@@ -241,3 +241,54 @@ bool timespec_normalize(struct timespec *ts)
 
 	return true;
 }
+
+k_timepoint_t timespec_abs_to_timepoint(uint32_t clock_id, const struct timespec *abstime)
+{
+	struct timespec now;
+	int __maybe_unused rc;
+	struct timespec duration = *abstime;
+
+	rc = sys_clock_gettime(clock_id, &now);
+	__ASSERT(rc == 0, "%s() %s: %d", "sys_clock_gettime", "failed", rc);
+	rc = (int)timespec_sub(&duration, &now);
+	__ASSERT(rc == 1, "%s() %s: %d", "timespec_sub", "overflowed", rc);
+
+	return sys_timepoint_calc(timespec_to_timeout(&duration, NULL));
+}
+
+#ifdef CONFIG_TIMEOUT_64BIT
+k_timeout_t timespec_abs_to_timeout(uint32_t clock_id, const struct timespec *abstime)
+{
+	uint64_t tick;
+	struct timespec mono = *abstime;
+
+	__ASSERT_NO_MSG((abstime != NULL) && timespec_is_valid(abstime));
+
+	if (clock_id == SYS_CLOCK_REALTIME) {
+		struct timespec offset;
+
+		/*
+		 * Rebase the wall-clock deadline onto SYS_CLOCK_MONOTONIC (uptime).
+		 *
+		 * TODO(clock-settime-reactive-waits): the realtime offset is pinned here;
+		 * a later sys_clock_settime() does not re-target timeouts already armed
+		 * with this value.
+		 */
+		sys_clock_getrtoffset(&offset);
+		(void)timespec_sub(&mono, &offset);
+	}
+
+	if (mono.tv_sec < 0) {
+		/* deadline already in the past: expire immediately */
+		tick = 0;
+	} else {
+		/*
+		 * SYS_CLOCK_MONOTONIC is the uptime clock, so the deadline converts to
+		 * ticks directly - no "now" sampling, no absolute/relative round-trip.
+		 */
+		tick = k_sec_to_ticks_ceil64(mono.tv_sec) + k_ns_to_ticks_ceil64(mono.tv_nsec);
+	}
+
+	return Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)MIN(tick, (uint64_t)(INT64_MAX - 1))));
+}
+#endif /* CONFIG_TIMEOUT_64BIT */

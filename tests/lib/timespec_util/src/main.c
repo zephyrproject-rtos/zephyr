@@ -557,6 +557,52 @@ ZTEST(timeutil_api, test_timespec_to_timeout_max)
 }
 #endif
 
+ZTEST(timeutil_api, test_timespec_abs_to_timeout)
+{
+	if (!IS_ENABLED(CONFIG_TIMEOUT_64BIT)) {
+		ztest_test_skip();
+	}
+
+#ifdef CONFIG_TIMEOUT_64BIT
+	uint64_t tick;
+	struct timespec abstime;
+	struct timespec offset;
+	struct timespec step;
+
+	/* monotonic deadlines convert directly to uptime ticks (no "now" sampling) */
+	abstime = SYS_TIMESPEC(2, NSEC_PER_SEC / 2);
+	tick = k_sec_to_ticks_ceil64(2) + k_ns_to_ticks_ceil64(NSEC_PER_SEC / 2);
+	zexpect_true(K_TIMEOUT_EQ(timespec_abs_to_timeout(SYS_CLOCK_MONOTONIC, &abstime),
+				  K_TIMEOUT_ABS_TICKS(tick)),
+		     "monotonic deadline did not convert to the expected absolute tick");
+
+	/* the monotonic epoch (uptime 0) is always in the past: expires immediately */
+	abstime = SYS_TIMESPEC(0, 0);
+	zexpect_true(K_TIMEOUT_EQ(timespec_abs_to_timeout(SYS_CLOCK_MONOTONIC, &abstime),
+				  K_TIMEOUT_ABS_TICKS(0)),
+		     "past monotonic deadline is not an immediate absolute timeout");
+
+	/* realtime deadlines are rebased by exactly the current realtime offset */
+	sys_clock_getrtoffset(&offset);
+	abstime = offset;
+	step = SYS_TIMESPEC(3, 0);
+	zassert_true(timespec_add(&abstime, &step));
+	tick = k_sec_to_ticks_ceil64(3);
+	zexpect_true(K_TIMEOUT_EQ(timespec_abs_to_timeout(SYS_CLOCK_REALTIME, &abstime),
+				  K_TIMEOUT_ABS_TICKS(tick)),
+		     "realtime deadline did not rebase onto the monotonic clock");
+
+	/* realtime deadline that rebases to before boot: expires immediately */
+	sys_clock_getrtoffset(&offset);
+	abstime = offset;
+	step = SYS_TIMESPEC(-1, 0);
+	zassert_true(timespec_add(&abstime, &step));
+	zexpect_true(K_TIMEOUT_EQ(timespec_abs_to_timeout(SYS_CLOCK_REALTIME, &abstime),
+				  K_TIMEOUT_ABS_TICKS(0)),
+		     "pre-boot realtime deadline is not an immediate absolute timeout");
+#endif /* CONFIG_TIMEOUT_64BIT */
+}
+
 static void *setup(void)
 {
 	TC_PRINT("CONFIG_SYS_CLOCK_TICKS_PER_SEC=%d\n", CONFIG_SYS_CLOCK_TICKS_PER_SEC);
