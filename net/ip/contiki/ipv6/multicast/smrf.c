@@ -85,6 +85,7 @@ mcast_fwd(struct net_mbuf *mbuf, void *p)
   UIP_IP_BUF(buf)->ttl--;
   tcpip_output(buf, NULL);
   uip_len(buf) = 0;
+  uip_ext_len(buf) = 0;
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
