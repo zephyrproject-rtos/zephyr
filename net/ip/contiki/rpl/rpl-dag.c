@@ -507,7 +507,6 @@ rpl_alloc_dag(struct net_buf *buf, uint8_t instance_id, uip_ipaddr_t *dag_id)
   }
 
   RPL_STAT(rpl_stats.mem_overflows++);
-  rpl_free_instance(buf, instance);
   return NULL;
 }
 /*---------------------------------------------------------------------------*/
