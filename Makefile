@@ -7,6 +7,8 @@ PATCHLEVEL 	   = 0
 SUBLEVEL	   = 0
 NAME 		   = Tiny Mountain
 
+export PROJECT VPFILE
+
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
 # More info can be located in ./README
@@ -561,11 +563,13 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf \
 	$(Q)$(MAKE) $(build)=$(@)
 
 # Objects we will link into vmlinux / subdirs we need to visit
-init-y		:= init/
-drivers-y	:= drivers/ sound/ firmware/
-net-y		:= net/
-libs-y		:= lib/
-core-y		:= usr/
+core-y := arch/ kernel/ misc/ lib/
+bsp-y  := drivers/
+
+ifneq ($(strip $(PROJECT)),)
+core-y += $(PROJECT)/src/
+endif
+
 endif # KBUILD_EXTMOD
 
 ifeq ($(dot-config),1)
@@ -607,13 +611,16 @@ else
 include/config/auto.conf: ;
 endif # $(dot-config)
 
+#File that includes all prepare special embedded architecture targets.
+include $(srctree)/scripts/Makefile.preparch
+sinclude $(srctree)/scripts/Makefile.${SRCARCH}.preparch
+
 # The all: target is the default when no target is given on the
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-include $(srctree)/arch/$(SRCARCH)/Makefile
 
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 
@@ -883,26 +890,26 @@ export mod_sign_cmd
 
 
 ifeq ($(KBUILD_EXTMOD),)
-core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/
+core-y		+=
 
 vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
-		     $(net-y) $(net-m) $(libs-y) $(libs-m)))
+		     $(bsp-y) $(bsp-m) $(libs-y) $(libs-m)))
 
 vmlinux-alldirs	:= $(sort $(vmlinux-dirs) $(patsubst %/,%,$(filter %/, \
-		     $(init-) $(core-) $(drivers-) $(net-) $(libs-))))
+		     $(init-) $(core-) $(drivers-) $(bsp-) $(libs-))))
 
 init-y		:= $(patsubst %/, %/built-in.o, $(init-y))
 core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
 drivers-y	:= $(patsubst %/, %/built-in.o, $(drivers-y))
-net-y		:= $(patsubst %/, %/built-in.o, $(net-y))
+bsp-y		:= $(patsubst %/, %/built-in.o, $(bsp-y))
 libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
 # Externally visible symbols (used by link-vmlinux.sh)
 export KBUILD_VMLINUX_INIT := $(head-y) $(init-y)
-export KBUILD_VMLINUX_MAIN := $(core-y) $(libs-y) $(drivers-y) $(net-y)
+export KBUILD_VMLINUX_MAIN := $(core-y) $(libs-y) $(drivers-y) $(bsp-y)
 export KBUILD_LDS          := arch/$(SRCARCH)/kernel/vmlinux.lds
 export LDFLAGS_vmlinux
 # used by scripts/pacmage/Makefile
@@ -926,7 +933,10 @@ endif
 ifdef CONFIG_BUILD_DOCSRC
 	$(Q)$(MAKE) $(build)=Documentation
 endif
+
+ifneq ($(strip $(PROJECT)),)
 	+$(call if_changed,link-vmlinux)
+endif
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
@@ -949,7 +959,6 @@ endef
 # Store (new) KERNELRELEASE string in include/config/kernel.release
 include/config/kernel.release: include/config/auto.conf FORCE
 	$(call filechk,kernel.release)
-
 
 # Things we need to do before we recursively start building the kernel
 # or the modules are listed in "prepare".
@@ -980,7 +989,30 @@ prepare1: prepare2 $(version_h) include/generated/utsrelease.h \
                    include/config/auto.conf
 	$(cmd_crmodverdir)
 
-archprepare: archheaders archscripts prepare1 scripts_basic
+ifneq ($(strip $(PROJECT)),)
+SYSGEN_EXEC=y
+endif
+
+ifneq ($(CONFIG_MICROKERNEL),y)
+SYSGEN_EXEC=n
+endif
+
+export SYSGEN_EXEC
+
+archprepare_common = $(strip \
+		archheaders archscripts prepare1 scripts_basic \
+		misc/generated/configs.c \
+		include/generated/offsets.h \
+		)
+
+archprepare_microkernel-y = misc/generated/nodes/microkernel_objects.h
+
+archprepare_prereq = $(strip \
+		$(archprepare_common) \
+		$(archprepare_microkernel-$(SYSGEN_EXEC)) \
+		)
+
+archprepare: $(archprepare_prereq)
 
 prepare0: archprepare FORCE
 	$(Q)$(MAKE) $(build)=.
