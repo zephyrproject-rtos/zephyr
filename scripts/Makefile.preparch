@@ -40,4 +40,21 @@ misc/generated/nodes/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNE
 misc/generated/nodes/microkernel_objects.h: misc/generated/nodes/prj.vpf FORCE
 	$(Q)$(srctree)/scripts/sysgen.py $(CURDIR)/misc/generated/nodes/prj.vpf $(CURDIR)/misc/generated/nodes/
 
+define filechk_configs.c
+	(echo "/* file is auto-generated, do not modify ! */"; \
+	echo; \
+	echo "#include <absSym.h>"; \
+	echo; \
+	echo "GEN_ABS_SYM_BEGIN (_ConfigAbsSyms)"; \
+	echo; \
+	cat $(CURDIR)/include/generated/autoconf.h | sed \
+	's/".*"/1/' | awk  \
+	'/#define/{printf "GEN_ABSOLUTE_SYM(%s, %s);\n", $$2, $$3}'; \
+	echo; \
+	echo "GEN_ABS_SYM_END";)
+endef
+
+misc/generated/configs.c: include/config/auto.conf FORCE
+	$(call filechk,configs.c)
+
 .PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf
