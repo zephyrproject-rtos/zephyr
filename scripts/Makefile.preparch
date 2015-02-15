@@ -37,4 +37,7 @@ misc/generated/nodes/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNE
 				include/config/auto.conf FORCE
 	$(call filechk,prj.vpf)
 
+misc/generated/nodes/microkernel_objects.h: misc/generated/nodes/prj.vpf FORCE
+	$(Q)$(srctree)/scripts/sysgen.py $(CURDIR)/misc/generated/nodes/prj.vpf $(CURDIR)/misc/generated/nodes/
+
 .PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf
