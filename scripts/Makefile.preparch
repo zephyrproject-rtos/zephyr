@@ -1,0 +1,40 @@
+ifneq ($(strip $(CONFIG_MAX_NUM_TASK_IRQS)),)
+ifneq (${CONFIG_MAX_NUM_TASK_IRQS},0)
+TASK_IRQS=y
+endif
+endif
+
+define filechk_prj.vpf
+	(echo "% WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!"; \
+	echo; \
+	echo "% NODE NAME         NLINAME      NDPACKS NCPACKS NTIMERS KSTACK"; \
+	echo "% CONFIG NUM_COMMAND_PACKETS NUM_TIMER_PACKETS"; \
+	echo "% ============================================================="; \
+	echo "  CONFIG ${CONFIG_NUM_COMMAND_PACKETS}                  ${CONFIG_NUM_TIMER_PACKETS}"; \
+	echo; \
+	echo "% TASKGROUP NAME";\
+	echo "% ==============";\
+	echo "  TASKGROUP EXE";\
+	echo "  TASKGROUP SYS";\
+	echo "  TASKGROUP FPU";\
+	echo "  TASKGROUP SSE";\
+	echo; \
+	if test "$(TASK_IRQS)" = "y"; then \
+		echo "% Task IRQ objects";\
+		echo "% EVENT    NAME              HANDLER"; \
+		echo "% ======================================="; \
+		for (( i=0; i < $(CONFIG_MAX_NUM_TASK_IRQS); i++ )) do \
+			echo "  EVENT    _TaskIrqEvt$$i     NULL"; \
+		done; \
+	fi; \
+	cat $(PROJECT)/$(VPFILE); \
+	cat $(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf;)
+endef
+
+#Specific source code generation for Viper
+misc/generated/nodes/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf \
+				$(PROJECT)/$(VPFILE) \
+				include/config/auto.conf FORCE
+	$(call filechk,prj.vpf)
+
+.PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf
