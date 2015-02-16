@@ -57,4 +57,57 @@ endef
 misc/generated/configs.c: include/config/auto.conf FORCE
 	$(call filechk,configs.c)
 
+define filechk_offsets.h
+	(echo "/* THIS FILE IS AUTO-GENERATED.  PLEASE DO NOT EDIT */"; \
+	echo; \
+	echo "/*"; \
+	echo " * This header file provides macros for the offsets of various structure"; \
+	echo " * members.  These offset macros are primarily intended to be used in"; \
+	echo " * assembly code."; \
+	echo " */"; \
+	echo; \
+	echo "/*"; \
+	echo " * Auto-generated header guard."; \
+	echo " */"; \
+	echo "#ifndef _OFFSETS_H_"; \
+	echo "#define _OFFSETS_H_"; \
+	echo; \
+	echo "#ifdef __cplusplus"; \
+	echo "extern "C" {"; \
+	echo "#endif"; \
+	echo; \
+	echo "/* defines */"; \
+	echo; \
+	nm -g $(CURDIR)/include/generated/offsets.o | awk \
+	--non-decimal-data \
+	'{ if($$1 ~ /[0-9a-f]+/) {p1= "0x" $$1; printf "#define %s \t 0x%X\n", $$3, p1;} }'; \
+	echo; \
+	echo "#ifdef __cplusplus"; \
+	echo "}"; \
+	echo "#endif"; \
+	echo; \
+	echo "#endif /* _OFFSETS_H_ */";)
+endef
+
+include/generated/offsets.h:  include/generated/offsets.o include/config/auto.conf FORCE
+	$(call filechk,offsets.h)
+
+define rule_cc_o_c
+	$(call echo-cmd,cc_o_c) $(cmd_cc_o_c);
+endef
+
+OFFSETS_INCLUDE = $(strip \
+		-I $(srctree)/include \
+		-I $(CURDIR)/include/generated \
+		-I $(srctree)/kernel/microkernel/include \
+		-I $(srctree)/kernel/nanokernel/include \
+		-I $(srctree)/target/src/kernel/arch/common/include \
+		-I $(srctree)/lib/libc/minimal/include \
+		-I $(srctree)/arch/x86/include )
+
+cmd_cc_o_c = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) $(USERINCLUDE) -c -o $@ $<
+
+include/generated/offsets.o: $(srctree)/arch/$(SRCARCH)/core/offsets/offsets.c FORCE
+	$(call if_changed_rule,cc_o_c)
+
 .PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf
