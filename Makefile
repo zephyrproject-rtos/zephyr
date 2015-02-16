@@ -1,8 +1,11 @@
-VERSION = 3
-PATCHLEVEL = 19
-SUBLEVEL = 0
-EXTRAVERSION =
-NAME = Diseased Newt
+VERSION_GENERATION = 2
+VERSION_MAJOR 	   = 2
+VERSION_MINOR 	   = 3
+VERSION_REVISION   = 0
+VERSION_RESERVED   = 0
+PATCHLEVEL 	   = 0
+SUBLEVEL	   = 0
+NAME 		   = Tiny Mountain
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
@@ -414,9 +417,10 @@ KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
-KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
+KERNELVERSION = $(VERSION_GENERATION).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_REVISION)
 
-export VERSION PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
+export VERSION_GENERATION VERSION_MAJOR VERSION_MINOR VERSION_REVISION VERSION_RESERVED
+export PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP
 export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE
@@ -481,7 +485,7 @@ asm-generic:
 # Detect when mixed targets is specified, and make a second invocation
 # of make so .config is not included in this case either (for *config).
 
-version_h := include/generated/uapi/linux/version.h
+version_h := include/generated/version.h
 old_version_h := include/linux/version.h
 
 no-dot-config-targets := clean mrproper distclean \
@@ -999,10 +1003,23 @@ define filechk_utsrelease.h
 	(echo \#define UTS_RELEASE \"$(KERNELRELEASE)\";)
 endef
 
+KERNEL_VERSION_HEX=0x${VERSION_GENERATION}${VERSION_MAJOR}${VERSION_MINOR}${VERSION_REVISION}
+KERNEL_CODE=40
+
 define filechk_version.h
-	(echo \#define LINUX_VERSION_CODE $(shell                         \
-	expr $(VERSION) \* 65536 + 0$(PATCHLEVEL) \* 256 + 0$(SUBLEVEL)); \
-	echo '#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))';)
+       (echo "#ifndef _KERNEL_VERSION_H_"; \
+       echo "#define _KERNEL_VERSION_H_"; \
+       echo ;\
+       echo "#define KERNELVERSION \\"; \
+       echo "$(KERNEL_VERSION_HEX)$(KERNEL_CODE)$(VERSION_RESERVED)"; \
+       echo "#define KERNEL_VERSION_NUMBER     $(KERNEL_VERSION_HEX)"; \
+       echo "#define KERNEL_VERSION_GENERATION $(VERSION_GENERATION)"; \
+       echo "#define KERNEL_VERSION_MAJOR      $(VERSION_MAJOR)"; \
+       echo "#define KERNEL_VERSION_MINOR      $(VERSION_MINOR)"; \
+       echo "#define KERNEL_VERSION_REVISION   $(VERSION_REVISION)"; \
+       echo "#define KERNEL_VERSION_STRING     \"$(KERNELVERSION)\""; \
+       echo; \
+       echo "#endif /* _KERNEL_VERSION_H_ */";)
 endef
 
 $(version_h): $(srctree)/Makefile FORCE
