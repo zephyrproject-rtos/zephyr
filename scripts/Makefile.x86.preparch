@@ -1,0 +1,22 @@
+PERF_OPT_FLAG-y = -DPERF_OPT
+ALIGN_STACK_FLAG- = -mpreferred-stack-boundary=2
+SECTION_GC_FLAG-y = $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
+LTO_FLAG-y = $(call cc-option,-flto,)
+PERF_OPT=$(if $(filter -Os,$(DEFAULTFLAGS)),,y),)
+PERF_OPT_FLAG = $(PERF_OPT_FLAG-$(PERF_OPT))
+ALIGN_STACK_FLAG = $(ALIGN_STACK_FLAG-$(PERF_OPT))
+SECTION_GC_FLAG = $(SECTION_GC_FLAG-$(CONFIG_SECTION_GARBAGE_COLLECTION))
+LTO_FLAG = $(LTO_FLAG-$(CONFIG_LTO))
+x86_FLAGS =  -DVXMICRO_ARCH_x86
+x86_FLAGS += -DVXMICRO_ARCH=x86
+x86_FLAGS += $(ALIGN_STACK_FLAG)
+x86_FLAGS += $(SECTION_GC_FLAG)
+x86_FLAGS += $(LTO_FLAG)
+x86_FLAGS += $(LTO_FLAG)
+x86_FLAGS += $(PERF_OPT_FLAG)
+
+ISA_FLAG_pentium4 = $(call cc-option,-march=pentium4,)
+ISA_FLAG_minuteia = $(call cc-option,-march=pentium,)
+ISA_FLAG_atom_n28xx = $(call cc-option,-march=atom,) $(call cc-option,-mtune=atom,)
+
+export ISA_FLAG_pentium4 ISA_FLAG_minuteia ISA_FLAG_atom_n28xx

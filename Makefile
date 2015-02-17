@@ -383,39 +383,47 @@ CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
+STDINCLUDE := -I$(srctree)/lib/libc/minimal/include
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
-USERINCLUDE    := \
-		-I$(srctree)/arch/$(hdr-arch)/include/uapi \
-		-Iarch/$(hdr-arch)/include/generated/uapi \
-		-I$(srctree)/include/uapi \
-		-Iinclude/generated/uapi \
-                -include $(srctree)/include/linux/kconfig.h
+USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
+PROJECTINCLUDE := $(strip -I$(srctree)/include/microkernel \
+		-I$(CURDIR)/misc/generated/nodes) \
+		$(USERINCLUDE)
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 LINUXINCLUDE    := \
 		-I$(srctree)/arch/$(hdr-arch)/include \
-		-Iarch/$(hdr-arch)/include/generated/uapi \
-		-Iarch/$(hdr-arch)/include/generated \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
-		-Iinclude \
-		$(USERINCLUDE)
+		-I$(srctree)/include \
+		-I$(CURDIR)/include/generated \
+		$(USERINCLUDE) \
+		$(STDINCLUDE)
 
-KBUILD_CPPFLAGS := -D__KERNEL__
+KBUILD_CPPFLAGS := -DKERNEL
 
-KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
-		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -std=gnu89
+DEFAULTFLAGS ?= -c -g -Os -std=c99
+
+KBUILD_CFLAGS   := $(DEFAULTFLAGS) \
+		-fno-reorder-functions \
+		-fno-asynchronous-unwind-tables \
+		-fno-omit-frame-pointer \
+		-fno-defer-pop -Wall \
+		-Wno-unused-but-set-variable \
+		-Wno-main -ffreestanding
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__
+KBUILD_AFLAGS   := -c -g -xassembler-with-cpp
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
+
+LDFLAGS += $(call cc-ldoption,-nostartfiles)
+LDFLAGS += $(call cc-ldoption,-nodefaultlibs)
+LDFLAGS += $(call cc-ldoption,-nostdlib)
+LDFLAGS += $(call cc-ldoption,-static)
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
@@ -433,7 +441,7 @@ export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
-export KBUILD_ARFLAGS
+export KBUILD_ARFLAGS PROJECTINCLUDE
 
 # When compiling out-of-tree modules, put MODVERDIR in the module
 # tree rather than in the kernel tree. The kernel tree might
@@ -613,7 +621,7 @@ endif # $(dot-config)
 
 #File that includes all prepare special embedded architecture targets.
 include $(srctree)/scripts/Makefile.preparch
-sinclude $(srctree)/scripts/Makefile.${SRCARCH}.preparch
+sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch
 
 # The all: target is the default when no target is given on the
 # command line.
@@ -643,9 +651,11 @@ KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
                  $(call cc-option,-fno-partial-inlining)
 endif
 
-ifneq ($(CONFIG_FRAME_WARN),0)
-KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
-endif
+ISA_FLAG=$(ISA_FLAG_$(CONFIG_BSP))
+
+STACK_CANARIES_FLAG_y = $(call cc-option,-fstack-protector-all,)
+STACK_CANARIES_FLAG_  = $(call cc-option,-fno-stack-protector,)
+STACK_CANARIES_FLAG = $(STACK_CANARIES_FLAG_$(CONFIG_STACK_CANARIES))
 
 # Handle stack protector mode.
 #
@@ -684,57 +694,22 @@ endif
 endif
 KBUILD_CFLAGS += $(stackp-flag)
 
-ifeq ($(COMPILER),clang)
-KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
-KBUILD_CPPFLAGS += $(call cc-option,-Wno-unknown-warning-option,)
-KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
-KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
-KBUILD_CFLAGS += $(call cc-disable-warning, gnu)
-# Quiet clang warning: comparison of unsigned expression < 0 is always false
-KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
-# CLANG uses a _MergedGlobals as optimization, but this breaks modpost, as the
-# source of a reference will be _MergedGlobals and not on of the whitelisted names.
-# See modpost pattern 2
-KBUILD_CFLAGS += $(call cc-option, -mno-global-merge,)
-KBUILD_CFLAGS += $(call cc-option, -fcatch-undefined-behavior)
-else
+export x86_FLAGS arm_FLAGS arc_FLAGS LDFLAG_LINKERCMD
 
-# This warning generated too much noise in a regular build.
-# Use make W=1 to enable this warning (see scripts/Makefile.build)
-KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
-endif
+ARCHFLAGS = $($(SRCARCH)_FLAGS)
 
-ifdef CONFIG_FRAME_POINTER
-KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
-else
-# Some targets (ARM with Thumb2, for example), can't be built with frame
-# pointers.  For those, we don't have FUNCTION_TRACER automatically
-# select FRAME_POINTER.  However, FUNCTION_TRACER adds -pg, and this is
-# incompatible with -fomit-frame-pointer with current GCC, so we don't use
-# -fomit-frame-pointer with FUNCTION_TRACER.
-ifndef CONFIG_FUNCTION_TRACER
-KBUILD_CFLAGS	+= -fomit-frame-pointer
-endif
-endif
-
-KBUILD_CFLAGS   += $(call cc-option, -fno-var-tracking-assignments)
-
-ifdef CONFIG_DEBUG_INFO
-ifdef CONFIG_DEBUG_INFO_SPLIT
-KBUILD_CFLAGS   += $(call cc-option, -gsplit-dwarf, -g)
-else
-KBUILD_CFLAGS	+= -g
-endif
-KBUILD_AFLAGS	+= -Wa,-gdwarf-2
-endif
-ifdef CONFIG_DEBUG_INFO_DWARF4
-KBUILD_CFLAGS	+= $(call cc-option, -gdwarf-4,)
-endif
+KBUILD_CFLAGS   += $(SSE_FP_MATH_FLAG) \
+		$(ISA_FLAG) \
+		$(STACK_CANARIES_FLAG) \
+		$(ARCHFLAGS)
 
 ifdef CONFIG_DEBUG_INFO_REDUCED
 KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly) \
 		   $(call cc-option,-fno-var-tracking)
 endif
+KBUILD_CFLAGS += $(CFLAGS)
+KBUILD_AFLAGS += $(ARCHFLAGS) $(ISA_FLAG=)
+KBUILD_AFLAGS += $(CFLAGS)
 
 ifdef CONFIG_FUNCTION_TRACER
 ifdef CONFIG_HAVE_FENTRY
@@ -754,6 +729,13 @@ endif
 ifdef CONFIG_DEBUG_SECTION_MISMATCH
 KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
 endif
+
+# Adding specific KBUILD_CFLAGS. This one is an specific example of how to set up KBUILD flags
+KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
+KBUILD_ARFLAGS := $(call ar-option,D)
+
+#FIXME This group of flags are under review
+ifdef REVIEW_BLOCK
 
 # arch Makefile may override CC so keep this after arch Makefile is included
 NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
@@ -779,14 +761,10 @@ KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
 
 # Prohibit date/time macros, which would make the build non-deterministic
 KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
+endif
 
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)
-
-# check for 'asm goto'
-ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-goto.sh $(CC)), y)
-	KBUILD_CFLAGS += -DCC_HAVE_ASM_GOTO
-endif
 
 include $(srctree)/scripts/Makefile.extrawarn
 
@@ -796,14 +774,16 @@ KBUILD_AFLAGS += $(KAFLAGS)
 KBUILD_CFLAGS += $(KCFLAGS)
 
 # Use --build-id when available.
-LDFLAGS_BUILD_ID = $(patsubst -Wl$(comma)%,%,\
-			      $(call cc-ldoption, -Wl$(comma)--build-id,))
-KBUILD_LDFLAGS_MODULE += $(LDFLAGS_BUILD_ID)
-LDFLAGS_vmlinux += $(LDFLAGS_BUILD_ID)
 
-ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
-LDFLAGS_vmlinux	+= $(call ld-option, -X,)
-endif
+LDFLAGS_vmlinux += $(call cc-ldoption,-nostartfiles)
+LDFLAGS_vmlinux += $(call cc-ldoption,-nodefaultlibs)
+LDFLAGS_vmlinux += $(call cc-ldoption,-nostdlib)
+LDFLAGS_vmlinux += $(call cc-ldoption,-static)
+LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)--unresolved-symbols=ignore-in-object-files)
+LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)-X)
+LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)-N)
+LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)--gc-sections)
+LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)--build-id=none)
 
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or
@@ -908,9 +888,11 @@ libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
 # Externally visible symbols (used by link-vmlinux.sh)
+DQUOTE = "
+#This comment line is to fix the highlighting of some editors due the quote effect."
 export KBUILD_VMLINUX_INIT := $(head-y) $(init-y)
 export KBUILD_VMLINUX_MAIN := $(core-y) $(libs-y) $(drivers-y) $(bsp-y)
-export KBUILD_LDS          := arch/$(SRCARCH)/kernel/vmlinux.lds
+export KBUILD_LDS          := $(srctree)/arch/$(SRCARCH)/$(subst $(DQUOTE),,$(CONFIG_BSP_DIR))/linker.cmd
 export LDFLAGS_vmlinux
 # used by scripts/pacmage/Makefile
 export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(vmlinux-alldirs)) arch Documentation include samples scripts tools virt)
@@ -1035,7 +1017,7 @@ define filechk_utsrelease.h
 	(echo \#define UTS_RELEASE \"$(KERNELRELEASE)\";)
 endef
 
-KERNEL_VERSION_HEX=0x${VERSION_GENERATION}${VERSION_MAJOR}${VERSION_MINOR}${VERSION_REVISION}
+KERNEL_VERSION_HEX=0x$(VERSION_GENERATION)$(VERSION_MAJOR)$(VERSION_MINOR)$(VERSION_REVISION)
 KERNEL_CODE=40
 
 define filechk_version.h

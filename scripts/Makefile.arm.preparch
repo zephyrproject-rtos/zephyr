@@ -1,0 +1,8 @@
+LTO_FLAG-y = $(call cc-option,-flto,)
+SECTION_GC_FLAG-y = $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
+SECTION_GC_FLAG = $(SECTION_GC_FLAG-$(CONFIG_SECTION_GARBAGE_COLLECTION))
+arm_FLAGS = $(call cc-option,-mthumb,)
+arm_FLAGS += -DVXMICRO_ARCH_arm
+arm_FLAGS += -DVXMICRO_ARCH=arm
+arm_FLAGS += $(SECTION_GC_FLAG)
+arm_FLAGS += $(LTO_FLAG-$(CONFIG_LTO))
