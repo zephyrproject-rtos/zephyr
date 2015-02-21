@@ -1,2 +1,2 @@
 obj-y = configs.o
-obj-$(CONFIG_MICROKERNEL) += nodes/
+obj-$(SYSGEN_EXEC) += nodes/
