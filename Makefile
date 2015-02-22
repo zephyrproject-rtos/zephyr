@@ -785,6 +785,9 @@ LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)-N)
 LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)--gc-sections)
 LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)--build-id=none)
 
+LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
+export LD_TOOLCHAIN
+
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or
 # set in the environment

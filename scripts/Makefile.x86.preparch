@@ -14,6 +14,7 @@ x86_FLAGS += $(SECTION_GC_FLAG)
 x86_FLAGS += $(LTO_FLAG)
 x86_FLAGS += $(LTO_FLAG)
 x86_FLAGS += $(PERF_OPT_FLAG)
+LDFLAG_LINKERCMD = -DVXMICRO_ARCH_x86
 
 ISA_FLAG_pentium4 = $(call cc-option,-march=pentium4,)
 ISA_FLAG_minuteia = $(call cc-option,-march=pentium,)

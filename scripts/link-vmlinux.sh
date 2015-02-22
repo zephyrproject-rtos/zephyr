@@ -37,34 +37,64 @@ info()
 	fi
 }
 
+# Creates linker parameters.
+# {1} output file
+# {2} symbol map file
+linker_params()
+{
+	echo "${LDFLAGS_vmlinux}" >> ${1}
+	echo "-Wl,-Map,./${2}" >> ${1}
+	echo "-L ${objtree}/include/generated" >> ${1}
+	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
+	echo "-Wl,--start-group ${KBUILD_VMLINUX_MAIN}" >> ${1}
+	echo "${objtree}/include/generated/offsets.o" >> ${1}
+}
+
+#Creates linker command file
+# {1} output file
+# {2} optional additional link parameters
+linker_command()
+{
+	${CC} -x assembler-with-cpp -nostdinc -undef -E -P  \
+		${LDFLAG_LINKERCMD} \
+		${LD_TOOLCHAIN} ${2} \
+		-I${srctree}/include -I${objtree}/include/generated \
+		${KBUILD_LDS} \
+		-o ${1}
+}
+
 # Link of vmlinux.o used for section mismatch analysis
 # ${1} output file
-modpost_link()
+# ${2} linker parameters file
+# ${3} linker command file
+initial_link()
 {
-	${LD} ${LDFLAGS} -r -o ${1} ${KBUILD_VMLINUX_INIT}                   \
-		--start-group ${KBUILD_VMLINUX_MAIN} --end-group
+	${CC} -o ${1} @${2}  -T ${3}
+}
+
+#Generates IDT and merge them into final binary
+# ${1} input file (vmlinux.elf)
+# ${2} output file (staticIdt.o)
+gen_idt()
+{
+	${OBJCOPY} -I elf32-i386 -O binary -j intList ${1} isrList.bin
+	${srctree}/host/x86-linux2/bin/genIdt -i isrList.bin -n 256 -o staticIdt.bin
+	${OBJCOPY} -I binary -B i386 -O elf32-i386 --rename-section .data=staticIdt staticIdt.bin ${2}
+	rm -f staticIdt.bin
+	rm -f isrList.bin
 }
 
 # Link of vmlinux
-# ${1} - optional extra .o files
-# ${2} - output file
+# ${1} - linker params file (vmlinux.lnk)
+# ${2} - linker command file (final-linker.cmd)
+# ${3} - input file (staticIdt.o)
+# ${4} - output file
 vmlinux_link()
 {
-	local lds="${objtree}/${KBUILD_LDS}"
-
-	if [ "${SRCARCH}" != "um" ]; then
-		${LD} ${LDFLAGS} ${LDFLAGS_vmlinux} -o ${2}                  \
-			-T ${lds} ${KBUILD_VMLINUX_INIT}                     \
-			--start-group ${KBUILD_VMLINUX_MAIN} --end-group ${1}
-	else
-		${CC} ${CFLAGS_vmlinux} -o ${2}                              \
-			-Wl,-T,${lds} ${KBUILD_VMLINUX_INIT}                 \
-			-Wl,--start-group                                    \
-				 ${KBUILD_VMLINUX_MAIN}                      \
-			-Wl,--end-group                                      \
-			-lutil ${1}
-		rm -f linux
-	fi
+	${CC} -o ${4} @${1} ${3} -T ${2}
+	${OBJCOPY} --set-section-flags intList=noload ${4} elf.tmp
+	${OBJCOPY} -R intList elf.tmp ${4}
+	rm elf.tmp
 }
 
 
@@ -120,8 +150,12 @@ cleanup()
 	rm -f .tmp_version
 	rm -f .tmp_vmlinux*
 	rm -f System.map
-	rm -f vmlinux
-	rm -f vmlinux.o
+	rm -f vmlinux.lnk
+	rm -f vmlinux.map
+	rm -f vmlinux.elf
+	rm -f staticIdt.o
+	rm -f linker.cmd
+	rm -f final-linker.cmd
 }
 
 #
@@ -149,11 +183,10 @@ case "${KCONFIG_CONFIG}" in
 esac
 
 #link vmlinux.o
-info LD vmlinux.o
-modpost_link vmlinux.o
-
-# modpost vmlinux.o to check for section mismatches
-${MAKE} -f "${srctree}/scripts/Makefile.modpost" vmlinux.o
+info LD vmlinux.elf
+linker_params vmlinux.lnk vmlinux.map
+linker_command linker.cmd
+initial_link vmlinux.elf vmlinux.lnk linker.cmd
 
 # Update version
 info GEN .version
@@ -164,9 +197,6 @@ else
 	mv .version .old_version;
 	expr 0$(cat .old_version) + 1 >.version;
 fi;
-
-# final build of init/
-${MAKE} -f "${srctree}/scripts/Makefile.build" obj=init
 
 kallsymso=""
 kallsyms_vmlinux=""
@@ -213,8 +243,12 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 	fi
 fi
 
-info LD vmlinux
-vmlinux_link "${kallsymso}" vmlinux
+if [ "${SRCARCH}" = "x86" ]; then
+	info SIDT vmlinux.elf
+	gen_idt vmlinux.elf staticIdt.o
+	linker_command final-linker.cmd -DFINAL_LINK
+	vmlinux_link vmlinux.lnk final-linker.cmd staticIdt.o vmlinux.elf
+fi
 
 if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
 	info SORTEX vmlinux
@@ -222,7 +256,7 @@ if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
 fi
 
 info SYSMAP System.map
-mksysmap vmlinux System.map
+mksysmap vmlinux.elf System.map
 
 # step a (see comment above)
 if [ -n "${CONFIG_KALLSYMS}" ]; then
