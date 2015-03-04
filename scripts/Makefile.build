@@ -71,6 +71,10 @@ _dummy := $(shell [ -d $(obj) ] || mkdir -p $(obj))
 # Create directories for object files if directory does not exist
 # Needed when obj-y := dir/file.o syntax is used
 _dummy := $(foreach d,$(obj-dirs), $(shell [ -d $(d) ] || mkdir -p $(d)))
+
+# Create directories for object files if directory does not exist
+# Needed when lib-y := dir/file.o syntax is used
+_dummy := $(foreach d,$(lib-dirs), $(shell [ -d $(d) ] || mkdir -p $(d)))
 endif
 
 ifndef obj
