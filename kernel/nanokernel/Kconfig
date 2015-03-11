@@ -1,0 +1,13 @@
+menu "Nanokernel Options"
+
+config KERNEL_DIR
+	string
+	default nkernel
+	depends on NANOKERNEL
+	help
+	This option holds the name of the directory used
+	by sysgen to locate the config1p.vpf file.
+
+source "kernel/nanokernel/core/Kconfig"
+
+endmenu

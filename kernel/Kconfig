@@ -1,0 +1,113 @@
+choice
+prompt "Kernel Type"
+default MICROKERNEL
+
+config NANOKERNEL
+	bool "NANOKERNEL"
+
+config MICROKERNEL
+	bool "MICROKERNEL"
+
+endchoice
+
+menu "General Kernel Options"
+
+config SYS_CLOCK_TICKS_PER_SEC
+	int
+	prompt "System tick frequency (in ticks/second)"
+	default 100
+	depends on !NO_ISRS
+	help
+	This option specifies the frequency of the system clock in Hz.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	#The value is set by each BSP Kconfig file.
+	help
+	Frequency of the hardware timer used for the system clock
+	(in Hz).
+
+config  XIP
+	bool
+	prompt "Execute in place"
+	help
+	  This option allows the kernel to operate with its text and read-only
+	  sections residing in ROM (or similar read-only memory). Not all BSPs
+	  support this option so it must be used with care; you must also
+	  supply a linker command file when building your image. Enabling this
+	  option increases both the code and data footprint of the image.
+
+config ENHANCED_SECURITY
+	bool
+	prompt "Enhanced security features"
+	default y if ARCH="x86"
+	default n
+	help
+	This option enables all security features supported by TiMo,
+	including those that can have a significant impact on system
+	footprint or performance; it also prevents the use of certain kernel
+	features that have known security risks.
+
+	Users can customize these settings using the CUSTOM_SECURITY option
+	in the "Security Options" menu.
+
+menu "Security Options"
+	depends on ENHANCED_SECURITY
+
+config CUSTOM_SECURITY
+	bool
+	prompt "Customized security"
+	default n
+	help
+	This option allow users to disable enhanced security features they do
+	not wish to use or enable the use of features with security exposures.
+
+config STACK_CANARIES
+	bool
+	prompt "Compiler stack canaries" if CUSTOM_SECURITY
+	default n
+	help
+	This option enables compiler stack canaries support on most functions
+	in the kernel. (Kernel functions that reside in LKMs do NOT have
+	stack canary support, due to limitations of the LKM technology.)
+
+	If stack canaries are supported by the compiler, it will emit
+	extra code that inserts a canary value into the stack frame when
+	a function is entered and validates this value upon exit.
+	Stack corruption (such as that caused by buffer overflow) results
+	in a fatal error condition for the running entity.
+	Enabling this option can result in a significant increase
+	in footprint and an associated decrease in performance.
+
+	If stack canaries are not supported by the compiler, enabling this
+	option has no effect.
+endmenu
+
+endmenu
+source "kernel/nanokernel/Kconfig"
+
+config TICKLESS_IDLE
+	bool
+	prompt "Tickless idle"
+	default y
+	depends on ADVANCED_POWER_MANAGEMENT && !TICKLESS_IDLE_UNSUPPORTED
+	help
+	This option suppresses periodic system clock interrupts whenever the
+	kernel becomes idle. This permits the system to remain in a power
+	saving state for extended periods without having to wake up to
+	service each tick as it occurs.
+
+config TICKLESS_IDLE_THRESH
+	int
+	prompt "Tickless idle threshold"
+	default 3
+	depends on TICKLESS_IDLE && MICROKERNEL
+	help
+	This option disables clock interrupt suppression when the kernel idles
+	for only a short period of time. It specifies the minimum number of
+	ticks that must occur before the next kernel timer expires in order
+	for suppression to happen.
+
+if MICROKERNEL
+source "kernel/microkernel/Kconfig"
+endif

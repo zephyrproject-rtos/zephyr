@@ -1,0 +1,211 @@
+menu "Microkernel Options"
+
+source "kernel/microkernel/core/Kconfig"
+
+config KERNEL_DIR
+	string
+	default ukernel
+	depends on MICROKERNEL
+	help
+		This option holds the name of the directory used
+		by sysgen to locate the config1p.vpf file.
+
+config	WORKLOAD_MONITOR
+	bool
+	prompt "Workload monitoring [EXPERIMENTAL]"
+	default y
+	depends on MICROKERNEL && EXPERIMENTAL
+	help
+	This option instructs the kernel to record the percentage of time
+	the system is doing useful work (i.e. is not idle).
+
+# NOTE:
+# All the API_* config options are being introduced to have the capability
+# to enable or disable all different microkernel APIs and to remove them
+# from the conpilation set in the future.
+# Right now, they are hidden options because the source code does not
+# necessarily support the capability to be eliminated from the compilation
+# set, since there are some dependencies that might need to be solved.
+
+config API_MEMMAP
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option adds the memory map API
+	to the microkernel image.
+
+config API_MEMPOOL
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the memory pool API
+	to the microkernel image.
+
+config API_TASKIRQ
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the task irq API
+	to the microkernel image.
+
+config	MAX_NUM_TASK_IRQS
+	int
+	prompt "Number of task IRQ objects"
+	default 0
+	depends on MICROKERNEL && API_TASKIRQ
+	help
+	This option specifies the maximum number of IRQs that may be
+	utilized by task level device drivers. A value of zero disables
+	this feature.
+
+config API_DONOTHING
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the idle API
+	to the microkernel image.
+
+config API_OFFLD2FIBER
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the offload to fiber API
+	to the microkernel image.
+
+config API_EVENTS
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the event mangement API
+	to the microkernel image.
+
+config API_MAILBOX
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the mailbox API
+	to the microkernel image.
+
+config API_MUTEX
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the mutex API
+	to the microkernel image.
+
+config API_FIFO
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the FIFO API
+	to the microkernel image.
+
+config API_SEMAPHORES
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the semaphores API
+	to the microkernel image.
+
+config API_TIMER
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the timer API
+	to the microkernel image.
+
+source "kernel/microkernel/timer/Kconfig"
+
+config API_CHANNEL
+	bool
+	default y
+	depends on MICROKERNEL
+	help
+	This option add the channel API
+	to the microkernel image.
+
+config  TASK_MONITOR
+	bool
+	prompt "Task monitoring [EXPERIMENTAL]"
+	default n
+	depends on MICROKERNEL
+	help
+	This option instructs the kernel to record significant task
+	activities. These can include: task switches, task state changes,
+	kernel service requests, and the signalling of events.
+
+config  TASK_MONITOR_CAPACITY
+	int
+	prompt "Trace buffer capacity (# of entries)"
+	default 300
+	depends on TASK_MONITOR
+	help
+	This option specifies the number of entries in the task monitor's
+	trace buffer. Each entry requires 12 bytes.
+
+config  TASK_MONITOR_MASK
+	int
+	prompt "Trace buffer mask"
+	default 15
+	depends on TASK_MONITOR
+	help
+	This option specifies which task execution activities are captured
+	in the task monitor's trace buffer. The following values can be
+	OR-ed together to form the mask:
+		1 (MON_TSWAP): task switch
+		2 (MON_STATE): task state change
+		4 (MON_KSERV): task execution of kernel APIs
+		8 (MON_EVENT): task event signalled
+
+config ADVANCED_POWER_MANAGEMENT
+	bool
+	prompt "Advanced power management"
+	default n
+	depends on MICROKERNEL
+	help
+	This option enables the BSP to implement extra power management
+	policies whenever the kernel becomes idle. The kernel informs the
+	BSP of the number of ticks until the next kernel timer expires by
+	calling the BSP function _SysPowerSaveIdle().
+
+menu "Advanced Power Management Features"
+	depends on MICROKERNEL && ADVANCED_POWER_MANAGEMENT && ADVANCED_IDLE_SUPPORTED
+
+config  ADVANCED_IDLE
+	bool
+	prompt "Advanced idle state"
+	default n
+	depends on ADVANCED_POWER_MANAGEMENT && ADVANCED_IDLE_SUPPORTED
+	help
+	This option enables the kernel to interface to a custom advanced idle
+	power saving manager. This permits the system to enter a custom
+	power saving state when the kernel becomes idle for extended periods,
+	and then to restore the system to its previous state (rather than
+	booting up from scratch) when the kernel is re-activated.
+
+config ADV_IDLE_STACK_SIZE
+	int
+	prompt "Advanced idle state stack size"
+	default 16
+	depends on ADVANCED_IDLE
+	help
+	This option defines the size of the separate stack used during the
+	system state check while the booting up. A separate stack is used
+	to avoid memory corruption on the system re-activation from power
+	down mode. The stack size must be large enough to hold the return
+	address (4 bytes) and the _AdvIdleCheckSleep() stack frame.
+
+endmenu
+
+endmenu
