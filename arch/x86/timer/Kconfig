@@ -1,0 +1,24 @@
+menu "Timer Configuration"
+
+config HPET_TIMER
+	bool "HPET timer"
+	default n
+	help
+	This option selects High Precision Event Timer (HPET) as a
+	system timer.
+
+config LOAPIC_TIMER
+	bool "LOAPIC timer"
+	depends on LOAPIC && BSP_GENERIC_PC
+	default n
+	help
+	This option selects LOAPIC timer as a system timer.
+
+config LOAPIC_TIMER_FREQ
+	int "LOAPIC timer frequency"
+	depends on LOAPIC_TIMER
+	default 0
+	help
+	This option specifies LOAPIC timer frequency in HZ.
+
+endmenu

@@ -1,0 +1,23 @@
+config BSP_DIR
+	string
+	default ti_lm3s6965
+	help
+	This option holds the directory name used by sysgen to identify
+	the location of the config1p.vpf file and is used by the build system
+	to locate the correct linker file.
+
+config NUM_IRQ_PRIO_BITS
+	default 3
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 7
+
+config BSP_TI_LM3S6965_QEMU
+	def_bool y
+	# BSP has only been tested on QEMU, not on real hardware, so always
+	# assume it is used for a QEMU target.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 12000000

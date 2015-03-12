@@ -1,0 +1,23 @@
+menu "BSP General Configuration"
+
+choice
+prompt "Minimum BSP Configuation Selection"
+default BSP_FSL_FRDM_K64F
+
+config  BSP_FSL_FRDM_K64F
+	bool "Minimum Configuration for FSL FRDM K64F"
+	select CPU_CORTEXM4
+	select DRV_K20_UART
+	select DRV_SERIAL
+
+config  BSP_TI_LM3S6965
+	bool "Minimum Configuration for a TI LM3S6965"
+	select CPU_CORTEXM3
+	select DRV_STELLARIS_UART
+	select DRV_SERIAL
+
+endchoice
+
+endmenu
+
+source "arch/arm/bsp/CortexM/Kconfig"

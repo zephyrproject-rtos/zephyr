@@ -1,0 +1,128 @@
+menu "x86 Core Options"
+	depends on ARCH="x86"
+
+config NO_ISRS
+	bool
+	prompt "No Asynchronous Interrupts"
+	default n
+	help
+	This option disables asynchronous interrupts support.
+
+menu "Memory Layout Options"
+
+config IDT_NUM_VECTORS
+	int
+	prompt "Number of IDT vectors"
+	default 256
+	help
+	This option specifies the number of interrupt vector entries in the
+	Interrupt Descriptor Table (IDT). By default all 256 vectors are
+	supported in an IDT requiring 2048 bytes of memory.
+
+config NUM_GDT_SPARE_ENTRIES
+	int
+	prompt "Number of spare GDT entries"
+	default 0
+	help
+	This option specifies the number of spare entries in the Global
+	Descriptor Table (GDT).
+
+config PHYS_LOAD_ADDR
+	hex "Physical load address"
+	# Default value must be supplied by BSP
+	help
+	This option specifies the physical address where the kernel is loaded.
+
+endmenu
+
+
+menu "Board Capabilities"
+
+config BOI_HANDLER_SUPPORTED
+	bool "BOI handler supported"
+	default n
+	help
+	This option signifies that the target has one or more devices whose
+	driver utilizes a "beginning of interrupt" handler that gets called
+	before TiMo's standard interrupt handling code. This capability
+	can be used by the driver to suppress spurious interrupts generated
+	by the device (or for other purposes).
+
+config EOI_HANDLER_SUPPORTED
+	bool "EOI handler supported"
+	default n
+	help
+	This option signifies that the target has one or more devices whose
+	driver utilizes an "end of interrupt" handler that gets called
+	after TiMo's standard interrupt handling code. This capability
+	can be used by the driver to tell the device that an interrupt
+	has been handled (or for other purposes).
+
+
+config UNALIGNED_WRITE_UNSUPPORTED
+	bool "Unaligned write Supported"
+	default n
+	help
+	This option signifies that the target may not properly decode the
+	IA-32 processor's byte enable (BE) lines, resulting in the inability
+	to read/write unaligned quantities.
+
+config LOCK_INSTRUCTION_UNSUPPORTED
+	bool "Lock Instruction Unsupported"
+	default n
+	help
+	This option signifies that the target lacks support for the IA-32
+	LOCK prefix instruction. Code running on such targets cannot
+	use the LOCK prefix to perform read-modify-write operations in an
+	atomic manner; such targets must utilize other techniques to perform
+	atomic operations (such as locking interrupts).
+
+endmenu
+
+menu "Floating Point Options"
+	depends on !CPU_FLOAT_UNSUPPORTED
+
+config  FP_SHARING
+	bool
+	prompt "Floating point resource sharing" if !ENHANCED_SECURITY
+	depends on FLOAT
+	default n
+	select AUTOMATIC_FP_ENABLING if ENHANCED_SECURITY
+	help
+	This option allows multiple tasks and fibers to safely utilize
+	floating point hardware resources. Every task or fiber that wishes
+	to use floating point instructions (i.e. x87 FPU, MMX, or SSEx) must
+	be created with such support already enabled, or must enable this
+	support via task_float_enable() or fiber_float_enable() before
+	executing these instructions.
+
+	Enabling this option adds 108 bytes to the stack size requirement
+	of each task or fiber that utilizes x87 FPU or MMX instructions,
+	and adds 464 bytes to the stack size requirement of each task or
+	fiber that utilizes SSEx instructions. (The stack size requirement
+	of tasks and fibers that do not utilize floating point instructions
+	remains unchanged.)
+
+	Disabling this option means that only a single task or fiber may
+	utilize x87 FPU, MMX, or SSEx instructions. (The stack size
+	requirement of all tasks and fibers remains unchanged.)
+
+config AUTOMATIC_FP_ENABLING
+	bool
+	prompt "Automatically enable floating point resource sharing" \
+		if !ENHANCED_SECURITY
+	depends on FP_SHARING
+	default n
+	help
+	This option allows tasks and fibers to safely utilize floating
+	point hardware resources without requiring them to first indicate
+	their intention to do so. The system automatically detects when
+	a task or fiber that does not currently have floating point support
+	enabled uses a floating point instruction, and automatically executes
+	task_float_enable() or fiber_float_enable() on its behalf. The
+	task or fiber is enabled for using x87 FPU, MMX, or SSEx instructions
+	if SSE is configured, otherwise it is enabled for using x87 FPU or
+	MMX instructions only.
+endmenu
+
+endmenu

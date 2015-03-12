@@ -1,0 +1,15 @@
+config ARCH
+	string
+	option env="ARCH"
+	default "x86"
+	help
+	This option identifies the architecture type.
+	The values supported are: x86 arm
+
+if ARCH = "x86"
+	source "arch/x86/Kconfig"
+endif
+
+if ARCH = "arm"
+	source "arch/arm/Kconfig"
+endif

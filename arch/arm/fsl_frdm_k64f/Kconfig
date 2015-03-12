@@ -1,0 +1,25 @@
+config BSP_DIR
+	string
+	default fsl_frdm_k64f
+	help
+	This option holds the directory name used by sysgen to identify
+	the location of the config1p.vpf file and is used by the build system
+	to locate the correct linker file.
+
+config NUM_IRQ_PRIO_BITS
+	default 4
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 32
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 25000000
+
+config WDOG_INIT
+	def_bool y
+	# omit prompt to signify a "hidden" option
+	help
+	This processor enables the watchdog timer with a short timeout
+	upon reset. Therefore, this requires that the watchdog be configured
+	during reset handling.

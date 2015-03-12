@@ -1,0 +1,215 @@
+menu "ARM Cortex CPU options"
+
+config CPU_CORTEX
+	bool "ARM CORTEX"
+	default n
+	select ARM
+	help
+	This option signifies the use of a CPU of the Cortex family.
+
+config CPU_CORTEXM
+	bool "ARM Cortex-M"
+	default n
+	select CPU_CORTEX
+	select ISA_THUMB2
+	help
+	This option signifies the use of a CPU of the Cortex-M family.
+
+config CPU_CORTEXM3
+	# omit prompt to signify a "hidden" option
+	bool "ARM Cortex-M3"
+	default n
+	select CPU_CORTEXM
+	help
+	This option signifies the use of a Cortex-M3+ CPU
+
+config CPU_CORTEXM4
+	# omit prompt to signify a "hidden" option
+	bool "ARM Cortex-M4"
+	default n
+	select CPU_CORTEXM3
+	help
+	This option signifies the use of a Cortex-M4 CPU
+
+endmenu
+
+menu "ARM Cortex-M family options"
+	depends on CPU_CORTEXM
+
+config LDREX_STREX_AVAILABLE
+	bool
+	default y
+
+config DATA_ENDIANNESS_LITTLE
+	bool
+	default y
+	help
+	This is driven by the processor implementation, since it is fixed in
+	hardware. The BSP should set this value to 'n' if the data is
+	implemented as big endian.
+
+config STACK_ALIGN_DOUBLE_WORD
+	bool
+	prompt "Align stacks on double-words (8 octets)"
+	default y
+	help
+	This is needed to conform to AAPCS, the procedure call standard for
+	the ARM. It wastes stack space.
+
+config NUM_IRQS
+	int
+	prompt "Upper limit of interrupt numbers/IDs used"
+	default 1
+	range 1 1000
+	help
+	Interrupts available will be 0 to NUM_IRQS-1.
+
+	The minimal value is 1.
+
+	The BSP must provide a valid default. This drives the size of the
+	vector table.
+
+config STACK_GROWS_DOWN
+	bool
+	prompt "Stacks grow down"
+	default y
+	help
+	Stacks can grow either up or down. Down is the default. Don't change
+	this unless you have a very good reason to do so.
+
+config NUM_IRQ_PRIO_BITS
+	int
+	#hidden option, implemented by BSP
+	help
+	Cortex-M chips can implement up to 8 bits of interrupt priorities,
+	for a maximum of 256 priorities. Most chips implement fewer than 8.
+
+	The BSP must define the correct value.
+
+config RUNTIME_NMI
+	bool
+	prompt "Attach an NMI handler at runtime"
+	default n
+	help
+	TiMo provides a simple NMI handler that simply hangs in a tight
+	loop if triggered. This fills the requirement that there must be an
+	NMI handler installed when the CPU boots. If a custom handler is
+	needed, enable this option and attach it via _NmiHandlerSet().
+
+config FAULT_DUMP
+	int
+	prompt "Fault dump level"
+	default 2
+	help
+	Different levels for display information when a fault occurs.
+
+	2: The default. Display specific and verbose information. Consumes
+		the most memory (long strings).
+	1: Display general and short information. Consumes less memory
+		(short strings).
+	0: Off.
+
+config XIP
+	default y
+
+endmenu
+
+menu "ARM Cortex-M3 options"
+	depends on CPU_CORTEXM3
+
+config SW_ISR_TABLE
+	bool
+	prompt "Enable software interrupt handler table"
+	default y
+	help
+	Enable an interrupt handler table implemented in software. This
+	table, unlike ISRs connected directly in the vector table, allow
+	a parameter to be passed to the interrupt handlers. Also, invoking
+	the exeception/interrupt exit stub is automatically done.
+
+	This has to be enabled for dynamically connecting interrupt handlers
+	at runtime (SW_ISR_TABLE_DYNAMIC).
+
+config SW_ISR_TABLE_DYNAMIC
+	bool
+	prompt "Allow installing interrupt handlers at runtime"
+	depends on SW_ISR_TABLE
+	default y
+	help
+	This option enables irq_connect(). It moves the ISR table to
+	SRAM so that it is writable. This has the side-effect of removing
+	write-protection on the ISR table.
+
+config SW_ISR_TABLE_STATIC_CUSTOM
+	bool
+	prompt "Projects provide a custom static software ISR table"
+	depends on SW_ISR_TABLE && !SW_ISR_TABLE_DYNAMIC
+	default n
+	help
+	Projects, not the BSP, provide a software table of ISR and their
+	parameters. The table is static, and thus ISRs cannot be connected
+	at runtime.
+
+config SW_ISR_TABLE_BSP
+	bool
+	# omit prompt to signify a "hidden" option
+	depends on SW_ISR_TABLE_DYNAMIC || (SW_ISR_TABLE && !SW_ISR_TABLE_STATIC_CUSTOM)
+	default y
+	help
+	Not user-selectable, helps build system logic.
+
+config IRQ_VECTOR_TABLE_CUSTOM
+	bool
+	prompt "Projects provide a custom static IRQ part of vector table"
+	depends on !SW_ISR_TABLE
+	default n
+	help
+	Projects, not the BSP, provide the IRQ part of the vector table.
+
+	This is the table of interrupt handlers with the best potential
+	performance, but is the less flexible.
+
+	The ISRs are installed directly in the vector table, thus are
+	directly called by the CPU when an interrupt is taken. This adds
+	the least overhead when handling an interrupt.
+
+	Downsides:
+	- ISRs cannot have a parameter
+	- ISRs cannot be connected at runtime
+	- ISRs must notify the kernel manually by invoking _IntExit() when
+		then are about to return.
+
+config IRQ_VECTOR_TABLE_BSP
+	bool
+	# omit prompt to signify a "hidden" option
+	depends on SW_ISR_TABLE || !IRQ_VECTOR_TABLE_CUSTOM
+	default y
+	help
+	Not user-selectable, helps build system logic.
+
+config ZERO_LATENCY_IRQS
+	bool
+	prompt "Enable zero-latency interrupts"
+	default n
+	help
+	Interrupt locking is done by setting exception masking to priority
+	one, thus allowing exception of priority zero to still come in. By
+	default, the kernel verifies, via __ASSERT() statements, that the
+	interrupt priority is not set to zero when either connecting them or
+	setting their priority. Enabling this option disables the check,
+	thus allowing setting the priority of interrupts to zero.
+
+	Note that this is a somewhat dangerous option: ISRs of priority zero
+	interrupts cannot use any kernel functionality.
+
+config ARCH_HAS_TASK_ABORT
+	bool
+	# omit prompt to signify a "hidden" option
+	default y
+
+config ARCH_HAS_NANO_FIBER_ABORT
+	bool
+	# omit prompt to signify a "hidden" option
+	default y
+
+endmenu
