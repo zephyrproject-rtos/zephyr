@@ -36,7 +36,7 @@ usage() {
 	echo "  -O    dir to put generated output files"
 }
 
-MAKE=true
+RUNMAKE=true
 ECHO=echo
 ALLTARGET=alldefconfig
 WARNREDUN=false
@@ -55,7 +55,7 @@ while true; do
 		continue
 		;;
 	"-m")
-		MAKE=false
+		RUNMAKE=false
 		shift
 		continue
 		;;
@@ -133,7 +133,7 @@ for MERGE_FILE in $MERGE_LIST ; do
 	cat $MERGE_FILE >> $TMP_FILE
 done
 
-if [ "$MAKE" = "false" ]; then
+if [ "$RUNMAKE" = "false" ]; then
 	cp $TMP_FILE $OUTPUT/.config
 	$ECHO "#"
 	$ECHO "# merged configuration written to $OUTPUT/.config (needs make)"
