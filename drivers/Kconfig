@@ -1,0 +1,47 @@
+config DRV_CONSOLE
+	bool
+	default y
+	help
+	This option enables the UART console driver.
+
+config DRV_SERIAL
+	bool
+	default n
+	help
+	This option enables the serial driver.
+
+if DRV_SERIAL
+source "drivers/serial/Kconfig"
+endif
+
+config DRV_TIMER
+	bool
+	default n
+	help
+	This option enables the timer driver.
+
+if DRV_TIMER
+source "drivers/timer/Kconfig"
+endif
+
+config DRV_INTCTL
+	bool
+	default n
+	help
+	This option enables the interrupt controller driver.
+
+config DRV_PCI
+	bool
+	default n
+	help
+	This option enables the PCI driver.
+
+config DRV_RANDOM
+	bool
+	default n
+	help
+	This option enables the random number generator driver.
+
+if DRV_RANDOM
+source "drivers/random/Kconfig"
+endif

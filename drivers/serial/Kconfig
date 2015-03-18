@@ -1,0 +1,23 @@
+config DRV_NS16550
+	bool
+	default n
+	help
+	This option enables the NS16550 serial driver.
+	This specific driver can be used for the serial hardware
+	available at the Generic PC and Quark.
+
+config DRV_K20_UART
+	bool
+	default n
+	help
+	This option enables the K20 serial driver.
+	This specific driver can be used for the serial hardware
+	available at the Freescale FRDM K64F BSP.
+
+config DRV_STELLARIS_UART
+	bool
+	default n
+	help
+	This option enables the Stellaris serial driver.
+	This specific driver can be used for the serial hardware
+	available at the Texas Instrument LM3S6965 BSP.
