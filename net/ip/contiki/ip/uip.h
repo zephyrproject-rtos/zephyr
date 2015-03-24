@@ -974,10 +974,10 @@ struct uip_udp_conn *uip_udp_new(const uip_ipaddr_t *ripaddr, uint16_t rport);
 #define uip_ipaddr_copy(dest, src) (*(dest) = *(src))
 #endif
 #ifndef uip_ip4addr_copy
-#define uip_ip4addr_copy(dest, src) (*(dest) = *(src))
+#define uip_ip4addr_copy(dest, src) (*((uip_ip4addr_t *)dest) = *((uip_ip4addr_t *)src))
 #endif
 #ifndef uip_ip6addr_copy
-#define uip_ip6addr_copy(dest, src) (*(dest) = *(src))
+#define uip_ip6addr_copy(dest, src) (*((uip_ip6addr_t *)dest) = *((uip_ip6addr_t *)src))
 #endif
 
 /**
