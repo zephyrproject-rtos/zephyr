@@ -543,7 +543,7 @@ void uip_unlisten(uint16_t port);
  * or NULL if no connection could be allocated.
  *
  */
-struct uip_conn *uip_connect(uip_ipaddr_t *ripaddr, uint16_t port);
+struct uip_conn *uip_connect(const uip_ipaddr_t *ripaddr, uint16_t port);
 
 
 

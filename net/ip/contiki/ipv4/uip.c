@@ -397,7 +397,7 @@ uip_init(void)
 /*---------------------------------------------------------------------------*/
 #if UIP_ACTIVE_OPEN
 struct uip_conn *
-uip_connect(uip_ipaddr_t *ripaddr, uint16_t rport)
+uip_connect(const uip_ipaddr_t *ripaddr, uint16_t rport)
 {
   register struct uip_conn *conn, *cconn;
 
