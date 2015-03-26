@@ -119,6 +119,14 @@ rpl_get_nbr(rpl_parent_t *parent)
   }
 }
 /*---------------------------------------------------------------------------*/
+static join_callback_t rpl_join_callback = NULL;
+
+void
+rpl_set_join_callback(join_callback_t callback)
+{
+  rpl_join_callback = callback;
+}
+/*---------------------------------------------------------------------------*/
 static void
 nbr_callback(void *ptr)
 {
@@ -1289,8 +1297,13 @@ rpl_process_dio(struct net_buf *buf, uip_ipaddr_t *from, rpl_dio_t *dio)
   }
 
   if(instance == NULL) {
-    PRINTF("RPL: New instance detected: Joining...\n");
-    rpl_join_instance(buf, from, dio);
+    /* Join the RPL DAG if there is no join callback or the join callback tells us to join. */
+    if(rpl_join_callback == NULL || rpl_join_callback(dio)) {
+      PRINTF("RPL: New instance detected: joining...\n");
+      rpl_join_instance(buf, from, dio);
+    } else {
+      PRINTF("RPL: New instance detected: not joining, rejected by join callback\n");
+    }
     return;
   }
 

@@ -233,6 +233,10 @@ struct rpl_dio {
 };
 typedef struct rpl_dio rpl_dio_t;
 
+/* Callback for evaluating if this is a network to join or not */
+typedef int (*join_callback_t) (rpl_dio_t* dio);
+void rpl_set_join_callback(join_callback_t callback);
+
 #if RPL_CONF_STATS
 /* Statistics for fault management. */
 struct rpl_stats {
