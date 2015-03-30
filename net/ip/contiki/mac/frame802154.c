@@ -180,10 +180,13 @@ frame802154_hdrlen(frame802154_t *p)
  *
  *   \param buf Pointer to the buffer to use for the frame.
  *
- *   \return The length of the frame header
- */
+ *   \param buf_len The length of the buffer to use for the frame.
+ *
+ *   \return The length of the frame header or 0 if there was
+ *   insufficient space in the buffer for the frame headers.
+*/
 int
-frame802154_create(frame802154_t *p, uint8_t *buf)
+frame802154_create(frame802154_t *p, uint8_t *buf, int buf_len)
 {
   int c;
   field_length_t flen;
@@ -193,7 +196,13 @@ frame802154_create(frame802154_t *p, uint8_t *buf)
 #endif /* LLSEC802154_USES_EXPLICIT_KEYS */
 
   field_len(p, &flen);
-  
+
+  if(3 + flen.dest_pid_len + flen.dest_addr_len +
+     flen.src_pid_len + flen.src_addr_len + flen.aux_sec_len > buf_len) {
+    /* Too little space for headers. */
+    return 0;
+  }
+
   /* OK, now we have field lengths.  Time to actually construct */
   /* the outgoing frame, and store it in buf */
   buf[0] = (p->fcf.frame_type & 7) |

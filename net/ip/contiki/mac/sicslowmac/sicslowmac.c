@@ -154,7 +154,7 @@ send_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
   params.payload_len = packetbuf_datalen(buf);
   len = frame802154_hdrlen(&params);
   if(packetbuf_hdralloc(buf, len)) {
-    frame802154_create(&params, packetbuf_hdrptr(buf));
+    frame802154_create(&params, packetbuf_hdrptr(buf), len);
 
     PRINTF("6MAC-UT: type %X\ndest:", params.fcf.frame_type);
     PRINTLLADDR((uip_lladdr_t *)params.dest_addr);

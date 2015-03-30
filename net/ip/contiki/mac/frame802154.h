@@ -190,7 +190,7 @@ typedef struct {
 /* Prototypes */
 
 int frame802154_hdrlen(frame802154_t *p);
-int frame802154_create(frame802154_t *p, uint8_t *buf);
+int frame802154_create(frame802154_t *p, uint8_t *buf, int buf_len);
 int frame802154_parse(uint8_t *data, int length, frame802154_t *pf);
 
 /** @} */

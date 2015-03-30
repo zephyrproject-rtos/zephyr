@@ -193,7 +193,7 @@ create_frame(struct net_mbuf *buf, int do_create)
     return hdr_len;
 
   } else if(packetbuf_hdralloc(buf, hdr_len)) {
-    frame802154_create(&params, packetbuf_hdrptr(buf));
+    frame802154_create(&params, packetbuf_hdrptr(buf), hdr_len);
 
     PRINTF("15.4-OUT: %2X", params.fcf.frame_type);
     PRINTADDR(params.dest_addr);
