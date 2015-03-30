@@ -88,7 +88,7 @@ is_broadcast_addr(uint8_t mode, uint8_t *addr)
 }
 /*---------------------------------------------------------------------------*/
 static int
-create_frame(struct net_mbuf *buf, int type, int do_create)
+create_frame(struct net_mbuf *buf, int do_create)
 {
   frame802154_t params;
   int hdr_len;
@@ -209,13 +209,13 @@ create_frame(struct net_mbuf *buf, int type, int do_create)
 static int
 hdr_length(struct net_mbuf *buf)
 {
-  return create_frame(buf, FRAME802154_DATAFRAME, 0);
+  return create_frame(buf, 0);
 }
 /*---------------------------------------------------------------------------*/
 static int
 create(struct net_mbuf *buf)
 {
-  return create_frame(buf, FRAME802154_DATAFRAME, 1);
+  return create_frame(buf, 1);
 }
 /*---------------------------------------------------------------------------*/
 static int
