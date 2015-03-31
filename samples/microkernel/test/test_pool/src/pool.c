@@ -549,7 +549,6 @@ void AlternateTask(void)
 	task_mem_pool_free(&blockList[0]);
 
 	evidence = 2;
-	return;
 }
 
 /*******************************************************************************
