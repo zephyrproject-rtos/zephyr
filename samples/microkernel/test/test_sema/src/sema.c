@@ -50,7 +50,7 @@ This modules tests the following semaphore routines:
 
 #include <util_test_common.h>
 
-extern void trigger_isrSemaSignal();
+extern void trigger_isrSemaSignal(ksem_t semaphore);
 extern void releaseTestFiber (void);
 
 /* defines */
