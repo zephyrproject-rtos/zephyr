@@ -80,11 +80,10 @@ extern unsigned char _IdtBaseAddress[];
 *
 */
 
-void irq_handler_set
-	(unsigned int vector,
-	 void (*oldRoutine)(void *parameter),
-	 void (*newRoutine)(void *parameter),
-	 void *parameter)
+void irq_handler_set(unsigned int vector,
+					 void (*oldRoutine)(void *parameter),
+					 void (*newRoutine)(void *parameter),
+					 void *parameter)
 {
 	unsigned int ix =
 		FIRST_OPT_OPCODE_OFF; /* call _IntEnt is not optional */
