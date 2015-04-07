@@ -116,9 +116,11 @@ void main (void)
 		 nano_task_sem_take(&sem[1]) ||
 		 nano_task_sem_take(&sem[2]) ? TC_FAIL : TC_PASS;
 
-	if (TC_FAIL == rv) goto get_out;
+	if (TC_FAIL == rv)
+		goto get_out;
 
-	for (int ii = 0; ii < 3; ii++) _NvicSwInterruptTrigger(ii);
+	for (int ii = 0; ii < 3; ii++)
+		_NvicSwInterruptTrigger(ii);
 
 	rv = nano_task_sem_take(&sem[0]) &&
 		 nano_task_sem_take(&sem[1]) &&
