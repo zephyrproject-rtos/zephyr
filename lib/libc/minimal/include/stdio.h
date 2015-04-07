@@ -73,7 +73,7 @@ int vsnprintf(char *restrict s, size_t len, const char *restrict fmt, va_list li
 int vsprintf(char *restrict s, const char *restrict fmt, va_list list);
 int vfprintf(FILE *restrict stream, const char *restrict format, va_list ap);
 
-int puts(const char* s);
+int puts(const char *s);
 
 int fputc (int c, FILE *stream);
 int fputs (const char *restrict s, FILE *restrict stream);

@@ -87,7 +87,7 @@ in ISR context.
 typedef struct
 	{
 	struct nano_fifo *channel;  /* FIFO channel */
-	void *       data;     /* pointer to data to add */
+	void *data;     /* pointer to data to add */
 	} ISR_FIFO_INFO;
 
 /* globals */
@@ -105,7 +105,7 @@ struct nano_sem   nanoSemObj3;    /* Used to block/wake-up fiber3 */
 struct nano_sem   nanoSemObjTask; /* Used to block/wake-up task */
 
 struct nano_timer  timer;
-void *      timerData[1];
+void *timerData[1];
 
 int myFifoData1[4];
 int myFifoData2[2];
@@ -165,7 +165,7 @@ void testTaskFifoGetW(void);
 
 void isr_fifo_put(void *parameter)
 {
-	ISR_FIFO_INFO * pInfo = (ISR_FIFO_INFO *) parameter;
+	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
 
 	nano_isr_fifo_put (pInfo->channel, pInfo->data);
 }
@@ -184,7 +184,7 @@ void isr_fifo_put(void *parameter)
 
 void isr_fifo_get(void *parameter)
 {
-	ISR_FIFO_INFO * pInfo = (ISR_FIFO_INFO *) parameter;
+	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
 
 	pInfo->data = nano_isr_fifo_get (pInfo->channel);
 }
@@ -199,7 +199,7 @@ void isr_fifo_get(void *parameter)
 
 void fiber1(void)
 {
-	void *  pData;      /* pointer to FIFO object get from the queue */
+	void   *pData;      /* pointer to FIFO object get from the queue */
 	int     count = 0;  /* counter */
 
     /* Wait for fiber1 to be activated. */
@@ -276,8 +276,8 @@ void fiber1(void)
 
 void testFiberFifoGetW(void)
 {
-	void *  pGetData;   /* pointer to FIFO object get from the queue */
-	void *  pPutData;   /* pointer to FIFO object to put to the queue */
+	void *pGetData;   /* pointer to FIFO object get from the queue */
+	void *pPutData;   /* pointer to FIFO object to put to the queue */
 
 	TC_PRINT("Test Fiber FIFO Get Wait Interfaces\n\n");
 	pGetData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
@@ -327,7 +327,7 @@ void testFiberFifoGetW(void)
 
 void testIsrFifoFromFiber(void)
 {
-		void *  pGetData;   /* pointer to FIFO object get from the queue */
+		void *pGetData;   /* pointer to FIFO object get from the queue */
 
 		TC_PRINT("Test ISR FIFO (invoked from Fiber)\n\n");
 
@@ -384,8 +384,8 @@ void testIsrFifoFromFiber(void)
 
 void testIsrFifoFromTask(void)
 {
-		void *  pGetData;   /* pointer to FIFO object get from the queue */
-		void *  pPutData;   /* pointer to FIFO object put to queue */
+		void *pGetData;   /* pointer to FIFO object get from the queue */
+		void *pPutData;   /* pointer to FIFO object put to queue */
 		int count = 0;      /* counter */
 
 		TC_PRINT("Test ISR FIFO (invoked from Task)\n\n");
@@ -447,7 +447,7 @@ void testIsrFifoFromTask(void)
 
 void fiber2(void)
 {
-	void *  pData;    /* pointer to FIFO object from the queue */
+	void *pData;    /* pointer to FIFO object from the queue */
 
     /* Wait for fiber2 to be activated */
 
@@ -507,7 +507,7 @@ void fiber2(void)
 
 void fiber3(void)
 {
-	void *  pData;
+	void *pData;
 
     /* Wait for fiber3 to be activated */
 	nano_fiber_sem_take_wait (&nanoSemObj3);
@@ -557,8 +557,8 @@ void fiber3(void)
 
 void testTaskFifoGetW(void)
 {
-	void *  pGetData;   /* pointer to FIFO object get from the queue */
-	void *  pPutData;   /* pointer to FIFO object to put to the queue */
+	void *pGetData;   /* pointer to FIFO object get from the queue */
+	void *pPutData;   /* pointer to FIFO object to put to the queue */
 
 	PRINT_LINE;
 	TC_PRINT("Test Task FIFO Get Wait Interfaces\n\n");
@@ -627,7 +627,7 @@ void initNanoObjects(void)
 
 void main(void)
 {
-	void *  pData;      /* pointer to FIFO object get from the queue */
+	void   *pData;      /* pointer to FIFO object get from the queue */
 	int     count = 0;  /* counter */
 	TC_START("Test Nanokernel FIFO");
 

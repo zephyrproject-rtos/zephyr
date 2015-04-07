@@ -76,10 +76,10 @@ static struct nano_timer  midTimer;
 static struct nano_sem    wakeTask;
 static struct nano_sem    wakeFiber;
 
-static void * timerData[1];
-static void * shortTimerData[1];
-static void * longTimerData[1];
-static void * midTimerData[1];
+static void *timerData[1];
+static void *shortTimerData[1];
+static void *longTimerData[1];
+static void *midTimerData[1];
 
 static int  fiberDetectedError = 0;
 static char fiberStack[FIBER_STACKSIZE];
@@ -136,7 +136,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	uint32_t  tick;            /* current tick */
 	uint32_t  elapsed;         /* # of elapsed ticks */
 	uint32_t  duration;        /* duration of the test in ticks */
-	void *    result;          /* value returned from timer get routine */
+	void     *result;          /* value returned from timer get routine */
 	int       busywaited = 0;  /* non-zero if <getRtn> returns NULL */
 
 	TC_PRINT ("  - test expected to take four seconds\n");
@@ -243,7 +243,7 @@ void startTimers(timer_start_func startRtn)
 int busyWaitTimers(timer_get_func getRtn)
 {
 	int      numExpired = 0; /* # of expired timers */
-	void *   result;         /* value returned from <getRtn> */
+	void    *result;         /* value returned from <getRtn> */
 	uint32_t ticks;          /* tick by which time test should be complete */
 
 	TC_PRINT ("  - test expected to take five or six seconds\n");

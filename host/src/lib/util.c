@@ -33,7 +33,7 @@
 #include <string.h>
 #include <vxmicro/os.h>
 
-const char * basename(const char *pathname)
+const char *basename(const char *pathname)
 {
 	int end = strlen(pathname)-1;
 	while(end != -1) {

@@ -104,12 +104,12 @@ typedef struct idtEntry
 
 static inline void _IdtEntCreate
 	(
-	unsigned long long * pIdtEntry, /* Pointer to where the entry is be built */
+	unsigned long long *pIdtEntry,      /* Pointer to where the entry is be built */
 	void (*routine) (void *),	    /* Routine to call when interrupt occurs  */
 	unsigned int dpl		    /* priv level for interrupt descriptor    */
 	)
 	{
-	unsigned long * pIdtEntry32 = (unsigned long *)pIdtEntry;
+	unsigned long *pIdtEntry32 = (unsigned long *)pIdtEntry;
 
 	pIdtEntry32[0] = (KERNEL_CODE_SEG_SELECTOR << 16) |
 			((unsigned short)(unsigned int)routine);

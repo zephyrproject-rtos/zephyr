@@ -88,7 +88,7 @@ static volatile int mainTaskNotReady = 0;
 
 void isr_task_command_handler(void *data)
 {
-	ISR_INFO *  pInfo = (ISR_INFO *) data;
+	ISR_INFO   *pInfo = (ISR_INFO *) data;
 	int         value = -1;
 
 	switch (pInfo->cmd)

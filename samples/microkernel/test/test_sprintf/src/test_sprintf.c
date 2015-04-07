@@ -494,7 +494,7 @@ int sprintfMiscTest(void)
 	char buffer[100];
 
     /*******************/
-	sprintf (buffer, "%p", (void*) DEADBEEF);
+	sprintf (buffer, "%p", (void *) DEADBEEF);
 	if (strcmp (buffer, DEADBEEF_PTR_STR) != 0)
 		{
 		TC_ERROR ("sprintf(%%p).  Expected '%s', got '%s'\n",

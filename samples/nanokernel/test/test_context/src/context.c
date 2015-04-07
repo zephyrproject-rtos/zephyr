@@ -96,7 +96,7 @@ typedef struct
 	int     error;      /* error value (if any) */
 	union
 		{
-		void *  data;   /* pointer to data to use or return */
+		void   *data;   /* pointer to data to use or return */
 		int     value;  /* value to be passed or returned */
 		};
 	}
@@ -115,7 +115,7 @@ static volatile int    excHandlerExecuted;
 
 static struct nano_sem        wakeFiber;
 static struct nano_timer      timer;
-static void *          timerData[1];
+static void *timerData[1];
 
 static int  fiberDetectedError = 0;
 static char fiberStack1[FIBER_STACKSIZE];

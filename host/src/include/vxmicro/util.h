@@ -35,7 +35,7 @@
 
 #define ALIAS(fn,fn_alias,ret) ret fn_alias() __attribute__((alias(#fn)));
 
-extern const char * basename(const char *pathname);
+extern const char *basename(const char *pathname);
 
 static inline
 unsigned long round_up(unsigned long x, unsigned long align)

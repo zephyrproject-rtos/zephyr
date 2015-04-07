@@ -186,7 +186,7 @@ static char postscript[] = "\
 #endif /* _HGUARD_ */\n";
 
 static Elf32_Ehdr	ehdr;    /* ELF header */
-static Elf32_Shdr *	shdr;    /* pointer to array ELF section headers */
+static Elf32_Shdr      *shdr;    /* pointer to array ELF section headers */
 
 /*******************************************************************************
 *
@@ -308,8 +308,8 @@ static int ehdrLoad(int fd  /* file descriptor of file from which to read */
      * byte swapping if the host and target have different byte ordering.
      */
 
-	if (((*(char*)&ix == 0x78) && (ehdr.e_ident[EI_DATA] == ELFDATA2MSB)) ||
-		((*(char*)&ix == 0x12) && (ehdr.e_ident[EI_DATA] == ELFDATA2LSB)))
+	if (((*(char *)&ix == 0x78) && (ehdr.e_ident[EI_DATA] == ELFDATA2MSB)) ||
+		((*(char *)&ix == 0x12) && (ehdr.e_ident[EI_DATA] == ELFDATA2LSB)))
 		{
 	swabRequired = 1;
 	DBG_PRINT ("Swab required\n");
@@ -460,7 +460,7 @@ int strTblLoad(int fd, /* file descriptor of file from which to read */
 			   char **ppStringTable /* ptr to ptr to string table */
 			   )
 {
-	char *  pTable;
+	char   *pTable;
 	int     nBytes;
 
 	DBG_PRINT ("Allocating %d bytes for string table\n",
@@ -600,12 +600,12 @@ int main(int argc, char *argv[])
 {
 	Elf32_Off	symTblOffset = 0;
 	Elf32_Word	symTblSize;		/* in bytes */
-	char *	pStringTable = NULL;
-	char *	inFileName;
-	char *	outFileName;
+	char   *pStringTable = NULL;
+	char   *inFileName;
+	char   *outFileName;
 	int		option;
 	int		inFd = -1;
-	FILE *	outFile = NULL;
+	FILE   *outFile = NULL;
 	unsigned    strTblIx;
 
     /* argument parsing */

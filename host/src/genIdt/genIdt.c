@@ -84,7 +84,7 @@ static void clean_exit(const int exit_code);
 
 typedef struct s_isrList
 	{
-	void * fnc;
+	void *fnc;
 	unsigned int dpl;
 	} ISR_LIST;
 
@@ -213,8 +213,8 @@ static void genIdt(void)
 	{
 	unsigned int i;
 	unsigned int size;
-	void * spurAddr;
-	void * spurNoErrAddr;
+	void *spurAddr;
+	void *spurNoErrAddr;
 
     /*
      * First find the address of the spurious interrupt handlers. They are the
@@ -257,7 +257,7 @@ static void genIdt(void)
 
 	while (size--)
 	{
-	void * addr;
+	void *addr;
 	unsigned int vec;
 	unsigned int dpl;
 

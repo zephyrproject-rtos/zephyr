@@ -70,7 +70,7 @@ These scenarios will be tested using a combinations of tasks, fibers and ISRs.
 typedef struct
 	{
 	struct nano_lifo *channel;  /* LIFO channel */
-	void *       data;     /* pointer to data to add */
+	void *data;     /* pointer to data to add */
 	} ISR_LIFO_INFO;
 
 typedef struct
@@ -94,7 +94,7 @@ static struct nano_lifo      lifoChannel;         /* LIFO channel used in test *
 static struct nano_sem       taskWaitSem;         /* task waits on this semaphore */
 static struct nano_sem       fiberWaitSem;        /* fiber waits on this semaphore */
 static struct nano_timer     timer;
-static void *         timerData[1];
+static void *timerData[1];
 static ISR_LIFO_INFO  isrLifoInfo = {&lifoChannel, NULL};
 
 static volatile int  fiberDetectedFailure = 0; /* non-zero on failure */
@@ -118,7 +118,7 @@ static void (*_trigger_nano_isr_lifo_get) (void) = (vvfn)sw_isr_trigger_1;
 
 void isr_lifo_put(void *data)
 {
-	ISR_LIFO_INFO * pInfo = (ISR_LIFO_INFO *) data;
+	ISR_LIFO_INFO *pInfo = (ISR_LIFO_INFO *) data;
 
 	nano_isr_lifo_put (pInfo->channel, pInfo->data);
 }
@@ -137,7 +137,7 @@ void isr_lifo_put(void *data)
 
 void isr_lifo_get(void *data)
 {
-	ISR_LIFO_INFO * pInfo = (ISR_LIFO_INFO *) data;
+	ISR_LIFO_INFO *pInfo = (ISR_LIFO_INFO *) data;
 
 	pInfo->data = nano_isr_lifo_get (pInfo->channel);
 }
@@ -155,7 +155,7 @@ void isr_lifo_get(void *data)
 
 int fiberLifoWaitTest(void)
 {
-	void *  data;     /* ptr to data retrieved from LIFO */
+	void *data;     /* ptr to data retrieved from LIFO */
 
     /*
      * The LIFO is empty; wait for an item to be added to the LIFO
@@ -217,7 +217,7 @@ int fiberLifoWaitTest(void)
 
 int fiberLifoNonWaitTest(void)
 {
-	void *  data;    /* pointer to data retrieved from LIFO */
+	void *data;    /* pointer to data retrieved from LIFO */
 
     /* The LIFO has two items in it; retrieve them both */
 
@@ -391,7 +391,7 @@ int taskLifoWaitTest(void)
 
 int taskLifoNonWaitTest(void)
 {
-	void *  data;    /* ptr to data retrieved from LIFO */
+	void *data;    /* ptr to data retrieved from LIFO */
 
     /*
      * The fiber is presently waiting for <fiberWaitSem>.  Populate the LIFO

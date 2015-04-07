@@ -41,7 +41,7 @@ in decimal notation. Each event object is outputted on stdout.
 #include <stdlib.h>
 
 void usage (
-	char* progname /* name of the program to use */
+	char *progname /* name of the program to use */
 	)
 	{
 	fprintf (stderr, "Utility creates a series of microkernel VPF event objects. Output is sent to stdout.\n");
@@ -52,7 +52,7 @@ void usage (
 
 int main (
 	int argc,
-	char* argv[]
+	char *argv[]
 	)
 	{
 	int i, j;

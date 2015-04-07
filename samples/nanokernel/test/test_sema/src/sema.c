@@ -87,7 +87,7 @@ static struct nano_sem        testSem;
 static int             fiberDetectedFailure = 0;
 
 static struct nano_timer     timer;
-static void *         timerData[1];
+static void *timerData[1];
 
 static char           fiberStack[FIBER_STACKSIZE];
 
@@ -109,7 +109,7 @@ static void (*_trigger_nano_isr_sem_take) (void) = (vvfn)sw_isr_trigger_1;
 
 void isr_sem_take(void *data)
 {
-	ISR_SEM_INFO * pInfo = (ISR_SEM_INFO *) data;
+	ISR_SEM_INFO *pInfo = (ISR_SEM_INFO *) data;
 
 	pInfo->data = nano_isr_sem_take (pInfo->sem);
 }
@@ -128,7 +128,7 @@ void isr_sem_take(void *data)
 
 void isr_sem_give(void *data)
 {
-	ISR_SEM_INFO * pInfo = (ISR_SEM_INFO *) data;
+	ISR_SEM_INFO *pInfo = (ISR_SEM_INFO *) data;
 
 	nano_isr_sem_give (pInfo->sem);
 	pInfo->data = 1;     /* Indicate semaphore has been given */

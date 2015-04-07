@@ -85,7 +85,7 @@
 
 #define UNALIGNED_WRITE(p, v)						\
 	do  {								\
-		unsigned int __attribute__((__may_alias__)) *pp = (unsigned int*)(p); \
+		unsigned int __attribute__((__may_alias__)) *pp = (unsigned int *)(p); \
 		_Unaligned32Write (pp, (v));				\
 	}								\
 	while (0)
@@ -94,7 +94,7 @@
 
 #define UNALIGNED_WRITE(p, v)						\
 	do  {								\
-		unsigned int __attribute__((__may_alias__)) *pp = (unsigned int*)(p); \
+		unsigned int __attribute__((__may_alias__)) *pp = (unsigned int *)(p); \
 		*pp = (v);						\
 	}								\
 	while (0)

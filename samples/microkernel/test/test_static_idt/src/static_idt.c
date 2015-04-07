@@ -58,8 +58,8 @@ Ensures interrupt and exception stubs are installed correctly.
 
 extern unsigned char _IdtBaseAddress[];
 
-extern void * nanoIntStub;
-extern void * exc_divide_error_handlerStub;
+extern void *nanoIntStub;
+extern void *exc_divide_error_handlerStub;
 
 NANO_CPU_INT_REGISTER (nanoIntStub, TEST_SOFT_INT, 0);
 
@@ -142,7 +142,7 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
 
 int nanoIdtStubTest(void)
 {
-	IDT_ENTRY *	pIdtEntry;
+	IDT_ENTRY *pIdtEntry;
 	uint16_t offset;
 
     /* Check for the interrupt stub */

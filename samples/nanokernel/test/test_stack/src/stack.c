@@ -113,7 +113,7 @@ uint32_t myIsrData[NUM_STACK_ELEMENT];  /* Data used for testing
 uint32_t stack1[NUM_STACK_ELEMENT];
 uint32_t stack2[NUM_STACK_ELEMENT];
 
-void * timerData[1];
+void *timerData[1];
 int retCode = TC_PASS;
 
 /* locals */
@@ -132,8 +132,8 @@ void initNanoObjects(void);
 void testFiberStackPopW(void);
 void testTaskStackPopW(void);
 /* Isr related functions */
-void isr_stack_push(void * parameter);
-void isr_stack_pop(void * parameter);
+void isr_stack_push(void *parameter);
+void isr_stack_pop(void *parameter);
 void testIsrStackFromFiber(void);
 void testIsrStackFromTask(void);
 
@@ -170,7 +170,7 @@ void initData(void)
 
 void isr_stack_push(void *parameter)
 {
-	ISR_STACK_INFO * pInfo = (ISR_STACK_INFO *) parameter;
+	ISR_STACK_INFO *pInfo = (ISR_STACK_INFO *) parameter;
 
 	nano_isr_stack_push (pInfo->channel, pInfo->data);
 
@@ -191,7 +191,7 @@ void isr_stack_push(void *parameter)
 
 void isr_stack_pop(void *parameter)
 {
-	ISR_STACK_INFO * pInfo = (ISR_STACK_INFO *) parameter;
+	ISR_STACK_INFO *pInfo = (ISR_STACK_INFO *) parameter;
 
 	if (nano_isr_stack_pop (pInfo->channel, &(pInfo->data)) == 0)
 		{

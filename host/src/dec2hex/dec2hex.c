@@ -34,7 +34,7 @@
 #include <stdlib.h>
 
 void usage (
-	char* progname /* name of the program to use */
+	char *progname /* name of the program to use */
 	)
 	{
 	fprintf (stderr, "Utility converts decimal numbers to hexadecimal\n");
@@ -43,7 +43,7 @@ void usage (
 
 int main (
 	int argc,
-	char* argv[]
+	char *argv[]
 	)
 	{
 	if (argc != 2)
