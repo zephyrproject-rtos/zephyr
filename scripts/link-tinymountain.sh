@@ -1,27 +1,27 @@
 #!/bin/sh
 #
-# link vmlinux
+# link tinymountain
 #
-# vmlinux is linked from the objects selected by $(KBUILD_VMLINUX_INIT) and
-# $(KBUILD_VMLINUX_MAIN). Most are built-in.o files from top-level directories
+# tinymountain is linked from the objects selected by $(KBUILD_TIMO_INIT) and
+# $(KBUILD_TIMO_MAIN). Most are built-in.o files from top-level directories
 # in the kernel tree, others are specified in arch/$(ARCH)/Makefile.
-# Ordering when linking is important, and $(KBUILD_VMLINUX_INIT) must be first.
+# Ordering when linking is important, and $(KBUILD_TIMO_INIT) must be first.
 #
-# vmlinux
+# tinymountain
 #   ^
 #   |
-#   +-< $(KBUILD_VMLINUX_INIT)
+#   +-< $(KBUILD_TIMO_INIT)
 #   |   +--< init/version.o + more
 #   |
-#   +--< $(KBUILD_VMLINUX_MAIN)
+#   +--< $(KBUILD_TIMO_MAIN)
 #   |    +--< drivers/built-in.o mm/built-in.o + more
 #   |
 #   +-< ${kallsymso} (see description in KALLSYMS section)
 #
-# vmlinux version (uname -v) cannot be updated during normal
+# tinymountain version (uname -v) cannot be updated during normal
 # descending-into-subdirs phase since we do not yet know if we need to
-# update vmlinux.
-# Therefore this step is delayed until just before final link of vmlinux.
+# update tinymountain.
+# Therefore this step is delayed until just before final link of tinymountain.
 #
 # System.map is generated to document addresses of all kernel symbols
 
@@ -42,11 +42,11 @@ info()
 # {2} symbol map file
 linker_params()
 {
-	echo "${LDFLAGS_vmlinux}" >> ${1}
+	echo "${LDFLAGS_tinymountain}" >> ${1}
 	echo "-Wl,-Map,./${2}" >> ${1}
 	echo "-L ${objtree}/include/generated" >> ${1}
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
-	echo "-Wl,--start-group ${KBUILD_VMLINUX_MAIN}" >> ${1}
+	echo "-Wl,--start-group ${KBUILD_TIMO_MAIN}" >> ${1}
 	echo "${objtree}/include/generated/offsets.o" >> ${1}
 }
 
@@ -63,7 +63,7 @@ linker_command()
 		-o ${1}
 }
 
-# Link of vmlinux.o used for section mismatch analysis
+# Link of tinymountain.o used for section mismatch analysis
 # ${1} output file
 # ${2} linker parameters file
 # ${3} linker command file
@@ -73,7 +73,7 @@ initial_link()
 }
 
 #Generates IDT and merge them into final binary
-# ${1} input file (vmlinux.elf)
+# ${1} input file (tinymountain.elf)
 # ${2} output file (staticIdt.o)
 gen_idt()
 {
@@ -84,12 +84,12 @@ gen_idt()
 	rm -f isrList.bin
 }
 
-# Link of vmlinux
-# ${1} - linker params file (vmlinux.lnk)
+# Link of tinymountain
+# ${1} - linker params file (tinymountain.lnk)
 # ${2} - linker command file (final-linker.cmd)
 # ${3} - input file (staticIdt.o)
 # ${4} - output file
-vmlinux_link()
+tinymountain_link()
 {
 	${CC} -o ${4} @${1} ${3} -T ${2}
 	${OBJCOPY} --set-section-flags intList=noload ${4} elf.tmp
@@ -121,7 +121,7 @@ kallsyms()
 	fi
 
 	local aflags="${KBUILD_AFLAGS} ${KBUILD_AFLAGS_KERNEL}               \
-		      ${NOSTDINC_FLAGS} ${LINUXINCLUDE} ${KBUILD_CPPFLAGS}"
+		      ${NOSTDINC_FLAGS} ${TIMOINCLUDE} ${KBUILD_CPPFLAGS}"
 
 	${NM} -n ${1} | \
 		scripts/kallsyms ${kallsymopt} | \
@@ -148,11 +148,11 @@ cleanup()
 	rm -f .tmp_System.map
 	rm -f .tmp_kallsyms*
 	rm -f .tmp_version
-	rm -f .tmp_vmlinux*
+	rm -f .tmp_tinymountain*
 	rm -f System.map
-	rm -f vmlinux.lnk
-	rm -f vmlinux.map
-	rm -f vmlinux.elf
+	rm -f tinymountain.lnk
+	rm -f tinymountain.map
+	rm -f tinymountain.elf
 	rm -f staticIdt.o
 	rm -f linker.cmd
 	rm -f final-linker.cmd
@@ -182,11 +182,11 @@ case "${KCONFIG_CONFIG}" in
 	. "./${KCONFIG_CONFIG}"
 esac
 
-#link vmlinux.o
-info LD vmlinux.elf
-linker_params vmlinux.lnk vmlinux.map
+#link tinymountain.o
+info LD tinymountain.elf
+linker_params tinymountain.lnk tinymountain.map
 linker_command linker.cmd
-initial_link vmlinux.elf vmlinux.lnk linker.cmd
+initial_link tinymountain.elf tinymountain.lnk linker.cmd
 
 # Update version
 info GEN .version
@@ -199,68 +199,68 @@ else
 fi;
 
 kallsymso=""
-kallsyms_vmlinux=""
+kallsyms_tinymountain=""
 if [ -n "${CONFIG_KALLSYMS}" ]; then
 
 	# kallsyms support
-	# Generate section listing all symbols and add it into vmlinux
+	# Generate section listing all symbols and add it into tinymountain
 	# It's a three step process:
-	# 1)  Link .tmp_vmlinux1 so it has all symbols and sections,
+	# 1)  Link .tmp_tinymountain1 so it has all symbols and sections,
 	#     but __kallsyms is empty.
 	#     Running kallsyms on that gives us .tmp_kallsyms1.o with
 	#     the right size
-	# 2)  Link .tmp_vmlinux2 so it now has a __kallsyms section of
+	# 2)  Link .tmp_tinymountain2 so it now has a __kallsyms section of
 	#     the right size, but due to the added section, some
 	#     addresses have shifted.
 	#     From here, we generate a correct .tmp_kallsyms2.o
 	# 2a) We may use an extra pass as this has been necessary to
 	#     woraround some alignment related bugs.
 	#     KALLSYMS_EXTRA_PASS=1 is used to trigger this.
-	# 3)  The correct ${kallsymso} is linked into the final vmlinux.
+	# 3)  The correct ${kallsymso} is linked into the final tinymountain.
 	#
-	# a)  Verify that the System.map from vmlinux matches the map from
+	# a)  Verify that the System.map from tinymountain matches the map from
 	#     ${kallsymso}.
 
 	kallsymso=.tmp_kallsyms2.o
-	kallsyms_vmlinux=.tmp_vmlinux2
+	kallsyms_tinymountain=.tmp_tinymountain2
 
 	# step 1
-	vmlinux_link "" .tmp_vmlinux1
-	kallsyms .tmp_vmlinux1 .tmp_kallsyms1.o
+	tinymountain_link "" .tmp_tinymountain1
+	kallsyms .tmp_tinymountain1 .tmp_kallsyms1.o
 
 	# step 2
-	vmlinux_link .tmp_kallsyms1.o .tmp_vmlinux2
-	kallsyms .tmp_vmlinux2 .tmp_kallsyms2.o
+	tinymountain_link .tmp_kallsyms1.o .tmp_tinymountain2
+	kallsyms .tmp_tinymountain2 .tmp_kallsyms2.o
 
 	# step 2a
 	if [ -n "${KALLSYMS_EXTRA_PASS}" ]; then
 		kallsymso=.tmp_kallsyms3.o
-		kallsyms_vmlinux=.tmp_vmlinux3
+		kallsyms_tinymountain=.tmp_tinymountain3
 
-		vmlinux_link .tmp_kallsyms2.o .tmp_vmlinux3
+		tinymountain_link .tmp_kallsyms2.o .tmp_tinymountain3
 
-		kallsyms .tmp_vmlinux3 .tmp_kallsyms3.o
+		kallsyms .tmp_tinymountain3 .tmp_kallsyms3.o
 	fi
 fi
 
 if [ "${SRCARCH}" = "x86" ]; then
-	info SIDT vmlinux.elf
-	gen_idt vmlinux.elf staticIdt.o
+	info SIDT tinymountain.elf
+	gen_idt tinymountain.elf staticIdt.o
 	linker_command final-linker.cmd -DFINAL_LINK
-	vmlinux_link vmlinux.lnk final-linker.cmd staticIdt.o vmlinux.elf
+	tinymountain_link tinymountain.lnk final-linker.cmd staticIdt.o tinymountain.elf
 fi
 
 if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
-	info SORTEX vmlinux
-	sortextable vmlinux
+	info SORTEX tinymountain
+	sortextable tinymountain
 fi
 
 info SYSMAP System.map
-mksysmap vmlinux.elf System.map
+mksysmap tinymountain.elf System.map
 
 # step a (see comment above)
 if [ -n "${CONFIG_KALLSYMS}" ]; then
-	mksysmap ${kallsyms_vmlinux} .tmp_System.map
+	mksysmap ${kallsyms_tinymountain} .tmp_System.map
 
 	if ! cmp -s System.map .tmp_System.map; then
 		echo >&2 Inconsistent kallsyms data

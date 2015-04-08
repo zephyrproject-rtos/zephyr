@@ -35,7 +35,7 @@ unexport GREP_OPTIONS
 # their own directory. If in some directory we have a dependency on
 # a file in another dir (which doesn't happen often, but it's often
 # unavoidable when linking the built-in.o targets which finally
-# turn into vmlinux), we will call a sub make in that other dir, and
+# turn into tinymountain), we will call a sub make in that other dir, and
 # after that we are sure that everything which is in that other dir
 # is now up to date.
 #
@@ -391,9 +391,9 @@ PROJECTINCLUDE := $(strip -I$(srctree)/include/microkernel \
 		-I$(CURDIR)/misc/generated/nodes) \
 		$(USERINCLUDE)
 
-# Use LINUXINCLUDE when you must reference the include/ directory.
+# Use TIMOINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
-LINUXINCLUDE    := \
+TIMOINCLUDE    := \
 		-I$(srctree)/arch/$(hdr-arch)/include \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
@@ -436,7 +436,7 @@ export CPP AR NM STRIP OBJCOPY OBJDUMP
 export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE
 export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
-export KBUILD_CPPFLAGS NOSTDINC_FLAGS LINUXINCLUDE OBJCOPYFLAGS LDFLAGS
+export KBUILD_CPPFLAGS NOSTDINC_FLAGS TIMOINCLUDE OBJCOPYFLAGS LDFLAGS
 export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
@@ -558,7 +558,7 @@ config: scripts_basic outputmakefile FORCE
 
 else
 # ===========================================================================
-# Build targets only - this includes vmlinux, arch specific targets, clean
+# Build targets only - this includes tinymountain, arch specific targets, clean
 # targets and others. In general all targets except *config targets.
 
 ifeq ($(KBUILD_EXTMOD),)
@@ -570,7 +570,7 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf \
 	 asm-generic
 	$(Q)$(MAKE) $(build)=$(@)
 
-# Objects we will link into vmlinux / subdirs we need to visit
+# Objects we will link into tinymountain / subdirs we need to visit
 core-y := arch/ kernel/ misc/ lib/
 bsp-y  := drivers/
 
@@ -626,8 +626,8 @@ sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch
 # The all: target is the default when no target is given on the
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
-# Defaults to vmlinux, but the arch makefile usually adds further targets
-all: vmlinux
+# Defaults to tinymountain, but the arch makefile usually adds further targets
+all: tinymountain
 
 
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
@@ -775,15 +775,15 @@ KBUILD_CFLAGS += $(KCFLAGS)
 
 # Use --build-id when available.
 
-LDFLAGS_vmlinux += $(call cc-ldoption,-nostartfiles)
-LDFLAGS_vmlinux += $(call cc-ldoption,-nodefaultlibs)
-LDFLAGS_vmlinux += $(call cc-ldoption,-nostdlib)
-LDFLAGS_vmlinux += $(call cc-ldoption,-static)
-LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)--unresolved-symbols=ignore-in-object-files)
-LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)-X)
-LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)-N)
-LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)--gc-sections)
-LDFLAGS_vmlinux += $(call cc-ldoption,-Wl$(comma)--build-id=none)
+LDFLAGS_tinymountain += $(call cc-ldoption,-nostartfiles)
+LDFLAGS_tinymountain += $(call cc-ldoption,-nodefaultlibs)
+LDFLAGS_tinymountain += $(call cc-ldoption,-nostdlib)
+LDFLAGS_tinymountain += $(call cc-ldoption,-static)
+LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)--unresolved-symbols=ignore-in-object-files)
+LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)-X)
+LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)-N)
+LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)--gc-sections)
+LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)--build-id=none)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 export LD_TOOLCHAIN
@@ -793,7 +793,7 @@ export LD_TOOLCHAIN
 # set in the environment
 # Also any assignments in arch/$(ARCH)/Makefile take precedence over
 # this default value
-export KBUILD_IMAGE ?= vmlinux
+export KBUILD_IMAGE ?= tinymountain
 
 #
 # INSTALL_PATH specifies where to place the updated kernel and system map
@@ -875,11 +875,11 @@ export mod_sign_cmd
 ifeq ($(KBUILD_EXTMOD),)
 core-y		+=
 
-vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
+tinymountain-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
 		     $(bsp-y) $(bsp-m) $(libs-y) $(libs-m)))
 
-vmlinux-alldirs	:= $(sort $(vmlinux-dirs) $(patsubst %/,%,$(filter %/, \
+tinymountain-alldirs	:= $(sort $(tinymountain-dirs) $(patsubst %/,%,$(filter %/, \
 		     $(init-) $(core-) $(drivers-) $(bsp-) $(libs-))))
 
 init-y		:= $(patsubst %/, %/built-in.o, $(init-y))
@@ -890,25 +890,25 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
-# Externally visible symbols (used by link-vmlinux.sh)
+# Externally visible symbols (used by link-tinymountain.sh)
 DQUOTE = "
 #This comment line is to fix the highlighting of some editors due the quote effect."
-export KBUILD_VMLINUX_INIT := $(head-y) $(init-y)
-export KBUILD_VMLINUX_MAIN := $(core-y) $(libs-y) $(drivers-y) $(bsp-y)
+export KBUILD_TIMO_INIT := $(head-y) $(init-y)
+export KBUILD_TIMO_MAIN := $(core-y) $(libs-y) $(drivers-y) $(bsp-y)
 export KBUILD_LDS          := $(srctree)/arch/$(SRCARCH)/$(subst $(DQUOTE),,$(CONFIG_BSP_DIR))/linker.cmd
-export LDFLAGS_vmlinux
+export LDFLAGS_tinymountain
 # used by scripts/pacmage/Makefile
-export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(vmlinux-alldirs)) arch Documentation include samples scripts tools virt)
+export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(tinymountain-alldirs)) arch Documentation include samples scripts tools virt)
 
-vmlinux-deps := $(KBUILD_LDS) $(KBUILD_VMLINUX_INIT) $(KBUILD_VMLINUX_MAIN)
+tinymountain-deps := $(KBUILD_LDS) $(KBUILD_TIMO_INIT) $(KBUILD_TIMO_MAIN)
 
-# Final link of vmlinux
-      cmd_link-vmlinux = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_vmlinux)
-quiet_cmd_link-vmlinux = LINK    $@
+# Final link of tinymountain
+      cmd_link-tinymountain = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_tinymountain)
+quiet_cmd_link-tinymountain = LINK    $@
 
 # Include targets which we want to
 # execute if the rest of the kernel build went well.
-vmlinux: scripts/link-vmlinux.sh $(vmlinux-deps) FORCE
+tinymountain: scripts/link-tinymountain.sh $(tinymountain-deps) FORCE
 ifdef CONFIG_HEADERS_CHECK
 	$(Q)$(MAKE) -f $(srctree)/Makefile headers_check
 endif
@@ -920,21 +920,21 @@ ifdef CONFIG_BUILD_DOCSRC
 endif
 
 ifneq ($(strip $(PROJECT)),)
-	+$(call if_changed,link-vmlinux)
+	+$(call if_changed,link-tinymountain)
 endif
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
-$(sort $(vmlinux-deps)): $(vmlinux-dirs) ;
+$(sort $(tinymountain-deps)): $(tinymountain-dirs) ;
 
-# Handle descending into subdirectories listed in $(vmlinux-dirs)
+# Handle descending into subdirectories listed in $(tinymountain-dirs)
 # Preset locale variables to speed up the build process. Limit locale
 # tweaks to this spot to avoid wrong language settings when running
 # make menuconfig etc.
 # Error messages still appears in the original language
 
-PHONY += $(vmlinux-dirs)
-$(vmlinux-dirs): prepare scripts
+PHONY += $(tinymountain-dirs)
+$(tinymountain-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
 
 define filechk_kernel.release
@@ -1129,13 +1129,13 @@ all: modules
 # using awk while concatenating to the final file.
 
 PHONY += modules
-modules: $(vmlinux-dirs) $(if $(KBUILD_BUILTIN),vmlinux) modules.builtin
-	$(Q)$(AWK) '!x[$$0]++' $(vmlinux-dirs:%=$(objtree)/%/modules.order) > $(objtree)/modules.order
+modules: $(tinymountain-dirs) $(if $(KBUILD_BUILTIN),tinymountain) modules.builtin
+	$(Q)$(AWK) '!x[$$0]++' $(tinymountain-dirs:%=$(objtree)/%/modules.order) > $(objtree)/modules.order
 	@$(kecho) '  Building modules, stage 2.';
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.fwinst obj=firmware __fw_modbuild
 
-modules.builtin: $(vmlinux-dirs:%=%/modules.builtin)
+modules.builtin: $(tinymountain-dirs:%=%/modules.builtin)
 	$(Q)$(AWK) '!x[$$0]++' $^ > $(objtree)/modules.builtin
 
 %/modules.builtin: include/config/auto.conf
@@ -1221,16 +1221,16 @@ MRPROPER_FILES += .config .config.old .version .old_version $(version_h) \
 #
 clean: rm-dirs  := $(CLEAN_DIRS)
 clean: rm-files := $(CLEAN_FILES)
-clean-dirs      := $(addprefix _clean_, . $(vmlinux-alldirs) )
+clean-dirs      := $(addprefix _clean_, . $(tinymountain-alldirs) )
 
-PHONY += $(clean-dirs) clean archclean vmlinuxclean
+PHONY += $(clean-dirs) clean archclean tinymountainclean
 $(clean-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
 
-vmlinuxclean:
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/link-vmlinux.sh clean
+tinymountainclean:
+	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/link-tinymountain.sh clean
 
-clean: archclean vmlinuxclean
+clean: archclean tinymountainclean
 
 # mrproper - Delete all generated files, including .config
 #
@@ -1291,7 +1291,7 @@ help:
 	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
-	@echo  '* vmlinux	  - Build the bare kernel'
+	@echo  '* tinymountain	  - Build the bare kernel'
 	@echo  '* modules	  - Build all modules'
 	@echo  '  modules_install - Install all modules to INSTALL_MOD_PATH (default: /)'
 	@echo  '  firmware_install- Install all firmware to INSTALL_FW_PATH'
@@ -1523,7 +1523,7 @@ else
 CHECKSTACK_ARCH := $(ARCH)
 endif
 checkstack:
-	$(OBJDUMP) -d vmlinux $$(find . -name '*.ko') | \
+	$(OBJDUMP) -d tinymountain $$(find . -name '*.ko') | \
 	$(PERL) $(src)/scripts/checkstack.pl $(CHECKSTACK_ARCH)
 
 kernelrelease:
