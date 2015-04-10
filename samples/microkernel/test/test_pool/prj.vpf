@@ -1,0 +1,25 @@
+% Application       : test microkernel memory pool APIs
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME          PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK tStartTask       5 RegressionTask    2048 [EXE]
+  TASK tAlternate       6 AlternateTask     2048 [EXE]
+  TASK tDefrag          7 DefragTask        2048 [EXE]
+  TASK tHelper          7 HelperTask        2048 [EXE]
+
+% SEMA NAME
+% ==================
+  SEMA ALTERNATE_SEM
+  SEMA DEFRAG_SEM
+  SEMA REGRESS_SEM
+  SEMA HELPER_SEM
+
+% POOL NAME            MIN  MAX     NMAX
+% =======================================
+  POOL POOL_ID         32   4096      1
+  POOL SECOND_POOL_ID  32   1024      5

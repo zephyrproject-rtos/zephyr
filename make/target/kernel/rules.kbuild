@@ -1,0 +1,123 @@
+# rules.kbuild - build system
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+.PHONY: klibs alibs
+
+alibs: ${iALIBS}
+
+#####
+# KLIB_DIR is set by the kernel designer if the kernel is to be built with
+# libraries built externally from the project. In that case, prevent building
+# libraries in the kernel project itself.
+
+ifeq (${KLIB_DIR},)
+klibs: ${iKLIBS}
+else
+klibs:
+	-@$(HOS_Echo) [klibs] KLIB_DIR is set, cannot build kernel libraries
+	@$(HOS_false)
+endif
+
+# all rules
+ifeq (${vGOAL_NEEDS_TARGET_SETUP},y)
+  include ${vMAKE}/target/arch/${vARCH}/rules.arch
+endif
+include ${vMAKE}/target/headers/rules.autoconf
+include ${vMAKE}/target/headers/rules.offsets
+include ${vMAKE}/target/headers/rules.kver
+ifeq (${vGOAL_NEEDS_TARGET_SETUP},y)
+  include ${vMAKE}/target/toolchain/${vTOOL}/rules.${vTOOL}
+  include ${vMAKE}/target/toolchain/${vTOOL}/rules.kernel-bin
+  include ${vMAKE}/target/kernel/nli/rules.nodes
+endif
+
+${vKLIB_DIR}/configs.c: ${vAUTOCONF_H} | $$(dir $$@).dir
+	$q${HOS_GenConfigAbssym} -i $< -o $@
+
+# generate a custom .c/.s -> .o rule for each source file
+iSRC_TYPES = C ASM
+$(foreach type,${iSRC_TYPES},\
+  $(foreach lib,${KLIBS} ${ALIBS},\
+    $(foreach module,${${lib}_${type}_MODULES},\
+      $(eval $(call one_${type}_obj_file__rule,${${lib}_${module}}))\
+    )\
+  )\
+)
+
+$(foreach klib,${KLIBS},$(eval $(call vars_for_one_klib__rule,${klib})))
+$(foreach alib,${ALIBS},$(eval $(call vars_for_one_kapp__rule,${alib})))
+
+$(foreach klib,${KLIBS},$(eval $(call deps_for_one_klib__rule,${klib})))
+$(foreach alib,${ALIBS},$(eval $(call deps_for_one_kapp__rule,${alib})))
+
+.PHONY: kernel_stdlib clean_kernel_stdlib
+kernel_stdlib:
+	${MAKE} -C ${vBASE}/lib/libc/${vKERNEL_STDLIB} ${iKERNEL_STDLIB_CMDLINE}
+
+clean_kernel_stdlib:
+	${MAKE} -C ${vBASE}/lib/libc/${vKERNEL_STDLIB} ${iKERNEL_STDLIB_CMDLINE} pristine
+
+${iBUILDSPEC}: | $$(dir $$@).dir
+	$q${HOS_Echo} "BSP          =" ${vBSP} > $@
+	$q${HOS_Echo} "BSP_VARIANT  =" $(or ${vBSP_VARIANT},"N/A") >> $@
+	$q${HOS_Echo} "ARCH         =" ${vARCH} >> $@
+	$q${HOS_Echo} "CPU          =" ${vCPU} >> $@
+	$q${HOS_Echo} "VXMICRO_TOOL =" ${vTOOL} >> $@
+	$q${HOS_Echo} "QEMU_MACHINE =" $(or ${QEMU_MACHINE},"N/A") >> $@
+	$q${HOS_Echo} "QEMU_CPU     =" $(or ${vQEMU_CPU},"N/A") >> $@
+
+#####
+# help
+
+.PHONY: help_kbuild help_klibs help_clean
+
+help_kbuild:
+	@${HOS_EchoBlankLine}
+	@${HOS_Echo} "  Build"
+	@${HOS_Echo} "    [default] bin: build project's bin files"
+	@${HOS_Echo} "              elf: build project's ELF files"
+	@${HOS_Echo} "              strip: generate a stripped ELF file"
+	@${HOS_Echo} "                     from an ELF image"
+
+help_klibs:
+	@${HOS_EchoBlankLine}
+	@${HOS_Echo} "  Build"
+	@${HOS_Echo} "              klibs - build project"
+
+help_clean:
+	@${HOS_EchoBlankLine}
+	@${HOS_Echo} "  Clean-up"
+	@${HOS_Echo} "              clean: clean all but keep configuration"
+	@${HOS_Echo} "              pristine: clean all and remove configuration"
+	@${HOS_Echo} "              wipe: alias for pristine"
+
+sinclude ${iDOT_D}

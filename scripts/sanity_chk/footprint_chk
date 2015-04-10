@@ -1,0 +1,262 @@
+#!/bin/bash
+
+# Copyright (c) 2015 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+# Script to characterize footprint of VxMicro
+
+# Import common sanity check definitions
+#
+if [ -z ${VXMICRO_BASE} ]; then
+	echo "shell variables required to build VxMicro are not set"
+	exit 1
+fi
+if [ ! -d ${VXMICRO_BASE} ] ; then
+	echo "directory ${VXMICRO_BASE} not found"
+	exit 1
+fi
+source ${VXMICRO_BASE}/scripts/sanity_chk/common.defs
+
+# Additional commands used in script
+SIZE="truesize"
+
+# Location of master project directory
+#
+PRJ_PATH=${VXMICRO_BASE}/samples
+
+# Pseudo-file describing sample projects to be characterized
+#
+# Project info must be specified on a single line
+# (which must terminate with a '\n' character, EXCEPT for the final entry).
+#
+# Project info consists of:
+# - project directory (relative to PRJ_PATH)
+# - build arguments (optional)
+# - project flags, enclosed in angle brackets "<>"
+#   - 'u' => microkernel; 'n' => nanokernel (required; must be first flag)
+#   - 'q' => run as part of quick sanity check (optional)
+# - list of BSP names that can be used with the project
+#
+# Sanity check will select first BSP name listed if the user does not specify
+# a BSP name when running sanity check (i.e. is the "default" BSP).
+#
+# A given project can appear more than once, allowing the project to be
+# sanitized multiple times. This can be useful if the project has multiple
+# configurations, or if the project should be characterized on more than one BSP
+# during a default BSP sanity check.
+#
+# List of sample projects can contain comment lines (denoted by '#'),
+# but be sure to terminate line with a '\n' character!
+#
+PRJ_LIST_STD="\
+nanokernel/benchmark/footprint     TEST=min         <nq> ti_lm3s6965 \n\
+nanokernel/benchmark/footprint     TEST=min         <nq> fsl_frdm_k64f \n\
+nanokernel/benchmark/footprint     TEST=min         <n>  pentium4 minuteia \n\
+nanokernel/benchmark/footprint     TEST=reg         <n>  pentium4 minuteia \n\
+nanokernel/benchmark/footprint     TEST=max         <nq> pentium4 minuteia \n\
+microkernel/benchmark/footprint    TEST=min         <uq> ti_lm3s6965 \n\
+microkernel/benchmark/footprint    TEST=min         <uq> fsl_frdm_k64f \n\
+microkernel/benchmark/footprint    TEST=min         <u>  pentium4 minuteia \n\
+microkernel/benchmark/footprint    TEST=reg         <u>  pentium4 minuteia \n\
+microkernel/benchmark/footprint    TEST=max         <uq> pentium4 minuteia \n\
+    # projects that don't indicate completion                        \n\
+nanokernel/benchmark/latency_measure   <n>  pentium4  minuteia  atom quark \n\
+nanokernel/benchmark/sys_kernel        <n>  pentium4  minuteia  atom quark \n\
+microkernel/benchmark/app_kernel       <u>  pentium4  minuteia  atom quark \n\
+microkernel/benchmark/latency_measure  <u>  pentium4  minuteia  atom quark \n\
+microkernel/benchmark/sys_kernel       <u>  pentium4  minuteia  atom quark \n\
+    # projects that don't require any special capabilities           \n\
+nanokernel/benchmark/boot_time         <n>  pentium4! minuteia! atom quark \n\
+microkernel/benchmark/boot_time        <u>  pentium4! minuteia! atom quark "
+
+# print script usage
+#
+help() {
+cat << EOF
+
+Usage : ${SCRIPT_NAME} [-hHcqb] [-A <arch>] [-B <board>] [-T <toolchain>]
+       -h display this help message
+       -H display more detailed documentation
+       -c just clean projects
+       -q just do quick sanity check
+       -b just build projects
+       -A build projects for the specified architecture
+       -B build projects for the specified BSP or BSP variant
+       -T build projects using the specified toolchain
+
+EOF
+}
+
+# print long help
+#
+long_help() {
+cat << EOF
+
+Script to determine footprint characteristics of VxMicro.
+
+The script builds nanokernel and microkernel footprint
+projects for their various configurations and measures the size of the
+resulting images. (NOTE: Only some BSP variants are supported.)
+
+EOF
+}
+
+# main routine activates a random host-related microkernel demo project
+#
+main() {
+	# set up default behaviors
+	clean_only=0
+	quick_sanity=0
+	build_only=0
+	ARCH_NAME=""
+	BSP_NAME=""
+
+	# process command options
+	#
+	# note: must handle all options that can be passed in by "sanity_chk",
+	# including ones that aren't applicable to this script
+	while getopts ":hHcqblA:B:T:" arg $*
+	do
+		case $arg in
+		h)
+			help
+			exit 0
+			;;
+		H)
+			long_help
+			exit 0
+			;;
+		c)
+			clean_only=1
+			;;
+		q)
+			quick_sanity=1
+			;;
+		b)
+			build_only=1
+			;;
+		l)
+			# do nothing
+			;;
+		A)
+			ARCH_NAME=$OPTARG
+			;;
+		B)
+			BSP_NAME=$OPTARG
+			;;
+		T)
+			export VXMICRO_TOOL="$OPTARG"
+			;;
+		\?)
+			${ECHO} "invalid option -$OPTARG"
+			help
+			exit 1
+			;;
+		:)
+			${ECHO} "missing argument for option -$OPTARG"
+			help
+			exit 1
+			;;
+		esac
+	done
+
+	# ensure no unexpected arguments have been provided
+	shift $((OPTIND-1))
+	if [ x$1 != x ] ; then
+		${ECHO} "unexpected argument $1"
+		exit 1
+	fi
+
+	# handle case where we're just cleaning up
+	if [ ${clean_only} = 1 ] ; then
+		print_header
+		${ECHO} "Cleaning all footprint sample projects"
+		${ECHO}
+
+		PRJ_LIST=${PRJ_LIST_STD}
+		clean_all_projects
+
+		${ECHO}
+		print_header
+		${ECHO} "${SCRIPT_NAME} cleanup completed successfully"
+		exit 0
+	fi
+
+	# determine which projects are to be built
+	PRJ_LIST=${PRJ_LIST_STD}
+
+	# set up environment info used to build projects
+	build_info_set
+
+	# set up project info used to build projects
+	proj_info_set
+
+	# build (and optionally measure footprint of) projects
+	PRJ_CLASS="footprint"
+	let cur_proj=0
+	let build_proj=0
+	while [ ${cur_proj} -lt ${NUM_PROJ} ] ; do
+		let cur_proj++
+		print_header
+
+		# skip non-essential projects when doing quick sanity check
+		if [ ${quick_sanity} = 1 -a x${PRJ_FLAG[${cur_proj}]:1:1} != xq ] ; then
+			skip_project ${cur_proj}
+			continue
+		fi
+
+		# build project
+		build_project ${cur_proj}
+		let build_proj++
+
+		# report footprint info (unless doing "build only")
+		if [ ${build_only} = 0 ] ; then
+			${ECHO}
+			${ECHO} "Footprint for ${PRJ_NAME[${cur_proj}]}"
+			${ECHO}
+			${ECHO} "target:    ${BSP_INFO[${cur_proj}]}"
+			${ECHO} "arguments: ${PRJ_ARGS[$cur_proj]}"
+			${ECHO}
+			${SIZE} outdir/*.elf
+			${ECHO}
+		fi
+	done
+
+	${ECHO}
+        print_header
+	${ECHO} "${SCRIPT_NAME} completed successfully "\
+	        "(built ${build_proj} projects)"
+}
+
+# invoke main routine passing all parameters passed to the script
+#
+main $*
+
+# exit with success
+exit 0

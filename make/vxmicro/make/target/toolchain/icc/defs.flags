@@ -1,0 +1,68 @@
+# defs.flags - build system
+
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+include ${iMAKE_ICC}/arch/${vARCH}/defs.flags
+include ${iMAKE_ICC}/arch/${vARCH}/defs.flags.${vCPU}
+include ${iMAKE_ICC}/${vICC_VER}/defs.flags
+
+# vxmicro flags
+vDEFAULT_COMPILER_OPT = -Os
+iHAS_COMPILER_OPT     ?= $(lastword $(CONFIG_COMPILER_OPT))
+iDEFPERF_COMPILER_OPT ?= \
+    $(if $(iHAS_COMPILER_OPT),$(if $(filter -Os,$(iHAS_COMPILER_OPT)),,${-D}PERF_OPT),)
+
+# Unlike GCC, the last specified optimization option does not always override
+# previous optimization options. For example, if both -Os and -O3 are specified
+# then regardless of their order, -Os will always override -O3.  To work
+# around this limitation, the compiler options are evaluated in a step-by-step
+# fashion.  If no options are specified in CONFIG_COMPILER_OPT, then
+# CONFIG_COMPILER_OPT is assumed to be -Os.  If no options are specified
+# in OVERRIDE_COMPILER_OPT, then the CONFIG_COMPILER_OPT options are used,
+# otherwise the OVERRIDE_COMPILER_OPT options are used.
+
+iCOMPILER_OPTIONS = $(or $(CONFIG_COMPILER_OPT),${vDEFAULT_COMPILER_OPT})
+iFINAL_COMPILER_OPTIONS = $(or $(OVERRIDE_COMPILER_OPT),$(iCOMPILER_OPTIONS))
+iINCLUDE_AUTOCONF = $(if ${INCLUDE_AUTOCONF},-include ${INCLUDE_AUTOCONF}, )
+
+iICC_VXMICRO_CFLAGS ?= \
+    $(iFINAL_COMPILER_OPTIONS) $(iDEFPERF_COMPILER_OPT) \
+    -fno-asynchronous-unwind-tables -fno-omit-frame-pointer \
+    -Wall -Wno-main -ffreestanding -Wremarks -no-ipo \
+    ${iINCLUDE_AUTOCONF}
+
+iGCC_VXMICRO_ASMFLAGS = $(iDEFPERF_COMPILER_OPT) ${iINCLUDE_AUTOCONF}
+
+# generic flags
+iICC_GENERIC_CFLAGS   ?= -c -g ${iICC_VXMICRO_CFLAGS}
+iGCC_GENERIC_ASMFLAGS ?= -c -g ${iGCC_VXMICRO_ASMFLAGS}
+iGCC_GENERIC_LFLAGS   ?= -X -N ${iGCC_VXMICRO_LFLAGS}
+iGCC_GENERIC_ARFLAGS  ?= cr    ${iGCC_VXMICRO_ARFLAGS}
+
+# generic and version-specific
+iICC_BASE_CFLAGS   ?= ${iICC_GENERIC_CFLAGS}   ${iICC_${vICC_VER}_CFLAGS}
+iGCC_BASE_ASMFLAGS ?= ${iGCC_GENERIC_ASMFLAGS} ${iGCC_${vGCC_VER}_ASMFLAGS}
+iGCC_BASE_LFLAGS   ?= ${iGCC_GENERIC_LFLAGS}   ${iGCC_${vGCC_VER}_LFLAGS}
+iGCC_BASE_ARFLAGS  ?= ${iGCC_GENERIC_ARFLAGS}  ${iGCC_${vGCC_VER}_ARFLAGS}
+
+# architecture/CPU-specific
+iICC_MACH_CFLAGS   ?= ${iICC_${vARCH}_CFLAGS}   ${iICC_${vCPU}_CFLAGS}
+iGCC_MACH_ASMFLAGS ?= ${iGCC_${vARCH}_ASMFLAGS} ${iGCC_${vCPU}_ASMFLAGS}
+iGCC_MACH_LFLAGS   ?= ${iGCC_${vARCH}_LFLAGS}   ${iGCC_${vCPU}_LFLAGS}
+iGCC_MACH_ARFLAGS  ?= ${iGCC_${vARCH}_ARFLAGS}  ${iGCC_${vCPU}_ARFLAGS}
+
+# only set if user did not set his own
+CFLAGS   ?= ${iICC_BASE_CFLAGS}   ${iICC_MACH_CFLAGS} ${vCUSTOM_TARGET_DEFS}
+ASMFLAGS ?= ${iGCC_BASE_ASMFLAGS} ${iGCC_MACH_ASMFLAGS} ${vCUSTOM_TARGET_DEFS}
+LFLAGS   ?= ${iGCC_BASE_LFLAGS}   ${iGCC_MACH_LFLAGS}
+ARFLAGS  ?= ${iGCC_BASE_ARFLAGS}  ${iGCC_MACH_ARFLAGS}
+
+# always add extra flags from user and necessary flags
+CFLAGS   += ${iCTX_CFLAGS}   ${EXTRA_CFLAGS}   -std=c99 ${STDLIB_CFLAGS}
+ASMFLAGS += ${iCTX_ASMFLAGS} ${EXTRA_ASMFLAGS} -xassembler-with-cpp
+LFLAGS   += ${iCTX_LFLAGS}   ${EXTRA_LFLAGS}
+ARFLAGS  += ${iCTX_ARFLAGS}  ${EXTRA_ARFLAGS}

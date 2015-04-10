@@ -1,0 +1,35 @@
+This LIFO test set covers the following scenarios.
+
+nano_fiber_lifo_get_wait
+  - Getting an item from an emtpy LIFO (involves blocking and waking)
+  - Getting an item from a non-empty LIFO (no blocking)
+
+nano_task_lifo_get_wait
+  - Getting an item from an emtpy LIFO (involves blocking and waking)
+  - Getting an item from a non-empty LIFO (no blocking)
+
+nano_isr_lifo_get
+  - Getting an item from a non-empty LIFO (no blocking)
+  - Getting an item from an empty LIFO (no blocking, returns NULL)
+
+nano_fiber_lifo_get
+  - Getting an item from a non-empty LIFO (no blocking)
+  - Getting an item from an empty LIFO (no blocking, returns NULL)
+
+nano_task_lifo_get
+  - Getting an item from a non-empty LIFO (no blocking)
+  - Getting an item from an empty LIFO (no blocking, returns NULL)
+
+nano_fiber_lifo_put
+  - Waking a task blocked on an empty LIFO
+  - Putting an item into an empty LIFO that upon which nothing is blocked
+  - Putting an item into a non-empty LIFO
+
+nano_task_lifo_put
+  - Waking a fiber blocked on an empty LIFO
+  - Putting an item into an empty LIFO that upon which nothing is blocked
+  - Putting an item into a non-empty LIFO
+
+nano_isr_lifo_put
+  - Putting an item into an empty LIFO that upon which nothing is blocked
+  - Putting an item into a non-empty LIFO

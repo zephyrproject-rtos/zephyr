@@ -1,0 +1,94 @@
+#
+# Copyright (c) 2013 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+                                    
+#CONFIG_NANO_KERNEL                   Enable Nanokernel-only mode
+
+
+#When nanokernel-only mode is set to 'n' then I have the following additional booleans:
+
+
+# CONFIG_STANDALONE       Run without a host server (if set to 'y', this forces  CPU_LOAD, RUNTIME_CTRL and INSTRUMENTATION to be 'n')
+
+# CONFIG_CPU_LOAD         Enable CPU load monitor
+# CONFIG_RUNTIME_CTRL     Enable task runtime Control
+# CONFIG_INSTRUMENTATION  Enable system instrumentation
+# CONFIG_ROUND_ROBIN  Enable round-robin scheduling 
+# CONFIG_MULTIMODE        Choose SP or MP version of the VSP
+
+
+
+config   CONFIG_NANO_KERNEL
+    bool "Nanokernel-only mode"
+    default y
+    help
+       Place your help text here
+    
+config CONFIG_STANDALONE
+    bool "Run without a host server"
+    default n
+    depends on !CONFIG_NANO_KERNEL
+    help
+       Place your help text here
+    
+config CONFIG_CPU_LOAD
+    bool "CPU load monitor"
+    default y
+    depends on !CONFIG_NANO_KERNEL && !CONFIG_STANDALONE
+    help
+       Place your help text here
+    
+config CONFIG_RUNTIME_CTRL
+    bool  "task runtime Control"
+    default y
+    depends on !CONFIG_NANO_KERNEL && !CONFIG_STANDALONE
+    help
+       Place your help text here
+    
+config CONFIG_INSTRUMENTATION
+    bool  "system instrumentation"
+    default y
+    depends on !CONFIG_NANO_KERNEL && !CONFIG_STANDALONE
+    help
+       Place your help text here
+    
+config CONFIG_ROUND_ROBIN
+    bool  "round-robin scheduling"
+    default y
+    depends on !CONFIG_NANO_KERNEL
+    help
+       Place your help text here
+    
+config CONFIG_MULTIMODE
+    bool  "MP version of the VSP"
+    default y
+    depends on !CONFIG_NANO_KERNEL
+    help
+       Place your help text here

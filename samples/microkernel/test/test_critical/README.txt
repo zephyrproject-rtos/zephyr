@@ -1,0 +1,41 @@
+Title: Critical section ukernel test
+
+Description:
+
+This test verifies that the microkernel task_offload_to_fiber() API operates as
+expected.
+
+This test has two tasks that increment a counter.  The routine that
+increments the counter is invoked from K_swapper() due to the two tasks
+calling task_offload_to_fiber().  The final result of the counter is expected
+to be the the number of times task_offload_to_fiber() was called to increment
+the counter as the incrementing was done in the context of K_swapper().
+
+This is done with time slicing both disabled and enabled to ensure that the
+result always matches the number of times task_offload_to_fiber() is called.
+
+--------------------------------------------------------------------------------
+
+Building and Running Project:
+
+This microkernel project outputs to the console.  It can be built and executed
+on QEMU as follows:
+
+    make pristine
+    make microkernel.qemu
+
+If executing on Simics, substitute 'simics' for 'qemu' in the command line.
+
+--------------------------------------------------------------------------------
+
+Sample Output:
+
+tc_start() - Test Microkernel Critical Section API
+
+Obtained expected <criticalVar> value of 10209055
+Enabling time slicing ...
+Obtained expected <criticalVar> value of 15123296
+===================================================================
+PASS - RegressionTask.
+===================================================================
+VXMICRO PROJECT EXECUTION SUCCESSFUL

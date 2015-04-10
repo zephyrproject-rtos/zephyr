@@ -1,0 +1,45 @@
+Title:  test_tickless
+
+Description:
+
+This test verifies the timing accuracy of the tickless idle feature.
+
+The test first calibrates itself by repeatedly sleeping for 10 ticks with the
+tickless idle feature disabled.  It then repeats this process with the tickless
+idle feature enabled.  Lastly, it compares the average measured duration of
+each approach and displays the result.  The tick timing is correct if the
+'diff ticks' with tickless enabled matches the SLEEP_TICKS (10) setting in
+the source.
+
+The demonstration utilizes microkernel resource APIs, timers and tickless
+idle mode.
+
+--------------------------------------------------------------------------------
+
+Building and Running Project:
+
+This microkernel project outputs to the console.  It can be built and executed
+on QEMU as follows:
+
+    make pristine
+    make microkernel.qemu
+
+If executing on Simics, substitute 'simics' for 'qemu' in the command line.
+
+--------------------------------------------------------------------------------
+
+Sample Output:
+
+Tickless Idle Test
+Calibrating TSC...
+Calibrated time stamp period = 0x00000000163adc3a
+Do the real test with tickless enabled
+Going idle for 10 ticks...
+start ticks     : 343
+end   ticks     : 353
+diff  ticks     : 10
+diff  time stamp: 0x0000000018a69898
+Cal   time stamp: 0x00000000163adc3a
+variance in time stamp diff: 10 percent
+===================================================================
+VXMICRO PROJECT EXECUTION SUCCESSFUL

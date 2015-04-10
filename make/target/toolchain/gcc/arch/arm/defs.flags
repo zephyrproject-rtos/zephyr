@@ -1,0 +1,64 @@
+# defs.flags - build system
+
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+iGCC_arm_DEFS = ${-D}VXMICRO_ARCH_arm ${-D}VXMICRO_ARCH=arm
+
+# section garbage collection
+iSECTION_GC_CFLAGS_y ?= -ffunction-sections -fdata-sections
+iSECTION_GC_CFLAGS   ?= ${iSECTION_GC_CFLAGS_${CONFIG_SECTION_GARBAGE_COLLECTION}}
+iSECTION_GC_LFLAGS_y ?= --gc-sections
+iSECTION_GC_LFLAGS   ?= ${iSECTION_GC_LFLAGS_${CONFIG_SECTION_GARBAGE_COLLECTION}}
+
+# link time optimization is not enabled by default.  Use LTO=on to enable
+iLTO_on ?= -flto
+iLTO    ?= ${iLTO_${LTO}}
+
+iGCC_arm_CFLAGS   = -mthumb ${iGCC_arm_DEFS} ${iSECTION_GC_CFLAGS} ${iLTO}
+iGCC_arm_CXXFLAGS = -mthumb ${iGCC_arm_DEFS} ${iSECTION_GC_CFLAGS} ${iLTO}
+iGCC_arm_LFLAGS   = ${iSECTION_GC_LFLAGS}
+
+# '-mthumb' is for the pre-processor, '-Wa,-mthumb' is for the assembler
+iGCC_arm_ASMFLAGS = -mthumb -Wa,-mthumb ${iGCC_arm_DEFS}
+
+# Instruction-Set Architecture (ISA)
+iMCPU_CortexM3 = m3
+iMCPU_CortexM4 = m4f
+iMCPU ?= -mcpu=cortex-${iMCPU_${vCPU}}
+
+iGCC_${vCPU}_CFLAGS   ?= ${iMCPU}
+iGCC_${vCPU}_CXXFLAGS ?= ${iMCPU}
+iGCC_${vCPU}_ASMFLAGS ?= ${iMCPU}
+
+# temporary check until we support more ARM CPUs
+ifneq (${vCPU},CortexM3)
+  ifneq (${vCPU},CortexM4)
+    $(error Toolchain support only enabled for CortexM3/M4 CPUs in the build system)
+  endif
+endif

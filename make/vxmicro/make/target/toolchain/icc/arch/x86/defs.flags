@@ -1,0 +1,26 @@
+# defs.flags - build system
+
+# Copyright (c) 2013 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+iICC_x86_DEFS = ${-D}VXMICRO_ARCH_x86 ${-D}VXMICRO_ARCH=x86
+
+# compiler optimization
+iALIGN_STACK ?= $(if $(iDEFPERF_COMPILER_OPT),,-falign-stack=assume-4-byte)
+
+# section garbage collection
+iSECTION_GC_CFLAGS_y ?= -ffunction-sections -fdata-sections
+iSECTION_GC_CFLAGS   ?= ${iSECTION_GC_CFLAGS_${CONFIG_SECTION_GARBAGE_COLLECTION}}
+iSECTION_GC_LFLAGS_y ?= --gc-sections
+iSECTION_GC_LFLAGS   ?= ${iSECTION_GC_LFLAGS_${CONFIG_SECTION_GARBAGE_COLLECTION}}
+
+# link time optimization is not enabled by default.  Use LTO=on to enable
+iLTO_on ?= -flto
+iLTO    ?= ${iLTO_${LTO}}
+
+iICC_x86_CFLAGS   = ${iICC_x86_DEFS} ${iSECTION_GC_CFLAGS} ${iLTO} $(iALIGN_STACK)
+iGCC_x86_ASMFLAGS = ${iICC_x86_DEFS}
+iGCC_x86_LFLAGS   = ${iSECTION_GC_LFLAGS}

@@ -1,0 +1,134 @@
+# ARM.kconf - ARM architecture options
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+menu "ARM family options"
+
+config	ARM
+	bool
+	default y
+	help
+	  This option signifies the use of an ARM system.
+
+config  ISA_THUMB2
+	bool
+	# omit prompt to signify a "hidden" option
+	default y
+	help
+	  From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
+
+	  Thumb-2 technology is the instruction set underlying the ARM Cortex
+	  architecture which provides enhanced levels of performance, energy
+	  efficiency, and code density for a wide range of embedded
+	  applications.
+
+	  Thumb-2 technology builds on the success of Thumb, the innovative
+	  high code density instruction set for ARM microprocessor cores, to
+	  increase the power of the ARM microprocessor core available to
+	  developers of low cost, high performance systems.
+
+	  The technology is backwards compatible with existing ARM and Thumb
+	  solutions, while significantly extending the features available to
+	  the Thumb instructions set. This allows more of the application to
+	  benefit from the best in class code density of Thumb.
+
+	  For performance optimised code Thumb-2 technology uses 31 percent
+	  less memory to reduce system cost, while providing up to 38 percent
+	  higher performance than existing high density code, which can be used
+	  to prolong battery-life or to enrich the product feature set. Thumb-2
+	  technology is featured in the  processor, and in all ARMv7
+	  architecture-based processors.
+
+config	ISA_ARM
+	bool
+	prompt "Build with the ARM instruction set" if !ISA_THUMB2
+	default y
+	depends on !ISA_THUMB2
+	help
+	  From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
+
+	  The ARM 32-bit instruction set is the base 32-bit ISA used in the
+	  ARMv4T, ARMv5TEJ and ARMv6 architectures.  In these architectures it
+	  is used in applications requiring high performance, or for handling
+	  hardware exceptions such as interrupts and processor start-up.
+
+	  The ARM 32-bit ISA is also supported in the Cortex-A and Cortex-R
+	  profiles of the Cortex architecture for performance critical
+	  applications, and for legacy code.  Most of its functionality is
+	  subsumed into the Thumb-2 instruction set, which also benefits from
+	  improved code density.
+
+	  ARM instructions are 32-bits wide, and are aligned on 4-byte
+	  boundaries.
+
+	  All ARM instructions can also be conditionalised to only execute when
+	  previous instructions have set a particular condition code. This
+	  means that instructions only have their normal effect on the
+	  programmers’ model operation, memory and coprocessors if the N, Z, C
+	  and V flags in the Application Program Status Register satisfy a
+	  condition specified in the instruction. If the flags do not satisfy
+	  this condition, the instruction acts as a NOP, that is, execution
+	  advances to the next instruction as normal, including any relevant
+	  checks for exceptions being taken, but has no other effect.  This
+	  conditionalisation of instructions allows small sections of if- and
+	  while-statements to be encoded without the use of branch
+	  instructions.
+
+config	ISA_THUMB
+	bool
+	prompt "Build with the THUMB instruction set" if !ISA_THUMB2
+	default n
+	depends on !ISA_ARM && !ISA_THUMB2
+	help
+	  From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
+
+	  Thumb technology is an extension to the 32-bit ARM architecture. The
+	  Thumb instruction set features a subset of the most commonly used
+	  32-bit ARM instructions which have been compressed into 16-bit wide
+	  opcodes. On execution, these 16-bit instructions are decompressed
+	  transparently to full 32-bit ARM instructions in real time without
+	  performance loss.
+
+	  Designers can use both 16-bit Thumb and 32-bit ARM instructions sets
+	  and therefore have the flexibility to emphasise performance or code
+	  size on a sub-routine level as their applications require.
+
+	  A Thumb-aware core is a standard ARM processor fitted with a Thumb
+	  decompressor in the instruction pipeline. The designer therefore
+	  gets	all the underlying power of the 32-bit ARM architecture as well
+	  as excellent code density from Thumb, all at 8-bit system cost.
+
+	  Thumb has better code density than common 8 and 16-bit CISC/RISC
+	  Controllers and is at a fraction of the code size of traditional
+	  32-bit architectures. This means that program memory can be smaller
+	  and hence cost reduced.
+
+endmenu

@@ -1,0 +1,21 @@
+# defs.kernel-bin - build system
+
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+# rules for running preprocessor on linker command file
+iLINKER_CMD_OPT = $(strip \
+	-undef ${iPP_OPT} \
+	${iPP_NOLINENO} \
+	${-D}VXMICRO_ARCH_${vARCH} \
+	${-D}${iLINKER_CMD_TOOL} \
+)
+
+iLINKER_CMD_INC = ${-I}${vKLIB_DIR}/include ${-I}${vBASE}/include
+iFINAL_LINKER_CMD = ${vOUT_DIR}/$(notdir ${LINKER_CMD})
+
+iUSR = $(if $(strip $(filter %.${usr},$^)),$(filter %.${usr},$^),${HOS_DEVNULL_R})
+iMEM = $(if $(strip $(filter %.${mem},$^)),$(filter %.${mem},$^),${HOS_DEVNULL_R})

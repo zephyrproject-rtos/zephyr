@@ -1,0 +1,86 @@
+# defs.flags - build system
+
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+include ${iMAKE_DIAB}/arch/${vARCH}/defs.flags
+sinclude ${iMAKE_DIAB}/${vDIAB_VER}/defs.flags
+
+# vxmicro flags
+vDEFAULT_COMPILER_OPT = -XO -Xsize-opt
+iHAS_COMPILER_OPT     ?= $(lastword $(CONFIG_COMPILER_OPT))
+iDEFPERF_COMPILER_OPT ?= \
+    $(if $(iHAS_COMPILER_OPT),$(if $(filter -Xsize-opt,$(iHAS_COMPILER_OPT)),,${-D}PERF_OPT),)
+
+iCOMPILER_OPTIONS = $(or $(CONFIG_COMPILER_OPT),${vDEFAULT_COMPILER_OPT})
+iFINAL_COMPILER_OPTIONS = $(or $(OVERRIDE_COMPILER_OPT),$(iCOMPILER_OPTIONS))
+iINCLUDE_AUTOCONF = $(if ${INCLUDE_AUTOCONF},-i=${INCLUDE_AUTOCONF}, )
+
+iDIAB_VXMICRO_CFLAGS ?= \
+    $(iFINAL_COMPILER_OPTIONS) $(iDEFPERF_COMPILER_OPT) \
+    -Xsemi-is-newline -Xkill-opt=0x800000 \
+    ${iINCLUDE_AUTOCONF}
+
+iDIAB_VXMICRO_ASMFLAGS = ${iDEFPERF_COMPILER_OPT} -W a,-Xsemi-is-newline -W a,-Xlabel-colon -W a,-g ${iINCLUDE_AUTOCONF}
+
+#
+# Ignore the following diagnostic messages
+#
+# #1643 - narrowing or signed-to-unsigned type conversion found: int to
+# unsigned short/char. This warning is generated in several VxMicro modules.
+# Each case has been determined to not be a problem.
+#
+# #2273 - suspicious truncation of a 32-bit value when assigned to a 64-bit
+# integral type (potential portability problem).
+#
+# #4193 - zero used for undefined preprocessing macro.
+#
+# #4951 - return type of main must be an int.  In VxMicro, the return value
+# from main() is ignored.  As such, its return value in the sample projects
+# has been set to 'void'.
+#
+# #5318 - function declared with "noreturn" does return.  The DIAB compiler
+# can not properly detect that many places in the VxMicro code are unreachable
+# and consequently those routines might not legitimately return.
+#
+# #5387 - explicit conversion of a 64-bit integral type to a smaller integral
+# type (potential portability problem).  Disabled as this warning occurs when
+# the variable is explicitly typecasted.
+#
+# #5388 - conversion from pointer to integral type has potential portability
+# problem.  If not disabled, this warning is generated when a pointer is
+# converted to an integer even if it was explicitly typecasted.
+iDIAB_IGNORE_CFLAGS ?= 1643,2273,4193,4951,5318,5387,5388
+
+# generic flags
+iDIAB_GENERIC_CFLAGS   ?= ${-c} ${-g} ${iDIAB_VXMICRO_CFLAGS} -ei${iDIAB_IGNORE_CFLAGS}
+iDIAB_GENERIC_ASMFLAGS ?= ${-c} ${-g} ${iDIAB_VXMICRO_ASMFLAGS}
+iDIAB_GENERIC_LFLAGS   ?= -X -N ${iDIAB_VXMICRO_LFLAGS} -Xrescan-libraries -Xrescan-restart -Xemulate-gnu-vma-lma
+iDIAB_GENERIC_ARFLAGS  ?= cr ${iDIAB_VXMICRO_ARFLAGS}
+
+# generic and version-specific
+iDIAB_BASE_CFLAGS   ?= ${iDIAB_GENERIC_CFLAGS}   ${iDIAB_${vDIAB_VER}_CFLAGS}
+iDIAB_BASE_ASMFLAGS ?= ${iDIAB_GENERIC_ASMFLAGS} ${iDIAB_${vDIAB_VER}_ASMFLAGS}
+iDIAB_BASE_LFLAGS   ?= ${iDIAB_GENERIC_LFLAGS}   ${iDIAB_${vDIAB_VER}_LFLAGS}
+iDIAB_BASE_ARFLAGS  ?= ${iDIAB_GENERIC_ARFLAGS}  ${iDIAB_${vDIAB_VER}_ARFLAGS}
+
+# architecture/CPU-specific
+iDIAB_MACH_CFLAGS   ?= ${iDIAB_${vARCH}_CFLAGS}   ${iDIAB_${vCPU}_CFLAGS}
+iDIAB_MACH_ASMFLAGS ?= ${iDIAB_${vARCH}_ASMFLAGS} ${iDIAB_${vCPU}_ASMFLAGS}
+iDIAB_MACH_LFLAGS   ?= ${iDIAB_${vARCH}_LFLAGS}   ${iDIAB_${vCPU}_LFLAGS}
+iDIAB_MACH_ARFLAGS  ?= ${iDIAB_${vARCH}_ARFLAGS}  ${iDIAB_${vCPU}_ARFLAGS}
+
+# only set if user did not set his own
+CFLAGS   ?= ${iDIAB_BASE_CFLAGS}   ${iDIAB_MACH_CFLAGS} ${vCUSTOM_TARGET_DEFS}
+ASMFLAGS ?= ${iDIAB_BASE_ASMFLAGS} ${iDIAB_MACH_ASMFLAGS} ${vCUSTOM_TARGET_DEFS}
+LFLAGS   ?= ${iDIAB_BASE_LFLAGS}   ${iDIAB_MACH_LFLAGS}
+ARFLAGS  ?= ${iDIAB_BASE_ARFLAGS}  ${iDIAB_MACH_ARFLAGS}
+
+# always add extra flags from user and necessary flags
+CFLAGS   += ${iCTX_CFLAGS}   ${EXTRA_CFLAGS}   ${iCC_C99} ${STDLIB_CFLAGS}
+ASMFLAGS += ${iCTX_ASMFLAGS} ${EXTRA_ASMFLAGS}
+LFLAGS   += ${iCTX_LFLAGS}   ${EXTRA_LFLAGS}
+ARFLAGS  += ${iCTX_ARFLAGS}  ${EXTRA_ARFLAGS}

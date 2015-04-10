@@ -1,0 +1,89 @@
+# obj.rules - rules for building object files
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+# user can set the following:
+#
+#   EXTRA_CFLAGS:         common CFLAGS appended to default CFLAGS_<host>
+#   EXTRA_CFLAGS_<host>:  CFLAGS appended to default CFLAGS_<host>
+#   HOST_ONLY=<host>:   build only for a specific host (i.e. linux2)
+#
+# and can override the following:
+#
+#   CFLAGS_<host>: CFLAGS for a specific host (i.e. linux2)
+#   SOURCES: list of C files
+#
+# defaults:
+#
+#   CFLAGS_<host>: -I. -Wall -Werror -g -m32 -D<host>
+#   SOURCES: all C files in current directory
+
+# object code files
+define generate_objs
+$1/%.o: %.c ${vOBJDIR_DEP_$1}
+	@${vCC_$1} ${CFLAGS_$1} -o $$@ -c $$<
+	@printf "%-12s%-20s -> %s\n" "[Compiling] " "$$<" "$$@"
+
+endef
+
+# object code directory
+define generate_dir
+${vOBJDIR_DEP_$1}: ${MAKEFILE_LIST}
+	@mkdir -p $$(dir $$@)
+	@touch $$@
+
+endef
+
+# .d dependency files
+define generate_deps
+$1/%.d: %.c ${vOBJDIR_DEP_$1}
+	@${vCC_$1} ${CFLAGS_$1} -MM $$< -MF $$@d
+	@sed 's#$${<:.c=.o}#$${@:.d=.o}#' <$$@d >$$@
+	@rm -f $$@d
+
+endef
+
+$(foreach host, ${HOST}, $(eval $(call generate_objs,$(host))))
+$(foreach host, ${HOST}, $(eval $(call generate_dir,$(host))))
+$(foreach host, ${HOST}, $(eval $(call generate_deps,$(host))))
+
+# only generate .d files if not cleaning
+ifeq (${MAKECMDGOALS},pristine)
+vIGNORE_DOT_D=y
+endif
+ifeq ($(findstring clean,${MAKECMDGOALS}),clean)
+vIGNORE_DOT_D=y
+endif
+
+ifneq (${vIGNORE_DOT_D},y)
+  ALL_HOSTS = $(foreach host,${HOST},$(if ${HOST_ONLY},$(findstring ${HOST_ONLY},${host}),${host}))
+  -include $(foreach src,${SOURCES}, $(addsuffix /${src:.c=.d},${ALL_HOSTS}))
+endif # vIGNORE_DOT_D

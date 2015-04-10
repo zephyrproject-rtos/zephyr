@@ -1,0 +1,324 @@
+# defs.kbuild - build system
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+vBSP = $(strip ${BSP})
+ifeq (${vGOAL_NEEDS_TARGET_SETUP},y)
+  include ${vCONFIG_BASE_DIR}/${vBSP}/defs.bsp
+else ifneq (${vBSP},)
+  include ${vCONFIG_BASE_DIR}/${vBSP}/defs.bsp
+endif
+
+vOUT_DIR ?= $(abspath $(or $(strip $(subst \,/,${OUTPUT_DIR})),${vHERE}/outdir))
+
+vKSRC_DIR ?= ${vBASE}/kernel
+vKHDR_DIR ?= ${vBASE}/include
+vKLIB_DIR ?= $(or $(strip $(subst \,/,${KLIB_DIR})),${vOUT_DIR}/klib)
+vKAPP_DIR ?= $(or $(strip $(subst \,/,${KAPP_DIR})),${vOUT_DIR}/kapp)
+LINKER_CMD ?= ${vBSP_BASE_DIR}/${vBSP}/linker.cmd
+INCLUDE_AUTOCONF = ${vKLIB_DIR}/include/autoconf.h
+
+# user can set PRJ_SRCPATH (be sure to extract drive letter if applicable)
+iPRJ_PATH_FROM_SRCPATH = $(subst ${vDRIVE_BASE},,$(subst ${vDRIVE_HERE},,$(abspath ${PRJ_SRCPATH})))
+iPRJ_PATH_AUTOMATIC = $(if $(strip ${PRJ_SRC}),,$(wildcard ${vHERE}/src))
+iPRJ_SRCPATH  = $(or ${iPRJ_PATH_FROM_SRCPATH},${iPRJ_PATH_AUTOMATIC})
+iPRJ_SRCPATH += ${iKTYPE_kapp_SRCPATH}
+
+iPRJ__SRCPATH = ${PRJ_INCPATH} ${iPRJ_SRCPATH}
+iPRJ_INCPATH = $(subst \,/,$(strip ${iPRJ__SRCPATH})) ${iKTYPE_kapp_INCPATH}
+
+# XXX - consider using ':=' since might be hitting the file system HARD
+#       in that case, toolchain definitions must precede this to get $c/$s
+iPRJ_SRC_AUTO =
+iPRJ_SRC_AUTO += $(foreach path,${iPRJ_SRCPATH},$(wildcard ${path}/*.$c))
+iPRJ_SRC_AUTO += $(foreach path,${iPRJ_SRCPATH},$(wildcard ${path}/*.$s))
+
+iPRJ_SRC = $(strip ${PRJ_SRC} ${iPRJ_SRC_AUTO} ${iKTYPE_kapp_SRC})
+kapp_SRC = ${iPRJ_SRC}
+
+# kapp_OBJ = $(sort $(subst .$s,.$o,$(subst .$c,.$o,${iPRJ_SRC})))
+
+iKLIB_INC_DIR ?= $(strip \
+  ${vBASE}/include \
+  ${vKLIB_DIR}/include \
+  ${KERNEL_STDLIB_INCLUDE_DIR} \
+)
+
+vKAPP_INC_DIR += $(strip \
+  ${iPRJ_INCPATH} \
+  ${vBASE}/include \
+  ${vKLIB_DIR}/include \
+  ${iKTYPE_kapp_INC} \
+  ${KERNEL_STDLIB_INCLUDE_DIR} \
+)
+
+LIB_INCLUDE_DIR ?= $(strip \
+	${vKLIB_DIR} \
+	${vKAPP_DIR} \
+	${vOUT_DIR} \
+	${vTC_LIB_DIR} \
+	${KERNEL_STDLIB_OUTPUT_DIR} \
+)
+ALL_LIBS += ${ALIBS} ${KLIBS} ${vKLIBS_EXTRA}
+
+ENTRY ?= __start
+
+# If PRJ_CONF is specified or a default prj.conf file exists indicate that
+# the build system will use a project config file.
+iUSE_PRJ_CONF = $(or ${PRJ_CONF},$(wildcard prj.conf))
+
+i_PRJ_CONF = $(if $(strip ${PRJ_CONF}),$(if $(wildcard ${PRJ_CONF}),$(strip \
+             $(subst \,/,${PRJ_CONF})),\
+             $(error invalid PRJ_CONF (${PRJ_CONF}))),$(wildcard prj.conf))
+
+iPRJ_CONF  = $(if ${i_PRJ_CONF},$(if $(findstring ./,$(dir ${i_PRJ_CONF})),\
+             ${vHERE}/${i_PRJ_CONF},${i_PRJ_CONF}),)
+
+#####
+# ref_bsp
+
+iCFG_ORIG_STEM = ${vCONFIG_BASE_DIR}/${vBSP}/${vKTYPE}/config${NUM_NODES}p
+
+
+#####
+# buildspec used by Host Tools
+
+iBUILDSPEC = ${vOUT_DIR}/buildspec
+
+#####
+# generated NLI file
+
+iCFG_FINAL_NLI = ${iNLI_OUT}/config${NUM_NODES}p.nli
+
+#####
+# always link against standard C and math libraries,
+# and against auxiliary compiler libraries
+
+vKLIBS_EXTRA += c m
+vKLIBS_EXTRA += ${vTC_LIBS}
+
+iKLIB_GEN_HDRS += $(strip \
+	${iOFFSETS_HDR} ${vAUTOCONF_H} \
+	${iKVER_HDR} \
+	${iKLIB_ARCH_GEN_HDRS} \
+)
+
+ALIBS ?= kapp
+
+iKLIBS = $(foreach klib,${KLIBS},${vKLIB_DIR}/lib${klib}.$a)
+iALIBS = $(foreach alib,${ALIBS},${vKAPP_DIR}/lib${alib}.$a)
+iLIBS  = ${iKLIBS} ${iALIBS}
+
+iOUTDIR_EXISTS   := $(wildcard ${vOUT_DIR})
+iOUTDIR_IS_VALID := $(wildcard ${vOUT_DIR}/.dir)
+
+#####
+# clean rule
+# Take a snapshot of the files and directories in ${vOUT_DIR}: they will
+# get moved to ${iTRASHBIN}, which will be subsequently deleted. The files
+# we are intereted in keeping are .autoconf, .autoconf.old and .dir, which
+# are not listed in a $(wildcard *) call because they start with '.'. This
+# behaviour is the same on Windows, which conflicts with the behaviour of
+# 'dir *' on that platform.
+
+iTRASHBIN = ${vOUT_DIR}/.trash
+iFILES_TO_CLEAN := $(wildcard ${vOUT_DIR}/*)
+
+#####
+
+# target
+include ${vMAKE}/target/env/defs.target
+
+# stdlib defaults
+vKERNEL_STDLIB ?= $(or $(strip ${KERNEL_STDLIB}),minimal)
+vSTDLIB = ${vKERNEL_STDLIB}
+include ${vMAKE}/target/stdlib/${vSTDLIB}/defs.stdlib
+include ${vMAKE}/target/stdlib/${vSTDLIB}/defs.kernel.stdlib
+
+# kernel headers
+include ${vMAKE}/target/headers/defs.autoconf.kernel
+include ${vMAKE}/target/headers/defs.offsets
+include ${vMAKE}/env/defs.kver
+include ${vMAKE}/target/headers/defs.kver
+
+# arch-specific
+ifeq (${vGOAL_NEEDS_TARGET_SETUP},y)
+  include ${vMAKE}/target/arch/${vARCH}/defs.arch
+  sinclude ${vMAKE}/target/kernel/arch/${vARCH}/defs.arch
+endif
+
+#Add kernel indicator
+iCTX_CFLAGS += -DKERNEL
+
+#Disable use of autoconf.h for configs.c build
+nkernel_configs_CFLAGS = ${-D}__AUTOCONF_DONT_USE_AUTOCONF
+
+# toolchain
+ifeq (${vGOAL_NEEDS_TARGET_SETUP},y)
+  include ${vMAKE}/target/toolchain/${vTOOL}/defs.${vTOOL}
+endif
+
+# kernel libraries, including BSP
+ifeq (${vGOAL_NEEDS_TARGET_SETUP},y)
+  include ${vBSP_BASE_DIR}/${vBSP}/defs.objs
+endif
+include ${vKSRC_DIR}/defs.objs
+
+# generate per-lib variables
+# $1: library name
+# $2: output directory
+define objs_for_one_lib__defs
+  $1_C_SRC = $$(filter %.$c,$${$1_SRC})
+  $1_C_SRC_TO_OBJ = $$(patsubst %.$c,%.$o,$${$1_C_SRC})
+  $1_C_OBJ = $$(addprefix $2/obj.$1/,$$(notdir $${$1_C_SRC_TO_OBJ}))
+  $1_C_MODULES = $$(notdir $$(basename $${$1_C_SRC}))
+  $1_ASM_SRC = $$(filter %.$s,$${$1_SRC})
+  $1_ASM_SRC_TO_OBJ = $$(patsubst %.$s,%.$o,$${$1_ASM_SRC})
+  $1_ASM_OBJ = $$(addprefix $2/obj.$1/,$$(notdir $${$1_ASM_SRC_TO_OBJ}))
+  $1_ASM_MODULES = $$(notdir $$(basename $${$1_ASM_SRC}))
+  $1_OBJ = $${$1_C_OBJ} $${$1_ASM_OBJ}
+
+endef
+
+# generate: <library name>_<module name> = <module name> <output dir> <source file>
+# $1: library name
+# $2: full path of source file
+# $3: output dir
+define src_to_module__defs
+  $1_$$(notdir $$(basename $2)) = $$(notdir $$(basename $2)) $3/obj.$1 $2
+
+endef
+
+define vars_for_one_klib__rule
+  ${vKLIB_DIR}/lib$1.$a: iINCLUDE_DIR=$${$1_INCLUDE_DIR} $${iKLIB_INC_DIR}
+  ${vKLIB_DIR}/lib$1.$a: iLIB_NAME=$1
+  ${vKLIB_DIR}/lib$1.$a: iOBJ=$${$1_OBJ}
+
+endef
+
+define vars_for_one_kapp__rule
+  ${vKAPP_DIR}/lib$1.$a: iINCLUDE_DIR=$${$1_INCLUDE_DIR} $${vKAPP_INC_DIR}
+  ${vKAPP_DIR}/lib$1.$a: iLIB_NAME=$1
+  ${vKAPP_DIR}/lib$1.$a: iOBJ=$${$1_OBJ}
+
+endef
+
+define deps_for_one_klib__rule
+  ${$1_C_OBJ} ${$1_ASM_OBJ}: $${iKLIB_GEN_HDRS}
+
+endef
+
+define deps_for_one_kapp__rule
+  ${$1_OBJ}: $${iKLIB_GEN_HDRS} $${iKAPP_GEN_HDRS} $${iKTYPE_kapp_DEP}
+
+endef
+
+define src_from_paths 
+   $1_SRC += \
+   $(strip\
+   $(foreach path,${$1_SRCPATH},$(wildcard ${path}/*.$c))\
+   $(foreach path,${$1_SRCPATH},$(wildcard ${path}/*.$s))\
+   )
+
+endef
+
+$(foreach lib,${KLIBS},$(eval $(call objs_for_one_lib__defs,${lib},${vKLIB_DIR})))
+$(foreach lib,${ALIBS},$(eval $(call objs_for_one_lib__defs,${lib},${vKAPP_DIR})))
+$(foreach lib,${KLIBS},$(eval $(call src_from_paths,${lib})))
+
+# generate for all kernel libraries:
+#   <library name>_<module name> = <module name> <output dir> <source file>
+$(foreach lib,${KLIBS},\
+  $(foreach src,${${lib}_C_SRC} ${${lib}_ASM_SRC},\
+    $(eval $(call src_to_module__defs,${lib},${src},${vKLIB_DIR}))\
+  )\
+)
+
+$(foreach lib,${ALIBS},\
+  $(foreach src,${${lib}_C_SRC} ${${lib}_ASM_SRC},\
+    $(eval $(call src_to_module__defs,${lib},${src},${vKAPP_DIR}))\
+  )\
+)
+
+# build complete line
+define Build_complete_output
+	-@${HOS_EchoBlankLine}
+	-@${HOS_Echo} Build complete.
+	-@$(foreach image,$?,${HOS_Echo} Image location: ${image} ${HOS_MultiCmd})
+
+endef
+
+iDOT_D_KLIB = $(foreach klib,${KLIBS},$(foreach obj,${${klib}_OBJ},${obj:.o=.d}))
+iDOT_D_KAPP = $(foreach alib,${ALIBS},$(foreach obj,${${alib}_OBJ},${obj:.o=.d}))
+iDOT_D += ${iDOT_D_KLIB} ${iDOT_D_KAPP}
+
+#####
+# kernel standard C libraries
+
+iKERNEL_STDLIB_RULE = kernel_stdlib
+
+# tricky: if KERNEL_STDLIB_COMPILER_OPT is non-empty,
+#         iKERNEL_STDLIB_COMPILER_OPT_STR_${KERNEL_STDLIB_COMPILER_OPT}
+#         resolves to <empty>, but if KERNEL_STDLIB_COMPILER_OPT is empty,
+#         iKERNEL_STDLIB_COMPILER_OPT_STR_${KERNEL_STDLIB_COMPILER_OPT} resolves
+#         to ${vDEFAULT_COMPILER_OPT}
+KERNEL_STDLIB_COMPILER_OPT ?= ${CONFIG_COMPILER_OPT}
+iKERNEL_STDLIB_COMPILER_OPT_STR_ = ${vDEFAULT_COMPILER_OPT}
+iKERNEL_STDLIB_COMPILER_OPT_STR = $(subst ${vSPACE},_,$(strip \
+	${KERNEL_STDLIB_COMPILER_OPT}${iKERNEL_STDLIB_COMPILER_OPT_STR_${KERNEL_STDLIB_COMPILER_OPT}} \
+))
+
+KERNEL_STDLIB_STACK_CANARIES ?= ${CONFIG_STACK_CANARIES}
+iKERNEL_STDLIB_STACK_CANARIES_STR_y = -stack_canaries
+iKERNEL_STDLIB_STACK_CANARIES_STR = ${iKERNEL_STDLIB_STACK_CANARIES_STR_${KERNEL_STDLIB_STACK_CANARIES}}
+
+iKERNEL_STDLIB_MISC_STR = ${iKERNEL_STDLIB_STACK_CANARIES_STR}${iKERNEL_STDLIB_COMPILER_OPT_STR}
+
+iKERNEL_STDLIB_DIR_NAME = ${vKERNEL_STDLIB}-kernel-${vARCH}-${vCPU}-${vTOOL}${iKERNEL_STDLIB_MISC_STR}
+
+KERNEL_STDLIB_OUTPUT_DIR ?= ${vBASE}/samples/libc/${iKERNEL_STDLIB_DIR_NAME}
+
+KERNEL_STDLIB_INCLUDE_DIR = ${vSTDLIB_HDR_PATH}
+
+iKERNEL_STDLIB_CMDLINE = $(strip \
+	OUTPUT_DIR=${KERNEL_STDLIB_OUTPUT_DIR} \
+	ARCH=${vARCH} CPU=${vCPU} VXMICRO_TOOL=${vTOOL}\
+	OVERRIDE_COMPILER_OPT=${KERNEL_STDLIB_COMPILER_OPT} \
+	STACK_CANARIES=${KERNEL_STDLIB_STACK_CANARIES} \
+    STDLIB_TYPE=KERNEL \
+)
+
+vKERNEL_UNDEF_SYMS_TIMESTAMP_y = build_timestamp
+
+vKERNEL_UNDEF_SYMS = $(strip \
+	${vKERNEL_UNDEF_SYMS_TIMESTAMP_${CONFIG_BUILD_TIMESTAMP}} \
+	${vARCH_UNDEF_SYMS} \
+)

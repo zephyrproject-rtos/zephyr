@@ -1,0 +1,128 @@
+# ARM_CortexM.kconf - ARM Cortex-M family options
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "ARM_Cortex.kconf"
+
+menu "ARM Cortex-M family options"
+
+config	CPU_CORTEXM
+	bool
+	default y
+	select CPU_CORTEX
+	select ISA_THUMB2
+	help
+	  This option signifies the use of a CPU of the Cortex-M family.
+
+config	LDREX_STREX_AVAILABLE
+	bool
+	default y
+
+config	DATA_ENDIANNESS_LITTLE
+	bool	
+	default y
+	help
+	  This is driven by the processor implementation, since it is fixed in
+	  hardware. The BSP should set this value to 'n' if the data is
+	  implemented as big endian.
+
+config	STACK_ALIGN_DOUBLE_WORD
+	bool
+	prompt "Align stacks on double-words (8 octets)"
+	default y
+	help
+	  This is needed to conform to AAPCS, the procedure call standard for
+	  the ARM. It wastes stack space.
+
+config	NUM_IRQS
+	int
+	prompt "Upper limit of interrupt numbers/IDs used"
+	default 1
+	range 1 1000
+	help
+	  Interrupts available will be 0 to NUM_IRQS-1.
+
+	  The minimal value is 1.
+
+	  The BSP must provide a valid default. This drives the size of the
+	  vector table.
+
+config	STACK_GROWS_DOWN
+	bool
+	prompt "Stacks grow down"
+	default y
+	help
+	  Stacks can grow either up or down. Down is the default. Don't change
+	  this unless you have a very good reason to do so.
+
+config	NUM_IRQ_PRIO_BITS
+	int
+#	hidden option, implemented by BSP
+	help
+	  Cortex-M chips can implement up to 8 bits of interrupt priorities,
+	  for a maximum of 256 priorities. Most chips implement fewer than 8.
+
+	  The BSP must define the correct value.
+
+config	RUNTIME_NMI
+	bool
+	prompt "Attach an NMI handler at runtime"
+	default n
+	help
+	  VxMicro provides a simple NMI handler that simply hangs in a tight
+	  loop if triggered. This fills the requirement that there must be an
+	  NMI handler installed when the CPU boots. If a custom handler is
+	  needed, enable this option and attach it via _NmiHandlerSet().
+
+config	ATOMIC_IDLE_WFI
+	bool
+#	hidden option, implemented by BSP
+	help
+	  The BSP sets this if wfi instruction can be interrupted by an
+	  already pending exception while primask is set.
+
+config	FAULT_DUMP
+	int
+	prompt "Fault dump level"
+	default 2
+	help
+	  Different levels for display information when a fault occurs.
+
+	  2: The default. Display specific and verbose information. Consumes
+	     the most memory (long strings).
+	  1: Display general and short information. Consumes less memory
+	     (short strings).
+	  0: Off.
+
+config	XIP
+	default y
+
+endmenu

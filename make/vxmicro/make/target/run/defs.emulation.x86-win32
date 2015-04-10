@@ -1,0 +1,71 @@
+# defs.emulation.x86-win32 - common emulator Windows specific definitions
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+
+# DESCRIPTION
+# File defines:
+# iHOST_FILE - file to be given to the host server:
+#       VPF for microkernel and IAP projects
+#       NLI for nanokernel projects
+# iWINECONSOLE - command that starts HostServer console
+# iWINEHOSTSERVER - command that starts HostServer GUI
+# iHOS_getprogpath - function that returns a full program path
+# iSIM_SERIAL_DEVICE - device driver used for the host communication
+# vSIM_HS_PORT - serial device or pseudo-device used
+#      for the host communication
+
+ifeq (${CONFIG_NANOKERNEL},y)
+  iHOST_FILE = ${iCFG_FINAL_NLI}
+else
+  iHOST_FILE = ${vOUT_DIR}/node/$(notdir ${iVPF})
+endif
+
+iWINECONSOLE ?= ${HOS_Bin_HostServerCon} -s ${iHOST_FILE}
+iWINEHOSTSERVER ?= ${HOS_Bin_HostServer} -s ${iHOST_FILE}
+
+# The executables are expected to reside in either "C:\Program Files\"
+# or "C:\Program Files (x86)".  These are shortened to "C:\Progra~1\"
+# and "C:\Progra~2\" respectively.
+iPF1 = C:/Progra~1
+iPF2 = C:/Progra~2
+iPF3 = ${vBASE}/host/${vHOST}/bin
+
+iPF1_BIN = $(subst \,/,$(wildcard ${iPF1}/$(1)))
+iPF2_BIN = $(subst \,/,$(wildcard ${iPF2}/$(1)))
+iPF3_BIN = $(subst \,/,$(wildcard ${iPF3}/$(1)))
+
+# if a program resides either in "C:\Program Files\" or "C:\Program Files (x86)",
+# return it's full path
+iHOS_getprogpath =  $(or ${iPF1_BIN},${iPF2_BIN},${iPF3_BIN})
+
+iSIM_SERIAL_DEVICE := $(call iHOS_getprogpath,com0com/com0com.sys)
+vSIM_HS_PORT ?= COM8

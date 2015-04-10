@@ -1,0 +1,140 @@
+# ARM_CortexM3.kconf - ARM Cortex-M3+ options
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "ARM_CortexM.kconf"
+
+menu "ARM Cortex-M3 options"
+
+config	CPU_CORTEXM3
+	# omit prompt to signify a "hidden" option
+	bool
+	default y
+	select CPU_CORTEXM
+	help
+	  This option signifies the use of a Cortex-M3+ CPU
+
+config	SW_ISR_TABLE
+	bool
+	prompt "Enable software interrupt handler table"
+	default n
+	help
+	  Enable an interrupt handler table implemented in software. This
+	  table, unlike ISRs connected directly in the vector table, allow
+	  a parameter to be passed to the interrupt handlers. Also, invoking
+	  the exeception/interrupt exit stub is automatically done.
+
+	  This has to be enabled for dynamically connecting interrupt handlers
+	  at runtime (SW_ISR_TABLE_DYNAMIC).
+
+config	SW_ISR_TABLE_DYNAMIC
+	bool
+	prompt "Allow installing interrupt handlers at runtime"
+	depends on SW_ISR_TABLE
+	default n
+	help
+	  This option enables irq_connect(). It moves the ISR table to
+	  SRAM so that it is writable. This has the side-effect of removing
+	  write-protection on the ISR table.
+
+config	SW_ISR_TABLE_STATIC_CUSTOM
+	bool
+	prompt "Projects provide a custom static software ISR table"
+	depends on SW_ISR_TABLE && !SW_ISR_TABLE_DYNAMIC
+	default n
+	help
+	  Projects, not the BSP, provide a software table of ISR and their
+	  parameters. The table is static, and thus ISRs cannot be connected
+	  at runtime.
+
+config	SW_ISR_TABLE_BSP
+	bool
+	# omit prompt to signify a "hidden" option
+	depends on SW_ISR_TABLE_DYNAMIC || (SW_ISR_TABLE && !SW_ISR_TABLE_STATIC_CUSTOM)
+	default y
+	help
+	  Not user-selectable, helps build system logic.
+
+config	IRQ_VECTOR_TABLE_CUSTOM
+	bool
+	prompt "Projects provide a custom static IRQ part of vector table"
+	depends on !SW_ISR_TABLE
+	default n
+	help
+	  Projects, not the BSP, provide the IRQ part of the vector table.
+
+	  This is the table of interrupt handlers with the best potential
+	  performance, but is the less flexible.
+
+	  The ISRs are installed directly in the vector table, thus are
+	  directly called by the CPU when an interrupt is taken. This adds
+	  the least overhead when handling an interrupt.
+
+	  Downsides:
+	  - ISRs cannot have a parameter
+	  - ISRs cannot be connected at runtime
+	  - ISRs must notify the kernel manually by invoking _ExcExit() when
+	    then are about to return.
+
+config	IRQ_VECTOR_TABLE_BSP
+	bool
+	# omit prompt to signify a "hidden" option
+	depends on SW_ISR_TABLE || !IRQ_VECTOR_TABLE_CUSTOM
+	default y
+	help
+	  Not user-selectable, helps build system logic.
+
+config	ZERO_LATENCY_IRQS
+	bool
+	prompt "Enable zero-latency interrupts"
+	default n
+	help
+	  Interrupt locking is done by setting exception masking to priority
+	  one, thus allowing exception of priority zero to still come in. By
+	  default, the kernel verifies, via __ASSERT() statements, that the
+	  interrupt priority is not set to zero when either connecting them or
+	  setting their priority. Enabling this option disables the check,
+	  thus allowing setting the priority of interrupts to zero.
+
+	  Note that this is a somewhat dangerous option: ISRs of priority zero
+	  interrupts cannot use any kernel functionality.
+
+config	ARCH_HAS_TASK_ABORT
+	bool
+	# omit prompt to signify a "hidden" option
+	default y
+
+config	ARCH_HAS_NANO_FIBER_ABORT
+	bool
+	# omit prompt to signify a "hidden" option
+	default y
+
+endmenu

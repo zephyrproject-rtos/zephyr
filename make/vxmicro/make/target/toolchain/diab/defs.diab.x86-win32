@@ -1,0 +1,15 @@
+# defs.diab.x86-win32 - build system
+
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+iDIAB_EXE_TEST = dcc.exe
+iDIAB_HOST_SUBDIR = WIN32/bin
+iDIAB_WRS_DEFAULT = C:\WindRiver
+
+GDB = ${vBASE}/host/${vHOST}/bin/gdb/gdb
+
+include ${iMAKE_DIAB}/defs.diab.host

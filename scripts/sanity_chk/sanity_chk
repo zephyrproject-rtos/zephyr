@@ -1,0 +1,246 @@
+#!/bin/bash
+
+# Copyright (c) 2015 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+# Wrapper script to sanitize the various aspects of VxMicro
+
+# Import common sanity check definitions
+#
+if [ -z ${VXMICRO_BASE} ]; then
+	echo "shell variables required to build VxMicro are not set"
+	exit 1
+fi
+if [ ! -d ${VXMICRO_BASE} ] ; then
+	echo "directory ${VXMICRO_BASE} not found"
+	exit 1
+fi
+source ${VXMICRO_BASE}/scripts/sanity_chk/common.defs
+
+# Symbols used in this script only
+#
+SCRIPT_PATH=${VXMICRO_BASE}/scripts/sanity_chk
+HOST_TOOLS_SRC_PATH=${VXMICRO_BASE}/host/src
+
+# print script usage
+#
+help() {
+cat << EOF
+
+Usage : ${SCRIPT_NAME} [-hHcqbls] [-A <arch>] [-B <board>] [-T <toolchain>]
+       -h display this help message
+       -H display more detailed documentation
+       -c just clean projects and delete execution logs
+       -q just do quick sanity check
+       -b just build projects
+       -l keep successful project execution logs
+       -s do not build host tools
+       -A build projects for the specified architecture
+       -B build projects for the specified BSP or BSP variant
+       -T build projects using the specified toolchain
+
+EOF
+}
+
+# print long help
+#
+long_help() {
+cat << EOF
+
+Script to sanitize VxMicro.
+
+The full sanity check consists of the following phases:
+
+    - Rebuild host tools to ensure they are compatible with the rest of VxMicro.
+    - Run "footprint_chk" to characterize the footprint of VxMicro.
+    - Run "regression_chk" to sanitize the standard portion of VxMicro.
+    - Run "common-klibs_chk" to verify if projects can share a set of common kernel libs
+    - Run "out-of-tree_chk" to verify if projects and BSPs can reside outside the normal VxMicro tree.
+
+The full sanity check is run by default. If desired, some steps can be omitted
+by using the available command options.
+
+*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=
+
+Before running the script, ensure Linux shell environment variables are set
+appropriately to build VxMicro on a Linux host.
+
+The script returns 0 on success. If an error is encountered at any point
+the script terminates with an error message and returns the exit value
+of the command that failed.
+
+EOF
+}
+
+# If the parameter is zero, build the host tools.
+#
+update_host_tools() {
+    if [ ${1} -eq 0 ] ; then
+	print_header
+	${ECHO} "Building host tools"
+
+	${CD} ${HOST_TOOLS_SRC_PATH}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	${MAKE} clean
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	${MAKE}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+    fi
+}
+
+# main routine
+#
+main() {
+	# set up default behaviors
+	clean_only=0
+	skip_host_tools=0
+
+	args_passed_on=""
+
+	# process command options
+	while getopts ":hHcqblsA:B:T:" arg $*
+	do
+		case $arg in
+		h)
+			help
+			exit 0
+			;;
+		H)
+			long_help
+			exit 0
+			;;
+		c)
+			clean_only=1
+			;;
+		q)
+			args_passed_on="${args_passed_on} -q"
+			;;
+		b)
+			args_passed_on="${args_passed_on} -b"
+			;;
+		l)
+			args_passed_on="${args_passed_on} -l"
+			;;
+		s)
+			skip_host_tools=1
+			;;
+		A)
+			args_passed_on="${args_passed_on} -A $OPTARG"
+			;;
+		B)
+			args_passed_on="${args_passed_on} -B $OPTARG"
+			;;
+		T)
+			export VXMICRO_TOOL="$OPTARG"
+			;;
+		\?)
+			${ECHO} "invalid option -$OPTARG"
+			help
+			exit 1
+			;;
+		:)
+			${ECHO} "missing argument for option -$OPTARG"
+			help
+			exit 1
+			;;
+		esac
+	done
+
+	# ensure no unexpected arguments have been provided
+	shift $((OPTIND-1))
+	if [ x$1 != x ] ; then
+		${ECHO} "unexpected argument $1"
+		exit 1
+	fi
+
+	# handle case where we're just cleaning up
+	if [ ${clean_only} = 1 ] ; then
+		${SCRIPT_PATH}/footprint_chk -c
+		[ $? -eq 0 ] || exit $?
+		${SCRIPT_PATH}/regression_chk -c
+		[ $? -eq 0 ] || exit $?
+		${SCRIPT_PATH}/common-klibs_chk -c
+		[ $? -eq 0 ] || exit $?
+		${SCRIPT_PATH}/out-of-tree_chk -c
+		exit $?
+	fi
+
+	# ensure a toolchain has been specified
+	if [ x${VXMICRO_TOOL} = x ] ; then
+		print_header
+		${ECHO} "no toolchain specified"
+		exit 1
+	fi
+
+	export VXMICRO_TOOL
+
+	# rebuild host tools (optional)
+        update_host_tools ${skip_host_tools}
+
+	# run the footprint characterization check
+	print_header
+	${ECHO} "Running Footprint Characterization Check"
+	${ECHO}
+	${SCRIPT_PATH}/footprint_chk ${args_passed_on}
+	[ $? -eq 0 ] || exit $?
+
+	# run the standard regression check
+	print_header
+	${ECHO} "Running Standard Regression Check"
+	${ECHO}
+	${SCRIPT_PATH}/regression_chk ${args_passed_on}
+	[ $? -eq 0 ] || exit $?
+
+	# run the common klibs regression check
+	print_header
+	${ECHO} "Running Common klibs Regression Check"
+	${ECHO}
+	${SCRIPT_PATH}/common-klibs_chk ${args_passed_on}
+	[ $? -eq 0 ] || exit $?
+
+	# run the out of tree regression check
+	print_header
+	${ECHO} "Running Out of tree Regression Check"
+	${ECHO}
+	${SCRIPT_PATH}/out-of-tree_chk ${args_passed_on}
+	[ $? -eq 0 ] || exit $?
+
+	${ECHO}
+	print_header
+	${ECHO} "${SCRIPT_NAME} completed successfully"
+}
+
+# invoke main routine passing all parameters passed to the script
+#
+main $*
+
+# exit with success
+exit 0

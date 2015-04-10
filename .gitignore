@@ -1,0 +1,13 @@
+*.o
+*.a
+*.d
+.dir
+
+outdir
+samples/libc/minimal-*-O?
+linux2/
+host/x86-linux2/bin/gen*
+host/x86-linux2/bin/bin2hex
+host/x86-linux2/bin/dec2hex
+host/x86-linux2/bin/mkevents
+host/x86-linux2/bin/sysgen

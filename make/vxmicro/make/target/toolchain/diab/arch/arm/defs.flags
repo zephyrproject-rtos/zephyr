@@ -1,0 +1,43 @@
+# defs.flags - build system
+
+# Copyright (c) 2014 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+iDIAB_arm_DEFS = ${-D}VXMICRO_ARCH_arm ${-D}VXMICRO_ARCH=arm
+
+# section garbage collection
+iSECTION_GC_CFLAGS_y ?= ${iCC_SPLIT_SECTIONS}
+iSECTION_GC_CFLAGS   ?= ${iSECTION_GC_CFLAGS_${CONFIG_SECTION_GARBAGE_COLLECTION}}
+iSECTION_GC_LFLAGS_y ?= ${iLD_REMOVE_UNUSED_SECTIONS}
+iSECTION_GC_LFLAGS   ?= ${iSECTION_GC_LFLAGS_${CONFIG_SECTION_GARBAGE_COLLECTION}}
+
+# link time optimization is not enabled by default.  Use LTO=on to enable
+iLTO_on ?= -flto
+iLTO    ?= ${iLTO_${LTO}}
+
+iDiab_arm_opt_flags =
+
+# ARM specific warnings to ignore.
+IDIAB_arm_IGNORE_CFLAGS_CODES ?=
+
+iDIAB_arm_CFLAGS   = ${iDIAB_arm_DEFS} ${iSECTION_GC_CFLAGS} ${iLTO} -ei${iDIAB_arm_IGNORE_CFLAGS_CODES} ${iDiab_arm_opt_flags}
+iDIAB_arm_ASMFLAGS = ${iDIAB_arm_DEFS}
+iDIAB_arm_LFLAGS   = ${iSECTION_GC_LFLAGS} -limpl
+
+# Instruction-Set Architecture (ISA)
+
+iDIAB_ISA_CPU_CortexM4 = ARMCORTEXM4
+iDIAB_ISA_CPU_CortexM3 = ARMCORTEXM3
+iDIAB_ISA_CPU = ${iDIAB_ISA_CPU_${vCPU}}
+
+iISA = -t${iDIAB_ISA_CPU}${iDIAB_ENDIANNESS}${iDIAB_FLOAT}:cross
+
+iDIAB_${vCPU}_CFLAGS   ?= ${iISA}
+iDIAB_${vCPU}_ASMFLAGS ?= ${iISA}
+
+# the linker tags these sections with PROGBITS, so they end up in the
+# image: strip them
+vDIAB_ARCH_LINK_OC_OPT = -R bss -R noinit -R scp -R scs

@@ -1,0 +1,647 @@
+/* fifo.c - test microkernel FIFO APIs under VxMicro */
+
+/*
+ * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1) Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2) Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3) Neither the name of Wind River Systems nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+DESCRIPTION
+This module tests the following FIFO routines:
+
+   task_fifo_put, task_fifo_put_wait, task_fifo_put_wait_timeout
+   task_fifo_get, task_fifo_get_wait, task_fifo_get_wait_timeout
+   task_fifo_size_get, task_fifo_purge
+
+Scenarios tested include:
+- Check number of elements in queue when queue is empty, full or
+  while it is being dequeued
+- Verify the data being dequeued are in correct order
+- Verify the return codes are correct for the APIs
+*/
+
+/* includes */
+
+#include <tc_util.h>
+#include <vxmicro.h>
+
+/* defines */
+
+#define MULTIPLIER              100     /* Used to initialize myData */
+#define NUM_OF_ELEMENT          5       /* Number of elements in myData array */
+#define DEPTH_OF_FIFO_QUEUE     2       /*
+                                         * Depth of FIFO queue, this has to
+										 * be aligned with the number in
+                                         * prj.vpf file
+                                         */
+
+#define SPECIAL_DATA            999     /* Special number to put in queue */
+
+/* locals */
+
+static int myData[NUM_OF_ELEMENT];
+static int tcRC = TC_PASS;              /* test case return code */
+
+/*******************************************************************************
+*
+* initMyData - initialize data array
+*
+* This routine initializes the myData array used in the FIFO tests.
+*
+* RETURNS: N/A
+*/
+
+void initMyData(void)
+{
+	for (int i = 0; i < NUM_OF_ELEMENT; i++) {
+		myData[i] = i * MULTIPLIER + 1;
+	}  /* for */
+}  /* initMyData */
+
+/*******************************************************************************
+*
+* printMyData - print data array
+*
+* This routine prints myData array.
+*
+* RETURNS: N/A
+*/
+
+void printMyData(void)
+{
+	for (int i = 0; i < NUM_OF_ELEMENT; i++) {
+		PRINT_DATA("myData[%d] = %d,\n", i, myData[i]);
+	}  /* for */
+
+} /* printMyData */
+
+/*******************************************************************************
+*
+* verifyRetValue - verify return value
+*
+* This routine verifies current value against expected value
+* and returns TRUE if they are the same.
+*
+* RETURNS:  TRUE, FALSE
+*/
+
+BOOL  verifyRetValue
+	(
+	int expectRetValue,         /* expect value */
+	int currentRetValue         /* current value */
+	)
+{
+	return (expectRetValue == currentRetValue);
+} /* verifyRetValue */
+
+/*******************************************************************************
+*
+* initMicroObjects - initialize microkernel objects
+*
+* This routine initializes the microkernel objects used in the FIFO tests.
+*
+* RETURNS: N/A
+*/
+
+void initMicroObjects(void)
+{
+	initMyData();
+	printMyData();
+} /* initMicroObjects */
+
+/*******************************************************************************
+*
+* fillFIFO - fills up the FIFO queue
+*
+* This routine fills the FIFO queue with myData array.  This assumes the
+* queue is empty before we put in elements.
+*
+* RETURNS: TC_PASS, TC_FAIL
+*
+* Also updates tcRC when result is TC_FAIL.
+*/
+
+int fillFIFO
+	(
+	kfifo_t queue,               /* FIFO queue */
+	int numElements             /*
+                                 * number of elements used to inserted
+                                 * into the queue
+                                 */
+	)
+{
+	int result = TC_PASS;       /* TC_PASS or TC_FAIL for this function */
+	int retValue;               /* return value from task_fifo_xxx APIs */
+
+	for (int i = 0; i < numElements; i++ ) {
+		retValue = task_fifo_put(queue, &myData[i]);
+		switch (retValue) {
+		case RC_OK:
+			/* TC_PRINT("i=%d, successfully put in data=%d\n", i, myData[i]);  */
+			if (i >= DEPTH_OF_FIFO_QUEUE) {
+				TC_ERROR("Incorrect return value of RC_OK when i = %d\n", i);
+				result = TC_FAIL;
+				goto exitTest3;
+			}
+			break;
+		case RC_FAIL:
+			/* TC_PRINT("i=%d, FIFOQ is full. Cannot put data=%d\n", i, myData[i]); */
+			if (i < DEPTH_OF_FIFO_QUEUE) {
+				TC_ERROR("Incorrect return value of RC_FAIL when i = %d\n", i);
+				result = TC_FAIL;
+				goto exitTest3;
+			}
+			break;
+		default:
+			TC_ERROR("Incorrect return value of %d when i = %d\n", retValue, i);
+			result = TC_FAIL;
+			goto exitTest3;
+		} /* switch */
+
+	} /* for */
+
+exitTest3:
+	if (result == TC_FAIL) {
+		tcRC = TC_FAIL;
+	}
+
+	TC_END_RESULT(result);
+	return result;
+
+} /* fillFIFO */
+
+/*******************************************************************************
+*
+* MicroTestFifoTask - task to test FIFO queue
+*
+* This routine is run in three context switches:
+* - it puts an element to the FIFO queue
+* - it purges the FIFO queue
+* - it dequeues an element from the FIFO queue
+*
+* RETURNS:  N/A
+*/
+void MicroTestFifoTask(void)
+{
+	int retValue;                 /* return value of task_fifo_xxx interface */
+	int locData = SPECIAL_DATA;   /* variable to pass data to and from queue */
+
+	/* (1) Wait for semaphore: put element test */
+	task_sem_take_wait(SEMSIG_MicroTestFifoTask);
+
+	TC_PRINT("Starts %s\n", __func__);
+	/* Put one element */
+	TC_PRINT("%s: Puts element %d\n", __func__, locData);
+	retValue = task_fifo_put(FIFOQ, &locData);
+	/*
+	 * Execution is switched back to RegressionTask (a higher priority task)
+	 * which is not block anymore.
+	 */
+	if (verifyRetValue(RC_OK, retValue)) {
+		TC_PRINT("%s: FIFOPut OK for %d\n", __func__, locData);
+	} else {
+		TC_ERROR("FIFOPut failed, retValue %d\n", retValue);
+		tcRC = TC_FAIL;
+		goto exitTest4;
+	}
+
+	/*
+	 * (2) Wait for semaphore: purge queue test.  Purge queue while another
+	 * task is in task_fifo_put_wait.  This is to test return value of the
+	 * task_fifo_put_wait interface.
+	 */
+	task_sem_take_wait(SEMSIG_MicroTestFifoTask);
+	/*
+	 * RegressionTask is waiting to put data into FIFO queue, which is
+	 * full.  We purge the queue here and the task_fifo_put_wait interface
+	 * will terminate the wait and return RC_FAIL.
+	 */
+	TC_PRINT("%s: About to purge queue\n", __func__);
+	retValue = task_fifo_purge(FIFOQ);
+
+	/*
+	 * Execution is switched back to RegressionTask (a higher priority task)
+	 * which is not block anymore.
+	 */
+	if (verifyRetValue(RC_OK, retValue)) {
+		TC_PRINT("%s: Successfully purged queue\n", __func__);
+	} else {
+		TC_ERROR("Problem purging queue, %d\n", retValue);
+		tcRC = TC_FAIL;
+		goto exitTest4;
+	}
+
+	/* (3) Wait for semaphore: get element test */
+	task_sem_take_wait(SEMSIG_MicroTestFifoTask);
+	TC_PRINT("%s: About to dequeue 1 element\n", __func__);
+	retValue =  task_fifo_get(FIFOQ, &locData);
+	/*
+	 * Execution is switched back to RegressionTask (a higher priority task)
+	 * which is not block anymore
+	 */
+	if ((retValue != RC_OK) || (locData != myData[0])) {
+		TC_ERROR("task_fifo_get failed,\n  retValue %d OR got data %d while expect %d\n"
+			, retValue, locData, myData[0]);
+		tcRC = TC_FAIL;
+		goto exitTest4;
+	} else {
+		TC_PRINT("%s: task_fifo_get got back correct data %d\n", __func__, locData);
+	}
+
+exitTest4:
+	TC_END_RESULT(tcRC);
+
+	/* Allow RegressionTask to print final result of the test */
+	task_sem_give(SEM_TestDone);
+}
+
+/*******************************************************************************
+*
+* verifyQueueData - Verifies data in queue is correct
+*
+* This routine assumes that the queue is full when this function is called.
+* It counts the number of elements in the queue, dequeues elements and verifies
+* that they are in the right order. Expect the dequeue order as: myData[0],
+* myData[1].
+*
+* RETURNS:  TC_PASS, TC_FAIL
+*
+* Also updates tcRC when result is TC_FAIL.
+*/
+int verifyQueueData
+	(
+	int loopCnt                 /* Number of elements passed to the for loop */
+	)
+{
+	int result = TC_PASS;       /* TC_PASS or TC_FAIL for this function */
+	int retValue;               /* task_fifo_xxx interface return value */
+	int locData;                /* local variable used for passing data */
+
+	/*
+	 * Counts elements using task_fifo_size_get interface.  Dequeues elements from
+	 * FIFOQ.  Test for proper return code when FIFO queue is empty using
+	 * task_fifo_get interface.
+	 */
+	for (int i = 0; i < loopCnt; i++) {
+		/* Counts number of elements */
+		retValue = task_fifo_size_get(FIFOQ);
+		if (!verifyRetValue(DEPTH_OF_FIFO_QUEUE-i, retValue)) {
+			TC_ERROR("i=%d, incorrect number of FIFO elements in queue: %d, expect %d\n"
+				, i, retValue, DEPTH_OF_FIFO_QUEUE-i);
+			result = TC_FAIL;
+			goto exitTest2;
+		} else {
+			/* TC_PRINT("%s: i=%d, %d elements in queue\n", __func__, i, retValue); */
+		}
+
+		/* Dequeues element */
+		retValue = task_fifo_get(FIFOQ, &locData);
+
+		switch (retValue) {
+		case RC_OK:
+			if ((i >= DEPTH_OF_FIFO_QUEUE) || (locData != myData[i])) {
+				TC_ERROR("RC_OK but got wrong data %d for i=%d\n", locData, i);
+				result = TC_FAIL;
+				goto exitTest2;
+			}
+
+			TC_PRINT("%s: i=%d, successfully get data %d\n", __func__, i, locData);
+			break;
+		case RC_FAIL:
+			if (i < DEPTH_OF_FIFO_QUEUE) {
+				TC_ERROR("RC_FAIL but i is only %d\n", i);
+				result = TC_FAIL;
+				goto exitTest2;
+			}
+			TC_PRINT("%s: i=%d, FIFOQ is empty. No data.\n", __func__, i);
+			break;
+		default:
+			TC_ERROR("i=%d, incorrect return value %d\n", i, retValue);
+			result = TC_FAIL;
+			goto exitTest2;
+		}  /* switch */
+	} /* for */
+
+exitTest2:
+
+	if (result == TC_FAIL) {
+		tcRC = TC_FAIL;
+	}
+
+	TC_END_RESULT(result);
+	return result;
+
+} /* verifyQueueData */
+
+
+/*******************************************************************************
+*
+* RegressionTask - main task to test FIFO queue
+*
+* This routine initializes data, fills the FIFO queue and verifies the
+* data in the queue is in correct order when items are being dequeued.
+* It also tests the wait (with and without timeouts) to put data into
+* queue when the queue is full.  The queue is purged at some point
+* and checked to see if the number of elements is correct.
+* The get wait interfaces (with and without timeouts) are also tested
+* and data verified.
+*
+* RETURNS:  N/A
+*/
+
+void RegressionTask(void)
+{
+	int retValue;               /* task_fifo_xxx interface return value */
+	int locData;                /* local variable used for passing data */
+	int result;                 /* result from utility functions */
+
+	TC_START("Test Microkernel FIFO");
+
+	initMicroObjects();
+
+	/*
+	 * Checks number of elements in queue, expect 0. Test task_fifo_size_get
+	 * interface.
+	 */
+	retValue = task_fifo_size_get(FIFOQ);
+	if (!verifyRetValue(0, retValue)) {
+		TC_ERROR("Incorrect number of FIFO elements in queue: %d\n", retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	}
+
+	/*
+	 * FIFOQ is only two elements deep.  Test for proper return code when
+	 * FIFO queue is full.  Test task_fifo_put interface.
+	 */
+	result = fillFIFO(FIFOQ, NUM_OF_ELEMENT);
+	if (result == TC_FAIL) { /* terminate test */
+		TC_ERROR("Failed fillFIFO.\n");
+		goto exitTest;
+	}
+
+	/*
+	 * Checks number of elements in FIFO queue, should be full.  Also verifies
+	 * data is in correct order.  Test task_fifo_size_get  and task_fifo_get interface.
+	 */
+	result = verifyQueueData(DEPTH_OF_FIFO_QUEUE + 1);
+	if (result == TC_FAIL) { /* terminate test */
+		TC_ERROR("Failed verifyQueueData.\n");
+		goto exitTest;
+	}
+
+/*----------------------------------------------------------------------------*/
+
+	/* Fill FIFO queue */
+	result = fillFIFO(FIFOQ, NUM_OF_ELEMENT);
+	if (result == TC_FAIL) { /* terminate test */
+		TC_ERROR("Failed fillFIFO.\n");
+		goto exitTest;
+	}
+
+	/*
+	 * Put myData[4] into queue with wait, test task_fifo_put_wait_timeout interface.
+	 * Queue is full, so this data did not make it into queue.  Expect
+	 * return code of RC_TIME.
+	 */
+	TC_PRINT("%s: About to putWT with data %d\n", __func__, myData[4]);
+	retValue = task_fifo_put_wait_timeout(FIFOQ, &myData[4], 2);  /* wait for 2 ticks */
+	if (verifyRetValue(RC_TIME, retValue)) {
+		TC_PRINT("%s: FIFO Put time out as expected for data %d\n"
+			, __func__, myData[4]);
+	} else {
+		TC_ERROR("Failed task_fifo_put_wait_timeout for data %d, retValue %d\n", myData[4], retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	}
+
+	/* Queue is full at this stage.  Verify data is correct. */
+	result = verifyQueueData(DEPTH_OF_FIFO_QUEUE);
+	if (result == TC_FAIL) { /* terminate test */
+		TC_ERROR("Failed verifyQueueData.\n");
+		goto exitTest;
+	}
+
+/*----------------------------------------------------------------------------*/
+
+	/* Fill FIFO queue.  Check number of elements in queue, should be 2. */
+	result = fillFIFO(FIFOQ, NUM_OF_ELEMENT);
+	if (result == TC_FAIL) { /* terminate test */
+		TC_ERROR("Failed fillFIFO.\n");
+		goto exitTest;
+	}
+
+	retValue = task_fifo_size_get(FIFOQ);
+	if (verifyRetValue(DEPTH_OF_FIFO_QUEUE, retValue)) {
+		TC_PRINT("%s: %d element in queue\n", __func__, retValue);
+	} else {
+		TC_ERROR("Incorrect number of FIFO elements in queue: %d\n", retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	}
+
+	/*
+	 * Purge queue, check number of elements in queue.  Test task_fifo_purge
+	 * interface.
+	 */
+	retValue = task_fifo_purge(FIFOQ);
+	if (verifyRetValue(RC_OK, retValue)) {
+		TC_PRINT("%s: Successfully purged queue\n", __func__);
+	} else {
+		TC_ERROR("Problem purging queue, %d\n", retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	}
+
+	/* Count number of elements in queue */
+	retValue = task_fifo_size_get(FIFOQ);
+	if (verifyRetValue(0, retValue)) {
+		TC_PRINT("%s: confirm %d element in queue\n", __func__, retValue);
+	} else {
+		TC_ERROR("Incorrect number of FIFO elements in queue: %d\n", retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	}
+
+	PRINT_LINE;
+/*----------------------------------------------------------------------------*/
+
+	/*
+	 * Semaphore to allow MicroTestFifoTask to run, but MicroTestFifoTask is lower
+	 * priority, so it won't run until this current task is blocked
+	 * in task_fifo_get_wait interface later.
+	 */
+	task_sem_give(SEMSIG_MicroTestFifoTask);
+
+	/*
+	 * Test task_fifo_get_wait interface.
+	 * Expect MicroTestFifoTask to run and insert SPECIAL_DATA into queue.
+	 */
+	TC_PRINT("%s: About to GetW data\n", __func__);
+	retValue = task_fifo_get_wait(FIFOQ, &locData);
+	if ((retValue != RC_OK) || (locData != SPECIAL_DATA)) {
+		TC_ERROR("Failed task_fifo_get_wait interface for data %d, retValue %d\n"
+			, locData, retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	} else {
+		TC_PRINT("%s: GetW get back %d\n", __func__, locData);
+	}
+
+	/* MicroTestFifoTask may have modified tcRC */
+	if (tcRC == TC_FAIL) {    /* terminate test */
+		TC_ERROR("tcRC failed.");
+		goto exitTest;
+	}
+
+	/*
+	 * Test task_fifo_get_wait_timeout interface.  Try to get more data, but there is
+	 * none before it times out.
+	 */
+	retValue = task_fifo_get_wait_timeout(FIFOQ, &locData, 2);
+	if (verifyRetValue(RC_TIME, retValue)) {
+		TC_PRINT("%s: GetWT timeout expected\n", __func__);
+	} else {
+		TC_ERROR("Failed task_fifo_get_wait_timeout interface for retValue %d\n", retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	}
+
+/*----------------------------------------------------------------------------*/
+
+	/* Fill FIFO queue */
+	result = fillFIFO(FIFOQ, NUM_OF_ELEMENT);
+	if (result == TC_FAIL) { /* terminate test */
+		TC_ERROR("Failed fillFIFO.\n");
+		goto exitTest;
+	}
+
+	/* Semaphore to allow MicroTestFifoTask to run */
+	task_sem_give(SEMSIG_MicroTestFifoTask);
+
+	/* MicroTestFifoTask may have modified tcRC */
+	if (tcRC == TC_FAIL) {    /* terminate test */
+		TC_ERROR("tcRC failed.");
+		goto exitTest;
+	}
+
+	/* Queue is full */
+	locData = SPECIAL_DATA;
+	TC_PRINT("%s: about to putW data %d\n", __func__, locData);
+	retValue = task_fifo_put_wait(FIFOQ,  &locData);
+
+	/*
+	 * Execution is switched to MicroTestFifoTask, which will purge the queue.
+	 * When the queue is purged while other tasks are waiting to put data into
+	 * queue, the return value will be RC_FAIL.
+	 */
+	if (verifyRetValue(RC_FAIL, retValue)) {
+		TC_PRINT("%s: PutW ok when queue is purged while waiting\n", __func__);
+	} else {
+		TC_ERROR("Failed task_fifo_put_wait interface when queue is purged, retValue %d\n"
+			, retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	}
+
+/*----------------------------------------------------------------------------*/
+
+	/* Fill FIFO queue */
+	result = fillFIFO(FIFOQ, NUM_OF_ELEMENT);
+	if (result == TC_FAIL) { /* terminate test */
+		TC_ERROR("Failed fillFIFO.\n");
+		goto exitTest;
+	}
+
+	/* Semaphore to allow MicroTestFifoTask to run */
+	task_sem_give(SEMSIG_MicroTestFifoTask);
+
+	/* MicroTestFifoTask may have modified tcRC */
+	if (tcRC == TC_FAIL) {    /* terminate test */
+		TC_ERROR("tcRC failed.");
+		goto exitTest;
+	}
+
+	/* Queue is full */
+	TC_PRINT("%s: about to putW data %d\n", __func__, myData[4]);
+	retValue = task_fifo_put_wait(FIFOQ,  &myData[4]);
+	/* Execution is switched to MicroTestFifoTask, which will dequeue one element */
+	if (verifyRetValue(RC_OK, retValue)) {
+		TC_PRINT("%s: PutW success for data %d\n", __func__, myData[4]);
+	} else {
+		TC_ERROR("Failed task_fifo_put_wait interface for data %d, retValue %d\n"
+			, myData[4], retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	}
+
+	PRINT_LINE;
+/*----------------------------------------------------------------------------*/
+
+	/*
+	 * Dequeue all data to check.  Expect data in the queue to be:
+	 * myData[1], myData[4].  myData[0] was dequeued by MicroTestFifoTask.
+	 */
+
+	/* Get first data */
+	retValue = task_fifo_get(FIFOQ, &locData);
+	if ((retValue != RC_OK) || (locData != myData[1])) {
+		TC_ERROR("Get back data %d, retValue %d\n", locData, retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	} else {
+		TC_PRINT("%s: Get back data %d\n", __func__, locData);
+	}
+
+	/* Get second data */
+	retValue = task_fifo_get(FIFOQ, &locData);
+	if ((retValue != RC_OK) || (locData != myData[4])) {
+		TC_ERROR("Get back data %d, retValue %d\n", locData, retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	} else {
+		TC_PRINT("%s: Get back data %d\n", __func__, locData);
+	}
+
+	/* Queue should be empty */
+	retValue = task_fifo_get(FIFOQ, &locData);
+	if (retValue != RC_FAIL) {
+		TC_ERROR("%s: incorrect retValue %d\n", __func__, retValue);
+		tcRC = TC_FAIL;
+		goto exitTest;
+	} else {
+		TC_PRINT("%s: queue is empty.  Test Done!\n", __func__);
+	}
+
+	task_sem_take_wait(SEM_TestDone);
+
+exitTest:
+
+	TC_END_RESULT(tcRC);
+	TC_END_REPORT(tcRC);
+}  /* RegressionTask */

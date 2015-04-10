@@ -1,0 +1,57 @@
+APIs tested in this test set
+============================
+
+fiber_fiber_start
+  - start a helper fiber to help with fiber_yield() tests
+
+task_fiber_start
+  - start a fiber to test fiber related functionality
+
+fiber_yield
+  - Called by a higher priority fiber when there is another fiber
+  - Called by an equal priority fiber when there is another fiber
+  - Called by a lower priority fiber when there is another fiber
+
+context_self_get
+  - Called from an ISR (interrupted a task)
+  - Called from an ISR (interrupted a fiber)
+  - Called from a task
+  - Called from a fiber
+
+context_type_get
+  - Called from an ISR that interrupted a task
+  - Called from an ISR that interrupted a fiber
+  - Called from a task
+  - Called from a fiber
+
+nano_cpu_idle
+  - CPU to be woken up by tick timer.  Thus, after each call, the tick count
+    should have advanced by one tick.
+
+irq_lock
+  - 1. Count the number of calls to nano_node_tick_get_32() before a tick expires.
+  - 2. Once determined, call nano_node_tick_get_32() many more times than that
+       with interrupts locked.  Check that the tick count remains unchanged.
+
+irq_unlock
+  - Continuation irq_lock: unlock interrupts, loop and verify the tick
+    count changes.
+
+irq_lock_inline
+irq_unlock_inline
+  - These two tests are tested in the same way as irq_lock()
+    and irq_unlock().
+
+irq_connect
+  - Used during nanokernel object initialization.  Verified when triggering
+    an ISR to perform ISR context work.
+
+nanoCpuExcConnect
+  - Used during nanokernel object initialization.  Verified by triggering a
+    divide-by-zero exception.  The handler skips us over the offending
+    instruction.
+
+irq_enable
+irq_disable
+  - Use these routines to disable and enable timer interrupts so that they can
+    be tested in the same way as irq_lock() and irq_unlock().

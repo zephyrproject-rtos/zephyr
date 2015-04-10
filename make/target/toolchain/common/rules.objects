@@ -1,0 +1,77 @@
+# rules.objects - build system
+
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+iQUIESCE_AR_1 =
+iQUIESCE_AR_  = >${HOS_DEVNULL_W} 2>${HOS_DEVNULL_W}
+iQUIESCE_AR   = ${iQUIESCE_AR_${vVERBOSE}}
+
+iCreate_Library  = $q${AR} ${ARFLAGS} $1 ${iQUIESCE_AR}
+iArchive_Library = $q${AR} ${ARFLAGS} $1 @$(basename $1).arlist ${iQUIESCE_AR}
+
+${vOUT_DIR}/%.$a: ${vOUT_DIR}/%.arlist | $$(dir $$@).dir
+	-@${HOS_Echo} '[${vTOOL}] Archiving   [$(notdir $@)]'
+	$(call iCreate_Library,$@)
+	$(call iArchive_Library,$@)
+
+ifeq (${vFILE_SUPPORTED},y)
+
+${vOUT_DIR}/%.arlist: $${$$(subst lib,,$$(notdir $$*))_OBJ} ${iDEPEND_ON_MAKEFILES} | $$(dir $$@).dir
+	@${HOS_Echo} '[${vTOOL}] Generating  [$(notdir $@)]'
+	$q$(file > $@,${iOBJ})
+
+else
+
+# Some hosts have a low max arg length limit (8191 chars): if $(file ...) is
+# available, use it to output object files list to a file; if not, generate
+# the file by looping on the list. On some hosts, file access is slow, so this
+# is slow, but is only done if the list of object files change, and is not
+# worse than looping on 'ar' for each object file. On Linux, file access is
+# fast, and this is still pretty fast, so there is no reason to try to speed
+# it up and create another implementation.
+
+# NOTE: the blank line at the end is necessary
+define iAdd_One_Obj_To_Arlist
+	$qecho $2 >> $1
+
+endef
+
+define iCreate_Arlist
+	@${HOS_EchoBlankLine} > $1
+	$(foreach obj,$2,$(call iAdd_One_Obj_To_Arlist,$1,${obj}))
+
+endef
+
+${vOUT_DIR}/%.arlist: $${$$(subst lib,,$$(notdir $$*))_OBJ} ${iDEPEND_ON_MAKEFILES} | $$(dir $$@).dir
+	@${HOS_Echo} '[${vTOOL}] Generating  [$(notdir $@)]'
+	$(call iCreate_Arlist,$@,${iOBJ})
+
+endif
+
+include ${vMAKE}/target/toolchain/common/defs.objects

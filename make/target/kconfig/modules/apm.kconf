@@ -1,0 +1,92 @@
+# apm.kconf - advanced power management configuration options
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+#
+# advanced power management features
+#
+
+config	ADVANCED_POWER_MANAGEMENT
+	bool
+	prompt "Advanced power management"
+	default n
+	depends on MICROKERNEL
+	help
+	  This option enables the BSP to implement extra power management
+	  policies whenever the kernel becomes idle. The kernel informs the
+	  BSP of the number of ticks until the next kernel timer expires by
+	  calling the BSP function _SysPowerSaveIdle().
+
+config  TICKLESS_IDLE
+	bool
+	prompt "Tickless idle"
+	default y
+	depends on ADVANCED_POWER_MANAGEMENT && !TICKLESS_IDLE_UNSUPPORTED
+	help
+	  This option suppresses periodic system clock interrupts whenever the
+	  kernel becomes idle. This permits the system to remain in a power
+	  saving state for extended periods without having to wake up to
+	  service each tick as it occurs.
+
+config  TICKLESS_IDLE_THRESH
+	int
+	prompt "Tickless idle threshold"
+	default 3
+	depends on TICKLESS_IDLE && MICROKERNEL
+	help
+	  This option disables clock interrupt suppression when the kernel idles
+	  for only a short period of time. It specifies the minimum number of
+	  ticks that must occur before the next kernel timer expires in order
+	  for suppression to happen.
+
+config  ADVANCED_IDLE
+	bool
+	prompt "Advanced idle state"
+	default n
+	depends on ADVANCED_POWER_MANAGEMENT && ADVANCED_IDLE_SUPPORTED
+	help
+	  This option enables the kernel to interface to a custom advanced idle
+	  power saving manager. This permits the system to enter a custom
+	  power saving state when the kernel becomes idle for extended periods,
+	  and then to restore the system to its previous state (rather than
+	  booting up from scratch) when the kernel is re-activated.
+
+config	ADV_IDLE_STACK_SIZE
+	int
+	prompt "Advanced idle state stack size"
+	default 16
+	depends on ADVANCED_IDLE
+	help
+	  This option defines the size of the separate stack used during the
+	  system state check while the booting up. A separate stack is used
+	  to avoid memory corruption on the system re-activation from power
+	  down mode. The stack size must be large enough to hold the return
+	  address (4 bytes) and the _AdvIdleCheckSleep() stack frame.

@@ -1,0 +1,542 @@
+# common definitions used by other VxMicro sanity check scripts
+
+# Copyright (c) 2015 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+# shell commands used in scripts
+AWK="/usr/bin/awk"
+BASENAME="/usr/bin/basename"
+CD="cd"
+DATE="/bin/date"
+DIRNAME="/usr/bin/dirname"
+ECHO="/bin/echo"
+GREP="/bin/grep"
+KILL="/bin/kill"
+LS="/bin/ls"
+MAKE="make-ll"
+# MAKE="/usr/bin/make"
+MV="/bin/mv"
+PS="/bin/ps"
+RM="/bin/rm"
+SED="/bin/sed"
+CP="/bin/cp"
+MKDIR="/bin/mkdir"
+SLEEP="/bin/sleep"
+ABS_PATH="/bin/readlink -m"
+
+# code coverage commands used in scripts
+SIMICS=${VXMICRO_BASE}/simics/simicsRun
+MERGECC=${VXMICRO_BASE}/simics/mergesimicscc.sh
+
+# record how script was invoked
+SCRIPT_NAME=`${BASENAME} $0`
+
+# assume log files are not to be kept
+KEEP_LOGS=0
+
+# log filename where QEMU console output is redirected to
+SANITY_CHK_LOG="sanity_chk.log"
+
+# log filename where Simics logging information is sent
+SIMICS_LOG="simics.log"
+
+# directory containing code coverage results
+CC_DIR=${VXMICRO_BASE}/codecoverage/`${BASENAME} $0`/
+HTML_CC_DIR=${VXMICRO_BASE}/codecoverage_html/`${BASENAME} $0`/
+
+# temporary files used when selecting projects to be sanitized
+TEMP_AWK_PROG="${VXMICRO_BASE}/.tempawkprog"
+TEMP_PRJ_LIST="${VXMICRO_BASE}/.tempprojlist"
+
+# maximum time (in seconds) to allow QEMU to execute a project
+QEMU_TIME_LIMIT=300
+
+# console output that indicates termination of a project that is being run,
+# and what indicates successful termination
+# (note: output string is allowed to contain spaces!)
+RUN_UNTIL="PROJECT EXECUTION"
+RUN_PASSED="PROJECT EXECUTION SUCCESSFUL"
+RUN_FAILED="PROJECT EXECUTION FAILED"
+
+# architecture BSP lists
+arm_BSP_LIST="fsl_frdm_k64f ti_lm3s6965"
+x86_BSP_LIST="pentium4 minuteia atom quark"
+_BSP_LIST="${arc_BSP_LIST} ${arm_BSP_LIST} ${x86_BSP_LIST}"
+
+# header used to identify script output during execution
+#
+print_header() {
+	${ECHO} "*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-="
+}
+
+# routine that prints error message and exits with error code
+#
+# PARAMETERS: $1 is exit value
+#             $2 is function name to print
+#             $3 is line number where script failed
+#             $4 is optional error msg
+#
+fail_exit() {
+	if [ -z "$4" ] ; then
+		msg=""
+	else
+		msg="$4"
+	fi
+
+	# print full script pathname to help in case of issues with $PATH
+	${ECHO} "$0 line $3 $2 failed: ($1) ${msg}"
+
+	exit $1
+}
+
+# restore a project to its pristine state
+#
+# PARAMETERS: $1 is project directory name
+#
+# ON ENTRY: ${PRJ_PATH} is path to master project directory
+#
+clean_project() {
+	${ECHO} "* Cleaning project $1"
+
+	${CD} ${PRJ_PATH}/$1
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	${MAKE} pristine
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	${RM} -f ${SANITY_CHK_LOG}* ${SIMICS_LOG}
+}
+
+# restore all projects to their pristine state
+#
+# ON ENTRY: ${PRJ_LIST} is pseudo-file of project information
+#
+# Note that routine will clean a project multiple times if it appears multiple
+# times in ${PRJ_LIST}. It's not worth optimizing to prevent this ...
+#
+clean_all_projects() {
+	project_dirs=`${ECHO} -e ${PRJ_LIST} | ${AWK} '!/#/ {print $1}'`
+	for project in ${project_dirs}
+	do
+		clean_project ${project}
+	done
+}
+
+# set up environment info used to build projects
+#
+# ON ENTRY: ${BSP_NAME} is BSP to use (empty => use per-project default)
+#
+# ON EXIT: ${BUILD_INFO} specifies build tool to use (and other build options)
+#
+build_info_set() {
+	# ensure BSP name isn't a script option that was entered by mistake
+	if [ x${BSP_NAME:0:1} = "x-" ] ; then
+		${ECHO} "invalid BSP '${BSP_NAME}' specified"
+		exit 1
+	fi
+
+	# ensure a toolchain has been specified
+	if [ x${VXMICRO_TOOL} = x ] ; then
+		print_header
+		${ECHO} "no toolchain specified"
+		exit 1
+	fi
+
+	# set up toolchain-specific build environment stuff
+	if [ x${VXMICRO_TOOL} = x"gcc" ] ; then
+		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
+	elif [ x${VXMICRO_TOOL} = x"icc" ] ; then
+		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Werror-all EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
+	elif [ x${VXMICRO_TOOL} = x"diab" ] ; then
+		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Xstop-on-warning EXTRA_LFLAGS=-Xstop-on-warning"
+	else
+		${ECHO} "invalid toolchain '${VXMICRO_TOOL}' specified"
+		exit 1
+	fi
+	BUILD_INFO="VXMICRO_TOOL=${VXMICRO_TOOL} ${MAKE_EXTRA_FLAGS}"
+}
+
+# set up project info used to build projects
+#
+# ON ENTRY: ${PRJ_PATH} is path to master project directory
+#           ${PRJ_LIST} is pseudo-file of project information
+#           ${BSP_NAME} is BSP to use (empty => use per-project default)
+#           ${ARCH_NAME} is architecture to use (empty => no arch restrictions)
+#
+# ON EXIT: ${PRJ_NAME} array specifies project directory name
+#          ${PRJ_ARGS} array specifies any additional project build arguments
+#          ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#          ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
+#          ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#          ${BSP_FLAG} array specifies optional BSP flag ('!' or empty)
+#          ${NUM_PROJ} specifies number of projects described in arrays
+#
+proj_info_set() {
+	# clean up any stale temporary files from an earlier run
+	${RM} -f ${TEMP_AWK_PROG} ${TEMP_PRJ_LIST}
+
+	# create list of projects to sanitize
+	# - specified BSP: choose only projects that support that BSP,
+	#   then filter out info about all other BSPs for those projects
+	# - no specified BSP: choose all projects, then filter out info
+	#   about all BSPs except the first one listed
+	# note: ignores any comment lines in the project information file
+	#       (i.e. any lines containing a '#' character)
+	dollar='$'
+	if [  x${BSP_NAME} != x ] ; then
+	    awk_string="!/#/ && /${BSP_NAME}/ {match(${dollar}0,/.+[>]/); \
+	    prjpart = substr(${dollar}0,RSTART,RLENGTH); \
+	    bsppart = substr(${dollar}0,RLENGTH+1);
+	    match(bsppart,/${BSP_NAME}!?/); \
+	    bsp = substr(bsppart,RSTART,RLENGTH); \
+	    if(length(bsp) > 0) \
+	        print prjpart \" \" bsp}"
+	else
+	    awk_string="!/#/ {match(${dollar}0,/.+[>]/); \
+	    prjpart = substr(${dollar}0,RSTART,RLENGTH); \
+	    bsppart = substr(${dollar}0,RLENGTH+1);
+	    match(bsppart,/[-a-zA-Z0-9_]+!?/); \
+	    bsp = substr(bsppart,RSTART,RLENGTH); \
+	    print prjpart \" \" bsp}"
+	fi
+
+	${ECHO} "${awk_string}" > ${TEMP_AWK_PROG}
+	${ECHO} -e ${PRJ_LIST} | ${AWK} -f ${TEMP_AWK_PROG} > ${TEMP_PRJ_LIST}
+
+	# deconstruct the filtered project list file
+	# into a set of arrays containing project info
+	let NUM_PROJ=0
+	while read line ; do
+		let NUM_PROJ++
+
+		PRJ_NAME[${NUM_PROJ}]=`${AWK} '{match($0,/[^ ]+[ <]/); \
+			print substr($0,RSTART,RLENGTH-1)}' <<< ${line}`
+
+		PRJ_ARGS[${NUM_PROJ}]=`${AWK} '{match($0,/ .*[<]/); \
+			print substr($0,RSTART+1,RLENGTH-2)}' <<< ${line}`
+
+		PRJ_FLAG[${NUM_PROJ}]=`${AWK} '{match($0,/<.*>/); \
+			print substr($0,RSTART+1,RLENGTH-2)}' <<< ${line}`
+		if [ ${PRJ_FLAG[${NUM_PROJ}]:0:1} = "u" ] ; then
+			PRJ_TYPE[${NUM_PROJ}]="microkernel"
+		elif [ ${PRJ_FLAG[${NUM_PROJ}]:0:1} = "n" ] ; then
+			PRJ_TYPE[${NUM_PROJ}]="nanokernel"
+		else
+			${ECHO} "unrecognized project type"
+			exit 1
+		fi
+
+		bsp2use_tmp=`${AWK} '{match($0,/[>] [-a-zA-Z0-9_]+/); \
+			print substr($0,RSTART+1,RLENGTH-1)}' <<< ${line}`
+		bsp2use="$(${ECHO} -e "${bsp2use_tmp}" | ${SED} -e 's/^[[:space:]]*//')"
+
+		${ECHO} ${_BSP_LIST} | ${GREP} -q -w ${bsp2use}
+		if [ $? -ne 0 ]; then
+			${ECHO} "Unrecognized BSP or BSP variant"
+			exit 1
+		fi
+
+		if [ x${ARCH_NAME} != x ] ; then
+			# An architecture has been specified.
+			bsp_list=${ARCH_NAME}_BSP_LIST
+			${ECHO} ${!bsp_list} | ${GREP} -q -w ${bsp2use}
+			if [ $? -ne 0 ] ; then
+				# The specified architecture does not support the
+				# BSP or BSP variant ${bsp2use}
+				let NUM_PROJ--
+				continue
+			fi
+		fi
+
+		if [ ${bsp2use} = "pentium4" ] ; then
+			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=pentium4"
+		elif [ ${bsp2use} = "minuteia" ] ; then
+			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=minuteia"
+		elif [ ${bsp2use} = "atom" ] ; then
+			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=atom_n28xx"
+		elif [ ${bsp2use} = "quark" ] ; then
+			BSP_INFO[${NUM_PROJ}]="BSP=quark"
+		elif [ x${VXMICRO_TOOL} = x"icc" ]; then
+			# This is a non-x86 BSP.  ICC can only
+			# be used with an x86 BSP.
+			let NUM_PROJ--
+			continue
+		else
+			BSP_INFO[${NUM_PROJ}]="BSP=${bsp2use}"
+		fi
+
+		BSP_FLAG[${NUM_PROJ}]=`${AWK} '/!/ {print "!"}' <<< ${line}`
+	done < ${TEMP_PRJ_LIST}
+
+	# clean up temporary files
+	${RM} -f ${TEMP_AWK_PROG} ${TEMP_PRJ_LIST}
+}
+
+# skip building of a standard VxMicro project
+#
+# PARAMETERS: $1 is project array entry to use
+#
+# ON ENTRY: ${PRJ_PATH} is path to master project directory
+#           ${PRJ_NAME} array specifies project directory name
+#           ${PRJ_ARGS} array specifies any additional project build arguments
+#           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
+#           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#           ${BUILD_INFO} specifies build tool to use (and other build options)
+#           ${NUM_PROJ} specifies # of projects described in arrays
+#           ${PRJ_CLASS} specifies type of projects being sanitized
+#
+skip_project() {
+	proj_name=`${BASENAME} ${PRJ_NAME[$1]}`
+
+	${ECHO} "Skipping ${proj_name} [${PRJ_CLASS} project $1 of ${NUM_PROJ}]"
+	${ECHO}
+}
+
+# build a standard VxMicro project
+#
+# PARAMETERS: $1 is project array entry to use
+#             $2 if set, tells the routine not to check for an elf file
+#
+# ON ENTRY: ${PRJ_PATH} is path to master project directory
+#           ${PRJ_NAME} array specifies project directory name
+#           ${PRJ_ARGS} array specifies any additional project build arguments
+#           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
+#           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#           ${BUILD_INFO} specifies build tool to use (and other build options)
+#           ${NUM_PROJ} specifies # of projects described in arrays
+#           ${PRJ_CLASS} specifies type of projects being sanitized
+#
+build_project() {
+	proj_name=`${BASENAME} ${PRJ_NAME[$1]}`
+
+	${ECHO} "Building ${proj_name} [${PRJ_CLASS} project $1 of ${NUM_PROJ}]"
+	${ECHO}
+	${ECHO} "target:    ${BSP_INFO[$1]}"
+	${ECHO} "arguments: ${PRJ_ARGS[$1]}"
+	${ECHO}
+
+	${CD} ${PRJ_PATH}/${PRJ_NAME[$1]}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	# build project from scratch
+	${MAKE} pristine
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	${MAKE} ${BUILD_INFO} ${PRJ_ARGS[$1]} ${BSP_INFO[$1]}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	if [ x$2 == x ] ; then
+		elf_name=`${LS} outdir/${PRJ_TYPE[$1]}.elf`
+		[ x${elf_name} != "x" ] || \
+			fail_exit $? $FUNCNAME $LINENO "couldn't build ${proj_name}"
+	fi
+}
+
+# use QEMU to run a standard VxMicro project that is already built
+#
+# PARAMETERS: $1 is project array entry to use
+#
+# ON ENTRY: ${PRJ_PATH} is path to master project directory
+#           ${PRJ_NAME} array specifies project directory name
+#           ${PRJ_ARGS} array specifies any additional project build arguments
+#           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
+#           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#           ${BUILD_INFO} specifies build tool to use (and other build options)
+#           ${NUM_PROJ} specifies # of projects described in arrays
+#           ${PRJ_CLASS} specifies type of projects being sanitized
+#
+qemu_project() {
+	proj_name=`${BASENAME} ${PRJ_NAME[$1]}`
+
+	${ECHO}
+	${ECHO} "Running ${proj_name} using QEMU [${PRJ_CLASS} project $1 of ${NUM_PROJ}]"
+	${ECHO}
+	${ECHO} "target:    ${BSP_INFO[$1]}"
+	${ECHO} "arguments: ${PRJ_ARGS[$1]}"
+	${ECHO}
+
+	${CD} ${PRJ_PATH}/${PRJ_NAME[$1]}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO $1
+
+	# create empty log now so the grep loop below can access the file
+	# right away for the case where QEMU did had a chance to run and
+	# create the file by the time the grep loop starts
+	${RM} -f ${SANITY_CHK_LOG}
+	:> ${SANITY_CHK_LOG}
+
+	# launch a separate process to run ELF file in QEMU,
+	# and append the logs into the empty log file created above
+	# (supply all build-related arguments to allow final linking
+	# to be done using the same arguments as the original build)
+	( ${MAKE} ${PRJ_TYPE[$1]}.qemu ${PRJ_ARGS[$1]} ${BSP_INFO[$1]} \
+	    ${BUILD_INFO} | tee ${SANITY_CHK_LOG} )&
+
+	# get QEMU's pid
+	# (wait for QEMU process to be spawned by examining list of tasks
+	# associated with this script's terminal, then grab the pid)
+	while [ 1 ]
+	do
+		qemu_pid=$( ${PS} -T | ${AWK} '/qemu/ {print $1}' )
+		if [ x"${qemu_pid}" != x ] ; then
+			break
+		fi
+		${SLEEP} 1
+	done
+
+	# assume execution will fail
+	let RESULT=1
+
+	# wait up for project to complete (or time limit to be reached)
+	let loop_cnt=0
+	while [ "${loop_cnt}" -le "${QEMU_TIME_LIMIT}" ]
+	do
+		${GREP} -q -E "${RUN_PASSED}" ${SANITY_CHK_LOG}
+		if [ $? -eq 0 ] ; then
+			let RESULT=0
+			break
+		fi
+		${GREP} -q -E "${RUN_FAILED}" ${SANITY_CHK_LOG}
+		if [ $? -eq 0 ] ; then
+			break
+		fi
+		let loop_cnt++
+		${SLEEP} 1
+	done
+
+	# kill QEMU, otherwise it continues running forever
+	# (tee will SIGPIPE when qemu is killed,
+	# and the subshell will exit when both its children exit)
+	${KILL} ${qemu_pid}
+
+	# keep log if requested or when there is an error
+	if [ ${KEEP_LOGS} = 1 -o ${RESULT} -ne 0 ] ; then
+		# append info identifying how log file was generated
+		$ECHO >> ${SANITY_CHK_LOG}
+		$ECHO "Project name: ${PRJ_NAME[$1]}" >> ${SANITY_CHK_LOG}
+		$ECHO "Project arguments: ${PRJ_ARGS[$1]}" >> ${SANITY_CHK_LOG}
+		$ECHO "BSP info: ${BSP_INFO[$1]}" >> ${SANITY_CHK_LOG}
+		$ECHO "Build info: ${BUILD_INFO}" >> ${SANITY_CHK_LOG}
+
+		# ensure log file name is unique to avoid overwriting
+		# a previously generated log file
+		# (note: assumes identical test isn't re-run within 60 seconds)
+		new_name=${SANITY_CHK_LOG}_project$1_`${DATE} +%F_%R`
+		${ECHO}
+		${ECHO} "saving log file ${PRJ_PATH}/${PRJ_NAME[$1]}/${new_name}"
+		${MV} -f ${SANITY_CHK_LOG} ${new_name}
+	else
+		${RM} -f ${SANITY_CHK_LOG}
+	fi
+
+	[ ${RESULT} -eq 0 ] || fail_exit 1 $FUNCNAME $LINENO \
+		"error running ${proj_name}"
+}
+
+# use Simics to run a standard VxMicro project that is already built
+#
+# PARAMETERS: $1 is project array entry to use
+#
+# ON ENTRY: ${PRJ_PATH} is path to master project directory
+#           ${PRJ_NAME} array specifies project directory name
+#           ${PRJ_ARGS} array specifies any additional project build arguments
+#           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
+#           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#           ${BUILD_INFO} specifies build tool to use (and other build options)
+#           ${NUM_PROJ} specifies # of projects described in arrays
+#           ${PRJ_CLASS} specifies type of projects being sanitized
+#
+simics_project() {
+	proj_name=`${BASENAME} ${PRJ_NAME[$1]}`
+
+	${ECHO}
+	${ECHO} "Running ${proj_name} using Simics [${PRJ_CLASS} project $1 of ${NUM_PROJ}]"
+	${ECHO}
+
+	${CD} ${PRJ_PATH}/${PRJ_NAME[$1]}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO $1
+
+	# create empty log file to ensure one exists even if Simics execution
+	# encounters a problem before getting around to creating it
+	${RM} -f ${SANITY_CHK_LOG}
+	:> ${SANITY_CHK_LOG}
+
+	# let Simics execute the project
+	# (note: BSP name passed in is everything after final "=" of BSP_INFO)
+	${SIMICS} -bsp `${GREP} -o '[^=]*$' <<< ${BSP_INFO[$1]}` \
+		-codecoverage -endline "${RUN_UNTIL}" \
+		-outfiles "${CC_DIR}/${proj_name}_project$1-" \
+		-log ${SANITY_CHK_LOG} -keep \
+		-v ./outdir/${PRJ_TYPE[$1]}.elf
+
+	# determine if the project completed successfully
+	${GREP} -q -E "${RUN_PASSED}" ${SANITY_CHK_LOG}
+	RESULT=$?
+
+	# keep log if requested or when there is an error
+	if [ ${KEEP_LOGS} = 1 -o ${RESULT} -ne 0 ] ; then
+		# ensure log file name is unique to avoid overwriting
+		# a previously generated log file
+		# (note: assumes identical test isn't re-run within 60 seconds)
+		new_name=${SANITY_CHK_LOG}_project$1_`${DATE} +%F_%R`
+		${ECHO}
+		${ECHO} "saving log file ${PRJ_PATH}/${PRJ_NAME[$1]}/${new_name}"
+		${MV} -f ${SANITY_CHK_LOG} ${new_name}
+	else
+		${RM} -f ${SANITY_CHK_LOG}
+		${RM} -f ${SIMICS_LOG}
+	fi
+
+	[ ${RESULT} -eq 0 ] || fail_exit 1 $FUNCNAME $LINENO \
+		"error running ${proj_name}"
+}
+
+# do pre-processing of code coverage data
+#
+reset_code_coverage() {
+	# delete any existing code coverage data
+	${RM} -rf ${CC_DIR} ${HTML_CC_DIR}
+}
+
+# do post-processing of code coverage data
+#
+compute_code_coverage() {
+	${MERGECC} ${CC_DIR} ${HTML_CC_DIR}
+	if [ $? -eq 0 ]; then
+		if [ ${KEEP_LOGS} -eq 0 ]; then
+		    ${RM} -rf ${CC_DIR}
+		fi
+		${ECHO} "Code coverage results are located in ${HTML_CC_DIR}"
+	else
+		${ECHO} "ERROR: Code coverage results aggregation FAILED"
+	fi
+}

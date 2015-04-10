@@ -1,0 +1,19 @@
+% Application       : kernel task level device interrupt test
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME          PRIO ENTRY           STACK GROUPS
+% ===================================================
+ TASK MONITORTASK    10   MonitorTaskEntry 1024 [EXE]
+ TASK tTaskAMain     11   taskAMain        1024 [EXE]
+ TASK tTaskBMain     12   taskBMain        1024 [EXE]
+ TASK tRegisterWait  13   registerWait     1024 [EXE]
+
+% SEMA NAME
+% =================
+  SEMA SEM_TASKDONE
+  SEMA SEM_TASKFAIL
+  SEMA SEM_RDY

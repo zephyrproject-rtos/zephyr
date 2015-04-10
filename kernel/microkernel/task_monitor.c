@@ -1,0 +1,122 @@
+/* task_monitor.c - microkernel task monitoring subsystem */
+
+/*
+ * Copyright (c) 1997-2010, 2013-2015 Wind River Systems, Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1) Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2) Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3) Neither the name of Wind River Systems nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifdef CONFIG_TASK_MONITOR
+
+#include <microkernel/k_struct.h>
+#include <minik.h>
+#include <kticks.h>
+#include <microkernel/ticks.h>
+#include <drivers/system_timer.h>
+#include <toolchain.h>
+#include <sections.h>
+
+static struct k_mrec __noinit K_monitor_buff[CONFIG_TASK_MONITOR_CAPACITY];
+
+static const int K_monitor_capacity = CONFIG_TASK_MONITOR_CAPACITY;
+const int K_monitor_mask = CONFIG_TASK_MONITOR_MASK;
+
+static struct k_mrec *K_monitor_wptr = K_monitor_buff;
+static int K_monitor_nrec = 0;
+static int K_monitor_wind = 0;
+
+taskswitchcallbackfunc TaskSwitchCallBack = NULL;
+
+extern const int K_max_eventnr;
+
+void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func)
+{
+	TaskSwitchCallBack = func;
+}
+
+void K_monitor_task(struct k_proc *X, uint32_t D)
+{
+#ifdef CONFIG_TASK_DEBUG
+	if (!K_DebugHalt)
+#endif
+	{
+		K_monitor_wptr->time = timer_read();
+		K_monitor_wptr->data1 = X->Ident;
+		K_monitor_wptr->data2 = D;
+		if (++K_monitor_wind == K_monitor_capacity) {
+			K_monitor_wind = 0;
+			K_monitor_wptr = K_monitor_buff;
+		} else
+			++K_monitor_wptr;
+		if (K_monitor_nrec < K_monitor_capacity)
+			K_monitor_nrec++;
+	}
+	if ((TaskSwitchCallBack != NULL) && (D == 0))
+		(TaskSwitchCallBack)(X->Ident, timer_read());
+}
+
+void K_monitor_args(struct k_args *A)
+{
+#ifdef CONFIG_TASK_DEBUG
+	if (!K_DebugHalt)
+#endif
+	{
+		K_monitor_wptr->time = timer_read();
+
+		if ((uint32_t)A < K_max_eventnr) /* K_max_eventnr must be used
+						    instead of 64 */
+		{
+			K_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
+		}
+		else {
+			K_monitor_wptr->data1 = K_Task->Ident;
+			K_monitor_wptr->data2 = MO_LCOMM | A->Comm;
+		}
+
+		if (++K_monitor_wind == K_monitor_capacity) {
+			K_monitor_wind = 0;
+			K_monitor_wptr = K_monitor_buff;
+		} else
+			++K_monitor_wptr;
+
+		if (K_monitor_nrec < K_monitor_capacity)
+			K_monitor_nrec++;
+	}
+}
+
+void K_monitor_read(struct k_args *A)
+{
+	A->Args.z4.nrec = K_monitor_nrec;
+	if (A->Args.z4.rind < K_monitor_nrec) {
+		int i = K_monitor_wind - K_monitor_nrec + A->Args.z4.rind;
+		if (i < 0)
+			i += K_monitor_capacity;
+		A->Args.z4.mrec = K_monitor_buff[i];
+	}
+}
+
+#endif /* CONFIG_TASK_MONITOR */

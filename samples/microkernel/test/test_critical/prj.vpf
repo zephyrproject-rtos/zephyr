@@ -1,0 +1,16 @@
+% Application       : test microkernel critical section API
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME         PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK ALTTASK       40 AlternateTask     1024 [EXE]
+  TASK REGRESSTASK   40 RegressionTask    1024 [EXE]
+
+% SEMA NAME
+% ================
+  SEMA ALT_SEM
+  SEMA REGRESS_SEM

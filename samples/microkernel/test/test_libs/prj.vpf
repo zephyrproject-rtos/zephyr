@@ -1,0 +1,16 @@
+% Application       : test VxMicro standard libraries
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME          PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK MONITORTASK      4 MonitorTaskEntry    2048 [EXE]
+  TASK tStartTask       5 RegressionTaskEntry 2048 [EXE]
+
+% SEMA NAME
+% =================
+  SEMA SEM_TASKDONE
+  SEMA SEM_TASKFAIL

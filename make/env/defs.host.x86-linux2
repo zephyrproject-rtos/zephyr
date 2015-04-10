@@ -1,0 +1,92 @@
+# defs.host.x86-linux2 - build system
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+HOS_SlashCnv =
+HOS_exe      =
+
+# Not all host apps are supported under Linux so
+# the Windows version is used with wine.
+HOS_Win32Bin = ${vBASE}/host/x86-win32/bin
+
+HOS_DeleteFiles       = rm -f
+HOS_CopyFile          = cp -p --no-preserve=timestamps
+HOS_Echo              = echo
+HOS_EchoBlankLine     = echo
+HOS_Cat               = cat
+HOS_Cat3Files         = $(HOS_Bin)/cat3files
+HOS_MakeDir           = mkdir -p
+HOS_DelDir            = rm -rf
+HOS_FileList          = $(HOS_Bin)/filelist
+HOS_DirList           = $(HOS_Bin)/dirlist
+HOS_Shell             = sh
+HOS_Rename            = mv
+HOS_Move              = mv
+HOS_SysGen            = ${vBASE}/scripts/sysgen.py
+HOS_GenOffsetHeader   = $(HOS_Bin)/genOffsetHeader
+HOS_GenConfigAbssym   = ${HOS_Bin}/gen_config_abssym
+HOS_MultiCmd          = ;
+HOS_SubdirsList       = find
+HOS_SubdirsListMod    = -type d
+HOS_false             = false
+HOS_true              = true
+HOS_Touch             = touch
+HOS_DEC2HEX           = $(HOS_Bin)/dec2hex
+HOS_GenIdt            = $(HOS_Bin)/genIdt
+HOS_Link              = ln -sf
+HOS_Term              = x-terminal-emulator -e
+HOS_mkevents          = ${HOS_Bin}/mkevents
+HOS_Sleep             = sleep
+HOS_Percent           = %
+HOS_GenHash           = ${HOS_Bin}/gen_file_path_hash
+
+# for weird rules where a copy is forced and thus the timestamps should not be
+# updated if the source of the copy did not get re-generated
+HOS_CopyFilePreserveTimestamps = cp -p
+
+HOS_ccache_y          = ccache
+HOS_ccache            = ${HOS_ccache_${VXMICRO_USE_CCACHE}}
+$(if ${HOS_ccache},$(if $(shell which ccache),,$(error no ccache in path)))
+
+MAKEFLAGS += -r
+
+# wrsconfig must be called differently depending on the host OS,
+# provide a wrapper as well
+HOS__Wrsconfig = $(HOS_Bin)/wrsconfig
+define HOS_Wrsconfig
+	$q(cd $(dir $(1)); $(HOS__Wrsconfig) $(2) $(notdir $(1)))
+
+endef
+
+# /dev/null, read/write
+i_DEVNULL = /dev/null
+HOS_DEVNULL_R = ${i_DEVNULL}
+HOS_DEVNULL_W = ${i_DEVNULL}

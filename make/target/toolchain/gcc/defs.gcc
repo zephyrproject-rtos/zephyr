@@ -1,0 +1,80 @@
+# defs.gcc - build system
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+vGCC_VARIANT = $(strip ${VXMICRO_GCC_VARIANT})
+
+iMAKE_GCC = ${vMAKE}/target/toolchain/gcc
+
+include ${iMAKE_GCC}/defs.exec
+
+vGCC_VER_x86 ?= 4.6
+vGCC_VER_arm ?= 4.6
+vGCC_VER_arc ?= 4.8
+vGCC_VER = $(or $(strip ${VXMICRO_GCC_VERSION}),${vGCC_VER_${vARCH}})
+
+include ${iMAKE_GCC}/defs.ext
+include ${iMAKE_GCC}/defs.flags
+
+# Compile against headers for the compiler's libraries
+vTC_LIB_DIR = ${iTC_AUX_LIB_DIR}
+
+vTC_LIBS = gcc
+
+iPP_OPT           = -E -x assembler-with-cpp -nostdinc
+iPP_NO_SPACE      =
+iPP_AS            =
+iPP_NOLINENO      = -P
+
+iCC_DEP           = -MM -MP
+iCC_DEP_GEN       = -M -MG -MP
+# Both -MT and -MF lines have a space at the end
+iCC_DEP_TARGET    = -MT 
+iCC_DEP_FILE      = -MF 
+
+iCC_SPLIT_SECTIONS = -ffunction-sections -fdata-sections
+
+iCC_C99            = -std=c99
+
+-c                      = -c
+-I                      = -I
+-D                      = -D
+# this line has a space at the end ("-o ")
+-o                      = -o 
+-g                      = -g
+-T                      = -T
+# this line has a space at the end ("-include ")
+-iinclude               = -include 
+
+# linker flag for section splitting and removal of unused sections.
+iLD_REMOVE_UNUSED_SECTIONS = --gc-sections
+
+iLINKER_CMD_TOOL = __GCC_LINKER_CMD__

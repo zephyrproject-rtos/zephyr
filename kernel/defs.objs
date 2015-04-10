@@ -1,0 +1,14 @@
+# nanokernel
+ifeq (${vGOAL_NEEDS_TARGET_SETUP},y)
+  include ${vBASE}/arch/${vARCH}/defs.objs
+endif
+
+# microkernel
+iDEFS_OBJS_MICROKERNEL_y = ${vBASE}/kernel/microkernel/defs.objs
+include ${iDEFS_OBJS_MICROKERNEL_${CONFIG_MICROKERNEL}}
+
+# utilities
+include ${vBASE}/kernel/common/util/defs.objs
+
+# miscellaneous
+include ${vBASE}/misc/defs.objs

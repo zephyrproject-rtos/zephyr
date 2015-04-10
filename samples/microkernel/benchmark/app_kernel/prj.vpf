@@ -1,0 +1,50 @@
+% Application       : AppKernel benchmark
+% Part common for all platforms
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME         PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK RECVTASK        5 recvtask          1024 []
+  TASK BENCHTASK       6 BenchTask         2048 [EXE]
+
+% FIFO NAME          DEPTH WIDTH
+% ==============================
+  FIFO DEMOQX1         500     1
+  FIFO DEMOQX4         500     4
+  FIFO MB_COMM           1    12
+  FIFO CH_COMM           1    12
+
+% MAP  NAME         BLOCKS BLOCKSIZE
+% ==================================
+  MAP  MAP1              4      16
+
+% SEMA NAME
+% =========
+  SEMA SEM0
+  SEMA SEM1
+  SEMA SEM2
+  SEMA SEM3
+  SEMA SEM4
+  SEMA STARTRCV
+
+% MAILBOX NAME
+% ==============
+  MAILBOX MAILB1
+
+% MUTEX NAME
+% ================
+  MUTEX DEMO_MUTEX
+
+% PIPE NAME             DEPTH
+% ===========================
+  PIPE PIPE_NOBUFF         0
+  PIPE PIPE_SMALLBUFF    256
+  PIPE PIPE_BIGBUFF     4096
+
+% POOL NAME         SIZE_SMALL SIZE_LARGE BLOCK_NUMBER
+% ====================================================
+  POOL DEMOPOOL            16        16            1

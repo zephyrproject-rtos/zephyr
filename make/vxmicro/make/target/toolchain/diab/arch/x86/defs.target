@@ -1,0 +1,19 @@
+# defs.target - build system
+
+# Copyright (c) 2014 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+iDIAB_ISA = X86
+iDIAB_ENDIANNESS = L
+
+# Minutia does not support floating point of any kind.
+iDIAB_FLOAT_minuteia = N
+
+# these support float, but note that Diab does not generate SSE instructions
+iDIAB_FLOAT_atom_n28xx = H
+iDIAB_FLOAT_pentium4 = H
+
+iDIAB_FLOAT = ${iDIAB_FLOAT_${vCPU}}

@@ -1,0 +1,81 @@
+% Application       : latency_measure
+% Common definitions
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME          PRIO ENTRY           STACK GROUPS
+% ====================================================
+  TASK TESTTASK      10   microMain        1024 [EXE]
+  TASK INTTASK       11   microInt         1024 [EXE]
+  TASK YIELDTASK     10   yieldingTask     1024 []
+
+% SEMA NAME
+% ===============
+  SEMA INTSEMA
+% The first semaphore used in lock/unlock latency test
+  SEMA SEMASTART
+  SEMA SEMA001
+  SEMA SEMA002
+  SEMA SEMA003
+  SEMA SEMA004
+  SEMA SEMA005
+  SEMA SEMA006
+  SEMA SEMA007
+  SEMA SEMA008
+  SEMA SEMA009
+  SEMA SEMA010
+  SEMA SEMA011
+  SEMA SEMA012
+  SEMA SEMA013
+  SEMA SEMA014
+  SEMA SEMA015
+  SEMA SEMA016
+  SEMA SEMA017
+  SEMA SEMA018
+  SEMA SEMA019
+  SEMA SEMA020
+  SEMA SEMA021
+  SEMA SEMA022
+  SEMA SEMA023
+  SEMA SEMA024
+  SEMA SEMA025
+  SEMA SEMA026
+  SEMA SEMA027
+  SEMA SEMA028
+  SEMA SEMA029
+  SEMA SEMA030
+  SEMA SEMA031
+  SEMA SEMA032
+  SEMA SEMA033
+  SEMA SEMA034
+  SEMA SEMA035
+  SEMA SEMA036
+  SEMA SEMA037
+  SEMA SEMA038
+  SEMA SEMA039
+  SEMA SEMA040
+  SEMA SEMA041
+  SEMA SEMA042
+  SEMA SEMA043
+  SEMA SEMA044
+  SEMA SEMA045
+  SEMA SEMA046
+  SEMA SEMA047
+  SEMA SEMA048
+  SEMA SEMA049
+  SEMA SEMA050
+  SEMA SEMAEND
+% The last semaphore used in lock/unlock latency test
+% All semaphores between SEMASTART and SEMAEND are
+% used in lock/unlock measurements test
+
+% EVENT    NAME     HANDLER
+% ======================
+  EVENT    EVENT0   0
+
+% MUTEX NAME
+% ================
+  MUTEX TEST_MUTEX

@@ -1,0 +1,4 @@
+This directory contains the common files between ICC and GCC since they
+are so similar.
+
+The differences are data-driven via make variables.

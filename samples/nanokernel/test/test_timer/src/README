@@ -1,0 +1,42 @@
+Starting a timer
+ Case 1: Add to an empty timer list
+ Case 2: Add to the end of the timer list (big tick value)
+ Case 3: Add to the start of the timer list (small tick value)
+ Case 4: Add to the middle of the timer list (medium tick value)
+
+Stopping a timer
+ No point to stop a non-existent timer
+ Case 1: Stop one at the head of the list (nothing waiting on it)
+ Case 2: Stop one at the end of the list (nothing waiting on it)
+ Case 3: Stop one in the middle of the list (nothing waiting on it)
+ Case 4: Stop the last in the list (nothing waiting on it)
+ Case 5: Stop a timer that had a fiber waiting on it
+
+Timer Expiry
+ Case 1: Timer has expired
+ Case 2: Timer has not expired
+ Case 3: Wait for a timer to expire
+
+Expired timers can use the nano_node_tick_get_32() and nano_node_tick_delta() routines
+to check the results against the timer routines.
+
+This test set does not yet test/verify nano_node_cycle_get_32()--that must still be
+done.
+
+APIs tested in this test set
+============================
+
+nano_timer_init   (implicitly done--called as part of _InitHardware)
+nano_fiber_timer_start
+nano_task_timer_start
+nano_fiber_timer_stop
+nano_task_timer_stop
+nano_fiber_timer_test
+nano_fiber_timer_wait
+nano_task_timer_test
+nano_task_timer_wait
+
+--------------------------------
+nanoTimeInit (implicitly done)
+nano_node_tick_get_32
+nano_node_tick_delta

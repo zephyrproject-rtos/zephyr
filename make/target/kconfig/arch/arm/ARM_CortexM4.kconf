@@ -1,0 +1,67 @@
+# ARM_CortexM4.kconf - ARM Cortex-M4 options
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "ARM_CortexM3.kconf"
+
+menu "ARM Cortex-M4 options"
+
+config	CPU_CORTEXM4
+	# omit prompt to signify a "hidden" option
+	bool
+	default y
+	select CPU_CORTEXM3
+	help
+	  This option signifies the use of a Cortex-M4 CPU
+
+config  FLOAT
+	bool
+        prompt "Support floating point instructions" if FLOAT_AVAILABLE
+        default n
+        help
+	  This option enables the usage of floating point instructions and
+	  registers.
+
+	  BSP must set FLOAT_AVAILABLE to enable this option.
+
+config  AUTOMATIC_FP_ENABLING
+	bool
+        prompt "Automatic FP enabling upon first usage from a context"
+	depends on FLOAT
+        default n
+        help
+	  This option adds automatic support for enabling floating point in
+	  a context when said context first uses a floating point
+	  instruction. This adds is a slight performance penalty (one load
+	  instruction) in the main exception stub and a results in a slightly
+	  larger overall code size.
+
+endmenu

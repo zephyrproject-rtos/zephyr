@@ -1,0 +1,12 @@
+# rules.icc - build system
+
+# Copyright (c) 2013 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+$(if $(vICC_VER),,$(error defs.icc must be included before this makefile fragment))
+
+include ${vMAKE}/target/toolchain/common/rules.objects
+include ${vMAKE}/target/toolchain/icc/${vICC_VER}/rules.icc

@@ -1,0 +1,14 @@
+# defs.exec - build system
+
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+
+# The right to copy, distribute, modify or otherwise make use
+# of this software may be licensed only pursuant to the terms
+# of an applicable Wind River license agreement.
+
+# Arch type to use with objcopy.
+OC_ARCH ?= i386
+OC_TARGET ?= elf32-${OC_ARCH}-vxworks
+
+OC    = ${iWRS_UTIL_DIR}/objcopypentium
+STRIP = ${iWRS_UTIL_DIR}/strippentium

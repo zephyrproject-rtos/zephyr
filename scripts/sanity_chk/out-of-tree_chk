@@ -1,0 +1,306 @@
+#!/bin/bash
+
+# Copyright (c) 2015 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+# Script to verify if projects and BSPs can reside out of tree
+
+# Test is disabled until building out-of-the-tree is supported
+exit 0
+
+# Import common sanity check definitions
+#
+if [ -z ${VXMICRO_BASE} ]; then
+	echo "shell variables required to build VxMicro are not set"
+	exit 1
+fi
+if [ ! -d ${VXMICRO_BASE} ] ; then
+	echo "directory ${VXMICRO_BASE} not found"
+	exit 1
+fi
+source ${VXMICRO_BASE}/scripts/sanity_chk/common.defs
+
+# Out of tree location
+OUT_OF_TREE_BASE_REL=${VXMICRO_BASE}/../$(basename ${VXMICRO_BASE})-sanity
+OUT_OF_TREE_BASE=$(${ABS_PATH} ${OUT_OF_TREE_BASE_REL})
+
+# Location of master project directory
+#
+PRJ_PATH=${OUT_OF_TREE_BASE}/samples
+
+# Pseudo-file describing sample projects to be sanitized
+#
+# Project info must be specified on a single line
+# (which must terminate with a '\n' character, EXCEPT for the final entry).
+#
+# Project info consists of:
+# - project directory (relative to PRJ_PATH)
+# - build arguments (optional)
+# - project flags, enclosed in angle brackets "<>"
+#   - 'u' => microkernel; 'n' => nanokernel (required; must be first flag)
+#   - 'q' => run as part of quick sanity check (optional)
+# - list of BSP names that can be used with the project
+#
+# A BSP name followed by "!" indicates the project can executed using QEMU.
+#
+# Sanity check will select first BSP name listed if the user does not specify
+# a BSP name when running sanity check (i.e. is the "default" BSP).
+#
+# A given project can appear more than once, allowing the project to be
+# sanitized multiple times. This can be useful if the project has multiple
+# configurations, or if the project should be run on more than one BSP
+# during a default BSP sanity check.
+#
+# List of sample projects can contain comment lines (denoted by '#'),
+# but be sure to terminate line with a '\n' character!
+#
+
+PRJ_LIST="\
+	# Nanokernel projects \n\
+nanokernel/test/test_fifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
+nanokernel/test/test_lifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
+nanokernel/test/test_sema   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
+	# Microkernel projects \n\
+microkernel/test/test_fifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
+microkernel/test/test_events VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
+microkernel/test/test_sema   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
+	# Nanokernel projects \n\
+nanokernel/test/test_fifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
+nanokernel/test/test_lifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
+nanokernel/test/test_sema   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
+	# Microkernel projects \n\
+microkernel/test/test_fifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark \n\
+microkernel/test/test_events VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark \n\
+microkernel/test/test_sema   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark "
+
+# print script usage
+#
+help() {
+cat << EOF
+
+Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>] [-T <toolchain>]
+       -h display this help message
+       -H display more detailed documentation
+       -c just delete copied samples and BSPs
+       -q just do quick sanity check
+       -b just build projects
+       -l keep successful project execution logs
+       -A build projects for the specified architecture
+       -B build projects for the specified BSP or BSP variant
+       -T build projects using the specified toolchain
+
+EOF
+}
+
+# print long help
+#
+long_help() {
+cat << EOF
+
+Script to verify VxMicro projects can be built out of tree with a BSP
+residing out of tree.
+
+The sanity check builds a selection of sample of projects supported by the
+specified BSP variant; if no BSP has been specified, a default BSP for each
+project is used. The script also runs each sample project using QEMU, where
+possible; if desired the script can be instructed to skip the QEMU execution
+step.
+
+BSPs and samples are copied to:
+	VXMICRO_BASE/../sanity/bsp
+	VXMICRO_BASE/../sanity/samples
+
+The script returns 0 on success. If an error is encountered at any point
+the script returns the exit value of the command that failed, the function
+and line of the script where the error was detected, as well as the full path
+of the script (to help debug path issues).
+
+*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=
+
+QEMU output from a project is sent to a log file identified by the script;
+it is typically located in the associated sample project directory.
+You can monitor execution by doing 'tail -f <log filename>' in another shell.
+
+A project's log file is normally retained only if execution fails; however,
+invoking the script with the '-l' option keeps the log file in all cases.
+
+*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=
+
+All object code and executable files persist after completion. Re-run the script
+with the '-c' option to delete the sample project object code and log files.
+
+EOF
+}
+
+# main routine building and running nanokernel sample projects
+#
+main() {
+	# set up default behaviors
+	clean_only=0
+	quick_sanity=0
+	build_only=0
+	ARCH_NAME=""
+	BSP_NAME=""
+	KEEP_LOGS=0
+
+	# process command options
+	while getopts ":hHcqblA:B:T:" arg $*
+	do
+		case $arg in
+		h)
+			help
+			exit 0
+			;;
+		H)
+			long_help
+			exit 0
+			;;
+		c)
+			clean_only=1
+			;;
+		q)
+			quick_sanity=1
+			;;
+		b)
+			build_only=1
+			;;
+		l)
+			KEEP_LOGS=1
+			;;
+		A)
+			ARCH_NAME=$OPTARG
+			;;
+		B)
+			BSP_NAME=$OPTARG
+			;;
+		T)
+			export VXMICRO_TOOL="$OPTARG"
+			;;
+		\?)
+			${ECHO} "invalid option -$OPTARG"
+			help
+			exit 1
+			;;
+		:)
+			${ECHO} "missing argument for option -$OPTARG"
+			help
+			exit 1
+			;;
+		esac
+	done
+
+	# ensure no unexpected arguments have been provided
+	shift $((OPTIND-1))
+	if [ x$1 != x ] ; then
+		${ECHO} "unexpected argument $1"
+		exit 1
+	fi
+
+	print_header
+	${ECHO} "Deleting all **OUT OF TREE** VxMicro BSPs and sample projects"
+
+	${RM} -rf ${OUT_OF_TREE_BASE}
+
+	${ECHO} "${SCRIPT_NAME} cleanup completed successfully"
+
+	# handle case where we're only cleaning up
+	if [ ${clean_only} = 1 ] ; then
+		exit 0
+	fi
+
+	# handle case where we're doing a quick sanity check
+	if [ ${quick_sanity} = 1 ] ; then
+		${ECHO}
+		${ECHO} "${SCRIPT_NAME} testing skipped during quick sanity check"
+		exit 0
+	fi
+
+	# set up environment info used to build projects
+	build_info_set
+
+	# set up project info used to build projects
+	proj_info_set
+
+	${MKDIR} -p ${OUT_OF_TREE_BASE}
+
+	# copy the BSPs
+	${CP} -r ${VXMICRO_BASE}/target/bsp ${OUT_OF_TREE_BASE}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	# copy the samples/include directory used by certain projects
+	${MKDIR} -p ${PRJ_PATH}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+	${CP} -r ${VXMICRO_BASE}/samples/include ${PRJ_PATH}
+	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+	# build (and optionally execute) projects
+	PRJ_CLASS="out of tree"
+	let cur_proj=0
+	let build_proj=0
+	let run_proj=0
+	while [ ${cur_proj} -lt ${NUM_PROJ} ] ; do
+		let cur_proj++
+		print_header
+
+		# Create a "fresh" copy of the project
+
+		${RM} -rf ${OUT_OF_TREE_BASE}/samples/${PRJ_NAME[${cur_proj}]}
+
+		${MKDIR} -p ${PRJ_PATH}/${PRJ_NAME[${cur_proj}]}
+		[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+		${CP} -r ${VXMICRO_BASE}/samples/${PRJ_NAME[${cur_proj}]}/* ${PRJ_PATH}/${PRJ_NAME[${cur_proj}]}
+		[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
+
+		# build project
+		build_project ${cur_proj}
+		let build_proj++
+
+		# skip non-executable projects (or when doing "build only")
+		if [ ${build_only} = 1 -o x${BSP_FLAG[${cur_proj}]} = x ] ; then
+			continue
+		fi
+
+		qemu_project ${cur_proj}
+		let run_proj++
+	done
+
+	${ECHO}
+        print_header
+	${ECHO} "${SCRIPT_NAME} completed successfully "\
+	        "(built ${build_proj} projects and ran ${run_proj} of them)"
+
+}
+
+# invoke main routine passing all parameters passed to the script
+#
+main $*
+
+# exit with success
+exit 0

@@ -1,0 +1,86 @@
+# rules.autoconf - build system
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+iTOP_KCONF = ${iKCONF_PRJ_DIR}/bsp-${vKTYPE}${vBSP_VARIANT}.kconf
+
+.PHONY: config
+
+define generate_autoconf_h
+	-@$(HOS_Echo) '[vxmicro] Generating [autoconf]'
+	$(call HOS_Wrsconfig,${iTOP_KCONF},$(1))
+
+endef
+
+iBSP_KCONF_VARIANT_HYPHEN_  = -
+iBSP_KCONF_VARIANT_HYPHEN_n =
+iBSP_KCONF_VARIANT_NO_ = n
+
+iBSP_KCONF_VARIANT_HYPHEN = ${iBSP_KCONF_VARIANT_HYPHEN_${iBSP_KCONF_VARIANT_NO_${vBSP_VARIANT}}}
+iBSP_KCONF_VARIANT = ${iBSP_KCONF_VARIANT_HYPHEN}${vBSP_VARIANT}
+
+iBSP_KCONF = ${iKCONF_PRJ_DIR}/bsp.kconf
+${iBSP_KCONF}: ${vCONFIG_BASE_DIR}/${vBSP}/bsp${iBSP_KCONF_VARIANT}.kconf | ${iKCONF_PRJ_DIR}/.dir
+	$q${HOS_CopyFile} $< $@ > ${HOS_DEVNULL_W}
+
+${iKCONF_TS}: ${iKCONF_FILES} | ${iKCONF_PRJ_DIR}/.dir
+	$q$(foreach file, $?, ${HOS_CopyFile} ${file} $(dir $@) > ${HOS_DEVNULL_W} ${HOS_MultiCmd})
+	@${HOS_Touch} $@
+
+config: $(if ${iPRJ_CONF},${vDOT_AUTOCONF},) ${iBSP_KCONF} ${iKCONF_TS} | ${vOUT_DIR}/.dir ${vAUTOCONF_DIR}/.dir
+	$(call generate_autoconf_h,)
+
+${vAUTOCONF_H}: ${vAUTOCONF_MK}
+	@$(HOS_true)
+
+#####
+# If the project does not provide a prj.conf file, autoconf.mk cannot be
+# created automatically: the user MUST invoke 'make config'.
+#
+# If it does exist, if it updated by the user AFTER the autoconf files are
+# created (autoconf.mk/autoconf.h/.autoconf), .autoconf must be updated by
+# copying prj.conf over .autoconf, or else the changes to prj.conf would not
+# be picked up, since .autoconf exists, and is the input file for custom
+# defaults.
+
+ifeq (${iPRJ_CONF},)
+${vAUTOCONF_MK}:
+	@${HOS_Echo} "No prj.conf: you must run 'make config' first."
+	@${HOS_false}
+else
+${vDOT_AUTOCONF}: ${iPRJ_CONF} | $$(dir $$@).dir
+	@$(HOS_CopyFile) $< $@ > ${HOS_DEVNULL_W}
+
+${vAUTOCONF_MK}: ${iBSP_KCONF} ${iKCONF_TS} ${vDOT_AUTOCONF} | ${vAUTOCONF_DIR}/.dir
+	$(call generate_autoconf_h,-S)
+endif
+
+#####

@@ -1,0 +1,20 @@
+% Application       : test microkernel map APIs
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME         PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK REGRESSTASK    5 RegressionTask    2048 [EXE]
+  TASK HELPERTASK     7 HelperTask        2048 [EXE]
+
+% MAP  NAME        BLOCKS BLOCKSIZE
+% ================================
+  MAP  MAP_LgBlks      2      1024
+
+% SEMA NAME
+% ====================
+  SEMA SEM_HELPERDONE
+  SEMA SEM_REGRESSDONE

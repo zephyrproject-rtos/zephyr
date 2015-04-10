@@ -1,0 +1,187 @@
+# misc.kconf - miscellaneous configuration options
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+#
+# miscellaneous features & settings
+#
+
+config  MAIN_STACK_SIZE
+	int
+	prompt "Background task stack size (in bytes)"
+	default 1024
+	help
+	  This option specifies the size of the stack used by the kernel's
+	  background task, whose entry point is main().
+
+config  ISR_STACK_SIZE
+	int
+	prompt "ISR and initialization stack size (in bytes)"
+	default 2048
+	help
+	  This option specifies the size of the stack used by interrupt
+	  service routines (ISRs), and during nanokernel initialization.
+
+config	MICROKERNEL_SERVER_STACK_SIZE
+	int
+	prompt "Microkernel server fiber (K_swapper) stack size"
+	default 1024
+	depends on MICROKERNEL
+	help
+	  This option specifies the size of the stack used by the microkernel
+	  server fiber, whose entry point is K_swapper().  This must be able
+	  to handle the deepest call stack for internal handling of microkernel
+	  objects used by a kernel's project.
+
+config	NUM_COMMAND_PACKETS
+	int
+	prompt "Number of command packets"
+	default 16
+	depends on MICROKERNEL
+	help
+	  This option specifies the number of packets in the command packet pool.
+	  This pool needs to be large enough to accommodate all in-flight
+	  asynchronous command requests as well as those internally issued by
+	  the microkernel server fiber (K_swapper).
+
+config  COMMAND_STACK_SIZE
+	int
+	prompt "K_swapper command stack size (in packets)"
+	default 64
+	depends on MICROKERNEL
+	help
+	  This option specifies the maximum number of command packets that
+	  can be queued up for processing by the kernel's K_swapper fiber.
+
+config	KHEAP_SIZE
+	int
+	prompt "Kernel heap size (in bytes)"
+	default 4096
+	depends on MICROKERNEL && KHEAP_SIZE_FIXED
+	help
+	  This option specifies the size of the kernel heap used by malloc().
+	  The size of this heap cannot be later increased at run time.
+
+config	NUM_TIMER_PACKETS
+	int
+	prompt "Number of timer packets"
+	default 10
+	depends on MICROKERNEL
+	help
+	  This option specifies the number of timer packets to create. Each
+	  explicit and implicit timer usage consumes one timer packet.
+
+config  SYS_CLOCK_TICKS_PER_SEC
+	int
+	prompt "System tick frequency (in ticks/second)"
+	default 100
+	depends on !NO_ISRS
+	help
+	  This option specifies the frequency of the system clock in Hz.
+
+config	SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	# omit prompt to signify a "hidden" option
+	# value is set by BSP
+	help
+	  Frequency of the hardware timer used for the system clock
+	  (in Hz).
+
+config  TIMESLICING
+	bool
+	prompt "Task time slicing"
+	default y
+	depends on MICROKERNEL
+	help
+	  This option enables time slicing between tasks of equal priority.
+
+config  TIMESLICE_SIZE
+	int
+	prompt "Time slice size (in ticks)"
+	default 0
+	depends on TIMESLICING
+	help
+	  This option specifies the maximum amount of time a task can execute
+	  before other tasks of equal priority are given an opportunity to run.
+	  A time slice size of zero means "no limit" (i.e. an infinitely large
+	  time slice).
+
+config  TIMESLICE_PRIORITY
+	int
+	prompt "Time slicing task priority threshold"
+	default 0
+	depends on TIMESLICING
+	help
+	  This option specifies the task priority level at which time slicing
+	  takes effect; tasks having a higher priority than this threshold
+	  are not subject to time slicing. A threshold level of zero means
+	  that all tasks are potentially subject to time slicing.
+
+config  BOOTLOADER_UNKNOWN
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+	help
+	  This option signifies that the target has an unknown bootloader
+	  or that it supports multiple ways of booting and it isn't clear
+	  at build time which method is to be used. When this option is enabled
+	  the BSP may have to do extra work to ensure a propert startup.
+
+config	MAX_NUM_TASK_IRQS
+	int
+	prompt "Number of task IRQ objects"
+	default 0
+	depends on MICROKERNEL
+	help
+	  This option specifies the maximum number of IRQs that may be
+	  utilized by task level device drivers. A value of zero disables
+	  this feature.
+
+config	TEST_RANDOM_GENERATOR
+	bool
+	prompt "Non-random number generator"
+	default n
+	depends on !CUSTOM_RANDOM_GENERATOR
+	help
+	  This option signifies that the kernel's random number APIs are
+	  permitted to return values that are not truly random.
+
+	  This capability is provided for testing purposes, when a truly random
+	  number generator is not available. The non-random number generator
+	  should not be used in a production environment.
+
+config	CONTEXT_CUSTOM_DATA
+	bool
+	prompt "Task and fiber custom data"
+	default n
+	help
+	  This option allows each task and fiber to store 32 bits of custom data,
+	  which can be accessed using the context_custom_data_xxx() APIs.

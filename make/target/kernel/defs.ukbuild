@@ -1,0 +1,102 @@
+# defs.ukbuild - build system
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+vKTYPE = ukernel
+NODES ?= 1
+NUM_NODES ?= 1
+
+# only NODE1 has a boot file
+iBOOT_FILE_1 = ${BOOT_FILE}
+
+#####
+# ref_bsp
+
+iCFG_ORIG_VPF  = ${iCFG_ORIG_STEM}.vpf
+
+#####
+# sysgen
+
+iSYSGEN_OUT = ${vOUT_DIR}/sysgen
+iNLI_OUT = ${iSYSGEN_OUT}
+
+iVXMICRO_H = ${iSYSGEN_OUT}/vxmicro.$h
+iMICROKERNEL_OBJECTS_H = ${iSYSGEN_OUT}/microkernel_objects.$h
+iKERNEL_MAIN_C = ${iSYSGEN_OUT}/kernel_main.$c
+
+#####
+# extra generated headers
+#
+# include/microkernel is needed because kernel_main.c includes "k_boot.h",
+# not "microkernel/k_boot.h"
+iKTYPE_kapp_INC += $(strip \
+	${iSYSGEN_OUT} \
+	${vBASE}/include/microkernel \
+)
+iKTYPE_kapp_SRC += ${iKERNEL_MAIN_C}
+
+iKTYPE_kapp_DEP += ${iMICROKERNEL_OBJECTS_H}
+define iPerNodeDep
+  iKTYPE_kapp_DEP += ${iVXMICRO_H} ${iKERNEL_MAIN_C}
+
+endef
+include ${vMAKE}/target/kernel/defs.kbuild
+
+#####
+# VPF file
+# must be after defs.kbuild so we get vHERE and the error does not trigger
+
+iVPF_BASE = $(wildcard $(or $(strip ${VPFILE}),prj.vpf))
+iVPF  = ${vHERE}/${iVPF_BASE}
+
+#####
+# this is located after including defs.kbuild since vOUT_DIR is needed to
+# construct the variable names and thus the toolchain definitions must have
+# been included first
+$(foreach node,${NODES},$(eval $(call iPerNodeDep,${node})))
+
+#####
+# this is located after including defs.kbuild since ${elf}/${bin} are needed to
+# construct the variable names and thus the toolchain definitions must have
+# been included first
+iALL_${elf}_TARGETS = ${vOUT_DIR}/microkernel.${elf}
+iALL_${bin}_TARGETS = ${vOUT_DIR}/microkernel.${bin}
+iALL_${strip}_TARGETS = ${vOUT_DIR}/microkernel.${strip}
+
+define iPerNodeRules
+${vOUT_DIR}/microkernel.${elf}:$${iBOOT_FILE_$1} ${vOUT_DIR}/microkernel.${lnk} ${iLIBS} ${iKERNEL_STDLIB_RULE}
+
+endef
+
+#####
+# for help:
+
+iHELP_EXEC_NAMES = microkernel

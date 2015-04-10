@@ -1,0 +1,29 @@
+% Application       : DiningPhilosophers
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASKGROUP NAME
+% ==============
+  TASKGROUP PHI
+
+% TASK NAME        PRIO ENTRY           STACK GROUPS
+% ==================================================
+  TASK philTask      5 philDemo         1024 [EXE]
+  TASK phi1Task0     6 philEntry        1024 [PHI]
+  TASK philTask1     6 philEntry        1024 [PHI]
+  TASK philTask2     6 philEntry        1024 [PHI]
+  TASK philTask3     6 philEntry        1024 [PHI]
+  TASK philTask4     6 philEntry        1024 [PHI]
+  TASK philTask5     6 philEntry        1024 [PHI]
+
+% MUTEX NAME
+% ================
+  MUTEX forkMutex0
+  MUTEX forkMutex1
+  MUTEX forkMutex2
+  MUTEX forkMutex3
+  MUTEX forkMutex4
+  MUTEX forkMutex5

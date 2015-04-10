@@ -1,0 +1,33 @@
+This semaphore test set covers the following scenarios.
+
+nano_fiber_sem_take_wait
+  - Wait for a semaphore to be given
+  - Take a semaphore without waiting
+
+nano_task_sem_take_wait
+  - Wait for a semaphore to be given
+  - Take a semaphore without waiting
+
+nano_isr_sem_take
+  - Take a semaphore without waiting
+  - Try to take an unavailable semaphore
+
+nano_fiber_sem_take
+  - Take a semaphore without waiting
+  - Try to take an unavailable semaphore
+
+nano_task_sem_take
+  - Take a semaphore without waiting
+  - Try to take an unavailable semaphore
+
+nano_fiber_sem_give
+  - Waking a task blocked on a semaphore
+  - Giving an available semaphore
+
+nano_task_sem_give
+  - Waking a fiber blocked on a semaphore
+  - Giving an available semaphore
+
+nano_isr_sem_give
+  - Waking a task blocked on a semaphore
+  - Giving an available semaphore

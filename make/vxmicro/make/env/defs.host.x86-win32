@@ -1,0 +1,137 @@
+# defs.host.x86-win32 - build system
+
+#
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+HOS_SlashCnv = $(HOS_Bin)/slashcnv
+HOS_exe      = .exe
+
+# i_NATIVE = y is native Windows, = n is Cygwin
+# native: either in WB env (WIND_HOME set) or no $MSYSCON var set
+# i_NATIVE = $(if $(strip ${WIND_HOME}),y,$(if $(strip ${MSYSCON}),n,y))
+# As cygwin is not yet supported, native Windows will be the default.
+i_NATIVE = y
+#####
+# If there is an sh.exe in the PATH on Windows, make will try to use it
+# instead of cmd as the shell, and this breaks the build system. Assigning
+# 'cmd' to SHELL breaks Cygwin for sure, but it is not supported and not
+# tested. If Cygwin becomes supported, the following lines should be used
+# instead.
+#
+#   iSHELL_y = cmd
+#   iSHELL_n = sh.exe
+#   SHELL = ${iSHELL_${i_NATIVE}}
+#
+# Unfortunately, these three lines do not work on make 3.81 for some
+# reason, but do work on 3.82. Until 3.82 is shipped with VxMicro, we
+# have to assign 'cmd' to SHELL directly like this.
+
+SHELL = cmd
+
+#####
+
+i_DeleteFiles_y       = $(HOS_SlashCnv) $(HOS_Bin)/rmfile.bat
+i_CopyFile_y          = $(HOS_SlashCnv) copy
+i_DelDir_y            = $(HOS_SlashCnv) $(HOS_Bin)/rmdir.bat
+i_Rename_y            = $(HOS_SlashCnv) $(HOS_Bin)/rename.bat
+i_Move_y              = $(HOS_SlashCnv) $(HOS_Bin)/movefiles.bat
+i_SubdirsList_y       = $(HOS_SlashCnv) @dir '\/b \/ad \/s'
+i_SubdirsListMod_y    =
+i_Cat_y               = $(HOS_SlashCnv) type
+
+i_DeleteFiles_n       = rm -f
+i_CopyFile_n          = cp
+i_DelDir_n            = rm -rf
+i_Rename_n            = mv
+i_Move_n              = mv
+i_SubdirsList_n       = find
+i_SubdirsListMod_n    = -type d
+i_Cat_n               = cat
+
+HOS_DeleteFiles       = ${i_DeleteFiles_${i_NATIVE}}
+HOS_CopyFile          = ${i_CopyFile_${i_NATIVE}}
+HOS_DelDir            = ${i_DelDir_${i_NATIVE}}
+HOS_Rename            = ${i_Rename_${i_NATIVE}}
+HOS_Move              = ${i_Move_${i_NATIVE}}
+HOS_SubdirsList       = ${i_SubdirsList_${i_NATIVE}}
+HOS_SubdirsListMod    = ${i_SubdirsListMod_${i_NATIVE}}
+HOS_Cat               = ${i_Cat_${i_NATIVE}}
+
+HOS_Echo              = $(HOS_SlashCnv) echo
+HOS_EchoBlankLine     = $(HOS_SlashCnv) echo.
+HOS_Cat3Files         = $(HOS_SlashCnv) $(HOS_Bin)/catenate.bat
+HOS_MakeDir           = $(HOS_SlashCnv) $(HOS_Bin)/makedir.bat
+HOS_FileList          = $(HOS_SlashCnv) @dir '\/b \/s'
+HOS_DirList           = $(HOS_SlashCnv) @dir '\/b \/ad'
+HOS_Shell             = $(HOS_SlashCnv) cmd \/C
+HOS_Bin_SysGen        = $(HOS_Bin)/generator
+HOS_Bin_HostServerCon = $(HOS_Bin)/HostServerCon
+HOS_Bin_HostServer    = $(HOS_Bin)/HostServer
+HOS_SysGen            = $(HOS_Bin_SysGen)
+HOS_HostServerCon     = $(HOS_Bin_HostServerCon)
+HOS_HostServer        = $(HOS_Bin_HostServer)
+HOS_GenOffsetHeader   = $(HOS_SlashCnv) $(HOS_Bin)/genOffsetHeader.exe
+HOS_GenConfigAbssym   = ${HOS_SlashCnv} ${HOS_Bin}/gen_config_abssym.exe
+HOS_Write512          = $(HOS_SlashCnv) $(HOS_Bin)/write512
+HOS_MultiCmd          = &
+HOS_false             = cmd /c exit /b 1
+HOS_true              = cmd /c exit /b 0
+HOS_Touch             = ${HOS_SlashCnv} ${HOS_Bin}/touch.bat
+HOS_GenPomsGdtH       = $(HOS_Bin)/gen_poms_gdt.exe
+HOS_DEC2HEX           = $(HOS_Bin)/dec2hex.exe
+HOS_GenIdt            = $(HOS_SlashCnv) $(HOS_Bin)/genIdt.exe
+HOS_Term              = cmd /c start cmd /c
+HOS_mkevents          = $(HOS_SlashCnv) ${HOS_Bin}/mkevents.exe
+HOS_Sleep             = timeout /t
+HOS_Percent           = %%
+
+# for weird rules where a copy is forced and thus the timestamps should not be
+# updated if the source of the copy did not get re-generated (no difference
+# on Windows)
+HOS_CopyFilePreserveTimestamps = ${HOS_CopyFile}
+
+MAKEFLAGS += -r
+
+# wrsconfig must be called differently depending on the host OS,
+# provide a wrapper as well
+HOS__Wrsconfig = $(HOS_SlashCnv) $(HOS_Bin)/wrsconfig
+define HOS_Wrsconfig
+	$q$(HOS__Wrsconfig).bat $(dir $(1)) $(HOS__Wrsconfig).exe $(2) $(1)
+
+endef
+
+# in Cygwin, make needs a space after nul under cygwin else ctrl-m is part
+# of redirect filename and you get a file called 'nul?'
+i_ONESPACE = 
+HOS_DEVNULL_R = nul${i_ONESPACE}
+i_DEVNULL_W_y = nul${i_ONESPACE}
+# Cygwin needs a # after /dev/null to redirect cp for some reason
+i_DEVNULL_W_n = /dev/null${i_ONESPACE} #
+HOS_DEVNULL_W = ${i_DEVNULL_W_${i_NATIVE}}

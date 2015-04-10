@@ -1,0 +1,23 @@
+% Application       : test microkernel mutex APIs
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME         PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK TASK10        10 Task10            2048 [EXE]
+  TASK TASK15        15 Task15            2048 [EXE]
+  TASK TASK20        20 Task20            2048 [EXE]
+  TASK TASK25        25 Task25            2048 [EXE]
+  TASK TASK30        30 Task30            2048 [EXE]
+  TASK TASK45        45 Task45            2048 [EXE]
+  TASK REGRESSTASK   40 RegressionTask    2048 [EXE]
+
+% MUTEX NAME
+% ============
+  MUTEX Mutex1
+  MUTEX Mutex2
+  MUTEX Mutex3
+  MUTEX Mutex4

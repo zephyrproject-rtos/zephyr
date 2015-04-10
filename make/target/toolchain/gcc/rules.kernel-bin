@@ -1,0 +1,78 @@
+# rules.kernel-bin - build system
+
+# Copyright (c) 2013-2014 Wind River Systems, Inc.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+# kernel binary rules
+# Note the use of echo not HOS_Echo since GNU ld needs forward slash paths
+
+include ${vMAKE}/target/toolchain/gcc/defs.kernel-bin
+
+${vOUT_DIR}/%.${lnk}: ${iDEPEND_ON_MAKEFILES} | $$(dir $$@).dir
+	-$q${HOS_Echo} '[${vTOOL}] Preparing   [$(notdir $@)]'
+	$qecho -nostartfiles -nodefaultlibs -nostdlib -static > ${vOUT_DIR}/lflags
+	$qecho $(foreach flag,${LFLAGS},-Wl,$(flag) ) >> ${vOUT_DIR}/lflags
+	$qecho -Wl,-Map,${vOUT_DIR}/$*.map >> ${vOUT_DIR}/lflags
+ifneq ($(strip ${iLTO}),)
+	$qecho {$iLTO} >> ${vOUT_DIR}/lflags
+endif
+	$qecho -L . $(foreach script,$(filter %.cmd,$^),-T$(subst \,/,$(script))) >> ${vOUT_DIR}/lflags
+	$qecho -u _OffsetAbsSyms >> ${vOUT_DIR}/lflags
+	$qecho -u _ConfigAbsSyms >> ${vOUT_DIR}/lflags
+ifneq ($(strip ${vKERNEL_UNDEF_SYMS}),)
+	$qecho $(foreach sym,${vKERNEL_UNDEF_SYMS},-u ${sym} ) >> ${vOUT_DIR}/lflags
+endif
+	$qecho $(foreach path,${LIB_INCLUDE_DIR},-L $(subst \,/,${path}) ) >> ${vOUT_DIR}/lflags
+	$qecho -Wl,--start-group $(foreach alib,${ALL_LIBS},-l${alib}) >> ${vOUT_DIR}/lflags
+	$qecho ${vKLIB_DIR}/offsets.$o >> ${vOUT_DIR}/lflags
+	$q$(HOS_Cat3Files) ${vOUT_DIR}/lflags ${iUSR} ${iMEM} $@ > ${HOS_DEVNULL_W}
+	-$q${HOS_DeleteFiles} ${vOUT_DIR}/lflags
+
+# rule to generate the final linker script (pre-processed)
+${iFINAL_LINKER_CMD}: ${LINKER_CMD} ${iOFFSETS_HDR} | $$(dir $$@).dir
+	$q${PP} ${iLINKER_CMD_OPT} ${iLINKER_CMD_INC} $< -o $@
+
+# rule to make elf files
+%.${elf}: ${vOUT_DIR}/$$(notdir $$*).${lnk} ${iBUILDSPEC} ${iFINAL_LINKER_CMD} | $$(dir $$@).dir
+	-@${HOS_Echo} '[${vTOOL}] Linking     [$(notdir $@)]'
+	$q${LD_K} -o $@ @$(filter %.${lnk},$^) $(filter %.$o,$^) -T ${iFINAL_LINKER_CMD}
+	$(call idtInTxt)
+ifeq ($(VXMICRO_HOST_OS),win32)
+	$q$(HOS_CopyFile) $(HOS_Bin)/exeelf.exe $*.exe > ${HOS_DEVNULL_W}
+endif
+
+# bin-from-elf rule
+%.${bin}: %.${elf} | $$(dir $$@).dir
+	-@${HOS_Echo} '[${vTOOL}] Generating  [$(notdir $@)]'
+	$q${OD} -S $< >$*.lst
+	$q${OC} -S -O binary -R .note -R .comment -R COMMON -R .eh_frame ${EXTRA_OC_FLAGS} $< $@
+
+# generate a stripped ELF file from an ELF image
+%.${strip}: %.${elf} | $$(dir $$@).dir
+	-@${HOS_Echo} '[${vTOOL}] Generating  [$(notdir $@)]'
+	$q${STRIP} -s -o $@ $<
