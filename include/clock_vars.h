@@ -1,4 +1,4 @@
-/* clock_vars.h - variables needed needed for system clock */
+/* Variables needed needed for system clock */
 
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
@@ -41,6 +41,7 @@ that use timer functionality.
 #define _CLOCK_VARS__H_
 
 #ifndef _ASMLANGUAGE
+#include <stdint.h>
 
 #define sys_clock_ticks_per_sec CONFIG_SYS_CLOCK_TICKS_PER_SEC
 #define sys_clock_hw_cycles_per_sec CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -59,8 +60,24 @@ extern int sys_clock_us_per_tick;
  */
 extern int sys_clock_hw_cycles_per_tick;
 
+/* number of nsec per usec */
+#define NSEC_PER_USEC 1000
+
+/* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
+#define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
+    (((uint64_t)(X) * sys_clock_us_per_tick * NSEC_PER_USEC) / \
+     sys_clock_hw_cycles_per_tick)
+
+/*
+ * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds
+ * and calculates the average cycle time
+ */
+#define SYS_CLOCK_HW_CYCLES_TO_NS_AVG(X, NCYCLES) \
+	(uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64 (X) / NCYCLES)
+
+#define SYS_CLOCK_HW_CYCLES_TO_NS(X) (uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64 (X))
+
 #ifdef CONFIG_NANOKERNEL
-#include <stdint.h>
 extern uint32_t nanoTicks;
 extern struct nano_timer *nanoTimerList;
 #endif /* CONFIG_NANOKERNEL */

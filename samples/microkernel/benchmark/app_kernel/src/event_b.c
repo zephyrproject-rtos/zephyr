@@ -88,7 +88,7 @@ void event_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "Signal enabled event",
-	     CYCLES2NS_AVG (et, NR_OF_EVENT_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_EVENT_RUNS));
 
     et = BENCH_START ();
     for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++)
@@ -116,7 +116,7 @@ void event_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "Signal event & Test event",
-	     CYCLES2NS_AVG (et, NR_OF_EVENT_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_EVENT_RUNS));
 
     et = BENCH_START ();
     for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++)
@@ -142,7 +142,7 @@ void event_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "Signal event & TestW event",
-	     CYCLES2NS_AVG (et, NR_OF_EVENT_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_EVENT_RUNS));
 
     PRINT_STRING ("| Signal event with installed handler"
 		  "                                         |\n", output_file);

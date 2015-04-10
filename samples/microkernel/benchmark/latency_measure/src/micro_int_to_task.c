@@ -108,7 +108,7 @@ int microIntToTask (void)
     if (flagVar == 1)
 	{
 	PRINT_FORMAT (" switching time is %lu tcs = %lu nsec",
-		      timestamp, CYCLES2NS(timestamp));
+		      timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	}
     return 0;
     }

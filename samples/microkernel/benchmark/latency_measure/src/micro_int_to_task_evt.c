@@ -106,7 +106,7 @@ int microIntToTaskEvt (void)
     task_event_recv_wait (EVENT0);
     timestamp = TIME_STAMP_DELTA_GET (timestamp);
     PRINT_FORMAT (" switch time is %lu tcs = %lu nsec",
-		  timestamp, CYCLES2NS (timestamp));
+		  timestamp, SYS_CLOCK_HW_CYCLES_TO_NS (timestamp));
     return 0;
     }
 

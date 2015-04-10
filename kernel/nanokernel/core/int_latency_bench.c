@@ -41,7 +41,6 @@
 #include <misc/printk.h> /* printk */
 #include <clock_vars.h>
 #include <drivers/system_timer.h>
-#include <../../../../applications/benchmark/latency_measure/timemacro.h>
 
 /* defines */
 
@@ -231,25 +230,25 @@ void int_latency_show(void)
 			       "handler:"
 			       " %d tcs = %d nsec\n",
 			       intHandlerLatency,
-			       CYCLES2NS(intHandlerLatency));
+			       SYS_CLOCK_HW_CYCLES_TO_NS(intHandlerLatency));
 		}
 
 		printk(" Max interrupt latency (includes hw int. to 'C' "
 		       "handler):"
 		       " %d tcs = %d nsec\n",
 		       intLockingLatencyMax + intHandlerLatency,
-		       CYCLES2NS(intLockingLatencyMax + intHandlerLatency));
+		       SYS_CLOCK_HW_CYCLES_TO_NS(intLockingLatencyMax + intHandlerLatency));
 
 		printk(" Overhead substracted from Max int. latency:\n"
 		       "  for int. lock           : %d tcs = %d nsec\n"
 		       "  each time int. lock nest: %d tcs = %d nsec\n"
 		       "  for int. unlocked       : %d tcs = %d nsec\n",
 		       initialStartDelay,
-		       CYCLES2NS(initialStartDelay),
+		       SYS_CLOCK_HW_CYCLES_TO_NS(initialStartDelay),
 		       nestingDelay,
-		       CYCLES2NS(nestingDelay),
+		       SYS_CLOCK_HW_CYCLES_TO_NS(nestingDelay),
 		       stopDelay,
-		       CYCLES2NS(stopDelay));
+		       SYS_CLOCK_HW_CYCLES_TO_NS(stopDelay));
 	} else {
 		printk("interrupts were not locked and unlocked yet\n");
 	}

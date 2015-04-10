@@ -92,7 +92,7 @@ static inline void printDashLine (void)
     printDashLine ();
 
 #define PRINT_TIME_BANNER()                                                    \
-    PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %lu nsec", CYCLES2NS(1));\
+    PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %lu nsec", SYS_CLOCK_HW_CYCLES_TO_NS(1));\
     printDashLine ();
 
 #define PRINT_OVERFLOW_ERROR() 	                                               \

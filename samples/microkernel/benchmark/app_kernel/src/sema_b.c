@@ -59,7 +59,7 @@ void sema_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "signal semaphore",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     task_sem_reset (SEM1);
     task_sem_give (STARTRCV);
@@ -73,7 +73,7 @@ void sema_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "signal to waiting high pri task",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
 #ifndef SEMA_LITE
     et = BENCH_START ();
@@ -86,7 +86,7 @@ void sema_test (void)
 
     PRINT_F (output_file, FORMAT,
 	     "signal to waiting high pri task, with timeout",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
@@ -97,7 +97,7 @@ void sema_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "signal to waitm (2)",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
@@ -108,7 +108,7 @@ void sema_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "signal to waitm (2), with timeout",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
@@ -119,7 +119,7 @@ void sema_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "signal to waitm (3)",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
@@ -130,7 +130,7 @@ void sema_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "signal to waitm (3), with timeout",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
@@ -141,7 +141,7 @@ void sema_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "signal to waitm (4)",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
@@ -152,7 +152,7 @@ void sema_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "signal to waitm (4), with timeout",
-	     CYCLES2NS_AVG (et, NR_OF_SEMA_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 #endif /* SEMA_LITE */
     }
 

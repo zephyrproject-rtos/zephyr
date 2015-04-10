@@ -164,7 +164,7 @@ int pipeget (
 	}
 
     t = TIME_STAMP_DELTA_GET (t);
-    *time = CYCLES2NS_AVG (t, count);
+    *time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
     if (bench_test_end () < 0)
 	{
 	if (high_timer_overflow ())

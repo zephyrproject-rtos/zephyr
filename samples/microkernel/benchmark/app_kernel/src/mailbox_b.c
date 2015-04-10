@@ -172,7 +172,7 @@ void mailbox_put (
 	task_mbox_put_wait (MAILB1, 1, &Message);
 	}
     t = TIME_STAMP_DELTA_GET (t);
-    *time = CYCLES2NS_AVG (t, count);
+    *time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
     check_result ();
     }
 

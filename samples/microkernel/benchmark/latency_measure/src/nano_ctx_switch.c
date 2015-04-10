@@ -145,6 +145,6 @@ int nanoCtxSwitch (void)
     else
 	PRINT_FORMAT (" Average context switch time is %lu tcs = %lu nsec",
 		      timestamp / ctxSwitchCounter,
-		      CYCLES2NS_AVG (timestamp, ctxSwitchCounter));
+		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, ctxSwitchCounter));
     return 0;
     }

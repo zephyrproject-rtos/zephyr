@@ -78,7 +78,7 @@ int nanoIntLockUnlock (void)
 	{
 	PRINT_FORMAT (" Average time for lock then unlock "
 		      "is %lu tcs = %lu nsec",
-		      timestamp / NTESTS, CYCLES2NS_AVG (timestamp, NTESTS));
+		      timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, NTESTS));
 	}
     else
 	{
@@ -101,7 +101,7 @@ int nanoIntLockUnlock (void)
 	{
 	PRINT_FORMAT (" Average time for lock then unlock "
 		      "is %lu tcs = %lu nsec",
-		      timestamp / NTESTS, CYCLES2NS_AVG (timestamp, NTESTS));
+		      timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, NTESTS));
 	}
     else
 	{

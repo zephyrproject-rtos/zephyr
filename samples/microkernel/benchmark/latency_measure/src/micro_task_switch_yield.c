@@ -135,7 +135,7 @@ void microTaskSwitchYield (void)
 	PRINT_FORMAT (" Average task context switch using "
 		      "yield %lu tcs = %lu nsec",
 		      timestamp / (iterations + helper_task_iterations),
-		      CYCLES2NS_AVG (timestamp,
+		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp,
 				     (iterations + helper_task_iterations)));
 	}
     }

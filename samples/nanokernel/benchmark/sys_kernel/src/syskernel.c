@@ -133,7 +133,7 @@ int check_result (
     fprintf (output_file, sz_case_details_fmt,
 	     "Average time for 1 iteration: ");
     fprintf (output_file, sz_case_timing_fmt,
-	     CYCLES2NS_AVG(t, NUMBER_OF_LOOPS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, NUMBER_OF_LOOPS));
 
     fprintf (output_file, sz_case_end_fmt);
     return 1;

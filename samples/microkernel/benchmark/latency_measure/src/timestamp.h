@@ -41,9 +41,6 @@
 
 #include <limits.h>
 
-#include <timemacro.h>
-
-
 #if defined (CONFIG_NANOKERNEL)
 
 #include <nanokernel.h>
@@ -66,6 +63,7 @@ static inline void TICK_SYNCH (void)
 }
 
 #elif (defined (CONFIG_MICROKERNEL) && defined (KERNEL))
+#include <vxmicro.h>
 
 #define OS_GET_TIME() task_node_cycle_get_32 ()
 
@@ -125,7 +123,6 @@ static inline void bench_test_init (void)
     }
 
 #if defined (CONFIG_MICROKERNEL) && defined (KERNEL)
-#include <vxmicro.h>
 
 /* number of ticks before timer overflows */
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)

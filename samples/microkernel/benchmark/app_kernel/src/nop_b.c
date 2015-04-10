@@ -57,7 +57,7 @@ void call_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "minimum VxMicro call time",
-	     CYCLES2NS_AVG (et, NR_OF_NOP_RUNS));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_NOP_RUNS));
     }
 
 #endif /* MICROKERNEL_CALL_BENCH */

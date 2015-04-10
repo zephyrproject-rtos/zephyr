@@ -63,7 +63,7 @@ void memorymap_test (void)
     check_result ();
 
     PRINT_F (output_file, FORMAT, "average alloc and dealloc memory page",
-	     CYCLES2NS_AVG (et, (2 * NR_OF_MAP_RUNS)));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, (2 * NR_OF_MAP_RUNS)));
 #endif /* MEMMAP_LITE */
     }
 

@@ -101,6 +101,6 @@ int nanoIntLatency (void)
     task_fiber_start (&fiberStack[0], STACKSIZE,
 		    (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
     PRINT_FORMAT (" switching time is %lu tcs = %lu nsec",
-		  timestamp, CYCLES2NS (timestamp));
+		  timestamp, SYS_CLOCK_HW_CYCLES_TO_NS (timestamp));
     return 0;
     }
