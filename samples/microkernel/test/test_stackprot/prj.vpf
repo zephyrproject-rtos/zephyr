@@ -5,11 +5,7 @@
 % manually entered comments being removed, along with
 % any format changes being undone.
 
-% TASKGROUP NAME
-% ==============
-  TASKGROUP NO_EXE
-
 % TASK NAME             PRIO ENTRY	      STACK GROUPS
 % ======================================================
   TASK REGRESSIONTASK      7 RegressionTask   2048 [EXE]
-  TASK ALTERNATETASK       5 AlternateTask	2048 [NO_EXE]
+  TASK ALTERNATETASK       5 AlternateTask    2048 []
