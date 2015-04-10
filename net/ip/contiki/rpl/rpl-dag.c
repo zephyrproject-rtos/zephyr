@@ -299,12 +299,16 @@ get_dag(uint8_t instance_id, uip_ipaddr_t *dag_id)
 rpl_dag_t *
 rpl_set_root(struct net_buf *buf, uint8_t instance_id, uip_ipaddr_t *dag_id)
 {
+  return rpl_set_root_with_version(buf, instance_id, dag_id, RPL_LOLLIPOP_INIT);
+}
+/*---------------------------------------------------------------------------*/
+rpl_dag_t *
+rpl_set_root_with_version(struct net_buf *buf, uint8_t instance_id, uip_ipaddr_t *dag_id, uint8_t version)
+{
   rpl_dag_t *dag;
   rpl_instance_t *instance;
-  uint8_t version;
   int i;
 
-  version = RPL_LOLLIPOP_INIT;
   instance = rpl_get_instance(instance_id);
   if(instance != NULL) {
     for(i = 0; i < RPL_MAX_DAG_PER_INSTANCE; ++i) {
