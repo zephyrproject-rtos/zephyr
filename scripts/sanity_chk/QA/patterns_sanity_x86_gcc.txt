@@ -1,5 +1,0 @@
-VXMICRO PROJECT EXECUTION SUCCESSFUL$|82
-^Build complete\.$|110
-sysgen.*Generating.*node|89
-Fatal task error! Aborting task\.$|28
-Fatal fiber error! Aborting fiber\.$|2
