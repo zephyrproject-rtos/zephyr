@@ -192,12 +192,12 @@ typedef struct nanoIsf {
  * and _SysFatalErrorHandler().
  */
 
-#define _NANO_ERR_SPURIOUS_INT	   (0)	/* Unhandled exception/interrupt */
+#define _NANO_ERR_SPURIOUS_INT		 (0)	/* Unhandled exception/interrupt */
 #define _NANO_ERR_PAGE_FAULT		 (1)	/* Page fault */
 #define _NANO_ERR_GEN_PROT_FAULT	 (2)	/* General protection fault */
 #define _NANO_ERR_INVALID_TASK_EXIT  (3)	/* Invalid task exit */
 #define _NANO_ERR_STACK_CHK_FAIL	 (4)	/* Stack corruption detected */
-#define _NANO_ERR_INVALID_STRING_OP  (6)	/* Invalid string operation */
+#define _NANO_ERR_INVALID_STRING_OP  (5)	/* Invalid string operation */
 
 #ifndef _ASMLANGUAGE
 
