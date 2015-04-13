@@ -36,7 +36,4 @@
 typedef unsigned int PHYS_ADDR;
 typedef unsigned int VIRT_ADDR;
 
-#define PHYS_ADDR_NONE	(PHYS_ADDR)(-1)
-#define PHYS_ADDR_ANY	(PHYS_ADDR)(0)
-
 #endif /* _x86_addr_types__h_ */
