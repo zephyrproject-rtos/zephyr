@@ -1,4 +1,4 @@
-/* k20Sim.h - Freescale K20 microprocessor SIM Module register definitions */
+/* Freescale K20 microprocessor SIM Module register definitions */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.

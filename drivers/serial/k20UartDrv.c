@@ -37,7 +37,7 @@ An _K20_UART_t structure is used to describe the UART.
 The BSP's _InitHardware() routine initializes all the
 values in the uart_init_info structure before calling uart_init().
 
-INCLUDE FILES: drivers/serial/k20Uart.h
+INCLUDE FILES: drivers/serial/k20_uart.h
 */
 
 /* includes */
@@ -48,8 +48,8 @@ INCLUDE FILES: drivers/serial/k20Uart.h
 
 #include <board.h>
 #include <drivers/uart.h>
-#include <drivers/k20Uart.h>
-#include <drivers/k20Sim.h>
+#include <drivers/k20_uart.h>
+#include <drivers/k20_sim.h>
 #include <toolchain.h>
 #include <sections.h>
 

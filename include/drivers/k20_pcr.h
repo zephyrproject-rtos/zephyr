@@ -1,4 +1,4 @@
-/* k20Pcr.h - Freescale K20 microprocessor Pin Control register definitions */
+/* Freescale K20 microprocessor Pin Control register definitions */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.

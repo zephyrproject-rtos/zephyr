@@ -40,12 +40,12 @@ for the fsl_frdm_k64f BSP.
 #include <nanokernel/cpu.h>
 #include <cputype.h>
 #include <board.h>
-#include <drivers/k20Mcg.h>
+#include <drivers/k20_mcg.h>
 #include <drivers/uart.h>
-#include <drivers/k20Pcr.h>
-#include <drivers/k20Sim.h>
-#include <drivers/k6xMpu.h>
-#include <drivers/k6xPmc.h>
+#include <drivers/k20_pcr.h>
+#include <drivers/k20_sim.h>
+#include <drivers/k6x_mpu.h>
+#include <drivers/k6x_pmc.h>
 #include <sections.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)

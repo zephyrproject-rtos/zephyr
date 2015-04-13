@@ -1,4 +1,4 @@
-/* k20Mcg.h - K20 Microprocessor MCG register definitions */
+/* K20 Microprocessor MCG register definitions */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.

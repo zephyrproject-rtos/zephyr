@@ -1,4 +1,4 @@
-/* k20Wdog.h - Freescale K20 microprocessor Watch Dog register definitions */
+/* Freescale K20 microprocessor Watch Dog registers */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-/* k20Uart.h - Freescale K20 microprocessor UART register definitions */
+/* Freescale K20 microprocessor UART register definitions */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.

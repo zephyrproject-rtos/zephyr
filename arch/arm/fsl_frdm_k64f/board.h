@@ -168,7 +168,7 @@ This header file is used to specify and describe board-level aspects for the
  * UART configuration settings
  */
 
-#include <drivers/k20Pcr.h>
+#include <drivers/k20_pcr.h>
 
 #define CONFIG_UART_NUM_SYSTEM_PORTS 1
 #define CONFIG_UART_NUM_EXTRA_PORTS 0
