@@ -40,3 +40,12 @@ config	BLUETOOTH
 	default n
 	help
 	  This option enables Bluetooth Low Energy support.
+
+config	BLUETOOTH_UART
+	bool
+	prompt "Bluetooth UART driver"
+	depends on BLUETOOTH
+	select UART_INTERRUPT_DRIVEN
+	default n
+	help
+	  Enable Bluetooth UART driver.

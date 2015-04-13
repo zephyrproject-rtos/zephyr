@@ -148,16 +148,25 @@ static void consoleInit(void)
 #endif /* DO_CONSOLE_INIT */
 
 #if defined(CONFIG_BLUETOOTH)
-
+#if defined(CONFIG_BLUETOOTH_UART)
+#include <bluetooth/uart.h>
+/* Interrupt handling */
+extern void *_bluetooth_uart_stub;
+SYS_INT_REGISTER(_bluetooth_uart_stub,
+		 CONFIG_BLUETOOTH_UART_IRQ,
+		 CONFIG_BLUETOOTH_UART_INT_PRI);
+#endif /* CONFIG_BLUETOOTH_UART */
 static void bluetooth_init(void)
 {
+#if defined(CONFIG_BLUETOOTH_UART)
+	bt_uart_init();
+#endif
 }
-
 #else
 #define bluetooth_init()	\
 	do {/* nothing */	\
 	} while ((0))
-#endif /* BLUETOOTH */
+#endif /* CONFIG_BLUETOOTH */
 
 /*******************************************************************************
 *

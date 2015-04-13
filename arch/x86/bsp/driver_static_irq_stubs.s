@@ -64,6 +64,10 @@ by x86 BSPs.
 	GTEXT(_i8253IntStub)
 #endif
 
+#if defined(CONFIG_BLUETOOTH_UART)
+	GTEXT(_bluetooth_uart_stub)
+#endif /* CONFIG_BLUETOOTH */
+
 #if defined(CONFIG_CONSOLE_HANDLER)
 	GTEXT(_console_uart_stub)
 #endif /* CONFIG_CONSOLE_HANDLER */
@@ -145,6 +149,26 @@ SECTION_FUNC(TEXT, _i8253IntStub)
 	addl    $4, %esp		/* Clean-up stack from push above */
 	jmp     _IntExit		/* Inform kernel interrupt is done */
 #endif /* CONFIG_PIT */
+
+#if defined(CONFIG_BLUETOOTH_UART)
+#if defined(CONFIG_PIC)
+SECTION_FUNC(TEXT, _bluetooth_uart_stub)
+	call	_IntEnt			/* Inform kernel interrupt has begun */
+	pushl	$0			/* Push dummy parameter */
+	call	bt_uart_isr		/* Call actual interrupt handler */
+	call	_i8259_eoi_master	/* Inform the PIC interrupt is done */
+	addl	$4, %esp		/* Clean-up stack from push above */
+	jmp	_IntExit		/* Inform kernel interrupt is done */
+#elif defined(CONFIG_IOAPIC)
+SECTION_FUNC(TEXT, _bluetooth_uart_stub)
+	call	_IntEnt			/* Inform kernel interrupt has begun */
+	pushl	$0			/* Push dummy parameter */
+	call	bt_uart_isr		/* Call actual interrupt handler */
+	call	_ioapic_eoi		/* Inform the PIC interrupt is done */
+	addl	$4, %esp		/* Clean-up stack from push above */
+	jmp	_IntExit		/* Inform kernel interrupt is done */
+#endif /* CONFIG_PIC */
+#endif /* CONFIG_BLUETOOTH_UART */
 
 #if defined(CONFIG_CONSOLE_HANDLER)
 

@@ -68,6 +68,9 @@ bsp_drivers_SRC_PIT_y = drivers/timer/i8253.c
 bsp_drivers_SRC_LOAPIC_TIMER_y = arch/${vARCH}/timer/loApicTimer.c
 bsp_drivers_SRC_HPET_y = arch/${vARCH}/timer/hpet.c
 
+# Bluetooth drivers
+bsp_drivers_SRC_BLUETOOTH_UART_y = drivers/bluetooth/uart.c
+
 # interrupt controllers
 # variable indicates PCI initialization
 bsp_PIC_INIT = ${CONFIG_PIC}${CONFIG_SHUTOFF_PIC}
@@ -91,6 +94,7 @@ bsp_drivers_SRC += $(strip \
 	${bsp_drivers_SRC_LOAPIC_${CONFIG_LOAPIC}} \
 	${bsp_drivers_SRC_IOAPIC_${CONFIG_IOAPIC}} \
 	${bsp_drivers_SRC_PIC_${bsp_PIC_INIT}} \
+	${bsp_drivers_SRC_BLUETOOTH_UART_${CONFIG_BLUETOOTH_UART}} \
 )
 
 # BSP specific section
