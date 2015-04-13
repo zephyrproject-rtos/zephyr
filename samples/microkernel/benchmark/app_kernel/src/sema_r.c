@@ -50,7 +50,6 @@ void waittask (void)
     {
     int i;
 
-#ifndef SEMA_LITE
     ksem_t slist[5];
 
     slist[0] = SEM1;
@@ -58,11 +57,9 @@ void waittask (void)
     slist[2] = ENDLIST;
     slist[3] = ENDLIST;
     slist[4] = ENDLIST;
-#endif /* SEMA_LITE */
 
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
 	task_sem_take_wait (SEM1);
-#ifndef SEMA_LITE
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
 	task_sem_take_wait_timeout (SEM1, SEMA_WAIT_TIME);
 
@@ -82,7 +79,6 @@ void waittask (void)
 	task_sem_group_take_wait (slist);
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
 	task_sem_group_take_wait_timeout (slist, SEMA_WAIT_TIME);
-#endif /* SEMA_LITE */
     }
 
 #endif /* SEMA_BENCH */

@@ -75,7 +75,6 @@ void sema_test (void)
     PRINT_F (output_file, FORMAT, "signal to waiting high pri task",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
-#ifndef SEMA_LITE
     et = BENCH_START ();
     for (i = 0; i < NR_OF_SEMA_RUNS; i++)
 	{
@@ -153,7 +152,6 @@ void sema_test (void)
 
     PRINT_F (output_file, FORMAT, "signal to waitm (4), with timeout",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
-#endif /* SEMA_LITE */
     }
 
 #endif /* SEMA_BENCH */

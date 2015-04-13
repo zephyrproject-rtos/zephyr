@@ -51,7 +51,6 @@ void memorymap_test (void)
     int i;
     void* p;
 
-#ifndef MEMMAP_LITE
     PRINT_STRING (dashline, output_file);
     et = BENCH_START ();
     for (i = 0; i < NR_OF_MAP_RUNS; i++)
@@ -64,7 +63,6 @@ void memorymap_test (void)
 
     PRINT_F (output_file, FORMAT, "average alloc and dealloc memory page",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, (2 * NR_OF_MAP_RUNS)));
-#endif /* MEMMAP_LITE */
     }
 
 #endif /* MEMMAP_BENCH */
