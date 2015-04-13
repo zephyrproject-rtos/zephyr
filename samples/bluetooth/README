@@ -1,0 +1,29 @@
+Bluetooth subsystem
+
+= Architecture =
+
+All processing is done in fibers. Basic structure for packet processing
+is bt_buf. Packets are queued to different queues and processed. Packet
+allocation is done through a free packets queue which gets populated
+during the stack init.
+
+= Building =
+
+$ make -C host/src
+$ make -C samples/bluetooth/<app>
+
+= Testing =
+
+Host Bluetooth controler is connected to the second qemu serial line
+through a UNIX socket (qemu option -serial unix:/tmp/bt-server-bredr).
+
+On the host side BlueZ allows to "connect" Bluetooth controller through
+a so-called user channel. Use the btproxy tool for that:
+
+$ sudo tools/btproxy -u
+Listening on /tmp/bt-server-bredr
+
+Now qemu can connect serial line to the 'bt-server-bredr' UNIX socket
+with following command:
+
+$ make -C samples/bluetooth/<app> NODE1.qemu
