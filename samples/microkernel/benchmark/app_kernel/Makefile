@@ -47,7 +47,4 @@ PRJ_INCPATH += ${vBASE}/samples/include/
 
 PRJ_CONF = $(PRJ_CONF_CONSOLE_$(if ${CONFIG_CPU_FLOAT_UNSUPPORTED},NOFLOAT,FLOAT)_$(if $(filter ${vBSP},${PC8253_BSP}),8253,GEN))
 
-# Enable unsupported libc functionality for testing purposes only
-export UNSUPPORTED_STD_LIBS=y
-
 include ${vMAKE}/target/make.ukernel

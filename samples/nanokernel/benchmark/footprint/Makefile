@@ -39,11 +39,6 @@ TEST ?= min
 PRJ_CONF = prj_${TEST}_${vARCH}.conf
 override EXTRA_CFLAGS += -DTEST_${TEST}
 
-# Conditionally enable unsupported libc functionality for testing purposes only
-UNSUPPORTED_STD_LIBS_reg = y
-UNSUPPORTED_STD_LIBS_max = y
-export UNSUPPORTED_STD_LIBS = ${UNSUPPORTED_STD_LIBS_${TEST}}
-
 # uncomment this to get a per-arch, per-test output dir
 # OUTPUT_DIR ?= ${vARCH}_${TEST}
 
