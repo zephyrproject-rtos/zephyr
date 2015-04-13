@@ -228,7 +228,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 				A->Comm = LOCK_TMO;
 				enlist_timeout(A);
 			}
-
+#endif
 			if (A->Prio < Mutex->OwnerCurrentPrio) {
 				/*
 				 * The priority level of the owning task is less
@@ -254,7 +254,6 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 					Mutex->OwnerCurrentPrio = BoostedPrio;
 				}
 			}
-#endif
 		} else {
 			/*
 			 * ERROR.  The mutex is locked by another task and

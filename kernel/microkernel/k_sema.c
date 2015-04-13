@@ -84,7 +84,6 @@ static void signal_semaphore(int n, struct sem_struct *S)
 			}
 #endif
 		}
-#ifndef LITE
 		else if (A->Comm == WAITMREQ) {
 			S->Level--;
 			A->Comm = WAITMRDY;
@@ -93,7 +92,6 @@ static void signal_semaphore(int n, struct sem_struct *S)
 			SENDARGS(Y);
 			Y = A;
 		}
-#endif
 		else
 			Y = A;
 		A = X;

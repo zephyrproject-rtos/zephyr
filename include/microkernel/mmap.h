@@ -37,8 +37,6 @@
 extern "C" {
 #endif
 
-#ifndef LITE
-
 extern void _mem_map_init(void);
 
 extern int task_mem_map_used_get(kmemory_map_t map);
@@ -47,9 +45,10 @@ extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
 
 #define task_mem_map_alloc(m, p) _task_mem_map_alloc(m, p, TICKS_NONE)
 #define task_mem_map_alloc_wait(m, p) _task_mem_map_alloc(m, p, TICKS_UNLIMITED)
-#define task_mem_map_alloc_wait_timeout(m, p, t) _task_mem_map_alloc(m, p, t)
 #define task_mem_map_free(m, p) _task_mem_map_free(m, p)
 
+#ifndef LITE
+#define task_mem_map_alloc_wait_timeout(m, p, t) _task_mem_map_alloc(m, p, t)
 #endif /* !LITE */
 
 #ifdef __cplusplus

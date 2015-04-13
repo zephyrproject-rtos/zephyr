@@ -35,10 +35,10 @@
 
 #define task_sem_take(s) _task_sem_take(s, TICKS_NONE)
 #define task_sem_take_wait(s) _task_sem_take(s, TICKS_UNLIMITED)
+#define task_sem_group_take_wait(g) _task_sem_group_take(g, TICKS_UNLIMITED)
 
 #ifndef LITE
 #define task_sem_take_wait_timeout(s, t) _task_sem_take(s, t)
-#define task_sem_group_take_wait(g) _task_sem_group_take(g, TICKS_UNLIMITED)
 #define task_sem_group_take_wait_timeout(g, t) _task_sem_group_take(g, t)
 #endif
 

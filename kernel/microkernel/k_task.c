@@ -72,11 +72,7 @@ void reset_state_bit(struct k_proc *X,    /* ptr to task */
 		 * be added to the list of schedulable tasks.
 		 */
 
-#ifndef LITE
 		struct k_tqhd *H = _k_task_priority_list + X->Prio;
-#else
-		struct k_tqhd *H = _k_task_priority_list;
-#endif
 
 		X->Forw = NULL;
 		H->Tail->Forw = X;

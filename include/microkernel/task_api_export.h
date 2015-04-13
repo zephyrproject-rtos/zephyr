@@ -43,14 +43,12 @@
 #define GROUP_TASK_SUSPEND 2
 #define GROUP_TASK_RESUME 3
 
-#ifndef LITE
-	#define task_abort(t) _task_ioctl(t, TASK_ABORT)
-	#define task_suspend(t) _task_ioctl(t, TASK_SUSPEND)
-	#define task_resume(t) _task_ioctl(t, TASK_RESUME)
-	#define task_group_abort(g) _task_group_ioctl(g, GROUP_TASK_ABORT)
-	#define task_group_suspend(g) _task_group_ioctl(g, GROUP_TASK_SUSPEND)
-	#define task_group_resume(g) _task_group_ioctl(g, GROUP_TASK_RESUME)
-#endif
+#define task_abort(t) _task_ioctl(t, TASK_ABORT)
+#define task_suspend(t) _task_ioctl(t, TASK_SUSPEND)
+#define task_resume(t) _task_ioctl(t, TASK_RESUME)
+#define task_group_abort(g) _task_group_ioctl(g, GROUP_TASK_ABORT)
+#define task_group_suspend(g) _task_group_ioctl(g, GROUP_TASK_SUSPEND)
+#define task_group_resume(g) _task_group_ioctl(g, GROUP_TASK_RESUME)
 
 #define task_start(t) _task_ioctl(t, TASK_START)
 #define task_group_start(g) _task_group_ioctl(g, GROUP_TASK_START)

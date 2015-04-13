@@ -272,22 +272,16 @@ typedef union {
 	struct k_args *args;
 } K_CREF;
 
-#ifndef LITE
 struct _a1arg {
 	kmemory_map_t mmap;
 	void **mptr;
 };
-#endif
 
 struct _c1arg {
 	int64_t time1;
 	int32_t time2;
-#ifndef LITE
 	K_TIMER *timer;
-#endif
-#ifndef LITE
 	ksem_t sema;
-#endif
 	ktask_t task;
 };
 
@@ -389,9 +383,7 @@ struct _z4arg {
 };
 
 union k_args_args {
-#ifndef LITE
 	struct _a1arg a1;
-#endif
 	struct _c1arg c1;
 	struct moved_req MovedReq;
 	struct _e1arg e1;
@@ -419,9 +411,7 @@ struct k_args {
 	K_CREF Ctxt;
 	union {
 		int32_t ticks;
-#ifndef LITE
 		K_TIMER *timer;
-#endif
 		int rcode;
 	} Time;
 	K_ARGS_ARGS Args;

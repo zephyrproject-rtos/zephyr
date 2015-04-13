@@ -44,9 +44,7 @@ extern struct k_tqhd _k_task_priority_list[];
 
 extern int _k_task_count;
 
-#ifndef LITE
 extern struct map_struct _k_mem_map_list[];
-#endif
 extern struct mbx_struct _k_mbox_list[];
 extern struct mutex_struct _k_mutex_list[];
 extern struct sem_struct _k_sem_list[];
@@ -54,26 +52,20 @@ extern struct que_struct _k_fifo_list[];
 extern struct pool_struct _k_mem_pool_list[];
 extern struct pipe_struct _k_pipe_list[];
 
-#ifndef LITE
 extern int _k_mem_map_count;
-#endif
 extern int _k_mem_pool_count;
 extern int _k_pipe_count;
 
 extern struct k_proc *_k_current_task;
 extern uint32_t _k_task_priority_bitmap[];
 
-#ifndef LITE
 extern K_TIMER *_k_timer_list_head;
 extern K_TIMER *_k_timer_list_tail;
-#endif
 extern int64_t _k_sys_clock_tick_count;
 
 extern struct nano_stack _k_command_stack;
 extern struct nano_lifo _k_server_command_packet_free;
-#ifndef LITE
 extern struct nano_lifo _k_timer_free;
-#endif
 
 extern void _Cput(struct nano_lifo *, void *);
 extern void _Cpsh(struct nano_stack *, uint32_t);
@@ -83,11 +75,9 @@ extern void set_state_bit(struct k_proc *, uint32_t);
 extern void reset_state_bit(struct k_proc *, uint32_t);
 extern void K_taskcall(struct k_args *);
 
-#ifndef LITE
 extern void delist_timeout(K_TIMER *T);
 extern void enlist_timeout(struct k_args *A);
 extern void force_timeout(struct k_args *A);
-#endif
 
 extern void init_drivers(void);
 
@@ -143,9 +133,7 @@ extern void init_drivers(void);
 extern int _k_debug_halt;
 extern char *K_NodeNames[];
 extern char **K_TaskNames[];
-#ifndef LITE
 extern char **K_MapNames[];
-#endif
 extern char **K_MbxNames[];
 extern char **K_MutexNames[];
 extern char **K_SemNames[];
@@ -227,17 +215,13 @@ extern void workload_monitor_calibrate(void);
 	do {                              \
 		(A) = _Cget(&_k_server_command_packet_free); \
 	} while (0)
-#ifndef LITE
 #define GETTIMER(T)                        \
 	do {                               \
 		(T) = _Cget(&_k_timer_free); \
 	} while (0)
-#endif
 
 #define FREEARGS(A) _Cput(&_k_server_command_packet_free, (A))
-#ifndef LITE
 #define FREETIMER(T) _Cput(&_k_timer_free, (T))
-#endif
 
 #define TO_ALIST(L, A) _Cpsh((L), (uint32_t)(A))
 

@@ -59,14 +59,10 @@ extern void _task_ioctl(ktask_t, int);
 extern void _task_group_ioctl(ktask_group_t, int);
 extern void task_yield(void);
 
-#ifndef LITE
 extern void task_priority_set(ktask_t task, kpriority_t prio);
-#endif
 
-#ifndef LITE
 extern void task_entry_set(ktask_t task, void (*func)(void));
 extern void task_abort_handler_set(void (*func)(void));
-#endif
 
 /*
  * The following task/group operations may only be performed with
