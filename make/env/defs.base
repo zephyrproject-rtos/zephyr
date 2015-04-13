@@ -56,12 +56,12 @@ vFILE_SUPPORTED := $(if $(filter 4.%,${MAKE_VERSION}),y,n)
 
 #####
 
-$(if ${VXMICRO_BASE},,$(if ${VXLITE_BASE},,$(error VXMICRO_BASE or VXLITE_BASE must be set)))
+$(if ${VXMICRO_BASE},,$(error VXMICRO_BASE must be set))
 
 vBASE ?= $(strip $(subst ${vDRIVE_BASE},,$(subst \,/,${VXMICRO_BASE})))
 vMAKE ?= ${vBASE}/make
 
-vBSP_BASE_DIR ?= $(strip $(subst \,/,$(or ${VXMICRO_BSP_BASE},${VXLITE_BSP_BASE},${vBASE}/arch/${vARCH})))
+vBSP_BASE_DIR ?= $(strip $(subst \,/,$(or ${VXMICRO_BSP_BASE},${vBASE}/arch/${vARCH})))
 vCONFIG_BASE_DIR ?= $(strip $(subst \,/,${vBASE}/config))
 
 #####
