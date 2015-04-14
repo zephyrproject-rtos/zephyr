@@ -100,7 +100,7 @@ extern int __data_num_words[];
 /* C FILES: declaration defined by the linker script */
 
 #ifdef VXMICRO_ARCH_x86
-#include <cputype.h> /* VIRT_ADDR, PHYS_ADDR */
+#include <cputype.h>
 #endif /* VXMICRO_ARCH_x86 */
 
 /* end address of image. */

@@ -137,9 +137,6 @@ the 'Quark' BSP.
 	NANO_CPU_INT_REGISTER(s, INT_VEC_IRQ0 + (irq), 0)
 #endif
 
-/* Start of the 4 MB virtual address space */
-#define VIRT_ADDR_START 0x00000000
-
 /* PCI definitions */
 #define PCI_CTRL_ADDR_REG 0xCF8
 #define PCI_CTRL_DATA_REG 0xCFC

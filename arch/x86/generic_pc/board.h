@@ -152,9 +152,6 @@ the 'generic_pc' BSP.
 	NANO_CPU_INT_REGISTER(s, INT_VEC_IRQ0 + (irq), 0)
 #endif
 
-/* Start of the 4 MB virtual address space */
-#define VIRT_ADDR_START 0x00000000
-
 #ifndef _ASMLANGUAGE
 /*
  * Device drivers utilize the macros PLB_BYTE_REG_WRITE() and
