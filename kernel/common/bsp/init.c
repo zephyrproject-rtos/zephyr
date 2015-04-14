@@ -62,6 +62,27 @@ extern char *__argv[], *__env[];
 
 extern void _Ctors(void);
 
+/* kernel build timestamp items */
+
+#define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
+
+#ifdef CONFIG_BUILD_TIMESTAMP
+const char * const build_timestamp = BUILD_TIMESTAMP;
+#endif
+
+/* boot banner items */
+
+#define BOOT_BANNER "****** BOOTING VXMICRO ******"
+
+#if !defined(CONFIG_BOOT_BANNER)
+#define PRINT_BOOT_BANNER() do { } while (0)
+#elif !defined(CONFIG_BUILD_TIMESTAMP)
+#define PRINT_BOOT_BANNER() printk(BOOT_BANNER "\n")
+#else
+#define PRINT_BOOT_BANNER() printk(BOOT_BANNER " %s\n", build_timestamp)
+#endif
+
+
 #ifdef CONFIG_STACK_CANARIES
 /*******************************************************************************
  *
@@ -142,6 +163,10 @@ FUNC_NORETURN void _Cstart(void)
 
 	/* invoke C++ constructors */
 	_Ctors();
+
+	/* display boot banner */
+
+	PRINT_BOOT_BANNER();
 
 	/* context switch into the background context (entry function is main())
 	 */

@@ -44,21 +44,6 @@ either in the form of an actual function or an alias to a function.
 #include <nanok.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <misc/printk.h>
-
-
-#define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
-#define BOOT_BANNER "****** BOOTING VXMICRO ******"
-
-
-#ifdef CONFIG_BUILD_TIMESTAMP
-/* Embed build timestamp into kernel image & boot banner */
-const char * const build_timestamp = BUILD_TIMESTAMP;
-#define PRINT_BOOT_BANNER() printk(BOOT_BANNER " %s\n", build_timestamp)
-#else
-/* Omit build timestamp from kernel image & boot banner */
-#define PRINT_BOOT_BANNER() printk(BOOT_BANNER "\n")
-#endif
 
 /*******************************************************************************
 *
@@ -335,7 +320,6 @@ FUNC_NORETURN void fiber_abort(void)
 #ifdef CONFIG_BOOT_BANNER
 void _nano_start(void)
 {
-	PRINT_BOOT_BANNER();
 	_nano_fiber_swap();
 }
 
