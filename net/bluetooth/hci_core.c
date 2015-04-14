@@ -38,10 +38,23 @@
 
 #include <bluetooth/bluetooth.h>
 
+/* Stacks for the fibers */
+#define RX_STACK_SIZE	1024
+static char rx_fiber_stack[RX_STACK_SIZE];
+
 /* Available (free) buffers queue */
 #define NUM_BUFS		5
 static struct bt_buf		buffers[NUM_BUFS];
 static struct nano_fifo		free_bufs;
+
+/* State tracking for the local Bluetooth controller */
+static struct bt_dev {
+	/* Queue for incoming HCI events & ACL data */
+	struct nano_fifo	rx_queue;
+
+	/* Registered HCI driver */
+	struct bt_driver	*drv;
+} dev;
 
 struct bt_buf *bt_buf_get_reserve(size_t reserve_head)
 {
@@ -104,7 +117,61 @@ size_t bt_buf_tailroom(struct bt_buf *buf)
 	return BT_BUF_MAX_DATA - bt_buf_headroom(buf) - buf->len;
 }
 
-static void init_free_queue(void)
+static void hci_receive_packet(struct bt_buf *buf)
+{
+	BT_DBG("buf %p type %u\n", buf, buf->type);
+}
+
+static void hci_rx_fiber(void)
+{
+	struct bt_buf *buf;
+
+	BT_DBG("\n");
+
+	while (1) {
+		buf = nano_fifo_get_wait(&dev.rx_queue);
+
+		hci_receive_packet(buf);
+		bt_buf_put(buf);
+	}
+}
+
+/* Interface to HCI driver layer */
+
+void bt_recv(struct bt_buf *buf)
+{
+	nano_fifo_put(&dev.rx_queue, buf);
+}
+
+int bt_driver_register(struct bt_driver *drv)
+{
+	if (dev.drv)
+		return -EALREADY;
+
+	if (!drv->open || !drv->send)
+		return -EINVAL;
+
+	dev.drv = drv;
+
+	return 0;
+}
+
+void bt_driver_unregister(struct bt_driver *drv)
+{
+	dev.drv = NULL;
+}
+
+/* fibers, fifos and semaphores initialization */
+
+static void rx_queue_init(void)
+{
+	nano_fifo_init(&dev.rx_queue);
+
+	fiber_start(rx_fiber_stack, RX_STACK_SIZE,
+		    (nano_fiber_entry_t) hci_rx_fiber, 0, 0, 7, 0);
+}
+
+static void free_queue_init(void)
 {
 	nano_fifo_init(&free_bufs);
 
@@ -114,7 +181,18 @@ static void init_free_queue(void)
 
 int bt_init(void)
 {
-	init_free_queue();
+	struct bt_driver *drv = dev.drv;
+	int err;
+
+	if (!drv)
+		return -ENODEV;
+
+	free_queue_init();
+	rx_queue_init();
+
+	err = drv->open();
+	if (err)
+		return err;
 
 	return 0;
 }

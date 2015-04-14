@@ -104,4 +104,26 @@ size_t bt_buf_headroom(struct bt_buf *buf);
 /* Initialize Bluetooth. Must be the called before anything else. */
 int bt_init(void);
 
+/* HCI driver API */
+
+/* Receive data from the controller/HCI driver */
+void bt_recv(struct bt_buf *buf);
+
+struct bt_driver {
+	/* How much headroom is needed for HCI transport headers */
+	size_t head_reserve;
+
+	/* Open the HCI transport */
+	int (*open) (void);
+
+	/* Send data to HCI */
+	int (*send) (struct bt_buf *buf);
+};
+
+/* Register a new HCI driver to the Bluetooth stack */
+int bt_driver_register(struct bt_driver *drv);
+
+/* Unregister a previously registered HCI driver */
+void bt_driver_unregister(struct bt_driver *drv);
+
 #endif /* __BT_BLUETOOTH_H */
