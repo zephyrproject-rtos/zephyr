@@ -33,10 +33,6 @@
 #ifndef _FLOATCONTEXT_H
 #define _FLOATCONTEXT_H
 
-/* byte offset of member in structure */
-
-#define OFFSET(structure, member) ((long)&(((structure *)0)->member))
-
 /*
  * Each architecture must define the FP_REG_SET and FP_NONVOLATILE_REG_SET
  * structures, and tailor the architecture specific implementations of

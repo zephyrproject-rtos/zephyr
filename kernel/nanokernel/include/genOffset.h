@@ -95,6 +95,7 @@ $ nm offsets.o
 
 /*#include "../../../../../include/absSym.h"*/
 #include <absSym.h>
+#include <stddef.h>
 
 #ifdef __GNUC__
 
@@ -118,19 +119,10 @@ $ nm offsets.o
 
 #endif /* end of "unsupported toolchain" */
 
-/*
- * Use the OFFSET() in the event the ANSI C offsetof() macro is not
- * suppported.
- */
-
-/* byte offset of member in structure */
-
-#define OFFSET(structure, member) ((long)&(((structure *)0)->member))
-
 /* definition of the GEN_OFFSET_SYM() macros is toolchain independant  */
 
 #define GEN_OFFSET_SYM(S, M) \
-	GEN_ABSOLUTE_SYM(__##S##_##M##_##OFFSET, OFFSET(S, M))
+	GEN_ABSOLUTE_SYM(__##S##_##M##_##OFFSET, offsetof(S, M))
 
 /*
  * Macro used to generate an absolute symbol utilized by host-side tools.

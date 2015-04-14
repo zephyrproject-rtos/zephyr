@@ -96,6 +96,7 @@ x87 FPU registers are being saved/restored.
 #include <nanokernel/cpu.h>
 #include <tc_util.h>
 #include "float_context.h"
+#include <stddef.h>
 
 #ifndef MAX_TESTS
 /* test duration, unless overridden by project builder (0 => run forever) */
@@ -416,7 +417,7 @@ void load_store_high(void)
 
 		numNonVolatileBytes = 0;
 
-		for (bufIx = OFFSET(FP_REG_SET, fpNonVolRegSet);
+		for (bufIx = offsetof(FP_REG_SET, fpNonVolRegSet);
 		     numNonVolatileBytes < SIZEOF_FP_NONVOLATILE_REG_SET;
 		     ++bufIx, ++numNonVolatileBytes)
 			floatRegisterSetBytePtr[bufIx] = 0;
@@ -450,9 +451,9 @@ void load_store_high(void)
 
 		numNonVolatileBytes = 0;
 		floatRegInitByte = FIBER_FLOAT_REG_CHECK_BYTE +
-				   OFFSET(FP_REG_SET, fpNonVolRegSet);
+				   offsetof(FP_REG_SET, fpNonVolRegSet);
 
-		for (bufIx = OFFSET(FP_REG_SET, fpNonVolRegSet);
+		for (bufIx = offsetof(FP_REG_SET, fpNonVolRegSet);
 		     numNonVolatileBytes < SIZEOF_FP_NONVOLATILE_REG_SET;
 		     ++bufIx, ++numNonVolatileBytes) {
 			if (floatRegisterSetBytePtr[bufIx] !=
