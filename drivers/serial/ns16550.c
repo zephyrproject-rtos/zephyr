@@ -350,6 +350,7 @@ int uart_fifo_fill(int which, /* UART on which to send */
 			    )
 {
 	int i;
+
 	for (i = 0; i < size && (INBYTE(LSR(which)) & LSR_THRE) != 0; i++) {
 		OUTBYTE(THR(which), txData[i]);
 	}
@@ -369,6 +370,7 @@ int uart_fifo_read(int which, /* UART to receive from */
 			    )
 {
 	int i;
+
 	for (i = 0; i < size && (INBYTE(LSR(which)) & LSR_RXRDY) != 0; i++) {
 		rxData[i] = INBYTE(RDR(which));
 	}

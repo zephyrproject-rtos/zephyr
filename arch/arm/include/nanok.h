@@ -198,6 +198,7 @@ static ALWAYS_INLINE void fiberRtnValueSet(
 	)
 {
 	tESF *pEsf = (void *)fiber->preempReg.psp;
+
 	pEsf->a1 = value;
 }
 

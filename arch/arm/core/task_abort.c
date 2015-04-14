@@ -70,6 +70,7 @@ static struct k_args cmdpacket;
 void _TaskAbort(void)
 {
 	const int taskAbortCode = 1;
+
 	if (_ScbIsInThreadMode()) {
 		_task_ioctl(K_Task->Ident, taskAbortCode);
 	} else {

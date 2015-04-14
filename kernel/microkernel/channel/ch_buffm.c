@@ -55,6 +55,7 @@ int MarkerAddLast(struct marker_list *pMarkerList,
 					BOOL bXferBusy)
 {
 	int i = MarkerFindFree(pMarkerList->aMarkers);
+
 	if (i == -1)
 		return i;
 	pMarkerList->aMarkers[i].pointer = pointer;
@@ -123,6 +124,7 @@ void MarkersClear(struct marker_list *pMarkerList)
 {
 	struct marker *pM = pMarkerList->aMarkers;
 	int i;
+
 	for (i = 0; i < MAXNBR_MARKERS; i++, pM++) {
 		k_memset(pM, 0, sizeof(struct marker));
 		/*pM->pointer =NULL; */
@@ -158,6 +160,7 @@ int MarkerFindFree(struct marker aMarkers[])
 {
 	struct marker *pM = aMarkers;
 	int i;
+
 	for (i = 0; i < MAXNBR_MARKERS; i++, pM++) {
 		if (NULL == pM->pointer) {
 			break;

@@ -96,6 +96,7 @@ void K_alloctmo(struct k_args *A)
 void K_alloc(struct k_args *A)
 {
 	struct map_struct *M = K_MapList + OBJ_INDEX(A->Args.a1.mmap);
+
 	if (M->Free != NULL) {
 		*(A->Args.a1.mptr) = M->Free;
 		M->Free = *(char **)(M->Free);

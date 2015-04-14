@@ -57,6 +57,7 @@ data structure.
 void nano_cpu_set_idle(int32_t ticks)
 {
 	extern tNANO _NanoKernel;
+
 	_NanoKernel.idle = ticks;
 }
 

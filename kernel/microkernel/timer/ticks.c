@@ -51,6 +51,7 @@ int64_t K_LowTime = 0;
 void _LowTimeInc(int inc)
 {
 	int key = irq_lock_inline();
+
 	K_LowTime += inc;
 	irq_unlock_inline(key);
 }
@@ -60,6 +61,7 @@ int64_t _LowTimeGet(void)
 	int64_t ticks;
 	int key = irq_lock_inline();
 	ticks = K_LowTime;
+
 	irq_unlock_inline(key);
 	return ticks;
 }

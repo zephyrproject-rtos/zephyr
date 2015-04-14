@@ -474,6 +474,7 @@ ksem_t _task_sem_group_take(ksemg_t group, /* group of semaphores to test */
 void K_signals(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
+
 	signal_semaphore(1, K_SemList + OBJ_INDEX(Sid));
 }
 
@@ -593,6 +594,7 @@ void isr_sem_give(ksem_t sema, /* semaphore to signal */
 void K_resets(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
+
 	K_SemList[OBJ_INDEX(Sid)].Level = 0;
 }
 

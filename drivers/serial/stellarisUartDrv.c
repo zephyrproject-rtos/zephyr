@@ -196,6 +196,7 @@ static void baudrateSet(int port, uint32_t baudrate, uint32_t sysClkFreqInHz)
 static inline void enable(int port)
 {
 	volatile struct _Uart *pUart = ports[port].base;
+
 	pUart->ctl |= UARTCTL_UARTEN;
 }
 
@@ -244,6 +245,7 @@ static inline void disable(int port)
 static inline void lineControlDefaultsSet(int port)
 {
 	volatile struct _Uart *pUart = ports[port].base;
+
 	pUart->lcrh = LINE_CONTROL_DEFAULTS;
 }
 
@@ -282,6 +284,7 @@ void uart_init(int port, /* UART channel to initialize */
 static int pollTxReady(int port)
 {
 	volatile struct _Uart *pUart = ports[port].base;
+
 	return (pUart->fr & UARTFR_TXFE);
 }
 

@@ -61,6 +61,7 @@ Exception/interrupt context helpers.
 static ALWAYS_INLINE uint32_t _IpsrGet(void)
 {
 	uint32_t vector;
+
 	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(vector));
 	return vector;
 }

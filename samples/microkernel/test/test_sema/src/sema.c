@@ -618,6 +618,7 @@ int RegressionTask (void)
 	int  tcRC;
 	int  value;
 	ksem_t semBlockList[4];
+
 	semBlockList[0] = blockHpSem;
 	semBlockList[1] = blockMpSem;
 	semBlockList[2] = blockLpSem;

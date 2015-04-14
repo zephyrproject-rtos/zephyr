@@ -68,6 +68,7 @@ static uint32_t timestamp;
 int microSemaLockUnlock (void)
     {
     int i;
+
     PRINT_FORMAT (" 3- Measure average time to signal a sema then test"
 		  " that sema");
     bench_test_start ();
@@ -125,6 +126,7 @@ int microSemaLockUnlock (void)
 int microMutexLockUnlock (void)
     {
     int i;
+
     PRINT_FORMAT (" 4- Measure average time to lock a mutex then"
 		  " unlock that mutex");
     timestamp = TIME_STAMP_DELTA_GET (0);

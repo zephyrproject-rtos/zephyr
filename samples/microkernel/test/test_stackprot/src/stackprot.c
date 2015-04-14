@@ -112,6 +112,7 @@ void check_input(const char *name, const char *input)
 {
     /* Stack will overflow when input is more than 16 characters */
 	char buf[16];
+
 	strcpy(buf, input);
 	TC_PRINT("%s: %s\n", name, buf);
 }

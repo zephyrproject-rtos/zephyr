@@ -80,6 +80,7 @@ void mycopypacket(struct k_args **out,
 int CalcFreeReaderSpace(struct k_args *pReaderList)
 {
 	int iSize = 0;
+
 	if (pReaderList) {
 		struct k_args *pReader = pReaderList;
 		while (pReader != NULL) {
@@ -94,6 +95,7 @@ int CalcFreeReaderSpace(struct k_args *pReaderList)
 int CalcAvailWriterData(struct k_args *pWriterList)
 {
 	int iSize = 0;
+
 	if (pWriterList) {
 		struct k_args *pWriter = pWriterList;
 		while (pWriter != NULL) {

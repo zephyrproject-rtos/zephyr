@@ -120,6 +120,7 @@ static inline uint32_t TIME_STAMP_DELTA_GET (uint32_t ts)
 static inline void bench_test_init (void)
     {
     uint32_t t = OS_GET_TIME ();
+
     tm_off = OS_GET_TIME () - t;
     }
 

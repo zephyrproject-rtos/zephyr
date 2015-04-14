@@ -59,6 +59,7 @@ the PendSV exception.
 void _IntLibInit(void)
 {
 	int irq = 0;
+
 	for (; irq < CONFIG_NUM_IRQS; irq++) {
 		_NvicIrqPrioSet(irq, _EXC_IRQ_DEFAULT_PRIO);
 	}

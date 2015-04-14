@@ -76,6 +76,7 @@ void begin_test (void);
 static inline uint32_t BENCH_START (void)
     {
     uint32_t et;
+
     begin_test ();
     et = TIME_STAMP_DELTA_GET (0);
     return et;

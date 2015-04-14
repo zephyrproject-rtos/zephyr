@@ -629,6 +629,7 @@ void main(void)
 {
 	void   *pData;      /* pointer to FIFO object get from the queue */
 	int     count = 0;  /* counter */
+
 	TC_START("Test Nanokernel FIFO");
 
     /* Initialize the FIFO queues and semaphore */

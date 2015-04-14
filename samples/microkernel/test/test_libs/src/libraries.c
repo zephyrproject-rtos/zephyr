@@ -95,6 +95,7 @@ int inttypesTest (void)
 	intmax_t numer = n;
 	intmax_t denom = d;
 	imaxdiv_t result = imaxdiv (numer, denom);
+
 	if ((result.quot != n/d) || (result.rem != n%d))
 	return TC_FAIL;
 

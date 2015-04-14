@@ -119,6 +119,7 @@ static void get_options(int argc, char *argv[])
 	{
 	char *endptr;
 	int ii, opt;
+
 	while ((opt = getopt(argc, argv, "hi:o:n:v")) != -1)
 	{
 	switch(opt)
@@ -169,6 +170,7 @@ static void get_options(int argc, char *argv[])
 static void get_exec_name(char *pathname)
 	{
 	int end = strlen(pathname)-1;
+
 	while(end != -1)
 	{
     #if defined (WINDOWS) /* Might have both slashes in path */
@@ -190,6 +192,7 @@ static void get_exec_name(char *pathname)
 static void open_files(void)
 	{
 	int ii;
+
 	fds[IFILE] = open(filenames[IFILE], O_RDONLY|O_BINARY);
 	fds[OFILE] = open(filenames[OFILE], O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,
 		                                S_IWUSR|S_IRUSR);
@@ -300,6 +303,7 @@ readError:
 static void close_files(void)
 	{
 	int ii;
+
 	for(ii = 0; ii < NUSERFILES; ii++)
 	{
 	close(fds[ii]);

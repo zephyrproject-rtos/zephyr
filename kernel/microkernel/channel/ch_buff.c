@@ -114,6 +114,7 @@ void BuffGetFreeSpace(struct chbuff *pChBuff,
 	int iFreeSpaceCont;
 	int iFreeSpaceAWA;
 	int iFreeSpaceTotal;
+
 	iFreeSpaceTotal =
 		CalcFreeSpace(pChBuff, &iFreeSpaceCont, &iFreeSpaceAWA);
 	__ASSERT_NO_MSG(iFreeSpaceCont == pChBuff->iFreeSpaceCont);
@@ -140,6 +141,7 @@ void BuffGetAvailData(struct chbuff *pChBuff,
 	int iAvailDataCont;
 	int iAvailDataAWA;
 	int iAvailDataTotal;
+
 	iAvailDataTotal =
 		CalcAvailData(pChBuff, &iAvailDataCont, &iAvailDataAWA);
 	__ASSERT_NO_MSG(iAvailDataCont == pChBuff->iAvailDataCont);
@@ -571,6 +573,7 @@ int BuffFull(struct chbuff *pChBuff)
 {/* remark: 0==iTotalFreeSpace is an INcorrect condition b/c of async. behavior
     */
 	int iAvailDataTotal;
+
 	BuffGetAvailDataTotal(pChBuff, &iAvailDataTotal);
 	return (pChBuff->iBuffSize == iAvailDataTotal);
 }
@@ -579,6 +582,7 @@ int BuffEmpty(struct chbuff *pChBuff)
 {/* remark: 0==iAvailDataTotal is an INcorrect condition b/c of async. behavior
     */
 	int iTotalFreeSpace;
+
 	BuffGetFreeSpaceTotal(pChBuff, &iTotalFreeSpace);
 	return (pChBuff->iBuffSize == iTotalFreeSpace);
 }

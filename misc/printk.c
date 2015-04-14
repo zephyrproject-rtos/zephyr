@@ -176,6 +176,7 @@ void printk(const char *fmt, /* formatted string to output */
 			  ...)
 {
 	va_list ap;
+
 	va_start(ap, fmt);
 	_vprintk(fmt, ap);
 	va_end(ap);
@@ -196,6 +197,7 @@ static void _printk_hex_ulong(
 	)
 {
 	int size = sizeof(num) * 2;
+
 	for (; size; size--) {
 		char nibble = (num >> ((size - 1) << 2) & 0xf);
 		nibble += nibble > 9 ? 87 : 48;
@@ -220,6 +222,7 @@ static void _printk_dec_ulong(
 	unsigned long pos = 999999999;
 	unsigned long remainder = num;
 	int found_largest_digit = 0;
+
 	while (pos >= 9) {
 		if (found_largest_digit || remainder > pos) {
 			found_largest_digit = 1;

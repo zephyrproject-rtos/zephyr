@@ -462,6 +462,7 @@ static uint32_t ioApicRedGetLo(unsigned int irq /* INTIN number */
 {
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
+
 	pEntry = (volatile uint32_t *)(IOAPIC_BASE_ADRS + (irq * 0x10) +
 				       IOAPIC_RTE0_LOW);
 
@@ -488,6 +489,7 @@ static void ioApicRedSetLo(unsigned int irq, /* INTIN number */
 {
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
+
 	pEntry = (volatile uint32_t *)(IOAPIC_BASE_ADRS + (irq * 0x10) +
 				       IOAPIC_RTE0_LOW);
 
@@ -514,6 +516,7 @@ static void ioApicRedSetHi(unsigned int irq, /* INTIN number */
 {
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
+
 	pEntry = (volatile uint32_t *)(IOAPIC_BASE_ADRS + (irq * 0x10) +
 				       IOAPIC_RTE0_HIGH);
 

@@ -106,6 +106,7 @@ __asm volatile void _MspSet(uint32_t msp)
 static ALWAYS_INLINE void _InterruptStackSetup(void)
 {
 	uint32_t msp = __GET_MSP();
+
 	_MspSet(msp);
 }
 

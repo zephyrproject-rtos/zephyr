@@ -161,6 +161,7 @@ extern void event_test (void);
 static inline uint32_t BENCH_START (void)
     {
     uint32_t et;
+
     bench_test_start ();
     et = TIME_STAMP_DELTA_GET (0);
     return et;

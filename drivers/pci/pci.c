@@ -353,6 +353,7 @@ int pci_dev_find(int class, int idx, uint32_t *addr, uint32_t *size, int *irq)
 {
 	int i;
 	int j;
+
 	for (i = 0, j = 0; i < dev_info_idx; i++) {
 		if (dev_info[i].class != class)
 			continue;

@@ -83,6 +83,7 @@ void kernel_init(void)
 	 * main())
 	 */
 	extern uint64_t __main_tsc;
+
 	__main_tsc = _NanoTscRead();
 #endif
 

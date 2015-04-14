@@ -102,6 +102,7 @@ int main(int argc, char *argv[])
 static void get_options(int argc, char *argv[])
 {
 	int ii, opt;
+
 	while ((opt = getopt(argc, argv, "hi:o:v")) != -1) {
 		switch(opt) {
 		case 'i':
@@ -154,6 +155,7 @@ static void open_files(void)
 static void write_str(const char *str)
 {
 	int len = strlen(str);
+
 	if (write(fds[OFILE], str, len) != len) {
 		perror("write");
 		clean_exit(-1);
@@ -226,6 +228,7 @@ static void generate_files(void)
 static void close_files(void)
 {
 	int ii;
+
 	for(ii = 0; ii < NUSERFILES; ii++) {
 		close(fds[ii]);
 	}
