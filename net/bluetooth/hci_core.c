@@ -30,9 +30,91 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <nanokernel.h>
+#include <toolchain.h>
+#include <string.h>
+#include <errno.h>
+#include <misc/byteorder.h>
+
 #include <bluetooth/bluetooth.h>
+
+/* Available (free) buffers queue */
+#define NUM_BUFS		5
+static struct bt_buf		buffers[NUM_BUFS];
+static struct nano_fifo		free_bufs;
+
+struct bt_buf *bt_buf_get_reserve(size_t reserve_head)
+{
+	struct bt_buf *buf;
+
+	buf = nano_fifo_get(&free_bufs);
+	if (!buf) {
+		BT_ERR("Failed to get free buffer\n");
+		return NULL;
+	}
+
+	buf->data = buf->buf + reserve_head;
+	buf->len = 0;
+	buf->sync = NULL;
+
+	BT_DBG("buf %p reserve %u\n", buf, reserve_head);
+
+	return buf;
+}
+
+struct bt_buf *bt_buf_get(void)
+{
+	return bt_buf_get_reserve(0);
+}
+
+void bt_buf_put(struct bt_buf *buf)
+{
+	BT_DBG("buf %p\n", buf);
+
+	nano_fifo_put(&free_bufs, buf);
+}
+
+uint8_t *bt_buf_add(struct bt_buf *buf, size_t len)
+{
+	uint8_t *tail = buf->data + buf->len;
+	buf->len += len;
+	return tail;
+}
+
+uint8_t *bt_buf_push(struct bt_buf *buf, size_t len)
+{
+	buf->data -= len;
+	buf->len += len;
+	return buf->data;
+}
+
+uint8_t *bt_buf_pull(struct bt_buf *buf, size_t len)
+{
+	buf->len -= len;
+	return buf->data += len;
+}
+
+size_t bt_buf_headroom(struct bt_buf *buf)
+{
+	return buf->data - buf->buf;
+}
+
+size_t bt_buf_tailroom(struct bt_buf *buf)
+{
+	return BT_BUF_MAX_DATA - bt_buf_headroom(buf) - buf->len;
+}
+
+static void init_free_queue(void)
+{
+	nano_fifo_init(&free_bufs);
+
+	for (int i = 0; i < NUM_BUFS; i++)
+		nano_fifo_put(&free_bufs, &buffers[i]);
+}
 
 int bt_init(void)
 {
+	init_free_queue();
+
 	return 0;
 }
