@@ -61,3 +61,6 @@ source "build.kconf"
 
 # This is for creating the NLI files on-the-fly
 source "nli.kconf"
+
+# Include Bluetooth configuration
+source "bluetooth.kconf"

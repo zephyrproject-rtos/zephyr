@@ -7,6 +7,9 @@ endif
 iDEFS_OBJS_MICROKERNEL_y = ${vBASE}/kernel/microkernel/defs.objs
 include ${iDEFS_OBJS_MICROKERNEL_${CONFIG_MICROKERNEL}}
 
+# networking
+include ${vBASE}/net/defs.objs
+
 # utilities
 include ${vBASE}/kernel/common/util/defs.objs
 

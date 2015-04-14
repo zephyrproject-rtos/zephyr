@@ -147,6 +147,18 @@ static void consoleInit(void)
 	} while ((0))
 #endif /* DO_CONSOLE_INIT */
 
+#if defined(CONFIG_BLUETOOTH)
+
+static void bluetooth_init(void)
+{
+}
+
+#else
+#define bluetooth_init()	\
+	do {/* nothing */	\
+	} while ((0))
+#endif /* BLUETOOTH */
+
 /*******************************************************************************
 *
 * _InitHardware - perform basic hardware initialization
@@ -170,4 +182,5 @@ void _InitHardware(void)
 	 */
 	ioapicInit();   /* NOP if not needed */
 	consoleInit(); /* NOP if not needed */
+	bluetooth_init(); /* NOP if not needed */
 }

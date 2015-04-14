@@ -1,7 +1,7 @@
-# ukernel.kconf - microkernel configuration options
+# bluetooth.kconf - Bluetooth LE configuration options
 
 #
-# Copyright (c) 2012-2014 Wind River Systems, Inc.
+# Copyright (c) 2015 Intel Corporation
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -13,7 +13,7 @@
 # this list of conditions and the following disclaimer in the documentation
 # and/or other materials provided with the distribution.
 #
-# 3) Neither the name of Wind River Systems nor the names of its contributors
+# 3) Neither the name of Intel Corporation nor the names of its contributors
 # may be used to endorse or promote products derived from this software without
 # specific prior written permission.
 #
@@ -30,38 +30,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-config	MICROKERNEL
+#
+# Bluetooth options
+#
+
+config	BLUETOOTH
 	bool
-# omit prompt to signify a "hidden" option that can't be changed
-	default y
-
-config MICROKERNEL_SERVER_PRIORITY
-	int
-	prompt "Priority of the kernel service fiber"
-	default 0
-	depends on MICROKERNEL
+	prompt "Bluetooth LE support [EXPERIMENTAL]"
+	default n
 	help
-	  Priority of the microkernel server fiber that performs
-	  kernel requests and task scheduling assignments.
-
-config PRIORITY_CEILING
-	int
-	prompt "Maximum priority for priority inheritance algorithm"
-	default 0
-	depends on MICROKERNEL
-	help
-	  The highest task priority for the mutex priority inheritance
-	  algorithm.
-	  A task of low priority holding a mutex will see its priority
-	  bumped to the priority of a task trying to acquire the mutex.
-	  This option puts an upper boundary to the priority a task may
-	  get bumped to.
-
-# see nkernel.kconf for a description of these files
-
-source "product.kconf"
-source "kernel-core.kconf"
-source "bsp.kconf"
-source "build.kconf"
-source "nli.kconf"
-source "bluetooth.kconf"
+	  This option enables Bluetooth Low Energy support.
