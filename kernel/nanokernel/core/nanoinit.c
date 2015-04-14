@@ -85,8 +85,7 @@ extern void main(int argc, char *argv[], char *envp[]);
 * initialization sequence:
 *
 *   crt0.s  -> _Cstart() -> _nano_init()
-*                        -> _nano_start() -> _Swap()  (context switch into
-*"main")
+*                        -> _nano_fiber_swap()
 *
 *   main () -> kernel_init () -> task_fiber_start(... K_swapper ...)
 *
@@ -96,7 +95,7 @@ extern void main(int argc, char *argv[], char *envp[]);
 * the provided <dummyOutContext> tCCS, however _NanoKernel.fiber is set to
 * NULL.
 *
-* Thus the subsequent invocation of _Swap() depicted above will result
+* Thus the subsequent invocation of _nano_fiber_swap() depicted above results
 * in a context switch into the main() routine.  The <dummyOutContext> will
 * be used as the context save area for the swap.  Typically, <dummyOutContext>
 * is a temp area on the current stack (as setup by crt0.s).

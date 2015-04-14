@@ -298,31 +298,3 @@ FUNC_NORETURN void fiber_abort(void)
 	_nano_fiber_swap();
 }
 #endif
-
-/*******************************************************************************
-*
-* _nano_start - start the nanokernel
-*
-* This routine is invoked as the last step of a BSP's _Cstart() implementation
-* to start the nanokernel.  The _nano_init() function is called early during
-* the execution of _Cstart() to setup the various nanokernel data structures,
-* but it's not until _nano_start() is invoked that a context switch into the
-* "main" task is performed.
-*
-* This routine should only be called from a BSP's _Cstart() implementation
-*
-* RETURNS: This function never returns
-*/
-
-/*
- * Print the boot banner if enabled
- */
-#ifdef CONFIG_BOOT_BANNER
-void _nano_start(void)
-{
-	_nano_fiber_swap();
-}
-
-#else
-FUNC_ALIAS(_nano_fiber_swap, _nano_start, void);
-#endif

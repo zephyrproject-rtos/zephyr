@@ -168,10 +168,9 @@ FUNC_NORETURN void _Cstart(void)
 
 	PRINT_BOOT_BANNER();
 
-	/* context switch into the background context (entry function is main())
-	 */
+	/* context switch into background context (entry function is main()) */
 
-	_nano_start();
+	_nano_fiber_swap();
 
 	/*
 	 * Compiler can't tell that the above routines won't return and issues
