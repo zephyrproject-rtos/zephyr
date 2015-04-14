@@ -101,6 +101,11 @@ size_t bt_buf_headroom(struct bt_buf *buf);
 /* Return pointer to the end of the data in the buffer */
 #define bt_buf_tail(buf) ((buf)->data + (buf)->len)
 
+/* HCI control APIs */
+
+/* Reset the state of the controller (i.e. perform full HCI init */
+int bt_hci_reset(void);
+
 /* Initialize Bluetooth. Must be the called before anything else. */
 int bt_init(void);
 
