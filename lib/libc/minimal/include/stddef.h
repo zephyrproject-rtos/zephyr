@@ -47,6 +47,6 @@ typedef int  ptrdiff_t;
 #define NULL (void *) 0
 #endif
 
-#define offsetof(type, member) ((size_t) (&((type) NULL)->member))
+#define offsetof(type, member) ((size_t) (&((type *) NULL)->member))
 
 #endif /* __INC_stddef_h__ */
