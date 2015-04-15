@@ -622,7 +622,8 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 				width = MAXFLD;
 
 			if (c == '.') {
-				if ((c = *format++) == '*') {
+				c = *format++;
+				if (c == '*') {
 					precision = (int32_t)
 					va_arg(vargs, int32_t);
 				} else
