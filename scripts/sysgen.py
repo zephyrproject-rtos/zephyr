@@ -45,23 +45,23 @@ import sys
 
 # input-related variables
 
-num_kargs   = 0
-num_timers  = 0
+num_kargs = 0
+num_timers = 0
 
-task_list   = [ ]
-event_list  = [ ]
-mutex_list  = [ ]
-sema_list   = [ ]
-fifo_list   = [ ]
-pipe_list   = [ ]
-mbx_list    = [ ]
-map_list    = [ ]
-pool_list   = [ ]
+task_list = []
+event_list = []
+mutex_list = []
+sema_list = []
+fifo_list = []
+pipe_list = []
+mbx_list = []
+map_list = []
+pool_list = []
 
-driver_list = [ ]
+driver_list = []
 
-group_dictionary = { }
-group_key_list = [ ]
+group_dictionary = {}
+group_key_list = []
 
 # output-related variables
 
@@ -69,17 +69,19 @@ kernel_main_c_data = ""
 vxmicro_h_data = ""
 micro_objs_h_data = ""
 
+
 def get_output_dir():
-	if len(sys.argv) > 2:
-		return sys.argv[2]
-	else:
-		return ""
+    if len(sys.argv) > 2:
+        return sys.argv[2]
+    else:
+        return ""
 
 output_dir = get_output_dir()
 
-# Parse VPF file
 
 def vpf_parse():
+    """ Parse VPF file """
+
     global num_kargs
     global num_timers
 
@@ -96,73 +98,73 @@ def vpf_parse():
     for line in my_list:
         words = line.split()
 
-        if (len(words) == 0) :
-            continue # ignore blank line
+        if (len(words) == 0):
+            continue    # ignore blank line
 
-        if (words[0][0] == "%") :
-            continue # ignore comment line
+        if (words[0][0] == "%"):
+            continue    # ignore comment line
 
-        if (words[0] == "CONFIG") :
+        if (words[0] == "CONFIG"):
             num_kargs = int(words[1])
             num_timers = int(words[2])
             continue
 
-        if (words[0] == "TASK") :
-            task_list.append( (words[1], int(words[2]), words[3],
-                                int(words[4]), words[5]) )
+        if (words[0] == "TASK"):
+            task_list.append((words[1], int(words[2]), words[3],
+                              int(words[4]), words[5]))
             continue
 
-        if (words[0] == "TASKGROUP") :
-            if group_dictionary.has_key(words[1]) :
+        if (words[0] == "TASKGROUP"):
+            if words[1] in group_dictionary:
                 continue    # ignore re-definition of a task group
             group_bitmask = 1 << len(group_dictionary)
             group_dictionary[words[1]] = group_bitmask
-            group_key_list.append( words[1] )
+            group_key_list.append(words[1])
             continue
 
-        if (words[0] == "EVENT") :
-            event_list.append( (words[1], words[2]) )
+        if (words[0] == "EVENT"):
+            event_list.append((words[1], words[2]))
             continue
 
-        if (words[0] == "SEMA") :
-            sema_list.append( (words[1], ) )
+        if (words[0] == "SEMA"):
+            sema_list.append((words[1],))
             continue
 
-        if (words[0] == "MUTEX") :
-            mutex_list.append( (words[1], ) )
+        if (words[0] == "MUTEX"):
+            mutex_list.append((words[1],))
             continue
 
-        if (words[0] == "FIFO") :
-            fifo_list.append( (words[1], int(words[2]), int(words[3])) )
+        if (words[0] == "FIFO"):
+            fifo_list.append((words[1], int(words[2]), int(words[3])))
             continue
 
-        if (words[0] == "PIPE") :
-            pipe_list.append( (words[1], int(words[2])) )
+        if (words[0] == "PIPE"):
+            pipe_list.append((words[1], int(words[2])))
             continue
 
-        if (words[0] == "MAILBOX") :
-            mbx_list.append( (words[1], ) )
+        if (words[0] == "MAILBOX"):
+            mbx_list.append((words[1],))
             continue
 
-        if (words[0] == "MAP") :
-            map_list.append( (words[1], int(words[2]), int(words[3])) )
+        if (words[0] == "MAP"):
+            map_list.append((words[1], int(words[2]), int(words[3])))
             continue
 
-        if (words[0] == "POOL") :
-            pool_list.append( (words[1], int(words[2]), int(words[3]),
-                                int(words[4])) )
+        if (words[0] == "POOL"):
+            pool_list.append((words[1], int(words[2]), int(words[3]),
+                              int(words[4])))
             continue
 
-        if (words[0] == "TIMERDRIVER") :
+        if (words[0] == "TIMERDRIVER"):
             start_quote = line.find("'")
             end_quote = line.rfind("'")
-            driver_list.append( line[start_quote+1:end_quote] )
+            driver_list.append(line[start_quote + 1:end_quote])
             continue
 
-        if (words[0] == "USERDRIVER") :
+        if (words[0] == "USERDRIVER"):
             start_quote = line.find("'")
             end_quote = line.rfind("'")
-            driver_list.append( line[start_quote+1:end_quote] )
+            driver_list.append(line[start_quote + 1:end_quote])
             continue
 
         print "UNRECOGNIZED INPUT LINE"
@@ -171,47 +173,65 @@ def vpf_parse():
 # Generate miscellaneous global variables
 
 kernel_main_c_filename_str = \
-	"/* kernel_main.c - microkernel mainline and kernel objects */\n\n"
+    "/* kernel_main.c - microkernel mainline and kernel objects */\n\n"
 
 do_not_edit_warning = \
-	"\n\n\n/* THIS FILE IS AUTOGENERATED -- DO NOT MODIFY! */\n\n\n"
+    "\n\n\n/* THIS FILE IS AUTOGENERATED -- DO NOT MODIFY! */\n\n\n"
 
 copyright = \
-	"/*\n" + \
-	" * Copyright (c) 2015 Wind River Systems, Inc.\n" + \
-	" *\n" + \
-	" * Redistribution and use in source and binary forms, with or without\n" + \
-	" * modification, are permitted provided that the following conditions are met:\n" + \
-	" *\n" + \
-	" * 1) Redistributions of source code must retain the above copyright notice,\n" + \
-	" * this list of conditions and the following disclaimer.\n" + \
-	" *\n" + \
-	" * 2) Redistributions in binary form must reproduce the above copyright notice,\n" + \
-	" * this list of conditions and the following disclaimer in the documentation\n" + \
-	" * and/or other materials provided with the distribution.\n" + \
-	" *\n" + \
-	" * 3) Neither the name of Wind River Systems nor the names of its contributors\n" + \
-	" * may be used to endorse or promote products derived from this software without\n" + \
-	" * specific prior written permission.\n" + \
-	" *\n" + \
-	" * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n" + \
-	" * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n" + \
-	" * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n" + \
-	" * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE\n" + \
-	" * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR\n" + \
-	" * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF\n" + \
-	" * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n" + \
-	" * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\n" + \
-	" * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n" + \
-	" * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n" + \
-	" * POSSIBILITY OF SUCH DAMAGE.\n" + \
-	" */\n"
+    "/*\n" + \
+    " * Copyright (c) 2015 Wind River Systems, Inc.\n" + \
+    " *\n" + \
+    " * Redistribution and use in source and binary forms," + \
+    " with or without\n" + \
+    " * modification, are permitted provided that the following conditions" + \
+    " are met:\n" + \
+    " *\n" + \
+    " * 1) Redistributions of source code must retain" + \
+    " the above copyright notice,\n" + \
+    " * this list of conditions and the following disclaimer.\n" + \
+    " *\n" + \
+    " * 2) Redistributions in binary form must reproduce" + \
+    " the above copyright notice,\n" + \
+    " * this list of conditions and the following disclaimer" + \
+    " in the documentation\n" + \
+    " * and/or other materials provided with the distribution.\n" + \
+    " *\n" + \
+    " * 3) Neither the name of Wind River Systems nor the names" + \
+    " of its contributors\n" + \
+    " * may be used to endorse or promote products derived" + \
+    " from this software without\n" + \
+    " * specific prior written permission.\n" + \
+    " *\n" + \
+    " * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS" + \
+    " AND CONTRIBUTORS \"AS IS\"\n" + \
+    " * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING," + \
+    " BUT NOT LIMITED TO, THE\n" + \
+    " * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS" + \
+    " FOR A PARTICULAR PURPOSE\n" + \
+    " * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER" + \
+    " OR CONTRIBUTORS BE\n" + \
+    " * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL," + \
+    " EXEMPLARY, OR\n" + \
+    " * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO," + \
+    " PROCUREMENT OF\n" + \
+    " * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;" + \
+    " OR BUSINESS\n" + \
+    " * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY," + \
+    " WHETHER IN\n" + \
+    " * CONTRACT, STRICT LIABILITY, OR TORT" + \
+    " (INCLUDING NEGLIGENCE OR OTHERWISE)\n" + \
+    " * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE," + \
+    " EVEN IF ADVISED OF THE\n" + \
+    " * POSSIBILITY OF SUCH DAMAGE.\n" + \
+    " */\n"
+
 
 def kernel_main_c_general():
     kernel_main_c_out(
-		kernel_main_c_filename_str +
-		copyright +
-		do_not_edit_warning +
+        kernel_main_c_filename_str +
+        copyright +
+        do_not_edit_warning +
         "\n" +
         "#include <microkernel.h>\n" +
         "#include <k_boot.h>\n" +
@@ -220,37 +240,39 @@ def kernel_main_c_general():
         "#include <vxmicro.h>")
 
     kernel_main_c_out("\nconst knode_t K_ThisNode = 0x00010000;")
-    kernel_main_c_out("\nchar __noinit _minik_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];")
-    kernel_main_c_out("int K_StackSize = CONFIG_MICROKERNEL_SERVER_STACK_SIZE;")
+    kernel_main_c_out(
+        "\nchar __noinit _minik_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];")
+    kernel_main_c_out(
+        "int K_StackSize = CONFIG_MICROKERNEL_SERVER_STACK_SIZE;")
 
-# Generate command packet variables
 
 def kernel_main_c_kargs():
+    """ Generate command packet variables """
 
     # command packets
 
     kernel_main_c_out("\n" +
-        "struct k_args K_ArgsBlocks[%s] =\n"  % (num_kargs) +
+        "struct k_args K_ArgsBlocks[%s] =\n" % (num_kargs) +
         "{\n" +
         "    {NULL, NULL, 0, 0, 0, (K_COMM) UNDEFINED},")
-    for i in range(1, num_kargs-1):
+    for i in range(1, num_kargs - 1):
         kernel_main_c_out(
             "    {&K_ArgsBlocks[%d], NULL, 0, 0, 0, (K_COMM) UNDEFINED}," %
-            (i-1))
+            (i - 1))
     kernel_main_c_out(
         "    {&K_ArgsBlocks[%d], NULL, 0, 0, 0, (K_COMM) UNDEFINED}" %
-        (num_kargs-2) +
+        (num_kargs - 2) +
         "\n};")
 
     # linked list of free command packets
 
     kernel_main_c_out("\n" +
         "struct nano_lifo K_ArgsFree = " +
-        "{(void *) &K_ArgsBlocks[%d], NULL};" % (num_kargs-1))
+        "{(void *) &K_ArgsBlocks[%d], NULL};" % (num_kargs - 1))
 
-# Generate timer system variables
 
 def kernel_main_c_timers():
+    """ Generate timer system variables """
 
     # timer descriptors
 
@@ -258,31 +280,34 @@ def kernel_main_c_timers():
         "K_TIMER K_TimerBlocks[%d] =\n" % (num_timers) +
         "{\n" +
         "    {NULL, NULL, 0, 0, (struct k_args *)0xffffffff},")
-    for i in range(1, num_timers-1):
+    for i in range(1, num_timers - 1):
         kernel_main_c_out(
-            "    {&K_TimerBlocks[%d], NULL, 0, 0, (struct k_args *)0xffffffff}," % (i-1))
+            "    {&K_TimerBlocks[%d], NULL, 0, 0, " % (i - 1) +
+            "(struct k_args *)0xffffffff},")
     kernel_main_c_out(
-        "    {&K_TimerBlocks[%d], NULL, 0, 0, (struct k_args *)0xffffffff}\n" % (num_timers-2) +
+        "    {&K_TimerBlocks[%d], NULL, 0, 0, (struct k_args *)0xffffffff}\n" %
+        (num_timers - 2) +
         "};")
 
     # linked list of free timers
 
     kernel_main_c_out("\n" +
         "struct nano_lifo K_TimerFree = " +
-        "{(void *) &K_TimerBlocks[%d], NULL};" % (num_timers-1))
+        "{(void *) &K_TimerBlocks[%d], NULL};" % (num_timers - 1))
 
-# Generate task variables
 
 def kernel_main_c_tasks():
+    """ Generate task variables """
+
     total_tasks = len(task_list) + 1
 
     # task global variables
 
-    kernel_main_c_out("int K_TaskCount = %d;" % (total_tasks - 1));
+    kernel_main_c_out("int K_TaskCount = %d;" % (total_tasks - 1))
 
     # task stack areas
 
-    kernel_main_c_out("");
+    kernel_main_c_out("")
     for task in task_list:
         kernel_main_c_out("char __noinit __%s_stack[%d];" % (task[0], task[3]))
 
@@ -301,7 +326,7 @@ def kernel_main_c_tasks():
 
         # create bitmask of group(s) task belongs to
         group_bitmask = 0
-        group_set = task[4][1:len(task[4])-1]   # drop [] surrounding groups
+        group_set = task[4][1:len(task[4]) - 1]   # drop [] surrounding groups
         if (group_set != ""):
             group_list = group_set.split(',')
             for group in group_list:
@@ -332,9 +357,10 @@ def kernel_main_c_tasks():
     kernel_main_c_out("\n" +
         "struct k_proc * K_Task = &K_TaskList[%d];" % (total_tasks - 1))
 
-# Generate task scheduling variables
 
 def kernel_main_c_priorities():
+    """ Generate task scheduling variables """
+
     num_prios = 64
     total_tasks = len(task_list) + 1
 
@@ -344,7 +370,8 @@ def kernel_main_c_priorities():
         "struct k_tqhd K_PrioList[%d] =\n" % (num_prios) +
         "{")
     for i in range(1, num_prios):
-        kernel_main_c_out("    {NULL, (struct k_proc *)&K_PrioList[%d]}," % (i-1))
+        kernel_main_c_out(
+            "    {NULL, (struct k_proc *)&K_PrioList[%d]}," % (i - 1))
     kernel_main_c_out(
         "    {&K_TaskList[%d], &K_TaskList[%d]}\n" %
         (total_tasks - 1, total_tasks - 1) +
@@ -353,11 +380,12 @@ def kernel_main_c_priorities():
     # active priority queue (idle task's queue)
 
     kernel_main_c_out("\n" +
-        "struct k_tqhd * K_Prio = &K_PrioList[%d];" % (num_prios-1))
+        "struct k_tqhd * K_Prio = &K_PrioList[%d];" % (num_prios - 1))
 
-# Generate event variables
 
 def kernel_main_c_events():
+    """ Generate event variables """
+
     total_events = 4 + len(event_list)
 
     # event descriptors
@@ -393,13 +421,14 @@ def kernel_main_c_events():
             "const kevent_t %s_objId = %s;" %
             (event_name[0], event_name[0]))
 
-# Generate mutex variables
 
 def kernel_main_c_mutexes():
+    """ Generate mutex variables """
+
     total_mutexes = len(mutex_list)
 
-    if (total_mutexes == 0) :
-        kernel_main_c_out("\nstruct mutex_struct * K_MutexList = NULL;");
+    if (total_mutexes == 0):
+        kernel_main_c_out("\nstruct mutex_struct * K_MutexList = NULL;")
         return
 
     # mutex descriptors
@@ -418,13 +447,14 @@ def kernel_main_c_mutexes():
         name = mutex[0]
         kernel_main_c_out("const kmutex_t %s_objId = %s;" % (name, name))
 
-# Generate semaphore variables
 
 def kernel_main_c_semas():
+    """ Generate semaphore variables """
+
     total_semas = len(sema_list)
 
-    if (total_semas == 0) :
-        kernel_main_c_out("\nstruct sem_struct * K_SemList = NULL;");
+    if (total_semas == 0):
+        kernel_main_c_out("\nstruct sem_struct * K_SemList = NULL;")
         return
 
     # semaphore descriptors
@@ -436,13 +466,14 @@ def kernel_main_c_semas():
         kernel_main_c_out("    {NULL, 0, 0},")
     kernel_main_c_out("};")
 
-# Generate FIFO variables
 
 def kernel_main_c_fifos():
+    """ Generate FIFO variables """
+
     total_fifos = len(fifo_list)
 
-    if (total_fifos == 0) :
-        kernel_main_c_out("\nstruct que_struct * K_QueList = NULL;");
+    if (total_fifos == 0):
+        kernel_main_c_out("\nstruct que_struct * K_QueList = NULL;")
         return
 
     # FIFO buffers
@@ -470,17 +501,18 @@ def kernel_main_c_fifos():
             (buffer, buffer))
     kernel_main_c_out("};")
 
-# Generate pipe variables
 
 def kernel_main_c_pipes():
+    """ Generate pipe variables """
+
     total_pipes = len(pipe_list)
 
     # pipe global variables
 
-    kernel_main_c_out("int K_PipeCount = %d;" % (total_pipes));
+    kernel_main_c_out("int K_PipeCount = %d;" % (total_pipes))
 
-    if (total_pipes == 0) :
-        kernel_main_c_out("\nstruct pipe_struct * K_PipeList = NULL;");
+    if (total_pipes == 0):
+        kernel_main_c_out("\nstruct pipe_struct * K_PipeList = NULL;")
         return
 
     # pipe buffers
@@ -488,7 +520,8 @@ def kernel_main_c_pipes():
     kernel_main_c_out("")
 
     for pipe in pipe_list:
-        kernel_main_c_out("char __noinit __%s_buffer[%d];" % (pipe[0], pipe[1]))
+        kernel_main_c_out(
+            "char __noinit __%s_buffer[%d];" % (pipe[0], pipe[1]))
 
     # pipe descriptors
 
@@ -513,13 +546,14 @@ def kernel_main_c_pipes():
         "PFN_CHANNEL_RWT pKS_Channel_PutWT = _task_pipe_put;\n" +
         "PFN_CHANNEL_RWT pKS_Channel_GetWT = _task_pipe_get;")
 
-# Generate mailbox variables
 
 def kernel_main_c_mailboxes():
+    """ Generate mailbox variables """
+
     total_mbxs = len(mbx_list)
 
-    if (total_mbxs == 0) :
-        kernel_main_c_out("\nstruct mbx_struct * K_MbxList = NULL;");
+    if (total_mbxs == 0):
+        kernel_main_c_out("\nstruct mbx_struct * K_MbxList = NULL;")
         return
 
     # mailbox descriptors
@@ -532,17 +566,17 @@ def kernel_main_c_mailboxes():
     kernel_main_c_out("};")
 
 
-# Generate memory map variables
-
 def kernel_main_c_maps():
+    """ Generate memory map variables """
+
     total_maps = len(map_list)
 
     # map global variables
 
-    kernel_main_c_out("int K_MapCount = %d;" % (total_maps));
+    kernel_main_c_out("int K_MapCount = %d;" % (total_maps))
 
-    if (total_maps == 0) :
-        kernel_main_c_out("\nstruct map_struct * K_MapList = NULL;");
+    if (total_maps == 0):
+        kernel_main_c_out("\nstruct map_struct * K_MapList = NULL;")
         return
 
     # memory map buffers
@@ -566,17 +600,17 @@ def kernel_main_c_maps():
     kernel_main_c_out("};")
 
 
-# Generate memory pool variables
-
 def kernel_main_c_pools():
+    """ Generate memory pool variables """
+
     total_pools = len(pool_list)
 
     # pool global variables
 
-    kernel_main_c_out("\nint K_PoolCount = %d;" % (total_pools));
+    kernel_main_c_out("\nint K_PoolCount = %d;" % (total_pools))
 
-    if (total_pools == 0) :
-        kernel_main_c_out("\nstruct pool_struct * K_PoolList = NULL;");
+    if (total_pools == 0):
+        kernel_main_c_out("\nstruct pool_struct * K_PoolList = NULL;")
         return
 
     # start accumulating memory pool descriptor info
@@ -600,11 +634,11 @@ def kernel_main_c_pools():
 
         # determine block sizes used by pool (including actual minimum size)
 
-        frag_size_list = [ max_block_size ]
-        while (ident != 0) :    # loop forever
-            min_block_size_actual = frag_size_list[len(frag_size_list)-1]
+        frag_size_list = [max_block_size]
+        while (ident != 0):    # loop forever
+            min_block_size_actual = frag_size_list[len(frag_size_list) - 1]
             min_block_size_proposed = min_block_size_actual / 4
-            if (min_block_size_proposed < min_block_size) :
+            if (min_block_size_proposed < min_block_size):
                 break
             frag_size_list.append(min_block_size_proposed)
         frag_levels = len(frag_size_list)
@@ -613,7 +647,7 @@ def kernel_main_c_pools():
         # - largest size gets special handling
         # - remainder of algorithm is a complete mystery ...
 
-        block_status_sizes = [ (num_maximal_blocks + 3) / 4 ]
+        block_status_sizes = [(num_maximal_blocks + 3) / 4]
         block_status_size_to_use = num_maximal_blocks
         for index in range(1, frag_levels):
             block_status_sizes.append(block_status_size_to_use)
@@ -631,7 +665,8 @@ def kernel_main_c_pools():
                         (frag_table, frag_levels))
         for index in range(0, frag_levels):
             kernel_main_c_out("    { %d, %d, blockstatus_%#010x_%d}," %
-                (frag_size_list[index], block_status_sizes[index], ident, index))
+                (frag_size_list[index], block_status_sizes[index],
+                 ident, index))
         kernel_main_c_out("};\n")
 
         # generate memory pool buffer
@@ -652,9 +687,8 @@ def kernel_main_c_pools():
     kernel_main_c_out(pool_descriptors)
 
 
-# Generate kernel services function table
-
 def kernel_main_c_kernel_services():
+    """ Generate kernel services function table """
 
     # initialize table with info for all possible kernel services
 
@@ -835,9 +869,10 @@ def kernel_main_c_kernel_services():
         kernel_main_c_out("    " + func)
     kernel_main_c_out("};")
 
-# Generate driver initialization routine
 
 def kernel_main_c_driver_init():
+    """ Generate driver initialization routine """
+
     kernel_main_c_out("\n" +
         "void init_drivers(void)\n" +
         "{")
@@ -845,22 +880,24 @@ def kernel_main_c_driver_init():
         kernel_main_c_out("    " + driver_call + ";")
     kernel_main_c_out("}")
 
-# Generate node initialization routine
 
 def kernel_main_c_node_init():
+    """ Generate node initialization routine """
+
     kernel_main_c_out("\n" +
         "void init_node(void)\n{")
-    if (len(pipe_list) > 0) :
+    if (len(pipe_list) > 0):
         kernel_main_c_out("    InitPipe();")
-    if (len(map_list) > 0) :
+    if (len(map_list) > 0):
         kernel_main_c_out("    InitMap();")
-    if (len(pool_list) > 0) :
+    if (len(pool_list) > 0):
         kernel_main_c_out("    InitPools();")
     kernel_main_c_out("}")
 
-# Generate main() routine
 
 def kernel_main_c_main():
+    """ Generate main() routine """
+
     kernel_main_c_out("\n" +
         "void main(void)\n" +
         "{\n" +
@@ -869,21 +906,26 @@ def kernel_main_c_main():
         "    kernel_idle();\n" +
         "}")
 
-# Append a string to kernel_main.c
 
 def kernel_main_c_out(string):
+    """ Append a string to kernel_main.c """
+
     global kernel_main_c_data
 
     kernel_main_c_data += string + "\n"
 
+
 def write_file(filename, contents):
+    """ Create file using specified name and contents """
+
     f = open(filename, 'w')    # overwrites it if it already exists
     f.write(contents)
     f.close()
 
-# Generate kernel_main.c file
 
 def kernel_main_c_generate():
+    """ Generate kernel_main.c file """
+
     global kernel_main_c_data
 
     # create file contents
@@ -910,173 +952,190 @@ def kernel_main_c_generate():
 # Generate microkernel_objects.h file
 
 micro_objs_h_filename_str = \
-	"/* microkernel_objects.h - microkernel objects */\n\n"
+    "/* microkernel_objects.h - microkernel objects */\n\n"
 
 micro_objs_h_include_guard = "_MICROKERNEL_OBJECTS__H_"
 
 micro_objs_h_header_include_guard_str = \
-	"#ifndef " + micro_objs_h_include_guard + "\n" \
-	"#define " + micro_objs_h_include_guard + "\n\n"
+    "#ifndef " + micro_objs_h_include_guard + "\n" \
+    "#define " + micro_objs_h_include_guard + "\n\n"
+
 
 def generate_micro_objs_h_header():
 
-	global micro_objs_h_data
-	micro_objs_h_data += \
-		micro_objs_h_filename_str + \
-		copyright + \
-		do_not_edit_warning + \
-		micro_objs_h_header_include_guard_str
+    global micro_objs_h_data
+    micro_objs_h_data += \
+        micro_objs_h_filename_str + \
+        copyright + \
+        do_not_edit_warning + \
+        micro_objs_h_header_include_guard_str
 
 micro_objs_h_footer_include_guard_str = \
-	"\n#endif /* " + micro_objs_h_include_guard + " */\n"
+    "\n#endif /* " + micro_objs_h_include_guard + " */\n"
+
 
 def generate_micro_objs_h_footer():
 
-	global micro_objs_h_data
-	micro_objs_h_data += \
-		micro_objs_h_footer_include_guard_str
+    global micro_objs_h_data
+    micro_objs_h_data += \
+        micro_objs_h_footer_include_guard_str
+
 
 def generate_taskgroup_line(taskgroup, group_id):
 
-	global micro_objs_h_data
-	micro_objs_h_data += \
-		"#define " + taskgroup + " 0x%8.8x\n" % group_id
+    global micro_objs_h_data
+    micro_objs_h_data += \
+        "#define " + taskgroup + " 0x%8.8x\n" % group_id
+
 
 def generate_micro_objs_h_taskgroups():
 
-	for group in group_key_list:
-		generate_taskgroup_line(group, group_dictionary[group])
+    for group in group_key_list:
+        generate_taskgroup_line(group, group_dictionary[group])
+
 
 def generate_micro_objs_h_nodes():
 
-	global micro_objs_h_data
-	micro_objs_h_data += \
-		"\n#define NODE1 0x00010000\n\n"
+    global micro_objs_h_data
+    micro_objs_h_data += \
+        "\n#define NODE1 0x00010000\n\n"
+
 
 def generate_obj_id_line(name, obj_id):
 
-	return "#define " + name + " 0x0001%4.4x\n" % obj_id
+    return "#define " + name + " 0x0001%4.4x\n" % obj_id
+
 
 def generate_obj_id_lines(obj_types):
 
-	data = ""
-	for obj_type in obj_types:
-		for obj in obj_type[0]:
-			data += generate_obj_id_line(str(obj[0]), obj_type[1])
-			obj_type[1] += 1
-		if obj_type[1] > 0:
-			data += "\n"
+    data = ""
+    for obj_type in obj_types:
+        for obj in obj_type[0]:
+            data += generate_obj_id_line(str(obj[0]), obj_type[1])
+            obj_type[1] += 1
+        if obj_type[1] > 0:
+            data += "\n"
 
-	return data
+    return data
+
 
 def generate_micro_objs_h_obj_ids():
 
-	global micro_objs_h_data
+    global micro_objs_h_data
 
-	obj_types = [
-		[task_list,  0],
-		[mutex_list, 0],
-		[sema_list,  0],
-		[fifo_list,  0],
-		[pipe_list,  0],
-		[mbx_list,   0],
-		[pool_list,  0],
-	]
+    obj_types = [
+        [task_list,  0],
+        [mutex_list, 0],
+        [sema_list,  0],
+        [fifo_list,  0],
+        [pipe_list,  0],
+        [mbx_list,   0],
+        [pool_list,  0],
+    ]
 
-	micro_objs_h_data += generate_obj_id_lines(obj_types)
+    micro_objs_h_data += generate_obj_id_lines(obj_types)
+
 
 def generate_micro_objs_h_misc():
 
-	global micro_objs_h_data
-	micro_objs_h_data += "\n" + \
-		"#define TICKFREQ 1000\n" + \
-		"#define DATALEN 32768\n" + \
-		"#define CEILING_PRIO 5\n" + \
-		"#define KERNEL_PRIO 0\n" + \
-		"#define DRIVER_PRIO 1\n" + \
-		"#define TICKTIME 1000\n"
+    global micro_objs_h_data
+    micro_objs_h_data += "\n" + \
+        "#define TICKFREQ 1000\n" + \
+        "#define DATALEN 32768\n" + \
+        "#define CEILING_PRIO 5\n" + \
+        "#define KERNEL_PRIO 0\n" + \
+        "#define DRIVER_PRIO 1\n" + \
+        "#define TICKTIME 1000\n"
+
 
 def micro_objs_h_generate():
 
-	generate_micro_objs_h_header()
-	generate_micro_objs_h_taskgroups()
-	generate_micro_objs_h_nodes()
-	generate_micro_objs_h_obj_ids()
-	generate_micro_objs_h_misc() # XXX - remove when ready
-	generate_micro_objs_h_footer()
+    generate_micro_objs_h_header()
+    generate_micro_objs_h_taskgroups()
+    generate_micro_objs_h_nodes()
+    generate_micro_objs_h_obj_ids()
+    generate_micro_objs_h_misc()    # XXX - remove when ready
+    generate_micro_objs_h_footer()
 
-	write_file(output_dir + 'microkernel_objects.h', micro_objs_h_data)
+    write_file(output_dir + 'microkernel_objects.h', micro_objs_h_data)
+
 
 vxmicro_h_filename_str = \
-	"/* vxmicro.h - microkernel master header file */\n\n"
+    "/* vxmicro.h - microkernel master header file */\n\n"
 
 vxmicro_h_include_guard = "_VXMICRO__H_"
 
 vxmicro_h_header_include_guard_str = \
-	"#ifndef " + vxmicro_h_include_guard + "\n" \
-	"#define " + vxmicro_h_include_guard + "\n\n"
+    "#ifndef " + vxmicro_h_include_guard + "\n" \
+    "#define " + vxmicro_h_include_guard + "\n\n"
+
 
 def generate_vxmicro_h_header():
 
-	global vxmicro_h_data
-	vxmicro_h_data += \
-		vxmicro_h_filename_str + \
-		copyright + \
-		do_not_edit_warning + \
-		vxmicro_h_header_include_guard_str + \
-		"#include <microkernel.h>\n" + \
-		"#include <microkernel_objects.h>\n"
+    global vxmicro_h_data
+    vxmicro_h_data += \
+        vxmicro_h_filename_str + \
+        copyright + \
+        do_not_edit_warning + \
+        vxmicro_h_header_include_guard_str + \
+        "#include <microkernel.h>\n" + \
+        "#include <microkernel_objects.h>\n"
+
 
 def generate_vxmicro_h_misc():
 
-	global vxmicro_h_data
-	vxmicro_h_data += "\n" + \
-		"extern const int K_max_eventnr;\n" + \
-		"extern struct evstr EVENTS[];\n\n"
+    global vxmicro_h_data
+    vxmicro_h_data += "\n" + \
+        "extern const int K_max_eventnr;\n" + \
+        "extern struct evstr EVENTS[];\n\n"
+
 
 def generate_vxmicro_h_obj_ids():
 
-	global vxmicro_h_data
+    global vxmicro_h_data
 
-	base_event = 4 # events start at 4
-	event_id = base_event
-	for event in event_list:
-		vxmicro_h_data += "#define %s %u\n" % (str(event[0]), event_id)
-		event_id += 1
-	if event_id > base_event:
-		vxmicro_h_data += "\n"
+    base_event = 4  # events start at 4
+    event_id = base_event
+    for event in event_list:
+        vxmicro_h_data += "#define %s %u\n" % (str(event[0]), event_id)
+        event_id += 1
+    if event_id > base_event:
+        vxmicro_h_data += "\n"
 
-	obj_types = [
-		[map_list, 0],
-	]
-	vxmicro_h_data += generate_obj_id_lines(obj_types)
+    obj_types = [
+        [map_list, 0],
+    ]
+    vxmicro_h_data += generate_obj_id_lines(obj_types)
+
 
 vxmicro_h_footer_include_guard_str = \
-	"\n#endif /* " + vxmicro_h_include_guard + " */\n"
+    "\n#endif /* " + vxmicro_h_include_guard + " */\n"
+
 
 def generate_vxmicro_h_task_entry_points():
 
-	global vxmicro_h_data
-	for task in task_list:
-		vxmicro_h_data += "extern void %s(void);\n" % task[2]
+    global vxmicro_h_data
+    for task in task_list:
+        vxmicro_h_data += "extern void %s(void);\n" % task[2]
+
 
 def generate_vxmicro_h_footer():
 
-	global vxmicro_h_data
-	vxmicro_h_data += \
-		vxmicro_h_footer_include_guard_str
+    global vxmicro_h_data
+    vxmicro_h_data += \
+        vxmicro_h_footer_include_guard_str
 
-# Generate vxmicro.h file
 
 def vxmicro_h_generate():
+    """ Generate vxmicro.h file """
 
-	generate_vxmicro_h_header()
-	generate_vxmicro_h_misc()
-	generate_vxmicro_h_obj_ids()
-	generate_vxmicro_h_task_entry_points()
-	generate_vxmicro_h_footer()
+    generate_vxmicro_h_header()
+    generate_vxmicro_h_misc()
+    generate_vxmicro_h_obj_ids()
+    generate_vxmicro_h_task_entry_points()
+    generate_vxmicro_h_footer()
 
-	write_file(output_dir + 'vxmicro.h', vxmicro_h_data)
+    write_file(output_dir + 'vxmicro.h', vxmicro_h_data)
 
 # System generator mainline
 
