@@ -108,7 +108,6 @@ extern void K_rawdata(struct k_args *DataPacket);
 extern void K_mvdsndack(struct k_args *SndDAck);
 extern void K_mvdrcvack(struct k_args *RcvDAck);
 
-extern void K_memcpyreq(struct k_args *Starter);
 extern void K_memcpyrpl(struct k_args *Stopper);
 
 extern void K_ChSendReq(struct k_args *Writer);
