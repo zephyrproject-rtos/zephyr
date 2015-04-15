@@ -117,14 +117,15 @@ copyright = \
     " * POSSIBILITY OF SUCH DAMAGE.\n" + \
     " */\n"
 
+output_dir = ""
+
 
 def get_output_dir():
-    if len(sys.argv) > 2:
-        return sys.argv[2]
-    else:
-        return ""
+    """ Handle optional output directory argument """
 
-output_dir = get_output_dir()
+    global output_dir
+    if len(sys.argv) > 2:
+        output_dir = sys.argv[2]
 
 
 def write_file(filename, contents):
@@ -1162,6 +1163,7 @@ def vxmicro_h_generate():
 
 
 vpf_parse()
+get_output_dir()
 kernel_main_c_generate()
 vxmicro_h_generate()
 micro_objs_h_generate()
