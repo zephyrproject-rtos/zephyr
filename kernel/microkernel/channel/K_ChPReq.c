@@ -205,16 +205,20 @@ void K_ChSendReq(struct k_args *RequestOrig)
 		    ChxxxGetTimeType((K_ARGS_ARGS *)&(RequestProc->Args))) {
 			/*{ call is blocking } */
 			INSERT_ELM(pPipe->Writers, RequestProc);
-			RequestProc->Comm = CHENQ_TMO; /* This is really only
-							  necessay in the case
-							  of a WT */
+			/*
+			 * NOTE: It is both faster and simpler to blindly assign the
+			 * CHENQ_TMO microkernel command to the packet even though it
+			 * is only useful to the finite timeout case.
+			 */
+			RequestProc->Comm = CHENQ_TMO;
 			if (_TIME_B ==
 			    ChxxxGetTimeType(
 				    (K_ARGS_ARGS *)&(RequestProc->Args))) {
-				/* { TIME_B } */
-				RequestProc->Time.timer =
-					NULL; /* If the writer specified a W,
-						 then NULL the timer */
+				/*
+				 * The writer specified TICKS_UNLIMITED.
+				 * NULL the timer.
+				 */
+				RequestProc->Time.timer = NULL;
 				return;
 			} else {
 /* { TIME_BT } */

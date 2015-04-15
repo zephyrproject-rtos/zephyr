@@ -482,7 +482,7 @@ int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 	/*__ASSERT_NO_MSG( NULL==pReader); */
 
 	/* first condition: request cannot wait any longer: must be -
-	 * (non-blocked) or WT with a killed timer */
+	 * (non-blocked) or a finite timed wait with a killed timer */
 	TimeType = ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args));
 	option = ChxxxGetChOpt((K_ARGS_ARGS *)&(pWriter->Args));
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
@@ -527,7 +527,7 @@ int ReaderInProgressIsBlocked(struct pipe_struct *pPipe,
 	/*__ASSERT_NO_MSG( NULL==pWriter); */
 
 	/* first condition: request cannot wait any longer: must be -
-	 * (non-blocked) or WT with a killed timer */
+	 * (non-blocked) or a finite timed wait with a killed timer */
 	TimeType = ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args));
 	option = ChxxxGetChOpt((K_ARGS_ARGS *)&(pReader->Args));
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||

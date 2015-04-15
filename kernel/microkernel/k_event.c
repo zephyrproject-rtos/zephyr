@@ -137,9 +137,8 @@ void K_event_test(struct k_args *A)
 			E->status = 0;
 			A->Time.rcode = RC_OK;
 		} else {
-			if (likely(A->Time.ticks !=
-					TICKS_NONE)) {/* Caller specified W
-						      operation */
+			if (likely(A->Time.ticks != TICKS_NONE)) {
+				/* Caller will wait for the event */
 				if (likely(E->waiter == NULL)) {
 					A->Ctxt.proc = K_Task;
 					E->waiter = A;
@@ -155,7 +154,8 @@ void K_event_test(struct k_args *A)
 								    waiter
 								    present */
 				}
-			} else { /* Caller did not specify W */
+			} else {
+				/* Caller will not wait for the event */
 				A->Time.rcode = RC_FAIL;
 			}
 		}
