@@ -30,5 +30,5 @@ unset vxmicro_answer_file
 # alias VIP='export | grep VXMICRO'
 #
 # 2) specify toolchain location
-# declare -x VXMICRO_GCC_DIR="<path>/CodeSourcery/Sourcery_CodeBench_Lite_for_IA32_ELF"
+# declare -x VXMICRO_GCC_DIR="<path to installation directory>"
 # declare -x VXMICRO_ICC_DIR="<path>/icc/composer_xe_2013.1.117"
