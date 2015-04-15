@@ -218,7 +218,7 @@ static inline uint64_t _NanoTscRead(void)
 	}  rv;
 
 	/* rdtsc & cpuid clobbers eax, ebx, ecx and edx registers */
-	__asm__ volatile (	/* serialize */
+	__asm__ volatile (/* serialize */
 		"xorl %%eax,%%eax;\n\t"
 		"cpuid;\n\t"
 		:

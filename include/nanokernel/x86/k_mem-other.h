@@ -58,7 +58,7 @@ done:
 #endif /* CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
 }
 
-__asm volatile void k_memset( void	*_d, int	_v, size_t	_n)
+__asm volatile void k_memset(void	*_d, int	_v, size_t	_n)
 {
 #ifndef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
 % mem _d, _v, _n; lab unaligned, done

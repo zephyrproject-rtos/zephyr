@@ -193,7 +193,7 @@ void isr_stack_pop(void *parameter)
 {
 	ISR_STACK_INFO * pInfo = (ISR_STACK_INFO *) parameter;
 
-	if ( nano_isr_stack_pop (pInfo->channel, &(pInfo->data)) == 0 )
+	if (nano_isr_stack_pop (pInfo->channel, &(pInfo->data)) == 0)
 		{
         /* the stack is empty, set data to INVALID_DATA */
 		pInfo->data = INVALID_DATA;
@@ -220,10 +220,10 @@ void fiber1(void)
 
 	TC_PRINT("Test Fiber STACK Pop\n\n");
     /* Get all data */
-	while ( nano_fiber_stack_pop(&nanoStackObj, &data) != 0 )
+	while (nano_fiber_stack_pop(&nanoStackObj, &data) != 0)
 		{
 		TC_PRINT("FIBER STACK Pop: count = %d, data is %d\n", count, data);
-		if( (count >= NUM_STACK_ELEMENT) || (data != myData[NUM_STACK_ELEMENT - 1 - count]) )
+		if((count >= NUM_STACK_ELEMENT) || (data != myData[NUM_STACK_ELEMENT - 1 - count]))
 		    {
 		    TCERR1(count);
 		    retCode = TC_FAIL;
@@ -383,10 +383,10 @@ void testIsrStackFromTask(void)
 	_trigger_nano_isr_stack_pop();
 	result = isrStackInfo.data;
 
-	while ( result != INVALID_DATA )
+	while (result != INVALID_DATA)
 	{
 	TC_PRINT("  Pop from queue1: count = %d, data is %d\n", count, result);
-	if ( (count >= NUM_STACK_ELEMENT) || ( result != myIsrData[NUM_STACK_ELEMENT - count - 1] ) )
+	if ((count >= NUM_STACK_ELEMENT) || (result != myIsrData[NUM_STACK_ELEMENT - count - 1]))
 	    {
 	    TCERR1(count);
 	    retCode = TC_FAIL;
@@ -594,10 +594,10 @@ void main(void)
 	TC_PRINT("Test Task STACK Pop\n");
 
     /* Get all data */
-	while ( nano_task_stack_pop(&nanoStackObj, &data) != 0 )
+	while (nano_task_stack_pop(&nanoStackObj, &data) != 0)
 		{
 		TC_PRINT("TASK STACK Pop: count = %d, data is %d\n", count, data);
-		if ( (count >= NUM_STACK_ELEMENT) || ( data != myData[count] ) )
+		if ((count >= NUM_STACK_ELEMENT) || (data != myData[count]))
 		    {
 		    TCERR1(count);
 		    retCode = TC_FAIL;

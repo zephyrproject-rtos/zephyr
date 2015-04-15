@@ -153,7 +153,7 @@ int fillFIFO(kfifo_t queue, int numElements)
 	int result = TC_PASS;       /* TC_PASS or TC_FAIL for this function */
 	int retValue;               /* return value from task_fifo_xxx APIs */
 
-	for (int i = 0; i < numElements; i++ ) {
+	for (int i = 0; i < numElements; i++) {
 		retValue = task_fifo_put(queue, &myData[i]);
 		switch (retValue) {
 		case RC_OK:

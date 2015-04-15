@@ -99,7 +99,7 @@ static inline uint32_t TIME_STAMP_DELTA_GET (uint32_t ts)
 
     /* serialize so OS_GET_TIME() is not reordered */
 #if defined(__GNUC__)
-    __asm__ __volatile__ (      /* serialize */ \
+    __asm__ __volatile__ (/* serialize */ \
 	"xorl %%eax,%%eax \n        cpuid"	\
 	::: "%eax", "%ebx", "%ecx", "%edx");
 #elif defined(__DCC__)

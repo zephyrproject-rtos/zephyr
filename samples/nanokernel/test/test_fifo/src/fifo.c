@@ -229,10 +229,10 @@ void fiber1(void)
 
 	TC_PRINT("Test Fiber FIFO Get\n\n");
     /* Get all FIFOs */
-	while ( (pData = nano_fiber_fifo_get(&nanoFifoObj)) != NULL )
+	while ((pData = nano_fiber_fifo_get(&nanoFifoObj)) != NULL)
 		{
 		TC_PRINT("FIBER FIFO Get: count = %d, ptr is %p\n", count, pData);
-		if( (count >= NUM_FIFO_ELEMENT) || (pData != pPutList1[count]) )
+		if((count >= NUM_FIFO_ELEMENT) || (pData != pPutList1[count]))
 		    {
 		    TCERR1(count);
 		    retCode = TC_FAIL;
@@ -396,10 +396,10 @@ void testIsrFifoFromTask(void)
 		_trigger_nano_isr_fifo_get();
 		pGetData = isrFifoInfo.data;
 
-		while ( pGetData != NULL )
+		while (pGetData != NULL)
 		    {
 		    TC_PRINT("Get from queue1: count = %d, ptr is %p\n", count, pGetData);
-		    if ( (count >= NUM_FIFO_ELEMENT) || (pGetData != pPutList1[count]) )
+		    if ((count >= NUM_FIFO_ELEMENT) || (pGetData != pPutList1[count]))
 		        {
 		        TCERR1(count);
 		        retCode = TC_FAIL;
@@ -432,7 +432,7 @@ void testIsrFifoFromTask(void)
 		else
 		{
 		TC_PRINT("\nTest ISR FIFO (invoked from Task) - put %p and get back %p\n",
-		         pPutData, pGetData );
+		         pPutData, pGetData);
 		}
 
 		TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
@@ -729,10 +729,10 @@ void main(void)
 	TC_PRINT("Test Task FIFO Get\n");
 
     /* Get all FIFOs */
-	while ( (pData = nano_task_fifo_get(&nanoFifoObj)) != NULL )
+	while ((pData = nano_task_fifo_get(&nanoFifoObj)) != NULL)
 		{
 		TC_PRINT("TASK FIFO Get: count = %d, ptr is %p\n", count, pData);
-		if ( (count >= NUM_FIFO_ELEMENT) || (pData != pPutList2[count]) )
+		if ((count >= NUM_FIFO_ELEMENT) || (pData != pPutList2[count]))
 		    {
 		    TCERR1(count);
 		    retCode = TC_FAIL;

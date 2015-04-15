@@ -178,14 +178,14 @@ static void _FpCtxSave(tCCS *ccs)
 __asm volatile void _FpCtxSave(tCCS *ccs)
 {
 	% mem ccs !"ax", "cx" movl ccs,
-		% eax leal __tCCS_preempFloatReg_OFFSET( % eax),
+		% eax leal __tCCS_preempFloatReg_OFFSET(% eax),
 		% ecx /* &preempFloatReg */
 #ifdef CONFIG_SSE
 			testl $0x20,
-		__tCCS_flags_OFFSET( % eax) jz 0f fxsave( % ecx) jmp 1f 0
-		: fnsave( % ecx)1 :
+		__tCCS_flags_OFFSET(% eax) jz 0f fxsave(% ecx) jmp 1f 0
+		: fnsave(% ecx)1 :
 #else
-			fnsave( % ecx)
+			fnsave(% ecx)
 #endif /* CONFIG_SSE */
 }
 #endif
@@ -227,7 +227,7 @@ __asm volatile void _FpCtxInit(tCCS *ccs)
 #ifdef CONFIG_SSE
 			movl ccs,
 		% eax testl $0x20,
-		__tCCS_flags_OFFSET( % eax) jz 0f
+		__tCCS_flags_OFFSET(% eax) jz 0f
 
 			/* initialize SSE (since context uses it) */
 			ldmxcsr _Mxcsr
