@@ -242,6 +242,13 @@ kernel_main_c_filename_str = \
     "/* kernel_main.c - microkernel mainline and kernel objects */\n\n"
 
 
+def kernel_main_c_out(string):
+    """ Append a string to kernel_main.c """
+
+    global kernel_main_c_data
+    kernel_main_c_data += string
+
+
 def kernel_main_c_general():
     kernel_main_c_out(
         kernel_main_c_filename_str +
@@ -252,13 +259,13 @@ def kernel_main_c_general():
         "#include <k_boot.h>\n" +
         "#include <toolchain.h>\n" +
         "#include <sections.h>\n" +
-        "#include <vxmicro.h>")
+        "#include <vxmicro.h>\n")
 
-    kernel_main_c_out("\nconst knode_t K_ThisNode = 0x00010000;")
+    kernel_main_c_out("\nconst knode_t K_ThisNode = 0x00010000;\n")
+    kernel_main_c_out("\n" +
+        "char __noinit _minik_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];\n")
     kernel_main_c_out(
-        "\nchar __noinit _minik_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];")
-    kernel_main_c_out(
-        "int K_StackSize = CONFIG_MICROKERNEL_SERVER_STACK_SIZE;")
+        "int K_StackSize = CONFIG_MICROKERNEL_SERVER_STACK_SIZE;\n")
 
 
 def kernel_main_c_kargs():
@@ -269,21 +276,21 @@ def kernel_main_c_kargs():
     kernel_main_c_out("\n" +
         "struct k_args K_ArgsBlocks[%s] =\n" % (num_kargs) +
         "{\n" +
-        "    {NULL, NULL, 0, 0, 0, (K_COMM) UNDEFINED},")
+        "    {NULL, NULL, 0, 0, 0, (K_COMM) UNDEFINED},\n")
     for i in range(1, num_kargs - 1):
         kernel_main_c_out(
-            "    {&K_ArgsBlocks[%d], NULL, 0, 0, 0, (K_COMM) UNDEFINED}," %
+            "    {&K_ArgsBlocks[%d], NULL, 0, 0, 0, (K_COMM) UNDEFINED},\n" %
             (i - 1))
     kernel_main_c_out(
-        "    {&K_ArgsBlocks[%d], NULL, 0, 0, 0, (K_COMM) UNDEFINED}" %
+        "    {&K_ArgsBlocks[%d], NULL, 0, 0, 0, (K_COMM) UNDEFINED}\n" %
         (num_kargs - 2) +
-        "\n};")
+        "};\n")
 
     # linked list of free command packets
 
     kernel_main_c_out("\n" +
         "struct nano_lifo K_ArgsFree = " +
-        "{(void *) &K_ArgsBlocks[%d], NULL};" % (num_kargs - 1))
+        "{(void *) &K_ArgsBlocks[%d], NULL};\n" % (num_kargs - 1))
 
 
 def kernel_main_c_timers():
@@ -294,21 +301,21 @@ def kernel_main_c_timers():
     kernel_main_c_out("\n" +
         "K_TIMER K_TimerBlocks[%d] =\n" % (num_timers) +
         "{\n" +
-        "    {NULL, NULL, 0, 0, (struct k_args *)0xffffffff},")
+        "    {NULL, NULL, 0, 0, (struct k_args *)0xffffffff},\n")
     for i in range(1, num_timers - 1):
         kernel_main_c_out(
             "    {&K_TimerBlocks[%d], NULL, 0, 0, " % (i - 1) +
-            "(struct k_args *)0xffffffff},")
+            "(struct k_args *)0xffffffff},\n")
     kernel_main_c_out(
         "    {&K_TimerBlocks[%d], NULL, 0, 0, (struct k_args *)0xffffffff}\n" %
         (num_timers - 2) +
-        "};")
+        "};\n")
 
     # linked list of free timers
 
     kernel_main_c_out("\n" +
         "struct nano_lifo K_TimerFree = " +
-        "{(void *) &K_TimerBlocks[%d], NULL};" % (num_timers - 1))
+        "{(void *) &K_TimerBlocks[%d], NULL};\n" % (num_timers - 1))
 
 
 def kernel_main_c_tasks():
@@ -318,19 +325,20 @@ def kernel_main_c_tasks():
 
     # task global variables
 
-    kernel_main_c_out("int K_TaskCount = %d;" % (total_tasks - 1))
+    kernel_main_c_out("int K_TaskCount = %d;\n" % (total_tasks - 1))
 
     # task stack areas
 
-    kernel_main_c_out("")
+    kernel_main_c_out("\n")
     for task in task_list:
-        kernel_main_c_out("char __noinit __%s_stack[%d];" % (task[0], task[3]))
+        kernel_main_c_out("char __noinit __%s_stack[%d];\n" %
+                          (task[0], task[3]))
 
     # task descriptors (including one for idle task)
 
     kernel_main_c_out("\n" +
         "struct k_proc K_TaskList[%d] =\n" % (total_tasks) +
-        "{")
+        "{\n")
     ident = 0x00010000
     for task in task_list:
         prio = task[1]
@@ -359,18 +367,18 @@ def kernel_main_c_tasks():
         kernel_main_c_out(
             "    {NULL, NULL, %d, %#010x, " % (prio, ident) +
             "0x00000001, %#010x,\n" % (group_bitmask) +
-            "%s, %s, %d, (taskabortfunction)NULL}," % (entry, stack, size))
+            "%s, %s, %d, (taskabortfunction)NULL},\n" % (entry, stack, size))
         ident += 1
 
     kernel_main_c_out("    {NULL, NULL, 63, 0x00000000, " +
         "0x00000000, 0x00000000,\n" +
-        "(taskstartfunction)NULL, NULL, 0, (taskabortfunction)NULL}")
-    kernel_main_c_out("};")
+        "(taskstartfunction)NULL, NULL, 0, (taskabortfunction)NULL}\n")
+    kernel_main_c_out("};\n")
 
     # currently scheduled task (idle task)
 
     kernel_main_c_out("\n" +
-        "struct k_proc * K_Task = &K_TaskList[%d];" % (total_tasks - 1))
+        "struct k_proc * K_Task = &K_TaskList[%d];\n" % (total_tasks - 1))
 
 
 def kernel_main_c_priorities():
@@ -383,19 +391,19 @@ def kernel_main_c_priorities():
 
     kernel_main_c_out("\n" +
         "struct k_tqhd K_PrioList[%d] =\n" % (num_prios) +
-        "{")
+        "{\n")
     for i in range(1, num_prios):
         kernel_main_c_out(
-            "    {NULL, (struct k_proc *)&K_PrioList[%d]}," % (i - 1))
+            "    {NULL, (struct k_proc *)&K_PrioList[%d]},\n" % (i - 1))
     kernel_main_c_out(
         "    {&K_TaskList[%d], &K_TaskList[%d]}\n" %
         (total_tasks - 1, total_tasks - 1) +
-        "};")
+        "};\n")
 
     # active priority queue (idle task's queue)
 
     kernel_main_c_out("\n" +
-        "struct k_tqhd * K_Prio = &K_PrioList[%d];" % (num_prios - 1))
+        "struct k_tqhd * K_Prio = &K_PrioList[%d];\n" % (num_prios - 1))
 
 
 def kernel_main_c_events():
@@ -407,33 +415,33 @@ def kernel_main_c_events():
 
     kernel_main_c_out("\n" +
         "struct evstr EVENTS[%d] =\n" % (total_events) +
-        "{")
+        "{\n")
     # pre-defined events
     kernel_main_c_out(
         "    {0, (kevent_handler_t)K_ticker, (struct k_args *)NULL, 0},\n" +
         "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n" +
         "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n" +
-        "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},"
+        "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n"
     )
     # project-specific events
     for event in event_list:
         kernel_main_c_out(
-            "    {0, (kevent_handler_t)%s, (struct k_args *)NULL, 0}," %
+            "    {0, (kevent_handler_t)%s, (struct k_args *)NULL, 0},\n" %
             (event[1]))
-    kernel_main_c_out("};")
+    kernel_main_c_out("};\n")
 
     # number of events
 
     kernel_main_c_out("\n" +
-        "const int K_max_eventnr = %d;" % (total_events))
+        "const int K_max_eventnr = %d;\n" % (total_events))
 
     # event object identifiers
 
-    kernel_main_c_out("")
+    kernel_main_c_out("\n")
 
     for event_name in event_list:
         kernel_main_c_out(
-            "const kevent_t %s_objId = %s;" %
+            "const kevent_t %s_objId = %s;\n" %
             (event_name[0], event_name[0]))
 
 
@@ -443,24 +451,24 @@ def kernel_main_c_mutexes():
     total_mutexes = len(mutex_list)
 
     if (total_mutexes == 0):
-        kernel_main_c_out("\nstruct mutex_struct * K_MutexList = NULL;")
+        kernel_main_c_out("\nstruct mutex_struct * K_MutexList = NULL;\n")
         return
 
     # mutex descriptors
 
     kernel_main_c_out("\n" +
         "struct mutex_struct K_MutexList[%s] =\n" % (total_mutexes) +
-        "{")
+        "{\n")
     for mutex in mutex_list:
-        kernel_main_c_out("    {ANYTASK, 64, 64, 0, NULL, 0, 0},")
-    kernel_main_c_out("};")
-    kernel_main_c_out("")
+        kernel_main_c_out("    {ANYTASK, 64, 64, 0, NULL, 0, 0},\n")
+    kernel_main_c_out("};\n")
+    kernel_main_c_out("\n")
 
     # mutex object identifiers
 
     for mutex in mutex_list:
         name = mutex[0]
-        kernel_main_c_out("const kmutex_t %s_objId = %s;" % (name, name))
+        kernel_main_c_out("const kmutex_t %s_objId = %s;\n" % (name, name))
 
 
 def kernel_main_c_semas():
@@ -469,17 +477,17 @@ def kernel_main_c_semas():
     total_semas = len(sema_list)
 
     if (total_semas == 0):
-        kernel_main_c_out("\nstruct sem_struct * K_SemList = NULL;")
+        kernel_main_c_out("\nstruct sem_struct * K_SemList = NULL;\n")
         return
 
     # semaphore descriptors
 
     kernel_main_c_out("\n" +
         "struct sem_struct K_SemList[%s] =\n" % (total_semas) +
-        "{")
+        "{\n")
     for semaphore in sema_list:
-        kernel_main_c_out("    {NULL, 0, 0},")
-    kernel_main_c_out("};")
+        kernel_main_c_out("    {NULL, 0, 0},\n")
+    kernel_main_c_out("};\n")
 
 
 def kernel_main_c_fifos():
@@ -488,22 +496,22 @@ def kernel_main_c_fifos():
     total_fifos = len(fifo_list)
 
     if (total_fifos == 0):
-        kernel_main_c_out("\nstruct que_struct * K_QueList = NULL;")
+        kernel_main_c_out("\nstruct que_struct * K_QueList = NULL;\n")
         return
 
     # FIFO buffers
 
-    kernel_main_c_out("")
+    kernel_main_c_out("\n")
 
     for fifo in fifo_list:
         kernel_main_c_out(
-            "char __noinit __%s_buffer[%d];" % (fifo[0], fifo[1] * fifo[2]))
+            "char __noinit __%s_buffer[%d];\n" % (fifo[0], fifo[1] * fifo[2]))
 
     # FIFO descriptors
 
     kernel_main_c_out("\n" +
         "struct que_struct K_QueList[%s] =\n" % (total_fifos) +
-        "{"
+        "{\n"
     )
     for fifo in fifo_list:
         depth = fifo[1]
@@ -512,9 +520,9 @@ def kernel_main_c_fifos():
         kernel_main_c_out(
             "    {%d, %d, %s, %s + (%d * %d),\n" %
             (depth, width, buffer, buffer, depth, width) +
-            "%s, %s, NULL, 0, 0, 0}," %
+            "%s, %s, NULL, 0, 0, 0},\n" %
             (buffer, buffer))
-    kernel_main_c_out("};")
+    kernel_main_c_out("};\n")
 
 
 def kernel_main_c_pipes():
@@ -524,30 +532,30 @@ def kernel_main_c_pipes():
 
     # pipe global variables
 
-    kernel_main_c_out("int K_PipeCount = %d;" % (total_pipes))
+    kernel_main_c_out("int K_PipeCount = %d;\n" % (total_pipes))
 
     if (total_pipes == 0):
-        kernel_main_c_out("\nstruct pipe_struct * K_PipeList = NULL;")
+        kernel_main_c_out("\nstruct pipe_struct * K_PipeList = NULL;\n")
         return
 
     # pipe buffers
 
-    kernel_main_c_out("")
+    kernel_main_c_out("\n")
 
     for pipe in pipe_list:
         kernel_main_c_out(
-            "char __noinit __%s_buffer[%d];" % (pipe[0], pipe[1]))
+            "char __noinit __%s_buffer[%d];\n" % (pipe[0], pipe[1]))
 
     # pipe descriptors
 
     kernel_main_c_out("\n" +
         "struct pipe_struct K_PipeList[%d] =\n" % (total_pipes) +
-        "{")
+        "{\n")
     for pipe in pipe_list:
         size = pipe[1]
         buffer = "__" + pipe[0] + "_buffer"
-        kernel_main_c_out("    {%d, %s}," % (size, buffer))
-    kernel_main_c_out("};")
+        kernel_main_c_out("    {%d, %s},\n" % (size, buffer))
+    kernel_main_c_out("};\n")
 
     # pipe variables [should probably be eliminated]
 
@@ -559,7 +567,7 @@ def kernel_main_c_pipes():
         "PFN_CHANNEL_RW  pHS_Channel_GetW = (PFN_CHANNEL_RW)NULL;\n" +
         "PFN_CHANNEL_RWT pHS_Channel_GetWT = (PFN_CHANNEL_RWT)NULL;\n" +
         "PFN_CHANNEL_RWT pKS_Channel_PutWT = _task_pipe_put;\n" +
-        "PFN_CHANNEL_RWT pKS_Channel_GetWT = _task_pipe_get;")
+        "PFN_CHANNEL_RWT pKS_Channel_GetWT = _task_pipe_get;\n")
 
 
 def kernel_main_c_mailboxes():
@@ -568,17 +576,17 @@ def kernel_main_c_mailboxes():
     total_mbxs = len(mbx_list)
 
     if (total_mbxs == 0):
-        kernel_main_c_out("\nstruct mbx_struct * K_MbxList = NULL;")
+        kernel_main_c_out("\nstruct mbx_struct * K_MbxList = NULL;\n")
         return
 
     # mailbox descriptors
 
     kernel_main_c_out("\n" +
         "struct mbx_struct K_MbxList[%d] =\n" % (total_mbxs) +
-        "{")
+        "{\n")
     for mbx in mbx_list:
-        kernel_main_c_out("    {NULL, NULL, 0},")
-    kernel_main_c_out("};")
+        kernel_main_c_out("    {NULL, NULL, 0},\n")
+    kernel_main_c_out("};\n")
 
 
 def kernel_main_c_maps():
@@ -588,31 +596,32 @@ def kernel_main_c_maps():
 
     # map global variables
 
-    kernel_main_c_out("int K_MapCount = %d;" % (total_maps))
+    kernel_main_c_out("int K_MapCount = %d;\n" % (total_maps))
 
     if (total_maps == 0):
-        kernel_main_c_out("\nstruct map_struct * K_MapList = NULL;")
+        kernel_main_c_out("\nstruct map_struct * K_MapList = NULL;\n")
         return
 
     # memory map buffers
 
-    kernel_main_c_out("")
+    kernel_main_c_out("\n")
 
     for map in map_list:
         blocks = map[1]
         block_size = map[2]
-        kernel_main_c_out("char __noinit __MAP_%s_buffer[%d];" %
+        kernel_main_c_out("char __noinit __MAP_%s_buffer[%d];\n" %
                     (map[0], blocks * block_size))
 
     # memory map descriptors
 
-    kernel_main_c_out("\nstruct map_struct K_MapList[%d] =\n{" % (total_maps))
+    kernel_main_c_out(
+        "\nstruct map_struct K_MapList[%d] =\n{\n" % (total_maps))
     for map in map_list:
         blocks = map[1]
         block_size = map[2]
-        kernel_main_c_out("    { %d, %d, __MAP_%s_buffer }," %
+        kernel_main_c_out("    { %d, %d, __MAP_%s_buffer },\n" %
                     (blocks, block_size, map[0]))
-    kernel_main_c_out("};")
+    kernel_main_c_out("};\n")
 
 
 def kernel_main_c_pools():
@@ -622,10 +631,10 @@ def kernel_main_c_pools():
 
     # pool global variables
 
-    kernel_main_c_out("\nint K_PoolCount = %d;" % (total_pools))
+    kernel_main_c_out("\nint K_PoolCount = %d;\n" % (total_pools))
 
     if (total_pools == 0):
-        kernel_main_c_out("\nstruct pool_struct * K_PoolList = NULL;")
+        kernel_main_c_out("\nstruct pool_struct * K_PoolList = NULL;\n")
         return
 
     # start accumulating memory pool descriptor info
@@ -636,7 +645,7 @@ def kernel_main_c_pools():
 
     for pool in pool_list:
 
-        kernel_main_c_out("")
+        kernel_main_c_out("\n")
 
         # create local variables relating to current pool
 
@@ -671,22 +680,23 @@ def kernel_main_c_pools():
         # generate block status areas
 
         for index in range(0, frag_levels):
-            kernel_main_c_out("struct block_stat blockstatus_%#010x_%d[%d];" %
+            kernel_main_c_out(
+                "struct block_stat blockstatus_%#010x_%d[%d];\n" %
                 (ident, index, block_status_sizes[index]))
 
         # generate memory pool fragmentation descriptor
 
-        kernel_main_c_out("\nstruct pool_block %s[%d] =\n{" %
+        kernel_main_c_out("\nstruct pool_block %s[%d] =\n{\n" %
                         (frag_table, frag_levels))
         for index in range(0, frag_levels):
-            kernel_main_c_out("    { %d, %d, blockstatus_%#010x_%d}," %
+            kernel_main_c_out("    { %d, %d, blockstatus_%#010x_%d},\n" %
                 (frag_size_list[index], block_status_sizes[index],
                  ident, index))
         kernel_main_c_out("};\n")
 
         # generate memory pool buffer
 
-        kernel_main_c_out("char __noinit %s[%d];" % (buffer, total_memory))
+        kernel_main_c_out("\nchar __noinit %s[%d];\n" % (buffer, total_memory))
 
         # append memory pool descriptor info
 
@@ -698,7 +708,7 @@ def kernel_main_c_pools():
 
     # generate memory pool descriptor info
 
-    pool_descriptors += "};"
+    pool_descriptors += "};\n"
     kernel_main_c_out(pool_descriptors)
 
 
@@ -879,10 +889,10 @@ def kernel_main_c_kernel_services():
 
     kernel_main_c_out("\n" +
         "const kernelfunc _minik_func[82] =\n" +
-        "{")
+        "{\n")
     for func in func_table:
-        kernel_main_c_out("    " + func)
-    kernel_main_c_out("};")
+        kernel_main_c_out("    " + func + "\n")
+    kernel_main_c_out("};\n")
 
 
 def kernel_main_c_driver_init():
@@ -890,24 +900,24 @@ def kernel_main_c_driver_init():
 
     kernel_main_c_out("\n" +
         "void init_drivers(void)\n" +
-        "{")
+        "{\n")
     for driver_call in driver_list:
-        kernel_main_c_out("    " + driver_call + ";")
-    kernel_main_c_out("}")
+        kernel_main_c_out("    " + driver_call + ";\n")
+    kernel_main_c_out("}\n")
 
 
 def kernel_main_c_node_init():
     """ Generate node initialization routine """
 
     kernel_main_c_out("\n" +
-        "void init_node(void)\n{")
+        "void init_node(void)\n{\n")
     if (len(pipe_list) > 0):
-        kernel_main_c_out("    InitPipe();")
+        kernel_main_c_out("    InitPipe();\n")
     if (len(map_list) > 0):
-        kernel_main_c_out("    InitMap();")
+        kernel_main_c_out("    InitMap();\n")
     if (len(pool_list) > 0):
-        kernel_main_c_out("    InitPools();")
-    kernel_main_c_out("}")
+        kernel_main_c_out("    InitPools();\n")
+    kernel_main_c_out("}\n")
 
 
 def kernel_main_c_main():
@@ -919,15 +929,7 @@ def kernel_main_c_main():
         "    kernel_init();\n" +
         "    task_group_start(EXE);\n" +
         "    kernel_idle();\n" +
-        "}")
-
-
-def kernel_main_c_out(string):
-    """ Append a string to kernel_main.c """
-
-    global kernel_main_c_data
-
-    kernel_main_c_data += string + "\n"
+        "}\n")
 
 
 def kernel_main_c_generate():
