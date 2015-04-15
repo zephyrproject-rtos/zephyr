@@ -31,7 +31,9 @@
  */
 
 
-#include "microkernel/k_boot.h"
+#include <microkernel/k_boot.h>
+#include <toolchain.h>
+#include <stdint.h>
 
 extern uint32_t *_currentbootinfo_word;
 

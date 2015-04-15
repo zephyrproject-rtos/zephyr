@@ -33,7 +33,7 @@
 #ifndef __K_BOOT_H__
 #define __K_BOOT_H__
 
-#include <microkernel/k_types.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
