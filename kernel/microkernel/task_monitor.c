@@ -87,8 +87,7 @@ void K_monitor_args(struct k_args *A)
 	{
 		K_monitor_wptr->time = timer_read();
 
-		if ((uint32_t)A < K_max_eventnr) /* K_max_eventnr must be used
-						    instead of 64 */
+		if ((uint32_t)A < K_max_eventnr)
 		{
 			K_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
 		}
