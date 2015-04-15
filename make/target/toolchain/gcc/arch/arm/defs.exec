@@ -45,4 +45,4 @@ iGCC_LIB_ISA = $(strip \
 )
 
 # path to the compiler auxiliary libraries
-iTC_AUX_LIB_DIR = $(wildcard $(iGCC_DIR)/lib/gcc/$(iGCC_TARGET)/$(vGCC_VER).*)/${iGCC_LIB_ISA}
+iTC_AUX_LIB_DIR ?= $(wildcard $(iGCC_DIR)/lib/gcc/$(iGCC_TARGET)/$(vGCC_VER).*)/${iGCC_LIB_ISA}

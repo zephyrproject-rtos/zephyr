@@ -39,4 +39,4 @@ OC_ARCH ?= arc
 OC_TARGET ?= elf32-${OC_ARCH}
 
 # path to the compiler auxiliary libraries
-iTC_AUX_LIB_DIR = $(wildcard $(iGCC_DIR)/lib/gcc/$(iGCC_TARGET)/$(vGCC_VER).*/em)
+iTC_AUX_LIB_DIR ?= $(wildcard $(iGCC_DIR)/lib/gcc/$(iGCC_TARGET)/$(vGCC_VER).*/em)
