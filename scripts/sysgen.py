@@ -32,8 +32,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Required arguments:
+# Arguments:
 #   - name of VPF file
+#   - name of directory for output files (optional)
 
 # Generates:
 #   - kernel_main.c file
@@ -43,7 +44,7 @@
 import os
 import sys
 
-# input-related variables
+# global variables describing system
 
 num_kargs = 0
 num_timers = 0
@@ -63,7 +64,7 @@ driver_list = []
 group_dictionary = {}
 group_key_list = []
 
-# output-related variables
+# global variables used during generation of output files
 
 kernel_main_c_data = ""
 vxmicro_h_data = ""
@@ -79,16 +80,19 @@ def get_output_dir():
 output_dir = get_output_dir()
 
 
+#
+# CREATE INTERNAL REPRESENTATION OF SYSTEM
+#
+
+
 def vpf_parse():
     """ Parse VPF file """
 
     global num_kargs
     global num_timers
 
-    # open file for reading
+    # read file contents in a single shot
     with open(sys.argv[1], 'r') as infile:
-
-        # read file contents
         data = infile.read()
 
     # create list of the lines, breaking at line boundaries
@@ -170,7 +174,11 @@ def vpf_parse():
         print "UNRECOGNIZED INPUT LINE"
         print words     # display any unrecognized line
 
-# Generate miscellaneous global variables
+
+#
+# GENERATE kernel_main.c FILE
+#
+
 
 kernel_main_c_filename_str = \
     "/* kernel_main.c - microkernel mainline and kernel objects */\n\n"
@@ -918,7 +926,7 @@ def kernel_main_c_out(string):
 def write_file(filename, contents):
     """ Create file using specified name and contents """
 
-    f = open(filename, 'w')    # overwrites it if it already exists
+    f = open(filename, 'w')    # overwrites file if it already exists
     f.write(contents)
     f.close()
 
@@ -928,7 +936,6 @@ def kernel_main_c_generate():
 
     global kernel_main_c_data
 
-    # create file contents
     kernel_main_c_general()
     kernel_main_c_kargs()
     kernel_main_c_timers()
@@ -949,7 +956,11 @@ def kernel_main_c_generate():
 
     write_file(output_dir + 'kernel_main.c', kernel_main_c_data)
 
-# Generate microkernel_objects.h file
+
+#
+# GENERATE microkernel_objects.h FILE
+#
+
 
 micro_objs_h_filename_str = \
     "/* microkernel_objects.h - microkernel objects */\n\n"
@@ -1060,6 +1071,11 @@ def micro_objs_h_generate():
     write_file(output_dir + 'microkernel_objects.h', micro_objs_h_data)
 
 
+#
+# GENERATE vxmicro.h FILE
+#
+
+
 vxmicro_h_filename_str = \
     "/* vxmicro.h - microkernel master header file */\n\n"
 
@@ -1094,7 +1110,7 @@ def generate_vxmicro_h_obj_ids():
 
     global vxmicro_h_data
 
-    base_event = 4  # events start at 4
+    base_event = 4  # no need to generate ids for the 4 pre-defined events
     event_id = base_event
     for event in event_list:
         vxmicro_h_data += "#define %s %u\n" % (str(event[0]), event_id)
@@ -1137,7 +1153,11 @@ def vxmicro_h_generate():
 
     write_file(output_dir + 'vxmicro.h', vxmicro_h_data)
 
-# System generator mainline
+
+#
+# SYSTEM GENERATOR MAINLINE
+#
+
 
 vpf_parse()
 kernel_main_c_generate()
