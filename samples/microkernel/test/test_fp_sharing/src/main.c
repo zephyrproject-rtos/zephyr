@@ -320,7 +320,7 @@ void load_store_low(void)
 * RETURNS: N/A
 */
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 void load_store_high(int unused1, int unused2)
 #else
 void load_store_high(void)
@@ -334,7 +334,7 @@ void load_store_high(void)
 	unsigned char *floatRegisterSetBytePtr =
 		(unsigned char *)&floatRegisterSet;
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
@@ -397,7 +397,7 @@ void load_store_high(void)
 		 * to provide a "clean" FPU state to this context once the sleep ends.
 		 */
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 		nano_fiber_timer_start(&fiberTimer, 1);
 		nano_fiber_timer_wait(&fiberTimer);
 #else

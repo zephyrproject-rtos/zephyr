@@ -41,7 +41,7 @@ Measure boot time for both nanokernel and microkernel project which includes
 
 /* includes */
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 #include <nanokernel.h>
 #else
 #include <vxmicro.h>
@@ -88,7 +88,7 @@ void bootTimeTask (void)
     TC_START ("Boot Time Measurement");
 
     /* Only print lower 32bit of time result */
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
     TC_PRINT("NanoKernel Boot Result: Clock Frequency: %d MHz\n",
              CONFIG_CPU_CLOCK_FREQ_MHZ);
 #else	/* CONFIG_MICROKERNEL */
@@ -119,7 +119,7 @@ void bootTimeTask (void)
 
     }
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 
 char fiberStack[512];
 

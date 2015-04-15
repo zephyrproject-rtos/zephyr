@@ -31,7 +31,7 @@
  */
 /* includes */
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
   #include <nanokernel.h>
   #include "phil.h"
 #else  /* ! CONFIG_NANOKERNEL */
@@ -43,7 +43,7 @@
 
 /* defines */
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
   #define FORK(x) &forks[x]
   #define TAKE(x) nano_fiber_sem_take_wait(x)
   #define GIVE(x) nano_fiber_sem_give(x)
@@ -57,7 +57,7 @@
 
 #define PRINT(x,y)	myPrint(x,y)
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 /* externs */
 
 extern struct nano_sem forks[N_PHILOSOPHERS];
@@ -117,7 +117,7 @@ static void myDelay
 
 void philEntry (void)
 	{
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 	struct nano_sem *f1;	/* fork #1 */
 	struct nano_sem *f2;	/* fork #2 */
 #else

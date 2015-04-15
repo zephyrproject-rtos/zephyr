@@ -38,7 +38,7 @@
 #include "timestamp.h"
 #include "utils.h"
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 
 #elif defined (CONFIG_MICROKERNEL)
 

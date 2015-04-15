@@ -32,7 +32,7 @@
 
 /* includes */
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 #include <nanokernel.h>
 #include "phil.h"
 #else
@@ -51,7 +51,7 @@
 	"implementation demonstrates the usage of multiple (6) %s\n"            \
 	"of differing priorities and the %s semaphores and timers."
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 
 #define STSIZE 1024
 
@@ -65,7 +65,7 @@ char philStack[N_PHILOSOPHERS][STSIZE];
 struct nano_sem forks[N_PHILOSOPHERS];
 #endif  /*  CONFIG_NANOKERNEL */
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 /*******************************************************************************
 *
 * main - nanokernel entry point

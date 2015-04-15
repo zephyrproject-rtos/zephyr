@@ -74,7 +74,7 @@ void nanoTest (void)
     printDashLine ();
     }
 
-#ifdef  CONFIG_NANOKERNEL
+#ifdef CONFIG_NANOKERNEL
 /*******************************************************************************
  *
  * main - nanokernel-only testing entry point
