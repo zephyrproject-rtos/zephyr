@@ -249,7 +249,9 @@ def kernel_main_c_out(string):
     kernel_main_c_data += string
 
 
-def kernel_main_c_general():
+def kernel_main_c_header():
+    """ Generate initial portion of kernel_main.c """
+
     kernel_main_c_out(
         kernel_main_c_filename_str +
         copyright +
@@ -937,7 +939,7 @@ def kernel_main_c_generate():
 
     global kernel_main_c_data
 
-    kernel_main_c_general()
+    kernel_main_c_header()
     kernel_main_c_kargs()
     kernel_main_c_timers()
     kernel_main_c_tasks()
