@@ -98,9 +98,6 @@ extern kmbox_t hosttxmbx;
 extern kmemory_pool_t hostrxpool;
 extern ktask_t ppdrv;
 
-extern int K_NumBootPorts;
-extern int K_BootPort;
-
 extern int K_NodeCount;
 extern int K_PrioCount;
 extern int K_TaskCount;
