@@ -45,9 +45,6 @@ simplifies the adding and removing of nodes to/from the list.
 #include <stddef.h>
 #include <misc/dlist.h>
 
-#include <sections.h>
-#include <toolchain.h>
-
 /*******************************************************************************
 *
 * dlistAdd - add node to tail of list
