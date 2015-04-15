@@ -39,35 +39,13 @@
 extern "C" {
 #endif
 
-#define LOAD_COMMAND 0x00010000
-#define START_COMMAND 0x00020000
-#define BOOT_REPLY 0x00030000
-#define LOAD_PASS 0
-#define LOAD_BOOT 1
-
 struct boot_struct {
 	uint32_t data;
 	uint32_t reserved;
 };
 
-typedef int (*PortAccessFunction)(struct boot_struct *);
-
-struct port_access {
-	PortAccessFunction GETCALL;
-	PortAccessFunction PUTCALL;
-};
-
-extern int K_BootPort;
-extern int K_NumBootPorts;
-extern struct port_access K_PortAccess[];
-
-inline void netload(void)
-{
-}
-
 extern int ReadNextWordFromFlash(struct boot_struct *pBootStruct);
 extern int PutWordToDevNull(struct boot_struct *pBootStruct);
-
 
 #ifdef __cplusplus
 }
