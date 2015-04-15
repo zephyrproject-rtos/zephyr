@@ -97,21 +97,6 @@
 	     (uint32_t)((1000000 * (uint64_t)putsize) / puttime[2]));
 #endif /* FLOAT */
 
-
-/*
- * The VisualDSP doesn't generate an appropriate code for
- * the C internal operator
- */
-static int BENCH_MIN (int a, int b)
-    {
-    if (a < b)
-	return a;
-    else
-	return b;
-    }
-
-/* #define BENCH_MIN(a,b)  ((a < b) ? a : b) */
-
 /*
  * Function prototypes.
  */
@@ -248,7 +233,7 @@ int pipeput (
     for (i = 0; _1_TO_N == option || (i < count); i++)
 	{
 	int sizexferd = 0;
-	int size2xfer = BENCH_MIN (size, size2xfer_total - sizexferd_total);
+	int size2xfer = min(size, size2xfer_total - sizexferd_total);
 	int ret;
 
 	ret = task_pipe_put_wait (pipe, data_bench, size2xfer,

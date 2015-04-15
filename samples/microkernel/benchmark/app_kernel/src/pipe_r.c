@@ -36,20 +36,6 @@
 #ifdef PIPE_BENCH
 
 /*
- * The VisualDSP doesn't generate an appropriate
- * code for the C internal operator
- */
-static int BENCH_MIN (int a, int b)
-    {
-    if (a < b)
-	return a;
-    else
-	return b;
-    }
-
-/* #define BENCH_MIN(a,b)  ((a < b) ? a : b) */
-
-/*
  * Function prototypes.
  */
 int pipeget (kpipe_t pipe, K_PIPE_OPTION option,
@@ -144,7 +130,7 @@ int pipeget (
     for (i = 0; _1_TO_N == option || (i < count); i++)
 	{
 	int sizexferd = 0;
-	int size2xfer = BENCH_MIN (size, size2xfer_total - sizexferd_total);
+	int size2xfer = min(size, size2xfer_total - sizexferd_total);
 	int ret;
 
 	ret = task_pipe_get_wait (pipe, data_recv, size2xfer,
