@@ -37,7 +37,7 @@
 #define MAX_MSG 256
 
 /* flag for performing the kernel call benchmark */
-#define KSCALL_BENCH
+#define MICROKERNEL_CALL_BENCH
 
 /* flag for performing the Mailbox benchmark */
 #define MAILBOX_BENCH

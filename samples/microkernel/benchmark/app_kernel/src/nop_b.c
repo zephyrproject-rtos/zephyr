@@ -32,7 +32,7 @@
 
 #include "master.h"
 
-#ifdef KSCALL_BENCH
+#ifdef MICROKERNEL_CALL_BENCH
 
 /*******************************************************************************
  *
@@ -60,4 +60,4 @@ void call_test (void)
 	     CYCLES2NS_AVG (et, NR_OF_NOP_RUNS));
     }
 
-#endif /* KSCALL_BENCH */
+#endif /* MICROKERNEL_CALL_BENCH */

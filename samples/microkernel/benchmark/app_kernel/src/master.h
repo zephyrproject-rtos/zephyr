@@ -82,7 +82,7 @@ extern char sline[];
 extern void dummy_test (void);
 
 /* other external functions */
-#ifdef KSCALL_BENCH
+#ifdef MICROKERNEL_CALL_BENCH
 extern void call_test (void);
 #else
 #define call_test dummy_test
