@@ -156,6 +156,23 @@ void nano_task_sem_give(
 	irq_unlock_inline(imask);
 }
 
+/*******************************************************************************
+*
+* nano_sem_give - give a nanokernel semaphore
+*
+* This is a convenience wrapper for the context-specific APIs. This is
+* helpful whenever the exact scheduling context is not known, but should
+* be avoided when the context is known up-front (to avoid unnecessary
+* overhead).
+*/
+void nano_sem_give(struct nano_sem *chan)
+{
+	static void (*func[3])(struct nano_sem *chan) = {
+		nano_isr_sem_give, nano_fiber_sem_give, nano_task_sem_give
+	};
+	func[context_type_get()](chan);
+}
+
 FUNC_ALIAS(_sem_take, nano_isr_sem_take, int);
 FUNC_ALIAS(_sem_take, nano_fiber_sem_take, int);
 FUNC_ALIAS(_sem_take, nano_task_sem_take, int);
@@ -278,4 +295,23 @@ void nano_task_sem_take_wait(
 
 	chan->nsig--;
 	irq_unlock_inline(imask);
+}
+
+/*******************************************************************************
+*
+* nano_sem_take_wait - take a nanokernel semaphore, poll/pend if not available
+*
+* This is a convenience wrapper for the context-specific APIs. This is
+* helpful whenever the exact scheduling context is not known, but should
+* be avoided when the context is known up-front (to avoid unnecessary
+* overhead).
+*
+* It's only valid to call this API from a fiber or a task.
+*/
+void nano_sem_take_wait(struct nano_sem *chan)
+{
+	static void (*func[3])(struct nano_sem *chan) = {
+		NULL, nano_fiber_sem_take_wait, nano_task_sem_take_wait
+	};
+	func[context_type_get()](chan);
 }

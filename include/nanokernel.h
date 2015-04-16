@@ -124,6 +124,9 @@ extern void *nano_task_lifo_get_wait(struct nano_lifo *chan);
 /* semaphore APIs
  */
 extern void nano_sem_init(struct nano_sem *chan);
+/* scheduling context independent methods (when context is not known) */
+extern void nano_sem_give(struct nano_sem *chan);
+extern void nano_sem_take_wait(struct nano_sem *chan);
 /* methods for ISRs */
 extern void nano_isr_sem_give(struct nano_sem *chan);
 extern int nano_isr_sem_take(struct nano_sem *chan);
