@@ -78,19 +78,19 @@ extern void main(int argc, char *argv[], char *envp[]);
 
 /*******************************************************************************
 *
-* _NanoInit - Initializes the nanokernel layer
+* _nano_init - Initializes the nanokernel layer
 *
 * This function is invoked from a BSP's initialization routine, which is in
 * turn invoked by crt0.s.  The following is a summary of the early nanokernel
 * initialization sequence:
 *
-*   crt0.s  -> _Cstart() -> _NanoInit()
+*   crt0.s  -> _Cstart() -> _nano_init()
 *                        -> _nano_start() -> _Swap()  (context switch into
 *"main")
 *
 *   main () -> kernel_init () -> task_fiber_start(... K_swapper ...)
 *
-* The _NanoInit() routine initializes a context for the main() routine
+* The _nano_init() routine initializes a context for the main() routine
 * (aka background context which is a task context)), and sets _NanoKernel.task
 * to the 'tCCS *' for the new context.  The _NanoKernel.current field is set to
 * the provided <dummyOutContext> tCCS, however _NanoKernel.fiber is set to
@@ -106,7 +106,7 @@ extern void main(int argc, char *argv[], char *envp[]);
 * \NOMANUAL
 */
 
-void _NanoInit(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
+void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 {
 	/*
 	 * Setup enough information re: the current execution context to permit

@@ -39,7 +39,7 @@ ARM-specific nanokernel initialization interface. Included by ARM/arch.h.
 #define _ARCH_ARM_CORTEXM_INIT_H_
 
 #ifndef _ASMLANGUAGE
-extern void _NanoInit(nano_context_id_t, int argc, char *argv[], char *envp[]);
+extern void _nano_init(nano_context_id_t, int argc, char *argv[], char *envp[]);
 extern void _nano_start(void);
 #endif
 

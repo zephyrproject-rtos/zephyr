@@ -132,7 +132,7 @@ FUNC_NORETURN void _Cstart(void)
 	 * both __argv and _env may come into play.)
 	 */
 
-	_NanoInit((tCCS *)&dummyCCS, 0, (char **)0, (char **)0);
+	_nano_init((tCCS *)&dummyCCS, 0, (char **)0, (char **)0);
 
 	/* perform basic hardware initialization */
 

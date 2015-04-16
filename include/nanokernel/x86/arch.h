@@ -591,7 +591,7 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
 
-extern void	_NanoInit		(nano_context_id_t dummyOutContext, int argc,
+extern void	_nano_init		(nano_context_id_t dummyOutContext, int argc,
 					 char *argv[], char *envp[]);
 
 extern void	_nano_start		(void);
