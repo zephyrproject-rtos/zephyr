@@ -145,7 +145,7 @@ SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 	testl $0x200, SP_ARG1(%esp)
 	jnz skipIntDisable
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStart
+	call	_int_latency_start
 #endif
 	cli
 BRANCH_LABEL(skipIntDisable)

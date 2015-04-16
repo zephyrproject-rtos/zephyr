@@ -71,7 +71,7 @@ entering and exiting a C interrupt handler.
 
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	GTEXT(_IntLatencyStart)
+	GTEXT(_int_latency_start)
 	GTEXT(_IntLatencyStop)
 #endif
 /*******************************************************************************
@@ -171,7 +171,7 @@ SECTION_FUNC(TEXT, _IntEnt)
 	 */
 
 	pushl	%eax
-	call	_IntLatencyStart
+	call	_int_latency_start
 	popl	%eax
 #endif
 
@@ -268,7 +268,7 @@ SECTION_FUNC(TEXT, _IntExit)
 
 	cli			/* disable interrupts */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStart
+	call	_int_latency_start
 #endif
 
 	/* determine whether exiting from a nested interrupt */
@@ -495,7 +495,7 @@ SECTION_FUNC(TEXT, irq_lock)
 	pushfl
 	cli
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStart
+	call	_int_latency_start
 #endif
 	popl	%eax
 	ret

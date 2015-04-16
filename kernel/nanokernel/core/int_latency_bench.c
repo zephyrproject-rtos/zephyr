@@ -86,7 +86,7 @@ uint32_t _HwIntToCHandlerLatency = ULONG_MAX;
 *
 */
 
-void _IntLatencyStart(void)
+void _int_latency_start(void)
 {
 	/* when interrupts are not already locked, take time stamp */
 	if (!intLockedTimestamp && intLatencyBenchRdy) {
@@ -180,12 +180,12 @@ void intLatencyInit(void)
 		/* measure time to call intLatencyStart() and intLatencyStop
 		 * takes */
 		initialStartDelay = timer_read();
-		_IntLatencyStart();
+		_int_latency_start();
 		initialStartDelay =
 			timer_read() - initialStartDelay - timeToReadTime;
 
 		nestingDelay = timer_read();
-		_IntLatencyStart();
+		_int_latency_start();
 		nestingDelay = timer_read() - nestingDelay - timeToReadTime;
 
 		stopDelay = timer_read();

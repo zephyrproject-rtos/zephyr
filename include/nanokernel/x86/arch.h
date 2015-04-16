@@ -259,7 +259,7 @@ static inline void irq_unlock(unsigned int key) {}
 #else /* CONFIG_NO_ISRS */
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-void _IntLatencyStart (void);
+void _int_latency_start (void);
 void _IntLatencyStop (void);
 #endif
 
@@ -313,7 +313,7 @@ static inline __attribute__((always_inline))
 			 );
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	_IntLatencyStart ();
+	_int_latency_start ();
 #endif
 
 	return key;
@@ -330,7 +330,7 @@ __asm volatile unsigned int irq_lock_inline (void)
 	pushfl
 	cli
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStart
+	call	_int_latency_start
 #endif
 	popl	%eax
 	}
