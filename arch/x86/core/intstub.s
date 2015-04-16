@@ -72,7 +72,7 @@ entering and exiting a C interrupt handler.
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	GTEXT(_int_latency_start)
-	GTEXT(_IntLatencyStop)
+	GTEXT(_int_latency_stop)
 #endif
 /*******************************************************************************
 *
@@ -209,7 +209,7 @@ BRANCH_LABEL(alreadyOnIntStack)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	/* preserve eax which contain stub return address */
 	pushl	%eax
-	call	_IntLatencyStop
+	call	_int_latency_stop
 	popl	%eax
 #endif
 
@@ -232,7 +232,7 @@ BRANCH_LABEL(_HandleIdle)
 	call	_SysPowerSaveIdleExit
 	add	$0x4, %esp
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStop
+	call	_int_latency_stop
 #endif
 	sti			/* re-enable interrupts */
 	popl	%eax
@@ -347,7 +347,7 @@ SECTION_FUNC(TEXT, _IntExit)
 
 	/* Restore volatile registers and return to the interrupted context */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStop
+	call	_int_latency_stop
 #endif
 
 	popl	%edx		
@@ -379,7 +379,7 @@ BRANCH_LABEL(noReschedule)
 
 BRANCH_LABEL(nestedInterrupt)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStop
+	call	_int_latency_stop
 #endif
 	popl	%edx		/* pop volatile registers in reverse order */
 	popl	%ecx
@@ -516,7 +516,7 @@ SECTION_FUNC(TEXT, irq_unlock)
 	testl $0x200, SP_ARG1(%esp)
 	jz skipIntEnable
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStop
+	call	_int_latency_stop
 #endif
 	sti
 BRANCH_LABEL(skipIntEnable)

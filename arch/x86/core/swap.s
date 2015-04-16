@@ -380,7 +380,7 @@ BRANCH_LABEL(CROHandlingDone)
 	/* save %eax since it used as the return value for _Swap */
 	pushl	%eax
 	/* interrupts are being reenabled, stop accumulating time */
-	call	_IntLatencyStop
+	call	_int_latency_stop
 	/* restore _Swap's %eax */
 	popl	%eax
 

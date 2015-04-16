@@ -106,7 +106,7 @@ void _int_latency_start(void)
 *
 */
 
-void _IntLatencyStop(void)
+void _int_latency_stop(void)
 {
 	uint32_t delta;
 	uint32_t delayOverhead;
@@ -189,7 +189,7 @@ void intLatencyInit(void)
 		nestingDelay = timer_read() - nestingDelay - timeToReadTime;
 
 		stopDelay = timer_read();
-		_IntLatencyStop();
+		_int_latency_stop();
 		stopDelay = timer_read() - stopDelay - timeToReadTime;
 
 		/* re-initialize globals to default values */

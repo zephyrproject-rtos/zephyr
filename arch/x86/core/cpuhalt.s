@@ -82,7 +82,7 @@ by nano_cpu_atomic_idle().
 
 SECTION_FUNC(TEXT, nano_cpu_idle)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStop
+	call	_int_latency_stop
 #endif
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT) 
 	rdtsc			/* record idle timestamp */
@@ -122,7 +122,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 
 SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_IntLatencyStop
+	call	_int_latency_stop
 #endif
 	sti			/* make sure interrupts are enabled */
 

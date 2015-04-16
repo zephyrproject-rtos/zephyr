@@ -260,7 +260,7 @@ static inline void irq_unlock(unsigned int key) {}
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 void _int_latency_start (void);
-void _IntLatencyStop (void);
+void _int_latency_stop (void);
 #endif
 
 /*******************************************************************************
@@ -361,7 +361,7 @@ static inline __attribute__((always_inline))
 	{
 	/*
 	 * The assembler code is split into two parts and
-	 * _IntLatencyStop (); is invoked as a legitimate C
+	 * _int_latency_stop (); is invoked as a legitimate C
 	 * function to let the compiler preserve registers
 	 * before the function invocation
 	 *
@@ -385,7 +385,7 @@ static inline __attribute__((always_inline))
 #endif
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	_IntLatencyStop ();
+	_int_latency_stop ();
 #endif
 	__asm__ volatile (
 
@@ -413,7 +413,7 @@ __asm volatile void irq_unlock_inline
 	testl	$0x200, key
 	jz	   end
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	 _IntLatencyStop
+	call	 _int_latency_stop
 #endif /* CONFIG_INT_LATENCY_BENCHMARK */
 	sti
 end:
