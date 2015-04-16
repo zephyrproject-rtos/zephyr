@@ -125,7 +125,7 @@ void _StackPush(struct nano_stack *chan, /* stack channel on
 	if (ccs != (tCCS *)NULL) {
 		chan->proc = 0;
 		fiberRtnValueSet(ccs, data);
-		_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
 		*(chan->next) = data;
 		chan->next++;
@@ -159,7 +159,7 @@ void nano_task_stack_push(
 	if (ccs != (tCCS *)NULL) {
 		chan->proc = 0;
 		fiberRtnValueSet(ccs, data);
-		_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
 		/* swap into the newly ready fiber */
 

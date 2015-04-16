@@ -62,7 +62,7 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 
 /*******************************************************************************
 *
-* _InsertCCS - add a context into the list of runnable contexts
+* _insert_ccs - add a context into the list of runnable contexts
 *
 * The list of runnable contexts is maintained via a single linked list
 * in priority order.  Numerically lower priorities represent higher priority
@@ -73,7 +73,7 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 * RETURNS: N/A
 */
 
-void _InsertCCS(tCCS **queue, tCCS *ccs)
+void _insert_ccs(tCCS **queue, tCCS *ccs)
 {
 	tCCS *pQ;
 
@@ -210,7 +210,7 @@ void _FiberStart(char *pStack,
 
 	/* insert thew newly crafted CCS into the fiber runnable context list */
 
-	_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+	_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
 	/*
 	 * Simply return to the caller if the current context is FIBER,
@@ -249,7 +249,7 @@ void fiber_yield(void)
 		 * then swap to the context at the head of the fiber list.
 		 */
 
-		_InsertCCS(&(_NanoKernel.fiber), _NanoKernel.current);
+		_insert_ccs(&(_NanoKernel.fiber), _NanoKernel.current);
 		_Swap(imask);
 	} else
 		irq_unlock_inline(imask);

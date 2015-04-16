@@ -113,7 +113,7 @@ void _SemGive(struct nano_sem *chan /* semaphore on which to signal */
 	ccs = chan->proc;
 	if (ccs != (tCCS *)NULL) {
 		chan->proc = 0;
-		_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
 		chan->nsig++;
 	}
@@ -143,7 +143,7 @@ void nano_task_sem_give(
 	ccs = chan->proc;
 	if (ccs != (tCCS *)NULL) {
 		chan->proc = 0;
-		_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
 		/* swap into the newly ready fiber */
 

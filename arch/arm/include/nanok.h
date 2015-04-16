@@ -201,7 +201,7 @@ static ALWAYS_INLINE void fiberRtnValueSet(
 	pEsf->a1 = value;
 }
 
-extern void _InsertCCS(tCCS **, tCCS *);
+extern void _insert_ccs(tCCS **, tCCS *);
 extern void *_NewContext(char *,
 			 unsigned,
 			 _ContextEntry,

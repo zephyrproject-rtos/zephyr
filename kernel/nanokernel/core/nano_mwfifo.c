@@ -132,7 +132,7 @@ void _FifoPut(struct nano_fifo *chan, /* channel on which to interact */
 		ccs->link = 0;
 
 		fiberRtnValueSet(ccs, (unsigned int)data);
-		_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
 		*(void **)chan->tail = data;
 		chan->tail = data;
@@ -177,7 +177,7 @@ void nano_task_fifo_put(
 		ccs->link = 0;
 
 		fiberRtnValueSet(ccs, (unsigned int)data);
-		_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
 		/* swap into the fiber just made ready */
 

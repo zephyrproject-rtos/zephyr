@@ -121,7 +121,7 @@ void _LifoPut(struct nano_lifo *chan, /* channel on which to put */
 		chan->proc = (tCCS *)0;
 
 		fiberRtnValueSet(ccs, (unsigned int)data);
-		_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
 		*(void **)data = chan->list;
 		chan->list = data;
@@ -155,7 +155,7 @@ void nano_task_lifo_put(
 		chan->proc = (tCCS *)0;
 
 		fiberRtnValueSet(ccs, (unsigned int)data);
-		_InsertCCS((tCCS **)&_NanoKernel.fiber, ccs);
+		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
 		/* swap into the newly ready fiber */
 

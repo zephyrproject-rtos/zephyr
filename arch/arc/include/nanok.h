@@ -264,7 +264,7 @@ static ALWAYS_INLINE int _IS_IN_ISR(void)
 	return ((act & 0xffff) != 0);
 }
 
-extern void _InsertCCS(tCCS **, tCCS *);
+extern void _insert_ccs(tCCS **, tCCS *);
 extern void *_NewContext(char *, unsigned, _ContextEntry,
 						 _ContextArg, _ContextArg, _ContextArg,
 						 int, unsigned);
