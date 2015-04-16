@@ -41,7 +41,7 @@ include ${vMAKE}/target/run/rules.qemu.${vHOST}
 	$q${HOS_Echo} [rules.qemu] Booting $<
 	$q${HOS_Echo} [${vQEMU_BIN} ${vQEMU_FLAGS}]
 	$q${HOS_Echo} ${iQEMU_BANNER}
-	$q${vQEMU_BIN} ${vQEMU_FLAGS} -kernel $< -serial ${iQEMU_CONSOLE}
+	$q${vQEMU_BIN} ${vQEMU_FLAGS} -kernel $< -serial ${iQEMU_CONSOLE} ${QEMU_EXTRA_FLAGS}
 
 .PHONY: help_qemu
 iQEMU_RUN_STR = $(foreach exec,${iHELP_EXEC_NAMES},${exec}.qemu): run
