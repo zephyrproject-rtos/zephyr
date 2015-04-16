@@ -85,7 +85,7 @@ extern void main(int argc, char *argv[], char *envp[]);
 * initialization sequence:
 *
 *   crt0.s  -> _Cstart() -> _NanoInit()
-*                        -> _NanoStart() -> _Swap()  (context switch into
+*                        -> _nano_start() -> _Swap()  (context switch into
 *"main")
 *
 *   main () -> kernel_init () -> task_fiber_start(... K_swapper ...)

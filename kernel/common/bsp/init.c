@@ -146,7 +146,7 @@ FUNC_NORETURN void _Cstart(void)
 	/* context switch into the background context (entry function is main())
 	 */
 
-	_NanoStart();
+	_nano_start();
 
 	/*
 	 * Compiler can't tell that the above routines won't return and issues

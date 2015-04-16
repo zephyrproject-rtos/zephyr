@@ -594,7 +594,7 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 extern void	_NanoInit		(nano_context_id_t dummyOutContext, int argc,
 					 char *argv[], char *envp[]);
 
-extern void	_NanoStart		(void);
+extern void	_nano_start		(void);
 
 extern unsigned int find_first_set		(unsigned int op);
 

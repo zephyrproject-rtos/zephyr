@@ -40,7 +40,7 @@
 
 #ifndef _ASMLANGUAGE
 extern void _NanoInit(nano_context_id_t, int argc, char *argv[], char *envp[]);
-extern void _NanoStart(void);
+extern void _nano_start(void);
 #endif
 
 #endif /* _ARCH_ARC_V2_INIT_H_ */
