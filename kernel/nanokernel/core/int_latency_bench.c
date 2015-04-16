@@ -151,13 +151,13 @@ void _int_latency_stop(void)
 
 /*******************************************************************************
 *
-* intLatencyInit - initialize interrupt latency benchmark
+* int_latency_init - initialize interrupt latency benchmark
 *
 * RETURNS: N/A
 *
 */
 
-void intLatencyInit(void)
+void int_latency_init(void)
 {
 	uint32_t timeToReadTime;
 	uint32_t cacheWarming = NB_CACHE_WARMING_DRY_RUN;
@@ -215,7 +215,7 @@ void intLatencyShow(void)
 	uint32_t intHandlerLatency = 0;
 
 	if (!intLatencyBenchRdy) {
-		printk("error: intLatencyInit() has not been invoked\n");
+		printk("error: int_latency_init() has not been invoked\n");
 		return;
 	}
 
