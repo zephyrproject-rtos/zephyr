@@ -51,7 +51,7 @@ the PendSV exception.
 #include <nanokernel.h>
 #include <nanokernel/cpu.h>
 
-extern void _NanoFiberSwap(void);
+extern void _nano_fiber_swap(void);
 
 /*******************************************************************************
 *
@@ -70,7 +70,7 @@ void fiber_abort(void)
 {
 	_context_exit(_NanoKernel.current);
 	if (_ScbIsInThreadMode()) {
-		_NanoFiberSwap();
+		_nano_fiber_swap();
 	} else {
 		_ScbPendsvSet();
 	}

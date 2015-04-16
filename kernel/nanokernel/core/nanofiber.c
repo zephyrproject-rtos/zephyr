@@ -257,7 +257,7 @@ void fiber_yield(void)
 
 /*******************************************************************************
 *
-* _NanoFiberSwap - pass control from the currently executing fiber
+* _nano_fiber_swap - pass control from the currently executing fiber
 *
 * This routine is used when a fiber voluntarily gives up control of the CPU.
 *
@@ -266,7 +266,7 @@ void fiber_yield(void)
 * RETURNS: This function never returns
 */
 
-FUNC_NORETURN void _NanoFiberSwap(void)
+FUNC_NORETURN void _nano_fiber_swap(void)
 {
 	unsigned int imask;
 
@@ -310,7 +310,7 @@ FUNC_NORETURN void fiber_abort(void)
 	/* Do normal context exit cleanup, then give up CPU control */
 
 	_context_exit(_NanoKernel.current);
-	_NanoFiberSwap();
+	_nano_fiber_swap();
 }
 #endif
 
@@ -336,9 +336,9 @@ FUNC_NORETURN void fiber_abort(void)
 void _NanoStart(void)
 {
 	PRINT_BOOT_BANNER();
-	_NanoFiberSwap();
+	_nano_fiber_swap();
 }
 
 #else
-FUNC_ALIAS(_NanoFiberSwap, _NanoStart, void);
+FUNC_ALIAS(_nano_fiber_swap, _NanoStart, void);
 #endif
