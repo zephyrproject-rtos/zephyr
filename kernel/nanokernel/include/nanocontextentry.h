@@ -46,7 +46,7 @@ This module provides definitions for a wrapper
 extern "C" {
 #endif
 
-extern void _ContextEntryRtn(_ContextEntry,
+extern void _context_entry(_ContextEntry,
 			     _ContextArg,
 			     _ContextArg,
 			     _ContextArg);

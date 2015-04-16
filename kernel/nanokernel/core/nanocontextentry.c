@@ -89,7 +89,7 @@ void _context_exit(tCCS *pContext)
 
 /*******************************************************************************
 *
-* _ContextEntryRtn - common context entry point function for kernel contexts
+* _context_entry - common context entry point function for kernel contexts
 *
 * This function serves as the entry point for _all_ kernel contexts, i.e. both
 * task and fiber contexts are instantiated such that initial execution starts
@@ -112,7 +112,7 @@ void _context_exit(tCCS *pContext)
 * \NOMANUAL
 */
 
-FUNC_NORETURN void _ContextEntryRtn(
+FUNC_NORETURN void _context_entry(
 	_ContextEntry pEntry,   /* address of app entry point function */
 	_ContextArg parameter1, /* 1st arg to app entry point function */
 	_ContextArg parameter2, /* 2nd arg to app entry point function */

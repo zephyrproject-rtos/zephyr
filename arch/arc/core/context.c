@@ -100,7 +100,7 @@ static ALWAYS_INLINE void toolsSupportInit(struct s_CCS *pCcs /* context */
  * needed anymore.
  *
  * The initial context is a basic stack frame that contains arguments for
- * _ContextEntryRtn() return address, that points at _ContextEntryRtn()
+ * _context_entry() return address, that points at _context_entry()
  * and status register.
  *
  * <options> is currently unused.

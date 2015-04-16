@@ -209,11 +209,11 @@ static void _NewContextInternal(
 #ifdef CONFIG_GDB_INFO
 /*******************************************************************************
 *
-* _ContextEntryWrapper - adjust stack before invoking _ContextEntryRtn
+* _ContextEntryWrapper - adjust stack before invoking _context_entry
 *
 * This function adjusts the initial stack frame created by _NewContext()
 * such that the GDB stack frame unwinders recognize it as the outermost frame
-* in the context's stack.  The function then jumps to _ContextEntryRtn().
+* in the context's stack.  The function then jumps to _context_entry().
 *
 * GDB normally stops unwinding a stack when it detects that it has
 * reached a function called main().  Kernel tasks, however, do not have
@@ -222,7 +222,7 @@ static void _NewContextInternal(
 *
 * Given the initial context created by _NewContext(), GDB expects to find a
 * return address on the stack immediately above the context entry routine
-* _ContextEntryRtn, in the location occupied by the initial EFLAGS.
+* _context_entry, in the location occupied by the initial EFLAGS.
 * GDB attempts to examine the memory at this return address, which typically
 * results in an invalid access to page 0 of memory.
 *
@@ -259,19 +259,19 @@ static void _NewContextInternal(
 * The initial EFLAGS cannot be overwritten until after _Swap() has swapped in
 * the new context for the first time.  This routine is called by _Swap() the
 * first time that the new context is swapped in, and it jumps to
-* _ContextEntryRtn after it has done its work.
+* _context_entry after it has done its work.
 *
 * RETURNS: this routine does NOT return.
 *
 * \NOMANUAL
 */
 
-__asm__("\t.globl _ContextEntryRtn\n"
+__asm__("\t.globl _context_entry\n"
 	"\t.section .text\n"
 	"_ContextEntryWrapper:\n" /* should place this func .s file and use
 				     SECTION_FUNC */
 	"\tmovl $0, (%esp)\n" /* zero initialEFLAGS location */
-	"\tjmp _ContextEntryRtn\n");
+	"\tjmp _context_entry\n");
 #endif /* CONFIG_GDB_INFO */
 
 /*******************************************************************************
@@ -318,7 +318,7 @@ void *_NewContext(
 	 * setup for both contexts are equivalent.
 	 */
 
-	/* push arguments required by _ContextEntryRtn() */
+	/* push arguments required by _context_entry() */
 
 	*--pInitialContext = (unsigned long)parameter3;
 	*--pInitialContext = (unsigned long)parameter2;
@@ -333,21 +333,21 @@ void *_NewContext(
 
 	/*
 	 * Arrange for the _ContextEntryWrapper() function to be called
-	 * to adjust the stack before _ContextEntryRtn() is invoked.
+	 * to adjust the stack before _context_entry() is invoked.
 	 */
 
 	*--pInitialContext = (unsigned long)_ContextEntryWrapper;
 
 #else /* CONFIG_GDB_INFO */
 
-	*--pInitialContext = (unsigned long)_ContextEntryRtn;
+	*--pInitialContext = (unsigned long)_context_entry;
 
 #endif /* CONFIG_GDB_INFO */
 
 	/*
 	 * note: stack area for edi, esi, ebx, ebp, and eax registers can be
 	 * left
-	 * uninitialized, since _ContextEntryRtn() doesn't care about the values
+	 * uninitialized, since _context_entry() doesn't care about the values
 	 * of these registers when it begins execution
 	 */
 

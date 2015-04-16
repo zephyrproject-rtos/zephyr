@@ -1,4 +1,4 @@
-/* ctx_wrapper.s - wrapper for _ContextEntryRtn */
+/* ctx_wrapper.s - wrapper for _context_entry */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -32,7 +32,7 @@
 
 /*
  * DESCRIPTION
- * Wrapper for _ContextEntryRtn routine when called from
+ * Wrapper for _context_entry routine when called from
  * the initial context
  */
 
@@ -42,13 +42,13 @@
 #include <sections.h>
 
 GTEXT(_ContextEntryWrapper)
-GTEXT(_ContextEntryRtn)
+GTEXT(_context_entry)
 
 
 /*
- * _ContextEntryWrapper - wrapper for _ContextEntryRtn
+ * _ContextEntryWrapper - wrapper for _context_entry
  *
- * The routine pops parameters for the _ContextEntryRtn from
+ * The routine pops parameters for the _context_entry from
  * stack frame, prepared by the _NewContext() routine
  *
  * RETURNS: N/A
@@ -60,5 +60,5 @@ SECTION_FUNC(TEXT, _ContextEntryWrapper)
 	pop_s r2
 	pop_s r1
 	pop_s r0
-	j _ContextEntryRtn
+	j _context_entry
 	nop

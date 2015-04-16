@@ -122,7 +122,7 @@ void *_NewContext(
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd) -
 				    sizeof(struct __esf));
 
-	pInitCtx->pc = ((uint32_t)_ContextEntryRtn) & 0xfffffffe;
+	pInitCtx->pc = ((uint32_t)_context_entry) & 0xfffffffe;
 	pInitCtx->a1 = (uint32_t)pEntry;
 	pInitCtx->a2 = (uint32_t)parameter1;
 	pInitCtx->a3 = (uint32_t)parameter2;
