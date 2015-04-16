@@ -118,6 +118,7 @@ microkernel/test/test_task              <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_task_irq          <u>  ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_timer             <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_xip               <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
+microkernel/test/test_bluetooth         <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_critical          <u>  pentium4! minuteia! atom quark \n\
 microkernel/test/test_events            <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_fifo              <uq> pentium4! minuteia! atom quark \n\
