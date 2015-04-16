@@ -327,7 +327,7 @@ def kernel_main_c_tasks():
 
     # task global variables
 
-    kernel_main_c_out("int K_TaskCount = %d;\n" % (total_tasks - 1))
+    kernel_main_c_out("\nint K_TaskCount = %d;\n" % (total_tasks - 1))
 
     # task stack areas
 
@@ -437,14 +437,15 @@ def kernel_main_c_events():
     kernel_main_c_out("\n" +
         "const int K_max_eventnr = %d;\n" % (total_events))
 
-    # event object identifiers
+    # event object identifiers (for project-defined events only)
 
-    kernel_main_c_out("\n")
+    if (len(event_list) > 0):
+        kernel_main_c_out("\n")
 
-    for event_name in event_list:
-        kernel_main_c_out(
-            "const kevent_t %s_objId = %s;\n" %
-            (event_name[0], event_name[0]))
+        for event_name in event_list:
+            kernel_main_c_out(
+                "const kevent_t %s_objId = %s;\n" %
+                (event_name[0], event_name[0]))
 
 
 def kernel_main_c_mutexes():
@@ -534,7 +535,7 @@ def kernel_main_c_pipes():
 
     # pipe global variables
 
-    kernel_main_c_out("int K_PipeCount = %d;\n" % (total_pipes))
+    kernel_main_c_out("\nint K_PipeCount = %d;\n" % (total_pipes))
 
     if (total_pipes == 0):
         kernel_main_c_out("\nstruct pipe_struct * K_PipeList = NULL;\n")
@@ -598,7 +599,7 @@ def kernel_main_c_maps():
 
     # map global variables
 
-    kernel_main_c_out("int K_MapCount = %d;\n" % (total_maps))
+    kernel_main_c_out("\nint K_MapCount = %d;\n" % (total_maps))
 
     if (total_maps == 0):
         kernel_main_c_out("\nstruct map_struct * K_MapList = NULL;\n")
