@@ -131,7 +131,7 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
 
 /*******************************************************************************
 *
-* _TimerStop - stop a nanokernel timer (generic implementation)
+* _timer_stop - stop a nanokernel timer (generic implementation)
 *
 * This function stops a previously started nanokernel timer object.
 *
@@ -140,7 +140,7 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
 * NOMANUAL
 */
 
-static void _TimerStop(struct nano_timer *timer /* timer to stop */
+static void _timer_stop(struct nano_timer *timer /* timer to stop */
 				     )
 {
 	unsigned int imask;
@@ -192,7 +192,7 @@ void nano_fiber_timer_stop(struct nano_timer *timer /* timer to stop */
 			)
 {
 
-	_TimerStop(timer);
+	_timer_stop(timer);
 
 	/* if there was a waiter, kick it */
 	if (timer->lifo.proc) {
@@ -214,7 +214,7 @@ void nano_task_timer_stop(struct nano_timer *timer /* timer to stop */
 		       )
 {
 
-	_TimerStop(timer);
+	_timer_stop(timer);
 
 	/* if there was a waiter, kick it */
 	if (timer->lifo.proc) {
