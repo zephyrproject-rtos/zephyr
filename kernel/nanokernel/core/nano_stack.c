@@ -173,13 +173,13 @@ void nano_task_stack_push(
 	irq_unlock_inline(imask);
 }
 
-FUNC_ALIAS(_StackPop, nano_isr_stack_pop, int);
-FUNC_ALIAS(_StackPop, nano_fiber_stack_pop, int);
-FUNC_ALIAS(_StackPop, nano_task_stack_pop, int);
+FUNC_ALIAS(_stack_pop, nano_isr_stack_pop, int);
+FUNC_ALIAS(_stack_pop, nano_fiber_stack_pop, int);
+FUNC_ALIAS(_stack_pop, nano_task_stack_pop, int);
 
 /*******************************************************************************
 *
-* _StackPop - pop data from a nanokernel stack
+* _stack_pop - pop data from a nanokernel stack
 *
 * Pop the first data word from a nanokernel stack object; it may be called
 * from a fiber, task, or ISR context.
@@ -198,7 +198,7 @@ FUNC_ALIAS(_StackPop, nano_task_stack_pop, int);
 * migration issue.
 */
 
-int _StackPop(struct nano_stack *chan, /* channel on which to interact */
+int _stack_pop(struct nano_stack *chan, /* channel on which to interact */
 			    uint32_t *pData   /* container for data to pop */
 			    )
 {
