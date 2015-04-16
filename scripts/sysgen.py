@@ -137,6 +137,16 @@ def write_file(filename, contents):
 
 
 #
+# ERROR HANDLING
+#
+
+
+def sysgen_error(msg):
+    print "\n*** sysgen error: " + msg + "\n"
+    sys.exit(1)
+
+
+#
 # CREATE INTERNAL REPRESENTATION OF SYSTEM
 #
 
@@ -227,8 +237,8 @@ def vpf_parse():
             driver_list.append(line[start_quote + 1:end_quote])
             continue
 
-        print "UNRECOGNIZED INPUT LINE"
-        print words     # display any unrecognized line
+        sysgen_error("unrecognized keyword %s on following line\n%s" %
+                     (words[0], line))
 
 
 #
