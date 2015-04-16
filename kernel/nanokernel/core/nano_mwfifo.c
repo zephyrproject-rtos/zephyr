@@ -89,12 +89,12 @@ void nano_fifo_init(struct nano_fifo *chan /* channel to initialize */
 	chan->stat = 0;
 }
 
-FUNC_ALIAS(_FifoPut, nano_isr_fifo_put, void);
-FUNC_ALIAS(_FifoPut, nano_fiber_fifo_put, void);
+FUNC_ALIAS(_fifo_put, nano_isr_fifo_put, void);
+FUNC_ALIAS(_fifo_put, nano_fiber_fifo_put, void);
 
 /*******************************************************************************
 *
-* _FifoPut - add an element to the end of a fifo
+* _fifo_put - add an element to the end of a fifo
 *
 * This routine adds an element to the end of a fifo object; it may be called
 * from either either a fiber or an ISR context.   A fiber pending on the fifo
@@ -112,7 +112,7 @@ FUNC_ALIAS(_FifoPut, nano_fiber_fifo_put, void);
 * without introducing a source code migration issue.
 */
 
-void _FifoPut(struct nano_fifo *chan, /* channel on which to interact */
+void _fifo_put(struct nano_fifo *chan, /* channel on which to interact */
 			    void *data       /* data to send */
 			    )
 {
