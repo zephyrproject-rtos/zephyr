@@ -90,6 +90,10 @@ extern void task_fiber_start(char *pStack,
 /* FIFO APIs
  */
 extern void nano_fifo_init(struct nano_fifo *chan);
+/* scheduling context independent methods (when context is not known) */
+extern void nano_fifo_put(struct nano_fifo *chan, void *data);
+extern void *nano_fifo_get(struct nano_fifo *chan);
+extern void *nano_fifo_get_wait(struct nano_fifo *chan);
 /* methods for ISRs */
 extern void nano_isr_fifo_put(struct nano_fifo *chan, void *data);
 extern void *nano_isr_fifo_get(struct nano_fifo *chan);

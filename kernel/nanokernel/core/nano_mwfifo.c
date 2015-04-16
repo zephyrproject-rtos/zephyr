@@ -192,9 +192,27 @@ void nano_task_fifo_put(
 	irq_unlock_inline(imask);
 }
 
+/*******************************************************************************
+*
+* nano_fifo_put - add an element to the end of a fifo
+*
+* This is a convenience wrapper for the context-specific APIs. This is
+* helpful whenever the exact scheduling context is not known, but should
+* be avoided when the context is known up-front (to avoid unnecessary
+* overhead).
+*/
+void nano_fifo_put(struct nano_fifo *chan, void *data)
+{
+	static void (*func[3])(struct nano_fifo *chan, void *data) = {
+		nano_isr_fifo_put, nano_fiber_fifo_put, nano_task_fifo_put
+	};
+	func[context_type_get()](chan, data);
+}
+
 FUNC_ALIAS(_fifo_get, nano_isr_fifo_get, void *);
 FUNC_ALIAS(_fifo_get, nano_fiber_fifo_get, void *);
 FUNC_ALIAS(_fifo_get, nano_task_fifo_get, void *);
+FUNC_ALIAS(_fifo_get, nano_fifo_get, void *);
 
 /*******************************************************************************
 *
@@ -359,4 +377,24 @@ void *nano_task_fifo_get_wait(
 	irq_unlock_inline(imask);
 
 	return data;
+}
+
+/*******************************************************************************
+*
+* nano_fifo_get_wait - get an element from the head of a fifo, poll/pend if
+*                      not available
+*
+* This is a convenience wrapper for the context-specific APIs. This is
+* helpful whenever the exact scheduling context is not known, but should
+* be avoided when the context is known up-front (to avoid unnecessary
+* overhead).
+*
+* It's only valid to call this API from a fiber or a task.
+*/
+void *nano_fifo_get_wait(struct nano_fifo *chan)
+{
+	static void *(*func[3])(struct nano_fifo *chan) = {
+		NULL, nano_fiber_fifo_get_wait, nano_task_fifo_get_wait
+	};
+	return func[context_type_get()](chan);
 }
