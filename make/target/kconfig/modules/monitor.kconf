@@ -114,7 +114,7 @@ config  INT_LATENCY_BENCHMARK
 
 	  Tracking begins when int_latency_init() is invoked by an application.
 	  The metrics are displayed (and a new sampling interval is started)
-	  each time intLatencyShow() is called thereafter.
+	  each time int_latency_show() is called thereafter.
 
 config  BOOT_TIME_MEASUREMENT
 	bool

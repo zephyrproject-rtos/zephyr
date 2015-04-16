@@ -202,7 +202,7 @@ void int_latency_init(void)
 
 /*******************************************************************************
 *
-* intLatencyShow - dumps interrupt latency values
+* int_latency_show - dumps interrupt latency values
 *
 * The interrupt latency value measures
 *
@@ -210,7 +210,7 @@ void int_latency_init(void)
 *
 */
 
-void intLatencyShow(void)
+void int_latency_show(void)
 {
 	uint32_t intHandlerLatency = 0;
 
