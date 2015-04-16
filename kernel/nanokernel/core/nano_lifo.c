@@ -169,13 +169,13 @@ void nano_task_lifo_put(
 	irq_unlock_inline(imask);
 }
 
-FUNC_ALIAS(_LifoGet, nano_isr_lifo_get, void *);
-FUNC_ALIAS(_LifoGet, nano_fiber_lifo_get, void *);
-FUNC_ALIAS(_LifoGet, nano_task_lifo_get, void *);
+FUNC_ALIAS(_lifo_get, nano_isr_lifo_get, void *);
+FUNC_ALIAS(_lifo_get, nano_fiber_lifo_get, void *);
+FUNC_ALIAS(_lifo_get, nano_task_lifo_get, void *);
 
 /*******************************************************************************
 *
-* _LifoGet - remove the first element from a linked list lifo
+* _lifo_get - remove the first element from a linked list lifo
 *
 * Remove the first element from the specified nanokernel linked list lifo;
 * it may be called from a fiber, task, or ISR context.
@@ -193,7 +193,7 @@ FUNC_ALIAS(_LifoGet, nano_task_lifo_get, void *);
 * differences in the future without introducing a source code migration issue.
 */
 
-void *_LifoGet(struct nano_lifo *chan /* channel on which to receive */
+void *_lifo_get(struct nano_lifo *chan /* channel on which to receive */
 			     )
 {
 	void *data;
