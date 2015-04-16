@@ -69,7 +69,7 @@ void nano_timer_init(struct nano_timer *timer, void *userData)
 *
 */
 
-FUNC_ALIAS(_TimerStart, nano_fiber_timer_start, void);
+FUNC_ALIAS(_timer_start, nano_fiber_timer_start, void);
 
 /*******************************************************************************
 *
@@ -82,11 +82,11 @@ FUNC_ALIAS(_TimerStart, nano_fiber_timer_start, void);
 *
 */
 
-FUNC_ALIAS(_TimerStart, nano_task_timer_start, void);
+FUNC_ALIAS(_timer_start, nano_task_timer_start, void);
 
 /*******************************************************************************
 *
-* _TimerStart - start a nanokernel timer (generic implementation)
+* _timer_start - start a nanokernel timer (generic implementation)
 *
 * This function starts a previously initialized nanokernel timer object.
 * The timer will expire in <ticks> system clock ticks.
@@ -96,7 +96,7 @@ FUNC_ALIAS(_TimerStart, nano_task_timer_start, void);
 * NOMANUAL
 */
 
-void _TimerStart(struct nano_timer *timer, /* timer to start */
+void _timer_start(struct nano_timer *timer, /* timer to start */
 				       int ticks /* number of system ticks
 						    before expiry */
 				       )
