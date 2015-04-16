@@ -196,7 +196,7 @@ void abort_task(struct k_proc *X)
 
 	/* Do normal context exit cleanup */
 
-	_ContextExitRtn((tCCS *)X->workspace);
+	_context_exit((tCCS *)X->workspace);
 
 	/* Set TF_TERM and TF_STOP state flags */
 

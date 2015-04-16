@@ -51,7 +51,7 @@ ending the context, be it a task or a fiber.
 #if defined(CONFIG_HOST_TOOLS_SUPPORT)
 /*******************************************************************************
 *
-* _ContextExitRtn - context exit routine
+* _context_exit - context exit routine
 *
 * This function is invoked when the specified context is aborted, either
 * normally or abnormally. It is called for the termination of any context,
@@ -65,7 +65,7 @@ ending the context, be it a task or a fiber.
 * \NOMANUAL
 */
 
-void _ContextExitRtn(tCCS *pContext)
+void _context_exit(tCCS *pContext)
 {
 	/*
 	 * Remove context from the list of contexts.  This singly linked list of

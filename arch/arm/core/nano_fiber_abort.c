@@ -68,7 +68,7 @@ extern void _NanoFiberSwap(void);
 
 void fiber_abort(void)
 {
-	_ContextExitRtn(_NanoKernel.current);
+	_context_exit(_NanoKernel.current);
 	if (_ScbIsInThreadMode()) {
 		_NanoFiberSwap();
 	} else {

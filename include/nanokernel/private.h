@@ -81,9 +81,9 @@ extern void _NanoEssentialContextClear(void);
 
 /* Private API to clean up when a context is aborted */
 #if defined(CONFIG_HOST_TOOLS_SUPPORT)
-extern void _ContextExitRtn(tCCS *ccs);
+extern void _context_exit(tCCS *ccs);
 #else
-#define _ContextExitRtn(ccs) \
+#define _context_exit(ccs) \
 	do {/* nothing */    \
 	} while (0)
 #endif /* CONFIG_HOST_TOOLS_SUPPORT */

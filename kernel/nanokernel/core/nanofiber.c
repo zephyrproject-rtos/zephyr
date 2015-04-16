@@ -309,7 +309,7 @@ FUNC_NORETURN void fiber_abort(void)
 {
 	/* Do normal context exit cleanup, then give up CPU control */
 
-	_ContextExitRtn(_NanoKernel.current);
+	_context_exit(_NanoKernel.current);
 	_NanoFiberSwap();
 }
 #endif
