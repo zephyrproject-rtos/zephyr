@@ -68,6 +68,15 @@ extern int _context_essential_check(tCCS *pCtx);
 
 /* fiber APIs
  */
+/* scheduling context independent method (when context is not known) */
+void fiber_start(char *stack,
+			unsigned stack_size,
+			nano_fiber_entry_t entry,
+			int arg1,
+			int arg2,
+			unsigned prio,
+			unsigned options);
+
 /* methods for fibers */
 extern void fiber_fiber_start(char *pStack,
 				unsigned int stackSize,

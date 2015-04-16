@@ -140,6 +140,7 @@ int _context_essential_check(tCCS *pCtx /* pointer to context */
 
 FUNC_ALIAS(_fiber_start, fiber_fiber_start, void);
 FUNC_ALIAS(_fiber_start, task_fiber_start, void);
+FUNC_ALIAS(_fiber_start, fiber_start, void);
 
 /*******************************************************************************
 *
