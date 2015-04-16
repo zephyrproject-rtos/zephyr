@@ -54,15 +54,16 @@ required by Security Development Lifecycle
 * if either <src> or <dest> are NULL, or if the destination buffer <dest>
 * is too small.
 *
+* \param dest         destination buffer
+* \param nDestElem    number of elements in destination buffer
+* \param src          source buffer
+* \param nElem        number of elements to copy
+*
 * RETURNS: 0 on success, otherwise invokes _NanoFatalErrorHandler()
 */
 
-errno_t __k_memcpy_s(
-	void *dest,       /* destination buffer */
-	size_t nDestElem, /* # of elements in destination buffer */
-	const void *src,  /* source buffer */
-	size_t nElem      /* # of elements to copy */
-	)
+errno_t __k_memcpy_s(void *dest, size_t nDestElem, const void *src,
+					 size_t nElem)
 {
 	if ((dest == NULL) || (src == NULL) || (nDestElem < nElem)) {
 		_NanoFatalErrorHandler(_NANO_ERR_INVALID_STRING_OP,
@@ -86,12 +87,13 @@ errno_t __k_memcpy_s(
 * enabled, returns the number of elements in the string <str> to a maximum
 * value of <maxElem>.  Note that if <str> is NULL, it returns 0.
 *
+* \param str        string about which to find length
+* \param maxElem    maximum number of elements in the string
+*
 * RETURNS: number of elements in the null-terminated character string
 */
 
-size_t __strlen_s(const char *str, /* string about which to find length */
-		  size_t maxElem   /* maximum # of elements in the string */
-		  )
+size_t __strlen_s(const char *str, size_t maxElem)
 {
 	size_t len = 0; /* the calculated string length */
 
@@ -117,16 +119,15 @@ size_t __strlen_s(const char *str, /* string about which to find length */
 * if either <src> or <dest> are NULL, or if the buffer for destination string
 * <dest> is too small.
 *
+* \param dest        destination string buffer
+* \param nDestElem   number of elements in destination buffer
+* \param src         source string buffer
+*
 * RETURNS: 0 on success, otherwise invokes _NanoFatalErrorHandler()
 */
 
-errno_t __strcpy_s
-	(
-	char *       dest,       /* destination string buffer */
-	size_t       nDestElem,  /* # of elements in destination buffer */
-	const char * src         /* source string buffer */
-	)
-	{
+errno_t __strcpy_s(char *dest, size_t nDestElem, const char *src)
+{
 	int i = 0;			/* loop counter */
 
 	if (dest != NULL) {
@@ -152,4 +153,4 @@ errno_t __strcpy_s
      */
 
 	return 1;
-	}
+}

@@ -94,15 +94,15 @@ static char fiber2Stack[FIBER2_STACKSIZE];
 * RETURNS: N/A
 */
 
-void initNanoObjects (void)
-	{
+void initNanoObjects(void)
+{
 	nano_timer_init (&timer, timerData);
 	nano_timer_init (&shortTimer, shortTimerData);
 	nano_timer_init (&longTimer, longTimerData);
 	nano_timer_init (&midTimer, midTimerData);
 	nano_sem_init (&wakeTask);
 	nano_sem_init (&wakeFiber);
-	}
+}
 
 /*******************************************************************************
 *
@@ -117,19 +117,21 @@ void initNanoObjects (void)
 *
 * This routine can be considered as testing nano_node_tick_get_32(),
 * nanoTimeElapsed() and nanoXXXTimerGetW() successful expiration cases.
+*
+* \param startRtn      routine to start the timer
+* \param waitRtn       routine to get and wait for the timer
+* \param getRtn        routine to get the timer (no waiting)
+* \param pTimer        pointer to the timer
+* \param pTimerData    pointer to the expected timer data
+* \param ticks         number of ticks to wait
+*
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int basicTimerWait
-	(
-	timer_start_func  startRtn,   /* routine to start the timer */
-	timer_getw_func   waitRtn,    /* routine to get and wait for the timer */
-	timer_get_func    getRtn,     /* routine to get the timer (no waiting) */
-	struct nano_timer *pTimer,        /* ptr to the timer */
-	void *         pTimerData,    /* ptr to the expected timer data */
-	int            ticks          /* number of ticks to wait */
-	)
-	{
+int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
+				   timer_get_func getRtn, struct nano_timer *pTimer,
+				   void *pTimerData, int ticks)
+{
 	uint64_t  reftime;         /* reference time for tick delta */
 	uint32_t  tick;            /* current tick */
 	uint32_t  elapsed;         /* # of elapsed ticks */
@@ -189,7 +191,7 @@ int basicTimerWait
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -203,14 +205,13 @@ int basicTimerWait
 *
 * Four timers are used so that the various paths can be tested.
 *
+* \param startRtn    routine to start the timers
+*
 * RETURNS: N/A
 */
 
-void startTimers
-	(
-	timer_start_func  startRtn    /* routine to start the timers */
-	)
-	{
+void startTimers(timer_start_func startRtn)
+{
 	int  tick;                    /* current tick */
 
 	tick = nano_node_tick_get_32 ();
@@ -223,7 +224,7 @@ void startTimers
 	startRtn (&longTimer, LONG_TIMEOUT);
 	startRtn (&shortTimer, SHORT_TIMEOUT);
 	startRtn (&midTimer, MID_TIMEOUT);
-	}
+}
 
 /*******************************************************************************
 *
@@ -234,14 +235,13 @@ void startTimers
 * expire.  The timers are expected to expire in the following order:
 *     <shortTimer>, <timer>, <midTimer>, <longTimer>
 *
+* \param getRtn    timer get routine (fiber or task)
+*
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int busyWaitTimers
-	(
-	timer_get_func getRtn    /* timer get routine (fiber or task) */
-	)
-	{
+int busyWaitTimers(timer_get_func getRtn)
+{
 	int      numExpired = 0; /* # of expired timers */
 	void *   result;         /* value returned from <getRtn> */
 	uint32_t ticks;          /* tick by which time test should be complete */
@@ -301,7 +301,7 @@ int busyWaitTimers
 		}
 
 	return (nano_node_tick_get_32 () < ticks) ? TC_PASS : TC_FAIL;
-	}
+}
 
 /*******************************************************************************
 *
@@ -313,15 +313,14 @@ int busyWaitTimers
 * exercise the code that removes timers from important locations in the list;
 * these include the middle, the head, the tail, and the last item.
 *
+* \param stopRtn    routine to stop timer (fiber or task)
+* \param getRtn     timer get routine (fiber or task)
+*
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int stopTimers
-	(
-	timer_stop_func  stopRtn,   /* routine to stop timer (fiber or task) */
-	timer_get_func   getRtn     /* timer get routine (fiber or task) */
-	)
-	{
+int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
+{
 	int  startTick;      /* tick at which test starts */
 	int  endTick;        /* tick by which test should be completed */
 
@@ -349,7 +348,7 @@ int stopTimers
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -358,20 +357,19 @@ int stopTimers
 * The second fiber has a lower priority than the first, but is still given
 * precedence over the task.
 *
+* \param arg1    unused
+* \param arg2    unused
+*
 * RETURNS: N/A
 */
 
-static void fiber2Entry
-	(
-	int  arg1,    /* unused */
-	int  arg2     /* unused */
-	)
-	{
+static void fiber2Entry(int arg1, int arg2)
+{
 	ARG_UNUSED (arg1);
 	ARG_UNUSED (arg2);
 
 	nano_fiber_timer_stop (&timer);
-	}
+}
 
 /*******************************************************************************
 *
@@ -380,15 +378,14 @@ static void fiber2Entry
 * NOTE: The fiber portion of the tests have higher priority than the task
 * portion of the tests.
 *
+* \param arg1    unused
+* \param arg2    unused
+*
 * RETURNS: N/A
 */
 
-static void fiberEntry
-	(
-	int  arg1,    /* unused */
-	int  arg2     /* unused */
-	)
-	{
+static void fiberEntry(int arg1, int arg2)
+{
 	int  rv;      /* return value from a test */
 	void *result; /* return value from timer wait routine */
 
@@ -458,7 +455,7 @@ static void fiberEntry
 		}
 
 	nano_fiber_sem_give (&wakeTask);
-	}
+}
 
 /*******************************************************************************
 *
@@ -467,8 +464,8 @@ static void fiberEntry
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int nano_node_cycle_get_32Test (void)
-	{
+int nano_node_cycle_get_32Test(void)
+{
 	uint32_t  timeStamp1;
 	uint32_t  timeStamp2;
 	int       i;
@@ -487,7 +484,7 @@ int nano_node_cycle_get_32Test (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -498,8 +495,8 @@ int nano_node_cycle_get_32Test (void)
 * RETURNS: N/A
 */
 
-void main (void)
-	{
+void main(void)
+{
 	int     rv;       /* return value from tests */
 
 	TC_START ("Test Nanokernel Timer");
@@ -614,4 +611,4 @@ void main (void)
 doneTests:
 	TC_END (rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
 	TC_END_REPORT (rv);
-	}
+}

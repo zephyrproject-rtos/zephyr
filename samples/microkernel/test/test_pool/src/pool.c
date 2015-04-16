@@ -129,11 +129,7 @@ static TEST_CASE defrag[] = {
 * RETURNS: 0 if the same, non-zero if not the same
 */
 
-int blockCompare
-	(
-	struct k_block *b1,
-	struct k_block *b2
-	)
+int blockCompare(struct k_block *b1, struct k_block *b2)
 {
 	char *p1 = (char *) b1;
 	char *p2 = (char *) b2;
@@ -157,13 +153,8 @@ int blockCompare
 * RETURNS: task_mem_pool_alloc() return value
 */
 
-int  poolBlockGetFunc
-	(
-	struct k_block *block,
-	kmemory_pool_t     pool,
-	int        size,
-	int32_t    unused
-	)
+int poolBlockGetFunc(struct k_block *block, kmemory_pool_t pool, int size,
+					 int32_t unused)
 {
 	ARG_UNUSED(unused);
 
@@ -177,13 +168,8 @@ int  poolBlockGetFunc
 * RETURNS: task_mem_pool_alloc_wait() return value
 */
 
-int  poolBlockGetWFunc
-	(
-	struct k_block *block,
-	kmemory_pool_t     pool,
-	int        size,
-	int32_t    unused
-	)
+int poolBlockGetWFunc(struct k_block *block, kmemory_pool_t pool, int size,
+					  int32_t unused)
 {
 	ARG_UNUSED(unused);
 
@@ -197,13 +183,8 @@ int  poolBlockGetWFunc
 * RETURNS: task_mem_pool_alloc_wait_timeout() return value
 */
 
-int  poolBlockGetWTFunc
-	(
-	struct k_block *block,
-	kmemory_pool_t     pool,
-	int        size,
-	int32_t    timeout
-	)
+int poolBlockGetWTFunc(struct k_block *block, kmemory_pool_t pool,
+					   int size, int32_t timeout)
 {
 	return task_mem_pool_alloc_wait_timeout(block, pool, size, timeout);
 }
@@ -215,11 +196,7 @@ int  poolBlockGetWTFunc
 * RETURNS: N/A
 */
 
-void freeBlocks
-	(
-	TEST_CASE *tests,
-	int        nTests
-	)
+void freeBlocks(TEST_CASE *tests, int nTests)
 {
 	int  i;
 
@@ -237,13 +214,8 @@ void freeBlocks
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int poolBlockGetWork
-	(
-	char               *string,
-	poolBlockGetFunc_t  func,
-	TEST_CASE          *tests,
-	int                 nTests
-	)
+int poolBlockGetWork(char *string, poolBlockGetFunc_t func,
+					 TEST_CASE *tests, int nTests)
 {
 	int  i;
 	int  rv;
@@ -414,11 +386,7 @@ int poolBlockGetWaitTest(void)
 * RETURNS: task_mem_pool_move() return value
 */
 
-int poolMoveBlock
-	(
-	struct k_block *block,
-	kmemory_pool_t     pool
-	)
+int poolMoveBlock(struct k_block *block, kmemory_pool_t pool)
 {
 	return task_mem_pool_move(block, pool);
 }
@@ -430,11 +398,7 @@ int poolMoveBlock
 * RETURNS: task_mem_pool_move_wait() return value
 */
 
-int poolMoveBlockW
-	(
-	struct k_block *block,
-	kmemory_pool_t     pool
-	)
+int poolMoveBlockW(struct k_block *block, kmemory_pool_t pool)
 {
 	return task_mem_pool_move_wait(block, pool);
 }
@@ -446,11 +410,7 @@ int poolMoveBlockW
 * RETURNS: task_mem_pool_move_wait_timeout() return value
 */
 
-int poolMoveBlockWT
-	(
-	struct k_block *block,
-	kmemory_pool_t     pool
-	)
+int poolMoveBlockWT(struct k_block *block, kmemory_pool_t pool)
 {
 	return task_mem_pool_move_wait_timeout(block, pool, TENTH_SECOND);
 }

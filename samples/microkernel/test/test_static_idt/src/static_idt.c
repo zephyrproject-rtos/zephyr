@@ -78,12 +78,12 @@ static char fiberStack[512];
 #define _trigger_isrHandler() __asm__ volatile("int %0" : : "i" (TEST_SOFT_INT) : "memory")
 #define _trigger_spurHandler() __asm__ volatile("int %0" : : "i" (TEST_SPUR_INT) : "memory")
 #elif defined (__DCC__)
-__asm volatile void _trigger_int (unsigned number)
-	{
+__asm volatile void _trigger_int(unsigned number)
+{
 % con number
 !
 	int  number
-	}
+}
 #define _trigger_isrHandler()   _trigger_int (TEST_SOFT_INT)
 #define _trigger_spurHandler()  _trigger_int (TEST_SPUR_INT)
 #endif
@@ -98,10 +98,10 @@ __asm volatile void _trigger_int (unsigned number)
 * RETURNS: N/A
 */
 
-void isr_handler (void)
-	{
+void isr_handler(void)
+{
 	intHandlerExecuted++;
-	}
+}
 
 /*******************************************************************************
 *
@@ -123,14 +123,11 @@ void isr_handler (void)
 * RETURNS: N/A
 */
 
-void exc_divide_error_handler
-	(
-	NANO_ESF *  pEsf
-	)
-	{
+void exc_divide_error_handler(NANO_ESF *pEsf)
+{
 	pEsf->eip += 2;
 	excHandlerExecuted = 1;    /* provide evidence that the handler executed */
-	}
+}
 
 
 /*******************************************************************************
@@ -143,8 +140,8 @@ void exc_divide_error_handler
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int nanoIdtStubTest (void)
-	{
+int nanoIdtStubTest(void)
+{
 	IDT_ENTRY *	pIdtEntry;
 	uint16_t offset;
 
@@ -191,7 +188,7 @@ int nanoIdtStubTest (void)
      * and software interrupt are triggered so we don't check them.
      */
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -201,15 +198,11 @@ int nanoIdtStubTest (void)
 */
 
 #ifdef CONFIG_MICROKERNEL
-void idtSpurTask (void)
+void idtSpurTask(void)
 #else
-static void idtSpurFiber
-	(
-	int a1,
-	int a2
-	)
+static void idtSpurFiber(int a1, int a2)
 #endif
-	{
+{
 #ifndef CONFIG_MICROKERNEL
 	ARG_UNUSED (a1);
 	ARG_UNUSED (a2);
@@ -222,7 +215,7 @@ static void idtSpurFiber
     /* Shouldn't get here */
 	spurHandlerAbortedContext = 0;
 
-	}
+}
 
 /*******************************************************************************
 *
@@ -234,11 +227,11 @@ static void idtSpurFiber
 */
 
 #ifdef CONFIG_MICROKERNEL
-void idtTestTask (void)
+void idtTestTask(void)
 #else
-void main (void)
+void main(void)
 #endif
-	{
+{
 	int           rv;       /* return value from tests */
 	volatile int  error;    /* used to create a divide by zero error */
 
@@ -313,4 +306,4 @@ void main (void)
 doneTests:
 	TC_END (rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
 	TC_END_REPORT (rv);
-	}
+}

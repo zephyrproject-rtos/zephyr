@@ -158,18 +158,17 @@ void testTaskFifoGetW(void);
 * This routine is the ISR handler for _trigger_nano_isr_fifo_put().  It adds
 * an item to the FIFO in the context of an ISR.
 *
+* \param parameter    pointer to ISR handler parameter
+*
 * RETURNS: N/A
 */
 
-void isr_fifo_put
-	(
-	void * parameter    /* ptr to ISR handler parameter */
-	)
-	{
+void isr_fifo_put(void *parameter)
+{
 	ISR_FIFO_INFO * pInfo = (ISR_FIFO_INFO *) parameter;
 
 	nano_isr_fifo_put (pInfo->channel, pInfo->data);
-	}
+}
 
 /*******************************************************************************
 *
@@ -178,18 +177,17 @@ void isr_fifo_put
 * This routine is the ISR handler for _trigger_nano_isr_fifo_get().  It gets
 * an item from the FIFO in the context of an ISR.
 *
+* \param parameter    pointer to ISR handler parameter
+*
 * RETURNS: N/A
 */
 
-void isr_fifo_get
-	(
-	void * parameter    /* ptr to ISR handler parameter */
-	)
-	{
+void isr_fifo_get(void *parameter)
+{
 	ISR_FIFO_INFO * pInfo = (ISR_FIFO_INFO *) parameter;
 
 	pInfo->data = nano_isr_fifo_get (pInfo->channel);
-	}
+}
 
 
 /*******************************************************************************
@@ -200,7 +198,7 @@ void isr_fifo_get
 */
 
 void fiber1(void)
-	{
+{
 	void *  pData;      /* pointer to FIFO object get from the queue */
 	int     count = 0;  /* counter */
 
@@ -263,7 +261,7 @@ void fiber1(void)
     /* Give semaphore to allow the main task to run */
 	nano_fiber_sem_give(&nanoSemObjTask);
 
-	} /* fiber1 */
+} /* fiber1 */
 
 
 /*******************************************************************************
@@ -277,7 +275,7 @@ void fiber1(void)
 */
 
 void testFiberFifoGetW(void)
-	{
+{
 	void *  pGetData;   /* pointer to FIFO object get from the queue */
 	void *  pPutData;   /* pointer to FIFO object to put to the queue */
 
@@ -312,7 +310,7 @@ void testFiberFifoGetW(void)
 
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
 
-	}  /* testFiberFifoGetW */
+}  /* testFiberFifoGetW */
 
 
 /*******************************************************************************
@@ -328,7 +326,7 @@ void testFiberFifoGetW(void)
 */
 
 void testIsrFifoFromFiber(void)
-	{
+{
 		void *  pGetData;   /* pointer to FIFO object get from the queue */
 
 		TC_PRINT("Test ISR FIFO (invoked from Fiber)\n\n");
@@ -369,7 +367,7 @@ void testIsrFifoFromFiber(void)
 
 		TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
 
-	}  /* testIsrFifoFromFiber */
+}  /* testIsrFifoFromFiber */
 
 
 /*******************************************************************************
@@ -385,7 +383,7 @@ void testIsrFifoFromFiber(void)
 */
 
 void testIsrFifoFromTask(void)
-	{
+{
 		void *  pGetData;   /* pointer to FIFO object get from the queue */
 		void *  pPutData;   /* pointer to FIFO object put to queue */
 		int count = 0;      /* counter */
@@ -448,7 +446,7 @@ void testIsrFifoFromTask(void)
 */
 
 void fiber2(void)
-	{
+{
 	void *  pData;    /* pointer to FIFO object from the queue */
 
     /* Wait for fiber2 to be activated */
@@ -498,7 +496,7 @@ void fiber2(void)
 	testIsrFifoFromFiber();
 
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
-	}  /* fiber2 */
+}  /* fiber2 */
 
 /*******************************************************************************
 *
@@ -507,8 +505,8 @@ void fiber2(void)
 * RETURNS: N/A
 */
 
-void fiber3 (void)
-	{
+void fiber3(void)
+{
 	void *  pData;
 
     /* Wait for fiber3 to be activated */
@@ -544,7 +542,7 @@ void fiber3 (void)
 
     /* Wait for fiber3 to be re-activated (not expected to occur) */
 	nano_fiber_sem_take_wait (&nanoSemObj3);
-	}
+}
 
 
 /*******************************************************************************
@@ -558,7 +556,7 @@ void fiber3 (void)
 */
 
 void testTaskFifoGetW(void)
-	{
+{
 	void *  pGetData;   /* pointer to FIFO object get from the queue */
 	void *  pPutData;   /* pointer to FIFO object to put to the queue */
 
@@ -586,7 +584,7 @@ void testTaskFifoGetW(void)
 	nano_task_fifo_put(&nanoFifoObj2, pPutData);
 
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
-	} /* testTaskFifoGetW */
+} /* testTaskFifoGetW */
 
 /*******************************************************************************
 *
@@ -598,7 +596,7 @@ void testTaskFifoGetW(void)
 */
 
 void initNanoObjects(void)
-	{
+{
 	struct isrInitInfo i =
 	{
 	{isr_fifo_put, isr_fifo_get},
@@ -616,7 +614,7 @@ void initNanoObjects(void)
 	nano_sem_init  (&nanoSemObjTask);
 
 	nano_timer_init (&timer, timerData);
-	} /* initNanoObjects */
+} /* initNanoObjects */
 
 /*******************************************************************************
 *
@@ -627,8 +625,8 @@ void initNanoObjects(void)
 * RETURNS: N/A
 */
 
-void main (void)
-	{
+void main(void)
+{
 	void *  pData;      /* pointer to FIFO object get from the queue */
 	int     count = 0;  /* counter */
 	TC_START("Test Nanokernel FIFO");
@@ -753,4 +751,4 @@ void main (void)
 exit:
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
 	TC_END_REPORT (retCode);
-	}
+}

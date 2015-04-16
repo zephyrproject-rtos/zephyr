@@ -107,14 +107,13 @@ void printMyData(void)
 * This routine verifies current value against expected value
 * and returns TRUE if they are the same.
 *
+* \param expectRetValue     expect value
+* \param currentRetValue    current value
+*
 * RETURNS:  TRUE, FALSE
 */
 
-BOOL  verifyRetValue
-	(
-	int expectRetValue,         /* expect value */
-	int currentRetValue         /* current value */
-	)
+BOOL verifyRetValue(int expectRetValue, int currentRetValue)
 {
 	return (expectRetValue == currentRetValue);
 } /* verifyRetValue */
@@ -141,19 +140,15 @@ void initMicroObjects(void)
 * This routine fills the FIFO queue with myData array.  This assumes the
 * queue is empty before we put in elements.
 *
+* \param queue          FIFO queue
+* \param numElements    Number of elements used to inserted into the queue
+*
 * RETURNS: TC_PASS, TC_FAIL
 *
 * Also updates tcRC when result is TC_FAIL.
 */
 
-int fillFIFO
-	(
-	kfifo_t queue,               /* FIFO queue */
-	int numElements             /*
-                                 * number of elements used to inserted
-                                 * into the queue
-                                 */
-	)
+int fillFIFO(kfifo_t queue, int numElements)
 {
 	int result = TC_PASS;       /* TC_PASS or TC_FAIL for this function */
 	int retValue;               /* return value from task_fifo_xxx APIs */
@@ -289,14 +284,13 @@ exitTest4:
 * that they are in the right order. Expect the dequeue order as: myData[0],
 * myData[1].
 *
+* \param loopCnt    number of elements passed to the for loop
+*
 * RETURNS:  TC_PASS, TC_FAIL
 *
 * Also updates tcRC when result is TC_FAIL.
 */
-int verifyQueueData
-	(
-	int loopCnt                 /* Number of elements passed to the for loop */
-	)
+int verifyQueueData(int loopCnt)
 {
 	int result = TC_PASS;       /* TC_PASS or TC_FAIL for this function */
 	int retValue;               /* task_fifo_xxx interface return value */

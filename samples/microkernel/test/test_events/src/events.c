@@ -76,10 +76,7 @@ extern struct nano_sem fiberSem; /* semaphore that allows test control the fiber
 * RETURNS: N/A
 */
 
-void isr_event_signal_handler
-	(
-	void *data
-	)
+void isr_event_signal_handler(void *data)
 {
 	ISR_INFO *pInfo = (ISR_INFO *) data;
 
@@ -370,13 +367,12 @@ int fiberEventSignalTest(void)
 *
 * eventHandler - handler to run on EVENT_ID event
 *
+* \param event    signalled event
+*
 * RETURNS: <handlerRetVal>
 */
 
-int eventHandler
-	(
-	int  event        /* signalled event */
-	)
+int eventHandler(int event)
 {
 	ARG_UNUSED(event);
 
@@ -389,13 +385,12 @@ int eventHandler
 *
 * altEventHandler - handler to run on ALT_EVENT event
 *
+* \param event    signalled event
+*
 * RETURNS: 1
 */
 
-int altEventHandler
-	(
-	int  event         /* signalled event */
-	)
+int altEventHandler(int event)
 {
 	ARG_UNUSED(event);
 

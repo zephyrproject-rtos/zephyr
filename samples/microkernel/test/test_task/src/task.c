@@ -86,11 +86,8 @@ static volatile int mainTaskNotReady = 0;
 * RETURNS: N/A
 */
 
-void isr_task_command_handler
-	(
-	void *  data
-	)
-	{
+void isr_task_command_handler(void *data)
+{
 	ISR_INFO *  pInfo = (ISR_INFO *) data;
 	int         value = -1;
 
@@ -106,7 +103,7 @@ void isr_task_command_handler
 		}
 
 	pInfo->data = value;
-	}
+}
 
 /*******************************************************************************
 *
@@ -115,12 +112,8 @@ void isr_task_command_handler
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int isrAPIsTest
-	(
-	int  taskId,
-	int  taskPrio
-	)
-	{
+int isrAPIsTest(int taskId, int taskPrio)
+{
 	isrInfo.cmd = CMD_TASKID;
 	_trigger_isrTaskCommand ();
 	if (isrInfo.data != taskId)
@@ -140,7 +133,7 @@ int isrAPIsTest
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -149,12 +142,8 @@ int isrAPIsTest
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int taskMacrosTest
-	(
-	int  taskId,
-	int  taskPrio
-	)
-	{
+int taskMacrosTest(int taskId, int taskPrio)
+{
 	int  value;
 
 	value = task_id_get ();
@@ -174,7 +163,7 @@ int taskMacrosTest
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -183,8 +172,8 @@ int taskMacrosTest
 * RETURNS: N/A
 */
 
-void microObjectsInit (void)
-	{
+void microObjectsInit(void)
+{
 	struct isrInitInfo i =
 	{
 	{ isr_task_command_handler, NULL },
@@ -194,7 +183,7 @@ void microObjectsInit (void)
 	(void) initIRQ (&i);
 
 	TC_PRINT ("Microkernel objects initialized\n");
-	}
+}
 
 /*******************************************************************************
 *
@@ -203,8 +192,8 @@ void microObjectsInit (void)
 * RETURNS: N/A
 */
 
-void helperTaskSetPrioTest (void)
-	{
+void helperTaskSetPrioTest(void)
+{
 	task_sem_take_wait (HT_SEM);
 	helperData = task_priority_get ();     /* Helper task priority lowered by 5 */
 	task_sem_give (RT_SEM);
@@ -216,7 +205,7 @@ void helperTaskSetPrioTest (void)
 	task_sem_take_wait (HT_SEM);
 	helperData = task_priority_get ();     /* Helper task prioirty restored */
 	task_sem_give (RT_SEM);
-	}
+}
 
 /*******************************************************************************
 *
@@ -225,8 +214,8 @@ void helperTaskSetPrioTest (void)
 * RETURNS: N/A
 */
 
-int taskSetPrioTest (void)
-	{
+int taskSetPrioTest(void)
+{
 	int  rv;
 
     /* Lower the priority of the current task (RegressionTask) */
@@ -296,7 +285,7 @@ int taskSetPrioTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -305,8 +294,8 @@ int taskSetPrioTest (void)
 * RETURNS: N/A
 */
 
-void helperTaskSleepTest (void)
-	{
+void helperTaskSleepTest(void)
+{
 	int32_t  firstTick;
 
 	task_sem_take_wait (HT_SEM);
@@ -318,7 +307,7 @@ void helperTaskSleepTest (void)
 	helperData = task_node_tick_get_32 () - firstTick;
 
 	task_sem_give (RT_SEM);
-	}
+}
 
 /*******************************************************************************
 *
@@ -327,8 +316,8 @@ void helperTaskSleepTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int taskSleepTest (void)
-	{
+int taskSleepTest(void)
+{
 	int32_t  tick;
 
 	tick = task_node_tick_get_32 ();           /* Busy wait to align */
@@ -351,7 +340,7 @@ int taskSleepTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -360,8 +349,8 @@ int taskSleepTest (void)
 * RETURNS: N/A
 */
 
-void helperTaskYieldTest (void)
-	{
+void helperTaskYieldTest(void)
+{
 	int  i;
 	task_sem_take_wait (HT_SEM);
 
@@ -372,7 +361,7 @@ void helperTaskYieldTest (void)
 		}
 
 	task_sem_give (RT_SEM);
-	}
+}
 
 /*******************************************************************************
 *
@@ -381,8 +370,8 @@ void helperTaskYieldTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int taskYieldTest (void)
-	{
+int taskYieldTest(void)
+{
 	int  prevHelperData;
 	int  i;
 
@@ -412,7 +401,7 @@ int taskYieldTest (void)
 	task_sem_take_wait (RT_SEM);
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -422,12 +411,12 @@ int taskYieldTest (void)
 * RETURNS: N/A
 */
 
-void helperTaskSuspendTest (void)
-	{
+void helperTaskSuspendTest(void)
+{
 	helperData++;
 
 	task_sem_take_wait (HT_SEM);
-	}
+}
 
 /*******************************************************************************
 *
@@ -442,8 +431,8 @@ void helperTaskSuspendTest (void)
 * RETURNS: TC_PASS on success or TC_FAIL on failure
 */
 
-int taskSuspendTest (void)
-	{
+int taskSuspendTest(void)
+{
 	int  prevHelperData;
 
 	task_suspend (HT_TASKID);    /* Suspend the helper task */
@@ -468,7 +457,7 @@ int taskSuspendTest (void)
 
 	task_sem_give (HT_SEM);
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -477,8 +466,8 @@ int taskSuspendTest (void)
 * RETURNS:  N/A
 */
 
-void HelperTask (void)
-	{
+void HelperTask(void)
+{
 	int  rv;
 
 	task_sem_take_wait (HT_SEM);
@@ -506,7 +495,7 @@ void HelperTask (void)
 	helperTaskYieldTest ();
 
 	helperTaskSuspendTest ();
-	}
+}
 
 /*******************************************************************************
 *
@@ -515,8 +504,8 @@ void HelperTask (void)
 * RETURNS:  N/A
 */
 
-void RegressionTask (void)
-	{
+void RegressionTask(void)
+{
 	int    rv;
 
 	TC_START("Test Microkernel Task API");
@@ -578,4 +567,4 @@ void RegressionTask (void)
 errorReturn:
 	TC_END_RESULT (tcRC);
 	TC_END_REPORT (tcRC);
-	}  /* RegressionTask */
+}  /* RegressionTask */

@@ -110,12 +110,12 @@ static vvfn _trigger_isrSemaSignal = (vvfn) sw_isr_trigger_0;
 * RETURNS: N/A
 */
 
-void RegressionTaskEntry (void)
-	{
+void RegressionTaskEntry(void)
+{
 	extern int RegressionTask (void);
 
 	task_sem_give (resultSems[RegressionTask ()]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -127,12 +127,12 @@ void RegressionTaskEntry (void)
 * RETURNS: N/A
 */
 
-void AlternateTaskEntry (void)
-	{
+void AlternateTaskEntry(void)
+{
 	extern int AlternateTask (void);
 
 	task_sem_give (resultSems[AlternateTask ()]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -144,12 +144,12 @@ void AlternateTaskEntry (void)
 * RETURNS: N/A
 */
 
-void HighPriTaskEntry (void)
-	{
+void HighPriTaskEntry(void)
+{
 	extern int HighPriTask (void);
 
 	task_sem_give (resultSems[HighPriTask ()]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -161,43 +161,41 @@ void HighPriTaskEntry (void)
 * RETURNS: N/A
 */
 
-void LowPriTaskEntry (void)
-	{
+void LowPriTaskEntry(void)
+{
 	extern int LowPriTask (void);
 
 	task_sem_give (resultSems[LowPriTask ()]);
-	}
+}
 
 /*******************************************************************************
 *
 * testIsrHandler - ISR that gives specified semaphore
 *
+* \param isrData    pointer to semaphore to be given
+*
 * RETURNS: N/A
 */
 
-static void testIsrHandler
-	(
-	void *isrData	/* pointer to semaphore to be given */
-	)
-	{
+static void testIsrHandler(void *isrData)
+{
 	isr_sem_give (*(ksem_t *)isrData, &CMD_PKT_SET(cmdPktSet));
-	}
+}
 
 /*******************************************************************************
 *
 * trigger_isrSemaSignal - generate interrupt that gives specified semaphore
 *
+* \param semaphore    semaphore to be given
+*
 * RETURNS: N/A
 */
 
-void trigger_isrSemaSignal
-	(
-	ksem_t semaphore	/* semaphore to be given */
-	)
-	{
+void trigger_isrSemaSignal(ksem_t semaphore)
+{
 	testIsrInfo = semaphore;
 	_trigger_isrSemaSignal ();
-	}
+}
 
 /*******************************************************************************
 *
@@ -206,10 +204,10 @@ void trigger_isrSemaSignal
 * RETURNS: N/A
 */
 
-void releaseTestFiber (void)
-	{
+void releaseTestFiber(void)
+{
 	nano_task_sem_give (&fiberSem);
-	}
+}
 
 /*******************************************************************************
 *
@@ -221,8 +219,8 @@ void releaseTestFiber (void)
 * RETURNS: N/A
 */
 
-static void testInterruptsInit (void)
-	{
+static void testInterruptsInit(void)
+{
 	struct isrInitInfo i =
 	{
 	{ testIsrHandler, NULL},
@@ -230,7 +228,7 @@ static void testInterruptsInit (void)
 	};
 
 	(void) initIRQ (&i);
-	}
+}
 
 /*******************************************************************************
 *
@@ -242,8 +240,8 @@ static void testInterruptsInit (void)
 * RETURNS: N/A
 */
 
-void MonitorTaskEntry (void)
-	{
+void MonitorTaskEntry(void)
+{
 	ksem_t result;
 	int tasksDone;
 
@@ -274,4 +272,4 @@ void MonitorTaskEntry (void)
 	}
 
 	TC_END_REPORT (TC_PASS);
-	}
+}

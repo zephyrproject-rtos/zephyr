@@ -68,7 +68,7 @@ static int count = 0;
 static int tcRC = TC_PASS;
 
 /* forward declarations */
-void check_input ( const char *name,  const char *input );
+void check_input(const char *name, const char *input);
 
 /*******************************************************************************
 *
@@ -77,21 +77,20 @@ void check_input ( const char *name,  const char *input );
 * This function calls check_input 6 times with the input name and a short
 * string, which is printed properly by check_input.
 *
+* \param name    task or fiber identification string
+*
 * RETURNS: N/A
 */
 
-void printLoop
-	(
-	const char * name	    /* task or fiber identification string */
-	)
-	{
+void printLoop(const char *name)
+{
 	while (count < 6)
 	    {
         /* A short input string to check_input.  It will pass. */
 		check_input(name, "Stack ok");
 		count++;
 	    }
-	}
+}
 
 /*******************************************************************************
 *
@@ -109,17 +108,13 @@ void printLoop
 * RETURNS: N/A
 */
 
-void check_input
-	(
-	const char *name,
-	const char *input
-	)
-	{
+void check_input(const char *name, const char *input)
+{
     /* Stack will overflow when input is more than 16 characters */
 	char buf[16];
 	strcpy(buf, input);
 	TC_PRINT("%s: %s\n", name, buf);
-	}
+}
 
 /*******************************************************************************
 *
@@ -134,11 +129,11 @@ void check_input
 * RETURNS: N/A
 */
 #ifdef CONFIG_MICROKERNEL
-void AlternateTask (void)
+void AlternateTask(void)
 #else
-void fiber1 (void)
+void fiber1(void)
 #endif /* ! CONFIG_MICROKERNEL */
-	{
+{
 	TC_PRINT("Starts %s\n", __func__);
 	check_input(__func__,
 		       "Input string is too long and stack overflowed!\n");
@@ -149,7 +144,7 @@ void fiber1 (void)
 	printLoop (__func__);
 
 	tcRC = TC_FAIL;
-	}
+}
 
 /*******************************************************************************
 *
@@ -164,11 +159,11 @@ void fiber1 (void)
 */
 
 #ifdef CONFIG_MICROKERNEL
-void RegressionTask (void)
+void RegressionTask(void)
 #else
-void main (void)
+void main(void)
 #endif /* ! CONFIG_MICROKERNEL */
-	{
+{
 	TC_START("Test Stack Protection Canary\n");
 	TC_PRINT("Starts %s\n", __func__);
 
@@ -191,4 +186,4 @@ void main (void)
 errorExit:
 	TC_END_RESULT(tcRC);
 	TC_END_REPORT (tcRC);
-	}
+}

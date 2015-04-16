@@ -53,12 +53,14 @@
 #define SLEEPTIME  500
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
-void helloLoop
-	(
-	const char * taskname,	/* task identification string */
-	ksem_t mySem,		/* task's own semaphore */
-	ksem_t otherSem		/* other task's semaphore */
-	)
+/*
+*
+* \param taskname    task identification string
+* \param mySem       task's own semaphore
+* \param otherSem    other task's semaphore
+*
+*/
+void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 {
 	while (1)
 	{
@@ -73,7 +75,7 @@ void helloLoop
 	}
 }
 
-void taskA (void)
+void taskA(void)
 {
     /* taskA gives its own semaphore, allowing it to say hello right away */
 	task_sem_give (TASKASEM);
@@ -82,7 +84,7 @@ void taskA (void)
 	helloLoop (__FUNCTION__, TASKASEM, TASKBSEM);
 }
 
-void taskB (void)
+void taskB(void)
 {
     /* invoke routine that allows task to ping-pong hello messages with taskA */
 	helloLoop (__FUNCTION__, TASKBSEM, TASKASEM);
@@ -111,7 +113,7 @@ char fiberStack[STACKSIZE];
 struct nano_sem nanoSemTask;
 struct nano_sem nanoSemFiber;
 
-void fiberEntry (void)
+void fiberEntry(void)
 {
 	struct nano_timer timer;
 	uint32_t data[2] = {0, 0};
@@ -134,7 +136,7 @@ void fiberEntry (void)
 	}
 }
 
-void main (void)
+void main(void)
 {
 	struct nano_timer timer;
 	uint32_t data[2] = {0, 0};

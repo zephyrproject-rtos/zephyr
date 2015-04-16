@@ -60,28 +60,27 @@ static uint32_t altTaskIterations = 0;
 * RETURNS: 0
 */
 
-int criticalRtn (void)
-	{
+int criticalRtn(void)
+{
 	volatile  uint32_t x;
 
 	x = criticalVar;
 	criticalVar = x + 1;
 
 	return 0;
-	}
+}
 
 /*******************************************************************************
 *
 * criticalLoop - common code for invoking task_offload_to_fiber()
 *
+* \param count    number of critical section calls made thus far
+*
 * RETURNS: number of critical section calls made by task
 */
 
-uint32_t criticalLoop
-	(
-	uint32_t  count   /* number of critical section calls made thus far */
-	)
-	{
+uint32_t criticalLoop(uint32_t count)
+{
 	int32_t  ticks;
 
 	ticks = task_node_tick_get_32 ();
@@ -92,7 +91,7 @@ uint32_t criticalLoop
 		}
 
 	return count;
-	}
+}
 
 /*******************************************************************************
 *
@@ -103,8 +102,8 @@ uint32_t criticalLoop
 * RETURNS: N/A
 */
 
-void AlternateTask (void)
-	{
+void AlternateTask(void)
+{
 	task_sem_take_wait (ALT_SEM);     /* Wait to be activated */
 
 	altTaskIterations = criticalLoop (altTaskIterations);
@@ -116,7 +115,7 @@ void AlternateTask (void)
 	altTaskIterations = criticalLoop (altTaskIterations);
 
 	task_sem_give (REGRESS_SEM);
-	}
+}
 
 /*******************************************************************************
 *
@@ -129,8 +128,8 @@ void AlternateTask (void)
 * RETURNS: N/A
 */
 
-void RegressionTask (void)
-	{
+void RegressionTask(void)
+{
 	uint32_t nCalls = 0;
 	int      status;
 
@@ -187,4 +186,4 @@ void RegressionTask (void)
 errorReturn:
 	TC_END_RESULT (TC_FAIL);
 	TC_END_REPORT (TC_FAIL);
-	}
+}

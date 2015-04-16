@@ -111,18 +111,17 @@ static void (*_trigger_nano_isr_lifo_get) (void) = (vvfn)sw_isr_trigger_1;
 * This routine is the ISR handler for _trigger_nano_isr_lifo_put().  It adds
 * an item to the LIFO in the context of an ISR.
 *
+* \param data    pointer to ISR handler parameter
+*
 * RETURNS: N/A
 */
 
-void isr_lifo_put
-	(
-	void * data    /* ptr to ISR handler parameter */
-	)
-	{
+void isr_lifo_put(void *data)
+{
 	ISR_LIFO_INFO * pInfo = (ISR_LIFO_INFO *) data;
 
 	nano_isr_lifo_put (pInfo->channel, pInfo->data);
-	}
+}
 
 /*******************************************************************************
 *
@@ -131,18 +130,17 @@ void isr_lifo_put
 * This routine is the ISR handler for _trigger_nano_isr_lifo_get().  It gets
 * an item from the LIFO in the context of an ISR.
 *
+* \param data    pointer to ISR handler parameter
+*
 * RETURNS: N/A
 */
 
-void isr_lifo_get
-	(
-	void * data    /* ptr to ISR handler parameter */
-	)
-	{
+void isr_lifo_get(void *data)
+{
 	ISR_LIFO_INFO * pInfo = (ISR_LIFO_INFO *) data;
 
 	pInfo->data = nano_isr_lifo_get (pInfo->channel);
-	}
+}
 
 /*******************************************************************************
 *
@@ -155,8 +153,8 @@ void isr_lifo_get
 * RETURNS: 0 on success, -1 on failure
 */
 
-int  fiberLifoWaitTest (void)
-	{
+int fiberLifoWaitTest(void)
+{
 	void *  data;     /* ptr to data retrieved from LIFO */
 
     /*
@@ -205,7 +203,7 @@ int  fiberLifoWaitTest (void)
 	nano_fiber_sem_take_wait (&fiberWaitSem);
 
 	return 0;
-	}
+}
 
 /*******************************************************************************
 *
@@ -217,8 +215,8 @@ int  fiberLifoWaitTest (void)
 * RETURNS: 0 on success, -1 on failure
 */
 
-int  fiberLifoNonWaitTest (void)
-	{
+int fiberLifoNonWaitTest(void)
+{
 	void *  data;    /* pointer to data retrieved from LIFO */
 
     /* The LIFO has two items in it; retrieve them both */
@@ -289,7 +287,7 @@ int  fiberLifoNonWaitTest (void)
 errorReturn:
 	fiberDetectedFailure = 1;
 	return -1;
-	}
+}
 
 /*******************************************************************************
 *
@@ -298,15 +296,14 @@ errorReturn:
 * NOTE: The fiber portion of the tests have higher priority than the task
 * portion of the tests.
 *
+* \param arg1    unused
+* \param arg2    unused
+*
 * RETURNS: N/A
 */
 
-static void fiberEntry
-	(
-	int  arg1,    /* unused */
-	int  arg2     /* unused */
-	)
-	{
+static void fiberEntry(int arg1, int arg2)
+{
 	int  rv;      /* return value from a test */
 
 	ARG_UNUSED (arg1);
@@ -319,7 +316,7 @@ static void fiberEntry
 		fiberLifoNonWaitTest ();
 		}
 
-	}
+}
 
 /*******************************************************************************
 *
@@ -332,8 +329,8 @@ static void fiberEntry
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int  taskLifoWaitTest (void)
-	{
+int taskLifoWaitTest(void)
+{
 	void *data;    /* ptr to data retrieved from LIFO */
 
     /* Wait on <taskWaitSem> in case fiber's print message blocked */
@@ -380,7 +377,7 @@ int  taskLifoWaitTest (void)
     /* Waiting on an empty LIFO passed for both fiber and task. */
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -392,8 +389,8 @@ int  taskLifoWaitTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int  taskLifoNonWaitTest (void)
-	{
+int taskLifoNonWaitTest(void)
+{
 	void *  data;    /* ptr to data retrieved from LIFO */
 
     /*
@@ -463,7 +460,7 @@ int  taskLifoNonWaitTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -474,8 +471,8 @@ int  taskLifoNonWaitTest (void)
 * RETURNS: N/A
 */
 
-void initNanoObjects (void)
-	{
+void initNanoObjects(void)
+{
 	struct isrInitInfo i =
 	{
 	{isr_lifo_put, isr_lifo_get},
@@ -490,7 +487,7 @@ void initNanoObjects (void)
 	nano_timer_init (&timer, timerData);
 
 	TC_PRINT ("Nano objects initialized\n");
-	}
+}
 
 /*******************************************************************************
 *
@@ -501,8 +498,8 @@ void initNanoObjects (void)
 * RETURNS: N/A
 */
 
-void main (void)
-	{
+void main(void)
+{
 	int     rv;       /* return value from tests */
 
 	TC_START ("Test Nanokernel LIFO");
@@ -526,4 +523,4 @@ void main (void)
 
 	TC_END (rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
 	TC_END_REPORT (rv);
-	}
+}

@@ -136,11 +136,8 @@ static void (*_trigger_isrHandler) (void) = (vvfn)sw_isr_trigger_0;
 * RETURNS: N/A
 */
 
-void isr_handler
-	(
-	void *  data
-	)
-	{
+void isr_handler(void *data)
+{
 	ARG_UNUSED (data);
 
 	switch (isrInfo.command)
@@ -157,7 +154,7 @@ void isr_handler
 		    isrInfo.error = UNKNOWN_COMMAND;
 		    break;
 		}
-	}
+}
 
 /* Cortex-M3 does not implement connecting non-IRQ exception handlers */
 #if !defined(CONFIG_CPU_CORTEXM3)
@@ -175,14 +172,11 @@ void isr_handler
 * RETURNS: N/A
 */
 
-void exc_divide_error_handler
-	(
-	NANO_ESF *  pEsf
-	)
-	{
+void exc_divide_error_handler(NANO_ESF *pEsf)
+{
 	pEsf->eip += 2;
 	excHandlerExecuted = 1;    /* provide evidence that the handler executed */
-	}
+}
 #endif
 
 /*******************************************************************************
@@ -194,8 +188,8 @@ void exc_divide_error_handler
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int initNanoObjects (void)
-	{
+int initNanoObjects(void)
+{
 	nano_sem_init (&wakeFiber);
 	nano_timer_init (&timer, timerData);
 
@@ -211,7 +205,7 @@ int initNanoObjects (void)
 	};
 
 	return initIRQ(&i) < 0 ? TC_FAIL : TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -225,8 +219,8 @@ int initNanoObjects (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int nano_cpu_idleTest (void)
-	{
+int nano_cpu_idleTest(void)
+{
 	int  tick;   /* current tick count */
 	int  i;      /* loop variable */
 
@@ -248,7 +242,7 @@ int nano_cpu_idleTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -257,15 +251,12 @@ int nano_cpu_idleTest (void)
 * RETURNS: irq_lock() return value
 */
 
-int irq_lockWrapper
-	(
-	int  unused
-	)
-	{
+int irq_lockWrapper(int unused)
+{
 	ARG_UNUSED (unused);
 
 	return irq_lock ();
-	}
+}
 
 /*******************************************************************************
 *
@@ -274,13 +265,10 @@ int irq_lockWrapper
 * RETURNS: N/A
 */
 
-void irq_unlockWrapper
-	(
-	int  imask
-	)
-	{
+void irq_unlockWrapper(int imask)
+{
 	irq_unlock (imask);
-	}
+}
 
 /*******************************************************************************
 *
@@ -289,15 +277,12 @@ void irq_unlockWrapper
 * RETURNS: irq_lock_inline() return value
 */
 
-int irq_lock_inlineWrapper
-	(
-	int  unused
-	)
-	{
+int irq_lock_inlineWrapper(int unused)
+{
 	ARG_UNUSED (unused);
 
 	return irq_lock_inline ();
-	}
+}
 
 /*******************************************************************************
 *
@@ -306,13 +291,10 @@ int irq_lock_inlineWrapper
 * RETURNS: N/A
 */
 
-void irq_unlock_inlineWrapper
-	(
-	int  imask
-	)
-	{
+void irq_unlock_inlineWrapper(int imask)
+{
 	irq_unlock_inline (imask);
-	}
+}
 
 /*******************************************************************************
 *
@@ -321,14 +303,11 @@ void irq_unlock_inlineWrapper
 * RETURNS: <irq>
 */
 
-int irq_disableWrapper
-	(
-	int  irq
-	)
-	{
+int irq_disableWrapper(int irq)
+{
 	irq_disable (irq);
 	return irq;
-	}
+}
 
 /*******************************************************************************
 *
@@ -337,13 +316,10 @@ int irq_disableWrapper
 * RETURNS: N/A
 */
 
-void irq_enableWrapper
-	(
-	int  irq
-	)
-	{
+void irq_enableWrapper(int irq)
+{
 	irq_enable (irq);
-	}
+}
 
 /*******************************************************************************
 *
@@ -356,13 +332,9 @@ void irq_enableWrapper
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int nanoCpuDisableInterruptsTest
-	(
-	disable_interrupt_func  disableRtn,
-	enable_interrupt_func   enableRtn,
-	int                     irq
-	)
-	{
+int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
+								 enable_interrupt_func enableRtn, int irq)
+{
 	unsigned long long  count = 0;
 	unsigned long long  i = 0;
 	int  tick;
@@ -418,7 +390,7 @@ int nanoCpuDisableInterruptsTest
 		}
 
 	return (tick == nano_node_tick_get_32 ()) ? TC_FAIL : TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -431,8 +403,8 @@ int nanoCpuDisableInterruptsTest
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int nanoCtxTaskTest (void)
-	{
+int nanoCtxTaskTest(void)
+{
 	nano_context_id_t  ctxId;
 
 	TC_PRINT ("Testing context_self_get() from an ISR and task\n");
@@ -465,7 +437,7 @@ int nanoCtxTaskTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -484,11 +456,8 @@ int nanoCtxTaskTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int nanoCtxFiberTest
-	(
-	nano_context_id_t  taskCtxId
-	)
-	{
+int nanoCtxFiberTest(nano_context_id_t taskCtxId)
+{
 	nano_context_id_t  ctxId;
 
 	ctxId = context_self_get ();
@@ -527,7 +496,7 @@ int nanoCtxFiberTest
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -536,15 +505,14 @@ int nanoCtxFiberTest
 * This routine is the entry point to the fiber's helper fiber.  It is used to
 * help test the behaviour of the fiber_yield() routine.
 *
+* \param arg1    unused
+* \param arg2    unused
+*
 * RETURNS: N/A
 */
 
-static void fiberHelper
-	(
-	int  arg1,         /* unused */
-	int  arg2          /* unused */
-	)
-	{
+static void fiberHelper(int arg1, int arg2)
+{
 	nano_context_id_t  ctxId;
 
 	ARG_UNUSED (arg1);
@@ -565,7 +533,7 @@ static void fiberHelper
 	fiberEvidence++;
     /* <fiberEvidence> should now be 2 */
 
-	}
+}
 
 /*******************************************************************************
 *
@@ -585,8 +553,8 @@ static void fiberHelper
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int fiber_yieldTest (void)
-	{
+int fiber_yieldTest(void)
+{
 	nano_context_id_t  ctxId;
 
     /*
@@ -647,7 +615,7 @@ int fiber_yieldTest (void)
 	nano_fiber_sem_take_wait (&wakeFiber);
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -655,15 +623,14 @@ int fiber_yieldTest (void)
 *
 * This routine is the entry point to the fiber started by the task.
 *
+* \param taskCtxId    context ID of the spawning task
+* \param arg1         unused
+*
 * RETURNS: N/A
 */
 
-static void fiberEntry
-	(
-	int  taskCtxId,    /* context ID of the spawning task */
-	int  arg1          /* unused */
-	)
-	{
+static void fiberEntry(int taskCtxId, int arg1)
+{
 	int          rv;
 
 	ARG_UNUSED (arg1);
@@ -685,7 +652,7 @@ static void fiberEntry
 		{
 		return;
 		}
-	}
+}
 
 /*******************************************************************************
 *
@@ -696,8 +663,8 @@ static void fiberEntry
 * RETURNS: N/A
 */
 
-void main (void)
-	{
+void main(void)
+{
 	int           rv;       /* return value from tests */
 
 	TC_START ("Test Nanokernel CPU and context routines");
@@ -823,4 +790,4 @@ void main (void)
 doneTests:
 	TC_END (rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
 	TC_END_REPORT (rv);
-	}
+}

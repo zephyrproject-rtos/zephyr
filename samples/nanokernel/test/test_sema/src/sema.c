@@ -102,18 +102,17 @@ static void (*_trigger_nano_isr_sem_take) (void) = (vvfn)sw_isr_trigger_1;
 * This routine is the ISR handler for _trigger_nano_isr_sem_take().  It takes a
 * semaphore within the context of an ISR.
 *
+* \param data    pointer to ISR handler parameter
+*
 * RETURNS: N/A
 */
 
-void isr_sem_take
-	(
-	void * data    /* ptr to ISR handler parameter */
-	)
-	{
+void isr_sem_take(void *data)
+{
 	ISR_SEM_INFO * pInfo = (ISR_SEM_INFO *) data;
 
 	pInfo->data = nano_isr_sem_take (pInfo->sem);
-	}
+}
 
 /*******************************************************************************
 *
@@ -122,19 +121,18 @@ void isr_sem_take
 * This routine is the ISR handler for _trigger_nano_isr_sem_take().  It gives a
 * semaphore within the context of an ISR.
 *
+* \param data    pointer to ISR handler parameter
+*
 * RETURNS: N/A
 */
 
-void isr_sem_give
-	(
-	void * data    /* ptr to ISR handler parameter */
-	)
-	{
+void isr_sem_give(void *data)
+{
 	ISR_SEM_INFO * pInfo = (ISR_SEM_INFO *) data;
 
 	nano_isr_sem_give (pInfo->sem);
 	pInfo->data = 1;     /* Indicate semaphore has been given */
-	}
+}
 
 /*******************************************************************************
 *
@@ -146,8 +144,8 @@ void isr_sem_give
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int  testSemFiberNoWait (void)
-	{
+int testSemFiberNoWait(void)
+{
 	int  i;
 
 	TC_PRINT ("Giving and taking a semaphore in a fiber (non-blocking)\n");
@@ -182,7 +180,7 @@ int  testSemFiberNoWait (void)
 errorReturn:
 	fiberDetectedFailure = 1;
 	return TC_FAIL;
-	}
+}
 
 /*******************************************************************************
 *
@@ -191,15 +189,14 @@ errorReturn:
 * NOTE: The fiber portion of the tests have higher priority than the task
 * portion of the tests.
 *
+* \param arg1    unused
+* \param arg2    unused
+*
 * RETURNS: N/A
 */
 
-static void fiberEntry
-	(
-	int  arg1,    /* unused */
-	int  arg2     /* unused */
-	)
-	{
+static void fiberEntry(int arg1, int arg2)
+{
 	int  rv;      /* return value from a test */
 
 	ARG_UNUSED (arg1);
@@ -259,7 +256,7 @@ static void fiberEntry
 
 	if (isrSemInfo.data == 1)
 		semTestState = STS_ISR_WOKE_TASK;
-	}
+}
 
 /*******************************************************************************
 *
@@ -270,8 +267,8 @@ static void fiberEntry
 * RETURNS: N/A
 */
 
-void initNanoObjects (void)
-	{
+void initNanoObjects(void)
+{
 	struct isrInitInfo i =
 	{
 	{isr_sem_give, isr_sem_take},
@@ -284,7 +281,7 @@ void initNanoObjects (void)
 	nano_timer_init (&timer, timerData);
 
 	TC_PRINT ("Nano objects initialized\n");
-	}
+}
 
 /*******************************************************************************
 *
@@ -296,8 +293,8 @@ void initNanoObjects (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int testSemIsrNoWait (void)
-	{
+int testSemIsrNoWait(void)
+{
 	int  i;
 
 	TC_PRINT ("Giving and taking a semaphore in an ISR (non-blocking)\n");
@@ -335,7 +332,7 @@ int testSemIsrNoWait (void)
 
 errorReturn:
 	return TC_FAIL;
-	}
+}
 
 /*******************************************************************************
 *
@@ -347,8 +344,8 @@ errorReturn:
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int testSemTaskNoWait (void)
-	{
+int testSemTaskNoWait(void)
+{
 	int  i;     /* loop counter */
 
 	TC_PRINT ("Giving and taking a semaphore in a task (non-blocking)\n");
@@ -382,7 +379,7 @@ int testSemTaskNoWait (void)
 
 errorReturn:
 	return TC_FAIL;
-	}
+}
 
 /*******************************************************************************
 *
@@ -394,8 +391,8 @@ errorReturn:
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int testSemWait (void)
-	{
+int testSemWait(void)
+{
 	if (fiberDetectedFailure != 0)
 		{
 		TC_ERROR (" *** Failure detected in the fiber.");
@@ -432,7 +429,7 @@ int testSemWait (void)
 
 	TC_PRINT ("Semaphore from the ISR woke the task.\n");
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -443,8 +440,8 @@ int testSemWait (void)
 * RETURNS: N/A
 */
 
-void main (void)
-	{
+void main(void)
+{
 	int     rv;       /* return value from tests */
 
 	TC_START ("Test Nanokernel Semaphores");
@@ -482,4 +479,4 @@ void main (void)
 doneTests:
 	TC_END (rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
 	TC_END_REPORT (rv);
-	}
+}

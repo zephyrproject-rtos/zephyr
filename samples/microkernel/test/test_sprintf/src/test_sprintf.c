@@ -88,8 +88,8 @@ typedef union
 * RETURNS: TC_PASS on success, TC_FAIL otherwise
 */
 
-int sprintfDoubleTest (void)
-	{
+int sprintfDoubleTest(void)
+{
 	char buffer[100];
 	raw_double_u var;
 	int  status = TC_PASS;
@@ -254,7 +254,7 @@ int sprintfDoubleTest (void)
 		}
 
 	return status;
-	}
+}
 #endif /* CONFIG_FLOAT */
 
 /*******************************************************************************
@@ -262,14 +262,8 @@ int sprintfDoubleTest (void)
 * tvsnprintf - a test wrapper for vsnprintf()
 */
 
-int tvsnprintf
-	(
-	char *       s,
-	size_t       len,
-	const char * format,
-	...
-	)
-	{
+int tvsnprintf(char *s, size_t len, const char *format, ...)
+{
 	va_list  vargs;
 	int      r;
 
@@ -278,7 +272,7 @@ int tvsnprintf
 	va_end (vargs);
 
 	return r;
-	}
+}
 
 /*******************************************************************************
 *
@@ -292,8 +286,8 @@ int tvsnprintf
 * RETURNS: TC_PASS on success, TC_FAIL otherwise
 */
 
-int vsnprintfTest (void)
-	{
+int vsnprintfTest(void)
+{
 	int  len;
 	int  status = TC_PASS;
 	char buffer[100];
@@ -355,20 +349,15 @@ int vsnprintfTest (void)
 		}
 
 	return status;
-	}
+}
 
 /*******************************************************************************
 *
 * tvsprintf - a test wrapper for vsprintf()
 */
 
-int tvsprintf
-	(
-	char *       s,
-	const char * format,
-	...
-	)
-	{
+int tvsprintf(char *s, const char *format, ...)
+{
 	va_list  vargs;
 	int      r;
 
@@ -377,7 +366,7 @@ int tvsprintf
 	va_end (vargs);
 
 	return r;
-	}
+}
 
 /*******************************************************************************
 *
@@ -390,8 +379,8 @@ int tvsprintf
 * RETURNS: TC_PASS on success, TC_FAIL otherwise
 */
 
-int vsprintfTest (void)
-	{
+int vsprintfTest(void)
+{
 	int  len;
 	int  status = TC_PASS;
 	char buffer[100];
@@ -413,7 +402,7 @@ int vsprintfTest (void)
 		}
 
 	return status;
-	}
+}
 
 /*******************************************************************************
 *
@@ -426,8 +415,8 @@ int vsprintfTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL otherwise
 */
 
-int snprintfTest (void)
-	{
+int snprintfTest(void)
+{
 	int  len;
 	int  status = TC_PASS;
 	char buffer[100];
@@ -489,7 +478,7 @@ int snprintfTest (void)
 		}
 
 	return status;
-	}
+}
 
 /*******************************************************************************
 *
@@ -498,8 +487,8 @@ int snprintfTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL otherwise
 */
 
-int sprintfMiscTest (void)
-	{
+int sprintfMiscTest(void)
+{
 	int  status = TC_PASS;
 	int  count;
 	char buffer[100];
@@ -573,7 +562,7 @@ int sprintfMiscTest (void)
 		}
 
 	return status;
-	}
+}
 
 /*******************************************************************************
 *
@@ -582,8 +571,8 @@ int sprintfMiscTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL otherwise
 */
 
-int sprintfIntegerTest (void)
-	{
+int sprintfIntegerTest(void)
+{
 	int  status = TC_PASS;
 	int  len;
 	char buffer[100];
@@ -746,7 +735,7 @@ int sprintfIntegerTest (void)
 		}
 
 	return status;
-	}
+}
 
 /*******************************************************************************
 *
@@ -755,8 +744,8 @@ int sprintfIntegerTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL otherwise
 */
 
-int sprintfStringTest (void)
-	{
+int sprintfStringTest(void)
+{
 	int  len;
 	int  status = TC_PASS;
 	char buffer[400];
@@ -797,7 +786,7 @@ int sprintfStringTest (void)
 		}
 
 	return status;
-	}
+}
 
 /*******************************************************************************
 *
@@ -806,8 +795,8 @@ int sprintfStringTest (void)
 * RETURNS: N/A
 */
 
-void RegressionTask (void)
-	{
+void RegressionTask(void)
+{
 	int  status = TC_PASS;
 
 	TC_START ("Test Microkernel sprintf APIs\n");
@@ -860,4 +849,4 @@ void RegressionTask (void)
 
 	TC_END_RESULT (status);
 	TC_END_REPORT (status);
-	}
+}

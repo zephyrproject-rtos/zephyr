@@ -74,14 +74,13 @@ int testMapFreeAllBlocks(void **P);
 * This routine verifies current value against expected value
 * and returns TRUE if they are the same.
 *
+* \param expectRetValue     expect value
+* \param currentRetValue    current value
+*
 * RETURNS:  TRUE, FALSE
 */
 
-BOOL  verifyRetValue
-	(
-	int expectRetValue,         /* expect value */
-	int currentRetValue         /* current value */
-	)
+BOOL verifyRetValue(int expectRetValue, int currentRetValue)
 {
 	return (expectRetValue == currentRetValue);
 
@@ -160,13 +159,12 @@ exitTest1:
 *
 *   task_mem_map_alloc(), task_mem_map_used_get()
 *
+* \param p    pointer to pointer of allocated blocks
+*
 * RETURNS:  TC_PASS, TC_FAIL
 */
 
-int testMapGetAllBlocks
-	(
-	void **p    /* pointer to pointer of allocated blocks */
-	)
+int testMapGetAllBlocks(void **p)
 {
 	int retValue;  /* task_mem_map_xxx interface return value */
 	void *errPtr;  /* Pointer to block */
@@ -233,13 +231,12 @@ int testMapGetAllBlocks
 *
 *   task_mem_map_free(), task_mem_map_used_get()
 *
+* \param p    pointer to pointer of allocated blocks
+*
 * RETURNS:  TC_PASS, TC_FAIL
 */
 
-int testMapFreeAllBlocks
-	(
-	void **p    /* pointer to pointer of allocated blocks */
-	)
+int testMapFreeAllBlocks(void **p)
 {
 	int retValue;     /* task_mem_map_xxx interface return value */
 
@@ -289,12 +286,11 @@ int testMapFreeAllBlocks
 *
 * This routine prints out the pointers.
 *
+* \param pointer    pointer to pointer of allocated blocks
+*
 * RETURNS:  N/A
 */
-void printPointers
-	(
-	void **pointer    /* pointer to pointer of allocated blocks */
-	)
+void printPointers(void **pointer)
 {
 	TC_PRINT("%s: ", __func__);
 	for (int i = 0; i < NUMBLOCKS; i++) {

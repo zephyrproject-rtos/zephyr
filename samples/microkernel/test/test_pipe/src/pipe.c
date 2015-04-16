@@ -185,29 +185,28 @@ extern kpipe_t pipeId;
 * RETURNS: N/A
 */
 
-void microObjectsInit (void)
-	{
+void microObjectsInit(void)
+{
 	int  i;    /* loop counter */
 
 	for (i = 0; i < sizeof (rxBuffer); i++)
 		{
 		txBuffer[i] = (char) i;
 		}
-	}
+}
 
 /*******************************************************************************
 *
 * receiveBufferCheck - check the contents of the receive buffer
 *
+* \param buffer    pointer to buffer to check
+* \param size      number of bytes to check
+*
 * RETURNS: <size> on success, index of wrong character on failure
 */
 
-int receiveBufferCheck
-	(
-	char * buffer,     /* pointer to buffer to check */
-	int    size        /* number of bytes to check */
-	)
-	{
+int receiveBufferCheck(char *buffer, int size)
+{
 	int  j;    /* loop counter */
 
 	for (j = 0; j < size; j++)
@@ -219,23 +218,23 @@ int receiveBufferCheck
 		}
 
 	return size;
-	}
+}
 
 /*******************************************************************************
 *
 * pipePutHelperWork - helper routine to pipePutTest()
 *
+* \param singleItems    testcase list (one item in the pipe)
+* \param nSingles       number of items in testcase
+* \param manyItems      testcase list (many items in the pipe)
+* \param nMany          number of items in testcase
+*
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipePutHelperWork
-	(
-	SIZE_EXPECT *  singleItems,  /* testcase list (one item in the pipe) */
-	int            nSingles,     /* # of items in testcase */
-	SIZE_EXPECT *  manyItems,    /* testcase list (many items in the pipe) */
-	int            nMany         /* # of items in testcase */
-	)
-	{
+int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
+					  SIZE_EXPECT *manyItems, int nMany)
+{
 	int  i;                      /* loop counter */
 	int  j;                      /* loop counter */
 	int  rv;                     /* value returned from task_pipe_get() */
@@ -329,7 +328,7 @@ int pipePutHelperWork
 	task_sem_give (regSem);   /* Wake the RegressionTask */
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -338,8 +337,8 @@ int pipePutHelperWork
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipePutHelper (void)
-	{
+int pipePutHelper(void)
+{
 	int  rv;   /* return value from pipePutHelperWork() */
 
 	rv = pipePutHelperWork (all_N, NELEMENTS(all_N),
@@ -367,7 +366,7 @@ int pipePutHelper (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -375,17 +374,17 @@ int pipePutHelper (void)
 *
 * This routine tests the task_pipe_put() API.
 *
+* \param singleItems    testcase list (one item in the pipe)
+* \param nSingles       number of items in testcase
+* \param manyItems      testcase list (many items in the pipe)
+* \param nMany          number of items in testcase
+*
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipePutTestWork
-	(
-	SIZE_EXPECT *  singleItems,  /* testcase list (one item in the pipe) */
-	int            nSingles,     /* # of items in testcase */
-	SIZE_EXPECT *  manyItems,    /* testcase list (many items in the pipe) */
-	int            nMany         /* # of items in testcase */
-	)
-	{
+int pipePutTestWork(SIZE_EXPECT *singleItems, int nSingles,
+					SIZE_EXPECT *manyItems, int nMany)
+{
 	int  rv;                     /* return code from task_pipe_put() */
 	int  i;                      /* loop counter */
 	int  bytesWritten;           /* # of bytes sent to pipe */
@@ -464,7 +463,7 @@ int pipePutTestWork
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -475,8 +474,8 @@ int pipePutTestWork
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipePutTest (void)
-	{
+int pipePutTest(void)
+{
 	int  rv;    /* return value from pipePutTestWork() */
 
 	rv = pipePutTestWork (all_N, NELEMENTS(all_N),
@@ -504,7 +503,7 @@ int pipePutTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -513,8 +512,8 @@ int pipePutTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipePutWaitHelper (void)
-	{
+int pipePutWaitHelper(void)
+{
 	int  i;           /* loop counter */
 	int  rv;          /* return value from task_pipe_get_wait */
 	int  bytesRead;   /* # of bytes read from task_pipe_get_wait() */
@@ -573,7 +572,7 @@ int pipePutWaitHelper (void)
 	task_sem_give (regSem);
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -582,8 +581,8 @@ int pipePutWaitHelper (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipePutWaitTest (void)
-	{
+int pipePutWaitTest(void)
+{
 	int  rv;            /* return code from task_pipe_put_wait() */
 	int  bytesWritten;  /* # of bytes written to pipe */
 
@@ -637,7 +636,7 @@ int pipePutWaitTest (void)
 	(void)task_sem_take_wait (regSem);
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -646,8 +645,8 @@ int pipePutWaitTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipePutTimeoutHelper (void)
-	{
+int pipePutTimeoutHelper(void)
+{
 	int  i;         /* loop counter */
 	int  rv;        /* return value from task_pipe_get_wait_timeout() */
 	int  bytesRead; /* # of bytes read from task_pipe_get_wait_timeout() */
@@ -706,7 +705,7 @@ int pipePutTimeoutHelper (void)
 	task_sem_give (regSem);
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -715,8 +714,8 @@ int pipePutTimeoutHelper (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipePutTimeoutTest (void)
-	{
+int pipePutTimeoutTest(void)
+{
 	int  rv;             /* return code from task_pipe_put_wait_timeout() */
 	int  bytesWritten;   /* # of bytes written to task_pipe_put_wait_timeout() */
 
@@ -790,7 +789,7 @@ int pipePutTimeoutTest (void)
 	(void)task_sem_take_wait (regSem);
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -804,8 +803,8 @@ int pipePutTimeoutTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipeGetTest (void)
-	{
+int pipeGetTest(void)
+{
 	int  i;         /* loop counter */
 	int  j;         /* loop counter */
 	int  rv;        /* return code from task_pipe_get() */
@@ -845,21 +844,20 @@ int pipeGetTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
 * pipeGetWaitHelperWork - test task_pipe_get_wait()
 *
+* \param items     testcase list for task_pipe_get_wait()
+* \param nItems    number of items in list
+*
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipeGetWaitHelperWork
-	(
-	SIZE_EXPECT *  items,   /* testcase list for task_pipe_get_wait() */
-	int            nItems   /* # of items in list */
-	)
-	{
+int pipeGetWaitHelperWork(SIZE_EXPECT *items, int nItems)
+{
 	int  i;          /* loop counter */
 	int  rv;         /* return value from task_pipe_put_wait() */
 	int  bytesSent;  /* # of bytes sent to task_pipe_put_wait() */
@@ -885,7 +883,7 @@ int pipeGetWaitHelperWork
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -894,8 +892,8 @@ int pipeGetWaitHelperWork
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipeGetWaitHelper (void)
-	{
+int pipeGetWaitHelper(void)
+{
 	int  rv;    /* return coded form pipeGetWaitHelperWork() */
 
 	(void)task_sem_take_wait (altSem);
@@ -915,21 +913,20 @@ int pipeGetWaitHelper (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
 * pipeGetWaitTestWork - test task_pipe_get_wait()
 *
+* \param items     testcase list for task_pipe_get_wait()
+* \param nItems    number of items in list
+*
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipeGetWaitTestWork
-	(
-	SIZE_EXPECT *  items,   /* testcase list for task_pipe_get_wait() */
-	int            nItems   /* # of items in list */
-	)
-	{
+int pipeGetWaitTestWork(SIZE_EXPECT *items, int nItems)
+{
 	int  i;         /* loop counter */
 	int  rv;        /* return code from task_pipe_get_wait() */
 	int  bytesRead; /* # of bytes read from task_pipe_get_wait() */
@@ -954,7 +951,7 @@ int pipeGetWaitTestWork
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -963,8 +960,8 @@ int pipeGetWaitTestWork
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipeGetWaitTest (void)
-	{
+int pipeGetWaitTest(void)
+{
 	int  rv;         /* return code from pipeGetWaitTestWork() */
 	int  bytesRead;  /* # of bytes read from task_pipe_get_waitait() */
 
@@ -993,7 +990,7 @@ int pipeGetWaitTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -1002,8 +999,8 @@ int pipeGetWaitTest (void)
 * RETURNS: TC_PASS on success, TC_FAIL on failure
 */
 
-int pipeGetTimeoutTest (void)
-	{
+int pipeGetTimeoutTest(void)
+{
 	int  i;          /* loop counter */
 	int  rv;         /* return value from task_pipe_get_wait_timeout() */
 	int  bytesRead;  /* # of bytes read from task_pipe_get_wait_timeout() */
@@ -1025,7 +1022,7 @@ int pipeGetTimeoutTest (void)
 		}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -1036,8 +1033,8 @@ int pipeGetTimeoutTest (void)
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int AlternateTask (void)
-	{
+int AlternateTask(void)
+{
 	int rv;   /* return code from each set of test cases */
 
 	rv = pipePutHelper ();
@@ -1076,7 +1073,7 @@ int AlternateTask (void)
      */
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -1087,8 +1084,8 @@ int AlternateTask (void)
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int RegressionTask (void)
-	{
+int RegressionTask(void)
+{
 	int  tcRC;    /* test case return code */
 
 	microObjectsInit ();
@@ -1136,4 +1133,4 @@ int RegressionTask (void)
 		}
 
 	return TC_PASS;
-	}
+}

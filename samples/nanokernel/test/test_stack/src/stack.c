@@ -148,13 +148,13 @@ void testIsrStackFromTask(void);
 */
 
 void initData(void)
-	{
+{
 	for (int i=0; i< NUM_STACK_ELEMENT; i++)
 		{
 		myData[i] = (STARTNUM + i) * MULTIPLIER;
 		myIsrData[i] = myData[i] + MYNUMBER;
 		}
-	} /* initData */
+} /* initData */
 
 /*******************************************************************************
 *
@@ -163,19 +163,18 @@ void initData(void)
 * This routine is the ISR handler for _trigger_nano_isr_stack_push().  It adds
 * an item to the STACK in the context of an ISR.
 *
+* \param parameter    pointer to ISR handler parameter
+*
 * RETURNS: N/A
 */
 
-void isr_stack_push
-	(
-	void * parameter    /* ptr to ISR handler parameter */
-	)
-	{
+void isr_stack_push(void *parameter)
+{
 	ISR_STACK_INFO * pInfo = (ISR_STACK_INFO *) parameter;
 
 	nano_isr_stack_push (pInfo->channel, pInfo->data);
 
-	}  /* isr_stack_push */
+}  /* isr_stack_push */
 
 /*******************************************************************************
 *
@@ -185,14 +184,13 @@ void isr_stack_push
 * an item from the STACK in the context of an ISR.  If the queue is empty,
 * it sets data to INVALID_DATA.
 *
+* \param parameter    pointer to ISR handler parameter
+*
 * RETURNS: N/A
 */
 
-void isr_stack_pop
-	(
-	void * parameter    /* ptr to ISR handler parameter */
-	)
-	{
+void isr_stack_pop(void *parameter)
+{
 	ISR_STACK_INFO * pInfo = (ISR_STACK_INFO *) parameter;
 
 	if ( nano_isr_stack_pop (pInfo->channel, &(pInfo->data)) == 0 )
@@ -201,7 +199,7 @@ void isr_stack_pop
 		pInfo->data = INVALID_DATA;
 		}
 
-	}  /* isr_stack_pop */
+}  /* isr_stack_pop */
 
 
 /*******************************************************************************
@@ -216,7 +214,7 @@ void isr_stack_pop
 */
 
 void fiber1(void)
-	{
+{
 	uint32_t    data;        /* data used to put and get from the stack queue */
 	int         count = 0;   /* counter */
 
@@ -251,7 +249,7 @@ void fiber1(void)
     /* Give semaphore to allow the main task to run */
 	nano_fiber_sem_give(&nanoSemObj);
 
-	} /* fiber1 */
+} /* fiber1 */
 
 
 
@@ -266,7 +264,7 @@ void fiber1(void)
 */
 
 void testFiberStackPopW(void)
-	{
+{
 	uint32_t  data;     /* data used to put and get from the stack queue */
 
 	TC_PRINT("Test Fiber STACK Pop Wait Interfaces\n\n");
@@ -300,7 +298,7 @@ void testFiberStackPopW(void)
 
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
 
-	}  /* testFiberStackPopW */
+}  /* testFiberStackPopW */
 
 /*******************************************************************************
 *
@@ -315,7 +313,7 @@ void testFiberStackPopW(void)
 */
 
 void testIsrStackFromFiber(void)
-	{
+{
 	uint32_t  result = INVALID_DATA;     /* data used to put and get from the stack queue */
 
 	TC_PRINT("Test ISR STACK (invoked from Fiber)\n\n");
@@ -360,7 +358,7 @@ void testIsrStackFromFiber(void)
 
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
 
-	}  /* testIsrStackFromFiber */
+}  /* testIsrStackFromFiber */
 
 /*******************************************************************************
 *
@@ -375,7 +373,7 @@ void testIsrStackFromFiber(void)
 */
 
 void testIsrStackFromTask(void)
-	{
+{
 	uint32_t  result = INVALID_DATA;     /* data used to put and get from the stack queue */
 	int       count  = 0;
 
@@ -423,7 +421,7 @@ void testIsrStackFromTask(void)
 	}
 
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
-	}
+}
 
 /*******************************************************************************
 *
@@ -435,13 +433,13 @@ void testIsrStackFromTask(void)
 */
 
 void fiber2(void)
-	{
+{
 	testFiberStackPopW();
 	PRINT_LINE;
 	testIsrStackFromFiber();
 
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
-	}
+}
 
 
 /*******************************************************************************
@@ -455,7 +453,7 @@ void fiber2(void)
 */
 
 void testTaskStackPopW(void)
-	{
+{
 	uint32_t  data;     /* data used to put and get from the stack queue */
 
 	PRINT_LINE;
@@ -483,7 +481,7 @@ void testTaskStackPopW(void)
 	nano_task_stack_push(&nanoStackObj2, data);
 
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
-	}  /* testTaskStackPopW */
+}  /* testTaskStackPopW */
 
 /*******************************************************************************
 *
@@ -495,12 +493,12 @@ void testTaskStackPopW(void)
 * RETURNS: N/A
 */
 
-void fiber3 (void)
-	{
+void fiber3(void)
+{
 	nano_fiber_timer_start (&timer, SECONDS(1));
 	nano_fiber_timer_wait (&timer);
 	nano_fiber_stack_push(&nanoStackObj, myData[0]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -512,7 +510,7 @@ void fiber3 (void)
 */
 
 void initNanoObjects(void)
-	{
+{
 	struct isrInitInfo i =
 	{
 	{isr_stack_push, isr_stack_pop},
@@ -525,7 +523,7 @@ void initNanoObjects(void)
 	nano_stack_init (&nanoStackObj2, stack2);
 	nano_sem_init   (&nanoSemObj);
 	nano_timer_init (&timer, timerData);
-	} /* initNanoObjects */
+} /* initNanoObjects */
 
 /*******************************************************************************
 *
@@ -536,8 +534,8 @@ void initNanoObjects(void)
 * RETURNS: N/A
 */
 
-void main (void)
-	{
+void main(void)
+{
 	int         count = 0;  /* counter */
 	uint32_t    data;       /* data used to put and get from the stack queue */
 
@@ -625,4 +623,4 @@ void main (void)
 exit:
 	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
 	TC_END_REPORT (retCode);
-	}
+}
