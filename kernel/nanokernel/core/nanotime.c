@@ -48,20 +48,20 @@ struct nano_timer *nanoTimerList = NULL;
 
 /*******************************************************************************
 *
-* nanoTimeInit - constructor that initializes nanokernel time tracking system
+* nano_time_init - constructor that initializes nanokernel time tracking system
 *
 * RETURNS: N/A
 *
 */
 
-NANO_INIT_SYS_NORMAL void nanoTimeInit(void)
+NANO_INIT_SYS_NORMAL void nano_time_init(void)
 {
 	timer_driver(0); /* note: priority parameter is unused */
 }
 
 #ifdef VXMICRO_ARCH_arm
-void (*__ctor_nanoTimeInit)(void) __attribute__((section(".ctors.250"))) =
-	nanoTimeInit;
+void (*__ctor_nano_time_init)(void) __attribute__((section(".ctors.250"))) =
+	nano_time_init;
 #endif
 
 /*******************************************************************************

@@ -36,7 +36,7 @@ This module tests the following timer related routines:
   nano_timer_init(), nano_fiber_timer_start(), nano_fiber_timer_stop(),
   nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
   nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
-  nanoTimeInit(), nano_node_tick_get_32(), nano_node_cycle_get_32(), nano_node_tick_delta()
+  nano_time_init(), nano_node_tick_get_32(), nano_node_cycle_get_32(), nano_node_tick_delta()
 */
 
 /* includes */
