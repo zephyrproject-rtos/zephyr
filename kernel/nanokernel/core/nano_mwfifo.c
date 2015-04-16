@@ -192,13 +192,13 @@ void nano_task_fifo_put(
 	irq_unlock_inline(imask);
 }
 
-FUNC_ALIAS(_FifoGet, nano_isr_fifo_get, void *);
-FUNC_ALIAS(_FifoGet, nano_fiber_fifo_get, void *);
-FUNC_ALIAS(_FifoGet, nano_task_fifo_get, void *);
+FUNC_ALIAS(_fifo_get, nano_isr_fifo_get, void *);
+FUNC_ALIAS(_fifo_get, nano_fiber_fifo_get, void *);
+FUNC_ALIAS(_fifo_get, nano_task_fifo_get, void *);
 
 /*******************************************************************************
 *
-* _FifoGet - get an element from the head a fifo
+* _fifo_get - get an element from the head a fifo
 *
 * Remove the head element from the specified nanokernel multiple-waiter
 * fifo linked list fifo; it may be called from a fiber, task, or ISR context.
@@ -216,7 +216,7 @@ FUNC_ALIAS(_FifoGet, nano_task_fifo_get, void *);
 * differences in the future without introducing a source code migration issue.
 */
 
-void *_FifoGet(struct nano_fifo *chan /* channel on which to interact */
+void *_fifo_get(struct nano_fifo *chan /* channel on which to interact */
 			     )
 {
 	void *data = NULL;
