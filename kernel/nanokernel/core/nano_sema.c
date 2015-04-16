@@ -156,13 +156,13 @@ void nano_task_sem_give(
 	irq_unlock_inline(imask);
 }
 
-FUNC_ALIAS(_SemTake, nano_isr_sem_take, int);
-FUNC_ALIAS(_SemTake, nano_fiber_sem_take, int);
-FUNC_ALIAS(_SemTake, nano_task_sem_take, int);
+FUNC_ALIAS(_sem_take, nano_isr_sem_take, int);
+FUNC_ALIAS(_sem_take, nano_fiber_sem_take, int);
+FUNC_ALIAS(_sem_take, nano_task_sem_take, int);
 
 /*******************************************************************************
 *
-* _SemTake - take a nanokernel semaphore
+* _sem_take - take a nanokernel semaphore
 *
 * Attempt to take a nanokernel sempahore; it may be called from a fiber, task,
 * or ISR context.
@@ -173,7 +173,7 @@ FUNC_ALIAS(_SemTake, nano_task_sem_take, int);
 * RETURNS: 1 if semaphore is available, 0 otherwise
 */
 
-int _SemTake(struct nano_sem *chan /* semaphore on which to test */
+int _sem_take(struct nano_sem *chan /* semaphore on which to test */
 			   )
 {
 	unsigned int imask;
