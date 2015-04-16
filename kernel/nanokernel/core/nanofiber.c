@@ -153,12 +153,12 @@ int _context_essential_check(tCCS *pCtx /* pointer to context */
 
 /* currently the fiber and task implementations are identical */
 
-FUNC_ALIAS(_FiberStart, fiber_fiber_start, void);
-FUNC_ALIAS(_FiberStart, task_fiber_start, void);
+FUNC_ALIAS(_fiber_start, fiber_fiber_start, void);
+FUNC_ALIAS(_fiber_start, task_fiber_start, void);
 
 /*******************************************************************************
 *
-* _FiberStart - initialize and start a fiber context
+* _fiber_start - initialize and start a fiber context
 *
 * This routine initilizes and starts a fiber context; it can be called from
 * either a fiber or a task context.  When this routine is called from a
@@ -170,14 +170,14 @@ FUNC_ALIAS(_FiberStart, task_fiber_start, void);
 *
 *    if ((_NanoKernel.current->flags & TASK) == TASK)
 *
-* Given that the _FiberStart() primitive is not considered real-time
+* Given that the _fiber_start() primitive is not considered real-time
 * performance critical, a runtime check to differentiate between a calling
 * task or fiber is performed in order to conserve footprint.
 *
 * RETURNS: N/A
 */
 
-void _FiberStart(char *pStack,
+void _fiber_start(char *pStack,
 			       unsigned stackSize, /* stack size in bytes */
 			       nano_fiber_entry_t pEntry,
 			       int parameter1,
