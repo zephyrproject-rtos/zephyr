@@ -112,16 +112,16 @@ void reset_state_bit(struct k_proc *X,    /* ptr to task */
 */
 
 void set_state_bit(
-	struct k_proc *X,    /* ptr to task */
+	struct k_proc *task_ptr,
 	uint32_t bits /* bitmask of TF_xxx bits to set */
 	)
 {
-	uint32_t f_old = X->State;     /* old state bits */
-	uint32_t f_new = f_old | bits; /* new state bits */
+	uint32_t old_state_bits = task_ptr->State;
+	uint32_t new_state_bits = old_state_bits | bits;
 
-	X->State = f_new; /* Update task's state bits */
+	task_ptr->State = new_state_bits;
 
-	if ((f_old == 0) && (f_new != 0)) {
+	if ((old_state_bits == 0) && (new_state_bits != 0)) {
 		/*
 		 * The task could have been scheduled to run ([State] was 0)
 		 * but can not be scheduled to run anymore at least one TF_xxx
@@ -144,40 +144,43 @@ void set_state_bit(
 		volatile
 #endif
 #endif
-			struct k_tqhd *H = K_PrioList + X->Prio;
-		struct k_proc *Y = (struct k_proc *)(&H->Head);
+			struct k_tqhd *task_queue = K_PrioList + task_ptr->Prio;
+		struct k_proc *cur_task = (struct k_proc *)(&task_queue->Head);
 
-		while (Y->Forw != X) {
-			Y = Y->Forw;
+		/*
+		 * Search in the list for this task priority level,
+		 * and remove the task.
+		 */
+		while (cur_task->Forw != task_ptr) {
+			cur_task = cur_task->Forw;
 		}
 
-		Y->Forw = X->Forw;
+		cur_task->Forw = task_ptr->Forw;
 
-		if (H->Tail == X) {
-			H->Tail = Y;
+		if (task_queue->Tail == task_ptr) {
+			task_queue->Tail = cur_task;
 		}
 
 		/*
-		 * Check that the list is empty
-		 * It means, H->Head == NULL
+		 * If there are no more tasks of this priority that are
+		 * runnable, then clear that bit in the global priority bit map.
 		 */
-
-		if (H->Head == NULL) {
-			K_PrioBitMap[X->Prio >> 5] &= ~(1 << (X->Prio & 0x1F));
+		if (task_queue->Head == NULL) {
+			K_PrioBitMap[task_ptr->Prio >> 5] &= ~(1 << (task_ptr->Prio & 0x1F));
 		}
 	}
 
 #ifdef CONFIG_TASK_MONITOR
-	f_new ^= f_old;
-	if ((K_monitor_mask & MON_STATE) && (f_new)) {
+	new_state_bits ^= old_state_bits;
+	if ((K_monitor_mask & MON_STATE) && (new_state_bits)) {
 		/*
 		 * Task monitoring is enabled and the new state bits are
 		 * different than the old state bits.
 		 *
-		 * <f_new> now contains the bits that are different.
+		 * <new_state_bits> now contains the bits that are different.
 		 */
 
-		K_monitor_task(X, f_new | MO_STBIT1);
+		K_monitor_task(task_ptr, new_state_bits | MO_STBIT1);
 	}
 #endif
 }
