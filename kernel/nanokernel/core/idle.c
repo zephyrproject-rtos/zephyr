@@ -45,7 +45,7 @@ data structure.
 
 /*******************************************************************************
 *
-* nanoCpuSetIdle - indicate that nanokernel is idling in tickless mode
+* nano_cpu_set_idle - indicate that nanokernel is idling in tickless mode
 *
 * Sets the nanokernel data structure idle field to a non-zero value.
 *
@@ -54,7 +54,7 @@ data structure.
 * \NOMANUAL
 */
 
-void nanoCpuSetIdle(int32_t ticks)
+void nano_cpu_set_idle(int32_t ticks)
 {
 	extern tNANO _NanoKernel;
 	_NanoKernel.idle = ticks;

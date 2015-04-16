@@ -58,7 +58,7 @@ unsigned char _SysPowerSaveFlag = 1;
 #endif
 
 extern void nano_cpu_idle(void);
-extern void nanoCpuSetIdle(int32_t ticks);
+extern void nano_cpu_set_idle(int32_t ticks);
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /*
@@ -101,11 +101,11 @@ void _SysPowerSaveIdle(int32_t ticks)
 	 */
 
 	if (_AdvIdleFunc(ticks) == 0) {
-		nanoCpuSetIdle(ticks);
+		nano_cpu_set_idle(ticks);
 		nano_cpu_idle();
 	}
 #else
-	nanoCpuSetIdle(ticks);
+	nano_cpu_set_idle(ticks);
 	nano_cpu_idle();
 #endif /* CONFIG_ADVANCED_IDLE */
 }
