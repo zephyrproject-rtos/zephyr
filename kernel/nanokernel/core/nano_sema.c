@@ -83,12 +83,12 @@ void nano_sem_init(struct nano_sem *chan /* semaphore object to initialize */
 	chan->proc = (tCCS *)0;
 }
 
-FUNC_ALIAS(_SemGive, nano_isr_sem_give, void);
-FUNC_ALIAS(_SemGive, nano_fiber_sem_give, void);
+FUNC_ALIAS(_sem_give, nano_isr_sem_give, void);
+FUNC_ALIAS(_sem_give, nano_fiber_sem_give, void);
 
 /*******************************************************************************
 *
-* _SemGive - give a nanokernel semaphore
+* _sem_give - give a nanokernel semaphore
 *
 * This routine performs a "give" operation on a nanokernel sempahore object;
 * it may be call from either a fiber or an ISR context.  A fiber pending on the
@@ -103,7 +103,7 @@ FUNC_ALIAS(_SemGive, nano_fiber_sem_give, void);
 * without introducing a source code migration issue.
 */
 
-void _SemGive(struct nano_sem *chan /* semaphore on which to signal */
+void _sem_give(struct nano_sem *chan /* semaphore on which to signal */
 			    )
 {
 	tCCS *ccs;
