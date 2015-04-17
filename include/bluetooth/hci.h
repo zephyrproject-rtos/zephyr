@@ -32,6 +32,13 @@
 #ifndef __BT_HCI_H
 #define __BT_HCI_H
 
+/* EIR/AD definitions */
+#define BT_EIR_FLAGS			0x01 /* AD flags */
+#define BT_EIR_NAME_COMPLETE		0x09 /* Complete name */
+
+#define BT_LE_AD_GENERAL		0x02 /* General Discoverable */
+#define BT_LE_AD_NO_BREDR		0x04 /* BR/EDR not supported */
+
 struct bt_hci_evt_hdr {
 	uint8_t  evt;
 	uint8_t  len;
@@ -119,6 +126,39 @@ struct bt_hci_rp_le_read_buffer_size {
 struct bt_hci_rp_le_read_local_features {
 	uint8_t  status;
 	uint8_t  features[8];
+} PACK_STRUCT;
+
+/* Advertising types */
+#define BT_LE_ADV_IND				0x00
+#define BT_LE_ADV_NONCONN_IND			0x03
+
+#define BT_HCI_OP_LE_SET_ADV_PARAMETERS		BT_OP(BT_OGF_LE, 0x0006)
+struct bt_hci_cp_le_set_adv_parameters {
+	uint16_t min_interval;
+	uint16_t max_interval;
+	uint8_t  type;
+	uint8_t  own_addr_type;
+	uint8_t  direct_addr_type;
+	uint8_t  direct_addr[6];
+	uint8_t  channel_map;
+	uint8_t  filter_policy;
+} PACK_STRUCT;
+
+#define BT_HCI_OP_LE_SET_ADV_DATA		BT_OP(BT_OGF_LE, 0x0008)
+struct bt_hci_cp_le_set_adv_data {
+	uint8_t  len;
+	uint8_t  data[31];
+} PACK_STRUCT;
+
+#define BT_HCI_OP_LE_SET_SCAN_RSP_DATA		BT_OP(BT_OGF_LE, 0x0009)
+struct bt_hci_cp_le_set_scan_rsp_data {
+	uint8_t  len;
+	uint8_t  data[31];
+} PACK_STRUCT;
+
+#define BT_HCI_OP_LE_SET_ADV_ENABLE		BT_OP(BT_OGF_LE, 0x000a)
+struct bt_hci_cp_le_set_adv_enable {
+	uint8_t  enable;
 } PACK_STRUCT;
 
 /* Event definitions */
