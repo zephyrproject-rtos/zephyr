@@ -41,6 +41,15 @@ config	BLUETOOTH
 	help
 	  This option enables Bluetooth Low Energy support.
 
+config	BLUETOOTH_DEBUG
+	bool
+	prompt "Bluetooth LE debug support"
+	depends on BLUETOOTH
+	default n
+	help
+	  This option enables Bluetooth debug going to standard
+	  serial console.
+
 config	BLUETOOTH_UART
 	bool
 	prompt "Bluetooth UART driver"
