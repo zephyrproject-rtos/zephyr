@@ -146,6 +146,10 @@ def sysgen_error(msg):
     sys.exit(1)
 
 
+def error_arg_count(line):
+    sysgen_error("invalid number of arguments on following line\n" + line)
+
+
 #
 # CREATE INTERNAL REPRESENTATION OF SYSTEM
 #
@@ -175,16 +179,22 @@ def vpf_parse():
             continue    # ignore comment line
 
         if (words[0] == "CONFIG"):
+            if (len(words) != 3):
+                error_arg_count(line)
             num_kargs = int(words[1])
             num_timers = int(words[2])
             continue
 
         if (words[0] == "TASK"):
+            if (len(words) != 6):
+                error_arg_count(line)
             task_list.append((words[1], int(words[2]), words[3],
                               int(words[4]), words[5]))
             continue
 
         if (words[0] == "TASKGROUP"):
+            if (len(words) != 2):
+                error_arg_count(line)
             if words[1] in group_dictionary:
                 continue    # ignore re-definition of a task group
             group_bitmask = 1 << len(group_dictionary)
@@ -193,45 +203,65 @@ def vpf_parse():
             continue
 
         if (words[0] == "EVENT"):
+            if (len(words) != 3):
+                error_arg_count(line)
             event_list.append((words[1], words[2]))
             continue
 
         if (words[0] == "SEMA"):
+            if (len(words) != 2):
+                error_arg_count(line)
             sema_list.append((words[1],))
             continue
 
         if (words[0] == "MUTEX"):
+            if (len(words) != 2):
+                error_arg_count(line)
             mutex_list.append((words[1],))
             continue
 
         if (words[0] == "FIFO"):
+            if (len(words) != 4):
+                error_arg_count(line)
             fifo_list.append((words[1], int(words[2]), int(words[3])))
             continue
 
         if (words[0] == "PIPE"):
+            if (len(words) != 3):
+                error_arg_count(line)
             pipe_list.append((words[1], int(words[2])))
             continue
 
         if (words[0] == "MAILBOX"):
+            if (len(words) != 2):
+                error_arg_count(line)
             mbx_list.append((words[1],))
             continue
 
         if (words[0] == "MAP"):
+            if (len(words) != 4):
+                error_arg_count(line)
             map_list.append((words[1], int(words[2]), int(words[3])))
             continue
 
         if (words[0] == "POOL"):
+            if (len(words) != 5):
+                error_arg_count(line)
             pool_list.append((words[1], int(words[2]), int(words[3]),
                               int(words[4])))
             continue
 
         if (words[0] == "TIMERDRIVER"):
+            if (len(words) == 1):
+                error_arg_count(line)
             start_quote = line.find("'")
             end_quote = line.rfind("'")
             driver_list.append(line[start_quote + 1:end_quote])
             continue
 
         if (words[0] == "USERDRIVER"):
+            if (len(words) == 1):
+                error_arg_count(line)
             start_quote = line.find("'")
             end_quote = line.rfind("'")
             driver_list.append(line[start_quote + 1:end_quote])
