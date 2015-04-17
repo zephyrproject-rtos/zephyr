@@ -70,6 +70,9 @@ static struct bt_dev {
 	/* LE features */
 	uint8_t			le_features[8];
 
+	/* Advertising state */
+	uint8_t                 adv_enable;
+
 	/* Controller buffer information */
 	uint16_t		le_mtu;
 	uint8_t			le_pkts;
@@ -641,4 +644,73 @@ int bt_init(void)
 		return err;
 
 	return hci_init();
+}
+
+int bt_start_advertising(uint8_t type, const char *name, uint8_t name_len)
+{
+	struct bt_buf *buf;
+	struct bt_hci_cp_le_set_adv_data *set_data;
+	struct bt_hci_cp_le_set_adv_data *scan_rsp;
+	struct bt_hci_cp_le_set_adv_parameters *set_param;
+
+	/* We don't support shortening of names, for now */
+	if (name_len > 29)
+		return -EINVAL;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_DATA, sizeof(*set_data));
+	if (!buf)
+		return -ENOBUFS;
+
+	set_data = (void *)bt_buf_add(buf, sizeof(*set_data));
+
+	memset(set_data, 0, sizeof(*set_data));
+
+	/* Advertising flags */
+	set_data->data[0] = 0x02; /* Length */
+	set_data->data[1] = BT_EIR_FLAGS;
+	set_data->data[2] = BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR;
+
+	set_data->len = 3;
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_DATA, buf);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_RSP_DATA,
+				sizeof(*scan_rsp));
+	if (!buf)
+		return -ENOBUFS;
+
+	scan_rsp = (void *)bt_buf_add(buf, sizeof(*scan_rsp));
+
+	memset(scan_rsp, 0, sizeof(*scan_rsp));
+
+	/* Friendly name */
+	scan_rsp->data[0] = name_len + 1;
+	scan_rsp->data[1] = BT_EIR_NAME_COMPLETE;
+	memcpy(scan_rsp->data + 2, name, name_len);
+
+	scan_rsp->len = name_len + 2;
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, buf);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAMETERS,
+				sizeof(*set_param));
+	if (!buf)
+		return -ENOBUFS;
+
+	set_param = (void *)bt_buf_add(buf, sizeof(*set_param));
+
+	memset(set_param, 0, sizeof(*set_param));
+	set_param->min_interval		= sys_cpu_to_le16(0x0800);
+	set_param->max_interval		= sys_cpu_to_le16(0x0800);
+	set_param->type			= type;
+	set_param->channel_map		= 0x07;
+
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_PARAMETERS, buf);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	if (!buf)
+		return -ENOBUFS;
+
+	dev.adv_enable = 0x01;
+	memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf);
 }
