@@ -403,14 +403,12 @@ qemu_project() {
 	# get QEMU's pid
 	# (wait for QEMU process to be spawned by examining list of tasks
 	# associated with this script's terminal, then grab the pid)
-	while [ 1 ]
+	while ! [ -f outdir/qemu.pid ]
 	do
-		qemu_pid=$( ${PS} -T | ${AWK} '/qemu/ {print $1}' )
-		if [ x"${qemu_pid}" != x ] ; then
-			break
-		fi
 		${SLEEP} 1
 	done
+
+        qemu_pid=$(<outdir/qemu.pid)
 
 	# assume execution will fail
 	let RESULT=1

@@ -46,5 +46,8 @@ sinclude ${vMAKE}/target/run/arch/defs.qemu.x86-linux2.${vARCH}
 
 # stop QEMU simulation
 define Qemu_stop
-	@-killall -q ${vQEMU_NAME};${HOS_true}
+	@-if [ -r ${vOUT_DIR}/qemu.pid ]; then \
+		kill -9 $$(<${vOUT_DIR}/qemu.pid); \
+		rm -f ${vOUT_DIR}/qemu.pid; \
+	fi
 endef
