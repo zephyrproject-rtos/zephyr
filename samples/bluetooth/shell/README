@@ -1,0 +1,2 @@
+First serial line is multiplexed with qemu monitor and bluetooth shell
+(btshell) is running there. Use help to check list of commands.
