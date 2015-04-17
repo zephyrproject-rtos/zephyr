@@ -1,0 +1,148 @@
+#
+# Automatically generated file; DO NOT EDIT.
+# Tiny Mountain Build Options
+#
+CONFIG_NANOKERNEL=y
+# CONFIG_MICROKERNEL is not set
+
+#
+# General Kernel Options
+#
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=100
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=150000000
+# CONFIG_XIP is not set
+CONFIG_ENHANCED_SECURITY=y
+
+#
+# Security Options
+#
+# CONFIG_CUSTOM_SECURITY is not set
+# CONFIG_STACK_CANARIES is not set
+
+#
+# Nanokernel Options
+#
+CONFIG_KERNEL_DIR="nkernel"
+# CONFIG_BOOT_BANNER is not set
+CONFIG_MAIN_STACK_SIZE=1024
+CONFIG_ISR_STACK_SIZE=2048
+CONFIG_PRINTK=y
+
+#
+# x86 Core Options
+#
+# CONFIG_NO_ISRS is not set
+
+#
+# Memory Layout Options
+#
+CONFIG_IDT_NUM_VECTORS=256
+CONFIG_NUM_GDT_SPARE_ENTRIES=0
+CONFIG_PHYS_LOAD_ADDR=0x00100000
+
+#
+# Board Capabilities
+#
+# CONFIG_BOI_HANDLER_SUPPORTED is not set
+CONFIG_EOI_HANDLER_SUPPORTED=y
+# CONFIG_UNALIGNED_WRITE_UNSUPPORTED is not set
+# CONFIG_LOCK_INSTRUCTION_UNSUPPORTED is not set
+
+#
+# Floating Point Options
+#
+
+#
+# BSP General Configuration
+#
+CONFIG_BSP_ATOM_N28XX=y
+# CONFIG_BSP_PCMINUTEIA is not set
+# CONFIG_BSP_PCPENTIUM4 is not set
+# CONFIG_BSP_QUARK is not set
+CONFIG_BSP_GENERIC_PC=y
+
+#
+# Intel Processor
+#
+# CONFIG_CPU_MINUTEIA is not set
+CONFIG_CPU_PENTIUM4=y
+# CONFIG_CPU_MIGHT_SUPPORT_CLFLUSH is not set
+
+#
+# Specific CPU Capability Support
+#
+CONFIG_ISA_IA32=y
+CONFIG_HARDWARE_BP_SUPPORTED=y
+# CONFIG_TICKLESS_IDLE_UNSUPPORTED is not set
+# CONFIG_CMOV_UNSUPPORTED is not set
+# CONFIG_CPU_FLOAT_UNSUPPORTED is not set
+# CONFIG_CPU_SSE_UNSUPPORTED is not set
+CONFIG_CACHE_LINE_SIZE=64
+
+#
+# Specific BSP Capability Support
+#
+# CONFIG_DYNAMIC_INT_STUBS is not set
+# CONFIG_PROT_MODE_SWITCH_PROMPT is not set
+# CONFIG_ADVANCED_IDLE_SUPPORTED is not set
+
+#
+# Boot Sequence Options
+#
+CONFIG_BOOTLOADER_UNKNOWN=y
+# CONFIG_PIC is not set
+CONFIG_SHUTOFF_PIC=y
+
+#
+# Floating Point Options
+#
+# CONFIG_FLOAT is not set
+CONFIG_CUSTOM_RANDOM_GENERATOR=y
+CONFIG_BSP_DIR="generic_pc"
+CONFIG_LOAPIC_TIMER_FREQ=150000000
+
+#
+# Serial Ports
+#
+CONFIG_EXTRA_SERIAL_PORT=y
+CONFIG_SERIAL_INTERRUPT_LEVEL=y
+# CONFIG_SERIAL_INTERRUPT_LOW is not set
+
+#
+# Timer Configuration
+#
+# CONFIG_HPET_TIMER is not set
+CONFIG_LOAPIC_TIMER=y
+
+#
+# Interrupt Controller Configuration
+#
+CONFIG_IOAPIC=y
+CONFIG_LOAPIC=y
+
+#
+# Debugging Options
+#
+# CONFIG_STDOUT_CONSOLE is not set
+# CONFIG_ASSERT is not set
+
+#
+# System Monitoring Options
+#
+
+#
+# Compile and Link Features
+#
+CONFIG_COMPILER_OPT=""
+CONFIG_SECTION_GARBAGE_COLLECTION=y
+CONFIG_DRV_CONSOLE=y
+CONFIG_DRV_SERIAL=y
+CONFIG_DRV_NS16550=y
+# CONFIG_DRV_K20_UART is not set
+# CONFIG_DRV_STELLARIS_UART is not set
+CONFIG_DRV_TIMER=y
+# CONFIG_PIT is not set
+CONFIG_DRV_INTCTL=y
+# CONFIG_DRV_PCI is not set
+# CONFIG_DRV_RANDOM is not set
+# CONFIG_EXPERIMENTAL is not set
