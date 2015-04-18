@@ -435,6 +435,15 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 	}
 }
 
+static void le_conn_complete(struct bt_buf *buf)
+{
+	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+
+	BT_DBG("status %u handle %u role %u peer_type %u\n", evt->status,
+	       handle, evt->role, evt->peer_addr_type);
+}
+
 static void hci_le_meta_event(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_meta_event *evt = (void *)buf->data;
@@ -442,6 +451,9 @@ static void hci_le_meta_event(struct bt_buf *buf)
 	bt_buf_pull(buf, sizeof(*evt));
 
 	switch (evt->subevent) {
+	case BT_HCI_EVT_LE_CONN_COMPLETE:
+		le_conn_complete(buf);
+		break;
 	default:
 		BT_DBG("Unhandled LE event %x\n", evt->subevent);
 		break;
