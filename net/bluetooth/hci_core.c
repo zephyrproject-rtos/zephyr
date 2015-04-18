@@ -203,6 +203,25 @@ static void hci_acl(struct bt_buf *buf)
 
 /* HCI event processing */
 
+static void hci_disconn_complete(struct bt_buf *buf)
+{
+	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
+	uint16_t handle = bt_acl_handle(sys_le16_to_cpu(evt->handle));
+
+	BT_DBG("status %u handle %u reason %u\n", evt->status, handle,
+	       evt->reason);
+
+	if (dev.adv_enable) {
+		struct bt_buf *buf;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+		if (buf) {
+			memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
+			bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_ENABLE, buf);
+		}
+	}
+}
+
 static void hci_reset_complete(struct bt_buf *buf)
 {
 	uint8_t status = buf->data[0];
@@ -428,6 +447,9 @@ static void hci_event(struct bt_buf *buf)
 	bt_buf_pull(buf, sizeof(*hdr));
 
 	switch (hdr->evt) {
+	case BT_HCI_EVT_DISCONN_COMPLETE:
+		hci_disconn_complete(buf);
+		break;
 	case BT_HCI_EVT_CMD_COMPLETE:
 		hci_cmd_complete(buf);
 		break;

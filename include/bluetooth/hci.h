@@ -163,6 +163,13 @@ struct bt_hci_cp_le_set_adv_enable {
 
 /* Event definitions */
 
+#define BT_HCI_EVT_DISCONN_COMPLETE		0x05
+struct bt_hci_evt_disconn_complete {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  reason;
+} PACK_STRUCT;
+
 #define BT_HCI_EVT_CMD_COMPLETE			0x0e
 struct hci_evt_cmd_complete {
 	uint8_t  ncmd;
