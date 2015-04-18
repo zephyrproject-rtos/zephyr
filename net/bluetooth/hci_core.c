@@ -76,6 +76,7 @@ static struct bt_dev {
 	/* Controller buffer information */
 	uint16_t		le_mtu;
 	uint8_t			le_pkts;
+	struct nano_sem		le_pkts_sem;
 
 	/* Number of commands controller can accept */
 	uint8_t			ncmd;
@@ -414,6 +415,26 @@ static void hci_cmd_status(struct bt_buf *buf)
 	}
 }
 
+static void hci_num_completed_packets(struct bt_buf *buf)
+{
+	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
+	uint16_t i, num_handles = sys_le16_to_cpu(evt->num_handles);
+
+	BT_DBG("num_handles %u\n", num_handles);
+
+	for (i = 0; i < num_handles; i++) {
+		uint16_t handle, count;
+
+		handle = sys_le16_to_cpu(evt->h[i].handle);
+		count = sys_le16_to_cpu(evt->h[i].count);
+
+		BT_DBG("handle %u count %u\n", handle, count);
+
+		while (count--)
+			nano_fiber_sem_give(&dev.le_pkts_sem);
+	}
+}
+
 static void hci_event(struct bt_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr = (void *)buf->data;
@@ -428,6 +449,9 @@ static void hci_event(struct bt_buf *buf)
 		break;
 	case BT_HCI_EVT_CMD_STATUS:
 		hci_cmd_status(buf);
+		break;
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+		hci_num_completed_packets(buf);
 		break;
 	default:
 		BT_ERR("Unknown event %u\n", hdr->evt);
@@ -491,6 +515,7 @@ static int hci_init(void)
 {
 	struct bt_hci_cp_set_event_mask *ev;
 	struct bt_buf *buf;
+	uint8_t i;
 
 	/* Send HCI_RESET */
 	bt_hci_cmd_send(BT_HCI_OP_RESET, NULL);
@@ -562,6 +587,13 @@ static int hci_init(void)
 	BT_DBG("HCI ver %u rev %u, manufacturer %u\n", dev.hci_version,
 	       dev.hci_revision, dev.manufacturer);
 	BT_DBG("ACL buffers: pkts %u mtu %u\n", dev.le_pkts, dev.le_mtu);
+
+	/* Initialize & prime the semaphore for counting controller-side
+	 * available ACL packet buffers.
+	 */
+	nano_sem_init(&dev.le_pkts_sem);
+	for (i = 0; i < dev.le_pkts; i++)
+		nano_sem_give(&dev.le_pkts_sem);
 
 	return 0;
 }

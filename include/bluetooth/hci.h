@@ -176,4 +176,13 @@ struct bt_hci_evt_cmd_status {
 	uint16_t opcode;
 } PACK_STRUCT;
 
+#define BT_HCI_EVT_NUM_COMPLETED_PACKETS	0x13
+struct bt_hci_evt_num_completed_packets {
+	uint8_t  num_handles;
+	struct {
+		uint16_t handle;
+		uint16_t count;
+	} h[0] PACK_STRUCT;
+} PACK_STRUCT;
+
 #endif /* __BT_HCI_H */
