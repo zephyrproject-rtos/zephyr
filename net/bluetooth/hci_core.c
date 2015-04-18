@@ -435,6 +435,19 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 	}
 }
 
+static void hci_le_meta_event(struct bt_buf *buf)
+{
+	struct bt_hci_evt_le_meta_event *evt = (void *)buf->data;
+
+	bt_buf_pull(buf, sizeof(*evt));
+
+	switch (evt->subevent) {
+	default:
+		BT_DBG("Unhandled LE event %x\n", evt->subevent);
+		break;
+	}
+}
+
 static void hci_event(struct bt_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr = (void *)buf->data;
@@ -452,6 +465,9 @@ static void hci_event(struct bt_buf *buf)
 		break;
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 		hci_num_completed_packets(buf);
+		break;
+	case BT_HCI_EVT_LE_META_EVENT:
+		hci_le_meta_event(buf);
 		break;
 	default:
 		BT_ERR("Unknown event %u\n", hdr->evt);

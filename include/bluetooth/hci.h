@@ -185,4 +185,9 @@ struct bt_hci_evt_num_completed_packets {
 	} h[0] PACK_STRUCT;
 } PACK_STRUCT;
 
+#define BT_HCI_EVT_LE_META_EVENT		0x3e
+struct bt_hci_evt_le_meta_event {
+	uint8_t  subevent;
+} PACK_STRUCT;
+
 #endif /* __BT_HCI_H */
