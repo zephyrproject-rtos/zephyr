@@ -119,12 +119,14 @@ void _k_mem_map_alloc(struct k_args *A)
 		A->Ctxt.proc = _k_current_task;
 		set_state_bit(_k_current_task, TF_ALLO);
 		INSERT_ELM(M->Waiters, A);
+#ifndef CONFIG_TICKLESS_KERNEL
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;
 		else {
 			A->Comm = ALLOCTMO;
 			enlist_timeout(A);
 		}
+#endif
 	} else
 		A->Time.rcode = RC_FAIL;
 }
@@ -175,10 +177,12 @@ void _k_mem_map_dealloc(struct k_args *A)
 		*(X->Args.a1.mptr) = M->Free;
 		M->Free = *(char **)(M->Free);
 
+#ifndef CONFIG_TICKLESS_KERNEL
 		if (X->Time.timer) {
 			delist_timeout(X->Time.timer);
 			X->Comm = NOP;
 		}
+#endif
 		X->Time.rcode = RC_OK;
 		reset_state_bit(X->Ctxt.proc, TF_ALLO);
 
