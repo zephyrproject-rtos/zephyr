@@ -39,6 +39,11 @@
 
 #include "ch_cfg.h" /* defines the high-level behavior of the channel service \
 		       */
+typedef uint32_t REQ_TYPE;
+#define _ALLREQ ((REQ_TYPE)0x0000FF00)
+#define _SYNCREQ ((REQ_TYPE)0x00000100)
+#define _SYNCREQL ((REQ_TYPE)0x00000200)
+#define _ASYNCREQ ((REQ_TYPE)0x00000400)
 
 /* K functions: */
 
