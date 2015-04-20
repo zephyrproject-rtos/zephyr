@@ -409,14 +409,6 @@ struct _z2arg {
 	int Wmark;
 };
 
-struct _z3arg {
-	int Comm;
-	int Ind;
-	int Ti;
-	int Tr;
-	struct k_args *Args;
-};
-
 struct _z4arg {
 	int Comm;
 	int rind;
@@ -441,7 +433,6 @@ union k_args_args {
 	struct _u1arg u1;
 	struct _z1arg z1;
 	struct _z2arg z2;
-	struct _z3arg z3;
 	struct _z4arg z4;
 	struct k_chproc ChProc;
 	struct k_chmovedack ChMovedAck;
