@@ -61,7 +61,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 	while (A && S->Level) {
 		X = A->Forw;
 
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 		if (A->Comm == WAITSREQ || A->Comm == WAITSTMO)
 #else
 		if (A->Comm == WAITSREQ)
@@ -72,7 +72,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 				Y->Forw = X;
 			else
 				S->Waiters = X;
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 			if (A->Time.timer) {
 				force_timeout(A);
 				A->Comm = WAITSRPL;
@@ -80,7 +80,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 #endif
 				A->Time.rcode = RC_OK;
 					reset_state_bit(A->Ctxt.proc, TF_SEMA);
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 			}
 #endif
 		}
@@ -399,7 +399,7 @@ void _k_sem_wait_request(struct k_args *A)
 		A->Prio = _k_current_task->Prio;
 		set_state_bit(_k_current_task, TF_SEMA);
 		INSERT_ELM(S->Waiters, A);
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;
 		else {

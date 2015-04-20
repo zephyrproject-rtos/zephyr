@@ -39,7 +39,7 @@
 #define task_mbox_get(b, m) _task_mbox_get(b, m, TICKS_NONE)
 #define task_mbox_get_wait(b, m) _task_mbox_get(b, m, TICKS_UNLIMITED)
 
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 #define task_mbox_put_wait_timeout(b, p, m, t) _task_mbox_put(b, p, m, t)
 #define task_mbox_get_wait_timeout(b, m, t) _task_mbox_get(b, m, t)
 #endif

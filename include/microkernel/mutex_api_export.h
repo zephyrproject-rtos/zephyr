@@ -36,7 +36,7 @@
 #define task_mutex_lock(m) _task_mutex_lock(m, TICKS_NONE)
 #define task_mutex_lock_wait(m) _task_mutex_lock(m, TICKS_UNLIMITED)
 
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 #define task_mutex_lock_wait_timeout(m, t) _task_mutex_lock(m, t)
 #endif
 

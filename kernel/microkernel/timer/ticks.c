@@ -39,7 +39,7 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 K_TIMER  *_k_timer_list_head = NULL;
 K_TIMER  *_k_timer_list_tail = NULL;
 #endif

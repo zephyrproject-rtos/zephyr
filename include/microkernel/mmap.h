@@ -47,9 +47,9 @@ extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
 #define task_mem_map_alloc_wait(m, p) _task_mem_map_alloc(m, p, TICKS_UNLIMITED)
 #define task_mem_map_free(m, p) _task_mem_map_free(m, p)
 
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 #define task_mem_map_alloc_wait_timeout(m, p, t) _task_mem_map_alloc(m, p, t)
-#endif /* !LITE */
+#endif
 
 #ifdef __cplusplus
 }

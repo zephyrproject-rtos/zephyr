@@ -70,7 +70,7 @@ int sys_clock_hw_cycles_per_tick =
 *
 * _HandleExpiredTimers - handle expired timers
 *
-* If non-lite system is configured this routine processes the sorted list of
+* If a non-tickless microkernel is configured, process the sorted list of
 * timers associated with waiting tasks and activate each task whose timer
 * has now expired.
 *
@@ -89,7 +89,7 @@ int sys_clock_hw_cycles_per_tick =
 
 static inline void _HandleExpiredTimers(int ticks)
 {
-#ifdef LITE
+#ifdef CONFIG_TICKLESS_KERNEL
 /* do nothing */
 #else
 	K_TIMER *T;

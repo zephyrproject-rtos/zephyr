@@ -216,7 +216,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 				set_state_bit(_k_current_task, TF_LOCK);
 			/* Note: Mutex->Waiters is a priority sorted list */
 			INSERT_ELM(Mutex->Waiters, A);
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 			if (A->Time.ticks == TICKS_UNLIMITED) {
 				/* Request will not time out */
 				A->Time.timer = NULL;
@@ -355,7 +355,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 			Mutex->OwnerCurrentPrio = X->Prio;
 			Mutex->OwnerOriginalPrio = X->Prio;
 
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 			if (X->Time.timer) {
 				/*
 				 * Trigger a call to _k_mutex_lock_reply()--it will
@@ -371,7 +371,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 				 */
 				X->Time.rcode = RC_OK;
 					reset_state_bit(X->Ctxt.proc, TF_LOCK);
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 			}
 #endif
 		} else {

@@ -489,7 +489,7 @@ void _k_task_sleep(struct k_args *P)
 void task_sleep(int32_t ticks /* number of ticks for which to sleep */
 		  )
 {
-#ifndef LITE
+#ifndef CONFIG_TICKLESS_KERNEL
 	struct k_args A;
 
 	A.Comm = SLEEP;
