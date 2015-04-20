@@ -46,7 +46,10 @@ extern void task_mem_pool_defragment(kmemory_pool_t pid);
 
 #define task_mem_pool_alloc(b, pid, s) _task_mem_pool_alloc(b, pid, s, TICKS_NONE)
 #define task_mem_pool_alloc_wait(b, pid, s) _task_mem_pool_alloc(b, pid, s, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
 #define task_mem_pool_alloc_wait_timeout(b, pid, s, t) _task_mem_pool_alloc(b, pid, s, t)
+#endif
 
 #ifdef __cplusplus
 }
