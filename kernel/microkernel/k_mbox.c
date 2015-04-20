@@ -385,6 +385,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 			}
 			CopyReader->Forw = NULL;
 
+#ifndef CONFIG_TICKLESS_KERNEL
 			if (CopyReader->Time.timer != NULL) {
 				/*
 				 * The reader was trying to handshake with
@@ -393,6 +394,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 				delist_timer(CopyReader->Time.timer);
 				FREETIMER(CopyReader->Time.timer);
 			}
+#endif
 
 			if (0 == u32Size) {
 				/* No data exchange--header only */
@@ -445,6 +447,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 		/* Put the letter into the mailbox */
 		INSERT_ELM(MailBox->Writers, CopyWriter);
 
+#ifndef CONFIG_TICKLESS_KERNEL
 		if (CopyWriter->Time.ticks == TICKS_UNLIMITED) {
 			/* This is a wait operation; there is no timer. */
 			CopyWriter->Time.timer = NULL;
@@ -455,6 +458,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 			 */
 			enlist_timeout(CopyWriter);
 		}
+#endif
 	} else {
 		/*
 		 * This is a no-wait operation.
@@ -546,11 +550,13 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 
 void _k_mbox_receive_reply(struct k_args *pCopyReader)
 {
+#ifndef CONFIG_TICKLESS_KERNEL
 	FREETIMER(pCopyReader->Time.timer);
 	REMOVE_ELM(pCopyReader);
 	pCopyReader->Time.rcode = RC_TIME;
 	pCopyReader->Comm = RECV_ACK;
 	SENDARGS(pCopyReader);
+#endif
 }
 
 /*******************************************************************************
@@ -605,6 +611,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 			}
 			CopyWriter->Forw = NULL;
 
+#ifndef CONFIG_TICKLESS_KERNEL
 			if (CopyWriter->Time.timer != NULL) {
 				/*
 				 * The writer was trying to handshake with
@@ -613,6 +620,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 				delist_timer(CopyWriter->Time.timer);
 				FREETIMER(CopyWriter->Time.timer);
 			}
+#endif
 
 			if (0 == u32Size) {
 				/* No data exchange--header only */
@@ -655,6 +663,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 		/* Put the letter into the mailbox */
 		INSERT_ELM(MailBox->Readers, CopyReader);
 
+#ifndef CONFIG_TICKLESS_KERNEL
 		if (CopyReader->Time.ticks == TICKS_UNLIMITED) {
 			/* This is a wait operation; there is no timer. */
 			CopyReader->Time.timer = NULL;
@@ -665,6 +674,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 			 */
 			enlist_timeout(CopyReader);
 		}
+#endif
 	} else {
 		/*
 		 * This is a no-wait operation.
@@ -744,7 +754,9 @@ void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
 	M->mailbox = mbox;
 	M->extra.sema = sema;
 
+#ifndef CONFIG_TICKLESS_KERNEL
 	A.Time.timer = NULL;
+#endif
 	A.Prio = prio;
 	A.Comm = SEND_REQ;
 	A.Args.m1.mess = *M;

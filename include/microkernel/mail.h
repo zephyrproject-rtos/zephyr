@@ -59,7 +59,10 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
 #define task_mbox_data_get_async_block(m, b, p) _task_mbox_data_get_async_block(m, b, p, TICKS_NONE)
 #define task_mbox_data_get_async_block_wait(m, b, p) \
 	_task_mbox_data_get_async_block(m, b, p, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
 #define task_mbox_data_get_async_block_wait_timeout(m, b, p, t) _task_mbox_data_get_async_block(m, b, p, t)
+#endif
 
 #ifdef __cplusplus
 }
