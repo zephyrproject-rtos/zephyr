@@ -69,7 +69,7 @@ extern void _task_nop(void);
 
 extern int task_offload_to_fiber(int (*)(), void *);
 
-/* The following two typedefs are used in NODEx.c */
+/* The following two typedefs are used in kernel_main.c */
 typedef void (*taskstartfunction)(void);
 typedef void (*taskabortfunction)(void);
 
@@ -122,7 +122,7 @@ extern PFN_CHANNEL_RWT pHS_Channel_GetWT;
 extern PFN_CHANNEL_RWT pKS_Channel_PutWT;
 extern PFN_CHANNEL_RWT pKS_Channel_GetWT;
 
-/* needed by generated NODEx.c */
+/* needed by generated kernel_main.c */
 extern void	timer_driver	(int priority);
 extern void	DefaultHostDriver (void);
 

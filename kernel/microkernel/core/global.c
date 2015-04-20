@@ -84,7 +84,7 @@ void kernel_init(void)
 
 	/*
 	 * Note: most variables & data structure are globally initialized in
-	 * NODEx.c
+	 * kernel_main.c
 	 */
 	init_node();
 
