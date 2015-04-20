@@ -36,10 +36,6 @@ This modules tests the following memory pool routines:
 
   task_mem_pool_alloc(), task_mem_pool_alloc_wait(), task_mem_pool_alloc_wait_timeout(),
   task_mem_pool_free()
-
-There is also minimal testing for task_mem_pool_move[_wait[_timeout]]().  These routines are
-designed to work with remote blocks; however, this module only uses local
-blocks.  Those routines, when used with local blocks, effectively become no-ops.
 */
 
 /* includes */
@@ -381,93 +377,6 @@ int poolBlockGetWaitTest(void)
 
 /*******************************************************************************
 *
-* poolMoveBlock -
-*
-* RETURNS: task_mem_pool_move() return value
-*/
-
-int poolMoveBlock(struct k_block *block, kmemory_pool_t pool)
-{
-	return task_mem_pool_move(block, pool);
-}
-
-/*******************************************************************************
-*
-* poolMoveBlockW -
-*
-* RETURNS: task_mem_pool_move_wait() return value
-*/
-
-int poolMoveBlockW(struct k_block *block, kmemory_pool_t pool)
-{
-	return task_mem_pool_move_wait(block, pool);
-}
-
-/*******************************************************************************
-*
-* poolMoveBlockWT -
-*
-* RETURNS: task_mem_pool_move_wait_timeout() return value
-*/
-
-int poolMoveBlockWT(struct k_block *block, kmemory_pool_t pool)
-{
-	return task_mem_pool_move_wait_timeout(block, pool, TENTH_SECOND);
-}
-
-/*******************************************************************************
-*
-* poolMoveBlockTests -
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
-
-int poolMoveBlockTests(void)
-{
-	struct k_block  tmpBlock[3];
-	poolMoveBlockFunc_t  func[3] = {poolMoveBlockW, poolMoveBlock,
-									poolMoveBlockWT};
-	int      rv;
-	int      i;
-
-	for (i = 0; i < 3; i++) {
-		rv = task_mem_pool_alloc(&blockList[i], POOL_ID, 512);
-		if (rv != RC_OK) {
-			TC_ERROR("Expected task_mem_pool_alloc() to return %d, got %d\n",
-					 RC_OK, rv);
-			return TC_FAIL;
-		}
-	}
-
-	for (i = 0; i < 3; i++) {
-		tmpBlock[i] = blockList[i];
-		rv = func[i](&blockList[i], POOL_ID);
-		if (rv != RC_OK) {
-			TC_ERROR("task_mem_pool_move[_wait[_timeout]](%d) returned %d, not %d\n",
-					 i, rv, RC_OK);
-			return TC_FAIL;
-		}
-
-		/*
-		 * The blocks are local.  As a result, the contents of each block are
-		 * not supposed to change.
-		 */
-
-		if (blockCompare(&tmpBlock[i], &blockList[i]) != 0) {
-			TC_ERROR("Local block contents unexpectedly changed!\n");
-			return TC_FAIL;
-		}
-	}
-
-	for (i = 0; i < 3; i++) {
-		task_mem_pool_free(&blockList[i]);
-	}
-
-	return TC_PASS;
-}
-
-/*******************************************************************************
-*
 * DefragTask - task responsible for defragmenting the pool POOL_ID
 *
 * RETURNS: N/A
@@ -580,12 +489,6 @@ void RegressionTask(void)
 
 	TC_PRINT("Testing task_mem_pool_alloc_wait() ...\n");
 	tcRC = poolBlockGetWaitTest();
-	if (tcRC != TC_PASS) {
-		goto doneTests;
-	}
-
-	TC_PRINT("Testing task_mem_pool_move[_wait[_timeout]]() ...\n");
-	tcRC = poolMoveBlockTests();
 	if (tcRC != TC_PASS) {
 		goto doneTests;
 	}
