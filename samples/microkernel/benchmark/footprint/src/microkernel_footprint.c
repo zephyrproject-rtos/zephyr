@@ -124,7 +124,6 @@ static pfunc func_array[] =
     (pfunc)_task_mbox_data_get_async_block,
     /* memory pool functions */
     (pfunc)_task_mem_pool_alloc,
-    (pfunc)_task_mem_pool_move,
     (pfunc)task_mem_pool_free,
     (pfunc)task_mem_pool_defragment,
     /* task functions */
