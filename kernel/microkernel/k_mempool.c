@@ -138,7 +138,7 @@ static void search_bp(char *ptr, struct pool_struct *P, int index)
 
 /*******************************************************************************
 *
-* defrag - defragmentation algorithm for local memory pool
+* defrag - defragmentation algorithm for memory pool
 *
 * RETURNS: N/A
 */
@@ -194,7 +194,7 @@ static void defrag(struct pool_struct *P,
 
 /*******************************************************************************
 *
-* K_Defrag - perform defragment local memory pool request
+* K_Defrag - perform defragment memory pool request
 *
 * RETURNS: N/A
 */
@@ -208,7 +208,7 @@ void K_Defrag(struct k_args *A)
 	       0		   /* and defragment till fragment level 0 */
 	       );
 
-	/* reschedule waiters, everything happens locally */
+	/* reschedule waiters */
 
 	if (
 		    P->Waiters) {
@@ -227,10 +227,9 @@ void K_Defrag(struct k_args *A)
 
 /*******************************************************************************
 *
-* task_mem_pool_defragment - defragment local memory pool request
+* task_mem_pool_defragment - defragment memory pool request
 *
-* This routine concatenates unused memory in a local memory pool.
-* (Must not be called for a remote memory pool or a system crash may result.)
+* This routine concatenates unused memory in a memory pool.
 *
 * RETURNS: N/A
 */
@@ -415,10 +414,10 @@ static char *rgetblock(struct pool_struct *P, int index, int startindex)
 *
 * K_GetBlock_Waiters - examine tasks that are waiting for memory pool blocks
 *
-* This routine attempts to satisfy any incomplete block allocation requests
-* for the specified local memory pool. It can be invoked either by the
-* explicit freeing of a used block or as a result of defragmenting the pool
-* (which may create one or more new, larger blocks).
+* This routine attempts to satisfy any incomplete block allocation requests for
+* the specified memory pool. It can be invoked either by the explicit freeing
+* of a used block or as a result of defragmenting the pool  (which may create
+* one or more new, larger blocks).
 *
 * RETURNS: N/A
 */
@@ -556,10 +555,10 @@ void K_GetBlock(struct k_args *A)
 
 /*******************************************************************************
 *
-* _task_mem_pool_alloc - allocate local memory pool block request
+* _task_mem_pool_alloc - allocate memory pool block request
 *
-* This routine allocates a free block from the specified local memory pool,
-* ensuring that its size is at least as big as the size requested (in bytes).
+* This routine allocates a free block from the specified memory pool, ensuring
+* that its size is at least as big as the size requested (in bytes).
 *
 * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
 */
@@ -592,11 +591,8 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 *
 * K_RelBlock - perform return memory pool block request
 *
-* Marks a block belonging to a local pool as free; if there are waiters
-* that can use the the block it is passed to a waiting task.
-*
-* Forwards a request to release a block in remote pool to the associated node,
-* which does the actual release work.
+* Marks a block belonging to a pool as free; if there are waiters that can use
+* the the block it is passed to a waiting task.
 *
 * RETURNS: N/A
 */
@@ -665,7 +661,7 @@ void K_RelBlock(struct k_args *A)
 *
 * task_mem_pool_free - return memory pool block request
 *
-* This routine returns a block to a memory pool, which may be local or remote.
+* This routine returns a block to a memory pool.
 *
 * The struct k_block structure contains the block details, including the pool to
 * which it should be returned.
