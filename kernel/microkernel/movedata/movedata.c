@@ -40,12 +40,43 @@
 #include <sections.h>
 #include <misc/__assert.h>
 
-/* forward declarations */
+/*******************************************************************************
+*
+* mvdreq_docont -
+*
+* RETURNS: N/A
+*/
 
+static void mvdreq_docont(struct k_args *Cont)
+{
+	struct k_args *Next;
 
-static void mvdreq_copy(struct moved_req *ReqArgs);
+	while (Cont) {
+		Next = Cont;
+		Cont = Cont->Forw;
+		SENDARGS(Next);
+	}
+}
 
-static void mvdreq_docont(struct k_args *Cont);
+/*******************************************************************************
+*
+* mvdreq_copy - perform movedata request
+*
+* RETURNS: N/A
+*/
+
+static void mvdreq_copy(struct moved_req *ReqArgs)
+{
+	k_memcpy_s(ReqArgs->destination,
+		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize),
+		   ReqArgs->source,
+		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize));
+
+	if (ReqArgs->Action & MVDACT_SNDACK)
+		mvdreq_docont(ReqArgs->Extra.Setup.ContSnd);
+	if (ReqArgs->Action & MVDACT_RCVACK)
+		mvdreq_docont(ReqArgs->Extra.Setup.ContRcv);
+}
 
 /*******************************************************************************
 *
@@ -84,45 +115,4 @@ void K_mvdreq(struct k_args *Req)
 	}
 
 	mvdreq_copy(ReqArgs);
-}
-
-/*******************************************************************************
-*
-* mvdreq_copy - perform movedata request
-*
-* RETURNS: N/A
-*/
-
-static void mvdreq_copy(struct moved_req *ReqArgs)
-{
-	k_memcpy_s(ReqArgs->destination,
-		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize),
-		   ReqArgs->source,
-		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize));
-
-	if (ReqArgs->Action & MVDACT_SNDACK)
-		mvdreq_docont(ReqArgs->Extra.Setup.ContSnd);
-	if (ReqArgs->Action & MVDACT_RCVACK)
-		mvdreq_docont(ReqArgs->Extra.Setup.ContRcv);
-}
-
-
-/* Helper functions */
-
-/*******************************************************************************
-*
-* mvdreq_docont -
-*
-* RETURNS: N/A
-*/
-
-static void mvdreq_docont(struct k_args *Cont)
-{
-	struct k_args *Next;
-
-	while (Cont) {
-		Next = Cont;
-		Cont = Cont->Forw;
-		SENDARGS(Next);
-	}
 }
