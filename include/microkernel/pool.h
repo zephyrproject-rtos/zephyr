@@ -41,18 +41,12 @@ extern void InitPools(void);
 
 extern int _task_mem_pool_alloc(struct k_block *B, kmemory_pool_t pid, int size, int32_t time);
 
-extern int _task_mem_pool_move(struct k_block *b, kmemory_pool_t pid, int32_t time);
-
 extern void task_mem_pool_free(struct k_block *bl);
 extern void task_mem_pool_defragment(kmemory_pool_t pid);
 
 #define task_mem_pool_alloc(b, pid, s) _task_mem_pool_alloc(b, pid, s, TICKS_NONE)
 #define task_mem_pool_alloc_wait(b, pid, s) _task_mem_pool_alloc(b, pid, s, TICKS_UNLIMITED)
 #define task_mem_pool_alloc_wait_timeout(b, pid, s, t) _task_mem_pool_alloc(b, pid, s, t)
-
-#define task_mem_pool_move(b, p) _task_mem_pool_move(b, p, TICKS_NONE)
-#define task_mem_pool_move_wait(b, p) _task_mem_pool_move(b, p, TICKS_UNLIMITED)
-#define task_mem_pool_move_wait_timeout(b, p, t) _task_mem_pool_move(b, p, t)
 
 #ifdef __cplusplus
 }

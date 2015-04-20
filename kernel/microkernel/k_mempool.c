@@ -685,24 +685,3 @@ void task_mem_pool_free(struct k_block *blockptr /* pointer to block to free */
 	A.Args.p1.rep_dataptr = blockptr->pointer_to_data;
 	KERNEL_ENTRY(&A);
 }
-
-/*******************************************************************************
-*
-* _task_mem_pool_move - move memory pool block to local memory pool request
-*
-* This routine ensures the contents of the specified memory pool block
-* are held locally. If the specified block belongs to a remote memory pool
-* the block's data is copied to a newly allocated local block and the remote
-* block is released. (If the specified block is already local it is left as is.)
-*
-* RETURNS: N/A
-*/
-
-int _task_mem_pool_move(struct k_block *block, kmemory_pool_t localpoolid, int32_t time)
-{
-	ARG_UNUSED(block);
-	ARG_UNUSED(localpoolid);
-	ARG_UNUSED(time);
-
-	return RC_OK;
-}
