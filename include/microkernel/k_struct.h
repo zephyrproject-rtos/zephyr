@@ -394,13 +394,6 @@ struct _u1arg {
 	int rval;
 };
 
-struct _z1arg {
-	int Comm;
-	int Nitem;
-	int Laddr;
-	int Lsize;
-};
-
 struct _z4arg {
 	int Comm;
 	int rind;
@@ -423,7 +416,6 @@ union k_args_args {
 	struct _q2arg q2;
 	struct _s1arg s1;
 	struct _u1arg u1;
-	struct _z1arg z1;
 	struct _z4arg z4;
 	struct k_chproc ChProc;
 	struct k_chmovedack ChMovedAck;
