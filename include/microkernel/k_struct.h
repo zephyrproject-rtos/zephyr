@@ -362,15 +362,6 @@ struct moved_req {
 	} Extra;
 };
 
-struct raw_data {
-	MovedAction Action;
-	int iXferID;
-	uint32_t iSize;
-	void *source;
-	void *destination;
-	void *data;
-};
-
 struct _g1arg {
 	ktask_t task;
 	ktask_group_t group;
@@ -460,7 +451,6 @@ union k_args_args {
 #endif
 	struct _c1arg c1;
 	struct moved_req MovedReq;
-	struct raw_data RawData;
 	struct _e1arg e1;
 	struct _g1arg g1;
 	struct _l1arg l1;
