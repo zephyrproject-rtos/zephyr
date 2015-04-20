@@ -318,13 +318,13 @@ def kernel_main_c_kargs():
     kernel_main_c_out("\n" +
         "struct k_args K_ArgsBlocks[%s] =\n" % (num_kargs) +
         "{\n" +
-        "    {NULL, NULL, 0, 0, 0, (K_COMM) UNDEFINED},\n")
+        "    {NULL, NULL, 0, 0, (K_COMM) UNDEFINED},\n")
     for i in range(1, num_kargs - 1):
         kernel_main_c_out(
-            "    {&K_ArgsBlocks[%d], NULL, 0, 0, 0, (K_COMM) UNDEFINED},\n" %
+            "    {&K_ArgsBlocks[%d], NULL, 0, 0, (K_COMM) UNDEFINED},\n" %
             (i - 1))
     kernel_main_c_out(
-        "    {&K_ArgsBlocks[%d], NULL, 0, 0, 0, (K_COMM) UNDEFINED}\n" %
+        "    {&K_ArgsBlocks[%d], NULL, 0, 0, (K_COMM) UNDEFINED}\n" %
         (num_kargs - 2) +
         "};\n")
 

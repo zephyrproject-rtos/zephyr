@@ -488,7 +488,6 @@ struct k_args {
 	struct k_args **Head;
 	kpriority_t Prio;
 	knode_t Srce;
-	knode_t Dest;
 	K_COMM Comm;
 	K_CREF Ctxt;
 	union {
