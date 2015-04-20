@@ -54,18 +54,18 @@
 
 static void copypacket(struct k_args **out, struct k_args *in)
 {
-		/* As <in> is a local packet, get a new command packet. */
+	/* As <in> is a local packet, get a new command packet. */
 
-		GETARGS(*out);
+	GETARGS(*out);
 
-		/*
-		 * Copy the data from <in> to <*out> and create
-		 * a backpointer to the original packet.
-		 */
+	/*
+	 * Copy the data from <in> to <*out> and create
+	 * a backpointer to the original packet.
+	 */
 
-		k_memcpy_s(*out, sizeof(struct k_args),
-				   in, sizeof(struct k_args));
-		(*out)->Ctxt.args = in;
+	k_memcpy_s(*out, sizeof(struct k_args),
+			   in, sizeof(struct k_args));
+	(*out)->Ctxt.args = in;
 }
 
 /*******************************************************************************
