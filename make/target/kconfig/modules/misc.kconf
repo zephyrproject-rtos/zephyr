@@ -119,6 +119,10 @@ config  SYS_CLOCK_TICKS_PER_SEC
 	help
 	  This option specifies the frequency of the system clock in Hz.
 
+	  Specifying a frequency of zero results in a "tickless kernel" that
+	  provides no timer support. This capability has not been fully
+	  implemented and should be treated as [EXPERIMENTAL].
+
 config	SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	# omit prompt to signify a "hidden" option
@@ -126,6 +130,14 @@ config	SYS_CLOCK_HW_CYCLES_PER_SEC
 	help
 	  Frequency of the hardware timer used for the system clock
 	  (in Hz).
+
+config	TICKLESS_KERNEL
+	bool
+	# omit prompt to signify a "hidden" option
+	default y if (SYS_CLOCK_TICKS_PER_SEC = 0)
+	default n
+	help
+	  This option specifies that the kernel lacks timer support.
 
 config  TIMESLICING
 	bool
