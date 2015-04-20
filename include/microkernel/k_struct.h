@@ -401,14 +401,6 @@ struct _z1arg {
 	int Lsize;
 };
 
-struct _z2arg {
-	int Comm;
-	ktask_t Task;
-	int Wsize;
-	int Wused;
-	int Wmark;
-};
-
 struct _z4arg {
 	int Comm;
 	int rind;
@@ -432,7 +424,6 @@ union k_args_args {
 	struct _s1arg s1;
 	struct _u1arg u1;
 	struct _z1arg z1;
-	struct _z2arg z2;
 	struct _z4arg z4;
 	struct k_chproc ChProc;
 	struct k_chmovedack ChMovedAck;
