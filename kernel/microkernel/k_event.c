@@ -143,12 +143,14 @@ void _k_event_test(struct k_args *A)
 					A->Ctxt.proc = _k_current_task;
 					E->waiter = A;
 					set_state_bit(_k_current_task, TF_EVNT);
+#ifndef CONFIG_TICKLESS_KERNEL
 					if (A->Time.ticks == TICKS_UNLIMITED) {
 						A->Time.timer = NULL;
 					} else {
 						A->Comm = EVENT_TMO;
 						enlist_timeout(A);
 					}
+#endif
 				} else {
 					A->Time.rcode = RC_FAIL; /* already a
 								    waiter
@@ -202,7 +204,6 @@ void _k_do_event_signal(kevent_t event)
 {
 	struct evstr *E = EVENTS + event;
 	struct k_args *A = E->waiter;
-	K_TIMER *T;
 	int ret_val = 1; /* If no handler is available, then ret_val is 1 by default */
 
 	if ((E->func) != NULL) { /* handler available */
@@ -214,11 +215,12 @@ void _k_do_event_signal(kevent_t event)
 	}
 	/* if proc waiting, will be rescheduled */
 	if (((A) != NULL) && (E->status != 0)) {
-		T = A->Time.timer;
-		if (T != NULL) {
-			delist_timeout(T);
+#ifndef CONFIG_TICKLESS_KERNEL
+		if (A->Time.timer != NULL) {
+			delist_timeout(A->Time.timer);
 			A->Comm = NOP;
 		}
+#endif
 		A->Time.rcode = RC_OK;
 
 		reset_state_bit(A->Ctxt.proc, TF_EVNT);

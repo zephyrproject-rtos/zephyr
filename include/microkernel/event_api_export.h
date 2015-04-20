@@ -35,6 +35,9 @@
 
 #define task_event_recv(event) _task_event_recv(event, TICKS_NONE)
 #define task_event_recv_wait(event) _task_event_recv(event, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
 #define task_event_recv_wait_timeout(event, time) _task_event_recv(event, time)
+#endif
 
 #endif /* _event_api_export__h_ */
