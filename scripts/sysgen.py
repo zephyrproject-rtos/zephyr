@@ -257,6 +257,8 @@ def vpf_parse():
         if (words[0] == "TIMERDRIVER"):
             if (len(words) == 1):
                 error_arg_count(line)
+            if (num_timers == 0):
+                continue    # ignore timer driver for a tickless microkernel
             start_quote = line.find("'")
             end_quote = line.rfind("'")
             driver_list.append(line[start_quote + 1:end_quote])
@@ -340,6 +342,9 @@ def kernel_main_c_kargs():
 
 def kernel_main_c_timers():
     """ Generate timer system variables """
+
+    if (num_timers == 0):
+        return
 
     # timer descriptors
 
@@ -479,8 +484,13 @@ def kernel_main_c_events():
         "struct evstr EVENTS[%d] =\n" % (total_events) +
         "{\n")
     # pre-defined events
+    if (num_timers > 0):
+        kernel_main_c_out(
+            "    {0, (kevent_handler_t)K_ticker, (struct k_args *)NULL, 0},\n")
+    else:
+        kernel_main_c_out(
+            "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n")
     kernel_main_c_out(
-        "    {0, (kevent_handler_t)K_ticker, (struct k_args *)NULL, 0},\n" +
         "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n" +
         "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n" +
         "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n"
@@ -795,8 +805,8 @@ def kernel_main_c_kernel_services():
 "/* 16 */ _k_sem_group_wait_cancel,",             # depends on semaphores
 "/* 17 */ _k_sem_group_wait_accept,",             # depends on semaphores
 "/* 18 */ _k_sem_group_wait,",                    # depends on semaphores
-"/* 19 */ _k_sem_group_wait_timeout,",            # depends on semaphores and
-                                                  #  timers
+"/* 19 */ _k_sem_group_wait_timeout,",            # depends on semaphores
+                                                  #  (but not timers)
 "/* 20 */ _k_sem_inquiry,",                       # depends on semaphores
 "/* 21 */ _k_mutex_lock_request,",                # depends on mutexes
 "/* 22 */ _k_mutex_lock_reply,",                  # depends on mutexes
@@ -820,7 +830,7 @@ def kernel_main_c_kernel_services():
                                                   #  timers
 "/* 38 */ _k_mbox_receive_ack,",                  # depends on mailboxes
 "/* 39 */ _k_mbox_receive_data,",                 # depends on mailboxes
-"/* 40 */ _k_time_elapse,",                       # required
+"/* 40 */ _k_time_elapse,",                       # depends on timers
 "/* 41 */ _k_task_sleep,",                        # depends on timers
 "/* 42 */ _k_task_wakeup,",                       # depends on timers
 "/* 43 */ _k_task_op,",                           # required
@@ -833,8 +843,8 @@ def kernel_main_c_kernel_services():
 "/* 50 */ _k_timer_dealloc,",                     # depends on timers
 "/* 51 */ _k_timer_start,",                       # depends on timers
 "/* 52 */ _k_timer_stop,",                        # depends on timers
-"/* 53 */ _k_mem_map_alloc_timeout,",             # depends on memory maps
-                                                  #  [and timers?]
+"/* 53 */ _k_mem_map_alloc_timeout,",             # depends on memory maps and
+                                                  #  timers
 "/* 54 */ (kernelfunc) NULL,",                    # unused
 "/* 55 */ (kernelfunc) NULL,",                    # unused
 "/* 56 */ (kernelfunc) NULL,",                    # unused
@@ -845,7 +855,8 @@ def kernel_main_c_kernel_services():
 "/* 61 */ _k_mem_pool_block_get,",                # depends on memory pools
 "/* 62 */ _k_mem_pool_block_release,",            # depends on memory pools
 "/* 63 */ _k_block_waiters_get,",                 # depends on memory pools
-"/* 64 */ _k_mem_pool_block_get_timeout_handle,", # depends on memory pools
+"/* 64 */ _k_mem_pool_block_get_timeout_handle,",  # depends on memory pools
+                                                   #  and timers
 "/* 65 */ _k_defrag,",                            # depends on memory pools
 "/* 66 */ (kernelfunc) NULL,",                    # unused
 "/* 67 */ (kernelfunc) NULL,",                    # unused
@@ -854,15 +865,15 @@ def kernel_main_c_kernel_services():
 "/* 70 */ (kernelfunc) NULL,",                    # unused
 "/* 71 */ (kernelfunc) NULL,",                    # unused
 "/* 72 */ K_ChSendReq,",                          # depends on pipes
-"/* 73 */ K_ChSendTmo,",                          # depends on pipes
+"/* 73 */ K_ChSendTmo,",                          # depends on pipes and timers
 "/* 74 */ K_ChSendRpl,",                          # depends on pipes
 "/* 75 */ K_ChSendAck,",                          # depends on pipes
 "/* 76 */ K_ChRecvReq,",                          # depends on pipes
-"/* 77 */ K_ChRecvTmo,",                          # depends on pipes
+"/* 77 */ K_ChRecvTmo,",                          # depends on pipes and timers
 "/* 78 */ K_ChRecvRpl,",                          # depends on pipes
 "/* 79 */ K_ChRecvAck,",                          # depends on pipes
 "/* 80 */ K_ChMovedAck,",                         # depends on pipes
-"/* 81 */ _k_event_test_timeout"                  # required
+"/* 81 */ _k_event_test_timeout"                  # depends on timers
     ]
 
     # eliminate table entries for kernel services that project doesn't utilize
@@ -935,18 +946,23 @@ def kernel_main_c_kernel_services():
 
     if (num_timers == 0):
         func_table[12] = "/* 12 */ (kernelfunc) NULL,"
-        func_table[19] = "/* 19 */ (kernelfunc) NULL,"
         func_table[23] = "/* 23 */ (kernelfunc) NULL,"
         func_table[27] = "/* 27 */ (kernelfunc) NULL,"
         func_table[30] = "/* 30 */ (kernelfunc) NULL,"
         func_table[33] = "/* 33 */ (kernelfunc) NULL,"
         func_table[37] = "/* 37 */ (kernelfunc) NULL,"
+        func_table[40] = "/* 40 */ (kernelfunc) NULL,"
         func_table[41] = "/* 41 */ (kernelfunc) NULL,"
         func_table[42] = "/* 42 */ (kernelfunc) NULL,"
         func_table[49] = "/* 49 */ (kernelfunc) NULL,"
         func_table[50] = "/* 50 */ (kernelfunc) NULL,"
         func_table[51] = "/* 51 */ (kernelfunc) NULL,"
         func_table[52] = "/* 52 */ (kernelfunc) NULL,"
+        func_table[53] = "/* 53 */ (kernelfunc) NULL,"
+        func_table[64] = "/* 64 */ (kernelfunc) NULL,"
+        func_table[73] = "/* 73 */ (kernelfunc) NULL,"
+        func_table[77] = "/* 77 */ (kernelfunc) NULL,"
+        func_table[81] = "/* 81 */ (kernelfunc) NULL,"
 
     # generate function table
 
