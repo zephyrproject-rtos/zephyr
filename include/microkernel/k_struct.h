@@ -310,13 +310,6 @@ struct _e1arg {
 	kevent_handler_t func;
 };
 
-struct moved_req_args_rcv {
-	int iXferID;
-	uint32_t iDone;
-	struct k_args *Cont;
-	uint32_t Dummy;
-};
-
 struct moved_req_args_setup {
 	struct k_args *ContSnd;
 	struct k_args *ContRcv;
@@ -350,7 +343,6 @@ struct moved_req {
 	uint32_t iTotalSize;
 	union {
 		struct moved_req_args_setup Setup;
-		struct moved_req_args_rcv Rcv;
 	} Extra;
 };
 
