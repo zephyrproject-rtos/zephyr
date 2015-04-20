@@ -39,9 +39,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 
-/* LMP feature helpers */
-#define lmp_bredr_capable(dev)	(!((dev).features[4] & BT_LMP_NO_BREDR))
-#define lmp_le_capable(dev)	((dev).features[4] & BT_LMP_LE)
+#include "hci_core.h"
 
 /* Stacks for the fibers */
 #define RX_STACK_SIZE	1024
@@ -54,46 +52,7 @@ static char cmd_fiber_stack[CMD_STACK_SIZE];
 static struct bt_buf		buffers[NUM_BUFS];
 static struct nano_fifo		free_bufs;
 
-/* State tracking for the local Bluetooth controller */
-static struct bt_dev {
-	/* Local Bluetooth Device Address */
-	uint8_t			bdaddr[6];
-
-	/* Controller version & manufacturer information */
-	uint8_t			hci_version;
-	uint16_t		hci_revision;
-	uint16_t		manufacturer;
-
-	/* BR/EDR features page 0 */
-	uint8_t			features[8];
-
-	/* LE features */
-	uint8_t			le_features[8];
-
-	/* Advertising state */
-	uint8_t                 adv_enable;
-
-	/* Controller buffer information */
-	uint16_t		le_mtu;
-	uint8_t			le_pkts;
-	struct nano_sem		le_pkts_sem;
-
-	/* Number of commands controller can accept */
-	uint8_t			ncmd;
-	struct nano_sem		ncmd_sem;
-
-	/* Last sent HCI command */
-	struct bt_buf		*sent_cmd;
-
-	/* Queue for incoming HCI events & ACL data */
-	struct nano_fifo	rx_queue;
-
-	/* Queue for outgoing HCI commands */
-	struct nano_fifo	cmd_queue;
-
-	/* Registered HCI driver */
-	struct bt_driver	*drv;
-} dev;
+static struct bt_dev dev;
 
 struct bt_buf *bt_buf_get_reserve(size_t reserve_head)
 {
