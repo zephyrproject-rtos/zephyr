@@ -180,13 +180,6 @@ struct k_mrec {
 
 /* target channels types: */
 
-typedef uint32_t TIME_TYPE;
-#define _ALLTIME ((TIME_TYPE)0x00FF0000)
-#define _TIME_NB ((TIME_TYPE)0x00010000)
-#define _TIME_B ((TIME_TYPE)0x00020000)
-#define _TIME_BT ((TIME_TYPE)0x00040000)
-
-
 struct pipe_struct {
 	int iBufferSize; /* size in bytes, must be first for sysgen */
 	char *Buffer;    /* pointer to statically allocated buffer  */

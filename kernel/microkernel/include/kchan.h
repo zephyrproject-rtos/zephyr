@@ -45,6 +45,12 @@ typedef uint32_t REQ_TYPE;
 #define _SYNCREQL ((REQ_TYPE)0x00000200)
 #define _ASYNCREQ ((REQ_TYPE)0x00000400)
 
+typedef uint32_t TIME_TYPE;
+#define _ALLTIME ((TIME_TYPE)0x00FF0000)
+#define _TIME_NB ((TIME_TYPE)0x00010000)
+#define _TIME_B  ((TIME_TYPE)0x00020000)
+#define _TIME_BT ((TIME_TYPE)0x00040000)
+
 /* K functions: */
 
 extern void K_ChSendReq(struct k_args *ReqOrig);
