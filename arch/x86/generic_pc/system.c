@@ -105,6 +105,12 @@ static void uartGenericInfoInit(struct uart_init_info *p_info)
 
 #endif /* DO_CONSOLE_INIT  */
 
+#if defined(CONFIG_CONSOLE_HANDLER)
+extern void *_console_uart_stub;
+SYS_INT_REGISTER(_console_uart_stub,
+		 CONFIG_UART_CONSOLE_IRQ, CONFIG_UART_CONSOLE_INT_PRI);
+#endif /* CONFIG_CONSOLE_HANDLER */
+
 #if defined(DO_CONSOLE_INIT)
 
 /*******************************************************************************

@@ -45,13 +45,21 @@ b) When the BSP is written so that device ISRs are installed directly in the
 #include <toolchain.h>
 #include <sections.h>
 
+#if defined(CONFIG_CONSOLE_HANDLER)
+#include <board.h>
+#include <console/uart_console.h>
+#endif /* CONFIG_CONSOLE_HANDLER */
+
 extern void _IsrWrapper(void);
 typedef void (*vth)(void); /* Vector Table Handler */
 
 #if defined(CONFIG_SW_ISR_TABLE)
 
 vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)] = _IsrWrapper
+	[0 ...(CONFIG_NUM_IRQS - 1)] = _IsrWrapper,
+#if defined(CONFIG_CONSOLE_HANDLER)
+	[CONFIG_UART_CONSOLE_IRQ] = (vth)console_uart_isr,
+#endif
 };
 
 #elif !defined(CONFIG_IRQ_VECTOR_TABLE_CUSTOM)
@@ -61,7 +69,10 @@ extern void _SpuriousIRQ(void);
 /* placeholders: fill with real ISRs */
 
 vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)] = _SpuriousIRQ
+	[0 ...(CONFIG_NUM_IRQS - 1)] = _SpuriousIRQ,
+#if defined(CONFIG_CONSOLE_HANDLER)
+	[CONFIG_UART_CONSOLE_IRQ] = (vth)console_uart_isr,
+#endif
 };
 
 #endif /* CONFIG_SW_ISR_TABLE */

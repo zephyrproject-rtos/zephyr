@@ -37,8 +37,12 @@
   Hooks into the printk and fputc (for printf) modules. Poll driven.
 */
 
+#include <nanokernel.h>
+#include <nanokernel/cpu.h>
+
 #include <stdio.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <board.h>
 #include <drivers/uart.h>
@@ -106,6 +110,88 @@ extern void __printk_hook_install(int (*fn)(int));
 	} while ((0))
 #endif
 
+#if defined(CONFIG_CONSOLE_HANDLER)
+#define MAX_LINE_LENGTH 1024
+static char rcv_data[MAX_LINE_LENGTH];
+static uint8_t rcv_pos = 0;
+static void (*handler) (const char *string);
+
+static int read_uart(int uart, uint8_t *buf, unsigned int size)
+{
+	int rx;
+
+	rx = uart_fifo_read(uart, buf, size);
+	if (rx < 0) {
+		/* Overrun issue. Stop the UART */
+		uart_irq_rx_disable(uart);
+
+		return -EIO;
+	}
+
+	return rx;
+}
+
+void console_uart_isr(void *unused)
+{
+	ARG_UNUSED(unused);
+
+	while (uart_irq_update(UART) && uart_irq_is_pending(UART)) {
+		/* Character(s) have been received */
+		if (uart_irq_rx_ready(UART)) {
+			int rx;
+			uint8_t byte;
+
+			rx = read_uart(UART, &byte, 1);
+			if (rx < 0)
+				return;
+
+			/* Echo back to console */
+			uart_poll_out(UART, byte);
+
+			if (byte == '\r' || byte == '\n' ||
+			    rcv_pos == sizeof(rcv_data) - 1) {
+				rcv_data[rcv_pos] = '\0';
+				uart_poll_out(UART, '\n');
+				rcv_pos = 0;
+
+				if (handler)
+					handler(rcv_data);
+			} else {
+				rcv_data[rcv_pos++] = byte;
+			}
+
+		}
+	}
+}
+
+static void console_handler_init(void)
+{
+	uint8_t c;
+
+	uart_irq_rx_disable(UART);
+	uart_irq_tx_disable(UART);
+	uart_int_connect(UART, console_uart_isr, NULL, NULL);
+
+	/* Drain the fifo */
+	while (uart_irq_rx_ready(UART))
+		uart_fifo_read(UART, &c, 1);
+
+	uart_irq_rx_enable(UART);
+}
+
+void uart_register_handler(void (*cb) (const char *string))
+{
+	handler = cb;
+}
+#else
+#define console_handler_init(x)			\
+	do {/* nothing */			\
+	} while ((0))
+#define uart_register_handler(x)		\
+	do {/* nothing */			\
+	} while ((0))
+#endif
+
 /******************************************************************************
  *
  * uartConsoleInit - initialize one UART as the console/debug port
@@ -117,4 +203,5 @@ void uartConsoleInit(void)
 {
 	__stdout_hook_install(consoleOut);
 	__printk_hook_install(consoleOut);
+	console_handler_init();
 }

@@ -41,6 +41,15 @@ extern "C" {
 
 extern void uartConsoleInit(void);
 
+/*
+ * Register callback function which gets called when string typed in
+ * the serial console. Carriage return is translated to NULL making
+ * string always NULL terminated.
+ */
+void uart_register_handler(void (*cb) (const char *string));
+
+void console_uart_isr(void *unused);
+
 #ifdef __cplusplus
 }
 #endif
