@@ -228,8 +228,10 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 {
 	ksem_t *L;
 
+#ifndef CONFIG_TICKLESS_KERNEL
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
+#endif
 
 	L = A->Args.s1.list;
 	while (*L != ENDLIST) {
@@ -263,9 +265,11 @@ void _k_sem_group_ready(struct k_args *R)
 	if (A->Args.s1.sema == ENDLIST) {
 		A->Args.s1.sema = R->Args.s1.sema;
 		A->Comm = WAITMTMO;
+#ifndef CONFIG_TICKLESS_KERNEL
 		if (A->Time.timer)
 			force_timeout(A);
 		else
+#endif
 			_k_sem_group_wait_timeout(A);
 	}
 	FREEARGS(R);
@@ -280,14 +284,16 @@ void _k_sem_group_ready(struct k_args *R)
 
 void _k_sem_wait_reply(struct k_args *A)
 {
+#ifndef CONFIG_TICKLESS_KERNEL
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
 	if (A->Comm == WAITSTMO) {
 		REMOVE_ELM(A);
 		A->Time.rcode = RC_TIME;
 	} else
+#endif
 		A->Time.rcode = RC_OK;
-		reset_state_bit(A->Ctxt.proc, TF_SEMA);
+   	reset_state_bit(A->Ctxt.proc, TF_SEMA);
 }
 
 /*******************************************************************************
@@ -366,6 +372,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 	A->Ctxt.proc = _k_current_task;
 	set_state_bit(_k_current_task, TF_LIST);
 
+#ifndef CONFIG_TICKLESS_KERNEL
 	if (A->Time.ticks != TICKS_NONE) {
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;
@@ -374,6 +381,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 			enlist_timeout(A);
 		}
 	}
+#endif
 }
 
 /*******************************************************************************
