@@ -68,22 +68,10 @@ int _task_pipe_put(kpipe_t Id,
 		ChReq.ReqInfo.ChRef.Id = Id;
 		ChxxxSetChOpt((K_ARGS_ARGS *)&ChReq, Option);
 
-		/* check what type of synchr. Xfer: Not yet implemented
-		 */
+		ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
+		ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
+		ChReq.ReqType.Sync.pData = pBuffer;
 
-		/* special synchr. Xfer: Not yet implemented
-		   {
-		   ChxxxSetReqType( &ReqInfo, _SYNCREQL);
-		   ChReq.ReqType.SyncLocal.Data ...;
-		   ChReq.ReqType.SyncLocal.iSizeTotal =iNbrBytesToWrite;
-		   }
-		 */
-		/* normal synchr. Xfer: */
-		{
-			ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
-			ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
-			ChReq.ReqType.Sync.pData = pBuffer;
-		}
 		A.Args.ChReq = ChReq;
 	}
 

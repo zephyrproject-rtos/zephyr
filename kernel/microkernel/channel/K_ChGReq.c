@@ -80,19 +80,6 @@ void K_ChRecvReq(struct k_args *RequestOrig)
 				RequestProc->Args.ChProc.iSizeTotal =
 					Request->Args.ChReq.ReqType.Sync.iSizeTotal;
 				break;
-#if 0
-    /*
-     * This code is presently unreachable and as such has been if-def'd out.
-     * It is unreachable because the "calling code" for this special
-     * synchronous transfer case has not been implemented in
-     * KS_ChGet.c :: _task_pipe_get().
-     */
-
-			case _SYNCREQL:
-				RequestProc->Args.ChProc.pData = Request->Args.ChReq.ReqType.SyncLocal.Data;
-				RequestProc->Args.ChProc.iSizeTotal = Request->Args.ChReq.ReqType.SyncLocal.iSizeTotal;
-				break;
-#endif
 			default:
 				break;
 			}

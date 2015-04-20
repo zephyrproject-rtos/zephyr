@@ -230,11 +230,6 @@ struct sync_req {
 	int iSizeTotal;
 };
 
-struct sync_req_l {
-	int Data[5];
-	int iSizeTotal;
-};
-
 struct async_req {
 	struct k_block block;
 	int iSizeTotal;
@@ -245,7 +240,6 @@ struct k_chreq {
 	struct req_info ReqInfo;
 	union {
 		struct sync_req Sync;
-		struct sync_req_l SyncLocal;
 		struct async_req Async;
 	} ReqType;
 	int Dummy;
@@ -266,7 +260,6 @@ struct k_chack {
 	struct req_info ReqInfo;
 	union {
 		struct sync_req Dummy;
-		struct sync_req_l SyncLocal;
 		struct async_req Async;
 	} ReqType;
 	int iSizeXferred;
