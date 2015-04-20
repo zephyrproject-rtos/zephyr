@@ -37,8 +37,10 @@
 extern "C" {
 #endif
 
-extern int _task_mutex_lock(kmutex_t, int32_t);
-extern void _task_mutex_unlock(kmutex_t);
+#include  <microkernel/k_types.h>
+
+extern int _task_mutex_lock(kmutex_t mutex, int32_t time);
+extern void _task_mutex_unlock(kmutex_t mutex);
 
 #define task_mutex_lock(m) _task_mutex_lock(m, TICKS_NONE)
 #define task_mutex_lock_wait(m) _task_mutex_lock(m, TICKS_UNLIMITED)
