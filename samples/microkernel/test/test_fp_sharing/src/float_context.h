@@ -87,67 +87,11 @@ typedef struct fpNonVolatileRegSet
 #define SIZEOF_FP_VOLATILE_REG_SET sizeof(FP_VOLATILE_REG_SET)
 #define SIZEOF_FP_NONVOLATILE_REG_SET 0
 
-#elif defined(CONFIG_ISA_POWERPC)
 
-#if defined(CONFIG_FLOAT)
+#else /* ! CONFIG_ISA_IA32 */
 
-#define FP_OPTION USE_FP
-
-/* FP registers (64-bit) */
-typedef struct fpReg
-{
-	unsigned char reg[8];
-} FP_REG;
-
-/* the set of volatile floating point registers */
-
-typedef struct fpVolatileRegSet
-{
-	FP_REG fpRegs[14]; /* f0 -> f13 */
-} FP_VOLATILE_REG_SET;
-
-/* the set of non-volatile floating point registers */
-
-typedef struct fpNonVolatileRegSet
-{
-	FP_REG fpRegs[18]; /* f14 -> f31 */
-} FP_NONVOLATILE_REG_SET;
-
-#define SIZEOF_FP_VOLATILE_REG_SET sizeof(FP_VOLATILE_REG_SET)
-#define SIZEOF_FP_NONVOLATILE_REG_SET sizeof(FP_NONVOLATILE_REG_SET)
-
-#elif defined(CONFIG_SUPPORT_SPE)
-
-#define FP_OPTION USE_SPE
-
-/* FP registers (64-bit) */
-typedef struct fpReg
-{
-	unsigned char reg[4];
-} FP_REG;
-
-/* the set of volatile floating point registers */
-
-typedef struct fpVolatileRegSet
-{
-	FP_REG fpRegs[11]; /* r0, r3 -> r12 */
-} FP_VOLATILE_REG_SET;
-
-/* the set of non-volatile floating point registers */
-
-typedef struct fpNonVolatileRegSet
-{
-	FP_REG fpRegs[18]; /* r14 -> r31 */
-} FP_NONVOLATILE_REG_SET;
-
-#define SIZEOF_FP_VOLATILE_REG_SET sizeof(FP_VOLATILE_REG_SET)
-#define SIZEOF_FP_NONVOLATILE_REG_SET sizeof(FP_NONVOLATILE_REG_SET)
-
-#endif
-
-#else
 #error Architecture needs to provide a definition for 'struct fpRegSet' and 'struct fpNonVolatileRegSet'
-#endif
+#endif /* CONFIG_ISA_IA32 */
 
 /* the set of ALL floating point registers */
 

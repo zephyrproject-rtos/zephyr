@@ -56,18 +56,6 @@ to load ALL non-integer registers, but main() should validate that only the
 x87 FPU registers are being saved/restored.
 */
 
-#if defined(CONFIG_ISA_POWERPC)
-#if defined(CONFIG_FSL_E500V2)
-#if !defined(CONFIG_SUPPORT_SPE)
-#error The SUPPORT_SPE config option has to be enabled
-#endif
-#else
-#if !defined(CONFIG_FLOAT)
-#error The FLOAT config option has to be enabled
-#endif /* FLOAT */
-#endif /* E500V2 */
-#endif /* CONFIG_ISA_POWERPC */
-
 #if defined(CONFIG_ISA_IA32)
 #ifndef CONFIG_FLOAT
 #error Rebuild the nanokernel with the FLOAT config option enabled
@@ -170,13 +158,11 @@ void load_store_low(void)
 	 * No need to invoke task_float_enable() since
 	 * AUTOMATIC_FP_ENABLING is in effect
 	 */
-#else
+#else /* ! CONFIG_AUTOMATIC_FP_ENABLING */
 #if defined(CONFIG_FLOAT)
 	task_float_enable(context_self_get());
-#elif defined(CONFIG_SUPPORT_SPE)
-	nanoCpuTaskSpeEnable(context_self_get());
 #endif
-#endif
+#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 
 #ifdef CONFIG_NANOKERNEL
 	/*
@@ -196,7 +182,7 @@ void load_store_low(void)
 			 5,	/* priority */
 			 FP_OPTION /* options */
 			 );
-#else
+#elif defined (CONFIG_MICROKERNEL)
 	/*
 	 * For microkernel builds, preemption tasks are specified in the .vpf file.
 	 *
@@ -291,8 +277,7 @@ void load_store_low(void)
 			return;
 		}
 
-#if defined(CONFIG_AUTOMATIC_FP_ENABLING) || \
-	defined(CONFIG_AUTOMATIC_SPE_ENABLING)
+#if defined(CONFIG_AUTOMATIC_FP_ENABLING)
 		/*
 		 * After every 1000 iterations (arbitrarily chosen), explicitly
 		 * disable floating point operations for the task. The subsequent
@@ -306,8 +291,6 @@ void load_store_low(void)
 		if ((load_store_low_count % 1000) == 0) {
 #if defined(CONFIG_FLOAT)
 			task_float_disable(context_self_get());
-#elif defined(CONFIG_SUPPORT_SPE)
-			nanoCpuTaskSpeDisable(context_self_get());
 #endif
 		}
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */
@@ -385,8 +368,6 @@ void load_store_high(void)
 
 #if defined(CONFIG_ISA_IA32)
 		_LoadThenStoreAllFloatRegisters(&floatRegisterSet);
-#else
-		_LoadAllFloatRegisters(&floatRegisterSet);
 #endif
 
 		/*
@@ -404,74 +385,6 @@ void load_store_high(void)
 #else
 		task_sleep(1);
 #endif
-
-#ifndef CONFIG_ISA_IA32
-		/*
-		 * Clear the memory buffer (non-volatile register portion only).
-		 * Note that for CONFIG_ISA_IA32 configurations, the
-		 * FP_NONVOLATILE_REG_SET is empty, and thus has zero size.
-		 * As a result, there is no point in checking the non-volatile floating
-		 * point registers for the CONFIG_ISA_IA32 configuration option
-		 * because there are none.
-		 */
-
-		numNonVolatileBytes = 0;
-
-		for (bufIx = offsetof(FP_REG_SET, fpNonVolRegSet);
-		     numNonVolatileBytes < SIZEOF_FP_NONVOLATILE_REG_SET;
-		     ++bufIx, ++numNonVolatileBytes)
-			floatRegisterSetBytePtr[bufIx] = 0;
-
-		/*
-		 * Utilize an architecture specific function to dump the contents
-		 * of all the non-volatile floating point (and XMM on IA-32) registers
-		 * to memory. The routine will return the number of bytes that have
-		 * been dumped to memory.
-		 *
-		 * For architectures where all floating point registers are considered
-		 * volatile, no registers are expected to survive across a function call
-		 * (nanoTimerStart or nano_fiber_timer_wait) much less across a
-		 * (cooperative) context switch to a context (the background task in
-		 * this case) that is utilizing floating point.
-		 */
-
-		_StoreNonVolatileFloatRegisters(
-			&floatRegisterSet.fpNonVolRegSet);
-
-		/*
-		 * Compare each byte of buffer to ensure the expected values are
-		 * present. Given that at least one fiber, that is also using
-		 * floating point registers, is preempting the background task
-		 * every tick, the (lazy) floating point context save/restore
-		 * mechanism is being excerised.
-		 *
-		 * Display an error message and return if any discrepancies are
-		 * detected.
-		 */
-
-		numNonVolatileBytes = 0;
-		floatRegInitByte = FIBER_FLOAT_REG_CHECK_BYTE +
-				   offsetof(FP_REG_SET, fpNonVolRegSet);
-
-		for (bufIx = offsetof(FP_REG_SET, fpNonVolRegSet);
-		     numNonVolatileBytes < SIZEOF_FP_NONVOLATILE_REG_SET;
-		     ++bufIx, ++numNonVolatileBytes) {
-			if (floatRegisterSetBytePtr[bufIx] !=
-			    (char)floatRegInitByte) {
-				TC_ERROR("load_store_high found 0x%x instead of 0x%x"
-						 " @ offset 0x%x\n",
-						 floatRegisterSetBytePtr[bufIx],
-						 (char)floatRegInitByte,
-						 bufIx);
-				TC_ERROR("Discrepancy found during iteration %d\n",
-						 load_store_high_count);
-				fpu_sharing_error = 1;
-				return;
-			}
-
-			++floatRegInitByte;
-		}
-#endif /* !CONFIG_ISA_IA32 */
 
 		/* periodically issue progress report */
 
