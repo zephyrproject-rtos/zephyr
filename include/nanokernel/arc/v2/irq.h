@@ -73,7 +73,7 @@ extern void _irq_exit(void);
 
 /*******************************************************************************
 *
-* irq_lock_inline - disable all interrupts on the local CPU (inline)
+* irq_lock_inline - disable all interrupts on the CPU (inline)
 *
 * See irq_lock() for full description
 *
@@ -93,7 +93,7 @@ static ALWAYS_INLINE unsigned int irq_lock_inline(void)
 
 /*******************************************************************************
 *
-* irq_unlock_inline - enable all interrupts on the local CPU (inline)
+* irq_unlock_inline - enable all interrupts on the CPU (inline)
 *
 * See irq_unlock() for full description
 *

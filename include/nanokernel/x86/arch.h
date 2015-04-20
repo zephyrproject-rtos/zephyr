@@ -265,7 +265,7 @@ void _int_latency_stop (void);
 
 /*******************************************************************************
 *
-* irq_lock_inline - disable all interrupts on the local CPU (inline)
+* irq_lock_inline - disable all interrupts on the CPU (inline)
 *
 * This routine disables interrupts.  It can be called from either interrupt,
 * task or fiber level.  This routine returns an architecture-dependent
@@ -339,9 +339,9 @@ __asm volatile unsigned int irq_lock_inline (void)
 
 /*******************************************************************************
 *
-* irq_unlock_inline - enable all interrupts on the local CPU (inline)
+* irq_unlock_inline - enable all interrupts on the CPU (inline)
 *
-* This routine re-enables interrupts on the local CPU.  The <key> parameter
+* This routine re-enables interrupts on the CPU.  The <key> parameter
 * is an architecture-dependent lock-out key that is returned by a previous
 * invocation of irq_lock_inline().
 *
