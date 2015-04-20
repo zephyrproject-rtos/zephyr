@@ -43,7 +43,7 @@
 /* forward declarations */
 
 
-static void mvdreq_LILC(struct moved_req *ReqArgs);
+static void mvdreq_copy(struct moved_req *ReqArgs);
 
 static void mvdreq_docont(struct k_args *Cont);
 
@@ -83,19 +83,17 @@ void K_mvdreq(struct k_args *Req)
 		return;
 	}
 
-/* local memcpy? :
- */
-	mvdreq_LILC(ReqArgs);
+	mvdreq_copy(ReqArgs);
 }
 
 /*******************************************************************************
 *
-* mvdreq_LILC - locally initiated, locally copied movedata request
+* mvdreq_copy - perform movedata request
 *
 * RETURNS: N/A
 */
 
-static void mvdreq_LILC(struct moved_req *ReqArgs)
+static void mvdreq_copy(struct moved_req *ReqArgs)
 {
 	k_memcpy_s(ReqArgs->destination,
 		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize),
