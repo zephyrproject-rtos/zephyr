@@ -54,8 +54,6 @@
 
 static void copypacket(struct k_args **out, struct k_args *in)
 {
-	/* As <in> is a local packet, get a new command packet. */
-
 	GETARGS(*out);
 
 	/*
@@ -250,9 +248,8 @@ void K_sendack(struct k_args *pCopyWriter)
 		}
 
 		/*
-		 * release the block from the memory pool:
-		 * (if necessary: if task_mbox_data_get_async_block(),
-		 * and local xfer, we should NOT! )
+		 * release the block from the memory pool
+		 * unless this an asynchronous transfer.
 		 */
 
 		if ((uint32_t)(-1) !=
@@ -334,8 +331,8 @@ void K_sendreq(struct k_args *Writer)
 	struct k_proc *sender = NULL;
 
 	/*
-	 * A local task generated this request.  Only deschedule the
-	 * task if it is not a poster (not an asynchronous request).
+	 * Only deschedule the task if it is not a poster
+	 * (not an asynchronous request).
 	 */
 
 	if (!bAsync) {
@@ -571,7 +568,6 @@ void K_recvreq(struct k_args *Reader)
 	struct k_args *temp;
 	struct k_args *CopyReader;
 
-	/* A local task generated this request */
 	Reader->Ctxt.proc = K_Task;
 	set_state_bit(Reader->Ctxt.proc, TF_RECV);
 
@@ -768,7 +764,6 @@ void K_recvdata(struct k_args *Starter)
 	struct k_args *MoveD;
 	struct k_args *Writer;
 
-	/* A local task generated this request */
 	Starter->Ctxt.proc = K_Task;
 	set_state_bit(K_Task, TF_RECVDATA);
 
@@ -865,15 +860,6 @@ int _task_mbox_data_get_async_block(struct k_msg *message,
 	/* special flow to check for possible optimisations: */
 
 	if (ISASYNCMSG(message)) {
-		/*
-		 * The message is asynchronous.  Thus, if the tx pool is
-		 * local, then the poster is local too.  The receiver too
-		 * is on this node.  If the mailbox is local too, then
-		 * the processing of the associated MOVED & continuation
-		 * packets can also be simplified since they are also on
-		 * this node.
-		 */
-
 		/* First transfer block */
 		__ASSERT_NO_MSG(-1 != message->tx_block.poolid);
 		*rxblock = message->tx_block;
@@ -955,7 +941,7 @@ void K_senddata(struct k_args *Starter)
 	struct k_args *CopyStarter;
 	struct k_args *MoveD;
 	struct k_args *Reader;
-	/* A local task generated this request */
+
 	Starter->Ctxt.proc = K_Task;
 	set_state_bit(K_Task, TF_SENDDATA);
 
