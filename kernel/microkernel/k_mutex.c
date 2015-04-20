@@ -78,6 +78,7 @@ void _k_mutex_lock_reply(
 	struct k_args *A /* pointer to mutex lock reply request arguments */
 	)
 {
+#ifndef CONFIG_TICKLESS_KERNEL
 	struct mutex_struct *Mutex; /* pointer to internal mutex structure */
 	struct k_args *PrioChanger; /* used to change a task's priority level */
 	struct k_args *FirstWaiter; /* pointer to first task in wait queue */
@@ -138,6 +139,11 @@ void _k_mutex_lock_reply(
 	} else {/* LOCK_RPL: Reply case */
 		A->Time.rcode = RC_OK;
 	}
+#else
+	/* LOCK_RPL: Reply case */
+	A->Time.rcode = RC_OK;
+#endif
+
 	reset_state_bit(A->Ctxt.proc, TF_LOCK);
 }
 
