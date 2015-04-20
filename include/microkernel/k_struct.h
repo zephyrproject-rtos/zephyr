@@ -394,11 +394,6 @@ struct _u1arg {
 	int rval;
 };
 
-struct _x1arg {
-	struct nano_lifo *chan;
-	int parm[7];
-};
-
 struct _z1arg {
 	int Comm;
 	int Nitem;
@@ -444,7 +439,6 @@ union k_args_args {
 	struct _q2arg q2;
 	struct _s1arg s1;
 	struct _u1arg u1;
-	struct _x1arg x1;
 	struct _z1arg z1;
 	struct _z2arg z2;
 	struct _z3arg z3;
