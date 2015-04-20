@@ -81,6 +81,16 @@ struct bt_hci_cp_set_event_mask {
 
 #define BT_HCI_OP_RESET				BT_OP(BT_OGF_BASEBAND, 0x0003)
 
+#define BT_HCI_OP_SET_CTL_TO_HOST_FLOW		BT_OP(BT_OGF_BASEBAND, 0x0031)
+
+#define BT_HCI_OP_HOST_BUFFER_SIZE		BT_OP(BT_OGF_BASEBAND, 0x0033)
+struct bt_hci_cp_host_buffer_size {
+	uint16_t acl_mtu;
+	uint8_t  sco_mtu;
+	uint16_t acl_pkts;
+	uint16_t sco_pkts;
+} PACK_STRUCT;
+
 #define BT_HCI_OP_LE_WRITE_LE_HOST_SUPP		BT_OP(BT_OGF_BASEBAND, 0x006d)
 struct bt_hci_cp_write_le_host_supp {
 	uint8_t  le;

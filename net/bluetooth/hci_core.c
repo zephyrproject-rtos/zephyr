@@ -505,8 +505,10 @@ static void hci_rx_fiber(void)
 
 static int hci_init(void)
 {
+	struct bt_hci_cp_host_buffer_size *hbs;
 	struct bt_hci_cp_set_event_mask *ev;
 	struct bt_buf *buf;
+	uint8_t *enable;
 
 	/* Send HCI_RESET */
 	bt_hci_cmd_send(BT_HCI_OP_RESET, NULL);
@@ -553,6 +555,26 @@ static int hci_init(void)
 	}
 
 	bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE, sizeof(*hbs));
+	if (!buf)
+		return -ENOBUFS;
+
+	hbs = (void *)bt_buf_add(buf, sizeof(*hbs));
+	memset(hbs, 0, sizeof(*hbs));
+	hbs->acl_mtu = sys_cpu_to_le16(BT_BUF_MAX_DATA -
+				       sizeof(struct bt_hci_acl_hdr));
+	hbs->acl_pkts = sys_cpu_to_le16(ACL_IN_MAX);
+
+	bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
+	if (!buf)
+		return -ENOBUFS;
+
+	enable = (void *)bt_buf_add(buf, sizeof(*enable));
+	*enable = 0x01;
+	bt_hci_cmd_send(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf);
 
 	if (lmp_bredr_capable(dev)) {
 		struct bt_hci_cp_write_le_host_supp *cp;
