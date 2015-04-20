@@ -51,3 +51,11 @@ config	PRINTK
 	  rather than suppressing the generation of printk() output entirely.
 	  Output is sent immediately, without any mutual exclusion or
 	  buffering.
+
+config	UART_HOSTDRV_INTERRUPT_DRIVEN
+	bool
+	prompt "Interrupt driven UART support"
+	default n
+	help
+	  This option enables interrupt support for UART allowing console
+	  input and UART based drivers.
