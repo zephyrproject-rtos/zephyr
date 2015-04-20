@@ -102,20 +102,11 @@ config	KHEAP_SIZE
 	  This option specifies the size of the kernel heap used by malloc().
 	  The size of this heap cannot be later increased at run time.
 
-config	NUM_TIMER_PACKETS
-	int
-	prompt "Number of timer packets"
-	default 10
-	depends on MICROKERNEL
-	help
-	  This option specifies the number of timer packets to create. Each
-	  explicit and implicit timer usage consumes one timer packet.
-
 config  SYS_CLOCK_TICKS_PER_SEC
 	int
-	prompt "System tick frequency (in ticks/second)"
+	prompt "System tick frequency" if !NO_ISRS
+	default 0 if NO_ISRS
 	default 100
-	depends on !NO_ISRS
 	help
 	  This option specifies the frequency of the system clock in Hz.
 
@@ -139,11 +130,21 @@ config	TICKLESS_KERNEL
 	help
 	  This option specifies that the kernel lacks timer support.
 
+config	NUM_TIMER_PACKETS
+	int
+	prompt "Number of timer packets" if !TICKLESS_KERNEL
+	default 0 if TICKLESS_KERNEL
+	default 10
+	depends on MICROKERNEL
+	help
+	  This option specifies the number of timer packets to create. Each
+	  explicit and implicit timer usage consumes one timer packet.
+
 config  TIMESLICING
 	bool
 	prompt "Task time slicing"
 	default y
-	depends on MICROKERNEL
+	depends on MICROKERNEL && !TICKLESS_KERNEL
 	help
 	  This option enables time slicing between tasks of equal priority.
 
