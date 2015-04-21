@@ -79,7 +79,6 @@ extern void init_drivers(void); /* generated function */
 extern const knode_t K_ThisNode;
 extern int K_StackSize;
 
-extern void *K_DataBlockPtr;
 extern struct k_args *K_ArgsBlockPtr;
 extern K_TIMER *K_TimerBlockPtr;
 extern void *_minik_stckp;
