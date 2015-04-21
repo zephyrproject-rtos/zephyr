@@ -130,6 +130,9 @@ static void consoleInit(void)
 void _InitHardware(void)
 {
 	consoleInit(); /* NOP if not needed */
-	NMI_INIT();    /* install default handler that simply resets the CPU
-		     * if configured in the kernel, NOP otherwise */
+
+	/* Install default handler that simply resets the CPU
+	 * if configured in the kernel, NOP otherwise
+	 */
+	NMI_INIT();
 }
