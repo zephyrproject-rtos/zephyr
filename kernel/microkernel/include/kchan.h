@@ -74,7 +74,6 @@ void setup_movedata(struct k_args *A,
 		    struct k_args *pWriter,
 		    struct k_args *pReader,
 		    void *destination,
-		    knode_t srcnode,
 		    void *source,
 		    uint32_t size,
 		    int XferID);

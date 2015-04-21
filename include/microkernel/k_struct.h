@@ -353,7 +353,6 @@ typedef uint32_t MovedAction;
 
 struct moved_req {
 	MovedAction Action;
-	knode_t srcnode;
 	void *source;
 	void *destination;
 	uint32_t iTotalSize;

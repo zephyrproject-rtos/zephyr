@@ -95,7 +95,6 @@ void K_ChProcWO(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 			pWriter,
 			NULL,
 			pWrite,
-			pWriterArgs->DataNode,
 			(char *)(pWriterArgs->pData) +
 				OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
 			ret,

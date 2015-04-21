@@ -162,7 +162,6 @@ void K_ChProcWR(
 			pReader,
 			(char *)(pReaderArgs->pData) +
 				OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
-			pWriterArgs->DataNode,
 			(char *)(pWriterArgs->pData) +
 				OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
 			iT2,
