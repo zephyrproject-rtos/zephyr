@@ -354,7 +354,6 @@ struct moved_req {
 	MovedAction Action;
 	knode_t srcnode;
 	void *source;
-	knode_t destnode;
 	void *destination;
 	uint32_t iTotalSize;
 	union {

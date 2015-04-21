@@ -160,7 +160,6 @@ void K_ChProcWR(
 			XFER_W2R,
 			pWriter,
 			pReader,
-			pReaderArgs->DataNode,
 			(char *)(pReaderArgs->pData) +
 				OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
 			pWriterArgs->DataNode,

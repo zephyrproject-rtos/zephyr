@@ -53,7 +53,6 @@ void setup_movedata(struct k_args *A,
 					  XFER_TYPE XferType,
 					  struct k_args *pWriter,
 					  struct k_args *pReader,
-					  knode_t destnode,
 					  void *destination,
 					  knode_t srcnode,
 					  void *source,
@@ -68,7 +67,6 @@ void setup_movedata(struct k_args *A,
 	A->Args.MovedReq.Action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
 	A->Args.MovedReq.srcnode = srcnode;
 	A->Args.MovedReq.source = source;
-	A->Args.MovedReq.destnode = destnode;
 	A->Args.MovedReq.destination = destination;
 	A->Args.MovedReq.iTotalSize = size;
 

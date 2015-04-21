@@ -94,7 +94,6 @@ void K_ChProcWO(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 			XFER_W2B,
 			pWriter,
 			NULL,
-			K_ThisNode,
 			pWrite,
 			pWriterArgs->DataNode,
 			(char *)(pWriterArgs->pData) +

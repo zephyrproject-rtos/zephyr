@@ -93,7 +93,6 @@ void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pNewReader)
 			XFER_B2R,
 			NULL,
 			pReader,
-			pReaderArgs->DataNode,
 			(char *)(pReaderArgs->pData) +
 				OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
 			K_ThisNode,
