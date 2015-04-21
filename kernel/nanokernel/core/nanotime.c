@@ -37,11 +37,15 @@
 #include <sections.h>
 #include <drivers/system_timer.h>
 
-/* units: us/tick */
+#ifndef CONFIG_TICKLESS_KERNEL
 int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
-/* units: # clock cycles/tick */
 int sys_clock_hw_cycles_per_tick =
 	sys_clock_hw_cycles_per_sec / sys_clock_ticks_per_sec;
+#else
+/* don't initialize to avoid division-by-zero error */
+int sys_clock_us_per_tick;
+int sys_clock_hw_cycles_per_tick;
+#endif
 
 uint32_t _nano_ticks = 0;
 struct nano_timer *_nano_timer_list = NULL;
