@@ -55,11 +55,8 @@ iKERNEL_MAIN_C = ${iSYSGEN_OUT}/kernel_main.$c
 #####
 # extra generated headers
 #
-# include/microkernel is needed because kernel_main.c includes "k_boot.h",
-# not "microkernel/k_boot.h"
 iKTYPE_kapp_INC += $(strip \
 	${iSYSGEN_OUT} \
-	${vBASE}/include/microkernel \
 )
 iKTYPE_kapp_SRC += ${iKERNEL_MAIN_C}
 
