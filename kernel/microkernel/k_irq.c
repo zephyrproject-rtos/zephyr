@@ -187,7 +187,7 @@ int _task_irq_test(kirq_t irq_obj, /* IRQ object identifier */
 	__ASSERT(task_irq_object[irq_obj].taskId == task_id_get(),
 			 "Incorrect Task ID");
 
-	return task_event_recv_wait_timeout(task_irq_object[irq_obj].event, time);
+	return _task_event_recv(task_irq_object[irq_obj].event, time);
 }
 
 /*******************************************************************************

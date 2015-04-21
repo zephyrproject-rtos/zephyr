@@ -37,6 +37,9 @@
 
 #define task_irq_test(irq_obj) _task_irq_test(irq_obj, TICKS_NONE)
 #define task_irq_test_wait(irq_obj) _task_irq_test(irq_obj, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
 #define task_irq_test_wait_timeout(irq_obj, time) _task_irq_test(irq_obj, time)
+#endif
 
 #endif /* _task_irq_api_export__h_ */
