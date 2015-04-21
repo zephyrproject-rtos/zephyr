@@ -493,21 +493,11 @@ void _k_task_sleep(struct k_args *P)
 void task_sleep(int32_t ticks /* number of ticks for which to sleep */
 		  )
 {
-#ifndef CONFIG_TICKLESS_KERNEL
 	struct k_args A;
 
 	A.Comm = SLEEP;
 	A.Time.ticks = ticks;
 	KERNEL_ENTRY(&A);
-#else
-	int64_t t = task_node_tick_get();
-	int64_t total = 0;
-
-	do {
-		task_yield();
-		total += task_node_tick_delta(&t);
-	} while (total < ticks);
-#endif
 }
 
 /*******************************************************************************

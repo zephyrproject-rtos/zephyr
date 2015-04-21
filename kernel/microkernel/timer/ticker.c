@@ -60,19 +60,22 @@ static kpriority_t slice_prio =
 int32_t _sys_idle_elapsed_ticks = 0; /* Initial value must be 0 */
 #endif
 
-/* units: us/tick */
+#ifndef CONFIG_TICKLESS_KERNEL
 int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
-/* units: # clock cycles/tick */
 int sys_clock_hw_cycles_per_tick =
 	sys_clock_hw_cycles_per_sec / sys_clock_ticks_per_sec;
+#else
+/* don't initialize to avoid division-by-zero error */
+int sys_clock_us_per_tick;
+int sys_clock_hw_cycles_per_tick;
+#endif
 
 /*******************************************************************************
 *
 * _HandleExpiredTimers - handle expired timers
 *
-* If a non-tickless microkernel is configured, process the sorted list of
-* timers associated with waiting tasks and activate each task whose timer
-* has now expired.
+* Process the sorted list of timers associated with waiting tasks and
+* activate each task whose timer has now expired.
 *
 * With tickless idle, a tick announcement may encompass multiple ticks.
 * Due to limitations of the underlying timer driver, the number of elapsed
@@ -89,9 +92,6 @@ int sys_clock_hw_cycles_per_tick =
 
 static inline void _HandleExpiredTimers(int ticks)
 {
-#ifdef CONFIG_TICKLESS_KERNEL
-/* do nothing */
-#else
 	K_TIMER *T;
 
 	while (_k_timer_list_head != NULL) {
@@ -118,7 +118,6 @@ static inline void _HandleExpiredTimers(int ticks)
 
 		ticks = 0; /* don't decrement duration for subsequent timer(s) */
 	}
-#endif
 }
 
 /*******************************************************************************

@@ -39,10 +39,8 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#ifndef CONFIG_TICKLESS_KERNEL
 K_TIMER  *_k_timer_list_head = NULL;
 K_TIMER  *_k_timer_list_tail = NULL;
-#endif
 
 int64_t _k_sys_clock_tick_count = 0;
 
