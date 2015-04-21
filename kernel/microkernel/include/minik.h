@@ -66,10 +66,6 @@ extern int K_QueCount;
 extern int K_PoolCount;
 extern int K_PipeCount;
 
-#ifndef LITE
-extern int K_TimerNall;
-#endif
-
 extern struct k_proc *K_Task;
 extern uint32_t K_PrioBitMap[];
 
