@@ -12,7 +12,8 @@ minimal (a "do nothing" image that has support for few kernel capabilities)
 -------
 - Idle task is only task in system.
 - K_swapper is only fiber in system.
-- ISRs for the system timer and spurious interrupt handling are present.
+- No system timer support.
+- ISR for the spurious interrupt handling is present.
 - IDT and stack memory sizes are very limited.
 - Provides support for 2 task priorities.
 
@@ -23,7 +24,7 @@ regular (a "typical" image that has support for some kernel capabilities)
 - A statically linked dummy ISR is present.
 - Has "foreground" task that prints a message to the console via printk().
 - Provides support for 16 task priorities.
-- Enables task scheduler support for time slicing.
+- Supports system timer, along with task scheduler support for time slicing.
 - Links in support for EVENT, MUTEX, FIFO, and MAP objects.
 
 maximal (a "complex" image that has support for many kernel capabilities)
