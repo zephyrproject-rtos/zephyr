@@ -32,10 +32,10 @@
 
 /* includes */
 
-#include "microkernel/k_struct.h"
-#include "kchan.h"
-#include "minik.h"
-#include "toolchain.h"
+#include <microkernel/k_struct.h>
+#include <kchan.h>
+#include <minik.h>
+#include <toolchain.h>
 
 /*******************************************************************************
 *

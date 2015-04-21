@@ -30,13 +30,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "microkernel/k_struct.h"
-#include "kchan.h"
-#include "minik.h"
-#include "kticks.h"
-#include "kmemcpy.h"
-#include "ksema.h"
-#include "kmemp.h"
+#include <microkernel/k_struct.h>
+#include <kchan.h>
+#include <minik.h>
+#include <kticks.h>
+#include <kmemcpy.h>
+#include <ksema.h>
+#include <kmemp.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>

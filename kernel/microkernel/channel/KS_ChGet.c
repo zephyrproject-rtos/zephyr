@@ -30,10 +30,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "microkernel/k_struct.h"
-#include "kchan.h"
-#include "minik.h"
-#include "toolchain.h"
+#include <microkernel/k_struct.h>
+#include <kchan.h>
+#include <minik.h>
+#include <toolchain.h>
 
 /*****************************************************************************/
 int _task_pipe_get(kpipe_t Id,

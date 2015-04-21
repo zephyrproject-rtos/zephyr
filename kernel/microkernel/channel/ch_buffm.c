@@ -38,10 +38,10 @@ extern "C" {
 /******************************************************************/
 
 #include <stddef.h>
-#include "microkernel/k_types.h"
-#include "microkernel/k_chstr.h" /* definition of all channel related data \
+#include <microkernel/k_types.h>
+#include <microkernel/k_chstr.h> /* definition of all channel related data \
 				    structures */
-#include "ch_buffm.h"
+#include <ch_buffm.h>
 #include <string.h>
 #include <toolchain.h>
 #include <sections.h>

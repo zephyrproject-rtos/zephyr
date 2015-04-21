@@ -42,9 +42,9 @@
 extern "C" {
 #endif
 
-#include "microkernel/k_types.h"
-#include "ch_buff.h"
-#include "ch_buffm.h"
+#include <microkernel/k_types.h>
+#include <ch_buff.h>
+#include <ch_buffm.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
