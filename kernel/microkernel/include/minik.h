@@ -66,7 +66,6 @@ extern int K_QueCount;
 extern int K_PoolCount;
 extern int K_PipeCount;
 
-extern int K_DataNall;
 extern int K_ArgsNall;
 #ifndef LITE
 extern int K_TimerNall;
