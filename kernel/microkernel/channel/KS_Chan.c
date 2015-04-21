@@ -51,24 +51,13 @@ int task_pipe_put(kpipe_t id,
 		  int *NrOfBytesWritten,
 		  K_PIPE_OPTION opt)
 {
-	if (OBJ_NODE(id) != 0) { /* a target channel */
-		if (unlikely(pKS_Channel_PutWT == NULL))
-			return RC_FAIL; /* or an assert */
+	if (unlikely(pKS_Channel_PutWT == NULL))
+		return RC_FAIL; /* or an assert */
 
-		return (*pKS_Channel_PutWT)(id,
-					    buffer,
-					    NrOfBytesToWrite,
-					    NrOfBytesWritten,
-					    opt,
-					    TICKS_NONE);
-	} else {
-		/* a host channel */
-		if (unlikely(pHS_Channel_Put == NULL))
-			return RC_FAIL; /* or an assert */
-
-		return (*pHS_Channel_Put)(
-			id, buffer, NrOfBytesToWrite, NrOfBytesWritten, opt);
-	}
+	return (*pKS_Channel_PutWT)(id, buffer,
+					NrOfBytesToWrite,
+					NrOfBytesWritten,
+					opt, TICKS_NONE);
 }
 
 /*******************************************************************************
@@ -84,24 +73,13 @@ int task_pipe_put_wait(kpipe_t id,
 		   int *NrOfBytesWritten,
 		   K_PIPE_OPTION opt)
 {
-	if (OBJ_NODE(id) != 0) { /* a target channel */
-		if (unlikely(pKS_Channel_PutWT == NULL))
-			return RC_FAIL; /* or an assert */
+	if (unlikely(pKS_Channel_PutWT == NULL))
+		return RC_FAIL; /* or an assert */
 
-		return (*pKS_Channel_PutWT)(id,
-					    buffer,
-					    NrOfBytesToWrite,
-					    NrOfBytesWritten,
-					    opt,
-					    TICKS_UNLIMITED);
-	} else {
-		/* a host channel */
-		if (unlikely(pHS_Channel_PutW == NULL))
-			return RC_FAIL; /* or an assert */
-
-		return (*pHS_Channel_PutW)(
-			id, buffer, NrOfBytesToWrite, NrOfBytesWritten, opt);
-	}
+	return (*pKS_Channel_PutWT)(id, buffer,
+					NrOfBytesToWrite,
+					NrOfBytesWritten,
+					opt, TICKS_UNLIMITED);
 }
 
 /*******************************************************************************
@@ -118,28 +96,13 @@ int task_pipe_put_wait_timeout(kpipe_t id,
 		    K_PIPE_OPTION opt,
 		    int32_t TimeOut)
 {
-	if (OBJ_NODE(id) != 0) { /* a target channel */
-		if (unlikely(pKS_Channel_PutWT == NULL))
-			return RC_FAIL; /* or an assert */
+	if (unlikely(pKS_Channel_PutWT == NULL))
+		return RC_FAIL; /* or an assert */
 
-		return (*pKS_Channel_PutWT)(id,
-					    buffer,
-					    NrOfBytesToWrite,
-					    NrOfBytesWritten,
-					    opt,
-					    TimeOut);
-	} else {
-		/* a host channel */
-		if (unlikely(pHS_Channel_PutWT == NULL))
-			return RC_FAIL; /* or an assert */
-
-		return (*pHS_Channel_PutWT)(id,
-					    buffer,
-					    NrOfBytesToWrite,
-					    NrOfBytesWritten,
-					    opt,
-					    TimeOut);
-	}
+	return (*pKS_Channel_PutWT)(id, buffer,
+					NrOfBytesToWrite,
+					NrOfBytesWritten,
+					opt, TimeOut);
 }
 
 /*******************************************************************************
@@ -155,24 +118,13 @@ int task_pipe_get(kpipe_t id,
 		  int *NrOfBytesRead,
 		  K_PIPE_OPTION opt)
 {
-	if (OBJ_NODE(id) != 0) { /* a target channel */
-		if (unlikely(pKS_Channel_GetWT == NULL))
-			return RC_FAIL; /* or an assert */
+	if (unlikely(pKS_Channel_GetWT == NULL))
+		return RC_FAIL; /* or an assert */
 
-		return (*pKS_Channel_GetWT)(id,
-					    buffer,
-					    NrOfBytesToRead,
-					    NrOfBytesRead,
-					    opt,
-					    TICKS_NONE);
-	} else {
-		/* a host channel */
-		if (unlikely(pHS_Channel_Get == NULL))
-			return RC_FAIL; /* or an assert */
-
-		return (*pHS_Channel_Get)(
-			id, buffer, NrOfBytesToRead, NrOfBytesRead, opt);
-	}
+	return (*pKS_Channel_GetWT)(id, buffer,
+					NrOfBytesToRead,
+					NrOfBytesRead,
+					opt, TICKS_NONE);
 }
 
 /*******************************************************************************
@@ -188,22 +140,12 @@ int task_pipe_get_wait(kpipe_t id,
 		   int *NrOfBytesRead,
 		   K_PIPE_OPTION opt)
 {
-	if (OBJ_NODE(id) != 0) { /* a target channel */
-		if (unlikely(pKS_Channel_GetWT == NULL))
-			return RC_FAIL; /* or an assert */
-		return (*pKS_Channel_GetWT)(id,
-					    buffer,
-					    NrOfBytesToRead,
-					    NrOfBytesRead,
-					    opt,
-					    TICKS_UNLIMITED);
-	} else {
-		/* a host channel */
-		if (unlikely(pHS_Channel_GetW == NULL))
-			return RC_FAIL; /* or an assert */
-		return (*pHS_Channel_GetW)(
-			id, buffer, NrOfBytesToRead, NrOfBytesRead, opt);
-	}
+	if (unlikely(pKS_Channel_GetWT == NULL))
+		return RC_FAIL; /* or an assert */
+	return (*pKS_Channel_GetWT)(id, buffer,
+					NrOfBytesToRead,
+					NrOfBytesRead,
+					opt, TICKS_UNLIMITED);
 }
 
 /*******************************************************************************
@@ -220,24 +162,10 @@ int task_pipe_get_wait_timeout(kpipe_t id,
 		    K_PIPE_OPTION opt,
 		    int32_t TimeOut)
 {
-	if (OBJ_NODE(id) != 0) { /* a target channel */
-		if (unlikely(pKS_Channel_GetWT == NULL))
-			return RC_FAIL; /* or an assert */
-		return (*pKS_Channel_GetWT)(id,
-					    buffer,
-					    NrOfBytesToRead,
-					    NrOfBytesRead,
-					    opt,
-					    TimeOut);
-	} else {
-		/* a host channel */
-		if (unlikely(pHS_Channel_GetWT == NULL))
-			return RC_FAIL; /* or an assert */
-		return (*pHS_Channel_GetWT)(id,
-					    buffer,
-					    NrOfBytesToRead,
-					    NrOfBytesRead,
-					    opt,
-					    TimeOut);
-	}
+	if (unlikely(pKS_Channel_GetWT == NULL))
+		return RC_FAIL; /* or an assert */
+	return (*pKS_Channel_GetWT)(id, buffer,
+					NrOfBytesToRead,
+					NrOfBytesRead,
+					opt, TimeOut);
 }

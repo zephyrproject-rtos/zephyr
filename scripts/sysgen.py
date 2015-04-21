@@ -602,12 +602,6 @@ def kernel_main_c_pipes():
     # pipe variables [should probably be eliminated]
 
     kernel_main_c_out("\n" +
-        "PFN_CHANNEL_RW  pHS_Channel_Put = (PFN_CHANNEL_RW)NULL;\n" +
-        "PFN_CHANNEL_RW  pHS_Channel_PutW = (PFN_CHANNEL_RW)NULL;\n" +
-        "PFN_CHANNEL_RWT pHS_Channel_PutWT = (PFN_CHANNEL_RWT)NULL;\n" +
-        "PFN_CHANNEL_RW  pHS_Channel_Get = (PFN_CHANNEL_RW)NULL;\n" +
-        "PFN_CHANNEL_RW  pHS_Channel_GetW = (PFN_CHANNEL_RW)NULL;\n" +
-        "PFN_CHANNEL_RWT pHS_Channel_GetWT = (PFN_CHANNEL_RWT)NULL;\n" +
         "PFN_CHANNEL_RWT pKS_Channel_PutWT = _task_pipe_put;\n" +
         "PFN_CHANNEL_RWT pKS_Channel_GetWT = _task_pipe_get;\n")
 

@@ -88,17 +88,11 @@ typedef int (*PFN_CHANNEL_RWT)(kpipe_t,
 			       K_PIPE_OPTION,
 			       int32_t);
 
-extern PFN_CHANNEL_RW pHS_Channel_Put;    /* maps to HS_ChannelPut */
-extern PFN_CHANNEL_RW pHS_Channel_PutW;   /* maps to HS_ChannelPutW */
 extern PFN_CHANNEL_RWT pKS_Channel_PutWT; /* maps to KS__ChannelPutWT
 							== _task_pipe_put */
-extern PFN_CHANNEL_RWT pHS_Channel_PutWT; /* maps to HS_ChannelPutWT */
 
-extern PFN_CHANNEL_RW pHS_Channel_Get;    /* maps to HS_ChannelGet */
-extern PFN_CHANNEL_RW pHS_Channel_GetW;   /* maps to HS_ChannelGetW */
 extern PFN_CHANNEL_RWT pKS_Channel_GetWT; /* maps to KS__ChannelGetWT
 							== _task_pipe_get */
-extern PFN_CHANNEL_RWT pHS_Channel_GetWT; /* maps to HS_ChannelGetWT */
 
 /* mapping of KS__ChannelXXX() to _task_pipe_xxx() functions */
 #define KS__ChannelPutWT _task_pipe_put

@@ -109,12 +109,6 @@ extern int K_PoolCount;
 extern int K_PipeCount;
 extern const int K_max_eventnr;
 
-extern PFN_CHANNEL_RW pHS_Channel_Put;
-extern PFN_CHANNEL_RW pHS_Channel_PutW;
-extern PFN_CHANNEL_RWT pHS_Channel_PutWT;
-extern PFN_CHANNEL_RW pHS_Channel_Get;
-extern PFN_CHANNEL_RW pHS_Channel_GetW;
-extern PFN_CHANNEL_RWT pHS_Channel_GetWT;
 extern PFN_CHANNEL_RWT pKS_Channel_PutWT;
 extern PFN_CHANNEL_RWT pKS_Channel_GetWT;
 
