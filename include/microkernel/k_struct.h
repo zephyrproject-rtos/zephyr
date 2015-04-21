@@ -248,7 +248,6 @@ struct k_chreq {
 
 struct k_chproc {
 	struct req_info ReqInfo;
-	knode_t DataNode;
 	void *pData; /* if NULL, data is embedded in
 			     cmd packet		    */
 	int iSizeTotal;      /* total size of data/free space    */

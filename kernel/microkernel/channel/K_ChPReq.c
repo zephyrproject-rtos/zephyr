@@ -93,10 +93,6 @@ void K_ChSendReq(struct k_args *RequestOrig)
 					.iSizeTotal;
 				break;
 			case _ASYNCREQ:
-				RequestProc->Args.ChProc.DataNode =
-					OBJ_NODE(Request->Args.ChReq
-						 .ReqType.Async
-						 .block.poolid);
 				RequestProc->Args.ChProc.pData =
 					Request->Args.ChReq.ReqType
 					.Async.block
