@@ -34,6 +34,7 @@
 #include <kmemcpy.h>
 #include <minik.h>
 #include <kticks.h>
+#include <ch_buff.h>
 
 /****************************************************************************/
 

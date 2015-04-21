@@ -38,6 +38,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
+#include <ch_buff.h>
 
 /*
 * - artefacts: ???
