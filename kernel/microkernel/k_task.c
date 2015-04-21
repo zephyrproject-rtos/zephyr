@@ -380,7 +380,7 @@ void K_set_prio(struct k_args *A)
 		X->Prio = A->Args.g1.prio;
 		reset_state_bit(X, TF_PRIO);
 
-	if (A->Srce)
+	if (A->alloc)
 		FREEARGS(A);
 }
 

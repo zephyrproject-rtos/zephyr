@@ -54,7 +54,7 @@ extern "C" {
 * of command packets.
 *
 * INTERNAL
-* It is critical that the word corresponding to the [Srce] field in the
+* It is critical that the word corresponding to the [alloc] field in the
 * equivalent struct k_args command packet be zero so that the system knows that the
 * command packet is not part of the free list.
 */

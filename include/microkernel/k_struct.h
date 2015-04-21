@@ -36,6 +36,7 @@
 #include <microkernel/k_types.h>
 #include <microkernel/k_chstr.h>
 #include <nanokernel.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -486,7 +487,7 @@ struct k_args {
 	struct k_args *Forw;
 	struct k_args **Head;
 	kpriority_t Prio;
-	knode_t Srce;
+	bool    alloc;          /* true if allocated via GETARGS(); else false */
 	K_COMM Comm;
 	K_CREF Ctxt;
 	union {

@@ -77,7 +77,7 @@ void _TaskAbort(void)
 		cmdpacket.Comm = TSKOP;
 		cmdpacket.Args.g1.task = K_Task->Ident;
 		cmdpacket.Args.g1.opt = taskAbortCode;
-		cmdpacket.Srce = 0;
+		cmdpacket.alloc = false;
 		K_Task->Args = &cmdpacket;
 		nano_isr_stack_push(&K_Args, (uint32_t) &cmdpacket);
 		_ScbPendsvSet();

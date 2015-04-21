@@ -144,7 +144,7 @@ static BOOL prepare_transfer(struct k_args *move,
 	reader->Time.rcode = RC_OK;
 
 	__ASSERT_NO_MSG(NULL == writer->Forw);
-	writer->Srce = K_ThisNode;
+	writer->alloc = true;
 
 	writer->Comm = SEND_ACK;
 	writer->Time.rcode = RC_OK;

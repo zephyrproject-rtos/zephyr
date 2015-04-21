@@ -647,7 +647,7 @@ void K_RelBlock(struct k_args *A)
 					NewGet->Comm = GET_BLOCK_WAIT;
 					TO_ALIST(&K_Args, NewGet); /* push on command stack */
 				}
-				if (A->Srce) {
+				if (A->alloc) {
 					FREEARGS(A);
 				}
 				return;

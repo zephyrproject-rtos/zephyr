@@ -127,7 +127,7 @@ void K_lockrpl(
 
 		if (Mutex->OwnerCurrentPrio != newPriority) {
 			GETARGS(PrioChanger);
-			PrioChanger->Srce = K_ThisNode;
+			PrioChanger->alloc = true;
 			PrioChanger->Comm = SPRIO;
 			PrioChanger->Prio = newPriority;
 			PrioChanger->Args.g1.task = Mutex->Owner;
@@ -245,7 +245,7 @@ void K_lockreq(struct k_args *A /* pointer to mutex lock
 					/* Boost the priority level */
 					GETARGS(PrioBooster);
 
-					PrioBooster->Srce = K_ThisNode;
+					PrioBooster->alloc = true;
 					PrioBooster->Comm = SPRIO;
 					PrioBooster->Prio = BoostedPrio;
 					PrioBooster->Args.g1.task = Mutex->Owner;
@@ -334,7 +334,7 @@ void K_unlock(struct k_args *A /* pointer to mutex unlock
 			 */
 			GETARGS(PrioDowner);
 
-			PrioDowner->Srce = K_ThisNode;
+			PrioDowner->alloc = true;
 			PrioDowner->Comm = SPRIO;
 			PrioDowner->Prio = Mutex->OwnerOriginalPrio;
 			PrioDowner->Args.g1.task = Mutex->Owner;
