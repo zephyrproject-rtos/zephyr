@@ -52,7 +52,7 @@ config	PRINTK
 	  Output is sent immediately, without any mutual exclusion or
 	  buffering.
 
-config	UART_HOSTDRV_INTERRUPT_DRIVEN
+config	UART_INTERRUPT_DRIVEN
 	bool
 	prompt "Interrupt driven UART support"
 	default n
@@ -63,7 +63,7 @@ config	UART_HOSTDRV_INTERRUPT_DRIVEN
 config	CONSOLE_HANDLER
 	bool
 	prompt "Enable console input handler"
-	select UART_HOSTDRV_INTERRUPT_DRIVEN
+	select UART_INTERRUPT_DRIVEN
 	default n
 	help
 	  This option enables console input handler allowing to write simple

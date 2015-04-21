@@ -336,7 +336,7 @@ unsigned char uart_poll_out(
 	return outChar;
 }
 
-#if CONFIG_UART_HOSTDRV_INTERRUPT_DRIVEN
+#if CONFIG_UART_INTERRUPT_DRIVEN
 /*******************************************************************************
 *
 * uart_fifo_fill - fill FIFO with data
@@ -539,4 +539,4 @@ void uart_int_connect(int which,	   /* UART to which to connect */
 
 	irq_enable((unsigned int)uart[which].irq);
 }
-#endif /* CONFIG_UART_HOSTDRV_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */

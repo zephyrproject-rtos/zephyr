@@ -331,7 +331,7 @@ unsigned char uart_poll_out(int port, unsigned char c)
 	return c;
 }
 
-#if CONFIG_UART_HOSTDRV_INTERRUPT_DRIVEN
+#if CONFIG_UART_INTERRUPT_DRIVEN
 
 /*******************************************************************************
 *
@@ -597,4 +597,4 @@ void uart_int_connect(int port,		   /* UART port to connect to */
 
 	irq_enable((unsigned int)ports[port].irq);
 }
-#endif /* CONFIG_UART_HOSTDRV_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
