@@ -61,17 +61,7 @@ int task_pipe_put(kpipe_t id,
 					    NrOfBytesWritten,
 					    opt,
 					    TICKS_NONE);
-	}
-#ifdef ENABLE_DEVICE_CHANNEL
-	else if (id & _DEVICE_CHANNEL) { /* a device channel */
-		if (unlikely(pKS_Device_Put == NULL))
-			return RC_FAIL; /* or an assert */
-
-		return (*pKS_Device_Put)(
-			id, buffer, NrOfBytesToWrite, NrOfBytesWritten, opt);
-	}
-#endif
-	else {
+	} else {
 		/* a host channel */
 		if (unlikely(pHS_Channel_Put == NULL))
 			return RC_FAIL; /* or an assert */
@@ -104,17 +94,7 @@ int task_pipe_put_wait(kpipe_t id,
 					    NrOfBytesWritten,
 					    opt,
 					    TICKS_UNLIMITED);
-	}
-#ifdef ENABLE_DEVICE_CHANNEL
-	else if (id & _DEVICE_CHANNEL) { /* a device channel */
-		if (unlikely(pKS_Device_PutW == NULL))
-			return RC_FAIL; /* or an assert */
-
-		return (*pKS_Device_PutW)(
-			id, buffer, NrOfBytesToWrite, NrOfBytesWritten, opt);
-	}
-#endif
-	else {
+	} else {
 		/* a host channel */
 		if (unlikely(pHS_Channel_PutW == NULL))
 			return RC_FAIL; /* or an assert */
@@ -148,21 +128,7 @@ int task_pipe_put_wait_timeout(kpipe_t id,
 					    NrOfBytesWritten,
 					    opt,
 					    TimeOut);
-	}
-#ifdef ENABLE_DEVICE_CHANNEL
-	else if (id & _DEVICE_CHANNEL) { /* a device channel */
-		if (unlikely(pKS_Device_PutWT == NULL))
-			return RC_FAIL; /* or an assert */
-
-		return (*pKS_Device_PutWT)(id,
-					   buffer,
-					   NrOfBytesToWrite,
-					   NrOfBytesWritten,
-					   opt,
-					   TimeOut);
-	}
-#endif
-	else {
+	} else {
 		/* a host channel */
 		if (unlikely(pHS_Channel_PutWT == NULL))
 			return RC_FAIL; /* or an assert */
@@ -199,17 +165,7 @@ int task_pipe_get(kpipe_t id,
 					    NrOfBytesRead,
 					    opt,
 					    TICKS_NONE);
-	}
-#ifdef ENABLE_DEVICE_CHANNEL
-	else if (id & _DEVICE_CHANNEL) { /* a device channel */
-		if (unlikely(pKS_Device_GetWT == NULL))
-			return RC_FAIL; /* or an assert */
-
-		return (*pKS_Device_Get)(
-			id, buffer, NrOfBytesToRead, NrOfBytesRead, opt);
-	}
-#endif
-	else {
+	} else {
 		/* a host channel */
 		if (unlikely(pHS_Channel_Get == NULL))
 			return RC_FAIL; /* or an assert */
@@ -241,16 +197,7 @@ int task_pipe_get_wait(kpipe_t id,
 					    NrOfBytesRead,
 					    opt,
 					    TICKS_UNLIMITED);
-	}
-#ifdef ENABLE_DEVICE_CHANNEL
-	else if (id & _DEVICE_CHANNEL) { /* a device channel */
-		if (unlikely(pKS_Device_GetW == NULL))
-			return RC_FAIL; /* or an assert */
-		return (*pKS_Device_GetW)(
-			id, buffer, NrOfBytesToRead, NrOfBytesRead, opt);
-	}
-#endif
-	else {
+	} else {
 		/* a host channel */
 		if (unlikely(pHS_Channel_GetW == NULL))
 			return RC_FAIL; /* or an assert */
@@ -282,20 +229,7 @@ int task_pipe_get_wait_timeout(kpipe_t id,
 					    NrOfBytesRead,
 					    opt,
 					    TimeOut);
-	}
-#ifdef ENABLE_DEVICE_CHANNEL
-	else if (id & _DEVICE_CHANNEL) { /* a device channel */
-		if (unlikely(pKS_Device_GetWT == NULL))
-			return RC_FAIL; /* or an assert */
-		return (*pKS_Device_GetWT)(id,
-					   buffer,
-					   NrOfBytesToRead,
-					   NrOfBytesRead,
-					   opt,
-					   TimeOut);
-	}
-#endif
-	else {
+	} else {
 		/* a host channel */
 		if (unlikely(pHS_Channel_GetWT == NULL))
 			return RC_FAIL; /* or an assert */

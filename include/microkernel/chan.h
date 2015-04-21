@@ -100,17 +100,6 @@ extern PFN_CHANNEL_RWT pKS_Channel_GetWT; /* maps to KS__ChannelGetWT
 							== _task_pipe_get */
 extern PFN_CHANNEL_RWT pHS_Channel_GetWT; /* maps to HS_ChannelGetWT */
 
-#undef ENABLE_DEVICE_CHANNEL /* for the future */
-
-#ifdef ENABLE_DEVICE_CHANNEL
-extern PFN_CHANNEL_RW pKS_Device_Put;    /* maps to NULL */
-extern PFN_CHANNEL_RW pKS_Device_PutW;   /* maps to NULL */
-extern PFN_CHANNEL_RWT pKS_Device_PutWT; /* maps to NULL */
-extern PFN_CHANNEL_RW pKS_Device_Get;    /* maps to NULL */
-extern PFN_CHANNEL_RW pKS_Device_GetW;   /* maps to NULL */
-extern PFN_CHANNEL_RWT pKS_Device_GetWT; /* maps to NULL */
-#endif					 /* ENABLE_DEVICE_CHANNEL */
-
 /* mapping of KS__ChannelXXX() to _task_pipe_xxx() functions */
 #define KS__ChannelPutWT _task_pipe_put
 
