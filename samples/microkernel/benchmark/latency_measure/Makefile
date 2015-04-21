@@ -33,9 +33,9 @@
 
 BSP ?= generic_pc
 
-PC8253_BSP=generic_pc
+PC8253_BSP_VARIANTS=generic_pc_pentium4 generic_pc_minuteia
 
-PRJ_CONF = $(if $(filter ${vBSP},${PC8253_BSP}),prj_pc8253.conf,prj_generic.conf)
+PRJ_CONF = $(if $(filter ${vBSP}_${vBSP_VARIANT},${PC8253_BSP_VARIANTS}),prj_pc8253.conf,prj_generic.conf)
 
 include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
 

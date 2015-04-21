@@ -33,7 +33,7 @@
 
 BSP ?= generic_pc
 
-PC8253_BSP=generic_pc
+PC8253_BSP_VARIANTS=generic_pc_pentium4 generic_pc_minuteia
 
 PRJ_CONF_8253 = prj_console_pc8253.conf
 PRJ_CONF_GEN = prj_console_generic.conf
@@ -42,7 +42,7 @@ PRJ_SRCPATH = ${vBASE}/samples/nanokernel/benchmark/sys_kernel/src
 PRJ_INCPATH = ${vHERE} $(subst \,/,${VXMICRO_BASE})/samples/microkernel/benchmark/latency_measure/src
 PRJ_INCPATH += ${vBASE}/samples/include/
 
-PRJ_CONF = $(PRJ_CONF_$(if $(filter ${vBSP},${PC8253_BSP}),8253,GEN))
+PRJ_CONF = $(PRJ_CONF_$(if $(filter ${vBSP}_${vBSP_VARIANT},${PC8253_BSP_VARIANTS}),8253,GEN))
 
 include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
 include ${vMAKE}/target/make.ukernel

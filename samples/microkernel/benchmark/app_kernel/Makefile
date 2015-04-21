@@ -35,7 +35,7 @@ BSP ?= generic_pc
 
 include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
 
-PC8253_BSP=generic_pc
+PC8253_BSP_VARIANTS=generic_pc_pentium4 generic_pc_minuteia
 
 PRJ_CONF_CONSOLE_FLOAT_8253 = prj_console_float_pc8253.conf
 PRJ_CONF_CONSOLE_NOFLOAT_8253 = prj_console_nofloat_pc8253.conf
@@ -45,6 +45,6 @@ PRJ_CONF_CONSOLE_NOFLOAT_GEN = prj_console_nofloat_generic.conf
 PRJ_INCPATH = ${vHERE} $(subst \,/,${VXMICRO_BASE})/samples/microkernel/benchmark/latency_measure/src
 PRJ_INCPATH += ${vBASE}/samples/include/
 
-PRJ_CONF = $(PRJ_CONF_CONSOLE_$(if ${CONFIG_CPU_FLOAT_UNSUPPORTED},NOFLOAT,FLOAT)_$(if $(filter ${vBSP},${PC8253_BSP}),8253,GEN))
+PRJ_CONF = $(PRJ_CONF_CONSOLE_$(if ${CONFIG_CPU_FLOAT_UNSUPPORTED},NOFLOAT,FLOAT)_$(if $(filter ${vBSP}_${vBSP_VARIANT},${PC8253_BSP_VARIANTS}),8253,GEN))
 
 include ${vMAKE}/target/make.ukernel
