@@ -45,14 +45,20 @@
 
 void _k_fifo_enque_reply(struct k_args *A)
 {
+#ifndef CONFIG_TICKLESS_KERNEL
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
 	if (unlikely(A->Comm == ENQ_TMO)) {
 		REMOVE_ELM(A);
 		A->Time.rcode = RC_TIME;
-	} else
+	} else {
 		A->Time.rcode = RC_OK;
-		reset_state_bit(A->Ctxt.proc, TF_ENQU);
+	}
+#else
+	A->Time.rcode = RC_OK;
+#endif
+
+	reset_state_bit(A->Ctxt.proc, TF_ENQU);
 }
 
 /*******************************************************************************
@@ -166,6 +172,7 @@ int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 
 void _k_fifo_deque_reply(struct k_args *A)
 {
+#ifndef CONFIG_TICKLESS_KERNEL
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
 	if (unlikely(A->Comm == DEQ_TMO)) {
@@ -174,6 +181,9 @@ void _k_fifo_deque_reply(struct k_args *A)
 	} else {
 		A->Time.rcode = RC_OK;
 	}
+#else
+	A->Time.rcode = RC_OK;
+#endif
 
 	reset_state_bit(A->Ctxt.proc, TF_DEQU);
 }
