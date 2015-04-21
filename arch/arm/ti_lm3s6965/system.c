@@ -116,6 +116,27 @@ static void consoleInit(void)
 	} while ((0))
 #endif /* DO_CONSOLE_INIT */
 
+#if defined(CONFIG_BLUETOOTH)
+#if defined(CONFIG_BLUETOOTH_UART)
+#include <bluetooth/uart.h>
+#endif /* CONFIG_BLUETOOTH_UART */
+
+static void bluetooth_init(void)
+{
+#if defined(CONFIG_BLUETOOTH_UART)
+	/* Enable clock to UART1 */
+	RCGC1 |= RCGC1_UART1_EN;
+
+	/* General UART init */
+	bt_uart_init();
+#endif /* CONFIG_BLUETOOTH_UART */
+}
+#else /* CONFIG_BLUETOOTH */
+#define bluetooth_init()	\
+	do {/* nothing */	\
+	} while ((0))
+#endif /* CONFIG_BLUETOOTH */
+
 /*******************************************************************************
 *
 * _InitHardware - perform basic hardware initialization
@@ -130,6 +151,7 @@ static void consoleInit(void)
 void _InitHardware(void)
 {
 	consoleInit(); /* NOP if not needed */
+	bluetooth_init(); /* NOP if not needed */
 
 	/* Install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise
