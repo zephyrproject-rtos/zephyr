@@ -77,7 +77,6 @@ extern void kernel_init(void);
 extern void init_node(void);    /* generated function */
 extern void init_drivers(void); /* generated function */
 extern const knode_t K_ThisNode;
-extern int K_ArgsNall;
 extern int K_TimerNall;
 extern int K_StackSize;
 
