@@ -57,24 +57,13 @@ void myfreetimer(K_TIMER * *ppTimer)
 	}
 }
 
-void mycopypacket(struct k_args **out,
-					struct k_args *in) /* borrowed from mailbox
-						       implementation */
-/* my version will ALWAYS make a copy = as the name implies it!! */
+/* adapted from mailbox implementation of copypacket() */
+void mycopypacket(struct k_args **out, struct k_args *in)
 {
-	/*if ( in->Srce == 0) */
-	{
-		GETARGS(*out);
-		k_memcpy_s(*out,
-			   sizeof(struct k_args),
-			   in,
-			   sizeof(struct k_args)); /* And copy the data from 'in' */
-		(*out)->Ctxt.args = in;
-	}
-	/*else
-	   {
-	   *out = in;
-	   } */
+	GETARGS(*out);
+	k_memcpy_s(*out, sizeof(struct k_args),
+			   in, sizeof(struct k_args));
+	(*out)->Ctxt.args = in;
 }
 
 int CalcFreeReaderSpace(struct k_args *pReaderList)
