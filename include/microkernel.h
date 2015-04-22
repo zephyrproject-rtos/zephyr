@@ -82,7 +82,6 @@ extern int K_StackSize;
 extern int K_NodeCount;
 extern int K_PrioCount;
 extern int K_TaskCount;
-extern int K_QueCount;
 extern int K_MapCount;
 extern int K_SemCount;
 extern int K_MutexCount;
