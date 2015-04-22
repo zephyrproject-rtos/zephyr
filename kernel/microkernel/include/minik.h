@@ -42,7 +42,6 @@ extern const knode_t K_ThisNode;
 extern struct k_proc K_TaskList[];
 extern struct k_tqhd K_PrioList[];
 
-extern int K_NodeCount;
 extern int K_TaskCount;
 extern int K_PrioCount;
 
