@@ -61,7 +61,6 @@ extern int K_MapCount;
 #endif
 extern int K_MbxCount;
 extern int K_MutexCount;
-extern int K_SemCount;
 extern int K_PoolCount;
 extern int K_PipeCount;
 
