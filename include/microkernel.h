@@ -79,9 +79,6 @@ extern void init_drivers(void); /* generated function */
 extern const knode_t K_ThisNode;
 extern int K_StackSize;
 
-extern kmbox_t hostrxmbx;
-extern kmbox_t hosttxmbx;
-extern kmemory_pool_t hostrxpool;
 extern ktask_t ppdrv;
 
 extern int K_NodeCount;
