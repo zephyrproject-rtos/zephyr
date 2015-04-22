@@ -83,7 +83,6 @@ extern int K_NodeCount;
 extern int K_PrioCount;
 extern int K_TaskCount;
 extern int K_MapCount;
-extern int K_MutexCount;
 extern int K_MbxCount;
 extern int K_PoolCount;
 extern int K_PipeCount;
