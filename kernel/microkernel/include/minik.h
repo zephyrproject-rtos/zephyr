@@ -43,7 +43,6 @@ extern struct k_proc K_TaskList[];
 extern struct k_tqhd K_PrioList[];
 
 extern int K_TaskCount;
-extern int K_PrioCount;
 
 #ifndef LITE
 extern struct map_struct K_MapList[];
