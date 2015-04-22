@@ -79,10 +79,6 @@ extern void init_drivers(void); /* generated function */
 extern const knode_t K_ThisNode;
 extern int K_StackSize;
 
-extern const uint32_t MTS_CommBufferSize;
-extern int MTS_RxBuffer[];
-extern int MTS_TxBuffer[];
-extern uint32_t *const MTS_PeekPokeBufferPtr;
 extern kmbox_t hostrxmbx;
 extern kmbox_t hosttxmbx;
 extern kmemory_pool_t hostrxpool;
