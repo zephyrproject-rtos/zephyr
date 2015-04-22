@@ -12,7 +12,8 @@ minimal (a "do nothing" image that has support for few kernel capabilities)
 -------
 - Background task is only task in system; no fibers are utilized.
 - Background task simply runs an endless loop that increments a global variable.
-- ISRs for the system timer and spurious interrupt handling are present.
+- No system timer support.
+- ISR for the spurious interrupt handling is present.
 - IDT and stack memory sizes are very limited.
 
 regular (a "typical" image that has support for some kernel capabilities)
@@ -22,7 +23,8 @@ regular (a "typical" image that has support for some kernel capabilities)
 - A statically linked dummy ISR is present.
 - Background task also starts a fiber.
 - Fiber prints a message to the console via printk().
-- Links in support for NANO_SEM and NANO_TIMER objects.
+- Supports system timer, along with NANO_TIMER objects.
+- Links in support for NANO_SEM objects.
 
 maximal (a "complex" image that has support for many kernel capabilities)
 -------
