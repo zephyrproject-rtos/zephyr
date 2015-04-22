@@ -39,13 +39,6 @@
 extern "C" {
 #endif
 
-/*
- * Macros for extracting the fields of a microkernel object id
- *
- * Note that OBJ_NODE() returns its info in the high 16 bits!
- */
-
-#define OBJ_NODE(objId) ((knode_t)(objId & 0xFFFF0000))
 #define OBJ_INDEX(objId) ((uint16_t)objId)
 
 typedef int32_t ktask_t;
