@@ -82,7 +82,6 @@ extern int K_StackSize;
 extern int K_PrioCount;
 extern int K_TaskCount;
 extern int K_MapCount;
-extern int K_MbxCount;
 extern int K_PoolCount;
 extern int K_PipeCount;
 extern const int K_max_eventnr;

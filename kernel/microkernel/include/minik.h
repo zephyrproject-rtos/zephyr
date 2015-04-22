@@ -58,7 +58,6 @@ extern struct pipe_struct K_PipeList[];
 #ifndef LITE
 extern int K_MapCount;
 #endif
-extern int K_MbxCount;
 extern int K_PoolCount;
 extern int K_PipeCount;
 
