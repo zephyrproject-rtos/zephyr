@@ -70,8 +70,6 @@ extern K_TIMER *_k_timer_list_tail;
 extern int64_t _k_sys_clock_tick_count;
 
 extern struct nano_stack _k_command_stack;
-extern struct nano_lifo LinkIn[6];
-extern struct nano_lifo LinkOut[6];
 extern struct nano_lifo K_DataFree;
 extern struct nano_lifo _k_server_command_packet_free;
 #ifndef LITE
