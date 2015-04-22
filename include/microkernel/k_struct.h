@@ -483,13 +483,6 @@ union k_args_args {
 	struct k_chack ChAck;
 };
 
-/*
- * At the present time, the size of k_args has been calculated to be 80 bytes
- * (the largest field in the K_ARGS_ARGS union type is [m1] at 48 bytes).
- * Should the size of k_args change, then the macro CMD_PKT_SIZE_IN_WORDS
- * in cmdPkt.h must be updated.
- */
-
 struct k_args {
 	struct k_args *Forw;
 	struct k_args **Head;

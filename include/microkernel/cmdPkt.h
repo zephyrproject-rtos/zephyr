@@ -43,7 +43,7 @@ extern "C" {
 
 /* defines */
 
-#define CMD_PKT_SIZE_IN_WORDS 20 /* This matches the size of struct k_args */
+#define CMD_PKT_SIZE_IN_WORDS (sizeof(struct k_args) / sizeof(uint32_t))
 
 /*******************************************************************************
 *
