@@ -70,7 +70,6 @@ extern K_TIMER *_k_timer_list_tail;
 extern int64_t _k_sys_clock_tick_count;
 
 extern struct nano_stack _k_command_stack;
-extern struct nano_lifo K_DataFree;
 extern struct nano_lifo _k_server_command_packet_free;
 #ifndef LITE
 extern struct nano_lifo _k_timer_free;
@@ -228,10 +227,6 @@ extern void wlMonitorCalibrate(void);
 	do {                              \
 		(A) = _Cget(&_k_server_command_packet_free); \
 	} while (0)
-#define GETDATA(D)                        \
-	do {                              \
-		(D) = _Cget(&K_DataFree); \
-	} while (0)
 #ifndef LITE
 #define GETTIMER(T)                        \
 	do {                               \
@@ -240,7 +235,6 @@ extern void wlMonitorCalibrate(void);
 #endif
 
 #define FREEARGS(A) _Cput(&_k_server_command_packet_free, (A))
-#define FREEDATA(D) _Cput(&K_DataFree, (D))
 #ifndef LITE
 #define FREETIMER(T) _Cput(&_k_timer_free, (T))
 #endif
