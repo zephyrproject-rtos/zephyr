@@ -45,7 +45,7 @@ config	CPU_CORTEXM3
 config	SW_ISR_TABLE
 	bool
 	prompt "Enable software interrupt handler table"
-	default n
+	default y
 	help
 	  Enable an interrupt handler table implemented in software. This
 	  table, unlike ISRs connected directly in the vector table, allow
@@ -59,7 +59,7 @@ config	SW_ISR_TABLE_DYNAMIC
 	bool
 	prompt "Allow installing interrupt handlers at runtime"
 	depends on SW_ISR_TABLE
-	default n
+	default y
 	help
 	  This option enables irq_connect(). It moves the ISR table to
 	  SRAM so that it is writable. This has the side-effect of removing
