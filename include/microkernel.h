@@ -79,8 +79,6 @@ extern void init_drivers(void); /* generated function */
 extern const knode_t K_ThisNode;
 extern int K_StackSize;
 
-extern ktask_t ppdrv;
-
 extern int K_NodeCount;
 extern int K_PrioCount;
 extern int K_TaskCount;
