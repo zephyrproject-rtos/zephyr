@@ -150,7 +150,6 @@ INCLUDE FILES: loapic.h
 #define LOAPIC_REMOTE 0x00004000 /* remote IRR */
 #define LOAPIC_EDGE 0x00000000   /* trigger mode: Edge */
 #define LOAPIC_LEVEL 0x00008000  /* trigger mode: Level */
-#define LOAPIC_MASK 0x00010000   /* mask */
 
 /* Local APIC Spurious-Interrupt Register Bits */
 
@@ -238,27 +237,27 @@ void _loapic_init(void)
 
 	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_LINT0) =
 		(*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_LINT0) &
-		 ~(LOAPIC_MODE | LOAPIC_LOW | LOAPIC_LEVEL | LOAPIC_MASK)) |
+		 ~(LOAPIC_MODE | LOAPIC_LOW | LOAPIC_LEVEL | LOAPIC_LVT_MASKED)) |
 		(LOAPIC_EXT | LOAPIC_HIGH | LOAPIC_EDGE);
 
 	/* set LINT1: NMI, high-polarity, edge-trigger, not-masked */
 
 	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_LINT1) =
 		(*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_LINT1) &
-		 ~(LOAPIC_MODE | LOAPIC_LOW | LOAPIC_LEVEL | LOAPIC_MASK)) |
+		 ~(LOAPIC_MODE | LOAPIC_LOW | LOAPIC_LEVEL | LOAPIC_LVT_MASKED)) |
 		(LOAPIC_NMI | LOAPIC_HIGH | LOAPIC_EDGE);
 
 	/* lock the Local APIC interrupts */
 
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER) = LOAPIC_MASK;
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_ERROR) = LOAPIC_MASK;
+	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER) = LOAPIC_LVT_MASKED;
+	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_ERROR) = LOAPIC_LVT_MASKED;
 
 	if (loApicMaxLvt >= LOAPIC_LVT_P6)
-		*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_PMC) = LOAPIC_MASK;
+		*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_PMC) = LOAPIC_LVT_MASKED;
 
 	if (loApicMaxLvt >= LOAPIC_LVT_PENTIUM4)
 		*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_THERMAL) =
-			LOAPIC_MASK;
+			LOAPIC_LVT_MASKED;
 
 	/* discard a pending interrupt if any */
 
@@ -385,7 +384,7 @@ void _loapic_irq_enable(unsigned int irq /* IRQ number of
 	/* clear the mask bit in the LVT */
 
 	oldLevel = irq_lock();
-	*pLvt = *pLvt & ~LOAPIC_MASK;
+	*pLvt = *pLvt & ~LOAPIC_LVT_MASKED;
 	irq_unlock(oldLevel);
 }
 
@@ -415,6 +414,6 @@ void _loapic_irq_disable(unsigned int irq /* IRQ number of the
 	/* set the mask bit in the LVT */
 
 	oldLevel = irq_lock();
-	*pLvt = *pLvt | LOAPIC_MASK;
+	*pLvt = *pLvt | LOAPIC_LVT_MASKED;
 	irq_unlock(oldLevel);
 }

@@ -65,6 +65,9 @@ extern "C" {
 #define LOAPIC_TIMER_CCR 0x390    /* Timer Current Count Reg */
 #define LOAPIC_TIMER_CONFIG 0x3e0 /* Timer Divide Config Reg */
 
+/* Local APIC Vector Table Bits */
+#define LOAPIC_LVT_MASKED 0x00010000   /* mask */
+
 #ifdef _ASMLANGUAGE
 GTEXT(_loapic_eoi)
 #else /* _ASMLANGUAGE */

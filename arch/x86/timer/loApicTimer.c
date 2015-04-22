@@ -179,7 +179,7 @@ static inline void _loApicTimerPeriodic(void)
 
 static inline void _loApicTimerStop(void)
 {
-	*_REG_TIMER |= LOAPIC_MASK;
+	*_REG_TIMER |= LOAPIC_LVT_MASKED;
 }
 #endif
 
@@ -198,7 +198,7 @@ static inline void _loApicTimerStop(void)
 
 static inline void _loApicTimerStart(void)
 {
-	*_REG_TIMER &= ~LOAPIC_MASK;
+	*_REG_TIMER &= ~LOAPIC_LVT_MASKED;
 }
 #endif
 
