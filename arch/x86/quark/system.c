@@ -49,8 +49,7 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
 #include <pci/pci.h>
-
-#define PCI_CLASS_COMM_CTLR 0x07
+#include <pci/pci_mgr.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 #define DO_CONSOLE_INIT
