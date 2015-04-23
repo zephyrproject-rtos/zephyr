@@ -45,23 +45,6 @@ config  COMPILER_OPT
 	  and can be used to change compiler optimization, warning and error
 	  messages, and so on.
 
-config  SECTION_GARBAGE_COLLECTION
-	bool
-	prompt "ELF section garbage collection"
-	default y
-	help
-	  This option enables the compiler to place each function and data
-	  item into its own ELF section, which then allows the linker to
-	  discard any sections that are not directly referenced. Enabling
-	  this option should significantly reduce the final image size,
-	  especially in situations when only a relatively few number of
-	  APIs in the object modules are actually referenced.
-
-	  Certain host tools expect the presence of various symbols in
-	  the ELF image, regardless of image configuration or composition.
-	  Enabling this option may cause these host tools to end abnormally
-	  if the expected symbols have been discarded.
-
 config	BUILD_TIMESTAMP
 	bool
 	prompt "Build timestamp"
