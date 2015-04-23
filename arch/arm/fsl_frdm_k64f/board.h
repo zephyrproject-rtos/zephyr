@@ -186,6 +186,14 @@ This header file is used to specify and describe board-level aspects for the
 #define CONFIG_UART_CONSOLE_IRQ IRQ_UART0_STATUS
 #define CONFIG_UART_CONSOLE_INT_PRI 3
 
+/* Bluetooth UART definitions */
+#define CONFIG_BLUETOOTH_UART_INDEX 1
+#define CONFIG_BLUETOOTH_UART_BAUDRATE 115200
+#define CONFIG_BLUETOOTH_UART_IRQ IRQ_UART1_STATUS
+#define CONFIG_BLUETOOTH_UART_INT_PRI 3
+#define CONFIG_BLUETOOTH_UART_REGS PERIPH_ADDR_BASE_UART1
+#define CONFIG_BLUETOOTH_UART_FREQ SYSCLK_DEFAULT_IOSC_HZ
+
 #define EXC_FROM_IRQ(irq) ((irq) + 16)
 #define VECTOR_FROM_IRQ(irq) EXC_FROM_IRQ(irq)
 #define VECTOR_ADDR(vector) ((uint32_t *)((int)vector << 2))
