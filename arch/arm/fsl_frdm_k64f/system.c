@@ -259,7 +259,7 @@ static void clkInit(void)
 *
 */
 
-#include "console/uart_console.h"
+#include <console/uart_console.h>
 
 static void consoleInit(void)
 {

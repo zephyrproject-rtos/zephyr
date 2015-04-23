@@ -35,6 +35,7 @@ bsp_INCLUDE_DIR = $(strip \
 	${vBASE}/arch/${vARCH} \
 	${vBASE}/include/bsp \
 	${vBASE}/include \
+	${vBASE}/include/drivers \
 	${vBASE}/drivers \
 	${vBSP_BASE_DIR}/${vBSP} \
 )
