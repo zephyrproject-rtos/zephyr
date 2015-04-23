@@ -38,6 +38,16 @@ various nanokernel structures.  These absolute symbols are typically
 utilized by assembly source files rather than hardcoding the values in
 some local header file.
 
+WARNING: Absolute symbols can potentially be utilized by external tools --
+for example, to locate a specific field within a data structure. Consequently,
+changes made to such symbols may require modifications to the associated
+tool(s). Typically, relocating a member of a structure merely requires
+that a tool be rebuilt; however, moving a member to another structure
+(or to a new sub-structure within an existing structure) may require that
+the tool itself be modified. Likewise, deleting, renaming, or changing the
+meaning of an absolute symbol may require modifications to a tool.
+
+
 The macro "GEN_OFFSET_SYM(structure, member)" is used to generate a single
 absolute symbol.  The absolute symbol will appear in the object module
 generated from the source file that utilizes the GEN_OFFSET_SYM() macro.
@@ -45,6 +55,7 @@ Absolute symbols representing a structure member offset have the following
 form:
 
 	__<structure>_<member>_OFFSET
+
 
 This header also defines the GEN_ABSOLUTE_SYM macro to simply define an
 absolute symbol, irrespective of whether the value represents a structure
@@ -123,23 +134,5 @@ $ nm offsets.o
 
 #define GEN_OFFSET_SYM(S, M) \
 	GEN_ABSOLUTE_SYM(__##S##_##M##_##OFFSET, offsetof(S, M))
-
-/*
- * Macro used to generate an absolute symbol utilized by host-side tools.
- *
- * IMPORTANT: Changes to such symbols MUST be coordinated with the host-side
- * tool that uses each symbol.  Do NOT delete or change the meaning
- * of structure members used by host-side tools without proper consultation.
- * Relocating a member within a structure can be done freely, as long as it
- * only changes the offset of the member; however, relocating a member used
- * by host-side tools to another structure (including a new sub-structure
- * within an existing structure) requires consultation.
- */
-
-#if defined(CONFIG_CONTEXT_MONITOR)
-#define GEN_OFFSET_SYM_HOST(s, m) GEN_OFFSET_SYM(s, m)
-#else
-#define GEN_OFFSET_SYM_HOST(s, m)
-#endif /* CONFIG_CONTEXT_MONITOR */
 
 #endif /* _GEN_OFFSET_H */

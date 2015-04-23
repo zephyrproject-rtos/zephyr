@@ -45,7 +45,10 @@ GEN_ABS_SYM_BEGIN(_OffsetAbsSyms)
 GEN_OFFSET_SYM(tNANO, fiber);
 GEN_OFFSET_SYM(tNANO, task);
 GEN_OFFSET_SYM(tNANO, current);
-GEN_OFFSET_SYM_HOST(tNANO, contexts);
+
+#if defined(CONFIG_CONTEXT_MONITOR)
+GEN_OFFSET_SYM(tNANO, contexts);
+#endif
 
 #ifdef CONFIG_FP_SHARING
 GEN_OFFSET_SYM(tNANO, current_fp);
@@ -58,11 +61,15 @@ GEN_ABSOLUTE_SYM(__tNANO_SIZEOF, sizeof(tNANO));
 /* arch-agnostic tCCS structure member offsets */
 
 GEN_OFFSET_SYM(tCCS, link);
-GEN_OFFSET_SYM_HOST(tCCS, next_context);
 GEN_OFFSET_SYM(tCCS, prio);
 GEN_OFFSET_SYM(tCCS, flags);
 GEN_OFFSET_SYM(tCCS, coopReg);   /* start of coop register set */
 GEN_OFFSET_SYM(tCCS, preempReg); /* start of prempt register set */
+
+#if defined(CONFIG_CONTEXT_MONITOR)
+GEN_OFFSET_SYM(tCCS, next_context);
+#endif
+
 
 /* size of the entire tCCS structure */
 
