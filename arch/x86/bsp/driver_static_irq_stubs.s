@@ -176,7 +176,7 @@ SECTION_FUNC(TEXT, _bluetooth_uart_stub)
 SECTION_FUNC(TEXT, _console_uart_stub)
 	call	_IntEnt			/* Inform kernel interrupt has begun */
 	pushl	$0			/* Push dummy parameter */
-	call	console_uart_isr	/* Call actual interrupt handler */
+	call	uart_console_isr	/* Call actual interrupt handler */
 	call	_i8259_eoi_master	/* Inform the PIC interrupt is done */
 	addl	$4, %esp		/* Clean-up stack from push above */
 	jmp	_IntExit		/* Inform kernel interrupt is done */
@@ -184,7 +184,7 @@ SECTION_FUNC(TEXT, _console_uart_stub)
 SECTION_FUNC(TEXT, _console_uart_stub)
 	call	_IntEnt			/* Inform kernel interrupt has begun */
 	pushl	$0			/* Push dummy parameter */
-	call	console_uart_isr	/* Call actual interrupt handler */
+	call	uart_console_isr	/* Call actual interrupt handler */
 	call	_ioapic_eoi		/* Inform the PIC interrupt is done */
 	addl	$4, %esp		/* Clean-up stack from push above */
 	jmp	_IntExit		/* Inform kernel interrupt is done */

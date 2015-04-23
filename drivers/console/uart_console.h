@@ -48,7 +48,7 @@ extern void uartConsoleInit(void);
  */
 void uart_register_handler(void (*cb) (const char *string));
 
-void console_uart_isr(void *unused);
+void uart_console_isr(void *unused);
 
 #ifdef __cplusplus
 }

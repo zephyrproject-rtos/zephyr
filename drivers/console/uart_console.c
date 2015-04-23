@@ -131,7 +131,7 @@ static int read_uart(int uart, uint8_t *buf, unsigned int size)
 	return rx;
 }
 
-void console_uart_isr(void *unused)
+void uart_console_isr(void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -170,7 +170,7 @@ static void console_handler_init(void)
 
 	uart_irq_rx_disable(UART);
 	uart_irq_tx_disable(UART);
-	uart_int_connect(UART, console_uart_isr, NULL, NULL);
+	uart_int_connect(UART, uart_console_isr, NULL, NULL);
 
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(UART))

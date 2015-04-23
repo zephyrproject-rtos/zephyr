@@ -58,7 +58,7 @@ typedef void (*vth)(void); /* Vector Table Handler */
 vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _IsrWrapper,
 #if defined(CONFIG_CONSOLE_HANDLER)
-	[CONFIG_UART_CONSOLE_IRQ] = (vth)console_uart_isr,
+	[CONFIG_UART_CONSOLE_IRQ] = (vth)uart_console_isr,
 #endif
 };
 
@@ -71,7 +71,7 @@ extern void _SpuriousIRQ(void);
 vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _SpuriousIRQ,
 #if defined(CONFIG_CONSOLE_HANDLER)
-	[CONFIG_UART_CONSOLE_IRQ] = (vth)console_uart_isr,
+	[CONFIG_UART_CONSOLE_IRQ] = (vth)uart_console_isr,
 #endif
 };
 
