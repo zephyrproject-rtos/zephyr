@@ -156,10 +156,6 @@ struct s_NANO {
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 	int32_t idle; /* Number of ticks for kernel idling */
 #endif		      /* CONFIG_ADVANCED_POWER_MANAGEMENT */
-
-#if 0 /* not needed, MSP should only be loaded once at startup */
-	char *common_isp;	    /* interrupt stack pointer base */
-#endif
 };
 
 typedef struct s_NANO tNANO;

@@ -141,11 +141,6 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 #if defined(CONFIG_MICROKERNEL)
 #endif
 
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
-/* initialize the linked list of all contexts */
-/* _NanoKernel.contexts  = NULL; not needed since _NanoKernel is in .bss */
-#endif /* CONFIG_HOST_TOOLS_SUPPORT */
-
 	/*
 	 * Initialize the context control block (CCS) for the main (aka
 	 * background)
