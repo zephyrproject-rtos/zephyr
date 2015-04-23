@@ -45,9 +45,9 @@ architecture.
 tNANO _NanoKernel = {0};
 
 #if defined(CONFIG_CONTEXT_MONITOR)
-#define TOOLS_SUPPORT_INIT(pCcs) toolsSupportInit(pCcs)
+#define CONTEXT_MONITOR_INIT(pCcs) _context_monitor_init(pCcs)
 #else
-#define TOOLS_SUPPORT_INIT(pCcs) \
+#define CONTEXT_MONITOR_INIT(pCcs) \
 	do {/* do nothing */     \
 	} while ((0))
 #endif
@@ -55,14 +55,14 @@ tNANO _NanoKernel = {0};
 #if defined(CONFIG_CONTEXT_MONITOR)
 /*******************************************************************************
 *
-* toolsSupportInit - initialize host-tools support when needed
+* _context_monitor_init - initialize context monitoring support
 *
 * Currently only inserts the new context in the list of active contexts.
 *
 * RETURNS: N/A
 */
 
-static ALWAYS_INLINE void toolsSupportInit(struct s_CCS *pCcs /* context */
+static ALWAYS_INLINE void _context_monitor_init(struct s_CCS *pCcs /* context */
 					   )
 {
 	unsigned int key;
@@ -145,7 +145,7 @@ void *_NewContext(
 
 	/* initial values in all other registers/CCS entries are irrelevant */
 
-	TOOLS_SUPPORT_INIT(pCcs);
+	CONTEXT_MONITOR_INIT(pCcs);
 
 	return pCcs;
 }
