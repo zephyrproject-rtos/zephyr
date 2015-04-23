@@ -43,11 +43,20 @@ provides a table that is filled with _SpuriousIRQ bindings.
 
 extern void _SpuriousIRQ(void *arg);
 
+#if defined(CONFIG_CONSOLE_HANDLER)
+#include <board.h>
+#include <console/uart_console.h>
+#endif /* CONFIG_CONSOLE_HANDLER */
+
 #if defined(CONFIG_SW_ISR_TABLE_DYNAMIC)
 
 _IsrTableEntry_t __isr_table_section _IsrTable[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)].arg = (void *)0xABAD1DEA,
-	 [0 ...(CONFIG_NUM_IRQS - 1)].isr = _SpuriousIRQ
+	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _SpuriousIRQ,
+#if defined(CONFIG_CONSOLE_HANDLER)
+	[CONFIG_UART_CONSOLE_IRQ].arg = NULL,
+	[CONFIG_UART_CONSOLE_IRQ].isr = uart_console_isr,
+#endif
 };
 
 #else
@@ -58,9 +67,13 @@ _IsrTableEntry_t __isr_table_section _IsrTable[CONFIG_NUM_IRQS] = {
 
 _IsrTableEntry_t __isr_table_section _IsrTable[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)].arg = (void *)0xABAD1DEA,
-	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _SpuriousIRQ
+	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _SpuriousIRQ,
+#if defined(CONFIG_CONSOLE_HANDLER)
+	[CONFIG_UART_CONSOLE_IRQ].arg = NULL,
+	[CONFIG_UART_CONSOLE_IRQ].isr = uart_console_isr,
+#endif
 };
 
-#endif
-#endif
-#endif
+#endif /* !CONFIG_SW_ISR_TABLE_STATIC_CUSTOM */
+#endif /* CONFIG_SW_ISR_TABLE */
+#endif /* CONFIG_SW_ISR_TABLE_DYNAMIC */
