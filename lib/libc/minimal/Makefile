@@ -42,7 +42,7 @@ ${LIB_NAME}_KERNEL = string stdout
 
 ${LIB_NAME}_SRC = $(foreach lib,${${LIB_NAME}_${STDLIB_TYPE}},$(wildcard source/${lib}/*.c))
 
-${LIB_NAME}_CFLAGS += ${iSECTION_GC_CFLAGS_y}
+${LIB_NAME}_CFLAGS += ${iSECTION_GC_CFLAGS}
 
 .PHONY: aliases
 .DEFAULT_GOAL = aliases
