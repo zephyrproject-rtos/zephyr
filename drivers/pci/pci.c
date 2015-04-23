@@ -57,8 +57,8 @@ In order to use the driver, BSP has to define:
 
 #include <board.h>
 
-#include "pci_mgr.h"
-#include "pci.h"
+#include <pci/pci_mgr.h>
+#include <pci/pci.h>
 
 /* NOTE. These parameters may need to be configurable */
 #define LSPCI_MAX_BUS 256 /* maximum number of buses to scan */

@@ -42,7 +42,7 @@ This module implements the PCI config space access functions
 #include <nanokernel.h>
 #include <nanokernel/cpu.h>
 
-#include "pci_mgr.h"
+#include <pci/pci_mgr.h>
 #include <string.h>
 
 #ifdef __MSIX_DEBUG__
