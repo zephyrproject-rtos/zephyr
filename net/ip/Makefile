@@ -25,6 +25,7 @@ obj-y = ${foreach f, $(MODULES_FILES), ${subst .c,.o,${f}}}
 
 obj-y += net_init.o \
 	 net_buf.o \
+	 net_context.o \
 	 contiki/netstack.o \
 	 contiki/packetbuf.o \
 	 contiki/uip-driver.o \

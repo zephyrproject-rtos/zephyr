@@ -57,11 +57,6 @@
 static char rx_fiber_stack[STACKSIZE];
 static char tx_fiber_stack[STACKSIZE];
 
-struct net_context {
-	/* Application receives data via this fifo */
-	struct nano_fifo rx_queue;
-};
-
 static struct net_dev {
 	/* Queue for incoming packets from driver */
 	struct nano_fifo rx_queue;
@@ -158,6 +153,7 @@ int net_init(void)
 		return -ENODEV;
 	}
 
+	net_context_init();
 	net_buf_init();
 	init_tx_queue();
 	init_rx_queue();

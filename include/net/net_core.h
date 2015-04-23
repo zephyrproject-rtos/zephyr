@@ -92,4 +92,6 @@ int net_register_driver(struct net_driver *drv);
  */
 void net_unregister_driver(struct net_driver *drv);
 
+void net_context_init(void);
+
 #endif /* __NET_CORE_H */

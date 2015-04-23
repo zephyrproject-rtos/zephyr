@@ -68,7 +68,15 @@ struct net_buf *net_buf_get_reserve(uint16_t reserve_head)
 
 struct net_buf *net_buf_get(struct net_context *context)
 {
-	return net_buf_get_reserve(0);
+	struct net_buf *buf = net_buf_get_reserve(0);
+
+	if (!buf) {
+		return buf;
+	}
+
+	buf->context = context;
+
+	return buf;
 }
 
 void net_buf_put(struct net_buf *buf)
