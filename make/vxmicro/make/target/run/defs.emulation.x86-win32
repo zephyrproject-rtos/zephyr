@@ -33,24 +33,10 @@
 
 # DESCRIPTION
 # File defines:
-# iHOST_FILE - file to be given to the host server:
-#       VPF for microkernel and IAP projects
-#       NLI for nanokernel projects
-# iWINECONSOLE - command that starts HostServer console
-# iWINEHOSTSERVER - command that starts HostServer GUI
 # iHOS_getprogpath - function that returns a full program path
 # iSIM_SERIAL_DEVICE - device driver used for the host communication
 # vSIM_HS_PORT - serial device or pseudo-device used
 #      for the host communication
-
-ifeq (${CONFIG_NANOKERNEL},y)
-  iHOST_FILE = ${iCFG_FINAL_NLI}
-else
-  iHOST_FILE = ${vOUT_DIR}/node/$(notdir ${iVPF})
-endif
-
-iWINECONSOLE ?= ${HOS_Bin_HostServerCon} -s ${iHOST_FILE}
-iWINEHOSTSERVER ?= ${HOS_Bin_HostServer} -s ${iHOST_FILE}
 
 # The executables are expected to reside in either "C:\Program Files\"
 # or "C:\Program Files (x86)".  These are shortened to "C:\Progra~1\"
