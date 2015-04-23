@@ -145,7 +145,7 @@ void irq_priority_set(
 }
 
 /*
- * _SpuriousIRQ - spurious interrupt handler
+ * _irq_spurious - spurious interrupt handler
  *
  * Installed in all dynamic interrupt slots at boot time. Throws an error if
  * called.
@@ -154,10 +154,10 @@ void irq_priority_set(
  */
 
 #include <misc/printk.h>
-void _SpuriousIRQ(void *unused)
+void _irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	printk("_SpuriousIRQ(). Spinning...\n");
+	printk("_irq_spurious(). Spinning...\n");
 	for (;;)
 		;
 }
@@ -182,7 +182,7 @@ int irq_connect(
 	void *arg
 )
 {
-	irq_handler_set(irq, _SpuriousIRQ, isr, arg);
+	irq_handler_set(irq, _irq_spurious, isr, arg);
 	irq_priority_set(irq, prio);
 	return irq;
 }
@@ -191,7 +191,7 @@ int irq_connect(
  * irq_disconnect - disconnect an ISR from an interrupt line
  *
  * Interrupt line <irq> is disconnected from its ISR and the latter is
- * replaced by _SpuriousIRQ(). irq_disable() should have been called before
+ * replaced by _irq_spurious(). irq_disable() should have been called before
  * invoking this routine.
  *
  * RETURNS: N/A
@@ -201,5 +201,5 @@ void irq_disconnect(unsigned int irq)
 {
 	int index = irq - 16;
 
-	irq_handler_set(irq, _IsrTable[index].isr, _SpuriousIRQ, NULL);
+	irq_handler_set(irq, _IsrTable[index].isr, _irq_spurious, NULL);
 }

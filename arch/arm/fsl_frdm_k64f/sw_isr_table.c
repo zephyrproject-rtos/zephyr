@@ -34,14 +34,14 @@
 DESCRIPTION
 This contains the ISR table meant to be used for ISRs that take a parameter.
 It is also used when ISRs are to be connected at runtime, and in this case
-provides a table that is filled with _SpuriousIRQ bindings.
+provides a table that is filled with _irq_spurious bindings.
 */
 
 #include <toolchain.h>
 #include <sections.h>
 #include <sw_isr_table.h>
 
-extern void _SpuriousIRQ(void *arg);
+extern void _irq_spurious(void *arg);
 
 #if defined(CONFIG_CONSOLE_HANDLER)
 #include <board.h>
@@ -52,7 +52,7 @@ extern void _SpuriousIRQ(void *arg);
 
 _IsrTableEntry_t __isr_table_section _IsrTable[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)].arg = (void *)0xABAD1DEA,
-	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _SpuriousIRQ,
+	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _irq_spurious,
 #if defined(CONFIG_CONSOLE_HANDLER)
 	[CONFIG_UART_CONSOLE_IRQ].arg = NULL,
 	[CONFIG_UART_CONSOLE_IRQ].isr = uart_console_isr,
@@ -67,7 +67,7 @@ _IsrTableEntry_t __isr_table_section _IsrTable[CONFIG_NUM_IRQS] = {
 
 _IsrTableEntry_t __isr_table_section _IsrTable[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)].arg = (void *)0xABAD1DEA,
-	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _SpuriousIRQ,
+	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _irq_spurious,
 #if defined(CONFIG_CONSOLE_HANDLER)
 	[CONFIG_UART_CONSOLE_IRQ].arg = NULL,
 	[CONFIG_UART_CONSOLE_IRQ].isr = uart_console_isr,

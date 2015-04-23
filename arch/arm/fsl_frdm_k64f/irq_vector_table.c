@@ -61,7 +61,7 @@ vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
 
 #elif !defined(CONFIG_IRQ_VECTOR_TABLE_CUSTOM)
 
-extern void _SpuriousIRQ(void);
+extern void _irq_spurious(void);
 
 #if defined(CONFIG_CONSOLE_HANDLER)
 static void _uart_console_isr(void)
@@ -73,7 +73,7 @@ static void _uart_console_isr(void)
 
 /* placeholders: fill with real ISRs */
 vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)] = _SpuriousIRQ,
+	[0 ...(CONFIG_NUM_IRQS - 1)] = _irq_spurious,
 #if defined(CONFIG_CONSOLE_HANDLER)
 	[CONFIG_UART_CONSOLE_IRQ] = _uart_console_isr,
 #endif
