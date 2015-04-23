@@ -36,16 +36,10 @@
 #if !defined(_ASMLANGUAGE)
 #define __section_stringify(x)  #x
 
-#ifdef CONFIG_SECTION_GARBAGE_COLLECTION
 #define __section(seg, hash, line)					\
 	__attribute__((section ("." __section_stringify(seg)		\
 				"." __section_stringify(hash)		\
 				"." __section_stringify(line))))
-#else  /* !CONFIG_SECTION_GARBAGE_COLLECTION */
-#define __section(seg, hash, line)                              \
-	__attribute__((section ("." __section_stringify(seg))))
-#endif /* !CONFIG_SECTION_GARBAGE_COLLECTION */
-
 
 #define __noinit     __section(NOINIT,    _FILE_PATH_HASH, __COUNTER__)
 

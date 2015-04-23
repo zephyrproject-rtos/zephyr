@@ -107,11 +107,7 @@ Macros to abstract compiler capabilities (common to all toolchains).
 
   #endif
 
-  #ifdef CONFIG_SECTION_GARBAGE_COLLECTION
-    #define GC_SECTION(sym) SECTION .text.FUNC(sym), "ax"
-  #else
-    #define GC_SECTION(sym) .text
-  #endif
+  #define GC_SECTION(sym) SECTION .text.FUNC(sym), "ax"
 
   #define BRANCH_LABEL(sym) FUNC(sym):
   #define VAR(sym)          FUNC(sym)

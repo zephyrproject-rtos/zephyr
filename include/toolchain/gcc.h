@@ -194,14 +194,11 @@ A##a:
  * These macros specify the section in which a given function or variable
  * resides.
  *
- * When garbage collection is enabled:
  * - SECTION_FUNC	allows only one function to reside in a sub-section
  * - SECTION_SUBSEC_FUNC allows multiple functions to reside in a sub-section
  *   This ensures that garbage collection only discards the section
  *   if all functions in the sub-section are not referenced.
  */
-
-#ifdef CONFIG_SECTION_GARBAGE_COLLECTION
 
 #if defined(VXMICRO_ARCH_arc)
 /*
@@ -247,45 +244,6 @@ A##a:
 		.section .sect.subsec, "ax"; PERFOPT_ALIGN; FUNC(sym):
 
 #endif /* VXMICRO_ARCH_arc */
-
-#else /* !CONFIG_SECTION_GARBAGE_COLLECTION */
-
-#if defined(VXMICRO_ARCH_arc)
-/*
- * Need to use assembly macros because ';' is interpreted as the start of
- * a single line comment in the ARC assembler.
- */
-
-.macro section_var section, symbol
-	.section .\section
-	FUNC(\symbol):
-.endm
-
-.macro section_func section, symbol
-	.section .\section
-	FUNC_CODE()
-	PERFOPT_ALIGN
-	FUNC(\symbol):
-	FUNC_INSTR(\symbol)
-.endm
-
-#define SECTION_VAR(sect, sym) section_var sect, sym
-#define SECTION_FUNC(sect, sym) section_func sect, sym
-#define SECTION_SUBSEC_FUNC(sect, subsec, sym) section_func sect, sym
-
-#else /* !VXMICRO_ARCH_arc */
-
-#define SECTION_VAR(sect, sym)  .section .sect; FUNC(sym):
-#define SECTION_FUNC(sect, sym)			\
-	.section .sect;				\
-	FUNC_CODE()				\
-	PERFOPT_ALIGN; FUNC(sym):		\
-				FUNC_INSTR(sym)
-#define SECTION_SUBSEC_FUNC(sect, subsec, sym) SECTION_FUNC(sect, sym)
-
-#endif /* VXMICRO_ARCH_arc */
-
-#endif /* CONFIG_SECTION_GARBAGE_COLLECTION */
 
 #endif /* _ASMLANGUAGE && !_LINKER */
 
