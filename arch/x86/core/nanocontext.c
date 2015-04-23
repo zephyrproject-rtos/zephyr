@@ -185,7 +185,7 @@ static void _NewContextInternal(
 
 	PRINTK("\ntCCS * = 0x%x", ccs);
 
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 	{
 		unsigned int imask;
 
@@ -203,7 +203,7 @@ static void _NewContextInternal(
 		_NanoKernel.contexts = ccs;
 		irq_unlock(imask);
 	}
-#endif /* CONFIG_HOST_TOOLS_SUPPORT */
+#endif /* CONFIG_CONTEXT_MONITOR */
 }
 
 #ifdef CONFIG_GDB_INFO

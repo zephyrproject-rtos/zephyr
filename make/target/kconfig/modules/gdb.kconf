@@ -38,7 +38,7 @@ config	GDB_INFO
 	bool
 	prompt "Task-aware debugging with GDB [EXPERIMENTAL]"
 	default n
-	depends on HOST_TOOLS_SUPPORT
+	depends on CONTEXT_MONITOR
 	help
 	  This option enables the kernel to collect additional information
 	  during interrupts, exceptions, and context switches. This information

@@ -48,7 +48,7 @@ ending the context, be it a task or a fiber.
 #include <nanocontextentry.h>
 #include <misc/printk.h>
 
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 /*******************************************************************************
 *
 * _context_exit - context exit routine
@@ -85,7 +85,7 @@ void _context_exit(tCCS *pContext)
 		pPrevContext->activeLink = pContext->activeLink;
 	}
 }
-#endif /* CONFIG_HOST_TOOLS_SUPPORT */
+#endif /* CONFIG_CONTEXT_MONITOR */
 
 /*******************************************************************************
 *

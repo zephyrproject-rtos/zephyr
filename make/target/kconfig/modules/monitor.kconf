@@ -93,6 +93,15 @@ config  OBJECT_MONITOR
 	  This option instructs the kernel to record statistics about
 	  microkernel object usage.
 
+config  CONTEXT_MONITOR
+	bool
+	prompt "Task and fiber monitoring [EXPERIMENTAL]"
+	default n
+	help
+	  This option instructs the kernel to maintain a list of all tasks
+	  and fibers (excluding those that have not yet started or have
+	  already terminated).
+
 config	INIT_STACKS
 	bool
 	prompt "Initialize stack areas"
@@ -126,12 +135,3 @@ config  BOOT_TIME_MEASUREMENT
 	  executing, while __main_tsc records when main() begins executing,
 	  and __idle_tsc records when the CPU becomes idle. All values are
 	  recorded in terms of CPU clock cycles since system reset.
-
-config  HOST_TOOLS_SUPPORT
-	bool
-	prompt "Host tools support [EXPERIMENTAL]"
-	default n
-	help
-	  This option allows the kernel to interact with VxMicro host tools.
-	  These tools allow users to monitor the behavior of the target system,
-	  as well to debug it.

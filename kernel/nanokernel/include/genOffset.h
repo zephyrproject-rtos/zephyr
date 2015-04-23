@@ -136,10 +136,10 @@ $ nm offsets.o
  * within an existing structure) requires consultation.
  */
 
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 #define GEN_OFFSET_SYM_HOST(s, m) GEN_OFFSET_SYM(s, m)
 #else
 #define GEN_OFFSET_SYM_HOST(s, m)
-#endif /* CONFIG_HOST_TOOLS_SUPPORT */
+#endif /* CONFIG_CONTEXT_MONITOR */
 
 #endif /* _GEN_OFFSET_H */

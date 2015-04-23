@@ -683,7 +683,7 @@ struct s_CCS {
 	tCoopReg coopReg;     /* non-volatile integer register storage */
 	tPreempReg preempReg; /* volatile integer register storage */
 
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 	struct s_CCS *activeLink; /* link to next context in the active list */
 #endif
 #ifdef CONFIG_GDB_INFO
@@ -737,7 +737,7 @@ typedef struct s_NANO {
 	tCCS *fiber;   /* singly linked list of runnable fiber contexts */
 	tCCS *task;    /* pointer to runnable task context */
 	tCCS *current; /* currently scheduled context (fiber or task) */
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 	tCCS *contexts; /* singly linked list of ALL fiber+tasks */
 #endif
 	unsigned nested;  /* nested interrupt count */

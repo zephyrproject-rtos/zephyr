@@ -184,7 +184,7 @@ struct s_CCS {
 #endif
 	struct coop coopReg;
 	struct preempt preempReg;
-#ifdef CONFIG_HOST_TOOLS_SUPPORT
+#ifdef CONFIG_CONTEXT_MONITOR
 	struct s_CCS *activeLink;  /* link to next context in the active list */
 #endif
 };
@@ -194,7 +194,7 @@ struct s_NANO {
 	tCCS *task;     /* current task the nanokernel knows about */
 	tCCS *current;  /* currently scheduled context (fiber or task) */
 
-#ifdef CONFIG_HOST_TOOLS_SUPPORT
+#ifdef CONFIG_CONTEXT_MONITOR
 	tCCS *contexts; /* singly linked list of ALL fiber+tasks */
 #endif
 

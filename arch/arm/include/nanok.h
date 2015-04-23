@@ -134,7 +134,7 @@ struct s_CCS {
 #endif
 	struct coop coopReg;
 	struct preempt preempReg;
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 	struct s_CCS *activeLink; /* link to next context in the active list */
 #endif
 };
@@ -145,7 +145,7 @@ struct s_NANO {
 	tCCS *current; /* currently scheduled context (fiber or task) */
 	int flags;     /* tCCS->flags of 'current' context */
 
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 	tCCS *contexts; /* singly linked list of ALL fiber+tasks */
 #endif
 

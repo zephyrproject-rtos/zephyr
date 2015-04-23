@@ -55,7 +55,7 @@ struct init_stack_frame {
 
 tNANO _NanoKernel = {0};
 
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 #define TOOLS_SUPPORT_INIT(pCcs) toolsSupportInit(pCcs)
 #else
 #define TOOLS_SUPPORT_INIT(pCcs) \
@@ -63,7 +63,7 @@ tNANO _NanoKernel = {0};
 	} while ((0))
 #endif
 
-#if defined(CONFIG_HOST_TOOLS_SUPPORT)
+#if defined(CONFIG_CONTEXT_MONITOR)
 /*
  * toolsSupportInit - initialize host-tools support when needed
  *
@@ -89,7 +89,7 @@ static ALWAYS_INLINE void toolsSupportInit(struct s_CCS *pCcs /* context */
 	_NanoKernel.contexts = pCcs;
 	irq_unlock_inline(key);
 }
-#endif /* CONFIG_HOST_TOOLS_SUPPORT */
+#endif /* CONFIG_CONTEXT_MONITOR */
 
 /*
  * _NewContext - initialize a new context (thread) from its stack space
