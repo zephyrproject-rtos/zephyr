@@ -214,7 +214,7 @@ void workload_time_slice_set(int32_t t)
 #if defined(CONFIG_ADVANCED_POWER_MANAGEMENT)
 /*******************************************************************************
 *
-* _GetNextTimerExpiry - obtain number of ticks until next timer expires
+* _get_next_timer_expiry - obtain number of ticks until next timer expires
 *
 * Must be called with interrupts locked to prevent the timer queues from
 * changing.
@@ -223,7 +223,7 @@ void workload_time_slice_set(int32_t t)
 *
 */
 
-static inline int32_t _GetNextTimerExpiry(void)
+static inline int32_t _get_next_timer_expiry(void)
 {
 	if (_k_timer_list_head)
 		return _k_timer_list_head->Ti;
@@ -255,7 +255,7 @@ static void _PowerSave(void)
 		for (;;) {
 			irq_lock_inline();
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
-			_SysPowerSaveIdle(_GetNextTimerExpiry());
+			_SysPowerSaveIdle(_get_next_timer_expiry());
 #else
 			/*
 			 * nano_cpu_idle () is invoked here directly only if APM
