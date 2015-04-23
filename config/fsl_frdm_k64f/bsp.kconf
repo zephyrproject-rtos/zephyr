@@ -49,7 +49,7 @@ config	NUM_IRQ_PRIO_BITS
 
 config  NUM_IRQS
         # must be >= the highest interrupt number used
-	default 32
+	default 34
 
 source "ARM_CortexM4.kconf"
 
