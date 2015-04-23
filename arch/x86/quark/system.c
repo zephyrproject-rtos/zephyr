@@ -139,7 +139,7 @@ static void consoleInit(void)
 	info.regs = _SysPciMap(addr, size);
 
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
-	uartConsoleInit();
+	uart_console_init();
 }
 
 #else

@@ -107,7 +107,7 @@ static void consoleInit(void)
 
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
 
-	uartConsoleInit();
+	uart_console_init();
 }
 
 #else

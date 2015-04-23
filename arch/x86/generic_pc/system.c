@@ -138,7 +138,7 @@ static void consoleInit(void)
 	info.irq = CONFIG_UART_CONSOLE_IRQ;
 	info.int_pri = CONFIG_UART_CONSOLE_INT_PRI;
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
-	uartConsoleInit();
+	uart_console_init();
 }
 
 #else

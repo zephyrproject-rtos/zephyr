@@ -39,7 +39,7 @@ extern "C" {
 
 #include <cputype.h>
 
-extern void uartConsoleInit(void);
+extern void uart_console_init(void);
 
 /*
  * Register callback function which gets called when string typed in

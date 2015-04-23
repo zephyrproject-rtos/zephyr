@@ -194,12 +194,12 @@ void uart_register_handler(void (*cb) (const char *string))
 
 /******************************************************************************
  *
- * uartConsoleInit - initialize one UART as the console/debug port
+ * uart_console_init - initialize one UART as the console/debug port
  *
  * RETURNS: N/A
  */
 
-void uartConsoleInit(void)
+void uart_console_init(void)
 {
 	__stdout_hook_install(consoleOut);
 	__printk_hook_install(consoleOut);
