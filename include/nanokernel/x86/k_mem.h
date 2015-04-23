@@ -50,10 +50,6 @@ if and shift operations in order to generate minimal code with maximum
 performance.
 */
 
-#if defined(VXMICRO_HOST_TOOLS)
-#define k_memcpy memcpy
-#define k_memset memset
-#else
 #include <toolchain.h>
 #include <sections.h>
 #include <stddef.h>
@@ -63,5 +59,3 @@ performance.
 #else
 	#include <nanokernel/x86/k_mem-other.h>
 #endif
-
-#endif /* VXMICRO_HOST_TOOLS */

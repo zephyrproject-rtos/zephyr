@@ -36,12 +36,7 @@
 #ifndef _CPUTYPE_H
 #define _CPUTYPE_H
 
-/*
- * If this file is part of the host tools build, default to the Intel arch.
- * This is done as a temporary workaround until the host tools build issue
- * is resolved on the host side.
- */
-#if defined(VXMICRO_HOST_TOOLS) || defined(VXMICRO_ARCH_x86)
+#if defined(VXMICRO_ARCH_x86)
 #include <nanokernel/x86/Intelprc.h>
 #elif defined(VXMICRO_ARCH_arm)
 #include <nanokernel/arm/ARMprc.h>
