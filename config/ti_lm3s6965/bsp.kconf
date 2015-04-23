@@ -67,13 +67,7 @@ config	BSP_TI_LM3S6965_QEMU
 	# BSP has only been tested on QEMU, not on real hardware, so always
 	# assume it is used for a QEMU target.
 
-config NLI_CPU_FREQ_MHZ
-       default "12.0"
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
        default 12000000
-
-config NLI_TIMER_FREQ_MHZ
-       default "12"
 
 endmenu

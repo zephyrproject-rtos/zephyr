@@ -55,13 +55,7 @@ config	BSP_PCMINUTEIA
 config  PHYS_LOAD_ADDR
 	default 0x00100000	
 
-config	NLI_CPU_FREQ_MHZ
-	default "400.0"
-
 config	SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1193180
-
-config	NLI_TIMER_FREQ_MHZ
-	default "1.19318"
 
 source "Intel-core.kconf"

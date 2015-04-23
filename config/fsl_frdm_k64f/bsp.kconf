@@ -60,14 +60,8 @@ config	BSP_FSL_FRDM_K64F
 	# omit prompt to signify a "hidden" option
 	select CPU_CORTEXM4
 
-config	NLI_CPU_FREQ_MHZ
-	default "120.0"
-
 config	SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 120000000
-
-config	NLI_TIMER_FREQ_MHZ
-	default "120.0"
 
 config	WDOG_INIT
 	def_bool y

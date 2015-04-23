@@ -61,13 +61,7 @@ config	CPU_MIGHT_SUPPORT_CLFLUSH
 config  PHYS_LOAD_ADDR
 	default 0x00100000	
 
-config	NLI_CPU_FREQ_MHZ
-	default "1800.0"
-
 config	SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 150000000
-
-config	NLI_TIMER_FREQ_MHZ
-	default "150.0"
 
 source "Intel-core.kconf"
