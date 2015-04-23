@@ -114,11 +114,6 @@ iCFG_ORIG_STEM = ${vCONFIG_BASE_DIR}/${vBSP}/${vKTYPE}/config${NUM_NODES}p
 iBUILDSPEC = ${vOUT_DIR}/buildspec
 
 #####
-# generated NLI file
-
-iCFG_FINAL_NLI = ${iNLI_OUT}/config${NUM_NODES}p.nli
-
-#####
 # always link against standard C and math libraries,
 # and against auxiliary compiler libraries
 

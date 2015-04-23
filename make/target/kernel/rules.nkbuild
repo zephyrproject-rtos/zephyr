@@ -43,6 +43,6 @@ ${strip}: ${vOUT_DIR}/nanokernel.${strip}
 
 ${vOUT_DIR}/nanokernel.${bin}: ${vOUT_DIR}/nanokernel.${elf}
 
-${vOUT_DIR}/nanokernel.${elf}: ${iLIBS} ${iKLIB_DEP} ${iCFG_FINAL_NLI} ${iKERNEL_STDLIB_RULE}
+${vOUT_DIR}/nanokernel.${elf}: ${iLIBS} ${iKLIB_DEP} ${iKERNEL_STDLIB_RULE}
 
 include ${vMAKE}/target/kernel/rules.kbuild
