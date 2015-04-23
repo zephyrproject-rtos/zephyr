@@ -56,6 +56,9 @@ bsp_arch_SRC = $(strip \
 	arch/arm/bsp/CortexM/nmi.c \
 )
 
+# Bluetooth
+bsp_drivers_SRC_BLUETOOTH_UART_y = drivers/bluetooth/uart.c
+
 # peripherals
 bsp_drivers_SRC_GDB_INFO_y = arch/${vARCH}/timer/systick_gdb.s
 bsp_drivers_SRC = $(strip \
@@ -63,6 +66,7 @@ bsp_drivers_SRC = $(strip \
 	arch/${vARCH}/timer/systick.c \
 	drivers/serial/k20UartDrv.c \
 	${bsp_drivers_SRC_GDB_INFO_${CONFIG_GDB_INFO}} \
+	${bsp_drivers_SRC_BLUETOOTH_UART_${CONFIG_BLUETOOTH_UART}} \
 )
 
 # configurable
