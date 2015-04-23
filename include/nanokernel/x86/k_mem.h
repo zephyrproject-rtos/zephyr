@@ -50,6 +50,9 @@ if and shift operations in order to generate minimal code with maximum
 performance.
 */
 
+#ifndef _K_MEM_H
+#define _K_MEM_H
+
 #include <toolchain.h>
 #include <sections.h>
 #include <stddef.h>
@@ -59,3 +62,5 @@ performance.
 #else
 	#include <nanokernel/x86/k_mem-other.h>
 #endif
+
+#endif /* _K_MEM_H */
