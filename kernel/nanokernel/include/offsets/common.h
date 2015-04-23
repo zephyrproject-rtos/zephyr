@@ -58,7 +58,7 @@ GEN_ABSOLUTE_SYM(__tNANO_SIZEOF, sizeof(tNANO));
 /* arch-agnostic tCCS structure member offsets */
 
 GEN_OFFSET_SYM(tCCS, link);
-GEN_OFFSET_SYM_HOST(tCCS, activeLink);
+GEN_OFFSET_SYM_HOST(tCCS, next_context);
 GEN_OFFSET_SYM(tCCS, prio);
 GEN_OFFSET_SYM(tCCS, flags);
 GEN_OFFSET_SYM(tCCS, coopReg);   /* start of coop register set */

@@ -135,7 +135,7 @@ struct s_CCS {
 	struct coop coopReg;
 	struct preempt preempReg;
 #if defined(CONFIG_CONTEXT_MONITOR)
-	struct s_CCS *activeLink; /* link to next context in the active list */
+	struct s_CCS *next_context; /* next item in list of ALL fiber+tasks */
 #endif
 };
 

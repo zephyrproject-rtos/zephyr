@@ -199,7 +199,7 @@ static void _NewContextInternal(
 		 */
 
 		imask = irq_lock();
-		ccs->activeLink = _NanoKernel.contexts;
+		ccs->next_context = _NanoKernel.contexts;
 		_NanoKernel.contexts = ccs;
 		irq_unlock(imask);
 	}

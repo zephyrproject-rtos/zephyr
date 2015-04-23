@@ -74,15 +74,15 @@ void _context_exit(tCCS *pContext)
 	 */
 
 	if (pContext == _NanoKernel.contexts) {
-		_NanoKernel.contexts = _NanoKernel.contexts->activeLink;
+		_NanoKernel.contexts = _NanoKernel.contexts->next_context;
 	} else {
 		tCCS *pPrevContext;
 
 		pPrevContext = _NanoKernel.contexts;
-		while (pContext != pPrevContext->activeLink) {
-			pPrevContext = pPrevContext->activeLink;
+		while (pContext != pPrevContext->next_context) {
+			pPrevContext = pPrevContext->next_context;
 		}
-		pPrevContext->activeLink = pContext->activeLink;
+		pPrevContext->next_context = pContext->next_context;
 	}
 }
 #endif /* CONFIG_CONTEXT_MONITOR */
