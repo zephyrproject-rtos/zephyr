@@ -58,6 +58,41 @@ extern const kernelfunc _k_server_dispatch_table[];
 
 /*******************************************************************************
 *
+* next_task_select - select task to be executed by microkernel
+*
+* Locates that highest priority task queue that is non-empty and chooses the
+* task at the head of that queue. It's guaranteed that there will always be
+* a non-empty queue, since the idle task is always executable.
+*
+* RETURNS: pointer to selected task
+*/
+
+static struct k_proc *next_task_select(void)
+{
+	int K_PrioListIdx;
+
+#if (CONFIG_NUM_TASK_PRIORITIES <= 32)
+	K_PrioListIdx = find_first_set_inline(_k_task_priority_bitmap[0]) - 1;
+#else
+	int bit_map;
+	int set_bit_pos;
+
+	K_PrioListIdx = -1;
+	for (bit_map = 0; ; bit_map++) {
+		set_bit_pos = find_first_set_inline(_k_task_priority_bitmap[bit_map]);
+		if (set_bit_pos) {
+			K_PrioListIdx += set_bit_pos;
+			break;
+		}
+		K_PrioListIdx += 32;
+	}
+#endif
+
+	return _k_task_priority_list[K_PrioListIdx].Head;
+}
+
+/*******************************************************************************
+*
 * K_swapper - the microkernel thread entry point
 *
 * This function implements the microkernel fiber.  It waits for command
@@ -74,7 +109,6 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 {
 	struct k_args *pArgs;
 	struct k_proc *pNextTask;
-	int K_PrioListIdx;
 
 	ARG_UNUSED(parameter1);
 	ARG_UNUSED(parameter2);
@@ -115,21 +149,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			}
 		} while (nano_fiber_stack_pop(&_k_command_stack, (void *)&pArgs));
 
-		/*
-		 * Always check higher priorities (lower numbers) first.
-		 * Check the low bitmask is not 0. Some built in bit scanning
-		 * functions have the result undefined if the argument is 0.
-		 */
-		if (_k_task_priority_bitmap[0])
-			K_PrioListIdx = find_first_set_inline(_k_task_priority_bitmap[0]) - 1;
-		else
-			K_PrioListIdx = find_first_set_inline(_k_task_priority_bitmap[1]) + 31;
-		/*
-		 * There is no need to check whether K_PrioListIx is 0 since
-		 * it's guaranteed that there will always be at least one task
-		 * in the ready state (idle task)
-		 */
-		pNextTask = _k_task_priority_list[K_PrioListIdx].Head;
+		pNextTask = next_task_select();
 
 		if (_k_current_task != pNextTask) {
 /*

@@ -61,6 +61,18 @@ config	MICROKERNEL_SERVER_STACK_SIZE
 	  to handle the deepest call stack for internal handling of microkernel
 	  objects used by a kernel's project.
 
+config	NUM_TASK_PRIORITIES
+	int
+	prompt "Number of task priorities"
+	default 64
+	range 1 256
+	depends on MICROKERNEL
+	help
+	  This option specifies the number of task priorities supported by the
+	  task scheduler. Specifying "N" provides support for task priorities
+	  ranging from 0 (highest) through N-2; task priority N-1 (lowest) is
+	  reserved for the kernel's idle task.
+
 config	NUM_COMMAND_PACKETS
 	int
 	prompt "Number of command packets"

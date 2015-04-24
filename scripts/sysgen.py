@@ -48,6 +48,7 @@ import sys
 
 num_kargs = 0
 num_timers = 0
+num_prios = 0
 
 task_list = []
 event_list = []
@@ -160,6 +161,7 @@ def vpf_parse():
 
     global num_kargs
     global num_timers
+    global num_prios
 
     # read file contents in a single shot
     with open(sys.argv[1], 'r') as infile:
@@ -179,10 +181,11 @@ def vpf_parse():
             continue    # ignore comment line
 
         if (words[0] == "CONFIG"):
-            if (len(words) != 3):
+            if (len(words) != 4):
                 error_arg_count(line)
             num_kargs = int(words[1])
             num_timers = int(words[2])
+            num_prios = int(words[3])
             continue
 
         if (words[0] == "TASK"):
@@ -363,6 +366,8 @@ def kernel_main_c_timers():
 def kernel_main_c_tasks():
     """ Generate task variables """
 
+    global num_prios
+
     total_tasks = len(task_list) + 1
 
     # task global variables
@@ -412,7 +417,7 @@ def kernel_main_c_tasks():
             "%s, %s, %d, (taskabortfunction)NULL},\n" % (entry, stack, size))
         ident += 1
 
-    kernel_main_c_out("    {NULL, NULL, 63, 0x00000000, " +
+    kernel_main_c_out("    {NULL, NULL, %d, 0x00000000, " % (num_prios - 1) +
         "0x00000000, 0x00000000,\n" +
         "(taskstartfunction)NULL, NULL, 0, (taskabortfunction)NULL}\n")
     kernel_main_c_out("};\n")
@@ -427,7 +432,8 @@ def kernel_main_c_tasks():
 def kernel_main_c_priorities():
     """ Generate task scheduling variables """
 
-    num_prios = 64
+    global num_prios
+
     total_tasks = len(task_list) + 1
 
     # priority queue descriptors (lowest priority queue contains idle task)
@@ -449,6 +455,17 @@ def kernel_main_c_priorities():
     kernel_main_c_out("\n" +
         "struct k_tqhd * K_Prio = &_k_task_priority_list[%d];\n" %
         (num_prios - 1))
+
+    # priority queue bit map (indicates which priority queues are non-empty;
+    # initially only the idle task's queue has a runnable task)
+
+    num_bit_maps = ((num_prios + 31) / 32)
+
+    kernel_main_c_out("\n" +
+        "uint32_t _k_task_priority_bitmap[%d] = {" % (num_bit_maps))
+    for i in range(1, num_bit_maps):
+        kernel_main_c_out("0, ")
+    kernel_main_c_out("(1u << %d)};\n" % ((num_prios - 1) & 0x1f))
 
 
 def kernel_main_c_events():
