@@ -44,6 +44,11 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_UART)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 #define H4_HEADER_SIZE	1
 
 #define H4_CMD		0x01
