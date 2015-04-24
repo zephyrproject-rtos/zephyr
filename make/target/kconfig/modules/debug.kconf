@@ -65,3 +65,14 @@ config	TASK_DEBUG
 	  This option allows execution of all tasks (with the exception of
 	  essential system tasks) to be suspended so that debugging operations
 	  can be performed.
+
+config	GDB_INFO
+	bool
+	prompt "OS-aware debugging with GDB [EXPERIMENTAL]"
+	default n
+	select CONTEXT_MONITOR
+	help
+	  This option enables the kernel to support OS-aware debugging
+	  using GDB by collecting additional information required by the
+	  debugger. System behavior during interrupts, exceptions, and
+	  context switches may be impacted by the collection of this data.

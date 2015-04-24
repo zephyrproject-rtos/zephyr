@@ -76,7 +76,6 @@ config  CPU_CLOCK_FREQ_MHZ
 endmenu
 
 menu "Debugging Options"
-source "gdb.kconf"
 source "debug.kconf"
 endmenu
 

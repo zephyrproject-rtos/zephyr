@@ -71,7 +71,6 @@ source "monitor.kconf"
 endmenu
 
 menu "Debugging Options"
-source "gdb.kconf"
 source "debug.kconf"
 endmenu
 
