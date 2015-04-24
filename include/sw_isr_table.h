@@ -41,7 +41,7 @@ Data types for a software-managed ISR table, with a parameter per-ISR.
 #if !defined(_ASMLANGUAGE)
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be
- * loaded arg -> r0, isr -> r3 in _IsrWrapper with one ldmia instruction,
+ * loaded arg -> r0, isr -> r3 in _isr_wrapper with one ldmia instruction,
  * on ARM Cortex-M (Thumb2).
  */
 struct _IsrTableEntry {

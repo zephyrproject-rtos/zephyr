@@ -71,7 +71,7 @@ GTEXT(__ev_dc_error)
 GTEXT(__ev_maligned)
 
 GTEXT(_PrepC)
-GTEXT(_IsrWrapper)
+GTEXT(_isr_wrapper)
 
 #else
 

@@ -50,14 +50,14 @@ _ASM_FILE_PROLOGUE
 
 GDATA(_IsrTable)
 
-GTEXT(_IsrWrapper)
+GTEXT(_isr_wrapper)
 GTEXT(_IntExit)
 
 /*******************************************************************************
 *
-* _IsrWrapper - wrapper around ISRs when inserted in software ISR table
+* _isr_wrapper - wrapper around ISRs when inserted in software ISR table
 *
-* When inserted in the vector table, _IsrWrapper() demuxes the ISR table using
+* When inserted in the vector table, _isr_wrapper() demuxes the ISR table using
 * the running interrupt number as the index, and invokes the registered ISR
 * with its correspoding argument. When returning from the ISR, it determines
 * if a context switch needs to happen (see documentation for __pendsv()) and
@@ -66,7 +66,7 @@ GTEXT(_IntExit)
 *
 * RETURNS: N/A
 */
-SECTION_FUNC(TEXT, _IsrWrapper)
+SECTION_FUNC(TEXT, _isr_wrapper)
 
     _GDB_STUB_EXC_ENTRY
 

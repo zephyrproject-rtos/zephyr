@@ -71,7 +71,7 @@ GTEXT(__pendsv)
 GTEXT(__reserved)
 
 GTEXT(_PrepC)
-GTEXT(_IsrWrapper)
+GTEXT(_isr_wrapper)
 
 #endif /* _ASMLANGUAGE */
 

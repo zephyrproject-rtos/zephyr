@@ -36,7 +36,7 @@ This file contains the IRQ part of the vector table. It is meant to be used
 for one of two cases:
 
 a) When software-managed ISRs (SW_ISR_TABLE) is enabled, and in that case it
-   binds _IsrWrapper() to all the IRQ entries in the vector table.
+   binds _isr_wrapper() to all the IRQ entries in the vector table.
 
 b) When the BSP is written so that device ISRs are installed directly in the
    vector table, they are enumerated here.
@@ -50,13 +50,13 @@ b) When the BSP is written so that device ISRs are installed directly in the
 #include <console/uart_console.h>
 #endif /* CONFIG_CONSOLE_HANDLER */
 
-extern void _IsrWrapper(void);
+extern void _isr_wrapper(void);
 typedef void (*vth)(void); /* Vector Table Handler */
 
 #if defined(CONFIG_SW_ISR_TABLE)
 
 vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)] = _IsrWrapper,
+	[0 ...(CONFIG_NUM_IRQS - 1)] = _isr_wrapper,
 };
 
 #elif !defined(CONFIG_IRQ_VECTOR_TABLE_CUSTOM)

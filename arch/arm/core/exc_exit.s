@@ -35,7 +35,7 @@ DESCRIPTION
 
 Provides functions for performing kernel handling when exiting exceptions or
 interrupts that are installed directly in the vector table (i.e. that are not
-wrapped around by _IsrWrapper()).
+wrapped around by _isr_wrapper()).
 */
 
 #define _ASMLANGUAGE
