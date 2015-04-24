@@ -495,7 +495,6 @@ asm-generic:
 # of make so .config is not included in this case either (for *config).
 
 version_h := include/generated/version.h
-old_version_h := include/linux/version.h
 
 no-dot-config-targets := clean mrproper distclean \
 			 cscope gtags TAGS tags help% %docs check% coccicheck \
@@ -1040,7 +1039,6 @@ endef
 
 $(version_h): $(srctree)/Makefile FORCE
 	$(call filechk,version.h)
-	$(Q)rm -f $(old_version_h)
 
 include/generated/utsrelease.h: include/config/kernel.release FORCE
 	$(call filechk,utsrelease.h)
@@ -1210,7 +1208,7 @@ CLEAN_FILES += misc/generated/nodes/kernel_main.c \
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
 		  arch/*/include/generated .tmp_objdiff
-MRPROPER_FILES += .config .config.old .version .old_version $(version_h) \
+MRPROPER_FILES += .config .config.old .version $(version_h) \
 		  Module.symvers tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS \
 		  signing_key.priv signing_key.x509 x509.genkey		\
 		  extra_certificates signing_key.x509.keyid		\
