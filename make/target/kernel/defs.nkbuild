@@ -36,8 +36,6 @@ vKTYPE = nkernel
 override NUM_NODES = 1
 override NODES = 1
 
-iNLI_OUT = ${vOUT_DIR}/nli
-
 include ${vMAKE}/target/kernel/defs.kbuild
 
 #####

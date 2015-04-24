@@ -46,7 +46,6 @@ iCFG_ORIG_VPF  = ${iCFG_ORIG_STEM}.vpf
 # sysgen
 
 iSYSGEN_OUT = ${vOUT_DIR}/sysgen
-iNLI_OUT = ${iSYSGEN_OUT}
 
 iVXMICRO_H = ${iSYSGEN_OUT}/vxmicro.$h
 iMICROKERNEL_OBJECTS_H = ${iSYSGEN_OUT}/microkernel_objects.$h

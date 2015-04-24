@@ -57,7 +57,6 @@ include ${vMAKE}/target/headers/rules.kver
 ifeq (${vGOAL_NEEDS_TARGET_SETUP},y)
   include ${vMAKE}/target/toolchain/${vTOOL}/rules.${vTOOL}
   include ${vMAKE}/target/toolchain/${vTOOL}/rules.kernel-bin
-  include ${vMAKE}/target/kernel/nli/rules.nodes
 endif
 
 ${vKLIB_DIR}/configs.c: ${vAUTOCONF_H} | $$(dir $$@).dir

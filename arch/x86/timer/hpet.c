@@ -568,11 +568,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 
 	counterLoadValue = (uint32_t)(tickFempto / hpetClockPeriod);
 
-	/*
-	 * Initialize "sys_clock_hw_cycles_per_tick"
-	 * (Note: This overrides any value that the host tools may have computed
-	 * at build time using BSP information, such as that in the NLI file.)
-	 */
+	/* Initialize "sys_clock_hw_cycles_per_tick" */
 
 	sys_clock_hw_cycles_per_tick = counterLoadValue;
 
