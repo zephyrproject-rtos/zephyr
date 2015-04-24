@@ -42,6 +42,11 @@
 #include "hci_core.h"
 #include "conn.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 /* How many buffers to use for incoming ACL data */
 #define ACL_IN_MAX	7
 #define ACL_OUT_MAX	7
