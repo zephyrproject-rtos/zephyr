@@ -13,9 +13,13 @@ export VXMICRO_BASE=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # prepend VxMicro build system tools to PATH, if not already present
 vxmicro_linux_bin=${VXMICRO_BASE}/host/x86-linux2/bin
+scripts_path=${VXMICRO_BASE}/scripts
 echo "${PATH}" | grep -q "${vxmicro_linux_bin}"
 [ $? != 0 ] && export PATH=${vxmicro_linux_bin}:${PATH}
 unset vxmicro_linux_bin
+echo "${PATH}" | grep -q "${scripts_path}"
+[ $? != 0 ] && export PATH=${scripts_path}:${PATH}
+unset scripts_path
 
 # enable custom environment settings
 vxmicro_answer_file=~/vxmicro-env_install.bash
