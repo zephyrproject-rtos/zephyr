@@ -6,6 +6,17 @@ source "misc/Kconfig"
 
 source "arch/Kconfig"
 
+menu "General Setup"
+
+config CROSS_COMPILE
+	string "Cross-compiler tool prefix"
+	help
+	Same as running 'make CROSS_COMPILE=prefix-' but stored for
+	default make runs in this kernel build directory.  You don't
+	need to set this unless you want the configured kernel build
+	directory to select the cross-compiler automatically.
+endmenu
+
 menu "Debugging Options"
 
 config STDOUT_CONSOLE
