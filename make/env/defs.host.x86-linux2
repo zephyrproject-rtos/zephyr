@@ -42,11 +42,11 @@ HOS_CopyFile          = cp -p --no-preserve=timestamps
 HOS_Echo              = echo
 HOS_EchoBlankLine     = echo
 HOS_Cat               = cat
-HOS_Cat3Files         = $(HOS_Bin)/cat3files
+HOS_Cat3Files         = ${vBASE}/scripts/cat3files
 HOS_MakeDir           = mkdir -p
 HOS_DelDir            = rm -rf
-HOS_FileList          = $(HOS_Bin)/filelist
-HOS_DirList           = $(HOS_Bin)/dirlist
+HOS_FileList          = ${vBASE}/scripts/filelist
+HOS_DirList           = ${vBASE}/scripts/dirlist
 HOS_Shell             = sh
 HOS_Rename            = mv
 HOS_Move              = mv
@@ -66,7 +66,7 @@ HOS_Term              = x-terminal-emulator -e
 HOS_mkevents          = ${HOS_Bin}/mkevents
 HOS_Sleep             = sleep
 HOS_Percent           = %
-HOS_GenHash           = ${HOS_Bin}/gen_file_path_hash
+HOS_GenHash           = ${vBASE}/scripts/gen_file_path_hash
 
 # for weird rules where a copy is forced and thus the timestamps should not be
 # updated if the source of the copy did not get re-generated
