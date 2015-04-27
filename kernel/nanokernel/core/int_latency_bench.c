@@ -64,7 +64,7 @@ static uint32_t nesting_delay = 0;
 static uint32_t stop_delay = 0;
 
 /* counter tracking intLock/intUnlock calls once interrupt are locked */
-static uint32_t intLockUnlockNest = 0;
+static uint32_t int_lock_unlock_nest = 0;
 
 /* indicate if the interrupt latency benchamrk is ready to be used */
 static uint32_t int_latency_bench_ready = 0;
@@ -90,9 +90,9 @@ void _int_latency_start(void)
 	/* when interrupts are not already locked, take time stamp */
 	if (!int_locked_timestamp && int_latency_bench_ready) {
 		int_locked_timestamp = timer_read();
-		intLockUnlockNest = 0;
+		int_lock_unlock_nest = 0;
 	}
-	intLockUnlockNest++;
+	int_lock_unlock_nest++;
 }
 
 /*******************************************************************************
@@ -130,7 +130,7 @@ void _int_latency_stop(void)
 		 */
 		delayOverhead =
 			(initial_start_delay +
-			 ((intLockUnlockNest - 1) * nesting_delay) + stop_delay);
+			 ((int_lock_unlock_nest - 1) * nesting_delay) + stop_delay);
 		if (delta >= delayOverhead)
 			delta -= delayOverhead;
 
