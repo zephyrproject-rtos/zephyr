@@ -123,7 +123,7 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
 *
 * This function will be called by the nanokernel idle loop or possibly within
 * an implementation of _SysPowerSaveIdle in the microkernel when the
-* '_SysPowerSaveFlag' variable is non-zero.  The ARM 'wfi' instruction
+* '_sys_power_save_flag' variable is non-zero.  The ARM 'wfi' instruction
 * will be issued, causing a low-power consumption sleep mode.
 *
 * RETURNS: N/A

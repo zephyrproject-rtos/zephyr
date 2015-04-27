@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module provides _SysPowerSaveFlag and _SysPowerSaveIdle(),
+This module provides _sys_power_save_flag and _SysPowerSaveIdle(),
 invoked within the microkernel idle loop.
 
 \INTERNAL
@@ -42,7 +42,7 @@ invoked within the microkernel idle loop.
 #include <toolchain.h>
 #include <sections.h>
 
-unsigned char _SysPowerSaveFlag = 1;
+unsigned char _sys_power_save_flag = 1;
 
 #if defined(CONFIG_ADVANCED_POWER_MANAGEMENT)
 

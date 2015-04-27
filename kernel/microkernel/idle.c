@@ -236,7 +236,7 @@ static inline int32_t _GetNextTimerExpiry(void)
 *
 * _PowerSave - power saving when idle
 *
-* If the BSP sets the _SysPowerSaveFlag flag, this routine will call the
+* If the BSP sets the _sys_power_save_flag flag, this routine will call the
 * _SysPowerSaveIdle() routine in an infinite loop. If the flag is not set,
 * this routine will fall through and kernel_idle() will try the next idling
 * mechanism.
@@ -248,10 +248,10 @@ static inline int32_t _GetNextTimerExpiry(void)
 static void _PowerSave(void)
 {
 	extern void nano_cpu_idle(void);
-	extern unsigned char _SysPowerSaveFlag;
+	extern unsigned char _sys_power_save_flag;
 	extern void _SysPowerSaveIdle(int32_t ticks);
 
-	if (_SysPowerSaveFlag) {
+	if (_sys_power_save_flag) {
 		for (;;) {
 			irq_lock_inline();
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
