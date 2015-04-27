@@ -52,7 +52,7 @@ unsigned int _k_workload_ticks = 0x0;
 unsigned int _k_workload_ref_time = 0x0;
 unsigned int _k_workload_t0 = 0x0;
 unsigned int _k_workload_t1 = 0x0;
-volatile unsigned int WldN0 = 0x0;
+volatile unsigned int _k_workload_n0 = 0x0;
 volatile unsigned int WldN1 = 0x0;
 volatile unsigned int Wld_i = 0x0;
 volatile unsigned int Wld_i0 = 0x0;
@@ -113,7 +113,7 @@ static void _WlLoop(void)
 
 void wlMonitorCalibrate(void)
 {
-	WldN0 = Wld_i = 0;
+	_k_workload_n0 = Wld_i = 0;
 	WldN1 = 1000;
 
 	_k_workload_t0 = timer_read();
@@ -141,7 +141,7 @@ void K_workload(struct k_args *P)
 	unsigned int k, t;
 	signed int iret;
 
-	k = (Wld_i - WldN0) * _k_workload_ref_time;
+	k = (Wld_i - _k_workload_n0) * _k_workload_ref_time;
 #ifdef WL_SCALE
 	t = (timer_read() - _k_workload_t0) >> (K_wl_scale);
 #else
