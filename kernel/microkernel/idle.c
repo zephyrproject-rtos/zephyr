@@ -53,7 +53,7 @@ unsigned int _k_workload_ref_time = 0x0;
 unsigned int _k_workload_t0 = 0x0;
 unsigned int _k_workload_t1 = 0x0;
 volatile unsigned int _k_workload_n0 = 0x0;
-volatile unsigned int WldN1 = 0x0;
+volatile unsigned int _k_workload_n1 = 0x0;
 volatile unsigned int Wld_i = 0x0;
 volatile unsigned int Wld_i0 = 0x0;
 volatile unsigned int WldTDelta = 0x0;
@@ -72,7 +72,7 @@ extern uint32_t K_wl_scale;
 *
 * Perform idle task "dummy work".
 *
-* This routine increments Wld_i and checks it against WldN1. WldN1 is updated
+* This routine increments Wld_i and checks it against _k_workload_n1. _k_workload_n1 is updated
 * by the system tick handler, and both are kept in close synchronization.
 *
 * RETURNS: N/A
@@ -84,7 +84,7 @@ static void _WlLoop(void)
 	volatile int x = 87654321;
 	volatile int y = 4;
 
-	while (++Wld_i != WldN1) /* except for the calibration phase,
+	while (++Wld_i != _k_workload_n1) /* except for the calibration phase,
 				  * this while loop should always be true.
 				  */
 	{
@@ -114,7 +114,7 @@ static void _WlLoop(void)
 void wlMonitorCalibrate(void)
 {
 	_k_workload_n0 = Wld_i = 0;
-	WldN1 = 1000;
+	_k_workload_n1 = 1000;
 
 	_k_workload_t0 = timer_read();
 	_WlLoop();

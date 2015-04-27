@@ -45,7 +45,7 @@ extern unsigned int _k_workload_ref_time;
 extern unsigned int _k_workload_t0;
 extern unsigned int _k_workload_t1;
 extern volatile unsigned int _k_workload_n0;
-extern volatile unsigned int WldN1;
+extern volatile unsigned int _k_workload_n1;
 extern volatile unsigned int Wld_i;
 extern volatile unsigned int Wld_i0;
 extern volatile unsigned int WldTDelta;
