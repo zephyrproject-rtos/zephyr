@@ -61,7 +61,7 @@ extern int _k_mem_pool_count;
 extern int _k_pipe_count;
 
 extern struct k_proc *_k_current_task;
-extern uint32_t K_PrioBitMap[];
+extern uint32_t _k_task_priority_bitmap[];
 
 #ifndef LITE
 extern K_TIMER *K_Thead;

@@ -120,10 +120,10 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 		 * Check the low bitmask is not 0. Some built in bit scanning
 		 * functions have the result undefined if the argument is 0.
 		 */
-		if (K_PrioBitMap[0])
-			K_PrioListIdx = find_first_set_inline(K_PrioBitMap[0]) - 1;
+		if (_k_task_priority_bitmap[0])
+			K_PrioListIdx = find_first_set_inline(_k_task_priority_bitmap[0]) - 1;
 		else
-			K_PrioListIdx = find_first_set_inline(K_PrioBitMap[1]) + 31;
+			K_PrioListIdx = find_first_set_inline(_k_task_priority_bitmap[1]) + 31;
 		/*
 		 * There is no need to check whether K_PrioListIx is 0 since
 		 * it's guaranteed that there will always be at least one task

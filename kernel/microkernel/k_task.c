@@ -81,7 +81,7 @@ void reset_state_bit(struct k_proc *X,    /* ptr to task */
 		X->Forw = NULL;
 		H->Tail->Forw = X;
 		H->Tail = X;
-		K_PrioBitMap[X->Prio >> 5] |= (1 << (X->Prio & 0x1F));
+		_k_task_priority_bitmap[X->Prio >> 5] |= (1 << (X->Prio & 0x1F));
 	}
 
 #ifdef CONFIG_TASK_MONITOR
@@ -166,7 +166,7 @@ void set_state_bit(
 		 * runnable, then clear that bit in the global priority bit map.
 		 */
 		if (task_queue->Head == NULL) {
-			K_PrioBitMap[task_ptr->Prio >> 5] &= ~(1 << (task_ptr->Prio & 0x1F));
+			_k_task_priority_bitmap[task_ptr->Prio >> 5] &= ~(1 << (task_ptr->Prio & 0x1F));
 		}
 	}
 
