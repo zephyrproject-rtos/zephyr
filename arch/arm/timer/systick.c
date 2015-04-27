@@ -106,7 +106,7 @@ static uint32_t accumulatedCount = 0;
 /* globals */
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-extern uint32_t _HwIntToCHandlerLatency;
+extern uint32_t _hw_irq_to_c_handler_latency;
 #endif
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
@@ -275,9 +275,9 @@ void _TIMER_INT_HANDLER(void *unused)
 	uint32_t value = __scs.systick.val;
 	uint32_t delta = __scs.systick.reload - value;
 
-	if (_HwIntToCHandlerLatency > delta) {
+	if (_hw_irq_to_c_handler_latency > delta) {
 		/* keep the lowest value observed */
-		_HwIntToCHandlerLatency = delta;
+		_hw_irq_to_c_handler_latency = delta;
 	}
 #endif
 

@@ -72,7 +72,7 @@ static uint32_t intLatencyBenchRdy = 0;
 /* globals */
 
 /* min amount of time it takes from HW interrupt generation to 'C' handler */
-uint32_t _HwIntToCHandlerLatency = ULONG_MAX;
+uint32_t _hw_irq_to_c_handler_latency = ULONG_MAX;
 
 /*******************************************************************************
 *
@@ -219,13 +219,13 @@ void int_latency_show(void)
 	}
 
 	if (intLockingLatencyMin != ULONG_MAX) {
-		if (_HwIntToCHandlerLatency == ULONG_MAX) {
+		if (_hw_irq_to_c_handler_latency == ULONG_MAX) {
 			intHandlerLatency = 0;
 			printk(" Min latency from hw interrupt up to 'C' int. "
 			       "handler: "
 			       "not measured\n");
 		} else {
-			intHandlerLatency = _HwIntToCHandlerLatency;
+			intHandlerLatency = _hw_irq_to_c_handler_latency;
 			printk(" Min latency from hw interrupt up to 'C' int. "
 			       "handler:"
 			       " %d tcs = %d nsec\n",

@@ -210,7 +210,7 @@ static uint32_t expectedMainCountValue = 0;
 #endif
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-extern uint32_t _HwIntToCHandlerLatency;
+extern uint32_t _hw_irq_to_c_handler_latency;
 #endif
 
 #ifdef TIMER_SUPPORTS_TICKLESS
@@ -281,9 +281,9 @@ void _timer_int_handler(void *unused)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	uint32_t delta = *_HPET_MAIN_COUNTER_VALUE - expectedMainCountValue;
 
-	if (_HwIntToCHandlerLatency > delta) {
+	if (_hw_irq_to_c_handler_latency > delta) {
 		/* keep the lowest value observed */
-		_HwIntToCHandlerLatency = delta;
+		_hw_irq_to_c_handler_latency = delta;
 	}
 	/* compute the next expected main counter value */
 	expectedMainCountValue += firstIntMainCountValue;
