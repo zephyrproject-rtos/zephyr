@@ -55,7 +55,7 @@ unsigned int _k_workload_t1 = 0x0;
 volatile unsigned int _k_workload_n0 = 0x0;
 volatile unsigned int _k_workload_n1 = 0x0;
 volatile unsigned int _k_workload_i = 0x0;
-volatile unsigned int Wld_i0 = 0x0;
+volatile unsigned int _k_workload_i0 = 0x0;
 volatile unsigned int WldTDelta = 0x0;
 volatile unsigned int WldT_start = 0x0;
 volatile unsigned int WldT_end = 0x0;
@@ -121,7 +121,7 @@ void wlMonitorCalibrate(void)
 	_k_workload_t1 = timer_read();
 
 	WldTDelta = _k_workload_t1 - _k_workload_t0;
-	Wld_i0 = _k_workload_i;
+	_k_workload_i0 = _k_workload_i;
 #ifdef WL_SCALE
 	_k_workload_ref_time = (_k_workload_t1 - _k_workload_t0) >> (K_wl_scale);
 #else
