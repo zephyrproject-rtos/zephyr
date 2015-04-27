@@ -54,7 +54,7 @@ This module provides the microkernel context implementation.
 #include <misc/__assert.h>
 #include <drivers/system_timer.h>
 
-extern const kernelfunc _minik_func[];
+extern const kernelfunc _k_server_dispatch_table[];
 
 /*******************************************************************************
 *
@@ -104,7 +104,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 					K_monitor_args(pArgs);
 				}
 #endif
-				_minik_func[pArgs->Comm](pArgs);
+				_k_server_dispatch_table[pArgs->Comm](pArgs);
 			}
 
 			/* check if another fiber (of equal or greater priority)

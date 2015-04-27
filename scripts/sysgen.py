@@ -924,7 +924,7 @@ def kernel_main_c_kernel_services():
     # generate function table
 
     kernel_main_c_out("\n" +
-        "const kernelfunc _minik_func[82] =\n" +
+        "const kernelfunc _k_server_dispatch_table[82] =\n" +
         "{\n")
     for func in func_table:
         kernel_main_c_out("    " + func + "\n")
