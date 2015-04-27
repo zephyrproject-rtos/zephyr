@@ -56,7 +56,7 @@ static uint32_t intLockedTimestamp = 0;
 
 /* stats tracking the minimum and maximum time when interrupts were locked */
 static uint32_t intLockingLatencyMin = ULONG_MAX;
-static uint32_t intLockingLatencyMax = 0;
+static uint32_t int_locked_latency_max = 0;
 
 /* overhead added to intLock/intUnlock by this latency benchmark */
 static uint32_t initial_start_delay = 0;
@@ -135,8 +135,8 @@ void _int_latency_stop(void)
 			delta -= delayOverhead;
 
 		/* update max */
-		if (delta > intLockingLatencyMax)
-			intLockingLatencyMax = delta;
+		if (delta > int_locked_latency_max)
+			int_locked_latency_max = delta;
 
 		/* update min */
 		if (delta < intLockingLatencyMin)
@@ -193,7 +193,7 @@ void int_latency_init(void)
 
 		/* re-initialize globals to default values */
 		intLockingLatencyMin = ULONG_MAX;
-		intLockingLatencyMax = 0;
+		int_locked_latency_max = 0;
 
 		cacheWarming--;
 	}
@@ -236,8 +236,8 @@ void int_latency_show(void)
 		printk(" Max interrupt latency (includes hw int. to 'C' "
 		       "handler):"
 		       " %d tcs = %d nsec\n",
-		       intLockingLatencyMax + intHandlerLatency,
-		       SYS_CLOCK_HW_CYCLES_TO_NS(intLockingLatencyMax + intHandlerLatency));
+		       int_locked_latency_max + intHandlerLatency,
+		       SYS_CLOCK_HW_CYCLES_TO_NS(int_locked_latency_max + intHandlerLatency));
 
 		printk(" Overhead substracted from Max int. latency:\n"
 		       "  for int. lock           : %d tcs = %d nsec\n"
@@ -258,7 +258,7 @@ void int_latency_show(void)
 	 * disabled.
 	 */
 	intLockingLatencyMin = ULONG_MAX;
-	intLockingLatencyMax = 0;
+	int_locked_latency_max = 0;
 }
 
 #endif /* CONFIG_INT_LATENCY_BENCHMARK */
