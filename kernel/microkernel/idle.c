@@ -50,7 +50,7 @@ task, depending on how the kernel is configured.
 unsigned int _k_workload_slice = 0x0;
 unsigned int _k_workload_ticks = 0x0;
 unsigned int _k_workload_ref_time = 0x0;
-unsigned int WldT0 = 0x0;
+unsigned int _k_workload_t0 = 0x0;
 unsigned int WldT1 = 0x0;
 volatile unsigned int WldN0 = 0x0;
 volatile unsigned int WldN1 = 0x0;
@@ -116,16 +116,16 @@ void wlMonitorCalibrate(void)
 	WldN0 = Wld_i = 0;
 	WldN1 = 1000;
 
-	WldT0 = timer_read();
+	_k_workload_t0 = timer_read();
 	_WlLoop();
 	WldT1 = timer_read();
 
-	WldTDelta = WldT1 - WldT0;
+	WldTDelta = WldT1 - _k_workload_t0;
 	Wld_i0 = Wld_i;
 #ifdef WL_SCALE
-	_k_workload_ref_time = (WldT1 - WldT0) >> (K_wl_scale);
+	_k_workload_ref_time = (WldT1 - _k_workload_t0) >> (K_wl_scale);
 #else
-	_k_workload_ref_time = (WldT1 - WldT0) >> (4 + 6);
+	_k_workload_ref_time = (WldT1 - _k_workload_t0) >> (4 + 6);
 #endif
 
 	_k_workload_slice = 100;
@@ -143,9 +143,9 @@ void K_workload(struct k_args *P)
 
 	k = (Wld_i - WldN0) * _k_workload_ref_time;
 #ifdef WL_SCALE
-	t = (timer_read() - WldT0) >> (K_wl_scale);
+	t = (timer_read() - _k_workload_t0) >> (K_wl_scale);
 #else
-	t = (timer_read() - WldT0) >> (4 + 6);
+	t = (timer_read() - _k_workload_t0) >> (4 + 6);
 #endif
 
 	iret = MSEC_PER_SEC - k / t;

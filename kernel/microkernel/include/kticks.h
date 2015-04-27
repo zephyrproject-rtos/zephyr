@@ -42,7 +42,7 @@ extern int64_t _k_sys_clock_tick_count;
 extern unsigned int _k_workload_slice;
 extern unsigned int _k_workload_ticks;
 extern unsigned int _k_workload_ref_time;
-extern unsigned int WldT0;
+extern unsigned int _k_workload_t0;
 extern unsigned int WldT1;
 extern volatile unsigned int WldN0;
 extern volatile unsigned int WldN1;
