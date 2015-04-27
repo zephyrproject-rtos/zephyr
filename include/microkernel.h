@@ -76,7 +76,7 @@ typedef void (*taskabortfunction)(void);
 extern void kernel_init(void);
 extern void init_node(void);    /* generated function */
 extern void init_drivers(void); /* generated function */
-extern const knode_t K_ThisNode;
+extern const knode_t _k_this_node;
 extern int K_StackSize;
 
 extern int K_TaskCount;

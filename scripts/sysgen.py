@@ -302,7 +302,7 @@ def kernel_main_c_header():
         "#include <sections.h>\n" +
         "#include <vxmicro.h>\n")
 
-    kernel_main_c_out("\nconst knode_t K_ThisNode = 0x00010000;\n")
+    kernel_main_c_out("\nconst knode_t _k_this_node = 0x00010000;\n")
     kernel_main_c_out("\n" +
         "char __noinit _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];\n")
     kernel_main_c_out(

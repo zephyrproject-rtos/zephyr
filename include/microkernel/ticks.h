@@ -50,7 +50,7 @@ extern K_TIMER *K_Thead;
 extern K_TIMER *K_Ttail;
 extern struct nano_lifo K_TimerFree;
 extern K_TIMER K_TimerBlocks[]; /* array of microkernel timer objects */
-extern const knode_t K_ThisNode;
+extern const knode_t _k_this_node;
 
 extern void scheduler_time_slice_set(int32_t t, kpriority_t p);
 
@@ -70,7 +70,7 @@ extern void scheduler_time_slice_set(int32_t t, kpriority_t p);
 
 static inline ktimer_t _timer_ptr_to_id(K_TIMER *timer)
 {
-	return (ktimer_t)((K_ThisNode << 16) +
+	return (ktimer_t)((_k_this_node << 16) +
 			  (uint32_t)(timer - &K_TimerBlocks[0]));
 }
 

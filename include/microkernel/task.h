@@ -40,7 +40,7 @@ extern "C" {
 #include <microkernel/task_api_export.h>
 
 extern struct k_proc *K_Task;
-extern const knode_t K_ThisNode;
+extern const knode_t _k_this_node;
 
 /*
  * The following task groups are reserved for system use.
@@ -88,7 +88,7 @@ extern void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func);
 #define task_group_mask_get() (K_Task->Group)
 #define task_group_join(g) (K_Task->Group |= g)
 #define task_group_leave(g) (K_Task->Group &= ~g)
-#define task_node_id_get() (K_ThisNode)
+#define task_node_id_get() (_k_this_node)
 
 #define isr_task_id_get() task_id_get()
 #define isr_task_priority_get() task_priority_get()
