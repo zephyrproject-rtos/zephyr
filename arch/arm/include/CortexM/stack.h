@@ -39,6 +39,7 @@ Stack helper functions.
 #define _ARM_CORTEXM_STACK__H_
 
 #include <nanok.h>
+#include <asm_inline.h>
 
 #ifdef CONFIG_STACK_GROWS_DOWN
 #define STACK_DIR STACK_GROWS_DOWN
@@ -66,30 +67,6 @@ Stack helper functions.
 #endif
 
 extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
-
-/*******************************************************************************
-*
-* _MspSet - set the value of the Main Stack Pointer register
-*
-* Store the value of <msp> in MSP register.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
-
-#if defined(__GNUC__)
-static ALWAYS_INLINE void _MspSet(uint32_t msp /* value to store in MSP */
-				  )
-{
-	__asm__ volatile("msr MSP, %0\n\t" :  : "r"(msp));
-}
-#elif defined(__DCC__)
-__asm volatile void _MspSet(uint32_t msp)
-{
-	% reg msp !"r0" msr MSP, msp
-}
-#endif
 
 /*******************************************************************************
 *

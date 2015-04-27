@@ -102,6 +102,7 @@ enable FP resource sharing on its behalf.
 
 #include <nanok.h>
 #include <toolchain.h>
+#include <asm_inline.h>
 
 /* the entire library vanishes without the FP_SHARING option enabled */
 
@@ -110,40 +111,6 @@ enable FP resource sharing on its behalf.
 #if defined(CONFIG_SSE)
 extern uint32_t _Mxcsr; /* SSE control/status register default value */
 #endif			/* CONFIG_SSE */
-
-#ifdef CONFIG_AUTOMATIC_FP_ENABLING
-
-/*******************************************************************************
-*
-* _FpAccessDisable - disallow use of floating point capabilities
-*
-* This routine sets CR0[TS] to 1, which disallows the use of FP instructions
-* by the currently executing context.
-*
-* RETURNS: N/A
-*/
-
-#if defined(__GNUC__)
-static void _FpAccessDisable(void)
-{
-	void *tempReg;
-
-	__asm__ volatile(
-		"movl %%cr0, %0;\n\t"
-		"orl $0x8, %0;\n\t"
-		"movl %0, %%cr0;\n\t"
-		: "=r"(tempReg)
-		:
-		: "memory");
-}
-#elif defined(__DCC__)
-__asm volatile void _FpAccessDisable(void)
-{
-	% !"ax" movl % cr0, % eax orl $0x8, % eax movl % eax, % cr0
-}
-#endif /* __GNUC__ */
-
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 
 /*******************************************************************************
 *
@@ -156,39 +123,10 @@ __asm volatile void _FpAccessDisable(void)
 * RETURNS: N/A
 */
 
-#if defined(__GNUC__)
 static void _FpCtxSave(tCCS *ccs)
 {
-#ifdef CONFIG_SSE
-	if (ccs->flags & USE_SSE) {
-		__asm__ volatile("fxsave (%0);\n\t"
-				 :
-				 : "r"(&ccs->preempFloatReg)
-				 : "memory");
-	} else
-#endif /* CONFIG_SSE */
-	{
-		__asm__ volatile("fnsave (%0);\n\t"
-				 :
-				 : "r"(&ccs->preempFloatReg)
-				 : "memory");
-	}
+	_do_fp_ctx_save(ccs->flags & USE_SSE, &ccs->preempFloatReg);
 }
-#elif defined(__DCC__)
-__asm volatile void _FpCtxSave(tCCS *ccs)
-{
-	% mem ccs !"ax", "cx" movl ccs,
-		% eax leal __tCCS_preempFloatReg_OFFSET(% eax),
-		% ecx /* &preempFloatReg */
-#ifdef CONFIG_SSE
-			testl $0x20,
-		__tCCS_flags_OFFSET(% eax) jz 0f fxsave(% ecx) jmp 1f 0
-		: fnsave(% ecx)1 :
-#else
-			fnsave(% ecx)
-#endif /* CONFIG_SSE */
-}
-#endif
 
 /*******************************************************************************
 *
@@ -199,43 +137,10 @@ __asm volatile void _FpCtxSave(tCCS *ccs)
 * RETURNS: N/A
 */
 
-#if defined(__GNUC__)
 static inline void _FpCtxInit(tCCS *ccs)
 {
-	/* initialize x87 FPU */
-	__asm__ volatile("fninit\n\t");
-
-
-#ifdef CONFIG_SSE
-	if (ccs->flags & USE_SSE) {
-		/* initialize SSE (since context uses it) */
-		__asm__ volatile("ldmxcsr _Mxcsr\n\t");
-
-	}
-#else
-	ARG_UNUSED(ccs);
-#endif /* CONFIG_SSE */
+	_do_fp_ctx_init(ccs->flags & USE_SSE);
 }
-#elif defined(__DCC__)
-__asm volatile void _FpCtxInit(tCCS *ccs)
-{
-	% mem ccs !"ax"
-		/* initialize x87 FPU */
-		fninit
-
-
-#ifdef CONFIG_SSE
-			movl ccs,
-		% eax testl $0x20,
-		__tCCS_flags_OFFSET(% eax) jz 0f
-
-			/* initialize SSE (since context uses it) */
-			ldmxcsr _Mxcsr
-
-0 :
-#endif /* CONFIG_SSE */
-}
-#endif
 
 /*******************************************************************************
 *

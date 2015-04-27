@@ -39,38 +39,13 @@ Exception/interrupt context helpers.
 #define _ARM_CORTEXM_ISR__H_
 
 #include <nanokernel/cpu.h>
+#include <asm_inline.h>
 
 #ifdef _ASMLANGUAGE
 
 /* nothing */
 
 #else
-
-/*******************************************************************************
-*
-* _IpsrGet - obtain value of IPSR register
-*
-* Obtain and return current value of IPSR register.
-*
-* RETURNS: the contents of the IPSR register
-*
-* \NOMANUAL
-*/
-
-#if defined(__GNUC__)
-static ALWAYS_INLINE uint32_t _IpsrGet(void)
-{
-	uint32_t vector;
-
-	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(vector));
-	return vector;
-}
-#elif defined(__DCC__)
-__asm volatile uint32_t _IpsrGet(void)
-{
-	% !"r0" mrs r0, IPSR
-}
-#endif
 
 /*******************************************************************************
 *

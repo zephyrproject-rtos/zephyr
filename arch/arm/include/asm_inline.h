@@ -1,7 +1,7 @@
-/* x86 GCC implementation of k_memset, k_memcpy, etc */
+/* Inline assembler kernel functions and macros */
 
 /*
- * Copyright (c) 2015 Wind River Systems, Inc.
+ * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,46 +30,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-static inline void k_memcpy(void *_d, const void *_s, size_t _n)
-{
-	/* _d & _s must be aligned to use movsl. */
-#ifndef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
-	if ((_n&3) == 0) {
-	/* _n is multiple of words, much more efficient to do word moves */
-	_n >>= 2;
-	__asm__ volatile ("rep movsl" :
-			  "+D" (_d), "+S" (_s), "+c" (_n) :
-			  :
-			  "cc", "memory");
-	} else
-#endif /* CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
-	{
-	__asm__ volatile ("rep movsb" :
-			  "+D" (_d), "+S" (_s), "+c" (_n) :
-			  :
-			  "cc", "memory");
-	}
-}
+#ifndef _ASM_INLINE_H
+#define _ASM_INLINE_H
 
-static inline void k_memset(void *_d, int _v, size_t _n)
-{
-	/* _d must be aligned to use stosl. */
-#ifndef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
-	if ((_n&3) == 0) {
-	/* _n is multiple of words, much more efficient to do word stores */
-	_n >>= 2;
-	_v |= _v<<8;
-	_v |= _v<<16;
-	__asm__ volatile ("rep stosl" :
-			  "+D" (_d), "+c" (_n) :
-			  "a" (_v) :
-			  "cc", "memory");
-	} else
-#endif /* CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
-	{
-		__asm__ volatile ("rep stosb" :
-			  "+D" (_d), "+c" (_n) :
-			  "a" (_v) :
-			  "cc", "memory");
-	}
-}
+#if !defined(VXMICRO_ARCH_arm) || !defined(CONFIG_CPU_CORTEXM)
+#error arch/arm/include/asm_inline.h is for ARM CortexM only
+#endif
+
+#if defined(__GNUC__)
+#include <CortexM/asm_inline_gcc.h>
+#else
+#include <CortexM/asm_inline_other.h>
+#endif /* __GNUC__ */
+
+#endif /* _ASM_INLINE_H */

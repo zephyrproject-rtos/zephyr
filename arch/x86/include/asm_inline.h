@@ -1,7 +1,7 @@
-/* rand32.c - non-random number generator */
+/* Inline assembler kernel functions and macros */
 
 /*
- * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,46 +30,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module provides a non-random implementation of _Rand32Get(), which is not
-meant to be used in a final product as a truly random number generator. It
-was provided to allow testing of kernel stack canaries on a BSP that does not
-(yet) provide a random number generator.
-*/
+#ifndef _ASM_INLINE_H
+#define _ASM_INLINE_H
 
-#include <nanokernel.h>
-#include <nanokernel/cpu.h>
-#include <drivers/rand32.h>
+#if !defined(VXMICRO_ARCH_x86)
+#error The arch/x86/include/asm_inline.h is only for x86 architecture
+#endif
 
-#if defined(CONFIG_TEST_RANDOM_GENERATOR)
-/*******************************************************************************
- *
- * _Rand32Init - initialize the random number generator
- *
- * The non-random number generator does not require any initialization.
- *
- * RETURNS: N/A
- */
+#if defined(__GNUC__)
+#include <asm_inline_gcc.h>
+#else
+#include <asm_inline_other.h>
+#endif /* __GNUC__ */
 
-void _Rand32Init(void)
-{
-}
-
-/*******************************************************************************
- *
- * _Rand32Get - get a 32 bit random number
- *
- * The non-random number generator returns values that are based off the
- * CPU's timestamp counter, which means that successive calls will normally
- * display ever-increasing values.
- *
- * RETURNS: a 32-bit number
- */
-
-uint32_t _Rand32Get(void)
-{
-	return _do_read_cpu_timestamp32();
-}
-
-#endif /* CONFIG_TEST_RANDOM_GENERATOR */
+#endif /* _ASM_INLINE_H */

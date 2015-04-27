@@ -155,61 +155,8 @@ the 'Quark' BSP.
  */
 
 #define PLB_BYTE_REG_WRITE(data, address) \
-	io_outByte(data, (unsigned int)address)
-#define PLB_BYTE_REG_READ(address) io_inByte((unsigned int)address)
-
-/*******************************************************************************
-*
-* io_outByte - output a byte to an IA-32 I/O port
-*
-* This function issues the 'out' instruction to write a byte to the specified
-* I/O port.
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
-
-#if defined(__DCC__)
-__asm volatile void io_outByte(unsigned char data, unsigned int port)
-{
-	% mem data, port;
-	!"ax", "dx" movl port, % edx movb data, % al outb % al, % dx
-}
-#elif defined(__GNUC__)
-static inline void io_outByte(unsigned char data, unsigned int port)
-{
-	__asm__ volatile("outb	%%al, %%dx;\n\t" : : "a"(data), "d"(port));
-}
-#endif
-
-/*******************************************************************************
-*
-* io_inByte - input a byte from an IA-32 I/O port
-*
-* This function issues the 'in' instruction to read a byte from the specified
-* I/O port.
-*
-* RETURNS: the byte read from the specified I/O port
-*
-* NOMANUAL
-*/
-
-#if defined(__DCC__)
-__asm volatile unsigned char io_inByte(unsigned int port)
-{
-	% mem port;
-	!"ax", "dx" movl port, % edx inb % dx, % al
-}
-#elif defined(__GNUC__)
-static inline unsigned char io_inByte(unsigned int port)
-{
-	char retByte;
-
-	__asm__ volatile("inb	%%dx, %%al;\n\t" : "=a"(retByte) : "d"(port));
-	return retByte;
-}
-#endif
+	sys_out8(data, (unsigned int)address)
+#define PLB_BYTE_REG_READ(address) sys_in8((unsigned int)address)
 
 /*******************************************************************************
 *
@@ -250,61 +197,8 @@ static inline uint8_t inByte(uint32_t addr)
  */
 
 #define PLB_WORD_REG_WRITE(data, address) \
-	io_outWord(data, (unsigned int)address)
-#define PLB_WORD_REG_READ(address) io_inWord((unsigned int)address)
-
-/*******************************************************************************
-*
-* io_outWord - output a word to an IA-32 I/O port
-*
-* This function issues the 'out' instruction to write a word to the
-* specified I/O port.
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
-
-#if defined(__DCC__)
-__asm volatile void io_outWord(unsigned short data, unsigned int port)
-{
-	% mem data, port;
-	!"ax", "dx" movl port, % edx movw data, % ax outw % ax, % dx
-}
-#elif defined(__GNUC__)
-static inline void io_outWord(unsigned short data, unsigned int port)
-{
-	__asm__ volatile("outw	%%ax, %%dx;\n\t" :  : "a"(data), "d"(port));
-}
-#endif
-
-/*******************************************************************************
-*
-* io_inWord - input a word from an IA-32 I/O port
-*
-* This function issues the 'in' instruction to read a word from the
-* specified I/O port.
-*
-* RETURNS: the word read from the specified I/O port
-*
-* NOMANUAL
-*/
-
-#if defined(__DCC__)
-__asm volatile unsigned short io_inWord(unsigned int port)
-{
-	% mem port;
-	!"ax", "dx" movl port, % edx inw % dx, % ax
-}
-#elif defined(__GNUC__)
-static inline unsigned short io_inWord(unsigned int port)
-{
-	unsigned short retWord;
-
-	__asm__ volatile("inw	%%dx, %%ax;\n\t" : "=a"(retWord) : "d"(port));
-	return retWord;
-}
-#endif
+	sys_out16(data, (unsigned int)address)
+#define PLB_WORD_REG_READ(address) sys_in16((unsigned int)address)
 
 /*******************************************************************************
 *
@@ -345,61 +239,8 @@ static inline uint16_t inWord(uint32_t addr)
  */
 
 #define PLB_LONG_REG_WRITE(data, address) \
-	io_outLong(data, (unsigned int)address)
-#define PLB_LONG_REG_READ(address) io_inLong((unsigned int)address)
-
-/*******************************************************************************
-*
-* io_outLong - output a long word to an IA-32 I/O port
-*
-* This function issues the 'out' instruction to write a long word to the
-* specified I/O port.
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
-
-#if defined(__DCC__)
-__asm volatile void io_outLong(unsigned int data, unsigned int port)
-{
-	% mem data, port;
-	!"ax", "dx" movl port, % edx movl data, % eax outl % eax, % dx
-}
-#elif defined(__GNUC__)
-static inline void io_outLong(unsigned int data, unsigned int port)
-{
-	__asm__ volatile("outl	%%eax, %%dx;\n\t" :  : "a"(data), "d"(port));
-}
-#endif
-
-/*******************************************************************************
-*
-* io_inLong - input a long word from an IA-32 I/O port
-*
-* This function issues the 'in' instruction to read a long word from the
-* specified I/O port.
-*
-* RETURNS: the long read from the specified I/O port
-*
-* NOMANUAL
-*/
-
-#if defined(__DCC__)
-__asm volatile unsigned long io_inLong(unsigned int port)
-{
-	% mem port;
-	!"ax", "dx" movl port, % edx inl % dx, % eax
-}
-#elif defined(__GNUC__)
-static inline unsigned long io_inLong(unsigned int port)
-{
-	unsigned long retLong;
-
-	__asm__ volatile("inl	%%dx, %%eax;\n\t" : "=a"(retLong) : "d"(port));
-	return retLong;
-}
-#endif
+	sys_out32(data, (unsigned int)address)
+#define PLB_LONG_REG_READ(address) sys_in32((unsigned int)address)
 
 /*******************************************************************************
 *

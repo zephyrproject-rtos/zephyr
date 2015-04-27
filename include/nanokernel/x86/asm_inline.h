@@ -1,7 +1,7 @@
-/* x86 implementation of k_memset, k_memcpy, etc */
+/* Intel x86 inline assembler functions and macros for public functions */
 
 /*
- * Copyright (c) 2015 Wind River Systems, Inc.
+ * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,37 +30,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _ASM_INLINE_PUBLIC_H
+#define _ASM_INLINE_PUBLIC_H
+
 /*
-DESCRIPTION
-The conditional definitions of k_memcpy() and k_memset() exist because it
-has been found that depending upon the choice of compiler, calls to memcpy()
-and memset() may or may not be size-optimized to "rep movsb" or "rep stosb".
-Consequently, without these conditional defines, there could be unresolved
-symbols to memcpy() and memset().
-
-This file is included indirectly by a number of HostServer source files
-which include microkernel/k_struct.h.  These files define VXMICRO_HOST_TOOLS
-when including target header files.   The Microsoft Visual C++ compiler
-used to build the HostServer does not handle the "static inline"
-declaration, so the HostServer uses the memcpy/memset implementations.
-
-Typical use of the inline function has the size (_s) and value (_v) parameters
-defined as immediate value and therefore the compiler optimization resolves the
-if and shift operations in order to generate minimal code with maximum
-performance.
-*/
-
-#ifndef _K_MEM_H
-#define _K_MEM_H
-
-#include <toolchain.h>
-#include <sections.h>
-#include <stddef.h>
+ * The file must not be included directly
+ * Include nanokernel/cpu.h instead
+ */
 
 #if defined(__GNUC__)
-	#include <nanokernel/x86/k_mem-gcc.h>
+#include <nanokernel/x86/asm_inline_gcc.h>
 #else
-	#include <nanokernel/x86/k_mem-other.h>
+#include <nanokernel/x86/asm_inline_other.h>
 #endif
 
-#endif /* _K_MEM_H */
+#endif /* _ASM_INLINE_PUBLIC_H */

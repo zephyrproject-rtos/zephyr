@@ -157,18 +157,6 @@ static uint32_t oldAcc = 0; /* previous accumulated value value */
 extern struct nano_stack _k_command_stack;
 #endif /* ! CONFIG_MICROKERNEL */
 
-#ifdef __DCC__
-__asm volatile unsigned int intLock_inline(void)
-{
-	% !"ax" pushfl cli popl % eax
-}
-
-__asm volatile void intUnlock_inline(unsigned int key)
-{
-	% mem key !testl $0x200, key jz 1f sti 1 :
-}
-#endif
-
 /*******************************************************************************
 *
 * _i8253CounterRead - read the i8253 counter register's value
@@ -575,17 +563,7 @@ uint32_t timer_read(void)
  * Expending irq_lock_inline() code since directly calling it would
  * would end up in infinite recursion.
  */
-#if defined(__GNUC__)
-	__asm__ volatile(
-		"pushfl;\n\t"
-		"cli;\n\t"
-		"popl %0;\n\t"
-		: "=g"(key)
-		:
-		: "memory");
-#elif defined(__DCC__)
-	key = intLock_inline();
-#endif
+	key = _do_irq_lock_inline();
 #else
 	key = irq_lock_inline();
 #endif
@@ -611,18 +589,8 @@ uint32_t timer_read(void)
  * Expending irq_unlock_inline() code since directly calling it would
  * would end up in infinite recursion.
  */
-#if defined(__GNUC__)
-	__asm__ volatile(
-		"testl $0x200, %0;\n\t"
-		"jz 0f;\n\t"
-		"sti;\n\t"
-		"0:\n\t"
-		:
-		: "g"(key)
-		: "cc", "memory");
-#elif defined(__DCC__)
-	intUnlock_inline(key);
-#endif
+	if (key & 0x200)
+		_do_irq_unlock_inline();
 #else
 	irq_unlock_inline(key);
 #endif

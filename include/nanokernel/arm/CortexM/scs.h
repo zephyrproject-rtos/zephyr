@@ -75,27 +75,6 @@ still considered part of the NVIC and an API for it is provided in nvic.h.
 
 #include <nanokernel/arm/CortexM/memory_map.h>
 
-#if defined(__GNUC__)
-
-#define _SCS_BASE_ADDR _PPB_INT_SCS
-#define _SCS_ICSR (_SCS_BASE_ADDR + 0xd04)
-#define _SCS_ICSR_PENDSV (1 << 28)
-#define _SCS_ICSR_UNPENDSV (1 << 27)
-#define _SCS_ICSR_RETTOBASE (1 << 11)
-
-#elif defined(__DCC__)
-
-/*
- * This is hardcoded to 0xe000e000 as the Diab compiler
- * sees an overflow in _PPB_INT_SCS.
- */
-_SCS_BASE_ADDR:
-.equ(0xe000e000) _SCS_ICSR : .equ(_SCS_BASE_ADDR + 0xd04) _SCS_ICSR_PENDSV :
-				     .equ(1 << 28) _SCS_ICSR_UNPENDSV
-			     : .equ(1 << 27) _SCS_ICSR_RETTOBASE : .equ(1 << 11)
-
-#endif
-
 #else /* _ASMLANGUAGE */
 
 #include <nanokernel.h>

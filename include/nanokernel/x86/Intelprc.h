@@ -52,8 +52,8 @@ extern "C"
 #include <stdint.h>
 #include <toolchain.h>
 #include <misc/util.h>
-#include <nanokernel/x86/k_mem.h>
 #include <nanokernel/x86/addr_types.h>
+#include <nanokernel/x86/asm_inline.h>
 #include <drivers/system_timer.h> /* timer_driver() needed by kernel_main.c */
 
 /*

@@ -61,6 +61,7 @@ extern "C" {
 #include <nanokernel/arm/CortexM/nvic.h>
 #include <nanokernel/arm/CortexM/memory_map.h>
 #include <nanokernel/arm/CortexM/gdb_stub.h>
+#include <nanokernel/arm/CortexM/asm_inline.h>
 #endif
 
 #ifdef __cplusplus

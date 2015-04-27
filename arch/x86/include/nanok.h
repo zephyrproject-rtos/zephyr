@@ -51,6 +51,7 @@ offsets.o module.
 
 #include <toolchain.h>
 #include <sections.h>
+#include <asm_inline.h>
 
 #ifndef _ASMLANGUAGE
 #include <nanokernel.h>		   /* public nanokernel API */
@@ -854,35 +855,6 @@ static inline void fiberRtnValueSet(
 
 	*(unsigned int *)(fiber->coopReg.esp) = value;
 }
-
-/*******************************************************************************
-*
-* EflagsGet - return the current value of the EFLAGS register
-*
-* RETURNS: the EFLAGS register.
-*
-* \NOMANUAL
-*/
-
-#if defined(__GNUC__)
-static inline unsigned int EflagsGet(void)
-{
-	unsigned int eflags; /* EFLAGS register contents */
-
-	__asm__ volatile(
-		"pushfl;\n\t"
-		"popl  %0;\n\t"
-		: "=r"(eflags)
-		: );
-
-	return eflags;
-}
-#elif defined(__DCC__)
-__asm volatile unsigned int EflagsGet(void)
-{
-	% !"ax" pushfl popl % eax
-}
-#endif
 
 /* definitions to support nanoCpuExcConnect() */
 

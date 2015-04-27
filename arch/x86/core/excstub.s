@@ -309,14 +309,6 @@ BRANCH_LABEL(nestedException)
 
 
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
-#if defined(__GNUC__)
-NANO_CPU_EXC_CONNECT_NO_ERR(_FpNotAvailableExcHandler,IV_DEVICE_NOT_AVAILABLE,0)
-#elif defined(__DCC__)
-	NANO_CPU_INT_REGISTER_ASM(_FpNotAvailableExcHandler,IV_DEVICE_NOT_AVAILABLE,0)
-	GTEXT(MK_STUB_NAME(_FpNotAvailableExcHandler))
-	SECTION_FUNC(TEXT, MK_STUB_NAME(_FpNotAvailableExcHandler))
-	NANO_CPU_EXC_CONNECT_NO_ERR_CODE(_FpNotAvailableExcHandler)
-#endif
-
+SYS_NANO_CPU_EXC_CONNECT(_FpNotAvailableExcHandler,IV_DEVICE_NOT_AVAILABLE)
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 

@@ -1,7 +1,7 @@
-/* rand32.c - non-random number generator */
+/* ARM CortexM GCC specific inline assembler functions and macros */
 
 /*
- * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,46 +30,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _ASM_INLINE_GCC_H
+#define _ASM_INLINE_GCC_H
+
 /*
-DESCRIPTION
-This module provides a non-random implementation of _Rand32Get(), which is not
-meant to be used in a final product as a truly random number generator. It
-was provided to allow testing of kernel stack canaries on a BSP that does not
-(yet) provide a random number generator.
+ * The file must not be included directly
+ * Include asm_inline.h instead
+ */
+
+#ifndef _ASMLANGUAGE
+
+/*******************************************************************************
+*
+* _IpsrGet - obtain value of IPSR register
+*
+* Obtain and return current value of IPSR register.
+*
+* RETURNS: the contents of the IPSR register
+*
+* \NOMANUAL
 */
 
-#include <nanokernel.h>
-#include <nanokernel/cpu.h>
-#include <drivers/rand32.h>
-
-#if defined(CONFIG_TEST_RANDOM_GENERATOR)
-/*******************************************************************************
- *
- * _Rand32Init - initialize the random number generator
- *
- * The non-random number generator does not require any initialization.
- *
- * RETURNS: N/A
- */
-
-void _Rand32Init(void)
+static ALWAYS_INLINE uint32_t _IpsrGet(void)
 {
+	uint32_t vector;
+
+	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(vector));
+	return vector;
 }
 
 /*******************************************************************************
- *
- * _Rand32Get - get a 32 bit random number
- *
- * The non-random number generator returns values that are based off the
- * CPU's timestamp counter, which means that successive calls will normally
- * display ever-increasing values.
- *
- * RETURNS: a 32-bit number
- */
+*
+* _MspSet - set the value of the Main Stack Pointer register
+*
+* Store the value of <msp> in MSP register.
+*
+* RETURNS: N/A
+*
+* \NOMANUAL
+*/
 
-uint32_t _Rand32Get(void)
+static ALWAYS_INLINE void _MspSet(uint32_t msp /* value to store in MSP */
+				  )
 {
-	return _do_read_cpu_timestamp32();
+	__asm__ volatile("msr MSP, %0\n\t" :  : "r"(msp));
 }
 
-#endif /* CONFIG_TEST_RANDOM_GENERATOR */
+#endif /* _ASMLANGUAGE */
+#endif /* _ASM_INLINE_GCC_H */

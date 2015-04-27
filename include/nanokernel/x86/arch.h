@@ -201,53 +201,6 @@ typedef struct nanoIsf {
 
 #ifndef _ASMLANGUAGE
 
-/********************************************************
-*
-*  _NanoTscRead - read timestamp register ensuring serialization
-*/
-
-#if defined (__GNUC__)
-static inline uint64_t _NanoTscRead(void)
-{
-	union {
-		struct  {
-			uint32_t lo;
-			uint32_t hi;
-		};
-		uint64_t  value;
-	}  rv;
-
-	/* rdtsc & cpuid clobbers eax, ebx, ecx and edx registers */
-	__asm__ volatile (/* serialize */
-		"xorl %%eax,%%eax;\n\t"
-		"cpuid;\n\t"
-		:
-		:
-		: "%eax", "%ebx", "%ecx", "%edx"
-		);
-	/*
-	 * We cannot use "=A", since this would use %rax on x86_64 and
-	 * return only the lower 32bits of the TSC
-	 */
-	__asm__ volatile ("rdtsc" : "=a" (rv.lo), "=d" (rv.hi));
-
-
-	return rv.value;
-  }
-
-#elif defined (__DCC__)
-__asm volatile uint64_t _NanoTscRead (void)
-	{
-%
-! "ax", "bx", "cx", "dx"
-	xorl  %eax, %eax
-	pushl %ebx
-	cpuid
-	rdtsc						 /* 64-bit timestamp returned in EDX:EAX */
-	popl  %ebx
-	}
-#endif
-
 
 #ifdef CONFIG_NO_ISRS
 
@@ -294,23 +247,10 @@ void _int_latency_stop (void);
 * \NOMANUAL
 */
 
-#if defined(__GNUC__)
 static inline __attribute__((always_inline))
-	unsigned int irq_lock_inline
-	(
-	void
-	)
+	unsigned int irq_lock_inline(void)
 	{
-	unsigned int key;
-
-	__asm__ volatile (
-			"pushfl;\n\t"
-			"cli;\n\t"
-			"popl %0;\n\t"
-			: "=g" (key)
-			:
-			: "memory"
-			 );
+	unsigned int key = _do_irq_lock_inline();
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	_int_latency_start ();
@@ -318,23 +258,6 @@ static inline __attribute__((always_inline))
 
 	return key;
 	}
-#elif defined(__DCC__)
-__asm volatile unsigned int irq_lock_inline (void)
-	{
-%
-#ifdef CONFIG_INT_LATENCH_BENCHMARK
-! "ax", "cx", "dx"
-#else
-! "ax"
-#endif  /* !CONFIG_INT_LATENCH_BENCHMARK */
-	pushfl
-	cli
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_start
-#endif
-	popl	%eax
-	}
-#endif
 
 
 /*******************************************************************************
@@ -352,224 +275,18 @@ __asm volatile unsigned int irq_lock_inline (void)
 * \NOMANUAL
 */
 
-#if defined(__GNUC__)
 static inline __attribute__((always_inline))
-	void irq_unlock_inline
-	(
-	unsigned int key
-	)
+	void irq_unlock_inline(unsigned int key)
 	{
-	/*
-	 * The assembler code is split into two parts and
-	 * _int_latency_stop (); is invoked as a legitimate C
-	 * function to let the compiler preserve registers
-	 * before the function invocation
-	 *
-	 * Neither the Intel C Compiler, nor DIAB C Compiler understand
-	 * asm goto construction
-	 */
-
-#if defined (__INTEL_COMPILER)
 	if (!(key & 0x200))
 		return;
-#else
-	__asm__ volatile goto (
-
-			"testl $0x200, %0;\n\t"
-			"jz %l[end];\n\t"
-			:
-			: "g" (key)
-			: "cc"
-			: end
-		);
-#endif
-
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	_int_latency_stop ();
 #endif
-	__asm__ volatile (
-
-			"sti;\n\t"
-			: :
-
-			 );
-#if defined(__GNUC__) && !defined (__INTEL_COMPILER)
-	end:
-#endif
+	_do_irq_unlock_inline();
 	return;
 	}
-#elif defined (__DCC__)
-__asm volatile void irq_unlock_inline
-	(
-	unsigned int key
-	)
-	{
-% mem key; lab end
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-! "ax", "cx", "dx"
-#else
-! "ax"
-#endif /* !CONFIG_INT_LATENCY_BENCHMARK */
-	testl	$0x200, key
-	jz	   end
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	 _int_latency_stop
-#endif /* CONFIG_INT_LATENCY_BENCHMARK */
-	sti
-end:
-	}
-#endif
-
 #endif /* CONFIG_NO_ISRS */
-
-
-/*******************************************************************************
-*
-* find_first_set_inline - find first set bit searching from the LSB (inline)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit to 32 for the most significant bit.
-* A return value of zero indicates that the value passed is zero.
-*
-* RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
-*
-* INTERNAL
-* For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
-* and leverage the fact that the 'bsfl' doesn't modify the destination operand
-* when the source operand is zero.  The "bitpos" variable can be preloaded
-* into the destination register, and given the unconditional ++bitpos that
-* is performed after the 'cmovzl', the correct results are yielded.
-*/
-
-#if defined __GNUC__
-static inline unsigned int find_first_set_inline (unsigned int op)
-	{
-	int bitpos;
-
-	__asm__ volatile (
-
-#if !defined(CONFIG_CMOV_UNSUPPORTED)
-
-		"bsfl %1, %0;\n\t"
-		"cmovzl %2, %0;\n\t"
-		: "=r" (bitpos)
-		: "rm" (op), "r" (-1)
-		: "cc"
-
-#else
-
-		"bsfl %1, %0;\n\t"
-		"jnz 1f;\n\t"
-		"movl $-1, %0;\n\t"
-		"1:\n\t"
-		: "=r" (bitpos)
-		: "rm" (op)
-		: "cc"
-
-#endif /* !CONFIG_CMOV_UNSUPPORTED */
-			 );
-
-	return (bitpos + 1);
-	}
-#elif defined(__DCC__)
-__asm volatile unsigned int find_first_set_inline
-	(
-	unsigned int op
-	)
-	{
-#if !defined(CONFIG_CMOV_UNSUPPORTED)
-% mem op
-! "ax", "cx"
-	movl	$-1, %ecx
-	bsfl	op, %eax
-	cmovz   %ecx, %eax
-	incl	%eax
-#else
-% mem op; lab unchanged
-! "ax"
-	bsfl	op, %eax
-	jnz	 unchanged
-	movl	$-1, %eax
-unchanged:
-	incl	%eax
-#endif
-	}
-#endif
-
-
-/*******************************************************************************
-*
-* find_last_set_inline - find first set bit searching from the MSB (inline)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit to 32 for the most significant bit.
-* A return value of zero indicates that the value passed is zero.
-*
-* RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
-*
-* INTERNAL
-* For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
-* and leverage the fact that the 'bsfl' doesn't modify the destination operand
-* when the source operand is zero.  The "bitpos" variable can be preloaded
-* into the destination register, and given the unconditional ++bitpos that
-* is performed after the 'cmovzl', the correct results are yielded.
-*/
-
-#if defined(__GNUC__)
-static inline unsigned int find_last_set_inline (unsigned int op)
-	{
-	int bitpos;
-
-	__asm__ volatile (
-
-#if !defined(CONFIG_CMOV_UNSUPPORTED)
-
-		"bsrl %1, %0;\n\t"
-		"cmovzl %2, %0;\n\t"
-		: "=r" (bitpos)
-		: "rm" (op), "r" (-1)
-
-#else
-
-		"bsrl %1, %0;\n\t"
-		"jnz 1f;\n\t"
-		"movl $-1, %0;\n\t"
-		"1:\n\t"
-		: "=r" (bitpos)
-		: "rm" (op)
-		: "cc"
-
-#endif /* CONFIG_CMOV_UNSUPPORTED */
-			 );
-
-	return (bitpos + 1);
-	}
-#elif defined(__DCC__)
-__asm volatile unsigned int find_last_set_inline
-	(
-	unsigned int op
-	)
-	{
-#if !defined(CONFIG_CMOV_UNSUPPORTED)
-% mem op
-! "ax", "cx"
-	movl	$-1, %ecx
-	bsrl	op, %eax
-	cmovz   %ecx, %eax
-	incl	%eax
-#else
-% mem op; lab unchanged
-! "ax"
-	bsrl	op, %eax
-	jnz	 unchanged
-	movl	$-1, %eax
-unchanged:
-	incl	%eax
-#endif
-	}
-#endif
 
 /* interrupt/exception/error related definitions */
 
