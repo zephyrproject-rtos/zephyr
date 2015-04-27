@@ -61,7 +61,7 @@ static uint32_t int_locked_latency_max = 0;
 /* overhead added to intLock/intUnlock by this latency benchmark */
 static uint32_t initial_start_delay = 0;
 static uint32_t nesting_delay = 0;
-static uint32_t stopDelay = 0;
+static uint32_t stop_delay = 0;
 
 /* counter tracking intLock/intUnlock calls once interrupt are locked */
 static uint32_t intLockUnlockNest = 0;
@@ -130,7 +130,7 @@ void _int_latency_stop(void)
 		 */
 		delayOverhead =
 			(initial_start_delay +
-			 ((intLockUnlockNest - 1) * nesting_delay) + stopDelay);
+			 ((intLockUnlockNest - 1) * nesting_delay) + stop_delay);
 		if (delta >= delayOverhead)
 			delta -= delayOverhead;
 
@@ -169,7 +169,7 @@ void int_latency_init(void)
 	 * invoking the latency can changes runtime (i.e. cache hit or miss)
 	 * but an estimated overhead is used to adjust Max interrupt latency.
 	 * The overhead introduced by benchmark is composed of three values:
-	 * initial_start_delay, nesting_delay, stopDelay.
+	 * initial_start_delay, nesting_delay, stop_delay.
 	 */
 	while (cacheWarming) {
 		/* measure how much time it takes to read time */
@@ -187,9 +187,9 @@ void int_latency_init(void)
 		_int_latency_start();
 		nesting_delay = timer_read() - nesting_delay - timeToReadTime;
 
-		stopDelay = timer_read();
+		stop_delay = timer_read();
 		_int_latency_stop();
-		stopDelay = timer_read() - stopDelay - timeToReadTime;
+		stop_delay = timer_read() - stop_delay - timeToReadTime;
 
 		/* re-initialize globals to default values */
 		intLockingLatencyMin = ULONG_MAX;
@@ -247,8 +247,8 @@ void int_latency_show(void)
 		       SYS_CLOCK_HW_CYCLES_TO_NS(initial_start_delay),
 		       nesting_delay,
 		       SYS_CLOCK_HW_CYCLES_TO_NS(nesting_delay),
-		       stopDelay,
-		       SYS_CLOCK_HW_CYCLES_TO_NS(stopDelay));
+		       stop_delay,
+		       SYS_CLOCK_HW_CYCLES_TO_NS(stop_delay));
 	} else {
 		printk("interrupts were not locked and unlocked yet\n");
 	}
