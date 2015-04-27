@@ -50,6 +50,11 @@ b) When the BSP is written so that device ISRs are installed directly in the
 #include <console/uart_console.h>
 #endif /* CONFIG_CONSOLE_HANDLER */
 
+#if defined(CONFIG_BLUETOOTH_UART)
+#include <board.h>
+#include <bluetooth/uart.h>
+#endif /* CONFIG_BLUETOOTH_UART */
+
 extern void _isr_wrapper(void);
 typedef void (*vth)(void); /* Vector Table Handler */
 
@@ -71,11 +76,22 @@ static void _uart_console_isr(void)
 }
 #endif /* CONFIG_CONSOLE_HANDLER */
 
+#if defined(CONFIG_BLUETOOTH_UART)
+static void _bt_uart_isr(void)
+{
+	bt_uart_isr(NULL);
+	_IntExit();
+}
+#endif /* CONFIG_BLUETOOTH_UART */
+
 /* placeholders: fill with real ISRs */
 vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _irq_spurious,
 #if defined(CONFIG_CONSOLE_HANDLER)
 	[CONFIG_UART_CONSOLE_IRQ] = _uart_console_isr,
+#endif
+#if defined(CONFIG_BLUETOOTH_UART)
+	[CONFIG_BLUETOOTH_UART_IRQ] = _bt_uart_isr,
 #endif
 };
 
