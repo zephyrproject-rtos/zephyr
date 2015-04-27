@@ -142,7 +142,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			 * Workload variable update in case of
 			 * power save mode
 			 */
-			extern volatile unsigned int Wld_i;
+			extern volatile unsigned int _k_workload_i;
 			extern volatile unsigned int Wld_i0;
 			extern volatile unsigned int WldTDelta;
 			extern volatile unsigned int WldT_start;
@@ -153,7 +153,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			}
 			if (_k_current_task->Ident == 0x00000000) {
 				WldT_end = timer_read();
-				Wld_i += (Wld_i0 * (WldT_end - WldT_start)) /
+				_k_workload_i += (Wld_i0 * (WldT_end - WldT_start)) /
 					 WldTDelta;
 			}
 #endif

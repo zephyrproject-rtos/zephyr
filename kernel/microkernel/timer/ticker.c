@@ -140,7 +140,7 @@ static inline void _WlMonitorUpdate(void)
 		_k_workload_t0 = _k_workload_t1;
 		_k_workload_t1 = timer_read();
 		_k_workload_n0 = _k_workload_n1;
-		_k_workload_n1 = Wld_i - 1;
+		_k_workload_n1 = _k_workload_i - 1;
 		_k_workload_ticks = _k_workload_slice;
 	}
 #else
