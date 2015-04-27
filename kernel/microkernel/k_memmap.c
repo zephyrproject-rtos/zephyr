@@ -31,7 +31,7 @@
  */
 
 #include "microkernel/k_struct.h"
-#include "minik.h" /* K_MapList, K_MapCount */
+#include "minik.h" /* _k_mem_map_list, K_MapCount */
 #include <sections.h>
 
 /*******************************************************************************
@@ -48,7 +48,7 @@ void InitMap(void)
 	int i, j, w;
 	struct map_struct *M;
 
-	for (i = 0, M = K_MapList; i < K_MapCount; i++, M++) {
+	for (i = 0, M = _k_mem_map_list; i < K_MapCount; i++, M++) {
 		char *p;
 		char *q;
 
@@ -95,7 +95,7 @@ void K_alloctmo(struct k_args *A)
 
 void K_alloc(struct k_args *A)
 {
-	struct map_struct *M = K_MapList + OBJ_INDEX(A->Args.a1.mmap);
+	struct map_struct *M = _k_mem_map_list + OBJ_INDEX(A->Args.a1.mmap);
 
 	if (M->Free != NULL) {
 		*(A->Args.a1.mptr) = M->Free;
@@ -162,7 +162,7 @@ int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request
 
 void K_dealloc(struct k_args *A)
 {
-	struct map_struct *M = K_MapList + OBJ_INDEX(A->Args.a1.mmap);
+	struct map_struct *M = _k_mem_map_list + OBJ_INDEX(A->Args.a1.mmap);
 	struct k_args *X;
 
 	**(char ***)(A->Args.a1.mptr) = M->Free;
@@ -226,5 +226,5 @@ void _task_mem_map_free(kmemory_map_t mmap, /* memory map */
 int task_mem_map_used_get(kmemory_map_t mmap /* memory map */
 		 )
 {
-	return K_MapList[OBJ_INDEX(mmap)].Nused;
+	return _k_mem_map_list[OBJ_INDEX(mmap)].Nused;
 }

@@ -635,7 +635,7 @@ def kernel_main_c_maps():
     kernel_main_c_out("\nint K_MapCount = %d;\n" % (total_maps))
 
     if (total_maps == 0):
-        kernel_main_c_out("\nstruct map_struct * K_MapList = NULL;\n")
+        kernel_main_c_out("\nstruct map_struct * _k_mem_map_list = NULL;\n")
         return
 
     # memory map buffers
@@ -651,7 +651,7 @@ def kernel_main_c_maps():
     # memory map descriptors
 
     kernel_main_c_out(
-        "\nstruct map_struct K_MapList[%d] =\n{\n" % (total_maps))
+        "\nstruct map_struct _k_mem_map_list[%d] =\n{\n" % (total_maps))
     for map in map_list:
         blocks = map[1]
         block_size = map[2]
