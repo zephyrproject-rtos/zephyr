@@ -102,8 +102,8 @@ static inline void _HandleExpiredTimers(int ticks)
 		}
 
 		T = _k_timer_list_head;
-		if (T == K_Ttail) {
-			_k_timer_list_head = K_Ttail = NULL;
+		if (T == _k_timer_list_tail) {
+			_k_timer_list_head = _k_timer_list_tail = NULL;
 		} else {
 			_k_timer_list_head = T->Forw;
 			_k_timer_list_head->Back = NULL;

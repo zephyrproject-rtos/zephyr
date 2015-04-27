@@ -107,7 +107,7 @@ void enlist_timer(K_TIMER *T)
 		P->Ti -= T->Ti;
 		P->Back = T;
 	} else
-		K_Ttail = T;
+		_k_timer_list_tail = T;
 	if (Q)
 		Q->Forw = T;
 	else
@@ -132,7 +132,7 @@ void delist_timer(K_TIMER *T)
 		P->Ti += T->Ti;
 		P->Back = Q;
 	} else
-		K_Ttail = Q;
+		_k_timer_list_tail = Q;
 	if (Q)
 		Q->Forw = P;
 	else

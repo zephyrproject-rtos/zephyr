@@ -41,7 +41,7 @@
 
 #ifndef LITE
 K_TIMER  *_k_timer_list_head = NULL;
-K_TIMER  *K_Ttail = NULL;
+K_TIMER  *_k_timer_list_tail = NULL;
 #endif
 
 int64_t K_LowTime = 0;

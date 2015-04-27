@@ -65,7 +65,7 @@ extern uint32_t _k_task_priority_bitmap[];
 
 #ifndef LITE
 extern K_TIMER *_k_timer_list_head;
-extern K_TIMER *K_Ttail;
+extern K_TIMER *_k_timer_list_tail;
 #endif
 extern int64_t K_LowTime;
 
