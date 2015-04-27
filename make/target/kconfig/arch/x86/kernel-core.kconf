@@ -71,7 +71,7 @@ config  CPU_CLOCK_FREQ_MHZ
 	depends on BOOT_TIME_MEASUREMENT
 	help
 	  This option specifies the CPU Clock Frequency in MHz in order to
-          convert Intel RDTSC timestamp to microseconds.
+	  convert Intel RDTSC timestamp to microseconds.
 
 endmenu
 
