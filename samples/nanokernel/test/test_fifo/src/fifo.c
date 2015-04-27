@@ -241,7 +241,7 @@ void fiber1(void)
 		count++;
 		}
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 	PRINT_LINE;
 
     /*
@@ -308,7 +308,7 @@ void testFiberFifoGetW(void)
 	TC_PRINT("FIBER FIFO Put to queue1: %p\n", pPutData);
 	nano_fiber_fifo_put(&nanoFifoObj, pPutData);
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 
 }  /* testFiberFifoGetW */
 
@@ -365,7 +365,7 @@ void testIsrFifoFromFiber(void)
 		    }
 		TC_PRINT("\n");
 
-		TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+		TC_END_RESULT(retCode);
 
 }  /* testIsrFifoFromFiber */
 
@@ -435,7 +435,7 @@ void testIsrFifoFromTask(void)
 		         pPutData, pGetData);
 		}
 
-		TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+		TC_END_RESULT(retCode);
 }  /* testIsrFifoFromTask */
 
 /*******************************************************************************
@@ -495,7 +495,7 @@ void fiber2(void)
 	PRINT_LINE;
 	testIsrFifoFromFiber();
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 }  /* fiber2 */
 
 /*******************************************************************************
@@ -583,7 +583,7 @@ void testTaskFifoGetW(void)
 	TC_PRINT("TASK FIFO Put to queue2: %p\n", pPutData);
 	nano_task_fifo_put(&nanoFifoObj2, pPutData);
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 } /* testTaskFifoGetW */
 
 /*******************************************************************************
@@ -750,6 +750,6 @@ void main(void)
 	PRINT_LINE;
 
 exit:
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT (retCode);
 	TC_END_REPORT (retCode);
 }

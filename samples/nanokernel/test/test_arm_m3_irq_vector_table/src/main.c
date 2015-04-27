@@ -127,7 +127,7 @@ void main (void)
 		 nano_task_sem_take(&sem[2]) ? TC_PASS : TC_FAIL;
 
 get_out:
-	TC_END (rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT (rv);
 	TC_END_REPORT (rv);
 	}
 

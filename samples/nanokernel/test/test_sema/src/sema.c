@@ -477,6 +477,6 @@ void main(void)
 		}
 
 doneTests:
-	TC_END (rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT (rv);
 	TC_END_REPORT (rv);
 }

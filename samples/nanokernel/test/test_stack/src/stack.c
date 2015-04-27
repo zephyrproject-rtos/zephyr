@@ -232,7 +232,7 @@ void fiber1(void)
 		count++;
 		}
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 	PRINT_LINE;
 
     /* Put data */
@@ -296,7 +296,7 @@ void testFiberStackPopW(void)
 	TC_PRINT("FIBER STACK Push to queue1: %d\n", data);
 	nano_fiber_stack_push(&nanoStackObj, data);
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 
 }  /* testFiberStackPopW */
 
@@ -356,7 +356,7 @@ void testIsrStackFromFiber(void)
                                           * [data] changes
                                           */
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 
 }  /* testIsrStackFromFiber */
 
@@ -420,7 +420,7 @@ void testIsrStackFromTask(void)
 	            myIsrData[3], result);
 	}
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 }
 
 /*******************************************************************************
@@ -438,7 +438,7 @@ void fiber2(void)
 	PRINT_LINE;
 	testIsrStackFromFiber();
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 }
 
 
@@ -480,7 +480,7 @@ void testTaskStackPopW(void)
 	TC_PRINT("TASK STACK Push to queue2: %d\n", data);
 	nano_task_stack_push(&nanoStackObj2, data);
 
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT(retCode);
 }  /* testTaskStackPopW */
 
 /*******************************************************************************
@@ -621,6 +621,6 @@ void main(void)
 	PRINT_LINE;
 
 exit:
-	TC_END(retCode, "%s - %s.\n", retCode == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_RESULT (retCode);
 	TC_END_REPORT (retCode);
 }
