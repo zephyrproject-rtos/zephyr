@@ -166,7 +166,7 @@ uint32_t __noinit K_DebugLowTime;
 static inline int _TlDebugUpdate(int32_t ticks)
 {
 	K_DebugLowTime += ticks;
-	return !K_DebugHalt;
+	return !_k_debug_halt;
 }
 #else
 #define _TlDebugUpdate(ticks) 1

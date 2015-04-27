@@ -143,7 +143,7 @@ extern void init_drivers(void);
 
 #ifdef CONFIG_TASK_DEBUG
 
-extern int K_DebugHalt;
+extern int _k_debug_halt;
 extern char *K_NodeNames[];
 extern char **K_TaskNames[];
 #ifndef LITE

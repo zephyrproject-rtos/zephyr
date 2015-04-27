@@ -61,7 +61,7 @@ void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func)
 void K_monitor_task(struct k_proc *X, uint32_t D)
 {
 #ifdef CONFIG_TASK_DEBUG
-	if (!K_DebugHalt)
+	if (!_k_debug_halt)
 #endif
 	{
 		K_monitor_wptr->time = timer_read();
@@ -82,7 +82,7 @@ void K_monitor_task(struct k_proc *X, uint32_t D)
 void K_monitor_args(struct k_args *A)
 {
 #ifdef CONFIG_TASK_DEBUG
-	if (!K_DebugHalt)
+	if (!_k_debug_halt)
 #endif
 	{
 		K_monitor_wptr->time = timer_read();

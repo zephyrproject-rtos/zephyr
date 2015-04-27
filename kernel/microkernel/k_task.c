@@ -313,9 +313,9 @@ void K_groupop(struct k_args *A)
 
 #ifdef CONFIG_TASK_DEBUG
 	if (opt == GROUP_TASK_BLOCK)
-		K_DebugHalt = 1;
+		_k_debug_halt = 1;
 	if (opt == GROUP_TASK_UNBLOCK)
-		K_DebugHalt = 0;
+		_k_debug_halt = 0;
 #endif
 
 	for (i = 0, X = _k_task_list; i < _k_task_count; i++, X++) {

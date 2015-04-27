@@ -55,7 +55,7 @@ struct nano_stack __noinit _k_command_stack;
 
 
 #ifdef CONFIG_TASK_DEBUG
-int K_DebugHalt = 0;
+int _k_debug_halt = 0;
 #endif
 
 #if CONFIG_COMMAND_STACK_SIZE <= 0
