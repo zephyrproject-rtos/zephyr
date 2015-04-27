@@ -61,7 +61,7 @@ volatile unsigned int _k_workload_start_time = 0x0;
 volatile unsigned int _k_workload_end_time = 0x0;
 
 #ifdef WL_SCALE
-extern uint32_t K_wl_scale;
+extern uint32_t _k_workload_scale;
 #endif
 
 #define MSEC_PER_SEC 1000
@@ -123,7 +123,7 @@ void wlMonitorCalibrate(void)
 	_k_workload_delta = _k_workload_t1 - _k_workload_t0;
 	_k_workload_i0 = _k_workload_i;
 #ifdef WL_SCALE
-	_k_workload_ref_time = (_k_workload_t1 - _k_workload_t0) >> (K_wl_scale);
+	_k_workload_ref_time = (_k_workload_t1 - _k_workload_t0) >> (_k_workload_scale);
 #else
 	_k_workload_ref_time = (_k_workload_t1 - _k_workload_t0) >> (4 + 6);
 #endif
@@ -143,7 +143,7 @@ void K_workload(struct k_args *P)
 
 	k = (_k_workload_i - _k_workload_n0) * _k_workload_ref_time;
 #ifdef WL_SCALE
-	t = (timer_read() - _k_workload_t0) >> (K_wl_scale);
+	t = (timer_read() - _k_workload_t0) >> (_k_workload_scale);
 #else
 	t = (timer_read() - _k_workload_t0) >> (4 + 6);
 #endif
