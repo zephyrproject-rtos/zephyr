@@ -31,7 +31,7 @@
  */
 
 #include "microkernel/k_struct.h"
-#include "minik.h" /* _k_mem_map_list, K_MapCount */
+#include "minik.h" /* _k_mem_map_list, _k_mem_map_count */
 #include <sections.h>
 
 /*******************************************************************************
@@ -48,7 +48,7 @@ void InitMap(void)
 	int i, j, w;
 	struct map_struct *M;
 
-	for (i = 0, M = _k_mem_map_list; i < K_MapCount; i++, M++) {
+	for (i = 0, M = _k_mem_map_list; i < _k_mem_map_count; i++, M++) {
 		char *p;
 		char *q;
 

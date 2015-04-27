@@ -632,7 +632,7 @@ def kernel_main_c_maps():
 
     # map global variables
 
-    kernel_main_c_out("\nint K_MapCount = %d;\n" % (total_maps))
+    kernel_main_c_out("\nint _k_mem_map_count = %d;\n" % (total_maps))
 
     if (total_maps == 0):
         kernel_main_c_out("\nstruct map_struct * _k_mem_map_list = NULL;\n")
