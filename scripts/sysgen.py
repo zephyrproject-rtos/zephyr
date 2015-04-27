@@ -574,7 +574,7 @@ def kernel_main_c_pipes():
 
     # pipe global variables
 
-    kernel_main_c_out("\nint K_PipeCount = %d;\n" % (total_pipes))
+    kernel_main_c_out("\nint _k_pipe_count = %d;\n" % (total_pipes))
 
     if (total_pipes == 0):
         kernel_main_c_out("\nstruct pipe_struct * _k_pipe_list = NULL;\n")

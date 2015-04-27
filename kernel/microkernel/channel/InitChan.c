@@ -43,7 +43,7 @@ void InitPipe(void)
 	int i;
 	struct pipe_struct *pPipe;
 
-	for (i = 0, pPipe = _k_pipe_list; i < K_PipeCount; i++, pPipe++) {
+	for (i = 0, pPipe = _k_pipe_list; i < _k_pipe_count; i++, pPipe++) {
 		pPipe->Readers = NULL;
 		pPipe->Writers = NULL;
 		BuffInit((unsigned char *)pPipe->Buffer,

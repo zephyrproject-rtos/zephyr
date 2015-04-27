@@ -58,7 +58,7 @@ extern struct pipe_struct _k_pipe_list[];
 extern int _k_mem_map_count;
 #endif
 extern int _k_mem_pool_count;
-extern int K_PipeCount;
+extern int _k_pipe_count;
 
 extern struct k_proc *K_Task;
 extern uint32_t K_PrioBitMap[];
