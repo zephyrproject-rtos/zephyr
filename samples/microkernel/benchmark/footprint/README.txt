@@ -58,8 +58,6 @@ it outputs to the console. It can be built and executed on QEMU as follows:
     make pristine
     make TEST=max microkernel.qemu          (maximal configuration)
 
-If executing on Simics, substitute 'simics' for 'qemu' in the command line.
-
 --------------------------------------------------------------------------------
 
 Sample Output:

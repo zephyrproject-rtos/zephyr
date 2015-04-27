@@ -41,8 +41,6 @@ on QEMU in three possibile configurations as follows:
     make pristine
     make BOOTTIME_QUALIFIER=worst microkernel.qemu
 
-If executing on Simics, substitute 'simics' for 'qemu' in the command line.
-
 --------------------------------------------------------------------------------
 
 Sample Output:

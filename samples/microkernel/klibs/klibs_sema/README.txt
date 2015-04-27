@@ -20,8 +20,6 @@ In ukernel/klibs/klibs_sema:
     make KLIB_DIR=<path to ukernel/test/test_fifo>/outdir/klib
     make KLIB_DIR=<path to ukernel/test/test_fifo>/outdir/klib microkernel.qemu
 
-If executing on Simics, substitute 'simics' for 'qemu' in the command line.
-
 --------------------------------------------------------------------------------
 
 Sample Output:

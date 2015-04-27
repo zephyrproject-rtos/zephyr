@@ -14,8 +14,6 @@ on QEMU as follows:
     make pristine
     make nanokernel.qemu
 
-If executing on Simics, substitute 'simics' for 'qemu' in the command line.
-
 --------------------------------------------------------------------------------
 
 Sample Output:

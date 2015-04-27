@@ -19,8 +19,6 @@ on QEMU as follows:
     make pristine
     make NODE1.qemu
 
-If executing on Simics, substitute 'simics' for 'qemu' in the command line.
-
 --------------------------------------------------------------------------------
 
 Sample Output:

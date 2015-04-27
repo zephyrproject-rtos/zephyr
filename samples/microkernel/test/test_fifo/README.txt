@@ -13,8 +13,6 @@ on QEMU as follows:
     make pristine
     make microkernel.qemu
 
-If executing on Simics, substitute 'simics' for 'qemu' in the command line.
-
 --------------------------------------------------------------------------------
 
 Sample Output:

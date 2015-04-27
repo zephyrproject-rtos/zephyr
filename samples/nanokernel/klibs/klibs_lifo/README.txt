@@ -20,8 +20,6 @@ In nkernel/klibs/klibs_lifo:
     make KLIB_DIR=<path to nkernel/test/test_fifo>/outdir/klib
     make KLIB_DIR=<path to nkernel/test/test_fifo>/outdir/klib nanokernel.qemu
 
-If executing on Simics, substitute 'simics' for 'qemu' in the command line.
-
 ---------------------------------------------------------------------------
 
 Sample Output:
