@@ -73,7 +73,7 @@ extern struct nano_stack _k_command_stack;
 extern struct nano_lifo LinkIn[6];
 extern struct nano_lifo LinkOut[6];
 extern struct nano_lifo K_DataFree;
-extern struct nano_lifo K_ArgsFree;
+extern struct nano_lifo _k_server_command_packet_free;
 #ifndef LITE
 extern struct nano_lifo K_TimerFree;
 #endif
@@ -228,7 +228,7 @@ extern void wlMonitorCalibrate(void);
 
 #define GETARGS(A)                        \
 	do {                              \
-		(A) = _Cget(&K_ArgsFree); \
+		(A) = _Cget(&_k_server_command_packet_free); \
 	} while (0)
 #define GETDATA(D)                        \
 	do {                              \
@@ -241,7 +241,7 @@ extern void wlMonitorCalibrate(void);
 	} while (0)
 #endif
 
-#define FREEARGS(A) _Cput(&K_ArgsFree, (A))
+#define FREEARGS(A) _Cput(&_k_server_command_packet_free, (A))
 #define FREEDATA(D) _Cput(&K_DataFree, (D))
 #ifndef LITE
 #define FREETIMER(T) _Cput(&K_TimerFree, (T))

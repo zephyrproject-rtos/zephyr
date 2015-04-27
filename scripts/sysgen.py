@@ -330,7 +330,7 @@ def kernel_main_c_kargs():
     # linked list of free command packets
 
     kernel_main_c_out("\n" +
-        "struct nano_lifo K_ArgsFree = " +
+        "struct nano_lifo _k_server_command_packet_free = " +
         "{(void *) &K_ArgsBlocks[%d], NULL};\n" % (num_kargs - 1))
 
 
