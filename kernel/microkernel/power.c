@@ -65,7 +65,7 @@ extern void nano_cpu_set_idle(int32_t ticks);
  * Idle time must be this value or higher for timer to go into tickless idle
  * state.
  */
-int32_t _SysIdleThresholdTicks =
+int32_t _sys_idle_threshold_ticks =
 	CONFIG_TICKLESS_IDLE_THRESH;
 #endif /* CONFIG_TICKLESS_IDLE */
 
@@ -85,7 +85,7 @@ int32_t _SysIdleThresholdTicks =
 void _SysPowerSaveIdle(int32_t ticks)
 {
 #if defined(CONFIG_TICKLESS_IDLE)
-	if ((ticks == -1) || ticks >= _SysIdleThresholdTicks) {
+	if ((ticks == -1) || ticks >= _sys_idle_threshold_ticks) {
 		/* Put the system timer into idle state until the next timer
 		 * event */
 		_timer_idle_enter(ticks);
@@ -126,7 +126,7 @@ void _SysPowerSaveIdle(int32_t ticks)
 void _SysPowerSaveIdleExit(int32_t ticks)
 {
 #ifdef CONFIG_TICKLESS_IDLE
-	if ((ticks == -1) || ticks >= _SysIdleThresholdTicks) {
+	if ((ticks == -1) || ticks >= _sys_idle_threshold_ticks) {
 		_timer_idle_exit();
 	}
 #else

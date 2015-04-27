@@ -44,7 +44,7 @@ Unit test for tickless idle feature.
 #define SLEEP_TICKS 10
 
 #ifdef CONFIG_TICKLESS_IDLE
-extern int32_t _SysIdleThresholdTicks;
+extern int32_t _sys_idle_threshold_ticks;
 #endif
 
 /* Clock speed - will change from BSP to BSP */
@@ -110,9 +110,9 @@ void ticklessTestTask (void)
 
 	printk("Calibrating TSC...\n");
 #ifdef CONFIG_TICKLESS_IDLE
-	oldThreshold = _SysIdleThresholdTicks;
+	oldThreshold = _sys_idle_threshold_ticks;
     /* make sure we do not enter tickless idle mode */
-	_SysIdleThresholdTicks = 0x7FFFFFFF;
+	_sys_idle_threshold_ticks = 0x7FFFFFFF;
 #endif
 
     /* initialize the timer, if necessary */
@@ -144,7 +144,7 @@ void ticklessTestTask (void)
 	printk("Do the real test with tickless enabled\n");
 
 #ifdef CONFIG_TICKLESS_IDLE
-	_SysIdleThresholdTicks = oldThreshold;
+	_sys_idle_threshold_ticks = oldThreshold;
 #endif
 
 	printk("Going idle for %d ticks...\n", SLEEP_TICKS);
