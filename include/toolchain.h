@@ -41,12 +41,10 @@ utilize toolchain specific attributes and/or pragmas.
 #ifndef _TOOLCHAIN_H
 #define _TOOLCHAIN_H
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <toolchain/gcc.h>
-#elif defined(__DCC__)
-#include <toolchain/diab.h>
 #else
-#include <toolchain/unsupported.h>
+#include <toolchain/other.h>
 #endif
 
 #endif /* _TOOLCHAIN_H */

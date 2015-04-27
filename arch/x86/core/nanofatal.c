@@ -36,12 +36,6 @@ This module provides the _NanoFatalErrorHandler() routine.
 */
 
 /* includes */
-
-/* Stack canaries not supported on Diab */
-#ifdef __DCC__
-#undef CONFIG_STACK_CANARIES
-#endif
-
 #include <toolchain.h>
 #include <sections.h>
 

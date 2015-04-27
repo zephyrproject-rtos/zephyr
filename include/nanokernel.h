@@ -34,9 +34,7 @@
 #define __NANOKERNEL_H__
 
 #include <stdint.h>
-#ifdef __DCC__
-#undef CONFIG_STACK_CANARIES
-#endif
+#include <toolchain.h> /* compiler specific configuration options */
 
 #include <nanokernel/private.h>
 #include <kernel_version.h>

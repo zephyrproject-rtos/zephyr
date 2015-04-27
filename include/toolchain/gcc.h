@@ -46,18 +46,6 @@
 
 #define FUNC_CONSTRUCT(lvl) __attribute__((constructor(lvl)))
 
-/*
- * The Intel C Compiler defines both __INTEL_COMPILER and __GNUC__; the
- * GNU C Compiler defines only __GNUC__.  Consequently, to differentiate
- * between those two compilers, checks for __INTEL_COMPILER must be done
- * before __GNUC__.
- */
-
-#if defined (__INTEL_COMPILER)
-#define CODE_UNREACHABLE
-#define FUNC_NORETURN
-#define _NODATA_SECTION(segment)  __attribute__((section(#segment)))
-#else
 #define CODE_UNREACHABLE __builtin_unreachable ()
 #define FUNC_NORETURN    __attribute__((__noreturn__))
 
@@ -69,7 +57,6 @@
 #else
 #define _NODATA_SECTION(segment)				\
 	__attribute__((section(#segment ",\"wa\",@nobits#")))
-#endif
 #endif
 
 /*

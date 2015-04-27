@@ -41,11 +41,7 @@ function __stack_chk_fail and global variable __stack_chk_guard.
 */
 
 /* includes */
-
-/* Stack canaries not supported on Diab */
-#ifdef __DCC__
-#undef CONFIG_STACK_CANARIES
-#endif
+#include <toolchain.h> /* compiler specific configurations */
 
 #if defined(CONFIG_STACK_CANARIES)
 
