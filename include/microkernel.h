@@ -83,7 +83,7 @@ extern int _k_task_count;
 extern int _k_mem_map_count;
 extern int _k_mem_pool_count;
 extern int _k_pipe_count;
-extern const int K_max_eventnr;
+extern const int _k_num_events;
 
 extern PFN_CHANNEL_RWT pKS_Channel_PutWT;
 extern PFN_CHANNEL_RWT pKS_Channel_GetWT;

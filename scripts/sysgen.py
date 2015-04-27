@@ -474,7 +474,7 @@ def kernel_main_c_events():
     # number of events
 
     kernel_main_c_out("\n" +
-        "const int K_max_eventnr = %d;\n" % (total_events))
+        "const int _k_num_events = %d;\n" % (total_events))
 
     # event object identifiers (for project-defined events only)
 
@@ -1143,7 +1143,7 @@ def generate_vxmicro_h_misc():
 
     global vxmicro_h_data
     vxmicro_h_data += "\n" + \
-        "extern const int K_max_eventnr;\n" + \
+        "extern const int _k_num_events;\n" + \
         "extern struct evstr EVENTS[];\n\n"
 
 

@@ -89,9 +89,9 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			&_k_command_stack); /* will schedule */
 		do {
 			kevent_t event;
-			/* if event < K_max_eventnr, it's a well-known event */
+			/* if event < _k_num_events, it's a well-known event */
 			event = (kevent_t)(pArgs);
-			if (event < (kevent_t)K_max_eventnr) {
+			if (event < (kevent_t)_k_num_events) {
 #ifdef CONFIG_TASK_MONITOR
 				if (K_monitor_mask & MON_EVENT) {
 					K_monitor_args(pArgs);

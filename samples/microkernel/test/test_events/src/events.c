@@ -132,7 +132,7 @@ int eventNoWaitTest(void)
 {
 	int  rv;    /* return value from task_event_xxx() calls */
 
-	rv = task_event_send(K_max_eventnr);   /* An invalid event # */
+	rv = task_event_send(_k_num_events);   /* An invalid event # */
 	if (rv != RC_FAIL) {
 		TC_ERROR("task_event_send() returned %d, not %d\n", rv, RC_FAIL);
 		return TC_FAIL;

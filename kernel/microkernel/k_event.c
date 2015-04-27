@@ -48,7 +48,7 @@ void K_event_set_handler(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
 
-	if (likely(event < K_max_eventnr)) {
+	if (likely(event < _k_num_events)) {
 		struct evstr *E = EVENTS + A->Args.e1.event;
 
 		if (E->func != NULL) {
@@ -130,7 +130,7 @@ void K_event_test(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
 
-	if (likely(event < K_max_eventnr)) {
+	if (likely(event < _k_num_events)) {
 		struct evstr *E = EVENTS + event;
 
 		if (E->status) { /* the next event can be received */
@@ -242,7 +242,7 @@ void K_event_signal(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
 
-	if (likely(event < K_max_eventnr)) {
+	if (likely(event < _k_num_events)) {
 		K_sigevent(event);
 		A->Time.rcode = RC_OK;
 	} else {

@@ -51,7 +51,7 @@ static int K_monitor_wind = 0;
 
 taskswitchcallbackfunc TaskSwitchCallBack = NULL;
 
-extern const int K_max_eventnr;
+extern const int _k_num_events;
 
 void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func)
 {
@@ -87,7 +87,7 @@ void K_monitor_args(struct k_args *A)
 	{
 		K_monitor_wptr->time = timer_read();
 
-		if ((uint32_t)A < K_max_eventnr)
+		if ((uint32_t)A < _k_num_events)
 		{
 			K_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
 		}
