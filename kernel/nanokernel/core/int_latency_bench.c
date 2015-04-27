@@ -67,7 +67,7 @@ static uint32_t stop_delay = 0;
 static uint32_t intLockUnlockNest = 0;
 
 /* indicate if the interrupt latency benchamrk is ready to be used */
-static uint32_t intLatencyBenchRdy = 0;
+static uint32_t int_latency_bench_ready = 0;
 
 /* globals */
 
@@ -88,7 +88,7 @@ uint32_t _hw_irq_to_c_handler_latency = ULONG_MAX;
 void _int_latency_start(void)
 {
 	/* when interrupts are not already locked, take time stamp */
-	if (!intLockedTimestamp && intLatencyBenchRdy) {
+	if (!intLockedTimestamp && int_latency_bench_ready) {
 		intLockedTimestamp = timer_read();
 		intLockUnlockNest = 0;
 	}
@@ -161,7 +161,7 @@ void int_latency_init(void)
 	uint32_t timeToReadTime;
 	uint32_t cacheWarming = NB_CACHE_WARMING_DRY_RUN;
 
-	intLatencyBenchRdy = 1;
+	int_latency_bench_ready = 1;
 
 	/*
 	 * measuring delay introduced by the interrupt latency benchmark few
@@ -213,7 +213,7 @@ void int_latency_show(void)
 {
 	uint32_t intHandlerLatency = 0;
 
-	if (!intLatencyBenchRdy) {
+	if (!int_latency_bench_ready) {
 		printk("error: int_latency_init() has not been invoked\n");
 		return;
 	}
