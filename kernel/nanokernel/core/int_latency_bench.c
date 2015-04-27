@@ -52,7 +52,7 @@
  * Timestamp corresponding to when interrupt were turned off.
  * A value of zero indicated interrupt are not currently locked.
  */
-static uint32_t intLockedTimestamp = 0;
+static uint32_t int_locked_timestamp = 0;
 
 /* stats tracking the minimum and maximum time when interrupts were locked */
 static uint32_t intLockingLatencyMin = ULONG_MAX;
@@ -88,8 +88,8 @@ uint32_t _hw_irq_to_c_handler_latency = ULONG_MAX;
 void _int_latency_start(void)
 {
 	/* when interrupts are not already locked, take time stamp */
-	if (!intLockedTimestamp && int_latency_bench_ready) {
-		intLockedTimestamp = timer_read();
+	if (!int_locked_timestamp && int_latency_bench_ready) {
+		int_locked_timestamp = timer_read();
 		intLockUnlockNest = 0;
 	}
 	intLockUnlockNest++;
@@ -112,14 +112,14 @@ void _int_latency_stop(void)
 	uint32_t currentTime = timer_read();
 
 	/* ensured intLatencyStart() was invoked first */
-	if (intLockedTimestamp) {
+	if (int_locked_timestamp) {
 		/*
 		 * time spent with interrupt lock is:
 		 * (current time - time when interrupt got disabled first) -
 		 * (delay when invoking start + number nested calls to intLock *
 		 * time it takes to call intLatencyStart + intLatencyStop)
 		 */
-		delta = (currentTime - intLockedTimestamp);
+		delta = (currentTime - int_locked_timestamp);
 
 		/*
 		 * Substract overhead introduce by the int latency benchmark
@@ -144,7 +144,7 @@ void _int_latency_stop(void)
 
 		/* interrupts are now enabled, get ready for next interrupt lock
 		 */
-		intLockedTimestamp = 0;
+		int_locked_timestamp = 0;
 	}
 }
 
