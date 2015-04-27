@@ -137,8 +137,8 @@ static inline void _WlMonitorUpdate(void)
 {
 #ifdef CONFIG_WORKLOAD_MONITOR
 	if (--_k_workload_ticks == 0) {
-		_k_workload_t0 = WldT1;
-		WldT1 = timer_read();
+		_k_workload_t0 = _k_workload_t1;
+		_k_workload_t1 = timer_read();
 		WldN0 = WldN1;
 		WldN1 = Wld_i - 1;
 		_k_workload_ticks = _k_workload_slice;
