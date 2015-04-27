@@ -10,8 +10,5 @@ include ${iDEFS_OBJS_MICROKERNEL_${CONFIG_MICROKERNEL}}
 # networking
 include ${vBASE}/net/defs.objs
 
-# utilities
-include ${vBASE}/kernel/common/util/defs.objs
-
 # miscellaneous
 include ${vBASE}/misc/defs.objs
