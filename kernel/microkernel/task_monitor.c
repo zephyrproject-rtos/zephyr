@@ -49,13 +49,13 @@ static struct k_mrec *k_monitor_wptr = k_monitor_buff;
 static int k_monitor_nrec = 0;
 static int K_monitor_wind = 0;
 
-taskswitchcallbackfunc TaskSwitchCallBack = NULL;
+taskswitchcallbackfunc _k_task_switch_callback = NULL;
 
 extern const int _k_num_events;
 
 void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func)
 {
-	TaskSwitchCallBack = func;
+	_k_task_switch_callback = func;
 }
 
 void K_monitor_task(struct k_proc *X, uint32_t D)
@@ -75,8 +75,8 @@ void K_monitor_task(struct k_proc *X, uint32_t D)
 		if (k_monitor_nrec < k_monitor_capacity)
 			k_monitor_nrec++;
 	}
-	if ((TaskSwitchCallBack != NULL) && (D == 0))
-		(TaskSwitchCallBack)(X->Ident, timer_read());
+	if ((_k_task_switch_callback != NULL) && (D == 0))
+		(_k_task_switch_callback)(X->Ident, timer_read());
 }
 
 void K_monitor_args(struct k_args *A)
