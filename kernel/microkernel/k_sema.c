@@ -581,7 +581,7 @@ void isr_sem_give(ksem_t sema, /* semaphore to signal */
 	pCommand->Comm = SIGNALS;
 	pCommand->Args.s1.sema = sema;
 
-	nano_isr_stack_push(&K_Args, (uint32_t)pCommand);
+	nano_isr_stack_push(&_k_command_stack, (uint32_t)pCommand);
 }
 
 /*******************************************************************************

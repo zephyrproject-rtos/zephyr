@@ -114,7 +114,7 @@ static inline void _HandleExpiredTimers(int ticks)
 		} else {
 			T->Ti = -1;
 		}
-		TO_ALIST(&K_Args, T->Args);
+		TO_ALIST(&_k_command_stack, T->Args);
 
 		ticks = 0; /* don't decrement Ti for subsequent timer(s) */
 	}

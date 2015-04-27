@@ -69,7 +69,7 @@ extern K_TIMER *_k_timer_list_tail;
 #endif
 extern int64_t _k_sys_clock_tick_count;
 
-extern struct nano_stack K_Args;
+extern struct nano_stack _k_command_stack;
 extern struct nano_lifo LinkIn[6];
 extern struct nano_lifo LinkOut[6];
 extern struct nano_lifo K_DataFree;
@@ -249,6 +249,6 @@ extern void wlMonitorCalibrate(void);
 
 #define TO_ALIST(L, A) _Cpsh((L), (uint32_t)(A))
 
-#define SENDARGS(A) _Cpsh(&K_Args, (uint32_t)(A))
+#define SENDARGS(A) _Cpsh(&_k_command_stack, (uint32_t)(A))
 
 #endif

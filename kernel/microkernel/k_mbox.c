@@ -884,7 +884,7 @@ int _task_mbox_data_get_async_block(struct k_msg *message,
 		__ASSERT_NO_MSG(NULL == Writer->Forw);
 
 		Writer->Args.m1.mess.tx_block.poolid = (uint32_t)(-1);
-		nano_task_stack_push(&K_Args, (uint32_t)Writer);
+		nano_task_stack_push(&_k_command_stack, (uint32_t)Writer);
 
 #ifdef ACTIV_ASSERTS
 		struct k_args *Dummy;

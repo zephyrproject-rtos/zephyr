@@ -172,7 +172,7 @@ void force_timeout(struct k_args *A)
 
 	if (T->Ti != -1) {
 		delist_timer(T);
-		TO_ALIST(&K_Args, A);
+		TO_ALIST(&_k_command_stack, A);
 	}
 }
 

@@ -295,5 +295,5 @@ FUNC_ALIAS(isr_event_send, fiber_event_send, void);
 void isr_event_send(kevent_t event /* event to signal */
 					   )
 {
-	nano_isr_stack_push(&K_Args, (uint32_t)event);
+	nano_isr_stack_push(&_k_command_stack, (uint32_t)event);
 }

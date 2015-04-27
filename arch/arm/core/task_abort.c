@@ -79,7 +79,7 @@ void _TaskAbort(void)
 		cmdpacket.Args.g1.opt = taskAbortCode;
 		cmdpacket.alloc = false;
 		_k_current_task->Args = &cmdpacket;
-		nano_isr_stack_push(&K_Args, (uint32_t) &cmdpacket);
+		nano_isr_stack_push(&_k_command_stack, (uint32_t) &cmdpacket);
 		_ScbPendsvSet();
 	}
 }

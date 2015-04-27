@@ -76,7 +76,7 @@ In a nanokernel-only system this device driver omits more complex capabilities
 #include <microkernel.h>
 #include <cputype.h>
 
-extern struct nano_stack K_Args;
+extern struct nano_stack _k_command_stack;
 
 #ifdef CONFIG_TICKLESS_IDLE
 #define TIMER_SUPPORTS_TICKLESS
@@ -298,7 +298,7 @@ void _timer_int_handler(void *unused)
 	 * timer is already configured to interrupt on the following tick
 	 */
 
-	nano_isr_stack_push(&K_Args, TICK_EVENT);
+	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 
 #else
 
@@ -335,7 +335,7 @@ void _timer_int_handler(void *unused)
 	 */
 
 	if (_SysIdleElapsedTicks == 1) {
-		nano_isr_stack_push(&K_Args, TICK_EVENT);
+		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	}
 
 #endif /* !TIMER_SUPPORTS_TICKLESS */
@@ -440,7 +440,7 @@ void _timer_idle_exit(void)
 		 * is
 		 * serviced.
 		 */
-		nano_isr_stack_push(&K_Args, TICK_EVENT);
+		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 
 		/* timer interrupt handler reprograms the timer for the next
 		 * tick */
@@ -491,7 +491,7 @@ void _timer_idle_exit(void)
 
 	if (_SysIdleElapsedTicks) {
 		/* Announce elapsed ticks to the microkernel */
-		nano_isr_stack_push(&K_Args, TICK_EVENT);
+		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	}
 
 	/*

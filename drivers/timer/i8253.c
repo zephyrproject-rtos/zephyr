@@ -154,7 +154,7 @@ static uint32_t oldAcc = 0; /* previous accumulated value value */
 /* externs */
 
 #ifdef CONFIG_MICROKERNEL
-extern struct nano_stack K_Args;
+extern struct nano_stack _k_command_stack;
 #endif /* ! CONFIG_MICROKERNEL */
 
 #ifdef __DCC__
@@ -297,7 +297,7 @@ void _timer_int_handler(void *unusedArg /* not used */
 	 */
 
 	if (_SysIdleElapsedTicks == 1) {
-		nano_isr_stack_push(&K_Args, TICK_EVENT);
+		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	}
 
 	/* accumulate total counter value */
@@ -306,7 +306,7 @@ void _timer_int_handler(void *unusedArg /* not used */
 #else
 #if defined(CONFIG_MICROKERNEL)
 	/* announce tick into the microkernel */
-	nano_isr_stack_push(&K_Args, TICK_EVENT);
+	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 #endif
 
 	/* accumulate total counter value */
@@ -476,7 +476,7 @@ void _timer_idle_exit(void)
 		 * is
 		 * serviced.
 		 */
-		nano_isr_stack_push(&K_Args, TICK_EVENT);
+		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	} else {
 		uint16_t elapsed;   /* elapsed "counter time" */
 		uint16_t remaining; /* remaing "counter time" */
@@ -499,7 +499,7 @@ void _timer_idle_exit(void)
 
 		if (_SysIdleElapsedTicks) {
 			/* Announce elapsed ticks to the microkernel */
-			nano_isr_stack_push(&K_Args, TICK_EVENT);
+			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 		}
 	}
 }

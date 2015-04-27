@@ -221,7 +221,7 @@ void K_Defrag(struct k_args *A)
 		GETARGS(NewGet);
 		*NewGet = *A;
 		NewGet->Comm = GET_BLOCK_WAIT;
-		TO_ALIST(&K_Args, NewGet); /*push on command stack */
+		TO_ALIST(&_k_command_stack, NewGet); /*push on command stack */
 	}
 }
 
@@ -645,7 +645,7 @@ void K_RelBlock(struct k_args *A)
 					GETARGS(NewGet);
 					*NewGet = *A;
 					NewGet->Comm = GET_BLOCK_WAIT;
-					TO_ALIST(&K_Args, NewGet); /* push on command stack */
+					TO_ALIST(&_k_command_stack, NewGet); /* push on command stack */
 				}
 				if (A->alloc) {
 					FREEARGS(A);

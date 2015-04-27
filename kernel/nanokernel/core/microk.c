@@ -86,7 +86,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 
 	while (1) { /* forever */
 		pArgs = (struct k_args *)nano_fiber_stack_pop_wait(
-			&K_Args); /* will schedule */
+			&_k_command_stack); /* will schedule */
 		do {
 			kevent_t event;
 			/* if event < K_max_eventnr, it's a well-known event */
@@ -113,7 +113,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			if (_NanoKernel.fiber) {
 				fiber_yield();
 			}
-		} while (nano_fiber_stack_pop(&K_Args, (void *)&pArgs));
+		} while (nano_fiber_stack_pop(&_k_command_stack, (void *)&pArgs));
 
 		/*
 		 * Always check higher priorities (lower numbers) first.

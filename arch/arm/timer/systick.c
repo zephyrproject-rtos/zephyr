@@ -64,7 +64,7 @@ conjunction with a microkernel.
 #include <microkernel.h>
 #include <cputype.h>
 
-extern struct nano_stack K_Args;
+extern struct nano_stack _k_command_stack;
 
 #endif /* CONFIG_MICROKERNEL */
 
@@ -317,7 +317,7 @@ void _TIMER_INT_HANDLER(void *unused)
 		idleMode = IDLE_NOT_TICKLESS;
 		_SysIdleElapsedTicks =
 			idleOrigTicks + 1; /* actual # of idle ticks */
-		nano_isr_stack_push(&K_Args, TICK_EVENT);
+		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	} else {
 		/*
 		 * Increment the tick because _timer_idle_exit does not
@@ -335,7 +335,7 @@ void _TIMER_INT_HANDLER(void *unused)
 		 */
 
 		if (_SysIdleElapsedTicks == 1) {
-			nano_isr_stack_push(&K_Args, TICK_EVENT);
+			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 		}
 	}
 
@@ -348,7 +348,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	 */
 	accumulatedCount += sys_clock_hw_cycles_per_tick;
 
-	nano_isr_stack_push(&K_Args, TICK_EVENT);
+	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 #endif /* CONFIG_TICKLESS_IDLE */
 
 	numIdleTicks = _NanoIdleValGet(); /* get # of idle ticks requested */
@@ -376,7 +376,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	 * one more tick has occurred -- don't need to do anything special since
 	 * timer is already configured to interrupt on the following tick
 	 */
-	nano_isr_stack_push(&K_Args, TICK_EVENT);
+	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 #else
 	_nano_ticks++;
 
@@ -587,7 +587,7 @@ void _timer_idle_exit(void)
 		 * so _SysIdleElapsedTicks is adjusted to account for it.
 		 */
 		_SysIdleElapsedTicks = idleOrigTicks - 1;
-		nano_isr_stack_push(&K_Args, TICK_EVENT);
+		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	} else {
 		uint32_t elapsed;   /* elapsed "counter time" */
 		uint32_t remaining; /* remaining "counter time" */
@@ -619,7 +619,7 @@ void _timer_idle_exit(void)
 
 		if (_SysIdleElapsedTicks) {
 			/* Announce elapsed ticks to the microkernel */
-			nano_isr_stack_push(&K_Args, TICK_EVENT);
+			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 		}
 	}
 
