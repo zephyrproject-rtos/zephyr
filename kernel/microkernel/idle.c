@@ -57,7 +57,7 @@ volatile unsigned int _k_workload_n1 = 0x0;
 volatile unsigned int _k_workload_i = 0x0;
 volatile unsigned int _k_workload_i0 = 0x0;
 volatile unsigned int _k_workload_delta = 0x0;
-volatile unsigned int WldT_start = 0x0;
+volatile unsigned int _k_workload_start_time = 0x0;
 volatile unsigned int WldT_end = 0x0;
 
 #ifdef WL_SCALE

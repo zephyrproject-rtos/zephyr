@@ -49,7 +49,7 @@ extern volatile unsigned int _k_workload_n1;
 extern volatile unsigned int _k_workload_i;
 extern volatile unsigned int _k_workload_i0;
 extern volatile unsigned int _k_workload_delta;
-extern volatile unsigned int WldT_start;
+extern volatile unsigned int _k_workload_start_time;
 extern volatile unsigned int WldT_end;
 
 extern void enlist_timer(K_TIMER *T);
