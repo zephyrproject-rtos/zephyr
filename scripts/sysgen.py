@@ -577,7 +577,7 @@ def kernel_main_c_pipes():
     kernel_main_c_out("\nint K_PipeCount = %d;\n" % (total_pipes))
 
     if (total_pipes == 0):
-        kernel_main_c_out("\nstruct pipe_struct * K_PipeList = NULL;\n")
+        kernel_main_c_out("\nstruct pipe_struct * _k_pipe_list = NULL;\n")
         return
 
     # pipe buffers
@@ -591,7 +591,7 @@ def kernel_main_c_pipes():
     # pipe descriptors
 
     kernel_main_c_out("\n" +
-        "struct pipe_struct K_PipeList[%d] =\n" % (total_pipes) +
+        "struct pipe_struct _k_pipe_list[%d] =\n" % (total_pipes) +
         "{\n")
     for pipe in pipe_list:
         size = pipe[1]

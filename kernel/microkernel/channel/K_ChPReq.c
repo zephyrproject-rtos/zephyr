@@ -82,7 +82,7 @@ void K_ChSendReq(struct k_args *RequestOrig)
 		{
 			mycopypacket(&RequestProc, Request);
 			RequestProc->Args.ChProc.ReqInfo.ChRef.pPipe =
-				&(K_PipeList[OBJ_INDEX(pipeId)]);
+				&(_k_pipe_list[OBJ_INDEX(pipeId)]);
 			switch (ChxxxGetReqType(&(RequestProc->Args))) {
 			case _SYNCREQ:
 				RequestProc->Args.ChProc.pData =
