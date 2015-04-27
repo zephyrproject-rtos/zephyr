@@ -207,7 +207,7 @@ void K_alloc_timer(
 	K_TIMER *T;
 	struct k_args *A;
 
-	T = _Cget(&K_TimerFree);
+	T = _Cget(&_k_timer_free);
 	P->Args.c1.timer = T;
 
 	if (T) {

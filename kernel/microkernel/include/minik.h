@@ -75,7 +75,7 @@ extern struct nano_lifo LinkOut[6];
 extern struct nano_lifo K_DataFree;
 extern struct nano_lifo _k_server_command_packet_free;
 #ifndef LITE
-extern struct nano_lifo K_TimerFree;
+extern struct nano_lifo _k_timer_free;
 #endif
 
 extern void _Cput(struct nano_lifo *, void *);
@@ -237,14 +237,14 @@ extern void wlMonitorCalibrate(void);
 #ifndef LITE
 #define GETTIMER(T)                        \
 	do {                               \
-		(T) = _Cget(&K_TimerFree); \
+		(T) = _Cget(&_k_timer_free); \
 	} while (0)
 #endif
 
 #define FREEARGS(A) _Cput(&_k_server_command_packet_free, (A))
 #define FREEDATA(D) _Cput(&K_DataFree, (D))
 #ifndef LITE
-#define FREETIMER(T) _Cput(&K_TimerFree, (T))
+#define FREETIMER(T) _Cput(&_k_timer_free, (T))
 #endif
 
 #define TO_ALIST(L, A) _Cpsh((L), (uint32_t)(A))

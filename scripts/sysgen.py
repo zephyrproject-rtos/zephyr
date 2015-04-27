@@ -355,7 +355,7 @@ def kernel_main_c_timers():
     # linked list of free timers
 
     kernel_main_c_out("\n" +
-        "struct nano_lifo K_TimerFree = " +
+        "struct nano_lifo _k_timer_free = " +
         "{(void *) &K_TimerBlocks[%d], NULL};\n" % (num_timers - 1))
 
 

@@ -48,7 +48,7 @@ extern "C" {
 extern int K_ticker(int event);
 extern K_TIMER *_k_timer_list_head;
 extern K_TIMER *_k_timer_list_tail;
-extern struct nano_lifo K_TimerFree;
+extern struct nano_lifo _k_timer_free;
 extern K_TIMER K_TimerBlocks[]; /* array of microkernel timer objects */
 extern const knode_t _k_this_node;
 
