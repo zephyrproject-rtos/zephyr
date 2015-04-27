@@ -49,7 +49,7 @@ This module implements the microkernel's tick event handler.
 #include <sections.h>
 
 #ifdef CONFIG_TIMESLICING
-static int32_t SliceCount = (int32_t)0;
+static int32_t slice_count = (int32_t)0;
 static int32_t SliceTime = (int32_t)CONFIG_TIMESLICE_SIZE;
 static kpriority_t SlicePrio =
 	(kpriority_t)CONFIG_TIMESLICE_PRIORITY;
@@ -188,9 +188,9 @@ static inline void _TimeSliceUpdate(void)
 {
 #ifdef CONFIG_TIMESLICING
 	int yield = SliceTime && (_k_current_task->Prio >= SlicePrio) &&
-		    (++SliceCount >= SliceTime);
+		    (++slice_count >= SliceTime);
 	if (yield) {
-		SliceCount = 0;
+		slice_count = 0;
 		K_yield(NULL);
 	}
 #else
