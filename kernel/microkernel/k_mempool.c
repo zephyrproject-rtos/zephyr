@@ -61,7 +61,7 @@ void InitPools(void)
 	char *memptr;
 
 	/* for all pools initialise largest blocks */
-	for (i = 0, P = _k_mem_pool_list; i < K_PoolCount; i++, P++) {
+	for (i = 0, P = _k_mem_pool_list; i < _k_mem_pool_count; i++, P++) {
 		int remaining = P->nr_of_maxblocks;
 		int t = 0;
 

@@ -667,7 +667,7 @@ def kernel_main_c_pools():
 
     # pool global variables
 
-    kernel_main_c_out("\nint K_PoolCount = %d;\n" % (total_pools))
+    kernel_main_c_out("\nint _k_mem_pool_count = %d;\n" % (total_pools))
 
     if (total_pools == 0):
         kernel_main_c_out("\nstruct pool_struct * _k_mem_pool_list = NULL;\n")

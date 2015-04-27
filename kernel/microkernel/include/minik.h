@@ -57,7 +57,7 @@ extern struct pipe_struct _k_pipe_list[];
 #ifndef LITE
 extern int _k_mem_map_count;
 #endif
-extern int K_PoolCount;
+extern int _k_mem_pool_count;
 extern int K_PipeCount;
 
 extern struct k_proc *K_Task;

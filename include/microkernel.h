@@ -81,7 +81,7 @@ extern int K_StackSize;
 
 extern int _k_task_count;
 extern int _k_mem_map_count;
-extern int K_PoolCount;
+extern int _k_mem_pool_count;
 extern int K_PipeCount;
 extern const int K_max_eventnr;
 
