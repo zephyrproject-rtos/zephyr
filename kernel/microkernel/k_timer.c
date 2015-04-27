@@ -83,7 +83,7 @@ int64_t task_node_tick_get(void)
 
 int32_t task_node_tick_get_32(void)
 {
-	return (int32_t)K_LowTime;
+	return (int32_t)_k_sys_clock_tick_count;
 }
 
 /*******************************************************************************

@@ -44,7 +44,7 @@ K_TIMER  *_k_timer_list_head = NULL;
 K_TIMER  *_k_timer_list_tail = NULL;
 #endif
 
-int64_t K_LowTime = 0;
+int64_t _k_sys_clock_tick_count = 0;
 
 /* these two access routines can be removed if atomic operators are
  * functional on all platforms */
@@ -52,7 +52,7 @@ void _LowTimeInc(int inc)
 {
 	int key = irq_lock_inline();
 
-	K_LowTime += inc;
+	_k_sys_clock_tick_count += inc;
 	irq_unlock_inline(key);
 }
 
@@ -60,7 +60,7 @@ int64_t _LowTimeGet(void)
 {
 	int64_t ticks;
 	int key = irq_lock_inline();
-	ticks = K_LowTime;
+	ticks = _k_sys_clock_tick_count;
 
 	irq_unlock_inline(key);
 	return ticks;

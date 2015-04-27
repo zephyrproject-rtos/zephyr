@@ -67,7 +67,7 @@ extern uint32_t _k_task_priority_bitmap[];
 extern K_TIMER *_k_timer_list_head;
 extern K_TIMER *_k_timer_list_tail;
 #endif
-extern int64_t K_LowTime;
+extern int64_t _k_sys_clock_tick_count;
 
 extern struct nano_stack K_Args;
 extern struct nano_lifo LinkIn[6];
