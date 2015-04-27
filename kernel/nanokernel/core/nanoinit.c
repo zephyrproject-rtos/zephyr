@@ -46,7 +46,7 @@ This module contains routines that are used to initialize the nanokernel.
 
 /* stack space for the background task context */
 
-static char __noinit mainStack[CONFIG_MAIN_STACK_SIZE];
+static char __noinit _k_init_and_idle_task_stack[CONFIG_MAIN_STACK_SIZE];
 
 /* storage space for the interrupt stack */
 
@@ -154,7 +154,7 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 	 */
 
 	_NanoKernel.task =
-		_NewContext(mainStack,			 /* pStackMem */
+		_NewContext(_k_init_and_idle_task_stack,			 /* pStackMem */
 			    CONFIG_MAIN_STACK_SIZE, /* stackSize */
 			    (_ContextEntry)main,	 /* pEntry */
 			    (_ContextArg)argc,		 /* parameter1 */
