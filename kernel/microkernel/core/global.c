@@ -61,7 +61,7 @@ int K_DebugHalt = 0;
 #if CONFIG_COMMAND_STACK_SIZE <= 0
 #error COMMAND_STACK_SIZE must be greater than zero
 #endif
-uint32_t __noinit _minik_args[CONFIG_COMMAND_STACK_SIZE];
+uint32_t __noinit _k_server_command_stack_storage[CONFIG_COMMAND_STACK_SIZE];
 
 extern void K_swapper(int i1, int i2);
 
@@ -85,9 +85,9 @@ void kernel_init(void)
 	init_node();
 
 #ifdef CONFIG_INIT_STACKS
-	k_memset((char *)_minik_args, 0xaa, sizeof(_minik_args));
+	k_memset((char *)_k_server_command_stack_storage, 0xaa, sizeof(_k_server_command_stack_storage));
 #endif
-	nano_stack_init(&K_Args, _minik_args);
+	nano_stack_init(&K_Args, _k_server_command_stack_storage);
 
 	task_fiber_start((char *)_k_server_stack,
 			   K_StackSize,
