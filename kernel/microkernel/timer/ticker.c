@@ -161,11 +161,11 @@ static inline void _WlMonitorUpdate(void)
 */
 
 #ifdef CONFIG_TASK_DEBUG
-uint32_t __noinit K_DebugLowTime;
+uint32_t __noinit _k_debug_sys_clock_tick_count;
 
 static inline int _TlDebugUpdate(int32_t ticks)
 {
-	K_DebugLowTime += ticks;
+	_k_debug_sys_clock_tick_count += ticks;
 	return !_k_debug_halt;
 }
 #else
