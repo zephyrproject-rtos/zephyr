@@ -141,7 +141,7 @@ static inline void _WlMonitorUpdate(void)
 		WldT1 = timer_read();
 		WldN0 = WldN1;
 		WldN1 = Wld_i - 1;
-		WldTicks = WldSlice;
+		WldTicks = _k_workload_slice;
 	}
 #else
 /* do nothing */

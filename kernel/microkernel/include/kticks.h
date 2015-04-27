@@ -39,7 +39,7 @@
 extern K_TIMER *_k_timer_list_head;
 extern K_TIMER *_k_timer_list_tail;
 extern int64_t _k_sys_clock_tick_count;
-extern unsigned int WldSlice;
+extern unsigned int _k_workload_slice;
 extern unsigned int WldTicks;
 extern unsigned int WldRefT;
 extern unsigned int WldT0;

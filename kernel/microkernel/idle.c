@@ -47,7 +47,7 @@ task, depending on how the kernel is configured.
 
 #if defined(CONFIG_WORKLOAD_MONITOR)
 
-unsigned int WldSlice = 0x0;
+unsigned int _k_workload_slice = 0x0;
 unsigned int WldTicks = 0x0;
 unsigned int WldRefT = 0x0;
 unsigned int WldT0 = 0x0;
@@ -128,7 +128,7 @@ void wlMonitorCalibrate(void)
 	WldRefT = (WldT1 - WldT0) >> (4 + 6);
 #endif
 
-	WldSlice = 100;
+	_k_workload_slice = 100;
 	WldTicks = 100;
 }
 
@@ -205,7 +205,7 @@ void workload_time_slice_set(int32_t t)
 		t = 10;
 	if (t > 1000)
 		t = 1000;
-	WldSlice = t;
+	_k_workload_slice = t;
 #else
 	ARG_UNUSED(t);
 #endif
