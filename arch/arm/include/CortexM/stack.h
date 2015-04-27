@@ -60,12 +60,12 @@ Stack helper functions.
 
 #if (STACK_DIR == STACK_GROWS_DOWN)
 #define __GET_MSP() \
-	STACK_ROUND_DOWN(&_InterruptStack[CONFIG_ISR_STACK_SIZE - 1])
+	STACK_ROUND_DOWN(&_interrupt_stack[CONFIG_ISR_STACK_SIZE - 1])
 #else
-#define __GET_MSP() STACK_ROUND_UP(&_InterruptStack[0])
+#define __GET_MSP() STACK_ROUND_UP(&_interrupt_stack[0])
 #endif
 
-extern char _InterruptStack[CONFIG_ISR_STACK_SIZE];
+extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
 /*******************************************************************************
 *

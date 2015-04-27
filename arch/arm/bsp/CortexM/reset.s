@@ -78,7 +78,7 @@ SECTION_FUNC(TEXT,__reset)
 
     /* 
      * Set PSP and use it to boot without using MSP, so that it
-     * gets set to _InterruptStack during nanoInit().
+     * gets set to _interrupt_stack during nanoInit().
      */
     ldr r0, =__CORTEXM_BOOT_PSP
     msr PSP, r0

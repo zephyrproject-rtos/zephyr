@@ -802,7 +802,7 @@ static inline void nanoArchInit(void)
 	extern void *__DummySpur;
 	extern void _ExcEnt(void);
 	extern void *__DummyExcEnt;
-	extern char _InterruptStack[CONFIG_ISR_STACK_SIZE];
+	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
 	_NanoKernel.nested = 0;
 
@@ -810,7 +810,7 @@ static inline void nanoArchInit(void)
 	_NanoKernel.common_isp = (char *)NULL;
 #else  /* notdef CONFIG_NO_ISRS */
 	_NanoKernel.common_isp = (char *)STACK_ROUND_DOWN(
-		&_InterruptStack[CONFIG_ISR_STACK_SIZE - 1]);
+		&_interrupt_stack[CONFIG_ISR_STACK_SIZE - 1]);
 #endif /* notdef CONFIG_NO_ISRS */
 
 	/*

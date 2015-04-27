@@ -64,7 +64,7 @@ static char __noinit mainStack[CONFIG_MAIN_STACK_SIZE];
  * this BSP doesn't need to setup the aforementioned temporary stack.
  */
 
-char __noinit _InterruptStack[CONFIG_ISR_STACK_SIZE];
+char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 #endif
 
 /*

@@ -79,7 +79,7 @@ some key symbols (eg. the gdt) provided by the linker script.
 	GTEXT(_Cstart)
 
 	GDATA(_IdtBaseAddress)
-	GDATA(_InterruptStack)
+	GDATA(_interrupt_stack)
 
 
 #if defined(CONFIG_SSE)
@@ -497,7 +497,7 @@ memInitDone:
 	 * interrupts are disabled until the first context switch.
 	 */
 
-	movl	$_InterruptStack, %esp
+	movl	$_interrupt_stack, %esp
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
 
 	/* align to stack boundary: ROUND_DOWN (%esp, 4) */
