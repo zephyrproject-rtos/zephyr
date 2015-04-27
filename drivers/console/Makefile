@@ -11,7 +11,7 @@ EXTRA_CFLAGS +=-I$(srctree)/arch/x86/quark
 endif
 
 ifeq (${CONFIG_BSP_FSL_FRDM_K64F},y)
-EXTRA_CFLAGS +=-I $(srctree)/arch/arm/fsl_frdm_k64f
+EXTRA_CFLAGS +=-I$(srctree)/arch/arm/fsl_frdm_k64f
 endif
 
 ifeq (${CONFIG_BSP_TI_LM3S6965},y)

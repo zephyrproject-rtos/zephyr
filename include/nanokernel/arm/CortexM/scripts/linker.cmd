@@ -144,7 +144,11 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+#if defined(CONFIG_XIP)
     SECTION_AT_PROLOGUE(_DATA_SECTION_NAME,,,_DATA_IN_ROM)
+#else
+    SECTION_PROLOGUE(_DATA_SECTION_NAME,,)
+#endif
 	{
 	__data_ram_start = .;
 	*(.data)

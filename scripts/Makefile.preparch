@@ -103,7 +103,7 @@ OFFSETS_INCLUDE = $(strip \
 		-I $(srctree)/kernel/nanokernel/include \
 		-I $(srctree)/target/src/kernel/arch/common/include \
 		-I $(srctree)/lib/libc/minimal/include \
-		-I $(srctree)/arch/x86/include )
+		-I $(srctree)/arch/${SRCARCH}/include )
 
 cmd_cc_o_c = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) $(USERINCLUDE) -c -o $@ $<
 
