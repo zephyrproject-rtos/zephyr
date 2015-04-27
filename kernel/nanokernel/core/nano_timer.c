@@ -34,7 +34,7 @@
 
 #include <nanok.h>
 
-extern struct nano_timer *nanoTimerList;
+extern struct nano_timer *_nano_timer_list;
 
 /*******************************************************************************
 *
@@ -109,7 +109,7 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
 
 	imask = irq_lock_inline();
 
-	cur = nanoTimerList;
+	cur = _nano_timer_list;
 
 	while (cur && (timer->ticks > cur->ticks)) {
 		timer->ticks -= cur->ticks;
@@ -124,7 +124,7 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
 	if (prev != NULL)
 		prev->link = timer;
 	else
-		nanoTimerList = timer;
+		_nano_timer_list = timer;
 
 	irq_unlock_inline(imask);
 }
@@ -149,7 +149,7 @@ static void _timer_stop(struct nano_timer *timer /* timer to stop */
 
 	imask = irq_lock_inline();
 
-	cur = nanoTimerList;
+	cur = _nano_timer_list;
 
 	/* find prev */
 	while (cur && cur != timer) {
@@ -161,10 +161,10 @@ static void _timer_stop(struct nano_timer *timer /* timer to stop */
 	if (cur) {
 		/* if it was first */
 		if (prev == NULL) {
-			nanoTimerList = timer->link;
+			_nano_timer_list = timer->link;
 			/* if not last */
-			if (nanoTimerList)
-				nanoTimerList->ticks += timer->ticks;
+			if (_nano_timer_list)
+				_nano_timer_list->ticks += timer->ticks;
 		} else {
 			prev->link = timer->link;
 			/* if not last */

@@ -44,7 +44,7 @@ int sys_clock_hw_cycles_per_tick =
 	sys_clock_hw_cycles_per_sec / sys_clock_ticks_per_sec;
 
 uint32_t _nano_ticks = 0;
-struct nano_timer *nanoTimerList = NULL;
+struct nano_timer *_nano_timer_list = NULL;
 
 /*******************************************************************************
 *

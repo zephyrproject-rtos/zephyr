@@ -79,7 +79,7 @@ extern int sys_clock_hw_cycles_per_tick;
 
 #ifdef CONFIG_NANOKERNEL
 extern uint32_t _nano_ticks;
-extern struct nano_timer *nanoTimerList;
+extern struct nano_timer *_nano_timer_list;
 #endif /* CONFIG_NANOKERNEL */
 
 #endif /* !_ASMLANGUAGE */

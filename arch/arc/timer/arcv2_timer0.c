@@ -152,14 +152,14 @@ void _timer_int_handler(void *unused)
 
 	_nano_ticks++;
 
-	if (nanoTimerList) {
-		nanoTimerList->ticks--;
+	if (_nano_timer_list) {
+		_nano_timer_list->ticks--;
 
-		while (nanoTimerList && (!nanoTimerList->ticks)) {
-			struct nano_timer *expired = nanoTimerList;
+		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
+			struct nano_timer *expired = _nano_timer_list;
 			struct nano_lifo *lifo = &expired->lifo;
 
-			nanoTimerList = expired->link;
+			_nano_timer_list = expired->link;
 			nano_fiber_lifo_put(lifo, expired->userData);
 		}
 	}

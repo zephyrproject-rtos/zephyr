@@ -349,13 +349,13 @@ void _timer_int_handler(void *unused /* parameter is not used */
 
 	_nano_ticks++; /* increment nanokernel ticks var */
 
-	if (nanoTimerList != NULL) {
-		nanoTimerList->ticks--;
+	if (_nano_timer_list != NULL) {
+		_nano_timer_list->ticks--;
 
-		while ((nanoTimerList != NULL) && (!nanoTimerList->ticks)) {
-			struct nano_timer *expired = nanoTimerList;
+		while ((_nano_timer_list != NULL) && (!_nano_timer_list->ticks)) {
+			struct nano_timer *expired = _nano_timer_list;
 			struct nano_lifo *chan = &expired->lifo;
-			nanoTimerList = expired->link;
+			_nano_timer_list = expired->link;
 			nano_fiber_lifo_put(chan, expired->userData);
 		}
 	}
