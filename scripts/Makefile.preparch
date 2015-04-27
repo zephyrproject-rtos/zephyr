@@ -28,11 +28,11 @@ define filechk_prj.vpf
 		done; \
 	fi; \
 	cat $(PROJECT)/$(VPFILE); \
-	cat $(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf;)
+	cat $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf;)
 endef
 
 #Specific source code generation for Viper
-misc/generated/nodes/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf \
+misc/generated/nodes/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf \
 				$(PROJECT)/$(VPFILE) \
 				include/config/auto.conf FORCE
 	$(call filechk,prj.vpf)
@@ -110,4 +110,4 @@ cmd_cc_o_c = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) $(USERINCLUDE) -c -o $@ $
 include/generated/offsets.o: $(srctree)/arch/$(SRCARCH)/core/offsets/offsets.c FORCE
 	$(call if_changed_rule,cc_o_c)
 
-.PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/$(CONFIG_KERNEL_DIR)/config1p.vpf
+.PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf

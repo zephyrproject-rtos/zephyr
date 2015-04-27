@@ -2,14 +2,6 @@ menu "Microkernel Options"
 
 source "kernel/microkernel/core/Kconfig"
 
-config KERNEL_DIR
-	string
-	default ukernel
-	depends on MICROKERNEL
-	help
-		This option holds the name of the directory used
-		by sysgen to locate the config1p.vpf file.
-
 config	WORKLOAD_MONITOR
 	bool
 	prompt "Workload monitoring [EXPERIMENTAL]"
