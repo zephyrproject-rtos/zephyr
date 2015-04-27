@@ -35,23 +35,11 @@ This module contains the initial code executed by the VxMicro ELF image
 after having been loaded into RAM.
 
 INTERNAL
-The CONFIG_PROT_MODE_SWITCH configuration option was once required when
-booting/loading an image into a Simics simulation environment, since the
-invocation technique involved halting the BIOS code (via a breakpoint) before
-it attempted to load a bootloader from disk, and then dumping the VxMicro ELF
-image into memory. This meant that the IA-32 processor was executing in 16-bit
-real mode (aka real mode) when __start() was called, thus requiring __start()
-to perform the 16-bit to 32-bit transition code and other sundry PC-related
-initialization steps (eg. enabling address line A20).
-
-Later advances now allow a VxMicro image to be loaded into the Simics environment
-after the system is already in 32-bit protected mode and address line A20 is
-enabled. Consequently, the CONFIG_PROT_MODE_SWITCH configuration option
-is no longer used by this BSP, and *all* booting scenarios for the BSP (e.g.
-via GRUB or any other multiboot compliant bootloader) now assume that the
-system is already in 32-bit protected mode and address line A20 is enabled.
-However, the code associated with CONFIG_PROT_MODE_SWITCH has been left
-in place in case future booting scenarios arise which require its use.
+The CONFIG_PROT_MODE_SWITCH configuration option is no longer used and *all*
+booting scenarios (e.g. via GRUB or any other multiboot compliant bootloader)
+now assume that the system is already in 32-bit protected mode and address line
+A20 is enabled. However, the code associated with CONFIG_PROT_MODE_SWITCH has
+been left in place should future booting scenarios arise which require its use.
 */
 
 #define _ASMLANGUAGE
@@ -287,7 +275,7 @@ SECTION_FUNC(TEXT_START, __start)
 	 * registers are set correctly.
 	 *
 	 * This is a special case for the generic_pc BSP, which must work for
-	 * multiple platforms (QEMU, SIMICS, generic PC board, etc.). With other
+	 * multiple platforms (QEMU, generic PC board, etc.). With other
 	 * BSPs the bootloader is well known so assumptions can be made.
 	 */
 	movw	$0x10, %ax	/* data segment selector (entry = 3) */
