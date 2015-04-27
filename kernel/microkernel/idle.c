@@ -68,7 +68,7 @@ extern uint32_t _k_workload_scale;
 
 /*******************************************************************************
 *
-* _WlLoop - shared code between workload calibration and monitoring
+* _workload_loop - shared code between workload calibration and monitoring
 *
 * Perform idle task "dummy work".
 *
@@ -79,7 +79,7 @@ extern uint32_t _k_workload_scale;
 *
 */
 
-static void _WlLoop(void)
+static void _workload_loop(void)
 {
 	volatile int x = 87654321;
 	volatile int y = 4;
@@ -117,7 +117,7 @@ void wlMonitorCalibrate(void)
 	_k_workload_n1 = 1000;
 
 	_k_workload_t0 = timer_read();
-	_WlLoop();
+	_workload_loop();
 	_k_workload_t1 = timer_read();
 
 	_k_workload_delta = _k_workload_t1 - _k_workload_t0;
@@ -302,7 +302,7 @@ int kernel_idle(void)
 #endif
 
 #ifdef CONFIG_WORKLOAD_MONITOR
-	_WlLoop();
+	_workload_loop();
 #endif
 
 	for (;;) {
