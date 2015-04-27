@@ -40,12 +40,12 @@
 #include <toolchain.h>
 #include <sections.h>
 
-static struct k_mrec __noinit K_monitor_buff[CONFIG_TASK_MONITOR_CAPACITY];
+static struct k_mrec __noinit k_monitor_buff[CONFIG_TASK_MONITOR_CAPACITY];
 
 static const int K_monitor_capacity = CONFIG_TASK_MONITOR_CAPACITY;
 const int K_monitor_mask = CONFIG_TASK_MONITOR_MASK;
 
-static struct k_mrec *K_monitor_wptr = K_monitor_buff;
+static struct k_mrec *K_monitor_wptr = k_monitor_buff;
 static int K_monitor_nrec = 0;
 static int K_monitor_wind = 0;
 
@@ -69,7 +69,7 @@ void K_monitor_task(struct k_proc *X, uint32_t D)
 		K_monitor_wptr->data2 = D;
 		if (++K_monitor_wind == K_monitor_capacity) {
 			K_monitor_wind = 0;
-			K_monitor_wptr = K_monitor_buff;
+			K_monitor_wptr = k_monitor_buff;
 		} else
 			++K_monitor_wptr;
 		if (K_monitor_nrec < K_monitor_capacity)
@@ -98,7 +98,7 @@ void K_monitor_args(struct k_args *A)
 
 		if (++K_monitor_wind == K_monitor_capacity) {
 			K_monitor_wind = 0;
-			K_monitor_wptr = K_monitor_buff;
+			K_monitor_wptr = k_monitor_buff;
 		} else
 			++K_monitor_wptr;
 
@@ -114,7 +114,7 @@ void K_monitor_read(struct k_args *A)
 		int i = K_monitor_wind - K_monitor_nrec + A->Args.z4.rind;
 		if (i < 0)
 			i += K_monitor_capacity;
-		A->Args.z4.mrec = K_monitor_buff[i];
+		A->Args.z4.mrec = k_monitor_buff[i];
 	}
 }
 
