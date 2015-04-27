@@ -170,11 +170,11 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 	_NanoKernel.task->flags |= ESSENTIAL;
 
 #if defined(CONFIG_MICROKERNEL)
-	/* fill in microkernel's TCB, which is the last element in K_TaskList[]
+	/* fill in microkernel's TCB, which is the last element in _k_task_list[]
 	 */
 
-	K_TaskList[K_TaskCount].workspace = (char *)_NanoKernel.task;
-	K_TaskList[K_TaskCount].worksize = CONFIG_MAIN_STACK_SIZE;
+	_k_task_list[K_TaskCount].workspace = (char *)_NanoKernel.task;
+	_k_task_list[K_TaskCount].worksize = CONFIG_MAIN_STACK_SIZE;
 #endif
 
 	/*

@@ -378,7 +378,7 @@ def kernel_main_c_tasks():
     # task descriptors (including one for idle task)
 
     kernel_main_c_out("\n" +
-        "struct k_proc K_TaskList[%d] =\n" % (total_tasks) +
+        "struct k_proc _k_task_list[%d] =\n" % (total_tasks) +
         "{\n")
     ident = 0x00010000
     for task in task_list:
@@ -419,7 +419,7 @@ def kernel_main_c_tasks():
     # currently scheduled task (idle task)
 
     kernel_main_c_out("\n" +
-        "struct k_proc * K_Task = &K_TaskList[%d];\n" % (total_tasks - 1))
+        "struct k_proc * K_Task = &_k_task_list[%d];\n" % (total_tasks - 1))
 
 
 def kernel_main_c_priorities():
@@ -437,7 +437,7 @@ def kernel_main_c_priorities():
         kernel_main_c_out(
             "    {NULL, (struct k_proc *)&_k_task_priority_list[%d]},\n" % (i - 1))
     kernel_main_c_out(
-        "    {&K_TaskList[%d], &K_TaskList[%d]}\n" %
+        "    {&_k_task_list[%d], &_k_task_list[%d]}\n" %
         (total_tasks - 1, total_tasks - 1) +
         "};\n")
 

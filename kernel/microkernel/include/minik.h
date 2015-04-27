@@ -39,7 +39,7 @@
 #define KERNEL_ENTRY(A) K_taskcall(A)
 
 extern const knode_t K_ThisNode;
-extern struct k_proc K_TaskList[];
+extern struct k_proc _k_task_list[];
 extern struct k_tqhd _k_task_priority_list[];
 
 extern int K_TaskCount;

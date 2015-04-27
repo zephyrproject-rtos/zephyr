@@ -250,7 +250,7 @@ void task_abort_handler_set(void (*func)(void) /* abort handler */
 void K_taskop(struct k_args *A)
 {
 	ktask_t Tid = A->Args.g1.task;
-		struct k_proc *X = K_TaskList + OBJ_INDEX(Tid);
+		struct k_proc *X = _k_task_list + OBJ_INDEX(Tid);
 
 		switch (A->Args.g1.opt) {
 		case TASK_START:
@@ -318,7 +318,7 @@ void K_groupop(struct k_args *A)
 		K_DebugHalt = 0;
 #endif
 
-	for (i = 0, X = K_TaskList; i < K_TaskCount; i++, X++) {
+	for (i = 0, X = _k_task_list; i < K_TaskCount; i++, X++) {
 		if (X->Group & grp) {
 			switch (opt) {
 			case GROUP_TASK_START:
@@ -374,7 +374,7 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
 void K_set_prio(struct k_args *A)
 {
 	ktask_t Tid = A->Args.g1.task;
-		struct k_proc *X = K_TaskList + OBJ_INDEX(Tid);
+		struct k_proc *X = _k_task_list + OBJ_INDEX(Tid);
 
 		set_state_bit(X, TF_PRIO);
 		X->Prio = A->Args.g1.prio;
@@ -471,6 +471,6 @@ void task_entry_set(ktask_t task,       /* task */
 		     void (*func)(void) /* entry point */
 		     )
 {
-	K_TaskList[OBJ_INDEX(task)].fstart = func;
+	_k_task_list[OBJ_INDEX(task)].fstart = func;
 }
 
