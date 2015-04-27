@@ -104,31 +104,8 @@ $ nm offsets.o
 #ifndef _GEN_OFFSET_H
 #define _GEN_OFFSET_H
 
-/*#include "../../../../../include/absSym.h"*/
-#include <absSym.h>
+#include <abs_sym.h>
 #include <stddef.h>
-
-#ifdef __GNUC__
-
-/* create an extern reference to the absolute symbol */
-
-#define GEN_OFFSET_EXTERN(name) extern const char name[]
-
-#elif defined(__DCC__)
-
-/* create an extern reference to the absolute symbol */
-
-#define GEN_OFFSET_EXTERN(name) extern const char name[]
-
-#else /* unsupported toolchain */
-
-#define GEN_OFFSET_EXTERN(name) \
-	#error GEN_OFFSET_EXTERN macro used with unsupported toolchain
-
-#define GEN_OFFSET_SYM(name) \
-	#error GEN_OFFSET_SYM macro used with unsupported toolchain
-
-#endif /* end of "unsupported toolchain" */
 
 /* definition of the GEN_OFFSET_SYM() macros is toolchain independant  */
 

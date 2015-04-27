@@ -1,4 +1,4 @@
-/* absSym.h - macros to generate absolute symbols */
+/* macros to generate absolute symbols for GCC */
 
 /*
  * Copyright (c) 2010, 2012-2014, Wind River Systems, Inc.
@@ -30,10 +30,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ABSSYM_H_
-#define ABSSYM_H_
+#ifndef _ABS_SYM_GCC_H_
+#define _ABS_SYM_GCC_H_
 
-#ifdef __GNUC__
+/*
+ * The file should not be included directly
+ * Include toolchain.h instead
+ */
+
+/* create an extern reference to the absolute symbol */
+
+#define GEN_OFFSET_EXTERN(name) extern const char name[]
 
 #define GEN_ABS_SYM_BEGIN(name) \
 	extern void name(void); \
@@ -41,9 +48,6 @@
 	{
 
 #define GEN_ABS_SYM_END }
-
-#define GEN_ABS_SYM_HOST(name, value) \
-	GEN_ABSOLUTE_SYM(CONFIG_##name, value)
 
 #if defined(VXMICRO_ARCH_arm)
 
@@ -71,29 +75,4 @@
 #error processor architecture not supported
 #endif
 
-#elif defined(__DCC__)
-
-#define GEN_ABS_SYM_BEGIN(name) GEN_ABSOLUTE_SYM(name, 0);
-
-#define GEN_ABS_SYM_END
-
-#define GEN_ABSOLUTE_SYM(name, value) \
-	const long name __attribute__((absolute)) = (long)(value)
-
-#define GEN_ABS_SYM_HOST(name, value) \
-	const long CONFIG_##name __attribute__((absolute)) = (long)(value)
-
-#else /* unsupported toolchain */
-
-#define GEN_ABS_SYM_BEGIN(name) \
-	#error GEN_ABS_SYM_BEGIN macro used with unsupported toolchain
-
-#define GEN_ABS_SYM_END \
-	#error GEN_ABS_SYM_END macro used with unsupported toolchain
-
-#define GEN_ABSOLUTE_SYM(name) \
-	#error GEN_ABSOLUTE_SYM macro used with unsupported toolchain
-
-#endif /* end of "unsupported toolchain" */
-
-#endif /* ABSSYM_H_ */
+#endif /* _ABS_SYM_GCC_H_ */

@@ -189,7 +189,7 @@ static void generate_files(void)
 	pBuf = strstr(pBuf, "#define AUTOCONF_INCLUDED");
 
 	write_str("/* file is auto-generated, do not modify ! */\n\n");
-	write_str("#include <absSym.h>\n\n");
+	write_str("#include <abs_sym.h>\n\n");
 	write_str("GEN_ABS_SYM_BEGIN (_ConfigAbsSyms)\n\n");
 
 	for (;;) {
