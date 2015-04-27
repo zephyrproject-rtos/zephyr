@@ -347,7 +347,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 
 #if defined(CONFIG_NANOKERNEL)
 
-	nanoTicks++; /* increment nanokernel ticks var */
+	_nano_ticks++; /* increment nanokernel ticks var */
 
 	if (nanoTimerList != NULL) {
 		nanoTimerList->ticks--;

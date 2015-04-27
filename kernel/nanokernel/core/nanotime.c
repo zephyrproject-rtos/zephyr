@@ -43,7 +43,7 @@ int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
 int sys_clock_hw_cycles_per_tick =
 	sys_clock_hw_cycles_per_sec / sys_clock_ticks_per_sec;
 
-uint32_t nanoTicks = 0;
+uint32_t _nano_ticks = 0;
 struct nano_timer *nanoTimerList = NULL;
 
 /*******************************************************************************
@@ -74,7 +74,7 @@ void (*__ctor_nano_time_init)(void) __attribute__((section(".ctors.250"))) =
 
 uint32_t nano_node_tick_get_32(void)
 {
-	return nanoTicks;
+	return _nano_ticks;
 }
 
 /*******************************************************************************
@@ -121,7 +121,7 @@ uint32_t nano_node_tick_delta(uint64_t *reftime)
 	uint32_t  delta;
 	uint32_t  saved;
 
-	saved = nanoTicks;
+	saved = _nano_ticks;
 	delta = saved - (uint32_t)(*reftime);
 	*reftime = (uint64_t) saved;
 

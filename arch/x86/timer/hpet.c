@@ -341,7 +341,7 @@ void _timer_int_handler(void *unused)
 #endif /* !TIMER_SUPPORTS_TICKLESS */
 
 #else
-	nanoTicks++; /* increment nanokernel ticks var */
+	_nano_ticks++; /* increment nanokernel ticks var */
 
 	if (nanoTimerList) {
 		nanoTimerList->ticks--;

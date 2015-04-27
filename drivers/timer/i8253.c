@@ -328,7 +328,7 @@ void _timer_int_handler(void *unusedArg /* not used */
 	}
 
 #if defined(CONFIG_NANOKERNEL)
-	nanoTicks++; /* increment nanokernel ticks var */
+	_nano_ticks++; /* increment nanokernel ticks var */
 
 	if (nanoTimerList) {
 		nanoTimerList->ticks--;

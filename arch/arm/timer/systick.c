@@ -378,7 +378,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	 */
 	nano_isr_stack_push(&K_Args, TICK_EVENT);
 #else
-	nanoTicks++;
+	_nano_ticks++;
 
 	if (nanoTimerList) {
 		nanoTimerList->ticks--;

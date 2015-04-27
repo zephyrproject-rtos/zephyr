@@ -150,7 +150,7 @@ void _timer_int_handler(void *unused)
 
 	accumulatedCount += sys_clock_hw_cycles_per_tick;
 
-	nanoTicks++;
+	_nano_ticks++;
 
 	if (nanoTimerList) {
 		nanoTimerList->ticks--;
