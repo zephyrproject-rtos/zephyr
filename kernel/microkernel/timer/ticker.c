@@ -50,7 +50,7 @@ This module implements the microkernel's tick event handler.
 
 #ifdef CONFIG_TIMESLICING
 static int32_t slice_count = (int32_t)0;
-static int32_t SliceTime = (int32_t)CONFIG_TIMESLICE_SIZE;
+static int32_t slice_time = (int32_t)CONFIG_TIMESLICE_SIZE;
 static kpriority_t SlicePrio =
 	(kpriority_t)CONFIG_TIMESLICE_PRIORITY;
 #endif /* CONFIG_TIMESLICING */
@@ -187,8 +187,8 @@ static inline int _TlDebugUpdate(int32_t ticks)
 static inline void _TimeSliceUpdate(void)
 {
 #ifdef CONFIG_TIMESLICING
-	int yield = SliceTime && (_k_current_task->Prio >= SlicePrio) &&
-		    (++slice_count >= SliceTime);
+	int yield = slice_time && (_k_current_task->Prio >= SlicePrio) &&
+		    (++slice_count >= slice_time);
 	if (yield) {
 		slice_count = 0;
 		K_yield(NULL);
@@ -295,7 +295,7 @@ void scheduler_time_slice_set(int32_t t, /* time slice in ticks */
 					    time slicing applies */
 				)
 {
-	SliceTime = t;
+	slice_time = t;
 	SlicePrio = p;
 }
 
