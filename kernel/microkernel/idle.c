@@ -49,7 +49,7 @@ task, depending on how the kernel is configured.
 
 unsigned int _k_workload_slice = 0x0;
 unsigned int _k_workload_ticks = 0x0;
-unsigned int WldRefT = 0x0;
+unsigned int _k_workload_ref_time = 0x0;
 unsigned int WldT0 = 0x0;
 unsigned int WldT1 = 0x0;
 volatile unsigned int WldN0 = 0x0;
@@ -123,9 +123,9 @@ void wlMonitorCalibrate(void)
 	WldTDelta = WldT1 - WldT0;
 	Wld_i0 = Wld_i;
 #ifdef WL_SCALE
-	WldRefT = (WldT1 - WldT0) >> (K_wl_scale);
+	_k_workload_ref_time = (WldT1 - WldT0) >> (K_wl_scale);
 #else
-	WldRefT = (WldT1 - WldT0) >> (4 + 6);
+	_k_workload_ref_time = (WldT1 - WldT0) >> (4 + 6);
 #endif
 
 	_k_workload_slice = 100;
@@ -141,7 +141,7 @@ void K_workload(struct k_args *P)
 	unsigned int k, t;
 	signed int iret;
 
-	k = (Wld_i - WldN0) * WldRefT;
+	k = (Wld_i - WldN0) * _k_workload_ref_time;
 #ifdef WL_SCALE
 	t = (timer_read() - WldT0) >> (K_wl_scale);
 #else
