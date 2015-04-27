@@ -152,13 +152,12 @@ microkernel/test/test_stackprot         <u>  pentium4! minuteia! atom quark "
 help() {
 cat << EOF
 
-Usage : ${SCRIPT_NAME} [-hHcqbkl] [-A <arch>] [-B <board>] [-T <toolchain>]
+Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>] [-T <toolchain>]
        -h display this help message
        -H display more detailed documentation
        -c just clean projects and delete execution logs
        -q just do quick sanity check
        -b just build projects
-       -k run code coverage tests on Simics
        -l keep successful project execution logs
        -A build projects for the specified architecture
        -B build projects for the specified BSP or BSP variant
@@ -208,7 +207,6 @@ main() {
 	clean_only=0
 	quick_sanity=0
 	build_only=0
-        code_coverage=0
 	BSP_NAME=""
 	ARCH_NAME=""
 	KEEP_LOGS=0
@@ -233,9 +231,6 @@ main() {
 			;;
 		b)
 			build_only=1
-			;;
-		k)
-		        code_coverage=1
 			;;
 		l)
 			KEEP_LOGS=1
@@ -298,11 +293,6 @@ main() {
 	# set up project info used to build projects
 	proj_info_set
 
-	# pre-process code coverage results, if needed
-	if [ ${code_coverage} = 1 ] ; then
-		reset_code_coverage
-	fi
-
 	# build (and optionally execute) projects
 	PRJ_CLASS="regression"
 	let cur_proj=0
@@ -318,12 +308,6 @@ main() {
 			continue
 		fi
 
-		# skip non-executable projects when computing code coverage
-		if [ ${code_coverage} = 1 -a x${BSP_FLAG[${cur_proj}]} = x ] ; then
-			skip_project ${cur_proj}
-			continue
-		fi
-
 		# build project
 		build_project ${cur_proj}
 		let build_proj++
@@ -334,11 +318,7 @@ main() {
 		fi
 
 		# execute project
-		if [ ${code_coverage} = 0 ] ; then
-			qemu_project ${cur_proj}
-		else
-			simics_project ${cur_proj}
-		fi
+		qemu_project ${cur_proj}
 		let run_proj++
 	done
 
@@ -346,11 +326,6 @@ main() {
         print_header
 	${ECHO} "${SCRIPT_NAME} completed successfully "\
 	        "(built ${build_proj} projects and ran ${run_proj} of them)"
-
-	# post-process code coverage results, if needed
-	if [ ${code_coverage} = 1 ] ; then
-		compute_code_coverage
-	fi
 }
 
 # invoke main routine passing all parameters passed to the script

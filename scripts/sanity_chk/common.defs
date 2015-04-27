@@ -50,10 +50,6 @@ MKDIR="/bin/mkdir"
 SLEEP="/bin/sleep"
 ABS_PATH="/bin/readlink -m"
 
-# code coverage commands used in scripts
-SIMICS=${VXMICRO_BASE}/simics/simicsRun
-MERGECC=${VXMICRO_BASE}/simics/mergesimicscc.sh
-
 # record how script was invoked
 SCRIPT_NAME=`${BASENAME} $0`
 
@@ -62,9 +58,6 @@ KEEP_LOGS=0
 
 # log filename where QEMU console output is redirected to
 SANITY_CHK_LOG="sanity_chk.log"
-
-# log filename where Simics logging information is sent
-SIMICS_LOG="simics.log"
 
 # directory containing code coverage results
 CC_DIR=${VXMICRO_BASE}/codecoverage/`${BASENAME} $0`/
@@ -129,8 +122,6 @@ clean_project() {
 
 	${MAKE} pristine
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
-
-	${RM} -f ${SANITY_CHK_LOG}* ${SIMICS_LOG}
 }
 
 # restore all projects to their pristine state
@@ -457,84 +448,4 @@ qemu_project() {
 
 	[ ${RESULT} -eq 0 ] || fail_exit 1 $FUNCNAME $LINENO \
 		"error running ${proj_name}"
-}
-
-# use Simics to run a standard VxMicro project that is already built
-#
-# PARAMETERS: $1 is project array entry to use
-#
-# ON ENTRY: ${PRJ_PATH} is path to master project directory
-#           ${PRJ_NAME} array specifies project directory name
-#           ${PRJ_ARGS} array specifies any additional project build arguments
-#           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
-#           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
-#           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
-#           ${BUILD_INFO} specifies build tool to use (and other build options)
-#           ${NUM_PROJ} specifies # of projects described in arrays
-#           ${PRJ_CLASS} specifies type of projects being sanitized
-#
-simics_project() {
-	proj_name=`${BASENAME} ${PRJ_NAME[$1]}`
-
-	${ECHO}
-	${ECHO} "Running ${proj_name} using Simics [${PRJ_CLASS} project $1 of ${NUM_PROJ}]"
-	${ECHO}
-
-	${CD} ${PRJ_PATH}/${PRJ_NAME[$1]}
-	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO $1
-
-	# create empty log file to ensure one exists even if Simics execution
-	# encounters a problem before getting around to creating it
-	${RM} -f ${SANITY_CHK_LOG}
-	:> ${SANITY_CHK_LOG}
-
-	# let Simics execute the project
-	# (note: BSP name passed in is everything after final "=" of BSP_INFO)
-	${SIMICS} -bsp `${GREP} -o '[^=]*$' <<< ${BSP_INFO[$1]}` \
-		-codecoverage -endline "${RUN_UNTIL}" \
-		-outfiles "${CC_DIR}/${proj_name}_project$1-" \
-		-log ${SANITY_CHK_LOG} -keep \
-		-v ./outdir/${PRJ_TYPE[$1]}.elf
-
-	# determine if the project completed successfully
-	${GREP} -q -E "${RUN_PASSED}" ${SANITY_CHK_LOG}
-	RESULT=$?
-
-	# keep log if requested or when there is an error
-	if [ ${KEEP_LOGS} = 1 -o ${RESULT} -ne 0 ] ; then
-		# ensure log file name is unique to avoid overwriting
-		# a previously generated log file
-		# (note: assumes identical test isn't re-run within 60 seconds)
-		new_name=${SANITY_CHK_LOG}_project$1_`${DATE} +%F_%R`
-		${ECHO}
-		${ECHO} "saving log file ${PRJ_PATH}/${PRJ_NAME[$1]}/${new_name}"
-		${MV} -f ${SANITY_CHK_LOG} ${new_name}
-	else
-		${RM} -f ${SANITY_CHK_LOG}
-		${RM} -f ${SIMICS_LOG}
-	fi
-
-	[ ${RESULT} -eq 0 ] || fail_exit 1 $FUNCNAME $LINENO \
-		"error running ${proj_name}"
-}
-
-# do pre-processing of code coverage data
-#
-reset_code_coverage() {
-	# delete any existing code coverage data
-	${RM} -rf ${CC_DIR} ${HTML_CC_DIR}
-}
-
-# do post-processing of code coverage data
-#
-compute_code_coverage() {
-	${MERGECC} ${CC_DIR} ${HTML_CC_DIR}
-	if [ $? -eq 0 ]; then
-		if [ ${KEEP_LOGS} -eq 0 ]; then
-		    ${RM} -rf ${CC_DIR}
-		fi
-		${ECHO} "Code coverage results are located in ${HTML_CC_DIR}"
-	else
-		${ECHO} "ERROR: Code coverage results aggregation FAILED"
-	fi
 }
