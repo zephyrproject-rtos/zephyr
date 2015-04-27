@@ -342,7 +342,7 @@ void K_sendreq(struct k_args *Writer)
 
 	Writer->Ctxt.proc = sender;
 
-	MailBox = K_MbxList + OBJ_INDEX(MailBoxId);
+	MailBox = _k_mbox_list + OBJ_INDEX(MailBoxId);
 
 	copypacket(&CopyWriter, Writer);
 
@@ -580,7 +580,7 @@ void K_recvreq(struct k_args *Reader)
 
 	CopyReader->Forw = NULL;
 
-	MailBox = K_MbxList + OBJ_INDEX(MailBoxId);
+	MailBox = _k_mbox_list + OBJ_INDEX(MailBoxId);
 
 	for (CopyWriter = MailBox->Writers, temp = NULL; CopyWriter != NULL;
 	     temp = CopyWriter, CopyWriter = CopyWriter->Forw) {

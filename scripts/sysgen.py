@@ -612,13 +612,13 @@ def kernel_main_c_mailboxes():
     total_mbxs = len(mbx_list)
 
     if (total_mbxs == 0):
-        kernel_main_c_out("\nstruct mbx_struct * K_MbxList = NULL;\n")
+        kernel_main_c_out("\nstruct mbx_struct * _k_mbox_list = NULL;\n")
         return
 
     # mailbox descriptors
 
     kernel_main_c_out("\n" +
-        "struct mbx_struct K_MbxList[%d] =\n" % (total_mbxs) +
+        "struct mbx_struct _k_mbox_list[%d] =\n" % (total_mbxs) +
         "{\n")
     for mbx in mbx_list:
         kernel_main_c_out("    {NULL, NULL, 0},\n")

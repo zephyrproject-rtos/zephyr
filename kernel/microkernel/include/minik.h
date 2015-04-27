@@ -47,7 +47,7 @@ extern int _k_task_count;
 #ifndef LITE
 extern struct map_struct _k_mem_map_list[];
 #endif
-extern struct mbx_struct K_MbxList[];
+extern struct mbx_struct _k_mbox_list[];
 extern struct mutex_struct K_MutexList[];
 extern struct sem_struct K_SemList[];
 extern struct que_struct K_QueList[];
