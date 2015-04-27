@@ -175,7 +175,7 @@ extern void K_monitor_task(struct k_proc *, uint32_t d2);
 extern void K_monitor_args(struct k_args *);
 extern void K_monitor_read(struct k_args *);
 
-extern const int K_monitor_mask;
+extern const int _k_monitor_mask;
 
 /* task level monitor bits */
 

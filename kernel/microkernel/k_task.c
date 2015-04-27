@@ -86,7 +86,7 @@ void reset_state_bit(struct k_proc *X,    /* ptr to task */
 
 #ifdef CONFIG_TASK_MONITOR
 	f_new ^= f_old;
-	if ((K_monitor_mask & MON_STATE) && (f_new)) {
+	if ((_k_monitor_mask & MON_STATE) && (f_new)) {
 		/*
 		 * Task monitoring is enabled and the new state bits are
 		 * different than the old state bits.
@@ -172,7 +172,7 @@ void set_state_bit(
 
 #ifdef CONFIG_TASK_MONITOR
 	new_state_bits ^= old_state_bits;
-	if ((K_monitor_mask & MON_STATE) && (new_state_bits)) {
+	if ((_k_monitor_mask & MON_STATE) && (new_state_bits)) {
 		/*
 		 * Task monitoring is enabled and the new state bits are
 		 * different than the old state bits.

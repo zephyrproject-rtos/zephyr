@@ -43,7 +43,7 @@
 static struct k_mrec __noinit k_monitor_buff[CONFIG_TASK_MONITOR_CAPACITY];
 
 static const int k_monitor_capacity = CONFIG_TASK_MONITOR_CAPACITY;
-const int K_monitor_mask = CONFIG_TASK_MONITOR_MASK;
+const int _k_monitor_mask = CONFIG_TASK_MONITOR_MASK;
 
 static struct k_mrec *K_monitor_wptr = k_monitor_buff;
 static int K_monitor_nrec = 0;

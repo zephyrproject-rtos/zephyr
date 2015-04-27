@@ -93,14 +93,14 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			event = (kevent_t)(pArgs);
 			if (event < (kevent_t)_k_num_events) {
 #ifdef CONFIG_TASK_MONITOR
-				if (K_monitor_mask & MON_EVENT) {
+				if (_k_monitor_mask & MON_EVENT) {
 					K_monitor_args(pArgs);
 				}
 #endif
 				K_sigevent(event);
 			} else {
 #ifdef CONFIG_TASK_MONITOR
-				if (K_monitor_mask & MON_KSERV) {
+				if (_k_monitor_mask & MON_KSERV) {
 					K_monitor_args(pArgs);
 				}
 #endif
@@ -162,7 +162,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			_NanoKernel.task = (tCCS *)pNextTask->workspace;
 
 #ifdef CONFIG_TASK_MONITOR
-			if (K_monitor_mask & MON_TSWAP) {
+			if (_k_monitor_mask & MON_TSWAP) {
 				K_monitor_task(_k_current_task, 0);
 			}
 #endif
