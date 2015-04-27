@@ -94,7 +94,7 @@ void K_lockrpl(
 		A->Time.rcode = RC_TIME;
 
 		MutexId = A->Args.l1.mutex;
-		Mutex = K_MutexList + OBJ_INDEX(MutexId);
+		Mutex = _k_mutex_list + OBJ_INDEX(MutexId);
 
 		FirstWaiter = Mutex->Waiters;
 
@@ -166,7 +166,7 @@ void K_lockreq(struct k_args *A /* pointer to mutex lock
 	MutexId = A->Args.l1.mutex;
 
 
-	Mutex = K_MutexList + OBJ_INDEX(MutexId);
+	Mutex = _k_mutex_list + OBJ_INDEX(MutexId);
 	if (Mutex->Level == 0 || Mutex->Owner == A->Args.l1.task) {
 		/* The mutex is either unowned or this is a nested lock. */
 #ifdef CONFIG_OBJECT_MONITOR
@@ -312,7 +312,7 @@ void K_unlock(struct k_args *A /* pointer to mutex unlock
 	struct k_args *PrioDowner;  /* used to change a task's priority level */
 
 	MutexId = A->Args.l1.mutex;
-	Mutex = K_MutexList + OBJ_INDEX(MutexId);
+	Mutex = _k_mutex_list + OBJ_INDEX(MutexId);
 	if (Mutex->Owner == A->Args.l1.task && --(Mutex->Level) == 0) {
 		/*
 		 * The requesting task owns the mutex and all locks

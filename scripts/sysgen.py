@@ -493,13 +493,13 @@ def kernel_main_c_mutexes():
     total_mutexes = len(mutex_list)
 
     if (total_mutexes == 0):
-        kernel_main_c_out("\nstruct mutex_struct * K_MutexList = NULL;\n")
+        kernel_main_c_out("\nstruct mutex_struct * _k_mutex_list = NULL;\n")
         return
 
     # mutex descriptors
 
     kernel_main_c_out("\n" +
-        "struct mutex_struct K_MutexList[%s] =\n" % (total_mutexes) +
+        "struct mutex_struct _k_mutex_list[%s] =\n" % (total_mutexes) +
         "{\n")
     for mutex in mutex_list:
         kernel_main_c_out("    {ANYTASK, 64, 64, 0, NULL, 0, 0},\n")
