@@ -52,19 +52,6 @@ via GRUB or any other multiboot compliant bootloader) now assume that the
 system is already in 32-bit protected mode and address line A20 is enabled.
 However, the code associated with CONFIG_PROT_MODE_SWITCH has been left
 in place in case future booting scenarios arise which require its use.
-
-POMS memory model
-
-When a kernel configured for POMS starts, it runs at a physical address that
-is different from the logical address it has been linked at. So, symbols are not
-accessible without doing some translation. It is best then to run at a logical
-address ASAP to access give access to symbols, especially to be able to run C
-code. To do that, we start using segment selectors for CS/DS/SS that are mapping
-the physical location to the logical location at which the kernel is linked, ie.
-0x1000. Those segment selectors are 0x18 for CS and 0x20 for DS/SS.
-
-Before these are used, the startup code uses physical address locations of
-some key symbols (eg. the gdt) provided by the linker script.
 */
 
 #define _ASMLANGUAGE
