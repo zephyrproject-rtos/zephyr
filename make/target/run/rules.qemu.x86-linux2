@@ -37,8 +37,7 @@
 serialLink: ${iSIM_SERIAL_DEVICE}
 
 # create host communication serial link
-# - destroy existing .socatPipe<X> files, in case they were last used by Simics
-#   (which configures some pieces differently)
+# - destroy existing .socatPipe<X> files
 # - link host's end of host communication link to .socatPipeB
 #   (which doesn't yet exist)
 #

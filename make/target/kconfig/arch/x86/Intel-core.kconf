@@ -159,7 +159,7 @@ config  LOCK_INSTRUCTION_UNSUPPORTED
 
 # CLFLUSH was introduced with PENTIUM4 processors, but might not be
 # available. The default QEMU implementation used by VxMicro (-cpu qemu32) does
-# not support it. The Simics pentium4 model does support it.
+# not support it.
 
 config	CPU_MIGHT_SUPPORT_CLFLUSH
 	bool

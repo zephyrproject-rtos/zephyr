@@ -30,8 +30,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Define empty rules for defs.* and rules.* files. We do not 
-# want to build images for defs.host, defs.simics etc
+# Define empty rules for the files "defs.*" and "rules.*".  This is done to
+# resolve a clash between file names (such as "defs.qemu" and "rules.qemu")
+# and rules (such as "%.qemu").  Without these two empty rules, "make" would
+# try to rebuild those build files when it encounters rules of the same name.
 defs.%: ;
 rules.%: ;
 
