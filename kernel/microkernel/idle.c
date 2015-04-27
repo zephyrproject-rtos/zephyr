@@ -48,7 +48,7 @@ task, depending on how the kernel is configured.
 #if defined(CONFIG_WORKLOAD_MONITOR)
 
 unsigned int _k_workload_slice = 0x0;
-unsigned int WldTicks = 0x0;
+unsigned int _k_workload_ticks = 0x0;
 unsigned int WldRefT = 0x0;
 unsigned int WldT0 = 0x0;
 unsigned int WldT1 = 0x0;
@@ -129,7 +129,7 @@ void wlMonitorCalibrate(void)
 #endif
 
 	_k_workload_slice = 100;
-	WldTicks = 100;
+	_k_workload_ticks = 100;
 }
 
 #endif /* CONFIG_WORKLOAD_MONITOR */
