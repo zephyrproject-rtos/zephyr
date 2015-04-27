@@ -306,7 +306,7 @@ def kernel_main_c_header():
     kernel_main_c_out("\n" +
         "char __noinit _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];\n")
     kernel_main_c_out(
-        "int K_StackSize = CONFIG_MICROKERNEL_SERVER_STACK_SIZE;\n")
+        "int _k_server_stack_size = CONFIG_MICROKERNEL_SERVER_STACK_SIZE;\n")
 
 
 def kernel_main_c_kargs():
