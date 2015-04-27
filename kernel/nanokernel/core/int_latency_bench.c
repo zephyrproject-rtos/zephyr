@@ -55,7 +55,7 @@
 static uint32_t int_locked_timestamp = 0;
 
 /* stats tracking the minimum and maximum time when interrupts were locked */
-static uint32_t intLockingLatencyMin = ULONG_MAX;
+static uint32_t int_locked_latency_min = ULONG_MAX;
 static uint32_t int_locked_latency_max = 0;
 
 /* overhead added to intLock/intUnlock by this latency benchmark */
@@ -139,8 +139,8 @@ void _int_latency_stop(void)
 			int_locked_latency_max = delta;
 
 		/* update min */
-		if (delta < intLockingLatencyMin)
-			intLockingLatencyMin = delta;
+		if (delta < int_locked_latency_min)
+			int_locked_latency_min = delta;
 
 		/* interrupts are now enabled, get ready for next interrupt lock
 		 */
@@ -192,7 +192,7 @@ void int_latency_init(void)
 		stop_delay = timer_read() - stop_delay - timeToReadTime;
 
 		/* re-initialize globals to default values */
-		intLockingLatencyMin = ULONG_MAX;
+		int_locked_latency_min = ULONG_MAX;
 		int_locked_latency_max = 0;
 
 		cacheWarming--;
@@ -218,7 +218,7 @@ void int_latency_show(void)
 		return;
 	}
 
-	if (intLockingLatencyMin != ULONG_MAX) {
+	if (int_locked_latency_min != ULONG_MAX) {
 		if (_hw_irq_to_c_handler_latency == ULONG_MAX) {
 			intHandlerLatency = 0;
 			printk(" Min latency from hw interrupt up to 'C' int. "
@@ -257,7 +257,7 @@ void int_latency_show(void)
 	 * with interrupt disabled hide smaller paths with interrupt
 	 * disabled.
 	 */
-	intLockingLatencyMin = ULONG_MAX;
+	int_locked_latency_min = ULONG_MAX;
 	int_locked_latency_max = 0;
 }
 
