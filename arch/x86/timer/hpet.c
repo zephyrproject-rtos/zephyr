@@ -217,7 +217,7 @@ extern uint32_t _hw_irq_to_c_handler_latency;
 
 /* additional globals, locals, and forward declarations */
 
-extern int32_t _SysIdleElapsedTicks;
+extern int32_t _sys_idle_elapsed_ticks;
 
 static uint32_t __noinit counterLoadValue; /* main counter units
 							    per system tick */
@@ -324,7 +324,7 @@ void _timer_int_handler(void *unused)
 	 * tickless mode,
 	 * _SysIdleElpasedTicks will be 0.
 	 */
-	_SysIdleElapsedTicks++;
+	_sys_idle_elapsed_ticks++;
 
 	/*
 	 * If we transistion from 0 elapsed ticks to 1 we need to announce the
@@ -334,7 +334,7 @@ void _timer_int_handler(void *unused)
 	 * _timer_idle_exit
 	 */
 
-	if (_SysIdleElapsedTicks == 1) {
+	if (_sys_idle_elapsed_ticks == 1) {
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	}
 
@@ -431,7 +431,7 @@ void _timer_idle_exit(void)
 		 * interrupt handler runs (which is unlikely, but could happen)
 		 */
 
-		_SysIdleElapsedTicks = programmedTicks - 1;
+		_sys_idle_elapsed_ticks = programmedTicks - 1;
 
 		/*
 		 * Announce elapsed ticks to the microkernel. Note we are
@@ -459,7 +459,7 @@ void _timer_idle_exit(void)
 	 * note: a premature tick declaration has no significant impact on
 	 * the microkernel, which gets informed of the correct number of elapsed
 	 * ticks when the following tick finally occurs; however, any ISRs that
-	 * access _SysIdleElapsedTicks to determine the current time may be
+	 * access _sys_idle_elapsed_ticks to determine the current time may be
 	 *misled
 	 * during the (very brief) interval before the tick-in-progress finishes
 	 * and the following tick begins
@@ -487,9 +487,9 @@ void _timer_idle_exit(void)
 	 * expires and the timer interrupt handler runs
 	 */
 
-	_SysIdleElapsedTicks = elapsedTicks;
+	_sys_idle_elapsed_ticks = elapsedTicks;
 
-	if (_SysIdleElapsedTicks) {
+	if (_sys_idle_elapsed_ticks) {
 		/* Announce elapsed ticks to the microkernel */
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	}

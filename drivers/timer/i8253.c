@@ -118,7 +118,7 @@ directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
 /* globals */
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-extern int32_t _SysIdleElapsedTicks;
+extern int32_t _sys_idle_elapsed_ticks;
 #endif
 
 /* locals */
@@ -288,7 +288,7 @@ void _timer_int_handler(void *unusedArg /* not used */
 	 * tickless mode,
 	 * _SysIdleElpasedTicks will be 0.
 	 */
-	_SysIdleElapsedTicks++;
+	_sys_idle_elapsed_ticks++;
 
 	/*
 	 * If we transistion from 0 elapsed ticks to 1 we need to announce the
@@ -296,12 +296,12 @@ void _timer_int_handler(void *unusedArg /* not used */
 	 * covered by _timer_idle_exit
 	 */
 
-	if (_SysIdleElapsedTicks == 1) {
+	if (_sys_idle_elapsed_ticks == 1) {
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	}
 
 	/* accumulate total counter value */
-	accumulatedCount += counterLoadVal * _SysIdleElapsedTicks;
+	accumulatedCount += counterLoadVal * _sys_idle_elapsed_ticks;
 
 #else
 #if defined(CONFIG_MICROKERNEL)
@@ -468,7 +468,7 @@ void _timer_idle_exit(void)
 		/* Timer expired. Place back in periodic mode */
 		_i8253CounterPeriodic(counterLoadVal);
 		_TimerMode = TIMER_MODE_PERIODIC;
-		_SysIdleElapsedTicks = _IdleOrigTicks - 1;
+		_sys_idle_elapsed_ticks = _IdleOrigTicks - 1;
 		/*
 		 * Announce elapsed ticks to the microkernel. Note we are
 		 * guaranteed
@@ -495,9 +495,9 @@ void _timer_idle_exit(void)
 			_i8253CounterOneShot(remaining);
 		}
 
-		_SysIdleElapsedTicks = elapsed / counterLoadVal;
+		_sys_idle_elapsed_ticks = elapsed / counterLoadVal;
 
-		if (_SysIdleElapsedTicks) {
+		if (_sys_idle_elapsed_ticks) {
 			/* Announce elapsed ticks to the microkernel */
 			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 		}

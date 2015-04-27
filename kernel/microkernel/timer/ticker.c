@@ -57,7 +57,7 @@ static kpriority_t slice_prio =
 
 #ifdef CONFIG_TICKLESS_IDLE
 /* Number of ticks elapsed that have not been announced to the microkernel */
-int32_t _SysIdleElapsedTicks = 0; /* Initial value must be 0 */
+int32_t _sys_idle_elapsed_ticks = 0; /* Initial value must be 0 */
 #endif
 
 /* units: us/tick */
@@ -221,8 +221,8 @@ static inline int32_t _SysIdleElapsedTicksGet(void)
 	int key;
 
 	key = irq_lock();
-	ticks = _SysIdleElapsedTicks;
-	_SysIdleElapsedTicks = 0;
+	ticks = _sys_idle_elapsed_ticks;
+	_sys_idle_elapsed_ticks = 0;
 	irq_unlock(key);
 	return ticks;
 #else

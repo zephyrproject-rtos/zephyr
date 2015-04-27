@@ -116,7 +116,7 @@ extern void _SysPowerSaveIdleExit(int32_t ticks);
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
 #ifdef CONFIG_TICKLESS_IDLE
-extern int32_t _SysIdleElapsedTicks;
+extern int32_t _sys_idle_elapsed_ticks;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 /* locals */
@@ -315,7 +315,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	if (idleMode == IDLE_TICKLESS) {
 		/* tickless idle completed without interruption */
 		idleMode = IDLE_NOT_TICKLESS;
-		_SysIdleElapsedTicks =
+		_sys_idle_elapsed_ticks =
 			idleOrigTicks + 1; /* actual # of idle ticks */
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	} else {
@@ -325,7 +325,7 @@ void _TIMER_INT_HANDLER(void *unused)
 		 * Also, if not in tickless mode, _SysIdleElpasedTicks will be
 		 * 0.
 		 */
-		_SysIdleElapsedTicks++;
+		_sys_idle_elapsed_ticks++;
 
 		/*
 		 * If we transition from 0 elapsed ticks to 1 we need to
@@ -334,13 +334,13 @@ void _TIMER_INT_HANDLER(void *unused)
 		 * _timer_idle_exit.
 		 */
 
-		if (_SysIdleElapsedTicks == 1) {
+		if (_sys_idle_elapsed_ticks == 1) {
 			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 		}
 	}
 
 	/* accumulate total counter value */
-	accumulatedCount += defaultLoadVal * _SysIdleElapsedTicks;
+	accumulatedCount += defaultLoadVal * _sys_idle_elapsed_ticks;
 #else  /* !CONFIG_TICKLESS_IDLE */
 	/*
 	 * No tickless idle:
@@ -544,7 +544,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 * the timer out of idle mode and generating an interrupt at the next
 * tick interval.  It is expected that interrupts have been disabled.
 *
-* Note that in this routine, _SysIdleElapsedTicks must be zero because the
+* Note that in this routine, _sys_idle_elapsed_ticks must be zero because the
 * ticker has done its work and consumed all the ticks. This has to be true
 * otherwise idle mode wouldn't have been entered in the first place.
 *
@@ -584,9 +584,9 @@ void _timer_idle_exit(void)
 		 * guaranteed
 		 * that the timer ISR will execute before the tick event is
 		 * serviced,
-		 * so _SysIdleElapsedTicks is adjusted to account for it.
+		 * so _sys_idle_elapsed_ticks is adjusted to account for it.
 		 */
-		_SysIdleElapsedTicks = idleOrigTicks - 1;
+		_sys_idle_elapsed_ticks = idleOrigTicks - 1;
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	} else {
 		uint32_t elapsed;   /* elapsed "counter time" */
@@ -615,9 +615,9 @@ void _timer_idle_exit(void)
 			sysTickReloadSet(remaining);
 		}
 
-		_SysIdleElapsedTicks = elapsed / defaultLoadVal;
+		_sys_idle_elapsed_ticks = elapsed / defaultLoadVal;
 
-		if (_SysIdleElapsedTicks) {
+		if (_sys_idle_elapsed_ticks) {
 			/* Announce elapsed ticks to the microkernel */
 			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 		}
