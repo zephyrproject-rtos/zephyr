@@ -36,7 +36,7 @@
 #include "microkernel/k_types.h"
 #include "microkernel/k_struct.h"
 
-extern K_TIMER *K_Thead;
+extern K_TIMER *_k_timer_list_head;
 extern K_TIMER *K_Ttail;
 extern int64_t K_LowTime;
 extern unsigned int WldSlice;

@@ -40,7 +40,7 @@
 #include <sections.h>
 
 #ifndef LITE
-K_TIMER  *K_Thead = NULL;
+K_TIMER  *_k_timer_list_head = NULL;
 K_TIMER  *K_Ttail = NULL;
 #endif
 

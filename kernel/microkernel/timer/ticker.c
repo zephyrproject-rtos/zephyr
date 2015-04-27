@@ -94,19 +94,19 @@ static inline void _HandleExpiredTimers(int ticks)
 #else
 	K_TIMER *T;
 
-	while (K_Thead != NULL) {
-		K_Thead->Ti -= ticks;
+	while (_k_timer_list_head != NULL) {
+		_k_timer_list_head->Ti -= ticks;
 
-		if (K_Thead->Ti > 0) {
+		if (_k_timer_list_head->Ti > 0) {
 			return;
 		}
 
-		T = K_Thead;
+		T = _k_timer_list_head;
 		if (T == K_Ttail) {
-			K_Thead = K_Ttail = NULL;
+			_k_timer_list_head = K_Ttail = NULL;
 		} else {
-			K_Thead = T->Forw;
-			K_Thead->Back = NULL;
+			_k_timer_list_head = T->Forw;
+			_k_timer_list_head->Back = NULL;
 		}
 		if (T->Tr) {
 			T->Ti = T->Tr;

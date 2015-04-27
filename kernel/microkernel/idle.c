@@ -225,8 +225,8 @@ void workload_time_slice_set(int32_t t)
 
 static inline int32_t _GetNextTimerExpiry(void)
 {
-	if (K_Thead)
-		return K_Thead->Ti;
+	if (_k_timer_list_head)
+		return _k_timer_list_head->Ti;
 
 	return TICKS_UNLIMITED;
 }

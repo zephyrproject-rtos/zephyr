@@ -95,7 +95,7 @@ int32_t task_node_tick_get_32(void)
 
 void enlist_timer(K_TIMER *T)
 {
-	K_TIMER *P = K_Thead;
+	K_TIMER *P = _k_timer_list_head;
 	K_TIMER *Q = NULL;
 
 	while (P && (T->Ti > P->Ti)) {
@@ -111,7 +111,7 @@ void enlist_timer(K_TIMER *T)
 	if (Q)
 		Q->Forw = T;
 	else
-		K_Thead = T;
+		_k_timer_list_head = T;
 	T->Forw = P;
 	T->Back = Q;
 }
@@ -136,7 +136,7 @@ void delist_timer(K_TIMER *T)
 	if (Q)
 		Q->Forw = P;
 	else
-		K_Thead = P;
+		_k_timer_list_head = P;
 	T->Ti = -1;
 }
 
