@@ -100,6 +100,6 @@ void kernel_init(void)
 	init_drivers();
 
 #ifdef CONFIG_WORKLOAD_MONITOR
-	wlMonitorCalibrate();
+	workload_monitor_calibrate();
 #endif
 }

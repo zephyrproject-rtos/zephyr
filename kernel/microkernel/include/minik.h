@@ -186,7 +186,7 @@ extern const int _k_monitor_mask;
 
 #ifdef CONFIG_WORKLOAD_MONITOR
 
-extern void wlMonitorCalibrate(void);
+extern void workload_monitor_calibrate(void);
 
 #endif
 
