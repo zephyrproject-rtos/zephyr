@@ -92,7 +92,7 @@ void K_monitor_args(struct k_args *A)
 			K_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
 		}
 		else {
-			K_monitor_wptr->data1 = K_Task->Ident;
+			K_monitor_wptr->data1 = _k_current_task->Ident;
 			K_monitor_wptr->data2 = MO_LCOMM | A->Comm;
 		}
 

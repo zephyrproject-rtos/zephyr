@@ -48,6 +48,6 @@
 void K_taskcall(struct k_args *cmdpacket)
 {
 	cmdpacket->alloc = false;
-	K_Task->Args = cmdpacket;
+	_k_current_task->Args = cmdpacket;
 	nano_task_stack_push(&K_Args, (uint32_t)cmdpacket);
 }

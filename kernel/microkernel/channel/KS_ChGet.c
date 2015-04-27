@@ -58,7 +58,7 @@ int _task_pipe_get(kpipe_t Id,
 	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut))
 		return RC_FAIL;
 
-	A.Prio = K_Task->Prio;
+	A.Prio = _k_current_task->Prio;
 	A.Comm = CHDEQ_REQ;
 	A.Time.ticks = TimeOut;
 	{

@@ -180,7 +180,7 @@ void K_lockreq(struct k_args *A /* pointer to mutex lock
 		 * task is on this node.  This may be more recent than
 		 * that stored in struct k_args.
 		 */
-		Mutex->OwnerCurrentPrio = K_Task->Prio;
+		Mutex->OwnerCurrentPrio = _k_current_task->Prio;
 
 		/*
 		 * Save the original priority when first acquiring the lock (but
@@ -211,9 +211,9 @@ void K_lockreq(struct k_args *A /* pointer to mutex lock
 				 * the priority saved in the request is up to
 				 * date.
 				 */
-				A->Ctxt.proc = K_Task;
-				A->Prio = K_Task->Prio;
-				set_state_bit(K_Task, TF_LOCK);
+				A->Ctxt.proc = _k_current_task;
+				A->Prio = _k_current_task->Prio;
+				set_state_bit(_k_current_task, TF_LOCK);
 			/* Note: Mutex->Waiters is a priority sorted list */
 			INSERT_ELM(Mutex->Waiters, A);
 #ifndef LITE
@@ -284,7 +284,7 @@ int _task_mutex_lock(
 	A.Comm = LOCK_REQ;
 	A.Time.ticks = time;
 	A.Args.l1.mutex = mutex;
-	A.Args.l1.task = K_Task->Ident;
+	A.Args.l1.task = _k_current_task->Ident;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }
@@ -399,7 +399,7 @@ void _task_mutex_unlock(kmutex_t mutex /* mutex to unlock */
 
 	A.Comm = UNLOCK;
 	A.Args.l1.mutex = mutex;
-	A.Args.l1.task = K_Task->Ident;
+	A.Args.l1.task = _k_current_task->Ident;
 	KERNEL_ENTRY(&A);
 }
 

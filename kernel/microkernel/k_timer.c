@@ -468,11 +468,11 @@ void K_sleep(struct k_args *P)
 	T->Args = P;
 
 	P->Comm = WAKEUP;
-	P->Ctxt.proc = K_Task;
+	P->Ctxt.proc = _k_current_task;
 	P->Time.timer = T;
 
 	enlist_timer(T);
-	set_state_bit(K_Task, TF_TIME);
+	set_state_bit(_k_current_task, TF_TIME);
 }
 
 /*******************************************************************************

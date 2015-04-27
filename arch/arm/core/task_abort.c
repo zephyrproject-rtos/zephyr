@@ -72,13 +72,13 @@ void _TaskAbort(void)
 	const int taskAbortCode = 1;
 
 	if (_ScbIsInThreadMode()) {
-		_task_ioctl(K_Task->Ident, taskAbortCode);
+		_task_ioctl(_k_current_task->Ident, taskAbortCode);
 	} else {
 		cmdpacket.Comm = TSKOP;
-		cmdpacket.Args.g1.task = K_Task->Ident;
+		cmdpacket.Args.g1.task = _k_current_task->Ident;
 		cmdpacket.Args.g1.opt = taskAbortCode;
 		cmdpacket.alloc = false;
-		K_Task->Args = &cmdpacket;
+		_k_current_task->Args = &cmdpacket;
 		nano_isr_stack_push(&K_Args, (uint32_t) &cmdpacket);
 		_ScbPendsvSet();
 	}

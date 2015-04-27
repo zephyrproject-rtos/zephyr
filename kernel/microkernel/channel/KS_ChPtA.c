@@ -62,7 +62,7 @@ int _task_pipe_put_async(
 		return RC_FAIL; /* not allowed because enlisted requests with
 				   zero size will hang in K_ChProc() */
 
-	A.Prio = K_Task->Prio;
+	A.Prio = _k_current_task->Prio;
 	A.Comm = CHENQ_REQ;
 	A.Time
 		.ticks = TICKS_UNLIMITED; /* same behavior in flow as a blocking

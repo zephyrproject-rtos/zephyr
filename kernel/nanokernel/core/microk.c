@@ -131,7 +131,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 		 */
 		pNextTask = _k_task_priority_list[K_PrioListIdx].Head;
 
-		if (K_Task != pNextTask) {
+		if (_k_current_task != pNextTask) {
 /*
  * Need to swap the low priority task,
  * the task was saved on kernel_entry
@@ -151,19 +151,19 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			if (pNextTask->Ident == 0x00000000) {
 				WldT_start = timer_read();
 			}
-			if (K_Task->Ident == 0x00000000) {
+			if (_k_current_task->Ident == 0x00000000) {
 				WldT_end = timer_read();
 				Wld_i += (Wld_i0 * (WldT_end - WldT_start)) /
 					 WldTDelta;
 			}
 #endif
 #endif
-			K_Task = pNextTask;
+			_k_current_task = pNextTask;
 			_NanoKernel.task = (tCCS *)pNextTask->workspace;
 
 #ifdef CONFIG_TASK_MONITOR
 			if (K_monitor_mask & MON_TSWAP) {
-				K_monitor_task(K_Task, 0);
+				K_monitor_task(_k_current_task, 0);
 			}
 #endif
 		}
@@ -225,7 +225,7 @@ void *_Cget(struct nano_lifo *chan)
 
 FUNC_NORETURN void _TaskAbort(void)
 {
-	_task_ioctl(K_Task->Ident, TASK_ABORT);
+	_task_ioctl(_k_current_task->Ident, TASK_ABORT);
 
 	/*
 	 * Compiler can't tell that _task_ioctl() won't return and issues

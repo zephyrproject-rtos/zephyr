@@ -419,7 +419,7 @@ def kernel_main_c_tasks():
     # currently scheduled task (idle task)
 
     kernel_main_c_out("\n" +
-        "struct k_proc * K_Task = &_k_task_list[%d];\n" % (total_tasks - 1))
+        "struct k_proc * _k_current_task = &_k_task_list[%d];\n" % (total_tasks - 1))
 
 
 def kernel_main_c_priorities():

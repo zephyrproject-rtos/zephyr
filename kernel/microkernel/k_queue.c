@@ -114,9 +114,9 @@ void K_enqreq(struct k_args *A)
 #endif
 	} else {
 		if (likely(A->Time.ticks != TICKS_NONE)) {
-				A->Ctxt.proc = K_Task;
-				A->Prio = K_Task->Prio;
-				set_state_bit(K_Task, TF_ENQU);
+				A->Ctxt.proc = _k_current_task;
+				A->Prio = _k_current_task->Prio;
+				set_state_bit(_k_current_task, TF_ENQU);
 			INSERT_ELM(Q->Waiters, A);
 #ifndef LITE
 			if (A->Time.ticks == TICKS_UNLIMITED)
@@ -238,9 +238,9 @@ void K_deqreq(struct k_args *A)
 			Q->Nused = --n;
 	} else {
 		if (likely(A->Time.ticks != TICKS_NONE)) {
-			A->Ctxt.proc = K_Task;
-			A->Prio = K_Task->Prio;
-			set_state_bit(K_Task, TF_DEQU);
+			A->Ctxt.proc = _k_current_task;
+			A->Prio = _k_current_task->Prio;
+			set_state_bit(_k_current_task, TF_DEQU);
 
 			INSERT_ELM(Q->Waiters, A);
 #ifndef LITE

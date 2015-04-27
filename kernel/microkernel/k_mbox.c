@@ -336,7 +336,7 @@ void K_sendreq(struct k_args *Writer)
 	 */
 
 	if (!bAsync) {
-		sender = K_Task;
+		sender = _k_current_task;
 		set_state_bit(sender, TF_SEND);
 	}
 
@@ -491,7 +491,7 @@ int _task_mbox_put(kmbox_t mbox, /* mailbox */
 		return RC_FAIL;
 	}
 
-	M->tx_task = K_Task->Ident;
+	M->tx_task = _k_current_task->Ident;
 	M->tx_block.poolid = 0; /* NO ASYNC POST */
 	M->extra.sema = 0;
 	M->mailbox = mbox;
@@ -568,7 +568,7 @@ void K_recvreq(struct k_args *Reader)
 	struct k_args *temp;
 	struct k_args *CopyReader;
 
-	Reader->Ctxt.proc = K_Task;
+	Reader->Ctxt.proc = _k_current_task;
 	set_state_bit(Reader->Ctxt.proc, TF_RECV);
 
 	copypacket(&CopyReader, Reader);
@@ -691,7 +691,7 @@ int _task_mbox_get(kmbox_t mbox, /* mailbox */
 {
 	struct k_args A;
 
-	M->rx_task = K_Task->Ident;
+	M->rx_task = _k_current_task->Ident;
 	M->mailbox = mbox;
 	M->extra.transfer = 0;
 
@@ -700,7 +700,7 @@ int _task_mbox_get(kmbox_t mbox, /* mailbox */
 	 * there is an assertion check in prepare_transfer() if equal to 0
 	 */
 
-	A.Prio = K_Task->Prio;
+	A.Prio = _k_current_task->Prio;
 	A.Comm = RECV_REQ;
 	A.Time.ticks = time;
 	A.Args.m1.mess = *M;
@@ -739,7 +739,7 @@ void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
 		M->tx_block.poolid = (uint32_t)(-1);
 	}
 
-	M->tx_task = K_Task->Ident;
+	M->tx_task = _k_current_task->Ident;
 	M->tx_data = NULL;
 	M->mailbox = mbox;
 	M->extra.sema = sema;
@@ -764,8 +764,8 @@ void K_recvdata(struct k_args *Starter)
 	struct k_args *MoveD;
 	struct k_args *Writer;
 
-	Starter->Ctxt.proc = K_Task;
-	set_state_bit(K_Task, TF_RECVDATA);
+	Starter->Ctxt.proc = _k_current_task;
+	set_state_bit(_k_current_task, TF_RECVDATA);
 
 	GETARGS(CopyStarter);
 	k_memcpy_s(CopyStarter, sizeof(struct k_args),
@@ -942,8 +942,8 @@ void K_senddata(struct k_args *Starter)
 	struct k_args *MoveD;
 	struct k_args *Reader;
 
-	Starter->Ctxt.proc = K_Task;
-	set_state_bit(K_Task, TF_SENDDATA);
+	Starter->Ctxt.proc = _k_current_task;
+	set_state_bit(_k_current_task, TF_SENDDATA);
 
 	GETARGS(CopyStarter);
 	k_memcpy_s(CopyStarter, sizeof(struct k_args),

@@ -39,7 +39,7 @@ extern "C" {
 
 #include <microkernel/task_api_export.h>
 
-extern struct k_proc *K_Task;
+extern struct k_proc *_k_current_task;
 extern const knode_t _k_this_node;
 
 /*
@@ -83,11 +83,11 @@ extern void task_abort_handler_set(void (*func)(void));
 extern void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func);
 #endif
 
-#define task_id_get() (K_Task->Ident)
-#define task_priority_get() (K_Task->Prio)
-#define task_group_mask_get() (K_Task->Group)
-#define task_group_join(g) (K_Task->Group |= g)
-#define task_group_leave(g) (K_Task->Group &= ~g)
+#define task_id_get() (_k_current_task->Ident)
+#define task_priority_get() (_k_current_task->Prio)
+#define task_group_mask_get() (_k_current_task->Group)
+#define task_group_join(g) (_k_current_task->Group |= g)
+#define task_group_leave(g) (_k_current_task->Group &= ~g)
 #define task_node_id_get() (_k_this_node)
 
 #define isr_task_id_get() task_id_get()

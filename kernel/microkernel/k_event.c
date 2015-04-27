@@ -140,9 +140,9 @@ void K_event_test(struct k_args *A)
 			if (likely(A->Time.ticks != TICKS_NONE)) {
 				/* Caller will wait for the event */
 				if (likely(E->waiter == NULL)) {
-					A->Ctxt.proc = K_Task;
+					A->Ctxt.proc = _k_current_task;
 					E->waiter = A;
-					set_state_bit(K_Task, TF_EVNT);
+					set_state_bit(_k_current_task, TF_EVNT);
 					if (A->Time.ticks == TICKS_UNLIMITED) {
 						A->Time.timer = NULL;
 					} else {

@@ -187,7 +187,7 @@ static inline int _TlDebugUpdate(int32_t ticks)
 static inline void _TimeSliceUpdate(void)
 {
 #ifdef CONFIG_TIMESLICING
-	int yield = SliceTime && (K_Task->Prio >= SlicePrio) &&
+	int yield = SliceTime && (_k_current_task->Prio >= SlicePrio) &&
 		    (++SliceCount >= SliceTime);
 	if (yield) {
 		SliceCount = 0;

@@ -233,7 +233,7 @@ void abort_task(struct k_proc *X)
 void task_abort_handler_set(void (*func)(void) /* abort handler */
 			    )
 {
-	K_Task->fabort = func;
+	_k_current_task->fabort = func;
 }
 
 /*******************************************************************************
@@ -420,14 +420,14 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 
 void K_yield(struct k_args *A)
 {
-	struct k_tqhd *H = _k_task_priority_list + K_Task->Prio;
-	struct k_proc *X = K_Task->Forw;
+	struct k_tqhd *H = _k_task_priority_list + _k_current_task->Prio;
+	struct k_proc *X = _k_current_task->Forw;
 
 	ARG_UNUSED(A);
-	if (X && H->Head == K_Task) {
-		K_Task->Forw = NULL;
-		H->Tail->Forw = K_Task;
-		H->Tail = K_Task;
+	if (X && H->Head == _k_current_task) {
+		_k_current_task->Forw = NULL;
+		H->Tail->Forw = _k_current_task;
+		H->Tail = _k_current_task;
 		H->Head = X;
 	}
 }

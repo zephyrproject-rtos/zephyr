@@ -357,7 +357,7 @@ void K_waitmany(struct k_args *A)
 		struct k_args *R;
 
 		GETARGS(R);
-		R->Prio = K_Task->Prio;
+		R->Prio = _k_current_task->Prio;
 		R->Comm = WAITMREQ;
 		R->Ctxt.args = A;
 		R->Args.s1.sema = *L++;
@@ -365,8 +365,8 @@ void K_waitmany(struct k_args *A)
 		(A->Args.s1.nsem)++;
 	}
 
-	A->Ctxt.proc = K_Task;
-	set_state_bit(K_Task, TF_LIST);
+	A->Ctxt.proc = _k_current_task;
+	set_state_bit(_k_current_task, TF_LIST);
 
 	if (A->Time.ticks != TICKS_NONE) {
 		if (A->Time.ticks == TICKS_UNLIMITED)
@@ -397,9 +397,9 @@ void K_waitsreq(struct k_args *A)
 		S->Level--;
 		A->Time.rcode = RC_OK;
 	} else if (A->Time.ticks != TICKS_NONE) {
-		A->Ctxt.proc = K_Task;
-		A->Prio = K_Task->Prio;
-		set_state_bit(K_Task, TF_SEMA);
+		A->Ctxt.proc = _k_current_task;
+		A->Prio = _k_current_task->Prio;
+		set_state_bit(_k_current_task, TF_SEMA);
 		INSERT_ELM(S->Waiters, A);
 #ifndef LITE
 		if (A->Time.ticks == TICKS_UNLIMITED)
@@ -457,7 +457,7 @@ ksem_t _task_sem_group_take(ksemg_t group, /* group of semaphores to test */
 	struct k_args A;
 
 	A.Comm = WAITMANY;
-	A.Prio = K_Task->Prio;
+	A.Prio = _k_current_task->Prio;
 	A.Time.ticks = time;
 	A.Args.s1.list = group;
 	KERNEL_ENTRY(&A);

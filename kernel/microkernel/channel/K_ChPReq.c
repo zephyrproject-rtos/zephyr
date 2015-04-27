@@ -58,10 +58,10 @@ void K_ChSendReq(struct k_args *RequestOrig)
 
 		if (!bAsync) {
 			RequestOrig->Ctxt.proc =
-				K_Task; /* First we save the pointer to
+				_k_current_task; /* First we save the pointer to
 					   the tasks TCB for
 					   rescheduling later */
-			set_state_bit(K_Task, TF_SEND);
+			set_state_bit(_k_current_task, TF_SEND);
 		} else {
 			RequestOrig->Ctxt.proc =
 				NULL; /* No need to put in data about

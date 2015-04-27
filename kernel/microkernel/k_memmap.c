@@ -115,9 +115,9 @@ void K_alloc(struct k_args *A)
 	*(A->Args.a1.mptr) = NULL;
 
 	if (likely(A->Time.ticks != TICKS_NONE)) {
-		A->Prio = K_Task->Prio;
-		A->Ctxt.proc = K_Task;
-		set_state_bit(K_Task, TF_ALLO);
+		A->Prio = _k_current_task->Prio;
+		A->Ctxt.proc = _k_current_task;
+		set_state_bit(_k_current_task, TF_ALLO);
 		INSERT_ELM(M->Waiters, A);
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;

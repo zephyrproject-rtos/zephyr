@@ -60,7 +60,7 @@ extern int _k_mem_map_count;
 extern int _k_mem_pool_count;
 extern int _k_pipe_count;
 
-extern struct k_proc *K_Task;
+extern struct k_proc *_k_current_task;
 extern uint32_t K_PrioBitMap[];
 
 #ifndef LITE
