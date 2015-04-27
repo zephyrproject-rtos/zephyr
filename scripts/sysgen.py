@@ -538,7 +538,7 @@ def kernel_main_c_fifos():
     total_fifos = len(fifo_list)
 
     if (total_fifos == 0):
-        kernel_main_c_out("\nstruct que_struct * K_QueList = NULL;\n")
+        kernel_main_c_out("\nstruct que_struct * _k_fifo_list = NULL;\n")
         return
 
     # FIFO buffers
@@ -552,7 +552,7 @@ def kernel_main_c_fifos():
     # FIFO descriptors
 
     kernel_main_c_out("\n" +
-        "struct que_struct K_QueList[%s] =\n" % (total_fifos) +
+        "struct que_struct _k_fifo_list[%s] =\n" % (total_fifos) +
         "{\n"
     )
     for fifo in fifo_list:
