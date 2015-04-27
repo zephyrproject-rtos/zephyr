@@ -130,7 +130,7 @@ void K_waitmend(struct k_args *R)
 
 void K_waitmcan(struct k_args *A)
 {
-	struct sem_struct *S = K_SemList + OBJ_INDEX(A->Args.s1.sema);
+	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -194,7 +194,7 @@ void K_waitmcan(struct k_args *A)
 
 void K_waitmacc(struct k_args *A)
 {
-	struct sem_struct *S = K_SemList + OBJ_INDEX(A->Args.s1.sema);
+	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -302,7 +302,7 @@ void K_waitsrpl(struct k_args *A)
 
 void K_waitmreq(struct k_args *A)
 {
-	struct sem_struct *S = K_SemList + OBJ_INDEX(A->Args.s1.sema);
+	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -391,7 +391,7 @@ void K_waitsreq(struct k_args *A)
 	uint32_t Sid;
 
 	Sid = A->Args.s1.sema;
-	S = K_SemList + OBJ_INDEX(Sid);
+	S = _k_sem_list + OBJ_INDEX(Sid);
 
 	if (S->Level) {
 		S->Level--;
@@ -475,7 +475,7 @@ void K_signals(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
 
-	signal_semaphore(1, K_SemList + OBJ_INDEX(Sid));
+	signal_semaphore(1, _k_sem_list + OBJ_INDEX(Sid));
 }
 
 /*******************************************************************************
@@ -595,7 +595,7 @@ void K_resets(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
 
-	K_SemList[OBJ_INDEX(Sid)].Level = 0;
+	_k_sem_list[OBJ_INDEX(Sid)].Level = 0;
 }
 
 /*******************************************************************************
@@ -666,7 +666,7 @@ void K_inqsema(struct k_args *A)
 	uint32_t Sid;
 
 	Sid = A->Args.s1.sema;
-	S = K_SemList + OBJ_INDEX(Sid);
+	S = _k_sem_list + OBJ_INDEX(Sid);
 	A->Time.rcode = S->Level;
 }
 

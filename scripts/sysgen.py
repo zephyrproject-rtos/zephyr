@@ -519,13 +519,13 @@ def kernel_main_c_semas():
     total_semas = len(sema_list)
 
     if (total_semas == 0):
-        kernel_main_c_out("\nstruct sem_struct * K_SemList = NULL;\n")
+        kernel_main_c_out("\nstruct sem_struct * _k_sem_list = NULL;\n")
         return
 
     # semaphore descriptors
 
     kernel_main_c_out("\n" +
-        "struct sem_struct K_SemList[%s] =\n" % (total_semas) +
+        "struct sem_struct _k_sem_list[%s] =\n" % (total_semas) +
         "{\n")
     for semaphore in sema_list:
         kernel_main_c_out("    {NULL, 0, 0},\n")
