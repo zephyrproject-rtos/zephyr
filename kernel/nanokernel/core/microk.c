@@ -144,7 +144,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			 */
 			extern volatile unsigned int _k_workload_i;
 			extern volatile unsigned int _k_workload_i0;
-			extern volatile unsigned int WldTDelta;
+			extern volatile unsigned int _k_workload_delta;
 			extern volatile unsigned int WldT_start;
 			extern volatile unsigned int WldT_end;
 
@@ -154,7 +154,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			if (_k_current_task->Ident == 0x00000000) {
 				WldT_end = timer_read();
 				_k_workload_i += (_k_workload_i0 * (WldT_end - WldT_start)) /
-					 WldTDelta;
+					 _k_workload_delta;
 			}
 #endif
 #endif
