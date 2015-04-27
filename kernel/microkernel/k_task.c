@@ -73,9 +73,9 @@ void reset_state_bit(struct k_proc *X,    /* ptr to task */
 		 */
 
 #ifndef LITE
-		struct k_tqhd *H = K_PrioList + X->Prio;
+		struct k_tqhd *H = _k_task_priority_list + X->Prio;
 #else
-		struct k_tqhd *H = K_PrioList;
+		struct k_tqhd *H = _k_task_priority_list;
 #endif
 
 		X->Forw = NULL;
@@ -144,7 +144,7 @@ void set_state_bit(
 		volatile
 #endif
 #endif
-			struct k_tqhd *task_queue = K_PrioList + task_ptr->Prio;
+			struct k_tqhd *task_queue = _k_task_priority_list + task_ptr->Prio;
 		struct k_proc *cur_task = (struct k_proc *)(&task_queue->Head);
 
 		/*
@@ -420,7 +420,7 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 
 void K_yield(struct k_args *A)
 {
-	struct k_tqhd *H = K_PrioList + K_Task->Prio;
+	struct k_tqhd *H = _k_task_priority_list + K_Task->Prio;
 	struct k_proc *X = K_Task->Forw;
 
 	ARG_UNUSED(A);

@@ -129,7 +129,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 		 * it's guaranteed that there will always be at least one task
 		 * in the ready state (idle task)
 		 */
-		pNextTask = K_PrioList[K_PrioListIdx].Head;
+		pNextTask = _k_task_priority_list[K_PrioListIdx].Head;
 
 		if (K_Task != pNextTask) {
 /*

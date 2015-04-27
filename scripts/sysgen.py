@@ -431,11 +431,11 @@ def kernel_main_c_priorities():
     # priority queue descriptors (lowest priority queue contains idle task)
 
     kernel_main_c_out("\n" +
-        "struct k_tqhd K_PrioList[%d] =\n" % (num_prios) +
+        "struct k_tqhd _k_task_priority_list[%d] =\n" % (num_prios) +
         "{\n")
     for i in range(1, num_prios):
         kernel_main_c_out(
-            "    {NULL, (struct k_proc *)&K_PrioList[%d]},\n" % (i - 1))
+            "    {NULL, (struct k_proc *)&_k_task_priority_list[%d]},\n" % (i - 1))
     kernel_main_c_out(
         "    {&K_TaskList[%d], &K_TaskList[%d]}\n" %
         (total_tasks - 1, total_tasks - 1) +
@@ -444,7 +444,7 @@ def kernel_main_c_priorities():
     # active priority queue (idle task's queue)
 
     kernel_main_c_out("\n" +
-        "struct k_tqhd * K_Prio = &K_PrioList[%d];\n" % (num_prios - 1))
+        "struct k_tqhd * K_Prio = &_k_task_priority_list[%d];\n" % (num_prios - 1))
 
 
 def kernel_main_c_events():
