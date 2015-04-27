@@ -61,7 +61,7 @@ void InitPools(void)
 	char *memptr;
 
 	/* for all pools initialise largest blocks */
-	for (i = 0, P = K_PoolList; i < K_PoolCount; i++, P++) {
+	for (i = 0, P = _k_mem_pool_list; i < K_PoolCount; i++, P++) {
 		int remaining = P->nr_of_maxblocks;
 		int t = 0;
 
@@ -201,7 +201,7 @@ static void defrag(struct pool_struct *P,
 
 void K_Defrag(struct k_args *A)
 {
-	struct pool_struct *P = K_PoolList + OBJ_INDEX(A->Args.p1.poolid);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
 
 	defrag(P,
 	       P->nr_of_frags - 1, /* start from smallest blocks */
@@ -424,7 +424,7 @@ static char *rgetblock(struct pool_struct *P, int index, int startindex)
 
 void K_GetBlock_Waiters(struct k_args *A)
 {
-	struct pool_struct *P = K_PoolList + OBJ_INDEX(A->Args.p1.poolid);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
 	char *found_block;
 	struct k_args *curr_task, *prev_task;
 	int start_size, offset;
@@ -502,7 +502,7 @@ void K_gtbltmo(struct k_args *A)
 
 void K_GetBlock(struct k_args *A)
 {
-	struct pool_struct *P = K_PoolList + OBJ_INDEX(A->Args.p1.poolid);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
 	char *found_block;
 
 	int start_size;
@@ -609,7 +609,7 @@ void K_RelBlock(struct k_args *A)
 	Pid = A->Args.p1.poolid;
 
 
-	P = K_PoolList + OBJ_INDEX(Pid);
+	P = _k_mem_pool_list + OBJ_INDEX(Pid);
 
 	/* calculate size */
 	start_size = P->minblock_size;

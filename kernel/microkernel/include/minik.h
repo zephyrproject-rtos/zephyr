@@ -51,7 +51,7 @@ extern struct mbx_struct _k_mbox_list[];
 extern struct mutex_struct _k_mutex_list[];
 extern struct sem_struct _k_sem_list[];
 extern struct que_struct _k_fifo_list[];
-extern struct pool_struct K_PoolList[];
+extern struct pool_struct _k_mem_pool_list[];
 extern struct pipe_struct K_PipeList[];
 
 #ifndef LITE

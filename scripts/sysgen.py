@@ -670,12 +670,12 @@ def kernel_main_c_pools():
     kernel_main_c_out("\nint K_PoolCount = %d;\n" % (total_pools))
 
     if (total_pools == 0):
-        kernel_main_c_out("\nstruct pool_struct * K_PoolList = NULL;\n")
+        kernel_main_c_out("\nstruct pool_struct * _k_mem_pool_list = NULL;\n")
         return
 
     # start accumulating memory pool descriptor info
 
-    pool_descriptors = "\nstruct pool_struct K_PoolList[%d] =\n{\n" % \
+    pool_descriptors = "\nstruct pool_struct _k_mem_pool_list[%d] =\n{\n" % \
                         (total_pools)
     ident = 0x00010000
 
