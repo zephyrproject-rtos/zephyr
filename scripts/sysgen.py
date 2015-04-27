@@ -366,7 +366,7 @@ def kernel_main_c_tasks():
 
     # task global variables
 
-    kernel_main_c_out("\nint K_TaskCount = %d;\n" % (total_tasks - 1))
+    kernel_main_c_out("\nint _k_task_count = %d;\n" % (total_tasks - 1))
 
     # task stack areas
 

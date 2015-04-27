@@ -318,7 +318,7 @@ void K_groupop(struct k_args *A)
 		K_DebugHalt = 0;
 #endif
 
-	for (i = 0, X = _k_task_list; i < K_TaskCount; i++, X++) {
+	for (i = 0, X = _k_task_list; i < _k_task_count; i++, X++) {
 		if (X->Group & grp) {
 			switch (opt) {
 			case GROUP_TASK_START:

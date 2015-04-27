@@ -42,7 +42,7 @@ extern const knode_t _k_this_node;
 extern struct k_proc _k_task_list[];
 extern struct k_tqhd _k_task_priority_list[];
 
-extern int K_TaskCount;
+extern int _k_task_count;
 
 #ifndef LITE
 extern struct map_struct K_MapList[];
