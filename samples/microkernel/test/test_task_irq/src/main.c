@@ -157,10 +157,12 @@ void MonitorTaskEntry (void)
 		        {
 		        TC_ERROR ("Monitor task timed out\n");
 		        }
+		    TC_END_RESULT (TC_FAIL);
 		    TC_END_REPORT (TC_FAIL);
 		    return;
 		    }
 		}
 
+	TC_END_RESULT (TC_PASS);
 	TC_END_REPORT (TC_PASS);
 	}

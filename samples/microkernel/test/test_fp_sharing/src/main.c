@@ -273,6 +273,7 @@ void load_store_low(void)
 		 */
 
 		if (fpu_sharing_error) {
+			TC_END_RESULT(TC_FAIL);
 			TC_END_REPORT(TC_FAIL);
 			return;
 		}
@@ -396,6 +397,7 @@ void load_store_high(void)
 		/* terminate testing if specified limit has been reached */
 
 		if (load_store_high_count == MAX_TESTS) {
+			TC_END_RESULT(TC_PASS);
 			TC_END_REPORT(TC_PASS);
 			return;
 		}

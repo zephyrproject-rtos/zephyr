@@ -329,5 +329,6 @@ void RegressionTaskEntry(void)
 	}
 
 exitRtn:
+	TC_END_RESULT(tcRC);
 	TC_END_REPORT(tcRC);
 }
