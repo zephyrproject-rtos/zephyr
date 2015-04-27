@@ -14,6 +14,7 @@ minimal (a "do nothing" image that has support for few kernel capabilities)
 - K_swapper is only fiber in system.
 - ISRs for the system timer and spurious interrupt handling are present.
 - IDT and stack memory sizes are very limited.
+- Provides support for 2 task priorities.
 
 regular (a "typical" image that has support for some kernel capabilities)
 -------
@@ -21,6 +22,7 @@ regular (a "typical" image that has support for some kernel capabilities)
 - Supports larger IDT and utilizes larger stacks.
 - A statically linked dummy ISR is present.
 - Has "foreground" task that prints a message to the console via printk().
+- Provides support for 16 task priorities.
 - Enables task scheduler support for time slicing.
 - Links in support for EVENT, MUTEX, FIFO, and MAP objects.
 
@@ -28,6 +30,7 @@ maximal (a "complex" image that has support for many kernel capabilities)
 -------
 - As for "regular" configuration, except as noted below.
 - Supports full IDT and utilizes even larger stacks.
+- Provides support for 64 task priorities.
 - Foreground task dynamically links in the dummy ISR, rather than having
   it statically linked.
 - Foreground task prints a message to the console via printf(),
