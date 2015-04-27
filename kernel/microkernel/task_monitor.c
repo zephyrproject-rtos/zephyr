@@ -42,7 +42,7 @@
 
 static struct k_mrec __noinit k_monitor_buff[CONFIG_TASK_MONITOR_CAPACITY];
 
-static const int K_monitor_capacity = CONFIG_TASK_MONITOR_CAPACITY;
+static const int k_monitor_capacity = CONFIG_TASK_MONITOR_CAPACITY;
 const int K_monitor_mask = CONFIG_TASK_MONITOR_MASK;
 
 static struct k_mrec *K_monitor_wptr = k_monitor_buff;
@@ -67,12 +67,12 @@ void K_monitor_task(struct k_proc *X, uint32_t D)
 		K_monitor_wptr->time = timer_read();
 		K_monitor_wptr->data1 = X->Ident;
 		K_monitor_wptr->data2 = D;
-		if (++K_monitor_wind == K_monitor_capacity) {
+		if (++K_monitor_wind == k_monitor_capacity) {
 			K_monitor_wind = 0;
 			K_monitor_wptr = k_monitor_buff;
 		} else
 			++K_monitor_wptr;
-		if (K_monitor_nrec < K_monitor_capacity)
+		if (K_monitor_nrec < k_monitor_capacity)
 			K_monitor_nrec++;
 	}
 	if ((TaskSwitchCallBack != NULL) && (D == 0))
@@ -96,13 +96,13 @@ void K_monitor_args(struct k_args *A)
 			K_monitor_wptr->data2 = MO_LCOMM | A->Comm;
 		}
 
-		if (++K_monitor_wind == K_monitor_capacity) {
+		if (++K_monitor_wind == k_monitor_capacity) {
 			K_monitor_wind = 0;
 			K_monitor_wptr = k_monitor_buff;
 		} else
 			++K_monitor_wptr;
 
-		if (K_monitor_nrec < K_monitor_capacity)
+		if (K_monitor_nrec < k_monitor_capacity)
 			K_monitor_nrec++;
 	}
 }
@@ -113,7 +113,7 @@ void K_monitor_read(struct k_args *A)
 	if (A->Args.z4.rind < K_monitor_nrec) {
 		int i = K_monitor_wind - K_monitor_nrec + A->Args.z4.rind;
 		if (i < 0)
-			i += K_monitor_capacity;
+			i += k_monitor_capacity;
 		A->Args.z4.mrec = k_monitor_buff[i];
 	}
 }
