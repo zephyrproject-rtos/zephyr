@@ -192,7 +192,7 @@ void delist_timeout(K_TIMER *T)
 
 /*******************************************************************************
 *
-* K_alloc_timer - handle timer allocation request
+* _k_timer_alloc - handle timer allocation request
 *
 * This routine, called by K_swapper(), handles the request for allocating a
 * timer.
@@ -200,7 +200,7 @@ void delist_timeout(K_TIMER *T)
 * RETURNS: N/A
 */
 
-void K_alloc_timer(
+void _k_timer_alloc(
 	struct k_args *P /* pointer to timer allocation request arguments */
 	)
 {

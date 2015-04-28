@@ -803,7 +803,7 @@ def kernel_main_c_kernel_services():
 "/* 46 */ _k_task_yield,",          # required
 "/* 47 */ K_alloc,",                # depends on memory maps
 "/* 48 */ K_dealloc,",              # depends on memory maps
-"/* 49 */ K_alloc_timer,",          # depends on timers
+"/* 49 */ _k_timer_alloc,",         # depends on timers
 "/* 50 */ K_dealloc_timer,",        # depends on timers
 "/* 51 */ K_start_timer,",          # depends on timers
 "/* 52 */ K_stop_timer,",           # depends on timers
