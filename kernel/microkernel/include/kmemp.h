@@ -34,8 +34,8 @@
 #define KMEMP_H
 
 extern void K_RelBlock(struct k_args *A);
-extern void K_GetBlock(struct k_args *A);
+extern void _k_mem_pool_block_get(struct k_args *A);
 extern void _k_defrag(struct k_args *A);
-extern void _k_block_get_timeout_handle(struct k_args *A);
+extern void _k_mem_pool_block_get_timeout_handle(struct k_args *A);
 
 #endif

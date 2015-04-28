@@ -480,12 +480,12 @@ void _k_block_waiters_get(struct k_args *A)
 
 /*******************************************************************************
 *
-* _k_block_get_timeout_handle - finish handling an allocate block request that timed out
+* _k_mem_pool_block_get_timeout_handle - finish handling an allocate block request that timed out
 *
 * RETURNS: N/A
 */
 
-void _k_block_get_timeout_handle(struct k_args *A)
+void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 {
 	delist_timeout(A->Time.timer);
 	REMOVE_ELM(A);
@@ -495,12 +495,12 @@ void _k_block_get_timeout_handle(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_GetBlock - perform allocate memory pool block request
+* _k_mem_pool_block_get - perform allocate memory pool block request
 *
 * RETURNS: N/A
 */
 
-void K_GetBlock(struct k_args *A)
+void _k_mem_pool_block_get(struct k_args *A)
 {
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
 	char *found_block;
