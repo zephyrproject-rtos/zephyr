@@ -366,12 +366,12 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
 
 /*******************************************************************************
 *
-* K_set_prio - handle task set priority request
+* _k_task_priority_set - handle task set priority request
 *
 * RETURNS: N/A
 */
 
-void K_set_prio(struct k_args *A)
+void _k_task_priority_set(struct k_args *A)
 {
 	ktask_t Tid = A->Args.g1.task;
 		struct k_proc *X = _k_task_list + OBJ_INDEX(Tid);
