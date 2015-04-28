@@ -33,7 +33,7 @@
 #ifndef KMMAP_H
 #define KMMAP_H
 
-extern void K_alloc(struct k_args *A);
+extern void _k_mem_map_alloc(struct k_args *A);
 extern void _k_mem_map_alloc_timeout(struct k_args *A);
 extern void K_dealloc(struct k_args *A);
 

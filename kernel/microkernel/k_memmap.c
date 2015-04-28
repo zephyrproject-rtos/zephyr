@@ -88,12 +88,12 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_alloc - perform allocate memory map block request
+* _k_mem_map_alloc - perform allocate memory map block request
 *
 * RETURNS: N/A
 */
 
-void K_alloc(struct k_args *A)
+void _k_mem_map_alloc(struct k_args *A)
 {
 	struct map_struct *M = _k_mem_map_list + OBJ_INDEX(A->Args.a1.mmap);
 
