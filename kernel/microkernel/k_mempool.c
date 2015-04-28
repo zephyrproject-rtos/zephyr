@@ -246,14 +246,14 @@ void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
 
 /*******************************************************************************
 *
-* searchblock_onfraglevel - allocate block using specified fragmentation level
+* search_block_on_frag_level - allocate block using specified fragmentation level
 *
 * This routine attempts to allocate a free block. [NEED TO EXPAND THIS]
 *
 * RETURNS: pointer to allocated block, or NULL if none available
 */
 
-static char *searchblock_onfraglevel(struct pool_block *pfraglevelinfo,
+static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 						    int *piblockindex)
 {
 	int i, status, end_of_list;
@@ -352,7 +352,7 @@ static char *rgetblock(struct pool_struct *P, int index, int startindex)
 	i = 0;
 
 	/* let's inspect the fragmentation level <index> */
-	found = searchblock_onfraglevel(&(fr_table[index]), &i);
+	found = search_block_on_frag_level(&(fr_table[index]), &i);
 	if (found != NULL) {
 		return found;
 	}
@@ -365,7 +365,7 @@ static char *rgetblock(struct pool_struct *P, int index, int startindex)
 		       startindex); /* but only until the requested blocksize
 				       (fragmentation level) !! */
 
-		found = searchblock_onfraglevel(&(fr_table[index]), &i);
+		found = search_block_on_frag_level(&(fr_table[index]), &i);
 		if (found != NULL) {
 			return found;
 		}
@@ -399,7 +399,7 @@ static char *rgetblock(struct pool_struct *P, int index, int startindex)
 		       startindex); /* but only until the requested blocksize
 				       (fragmentation level) !! */
 
-		found = searchblock_onfraglevel(&(fr_table[index]), &i);
+		found = search_block_on_frag_level(&(fr_table[index]), &i);
 		if (found != NULL) {
 			return found;
 		}
