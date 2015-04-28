@@ -334,7 +334,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_waitmany - handle semaphore group wait request
+* _k_sem_group_wait_any - handle semaphore group wait request
 *
 * This routine splits the single semaphore group wait request into several
 * internal wait requests--one for each semaphore in the group.
@@ -342,7 +342,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 * RETURNS: N/A
 */
 
-void K_waitmany(struct k_args *A)
+void _k_sem_group_wait_any(struct k_args *A)
 {
 	ksem_t *L;
 
