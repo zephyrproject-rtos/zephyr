@@ -589,7 +589,7 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 
 /*******************************************************************************
 *
-* K_RelBlock - perform return memory pool block request
+* _k_mem_pool_block_release - perform return memory pool block request
 *
 * Marks a block belonging to a pool as free; if there are waiters that can use
 * the the block it is passed to a waiting task.
@@ -597,7 +597,7 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 * RETURNS: N/A
 */
 
-void K_RelBlock(struct k_args *A)
+void _k_mem_pool_block_release(struct k_args *A)
 {
 	struct pool_struct *P;
 	struct pool_block *block;

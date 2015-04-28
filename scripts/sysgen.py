@@ -816,7 +816,7 @@ def kernel_main_c_kernel_services():
 "/* 59 */ K_event_set_handler,",    # required
 "/* 60 */ K_event_signal,",         # required
 "/* 61 */ _k_mem_pool_block_get,",           # depends on memory pools
-"/* 62 */ K_RelBlock,",             # depends on memory pools
+"/* 62 */ _k_mem_pool_block_release,",       # depends on memory pools
 "/* 63 */ _k_block_waiters_get,",   # depends on memory pools
 "/* 64 */ _k_mem_pool_block_get_timeout_handle,",   # depends on memory pools
 "/* 65 */ _k_defrag,",              # depends on memory pools

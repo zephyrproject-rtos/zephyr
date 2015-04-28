@@ -58,7 +58,7 @@ void K_ChSendAck(struct k_args *Request)
 			A.Args.p1.req_size = blockptr->req_size;
 			A.Args.p1.rep_poolptr = blockptr->address_in_pool;
 			A.Args.p1.rep_dataptr = blockptr->pointer_to_data;
-			K_RelBlock(&A); /* will return immediately */
+			_k_mem_pool_block_release(&A); /* will return immediately */
 		}
 
 		if ((ksem_t)NULL != pChAck->ReqType.Async.sema) {
