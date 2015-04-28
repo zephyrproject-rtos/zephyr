@@ -233,12 +233,12 @@ void _k_do_event_signal(kevent_t event)
 
 /*******************************************************************************
 *
-* K_event_signal - perform signal an event request
+* _k_event_signal - perform signal an event request
 *
 * RETURNS: N/A
 */
 
-void K_event_signal(struct k_args *A)
+void _k_event_signal(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
 

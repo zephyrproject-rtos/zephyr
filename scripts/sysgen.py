@@ -814,7 +814,7 @@ def kernel_main_c_kernel_services():
 "/* 57 */ (kernelfunc) NULL,",      # unused
 "/* 58 */ _k_event_test,",          # required
 "/* 59 */ _k_event_handler_set,",   # required
-"/* 60 */ K_event_signal,",         # required
+"/* 60 */ _k_event_signal,",        # required
 "/* 61 */ _k_mem_pool_block_get,",           # depends on memory pools
 "/* 62 */ _k_mem_pool_block_release,",       # depends on memory pools
 "/* 63 */ _k_block_waiters_get,",   # depends on memory pools

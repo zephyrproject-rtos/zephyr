@@ -94,7 +94,7 @@ extern void K_debug_req(struct k_args *);
 extern void K_debug_ack(struct k_args *);
 extern void _k_event_test(struct k_args *);
 extern void _k_event_handler_set(struct k_args *);
-extern void K_event_signal(struct k_args *);
+extern void _k_event_signal(struct k_args *);
 extern void _k_mem_pool_block_get(struct k_args *);
 extern void _k_mem_pool_block_release(struct k_args *);
 extern void _k_block_waiters_get(struct k_args *);
