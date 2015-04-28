@@ -35,5 +35,11 @@ obj-y += net_init.o \
 	 contiki/linkaddr.o \
 	 contiki/queuebuf.o
 
+ifeq ($(CONFIG_NETWORKING_WITH_LOGGING),y)
+     EXTRA_CFLAGS += -DUIP_CONF_LOGGING=1
+     obj-y += contiki/uip-log.o
+endif
+
+
 # workaround for include file location
 CREATE_INCLUDE_LINK_net := $(shell ln -s ${ZEPHYR_BASE}/net/ip/contiki ${ZEPHYR_BASE}/net/ip/contiki/net > /dev/null 2>&1)

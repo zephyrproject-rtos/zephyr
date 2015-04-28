@@ -40,3 +40,11 @@ config	NETWORKING
 	default n
 	help
 	  This option enabled generic networking support.
+
+config	NETWORKING_WITH_LOGGING
+	bool
+	prompt "Enable logging of the uIP stack"
+	depends on NETWORKING
+	default n
+	help
+	  Enable packet and uIP stack logging
