@@ -761,7 +761,7 @@ def kernel_main_c_kernel_services():
 "/*  4 */ K_offload,",              # required
 "/*  5 */ K_workload,",             # required
 "/*  6 */ K_signals,",              # depends on semaphores
-"/*  7 */ K_signalm,",              # depends on semaphores
+"/*  7 */ _k_sem_group_signal,",              # depends on semaphores
 "/*  8 */ K_resets,",               # depends on semaphores
 "/*  9 */ K_resetm,",               # depends on semaphores
 "/* 10 */ _k_sem_wait_request,",               # depends on semaphores

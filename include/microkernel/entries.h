@@ -47,7 +47,7 @@ extern void K_nop(struct k_args *);
 extern void K_offload(struct k_args *);
 extern void K_workload(struct k_args *);
 extern void K_signals(struct k_args *);
-extern void K_signalm(struct k_args *);
+extern void _k_sem_group_signal(struct k_args *);
 extern void K_resets(struct k_args *);
 extern void K_resetm(struct k_args *);
 extern void _k_sem_wait_request(struct k_args *);

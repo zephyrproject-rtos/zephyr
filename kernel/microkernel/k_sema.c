@@ -480,12 +480,12 @@ void K_signals(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_signalm - handle signal semaphore group request
+* _k_sem_group_signal - handle signal semaphore group request
 *
 * RETURNS: N/A
 */
 
-void K_signalm(struct k_args *A)
+void _k_sem_group_signal(struct k_args *A)
 {
 	ksem_t *L = A->Args.s1.list;
 
