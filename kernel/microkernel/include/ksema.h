@@ -42,7 +42,7 @@ extern void K_waitsreq(struct k_args *A);
 extern void K_inqsema(struct k_args *A);
 extern void K_waitmany(struct k_args *A);
 extern void _k_sem_group_wait_timeout(struct k_args *A);
-extern void K_waitmrdy(struct k_args *R);
+extern void _k_sem_group_ready(struct k_args *R);
 extern void _k_sem_group_wait(struct k_args *R);
 extern void K_waitmreq(struct k_args *A);
 extern void _k_sem_group_wait_cancel(struct k_args *A);

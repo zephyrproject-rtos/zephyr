@@ -769,7 +769,7 @@ def kernel_main_c_kernel_services():
 "/* 12 */ K_waitsrpl,",             # depends on semaphores and timers
 "/* 13 */ K_waitmany,",             # depends on semaphores
 "/* 14 */ K_waitmreq,",             # depends on semaphores
-"/* 15 */ K_waitmrdy,",             # depends on semaphores
+"/* 15 */ _k_sem_group_ready,",                # depends on semaphores
 "/* 16 */ _k_sem_group_wait_cancel,",          # depends on semaphores
 "/* 17 */ _k_sem_group_wait_accept,",          # depends on semaphores
 "/* 18 */ _k_sem_group_wait,",             # depends on semaphores

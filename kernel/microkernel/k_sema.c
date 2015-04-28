@@ -249,7 +249,7 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_waitmrdy - handle semaphore ready request
+* _k_sem_group_ready - handle semaphore ready request
 *
 * This routine only applies to semaphore group wait requests.  It identifies
 * the one semaphore in the group that "won" the semaphore group wait request
@@ -258,7 +258,7 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 * RETURNS: N/A
 */
 
-void K_waitmrdy(struct k_args *R)
+void _k_sem_group_ready(struct k_args *R)
 {
 	struct k_args *A = R->Ctxt.args;
 
