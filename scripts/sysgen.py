@@ -304,7 +304,8 @@ def kernel_main_c_header():
 
     kernel_main_c_out("\nconst knode_t _k_this_node = 0x00010000;\n")
     kernel_main_c_out("\n" +
-        "char __noinit _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];\n")
+        "char __noinit " +
+        "_k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];\n")
     kernel_main_c_out(
         "int _k_server_stack_size = CONFIG_MICROKERNEL_SERVER_STACK_SIZE;\n")
 
@@ -419,7 +420,8 @@ def kernel_main_c_tasks():
     # currently scheduled task (idle task)
 
     kernel_main_c_out("\n" +
-        "struct k_proc * _k_current_task = &_k_task_list[%d];\n" % (total_tasks - 1))
+        "struct k_proc * _k_current_task = &_k_task_list[%d];\n" %
+        (total_tasks - 1))
 
 
 def kernel_main_c_priorities():
@@ -435,7 +437,8 @@ def kernel_main_c_priorities():
         "{\n")
     for i in range(1, num_prios):
         kernel_main_c_out(
-            "    {NULL, (struct k_proc *)&_k_task_priority_list[%d]},\n" % (i - 1))
+            "    {NULL, (struct k_proc *)&_k_task_priority_list[%d]},\n" %
+            (i - 1))
     kernel_main_c_out(
         "    {&_k_task_list[%d], &_k_task_list[%d]}\n" %
         (total_tasks - 1, total_tasks - 1) +
@@ -444,7 +447,8 @@ def kernel_main_c_priorities():
     # active priority queue (idle task's queue)
 
     kernel_main_c_out("\n" +
-        "struct k_tqhd * K_Prio = &_k_task_priority_list[%d];\n" % (num_prios - 1))
+        "struct k_tqhd * K_Prio = &_k_task_priority_list[%d];\n" %
+        (num_prios - 1))
 
 
 def kernel_main_c_events():
