@@ -98,7 +98,7 @@ extern void K_event_signal(struct k_args *);
 extern void K_GetBlock(struct k_args *);
 extern void K_RelBlock(struct k_args *);
 extern void _k_block_waiters_get(struct k_args *);
-extern void K_gtbltmo(struct k_args *);
+extern void _k_block_get_timeout_handle(struct k_args *);
 extern void _k_defrag(struct k_args *);
 
 extern void K_mvdreq(struct k_args *Req);

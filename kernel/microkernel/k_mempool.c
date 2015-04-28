@@ -480,12 +480,12 @@ void _k_block_waiters_get(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_gtbltmo - finish handling an allocate block request that timed out
+* _k_block_get_timeout_handle - finish handling an allocate block request that timed out
 *
 * RETURNS: N/A
 */
 
-void K_gtbltmo(struct k_args *A)
+void _k_block_get_timeout_handle(struct k_args *A)
 {
 	delist_timeout(A->Time.timer);
 	REMOVE_ELM(A);
