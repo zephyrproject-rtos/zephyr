@@ -43,3 +43,36 @@ struct bt_l2cap_sig_hdr {
 	uint8_t  ident;
 	uint16_t len;
 } PACK_STRUCT;
+
+#define BT_L2CAP_REJ_NOT_UNDERSTOOD	0x0000
+#define BT_L2CAP_REJ_MTU_EXCEEDED	0x0001
+#define BT_L2CAP_REJ_INVALID_CID	0x0002
+
+#define BT_L2CAP_CMD_REJECT		0x01
+struct bt_l2cap_cmd_reject {
+	uint16_t reason;
+	uint8_t  data[0];
+} PACK_STRUCT;
+
+#define BT_L2CAP_CONN_PARAM_REQ		0x12
+struct bt_l2cap_conn_param_req {
+	uint16_t min_interval;
+	uint16_t max_interval;
+	uint16_t latency;
+	uint16_t timeout;
+} PACK_STRUCT;
+
+#define BT_L2CAP_CONN_PARAM_RSP		0x13
+struct bt_l2cap_conn_param_rsp {
+	uint16_t result;
+} PACK_STRUCT;
+
+/* Prepare an L2CAP PDU to be sent over a connection */
+struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
+				   size_t len);
+
+/* Receive a new L2CAP PDU from a connection */
+void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf);
+
+/* Perform connection parameter update request */
+void bt_l2cap_update_conn_param(struct bt_conn *conn);

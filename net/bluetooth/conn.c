@@ -166,7 +166,7 @@ static void conn_rx_fiber(int arg1, int arg2)
 			break;
 		}
 
-		bt_buf_put(buf);
+		bt_l2cap_recv(conn, buf);
 	}
 
 	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
@@ -251,6 +251,8 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle)
 
 	fiber_start(conn->tx_stack, BT_CONN_TX_STACK_SIZE, conn_tx_fiber,
 		    (int)bt_conn_get(conn), 0, 7, 0);
+
+	bt_l2cap_update_conn_param(conn);
 
 	return conn;
 }
