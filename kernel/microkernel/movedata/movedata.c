@@ -80,12 +80,12 @@ static void mvdreq_copy(struct moved_req *ReqArgs)
 
 /*******************************************************************************
 *
-* K_mvdreq - process a movedata request
+* _k_movedata_request - process a movedata request
 *
 * RETURNS: N/A
 */
 
-void K_mvdreq(struct k_args *Req)
+void _k_movedata_request(struct k_args *Req)
 {
 	struct moved_req *ReqArgs;
 

@@ -166,7 +166,7 @@ void K_ChProcWR(
 				OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
 			iT2,
 			-1);
-		K_mvdreq(Moved_req);
+		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
 		_UpdateChannelXferStatus(pWriter, pWriterArgs, iT2);

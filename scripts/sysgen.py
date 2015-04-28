@@ -755,7 +755,7 @@ def kernel_main_c_kernel_services():
 
     func_table = [
 "/*  0 */ _k_nop,",                 # required
-"/*  1 */ K_mvdreq,",               # required
+"/*  1 */ _k_movedata_request,",               # required
 "/*  2 */ (kernelfunc) NULL,",      # unused
 "/*  3 */ (kernelfunc) NULL,",      # unused
 "/*  4 */ _k_offload_to_fiber,",       # required

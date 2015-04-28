@@ -100,7 +100,7 @@ void K_ChProcWO(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 				OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
 			ret,
 			(numIterations == 2) ? id : -1);
-		K_mvdreq(Moved_req);
+		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
 		pWriterArgs->iNbrPendXfers++;

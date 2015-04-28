@@ -99,7 +99,7 @@ void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pNewReader)
 			pRead,
 			ret,
 			id);
-		K_mvdreq(Moved_req);
+		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
 		pReaderArgs->iNbrPendXfers++;

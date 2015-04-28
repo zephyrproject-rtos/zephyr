@@ -218,7 +218,7 @@ static void transfer(struct k_args *pMvdReq)
 	__ASSERT_NO_MSG(NULL != pMvdReq->Args.MovedReq.source);
 	__ASSERT_NO_MSG(NULL != pMvdReq->Args.MovedReq.destination);
 
-	K_mvdreq(pMvdReq);
+	_k_movedata_request(pMvdReq);
 	FREEARGS(pMvdReq);
 }
 

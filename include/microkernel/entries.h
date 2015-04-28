@@ -101,7 +101,7 @@ extern void _k_block_waiters_get(struct k_args *);
 extern void _k_mem_pool_block_get_timeout_handle(struct k_args *);
 extern void _k_defrag(struct k_args *);
 
-extern void K_mvdreq(struct k_args *Req);
+extern void _k_movedata_request(struct k_args *Req);
 extern void K_mvdsndreq(struct k_args *SndReq);
 extern void K_mvdrcvreq(struct k_args *RcvReq);
 extern void K_rawdata(struct k_args *DataPacket);
