@@ -109,7 +109,8 @@ simple_udp_register(struct simple_udp_connection *c,
                     uint16_t local_port,
                     uip_ipaddr_t *remote_addr,
                     uint16_t remote_port,
-                    simple_udp_callback receive_callback)
+                    simple_udp_callback receive_callback,
+                    void *user_data)
 {
 
   init_simple_udp();
@@ -120,6 +121,7 @@ simple_udp_register(struct simple_udp_connection *c,
     uip_ipaddr_copy(&c->remote_addr, remote_addr);
   }
   c->receive_callback = receive_callback;
+  c->user_data = user_data;
 
   PROCESS_CONTEXT_BEGIN(&simple_udp_process);
   c->udp_conn = udp_new(remote_addr, UIP_HTONS(remote_port), c);
@@ -173,7 +175,8 @@ PROCESS_THREAD(simple_udp_process, ev, data, buf)
                                 UIP_HTONS(UIP_IP_BUF(buf)->srcport),
                                 &(UIP_IP_BUF(buf)->destipaddr),
                                 UIP_HTONS(UIP_IP_BUF(buf)->destport),
-                                uip_buf(buf), uip_datalen(buf));
+                                uip_buf(buf), uip_datalen(buf),
+                                c->user_data);
             PROCESS_CONTEXT_END();
           }
         }

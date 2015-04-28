@@ -65,7 +65,8 @@ typedef void (* simple_udp_callback)(struct simple_udp_connection *c,
                                      uint16_t source_port,
                                      const uip_ipaddr_t *dest_addr,
                                      uint16_t dest_port,
-                                     const uint8_t *data, uint16_t datalen);
+                                     const uint8_t *data, uint16_t datalen,
+                                     void *user_data);
 
 /** Simple UDP connection */
 struct simple_udp_connection {
@@ -75,6 +76,7 @@ struct simple_udp_connection {
   simple_udp_callback receive_callback;
   struct uip_udp_conn *udp_conn;
   struct process *client_process;
+  void *user_data;
 };
 
 /**
@@ -100,7 +102,8 @@ int simple_udp_register(struct simple_udp_connection *c,
                         uint16_t local_port,
                         uip_ipaddr_t *remote_addr,
                         uint16_t remote_port,
-                        simple_udp_callback receive_callback);
+                        simple_udp_callback receive_callback,
+                        void *user_data);
 
 /**
  * \brief      Send a UDP packet
