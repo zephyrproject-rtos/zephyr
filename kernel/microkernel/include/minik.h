@@ -170,7 +170,7 @@ extern char **K_QueNames[];
 
 extern void _k_task_monitor(struct k_proc *, uint32_t d2);
 extern void _k_task_monitor_args(struct k_args *);
-extern void K_monitor_read(struct k_args *);
+extern void _k_task_monitor_read(struct k_args *);
 
 extern const int _k_monitor_mask;
 

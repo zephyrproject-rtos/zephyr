@@ -107,7 +107,7 @@ void _k_task_monitor_args(struct k_args *A)
 	}
 }
 
-void K_monitor_read(struct k_args *A)
+void _k_task_monitor_read(struct k_args *A)
 {
 	A->Args.z4.nrec = k_monitor_nrec;
 	if (A->Args.z4.rind < k_monitor_nrec) {
