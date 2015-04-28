@@ -296,12 +296,12 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 
 /*******************************************************************************
 *
-* K_sendrpl - process the timeout for a mailbox send request
+* _k_mbox_send_reply - process the timeout for a mailbox send request
 *
 * RETURNS: N/A
 */
 
-void K_sendrpl(struct k_args *pCopyWriter)
+void _k_mbox_send_reply(struct k_args *pCopyWriter)
 {
 	FREETIMER(pCopyWriter->Time.timer);
 	REMOVE_ELM(pCopyWriter);
