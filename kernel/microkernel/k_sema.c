@@ -118,7 +118,7 @@ void _k_sem_group_wait(struct k_args *R)
 
 /*******************************************************************************
 *
-* K_waitmcan - handle cancellation of a semaphore involved in a
+* _k_sem_group_wait_cancel - handle cancellation of a semaphore involved in a
 *              semaphore group wait request
 *
 * This routine only applies to semaphore group wait requests.  It is invoked
@@ -128,7 +128,7 @@ void _k_sem_group_wait(struct k_args *R)
 * RETURNS: N/A
 */
 
-void K_waitmcan(struct k_args *A)
+void _k_sem_group_wait_cancel(struct k_args *A)
 {
 	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
 	struct k_args *X = S->Waiters;
