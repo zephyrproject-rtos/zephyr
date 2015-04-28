@@ -102,12 +102,12 @@ static void signal_semaphore(int n, struct sem_struct *S)
 
 /*******************************************************************************
 *
-* K_waitmend - finish handling incomplete waits on semaphores
+* _k_sem_group_wait - finish handling incomplete waits on semaphores
 *
 * RETURNS: N/A
 */
 
-void K_waitmend(struct k_args *R)
+void _k_sem_group_wait(struct k_args *R)
 {
 	struct k_args *A = R->Ctxt.args;
 
@@ -164,7 +164,7 @@ void K_waitmcan(struct k_args *A)
 						signal_semaphore(1, S);
 				}
 
-				K_waitmend(X);
+				_k_sem_group_wait(X);
 			} else
 				FREEARGS(X); /* ERROR */
 			FREEARGS(A);
@@ -206,7 +206,7 @@ void K_waitmacc(struct k_args *A)
 			else
 				S->Waiters = X->Forw;
 			if (X->Comm == WAITMRDY) {
-					K_waitmend(X);
+					_k_sem_group_wait(X);
 			} else
 				FREEARGS(X); /* ERROR */
 			FREEARGS(A);
@@ -314,7 +314,7 @@ void K_waitmreq(struct k_args *A)
 			else
 				S->Waiters = X->Forw;
 			if (X->Comm == WAITMCAN) {
-				K_waitmend(X);
+				_k_sem_group_wait(X);
 			} else
 				FREEARGS(X); /* ERROR */
 			FREEARGS(A);

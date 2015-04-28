@@ -57,7 +57,7 @@ extern void K_waitmreq(struct k_args *);
 extern void K_waitmrdy(struct k_args *);
 extern void K_waitmcan(struct k_args *);
 extern void K_waitmacc(struct k_args *);
-extern void K_waitmend(struct k_args *);
+extern void _k_sem_group_wait(struct k_args *);
 extern void K_waitmtmo(struct k_args *);
 extern void K_inqsema(struct k_args *);
 extern void _k_mutex_lock_request(struct k_args *);
