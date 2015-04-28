@@ -54,7 +54,7 @@ static char cmd_fiber_stack[CMD_STACK_SIZE];
 
 static struct bt_dev dev;
 
-static struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
+struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 {
 	struct bt_hci_cmd_hdr *hdr;
 	struct bt_buf *buf;
@@ -79,7 +79,7 @@ static struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	return buf;
 }
 
-static int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf)
+int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf)
 {
 	if (!buf) {
 		buf = bt_hci_cmd_create(opcode, 0);

@@ -76,3 +76,6 @@ struct bt_dev {
 	/* Registered HCI driver */
 	struct bt_driver	*drv;
 };
+
+struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
+int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf);
