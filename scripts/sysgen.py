@@ -754,7 +754,7 @@ def kernel_main_c_kernel_services():
     # initialize table with info for all possible kernel services
 
     func_table = [
-"/*  0 */ K_nop,",                  # required
+"/*  0 */ _k_nop,",                 # required
 "/*  1 */ K_mvdreq,",               # required
 "/*  2 */ (kernelfunc) NULL,",      # unused
 "/*  3 */ (kernelfunc) NULL,",      # unused

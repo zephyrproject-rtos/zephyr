@@ -47,12 +47,12 @@ a task to measure the overhead involved in issuing a kernel service request.
 
 /*******************************************************************************
 *
-* K_nop - perform "do nothing" kernel request
+* _k_nop - perform "do nothing" kernel request
 *
 * RETURNS: N/A
 */
 
-void K_nop(struct k_args *A)
+void _k_nop(struct k_args *A)
 {
 	ARG_UNUSED(A);
 }
