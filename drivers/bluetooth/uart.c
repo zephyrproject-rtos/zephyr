@@ -161,7 +161,7 @@ void bt_uart_isr(void *unused)
 					break;
 				default:
 					BT_ERR("Unknown H4 type %u\n", type);
-					goto failed;
+					return;
 			}
 
 			if (remaining < 0) {
