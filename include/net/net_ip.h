@@ -92,6 +92,9 @@ struct net_addr {
 	};
 };
 
+#define IN6ADDR_ANY_INIT { { { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } } }
+#define IN6ADDR_LOOPBACK_INIT { { { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1 } } }
+
 /*! IPv6/IPv4 network connection tuple */
 struct net_tuple {
 	/*! IPv6/IPv4 remote address */
