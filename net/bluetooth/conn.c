@@ -267,8 +267,8 @@ void bt_conn_del(struct bt_conn *conn)
 	conn->state = BT_CONN_DISCONNECTED;
 
 	/* Send dummy buffers to wake up and kill the fibers */
-	nano_fifo_put(&conn->tx_queue, bt_buf_get());
-	nano_fifo_put(&conn->rx_queue, bt_buf_get());
+	nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_ACL_OUT, 0));
+	nano_fifo_put(&conn->rx_queue, bt_buf_get(BT_ACL_IN, 0));
 
 	bt_conn_put(conn);
 }
@@ -314,11 +314,9 @@ struct bt_buf *bt_conn_create_pdu(struct bt_conn *conn, size_t len)
 	struct bt_hci_acl_hdr *hdr;
 	struct bt_buf *buf;
 
-	buf = bt_buf_get_reserve(dev->drv->head_reserve);
+	buf = bt_buf_get(BT_ACL_OUT, dev->drv->head_reserve);
 	if (!buf)
 		return NULL;
-
-	buf->type = BT_ACL_OUT;
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->handle = sys_cpu_to_le16(conn->handle);

@@ -57,7 +57,7 @@ static struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("opcode %x param_len %u\n", opcode, param_len);
 
-	buf = bt_buf_get_reserve(dev.drv->head_reserve);
+	buf = bt_buf_get(BT_CMD, dev.drv->head_reserve);
 	if (!buf) {
 		BT_ERR("Cannot get free buffer\n");
 		return NULL;
@@ -65,7 +65,6 @@ static struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("buf %p\n", buf);
 
-	buf->type = BT_CMD;
 	buf->opcode = opcode;
 	buf->sync = NULL;
 

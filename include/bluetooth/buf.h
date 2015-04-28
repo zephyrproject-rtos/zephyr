@@ -65,11 +65,10 @@ struct bt_buf {
 	uint8_t buf[BT_BUF_MAX_DATA];
 };
 
-/* Get buffer from the available buffers pool */
-struct bt_buf *bt_buf_get(void);
-
-/* Same as bt_buf_get, but also reserve headroom for potential headers */
-struct bt_buf *bt_buf_get_reserve(size_t reserve_head);
+/* Get buffer from the available buffers pool with specified type and
+ * reserved headroom.
+ */
+struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head);
 
 /* Place buffer back into the available buffers pool */
 void bt_buf_put(struct bt_buf *buf);

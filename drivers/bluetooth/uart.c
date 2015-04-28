@@ -142,19 +142,21 @@ void bt_uart_isr(void *unused)
 				return;
 			}
 
-			buf = bt_buf_get();
-			if (!buf) {
-				BT_ERR("Cannot get free buffer\n");
-				return;
-			}
-
 			switch (type) {
 				case H4_EVT:
-					buf->type = BT_EVT;
+					buf = bt_buf_get(BT_EVT, 0);
+					if (!buf) {
+						BT_ERR("No event buffers!\n");
+						return;
+					}
 					remaining = bt_uart_evt_recv(buf);
 					break;
 				case H4_ACL:
-					buf->type = BT_ACL_IN;
+					buf = bt_buf_get(BT_ACL_IN, 0);
+					if (!buf) {
+						BT_ERR("No ACL buffers!\n");
+						return;
+					}
 					remaining = bt_uart_acl_recv(buf);
 					break;
 				default:
