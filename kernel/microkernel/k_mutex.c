@@ -64,7 +64,7 @@ NOMANUAL
 
 /*******************************************************************************
 *
-* K_lockrpl - reply to a mutex lock request (LOCK_TMO, LOCK_RPL)
+* _k_mutex_lock_reply - reply to a mutex lock request (LOCK_TMO, LOCK_RPL)
 *
 * This routine replies to a mutex lock request.  This will occur if either
 * the waiting task times out or acquires the mutex lock.
@@ -74,7 +74,7 @@ NOMANUAL
 * \NOMANUAL
 */
 
-void K_lockrpl(
+void _k_mutex_lock_reply(
 	struct k_args *A /* pointer to mutex lock reply request arguments */
 	)
 {
@@ -222,7 +222,7 @@ void K_lockreq(struct k_args *A /* pointer to mutex lock
 				A->Time.timer = NULL;
 			} else {
 				/*
-				 * Prepare to call K_lockrpl() should
+				 * Prepare to call _k_mutex_lock_reply() should
 				 * the request time out.
 				 */
 				A->Comm = LOCK_TMO;
@@ -359,7 +359,7 @@ void K_unlock(struct k_args *A /* pointer to mutex unlock
 #ifndef LITE
 			if (X->Time.timer) {
 				/*
-				 * Trigger a call to K_lockrpl()--it will
+				 * Trigger a call to _k_mutex_lock_reply()--it will
 				 * send a reply with a return code of RC_OK.
 				 */
 				force_timeout(X);

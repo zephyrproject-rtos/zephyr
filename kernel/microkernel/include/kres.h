@@ -34,7 +34,7 @@
 #define KRES_H
 
 extern void K_lockreq(struct k_args *A);
-extern void K_lockrpl(struct k_args *A);
+extern void _k_mutex_lock_reply(struct k_args *A);
 extern void K_unlock(struct k_args *A);
 
 #endif

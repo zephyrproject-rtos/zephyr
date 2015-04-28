@@ -776,8 +776,8 @@ def kernel_main_c_kernel_services():
 "/* 19 */ K_waitmtmo,",             # depends on semaphores and timers
 "/* 20 */ K_inqsema,",              # depends on semaphores
 "/* 21 */ K_lockreq,",              # depends on mutexes
-"/* 22 */ K_lockrpl,",              # depends on mutexes
-"/* 23 */ K_lockrpl,",              # depends on mutexes and timers
+"/* 22 */ _k_mutex_lock_reply,",          # depends on mutexes
+"/* 23 */ _k_mutex_lock_reply,",          # depends on mutexes and timers
 "/* 24 */ K_unlock,",               # depends on mutexes
 "/* 25 */ K_enqreq,",               # depends on FIFOs
 "/* 26 */ K_enqrpl,",               # depends on FIFOs

@@ -61,7 +61,7 @@ extern void K_waitmend(struct k_args *);
 extern void K_waitmtmo(struct k_args *);
 extern void K_inqsema(struct k_args *);
 extern void K_lockreq(struct k_args *);
-extern void K_lockrpl(struct k_args *);
+extern void _k_mutex_lock_reply(struct k_args *);
 extern void K_unlock(struct k_args *);
 extern void K_enqreq(struct k_args *);
 extern void K_enqrpl(struct k_args *);
