@@ -819,7 +819,7 @@ def kernel_main_c_kernel_services():
 "/* 62 */ K_RelBlock,",             # depends on memory pools
 "/* 63 */ K_GetBlock_Waiters,",     # depends on memory pools
 "/* 64 */ K_gtbltmo,",              # depends on memory pools
-"/* 65 */ K_Defrag,",               # depends on memory pools
+"/* 65 */ _k_defrag,",              # depends on memory pools
 "/* 66 */ (kernelfunc) NULL,",      # unused
 "/* 67 */ (kernelfunc) NULL,",      # unused
 "/* 68 */ (kernelfunc) NULL,",      # unused

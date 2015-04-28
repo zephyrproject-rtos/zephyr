@@ -194,12 +194,12 @@ static void defrag(struct pool_struct *P,
 
 /*******************************************************************************
 *
-* K_Defrag - perform defragment memory pool request
+* _k_defrag - perform defragment memory pool request
 *
 * RETURNS: N/A
 */
 
-void K_Defrag(struct k_args *A)
+void _k_defrag(struct k_args *A)
 {
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
 

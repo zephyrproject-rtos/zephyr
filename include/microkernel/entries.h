@@ -99,7 +99,7 @@ extern void K_GetBlock(struct k_args *);
 extern void K_RelBlock(struct k_args *);
 extern void K_GetBlock_Waiters(struct k_args *);
 extern void K_gtbltmo(struct k_args *);
-extern void K_Defrag(struct k_args *);
+extern void _k_defrag(struct k_args *);
 
 extern void K_mvdreq(struct k_args *Req);
 extern void K_mvdsndreq(struct k_args *SndReq);

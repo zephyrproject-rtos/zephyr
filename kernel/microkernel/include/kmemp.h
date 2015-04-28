@@ -35,7 +35,7 @@
 
 extern void K_RelBlock(struct k_args *A);
 extern void K_GetBlock(struct k_args *A);
-extern void K_Defrag(struct k_args *A);
+extern void _k_defrag(struct k_args *A);
 extern void K_gtbltmo(struct k_args *A);
 
 #endif
