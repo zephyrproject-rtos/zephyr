@@ -180,12 +180,12 @@ void _k_fifo_deque_reply(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_deqreq - perform FIFO dequeue request
+* _k_fifo_deque_request - perform FIFO dequeue request
 *
 * RETURNS: N/A
 */
 
-void K_deqreq(struct k_args *A)
+void _k_fifo_deque_request(struct k_args *A)
 {
 	struct k_args *W;
 	struct que_struct *Q;

@@ -782,7 +782,7 @@ def kernel_main_c_kernel_services():
 "/* 25 */ _k_fifo_enque_request,",       # depends on FIFOs
 "/* 26 */ _k_fifo_enque_reply,",         # depends on FIFOs
 "/* 27 */ _k_fifo_enque_reply,",         # depends on FIFOs and timers
-"/* 28 */ K_deqreq,",               # depends on FIFOs
+"/* 28 */ _k_fifo_deque_request,",               # depends on FIFOs
 "/* 29 */ _k_fifo_deque_reply,",               # depends on FIFOs
 "/* 30 */ _k_fifo_deque_reply,",               # depends on FIFOs and timers
 "/* 31 */ K_queue,",                # depends on FIFOs

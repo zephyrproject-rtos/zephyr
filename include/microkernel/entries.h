@@ -65,7 +65,7 @@ extern void _k_mutex_lock_reply(struct k_args *);
 extern void K_unlock(struct k_args *);
 extern void _k_fifo_enque_request(struct k_args *);
 extern void _k_fifo_enque_reply(struct k_args *);
-extern void K_deqreq(struct k_args *);
+extern void _k_fifo_deque_request(struct k_args *);
 extern void _k_fifo_deque_reply(struct k_args *);
 extern void K_queue(struct k_args *);
 extern void _k_mbox_send_request(struct k_args *);
