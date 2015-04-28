@@ -160,6 +160,8 @@ int simple_udp_sendto_port(struct net_buf *buf, struct simple_udp_connection *c,
 
 void simple_udp_init(void);
 
+PROCESS_NAME(simple_udp_process);
+
 #endif /* SIMPLE_UDP_H */
 
 /** @} */
