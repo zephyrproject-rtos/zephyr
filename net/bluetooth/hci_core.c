@@ -467,7 +467,7 @@ static void hci_rx_fiber(void)
 		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
 
 		switch (buf->type) {
-			case BT_ACL:
+			case BT_ACL_IN:
 				hci_acl(buf);
 				break;
 			case BT_EVT:

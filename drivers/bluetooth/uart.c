@@ -154,7 +154,7 @@ void bt_uart_isr(void *unused)
 					remaining = bt_uart_evt_recv(buf);
 					break;
 				case H4_ACL:
-					buf->type = BT_ACL;
+					buf->type = BT_ACL_IN;
 					remaining = bt_uart_acl_recv(buf);
 					break;
 				default:
@@ -218,7 +218,7 @@ static int bt_uart_send(struct bt_buf *buf)
 	case BT_CMD:
 		*type = H4_CMD;
 		break;
-	case BT_ACL:
+	case BT_ACL_OUT:
 		*type = H4_ACL;
 		break;
 	case BT_EVT:

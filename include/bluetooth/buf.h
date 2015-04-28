@@ -42,9 +42,10 @@
 
 /* Type of data contained in this buffer */
 enum bt_buf_type {
-	BT_CMD,
-	BT_EVT,
-	BT_ACL,
+	BT_CMD,		/* HCI command */
+	BT_EVT,		/* HCI event */
+	BT_ACL_OUT,	/* Outgoing ACL data */
+	BT_ACL_IN,	/* Incoming ACL data */
 };
 
 struct bt_buf {

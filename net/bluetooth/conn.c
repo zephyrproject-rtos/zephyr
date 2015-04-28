@@ -318,7 +318,7 @@ struct bt_buf *bt_conn_create_pdu(struct bt_conn *conn, size_t len)
 	if (!buf)
 		return NULL;
 
-	buf->type = BT_ACL;
+	buf->type = BT_ACL_OUT;
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->handle = sys_cpu_to_le16(conn->handle);
