@@ -121,12 +121,12 @@ void _k_event_test_timeout(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_event_test - perform test for event request
+* _k_event_test - perform test for event request
 *
 * RETURNS: N/A
 */
 
-void K_event_test(struct k_args *A)
+void _k_event_test(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
 
