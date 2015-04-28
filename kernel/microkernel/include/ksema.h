@@ -34,7 +34,7 @@
 #define KSEMA_H
 
 extern void _k_sem_signal(struct k_args *A);
-extern void K_resets(struct k_args *A);
+extern void _k_sem_reset(struct k_args *A);
 extern void _k_sem_group_signal(struct k_args *A);
 extern void K_resetm(struct k_args *A);
 extern void _k_sem_wait_reply(struct k_args *A);

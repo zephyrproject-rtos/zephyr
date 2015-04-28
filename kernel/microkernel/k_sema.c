@@ -586,12 +586,12 @@ void isr_sem_give(ksem_t sema, /* semaphore to signal */
 
 /*******************************************************************************
 *
-* K_resets - handle semaphore reset request
+* _k_sem_reset - handle semaphore reset request
 *
 * RETURNS: N/A
 */
 
-void K_resets(struct k_args *A)
+void _k_sem_reset(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
 
@@ -610,7 +610,7 @@ void K_resetm(struct k_args *A)
 	ksem_t *L = A->Args.s1.list;
 
 	while ((A->Args.s1.sema = *L++) != ENDLIST)
-		K_resets(A);
+		_k_sem_reset(A);
 }
 
 /*******************************************************************************
