@@ -357,14 +357,22 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 
 	for (i = 0; i < num_handles; i++) {
 		uint16_t handle, count;
+		struct bt_buf *buf;
 
 		handle = sys_le16_to_cpu(evt->h[i].handle);
 		count = sys_le16_to_cpu(evt->h[i].count);
 
 		BT_DBG("handle %u count %u\n", handle, count);
 
-		while (count--)
+		while (count--) {
 			nano_fiber_sem_give(&dev.le_pkts_sem);
+			buf = nano_fiber_fifo_get(&dev.acl_pend);
+			if (!buf) {
+				BT_ERR("Mismatch with pending ACL buffers\n");
+				continue;
+			}
+			bt_buf_put(buf);
+		}
 	}
 }
 
@@ -646,6 +654,9 @@ int bt_init(void)
 	err = hci_init();
 	if (err)
 		return err;
+
+	/* Initialize pending ACL packets FIFO */
+	nano_fifo_init(&dev.acl_pend);
 
 	/* Re-initialize buffers now that we know the ACL counts */
 	if (dev.le_pkts > ACL_OUT_MAX)

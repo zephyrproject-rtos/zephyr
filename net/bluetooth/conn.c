@@ -208,7 +208,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 		}
 
 		dev->drv->send(buf);
-		bt_buf_put(buf);
+		nano_fiber_fifo_put(&dev->acl_pend, buf);
 	}
 
 	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
