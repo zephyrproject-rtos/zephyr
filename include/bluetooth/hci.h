@@ -32,6 +32,9 @@
 #ifndef __BT_HCI_H
 #define __BT_HCI_H
 
+#include <toolchain.h>
+#include <stdint.h>
+
 /* EIR/AD definitions */
 #define BT_EIR_FLAGS			0x01 /* AD flags */
 #define BT_EIR_NAME_COMPLETE		0x09 /* Complete name */
