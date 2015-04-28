@@ -295,7 +295,7 @@ void _task_ioctl(ktask_t task, /* task on which to operate */
 
 /*******************************************************************************
 *
-* K_groupop - handle task group operation request
+* _k_task_group_op - handle task group operation request
 *
 * This routine handles any one of the following task group operations requests:
 *   starting either kernel or user tasks, aborting tasks, suspending tasks,
@@ -304,7 +304,7 @@ void _task_ioctl(ktask_t task, /* task on which to operate */
 * RETURNS: N/A
 */
 
-void K_groupop(struct k_args *A)
+void _k_task_group_op(struct k_args *A)
 {
 	ktask_group_t grp = A->Args.g1.group;
 	int opt = A->Args.g1.opt;

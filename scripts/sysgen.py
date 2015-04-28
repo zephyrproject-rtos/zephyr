@@ -798,7 +798,7 @@ def kernel_main_c_kernel_services():
 "/* 41 */ K_sleep,",                # depends on timers
 "/* 42 */ K_wakeup,",               # depends on timers
 "/* 43 */ _k_task_op,",             # required
-"/* 44 */ K_groupop,",              # required
+"/* 44 */ _k_task_group_op,",       # required
 "/* 45 */ K_set_prio,",             # required
 "/* 46 */ K_yield,",                # required
 "/* 47 */ K_alloc,",                # depends on memory maps

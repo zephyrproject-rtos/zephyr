@@ -41,7 +41,7 @@
 extern void start_task(struct k_proc *X, void (*func)(void));
 extern void abort_task(struct k_proc *X);
 extern void _k_task_op(struct k_args *A);
-extern void K_groupop(struct k_args *A);
+extern void _k_task_group_op(struct k_args *A);
 extern void K_set_prio(struct k_args *A);
 extern void K_yield(struct k_args *A);
 
