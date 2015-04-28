@@ -48,73 +48,7 @@
 static char rx_fiber_stack[RX_STACK_SIZE];
 static char cmd_fiber_stack[CMD_STACK_SIZE];
 
-/* Available (free) buffers queue */
-#define NUM_BUFS		5
-static struct bt_buf		buffers[NUM_BUFS];
-static struct nano_fifo		free_bufs;
-
 static struct bt_dev dev;
-
-struct bt_buf *bt_buf_get_reserve(size_t reserve_head)
-{
-	struct bt_buf *buf;
-
-	buf = nano_fifo_get(&free_bufs);
-	if (!buf) {
-		BT_ERR("Failed to get free buffer\n");
-		return NULL;
-	}
-
-	buf->data = buf->buf + reserve_head;
-	buf->len = 0;
-	buf->sync = NULL;
-
-	BT_DBG("buf %p reserve %u\n", buf, reserve_head);
-
-	return buf;
-}
-
-struct bt_buf *bt_buf_get(void)
-{
-	return bt_buf_get_reserve(0);
-}
-
-void bt_buf_put(struct bt_buf *buf)
-{
-	BT_DBG("buf %p\n", buf);
-
-	nano_fifo_put(&free_bufs, buf);
-}
-
-uint8_t *bt_buf_add(struct bt_buf *buf, size_t len)
-{
-	uint8_t *tail = buf->data + buf->len;
-	buf->len += len;
-	return tail;
-}
-
-uint8_t *bt_buf_push(struct bt_buf *buf, size_t len)
-{
-	buf->data -= len;
-	buf->len += len;
-	return buf->data;
-}
-
-uint8_t *bt_buf_pull(struct bt_buf *buf, size_t len)
-{
-	buf->len -= len;
-	return buf->data += len;
-}
-
-size_t bt_buf_headroom(struct bt_buf *buf)
-{
-	return buf->data - buf->buf;
-}
-
-size_t bt_buf_tailroom(struct bt_buf *buf)
-{
-	return BT_BUF_MAX_DATA - bt_buf_headroom(buf) - buf->len;
-}
 
 static struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 {
@@ -687,14 +621,6 @@ static void rx_queue_init(void)
 		    (nano_fiber_entry_t) hci_rx_fiber, 0, 0, 7, 0);
 }
 
-static void free_queue_init(void)
-{
-	nano_fifo_init(&free_bufs);
-
-	for (int i = 0; i < NUM_BUFS; i++)
-		nano_fifo_put(&free_bufs, &buffers[i]);
-}
-
 int bt_init(void)
 {
 	struct bt_driver *drv = dev.drv;
@@ -703,7 +629,7 @@ int bt_init(void)
 	if (!drv)
 		return -ENODEV;
 
-	free_queue_init();
+	bt_buf_init();
 	cmd_queue_init();
 	rx_queue_init();
 

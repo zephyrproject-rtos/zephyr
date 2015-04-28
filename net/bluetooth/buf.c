@@ -1,4 +1,4 @@
-/* bluetooth.h - HCI core Bluetooth definitions */
+/* buf.c - Bluetooth buffer management */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -29,49 +29,87 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __BT_BLUETOOTH_H
-#define __BT_BLUETOOTH_H
 
-#include <misc/printk.h>
+#include <nanokernel.h>
+#include <toolchain.h>
+#include <stddef.h>
+
+#include <bluetooth/hci.h>
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/buf.h>
 
-/* Bluetooth subsystem logging helpers */
+#include "hci_core.h"
 
-#define BT_DBG(fmt, ...) printk("bt: %s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_ERR(fmt, ...) printk("bt: %s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_INFO(fmt, ...) printk("bt: " fmt,  ##__VA_ARGS__)
+/* Available (free) buffers queue */
+#define NUM_BUFS		5
+static struct bt_buf		buffers[NUM_BUFS];
+static struct nano_fifo		free_bufs;
 
-/* HCI control APIs */
+struct bt_buf *bt_buf_get_reserve(size_t reserve_head)
+{
+	struct bt_buf *buf;
 
-/* Reset the state of the controller (i.e. perform full HCI init */
-int bt_hci_reset(void);
+	buf = nano_fifo_get(&free_bufs);
+	if (!buf) {
+		BT_ERR("Failed to get free buffer\n");
+		return NULL;
+	}
 
-/* Initialize Bluetooth. Must be the called before anything else. */
-int bt_init(void);
+	buf->data = buf->buf + reserve_head;
+	buf->len = 0;
+	buf->sync = NULL;
 
-/* HCI driver API */
+	BT_DBG("buf %p reserve %u\n", buf, reserve_head);
 
-/* Receive data from the controller/HCI driver */
-void bt_recv(struct bt_buf *buf);
+	return buf;
+}
 
-struct bt_driver {
-	/* How much headroom is needed for HCI transport headers */
-	size_t head_reserve;
+struct bt_buf *bt_buf_get(void)
+{
+	return bt_buf_get_reserve(0);
+}
 
-	/* Open the HCI transport */
-	int (*open) (void);
+void bt_buf_put(struct bt_buf *buf)
+{
+	BT_DBG("buf %p\n", buf);
 
-	/* Send data to HCI */
-	int (*send) (struct bt_buf *buf);
-};
+	nano_fifo_put(&free_bufs, buf);
+}
 
-/* Register a new HCI driver to the Bluetooth stack */
-int bt_driver_register(struct bt_driver *drv);
+uint8_t *bt_buf_add(struct bt_buf *buf, size_t len)
+{
+	uint8_t *tail = buf->data + buf->len;
+	buf->len += len;
+	return tail;
+}
 
-/* Unregister a previously registered HCI driver */
-void bt_driver_unregister(struct bt_driver *drv);
+uint8_t *bt_buf_push(struct bt_buf *buf, size_t len)
+{
+	buf->data -= len;
+	buf->len += len;
+	return buf->data;
+}
 
-/* Advertising testing API */
-int bt_start_advertising(uint8_t type, const char *name, uint8_t name_len);
+uint8_t *bt_buf_pull(struct bt_buf *buf, size_t len)
+{
+	buf->len -= len;
+	return buf->data += len;
+}
 
-#endif /* __BT_BLUETOOTH_H */
+size_t bt_buf_headroom(struct bt_buf *buf)
+{
+	return buf->data - buf->buf;
+}
+
+size_t bt_buf_tailroom(struct bt_buf *buf)
+{
+	return BT_BUF_MAX_DATA - bt_buf_headroom(buf) - buf->len;
+}
+
+void bt_buf_init(void)
+{
+	nano_fifo_init(&free_bufs);
+
+	for (int i = 0; i < NUM_BUFS; i++)
+		nano_fifo_put(&free_bufs, &buffers[i]);
+}
