@@ -294,13 +294,13 @@ void _k_sem_wait_reply(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_waitmreq - handle internal wait request on a semaphore involved in a
+* _k_sem_group_wait_request - handle internal wait request on a semaphore involved in a
 *              semaphore group wait request
 *
 * RETURNS: N/A
 */
 
-void K_waitmreq(struct k_args *A)
+void _k_sem_group_wait_request(struct k_args *A)
 {
 	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
 	struct k_args *X = S->Waiters;
