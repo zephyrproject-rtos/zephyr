@@ -466,12 +466,12 @@ ksem_t _task_sem_group_take(ksemg_t group, /* group of semaphores to test */
 
 /*******************************************************************************
 *
-* K_signals - handle semaphore signal request
+* _k_sem_signal - handle semaphore signal request
 *
 * RETURNS: N/A
 */
 
-void K_signals(struct k_args *A)
+void _k_sem_signal(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
 
@@ -490,7 +490,7 @@ void _k_sem_group_signal(struct k_args *A)
 	ksem_t *L = A->Args.s1.list;
 
 	while ((A->Args.s1.sema = *L++) != ENDLIST)
-		K_signals(A);
+		_k_sem_signal(A);
 }
 
 /*******************************************************************************

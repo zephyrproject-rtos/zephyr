@@ -244,7 +244,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 #endif
 			A.Comm = SIGNALS;
 			A.Args.s1.sema = pCopyWriter->Args.m1.mess.extra.sema;
-			K_signals(&A);
+			_k_sem_signal(&A);
 		}
 
 		/*

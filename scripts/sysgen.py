@@ -760,7 +760,7 @@ def kernel_main_c_kernel_services():
 "/*  3 */ (kernelfunc) NULL,",      # unused
 "/*  4 */ K_offload,",              # required
 "/*  5 */ K_workload,",             # required
-"/*  6 */ K_signals,",              # depends on semaphores
+"/*  6 */ _k_sem_signal,",                    # depends on semaphores
 "/*  7 */ _k_sem_group_signal,",              # depends on semaphores
 "/*  8 */ K_resets,",               # depends on semaphores
 "/*  9 */ K_resetm,",               # depends on semaphores

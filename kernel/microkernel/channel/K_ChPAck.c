@@ -66,7 +66,7 @@ void K_ChSendAck(struct k_args *Request)
 			struct k_args A;
 			A.Comm = SIGNALS;
 			A.Args.s1.sema = pChAck->ReqType.Async.sema;
-			K_signals(&A); /* will return immediately */
+			_k_sem_signal(&A); /* will return immediately */
 		}
 	} else {
 		/* Reschedule the sender task: */
