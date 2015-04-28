@@ -754,88 +754,94 @@ def kernel_main_c_kernel_services():
     # initialize table with info for all possible kernel services
 
     func_table = [
-"/*  0 */ _k_nop,",                 # required
-"/*  1 */ _k_movedata_request,",               # required
-"/*  2 */ (kernelfunc) NULL,",      # unused
-"/*  3 */ (kernelfunc) NULL,",      # unused
-"/*  4 */ _k_offload_to_fiber,",       # required
-"/*  5 */ _k_node_workload_get,",            # required
-"/*  6 */ _k_sem_signal,",                    # depends on semaphores
-"/*  7 */ _k_sem_group_signal,",              # depends on semaphores
-"/*  8 */ _k_sem_reset,",                     # depends on semaphores
-"/*  9 */ _k_sem_group_reset,",               # depends on semaphores
-"/* 10 */ _k_sem_wait_request,",               # depends on semaphores
-"/* 11 */ _k_sem_wait_reply,",             # depends on semaphores
-"/* 12 */ _k_sem_wait_reply,",             # depends on semaphores and timers
-"/* 13 */ _k_sem_group_wait_any,",             # depends on semaphores
-"/* 14 */ _k_sem_group_wait_request,",         # depends on semaphores
-"/* 15 */ _k_sem_group_ready,",                # depends on semaphores
-"/* 16 */ _k_sem_group_wait_cancel,",          # depends on semaphores
-"/* 17 */ _k_sem_group_wait_accept,",          # depends on semaphores
-"/* 18 */ _k_sem_group_wait,",             # depends on semaphores
-"/* 19 */ _k_sem_group_wait_timeout,",      # depends on semaphores and timers
-"/* 20 */ _k_sem_inquiry,",                    # depends on semaphores
-"/* 21 */ _k_mutex_lock_request,",        # depends on mutexes
-"/* 22 */ _k_mutex_lock_reply,",          # depends on mutexes
-"/* 23 */ _k_mutex_lock_reply,",          # depends on mutexes and timers
-"/* 24 */ _k_mutex_unlock,",        # depends on mutexes
-"/* 25 */ _k_fifo_enque_request,",       # depends on FIFOs
-"/* 26 */ _k_fifo_enque_reply,",         # depends on FIFOs
-"/* 27 */ _k_fifo_enque_reply,",         # depends on FIFOs and timers
-"/* 28 */ _k_fifo_deque_request,",               # depends on FIFOs
-"/* 29 */ _k_fifo_deque_reply,",               # depends on FIFOs
-"/* 30 */ _k_fifo_deque_reply,",               # depends on FIFOs and timers
-"/* 31 */ _k_fifo_ioctl,",               # depends on FIFOs
-"/* 32 */ _k_mbox_send_request,",   # depends on mailboxes
-"/* 33 */ _k_mbox_send_reply,",     # depends on mailboxes and timers
-"/* 34 */ _k_mbox_send_ack,",       # depends on mailboxes
-"/* 35 */ _k_mbox_send_data,",      # depends on mailboxes
-"/* 36 */ _k_mbox_receive_request,",# depends on mailboxes
-"/* 37 */ _k_mbox_receive_reply,",  # depends on mailboxes and timers
-"/* 38 */ _k_mbox_receive_ack,",    # depends on mailboxes
-"/* 39 */ _k_mbox_receive_data,",   # depends on mailboxes
-"/* 40 */ _k_time_elapse,",         # required
-"/* 41 */ _k_task_sleep,",          # depends on timers
-"/* 42 */ _k_task_wakeup,",         # depends on timers
-"/* 43 */ _k_task_op,",             # required
-"/* 44 */ _k_task_group_op,",       # required
-"/* 45 */ _k_task_priority_set,",            # required
-"/* 46 */ _k_task_yield,",          # required
-"/* 47 */ _k_mem_map_alloc,",        # depends on memory maps
-"/* 48 */ _k_mem_map_dealloc,",      # depends on memory maps
-"/* 49 */ _k_timer_alloc,",         # depends on timers
-"/* 50 */ _k_timer_dealloc,",       # depends on timers
-"/* 51 */ _k_timer_start,",         # depends on timers
-"/* 52 */ _k_timer_stop,",          # depends on timers
-"/* 53 */ _k_mem_map_alloc_timeout,",# depends on memory maps [and timers?]
-"/* 54 */ (kernelfunc) NULL,",      # unused
-"/* 55 */ (kernelfunc) NULL,",      # unused
-"/* 56 */ (kernelfunc) NULL,",      # unused
-"/* 57 */ (kernelfunc) NULL,",      # unused
-"/* 58 */ _k_event_test,",          # required
-"/* 59 */ _k_event_handler_set,",   # required
-"/* 60 */ _k_event_signal,",        # required
-"/* 61 */ _k_mem_pool_block_get,",           # depends on memory pools
-"/* 62 */ _k_mem_pool_block_release,",       # depends on memory pools
-"/* 63 */ _k_block_waiters_get,",   # depends on memory pools
-"/* 64 */ _k_mem_pool_block_get_timeout_handle,",   # depends on memory pools
-"/* 65 */ _k_defrag,",              # depends on memory pools
-"/* 66 */ (kernelfunc) NULL,",      # unused
-"/* 67 */ (kernelfunc) NULL,",      # unused
-"/* 68 */ (kernelfunc) NULL,",      # unused
-"/* 69 */ (kernelfunc) NULL,",      # unused
-"/* 70 */ (kernelfunc) NULL,",      # unused
-"/* 71 */ (kernelfunc) NULL,",      # unused
-"/* 72 */ K_ChSendReq,",            # depends on pipes
-"/* 73 */ K_ChSendTmo,",            # depends on pipes
-"/* 74 */ K_ChSendRpl,",            # depends on pipes
-"/* 75 */ K_ChSendAck,",            # depends on pipes
-"/* 76 */ K_ChRecvReq,",            # depends on pipes
-"/* 77 */ K_ChRecvTmo,",            # depends on pipes
-"/* 78 */ K_ChRecvRpl,",            # depends on pipes
-"/* 79 */ K_ChRecvAck,",            # depends on pipes
-"/* 80 */ K_ChMovedAck,",           # depends on pipes
-"/* 81 */ _k_event_test_timeout"    # required
+"/*  0 */ _k_nop,",                               # required
+"/*  1 */ _k_movedata_request,",                  # required
+"/*  2 */ (kernelfunc) NULL,",                    # unused
+"/*  3 */ (kernelfunc) NULL,",                    # unused
+"/*  4 */ _k_offload_to_fiber,",                  # required
+"/*  5 */ _k_node_workload_get,",                 # required
+"/*  6 */ _k_sem_signal,",                        # depends on semaphores
+"/*  7 */ _k_sem_group_signal,",                  # depends on semaphores
+"/*  8 */ _k_sem_reset,",                         # depends on semaphores
+"/*  9 */ _k_sem_group_reset,",                   # depends on semaphores
+"/* 10 */ _k_sem_wait_request,",                  # depends on semaphores
+"/* 11 */ _k_sem_wait_reply,",                    # depends on semaphores
+"/* 12 */ _k_sem_wait_reply,",                    # depends on semaphores and
+                                                  #  timers
+"/* 13 */ _k_sem_group_wait_any,",                # depends on semaphores
+"/* 14 */ _k_sem_group_wait_request,",            # depends on semaphores
+"/* 15 */ _k_sem_group_ready,",                   # depends on semaphores
+"/* 16 */ _k_sem_group_wait_cancel,",             # depends on semaphores
+"/* 17 */ _k_sem_group_wait_accept,",             # depends on semaphores
+"/* 18 */ _k_sem_group_wait,",                    # depends on semaphores
+"/* 19 */ _k_sem_group_wait_timeout,",            # depends on semaphores and
+                                                  #  timers
+"/* 20 */ _k_sem_inquiry,",                       # depends on semaphores
+"/* 21 */ _k_mutex_lock_request,",                # depends on mutexes
+"/* 22 */ _k_mutex_lock_reply,",                  # depends on mutexes
+"/* 23 */ _k_mutex_lock_reply,",                  # depends on mutexes and
+                                                  #  timers
+"/* 24 */ _k_mutex_unlock,",                      # depends on mutexes
+"/* 25 */ _k_fifo_enque_request,",                # depends on FIFOs
+"/* 26 */ _k_fifo_enque_reply,",                  # depends on FIFOs
+"/* 27 */ _k_fifo_enque_reply,",                  # depends on FIFOs and timers
+"/* 28 */ _k_fifo_deque_request,",                # depends on FIFOs
+"/* 29 */ _k_fifo_deque_reply,",                  # depends on FIFOs
+"/* 30 */ _k_fifo_deque_reply,",                  # depends on FIFOs and timers
+"/* 31 */ _k_fifo_ioctl,",                        # depends on FIFOs
+"/* 32 */ _k_mbox_send_request,",                 # depends on mailboxes
+"/* 33 */ _k_mbox_send_reply,",                   # depends on mailboxes and
+                                                  #  timers
+"/* 34 */ _k_mbox_send_ack,",                     # depends on mailboxes
+"/* 35 */ _k_mbox_send_data,",                    # depends on mailboxes
+"/* 36 */ _k_mbox_receive_request,",              # depends on mailboxes
+"/* 37 */ _k_mbox_receive_reply,",                # depends on mailboxes and
+                                                  #  timers
+"/* 38 */ _k_mbox_receive_ack,",                  # depends on mailboxes
+"/* 39 */ _k_mbox_receive_data,",                 # depends on mailboxes
+"/* 40 */ _k_time_elapse,",                       # required
+"/* 41 */ _k_task_sleep,",                        # depends on timers
+"/* 42 */ _k_task_wakeup,",                       # depends on timers
+"/* 43 */ _k_task_op,",                           # required
+"/* 44 */ _k_task_group_op,",                     # required
+"/* 45 */ _k_task_priority_set,",                 # required
+"/* 46 */ _k_task_yield,",                        # required
+"/* 47 */ _k_mem_map_alloc,",                     # depends on memory maps
+"/* 48 */ _k_mem_map_dealloc,",                   # depends on memory maps
+"/* 49 */ _k_timer_alloc,",                       # depends on timers
+"/* 50 */ _k_timer_dealloc,",                     # depends on timers
+"/* 51 */ _k_timer_start,",                       # depends on timers
+"/* 52 */ _k_timer_stop,",                        # depends on timers
+"/* 53 */ _k_mem_map_alloc_timeout,",             # depends on memory maps
+                                                  #  [and timers?]
+"/* 54 */ (kernelfunc) NULL,",                    # unused
+"/* 55 */ (kernelfunc) NULL,",                    # unused
+"/* 56 */ (kernelfunc) NULL,",                    # unused
+"/* 57 */ (kernelfunc) NULL,",                    # unused
+"/* 58 */ _k_event_test,",                        # required
+"/* 59 */ _k_event_handler_set,",                 # required
+"/* 60 */ _k_event_signal,",                      # required
+"/* 61 */ _k_mem_pool_block_get,",                # depends on memory pools
+"/* 62 */ _k_mem_pool_block_release,",            # depends on memory pools
+"/* 63 */ _k_block_waiters_get,",                 # depends on memory pools
+"/* 64 */ _k_mem_pool_block_get_timeout_handle,", # depends on memory pools
+"/* 65 */ _k_defrag,",                            # depends on memory pools
+"/* 66 */ (kernelfunc) NULL,",                    # unused
+"/* 67 */ (kernelfunc) NULL,",                    # unused
+"/* 68 */ (kernelfunc) NULL,",                    # unused
+"/* 69 */ (kernelfunc) NULL,",                    # unused
+"/* 70 */ (kernelfunc) NULL,",                    # unused
+"/* 71 */ (kernelfunc) NULL,",                    # unused
+"/* 72 */ K_ChSendReq,",                          # depends on pipes
+"/* 73 */ K_ChSendTmo,",                          # depends on pipes
+"/* 74 */ K_ChSendRpl,",                          # depends on pipes
+"/* 75 */ K_ChSendAck,",                          # depends on pipes
+"/* 76 */ K_ChRecvReq,",                          # depends on pipes
+"/* 77 */ K_ChRecvTmo,",                          # depends on pipes
+"/* 78 */ K_ChRecvRpl,",                          # depends on pipes
+"/* 79 */ K_ChRecvAck,",                          # depends on pipes
+"/* 80 */ K_ChMovedAck,",                         # depends on pipes
+"/* 81 */ _k_event_test_timeout"                  # required
     ]
 
     # eliminate table entries for kernel services that project doesn't utilize
