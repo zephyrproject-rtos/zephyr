@@ -240,7 +240,7 @@ ktimer_t task_timer_alloc(void)
 
 /*******************************************************************************
 *
-* K_dealloc_timer - handle timer deallocation request
+* _k_timer_dealloc - handle timer deallocation request
 *
 * This routine, called by K_swapper(), handles the request for deallocating a
 * timer.
@@ -248,7 +248,7 @@ ktimer_t task_timer_alloc(void)
 * RETURNS: N/A
 */
 
-void K_dealloc_timer(struct k_args *P)
+void _k_timer_dealloc(struct k_args *P)
 {
 	K_TIMER *T = P->Args.c1.timer;
 	struct k_args *A = T->Args;
