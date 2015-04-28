@@ -42,6 +42,10 @@
 #include "hci_core.h"
 #include "conn.h"
 
+/* How many buffers to use for incoming ACL data */
+#define ACL_IN_MAX	7
+#define ACL_OUT_MAX	7
+
 /* Stacks for the fibers */
 #define RX_STACK_SIZE	1024
 #define CMD_STACK_SIZE	256
@@ -623,12 +627,15 @@ static void rx_queue_init(void)
 int bt_init(void)
 {
 	struct bt_driver *drv = dev.drv;
+	int acl_out;
 	int err;
 
 	if (!drv)
 		return -ENODEV;
 
-	bt_buf_init();
+	/* Initialize buffers with zero ACL for starters */
+	bt_buf_init(0, 0);
+
 	cmd_queue_init();
 	rx_queue_init();
 
@@ -636,7 +643,17 @@ int bt_init(void)
 	if (err)
 		return err;
 
-	return hci_init();
+	err = hci_init();
+	if (err)
+		return err;
+
+	/* Re-initialize buffers now that we know the ACL counts */
+	if (dev.le_pkts > ACL_OUT_MAX)
+		acl_out = ACL_OUT_MAX;
+	else
+		acl_out = dev.le_pkts;
+
+	return bt_buf_init(ACL_IN_MAX, acl_out);
 }
 
 int bt_start_advertising(uint8_t type, const char *name, uint8_t name_len)

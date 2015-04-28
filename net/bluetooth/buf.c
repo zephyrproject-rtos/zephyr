@@ -32,6 +32,7 @@
 
 #include <nanokernel.h>
 #include <toolchain.h>
+#include <errno.h>
 #include <stddef.h>
 
 #include <bluetooth/hci.h>
@@ -40,16 +41,36 @@
 
 #include "hci_core.h"
 
-/* Available (free) buffers queue */
-#define NUM_BUFS		5
+/* Total number of all types of buffers */
+#define NUM_BUFS		20
 static struct bt_buf		buffers[NUM_BUFS];
-static struct nano_fifo		free_bufs;
+
+/* Available (free) buffers queues */
+static struct nano_fifo		avail_hci;
+static struct nano_fifo		avail_acl_in;
+static struct nano_fifo		avail_acl_out;
+
+static struct nano_fifo *get_avail(enum bt_buf_type type)
+{
+	switch (type) {
+	case BT_CMD:
+	case BT_EVT:
+		return &avail_hci;
+	case BT_ACL_IN:
+		return &avail_acl_in;
+	case BT_ACL_OUT:
+		return &avail_acl_out;
+	default:
+		return NULL;
+	}
+}
 
 struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 {
+	struct nano_fifo *avail = get_avail(type);
 	struct bt_buf *buf;
 
-	buf = nano_fifo_get(&free_bufs);
+	buf = nano_fifo_get(avail);
 	if (!buf) {
 		BT_ERR("Failed to get free buffer\n");
 		return NULL;
@@ -67,9 +88,11 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 
 void bt_buf_put(struct bt_buf *buf)
 {
+	struct nano_fifo *avail = get_avail(buf->type);
+
 	BT_DBG("buf %p\n", buf);
 
-	nano_fifo_put(&free_bufs, buf);
+	nano_fifo_put(avail, buf);
 }
 
 uint8_t *bt_buf_add(struct bt_buf *buf, size_t len)
@@ -102,10 +125,30 @@ size_t bt_buf_tailroom(struct bt_buf *buf)
 	return BT_BUF_MAX_DATA - bt_buf_headroom(buf) - buf->len;
 }
 
-void bt_buf_init(void)
+int bt_buf_init(int acl_in, int acl_out)
 {
-	nano_fifo_init(&free_bufs);
+	int i;
 
-	for (int i = 0; i < NUM_BUFS; i++)
-		nano_fifo_put(&free_bufs, &buffers[i]);
+	/* Check that we have enough buffers configured */
+	if (acl_out + acl_in >= NUM_BUFS - 2) {
+		BT_ERR("Too many ACL buffers requested\n");
+		return -EINVAL;
+	}
+
+	BT_DBG("Available bufs: ACL in: %d, ACL out: %d, cmds/evts: %d\n",
+	       acl_in, acl_out, NUM_BUFS - (acl_in + acl_out));
+
+	nano_fifo_init(&avail_acl_in);
+	for (i = 0; acl_in > 0; i++, acl_in--)
+		nano_fifo_put(&avail_acl_in, &buffers[i]);
+
+	nano_fifo_init(&avail_acl_out);
+	for (; acl_out > 0; i++, acl_out--)
+		nano_fifo_put(&avail_acl_out, &buffers[i]);
+
+	nano_fifo_init(&avail_hci);
+	for (; i < NUM_BUFS; i++)
+		nano_fifo_put(&avail_hci, &buffers[i]);
+
+	return 0;
 }

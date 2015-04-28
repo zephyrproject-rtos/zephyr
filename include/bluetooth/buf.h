@@ -91,7 +91,10 @@ size_t bt_buf_headroom(struct bt_buf *buf);
 /* Return pointer to the end of the data in the buffer */
 #define bt_buf_tail(buf) ((buf)->data + (buf)->len)
 
-/* Initialize the buffers */
-void bt_buf_init(void);
+/* Initialize the buffers with specified amount of incoming and outgoing
+ * ACL buffers. The HCI command and event buffers will be allocated from
+ * whatever is left over.
+ */
+int bt_buf_init(int acl_in, int acl_out);
 
 #endif /* __BT_BUF_H */
