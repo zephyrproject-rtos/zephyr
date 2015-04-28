@@ -57,12 +57,12 @@ void _k_fifo_enque_reply(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_enqreq - perform a FIFO enqueue request
+* _k_fifo_enque_request - perform a FIFO enqueue request
 *
 * RETURNS: N/A
 */
 
-void K_enqreq(struct k_args *A)
+void _k_fifo_enque_request(struct k_args *A)
 {
 	struct k_args *W;
 	struct que_struct *Q;

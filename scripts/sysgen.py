@@ -779,7 +779,7 @@ def kernel_main_c_kernel_services():
 "/* 22 */ _k_mutex_lock_reply,",          # depends on mutexes
 "/* 23 */ _k_mutex_lock_reply,",          # depends on mutexes and timers
 "/* 24 */ K_unlock,",               # depends on mutexes
-"/* 25 */ K_enqreq,",               # depends on FIFOs
+"/* 25 */ _k_fifo_enque_request,",       # depends on FIFOs
 "/* 26 */ _k_fifo_enque_reply,",         # depends on FIFOs
 "/* 27 */ _k_fifo_enque_reply,",         # depends on FIFOs and timers
 "/* 28 */ K_deqreq,",               # depends on FIFOs
