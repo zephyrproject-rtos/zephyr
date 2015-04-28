@@ -35,7 +35,7 @@
 
 /*******************************************************************************
 *
-* K_offload - process an "offload to fiber" request
+* _k_offload_to_fiber - process an "offload to fiber" request
 *
 * This routine simply invokes the requested function from within the context
 * of the K_swapper() fiber and saves the result.
@@ -43,7 +43,7 @@
 * RETURNS: N/A
 */
 
-void K_offload(struct k_args *A)
+void _k_offload_to_fiber(struct k_args *A)
 {
 	A->Args.u1.rval = (*A->Args.u1.func)(A->Args.u1.argp);
 }

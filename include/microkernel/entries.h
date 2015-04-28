@@ -44,7 +44,7 @@ typedef void (*kernelfunc)(struct k_args *);
 /* Jumptable entrypoints */
 
 extern void K_nop(struct k_args *);
-extern void K_offload(struct k_args *);
+extern void _k_offload_to_fiber(struct k_args *);
 extern void K_workload(struct k_args *);
 extern void _k_sem_signal(struct k_args *);
 extern void _k_sem_group_signal(struct k_args *);
