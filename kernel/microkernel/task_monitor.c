@@ -58,7 +58,7 @@ void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func)
 	_k_task_switch_callback = func;
 }
 
-void K_monitor_task(struct k_proc *X, uint32_t D)
+void _k_task_monitor(struct k_proc *X, uint32_t D)
 {
 #ifdef CONFIG_TASK_DEBUG
 	if (!_k_debug_halt)

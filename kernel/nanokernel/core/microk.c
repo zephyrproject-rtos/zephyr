@@ -163,7 +163,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 
 #ifdef CONFIG_TASK_MONITOR
 			if (_k_monitor_mask & MON_TSWAP) {
-				K_monitor_task(_k_current_task, 0);
+				_k_task_monitor(_k_current_task, 0);
 			}
 #endif
 		}

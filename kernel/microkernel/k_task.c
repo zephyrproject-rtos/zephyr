@@ -94,7 +94,7 @@ void reset_state_bit(struct k_proc *X,    /* ptr to task */
 		 * <f_new> now contains the bits that are different.
 		 */
 
-		K_monitor_task(X, f_new | MO_STBIT0);
+		_k_task_monitor(X, f_new | MO_STBIT0);
 	}
 #endif
 }
@@ -180,7 +180,7 @@ void set_state_bit(
 		 * <new_state_bits> now contains the bits that are different.
 		 */
 
-		K_monitor_task(task_ptr, new_state_bits | MO_STBIT1);
+		_k_task_monitor(task_ptr, new_state_bits | MO_STBIT1);
 	}
 #endif
 }
