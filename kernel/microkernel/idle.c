@@ -237,7 +237,7 @@ static inline int32_t _get_next_timer_expiry(void)
 * _power_save - power saving when idle
 *
 * If the BSP sets the _sys_power_save_flag flag, this routine will call the
-* _SysPowerSaveIdle() routine in an infinite loop. If the flag is not set,
+* _sys_power_save_idle() routine in an infinite loop. If the flag is not set,
 * this routine will fall through and kernel_idle() will try the next idling
 * mechanism.
 *
@@ -249,13 +249,13 @@ static void _power_save(void)
 {
 	extern void nano_cpu_idle(void);
 	extern unsigned char _sys_power_save_flag;
-	extern void _SysPowerSaveIdle(int32_t ticks);
+	extern void _sys_power_save_idle(int32_t ticks);
 
 	if (_sys_power_save_flag) {
 		for (;;) {
 			irq_lock_inline();
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
-			_SysPowerSaveIdle(_get_next_timer_expiry());
+			_sys_power_save_idle(_get_next_timer_expiry());
 #else
 			/*
 			 * nano_cpu_idle () is invoked here directly only if APM

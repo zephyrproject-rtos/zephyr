@@ -43,7 +43,7 @@ config	ADVANCED_POWER_MANAGEMENT
 	  This option enables the BSP to implement extra power management
 	  policies whenever the kernel becomes idle. The kernel informs the
 	  BSP of the number of ticks until the next kernel timer expires by
-	  calling the BSP function _SysPowerSaveIdle().
+	  calling the BSP function _sys_power_save_idle().
 
 config  TICKLESS_IDLE
 	bool

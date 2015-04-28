@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides an implementation of the architecture-specific
 nano_cpu_idle() primitive required by the nanokernel idle loop component.
-It can be called within an implementation of _SysPowerSaveIdle(),
+It can be called within an implementation of _sys_power_save_idle(),
 which is provided for the microkernel by the BSP.
 
 The module also provides an implementation of nano_cpu_atomic_idle(), which
@@ -69,7 +69,7 @@ by nano_cpu_atomic_idle().
 * nano_cpu_idle - power save idle routine for IA-32
 *
 * This function will be called by the nanokernel idle loop or possibly within
-* an implementation of _SysPowerSaveIdle in the microkernel when the
+* an implementation of _sys_power_save_idle in the microkernel when the
 * '_sys_power_save_flag' variable is non-zero.  The IA-32 'hlt' instruction
 * will be issued causing a low-power consumption sleep mode.
 *

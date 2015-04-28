@@ -122,7 +122,7 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
 * nano_cpu_idle - power save idle routine for ARM Cortex-M
 *
 * This function will be called by the nanokernel idle loop or possibly within
-* an implementation of _SysPowerSaveIdle in the microkernel when the
+* an implementation of _sys_power_save_idle in the microkernel when the
 * '_sys_power_save_flag' variable is non-zero.  The ARM 'wfi' instruction
 * will be issued, causing a low-power consumption sleep mode.
 *

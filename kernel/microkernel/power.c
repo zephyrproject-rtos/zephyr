@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module provides _sys_power_save_flag and _SysPowerSaveIdle(),
+This module provides _sys_power_save_flag and _sys_power_save_idle(),
 invoked within the microkernel idle loop.
 
 \INTERNAL
@@ -71,7 +71,7 @@ int32_t _sys_idle_threshold_ticks =
 
 /*******************************************************************************
 *
-* _SysPowerSaveIdle - power management policy when kernel is idle
+* _sys_power_save_idle - power management policy when kernel is idle
 *
 * This routine implements the power management policy based on the time
 * until the timer expires, in system ticks.
@@ -82,7 +82,7 @@ int32_t _sys_idle_threshold_ticks =
 * \NOMANUAL
 */
 
-void _SysPowerSaveIdle(int32_t ticks)
+void _sys_power_save_idle(int32_t ticks)
 {
 #if defined(CONFIG_TICKLESS_IDLE)
 	if ((ticks == -1) || ticks >= _sys_idle_threshold_ticks) {
