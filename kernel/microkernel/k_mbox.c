@@ -47,12 +47,12 @@
 
 /*******************************************************************************
 *
-* copypacket - copy a packet
+* copy_packet - copy a packet
 *
 * RETURNS: N/A
 */
 
-static void copypacket(struct k_args **out, struct k_args *in)
+static void copy_packet(struct k_args **out, struct k_args *in)
 {
 	GETARGS(*out);
 
@@ -344,7 +344,7 @@ void K_sendreq(struct k_args *Writer)
 
 	MailBox = _k_mbox_list + OBJ_INDEX(MailBoxId);
 
-	copypacket(&CopyWriter, Writer);
+	copy_packet(&CopyWriter, Writer);
 
 	if (bAsync) {
 		/*
@@ -571,7 +571,7 @@ void K_recvreq(struct k_args *Reader)
 	Reader->Ctxt.proc = _k_current_task;
 	set_state_bit(Reader->Ctxt.proc, TF_RECV);
 
-	copypacket(&CopyReader, Reader);
+	copy_packet(&CopyReader, Reader);
 
 	/*
 	 * The [Forw] field can be changed later when added to the Reader's
