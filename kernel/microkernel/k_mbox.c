@@ -509,7 +509,7 @@ int _task_mbox_put(kmbox_t mbox, /* mailbox */
 
 /*******************************************************************************
 *
-* K_recvack - process a mailbox receive acknowledgement
+* _k_mbox_receive_ack - process a mailbox receive acknowledgement
 *
 * This routine processes a mailbox receive acknowledgement.
 *
@@ -518,7 +518,7 @@ int _task_mbox_put(kmbox_t mbox, /* mailbox */
 * RETURNS: N/A
 */
 
-void K_recvack(struct k_args *pCopyReader)
+void _k_mbox_receive_ack(struct k_args *pCopyReader)
 {
 	struct k_args *Starter;
 
