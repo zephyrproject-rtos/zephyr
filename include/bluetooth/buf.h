@@ -54,12 +54,17 @@ struct bt_buf_hci_data {
 	uint16_t opcode;
 };
 
+struct bt_buf_acl_data {
+	uint16_t handle;
+};
+
 struct bt_buf {
 	/* FIFO uses first 4 bytes itself, reserve space */
 	int __unused;
 
 	union {
 		struct bt_buf_hci_data	hci;
+		struct bt_buf_acl_data	acl;
 	};
 
 	/* Type of data contained in the buffer */

@@ -125,11 +125,11 @@ static void hci_acl(struct bt_buf *buf)
 
 	handle = sys_le16_to_cpu(hdr->handle);
 	flags = (handle >> 12);
-	handle = bt_acl_handle(handle);
+	buf->acl.handle = bt_acl_handle(handle);
 
 	bt_buf_pull(buf, sizeof(*hdr));
 
-	BT_DBG("handle %u len %u flags %u\n", handle, len, flags);
+	BT_DBG("handle %u len %u flags %u\n", buf->acl.handle, len, flags);
 
 	if (buf->len != len) {
 		BT_ERR("ACL data length mismatch (%u != %u)\n", buf->len, len);
@@ -137,9 +137,9 @@ static void hci_acl(struct bt_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup(handle);
+	conn = bt_conn_lookup(buf->acl.handle);
 	if (!conn) {
-		BT_ERR("Unable to find conn for handle %u\n", handle);
+		BT_ERR("Unable to find conn for handle %u\n", buf->acl.handle);
 		bt_buf_put(buf);
 		return;
 	}

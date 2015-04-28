@@ -76,12 +76,12 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 		return NULL;
 	}
 
+	memset(buf, 0, sizeof(*buf));
+
 	buf->type = type;
 	buf->data = buf->buf + reserve_head;
-	buf->len = 0;
-	buf->hci.sync = NULL;
 
-	BT_DBG("buf %p reserve %u\n", buf, reserve_head);
+	BT_DBG("buf %p type %d reserve %u\n", buf, buf->type, reserve_head);
 
 	return buf;
 }
