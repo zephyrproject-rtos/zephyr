@@ -328,7 +328,7 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 
 /*******************************************************************************
 *
-* rgetblock - recursively get a block, doing fragmentation if necessary
+* get_block_recusive - recursively get a block, doing fragmentation if necessary
 *
 * [NEED A BETTER DESCRIPTION HERE]
 *
@@ -338,7 +338,7 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 * RETURNS: pointer to allocated block, or NULL if none available
 */
 
-static char *rgetblock(struct pool_struct *P, int index, int startindex)
+static char *get_block_recusive(struct pool_struct *P, int index, int startindex)
 {
 	int i;
 	char *found, *larger_block;
@@ -375,7 +375,7 @@ static char *rgetblock(struct pool_struct *P, int index, int startindex)
 
 	/* end of list and i is index of first empty entry in blocktable */
 	{
-		larger_block = rgetblock(
+		larger_block = get_block_recusive(
 			P, index - 1, startindex); /* get a block of one size larger */
 	}
 
@@ -444,7 +444,7 @@ void K_GetBlock_Waiters(struct k_args *A)
 		}
 
 		/* allocate block */
-		found_block = rgetblock(
+		found_block = get_block_recusive(
 			P, offset, offset); /* allocate and fragment blocks */
 
 		/* if success : remove task from list and reschedule */
@@ -521,7 +521,7 @@ void K_GetBlock(struct k_args *A)
 	/* offset: index in fragtable of the minimal blocksize */
 
 	found_block =
-		rgetblock(P, offset, offset); /* allocate and fragment blocks */
+		get_block_recusive(P, offset, offset); /* allocate and fragment blocks */
 
 	if (found_block != NULL) {
 		A->Args.p1.rep_poolptr = found_block;
