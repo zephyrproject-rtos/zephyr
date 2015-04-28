@@ -84,7 +84,7 @@ extern void _k_task_group_op(struct k_args *);
 extern void _k_task_priority_set(struct k_args *);
 extern void _k_task_yield(struct k_args *);
 extern void _k_mem_map_alloc(struct k_args *);
-extern void K_dealloc(struct k_args *);
+extern void _k_mem_map_dealloc(struct k_args *);
 extern void _k_timer_alloc(struct k_args *);
 extern void _k_timer_dealloc(struct k_args *);
 extern void _k_timer_start(struct k_args *);

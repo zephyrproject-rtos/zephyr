@@ -155,12 +155,12 @@ int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request
 
 /*******************************************************************************
 *
-* K_dealloc - perform return memory map block request
+* _k_mem_map_dealloc - perform return memory map block request
 *
 * RETURNS: N/A
 */
 
-void K_dealloc(struct k_args *A)
+void _k_mem_map_dealloc(struct k_args *A)
 {
 	struct map_struct *M = _k_mem_map_list + OBJ_INDEX(A->Args.a1.mmap);
 	struct k_args *X;
