@@ -37,7 +37,7 @@ extern void K_signals(struct k_args *A);
 extern void K_resets(struct k_args *A);
 extern void K_signalm(struct k_args *A);
 extern void K_resetm(struct k_args *A);
-extern void K_waitsrpl(struct k_args *A);
+extern void _k_sem_wait_reply(struct k_args *A);
 extern void K_waitsreq(struct k_args *A);
 extern void K_inqsema(struct k_args *A);
 extern void K_waitmany(struct k_args *A);

@@ -51,7 +51,7 @@ extern void K_signalm(struct k_args *);
 extern void K_resets(struct k_args *);
 extern void K_resetm(struct k_args *);
 extern void K_waitsreq(struct k_args *);
-extern void K_waitsrpl(struct k_args *);
+extern void _k_sem_wait_reply(struct k_args *);
 extern void K_waitmany(struct k_args *);
 extern void K_waitmreq(struct k_args *);
 extern void _k_sem_group_ready(struct k_args *);

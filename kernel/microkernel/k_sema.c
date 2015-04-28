@@ -275,12 +275,12 @@ void _k_sem_group_ready(struct k_args *R)
 
 /*******************************************************************************
 *
-* K_waitsrpl - reply to a semaphore wait request
+* _k_sem_wait_reply - reply to a semaphore wait request
 *
 * RETURNS: N/A
 */
 
-void K_waitsrpl(struct k_args *A)
+void _k_sem_wait_reply(struct k_args *A)
 {
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
