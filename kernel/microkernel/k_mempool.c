@@ -412,7 +412,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 
 /*******************************************************************************
 *
-* K_GetBlock_Waiters - examine tasks that are waiting for memory pool blocks
+* _k_block_waiters_get - examine tasks that are waiting for memory pool blocks
 *
 * This routine attempts to satisfy any incomplete block allocation requests for
 * the specified memory pool. It can be invoked either by the explicit freeing
@@ -422,7 +422,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 * RETURNS: N/A
 */
 
-void K_GetBlock_Waiters(struct k_args *A)
+void _k_block_waiters_get(struct k_args *A)
 {
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
 	char *found_block;
