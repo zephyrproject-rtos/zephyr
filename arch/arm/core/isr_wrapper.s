@@ -79,7 +79,8 @@ SECTION_FUNC(TEXT, _isr_wrapper)
      * the device for the next timer deadline is not interrupted.
      * For non-tickless idle, this ensures that the clearing of the kernel idle
      * state is not interrupted.
-     * In each case, _SysPowerSaveIdleExit is called with interrupts disabled.
+     * In each case, _sys_power_save_idle_exit is called with interrupts 
+     * disabled.
      */
     cpsid i  /* PRIMASK = 1 */
 
@@ -90,7 +91,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
     ittt ne
 	movne	r1, #0
         strne	r1, [r2, #__tNANO_idle_OFFSET]  /* clear kernel idle state */
-	blxne	_SysPowerSaveIdleExit
+	blxne	_sys_power_save_idle_exit
 
     cpsie i		/* re-enable interrupts (PRIMASK = 0) */
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */

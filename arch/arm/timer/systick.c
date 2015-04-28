@@ -112,7 +112,7 @@ extern uint32_t _hw_irq_to_c_handler_latency;
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 extern int32_t _NanoIdleValGet(void);
 extern void _NanoIdleValClear(void);
-extern void _SysPowerSaveIdleExit(int32_t ticks);
+extern void _sys_power_save_idle_exit(int32_t ticks);
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
 #ifdef CONFIG_TICKLESS_IDLE
@@ -292,7 +292,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	 * For non-tickless idle, this ensures that the clearing of the kernel
 	 * idle
 	 * state is not interrupted.
-	 * In each case, _SysPowerSaveIdleExit is called with interrupts
+	 * In each case, _sys_power_save_idle_exit is called with interrupts
 	 * disabled.
 	 */
 	__asm__(" cpsid i"); /* PRIMASK = 1 */
@@ -361,7 +361,7 @@ void _TIMER_INT_HANDLER(void *unused)
 		 * Note that for tickless idle, nothing will be done in
 		 * _timer_idle_exit.
 		 */
-		_SysPowerSaveIdleExit(numIdleTicks);
+		_sys_power_save_idle_exit(numIdleTicks);
 	}
 
 	__asm__(" cpsie i"); /* re-enable interrupts (PRIMASK = 0) */
@@ -540,7 +540,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 *
 * _timer_idle_exit - handling of tickless idle when interrupted
 *
-* The routine, called by _SysPowerSaveIdleExit, is responsible for taking
+* The routine, called by _sys_power_save_idle_exit, is responsible for taking
 * the timer out of idle mode and generating an interrupt at the next
 * tick interval.  It is expected that interrupts have been disabled.
 *

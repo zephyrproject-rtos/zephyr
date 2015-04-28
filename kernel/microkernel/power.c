@@ -112,7 +112,7 @@ void _sys_power_save_idle(int32_t ticks)
 
 /*******************************************************************************
 *
-* _SysPowerSaveIdleExit - power management policy when kernel leaves idle state
+* _sys_power_save_idle_exit - power management policy when kernel leaves idle state
 *
 * This routine implements the power management policy when kernel leaves idle
 * state. Routine can be modified to wake up other devices.
@@ -123,7 +123,7 @@ void _sys_power_save_idle(int32_t ticks)
 * \NOMANUAL
 */
 
-void _SysPowerSaveIdleExit(int32_t ticks)
+void _sys_power_save_idle_exit(int32_t ticks)
 {
 #ifdef CONFIG_TICKLESS_IDLE
 	if ((ticks == -1) || ticks >= _sys_idle_threshold_ticks) {

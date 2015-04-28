@@ -66,7 +66,7 @@ entering and exiting a C interrupt handler.
 	GTEXT(_Swap)
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
-	GTEXT(_SysPowerSaveIdleExit)
+	GTEXT(_sys_power_save_idle_exit)
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
 
@@ -223,13 +223,13 @@ BRANCH_LABEL(_HandleIdle)
 	movl	$0, __tNANO_idle_OFFSET(%ecx)
 
 	/*
-	 * Beware that a timer driver's _SysPowerSaveIdleExit() implementation might
+	 * Beware that a timer driver's _sys_power_save_idle_exit() implementation might
 	 * expect that interrupts are disabled when invoked.  This ensures that
 	 * the calculation and programming of the device for the next timer
 	 * deadline is not interrupted.
 	 */
 	 
-	call	_SysPowerSaveIdleExit
+	call	_sys_power_save_idle_exit
 	add	$0x4, %esp
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
