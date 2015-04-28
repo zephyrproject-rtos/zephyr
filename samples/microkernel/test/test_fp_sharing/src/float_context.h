@@ -112,16 +112,7 @@ typedef struct fpRegSet
 #define MAIN_FLOAT_REG_CHECK_BYTE (unsigned char)0xe5
 #define FIBER_FLOAT_REG_CHECK_BYTE (unsigned char)0xf9
 
-/* each supported architecture must provide an implementation of the following
- */
-
-void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer);
-void _StoreAllFloatRegisters(FP_REG_SET *pToBufffer);
 void _StoreNonVolatileFloatRegisters(FP_NONVOLATILE_REG_SET *pToBuffer);
-
-#if defined(CONFIG_ISA_IA32)
-void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer);
-#endif
 
 extern int fpu_sharing_error;
 

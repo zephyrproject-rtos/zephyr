@@ -1,7 +1,7 @@
-/* float_regs_x86.c - floating point register load/store APIs for IA-32  */
+/* Intel x86 GCC specific floating point register macros */
 
 /*
- * Copyright (c) 2011-2014 Wind River Systems, Inc.
+ * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,42 +30,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module provides implementations of the _LoadAllFloatRegisters(),
-_StoreAllFloatRegisters(), _LoadThenStoreAllFloatRegisters, and
-_StoreNonVolatileFloatRegisters() routines required by the 'floatContext' test.
-*/
+#ifndef _FLOAT_REGS_X86_GCC_H
+#define _FLOAT_REGS_X86_GCC_H
 
-#if defined(CONFIG_ISA_IA32)
+#if !defined(__GNUC__) || !defined(CONFIG_ISA_IA32)
+#error test_asm_inline_gcc.h goes only with x86 GCC
+#endif
 
 #include <toolchain.h>
 #include "float_context.h"
-
-#if defined(__DCC__)
-__asm volatile void _LoadAllFloatRegisters_inline(FP_REG_SET *pFromBuffer)
-{
-% reg pFromBuffer
-!
-	movdqu  0(pFromBuffer), %xmm0
-	movdqu 16(pFromBuffer), %xmm1
-	movdqu 32(pFromBuffer), %xmm2
-	movdqu 48(pFromBuffer), %xmm3
-	movdqu 64(pFromBuffer), %xmm4
-	movdqu 80(pFromBuffer), %xmm5
-	movdqu 96(pFromBuffer), %xmm6
-	movdqu 112(pFromBuffer), %xmm7
-
-	fldt   128(pFromBuffer)
-	fldt   138(pFromBuffer)
-	fldt   148(pFromBuffer)
-	fldt   158(pFromBuffer)
-	fldt   168(pFromBuffer)
-	fldt   178(pFromBuffer)
-	fldt   188(pFromBuffer)
-	fldt   198(pFromBuffer)
-}
-#endif
 
 /*******************************************************************************
 *
@@ -87,7 +60,7 @@ __asm volatile void _LoadAllFloatRegisters_inline(FP_REG_SET *pFromBuffer)
 * RETURNS: N/A
 */
 
-void _LoadAllFloatRegisters (FP_REG_SET *pFromBuffer)
+static inline void _LoadAllFloatRegisters (FP_REG_SET *pFromBuffer)
 {
 	/*
 	 * The 'movdqu' is the "move double quad unaligned" instruction: Move
@@ -112,7 +85,6 @@ void _LoadAllFloatRegisters (FP_REG_SET *pFromBuffer)
 	 *    dq = double quad (128 bit)
 	 */
 
-#if defined(__GNUC__)
 	__asm__ volatile (
 		"movdqu  0(%0), %%xmm0\n\t;"
 		"movdqu 16(%0), %%xmm1\n\t;"
@@ -134,47 +106,8 @@ void _LoadAllFloatRegisters (FP_REG_SET *pFromBuffer)
 
 		:: "r" (pFromBuffer)
 		);
-#elif defined(__DCC__)
-	_LoadAllFloatRegisters_inline (pFromBuffer);
-#endif
 }
 
-#if defined(__DCC__)
-__asm volatile void _LoadThenStoreAllFloatRegisters_inline(
-	FP_REG_SET *pFromToBuffer)
-{
-% reg pFromToBuffer
-!
-	movdqu  0(pFromToBuffer), %xmm0
-	movdqu 16(pFromToBuffer), %xmm1
-	movdqu 32(pFromToBuffer), %xmm2
-	movdqu 48(pFromToBuffer), %xmm3
-	movdqu 64(pFromToBuffer), %xmm4
-	movdqu 80(pFromToBuffer), %xmm5
-	movdqu 96(pFromToBuffer), %xmm6
-	movdqu 112(pFromToBuffer), %xmm7
-
-	fldt   128(pFromToBuffer)
-	fldt   138(pFromToBuffer)
-	fldt   148(pFromToBuffer)
-	fldt   158(pFromToBuffer)
-	fldt   168(pFromToBuffer)
-	fldt   178(pFromToBuffer)
-	fldt   188(pFromToBuffer)
-	fldt   198(pFromToBuffer)
-
-	/* pop the x87 FPU registers back to memory */
-
-	fstpt  198(pFromToBuffer)
-	fstpt  188(pFromToBuffer)
-	fstpt  178(pFromToBuffer)
-	fstpt  168(pFromToBuffer)
-	fstpt  158(pFromToBuffer)
-	fstpt  148(pFromToBuffer)
-	fstpt  138(pFromToBuffer)
-	fstpt  128(pFromToBuffer)
-}
-#endif
 
 /*******************************************************************************
 *
@@ -194,9 +127,8 @@ __asm volatile void _LoadThenStoreAllFloatRegisters_inline(
 * RETURNS: N/A
 */
 
-void _LoadThenStoreAllFloatRegisters (FP_REG_SET *pFromToBuffer)
+static inline void _LoadThenStoreAllFloatRegisters (FP_REG_SET *pFromToBuffer)
 {
-#if defined(__GNUC__)
 	__asm__ volatile (
 		"movdqu  0(%0), %%xmm0\n\t;"
 		"movdqu 16(%0), %%xmm1\n\t;"
@@ -229,36 +161,8 @@ void _LoadThenStoreAllFloatRegisters (FP_REG_SET *pFromToBuffer)
 
 		:: "r" (pFromToBuffer)
 		);
-#elif defined(__DCC__)
-	_LoadThenStoreAllFloatRegisters_inline (pFromToBuffer);
-#endif
 }
 
-
-#if defined(__DCC__)
-__asm volatile void _StoreAllFloatRegisters_inline(FP_REG_SET *pToBuffer)
-{
-% reg pToBuffer
-!
-	movdqu %xmm0, 0(pToBuffer)
-	movdqu %xmm1, 16(pToBuffer)
-	movdqu %xmm2, 32(pToBuffer)
-	movdqu %xmm3, 48(pToBuffer)
-	movdqu %xmm4, 64(pToBuffer)
-	movdqu %xmm5, 80(pToBuffer)
-	movdqu %xmm6, 96(pToBuffer)
-	movdqu %xmm7, 112(pToBuffer)
-
-	fstpt  198(pToBuffer)
-	fstpt  188(pToBuffer)
-	fstpt  178(pToBuffer)
-	fstpt  168(pToBuffer)
-	fstpt  158(pToBuffer)
-	fstpt  148(pToBuffer)
-	fstpt  138(pToBuffer)
-	fstpt  128(pToBuffer)
-}
-#endif
 
 /*******************************************************************************
 *
@@ -272,9 +176,8 @@ __asm volatile void _StoreAllFloatRegisters_inline(FP_REG_SET *pToBuffer)
 * RETURNS: N/A
 */
 
-void _StoreAllFloatRegisters (FP_REG_SET *pToBuffer)
+static inline void _StoreAllFloatRegisters (FP_REG_SET *pToBuffer)
 {
-#if defined(__GNUC__)
 	__asm__ volatile (
 		"movdqu %%xmm0, 0(%0)\n\t;"
 		"movdqu %%xmm1, 16(%0)\n\t;"
@@ -296,11 +199,7 @@ void _StoreAllFloatRegisters (FP_REG_SET *pToBuffer)
 
 		:: "r" (pToBuffer) : "memory"
 		);
-#elif defined(__DCC__)
-	_StoreAllFloatRegisters_inline (pToBuffer);
-#endif
 }
-
 
 /*******************************************************************************
 *
@@ -322,5 +221,4 @@ void _StoreNonVolatileFloatRegisters (FP_NONVOLATILE_REG_SET *pToBuffer)
 	ARG_UNUSED (pToBuffer);
 	/* do nothing; there are no non-volatile floating point registers */
 }
-
-#endif /* CONFIG_ISA_IA32 */
+#endif /* _FLOAT_REGS_X86_GCC_H */

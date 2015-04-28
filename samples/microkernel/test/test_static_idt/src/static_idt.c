@@ -42,6 +42,12 @@ Ensures interrupt and exception stubs are installed correctly.
 #include <nanokernel.h>
 #include <nanokernel/cpu.h>
 #include <nanok.h>
+#if defined(__GNUC__)
+#include <test_asm_inline_gcc.h>
+#else
+#include <test_asm_inline_other.h>
+#endif
+
 #ifdef CONFIG_MICROKERNEL
 #include <vxmicro.h>
 #endif
@@ -72,20 +78,6 @@ static volatile int    spurHandlerAbortedContext = 1;
 
 #ifdef CONFIG_NANOKERNEL
 static char fiberStack[512];
-#endif
-
-#if defined(__GNUC__)
-#define _trigger_isrHandler() __asm__ volatile("int %0" : : "i" (TEST_SOFT_INT) : "memory")
-#define _trigger_spurHandler() __asm__ volatile("int %0" : : "i" (TEST_SPUR_INT) : "memory")
-#elif defined (__DCC__)
-__asm volatile void _trigger_int(unsigned number)
-{
-% con number
-!
-	int  number
-}
-#define _trigger_isrHandler()   _trigger_int (TEST_SOFT_INT)
-#define _trigger_spurHandler()  _trigger_int (TEST_SPUR_INT)
 #endif
 
 

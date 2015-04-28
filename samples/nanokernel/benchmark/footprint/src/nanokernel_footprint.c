@@ -43,6 +43,14 @@ volatile int i = 0;		/* counter used by background task */
 #include <nanokernel/cpu.h>
 #include <stdio.h>
 
+#ifdef TEST_reg
+#if defined(__GNUC__)
+#include <test_asm_inline_gcc.h>
+#else
+#include <test_asm_inline_other.h>
+#endif /* __GNUC__ */
+#endif /* TEST_reg */
+
 /* defines */
 
 #define IRQ_PRIORITY      3
@@ -130,31 +138,9 @@ void dummyIsr (void *unused)
 
 static void isrDummyIntStub (void *unused)
     {
-    extern void _IntEnt  (void);
-    extern void _IntExit (void);
-
     ARG_UNUSED (unused);
 
-    /* compiler-generated preamble pushes & modifies EBP */
-
-#if defined(__GNUC__)
-    __asm__ volatile (
-			"pop     %%ebp;\n\t"
-			"call    _IntEnt;\n\t"
-			"pushl   $0;\n\t"
-			"call    dummyIsr;\n\t"
-			"addl    $4, %%esp;\n\t"
-			"jmp     _IntExit;\n\t"
-			: :
-		     );
-#elif defined(__DCC__)
-    __asm__ volatile ("pop     %ebp;\n\t"
-                      "call    _IntEnt;\n\t"
-                      "pushl   $0;\n\t"
-                      "call    dummyIsr;\n\t"
-                      "addl    $4, %esp;\n\t"
-                      "jmp     _IntExit;\n\t");
-#endif
+    isr_dummy();
 
     CODE_UNREACHABLE;
     }

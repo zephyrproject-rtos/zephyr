@@ -40,6 +40,11 @@
 #define _TIMESTAMP_H_
 
 #include <limits.h>
+#if defined(__GNUC__)
+#include <test_asm_inline_gcc.h>
+#else
+#include <test_asm_inline_other.h>
+#endif
 
 #if defined (CONFIG_NANOKERNEL)
 
@@ -79,30 +84,12 @@ typedef int64_t TICK_TYPE;
 /* time necessary to read the time */
 extern uint32_t tm_off;
 
-#if defined(__DCC__)
-__asm volatile void _TIME_STAMP_DELTA_GET_inline (void)
-    {
-%
-! "ax", "bx", "cx", "dx"
-    xorl   %eax, %eax
-    pushl  %ebx
-    cpuid
-    popl   %ebx
-    }
-#endif
-
 static inline uint32_t TIME_STAMP_DELTA_GET (uint32_t ts)
     {
     uint32_t t;
 
     /* serialize so OS_GET_TIME() is not reordered */
-#if defined(__GNUC__)
-    __asm__ __volatile__ (/* serialize */ \
-	"xorl %%eax,%%eax \n        cpuid"	\
-	::: "%eax", "%ebx", "%ecx", "%edx");
-#elif defined(__DCC__)
-    _TIME_STAMP_DELTA_GET_inline ();
-#endif
+    timestamp_serialize();
 
     t = OS_GET_TIME ();
     uint32_t res = (t >= ts)? (t - ts): (ULONG_MAX - ts + t);

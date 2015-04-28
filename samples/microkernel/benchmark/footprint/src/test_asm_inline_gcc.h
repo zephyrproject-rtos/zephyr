@@ -1,7 +1,7 @@
-/* test_stubs.s - Exception and interrupt stubs */
+/* Intel x86 GCC specific test inline assembler functions and macros */
 
 /*
- * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,49 +30,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module implements assembler exception and interrupt stubs for regression
-testing.
-*/
+#ifndef _TEST_ASM_INLINE_GCC_H
+#define _TEST_ASM_INLINE_GCC_H
 
-#define _ASMLANGUAGE
+#if !defined(__GNUC__) || !defined(VXMICRO_ARCH_x86)
+#error test_asm_inline_gcc.h goes only with x86 GCC
+#endif
 
-#ifdef CONFIG_ISA_IA32
+static inline void isr_dummy(void)
+{
+	extern void _IntEnt  (void);
+	extern void _IntExit (void);
 
-/* IA-32 specific */
+        /* compiler-generated preamble pushes & modifies EBP */
+	__asm__ volatile (
+		"pop     %%ebp;\n\t"
+		"call    _IntEnt;\n\t"
+		"pushl   $0;\n\t"
+		"call    dummyIsr;\n\t"
+		"addl    $4, %%esp;\n\t"
+		"jmp     _IntExit;\n\t"
+		: :
+		);
+}
 
-#include <nanokernel/cpu.h>
-#include <nanok.h>
-#include <nanokernel/x86/asm.h>
-#include <asmPrv.h>
-#include <asm_inline.h>
-
-	/* exports (internal APIs) */
-
-	GTEXT(_ExcEnt)
-	GTEXT(_ExcExit)
-	GTEXT(_IntEnt)
-	GTEXT(_IntExit)
-
-
-/* Static exception handler stubs */
-SYS_NANO_CPU_EXC_CONNECT(exc_divide_error_handler,IV_DIVIDE_ERROR)
-
-/* Static interrupt handler stubs */
-
-
-	GTEXT(nanoIntStub)
-
-SECTION_FUNC(TEXT, nanoIntStub)
-        call    _IntEnt
-        pushl   $0
-        call    isr_handler
-        addl    $4, %esp
-        jmp     _IntExit
-
-#else
-
-#error Arch not supported
-
-#endif /* CONFIG_ISA_IA32 */
+#endif /* _TEST_ASM_INLINE_GCC_H */
