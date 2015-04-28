@@ -763,7 +763,7 @@ def kernel_main_c_kernel_services():
 "/*  6 */ _k_sem_signal,",                    # depends on semaphores
 "/*  7 */ _k_sem_group_signal,",              # depends on semaphores
 "/*  8 */ _k_sem_reset,",                     # depends on semaphores
-"/*  9 */ K_resetm,",               # depends on semaphores
+"/*  9 */ _k_sem_group_reset,",               # depends on semaphores
 "/* 10 */ _k_sem_wait_request,",               # depends on semaphores
 "/* 11 */ _k_sem_wait_reply,",             # depends on semaphores
 "/* 12 */ _k_sem_wait_reply,",             # depends on semaphores and timers

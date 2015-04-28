@@ -600,12 +600,12 @@ void _k_sem_reset(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_resetm - handle semaphore group reset request
+* _k_sem_group_reset - handle semaphore group reset request
 *
 * RETURNS: N/A
 */
 
-void K_resetm(struct k_args *A)
+void _k_sem_group_reset(struct k_args *A)
 {
 	ksem_t *L = A->Args.s1.list;
 
