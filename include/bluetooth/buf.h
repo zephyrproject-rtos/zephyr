@@ -48,13 +48,19 @@ enum bt_buf_type {
 	BT_ACL_IN,	/* Incoming ACL data */
 };
 
+/* HCI command specific info */
+struct bt_buf_hci_data {
+	struct nano_sem *sync;
+	uint16_t opcode;
+};
+
 struct bt_buf {
 	/* FIFO uses first 4 bytes itself, reserve space */
 	int __unused;
 
-	/* HCI command specific info */
-	struct nano_sem *sync;
-	uint16_t opcode;
+	union {
+		struct bt_buf_hci_data	hci;
+	};
 
 	/* Type of data contained in the buffer */
 	uint8_t type;

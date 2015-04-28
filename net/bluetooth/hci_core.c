@@ -69,8 +69,8 @@ struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("buf %p\n", buf);
 
-	buf->opcode = opcode;
-	buf->sync = NULL;
+	buf->hci.opcode = opcode;
+	buf->hci.sync = NULL;
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -107,7 +107,7 @@ static int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf)
 	BT_DBG("opcode %x len %u\n", opcode, buf->len);
 
 	nano_sem_init(&sync_sem);
-	buf->sync = &sync_sem;
+	buf->hci.sync = &sync_sem;
 
 	nano_fifo_put(&dev.cmd_queue, buf);
 
@@ -265,7 +265,10 @@ static void hci_cmd_done(uint16_t opcode)
 {
 	struct bt_buf *sent = dev.sent_cmd;
 
-	if (dev.sent_cmd->opcode != opcode) {
+	if (!sent)
+		return;
+
+	if (dev.sent_cmd->hci.opcode != opcode) {
 		BT_ERR("Unexpected completion of opcode %x\n", opcode);
 		return;
 	}
@@ -273,8 +276,8 @@ static void hci_cmd_done(uint16_t opcode)
 	dev.sent_cmd = NULL;
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	if (sent->sync)
-		nano_fiber_sem_give(sent->sync);
+	if (sent->hci.sync)
+		nano_fiber_sem_give(sent->hci.sync);
 
 	bt_buf_put(sent);
 }
