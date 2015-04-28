@@ -127,6 +127,14 @@ struct net_tuple *net_context_get_tuple(struct net_context *context)
 	return &context->tuple;
 }
 
+struct nano_fifo *net_context_get_queue(struct net_context *context)
+{
+	if (!context)
+		return NULL;
+
+	return &context->rx_queue;
+}
+
 void net_context_init(void)
 {
 	int i;

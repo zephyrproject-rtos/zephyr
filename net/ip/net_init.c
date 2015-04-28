@@ -53,6 +53,11 @@
 #include "contiki/uip-driver.h"
 #include "contiki/ipv6/uip-ds6.h"
 
+/* Declare some private functions only to be used in this file so the
+ * prototypes are not found in .h file.
+ */
+struct nano_fifo *net_context_get_queue(struct net_context *context);
+
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning
  */
