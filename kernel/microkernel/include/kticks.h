@@ -64,7 +64,7 @@ extern void _k_timer_stop(struct k_args *P);
 extern void _k_task_sleep(struct k_args *P);
 extern void _k_task_wakeup(struct k_args *P);
 extern void _k_time_elapse(struct k_args *P);
-extern void K_workload(struct k_args *P);
+extern void _k_node_workload_get(struct k_args *P);
 
 extern int64_t _LowTimeGet(void);
 extern void _LowTimeInc(int inc);
