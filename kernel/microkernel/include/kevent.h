@@ -41,6 +41,6 @@ extern void K_event_signal(struct k_args *A);
 extern void _k_event_handler_set(struct k_args *A);
 extern void _k_event_test(struct k_args *A);
 extern void _k_event_test_timeout(struct k_args *A);
-extern void K_sigevent(kevent_t event);
+extern void _k_do_event_signal(kevent_t event);
 
 #endif /* _KEVENT_H */

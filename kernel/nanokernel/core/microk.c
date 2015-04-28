@@ -47,7 +47,7 @@ This module provides the microkernel context implementation.
 #include <sections.h>
 #include <minik.h>
 #include <nanok.h>
-#include <kevent.h> /* K_sigevent */
+#include <kevent.h>
 #include <microkernel.h>
 #include <microkernel/entries.h> /* kernelfunc */
 #include <nanokernel.h>
@@ -97,7 +97,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 					_k_task_monitor_args(pArgs);
 				}
 #endif
-				K_sigevent(event);
+				_k_do_event_signal(event);
 			} else {
 #ifdef CONFIG_TASK_MONITOR
 				if (_k_monitor_mask & MON_KSERV) {

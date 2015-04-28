@@ -189,7 +189,7 @@ int _task_event_recv(
 
 /*******************************************************************************
 *
-* K_sigevent - signal an event
+* _k_do_event_signal - signal an event
 *
 * Lowest level event signalling routine, which is invoked directly when the
 * signal is issued by a task and indirectly when the signal is issued by a
@@ -198,7 +198,7 @@ int _task_event_recv(
 * RETURNS: N/A
 */
 
-void K_sigevent(kevent_t event)
+void _k_do_event_signal(kevent_t event)
 {
 	struct evstr *E = EVENTS + event;
 	struct k_args *A = E->waiter;
@@ -243,7 +243,7 @@ void K_event_signal(struct k_args *A)
 	kevent_t event = A->Args.e1.event;
 
 	if (likely(event < _k_num_events)) {
-		K_sigevent(event);
+		_k_do_event_signal(event);
 		A->Time.rcode = RC_OK;
 	} else {
 		A->Time.rcode = RC_FAIL;
