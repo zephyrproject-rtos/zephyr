@@ -774,7 +774,7 @@ def kernel_main_c_kernel_services():
 "/* 17 */ _k_sem_group_wait_accept,",          # depends on semaphores
 "/* 18 */ _k_sem_group_wait,",             # depends on semaphores
 "/* 19 */ _k_sem_group_wait_timeout,",      # depends on semaphores and timers
-"/* 20 */ K_inqsema,",              # depends on semaphores
+"/* 20 */ _k_sem_inquiry,",                    # depends on semaphores
 "/* 21 */ _k_mutex_lock_request,",        # depends on mutexes
 "/* 22 */ _k_mutex_lock_reply,",          # depends on mutexes
 "/* 23 */ _k_mutex_lock_reply,",          # depends on mutexes and timers

@@ -655,12 +655,12 @@ void task_sem_group_reset(ksemg_t group /* group of semaphores to reset */
 
 /*******************************************************************************
 *
-* K_inqsema - handle semaphore inquiry request
+* _k_sem_inquiry - handle semaphore inquiry request
 *
 * RETURNS: N/A
 */
 
-void K_inqsema(struct k_args *A)
+void _k_sem_inquiry(struct k_args *A)
 {
 	struct sem_struct *S;
 	uint32_t Sid;

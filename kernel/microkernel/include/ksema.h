@@ -39,7 +39,7 @@ extern void _k_sem_group_signal(struct k_args *A);
 extern void _k_sem_group_reset(struct k_args *A);
 extern void _k_sem_wait_reply(struct k_args *A);
 extern void _k_sem_wait_request(struct k_args *A);
-extern void K_inqsema(struct k_args *A);
+extern void _k_sem_inquiry(struct k_args *A);
 extern void _k_sem_group_wait_any(struct k_args *A);
 extern void _k_sem_group_wait_timeout(struct k_args *A);
 extern void _k_sem_group_ready(struct k_args *R);

@@ -59,7 +59,7 @@ extern void _k_sem_group_wait_cancel(struct k_args *);
 extern void _k_sem_group_wait_accept(struct k_args *);
 extern void _k_sem_group_wait(struct k_args *);
 extern void _k_sem_group_wait_timeout(struct k_args *);
-extern void K_inqsema(struct k_args *);
+extern void _k_sem_inquiry(struct k_args *);
 extern void _k_mutex_lock_request(struct k_args *);
 extern void _k_mutex_lock_reply(struct k_args *);
 extern void K_unlock(struct k_args *);
