@@ -291,7 +291,7 @@ int _task_mutex_lock(
 
 /*******************************************************************************
 *
-* K_unlock - process a mutex unlock request
+* _k_mutex_unlock - process a mutex unlock request
 *
 * This routine processes a mutex unlock request (UNLOCK).  If the mutex
 * was involved in priority inheritance, then it will change the priority level
@@ -303,7 +303,7 @@ int _task_mutex_lock(
 * \NOMANUAL
 */
 
-void K_unlock(struct k_args *A /* pointer to mutex unlock
+void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 						 request arguments */
 				    )
 {
