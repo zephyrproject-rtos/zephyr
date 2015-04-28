@@ -800,7 +800,7 @@ def kernel_main_c_kernel_services():
 "/* 43 */ _k_task_op,",             # required
 "/* 44 */ _k_task_group_op,",       # required
 "/* 45 */ _k_task_priority_set,",            # required
-"/* 46 */ K_yield,",                # required
+"/* 46 */ _k_task_yield,",          # required
 "/* 47 */ K_alloc,",                # depends on memory maps
 "/* 48 */ K_dealloc,",              # depends on memory maps
 "/* 49 */ K_alloc_timer,",          # depends on timers

@@ -33,7 +33,7 @@
 #include <microkernel/k_struct.h>
 #include <minik.h>
 #include <kticks.h> /* WL and timeslice stuff */
-#include <ktask.h>  /* K_yield */
+#include <ktask.h>  /* _k_task_yield */
 #include <microkernel/ticks.h>
 #include <nanokernel/cpu.h>
 #include <toolchain.h>

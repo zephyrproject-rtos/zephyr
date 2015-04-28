@@ -43,6 +43,6 @@ extern void abort_task(struct k_proc *X);
 extern void _k_task_op(struct k_args *A);
 extern void _k_task_group_op(struct k_args *A);
 extern void _k_task_priority_set(struct k_args *A);
-extern void K_yield(struct k_args *A);
+extern void _k_task_yield(struct k_args *A);
 
 #endif

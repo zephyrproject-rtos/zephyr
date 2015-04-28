@@ -42,7 +42,7 @@ This module implements the microkernel's tick event handler.
 #include <minik.h>
 #include <kticks.h> /* WL stuff */
 #include <drivers/system_timer.h>
-#include <ktask.h>  /* K_yield */
+#include <ktask.h>  /* _k_task_yield */
 #include <microkernel.h>
 #include <microkernel/ticks.h>
 #include <toolchain.h>
@@ -191,7 +191,7 @@ static inline void _TimeSliceUpdate(void)
 		    (++slice_count >= slice_time);
 	if (yield) {
 		slice_count = 0;
-		K_yield(NULL);
+		_k_task_yield(NULL);
 	}
 #else
 /* do nothing */

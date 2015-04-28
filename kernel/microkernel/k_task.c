@@ -413,12 +413,12 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 
 /*******************************************************************************
 *
-* K_yield - handle task yield request
+* _k_task_yield - handle task yield request
 *
 * RETURNS: N/A
 */
 
-void K_yield(struct k_args *A)
+void _k_task_yield(struct k_args *A)
 {
 	struct k_tqhd *H = _k_task_priority_list + _k_current_task->Prio;
 	struct k_proc *X = _k_current_task->Forw;
