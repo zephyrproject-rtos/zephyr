@@ -282,7 +282,7 @@ void task_timer_free(ktimer_t timer /* timer to deallocate */
 
 /*******************************************************************************
 *
-* K_start_timer - handle start timer request
+* _k_timer_start - handle start timer request
 *
 * This routine, called by K_swapper(), handles the start timer request from
 * both task_timer_start() and task_timer_restart().
@@ -290,7 +290,7 @@ void task_timer_free(ktimer_t timer /* timer to deallocate */
 * RETURNS: N/A
 */
 
-void K_start_timer(struct k_args *P /* pointer to timer start
+void _k_timer_start(struct k_args *P /* pointer to timer start
 						      request arguments */
 					 )
 {

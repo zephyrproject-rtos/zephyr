@@ -59,7 +59,7 @@ extern void delist_timeout(K_TIMER *T);
 extern void force_timeout(struct k_args *A);
 extern void _k_timer_alloc(struct k_args *P);
 extern void _k_timer_dealloc(struct k_args *P);
-extern void K_start_timer(struct k_args *P);
+extern void _k_timer_start(struct k_args *P);
 extern void K_stop_timer(struct k_args *P);
 extern void K_sleep(struct k_args *P);
 extern void K_wakeup(struct k_args *P);

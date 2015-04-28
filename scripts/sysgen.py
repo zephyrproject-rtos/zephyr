@@ -805,7 +805,7 @@ def kernel_main_c_kernel_services():
 "/* 48 */ K_dealloc,",              # depends on memory maps
 "/* 49 */ _k_timer_alloc,",         # depends on timers
 "/* 50 */ _k_timer_dealloc,",       # depends on timers
-"/* 51 */ K_start_timer,",          # depends on timers
+"/* 51 */ _k_timer_start,",         # depends on timers
 "/* 52 */ K_stop_timer,",           # depends on timers
 "/* 53 */ _k_mem_map_alloc_timeout,",# depends on memory maps [and timers?]
 "/* 54 */ (kernelfunc) NULL,",      # unused
