@@ -835,7 +835,7 @@ def kernel_main_c_kernel_services():
 "/* 78 */ K_ChRecvRpl,",            # depends on pipes
 "/* 79 */ K_ChRecvAck,",            # depends on pipes
 "/* 80 */ K_ChMovedAck,",           # depends on pipes
-"/* 81 */ K_eventtesttmo"           # required
+"/* 81 */ _k_event_test_timeout"    # required
     ]
 
     # eliminate table entries for kernel services that project doesn't utilize

@@ -103,12 +103,12 @@ int task_event_set_handler(kevent_t event,     /* event upon which to reigster *
 
 /*******************************************************************************
 *
-* K_eventtesttmo - finish handling a test for event request that timed out
+* _k_event_test_timeout - finish handling a test for event request that timed out
 *
 * RETURNS: N/A
 */
 
-void K_eventtesttmo(struct k_args *A)
+void _k_event_test_timeout(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
 	struct evstr *E = EVENTS + event;

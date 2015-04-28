@@ -117,7 +117,7 @@ extern void K_ChRecvTmo(struct k_args *Reader);
 extern void K_ChRecvRpl(struct k_args *Reader);
 extern void K_ChRecvAck(struct k_args *Reader);
 extern void K_ChMovedAck(struct k_args *pEOXfer);
-extern void K_eventtesttmo(struct k_args *A);
+extern void _k_event_test_timeout(struct k_args *A);
 
 #ifdef __cplusplus
 }
