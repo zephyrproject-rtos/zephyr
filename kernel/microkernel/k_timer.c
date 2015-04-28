@@ -387,7 +387,7 @@ void task_timer_restart(ktimer_t timer, /* timer to restart */
 
 /*******************************************************************************
 *
-* K_stop_timer - handle stop timer request
+* _k_timer_stop - handle stop timer request
 *
 * This routine, called by K_swapper(), handles the request for stopping a
 * timer.
@@ -395,7 +395,7 @@ void task_timer_restart(ktimer_t timer, /* timer to restart */
 * RETURNS: N/A
 */
 
-void K_stop_timer(struct k_args *P)
+void _k_timer_stop(struct k_args *P)
 {
 	K_TIMER *T = P->Args.c1.timer;
 
