@@ -508,7 +508,7 @@ void task_sleep(int32_t ticks /* number of ticks for which to sleep */
 
 /*******************************************************************************
 *
-* K_elapse - handle elapsed ticks calculation request
+* _k_time_elapse - handle elapsed ticks calculation request
 *
 * This routine, called by K_swapper(), handles the request for calculating the
 * time elapsed since the specified reference time.
@@ -516,7 +516,7 @@ void task_sleep(int32_t ticks /* number of ticks for which to sleep */
 * RETURNS: N/A
 */
 
-void K_elapse(struct k_args *P)
+void _k_time_elapse(struct k_args *P)
 {
 	int64_t now = _LowTimeGet();
 

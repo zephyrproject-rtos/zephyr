@@ -76,7 +76,7 @@ extern void _k_mbox_receive_request(struct k_args *);
 extern void _k_mbox_receive_reply(struct k_args *);
 extern void _k_mbox_receive_ack(struct k_args *);
 extern void _k_mbox_receive_data(struct k_args *);
-extern void K_elapse(struct k_args *);
+extern void _k_time_elapse(struct k_args *);
 extern void _k_task_sleep(struct k_args *);
 extern void _k_task_wakeup(struct k_args *);
 extern void _k_task_op(struct k_args *);
