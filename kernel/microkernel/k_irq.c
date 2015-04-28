@@ -192,14 +192,14 @@ int _task_irq_test(kirq_t irq_obj, /* IRQ object identifier */
 
 /*******************************************************************************
 *
-* K_taskirqalloc - allocate a task IRQ object
+* _k_task_irq_alloc - allocate a task IRQ object
 *
 * This routine allocates a task IRQ object to a task.
 *
 * RETURNS: ptr to allocated task IRQ object if successful, NULL if not
 */
 
-static int K_taskirqalloc(
+static int _k_task_irq_alloc(
 	void *arg /* ptr to registration request arguments */
 	)
 {
@@ -261,7 +261,7 @@ uint32_t task_irq_alloc(
 	arg.irq = irq;
 	arg.taskId = task_id_get();
 
-	irq_obj_ptr = (struct task_irq_info *)task_offload_to_fiber(K_taskirqalloc,
+	irq_obj_ptr = (struct task_irq_info *)task_offload_to_fiber(_k_task_irq_alloc,
 						     (void *)&arg);
 	if (irq_obj_ptr == NULL) {
 		return INVALID_VECTOR;
