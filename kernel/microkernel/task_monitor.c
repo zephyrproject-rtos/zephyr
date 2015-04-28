@@ -79,7 +79,7 @@ void _k_task_monitor(struct k_proc *X, uint32_t D)
 		(_k_task_switch_callback)(X->Ident, timer_read());
 }
 
-void K_monitor_args(struct k_args *A)
+void _k_task_monitor_args(struct k_args *A)
 {
 #ifdef CONFIG_TASK_DEBUG
 	if (!_k_debug_halt)

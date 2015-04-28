@@ -94,14 +94,14 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			if (event < (kevent_t)_k_num_events) {
 #ifdef CONFIG_TASK_MONITOR
 				if (_k_monitor_mask & MON_EVENT) {
-					K_monitor_args(pArgs);
+					_k_task_monitor_args(pArgs);
 				}
 #endif
 				K_sigevent(event);
 			} else {
 #ifdef CONFIG_TASK_MONITOR
 				if (_k_monitor_mask & MON_KSERV) {
-					K_monitor_args(pArgs);
+					_k_task_monitor_args(pArgs);
 				}
 #endif
 				_k_server_dispatch_table[pArgs->Comm](pArgs);
