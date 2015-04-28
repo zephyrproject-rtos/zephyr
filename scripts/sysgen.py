@@ -952,7 +952,7 @@ def kernel_main_c_node_init():
     if (len(map_list) > 0):
         kernel_main_c_out("    _mem_map_init();\n")
     if (len(pool_list) > 0):
-        kernel_main_c_out("    InitPools();\n")
+        kernel_main_c_out("    _mem_pools_init();\n")
     kernel_main_c_out("}\n")
 
 

@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-extern void InitPools(void);
+extern void _mem_pools_init(void);
 
 extern int _task_mem_pool_alloc(struct k_block *B, kmemory_pool_t pid, int size, int32_t time);
 

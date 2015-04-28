@@ -47,14 +47,14 @@
 
 /*******************************************************************************
 *
-* InitPools - initialize kernel memory pool subsystem
+* _mem_pools_init - initialize kernel memory pool subsystem
 *
 * Perform any initialization of memory pool that wasn't done at build time.
 *
 * RETURNS: N/A
 */
 
-void InitPools(void)
+void _mem_pools_init(void)
 {
 	int i, j, k;
 	struct pool_struct *P;
