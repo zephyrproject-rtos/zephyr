@@ -791,7 +791,7 @@ def kernel_main_c_kernel_services():
 "/* 34 */ _k_mbox_send_ack,",       # depends on mailboxes
 "/* 35 */ K_senddata,",             # depends on mailboxes
 "/* 36 */ K_recvreq,",              # depends on mailboxes
-"/* 37 */ K_recvrpl,",              # depends on mailboxes and timers
+"/* 37 */ _k_mbox_receive_reply,",  # depends on mailboxes and timers
 "/* 38 */ _k_mbox_receive_ack,",    # depends on mailboxes
 "/* 39 */ K_recvdata,",             # depends on mailboxes
 "/* 40 */ K_elapse,",               # required

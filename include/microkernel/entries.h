@@ -73,7 +73,7 @@ extern void _k_mbox_send_reply(struct k_args *);
 extern void _k_mbox_send_ack(struct k_args *);
 extern void K_senddata(struct k_args *);
 extern void K_recvreq(struct k_args *);
-extern void K_recvrpl(struct k_args *);
+extern void _k_mbox_receive_reply(struct k_args *);
 extern void _k_mbox_receive_ack(struct k_args *);
 extern void K_recvdata(struct k_args *);
 extern void K_elapse(struct k_args *);

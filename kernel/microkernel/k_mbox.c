@@ -539,12 +539,12 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 
 /*******************************************************************************
 *
-* K_recvrpl - process the timeout for a mailbox receive request
+* _k_mbox_receive_reply - process the timeout for a mailbox receive request
 *
 * RETURNS: N/A
 */
 
-void K_recvrpl(struct k_args *pCopyReader)
+void _k_mbox_receive_reply(struct k_args *pCopyReader)
 {
 	FREETIMER(pCopyReader->Time.timer);
 	REMOVE_ELM(pCopyReader);

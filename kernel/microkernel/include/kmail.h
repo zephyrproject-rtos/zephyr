@@ -55,7 +55,7 @@ extern void _k_mbox_send_reply(struct k_args *Writer);
 extern void _k_mbox_send_request(struct k_args *Writer);
 extern void _k_mbox_send_ack(struct k_args *Writer);
 extern void _k_mbox_receive_ack(struct k_args *Reader);
-extern void K_recvrpl(struct k_args *Reader);
+extern void _k_mbox_receive_reply(struct k_args *Reader);
 extern void K_recvreq(struct k_args *Reader);
 extern void K_recvdata(struct k_args *Starter);
 
