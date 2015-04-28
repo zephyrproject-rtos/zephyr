@@ -79,7 +79,7 @@ extern void _k_mbox_receive_data(struct k_args *);
 extern void K_elapse(struct k_args *);
 extern void K_sleep(struct k_args *);
 extern void K_wakeup(struct k_args *);
-extern void K_taskop(struct k_args *);
+extern void _k_task_op(struct k_args *);
 extern void K_groupop(struct k_args *);
 extern void K_set_prio(struct k_args *);
 extern void K_yield(struct k_args *);

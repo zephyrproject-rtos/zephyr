@@ -238,7 +238,7 @@ void task_abort_handler_set(void (*func)(void) /* abort handler */
 
 /*******************************************************************************
 *
-* K_taskop - handle a task operation request
+* _k_task_op - handle a task operation request
 *
 * This routine handles any one of the following task operation requests:
 *   starting either a kernel or user task, aborting a task, suspending a task,
@@ -247,7 +247,7 @@ void task_abort_handler_set(void (*func)(void) /* abort handler */
 * RETURNS: N/A
 */
 
-void K_taskop(struct k_args *A)
+void _k_task_op(struct k_args *A)
 {
 	ktask_t Tid = A->Args.g1.task;
 		struct k_proc *X = _k_task_list + OBJ_INDEX(Tid);
