@@ -143,7 +143,7 @@ void _k_mutex_lock_reply(
 
 /*******************************************************************************
 *
-* K_lockreq - process a mutex lock request
+* _k_mutex_lock_request - process a mutex lock request
 *
 * This routine processes a mutex lock request (LOCK_REQ).  If the mutex
 * is already locked, and the timeout is non-zero then the priority inheritance
@@ -154,7 +154,7 @@ void _k_mutex_lock_reply(
 * \NOMANUAL
 */
 
-void K_lockreq(struct k_args *A /* pointer to mutex lock
+void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 						  request arguments */
 				     )
 {
