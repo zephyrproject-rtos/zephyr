@@ -39,6 +39,7 @@
 
 #define BT_DBG(fmt, ...) printk("bt: %s: " fmt, __func__, ##__VA_ARGS__)
 #define BT_ERR(fmt, ...) printk("bt: %s: " fmt, __func__, ##__VA_ARGS__)
+#define BT_WARN(fmt, ...) printk("bt: %s: " fmt, __func__, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) printk("bt: " fmt,  ##__VA_ARGS__)
 
 /* HCI control APIs */
