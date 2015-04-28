@@ -46,17 +46,22 @@
 
 #include <net/net_core.h>
 #include <net/net_buf.h>
+#include <net/net_ip.h>
+#include <net/net_socket.h>
 
 #include "contiki/os/sys/process.h"
 #include "contiki/os/sys/etimer.h"
 #include "contiki/netstack.h"
 #include "contiki/uip-driver.h"
 #include "contiki/ipv6/uip-ds6.h"
+#include "contiki/ip/simple-udp.h"
 
 /* Declare some private functions only to be used in this file so the
  * prototypes are not found in .h file.
  */
 struct nano_fifo *net_context_get_queue(struct net_context *context);
+struct simple_udp_connection *
+	net_context_get_udp_connection(struct net_context *context);
 
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning
@@ -76,22 +81,117 @@ static struct net_dev {
 	struct net_driver *drv;
 } netdev;
 
+/* Called by application to send a packet */
+int net_send(struct net_buf *buf)
+{
+	if (buf->len == 0) {
+		return -ENODATA;
+	}
+
+	nano_fifo_put(&netdev.tx_queue, buf);
+
+	return 0;
+}
+
+/* Called by application when it wants to receive network data */
+struct net_buf *net_receive(struct net_context *context)
+{
+	struct nano_fifo *rx_queue = net_context_get_queue(context);
+
+	return nano_fifo_get(rx_queue);
+}
+
+static void udp_packet_recv(struct simple_udp_connection *c,
+			    const uip_ipaddr_t *source_addr,
+			    uint16_t source_port,
+			    const uip_ipaddr_t *dest_addr,
+			    uint16_t dest_port,
+			    const uint8_t *data, uint16_t datalen,
+			    void *user_data)
+{
+	struct net_buf *buf = user_data;
+	struct nano_fifo *queue;
+
+	if (!buf->context) {
+		return;
+	}
+
+	queue = net_context_get_queue(buf->context);
+
+	nano_fifo_put(queue, buf);
+}
+
+/* Internal function to send network data to uIP stack */
+static int check_and_send_packet(struct net_buf *buf)
+{
+	struct net_tuple *tuple;
+	struct simple_udp_connection *udp;
+	int ret = 0;
+
+	tuple = net_context_get_tuple(buf->context);
+	if (!tuple) {
+		return -EINVAL;
+	}
+
+	switch (tuple->ip_proto) {
+	case IPPROTO_UDP:
+		udp = net_context_get_udp_connection(buf->context);
+		ret = simple_udp_register(udp, tuple->local_port,
+					  (uip_ip6addr_t *)tuple->remote_addr,
+					  tuple->remote_port,
+					  udp_packet_recv,
+					  buf);
+		if (!ret) {
+			NET_DBG("UDP connection creation failed\n");
+			ret = -ENOENT;
+			break;
+		}
+		simple_udp_send(buf, udp, buf->data, buf->len);
+		ret = 0;
+		break;
+	case IPPROTO_TCP:
+		NET_DBG("TCP not yet supported\n");
+		ret = -EINVAL;
+		break;
+	case IPPROTO_ICMPV6:
+		NET_DBG("ICMPv6 not yet supported\n");
+		ret = -EINVAL;
+		break;
+	}
+
+	return ret;
+}
+
 static void net_tx_fiber(void)
 {
 	struct net_driver *drv = netdev.drv;
 
-	NET_DBG("\n");
+	NET_DBG("Starting TX fiber\n");
 
 	while (1) {
 		struct net_buf *buf;
+		uint8_t run;
 
 		/* Get next packet from application - wait if necessary */
 		buf = nano_fifo_get_wait(&netdev.tx_queue);
 
 		NET_DBG("Sending (buf %p, len %u) to stack\n", buf, buf->len);
 
-		//drv->send(buf); // This is for further studies
+		if (check_and_send_packet(buf) == 0) {
+			/* FIXME - we should only release the buffer
+			 * if the packet could not be passed to 15.4 or BT
+			 * stack. This needs still some work but as a
+			 * workaround release the buffer here.
+			 */
+			net_buf_put(buf);
+		}
 
+		/* Check for any events that we might need to process */
+		do {
+			buf = net_buf_get_reserve(0);
+			run = process_run(buf);
+			net_buf_put(buf);
+		} while (run > 0);
 	}
 }
 
@@ -99,7 +199,7 @@ static void net_rx_fiber(void)
 {
 	struct net_buf *buf;
 
-	NET_DBG("\n");
+	NET_DBG("Starting RX fiber\n");
 
 	while (1) {
 		/* Wait next packet from network, pass it to IP stack */
@@ -164,6 +264,7 @@ static int network_initialization(void)
 		NETSTACK_RDC.name, NETSTACK_NETWORK.name);
 
 	process_start(&tcpip_process, NULL);
+	process_start(&simple_udp_process, NULL);
 	process_start(&etimer_process, NULL);
 
 	return 0;

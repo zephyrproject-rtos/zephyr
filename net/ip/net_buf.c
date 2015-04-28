@@ -42,6 +42,11 @@
 
 #include <net/net_core.h>
 #include <net/net_buf.h>
+#include <net/net_ip.h>
+
+#include "ip/uip.h"
+
+extern struct net_tuple *net_context_get_tuple(struct net_context *context);
 
 /* Available (free) buffers queue */
 #define NUM_BUFS		2
@@ -68,8 +73,28 @@ struct net_buf *net_buf_get_reserve(uint16_t reserve_head)
 
 struct net_buf *net_buf_get(struct net_context *context)
 {
-	struct net_buf *buf = net_buf_get_reserve(0);
+	struct net_buf *buf;
+	struct net_tuple *tuple;
+	uint16_t reserve = 0;
 
+	tuple = net_context_get_tuple(context);
+	if (!tuple) {
+		return NULL;
+	}
+
+	switch (tuple->ip_proto) {
+	case IPPROTO_UDP:
+		reserve = UIP_IPUDPH_LEN;
+		break;
+	case IPPROTO_TCP:
+		reserve = UIP_IPTCPH_LEN;
+		break;
+	case IPPROTO_ICMPV6:
+		reserve = UIP_IPICMPH_LEN;
+		break;
+	}
+
+	buf = net_buf_get_reserve(reserve);
 	if (!buf) {
 		return buf;
 	}

@@ -41,12 +41,19 @@
 #include <net/net_ip.h>
 #include <net/net_socket.h>
 
+#include "ip/simple-udp.h"
+
 struct net_context {
 	/* Connection tuple identifies the connection */
 	struct net_tuple tuple;
 
 	/* Application receives data via this fifo */
 	struct nano_fifo rx_queue;
+
+	/* Application connection data */
+	union {
+		struct simple_udp_connection udp;
+	};
 };
 
 /* Override this in makefile if needed */
@@ -133,6 +140,16 @@ struct nano_fifo *net_context_get_queue(struct net_context *context)
 		return NULL;
 
 	return &context->rx_queue;
+}
+
+struct simple_udp_connection *
+net_context_get_udp_connection(struct net_context *context)
+{
+	if (!context) {
+		return NULL;
+	}
+
+	return &context->udp;
 }
 
 void net_context_init(void)
