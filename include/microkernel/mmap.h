@@ -39,7 +39,7 @@ extern "C" {
 
 #ifndef LITE
 
-extern void InitMap(void);
+extern void _mem_map_init(void);
 
 extern int task_mem_map_used_get(kmemory_map_t map);
 extern int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time);

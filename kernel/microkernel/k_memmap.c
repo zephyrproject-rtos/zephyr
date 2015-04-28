@@ -36,14 +36,14 @@
 
 /*******************************************************************************
 *
-* InitMap - initialize kernel memory map subsystem
+* _mem_map_init - initialize kernel memory map subsystem
 *
 * Perform any initialization of memory maps that wasn't done at build time.
 *
 * RETURNS: N/A
 */
 
-void InitMap(void)
+void _mem_map_init(void)
 {
 	int i, j, w;
 	struct map_struct *M;
