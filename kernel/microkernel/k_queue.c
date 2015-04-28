@@ -38,12 +38,12 @@
 
 /*******************************************************************************
 *
-* K_enqrpl - finish performing an incomplete FIFO enqueue request
+* _k_fifo_enque_reply - finish performing an incomplete FIFO enqueue request
 *
 * RETURNS: N/A
 */
 
-void K_enqrpl(struct k_args *A)
+void _k_fifo_enque_reply(struct k_args *A)
 {
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);

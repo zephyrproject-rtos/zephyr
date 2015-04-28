@@ -33,7 +33,7 @@
 #ifndef KFIFO_H
 #define KFIFO_H
 
-extern void K_enqrpl(struct k_args *A);
+extern void _k_fifo_enque_reply(struct k_args *A);
 extern void K_deqrpl(struct k_args *A);
 extern void K_enqreq(struct k_args *A);
 extern void K_deqreq(struct k_args *A);
