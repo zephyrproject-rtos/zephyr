@@ -224,12 +224,12 @@ static void transfer(struct k_args *pMvdReq)
 
 /*******************************************************************************
 *
-* K_sendack - process the acknowledgement to a mailbox send request
+* _k_mbox_send_ack - process the acknowledgement to a mailbox send request
 *
 * RETURNS: N/A
 */
 
-void K_sendack(struct k_args *pCopyWriter)
+void _k_mbox_send_ack(struct k_args *pCopyWriter)
 {
 	if (ISASYNCMSG(&(pCopyWriter->Args.m1.mess))) {
 		if (pCopyWriter->Args.m1.mess.extra.sema) {

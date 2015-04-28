@@ -788,7 +788,7 @@ def kernel_main_c_kernel_services():
 "/* 31 */ K_queue,",                # depends on FIFOs
 "/* 32 */ K_sendreq,",              # depends on mailboxes
 "/* 33 */ K_sendrpl,",              # depends on mailboxes and timers
-"/* 34 */ K_sendack,",              # depends on mailboxes
+"/* 34 */ _k_mbox_send_ack,",       # depends on mailboxes
 "/* 35 */ K_senddata,",             # depends on mailboxes
 "/* 36 */ K_recvreq,",              # depends on mailboxes
 "/* 37 */ K_recvrpl,",              # depends on mailboxes and timers

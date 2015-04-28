@@ -70,7 +70,7 @@ extern void K_deqrpl(struct k_args *);
 extern void K_queue(struct k_args *);
 extern void K_sendreq(struct k_args *);
 extern void K_sendrpl(struct k_args *);
-extern void K_sendack(struct k_args *);
+extern void _k_mbox_send_ack(struct k_args *);
 extern void K_senddata(struct k_args *);
 extern void K_recvreq(struct k_args *);
 extern void K_recvrpl(struct k_args *);
