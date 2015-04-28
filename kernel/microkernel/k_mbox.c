@@ -753,12 +753,12 @@ void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
 
 /*******************************************************************************
 *
-* K_recvdata - process a mailbox receive data request
+* _k_mbox_receive_data - process a mailbox receive data request
 *
 * RETURNS: N/A
 */
 
-void K_recvdata(struct k_args *Starter)
+void _k_mbox_receive_data(struct k_args *Starter)
 {
 	struct k_args *CopyStarter;
 	struct k_args *MoveD;

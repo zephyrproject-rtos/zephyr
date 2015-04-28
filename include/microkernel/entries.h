@@ -75,7 +75,7 @@ extern void K_senddata(struct k_args *);
 extern void _k_mbox_receive_request(struct k_args *);
 extern void _k_mbox_receive_reply(struct k_args *);
 extern void _k_mbox_receive_ack(struct k_args *);
-extern void K_recvdata(struct k_args *);
+extern void _k_mbox_receive_data(struct k_args *);
 extern void K_elapse(struct k_args *);
 extern void K_sleep(struct k_args *);
 extern void K_wakeup(struct k_args *);
