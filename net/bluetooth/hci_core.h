@@ -56,7 +56,6 @@ struct bt_dev {
 	/* Controller buffer information */
 	uint8_t			le_pkts;
 	uint16_t		le_mtu;
-	struct nano_sem		le_pkts_sem;
 
 	/* Number of commands controller can accept */
 	uint8_t			ncmd;

@@ -190,19 +190,9 @@ static void conn_tx_fiber(int arg1, int arg2)
 	BT_DBG("Started for handle %u\n", conn->handle);
 
 	while (conn->state == BT_CONN_CONNECTED) {
-		/* Wait until the controller can accept ACL packets */
-		nano_fiber_sem_take_wait(&dev->le_pkts_sem);
-
-		/* check for disconnection */
-		if (conn->state != BT_CONN_CONNECTED) {
-			nano_fiber_sem_give(&dev->le_pkts_sem);
-			break;
-		}
-
 		/* Get next ACL packet for connection */
 		buf = nano_fifo_get_wait(&conn->tx_queue);
 		if (conn->state != BT_CONN_CONNECTED) {
-			nano_fiber_sem_give(&dev->le_pkts_sem);
 			bt_buf_put(buf);
 			break;
 		}
