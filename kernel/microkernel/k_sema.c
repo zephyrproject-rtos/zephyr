@@ -380,12 +380,12 @@ void _k_sem_group_wait_any(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_waitsreq - handle semaphore test and wait request
+* _k_sem_wait_request - handle semaphore test and wait request
 *
 * RETURNS: N/A
 */
 
-void K_waitsreq(struct k_args *A)
+void _k_sem_wait_request(struct k_args *A)
 {
 	struct sem_struct *S;
 	uint32_t Sid;
