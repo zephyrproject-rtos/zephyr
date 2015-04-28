@@ -234,7 +234,7 @@ static inline int32_t _get_next_timer_expiry(void)
 
 /*******************************************************************************
 *
-* _PowerSave - power saving when idle
+* _power_save - power saving when idle
 *
 * If the BSP sets the _sys_power_save_flag flag, this routine will call the
 * _SysPowerSaveIdle() routine in an infinite loop. If the flag is not set,
@@ -245,7 +245,7 @@ static inline int32_t _get_next_timer_expiry(void)
 *
 */
 
-static void _PowerSave(void)
+static void _power_save(void)
 {
 	extern void nano_cpu_idle(void);
 	extern unsigned char _sys_power_save_flag;
@@ -269,7 +269,7 @@ static void _PowerSave(void)
 		}
 
 		/*
-		 * Code analyzers may complain that _PowerSave() uses an
+		 * Code analyzers may complain that _power_save() uses an
 		 * infinite loop
 		 * unless we indicate that this is intentional
 		 */
@@ -292,7 +292,7 @@ static void _PowerSave(void)
 
 int kernel_idle(void)
 {
-	_PowerSave(); /* never returns if power saving is enabled */
+	_power_save(); /* never returns if power saving is enabled */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* Power saving not enabled, so record timestamp when idle begins here
