@@ -38,7 +38,7 @@ extern struct evstr EVENTS[];
 extern const int _k_num_events;
 
 extern void K_event_signal(struct k_args *A);
-extern void K_event_set_handler(struct k_args *A);
+extern void _k_event_handler_set(struct k_args *A);
 extern void K_event_test(struct k_args *A);
 extern void _k_event_test_timeout(struct k_args *A);
 extern void K_sigevent(kevent_t event);

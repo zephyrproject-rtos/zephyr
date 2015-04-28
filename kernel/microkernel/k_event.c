@@ -39,12 +39,12 @@
 
 /*******************************************************************************
 *
-* K_event_set_handler - perform set event handler request
+* _k_event_handler_set - perform set event handler request
 *
 * RETURNS: N/A
 */
 
-void K_event_set_handler(struct k_args *A)
+void _k_event_handler_set(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
 
