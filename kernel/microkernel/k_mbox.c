@@ -555,12 +555,12 @@ void _k_mbox_receive_reply(struct k_args *pCopyReader)
 
 /*******************************************************************************
 *
-* K_recvreq - process a mailbox receive request
+* _k_mbox_receive_request - process a mailbox receive request
 *
 * RETURNS: N/A
 */
 
-void K_recvreq(struct k_args *Reader)
+void _k_mbox_receive_request(struct k_args *Reader)
 {
 	kmbox_t MailBoxId = Reader->Args.m1.mess.mailbox;
 	struct mbx_struct *MailBox;
