@@ -37,6 +37,6 @@ extern void _k_fifo_enque_reply(struct k_args *A);
 extern void _k_fifo_deque_reply(struct k_args *A);
 extern void _k_fifo_enque_request(struct k_args *A);
 extern void _k_fifo_deque_request(struct k_args *A);
-extern void K_queue(struct k_args *A);
+extern void _k_fifo_ioctl(struct k_args *A);
 
 #endif

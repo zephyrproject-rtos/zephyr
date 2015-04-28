@@ -785,7 +785,7 @@ def kernel_main_c_kernel_services():
 "/* 28 */ _k_fifo_deque_request,",               # depends on FIFOs
 "/* 29 */ _k_fifo_deque_reply,",               # depends on FIFOs
 "/* 30 */ _k_fifo_deque_reply,",               # depends on FIFOs and timers
-"/* 31 */ K_queue,",                # depends on FIFOs
+"/* 31 */ _k_fifo_ioctl,",               # depends on FIFOs
 "/* 32 */ _k_mbox_send_request,",   # depends on mailboxes
 "/* 33 */ _k_mbox_send_reply,",     # depends on mailboxes and timers
 "/* 34 */ _k_mbox_send_ack,",       # depends on mailboxes

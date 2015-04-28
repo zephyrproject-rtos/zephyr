@@ -288,12 +288,12 @@ int _task_fifo_get(kfifo_t queue, /* FIFO queue */
 
 /*******************************************************************************
 *
-* K_queue - perform miscellaneous FIFO request
+* _k_fifo_ioctl - perform miscellaneous FIFO request
 *
 * RETURNS: N/A
 */
 
-void K_queue(struct k_args *A)
+void _k_fifo_ioctl(struct k_args *A)
 {
 	struct que_struct *Q;
 	int Qid;

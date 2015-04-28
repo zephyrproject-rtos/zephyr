@@ -67,7 +67,7 @@ extern void _k_fifo_enque_request(struct k_args *);
 extern void _k_fifo_enque_reply(struct k_args *);
 extern void _k_fifo_deque_request(struct k_args *);
 extern void _k_fifo_deque_reply(struct k_args *);
-extern void K_queue(struct k_args *);
+extern void _k_fifo_ioctl(struct k_args *);
 extern void _k_mbox_send_request(struct k_args *);
 extern void _k_mbox_send_reply(struct k_args *);
 extern void _k_mbox_send_ack(struct k_args *);
