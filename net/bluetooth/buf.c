@@ -72,10 +72,17 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 	struct nano_fifo *avail = get_avail(type);
 	struct bt_buf *buf;
 
+	BT_DBG("type %d reserve %u\n", type, reserve_head);
+
 	buf = nano_fifo_get(avail);
 	if (!buf) {
-		BT_ERR("Failed to get free buffer\n");
-		return NULL;
+		if (context_type_get() == NANO_CTX_ISR) {
+			BT_ERR("Failed to get free buffer\n");
+			return NULL;
+		}
+
+		BT_WARN("Low on buffers. Waiting (type %d)\n", type);
+		buf = nano_fifo_get_wait(avail);
 	}
 
 	memset(buf, 0, sizeof(*buf));
