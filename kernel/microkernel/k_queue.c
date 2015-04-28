@@ -159,12 +159,12 @@ int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 
 /*******************************************************************************
 *
-* K_deqrpl - finish performing an incomplete FIFO dequeue request
+* _k_fifo_deque_reply - finish performing an incomplete FIFO dequeue request
 *
 * RETURNS: N/A
 */
 
-void K_deqrpl(struct k_args *A)
+void _k_fifo_deque_reply(struct k_args *A)
 {
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
