@@ -931,12 +931,12 @@ int _task_mbox_data_get_async_block(struct k_msg *message,
 
 /*******************************************************************************
 *
-* K_senddata - process a mailbox send data request
+* _k_mbox_send_data - process a mailbox send data request
 *
 * RETURNS: N/A
 */
 
-void K_senddata(struct k_args *Starter)
+void _k_mbox_send_data(struct k_args *Starter)
 {
 	struct k_args *CopyStarter;
 	struct k_args *MoveD;

@@ -71,7 +71,7 @@ extern void K_queue(struct k_args *);
 extern void _k_mbox_send_request(struct k_args *);
 extern void _k_mbox_send_reply(struct k_args *);
 extern void _k_mbox_send_ack(struct k_args *);
-extern void K_senddata(struct k_args *);
+extern void _k_mbox_send_data(struct k_args *);
 extern void _k_mbox_receive_request(struct k_args *);
 extern void _k_mbox_receive_reply(struct k_args *);
 extern void _k_mbox_receive_ack(struct k_args *);

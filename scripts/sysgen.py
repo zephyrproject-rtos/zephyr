@@ -789,7 +789,7 @@ def kernel_main_c_kernel_services():
 "/* 32 */ _k_mbox_send_request,",   # depends on mailboxes
 "/* 33 */ _k_mbox_send_reply,",     # depends on mailboxes and timers
 "/* 34 */ _k_mbox_send_ack,",       # depends on mailboxes
-"/* 35 */ K_senddata,",             # depends on mailboxes
+"/* 35 */ _k_mbox_send_data,",      # depends on mailboxes
 "/* 36 */ _k_mbox_receive_request,",# depends on mailboxes
 "/* 37 */ _k_mbox_receive_reply,",  # depends on mailboxes and timers
 "/* 38 */ _k_mbox_receive_ack,",    # depends on mailboxes
