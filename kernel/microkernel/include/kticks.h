@@ -61,7 +61,7 @@ extern void _k_timer_alloc(struct k_args *P);
 extern void _k_timer_dealloc(struct k_args *P);
 extern void _k_timer_start(struct k_args *P);
 extern void _k_timer_stop(struct k_args *P);
-extern void K_sleep(struct k_args *P);
+extern void _k_task_sleep(struct k_args *P);
 extern void _k_task_wakeup(struct k_args *P);
 extern void K_elapse(struct k_args *P);
 extern void K_workload(struct k_args *P);

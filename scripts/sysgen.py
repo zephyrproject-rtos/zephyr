@@ -795,7 +795,7 @@ def kernel_main_c_kernel_services():
 "/* 38 */ _k_mbox_receive_ack,",    # depends on mailboxes
 "/* 39 */ _k_mbox_receive_data,",   # depends on mailboxes
 "/* 40 */ K_elapse,",               # required
-"/* 41 */ K_sleep,",                # depends on timers
+"/* 41 */ _k_task_sleep,",          # depends on timers
 "/* 42 */ _k_task_wakeup,",         # depends on timers
 "/* 43 */ _k_task_op,",             # required
 "/* 44 */ _k_task_group_op,",       # required

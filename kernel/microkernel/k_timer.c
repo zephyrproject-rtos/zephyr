@@ -447,7 +447,7 @@ void _k_task_wakeup(struct k_args *P)
 
 /*******************************************************************************
 *
-* K_sleep - handle task sleep request
+* _k_task_sleep - handle task sleep request
 *
 * This routine, called by K_swapper(), handles the request for putting a task
 * to sleep.
@@ -455,7 +455,7 @@ void _k_task_wakeup(struct k_args *P)
 * RETURNS: N/A
 */
 
-void K_sleep(struct k_args *P)
+void _k_task_sleep(struct k_args *P)
 {
 	K_TIMER *T;
 
