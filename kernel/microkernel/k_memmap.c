@@ -73,12 +73,12 @@ void _mem_map_init(void)
 
 /*******************************************************************************
 *
-* K_alloctmo - finish handling a memory map block request that timed out
+* _k_mem_map_alloc_timeout - finish handling a memory map block request that timed out
 *
 * RETURNS: N/A
 */
 
-void K_alloctmo(struct k_args *A)
+void _k_mem_map_alloc_timeout(struct k_args *A)
 {
 	delist_timeout(A->Time.timer);
 	REMOVE_ELM(A);

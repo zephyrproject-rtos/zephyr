@@ -89,7 +89,7 @@ extern void K_alloc_timer(struct k_args *);
 extern void K_dealloc_timer(struct k_args *);
 extern void K_start_timer(struct k_args *);
 extern void K_stop_timer(struct k_args *);
-extern void K_alloctmo(struct k_args *);
+extern void _k_mem_map_alloc_timeout(struct k_args *);
 extern void K_debug_req(struct k_args *);
 extern void K_debug_ack(struct k_args *);
 extern void K_event_test(struct k_args *);
