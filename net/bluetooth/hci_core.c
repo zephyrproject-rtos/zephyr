@@ -40,6 +40,7 @@
 #include <bluetooth/bluetooth.h>
 
 #include "hci_core.h"
+#include "conn.h"
 
 /* Stacks for the fibers */
 #define RX_STACK_SIZE	1024
@@ -182,6 +183,7 @@ static void hci_acl(struct bt_buf *buf)
 {
 	struct bt_hci_acl_hdr *hdr = (void *)buf->data;
 	uint16_t handle, len = sys_le16_to_cpu(hdr->len);
+	struct bt_conn *conn;
 	uint8_t flags;
 
 	handle = sys_le16_to_cpu(hdr->handle);
@@ -198,7 +200,14 @@ static void hci_acl(struct bt_buf *buf)
 		return;
 	}
 
-	bt_buf_put(buf);
+	conn = bt_conn_lookup(handle);
+	if (!conn) {
+		BT_ERR("Unable to find conn for handle %u\n", handle);
+		bt_buf_put(buf);
+		return;
+	}
+
+	bt_conn_recv(conn, buf, flags);
 }
 
 /* HCI event processing */
@@ -207,9 +216,18 @@ static void hci_disconn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
 	uint16_t handle = bt_acl_handle(sys_le16_to_cpu(evt->handle));
+	struct bt_conn *conn;
 
 	BT_DBG("status %u handle %u reason %u\n", evt->status, handle,
 	       evt->reason);
+
+	conn = bt_conn_lookup(handle);
+	if (!conn) {
+		BT_ERR("Unable to look up conn with handle %u\n", handle);
+		return;
+	}
+
+	bt_conn_del(conn);
 
 	if (dev.adv_enable) {
 		struct bt_buf *buf;
@@ -417,9 +435,18 @@ static void le_conn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
 
 	BT_DBG("status %u handle %u role %u peer_type %u\n", evt->status,
 	       handle, evt->role, evt->peer_addr_type);
+
+	conn = bt_conn_add(&dev, handle);
+	if (!conn) {
+		BT_ERR("Unable to add new conn for handle %u\n", handle);
+		return;
+	}
+
+	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 }
 
 static void hci_le_meta_event(struct bt_buf *buf)
