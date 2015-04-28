@@ -771,7 +771,7 @@ def kernel_main_c_kernel_services():
 "/* 14 */ K_waitmreq,",             # depends on semaphores
 "/* 15 */ K_waitmrdy,",             # depends on semaphores
 "/* 16 */ _k_sem_group_wait_cancel,",          # depends on semaphores
-"/* 17 */ K_waitmacc,",             # depends on semaphores
+"/* 17 */ _k_sem_group_wait_accept,",          # depends on semaphores
 "/* 18 */ _k_sem_group_wait,",             # depends on semaphores
 "/* 19 */ K_waitmtmo,",             # depends on semaphores and timers
 "/* 20 */ K_inqsema,",              # depends on semaphores

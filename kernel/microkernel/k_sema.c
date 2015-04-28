@@ -183,7 +183,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_waitmacc - handle acceptance of the ready semaphore request
+* _k_sem_group_wait_accept - handle acceptance of the ready semaphore request
 *
 * This routine only applies to semaphore group wait requests.  It handles
 * the request for the one semaphore in the group that "wins" the semaphore
@@ -192,7 +192,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 * RETURNS: N/A
 */
 
-void K_waitmacc(struct k_args *A)
+void _k_sem_group_wait_accept(struct k_args *A)
 {
 	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
 	struct k_args *X = S->Waiters;
