@@ -458,9 +458,18 @@ static void hci_cmd_fiber(void)
 		buf = nano_fifo_get_wait(&dev.cmd_queue);
 		dev.ncmd = 0;
 
-		BT_DBG("Sending command (buf %p) to driver\n", buf);
+		BT_DBG("Sending command %x (buf %p) to driver\n",
+		       buf->hci.opcode, buf);
 
 		drv->send(buf);
+
+		/* Clear out any existing sent command */
+		if (dev.sent_cmd) {
+			BT_ERR("Uncleared pending sent_cmd\n");
+			bt_buf_put(dev.sent_cmd);
+			dev.sent_cmd = NULL;
+		}
+
 		dev.sent_cmd = buf;
 	}
 }
