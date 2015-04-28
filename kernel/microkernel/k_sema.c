@@ -221,12 +221,12 @@ void _k_sem_group_wait_accept(struct k_args *A)
 
 /*******************************************************************************
 *
-* K_waitmtmo - handle semaphore group timeout request
+* _k_sem_group_wait_timeout - handle semaphore group timeout request
 *
 * RETURNS: N/A
 */
 
-void K_waitmtmo(struct k_args *A)
+void _k_sem_group_wait_timeout(struct k_args *A)
 {
 	ksem_t *L;
 
@@ -268,7 +268,7 @@ void K_waitmrdy(struct k_args *R)
 		if (A->Time.timer)
 			force_timeout(A);
 		else
-			K_waitmtmo(A);
+			_k_sem_group_wait_timeout(A);
 	}
 	FREEARGS(R);
 }
