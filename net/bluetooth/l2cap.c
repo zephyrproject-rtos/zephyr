@@ -10,6 +10,7 @@
 #include "hci_core.h"
 #include "conn.h"
 #include "l2cap.h"
+#include "att.h"
 
 #define LE_CONN_MIN_INTERVAL	0x0028
 #define LE_CONN_MAX_INTERVAL	0x0038
@@ -137,6 +138,9 @@ void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf)
 	switch (cid) {
 	case BT_L2CAP_CID_LE_SIG:
 		le_sig(conn, buf);
+		break;
+	case BT_L2CAP_CID_ATT:
+		bt_att_recv(conn, buf);
 		break;
 	default:
 		BT_ERR("Ignoring data for unknown CID %u\n", cid);
