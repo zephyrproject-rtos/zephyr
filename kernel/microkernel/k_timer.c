@@ -425,7 +425,7 @@ void task_timer_stop(ktimer_t timer /* timer to stop */
 
 /*******************************************************************************
 *
-* K_wakeup - handle internally issued task wakeup request
+* _k_task_wakeup - handle internally issued task wakeup request
 *
 * This routine, called by K_swapper(), handles the request for waking a task
 * at the end of its sleep period.
@@ -433,7 +433,7 @@ void task_timer_stop(ktimer_t timer /* timer to stop */
 * RETURNS: N/A
 */
 
-void K_wakeup(struct k_args *P)
+void _k_task_wakeup(struct k_args *P)
 {
 	K_TIMER *T;
 	struct k_proc *X;

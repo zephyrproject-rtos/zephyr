@@ -796,7 +796,7 @@ def kernel_main_c_kernel_services():
 "/* 39 */ _k_mbox_receive_data,",   # depends on mailboxes
 "/* 40 */ K_elapse,",               # required
 "/* 41 */ K_sleep,",                # depends on timers
-"/* 42 */ K_wakeup,",               # depends on timers
+"/* 42 */ _k_task_wakeup,",         # depends on timers
 "/* 43 */ _k_task_op,",             # required
 "/* 44 */ _k_task_group_op,",       # required
 "/* 45 */ _k_task_priority_set,",            # required
