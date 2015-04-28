@@ -50,7 +50,6 @@
 #include <microkernel/sema.h>
 #include <microkernel/event.h>
 #include <microkernel/pool.h>
-#include <microkernel/memcpy.h>
 #include <microkernel/chan.h>
 #include <microkernel/task_irq.h>
 
