@@ -312,12 +312,12 @@ void _k_mbox_send_reply(struct k_args *pCopyWriter)
 
 /*******************************************************************************
 *
-* K_sendreq - process a mailbox send request
+* _k_mbox_send_request - process a mailbox send request
 *
 * RETURNS: N/A
 */
 
-void K_sendreq(struct k_args *Writer)
+void _k_mbox_send_request(struct k_args *Writer)
 {
 	kmbox_t MailBoxId = Writer->Args.m1.mess.mailbox;
 	struct mbx_struct *MailBox;
