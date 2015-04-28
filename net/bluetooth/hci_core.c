@@ -89,6 +89,15 @@ int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf)
 
 	BT_DBG("opcode %x len %u\n", opcode, buf->len);
 
+	/* Host Number of Completed Packets can ignore the ncmd value
+	 * and does not generate any cmd complete/status events.
+	 */
+	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
+		dev.drv->send(buf);
+		bt_buf_put(buf);
+		return 0;
+	}
+
 	nano_fifo_put(&dev.cmd_queue, buf);
 
 	return 0;

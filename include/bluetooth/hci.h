@@ -91,6 +91,17 @@ struct bt_hci_cp_host_buffer_size {
 	uint16_t sco_pkts;
 } PACK_STRUCT;
 
+struct bt_hci_handle_count {
+	uint16_t handle;
+	uint16_t count;
+} PACK_STRUCT;
+
+#define BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS	BT_OP(BT_OGF_BASEBAND, 0x0035)
+struct bt_hci_cp_host_num_completed_packets {
+	uint8_t  num_handles;
+	struct bt_hci_handle_count h[0];
+} PACK_STRUCT;
+
 #define BT_HCI_OP_LE_WRITE_LE_HOST_SUPP		BT_OP(BT_OGF_BASEBAND, 0x006d)
 struct bt_hci_cp_write_le_host_supp {
 	uint8_t  le;
@@ -199,10 +210,7 @@ struct bt_hci_evt_cmd_status {
 #define BT_HCI_EVT_NUM_COMPLETED_PACKETS	0x13
 struct bt_hci_evt_num_completed_packets {
 	uint8_t  num_handles;
-	struct {
-		uint16_t handle;
-		uint16_t count;
-	} h[0] PACK_STRUCT;
+	struct bt_hci_handle_count h[0];
 } PACK_STRUCT;
 
 #define BT_HCI_EVT_LE_META_EVENT		0x3e

@@ -34,6 +34,8 @@
 #include <toolchain.h>
 #include <errno.h>
 #include <stddef.h>
+#include <string.h>
+#include <misc/byteorder.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -88,11 +90,36 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 
 void bt_buf_put(struct bt_buf *buf)
 {
+	struct bt_hci_cp_host_num_completed_packets *cp;
+	struct bt_hci_handle_count *hc;
 	struct nano_fifo *avail = get_avail(buf->type);
+	uint16_t handle;
 
-	BT_DBG("buf %p\n", buf);
+	BT_DBG("buf %p type %d\n", buf, buf->type);
 
+	handle = buf->acl.handle;
 	nano_fifo_put(avail, buf);
+
+	if (avail != &avail_acl_in)
+		return;
+
+	BT_DBG("Reporting completed packet for handle %u\n", handle);
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
+				sizeof(*cp) + sizeof(*hc));
+	if (!buf) {
+		BT_ERR("Unable to allocate new HCI command\n");
+		return;
+	}
+
+	cp = (void *)bt_buf_add(buf, sizeof(*cp));
+	cp->num_handles = sys_cpu_to_le16(1);
+
+	hc = (void *)bt_buf_add(buf, sizeof(*hc));
+	hc->handle = sys_cpu_to_le16(handle);
+	hc->count  = sys_cpu_to_le16(1);
+
+	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 }
 
 uint8_t *bt_buf_add(struct bt_buf *buf, size_t len)
