@@ -188,9 +188,11 @@ extern void nano_task_timer_stop(struct nano_timer *chan);
 
 /* methods for tasks and fibers for handling time and ticks */
 
+extern int64_t nano_tick_get(void);
 extern uint32_t nano_tick_get_32(void);
 extern uint32_t nano_cycle_get_32(void);
-extern uint32_t nano_tick_delta(uint64_t *reftime);
+extern int64_t nano_tick_delta(int64_t *reftime);
+extern uint32_t nano_tick_delta_32(int64_t *reftime);
 
 #endif /* CONFIG_NANOKERNEL */
 

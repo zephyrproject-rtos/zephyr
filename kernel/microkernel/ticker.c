@@ -339,7 +339,7 @@ void _k_time_elapse(struct k_args *P)
 {
 	int64_t now = task_tick_get();
 
-	P->Args.c1.time2 = (int32_t)(now - P->Args.c1.time1);
+	P->Args.c1.time2 = now - P->Args.c1.time1;
 	P->Args.c1.time1 = now;
 }
 
@@ -363,8 +363,8 @@ void _k_time_elapse(struct k_args *P)
 * RETURNS: elapsed time in system ticks
 */
 
-int32_t task_tick_delta(int64_t *reftime /* pointer to reference time */
-			   )
+int64_t task_tick_delta(int64_t *reftime /* pointer to reference time */
+			)
 {
 	struct k_args A;
 

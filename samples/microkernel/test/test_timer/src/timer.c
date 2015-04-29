@@ -89,7 +89,8 @@ int testLowTimerStop(void)
 
 int testLowTimerPeriodicity(void)
 {
-	int32_t     ticks;
+	int64_t     ticks;
+	int32_t     ticks_32;
 	int64_t  refTime;
 	int         i;
 	int         status;
@@ -97,8 +98,8 @@ int testLowTimerPeriodicity(void)
 	pTimer[0] = task_timer_alloc();
 
 	/* Align to a tick */
-	ticks = task_tick_get_32();
-	while (task_tick_get_32() == ticks) {
+	ticks_32 = task_tick_get_32();
+	while (task_tick_get_32() == ticks_32) {
 	}
 
 	(void) task_tick_delta(&refTime);
@@ -122,23 +123,23 @@ int testLowTimerPeriodicity(void)
 	}
 
 
-	ticks = task_tick_get_32();
-	while (task_tick_get_32() == ticks) {     /* Align to a tick */
+	ticks_32 = task_tick_get_32();
+	while (task_tick_get_32() == ticks_32) {     /* Align to a tick */
 	}
-	(void) task_tick_delta(&refTime);
+	(void) task_tick_delta_32(&refTime);
 
     /* Use task_timer_restart() to change the periodicity */
 	task_timer_restart(pTimer[0], 0, 60);
 	for (i = 0; i < 6; i++) {
 		status = task_sem_take_wait_timeout(TIMER_SEM, 100);
-		ticks = task_tick_delta(&refTime);
+		ticks_32 = task_tick_delta_32(&refTime);
 
 		if (status != RC_OK) {
 			TC_ERROR("** Timer appears to not have fired\n");
 			return TC_FAIL;    /* Return failure, do not "clean up" */
 		}
 
-		if (!WITHIN_ERROR(ticks, 60, 1)) {
+		if (!WITHIN_ERROR(ticks_32, 60, 1)) {
 			TC_ERROR("** Timer fired after %d ticks, not %d\n", ticks, 60);
 			return TC_FAIL;    /* Return failure, do not "clean up" */
 		}

@@ -281,7 +281,7 @@ struct _a1arg {
 
 struct _c1arg {
 	int64_t time1;
-	int32_t time2;
+	int64_t time2;
 	K_TIMER *timer;
 	ksem_t sema;
 	ktask_t task;

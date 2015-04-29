@@ -55,7 +55,7 @@
 /* number of ticks before timer overflows */
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
 
-typedef uint64_t TICK_TYPE;
+typedef int64_t TICK_TYPE;
 #define TICK_GET(x) (TICK_TYPE)nano_tick_delta(x)
 
 static inline void TICK_SYNCH (void)

@@ -78,7 +78,7 @@ extern int sys_clock_hw_cycles_per_tick;
 #define SYS_CLOCK_HW_CYCLES_TO_NS(X) (uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64 (X))
 
 #ifdef CONFIG_NANOKERNEL
-extern uint32_t _nano_ticks;
+extern int64_t _nano_ticks;
 extern struct nano_timer *_nano_timer_list;
 #endif /* CONFIG_NANOKERNEL */
 

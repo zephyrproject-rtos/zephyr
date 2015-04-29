@@ -132,9 +132,10 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 				   timer_get_func getRtn, struct nano_timer *pTimer,
 				   void *pTimerData, int ticks)
 {
-	uint64_t  reftime;         /* reference time for tick delta */
+	int64_t  reftime;          /* reference time for tick delta */
 	uint32_t  tick;            /* current tick */
-	uint32_t  elapsed;         /* # of elapsed ticks */
+	uint32_t  elapsed_32;      /* # of elapsed ticks for 32-bit functions*/
+	int64_t  elapsed;          /* # of elapsed ticks */
 	uint32_t  duration;        /* duration of the test in ticks */
 	void     *result;          /* value returned from timer get routine */
 	int       busywaited = 0;  /* non-zero if <getRtn> returns NULL */
@@ -152,7 +153,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	startRtn (pTimer, ticks);       /* Start the timer */
 	result = waitRtn (pTimer);      /* Wait for the timer to expire */
 
-	elapsed = nano_tick_delta (&reftime);
+	elapsed_32 = nano_tick_delta_32 (&reftime);
 	duration = nano_tick_get_32 () - tick;
 
     /*
@@ -162,7 +163,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
      */
 
 	if ((result != pTimerData) ||
-		(duration - elapsed > 1) || ((duration - ticks) > 1))
+		(duration - elapsed_32 > 1) || ((duration - ticks) > 1))
 		{
 		return TC_FAIL;
 		}

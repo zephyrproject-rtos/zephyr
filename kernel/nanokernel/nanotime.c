@@ -47,7 +47,7 @@ int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #endif
 
-uint32_t _nano_ticks = 0;
+int64_t _nano_ticks = 0;
 struct nano_timer *_nano_timer_list = NULL;
 
 /*******************************************************************************
@@ -70,7 +70,7 @@ void (*__ctor_nano_time_init)(void) __attribute__((section(".ctors.250"))) =
 
 /*******************************************************************************
 *
-* nano_tick_get_32 - return the current system tick count
+* nano_tick_get_32 - return the lower part of the current system tick count
 *
 * RETURNS: the current system tick count
 *
@@ -78,7 +78,30 @@ void (*__ctor_nano_time_init)(void) __attribute__((section(".ctors.250"))) =
 
 uint32_t nano_tick_get_32(void)
 {
-	return _nano_ticks;
+	return (uint32_t)_nano_ticks;
+}
+
+/*******************************************************************************
+*
+* nano_tick_get - return the current system tick count
+*
+* RETURNS: the current system tick count
+*
+*/
+
+int64_t nano_tick_get(void)
+{
+	int64_t tmp_nano_ticks;
+	/*
+	 * Lock the interrupts when reading _nano_ticks 64-bit variable.
+	 * Some architectures (x86) do not handle 64-bit atomically, so
+	 * we have to lock the timer interrupt that causes change of
+	 * _nano_ticks
+	 */
+	unsigned int imask = irq_lock_inline();
+	tmp_nano_ticks = _nano_ticks;
+	irq_unlock_inline(imask);
+	return tmp_nano_ticks;
 }
 
 /*******************************************************************************
@@ -118,18 +141,53 @@ uint32_t nano_cycle_get_32(void)
 * y = nano_tick_delta(&reftime);     /# how long since [do stuff] #/
 *
 * RETURNS: tick count since reference time; undefined for first invocation
+*
+* NOTE: We use inline function for both 64-bit and 32-bit functions.
+* Compiler optimizes out 64-bit result handling in 32-bit version.
 */
 
-uint32_t nano_tick_delta(uint64_t *reftime)
+static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
 {
-	uint32_t  delta;
-	uint32_t  saved;
+	int64_t  delta;
+	int64_t  saved;
 
+	/*
+	 * Lock the interrupts when reading _nano_ticks 64-bit variable.
+	 * Some architectures (x86) do not handle 64-bit atomically, so
+	 * we have to lock the timer interrupt that causes change of
+	 * _nano_ticks
+	 */
+	unsigned int imask = irq_lock_inline();
 	saved = _nano_ticks;
-	delta = saved - (uint32_t)(*reftime);
-	*reftime = (uint64_t) saved;
+	irq_unlock_inline(imask);
+	delta = saved - (*reftime);
+	*reftime = saved;
 
 	return delta;
+}
+
+/*******************************************************************************
+*
+* nano_tick_delta - return number of ticks since a reference time
+*
+* RETURNS: tick count since reference time; undefined for first invocation
+*/
+
+int64_t nano_tick_delta(int64_t *reftime)
+{
+	return _nano_tick_delta(reftime);
+}
+
+/*******************************************************************************
+*
+* nano_tick_delta_32 - return 32-bit number of ticks since a reference time
+*
+* RETURNS: 32-bit tick count since reference time; undefined for first invocation
+*/
+
+uint32_t nano_tick_delta_32(int64_t *reftime)
+{
+	return (uint32_t)_nano_tick_delta(reftime);
 }
 
 #endif /*  CONFIG_NANOKERNEL */

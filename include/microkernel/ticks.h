@@ -101,7 +101,11 @@ extern void task_timer_restart(ktimer_t timer,
                                int32_t duration,
                                int32_t period);
 extern void task_timer_stop(ktimer_t timer);
-extern int32_t task_tick_delta(int64_t *reftime);
+extern int64_t task_tick_delta(int64_t *reftime);
+static inline int32_t task_tick_delta_32(int64_t *reftime)
+{
+	return (int32_t)task_tick_delta(reftime);
+}
 
 extern void task_sleep(int32_t ticks);
 extern int task_workload_get(void);
