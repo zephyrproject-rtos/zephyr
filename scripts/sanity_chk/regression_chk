@@ -96,6 +96,7 @@ nanokernel/test/test_static_idt         <nq> pentium4! minuteia! atom quark \n\
 nanokernel/test/test_xip                <nq> pentium4! minuteia! atom quark \n\
 nanokernel/test/test_timer              <nq> pentium4! minuteia! atom quark \n\
 nanokernel/test/test_arm_m3_irq_vector_table <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
+nanokernel/test/test_bluetooth          <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
 nanokernel/test/test_context            <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
 nanokernel/test/test_fifo               <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
 nanokernel/test/test_lifo               <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
