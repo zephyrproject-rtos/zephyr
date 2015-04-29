@@ -42,10 +42,11 @@
 
 /* Type of data contained in this buffer */
 enum bt_buf_type {
-	BT_CMD,		/* HCI command */
-	BT_EVT,		/* HCI event */
-	BT_ACL_OUT,	/* Outgoing ACL data */
-	BT_ACL_IN,	/* Incoming ACL data */
+	BT_CMD,			/* HCI command */
+	BT_EVT,			/* HCI event */
+	BT_ACL_OUT,		/* Outgoing ACL data */
+	BT_ACL_IN,		/* Incoming ACL data */
+	BT_DUMMY = BT_CMD,	/* Only used for waking up fibers */
 };
 
 /* HCI command specific info */

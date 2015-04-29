@@ -257,8 +257,8 @@ void bt_conn_del(struct bt_conn *conn)
 	conn->state = BT_CONN_DISCONNECTED;
 
 	/* Send dummy buffers to wake up and kill the fibers */
-	nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_ACL_OUT, 0));
-	nano_fifo_put(&conn->rx_queue, bt_buf_get(BT_ACL_IN, 0));
+	nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
+	nano_fifo_put(&conn->rx_queue, bt_buf_get(BT_DUMMY, 0));
 
 	bt_conn_put(conn);
 }
