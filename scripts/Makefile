@@ -21,4 +21,4 @@ build_docproc: $(obj)/docproc
 subdir-$(CONFIG_MODVERSIONS) += genksyms
 
 # Let clean descend into subdirs
-subdir-	+= basic kconfig package
+subdir-	+= basic kconfig package gen_idt

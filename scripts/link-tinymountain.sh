@@ -78,7 +78,7 @@ initial_link()
 gen_idt()
 {
 	${OBJCOPY} -I elf32-i386 -O binary -j intList ${1} isrList.bin
-	${srctree}/host/x86-linux2/bin/genIdt -i isrList.bin -n 256 -o staticIdt.bin
+	${GENIDT} -i isrList.bin -n 256 -o staticIdt.bin
 	${OBJCOPY} -I binary -B i386 -O elf32-i386 --rename-section .data=staticIdt staticIdt.bin ${2}
 	rm -f staticIdt.bin
 	rm -f isrList.bin

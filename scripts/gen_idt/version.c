@@ -31,7 +31,7 @@
  */
 
 #include <stdio.h>
-#include <vxmicro/version.h>
+#include "version.h"
 
 void show_version(const char *name, const struct version *ver)
 {

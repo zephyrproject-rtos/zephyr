@@ -55,7 +55,7 @@ from within the VxMicro build system during the link stage.
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <vxmicro/version.h>
+#include "version.h"
 
 /* These come from the shared directory */
 #include "segselect.h"
