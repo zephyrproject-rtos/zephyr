@@ -91,14 +91,9 @@ static struct bt_buf *bt_uart_evt_recv(int *remaining)
 {
 	struct bt_hci_evt_hdr hdr;
 	struct bt_buf *buf;
-	int read;
 
-	read = bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
-	if (read != sizeof(hdr)) {
-		BT_ERR("Cannot read event header\n");
-		*remaining = -EIO;
-		return NULL;
-	}
+	/* We can ignore the return value since we pass len == min */
+	bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	*remaining = hdr.len;
 
@@ -117,14 +112,9 @@ static struct bt_buf *bt_uart_acl_recv(int *remaining)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct bt_buf *buf;
-	int read;
 
-	read = bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
-	if (read != sizeof(hdr)) {
-		BT_ERR("Cannot read ACL header\n");
-		*remaining = -EIO;
-		return NULL;
-	}
+	/* We can ignore the return value since we pass len == min */
+	bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	buf = bt_buf_get(BT_ACL_IN, 0);
 	if (buf)
@@ -178,12 +168,6 @@ void bt_uart_isr(void *unused)
 				default:
 					BT_ERR("Unknown H4 type %u\n", type);
 					return;
-			}
-
-			if (remaining < 0) {
-				BT_ERR("Corrupted data received\n");
-				remaining = 0;
-				return;
 			}
 
 			if (remaining > bt_buf_tailroom(buf)) {
