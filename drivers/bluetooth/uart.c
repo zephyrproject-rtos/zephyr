@@ -53,7 +53,7 @@
 
 #define UART CONFIG_BLUETOOTH_UART_INDEX
 
-static int bt_uart_read(int uart, uint8_t *buf, size_t len)
+static int bt_uart_read(int uart, uint8_t *buf, size_t len, size_t min)
 {
 	int total = 0;
 
@@ -63,7 +63,9 @@ static int bt_uart_read(int uart, uint8_t *buf, size_t len)
 		rx = uart_fifo_read(uart, buf, len);
 		if (rx == 0) {
 			BT_DBG("Got zero bytes from UART\n");
-			continue;
+			if (total < min)
+				continue;
+			break;
 		}
 
 		BT_DBG("read %d remaining %d\n", rx, len - rx);
@@ -91,7 +93,7 @@ static struct bt_buf *bt_uart_evt_recv(int *remaining)
 	struct bt_buf *buf;
 	int read;
 
-	read = bt_uart_read(UART, (void *)&hdr, sizeof(hdr));
+	read = bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 	if (read != sizeof(hdr)) {
 		BT_ERR("Cannot read event header\n");
 		*remaining = -EIO;
@@ -117,7 +119,7 @@ static struct bt_buf *bt_uart_acl_recv(int *remaining)
 	struct bt_buf *buf;
 	int read;
 
-	read = bt_uart_read(UART, (void *)&hdr, sizeof(hdr));
+	read = bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 	if (read != sizeof(hdr)) {
 		BT_ERR("Cannot read ACL header\n");
 		*remaining = -EIO;
@@ -160,10 +162,10 @@ void bt_uart_isr(void *unused)
 			uint8_t type;
 
 			/* Get packet type */
-			read = bt_uart_read(UART, &type, sizeof(type));
+			read = bt_uart_read(UART, &type, sizeof(type), 0);
 			if (read != sizeof(type)) {
-				BT_ERR("Error reading UART\n");
-				return;
+				BT_WARN("Unable to read H4 packet type\n");
+				continue;
 			}
 
 			switch (type) {
@@ -199,11 +201,7 @@ void bt_uart_isr(void *unused)
 			continue;
 		}
 
-		read = bt_uart_read(UART, bt_buf_tail(buf), remaining);
-		if (read < 0) {
-			BT_ERR("Error reading UART\n");
-			goto failed;
-		}
+		read = bt_uart_read(UART, bt_buf_tail(buf), remaining, 0);
 
 		buf->len += read;
 		remaining -= read;
