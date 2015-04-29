@@ -39,6 +39,7 @@
 #include <board.h>
 #include <drivers/uart.h>
 #include <misc/byteorder.h>
+#include <string.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -74,43 +75,66 @@ static int bt_uart_read(int uart, uint8_t *buf, size_t len)
 	return total;
 }
 
-static int bt_uart_evt_recv(struct bt_buf *buf)
+static size_t bt_uart_discard(int uart, size_t len)
 {
-	struct bt_hci_evt_hdr *hdr;
-	int read;
+	uint8_t buf[33];
 
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	if (len > sizeof(buf))
+		len = sizeof(buf);
 
-	read = bt_uart_read(UART, (void *)hdr, sizeof(*hdr));
-	if (read != sizeof(*hdr)) {
-		BT_ERR("Cannot read event header\n");
-		return -EIO;
-	}
-
-	BT_DBG("len %u\n", hdr->len);
-
-	return hdr->len;
+	return uart_fifo_read(uart, buf, len);
 }
 
-static int bt_uart_acl_recv(struct bt_buf *buf)
+static struct bt_buf *bt_uart_evt_recv(int *remaining)
 {
-	struct bt_hci_acl_hdr *hdr;
-	uint16_t len;
+	struct bt_hci_evt_hdr hdr;
+	struct bt_buf *buf;
 	int read;
 
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
-
-	read = bt_uart_read(UART, (void *)hdr, sizeof(*hdr));
-	if (read != sizeof(*hdr)) {
-		BT_ERR("Cannot read ACL header\n");
-		return -EIO;
+	read = bt_uart_read(UART, (void *)&hdr, sizeof(hdr));
+	if (read != sizeof(hdr)) {
+		BT_ERR("Cannot read event header\n");
+		*remaining = -EIO;
+		return NULL;
 	}
 
-	len = sys_le16_to_cpu(hdr->len);
+	*remaining = hdr.len;
 
-	BT_DBG("len %u\n", len);
+	buf = bt_buf_get(BT_EVT, 0);
+	if (buf)
+		memcpy(bt_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+	else
+		BT_ERR("No available event buffers!\n");
 
-	return len;
+	BT_DBG("len %u\n", hdr.len);
+
+	return buf;
+}
+
+static struct bt_buf *bt_uart_acl_recv(int *remaining)
+{
+	struct bt_hci_acl_hdr hdr;
+	struct bt_buf *buf;
+	int read;
+
+	read = bt_uart_read(UART, (void *)&hdr, sizeof(hdr));
+	if (read != sizeof(hdr)) {
+		BT_ERR("Cannot read ACL header\n");
+		*remaining = -EIO;
+		return NULL;
+	}
+
+	buf = bt_buf_get(BT_ACL_IN, 0);
+	if (buf)
+		memcpy(bt_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
+	else
+		BT_ERR("No available ACL buffers!\n");
+
+	*remaining = sys_le16_to_cpu(hdr.len);
+
+	BT_DBG("len %u\n", *remaining);
+
+	return buf;
 }
 
 void bt_uart_isr(void *unused)
@@ -131,8 +155,8 @@ void bt_uart_isr(void *unused)
 			continue;
 		}
 
-		/* Character(s) have been received */
-		if (!buf) {
+		/* Beginning of a new packet */
+		if (!remaining) {
 			uint8_t type;
 
 			/* Get packet type */
@@ -144,20 +168,10 @@ void bt_uart_isr(void *unused)
 
 			switch (type) {
 				case H4_EVT:
-					buf = bt_buf_get(BT_EVT, 0);
-					if (!buf) {
-						BT_ERR("No event buffers!\n");
-						return;
-					}
-					remaining = bt_uart_evt_recv(buf);
+					buf = bt_uart_evt_recv(&remaining);
 					break;
 				case H4_ACL:
-					buf = bt_buf_get(BT_ACL_IN, 0);
-					if (!buf) {
-						BT_ERR("No ACL buffers!\n");
-						return;
-					}
-					remaining = bt_uart_acl_recv(buf);
+					buf = bt_uart_acl_recv(&remaining);
 					break;
 				default:
 					BT_ERR("Unknown H4 type %u\n", type);
@@ -166,7 +180,8 @@ void bt_uart_isr(void *unused)
 
 			if (remaining < 0) {
 				BT_ERR("Corrupted data received\n");
-				goto failed;
+				remaining = 0;
+				return;
 			}
 
 			if (remaining > bt_buf_tailroom(buf)) {
@@ -175,6 +190,13 @@ void bt_uart_isr(void *unused)
 			}
 
 			BT_DBG("need to get %u bytes\n", remaining);
+		}
+
+		if (!buf) {
+			read = bt_uart_discard(UART, remaining);
+			BT_WARN("Discarded %d bytes\n", read);
+			remaining -= read;
+			continue;
 		}
 
 		read = bt_uart_read(UART, bt_buf_tail(buf), remaining);
