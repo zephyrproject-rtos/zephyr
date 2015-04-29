@@ -71,11 +71,16 @@ static uint8_t *packetbufptr;
 #endif
 
 #define DEBUG 0
-#if DEBUG
+#define DEBUG_LEVEL DEBUG
+//#define DEBUG DEBUG_NONE
+#include "net/ip/uip-debug.h"
+
+#if UIP_LOGGING
 #include <stdio.h>
-#define PRINTF(...) printf(__VA_ARGS__)
+void uip_log(char *msg);
+#define UIP_LOG(m) uip_log(m)
 #else
-#define PRINTF(...)
+#define UIP_LOG(m)
 #endif
 
 /*---------------------------------------------------------------------------*/

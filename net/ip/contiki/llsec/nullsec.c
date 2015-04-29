@@ -49,6 +49,17 @@
 #include "net/netstack.h"
 #include "net/packetbuf.h"
 
+#define DEBUG 0
+#include "net/ip/uip-debug.h"
+
+#if UIP_LOGGING
+#include <stdio.h>
+void uip_log(char *msg);
+#define UIP_LOG(m) uip_log(m)
+#else
+#define UIP_LOG(m)
+#endif
+
 /*---------------------------------------------------------------------------*/
 static void
 bootstrap(llsec_on_bootstrapped_t on_bootstrapped)

@@ -84,11 +84,14 @@ static volatile unsigned char poll_requested;
 static void call_process(struct process *p, process_event_t ev, process_data_t data, struct net_buf *buf);
 
 #define DEBUG 0
-#if DEBUG
+#include "net/ip/uip-debug.h"
+
+#if UIP_LOGGING
 #include <stdio.h>
-#define PRINTF(...) printf(__VA_ARGS__)
+void uip_log(char *msg);
+#define UIP_LOG(m) uip_log(m)
 #else
-#define PRINTF(...)
+#define UIP_LOG(m)
 #endif
 
 /*---------------------------------------------------------------------------*/

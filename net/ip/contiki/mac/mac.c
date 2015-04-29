@@ -34,12 +34,15 @@
 #include "net/net_buf.h"
 
 #define DEBUG 0
-#if DEBUG
+#include "net/ip/uip-debug.h"
+
+#if UIP_LOGGING
 #include <stdio.h>
-#define PRINTF(...) printf(__VA_ARGS__)
-#else /* DEBUG */
-#define PRINTF(...)
-#endif /* DEBUG */
+void uip_log(char *msg);
+#define UIP_LOG(m) uip_log(m)
+#else
+#define UIP_LOG(m)
+#endif
 
 /*---------------------------------------------------------------------------*/
 void

@@ -43,6 +43,17 @@
 #include "net/uip-driver.h"
 #include <string.h>
 
+#define DEBUG 0
+#include "net/ip/uip-debug.h"
+
+#if UIP_LOGGING
+#include <stdio.h>
+void uip_log(char *msg);
+#define UIP_LOG(m) uip_log(m)
+#else
+#define UIP_LOG(m)
+#endif
+
 /*--------------------------------------------------------------------*/
 uint8_t
 uip_driver_send(struct net_buf *buf, const uip_lladdr_t *lladdr)

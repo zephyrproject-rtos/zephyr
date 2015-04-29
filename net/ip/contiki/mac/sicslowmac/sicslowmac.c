@@ -55,6 +55,7 @@ struct net_buf;
 #include "lib/random.h"
 
 #define DEBUG 0
+#include "net/ip/uip-debug.h"
 
 #if DEBUG
 #include <stdio.h>
@@ -63,6 +64,14 @@ struct net_buf;
 #else
 #define PRINTF(...)
 #define PRINTADDR(addr)
+#endif
+
+#if UIP_LOGGING
+#include <stdio.h>
+void uip_log(char *msg);
+#define UIP_LOG(m) uip_log(m)
+#else
+#define UIP_LOG(m)
 #endif
 
 /**  \brief The sequence number (0x00 - 0xff) added to the transmitted
