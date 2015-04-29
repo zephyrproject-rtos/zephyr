@@ -84,6 +84,8 @@ input(struct net_buf *buf)
     memcpy(&uip_buf(buf)[UIP_LLH_LEN], packetbuf_dataptr(buf), packetbuf_datalen(buf));
     uip_len(buf) = packetbuf_datalen(buf);
     tcpip_input(buf);
+  } else {
+    UIP_LOG("uip-driver: too long packet discarded");
   }
 }
 /*--------------------------------------------------------------------*/
