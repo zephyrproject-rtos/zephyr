@@ -105,6 +105,7 @@ nanokernel/test/test_sema               <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
 nanokernel/test/test_stack              <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
 nanokernel/test/test_timer              <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
 nanokernel/test/test_xip                <nq> ti_lm3s6965! fsl_frdm_k64f     \n\
+microkernel/test/test_bluetooth         <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_critical          <u>  ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_events            <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_fifo              <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
