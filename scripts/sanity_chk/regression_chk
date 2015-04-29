@@ -76,6 +76,7 @@ PRJ_PATH=${VXMICRO_BASE}/samples
 PRJ_LIST_STD="\
     # projects that don't indicate completion                               \n\
 nanokernel/apps/bluetooth/init               <n>  pentium4  minuteia  atom quark \n\
+nanokernel/apps/bluetooth/init               <n>  fsl_frdm_k64f ti_lm3s6965      \n\
 nanokernel/apps/hello_world                  <n>  pentium4  minuteia  atom quark \n\
 nanokernel/apps/philosophers                 <n>  pentium4  minuteia  atom quark \n\
 nanokernel/apps/hello_world                  <n>  fsl_frdm_k64f ti_lm3s6965      \n\
