@@ -191,16 +191,26 @@ SECTIONS
     GROUP_END(RAMABLE_REGION)
 
     GROUP_START(SYSTEM_CONTROL_PERIPH)
-    SECTION_PROLOGUE(scp,(NOLOAD),)
+    SECTION_PROLOGUE(.scp,(NOLOAD),)
 	{
+	/*
+	 * The leading '.' in the ".scp" section name indicates that section is
+	 * mapped to neither a normal ROM nor a normal RAM area.
+	 */
+
 	*(.scp)
 	*(".scp.*")
 	 } GROUP_LINK_IN(SYSTEM_CONTROL_PERIPH)
     GROUP_END(SYSTEM_CONTROL_PERIPH)
 
     GROUP_START(SYSTEM_CONTROL_SPACE)
-    SECTION_PROLOGUE(scs,(NOLOAD),)
+    SECTION_PROLOGUE(.scs,(NOLOAD),)
 	{
+	/*
+	 * The leading '.' in the ".scs" section name indicates that section is
+	 * mapped to neither normal ROM nor normal RAM space.
+	 */
+
 	*(.scs)
 	*(".scs.*")
 	 } GROUP_LINK_IN(SYSTEM_CONTROL_SPACE)
