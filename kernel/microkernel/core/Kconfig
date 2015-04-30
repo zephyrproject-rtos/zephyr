@@ -72,4 +72,17 @@ config NUM_TIMER_PACKETS
 	help
 	This option specifies the number of timer packets to create. Each
 	explicit and implicit timer usage consumes one timer packet.
+
+config  NUM_TASK_PRIORITIES
+	int
+	prompt "Number of task priorities"
+	default 16
+	range 1 256
+	depends on MICROKERNEL
+	help
+	This option specifies the number of task priorities supported by the
+	task scheduler. Specifying "N" provides support for task priorities
+	ranging from 0 (highest) through N-2; task priority N-1 (lowest) is
+	reserved for the kernel's idle task.
+
 endmenu

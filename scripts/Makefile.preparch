@@ -7,10 +7,9 @@ endif
 define filechk_prj.vpf
 	(echo "% WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!"; \
 	echo; \
-	echo "% NODE NAME         NLINAME      NDPACKS NCPACKS NTIMERS KSTACK"; \
-	echo "% CONFIG NUM_COMMAND_PACKETS NUM_TIMER_PACKETS"; \
+	echo "% CONFIG NUM_COMMAND_PACKETS NUM_TIMER_PACKETS NUM_TASK_PRIORITIES"; \
 	echo "% ============================================================="; \
-	echo "  CONFIG ${CONFIG_NUM_COMMAND_PACKETS}                  ${CONFIG_NUM_TIMER_PACKETS}"; \
+	echo "  CONFIG ${CONFIG_NUM_COMMAND_PACKETS}             ${CONFIG_NUM_TIMER_PACKETS}               ${CONFIG_NUM_TASK_PRIORITIES}"; \
 	echo; \
 	echo "% TASKGROUP NAME";\
 	echo "% ==============";\
