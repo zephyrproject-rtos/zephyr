@@ -153,7 +153,7 @@ void enlist_timeout(struct k_args *P)
 
 	GETTIMER(T);
 	T->duration = P->Time.ticks;
-	T->Tr = 0;
+	T->period = 0;
 	T->Args = P;
 	enlist_timer(T);
 	P->Time.timer = T;
@@ -300,17 +300,21 @@ void _k_timer_start(struct k_args *P /* pointer to timer start
 		delist_timer(T);
 
 	T->duration = (int32_t)P->Args.c1.time1; /* Set the initial delay */
-	T->Tr = P->Args.c1.time2;	  /* Set the period */
+	T->period = P->Args.c1.time2;	  /* Set the period */
 
-	if ((T->duration < 0) || (T->Tr < 0)) {/* Either the initial delay and/or */
-		T->duration = -1;                  /* the period is invalid.  Mark    */
-		return;			                   /* the timer as inactive.          */
+    /*
+     * Either the initial delay and/or the period is invalid.  Mark
+     * the timer as inactive.
+     */
+	if ((T->duration < 0) || (T->period < 0)) {
+		T->duration = -1;
+		return;
 	}
 
 	if (T->duration == 0) {
-		if (T->Tr != 0) {/* Match the initial delay to the period. */
-			T->duration = T->Tr;
-		} else {	    /* duration=0, Tr=0 is an invalid combination. */
+		if (T->period != 0) {/* Match the initial delay to the period. */
+			T->duration = T->period;
+		} else {	    /* duration=0, period=0 is an invalid combination. */
 			T->duration = -1; /* Mark the timer as invalid. */
 			return;
 		}
@@ -332,12 +336,12 @@ void _k_timer_start(struct k_args *P /* pointer to timer start
 * This routine starts or restarts the specified low resolution timer.
 *
 * When the specified number of ticks, set by <duration>, expires, the semaphore
-* is signalled.  The timer repeats the expiration/signal cycle each time <Tr>
-* ticks has elapsed.
+* is signalled.  The timer repeats the expiration/signal cycle each time
+* <period> ticks has elapsed.
 *
-* Setting <Tr> to 0 stops the timer at the end of the initial delay. Setting
-* <duration> to 0 will cause an initial delay equal to the repetition
-* interval.  If both <duration> and <Tr> are set to 0, or if one or both of
+* Setting <period> to 0 stops the timer at the end of the initial delay.
+* Setting <duration> to 0 will cause an initial delay equal to the repetition
+* interval.  If both <duration> and <period> are set to 0, or if one or both of
 * the values is invalid (negative), then this kernel API acts like a
 * task_timer_stop(): if the allocated timer was still running (from a
 * previous call), it will be cancelled; if not, nothing will happen.
@@ -347,7 +351,7 @@ void _k_timer_start(struct k_args *P /* pointer to timer start
 
 void task_timer_start(ktimer_t timer, /* timer to start */
 		      int32_t duration,       /* initial delay in ticks */
-		      int32_t Tr,     /* repetition interval in ticks */
+		      int32_t period,         /* repetition interval in ticks */
 		      ksem_t sema     /* semaphore to signal */
 		      )
 {
@@ -356,7 +360,7 @@ void task_timer_start(ktimer_t timer, /* timer to start */
 	A.Comm = TSTART;
 	A.Args.c1.timer = _timer_id_to_ptr(timer);
 	A.Args.c1.time1 = (int64_t)duration;
-	A.Args.c1.time2 = Tr;
+	A.Args.c1.time2 = period;
 	A.Args.c1.sema = sema;
 	KERNEL_ENTRY(&A);
 }
@@ -372,7 +376,7 @@ void task_timer_start(ktimer_t timer, /* timer to start */
 
 void task_timer_restart(ktimer_t timer, /* timer to restart */
 			int32_t duration,           /* initial delay */
-			int32_t Tr      /* repetition interval */
+			int32_t period              /* repetition interval */
 			)
 {
 	struct k_args A;
@@ -380,7 +384,7 @@ void task_timer_restart(ktimer_t timer, /* timer to restart */
 	A.Comm = TSTART;
 	A.Args.c1.timer = _timer_id_to_ptr(timer);
 	A.Args.c1.time1 = (int64_t)duration;
-	A.Args.c1.time2 = Tr;
+	A.Args.c1.time2 = period;
 	A.Args.c1.sema = ENDLIST;
 	KERNEL_ENTRY(&A);
 }
@@ -464,7 +468,7 @@ void _k_task_sleep(struct k_args *P)
 
 	GETTIMER(T);
 	T->duration = P->Time.ticks;
-	T->Tr = 0;
+	T->period = 0;
 	T->Args = P;
 
 	P->Comm = WAKEUP;

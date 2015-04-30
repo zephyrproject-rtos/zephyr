@@ -108,8 +108,8 @@ static inline void _HandleExpiredTimers(int ticks)
 			_k_timer_list_head = T->Forw;
 			_k_timer_list_head->Back = NULL;
 		}
-		if (T->Tr) {
-			T->duration = T->Tr;
+		if (T->period) {
+			T->duration = T->period;
 			enlist_timer(T);
 		} else {
 			T->duration = -1;
