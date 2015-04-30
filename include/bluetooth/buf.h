@@ -51,7 +51,13 @@ enum bt_buf_type {
 
 /* HCI command specific info */
 struct bt_buf_hci_data {
-	struct nano_sem *sync;
+	/* Used by bt_hci_cmd_send_sync. Initially contains the waiting
+	 * semaphore, as the semaphore is given back contains the bt_buf
+	 * for the return parameters.
+	 */
+	void *sync;
+
+	/* The command OpCode that the buffer contains */
 	uint16_t opcode;
 };
 

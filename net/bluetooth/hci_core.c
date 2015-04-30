@@ -108,9 +108,11 @@ int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf)
 	return 0;
 }
 
-static int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf)
+static int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
+				struct bt_buf **rsp)
 {
 	struct nano_sem sync_sem;
+	int err;
 
 	if (!buf) {
 		buf = bt_hci_cmd_create(opcode, 0);
@@ -127,7 +129,20 @@ static int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf)
 
 	nano_sem_take_wait(&sync_sem);
 
-	return 0;
+	/* Indicate failure if we failed to get the return parameters */
+	if (!buf->hci.sync)
+		err = -EIO;
+	else
+		err = 0;
+
+	if (rsp)
+		*rsp = buf->hci.sync;
+	else if (buf->hci.sync)
+		bt_buf_put(buf->hci.sync);
+
+	bt_buf_put(buf);
+
+	return err;
 }
 
 static void hci_acl(struct bt_buf *buf)
@@ -275,7 +290,7 @@ static void hci_le_read_features_complete(struct bt_buf *buf)
 	memcpy(dev.le_features, rp->features, sizeof(dev.le_features));
 }
 
-static void hci_cmd_done(uint16_t opcode)
+static void hci_cmd_done(uint16_t opcode, uint8_t status, struct bt_buf *buf)
 {
 	struct bt_buf *sent = dev.sent_cmd;
 
@@ -290,20 +305,34 @@ static void hci_cmd_done(uint16_t opcode)
 	dev.sent_cmd = NULL;
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
-	if (sent->hci.sync)
-		nano_fiber_sem_give(sent->hci.sync);
+	if (sent->hci.sync) {
+		struct nano_sem *sem = sent->hci.sync;
 
-	bt_buf_put(sent);
+		if (status)
+			sent->hci.sync = NULL;
+		else
+			sent->hci.sync = bt_buf_hold(buf);
+
+		nano_fiber_sem_give(sem);
+	} else {
+		bt_buf_put(sent);
+	}
 }
 
 static void hci_cmd_complete(struct bt_buf *buf)
 {
 	struct hci_evt_cmd_complete *evt = (void *)buf->data;
 	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
+	uint8_t *status;
 
 	BT_DBG("opcode %x\n", opcode);
 
 	bt_buf_pull(buf, sizeof(*evt));
+
+	/* All command return parameters have a 1-byte status in the
+	 * beginning, so we can safely make this generalization.
+	 */
+	status = buf->data;
 
 	switch (opcode) {
 	case BT_HCI_OP_RESET:
@@ -332,7 +361,7 @@ static void hci_cmd_complete(struct bt_buf *buf)
 		break;
 	}
 
-	hci_cmd_done(opcode);
+	hci_cmd_done(opcode, *status, buf);
 
 	if (evt->ncmd && !dev.ncmd) {
 		/* Allow next command to be sent */
@@ -356,7 +385,7 @@ static void hci_cmd_status(struct bt_buf *buf)
 		break;
 	}
 
-	hci_cmd_done(opcode);
+	hci_cmd_done(opcode, evt->status, NULL);
 
 	if (evt->ncmd && !dev.ncmd) {
 		/* Allow next command to be sent */
@@ -534,7 +563,7 @@ static int hci_init(void)
 	bt_hci_cmd_send(BT_HCI_OP_READ_LOCAL_VERSION_INFO, NULL);
 
 	/* Read Bluetooth Address */
-	bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL);
+	bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, NULL);
 
 	/* For now we only support LE capable controllers */
 	if (!lmp_le_capable(dev)) {
@@ -568,7 +597,7 @@ static int hci_init(void)
 		ev->events[5] |= 0x80; /* Encryption Key Refresh Complete */
 	}
 
-	bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf);
+	bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE, sizeof(*hbs));
 	if (!buf)
@@ -608,7 +637,8 @@ static int hci_init(void)
 		/* Excplicitly enable LE for dual-mode controllers */
 		cp->le = 0x01;
 		cp->simul = 0x00;
-		bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, buf);
+		bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, buf,
+				     NULL);
 	}
 
 	BT_DBG("HCI ver %u rev %u, manufacturer %u\n", dev.hci_version,
@@ -772,5 +802,5 @@ int bt_start_advertising(uint8_t type, const char *name, uint8_t name_len)
 	dev.adv_enable = 0x01;
 	memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
