@@ -20,4 +20,15 @@ ISA_FLAG_pentium4 = $(call cc-option,-march=pentium4,)
 ISA_FLAG_minuteia = $(call cc-option,-march=pentium,)
 ISA_FLAG_atom_n28xx = $(call cc-option,-march=atom,) $(call cc-option,-mtune=atom,)
 
-export ISA_FLAG_pentium4 ISA_FLAG_minuteia ISA_FLAG_atom_n28xx
+
+QEMU_BIOS ?= /usr/share/qemu
+QEMU_CPU_TYPE_x86 = qemu32
+QEMU_FLAGS_x86 = -m 32 -cpu $(QEMU_CPU_TYPE_x86) \
+		-no-reboot -nographic -display none -net none \
+		-clock dynticks -no-acpi -balloon none -no-hpet \
+		-L $(QEMU_BIOS) -bios bios.bin \
+		-serial mon:stdio -machine type=pc-0.14
+QEMU_x86 = qemu-system-i386
+
+export ISA_FLAG_pentium4 ISA_FLAG_minuteia ISA_FLAG_atom_n28xx \
+	QEMU_FLAGS_x86 QEMU_x86 QEMU_CPU_TYPE_x86

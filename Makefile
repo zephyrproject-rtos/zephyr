@@ -373,6 +373,8 @@ DEPMOD		= /sbin/depmod
 PERL		= perl
 PYTHON		= python
 CHECK		= sparse
+QEMU_BIN_PATH	?= /usr/bin
+QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
 
 CHECKFLAGS     := -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   =
@@ -1296,6 +1298,7 @@ help:
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* tinymountain	  - Build the bare kernel'
+	@echo  '  qemu		  - Build the bare kernel and runs the emulation with qemu'
 	@echo  '* modules	  - Build all modules'
 	@echo  '  modules_install - Install all modules to INSTALL_MOD_PATH (default: /)'
 	@echo  '  firmware_install- Install all firmware to INSTALL_FW_PATH'
@@ -1547,6 +1550,12 @@ tools/: FORCE
 tools/%: FORCE
 	$(Q)mkdir -p $(objtree)/tools
 	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(filter --j% -j,$(MAKEFLAGS))" O=$(objtree) subdir=tools -C $(src)/tools/ $*
+
+QEMU_FLAGS = $ $(QEMU_FLAGS_$(SRCARCH))
+
+qemu: tinymountain
+	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(SRCARCH))'
+	$(Q)$(QEMU) $(QEMU_FLAGS) -kernel tinymountain.elf
 
 # Single targets
 # ---------------------------------------------------------------------------
