@@ -8,13 +8,13 @@ all: FORCE
 	PROJECT=$(PROJECT_BASE) VPFILE=$(VPFILE)
 
 rm-files:= final-linker.cmd linker.cmd modules.order \
-	staticIdt.o System.map tinymountain.lnk \
-	tinymountain.map tinymountain.elf
+	staticIdt.o System.map *kernel.lnk \
+	*kernel.map *kernel.elf
 rm-dirs := arch drivers include kernel lib misc \
 	scripts source
 
 clean: FORCE
-	$(shell rm $(rm-files))
+	$(shell rm $(rm-files) -f)
 	$(shell rm $(rm-dirs) -r)
 
 mrproper: clean

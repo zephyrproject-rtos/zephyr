@@ -784,7 +784,14 @@ LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)--gc-sections)
 LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)--build-id=none)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
-export LD_TOOLCHAIN
+
+ifeq ("$(CONFIG_MICROKERNEL)", "y")
+KERNEL_NAME=microkernel
+else
+KERNEL_NAME=nanokernel
+endif
+
+export LD_TOOLCHAIN KERNEL_NAME
 
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or

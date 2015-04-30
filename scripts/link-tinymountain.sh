@@ -63,7 +63,7 @@ linker_command()
 		-o ${1}
 }
 
-# Link of tinymountain.o used for section mismatch analysis
+# Link of ${KERNEL_NAME}.o used for section mismatch analysis
 # ${1} output file
 # ${2} linker parameters file
 # ${3} linker command file
@@ -73,7 +73,7 @@ initial_link()
 }
 
 #Generates IDT and merge them into final binary
-# ${1} input file (tinymountain.elf)
+# ${1} input file (${KERNEL_NAME}.elf)
 # ${2} output file (staticIdt.o)
 gen_idt()
 {
@@ -85,7 +85,7 @@ gen_idt()
 }
 
 # Link of tinymountain
-# ${1} - linker params file (tinymountain.lnk)
+# ${1} - linker params file (${KERNEL_NAME}.lnk)
 # ${2} - linker command file (final-linker.cmd)
 # ${3} - input file (staticIdt.o)
 # ${4} - output file
@@ -148,11 +148,11 @@ cleanup()
 	rm -f .tmp_System.map
 	rm -f .tmp_kallsyms*
 	rm -f .tmp_version
-	rm -f .tmp_tinymountain*
+	rm -f .tmp_${KERNEL_NAME}*
 	rm -f System.map
-	rm -f tinymountain.lnk
-	rm -f tinymountain.map
-	rm -f tinymountain.elf
+	rm -f ${KERNEL_NAME}.lnk
+	rm -f ${KERNEL_NAME}.map
+	rm -f ${KERNEL_NAME}.elf
 	rm -f staticIdt.o
 	rm -f linker.cmd
 	rm -f final-linker.cmd
@@ -182,11 +182,11 @@ case "${KCONFIG_CONFIG}" in
 	. "./${KCONFIG_CONFIG}"
 esac
 
-#link tinymountain.o
-info LD tinymountain.elf
-linker_params tinymountain.lnk tinymountain.map
+#link ${KERNEL_NAME}.o
+info LD ${KERNEL_NAME}.elf
+linker_params ${KERNEL_NAME}.lnk ${KERNEL_NAME}.map
 linker_command linker.cmd
-initial_link tinymountain.elf tinymountain.lnk linker.cmd
+initial_link ${KERNEL_NAME}.elf ${KERNEL_NAME}.lnk linker.cmd
 
 # Update version
 info GEN .version
@@ -205,11 +205,11 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 	# kallsyms support
 	# Generate section listing all symbols and add it into tinymountain
 	# It's a three step process:
-	# 1)  Link .tmp_tinymountain1 so it has all symbols and sections,
+	# 1)  Link .tmp_${KERNEL_NAME} so it has all symbols and sections,
 	#     but __kallsyms is empty.
 	#     Running kallsyms on that gives us .tmp_kallsyms1.o with
 	#     the right size
-	# 2)  Link .tmp_tinymountain2 so it now has a __kallsyms section of
+	# 2)  Link .tmp_${KERNEL_NAME}2 so it now has a __kallsyms section of
 	#     the right size, but due to the added section, some
 	#     addresses have shifted.
 	#     From here, we generate a correct .tmp_kallsyms2.o
@@ -222,41 +222,41 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 	#     ${kallsymso}.
 
 	kallsymso=.tmp_kallsyms2.o
-	kallsyms_tinymountain=.tmp_tinymountain2
+	kallsyms_tinymountain=.tmp_${KERNEL_NAME}2
 
 	# step 1
-	tinymountain_link "" .tmp_tinymountain1
-	kallsyms .tmp_tinymountain1 .tmp_kallsyms1.o
+	tinymountain_link "" .tmp_${KERNEL_NAME}1
+	kallsyms .tmp_${KERNEL_NAME}1 .tmp_kallsyms1.o
 
 	# step 2
-	tinymountain_link .tmp_kallsyms1.o .tmp_tinymountain2
-	kallsyms .tmp_tinymountain2 .tmp_kallsyms2.o
+	tinymountain_link .tmp_kallsyms1.o .tmp_${KERNEL_NAME}2
+	kallsyms .tmp_${KERNEL_NAME}2 .tmp_kallsyms2.o
 
 	# step 2a
 	if [ -n "${KALLSYMS_EXTRA_PASS}" ]; then
 		kallsymso=.tmp_kallsyms3.o
-		kallsyms_tinymountain=.tmp_tinymountain3
+		kallsyms_tinymountain=.tmp_${KERNEL_NAME}3
 
-		tinymountain_link .tmp_kallsyms2.o .tmp_tinymountain3
+		tinymountain_link .tmp_kallsyms2.o .tmp_${KERNEL_NAME}3
 
-		kallsyms .tmp_tinymountain3 .tmp_kallsyms3.o
+		kallsyms .tmp_${KERNEL_NAME}3 .tmp_kallsyms3.o
 	fi
 fi
 
 if [ "${SRCARCH}" = "x86" ]; then
-	info SIDT tinymountain.elf
-	gen_idt tinymountain.elf staticIdt.o
+	info SIDT ${KERNEL_NAME}.elf
+	gen_idt ${KERNEL_NAME}.elf staticIdt.o
 	linker_command final-linker.cmd -DFINAL_LINK
-	tinymountain_link tinymountain.lnk final-linker.cmd staticIdt.o tinymountain.elf
+	tinymountain_link ${KERNEL_NAME}.lnk final-linker.cmd staticIdt.o ${KERNEL_NAME}.elf
 fi
 
 if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
-	info SORTEX tinymountain
-	sortextable tinymountain
+	info SORTEX ${KERNEL_NAME}
+	sortextable ${KERNEL_NAME}
 fi
 
 info SYSMAP System.map
-mksysmap tinymountain.elf System.map
+mksysmap ${KERNEL_NAME}.elf System.map
 
 # step a (see comment above)
 if [ -n "${CONFIG_KALLSYMS}" ]; then
