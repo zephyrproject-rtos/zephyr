@@ -216,80 +216,6 @@ static void hci_reset_complete(struct bt_buf *buf)
 		return;
 }
 
-static void hci_read_local_ver_complete(struct bt_buf *buf)
-{
-	struct bt_hci_rp_read_local_version_info *rp = (void *)buf->data;
-
-	BT_DBG("status %u\n", rp->status);
-
-	if (rp->status)
-		return;
-
-	dev.hci_version = rp->hci_version;
-	dev.hci_revision = sys_le16_to_cpu(rp->hci_revision);
-	dev.manufacturer = sys_le16_to_cpu(rp->manufacturer);
-}
-
-static void hci_read_features_complete(struct bt_buf *buf)
-{
-	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
-
-	BT_DBG("status %u\n", rp->status);
-
-	memcpy(dev.features, rp->features, sizeof(dev.features));
-}
-
-static void hci_read_buffer_size_complete(struct bt_buf *buf)
-{
-	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
-
-	BT_DBG("status %u\n", rp->status);
-
-	if (rp->status)
-		return;
-
-	/* If LE-side has buffers we can ignore the BR/EDR values */
-	if (dev.le_mtu)
-		return;
-
-	dev.le_mtu = sys_le16_to_cpu(rp->acl_max_len);
-	dev.le_pkts = sys_le16_to_cpu(rp->acl_max_num);
-}
-
-static void hci_read_bdaddr_complete(struct bt_buf *buf)
-{
-	struct bt_hci_rp_read_bd_addr *rp = (void *)buf->data;
-
-	BT_DBG("status %u\n", rp->status);
-
-	if (rp->status)
-		return;
-
-	memcpy(dev.bdaddr, rp->bdaddr, sizeof(dev.bdaddr));
-}
-
-static void hci_le_read_buffer_size_complete(struct bt_buf *buf)
-{
-	struct bt_hci_rp_le_read_buffer_size *rp = (void *)buf->data;
-
-	BT_DBG("status %u\n", rp->status);
-
-	if (rp->status)
-		return;
-
-	dev.le_mtu = sys_le16_to_cpu(rp->le_max_len);
-	dev.le_pkts = rp->le_max_num;
-}
-
-static void hci_le_read_features_complete(struct bt_buf *buf)
-{
-	struct bt_hci_rp_le_read_local_features *rp = (void *)buf->data;
-
-	BT_DBG("status %u\n", rp->status);
-
-	memcpy(dev.le_features, rp->features, sizeof(dev.le_features));
-}
-
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct bt_buf *buf)
 {
 	struct bt_buf *sent = dev.sent_cmd;
@@ -337,24 +263,6 @@ static void hci_cmd_complete(struct bt_buf *buf)
 	switch (opcode) {
 	case BT_HCI_OP_RESET:
 		hci_reset_complete(buf);
-		break;
-	case BT_HCI_OP_READ_LOCAL_VERSION_INFO:
-		hci_read_local_ver_complete(buf);
-		break;
-	case BT_HCI_OP_READ_LOCAL_FEATURES:
-		hci_read_features_complete(buf);
-		break;
-	case BT_HCI_OP_READ_BUFFER_SIZE:
-		hci_read_buffer_size_complete(buf);
-		break;
-	case BT_HCI_OP_READ_BD_ADDR:
-		hci_read_bdaddr_complete(buf);
-		break;
-	case BT_HCI_OP_LE_READ_BUFFER_SIZE:
-		hci_le_read_buffer_size_complete(buf);
-		break;
-	case BT_HCI_OP_LE_READ_LOCAL_FEATURES:
-		hci_le_read_features_complete(buf);
 		break;
 	default:
 		BT_ERR("Unknown opcode %x\n", opcode);
@@ -546,24 +454,100 @@ static void hci_rx_fiber(void)
 	}
 }
 
+static void read_local_features_complete(struct bt_buf *buf)
+{
+	struct bt_hci_rp_read_local_features *rp = (void *)buf->data;
+
+	BT_DBG("status %u\n", rp->status);
+
+	memcpy(dev.features, rp->features, sizeof(dev.features));
+}
+
+static void read_local_ver_complete(struct bt_buf *buf)
+{
+	struct bt_hci_rp_read_local_version_info *rp = (void *)buf->data;
+
+	BT_DBG("status %u\n", rp->status);
+
+	dev.hci_version = rp->hci_version;
+	dev.hci_revision = sys_le16_to_cpu(rp->hci_revision);
+	dev.manufacturer = sys_le16_to_cpu(rp->manufacturer);
+}
+
+static void read_bdaddr_complete(struct bt_buf *buf)
+{
+	struct bt_hci_rp_read_bd_addr *rp = (void *)buf->data;
+
+	BT_DBG("status %u\n", rp->status);
+
+	memcpy(dev.bdaddr, rp->bdaddr, sizeof(dev.bdaddr));
+}
+
+static void read_le_features_complete(struct bt_buf *buf)
+{
+	struct bt_hci_rp_le_read_local_features *rp = (void *)buf->data;
+
+	BT_DBG("status %u\n", rp->status);
+
+	memcpy(dev.le_features, rp->features, sizeof(dev.le_features));
+}
+
+static void host_buffer_size_complete(struct bt_buf *buf)
+{
+	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
+
+	BT_DBG("status %u\n", rp->status);
+
+	/* If LE-side has buffers we can ignore the BR/EDR values */
+	if (dev.le_mtu)
+		return;
+
+	dev.le_mtu = sys_le16_to_cpu(rp->acl_max_len);
+	dev.le_pkts = sys_le16_to_cpu(rp->acl_max_num);
+}
+
+static void le_read_buffer_size_complete(struct bt_buf *buf)
+{
+	struct bt_hci_rp_le_read_buffer_size *rp = (void *)buf->data;
+
+	BT_DBG("status %u\n", rp->status);
+
+	dev.le_mtu = sys_le16_to_cpu(rp->le_max_len);
+	dev.le_pkts = rp->le_max_num;
+}
+
 static int hci_init(void)
 {
 	struct bt_hci_cp_host_buffer_size *hbs;
 	struct bt_hci_cp_set_event_mask *ev;
-	struct bt_buf *buf;
+	struct bt_buf *buf, *rsp;
 	uint8_t *enable;
+	int err;
 
 	/* Send HCI_RESET */
 	bt_hci_cmd_send(BT_HCI_OP_RESET, NULL);
 
 	/* Read Local Supported Features */
-	bt_hci_cmd_send(BT_HCI_OP_READ_LOCAL_FEATURES, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
+	if (err)
+		return err;
+	read_local_features_complete(rsp);
+	bt_buf_put(rsp);
 
 	/* Read Local Version Information */
-	bt_hci_cmd_send(BT_HCI_OP_READ_LOCAL_VERSION_INFO, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_VERSION_INFO, NULL,
+				   &rsp);
+	if (err)
+		return err;
+	read_local_ver_complete(rsp);
+	bt_buf_put(rsp);
 
 	/* Read Bluetooth Address */
-	bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
+	if (err)
+		return err;
+	read_bdaddr_complete(rsp);
+	bt_buf_put(rsp);
 
 	/* For now we only support LE capable controllers */
 	if (!lmp_le_capable(dev)) {
@@ -572,10 +556,19 @@ static int hci_init(void)
 	}
 
 	/* Read Low Energy Supported Features */
-	bt_hci_cmd_send(BT_HCI_OP_LE_READ_LOCAL_FEATURES, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_LOCAL_FEATURES, NULL,
+				   &rsp);
+	if (err)
+		return err;
+	read_le_features_complete(rsp);
+	bt_buf_put(rsp);
 
 	/* Read LE Buffer Size */
-	bt_hci_cmd_send(BT_HCI_OP_LE_READ_BUFFER_SIZE, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE, NULL, &rsp);
+	if (err)
+		return err;
+	le_read_buffer_size_complete(rsp);
+	bt_buf_put(rsp);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_EVENT_MASK, 8);
 	if (!buf)
@@ -609,7 +602,11 @@ static int hci_init(void)
 				       sizeof(struct bt_hci_acl_hdr));
 	hbs->acl_pkts = sys_cpu_to_le16(ACL_IN_MAX);
 
-	bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, &rsp);
+	if (err)
+		return err;
+	host_buffer_size_complete(rsp);
+	bt_buf_put(rsp);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
 	if (!buf)
