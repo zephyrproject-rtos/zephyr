@@ -38,19 +38,19 @@
 #define TASK_SUSPEND 2
 #define TASK_RESUME 3
 
-#define GROUP_TASK_START 0
-#define GROUP_TASK_ABORT 1
-#define GROUP_TASK_SUSPEND 2
-#define GROUP_TASK_RESUME 3
+#define TASK_GROUP_START 0
+#define TASK_GROUP_ABORT 1
+#define TASK_GROUP_SUSPEND 2
+#define TASK_GROUP_RESUME 3
 
 #define task_abort(t) _task_ioctl(t, TASK_ABORT)
 #define task_suspend(t) _task_ioctl(t, TASK_SUSPEND)
 #define task_resume(t) _task_ioctl(t, TASK_RESUME)
-#define task_group_abort(g) _task_group_ioctl(g, GROUP_TASK_ABORT)
-#define task_group_suspend(g) _task_group_ioctl(g, GROUP_TASK_SUSPEND)
-#define task_group_resume(g) _task_group_ioctl(g, GROUP_TASK_RESUME)
+#define task_group_abort(g) _task_group_ioctl(g, TASK_GROUP_ABORT)
+#define task_group_suspend(g) _task_group_ioctl(g, TASK_GROUP_SUSPEND)
+#define task_group_resume(g) _task_group_ioctl(g, TASK_GROUP_RESUME)
 
 #define task_start(t) _task_ioctl(t, TASK_START)
-#define task_group_start(g) _task_group_ioctl(g, GROUP_TASK_START)
+#define task_group_start(g) _task_group_ioctl(g, TASK_GROUP_START)
 
 #endif /* _task_api_export__h_ */

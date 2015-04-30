@@ -308,31 +308,31 @@ void _k_task_group_op(struct k_args *A)
 	struct k_proc *X;
 
 #ifdef CONFIG_TASK_DEBUG
-	if (opt == GROUP_TASK_BLOCK)
+	if (opt == TASK_GROUP_BLOCK)
 		_k_debug_halt = 1;
-	if (opt == GROUP_TASK_UNBLOCK)
+	if (opt == TASK_GROUP_UNBLOCK)
 		_k_debug_halt = 0;
 #endif
 
 	for (i = 0, X = _k_task_list; i < _k_task_count; i++, X++) {
 		if (X->Group & grp) {
 			switch (opt) {
-			case GROUP_TASK_START:
+			case TASK_GROUP_START:
 				start_task(X, X->fstart);
 				break;
-			case GROUP_TASK_ABORT:
+			case TASK_GROUP_ABORT:
 				abort_task(X);
 				break;
-			case GROUP_TASK_SUSPEND:
+			case TASK_GROUP_SUSPEND:
 				set_state_bit(X, TF_SUSP);
 				break;
-			case GROUP_TASK_RESUME:
+			case TASK_GROUP_RESUME:
 				reset_state_bit(X, TF_SUSP);
 				break;
-			case GROUP_TASK_BLOCK:
+			case TASK_GROUP_BLOCK:
 				set_state_bit(X, TF_BLCK);
 				break;
-			case GROUP_TASK_UNBLOCK:
+			case TASK_GROUP_UNBLOCK:
 				reset_state_bit(X, TF_BLCK);
 				break;
 			}

@@ -72,8 +72,8 @@ extern void task_abort_handler_set(void (*func)(void));
 #define TASK_BLOCK 4
 #define TASK_UNBLOCK 5
 
-#define GROUP_TASK_BLOCK 4
-#define GROUP_TASK_UNBLOCK 5
+#define TASK_GROUP_BLOCK 4
+#define TASK_GROUP_UNBLOCK 5
 
 #ifdef CONFIG_TASK_MONITOR
 extern void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func);
