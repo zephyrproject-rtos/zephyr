@@ -136,7 +136,8 @@ packetbuf_copyto_hdr(struct net_buf *buf, uint8_t *to)
 #if DEBUG_LEVEL > 0
   {
     int i;
-    PRINTF("packetbuf_write_hdr: header:\n");
+    PRINTF("packetbuf %p\n", uip_pkt_packetbuf(buf));
+    PRINTF("packetbuf_write_hdr: header (from %p, %d bytes):\n", uip_pkt_hdrptr(buf), PACKETBUF_HDR_SIZE);
     for(i = uip_pkt_hdrptr(buf); i < PACKETBUF_HDR_SIZE; ++i) {
       PRINTF("0x%02x, ", uip_pkt_packetbuf(buf)[i]);
     }
