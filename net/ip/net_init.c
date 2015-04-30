@@ -175,22 +175,18 @@ static void net_tx_fiber(void)
 		/* Get next packet from application - wait if necessary */
 		buf = nano_fifo_get_wait(&netdev.tx_queue);
 
-		NET_DBG("Sending (buf %p, len %u) to stack\n", buf, buf->len);
+		NET_DBG("Sending (buf %p, len %u) to IP stack\n",
+			buf, buf->len);
 
-		if (check_and_send_packet(buf) == 0) {
-			/* FIXME - we should only release the buffer
-			 * if the packet could not be passed to 15.4 or BT
-			 * stack. This needs still some work but as a
-			 * workaround release the buffer here.
-			 */
+		if (check_and_send_packet(buf) < 0) {
+			/* Release buffer on error */
 			net_buf_put(buf);
+			continue;
 		}
 
 		/* Check for any events that we might need to process */
 		do {
-			buf = net_buf_get_reserve(0);
 			run = process_run(buf);
-			net_buf_put(buf);
 		} while (run > 0);
 	}
 }
