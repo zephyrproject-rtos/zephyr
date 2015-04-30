@@ -226,7 +226,7 @@ void workload_time_slice_set(int32_t t)
 static inline int32_t _get_next_timer_expiry(void)
 {
 	if (_k_timer_list_head)
-		return _k_timer_list_head->Ti;
+		return _k_timer_list_head->duration;
 
 	return TICKS_UNLIMITED;
 }

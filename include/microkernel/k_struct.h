@@ -51,7 +51,7 @@ struct k_timer { /* For pointer declarations only !!	  */
 	      /* Do not access fields in user code.	  */
 	K_TIMER *Forw;
 	K_TIMER *Back;
-	int32_t Ti;
+	int32_t duration;
 	int32_t Tr;
 	struct k_args *Args;
 }; /* use K_TIMER as the timer type name */

@@ -98,13 +98,13 @@ void enlist_timer(K_TIMER *T)
 	K_TIMER *P = _k_timer_list_head;
 	K_TIMER *Q = NULL;
 
-	while (P && (T->Ti > P->Ti)) {
-		T->Ti -= P->Ti;
+	while (P && (T->duration > P->duration)) {
+		T->duration -= P->duration;
 		Q = P;
 		P = P->Forw;
 	}
 	if (P) {
-		P->Ti -= T->Ti;
+		P->duration -= T->duration;
 		P->Back = T;
 	} else
 		_k_timer_list_tail = T;
@@ -129,7 +129,7 @@ void delist_timer(K_TIMER *T)
 	K_TIMER *Q = T->Back;
 
 	if (P) {
-		P->Ti += T->Ti;
+		P->duration += T->duration;
 		P->Back = Q;
 	} else
 		_k_timer_list_tail = Q;
@@ -137,7 +137,7 @@ void delist_timer(K_TIMER *T)
 		Q->Forw = P;
 	else
 		_k_timer_list_head = P;
-	T->Ti = -1;
+	T->duration = -1;
 }
 
 /*******************************************************************************
@@ -152,7 +152,7 @@ void enlist_timeout(struct k_args *P)
 	K_TIMER *T;
 
 	GETTIMER(T);
-	T->Ti = P->Time.ticks;
+	T->duration = P->Time.ticks;
 	T->Tr = 0;
 	T->Args = P;
 	enlist_timer(T);
@@ -170,7 +170,7 @@ void force_timeout(struct k_args *A)
 {
 	K_TIMER *T = A->Time.timer;
 
-	if (T->Ti != -1) {
+	if (T->duration != -1) {
 		delist_timer(T);
 		TO_ALIST(&_k_command_stack, A);
 	}
@@ -185,7 +185,7 @@ void force_timeout(struct k_args *A)
 
 void delist_timeout(K_TIMER *T)
 {
-	if (T->Ti != -1)
+	if (T->duration != -1)
 		delist_timer(T);
 	FREETIMER(T);
 }
@@ -213,7 +213,7 @@ void _k_timer_alloc(
 	if (T) {
 		GETARGS(A);
 		T->Args = A;
-		T->Ti = -1; /* -1 indicates that timer is disabled */
+		T->duration = -1; /* -1 indicates that timer is disabled */
 	}
 }
 
@@ -253,7 +253,7 @@ void _k_timer_dealloc(struct k_args *P)
 	K_TIMER *T = P->Args.c1.timer;
 	struct k_args *A = T->Args;
 
-	if (T->Ti != -1)
+	if (T->duration != -1)
 		delist_timer(T);
 
 	FREETIMER(T);
@@ -296,29 +296,29 @@ void _k_timer_start(struct k_args *P /* pointer to timer start
 {
 	K_TIMER *T = P->Args.c1.timer; /* ptr to the timer to start */
 
-	if (T->Ti != -1) /* Stop the timer if it is active */
+	if (T->duration != -1) /* Stop the timer if it is active */
 		delist_timer(T);
 
-	T->Ti = (int32_t)P->Args.c1.time1; /* Set the initial delay */
+	T->duration = (int32_t)P->Args.c1.time1; /* Set the initial delay */
 	T->Tr = P->Args.c1.time2;	  /* Set the period */
 
-	if ((T->Ti < 0) || (T->Tr < 0)) {/* Either the initial delay and/or */
-		T->Ti = -1;		 /* the period is invalid.  Mark    */
-		return;			 /* the timer as inactive.          */
+	if ((T->duration < 0) || (T->Tr < 0)) {/* Either the initial delay and/or */
+		T->duration = -1;                  /* the period is invalid.  Mark    */
+		return;			                   /* the timer as inactive.          */
 	}
 
-	if (T->Ti == 0) {
+	if (T->duration == 0) {
 		if (T->Tr != 0) {/* Match the initial delay to the period. */
-			T->Ti = T->Tr;
-		} else {	    /* Ti=0, Tr=0 is an invalid combination. */
-			T->Ti = -1; /* Mark the timer as invalid. */
+			T->duration = T->Tr;
+		} else {	    /* duration=0, Tr=0 is an invalid combination. */
+			T->duration = -1; /* Mark the timer as invalid. */
 			return;
 		}
 	}
 
 	if (P->Args.c1.sema != ENDLIST) { /* Track the semaphore to
-					   * signal for when the timer
-					   * expires. */
+                                       * signal for when the timer
+                                       * expires. */
 		T->Args->Comm = SIGNALS;
 		T->Args->Args.s1.sema = P->Args.c1.sema;
 	}
@@ -331,22 +331,22 @@ void _k_timer_start(struct k_args *P /* pointer to timer start
 *
 * This routine starts or restarts the specified low resolution timer.
 *
-* When the specified number of ticks, set by <Ti>, expires, the semaphore is
-* signalled.  The timer repeats the expiration/signal cycle each time <Tr>
+* When the specified number of ticks, set by <duration>, expires, the semaphore
+* is signalled.  The timer repeats the expiration/signal cycle each time <Tr>
 * ticks has elapsed.
 *
 * Setting <Tr> to 0 stops the timer at the end of the initial delay. Setting
-* <Ti> to 0 will cause an initial delay equal to the repetition interval.  If
-* both <Ti> and <Tr> are set to 0, or if one or both of the values is invalid
-* (negative), then this kernel API acts like a task_timer_stop(): if the
-* allocated timer was still running (from a previous call), it will be
-* cancelled; if not, nothing will happen.
+* <duration> to 0 will cause an initial delay equal to the repetition
+* interval.  If both <duration> and <Tr> are set to 0, or if one or both of
+* the values is invalid (negative), then this kernel API acts like a
+* task_timer_stop(): if the allocated timer was still running (from a
+* previous call), it will be cancelled; if not, nothing will happen.
 *
 * RETURNS: N/A
 */
 
 void task_timer_start(ktimer_t timer, /* timer to start */
-		      int32_t Ti,     /* initial delay in ticks */
+		      int32_t duration,       /* initial delay in ticks */
 		      int32_t Tr,     /* repetition interval in ticks */
 		      ksem_t sema     /* semaphore to signal */
 		      )
@@ -355,7 +355,7 @@ void task_timer_start(ktimer_t timer, /* timer to start */
 
 	A.Comm = TSTART;
 	A.Args.c1.timer = _timer_id_to_ptr(timer);
-	A.Args.c1.time1 = (int64_t)Ti;
+	A.Args.c1.time1 = (int64_t)duration;
 	A.Args.c1.time2 = Tr;
 	A.Args.c1.sema = sema;
 	KERNEL_ENTRY(&A);
@@ -371,7 +371,7 @@ void task_timer_start(ktimer_t timer, /* timer to start */
 */
 
 void task_timer_restart(ktimer_t timer, /* timer to restart */
-			int32_t Ti,     /* initial delay */
+			int32_t duration,           /* initial delay */
 			int32_t Tr      /* repetition interval */
 			)
 {
@@ -379,7 +379,7 @@ void task_timer_restart(ktimer_t timer, /* timer to restart */
 
 	A.Comm = TSTART;
 	A.Args.c1.timer = _timer_id_to_ptr(timer);
-	A.Args.c1.time1 = (int64_t)Ti;
+	A.Args.c1.time1 = (int64_t)duration;
 	A.Args.c1.time2 = Tr;
 	A.Args.c1.sema = ENDLIST;
 	KERNEL_ENTRY(&A);
@@ -399,7 +399,7 @@ void _k_timer_stop(struct k_args *P)
 {
 	K_TIMER *T = P->Args.c1.timer;
 
-	if (T->Ti != -1)
+	if (T->duration != -1)
 		delist_timer(T);
 }
 
@@ -463,7 +463,7 @@ void _k_task_sleep(struct k_args *P)
 		return;
 
 	GETTIMER(T);
-	T->Ti = P->Time.ticks;
+	T->duration = P->Time.ticks;
 	T->Tr = 0;
 	T->Args = P;
 

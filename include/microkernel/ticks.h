@@ -94,10 +94,10 @@ extern int64_t task_node_tick_get(void);
 extern ktimer_t task_timer_alloc(void);
 extern void task_timer_free(ktimer_t timer);
 extern void task_timer_start(ktimer_t timer,
-			     int32_t Ti,
+			     int32_t duration,
 			     int32_t Tr,
 			     ksem_t sema);
-extern void task_timer_restart(ktimer_t timer, int32_t Ti, int32_t Tr);
+extern void task_timer_restart(ktimer_t timer, int32_t duration, int32_t Tr);
 extern void task_timer_stop(ktimer_t timer);
 extern int32_t task_node_tick_delta(int64_t *reftime);
 

@@ -95,9 +95,9 @@ static inline void _HandleExpiredTimers(int ticks)
 	K_TIMER *T;
 
 	while (_k_timer_list_head != NULL) {
-		_k_timer_list_head->Ti -= ticks;
+		_k_timer_list_head->duration -= ticks;
 
-		if (_k_timer_list_head->Ti > 0) {
+		if (_k_timer_list_head->duration > 0) {
 			return;
 		}
 
@@ -109,14 +109,14 @@ static inline void _HandleExpiredTimers(int ticks)
 			_k_timer_list_head->Back = NULL;
 		}
 		if (T->Tr) {
-			T->Ti = T->Tr;
+			T->duration = T->Tr;
 			enlist_timer(T);
 		} else {
-			T->Ti = -1;
+			T->duration = -1;
 		}
 		TO_ALIST(&_k_command_stack, T->Args);
 
-		ticks = 0; /* don't decrement Ti for subsequent timer(s) */
+		ticks = 0; /* don't decrement duration for subsequent timer(s) */
 	}
 #endif
 }
