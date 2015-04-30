@@ -89,7 +89,6 @@ extern void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func);
 #define isr_task_id_get() task_id_get()
 #define isr_task_priority_get() task_priority_get()
 #define isr_task_group_mask_get() task_group_mask_get()
-#define isr_node_id_get() task_node_id_get()
 
 #ifdef __cplusplus
 }
