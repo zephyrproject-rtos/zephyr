@@ -37,7 +37,22 @@
 
 /* EIR/AD definitions */
 #define BT_EIR_FLAGS			0x01 /* AD flags */
+#define BT_EIR_UUID16_SOME		0x02 /* 16-bit UUID, more available */
+#define BT_EIR_UUID16_ALL		0x03 /* 16-bit UUID, all listed */
+#define BT_EIR_UUID32_SOME		0x04 /* 32-bit UUID, more available */
+#define BT_EIR_UUID32_ALL		0x05 /* 32-bit UUID, all listed */
+#define BT_EIR_UUID128_SOME		0x06 /* 128-bit UUID, more available */
+#define BT_EIR_UUID128_ALL		0x07 /* 128-bit UUID, all listed */
 #define BT_EIR_NAME_COMPLETE		0x09 /* Complete name */
+#define BT_EIR_TX_POWER			0x0A /* Tx Power */
+#define BT_EIR_SOLICIT16		0x14 /* Solicit UUIDs, 16-bit */
+#define BT_EIR_SOLICIT128		0x15 /* Solicit UUIDs, 128-bit */
+#define BT_EIR_SVC_DATA16		0x16 /* Service data, 16-bit UUID */
+#define BT_EIR_GAP_APPEARANCE		0x19 /* GAP appearance */
+#define BT_EIR_SOLICIT32		0x1F /* Solicit UUIDs, 32-bit */
+#define BT_EIR_SVC_DATA32		0x20 /* Service data, 32-bit UUID */
+#define BT_EIR_SVC_DATA128		0x21 /* Service data, 128-bit UUID */
+#define BT_EIR_MANUFACTURER_DATA	0xFF /* Manufacturer Specific Data */
 
 #define BT_LE_AD_GENERAL		0x02 /* General Discoverable */
 #define BT_LE_AD_NO_BREDR		0x04 /* BR/EDR not supported */
@@ -154,6 +169,8 @@ struct bt_hci_rp_le_read_local_features {
 
 /* Advertising types */
 #define BT_LE_ADV_IND				0x00
+#define BT_LE_ADV_DIRECT_IND			0x01
+#define BT_LE_ADV_SCAN_IND			0x02
 #define BT_LE_ADV_NONCONN_IND			0x03
 
 #define BT_HCI_OP_LE_SET_ADV_PARAMETERS		BT_OP(BT_OGF_LE, 0x0006)
