@@ -84,7 +84,6 @@ extern void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func);
 #define task_group_mask_get() (_k_current_task->Group)
 #define task_group_join(g) (_k_current_task->Group |= g)
 #define task_group_leave(g) (_k_current_task->Group &= ~g)
-#define task_node_id_get() (_k_this_node)
 
 #define isr_task_id_get() task_id_get()
 #define isr_task_priority_get() task_priority_get()
