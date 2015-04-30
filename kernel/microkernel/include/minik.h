@@ -36,7 +36,7 @@
 #include <microkernel/k_struct.h>
 #include <clock_vars.h>
 
-#define KERNEL_ENTRY(A) K_taskcall(A)
+#define KERNEL_ENTRY(A) _k_task_call(A)
 
 extern const knode_t _k_this_node;
 extern struct k_proc _k_task_list[];
@@ -73,7 +73,7 @@ extern void *_Cget(struct nano_lifo *);
 
 extern void set_state_bit(struct k_proc *, uint32_t);
 extern void reset_state_bit(struct k_proc *, uint32_t);
-extern void K_taskcall(struct k_args *);
+extern void _k_task_call(struct k_args *);
 
 extern void delist_timeout(K_TIMER *T);
 extern void enlist_timeout(struct k_args *A);

@@ -40,12 +40,12 @@
 
 /*******************************************************************************
 *
-* K_taskcall - send command packet to be processed by K_swapper
+* _k_task_call - send command packet to be processed by K_swapper
 *
 * RETURNS: N/A
 */
 
-void K_taskcall(struct k_args *cmdpacket)
+void _k_task_call(struct k_args *cmdpacket)
 {
 	cmdpacket->alloc = false;
 	_k_current_task->Args = cmdpacket;
