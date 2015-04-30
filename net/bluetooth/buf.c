@@ -87,6 +87,7 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 
 	memset(buf, 0, sizeof(*buf));
 
+	buf->ref  = 1;
 	buf->type = type;
 	buf->data = buf->buf + reserve_head;
 
@@ -102,7 +103,10 @@ void bt_buf_put(struct bt_buf *buf)
 	struct nano_fifo *avail = get_avail(buf->type);
 	uint16_t handle;
 
-	BT_DBG("buf %p type %d\n", buf, buf->type);
+	BT_DBG("buf %p ref %u type %d\n", buf, buf->ref, buf->type);
+
+	if (--buf->ref)
+		return;
 
 	handle = buf->acl.handle;
 	nano_fifo_put(avail, buf);
@@ -127,6 +131,13 @@ void bt_buf_put(struct bt_buf *buf)
 	hc->count  = sys_cpu_to_le16(1);
 
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
+}
+
+struct bt_buf *bt_buf_hold(struct bt_buf *buf)
+{
+	BT_DBG("buf %p (old) ref %u type %d\n", buf, buf->ref, buf->type);
+	buf->ref++;
+	return buf;
 }
 
 uint8_t *bt_buf_add(struct bt_buf *buf, size_t len)

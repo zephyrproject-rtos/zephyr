@@ -68,6 +68,9 @@ struct bt_buf {
 		struct bt_buf_acl_data	acl;
 	};
 
+	/* Reference count */
+	uint8_t ref;
+
 	/* Type of data contained in the buffer */
 	uint8_t type;
 
@@ -84,6 +87,9 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head);
 
 /* Place buffer back into the available buffers pool */
 void bt_buf_put(struct bt_buf *buf);
+
+/* Increment the reference count of a buffer */
+struct bt_buf *bt_buf_hold(struct bt_buf *buf);
 
 /* Prepare data to be added at the end of the buffer */
 uint8_t *bt_buf_add(struct bt_buf *buf, size_t len);
