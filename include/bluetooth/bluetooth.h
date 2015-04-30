@@ -77,7 +77,15 @@ int bt_driver_register(struct bt_driver *drv);
 /* Unregister a previously registered HCI driver */
 void bt_driver_unregister(struct bt_driver *drv);
 
-/* Advertising testing API */
-int bt_start_advertising(uint8_t type, const char *name, uint8_t name_len);
+/* Advertising API */
+
+struct bt_eir {
+	uint8_t len;
+	uint8_t type;
+	uint8_t data[29];
+} PACK_STRUCT;
+
+int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
+			 const struct bt_eir *sd);
 
 #endif /* __BT_BLUETOOTH_H */

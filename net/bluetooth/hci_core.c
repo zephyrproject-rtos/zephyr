@@ -733,16 +733,17 @@ int bt_init(void)
 	return bt_buf_init(ACL_IN_MAX, acl_out);
 }
 
-int bt_start_advertising(uint8_t type, const char *name, uint8_t name_len)
+int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
+			 const struct bt_eir *sd)
 {
 	struct bt_buf *buf;
 	struct bt_hci_cp_le_set_adv_data *set_data;
 	struct bt_hci_cp_le_set_adv_data *scan_rsp;
 	struct bt_hci_cp_le_set_adv_parameters *set_param;
+	int i;
 
-	/* We don't support shortening of names, for now */
-	if (name_len > 29)
-		return -EINVAL;
+	if (!ad)
+		goto send_scan_rsp;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_DATA, sizeof(*set_data));
 	if (!buf)
@@ -752,13 +753,20 @@ int bt_start_advertising(uint8_t type, const char *name, uint8_t name_len)
 
 	memset(set_data, 0, sizeof(*set_data));
 
-	/* Advertising flags */
-	set_data->data[0] = 0x02; /* Length */
-	set_data->data[1] = BT_EIR_FLAGS;
-	set_data->data[2] = BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR;
+	for (i = 0; ad[i].len; i++) {
+		/* Check if ad fit in the remaining buffer */
+		if (set_data->len + ad[i].len + 1 > 29)
+			break;
 
-	set_data->len = 3;
+		memcpy(&set_data->data[set_data->len], &ad[i], ad[i].len + 1);
+		set_data->len += ad[i].len + 1;
+	}
+
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_DATA, buf);
+
+send_scan_rsp:
+	if (!sd)
+		goto send_set_param;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_RSP_DATA,
 				sizeof(*scan_rsp));
@@ -769,14 +777,18 @@ int bt_start_advertising(uint8_t type, const char *name, uint8_t name_len)
 
 	memset(scan_rsp, 0, sizeof(*scan_rsp));
 
-	/* Friendly name */
-	scan_rsp->data[0] = name_len + 1;
-	scan_rsp->data[1] = BT_EIR_NAME_COMPLETE;
-	memcpy(scan_rsp->data + 2, name, name_len);
+	for (i = 0; sd[i].len; i++) {
+		/* Check if ad fit in the remaining buffer */
+		if (scan_rsp->len + sd[i].len + 1 > 29)
+			break;
 
-	scan_rsp->len = name_len + 2;
+		memcpy(&scan_rsp->data[scan_rsp->len], &sd[i], sd[i].len + 1);
+		scan_rsp->len += sd[i].len + 1;
+	}
+
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, buf);
 
+send_set_param:
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAMETERS,
 				sizeof(*set_param));
 	if (!buf)

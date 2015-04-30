@@ -37,13 +37,29 @@
 #include "bluetooth/bluetooth.h"
 #include "bluetooth/hci.h"
 
+const struct bt_eir ad[] = {
+	{
+		.len = 2,
+		.type = BT_EIR_FLAGS,
+		.data = { BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR },
+	},
+	{ }
+};
+const struct bt_eir sd[] = {
+	{
+		.len = 16,
+		.type = BT_EIR_NAME_COMPLETE,
+		.data = "Test peripheral",
+	},
+	{ }
+};
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
 void main(void)
 #endif
 {
-	const char *name = "Test Peripheral";
 	int err;
 
 	err = bt_init();
@@ -54,7 +70,7 @@ void main(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_start_advertising(BT_LE_ADV_IND, name, strlen(name));
+	err = bt_start_advertising(BT_LE_ADV_IND, ad, sd);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
