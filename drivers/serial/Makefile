@@ -1,4 +1,4 @@
-EXTRA_CFLAGS +=-I$(srctree)/drivers
+EXTRA_CFLAGS +=-I$(srctree)/include/drivers
 
 ifeq (${CONFIG_BSP_GENERIC_PC},y)
 EXTRA_CFLAGS +=-I$(srctree)/arch/x86

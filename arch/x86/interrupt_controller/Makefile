@@ -1,4 +1,4 @@
-EXTRA_CFLAGS +=-I$(srctree)/drivers
+EXTRA_CFLAGS +=-I$(srctree)/include/drivers
 EXTRA_CFLAGS +=-I$(srctree)/arch/x86/generic_pc
 EXTRA_CFLAGS +=-I$(srctree)/arch/x86
 
