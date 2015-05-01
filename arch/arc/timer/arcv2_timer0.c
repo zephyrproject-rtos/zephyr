@@ -160,7 +160,7 @@ void _timer_int_handler(void *unused)
 			struct nano_lifo *lifo = &expired->lifo;
 
 			_nano_timer_list = expired->link;
-			nano_fiber_lifo_put(lifo, expired->userData);
+			nano_isr_lifo_put(lifo, expired->userData);
 		}
 	}
 }

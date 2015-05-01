@@ -325,7 +325,7 @@ void _timer_int_handler(void *unusedArg /* not used */
 			struct nano_timer *expired = _nano_timer_list;
 			struct nano_lifo *chan = &expired->lifo;
 			_nano_timer_list = expired->link;
-			nano_fiber_lifo_put(chan, expired->userData);
+			nano_isr_lifo_put(chan, expired->userData);
 		}
 	}
 #endif /*  CONFIG_NANOKERNEL */
