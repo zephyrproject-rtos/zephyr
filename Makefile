@@ -1555,7 +1555,7 @@ QEMU_FLAGS = $ $(QEMU_FLAGS_$(SRCARCH))
 
 qemu: tinymountain
 	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(SRCARCH))'
-	$(Q)$(QEMU) $(QEMU_FLAGS) -kernel tinymountain.elf
+	$(Q)$(QEMU) $(QEMU_FLAGS) -kernel $(KERNEL_NAME).elf
 
 # Single targets
 # ---------------------------------------------------------------------------
