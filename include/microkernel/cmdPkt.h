@@ -84,7 +84,7 @@ struct cmd_pkt_set {
 
 /* externs */
 
-extern cmdPkt_t *cmdPktGet(struct cmd_pkt_set *pSet);
+extern cmdPkt_t *_cmd_pkt_get(struct cmd_pkt_set *pSet);
 
 #ifdef __cplusplus
 }

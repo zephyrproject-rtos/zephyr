@@ -580,10 +580,10 @@ void isr_sem_give(ksem_t sema, /* semaphore to signal */
 	/*
 	 * The cmdPkt_t data structure was designed to work seamlessly with the
 	 * struct k_args data structure and it is thus safe (and expected) to typecast
-	 * the return value of cmdPktGet() to "struct k_args *".
+	 * the return value of _cmd_pkt_get() to "struct k_args *".
 	 */
 
-	pCommand = (struct k_args *)cmdPktGet(pSet);
+	pCommand = (struct k_args *)_cmd_pkt_get(pSet);
 	pCommand->Comm = SIGNALS;
 	pCommand->Args.s1.sema = sema;
 

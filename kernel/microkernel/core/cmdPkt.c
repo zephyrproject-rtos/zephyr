@@ -62,14 +62,14 @@ that have an ISR component should use their own command packet set.
 
 /*******************************************************************************
  *
- * cmdPktGet - get the next command packet
+ * _cmd_pkt_get - get the next command packet
  *
  * This routine gets the next command packet from the specified set.
  *
  * RETURNS: pointer to the command packet
  */
 
-cmdPkt_t *cmdPktGet(
+cmdPkt_t *_cmd_pkt_get(
 	struct cmd_pkt_set *pSet /* ptr to set of command packets */
 	)
 {
