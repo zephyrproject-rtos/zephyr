@@ -42,7 +42,7 @@ info()
 # {2} symbol map file
 linker_params()
 {
-	echo "${LDFLAGS_tinymountain}" >> ${1}
+	echo "${LDFLAGS_tinymountain}" > ${1}
 	echo "-Wl,-Map,./${2}" >> ${1}
 	echo "-L ${objtree}/include/generated" >> ${1}
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
