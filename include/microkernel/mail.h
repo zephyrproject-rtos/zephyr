@@ -41,11 +41,17 @@ extern "C" {
 
 #include <microkernel/mail_api_export.h>
 
-extern int _task_mbox_put(kmbox_t mbox, kpriority_t prio, struct k_msg *M, int32_t time);
+extern int _task_mbox_put(kmbox_t mbox,
+                          kpriority_t prio,
+                          struct k_msg *M,
+                          int32_t time);
 
 extern int _task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t time);
 
-extern void _task_mbox_put_async(kmbox_t mbox, kpriority_t prio, struct k_msg *M, ksem_t sem);
+extern void _task_mbox_put_async(kmbox_t mbox,
+                                 kpriority_t prio,
+                                 struct k_msg *M,
+                                 ksem_t sem);
 
 extern void _task_mbox_data_get(struct k_msg *M);
 
@@ -56,12 +62,14 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
 
 #define task_mbox_put_async(b, p, m, s) _task_mbox_put_async(b, p, m, s)
 #define task_mbox_data_get(m) _task_mbox_data_get(m)
-#define task_mbox_data_get_async_block(m, b, p) _task_mbox_data_get_async_block(m, b, p, TICKS_NONE)
+#define task_mbox_data_get_async_block(m, b, p) \
+        _task_mbox_data_get_async_block(m, b, p, TICKS_NONE)
 #define task_mbox_data_get_async_block_wait(m, b, p) \
 	_task_mbox_data_get_async_block(m, b, p, TICKS_UNLIMITED)
 
 #ifndef CONFIG_TICKLESS_KERNEL
-#define task_mbox_data_get_async_block_wait_timeout(m, b, p, t) _task_mbox_data_get_async_block(m, b, p, t)
+#define task_mbox_data_get_async_block_wait_timeout(m, b, p, t) \
+        _task_mbox_data_get_async_block(m, b, p, t)
 #endif
 
 #ifdef __cplusplus
