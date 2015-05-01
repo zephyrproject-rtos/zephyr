@@ -331,7 +331,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	 */
 
 	if (_sys_idle_elapsed_ticks == 1) {
-		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+		__sys_clock_tick_announce();
 	}
 
 #else
@@ -339,26 +339,13 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	clock_accumulated_count += counterLoadVal;
 
 #if defined(CONFIG_MICROKERNEL)
-	/* announce tick into the microkernel */
-	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+	__sys_clock_tick_announce();
 #endif
 
 #endif /*TIMER_SUPPORTS_TICKLESS*/
 
 #if defined(CONFIG_NANOKERNEL)
-
-	_nano_ticks++; /* increment nanokernel ticks var */
-
-	if (_nano_timer_list != NULL) {
-		_nano_timer_list->ticks--;
-
-		while ((_nano_timer_list != NULL) && (!_nano_timer_list->ticks)) {
-			struct nano_timer *expired = _nano_timer_list;
-			struct nano_lifo *chan = &expired->lifo;
-			_nano_timer_list = expired->link;
-			nano_isr_lifo_put(chan, expired->userData);
-		}
-	}
+	__sys_clock_tick_announce();
 #endif /*  CONFIG_NANOKERNEL */
 
 #ifdef LOAPIC_TIMER_PERIODIC_WORKAROUND
@@ -528,7 +515,7 @@ void _timer_idle_exit(void)
 		 * is
 		 * serviced.
 		 */
-		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+		__sys_clock_tick_announce();
 	} else {
 		uint32_t elapsed;   /* elapsed "counter time" */
 		uint32_t remaining; /* remaining "counter time" */
@@ -551,8 +538,7 @@ void _timer_idle_exit(void)
 		_sys_idle_elapsed_ticks = elapsed / counterLoadVal;
 
 		if (_sys_idle_elapsed_ticks) {
-			/* Announce elapsed ticks to the microkernel */
-			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+			__sys_clock_tick_announce();
 		}
 	}
 	_loApicTimerStart();

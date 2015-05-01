@@ -150,19 +150,7 @@ void _timer_int_handler(void *unused)
 
 	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
 
-	_nano_ticks++;
-
-	if (_nano_timer_list) {
-		_nano_timer_list->ticks--;
-
-		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
-			struct nano_timer *expired = _nano_timer_list;
-			struct nano_lifo *lifo = &expired->lifo;
-
-			_nano_timer_list = expired->link;
-			nano_isr_lifo_put(lifo, expired->userData);
-		}
-	}
+	_sys_clock_tick_announce();
 }
 
 /*******************************************************************************

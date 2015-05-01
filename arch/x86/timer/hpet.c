@@ -298,7 +298,7 @@ void _timer_int_handler(void *unused)
 	 * timer is already configured to interrupt on the following tick
 	 */
 
-	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+	_sys_clock_tick_announce();
 
 #else
 
@@ -335,24 +335,13 @@ void _timer_int_handler(void *unused)
 	 */
 
 	if (_sys_idle_elapsed_ticks == 1) {
-		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+		_sys_clock_tick_announce();
 	}
 
 #endif /* !TIMER_SUPPORTS_TICKLESS */
 
 #else
-	_nano_ticks++; /* increment nanokernel ticks var */
-
-	if (_nano_timer_list) {
-		_nano_timer_list->ticks--;
-
-		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
-			struct nano_timer *expired = _nano_timer_list;
-			struct nano_lifo *chan = &expired->lifo;
-			_nano_timer_list = expired->link;
-			nano_isr_lifo_put(chan, expired->userData);
-		}
-	}
+	_sys_clock_tick_announce();
 #endif /* CONFIG_MICROKERNEL */
 }
 
@@ -440,7 +429,7 @@ void _timer_idle_exit(void)
 		 * is
 		 * serviced.
 		 */
-		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+		_sys_clock_tick_announce();
 
 		/* timer interrupt handler reprograms the timer for the next
 		 * tick */
@@ -491,7 +480,7 @@ void _timer_idle_exit(void)
 
 	if (_sys_idle_elapsed_ticks) {
 		/* Announce elapsed ticks to the microkernel */
-		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+		_sys_clock_tick_announce();
 	}
 
 	/*

@@ -317,7 +317,7 @@ void _TIMER_INT_HANDLER(void *unused)
 		idle_mode = IDLE_NOT_TICKLESS;
 		_sys_idle_elapsed_ticks =
 			idle_original_ticks + 1; /* actual # of idle ticks */
-		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+		_sys_clock_tick_announce();
 	} else {
 		/*
 		 * Increment the tick because _timer_idle_exit does not
@@ -335,7 +335,7 @@ void _TIMER_INT_HANDLER(void *unused)
 		 */
 
 		if (_sys_idle_elapsed_ticks == 1) {
-			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+			_sys_clock_tick_announce();
 		}
 	}
 
@@ -348,7 +348,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	 */
 	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
 
-	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+	_sys_clock_tick_announce();
 #endif /* CONFIG_TICKLESS_IDLE */
 
 	numIdleTicks = _NanoIdleValGet(); /* get # of idle ticks requested */
@@ -371,26 +371,12 @@ void _TIMER_INT_HANDLER(void *unused)
 	/* accumulate total counter value */
 	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
 
-#ifdef CONFIG_MICROKERNEL
 	/*
 	 * one more tick has occurred -- don't need to do anything special since
 	 * timer is already configured to interrupt on the following tick
 	 */
-	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
-#else
-	_nano_ticks++;
+	_sys_clock_tick_announce();
 
-	if (_nano_timer_list) {
-		_nano_timer_list->ticks--;
-
-		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
-			struct nano_timer *expired = _nano_timer_list;
-			struct nano_lifo *chan = &expired->lifo;
-			_nano_timer_list = expired->link;
-			nano_isr_lifo_put(chan, expired->userData);
-		}
-	}
-#endif /* CONFIG_MICROKERNEL */
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
 	extern void _ExcExit(void);
@@ -587,7 +573,7 @@ void _timer_idle_exit(void)
 		 * so _sys_idle_elapsed_ticks is adjusted to account for it.
 		 */
 		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
-		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+		_sys_clock_tick_announce();
 	} else {
 		uint32_t elapsed;   /* elapsed "counter time" */
 		uint32_t remaining; /* remaining "counter time" */
@@ -618,8 +604,7 @@ void _timer_idle_exit(void)
 		_sys_idle_elapsed_ticks = elapsed / default_load_value;
 
 		if (_sys_idle_elapsed_ticks) {
-			/* Announce elapsed ticks to the microkernel */
-			nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
+			_sys_clock_tick_announce();
 		}
 	}
 
