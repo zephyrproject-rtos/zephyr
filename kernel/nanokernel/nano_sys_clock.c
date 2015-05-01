@@ -50,6 +50,9 @@ int sys_clock_hw_cycles_per_tick;
 int64_t _nano_ticks = 0;
 struct nano_timer *_nano_timer_list = NULL;
 
+/* updated by timer driver for tickless, stays at 1 for non-tickless */
+uint32_t _sys_idle_elapsed_ticks = 1;
+
 /*******************************************************************************
 *
 * nano_time_init - constructor that initializes nanokernel time tracking system
@@ -188,6 +191,33 @@ int64_t nano_tick_delta(int64_t *reftime)
 uint32_t nano_tick_delta_32(int64_t *reftime)
 {
 	return (uint32_t)_nano_tick_delta(reftime);
+}
+
+/*******************************************************************************
+*
+* _do_sys_clock_tick_announce - announce a tick to the nanokernel
+*
+* This function is only to be called by the system clock timer driver when a
+* tick is to be announced to the nanokernel. It takes care of dequeuing the
+* timers that have expired and wake up the fibers pending on them.
+*
+* RETURNS: N/A
+*/
+
+void _do_sys_clock_tick_announce(uint32_t ticks)
+{
+	_nano_ticks += ticks;
+
+	if (_nano_timer_list) {
+		_nano_timer_list->ticks -= ticks;
+
+		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
+			struct nano_timer *expired = _nano_timer_list;
+			struct nano_lifo *lifo = &expired->lifo;
+			_nano_timer_list = expired->link;
+			nano_isr_lifo_put(lifo, expired->userData);
+		}
+	}
 }
 
 #endif /*  CONFIG_NANOKERNEL */
