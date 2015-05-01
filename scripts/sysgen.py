@@ -991,7 +991,7 @@ def kernel_main_c_node_init():
     kernel_main_c_out("\n" +
         "void init_node(void)\n{\n")
     if (len(pipe_list) > 0):
-        kernel_main_c_out("    InitPipe();\n")
+        kernel_main_c_out("    _pipe_init();\n")
     if (len(map_list) > 0):
         kernel_main_c_out("    _mem_map_init();\n")
     if (len(pool_list) > 0):

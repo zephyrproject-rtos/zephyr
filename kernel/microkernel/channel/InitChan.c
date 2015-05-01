@@ -38,7 +38,7 @@
 
 /****************************************************************************/
 
-void InitPipe(void)
+void _pipe_init(void)
 {
 	int i;
 	struct pipe_struct *pPipe;
