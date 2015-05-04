@@ -40,7 +40,7 @@ nkernel_INCLUDE_DIR = $(strip \
 
 nkernel_PATH = $(strip \
 	${vBASE}/arch/${vARCH}/core \
-	${vBASE}/kernel/nanokernel/core \
+	${vBASE}/kernel/nanokernel \
 )
 
 nkernel_PATH_y = $(strip \
