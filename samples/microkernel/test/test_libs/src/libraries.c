@@ -71,8 +71,9 @@ int limitsTest(void)
 {
 	TC_PRINT("Testing limits.h library ...\n");
 
-	if (longMax + longOne != LONG_MIN)
-	return TC_FAIL;
+	if (longMax + longOne != LONG_MIN) {
+		return TC_FAIL;
+	}
 
 	return TC_PASS;
 }
@@ -88,8 +89,9 @@ int stdboolTest(void)
 {
 	TC_PRINT("Testing stdbool.h library ...\n");
 
-	if ((true != 1) || (false != 0))
-	return TC_FAIL;
+	if ((true != 1) || (false != 0)) {
+		return TC_FAIL;
+	}
 
 	return TC_PASS;
 }
@@ -113,8 +115,9 @@ int stddefTest(void)
 {
 	TC_PRINT("Testing stddef.h library ...\n");
 
-	if (sizeOfLongVariable != 4)
-	return TC_FAIL;
+	if (sizeOfLongVariable != 4) {
+		return TC_FAIL;
+	}
 
 	return TC_PASS;
 }
@@ -138,8 +141,9 @@ int stdintTest(void)
 {
 	TC_PRINT("Testing stdint.h library ...\n");
 
-	if (unsignedInt + unsignedByte + 1u != 0)
-	return TC_FAIL;
+	if (unsignedInt + unsignedByte + 1u != 0) {
+		return TC_FAIL;
+	}
 
 	return TC_PASS;
 }
@@ -164,8 +168,9 @@ int stringTest(void)
 	TC_PRINT("Testing string.h library ...\n");
 
 	memset(buffer, 'a', BUFSIZE);
-	if (buffer[0] != 'a' || buffer[BUFSIZE-1] != 'a')
-	return TC_FAIL;
+	if (buffer[0] != 'a' || buffer[BUFSIZE-1] != 'a') {
+		return TC_FAIL;
+	}
 
 	return TC_PASS;
 }
@@ -186,9 +191,9 @@ int RegressionTask(void)
 	TC_PRINT("Validating access to supported libraries\n");
 
 	if (limitsTest () || stdboolTest () || stddefTest () ||
-	stdintTest () || stringTest ()) {
-	TC_PRINT ("Library validation failed\n");
-	return TC_FAIL;
+        stdintTest () || stringTest ()) {
+		TC_PRINT("Library validation failed\n");
+		return TC_FAIL;
 	}
 
 	TC_PRINT("Validation complete\n");
