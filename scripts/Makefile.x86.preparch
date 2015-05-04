@@ -16,10 +16,10 @@ x86_FLAGS += $(LTO_FLAG)
 x86_FLAGS += $(PERF_OPT_FLAG)
 LDFLAG_LINKERCMD = -DVXMICRO_ARCH_x86
 
-ISA_FLAG_pentium4 = $(call cc-option,-march=pentium4,)
-ISA_FLAG_minuteia = $(call cc-option,-march=pentium,)
-ISA_FLAG_atom_n28xx = $(call cc-option,-march=atom,) $(call cc-option,-mtune=atom,)
-
+ISA_FLAG_pentium4-$(CONFIG_BSP_PCPENTIUM4) = -march=pentium4
+ISA_FLAG_minuteia-$(CONFIG_BSP_PCMINUTEIA) = -march=pentium
+ISA_FLAG_atom_n28xx-$(CONFIG_BSP_ATOM_N28XX) = -march=atom -mtune=atom
+ISA_FLAG_x86 = $(strip $(ISA_FLAG_pentium4-y) $(ISA_FLAG_minuteia-y) $(ISA_FLAG_atom_n28xx-y))
 
 QEMU_BIOS ?= /usr/share/qemu
 QEMU_CPU_TYPE_x86 = qemu32
@@ -30,5 +30,4 @@ QEMU_FLAGS_x86 = -m 32 -cpu $(QEMU_CPU_TYPE_x86) \
 		-serial mon:stdio -machine type=pc-0.14
 QEMU_x86 = qemu-system-i386
 
-export ISA_FLAG_pentium4 ISA_FLAG_minuteia ISA_FLAG_atom_n28xx \
-	QEMU_FLAGS_x86 QEMU_x86 QEMU_CPU_TYPE_x86
+export ISA_FLAG_x86 QEMU_FLAGS_x86 QEMU_x86 QEMU_CPU_TYPE_x86

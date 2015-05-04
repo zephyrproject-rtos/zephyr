@@ -641,7 +641,7 @@ KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
                  $(call cc-option,-fno-partial-inlining)
 endif
 
-ISA_FLAG=$(ISA_FLAG_$(CONFIG_BSP))
+ISA_FLAG=$(ISA_FLAG_$(SRCARCH))
 
 STACK_CANARIES_FLAG_y = $(call cc-option,-fstack-protector-all,)
 STACK_CANARIES_FLAG_  = $(call cc-option,-fno-stack-protector,)
@@ -695,7 +695,7 @@ KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly) \
 		   $(call cc-option,-fno-var-tracking)
 endif
 KBUILD_CFLAGS += $(CFLAGS)
-KBUILD_AFLAGS += $(ARCHFLAGS) $(ISA_FLAG=)
+KBUILD_AFLAGS += $(ARCHFLAGS) $(ISA_FLAG)
 KBUILD_AFLAGS += $(CFLAGS)
 
 ifdef CONFIG_FUNCTION_TRACER
