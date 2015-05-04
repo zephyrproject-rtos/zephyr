@@ -1,7 +1,7 @@
-/* nano_stack.c - VxMicro nanokernel 'stack' implementation */
+/* nanokernel fixed-size stack object */
 
 /*
- * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -45,9 +45,6 @@ following APIs:
 INTERNAL
 In some cases the compiler "alias" attribute is used to map two or more
 APIs to the same function, since they have identical implementations.
-
-Reference entries for these APIs may eventually be created in the directory
-target/src/kernel/arch/doc.
 */
 
 #include <nanok.h>
@@ -70,9 +67,10 @@ target/src/kernel/arch/doc.
 * level invocation.
 */
 
-void nano_stack_init(struct nano_stack *chan, /* stack to initialize */
-				 uint32_t *data    /* container for stack */
-				 )
+void nano_stack_init(
+	struct nano_stack *chan,	/* stack to initialize */
+	uint32_t *data				/* container for stack */
+	)
 {
 	chan->next = chan->base = data;
 	chan->proc = (tCCS *)0;
@@ -81,10 +79,10 @@ void nano_stack_init(struct nano_stack *chan, /* stack to initialize */
 #ifdef CONFIG_MICROKERNEL
 
 /*
- * For legacy reasons, the microkernel utilizes the _Cpsh() API which
- * is functionally equivalent to nano_fiber_stack_pushC() (which has been renamed
- * nano_fiber_stack_push() given that, by default, APIs will be a C interface), an
- * an alias will be generated.
+ * For legacy reasons, the microkernel utilizes the _Cpsh() API which is
+ * functionally equivalent to nano_fiber_stack_pushC() (which has been renamed
+ * nano_fiber_stack_push() given that, by default, APIs will be a C
+ * interface), an an alias will be generated.
  */
 
 FUNC_ALIAS(_stack_push, _Cpsh, void);
@@ -104,17 +102,16 @@ FUNC_ALIAS(_stack_push, nano_fiber_stack_push, void);
 * RETURNS: N/A
 *
 * INTERNAL
-* This function is capable of supporting invocations from both a fiber and
-* an ISR context.  However, the 'nano_isr_stack_push' and 'nano_fiber_stack_push'
-*alias'
-* are created to support any required implementation differences in the future
-* without introducing a source code migration issue.
+* This function is capable of supporting invocations from both a fiber and an
+* ISR context.  However, the nano_isr_stack_push and nano_fiber_stack_push
+* aliases are created to support any required implementation differences in
+* the future without introducing a source code migration issue.
 */
 
-void _stack_push(struct nano_stack *chan, /* stack channel on
-							   which to interact */
-				      uint32_t data /* data to push on stack */
-				      )
+void _stack_push(
+	struct nano_stack *chan, /* stack channel on which to interact */
+	uint32_t data /* data to push on stack */
+	)
 {
 	tCCS *ccs;
 	unsigned int imask;
@@ -192,15 +189,16 @@ FUNC_ALIAS(_stack_pop, nano_task_stack_pop, int);
 *
 * INTERNAL
 * This function is capable of supporting invocations from fiber, task, and
-* ISR contexts.  However, the 'nano_isr_stack_pop', 'nano_task_stack_pop', and
-* 'nano_fiber_stack_pop' alias' are created to support any required
+* ISR contexts.  However, the nano_isr_stack_pop, nano_task_stack_pop, and
+* nano_fiber_stack_pop aliases are created to support any required
 * implementation differences in the future without intoducing a source code
 * migration issue.
 */
 
-int _stack_pop(struct nano_stack *chan, /* channel on which to interact */
-			    uint32_t *pData   /* container for data to pop */
-			    )
+int _stack_pop(
+	struct nano_stack *chan,	/* channel on which to interact */
+	uint32_t *pData				/* container for data to pop */
+	)
 {
 	unsigned int imask;
 	int rv = 0;
@@ -219,7 +217,7 @@ int _stack_pop(struct nano_stack *chan, /* channel on which to interact */
 
 /*******************************************************************************
 *
-* nano_fiber_stack_pop_wait - pop data from a nanokernel stack, wait if not available
+* nano_fiber_stack_pop_wait - pop data from a nanokernel stack, wait if empty
 *
 * Pop the first data word from a nanokernel stack object; it can only be
 * called from a fiber context
@@ -230,8 +228,8 @@ int _stack_pop(struct nano_stack *chan, /* channel on which to interact */
 * RETURNS: the data popped from the stack
 *
 * INTERNAL
-* There exists a separate nano_task_stack_pop_wait() implementation since a task
-* context cannot pend on a nanokernel object. Intead tasks will poll the
+* There exists a separate nano_task_stack_pop_wait() implementation since a
+* task context cannot pend on a nanokernel object. Instead tasks will poll the
 * the stack object.
 */
 
@@ -258,7 +256,7 @@ uint32_t nano_fiber_stack_pop_wait(
 
 /*******************************************************************************
 *
-* nano_task_stack_pop_wait - pop data from a nanokernel stack, poll if not available
+* nano_task_stack_pop_wait - pop data from a nanokernel stack, poll if empty
 *
 * Pop the first data word from a nanokernel stack; it can only be called
 * from a task context.
@@ -282,10 +280,8 @@ uint32_t nano_task_stack_pop_wait(
 		imask = irq_lock_inline();
 
 		/*
-		 * Predict that the branch will be taken to break out of the
-		 * loop.
-		 * There is little cost to a misprediction since that leads to
-		 * idle.
+		 * Predict that the branch will be taken to break out of the loop.
+		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
 		if (likely(chan->next > chan->base))
@@ -293,21 +289,19 @@ uint32_t nano_task_stack_pop_wait(
 
 		/*
 		 * Invoke nano_cpu_atomic_idle() with interrupts still disabled to
-		 *prevent
-		 * the scenario where an interrupt fires after re-enabling
-		 *interrupts
-		 * and before executing the "halt" instruction.  If the ISR
-		 *performs
-		 * a nano_isr_stack_push() on the stack specified by the 'chan'
-		 *parameter,
-		 * the subsequent execution of the "halt" instruction will
-		 *result
-		 * in the queued data being ignored until the next interrupt, if
-		 *any.
+		 * prevent the scenario where an interrupt fires after re-enabling
+		 * interrupts and before executing the "halt" instruction.  If the ISR
+		 * performs a nano_isr_stack_push() on the same stack object, the
+		 * subsequent execution of the "halt" instruction will result in the
+		 * queued data being ignored until the next interrupt, if any.
 		 *
 		 * Thus it should be clear that an architectures implementation
 		 * of nano_cpu_atomic_idle() must be able to atomically re-enable
 		 * interrupts and enter a low-power mode.
+		 *
+		 * This explanation is valid for all nanokernel objects: stacks, FIFOs,
+		 * LIFOs, and semaphores, for their nano_task_<object>_<get>_wait()
+		 * routines.
 		 */
 
 		nano_cpu_atomic_idle(imask);
