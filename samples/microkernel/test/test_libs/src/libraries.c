@@ -238,6 +238,29 @@ int strcmp_test (void)
 }
 
 
+/*******************************************************************************
+ *
+ * strcpy_test - test string copy function
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
+
+int strcpy_test (void)
+{
+	TC_PRINT ("\tstrcpy ...\t");
+
+	memset (buffer, '\0', BUFSIZE);
+	strcpy(buffer, "10 chars!!\0");
+
+	if (strcmp(buffer, "10 chars!!\0") != 0) {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT ("passed\n");
+	return TC_PASS;
+}
+
 
 /*******************************************************************************
 *
@@ -250,7 +273,7 @@ int stringTest(void)
 {
 	TC_PRINT("Testing string.h library ...\n");
 
-	if (memset_test() || strlen_test() || strcmp_test()) {
+	if (memset_test() || strlen_test() || strcmp_test() || strcpy_test()) {
 		return TC_FAIL;
 	}
 
