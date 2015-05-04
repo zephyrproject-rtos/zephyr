@@ -71,3 +71,4 @@ struct bt_att_exchange_mtu_rsp {
 } PACK_STRUCT;
 
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
+struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);

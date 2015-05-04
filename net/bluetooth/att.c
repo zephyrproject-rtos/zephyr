@@ -48,17 +48,12 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 			 uint8_t err)
 {
 	struct bt_att_error_rsp *rsp;
-	struct bt_att_hdr *hdr;
 	struct bt_buf *buf;
 
-	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_ATT,
-				  sizeof(*hdr) + sizeof(*rsp));
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
 	if (!buf) {
 		return;
 	}
-
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
-	hdr->code = BT_ATT_OP_ERROR_RSP;
 
 	rsp = (void *)bt_buf_add(buf, sizeof(*rsp));
 	rsp->request = req;
@@ -90,4 +85,20 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 
 done:
 	bt_buf_put(buf);
+}
+
+struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
+{
+	struct bt_att_hdr *hdr;
+	struct bt_buf *buf;
+
+	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_ATT, sizeof(*hdr) + len);
+	if (!buf) {
+		return NULL;
+	}
+
+	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	hdr->code = op;
+
+	return buf;
 }
