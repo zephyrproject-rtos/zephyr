@@ -69,11 +69,11 @@ APIs to the same function, since they have identical implementations.
 */
 
 void nano_fifo_init(
-	struct nano_fifo *chan /* channel to initialize */
+	struct nano_fifo *fifo /* fifo to initialize */
 	)
 {
-	chan->head = (void *)0;
-	chan->tail = (void *)&(chan->head);
+	fifo->head = (void *)0;
+	fifo->tail = (void *)&(fifo->head);
 
 	/*
 	 * If the 'stat' field is a positive value, it indicates how many data
@@ -83,7 +83,7 @@ void nano_fifo_init(
 	 * in the LIFO _and_ there are no pending fibers.
 	 */
 
-	chan->stat = 0;
+	fifo->stat = 0;
 }
 
 FUNC_ALIAS(_fifo_put, nano_isr_fifo_put, void);
@@ -110,7 +110,7 @@ FUNC_ALIAS(_fifo_put, nano_fiber_fifo_put, void);
 */
 
 void _fifo_put(
-	struct nano_fifo *chan,	/* channel on which to interact */
+	struct nano_fifo *fifo,	/* fifo on which to interact */
 	void *data				/* data to send */
 	)
 {
@@ -119,21 +119,21 @@ void _fifo_put(
 
 	imask = irq_lock_inline();
 
-	chan->stat++;
-	if (chan->stat <= 0) {
-		ccs = chan->head;
-		if (chan->stat == 0) {
-			chan->tail = (void *)&chan->head;
+	fifo->stat++;
+	if (fifo->stat <= 0) {
+		ccs = fifo->head;
+		if (fifo->stat == 0) {
+			fifo->tail = (void *)&fifo->head;
 		} else {
-			chan->head = ccs->link;
+			fifo->head = ccs->link;
 		}
 		ccs->link = 0;
 
 		fiberRtnValueSet(ccs, (unsigned int)data);
 		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
-		*(void **)chan->tail = data;
-		chan->tail = data;
+		*(void **)fifo->tail = data;
+		fifo->tail = data;
 		*(int *)data = 0;
 	}
 
@@ -155,7 +155,7 @@ void _fifo_put(
 */
 
 void nano_task_fifo_put(
-	struct nano_fifo *chan,	/* channel on which to interact */
+	struct nano_fifo *fifo,	/* fifo on which to interact */
 	void *data				/* data to send */
 	)
 {
@@ -164,13 +164,13 @@ void nano_task_fifo_put(
 
 	imask = irq_lock_inline();
 
-	chan->stat++;
-	if (chan->stat <= 0) {
-		ccs = chan->head;
-		if (chan->stat == 0) {
-			chan->tail = (void *)&chan->head;
+	fifo->stat++;
+	if (fifo->stat <= 0) {
+		ccs = fifo->head;
+		if (fifo->stat == 0) {
+			fifo->tail = (void *)&fifo->head;
 		} else {
-			chan->head = ccs->link;
+			fifo->head = ccs->link;
 		}
 		ccs->link = 0;
 
@@ -182,8 +182,8 @@ void nano_task_fifo_put(
 		_Swap(imask);
 		return;
 	} else {
-		*(void **)chan->tail = data;
-		chan->tail = data;
+		*(void **)fifo->tail = data;
+		fifo->tail = data;
 		*(int *)data = 0;
 	}
 
@@ -199,12 +199,12 @@ void nano_task_fifo_put(
 * be avoided when the context is known up-front (to avoid unnecessary
 * overhead).
 */
-void nano_fifo_put(struct nano_fifo *chan, void *data)
+void nano_fifo_put(struct nano_fifo *fifo, void *data)
 {
-	static void (*func[3])(struct nano_fifo *chan, void *data) = {
+	static void (*func[3])(struct nano_fifo *fifo, void *data) = {
 		nano_isr_fifo_put, nano_fiber_fifo_put, nano_task_fifo_put
 	};
-	func[context_type_get()](chan, data);
+	func[context_type_get()](fifo, data);
 }
 
 FUNC_ALIAS(_fifo_get, nano_isr_fifo_get, void *);
@@ -234,7 +234,7 @@ FUNC_ALIAS(_fifo_get, nano_fifo_get, void *);
 */
 
 void *_fifo_get(
-	struct nano_fifo *chan /* channel on which to interact */
+	struct nano_fifo *fifo /* fifo on which to interact */
 	)
 {
 	void *data = NULL;
@@ -242,14 +242,14 @@ void *_fifo_get(
 
 	imask = irq_lock_inline();
 
-	if (chan->stat > 0) {
-		chan->stat--;
-		data = chan->head;
+	if (fifo->stat > 0) {
+		fifo->stat--;
+		data = fifo->head;
 
-		if (chan->stat == 0) {
-			chan->tail = (void *)&(chan->head);
+		if (fifo->stat == 0) {
+			fifo->tail = (void *)&(fifo->head);
 		} else {
-			chan->head = *(void **)data;
+			fifo->head = *(void **)data;
 		}
 	}
 	irq_unlock_inline(imask);
@@ -277,7 +277,7 @@ void *_fifo_get(
 */
 
 void *nano_fiber_fifo_get_wait(
-	struct nano_fifo *chan /* channel on which to interact */
+	struct nano_fifo *fifo /* fifo on which to interact */
 	)
 {
 	void *data;
@@ -285,17 +285,17 @@ void *nano_fiber_fifo_get_wait(
 
 	imask = irq_lock_inline();
 
-	chan->stat--;
-	if (chan->stat < 0) {
-		((tCCS *)chan->tail)->link = _NanoKernel.current;
-		chan->tail = _NanoKernel.current;
+	fifo->stat--;
+	if (fifo->stat < 0) {
+		((tCCS *)fifo->tail)->link = _NanoKernel.current;
+		fifo->tail = _NanoKernel.current;
 		data = (void *)_Swap(imask);
 	} else {
-		data = chan->head;
-		if (chan->stat == 0) {
-			chan->tail = (void *)&chan->head;
+		data = fifo->head;
+		if (fifo->stat == 0) {
+			fifo->tail = (void *)&fifo->head;
 		} else {
-			chan->head = *(void **)data;
+			fifo->head = *(void **)data;
 		}
 
 		irq_unlock_inline(imask);
@@ -321,7 +321,7 @@ void *nano_fiber_fifo_get_wait(
 */
 
 void *nano_task_fifo_get_wait(
-	struct nano_fifo *chan /* channel on which to interact */
+	struct nano_fifo *fifo /* fifo on which to interact */
 	)
 {
 	void *data;
@@ -337,7 +337,7 @@ void *nano_task_fifo_get_wait(
 		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
-		if (likely(chan->stat > 0))
+		if (likely(fifo->stat > 0))
 			break;
 
 		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
@@ -345,13 +345,13 @@ void *nano_task_fifo_get_wait(
 		nano_cpu_atomic_idle(imask);
 	}
 
-	chan->stat--;
-	data = chan->head;
+	fifo->stat--;
+	data = fifo->head;
 
-	if (chan->stat == 0)
-		chan->tail = (void *)&(chan->head);
+	if (fifo->stat == 0)
+		fifo->tail = (void *)&(fifo->head);
 	else
-		chan->head = *(void **)data;
+		fifo->head = *(void **)data;
 
 	irq_unlock_inline(imask);
 
@@ -369,10 +369,10 @@ void *nano_task_fifo_get_wait(
 *
 * It's only valid to call this API from a fiber or a task.
 */
-void *nano_fifo_get_wait(struct nano_fifo *chan)
+void *nano_fifo_get_wait(struct nano_fifo *fifo)
 {
-	static void *(*func[3])(struct nano_fifo *chan) = {
+	static void *(*func[3])(struct nano_fifo *fifo) = {
 		NULL, nano_fiber_fifo_get_wait, nano_task_fifo_get_wait
 	};
-	return func[context_type_get()](chan);
+	return func[context_type_get()](fifo);
 }
