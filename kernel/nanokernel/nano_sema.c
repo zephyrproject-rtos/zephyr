@@ -74,11 +74,11 @@ APIs to the same function, since they have identical implementations.
 */
 
 void nano_sem_init(
-	struct nano_sem *chan /* semaphore object to initialize */
+	struct nano_sem *sem /* semaphore object to initialize */
 	)
 {
-	chan->nsig = 0;
-	chan->proc = (tCCS *)0;
+	sem->nsig = 0;
+	sem->proc = (tCCS *)0;
 }
 
 FUNC_ALIAS(_sem_give, nano_isr_sem_give, void);
@@ -103,19 +103,19 @@ FUNC_ALIAS(_sem_give, nano_fiber_sem_give, void);
 */
 
 void _sem_give(
-	struct nano_sem *chan /* semaphore on which to signal */
+	struct nano_sem *sem /* semaphore on which to signal */
 	)
 {
 	tCCS *ccs;
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	ccs = chan->proc;
+	ccs = sem->proc;
 	if (ccs != (tCCS *)NULL) {
-		chan->proc = 0;
+		sem->proc = 0;
 		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
-		chan->nsig++;
+		sem->nsig++;
 	}
 
 	irq_unlock_inline(imask);
@@ -133,16 +133,16 @@ void _sem_give(
 */
 
 void nano_task_sem_give(
-	struct nano_sem *chan /* semaphore on which to signal */
+	struct nano_sem *sem /* semaphore on which to signal */
 	)
 {
 	tCCS *ccs;
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	ccs = chan->proc;
+	ccs = sem->proc;
 	if (ccs != (tCCS *)NULL) {
-		chan->proc = 0;
+		sem->proc = 0;
 		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
 		/* swap into the newly ready fiber */
@@ -150,7 +150,7 @@ void nano_task_sem_give(
 		_Swap(imask);
 		return;
 	} else {
-		chan->nsig++;
+		sem->nsig++;
 	}
 
 	irq_unlock_inline(imask);
@@ -166,12 +166,12 @@ void nano_task_sem_give(
 * overhead).
 */
 
-void nano_sem_give(struct nano_sem *chan)
+void nano_sem_give(struct nano_sem *sem)
 {
-	static void (*func[3])(struct nano_sem *chan) = {
+	static void (*func[3])(struct nano_sem *sem) = {
 		nano_isr_sem_give, nano_fiber_sem_give, nano_task_sem_give
 	};
-	func[context_type_get()](chan);
+	func[context_type_get()](sem);
 }
 
 FUNC_ALIAS(_sem_take, nano_isr_sem_take, int);
@@ -192,15 +192,15 @@ FUNC_ALIAS(_sem_take, nano_task_sem_take, int);
 */
 
 int _sem_take(
-	struct nano_sem *chan /* semaphore on which to test */
+	struct nano_sem *sem /* semaphore on which to test */
 	)
 {
 	unsigned int imask;
 	int avail;
 
 	imask = irq_lock_inline();
-	avail = (chan->nsig > 0);
-	chan->nsig -= avail;
+	avail = (sem->nsig > 0);
+	sem->nsig -= avail;
 	irq_unlock_inline(imask);
 
 	return avail;
@@ -225,17 +225,17 @@ int _sem_take(
 */
 
 void nano_fiber_sem_take_wait(
-	struct nano_sem *chan /* semaphore on which to wait */
+	struct nano_sem *sem /* semaphore on which to wait */
 	)
 {
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	if (chan->nsig == 0) {
-		chan->proc = _NanoKernel.current;
+	if (sem->nsig == 0) {
+		sem->proc = _NanoKernel.current;
 		_Swap(imask);
 	} else {
-		chan->nsig--;
+		sem->nsig--;
 		irq_unlock_inline(imask);
 	}
 }
@@ -254,7 +254,7 @@ void nano_fiber_sem_take_wait(
 */
 
 void nano_task_sem_take_wait(
-	struct nano_sem *chan /* semaphore on which to wait */
+	struct nano_sem *sem /* semaphore on which to wait */
 	)
 {
 	unsigned int imask;
@@ -269,7 +269,7 @@ void nano_task_sem_take_wait(
 		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
-		if (likely(chan->nsig > 0))
+		if (likely(sem->nsig > 0))
 			break;
 
 		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
@@ -277,7 +277,7 @@ void nano_task_sem_take_wait(
 		nano_cpu_atomic_idle(imask);
 	}
 
-	chan->nsig--;
+	sem->nsig--;
 	irq_unlock_inline(imask);
 }
 
@@ -292,10 +292,10 @@ void nano_task_sem_take_wait(
 *
 * It's only valid to call this API from a fiber or a task.
 */
-void nano_sem_take_wait(struct nano_sem *chan)
+void nano_sem_take_wait(struct nano_sem *sem)
 {
-	static void (*func[3])(struct nano_sem *chan) = {
+	static void (*func[3])(struct nano_sem *sem) = {
 		NULL, nano_fiber_sem_take_wait, nano_task_sem_take_wait
 	};
-	func[context_type_get()](chan);
+	func[context_type_get()](sem);
 }
