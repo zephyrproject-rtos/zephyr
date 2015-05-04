@@ -38,15 +38,30 @@ extern "C" {
 #endif
 
 #include <cputype.h>
+#include <nanokernel.h>
 
 extern void uart_console_init(void);
 
-/*
- * Register callback function which gets called when string typed in
- * the serial console. Carriage return is translated to NULL making
- * string always NULL terminated.
+#define MAX_LINE_LEN 1024
+struct uart_console_input {
+	int __unused;
+	char line[MAX_LINE_LEN];
+};
+
+/** @brief Register uart input processing
+ *
+ *  Input processing is started when string is typed in the console.
+ *  Carriage return is translated to NULL making string always NULL
+ *  terminated. Application before calling register function need to
+ *  initialize two fifo queues mentioned below.
+ *
+ *  @param avail nano_fifo queue keeping available input slots
+ *  @param lines nano_fifo queue of entered lines which to be processed
+ *         in the application code.
+ *
+ *  @return None
  */
-void uart_register_handler(void (*cb) (const char *string));
+void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines);
 
 void uart_console_isr(void *unused);
 

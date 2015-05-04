@@ -111,10 +111,10 @@ extern void __printk_hook_install(int (*fn)(int));
 #endif
 
 #if defined(CONFIG_CONSOLE_HANDLER)
-#define MAX_LINE_LENGTH 1024
-static char rcv_data[MAX_LINE_LENGTH];
-static uint8_t rcv_pos = 0;
-static void (*handler) (const char *string);
+static size_t pos = 0;
+
+static struct nano_fifo *avail_queue;
+static struct nano_fifo *lines_queue;
 
 static int read_uart(int uart, uint8_t *buf, unsigned int size)
 {
@@ -138,33 +138,43 @@ void uart_console_isr(void *unused)
 	while (uart_irq_update(UART) && uart_irq_is_pending(UART)) {
 		/* Character(s) have been received */
 		if (uart_irq_rx_ready(UART)) {
-			int rx;
+			static struct uart_console_input *cmd;
 			uint8_t byte;
+			int rx;
+
+
+			if (!cmd) {
+				cmd = nano_isr_fifo_get(avail_queue);
+				if (!cmd)
+					return;
+			}
 
 			rx = read_uart(UART, &byte, 1);
-			if (rx < 0)
+			if (rx < 0) {
+				nano_isr_fifo_put(avail_queue, cmd);
 				return;
+			}
 
 			/* Echo back to console */
 			uart_poll_out(UART, byte);
 
 			if (byte == '\r' || byte == '\n' ||
-			    rcv_pos == sizeof(rcv_data) - 1) {
-				rcv_data[rcv_pos] = '\0';
+			    pos == sizeof(cmd->line) - 1) {
+				cmd->line[pos] = '\0';
 				uart_poll_out(UART, '\n');
-				rcv_pos = 0;
+				pos = 0;
 
-				if (handler)
-					handler(rcv_data);
+				nano_isr_fifo_put(lines_queue, cmd);
+				cmd = NULL;
 			} else {
-				rcv_data[rcv_pos++] = byte;
+				cmd->line[pos++] = byte;
 			}
 
 		}
 	}
 }
 
-static void console_handler_init(void)
+static void console_input_init(void)
 {
 	uint8_t c;
 
@@ -179,15 +189,18 @@ static void console_handler_init(void)
 	uart_irq_rx_enable(UART);
 }
 
-void uart_register_handler(void (*cb) (const char *string))
+void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)
 {
-	handler = cb;
+	avail_queue = avail;
+	lines_queue = lines;
+
+	console_input_init();
 }
 #else
-#define console_handler_init(x)			\
+#define console_input_init(x)			\
 	do {/* nothing */			\
 	} while ((0))
-#define uart_register_handler(x)		\
+#define uart_register_input(x)			\
 	do {/* nothing */			\
 	} while ((0))
 #endif
@@ -203,5 +216,4 @@ void uart_console_init(void)
 {
 	__stdout_hook_install(consoleOut);
 	__printk_hook_install(consoleOut);
-	console_handler_init();
 }
