@@ -324,6 +324,38 @@ int strncpy_test (void)
 }
 
 /*******************************************************************************
+ *
+ * strchr_test - test string scanning function
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
+
+int strchr_test (void)
+{
+	char *rs = NULL;
+	TC_PRINT ("\tstrchr ...\t");
+
+	memset (buffer, '\0', BUFSIZE);
+	strncpy(buffer, "Copy 10", BUFSIZE);
+
+	rs = strchr(buffer, '1');
+
+	if (!rs) {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	}
+
+	if (strncmp(rs, "10", 2) != 0) {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT ("passed\n");
+	return TC_PASS;
+}
+
+
+/*******************************************************************************
 *
  * stringTest - test string operations library
  * * RETURNS: TC_PASS or TC_FAIL
@@ -334,7 +366,7 @@ int stringTest(void)
 	TC_PRINT("Testing string.h library ...\n");
 
 	if (memset_test() || strlen_test() || strcmp_test() || strcpy_test() ||
-	    strncpy_test() || strncmp_test()) {
+	    strncpy_test() || strncmp_test() || strchr_test()) {
 		return TC_FAIL;
 	}
 
