@@ -70,13 +70,13 @@ void (*__ctor_nano_time_init)(void) __attribute__((section(".ctors.250"))) =
 
 /*******************************************************************************
 *
-* nano_node_tick_get_32 - return the current system tick count
+* nano_tick_get_32 - return the current system tick count
 *
 * RETURNS: the current system tick count
 *
 */
 
-uint32_t nano_node_tick_get_32(void)
+uint32_t nano_tick_get_32(void)
 {
 	return _nano_ticks;
 }

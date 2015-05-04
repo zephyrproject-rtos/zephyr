@@ -46,7 +46,7 @@
 * This routine reads the processor's high precision timer.  It reads the
 * counter register on the timer device. This counter register increments
 * at a relatively high rate (e.g. 20 MHz), and thus is considered a
-* "high resolution" timer.  This is in contrast to nano_node_tick_get_32() and
+* "high resolution" timer.  This is in contrast to nano_tick_get_32() and
 * task_node_tick_get_32() which return the value of the kernel ticks variable.
 *
 * RETURNS: current high precision clock value
@@ -73,7 +73,7 @@ int64_t task_node_tick_get(void)
 
 /*******************************************************************************
 *
-* task_node_tick_get_32 - read the current system clock value
+* task_tick_get_32 - read the current system clock value
 *
 * This routine returns the lower 32-bits of the current system clock value
 * as measured in ticks.
@@ -81,7 +81,7 @@ int64_t task_node_tick_get(void)
 * RETURNS: lower 32-bit of the current system clock value
 */
 
-int32_t task_node_tick_get_32(void)
+int32_t task_tick_get_32(void)
 {
 	return (int32_t)_k_sys_clock_tick_count;
 }

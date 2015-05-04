@@ -225,17 +225,17 @@ int nano_cpu_idleTest(void)
 	int  i;      /* loop variable */
 
     /* Align to a "tick boundary". */
-	tick = nano_node_tick_get_32 ();
-	while (tick == nano_node_tick_get_32 ())
+	tick = nano_tick_get_32 ();
+	while (tick == nano_tick_get_32 ())
 		{
 		}
-	tick = nano_node_tick_get_32 ();
+	tick = nano_tick_get_32 ();
 
 	for (i = 0; i < 5; i++)     /* Repeat the test five times */
 		{
 		nano_cpu_idle ();
 		tick++;
-		if (nano_node_tick_get_32 () != tick)
+		if (nano_tick_get_32 () != tick)
 		    {
 		    return TC_FAIL;
 		    }
@@ -342,13 +342,13 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	int  imask;
 
     /* Align to a "tick boundary" */
-	tick = nano_node_tick_get_32 ();
-	while (nano_node_tick_get_32 () == tick)
+	tick = nano_tick_get_32 ();
+	while (nano_tick_get_32 () == tick)
 		{
 		}
 	tick++;
 
-	while (nano_node_tick_get_32 () == tick)
+	while (nano_tick_get_32 () == tick)
 		{
 		count++;
 		}
@@ -363,13 +363,13 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	count <<= 4;
 
 	imask = disableRtn (irq);
-	tick = nano_node_tick_get_32 ();
+	tick = nano_tick_get_32 ();
 	for (i = 0; i < count; i++)
 		{
-		nano_node_tick_get_32 ();
+		nano_tick_get_32 ();
 		}
 
-	tick2 = nano_node_tick_get_32 ();
+	tick2 = nano_tick_get_32 ();
 
     /*
      * Re-enable interrupts before returning (for both success and failure
@@ -386,10 +386,10 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
     /* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++)
 		{
-		nano_node_tick_get_32 ();
+		nano_tick_get_32 ();
 		}
 
-	return (tick == nano_node_tick_get_32 ()) ? TC_FAIL : TC_PASS;
+	return (tick == nano_tick_get_32 ()) ? TC_FAIL : TC_PASS;
 }
 
 /*******************************************************************************

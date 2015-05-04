@@ -300,11 +300,11 @@ void helperTaskSleepTest(void)
 
 	task_sem_take_wait (HT_SEM);
 
-	firstTick = task_node_tick_get_32 ();
+	firstTick = task_tick_get_32 ();
 	while (mainTaskNotReady)
 		{
 		}
-	helperData = task_node_tick_get_32 () - firstTick;
+	helperData = task_tick_get_32 () - firstTick;
 
 	task_sem_give (RT_SEM);
 }
@@ -320,8 +320,8 @@ int taskSleepTest(void)
 {
 	int32_t  tick;
 
-	tick = task_node_tick_get_32 ();           /* Busy wait to align */
-	while (tick == task_node_tick_get_32 ())   /* to tick boundary */
+	tick = task_tick_get_32 ();           /* Busy wait to align */
+	while (tick == task_tick_get_32 ())   /* to tick boundary */
 		{
 		}
 

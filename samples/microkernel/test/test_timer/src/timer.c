@@ -36,7 +36,7 @@ This module tests the following ukernel timer routines:
 
   task_timer_alloc(), task_timer_free()
   task_timer_start(), task_timer_restart(), task_timer_stop()
-  task_node_tick_delta(), task_node_tick_get_32()
+  task_node_tick_delta(), task_tick_get_32()
 */
 
 /* includes */
@@ -97,8 +97,8 @@ int testLowTimerPeriodicity(void)
 	pTimer[0] = task_timer_alloc();
 
 	/* Align to a tick */
-	ticks = task_node_tick_get_32();
-	while (task_node_tick_get_32() == ticks) {
+	ticks = task_tick_get_32();
+	while (task_tick_get_32() == ticks) {
 	}
 
 	(void) task_node_tick_delta(&refTime);
@@ -122,8 +122,8 @@ int testLowTimerPeriodicity(void)
 	}
 
 
-	ticks = task_node_tick_get_32();
-	while (task_node_tick_get_32() == ticks) {     /* Align to a tick */
+	ticks = task_tick_get_32();
+	while (task_tick_get_32() == ticks) {     /* Align to a tick */
 	}
 	(void) task_node_tick_delta(&refTime);
 
@@ -171,8 +171,8 @@ int testLowTimerDoesNotStart(void)
 
 	for (i = 0; i < 3; i++) {
 		/* Align to a tick */
-		ticks = task_node_tick_get_32();
-		while (task_node_tick_get_32() == ticks) {
+		ticks = task_tick_get_32();
+		while (task_tick_get_32() == ticks) {
 		}
 
 		task_timer_start(pTimer[0], Ti[i], Tr[i], TIMER_SEM);
@@ -204,8 +204,8 @@ int testLowTimerOneShot(void)
 	pTimer[0] = task_timer_alloc();
 
 	/* Align to a tick */
-	ticks = task_node_tick_get_32();
-	while (task_node_tick_get_32() == ticks) {
+	ticks = task_tick_get_32();
+	while (task_tick_get_32() == ticks) {
 	}
 
 	/* Timer to fire once only in 100 ticks */

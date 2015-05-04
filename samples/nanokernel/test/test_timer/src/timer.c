@@ -36,7 +36,7 @@ This module tests the following timer related routines:
   nano_timer_init(), nano_fiber_timer_start(), nano_fiber_timer_stop(),
   nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
   nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
-  nano_time_init(), nano_node_tick_get_32(), nano_node_cycle_get_32(), nano_node_tick_delta()
+  nano_time_init(), nano_tick_get_32(), nano_node_cycle_get_32(), nano_node_tick_delta()
 */
 
 /* includes */
@@ -111,11 +111,11 @@ void initNanoObjects(void)
 * This routine can be called from a task or a fiber to wait upon a timer.
 * It will busy wait until the current tick ends, at which point it will
 * start and then wait upon a timer.  The length of time it spent waiting
-* gets cross-checked with the nano_node_tick_get_32() and nanoTimeElapsed() APIs.
+* gets cross-checked with the nano_tick_get_32() and nanoTimeElapsed() APIs.
 * All three are expected to match up, but a tolerance of one (1) tick is
 * considered acceptable.
 *
-* This routine can be considered as testing nano_node_tick_get_32(),
+* This routine can be considered as testing nano_tick_get_32(),
 * nanoTimeElapsed() and nanoXXXTimerGetW() successful expiration cases.
 *
 * \param startRtn      routine to start the timer
@@ -141,8 +141,8 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 
 	TC_PRINT ("  - test expected to take four seconds\n");
 
-	tick = nano_node_tick_get_32();
-	while (nano_node_tick_get_32() == tick)
+	tick = nano_tick_get_32();
+	while (nano_tick_get_32() == tick)
 		{
         /* Align to a tick boundary */
 		}
@@ -153,7 +153,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	result = waitRtn (pTimer);      /* Wait for the timer to expire */
 
 	elapsed = nano_node_tick_delta (&reftime);
-	duration = nano_node_tick_get_32 () - tick;
+	duration = nano_tick_get_32 () - tick;
 
     /*
      * The difference between <duration> and <elapsed> is expected to be zero
@@ -168,8 +168,8 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 		}
 
     /* Check that the non-wait-timer-get routine works properly. */
-	tick = nano_node_tick_get_32();
-	while (nano_node_tick_get_32() == tick)
+	tick = nano_tick_get_32();
+	while (nano_tick_get_32() == tick)
 		{
         /* Align to a tick boundary */
 		}
@@ -182,7 +182,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 		busywaited = 1;
 		}
 	elapsed = nano_node_tick_delta (&reftime);
-	duration = nano_node_tick_get_32 () - tick;
+	duration = nano_tick_get_32 () - tick;
 
 	if ((busywaited != 1) || (result != pTimerData) ||
 		(duration - elapsed > 1) || ((duration - ticks) > 1))
@@ -214,8 +214,8 @@ void startTimers(timer_start_func startRtn)
 {
 	int  tick;                    /* current tick */
 
-	tick = nano_node_tick_get_32 ();
-	while (nano_node_tick_get_32 () == tick)
+	tick = nano_tick_get_32 ();
+	while (nano_tick_get_32 () == tick)
 		{
         /* Wait for the end of the tick */
 		}
@@ -248,8 +248,8 @@ int busyWaitTimers(timer_get_func getRtn)
 
 	TC_PRINT ("  - test expected to take five or six seconds\n");
 
-	ticks = nano_node_tick_get_32 () + SIX_SECONDS;
-	while ((numExpired != 4) && (nano_node_tick_get_32 () < ticks))
+	ticks = nano_tick_get_32 () + SIX_SECONDS;
+	while ((numExpired != 4) && (nano_tick_get_32 () < ticks))
 		{
 		result = getRtn (&timer);
 		if (result != NULL)
@@ -300,7 +300,7 @@ int busyWaitTimers(timer_get_func getRtn)
 		    }
 		}
 
-	return (nano_node_tick_get_32 () < ticks) ? TC_PASS : TC_FAIL;
+	return (nano_tick_get_32 () < ticks) ? TC_PASS : TC_FAIL;
 }
 
 /*******************************************************************************
@@ -331,14 +331,14 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
 
 	TC_PRINT ("  - test expected to take six seconds\n");
 
-	startTick = nano_node_tick_get_32 ();
-	while (nano_node_tick_get_32 () == startTick)
+	startTick = nano_tick_get_32 ();
+	while (nano_tick_get_32 () == startTick)
 		{
 		}
 	startTick++;
 	endTick = startTick + SIX_SECONDS;
 
-	while (nano_node_tick_get_32 () < endTick)
+	while (nano_tick_get_32 () < endTick)
 		{
 		if ((getRtn (&timer) != NULL) || (getRtn (&shortTimer) != NULL) ||
 		    (getRtn (&midTimer) != NULL) || (getRtn (&longTimer) != NULL))
