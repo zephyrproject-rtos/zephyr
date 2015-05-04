@@ -79,11 +79,11 @@ static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
 */
 
 void RegressionTaskEntry(void)
-	{
+{
 	extern int RegressionTask(void);
 
 	task_sem_give (resultSems[RegressionTask ()]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -96,7 +96,7 @@ void RegressionTaskEntry(void)
 */
 
 void MonitorTaskEntry(void)
-	{
+{
 	ksem_t result;
 	int tasksDone;
 
@@ -121,4 +121,4 @@ void MonitorTaskEntry(void)
 	}
 
 	TC_END_REPORT(TC_PASS);
-	}
+}

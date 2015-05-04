@@ -68,14 +68,14 @@ volatile long longOne = 1L;
 */
 
 int limitsTest(void)
-	{
+{
 	TC_PRINT("Testing limits.h library ...\n");
 
 	if (longMax + longOne != LONG_MIN)
 	return TC_FAIL;
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -85,14 +85,14 @@ int limitsTest(void)
 */
 
 int stdboolTest(void)
-	{
+{
 	TC_PRINT("Testing stdbool.h library ...\n");
 
 	if ((true != 1) || (false != 0))
 	return TC_FAIL;
 
 	return TC_PASS;
-	}
+}
 
 /*
  * variables used during stddef library testing; must be marked as "volatile"
@@ -110,14 +110,14 @@ volatile size_t sizeOfLongVariable = sizeof(longVariable);
 */
 
 int stddefTest(void)
-	{
+{
 	TC_PRINT("Testing stddef.h library ...\n");
 
 	if (sizeOfLongVariable != 4)
 	return TC_FAIL;
 
 	return TC_PASS;
-	}
+}
 
 /*
  * variables used during stdint library testing; must be marked as "volatile"
@@ -135,14 +135,14 @@ volatile uint32_t unsignedInt = 0xffffff00;
 */
 
 int stdintTest(void)
-	{
+{
 	TC_PRINT("Testing stdint.h library ...\n");
 
 	if (unsignedInt + unsignedByte + 1u != 0)
 	return TC_FAIL;
 
 	return TC_PASS;
-	}
+}
 
 /*
  * variables used during string library testing
@@ -160,7 +160,7 @@ char buffer[BUFSIZE];
 */
 
 int stringTest(void)
-	{
+{
 	TC_PRINT("Testing string.h library ...\n");
 
 	memset(buffer, 'a', BUFSIZE);
@@ -168,7 +168,7 @@ int stringTest(void)
 	return TC_FAIL;
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -182,7 +182,7 @@ int stringTest(void)
 */
 
 int RegressionTask(void)
-	{
+{
 	TC_PRINT("Validating access to supported libraries\n");
 
 	if (limitsTest () || stdboolTest () || stddefTest () ||
@@ -193,4 +193,4 @@ int RegressionTask(void)
 
 	TC_PRINT("Validation complete\n");
 	return TC_PASS;
-	}
+}
