@@ -44,7 +44,7 @@ fi
 source ${VXMICRO_BASE}/scripts/sanity_chk/common.defs
 
 # Additional commands used in script
-SIZE="truesize"
+SIZE="${VXMICRO_BASE}/scripts/truesize"
 
 # Location of master project directory
 #
