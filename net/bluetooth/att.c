@@ -58,7 +58,7 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 	}
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
-	hdr->code = BT_ATT_ERROR_RSP;
+	hdr->code = BT_ATT_OP_ERROR_RSP;
 
 	rsp = (void *)bt_buf_add(buf, sizeof(*rsp));
 	rsp->request = req;

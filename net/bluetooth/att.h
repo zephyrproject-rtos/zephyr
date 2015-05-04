@@ -53,19 +53,19 @@ struct bt_att_hdr {
 #define BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE	0x10
 #define BT_ATT_ERR_INSUFFICIENT_RESOURCES	0x11
 
-#define BT_ATT_ERROR_RSP			0x01
+#define BT_ATT_OP_ERROR_RSP			0x01
 struct bt_att_error_rsp {
 	uint8_t  request;
 	uint16_t handle;
 	uint8_t  error;
 } PACK_STRUCT;
 
-#define BT_L2CAP_ATT_EXCHANGE_MTU_REQ		0x02
+#define BT_ATT_OP_MTU_REQ			0x02
 struct bt_att_exchange_mtu_req {
 	uint16_t mtu;
 } PACK_STRUCT;
 
-#define BT_L2CAP_ATT_EXCHANGE_MTU_RSP		0x03
+#define BT_ATT_OP_MTU_RSP			0x03
 struct bt_att_exchange_mtu_rsp {
 	uint16_t mtu;
 } PACK_STRUCT;
