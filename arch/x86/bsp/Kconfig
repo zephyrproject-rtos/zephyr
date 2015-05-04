@@ -2,7 +2,7 @@ menu "BSP General Configuration"
 
 choice
 prompt "BSP Configuration"
-default BSP_ATOM_N28XX
+default BSP_PCPENTIUM4
 
 config BSP_ATOM_N28XX
 	bool "Minimum configuration for ATOM N28XX BSP"
