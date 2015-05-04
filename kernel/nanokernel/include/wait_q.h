@@ -1,0 +1,86 @@
+/* wait queue for multiple fibers on nanokernel objects */
+
+/*
+ * Copyright (c) 2015 Wind River Systems, Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1) Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2) Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3) Neither the name of Wind River Systems nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef _kernel_nanokernel_include_wait_q__h_
+#define _kernel_nanokernel_include_wait_q__h_
+
+#include <nanok.h>
+
+/* reset a wait queue, call during operation */
+static inline void _nano_wait_q_reset(struct _nano_queue *wait_q)
+{
+	wait_q->head = (void *)0;
+	wait_q->tail = (void *)&(wait_q->head);
+}
+
+/* initialize a wait queue: call only during object initialization */
+static inline void _nano_wait_q_init(struct _nano_queue *wait_q)
+{
+	_nano_wait_q_reset(wait_q);
+}
+
+/*
+ * Remove first fiber from a wait queue and put it on the ready queue, knowing
+ * that the wait queue is not empty.
+ */
+static inline tCCS *_nano_wait_q_remove_no_check(struct _nano_queue *wait_q)
+{
+	tCCS *ccs = wait_q->head;
+
+	if (wait_q->tail == wait_q->head) {
+		_nano_wait_q_reset(wait_q);
+	} else {
+		wait_q->head = ccs->link;
+	}
+	ccs->link = 0;
+
+	_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
+	return ccs;
+}
+
+/*
+ * Remove first fiber from a wait queue and put it on the ready queue.
+ * Abort and return NULL if the wait queue is empty.
+ */
+static inline tCCS *_nano_wait_q_remove(struct _nano_queue *wait_q)
+{
+	return wait_q->head ? _nano_wait_q_remove_no_check(wait_q) : NULL;
+}
+
+/* put current fiber on specified wait queue */
+static inline void _nano_wait_q_put(struct _nano_queue *wait_q)
+{
+	((tCCS *)wait_q->tail)->link = _NanoKernel.current;
+	wait_q->tail = _NanoKernel.current;
+}
+
+#endif /* _kernel_nanokernel_include_wait_q__h_ */

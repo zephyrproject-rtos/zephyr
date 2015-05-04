@@ -39,6 +39,11 @@ extern "C" {
 
 typedef struct s_CCS tCCS;
 
+struct _nano_queue {
+	void *head;
+	void *tail;
+};
+
 struct nano_sem {
 	tCCS *proc;
 	int nsig;
