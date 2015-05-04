@@ -61,11 +61,11 @@ volatile long longMax = LONG_MAX;
 volatile long longOne = 1L;
 
 /*******************************************************************************
-*
-* limitsTest - test implementation-defined constants library
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+ *
+ * limitsTest - test implementation-defined constants library
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int limitsTest(void)
 {
@@ -78,11 +78,11 @@ int limitsTest(void)
 }
 
 /*******************************************************************************
-*
-* stdboolTest - test boolean types and values library
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+ *
+ * stdboolTest - test boolean types and values library
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int stdboolTest(void)
 {
@@ -103,11 +103,11 @@ volatile long longVariable;
 volatile size_t sizeOfLongVariable = sizeof(longVariable);
 
 /*******************************************************************************
-*
-* stddefTest - test standard type definitions library
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+ *
+ * stddefTest - test standard type definitions library
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int stddefTest(void)
 {
@@ -128,11 +128,11 @@ volatile uint8_t unsignedByte = 0xff;
 volatile uint32_t unsignedInt = 0xffffff00;
 
 /*******************************************************************************
-*
-* stdintTest - test integer types library
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+ *
+ * stdintTest - test integer types library
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int stdintTest(void)
 {
@@ -153,11 +153,11 @@ int stdintTest(void)
 char buffer[BUFSIZE];
 
 /*******************************************************************************
-*
-* stringTest - test string operations library
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+ *
+ * stringTest - test string operations library
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int stringTest(void)
 {
@@ -171,15 +171,15 @@ int stringTest(void)
 }
 
 /*******************************************************************************
-*
-* RegressionTask - main task in the test suite
-*
-* This is the entry point to the main task used by the standard libraries test
-* suite. It tests each library in turn until a failure is detected or all
-* libraries have been tested successfully.
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+ *
+ * RegressionTask - main task in the test suite
+ *
+ * This is the entry point to the main task used by the standard libraries test
+ * suite. It tests each library in turn until a failure is detected or all
+ * libraries have been tested successfully.
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int RegressionTask(void)
 {
