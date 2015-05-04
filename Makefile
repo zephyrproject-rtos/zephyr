@@ -404,9 +404,11 @@ TIMOINCLUDE    := \
 
 KBUILD_CPPFLAGS := -DKERNEL
 
-DEFAULTFLAGS ?= -c -g -Os -std=c99
+DEFAULTFLAGS ?= -Os
 
-KBUILD_CFLAGS   := $(DEFAULTFLAGS) \
+KBUILD_CFLAGS   := -c -g -std=c99
+		$(DEFAULTFLAGS) \
+		$(CONFIG_COMPILER_OPT) \
 		-fno-reorder-functions \
 		-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \
