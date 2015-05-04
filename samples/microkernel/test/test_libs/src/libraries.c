@@ -179,6 +179,29 @@ int memset_test(void)
 
 /*******************************************************************************
  *
+ * strlen_test - test string length function
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
+
+int strlen_test(void)
+{
+	TC_PRINT ("\tstrlen ...\t");
+
+	memset (buffer, '\0', BUFSIZE);
+	memset (buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
+	if (strlen(buffer) != 5) {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT ("passed\n");
+	return TC_PASS;
+}
+
+
+/*******************************************************************************
+*
  * stringTest - test string operations library
  *
  * RETURNS: TC_PASS or TC_FAIL
@@ -188,7 +211,7 @@ int stringTest(void)
 {
 	TC_PRINT("Testing string.h library ...\n");
 
-	if (memset_test()) {
+	if (memset_test() || strlen_test()) {
 		return TC_FAIL;
 	}
 
