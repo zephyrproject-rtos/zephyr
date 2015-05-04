@@ -45,7 +45,6 @@ nkernel_PATH = $(strip \
 
 nkernel_PATH_y = $(strip \
 	${vBASE}/arch/${vARCH}/task \
-	${vBASE}/kernel/nanokernel/task \
 )
 
 nkernel_PATH += ${nkernel_PATH_${CONFIG_MICROKERNEL}}

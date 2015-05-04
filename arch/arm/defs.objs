@@ -50,13 +50,8 @@ nkernel_SRC_NANOKERNEL_y = $(strip \
 	${vBASE}/misc/printk.c \
 )
 
-nkernel_SRC_MICROKERNEL_y = $(strip \
-	${vBASE}/kernel/nanokernel/task/start_task.c \
-)
-
 nkernel_SRC += $(strip \
 	${nkernel_SRC_NANOKERNEL_${CONFIG_NANOKERNEL}} \
-	${nkernel_SRC_MICROKERNEL_${CONFIG_MICROKERNEL}} \
 )
 
 ifeq ($(CONFIG_ENHANCED_SECURITY),y)

@@ -40,7 +40,7 @@
 #include <minik.h>
 #include <nanok.h>
 #include <ktask.h>
-
+#include <start_task_arch.h>
 
 
 /*******************************************************************************
@@ -179,6 +179,54 @@ void set_state_bit(
 		_k_task_monitor(task_ptr, new_state_bits | MO_STBIT1);
 	}
 #endif
+}
+
+/*******************************************************************************
+*
+* start_task - initialize and start a task
+*
+* RETURNS: N/A
+*/
+
+void start_task(struct k_proc *X,	 /* ptr to task control block */
+			      void (*func)(void) /* entry point for task */
+			      )
+{
+	unsigned int contextOptions;
+	void *pNewContext;
+
+/* Note: the field X->worksize now represents the task size in bytes */
+
+#ifdef CONFIG_INIT_STACKS
+	k_memset(X->workspace, 0xaa, X->worksize);
+#endif
+
+	contextOptions = 0;
+	_START_TASK_ARCH(X, &contextOptions);
+
+	/*
+	 * The 'func' argument to _NewContext() represents the entry point of
+	 * the
+	 * kernel task.  The 'parameter1', 'parameter2', & 'parameter3'
+	 * arguments
+	 * are not applicable to such tasks.  A 'priority' of -1 indicates that
+	 * the context is a task, rather than a fiber.
+	 */
+
+	pNewContext = (tCCS *)_NewContext((char *)X->workspace, /* pStackMem */
+					  X->worksize,		/* stackSize */
+					  (_ContextEntry)func,  /* pEntry */
+					  (void *)0,		/* parameter1 */
+					  (void *)0,		/* parameter2 */
+					  (void *)0,		/* parameter3 */
+					  -1,			/* priority */
+					  contextOptions	/* options */
+					  );
+
+	X->workspace = (char *)pNewContext;
+	X->fabort = NULL;
+
+	reset_state_bit(X, TF_STOP | TF_TERM);
 }
 
 /*******************************************************************************
