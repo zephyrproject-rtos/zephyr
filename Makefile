@@ -631,18 +631,6 @@ sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch
 # Defaults to tinymountain, but the arch makefile usually adds further targets
 all: tinymountain
 
-
-KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
-
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
-else
-KBUILD_CFLAGS	+= -O2
-endif
-
-# Tell gcc to never replace conditional load with a non-conditional one
-KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
-
 ifdef CONFIG_READABLE_ASM
 # Disable optimizations that make assembler listings hard to read.
 # reorder blocks reorders the control in the function
@@ -689,9 +677,6 @@ ifdef CONFIG_CC_STACKPROTECTOR_STRONG
     $(warning Cannot use CONFIG_CC_STACKPROTECTOR_STRONG: \
 	      -fstack-protector-strong not supported by compiler)
   endif
-else
-  # Force off for distro compilers that enable stack protector by default.
-  stackp-flag := $(call cc-option, -fno-stack-protector)
 endif
 endif
 KBUILD_CFLAGS += $(stackp-flag)
@@ -733,7 +718,6 @@ KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
 endif
 
 # Adding specific KBUILD_CFLAGS. This one is an specific example of how to set up KBUILD flags
-KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 KBUILD_ARFLAGS := $(call ar-option,D)
 
 #FIXME This group of flags are under review
