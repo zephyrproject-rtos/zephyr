@@ -1,7 +1,7 @@
-/* nano_lifo.c - VxMicro nanokernel 'lifo' implementation */
+/* nanokernel dynamic-size LIFO queue object */
 
 /*
- * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -44,9 +44,6 @@ following APIs:
 INTERNAL
 In some cases the compiler "alias" attribute is used to map two or more
 APIs to the same function, since they have identical implementations.
-
-Reference entries for these APIs may eventually be created in the directory
-target/src/kernel/arch/doc.
 */
 
 #include <nanok.h>
@@ -70,8 +67,9 @@ target/src/kernel/arch/doc.
 * level invocation.
 */
 
-void nano_lifo_init(struct nano_lifo *chan /* channel to initialize */
-				)
+void nano_lifo_init(
+	struct nano_lifo *chan /* channel to initialize */
+	)
 {
 	chan->list = (void *)0;
 	chan->proc = (tCCS *)0;
@@ -102,15 +100,16 @@ FUNC_ALIAS(_lifo_put, nano_fiber_lifo_put, void);
 * RETURNS: N/A
 *
 * INTERNAL
-* This function is capable of supporting invocations from both a fiber and
-* an ISR context.  However, the 'nano_isr_lifo_put' and 'nano_fiber_lifo_put' alias'
+* This function is capable of supporting invocations from both a fiber and an
+* ISR context.  However, the nano_isr_lifo_put and nano_fiber_lifo_put aliases
 * are created to support any required implementation differences in the future
 * without introducing a source code migration issue.
 */
 
-void _lifo_put(struct nano_lifo *chan, /* channel on which to put */
-			    void *data       /* data to insert */
-			    )
+void _lifo_put(
+	struct nano_lifo *chan, /* channel on which to put */
+	void *data				/* data to insert */
+	)
 {
 	tCCS *ccs;
 	unsigned int imask;
@@ -138,12 +137,14 @@ void _lifo_put(struct nano_lifo *chan, /* channel on which to put */
 * called only from a task context.  A fiber pending on the lifo
 * object will be made ready, and will be scheduled to execute.
 *
+* This routine is only callable by a task.
+*
 * RETURNS: N/A
 */
 
 void nano_task_lifo_put(
 	struct nano_lifo *chan, /* channel on which to put */
-	void *data       /* data to insert */
+	void *data				/* data to insert */
 	)
 {
 	tCCS *ccs;
@@ -180,21 +181,23 @@ FUNC_ALIAS(_lifo_get, nano_task_lifo_get, void *);
 * Remove the first element from the specified nanokernel linked list lifo;
 * it may be called from a fiber, task, or ISR context.
 *
-* If no elements are available, NULL is returned.  The first word in the element
-* contains invalid data because that memory location was used to store a pointer
-* to the next element in the linked list.
+* If no elements are available, NULL is returned.  The first word in the
+* element contains invalid data because that memory location was used to store
+* a pointer to the next element in the linked list.
 *
 * RETURNS: Pointer to first element in the list if available, otherwise NULL
 *
 * INTERNAL
-* This function is capable of supporting invocations from fiber, task, and
-* ISR contexts.  However, the 'nano_isr_lifo_get', 'nano_task_lifo_get', and
-* 'nano_fiber_lifo_get' alias' are created to support any required implementation
-* differences in the future without introducing a source code migration issue.
+* This function is capable of supporting invocations from fiber, task, and ISR
+* contexts.  However, the nano_isr_lifo_get, nano_task_lifo_get, and
+* nano_fiber_lifo_get aliases are created to support any required
+* implementation differences in the future without introducing a source code
+* migration issue.
 */
 
-void *_lifo_get(struct nano_lifo *chan /* channel on which to receive */
-			     )
+void *_lifo_get(
+	struct nano_lifo *chan /* channel on which to receive */
+	)
 {
 	void *data;
 	unsigned int imask;
@@ -213,14 +216,13 @@ void *_lifo_get(struct nano_lifo *chan /* channel on which to receive */
 
 /*******************************************************************************
 *
-* nano_fiber_lifo_get_wait - remove the first element from a linked list LIFO, wait if
-*                     not available
+* nano_fiber_lifo_get_wait - get the first element from a LIFO, wait if empty
 *
 * Remove the first element from the specified system-level linked list lifo;
 * it can only be called from a fiber context.
 *
-* If no elements are available, the calling fiber will pend until
-* an element is put onto the list.
+* If no elements are available, the calling fiber will pend until an element
+* is put onto the list.
 *
 * The first word in the element contains invalid data because that memory
 * location was used to store a pointer to the next element in the linked list.
@@ -228,8 +230,8 @@ void *_lifo_get(struct nano_lifo *chan /* channel on which to receive */
 * RETURNS: Pointer to first element in the list
 *
 * INTERNAL
-* There exists a separate nano_task_lifo_get_wait() implementation since a task
-* context cannot pend on a nanokernel object.  Instead, tasks will poll
+* There exists a separate nano_task_lifo_get_wait() implementation since a
+* task context cannot pend on a nanokernel object.  Instead, tasks will poll
 * the lifo object.
 */
 
@@ -256,14 +258,13 @@ void *nano_fiber_lifo_get_wait(
 
 /*******************************************************************************
 *
-* nano_task_lifo_get_wait - remove the first element from a linked list lifo, poll if
-*                    not available
+* nano_task_lifo_get_wait - get the first element from a lifo, poll if empty
 *
 * Remove the first element from the specified nanokernel linked list lifo; it
 * can only be called from a task context.
 *
-* If no elements are available, the calling task will poll until an
-* element is put onto the list.
+* If no elements are available, the calling task will poll until an element is
+* put onto the list.
 *
 * The first word in the element contains invalid data because that memory
 * location was used to store a pointer to the next element in the linked list.
@@ -284,33 +285,14 @@ void *nano_task_lifo_get_wait(
 		imask = irq_lock_inline();
 
 		/*
-		 * Predict that the branch will be taken to break out of the
-		 * loop.
-		 * There is little cost to a misprediction since that leads to
-		 * idle.
+		 * Predict that the branch will be taken to break out of the loop.
+		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
 		if (likely(chan->list != NULL))
 			break;
 
-		/*
-		 * Invoke nano_cpu_atomic_idle() with interrupts still disabled to
-		 *prevent
-		 * the scenario where an interrupt fires after re-enabling
-		 *interrupts
-		 * and before executing the "halt" instruction.  If the ISR
-		 *performs
-		 * a nano_isr_lifo_put() on the LIFO specified by the 'chan'
-		 *parameter,
-		 * the subsequent execution of the "halt" instruction will
-		 *result
-		 * in the queued data being ignored until the next interrupt, if
-		 *any.
-		 *
-		 * Thus it should be clear that an architecture's implementation
-		 * of nano_cpu_atomic_idle() must be able to atomically re-enable
-		 * interrupts and enter a low-power mode.
-		 */
+		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
 
 		nano_cpu_atomic_idle(imask);
 	}
