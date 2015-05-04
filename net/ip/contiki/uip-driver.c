@@ -79,12 +79,14 @@ init(void)
 static void
 input(struct net_buf *buf)
 {
+  PRINTF("uip-driver(%p): input %d bytes\n", buf, packetbuf_datalen(buf));
   if(packetbuf_datalen(buf) > 0 &&
      packetbuf_datalen(buf) <= UIP_BUFSIZE - UIP_LLH_LEN) {
     memcpy(&uip_buf(buf)[UIP_LLH_LEN], packetbuf_dataptr(buf), packetbuf_datalen(buf));
     uip_len(buf) = packetbuf_datalen(buf);
     tcpip_input(buf);
   } else {
+    PRINTF("datalen %d MAX %d\n", packetbuf_datalen(buf), UIP_BUFSIZE - UIP_LLH_LEN);
     UIP_LOG("uip-driver: too long packet discarded");
   }
 }
