@@ -170,7 +170,7 @@ void _k_node_workload_get(struct k_args *P)
 
 /*******************************************************************************
 *
-* task_node_workload_get - read the processor workload
+* task_workload_get - read the processor workload
 *
 * This routine returns the workload as a number ranging from 0 to 1000.
 *
@@ -180,7 +180,7 @@ void _k_node_workload_get(struct k_args *P)
 * RETURNS: workload
 */
 
-int task_node_workload_get(void)
+int task_workload_get(void)
 {
 	struct k_args A;
 
@@ -193,7 +193,7 @@ int task_node_workload_get(void)
 *
 * workload_time_slice_set - set workload period
 *
-* This routine specifies the workload measuring period for task_node_workload_get().
+* This routine specifies the workload measuring period for task_workload_get().
 *
 * RETURNS: N/A
 */

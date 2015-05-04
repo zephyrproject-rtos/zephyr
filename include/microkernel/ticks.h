@@ -104,7 +104,7 @@ extern void task_timer_stop(ktimer_t timer);
 extern int32_t task_node_tick_delta(int64_t *reftime);
 
 extern void task_sleep(int32_t ticks);
-extern int task_node_workload_get(void);
+extern int task_workload_get(void);
 extern void workload_time_slice_set(int32_t t);
 
 extern int kernel_idle(void);
