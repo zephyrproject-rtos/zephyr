@@ -237,6 +237,44 @@ int strcmp_test (void)
 	return TC_PASS;
 }
 
+/*******************************************************************************
+ *
+ * strncmp_test - test string N compare function
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
+
+int strncmp_test (void)
+{
+	strncpy(buffer, "eeeeeeeeeeee", BUFSIZE);
+
+	TC_PRINT ("\tstrncmp 0 ...\t");
+	if (strncmp(buffer, "fffff", 0) != 0) {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	} else {
+		TC_PRINT ("passed\n");
+	}
+
+	TC_PRINT ("\tstrncmp 3 ...\t");
+	if (strncmp(buffer, "eeeff", 3) != 0) {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	} else {
+		TC_PRINT ("passed\n");
+	}
+
+	TC_PRINT ("\tstrncmp 10 ...\t");
+	if (strncmp(buffer, "eeeeeeeeeeeff", BUFSIZE) != 0) {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	} else {
+		TC_PRINT ("passed\n");
+	}
+
+	return TC_PASS;
+}
+
 
 /*******************************************************************************
  *
@@ -296,7 +334,7 @@ int stringTest(void)
 	TC_PRINT("Testing string.h library ...\n");
 
 	if (memset_test() || strlen_test() || strcmp_test() || strcpy_test() ||
-	    strncpy_test()) {
+	    strncpy_test() || strncmp_test()) {
 		return TC_FAIL;
 	}
 
