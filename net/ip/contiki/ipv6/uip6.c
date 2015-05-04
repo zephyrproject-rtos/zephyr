@@ -2324,6 +2324,11 @@ uip_process(struct net_buf *buf, uint8_t flag)
   return;
 
  drop:
+  /* If there is an error, then just return the buffer to pool */
+  if (uip_len(buf) == 0) {
+    net_buf_put(buf);
+  }
+
   uip_len(buf) = 0;
   uip_ext_len(buf) = 0;
   uip_ext_bitmap(buf) = 0;
