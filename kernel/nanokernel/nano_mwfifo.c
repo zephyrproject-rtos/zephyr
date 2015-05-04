@@ -50,6 +50,7 @@ APIs to the same function, since they have identical implementations.
 #include <nanok.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <wait_q.h>
 
 /*******************************************************************************
 *
@@ -72,8 +73,13 @@ void nano_fifo_init(
 	struct nano_fifo *fifo /* fifo to initialize */
 	)
 {
-	fifo->head = (void *)0;
-	fifo->tail = (void *)&(fifo->head);
+	/*
+	 * The wait queue and data queue occupy the same space since there cannot
+	 * be both queued data and pending fibers in the FIFO. Care must be taken
+	 * that, when one of the queues becomes empty, it is reset to a state
+	 * that reflects an empty queue to both the data and wait queues.
+	 */
+	_nano_wait_q_init(&fifo->wait_q);
 
 	/*
 	 * If the 'stat' field is a positive value, it indicates how many data
@@ -114,23 +120,14 @@ void _fifo_put(
 	void *data				/* data to send */
 	)
 {
-	tCCS *ccs;
 	unsigned int imask;
 
 	imask = irq_lock_inline();
 
 	fifo->stat++;
 	if (fifo->stat <= 0) {
-		ccs = fifo->head;
-		if (fifo->stat == 0) {
-			fifo->tail = (void *)&fifo->head;
-		} else {
-			fifo->head = ccs->link;
-		}
-		ccs->link = 0;
-
+		tCCS *ccs = _nano_wait_q_remove_no_check(&fifo->wait_q);
 		fiberRtnValueSet(ccs, (unsigned int)data);
-		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
 		*(void **)fifo->tail = data;
 		fifo->tail = data;
@@ -159,23 +156,14 @@ void nano_task_fifo_put(
 	void *data				/* data to send */
 	)
 {
-	tCCS *ccs;
 	unsigned int imask;
 
 	imask = irq_lock_inline();
 
 	fifo->stat++;
 	if (fifo->stat <= 0) {
-		ccs = fifo->head;
-		if (fifo->stat == 0) {
-			fifo->tail = (void *)&fifo->head;
-		} else {
-			fifo->head = ccs->link;
-		}
-		ccs->link = 0;
-
+		tCCS *ccs = _nano_wait_q_remove_no_check(&fifo->wait_q);
 		fiberRtnValueSet(ccs, (unsigned int)data);
-		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
 		/* swap into the fiber just made ready */
 
@@ -247,7 +235,7 @@ void *_fifo_get(
 		data = fifo->head;
 
 		if (fifo->stat == 0) {
-			fifo->tail = (void *)&(fifo->head);
+			_nano_wait_q_reset(&fifo->wait_q);
 		} else {
 			fifo->head = *(void **)data;
 		}
@@ -287,13 +275,12 @@ void *nano_fiber_fifo_get_wait(
 
 	fifo->stat--;
 	if (fifo->stat < 0) {
-		((tCCS *)fifo->tail)->link = _NanoKernel.current;
-		fifo->tail = _NanoKernel.current;
+		_nano_wait_q_put(&fifo->wait_q);
 		data = (void *)_Swap(imask);
 	} else {
 		data = fifo->head;
 		if (fifo->stat == 0) {
-			fifo->tail = (void *)&fifo->head;
+			_nano_wait_q_reset(&fifo->wait_q);
 		} else {
 			fifo->head = *(void **)data;
 		}
@@ -349,7 +336,7 @@ void *nano_task_fifo_get_wait(
 	data = fifo->head;
 
 	if (fifo->stat == 0)
-		fifo->tail = (void *)&(fifo->head);
+		_nano_wait_q_reset(&fifo->wait_q);
 	else
 		fifo->head = *(void **)data;
 
