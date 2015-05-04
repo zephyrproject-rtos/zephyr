@@ -43,92 +43,14 @@ it guarantee that ALL functionality provided is working correctly.
 
 /* includes */
 
-#include <ukernel_api.h>
-
+#include <microkernel.h>
 #include <tc_util.h>
 
-#include <ctype.h>
-#include <inttypes.h>
-#include <iso646.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-/*******************************************************************************
-*
-* ctypeTest - test character types library
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
-
-int ctypeTest(void)
-	{
-	TC_PRINT("Testing ctype.h library ...\n");
-
-	if (!isalpha ('a') || isalpha ('.'))
-	return TC_FAIL;
-
-	return TC_PASS;
-	}
-
-/*
- * variables used during inttypes testing; must be marked as "volatile"
- * to prevent compiler from computing results at compile time
- */
-
-volatile int n = 100;
-volatile int d = 7;
-
-/*******************************************************************************
-*
-* inttypesTest - test fixed sized integer types library
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
-
-int inttypesTest(void)
-	{
-	TC_PRINT("Testing inttypes.h library ...\n");
-
-	intmax_t numer = n;
-	intmax_t denom = d;
-	imaxdiv_t result = imaxdiv(numer, denom);
-
-	if ((result.quot != n/d) || (result.rem != n%d))
-	return TC_FAIL;
-
-	return TC_PASS;
-	}
-
-/*
- * variables used during iso646 testing; must be marked as "volatile"
- * to prevent compiler from computing results at compile time
- */
-
-volatile int x = 0xabab;
-volatile int y = 0x0ff0;
-
-/*******************************************************************************
-*
-* iso646Test - test alternative spellings library
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
-
-int iso646Test(void)
-	{
-	TC_PRINT("Testing iso646.h library ...\n");
-
-	int mainExpr = (x & y) ^ ~x;
-	int altExpr  = (x bitand y) xor compl x;
-
-	if (mainExpr != altExpr)
-	return TC_FAIL;
-
-	return TC_PASS;
-	}
 
 /*
  * variables used during limits library testing; must be marked as "volatile"
@@ -263,9 +185,9 @@ int RegressionTask(void)
 	{
 	TC_PRINT("Validating access to supported libraries\n");
 
-	if (ctypeTest () || inttypesTest () || iso646Test () || limitsTest () ||
-	stdboolTest () || stddefTest () || stdintTest () || stringTest ()) {
-	TC_PRINT("Library validation failed\n");
+	if (limitsTest () || stdboolTest () || stddefTest () ||
+	stdintTest () || stringTest ()) {
+	TC_PRINT ("Library validation failed\n");
 	return TC_FAIL;
 	}
 
