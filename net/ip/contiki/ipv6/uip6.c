@@ -1271,7 +1271,8 @@ uip_process(struct net_buf *buf, uint8_t flag)
 #else /* UIP_CONF_ROUTER */
   if(!uip_ds6_is_my_addr(&UIP_IP_BUF(buf)->destipaddr) &&
      !uip_ds6_is_my_maddr(&UIP_IP_BUF(buf)->destipaddr) &&
-     !uip_is_addr_mcast(&UIP_IP_BUF(buf)->destipaddr)) {
+     !uip_is_addr_mcast(&UIP_IP_BUF(buf)->destipaddr) &&
+     !uip_is_addr_loopback(&UIP_IP_BUF(buf)->destipaddr)) {
     PRINTF("Dropping packet, not for me\n");
     UIP_STAT(++uip_stat.ip.drop);
     goto drop;
