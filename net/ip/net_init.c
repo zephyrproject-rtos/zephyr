@@ -62,6 +62,8 @@
 struct nano_fifo *net_context_get_queue(struct net_context *context);
 struct simple_udp_connection *
 	net_context_get_udp_connection(struct net_context *context);
+int net_context_get_receiver_registered(struct net_context *context);
+void net_context_set_receiver_registered(struct net_context *context);
 
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning

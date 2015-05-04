@@ -37,6 +37,7 @@
 #include <nanokernel.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include <net/net_ip.h>
 #include <net/net_socket.h>
@@ -54,6 +55,8 @@ struct net_context {
 	union {
 		struct simple_udp_connection udp;
 	};
+
+	bool receiver_registered;
 };
 
 /* Override this in makefile if needed */
@@ -165,4 +168,26 @@ void net_context_init(void)
 	}
 
 	context_sem_give(&contexts_lock);
+}
+
+int net_context_get_receiver_registered(struct net_context *context)
+{
+	if (!context) {
+		return -ENOENT;
+	}
+
+	if (context->receiver_registered) {
+		return true;
+	}
+
+	return false;
+}
+
+void net_context_set_receiver_registered(struct net_context *context)
+{
+	if (!context) {
+		return;
+	}
+
+	context->receiver_registered = true;
 }
