@@ -120,5 +120,6 @@ void MonitorTaskEntry(void)
 		}
 	}
 
+	TC_END_RESULT(TC_PASS);
 	TC_END_REPORT(TC_PASS);
 }
