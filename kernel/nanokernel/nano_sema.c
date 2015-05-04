@@ -1,7 +1,7 @@
-/* nano_sema.c - VxMicro nanokernel 'sema' implementation */
+/* nanokernel semaphore object */
 
 /*
- * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -50,9 +50,6 @@ having to pend on the semaphore.
 INTERNAL
 In some cases the compiler "alias" attribute is used to map two or more
 APIs to the same function, since they have identical implementations.
-
-Reference entries for these APIs may eventually be created in the directory
-target/src/kernel/arch/doc.
 */
 
 #include <nanok.h>
@@ -76,8 +73,9 @@ target/src/kernel/arch/doc.
 * level invocation.
 */
 
-void nano_sem_init(struct nano_sem *chan /* semaphore object to initialize */
-		 )
+void nano_sem_init(
+	struct nano_sem *chan /* semaphore object to initialize */
+	)
 {
 	chan->nsig = 0;
 	chan->proc = (tCCS *)0;
@@ -91,20 +89,22 @@ FUNC_ALIAS(_sem_give, nano_fiber_sem_give, void);
 * _sem_give - give a nanokernel semaphore
 *
 * This routine performs a "give" operation on a nanokernel sempahore object;
-* it may be call from either a fiber or an ISR context.  A fiber pending on the
-* semaphore object will be made ready, but will NOT be scheduled to execute.
+* it may be call from either a fiber or an ISR context.  A fiber pending on
+* the semaphore object will be made ready, but will NOT be scheduled to
+* execute.
 *
 * RETURNS: N/A
 *
 * INTERNAL
-* This function is capable of supporting invocations from both a fiber and
-* an ISR context.  However, the 'nano_isr_sem_give' and 'nano_fiber_sem_give' alias'
+* This function is capable of supporting invocations from both a fiber and an
+* ISR context.  However, the nano_isr_sem_give and nano_fiber_sem_give aliases
 * are created to support any required implementation differences in the future
 * without introducing a source code migration issue.
 */
 
-void _sem_give(struct nano_sem *chan /* semaphore on which to signal */
-			    )
+void _sem_give(
+	struct nano_sem *chan /* semaphore on which to signal */
+	)
 {
 	tCCS *ccs;
 	unsigned int imask;
@@ -165,6 +165,7 @@ void nano_task_sem_give(
 * be avoided when the context is known up-front (to avoid unnecessary
 * overhead).
 */
+
 void nano_sem_give(struct nano_sem *chan)
 {
 	static void (*func[3])(struct nano_sem *chan) = {
@@ -179,7 +180,7 @@ FUNC_ALIAS(_sem_take, nano_task_sem_take, int);
 
 /*******************************************************************************
 *
-* _sem_take - take a nanokernel semaphore
+* _sem_take - take a nanokernel semaphore, fail if unavailable
 *
 * Attempt to take a nanokernel sempahore; it may be called from a fiber, task,
 * or ISR context.
@@ -190,8 +191,9 @@ FUNC_ALIAS(_sem_take, nano_task_sem_take, int);
 * RETURNS: 1 if semaphore is available, 0 otherwise
 */
 
-int _sem_take(struct nano_sem *chan /* semaphore on which to test */
-			   )
+int _sem_take(
+	struct nano_sem *chan /* semaphore on which to test */
+	)
 {
 	unsigned int imask;
 	int avail;
@@ -206,7 +208,7 @@ int _sem_take(struct nano_sem *chan /* semaphore on which to test */
 
 /*******************************************************************************
 *
-* nano_fiber_sem_take_wait - test a system-level semaphore, wait if not available
+* nano_fiber_sem_take_wait - test a nanokernel semaphore, wait if unavailable
 *
 * Take a nanokernel sempahore; it can only be called from a fiber context.
 *
@@ -222,9 +224,9 @@ int _sem_take(struct nano_sem *chan /* semaphore on which to test */
 * the sempahore object.
 */
 
-void nano_fiber_sem_take_wait(struct nano_sem *chan /* semaphore on
-							       which to wait */
-					     )
+void nano_fiber_sem_take_wait(
+	struct nano_sem *chan /* semaphore on which to wait */
+	)
 {
 	unsigned int imask;
 
@@ -240,7 +242,7 @@ void nano_fiber_sem_take_wait(struct nano_sem *chan /* semaphore on
 
 /*******************************************************************************
 *
-* nano_task_sem_take_wait - take a nanokernel semaphore, poll if not available
+* nano_task_sem_take_wait - take a nanokernel semaphore, poll if unavailable
 *
 * Take a nanokernel sempahore; it can only be called from a task context.
 *
@@ -257,38 +259,20 @@ void nano_task_sem_take_wait(
 {
 	unsigned int imask;
 
-	/* spin until the sempahore is signalled */
+	/* spin until the sempahore is signaled */
 
 	while (1) {
 		imask = irq_lock_inline();
 
 		/*
-		 * Predict that the branch will be taken to break out of the
-		 * loop.
-		 * There is little cost to a misprediction since that leads to
-		 * idle.
+		 * Predict that the branch will be taken to break out of the loop.
+		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
 		if (likely(chan->nsig > 0))
 			break;
 
-		/*
-		 * Invoke nano_cpu_atomic_idle() with interrupts still disabled to
-		 *prevent
-		 * the scenario where an interrupt fires after re-enabling
-		 *interrupts
-		 * and before executing the "halt" instruction.  If the ISR
-		 *performs
-		 * a nano_isr_sem_give() on the SEM specified by the 'chan'
-		 *parameter,
-		 * the subsequent execution of the "halt" instruction will
-		 *result
-		 * in the signal being ignored until the next interrupt, if any.
-		 *
-		 * Thus it should be clear that an architectures implementation
-		 * of nano_cpu_atomic_idle() must be able to atomically re-enable
-		 * interrupts and enter a low-power mode.
-		 */
+		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
 
 		nano_cpu_atomic_idle(imask);
 	}
