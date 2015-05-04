@@ -72,6 +72,7 @@ struct net_buf {
 	uint8_t uip_ext_opt_offset;
 	uint8_t uip_flags;
 	uint16_t uip_slen;
+	uint16_t uip_appdatalen;
 	uint8_t *uip_next_hdr;
 	void *uip_appdata;  /* application data */
 	void *uip_sappdata; /* app data to be sent */
@@ -126,6 +127,7 @@ struct net_buf {
 #define uip_nd6_opt_offset(buf) ((buf)->nd6_opt_offset)
 #define uip_next_hdr(buf) ((buf)->uip_next_hdr)
 #define uip_appdata(buf) ((buf)->uip_appdata)
+#define uip_appdatalen(buf) ((buf)->uip_appdatalen)
 #define uip_sappdata(buf) ((buf)->uip_sappdata)
 #define uip_flags(buf) ((buf)->uip_flags)
 #define uip_conn(buf) ((struct uip_conn *)((buf)->uip_conn))
