@@ -49,6 +49,8 @@ in the future to enhance test coverage.
 #include <tc_util.h>
 #include <vxmicro.h>
 
+#include <util_test_common.h>
+
 /* defines */
 
 #define NUM_TEST_TASKS	1	/* # of test tasks to monitor */

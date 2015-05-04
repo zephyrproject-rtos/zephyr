@@ -85,7 +85,6 @@ microkernel/apps/philosophers                <u>  pentium4  minuteia  atom quark
 microkernel/apps/hello_world                 <u>  fsl_frdm_k64f ti_lm3s6965      \n\
 microkernel/apps/philosophers                <u>  fsl_frdm_k64f ti_lm3s6965      \n\
     # projects that have been temporarily disabled                          \n\
-#microkernel/test/test_libs             <uq> pentium4! minuteia! atom quark \n\
     # projects that don't require any special capabilities                  \n\
 nanokernel/test/test_bluetooth          <nq> pentium4! minuteia! atom quark \n\
 nanokernel/test/test_context            <nq> pentium4! minuteia! atom quark \n\
@@ -123,6 +122,7 @@ microkernel/test/test_bluetooth         <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_critical          <u>  pentium4! minuteia! atom quark \n\
 microkernel/test/test_events            <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_fifo              <uq> pentium4! minuteia! atom quark \n\
+microkernel/test/test_libs              <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_mail              <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_map               <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_pipe              <uq> pentium4! minuteia! atom quark \n\
