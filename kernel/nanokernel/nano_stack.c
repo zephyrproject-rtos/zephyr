@@ -68,12 +68,12 @@ APIs to the same function, since they have identical implementations.
 */
 
 void nano_stack_init(
-	struct nano_stack *chan,	/* stack to initialize */
+	struct nano_stack *stack,	/* stack to initialize */
 	uint32_t *data				/* container for stack */
 	)
 {
-	chan->next = chan->base = data;
-	chan->proc = (tCCS *)0;
+	stack->next = stack->base = data;
+	stack->proc = (tCCS *)0;
 }
 
 #ifdef CONFIG_MICROKERNEL
@@ -109,7 +109,7 @@ FUNC_ALIAS(_stack_push, nano_fiber_stack_push, void);
 */
 
 void _stack_push(
-	struct nano_stack *chan, /* stack channel on which to interact */
+	struct nano_stack *stack, /* stack on which to interact */
 	uint32_t data /* data to push on stack */
 	)
 {
@@ -118,14 +118,14 @@ void _stack_push(
 
 	imask = irq_lock_inline();
 
-	ccs = chan->proc;
+	ccs = stack->proc;
 	if (ccs != (tCCS *)NULL) {
-		chan->proc = 0;
+		stack->proc = 0;
 		fiberRtnValueSet(ccs, data);
 		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
-		*(chan->next) = data;
-		chan->next++;
+		*(stack->next) = data;
+		stack->next++;
 	}
 
 	irq_unlock_inline(imask);
@@ -143,7 +143,7 @@ void _stack_push(
 */
 
 void nano_task_stack_push(
-	struct nano_stack *chan, /* stack channel on which to interact */
+	struct nano_stack *stack, /* stack on which to interact */
 	uint32_t data     /* data to push on stack */
 	)
 {
@@ -152,9 +152,9 @@ void nano_task_stack_push(
 
 	imask = irq_lock_inline();
 
-	ccs = chan->proc;
+	ccs = stack->proc;
 	if (ccs != (tCCS *)NULL) {
-		chan->proc = 0;
+		stack->proc = 0;
 		fiberRtnValueSet(ccs, data);
 		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
@@ -163,8 +163,8 @@ void nano_task_stack_push(
 		_Swap(imask);
 		return;
 	} else {
-		*(chan->next) = data;
-		chan->next++;
+		*(stack->next) = data;
+		stack->next++;
 	}
 
 	irq_unlock_inline(imask);
@@ -196,7 +196,7 @@ FUNC_ALIAS(_stack_pop, nano_task_stack_pop, int);
 */
 
 int _stack_pop(
-	struct nano_stack *chan,	/* channel on which to interact */
+	struct nano_stack *stack,	/* stack on which to interact */
 	uint32_t *pData				/* container for data to pop */
 	)
 {
@@ -205,9 +205,9 @@ int _stack_pop(
 
 	imask = irq_lock_inline();
 
-	if (chan->next > chan->base) {
-		chan->next--;
-		*pData = *(chan->next);
+	if (stack->next > stack->base) {
+		stack->next--;
+		*pData = *(stack->next);
 		rv = 1;
 	}
 
@@ -234,7 +234,7 @@ int _stack_pop(
 */
 
 uint32_t nano_fiber_stack_pop_wait(
-	struct nano_stack *chan /* channel on which to interact */
+	struct nano_stack *stack /* stack on which to interact */
 	)
 {
 	uint32_t data;
@@ -242,12 +242,12 @@ uint32_t nano_fiber_stack_pop_wait(
 
 	imask = irq_lock_inline();
 
-	if (chan->next == chan->base) {
-		chan->proc = _NanoKernel.current;
+	if (stack->next == stack->base) {
+		stack->proc = _NanoKernel.current;
 		data = (uint32_t)_Swap(imask);
 	} else {
-		chan->next--;
-		data = *(chan->next);
+		stack->next--;
+		data = *(stack->next);
 		irq_unlock_inline(imask);
 	}
 
@@ -268,7 +268,7 @@ uint32_t nano_fiber_stack_pop_wait(
 */
 
 uint32_t nano_task_stack_pop_wait(
-	struct nano_stack *chan /* channel on which to interact */
+	struct nano_stack *stack /* stack on which to interact */
 	)
 {
 	uint32_t data;
@@ -284,7 +284,7 @@ uint32_t nano_task_stack_pop_wait(
 		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
-		if (likely(chan->next > chan->base))
+		if (likely(stack->next > stack->base))
 			break;
 
 		/*
@@ -307,8 +307,8 @@ uint32_t nano_task_stack_pop_wait(
 		nano_cpu_atomic_idle(imask);
 	}
 
-	chan->next--;
-	data = *(chan->next);
+	stack->next--;
+	data = *(stack->next);
 
 	irq_unlock_inline(imask);
 
