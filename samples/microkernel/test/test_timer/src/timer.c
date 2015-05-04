@@ -36,7 +36,7 @@ This module tests the following ukernel timer routines:
 
   task_timer_alloc(), task_timer_free()
   task_timer_start(), task_timer_restart(), task_timer_stop()
-  task_node_tick_delta(), task_tick_get_32()
+  task_tick_delta(), task_tick_get_32()
 */
 
 /* includes */
@@ -101,12 +101,12 @@ int testLowTimerPeriodicity(void)
 	while (task_tick_get_32() == ticks) {
 	}
 
-	(void) task_node_tick_delta(&refTime);
+	(void) task_tick_delta(&refTime);
 	task_timer_start(pTimer[0], 100, 50, TIMER_SEM);
 
 	for (i = 0; i < 5; i++) {
 		status = task_sem_take_wait_timeout(TIMER_SEM, 200);
-		ticks = task_node_tick_delta(&refTime);
+		ticks = task_tick_delta(&refTime);
 
 		if (status != RC_OK) {
 			TC_ERROR("** Timer appears to not have fired\n");
@@ -125,13 +125,13 @@ int testLowTimerPeriodicity(void)
 	ticks = task_tick_get_32();
 	while (task_tick_get_32() == ticks) {     /* Align to a tick */
 	}
-	(void) task_node_tick_delta(&refTime);
+	(void) task_tick_delta(&refTime);
 
     /* Use task_timer_restart() to change the periodicity */
 	task_timer_restart(pTimer[0], 0, 60);
 	for (i = 0; i < 6; i++) {
 		status = task_sem_take_wait_timeout(TIMER_SEM, 100);
-		ticks = task_node_tick_delta(&refTime);
+		ticks = task_tick_delta(&refTime);
 
 		if (status != RC_OK) {
 			TC_ERROR("** Timer appears to not have fired\n");
@@ -209,10 +209,10 @@ int testLowTimerOneShot(void)
 	}
 
 	/* Timer to fire once only in 100 ticks */
-	(void) task_node_tick_delta(&refTime);
+	(void) task_tick_delta(&refTime);
 	task_timer_start(pTimer[0], 100, 0, TIMER_SEM);
 	status = task_sem_take_wait(TIMER_SEM);
-	ticks = task_node_tick_delta(&refTime);
+	ticks = task_tick_delta(&refTime);
 	if (!WITHIN_ERROR(ticks, 100, 1)) {
 		TC_ERROR("** Expected %d ticks to elapse, got %d\n", 100, ticks);
 		return TC_FAIL;    /* Return failure, do not "clean up" */

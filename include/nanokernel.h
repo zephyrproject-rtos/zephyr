@@ -192,7 +192,7 @@ extern void nano_task_timer_stop(struct nano_timer *chan);
 
 extern uint32_t nano_tick_get_32(void);
 extern uint32_t nano_cycle_get_32(void);
-extern uint32_t nano_node_tick_delta(uint64_t *reftime);
+extern uint32_t nano_tick_delta(uint64_t *reftime);
 
 #endif /* CONFIG_NANOKERNEL */
 

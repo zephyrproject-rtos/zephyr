@@ -520,7 +520,7 @@ void _k_time_elapse(struct k_args *P)
 
 /*******************************************************************************
 *
-* task_node_tick_delta - return ticks between calls
+* task_tick_delta - return ticks between calls
 *
 * This function is meant to be used in contained fragments of code. The first
 * call to it in a particular code fragment fills in a reference time variable
@@ -529,7 +529,7 @@ void _k_time_elapse(struct k_args *P)
 * tick count is the return value. Since the first call is meant to only fill in
 * the reference time, its return value should be discarded.
 *
-* Since a code fragment that wants to use task_node_tick_delta() passes in its
+* Since a code fragment that wants to use task_tick_delta() passes in its
 * own reference time variable, multiple code fragments can make use of this
 * function concurrently.
 *
@@ -538,7 +538,7 @@ void _k_time_elapse(struct k_args *P)
 * RETURNS: elapsed time in system ticks
 */
 
-int32_t task_node_tick_delta(int64_t *reftime /* pointer to reference time */
+int32_t task_tick_delta(int64_t *reftime /* pointer to reference time */
 			   )
 {
 	struct k_args A;

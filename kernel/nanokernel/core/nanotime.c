@@ -96,7 +96,7 @@ uint32_t nano_cycle_get_32(void)
 
 /*******************************************************************************
 *
-* nano_node_tick_delta - return number of ticks since a reference time
+* nano_tick_delta - return number of ticks since a reference time
 *
 * This function is meant to be used in contained fragments of code. The first
 * call to it in a particular code fragment fills in a reference time variable
@@ -105,22 +105,22 @@ uint32_t nano_cycle_get_32(void)
 * tick count is the return value. Since the first call is meant to only fill in
 * the reference time, its return value should be discarded.
 *
-* Since a code fragment that wants to use nano_node_tick_delta passes in its
+* Since a code fragment that wants to use nano_tick_delta passes in its
 * own reference time variable, multiple code fragments can make use of this
 * function concurrently.
 *
 * e.g.
 * uint64_t  reftime;
-* (void) nano_node_tick_delta(&reftime);  /# prime it #/
+* (void) nano_tick_delta(&reftime);  /# prime it #/
 * [do stuff]
-* x = nano_node_tick_delta(&reftime);     /# how long since priming #/
+* x = nano_tick_delta(&reftime);     /# how long since priming #/
 * [do more stuff]
-* y = nano_node_tick_delta(&reftime);     /# how long since [do stuff] #/
+* y = nano_tick_delta(&reftime);     /# how long since [do stuff] #/
 *
 * RETURNS: tick count since reference time; undefined for first invocation
 */
 
-uint32_t nano_node_tick_delta(uint64_t *reftime)
+uint32_t nano_tick_delta(uint64_t *reftime)
 {
 	uint32_t  delta;
 	uint32_t  saved;

@@ -51,14 +51,14 @@
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
 
 typedef uint64_t TICK_TYPE;
-#define TICK_GET(x) (TICK_TYPE)nano_node_tick_delta(x)
+#define TICK_GET(x) (TICK_TYPE)nano_tick_delta(x)
 
 static inline void TICK_SYNCH (void)
 {
 	TICK_TYPE  reftime;
 
-	(void) nano_node_tick_delta(&reftime);
-	while (nano_node_tick_delta(&reftime) == 0) {
+	(void) nano_tick_delta(&reftime);
+	while (nano_tick_delta(&reftime) == 0) {
 	}
 }
 
@@ -68,7 +68,7 @@ static inline void TICK_SYNCH (void)
 #define OS_GET_TIME() task_cycle_get_32 ()
 
 typedef int64_t TICK_TYPE;
-#define TICK_GET(x) (TICK_TYPE)task_node_tick_delta(x)
+#define TICK_GET(x) (TICK_TYPE)task_tick_delta(x)
 
 #define TICK_SYNCH() task_sleep(1)
 

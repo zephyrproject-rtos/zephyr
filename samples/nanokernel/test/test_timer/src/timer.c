@@ -36,7 +36,7 @@ This module tests the following timer related routines:
   nano_timer_init(), nano_fiber_timer_start(), nano_fiber_timer_stop(),
   nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
   nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
-  nano_time_init(), nano_tick_get_32(), nano_cycle_get_32(), nano_node_tick_delta()
+  nano_time_init(), nano_tick_get_32(), nano_cycle_get_32(), nano_tick_delta()
 */
 
 /* includes */
@@ -148,11 +148,11 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 		}
 
 	tick++;
-	(void) nano_node_tick_delta (&reftime);
+	(void) nano_tick_delta (&reftime);
 	startRtn (pTimer, ticks);       /* Start the timer */
 	result = waitRtn (pTimer);      /* Wait for the timer to expire */
 
-	elapsed = nano_node_tick_delta (&reftime);
+	elapsed = nano_tick_delta (&reftime);
 	duration = nano_tick_get_32 () - tick;
 
     /*
@@ -175,13 +175,13 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 		}
 
 	tick++;
-	(void) nano_node_tick_delta (&reftime);
+	(void) nano_tick_delta (&reftime);
 	startRtn (pTimer, ticks);       /* Start the timer */
 	while ((result = getRtn (pTimer)) == NULL)
 		{
 		busywaited = 1;
 		}
-	elapsed = nano_node_tick_delta (&reftime);
+	elapsed = nano_tick_delta (&reftime);
 	duration = nano_tick_get_32 () - tick;
 
 	if ((busywaited != 1) || (result != pTimerData) ||
