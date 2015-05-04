@@ -158,6 +158,27 @@ char buffer[BUFSIZE];
 
 /*******************************************************************************
  *
+ * memset_test - test string memset
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
+
+int memset_test(void)
+{
+	TC_PRINT ("\tmemset ...\t");
+
+	memset (buffer, 'a', BUFSIZE);
+	if (buffer[0] != 'a' || buffer[BUFSIZE-1] != 'a') {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT ("passed\n");
+	return TC_PASS;
+}
+
+/*******************************************************************************
+ *
  * stringTest - test string operations library
  *
  * RETURNS: TC_PASS or TC_FAIL
@@ -167,8 +188,7 @@ int stringTest(void)
 {
 	TC_PRINT("Testing string.h library ...\n");
 
-	memset(buffer, 'a', BUFSIZE);
-	if (buffer[0] != 'a' || buffer[BUFSIZE-1] != 'a') {
+	if (memset_test()) {
 		return TC_FAIL;
 	}
 
