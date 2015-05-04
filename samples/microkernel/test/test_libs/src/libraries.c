@@ -261,19 +261,42 @@ int strcpy_test (void)
 	return TC_PASS;
 }
 
+/*******************************************************************************
+ *
+ * strncpy_test - test string N copy function
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
+
+int strncpy_test (void)
+{
+	TC_PRINT ("\tstrncpy ...\t");
+
+	memset (buffer, '\0', BUFSIZE);
+	strncpy(buffer, "This is over 10 characters", BUFSIZE);
+
+	/* Purposely different values */
+	if (strncmp(buffer, "This is over 20 characters", BUFSIZE) != 0) {
+		TC_PRINT ("failed\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT ("passed\n");
+	return TC_PASS;
+}
 
 /*******************************************************************************
 *
  * stringTest - test string operations library
- *
- * RETURNS: TC_PASS or TC_FAIL
+ * * RETURNS: TC_PASS or TC_FAIL
  */
 
 int stringTest(void)
 {
 	TC_PRINT("Testing string.h library ...\n");
 
-	if (memset_test() || strlen_test() || strcmp_test() || strcpy_test()) {
+	if (memset_test() || strlen_test() || strcmp_test() || strcpy_test() ||
+	    strncpy_test()) {
 		return TC_FAIL;
 	}
 
