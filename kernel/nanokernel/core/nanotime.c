@@ -83,13 +83,13 @@ uint32_t nano_tick_get_32(void)
 
 /*******************************************************************************
 *
-* nano_node_cycle_get_32 - return a high resolution timestamp
+* nano_cycle_get_32 - return a high resolution timestamp
 *
 * RETURNS: the current timer hardware count
 *
 */
 
-uint32_t nano_node_cycle_get_32(void)
+uint32_t nano_cycle_get_32(void)
 {
 	return timer_read();
 }

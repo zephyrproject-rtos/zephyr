@@ -41,7 +41,7 @@
 
 /*******************************************************************************
 *
-* task_node_cycle_get_32 - read the processor's high precision timer
+* task_cycle_get_32 - read the processor's high precision timer
 *
 * This routine reads the processor's high precision timer.  It reads the
 * counter register on the timer device. This counter register increments
@@ -52,7 +52,7 @@
 * RETURNS: current high precision clock value
 */
 
-uint32_t task_node_cycle_get_32(void)
+uint32_t task_cycle_get_32(void)
 {
 	return timer_read();
 }

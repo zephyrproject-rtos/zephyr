@@ -88,7 +88,7 @@ static inline K_TIMER *_timer_id_to_ptr(ktimer_t timer)
 	return &K_TimerBlocks[OBJ_INDEX(timer)];
 }
 
-extern uint32_t task_node_cycle_get_32(void);
+extern uint32_t task_cycle_get_32(void);
 extern int32_t task_tick_get_32(void);
 extern int64_t task_tick_get(void);
 extern ktimer_t task_timer_alloc(void);
@@ -109,7 +109,7 @@ extern void workload_time_slice_set(int32_t t);
 
 extern int kernel_idle(void);
 
-#define isr_node_cycle_get_32() task_node_cycle_get_32()
+#define isr_cycle_get_32() task_cycle_get_32()
 #define isr_tick_get_32() task_tick_get_32()
 #define isr_tick_get() task_tick_get()
 
