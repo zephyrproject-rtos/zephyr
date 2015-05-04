@@ -2,7 +2,7 @@ PERF_OPT_FLAG-y = -DPERF_OPT
 ALIGN_STACK_FLAG- = -mpreferred-stack-boundary=2
 SECTION_GC_FLAG-y = $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
 LTO_FLAG-y = $(call cc-option,-flto,)
-PERF_OPT=$(if $(filter -Os,$(DEFAULTFLAGS)),,y),)
+PERF_OPT=$(if $(filter -Os,$(DEFAULTFLAGS)),,y)
 PERF_OPT_FLAG = $(PERF_OPT_FLAG-$(PERF_OPT))
 ALIGN_STACK_FLAG = $(ALIGN_STACK_FLAG-$(PERF_OPT))
 SECTION_GC_FLAG = $(SECTION_GC_FLAG-$(CONFIG_SECTION_GARBAGE_COLLECTION))
