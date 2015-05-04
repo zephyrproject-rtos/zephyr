@@ -68,11 +68,11 @@ APIs to the same function, since they have identical implementations.
 */
 
 void nano_lifo_init(
-	struct nano_lifo *chan /* channel to initialize */
+	struct nano_lifo *lifo /* lifo to initialize */
 	)
 {
-	chan->list = (void *)0;
-	chan->proc = (tCCS *)0;
+	lifo->list = (void *)0;
+	lifo->proc = (tCCS *)0;
 }
 
 #ifdef CONFIG_MICROKERNEL
@@ -107,7 +107,7 @@ FUNC_ALIAS(_lifo_put, nano_fiber_lifo_put, void);
 */
 
 void _lifo_put(
-	struct nano_lifo *chan, /* channel on which to put */
+	struct nano_lifo *lifo, /* lifo on which to put */
 	void *data				/* data to insert */
 	)
 {
@@ -115,15 +115,15 @@ void _lifo_put(
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	ccs = chan->proc;
+	ccs = lifo->proc;
 	if (ccs != (tCCS *)NULL) {
-		chan->proc = (tCCS *)0;
+		lifo->proc = (tCCS *)0;
 
 		fiberRtnValueSet(ccs, (unsigned int)data);
 		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
-		*(void **)data = chan->list;
-		chan->list = data;
+		*(void **)data = lifo->list;
+		lifo->list = data;
 	}
 
 	irq_unlock_inline(imask);
@@ -143,7 +143,7 @@ void _lifo_put(
 */
 
 void nano_task_lifo_put(
-	struct nano_lifo *chan, /* channel on which to put */
+	struct nano_lifo *lifo, /* lifo on which to put */
 	void *data				/* data to insert */
 	)
 {
@@ -151,9 +151,9 @@ void nano_task_lifo_put(
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	ccs = chan->proc;
+	ccs = lifo->proc;
 	if (ccs != (tCCS *)NULL) {
-		chan->proc = (tCCS *)0;
+		lifo->proc = (tCCS *)0;
 
 		fiberRtnValueSet(ccs, (unsigned int)data);
 		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
@@ -163,8 +163,8 @@ void nano_task_lifo_put(
 		_Swap(imask);
 		return;
 	} else {
-		*(void **)data = chan->list;
-		chan->list = data;
+		*(void **)data = lifo->list;
+		lifo->list = data;
 	}
 
 	irq_unlock_inline(imask);
@@ -196,7 +196,7 @@ FUNC_ALIAS(_lifo_get, nano_task_lifo_get, void *);
 */
 
 void *_lifo_get(
-	struct nano_lifo *chan /* channel on which to receive */
+	struct nano_lifo *lifo /* lifo on which to receive */
 	)
 {
 	void *data;
@@ -204,9 +204,9 @@ void *_lifo_get(
 
 	imask = irq_lock_inline();
 
-	data = chan->list;
+	data = lifo->list;
 	if (data != NULL) {
-		chan->list = *(void **)data;
+		lifo->list = *(void **)data;
 	}
 
 	irq_unlock_inline(imask);
@@ -236,7 +236,7 @@ void *_lifo_get(
 */
 
 void *nano_fiber_lifo_get_wait(
-	struct nano_lifo *chan /* channel on which to receive */
+	struct nano_lifo *lifo /* lifo on which to receive */
 	)
 {
 	void *data;
@@ -244,12 +244,12 @@ void *nano_fiber_lifo_get_wait(
 
 	imask = irq_lock_inline();
 
-	if (chan->list == NULL) {
-		chan->proc = _NanoKernel.current;
+	if (lifo->list == NULL) {
+		lifo->proc = _NanoKernel.current;
 		data = (void *)_Swap(imask);
 	} else {
-		data = chan->list;
-		chan->list = *(void **)data;
+		data = lifo->list;
+		lifo->list = *(void **)data;
 		irq_unlock_inline(imask);
 	}
 
@@ -273,7 +273,7 @@ void *nano_fiber_lifo_get_wait(
 */
 
 void *nano_task_lifo_get_wait(
-	struct nano_lifo *chan /* channel on which to interact */
+	struct nano_lifo *lifo /* lifo on which to interact */
 	)
 {
 	void *data;
@@ -289,7 +289,7 @@ void *nano_task_lifo_get_wait(
 		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
-		if (likely(chan->list != NULL))
+		if (likely(lifo->list != NULL))
 			break;
 
 		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
@@ -297,8 +297,8 @@ void *nano_task_lifo_get_wait(
 		nano_cpu_atomic_idle(imask);
 	}
 
-	data = chan->list;
-	chan->list = *(void **)data;
+	data = lifo->list;
+	lifo->list = *(void **)data;
 
 	irq_unlock_inline(imask);
 
