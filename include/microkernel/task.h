@@ -40,7 +40,6 @@ extern "C" {
 #include <microkernel/task_api_export.h>
 
 extern struct k_proc *_k_current_task;
-extern const knode_t _k_this_node;
 
 /*
  * The following task groups are reserved for system use.

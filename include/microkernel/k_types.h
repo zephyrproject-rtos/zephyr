@@ -52,7 +52,6 @@ typedef int32_t ksem_t;
 typedef ksem_t *ksemg_t;
 typedef uint32_t ktimer_t;
 typedef uint32_t kpriority_t;
-typedef uint32_t knode_t;
 typedef uint32_t kmemory_pool_t;
 typedef unsigned int kevent_t;
 typedef uint32_t kirq_t;

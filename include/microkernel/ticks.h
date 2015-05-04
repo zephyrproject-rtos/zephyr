@@ -50,7 +50,6 @@ extern K_TIMER *_k_timer_list_head;
 extern K_TIMER *_k_timer_list_tail;
 extern struct nano_lifo _k_timer_free;
 extern K_TIMER K_TimerBlocks[]; /* array of microkernel timer objects */
-extern const knode_t _k_this_node;
 
 extern void scheduler_time_slice_set(int32_t t, kpriority_t p);
 
@@ -64,14 +63,15 @@ extern void scheduler_time_slice_set(int32_t t, kpriority_t p);
 * to elements of an array returns the difference between the array subscripts
 * of those elements. (That is, "&a[j]-&a[i]" returns "j-i".)
 *
+* This algorithm also set the upper 16 bits of the object identifier
+* to the same value utilized by the microkernel system generator.
 *
 * RETURNS: timer object identifier
 */
 
 static inline ktimer_t _timer_ptr_to_id(K_TIMER *timer)
 {
-	return (ktimer_t)((_k_this_node << 16) +
-			  (uint32_t)(timer - &K_TimerBlocks[0]));
+	return (ktimer_t)(0x00010000u + (uint32_t)(timer - &K_TimerBlocks[0]));
 }
 
 /*******************************************************************************
