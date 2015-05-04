@@ -95,21 +95,81 @@ int net_send(struct net_buf *buf)
 	return 0;
 }
 
+static void udp_packet_receive(struct simple_udp_connection *c,
+			       const uip_ipaddr_t *source_addr,
+			       uint16_t source_port,
+			       const uip_ipaddr_t *dest_addr,
+			       uint16_t dest_port,
+			       const uint8_t *data, uint16_t datalen,
+			       void *user_data,
+			       struct net_buf *buf)
+{
+	struct net_context *context = user_data;
+
+	if (!context) {
+		return;
+	}
+
+	uip_appdatalen(buf) = datalen;
+
+	NET_DBG("packet received buf %p context %p len %d\n",
+		buf, context, datalen);
+
+	nano_fifo_put(net_context_get_queue(context), buf);
+}
+
 /* Called by application when it wants to receive network data */
 struct net_buf *net_receive(struct net_context *context)
 {
 	struct nano_fifo *rx_queue = net_context_get_queue(context);
+	struct net_tuple *tuple;
+	struct simple_udp_connection *udp;
+	int ret = 0;
+
+	tuple = net_context_get_tuple(context);
+	if (!tuple) {
+		return NULL;
+	}
+
+	switch (tuple->ip_proto) {
+	case IPPROTO_UDP:
+		udp = net_context_get_udp_connection(context);
+		if (!net_context_get_receiver_registered(context)) {
+			ret = simple_udp_register(udp, tuple->local_port,
+					  (uip_ip6addr_t *)tuple->remote_addr,
+					  tuple->remote_port,
+					  udp_packet_receive,
+					  context);
+			if (!ret) {
+				NET_DBG("UDP connection listener failed\n");
+				ret = -ENOENT;
+				break;
+			}
+		}
+		net_context_set_receiver_registered(context);
+		ret = 0;
+		break;
+	case IPPROTO_TCP:
+		NET_DBG("TCP not yet supported\n");
+		ret = -EINVAL;
+		break;
+	case IPPROTO_ICMPV6:
+		NET_DBG("ICMPv6 not yet supported\n");
+		ret = -EINVAL;
+		break;
+	}
 
 	return nano_fifo_get(rx_queue);
 }
 
-static void udp_packet_recv(struct simple_udp_connection *c,
-			    const uip_ipaddr_t *source_addr,
-			    uint16_t source_port,
-			    const uip_ipaddr_t *dest_addr,
-			    uint16_t dest_port,
-			    const uint8_t *data, uint16_t datalen,
-			    void *user_data)
+static void udp_packet_reply(struct simple_udp_connection *c,
+			     const uip_ipaddr_t *source_addr,
+			     uint16_t source_port,
+			     const uip_ipaddr_t *dest_addr,
+			     uint16_t dest_port,
+			     const uint8_t *data, uint16_t datalen,
+			     void *user_data,
+			     struct net_buf *not_used)
 {
 	struct net_buf *buf = user_data;
 	struct nano_fifo *queue;
@@ -117,6 +177,9 @@ static void udp_packet_recv(struct simple_udp_connection *c,
 	if (!buf->context) {
 		return;
 	}
+
+	NET_DBG("packet reply buf %p context %p len %d\n", buf, buf->context,
+		buf->len);
 
 	queue = net_context_get_queue(buf->context);
 
@@ -141,7 +204,7 @@ static int check_and_send_packet(struct net_buf *buf)
 		ret = simple_udp_register(udp, tuple->local_port,
 					  (uip_ip6addr_t *)tuple->remote_addr,
 					  tuple->remote_port,
-					  udp_packet_recv,
+					  udp_packet_reply,
 					  buf);
 		if (!ret) {
 			NET_DBG("UDP connection creation failed\n");
