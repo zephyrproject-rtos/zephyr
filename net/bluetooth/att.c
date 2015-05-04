@@ -35,6 +35,7 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/byteorder.h>
+#include <misc/util.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -63,6 +64,51 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 	bt_conn_send(conn, buf);
 }
 
+static void att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att_exchange_mtu_req *req;
+	struct bt_att_exchange_mtu_rsp *rsp;
+	struct bt_buf *buf;
+	uint16_t mtu;
+
+	if (data->len != sizeof(*req)) {
+		send_err_rsp(conn, BT_ATT_OP_MTU_REQ, 0,
+			     BT_ATT_ERR_INVALID_PDU);
+		return;
+	}
+
+	req = (void *)data->data;
+
+	mtu = sys_le16_to_cpu(req->mtu);
+
+	BT_DBG("Client MTU %u\n", mtu);
+
+	if (mtu > BT_ATT_MAX_LE_MTU || mtu < BT_ATT_DEFAULT_LE_MTU) {
+		send_err_rsp(conn, BT_ATT_OP_MTU_REQ, 0,
+			     BT_ATT_ERR_INVALID_PDU);
+		return;
+	}
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_MTU_RSP, sizeof(*rsp));
+	if (!buf) {
+		return;
+	}
+
+	/* Select MTU based on the amount of room we have in bt_buf including
+	 * one extra byte for ATT header.
+	 */
+	mtu = min(mtu, bt_buf_tailroom(buf) + 1);
+
+	BT_DBG("Server MTU %u\n", mtu);
+
+	/* TODO: Store the MTU negotiated */
+
+	rsp = (void *)bt_buf_add(buf, sizeof(*rsp));
+	rsp->mtu = sys_cpu_to_le16(mtu);
+
+	bt_conn_send(conn, buf);
+}
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_att_hdr *hdr = (void *)buf->data;
@@ -77,6 +123,9 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 	bt_buf_pull(buf, sizeof(*hdr));
 
 	switch (hdr->code) {
+	case BT_ATT_OP_MTU_REQ:
+		att_mtu_req(conn, buf);
+		break;
 	default:
 		BT_DBG("Unhandled ATT code %u\n", hdr->code);
 		send_err_rsp(conn, hdr->code, 0, BT_ATT_ERR_NOT_SUPPORTED);
