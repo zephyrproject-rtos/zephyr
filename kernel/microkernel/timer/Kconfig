@@ -5,7 +5,7 @@ config TIMESLICING
 	bool
 	prompt "Task time slicing"
 	default y
-	depends on MICROKERNEL
+	depends on MICROKERNEL && !TICKLESS_KERNEL
 	help
 	This option enables time slicing between tasks of equal priority.
 

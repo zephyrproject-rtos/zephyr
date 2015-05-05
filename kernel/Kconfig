@@ -27,6 +27,25 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	Frequency of the hardware timer used for the system clock
 	(in Hz).
 
+config  TICKLESS_KERNEL
+	bool
+	# omit prompt to signify a "hidden" option
+	default y if (SYS_CLOCK_TICKS_PER_SEC = 0)
+	default n
+	help
+	This option specifies that the kernel lacks timer support.
+
+config  INIT_STACKS
+	bool
+	prompt "Initialize stack areas"
+	default n
+	help
+	This option instructs the kernel to initialize stack areas with a
+	known value (0xaa) before they are first used, so that the high
+	water mark can be easily determined. This applies to the stack areas
+	for both tasks and fibers, as well as for the K_swapper's command
+	stack.
+
 config  XIP
 	bool
 	prompt "Execute in place"

@@ -21,3 +21,11 @@ config DRV_STELLARIS_UART
 	This option enables the Stellaris serial driver.
 	This specific driver can be used for the serial hardware
 	available at the Texas Instrument LM3S6965 BSP.
+
+config  UART_INTERRUPT_DRIVEN
+	bool
+	prompt "Interrupt driven UART support"
+	default n
+	help
+	This option enables interrupt support for UART allowing console
+	input and UART based drivers.

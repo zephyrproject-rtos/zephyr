@@ -111,6 +111,14 @@ config  SECTION_GARBAGE_COLLECTION
 	Enabling this option may cause these host tools to end abnormally
 	if the expected symbols have been discarded.
 
+config BUILD_TIMESTAMP
+	bool
+	prompt "Build timestamp"
+	default n
+	help
+	This option embeds a string into the project image that indicates
+	the date and time the image was created.
+
 endmenu
 
 source "drivers/Kconfig"

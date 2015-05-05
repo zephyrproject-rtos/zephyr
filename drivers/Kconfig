@@ -4,6 +4,10 @@ config DRV_CONSOLE
 	help
 	This option enables the UART console driver.
 
+if DRV_CONSOLE
+source "drivers/console/Kconfig"
+endif
+
 config DRV_SERIAL
 	bool
 	default n

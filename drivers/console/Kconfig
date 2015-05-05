@@ -1,0 +1,16 @@
+config UART_INTERRUPT_DRIVEN
+	bool
+	prompt "Interrupt driven UART support"
+	default n
+	help
+	This option enables interrupt support for UART allowing console
+	input and UART based drivers.
+
+config CONSOLE_HANDLER
+	bool
+	prompt "Enable console input handler"
+	select UART_INTERRUPT_DRIVEN
+	default n
+	help
+	This option enables console input handler allowing to write simple
+	interaction between serial console and the OS.
