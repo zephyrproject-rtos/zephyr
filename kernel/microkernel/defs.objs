@@ -39,7 +39,6 @@ ukernel_INCLUDE_DIR = $(strip \
 
 ukernel_PATH = $(strip \
 	. \
-	core \
 	channel \
 	movedata \
 )
