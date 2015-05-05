@@ -40,7 +40,6 @@ ukernel_INCLUDE_DIR = $(strip \
 ukernel_PATH = $(strip \
 	. \
 	channel \
-	movedata \
 )
 
 ukernel_ABS_PATH = $(addprefix ${ukernel_BASE},${ukernel_PATH})
