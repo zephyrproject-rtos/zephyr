@@ -42,7 +42,6 @@ ukernel_PATH = $(strip \
 	core \
 	channel \
 	movedata \
-	timer \
 )
 
 ukernel_ABS_PATH = $(addprefix ${ukernel_BASE},${ukernel_PATH})
