@@ -34,7 +34,7 @@
 
 void watchdog_init(void);
 void watchdog_start(void);
-void watchdog_periodic(void);
+static inline void watchdog_periodic(void) { } /* FIXME - code needed here */
 void watchdog_stop(void);
 
 void watchdog_reboot(void);
