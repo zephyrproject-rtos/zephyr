@@ -211,7 +211,7 @@ input_packet(struct net_buf *buf)
          frame.dest_pid != FRAME802154_BROADCASTPANDID) {
         /* Not broadcast or for our PAN */
         PRINTF("6MAC: for another pan %u\n", frame.dest_pid);
-        return;
+        goto error;
       }
       if(!is_broadcast_addr(frame.fcf.dest_addr_mode, frame.dest_addr)) {
         packetbuf_set_addr(buf, PACKETBUF_ADDR_RECEIVER, (linkaddr_t *)&frame.dest_addr);
@@ -220,7 +220,7 @@ input_packet(struct net_buf *buf)
                          &linkaddr_node_addr)) {
           /* Not for this node */
           PRINTF("6MAC: not for us\n");
-          return;
+	  goto error;
         }
 #endif
       }
@@ -232,9 +232,12 @@ input_packet(struct net_buf *buf)
     PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
     PRINTF("%u\n", packetbuf_datalen(buf));
     NETSTACK_MAC.input(buf);
+    return;
   } else {
     PRINTF("6MAC: failed to parse hdr\n");
   }
+error:
+  net_buf_put(buf);
 }
 /*---------------------------------------------------------------------------*/
 static int
