@@ -41,6 +41,14 @@ config	NETWORKING
 	help
 	  This option enabled generic networking support.
 
+config	NETWORKING_WITH_6LOWPAN
+	bool
+	prompt "Enable 6LoWPAN (IPv6 compression) in the uIP stack"
+	depends on NETWORKING
+	default n
+	help
+	  Enable 6LoWPAN in uIP stack
+
 config	NETWORKING_WITH_LOGGING
 	bool
 	prompt "Enable logging of the uIP stack"

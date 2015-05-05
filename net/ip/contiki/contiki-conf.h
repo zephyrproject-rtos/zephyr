@@ -27,7 +27,15 @@ typedef unsigned int uip_stats_t;
 /* No reassembly yet */
 #define SICSLOWPAN_CONF_FRAG 0
 
+#ifdef SICSLOWPAN_CONF_ENABLE
+#define NETSTACK_CONF_NETWORK	sicslowpan_driver
+/* Min and Max compressible UDP ports */
+#define SICSLOWPAN_UDP_PORT_MIN                     0xF0B0
+#define SICSLOWPAN_UDP_PORT_MAX                     0xF0BF   /* F0B0 + 15 */
+#else
 #define NETSTACK_CONF_NETWORK	uip_driver
+#endif /* SICSLOWPAN_CONF_ENABLE */
+
 #define NETSTACK_CONF_FRAMER	framer_802154
 #define NETSTACK_CONF_LLSEC	nullsec_driver
 #define NETSTACK_CONF_MAC	csma_driver
