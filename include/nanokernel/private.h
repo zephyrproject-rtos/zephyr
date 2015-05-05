@@ -50,8 +50,8 @@ struct nano_sem {
 };
 
 struct nano_lifo {
+	struct _nano_queue wait_q;
 	void *list;
-	tCCS *proc;
 };
 
 struct nano_fifo {

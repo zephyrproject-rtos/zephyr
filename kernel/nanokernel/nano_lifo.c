@@ -49,6 +49,7 @@ APIs to the same function, since they have identical implementations.
 #include <nanok.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <wait_q.h>
 
 /*******************************************************************************
 *
@@ -72,7 +73,7 @@ void nano_lifo_init(
 	)
 {
 	lifo->list = (void *)0;
-	lifo->proc = (tCCS *)0;
+	_nano_wait_q_init(&lifo->wait_q);
 }
 
 #ifdef CONFIG_MICROKERNEL
@@ -115,12 +116,9 @@ void _lifo_put(
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	ccs = lifo->proc;
+	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs != (tCCS *)NULL) {
-		lifo->proc = (tCCS *)0;
-
 		fiberRtnValueSet(ccs, (unsigned int)data);
-		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 	} else {
 		*(void **)data = lifo->list;
 		lifo->list = data;
@@ -151,12 +149,9 @@ void nano_task_lifo_put(
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	ccs = lifo->proc;
+	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs != (tCCS *)NULL) {
-		lifo->proc = (tCCS *)0;
-
 		fiberRtnValueSet(ccs, (unsigned int)data);
-		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
 
 		/* swap into the newly ready fiber */
 
@@ -245,7 +240,7 @@ void *nano_fiber_lifo_get_wait(
 	imask = irq_lock_inline();
 
 	if (lifo->list == NULL) {
-		lifo->proc = _NanoKernel.current;
+		_nano_wait_q_put(&lifo->wait_q);
 		data = (void *)_Swap(imask);
 	} else {
 		data = lifo->list;

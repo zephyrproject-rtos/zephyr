@@ -195,7 +195,7 @@ void nano_fiber_timer_stop(struct nano_timer *timer /* timer to stop */
 	_timer_stop(timer);
 
 	/* if there was a waiter, kick it */
-	if (timer->lifo.proc) {
+	if (timer->lifo.wait_q.head) {
 		nano_fiber_lifo_put(&timer->lifo, (void *)0);
 	}
 }
@@ -217,7 +217,7 @@ void nano_task_timer_stop(struct nano_timer *timer /* timer to stop */
 	_timer_stop(timer);
 
 	/* if there was a waiter, kick it */
-	if (timer->lifo.proc) {
+	if (timer->lifo.wait_q.head) {
 		nano_task_lifo_put(&timer->lifo, (void *)0);
 	}
 }

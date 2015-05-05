@@ -330,7 +330,8 @@ def kernel_main_c_kargs():
 
     kernel_main_c_out("\n" +
         "struct nano_lifo _k_server_command_packet_free = " +
-        "{(void *) &K_ArgsBlocks[%d], NULL};\n" % (num_kargs - 1))
+        "{{NULL, &_k_server_command_packet_free.wait_q.head}, " +
+        "(void *) &K_ArgsBlocks[%d]};\n" % (num_kargs - 1))
 
 
 def kernel_main_c_timers():
@@ -358,7 +359,8 @@ def kernel_main_c_timers():
 
     kernel_main_c_out("\n" +
         "struct nano_lifo _k_timer_free = " +
-        "{(void *) &K_TimerBlocks[%d], NULL};\n" % (num_timers - 1))
+        "{{NULL, &_k_timer_free.wait_q.head}, " +
+        "(void *) &K_TimerBlocks[%d]};\n"  % (num_timers - 1))
 
 
 def kernel_main_c_tasks():
