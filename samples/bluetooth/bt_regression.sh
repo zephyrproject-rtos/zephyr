@@ -24,6 +24,9 @@ nanokernel/apps/bluetooth/init               <n> quark           \n\
 nanokernel/apps/bluetooth/init               <n> minuteia        \n\
 nanokernel/apps/bluetooth/init               <n> fsl_frdm_k64f   \n\
 nanokernel/apps/bluetooth/init               <n> ti_lm3s6965     \n\
+nanokernel/apps/bluetooth/shell              <n> pentium4        \n\
+nanokernel/apps/bluetooth/shell              <n> ti_lm3s6965     \n\
+nanokernel/apps/bluetooth/shell              <n> fsl_frdm_k64f   \n\
 nanokernel/test/test_bluetooth              <nq> pentium4!       \n\
 nanokernel/test/test_bluetooth              <nq> quark           \n\
 #  nanokernel/test/test_bluetooth              <nq> atom            \n\
