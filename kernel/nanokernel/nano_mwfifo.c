@@ -97,6 +97,20 @@ FUNC_ALIAS(_fifo_put, nano_fiber_fifo_put, void);
 
 /*******************************************************************************
 *
+* enqueue_data - internal routine to append data to a fifo
+*
+* RETURNS: N/A
+*/
+
+static inline void enqueue_data(struct nano_fifo *fifo, void *data)
+{
+	*(void **)fifo->tail = data;
+	fifo->tail = data;
+	*(int *)data = 0;
+}
+
+/*******************************************************************************
+*
 * _fifo_put - add an element to the end of a fifo
 *
 * This routine adds an element to the end of a fifo object; it may be called
@@ -129,9 +143,7 @@ void _fifo_put(
 		tCCS *ccs = _nano_wait_q_remove_no_check(&fifo->wait_q);
 		fiberRtnValueSet(ccs, (unsigned int)data);
 	} else {
-		*(void **)fifo->tail = data;
-		fifo->tail = data;
-		*(int *)data = 0;
+		enqueue_data(fifo, data);
 	}
 
 	irq_unlock_inline(imask);
@@ -170,9 +182,7 @@ void nano_task_fifo_put(
 		_Swap(imask);
 		return;
 	} else {
-		*(void **)fifo->tail = data;
-		fifo->tail = data;
-		*(int *)data = 0;
+		enqueue_data(fifo, data);
 	}
 
 	irq_unlock_inline(imask);
@@ -199,6 +209,31 @@ FUNC_ALIAS(_fifo_get, nano_isr_fifo_get, void *);
 FUNC_ALIAS(_fifo_get, nano_fiber_fifo_get, void *);
 FUNC_ALIAS(_fifo_get, nano_task_fifo_get, void *);
 FUNC_ALIAS(_fifo_get, nano_fifo_get, void *);
+
+/*******************************************************************************
+*
+* dequeue_data - internal routine to remove data from a fifo
+*
+* RETURNS: the data item removed
+*/
+
+static inline void *dequeue_data(struct nano_fifo *fifo)
+{
+	void *data = fifo->head;
+
+	if (fifo->stat == 0) {
+		/*
+		 * The data_q and wait_q occupy the same space and have the same
+		 * format, and there is already an API for resetting the wait_q, so
+		 * use it.
+		 */
+		_nano_wait_q_reset(&fifo->wait_q);
+	} else {
+		fifo->head = *(void **)data;
+	}
+
+	return data;
+}
 
 /*******************************************************************************
 *
@@ -232,13 +267,7 @@ void *_fifo_get(
 
 	if (fifo->stat > 0) {
 		fifo->stat--;
-		data = fifo->head;
-
-		if (fifo->stat == 0) {
-			_nano_wait_q_reset(&fifo->wait_q);
-		} else {
-			fifo->head = *(void **)data;
-		}
+		data = dequeue_data(fifo);
 	}
 	irq_unlock_inline(imask);
 	return data;
@@ -278,13 +307,7 @@ void *nano_fiber_fifo_get_wait(
 		_nano_wait_q_put(&fifo->wait_q);
 		data = (void *)_Swap(imask);
 	} else {
-		data = fifo->head;
-		if (fifo->stat == 0) {
-			_nano_wait_q_reset(&fifo->wait_q);
-		} else {
-			fifo->head = *(void **)data;
-		}
-
+		data = dequeue_data(fifo);
 		irq_unlock_inline(imask);
 	}
 
@@ -333,13 +356,7 @@ void *nano_task_fifo_get_wait(
 	}
 
 	fifo->stat--;
-	data = fifo->head;
-
-	if (fifo->stat == 0)
-		_nano_wait_q_reset(&fifo->wait_q);
-	else
-		fifo->head = *(void **)data;
-
+	data = dequeue_data(fifo);
 	irq_unlock_inline(imask);
 
 	return data;
