@@ -52,14 +52,8 @@ nkernel_PATH += ${nkernel_PATH_${CONFIG_MICROKERNEL}}
 nkernel_SRC :=
 ifeq (${CONFIG_NANOKERNEL},y)
   nkernel_SRC += $(strip \
-	${vBASE}/kernel/common/version.c \
 	${vBASE}/misc/printk.c \
   )
-  ifeq ($(CONFIG_ENHANCED_SECURITY),y)
-    nkernel_SRC += $(strip \
-	${vBASE}/kernel/common/string_s.c \
-  )
-  endif
 endif
 
 nkernel_SRC += $(foreach path,${nkernel_PATH},$(wildcard ${path}/*.$c))

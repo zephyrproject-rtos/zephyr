@@ -46,19 +46,12 @@ nkernel_PATH = $(strip \
 
 nkernel_SRC :=
 nkernel_SRC_NANOKERNEL_y = $(strip \
-	${vBASE}/kernel/common/version.c \
 	${vBASE}/misc/printk.c \
 )
 
 nkernel_SRC += $(strip \
 	${nkernel_SRC_NANOKERNEL_${CONFIG_NANOKERNEL}} \
 )
-
-ifeq ($(CONFIG_ENHANCED_SECURITY),y)
-  nkernel_SRC += $(strip \
-     ${vBASE}/kernel/common/string_s.c \
-)
-endif
 
 nkernel_SRC += $(foreach path,${nkernel_PATH},$(wildcard ${path}/*.$c))
 nkernel_SRC += $(foreach path,${nkernel_PATH},$(wildcard ${path}/*.$s))
