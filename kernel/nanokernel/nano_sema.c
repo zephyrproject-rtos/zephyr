@@ -55,6 +55,7 @@ APIs to the same function, since they have identical implementations.
 #include <nanok.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <wait_q.h>
 
 /*******************************************************************************
 *
@@ -78,7 +79,7 @@ void nano_sem_init(
 	)
 {
 	sem->nsig = 0;
-	sem->proc = (tCCS *)0;
+	_nano_wait_q_init(&sem->wait_q);
 }
 
 FUNC_ALIAS(_sem_give, nano_isr_sem_give, void);
@@ -110,11 +111,8 @@ void _sem_give(
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	ccs = sem->proc;
-	if (ccs != (tCCS *)NULL) {
-		sem->proc = 0;
-		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
-	} else {
+	ccs = _nano_wait_q_remove(&sem->wait_q);
+	if (!ccs) {
 		sem->nsig++;
 	}
 
@@ -140,13 +138,9 @@ void nano_task_sem_give(
 	unsigned int imask;
 
 	imask = irq_lock_inline();
-	ccs = sem->proc;
+	ccs = _nano_wait_q_remove(&sem->wait_q);
 	if (ccs != (tCCS *)NULL) {
-		sem->proc = 0;
-		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
-
 		/* swap into the newly ready fiber */
-
 		_Swap(imask);
 		return;
 	} else {
@@ -232,7 +226,7 @@ void nano_fiber_sem_take_wait(
 
 	imask = irq_lock_inline();
 	if (sem->nsig == 0) {
-		sem->proc = _NanoKernel.current;
+		_nano_wait_q_put(&sem->wait_q);
 		_Swap(imask);
 	} else {
 		sem->nsig--;

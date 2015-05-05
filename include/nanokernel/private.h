@@ -45,7 +45,7 @@ struct _nano_queue {
 };
 
 struct nano_sem {
-	tCCS *proc;
+	struct _nano_queue wait_q;
 	int nsig;
 };
 
