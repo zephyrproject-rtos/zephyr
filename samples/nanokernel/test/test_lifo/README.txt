@@ -25,6 +25,23 @@ Task waiting on an empty LIFO
 Fiber to get LIFO items without waiting
 Task to get LIFO items without waiting
 ISR to get LIFO items without waiting
+First pass
+multiple-waiter fiber 0 receiving item...
+multiple-waiter fiber 1 receiving item...
+multiple-waiter fiber 2 receiving item...
+multiple-waiter fiber 0 got correct item, giving semaphore
+multiple-waiter fiber 1 got correct item, giving semaphore
+multiple-waiter fiber 2 got correct item, giving semaphore
+Task took multi-waiter reply semaphore 3 times, as expected.
+Second pass
+multiple-waiter fiber 0 receiving item...
+multiple-waiter fiber 0 got correct item, giving semaphore
+multiple-waiter fiber 1 receiving item...
+multiple-waiter fiber 2 receiving item...
+multiple-waiter fiber 1 got correct item, giving semaphore
+multiple-waiter fiber 2 got correct item, giving semaphore
+Task took multi-waiter reply semaphore 3 times, as expected.
+===================================================================
 PASS - main.
 ===================================================================
 VXMICRO PROJECT EXECUTION SUCCESSFUL
