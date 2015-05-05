@@ -5,12 +5,6 @@
 #in the kernel binary from the configuration menu in the near future.
 
 menu "Core Microkernel Options"
-config COMMAND_PACKET
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option adds the command packet kernel services to the CORE API.
 
 config MICROKERNEL_SERVER_STACK_SIZE
 	int
