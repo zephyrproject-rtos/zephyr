@@ -59,7 +59,11 @@ static int cmd_reset(int argc, const char *line)
 	return 0;
 }
 
+#ifdef CONFIG_MICROKERNEL
 void mainloop(void)
+#else
+void main(void)
+#endif
 {
 	shell_init("btshell> ");
 
