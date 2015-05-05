@@ -53,13 +53,21 @@ extern struct net_tuple *net_context_get_tuple(struct net_context *context);
 static struct net_buf		buffers[NUM_BUFS];
 static struct nano_fifo		free_bufs;
 
+#ifdef DEBUG_NET_BUFS
+struct net_buf *net_buf_get_reserve_debug(uint16_t reserve_head, const char *caller, int line)
+#else
 struct net_buf *net_buf_get_reserve(uint16_t reserve_head)
+#endif
 {
 	struct net_buf *buf;
 
 	buf = nano_fifo_get(&free_bufs);
 	if (!buf) {
+#ifdef DEBUG_NET_BUFS
+		NET_ERR("Failed to get free buffer (%s():%d)\n", caller, line);
+#else
 		NET_ERR("Failed to get free buffer\n");
+#endif
 		return NULL;
 	}
 
@@ -71,7 +79,11 @@ struct net_buf *net_buf_get_reserve(uint16_t reserve_head)
 	return buf;
 }
 
+#ifdef DEBUG_NET_BUFS
+struct net_buf *net_buf_get_debug(struct net_context *context, const char *caller, int line)
+#else
 struct net_buf *net_buf_get(struct net_context *context)
+#endif
 {
 	struct net_buf *buf;
 	struct net_tuple *tuple;
@@ -94,7 +106,11 @@ struct net_buf *net_buf_get(struct net_context *context)
 		break;
 	}
 
+#ifdef DEBUG_NET_BUFS
+	buf = net_buf_get_reserve_debug(reserve, caller, line);
+#else
 	buf = net_buf_get_reserve(reserve);
+#endif
 	if (!buf) {
 		return buf;
 	}
@@ -104,9 +120,17 @@ struct net_buf *net_buf_get(struct net_context *context)
 	return buf;
 }
 
+#ifdef DEBUG_NET_BUFS
+void net_buf_put_debug(struct net_buf *buf, const char *caller, int line)
+#else
 void net_buf_put(struct net_buf *buf)
+#endif
 {
+#ifdef DEBUG_NET_BUFS
+	NET_DBG("buf %p (%s():%d)\n", buf, caller, line);
+#else
 	NET_DBG("buf %p\n", buf);
+#endif
 
 	nano_fifo_put(&free_bufs, buf);
 }

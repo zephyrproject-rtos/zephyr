@@ -46,6 +46,11 @@
 #include "contiki/ip/uip.h"
 #include "contiki/packetbuf.h"
 
+#if defined(CONFIG_NETWORKING_WITH_LOGGING)
+#undef DEBUG_NET_BUFS
+#define DEBUG_NET_BUFS
+#endif
+
 struct net_context;
 
 /*! The default MTU is 1280 (minimum IPv6 packet size) + LL header
@@ -172,7 +177,13 @@ struct net_buf {
  *
  * @return Network buffer if successful, NULL otherwise.
  */
+/* Get buffer from the available buffers pool */
+#ifdef DEBUG_NET_BUFS
+#define net_buf_get(context) net_buf_get_debug(context, __FUNCTION__, __LINE__)
+struct net_buf *net_buf_get_debug(struct net_context *context, const char *caller, int line);
+#else
 struct net_buf *net_buf_get(struct net_context *context);
+#endif
 
 /*!
  * @brief Get buffer from pool but also reserve headroom for
@@ -185,7 +196,13 @@ struct net_buf *net_buf_get(struct net_context *context);
  *
  * @return Network buffer if successful, NULL otherwise.
  */
+/* Same as net_buf_get, but also reserve headroom for potential headers */
+#ifdef DEBUG_NET_BUFS
+#define net_buf_get_reserve(res) net_buf_get_reserve_debug(res,__FUNCTION__,__LINE__)
+struct net_buf *net_buf_get_reserve_debug(uint16_t reserve_head, const char *caller, int line);
+#else
 struct net_buf *net_buf_get_reserve(uint16_t reserve_head);
+#endif
 
 /*!
  * @brief Place buffer back into the available buffers pool.
@@ -197,7 +214,13 @@ struct net_buf *net_buf_get_reserve(uint16_t reserve_head);
  * @param buf Network buffer to release.
  *
  */
+/* Place buffer back into the available buffers pool */
+#ifdef DEBUG_NET_BUFS
+#define net_buf_put(buf) net_buf_put_debug(buf, __FUNCTION__, __LINE__)
+void net_buf_put_debug(struct net_buf *buf, const char *caller, int line);
+#else
 void net_buf_put(struct net_buf *buf);
+#endif
 
 /*!
  * @brief Prepare data to be added at the end of the buffer.
