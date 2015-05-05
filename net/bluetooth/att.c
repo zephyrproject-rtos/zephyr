@@ -53,8 +53,9 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 
 	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_ATT,
 				  sizeof(*hdr) + sizeof(*rsp));
-	if (!buf)
+	if (!buf) {
 		return;
+	}
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_ATT_ERROR_RSP;

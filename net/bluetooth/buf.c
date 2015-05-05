@@ -105,14 +105,16 @@ void bt_buf_put(struct bt_buf *buf)
 
 	BT_DBG("buf %p ref %u type %d\n", buf, buf->ref, buf->type);
 
-	if (--buf->ref)
+	if (--buf->ref) {
 		return;
+	}
 
 	handle = buf->acl.handle;
 	nano_fifo_put(avail, buf);
 
-	if (avail != &avail_acl_in)
+	if (avail != &avail_acl_in) {
 		return;
+	}
 
 	BT_DBG("Reporting completed packet for handle %u\n", handle);
 
@@ -184,16 +186,19 @@ int bt_buf_init(int acl_in, int acl_out)
 	       acl_in, acl_out, NUM_BUFS - (acl_in + acl_out));
 
 	nano_fifo_init(&avail_acl_in);
-	for (i = 0; acl_in > 0; i++, acl_in--)
+	for (i = 0; acl_in > 0; i++, acl_in--) {
 		nano_fifo_put(&avail_acl_in, &buffers[i]);
+	}
 
 	nano_fifo_init(&avail_acl_out);
-	for (; acl_out > 0; i++, acl_out--)
+	for (; acl_out > 0; i++, acl_out--) {
 		nano_fifo_put(&avail_acl_out, &buffers[i]);
+	}
 
 	nano_fifo_init(&avail_hci);
-	for (; i < NUM_BUFS; i++)
+	for (; i < NUM_BUFS; i++) {
 		nano_fifo_put(&avail_hci, &buffers[i]);
+	}
 
 	return 0;
 }

@@ -22,8 +22,9 @@ static uint8_t get_ident(struct bt_conn *conn)
 	conn->l2_ident++;
 
 	/* handle integer overflow (0 is not valid) */
-	if (!conn->l2_ident)
+	if (!conn->l2_ident) {
 		conn->l2_ident++;
+	}
 
 	return conn->l2_ident;
 }
@@ -35,8 +36,9 @@ struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
 	struct bt_buf *buf;
 
 	buf = bt_conn_create_pdu(conn, sizeof(*hdr) + len);
-	if (!buf)
+	if (!buf) {
 		return NULL;
+	}
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->len = sys_cpu_to_le16(len);
@@ -53,8 +55,9 @@ static void rej_not_understood(struct bt_conn *conn, uint8_t ident)
 
 	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_LE_SIG,
 				  sizeof(*hdr) + sizeof(*rej));
-	if (!buf)
+	if (!buf) {
 		return;
+	}
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CMD_REJECT;
@@ -157,13 +160,15 @@ void bt_l2cap_update_conn_param(struct bt_conn *conn)
 
 	/* Check if we need to update anything */
 	if (conn->le_conn_interval >= LE_CONN_MIN_INTERVAL &&
-	    conn->le_conn_interval <= LE_CONN_MAX_INTERVAL)
+	    conn->le_conn_interval <= LE_CONN_MAX_INTERVAL) {
 		return;
+	}
 
 	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_LE_SIG,
 				  sizeof(*hdr) + sizeof(*req));
-	if (!buf)
+	if (!buf) {
 		return;
+	}
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONN_PARAM_REQ;

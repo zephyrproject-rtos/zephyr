@@ -48,8 +48,9 @@ static struct bt_conn conns[MAX_CONN_COUNT];
 
 static void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
-	if (!conn->rx_len)
+	if (!conn->rx_len) {
 		return;
+	}
 
 	bt_buf_put(conn->rx);
 	conn->rx = NULL;
@@ -114,8 +115,9 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 		conn->rx_len -= buf->len;
 		bt_buf_put(buf);
 
-		if (conn->rx_len)
+		if (conn->rx_len) {
 			return;
+		}
 
 		buf = conn->rx;
 		conn->rx = NULL;
@@ -172,8 +174,9 @@ static void conn_rx_fiber(int arg1, int arg2)
 	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
 
 	/* Give back any allocated buffers */
-	while ((buf = nano_fifo_get(&conn->rx_queue)))
+	while ((buf = nano_fifo_get(&conn->rx_queue))) {
 		bt_buf_put(buf);
+	}
 
 	bt_conn_reset_rx_state(conn);
 
@@ -204,8 +207,9 @@ static void conn_tx_fiber(int arg1, int arg2)
 	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
 
 	/* Give back any allocated buffers */
-	while ((buf = nano_fifo_get(&conn->tx_queue)))
+	while ((buf = nano_fifo_get(&conn->tx_queue))) {
 		bt_buf_put(buf);
+	}
 
 	BT_DBG("handle %u exiting\n", conn->handle);
 	bt_conn_put(conn);
@@ -223,8 +227,9 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle)
 		}
 	}
 
-	if (!conn)
+	if (!conn) {
 		return NULL;
+	}
 
 	memset(conn, 0, sizeof(*conn));
 
@@ -251,8 +256,9 @@ void bt_conn_del(struct bt_conn *conn)
 {
 	BT_DBG("handle %u\n", conn->handle);
 
-	if (conn->state != BT_CONN_CONNECTED)
+	if (conn->state != BT_CONN_CONNECTED) {
 		return;
+	}
 
 	conn->state = BT_CONN_DISCONNECTED;
 
@@ -268,10 +274,13 @@ struct bt_conn *bt_conn_lookup(uint16_t handle)
 	int i;
 
 	for (i = 0; i < MAX_CONN_COUNT; i++) {
-		if (conns[i].state != BT_CONN_CONNECTED)
+		if (conns[i].state != BT_CONN_CONNECTED) {
 			continue;
-		if (conns[i].handle == handle)
+		}
+
+		if (conns[i].handle == handle) {
 			return &conns[i];
+		}
 	}
 
 	return NULL;
@@ -292,8 +301,9 @@ void bt_conn_put(struct bt_conn *conn)
 
 	BT_DBG("handle %u ref %u\n", conn->handle, conn->ref);
 
-	if (conn->ref)
+	if (conn->ref) {
 		return;
+	}
 
 	conn->handle = 0;
 }
@@ -305,8 +315,9 @@ struct bt_buf *bt_conn_create_pdu(struct bt_conn *conn, size_t len)
 	struct bt_buf *buf;
 
 	buf = bt_buf_get(BT_ACL_OUT, dev->drv->head_reserve);
-	if (!buf)
+	if (!buf) {
 		return NULL;
+	}
 
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->handle = sys_cpu_to_le16(conn->handle);

@@ -68,8 +68,9 @@ static int bt_uart_read(int uart, uint8_t *buf, size_t len, size_t min)
 		rx = uart_fifo_read(uart, buf, len);
 		if (rx == 0) {
 			BT_DBG("Got zero bytes from UART\n");
-			if (total < min)
+			if (total < min) {
 				continue;
+			}
 			break;
 		}
 
@@ -86,8 +87,9 @@ static size_t bt_uart_discard(int uart, size_t len)
 {
 	uint8_t buf[33];
 
-	if (len > sizeof(buf))
+	if (len > sizeof(buf)) {
 		len = sizeof(buf);
+	}
 
 	return uart_fifo_read(uart, buf, len);
 }
@@ -103,10 +105,11 @@ static struct bt_buf *bt_uart_evt_recv(int *remaining)
 	*remaining = hdr.len;
 
 	buf = bt_buf_get(BT_EVT, 0);
-	if (buf)
+	if (buf) {
 		memcpy(bt_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
-	else
+	} else {
 		BT_ERR("No available event buffers!\n");
+	}
 
 	BT_DBG("len %u\n", hdr.len);
 
@@ -122,10 +125,11 @@ static struct bt_buf *bt_uart_acl_recv(int *remaining)
 	bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	buf = bt_buf_get(BT_ACL_IN, 0);
-	if (buf)
+	if (buf) {
 		memcpy(bt_buf_add(buf, sizeof(hdr)), &hdr, sizeof(hdr));
-	else
+	} else {
 		BT_ERR("No available ACL buffers!\n");
+	}
 
 	*remaining = sys_le16_to_cpu(hdr.len);
 
@@ -145,10 +149,11 @@ void bt_uart_isr(void *unused)
 		int read;
 
 		if (!uart_irq_rx_ready(UART)) {
-			if (uart_irq_tx_ready(UART))
+			if (uart_irq_tx_ready(UART)) {
 				BT_DBG("transmit ready\n");
-			else
+			} else {
 				BT_DBG("spurious interrupt\n");
+			}
 			continue;
 		}
 
