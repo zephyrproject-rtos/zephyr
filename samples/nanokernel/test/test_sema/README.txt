@@ -26,6 +26,23 @@ Giving and taking a semaphore in a fiber (non-blocking)
 Semaphore from the task woke the fiber
 Semaphore from the fiber woke the task
 Semaphore from the ISR woke the task.
+First pass
+multiple-waiter fiber 0 trying to get semaphore...
+multiple-waiter fiber 1 trying to get semaphore...
+multiple-waiter fiber 2 trying to get semaphore...
+multiple-waiter fiber 0 acquired semaphore, sending reply
+multiple-waiter fiber 1 acquired semaphore, sending reply
+multiple-waiter fiber 2 acquired semaphore, sending reply
+Task took multi-waiter reply semaphore 3 times, as expected.
+Second pass
+multiple-waiter fiber 0 trying to get semaphore...
+multiple-waiter fiber 1 trying to get semaphore...
+multiple-waiter fiber 2 trying to get semaphore...
+multiple-waiter fiber 0 acquired semaphore, sending reply
+multiple-waiter fiber 1 acquired semaphore, sending reply
+multiple-waiter fiber 2 acquired semaphore, sending reply
+Task took multi-waiter reply semaphore 3 times, as expected.
+===================================================================
 PASS - main.
 ===================================================================
 VXMICRO PROJECT EXECUTION SUCCESSFUL

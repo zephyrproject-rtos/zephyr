@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module tests two basic scenarios with the usage of the following semaphore
+This module tests three basic scenarios with the usage of the following semaphore
 routines:
 
    nano_sem_init
@@ -45,6 +45,9 @@ Scenario #1:
 
 Scenario #2:
    A task or fiber must wait for the semaphore to be given before it gets it.
+
+Scenario #3:
+   Multiple fibers pend on the same semaphore.
 */
 
 /* includes */
@@ -94,6 +97,8 @@ static char           fiberStack[FIBER_STACKSIZE];
 static void (*_trigger_nano_isr_sem_give) (void) = (vvfn)sw_isr_trigger_0;
 static void (*_trigger_nano_isr_sem_take) (void) = (vvfn)sw_isr_trigger_1;
 
+static struct nano_sem multi_waiters;
+static struct nano_sem reply_multi_waiters;
 
 /*******************************************************************************
 *
@@ -278,6 +283,8 @@ void initNanoObjects(void)
 	(void)initIRQ (&i);
 
 	nano_sem_init (&testSem);
+	nano_sem_init (&multi_waiters);
+	nano_sem_init (&reply_multi_waiters);
 	nano_timer_init (&timer, timerData);
 
 	TC_PRINT ("Nano objects initialized\n");
@@ -431,6 +438,109 @@ int testSemWait(void)
 	return TC_PASS;
 }
 
+/*
+ * Multiple-waiters test
+ *
+ * NUM_WAITERS fibers pend on the multi_waiters semaphore, then the task give
+ * the semaphore NUM_WAITERS times. Each time, the first fiber in the queue
+ * wakes up, is context-switched to, and gives the reply_multi_waiters
+ * semaphore, for a total of NUM_WAITERS times. The task finally must be able
+ * to obtain the reply_multi_waiters semaphore NUM_WAITERS times.
+ */
+#define NUM_WAITERS 3
+static char fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
+
+/*******************************************************************************
+*
+* fiber_multi_waiters - fiber entry point for multiple-waiters test
+*
+* RETURNS: N/A
+*/
+
+static void fiber_multi_waiters(int arg1, int arg2)
+{
+	TC_PRINT ("multiple-waiter fiber %d trying to get semaphore...\n", arg1);
+	nano_fiber_sem_take_wait(&multi_waiters);
+	TC_PRINT ("multiple-waiter fiber %d acquired semaphore, sending reply\n",
+				arg1);
+	nano_fiber_sem_give(&reply_multi_waiters);
+}
+
+/*******************************************************************************
+*
+* do_test_multiple_waiters - task part of multiple-waiter test, repeatable
+*
+* RETURNS: N/A
+*/
+
+static int do_test_multiple_waiters(void)
+{
+	int ii;
+
+	/* pend all fibers one the same semaphore */
+	for (ii = 0; ii < NUM_WAITERS; ii++) {
+		task_fiber_start(fiber_multi_waiters_stacks[ii], FIBER_STACKSIZE,
+							fiber_multi_waiters, ii, 0, FIBER_PRIORITY, 0);
+	}
+
+	/* wake up all the fibers: the task is preempted each time */
+	for (ii = 0; ii < NUM_WAITERS; ii++) {
+		nano_task_sem_give(&multi_waiters);
+	}
+
+	/* reply_multi_waiters will have been given once for each fiber */
+	for (ii = 0; ii < NUM_WAITERS; ii++) {
+		if (!nano_task_sem_take(&reply_multi_waiters)) {
+			TC_ERROR (" *** Cannot take sem supposedly given by waiters.\n");
+			return TC_FAIL;
+		}
+	}
+
+	TC_PRINT("Task took multi-waiter reply semaphore %d times, as expected.\n",
+				NUM_WAITERS);
+
+	if (nano_task_sem_take(&multi_waiters)) {
+		TC_ERROR (" *** multi_waiters should have been empty.\n");
+		return TC_FAIL;
+	}
+
+	if (nano_task_sem_take(&reply_multi_waiters)) {
+		TC_ERROR (" *** reply_multi_waiters should have been empty.\n");
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+/*******************************************************************************
+*
+* test_multiple_waiters - entry point for multiple-waiters test
+*
+* RETURNS: N/A
+*/
+
+static int test_multiple_waiters(void)
+{
+	TC_PRINT("First pass\n");
+	if (do_test_multiple_waiters() == TC_FAIL) {
+		TC_ERROR (" *** First pass test failed.\n");
+		return TC_FAIL;
+	}
+
+	/*
+	 * Verify a wait q that has been emptied has been reset correctly, so
+	 * redo the test.
+	 */
+
+	TC_PRINT("Second pass\n");
+	if (do_test_multiple_waiters() == TC_FAIL) {
+		TC_ERROR (" *** Second pass test failed.\n");
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
 /*******************************************************************************
 *
 * main - entry point to semaphore tests
@@ -471,6 +581,12 @@ void main(void)
 		                0, 0, FIBER_PRIORITY, 0);
 
 	rv = testSemWait ();
+	if (rv != TC_PASS)
+		{
+		goto doneTests;
+		}
+
+	rv = test_multiple_waiters();
 	if (rv != TC_PASS)
 		{
 		goto doneTests;
