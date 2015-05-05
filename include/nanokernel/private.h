@@ -57,10 +57,7 @@ struct nano_lifo {
 struct nano_fifo {
 	union {
 		struct _nano_queue wait_q;
-		struct {
-			void *head;
-			void *tail;
-		};
+		struct _nano_queue data_q;
 	};
 	int stat;
 };

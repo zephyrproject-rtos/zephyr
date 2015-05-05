@@ -104,8 +104,8 @@ FUNC_ALIAS(_fifo_put, nano_fiber_fifo_put, void);
 
 static inline void enqueue_data(struct nano_fifo *fifo, void *data)
 {
-	*(void **)fifo->tail = data;
-	fifo->tail = data;
+	*(void **)fifo->data_q.tail = data;
+	fifo->data_q.tail = data;
 	*(int *)data = 0;
 }
 
@@ -219,7 +219,7 @@ FUNC_ALIAS(_fifo_get, nano_fifo_get, void *);
 
 static inline void *dequeue_data(struct nano_fifo *fifo)
 {
-	void *data = fifo->head;
+	void *data = fifo->data_q.head;
 
 	if (fifo->stat == 0) {
 		/*
@@ -229,7 +229,7 @@ static inline void *dequeue_data(struct nano_fifo *fifo)
 		 */
 		_nano_wait_q_reset(&fifo->wait_q);
 	} else {
-		fifo->head = *(void **)data;
+		fifo->data_q.head = *(void **)data;
 	}
 
 	return data;
