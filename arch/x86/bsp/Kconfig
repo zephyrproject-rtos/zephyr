@@ -101,7 +101,7 @@ config ADV_IDLE_STACK_SIZE
 	address (4 bytes) and the _AdvIdleCheckSleep() stack frame.
 
 config CPU_MIGHT_SUPPORT_CLFLUSH
-	bool "CPU might sypport CLFLUSH"
+	bool
 	default n
 	help
 	If a BSP uses a processor that possibly implements CLFLUSH, change
