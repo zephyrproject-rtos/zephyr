@@ -41,10 +41,6 @@ BSP ?= generic_pc
 PRJ_CONF = prj_${vARCH}.conf
 VPFILE = prj.vpf
 
-PRJ_INCPATH += ${vBSP_BASE_DIR}/${BSP}
-PRJ_INCPATH += ${vBASE}/drivers
-PRJ_INCPATH += ${vBASE}/arch/${vARCH}
-
 # UART for Bluetooth
 QEMU_EXTRA_FLAGS += -serial unix:/tmp/bt-server-bredr
 
