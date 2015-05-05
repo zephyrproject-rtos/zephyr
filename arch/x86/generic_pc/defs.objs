@@ -45,8 +45,6 @@ bsp_kernel_SRC = $(strip \
 	arch/${vARCH}/bsp/cache.c \
 	arch/${vARCH}/bsp/cache_s.s \
 	arch/${vARCH}/bsp/rand32.c \
-	kernel/common/bsp/init.c \
-	kernel/common/bsp/ctors.c \
 	arch/${vARCH}/bsp/sysFatalErrorHandler.c \
 )
 

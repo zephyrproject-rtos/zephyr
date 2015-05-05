@@ -45,8 +45,6 @@ bsp_init_SRC = $(strip \
 	arch/arm/bsp/CortexM/vector_table.s \
 	arch/arm/bsp/CortexM/reset.s \
 	arch/arm/bsp/CortexM/prep_c.c  \
-	kernel/common/bsp/init.c \
-	kernel/common/bsp/ctors.c \
 )
 
 # peripherals
