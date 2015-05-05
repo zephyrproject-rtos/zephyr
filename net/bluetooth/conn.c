@@ -147,16 +147,56 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 
 void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 {
+	uint16_t len, remaining = buf->len;
+	struct bt_dev *dev = conn->dev;
 	struct bt_hci_acl_hdr *hdr;
-	uint16_t len = buf->len;
+	struct nano_fifo frags;
+	uint8_t *ptr;
 
 	BT_DBG("conn handle %u buf len %u\n", conn->handle, buf->len);
+
+	nano_fifo_init(&frags);
+
+	if (remaining > dev->le_mtu) {
+		len = dev->le_mtu;
+	} else {
+		len = remaining;
+	}
 
 	hdr = (void *)bt_buf_push(buf, sizeof(*hdr));
 	hdr->handle = sys_cpu_to_le16(conn->handle);
 	hdr->len = sys_cpu_to_le16(len);
 
-	nano_fifo_put(&conn->tx_queue, buf);
+	buf->len -= remaining - len;
+	ptr = bt_buf_tail(buf);
+
+	nano_fifo_put(&frags, buf);
+	remaining -= len;
+
+	while (remaining) {
+		buf = bt_conn_create_pdu(conn);
+
+		if (remaining > dev->le_mtu) {
+			len = dev->le_mtu;
+		} else {
+			len = remaining;
+		}
+
+		/* Copy from original buffer */
+		memcpy(bt_buf_add(buf, len), ptr, len);
+		ptr += len;
+
+		hdr = (void *)bt_buf_push(buf, sizeof(*hdr));
+		hdr->handle = sys_cpu_to_le16(conn->handle | (1 << 12));
+		hdr->len = sys_cpu_to_le16(len);
+
+		nano_fifo_put(&frags, buf);
+		remaining -= len;
+	}
+
+	while ((buf = nano_fifo_get(&frags))) {
+		nano_fifo_put(&conn->tx_queue, buf);
+	}
 }
 
 static void conn_rx_fiber(int arg1, int arg2)
