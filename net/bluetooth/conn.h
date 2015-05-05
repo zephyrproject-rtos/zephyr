@@ -62,7 +62,7 @@ struct bt_conn {
 };
 
 /* Prepare a new buffer to be sent over the connection */
-struct bt_buf *bt_conn_create_pdu(struct bt_conn *conn, size_t len);
+struct bt_buf *bt_conn_create_pdu(struct bt_conn *conn);
 
 /* Process incoming data for a connection */
 void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags);

@@ -35,7 +35,7 @@ struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
 	struct bt_l2cap_hdr *hdr;
 	struct bt_buf *buf;
 
-	buf = bt_conn_create_pdu(conn, sizeof(*hdr) + len);
+	buf = bt_conn_create_pdu(conn);
 	if (!buf) {
 		return NULL;
 	}

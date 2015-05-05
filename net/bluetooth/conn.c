@@ -147,7 +147,14 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 
 void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 {
+	struct bt_hci_acl_hdr *hdr;
+	uint16_t len = buf->len;
+
 	BT_DBG("conn handle %u buf len %u\n", conn->handle, buf->len);
+
+	hdr = (void *)bt_buf_push(buf, sizeof(*hdr));
+	hdr->handle = sys_cpu_to_le16(conn->handle);
+	hdr->len = sys_cpu_to_le16(len);
 
 	nano_fifo_put(&conn->tx_queue, buf);
 }
@@ -308,20 +315,9 @@ void bt_conn_put(struct bt_conn *conn)
 	conn->handle = 0;
 }
 
-struct bt_buf *bt_conn_create_pdu(struct bt_conn *conn, size_t len)
+struct bt_buf *bt_conn_create_pdu(struct bt_conn *conn)
 {
-	struct bt_dev *dev = conn->dev;
-	struct bt_hci_acl_hdr *hdr;
-	struct bt_buf *buf;
+	size_t reserve = conn->dev->drv->head_reserve;
 
-	buf = bt_buf_get(BT_ACL_OUT, dev->drv->head_reserve);
-	if (!buf) {
-		return NULL;
-	}
-
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
-	hdr->handle = sys_cpu_to_le16(conn->handle);
-	hdr->len = len;
-
-	return buf;
+	return bt_buf_get(BT_ACL_OUT, reserve + sizeof(struct bt_hci_acl_hdr));
 }
