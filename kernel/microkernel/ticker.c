@@ -72,9 +72,17 @@ int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #endif
 
-/* these two access routines can be removed if atomic operators are
- * functional on all platforms */
-void _LowTimeInc(int inc)
+/*******************************************************************************
+*
+* sys_clock_increment - increment system clock by "N" ticks
+*
+* Interrupts are locked while updating clock since some CPUs do not support
+* native atomic operations on 64 bit values.
+*
+* RETURNS: N/A
+*/
+
+static void sys_clock_increment(int inc)
 {
 	int key = irq_lock_inline();
 
@@ -274,7 +282,7 @@ int K_ticker(int event)
 	if (_TlDebugUpdate(ticks)) {
 		_TimeSliceUpdate();
 		_HandleExpiredTimers(ticks);
-		_LowTimeInc(ticks);
+		sys_clock_increment(ticks);
 	}
 
 	return 1;

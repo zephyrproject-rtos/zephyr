@@ -67,5 +67,4 @@ extern void _k_time_elapse(struct k_args *P);
 extern void _k_node_workload_get(struct k_args *P);
 
 extern int64_t _LowTimeGet(void);
-extern void _LowTimeInc(int inc);
 #endif
