@@ -168,6 +168,10 @@ handle_dio_timer(struct net_mbuf *mbuf, void *ptr)
     }
     new_dio_interval(buf, instance);
   }
+
+#if DEBUG
+  rpl_print_neighbor_list();
+#endif
 }
 /*---------------------------------------------------------------------------*/
 void

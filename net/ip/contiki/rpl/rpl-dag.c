@@ -82,6 +82,28 @@ rpl_instance_t instance_table[RPL_MAX_INSTANCES];
 rpl_instance_t *default_instance;
 
 /*---------------------------------------------------------------------------*/
+void
+rpl_print_neighbor_list()
+{
+  if(default_instance != NULL && default_instance->current_dag != NULL &&
+      default_instance->of != NULL && default_instance->of->calculate_rank != NULL) {
+    int curr_dio_interval = default_instance->dio_intcurrent;
+    int curr_rank = default_instance->current_dag->rank;
+    rpl_parent_t *p = nbr_table_head(rpl_parents);
+
+    printf("RPL: rank %u dioint %u, %u nbr(s)\n", curr_rank, curr_dio_interval, uip_ds6_nbr_num());
+    while(p != NULL) {
+      uip_ds6_nbr_t *nbr = rpl_get_nbr(p);
+      printf("RPL: nbr %3u %5u, %5u => %5u %c\n",
+          nbr_table_get_lladdr(rpl_parents, p)->u8[7],
+          p->rank, nbr ? nbr->link_metric : 0, default_instance->of->calculate_rank(p, 0),
+          p == default_instance->current_dag->preferred_parent ? '*' : ' ');
+      p = nbr_table_next(rpl_parents, p);
+    }
+    printf("RPL: end of list\n");
+  }
+}
+/*---------------------------------------------------------------------------*/
 uip_ds6_nbr_t *
 rpl_get_nbr(rpl_parent_t *parent)
 {
@@ -738,6 +760,9 @@ rpl_select_dag(struct net_buf *buf, rpl_instance_t *instance, rpl_parent_t *p)
       rpl_schedule_dao(buf, instance);
     }
     rpl_reset_dio_timer(buf, instance);
+#if DEBUG
+    rpl_print_neighbor_list();
+#endif
   } else if(best_dag->rank != old_rank) {
     PRINTF("RPL: Preferred parent update, rank changed from %u to %u\n",
   	(unsigned)old_rank, best_dag->rank);
