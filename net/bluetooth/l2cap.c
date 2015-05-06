@@ -40,6 +40,13 @@ struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
 		return NULL;
 	}
 
+	/* Check if buf created has enough space */
+	if (bt_buf_tailroom(buf) - sizeof(*hdr) < len) {
+		BT_ERR("Buffer too short\n");
+		bt_buf_put(buf);
+		return NULL;
+	}
+
 	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
 	hdr->len = sys_cpu_to_le16(len);
 	hdr->cid = sys_cpu_to_le16(cid);
