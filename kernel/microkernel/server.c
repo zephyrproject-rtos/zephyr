@@ -1,4 +1,4 @@
-/* microk.c - VxMicro microkernel context implementation */
+/* server.c - microkernel server */
 
 /*
  * Copyright (c) 2010, 2012-2015 Wind River Systems, Inc.
@@ -32,16 +32,12 @@
 
 /*
 DESCRIPTION
-This module provides the microkernel context implementation.
+This module implements the microkernel server, which processes service requests
+from tasks (and, less commonly, fibers and ISRs). The requests are service by
+a high priority fiber, thereby ensuring that requests are processed in a timely
+manner and in a single threaded manner that prevents simultaneous requests from
+interfering with each other.
 */
-
-/*
- * Wrap the entire file in an #ifdef CONFIG_MICROKERNEL since it's located
- * in a nanokernel build directory.  This will ensure a zero sized object
- * module for a nanokernel only build.
- */
-
-#ifdef CONFIG_MICROKERNEL
 
 #include <toolchain.h>
 #include <sections.h>
@@ -173,8 +169,9 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			}
 			if (_k_current_task->Ident == 0x00000000) {
 				_k_workload_end_time = timer_read();
-				_k_workload_i += (_k_workload_i0 * (_k_workload_end_time - _k_workload_start_time)) /
-					 _k_workload_delta;
+				_k_workload_i += (_k_workload_i0 *
+					(_k_workload_end_time - _k_workload_start_time)) /
+					_k_workload_delta;
 			}
 #endif
 #endif
@@ -256,5 +253,3 @@ FUNC_NORETURN void _TaskAbort(void)
 	CODE_UNREACHABLE;
 }
 #endif
-
-#endif /* CONFIG_MICROKERNEL */
