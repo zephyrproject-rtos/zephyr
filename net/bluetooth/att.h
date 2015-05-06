@@ -101,5 +101,25 @@ struct bt_att_find_info_rsp {
 	uint8_t  info[0];
 } PACK_STRUCT;
 
+/* Find By Type Value Request */
+#define BT_ATT_OP_FIND_TYPE_REQ			0x06
+struct bt_att_find_type_req {
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint16_t type;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
+struct bt_att_handle_group {
+	uint16_t start_handle;
+	uint16_t end_handle;
+} PACK_STRUCT;
+
+/* Find By Type Value Response */
+#define BT_ATT_OP_FIND_TYPE_RSP			0x07
+struct bt_att_find_type_rsp {
+	struct bt_att_handle_group list[0];
+} PACK_STRUCT;
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
