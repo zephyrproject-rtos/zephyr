@@ -125,7 +125,8 @@ void _sem_give(
 *
 * This routine performs a "give" operation on a nanokernel sempahore object;
 * it can only be called from a task context.  A fiber pending on the
-* semaphore object will be made ready, and will be scheduled to execute.
+* semaphore object will be made ready, and will preempt the running task
+* immediately.
 *
 * RETURNS: N/A
 */
@@ -140,7 +141,6 @@ void nano_task_sem_give(
 	imask = irq_lock_inline();
 	ccs = _nano_wait_q_remove(&sem->wait_q);
 	if (ccs != (tCCS *)NULL) {
-		/* swap into the newly ready fiber */
 		_Swap(imask);
 		return;
 	} else {

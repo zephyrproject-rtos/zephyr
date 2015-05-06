@@ -137,7 +137,7 @@ void _stack_push(
 *
 * This routine pushes a data item onto a stack object; it may be called only
 * from a task context.  A fiber pending on the stack object will be
-* made ready, and will be scheduled to execute.
+* made ready, and will preempt the running task immediately.
 *
 * RETURNS: N/A
 */
@@ -157,9 +157,6 @@ void nano_task_stack_push(
 		stack->proc = 0;
 		fiberRtnValueSet(ccs, data);
 		_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
-
-		/* swap into the newly ready fiber */
-
 		_Swap(imask);
 		return;
 	} else {

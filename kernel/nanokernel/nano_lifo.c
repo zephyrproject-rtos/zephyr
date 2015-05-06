@@ -133,7 +133,7 @@ void _lifo_put(
 *
 * This routine adds an element to the head of a lifo object; it can be
 * called only from a task context.  A fiber pending on the lifo
-* object will be made ready, and will be scheduled to execute.
+* object will be made ready, and will preempt the running task immediately.
 *
 * This routine is only callable by a task.
 *
@@ -152,9 +152,6 @@ void nano_task_lifo_put(
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs != (tCCS *)NULL) {
 		fiberRtnValueSet(ccs, (unsigned int)data);
-
-		/* swap into the newly ready fiber */
-
 		_Swap(imask);
 		return;
 	} else {

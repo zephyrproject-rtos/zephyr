@@ -155,7 +155,7 @@ void _fifo_put(
 *
 * This routine adds an element to the end of a fifo object; it can be called
 * from only a task context.  A fiber pending on the fifo object will be made
-* ready, and will be scheduled to execute.
+* ready, and will preempt the running task immediately.
 *
 * If a fiber is waiting on the fifo, the address of the element is returned to
 * the waiting fiber.  Otherwise, the element is linked to the end of the list.
@@ -176,9 +176,6 @@ void nano_task_fifo_put(
 	if (fifo->stat <= 0) {
 		tCCS *ccs = _nano_wait_q_remove_no_check(&fifo->wait_q);
 		fiberRtnValueSet(ccs, (unsigned int)data);
-
-		/* swap into the fiber just made ready */
-
 		_Swap(imask);
 		return;
 	} else {
