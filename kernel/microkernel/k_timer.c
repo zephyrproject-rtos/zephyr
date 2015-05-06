@@ -148,6 +148,56 @@ void delist_timeout(K_TIMER *T)
 
 /*******************************************************************************
 *
+* _k_timer_list_update - handle expired timers
+*
+* Process the sorted list of timers associated with waiting tasks and
+* activate each task whose timer has now expired.
+*
+* With tickless idle, a tick announcement may encompass multiple ticks.
+* Due to limitations of the underlying timer driver, the number of elapsed
+* ticks may -- under very rare circumstances -- exceed the first timer's
+* remaining tick count, although never by more a single tick. This means that
+* a task timer may occasionally expire one tick later than it was scheduled to,
+* and that a periodic timer may exhibit a slow, ever-increasing degree of drift
+* from the main system timer over long intervals.
+*
+* RETURNS: N/A
+*
+* \NOMANUAL
+*/
+
+void _k_timer_list_update(int ticks)
+{
+	K_TIMER *T;
+
+	while (_k_timer_list_head != NULL) {
+		_k_timer_list_head->duration -= ticks;
+
+		if (_k_timer_list_head->duration > 0) {
+			return;
+		}
+
+		T = _k_timer_list_head;
+		if (T == _k_timer_list_tail) {
+			_k_timer_list_head = _k_timer_list_tail = NULL;
+		} else {
+			_k_timer_list_head = T->Forw;
+			_k_timer_list_head->Back = NULL;
+		}
+		if (T->period) {
+			T->duration = T->period;
+			enlist_timer(T);
+		} else {
+			T->duration = -1;
+		}
+		TO_ALIST(&_k_command_stack, T->Args);
+
+		ticks = 0; /* don't decrement duration for subsequent timer(s) */
+	}
+}
+
+/*******************************************************************************
+*
 * _k_timer_alloc - handle timer allocation request
 *
 * This routine, called by K_swapper(), handles the request for allocating a
