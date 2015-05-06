@@ -48,6 +48,8 @@ This module implements the microkernel's tick event handler.
 #include <toolchain.h>
 #include <sections.h>
 
+int64_t _k_sys_clock_tick_count = 0;
+
 #ifdef CONFIG_TIMESLICING
 static int32_t slice_count = (int32_t)0;
 static int32_t slice_time = (int32_t)CONFIG_TIMESLICE_SIZE;
@@ -69,6 +71,26 @@ int sys_clock_hw_cycles_per_tick =
 int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #endif
+
+/* these two access routines can be removed if atomic operators are
+ * functional on all platforms */
+void _LowTimeInc(int inc)
+{
+	int key = irq_lock_inline();
+
+	_k_sys_clock_tick_count += inc;
+	irq_unlock_inline(key);
+}
+
+int64_t _LowTimeGet(void)
+{
+	int64_t ticks;
+	int key = irq_lock_inline();
+	ticks = _k_sys_clock_tick_count;
+
+	irq_unlock_inline(key);
+	return ticks;
+}
 
 /*******************************************************************************
 *

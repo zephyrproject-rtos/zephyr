@@ -39,6 +39,9 @@
 #include <kticks.h>
 #include <drivers/system_timer.h>
 
+K_TIMER  *_k_timer_list_head = NULL;
+K_TIMER  *_k_timer_list_tail = NULL;
+
 /*******************************************************************************
 *
 * task_cycle_get_32 - read the processor's high precision timer
