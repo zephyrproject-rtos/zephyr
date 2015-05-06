@@ -50,6 +50,7 @@ endif
 	$qecho $(foreach path,${LIB_INCLUDE_DIR},-L $(subst \,/,${path}) ) >> ${vOUT_DIR}/lflags
 	$qecho -Wl,--start-group $(foreach alib,${ALL_LIBS},-l${alib}) >> ${vOUT_DIR}/lflags
 	$qecho ${vKLIB_DIR}/offsets.$o >> ${vOUT_DIR}/lflags
+	$qecho  -Wl,--end-group>> ${vOUT_DIR}/lflags
 	$q$(HOS_Cat3Files) ${vOUT_DIR}/lflags ${iUSR} ${iMEM} $@ > ${HOS_DEVNULL_W}
 	-$q${HOS_DeleteFiles} ${vOUT_DIR}/lflags
 
