@@ -1,3 +1,3 @@
 EXTRA_CFLAGS +=-I$(srctree)/kernel/microkernel/include
 
-obj-y = movedata.o ks_moved.o
+obj-y = movedata.o
