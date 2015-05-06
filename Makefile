@@ -406,7 +406,7 @@ KBUILD_CPPFLAGS := -DKERNEL
 
 DEFAULTFLAGS ?= -Os
 
-KBUILD_CFLAGS   := -c -g -std=c99
+KBUILD_CFLAGS   := -c -g -std=c99 \
 		$(DEFAULTFLAGS) \
 		$(CONFIG_COMPILER_OPT) \
 		-fno-reorder-functions \
