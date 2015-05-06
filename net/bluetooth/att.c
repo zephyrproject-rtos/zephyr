@@ -118,7 +118,7 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		goto done;
 	}
 
-	BT_DBG("Received ATT code %u len %u\n", buf->len);
+	BT_DBG("Received ATT code %u len %u\n", hdr->code, buf->len);
 
 	bt_buf_pull(buf, sizeof(*hdr));
 
