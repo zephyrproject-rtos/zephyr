@@ -1,6 +1,5 @@
 LTO_FLAG-y = $(call cc-option,-flto,)
-SECTION_GC_FLAG-y = $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
-SECTION_GC_FLAG = $(SECTION_GC_FLAG-$(CONFIG_SECTION_GARBAGE_COLLECTION))
+SECTION_GC_FLAG = $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
 arm_FLAGS = $(call cc-option,-mthumb,)
 ifeq ($(CONFIG_CPU_CORTEXM3),y)
 arm_FLAGS += -mcpu=cortex-m3
