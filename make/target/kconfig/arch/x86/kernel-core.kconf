@@ -80,10 +80,5 @@ source "debug.kconf"
 endmenu
 
 menu "Miscellaneous Kernel Options"
-config	KHEAP_SIZE_FIXED
-	bool
-# omit prompt to signify a "hidden" option
-	default y
-
 source "misc.kconf"
 endmenu

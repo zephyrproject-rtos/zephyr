@@ -93,15 +93,6 @@ config  COMMAND_STACK_SIZE
 	  This option specifies the maximum number of command packets that
 	  can be queued up for processing by the kernel's K_swapper fiber.
 
-config	KHEAP_SIZE
-	int
-	prompt "Kernel heap size (in bytes)"
-	default 4096
-	depends on MICROKERNEL && KHEAP_SIZE_FIXED
-	help
-	  This option specifies the size of the kernel heap used by malloc().
-	  The size of this heap cannot be later increased at run time.
-
 config  SYS_CLOCK_TICKS_PER_SEC
 	int
 	prompt "System tick frequency" if !NO_ISRS
