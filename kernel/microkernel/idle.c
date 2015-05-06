@@ -72,8 +72,9 @@ extern uint32_t _k_workload_scale;
 *
 * Perform idle task "dummy work".
 *
-* This routine increments _k_workload_i and checks it against _k_workload_n1. _k_workload_n1 is updated
-* by the system tick handler, and both are kept in close synchronization.
+* This routine increments _k_workload_i and checks it against _k_workload_n1.
+* _k_workload_n1 is updated by the system tick handler, and both are kept
+* in close synchronization.
 *
 * RETURNS: N/A
 *
@@ -84,9 +85,9 @@ static void _workload_loop(void)
 	volatile int x = 87654321;
 	volatile int y = 4;
 
-	while (++_k_workload_i != _k_workload_n1) /* except for the calibration phase,
-				  * this while loop should always be true.
-				  */
+	/* loop never terminates, except during calibration phase */
+
+	while (++_k_workload_i != _k_workload_n1) 
 	{
 		unsigned int s_iCountDummyProc = 0;
 		while (64 != s_iCountDummyProc++) { /* 64 == 2^6 */
@@ -123,7 +124,8 @@ void workload_monitor_calibrate(void)
 	_k_workload_delta = _k_workload_t1 - _k_workload_t0;
 	_k_workload_i0 = _k_workload_i;
 #ifdef WL_SCALE
-	_k_workload_ref_time = (_k_workload_t1 - _k_workload_t0) >> (_k_workload_scale);
+	_k_workload_ref_time =
+		(_k_workload_t1 - _k_workload_t0) >> (_k_workload_scale);
 #else
 	_k_workload_ref_time = (_k_workload_t1 - _k_workload_t0) >> (4 + 6);
 #endif
@@ -234,13 +236,12 @@ extern void nano_cpu_set_idle(int32_t ticks);
  * Idle time must be this value or higher for timer to go into tickless idle
  * state.
  */
-int32_t _sys_idle_threshold_ticks =
-	CONFIG_TICKLESS_IDLE_THRESH;
+int32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 /*******************************************************************************
 *
-* _sys_power_save_idle - power management policy when kernel is idle
+* _sys_power_save_idle - power management policy when kernel begins idling
 *
 * This routine implements the power management policy based on the time
 * until the timer expires, in system ticks.
@@ -254,12 +255,16 @@ int32_t _sys_idle_threshold_ticks =
 void _sys_power_save_idle(int32_t ticks)
 {
 #if defined(CONFIG_TICKLESS_IDLE)
-	if ((ticks == -1) || ticks >= _sys_idle_threshold_ticks) {
-		/* Put the system timer into idle state until the next timer
-		 * event */
+	if ((ticks == TICKS_UNLIMITED) || ticks >= _sys_idle_threshold_ticks) {
+		/*
+		 * Stop generating system timer interrupts until it's time for
+		 * the next scheduled microkernel timer to expire. 
+		 */
+
 		_timer_idle_enter(ticks);
 	}
 #endif /* CONFIG_TICKLESS_IDLE */
+
 #ifdef CONFIG_ADVANCED_IDLE
 	/*
 	 * Call the advanced sleep function, which checks if the system should
@@ -281,10 +286,10 @@ void _sys_power_save_idle(int32_t ticks)
 
 /*******************************************************************************
 *
-* _sys_power_save_idle_exit - power management policy when kernel leaves idle state
+* _sys_power_save_idle_exit - power management policy when kernel stops idling
 *
-* This routine implements the power management policy when kernel leaves idle
-* state. Routine can be modified to wake up other devices.
+* This routine is invoked when the kernel leaves the idle state.
+* Routine can be modified to wake up other devices.
 * The routine is invoked from interrupt context, with interrupts disabled.
 *
 * RETURNS: N/A
@@ -295,7 +300,9 @@ void _sys_power_save_idle(int32_t ticks)
 void _sys_power_save_idle_exit(int32_t ticks)
 {
 #ifdef CONFIG_TICKLESS_IDLE
-	if ((ticks == -1) || ticks >= _sys_idle_threshold_ticks) {
+	if ((ticks == TICKS_UNLIMITED) || ticks >= _sys_idle_threshold_ticks) {
+		/* Resume normal periodic system timer interrupts */
+
 		_timer_idle_exit();
 	}
 #else
@@ -339,8 +346,6 @@ static inline int32_t _get_next_timer_expiry(void)
 static void _power_save(void)
 {
 	extern void nano_cpu_idle(void);
-	extern unsigned char _sys_power_save_flag;
-	extern void _sys_power_save_idle(int32_t ticks);
 
 	if (_sys_power_save_flag) {
 		for (;;) {
@@ -349,20 +354,18 @@ static void _power_save(void)
 			_sys_power_save_idle(_get_next_timer_expiry());
 #else
 			/*
-			 * nano_cpu_idle () is invoked here directly only if APM
-			 * is
-			 * disabled. Otherwise BSP decides either to invoke it
-			 * or
+			 * nano_cpu_idle () is invoked here directly only if APM is
+			 * disabled. Otherwise BSP decides either to invoke it or
 			 * to implement advanced idle functionality
 			 */
+
 			nano_cpu_idle();
 #endif
 		}
 
 		/*
 		 * Code analyzers may complain that _power_save() uses an
-		 * infinite loop
-		 * unless we indicate that this is intentional
+		 * infinite loop unless we indicate that this is intentional
 		 */
 
 		CODE_UNREACHABLE;
@@ -386,8 +389,8 @@ int kernel_idle(void)
 	_power_save(); /* never returns if power saving is enabled */
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	/* Power saving not enabled, so record timestamp when idle begins here
-	 */
+	/* record timestamp when idling begins */
+
 	extern uint64_t __idle_tsc;
 	__idle_tsc = _NanoTscRead();
 #endif
