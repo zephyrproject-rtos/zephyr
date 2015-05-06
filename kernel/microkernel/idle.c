@@ -372,13 +372,19 @@ static void _power_save(void)
 	}
 }
 
+/* Specify what work to do when idle task is "busy waiting" */
+
+#ifdef CONFIG_WORKLOAD_MONITOR
+#define DO_IDLE_WORK()	_workload_loop();
+#else
+#define DO_IDLE_WORK()	do { /* do nothing */ } while (0)
+#endif
+
 /*******************************************************************************
 *
 * kernel_idle - microkernel idle task
 *
-* If power save is on, we sleep. If power save is off, we will try to do
-* workload monitoring.  If power save is off and workload monitoring
-* is not included, we have to busy wait.
+* If power save is on, we sleep; if power save is off, we "busy wait".
 *
 * RETURNS: N/A
 *
@@ -395,12 +401,8 @@ int kernel_idle(void)
 	__idle_tsc = _NanoTscRead();
 #endif
 
-#ifdef CONFIG_WORKLOAD_MONITOR
-	_workload_loop();
-#endif
-
 	for (;;) {
-		/* do nothing */
+		DO_IDLE_WORK();
 	}
 
 	/*
