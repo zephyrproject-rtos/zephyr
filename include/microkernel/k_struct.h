@@ -44,17 +44,19 @@ extern "C" {
 
 typedef union k_args_args K_ARGS_ARGS;
 
-struct k_timer;
-typedef struct k_timer K_TIMER;
+/* Kernel timer structure (non-public) */
 
-struct k_timer { /* For pointer declarations only !!	  */
-	      /* Do not access fields in user code.	  */
-	K_TIMER *Forw;
-	K_TIMER *Back;
+struct k_timer {
+	struct k_timer *Forw;
+	struct k_timer *Back;
 	int32_t duration;
 	int32_t period;
 	struct k_args *Args;
-}; /* use K_TIMER as the timer type name */
+};
+
+/* Kernel timer type (public) */
+
+typedef struct k_timer K_TIMER;
 
 /* ---------------------------------------------------------------------- */
 /* PROCESSOR SPECIFIC TYPES & DATA STRUCTURES */
