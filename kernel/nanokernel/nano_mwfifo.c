@@ -92,8 +92,8 @@ void nano_fifo_init(
 	fifo->stat = 0;
 }
 
-FUNC_ALIAS(_fifo_put, nano_isr_fifo_put, void);
-FUNC_ALIAS(_fifo_put, nano_fiber_fifo_put, void);
+FUNC_ALIAS(_fifo_put_non_preemptible, nano_isr_fifo_put, void);
+FUNC_ALIAS(_fifo_put_non_preemptible, nano_fiber_fifo_put, void);
 
 /*******************************************************************************
 *
@@ -111,7 +111,7 @@ static inline void enqueue_data(struct nano_fifo *fifo, void *data)
 
 /*******************************************************************************
 *
-* _fifo_put - add an element to the end of a fifo
+* _fifo_put_non_preemptible - append an element to a fifo (no context switch)
 *
 * This routine adds an element to the end of a fifo object; it may be called
 * from either either a fiber or an ISR context.   A fiber pending on the fifo
@@ -129,7 +129,7 @@ static inline void enqueue_data(struct nano_fifo *fifo, void *data)
 * without introducing a source code migration issue.
 */
 
-void _fifo_put(
+void _fifo_put_non_preemptible(
 	struct nano_fifo *fifo,	/* fifo on which to interact */
 	void *data				/* data to send */
 	)

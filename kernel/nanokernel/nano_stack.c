@@ -85,15 +85,15 @@ void nano_stack_init(
  * interface), an an alias will be generated.
  */
 
-FUNC_ALIAS(_stack_push, _Cpsh, void);
+FUNC_ALIAS(_stack_push_non_preemptible, _Cpsh, void);
 #endif /* CONFIG_MICROKERNEL */
 
-FUNC_ALIAS(_stack_push, nano_isr_stack_push, void);
-FUNC_ALIAS(_stack_push, nano_fiber_stack_push, void);
+FUNC_ALIAS(_stack_push_non_preemptible, nano_isr_stack_push, void);
+FUNC_ALIAS(_stack_push_non_preemptible, nano_fiber_stack_push, void);
 
 /*******************************************************************************
 *
-* _stack_push - push data onto a nanokernel stack
+* _stack_push_non_preemptible - push data onto a stack (no context switch)
 *
 * This routine pushes a data item onto a stack object; it may be called from
 * either a fiber or ISR context.  A fiber pending on the stack object will be
@@ -108,7 +108,7 @@ FUNC_ALIAS(_stack_push, nano_fiber_stack_push, void);
 * the future without introducing a source code migration issue.
 */
 
-void _stack_push(
+void _stack_push_non_preemptible(
 	struct nano_stack *stack, /* stack on which to interact */
 	uint32_t data /* data to push on stack */
 	)

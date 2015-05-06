@@ -84,15 +84,15 @@ void nano_lifo_init(
  * an alias will be generated.
  */
 
-FUNC_ALIAS(_lifo_put, _Cput, void);
+FUNC_ALIAS(_lifo_put_non_preemptible, _Cput, void);
 #endif /* CONFIG_MICROKERNEL */
 
-FUNC_ALIAS(_lifo_put, nano_isr_lifo_put, void);
-FUNC_ALIAS(_lifo_put, nano_fiber_lifo_put, void);
+FUNC_ALIAS(_lifo_put_non_preemptible, nano_isr_lifo_put, void);
+FUNC_ALIAS(_lifo_put_non_preemptible, nano_fiber_lifo_put, void);
 
 /*******************************************************************************
 *
-* _lifo_put - add an element to the head of a linked list lifo
+* _lifo_put_non_preemptible - prepend an element to a lifo (no context switch)
 *
 * This routine adds an element to the head of a lifo object; it may be
 * called from either a fiber or an ISR context.  A fiber pending on the lifo
@@ -107,7 +107,7 @@ FUNC_ALIAS(_lifo_put, nano_fiber_lifo_put, void);
 * without introducing a source code migration issue.
 */
 
-void _lifo_put(
+void _lifo_put_non_preemptible(
 	struct nano_lifo *lifo, /* lifo on which to put */
 	void *data				/* data to insert */
 	)

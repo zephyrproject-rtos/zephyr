@@ -82,12 +82,12 @@ void nano_sem_init(
 	_nano_wait_q_init(&sem->wait_q);
 }
 
-FUNC_ALIAS(_sem_give, nano_isr_sem_give, void);
-FUNC_ALIAS(_sem_give, nano_fiber_sem_give, void);
+FUNC_ALIAS(_sem_give_non_preemptible, nano_isr_sem_give, void);
+FUNC_ALIAS(_sem_give_non_preemptible, nano_fiber_sem_give, void);
 
 /*******************************************************************************
 *
-* _sem_give - give a nanokernel semaphore
+* _sem_give_non_preemptible - give a nanokernel semaphore (no context switch)
 *
 * This routine performs a "give" operation on a nanokernel sempahore object;
 * it may be call from either a fiber or an ISR context.  A fiber pending on
@@ -103,7 +103,7 @@ FUNC_ALIAS(_sem_give, nano_fiber_sem_give, void);
 * without introducing a source code migration issue.
 */
 
-void _sem_give(
+void _sem_give_non_preemptible(
 	struct nano_sem *sem /* semaphore on which to signal */
 	)
 {
