@@ -79,7 +79,7 @@ uip_debug_lladdr_print(const uip_lladdr_t *addr)
     if(i > 0) {
       PRINTA(":");
     }
-    PRINTA("%02x", addr->addr[i]);
+    PRINTA("%x", addr->addr[i]);
   }
 }
 /*---------------------------------------------------------------------------*/
