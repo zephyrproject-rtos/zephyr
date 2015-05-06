@@ -330,5 +330,92 @@ rpl_cancel_dao(rpl_instance_t *instance)
   ctimer_stop(&instance->dao_lifetime_timer);
 }
 /*---------------------------------------------------------------------------*/
+#if RPL_WITH_PROBING
+static rpl_parent_t *
+get_probing_target(rpl_dag_t *dag)
+{
+  /* Returns the next probing target. The current implementation looks for the
+   * best parent to which we have not transmitted since 2 * RPL_PROBING_INTERVAL.
+   * This will mostly select the preferred and second best parents. Probing the
+   * second best parent is important: if the link is good, RPL might choose to
+   * switch to it. If the link is bad, the second best parent will decrease in
+   * ranking, and another parent will be probed next time. */
 
+  rpl_parent_t *p;
+  rpl_parent_t *probing_target;
+  rpl_rank_t probing_target_rank;
+  /* Look for a parent we have not sent to since 2 * RPL_PROBING_INTERVAL,
+   * e.g. with last_tx_time earlier than min_last_tx */
+  clock_time_t min_last_tx = clock_time();
+  min_last_tx = min_last_tx > 2 * RPL_PROBING_INTERVAL ? min_last_tx - 2 * RPL_PROBING_INTERVAL : 1;
+
+  if(dag == NULL ||
+      dag->instance == NULL ||
+      dag->preferred_parent == NULL) {
+    return NULL;
+  }
+
+  /* Our preferred parent needs probing */
+  if(dag->preferred_parent->last_tx_time < min_last_tx) {
+    return dag->preferred_parent;
+  }
+
+  /* Look for the best parent that needs probing. */
+  probing_target = NULL;
+  probing_target_rank = INFINITE_RANK;
+  p = nbr_table_head(rpl_parents);
+  while(p != NULL) {
+    if(p->dag == dag && p->last_tx_time < min_last_tx) {
+      rpl_rank_t p_rank = dag->instance->of->calculate_rank(p, 0);
+      /* p is in our dag and needs probing */
+      if(probing_target == NULL) {
+        probing_target = p;
+        probing_target_rank = p_rank;
+      } else {
+        if(p_rank < probing_target_rank) {
+          /* Found better candidate */
+          probing_target = p;
+          probing_target_rank = p_rank;
+        }
+      }
+    }
+    p = nbr_table_next(rpl_parents, p);
+  }
+
+  return probing_target;
+}
+/*---------------------------------------------------------------------------*/
+static void
+handle_probing_timer(struct net_mbuf *mbuf, void *ptr)
+{
+  struct net_buf *buf = (struct net_buf *)mbuf;
+
+  rpl_instance_t *instance = (rpl_instance_t *)ptr;
+  rpl_parent_t *probing_target = RPL_PROBING_SELECT_FUNC(instance->current_dag);
+
+  /* Perform probing */
+  if(probing_target != NULL && rpl_get_parent_ipaddr(probing_target) != NULL) {
+    PRINTF("RPL: probing %3u\n",
+        nbr_table_get_lladdr(rpl_parents, probing_target)->u8[7]);
+    /* Send probe, e.g. unicast DIO or DIS */
+    RPL_PROBING_SEND_FUNC(buf, instance, rpl_get_parent_ipaddr(probing_target));
+  }
+
+  /* Schedule next probing */
+  rpl_schedule_probing(instance);
+
+#if DEBUG
+  rpl_print_neighbor_list();
+#endif
+}
+/*---------------------------------------------------------------------------*/
+void
+rpl_schedule_probing(rpl_instance_t *instance)
+{
+  clock_time_t delay = (RPL_PROBING_INTERVAL / 2) +
+      random_rand() % (RPL_PROBING_INTERVAL / 2);
+  ctimer_set(NULL, &instance->probing_timer, delay,
+                  handle_probing_timer, instance);
+}
+#endif /* RPL_WITH_PROBING */
 /** @}*/

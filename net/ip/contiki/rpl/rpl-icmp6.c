@@ -466,8 +466,12 @@ dio_output(struct net_buf *buf, rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
 
   buffer[pos++] = instance->dtsn_out;
 
-  /* always request new DAO to refresh route */
-  RPL_LOLLIPOP_INCREMENT(instance->dtsn_out);
+  if(uc_addr == NULL) {
+    /* Request new DAO to refresh route. We do not do this for unicast DIO
+     * in order to avoid DAO messages after a DIS-DIO update,
+     * or upon unicast DIO probing. */
+    RPL_LOLLIPOP_INCREMENT(instance->dtsn_out);
+  }
 
   /* reserved 2 bytes */
   buffer[pos++] = 0; /* flags */

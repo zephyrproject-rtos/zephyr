@@ -75,7 +75,7 @@ static rpl_of_t * const objective_functions[] = {&RPL_OF};
 
 /*---------------------------------------------------------------------------*/
 /* Per-parent RPL information */
-NBR_TABLE(rpl_parent_t, rpl_parents);
+NBR_TABLE_GLOBAL(rpl_parent_t, rpl_parents);
 /*---------------------------------------------------------------------------*/
 /* Allocate instance table. */
 rpl_instance_t instance_table[RPL_MAX_INSTANCES];
@@ -90,14 +90,17 @@ rpl_print_neighbor_list()
     int curr_dio_interval = default_instance->dio_intcurrent;
     int curr_rank = default_instance->current_dag->rank;
     rpl_parent_t *p = nbr_table_head(rpl_parents);
+    clock_time_t now = clock_time();
 
     printf("RPL: rank %u dioint %u, %u nbr(s)\n", curr_rank, curr_dio_interval, uip_ds6_nbr_num());
     while(p != NULL) {
       uip_ds6_nbr_t *nbr = rpl_get_nbr(p);
-      printf("RPL: nbr %3u %5u, %5u => %5u %c\n",
+      printf("RPL: nbr %3u %5u, %5u => %5u %c (last tx %u min ago)\n",
           nbr_table_get_lladdr(rpl_parents, p)->u8[7],
-          p->rank, nbr ? nbr->link_metric : 0, default_instance->of->calculate_rank(p, 0),
-          p == default_instance->current_dag->preferred_parent ? '*' : ' ');
+          p->rank, nbr ? nbr->link_metric : 0,
+          default_instance->of->calculate_rank(p, 0),
+          p == default_instance->current_dag->preferred_parent ? '*' : ' ',
+          (now - p->last_tx_time) / (60 * CLOCK_SECOND));
       p = nbr_table_next(rpl_parents, p);
     }
     printf("RPL: end of list\n");
@@ -309,7 +312,7 @@ rpl_set_root(struct net_buf *buf, uint8_t instance_id, uip_ipaddr_t *dag_id)
         } else {
           PRINTF("RPL: Dropping a DAG when setting this node as root");
         }
-        rpl_free_dag(dag);
+        rpl_free_dag(buf, dag);
       }
     }
   }
@@ -506,6 +509,9 @@ rpl_alloc_instance(uint8_t instance_id)
       instance->instance_id = instance_id;
       instance->def_route = NULL;
       instance->used = 1;
+#if RPL_WITH_PROBING
+      rpl_schedule_probing(instance);
+#endif /* RPL_WITH_PROBING */
       return instance;
     }
   }
@@ -565,6 +571,9 @@ rpl_free_instance(struct net_buf *buf, rpl_instance_t *instance)
 
   rpl_set_default_route(instance, NULL);
 
+#if RPL_WITH_PROBING
+  ctimer_stop(&instance->probing_timer);
+#endif /* RPL_WITH_PROBING */
   ctimer_stop(&instance->dio_timer);
   ctimer_stop(&instance->dao_timer);
   ctimer_stop(&instance->dao_lifetime_timer);
