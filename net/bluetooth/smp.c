@@ -44,11 +44,34 @@
 #include "l2cap.h"
 #include "smp.h"
 
+struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
+{
+	struct bt_smp_hdr *hdr;
+	struct bt_buf *buf;
+
+	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_SMP, sizeof(*hdr) + len);
+	if (!buf)
+		return NULL;
+
+	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	hdr->code = op;
+
+	return buf;
+}
+
 static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 {
-	/* TODO: implement err response */
+	struct bt_smp_pairing_fail *rsp;
+	struct bt_buf *buf;
 
-	return;
+	buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_FAIL, sizeof(*rsp));
+	if (!buf)
+		return;
+
+	rsp = (void *)bt_buf_add(buf, sizeof(*rsp));
+	rsp->reason = reason;
+
+	bt_conn_send(conn, buf);
 }
 
 void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
