@@ -44,53 +44,6 @@ K_TIMER  *_k_timer_list_tail = NULL;
 
 /*******************************************************************************
 *
-* task_cycle_get_32 - read the processor's high precision timer
-*
-* This routine reads the processor's high precision timer.  It reads the
-* counter register on the timer device. This counter register increments
-* at a relatively high rate (e.g. 20 MHz), and thus is considered a
-* "high resolution" timer.  This is in contrast to nano_tick_get_32() and
-* task_tick_get_32() which return the value of the kernel ticks variable.
-*
-* RETURNS: current high precision clock value
-*/
-
-uint32_t task_cycle_get_32(void)
-{
-	return timer_read();
-}
-
-/*******************************************************************************
-*
-* task_tick_get - read the current system clock value
-*
-* This routine returns the current system clock value as measured in ticks.
-*
-* RETURNS: current system clock value
-*/
-
-int64_t task_tick_get(void)
-{
-	return _LowTimeGet();
-}
-
-/*******************************************************************************
-*
-* task_tick_get_32 - read the current system clock value
-*
-* This routine returns the lower 32-bits of the current system clock value
-* as measured in ticks.
-*
-* RETURNS: lower 32-bit of the current system clock value
-*/
-
-int32_t task_tick_get_32(void)
-{
-	return (int32_t)_k_sys_clock_tick_count;
-}
-
-/*******************************************************************************
-*
 * enlist_timer - insert a timer into the timer queue
 *
 * RETURNS: N/A
@@ -501,54 +454,4 @@ void task_sleep(int32_t ticks /* number of ticks for which to sleep */
 	A.Comm = SLEEP;
 	A.Time.ticks = ticks;
 	KERNEL_ENTRY(&A);
-}
-
-/*******************************************************************************
-*
-* _k_time_elapse - handle elapsed ticks calculation request
-*
-* This routine, called by K_swapper(), handles the request for calculating the
-* time elapsed since the specified reference time.
-*
-* RETURNS: N/A
-*/
-
-void _k_time_elapse(struct k_args *P)
-{
-	int64_t now = _LowTimeGet();
-
-	P->Args.c1.time2 = (int32_t)(now - P->Args.c1.time1);
-	P->Args.c1.time1 = now;
-}
-
-/*******************************************************************************
-*
-* task_tick_delta - return ticks between calls
-*
-* This function is meant to be used in contained fragments of code. The first
-* call to it in a particular code fragment fills in a reference time variable
-* which then gets passed and updated every time the function is called. From
-* the second call on, the delta between the value passed to it and the current
-* tick count is the return value. Since the first call is meant to only fill in
-* the reference time, its return value should be discarded.
-*
-* Since a code fragment that wants to use task_tick_delta() passes in its
-* own reference time variable, multiple code fragments can make use of this
-* function concurrently.
-*
-* Note that it is not necessary to allocate a timer to use this call.
-*
-* RETURNS: elapsed time in system ticks
-*/
-
-int32_t task_tick_delta(int64_t *reftime /* pointer to reference time */
-			   )
-{
-	struct k_args A;
-
-	A.Comm = ELAPSE;
-	A.Args.c1.time1 = *reftime;
-	KERNEL_ENTRY(&A);
-	*reftime = A.Args.c1.time1;
-	return A.Args.c1.time2;
 }
