@@ -1,4 +1,7 @@
-/* l2cap.h - L2CAP handling */
+/**
+ * @file smp.h
+ * Security Manager Protocol implementation header
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -30,50 +33,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define BT_L2CAP_CID_ATT		0x0004
-#define BT_L2CAP_CID_LE_SIG		0x0005
-#define BT_L2CAP_CID_SMP		0x0006
-
-struct bt_l2cap_hdr {
-	uint16_t len;
-	uint16_t cid;
-} PACK_STRUCT;
-
-struct bt_l2cap_sig_hdr {
+struct bt_smp_hdr {
 	uint8_t  code;
-	uint8_t  ident;
-	uint16_t len;
 } PACK_STRUCT;
 
-#define BT_L2CAP_REJ_NOT_UNDERSTOOD	0x0000
-#define BT_L2CAP_REJ_MTU_EXCEEDED	0x0001
-#define BT_L2CAP_REJ_INVALID_CID	0x0002
+#define BT_SMP_ERR_PASSKEY_ENTRY_FAILED		0x01
+#define BT_SMP_ERR_OOB_NOT_AVAIL		0x02
+#define BT_SMP_ERR_AUTH_REQUIREMENTS		0x03
+#define BT_SMP_ERR_CONFIRM_FAILED		0x04
+#define BT_SMP_ERR_PAIRING_NOTSUPP		0x05
+#define BT_SMP_ERR_ENC_KEY_SIZE			0x06
+#define BT_SMP_ERR_CMD_NOTSUPP			0x07
+#define BT_SMP_ERR_UNSPECIFIED			0x08
+#define BT_SMP_ERR_REPEATED_ATTEMPTS		0x09
+#define BT_SMP_ERR_INVALID_PARAMS		0x0a
+#define BT_SMP_ERR_DHKEY_CHECK_FAILED		0x0b
+#define BT_SMP_ERR_NUMERIC_COMP_FAILED		0x0c
+#define BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS	0x0d
+#define BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED	0x0e
 
-#define BT_L2CAP_CMD_REJECT		0x01
-struct bt_l2cap_cmd_reject {
-	uint16_t reason;
-	uint8_t  data[0];
-} PACK_STRUCT;
-
-#define BT_L2CAP_CONN_PARAM_REQ		0x12
-struct bt_l2cap_conn_param_req {
-	uint16_t min_interval;
-	uint16_t max_interval;
-	uint16_t latency;
-	uint16_t timeout;
-} PACK_STRUCT;
-
-#define BT_L2CAP_CONN_PARAM_RSP		0x13
-struct bt_l2cap_conn_param_rsp {
-	uint16_t result;
-} PACK_STRUCT;
-
-/* Prepare an L2CAP PDU to be sent over a connection */
-struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
-				   size_t len);
-
-/* Receive a new L2CAP PDU from a connection */
-void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf);
-
-/* Perform connection parameter update request */
-void bt_l2cap_update_conn_param(struct bt_conn *conn);
+void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf);

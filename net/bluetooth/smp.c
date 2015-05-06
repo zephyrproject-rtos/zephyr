@@ -1,4 +1,7 @@
-/* l2cap.h - L2CAP handling */
+/**
+ * @file smp.c
+ * Security Manager Protocol implementation
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -30,50 +33,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define BT_L2CAP_CID_ATT		0x0004
-#define BT_L2CAP_CID_LE_SIG		0x0005
-#define BT_L2CAP_CID_SMP		0x0006
+#include <nanokernel.h>
+#include <stddef.h>
 
-struct bt_l2cap_hdr {
-	uint16_t len;
-	uint16_t cid;
-} PACK_STRUCT;
+#include <bluetooth/hci.h>
+#include <bluetooth/bluetooth.h>
 
-struct bt_l2cap_sig_hdr {
-	uint8_t  code;
-	uint8_t  ident;
-	uint16_t len;
-} PACK_STRUCT;
+#include "hci_core.h"
+#include "conn.h"
+#include "l2cap.h"
+#include "smp.h"
 
-#define BT_L2CAP_REJ_NOT_UNDERSTOOD	0x0000
-#define BT_L2CAP_REJ_MTU_EXCEEDED	0x0001
-#define BT_L2CAP_REJ_INVALID_CID	0x0002
+static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
+{
+	/* TODO: implement err response */
 
-#define BT_L2CAP_CMD_REJECT		0x01
-struct bt_l2cap_cmd_reject {
-	uint16_t reason;
-	uint8_t  data[0];
-} PACK_STRUCT;
+	return;
+}
 
-#define BT_L2CAP_CONN_PARAM_REQ		0x12
-struct bt_l2cap_conn_param_req {
-	uint16_t min_interval;
-	uint16_t max_interval;
-	uint16_t latency;
-	uint16_t timeout;
-} PACK_STRUCT;
+void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_hdr *hdr = (void *)buf->data;
 
-#define BT_L2CAP_CONN_PARAM_RSP		0x13
-struct bt_l2cap_conn_param_rsp {
-	uint16_t result;
-} PACK_STRUCT;
+	if (buf->len < sizeof(*hdr)) {
+		BT_ERR("Too small SMP PDU received\n");
+		goto done;
+	}
 
-/* Prepare an L2CAP PDU to be sent over a connection */
-struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
-				   size_t len);
+	BT_DBG("Received SMP code %u len %u\n", hdr->code, buf->len);
 
-/* Receive a new L2CAP PDU from a connection */
-void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf);
+	bt_buf_pull(buf, sizeof(*hdr));
 
-/* Perform connection parameter update request */
-void bt_l2cap_update_conn_param(struct bt_conn *conn);
+	switch (hdr->code) {
+	default:
+		BT_DBG("Unhandled SMP code %u\n", hdr->code);
+		send_err_rsp(conn, BT_SMP_ERR_CMD_NOTSUPP);
+		break;
+	}
+
+done:
+	bt_buf_put(buf);
+}
