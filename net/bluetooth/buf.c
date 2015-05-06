@@ -43,6 +43,11 @@
 
 #include "hci_core.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_BUF)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 /* Total number of all types of buffers */
 #define NUM_BUFS		20
 static struct bt_buf		buffers[NUM_BUFS];
@@ -145,12 +150,24 @@ struct bt_buf *bt_buf_hold(struct bt_buf *buf)
 uint8_t *bt_buf_add(struct bt_buf *buf, size_t len)
 {
 	uint8_t *tail = buf->data + buf->len;
+#if defined(CONFIG_BLUETOOTH_DEBUG_BUF)
+	if (bt_buf_tailroom(buf) < len) {
+		BT_ERR("buf %p overflow! len %u tailroom %u\n", buf, len,
+		       bt_buf_tailroom(buf));
+	}
+#endif
 	buf->len += len;
 	return tail;
 }
 
 uint8_t *bt_buf_push(struct bt_buf *buf, size_t len)
 {
+#if defined(CONFIG_BLUETOOTH_DEBUG_BUF)
+	if (bt_buf_headroom(buf) < len) {
+		BT_ERR("buf %p underflow! len %u headroom %u\n", buf, len,
+		       bt_buf_headroom(buf));
+	}
+#endif
 	buf->data -= len;
 	buf->len += len;
 	return buf->data;
@@ -158,6 +175,12 @@ uint8_t *bt_buf_push(struct bt_buf *buf, size_t len)
 
 uint8_t *bt_buf_pull(struct bt_buf *buf, size_t len)
 {
+#if defined(CONFIG_BLUETOOTH_DEBUG_BUF)
+	if (buf->len < len) {
+		BT_ERR("buf %p overflow! len %u buf->len %u\n", buf, len,
+		       buf->len);
+	}
+#endif
 	buf->len -= len;
 	return buf->data += len;
 }
