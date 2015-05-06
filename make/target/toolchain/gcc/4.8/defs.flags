@@ -33,3 +33,5 @@ iGCC_4.8_CFLAGS   =
 iGCC_4.8_ASMFLAGS =
 iGCC_4.8_LFLAGS   =
 iGCC_4.8_ARFLAGS  =
+
+sinclude ${vMAKE}/target/toolchain/gcc/4.8/defs.flags.variant_${VXMICRO_GCC_VARIANT}

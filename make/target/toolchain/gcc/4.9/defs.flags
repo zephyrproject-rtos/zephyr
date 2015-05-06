@@ -30,5 +30,6 @@
 
 iGCC_4.9_CFLAGS   =
 iGCC_4.9_ASMFLAGS =
-iGCC_4.9_LFLAGS   = --build-id=none -rpath-link,$(iGCC_LIBGCC_DIR)
+iGCC_4.9_LFLAGS   =
 iGCC_4.9_ARFLAGS  =
+sinclude ${vMAKE}/target/toolchain/gcc/4.9/defs.flags.variant_${VXMICRO_GCC_VARIANT}

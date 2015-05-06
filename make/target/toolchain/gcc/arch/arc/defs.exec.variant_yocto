@@ -1,7 +1,7 @@
 # defs.exec.variant_yocto - build system
-
-#  Copyright (c) 2015 Intel Corporation.
-
+#
+# Copyright (c) 2015 Intel Corporation.
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -27,13 +27,15 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+#
 
-iGCC_TARGET ?= arm-poky-eabi
-vGCC_VER_arm ?= 4.9
+iGCC_TARGET ?= arc-poky-elf
+vGCC_VER_arc ?= 4.8
 
 iGCC_BIN_DIR  ?= $(YOCTO_SDK_INSTALL_DIR)/sysroots/i686-pokysdk-linux/usr/bin/
 iGCC_PREFIX   ?= $(iGCC_BIN_DIR)/$(iGCC_TARGET)/$(iGCC_TARGET)
 iGCC_EXE__USR ?= $(iGCC_PREFIX)-gcc
 
-iGCC_LIBGCC_DIR ?= $(YOCTO_SDK_INSTALL_DIR)/sysroots/armv5e-poky-eabi/usr/lib/$(iGCC_TARGET)/4.9.2
+iGCC_LIBGCC_DIR ?= $(YOCTO_SDK_INSTALL_DIR)/sysroots/arc-poky-elf/usr/lib/$(iGCC_TARGET)/4.8.3
+
 

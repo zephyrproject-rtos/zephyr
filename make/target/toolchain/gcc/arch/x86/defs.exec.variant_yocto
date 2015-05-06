@@ -31,10 +31,9 @@
 iGCC_TARGET ?= i586-poky-elf
 vGCC_VER_x86 ?= 4.9
 
-iGCC_BIN_DIR  ?= $(YOCTO_SDK_INSTALL_DIR)/sysroots/x86_64-pokysdk-linux/usr/bin/
+iGCC_BIN_DIR  ?= $(YOCTO_SDK_INSTALL_DIR)/sysroots/i686-pokysdk-linux/usr/bin/
 iGCC_PREFIX   ?= $(iGCC_BIN_DIR)/$(iGCC_TARGET)/$(iGCC_TARGET)
 iGCC_EXE__USR ?= $(iGCC_PREFIX)-gcc
 
 iGCC_LIBGCC_DIR ?= $(YOCTO_SDK_INSTALL_DIR)/sysroots/$(iGCC_TARGET)/usr/lib/$(iGCC_TARGET)/4.9.2
-iGCC_LDFLAGS_EX ?= $(iGCC_4.9_LDFLAGS)
-iGCC_CCFLAGS_EX ?= $(iGCC_4.9_CFLAGS)
+
