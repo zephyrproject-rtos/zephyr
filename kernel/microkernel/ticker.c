@@ -111,12 +111,20 @@ int32_t task_tick_get_32(void)
 *
 * This routine returns the current system clock value as measured in ticks.
 *
+* Interrupts are locked while updating clock since some CPUs do not support
+* native atomic operations on 64 bit values.
+*
 * RETURNS: current system clock value
 */
 
 int64_t task_tick_get(void)
 {
-	return _LowTimeGet();
+	int64_t ticks;
+	int key = irq_lock_inline();
+
+	ticks = _k_sys_clock_tick_count;
+	irq_unlock_inline(key);
+	return ticks;
 }
 
 /*******************************************************************************
@@ -135,16 +143,6 @@ static void sys_clock_increment(int inc)
 
 	_k_sys_clock_tick_count += inc;
 	irq_unlock_inline(key);
-}
-
-int64_t _LowTimeGet(void)
-{
-	int64_t ticks;
-	int key = irq_lock_inline();
-	ticks = _k_sys_clock_tick_count;
-
-	irq_unlock_inline(key);
-	return ticks;
 }
 
 /*******************************************************************************
@@ -389,7 +387,7 @@ void scheduler_time_slice_set(int32_t t, /* time slice in ticks */
 
 void _k_time_elapse(struct k_args *P)
 {
-	int64_t now = _LowTimeGet();
+	int64_t now = task_tick_get();
 
 	P->Args.c1.time2 = (int32_t)(now - P->Args.c1.time1);
 	P->Args.c1.time1 = now;
