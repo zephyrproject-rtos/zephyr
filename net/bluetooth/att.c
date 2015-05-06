@@ -109,6 +109,46 @@ static void att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
 	bt_conn_send(conn, buf);
 }
 
+static void att_find_info_req(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att_find_info_req *req;
+	uint16_t start_handle, end_handle;
+
+	if (data->len != sizeof(*req)) {
+		send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, 0,
+			     BT_ATT_ERR_INVALID_PDU);
+		return;
+	}
+
+	req = (void *)data->data;
+
+	start_handle = sys_le16_to_cpu(req->start_handle);
+	end_handle = sys_le16_to_cpu(req->end_handle);
+
+	BT_DBG("start_handle %u end_handle %u\n", start_handle, end_handle);
+
+	/* Handle 0 is invalid */
+	if (!start_handle || !end_handle) {
+		start_handle = 0;
+		goto invalid_handle;
+	}
+
+	/* Check if range is valid */
+	if (start_handle > end_handle) {
+		goto invalid_handle;
+	}
+
+	/* TODO: Generate proper response once a database is defined */
+
+	send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, start_handle,
+		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+	return;
+
+invalid_handle:
+	send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, start_handle,
+		     BT_ATT_ERR_INVALID_HANDLE);
+}
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_att_hdr *hdr = (void *)buf->data;
@@ -125,6 +165,9 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 	switch (hdr->code) {
 	case BT_ATT_OP_MTU_REQ:
 		att_mtu_req(conn, buf);
+		break;
+	case BT_ATT_OP_FIND_INFO_REQ:
+		att_find_info_req(conn, buf);
 		break;
 	default:
 		BT_DBG("Unhandled ATT code %u\n", hdr->code);

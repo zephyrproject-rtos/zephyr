@@ -73,5 +73,33 @@ struct bt_att_exchange_mtu_rsp {
 	uint16_t mtu;
 } PACK_STRUCT;
 
+/* Find Information Request */
+#define BT_ATT_OP_FIND_INFO_REQ			0x04
+struct bt_att_find_info_req {
+	uint16_t start_handle;
+	uint16_t end_handle;
+} PACK_STRUCT;
+
+/* Format field values for BT_ATT_OP_FIND_INFO_RSP */
+#define BT_ATT_INFO_1				0x01
+#define BT_ATT_INFO_2				0x02
+
+struct bt_att_info_1 {
+	uint16_t handle;
+	uint16_t uuid;
+} PACK_STRUCT;
+
+struct bt_att_info_2 {
+	uint16_t handle;
+	uint8_t  uuid[16];
+} PACK_STRUCT;
+
+/* Find Information Response */
+#define BT_ATT_OP_FIND_INFO_RSP			0x05
+struct bt_att_find_info_rsp {
+	uint8_t  format;
+	uint8_t  info[0];
+} PACK_STRUCT;
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
