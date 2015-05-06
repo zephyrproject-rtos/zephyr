@@ -42,6 +42,6 @@ PRJ_CONF = prj_${vARCH}.conf
 VPFILE = prj.vpf
 
 # UART for Bluetooth
-QEMU_EXTRA_FLAGS += -serial unix:/tmp/bt-server-bredr
+QEMU_EXTRA_FLAGS ?= -serial unix:/tmp/bt-server-bredr
 
 include ${vMAKE}/target/make.ukernel
