@@ -34,6 +34,7 @@
 #include <toolchain.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
@@ -109,10 +110,29 @@ static void att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
 	bt_conn_send(conn, buf);
 }
 
+static bool range_is_valid(uint16_t start, uint16_t end, uint16_t *err)
+{
+	/* Handle 0 is invalid */
+	if (!start || !end) {
+		if (err)
+			*err = 0;
+		return false;
+	}
+
+	/* Check if range is valid */
+	if (start > end) {
+		if (err)
+			*err = start;
+		return false;
+	}
+
+	return true;
+}
+
 static void att_find_info_req(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_find_info_req *req;
-	uint16_t start_handle, end_handle;
+	uint16_t start_handle, end_handle, err_handle;
 
 	if (data->len != sizeof(*req)) {
 		send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, 0,
@@ -127,15 +147,10 @@ static void att_find_info_req(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("start_handle %u end_handle %u\n", start_handle, end_handle);
 
-	/* Handle 0 is invalid */
-	if (!start_handle || !end_handle) {
-		start_handle = 0;
-		goto invalid_handle;
-	}
-
-	/* Check if range is valid */
-	if (start_handle > end_handle) {
-		goto invalid_handle;
+	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
+		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, err_handle,
+			     BT_ATT_ERR_INVALID_HANDLE);
+		return;
 	}
 
 	/* TODO: Generate proper response once a database is defined */
@@ -143,16 +158,12 @@ static void att_find_info_req(struct bt_conn *conn, struct bt_buf *data)
 	send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, start_handle,
 		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 	return;
-
-invalid_handle:
-	send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, start_handle,
-		     BT_ATT_ERR_INVALID_HANDLE);
 }
 
 static void att_find_type_req(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_find_type_req *req;
-	uint16_t start_handle, end_handle, type;
+	uint16_t start_handle, end_handle, err_handle, type;
 	uint8_t *value;
 
 	if (data->len < sizeof(*req)) {
@@ -171,15 +182,10 @@ static void att_find_type_req(struct bt_conn *conn, struct bt_buf *data)
 	BT_DBG("start_handle %u end_handle %u type %u\n", start_handle,
 	       end_handle, type);
 
-	/* Handle 0 is invalid */
-	if (!start_handle || !end_handle) {
-		start_handle = 0;
-		goto invalid_handle;
-	}
-
-	/* Check if range is valid */
-	if (start_handle > end_handle) {
-		goto invalid_handle;
+	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
+		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, err_handle,
+			     BT_ATT_ERR_INVALID_HANDLE);
+		return;
 	}
 
 	/* TODO: Generate proper response once a database is defined */
@@ -188,10 +194,71 @@ static void att_find_type_req(struct bt_conn *conn, struct bt_buf *data)
 		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
 	return;
+}
 
-invalid_handle:
-	send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, start_handle,
-		     BT_ATT_ERR_INVALID_HANDLE);
+static bool uuid_create(struct bt_uuid *uuid, uint8_t *data, uint8_t len)
+{
+	uint16_t u16;
+
+	if (len > sizeof(uuid->u128))
+		return false;
+
+	switch (len) {
+	case 2:
+		uuid->type = BT_UUID_16;
+		/* TODO: Add unaligned helpers for these operations */
+		memcpy(&u16, data, len);
+		uuid->u16 = sys_le16_to_cpu(u16);
+		return true;
+	case 16:
+		uuid->type = BT_UUID_128;
+		memcpy(uuid->u128, data, len);
+		return true;
+	}
+
+	return false;
+}
+
+static void att_read_type_req(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att_read_type_req *req;
+	uint16_t start_handle, end_handle, err_handle;
+	struct bt_uuid uuid;
+
+	/* Type can only be UUID16 or UUID128 */
+	if (data->len != sizeof(*req) + sizeof(uuid.u16) &&
+	    data->len != sizeof(*req) + sizeof(uuid.u128)) {
+		send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, 0,
+			     BT_ATT_ERR_INVALID_PDU);
+		return;
+	}
+
+	req = (void *)data->data;
+
+	start_handle = sys_le16_to_cpu(req->start_handle);
+	end_handle = sys_le16_to_cpu(req->end_handle);
+	bt_buf_pull(data, sizeof(*req));
+
+	if (!uuid_create(&uuid, data->data, data->len)) {
+		send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, 0,
+			     BT_ATT_ERR_UNLIKELY);
+		return;
+	}
+
+	BT_DBG("start_handle %u end_handle %u type %u\n",
+	       start_handle, end_handle, uuid.u16);
+
+	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
+		send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, err_handle,
+			     BT_ATT_ERR_INVALID_HANDLE);
+		return;
+	}
+
+	/* TODO: Generate proper response once a database is defined */
+
+	send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, start_handle,
+		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+	return;
 }
 
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
@@ -216,6 +283,9 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	case BT_ATT_OP_FIND_TYPE_REQ:
 		att_find_type_req(conn, buf);
+		break;
+	case BT_ATT_OP_READ_TYPE_REQ:
+		att_read_type_req(conn, buf);
 		break;
 	default:
 		BT_DBG("Unhandled ATT code %u\n", hdr->code);

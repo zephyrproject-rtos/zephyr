@@ -121,5 +121,37 @@ struct bt_att_find_type_rsp {
 	struct bt_att_handle_group list[0];
 } PACK_STRUCT;
 
+#define BT_UUID_16				0x00
+#define BT_UUID_128				0x01
+
+/* TODO: Move UUID to its own file */
+struct bt_uuid {
+	uint8_t type;
+	union {
+		uint16_t u16;
+		uint8_t  u128[16];
+	};
+};
+
+/* Read By Type Request */
+#define BT_ATT_OP_READ_TYPE_REQ			0x08
+struct bt_att_read_type_req {
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint8_t  uuid[0];
+} PACK_STRUCT;
+
+struct bt_att_data {
+	uint16_t handle;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
+/* Read By Type Response */
+#define BT_ATT_OP_READ_TYPE_RSP			0x09
+struct bt_att_read_type_rsp {
+	uint8_t  len;
+	struct bt_att_data data[0];
+} PACK_STRUCT;
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
