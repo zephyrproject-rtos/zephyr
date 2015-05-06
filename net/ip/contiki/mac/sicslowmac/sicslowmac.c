@@ -58,11 +58,8 @@ struct net_buf;
 #include "net/ip/uip-debug.h"
 
 #if DEBUG
-#include <stdio.h>
-#define PRINTF(...) printf(__VA_ARGS__)
 #define PRINTADDR(addr) PRINTF(" %02x%02x:%02x%02x:%02x%02x:%02x%02x ", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7])
 #else
-#define PRINTF(...)
 #define PRINTADDR(addr)
 #endif
 
@@ -167,9 +164,10 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
     int ret;
     frame802154_create(&params, packetbuf_hdrptr(buf));
 
-    PRINTF("6MAC-UT: %2X", params.fcf.frame_type);
-    PRINTADDR(params.dest_addr);
-    PRINTF("%u %u (%u)\n", len, packetbuf_datalen(buf), packetbuf_totlen(buf));
+    PRINTF("6MAC-UT: type %X dest ", params.fcf.frame_type);
+    PRINTLLADDR(params.dest_addr);
+    PRINTF(" len %u datalen %u (totlen %u)\n", len, packetbuf_datalen(buf),
+	   packetbuf_totlen(buf));
 
     ret = NETSTACK_RADIO.send(buf, packetbuf_hdrptr(buf), packetbuf_totlen(buf));
     if(sent) {
@@ -203,6 +201,7 @@ input_packet(struct net_buf *buf)
   int len;
 
   len = packetbuf_datalen(buf);
+  PRINTF("6MAC: received %d bytes\n", len);
 
   if(frame802154_parse(packetbuf_dataptr(buf), len, &frame) &&
      packetbuf_hdrreduce(buf, len - frame.payload_len)) {
@@ -220,6 +219,8 @@ input_packet(struct net_buf *buf)
                          &linkaddr_node_addr)) {
           /* Not for this node */
           PRINTF("6MAC: not for us\n");
+	  PRINTF("6MAC: we are "); PRINTLLADDR(&linkaddr_node_addr); PRINTF("\n");
+	  PRINTF("6MAC: recipient is "); PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER)); PRINTF("\n");
 	  goto error;
         }
 #endif
@@ -227,10 +228,11 @@ input_packet(struct net_buf *buf)
     }
     packetbuf_set_addr(buf, PACKETBUF_ADDR_SENDER, (linkaddr_t *)&frame.src_addr);
 
-    PRINTF("6MAC-IN: %2X", frame.fcf.frame_type);
-    PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
-    PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
-    PRINTF("%u\n", packetbuf_datalen(buf));
+    PRINTF("6MAC-IN: type 0x%X sender ", frame.fcf.frame_type);
+    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
+    PRINTF(" receiver ");
+    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
+    PRINTF(" len %u\n", packetbuf_datalen(buf));
     NETSTACK_MAC.input(buf);
     return;
   } else {
