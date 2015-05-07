@@ -128,29 +128,7 @@ extern void init_drivers(void);
 #define TF_ALLW 0x0FFFF800 /* Mask of all wait flags */
 
 #ifdef CONFIG_TASK_DEBUG
-
 extern int _k_debug_halt;
-extern char *K_NodeNames[];
-extern char **K_TaskNames[];
-extern char **K_MapNames[];
-extern char **K_MbxNames[];
-extern char **K_MutexNames[];
-extern char **K_SemNames[];
-extern char **K_QueNames[];
-
-#define TASK_INFO 1
-#define WSP_INFO 2
-#define MAP_INFO 3
-#define MBX_INFO 4
-#define QUE_INFO 5
-#define RES_INFO 6
-#define SEM_INFO 7
-#define TIMER_INFO 8
-#define APCK_INFO 9
-#define DPCK_INFO 10
-#define RESET_COUNTS 11
-#define MONIT_INFO 12
-
 #endif
 
 #ifdef CONFIG_TASK_MONITOR
@@ -172,9 +150,7 @@ extern const int _k_monitor_mask;
 #endif
 
 #ifdef CONFIG_WORKLOAD_MONITOR
-
 extern void workload_monitor_calibrate(void);
-
 #endif
 
 #define INSERT_ELM(L, E)                              \
