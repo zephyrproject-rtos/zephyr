@@ -153,5 +153,17 @@ struct bt_att_read_type_rsp {
 	struct bt_att_data data[0];
 } PACK_STRUCT;
 
+/* Read Request */
+#define BT_ATT_OP_READ_REQ			0x0a
+struct bt_att_read_req {
+	uint16_t handle;
+} PACK_STRUCT;
+
+/* Read Response */
+#define BT_ATT_OP_READ_RSP			0x0b
+struct bt_att_read_rsp {
+	uint8_t  value[0];
+} PACK_STRUCT;
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
