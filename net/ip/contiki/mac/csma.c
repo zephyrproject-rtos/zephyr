@@ -461,6 +461,8 @@ channel_check_interval(void)
 static void
 init(void)
 {
+  queuebuf_init();
+
   memb_init(&packet_memb);
   memb_init(&metadata_memb);
   memb_init(&neighbor_memb);
