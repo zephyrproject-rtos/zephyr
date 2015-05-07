@@ -280,7 +280,7 @@ uip_ds6_route_add(uip_ipaddr_t *ipaddr, uint8_t length,
   if(r != NULL) {
     uip_ipaddr_t *current_nexthop;
     current_nexthop = uip_ds6_route_nexthop(r);
-    if(uip_ipaddr_cmp(nexthop, current_nexthop)) {
+    if(current_nexthop != NULL && uip_ipaddr_cmp(nexthop, current_nexthop)) {
       /* no need to update route - already correct! */
       return r;
     }
