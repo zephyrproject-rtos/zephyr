@@ -52,6 +52,29 @@ struct bt_smp_hdr {
 #define BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS	0x0d
 #define BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED	0x0e
 
+#define BT_SMP_IO_DISPLAY_ONLY			0x00
+#define BT_SMP_IO_DISPLAY_YESNO			0x01
+#define BT_SMP_IO_KEYBOARD_ONLY			0x02
+#define BT_SMP_IO_NO_INPUT_OUTPUT		0x03
+#define BT_SMP_IO_KEYBOARD_DISPLAY		0x04
+
+#define BT_SMP_OOB_NOT_PRESENT			0x00
+#define BT_SMP_OOB_PRESENT			0x01
+
+#define BT_SMP_MIN_ENC_KEY_SIZE			7
+#define BT_SMP_MAX_ENC_KEY_SIZE			16
+
+#define BT_SMP_CMD_PAIRING_REQ			0x01
+#define BT_SMP_CMD_PAIRING_RSP			0x02
+struct bt_smp_pairing {
+	uint8_t  io_capability;
+	uint8_t  oob_flag;
+	uint8_t  auth_req;
+	uint8_t  max_key_size;
+	uint8_t  init_key_dist;
+	uint8_t  resp_key_dist;
+} PACK_STRUCT;
+
 #define BT_SMP_CMD_PAIRING_FAIL			0x05
 struct bt_smp_pairing_fail {
 	uint8_t  reason;

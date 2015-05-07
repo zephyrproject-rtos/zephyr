@@ -74,9 +74,42 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 	bt_conn_send(conn, buf);
 }
 
+static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_pairing *req = (void *)buf->data;
+	struct bt_smp_pairing *rsp;
+	struct bt_buf *rsp_buf;
+
+	BT_DBG("\n");
+
+	if (buf->len != sizeof(*req))
+		return BT_SMP_ERR_INVALID_PARAMS;
+
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
+	if (!rsp_buf)
+		return BT_SMP_ERR_UNSPECIFIED;
+
+	rsp = (void *)bt_buf_add(rsp_buf, sizeof(*rsp));
+
+	/* For JustWorks pairing simplify rsp parameters.
+	 * TODO: needs to be reworked later on
+	 */
+	rsp->auth_req = req->auth_req;
+	rsp->io_capability = BT_SMP_IO_NO_INPUT_OUTPUT;
+	rsp->oob_flag = BT_SMP_OOB_NOT_PRESENT;
+	rsp->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
+	rsp->init_key_dist = 0;
+	rsp->resp_key_dist = 0;
+
+	bt_conn_send(conn, rsp_buf);
+
+	return 0;
+}
+
 void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_hdr *hdr = (void *)buf->data;
+	int err;
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small SMP PDU received\n");
@@ -88,10 +121,17 @@ void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 	bt_buf_pull(buf, sizeof(*hdr));
 
 	switch (hdr->code) {
+	case BT_SMP_CMD_PAIRING_REQ:
+		err = smp_pairing_req(conn, buf);
+		break;
 	default:
 		BT_DBG("Unhandled SMP code %u\n", hdr->code);
-		send_err_rsp(conn, BT_SMP_ERR_CMD_NOTSUPP);
+		err = BT_SMP_ERR_CMD_NOTSUPP;
 		break;
+	}
+
+	if (err) {
+		send_err_rsp(conn, err);
 	}
 
 done:
