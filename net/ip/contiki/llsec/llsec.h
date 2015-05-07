@@ -72,7 +72,7 @@ struct llsec_driver {
   void (* bootstrap)(llsec_on_bootstrapped_t on_bootstrapped);
   
   /** Secures outgoing frames before passing them to NETSTACK_MAC. */
-  void (* send)(struct net_buf *buf, mac_callback_t sent_callback, void *ptr);
+  uint8_t (* send)(struct net_buf *buf, mac_callback_t sent_callback, void *ptr);
   
   /**
    * Once the NETSTACK_FRAMER wrote the headers, the LLSEC driver

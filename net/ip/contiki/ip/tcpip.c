@@ -114,10 +114,8 @@ static uint8_t (* outputfunc)(struct net_buf *buf, const uip_lladdr_t *a);
 uint8_t
 tcpip_output(struct net_buf *buf, const uip_lladdr_t *a)
 {
-  int ret;
   if(outputfunc != NULL) {
-    ret = outputfunc(buf, a);
-    return ret;
+    return outputfunc(buf, a);
   }
   UIP_LOG("tcpip_output: Use tcpip_set_outputfunc() to set an output function");
   return 0;
@@ -219,7 +217,8 @@ packet_input(struct net_buf *buf)
       uip_split_output(buf);
 #else /* UIP_CONF_TCP_SPLIT */
 #if NETSTACK_CONF_WITH_IPV6
-      tcpip_ipv6_output(buf);
+      PRINTF("tcpip packet_input output len %d\n", uip_len(buf));
+      ret = tcpip_ipv6_output(buf);
 #else
       PRINTF("tcpip packet_input output len %d\n", uip_len);
       tcpip_output(buf);
@@ -441,7 +440,9 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
               etimer_restart(&periodic);
               uip_periodic(i);
 #if NETSTACK_CONF_WITH_IPV6
-              tcpip_ipv6_output(buf);
+	      if (!tcpip_ipv6_output(buf)) {
+                net_buf_put(buf);
+	      }
 #else
               if(uip_len > 0) {
 		PRINTF("tcpip_output from periodic len %d\n", uip_len);
@@ -481,13 +482,17 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
         if(data == &uip_ds6_timer_rs &&
            etimer_expired(&uip_ds6_timer_rs)) {
           uip_ds6_send_rs(buf);
-          tcpip_ipv6_output(buf);
+	  if (!tcpip_ipv6_output(buf)) {
+            net_buf_put(buf);
+	  }
         }
 #endif /* !UIP_CONF_ROUTER */
         if(data == &uip_ds6_timer_periodic &&
            etimer_expired(&uip_ds6_timer_periodic)) {
           uip_ds6_periodic(buf);
-          tcpip_ipv6_output(buf);
+	  if (!tcpip_ipv6_output(buf)) {
+            net_buf_put(buf);
+	  }
         }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
       }
@@ -515,7 +520,9 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
       if(data != NULL) {
         uip_udp_periodic_conn(buf, data);
 #if NETSTACK_CONF_WITH_IPV6
-        tcpip_ipv6_output(buf);
+        if (!tcpip_ipv6_output(buf)) {
+          net_buf_put(buf);
+	}
 #else
         if(uip_len > 0) {
           tcpip_output();
@@ -542,26 +549,29 @@ tcpip_input(struct net_buf *buf)
 }
 /*---------------------------------------------------------------------------*/
 #if NETSTACK_CONF_WITH_IPV6
-void
+uint8_t
 tcpip_ipv6_output(struct net_buf *buf)
 {
   uip_ds6_nbr_t *nbr = NULL;
   uip_ipaddr_t *nexthop;
+  uint8_t ret = 0; /* return value 0 == failed, 1 == ok */
+
+  PRINTF("%s(): buf %p len %d\n", __FUNCTION__, buf, uip_len(buf));
 
   if(uip_len(buf) == 0) {
-    return;
+    return 0;
   }
 
   if(uip_len(buf) > UIP_LINK_MTU) {
     UIP_LOG("tcpip_ipv6_output: Packet to big");
     uip_len(buf) = 0;
-    return;
+    return 0;
   }
 
   if(uip_is_addr_unspecified(&UIP_IP_BUF(buf)->destipaddr)){
     UIP_LOG("tcpip_ipv6_output: Destination address unspecified");
     uip_len(buf) = 0;
-    return;
+    return 0;
   }
 
   if(!uip_is_addr_mcast(&UIP_IP_BUF(buf)->destipaddr)) {
@@ -598,7 +608,7 @@ tcpip_ipv6_output(struct net_buf *buf)
           PRINTF("tcpip_ipv6_output: Destination off-link but no route\n");
 #endif /* !UIP_FALLBACK_INTERFACE */
           uip_len(buf) = 0;
-          return;
+          return 0;
         }
 
       } else {
@@ -627,7 +637,7 @@ tcpip_ipv6_output(struct net_buf *buf)
 
           /* We don't have a nexthop to send the packet to, so we drop
              it. */
-          return;
+          return 0;
         }
       }
 #if TCPIP_CONF_ANNOTATE_TRANSMISSIONS
@@ -650,7 +660,7 @@ tcpip_ipv6_output(struct net_buf *buf)
 #if UIP_CONF_IPV6_RPL
     if(rpl_update_header_final(nexthop)) {
       uip_len(buf) = 0;
-      return;
+      return 0;
     }
 #endif /* UIP_CONF_IPV6_RPL */
     nbr = uip_ds6_nbr_lookup(nexthop);
@@ -658,7 +668,7 @@ tcpip_ipv6_output(struct net_buf *buf)
 #if UIP_ND6_SEND_NA
       if((nbr = uip_ds6_nbr_add(nexthop, NULL, 0, NBR_INCOMPLETE)) == NULL) {
         uip_len(buf) = 0;
-        return;
+        return 0;
       } else {
 #if UIP_CONF_IPV6_QUEUE_PKT
         /* Copy outgoing pkt in the queuing buffer for later transmit. */
@@ -696,7 +706,7 @@ tcpip_ipv6_output(struct net_buf *buf)
         }
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
         uip_len(buf) = 0;
-        return;
+        return 0;
       }
       /* Send in parallel if we are running NUD (nbc state is either STALE,
          DELAY, or PROBE). See RFC 4861, section 7.3.3 on node behavior. */
@@ -708,7 +718,7 @@ tcpip_ipv6_output(struct net_buf *buf)
       }
 #endif /* UIP_ND6_SEND_NA */
 
-      tcpip_output(buf, uip_ds6_nbr_get_ll(nbr));
+      ret = tcpip_output(buf, uip_ds6_nbr_get_ll(nbr));
 
 #if UIP_CONF_IPV6_QUEUE_PKT
       /*
@@ -721,19 +731,23 @@ tcpip_ipv6_output(struct net_buf *buf)
         uip_len(buf) = uip_packetqueue_buflen(&nbr->packethandle);
         memcpy(UIP_IP_BUF(buf), uip_packetqueue_buf(&nbr->packethandle), uip_len(buf));
         uip_packetqueue_free(&nbr->packethandle);
-        tcpip_output(uip_ds6_nbr_get_ll(nbr));
+        ret = tcpip_output(uip_ds6_nbr_get_ll(nbr));
       }
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
 
-      uip_len(buf) = 0;
-      return;
+      if (ret == 0) {
+        uip_len(buf) = 0;
+      }
+
+      return ret;
     }
     return;
   }
   /* Multicast IP destination address. */
-  tcpip_output(buf, NULL);
+  ret = tcpip_output(buf, NULL);
   uip_len(buf) = 0;
   uip_ext_len(buf) = 0;
+  return ret;
 }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
 /*---------------------------------------------------------------------------*/

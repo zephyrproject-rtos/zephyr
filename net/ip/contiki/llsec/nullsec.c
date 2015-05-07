@@ -67,11 +67,11 @@ bootstrap(llsec_on_bootstrapped_t on_bootstrapped)
   on_bootstrapped();
 }
 /*---------------------------------------------------------------------------*/
-static void
+static uint8_t
 send(struct net_buf *buf, mac_callback_t sent, void *ptr)
 {
   packetbuf_set_attr(buf, PACKETBUF_ATTR_FRAME_TYPE, FRAME802154_DATAFRAME);
-  NETSTACK_MAC.send(buf, sent, ptr);
+  return NETSTACK_MAC.send(buf, sent, ptr);
 }
 /*---------------------------------------------------------------------------*/
 static int

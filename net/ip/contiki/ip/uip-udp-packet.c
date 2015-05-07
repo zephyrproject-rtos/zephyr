@@ -67,7 +67,8 @@ uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *dat
 #endif /* UIP_IPV6_MULTICAST */
 
 #if NETSTACK_CONF_WITH_IPV6
-    tcpip_ipv6_output(buf);
+ if (!tcpip_ipv6_output(buf))
+   net_buf_put(buf);
 #else
     if(uip_len > 0) {
       tcpip_output();

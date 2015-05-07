@@ -353,7 +353,7 @@ void tcpip_set_outputfunc(uint8_t (* f)(void));
  * \brief This function does address resolution and then calls tcpip_output
  */
 #if NETSTACK_CONF_WITH_IPV6
-void tcpip_ipv6_output(struct net_buf *buf);
+uint8_t tcpip_ipv6_output(struct net_buf *buf);
 #endif
 
 /**

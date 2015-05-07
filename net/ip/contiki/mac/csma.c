@@ -169,21 +169,6 @@ default_timebase(void)
 }
 /*---------------------------------------------------------------------------*/
 static void
-transmit_packet_list(struct net_buf *buf, void *ptr)
-{
-  struct neighbor_queue *n = ptr;
-  if(n) {
-    struct rdc_buf_list *q = list_head(n->queued_packet_list);
-    if(q != NULL) {
-      PRINTF("csma: preparing number %d %p, queue len %d\n", n->transmissions, q,
-          list_length(n->queued_packet_list));
-      /* Send packets in the neighbor's list */
-      NETSTACK_RDC.send_list(buf, packet_sent, n, q);
-    }
-  }
-}
-/*---------------------------------------------------------------------------*/
-static void
 free_packet(struct net_buf *buf, struct neighbor_queue *n, struct rdc_buf_list *p)
 {
   if(p != NULL) {
@@ -208,6 +193,23 @@ free_packet(struct net_buf *buf, struct neighbor_queue *n, struct rdc_buf_list *
       ctimer_stop(&n->transmit_timer);
       list_remove(neighbor_list, n);
       memb_free(&neighbor_memb, n);
+    }
+  }
+}
+/*---------------------------------------------------------------------------*/
+static void
+transmit_packet_list(struct net_buf *buf, void *ptr)
+{
+  struct neighbor_queue *n = ptr;
+  if(n) {
+    struct rdc_buf_list *q = list_head(n->queued_packet_list);
+    if(q != NULL) {
+      PRINTF("csma: preparing number %d %p, queue len %d\n", n->transmissions, q,
+          list_length(n->queued_packet_list));
+      /* Send packets in the neighbor's list */
+      if (!NETSTACK_RDC.send_list(buf, packet_sent, n, q)) {
+        free_packet(buf, n, q);
+      }
     }
   }
 }
@@ -326,7 +328,7 @@ packet_sent(struct net_buf *buf, void *ptr, int status, int num_transmissions)
   }
 }
 /*---------------------------------------------------------------------------*/
-static void
+static uint8_t
 send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
 {
   struct rdc_buf_list *q;
@@ -336,8 +338,8 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
   const linkaddr_t *addr = packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER);
 
   if (!buf) {
-	  UIP_LOG("csma: send_packet(): net_buf is NULL, cannot send packet");
-	  return;
+    UIP_LOG("csma: send_packet(): net_buf is NULL, cannot send packet");
+    return 0;
   }
 
   if(!initialized) {
@@ -405,7 +407,7 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
             if(list_head(n->queued_packet_list) == q) {
               ctimer_set(buf, &n->transmit_timer, 0, transmit_packet_list, n);
             }
-            return;
+            return 1;
           }
           memb_free(&metadata_memb, q->ptr);
           PRINTF("csma: could not allocate queuebuf, dropping packet\n");

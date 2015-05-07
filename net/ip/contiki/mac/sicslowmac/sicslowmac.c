@@ -102,11 +102,12 @@ is_broadcast_addr(uint8_t mode, uint8_t *addr)
   return 1;
 }
 /*---------------------------------------------------------------------------*/
-static void
+static uint8_t
 send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
 {
   frame802154_t params;
   uint8_t len;
+  uint8_t ret = 0;
 
   /* init to zeros */
   memset(&params, 0, sizeof(params));
@@ -161,7 +162,6 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
   params.payload_len = packetbuf_datalen(buf);
   len = frame802154_hdrlen(&params);
   if(packetbuf_hdralloc(buf, len)) {
-    int ret;
     frame802154_create(&params, packetbuf_hdrptr(buf));
 
     PRINTF("6MAC-UT: type %X dest ", params.fcf.frame_type);
@@ -183,15 +183,21 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
   } else {
     PRINTF("6MAC-UT: too large header: %u\n", len);
   }
+
+  return ret;
 }
 /*---------------------------------------------------------------------------*/
-void
+uint8_t
 send_list(struct net_buf *buf, mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 {
   if(buf_list != NULL) {
     queuebuf_to_packetbuf(buf, buf_list->buf);
-    send_packet(buf, sent, ptr);
+    if (!send_packet(buf, sent, ptr)) {
+      return 0;
+    }
   }
+
+  return 1;
 }
 /*---------------------------------------------------------------------------*/
 static void
