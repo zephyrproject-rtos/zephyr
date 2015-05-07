@@ -256,6 +256,33 @@ void abort_task(struct k_proc *X)
 	}
 }
 
+#ifndef CONFIG_ARCH_HAS_TASK_ABORT
+/*******************************************************************************
+*
+* _TaskAbort - microkernel handler for fatal task errors
+*
+* To be invoked when a task aborts implicitly, either by returning from its
+* entry point or due to a software or hardware fault.
+*
+* RETURNS: does not return
+*
+* \NOMANUAL
+*/
+
+FUNC_NORETURN void _TaskAbort(void)
+{
+	_task_ioctl(_k_current_task->Ident, TASK_ABORT);
+
+	/*
+	 * Compiler can't tell that _task_ioctl() won't return and issues
+	 * a warning unless we explicitly tell it that control never gets this
+	 * far.
+	 */
+
+	CODE_UNREACHABLE;
+}
+#endif
+
 /*******************************************************************************
 *
 * task_abort_handler_set - install an abort handler
