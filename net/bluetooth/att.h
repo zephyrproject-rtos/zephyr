@@ -192,5 +192,26 @@ struct bt_att_read_mult_rsp {
 	uint8_t  value[0];
 } PACK_STRUCT;
 
+/* Read by Group Type Request */
+#define BT_ATT_OP_READ_GROUP_REQ		0x10
+struct bt_att_read_group_req {
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint8_t  uuid[0];
+} PACK_STRUCT;
+
+struct bt_att_group_data {
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
+/* Read by Group Type Response */
+#define BT_ATT_OP_READ_GROUP_RSP		0x11
+struct bt_att_read_group_rsp {
+	uint8_t  len;
+	struct bt_att_group_data data[0];
+} PACK_STRUCT;
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);

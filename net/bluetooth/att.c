@@ -338,6 +338,64 @@ static void att_read_mult_req(struct bt_conn *conn, struct bt_buf *data)
 		     BT_ATT_ERR_INVALID_HANDLE);
 }
 
+static void att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att_read_group_req *req;
+	uint16_t start_handle, end_handle, err_handle;
+	struct bt_uuid uuid;
+
+	/* Type can only be UUID16 or UUID128 */
+	if (data->len != sizeof(*req) + sizeof(uuid.u16) &&
+	    data->len != sizeof(*req) + sizeof(uuid.u128)) {
+		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, 0,
+			     BT_ATT_ERR_INVALID_PDU);
+		return;
+	}
+
+	req = (void *)data->data;
+
+	start_handle = sys_le16_to_cpu(req->start_handle);
+	end_handle = sys_le16_to_cpu(req->end_handle);
+	bt_buf_pull(data, sizeof(*req));
+
+	if (!uuid_create(&uuid, data->data, data->len)) {
+		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, 0,
+			     BT_ATT_ERR_UNLIKELY);
+		return;
+	}
+
+	BT_DBG("start_handle %u end_handle %u type %u\n",
+	       start_handle, end_handle, uuid.u16);
+
+	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
+		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, err_handle,
+			     BT_ATT_ERR_INVALID_HANDLE);
+		return;
+	}
+
+	/* Core v4.2, Vol 3, sec 2.5.3 Attribute Grouping:
+	 * Not all of the grouping attributes can be used in the ATT
+	 * Read By Group Type Request. The «Primary Service» and «Secondary
+	 * Service» grouping types may be used in the Read By Group Type
+	 * Request. The «Characteristic» grouping type shall not be used in
+	 * the ATT Read By Group Type Request.
+	 */
+	if (uuid.type == BT_UUID_16) {
+		if (uuid.u16 != 0x2800 && uuid.u16 != 0x2801) {
+			send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ,
+				     start_handle,
+				     BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE);
+			return;
+		}
+	} /* TODO: Add UUID helpers for UUID formats */
+
+	/* TODO: Generate proper response once a database is defined */
+
+	send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, start_handle,
+		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+	return;
+}
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_att_hdr *hdr = (void *)buf->data;
@@ -372,6 +430,9 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	case BT_ATT_OP_READ_MULT_REQ:
 		att_read_mult_req(conn, buf);
+		break;
+	case BT_ATT_OP_READ_GROUP_REQ:
+		att_read_group_req(conn, buf);
 		break;
 	default:
 		BT_DBG("Unhandled ATT code %u\n", hdr->code);
