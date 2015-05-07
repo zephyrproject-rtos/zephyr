@@ -106,6 +106,20 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static int smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_pairing_confirm *req = (void *)buf->data;
+
+	BT_DBG("\n");
+
+	if (buf->len != sizeof(*req))
+		return BT_SMP_ERR_INVALID_PARAMS;
+
+	/* TODO: Send pairing_confirm(Sconfirm) back */
+
+	return 0;
+}
+
 void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_hdr *hdr = (void *)buf->data;
@@ -123,6 +137,9 @@ void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 	switch (hdr->code) {
 	case BT_SMP_CMD_PAIRING_REQ:
 		err = smp_pairing_req(conn, buf);
+		break;
+	case BT_SMP_CMD_PAIRING_CONFIRM:
+		err = smp_pairing_confirm(conn, buf);
 		break;
 	default:
 		BT_DBG("Unhandled SMP code %u\n", hdr->code);
