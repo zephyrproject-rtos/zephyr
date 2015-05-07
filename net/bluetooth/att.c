@@ -290,6 +290,30 @@ static void att_read_req(struct bt_conn *conn, struct bt_buf *data)
 		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 }
 
+static void att_read_blob_req(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att_read_blob_req *req;
+	uint16_t handle, offset;
+
+	if (data->len != sizeof(*req)) {
+		send_err_rsp(conn, BT_ATT_OP_READ_BLOB_REQ, 0,
+			     BT_ATT_ERR_INVALID_PDU);
+		return;
+	}
+
+	req = (void *)data->data;
+
+	handle = sys_le16_to_cpu(req->handle);
+	offset = sys_le16_to_cpu(req->offset);
+
+	BT_DBG("handle %u offset %u\n", handle, offset);
+
+	/* TODO: Generate proper response once a database is defined */
+
+	send_err_rsp(conn, BT_ATT_OP_READ_BLOB_REQ, handle,
+		     BT_ATT_ERR_INVALID_HANDLE);
+}
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_att_hdr *hdr = (void *)buf->data;
@@ -318,6 +342,9 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	case BT_ATT_OP_READ_REQ:
 		att_read_req(conn, buf);
+		break;
+	case BT_ATT_OP_READ_BLOB_REQ:
+		att_read_blob_req(conn, buf);
 		break;
 	default:
 		BT_DBG("Unhandled ATT code %u\n", hdr->code);
