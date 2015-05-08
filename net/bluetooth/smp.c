@@ -89,6 +89,11 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	if (!rsp_buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 
+	if ((req->max_key_size > BT_SMP_MAX_ENC_KEY_SIZE) ||
+	    (req->max_key_size < BT_SMP_MIN_ENC_KEY_SIZE)) {
+		return BT_SMP_ERR_ENC_KEY_SIZE;
+	}
+
 	rsp = (void *)bt_buf_add(rsp_buf, sizeof(*rsp));
 
 	/* For JustWorks pairing simplify rsp parameters.
@@ -97,7 +102,7 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	rsp->auth_req = req->auth_req;
 	rsp->io_capability = BT_SMP_IO_NO_INPUT_OUTPUT;
 	rsp->oob_flag = BT_SMP_OOB_NOT_PRESENT;
-	rsp->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
+	rsp->max_key_size = req->max_key_size;
 	rsp->init_key_dist = 0;
 	rsp->resp_key_dist = 0;
 
