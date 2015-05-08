@@ -58,6 +58,7 @@ that have an ISR component should use their own command packet set.
 #include <nanokernel/cpu.h>
 #include <microkernel/k_struct.h>
 #include <microkernel/cmdPkt.h>
+#include <minik.h>
 #include <sections.h>
 
 /*******************************************************************************
@@ -84,4 +85,18 @@ cmdPkt_t *_cmd_pkt_get(
 	irq_unlock_inline(key);
 
 	return &pSet->cmdPkt[index];
+}
+
+/*******************************************************************************
+*
+* _k_task_call - send command packet to be processed by K_swapper
+*
+* RETURNS: N/A
+*/
+
+void _k_task_call(struct k_args *cmdpacket)
+{
+	cmdpacket->alloc = false;
+	_k_current_task->Args = cmdpacket;
+	nano_task_stack_push(&_k_command_stack, (uint32_t)cmdpacket);
 }
