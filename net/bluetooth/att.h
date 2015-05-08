@@ -239,6 +239,18 @@ struct bt_att_prepare_write_rsp {
 	uint8_t  value[0];
 } PACK_STRUCT;
 
+/* Execute Write Request */
+#define BT_ATT_FLAG_CANCEL			0x00
+#define BT_ATT_FLAG_EXEC			0x01
+
+#define BT_ATT_OP_EXEC_WRITE_REQ		0x18
+struct bt_att_exec_write_req {
+	uint8_t  flags;
+} PACK_STRUCT;
+
+/* Execute Write Response */
+#define BT_ATT_OP_EXEC_WRITE_RSP		0x19
+
 /* Write Command */
 #define BT_ATT_OP_WRITE_CMD			0x52
 struct bt_att_write_cmd {

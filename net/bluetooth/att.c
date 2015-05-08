@@ -444,6 +444,26 @@ static void att_prepare_write_req(struct bt_conn *conn, struct bt_buf *data)
 		     BT_ATT_ERR_INVALID_HANDLE);
 }
 
+static void att_exec_write_req(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att_exec_write_req *req;
+
+	if (data->len != sizeof(*req)) {
+		send_err_rsp(conn, BT_ATT_OP_EXEC_WRITE_REQ, 0,
+			     BT_ATT_ERR_INVALID_PDU);
+		return;
+	}
+
+	req = (void *)data->data;
+
+	BT_DBG("flags %u\n", req->flags);
+
+	/* TODO: Generate proper response once a database is defined */
+
+	send_err_rsp(conn, BT_ATT_OP_EXEC_WRITE_REQ, 0,
+		     BT_ATT_ERR_NOT_SUPPORTED);
+}
+
 static void att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_write_req *req;
@@ -524,6 +544,9 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	case BT_ATT_OP_PREPARE_WRITE_REQ:
 		att_prepare_write_req(conn, buf);
+		break;
+	case BT_ATT_OP_EXEC_WRITE_REQ:
+		att_exec_write_req(conn, buf);
 		break;
 	case BT_ATT_OP_WRITE_CMD:
 		att_write_cmd(conn, buf);
