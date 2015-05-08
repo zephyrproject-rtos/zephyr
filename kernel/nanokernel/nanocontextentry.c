@@ -135,7 +135,7 @@ FUNC_NORETURN void _context_entry(
 		/* Loss of essential context is a system fatal error */
 
 		_NanoFatalErrorHandler(_NANO_ERR_INVALID_TASK_EXIT,
-				       &__defaultEsf);
+				       &_default_esf);
 	}
 
 /* Gracefully terminate the currently executing context */

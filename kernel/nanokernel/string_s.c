@@ -67,7 +67,7 @@ errno_t __k_memcpy_s(void *dest, size_t nDestElem, const void *src,
 {
 	if ((dest == NULL) || (src == NULL) || (nDestElem < nElem)) {
 		_NanoFatalErrorHandler(_NANO_ERR_INVALID_STRING_OP,
-				       &__defaultEsf);
+				       &_default_esf);
 	}
 
 	/*
@@ -143,7 +143,7 @@ errno_t __strcpy_s(char *dest, size_t nDestElem, const char *src)
 		dest[0] = '\0';
 	}
 
-	_NanoFatalErrorHandler (_NANO_ERR_INVALID_STRING_OP, &__defaultEsf);
+	_NanoFatalErrorHandler (_NANO_ERR_INVALID_STRING_OP, &_default_esf);
 
     /*
      * the following statement is included in case the compiler

@@ -369,7 +369,7 @@ extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF *pEsf);
 /* Dummy ESF for fatal errors that would otherwise not have an ESF */
-extern const NANO_ESF __defaultEsf;
+extern const NANO_ESF _default_esf;
 
 /*
  * BSP provided routine which kernel invokes to configure an interrupt vector

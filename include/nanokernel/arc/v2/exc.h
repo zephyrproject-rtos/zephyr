@@ -46,7 +46,7 @@ struct __esf {
 };
 
 typedef struct __esf NANO_ESF;
-extern const NANO_ESF __defaultEsf;
+extern const NANO_ESF _default_esf;
 #endif
 
 #endif /* _ARCH_ARC_V2_EXC_H_ */

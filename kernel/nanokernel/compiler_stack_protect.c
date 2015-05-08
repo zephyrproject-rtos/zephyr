@@ -63,7 +63,7 @@ void FUNC_NORETURN _StackCheckHandler(void)
 	/* Stack canary error is a software fatal condition; treat it as such.
 	 */
 
-	_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, &__defaultEsf);
+	_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, &_default_esf);
 }
 
 #endif /* CONFIG_STACK_CANARIES */

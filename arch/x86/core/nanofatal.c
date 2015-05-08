@@ -52,7 +52,7 @@ This module provides the _NanoFatalErrorHandler() routine.
  * Define a default ESF for use with _NanoFatalErrorHandler() in the event
  * the caller does not have a NANO_ESF to pass
  */
-const NANO_ESF __defaultEsf = {
+const NANO_ESF _default_esf = {
 #ifdef CONFIG_GDB_INFO
 	0xdeaddead, /* EBP */
 	0xdeaddead, /* EBX */
@@ -79,7 +79,7 @@ const NANO_ESF __defaultEsf = {
 *
 * The caller is expected to always provide a usable ESF.  In the event that the
 * fatal error does not have a hardware generated ESF, the caller should either
-* create its own or use a pointer to the global default ESF <__defaultEsf>.
+* create its own or use a pointer to the global default ESF <_default_esf>.
 *
 * RETURNS: This function does not return.
 *

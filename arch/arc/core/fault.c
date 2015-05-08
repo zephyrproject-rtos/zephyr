@@ -103,7 +103,7 @@ void _Fault(void)
 {
 	uint32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
 
-	FAULT_DUMP(&__defaultEsf, ecr);
+	FAULT_DUMP(&_default_esf, ecr);
 
-	_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &__defaultEsf);
+	_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
 }

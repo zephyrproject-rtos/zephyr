@@ -58,7 +58,7 @@ This module provides the _NanoFatalErrorHandler() routine for ARM Cortex-M.
  * Define a default ESF for use with _NanoFatalErrorHandler() in the event
  * the caller does not have a NANO_ESF to pass
  */
-const NANO_ESF __defaultEsf = {0xdeaddead, /* a1 */
+const NANO_ESF _default_esf = {0xdeaddead, /* a1 */
 						      0xdeaddead, /* a2 */
 						      0xdeaddead, /* a3 */
 						      0xdeaddead, /* a4 */
@@ -79,7 +79,7 @@ const NANO_ESF __defaultEsf = {0xdeaddead, /* a1 */
 *
 * The caller is expected to always provide a usable ESF. In the event that the
 * fatal error does not have a hardware generated ESF, the caller should either
-* create its own or use a pointer to the global default ESF <__defaultEsf>.
+* create its own or use a pointer to the global default ESF <_default_esf>.
 *
 * RETURNS: This function does not return.
 *
