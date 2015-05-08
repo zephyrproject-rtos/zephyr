@@ -138,7 +138,7 @@ static uint16_t _currentLoadVal = 0;
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
 
-static uint16_t _IdleOrigCount = 0;
+static uint16_t idle_original_count = 0;
 static uint16_t _IdleOrigTicks = 0;
 static uint16_t __noinit _MaxSysTicks;
 static uint16_t __noinit _MaxLoadValue;
@@ -414,7 +414,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		newCount += _IdleOrigTicks * counterLoadVal;
 	}
 
-	_IdleOrigCount = newCount - _TimerIdleSkew;
+	idle_original_count = newCount - _TimerIdleSkew;
 
 	/* Stop/start the timer instead of disabling/enabling the interrupt? */
 	irq_disable(PIT_INT_LVL);
@@ -452,7 +452,7 @@ void _timer_idle_exit(void)
 	/* request counter 0 to be latched */
 	count = _i8253CounterRead();
 
-	if ((count == 0) || (count >= _IdleOrigCount)) {
+	if ((count == 0) || (count >= idle_original_count)) {
 		/* Timer expired. Place back in periodic mode */
 		_i8253CounterPeriodic(counterLoadVal);
 		_TimerMode = TIMER_MODE_PERIODIC;
@@ -469,7 +469,7 @@ void _timer_idle_exit(void)
 		uint16_t elapsed;   /* elapsed "counter time" */
 		uint16_t remaining; /* remaing "counter time" */
 
-		elapsed = _IdleOrigCount - count;
+		elapsed = idle_original_count - count;
 
 		remaining = elapsed % counterLoadVal;
 

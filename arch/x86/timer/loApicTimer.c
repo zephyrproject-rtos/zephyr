@@ -133,7 +133,7 @@ static uint32_t __noinit counterLoadVal; /* computed counter 0
 static uint32_t clock_accumulated_count = 0;
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-static uint32_t _IdleOrigCount = 0;
+static uint32_t idle_original_count = 0;
 static uint32_t __noinit _MaxSysTicks;
 static uint32_t _IdleOrigTicks = 0;
 static uint32_t __noinit _MaxLoadValue;
@@ -457,7 +457,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 * timer. So we read the count out of it and add it to the requested
 	 * time out
 	 */
-	_IdleOrigCount = _loApicTimerGetRemaining() - _TimerIdleSkew;
+	idle_original_count = _loApicTimerGetRemaining() - _TimerIdleSkew;
 
 	if ((ticks == -1) || (ticks > _MaxSysTicks)) {
 		/*
@@ -471,20 +471,20 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * earlier
 		 * is added.
 		 */
-		_IdleOrigCount += _MaxLoadValue - counterLoadVal;
+		idle_original_count += _MaxLoadValue - counterLoadVal;
 		_IdleOrigTicks = _MaxSysTicks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back ? */
 		_IdleOrigTicks = ticks - 1;
-		_IdleOrigCount += _IdleOrigTicks * counterLoadVal;
+		idle_original_count += _IdleOrigTicks * counterLoadVal;
 	}
 
 	_TimerMode = TIMER_MODE_PERIODIC_ENT;
 
 	/* Set timer to one shot mode */
 	_loApicTimerOneShot();
-	_loApicTimerSetCount(_IdleOrigCount);
+	_loApicTimerSetCount(idle_original_count);
 	_loApicTimerStart();
 }
 
@@ -514,7 +514,7 @@ void _timer_idle_exit(void)
 
 	count = _loApicTimerGetRemaining();
 
-	if ((count == 0) || (count >= _IdleOrigCount)) {
+	if ((count == 0) || (count >= idle_original_count)) {
 		/* Timer expired and/or wrapped around. Place back in periodic
 		 * mode */
 		_loApicTimerPeriodic();
@@ -533,7 +533,7 @@ void _timer_idle_exit(void)
 		uint32_t elapsed;   /* elapsed "counter time" */
 		uint32_t remaining; /* remaining "counter time" */
 
-		elapsed = _IdleOrigCount - count;
+		elapsed = idle_original_count - count;
 
 		remaining = elapsed % counterLoadVal;
 
