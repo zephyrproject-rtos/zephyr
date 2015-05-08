@@ -219,7 +219,7 @@ extern uint32_t _hw_irq_to_c_handler_latency;
 
 extern int32_t _sys_idle_elapsed_ticks;
 
-static uint32_t __noinit counterLoadValue; /* main counter units
+static uint32_t __noinit counter_load_value; /* main counter units
 							    per system tick */
 static uint64_t counterLastValue =
 	0; /* counter value for most recent tick */
@@ -315,7 +315,7 @@ void _timer_int_handler(void *unused)
 
 	counterLastValue = *_HPET_TIMER0_COMPARATOR;
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
-	*_HPET_TIMER0_COMPARATOR = counterLastValue + counterLoadValue;
+	*_HPET_TIMER0_COMPARATOR = counterLastValue + counter_load_value;
 	programmedTicks = 1;
 
 	/*
@@ -392,7 +392,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
 	*_HPET_TIMER0_COMPARATOR =
-		(ticks >= 0) ? counterLastValue + ticks * counterLoadValue
+		(ticks >= 0) ? counterLastValue + ticks * counter_load_value
 			     : ~(uint64_t)0;
 	staleIntCheck = 1;
 	programmedTicks = ticks;
@@ -466,15 +466,15 @@ void _timer_idle_exit(void)
 	 */
 
 	elapsedTicks =
-		(int32_t)((currTime - counterLastValue) / counterLoadValue);
-	counterLastValue += (uint64_t)elapsedTicks * counterLoadValue;
+		(int32_t)((currTime - counterLastValue) / counter_load_value);
+	counterLastValue += (uint64_t)elapsedTicks * counter_load_value;
 
-	counterNextValue = counterLastValue + counterLoadValue;
+	counterNextValue = counterLastValue + counter_load_value;
 
 	if ((counterNextValue - currTime) <= HPET_COMP_DELAY) {
 		elapsedTicks++;
-		counterNextValue += counterLoadValue;
-		counterLastValue += counterLoadValue;
+		counterNextValue += counter_load_value;
+		counterLastValue += counter_load_value;
 	}
 
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
@@ -524,7 +524,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 	uint64_t hpetClockPeriod;
 	uint64_t tickFempto;
 #ifndef TIMER_SUPPORTS_TICKLESS
-	uint32_t counterLoadValue;
+	uint32_t counter_load_value;
 #endif
 
 	ARG_UNUSED(priority);
@@ -566,11 +566,11 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 	 * 'sys_clock_us_per_tick' period
 	 */
 
-	counterLoadValue = (uint32_t)(tickFempto / hpetClockPeriod);
+	counter_load_value = (uint32_t)(tickFempto / hpetClockPeriod);
 
 	/* Initialize "sys_clock_hw_cycles_per_tick" */
 
-	sys_clock_hw_cycles_per_tick = counterLoadValue;
+	sys_clock_hw_cycles_per_tick = counter_load_value;
 
 	/*
 	 * Set the comparator register for timer0.  The write to the comparator
@@ -578,10 +578,10 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 	 */
 
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
-	*_HPET_TIMER0_COMPARATOR = counterLoadValue;
+	*_HPET_TIMER0_COMPARATOR = counter_load_value;
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	main_count_first_irq_value = counterLoadValue;
+	main_count_first_irq_value = counter_load_value;
 	main_count_expected_value = main_count_first_irq_value;
 #endif
 
