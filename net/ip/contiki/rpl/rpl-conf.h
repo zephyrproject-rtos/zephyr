@@ -249,4 +249,14 @@
 #define RPL_PROBING_SEND_FUNC(buf, instance, addr) dio_output((buf), (instance), (addr))
 #endif
 
+/*
+ * Function used to calculate next RPL probing interval
+ * */
+#ifdef RPL_CONF_PROBING_DELAY_FUNC
+#define RPL_PROBING_DELAY_FUNC RPL_CONF_PROBING_DELAY_FUNC
+#else
+#define RPL_PROBING_DELAY_FUNC() ((RPL_PROBING_INTERVAL / 2) \
+    + random_rand() % (RPL_PROBING_INTERVAL))
+#endif
+
 #endif /* RPL_CONF_H */
