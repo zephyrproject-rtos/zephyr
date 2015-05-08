@@ -140,7 +140,7 @@ static uint16_t _currentLoadVal = 0;
 
 static uint16_t idle_original_count = 0;
 static uint16_t _IdleOrigTicks = 0;
-static uint16_t __noinit _MaxSysTicks;
+static uint16_t __noinit max_system_ticks;
 static uint16_t __noinit _MaxLoadValue;
 static uint16_t __noinit _TimerIdleSkew;
 
@@ -350,9 +350,9 @@ void _timer_int_handler(void *unusedArg /* not used */
 
 static void _i8253TicklessIdleInit(void)
 {
-	_MaxSysTicks = 0xffff / counterLoadVal;
+	max_system_ticks = 0xffff / counterLoadVal;
 	/* this gives a count that gives the max number of full ticks */
-	_MaxLoadValue = _MaxSysTicks * counterLoadVal;
+	_MaxLoadValue = max_system_ticks * counterLoadVal;
 }
 
 /*******************************************************************************
@@ -393,7 +393,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 */
 	newCount = _i8253CounterRead();
 
-	if (ticks == -1 || ticks > _MaxSysTicks) {
+	if (ticks == -1 || ticks > max_system_ticks) {
 		/*
 		 * We've been asked to fire the timer so far in the future that
 		 * the
@@ -406,7 +406,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * is added.
 		 */
 		newCount += _MaxLoadValue - counterLoadVal;
-		_IdleOrigTicks = _MaxSysTicks - 1;
+		_IdleOrigTicks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back ? */

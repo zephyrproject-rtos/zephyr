@@ -134,7 +134,7 @@ static uint32_t clock_accumulated_count = 0;
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
 static uint32_t idle_original_count = 0;
-static uint32_t __noinit _MaxSysTicks;
+static uint32_t __noinit max_system_ticks;
 static uint32_t _IdleOrigTicks = 0;
 static uint32_t __noinit _MaxLoadValue;
 static uint32_t __noinit _TimerIdleSkew;
@@ -396,9 +396,9 @@ void _timer_int_handler(void *unused /* parameter is not used */
 
 static void _loApicTimerTicklessIdleInit(void)
 {
-	_MaxSysTicks = 0xffffffff / counterLoadVal;
+	max_system_ticks = 0xffffffff / counterLoadVal;
 	/* this gives a count that gives the max number of full ticks */
-	_MaxLoadValue = _MaxSysTicks * counterLoadVal;
+	_MaxLoadValue = max_system_ticks * counterLoadVal;
 }
 
 /*******************************************************************************
@@ -459,7 +459,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 */
 	idle_original_count = _loApicTimerGetRemaining() - _TimerIdleSkew;
 
-	if ((ticks == -1) || (ticks > _MaxSysTicks)) {
+	if ((ticks == -1) || (ticks > max_system_ticks)) {
 		/*
 		 * We've been asked to fire the timer so far in the future that
 		 * the
@@ -472,7 +472,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * is added.
 		 */
 		idle_original_count += _MaxLoadValue - counterLoadVal;
-		_IdleOrigTicks = _MaxSysTicks - 1;
+		_IdleOrigTicks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back ? */
