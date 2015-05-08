@@ -35,6 +35,7 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/byteorder.h>
+#include <misc/util.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -157,11 +158,7 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 
 	nano_fifo_init(&frags);
 
-	if (remaining > dev->le_mtu) {
-		len = dev->le_mtu;
-	} else {
-		len = remaining;
-	}
+	len = min(remaining, dev->le_mtu);
 
 	hdr = (void *)bt_buf_push(buf, sizeof(*hdr));
 	hdr->handle = sys_cpu_to_le16(conn->handle);
@@ -176,11 +173,7 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 	while (remaining) {
 		buf = bt_conn_create_pdu(conn);
 
-		if (remaining > dev->le_mtu) {
-			len = dev->le_mtu;
-		} else {
-			len = remaining;
-		}
+		len = min(remaining, dev->le_mtu);
 
 		/* Copy from original buffer */
 		memcpy(bt_buf_add(buf, len), ptr, len);
