@@ -148,7 +148,7 @@ static uint16_t __noinit timer_idle_skew;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-static uint32_t oldCount = 0; /* previous system clock value */
+static uint32_t old_count = 0; /* previous system clock value */
 static uint32_t oldAcc = 0; /* previous accumulated value value */
 
 /* externs */
@@ -304,12 +304,12 @@ void _timer_int_handler(void *unusedArg /* not used */
 	/*
 	 * Algorithm tries to compensate lost interrupts if any happened and
 	 * prevent the timer from counting backwards
-	 * ULONG_MAX / 2 is the maximal value that oldCount can be more than
+	 * ULONG_MAX / 2 is the maximal value that old_count can be more than
 	 * clock_accumulated_count. If it is more -- consider it as an clock_accumulated_count
 	 * wrap and do not try to compensate.
 	 */
-	if (clock_accumulated_count < oldCount) {
-		uint32_t tmp = oldCount - clock_accumulated_count;
+	if (clock_accumulated_count < old_count) {
+		uint32_t tmp = old_count - clock_accumulated_count;
 		if ((tmp >= counterLoadVal) && (tmp < (ULONG_MAX / 2))) {
 			clock_accumulated_count += tmp - tmp % counterLoadVal;
 		}
@@ -576,12 +576,12 @@ uint32_t timer_read(void)
 	 * happened before the timer interrupt (due to possible interrupt
 	 * disable)
 	 */
-	if ((newCount < oldCount) && (clock_accumulated_count == oldAcc)) {
-		uint32_t tmp = oldCount - newCount;
+	if ((newCount < old_count) && (clock_accumulated_count == oldAcc)) {
+		uint32_t tmp = old_count - newCount;
 		newCount += tmp - tmp % _currentLoadVal + _currentLoadVal;
 	}
 
-	oldCount = newCount;
+	old_count = newCount;
 	oldAcc = clock_accumulated_count;
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
