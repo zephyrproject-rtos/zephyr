@@ -122,7 +122,7 @@ extern int32_t _sys_idle_elapsed_ticks;
 /* locals */
 
 #ifdef CONFIG_TICKLESS_IDLE
-static uint32_t __noinit defaultLoadVal; /* default count */
+static uint32_t __noinit default_load_value; /* default count */
 static uint32_t idleOrigCount = 0;
 static uint32_t __noinit maxSysTicks;
 static uint32_t idleOrigTicks = 0;
@@ -305,7 +305,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	 */
 	if (timerMode == TIMER_MODE_ONE_SHOT) {
 		sysTickStop();
-		sysTickReloadSet(defaultLoadVal);
+		sysTickReloadSet(default_load_value);
 		sysTickStart();
 		timerMode = TIMER_MODE_PERIODIC;
 	}
@@ -340,7 +340,7 @@ void _TIMER_INT_HANDLER(void *unused)
 	}
 
 	/* accumulate total counter value */
-	clock_accumulated_count += defaultLoadVal * _sys_idle_elapsed_ticks;
+	clock_accumulated_count += default_load_value * _sys_idle_elapsed_ticks;
 #else  /* !CONFIG_TICKLESS_IDLE */
 	/*
 	 * No tickless idle:
@@ -407,7 +407,7 @@ void _TIMER_INT_HANDLER(void *unused)
 * necessary hardware-specific parameters.
 *
 * Note that the maximum number of ticks that can elapse during a "tickless idle"
-* is limited by <defaultLoadVal>.  The larger the value (the lower the
+* is limited by <default_load_value>.  The larger the value (the lower the
 * tick frequency), the fewer elapsed ticks during a "tickless idle".
 * Conversely, the smaller the value (the higher the tick frequency), the
 * more elapsed ticks during a "tickless idle".
@@ -425,13 +425,13 @@ static void sysTickTicklessIdleInit(void)
 	volatile uint32_t dummy; /* used to help determine the 'skew time' */
 
 	/* store the default reload value (which has already been set) */
-	defaultLoadVal = sysTickReloadGet();
+	default_load_value = sysTickReloadGet();
 
 	/* calculate the max number of ticks with this 24-bit H/W counter */
-	maxSysTicks = 0x00ffffff / defaultLoadVal;
+	maxSysTicks = 0x00ffffff / default_load_value;
 
 	/* determine the associated load value */
-	maxLoadValue = maxSysTicks * defaultLoadVal;
+	maxLoadValue = maxSysTicks * default_load_value;
 
 	/*
 	 * Calculate the skew from switching the timer in and out of idle mode.
@@ -459,12 +459,12 @@ static void sysTickTicklessIdleInit(void)
 	dummy = sysTickCurrentGet(); /* emulate sysTickReloadSet() */
 
 	/* emulate calculation of the new counter reload value */
-	if ((dummy == 1) || (dummy == defaultLoadVal)) {
+	if ((dummy == 1) || (dummy == default_load_value)) {
 		dummy = maxSysTicks - 1;
-		dummy += maxLoadValue - defaultLoadVal;
+		dummy += maxLoadValue - default_load_value;
 	} else {
 		dummy = dummy - 1;
-		dummy += dummy * defaultLoadVal;
+		dummy += dummy * default_load_value;
 	}
 
 	/* _sysTickStart() without interrupts */
@@ -477,7 +477,7 @@ static void sysTickTicklessIdleInit(void)
 
 	/* restore the previous sysTick state */
 	sysTickStop();
-	sysTickReloadSet(defaultLoadVal);
+	sysTickReloadSet(default_load_value);
 }
 
 /*******************************************************************************
@@ -517,13 +517,13 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * earlier
 		 * is added.
 		 */
-		idleOrigCount += maxLoadValue - defaultLoadVal;
+		idleOrigCount += maxLoadValue - default_load_value;
 		idleOrigTicks = maxSysTicks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back */
 		idleOrigTicks = ticks - 1;
-		idleOrigCount += idleOrigTicks * defaultLoadVal;
+		idleOrigCount += idleOrigTicks * default_load_value;
 	}
 
 	/*
@@ -576,7 +576,7 @@ void _timer_idle_exit(void)
 		 * The timer expired and/or wrapped around. Re-set the timer to
 		 * its default value and mode.
 		 */
-		sysTickReloadSet(defaultLoadVal);
+		sysTickReloadSet(default_load_value);
 		timerMode = TIMER_MODE_PERIODIC;
 
 		/*
@@ -594,7 +594,7 @@ void _timer_idle_exit(void)
 
 		elapsed = idleOrigCount - count;
 
-		remaining = elapsed % defaultLoadVal;
+		remaining = elapsed % default_load_value;
 
 		/* ensure that the timer will interrupt at the next tick */
 
@@ -604,7 +604,7 @@ void _timer_idle_exit(void)
 			 * timer to
 			 * its default value and mode.
 			 */
-			sysTickReloadSet(defaultLoadVal);
+			sysTickReloadSet(default_load_value);
 			timerMode = TIMER_MODE_PERIODIC;
 		} else if (count > remaining) {
 			/*
@@ -615,7 +615,7 @@ void _timer_idle_exit(void)
 			sysTickReloadSet(remaining);
 		}
 
-		_sys_idle_elapsed_ticks = elapsed / defaultLoadVal;
+		_sys_idle_elapsed_ticks = elapsed / default_load_value;
 
 		if (_sys_idle_elapsed_ticks) {
 			/* Announce elapsed ticks to the microkernel */
