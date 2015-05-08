@@ -202,6 +202,16 @@ struct bt_hci_cp_le_set_adv_enable {
 	uint8_t  enable;
 } PACK_STRUCT;
 
+#define BT_HCI_OP_LE_ENCRYPT			BT_OP(BT_OGF_LE, 0x0017)
+struct bt_hci_cp_le_encrypt {
+	uint8_t  key[16];
+	uint8_t  plaintext[16];
+} PACK_STRUCT;
+struct bt_hci_rp_le_encrypt {
+	uint8_t  status;
+	uint8_t  enc_data[16];
+} PACK_STRUCT;
+
 /* Event definitions */
 
 #define BT_HCI_EVT_DISCONN_COMPLETE		0x05
