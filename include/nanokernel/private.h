@@ -63,7 +63,7 @@ struct nano_fifo {
 };
 
 struct nano_stack {
-	tCCS *proc;
+	tCCS *fiber;
 	uint32_t *base;
 	uint32_t *next;
 };
