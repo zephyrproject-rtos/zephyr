@@ -48,7 +48,7 @@ a parameter.
 
 _ASM_FILE_PROLOGUE
 
-GDATA(_IsrTable)
+GDATA(_sw_isr_table)
 
 GTEXT(_isr_wrapper)
 GTEXT(_IntExit)
@@ -99,7 +99,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
     mrs r0, IPSR	/* get exception number */
     sub r0, r0, #16	/* get IRQ number */
     lsl r0, r0, #3	/* table is 8-byte wide */
-    ldr r1, =_IsrTable
+    ldr r1, =_sw_isr_table
     add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
 			 *              in thumb mode */
 

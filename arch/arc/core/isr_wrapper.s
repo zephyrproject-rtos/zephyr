@@ -227,7 +227,7 @@ SECTION_FUNC(TEXT, _isr_demux)
 	lr r0, [_ARC_V2_ICAUSE]
 	sub r0, r0, 16
 
-	mov r1, _IsrTable
+	mov r1, _sw_isr_table
 	add3 r0, r1, r0   /* table entries are 8-bytes wide */
 
 	ld r1, [r0, 4] /* ISR into r1 */

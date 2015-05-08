@@ -51,7 +51,7 @@ struct _IsrTableEntry {
 
 typedef struct _IsrTableEntry _IsrTableEntry_t;
 
-extern _IsrTableEntry_t _IsrTable[CONFIG_NUM_IRQS];
+extern _IsrTableEntry_t _sw_isr_table[CONFIG_NUM_IRQS];
 #endif /* _ASMLANGUAGE */
 
 #endif /* _SW_ISR_TABLE__H_ */

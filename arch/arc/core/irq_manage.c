@@ -73,12 +73,12 @@ void irq_handler_set(
 	int key = irq_lock_inline();
 	int index = irq - 16;
 
-	__ASSERT(old == _IsrTable[index].isr,
+	__ASSERT(old == _sw_isr_table[index].isr,
 		 "expected ISR not found in table");
 
-	if (old == _IsrTable[index].isr) {
-		_IsrTable[index].isr = new;
-		_IsrTable[index].arg = arg;
+	if (old == _sw_isr_table[index].isr) {
+		_sw_isr_table[index].isr = new;
+		_sw_isr_table[index].arg = arg;
 	}
 
 	irq_unlock_inline(key);
@@ -201,5 +201,5 @@ void irq_disconnect(unsigned int irq)
 {
 	int index = irq - 16;
 
-	irq_handler_set(irq, _IsrTable[index].isr, _irq_spurious, NULL);
+	irq_handler_set(irq, _sw_isr_table[index].isr, _irq_spurious, NULL);
 }
