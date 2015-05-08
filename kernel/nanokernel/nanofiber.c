@@ -36,11 +36,6 @@ This module provides various nanokernel fiber related primitives,
 either in the form of an actual function or an alias to a function.
 */
 
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel/k_struct.h>
-#include <microkernel.h>
-#endif
-
 #include <nanok.h>
 #include <toolchain.h>
 #include <sections.h>

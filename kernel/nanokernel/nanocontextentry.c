@@ -39,11 +39,6 @@ ending the context, be it a task or a fiber.
 #include <toolchain.h>
 #include <sections.h>
 
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel/k_struct.h>
-#include <microkernel.h>
-#endif /* CONFIG_MICROKERNEL */
-
 #include <nanok.h>
 #include <nanocontextentry.h>
 #include <misc/printk.h>

@@ -138,9 +138,6 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 	_IntLibInit();
 #endif
 
-#if defined(CONFIG_MICROKERNEL)
-#endif
-
 	/*
 	 * Initialize the context control block (CCS) for the main (aka
 	 * background)
