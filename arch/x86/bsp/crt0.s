@@ -481,13 +481,13 @@ memInitDone:
 
 	/* activate RAM-based Global Descriptor Table (GDT) */
 
-	lgdt	%ds:_Gdt
+	lgdt	%ds:_gdt
 
 
 
 #if defined (CONFIG_ADVANCED_IDLE)
 	/*
-	 * Invoke _AdvIdleStart(_Cstart, _Gdt, _GlobalTss) by jumping to it.
+	 * Invoke _AdvIdleStart(_Cstart, _gdt, _GlobalTss) by jumping to it.
 	 * If it's a cold boot, this routine jumps to _Cstart and the normal
 	 * kernel boot sequence continues; otherwise, it uses the TSS info
 	 * saved in the GDT to resumes kernel processing at the point it was
@@ -496,7 +496,7 @@ memInitDone:
 	 */
 
 	pushl	$_GlobalTss
-	pushl	$_Gdt
+	pushl	$_gdt
 	pushl	$_Cstart
 	call	_AdvIdleStart
 #else

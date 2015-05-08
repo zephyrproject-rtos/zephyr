@@ -94,7 +94,7 @@ static
 
 /* globals */
 
-tGdtHeader _Gdt = {
+tGdtHeader _gdt = {
 	sizeof(tGdtDesc[MAX_GDT_ENTRIES - CONFIG_NUM_GDT_SPARE_ENTRIES]) -
 		1,
 	&_GdtEntries[0]};
