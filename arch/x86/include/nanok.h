@@ -800,7 +800,7 @@ extern tNANO _nanokernel;
 static inline void nanoArchInit(void)
 {
 	extern void *__isr___SpuriousIntHandler;
-	extern void *__DummySpur;
+	extern void *_dummy_spurious_interrupt;
 	extern void _ExcEnt(void);
 	extern void *__DummyExcEnt;
 	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
@@ -820,7 +820,7 @@ static inline void nanoArchInit(void)
 	 * isn't made then intconnect.o is never pulled in by the linker.
 	 */
 
-	__DummySpur = &__isr___SpuriousIntHandler;
+	_dummy_spurious_interrupt = &__isr___SpuriousIntHandler;
 
 	/*
 	 * Forces the inclusion of the exception vector stub code. If a

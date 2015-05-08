@@ -108,7 +108,7 @@ extern void _SpuriousIntNoErrCodeHandler(void *);
  * warnings issued some compilers that they aren't used. Therefore care must
  * be taken if they are to be moved. See nanok.h for more information.
  */
-void *__DummySpur;
+void *_dummy_spurious_interrupt;
 void *__DummyExcEnt;
 
 /*
