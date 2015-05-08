@@ -249,7 +249,8 @@ void K_ChProc(struct pipe_struct *pPipe,
 					if (pReader &&
 					    _TIME_NB !=
 						    ChxxxGetTimeType((
-							    K_ARGS_ARGS *)&(pWriter->Args))) {/* force transfer (we make exception for non-blocked writer) */
+							    K_ARGS_ARGS *)&(pWriter->Args))) {
+						/* force transfer (we make exception for non-blocked writer) */
 						K_ChProcWR(pPipe,
 							   pWriter,
 							   pReader);
@@ -276,7 +277,8 @@ void K_ChProc(struct pipe_struct *pPipe,
 					if (pWriter &&
 					    _TIME_NB !=
 						    ChxxxGetTimeType((
-							    K_ARGS_ARGS *)&(pReader->Args))) {/* force transfer (we make exception for non-blocked reader) */
+							    K_ARGS_ARGS *)&(pReader->Args))) {
+						/* force transfer (we make exception for non-blocked reader) */
 						K_ChProcWR(pPipe,
 							   pWriter,
 							   pReader);

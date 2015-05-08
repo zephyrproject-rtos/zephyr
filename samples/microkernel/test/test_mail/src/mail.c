@@ -38,7 +38,8 @@ This module tests the following mailbox APIs:
    task_mbox_get, task_mbox_get_wait, task_mbox_get_wait_timeout
 
    task_mbox_data_get
-   task_mbox_data_get_async_block,  task_mbox_data_get_async_block_wait, task_mbox_data_get_async_block_wait_timeout
+   task_mbox_data_get_async_block,  task_mbox_data_get_async_block_wait,
+   task_mbox_data_get_async_block_wait_timeout
 
 The module does NOT test the following mailbox APIs:
 

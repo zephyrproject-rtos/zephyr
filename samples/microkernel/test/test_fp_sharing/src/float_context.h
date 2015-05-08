@@ -86,7 +86,8 @@ typedef struct fpNonVolatileRegSet {
 
 #else /* ! CONFIG_ISA_IA32 */
 
-#error Architecture needs to provide a definition for 'struct fpRegSet' and 'struct fpNonVolatileRegSet'
+#error Architecture needs to provide a definition for 'struct fpRegSet' \
+and 'struct fpNonVolatileRegSet'
 #endif /* CONFIG_ISA_IA32 */
 
 /* the set of ALL floating point registers */

@@ -49,7 +49,8 @@ in decimal notation. Each event object is outputted on stdout.
 
 void usage(char *progname)
 {
-	fprintf(stderr, "Utility creates a series of microkernel VPF event objects. Output is sent to stdout.\n");
+	fprintf(stderr, "Utility creates a series of microkernel VPF event objects. "
+			"Output is sent to stdout.\n");
 	fprintf(stderr, "Usage: %s <decimal number>\n", progname);
 }
 

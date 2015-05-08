@@ -308,7 +308,8 @@ static	char _get_digit(uint32_t fract[], int *digit_count)
 #define	MAXFP1	0xFFFFFFFF	/* Largest # if first fp format */
 #define	MAXFP2	0x0FFFFFFF	/* Largest # in second fp format */
 
-static int _to_float(char *buf, uint32_t double_temp[], int full, int c, int falt, int fplus, int fspace, int precision)
+static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
+					 int falt, int fplus, int fspace, int precision)
 {
 	register int    decexp;
 	register int    exp;

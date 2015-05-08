@@ -429,7 +429,8 @@ void RegressionTask(void)
 		TC_PRINT("%s: FIFO Put time out as expected for data %d\n"
 			, __func__, myData[4]);
 	} else {
-		TC_ERROR("Failed task_fifo_put_wait_timeout for data %d, retValue %d\n", myData[4], retValue);
+		TC_ERROR("Failed task_fifo_put_wait_timeout for data %d, retValue %d\n",
+				 myData[4], retValue);
 		tcRC = TC_FAIL;
 		goto exitTest;
 	}
