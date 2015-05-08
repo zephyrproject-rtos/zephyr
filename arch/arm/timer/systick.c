@@ -129,7 +129,7 @@ static uint32_t idle_original_ticks = 0;
 static uint32_t __noinit max_load_value;
 static uint32_t __noinit timer_idle_skew;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
-static unsigned char idleMode = IDLE_NOT_TICKLESS;
+static unsigned char idle_mode = IDLE_NOT_TICKLESS;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 #if defined(CONFIG_TICKLESS_IDLE) || \
@@ -312,9 +312,9 @@ void _TIMER_INT_HANDLER(void *unused)
 
 	/* set the number of elapsed ticks and announce them to the kernel */
 
-	if (idleMode == IDLE_TICKLESS) {
+	if (idle_mode == IDLE_TICKLESS) {
 		/* tickless idle completed without interruption */
-		idleMode = IDLE_NOT_TICKLESS;
+		idle_mode = IDLE_NOT_TICKLESS;
 		_sys_idle_elapsed_ticks =
 			idle_original_ticks + 1; /* actual # of idle ticks */
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
@@ -531,7 +531,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 * modes, so the reload value is simply changed.
 	 */
 	timer_mode = TIMER_MODE_ONE_SHOT;
-	idleMode = IDLE_TICKLESS;
+	idle_mode = IDLE_TICKLESS;
 	sysTickReloadSet(idle_original_count);
 	sysTickStart();
 }
@@ -623,7 +623,7 @@ void _timer_idle_exit(void)
 		}
 	}
 
-	idleMode = IDLE_NOT_TICKLESS;
+	idle_mode = IDLE_NOT_TICKLESS;
 	sysTickStart();
 }
 
