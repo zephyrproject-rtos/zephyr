@@ -83,7 +83,7 @@ In order to use the driver, BSP has to define:
 #define MAX_BARS 6
 
 static struct pci_dev_info __noinit dev_info[CONFIG_MAX_PCI_DEVS];
-static int dev_info_idx = 0;
+static int dev_info_index = 0;
 
 /*******************************************************************************
 *
@@ -216,7 +216,7 @@ static void pci_dev_scan(uint32_t bus,
 	int i;
 	int max_bars;
 
-	if (dev_info_idx == CONFIG_MAX_PCI_DEVS) {
+	if (dev_info_index == CONFIG_MAX_PCI_DEVS) {
 		/* No more room in the table */
 		return;
 	}
@@ -256,20 +256,20 @@ static void pci_dev_scan(uint32_t bus,
 		for (i = 0; i < max_bars; ++i) {
 			/* Ignore BARs with errors and 64 bit BARs */
 			if (pci_bar_params_get(
-				    bus, dev, func, i, dev_info + dev_info_idx) !=
+				    bus, dev, func, i, dev_info + dev_info_index) !=
 			    0)
 				continue;
 			else {
-				dev_info[dev_info_idx].vendor_id =
+				dev_info[dev_info_index].vendor_id =
 					pci_dev_header.field.vendor_id;
-				dev_info[dev_info_idx].device_id =
+				dev_info[dev_info_index].device_id =
 					pci_dev_header.field.device_id;
-				dev_info[dev_info_idx].class =
+				dev_info[dev_info_index].class =
 					pci_dev_header.field.class;
-				dev_info[dev_info_idx].irq = pci_pin2irq(
+				dev_info[dev_info_index].irq = pci_pin2irq(
 					pci_dev_header.field.interrupt_pin);
-				dev_info_idx++;
-				if (dev_info_idx == CONFIG_MAX_PCI_DEVS) {
+				dev_info_index++;
+				if (dev_info_index == CONFIG_MAX_PCI_DEVS) {
 					/* No more room in the table */
 					return;
 				}
@@ -305,7 +305,7 @@ void pci_bus_scan(uint32_t class_mask /* bitmask, bits set for each needed class
 	/* run through the buses and devices */
 	for (bus = 0; bus < LSPCI_MAX_BUS; bus++) {
 		for (dev = 0; (dev < LSPCI_MAX_DEV) &&
-				      (dev_info_idx < CONFIG_MAX_PCI_DEVS);
+				      (dev_info_index < CONFIG_MAX_PCI_DEVS);
 		     dev++) {
 			pci_ctrl_addr.field.bus = bus;
 			pci_ctrl_addr.field.device = dev;
@@ -354,7 +354,7 @@ int pci_dev_find(int class, int idx, uint32_t *addr, uint32_t *size, int *irq)
 	int i;
 	int j;
 
-	for (i = 0, j = 0; i < dev_info_idx; i++) {
+	for (i = 0, j = 0; i < dev_info_index; i++) {
 		if (dev_info[i].class != class)
 			continue;
 
@@ -384,7 +384,7 @@ void pci_show(void)
 	int i;
 
 	printk("PCI devices:\n");
-	for (i = 0; i < dev_info_idx; i++) {
+	for (i = 0; i < dev_info_index; i++) {
 		printk("%X:%X class: 0x%X, %s, addrs: 0x%X-0x%X, IRQ %d\n",
 		       dev_info[i].vendor_id,
 		       dev_info[i].device_id,
