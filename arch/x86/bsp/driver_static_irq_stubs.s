@@ -61,7 +61,7 @@ by x86 BSPs.
 #endif
 
 #if defined (CONFIG_PIT)
-	GTEXT(_i8253IntStub)
+	GTEXT(_i8253_interrupt_stub)
 #endif
 
 #if defined(CONFIG_BLUETOOTH_UART)
@@ -141,7 +141,7 @@ SECTION_FUNC(TEXT, _slaveStrayIntStub)
 #endif /* CONFIG_PIC */
 
 #if defined(CONFIG_PIT)
-SECTION_FUNC(TEXT, _i8253IntStub)
+SECTION_FUNC(TEXT, _i8253_interrupt_stub)
 	call    _IntEnt			/* Inform kernel interrupt has begun */
 	pushl   $0			/* Push dummy parameter */
 	call    _timer_int_handler	/* Call actual interrupt handler */

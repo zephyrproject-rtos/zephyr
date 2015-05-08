@@ -126,10 +126,10 @@ extern int32_t _sys_idle_elapsed_ticks;
 /* interrupt stub memory for irq_connect() */
 
 #ifndef CONFIG_DYNAMIC_INT_STUBS
-extern void *_i8253IntStub;
-SYS_INT_REGISTER(_i8253IntStub, PIT_INT_LVL, PIT_INT_PRI);
+extern void *_i8253_interrupt_stub;
+SYS_INT_REGISTER(_i8253_interrupt_stub, PIT_INT_LVL, PIT_INT_PRI);
 #else
-static NANO_CPU_INT_STUB_DECL(_i8253IntStub);
+static NANO_CPU_INT_STUB_DECL(_i8253_interrupt_stub);
 #endif
 
 static uint16_t __noinit counterLoadVal; /* computed counter */
@@ -526,7 +526,7 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 				PIT_INT_PRI,
 				_i8253IntHandlerPeriodic,
 				0,
-				_i8253IntStub);
+				_i8253_interrupt_stub);
 #endif /* CONFIG_DYNAMIC_INT_STUBS */
 
 	_i8253TicklessIdleSkew();
