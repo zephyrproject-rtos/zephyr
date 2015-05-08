@@ -137,7 +137,7 @@ static uint32_t idle_original_count = 0;
 static uint32_t __noinit max_system_ticks;
 static uint32_t idle_original_ticks = 0;
 static uint32_t __noinit max_load_value;
-static uint32_t __noinit _TimerIdleSkew;
+static uint32_t __noinit timer_idle_skew;
 static unsigned char _TimerMode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
@@ -422,7 +422,7 @@ static void _loApicTimerTicklessIdleSkew(void)
 	volatile uint32_t dummy; /* used to replicate the 'skew time' */
 
 	/* Timer must be running for this to work */
-	_TimerIdleSkew = _loApicTimerGetRemaining();
+	timer_idle_skew = _loApicTimerGetRemaining();
 
 	_loApicTimerStart(); /* This is normally a stop operation */
 	dummy = _loApicTimerGetRemaining(); /*_loApicTimerSetCount
@@ -432,7 +432,7 @@ static void _loApicTimerTicklessIdleSkew(void)
 	_TimerMode = TIMER_MODE_PERIODIC;
 
 	/* Down counter */
-	_TimerIdleSkew -= _loApicTimerGetRemaining();
+	timer_idle_skew -= _loApicTimerGetRemaining();
 }
 
 /*******************************************************************************
@@ -457,7 +457,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 * timer. So we read the count out of it and add it to the requested
 	 * time out
 	 */
-	idle_original_count = _loApicTimerGetRemaining() - _TimerIdleSkew;
+	idle_original_count = _loApicTimerGetRemaining() - timer_idle_skew;
 
 	if ((ticks == -1) || (ticks > max_system_ticks)) {
 		/*

@@ -142,7 +142,7 @@ static uint16_t idle_original_count = 0;
 static uint16_t idle_original_ticks = 0;
 static uint16_t __noinit max_system_ticks;
 static uint16_t __noinit max_load_value;
-static uint16_t __noinit _TimerIdleSkew;
+static uint16_t __noinit timer_idle_skew;
 
 /* Used to determine if the timer ISR should place the timer in periodic mode */
 static unsigned char _TimerMode = TIMER_MODE_PERIODIC;
@@ -367,7 +367,7 @@ static void _i8253TicklessIdleInit(void)
 static void _i8253TicklessIdleSkew(void)
 {
 	/* TBD */
-	_TimerIdleSkew = 0;
+	timer_idle_skew = 0;
 }
 
 /*******************************************************************************
@@ -414,7 +414,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		newCount += idle_original_ticks * counterLoadVal;
 	}
 
-	idle_original_count = newCount - _TimerIdleSkew;
+	idle_original_count = newCount - timer_idle_skew;
 
 	/* Stop/start the timer instead of disabling/enabling the interrupt? */
 	irq_disable(PIT_INT_LVL);
