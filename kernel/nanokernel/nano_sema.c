@@ -140,7 +140,7 @@ void nano_task_sem_give(
 
 	imask = irq_lock_inline();
 	ccs = _nano_wait_q_remove(&sem->wait_q);
-	if (ccs != (tCCS *)NULL) {
+	if (ccs) {
 		_Swap(imask);
 		return;
 	} else {

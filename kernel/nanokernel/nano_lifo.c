@@ -117,7 +117,7 @@ void _lifo_put_non_preemptible(
 
 	imask = irq_lock_inline();
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
-	if (ccs != (tCCS *)NULL) {
+	if (ccs) {
 		fiberRtnValueSet(ccs, (unsigned int)data);
 	} else {
 		*(void **)data = lifo->list;
@@ -150,7 +150,7 @@ void nano_task_lifo_put(
 
 	imask = irq_lock_inline();
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
-	if (ccs != (tCCS *)NULL) {
+	if (ccs) {
 		fiberRtnValueSet(ccs, (unsigned int)data);
 		_Swap(imask);
 		return;
@@ -197,7 +197,7 @@ void *_lifo_get(
 	imask = irq_lock_inline();
 
 	data = lifo->list;
-	if (data != NULL) {
+	if (data) {
 		lifo->list = *(void **)data;
 	}
 
@@ -236,7 +236,7 @@ void *nano_fiber_lifo_get_wait(
 
 	imask = irq_lock_inline();
 
-	if (lifo->list == NULL) {
+	if (!lifo->list) {
 		_nano_wait_q_put(&lifo->wait_q);
 		data = (void *)_Swap(imask);
 	} else {
@@ -281,7 +281,7 @@ void *nano_task_lifo_get_wait(
 		 * There is little cost to a misprediction since that leads to idle.
 		 */
 
-		if (likely(lifo->list != NULL))
+		if (likely(lifo->list))
 			break;
 
 		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
