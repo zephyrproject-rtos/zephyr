@@ -202,6 +202,30 @@ struct bt_hci_cp_le_set_adv_enable {
 	uint8_t  enable;
 } PACK_STRUCT;
 
+/* Scan types */
+#define BT_HCI_OP_LE_SET_SCAN_PARAMS		BT_OP(BT_OGF_LE, 0x000b)
+#define BT_LE_SCAN_PASSIVE			0x00
+#define BT_LE_SCAN_ACTIVE			0x01
+
+struct bt_hci_cp_le_set_scan_params {
+	uint8_t  scan_type;
+	uint16_t interval;
+	uint16_t window;
+	uint8_t  addr_type;
+	uint8_t  filter_policy;
+} PACK_STRUCT;
+
+#define BT_HCI_OP_LE_SET_SCAN_ENABLE		BT_OP(BT_OGF_LE, 0x000c)
+#define BT_LE_SCAN_DISABLE			0x00
+#define BT_LE_SCAN_ENABLE			0x01
+#define BT_LE_SCAN_FILTER_DUP_DISABLE		0x00
+#define BT_LE_SCAN_FILTER_DUP_ENABLE		0x01
+
+struct bt_hci_cp_le_set_scan_enable {
+	uint8_t  enable;
+	uint8_t  filter_dup;
+} PACK_STRUCT;
+
 #define BT_HCI_OP_LE_ENCRYPT			BT_OP(BT_OGF_LE, 0x0017)
 struct bt_hci_cp_le_encrypt {
 	uint8_t  key[16];

@@ -828,3 +828,92 @@ send_set_param:
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
+
+int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
+{
+	struct bt_buf *buf, *rsp;
+	struct bt_hci_cp_le_set_scan_params *set_param;
+	struct bt_hci_cp_le_set_scan_enable *scan_enable;
+	int err;
+
+	if (dev.scan_enable == BT_LE_SCAN_ENABLE) {
+		return -EALREADY;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS, sizeof(*set_param));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	set_param = (void *)bt_buf_add(buf, sizeof(*set_param));
+	memset(set_param, 0, sizeof(*set_param));
+	set_param->scan_type = scan_type;
+
+	/* for the rest parameters apply default values according to
+	 *  spec 4.2, vol2, part E, 7.8.10
+	 */
+	set_param->interval = sys_cpu_to_le16(0x0010);
+	set_param->window = sys_cpu_to_le16(0x0010);
+	set_param->filter_policy = 0x00;
+	set_param->addr_type = 0x00;
+
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*scan_enable));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	scan_enable = (void *)bt_buf_add(buf, sizeof(*scan_enable));
+	memset(scan_enable, 0, sizeof(*scan_enable));
+	scan_enable->filter_dup = scan_filter;
+	scan_enable->enable = BT_LE_SCAN_ENABLE;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	/* Update scan state in case of success (0) status */
+	if (!rsp->data[0]) {
+		dev.scan_enable = BT_LE_SCAN_ENABLE;
+	}
+
+	bt_buf_put(rsp);
+
+	return 0;
+}
+
+int bt_stop_scanning()
+{
+	struct bt_buf *buf, *rsp;
+	struct bt_hci_cp_le_set_scan_enable *scan_enable;
+	int err;
+
+	if (dev.scan_enable == BT_LE_SCAN_DISABLE) {
+		return -EALREADY;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*scan_enable));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	scan_enable = (void *)bt_buf_add(buf, sizeof(*scan_enable));
+	memset(scan_enable, 0x0, sizeof(*scan_enable));
+	scan_enable->filter_dup = 0x00;
+	scan_enable->enable = BT_LE_SCAN_DISABLE;
+
+	err =  bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	/* Update scan state in case of success (0) status */
+	if (!rsp->data[0]) {
+		dev.scan_enable = BT_LE_SCAN_DISABLE;
+	}
+
+	bt_buf_put(rsp);
+
+	return 0;
+}

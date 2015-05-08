@@ -87,5 +87,7 @@ struct bt_eir {
 
 int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
 			 const struct bt_eir *sd);
+int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter);
+int bt_stop_scanning();
 
 #endif /* __BT_BLUETOOTH_H */

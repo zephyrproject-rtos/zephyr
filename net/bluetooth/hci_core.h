@@ -53,6 +53,9 @@ struct bt_dev {
 	/* Advertising state */
 	uint8_t                 adv_enable;
 
+	/* Scanning state */
+	uint8_t			scan_enable;
+
 	/* Controller buffer information */
 	uint8_t			le_pkts;
 	uint16_t		le_mtu;
