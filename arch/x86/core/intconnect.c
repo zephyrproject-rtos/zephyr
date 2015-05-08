@@ -109,7 +109,7 @@ extern void _SpuriousIntNoErrCodeHandler(void *);
  * be taken if they are to be moved. See nanok.h for more information.
  */
 void *_dummy_spurious_interrupt;
-void *__DummyExcEnt;
+void *_dummy_exception_vector_stub;
 
 /*
  * Place the addresses of the spurious interrupt handlers into the intList

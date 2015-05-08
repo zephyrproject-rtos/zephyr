@@ -802,7 +802,7 @@ static inline void nanoArchInit(void)
 	extern void *__isr___SpuriousIntHandler;
 	extern void *_dummy_spurious_interrupt;
 	extern void _ExcEnt(void);
-	extern void *__DummyExcEnt;
+	extern void *_dummy_exception_vector_stub;
 	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
 	_nanokernel.nested = 0;
@@ -828,7 +828,7 @@ static inline void nanoArchInit(void)
 	 * isn't made then excstubs.o is never pulled in by the linker.
 	 */
 
-	__DummyExcEnt = &_ExcEnt;
+	_dummy_exception_vector_stub = &_ExcEnt;
 
 
 }
