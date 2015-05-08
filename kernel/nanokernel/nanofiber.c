@@ -91,7 +91,7 @@ void _insert_ccs(tCCS **queue, tCCS *ccs)
 
 nano_context_id_t context_self_get(void)
 {
-	return _NanoKernel.current;
+	return _nanokernel.current;
 }
 
 /*******************************************************************************
@@ -108,7 +108,7 @@ nano_context_type_t context_type_get(void)
 	if (_IS_IN_ISR())
 		return NANO_CTX_ISR;
 
-	if ((_NanoKernel.current->flags & TASK) == TASK)
+	if ((_nanokernel.current->flags & TASK) == TASK)
 		return NANO_CTX_TASK;
 
 	return NANO_CTX_FIBER;
@@ -128,7 +128,7 @@ nano_context_type_t context_type_get(void)
 int _context_essential_check(tCCS *pCtx /* pointer to context */
 					   )
 {
-	return ((pCtx == NULL) ? _NanoKernel.current : pCtx)->flags & ESSENTIAL;
+	return ((pCtx == NULL) ? _nanokernel.current : pCtx)->flags & ESSENTIAL;
 }
 
 /* currently the fiber and task implementations are identical */
@@ -149,7 +149,7 @@ FUNC_ALIAS(_fiber_start, fiber_start, void);
 * Given that this routine is _not_ ISR-callable, the following code is used
 * to differentiate between a task and fiber context:
 *
-*    if ((_NanoKernel.current->flags & TASK) == TASK)
+*    if ((_nanokernel.current->flags & TASK) == TASK)
 *
 * Given that the _fiber_start() primitive is not considered real-time
 * performance critical, a runtime check to differentiate between a calling
@@ -191,14 +191,14 @@ void _fiber_start(char *pStack,
 
 	/* insert thew newly crafted CCS into the fiber runnable context list */
 
-	_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
+	_insert_ccs((tCCS **)&_nanokernel.fiber, ccs);
 
 	/*
 	 * Simply return to the caller if the current context is FIBER,
 	 * otherwise swap into the newly created fiber context
 	 */
 
-	if ((_NanoKernel.current->flags & TASK) == TASK)
+	if ((_nanokernel.current->flags & TASK) == TASK)
 		_Swap(imask);
 	else
 		irq_unlock(imask);
@@ -222,15 +222,15 @@ void fiber_yield(void)
 {
 	unsigned int imask = irq_lock_inline();
 
-	if ((_NanoKernel.fiber != (tCCS *)NULL) &&
-	    (_NanoKernel.current->prio >= _NanoKernel.fiber->prio)) {
+	if ((_nanokernel.fiber != (tCCS *)NULL) &&
+	    (_nanokernel.current->prio >= _nanokernel.fiber->prio)) {
 		/*
 		 * Reinsert current context into the list of runnable contexts,
 		 * and
 		 * then swap to the context at the head of the fiber list.
 		 */
 
-		_insert_ccs(&(_NanoKernel.fiber), _NanoKernel.current);
+		_insert_ccs(&(_nanokernel.fiber), _nanokernel.current);
 		_Swap(imask);
 	} else
 		irq_unlock_inline(imask);
@@ -290,7 +290,7 @@ FUNC_NORETURN void fiber_abort(void)
 {
 	/* Do normal context exit cleanup, then give up CPU control */
 
-	_context_exit(_NanoKernel.current);
+	_context_exit(_nanokernel.current);
 	_nano_fiber_swap();
 }
 #endif

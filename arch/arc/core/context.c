@@ -53,7 +53,7 @@ struct init_stack_frame {
 	uint32_t r0;
 };
 
-tNANO _NanoKernel = {0};
+tNANO _nanokernel = {0};
 
 #if defined(CONFIG_CONTEXT_MONITOR)
 #define CONTEXT_MONITOR_INIT(pCcs) context_monitor_init(pCcs)
@@ -85,8 +85,8 @@ static ALWAYS_INLINE void context_monitor_init(struct s_CCS *pCcs /* context */
 	 */
 
 	key = irq_lock_inline();
-	pCcs->next_context = _NanoKernel.contexts;
-	_NanoKernel.contexts = pCcs;
+	pCcs->next_context = _nanokernel.contexts;
+	_nanokernel.contexts = pCcs;
 	irq_unlock_inline(key);
 }
 #endif /* CONFIG_CONTEXT_MONITOR */

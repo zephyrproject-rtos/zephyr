@@ -63,7 +63,7 @@ static inline tCCS *_nano_wait_q_remove_no_check(struct _nano_queue *wait_q)
 	}
 	ccs->link = 0;
 
-	_insert_ccs((tCCS **)&_NanoKernel.fiber, ccs);
+	_insert_ccs((tCCS **)&_nanokernel.fiber, ccs);
 	return ccs;
 }
 
@@ -79,8 +79,8 @@ static inline tCCS *_nano_wait_q_remove(struct _nano_queue *wait_q)
 /* put current fiber on specified wait queue */
 static inline void _nano_wait_q_put(struct _nano_queue *wait_q)
 {
-	((tCCS *)wait_q->tail)->link = _NanoKernel.current;
-	wait_q->tail = _NanoKernel.current;
+	((tCCS *)wait_q->tail)->link = _nanokernel.current;
+	wait_q->tail = _nanokernel.current;
 }
 
 #endif /* _kernel_nanokernel_include_wait_q__h_ */

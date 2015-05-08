@@ -83,7 +83,7 @@ SECTION_FUNC(TEXT, _firq_enter)
 	 */
 
 	/* save LP_START/LP_COUNT/LP_END variables */
-	mov_s r1, _NanoKernel
+	mov_s r1, _nanokernel
 
 	/* cannot store lp_count directly to memory */
 	mov r2, lp_count
@@ -106,12 +106,12 @@ SECTION_FUNC(TEXT, _firq_enter)
 
 SECTION_FUNC(TEXT, _firq_exit)
 
-	mov_s r1, _NanoKernel
+	mov_s r1, _nanokernel
 	ld_s r2, [r1, __tNANO_current_OFFSET]
 
 #ifndef CONFIG_FIRQ_NO_LPCC
 
-	/* assumption: r1 contains _NanoKernel, r2 contains the current thread */
+	/* assumption: r1 contains _nanokernel, r2 contains the current thread */
 
 	/* restore LP_START/LP_COUNT/LP_END variables */
 
@@ -185,7 +185,7 @@ _firq_reschedule:
 
 	st ilink, [sp, __tISF_pc_OFFSET] /* ilink into pc */
 
-	mov_s r1, _NanoKernel
+	mov_s r1, _nanokernel
 	ld r2, [r1, __tNANO_current_OFFSET]
 
 	_save_callee_saved_regs

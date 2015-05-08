@@ -112,7 +112,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 	/* indicate that failure of this fiber may be fatal to the entire system
 	 */
 
-	_NanoKernel.current->flags |= ESSENTIAL;
+	_nanokernel.current->flags |= ESSENTIAL;
 
 	while (1) { /* forever */
 		pArgs = (struct k_args *)nano_fiber_stack_pop_wait(
@@ -140,7 +140,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 			/* check if another fiber (of equal or greater priority)
 			 * needs to run */
 
-			if (_NanoKernel.fiber) {
+			if (_nanokernel.fiber) {
 				fiber_yield();
 			}
 		} while (nano_fiber_stack_pop(&_k_command_stack, (void *)&pArgs));
@@ -160,7 +160,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 #endif
 
 			_k_current_task = pNextTask;
-			_NanoKernel.task = (tCCS *)pNextTask->workspace;
+			_nanokernel.task = (tCCS *)pNextTask->workspace;
 
 #ifdef CONFIG_TASK_MONITOR
 			if (_k_monitor_mask & MON_TSWAP) {

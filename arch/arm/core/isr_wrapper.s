@@ -85,7 +85,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
     cpsid i  /* PRIMASK = 1 */
 
     /* is this a wakeup from idle ? */
-    ldr r2, =_NanoKernel
+    ldr r2, =_nanokernel
     ldr r0, [r2, #__tNANO_idle_OFFSET]  /* requested idle duration, in ticks */
     cmp r0, #0
     ittt ne

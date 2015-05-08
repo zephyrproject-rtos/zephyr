@@ -64,7 +64,7 @@ GTEXT(_rirq_exit)
 
 SECTION_FUNC(TEXT, _rirq_enter)
 
-	mov r1, _NanoKernel
+	mov r1, _nanokernel
 	ld r2, [r1, __tNANO_current_OFFSET]
 #if CONFIG_NUM_REGULAR_IRQ_PRIO_LEVELS == 1
 	st sp, [r2, __tCCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
@@ -84,7 +84,7 @@ SECTION_FUNC(TEXT, _rirq_enter)
 
 SECTION_FUNC(TEXT, _rirq_exit)
 
-	mov r1, _NanoKernel
+	mov r1, _nanokernel
 	ld r2, [r1, __tNANO_current_OFFSET]
 
 #if CONFIG_NUM_REGULAR_IRQ_PRIO_LEVELS > 1

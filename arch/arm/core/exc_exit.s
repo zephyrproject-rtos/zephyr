@@ -49,7 +49,7 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(_ExcExit)
 GTEXT(_IntExit)
-GDATA(_NanoKernel)
+GDATA(_nanokernel)
 
 #if CONFIG_GDB_INFO
   #define _EXIT_EXC_IF_FIBER_PREEMPTED beq _ExcExitWithGdbStub
@@ -104,7 +104,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
-    ldr r1, =_NanoKernel
+    ldr r1, =_nanokernel
 
     /* is the current thread preemptible (task) ? */
     ldr r2, [r1, #__tNANO_flags_OFFSET]

@@ -68,12 +68,12 @@ void _context_exit(tCCS *pContext)
 	 * fibers regardless of whether they are runnable.
 	 */
 
-	if (pContext == _NanoKernel.contexts) {
-		_NanoKernel.contexts = _NanoKernel.contexts->next_context;
+	if (pContext == _nanokernel.contexts) {
+		_nanokernel.contexts = _nanokernel.contexts->next_context;
 	} else {
 		tCCS *pPrevContext;
 
-		pPrevContext = _NanoKernel.contexts;
+		pPrevContext = _nanokernel.contexts;
 		while (pContext != pPrevContext->next_context) {
 			pPrevContext = pPrevContext->next_context;
 		}
@@ -127,7 +127,7 @@ FUNC_NORETURN void _context_entry(
 		 * so if it has nothing left to do just let it idle forever
 		 */
 
-		while (((_NanoKernel.current)->flags & TASK) == TASK) {
+		while (((_nanokernel.current)->flags & TASK) == TASK) {
 			nano_cpu_idle();
 		}
 #endif /*  CONFIG_NANOKERNEL */
@@ -141,7 +141,7 @@ FUNC_NORETURN void _context_entry(
 /* Gracefully terminate the currently executing context */
 
 #ifdef CONFIG_MICROKERNEL
-	if (((_NanoKernel.current)->flags & TASK) == TASK) {
+	if (((_nanokernel.current)->flags & TASK) == TASK) {
 		extern FUNC_NORETURN void _TaskAbort(void);
 		_TaskAbort();
 	} else

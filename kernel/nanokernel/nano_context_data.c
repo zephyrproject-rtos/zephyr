@@ -54,7 +54,7 @@ for the context's "program" to use as it sees fit.
 void context_custom_data_set(void *value /* new value */
 		      )
 {
-	_NanoKernel.current->custom_data = value;
+	_nanokernel.current->custom_data = value;
 }
 
 /*******************************************************************************
@@ -69,6 +69,6 @@ void context_custom_data_set(void *value /* new value */
 
 void *context_custom_data_get(void)
 {
-	return _NanoKernel.current->custom_data;
+	return _nanokernel.current->custom_data;
 }
 #endif /* CONFIG_CONTEXT_CUSTOM_DATA */

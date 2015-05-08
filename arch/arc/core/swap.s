@@ -49,7 +49,7 @@ See isr_wrapper.s for details.
 
 GTEXT(_Swap)
 
-GDATA(_NanoKernel)
+GDATA(_nanokernel)
 
 /*******************************************************************************
 *
@@ -87,7 +87,7 @@ SECTION_FUNC(TEXT, _Swap)
 
 	/* interrupts are locked, interrupt key is in r0 */
 
-	mov r1, _NanoKernel
+	mov r1, _nanokernel
 	ld r2, [r1, __tNANO_current_OFFSET]
 
 	/* save intlock key */

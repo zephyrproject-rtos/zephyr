@@ -173,7 +173,7 @@ typedef struct firq_regs tFirqRegs;
 
 struct s_CCS {
 	struct s_CCS *link;        /* node in singly-linked list
-								* _NanoKernel.fibers */
+								* _nanokernel.fibers */
 	uint32_t flags;            /* bitmask of flags above */
 	uint32_t intlock_key;      /* interrupt key when relinquishing control */
 	int relinquish_cause;      /* one of the _CAUSE_xxxx definitions above */
@@ -210,14 +210,14 @@ struct s_NANO {
 
 	/*
 	 * FIRQ stack pointer is installed once in the second bank's SP, so
-	 * there is no need to track it in _NanoKernel.
+	 * there is no need to track it in _nanokernel.
 	 */
 
 	struct firq_regs firq_regs;
 };
 
 typedef struct s_NANO tNANO;
-extern tNANO _NanoKernel;
+extern tNANO _nanokernel;
 
 #ifdef CONFIG_CPU_ARCV2
 #include <v2/cache.h>

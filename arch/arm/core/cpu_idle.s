@@ -92,7 +92,7 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
 */
 
 SECTION_FUNC(TEXT, _NanoIdleValGet)
-    ldr r0, =_NanoKernel
+    ldr r0, =_nanokernel
     ldr r0, [r0, #__tNANO_idle_OFFSET]
     bx lr
 
@@ -110,7 +110,7 @@ SECTION_FUNC(TEXT, _NanoIdleValGet)
 */
 
 SECTION_FUNC(TEXT, _NanoIdleValClear)
-    ldr r0, =_NanoKernel
+    ldr r0, =_nanokernel
     eors.n r1, r1
     str r1, [r0, #__tNANO_idle_OFFSET]
     bx lr

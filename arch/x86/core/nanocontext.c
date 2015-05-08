@@ -51,7 +51,7 @@ processor architecture.
 
 /* the one and only nanokernel control structure */
 
-tNANO _NanoKernel = {0};
+tNANO _nanokernel = {0};
 
 /* forward declaration */
 
@@ -199,8 +199,8 @@ static void _NewContextInternal(
 		 */
 
 		imask = irq_lock();
-		ccs->next_context = _NanoKernel.contexts;
-		_NanoKernel.contexts = ccs;
+		ccs->next_context = _nanokernel.contexts;
+		_nanokernel.contexts = ccs;
 		irq_unlock(imask);
 	}
 #endif /* CONFIG_CONTEXT_MONITOR */
@@ -382,7 +382,7 @@ void *_NewContext(
 
 void _NanoEssentialContextSet(void)
 {
-	_NanoKernel.current->flags |= ESSENTIAL;
+	_nanokernel.current->flags |= ESSENTIAL;
 }
 
 /*******************************************************************************
@@ -400,5 +400,5 @@ void _NanoEssentialContextSet(void)
 
 void _NanoEssentialContextClear(void)
 {
-	_NanoKernel.current->flags &= ~ESSENTIAL;
+	_nanokernel.current->flags &= ~ESSENTIAL;
 }

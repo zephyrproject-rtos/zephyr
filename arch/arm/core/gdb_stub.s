@@ -75,7 +75,7 @@ _ASM_FILE_PROLOGUE
 
 SECTION_FUNC(TEXT, _GdbStubExcEntry)
 
-    ldr r1, =_NanoKernel
+    ldr r1, =_nanokernel
     ldr r2, [r1, #__tNANO_flags_OFFSET]
 
     /* already in an exception, do not update the registers */
@@ -119,7 +119,7 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
     it eq
 	bxeq lr
 
-    ldr r1, =_NanoKernel
+    ldr r1, =_nanokernel
     ldr r2, [r1, #__tNANO_flags_OFFSET]
 
     bic r2, #EXC_ACTIVE

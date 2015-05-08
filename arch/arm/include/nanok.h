@@ -125,7 +125,7 @@ typedef struct preempt tPreempt;
 
 #ifndef _ASMLANGUAGE
 struct s_CCS {
-	struct s_CCS *link; /* singly-linked list in _NanoKernel.fibers */
+	struct s_CCS *link; /* singly-linked list in _nanokernel.fibers */
 	uint32_t flags;
 	uint32_t basepri;
 	int prio;
@@ -159,7 +159,7 @@ struct s_NANO {
 };
 
 typedef struct s_NANO tNANO;
-extern tNANO _NanoKernel;
+extern tNANO _nanokernel;
 
 #endif /* _ASMLANGUAGE */
 
@@ -168,7 +168,7 @@ extern void _FaultInit(void);
 extern void _CpuIdleInit(void);
 static ALWAYS_INLINE void nanoArchInit(void)
 {
-	_NanoKernel.flags = FIBER;
+	_nanokernel.flags = FIBER;
 	_InterruptStackSetup();
 	_ExcSetup();
 	_FaultInit();

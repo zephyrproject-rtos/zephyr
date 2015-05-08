@@ -90,9 +90,9 @@ extern void main(int argc, char *argv[], char *envp[]);
 *   main () -> kernel_init () -> task_fiber_start(... K_swapper ...)
 *
 * The _nano_init() routine initializes a context for the main() routine
-* (aka background context which is a task context)), and sets _NanoKernel.task
-* to the 'tCCS *' for the new context.  The _NanoKernel.current field is set to
-* the provided <dummyOutContext> tCCS, however _NanoKernel.fiber is set to
+* (aka background context which is a task context)), and sets _nanokernel.task
+* to the 'tCCS *' for the new context.  The _nanokernel.current field is set to
+* the provided <dummyOutContext> tCCS, however _nanokernel.fiber is set to
 * NULL.
 *
 * Thus the subsequent invocation of _nano_fiber_swap() depicted above results
@@ -117,7 +117,7 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 	 * needed to identify it as a dummy context.
 	 */
 
-	_NanoKernel.current = dummyOutContext;
+	_nanokernel.current = dummyOutContext;
 
 	dummyOutContext->link =
 		(tCCS *)NULL; /* context not inserted into list */
@@ -145,7 +145,7 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 	 * 'main'.
 	 */
 
-	_NanoKernel.task =
+	_nanokernel.task =
 		_NewContext(_k_init_and_idle_task_stack,			 /* pStackMem */
 			    CONFIG_MAIN_STACK_SIZE, /* stackSize */
 			    (_ContextEntry)main,	 /* pEntry */
@@ -159,13 +159,13 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 	/* indicate that failure of this task may be fatal to the entire system
 	 */
 
-	_NanoKernel.task->flags |= ESSENTIAL;
+	_nanokernel.task->flags |= ESSENTIAL;
 
 #if defined(CONFIG_MICROKERNEL)
 	/* fill in microkernel's TCB, which is the last element in _k_task_list[]
 	 */
 
-	_k_task_list[_k_task_count].workspace = (char *)_NanoKernel.task;
+	_k_task_list[_k_task_count].workspace = (char *)_nanokernel.task;
 	_k_task_list[_k_task_count].worksize = CONFIG_MAIN_STACK_SIZE;
 #endif
 
@@ -175,9 +175,9 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 	 * as the currently executing fiber context.
 	 */
 
-	_NanoKernel.fiber = NULL;
+	_nanokernel.fiber = NULL;
 #ifdef CONFIG_FP_SHARING
-	_NanoKernel.current_fp = NULL;
+	_nanokernel.current_fp = NULL;
 #endif /* CONFIG_FP_SHARING */
 
 	nanoArchInit();

@@ -88,12 +88,12 @@ IRQ stack frame layout:
 
 The context switch code adopts this standard so that it is easier to follow:
 
-  - r1 contains _NanoKernel ASAP and is not overwritten over the lifespan of
+  - r1 contains _nanokernel ASAP and is not overwritten over the lifespan of
     the functions.
-  - r2 contains _NanoKernel.current ASAP, and the incoming thread when we
+  - r2 contains _nanokernel.current ASAP, and the incoming thread when we
     transition from outgoing context to incoming context
 
-Not loading _NanoKernel into r0 allows loading _NanoKernel without stomping on
+Not loading _nanokernel into r0 allows loading _nanokernel without stomping on
 the parameter in r0 in _Swap().
 
 

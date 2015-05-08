@@ -159,7 +159,7 @@ SECTION_FUNC(TEXT, _ExcEnt)
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
 
-	movl	_NanoKernel + __tNANO_current_OFFSET, %ecx
+	movl	_nanokernel + __tNANO_current_OFFSET, %ecx
 
 	incl	__tCCS_excNestCount_OFFSET(%ecx)	/* inc exception nest count */
 
@@ -241,7 +241,7 @@ SECTION_FUNC(TEXT, _ExcExit)
 
 #if defined(CONFIG_SUPPORT_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
 
-	movl	_NanoKernel + __tNANO_current_OFFSET, %ecx
+	movl	_nanokernel + __tNANO_current_OFFSET, %ecx
 
 	/*
 	 * Must lock interrupts to prevent outside interference.

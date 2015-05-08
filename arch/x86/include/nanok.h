@@ -777,10 +777,10 @@ typedef struct s_NANO {
 
 /*
  * There is only a single instance of the s_NANO structure, given that there
- * is only a single nanokernel in the system: _NanoKernel
+ * is only a single nanokernel in the system: _nanokernel
  */
 
-extern tNANO _NanoKernel;
+extern tNANO _nanokernel;
 
 /* inline function definitions */
 
@@ -805,12 +805,12 @@ static inline void nanoArchInit(void)
 	extern void *__DummyExcEnt;
 	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
-	_NanoKernel.nested = 0;
+	_nanokernel.nested = 0;
 
 #ifdef CONFIG_NO_ISRS
-	_NanoKernel.common_isp = (char *)NULL;
+	_nanokernel.common_isp = (char *)NULL;
 #else  /* notdef CONFIG_NO_ISRS */
-	_NanoKernel.common_isp = (char *)STACK_ROUND_DOWN(
+	_nanokernel.common_isp = (char *)STACK_ROUND_DOWN(
 		&_interrupt_stack[CONFIG_ISR_STACK_SIZE - 1]);
 #endif /* notdef CONFIG_NO_ISRS */
 
@@ -932,7 +932,7 @@ static inline void _IntLibInit(void)
 }
 #endif
 
-#define _IS_IN_ISR() (_NanoKernel.nested != 0)
+#define _IS_IN_ISR() (_nanokernel.nested != 0)
 
 #endif /* _ASMLANGUAGE */
 

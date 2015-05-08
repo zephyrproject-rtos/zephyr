@@ -214,7 +214,7 @@ void _FpEnable(tCCS *ccs,
 	 * preserved).
 	 */
 
-	fp_owner = _NanoKernel.current_fp;
+	fp_owner = _nanokernel.current_fp;
 	if (fp_owner) {
 		if (fp_owner->flags & INT_OR_EXC_MASK) {
 			_FpCtxSave(fp_owner);
@@ -227,7 +227,7 @@ void _FpEnable(tCCS *ccs,
 
 	/* Associate the new FP context with the specified task/fiber */
 
-	if (ccs == _NanoKernel.current) {
+	if (ccs == _nanokernel.current) {
 		/*
 		 * When enabling FP support for self, just claim ownership of
 		 *the FPU
@@ -237,14 +237,14 @@ void _FpEnable(tCCS *ccs,
 		 *CCS.)
 		 */
 
-		_NanoKernel.current_fp = ccs;
+		_nanokernel.current_fp = ccs;
 	} else {
 		/*
 		 * When enabling FP support for someone else, assign ownership
 		 * of the FPU to them (unless we need it ourselves).
 		 */
 
-		if ((_NanoKernel.current->flags & USE_FP) != USE_FP) {
+		if ((_nanokernel.current->flags & USE_FP) != USE_FP) {
 			/*
 			 * We are not FP-capable, so mark FPU as owned by the
 			 * context
@@ -253,7 +253,7 @@ void _FpEnable(tCCS *ccs,
 			 * FP access by setting CR0[TS] to its original state.
 			 */
 
-			_NanoKernel.current_fp = ccs;
+			_nanokernel.current_fp = ccs;
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
 			_FpAccessDisable();
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */
@@ -362,15 +362,15 @@ void _FpDisable(tCCS *ccs)
 
 	ccs->flags &= ~(USE_FP | USE_SSE);
 
-	if (ccs == _NanoKernel.current) {
+	if (ccs == _nanokernel.current) {
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
 		_FpAccessDisable();
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 
-		_NanoKernel.current_fp = (tCCS *)0;
+		_nanokernel.current_fp = (tCCS *)0;
 	} else {
-		if (_NanoKernel.current_fp == ccs)
-			_NanoKernel.current_fp = (tCCS *)0;
+		if (_nanokernel.current_fp == ccs)
+			_nanokernel.current_fp = (tCCS *)0;
 	}
 
 	irq_unlock_inline(imask);
@@ -453,7 +453,7 @@ void _FpNotAvailableExcHandler(NANO_ESF * pEsf /* not used */
 	enableOption = USE_FP;
 #endif
 
-	_FpEnable(_NanoKernel.current, enableOption);
+	_FpEnable(_nanokernel.current, enableOption);
 }
 
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */

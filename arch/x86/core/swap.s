@@ -95,9 +95,9 @@ save frame on the stack.
 * potential security leaks.
 *
 * The scheduling algorithm is simple: schedule the head of the runnable
-* FIBER context list, which is represented by _NanoKernel.fiber.  If there are
+* FIBER context list, which is represented by _nanokernel.fiber.  If there are
 * no runnable FIBER contexts, then schedule the TASK context represented
-* by _NanoKernel.task.  The _NanoKernel.task field will never be NULL.
+* by _nanokernel.task.  The _nanokernel.task field will never be NULL.
 *
 * RETURNS: may contain a return value setup by a call to fiberRtnValueSet()
 *
@@ -108,7 +108,7 @@ save frame on the stack.
 */
 
 SECTION_FUNC(TEXT, _Swap)
-	movl	$_NanoKernel, %eax
+	movl	$_nanokernel, %eax
 
 	/*
 	 * Push all non-volatile registers onto the stack; do not copy
@@ -139,7 +139,7 @@ SECTION_FUNC(TEXT, _Swap)
 
 	/*
 	 * Determine what FIBER or TASK context needs to be swapped in. 
-	 * Note that the %eax still contains &_NanoKernel.
+	 * Note that the %eax still contains &_nanokernel.
 	 */ 
 
 	movl	__tNANO_fiber_OFFSET (%eax), %ecx
@@ -155,7 +155,7 @@ SECTION_FUNC(TEXT, _Swap)
 
  	/*
  	 * There are no FIBER context in the run queue, thus swap in the
-	 * TASK context specified via _NanoKernel.task.  The 'task' field
+	 * TASK context specified via _nanokernel.task.  The 'task' field
 	 * will _never_ be NULL.
 	 */
 
@@ -168,7 +168,7 @@ BRANCH_LABEL(swapTask)
 	/*
 	 * At this point, the %ecx register contains the 'tCCS *' of
 	 * the TASK or FIBER to be swapped in, and %eax still
-	 * contains &_NanoKernel.
+	 * contains &_nanokernel.
 	 */
 
 BRANCH_LABEL(restoreContext)
@@ -338,7 +338,7 @@ BRANCH_LABEL(CROHandlingDone)
 
 
 
-	/* update _NanoKernel.current to reflect incoming context */
+	/* update _nanokernel.current to reflect incoming context */
 
 	movl    %ecx, __tNANO_current_OFFSET (%eax) 
 

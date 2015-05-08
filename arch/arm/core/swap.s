@@ -49,7 +49,7 @@ GTEXT(_Swap)
 GTEXT(__svc)
 GTEXT(__pendsv)
 
-GDATA(_NanoKernel)
+GDATA(_nanokernel)
 
 /*******************************************************************************
 *
@@ -64,9 +64,9 @@ GDATA(_NanoKernel)
 * to swap *something*.
 *
 * The scheduling algorithm is simple: schedule the head of the runnable FIBER
-* context list, which is represented by _NanoKernel.fiber. If there are no
+* context list, which is represented by _nanokernel.fiber. If there are no
 * runnable FIBER contexts, then schedule the TASK context represented by
-* _NanoKernel.task. The _NanoKernel.task field will never be NULL.
+* _nanokernel.task. The _nanokernel.task field will never be NULL.
 */
 
 SECTION_FUNC(TEXT, __pendsv)
@@ -74,7 +74,7 @@ SECTION_FUNC(TEXT, __pendsv)
     _GDB_STUB_EXC_ENTRY
 
     /* load _Nanokernel into r1 and current tCCS into r2 */
-    ldr r1, =_NanoKernel
+    ldr r1, =_nanokernel
     ldr r2, [r1, #__tNANO_current_OFFSET]
 
     /* addr of callee-saved regs in CCS in r0 */
@@ -213,7 +213,7 @@ SECTION_FUNC(TEXT, __svc)
 
 SECTION_FUNC(TEXT, _Swap)
 
-    ldr r1, =_NanoKernel
+    ldr r1, =_nanokernel
     ldr r2, [r1, #__tNANO_current_OFFSET]
     str r0, [r2, #__tCCS_basepri_OFFSET]
 

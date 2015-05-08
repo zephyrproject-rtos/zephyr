@@ -80,7 +80,7 @@ entering and exiting a C interrupt handler.
 *
 * This function is called from the interrupt stub created by irq_connect()
 * to inform the VxMicro kernel of an interrupt.  This routine increments
-* _NanoKernel.nested (to support interrupt nesting), switches to the
+* _nanokernel.nested (to support interrupt nesting), switches to the
 * base of the interrupt stack, if not already on the interrupt stack, and then
 * saves the volatile integer registers onto the stack.  Finally, control is
 * returned back to the interrupt stub code (which will then invoke the
@@ -176,9 +176,9 @@ SECTION_FUNC(TEXT, _IntEnt)
 #endif
 
 
-	/* load %ecx with &_NanoKernel */
+	/* load %ecx with &_nanokernel */
 
-	movl	$_NanoKernel, %ecx
+	movl	$_nanokernel, %ecx
 
 	/* switch to the interrupt stack for the non-nested case */
 
@@ -246,7 +246,7 @@ BRANCH_LABEL(_HandleIdle)
 *
 * This function is called from the interrupt stub created by irq_connect()
 * to inform the VxMicro kernel that the processing of an interrupt has
-* completed.  This routine decrements _NanoKernel.nested (to support interrupt
+* completed.  This routine decrements _nanokernel.nested (to support interrupt
 * nesting), restores the volatile integer registers, and then switches
 * back to the interrupted context's stack, if this isn't a nested interrupt.
 *
@@ -273,7 +273,7 @@ SECTION_FUNC(TEXT, _IntExit)
 
 	/* determine whether exiting from a nested interrupt */
 
-	movl	$_NanoKernel, %ecx
+	movl	$_nanokernel, %ecx
 	decl	__tNANO_nested_OFFSET(%ecx)	/* dec interrupt nest count */
 	jne	nestedInterrupt                 /* 'iret' if nested case */
 
@@ -281,7 +281,7 @@ SECTION_FUNC(TEXT, _IntExit)
 	/*
 	 * Determine whether the execution of the ISR requires a context
 	 * switch.  If the interrupted context is PREEMPTIBLE and
-	 * _NanoKernel.fiber is non-NULL, a _Swap() needs to occur.
+	 * _nanokernel.fiber is non-NULL, a _Swap() needs to occur.
 	 */
 
 	movl	__tNANO_current_OFFSET (%ecx), %eax
@@ -335,7 +335,7 @@ SECTION_FUNC(TEXT, _IntExit)
 	 * since it has served its purpose.
 	 */
 	 
-	movl	_NanoKernel + __tNANO_current_OFFSET, %eax
+	movl	_nanokernel + __tNANO_current_OFFSET, %eax
 	andl	$~INT_ACTIVE, __tCCS_flags_OFFSET (%eax)
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 

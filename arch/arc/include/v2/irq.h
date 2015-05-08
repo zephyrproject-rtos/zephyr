@@ -69,7 +69,7 @@ static ALWAYS_INLINE void _irq_setup(void)
 	nano_cpu_sleep_mode = _ARC_V2_WAKE_IRQ_LEVEL;
 	_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_CTRL, aux_irq_ctrl_value);
 
-	_NanoKernel.rirq_sp = _interrupt_stack + CONFIG_ISR_STACK_SIZE;
+	_nanokernel.rirq_sp = _interrupt_stack + CONFIG_ISR_STACK_SIZE;
 	_firq_stack_setup();
 }
 
