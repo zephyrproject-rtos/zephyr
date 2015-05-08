@@ -53,7 +53,7 @@ been left in place should future booting scenarios arise which require its use.
 	/* externs */
 	GTEXT(_Cstart)
 
-	GDATA(_IdtBaseAddress)
+	GDATA(_idt_base_address)
 	GDATA(_interrupt_stack)
 
 
@@ -526,7 +526,7 @@ _Idt:
 	 * setup by the BIOS (or GRUB?).
 	 */
 
-	.long	_IdtBaseAddress		/* physical start address */
+	.long	_idt_base_address		/* physical start address */
 
 
 #ifdef CONFIG_BOOTLOADER_UNKNOWN

@@ -60,9 +60,9 @@ Ensures interrupt and exception stubs are installed correctly.
 
 /* externs */
 
- /* the _IdtBaseAddress symbol is generated via a linker script */
+ /* the _idt_base_address symbol is generated via a linker script */
 
-extern unsigned char _IdtBaseAddress[];
+extern unsigned char _idt_base_address[];
 
 extern void *nanoIntStub;
 extern void *exc_divide_error_handlerStub;
@@ -138,7 +138,7 @@ int nanoIdtStubTest(void)
 	uint16_t offset;
 
     /* Check for the interrupt stub */
-	pIdtEntry = (IDT_ENTRY *) (_IdtBaseAddress + (TEST_SOFT_INT << 3));
+	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (TEST_SOFT_INT << 3));
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) & 0xFFFF);
 	if (pIdtEntry->lowOffset != offset)
@@ -157,7 +157,7 @@ int nanoIdtStubTest(void)
 	}
 
     /* Check for the exception stub */
-	pIdtEntry = (IDT_ENTRY *) (_IdtBaseAddress + (IV_DIVIDE_ERROR << 3));
+	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (IV_DIVIDE_ERROR << 3));
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) & 0xFFFF);
 	if (pIdtEntry->lowOffset != offset)

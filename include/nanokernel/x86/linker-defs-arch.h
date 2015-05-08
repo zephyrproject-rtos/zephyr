@@ -59,7 +59,7 @@ Commonly used macros and defines for linker script.
  */
 #define IDT_MEMORY \
   . = ALIGN(8);\
-  _IdtBaseAddress = .;\
+  _idt_base_address = .;\
   STATIC_IDT
 
 #endif   /* _LINKERDEFSARCH_H */

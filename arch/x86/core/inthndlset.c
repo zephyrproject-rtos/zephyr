@@ -45,9 +45,9 @@
 #include <nanok.h>
 
 
-/* the _IdtBaseAddress symbol is generated via a linker script */
+/* the _idt_base_address symbol is generated via a linker script */
 
-extern unsigned char _IdtBaseAddress[];
+extern unsigned char _idt_base_address[];
 
 /*
  * The FIRST_OPT_OPCODE_OFF macro defines the offset of the first optional
@@ -90,7 +90,7 @@ void irq_handler_set(unsigned int vector,
 	unsigned int *pIdtEntry;
 	unsigned char *pIntStubMem;
 
-	pIdtEntry = (unsigned int *)(_IdtBaseAddress + (vector << 3));
+	pIdtEntry = (unsigned int *)(_idt_base_address + (vector << 3));
 	pIntStubMem = (unsigned char *)(((uint16_t)pIdtEntry[0]) |
 					(pIdtEntry[1] & 0xffff0000));
 
