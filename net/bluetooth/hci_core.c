@@ -33,6 +33,7 @@
 #include <nanokernel.h>
 #include <toolchain.h>
 #include <string.h>
+#include <stdio.h>
 #include <errno.h>
 #include <misc/byteorder.h>
 
@@ -58,6 +59,16 @@ static char rx_fiber_stack[RX_STACK_SIZE];
 static char cmd_fiber_stack[CMD_STACK_SIZE];
 
 static struct bt_dev dev;
+
+const char *bt_bdaddr_str(const uint8_t bdaddr[6])
+{
+	static char bdaddr_str[18];
+
+	sprintf(bdaddr_str, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+		bdaddr[5], bdaddr[4], bdaddr[3], bdaddr[2], bdaddr[1], bdaddr[0]);
+
+	return bdaddr_str;
+}
 
 struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 {
@@ -347,6 +358,28 @@ static void le_conn_complete(struct bt_buf *buf)
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 }
 
+static void le_adv_report(struct bt_buf *buf)
+{
+	uint8_t num_reports = buf->data[0];
+	struct bt_hci_ev_le_advertising_info *info = (void *)&buf->data[1];
+
+	BT_DBG("Adv number of reports %u\n",  num_reports);
+
+	while (num_reports--) {
+		int8_t rssi = info->data[info->length];
+
+		BT_DBG("addr [%s], type:%u, event:%u, len:%u, rssi:%d dBm\n",
+			bt_bdaddr_str(info->bdaddr), info->bdaddr_type,
+			info->evt_type, info->length, rssi);
+
+		/* Get next report iteration by moving pointer to right offset
+		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
+		 */
+		info = (void *)bt_buf_pull(buf, sizeof(*info) + info->length +
+					   sizeof(rssi));
+	}
+}
+
 static void hci_le_meta_event(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_meta_event *evt = (void *)buf->data;
@@ -356,6 +389,9 @@ static void hci_le_meta_event(struct bt_buf *buf)
 	switch (evt->subevent) {
 	case BT_HCI_EVT_LE_CONN_COMPLETE:
 		le_conn_complete(buf);
+		break;
+	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+		le_adv_report(buf);
 		break;
 	default:
 		BT_DBG("Unhandled LE event %x\n", evt->subevent);

@@ -82,3 +82,8 @@ struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 			 struct bt_buf **rsp);
+
+/* The helper is only safe to be called from internal fibers as it's
+ * not multi-threading safe
+ */
+const char *bt_bdaddr_str(const uint8_t bdaddr[6]);

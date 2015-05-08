@@ -172,6 +172,8 @@ struct bt_hci_rp_le_read_local_features {
 #define BT_LE_ADV_DIRECT_IND			0x01
 #define BT_LE_ADV_SCAN_IND			0x02
 #define BT_LE_ADV_NONCONN_IND			0x03
+/* Needed in advertising reports when getting info about */
+#define BT_LE_ADV_SCAN_RSP			0x04
 
 #define BT_HCI_OP_LE_SET_ADV_PARAMETERS		BT_OP(BT_OGF_LE, 0x0006)
 struct bt_hci_cp_le_set_adv_parameters {
@@ -280,6 +282,18 @@ struct bt_hci_evt_le_conn_complete {
 	uint16_t latency;
 	uint16_t supv_timeout;
 	uint8_t  clock_accuracy;
+} PACK_STRUCT;
+
+#define BT_ADDR_LE_DEV_PUBLIC			0x00
+#define BT_ADDR_LE_DEV_RANDOM			0x01
+
+#define BT_HCI_EVT_LE_ADVERTISING_REPORT		0x02
+struct bt_hci_ev_le_advertising_info {
+	uint8_t  evt_type;
+	uint8_t  bdaddr_type;
+	uint8_t  bdaddr[6];
+	uint8_t  length;
+	uint8_t  data[0];
 } PACK_STRUCT;
 
 #endif /* __BT_HCI_H */
