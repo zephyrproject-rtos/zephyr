@@ -123,7 +123,7 @@ extern int32_t _sys_idle_elapsed_ticks;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static uint32_t __noinit default_load_value; /* default count */
-static uint32_t idleOrigCount = 0;
+static uint32_t idle_original_count = 0;
 static uint32_t __noinit maxSysTicks;
 static uint32_t idleOrigTicks = 0;
 static uint32_t __noinit maxLoadValue;
@@ -503,7 +503,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 * timer. So we read the count out of it and add it to the requested
 	 * time out
 	 */
-	idleOrigCount = sysTickCurrentGet() - timerIdleSkew;
+	idle_original_count = sysTickCurrentGet() - timerIdleSkew;
 
 	if ((ticks == -1) || (ticks > maxSysTicks)) {
 		/*
@@ -517,13 +517,13 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * earlier
 		 * is added.
 		 */
-		idleOrigCount += maxLoadValue - default_load_value;
+		idle_original_count += maxLoadValue - default_load_value;
 		idleOrigTicks = maxSysTicks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back */
 		idleOrigTicks = ticks - 1;
-		idleOrigCount += idleOrigTicks * default_load_value;
+		idle_original_count += idleOrigTicks * default_load_value;
 	}
 
 	/*
@@ -532,7 +532,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 */
 	timerMode = TIMER_MODE_ONE_SHOT;
 	idleMode = IDLE_TICKLESS;
-	sysTickReloadSet(idleOrigCount);
+	sysTickReloadSet(idle_original_count);
 	sysTickStart();
 }
 
@@ -592,7 +592,7 @@ void _timer_idle_exit(void)
 		uint32_t elapsed;   /* elapsed "counter time" */
 		uint32_t remaining; /* remaining "counter time" */
 
-		elapsed = idleOrigCount - count;
+		elapsed = idle_original_count - count;
 
 		remaining = elapsed % default_load_value;
 
