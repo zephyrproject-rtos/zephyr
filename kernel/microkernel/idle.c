@@ -68,7 +68,7 @@ extern uint32_t _k_workload_scale;
 
 /*******************************************************************************
 *
-* _workload_loop - shared code between workload calibration and monitoring
+* workload_loop - shared code between workload calibration and monitoring
 *
 * Perform idle task "dummy work".
 *
@@ -80,7 +80,7 @@ extern uint32_t _k_workload_scale;
 *
 */
 
-static void _workload_loop(void)
+static void workload_loop(void)
 {
 	volatile int x = 87654321;
 	volatile int y = 4;
@@ -118,7 +118,7 @@ void workload_monitor_calibrate(void)
 	_k_workload_n1 = 1000;
 
 	_k_workload_t0 = timer_read();
-	_workload_loop();
+	workload_loop();
 	_k_workload_t1 = timer_read();
 
 	_k_workload_delta = _k_workload_t1 - _k_workload_t0;
@@ -156,6 +156,15 @@ void _k_workload_monitor_update(void)
 		_k_workload_ticks = _k_workload_slice;
 	}
 }
+
+/*******************************************************************************
+*
+* _k_workload_get - process request to read the processor workload
+*
+* Computes workload, or uses 0 if workload monitoring is not configured.
+*
+* RETURNS: N/A
+*/
 
 void _k_workload_get(struct k_args *P)
 {
@@ -196,8 +205,13 @@ void _k_workload_get(struct k_args *P)
 *
 * This routine returns the workload as a number ranging from 0 to 1000.
 *
-* Each unit equals 0.1% of the time the CPU was not idle during the period
-* set by workload_time_slice_set().
+* Each unit equals 0.1% of the time the idle task was not scheduled by the
+* microkernel during the period set by workload_time_slice_set().
+*
+* IMPORTANT: This workload monitor ignores any time spent servicing ISRs and
+* fibers! Thus, a system which has no meaningful task work to do may spend
+* up to 100% of its time servicing ISRs and fibers, yet report a workload of 0%
+* because the idle task is always the task selected by the microkernel.
 *
 * RETURNS: workload
 */
@@ -395,7 +409,7 @@ static void _power_save(void)
 /* Specify what work to do when idle task is "busy waiting" */
 
 #ifdef CONFIG_WORKLOAD_MONITOR
-#define DO_IDLE_WORK()	_workload_loop();
+#define DO_IDLE_WORK()	workload_loop()
 #else
 #define DO_IDLE_WORK()	do { /* do nothing */ } while (0)
 #endif
