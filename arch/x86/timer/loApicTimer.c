@@ -135,7 +135,7 @@ static uint32_t clock_accumulated_count = 0;
 #if defined(TIMER_SUPPORTS_TICKLESS)
 static uint32_t idle_original_count = 0;
 static uint32_t __noinit max_system_ticks;
-static uint32_t _IdleOrigTicks = 0;
+static uint32_t idle_original_ticks = 0;
 static uint32_t __noinit _MaxLoadValue;
 static uint32_t __noinit _TimerIdleSkew;
 static unsigned char _TimerMode = TIMER_MODE_PERIODIC;
@@ -472,12 +472,12 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * is added.
 		 */
 		idle_original_count += _MaxLoadValue - counterLoadVal;
-		_IdleOrigTicks = max_system_ticks - 1;
+		idle_original_ticks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back ? */
-		_IdleOrigTicks = ticks - 1;
-		idle_original_count += _IdleOrigTicks * counterLoadVal;
+		idle_original_ticks = ticks - 1;
+		idle_original_count += idle_original_ticks * counterLoadVal;
 	}
 
 	_TimerMode = TIMER_MODE_PERIODIC_ENT;
@@ -519,7 +519,7 @@ void _timer_idle_exit(void)
 		 * mode */
 		_loApicTimerPeriodic();
 		_loApicTimerSetCount(counterLoadVal);
-		_sys_idle_elapsed_ticks = _IdleOrigTicks - 1;
+		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
 		_TimerMode = TIMER_MODE_PERIODIC;
 		/*
 		 * Announce elapsed ticks to the microkernel. Note we are

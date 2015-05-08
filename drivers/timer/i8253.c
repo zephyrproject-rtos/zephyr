@@ -139,7 +139,7 @@ static uint16_t _currentLoadVal = 0;
 #if defined(TIMER_SUPPORTS_TICKLESS)
 
 static uint16_t idle_original_count = 0;
-static uint16_t _IdleOrigTicks = 0;
+static uint16_t idle_original_ticks = 0;
 static uint16_t __noinit max_system_ticks;
 static uint16_t __noinit _MaxLoadValue;
 static uint16_t __noinit _TimerIdleSkew;
@@ -406,12 +406,12 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * is added.
 		 */
 		newCount += _MaxLoadValue - counterLoadVal;
-		_IdleOrigTicks = max_system_ticks - 1;
+		idle_original_ticks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back ? */
-		_IdleOrigTicks = ticks - 1;
-		newCount += _IdleOrigTicks * counterLoadVal;
+		idle_original_ticks = ticks - 1;
+		newCount += idle_original_ticks * counterLoadVal;
 	}
 
 	idle_original_count = newCount - _TimerIdleSkew;
@@ -456,7 +456,7 @@ void _timer_idle_exit(void)
 		/* Timer expired. Place back in periodic mode */
 		_i8253CounterPeriodic(counterLoadVal);
 		_TimerMode = TIMER_MODE_PERIODIC;
-		_sys_idle_elapsed_ticks = _IdleOrigTicks - 1;
+		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
 		/*
 		 * Announce elapsed ticks to the microkernel. Note we are
 		 * guaranteed
