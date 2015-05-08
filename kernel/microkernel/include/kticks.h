@@ -39,18 +39,6 @@
 extern K_TIMER *_k_timer_list_head;
 extern K_TIMER *_k_timer_list_tail;
 extern int64_t _k_sys_clock_tick_count;
-extern unsigned int _k_workload_slice;
-extern unsigned int _k_workload_ticks;
-extern unsigned int _k_workload_ref_time;
-extern unsigned int _k_workload_t0;
-extern unsigned int _k_workload_t1;
-extern volatile unsigned int _k_workload_n0;
-extern volatile unsigned int _k_workload_n1;
-extern volatile unsigned int _k_workload_i;
-extern volatile unsigned int _k_workload_i0;
-extern volatile unsigned int _k_workload_delta;
-extern volatile unsigned int _k_workload_start_time;
-extern volatile unsigned int _k_workload_end_time;
 
 extern void enlist_timer(K_TIMER *T);
 extern void delist_timer(K_TIMER *T);

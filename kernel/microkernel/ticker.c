@@ -147,33 +147,6 @@ static void sys_clock_increment(int inc)
 
 /*******************************************************************************
 *
-* _WlMonitorUpdate - workload monitor tick handler
-*
-* If workload monitor is configured this routine updates the global variables
-* it uses to record the passage of time.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
-
-static inline void _WlMonitorUpdate(void)
-{
-#ifdef CONFIG_WORKLOAD_MONITOR
-	if (--_k_workload_ticks == 0) {
-		_k_workload_t0 = _k_workload_t1;
-		_k_workload_t1 = timer_read();
-		_k_workload_n0 = _k_workload_n1;
-		_k_workload_n1 = _k_workload_i - 1;
-		_k_workload_ticks = _k_workload_slice;
-	}
-#else
-/* do nothing */
-#endif
-}
-
-/*******************************************************************************
-*
 * _TlDebugUpdate - task level debugging tick handler
 *
 * If task level debugging is configured this routine updates the low resolution
@@ -272,7 +245,7 @@ int K_ticker(int event)
 
 	ticks = _SysIdleElapsedTicksGet();
 
-	_WlMonitorUpdate();
+	_k_workload_monitor_update();
 
 	if (_TlDebugUpdate(ticks)) {
 		_TimeSliceUpdate();

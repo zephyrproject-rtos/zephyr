@@ -151,6 +151,9 @@ extern const int _k_monitor_mask;
 
 #ifdef CONFIG_WORKLOAD_MONITOR
 extern void workload_monitor_calibrate(void);
+extern void _k_workload_monitor_update(void);
+#else
+#define _k_workload_monitor_update()	do { /* nothing */ } while (0)
 #endif
 
 #define INSERT_ELM(L, E)                              \

@@ -134,10 +134,29 @@ void workload_monitor_calibrate(void)
 	_k_workload_ticks = 100;
 }
 
-#endif /* CONFIG_WORKLOAD_MONITOR */
+/*******************************************************************************
+*
+* _k_workload_monitor_update - workload monitor tick handler
+*
+* If workload monitor is configured this routine updates the global variables
+* it uses to record the passage of time.
+*
+* RETURNS: N/A
+*
+* \NOMANUAL
+*/
 
+void _k_workload_monitor_update(void)
+{
+	if (--_k_workload_ticks == 0) {
+		_k_workload_t0 = _k_workload_t1;
+		_k_workload_t1 = timer_read();
+		_k_workload_n0 = _k_workload_n1;
+		_k_workload_n1 = _k_workload_i - 1;
+		_k_workload_ticks = _k_workload_slice;
+	}
+}
 
-#ifdef CONFIG_WORKLOAD_MONITOR
 void _k_workload_get(struct k_args *P)
 {
 	unsigned int k, t;
@@ -168,7 +187,8 @@ void _k_workload_get(struct k_args *P)
 {
 	P->Args.u1.rval = 0;
 }
-#endif
+
+#endif /* CONFIG_WORKLOAD_MONITOR */
 
 /*******************************************************************************
 *
