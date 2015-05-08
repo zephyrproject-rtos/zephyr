@@ -94,9 +94,9 @@ cmdPkt_t *_cmd_pkt_get(
 * RETURNS: N/A
 */
 
-void _k_task_call(struct k_args *cmdpacket)
+void _k_task_call(struct k_args *cmd_packet)
 {
-	cmdpacket->alloc = false;
-	_k_current_task->Args = cmdpacket;
-	nano_task_stack_push(&_k_command_stack, (uint32_t)cmdpacket);
+	cmd_packet->alloc = false;
+	_k_current_task->Args = cmd_packet;
+	nano_task_stack_push(&_k_command_stack, (uint32_t)cmd_packet);
 }

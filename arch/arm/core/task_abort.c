@@ -50,7 +50,7 @@ PendSV exception and cause the immediate context switch to K_swapper.
 #include <nanokernel.h>
 #include <misc/__assert.h>
 
-static struct k_args cmdpacket;
+static struct k_args cmd_packet;
 
 /*******************************************************************************
 *
@@ -74,12 +74,12 @@ void _TaskAbort(void)
 	if (_ScbIsInThreadMode()) {
 		_task_ioctl(_k_current_task->Ident, taskAbortCode);
 	} else {
-		cmdpacket.Comm = TSKOP;
-		cmdpacket.Args.g1.task = _k_current_task->Ident;
-		cmdpacket.Args.g1.opt = taskAbortCode;
-		cmdpacket.alloc = false;
-		_k_current_task->Args = &cmdpacket;
-		nano_isr_stack_push(&_k_command_stack, (uint32_t) &cmdpacket);
+		cmd_packet.Comm = TSKOP;
+		cmd_packet.Args.g1.task = _k_current_task->Ident;
+		cmd_packet.Args.g1.opt = taskAbortCode;
+		cmd_packet.alloc = false;
+		_k_current_task->Args = &cmd_packet;
+		nano_isr_stack_push(&_k_command_stack, (uint32_t) &cmd_packet);
 		_ScbPendsvSet();
 	}
 }
