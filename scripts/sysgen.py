@@ -314,15 +314,15 @@ def kernel_main_c_kargs():
     # command packets
 
     kernel_main_c_out("\n" +
-        "struct k_args K_ArgsBlocks[%s] =\n" % (num_kargs) +
+        "struct k_args _k_server_command_packets[%s] =\n" % (num_kargs) +
         "{\n" +
         "    {NULL, NULL, 0, 0, (K_COMM) UNDEFINED},\n")
     for i in range(1, num_kargs - 1):
         kernel_main_c_out(
-            "    {&K_ArgsBlocks[%d], NULL, 0, 0, (K_COMM) UNDEFINED},\n" %
+            "    {&_k_server_command_packets[%d], NULL, 0, 0, (K_COMM) UNDEFINED},\n" %
             (i - 1))
     kernel_main_c_out(
-        "    {&K_ArgsBlocks[%d], NULL, 0, 0, (K_COMM) UNDEFINED}\n" %
+        "    {&_k_server_command_packets[%d], NULL, 0, 0, (K_COMM) UNDEFINED}\n" %
         (num_kargs - 2) +
         "};\n")
 
@@ -331,7 +331,7 @@ def kernel_main_c_kargs():
     kernel_main_c_out("\n" +
         "struct nano_lifo _k_server_command_packet_free = " +
         "{{NULL, &_k_server_command_packet_free.wait_q.head}, " +
-        "(void *) &K_ArgsBlocks[%d]};\n" % (num_kargs - 1))
+        "(void *) &_k_server_command_packets[%d]};\n" % (num_kargs - 1))
 
 
 def kernel_main_c_timers():
