@@ -334,18 +334,17 @@ rpl_cancel_dao(rpl_instance_t *instance)
 static rpl_parent_t *
 get_probing_target(rpl_dag_t *dag)
 {
-  /* Returns the next probing target. The current implementation looks for the
-   * best parent to which we have not transmitted since 2 * RPL_PROBING_INTERVAL.
-   * This will mostly select the preferred and second best parents. Probing the
-   * second best parent is important: if the link is good, RPL might choose to
-   * switch to it. If the link is bad, the second best parent will decrease in
-   * ranking, and another parent will be probed next time. */
+  /* Returns the next probing target. The current implementation probes the current
+   * preferred parent if we have not updated its link for 2 * RPL_PROBING_INTERVAL.
+   * Otherwise, it picks at random between:
+   * (1) selecting the best parent not updated for 2 * RPL_PROBING_INTERVAL
+   * (2) selecting the least recently updated parent
+   */
 
   rpl_parent_t *p;
-  rpl_parent_t *probing_target;
-  rpl_rank_t probing_target_rank;
-  /* Look for a parent we have not sent to since 2 * RPL_PROBING_INTERVAL,
-   * e.g. with last_tx_time earlier than min_last_tx */
+  rpl_parent_t *probing_target = NULL;
+  rpl_rank_t probing_target_rank = INFINITE_RANK;
+  /* min_last_tx is the clock time (2 * RPL_PROBING_INTERVAL) in the past */
   clock_time_t min_last_tx = clock_time();
   min_last_tx = min_last_tx > 2 * RPL_PROBING_INTERVAL ? min_last_tx - 2 * RPL_PROBING_INTERVAL : 1;
 
@@ -360,26 +359,34 @@ get_probing_target(rpl_dag_t *dag)
     return dag->preferred_parent;
   }
 
-  /* Look for the best parent that needs probing. */
-  probing_target = NULL;
-  probing_target_rank = INFINITE_RANK;
-  p = nbr_table_head(rpl_parents);
-  while(p != NULL) {
-    if(p->dag == dag && p->last_tx_time < min_last_tx) {
-      rpl_rank_t p_rank = dag->instance->of->calculate_rank(p, 0);
-      /* p is in our dag and needs probing */
-      if(probing_target == NULL) {
-        probing_target = p;
-        probing_target_rank = p_rank;
-      } else {
-        if(p_rank < probing_target_rank) {
-          /* Found better candidate */
+  if((random_rand() % 2) == 0) {
+    /* With 1/2 probability: probe best parent not updated for 2 * RPL_PROBING_INTERVAL */
+    p = nbr_table_head(rpl_parents);
+    while(p != NULL) {
+      if(p->dag == dag && p->last_tx_time < min_last_tx) {
+        /* p is in our dag and needs probing */
+        rpl_rank_t p_rank = dag->instance->of->calculate_rank(p, 0);
+        if(probing_target == NULL
+            || p_rank < probing_target_rank) {
           probing_target = p;
           probing_target_rank = p_rank;
         }
       }
+      p = nbr_table_next(rpl_parents, p);
     }
-    p = nbr_table_next(rpl_parents, p);
+  } else {
+    /* With 1/2 probability: probe the least recently updated parent */
+    p = nbr_table_head(rpl_parents);
+    while(p != NULL) {
+      if(p->dag == dag) {
+        if(probing_target == NULL
+            || p->last_tx_time < probing_target->last_tx_time) {
+          probing_target = p;
+        }
+      }
+      p = nbr_table_next(rpl_parents, p);
+    }
+
   }
 
   return probing_target;
