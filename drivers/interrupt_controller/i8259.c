@@ -103,7 +103,7 @@ the last level acknowledged and serviced.
 /* globals */
 
 #ifndef CONFIG_SHUTOFF_PIC
-unsigned int _I8259SpuriousIntCount =
+unsigned int _i8259_spurious_interrupt_count =
 	0; /* track # of spurious interrupts */
 
 /*

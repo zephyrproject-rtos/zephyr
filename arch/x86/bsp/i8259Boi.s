@@ -56,7 +56,7 @@ a real IRQ has been inserted.
  	/* externs */
 
 	GTEXT(_IntExit)
-	GDATA(_I8259SpuriousIntCount)
+	GDATA(_i8259_spurious_interrupt_count)
 
 
 /*******************************************************************************
@@ -144,7 +144,7 @@ BRANCH_LABEL(check_isr)
 
 BRANCH_LABEL(spur_isr)
     /* An actual spurious interrupt. Increment counter and short circuit */
-    incl    _I8259SpuriousIntCount
+    incl    _i8259_spurious_interrupt_count
 
     /* Pop the return address */
     addl    $4, %esp
