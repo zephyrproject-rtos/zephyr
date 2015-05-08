@@ -148,33 +148,17 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 		pNextTask = next_task_select();
 
 		if (_k_current_task != pNextTask) {
-/*
- * Need to swap the low priority task,
- * the task was saved on kernel_entry
- */
-#ifndef CONFIG_POWERSAVEOFF
-#ifdef CONFIG_WORKLOAD_MONITOR
-			/*
-			 * Workload variable update in case of
-			 * power save mode
-			 */
-			extern volatile unsigned int _k_workload_i;
-			extern volatile unsigned int _k_workload_i0;
-			extern volatile unsigned int _k_workload_delta;
-			extern volatile unsigned int _k_workload_start_time;
-			extern volatile unsigned int _k_workload_end_time;
 
+			/* switch from currently selected task to a different one */
+
+#ifdef CONFIG_WORKLOAD_MONITOR
 			if (pNextTask->Ident == 0x00000000) {
-				_k_workload_start_time = timer_read();
-			}
-			if (_k_current_task->Ident == 0x00000000) {
-				_k_workload_end_time = timer_read();
-				_k_workload_i += (_k_workload_i0 *
-					(_k_workload_end_time - _k_workload_start_time)) /
-					_k_workload_delta;
+				_k_workload_monitor_idle_start();
+			} else if (_k_current_task->Ident == 0x00000000) {
+				_k_workload_monitor_idle_end();
 			}
 #endif
-#endif
+
 			_k_current_task = pNextTask;
 			_NanoKernel.task = (tCCS *)pNextTask->workspace;
 

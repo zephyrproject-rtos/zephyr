@@ -152,6 +152,8 @@ extern const int _k_monitor_mask;
 #ifdef CONFIG_WORKLOAD_MONITOR
 extern void workload_monitor_calibrate(void);
 extern void _k_workload_monitor_update(void);
+extern void _k_workload_monitor_idle_start(void);
+extern void _k_workload_monitor_idle_end(void);
 #else
 #define _k_workload_monitor_update()	do { /* nothing */ } while (0)
 #endif

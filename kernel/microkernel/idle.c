@@ -47,21 +47,21 @@ task, depending on how the kernel is configured.
 
 #if defined(CONFIG_WORKLOAD_MONITOR)
 
-unsigned int _k_workload_slice = 0x0;
-unsigned int _k_workload_ticks = 0x0;
-unsigned int _k_workload_ref_time = 0x0;
-unsigned int _k_workload_t0 = 0x0;
-unsigned int _k_workload_t1 = 0x0;
-volatile unsigned int _k_workload_n0 = 0x0;
-volatile unsigned int _k_workload_n1 = 0x0;
-volatile unsigned int _k_workload_i = 0x0;
-volatile unsigned int _k_workload_i0 = 0x0;
-volatile unsigned int _k_workload_delta = 0x0;
-volatile unsigned int _k_workload_start_time = 0x0;
-volatile unsigned int _k_workload_end_time = 0x0;
+static unsigned int _k_workload_slice = 0x0;
+static unsigned int _k_workload_ticks = 0x0;
+static unsigned int _k_workload_ref_time = 0x0;
+static unsigned int _k_workload_t0 = 0x0;
+static unsigned int _k_workload_t1 = 0x0;
+static volatile unsigned int _k_workload_n0 = 0x0;
+static volatile unsigned int _k_workload_n1 = 0x0;
+static volatile unsigned int _k_workload_i = 0x0;
+static volatile unsigned int _k_workload_i0 = 0x0;
+static volatile unsigned int _k_workload_delta = 0x0;
+static volatile unsigned int _k_workload_start_time = 0x0;
+static volatile unsigned int _k_workload_end_time = 0x0;
 
 #ifdef WL_SCALE
-extern uint32_t _k_workload_scale;
+static extern uint32_t _k_workload_scale;
 #endif
 
 #define MSEC_PER_SEC 1000
@@ -155,6 +155,37 @@ void _k_workload_monitor_update(void)
 		_k_workload_n1 = _k_workload_i - 1;
 		_k_workload_ticks = _k_workload_slice;
 	}
+}
+
+/*******************************************************************************
+*
+* _k_workload_monitor_idle_start - workload monitor "start idling" handler
+*
+* Records time when idle task was selected for execution by the microkernel.
+*
+* RETURNS: N/A
+*/
+
+void _k_workload_monitor_idle_start(void)
+{
+	_k_workload_start_time = timer_read();
+}
+
+/*******************************************************************************
+*
+* _k_workload_monitor_idle_end - workload monitor "end idling" handler
+*
+* Records time when idle task was no longer selected for execution by the
+* microkernel, and updates amount of time spent idling.
+*
+* RETURNS: N/A
+*/
+
+void _k_workload_monitor_idle_end(void)
+{
+	_k_workload_end_time = timer_read();
+	_k_workload_i += (_k_workload_i0 *
+		(_k_workload_end_time - _k_workload_start_time)) / _k_workload_delta;
 }
 
 /*******************************************************************************
