@@ -45,7 +45,7 @@ typedef void (*vth)(void); /* Vector Table Handler */
 
 #if defined(CONFIG_GDB_INFO) && !defined(CONFIG_SW_ISR_TABLE)
 
-vth __gdb_stub_irq_vector_table _GdbStubIrqVectorTable[CONFIG_NUM_IRQS] = {
+vth __gdb_stub_irq_vector_table _irq_vector_table_with_gdb_stub[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _GdbStubIrqVectorTableEntry
 };
 

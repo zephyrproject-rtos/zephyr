@@ -33,13 +33,13 @@
 # undefined symbols the linker must define
 # Some compilers do not understand the EXTERN() linker language pseudo-function
 
-# link in _GdbStubIrqVectorTable if CONFIG_GDB_INFO is enabled but
+# link in _irq_vector_table_with_gdb_stub if CONFIG_GDB_INFO is enabled but
 # CONFIG_SW_ISR_TABLE is *disabled*
 iARCH_UNDEF_SYMS_GDB_INFO__y = y
 iARCH_UNDEF_SYMS_SW_ISR_TABLE__ = n
 iARCH_UNDEF_SYMS_GDB_INFO = ${iARCH_UNDEF_SYMS_GDB_INFO__${CONFIG_GDB_INFO}}
 iARCH_UNDEF_SYMS_SW_ISR_TABLE = ${iARCH_UNDEF_SYMS_SW_ISR_TABLE__${CONFIG_SW_ISR_TABLE}}
-iARCH_UNDEF_SYMS_GDB_STUBS_yn = _GdbStubIrqVectorTable
+iARCH_UNDEF_SYMS_GDB_STUBS_yn = _irq_vector_table_with_gdb_stub
 
 vARCH_UNDEF_SYMS = $(strip \
 	_irq_vector_table \
