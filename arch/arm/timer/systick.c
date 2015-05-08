@@ -128,7 +128,7 @@ static uint32_t __noinit max_system_ticks;
 static uint32_t idle_original_ticks = 0;
 static uint32_t __noinit max_load_value;
 static uint32_t __noinit timer_idle_skew;
-static unsigned char timerMode = TIMER_MODE_PERIODIC;
+static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 static unsigned char idleMode = IDLE_NOT_TICKLESS;
 #endif /* CONFIG_TICKLESS_IDLE */
 
@@ -303,11 +303,11 @@ void _TIMER_INT_HANDLER(void *unused)
 	 *  _timer_idle_exit has processed a partial idle, return
 	 *  to the normal tick cycle.
 	 */
-	if (timerMode == TIMER_MODE_ONE_SHOT) {
+	if (timer_mode == TIMER_MODE_ONE_SHOT) {
 		sysTickStop();
 		sysTickReloadSet(default_load_value);
 		sysTickStart();
-		timerMode = TIMER_MODE_PERIODIC;
+		timer_mode = TIMER_MODE_PERIODIC;
 	}
 
 	/* set the number of elapsed ticks and announce them to the kernel */
@@ -470,7 +470,7 @@ static void sysTickTicklessIdleInit(void)
 	/* _sysTickStart() without interrupts */
 	__scs.systick.stcsr.val |= stcsr.val;
 
-	timerMode = TIMER_MODE_PERIODIC;
+	timer_mode = TIMER_MODE_PERIODIC;
 
 	/* skew time calculation for down counter (assumes no rollover) */
 	timer_idle_skew -= sysTickCurrentGet();
@@ -530,7 +530,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 * Set timer to virtual "one shot" mode - sysTick does not have multiple
 	 * modes, so the reload value is simply changed.
 	 */
-	timerMode = TIMER_MODE_ONE_SHOT;
+	timer_mode = TIMER_MODE_ONE_SHOT;
 	idleMode = IDLE_TICKLESS;
 	sysTickReloadSet(idle_original_count);
 	sysTickStart();
@@ -555,7 +555,7 @@ void _timer_idle_exit(void)
 {
 	uint32_t count; /* timer's current count register value */
 
-	if (timerMode == TIMER_MODE_PERIODIC) {
+	if (timer_mode == TIMER_MODE_PERIODIC) {
 		/*
 		 * The timer interrupt handler is handling a completed tickless
 		 * idle
@@ -577,7 +577,7 @@ void _timer_idle_exit(void)
 		 * its default value and mode.
 		 */
 		sysTickReloadSet(default_load_value);
-		timerMode = TIMER_MODE_PERIODIC;
+		timer_mode = TIMER_MODE_PERIODIC;
 
 		/*
 		 * Announce elapsed ticks to the microkernel. Note we are
@@ -605,7 +605,7 @@ void _timer_idle_exit(void)
 			 * its default value and mode.
 			 */
 			sysTickReloadSet(default_load_value);
-			timerMode = TIMER_MODE_PERIODIC;
+			timer_mode = TIMER_MODE_PERIODIC;
 		} else if (count > remaining) {
 			/*
 			 * There is less time remaining to the next tick
