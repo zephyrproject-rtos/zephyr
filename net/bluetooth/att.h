@@ -223,6 +223,22 @@ struct bt_att_write_req {
 /* Write Response */
 #define BT_ATT_OP_WRITE_RSP			0x13
 
+/* Prepare Write Request */
+#define BT_ATT_OP_PREPARE_WRITE_REQ		0x16
+struct bt_att_prepare_write_req {
+	uint16_t handle;
+	uint16_t offset;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
+/* Prepare Write Respond */
+#define BT_ATT_OP_PREPARE_WRITE_RSP		0x17
+struct bt_att_prepare_write_rsp {
+	uint16_t handle;
+	uint16_t offset;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
 /* Write Command */
 #define BT_ATT_OP_WRITE_CMD			0x52
 struct bt_att_write_cmd {

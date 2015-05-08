@@ -420,6 +420,30 @@ static void att_write_req(struct bt_conn *conn, struct bt_buf *data)
 		     BT_ATT_ERR_INVALID_HANDLE);
 }
 
+static void att_prepare_write_req(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att_prepare_write_req *req;
+	uint16_t handle, offset;
+
+	if (data->len < sizeof(*req)) {
+		send_err_rsp(conn, BT_ATT_OP_PREPARE_WRITE_REQ, 0,
+			     BT_ATT_ERR_INVALID_PDU);
+		return;
+	}
+
+	req = (void *)data->data;
+
+	handle = sys_le16_to_cpu(req->handle);
+	offset = sys_le16_to_cpu(req->offset);
+
+	BT_DBG("handle %u offset %u\n", handle);
+
+	/* TODO: Generate proper response once a database is defined */
+
+	send_err_rsp(conn, BT_ATT_OP_PREPARE_WRITE_REQ, handle,
+		     BT_ATT_ERR_INVALID_HANDLE);
+}
+
 static void att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_write_req *req;
@@ -497,6 +521,9 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	case BT_ATT_OP_WRITE_REQ:
 		att_write_req(conn, buf);
+		break;
+	case BT_ATT_OP_PREPARE_WRITE_REQ:
+		att_prepare_write_req(conn, buf);
 		break;
 	case BT_ATT_OP_WRITE_CMD:
 		att_write_cmd(conn, buf);
