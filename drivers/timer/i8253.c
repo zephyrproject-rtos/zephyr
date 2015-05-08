@@ -149,7 +149,7 @@ static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
 static uint32_t old_count = 0; /* previous system clock value */
-static uint32_t oldAcc = 0; /* previous accumulated value value */
+static uint32_t old_accumulated_count = 0; /* previous accumulated value value */
 
 /* externs */
 
@@ -576,13 +576,13 @@ uint32_t timer_read(void)
 	 * happened before the timer interrupt (due to possible interrupt
 	 * disable)
 	 */
-	if ((newCount < old_count) && (clock_accumulated_count == oldAcc)) {
+	if ((newCount < old_count) && (clock_accumulated_count == old_accumulated_count)) {
 		uint32_t tmp = old_count - newCount;
 		newCount += tmp - tmp % _currentLoadVal + _currentLoadVal;
 	}
 
 	old_count = newCount;
-	oldAcc = clock_accumulated_count;
+	old_accumulated_count = clock_accumulated_count;
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 /*
