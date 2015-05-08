@@ -121,11 +121,11 @@ extern int32_t _sys_idle_elapsed_ticks;
 /* locals */
 #ifdef CONFIG_DYNAMIC_INT_STUBS
 static NANO_CPU_INT_STUB_DECL(
-	_loApicTimerIntStub); /* interrupt stub memory for */
+	_loapic_timer_irq_stub); /* interrupt stub memory for */
 			      /* irq_connect()       */
 #else			      /* !CONFIG_DYNAMIC_INT_STUBS */
-extern void *_loApicTimerIntStub;
-SYS_INT_REGISTER(_loApicTimerIntStub, LOAPIC_TIMER_IRQ, LOAPIC_TIMER_INT_PRI);
+extern void *_loapic_timer_irq_stub;
+SYS_INT_REGISTER(_loapic_timer_irq_stub, LOAPIC_TIMER_IRQ, LOAPIC_TIMER_INT_PRI);
 #endif			      /* CONFIG_DYNAMIC_INT_STUBS */
 
 static uint32_t __noinit counterLoadVal; /* computed counter 0
@@ -596,7 +596,7 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 			  LOAPIC_TIMER_INT_PRI,
 			  _loApicTimerIntHandler,
 			  0,
-			  _loApicTimerIntStub);
+			  _loapic_timer_irq_stub);
 #else  /* !CONFIG_DYNAMIC_INT_STUBS */
 	/*
 	 * Although the stub has already been "connected", the vector number

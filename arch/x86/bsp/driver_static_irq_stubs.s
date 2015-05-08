@@ -48,7 +48,7 @@ by x86 BSPs.
 
 	/* exports (internal APIs) */
 #if defined(CONFIG_LOAPIC_TIMER)
-	GTEXT(_loApicTimerIntStub)
+	GTEXT(_loapic_timer_irq_stub)
 #endif
 
 #if defined(CONFIG_HPET_TIMER)
@@ -78,7 +78,7 @@ by x86 BSPs.
 	GTEXT(_IntExit)
 
 #if defined(CONFIG_LOAPIC_TIMER)
-SECTION_FUNC (TEXT, _loApicTimerIntStub)
+SECTION_FUNC (TEXT, _loapic_timer_irq_stub)
 	call    _IntEnt			/* Inform kernel interrupt has begun */
 	pushl   $0			/* Push dummy parameter */
 	call    _timer_int_handler	/* Call actual interrupt handler */
