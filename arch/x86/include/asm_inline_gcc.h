@@ -145,7 +145,7 @@ static inline void _do_fp_ctx_init(int flags)
 #ifdef CONFIG_SSE
 	if (flags) {
 		/* initialize SSE (since context uses it) */
-		__asm__ volatile("ldmxcsr _Mxcsr\n\t");
+		__asm__ volatile("ldmxcsr _sse_mxcsr_default_value\n\t");
 
 	}
 #else

@@ -109,7 +109,7 @@ enable FP resource sharing on its behalf.
 #ifdef CONFIG_FP_SHARING
 
 #if defined(CONFIG_SSE)
-extern uint32_t _Mxcsr; /* SSE control/status register default value */
+extern uint32_t _sse_mxcsr_default_value; /* SSE control/status register default value */
 #endif			/* CONFIG_SSE */
 
 /*******************************************************************************

@@ -58,7 +58,7 @@ been left in place should future booting scenarios arise which require its use.
 
 
 #if defined(CONFIG_SSE)
-	GDATA(_Mxcsr)
+	GDATA(_sse_mxcsr_default_value)
 #endif /* CONFIG_SSE */
 
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
@@ -370,7 +370,7 @@ __csSet:
 	andl	$~0x400, %eax		/* CR4[OSXMMEXCPT] = 0 */
 	movl	%eax, %cr4		/* move EAX to CR4 */
 
-	ldmxcsr _Mxcsr			/* initialize SSE control/status reg */
+	ldmxcsr _sse_mxcsr_default_value			/* initialize SSE control/status reg */
 
   #endif /* CONFIG_SSE */
 
@@ -510,7 +510,7 @@ memInitDone:
 
 	/* SSE control & status register initial value */
 
-_Mxcsr:
+_sse_mxcsr_default_value:
 	.long	0x1f80			/* all SSE exceptions clear & masked */
 
 #endif /* CONFIG_SSE */
