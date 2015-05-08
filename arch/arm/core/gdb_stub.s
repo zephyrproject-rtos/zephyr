@@ -154,7 +154,7 @@ SECTION_FUNC(TEXT, _GdbStubIrqVectorTableEntry)
 
     mrs r0, IPSR	/* get exception number */
     sub r0, r0, #16	/* get IRQ number */
-    ldr r1, =_IrqVectorTable
+    ldr r1, =_irq_vector_table
 
     /* grab real ISR at address: r1 + (r0 << 2) (table is 4-byte wide) */
     ldr r1, [r1, r0, LSL #2]

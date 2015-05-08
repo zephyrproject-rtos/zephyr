@@ -132,7 +132,7 @@ get_out:
 	}
 
 typedef void (*vth)(void); /* Vector Table Handler */
-vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] =
+vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] =
 	{
 	isr0, isr1, isr2
 	};

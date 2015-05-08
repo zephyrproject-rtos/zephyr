@@ -10,5 +10,5 @@
 # Diab does not understand the EXTERN() linker language pseudo-function
 
 vARCH_UNDEF_SYMS = $(strip \
-	_IrqVectorTable \
+	_irq_vector_table \
 )

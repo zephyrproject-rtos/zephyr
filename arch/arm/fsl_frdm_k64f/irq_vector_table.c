@@ -60,7 +60,7 @@ typedef void (*vth)(void); /* Vector Table Handler */
 
 #if defined(CONFIG_SW_ISR_TABLE)
 
-vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
+vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _isr_wrapper,
 };
 
@@ -85,7 +85,7 @@ static void _bt_uart_isr(void)
 #endif /* CONFIG_BLUETOOTH_UART */
 
 /* placeholders: fill with real ISRs */
-vth __irq_vector_table _IrqVectorTable[CONFIG_NUM_IRQS] = {
+vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)] = _irq_spurious,
 #if defined(CONFIG_CONSOLE_HANDLER)
 	[CONFIG_UART_CONSOLE_IRQ] = _uart_console_isr,
