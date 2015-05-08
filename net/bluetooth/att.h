@@ -258,6 +258,23 @@ struct bt_att_write_cmd {
 	uint8_t  value[0];
 } PACK_STRUCT;
 
+/* Handle Value Notification */
+#define BT_ATT_OP_NOTIFY			0x1b
+struct bt_att_notify {
+	uint16_t handle;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
+/* Handle Value Indication */
+#define BT_ATT_OP_INDICATE			0x1d
+struct bt_att_indicate {
+	uint16_t handle;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
+/* Handle Value Confirm */
+#define BT_ATT_OP_CONFIRM			0x1f
+
 struct bt_att_signature {
 	uint8_t  value[12];
 } PACK_STRUCT;
