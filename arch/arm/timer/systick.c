@@ -126,7 +126,7 @@ static uint32_t __noinit default_load_value; /* default count */
 static uint32_t idle_original_count = 0;
 static uint32_t __noinit max_system_ticks;
 static uint32_t idle_original_ticks = 0;
-static uint32_t __noinit maxLoadValue;
+static uint32_t __noinit max_load_value;
 static uint32_t __noinit timerIdleSkew;
 static unsigned char timerMode = TIMER_MODE_PERIODIC;
 static unsigned char idleMode = IDLE_NOT_TICKLESS;
@@ -431,7 +431,7 @@ static void sysTickTicklessIdleInit(void)
 	max_system_ticks = 0x00ffffff / default_load_value;
 
 	/* determine the associated load value */
-	maxLoadValue = max_system_ticks * default_load_value;
+	max_load_value = max_system_ticks * default_load_value;
 
 	/*
 	 * Calculate the skew from switching the timer in and out of idle mode.
@@ -461,7 +461,7 @@ static void sysTickTicklessIdleInit(void)
 	/* emulate calculation of the new counter reload value */
 	if ((dummy == 1) || (dummy == default_load_value)) {
 		dummy = max_system_ticks - 1;
-		dummy += maxLoadValue - default_load_value;
+		dummy += max_load_value - default_load_value;
 	} else {
 		dummy = dummy - 1;
 		dummy += dummy * default_load_value;
@@ -517,7 +517,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * earlier
 		 * is added.
 		 */
-		idle_original_count += maxLoadValue - default_load_value;
+		idle_original_count += max_load_value - default_load_value;
 		idle_original_ticks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
