@@ -79,3 +79,5 @@ struct bt_dev {
 
 struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf);
+int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
+			 struct bt_buf **rsp);

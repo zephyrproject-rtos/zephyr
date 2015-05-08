@@ -109,8 +109,8 @@ int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf)
 	return 0;
 }
 
-static int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
-				struct bt_buf **rsp)
+int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
+			 struct bt_buf **rsp)
 {
 	struct nano_sem sync_sem;
 	int err;
