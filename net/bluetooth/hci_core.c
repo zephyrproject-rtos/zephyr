@@ -583,7 +583,7 @@ static int hci_init(void)
 	le_read_buffer_size_complete(rsp);
 	bt_buf_put(rsp);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_SET_EVENT_MASK, 8);
+	buf = bt_hci_cmd_create(BT_HCI_OP_SET_EVENT_MASK, sizeof(*ev));
 	if (!buf) {
 		return -ENOBUFS;
 	}
