@@ -230,5 +230,16 @@ struct bt_att_write_cmd {
 	uint8_t  value[0];
 } PACK_STRUCT;
 
+struct bt_att_signature {
+	uint8_t  value[12];
+} PACK_STRUCT;
+
+/* Signed Write Command */
+#define BT_ATT_OP_SIGNED_WRITE_CMD		0xD2
+struct bt_att_signed_write_req {
+	uint16_t handle;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);

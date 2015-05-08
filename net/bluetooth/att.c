@@ -438,6 +438,25 @@ static void att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 	/* TODO: Perform write once database is defined */
 }
 
+static void att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att_write_req *req;
+	uint16_t handle;
+
+	if (data->len < sizeof(*req) + sizeof(struct bt_att_signature)) {
+		return;
+	}
+
+	req = (void *)data->data;
+
+	handle = sys_le16_to_cpu(req->handle);
+	bt_buf_pull(data, sizeof(*req));
+
+	BT_DBG("handle %u\n", handle);
+
+	/* TODO: Perform write once database is defined */
+}
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_att_hdr *hdr = (void *)buf->data;
@@ -481,6 +500,9 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	case BT_ATT_OP_WRITE_CMD:
 		att_write_cmd(conn, buf);
+		break;
+	case BT_ATT_OP_SIGNED_WRITE_CMD:
+		att_signed_write_cmd(conn, buf);
 		break;
 	default:
 		BT_DBG("Unhandled ATT code %u\n", hdr->code);
