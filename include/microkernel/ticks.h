@@ -49,7 +49,7 @@ extern int K_ticker(int event);
 extern K_TIMER *_k_timer_list_head;
 extern K_TIMER *_k_timer_list_tail;
 extern struct nano_lifo _k_timer_free;
-extern K_TIMER K_TimerBlocks[]; /* array of microkernel timer objects */
+extern K_TIMER _k_timer_blocks[]; /* array of microkernel timer objects */
 
 extern void scheduler_time_slice_set(int32_t t, kpriority_t p);
 
@@ -71,7 +71,7 @@ extern void scheduler_time_slice_set(int32_t t, kpriority_t p);
 
 static inline ktimer_t _timer_ptr_to_id(K_TIMER *timer)
 {
-	return (ktimer_t)(0x00010000u + (uint32_t)(timer - &K_TimerBlocks[0]));
+	return (ktimer_t)(0x00010000u + (uint32_t)(timer - &_k_timer_blocks[0]));
 }
 
 /*******************************************************************************
@@ -85,7 +85,7 @@ static inline ktimer_t _timer_ptr_to_id(K_TIMER *timer)
 
 static inline K_TIMER *_timer_id_to_ptr(ktimer_t timer)
 {
-	return &K_TimerBlocks[OBJ_INDEX(timer)];
+	return &_k_timer_blocks[OBJ_INDEX(timer)];
 }
 
 extern uint32_t task_cycle_get_32(void);

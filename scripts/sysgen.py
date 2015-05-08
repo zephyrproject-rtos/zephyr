@@ -343,15 +343,15 @@ def kernel_main_c_timers():
     # timer descriptors
 
     kernel_main_c_out("\n" +
-        "K_TIMER K_TimerBlocks[%d] =\n" % (num_timers) +
+        "K_TIMER _k_timer_blocks[%d] =\n" % (num_timers) +
         "{\n" +
         "    {NULL, NULL, 0, 0, (struct k_args *)0xffffffff},\n")
     for i in range(1, num_timers - 1):
         kernel_main_c_out(
-            "    {&K_TimerBlocks[%d], NULL, 0, 0, " % (i - 1) +
+            "    {&_k_timer_blocks[%d], NULL, 0, 0, " % (i - 1) +
             "(struct k_args *)0xffffffff},\n")
     kernel_main_c_out(
-        "    {&K_TimerBlocks[%d], NULL, 0, 0, (struct k_args *)0xffffffff}\n" %
+        "    {&_k_timer_blocks[%d], NULL, 0, 0, (struct k_args *)0xffffffff}\n" %
         (num_timers - 2) +
         "};\n")
 
@@ -360,7 +360,7 @@ def kernel_main_c_timers():
     kernel_main_c_out("\n" +
         "struct nano_lifo _k_timer_free = " +
         "{{NULL, &_k_timer_free.wait_q.head}, " +
-        "(void *) &K_TimerBlocks[%d]};\n"  % (num_timers - 1))
+        "(void *) &_k_timer_blocks[%d]};\n"  % (num_timers - 1))
 
 
 def kernel_main_c_tasks():
