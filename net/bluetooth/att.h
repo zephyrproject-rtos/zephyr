@@ -223,5 +223,12 @@ struct bt_att_write_req {
 /* Write Response */
 #define BT_ATT_OP_WRITE_RSP			0x13
 
+/* Write Command */
+#define BT_ATT_OP_WRITE_CMD			0x52
+struct bt_att_write_cmd {
+	uint16_t handle;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
