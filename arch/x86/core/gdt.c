@@ -65,12 +65,12 @@ for the IA-32 architecture.
  */
 
 /*
- * For MM_POMS, _GdtEntries must be global so the linker script can
+ * For MM_POMS, _gdt_entries must be global so the linker script can
  * generate a _GdtEntriesP for crt0.s
  */
 static
 	tGdtDesc
-		_GdtEntries[MAX_GDT_ENTRIES]
+		_gdt_entries[MAX_GDT_ENTRIES]
 	__attribute__((aligned(8))) = {
 		{/* Entry 0 (selector=0x0000): The "NULL descriptor" */
 		 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00},
@@ -97,7 +97,7 @@ static
 tGdtHeader _gdt = {
 	sizeof(tGdtDesc[MAX_GDT_ENTRIES - CONFIG_NUM_GDT_SPARE_ENTRIES]) -
 		1,
-	&_GdtEntries[0]};
+	&_gdt_entries[0]};
 
 
 
