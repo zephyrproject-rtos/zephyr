@@ -136,7 +136,7 @@ static uint32_t clock_accumulated_count = 0;
 static uint32_t idle_original_count = 0;
 static uint32_t __noinit max_system_ticks;
 static uint32_t idle_original_ticks = 0;
-static uint32_t __noinit _MaxLoadValue;
+static uint32_t __noinit max_load_value;
 static uint32_t __noinit _TimerIdleSkew;
 static unsigned char _TimerMode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
@@ -398,7 +398,7 @@ static void _loApicTimerTicklessIdleInit(void)
 {
 	max_system_ticks = 0xffffffff / counterLoadVal;
 	/* this gives a count that gives the max number of full ticks */
-	_MaxLoadValue = max_system_ticks * counterLoadVal;
+	max_load_value = max_system_ticks * counterLoadVal;
 }
 
 /*******************************************************************************
@@ -471,7 +471,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * earlier
 		 * is added.
 		 */
-		idle_original_count += _MaxLoadValue - counterLoadVal;
+		idle_original_count += max_load_value - counterLoadVal;
 		idle_original_ticks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming

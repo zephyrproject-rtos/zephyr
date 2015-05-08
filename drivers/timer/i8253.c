@@ -141,7 +141,7 @@ static uint16_t _currentLoadVal = 0;
 static uint16_t idle_original_count = 0;
 static uint16_t idle_original_ticks = 0;
 static uint16_t __noinit max_system_ticks;
-static uint16_t __noinit _MaxLoadValue;
+static uint16_t __noinit max_load_value;
 static uint16_t __noinit _TimerIdleSkew;
 
 /* Used to determine if the timer ISR should place the timer in periodic mode */
@@ -352,7 +352,7 @@ static void _i8253TicklessIdleInit(void)
 {
 	max_system_ticks = 0xffff / counterLoadVal;
 	/* this gives a count that gives the max number of full ticks */
-	_MaxLoadValue = max_system_ticks * counterLoadVal;
+	max_load_value = max_system_ticks * counterLoadVal;
 }
 
 /*******************************************************************************
@@ -405,7 +405,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * earlier
 		 * is added.
 		 */
-		newCount += _MaxLoadValue - counterLoadVal;
+		newCount += max_load_value - counterLoadVal;
 		idle_original_ticks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
