@@ -65,5 +65,5 @@ extern void _k_timer_stop(struct k_args *P);
 extern void _k_task_sleep(struct k_args *P);
 extern void _k_task_wakeup(struct k_args *P);
 extern void _k_time_elapse(struct k_args *P);
-extern void _k_node_workload_get(struct k_args *P);
+extern void _k_workload_get(struct k_args *P);
 #endif

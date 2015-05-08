@@ -138,7 +138,7 @@ void workload_monitor_calibrate(void)
 
 
 #ifdef CONFIG_WORKLOAD_MONITOR
-void _k_node_workload_get(struct k_args *P)
+void _k_workload_get(struct k_args *P)
 {
 	unsigned int k, t;
 	signed int iret;
@@ -164,7 +164,7 @@ void _k_node_workload_get(struct k_args *P)
 	P->Args.u1.rval = iret;
 }
 #else
-void _k_node_workload_get(struct k_args *P)
+void _k_workload_get(struct k_args *P)
 {
 	P->Args.u1.rval = 0;
 }

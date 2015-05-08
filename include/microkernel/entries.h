@@ -45,7 +45,7 @@ typedef void (*kernelfunc)(struct k_args *);
 
 extern void _k_nop(struct k_args *);
 extern void _k_offload_to_fiber(struct k_args *);
-extern void _k_node_workload_get(struct k_args *);
+extern void _k_workload_get(struct k_args *);
 extern void _k_sem_signal(struct k_args *);
 extern void _k_sem_group_signal(struct k_args *);
 extern void _k_sem_reset(struct k_args *);
