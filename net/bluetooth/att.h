@@ -213,5 +213,15 @@ struct bt_att_read_group_rsp {
 	struct bt_att_group_data data[0];
 } PACK_STRUCT;
 
+/* Write Request */
+#define BT_ATT_OP_WRITE_REQ			0x12
+struct bt_att_write_req {
+	uint16_t handle;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
+/* Write Response */
+#define BT_ATT_OP_WRITE_RSP			0x13
+
 void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
