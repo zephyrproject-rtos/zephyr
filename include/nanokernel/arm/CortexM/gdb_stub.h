@@ -62,7 +62,7 @@ _GDB_STUB_EXC_EXIT:     .macro
 	pop {lr}
 .endm
 
-GTEXT(_GdbStubIrqVectorTableEntry)
+GTEXT(_irq_vector_table_entry_with_gdb_stub)
 
 #else
 #define _GDB_STUB_EXC_ENTRY
@@ -70,6 +70,6 @@ GTEXT(_GdbStubIrqVectorTableEntry)
 #endif /* CONFIG_GDB_INFO */
 
 #else
-extern void _GdbStubIrqVectorTableEntry(void);
+extern void _irq_vector_table_entry_with_gdb_stub(void);
 #endif /* _ASMLANGUAGE */
 #endif /* _GDB_STUB__H_ */

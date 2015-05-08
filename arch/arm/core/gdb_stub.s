@@ -131,7 +131,7 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
 
 /*******************************************************************************
 *
-* _GdbStubIrqVectorTableEntry - stub for ISRs installed directly in
+* _irq_vector_table_entry_with_gdb_stub - stub for ISRs installed directly in
 *                               vector table
 *
 * VxMicro on Cortex-M3/4 allows users to configure the kernel such that
@@ -148,7 +148,7 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
 * RETURNS: N/A
 */
 
-SECTION_FUNC(TEXT, _GdbStubIrqVectorTableEntry)
+SECTION_FUNC(TEXT, _irq_vector_table_entry_with_gdb_stub)
 
     _GDB_STUB_EXC_ENTRY
 

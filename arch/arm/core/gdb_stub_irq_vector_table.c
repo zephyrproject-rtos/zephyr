@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 When GDB is enabled, the static IRQ vector table needs to install the
-_GdbStubIrqVectorTableEntry stub to do some work before calling the
+_irq_vector_table_entry_with_gdb_stub stub to do some work before calling the
 user-installed ISRs.
 */
 
@@ -46,7 +46,7 @@ typedef void (*vth)(void); /* Vector Table Handler */
 #if defined(CONFIG_GDB_INFO) && !defined(CONFIG_SW_ISR_TABLE)
 
 vth __gdb_stub_irq_vector_table _irq_vector_table_with_gdb_stub[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)] = _GdbStubIrqVectorTableEntry
+	[0 ...(CONFIG_NUM_IRQS - 1)] = _irq_vector_table_entry_with_gdb_stub
 };
 
 #endif /* CONFIG_GDB_INFO && !CONFIG_SW_ISR_TABLE */
