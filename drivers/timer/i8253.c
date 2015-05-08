@@ -145,7 +145,7 @@ static uint16_t __noinit max_load_value;
 static uint16_t __noinit timer_idle_skew;
 
 /* Used to determine if the timer ISR should place the timer in periodic mode */
-static unsigned char _TimerMode = TIMER_MODE_PERIODIC;
+static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
 static uint32_t oldCount = 0; /* previous system clock value */
@@ -265,9 +265,9 @@ void _timer_int_handler(void *unusedArg /* not used */
 	ARG_UNUSED(unusedArg);
 
 #ifdef TIMER_SUPPORTS_TICKLESS
-	if (_TimerMode == TIMER_MODE_PERIODIC_ENT) {
+	if (timer_mode == TIMER_MODE_PERIODIC_ENT) {
 		_i8253CounterPeriodic(counterLoadVal);
-		_TimerMode = TIMER_MODE_PERIODIC;
+		timer_mode = TIMER_MODE_PERIODIC;
 	}
 
 	/*
@@ -419,7 +419,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	/* Stop/start the timer instead of disabling/enabling the interrupt? */
 	irq_disable(PIT_INT_LVL);
 
-	_TimerMode = TIMER_MODE_PERIODIC_ENT;
+	timer_mode = TIMER_MODE_PERIODIC_ENT;
 
 	/* Program for terminal mode. The PIT equivalent of one shot */
 	_i8253CounterOneShot(newCount);
@@ -455,7 +455,7 @@ void _timer_idle_exit(void)
 	if ((count == 0) || (count >= idle_original_count)) {
 		/* Timer expired. Place back in periodic mode */
 		_i8253CounterPeriodic(counterLoadVal);
-		_TimerMode = TIMER_MODE_PERIODIC;
+		timer_mode = TIMER_MODE_PERIODIC;
 		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
 		/*
 		 * Announce elapsed ticks to the microkernel. Note we are
@@ -476,7 +476,7 @@ void _timer_idle_exit(void)
 		/* switch timer to periodic mode */
 		if (remaining == 0) {
 			_i8253CounterPeriodic(counterLoadVal);
-			_TimerMode = TIMER_MODE_PERIODIC;
+			timer_mode = TIMER_MODE_PERIODIC;
 		} else if (count > remaining) {
 			/* less time remaining to the next tick than was
 			 * programmed */

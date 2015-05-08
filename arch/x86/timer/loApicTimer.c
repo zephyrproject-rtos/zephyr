@@ -138,7 +138,7 @@ static uint32_t __noinit max_system_ticks;
 static uint32_t idle_original_ticks = 0;
 static uint32_t __noinit max_load_value;
 static uint32_t __noinit timer_idle_skew;
-static unsigned char _TimerMode = TIMER_MODE_PERIODIC;
+static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
 /* externs */
@@ -305,12 +305,12 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	ARG_UNUSED(unused);
 
 #ifdef TIMER_SUPPORTS_TICKLESS
-	if (_TimerMode == TIMER_MODE_PERIODIC_ENT) {
+	if (timer_mode == TIMER_MODE_PERIODIC_ENT) {
 		_loApicTimerStop();
 		_loApicTimerPeriodic();
 		_loApicTimerSetCount(counterLoadVal);
 		_loApicTimerStart();
-		_TimerMode = TIMER_MODE_PERIODIC;
+		timer_mode = TIMER_MODE_PERIODIC;
 	}
 
 	/*
@@ -429,7 +429,7 @@ static void _loApicTimerTicklessIdleSkew(void)
 					       (counterLoadVal);*/
 	_loApicTimerPeriodic();
 	_loApicTimerStart();
-	_TimerMode = TIMER_MODE_PERIODIC;
+	timer_mode = TIMER_MODE_PERIODIC;
 
 	/* Down counter */
 	timer_idle_skew -= _loApicTimerGetRemaining();
@@ -480,7 +480,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		idle_original_count += idle_original_ticks * counterLoadVal;
 	}
 
-	_TimerMode = TIMER_MODE_PERIODIC_ENT;
+	timer_mode = TIMER_MODE_PERIODIC_ENT;
 
 	/* Set timer to one shot mode */
 	_loApicTimerOneShot();
@@ -520,7 +520,7 @@ void _timer_idle_exit(void)
 		_loApicTimerPeriodic();
 		_loApicTimerSetCount(counterLoadVal);
 		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
-		_TimerMode = TIMER_MODE_PERIODIC;
+		timer_mode = TIMER_MODE_PERIODIC;
 		/*
 		 * Announce elapsed ticks to the microkernel. Note we are
 		 * guaranteed
@@ -541,7 +541,7 @@ void _timer_idle_exit(void)
 		if (remaining == 0) {
 			_loApicTimerPeriodic();
 			_loApicTimerSetCount(counterLoadVal);
-			_TimerMode = TIMER_MODE_PERIODIC;
+			timer_mode = TIMER_MODE_PERIODIC;
 		} else if (count > remaining) {
 			/* less time remaining to the next tick than was
 			 * programmed. Leave in one shot mode */
