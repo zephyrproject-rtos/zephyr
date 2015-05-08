@@ -205,7 +205,7 @@ SYS_INT_REGISTER(_hpetIntStub, HPET_TIMER0_IRQ, HPET_TIMER0_INT_PRI);
 #endif					     /* CONFIG_DYNAMIC_INT_STUBS */
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-static uint32_t firstIntMainCountValue = 0;
+static uint32_t main_count_first_irq_value = 0;
 static uint32_t expectedMainCountValue = 0;
 #endif
 
@@ -286,7 +286,7 @@ void _timer_int_handler(void *unused)
 		_hw_irq_to_c_handler_latency = delta;
 	}
 	/* compute the next expected main counter value */
-	expectedMainCountValue += firstIntMainCountValue;
+	expectedMainCountValue += main_count_first_irq_value;
 #endif
 
 #ifdef CONFIG_MICROKERNEL
@@ -581,8 +581,8 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 	*_HPET_TIMER0_COMPARATOR = counterLoadValue;
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	firstIntMainCountValue = counterLoadValue;
-	expectedMainCountValue = firstIntMainCountValue;
+	main_count_first_irq_value = counterLoadValue;
+	expectedMainCountValue = main_count_first_irq_value;
 #endif
 
 #ifndef TIMER_SUPPORTS_TICKLESS
