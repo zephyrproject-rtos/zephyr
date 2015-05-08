@@ -225,7 +225,7 @@ static uint64_t counter_last_value =
 	0; /* counter value for most recent tick */
 static int32_t programmed_ticks =
 	1; /* # ticks timer is programmed for */
-static int staleIntCheck =
+static int stale_irq_check =
 	0; /* is stale interrupt possible? */
 
 /*******************************************************************************
@@ -304,8 +304,8 @@ void _timer_int_handler(void *unused)
 
 	/* see if interrupt was triggered while timer was being reprogrammed */
 
-	if (staleIntCheck) {
-		staleIntCheck = 0;
+	if (stale_irq_check) {
+		stale_irq_check = 0;
 		if (_hpetMainCounterAtomic() < *_HPET_TIMER0_COMPARATOR) {
 			return; /* ignore "stale" interrupt */
 		}
@@ -394,7 +394,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	*_HPET_TIMER0_COMPARATOR =
 		(ticks >= 0) ? counter_last_value + ticks * counter_load_value
 			     : ~(uint64_t)0;
-	staleIntCheck = 1;
+	stale_irq_check = 1;
 	programmed_ticks = ticks;
 }
 
@@ -479,7 +479,7 @@ void _timer_idle_exit(void)
 
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
 	*_HPET_TIMER0_COMPARATOR = counterNextValue;
-	staleIntCheck = 1;
+	stale_irq_check = 1;
 
 	/*
 	 * update # of ticks since last tick event was announced,
