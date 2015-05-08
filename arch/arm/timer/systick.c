@@ -125,7 +125,7 @@ extern int32_t _sys_idle_elapsed_ticks;
 static uint32_t __noinit default_load_value; /* default count */
 static uint32_t idle_original_count = 0;
 static uint32_t __noinit max_system_ticks;
-static uint32_t idleOrigTicks = 0;
+static uint32_t idle_original_ticks = 0;
 static uint32_t __noinit maxLoadValue;
 static uint32_t __noinit timerIdleSkew;
 static unsigned char timerMode = TIMER_MODE_PERIODIC;
@@ -316,7 +316,7 @@ void _TIMER_INT_HANDLER(void *unused)
 		/* tickless idle completed without interruption */
 		idleMode = IDLE_NOT_TICKLESS;
 		_sys_idle_elapsed_ticks =
-			idleOrigTicks + 1; /* actual # of idle ticks */
+			idle_original_ticks + 1; /* actual # of idle ticks */
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	} else {
 		/*
@@ -518,12 +518,12 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * is added.
 		 */
 		idle_original_count += maxLoadValue - default_load_value;
-		idleOrigTicks = max_system_ticks - 1;
+		idle_original_ticks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back */
-		idleOrigTicks = ticks - 1;
-		idle_original_count += idleOrigTicks * default_load_value;
+		idle_original_ticks = ticks - 1;
+		idle_original_count += idle_original_ticks * default_load_value;
 	}
 
 	/*
@@ -586,7 +586,7 @@ void _timer_idle_exit(void)
 		 * serviced,
 		 * so _sys_idle_elapsed_ticks is adjusted to account for it.
 		 */
-		_sys_idle_elapsed_ticks = idleOrigTicks - 1;
+		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 	} else {
 		uint32_t elapsed;   /* elapsed "counter time" */
