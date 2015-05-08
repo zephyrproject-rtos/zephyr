@@ -124,7 +124,7 @@ extern int32_t _sys_idle_elapsed_ticks;
 #ifdef CONFIG_TICKLESS_IDLE
 static uint32_t __noinit default_load_value; /* default count */
 static uint32_t idle_original_count = 0;
-static uint32_t __noinit maxSysTicks;
+static uint32_t __noinit max_system_ticks;
 static uint32_t idleOrigTicks = 0;
 static uint32_t __noinit maxLoadValue;
 static uint32_t __noinit timerIdleSkew;
@@ -428,10 +428,10 @@ static void sysTickTicklessIdleInit(void)
 	default_load_value = sysTickReloadGet();
 
 	/* calculate the max number of ticks with this 24-bit H/W counter */
-	maxSysTicks = 0x00ffffff / default_load_value;
+	max_system_ticks = 0x00ffffff / default_load_value;
 
 	/* determine the associated load value */
-	maxLoadValue = maxSysTicks * default_load_value;
+	maxLoadValue = max_system_ticks * default_load_value;
 
 	/*
 	 * Calculate the skew from switching the timer in and out of idle mode.
@@ -460,7 +460,7 @@ static void sysTickTicklessIdleInit(void)
 
 	/* emulate calculation of the new counter reload value */
 	if ((dummy == 1) || (dummy == default_load_value)) {
-		dummy = maxSysTicks - 1;
+		dummy = max_system_ticks - 1;
 		dummy += maxLoadValue - default_load_value;
 	} else {
 		dummy = dummy - 1;
@@ -505,7 +505,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 */
 	idle_original_count = sysTickCurrentGet() - timerIdleSkew;
 
-	if ((ticks == -1) || (ticks > maxSysTicks)) {
+	if ((ticks == -1) || (ticks > max_system_ticks)) {
 		/*
 		 * We've been asked to fire the timer so far in the future that
 		 * the
@@ -518,7 +518,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * is added.
 		 */
 		idle_original_count += maxLoadValue - default_load_value;
-		idleOrigTicks = maxSysTicks - 1;
+		idleOrigTicks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back */
