@@ -127,7 +127,7 @@ static uint32_t idle_original_count = 0;
 static uint32_t __noinit max_system_ticks;
 static uint32_t idle_original_ticks = 0;
 static uint32_t __noinit max_load_value;
-static uint32_t __noinit timerIdleSkew;
+static uint32_t __noinit timer_idle_skew;
 static unsigned char timerMode = TIMER_MODE_PERIODIC;
 static unsigned char idleMode = IDLE_NOT_TICKLESS;
 #endif /* CONFIG_TICKLESS_IDLE */
@@ -452,7 +452,7 @@ static void sysTickTicklessIdleInit(void)
 	__scs.systick.stcsr.val |= stcsr.val;
 	__asm__(" isb"); /* ensure the timer is started before reading */
 
-	timerIdleSkew = sysTickCurrentGet(); /* start of skew time */
+	timer_idle_skew = sysTickCurrentGet(); /* start of skew time */
 
 	__scs.systick.stcsr.val |= stcsr.val; /* normally sysTickStop() */
 
@@ -473,7 +473,7 @@ static void sysTickTicklessIdleInit(void)
 	timerMode = TIMER_MODE_PERIODIC;
 
 	/* skew time calculation for down counter (assumes no rollover) */
-	timerIdleSkew -= sysTickCurrentGet();
+	timer_idle_skew -= sysTickCurrentGet();
 
 	/* restore the previous sysTick state */
 	sysTickStop();
@@ -503,7 +503,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 * timer. So we read the count out of it and add it to the requested
 	 * time out
 	 */
-	idle_original_count = sysTickCurrentGet() - timerIdleSkew;
+	idle_original_count = sysTickCurrentGet() - timer_idle_skew;
 
 	if ((ticks == -1) || (ticks > max_system_ticks)) {
 		/*
