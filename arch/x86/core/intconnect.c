@@ -134,7 +134,7 @@ void *__attribute__((section(".spurNoErrIsr")))
 
 #define VEC_ALLOC_NUM_INTS ((CONFIG_IDT_NUM_VECTORS + 31) & ~31) / 32
 
-static unsigned int _VectorsAllocated[VEC_ALLOC_NUM_INTS] = {
+static unsigned int interrupt_vectors_allocated[VEC_ALLOC_NUM_INTS] = {
 	[0 ...(VEC_ALLOC_NUM_INTS - 1)] = 0xffffffff
 };
 
@@ -271,7 +271,7 @@ int irq_connect(
 	 *
 	 * The _SysIntVecAlloc() routine will use the "utility" routine
 	 * _IntVecAlloc() provided in this module to scan the
-	 *_VectorsAllocated[]
+	 *interrupt_vectors_allocated[]
 	 * array for a suitable vector.
 	 */
 
@@ -433,7 +433,7 @@ int irq_connect(
 *
 * _IntVecAlloc - allocate a free interrupt vector given <priority>
 *
-* This routine scans the _VectorsAllocated[] array for a free vector that
+* This routine scans the interrupt_vectors_allocated[] array for a free vector that
 * satisfies the specified <priority>.  It is a utility function for use only
 * by a BSP's _SysIntVecAlloc() routine.
 *
@@ -478,15 +478,15 @@ int _IntVecAlloc(unsigned int priority)
 #endif /* DEBUG */
 
 	/*
-	 * Atomically allocate a vector from the _VectorsAllocated[] array
+	 * Atomically allocate a vector from the interrupt_vectors_allocated[] array
 	 * to prevent race conditions with other tasks/fibers attempting to
 	 * allocate an interrupt vector.
 	 */
 
-	entryToScan = priority >> 1; /* _VectorsAllocated[] entry to scan */
+	entryToScan = priority >> 1; /* interrupt_vectors_allocated[] entry to scan */
 
 	/*
-	 * The _VectorsAllocated[] entry specified by 'entryToScan' is a 32-bit
+	 * The interrupt_vectors_allocated[] entry specified by 'entryToScan' is a 32-bit
 	 * quantity and thus represents the vectors for a pair of priority
 	 *levels.
 	 * Use find_last_set() to scan for the upper of the 2, and find_first_set() to
@@ -502,7 +502,7 @@ int _IntVecAlloc(unsigned int priority)
 	if ((priority % 2) == 0) {
 		/* scan from the LSB for even priorities */
 
-		fsb = find_first_set(_VectorsAllocated[entryToScan]);
+		fsb = find_first_set(interrupt_vectors_allocated[entryToScan]);
 
 #if defined(DEBUG)
 		if ((fsb == 0) || (fsb > 16)) {
@@ -519,7 +519,7 @@ int _IntVecAlloc(unsigned int priority)
 	} else {
 		/* scan from the MSB for odd priorities */
 
-		fsb = find_last_set(_VectorsAllocated[entryToScan]);
+		fsb = find_last_set(interrupt_vectors_allocated[entryToScan]);
 
 #if defined(DEBUG)
 		if ((fsb == 0) || (fsb < 17)) {
@@ -541,7 +541,7 @@ int _IntVecAlloc(unsigned int priority)
 
 	/* mark the vector as allocated */
 
-	_VectorsAllocated[entryToScan] &= ~(1 << fsb);
+	interrupt_vectors_allocated[entryToScan] &= ~(1 << fsb);
 
 	irq_unlock(imask);
 
@@ -572,7 +572,7 @@ void _IntVecMarkAllocated(unsigned int vector)
 	unsigned int imask;
 
 	imask = irq_lock();
-	_VectorsAllocated[entryToSet] &= ~(1 << bitToSet);
+	interrupt_vectors_allocated[entryToSet] &= ~(1 << bitToSet);
 	irq_unlock(imask);
 }
 
@@ -593,7 +593,7 @@ void _IntVecMarkFree(unsigned int vector)
 	unsigned int imask;
 
 	imask = irq_lock();
-	_VectorsAllocated[entryToSet] |= (1 << bitToSet);
+	interrupt_vectors_allocated[entryToSet] |= (1 << bitToSet);
 	irq_unlock(imask);
 }
 
