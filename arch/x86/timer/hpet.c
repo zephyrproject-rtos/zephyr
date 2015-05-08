@@ -221,7 +221,7 @@ extern int32_t _sys_idle_elapsed_ticks;
 
 static uint32_t __noinit counter_load_value; /* main counter units
 							    per system tick */
-static uint64_t counterLastValue =
+static uint64_t counter_last_value =
 	0; /* counter value for most recent tick */
 static int32_t programmedTicks =
 	1; /* # ticks timer is programmed for */
@@ -313,9 +313,9 @@ void _timer_int_handler(void *unused)
 
 	/* configure timer to expire on next tick */
 
-	counterLastValue = *_HPET_TIMER0_COMPARATOR;
+	counter_last_value = *_HPET_TIMER0_COMPARATOR;
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
-	*_HPET_TIMER0_COMPARATOR = counterLastValue + counter_load_value;
+	*_HPET_TIMER0_COMPARATOR = counter_last_value + counter_load_value;
 	programmedTicks = 1;
 
 	/*
@@ -392,7 +392,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
 	*_HPET_TIMER0_COMPARATOR =
-		(ticks >= 0) ? counterLastValue + ticks * counter_load_value
+		(ticks >= 0) ? counter_last_value + ticks * counter_load_value
 			     : ~(uint64_t)0;
 	staleIntCheck = 1;
 	programmedTicks = ticks;
@@ -466,15 +466,15 @@ void _timer_idle_exit(void)
 	 */
 
 	elapsedTicks =
-		(int32_t)((currTime - counterLastValue) / counter_load_value);
-	counterLastValue += (uint64_t)elapsedTicks * counter_load_value;
+		(int32_t)((currTime - counter_last_value) / counter_load_value);
+	counter_last_value += (uint64_t)elapsedTicks * counter_load_value;
 
-	counterNextValue = counterLastValue + counter_load_value;
+	counterNextValue = counter_last_value + counter_load_value;
 
 	if ((counterNextValue - currTime) <= HPET_COMP_DELAY) {
 		elapsedTicks++;
 		counterNextValue += counter_load_value;
-		counterLastValue += counter_load_value;
+		counter_last_value += counter_load_value;
 	}
 
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
