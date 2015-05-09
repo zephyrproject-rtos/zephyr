@@ -1,6 +1,6 @@
 EXTRA_CFLAGS +=-I$(srctree)/kernel/microkernel/include
 
-obj-y = k_task.o idle.o power.o
+obj-y = k_task.o idle.o
 
 obj-$(CONFIG_TASK_MONITOR)    += task_monitor.o
 obj-$(CONFIG_API_MEMMAP)      += k_memmap.o
