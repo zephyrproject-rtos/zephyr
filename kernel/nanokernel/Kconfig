@@ -1,5 +1,48 @@
 menu "Nanokernel Options"
 
-source "kernel/nanokernel/core/Kconfig"
+config BOOT_BANNER
+	bool
+	prompt "Boot banner"
+	default n
+	select PRINTK
+	help
+	This option outputs a banner to the console device during boot up. It
+	also embeds a date & time stamp in the kernel and in each USAP image.
 
+config INT_LATENCY_BENCHMARK
+	bool
+	prompt "Interrupt latency metrics [EXPERIMENTAL]"
+	default n
+	depends on ARCH="x86" && EXPERIMENTAL
+	help
+	This option enables the tracking of interrupt latency metrics;
+	the exact set of metrics being tracked is BSP-dependent.
+	Tracking begins when intLatencyInit() is invoked by an application.
+	The metrics are displayed (and a new sampling interval is started)
+	each time intLatencyShow() is called thereafter.
+
+config MAIN_STACK_SIZE
+
+	int
+	prompt "Background task stack size (in bytes)"
+	default 1024
+	help
+	This option specifies the size of the stack used by the kernel's
+	background task, whose entry point is main().
+
+config ISR_STACK_SIZE
+	int
+	prompt "ISR and initialization stack size (in bytes)"
+	default 2048
+	help
+	This option specifies the size of the stack used by interrupt
+	service routines (ISRs), and during nanokernel initialization.
+
+config  CONTEXT_CUSTOM_DATA
+	bool
+	prompt "Task and fiber custom data"
+	default n
+	help
+	This option allows each task and fiber to store 32 bits of custom data,
+	which can be accessed using the context_custom_data_xxx() APIs.
 endmenu
