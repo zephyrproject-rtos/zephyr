@@ -7,7 +7,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-all: FORCE
+all: FORCE mergeconfig
 	$(Q)$(MAKE) -C $(TIMO_BASE)  O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE)
 
