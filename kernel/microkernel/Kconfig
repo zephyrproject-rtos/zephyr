@@ -1,6 +1,85 @@
 menu "Microkernel Options"
 
-source "kernel/microkernel/core/Kconfig"
+
+#The Kconfig symbols for API are hidden symbols.
+#In the current sate of the system is not possible to remove
+#API source code without affecting dependencies in the source code.
+#This symbols will allow to select which APIs we want to include
+#in the kernel binary from the configuration menu in the near future.
+
+config MICROKERNEL_SERVER_STACK_SIZE
+	int
+	prompt "Microkernel server fiber (K_swapper) stack size"
+	default 1024
+	depends on MICROKERNEL
+	help
+	This option specifies the size of the stack used by the microkernel
+	server fiber, whose entry point is K_swapper().  This must be able
+	to handle the deepest call stack for internal handling of microkernel
+
+config MICROKERNEL_SERVER_PRIORITY
+	int
+	prompt "Priority of the kernel service fiber"
+	default 0
+	depends on MICROKERNEL
+	help
+	Priority of the microkernel server fiber that performs
+	kernel requests and task scheduling assignments.
+
+config PRIORITY_CEILING
+	int
+	prompt "Maximum priority for priority inheritance algorithm"
+	default 0
+	depends on MICROKERNEL
+	help
+	The highest task priority for the mutex priority inheritance
+	algorithm.
+	A task of low priority holding a mutex will see its priority
+	bumped to the priority of a task trying to acquire the mutex.
+	This option puts an upper boundary to the priority a task may
+	get bumped to.
+
+config COMMAND_STACK_SIZE
+	int
+	prompt "K_swapper command stack size (in packets)"
+	default 64
+	depends on MICROKERNEL
+	help
+	This option specifies the maximum number of command packets that
+	can be queued up for processing by the kernel's K_swapper fiber.
+
+config NUM_COMMAND_PACKETS
+	int
+	prompt "Number of command packets"
+	default 16
+	depends on MICROKERNEL
+	help
+	This option specifies the number of packets in the command packet pool.
+	This pool needs to be large enough to accommodate all in-flight
+	asynchronous command requests as well as those internally issued by
+	the microkernel server fiber (K_swapper).
+
+config NUM_TIMER_PACKETS
+	int
+	prompt "Number of timer packets" if !TICKLESS_KERNEL
+	default 0 if TICKLESS_KERNEL
+	default 10
+	depends on MICROKERNEL
+	help
+	This option specifies the number of timer packets to create. Each
+	explicit and implicit timer usage consumes one timer packet.
+
+config  NUM_TASK_PRIORITIES
+	int
+	prompt "Number of task priorities"
+	default 16
+	range 1 256
+	depends on MICROKERNEL
+	help
+	This option specifies the number of task priorities supported by the
+	task scheduler. Specifying "N" provides support for task priorities
+	ranging from 0 (highest) through N-2; task priority N-1 (lowest) is
+	reserved for the kernel's idle task.
 
 config	WORKLOAD_MONITOR
 	bool

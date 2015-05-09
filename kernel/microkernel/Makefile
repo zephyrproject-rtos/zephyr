@@ -1,6 +1,7 @@
 EXTRA_CFLAGS +=-I$(srctree)/kernel/microkernel/include
 
 obj-y = k_task.o idle.o
+obj-y = global.o cmdPkt.o
 
 obj-$(CONFIG_TASK_MONITOR)    += task_monitor.o
 obj-$(CONFIG_API_MEMMAP)      += k_memmap.o
@@ -15,7 +16,8 @@ obj-$(CONFIG_API_FIFO)        += k_queue.o
 obj-$(CONFIG_API_SEMAPHORES)  += k_sema.o
 obj-$(CONFIG_API_TIMER)       += k_timer.o
 
-obj-y += core/
 obj-y += movedata/
 obj-$(CONFIG_API_CHANNEL) += channel/
 obj-$(CONFIG_API_TIMER) += timer/
+
+
