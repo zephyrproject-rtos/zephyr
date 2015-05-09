@@ -31,14 +31,19 @@ all: $(CONFIG_DEPS)
 rm-files:= final-linker.cmd linker.cmd modules.order \
 	staticIdt.o System.map *kernel.lnk \
 	*kernel.map *kernel.elf
+rm-objects:= *.o
 rm-dirs := arch drivers include kernel lib misc \
 	scripts source
 
-clean: FORCE
-	$(shell cd $(PROJECT_BASE);rm $(rm-files) -f)
-        $(shell cd $(PROJECT_BASE);rm $(rm-dirs) -r)
+cmd_clean_inner_files = \
+	 $(shell cd $(PROJECT_BASE);rm $(rm-files) -f; rm $(rm-dirs) -rf)
 
-mrproper: clean
+clean: FORCE
+	@rm $(SOURCE_DIR)$(rm-objects) -f
+	$(call cmd_clean_inner_files)
+
+mrproper: FORCE
+	$(call cmd_clean_inner_files)
 	$(Q)$(MAKE) -C $(TIMO_BASE) \
 	PROJECT=$(PROJECT_BASE) mrproper
 
@@ -66,7 +71,7 @@ initconfig:
 	PROJECT=$(PROJECT_BASE) oldconfig
 
 
-PHONY += FORCE
+PHONY += FORCE clean mrproper
 FORCE:
 
 .PHONY: $(PHONY)
