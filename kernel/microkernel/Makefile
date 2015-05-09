@@ -5,6 +5,7 @@ obj-y += global.o cmdPkt.o
 obj-y += movedata.o
 obj-y += ticker.o
 
+obj-$(CONFIG_MICROKERNEL)     += server.o
 obj-$(CONFIG_TASK_MONITOR)    += task_monitor.o
 obj-$(CONFIG_API_MEMMAP)      += k_memmap.o
 obj-$(CONFIG_API_MEMPOOL)     += k_mempool.o

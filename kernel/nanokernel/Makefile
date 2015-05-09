@@ -14,6 +14,5 @@ obj-$(CONFIG_STACK_CANARIES) += compiler_stack_protect.o
 obj-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
 obj-$(CONFIG_PERFORMANCE_METRICS) += nanometrics.o
 obj-$(CONFIG_ADVANCED_POWER_MANAGEMENT) += idle.o
-obj-$(CONFIG_MICROKERNEL) += microk.o
 obj-$(CONFIG_NANOKERNEL) += nanotime.o
 
