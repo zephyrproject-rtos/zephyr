@@ -19,7 +19,7 @@ rm-dirs := arch drivers include kernel lib misc \
 
 clean: FORCE
 	$(shell rm $(rm-files) -f)
-	$(shell rm $(rm-dirs) -r)
+	$(shell rm $(rm-dirs) -rf)
 
 mrproper: clean
 	$(Q)$(MAKE) -C $(TIMO_BASE) \
@@ -33,9 +33,13 @@ qemu: FORCE
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) qemu
 
-mergeconfig:
+cmd_merge_config = set -e; \
+	$(Q)test -s $(PROJECT_BASE)/prj_$(ARCH).conf || \
 	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
 	-m -O $(PROJECT_BASE) $(PROJECT_BASE)/.config $(PROJECT_BASE)/prj_$(ARCH).conf
+
+mergeconfig:
+	$(call cmd_merge_config)
 	$(Q)yes "" | $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) oldconfig
 
