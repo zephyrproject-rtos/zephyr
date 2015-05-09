@@ -1,52 +1,10 @@
-# Makefile - app_kernel benchmarking Makefile for microkernel
+TIMO_BASE = $(strip $(subst /samples/microkernel/benchmark/app_kernel,,$(shell pwd) ))
 
-# Copyright (c) 2013-2014 Wind River Systems, Inc.
-
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1) Redistributions of source code must retain the above copyright notice,
-# this list of conditions and the following disclaimer.
-#
-# 2) Redistributions in binary form must reproduce the above copyright notice,
-# this list of conditions and the following disclaimer in the documentation
-# and/or other materials provided with the distribution.
-#
-# 3) Neither the name of Wind River Systems nor the names of its contributors
-# may be used to endorse or promote products derived from this software without
-# specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
-# DESCRIPTION
-# Makefile for the AppKernel benchmark
+PC8253_BSP_VARIANTS=generic_pc pentium4 minuteia
 
 BSP ?= generic_pc
+VPFILE = prj.vpf
+KERNEL_TYPE = micro
+CONF_OVERLAY = prj_console_float_$(if $(filter $(BSP),$(PC8253_BSP_VARIANTS)),pc8253,generic).conf
 
-include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
-
-PC8253_BSP_VARIANTS=generic_pc_pentium4 generic_pc_minuteia
-
-PRJ_CONF_CONSOLE_FLOAT_8253 = prj_console_float_pc8253.conf
-PRJ_CONF_CONSOLE_NOFLOAT_8253 = prj_console_nofloat_pc8253.conf
-PRJ_CONF_CONSOLE_FLOAT_GEN = prj_console_float_generic.conf
-PRJ_CONF_CONSOLE_NOFLOAT_GEN = prj_console_nofloat_generic.conf
-
-PRJ_INCPATH = ${vHERE} $(subst \,/,${VXMICRO_BASE})/samples/microkernel/benchmark/latency_measure/src
-PRJ_INCPATH += ${vBASE}/samples/include/
-
-PRJ_CONF = $(PRJ_CONF_CONSOLE_$(if ${CONFIG_CPU_FLOAT_UNSUPPORTED},NOFLOAT,FLOAT)_$(if $(filter ${vBSP}_${vBSP_VARIANT},${PC8253_BSP_VARIANTS}),8253,GEN))
-
-override EXTRA_CFLAGS += -I${vBASE}/kernel/microkernel/include/
-
-include ${vMAKE}/target/make.ukernel
+include ${TIMO_BASE}/Makefile.inc
