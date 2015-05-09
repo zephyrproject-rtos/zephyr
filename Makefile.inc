@@ -1,15 +1,26 @@
-PROJECT_BASE = $(shell pwd)
+PROJECT_BASE ?= $(shell pwd)
 ARCH?=x86
 
 export ARCH VPFILE
+
+ifdef BSP
+ifdef KERNEL_TYPE
+KBUILD_DEFCONFIG=$(KERNEL_TYPE)_$(BSP)_defconfig
+export KBUILD_DEFCONFIG
+endif
+endif
+
+ifdef KBUILD_DEFCONFIG
+CONFIG_DEPS=initconfig
+else
+CONFIG_DEPS=FORCE
+endif
 
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-
-
-all: FORCE mergeconfig
+all: $(CONFIG_DEPS)
 	$(Q)$(MAKE) -C $(TIMO_BASE)  O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE)
 
@@ -20,8 +31,8 @@ rm-dirs := arch drivers include kernel lib misc \
 	scripts source
 
 clean: FORCE
-	$(shell rm $(rm-files) -f)
-	$(shell rm $(rm-dirs) -rf)
+	$(shell cd $(PROJECT_BASE);rm $(rm-files) -f)
+        $(shell cd $(PROJECT_BASE);rm $(rm-dirs) -r)
 
 mrproper: clean
 	$(Q)$(MAKE) -C $(TIMO_BASE) \
@@ -31,20 +42,21 @@ mrproper: clean
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) $@
 
-qemu: FORCE mergeconfig
+qemu: $(CONFIG_DEPS)
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) qemu
 
 cmd_defconfig = \
-	$(Q)test -s .config || $(MAKE) defconfig
+	$(Q)test -s .config || $(Q) $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
+	PROJECT=$(PROJECT_BASE) defconfig
 
 cmd_merge_config = set -e; \
 	$(call cmd_defconfig) \
-	$(Q)test -s $(PROJECT_BASE)/prj_$(ARCH).conf || \
+	$(Q)test -s $(CONF_OVERLAY) || \
 	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
-	-m -O $(PROJECT_BASE) $(PROJECT_BASE)/.config $(PROJECT_BASE)/prj_$(ARCH).conf
+	-m -O $(PROJECT_BASE) $(PROJECT_BASE)/.config $(CONF_OVERLAY)
 
-mergeconfig:
+initconfig:
 	$(call cmd_merge_config)
 	$(Q)yes "" | $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) oldconfig
