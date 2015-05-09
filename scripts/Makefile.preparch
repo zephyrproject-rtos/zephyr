@@ -42,7 +42,7 @@ misc/generated/nodes/microkernel_objects.h: misc/generated/nodes/prj.vpf FORCE
 define filechk_configs.c
 	(echo "/* file is auto-generated, do not modify ! */"; \
 	echo; \
-	echo "#include <absSym.h>"; \
+	echo "#include <abs_sym.h>"; \
 	echo; \
 	echo "GEN_ABS_SYM_BEGIN (_ConfigAbsSyms)"; \
 	echo; \
