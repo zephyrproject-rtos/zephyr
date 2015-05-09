@@ -15,4 +15,3 @@ obj-$(CONFIG_ADVANCED_POWER_MANAGEMENT) += idle.o
 obj-$(CONFIG_MICROKERNEL) += microk.o
 obj-$(CONFIG_NANOKERNEL) += nanotime.o
 
-obj-$(CONFIG_MICROKERNEL) += task/
