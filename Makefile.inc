@@ -7,6 +7,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
+
+
 all: FORCE mergeconfig
 	$(Q)$(MAKE) -C $(TIMO_BASE)  O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE)
@@ -29,11 +31,15 @@ mrproper: clean
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) $@
 
-qemu: FORCE
+qemu: FORCE mergeconfig
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) qemu
 
+cmd_defconfig = \
+	$(Q)test -s .config || $(MAKE) defconfig
+
 cmd_merge_config = set -e; \
+	$(call cmd_defconfig) \
 	$(Q)test -s $(PROJECT_BASE)/prj_$(ARCH).conf || \
 	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
 	-m -O $(PROJECT_BASE) $(PROJECT_BASE)/.config $(PROJECT_BASE)/prj_$(ARCH).conf
