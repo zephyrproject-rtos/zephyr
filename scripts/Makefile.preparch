@@ -26,13 +26,13 @@ define filechk_prj.vpf
 			echo "  EVENT    _TaskIrqEvt$$i     NULL"; \
 		done; \
 	fi; \
-	cat $(PROJECT)/$(VPFILE); \
+	cat $(VPFILE); \
 	cat $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf;)
 endef
 
 #Specific source code generation for Viper
 misc/generated/nodes/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf \
-				$(PROJECT)/$(VPFILE) \
+				$(VPFILE) \
 				include/config/auto.conf FORCE
 	$(call filechk,prj.vpf)
 
