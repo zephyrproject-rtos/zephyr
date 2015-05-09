@@ -7,7 +7,7 @@ PATCHLEVEL 	   = 0
 SUBLEVEL	   = 0
 NAME 		   = Tiny Mountain
 
-export PROJECT VPFILE
+export SOURCE_DIR PROJECT VPFILE
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
@@ -577,7 +577,7 @@ core-y := arch/ kernel/ misc/ lib/
 bsp-y  := drivers/
 
 ifneq ($(strip $(PROJECT)),)
-core-y += $(PROJECT)/src/
+core-y += $(SOURCE_DIR)
 endif
 
 endif # KBUILD_EXTMOD

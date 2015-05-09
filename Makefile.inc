@@ -16,13 +16,17 @@ else
 CONFIG_DEPS=FORCE
 endif
 
+ifndef SOURCE_DIR
+SOURCE_DIR=$(PROJECT_BASE)/src/
+endif
+
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
 all: $(CONFIG_DEPS)
 	$(Q)$(MAKE) -C $(TIMO_BASE)  O=$(PROJECT_BASE) \
-	PROJECT=$(PROJECT_BASE)
+	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR)
 
 rm-files:= final-linker.cmd linker.cmd modules.order \
 	staticIdt.o System.map *kernel.lnk \
