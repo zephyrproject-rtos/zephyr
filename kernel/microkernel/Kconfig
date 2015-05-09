@@ -196,7 +196,39 @@ config API_TIMER
 	This option add the timer API
 	to the microkernel image.
 
-source "kernel/microkernel/timer/Kconfig"
+menu "Timer API Options"
+	depends on API_TIMER
+
+config TIMESLICING
+	bool
+	prompt "Task time slicing"
+	default y
+	depends on MICROKERNEL && !TICKLESS_KERNEL
+	help
+	This option enables time slicing between tasks of equal priority.
+
+config TIMESLICE_SIZE
+	int
+	prompt "Time slice size (in ticks)"
+	default 0
+	depends on TIMESLICING
+	help
+	This option specifies the maximum amount of time a task can execute
+	before other tasks of equal priority are given an opportunity to run.
+	A time slice size of zero means "no limit" (i.e. an infinitely large
+	time slice).
+
+config  TIMESLICE_PRIORITY
+	int
+	prompt "Time slicing task priority threshold"
+	default 0
+	depends on TIMESLICING
+	help
+	This option specifies the task priority level at which time slicing
+	takes effect; tasks having a higher priority than this threshold
+	are not subject to time slicing. A threshold level of zero means
+	that all tasks are potentially subject to time slicing.
+endmenu
 
 config API_CHANNEL
 	bool
