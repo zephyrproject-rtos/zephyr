@@ -3,7 +3,6 @@ config TEST_RANDOM_GENERATOR
 	bool
 	prompt "Non-random number generator"
 	default n
-	depends on !CUSTOM_RANDOM_GENERATOR && DRV_RANDOM
 	help
 	This option signifies that the kernel's random number APIs are
 	permitted to return values that are not truly random.
