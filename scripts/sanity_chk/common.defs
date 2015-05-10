@@ -381,7 +381,7 @@ qemu_project() {
 	# and append the logs into the empty log file created above
 	# (supply all build-related arguments to allow final linking
 	# to be done using the same arguments as the original build)
-	( ${MAKE} ${PRJ_TYPE[$1]}.qemu ${PRJ_ARGS[$1]} ${BSP_INFO[$1]} \
+	( ${MAKE} qemu ${PRJ_ARGS[$1]} ${BSP_INFO[$1]} \
 	    ${BUILD_INFO} | tee ${SANITY_CHK_LOG} )&
 
 	# get QEMU's pid
