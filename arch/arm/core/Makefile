@@ -11,4 +11,4 @@ obj-y = atomic.o exc_exit.o ffs.o irq_init.o \
 	fault_s.o gdb_stub.o isr_wrapper.o \
 	nanofatal.o
 
-obj-$(MICROKERNEL) += task_abort.o
+obj-$(CONFIG_MICROKERNEL) += task_abort.o
