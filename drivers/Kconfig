@@ -46,6 +46,4 @@ config DRV_RANDOM
 	help
 	This option enables the random number generator driver.
 
-if DRV_RANDOM
 source "drivers/random/Kconfig"
-endif
