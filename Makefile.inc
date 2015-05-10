@@ -40,6 +40,7 @@ cmd_clean_inner_files = \
 
 clean: FORCE
 	@rm $(SOURCE_DIR)$(rm-objects) -f
+	@rm $(SOURCE_DIR)/modules.order -f
 	$(call cmd_clean_inner_files)
 
 mrproper: FORCE
