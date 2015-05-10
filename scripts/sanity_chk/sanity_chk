@@ -187,8 +187,8 @@ main() {
 		[ $? -eq 0 ] || exit $?
 		${SCRIPT_PATH}/regression_chk -c
 		[ $? -eq 0 ] || exit $?
-		${SCRIPT_PATH}/common-klibs_chk -c
-		[ $? -eq 0 ] || exit $?
+		#${SCRIPT_PATH}/common-klibs_chk -c
+		#[ $? -eq 0 ] || exit $?
 		${SCRIPT_PATH}/out-of-tree_chk -c
 		exit $?
 	fi
@@ -223,8 +223,8 @@ main() {
 	print_header
 	${ECHO} "Running Common klibs Regression Check"
 	${ECHO}
-	${SCRIPT_PATH}/common-klibs_chk ${args_passed_on}
-	[ $? -eq 0 ] || exit $?
+	#${SCRIPT_PATH}/common-klibs_chk ${args_passed_on}
+	#[ $? -eq 0 ] || exit $?
 
 	# run the out of tree regression check
 	print_header
