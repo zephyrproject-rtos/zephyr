@@ -89,7 +89,6 @@ microkernel/apps/hello_world                 <u>  fsl_frdm_k64f ti_lm3s6965     
 microkernel/apps/philosophers                <u>  fsl_frdm_k64f ti_lm3s6965      \n\
     # projects that have been temporarily disabled                          \n\
     # projects that don't require any special capabilities                  \n\
-nanokernel/test/test_bluetooth          <nq> pentium4! minuteia! atom quark \n\
 nanokernel/test/test_context            <nq> pentium4! minuteia! atom quark \n\
 nanokernel/test/test_fifo               <nq> pentium4! minuteia! atom quark \n\
 nanokernel/test/test_lifo               <nq> pentium4! minuteia! atom quark \n\
