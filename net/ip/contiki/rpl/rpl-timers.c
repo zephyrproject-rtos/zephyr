@@ -357,11 +357,11 @@ get_probing_target(rpl_dag_t *dag)
 
   /* Our preferred parent needs probing */
   if(dag->preferred_parent->last_tx_time < min_last_tx) {
-    return dag->preferred_parent;
+    probing_target = dag->preferred_parent;
   }
 
-  if((random_rand() % 2) == 0) {
-    /* With 1/2 probability: probe best parent not updated for RPL_PROBING_EXPIRATION_TIME */
+  /* With 50% probability: probe best parent not updated for RPL_PROBING_EXPIRATION_TIME */
+  if(probing_target == NULL && (random_rand() % 2) == 0) {
     p = nbr_table_head(rpl_parents);
     while(p != NULL) {
       if(p->dag == dag && p->last_tx_time < min_last_tx) {
@@ -375,8 +375,10 @@ get_probing_target(rpl_dag_t *dag)
       }
       p = nbr_table_next(rpl_parents, p);
     }
-  } else {
-    /* With 1/2 probability: probe the least recently updated parent */
+  }
+
+  /* The default probing target is the least recently updated parent */
+  if(probing_target == NULL) {
     p = nbr_table_head(rpl_parents);
     while(p != NULL) {
       if(p->dag == dag) {
@@ -387,7 +389,6 @@ get_probing_target(rpl_dag_t *dag)
       }
       p = nbr_table_next(rpl_parents, p);
     }
-
   }
 
   return probing_target;
