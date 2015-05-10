@@ -55,7 +55,7 @@ mrproper: FORCE
 
 qemu: $(CONFIG_DEPS)
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
-	PROJECT=$(PROJECT_BASE) qemu
+	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) qemu
 
 cmd_defconfig = \
 	$(Q)test -s .config || $(Q) $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
