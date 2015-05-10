@@ -11,5 +11,4 @@ endif
 EXTRA_AFLAGS = $(EXTRA_CFLAGS)
 
 obj-y = vector_table.o reset.o \
-	prep_c.o scs.o scb.o
-obj-$(CONFIG_RUNTIME_NMI) += nmi.o
+	prep_c.o scs.o scb.o nmi.o
