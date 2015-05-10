@@ -6,6 +6,6 @@ BSP ?= generic_pc
 VPFILE = $(TIMO_BASE)/samples/microkernel/benchmark/sys_kernel/prj.vpf
 KERNEL = micro
 SNIPPET = prj_console_$(if $(filter $(BSP),$(PC8253_BSP_VARIANTS)),pc8253,generic).conf
-PROJECT_BASE = $(TIMO_BASE)/samples/nanokernel/benchmark/sys_kernel
+SOURCE_DIR = $(TIMO_BASE)/samples/nanokernel/benchmark/sys_kernel
 
 include ${TIMO_BASE}/Makefile.inc

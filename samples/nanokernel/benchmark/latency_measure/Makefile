@@ -5,6 +5,6 @@ PC8253_BSP_VARIANTS=generic_pc pentium4 minuteia
 BSP ?= generic_pc
 KERNEL_TYPE = nano
 CONF_OVERLAY = prj.conf
-PROJECT_BASE = $(TIMO_BASE)/samples/microkernel/benchmark/latency_measure
+SOURCE_DIR = $(TIMO_BASE)/samples/microkernel/benchmark/latency_measure
 
 include $(TIMO_BASE)/Makefile.inc
