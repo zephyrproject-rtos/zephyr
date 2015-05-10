@@ -1,6 +1,6 @@
 BSP ?= generic_pc
 KERNEL_TYPE = nano
 CONF_OVERLAY = prj_$(ARCH).conf
-SOURCE_DIR = $(TIMO_BASE)/samples/microkernel/test/test_xip
+SOURCE_DIR = $(TIMO_BASE)/samples/microkernel/test/test_xip/src/
 
 include $(TIMO_BASE)/Makefile.inc

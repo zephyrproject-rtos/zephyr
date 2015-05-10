@@ -11,7 +11,7 @@ CONF_quark_ = quark/prj.conf
 
 KERNEL_TYPE = nano
 CONF_OVERLAY = $(CONF_$(BSP))
-SOURCE_DIR = $(TIMO_BASE)/samples/microkernel/benchmark/boot_time
+SOURCE_DIR = $(TIMO_BASE)/samples/microkernel/benchmark/boot_time/src/
 
 include $(TIMO_BASE)/Makefile.inc
 
