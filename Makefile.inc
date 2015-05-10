@@ -27,7 +27,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 all: $(CONFIG_DEPS)
 	$(Q)$(MAKE) -C $(TIMO_BASE)  O=$(PROJECT_BASE) \
-	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR)
+	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS)
 
 rm-files:= final-linker.cmd linker.cmd modules.order \
 	staticIdt.o System.map *kernel.lnk \
