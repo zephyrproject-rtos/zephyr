@@ -243,7 +243,7 @@ main() {
 			${ECHO} "target:    ${BSP_INFO[${cur_proj}]}"
 			${ECHO} "arguments: ${PRJ_ARGS[$cur_proj]}"
 			${ECHO}
-			${SIZE} outdir/*.elf
+			${SIZE} *.elf
 			${ECHO}
 		fi
 	done

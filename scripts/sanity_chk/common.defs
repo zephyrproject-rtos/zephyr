@@ -120,7 +120,7 @@ clean_project() {
 	${CD} ${PRJ_PATH}/$1
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
-	${MAKE} pristine
+	${MAKE} distclean
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 }
 
@@ -161,7 +161,7 @@ build_info_set() {
 
 	# set up toolchain-specific build environment stuff
 	if [ x${VXMICRO_TOOL} = x"gcc" ] ; then
-		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
+		MAKE_EXTRA_FLAGS="EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
 	elif [ x${VXMICRO_TOOL} = x"diab" ] ; then
 		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Xstop-on-warning EXTRA_LFLAGS=-Xstop-on-warning"
 	else
@@ -331,14 +331,14 @@ build_project() {
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	# build project from scratch
-	${MAKE} pristine
+	${MAKE} distclean
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	${MAKE} ${BUILD_INFO} ${PRJ_ARGS[$1]} ${BSP_INFO[$1]}
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	if [ x$2 == x ] ; then
-		elf_name=`${LS} outdir/${PRJ_TYPE[$1]}.elf`
+		elf_name=`${LS} ${PRJ_TYPE[$1]}.elf`
 		[ x${elf_name} != "x" ] || \
 			fail_exit $? $FUNCNAME $LINENO "couldn't build ${proj_name}"
 	fi
@@ -387,12 +387,12 @@ qemu_project() {
 	# get QEMU's pid
 	# (wait for QEMU process to be spawned by examining list of tasks
 	# associated with this script's terminal, then grab the pid)
-	while ! [ -f outdir/qemu.pid ]
+	while ! [ -f qemu.pid ]
 	do
 		${SLEEP} 1
 	done
 
-        qemu_pid=$(<outdir/qemu.pid)
+        qemu_pid=$(<qemu.pid)
 
 	# assume execution will fail
 	let RESULT=1

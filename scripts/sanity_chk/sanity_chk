@@ -203,7 +203,7 @@ main() {
 	export VXMICRO_TOOL
 
 	# rebuild host tools (optional)
-        update_host_tools ${skip_host_tools}
+        #update_host_tools ${skip_host_tools}
 
 	# run the footprint characterization check
 	print_header
