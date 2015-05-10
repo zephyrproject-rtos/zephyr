@@ -31,7 +31,7 @@ all: $(CONFIG_DEPS)
 
 rm-files:= final-linker.cmd linker.cmd modules.order \
 	staticIdt.o System.map *kernel.lnk \
-	*kernel.map *kernel.elf
+	*kernel.map *kernel.elf qemu.pid
 rm-objects:= *.o
 rm-dirs := arch drivers include kernel lib misc \
 	scripts source
