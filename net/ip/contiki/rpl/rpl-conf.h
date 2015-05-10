@@ -227,6 +227,15 @@
 #endif
 
 /*
+ * RPL probing expiration time.
+ * */
+#ifdef RPL_CONF_PROBING_EXPIRATION_TIME
+#define RPL_PROBING_EXPIRATION_TIME RPL_CONF_PROBING_EXPIRATION_TIME
+#else
+#define RPL_PROBING_EXPIRATION_TIME (10 * 60 * CLOCK_SECOND)
+#endif
+
+/*
  * Function used to select the next parent to be probed.
  * */
 #ifdef RPL_CONF_PROBING_SELECT_FUNC
