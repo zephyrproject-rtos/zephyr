@@ -60,12 +60,12 @@ KEEP_LOGS=0
 SANITY_CHK_LOG="sanity_chk.log"
 
 # directory containing code coverage results
-CC_DIR=${VXMICRO_BASE}/codecoverage/`${BASENAME} $0`/
-HTML_CC_DIR=${VXMICRO_BASE}/codecoverage_html/`${BASENAME} $0`/
+CC_DIR=${TIMO_BASE}/codecoverage/`${BASENAME} $0`/
+HTML_CC_DIR=${TIMO_BASE}/codecoverage_html/`${BASENAME} $0`/
 
 # temporary files used when selecting projects to be sanitized
-TEMP_AWK_PROG="${VXMICRO_BASE}/.tempawkprog"
-TEMP_PRJ_LIST="${VXMICRO_BASE}/.tempprojlist"
+TEMP_AWK_PROG="${TIMO_BASE}/.tempawkprog"
+TEMP_PRJ_LIST="${TIMO_BASE}/.tempprojlist"
 
 # maximum time (in seconds) to allow QEMU to execute a project
 QEMU_TIME_LIMIT=300

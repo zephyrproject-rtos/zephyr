@@ -33,22 +33,22 @@
 
 # Import common sanity check definitions
 #
-if [ -z ${VXMICRO_BASE} ]; then
+if [ -z ${TIMO_BASE} ]; then
 	echo "shell variables required to build VxMicro are not set"
 	exit 1
 fi
-if [ ! -d ${VXMICRO_BASE} ] ; then
-	echo "directory ${VXMICRO_BASE} not found"
+if [ ! -d ${TIMO_BASE} ] ; then
+	echo "directory ${TIMO_BASE} not found"
 	exit 1
 fi
-source ${VXMICRO_BASE}/scripts/sanity_chk/common.defs
+source ${TIMO_BASE}/scripts/sanity_chk/common.defs
 
 # Additional commands used in script
 SIZE="${VXMICRO_BASE}/scripts/truesize"
 
 # Location of master project directory
 #
-PRJ_PATH=${VXMICRO_BASE}/samples
+PRJ_PATH=${TIMO_BASE}/samples
 
 # Pseudo-file describing sample projects to be characterized
 #

@@ -36,18 +36,18 @@ exit 0
 
 # Import common sanity check definitions
 #
-if [ -z ${VXMICRO_BASE} ]; then
+if [ -z ${TIMO_BASE} ]; then
 	echo "shell variables required to build VxMicro are not set"
 	exit 1
 fi
-if [ ! -d ${VXMICRO_BASE} ] ; then
-	echo "directory ${VXMICRO_BASE} not found"
+if [ ! -d ${TIMO_BASE} ] ; then
+	echo "directory ${TIMO_BASE} not found"
 	exit 1
 fi
-source ${VXMICRO_BASE}/scripts/sanity_chk/common.defs
+source ${TIMO_BASE}/scripts/sanity_chk/common.defs
 
 # Out of tree location
-OUT_OF_TREE_BASE_REL=${VXMICRO_BASE}/../$(basename ${VXMICRO_BASE})-sanity
+OUT_OF_TREE_BASE_REL=${TIMO_BASE}/../$(basename ${TIMO_BASE})-sanity
 OUT_OF_TREE_BASE=$(${ABS_PATH} ${OUT_OF_TREE_BASE_REL})
 
 # Location of master project directory
@@ -133,8 +133,8 @@ possible; if desired the script can be instructed to skip the QEMU execution
 step.
 
 BSPs and samples are copied to:
-	VXMICRO_BASE/../sanity/bsp
-	VXMICRO_BASE/../sanity/samples
+	TIMO_BASE/../sanity/bsp
+	TIMO_BASE/../sanity/samples
 
 The script returns 0 on success. If an error is encountered at any point
 the script returns the exit value of the command that failed, the function
@@ -250,13 +250,13 @@ main() {
 	${MKDIR} -p ${OUT_OF_TREE_BASE}
 
 	# copy the BSPs
-	${CP} -r ${VXMICRO_BASE}/target/bsp ${OUT_OF_TREE_BASE}
+	${CP} -r ${TIMO_BASE}/target/bsp ${OUT_OF_TREE_BASE}
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	# copy the samples/include directory used by certain projects
 	${MKDIR} -p ${PRJ_PATH}
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
-	${CP} -r ${VXMICRO_BASE}/samples/include ${PRJ_PATH}
+	${CP} -r ${TIMO_BASE}/samples/include ${PRJ_PATH}
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	# build (and optionally execute) projects
@@ -275,7 +275,7 @@ main() {
 		${MKDIR} -p ${PRJ_PATH}/${PRJ_NAME[${cur_proj}]}
 		[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
-		${CP} -r ${VXMICRO_BASE}/samples/${PRJ_NAME[${cur_proj}]}/* ${PRJ_PATH}/${PRJ_NAME[${cur_proj}]}
+		${CP} -r ${TIMO_BASE}/samples/${PRJ_NAME[${cur_proj}]}/* ${PRJ_PATH}/${PRJ_NAME[${cur_proj}]}
 		[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 		# build project
