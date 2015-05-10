@@ -1524,9 +1524,10 @@ tools/%: FORCE
 	$(Q)mkdir -p $(objtree)/tools
 	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(filter --j% -j,$(MAKEFLAGS))" O=$(objtree) subdir=tools -C $(src)/tools/ $*
 
-QEMU_FLAGS = $ $(QEMU_FLAGS_$(SRCARCH))
+QEMU_FLAGS = $(QEMU_FLAGS_$(SRCARCH)) -pidfile qemu.pid
 
 qemu: tinymountain
+	@echo "To exit from QEMU enter: 'CTRL+a, x'"
 	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(SRCARCH))'
 	$(Q)$(QEMU) $(QEMU_FLAGS) -kernel $(KERNEL_NAME).elf
 
