@@ -44,6 +44,9 @@ clean: FORCE
 	@rm $(SOURCE_DIR)/modules.order -f
 	$(call cmd_clean_inner_files)
 
+distclean: clean
+	@rm $(PROJECT_BASE)/.config -f
+
 mrproper: FORCE
 	$(call cmd_clean_inner_files)
 	$(Q)$(MAKE) -C $(TIMO_BASE) \
