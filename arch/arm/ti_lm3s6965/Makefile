@@ -1,5 +1,4 @@
 EXTRA_CFLAGS +=-I$(srctree)/include/bsp
-EXTRA_CFLAGS +=-I$(srctree)/kernel/common/bsp
 EXTRA_CFLAGS +=-I$(srctree)/include/drivers
 EXTRA_CFLAGS +=-I$(srctree)/arch/arm/ti_lm3s6965
 

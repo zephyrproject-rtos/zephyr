@@ -1,4 +1,3 @@
-EXTRA_CFLAGS +=-I$(srctree)/kernel/common/bsp
 EXTRA_CFLAGS +=-I$(srctree)/include/drivers
 
 ifeq (${CONFIG_BSP_FSL_FRDM_K64F},y)
