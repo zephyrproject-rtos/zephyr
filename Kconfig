@@ -54,11 +54,20 @@ endmenu
 
 menu "System Monitoring Options"
 
+
+config  PERFORMANCE_METRICS
+	bool
+	prompt "Enable performance metrics"
+	default n
+	depends on EXPERIMENTAL
+	help
+	Enable Performance Metrics.
+
 config  BOOT_TIME_MEASUREMENT
 	bool
 	prompt "Boot time measurements [EXPERIMENTAL]"
 	default n
-	depends on EXPERIMENTAL
+	depends on EXPERIMENTAL && PERFORMANCE_METRICS
 	help
 	This option enables the recording of timestamps during system start
 	up. The global variable __start_tsc records the time kernel begins
