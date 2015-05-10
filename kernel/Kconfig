@@ -62,7 +62,7 @@ config ENHANCED_SECURITY
 	default y if ARCH="x86"
 	default n
 	help
-	This option enables all security features supported by TiMo,
+	This option enables all security features supported by the kernel,
 	including those that can have a significant impact on system
 	footprint or performance; it also prevents the use of certain kernel
 	features that have known security risks.

@@ -61,7 +61,7 @@ config  BOOT_TIME_MEASUREMENT
 	depends on EXPERIMENTAL
 	help
 	This option enables the recording of timestamps during system start
-	up. The global variable __start_tsc records the time TiMo begins
+	up. The global variable __start_tsc records the time kernel begins
 	executing, while __main_tsc records when main() begins executing,
 	and __idle_tsc records when the CPU becomes idle. All values are
 	recorded in terms of CPU clock cycles since system reset.
@@ -87,7 +87,7 @@ config  COMPILER_OPT
 	This option is a free-form string that is passed to the compiler
 	when building all parts of a project (i.e. kernel, LKMs, and USAPs).
 	The compiler options specified by this string supplement the
-	pre-defined set of compiler supplied by the TiMo build system,
+	pre-defined set of compiler supplied by the build system,
 	and can be used to change compiler optimization, warning and error
 	messages, and so on.
 

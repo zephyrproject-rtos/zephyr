@@ -44,7 +44,7 @@ config BOI_HANDLER_SUPPORTED
 	help
 	This option signifies that the target has one or more devices whose
 	driver utilizes a "beginning of interrupt" handler that gets called
-	before TiMo's standard interrupt handling code. This capability
+	before the standard interrupt handling code. This capability
 	can be used by the driver to suppress spurious interrupts generated
 	by the device (or for other purposes).
 
@@ -54,7 +54,7 @@ config EOI_HANDLER_SUPPORTED
 	help
 	This option signifies that the target has one or more devices whose
 	driver utilizes an "end of interrupt" handler that gets called
-	after TiMo's standard interrupt handling code. This capability
+	after the standard interrupt handling code. This capability
 	can be used by the driver to tell the device that an interrupt
 	has been handled (or for other purposes).
 

@@ -184,7 +184,7 @@ config DYNAMIC_INT_STUBS
 	help
 	This option allows a BSP's drivers to install interrupt handlers
 	at run time, if desired. If not enabled, interrupt handlers can only
-	be installed statically when the TiMo image is created.
+	be installed statically when the image is created.
 
 config PROT_MODE_SWITCH_PROMPT
 	bool "Prot Mode switch prompt"

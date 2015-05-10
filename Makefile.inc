@@ -18,6 +18,7 @@ endif
 
 ifndef SOURCE_DIR
 SOURCE_DIR=$(PROJECT_BASE)/src/
+export SOURCE_DIR
 endif
 
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \

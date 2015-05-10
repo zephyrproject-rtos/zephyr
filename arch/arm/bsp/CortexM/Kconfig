@@ -91,7 +91,7 @@ config RUNTIME_NMI
 	prompt "Attach an NMI handler at runtime"
 	default n
 	help
-	TiMo provides a simple NMI handler that simply hangs in a tight
+	The kernel provides a simple NMI handler that simply hangs in a tight
 	loop if triggered. This fills the requirement that there must be an
 	NMI handler installed when the CPU boots. If a custom handler is
 	needed, enable this option and attach it via _NmiHandlerSet().
