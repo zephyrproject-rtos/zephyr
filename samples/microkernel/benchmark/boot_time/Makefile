@@ -13,7 +13,6 @@ VPFILE = prj.vpf
 KERNEL_TYPE = micro
 CONF_OVERLAY = ${CONF_${BSP}}
 
-include ${TIMO_BASE}/Makefile.inc
 
 $(if $(CONF_OVERLAY),,$(error no prj.conf file available))
 $(if $(wildcard $(CONF_OVERLAY)),,$(error no $(CONF_OVERLAY) file available))
@@ -24,3 +23,5 @@ NO_QUALIFIED_PRJ_CONF_WARNING = $(strip \
 $(if $(filter $(BSP)/prj.conf,$(CONF_OVERLAY)),$(warning *** $(NO_QUALIFIED_PRJ_CONF_WARNING) ***),)
 
 $(info using CONF_OVERLAY = $(CONF_OVERLAY))
+
+include ${TIMO_BASE}/Makefile.inc
