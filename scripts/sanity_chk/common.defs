@@ -334,7 +334,7 @@ build_project() {
 	${MAKE} distclean
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
-	${MAKE} ${BUILD_INFO} ${PRJ_ARGS[$1]} ${BSP_INFO[$1]}
+	${MAKE} ARCH=${ARCH_NAME}  ${BUILD_INFO} ${PRJ_ARGS[$1]} ${BSP_INFO[$1]}
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	if [ x$2 == x ] ; then
@@ -381,7 +381,7 @@ qemu_project() {
 	# and append the logs into the empty log file created above
 	# (supply all build-related arguments to allow final linking
 	# to be done using the same arguments as the original build)
-	( ${MAKE} qemu ${PRJ_ARGS[$1]} ${BSP_INFO[$1]} \
+	( ${MAKE} ARCH=${ARCH_NAME} qemu ${PRJ_ARGS[$1]} ${BSP_INFO[$1]} \
 	    ${BUILD_INFO} | tee ${SANITY_CHK_LOG} )&
 
 	# get QEMU's pid
