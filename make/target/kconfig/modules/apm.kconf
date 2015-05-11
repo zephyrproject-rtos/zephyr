@@ -38,7 +38,6 @@ config	ADVANCED_POWER_MANAGEMENT
 	bool
 	prompt "Advanced power management"
 	default n
-	depends on MICROKERNEL
 	help
 	  This option enables the BSP to implement extra power management
 	  policies whenever the kernel becomes idle. The kernel informs the
