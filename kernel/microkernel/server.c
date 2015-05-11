@@ -44,7 +44,6 @@ interfering with each other.
 #include <minik.h>
 #include <nanok.h>
 #include <microkernel.h>
-#include <microkernel/entries.h> /* kernelfunc */
 #include <nanokernel.h>
 #include <misc/__assert.h>
 #include <drivers/system_timer.h>

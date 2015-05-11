@@ -1,4 +1,4 @@
-/* microkernel/entries.h */
+/* non-public microkernel APIs referenced by kernel_main.c */
 
 /*
  * Copyright (c) 1997-2012, 2014 Wind River Systems, Inc.
@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-/* Non-public microkernel APIs referenced by kernel_main.c */
+/* APIs referenced by generated routines */
 
 extern void _pipe_init(void);
 extern void _mem_map_init(void);
