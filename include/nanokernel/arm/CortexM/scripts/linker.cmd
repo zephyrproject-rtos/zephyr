@@ -41,8 +41,6 @@ Linker script for the Cortex-M3 BSPs.
 #include <autoconf.h>
 #include <sections.h>
 
-#define KENTRY _VxMicroStart
-
 #include <linker-tool.h>
 
 /* physical address of RAM */

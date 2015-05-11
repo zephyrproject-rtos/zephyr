@@ -56,7 +56,6 @@ No other symbol has the same format, so they are easy to spot.
 .equ __CORTEXM_BOOT_PSP, (__CORTEXM_BOOT_MSP - 0x100)
 
 GTEXT(__start)
-GTEXT(_VxMicroStart)
 GTEXT(_VectorTableROM)
 
 GTEXT(__reset)

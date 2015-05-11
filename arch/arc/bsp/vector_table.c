@@ -85,5 +85,4 @@ struct vector_table _VectorTable _GENERIC_SECTION(.exc_vector_table) = {
 	(uint32_t)__ev_maligned,
 };
 
-extern struct vector_table _VxMicroStart _ALIAS_OF(_VectorTable);
-extern struct vector_table _start _ALIAS_OF(_VectorTable);
+extern struct vector_table __start _ALIAS_OF(_VectorTable);

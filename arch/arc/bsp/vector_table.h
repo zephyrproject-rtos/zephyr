@@ -52,7 +52,6 @@ Refer to the ARCv2 manual for an explanation of the exceptions.
 #include <sections.h>
 
 GTEXT(__start)
-GTEXT(_VxMicroStart)
 GTEXT(_VectorTable)
 
 GTEXT(__reset)

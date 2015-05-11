@@ -47,8 +47,6 @@ This is the linker script for both standard images and XIP images.
   #define PHYS_RAM_ADDR    PHYS_LOAD_ADDR
 #endif /* CONFIG_XIP */
 
-#define KENTRY  __start
-
 MEMORY
     {
 #ifdef CONFIG_XIP

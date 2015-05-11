@@ -48,6 +48,7 @@ ifneq ($(strip ${vKERNEL_UNDEF_SYMS}),)
 	$qecho $(foreach sym,${vKERNEL_UNDEF_SYMS},-u ${sym} ) >> ${vOUT_DIR}/lflags
 endif
 	$qecho $(foreach path,${LIB_INCLUDE_DIR},-L $(subst \,/,${path}) ) >> ${vOUT_DIR}/lflags
+	$qecho -Wl,-e,__start >> ${vOUT_DIR}/lflags
 	$qecho -Wl,--start-group $(foreach alib,${ALL_LIBS},-l${alib}) >> ${vOUT_DIR}/lflags
 	$qecho ${vKLIB_DIR}/offsets.$o >> ${vOUT_DIR}/lflags
 	$qecho  -Wl,--end-group>> ${vOUT_DIR}/lflags

@@ -41,14 +41,11 @@ use with the GCC linker.
 
 #if defined(CONFIG_CPU_CORTEXM)
 OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
-ENTRY(KENTRY)
 #elif defined(CONFIG_ARC)
 OUTPUT_FORMAT("elf32-littlearc", "elf32-bigarc", "elf32-littlearc")
-ENTRY(KENTRY)
 #else
 OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
 OUTPUT_ARCH(i386)
-ENTRY(KENTRY)
 #endif
 
 /*
