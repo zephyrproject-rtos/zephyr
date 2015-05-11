@@ -39,8 +39,6 @@
 extern "C" {
 #endif
 
-#define OBJ_INDEX(objId) ((uint16_t)objId)
-
 typedef int32_t ktask_t;
 typedef uint32_t ktask_group_t;
 typedef uint32_t kmutex_t;
