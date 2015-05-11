@@ -133,7 +133,7 @@ static NANO_CPU_INT_STUB_DECL(_i8253IntStub);
 #endif
 
 static uint16_t __noinit counterLoadVal; /* computed counter */
-static volatile uint32_t accumulatedCount = 0;
+static volatile uint32_t clock_accumulated_count = 0;
 static uint16_t _currentLoadVal = 0;
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
@@ -289,7 +289,7 @@ void _timer_int_handler(void *unusedArg /* not used */
 	}
 
 	/* accumulate total counter value */
-	accumulatedCount += counterLoadVal * _sys_idle_elapsed_ticks;
+	clock_accumulated_count += counterLoadVal * _sys_idle_elapsed_ticks;
 
 #else
 #if defined(CONFIG_MICROKERNEL)
@@ -298,20 +298,20 @@ void _timer_int_handler(void *unusedArg /* not used */
 #endif
 
 	/* accumulate total counter value */
-	accumulatedCount += counterLoadVal;
+	clock_accumulated_count += counterLoadVal;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
 	/*
 	 * Algorithm tries to compensate lost interrupts if any happened and
 	 * prevent the timer from counting backwards
 	 * ULONG_MAX / 2 is the maximal value that oldCount can be more than
-	 * accumulatedCount. If it is more -- consider it as an accumulatedCount
+	 * clock_accumulated_count. If it is more -- consider it as an clock_accumulated_count
 	 * wrap and do not try to compensate.
 	 */
-	if (accumulatedCount < oldCount) {
-		uint32_t tmp = oldCount - accumulatedCount;
+	if (clock_accumulated_count < oldCount) {
+		uint32_t tmp = oldCount - clock_accumulated_count;
 		if ((tmp >= counterLoadVal) && (tmp < (ULONG_MAX / 2))) {
-			accumulatedCount += tmp - tmp % counterLoadVal;
+			clock_accumulated_count += tmp - tmp % counterLoadVal;
 		}
 	}
 
@@ -569,20 +569,20 @@ uint32_t timer_read(void)
 #endif
 
 	/* counters are down counters so need to subtact from counterLoadVal */
-	newCount = accumulatedCount + _currentLoadVal - _i8253CounterRead();
+	newCount = clock_accumulated_count + _currentLoadVal - _i8253CounterRead();
 
 	/*
 	 * This algorithm fixes the situation when the timer counter reset
 	 * happened before the timer interrupt (due to possible interrupt
 	 * disable)
 	 */
-	if ((newCount < oldCount) && (accumulatedCount == oldAcc)) {
+	if ((newCount < oldCount) && (clock_accumulated_count == oldAcc)) {
 		uint32_t tmp = oldCount - newCount;
 		newCount += tmp - tmp % _currentLoadVal + _currentLoadVal;
 	}
 
 	oldCount = newCount;
-	oldAcc = accumulatedCount;
+	oldAcc = clock_accumulated_count;
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 /*

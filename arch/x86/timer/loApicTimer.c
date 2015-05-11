@@ -130,7 +130,7 @@ SYS_INT_REGISTER(_loApicTimerIntStub, LOAPIC_TIMER_IRQ, LOAPIC_TIMER_INT_PRI);
 
 static uint32_t __noinit counterLoadVal; /* computed counter 0
 							  initial count value */
-static uint32_t accumulatedCount = 0;
+static uint32_t clock_accumulated_count = 0;
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
 static uint32_t _IdleOrigCount = 0;
@@ -322,7 +322,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	_sys_idle_elapsed_ticks++;
 
 	/* accumulate total counter value */
-	accumulatedCount += counterLoadVal * _sys_idle_elapsed_ticks;
+	clock_accumulated_count += counterLoadVal * _sys_idle_elapsed_ticks;
 
 	/*
 	 * If we transistion from 0 elapsed ticks to 1 we need to announce the
@@ -336,7 +336,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 
 #else
 	/* accumulate total counter value */
-	accumulatedCount += counterLoadVal;
+	clock_accumulated_count += counterLoadVal;
 
 #if defined(CONFIG_MICROKERNEL)
 	/* announce tick into the microkernel */
@@ -636,13 +636,13 @@ uint32_t timer_read(void)
 
 #if !defined(TIMER_SUPPORTS_TICKLESS)
 	/* counter is a down counter so need to subtact from counterLoadVal */
-	val = accumulatedCount - _loApicTimerGetRemaining() + counterLoadVal;
+	val = clock_accumulated_count - _loApicTimerGetRemaining() + counterLoadVal;
 #else
 	/*
 	 * counter is a down counter so need to subtact from what was programmed
 	 * in the reload register
 	 */
-	val = accumulatedCount - _loApicTimerGetRemaining() +
+	val = clock_accumulated_count - _loApicTimerGetRemaining() +
 	      _loApicTimerGetCount();
 #endif
 

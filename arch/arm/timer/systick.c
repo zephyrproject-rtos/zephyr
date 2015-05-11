@@ -69,7 +69,7 @@ extern struct nano_stack _k_command_stack;
 #endif /* CONFIG_MICROKERNEL */
 
 /* running total of timer count */
-static uint32_t accumulatedCount = 0;
+static uint32_t clock_accumulated_count = 0;
 
 /*
  * A board support package's board.h header must provide definitions for the
@@ -340,13 +340,13 @@ void _TIMER_INT_HANDLER(void *unused)
 	}
 
 	/* accumulate total counter value */
-	accumulatedCount += defaultLoadVal * _sys_idle_elapsed_ticks;
+	clock_accumulated_count += defaultLoadVal * _sys_idle_elapsed_ticks;
 #else  /* !CONFIG_TICKLESS_IDLE */
 	/*
 	 * No tickless idle:
 	 * Update the total tick count and announce this tick to the kernel.
 	 */
-	accumulatedCount += sys_clock_hw_cycles_per_tick;
+	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
 
 	nano_isr_stack_push(&_k_command_stack, TICK_EVENT);
 #endif /* CONFIG_TICKLESS_IDLE */
@@ -369,7 +369,7 @@ void _TIMER_INT_HANDLER(void *unused)
 #else /* !CONFIG_ADVANCED_POWER_MANAGEMENT */
 
 	/* accumulate total counter value */
-	accumulatedCount += sys_clock_hw_cycles_per_tick;
+	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
 
 #ifdef CONFIG_MICROKERNEL
 	/*
@@ -694,7 +694,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 
 uint32_t timer_read(void)
 {
-	return accumulatedCount + (__scs.systick.strvr - __scs.systick.stcvr);
+	return clock_accumulated_count + (__scs.systick.strvr - __scs.systick.stcvr);
 }
 
 #ifdef CONFIG_SYSTEM_TIMER_DISABLE

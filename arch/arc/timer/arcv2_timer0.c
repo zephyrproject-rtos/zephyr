@@ -65,7 +65,7 @@ The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero counter.
 #define _ARC_V2_TMR_CTRL_IP 0x8 /* interrupt pending flag */
 
 /* running total of timer count */
-static uint32_t accumulatedCount = 0;
+static uint32_t clock_accumulated_count = 0;
 
 
 /*******************************************************************************
@@ -148,7 +148,7 @@ void _timer_int_handler(void *unused)
 	/* clear the interrupt by writing 0 to IP bit of the control register */
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, zero_ip_bit);
 
-	accumulatedCount += sys_clock_hw_cycles_per_tick;
+	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
 
 	_nano_ticks++;
 
@@ -212,7 +212,7 @@ void timer_driver(
 
 uint32_t timer_read(void)
 {
-	return (accumulatedCount + count_get());
+	return (clock_accumulated_count + count_get());
 }
 
 #if defined(CONFIG_SYSTEM_TIMER_DISABLE)
