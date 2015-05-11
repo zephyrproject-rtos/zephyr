@@ -39,8 +39,6 @@
 extern "C" {
 #endif
 
-#include <microkernel/mail_api_export.h>
-
 extern int _task_mbox_put(kmbox_t mbox,
 		                  kpriority_t prio,
 		                  struct k_msg *M,
@@ -59,6 +57,20 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
 				 struct k_block *rxblock,
 				 kmemory_pool_t pid,
 				 int32_t time);
+
+#define task_mbox_put(b, p, m) _task_mbox_put(b, p, m, TICKS_NONE)
+#define task_mbox_put_wait(b, p, m) _task_mbox_put(b, p, m, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
+#define task_mbox_put_wait_timeout(b, p, m, t) _task_mbox_put(b, p, m, t)
+#endif
+
+#define task_mbox_get(b, m) _task_mbox_get(b, m, TICKS_NONE)
+#define task_mbox_get_wait(b, m) _task_mbox_get(b, m, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
+#define task_mbox_get_wait_timeout(b, m, t) _task_mbox_get(b, m, t)
+#endif
 
 #define task_mbox_put_async(b, p, m, s) _task_mbox_put_async(b, p, m, s)
 #define task_mbox_data_get(m) _task_mbox_data_get(m)

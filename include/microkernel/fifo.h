@@ -39,11 +39,26 @@
 extern "C" {
 #endif
 
-#include <microkernel/fifo_api_export.h>
-
 extern int _task_fifo_put(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_get(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_ioctl(kfifo_t queue, int op);
+
+#define task_fifo_put(q, p) _task_fifo_put(q, p, TICKS_NONE)
+#define task_fifo_put_wait(q, p) _task_fifo_put(q, p, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
+#define task_fifo_put_wait_timeout(q, p, t) _task_fifo_put(q, p, t)
+#endif
+
+#define task_fifo_get(q, p) _task_fifo_get(q, p, TICKS_NONE)
+#define task_fifo_get_wait(q, p) _task_fifo_get(q, p, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
+#define task_fifo_get_wait_timeout(q, p, t) _task_fifo_get(q, p, t)
+#endif
+
+#define task_fifo_size_get(q) _task_fifo_ioctl(q, 0)
+#define task_fifo_purge(q) _task_fifo_ioctl(q, 1)
 
 #ifdef __cplusplus
 }

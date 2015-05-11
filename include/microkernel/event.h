@@ -37,7 +37,6 @@
 extern "C" {
 #endif
 
-#include <microkernel/event_api_export.h>
 #include <microkernel/cmdPkt.h>
 
 extern void isr_event_send(kevent_t event);
@@ -46,6 +45,13 @@ extern int task_event_set_handler(kevent_t event, kevent_handler_t handler);
 
 extern int task_event_send(kevent_t event);
 extern int _task_event_recv(kevent_t event, int32_t time);
+
+#define task_event_recv(event) _task_event_recv(event, TICKS_NONE)
+#define task_event_recv_wait(event) _task_event_recv(event, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
+#define task_event_recv_wait_timeout(event, time) _task_event_recv(event, time)
+#endif
 
 #ifdef __cplusplus
 }

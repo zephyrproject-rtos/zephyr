@@ -37,7 +37,6 @@
 extern "C" {
 #endif
 
-#include <microkernel/sema_api_export.h>
 #include <microkernel/cmdPkt.h>
 
 extern void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet);
@@ -50,6 +49,15 @@ extern void task_sem_reset(ksem_t sema);
 extern void task_sem_group_reset(ksemg_t semagroup);
 extern int _task_sem_take(ksem_t sema, int32_t time);
 extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
+
+#define task_sem_take(s) _task_sem_take(s, TICKS_NONE)
+#define task_sem_take_wait(s) _task_sem_take(s, TICKS_UNLIMITED)
+#define task_sem_group_take_wait(g) _task_sem_group_take(g, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
+#define task_sem_take_wait_timeout(s, t) _task_sem_take(s, t)
+#define task_sem_group_take_wait_timeout(g, t) _task_sem_group_take(g, t)
+#endif
 
 #ifdef __cplusplus
 }

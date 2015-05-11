@@ -34,7 +34,8 @@
 #define TASK_IRQ_H
 
 #include <microkernel/k_types.h>
-#include <microkernel/task_irq_api_export.h>
+
+#define INVALID_VECTOR 0xFFFFFFFF
 
 struct task_irq_info {
 	ktask_t taskId;  /* task ID of task IRQ object's owner */
@@ -51,5 +52,12 @@ extern uint32_t task_irq_alloc(kirq_t irq_obj,
 extern int _task_irq_test(kirq_t irq_ob, int32_t time);
 extern void task_irq_ack(kirq_t irq_obj);
 extern void task_irq_free(kirq_t irq_obj);
+
+#define task_irq_test(irq_obj) _task_irq_test(irq_obj, TICKS_NONE)
+#define task_irq_test_wait(irq_obj) _task_irq_test(irq_obj, TICKS_UNLIMITED)
+
+#ifndef CONFIG_TICKLESS_KERNEL
+#define task_irq_test_wait_timeout(irq_obj, time) _task_irq_test(irq_obj, time)
+#endif
 
 #endif /* TASK_IRQ_H */

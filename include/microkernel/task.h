@@ -37,8 +37,6 @@
 extern "C" {
 #endif
 
-#include <microkernel/task_api_export.h>
-
 extern struct k_proc *_k_current_task;
 
 /*
@@ -64,13 +62,20 @@ extern void task_entry_set(ktask_t task, void (*func)(void));
 extern void task_abort_handler_set(void (*func)(void));
 
 /*
- * The following task/group operations may only be performed with
- * _task_ioctl() and _task_group_ioctl() in the kernel.
+ * Operations supported by _task_ioctl() and _task_group_ioctl()
  */
 
+#define TASK_START 0
+#define TASK_ABORT 1
+#define TASK_SUSPEND 2
+#define TASK_RESUME 3
 #define TASK_BLOCK 4
 #define TASK_UNBLOCK 5
 
+#define TASK_GROUP_START 0
+#define TASK_GROUP_ABORT 1
+#define TASK_GROUP_SUSPEND 2
+#define TASK_GROUP_RESUME 3
 #define TASK_GROUP_BLOCK 4
 #define TASK_GROUP_UNBLOCK 5
 
@@ -80,9 +85,18 @@ extern void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func);
 
 #define task_id_get() (_k_current_task->Ident)
 #define task_priority_get() (_k_current_task->Prio)
+#define task_start(t) _task_ioctl(t, TASK_START)
+#define task_abort(t) _task_ioctl(t, TASK_ABORT)
+#define task_suspend(t) _task_ioctl(t, TASK_SUSPEND)
+#define task_resume(t) _task_ioctl(t, TASK_RESUME)
+
 #define task_group_mask_get() (_k_current_task->Group)
 #define task_group_join(g) (_k_current_task->Group |= g)
 #define task_group_leave(g) (_k_current_task->Group &= ~g)
+#define task_group_start(g) _task_group_ioctl(g, TASK_GROUP_START)
+#define task_group_abort(g) _task_group_ioctl(g, TASK_GROUP_ABORT)
+#define task_group_suspend(g) _task_group_ioctl(g, TASK_GROUP_SUSPEND)
+#define task_group_resume(g) _task_group_ioctl(g, TASK_GROUP_RESUME)
 
 #define isr_task_id_get() task_id_get()
 #define isr_task_priority_get() task_priority_get()
