@@ -38,8 +38,45 @@
 #include <minik.h>
 #include <drivers/system_timer.h>
 
+extern K_TIMER _k_timer_blocks[];
+
 K_TIMER  *_k_timer_list_head = NULL;
 K_TIMER  *_k_timer_list_tail = NULL;
+
+/*******************************************************************************
+*
+* _timer_id_to_ptr - convert timer pointer to timer object identifier
+*
+* This routine converts a timer pointer into a timer object identifier.
+*
+* This algorithm relies on the fact that subtracting two pointers that point
+* to elements of an array returns the difference between the array subscripts
+* of those elements. (That is, "&a[j]-&a[i]" returns "j-i".)
+*
+* This algorithm also set the upper 16 bits of the object identifier
+* to the same value utilized by the microkernel system generator.
+*
+* RETURNS: timer object identifier
+*/
+
+static inline ktimer_t _timer_ptr_to_id(K_TIMER *timer)
+{
+	return (ktimer_t)(0x00010000u + (uint32_t)(timer - &_k_timer_blocks[0]));
+}
+
+/*******************************************************************************
+*
+* _timer_id_to_ptr - convert timer object identifier to timer pointer
+*
+* This routine converts a timer object identifier into a timer pointer.
+*
+* RETURNS: timer pointer
+*/
+
+static inline K_TIMER *_timer_id_to_ptr(ktimer_t timer)
+{
+	return &_k_timer_blocks[OBJ_INDEX(timer)];
+}
 
 /*******************************************************************************
 *
