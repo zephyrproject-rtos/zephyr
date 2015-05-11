@@ -28,9 +28,6 @@ iQUIESCE_DOT_D =
 # This is useful for IAP projects
 vPP ?= ${vCPP}
 
-# Select the DIAB compiler for linking the kernel
-vLD_K = ${vLD}
-
 ifeq (${MAKE_RESTARTS},)
   ifeq (${MAKELEVEL},0)
     $(call q_info,Using DIAB installed in '${iDIAB_DIR}')

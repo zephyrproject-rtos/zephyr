@@ -84,7 +84,7 @@ define idtInTxt
 	-$q$(HOS_DeleteFiles) ${iFINAL_LINKER_CMD}
 	-@$(HOS_Echo) '[${vTOOL}] Relinking   [$(notdir $@)]'
 	$q${vPP} -DFINAL_LINK ${iLINKER_CMD_OPT} ${iLINKER_CMD_INC} ${LINKER_CMD} -o ${iFINAL_LINKER_CMD}
-	$q${vLD_K} -o $@ @$(filter %.${lnk},$^) $(filter %.$o,$^) ${vOUT_DIR}/staticIdt.$o ${-T} ${iFINAL_LINKER_CMD}
+	$q${vLD} -o $@ @$(filter %.${lnk},$^) $(filter %.$o,$^) ${vOUT_DIR}/staticIdt.$o ${-T} ${iFINAL_LINKER_CMD}
 	$(call i_noload_${vTOOL},$@,${vOUT_DIR}/elf.tmp)
 	$q$(vOC) -R intList ${vOUT_DIR}/elf.tmp $@
 	-@$(HOS_DeleteFiles) ${vOUT_DIR}/staticIdt.*

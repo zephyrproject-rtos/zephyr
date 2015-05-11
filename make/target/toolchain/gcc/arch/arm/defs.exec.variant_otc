@@ -1,6 +1,4 @@
-# defs.exec - build system
-
-# Copyright (c) 2013-2014 Wind River Systems, Inc.
+# Copyright (c) 2015 Wind River Systems, Inc.
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,34 +26,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-sinclude ${iMAKE_GCC}/arch/${vARCH}/defs.exec.variant_${vGCC_VARIANT}
-include ${iMAKE_GCC}/arch/${vARCH}/defs.exec
-sinclude ${iMAKE_GCC}/defs.gcc.${vHOST}.variant_${vGCC_VARIANT}
-include ${iMAKE_GCC}/defs.gcc.${vHOST} # find toolchain installation
+iGCC_TARGET = arm-none-eabi
+vGCC_VER_arm = 4.8
 
-$(if ${iGCC_DIR},,$(error No GCC toolchain installation found!))
-
-iGCC_BIN_DIR ?= $(iGCC_DIR)/bin
-iGCC_PREFIX  ?= ${iGCC_BIN_DIR}/${iGCC_TARGET}
-
-vCC    ?= ${iGCC_PREFIX}-gcc
-vCPP   ?= ${iGCC_PREFIX}-cpp
-vAS    ?= ${vCC}
-vAR    ?= ${iGCC_PREFIX}-ar
-vLD    ?= ${iGCC_PREFIX}-ld
-vOC    ?= ${iGCC_PREFIX}-objcopy
-vOD    ?= ${iGCC_PREFIX}-objdump
-vGDB   ?= ${iGCC_PREFIX}-gdb
-vSTRIP ?= ${iGCC_PREFIX}-strip
-
-# quiet by default
-iQUIESCE_DOT_D =
-
-# Select the GNU compiler for the pre-processing tool
-vPP ?= ${vCPP}
-
-ifeq (${MAKE_RESTARTS},)
-  ifeq (${MAKELEVEL},0)
-    $(call q_info,Using GCC installed in '${iGCC_DIR}')
-  endif
-endif
+# path to the compiler auxiliary libraries
+iTC_AUX_LIB_DIR ?= $(wildcard $(iGCC_DIR)/lib/gcc/$(iGCC_TARGET)/$(vGCC_VER).*)
