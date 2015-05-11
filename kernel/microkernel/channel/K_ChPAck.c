@@ -34,7 +34,6 @@
 #include <kchan.h>
 #include <minik.h>
 #include <kticks.h>
-#include <kmemcpy.h>
 #include <ksema.h>
 #include <kmemp.h>
 #include <toolchain.h>

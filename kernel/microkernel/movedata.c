@@ -34,7 +34,6 @@
 
 #include <microkernel/k_struct.h>
 #include <minik.h>
-#include <kmemcpy.h>
 #include <string_s.h>
 #include <toolchain.h>
 #include <sections.h>

@@ -34,7 +34,6 @@
 
 #include <microkernel.h>
 #include <kchan.h>
-#include <kmemcpy.h>
 #include <minik.h>
 #include <kticks.h>
 #include <toolchain.h>

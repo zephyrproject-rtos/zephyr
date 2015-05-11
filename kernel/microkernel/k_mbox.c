@@ -39,7 +39,6 @@
 
 #include <minik.h>
 #include <kmail.h>
-#include <kmemcpy.h>
 #include <kticks.h>
 #include <ksema.h>
 
