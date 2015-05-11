@@ -49,7 +49,7 @@ void _k_event_handler_set(struct k_args *A)
 	kevent_t event = A->Args.e1.event;
 
 	if (likely(event < _k_num_events)) {
-		struct evstr *E = EVENTS + A->Args.e1.event;
+		struct evstr *E = _k_event_list + A->Args.e1.event;
 
 		if (E->func != NULL) {
 			if (likely(A->Args.e1.func == NULL)) {
@@ -111,7 +111,7 @@ int task_event_set_handler(kevent_t event,     /* event upon which to reigster *
 void _k_event_test_timeout(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
-	struct evstr *E = EVENTS + event;
+	struct evstr *E = _k_event_list + event;
 
 	FREETIMER(A->Time.timer);
 	A->Time.rcode = RC_TIME;
@@ -131,7 +131,7 @@ void _k_event_test(struct k_args *A)
 	kevent_t event = A->Args.e1.event;
 
 	if (likely(event < _k_num_events)) {
-		struct evstr *E = EVENTS + event;
+		struct evstr *E = _k_event_list + event;
 
 		if (E->status) { /* the next event can be received */
 			E->status = 0;
@@ -202,7 +202,7 @@ int _task_event_recv(
 
 void _k_do_event_signal(kevent_t event)
 {
-	struct evstr *E = EVENTS + event;
+	struct evstr *E = _k_event_list + event;
 	struct k_args *A = E->waiter;
 	int ret_val = 1; /* If no handler is available, then ret_val is 1 by default */
 

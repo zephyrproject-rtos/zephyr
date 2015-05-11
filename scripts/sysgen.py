@@ -476,7 +476,7 @@ def kernel_main_c_events():
     # event descriptors
 
     kernel_main_c_out("\n" +
-        "struct evstr EVENTS[%d] =\n" % (total_events) +
+        "struct evstr _k_event_list[%d] =\n" % (total_events) +
         "{\n")
     # pre-defined events
     if (num_timers > 0):
@@ -1182,7 +1182,7 @@ def generate_vxmicro_h_misc():
     global vxmicro_h_data
     vxmicro_h_data += "\n" + \
         "extern const int _k_num_events;\n" + \
-        "extern struct evstr EVENTS[];\n\n"
+        "extern struct evstr _k_event_list[];\n\n"
 
 
 def generate_vxmicro_h_obj_ids():
