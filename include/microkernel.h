@@ -63,8 +63,6 @@ extern "C" {
 #define MON_EVENT 8
 #define MON_ALL 15
 
-extern void _task_nop(void);
-
 extern int task_offload_to_fiber(int (*)(), void *);
 
 /* The following two typedefs are used in kernel_main.c */

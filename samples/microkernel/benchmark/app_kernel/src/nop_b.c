@@ -34,6 +34,10 @@
 
 #ifdef MICROKERNEL_CALL_BENCH
 
+/* utilize non-public microkernel API for test purposes */
+
+extern void _task_nop(void);
+
 /*******************************************************************************
  *
  * call_test - Kernel entry timing test
