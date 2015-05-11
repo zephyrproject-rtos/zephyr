@@ -62,8 +62,8 @@ extern const int _k_num_events;
 extern struct k_proc *_k_current_task;
 extern uint32_t _k_task_priority_bitmap[];
 
-extern K_TIMER *_k_timer_list_head;
-extern K_TIMER *_k_timer_list_tail;
+extern struct k_timer *_k_timer_list_head;
+extern struct k_timer *_k_timer_list_tail;
 
 extern struct nano_stack _k_command_stack;
 extern struct nano_lifo _k_server_command_packet_free;
@@ -76,10 +76,10 @@ extern void _k_task_group_op(struct k_args *A);
 extern void _k_task_priority_set(struct k_args *A);
 extern void _k_task_yield(struct k_args *A);
 
-extern void enlist_timer(K_TIMER *T);
-extern void delist_timer(K_TIMER *T);
+extern void enlist_timer(struct k_timer *T);
+extern void delist_timer(struct k_timer *T);
 extern void enlist_timeout(struct k_args *P);
-extern void delist_timeout(K_TIMER *T);
+extern void delist_timeout(struct k_timer *T);
 extern void force_timeout(struct k_args *A);
 extern void _k_timer_list_update(int ticks);
 extern void _k_timer_alloc(struct k_args *P);
@@ -148,7 +148,7 @@ extern void set_state_bit(struct k_proc *, uint32_t);
 extern void reset_state_bit(struct k_proc *, uint32_t);
 extern void _k_task_call(struct k_args *);
 
-extern void delist_timeout(K_TIMER *T);
+extern void delist_timeout(struct k_timer *T);
 extern void enlist_timeout(struct k_args *A);
 extern void force_timeout(struct k_args *A);
 

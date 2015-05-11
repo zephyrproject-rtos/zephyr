@@ -54,10 +54,6 @@ struct k_timer {
 	struct k_args *Args;
 };
 
-/* Kernel timer type (public) */
-
-typedef struct k_timer K_TIMER;
-
 /* ---------------------------------------------------------------------- */
 /* PROCESSOR SPECIFIC TYPES & DATA STRUCTURES */
 
@@ -282,7 +278,7 @@ struct _a1arg {
 struct _c1arg {
 	int64_t time1;
 	int64_t time2;
-	K_TIMER *timer;
+	struct k_timer *timer;
 	ksem_t sema;
 	ktask_t task;
 };
@@ -413,7 +409,7 @@ struct k_args {
 	K_CREF Ctxt;
 	union {
 		int32_t ticks;
-		K_TIMER *timer;
+		struct k_timer *timer;
 		int rcode;
 	} Time;
 	K_ARGS_ARGS Args;

@@ -77,7 +77,7 @@ int CalcFreeReaderSpace(struct k_args *pReaderList);
 int CalcAvailWriterData(struct k_args *pWriterList);
 
 void DeListWaiter(struct k_args *pReqProc);
-void myfreetimer(K_TIMER **ppTimer);
+void myfreetimer(struct k_timer **ppTimer);
 
 void setup_movedata(struct k_args *A,
 		    struct pipe_struct *pPipe,

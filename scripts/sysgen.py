@@ -343,7 +343,7 @@ def kernel_main_c_timers():
     # timer descriptors
 
     kernel_main_c_out("\n" +
-        "K_TIMER _k_timer_blocks[%d] =\n" % (num_timers) +
+        "struct k_timer _k_timer_blocks[%d] =\n" % (num_timers) +
         "{\n" +
         "    {NULL, NULL, 0, 0, (struct k_args *)0xffffffff},\n")
     for i in range(1, num_timers - 1):

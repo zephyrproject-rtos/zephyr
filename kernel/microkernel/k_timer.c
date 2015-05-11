@@ -38,10 +38,10 @@
 #include <minik.h>
 #include <drivers/system_timer.h>
 
-extern K_TIMER _k_timer_blocks[];
+extern struct k_timer _k_timer_blocks[];
 
-K_TIMER  *_k_timer_list_head = NULL;
-K_TIMER  *_k_timer_list_tail = NULL;
+struct k_timer  *_k_timer_list_head = NULL;
+struct k_timer  *_k_timer_list_tail = NULL;
 
 /*******************************************************************************
 *
@@ -59,7 +59,7 @@ K_TIMER  *_k_timer_list_tail = NULL;
 * RETURNS: timer object identifier
 */
 
-static inline ktimer_t _timer_ptr_to_id(K_TIMER *timer)
+static inline ktimer_t _timer_ptr_to_id(struct k_timer *timer)
 {
 	return (ktimer_t)(0x00010000u + (uint32_t)(timer - &_k_timer_blocks[0]));
 }
@@ -73,7 +73,7 @@ static inline ktimer_t _timer_ptr_to_id(K_TIMER *timer)
 * RETURNS: timer pointer
 */
 
-static inline K_TIMER *_timer_id_to_ptr(ktimer_t timer)
+static inline struct k_timer *_timer_id_to_ptr(ktimer_t timer)
 {
 	return &_k_timer_blocks[OBJ_INDEX(timer)];
 }
@@ -85,10 +85,10 @@ static inline K_TIMER *_timer_id_to_ptr(ktimer_t timer)
 * RETURNS: N/A
 */
 
-void enlist_timer(K_TIMER *T)
+void enlist_timer(struct k_timer *T)
 {
-	K_TIMER *P = _k_timer_list_head;
-	K_TIMER *Q = NULL;
+	struct k_timer *P = _k_timer_list_head;
+	struct k_timer *Q = NULL;
 
 	while (P && (T->duration > P->duration)) {
 		T->duration -= P->duration;
@@ -115,10 +115,10 @@ void enlist_timer(K_TIMER *T)
 * RETURNS: N/A
 */
 
-void delist_timer(K_TIMER *T)
+void delist_timer(struct k_timer *T)
 {
-	K_TIMER *P = T->Forw;
-	K_TIMER *Q = T->Back;
+	struct k_timer *P = T->Forw;
+	struct k_timer *Q = T->Back;
 
 	if (P) {
 		P->duration += T->duration;
@@ -141,7 +141,7 @@ void delist_timer(K_TIMER *T)
 
 void enlist_timeout(struct k_args *P)
 {
-	K_TIMER *T;
+	struct k_timer *T;
 
 	GETTIMER(T);
 	T->duration = P->Time.ticks;
@@ -160,7 +160,7 @@ void enlist_timeout(struct k_args *P)
 
 void force_timeout(struct k_args *A)
 {
-	K_TIMER *T = A->Time.timer;
+	struct k_timer *T = A->Time.timer;
 
 	if (T->duration != -1) {
 		delist_timer(T);
@@ -175,7 +175,7 @@ void force_timeout(struct k_args *A)
 * RETURNS: N/A
 */
 
-void delist_timeout(K_TIMER *T)
+void delist_timeout(struct k_timer *T)
 {
 	if (T->duration != -1)
 		delist_timer(T);
@@ -204,7 +204,7 @@ void delist_timeout(K_TIMER *T)
 
 void _k_timer_list_update(int ticks)
 {
-	K_TIMER *T;
+	struct k_timer *T;
 
 	while (_k_timer_list_head != NULL) {
 		_k_timer_list_head->duration -= ticks;
@@ -246,7 +246,7 @@ void _k_timer_alloc(
 	struct k_args *P /* pointer to timer allocation request arguments */
 	)
 {
-	K_TIMER *T;
+	struct k_timer *T;
 	struct k_args *A;
 
 	T = _Cget(&_k_timer_free);
@@ -272,7 +272,7 @@ void _k_timer_alloc(
 ktimer_t task_timer_alloc(void)
 {
 	struct k_args A;
-	K_TIMER *timer;
+	struct k_timer *timer;
 
 	A.Comm = TALLOC;
 	KERNEL_ENTRY(&A);
@@ -292,7 +292,7 @@ ktimer_t task_timer_alloc(void)
 
 void _k_timer_dealloc(struct k_args *P)
 {
-	K_TIMER *T = P->Args.c1.timer;
+	struct k_timer *T = P->Args.c1.timer;
 	struct k_args *A = T->Args;
 
 	if (T->duration != -1)
@@ -336,7 +336,7 @@ void _k_timer_start(struct k_args *P /* pointer to timer start
 						      request arguments */
 					 )
 {
-	K_TIMER *T = P->Args.c1.timer; /* ptr to the timer to start */
+	struct k_timer *T = P->Args.c1.timer; /* ptr to the timer to start */
 
 	if (T->duration != -1) /* Stop the timer if it is active */
 		delist_timer(T);
@@ -443,7 +443,7 @@ void task_timer_restart(ktimer_t timer, /* timer to restart */
 
 void _k_timer_stop(struct k_args *P)
 {
-	K_TIMER *T = P->Args.c1.timer;
+	struct k_timer *T = P->Args.c1.timer;
 
 	if (T->duration != -1)
 		delist_timer(T);
@@ -481,7 +481,7 @@ void task_timer_stop(ktimer_t timer /* timer to stop */
 
 void _k_task_wakeup(struct k_args *P)
 {
-	K_TIMER *T;
+	struct k_timer *T;
 	struct k_proc *X;
 
 	X = P->Ctxt.proc;
@@ -503,7 +503,7 @@ void _k_task_wakeup(struct k_args *P)
 
 void _k_task_sleep(struct k_args *P)
 {
-	K_TIMER *T;
+	struct k_timer *T;
 
 	if ((P->Time.ticks) <= 0)
 		return;

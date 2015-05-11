@@ -47,7 +47,7 @@ void DeListWaiter(struct k_args *pReqProc)
 	pReqProc->Head = NULL;
 }
 
-void myfreetimer(K_TIMER * *ppTimer)
+void myfreetimer(struct k_timer * *ppTimer)
 {
 	if (*ppTimer) {
 		delist_timer(*ppTimer);
