@@ -1,7 +1,7 @@
 PROJECT_BASE ?= $(shell pwd)
 ARCH?=x86
 
-export ARCH VPFILE
+export ARCH VPFILE QEMU_EXTRA_FLAGS
 
 ifdef BSP
 ifdef KERNEL_TYPE
