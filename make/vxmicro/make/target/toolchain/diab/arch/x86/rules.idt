@@ -45,6 +45,6 @@ iDIAB_SET_SECTION_FLAGS = $(strip \
 
 define i_noload_diab
     -@$(HOS_Echo) '[Diab] Setting sections to noload   [$(notdir $2)]'
-    $q${OC} ${iDIAB_SET_SECTION_FLAGS} $1 $2
+    $q${vOC} ${iDIAB_SET_SECTION_FLAGS} $1 $2
 
 endef

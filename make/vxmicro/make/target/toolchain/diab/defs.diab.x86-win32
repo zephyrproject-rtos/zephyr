@@ -10,6 +10,6 @@ iDIAB_EXE_TEST = dcc.exe
 iDIAB_HOST_SUBDIR = WIN32/bin
 iDIAB_WRS_DEFAULT = C:\WindRiver
 
-GDB = ${vBASE}/host/${vHOST}/bin/gdb/gdb
+vGDB ?= ${vBASE}/host/${vHOST}/bin/gdb/gdb
 
 include ${iMAKE_DIAB}/defs.diab.host

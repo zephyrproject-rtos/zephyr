@@ -32,8 +32,8 @@ iQUIESCE_AR_1 =
 iQUIESCE_AR_  = >${HOS_DEVNULL_W} 2>${HOS_DEVNULL_W}
 iQUIESCE_AR   = ${iQUIESCE_AR_${vVERBOSE}}
 
-iCreate_Library  = $q${AR} ${ARFLAGS} $1 ${iQUIESCE_AR}
-iArchive_Library = $q${AR} ${ARFLAGS} $1 @$(basename $1).arlist ${iQUIESCE_AR}
+iCreate_Library  = $q${vAR} ${ARFLAGS} $1 ${iQUIESCE_AR}
+iArchive_Library = $q${vAR} ${ARFLAGS} $1 @$(basename $1).arlist ${iQUIESCE_AR}
 
 ${vOUT_DIR}/%.$a: ${vOUT_DIR}/%.arlist | $$(dir $$@).dir
 	-@${HOS_Echo} '[${vTOOL}] Archiving   [$(notdir $@)]'

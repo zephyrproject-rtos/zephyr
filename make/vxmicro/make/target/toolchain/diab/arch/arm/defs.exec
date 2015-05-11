@@ -10,5 +10,5 @@
 OC_ARCH ?= littlearm
 OC_TARGET ?= elf32-${OC_ARCH}-vxworks
 
-OC    = ${iWRS_UTIL_DIR}/objcopyarm
-STRIP = ${iWRS_UTIL_DIR}/striparm
+vOC    ?= ${iWRS_UTIL_DIR}/objcopyarm
+vSTRIP ?= ${iWRS_UTIL_DIR}/striparm

@@ -40,6 +40,6 @@ iGCC_SET_SECTION_FLAGS = $(strip \
 
 define i_noload_gcc
     -@$(HOS_Echo) '[${vTOOL}] Setting sections to noload   [$(notdir $2)]'
-    $q${OC} ${iGCC_SET_SECTION_FLAGS} $1 $2
+    $q${vOC} ${iGCC_SET_SECTION_FLAGS} $1 $2
 
 endef

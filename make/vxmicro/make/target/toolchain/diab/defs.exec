@@ -13,11 +13,11 @@ $(if ${iDIAB_DIR},,$(error No DIAB toolchain installation found!))
 
 iWRS_UTIL_DIR = ${vWRS_BASE}/vxworks-7/host/binutils/${vHOST}/bin
 
-CC    = ${iDIAB_BIN_DIR}/dcc      # C Compiler
-CPP   = ${iDIAB_BIN_DIR}/dcc -P  ${iISA} # C Pre-Processor
-AS    = ${iDIAB_BIN_DIR}/dcc      # Assembler, through the compiler frontend to get pre-processing
-AR    = ${iDIAB_BIN_DIR}/dar      # Archiver
-LD    = ${iDIAB_BIN_DIR}/dld      # Loader
+vCC   ?= ${iDIAB_BIN_DIR}/dcc      # C Compiler
+vCPP  ?= ${iDIAB_BIN_DIR}/dcc -P  ${iISA} # C Pre-Processor
+vAS   ?= ${iDIAB_BIN_DIR}/dcc      # Assembler, through the compiler frontend to get pre-processing
+vAR   ?= ${iDIAB_BIN_DIR}/dar      # Archiver
+vLD   ?= ${iDIAB_BIN_DIR}/dld      # Loader
 
 # objcopy and strip are arch-specific and defined in ${vARCH}/defs.exec
 
@@ -26,10 +26,10 @@ iQUIESCE_DOT_D =
 
 # Select the DIAB compiler for the pre-processing tool
 # This is useful for IAP projects
-PP ?= ${CPP}
+vPP ?= ${vCPP}
 
 # Select the DIAB compiler for linking the kernel
-LD_K = ${LD}
+vLD_K = ${vLD}
 
 ifeq (${MAKE_RESTARTS},)
   ifeq (${MAKELEVEL},0)

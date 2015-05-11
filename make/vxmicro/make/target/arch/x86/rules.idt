@@ -49,13 +49,13 @@ iXCC_SET_SECTION_FLAGS = $(strip \
 
 define i_noload_diab
     -@$(HOS_Echo) '[Diab] Setting sections to noload   [$(notdir $2)]'
-    $q${OC} ${iDIAB_SET_SECTION_FLAGS} $1 $2
+    $q${vOC} ${iDIAB_SET_SECTION_FLAGS} $1 $2
 
 endef
 
 define i_noload_gcc
     -@$(HOS_Echo) '[${vTOOL}] Setting sections to noload   [$(notdir $2)]'
-    $q${OC} ${iXCC_SET_SECTION_FLAGS} $1 $2
+    $q${vOC} ${iXCC_SET_SECTION_FLAGS} $1 $2
 
 endef
 
@@ -77,16 +77,16 @@ endef
 
 define idtInTxt
 	-@$(HOS_Echo) '[${vTOOL}] Creating    [Static IDT]'
-	$q$(OC) -I ${OC_TARGET} -O binary -j intList $@ ${vOUT_DIR}/isrList.bin
+	$q$(vOC) -I ${OC_TARGET} -O binary -j intList $@ ${vOUT_DIR}/isrList.bin
 	-$q$(HOS_Rename) $@ ${vOUT_DIR}/elf.old
 	$q$(HOS_GenIdt) -i ${vOUT_DIR}/isrList.bin -n ${CONFIG_IDT_NUM_VECTORS} -o ${vOUT_DIR}/staticIdt.bin
-	$q$(OC) -I binary -B ${OC_ARCH} -O ${OC_TARGET} --rename-section .data=staticIdt ${vOUT_DIR}/staticIdt.bin ${vOUT_DIR}/staticIdt.o
+	$q$(vOC) -I binary -B ${OC_ARCH} -O ${OC_TARGET} --rename-section .data=staticIdt ${vOUT_DIR}/staticIdt.bin ${vOUT_DIR}/staticIdt.o
 	-$q$(HOS_DeleteFiles) ${iFINAL_LINKER_CMD}
 	-@$(HOS_Echo) '[${vTOOL}] Relinking   [$(notdir $@)]'
-	$q${PP} -DFINAL_LINK ${iLINKER_CMD_OPT} ${iLINKER_CMD_INC} ${LINKER_CMD} -o ${iFINAL_LINKER_CMD}
-	$q${LD_K} -o $@ @$(filter %.${lnk},$^) $(filter %.$o,$^) ${vOUT_DIR}/staticIdt.$o ${-T} ${iFINAL_LINKER_CMD}
+	$q${vPP} -DFINAL_LINK ${iLINKER_CMD_OPT} ${iLINKER_CMD_INC} ${LINKER_CMD} -o ${iFINAL_LINKER_CMD}
+	$q${vLD_K} -o $@ @$(filter %.${lnk},$^) $(filter %.$o,$^) ${vOUT_DIR}/staticIdt.$o ${-T} ${iFINAL_LINKER_CMD}
 	$(call i_noload_${vTOOL},$@,${vOUT_DIR}/elf.tmp)
-	$q$(OC) -R intList ${vOUT_DIR}/elf.tmp $@
+	$q$(vOC) -R intList ${vOUT_DIR}/elf.tmp $@
 	-@$(HOS_DeleteFiles) ${vOUT_DIR}/staticIdt.*
 	-@$(HOS_DeleteFiles) ${vOUT_DIR}/isrList.*
 	-@$(HOS_DeleteFiles) ${vOUT_DIR}/elf.old

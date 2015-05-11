@@ -10,6 +10,6 @@ iDIAB_EXE_TEST = dcc
 iDIAB_HOST_SUBDIR = LINUX386/bin
 iDIAB_WRS_DEFAULT = ~/WindRiver
 
-GDB = gdb
+vGDB ?= gdb
 
 include ${iMAKE_DIAB}/defs.diab.host

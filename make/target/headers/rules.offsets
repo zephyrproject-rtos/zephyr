@@ -37,5 +37,5 @@ ${iOFFSETS_HDR}: ${iOFFSETS_OBJ} | ${iOFFSETS_DIR}/.dir
 
 ${iOFFSETS_OBJ}: ${iOFFSETS_C}
 	@${HOS_Echo} '[${vTOOL}] Compiling   [$(notdir $<)]'
-	$q${CC} ${iOFFSETS_CFLAGS} ${iCC_DEP} $< ${iCC_DEP_TARGET}$@ ${iCC_DEP_FILE}${@:.o=.d} ${iQUIESCE_DOT_D}
-	$q${CC} ${iOFFSETS_CFLAGS} $< -o $@
+	$q${vCC} ${iOFFSETS_CFLAGS} ${iCC_DEP} $< ${iCC_DEP_TARGET}$@ ${iCC_DEP_FILE}${@:.o=.d} ${iQUIESCE_DOT_D}
+	$q${vCC} ${iOFFSETS_CFLAGS} $< -o $@

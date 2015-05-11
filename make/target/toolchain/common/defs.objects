@@ -75,8 +75,8 @@ $$(word 2,$1)/$$(word 1,$1).hash: | $$(word 2,$1)/.dir
 ifeq (${iNO_FLAGS_FILES},y)
 $$(word 2,$1)/$$(word 1,$1).$o: $$(word 3,$1) $$(word 2,$1)/$$(word 1,$1).hash ${iDEPEND_ON_MAKEFILES} | $$(word 2,$1)/.dir
 	-@${HOS_Echo} '[${vTOOL}] Compiling   [$$(notdir $$<)]'
-	$q${HOS_ccache} ${CC} $${iOBJ_FLAGS} $$< -o $$@
-	$q${CC} $${iOBJ_FLAGS} $${iCC_DEP_GEN} $$< $${iCC_DEP_TARGET}$$@ $${iCC_DEP_FILE}$${@:.o=.d} $${iQUIESCE_DOT_D}
+	$q${HOS_ccache} ${vCC} $${iOBJ_FLAGS} $$< -o $$@
+	$q${vCC} $${iOBJ_FLAGS} $${iCC_DEP_GEN} $$< $${iCC_DEP_TARGET}$$@ $${iCC_DEP_FILE}$${@:.o=.d} $${iQUIESCE_DOT_D}
 else
 $$(word 2,$1)/$$(word 1,$1).flags: ${iDEPEND_ON_MAKEFILES} | $$(word 2,$1)/.dir
 	-@${HOS_Echo} '[${vTOOL}] Preparing   [$$(notdir $$@)]'
@@ -84,8 +84,8 @@ $$(word 2,$1)/$$(word 1,$1).flags: ${iDEPEND_ON_MAKEFILES} | $$(word 2,$1)/.dir
 
 $$(word 2,$1)/$$(word 1,$1).$o: $$(word 3,$1) $$(word 2,$1)/$$(word 1,$1).hash $$(word 2,$1)/$$(word 1,$1).flags | $$(word 2,$1)/.dir
 	-@${HOS_Echo} '[${vTOOL}] Compiling   [$$(notdir $$<)]'
-	$q${CC} @$$(word 2,$1)/$$(word 1,$1).flags $$< $${-o} $$@
-	$q${CC} @$$(word 2,$1)/$$(word 1,$1).flags $${iCC_DEP_GEN} $$< $${iCC_DEP_TARGET}$$@ $${iCC_DEP_FILE}$${@:.o=.d} $${iQUIESCE_DOT_D}
+	$q${vCC} @$$(word 2,$1)/$$(word 1,$1).flags $$< $${-o} $$@
+	$q${vCC} @$$(word 2,$1)/$$(word 1,$1).flags $${iCC_DEP_GEN} $$< $${iCC_DEP_TARGET}$$@ $${iCC_DEP_FILE}$${@:.o=.d} $${iQUIESCE_DOT_D}
 endif
 
 endef
@@ -112,8 +112,8 @@ $$(word 2,$1)/$$(word 1,$1).${iOBJ_VAR_EXT}: iOBJ_FLAGS=$$(strip \
 ifeq (${iNO_FLAGS_FILES},y)
 $$(word 2,$1)/$$(word 1,$1).$o: $$(word 3,$1) ${iDEPEND_ON_MAKEFILES} | $$(word 2,$1)/.dir
 	-@${HOS_Echo} '[${vTOOL}] Assembling  [$$(notdir $$<)]'
-	$q${AS} $${iOBJ_FLAGS} $${iPP_AS} $$< -o $$@
-	$q${AS} $${iOBJ_FLAGS} $${iCC_DEP_GEN} $$< $${iCC_DEP_TARGET}$$@ $${iCC_DEP_FILE}$${@:.o=.d} $${iQUIESCE_DOT_D}
+	$q${vAS} $${iOBJ_FLAGS} $${iPP_AS} $$< -o $$@
+	$q${vAS} $${iOBJ_FLAGS} $${iCC_DEP_GEN} $$< $${iCC_DEP_TARGET}$$@ $${iCC_DEP_FILE}$${@:.o=.d} $${iQUIESCE_DOT_D}
 else
 $$(word 2,$1)/$$(word 1,$1).flags: ${iDEPEND_ON_MAKEFILES} | $$(word 2,$1)/.dir
 	-@${HOS_Echo} '[${vTOOL}] Preparing   [$$(notdir $$@)]'
@@ -121,8 +121,8 @@ $$(word 2,$1)/$$(word 1,$1).flags: ${iDEPEND_ON_MAKEFILES} | $$(word 2,$1)/.dir
 
 $$(word 2,$1)/$$(word 1,$1).$o: $$(word 3,$1) $$(word 2,$1)/$$(word 1,$1).flags | $$(word 2,$1)/.dir
 	-@${HOS_Echo} '[${vTOOL}] Assembling  [$$(notdir $$<)]'
-	$q${AS} @$$(word 2,$1)/$$(word 1,$1).flags $$< $${-o} $$@
-	$q${AS} @$$(word 2,$1)/$$(word 1,$1).flags $${iCC_DEP_GEN} $$< $${iCC_DEP_TARGET}$$@ $${iCC_DEP_FILE}$${@:.o=.d} $${iQUIESCE_DOT_D}
+	$q${vAS} @$$(word 2,$1)/$$(word 1,$1).flags $$< $${-o} $$@
+	$q${vAS} @$$(word 2,$1)/$$(word 1,$1).flags $${iCC_DEP_GEN} $$< $${iCC_DEP_TARGET}$$@ $${iCC_DEP_FILE}$${@:.o=.d} $${iQUIESCE_DOT_D}
 endif
 
 endef

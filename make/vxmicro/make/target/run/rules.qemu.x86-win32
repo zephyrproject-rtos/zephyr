@@ -49,5 +49,5 @@ ${iSIM_SERIAL_DEVICE}:
 	$(Qemu_stop)
 	$q${HOS_Term} "${vQEMU_BIN} ${vQEMU_FLAGS} -kernel $< -s -S -serial ${iQEMU_CONSOLE}"
 	$q${HOS_Sleep} 1
-	$q${GDB} $<
+	$q${vGDB} $<
 

@@ -67,6 +67,6 @@ define Qemu_runhostgdb
 	$q${HOS_Term} $1
 	$q${HOS_Term} "${vQEMU_BIN} ${vQEMU_FLAGS} -kernel $< -s -S -serial ${iQEMU_CONSOLE} -serial ${vSIM_HS_PORT}"
 	$q${HOS_Sleep} 1
-	$(GDB) $<
+	$(vGDB) $<
 	$(Qemu_stop)
 endef

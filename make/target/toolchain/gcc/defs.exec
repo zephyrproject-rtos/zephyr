@@ -38,24 +38,24 @@ $(if ${iGCC_DIR},,$(error No GCC toolchain installation found!))
 iGCC_BIN_DIR ?= $(iGCC_DIR)/bin
 iGCC_PREFIX  ?= ${iGCC_BIN_DIR}/${iGCC_TARGET}
 
-CC    = ${iGCC_PREFIX}-gcc
-CPP   = ${iGCC_PREFIX}-cpp
-AS    = ${CC}
-AR    = ${iGCC_PREFIX}-ar
-LD    = ${iGCC_PREFIX}-ld
-OC    = ${iGCC_PREFIX}-objcopy
-OD    = ${iGCC_PREFIX}-objdump
-GDB   = ${iGCC_PREFIX}-gdb
-STRIP = ${iGCC_PREFIX}-strip
+vCC    ?= ${iGCC_PREFIX}-gcc
+vCPP   ?= ${iGCC_PREFIX}-cpp
+vAS    ?= ${vCC}
+vAR    ?= ${iGCC_PREFIX}-ar
+vLD    ?= ${iGCC_PREFIX}-ld
+vOC    ?= ${iGCC_PREFIX}-objcopy
+vOD    ?= ${iGCC_PREFIX}-objdump
+vGDB   ?= ${iGCC_PREFIX}-gdb
+vSTRIP ?= ${iGCC_PREFIX}-strip
 
 # quiet by default
 iQUIESCE_DOT_D =
 
 # Select the GNU compiler for the pre-processing tool
-PP ?= ${CPP}
+vPP ?= ${vCPP}
 
 # Select the GNU compiler for linking the kernel
-LD_K  = ${CC}
+vLD_K  = ${vCC}
 
 ifeq (${MAKE_RESTARTS},)
   ifeq (${MAKELEVEL},0)

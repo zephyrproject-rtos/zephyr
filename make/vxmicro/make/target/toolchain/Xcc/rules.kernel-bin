@@ -33,12 +33,12 @@ endif
 
 # rule to generate the final linker script (pre-processed)
 ${iFINAL_LINKER_CMD}: ${LINKER_CMD} ${iOFFSETS_HDR} | $$(dir $$@).dir
-	$q${PP} ${iLINKER_CMD_OPT} ${iLINKER_CMD_INC} $< -o $@
+	$q${vPP} ${iLINKER_CMD_OPT} ${iLINKER_CMD_INC} $< -o $@
 
 # rule to make elf files
 %.${elf}: ${vOUT_DIR}/$$(notdir $$*).${lnk} ${iBUILDSPEC} ${iFINAL_LINKER_CMD} | $$(dir $$@).dir
 	-@${HOS_Echo} '[${vTOOL}] Linking     [$(notdir $@)]'
-	$q${LD_K} -o $@ @$(filter %.${lnk},$^) $(filter %.$o,$^) -T ${iFINAL_LINKER_CMD}
+	$q${vLD_K} -o $@ @$(filter %.${lnk},$^) $(filter %.$o,$^) -T ${iFINAL_LINKER_CMD}
 	$(call idtInTxt)
 ifeq ($(VXMICRO_HOST_OS),win32)
 	$q$(HOS_CopyFile) $(HOS_Bin)/exeelf.exe $*.exe > ${HOS_DEVNULL_W}
@@ -47,10 +47,10 @@ endif
 # bin-from-elf rule
 %.${bin}: %.${elf} | $$(dir $$@).dir
 	-@${HOS_Echo} '[${vTOOL}] Generating  [$(notdir $@)]'
-	$q${OD} -S $< >$*.lst
-	$q${OC} -S -O binary -R .note -R .comment -R COMMON -R .eh_frame ${EXTRA_OC_FLAGS} $< $@
+	$q${vOD} -S $< >$*.lst
+	$q${vOC} -S -O binary -R .note -R .comment -R COMMON -R .eh_frame ${EXTRA_OC_FLAGS} $< $@
 
 # generate a stripped ELF file from an ELF image
 %.${strip}: %.${elf} | $$(dir $$@).dir
 	-@${HOS_Echo} '[${vTOOL}] Generating  [$(notdir $@)]'
-	$q${STRIP} -s -o $@ $<
+	$q${vSTRIP} -s -o $@ $<

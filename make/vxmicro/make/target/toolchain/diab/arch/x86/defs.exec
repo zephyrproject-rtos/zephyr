@@ -10,5 +10,5 @@
 OC_ARCH ?= i386
 OC_TARGET ?= elf32-${OC_ARCH}-vxworks
 
-OC    = ${iWRS_UTIL_DIR}/objcopypentium
-STRIP = ${iWRS_UTIL_DIR}/strippentium
+vOC    ?= ${iWRS_UTIL_DIR}/objcopypentium
+vSTRIP ?= ${iWRS_UTIL_DIR}/strippentium

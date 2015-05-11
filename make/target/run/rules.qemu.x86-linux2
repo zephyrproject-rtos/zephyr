@@ -64,8 +64,8 @@ endef
 
 %.qemu.gdb %.gdb: ${vOUT_DIR}/%.${elf} .gdbinit
 	$(call Qemu_debug,$<)
-	$q${GDB} -tui $<
+	$q${vGDB} -tui $<
 
 %.qemu.ddd %.ddd: ${vOUT_DIR}/%.${elf} .gdbinit
 	$(call Qemu_debug,$<)
-	ddd --gdb --debugger "${GDB} $<" &
+	ddd --gdb --debugger "${vGDB} $<" &
