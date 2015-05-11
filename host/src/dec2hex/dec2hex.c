@@ -46,8 +46,7 @@ int main (
 	char *argv[]
 	)
 	{
-	if (argc != 2)
-	{
+	if (argc != 2) {
 	usage (argv[0]);
 	return -1;
 	}

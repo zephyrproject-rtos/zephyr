@@ -89,8 +89,7 @@ ksem_t blockHpSem	= BLOCK_HP_SEM;
 ksem_t blockMpSem	= BLOCK_MP_SEM;
 ksem_t blockLpSem	= BLOCK_LP_SEM;
 
-ksem_t semList[] =
-	{
+ksem_t semList[] = {
 	GROUP_SEM1,
 	GROUP_SEM2,
 	GROUP_SEM3,
@@ -221,8 +220,7 @@ void releaseTestFiber(void)
 
 static void testInterruptsInit(void)
 {
-	struct isrInitInfo i =
-	{
+	struct isrInitInfo i = {
 	{ testIsrHandler, NULL},
 	{ &testIsrInfo, NULL},
 	};
@@ -257,13 +255,10 @@ void MonitorTaskEntry(void)
      * then issue the appropriate test case summary message
      */
 
-	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++)
-	{
+	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
 	result = task_sem_group_take_wait_timeout (resultSems, SECONDS(60));
-	if (result != resultSems[TC_PASS])
-	    {
-	    if (result != resultSems[TC_FAIL])
-		{
+	if (result != resultSems[TC_PASS]) {
+	    if (result != resultSems[TC_FAIL]) {
 		TC_ERROR ("Monitor task timed out\n");
 		}
 	    TC_END_RESULT (TC_FAIL);

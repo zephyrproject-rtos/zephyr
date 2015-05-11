@@ -130,8 +130,7 @@ void mailbox_test (void)
     task_fifo_get_wait (MB_COMM, &getinfo); /* waiting for ack */
     PRINT_ONE_RESULT ();
     EmptyMsgPutTime = puttime;
-    for (putsize = 8; putsize <= MESSAGE_SIZE; putsize <<= 1)
-	{
+    for (putsize = 8; putsize <= MESSAGE_SIZE; putsize <<= 1) {
 	mailbox_put (putsize, putcount, &puttime);
 	task_fifo_get_wait (MB_COMM, &getinfo); /* waiting for ack */
 	PRINT_ONE_RESULT ();
@@ -167,8 +166,7 @@ void mailbox_put (
     /* first sync with the receiver */
     task_sem_give (SEM0);
     t = BENCH_START ();
-    for (i = 0; i < count; i++)
-	{
+    for (i = 0; i < count; i++) {
 	task_mbox_put_wait (MAILB1, 1, &Message);
 	}
     t = TIME_STAMP_DELTA_GET (t);

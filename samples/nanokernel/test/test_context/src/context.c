@@ -90,12 +90,10 @@ This module tests the following CPU and context related routines:
 
 /* typedefs */
 
-typedef struct
-	{
+typedef struct {
 	int     command;    /* command to process */
 	int     error;      /* error value (if any) */
-	union
-		{
+	union {
 		void   *data;   /* pointer to data to use or return */
 		int     value;  /* value to be passed or returned */
 		};
@@ -140,8 +138,7 @@ void isr_handler(void *data)
 {
 	ARG_UNUSED (data);
 
-	switch (isrInfo.command)
-		{
+	switch (isrInfo.command) {
 		case CTX_SELF_CMD:
 		    isrInfo.data = (void *) context_self_get ();
 		    break;
@@ -198,8 +195,7 @@ int initNanoObjects(void)
 	nanoCpuExcConnect (IV_DIVIDE_ERROR, exc_divide_error_handler, nanoExcStub);
 #endif
 
-	struct isrInitInfo i =
-	{
+	struct isrInitInfo i = {
 	{isr_handler, NULL},
 	{&isrInfo, NULL},
 	};
@@ -226,17 +222,14 @@ int nano_cpu_idleTest(void)
 
     /* Align to a "tick boundary". */
 	tick = nano_tick_get_32 ();
-	while (tick == nano_tick_get_32 ())
-		{
+	while (tick == nano_tick_get_32 ()) {
 		}
 	tick = nano_tick_get_32 ();
 
-	for (i = 0; i < 5; i++)     /* Repeat the test five times */
-		{
+	for (i = 0; i < 5; i++) {     /* Repeat the test five times */
 		nano_cpu_idle ();
 		tick++;
-		if (nano_tick_get_32 () != tick)
-		    {
+		if (nano_tick_get_32 () != tick) {
 		    return TC_FAIL;
 		    }
 		}
@@ -343,13 +336,11 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
     /* Align to a "tick boundary" */
 	tick = nano_tick_get_32 ();
-	while (nano_tick_get_32 () == tick)
-		{
+	while (nano_tick_get_32 () == tick) {
 		}
 	tick++;
 
-	while (nano_tick_get_32 () == tick)
-		{
+	while (nano_tick_get_32 () == tick) {
 		count++;
 		}
 
@@ -364,8 +355,7 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
 	imask = disableRtn (irq);
 	tick = nano_tick_get_32 ();
-	for (i = 0; i < count; i++)
-		{
+	for (i = 0; i < count; i++) {
 		nano_tick_get_32 ();
 		}
 
@@ -378,14 +368,12 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
 	enableRtn (imask);
 
-	if (tick2 != tick)
-		{
+	if (tick2 != tick) {
 		return TC_FAIL;
 		}
 
     /* Now repeat with interrupts unlocked. */
-	for (i = 0; i < count; i++)
-		{
+	for (i = 0; i < count; i++) {
 		nano_tick_get_32 ();
 		}
 
@@ -412,8 +400,7 @@ int nanoCtxTaskTest(void)
 	isrInfo.command = CTX_SELF_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler ();
-	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId))
-		{
+	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId)) {
         /*
          * Either the ISR detected an error, or the ISR context ID does not
          * match the interrupted task's context ID.
@@ -425,14 +412,12 @@ int nanoCtxTaskTest(void)
 	isrInfo.command = CTX_TYPE_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler ();
-	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR))
-		{
+	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
 		return TC_FAIL;
 		}
 
 	TC_PRINT ("Testing context_type_get() from a task\n");
-	if (context_type_get() != NANO_CTX_TASK)
-		{
+	if (context_type_get() != NANO_CTX_TASK) {
 		return TC_FAIL;
 		}
 
@@ -461,8 +446,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 	nano_context_id_t  ctxId;
 
 	ctxId = context_self_get ();
-	if (ctxId == taskCtxId)
-		{
+	if (ctxId == taskCtxId) {
 		fiberDetectedError = 1;
 		return TC_FAIL;
 		}
@@ -470,8 +454,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 	isrInfo.command = CTX_SELF_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler ();
-	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId))
-		{
+	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId)) {
         /*
          * Either the ISR detected an error, or the ISR context ID does not
          * match the interrupted fiber's context ID.
@@ -483,14 +466,12 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 	isrInfo.command = CTX_TYPE_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler ();
-	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR))
-		{
+	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
 		fiberDetectedError = 3;
 		return TC_FAIL;
 		}
 
-	if (context_type_get() != NANO_CTX_FIBER)
-		{
+	if (context_type_get() != NANO_CTX_FIBER) {
 		fiberDetectedError = 4;
 		return TC_FAIL;
 		}
@@ -568,8 +549,8 @@ int fiber_yieldTest(void)
 	fiber_fiber_start (fiberStack2, FIBER_STACKSIZE, fiberHelper,
 		                 0, 0, FIBER_PRIORITY - 1, 0);
 
-	if (fiberEvidence != 0)
-		{                           /* ERROR! Helper spawned at higher */
+	if (fiberEvidence != 0) {
+		/* ERROR! Helper spawned at higher */
 		fiberDetectedError = 10;    /* priority ran prematurely. */
 		return TC_FAIL;
 		}
@@ -581,14 +562,14 @@ int fiber_yieldTest(void)
 
 	fiber_yield ();
 
-	if (fiberEvidence == 0)
-		{                           /* ERROR! Did not yield to higher */
+	if (fiberEvidence == 0) {
+		/* ERROR! Did not yield to higher */
 		fiberDetectedError = 11;    /* priority fiber. */
 		return TC_FAIL;
 		}
 
-	if (fiberEvidence > 1)
-		{                           /* ERROR! Helper did not yield to */
+	if (fiberEvidence > 1) {
+		/* ERROR! Helper did not yield to */
 		fiberDetectedError = 12;    /* equal priority fiber. */
 		return TC_FAIL;
 		}
@@ -601,8 +582,8 @@ int fiber_yieldTest(void)
 	ctxId->prio--;
 	fiber_yield ();
 
-	if (fiberEvidence != 1)
-		{                           /* ERROR! Context switched to a lower */
+	if (fiberEvidence != 1) {
+		/* ERROR! Context switched to a lower */
 		fiberDetectedError = 13;    /* priority fiber! */
 		return TC_FAIL;
 		}
@@ -639,8 +620,7 @@ static void fiberEntry(int taskCtxId, int arg1)
 	nano_fiber_sem_take_wait (&wakeFiber);
 
 	rv = nanoCtxFiberTest ((nano_context_id_t) taskCtxId);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		return;
 		}
 
@@ -648,8 +628,7 @@ static void fiberEntry(int taskCtxId, int arg1)
 	nano_fiber_sem_take_wait (&wakeFiber);
 
 	rv = fiber_yieldTest ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		return;
 		}
 }
@@ -671,23 +650,20 @@ void main(void)
 
 	TC_PRINT ("Initializing nanokernel objects\n");
 	rv = initNanoObjects ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
 	TC_PRINT ("Testing nano_cpu_idle()\n");
 	rv = nano_cpu_idleTest ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
 	TC_PRINT ("Testing interrupt locking and unlocking\n");
 	rv = nanoCpuDisableInterruptsTest (irq_lockWrapper,
 		                               irq_unlockWrapper, -1);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
@@ -695,8 +671,7 @@ void main(void)
 	TC_PRINT ("Testing inline interrupt locking and unlocking\n");
 	rv = nanoCpuDisableInterruptsTest (irq_lock_inlineWrapper,
 		                               irq_unlock_inlineWrapper, -1);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
@@ -716,15 +691,13 @@ void main(void)
 	TC_PRINT ("Testing irq_disable() and irq_enable()\n");
 	rv = nanoCpuDisableInterruptsTest (irq_disableWrapper,
 		                               irq_enableWrapper, TICK_IRQ);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 #endif
 
 	rv = nanoCtxTaskTest ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
@@ -733,8 +706,7 @@ void main(void)
 	task_fiber_start (fiberStack1, FIBER_STACKSIZE, fiberEntry,
 		                (int) context_self_get (), 0, FIBER_PRIORITY, 0);
 
-	if (fiberEvidence != 1)
-		{
+	if (fiberEvidence != 1) {
 	rv = TC_FAIL;
 		TC_ERROR ("  - fiber did not execute as expected!\n");
 		goto doneTests;
@@ -744,8 +716,7 @@ void main(void)
 	TC_PRINT ("Fiber to test context_self_get() and context_type_get\n");
 	nano_task_sem_give (&wakeFiber);
 
-	if (fiberDetectedError != 0)
-		{
+	if (fiberDetectedError != 0) {
 	rv = TC_FAIL;
 		TC_ERROR ("  - failure detected in fiber; fiberDetectedError = %d\n",
 		          fiberDetectedError);
@@ -755,8 +726,7 @@ void main(void)
 	TC_PRINT ("Fiber to test fiber_yield()\n");
 	nano_task_sem_give (&wakeFiber);
 
-	if (fiberDetectedError != 0)
-		{
+	if (fiberDetectedError != 0) {
 	rv = TC_FAIL;
 		TC_ERROR ("  - failure detected in fiber; fiberDetectedError = %d\n",
 		          fiberDetectedError);

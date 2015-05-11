@@ -51,8 +51,7 @@ void mempool_test (void)
 
     PRINT_STRING (dashline, output_file);
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_POOL_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_POOL_RUNS; i++) {
 	task_mem_pool_alloc_wait (&block, DEMOPOOL, 16);
 	task_mem_pool_free (&block);
 	}

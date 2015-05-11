@@ -104,8 +104,7 @@ void main (void)
 	{
 	TC_START ("Test Cortex-M3 IRQ installed directly in vector table");
 
-	for (int ii = 0; ii < 3; ii++)
-	{
+	for (int ii = 0; ii < 3; ii++) {
 	irq_enable(ii);
 	irq_priority_set(ii, _EXC_IRQ_DEFAULT_PRIO);
 	nano_sem_init(&sem[ii]);
@@ -132,7 +131,6 @@ get_out:
 	}
 
 typedef void (*vth)(void); /* Vector Table Handler */
-vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] =
-	{
+vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	isr0, isr1, isr2
 	};

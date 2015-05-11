@@ -143,8 +143,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	TC_PRINT ("  - test expected to take four seconds\n");
 
 	tick = nano_tick_get_32();
-	while (nano_tick_get_32() == tick)
-		{
+	while (nano_tick_get_32() == tick) {
         /* Align to a tick boundary */
 		}
 
@@ -163,31 +162,27 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
      */
 
 	if ((result != pTimerData) ||
-		(duration - elapsed_32 > 1) || ((duration - ticks) > 1))
-		{
+		(duration - elapsed_32 > 1) || ((duration - ticks) > 1)) {
 		return TC_FAIL;
 		}
 
     /* Check that the non-wait-timer-get routine works properly. */
 	tick = nano_tick_get_32();
-	while (nano_tick_get_32() == tick)
-		{
+	while (nano_tick_get_32() == tick) {
         /* Align to a tick boundary */
 		}
 
 	tick++;
 	(void) nano_tick_delta (&reftime);
 	startRtn (pTimer, ticks);       /* Start the timer */
-	while ((result = getRtn (pTimer)) == NULL)
-		{
+	while ((result = getRtn (pTimer)) == NULL) {
 		busywaited = 1;
 		}
 	elapsed = nano_tick_delta (&reftime);
 	duration = nano_tick_get_32 () - tick;
 
 	if ((busywaited != 1) || (result != pTimerData) ||
-		(duration - elapsed > 1) || ((duration - ticks) > 1))
-		{
+		(duration - elapsed > 1) || ((duration - ticks) > 1)) {
 		return TC_FAIL;
 		}
 
@@ -216,8 +211,7 @@ void startTimers(timer_start_func startRtn)
 	int  tick;                    /* current tick */
 
 	tick = nano_tick_get_32 ();
-	while (nano_tick_get_32 () == tick)
-		{
+	while (nano_tick_get_32 () == tick) {
         /* Wait for the end of the tick */
 		}
 
@@ -250,14 +244,11 @@ int busyWaitTimers(timer_get_func getRtn)
 	TC_PRINT ("  - test expected to take five or six seconds\n");
 
 	ticks = nano_tick_get_32 () + SIX_SECONDS;
-	while ((numExpired != 4) && (nano_tick_get_32 () < ticks))
-		{
+	while ((numExpired != 4) && (nano_tick_get_32 () < ticks)) {
 		result = getRtn (&timer);
-		if (result != NULL)
-		    {
+		if (result != NULL) {
 		    numExpired++;
-		    if ((result != timerData) || (numExpired != 2))
-		        {
+		    if ((result != timerData) || (numExpired != 2)) {
 		        TC_ERROR ("Expected <timer> to expire 2nd, not 0x%x\n",
 		                  result);
 		        return TC_FAIL;
@@ -265,11 +256,9 @@ int busyWaitTimers(timer_get_func getRtn)
 		    }
 
 		result = getRtn (&shortTimer);
-		if (result != NULL)
-		    {
+		if (result != NULL) {
 		    numExpired++;
-		    if ((result != shortTimerData) || (numExpired != 1))
-		        {
+		    if ((result != shortTimerData) || (numExpired != 1)) {
 		        TC_ERROR ("Expected <shortTimer> to expire 1st, not 0x%x\n",
 		                  result);
 		        return TC_FAIL;
@@ -277,11 +266,9 @@ int busyWaitTimers(timer_get_func getRtn)
 		    }
 
 		result = getRtn (&midTimer);
-		if (result != NULL)
-		    {
+		if (result != NULL) {
 		    numExpired++;
-		    if ((result != midTimerData) || (numExpired != 3))
-		        {
+		    if ((result != midTimerData) || (numExpired != 3)) {
 		        TC_ERROR ("Expected <midTimer> to expire 3rd, not 0x%x\n",
 		                  result);
 		        return TC_FAIL;
@@ -289,11 +276,9 @@ int busyWaitTimers(timer_get_func getRtn)
 		    }
 
 		result = getRtn (&longTimer);
-		if (result != NULL)
-		    {
+		if (result != NULL) {
 		    numExpired++;
-		    if ((result != longTimerData) || (numExpired != 4))
-		        {
+		    if ((result != longTimerData) || (numExpired != 4)) {
 		        TC_ERROR ("Expected <longTimer> to expire 4th, not 0x%x\n",
 		                  result);
 		        return TC_FAIL;
@@ -333,17 +318,14 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
 	TC_PRINT ("  - test expected to take six seconds\n");
 
 	startTick = nano_tick_get_32 ();
-	while (nano_tick_get_32 () == startTick)
-		{
+	while (nano_tick_get_32 () == startTick) {
 		}
 	startTick++;
 	endTick = startTick + SIX_SECONDS;
 
-	while (nano_tick_get_32 () < endTick)
-		{
+	while (nano_tick_get_32 () < endTick) {
 		if ((getRtn (&timer) != NULL) || (getRtn (&shortTimer) != NULL) ||
-		    (getRtn (&midTimer) != NULL) || (getRtn (&longTimer) != NULL))
-		    {
+		    (getRtn (&midTimer) != NULL) || (getRtn (&longTimer) != NULL)) {
 		    return TC_FAIL;
 		    }
 		}
@@ -399,8 +381,7 @@ static void fiberEntry(int arg1, int arg2)
 		                 nano_fiber_timer_test, &timer, timerData, TWO_SECONDS);
 
 	nano_fiber_sem_give (&wakeTask);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		fiberDetectedError = 1;
 		return;
 		}
@@ -411,8 +392,7 @@ static void fiberEntry(int arg1, int arg2)
 	startTimers (nano_fiber_timer_start);
 	rv = busyWaitTimers (nano_fiber_timer_test);
 	nano_fiber_sem_give (&wakeTask);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		fiberDetectedError = 2;
 		return;
 		}
@@ -423,8 +403,7 @@ static void fiberEntry(int arg1, int arg2)
 	startTimers (nano_fiber_timer_start);
 	rv = stopTimers (nano_fiber_timer_stop, nano_fiber_timer_test);
 	nano_fiber_sem_give (&wakeTask);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		fiberDetectedError = 3;
 		return;
 		}
@@ -437,8 +416,7 @@ static void fiberEntry(int arg1, int arg2)
 	nano_fiber_timer_start (&timer, TWO_SECONDS);   /* Start timer */
 	result = nano_fiber_timer_wait (&timer);        /* Wait on timer */
     /* Control switches to newly created fiber #2 before coming back. */
-	if (result != NULL)
-		{
+	if (result != NULL) {
 		fiberDetectedError = 4;
 		nano_fiber_sem_give (&wakeTask);
 		return;
@@ -449,8 +427,7 @@ static void fiberEntry(int arg1, int arg2)
 	nano_fiber_sem_give (&wakeTask);
 	nano_fiber_timer_start (&timer, TWO_SECONDS);
 	result = nano_fiber_timer_wait (&timer);
-	if (result != NULL)
-		{
+	if (result != NULL) {
 		fiberDetectedError = 5;
 		return;
 		}
@@ -472,13 +449,11 @@ int nano_cycle_get_32Test(void)
 	int       i;
 
 	timeStamp2 = nano_cycle_get_32 ();
-	for (i = 0; i < 1000000; i++)
-		{
+	for (i = 0; i < 1000000; i++) {
 		timeStamp1 = timeStamp2;
 		timeStamp2 = nano_cycle_get_32 ();
 
-		if (timeStamp2 < timeStamp1)
-		    {
+		if (timeStamp2 < timeStamp1) {
 		    TC_ERROR ("Timestamp value not increasing with successive calls\n");
 		    return TC_FAIL;
 		    }
@@ -507,8 +482,7 @@ void main(void)
 	TC_PRINT ("Task testing basic timer functionality\n");
 	rv = basicTimerWait (nano_task_timer_start, nano_task_timer_wait,
 		                 nano_task_timer_test, &timer, timerData, TWO_SECONDS);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		TC_ERROR ("Task-level of waiting for timers failed\n");
 		goto doneTests;
 		}
@@ -517,8 +491,7 @@ void main(void)
 	TC_PRINT ("Task testing timers expire in the correct order\n");
 	startTimers (nano_task_timer_start);
 	rv = busyWaitTimers (nano_task_timer_test);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		TC_ERROR ("Task-level timer expiration order failed\n");
 		goto doneTests;
 		}
@@ -527,8 +500,7 @@ void main(void)
 	TC_PRINT ("Task testing the stopping of timers\n");
 	startTimers (nano_task_timer_start);
 	rv = stopTimers (nano_task_timer_stop, nano_task_timer_test);
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		TC_ERROR ("Task-level stopping of timers test failed\n");
 		goto doneTests;
 		}
@@ -543,8 +515,7 @@ void main(void)
 
 	nano_task_sem_take_wait (&wakeTask);
 
-	if (fiberDetectedError == 1)
-		{
+	if (fiberDetectedError == 1) {
 		TC_ERROR ("Fiber-level of waiting for timers failed\n");
 		rv = TC_FAIL;
 		goto doneTests;
@@ -553,8 +524,7 @@ void main(void)
 	nano_task_sem_give (&wakeFiber);
 	nano_task_sem_take_wait (&wakeTask);
 
-	if (fiberDetectedError == 2)
-		{
+	if (fiberDetectedError == 2) {
 		TC_ERROR ("Fiber-level timer expiration order failed\n");
 		rv = TC_FAIL;
 		goto doneTests;
@@ -563,8 +533,7 @@ void main(void)
 	nano_task_sem_give (&wakeFiber);
 	nano_task_sem_take_wait (&wakeTask);
 
-	if (fiberDetectedError == 3)
-		{
+	if (fiberDetectedError == 3) {
 		TC_ERROR ("Fiber-level stopping of timers test failed\n");
 		rv = TC_FAIL;
 		goto doneTests;
@@ -572,16 +541,14 @@ void main(void)
 
 	nano_task_sem_give (&wakeFiber);
 	nano_task_sem_take_wait (&wakeTask);
-	if (fiberDetectedError == 4)
-		{
+	if (fiberDetectedError == 4) {
 		TC_ERROR ("Fiber stopping a timer waited upon by a fiber failed\n");
 		rv = TC_FAIL;
 		goto doneTests;
 		}
 	nano_task_timer_stop (&timer);
 
-	if (fiberDetectedError == 5)
-		{
+	if (fiberDetectedError == 5) {
 		TC_ERROR ("Task stopping a timer waited upon by a fiber failed\n");
 		rv = TC_FAIL;
 		goto doneTests;
@@ -602,8 +569,7 @@ void main(void)
 
 	TC_PRINT ("Task testing of nano_cycle_get_32()\n");
 	rv = nano_cycle_get_32Test ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		TC_ERROR ("nano_cycle_get_32Test() failed\n");
 		goto doneTests;
 		}

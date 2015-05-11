@@ -75,8 +75,7 @@ typedef unsigned char __attribute__((aligned(_INT_STUB_ALIGN)))
 						NANO_INT_STUB[_INT_STUB_SIZE];
 
 
-typedef struct s_isrList
-{
+typedef struct s_isrList {
 	void		*fnc;    /* Address of ISR/stub */
 	unsigned int    vec;    /* Vector number associated with ISR/stub */
 	unsigned int    dpl;    /* Privilege level associated with ISR/stub */

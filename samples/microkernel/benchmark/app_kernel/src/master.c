@@ -45,8 +45,8 @@ char Msg[MAX_MSG];
 char data_bench[OCTET_TO_SIZEOFUNIT (MESSAGE_SIZE)];
 
 #ifdef PIPE_BENCH
-kpipe_t TestPipes[] =
-{PIPE_NOBUFF, PIPE_SMALLBUFF, PIPE_BIGBUFF};
+kpipe_t TestPipes[] = {
+PIPE_NOBUFF, PIPE_SMALLBUFF, PIPE_BIGBUFF};
 #endif
 const char dashline[] =
     "|--------------------------------------"
@@ -135,8 +135,7 @@ void BenchTask (void)
     bench_test_init ();
 
     PRINT_STRING (newline, output_file);
-    do
-	{
+    do {
 	PRINT_STRING (dashline, output_file);
 	PRINT_STRING ("|          S I M P L E   S E R V I C E    "
 		      "M E A S U R E M E N T S  |  nsec    |\n",

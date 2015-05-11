@@ -62,8 +62,7 @@
 */
 void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 {
-	while (1)
-	{
+	while (1) {
 	task_sem_take_wait (mySem);
 
 	/* say "hello" */
@@ -121,8 +120,7 @@ void fiberEntry(void)
 	nano_sem_init (&nanoSemFiber);
 	nano_timer_init (&timer, data);
 
-	while (1)
-	{
+	while (1) {
 	/* wait for task to let us have a turn */
 	nano_fiber_sem_take_wait (&nanoSemFiber);
 
@@ -147,8 +145,7 @@ void main(void)
 	nano_sem_init (&nanoSemTask);
 	nano_timer_init (&timer, data);
 
-	while (1)
-	{
+	while (1) {
 	/* say "hello" */
 	PRINT ("%s: Hello World!\n", __FUNCTION__);
 

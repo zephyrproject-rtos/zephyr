@@ -57,8 +57,7 @@ int main (
 	{
 	int i, j;
 
-	if (argc != 2)
-	{
+	if (argc != 2) {
 	usage (argv[0]);
 	return -1;
 	}

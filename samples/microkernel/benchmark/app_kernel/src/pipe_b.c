@@ -165,18 +165,15 @@ void pipe_test (void)
     PRINT_STRING (dashline, output_file);
 
     /* Test with two different sender priorities */
-    for (prio = 0; prio < 2; prio++)
-	{
+    for (prio = 0; prio < 2; prio++) {
 	/* non-buffered operation, non-matching (1_TO_N) */
-	if (prio == 0)
-	    {
+	if (prio == 0) {
 	    PRINT_STRING ("|                      "
 			  "non-matching sizes (1_TO_N) to higher priority"
 			  "         |\n", output_file);
 	    TaskPrio = task_priority_get ();
 	    }
-	if (prio == 1)
-	    {
+	if (prio == 1) {
 	    PRINT_STRING ("|                      "
 			  "non-matching sizes (1_TO_N) to lower priority"
 			  "          |\n", output_file);
@@ -230,8 +227,7 @@ int pipeput (
     /* first sync with the receiver */
     task_sem_give (SEM0);
     t = BENCH_START ();
-    for (i = 0; _1_TO_N == option || (i < count); i++)
-	{
+    for (i = 0; _1_TO_N == option || (i < count); i++) {
 	int sizexferd = 0;
 	int size2xfer = min(size, size2xfer_total - sizexferd_total);
 	int ret;
@@ -253,15 +249,12 @@ int pipeput (
 
     t = TIME_STAMP_DELTA_GET (t);
     *time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
-    if (bench_test_end () < 0)
-	{
-	if (high_timer_overflow ())
-	    {
+    if (bench_test_end () < 0) {
+	if (high_timer_overflow ()) {
 	    PRINT_STRING ("| Timer overflow. Results are invalid            ",
 			  output_file);
 	    }
-	else
-	    {
+	else {
 	    PRINT_STRING ("| Tick occured. Results may be inaccurate        ",
 			  output_file);
 	    }

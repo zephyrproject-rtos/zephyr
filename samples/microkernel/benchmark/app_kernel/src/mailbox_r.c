@@ -71,8 +71,7 @@ void mailrecvtask (void)
     getinfo.count = getcount;
     task_fifo_put_wait (MB_COMM, &getinfo); /* acknowledge to master */
 
-    for (getsize = 8; getsize <= MESSAGE_SIZE; getsize <<= 1)
-	{
+    for (getsize = 8; getsize <= MESSAGE_SIZE; getsize <<= 1) {
 	mailbox_get (MAILB1, getsize, getcount, &gettime);
 	getinfo.time = gettime;
 	getinfo.size = getsize;
@@ -109,8 +108,7 @@ int mailbox_get (
     /* sync with the sender */
     task_sem_take_wait (SEM0);
     t = BENCH_START ();
-    for (i = 0; i < count; i++)
-	{
+    for (i = 0; i < count; i++) {
 	task_mbox_get_wait (mailbox, &Message);
 	}
 

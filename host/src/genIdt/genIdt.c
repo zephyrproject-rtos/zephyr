@@ -82,16 +82,14 @@ static void close_files(void);
 static void genIdt(void);
 static void clean_exit(const int exit_code);
 
-typedef struct s_isrList
-	{
+typedef struct s_isrList {
 	void *fnc;
 	unsigned int dpl;
 	} ISR_LIST;
 
 static ISR_LIST idt[256];
 
-enum
-	{
+enum {
 	IFILE=0,             /* input file */
 	OFILE,               /* output file */
 	NUSERFILES,          /* number of user-provided file names */
@@ -120,10 +118,8 @@ static void get_options(int argc, char *argv[])
 	char *endptr;
 	int ii, opt;
 
-	while ((opt = getopt(argc, argv, "hi:o:n:v")) != -1)
-	{
-	switch(opt)
-	    {
+	while ((opt = getopt(argc, argv, "hi:o:n:v")) != -1) {
+	switch(opt) {
 	    case 'i':
 		filenames[IFILE] = optarg;
 		break;
@@ -151,16 +147,13 @@ static void get_options(int argc, char *argv[])
 	    }
 	}
 
-	if ((unsigned int)-1 == numVecs)
-	{
+	if ((unsigned int)-1 == numVecs) {
 	usage(SHORT_USAGE);
 	exit(-1);
 	}
 
-	for(ii = IFILE; ii < NUSERFILES; ii++)
-	{
-	if (!filenames[ii])
-	    {
+	for(ii = IFILE; ii < NUSERFILES; ii++) {
+	if (!filenames[ii]) {
 	    usage(SHORT_USAGE);
 	    exit(-1);
 	    }
@@ -171,8 +164,7 @@ static void get_exec_name(char *pathname)
 	{
 	int end = strlen(pathname)-1;
 
-	while(end != -1)
-	{
+	while(end != -1) {
     #if defined (WINDOWS) /* Might have both slashes in path */
 	if (pathname[end] == '/' || pathname[end] == '\\')
     #else
@@ -196,15 +188,12 @@ static void open_files(void)
 	fds[IFILE] = open(filenames[IFILE], O_RDONLY|O_BINARY);
 	fds[OFILE] = open(filenames[OFILE], O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,
 		                                S_IWUSR|S_IRUSR);
-	for(ii = 0; ii < NUSERFILES; ii++)
-	{
+	for(ii = 0; ii < NUSERFILES; ii++) {
 	int invalid = fds[ii] == -1;
-	if (invalid)
-	    {
+	if (invalid) {
 	    char *invalid = filenames[ii];
 	    fprintf(stderr, "invalid file %s\n", invalid);
-	    for(--ii; ii >= 0; ii--)
-		{
+	    for(--ii; ii >= 0; ii--) {
 		close(fds[ii]);
 		}
 	    exit (-1);
@@ -233,8 +222,7 @@ static void genIdt(void)
 		    spurAddr, spurNoErrAddr);
 
     /* Initially fill in the IDT array with the spurious handlers */
-	for (i = 0; i < numVecs; i++)
-	{
+	for (i = 0; i < numVecs; i++) {
 	if ((((1 << i) & _EXC_ERROR_CODE_FAULTS)) && (i < 32))
 	    idt[i].fnc = spurAddr;
 	else
@@ -251,15 +239,13 @@ static void genIdt(void)
 
 	PRINTF ("There are %d ISR(s)\n", size);
 
-	if (size > numVecs)
-	{
+	if (size > numVecs) {
 	fprintf (stderr, "Too many ISRs found. Got %u. Expected less than %u."
 	                 " Malformed input file?\n", size, numVecs);
 	clean_exit(-1);
 	}
 
-	while (size--)
-	{
+	while (size--) {
 	void *addr;
 	unsigned int vec;
 	unsigned int dpl;
@@ -284,8 +270,7 @@ static void genIdt(void)
      * Now construct the actual idt.
      */
 
-	for (i = 0; i < numVecs; i++)
-	{
+	for (i = 0; i < numVecs; i++) {
 	unsigned long long idtEnt;
 
 	 _IdtEntCreate (&idtEnt, idt[i].fnc, idt[i].dpl);
@@ -304,8 +289,7 @@ static void close_files(void)
 	{
 	int ii;
 
-	for(ii = 0; ii < NUSERFILES; ii++)
-	{
+	for(ii = 0; ii < NUSERFILES; ii++) {
 	close(fds[ii]);
 	}
 	}
@@ -322,8 +306,7 @@ static void usage(const int len)
 	    "\n%s -i <input file> -n <n>\n",
 	    filenames[EXECFILE]);
 
-	if (len == SHORT_USAGE)
-	{
+	if (len == SHORT_USAGE) {
 	return;
 	}
 

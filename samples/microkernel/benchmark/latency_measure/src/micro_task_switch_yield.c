@@ -63,8 +63,7 @@ static uint32_t helper_task_iterations = 0;
 
 void yieldingTask (void)
     {
-    while (helper_task_iterations < NB_OF_YIELD)
-	{
+    while (helper_task_iterations < NB_OF_YIELD) {
 	task_yield ();
 	helper_task_iterations++;
 	}
@@ -97,8 +96,7 @@ void microTaskSwitchYield (void)
     timestamp = TIME_STAMP_DELTA_GET (0);
 
     /* loop until either helper or this routine reaches number of yields */
-    while (iterations < NB_OF_YIELD && helper_task_iterations < NB_OF_YIELD)
-	{
+    while (iterations < NB_OF_YIELD && helper_task_iterations < NB_OF_YIELD) {
 	task_yield ();
 	iterations++;
 	}
@@ -113,13 +111,11 @@ void microTaskSwitchYield (void)
      * and forth.
      */
     delta = iterations - helper_task_iterations;
-    if (bench_test_end () < 0)
-	{
+    if (bench_test_end () < 0) {
 	errorCount++;
 	PRINT_OVERFLOW_ERROR ();
 	}
-    else if (abs (delta) > 1)
-	{
+    else if (abs (delta) > 1) {
 	/* expecting even alternating context switch, seems one routine
 	 * called yield without the other having chance to execute
 	 */
@@ -127,8 +123,7 @@ void microTaskSwitchYield (void)
 	PRINT_FORMAT (" Error, iteration:%lu, helper iteration:%lu",
 		      iterations, helper_task_iterations);
 	}
-    else
-	{
+    else {
 	/* task_yield is called (iterations + helper_task_iterations)
 	 * times in total.
 	 */

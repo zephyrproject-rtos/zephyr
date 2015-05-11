@@ -264,8 +264,7 @@ int RegressionTask (void)
 	TC_PRINT ("Validating access to supported libraries\n");
 
 	if (ctypeTest () || inttypesTest () || iso646Test () || limitsTest () ||
-	stdboolTest () || stddefTest () || stdintTest () || stringTest ())
-	{
+	stdboolTest () || stddefTest () || stdintTest () || stringTest ()) {
 	TC_PRINT ("Library validation failed\n");
 	return TC_FAIL;
 	}

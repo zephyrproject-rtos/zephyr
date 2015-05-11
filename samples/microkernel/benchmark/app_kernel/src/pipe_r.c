@@ -68,8 +68,7 @@ void piperecvtask (void)
     /* matching (ALL_N) */
 
     for (getsize = 8; getsize <= MESSAGE_SIZE_PIPE; getsize <<= 1) {
-	for (pipe = 0; pipe < 3; pipe++)
-	    {
+	for (pipe = 0; pipe < 3; pipe++) {
 	    getcount = NR_OF_PIPE_RUNS;
 	    pipeget (TestPipes[pipe], _ALL_N, getsize,
 			getcount, &gettime);
@@ -80,14 +79,11 @@ void piperecvtask (void)
 	    }
 	}
 
-    for (prio = 0; prio < 2; prio++)
-	{
+    for (prio = 0; prio < 2; prio++) {
 	/* non-matching (1_TO_N) */
-	for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1)
-	    {
+	for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1) {
 	    getcount = MESSAGE_SIZE_PIPE / getsize;
-	    for (pipe = 0; pipe < 3; pipe++)
-		{
+	    for (pipe = 0; pipe < 3; pipe++) {
 		/* size*count == MESSAGE_SIZE_PIPE */
 		pipeget (TestPipes[pipe], _1_TO_N,
 			    getsize, getcount, &gettime);
@@ -127,8 +123,7 @@ int pipeget (
     /* sync with the sender */
     task_sem_take_wait (SEM0);
     t = BENCH_START ();
-    for (i = 0; _1_TO_N == option || (i < count); i++)
-	{
+    for (i = 0; _1_TO_N == option || (i < count); i++) {
 	int sizexferd = 0;
 	int size2xfer = min(size, size2xfer_total - sizexferd_total);
 	int ret;
@@ -151,15 +146,12 @@ int pipeget (
 
     t = TIME_STAMP_DELTA_GET (t);
     *time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
-    if (bench_test_end () < 0)
-	{
-	if (high_timer_overflow ())
-	    {
+    if (bench_test_end () < 0) {
+	if (high_timer_overflow ()) {
 	    PRINT_STRING ("| Timer overflow. Results are invalid            ",
 			  output_file);
 	    }
-	else
-	    {
+	else {
 	    PRINT_STRING ("| Tick occured. Results may be inaccurate        ",
 			  output_file);
 	    }

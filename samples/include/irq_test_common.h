@@ -77,16 +77,14 @@ typedef void (*vvpfn)(void *);	/* void-void_pointer function pointer */
  * filled in after calling irq_connect().
  */
 
-static char sw_isr_trigger_0[] =
-	{
+static char sw_isr_trigger_0[] = {
 	0xcd,     /* OPCODE: INT imm8 */
 	0x00,     /* imm8 data (vector to trigger) filled in at runtime */
 	0xc3      /* OPCODE: RET (near) */
 	};
 
 #if NUM_SW_IRQS >= 2
-static char sw_isr_trigger_1[] =
-	{
+static char sw_isr_trigger_1[] = {
 	/* same as above */
 	0xcd,
 	0x00,
@@ -111,8 +109,7 @@ static inline void sw_isr_trigger_1(void)
 #endif  /* CONFIG_CPU_CORTEXM */
 #endif
 
-struct isrInitInfo
-	{
+struct isrInitInfo {
 	vvpfn isr[2];
 	void *arg[2];
 	};
@@ -131,24 +128,20 @@ static int initIRQ
 #if defined(VXMICRO_ARCH_x86)
 	int  vector;     /* vector to which interrupt is connected */
 
-	if (i->isr[0])
-	{
+	if (i->isr[0]) {
 	vector = irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
 				    i->arg[0], nanoIntStub1);
-	if (-1 == vector)
-	    {
+	if (-1 == vector) {
 	    return -1;
 	    }
 	sw_isr_trigger_0[1] = vector;
 	}
 
 #if NUM_SW_IRQS >= 2
-	if (i->isr[1])
-	{
+	if (i->isr[1]) {
 	vector = irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
 				    i->arg[1], nanoIntStub2);
-	if (-1 == vector)
-	    {
+	if (-1 == vector) {
 	    return -1;
 	    }
 	sw_isr_trigger_1[1] = vector;
@@ -156,13 +149,11 @@ static int initIRQ
 #endif /* NUM_SW_IRQS >= 2 */
 #elif defined(VXMICRO_ARCH_arm)
 #if defined(CONFIG_CPU_CORTEXM)
-	if (i->isr[0])
-	{
+	if (i->isr[0]) {
 	(void) irq_connect (0, IRQ_PRIORITY, i->isr[0], i->arg[0]);
 	irq_enable (0);
 	}
-	if (i->isr[1])
-	{
+	if (i->isr[1]) {
 	(void) irq_connect (1, IRQ_PRIORITY, i->isr[1], i->arg[1]);
 	irq_enable (1);
 	}

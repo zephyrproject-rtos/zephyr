@@ -113,16 +113,14 @@ int check_result (
        bench_test_end checks tCheck static variable.
        bench_test_start modifies it
     */
-    if (bench_test_end () != 0)
-	{
+    if (bench_test_end () != 0) {
 	fprintf (output_file, sz_case_result_fmt, sz_fail);
 	fprintf (output_file, sz_case_details_fmt,
 		 "timer tick happened. Results are inaccurate");
 	fprintf (output_file, sz_case_end_fmt);
 	return 0;
 	}
-    if (i != NUMBER_OF_LOOPS)
-	{
+    if (i != NUMBER_OF_LOOPS) {
 	fprintf (output_file, sz_case_result_fmt, sz_fail);
 	fprintf (output_file, sz_case_details_fmt, "loop counter = ");
 	fprintf (output_file, "%i !!!", i);
@@ -211,8 +209,7 @@ void main (void)
     init_output (&continuously);
     bench_test_init ();
 
-    do
-	{
+    do {
 	fprintf (output_file, sz_module_title_fmt, "Nanokernel API test");
 	fprintf (output_file, sz_kernel_ver_fmt, kernel_version_get ());
 	fprintf (output_file,
@@ -226,8 +223,7 @@ void main (void)
 	test_result += fifo_test ();
 	test_result += stack_test ();
 
-	if (test_result)
-	    {
+	if (test_result) {
 	    /* sema, lifo, fifo, stack account for twelve tests in total */
 	    if (test_result == 12)
 		fprintf (output_file, sz_module_result_fmt, sz_success);

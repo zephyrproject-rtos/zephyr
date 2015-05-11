@@ -132,19 +132,16 @@ void philEntry (void)
 	irq_unlock (pri);
 
     /* always take the lowest fork first */
-	if ((id+1) != N_PHILOSOPHERS)
-	{
+	if ((id+1) != N_PHILOSOPHERS) {
 	f1 = FORK (id);
 	f2 = FORK (id + 1);
 	}
-	else
-	{
+	else {
 	f1 = FORK (0);
 	f2 = FORK (id);
 	}
 
-	while (1)
-	{
+	while (1) {
 	TAKE (f1);
 	TAKE (f2);
 

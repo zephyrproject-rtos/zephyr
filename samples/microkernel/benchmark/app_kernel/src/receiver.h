@@ -38,8 +38,7 @@
 #include "memcfg.h"
 
 /* type defines. */
-typedef struct
-    {
+typedef struct {
     int count;
     unsigned int time;
     int size;

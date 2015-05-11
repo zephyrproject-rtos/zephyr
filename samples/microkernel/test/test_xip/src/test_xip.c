@@ -78,10 +78,8 @@ void RegressionTaskEntry (void)
 	TC_PRINT ("Test globals\n");
 
     /* Array should be filled with monotomically incrementing values */
-	for (i = 0; i < XIP_TEST_ARRAY_SZ; i++)
-	{
-	if (xip_array[i] != (i+1))
-	    {
+	for (i = 0; i < XIP_TEST_ARRAY_SZ; i++) {
+	if (xip_array[i] != (i+1)) {
 	    TC_PRINT ("xip_array[%d] != %d\n", i, i+1);
 	    tcRC = TC_FAIL;
 		    goto exitRtn;

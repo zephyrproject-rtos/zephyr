@@ -68,14 +68,12 @@ Scenario #3:
 
 /* typedefs */
 
-typedef struct
-	{
+typedef struct {
 	struct nano_sem *sem;    /* ptr to semaphore */
 	int         data;   /* data */
 	} ISR_SEM_INFO;
 
-typedef enum
-	{
+typedef enum {
 	STS_INIT = -1,
 	STS_TASK_WOKE_FIBER,
 	STS_FIBER_WOKE_TASK,
@@ -160,22 +158,18 @@ int testSemFiberNoWait(void)
      * taken that many times.
      */
 
-	for (i = 0; i < 32; i++)
-		{
+	for (i = 0; i < 32; i++) {
 		nano_fiber_sem_give (&testSem);
 		}
 
-	for (i = 0; i < 32; i++)
-		{
-		if (nano_fiber_sem_take (&testSem) != 1)
-		    {
+	for (i = 0; i < 32; i++) {
+		if (nano_fiber_sem_take (&testSem) != 1) {
 		    TC_ERROR (" *** Expected nano_fiber_sem_take() to succeed, not fail\n");
 		    goto errorReturn;
 		    }
 		}
 
-	if (nano_fiber_sem_take (&testSem) != 0)
-		{
+	if (nano_fiber_sem_take (&testSem) != 0) {
 		TC_ERROR (" *** Expected  nano_fiber_sem_take() to fail, not succeed\n");
 		goto errorReturn;
 		}
@@ -208,8 +202,7 @@ static void fiberEntry(int arg1, int arg2)
 	ARG_UNUSED (arg2);
 
 	rv = testSemFiberNoWait ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		return;
 		}
 
@@ -274,8 +267,7 @@ static void fiberEntry(int arg1, int arg2)
 
 void initNanoObjects(void)
 {
-	struct isrInitInfo i =
-	{
+	struct isrInitInfo i = {
 	{isr_sem_give, isr_sem_take},
 	{&isrSemInfo, &isrSemInfo},
 	};
@@ -312,25 +304,21 @@ int testSemIsrNoWait(void)
      */
 
 	isrSemInfo.sem = &testSem;
-	for (i = 0; i < 32; i++)
-		{
+	for (i = 0; i < 32; i++) {
 		_trigger_nano_isr_sem_give ();
 		}
 
-	for (i = 0; i < 32; i++)
-		{
+	for (i = 0; i < 32; i++) {
 		isrSemInfo.data = 0;
 		_trigger_nano_isr_sem_take ();
-		if (isrSemInfo.data != 1)
-		    {
+		if (isrSemInfo.data != 1) {
 		    TC_ERROR (" *** Expected nano_isr_sem_take() to succeed, not fail\n");
 		    goto errorReturn;
 		    }
 		}
 
 	_trigger_nano_isr_sem_take ();
-	if (isrSemInfo.data != 0)
-		{
+	if (isrSemInfo.data != 0) {
 		TC_ERROR (" *** Expected  nano_isr_sem_take() to fail, not succeed!\n");
 		goto errorReturn;
 		}
@@ -362,22 +350,18 @@ int testSemTaskNoWait(void)
      * taken that many times.
      */
 
-	for (i = 0; i < 32; i++)
-		{
+	for (i = 0; i < 32; i++) {
 		nano_task_sem_give (&testSem);
 		}
 
-	for (i = 0; i < 32; i++)
-		{
-		if (nano_task_sem_take (&testSem) != 1)
-		    {
+	for (i = 0; i < 32; i++) {
+		if (nano_task_sem_take (&testSem) != 1) {
 		    TC_ERROR (" *** Expected nano_task_sem_take() to succeed, not fail\n");
 		    goto errorReturn;
 		    }
 		}
 
-	if (nano_task_sem_take (&testSem) != 0)
-		{
+	if (nano_task_sem_take (&testSem) != 0) {
 		TC_ERROR (" *** Expected  nano_task_sem_take() to fail, not succeed!\n");
 		goto errorReturn;
 		}
@@ -400,16 +384,14 @@ errorReturn:
 
 int testSemWait(void)
 {
-	if (fiberDetectedFailure != 0)
-		{
+	if (fiberDetectedFailure != 0) {
 		TC_ERROR (" *** Failure detected in the fiber.");
 		return TC_FAIL;
 		}
 
 	nano_task_sem_give (&testSem);    /* Wake the fiber. */
 
-	if (semTestState != STS_TASK_WOKE_FIBER)
-		{
+	if (semTestState != STS_TASK_WOKE_FIBER) {
 		TC_ERROR (" *** Expected task to wake fiber.  It did not.\n");
 		return TC_FAIL;
 		}
@@ -418,8 +400,7 @@ int testSemWait(void)
 
 	nano_task_sem_take_wait (&testSem);   /* Wait on <testSem> */
 
-	if (semTestState != STS_FIBER_WOKE_TASK)
-		{
+	if (semTestState != STS_FIBER_WOKE_TASK) {
 		TC_ERROR (" *** Expected fiber to wake task.  It did not.\n");
 		return TC_FAIL;
 		}
@@ -428,8 +409,7 @@ int testSemWait(void)
 
 	nano_task_sem_take_wait (&testSem);  /* Wait on <testSem> again. */
 
-	if (semTestState != STS_ISR_WOKE_TASK)
-		{
+	if (semTestState != STS_ISR_WOKE_TASK) {
 		TC_ERROR (" *** Expected ISR to wake task.  It did not.\n");
 		return TC_FAIL;
 		}
@@ -559,14 +539,12 @@ void main(void)
 	initNanoObjects ();
 
 	rv = testSemTaskNoWait ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
 	rv = testSemIsrNoWait ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
@@ -581,14 +559,12 @@ void main(void)
 		                0, 0, FIBER_PRIORITY, 0);
 
 	rv = testSemWait ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
 	rv = test_multiple_waiters();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 

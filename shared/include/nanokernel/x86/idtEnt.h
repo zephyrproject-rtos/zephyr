@@ -69,8 +69,7 @@ extern"C"
  * too deeply.)
  */
 
-typedef struct idtEntry
-	{
+typedef struct idtEntry {
 	unsigned short	lowOffset;
 	unsigned short	segmentSelector;
 	unsigned short	reserved:5;

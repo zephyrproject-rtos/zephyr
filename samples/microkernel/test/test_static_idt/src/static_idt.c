@@ -141,16 +141,14 @@ int nanoIdtStubTest(void)
 	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (TEST_SOFT_INT << 3));
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) & 0xFFFF);
-	if (pIdtEntry->lowOffset != offset)
-	{
+	if (pIdtEntry->lowOffset != offset) {
 	TC_ERROR ("Failed to find low offset of nanoIntStub \
 		   (0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
 	return TC_FAIL;
 	}
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) >> 16);
-	if (pIdtEntry->hiOffset != offset)
-	{
+	if (pIdtEntry->hiOffset != offset) {
 	TC_ERROR ("Failed to find high offset of nanoIntStub \
 		   (0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
 	return TC_FAIL;
@@ -160,16 +158,14 @@ int nanoIdtStubTest(void)
 	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (IV_DIVIDE_ERROR << 3));
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) & 0xFFFF);
-	if (pIdtEntry->lowOffset != offset)
-	{
+	if (pIdtEntry->lowOffset != offset) {
 	TC_ERROR ("Failed to find low offset of exc stub \
 		   (0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
 	return TC_FAIL;
 	}
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) >> 16);
-	if (pIdtEntry->hiOffset != offset)
-	{
+	if (pIdtEntry->hiOffset != offset) {
 	TC_ERROR ("Failed to find high offset of exc stub \
 		   (0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
 	return TC_FAIL;
@@ -232,21 +228,18 @@ void main(void)
 
 	TC_PRINT ("Testing to see if IDT has address of test stubs()\n");
 	rv = nanoIdtStubTest ();
-	if (rv != TC_PASS)
-		{
+	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
 	TC_PRINT ("Testing to see interrupt handler executes properly\n");
 	_trigger_isrHandler();
 
-	if (intHandlerExecuted == 0)
-	{
+	if (intHandlerExecuted == 0) {
 	TC_ERROR ("Interrupt handler did not execute\n");
 	rv = TC_FAIL;
 	goto doneTests;
-	} else if (intHandlerExecuted != 1)
-	{
+	} else if (intHandlerExecuted != 1) {
 	TC_ERROR ("Interrupt handler executed more than once! (%d)\n",
 		   intHandlerExecuted);
 	rv = TC_FAIL;
@@ -261,14 +254,12 @@ void main(void)
      */
 	error = error / excHandlerExecuted;
 
-	if (excHandlerExecuted == 0)
-	{
+	if (excHandlerExecuted == 0) {
 	TC_ERROR ("Exception handler did not execute\n");
 	rv = TC_FAIL;
 	goto doneTests;
 	}
-	else if (excHandlerExecuted != 1)
-	{
+	else if (excHandlerExecuted != 1) {
 	TC_ERROR ("Exception handler executed more than once! (%d)\n",
 		   excHandlerExecuted);
 	rv = TC_FAIL;
@@ -288,8 +279,7 @@ void main(void)
      * The fiber/task should not run past where the spurious interrupt is
      * generated. Therefore spurHandlerAbortedContext should remain at 1.
      */
-	if (spurHandlerAbortedContext == 0)
-	{
+	if (spurHandlerAbortedContext == 0) {
 	TC_ERROR ("Spurious handler did not execute as expected\n");
 	rv = TC_FAIL;
 	goto doneTests;

@@ -74,8 +74,7 @@ void lifo_fiber1 (
 
     ARG_UNUSED (par1);
 
-    for (i = 0; i < par2 / 2; i++)
-	{
+    for (i = 0; i < par2 / 2; i++) {
 	pelement = (int *) nano_fiber_lifo_get_wait (&nanoLifo1);
 	if (pelement[1] != 2 * i)
 	    break;
@@ -111,8 +110,7 @@ void lifo_fiber2 (
     int * pelement;
     int * pcounter = (int *) par1;
 
-    for (i = 0; i < par2; i++)
-	{
+    for (i = 0; i < par2; i++) {
 	element[1] = i;
 	nano_fiber_lifo_put (&nanoLifo1, element);
 	pelement = (int *) nano_fiber_lifo_get_wait (&nanoLifo2);
@@ -143,8 +141,7 @@ void lifo_fiber3 (
     int * pelement;
     int * pcounter = (int *) par1;
 
-    for (i = 0; i < par2; i++)
-	{
+    for (i = 0; i < par2; i++) {
 	element[1] = i;
 	nano_fiber_lifo_put (&nanoLifo1, element);
 	while (NULL == (pelement = (int *) nano_fiber_lifo_get (&nanoLifo2)))
@@ -244,8 +241,7 @@ int lifo_test (void)
 
     task_fiber_start (fiber_stack1, STACK_SIZE, lifo_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-    for (i = 0; i < NUMBER_OF_LOOPS / 2; i++)
-	{
+    for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
 	int element[2];
 	int *	pelement;
 	element[1] = 2 * i;

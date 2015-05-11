@@ -84,8 +84,7 @@ void check_input(const char *name, const char *input);
 
 void printLoop(const char *name)
 {
-	while (count < 6)
-	    {
+	while (count < 6) {
         /* A short input string to check_input.  It will pass. */
 		check_input(name, "Stack ok");
 		count++;
@@ -177,8 +176,7 @@ void main(void)
 		                (nano_fiber_entry_t) fiber1, 0, 0, 7, 0);
 #endif /* ! CONFIG_MICROKERNEL */
 
-	if (tcRC == TC_FAIL)
-		{
+	if (tcRC == TC_FAIL) {
 		goto errorExit;
 		}
 

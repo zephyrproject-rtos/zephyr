@@ -41,8 +41,7 @@
 
 #include "receiver.h"
 
-char data_recv[OCTET_TO_SIZEOFUNIT (MESSAGE_SIZE)] =
-    {
+char data_recv[OCTET_TO_SIZEOFUNIT (MESSAGE_SIZE)] = {
     0
     };
 

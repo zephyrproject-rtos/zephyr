@@ -78,15 +78,13 @@ exercises the task_irq_free() API.
 
 int taskA(ksem_t semRdy)
 	{
-	if (task_irq_alloc (DEV1_ID, DEV1_IRQ, 1) == INVALID_VECTOR)
-		{
+	if (task_irq_alloc (DEV1_ID, DEV1_IRQ, 1) == INVALID_VECTOR) {
 	TC_ERROR ("Not able to allocate IRQ object\n");
 	return TC_FAIL;
 		}
 	TC_PRINT ("IRQ object %d using IRQ%d allocated\n", DEV1_ID, DEV1_IRQ);
 
-	if (task_irq_alloc (DEV2_ID, DEV2_IRQ, 2) == INVALID_VECTOR)
-		{
+	if (task_irq_alloc (DEV2_ID, DEV2_IRQ, 2) == INVALID_VECTOR) {
 	TC_ERROR ("Not able to allocate IRQ object\n");
 	return TC_FAIL;
 		}
@@ -96,16 +94,14 @@ int taskA(ksem_t semRdy)
 
 	task_sem_give (semRdy);
 
-	if (task_irq_test_wait (DEV1_ID) != RC_OK)
-		{
+	if (task_irq_test_wait (DEV1_ID) != RC_OK) {
 	TC_ERROR ("Not able to test IRQ object event\n");
 	return TC_FAIL;
 		}
 	TC_PRINT ("Received event for IRQ object %d\n", DEV1_ID);
 	task_irq_ack (DEV1_ID);
 
-	if (task_irq_test_wait (DEV2_ID) != RC_OK)
-		{
+	if (task_irq_test_wait (DEV2_ID) != RC_OK) {
 	TC_ERROR ("Not able to test IRQ object event\n");
 	return TC_FAIL;
 		}
@@ -118,8 +114,7 @@ int taskA(ksem_t semRdy)
 
 	TC_PRINT ("\nAttempt to allocate an IRQ object that\n");
 	TC_PRINT ("is already allocated by another task...\n");
-	if (task_irq_alloc (DEV4_ID, DEV4_IRQ, 1) != INVALID_VECTOR)
-		{
+	if (task_irq_alloc (DEV4_ID, DEV4_IRQ, 1) != INVALID_VECTOR) {
 	TC_ERROR ("Error: Was able to allocate\n\n");
 		return TC_FAIL;
 		}
@@ -127,8 +122,7 @@ int taskA(ksem_t semRdy)
 
 	TC_PRINT ("\nAttempt to allocate an IRQ that\n"
 		      "is already allocated by another task...\n");
-	if (task_irq_alloc (DEV5_ID, DEV4_IRQ, 1) != INVALID_VECTOR)
-		{
+	if (task_irq_alloc (DEV5_ID, DEV4_IRQ, 1) != INVALID_VECTOR) {
 	TC_ERROR ("Error: Was able to allocate\n\n");
 		return TC_FAIL;
 		}
@@ -154,15 +148,13 @@ int taskA(ksem_t semRdy)
 
 int taskB(ksem_t semRdy)
 	{
-	if (task_irq_alloc (DEV3_ID, DEV3_IRQ, 1) == INVALID_VECTOR)
-		{
+	if (task_irq_alloc (DEV3_ID, DEV3_IRQ, 1) == INVALID_VECTOR) {
 	TC_ERROR ("Not able to allocate IRQ object\n");
 	return TC_FAIL;
 		}
 	TC_PRINT ("IRQ object %d using IRQ%d allocated\n", DEV3_ID, DEV3_IRQ);
 
-	if (task_irq_alloc (DEV4_ID, DEV4_IRQ, 1) == INVALID_VECTOR)
-		{
+	if (task_irq_alloc (DEV4_ID, DEV4_IRQ, 1) == INVALID_VECTOR) {
 	TC_ERROR ("Not able to allocate IRQ object\n");
 	return TC_FAIL;
 		}
@@ -172,16 +164,14 @@ int taskB(ksem_t semRdy)
 
 	task_sem_give (semRdy);
 
-	if (task_irq_test_wait (DEV3_ID) != RC_OK)
-		{
+	if (task_irq_test_wait (DEV3_ID) != RC_OK) {
 		TC_ERROR ("Not able to test IRQ object event\n");
 		return TC_FAIL;
 		}
 	TC_PRINT ("Received event for IRQ object %d\n", DEV3_ID);
 	task_irq_ack (DEV3_ID);
 
-	if (task_irq_test_wait (DEV4_ID) != RC_OK)
-		{
+	if (task_irq_test_wait (DEV4_ID) != RC_OK) {
 	TC_ERROR ("Not able to test IRQ object event\n");
 	return TC_FAIL;
 		}

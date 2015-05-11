@@ -56,8 +56,7 @@ typedef unsigned int    Elf32_Word;
 
 #define EI_NIDENT	16
 
-typedef struct
-	{
+typedef struct {
 	unsigned char e_ident[EI_NIDENT];
 	Elf32_Half	e_type;
 	Elf32_Half	e_machine;
@@ -179,8 +178,7 @@ typedef struct
 /*
  * Section header
  */
-typedef struct
-	{
+typedef struct {
 	Elf32_Word	sh_name;
 	Elf32_Word	sh_type;	/* SHT_... */
 	Elf32_Word	sh_flags;	/* SHF_... */
@@ -240,8 +238,7 @@ typedef struct
 /*
  * Symbol table
  */
-typedef struct
-	{
+typedef struct {
 	Elf32_Word	st_name;
 	Elf32_Addr	st_value;
 	Elf32_Word	st_size;
@@ -289,14 +286,12 @@ typedef struct
 /*
  * Relocation
  */
-typedef struct
-	{
+typedef struct {
 	Elf32_Addr	r_offset;
 	Elf32_Word	r_info;
 	} Elf32_Rel;
 
-typedef struct
-	{
+typedef struct {
 	Elf32_Addr	r_offset;
 	Elf32_Word	r_info;
 	Elf32_Sword	r_addend;
@@ -309,8 +304,7 @@ typedef struct
 /*
  * Program header
  */
-typedef struct
-	{
+typedef struct {
 	Elf32_Word	p_type;
 	Elf32_Off	p_offset;
 	Elf32_Addr	p_vaddr;
@@ -344,11 +338,9 @@ typedef struct
 #define PF_R		0x4
 #define PF_MASKPROC	0xf0000000
 
-typedef struct
-	{
+typedef struct {
 	Elf32_Sword	d_tag;
-	union
-		{
+	union {
 	Elf32_Word  d_val;
 	Elf32_Addr  d_ptr;
 		} d_un;

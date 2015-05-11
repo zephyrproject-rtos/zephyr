@@ -80,8 +80,7 @@ static void fiberOne (void)
     {
     nano_fiber_sem_take_wait (&syncSema);
     timestamp = TIME_STAMP_DELTA_GET (0);
-    while (ctxSwitchCounter < NCTXSWITCH)
-	{
+    while (ctxSwitchCounter < NCTXSWITCH) {
 	fiber_yield ();
 	ctxSwitchCounter++;
 	ctxSwitchBalancer--;
@@ -104,8 +103,7 @@ static void fiberOne (void)
 static void fiberTwo (void)
     {
     nano_fiber_sem_give (&syncSema);
-    while (ctxSwitchCounter < NCTXSWITCH)
-	{
+    while (ctxSwitchCounter < NCTXSWITCH) {
 	fiber_yield ();
 	ctxSwitchCounter++;
 	ctxSwitchBalancer++;
@@ -133,12 +131,10 @@ int nanoCtxSwitch (void)
 		    (nano_fiber_entry_t) fiberOne, 0, 0, 6, 0);
     task_fiber_start (&fiberTwoStack[0], STACKSIZE,
 		    (nano_fiber_entry_t) fiberTwo, 0, 0, 6, 0);
-    if (ctxSwitchBalancer > 3 || ctxSwitchBalancer < -3)
-	{
+    if (ctxSwitchBalancer > 3 || ctxSwitchBalancer < -3) {
 	PRINT_FORMAT (" Balance is %d. FAILED", ctxSwitchBalancer);
 	}
-    else if (bench_test_end () != 0)
-	{
+    else if (bench_test_end () != 0) {
 	errorCount++;
 	PRINT_OVERFLOW_ERROR ();
 	}

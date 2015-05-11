@@ -87,8 +87,7 @@ void _k_task_monitor_args(struct k_args *A)
 	{
 		k_monitor_wptr->time = timer_read();
 
-		if ((uint32_t)A < _k_num_events)
-		{
+		if ((uint32_t)A < _k_num_events) {
 			k_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
 		}
 		else {

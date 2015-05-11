@@ -49,8 +49,7 @@ void call_test (void)
     int i;
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_NOP_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_NOP_RUNS; i++) {
 	_task_nop();
 	}
     et = TIME_STAMP_DELTA_GET (et);

@@ -86,8 +86,7 @@ NANO_CPU_INT_REGISTER (isrDummyIntStub, TEST_SOFT_INT, 0);
 static char pStack[FIBER_STACK_SIZE];
 
 /* pointer array ensures specified functions are linked into the image */
-volatile pfunc func_array[] =
-    {
+volatile pfunc func_array[] = {
     /* nano timer functions */
     (pfunc)nano_timer_init,
     (pfunc)nano_fiber_timer_start,
@@ -193,8 +192,7 @@ void main (void)
 		    (int) func_array, 10, 0);
 #endif /* !TEST_min */
 
-    while (1)
-	{
+    while (1) {
 	i++;
 	}
     }

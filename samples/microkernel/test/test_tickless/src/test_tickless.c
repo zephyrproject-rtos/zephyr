@@ -118,8 +118,7 @@ void ticklessTestTask (void)
     /* initialize the timer, if necessary */
 	_TIMESTAMP_OPEN();
 
-	for (i = 0; i < CAL_REPS; i++)
-	{
+	for (i = 0; i < CAL_REPS; i++) {
 	/*
          * Do a single tick sleep to get us as close to a tick boundary
          * as we can.
@@ -149,8 +148,7 @@ void ticklessTestTask (void)
 
 	printk("Going idle for %d ticks...\n", SLEEP_TICKS);
 
-	for (i = 0; i < CAL_REPS; i++)
-	{
+	for (i = 0; i < CAL_REPS; i++) {
 	/*
          * Do a single tick sleep to get us as close to a tick boundary
          * as we can.
@@ -190,13 +188,11 @@ void ticklessTestTask (void)
 
 	printk("variance in time stamp diff: %d percent\n", (int32_t)diff_per);
 
-	if (diff_ticks != SLEEP_TICKS)
-	{
+	if (diff_ticks != SLEEP_TICKS) {
 	printk("* TEST FAILED. TICK COUNT INCORRECT *\n");
 	TC_END_REPORT(TC_FAIL);
 	}
-	else
-		{
+	else {
 	TC_END_REPORT(TC_PASS);
 		}
 

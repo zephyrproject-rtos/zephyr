@@ -84,8 +84,7 @@ in ISR context.
 
 /* typedefs */
 
-typedef struct
-	{
+typedef struct {
 	struct nano_fifo *channel;  /* FIFO channel */
 	void *data;     /* pointer to data to add */
 	} ISR_FIFO_INFO;
@@ -117,16 +116,14 @@ void * const pMyFifoData2 = (void *)myFifoData2;
 void * const pMyFifoData3 = (void *)myFifoData3;
 void * const pMyFifoData4 = (void *)myFifoData4;
 
-void * const pPutList1[NUM_FIFO_ELEMENT]  =
-	{
+void * const pPutList1[NUM_FIFO_ELEMENT]  = {
 	(void *)myFifoData1,
 	(void *)myFifoData2,
 	(void *)myFifoData3,
 	(void *)myFifoData4
 	};
 
-void * const pPutList2[NUM_FIFO_ELEMENT] =
-	{
+void * const pPutList2[NUM_FIFO_ELEMENT] = {
 	(void *)myFifoData4,
 	(void *)myFifoData3,
 	(void *)myFifoData2,
@@ -207,8 +204,7 @@ void fiber1(void)
 
     /* Wait for data to be added to <nanoFifoObj> by task */
 	pData = nano_fiber_fifo_get_wait (&nanoFifoObj);
-	if (pData != pPutList1[0])
-		{
+	if (pData != pPutList1[0]) {
 		TC_ERROR ("fiber1 (1) - expected 0x%x, got 0x%x\n",
 		          pPutList1[0], pData);
 		retCode = TC_FAIL;
@@ -217,8 +213,7 @@ void fiber1(void)
 
     /* Wait for data to be added to <nanoFifoObj2> by fiber3 */
 	pData = nano_fiber_fifo_get_wait (&nanoFifoObj2);
-	if (pData != pPutList2[0])
-		{
+	if (pData != pPutList2[0]) {
 		TC_ERROR ("fiber1 (2) - expected 0x%x, got 0x%x\n",
 		          pPutList2[0], pData);
 		retCode = TC_FAIL;
@@ -229,11 +224,9 @@ void fiber1(void)
 
 	TC_PRINT("Test Fiber FIFO Get\n\n");
     /* Get all FIFOs */
-	while ((pData = nano_fiber_fifo_get(&nanoFifoObj)) != NULL)
-		{
+	while ((pData = nano_fiber_fifo_get(&nanoFifoObj)) != NULL) {
 		TC_PRINT("FIBER FIFO Get: count = %d, ptr is %p\n", count, pData);
-		if((count >= NUM_FIFO_ELEMENT) || (pData != pPutList1[count]))
-		    {
+		if((count >= NUM_FIFO_ELEMENT) || (pData != pPutList1[count])) {
 		    TCERR1(count);
 		    retCode = TC_FAIL;
 		    return;
@@ -250,8 +243,7 @@ void fiber1(void)
      */
 	TC_PRINT("Test Fiber FIFO Put\n");
 	TC_PRINT("\nFIBER FIFO Put Order: ");
-	for (int i=0; i<NUM_FIFO_ELEMENT; i++)
-		{
+	for (int i=0; i<NUM_FIFO_ELEMENT; i++) {
 		nano_fiber_fifo_put(&nanoFifoObj, pPutList2[i]);
 		TC_PRINT(" %p,", pPutList2[i]);
 		}
@@ -283,8 +275,7 @@ void testFiberFifoGetW(void)
 	pGetData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
 	TC_PRINT("FIBER FIFO Get from queue2: %p\n", pGetData);
     /* Verify results */
-	if (pGetData != pMyFifoData1)
-		{
+	if (pGetData != pMyFifoData1) {
 		retCode = TC_FAIL;
 		TCERR2;
 		return;
@@ -297,8 +288,7 @@ void testFiberFifoGetW(void)
 	pGetData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
 	TC_PRINT("FIBER FIFO Get from queue2: %p\n", pGetData);
     /* Verify results */
-	if (pGetData != pMyFifoData3)
-		{
+	if (pGetData != pMyFifoData3) {
 		retCode = TC_FAIL;
 		TCERR2;
 		return;
@@ -336,8 +326,7 @@ void testIsrFifoFromFiber(void)
 		pGetData = isrFifoInfo.data;
 
 		TC_PRINT("ISR FIFO Get from queue1: %p\n", pGetData);
-		if (isrFifoInfo.data != pMyFifoData4)
-		{
+		if (isrFifoInfo.data != pMyFifoData4) {
 		    retCode = TC_FAIL;
 		    TCERR2;
 		    return;
@@ -347,8 +336,7 @@ void testIsrFifoFromFiber(void)
 		_trigger_nano_isr_fifo_get();
 		pGetData = isrFifoInfo.data;
 
-		if (pGetData != NULL)
-		{
+		if (pGetData != NULL) {
 		    TC_PRINT("Get from queue1: %p\n", pGetData);
 		    retCode = TC_FAIL;
 		    TCERR3;
@@ -357,8 +345,7 @@ void testIsrFifoFromFiber(void)
 
         /* Put more item into queue */
 		TC_PRINT("\nISR FIFO (running in fiber context) Put Order: \n");
-		for (int i=0; i<NUM_FIFO_ELEMENT; i++)
-		    {
+		for (int i=0; i<NUM_FIFO_ELEMENT; i++) {
 		    isrFifoInfo.data = pPutList1[i];
 		    TC_PRINT(" %p,", pPutList1[i]);
 		    _trigger_nano_isr_fifo_put();
@@ -396,11 +383,9 @@ void testIsrFifoFromTask(void)
 		_trigger_nano_isr_fifo_get();
 		pGetData = isrFifoInfo.data;
 
-		while (pGetData != NULL)
-		    {
+		while (pGetData != NULL) {
 		    TC_PRINT("Get from queue1: count = %d, ptr is %p\n", count, pGetData);
-		    if ((count >= NUM_FIFO_ELEMENT) || (pGetData != pPutList1[count]))
-		        {
+		    if ((count >= NUM_FIFO_ELEMENT) || (pGetData != pPutList1[count])) {
 		        TCERR1(count);
 		        retCode = TC_FAIL;
 		        return;
@@ -423,14 +408,12 @@ void testIsrFifoFromTask(void)
 		_trigger_nano_isr_fifo_get();
 		pGetData = isrFifoInfo.data;
         /* Verify data */
-		if (pGetData != pPutData)
-		{
+		if (pGetData != pPutData) {
 		    retCode = TC_FAIL;
 		    TCERR2;
 		    return;
 		}
-		else
-		{
+		else {
 		TC_PRINT("\nTest ISR FIFO (invoked from Task) - put %p and get back %p\n",
 		         pPutData, pGetData);
 		}
@@ -455,8 +438,7 @@ void fiber2(void)
 
     /* Wait for data to be added to <nanoFifoObj> */
 	pData = nano_fiber_fifo_get_wait (&nanoFifoObj);
-	if (pData != pPutList1[1])
-		{
+	if (pData != pPutList1[1]) {
 		TC_ERROR ("fiber2 (1) - expected 0x%x, got 0x%x\n",
 		          pPutList1[1], pData);
 		retCode = TC_FAIL;
@@ -465,8 +447,7 @@ void fiber2(void)
 
     /* Wait for data to be added to <nanoFifoObj2> by fiber3 */
 	pData = nano_fiber_fifo_get_wait (&nanoFifoObj2);
-	if (pData != pPutList2[1])
-		{
+	if (pData != pPutList2[1]) {
 		TC_ERROR ("fiber2 (2) - expected 0x%x, got 0x%x\n",
 		          pPutList2[1], pData);
 		retCode = TC_FAIL;
@@ -476,11 +457,9 @@ void fiber2(void)
 	nano_fiber_sem_take_wait (&nanoSemObj2);   /* Wait for fiber2 to be reactivated */
 
     /* Fiber #2 has been reactivated by main task */
-	for (int i = 0; i < 4; i++)
-		{
+	for (int i = 0; i < 4; i++) {
 		pData = nano_fiber_fifo_get_wait (&nanoFifoObj);
-		if (pData != pPutList1[i])
-		    {
+		if (pData != pPutList1[i]) {
 		    TC_ERROR ("fiber2 (3) - iteration %d expected 0x%x, got 0x%x\n",
 		              i, pPutList1[i], pData);
 		    retCode = TC_FAIL;
@@ -521,8 +500,7 @@ void fiber3(void)
 
     /* Immediately get the data from <nanoFifoObj2>. */
 	pData = nano_fiber_fifo_get_wait (&nanoFifoObj2);
-	if (pData != pPutList2[0])
-		{
+	if (pData != pPutList2[0]) {
 		retCode = TC_FAIL;
 		TC_ERROR ("fiber3 (1) - got 0x%x from <nanoFifoObj2>, expected 0x%x\n",
 		          pData, pPutList2[0]);
@@ -572,8 +550,7 @@ void testTaskFifoGetW(void)
 	pGetData = nano_task_fifo_get_wait(&nanoFifoObj);
 	TC_PRINT("TASK FIFO Get from queue1: %p\n", pGetData);
     /* Verify results */
-	if (pGetData != pMyFifoData2)
-		{
+	if (pGetData != pMyFifoData2) {
 		retCode = TC_FAIL;
 		TCERR2;
 		return;
@@ -597,8 +574,7 @@ void testTaskFifoGetW(void)
 
 void initNanoObjects(void)
 {
-	struct isrInitInfo i =
-	{
+	struct isrInitInfo i = {
 	{isr_fifo_put, isr_fifo_get},
 	{&isrFifoInfo, &isrFifoInfo},
 	};
@@ -671,11 +647,9 @@ void main(void)
 	nano_task_fifo_put (&nanoFifoObj2, pPutList2[0]);
 	nano_task_sem_give (&nanoSemObj3);    /* Reactivate fiber #3 */
 
-	for (int i = 0; i < 4; i++)
-		{
+	for (int i = 0; i < 4; i++) {
 		pData = nano_task_fifo_get_wait (&nanoFifoObj2);
-		if (pData != pPutList2[i])
-		    {
+		if (pData != pPutList2[i]) {
 		    TC_ERROR ("nano_task_fifo_get_wait() expected 0x%x, got 0x%x\n",
 		              pPutList2[i], pData);
 		    goto exit;
@@ -683,8 +657,7 @@ void main(void)
 		}
 
     /* Add items to <nanoFifoObj> for fiber #2 */
-	for (int i = 0; i < 4; i++)
-		{
+	for (int i = 0; i < 4; i++) {
 		nano_task_fifo_put (&nanoFifoObj, pPutList1[i]);
 		}
 
@@ -693,8 +666,7 @@ void main(void)
     /* Wait for fibers to finish */
 	nano_task_sem_take_wait (&nanoSemObjTask);
 
-	if (retCode == TC_FAIL)
-		{
+	if (retCode == TC_FAIL) {
 		goto exit;
 		}
 
@@ -705,8 +677,7 @@ void main(void)
 
 	TC_PRINT("Test Task FIFO Put\n");
 	TC_PRINT("\nTASK FIFO Put Order: ");
-	for (int i=0; i<NUM_FIFO_ELEMENT; i++)
-		{
+	for (int i=0; i<NUM_FIFO_ELEMENT; i++) {
 		nano_task_fifo_put(&nanoFifoObj, pPutList1[i]);
 		TC_PRINT(" %p,", pPutList1[i]);
 		}
@@ -716,8 +687,7 @@ void main(void)
 
 	nano_task_sem_give (&nanoSemObj1);      /* Activate fiber1 */
 
-	if (retCode == TC_FAIL)
-		{
+	if (retCode == TC_FAIL) {
 		goto exit;
 		}
 
@@ -730,11 +700,9 @@ void main(void)
 	TC_PRINT("Test Task FIFO Get\n");
 
     /* Get all FIFOs */
-	while ((pData = nano_task_fifo_get(&nanoFifoObj)) != NULL)
-		{
+	while ((pData = nano_task_fifo_get(&nanoFifoObj)) != NULL) {
 		TC_PRINT("TASK FIFO Get: count = %d, ptr is %p\n", count, pData);
-		if ((count >= NUM_FIFO_ELEMENT) || (pData != pPutList2[count]))
-		    {
+		if ((count >= NUM_FIFO_ELEMENT) || (pData != pPutList2[count])) {
 		    TCERR1(count);
 		    retCode = TC_FAIL;
 		    goto exit;

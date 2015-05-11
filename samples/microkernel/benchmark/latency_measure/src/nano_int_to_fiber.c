@@ -86,8 +86,7 @@ static void fiberInt (void)
     setSwInterrupt (latencyTestIsr);
     flagVar = 0;
     raiseIntFunc ();
-    if (flagVar != 1)
-	{
+    if (flagVar != 1) {
 	PRINT_FORMAT (" Flag variable has not changed. FAILED");
 	}
     else
@@ -110,8 +109,7 @@ int nanoIntToFiber (void)
     TICK_SYNCH ();
     task_fiber_start (&fiberStack[0], STACKSIZE,
 		    (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
-    if (flagVar == 1)
-	{
+    if (flagVar == 1) {
 	PRINT_FORMAT (" switching time is %lu tcs = %lu nsec",
 		      timestamp, SYS_CLOCK_HW_CYCLES_TO_NS (timestamp));
 	}

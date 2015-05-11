@@ -79,8 +79,7 @@ int main (void)
 
 	PRINTF (DEMO_DESCRIPTION, "fibers", "nanokernel");
 
-	for (i = 0; i < N_PHILOSOPHERS; i++)
-		{
+	for (i = 0; i < N_PHILOSOPHERS; i++) {
 	nano_sem_init (&forks[i]);
 	nano_task_sem_give (&forks[i]);
 	}
@@ -91,8 +90,7 @@ int main (void)
 			(nano_fiber_entry_t) philEntry, 0, 0, 6, 0);
 
     /* wait forever */
-	while (1)
-	{
+	while (1) {
 	extern void nano_cpu_idle (void);
 	nano_cpu_idle ();
 	}
@@ -113,8 +111,7 @@ void philDemo (void)
 	 task_group_start (PHI);
 
     /* wait forever */
-	while (1)
-		{
+	while (1) {
 	task_sleep (10000);
 		}
 	}

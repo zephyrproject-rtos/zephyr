@@ -73,8 +73,7 @@ void fifo_fiber1 (
     int * pelement;
 
     ARG_UNUSED (par1);
-    for (i = 0; i < par2; i++)
-	{
+    for (i = 0; i < par2; i++) {
 	pelement = (int *) nano_fiber_fifo_get_wait (&nanoFifo1);
 	if (pelement[1] != i)
 	    break;
@@ -105,8 +104,7 @@ void fifo_fiber2 (
     int * pelement;
     int * pcounter = (int *) par1;
 
-    for (i = 0; i < par2; i++)
-	{
+    for (i = 0; i < par2; i++) {
 	element[1] = i;
 	nano_fiber_fifo_put (&nanoFifo1, element);
 	pelement = (int *) nano_fiber_fifo_get_wait (&nanoFifo2);
@@ -138,8 +136,7 @@ void fifo_fiber3 (
     int * pelement;
     int * pcounter = (int *) par1;
 
-    for (i = 0; i < par2; i++)
-	{
+    for (i = 0; i < par2; i++) {
 	element[1] = i;
 	nano_fiber_fifo_put (&nanoFifo1, element);
 	while (NULL == (pelement = (int *) nano_fiber_fifo_get (&nanoFifo2)))
@@ -243,8 +240,7 @@ int fifo_test (void)
 		    NUMBER_OF_LOOPS / 2, 3, 0);
     task_fiber_start (fiber_stack2, STACK_SIZE, fifo_fiber1, 0,
 		    NUMBER_OF_LOOPS / 2, 3, 0);
-    for (i = 0; i < NUMBER_OF_LOOPS / 2; i++)
-	{
+    for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
 	int element[2];
 	int *	pelement;
 	element[1] = i;

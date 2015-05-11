@@ -96,8 +96,7 @@ void Task10 (void)
 
     /* Wait and boost owner priority to 10 */
 	rv = task_mutex_lock_wait_timeout (Mutex4, ONE_SECOND);
-	if (rv != RC_TIME)
-		{
+	if (rv != RC_TIME) {
 		tcRC = TC_FAIL;
 		TC_ERROR ("Failed to timeout on mutex 0x%x\n", Mutex4);
 		return;
@@ -128,8 +127,7 @@ void Task15 (void)
      */
 
 	rv = task_mutex_lock_wait_timeout (Mutex4, 2 * ONE_SECOND);
-	if (rv != RC_OK)
-		{
+	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR ("Failed to take mutex 0x%x\n", Mutex4);
 		return;
@@ -160,8 +158,7 @@ void Task20 (void)
      */
 
 	rv = task_mutex_lock_wait_timeout (Mutex3, 3 * ONE_SECOND);
-	if (rv != RC_TIME)
-		{
+	if (rv != RC_TIME) {
 		tcRC = TC_FAIL;
 		TC_ERROR ("Failed to timeout on mutex 0x%x\n", Mutex3);
 		return;
@@ -183,8 +180,7 @@ void Task25 (void)
 	task_sleep (ONE_SECOND + HALF_SECOND);
 
 	rv = task_mutex_lock_wait (Mutex2);      /* Wait and boost owner priority to 25 */
-	if (rv != RC_OK)
-		{
+	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR ("Failed to take mutex 0x%x\n", Mutex2);
 		return;
@@ -207,16 +203,15 @@ void Task30 (void)
 	task_sleep (HALF_SECOND);   /* Allow lower priority task to run */
 
 	rv = task_mutex_lock (Mutex1);       /* <Mutex1> is already locked. */
-	if (rv != RC_FAIL)            /* This attempt to lock the mutex */
-		{                         /* should not succeed. */
+	if (rv != RC_FAIL) {            /* This attempt to lock the mutex */
+		/* should not succeed. */
 		tcRC = TC_FAIL;
 		TC_ERROR ("Failed to NOT take locked mutex 0x%x\n", Mutex1);
 		return;
 		}
 
 	rv = task_mutex_lock_wait (Mutex1);      /* Wait and boost owner priority to 30 */
-	if (rv != RC_OK)
-		{
+	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR ("Failed to take mutex 0x%x\n", Mutex1);
 		return;
@@ -238,8 +233,7 @@ void Task45 (void)
 
 	task_sleep (3 * ONE_SECOND + HALF_SECOND);
 	rv = task_mutex_lock_wait (Mutex3);
-	if (rv != RC_OK)
-		{
+	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
 		TC_ERROR ("Failed to take mutex 0x%x\n", Mutex2);
 		return;
@@ -276,11 +270,9 @@ void RegressionTask (void)
      * 4th iteration: Take Mutex4; Task10 waits on Mutex4
      */
 
-	for (i = 0; i < 4; i++)
-		{
+	for (i = 0; i < 4; i++) {
 		rv = task_mutex_lock (mutexes[i]);
-		if (rv != RC_OK)
-		    {
+		if (rv != RC_OK) {
 		    TC_ERROR ("Failed to lock mutex 0x%x\n", mutexes[i]);
 		    tcRC = TC_FAIL;
 		    goto errorReturn;
@@ -288,15 +280,13 @@ void RegressionTask (void)
 		task_sleep (ONE_SECOND);
 
 		rv = task_priority_get ();
-		if (rv != priority[i])
-		    {
+		if (rv != priority[i]) {
 		    TC_ERROR ("Expected priority %d, not %d\n", priority[i], rv);
 		    tcRC = TC_FAIL;
 		    goto errorReturn;
 		    }
 
-		if (tcRC != TC_PASS)     /* Catch any errors from other tasks */
-		    {
+		if (tcRC != TC_PASS) {     /* Catch any errors from other tasks */
 		    goto errorReturn;
 		    }
 		}
@@ -310,8 +300,7 @@ void RegressionTask (void)
     /* ~ 5 seconds have passed */
 
 	rv = task_priority_get ();
-	if (rv != 15)
-		{
+	if (rv != 15) {
 		TC_ERROR ("%s timed out and out priority should drop.\n", "Task10");
 		TC_ERROR ("Expected priority %d, not %d\n", 15, rv);
 		tcRC = TC_FAIL;
@@ -320,8 +309,7 @@ void RegressionTask (void)
 
 	task_mutex_unlock (Mutex4);
 	rv = task_priority_get ();
-	if (rv != 20)
-		{
+	if (rv != 20) {
 		TC_ERROR ("Gave %s and priority should drop.\n", "Mutex4");
 		TC_ERROR ("Expected priority %d, not %d\n", 20, rv);
 		tcRC = TC_FAIL;
@@ -332,26 +320,22 @@ void RegressionTask (void)
 
     /* ~ 6 seconds have passed */
 
-	for (i = 0; i < 3; i++)
-		{
+	for (i = 0; i < 3; i++) {
 		rv = task_priority_get ();
-		if (rv != dropPri[i])
-		    {
+		if (rv != dropPri[i]) {
 		    TC_ERROR ("Expected priority %d, not %d\n", dropPri[i], rv);
 		    tcRC = TC_FAIL;
 		    goto errorReturn;
 		    }
 		task_mutex_unlock (giveMutex[i]);
 
-		if (tcRC != TC_PASS)
-		    {
+		if (tcRC != TC_PASS) {
 		    goto errorReturn;
 		    }
 		}
 
 	rv = task_priority_get ();
-	if (rv != 40)
-		{
+	if (rv != 40) {
 		TC_ERROR ("Expected priority %d, not %d\n", 40, rv);
 		tcRC = TC_FAIL;
 		goto errorReturn;
@@ -359,8 +343,7 @@ void RegressionTask (void)
 
 	task_sleep (ONE_SECOND);     /* Give Task45 time to run */
 
-	if (tcRC != TC_PASS)
-		{
+	if (tcRC != TC_PASS) {
 		goto errorReturn;
 		}
 

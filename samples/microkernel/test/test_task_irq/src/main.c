@@ -103,10 +103,8 @@ void registerWait (void)
 
     /* Wait for the 2 tasks to finish registering their IRQ objects*/
 
-	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS - 1; tasksDone++)
-		{
-		if (task_sem_take_wait_timeout (SEM_RDY, TIMEOUT) != RC_OK)
-		    {
+	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS - 1; tasksDone++) {
+		if (task_sem_take_wait_timeout (SEM_RDY, TIMEOUT) != RC_OK) {
 		    TC_ERROR ("Monitor task timed out\n");
 		    task_sem_give (resultSems[TC_FAIL]);
 		    return;
@@ -114,8 +112,7 @@ void registerWait (void)
 		}
 
 	TC_PRINT ("Generating interrupts for all allocated IRQ objects...\n");
-	for (irq_obj = 0; irq_obj < NUM_TASK_IRQS; irq_obj++)
-		{
+	for (irq_obj = 0; irq_obj < NUM_TASK_IRQS; irq_obj++) {
 	if (task_irq_object[irq_obj].irq != INVALID_VECTOR)
 	    raiseInt((uint8_t)task_irq_object[irq_obj].vector);
 		}
@@ -148,13 +145,10 @@ void MonitorTaskEntry (void)
      * then issue the appropriate test case summary message
      */
 
-	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++)
-		{
+	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
 		result = task_sem_group_take_wait_timeout (resultSems, TIMEOUT);
-		if (result != resultSems[TC_PASS])
-		    {
-		    if (result != resultSems[TC_FAIL])
-		        {
+		if (result != resultSems[TC_PASS]) {
+		    if (result != resultSems[TC_FAIL]) {
 		        TC_ERROR ("Monitor task timed out\n");
 		        }
 		    TC_END_RESULT (TC_FAIL);

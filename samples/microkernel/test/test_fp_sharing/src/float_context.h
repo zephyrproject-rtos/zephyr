@@ -57,30 +57,26 @@
 
 /* a single x87 FPU register in double extended format (80 bits) */
 
-typedef struct fpReg
-{
+typedef struct fpReg {
 	unsigned char reg[10];
 } FP_REG;
 
 /* a single XMM register (128 bits) */
 
-typedef struct xmmReg
-{
+typedef struct xmmReg {
 	unsigned char reg[16];
 } XMM_REG;
 
 /* the set of volatile floating point registers */
 
-typedef struct fpVolatileRegSet
-{
+typedef struct fpVolatileRegSet {
 	XMM_REG xmmRegs[8]; /* XMM[0] -> XMM[7] */
 	FP_REG fpRegs[8];   /* ST[0] -> ST[7] */
 } FP_VOLATILE_REG_SET;
 
 /* the set of non-volatile floating point registers */
 
-typedef struct fpNonVolatileRegSet
-{
+typedef struct fpNonVolatileRegSet {
 	/* this structure has been intentionally left blank */
 } FP_NONVOLATILE_REG_SET;
 
@@ -95,8 +91,7 @@ typedef struct fpNonVolatileRegSet
 
 /* the set of ALL floating point registers */
 
-typedef struct fpRegSet
-{
+typedef struct fpRegSet {
 	FP_VOLATILE_REG_SET fpVolRegSet;
 	FP_NONVOLATILE_REG_SET fpNonVolRegSet;
 } FP_REG_SET;

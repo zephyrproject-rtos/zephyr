@@ -73,12 +73,10 @@ void event_test (void)
 
     PRINT_STRING (dashline, output_file);
     et = BENCH_START ();
-    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++)
-	{
+    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
 	nReturn = task_event_send (TEST_EVENT);
 #ifdef EVENT_CHECK
-	if (nReturn != RC_OK)
-	    {
+	if (nReturn != RC_OK) {
 	    PRINT_STRING (EventSignalErr, output_file);
 	    return; /* error */
 	    }
@@ -91,12 +89,10 @@ void event_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_EVENT_RUNS));
 
     et = BENCH_START ();
-    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++)
-	{
+    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
 	nReturn = task_event_send (TEST_EVENT);
 #ifdef EVENT_CHECK
-	if (nReturn != RC_OK)
-	    {
+	if (nReturn != RC_OK) {
 	    PRINT_STRING (EventSignalErr, output_file);
 	    task_sleep (SLEEP_TIME);
 	    return; /* error */
@@ -104,8 +100,7 @@ void event_test (void)
 #endif /* EVENT_CHECK */
 	nReturn = task_event_recv (TEST_EVENT);
 #ifdef EVENT_CHECK
-	if (nReturn != RC_OK)
-	    {
+	if (nReturn != RC_OK) {
 	    PRINT_STRING (EventTestErr, output_file);
 	    task_sleep (SLEEP_TIME);
 	    return; /* error */
@@ -119,20 +114,17 @@ void event_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_EVENT_RUNS));
 
     et = BENCH_START ();
-    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++)
-	{
+    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
 	nReturn = task_event_send (TEST_EVENT);
 #ifdef EVENT_CHECK
-	if (nReturn != RC_OK)
-	    {
+	if (nReturn != RC_OK) {
 	    PRINT_STRING (EventSignalErr, output_file);
 	    return; /* error */
 	    }
 #endif /* EVENT_CHECK */
 	nReturn = task_event_recv_wait (TEST_EVENT);
 #ifdef EVENT_CHECK
-	if (nReturn != RC_OK)
-	    {
+	if (nReturn != RC_OK) {
 	    PRINT_STRING (EventTestErr, output_file);
 	    return; /* error */
 	    }
@@ -147,25 +139,21 @@ void event_test (void)
     PRINT_STRING ("| Signal event with installed handler"
 		  "                                         |\n", output_file);
     nReturn = task_event_set_handler (TEST_EVENT, example_handler);
-    if (nReturn != RC_OK)
-	{
+    if (nReturn != RC_OK) {
 	PRINT_F (output_file, "-------- Error installing event handler.\n");
 	task_sleep (SLEEP_TIME);
 	return; /* error */
 	}
 
-    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++)
-	{
+    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
 	nReturn = task_event_send (TEST_EVENT);
 #ifdef EVENT_CHECK
-	if (nReturn != RC_OK)
-	    {
+	if (nReturn != RC_OK) {
 	    PRINT_STRING (EventSignalErr, output_file);
 	    task_sleep (SLEEP_TIME);
 	    return; /* error */
 	    }
-	if (nEventValue != TEST_EVENT + 1)
-	    {
+	if (nEventValue != TEST_EVENT + 1) {
 	    PRINT_STRING (EventHandlerErr, output_file);
 	    task_sleep (SLEEP_TIME);
 	    return; /* error */
@@ -175,8 +163,7 @@ void event_test (void)
 	}
 
     nReturn = task_event_set_handler (TEST_EVENT, NULL);
-    if (nReturn != RC_OK)
-	{
+    if (nReturn != RC_OK) {
 	PRINT_F (output_file, "Error removing event handler.\n");
 	task_sleep (SLEEP_TIME);
 	return; /* error */

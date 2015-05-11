@@ -87,8 +87,7 @@ static void workload_loop(void)
 
 	/* loop never terminates, except during calibration phase */
 
-	while (++_k_workload_i != _k_workload_n1) 
-	{
+	while (++_k_workload_i != _k_workload_n1) {
 		unsigned int s_iCountDummyProc = 0;
 		while (64 != s_iCountDummyProc++) { /* 64 == 2^6 */
 			x >>= y;

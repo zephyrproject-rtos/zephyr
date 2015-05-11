@@ -82,8 +82,7 @@ static void makeInt (void)
     initSwInterrupt (latencyTestIsr);
     flagVar = 0;
     raiseIntFunc ();
-    if (flagVar != 1)
-	{
+    if (flagVar != 1) {
 	PRINT_FORMAT (" Flag variable has not changed. FAILED\n");
 	}
     else
@@ -105,8 +104,7 @@ int microIntToTask (void)
 		  " interrupted task");
     TICK_SYNCH ();
     makeInt ();
-    if (flagVar == 1)
-	{
+    if (flagVar == 1) {
 	PRINT_FORMAT (" switching time is %lu tcs = %lu nsec",
 		      timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	}

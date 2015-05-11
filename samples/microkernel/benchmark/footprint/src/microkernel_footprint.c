@@ -83,8 +83,7 @@ NANO_CPU_INT_REGISTER (isrDummyIntStub, TEST_SOFT_INT, 0);
 #endif /* TEST_max */
 
 /* pointer array ensures specified functions are linked into the image */
-static pfunc func_array[] =
-    {
+static pfunc func_array[] = {
     /* event functions */
     (pfunc)task_event_send,
     (pfunc)_task_event_recv,
@@ -206,8 +205,7 @@ void fgTaskEntry (void)
     printk ((char *)MESSAGE, func_array);
 #endif /* TEST_max */
 
-    while (1)
-	{
+    while (1) {
 	i++;
 	}
     }

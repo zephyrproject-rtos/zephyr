@@ -121,15 +121,13 @@ uint32_t _TimestampRead (void)
 
     /* handle rollover for every other read (end of sleep) */
 
-	if ((cnt % 2) && (timerVal > lastTimerVal))
-	{
+	if ((cnt % 2) && (timerVal > lastTimerVal)) {
 	lastTimerVal = timerVal;
 
 	/* convert to extended up-counter value */
 	timerVal = _TIMESTAMP_EXT + (_TIMESTAMP_MAX - timerVal);
 	}
-	else
-	{
+	else {
 	lastTimerVal = timerVal;
 
 	/* convert to up-counter value */
@@ -245,16 +243,14 @@ uint32_t _TimestampRead (void)
 
     /* ensure a valid reading */
 
-	while (prescale1 != prescale2)
-		{
+	while (prescale1 != prescale2) {
 		prescale1 = _TIMESTAMP_PRESCALE;
 		prescale2 = _TIMESTAMP_PRESCALE;
 		}
 
     /* handle prescale rollover @ 0x8000 for every other read (end of sleep) */
 
-	if ((cnt % 2) && (prescale1 < lastPrescale))
-		{
+	if ((cnt % 2) && (prescale1 < lastPrescale)) {
 		prescale1 += 0x8000;
 		}
 

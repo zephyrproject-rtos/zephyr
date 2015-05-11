@@ -197,8 +197,7 @@ static Elf32_Shdr      *shdr;    /* pointer to array ELF section headers */
 
 static void swabElfHdr(Elf32_Ehdr *pHdrToSwab)
 {
-	if (swabRequired == 0)
-	   {
+	if (swabRequired == 0) {
 	   return;  /* do nothing */
 	   }
 
@@ -226,8 +225,7 @@ static void swabElfHdr(Elf32_Ehdr *pHdrToSwab)
 
 static void swabElfSectionHdr(Elf32_Shdr *pHdrToSwab)
 {
-	if (swabRequired == 0)
-	   {
+	if (swabRequired == 0) {
 	   return;  /* do nothing */
 	   }
 
@@ -253,8 +251,7 @@ static void swabElfSectionHdr(Elf32_Shdr *pHdrToSwab)
 
 static void swabElfSym(Elf32_Sym *pHdrToSwab)
 {
-	if (swabRequired == 0)
-	   {
+	if (swabRequired == 0) {
 	   return;  /* do nothing */
 	   }
 
@@ -280,24 +277,21 @@ static int ehdrLoad(int fd  /* file descriptor of file from which to read */
 	lseek (fd, 0, SEEK_SET);
 
 	nBytes = read (fd, &ehdr, sizeof (ehdr));
-	if (nBytes != sizeof (ehdr))
-		{
+	if (nBytes != sizeof (ehdr)) {
 		fprintf (stderr, "Failed to read ELF header\n");
 		return -1;
 		}
 
     /* perform some rudimentary ELF file validation */
 
-	if (strncmp ((char *)ehdr.e_ident, ELFMAG, 4) != 0)
-	{
+	if (strncmp ((char *)ehdr.e_ident, ELFMAG, 4) != 0) {
 	fprintf (stderr, "Input object module not ELF format\n");
 	return -1;
 	}
 
     /* 64-bit ELF module not supported (for now) */
 
-	if (ehdr.e_ident[EI_CLASS] != ELFCLASS32)
-		{
+	if (ehdr.e_ident[EI_CLASS] != ELFCLASS32) {
 	fprintf (stderr, "ELF64 class not supported\n");
 	return -1;
 	}
@@ -309,8 +303,7 @@ static int ehdrLoad(int fd  /* file descriptor of file from which to read */
      */
 
 	if (((*(char *)&ix == 0x78) && (ehdr.e_ident[EI_DATA] == ELFDATA2MSB)) ||
-		((*(char *)&ix == 0x12) && (ehdr.e_ident[EI_DATA] == ELFDATA2LSB)))
-		{
+		((*(char *)&ix == 0x12) && (ehdr.e_ident[EI_DATA] == ELFDATA2LSB))) {
 	swabRequired = 1;
 	DBG_PRINT ("Swab required\n");
 	}
@@ -341,8 +334,7 @@ int shdrsLoad(int fd  /* file descriptor of file from which to read */
 	unsigned  ix;        /* loop index */
 
 	shdr = malloc (ehdr.e_shnum * sizeof (Elf32_Shdr));
-	if (shdr == NULL)
-		{
+	if (shdr == NULL) {
 		fprintf (stderr, "No memory for section headers!\n");
 		return -1;
 		}
@@ -350,11 +342,9 @@ int shdrsLoad(int fd  /* file descriptor of file from which to read */
     /* Seek to the start of the table of section headers */
 	lseek (fd, ehdr.e_shoff, SEEK_SET);
 
-	for (ix = 0; ix < ehdr.e_shnum; ix++)
-		{
+	for (ix = 0; ix < ehdr.e_shnum; ix++) {
 	nBytes = read (fd, &shdr[ix], sizeof (Elf32_Shdr));
-	if (nBytes != sizeof (Elf32_Shdr))
-	    {
+	if (nBytes != sizeof (Elf32_Shdr)) {
 	    fprintf (stderr, "Unable to read entire section header (#%d)\n",
 		             ix);
 	    return -1;
@@ -382,10 +372,8 @@ int symTblFind(unsigned *pSymTblOffset,  /* ptr to symbol table offset */
 {
 	unsigned  ix;    /* loop index */
 
-	for (ix = 0; ix < ehdr.e_shnum; ++ix)
-		{
-	if (shdr[ix].sh_type == SHT_SYMTAB)
-	    {
+	for (ix = 0; ix < ehdr.e_shnum; ++ix) {
+	if (shdr[ix].sh_type == SHT_SYMTAB) {
 	    *pSymTblOffset = shdr[ix].sh_offset;
 	    *pSymTblSize   = shdr[ix].sh_size;
 
@@ -425,20 +413,16 @@ int strTblFind(unsigned *pStrTblIx  /* ptr to string table's index */
 	unsigned  strTblIx = 0xffffffff;
 	unsigned  ix;
 
-	for (ix = 0; ix < ehdr.e_shnum; ++ix)
-		{
-		if (shdr[ix].sh_type == SHT_STRTAB)
-		    {
+	for (ix = 0; ix < ehdr.e_shnum; ++ix) {
+		if (shdr[ix].sh_type == SHT_STRTAB) {
 		    if ((strTblIx == 0xffffffff) ||
-		        (ix != ehdr.e_shstrndx))
-		        {
+		        (ix != ehdr.e_shstrndx)) {
 		        strTblIx = ix;
 		        }
 		    }
 		}
 
-	if (strTblIx == 0xffffffff)
-		{
+	if (strTblIx == 0xffffffff) {
 		fprintf (stderr, "Object module missing string table!\n");
 		return -1;
 		}
@@ -467,8 +451,7 @@ int strTblLoad(int fd, /* file descriptor of file from which to read */
 		       shdr[strTblIx].sh_size);
 
 	pTable = malloc (shdr[strTblIx].sh_size);
-	if (pTable == NULL)
-		{
+	if (pTable == NULL) {
 		fprintf (stderr, "No memory for string table!");
 		return -1;
 		}
@@ -476,8 +459,7 @@ int strTblLoad(int fd, /* file descriptor of file from which to read */
 	lseek (fd, shdr[strTblIx].sh_offset, SEEK_SET);
 
 	nBytes = read (fd, pTable, shdr[strTblIx].sh_size);
-	if (nBytes != shdr[strTblIx].sh_size)
-		{
+	if (nBytes != shdr[strTblIx].sh_size) {
 		free (pTable);
 		fprintf (stderr, "Unable to read entire string table!\n");
 		return -1;
@@ -514,8 +496,7 @@ void headerPreambleDump(FILE *fp,       /* file pointer to which to write */
      * of the hash should be unique enough for our purposes.
      */
 
-	for (ix = 0; ix < sizeof(filename); ++ix)
-		{
+	for (ix = 0; ix < sizeof(filename); ++ix) {
 		hash = (hash * 33) + (unsigned int) filename[ix];
 		}
 
@@ -546,8 +527,7 @@ void headerAbsoluteSymbolsDump(int fd,   /* file descriptor of file from which t
 	numSyms = symTblSize / sizeof(Elf32_Sym);
 	lseek (fd, symTblOffset, SEEK_SET);
 
-	for (ix = 0; ix < numSyms; ++ix)
-	{
+	for (ix = 0; ix < numSyms; ++ix) {
 	/* read in a single symbol structure */
 
 	read (fd, &aSym, sizeof(Elf32_Sym));
@@ -560,13 +540,11 @@ void headerAbsoluteSymbolsDump(int fd,   /* file descriptor of file from which t
 	 */
 
 	if ((aSym.st_shndx == SHN_ABS) &&
-	    (ELF_ST_BIND(aSym.st_info) == STB_GLOBAL))
-	    {
+	    (ELF_ST_BIND(aSym.st_info) == STB_GLOBAL)) {
 	    if ((strstr (&pStringTable[aSym.st_name],
 		                 STRUCT_OFF_SUFFIX) != NULL) ||
 	        (strstr (&pStringTable[aSym.st_name],
-		                 STRUCT_SIZ_SUFFIX) != NULL))
-		        {
+		                 STRUCT_SIZ_SUFFIX) != NULL)) {
 		fprintf (fp, "#define\t%s\t0x%X\n",
 		                 &pStringTable[aSym.st_name], aSym.st_value);
 	        }
@@ -610,16 +588,13 @@ int main(int argc, char *argv[])
 
     /* argument parsing */
 
-	if (argc != 5)
-		{
+	if (argc != 5) {
 		fprintf (stderr, usage, argv[0]);
 	goto errorReturn;
 	}
 
-	while ((option = getopt (argc, argv, "i:o:")) != -1)
-		{
-	switch (option)
-	    {
+	while ((option = getopt (argc, argv, "i:o:")) != -1) {
+	switch (option) {
 	    case 'i':
 	        inFileName = optarg;
 		break;
@@ -636,16 +611,14 @@ int main(int argc, char *argv[])
 
 	inFd = open (inFileName, OPEN_FLAGS);
 
-	if (inFd == -1)
-		{
+	if (inFd == -1) {
 	fprintf (stderr, "Cannot open input object module");
 	goto errorReturn;
 	}
 
 	outFile = fopen (outFileName, "w");
 
-	if (outFile == NULL)
-		{
+	if (outFile == NULL) {
 	fprintf (stderr, "Cannot open output header file");
 	goto errorReturn;
 	}
@@ -664,8 +637,7 @@ int main(int argc, char *argv[])
 		(shdrsLoad (inFd) != 0) ||
 		(symTblFind (&symTblOffset, &symTblSize) != 0) ||
 		(strTblFind (&strTblIx) != 0) ||
-		(strTblLoad (inFd, strTblIx, &pStringTable) != 0))
-		{
+		(strTblLoad (inFd, strTblIx, &pStringTable) != 0)) {
 		goto errorReturn;
 		}
 
@@ -692,23 +664,19 @@ int main(int argc, char *argv[])
 	return 0;
 
 errorReturn:
-	if (inFd != -1)
-		{
+	if (inFd != -1) {
 		close (inFd);
 		}
 
-	if (outFile != NULL)
-		{
+	if (outFile != NULL) {
 		fclose (outFile);
 		}
 
-	if (shdr != NULL)
-		{
+	if (shdr != NULL) {
 		free (shdr);
 		}
 
-	if (pStringTable != NULL)
-		{
+	if (pStringTable != NULL) {
 		free (pStringTable);
 		}
 

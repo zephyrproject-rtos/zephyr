@@ -133,8 +133,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 	struct k_args *Y = NULL;
 
 	while (X && (X->Prio <= A->Prio)) {
-		if (X->Ctxt.args == A->Ctxt.args)
-		{
+		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y)
 				Y->Forw = X->Forw;
 			else
@@ -197,8 +196,7 @@ void _k_sem_group_wait_accept(struct k_args *A)
 	struct k_args *Y = NULL;
 
 	while (X && (X->Prio <= A->Prio)) {
-		if (X->Ctxt.args == A->Ctxt.args)
-		{
+		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y)
 				Y->Forw = X->Forw;
 			else
@@ -311,8 +309,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 	struct k_args *Y = NULL;
 
 	while (X && (X->Prio <= A->Prio)) {
-		if (X->Ctxt.args == A->Ctxt.args)
-		{
+		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y)
 				Y->Forw = X->Forw;
 			else

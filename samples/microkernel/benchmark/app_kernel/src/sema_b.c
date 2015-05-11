@@ -51,8 +51,7 @@ void sema_test (void)
 
     PRINT_STRING (dashline, output_file);
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM0);
 	}
     et = TIME_STAMP_DELTA_GET (et);
@@ -65,8 +64,7 @@ void sema_test (void)
     task_sem_give (STARTRCV);
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM1);
 	}
     et = TIME_STAMP_DELTA_GET (et);
@@ -76,8 +74,7 @@ void sema_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM1);
 	}
     et = TIME_STAMP_DELTA_GET (et);
@@ -88,8 +85,7 @@ void sema_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM2);
 	}
     et = TIME_STAMP_DELTA_GET (et);
@@ -99,8 +95,7 @@ void sema_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM2);
 	}
     et = TIME_STAMP_DELTA_GET (et);
@@ -110,8 +105,7 @@ void sema_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM3);
 	}
     et = TIME_STAMP_DELTA_GET (et);
@@ -121,8 +115,7 @@ void sema_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM3);
 	}
     et = TIME_STAMP_DELTA_GET (et);
@@ -132,8 +125,7 @@ void sema_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM4);
 	}
     et = TIME_STAMP_DELTA_GET (et);
@@ -143,8 +135,7 @@ void sema_test (void)
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_SEMA_RUNS));
 
     et = BENCH_START ();
-    for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	{
+    for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 	task_sem_give (SEM4);
 	}
     et = TIME_STAMP_DELTA_GET (et);

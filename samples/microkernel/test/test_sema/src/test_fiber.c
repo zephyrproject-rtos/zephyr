@@ -80,14 +80,12 @@ static void testFiberEntry (void)
 
     /* release the semaphore for N_TESTS times */
 	nano_fiber_sem_take_wait (&fiberSem);
-	for (i = 0; i < N_TESTS; i++)
-	{
+	for (i = 0; i < N_TESTS; i++) {
 	fiber_sem_give (simpleSem, &CMD_PKT_SET(cmdPktSet));
 	}
 
     /* signal each semaphore in the group */
-	for (i = 0; semList[i] != ENDLIST; i++)
-	{
+	for (i = 0; semList[i] != ENDLIST; i++) {
 	nano_fiber_sem_take_wait (&fiberSem);
 	fiber_sem_give (semList[i], &CMD_PKT_SET(cmdPktSet));
 	}

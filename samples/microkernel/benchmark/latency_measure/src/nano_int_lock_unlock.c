@@ -68,20 +68,17 @@ int nanoIntLockUnlock (void)
 		  " call");
     bench_test_start ();
     timestamp = TIME_STAMP_DELTA_GET (0);
-    for (i = 0; i < NTESTS; i++)
-	{
+    for (i = 0; i < NTESTS; i++) {
 	mask = irq_lock ();
 	irq_unlock (mask);
 	}
     timestamp = TIME_STAMP_DELTA_GET (timestamp);
-    if (bench_test_end () == 0)
-	{
+    if (bench_test_end () == 0) {
 	PRINT_FORMAT (" Average time for lock then unlock "
 		      "is %lu tcs = %lu nsec",
 		      timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, NTESTS));
 	}
-    else
-	{
+    else {
 	errorCount++;
 	PRINT_OVERFLOW_ERROR ();
 	}
@@ -91,20 +88,17 @@ int nanoIntLockUnlock (void)
 		  " function call");
     bench_test_start ();
     timestamp = TIME_STAMP_DELTA_GET (0);
-    for (i = 0; i < NTESTS; i++)
-	{
+    for (i = 0; i < NTESTS; i++) {
 	mask = irq_lock_inline ();
 	irq_unlock_inline (mask);
 	}
     timestamp = TIME_STAMP_DELTA_GET (timestamp);
-    if (bench_test_end () == 0)
-	{
+    if (bench_test_end () == 0) {
 	PRINT_FORMAT (" Average time for lock then unlock "
 		      "is %lu tcs = %lu nsec",
 		      timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, NTESTS));
 	}
-    else
-	{
+    else {
 	errorCount++;
 	PRINT_OVERFLOW_ERROR ();
 	}

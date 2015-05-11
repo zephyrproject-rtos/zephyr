@@ -73,8 +73,7 @@ void stack_fiber1 (
 
     ARG_UNUSED (par1);
 
-    for (i = 0; i < par2 / 2; i++)
-	{
+    for (i = 0; i < par2 / 2; i++) {
 	data = nano_fiber_stack_pop_wait (&nanoChannel1);
 	if (data != 2 * i)
 	    break;
@@ -107,8 +106,7 @@ void stack_fiber2 (
     uint32_t data;
     int * pcounter = (int *) par1;
 
-    for (i = 0; i < par2; i++)
-	{
+    for (i = 0; i < par2; i++) {
 	data = i;
 	nano_fiber_stack_push (&nanoChannel1, data);
 	data = nano_fiber_stack_pop_wait (&nanoChannel2);
@@ -137,8 +135,7 @@ void stack_fiber3 (
     uint32_t data;
     int * pcounter = (int *) par1;
 
-    for (i = 0; i < par2; i++)
-	{
+    for (i = 0; i < par2; i++) {
 	data = i;
 	nano_fiber_stack_push (&nanoChannel1, data);
 	data = 0xffffffff;
@@ -227,8 +224,7 @@ int stack_test (void)
 
     task_fiber_start (fiber_stack1, STACK_SIZE, stack_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-    for (i = 0; i < NUMBER_OF_LOOPS / 2; i++)
-	{
+    for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
 	uint32_t data;
 	data = 2 * i;
 	nano_task_stack_push (&nanoChannel1, data);

@@ -129,13 +129,10 @@ void MonitorTaskEntry (void)
      * then issue the appropriate test case summary message
      */
 
-	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++)
-	{
+	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
 	result = task_sem_group_take_wait_timeout (resultSems, TIMEOUT);
-	if (result != resultSems[TC_PASS])
-	    {
-	    if (result != resultSems[TC_FAIL])
-		{
+	if (result != resultSems[TC_PASS]) {
+	    if (result != resultSems[TC_FAIL]) {
 		TC_ERROR ("Monitor task timed out\n");
 		}
 	    TC_END_RESULT (TC_FAIL);
