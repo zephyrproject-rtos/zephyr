@@ -1,4 +1,4 @@
-/* idle.c - VxMicro idle support for IA-32 architecture */
+/* nanokernel idle support */
 
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
