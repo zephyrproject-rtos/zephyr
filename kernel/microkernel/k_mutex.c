@@ -58,7 +58,6 @@ NOMANUAL
 /* includes */
 
 #include <microkernel.h>
-#include <kticks.h>
 #include <minik.h>
 #include <nanok.h>
 

@@ -39,7 +39,6 @@
 
 #include <minik.h>
 #include <nanok.h>
-#include <ktask.h>
 #include <start_task_arch.h>
 
 

@@ -36,7 +36,6 @@
 #include <sections.h>
 
 #include <minik.h>
-#include <kticks.h>
 #include <drivers/system_timer.h>
 
 K_TIMER  *_k_timer_list_head = NULL;

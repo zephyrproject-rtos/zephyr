@@ -33,7 +33,6 @@
 #include "minik.h"
 #include "nanokernel.h"
 #include "nanok.h"
-#include "kticks.h" /* WL and timeslice stuff */
 #include <toolchain.h>
 #include <sections.h>
 

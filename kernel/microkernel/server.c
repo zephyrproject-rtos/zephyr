@@ -43,7 +43,6 @@ interfering with each other.
 #include <sections.h>
 #include <minik.h>
 #include <nanok.h>
-#include <kevent.h>
 #include <microkernel.h>
 #include <microkernel/entries.h> /* kernelfunc */
 #include <nanokernel.h>

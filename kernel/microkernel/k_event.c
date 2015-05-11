@@ -31,7 +31,6 @@
  */
 
 #include "microkernel/k_struct.h"
-#include "kevent.h"
 #include "minik.h"
 #include "microkernel/event.h"
 #include <toolchain.h>

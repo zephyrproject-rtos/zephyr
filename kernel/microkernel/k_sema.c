@@ -37,8 +37,6 @@
 #include <sections.h>
 
 #include <minik.h>
-#include <ksema.h>
-#include <kticks.h>
 
 /*******************************************************************************
 *

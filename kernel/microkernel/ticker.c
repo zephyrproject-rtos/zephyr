@@ -40,9 +40,7 @@ This module implements the microkernel's tick event handler.
 
 #include <microkernel/k_struct.h>
 #include <minik.h>
-#include <kticks.h> /* WL stuff */
 #include <drivers/system_timer.h>
-#include <ktask.h>  /* _k_task_yield */
 #include <microkernel.h>
 #include <microkernel/ticks.h>
 #include <toolchain.h>

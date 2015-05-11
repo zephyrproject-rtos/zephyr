@@ -55,6 +55,8 @@ extern int _k_mem_map_count;
 extern int _k_mem_pool_count;
 extern int _k_pipe_count;
 
+extern const int _k_num_events;
+
 extern struct k_proc *_k_current_task;
 extern uint32_t _k_task_priority_bitmap[];
 
@@ -64,6 +66,77 @@ extern K_TIMER *_k_timer_list_tail;
 extern struct nano_stack _k_command_stack;
 extern struct nano_lifo _k_server_command_packet_free;
 extern struct nano_lifo _k_timer_free;
+
+extern void start_task(struct k_proc *X, void (*func)(void));
+extern void abort_task(struct k_proc *X);
+extern void _k_task_op(struct k_args *A);
+extern void _k_task_group_op(struct k_args *A);
+extern void _k_task_priority_set(struct k_args *A);
+extern void _k_task_yield(struct k_args *A);
+
+extern void enlist_timer(K_TIMER *T);
+extern void delist_timer(K_TIMER *T);
+extern void enlist_timeout(struct k_args *P);
+extern void delist_timeout(K_TIMER *T);
+extern void force_timeout(struct k_args *A);
+extern void _k_timer_list_update(int ticks);
+extern void _k_timer_alloc(struct k_args *P);
+extern void _k_timer_dealloc(struct k_args *P);
+extern void _k_timer_start(struct k_args *P);
+extern void _k_timer_stop(struct k_args *P);
+extern void _k_task_sleep(struct k_args *P);
+extern void _k_task_wakeup(struct k_args *P);
+extern void _k_time_elapse(struct k_args *P);
+extern void _k_workload_get(struct k_args *P);
+
+extern void _k_event_signal(struct k_args *A);
+extern void _k_event_handler_set(struct k_args *A);
+extern void _k_event_test(struct k_args *A);
+extern void _k_event_test_timeout(struct k_args *A);
+extern void _k_do_event_signal(kevent_t event);
+
+extern void _k_mutex_lock_request(struct k_args *A);
+extern void _k_mutex_lock_reply(struct k_args *A);
+extern void _k_mutex_unlock(struct k_args *A);
+
+extern void _k_sem_signal(struct k_args *A);
+extern void _k_sem_reset(struct k_args *A);
+extern void _k_sem_group_signal(struct k_args *A);
+extern void _k_sem_group_reset(struct k_args *A);
+extern void _k_sem_wait_reply(struct k_args *A);
+extern void _k_sem_wait_request(struct k_args *A);
+extern void _k_sem_inquiry(struct k_args *A);
+
+extern void _k_sem_group_wait_any(struct k_args *A);
+extern void _k_sem_group_wait_timeout(struct k_args *A);
+extern void _k_sem_group_ready(struct k_args *R);
+extern void _k_sem_group_wait(struct k_args *R);
+extern void _k_sem_group_wait_request(struct k_args *A);
+extern void _k_sem_group_wait_cancel(struct k_args *A);
+extern void _k_sem_group_wait_accept(struct k_args *A);
+
+extern void _k_fifo_enque_reply(struct k_args *A);
+extern void _k_fifo_deque_reply(struct k_args *A);
+extern void _k_fifo_enque_request(struct k_args *A);
+extern void _k_fifo_deque_request(struct k_args *A);
+extern void _k_fifo_ioctl(struct k_args *A);
+
+extern void _k_mbox_send_reply(struct k_args *Writer);
+extern void _k_mbox_send_request(struct k_args *Writer);
+extern void _k_mbox_send_ack(struct k_args *Writer);
+extern void _k_mbox_receive_ack(struct k_args *Reader);
+extern void _k_mbox_receive_reply(struct k_args *Reader);
+extern void _k_mbox_receive_request(struct k_args *Reader);
+extern void _k_mbox_receive_data(struct k_args *Starter);
+
+extern void _k_mem_map_alloc(struct k_args *A);
+extern void _k_mem_map_alloc_timeout(struct k_args *A);
+extern void _k_mem_map_dealloc(struct k_args *A);
+
+extern void _k_mem_pool_block_release(struct k_args *A);
+extern void _k_mem_pool_block_get(struct k_args *A);
+extern void _k_defrag(struct k_args *A);
+extern void _k_mem_pool_block_get_timeout_handle(struct k_args *A);
 
 extern void _Cput(struct nano_lifo *, void *);
 extern void _Cpsh(struct nano_stack *, uint32_t);

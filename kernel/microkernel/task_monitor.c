@@ -34,7 +34,6 @@
 
 #include <microkernel/k_struct.h>
 #include <minik.h>
-#include <kticks.h>
 #include <microkernel/ticks.h>
 #include <drivers/system_timer.h>
 #include <toolchain.h>

@@ -38,11 +38,18 @@
 #include <sections.h>
 
 #include <minik.h>
-#include <kmail.h>
-#include <kticks.h>
-#include <ksema.h>
 
 #include <misc/__assert.h>
+
+/*******************************************************************************
+*
+* ISASYNCMSG - determines if mailbox message is synchronous or asynchronous
+*
+* Returns a non-zero value if the specified message contains a valid pool ID,
+* indicating that it is an asynchronous message.
+*/
+
+#define ISASYNCMSG(message) ((message)->tx_block.poolid != 0)
 
 /*******************************************************************************
 *

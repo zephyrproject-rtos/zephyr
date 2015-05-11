@@ -32,7 +32,6 @@
 
 #include <microkernel/k_struct.h>
 #include <minik.h>
-#include <kticks.h>
 #include <kchan.h>
 #include <toolchain.h>
 #include <sections.h>

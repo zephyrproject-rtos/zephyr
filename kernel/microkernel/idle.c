@@ -38,7 +38,6 @@ task, depending on how the kernel is configured.
 
 #include <microkernel/k_struct.h>
 #include <minik.h>
-#include <kticks.h>
 #include <nanok.h>
 #include <nanokernel/cpu.h>
 #include <toolchain.h>
