@@ -60,7 +60,7 @@ config  TICKLESS_IDLE_THRESH
 	int
 	prompt "Tickless idle threshold"
 	default 3
-	depends on TICKLESS_IDLE && MICROKERNEL
+	depends on TICKLESS_IDLE
 	help
 	  This option disables clock interrupt suppression when the kernel idles
 	  for only a short period of time. It specifies the minimum number of
