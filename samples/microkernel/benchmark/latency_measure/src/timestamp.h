@@ -85,29 +85,29 @@ typedef int64_t TICK_TYPE;
 extern uint32_t tm_off;
 
 static inline uint32_t TIME_STAMP_DELTA_GET (uint32_t ts)
-    {
-    uint32_t t;
+	{
+	uint32_t t;
 
     /* serialize so OS_GET_TIME() is not reordered */
-    timestamp_serialize();
+	timestamp_serialize();
 
-    t = OS_GET_TIME ();
-    uint32_t res = (t >= ts)? (t - ts): (ULONG_MAX - ts + t);
-    if (ts > 0)
+	t = OS_GET_TIME ();
+	uint32_t res = (t >= ts)? (t - ts): (ULONG_MAX - ts + t);
+	if (ts > 0)
 	res -= tm_off;
-    return res;
-    }
+	return res;
+	}
 
 /*
  * Routine initializes the benchmark timing measurement
  * The function sets up the global variable tm_off
  */
 static inline void bench_test_init (void)
-    {
-    uint32_t t = OS_GET_TIME ();
+	{
+	uint32_t t = OS_GET_TIME ();
 
-    tm_off = OS_GET_TIME () - t;
-    }
+	tm_off = OS_GET_TIME () - t;
+	}
 
 #if defined (CONFIG_MICROKERNEL) && defined (KERNEL)
 
@@ -127,23 +127,23 @@ static TICK_TYPE tCheck;
  * Functions modify the tCheck global variable.
  */
 static inline void bench_test_start (void)
-    {
-    tCheck = 0;
+	{
+	tCheck = 0;
     /* before reading time we synchronize to the start of the timer tick */
-    TICK_SYNCH ();
-    tCheck = TICK_GET(&tCheck);
-    }
+	TICK_SYNCH ();
+	tCheck = TICK_GET(&tCheck);
+	}
 
 
 /* returns 0 if the number of ticks is valid and -1 if not */
 static inline int bench_test_end (void)
-    {
-    tCheck = TICK_GET(&tCheck);
-    if (tCheck > BENCH_MAX_TICKS)
+	{
+	tCheck = TICK_GET(&tCheck);
+	if (tCheck > BENCH_MAX_TICKS)
 	return -1;
-    else
+	else
 	return 0;
-    }
+	}
 
 /*
  * Returns -1 if number of ticks cause high precision timer counter
@@ -152,12 +152,12 @@ static inline int bench_test_end (void)
  * results or is it completely invalid
  */
 static inline int high_timer_overflow (void)
-    {
-    if (tCheck >= (UINT_MAX / sys_clock_hw_cycles_per_tick))
+	{
+	if (tCheck >= (UINT_MAX / sys_clock_hw_cycles_per_tick))
 	return -1;
-    else
+	else
 	return 0;
-    }
+	}
 #endif /*  CONFIG_NANOKERNEL || CONFIG_MICROKERNEL */
 
 #endif /* _TIMESTAMP_H_ */

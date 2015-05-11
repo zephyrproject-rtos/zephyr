@@ -54,25 +54,25 @@ int errorCount = 0; /* track number of errors */
  */
 
 void nanoTest (void)
-    {
-    PRINT_NANO_BANNER ();
-    PRINT_TIME_BANNER();
+	{
+	PRINT_NANO_BANNER ();
+	PRINT_TIME_BANNER();
 
-    nanoIntLatency ();
-    printDashLine ();
+	nanoIntLatency ();
+	printDashLine ();
 
-    nanoIntToFiber ();
-    printDashLine ();
+	nanoIntToFiber ();
+	printDashLine ();
 
-    nanoIntToFiberSem ();
-    printDashLine ();
+	nanoIntToFiberSem ();
+	printDashLine ();
 
-    nanoCtxSwitch ();
-    printDashLine ();
+	nanoCtxSwitch ();
+	printDashLine ();
 
-    nanoIntLockUnlock ();
-    printDashLine ();
-    }
+	nanoIntLockUnlock ();
+	printDashLine ();
+	}
 
 #ifdef CONFIG_NANOKERNEL
 /*******************************************************************************
@@ -85,14 +85,14 @@ void nanoTest (void)
  */
 
 void main (void)
-    {
-    bench_test_init ();
+	{
+	bench_test_init ();
 
-    nanoTest ();
+	nanoTest ();
 
-    PRINT_END_BANNER ();
-    TC_END_REPORT (errorCount);
-    }
+	PRINT_END_BANNER ();
+	TC_END_REPORT (errorCount);
+	}
 
 #else
 
@@ -112,25 +112,25 @@ void microTaskSwitchYield (void);
  */
 
 void microTest (void)
-    {
-    PRINT_MICRO_BANNER ();
-    PRINT_TIME_BANNER();
+	{
+	PRINT_MICRO_BANNER ();
+	PRINT_TIME_BANNER();
 
-    microIntToTask ();
-    printDashLine ();
+	microIntToTask ();
+	printDashLine ();
 
-    microIntToTaskEvt ();
-    printDashLine ();
+	microIntToTaskEvt ();
+	printDashLine ();
 
-    microSemaLockUnlock ();
-    printDashLine ();
+	microSemaLockUnlock ();
+	printDashLine ();
 
-    microMutexLockUnlock ();
-    printDashLine ();
+	microMutexLockUnlock ();
+	printDashLine ();
 
-    microTaskSwitchYield ();
-    printDashLine ();
-    }
+	microTaskSwitchYield ();
+	printDashLine ();
+	}
 
 /*******************************************************************************
  *
@@ -142,13 +142,13 @@ void microTest (void)
  */
 
 void microMain (void)
-    {
-    bench_test_init ();
+	{
+	bench_test_init ();
 
-    nanoTest ();
-    microTest ();
+	nanoTest ();
+	microTest ();
 
-    PRINT_END_BANNER ();
-    TC_END_REPORT (errorCount);
-    }
+	PRINT_END_BANNER ();
+	TC_END_REPORT (errorCount);
+	}
 #endif /* CONFIG_NANOKERNEL */

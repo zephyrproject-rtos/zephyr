@@ -39,7 +39,7 @@
 
 static inline void timestamp_serialize(void)
 {
-    __asm__ __volatile__ (/* serialize */
+	__asm__ __volatile__ (/* serialize */
 	"xorl %%eax,%%eax;\n\t"
 	"cpuid;\n\t"
 	:

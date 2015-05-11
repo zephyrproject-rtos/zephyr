@@ -52,12 +52,12 @@ extern int errorCount;
 #define PRINTF(fmt, ...) printf (fmt, ##__VA_ARGS__)
 
 #define PRINT_FORMAT(fmt, ...)                                       \
-    do                                                               \
-        {                                                            \
-        snprintf (tmpString, TMP_STRING_SIZE, fmt, ##__VA_ARGS__);   \
-        PRINTF ("|%-77s|\n", tmpString);                             \
-        }                                                            \
-    while (0)
+	do                                                               \
+		{                                                            \
+		snprintf (tmpString, TMP_STRING_SIZE, fmt, ##__VA_ARGS__);   \
+		PRINTF ("|%-77s|\n", tmpString);                             \
+		}                                                            \
+	while (0)
 
 /*******************************************************************************
  *
@@ -69,34 +69,34 @@ extern int errorCount;
  */
 
 static inline void printDashLine (void)
-    {
-    PRINTF ("|-----------------------------------------------------------------"
+	{
+	PRINTF ("|-----------------------------------------------------------------"
 	    "------------|\n");
-    }
+	}
 
 #define PRINT_END_BANNER()                                                     \
-    PRINTF ("|                                    E N D                       "\
+	PRINTF ("|                                    E N D                       "\
 	    "             |\n");                                               \
-    printDashLine ();
+	printDashLine ();
 
 #define PRINT_NANO_BANNER()                                                    \
-    printDashLine ();                                                          \
-    PRINTF ("|                    VxMicro Nanokernel Latency Benchmark        "\
+	printDashLine ();                                                          \
+	PRINTF ("|                    VxMicro Nanokernel Latency Benchmark        "\
 	    "             |\n");                                               \
-    printDashLine ();
+	printDashLine ();
 
 #define PRINT_MICRO_BANNER()                                                   \
-    printDashLine ();                                                          \
-    PRINTF ("|                    VxMicro Microkernel Latency Benchmark       "\
+	printDashLine ();                                                          \
+	PRINTF ("|                    VxMicro Microkernel Latency Benchmark       "\
 	    "             |\n");                                               \
-    printDashLine ();
+	printDashLine ();
 
 #define PRINT_TIME_BANNER()                                                    \
-    PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %lu nsec", SYS_CLOCK_HW_CYCLES_TO_NS(1));\
-    printDashLine ();
+	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %lu nsec", SYS_CLOCK_HW_CYCLES_TO_NS(1));\
+	printDashLine ();
 
 #define PRINT_OVERFLOW_ERROR() 	                                               \
-    PRINT_FORMAT (" Error: tick occured")
+	PRINT_FORMAT (" Error: tick occured")
 
 #else
 #error PRINTK needs to be enabled in VxMicro configuration

@@ -66,14 +66,14 @@ int example_handler (int event);
  */
 
 void event_test (void)
-    {
-    int nReturn;
-    int nCounter;
-    uint32_t et; /* elapsed time */
+	{
+	int nReturn;
+	int nCounter;
+	uint32_t et; /* elapsed time */
 
-    PRINT_STRING (dashline, output_file);
-    et = BENCH_START ();
-    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
+	PRINT_STRING (dashline, output_file);
+	et = BENCH_START ();
+	for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
 	nReturn = task_event_send (TEST_EVENT);
 #ifdef EVENT_CHECK
 	if (nReturn != RC_OK) {
@@ -82,14 +82,14 @@ void event_test (void)
 	    }
 #endif /* EVENT_CHECK */
 	}
-    et = TIME_STAMP_DELTA_GET (et);
-    check_result ();
+	et = TIME_STAMP_DELTA_GET (et);
+	check_result ();
 
-    PRINT_F (output_file, FORMAT, "Signal enabled event",
+	PRINT_F (output_file, FORMAT, "Signal enabled event",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_EVENT_RUNS));
 
-    et = BENCH_START ();
-    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
+	et = BENCH_START ();
+	for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
 	nReturn = task_event_send (TEST_EVENT);
 #ifdef EVENT_CHECK
 	if (nReturn != RC_OK) {
@@ -107,14 +107,14 @@ void event_test (void)
 	    }
 #endif /* EVENT_CHECK */
 	}
-    et = TIME_STAMP_DELTA_GET (et);
-    check_result ();
+	et = TIME_STAMP_DELTA_GET (et);
+	check_result ();
 
-    PRINT_F (output_file, FORMAT, "Signal event & Test event",
+	PRINT_F (output_file, FORMAT, "Signal event & Test event",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_EVENT_RUNS));
 
-    et = BENCH_START ();
-    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
+	et = BENCH_START ();
+	for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
 	nReturn = task_event_send (TEST_EVENT);
 #ifdef EVENT_CHECK
 	if (nReturn != RC_OK) {
@@ -130,22 +130,22 @@ void event_test (void)
 	    }
 #endif /* EVENT_CHECK */
 	}
-    et = TIME_STAMP_DELTA_GET (et);
-    check_result ();
+	et = TIME_STAMP_DELTA_GET (et);
+	check_result ();
 
-    PRINT_F (output_file, FORMAT, "Signal event & TestW event",
+	PRINT_F (output_file, FORMAT, "Signal event & TestW event",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, NR_OF_EVENT_RUNS));
 
-    PRINT_STRING ("| Signal event with installed handler"
+	PRINT_STRING ("| Signal event with installed handler"
 		  "                                         |\n", output_file);
-    nReturn = task_event_set_handler (TEST_EVENT, example_handler);
-    if (nReturn != RC_OK) {
+	nReturn = task_event_set_handler (TEST_EVENT, example_handler);
+	if (nReturn != RC_OK) {
 	PRINT_F (output_file, "-------- Error installing event handler.\n");
 	task_sleep (SLEEP_TIME);
 	return; /* error */
 	}
 
-    for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
+	for (nCounter = 0; nCounter < NR_OF_EVENT_RUNS; nCounter++) {
 	nReturn = task_event_send (TEST_EVENT);
 #ifdef EVENT_CHECK
 	if (nReturn != RC_OK) {
@@ -162,19 +162,19 @@ void event_test (void)
 	nEventValue = 0;
 	}
 
-    nReturn = task_event_set_handler (TEST_EVENT, NULL);
-    if (nReturn != RC_OK) {
+	nReturn = task_event_set_handler (TEST_EVENT, NULL);
+	if (nReturn != RC_OK) {
 	PRINT_F (output_file, "Error removing event handler.\n");
 	task_sleep (SLEEP_TIME);
 	return; /* error */
 	}
 
-    PRINT_STRING ("|    Handler responds OK"
+	PRINT_STRING ("|    Handler responds OK"
 		  "                                                      |\n",
 		  output_file);
 
-    return; /* success */
-    }
+	return; /* success */
+	}
 
 
 /*******************************************************************************
@@ -190,10 +190,10 @@ void event_test (void)
  */
 
 int example_handler (int event)
-    {
-    nEventValue = event + 1;
+	{
+	nEventValue = event + 1;
 
-    return 1;
-    }
+	return 1;
+	}
 
 #endif /* EVENT_BENCH */

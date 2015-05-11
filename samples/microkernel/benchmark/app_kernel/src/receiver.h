@@ -39,10 +39,10 @@
 
 /* type defines. */
 typedef struct {
-    int count;
-    unsigned int time;
-    int size;
-    } GetInfo;
+	int count;
+	unsigned int time;
+	int size;
+	} GetInfo;
 
 /* global data */
 extern char data_recv[OCTET_TO_SIZEOFUNIT (MESSAGE_SIZE)];

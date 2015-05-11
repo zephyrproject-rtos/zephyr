@@ -57,17 +57,17 @@ int pipeget (kpipe_t pipe, K_PIPE_OPTION option,
  */
 
 void piperecvtask (void)
-    {
-    int getsize;
-    unsigned int gettime;
-    int getcount;
-    int pipe;
-    int prio;
-    GetInfo getinfo;
+	{
+	int getsize;
+	unsigned int gettime;
+	int getcount;
+	int pipe;
+	int prio;
+	GetInfo getinfo;
 
     /* matching (ALL_N) */
 
-    for (getsize = 8; getsize <= MESSAGE_SIZE_PIPE; getsize <<= 1) {
+	for (getsize = 8; getsize <= MESSAGE_SIZE_PIPE; getsize <<= 1) {
 	for (pipe = 0; pipe < 3; pipe++) {
 	    getcount = NR_OF_PIPE_RUNS;
 	    pipeget (TestPipes[pipe], _ALL_N, getsize,
@@ -79,7 +79,7 @@ void piperecvtask (void)
 	    }
 	}
 
-    for (prio = 0; prio < 2; prio++) {
+	for (prio = 0; prio < 2; prio++) {
 	/* non-matching (1_TO_N) */
 	for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1) {
 	    getcount = MESSAGE_SIZE_PIPE / getsize;
@@ -95,7 +95,7 @@ void piperecvtask (void)
 	    }
 	}
 
-    }
+	}
 
 
 /*******************************************************************************
@@ -108,22 +108,22 @@ void piperecvtask (void)
  */
 
 int pipeget (
-    kpipe_t pipe, /* pipe to read data from */
-    K_PIPE_OPTION option, /* _ALL_TO_N or _1_TO_N */
-    int size, /* data chunk size */
-    int count, /* number of data chunks */
-    unsigned int* time /* total write time */
-    )
-    {
-    int i;
-    unsigned int t;
-    int sizexferd_total = 0;
-    int size2xfer_total = size * count;
+	kpipe_t pipe, /* pipe to read data from */
+	K_PIPE_OPTION option, /* _ALL_TO_N or _1_TO_N */
+	int size, /* data chunk size */
+	int count, /* number of data chunks */
+	unsigned int* time /* total write time */
+	)
+	{
+	int i;
+	unsigned int t;
+	int sizexferd_total = 0;
+	int size2xfer_total = size * count;
 
     /* sync with the sender */
-    task_sem_take_wait (SEM0);
-    t = BENCH_START ();
-    for (i = 0; _1_TO_N == option || (i < count); i++) {
+	task_sem_take_wait (SEM0);
+	t = BENCH_START ();
+	for (i = 0; _1_TO_N == option || (i < count); i++) {
 	int sizexferd = 0;
 	int size2xfer = min(size, size2xfer_total - sizexferd_total);
 	int ret;
@@ -144,9 +144,9 @@ int pipeget (
 	    return 1;
 	}
 
-    t = TIME_STAMP_DELTA_GET (t);
-    *time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
-    if (bench_test_end () < 0) {
+	t = TIME_STAMP_DELTA_GET (t);
+	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
+	if (bench_test_end () < 0) {
 	if (high_timer_overflow ()) {
 	    PRINT_STRING ("| Timer overflow. Results are invalid            ",
 			  output_file);
@@ -158,7 +158,7 @@ int pipeget (
 	PRINT_STRING ("                             |\n",
 		      output_file);
 	}
-    return 0;
-    }
+	return 0;
+	}
 
 #endif /* PIPE_BENCH */

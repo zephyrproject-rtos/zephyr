@@ -56,29 +56,29 @@ int mailbox_get (kmbox_t mailbox,int size,int count,unsigned int* time);
  */
 
 void mailrecvtask (void)
-    {
-    int getsize;
-    unsigned int gettime;
-    int getcount;
-    GetInfo getinfo;
+	{
+	int getsize;
+	unsigned int gettime;
+	int getcount;
+	GetInfo getinfo;
 
-    getcount = NR_OF_MBOX_RUNS;
+	getcount = NR_OF_MBOX_RUNS;
 
-    getsize = 0;
-    mailbox_get (MAILB1, getsize, getcount, &gettime);
-    getinfo.time = gettime;
-    getinfo.size = getsize;
-    getinfo.count = getcount;
-    task_fifo_put_wait (MB_COMM, &getinfo); /* acknowledge to master */
+	getsize = 0;
+	mailbox_get (MAILB1, getsize, getcount, &gettime);
+	getinfo.time = gettime;
+	getinfo.size = getsize;
+	getinfo.count = getcount;
+	task_fifo_put_wait (MB_COMM, &getinfo); /* acknowledge to master */
 
-    for (getsize = 8; getsize <= MESSAGE_SIZE; getsize <<= 1) {
+	for (getsize = 8; getsize <= MESSAGE_SIZE; getsize <<= 1) {
 	mailbox_get (MAILB1, getsize, getcount, &gettime);
 	getinfo.time = gettime;
 	getinfo.size = getsize;
 	getinfo.count = getcount;
 	task_fifo_put_wait (MB_COMM, &getinfo); /* acknowledge to master */
 	}
-    }
+	}
 
 
 /*******************************************************************************
@@ -91,32 +91,32 @@ void mailrecvtask (void)
  */
 
 int mailbox_get (
-    kmbox_t mailbox, /* the mailbox to read data from */
-    int size, /* size of each data portion */
-    int count, /* number of data portions */
-    unsigned int* time /* resulting time */
-    )
-    {
-    int i;
-    unsigned int t;
-    struct k_msg Message;
+	kmbox_t mailbox, /* the mailbox to read data from */
+	int size, /* size of each data portion */
+	int count, /* number of data portions */
+	unsigned int* time /* resulting time */
+	)
+	{
+	int i;
+	unsigned int t;
+	struct k_msg Message;
 
-    Message.tx_task = ANYTASK;
-    Message.rx_data = data_recv;
-    Message.size = size;
+	Message.tx_task = ANYTASK;
+	Message.rx_data = data_recv;
+	Message.size = size;
 
     /* sync with the sender */
-    task_sem_take_wait (SEM0);
-    t = BENCH_START ();
-    for (i = 0; i < count; i++) {
+	task_sem_take_wait (SEM0);
+	t = BENCH_START ();
+	for (i = 0; i < count; i++) {
 	task_mbox_get_wait (mailbox, &Message);
 	}
 
-    t = TIME_STAMP_DELTA_GET (t);
-    *time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
-    if (bench_test_end () < 0)
+	t = TIME_STAMP_DELTA_GET (t);
+	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
+	if (bench_test_end () < 0)
 	PRINT_OVERFLOW_ERROR ();
-    return 0;
-    }
+	return 0;
+	}
 
 #endif /* MAILBOX_BENCH */

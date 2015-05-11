@@ -65,8 +65,8 @@ extern int sys_clock_hw_cycles_per_tick;
 
 /* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
-    (((uint64_t)(X) * sys_clock_us_per_tick * NSEC_PER_USEC) / \
-     sys_clock_hw_cycles_per_tick)
+	(((uint64_t)(X) * sys_clock_us_per_tick * NSEC_PER_USEC) / \
+	 sys_clock_hw_cycles_per_tick)
 
 /*
  * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds

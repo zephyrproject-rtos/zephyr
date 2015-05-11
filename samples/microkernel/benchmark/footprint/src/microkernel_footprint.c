@@ -85,64 +85,64 @@ NANO_CPU_INT_REGISTER (isrDummyIntStub, TEST_SOFT_INT, 0);
 /* pointer array ensures specified functions are linked into the image */
 static pfunc func_array[] = {
     /* event functions */
-    (pfunc)task_event_send,
-    (pfunc)_task_event_recv,
+	(pfunc)task_event_send,
+	(pfunc)_task_event_recv,
     /* mutex functions */
-    (pfunc)_task_mutex_lock,
-    (pfunc)_task_mutex_unlock,
+	(pfunc)_task_mutex_lock,
+	(pfunc)_task_mutex_unlock,
     /* FIFO functions */
-    (pfunc)_task_fifo_put,
-    (pfunc)_task_fifo_get,
-    (pfunc)_task_fifo_ioctl,
+	(pfunc)_task_fifo_put,
+	(pfunc)_task_fifo_get,
+	(pfunc)_task_fifo_ioctl,
     /* memory map functions */
-    (pfunc)task_mem_map_used_get,
-    (pfunc)_task_mem_map_alloc,
-    (pfunc)_task_mem_map_free,
+	(pfunc)task_mem_map_used_get,
+	(pfunc)_task_mem_map_alloc,
+	(pfunc)_task_mem_map_free,
 #ifdef TEST_max
     /* task device interrupt functions */
-    (pfunc)task_irq_alloc,
-    (pfunc)_task_irq_test,
-    (pfunc)task_irq_ack,
-    (pfunc)task_irq_free,
+	(pfunc)task_irq_alloc,
+	(pfunc)_task_irq_test,
+	(pfunc)task_irq_ack,
+	(pfunc)task_irq_free,
     /* semaphore functions */
-    (pfunc)isr_sem_give,
-    (pfunc)task_sem_give,
-    (pfunc)task_sem_group_give,
-    (pfunc)task_sem_count_get,
-    (pfunc)task_sem_reset,
-    (pfunc)task_sem_group_reset,
-    (pfunc)_task_sem_take,
-    (pfunc)_task_sem_group_take,
+	(pfunc)isr_sem_give,
+	(pfunc)task_sem_give,
+	(pfunc)task_sem_group_give,
+	(pfunc)task_sem_count_get,
+	(pfunc)task_sem_reset,
+	(pfunc)task_sem_group_reset,
+	(pfunc)_task_sem_take,
+	(pfunc)_task_sem_group_take,
     /* pipe functions */
-    (pfunc)task_pipe_put,
-    (pfunc)task_pipe_put_wait,
-    (pfunc)task_pipe_put_wait_timeout,
-    (pfunc)task_pipe_get,
-    (pfunc)task_pipe_get_wait,
-    (pfunc)task_pipe_get_wait_timeout,
+	(pfunc)task_pipe_put,
+	(pfunc)task_pipe_put_wait,
+	(pfunc)task_pipe_put_wait_timeout,
+	(pfunc)task_pipe_get,
+	(pfunc)task_pipe_get_wait,
+	(pfunc)task_pipe_get_wait_timeout,
 	(pfunc)_task_pipe_put_async,
-    (pfunc)_task_pipe_put,
-    (pfunc)_task_pipe_get,
+	(pfunc)_task_pipe_put,
+	(pfunc)_task_pipe_get,
     /* mailbox functions */
-    (pfunc)_task_mbox_put,
-    (pfunc)_task_mbox_get,
-    (pfunc)_task_mbox_put_async,
-    (pfunc)_task_mbox_data_get,
-    (pfunc)_task_mbox_data_get_async_block,
+	(pfunc)_task_mbox_put,
+	(pfunc)_task_mbox_get,
+	(pfunc)_task_mbox_put_async,
+	(pfunc)_task_mbox_data_get,
+	(pfunc)_task_mbox_data_get_async_block,
     /* memory pool functions */
-    (pfunc)_task_mem_pool_alloc,
-    (pfunc)task_mem_pool_free,
-    (pfunc)task_mem_pool_defragment,
+	(pfunc)_task_mem_pool_alloc,
+	(pfunc)task_mem_pool_free,
+	(pfunc)task_mem_pool_defragment,
     /* task functions */
-    (pfunc)_task_ioctl,
-    (pfunc)_task_group_ioctl,
-    (pfunc)task_abort_handler_set,
-    (pfunc)task_entry_set,
-    (pfunc)task_priority_set,
-    (pfunc)task_sleep,
-    (pfunc)task_yield,
+	(pfunc)_task_ioctl,
+	(pfunc)_task_group_ioctl,
+	(pfunc)task_abort_handler_set,
+	(pfunc)task_entry_set,
+	(pfunc)task_priority_set,
+	(pfunc)task_sleep,
+	(pfunc)task_yield,
 #endif /* TEST_max */
-    };
+	};
 
 /*******************************************************************************
  *
@@ -152,9 +152,9 @@ static pfunc func_array[] = {
  */
 
 void dummyIsr (void *unused)
-    {
-    ARG_UNUSED (unused);
-    }
+	{
+	ARG_UNUSED (unused);
+	}
 
 #ifdef TEST_reg
 /*******************************************************************************
@@ -169,13 +169,13 @@ void dummyIsr (void *unused)
  */
 
 static void isrDummyIntStub (void *unused)
-    {
-    ARG_UNUSED (unused);
+	{
+	ARG_UNUSED (unused);
 
-    isr_dummy();
+	isr_dummy();
 
-    CODE_UNREACHABLE;
-    }
+	CODE_UNREACHABLE;
+	}
 #endif /* TEST_reg */
 
 /*******************************************************************************
@@ -191,23 +191,23 @@ static void isrDummyIntStub (void *unused)
  */
 
 void fgTaskEntry (void)
-    {
+	{
 #ifdef TEST_max
     /* dynamically link in dummy ISR */
-    irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
+	irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
 		       (void *) 0, isrDummyHandlerStub);
 #endif /* TEST_max */
 
     /* note: referencing "func_array" ensures it isn't optimized out */
 #ifdef TEST_max
-    printf ((char *)MESSAGE, func_array);
+	printf ((char *)MESSAGE, func_array);
 #else
-    printk ((char *)MESSAGE, func_array);
+	printk ((char *)MESSAGE, func_array);
 #endif /* TEST_max */
 
-    while (1) {
+	while (1) {
 	i++;
 	}
-    }
+	}
 
 #endif /* TEST_min */

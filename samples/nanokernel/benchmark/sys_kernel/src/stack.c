@@ -48,10 +48,10 @@ uint32_t stack2[2];
  */
 
 void stack_test_init (void)
-    {
-    nano_stack_init (&nanoChannel1, stack1);
-    nano_stack_init (&nanoChannel2, stack2);
-    }
+	{
+	nano_stack_init (&nanoChannel1, stack1);
+	nano_stack_init (&nanoChannel2, stack2);
+	}
 
 
 /*******************************************************************************
@@ -64,16 +64,16 @@ void stack_test_init (void)
  */
 
 void stack_fiber1 (
-    int par1, /* ignored parameter */
-    int par2 /* number of test loops */
-    )
-    {
-    int i;
-    uint32_t data;
+	int par1, /* ignored parameter */
+	int par2 /* number of test loops */
+	)
+	{
+	int i;
+	uint32_t data;
 
-    ARG_UNUSED (par1);
+	ARG_UNUSED (par1);
 
-    for (i = 0; i < par2 / 2; i++) {
+	for (i = 0; i < par2 / 2; i++) {
 	data = nano_fiber_stack_pop_wait (&nanoChannel1);
 	if (data != 2 * i)
 	    break;
@@ -85,7 +85,7 @@ void stack_fiber1 (
 	data = 2 * i + 1;
 	nano_fiber_stack_push (&nanoChannel2, data);
 	}
-    }
+	}
 
 
 /*******************************************************************************
@@ -98,15 +98,15 @@ void stack_fiber1 (
  */
 
 void stack_fiber2 (
-    int par1, /* address of the counter */
-    int par2 /* number of test cycles */
-    )
-    {
-    int i;
-    uint32_t data;
-    int * pcounter = (int *) par1;
+	int par1, /* address of the counter */
+	int par2 /* number of test cycles */
+	)
+	{
+	int i;
+	uint32_t data;
+	int * pcounter = (int *) par1;
 
-    for (i = 0; i < par2; i++) {
+	for (i = 0; i < par2; i++) {
 	data = i;
 	nano_fiber_stack_push (&nanoChannel1, data);
 	data = nano_fiber_stack_pop_wait (&nanoChannel2);
@@ -114,7 +114,7 @@ void stack_fiber2 (
 	    break;
 	(*pcounter)++;
 	}
-    }
+	}
 
 
 /*******************************************************************************
@@ -127,15 +127,15 @@ void stack_fiber2 (
  */
 
 void stack_fiber3 (
-    int par1, /* address of the counter */
-    int par2 /* number of test cycles */
-    )
-    {
-    int i;
-    uint32_t data;
-    int * pcounter = (int *) par1;
+	int par1, /* address of the counter */
+	int par2 /* number of test cycles */
+	)
+	{
+	int i;
+	uint32_t data;
+	int * pcounter = (int *) par1;
 
-    for (i = 0; i < par2; i++) {
+	for (i = 0; i < par2; i++) {
 	data = i;
 	nano_fiber_stack_push (&nanoChannel1, data);
 	data = 0xffffffff;
@@ -145,7 +145,7 @@ void stack_fiber3 (
 	    break;
 	(*pcounter)++;
 	}
-    }
+	}
 
 
 /*******************************************************************************
@@ -158,73 +158,73 @@ void stack_fiber3 (
  */
 
 int stack_test (void)
-    {
-    uint32_t t;
-    int i = 0;
-    int return_value = 0;
+	{
+	uint32_t t;
+	int i = 0;
+	int return_value = 0;
 
     /* test get wait & put fiber functions */
-    fprintf (output_file, sz_test_case_fmt,
+	fprintf (output_file, sz_test_case_fmt,
 	     "Stack channel - 'nano_fiber_stack_pop_wait'");
-    fprintf (output_file, sz_description,
+	fprintf (output_file, sz_description,
 	     "testing 'nano_stack_init','nano_fiber_stack_pop_wait',"
 	     " 'nano_fiber_stack_push' functions;");
-    printf (sz_test_start_fmt, "'nano_fiber_stack_pop_wait'");
+	printf (sz_test_start_fmt, "'nano_fiber_stack_pop_wait'");
 
-    stack_test_init ();
+	stack_test_init ();
 
-    t = BENCH_START ();
+	t = BENCH_START ();
 
-    task_fiber_start (fiber_stack1, STACK_SIZE, stack_fiber1, 0,
+	task_fiber_start (fiber_stack1, STACK_SIZE, stack_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-    task_fiber_start (fiber_stack2, STACK_SIZE, stack_fiber2, (int) &i,
+	task_fiber_start (fiber_stack2, STACK_SIZE, stack_fiber2, (int) &i,
 		    NUMBER_OF_LOOPS, 3, 0);
 
-    t = TIME_STAMP_DELTA_GET (t);
+	t = TIME_STAMP_DELTA_GET (t);
 
-    return_value += check_result (i, t);
+	return_value += check_result (i, t);
 
     /* test get/yield & put fiber functions */
-    fprintf (output_file, sz_test_case_fmt,
+	fprintf (output_file, sz_test_case_fmt,
 	     "Stack channel - 'nano_fiber_stack_pop'");
-    fprintf (output_file, sz_description,
+	fprintf (output_file, sz_description,
 	     "testing 'nano_stack_init','nano_fiber_stack_pop_wait',"
 	     " 'nano_fiber_stack_pop',\n");
-    fprintf (output_file,
+	fprintf (output_file,
 	     "\t'nano_fiber_stack_push', 'fiber_yield' functions;");
-    printf (sz_test_start_fmt, "'nano_fiber_stack_pop'");
+	printf (sz_test_start_fmt, "'nano_fiber_stack_pop'");
 
-    stack_test_init ();
+	stack_test_init ();
 
-    t = BENCH_START ();
+	t = BENCH_START ();
 
-    i = 0;
-    task_fiber_start (fiber_stack1, STACK_SIZE, stack_fiber1, 0,
+	i = 0;
+	task_fiber_start (fiber_stack1, STACK_SIZE, stack_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-    task_fiber_start (fiber_stack2, STACK_SIZE, stack_fiber3, (int) &i,
+	task_fiber_start (fiber_stack2, STACK_SIZE, stack_fiber3, (int) &i,
 		    NUMBER_OF_LOOPS, 3, 0);
 
-    t = TIME_STAMP_DELTA_GET (t);
+	t = TIME_STAMP_DELTA_GET (t);
 
-    return_value += check_result (i, t);
+	return_value += check_result (i, t);
 
     /* test get wait & put fiber/task functions */
-    fprintf (output_file, sz_test_case_fmt,
+	fprintf (output_file, sz_test_case_fmt,
 	     "Stack channel - 'nano_task_stack_pop_wait'");
-    fprintf (output_file, sz_description,
+	fprintf (output_file, sz_description,
 	     "testing 'nano_stack_init','nano_fiber_stack_pop_wait',"
 	     " 'nano_fiber_stack_push',\n");
-    fprintf (output_file,
+	fprintf (output_file,
 	     "\t'nano_task_stack_pop_wait', 'nano_task_stack_push' functions;");
-    printf (sz_test_start_fmt, "'nano_task_stack_pop_wait'");
+	printf (sz_test_start_fmt, "'nano_task_stack_pop_wait'");
 
-    stack_test_init ();
+	stack_test_init ();
 
-    t = BENCH_START ();
+	t = BENCH_START ();
 
-    task_fiber_start (fiber_stack1, STACK_SIZE, stack_fiber1, 0,
+	task_fiber_start (fiber_stack1, STACK_SIZE, stack_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-    for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
+	for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
 	uint32_t data;
 	data = 2 * i;
 	nano_task_stack_push (&nanoChannel1, data);
@@ -239,9 +239,9 @@ int stack_test (void)
 	    break;
 	}
 
-    t = TIME_STAMP_DELTA_GET (t);
+	t = TIME_STAMP_DELTA_GET (t);
 
-    return_value += check_result (i * 2, t);
+	return_value += check_result (i * 2, t);
 
-    return return_value;
-    }
+	return return_value;
+	}

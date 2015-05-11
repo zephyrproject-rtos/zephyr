@@ -49,8 +49,8 @@ kpipe_t TestPipes[] = {
 PIPE_NOBUFF, PIPE_SMALLBUFF, PIPE_BIGBUFF};
 #endif
 const char dashline[] =
-    "|--------------------------------------"
-    "---------------------------------------|\n";
+	"|--------------------------------------"
+	"---------------------------------------|\n";
 char sline[SLINE_LEN + 1];
 const char newline[] = "\n";
 
@@ -73,7 +73,7 @@ uint32_t tm_off;
 
 int kbhit (void)
 {
-    return 0;
+	return 0;
 }
 
 
@@ -87,18 +87,18 @@ int kbhit (void)
  */
 
 void init_output (
-    int *continuously, /* run test till the user presses the key */
-    int *autorun /* expect user input */
-    )
-    {
-    ARG_UNUSED (continuously);
-    ARG_UNUSED (autorun);
+	int *continuously, /* run test till the user presses the key */
+	int *autorun /* expect user input */
+	)
+	{
+	ARG_UNUSED (continuously);
+	ARG_UNUSED (autorun);
 
     /*
      * send all printf and fprintf to console
      */
-    output_file = stdout;
-    }
+	output_file = stdout;
+	}
 
 /*******************************************************************************
  *
@@ -110,8 +110,8 @@ void init_output (
  */
 
 void output_close (void)
-    {
-    }
+	{
+	}
 
 /* no need to wait for user key press when using console */
 #define WAIT_FOR_USER() {}
@@ -128,14 +128,14 @@ void output_close (void)
 
 /* see config.h to select or to unselect*/
 void BenchTask (void)
-    {
-    int autorun = 0, continuously = 0;
+	{
+	int autorun = 0, continuously = 0;
 
-    init_output (&continuously, &autorun);
-    bench_test_init ();
+	init_output (&continuously, &autorun);
+	bench_test_init ();
 
-    PRINT_STRING (newline, output_file);
-    do {
+	PRINT_STRING (newline, output_file);
+	do {
 	PRINT_STRING (dashline, output_file);
 	PRINT_STRING ("|          S I M P L E   S E R V I C E    "
 		      "M E A S U R E M E N T S  |  nsec    |\n",
@@ -157,19 +157,19 @@ void BenchTask (void)
 	PRINT_STRING (dashline, output_file);
 	PRINT_STRING ("VXMICRO PROJECT EXECUTION SUCCESSFUL\n",output_file);
 	}
-    while (continuously && !kbhit ());
+	while (continuously && !kbhit ());
 
-    WAIT_FOR_USER ();
+	WAIT_FOR_USER ();
 
     /*
      * Make a 2 second delay. sys_clock_ticks_per_sec in this context is
      * a number of system times ticks in a second.
      */
-    if (autorun)
+	if (autorun)
 	task_sleep (2 * sys_clock_ticks_per_sec);
 
-    output_close ();
-    }
+	output_close ();
+	}
 
 
 /*******************************************************************************
@@ -182,6 +182,6 @@ void BenchTask (void)
  */
 
 void dummy_test (void)
-    {
-    return;
-    }
+	{
+	return;
+	}

@@ -58,12 +58,12 @@ static uint32_t timestamp;
 */
 
 static void latencyTestIsr (void *unused)
-    {
-    ARG_UNUSED (unused);
+	{
+	ARG_UNUSED (unused);
 
-    flagVar = 1;
-    timestamp = TIME_STAMP_DELTA_GET (0);
-    }
+	flagVar = 1;
+	timestamp = TIME_STAMP_DELTA_GET (0);
+	}
 
 /*******************************************************************************
 *
@@ -78,16 +78,16 @@ static void latencyTestIsr (void *unused)
 */
 
 static void makeInt (void)
-    {
-    initSwInterrupt (latencyTestIsr);
-    flagVar = 0;
-    raiseIntFunc ();
-    if (flagVar != 1) {
+	{
+	initSwInterrupt (latencyTestIsr);
+	flagVar = 0;
+	raiseIntFunc ();
+	if (flagVar != 1) {
 	PRINT_FORMAT (" Flag variable has not changed. FAILED\n");
 	}
-    else
+	else
 	timestamp = TIME_STAMP_DELTA_GET (timestamp);
-    }
+	}
 
 /*******************************************************************************
  *
@@ -99,16 +99,16 @@ static void makeInt (void)
  */
 
 int microIntToTask (void)
-    {
-    PRINT_FORMAT (" 1- Measure time to switch from ISR to back to"
+	{
+	PRINT_FORMAT (" 1- Measure time to switch from ISR to back to"
 		  " interrupted task");
-    TICK_SYNCH ();
-    makeInt ();
-    if (flagVar == 1) {
+	TICK_SYNCH ();
+	makeInt ();
+	if (flagVar == 1) {
 	PRINT_FORMAT (" switching time is %lu tcs = %lu nsec",
 		      timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	}
-    return 0;
-    }
+	return 0;
+	}
 
 #endif /* MICROKERNEL */

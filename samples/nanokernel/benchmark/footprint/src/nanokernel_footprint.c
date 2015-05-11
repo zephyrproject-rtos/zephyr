@@ -88,28 +88,28 @@ static char pStack[FIBER_STACK_SIZE];
 /* pointer array ensures specified functions are linked into the image */
 volatile pfunc func_array[] = {
     /* nano timer functions */
-    (pfunc)nano_timer_init,
-    (pfunc)nano_fiber_timer_start,
-    (pfunc)nano_fiber_timer_wait,
+	(pfunc)nano_timer_init,
+	(pfunc)nano_fiber_timer_start,
+	(pfunc)nano_fiber_timer_wait,
     /* nano semaphore functions */
-    (pfunc)nano_sem_init,
-    (pfunc)nano_fiber_sem_take_wait,
-    (pfunc)nano_fiber_sem_give,
+	(pfunc)nano_sem_init,
+	(pfunc)nano_fiber_sem_take_wait,
+	(pfunc)nano_fiber_sem_give,
 #ifdef TEST_max
     /* nano LIFO functions */
-    (pfunc)nano_lifo_init,
-    (pfunc)nano_fiber_lifo_put,
-    (pfunc)nano_fiber_lifo_get,
+	(pfunc)nano_lifo_init,
+	(pfunc)nano_fiber_lifo_put,
+	(pfunc)nano_fiber_lifo_get,
     /* nano stack functions */
-    (pfunc)nano_stack_init,
-    (pfunc)nano_fiber_stack_push,
-    (pfunc)nano_fiber_stack_pop,
+	(pfunc)nano_stack_init,
+	(pfunc)nano_fiber_stack_push,
+	(pfunc)nano_fiber_stack_pop,
     /* nano FIFO functions */
-    (pfunc)nano_fifo_init,
-    (pfunc)nano_fiber_fifo_put,
-    (pfunc)nano_fiber_fifo_get,
+	(pfunc)nano_fifo_init,
+	(pfunc)nano_fiber_fifo_put,
+	(pfunc)nano_fiber_fifo_get,
 #endif /* TEST_max */
-    };
+	};
 
 /*******************************************************************************
  *
@@ -119,9 +119,9 @@ volatile pfunc func_array[] = {
  */
 
 void dummyIsr (void *unused)
-    {
-    ARG_UNUSED (unused);
-    }
+	{
+	ARG_UNUSED (unused);
+	}
 
 #ifdef TEST_reg
 /*******************************************************************************
@@ -136,13 +136,13 @@ void dummyIsr (void *unused)
  */
 
 static void isrDummyIntStub (void *unused)
-    {
-    ARG_UNUSED (unused);
+	{
+	ARG_UNUSED (unused);
 
-    isr_dummy();
+	isr_dummy();
 
-    CODE_UNREACHABLE;
-    }
+	CODE_UNREACHABLE;
+	}
 #endif /* TEST_reg */
 
 /*******************************************************************************
@@ -153,19 +153,19 @@ static void isrDummyIntStub (void *unused)
  */
 
 static void fiberEntry
-    (
-    int  message,	/* message to be printed */
-    int  arg1		/* unused */
-    )
-    {
-    ARG_UNUSED (arg1);
+	(
+	int  message,	/* message to be printed */
+	int  arg1		/* unused */
+	)
+	{
+	ARG_UNUSED (arg1);
 
 #ifdef TEST_max
-    printf ((char *)message);
+	printf ((char *)message);
 #else
-    printk ((char *)message);
+	printk ((char *)message);
 #endif /* TEST_max */
-    }
+	}
 
 #endif /* !TEST_min */
 
@@ -180,19 +180,19 @@ static void fiberEntry
  */
 
 void main (void)
-    {
+	{
 #ifdef TEST_max
     /* dynamically link in dummy ISR */
-    irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
+	irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
 		       (void *) 0, isrDummyHandlerStub);
 #endif /* TEST_max */
 #ifndef TEST_min
     /* start a trivial fiber */
-    task_fiber_start (pStack, FIBER_STACK_SIZE, fiberEntry, (int) MESSAGE,
+	task_fiber_start (pStack, FIBER_STACK_SIZE, fiberEntry, (int) MESSAGE,
 		    (int) func_array, 10, 0);
 #endif /* !TEST_min */
 
-    while (1) {
+	while (1) {
 	i++;
 	}
-    }
+	}
