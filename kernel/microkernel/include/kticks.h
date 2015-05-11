@@ -36,8 +36,6 @@
 #include "microkernel/k_types.h"
 #include "microkernel/k_struct.h"
 
-extern K_TIMER *_k_timer_list_head;
-extern K_TIMER *_k_timer_list_tail;
 extern int64_t _k_sys_clock_tick_count;
 
 extern void enlist_timer(K_TIMER *T);
