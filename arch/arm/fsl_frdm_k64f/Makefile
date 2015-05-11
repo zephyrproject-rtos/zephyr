@@ -1,5 +1,6 @@
 EXTRA_CFLAGS +=-I$(srctree)/include/bsp
 EXTRA_CFLAGS +=-I$(srctree)/include/drivers
+EXTRA_CFLAGS +=-I$(srctree)/drivers
 EXTRA_CFLAGS +=-I$(srctree)/arch/arm/fsl_frdm_k64f
 
 EXTRA_AFLAGS := ${EXTRA_CFLAGS}

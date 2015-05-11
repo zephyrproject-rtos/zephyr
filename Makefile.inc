@@ -34,7 +34,7 @@ rm-files:= final-linker.cmd linker.cmd modules.order \
 	*kernel.map *kernel.elf qemu.pid
 rm-objects:= *.o
 rm-dirs := arch drivers include kernel lib misc \
-	scripts source
+	scripts source net
 
 cmd_clean_inner_files = \
 	 $(shell cd $(PROJECT_BASE);rm $(rm-files) -f; rm $(rm-dirs) -rf)

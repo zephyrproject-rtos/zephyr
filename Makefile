@@ -575,7 +575,7 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf \
 	$(Q)$(MAKE) $(build)=$(@)
 
 # Objects we will link into tinymountain / subdirs we need to visit
-core-y := arch/ kernel/ misc/ lib/
+core-y := arch/ kernel/ misc/ lib/ net/
 bsp-y  := drivers/
 
 ifneq ($(strip $(PROJECT)),)
@@ -1529,7 +1529,7 @@ QEMU_FLAGS = $(QEMU_FLAGS_$(SRCARCH)) -pidfile qemu.pid
 qemu: tinymountain
 	@echo "To exit from QEMU enter: 'CTRL+a, x'"
 	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(SRCARCH))'
-	$(Q)$(QEMU) $(QEMU_FLAGS) -kernel $(KERNEL_NAME).elf
+	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_NAME).elf
 
 # Single targets
 # ---------------------------------------------------------------------------

@@ -47,3 +47,5 @@ config DRV_RANDOM
 	This option enables the random number generator driver.
 
 source "drivers/random/Kconfig"
+
+source "drivers/bluetooth/Kconfig"
