@@ -303,6 +303,7 @@ def kernel_main_c_header():
         do_not_edit_warning +
         "\n" +
         "#include <microkernel.h>\n" +
+        "#include <microkernel/entries.h>\n" +
         "#include <toolchain.h>\n" +
         "#include <sections.h>\n" +
         "#include <vxmicro.h>\n")

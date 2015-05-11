@@ -101,8 +101,6 @@ extern PFN_CHANNEL_RWT pKS_Channel_GetWT; /* maps to KS__ChannelGetWT
 
 /* base API functions */
 
-extern void _pipe_init(void);
-
 extern int _task_pipe_put(kpipe_t id,
 		       void *pBuffer,
 		       int iNbrBytesToWrite,

@@ -34,6 +34,7 @@
 #define MINIK_H
 
 #include <microkernel/k_struct.h>
+#include <microkernel/entries.h>
 #include <clock_vars.h>
 
 #define KERNEL_ENTRY(A) _k_task_call(A)

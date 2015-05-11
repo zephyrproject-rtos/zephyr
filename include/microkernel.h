@@ -38,7 +38,6 @@
 #include <cputype.h>
 #include <microkernel/k_types.h>
 #include <microkernel/k_struct.h>
-#include <microkernel/entries.h>
 #include <clock_vars.h>
 
 #include <microkernel/task.h>
@@ -68,9 +67,6 @@ extern int task_offload_to_fiber(int (*)(), void *);
 /* The following two typedefs are used in kernel_main.c */
 typedef void (*taskstartfunction)(void);
 typedef void (*taskabortfunction)(void);
-
-/* Miscellaneous */
-extern void kernel_init(void);
 
 extern PFN_CHANNEL_RWT pKS_Channel_PutWT;
 extern PFN_CHANNEL_RWT pKS_Channel_GetWT;

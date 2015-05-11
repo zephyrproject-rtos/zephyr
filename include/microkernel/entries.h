@@ -39,6 +39,16 @@
 extern "C" {
 #endif
 
+/* Non-public microkernel APIs referenced by kernel_main.c */
+
+extern void _pipe_init(void);
+extern void _mem_map_init(void);
+extern void _mem_pools_init(void);
+extern void kernel_init(void);
+extern int kernel_idle(void);
+
+/* Format of routines invoked by microkernel server */
+
 typedef void (*kernelfunc)(struct k_args *);
 
 /* Jumptable entrypoints */
