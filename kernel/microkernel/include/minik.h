@@ -152,8 +152,6 @@ extern void delist_timeout(struct k_timer *T);
 extern void enlist_timeout(struct k_args *A);
 extern void force_timeout(struct k_args *A);
 
-extern void init_drivers(void);
-
 /*
  * The task status flags may be OR'ed together to form a task's state.  The
  * existence of one or more non-zero bits indicates that the task can not be

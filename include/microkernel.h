@@ -71,8 +71,6 @@ typedef void (*taskabortfunction)(void);
 
 /* Miscellaneous */
 extern void kernel_init(void);
-extern void init_node(void);    /* generated function */
-extern void init_drivers(void); /* generated function */
 
 extern PFN_CHANNEL_RWT pKS_Channel_PutWT;
 extern PFN_CHANNEL_RWT pKS_Channel_GetWT;
