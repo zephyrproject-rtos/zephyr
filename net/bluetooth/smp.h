@@ -54,7 +54,7 @@ struct bt_smp_hdr {
 
 #define BT_SMP_CMD_PAIRING_FAIL			0x05
 struct bt_smp_pairing_fail {
-	uint8_t reason;
+	uint8_t  reason;
 } PACK_STRUCT;
 
 void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf);
