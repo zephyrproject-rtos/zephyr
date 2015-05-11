@@ -33,8 +33,6 @@
 #ifndef _KEVENT_H
 #define _KEVENT_H
 
-extern struct evstr _k_event_list[];
-
 extern const int _k_num_events;
 
 extern void _k_event_signal(struct k_args *A);

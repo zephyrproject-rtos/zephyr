@@ -37,6 +37,8 @@
 #include <toolchain.h>
 #include <sections.h>
 
+extern struct evstr _k_event_list[];
+
 /*******************************************************************************
 *
 * _k_event_handler_set - perform set event handler request
