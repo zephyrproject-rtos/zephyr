@@ -326,6 +326,7 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 		BT_DBG("handle %u count %u\n", handle, count);
 
 		while (count--) {
+			nano_fiber_sem_give(&dev.le_pkts_sem);
 			buf = nano_fiber_fifo_get(&dev.acl_pend);
 			if (!buf) {
 				BT_ERR("Mismatch with pending ACL buffers\n");
@@ -530,7 +531,7 @@ static int hci_init(void)
 	struct bt_hci_cp_set_event_mask *ev;
 	struct bt_buf *buf, *rsp;
 	uint8_t *enable;
-	int err;
+	int i, err;
 
 	/* Send HCI_RESET */
 	bt_hci_cmd_send(BT_HCI_OP_RESET, NULL);
@@ -659,6 +660,13 @@ static int hci_init(void)
 	BT_DBG("HCI ver %u rev %u, manufacturer %u\n", dev.hci_version,
 	       dev.hci_revision, dev.manufacturer);
 	BT_DBG("ACL buffers: pkts %u mtu %u\n", dev.le_pkts, dev.le_mtu);
+
+	/* Initialize & prime the semaphore for counting controller-side
+	 * available ACL packet buffers.
+	 */
+	nano_sem_init(&dev.le_pkts_sem);
+	for (i = 0; i < dev.le_pkts; i++)
+		nano_sem_give(&dev.le_pkts_sem);
 
 	return 0;
 }
