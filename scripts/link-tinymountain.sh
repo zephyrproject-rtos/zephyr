@@ -70,6 +70,7 @@ linker_command()
 initial_link()
 {
 	${CC} -o ${1} @${2}  -T ${3}
+	cp ${KLIBC_DIR}/lib.a ${KLIBC_DIR}/libc.a
 }
 
 #Generates IDT and merge them into final binary

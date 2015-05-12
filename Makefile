@@ -7,7 +7,7 @@ PATCHLEVEL 	   = 0
 SUBLEVEL	   = 0
 NAME 		   = Tiny Mountain
 
-export SOURCE_DIR PROJECT VPFILE
+export SOURCE_DIR PROJECT VPFILE KLIBC_DIR
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
@@ -575,8 +575,10 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf \
 	$(Q)$(MAKE) $(build)=$(@)
 
 # Objects we will link into tinymountain / subdirs we need to visit
-core-y := arch/ kernel/ misc/ lib/ net/
+KLIBC_DIR := lib/libc/minimal
+core-y := arch/ kernel/ misc/ net/
 bsp-y  := drivers/
+libs-y := $(KLIBC_DIR)/
 
 ifneq ($(strip $(PROJECT)),)
 core-y += $(SOURCE_DIR)
