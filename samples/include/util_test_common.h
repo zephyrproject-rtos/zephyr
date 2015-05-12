@@ -42,6 +42,4 @@ Common utility-type macros for use in the sample projects.
 #define SECONDS(x) ((x) * sys_clock_ticks_per_sec)
 #define MSEC(x)    (((x) * sys_clock_ticks_per_sec) / 1000)
 
-#define NELEMENTS(x) (sizeof(x) / sizeof(x[0]))
-
 #endif /* _UTIL_TEST_COMMON__H_ */

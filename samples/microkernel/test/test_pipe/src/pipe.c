@@ -47,10 +47,9 @@ The following target pipe routine does not yet have a test case:
 #include <nanokernel/cpu.h>
 #include <tc_util.h>
 #include <vxmicro.h>
+#include <misc/util.h>
 
 /* defines */
-
-#define  NELEMENTS(x)   (sizeof(x) / sizeof(x[0]))
 
 #define  ONE_SECOND     (sys_clock_ticks_per_sec)
 
@@ -341,24 +340,24 @@ int pipePutHelper(void)
 {
 	int  rv;   /* return value from pipePutHelperWork() */
 
-	rv = pipePutHelperWork (all_N, NELEMENTS(all_N),
-		                       many_all_N, NELEMENTS(many_all_N));
+	rv = pipePutHelperWork (all_N, ARRAY_SIZE(all_N),
+		                       many_all_N, ARRAY_SIZE(many_all_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on all_N/many_all_N test\n");
 		return TC_FAIL;
 		}
 
-	rv = pipePutHelperWork (one_to_N, NELEMENTS(one_to_N),
-		                       many_one_to_N, NELEMENTS(many_one_to_N));
+	rv = pipePutHelperWork (one_to_N, ARRAY_SIZE(one_to_N),
+		                       many_one_to_N, ARRAY_SIZE(many_one_to_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _1_TO_N/many_1_TO_N test\n");
 		return TC_FAIL;
 		}
 
-	rv = pipePutHelperWork (zero_to_N, NELEMENTS(zero_to_N),
-		                       many_zero_to_N, NELEMENTS(many_zero_to_N));
+	rv = pipePutHelperWork (zero_to_N, ARRAY_SIZE(zero_to_N),
+		                       many_zero_to_N, ARRAY_SIZE(many_zero_to_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _0_TO_N/many_0_TO_N test\n");
@@ -478,24 +477,24 @@ int pipePutTest(void)
 {
 	int  rv;    /* return value from pipePutTestWork() */
 
-	rv = pipePutTestWork (all_N, NELEMENTS(all_N),
-		                     many_all_N, NELEMENTS(many_all_N));
+	rv = pipePutTestWork (all_N, ARRAY_SIZE(all_N),
+		                     many_all_N, ARRAY_SIZE(many_all_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _ALL_N/many_ALL_N test\n");
 		return TC_FAIL;
 		}
 
-	rv = pipePutTestWork (one_to_N, NELEMENTS(one_to_N),
-		                     many_one_to_N, NELEMENTS(many_one_to_N));
+	rv = pipePutTestWork (one_to_N, ARRAY_SIZE(one_to_N),
+		                     many_one_to_N, ARRAY_SIZE(many_one_to_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _1_TO_N/many_1_TO_N test\n");
 		return TC_FAIL;
 		}
 
-	rv = pipePutTestWork (zero_to_N, NELEMENTS(zero_to_N),
-		                     many_zero_to_N, NELEMENTS(many_zero_to_N));
+	rv = pipePutTestWork (zero_to_N, ARRAY_SIZE(zero_to_N),
+		                     many_zero_to_N, ARRAY_SIZE(many_zero_to_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _0_TO_N/many_0_TO_N test\n");
@@ -812,9 +811,9 @@ int pipeGetTest(void)
 	int  size[] ={1, PIPE_SIZE - 1, PIPE_SIZE, PIPE_SIZE + 1};
 	K_PIPE_OPTION  options[] = {_ALL_N, _1_TO_N};
 
-	for (j = 0; j < NELEMENTS(options); j++)
+	for (j = 0; j < ARRAY_SIZE(options); j++)
 		{
-		for (i = 0; i < NELEMENTS(size); i++)
+		for (i = 0; i < ARRAY_SIZE(size); i++)
 		    {
 		    rv = task_pipe_get (pipeId, rxBuffer, size[i],
 		                        &bytesRead, options[j]);
@@ -826,7 +825,7 @@ int pipeGetTest(void)
 		    }
 		}
 
-	for (i = 0; i < NELEMENTS(size); i++)
+	for (i = 0; i < ARRAY_SIZE(size); i++)
 		{
 		rv = task_pipe_get (pipeId, rxBuffer, size[i],
 		                    &bytesRead, _0_TO_N);
@@ -898,14 +897,14 @@ int pipeGetWaitHelper(void)
 
 	(void)task_sem_take_wait (altSem);
 
-	rv = pipeGetWaitHelperWork (wait_all_N, NELEMENTS(wait_all_N));
+	rv = pipeGetWaitHelperWork (wait_all_N, ARRAY_SIZE(wait_all_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _ALL_N test\n");
 		return TC_FAIL;
 		}
 
-	rv = pipeGetWaitHelperWork (wait_one_to_N, NELEMENTS(wait_one_to_N));
+	rv = pipeGetWaitHelperWork (wait_one_to_N, ARRAY_SIZE(wait_one_to_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _1_TO_N test\n");
@@ -967,14 +966,14 @@ int pipeGetWaitTest(void)
 
 	task_sem_give (altSem);   /* Wake AlternateTask */
 
-	rv = pipeGetWaitTestWork (wait_all_N, NELEMENTS(wait_all_N));
+	rv = pipeGetWaitTestWork (wait_all_N, ARRAY_SIZE(wait_all_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _ALL_N test\n");
 		return TC_FAIL;
 		}
 
-	rv = pipeGetWaitTestWork (wait_one_to_N, NELEMENTS(wait_one_to_N));
+	rv = pipeGetWaitTestWork (wait_one_to_N, ARRAY_SIZE(wait_one_to_N));
 	if (rv != TC_PASS)
 		{
 		TC_ERROR ("Failed on _1_TO_N test\n");
@@ -1005,7 +1004,7 @@ int pipeGetTimeoutTest(void)
 	int  rv;         /* return value from task_pipe_get_wait_timeout() */
 	int  bytesRead;  /* # of bytes read from task_pipe_get_wait_timeout() */
 
-	for (i = 0; i < NELEMENTS(timeout_cases); i++)
+	for (i = 0; i < ARRAY_SIZE(timeout_cases); i++)
 		{
 		rv = task_pipe_get_wait_timeout (pipeId, rxBuffer, timeout_cases[i].size,
 		                      &bytesRead, timeout_cases[i].options, ONE_SECOND);

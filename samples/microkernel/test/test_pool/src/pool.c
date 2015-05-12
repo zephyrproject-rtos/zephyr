@@ -44,10 +44,9 @@ This modules tests the following memory pool routines:
 #include <nanokernel.h>
 #include <nanokernel/cpu.h>
 #include <vxmicro.h>
+#include <misc/util.h>
 
 /* defines */
-
-#define  NELEMENTS(x)   (sizeof(x) / sizeof(x[0]))
 
 #define  ONE_SECOND     (sys_clock_ticks_per_sec)
 #define  TENTH_SECOND   (sys_clock_ticks_per_sec / 10)
@@ -246,20 +245,20 @@ int poolBlockGetTest(void)
 
 	for (j = 0; j < 8; j++) {
 		rv = poolBlockGetWork("task_mem_pool_alloc", poolBlockGetFunc,
-							  getSet, NELEMENTS(getSet));
+							  getSet, ARRAY_SIZE(getSet));
 		if (rv != TC_PASS) {
 			return TC_FAIL;
 		}
 
-		freeBlocks(getSet, NELEMENTS(getSet));
+		freeBlocks(getSet, ARRAY_SIZE(getSet));
 
 		rv = poolBlockGetWork("task_mem_pool_alloc", poolBlockGetFunc,
-							  getSet2, NELEMENTS(getSet2));
+							  getSet2, ARRAY_SIZE(getSet2));
 		if (rv != TC_PASS) {
 			return TC_FAIL;
 		}
 
-		freeBlocks(getSet2, NELEMENTS(getSet2));
+		freeBlocks(getSet2, ARRAY_SIZE(getSet2));
 	}
 
 	return TC_PASS;
@@ -295,12 +294,12 @@ int poolBlockGetTimeoutTest(void)
 
 	for (j = 0; j < 8; j++) {
 		rv = poolBlockGetWork("task_mem_pool_alloc_wait_timeout", poolBlockGetWTFunc,
-							  getwtSet, NELEMENTS(getwtSet));
+							  getwtSet, ARRAY_SIZE(getwtSet));
 		if (rv != TC_PASS) {
 			return TC_FAIL;
 		}
 
-		freeBlocks(getwtSet, NELEMENTS(getwtSet));
+		freeBlocks(getwtSet, ARRAY_SIZE(getwtSet));
 	}
 
 	rv = task_mem_pool_alloc_wait_timeout(&helperBlock, POOL_ID, 3148, 5);
@@ -406,7 +405,7 @@ int poolDefragTest(void)
 	/* Get a bunch of blocks */
 
 	rv = poolBlockGetWork("task_mem_pool_alloc", poolBlockGetFunc,
-						  defrag, NELEMENTS(defrag));
+						  defrag, ARRAY_SIZE(defrag));
 	if (rv != TC_PASS) {
 		return TC_FAIL;
 	}
@@ -435,7 +434,7 @@ int poolDefragTest(void)
 
 	/* Free the allocated blocks */
 
-	freeBlocks(defrag, NELEMENTS(defrag));
+	freeBlocks(defrag, ARRAY_SIZE(defrag));
 
 	return TC_PASS;
 }
