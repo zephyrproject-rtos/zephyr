@@ -59,7 +59,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 	while (A && S->Level) {
 		X = A->Forw;
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Comm == WAITSREQ || A->Comm == WAITSTMO)
 #else
 		if (A->Comm == WAITSREQ)
@@ -70,7 +70,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 				Y->Forw = X;
 			else
 				S->Waiters = X;
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.timer) {
 				force_timeout(A);
 				A->Comm = WAITSRPL;
@@ -78,7 +78,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 #endif
 				A->Time.rcode = RC_OK;
 					reset_state_bit(A->Ctxt.proc, TF_SEMA);
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			}
 #endif
 		}
@@ -224,7 +224,7 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 {
 	ksem_t *L;
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
 #endif
@@ -261,7 +261,7 @@ void _k_sem_group_ready(struct k_args *R)
 	if (A->Args.s1.sema == ENDLIST) {
 		A->Args.s1.sema = R->Args.s1.sema;
 		A->Comm = WAITMTMO;
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer)
 			force_timeout(A);
 		else
@@ -280,7 +280,7 @@ void _k_sem_group_ready(struct k_args *R)
 
 void _k_sem_wait_reply(struct k_args *A)
 {
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
 	if (A->Comm == WAITSTMO) {
@@ -367,7 +367,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 	A->Ctxt.proc = _k_current_task;
 	set_state_bit(_k_current_task, TF_LIST);
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (A->Time.ticks != TICKS_NONE) {
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;
@@ -402,7 +402,7 @@ void _k_sem_wait_request(struct k_args *A)
 		A->Prio = _k_current_task->Prio;
 		set_state_bit(_k_current_task, TF_SEMA);
 		INSERT_ELM(S->Waiters, A);
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;
 		else {

@@ -61,14 +61,14 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
 #define task_mbox_put(b, p, m) _task_mbox_put(b, p, m, TICKS_NONE)
 #define task_mbox_put_wait(b, p, m) _task_mbox_put(b, p, m, TICKS_UNLIMITED)
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define task_mbox_put_wait_timeout(b, p, m, t) _task_mbox_put(b, p, m, t)
 #endif
 
 #define task_mbox_get(b, m) _task_mbox_get(b, m, TICKS_NONE)
 #define task_mbox_get_wait(b, m) _task_mbox_get(b, m, TICKS_UNLIMITED)
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define task_mbox_get_wait_timeout(b, m, t) _task_mbox_get(b, m, t)
 #endif
 
@@ -79,7 +79,7 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
 #define task_mbox_data_get_async_block_wait(m, b, p) \
 	_task_mbox_data_get_async_block(m, b, p, TICKS_UNLIMITED)
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define task_mbox_data_get_async_block_wait_timeout(m, b, p, t) \
 		_task_mbox_data_get_async_block(m, b, p, t)
 #endif

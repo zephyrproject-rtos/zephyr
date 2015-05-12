@@ -119,7 +119,7 @@ void _k_mem_map_alloc(struct k_args *A)
 		A->Ctxt.proc = _k_current_task;
 		set_state_bit(_k_current_task, TF_ALLO);
 		INSERT_ELM(M->Waiters, A);
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;
 		else {
@@ -177,7 +177,7 @@ void _k_mem_map_dealloc(struct k_args *A)
 		*(X->Args.a1.mptr) = M->Free;
 		M->Free = *(char **)(M->Free);
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (X->Time.timer) {
 			delist_timeout(X->Time.timer);
 			X->Comm = NOP;

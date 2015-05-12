@@ -46,14 +46,14 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
 #define task_fifo_put(q, p) _task_fifo_put(q, p, TICKS_NONE)
 #define task_fifo_put_wait(q, p) _task_fifo_put(q, p, TICKS_UNLIMITED)
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define task_fifo_put_wait_timeout(q, p, t) _task_fifo_put(q, p, t)
 #endif
 
 #define task_fifo_get(q, p) _task_fifo_get(q, p, TICKS_NONE)
 #define task_fifo_get_wait(q, p) _task_fifo_get(q, p, TICKS_UNLIMITED)
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define task_fifo_get_wait_timeout(q, p, t) _task_fifo_get(q, p, t)
 #endif
 

@@ -43,7 +43,7 @@ extern void _task_mutex_unlock(kmutex_t);
 #define task_mutex_lock(m) _task_mutex_lock(m, TICKS_NONE)
 #define task_mutex_lock_wait(m) _task_mutex_lock(m, TICKS_UNLIMITED)
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define task_mutex_lock_wait_timeout(m, t) _task_mutex_lock(m, t)
 #endif
 

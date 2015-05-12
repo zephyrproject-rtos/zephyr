@@ -60,7 +60,7 @@ static kpriority_t slice_prio =
 int32_t _sys_idle_elapsed_ticks = 0; /* Initial value must be 0 */
 #endif
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
 int sys_clock_hw_cycles_per_tick =
 	sys_clock_hw_cycles_per_sec / sys_clock_ticks_per_sec;

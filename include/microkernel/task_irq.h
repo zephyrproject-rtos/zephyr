@@ -56,7 +56,7 @@ extern void task_irq_free(kirq_t irq_obj);
 #define task_irq_test(irq_obj) _task_irq_test(irq_obj, TICKS_NONE)
 #define task_irq_test_wait(irq_obj) _task_irq_test(irq_obj, TICKS_UNLIMITED)
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define task_irq_test_wait_timeout(irq_obj, time) _task_irq_test(irq_obj, time)
 #endif
 

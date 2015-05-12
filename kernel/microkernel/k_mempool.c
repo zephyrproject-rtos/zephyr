@@ -453,7 +453,7 @@ void _k_block_waiters_get(struct k_args *A)
 
 			/* reschedule task */
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (curr_task->Time.timer) {
 				delist_timeout(curr_task->Time.timer);
 			}
@@ -541,7 +541,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 		/* INSERT_ELM (P->frag_tab[offset].Waiters, A); */
 		INSERT_ELM(P->Waiters, A);
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;
 		} else {

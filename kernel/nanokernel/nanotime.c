@@ -37,7 +37,7 @@
 #include <sections.h>
 #include <drivers/system_timer.h>
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
 int sys_clock_hw_cycles_per_tick =
 	sys_clock_hw_cycles_per_sec / sys_clock_ticks_per_sec;

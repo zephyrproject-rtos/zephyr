@@ -45,7 +45,7 @@
 
 void _k_fifo_enque_reply(struct k_args *A)
 {
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
 	if (unlikely(A->Comm == ENQ_TMO)) {
@@ -87,7 +87,7 @@ void _k_fifo_enque_request(struct k_args *A)
 			p = W->Args.q1.data;
 			k_memcpy(p, q, w);
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (W->Time.timer) {
 				force_timeout(W);
 				W->Comm = DEQ_RPL;
@@ -96,7 +96,7 @@ void _k_fifo_enque_request(struct k_args *A)
 				W->Time.rcode = RC_OK;
 					reset_state_bit(W->Ctxt.proc, TF_DEQU);
 			}
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		}
 #endif
 		else {
@@ -124,7 +124,7 @@ void _k_fifo_enque_request(struct k_args *A)
 				A->Prio = _k_current_task->Prio;
 				set_state_bit(_k_current_task, TF_ENQU);
 			INSERT_ELM(Q->Waiters, A);
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.ticks == TICKS_UNLIMITED)
 				A->Time.timer = NULL;
 			else {
@@ -172,7 +172,7 @@ int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 
 void _k_fifo_deque_reply(struct k_args *A)
 {
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
 	if (unlikely(A->Comm == DEQ_TMO)) {
@@ -230,7 +230,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			else
 				Q->Enqp = p;
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (W->Time.timer) {
 				force_timeout(W);
 				W->Comm = ENQ_RPL;
@@ -238,7 +238,7 @@ void _k_fifo_deque_request(struct k_args *A)
 #endif
 				W->Time.rcode = RC_OK;
 				reset_state_bit(W->Ctxt.proc, TF_ENQU);
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			}
 #endif
 #ifdef CONFIG_OBJECT_MONITOR
@@ -253,7 +253,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			set_state_bit(_k_current_task, TF_DEQU);
 
 			INSERT_ELM(Q->Waiters, A);
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.ticks == TICKS_UNLIMITED)
 				A->Time.timer = NULL;
 			else {
@@ -316,7 +316,7 @@ void _k_fifo_ioctl(struct k_args *A)
 
 			while ((X = Q->Waiters)) {
 				Q->Waiters = X->Forw;
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 				if (likely(X->Time.timer)) {
 					force_timeout(X);
 					X->Comm = ENQ_RPL;
@@ -324,7 +324,7 @@ void _k_fifo_ioctl(struct k_args *A)
 #endif
 					X->Time.rcode = RC_FAIL;
 					reset_state_bit(X->Ctxt.proc, TF_ENQU);
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 				}
 #endif
 			}

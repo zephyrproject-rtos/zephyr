@@ -391,7 +391,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 			}
 			CopyReader->Forw = NULL;
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (CopyReader->Time.timer != NULL) {
 				/*
 				 * The reader was trying to handshake with
@@ -453,7 +453,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 		/* Put the letter into the mailbox */
 		INSERT_ELM(MailBox->Writers, CopyWriter);
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (CopyWriter->Time.ticks == TICKS_UNLIMITED) {
 			/* This is a wait operation; there is no timer. */
 			CopyWriter->Time.timer = NULL;
@@ -556,7 +556,7 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 
 void _k_mbox_receive_reply(struct k_args *pCopyReader)
 {
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	FREETIMER(pCopyReader->Time.timer);
 	REMOVE_ELM(pCopyReader);
 	pCopyReader->Time.rcode = RC_TIME;
@@ -617,7 +617,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 			}
 			CopyWriter->Forw = NULL;
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (CopyWriter->Time.timer != NULL) {
 				/*
 				 * The writer was trying to handshake with
@@ -669,7 +669,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 		/* Put the letter into the mailbox */
 		INSERT_ELM(MailBox->Readers, CopyReader);
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (CopyReader->Time.ticks == TICKS_UNLIMITED) {
 			/* This is a wait operation; there is no timer. */
 			CopyReader->Time.timer = NULL;
@@ -760,7 +760,7 @@ void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
 	M->mailbox = mbox;
 	M->extra.sema = sema;
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	A.Time.timer = NULL;
 #endif
 	A.Prio = prio;

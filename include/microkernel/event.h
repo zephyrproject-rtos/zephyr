@@ -49,7 +49,7 @@ extern int _task_event_recv(kevent_t event, int32_t time);
 #define task_event_recv(event) _task_event_recv(event, TICKS_NONE)
 #define task_event_recv_wait(event) _task_event_recv(event, TICKS_UNLIMITED)
 
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 #define task_event_recv_wait_timeout(event, time) _task_event_recv(event, time)
 #endif
 

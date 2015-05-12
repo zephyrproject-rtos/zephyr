@@ -144,7 +144,7 @@ void _k_event_test(struct k_args *A)
 					A->Ctxt.proc = _k_current_task;
 					E->waiter = A;
 					set_state_bit(_k_current_task, TF_EVNT);
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 					if (A->Time.ticks == TICKS_UNLIMITED) {
 						A->Time.timer = NULL;
 					} else {
@@ -216,7 +216,7 @@ void _k_do_event_signal(kevent_t event)
 	}
 	/* if proc waiting, will be rescheduled */
 	if (((A) != NULL) && (E->status != 0)) {
-#ifndef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer != NULL) {
 			delist_timeout(A->Time.timer);
 			A->Comm = NOP;
