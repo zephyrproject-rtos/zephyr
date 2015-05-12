@@ -1,4 +1,4 @@
-/* nanotime.c - time tracking for nanokernel-only systems */
+/* system clock support for nanokernel-only systems */
 
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.

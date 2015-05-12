@@ -32,9 +32,9 @@
 
 /*
 DESCRIPTION
-This module provides the VxMicro nanokernel (aka system-level)
-'multiple-waiter fifo' (fifo) implementation.  This module provides the
-backing implementation for the following API:
+This module provides the VxMicro nanokernel (aka system-level) 'fifo' 
+implementation. This module provides the backing implementation for the
+following APIs:
 
    nano_fifo_init
    nano_fiber_fifo_put, nano_task_fifo_put, nano_isr_fifo_put

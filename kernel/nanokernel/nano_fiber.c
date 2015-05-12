@@ -1,4 +1,4 @@
-/* nanofiber.c - VxMicro nanokernel fiber support primitives */
+/* nanokernel fiber support primitives */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-/* nanoinit.c - VxMicro nanokernel initialization module */
+/* nanokernel initialization module */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.

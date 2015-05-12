@@ -1,4 +1,4 @@
-/* nanocontextentry.c - VxMicro nanokernel context entry/exit logic */
+/* nanokernel context support */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
@@ -32,8 +32,8 @@
 
 /*
 DESCRIPTION
-This module provides a wrapper around a context entry point for starting and
-ending the context, be it a task or a fiber.
+This module provides general purpose context support, with applies to both
+tasks or fibers.
 */
 
 #include <toolchain.h>
