@@ -35,14 +35,39 @@ DESCRIPTION
 This module contains routines that are used to initialize the nanokernel.
 */
 
-#include <toolchain.h>
+#include <offsets.h>
+#include <cputype.h>
+#include <nanokernel.h>
+#include <nanokernel/cpu.h>
+#include <misc/printk.h>
+#include <drivers/rand32.h>
 #include <sections.h>
+#include <toolchain.h>
+#include <nanok.h>
 
 #ifdef CONFIG_MICROKERNEL
 #include <minik.h>
 #endif /* CONFIG_MICROKERNEL */
 
-#include <nanok.h>
+/* kernel build timestamp items */
+
+#define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
+
+#ifdef CONFIG_BUILD_TIMESTAMP
+const char * const build_timestamp = BUILD_TIMESTAMP;
+#endif
+
+/* boot banner items */
+
+#define BOOT_BANNER "****** BOOTING VXMICRO ******"
+
+#if !defined(CONFIG_BOOT_BANNER)
+#define PRINT_BOOT_BANNER() do { } while (0)
+#elif !defined(CONFIG_BUILD_TIMESTAMP)
+#define PRINT_BOOT_BANNER() printk(BOOT_BANNER "\n")
+#else
+#define PRINT_BOOT_BANNER() printk(BOOT_BANNER " %s\n", build_timestamp)
+#endif
 
 /* stack space for the background task context */
 
@@ -68,13 +93,19 @@ char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 #endif
 
 /*
- * The kernel allows a BSP to pass arguments to the background task in
- * a nanokernel-only system, or the idle task in a microkernel system,
- * but this isn't advertised at the moment since there isn't a use case
- * for this capability. However, one may arise in a future release ...
+ * entry point for background task in a nanokernel-only system,
+ * or the idle task in a microkernel system
  */
 
-extern void main(int argc, char *argv[], char *envp[]);
+extern void main(void);
+
+/* hardware initialization routine provided by BSP */
+
+extern void _InitHardware(void);
+
+/* constructor initialization */
+
+extern void _Ctors(void);
 
 /*******************************************************************************
 *
@@ -181,4 +212,99 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 #endif /* CONFIG_FP_SHARING */
 
 	nanoArchInit();
+}
+
+#ifdef CONFIG_STACK_CANARIES
+/*******************************************************************************
+ *
+ * STACK_CANARY_INIT - initialize the kernel's stack canary
+ *
+ * This macro, only called from the BSP's _Cstart() routine, is used to
+ * initialize the kernel's stack canary.  Both of the supported Intel and GNU
+ * compilers currently support the stack canary global variable
+ * <__stack_chk_guard>.  However, as this might not hold true for all future
+ * releases, the initialization of the kernel stack canary has been abstracted
+ * out for maintenance and backwards compatibility reasons.
+ *
+ * INTERNAL
+ * Modifying __stack_chk_guard directly at runtime generates a build error
+ * with ICC 13.0.2 20121114 on Windows 7. In-line assembly is used as a
+ * workaround.
+ */
+
+extern void *__stack_chk_guard;
+
+#if defined(VXMICRO_ARCH_x86)
+#define _MOVE_INSTR "movl "
+#elif defined(VXMICRO_ARCH_arm)
+#define _MOVE_INSTR "str "
+#else
+#error "Unknown VXMICRO_ARCH type"
+#endif /* VXMICRO_ARCH */
+
+#define STACK_CANARY_INIT()                                \
+	do {                                               \
+		register void *tmp;                        \
+		_Rand32Init();                             \
+		tmp = (void *)_Rand32Get();                \
+		__asm__ volatile(_MOVE_INSTR "%1, %0;\n\t" \
+				 : "=m"(__stack_chk_guard) \
+				 : "r"(tmp));              \
+	} while (0)
+
+#else /* !CONFIG_STACK_CANARIES */
+#define STACK_CANARY_INIT()
+#endif /* CONFIG_STACK_CANARIES */
+
+/*******************************************************************************
+*
+* _Cstart - initialize nanokernel
+*
+* This routine is invoked by the BSP when the system is ready to run C code.
+* The processor must be running in 32-bit mode, and the BSS must have been
+* cleared/zeroed.
+*
+* RETURNS: Does not return
+*/
+
+FUNC_NORETURN void _Cstart(void)
+{
+	/* floating point operations are NOT performed during nanokernel init */
+
+	char dummyCCS[__tCCS_NOFLOAT_SIZEOF];
+
+	/*
+	 * Initialize the nanokernel.  This step includes initializing the
+	 * interrupt subsystem, which must be performed before the
+	 * hardware initialization phase (by _InitHardware).
+	 *
+	 * For the time being don't pass any arguments to the nanokernel.
+	 */
+
+	_nano_init((tCCS *)&dummyCCS, 0, (char **)0, (char **)0);
+
+	/* perform basic hardware initialization */
+
+	_InitHardware();
+
+	STACK_CANARY_INIT();
+
+	/* invoke C++ constructors */
+	_Ctors();
+
+	/* display boot banner */
+
+	PRINT_BOOT_BANNER();
+
+	/* context switch into background context (entry function is main()) */
+
+	_nano_fiber_swap();
+
+	/*
+	 * Compiler can't tell that the above routines won't return and issues
+	 * a warning unless we explicitly tell it that control never gets this
+	 * far.
+	 */
+
+	CODE_UNREACHABLE;
 }
