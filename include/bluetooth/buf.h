@@ -106,6 +106,9 @@ uint8_t *bt_buf_push(struct bt_buf *buf, size_t len);
 /* Remove data from the beginning of the buffer */
 uint8_t *bt_buf_pull(struct bt_buf *buf, size_t len);
 
+/* Remove and convert 16 bits from the beginning of the buffer */
+uint16_t bt_buf_pull_le16(struct bt_buf *buf);
+
 /* Returns how much free space there is at the end of the buffer */
 size_t bt_buf_tailroom(struct bt_buf *buf);
 

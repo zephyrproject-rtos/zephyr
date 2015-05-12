@@ -185,6 +185,16 @@ uint8_t *bt_buf_pull(struct bt_buf *buf, size_t len)
 	return buf->data += len;
 }
 
+uint16_t bt_buf_pull_le16(struct bt_buf *buf)
+{
+	uint16_t value;
+
+	value = UNALIGNED_GET((uint16_t *)buf->data);
+	bt_buf_pull(buf, sizeof(value));
+
+	return sys_cpu_to_le16(value);
+}
+
 size_t bt_buf_headroom(struct bt_buf *buf)
 {
 	return buf->data - buf->buf;
