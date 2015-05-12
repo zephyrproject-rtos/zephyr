@@ -136,7 +136,7 @@ extern void _Ctors(void);
 * \NOMANUAL
 */
 
-void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
+void _nano_init(tCCS *dummyOutContext)
 {
 	/*
 	 * Setup enough information re: the current execution context to permit
@@ -180,9 +180,9 @@ void _nano_init(tCCS *dummyOutContext, int argc, char *argv[], char *envp[])
 		_NewContext(_k_init_and_idle_task_stack,			 /* pStackMem */
 			    CONFIG_MAIN_STACK_SIZE, /* stackSize */
 			    (_ContextEntry)main,	 /* pEntry */
-			    (_ContextArg)argc,		 /* parameter1 */
-			    (_ContextArg)argv,		 /* parameter2 */
-			    (_ContextArg)envp,		 /* parameter3 */
+			    (_ContextArg)0,	 /* parameter1 */
+			    (_ContextArg)0,	 /* parameter2 */
+			    (_ContextArg)0,	 /* parameter3 */
 			    -1,				 /* priority */
 			    0				 /* options */
 			    );
@@ -277,11 +277,9 @@ FUNC_NORETURN void _Cstart(void)
 	 * Initialize the nanokernel.  This step includes initializing the
 	 * interrupt subsystem, which must be performed before the
 	 * hardware initialization phase (by _InitHardware).
-	 *
-	 * For the time being don't pass any arguments to the nanokernel.
 	 */
 
-	_nano_init((tCCS *)&dummyCCS, 0, (char **)0, (char **)0);
+	_nano_init((tCCS *)&dummyCCS);
 
 	/* perform basic hardware initialization */
 
