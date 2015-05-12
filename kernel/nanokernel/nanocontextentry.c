@@ -43,6 +43,93 @@ ending the context, be it a task or a fiber.
 #include <nanocontextentry.h>
 #include <misc/printk.h>
 
+/*******************************************************************************
+*
+* context_self_get - return the currently executing context
+*
+* This routine returns a pointer to the context control block of the currently
+* executing context.  It is cast to a nano_context_id_t for use publically.
+*
+* RETURNS: nano_context_id_t of the currently executing context.
+*/
+
+nano_context_id_t context_self_get(void)
+{
+	return _nanokernel.current;
+}
+
+/*******************************************************************************
+*
+* context_type_get - return the type of the currently executing context
+*
+* This routine returns the type of context currently executing.
+*
+* RETURNS: nano_context_type_t of the currently executing context.
+*/
+
+nano_context_type_t context_type_get(void)
+{
+	if (_IS_IN_ISR())
+		return NANO_CTX_ISR;
+
+	if ((_nanokernel.current->flags & TASK) == TASK)
+		return NANO_CTX_TASK;
+
+	return NANO_CTX_FIBER;
+}
+
+/*******************************************************************************
+*
+* _context_essential_check - is the specified context essential?
+*
+* This routine indicates if the specified context is an essential system
+* context.  A NULL context pointer indicates that the current context is
+* to be queried.
+*
+* RETURNS: Non-zero if specified context is essential, zero if it is not
+*/
+
+int _context_essential_check(tCCS *pCtx /* pointer to context */
+					   )
+{
+	return ((pCtx == NULL) ? _nanokernel.current : pCtx)->flags & ESSENTIAL;
+}
+
+#ifdef CONFIG_CONTEXT_CUSTOM_DATA
+
+/*******************************************************************************
+*
+* context_custom_data_set - set context's custom data
+*
+* This routine sets the custom data value for the current task or fiber.
+* Custom data is not used by the kernel itself, and is freely available
+* for the context to use as it sees fit.
+*
+* RETURNS: N/A
+*/
+
+void context_custom_data_set(void *value /* new value */
+		      )
+{
+	_nanokernel.current->custom_data = value;
+}
+
+/*******************************************************************************
+*
+* context_custom_data_get - get context's custom data
+*
+* This function returns the custom data value for the current task or fiber.
+*
+* RETURNS: current handle value
+*/
+
+void *context_custom_data_get(void)
+{
+	return _nanokernel.current->custom_data;
+}
+
+#endif /* CONFIG_CONTEXT_CUSTOM_DATA */
+
 #if defined(CONFIG_CONTEXT_MONITOR)
 /*******************************************************************************
 *
@@ -158,3 +245,43 @@ FUNC_NORETURN void _context_entry(
 
 	CODE_UNREACHABLE;
 }
+/*******************************************************************************
+*
+* _insert_ccs - add a context into the list of runnable contexts
+*
+* The list of runnable contexts is maintained via a single linked list
+* in priority order.  Numerically lower priorities represent higher priority
+* contexts.
+*
+* \NOMANUAL
+*
+* RETURNS: N/A
+*/
+
+void _insert_ccs(tCCS **queue, tCCS *ccs)
+{
+	tCCS *pQ;
+
+	pQ = (tCCS *)queue;
+
+	/*
+	 * Scan the "queue" until end of list or until context with numerically
+	 * higher priority is located.  A context will be placed at the end of
+	 * the series of equal priority contexts.
+	 */
+
+	while (pQ->link && (ccs->prio >= pQ->link->prio)) {
+		pQ = pQ->link;
+	}
+
+	/*
+	 * Insert context.  A context will be placed at the end of equal
+	 * priority
+	 * contexts.
+	 */
+
+	ccs->link = pQ->link;
+	pQ->link = ccs;
+}
+
+
