@@ -88,6 +88,7 @@ config  COMMAND_STACK_SIZE
 	int
 	prompt "K_swapper command stack size (in packets)"
 	default 64
+	range 1 256
 	depends on MICROKERNEL
 	help
 	  This option specifies the maximum number of command packets that
