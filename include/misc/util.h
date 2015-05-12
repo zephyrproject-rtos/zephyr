@@ -42,6 +42,8 @@ Misc utilities usable by nanokernel, microkernel, and application code.
 extern "C" {
 #endif
 
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+
 #ifndef _ASMLANGUAGE
 
 /* round "x" up/down to next multiple of "align" (which must be a power of 2) */
