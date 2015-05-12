@@ -69,26 +69,20 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 #define PRINT_BOOT_BANNER() printk(BOOT_BANNER " %s\n", build_timestamp)
 #endif
 
-/* stack space for the background task context */
+/* stack space for the background (or idle) task context */
 
-static char __noinit _k_init_and_idle_task_stack[CONFIG_MAIN_STACK_SIZE];
-
-/* storage space for the interrupt stack */
-
-#ifndef CONFIG_NO_ISRS
+static char __noinit main_task_stack[CONFIG_MAIN_STACK_SIZE];
 
 /*
- * The symbol for the interrupt stack area is NOT static since it's
- * referenced from a BSPs crt0.s module when setting up the temporary
- * stack used during the execution of kernel initialization sequence, i.e.
- * up until the first context switch.  The dual-purposing of this area of
- * memory is safe since interrupts are disabled until the first context
- * switch.
+ * storage space for the interrupt stack
  *
- * The NO_ISRS option is only supported with the 'lxPentium4' BSP, but
- * this BSP doesn't need to setup the aforementioned temporary stack.
+ * Note: This area is used as the system stack during nanokernel initialization,
+ * since the nanokernel hasn't yet set up its own stack areas. The dual
+ * purposing of this area is safe since interrupts are disabled until the
+ * nanokernel context switches to the background (or idle) task.
  */
 
+#ifndef CONFIG_NO_ISRS
 char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 #endif
 
@@ -109,43 +103,21 @@ extern void _Ctors(void);
 
 /*******************************************************************************
 *
-* _nano_init - Initializes the nanokernel layer
+* nano_init - initializes nanokernel data structures
 *
-* This function is invoked from a BSP's initialization routine, which is in
-* turn invoked by crt0.s.  The following is a summary of the early nanokernel
-* initialization sequence:
-*
-*   crt0.s  -> _Cstart() -> _nano_init()
-*                        -> _nano_fiber_swap()
-*
-*   main () -> kernel_init () -> task_fiber_start(... K_swapper ...)
-*
-* The _nano_init() routine initializes a context for the main() routine
-* (aka background context which is a task context)), and sets _nanokernel.task
-* to the 'tCCS *' for the new context.  The _nanokernel.current field is set to
-* the provided <dummyOutContext> tCCS, however _nanokernel.fiber is set to
-* NULL.
-*
-* Thus the subsequent invocation of _nano_fiber_swap() depicted above results
-* in a context switch into the main() routine.  The <dummyOutContext> will
-* be used as the context save area for the swap.  Typically, <dummyOutContext>
-* is a temp area on the current stack (as setup by crt0.s).
+* This routine initializes various nanokernel data structures, including
+* the background (or idle) task and any architecture-specific initialization.
 *
 * RETURNS: N/A
-*
-* \NOMANUAL
 */
 
-void _nano_init(tCCS *dummyOutContext)
+static void nano_init(tCCS *dummyOutContext)
 {
 	/*
-	 * Setup enough information re: the current execution context to permit
-	 * a level of debugging output if an exception should happen to occur
-	 * during _IntLibInit() or _AppContextInit(), for example. However,
-	 * don't
-	 * waste effort initializing the fields of the dummy context beyond
-	 * those
-	 * needed to identify it as a dummy context.
+	 * Initialize the current execution context to permit a level of debugging
+	 * output if an exception should happen during nanokernel initialization.
+	 * However, don't waste effort initializing the fields of the dummy context
+	 * beyond those needed to identify it as a dummy context.
 	 */
 
 	_nanokernel.current = dummyOutContext;
@@ -160,8 +132,7 @@ void _nano_init(tCCS *dummyOutContext)
 	/*
 	 * The interrupt library needs to be initialized early since a series of
 	 * handlers are installed into the interrupt table to catch spurious
-	 * interrupts.  This must be performed before other nanokernel
-	 * subsystems
+	 * interrupts. This must be performed before other nanokernel subsystems
 	 * install bonafide handlers, or before hardware device drivers are
 	 * initialized (in the BSPs' _InitHardware).
 	 */
@@ -170,14 +141,12 @@ void _nano_init(tCCS *dummyOutContext)
 #endif
 
 	/*
-	 * Initialize the context control block (CCS) for the main (aka
-	 * background)
-	 * context.  The entry point for the background context is hardcoded as
-	 * 'main'.
+	 * Initialize the context control block (CCS) for the background task
+	 * (or idle task). The entry point for this context is 'main'.
 	 */
 
 	_nanokernel.task =
-		_NewContext(_k_init_and_idle_task_stack,			 /* pStackMem */
+		_NewContext(main_task_stack,	/* pStackMem */
 			    CONFIG_MAIN_STACK_SIZE, /* stackSize */
 			    (_ContextEntry)main,	 /* pEntry */
 			    (_ContextArg)0,	 /* parameter1 */
@@ -187,29 +156,25 @@ void _nano_init(tCCS *dummyOutContext)
 			    0				 /* options */
 			    );
 
-	/* indicate that failure of this task may be fatal to the entire system
-	 */
+	/* indicate that failure of this task may be fatal to the entire system */
 
 	_nanokernel.task->flags |= ESSENTIAL;
 
 #if defined(CONFIG_MICROKERNEL)
-	/* fill in microkernel's TCB, which is the last element in _k_task_list[]
-	 */
+	/* fill in microkernel's TCB with info about the idle task */
 
 	_k_task_list[_k_task_count].workspace = (char *)_nanokernel.task;
 	_k_task_list[_k_task_count].worksize = CONFIG_MAIN_STACK_SIZE;
 #endif
 
-	/*
-	 * Initialize the nanokernel (tNANO) structure specifying the dummy
-	 * context
-	 * as the currently executing fiber context.
-	 */
+	/* indicate that no fibers are ready to run */
 
 	_nanokernel.fiber = NULL;
 #ifdef CONFIG_FP_SHARING
 	_nanokernel.current_fp = NULL;
 #endif /* CONFIG_FP_SHARING */
+
+	/* perform any architecture-specific initialization */
 
 	nanoArchInit();
 }
@@ -219,12 +184,8 @@ void _nano_init(tCCS *dummyOutContext)
  *
  * STACK_CANARY_INIT - initialize the kernel's stack canary
  *
- * This macro, only called from the BSP's _Cstart() routine, is used to
- * initialize the kernel's stack canary.  Both of the supported Intel and GNU
- * compilers currently support the stack canary global variable
- * <__stack_chk_guard>.  However, as this might not hold true for all future
- * releases, the initialization of the kernel stack canary has been abstracted
- * out for maintenance and backwards compatibility reasons.
+ * This macro initializes the kernel's stack canary global variable,
+ * __stack_chk_guard, with a random value.
  *
  * INTERNAL
  * Modifying __stack_chk_guard directly at runtime generates a build error
@@ -274,20 +235,23 @@ FUNC_NORETURN void _Cstart(void)
 	char dummyCCS[__tCCS_NOFLOAT_SIZEOF];
 
 	/*
-	 * Initialize the nanokernel.  This step includes initializing the
-	 * interrupt subsystem, which must be performed before the
-	 * hardware initialization phase (by _InitHardware).
+	 * Initialize nanokernel data structures. This step includes
+	 * initializing the interrupt subsystem, which must be performed
+	 * before the hardware initialization phase.
 	 */
 
-	_nano_init((tCCS *)&dummyCCS);
+	nano_init((tCCS *)&dummyCCS);
 
 	/* perform basic hardware initialization */
 
 	_InitHardware();
 
+	/* initialize stack canaries */
+
 	STACK_CANARY_INIT();
 
 	/* invoke C++ constructors */
+
 	_Ctors();
 
 	/* display boot banner */
