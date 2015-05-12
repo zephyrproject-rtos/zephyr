@@ -41,6 +41,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/uuid.h>
+#include <bluetooth/gatt.h>
 
 #include "hci_core.h"
 #include "conn.h"

@@ -32,6 +32,18 @@
 #ifndef __BT_UUID_H
 #define __BT_UUID_H
 
+#define BT_UUID_GAP				0x1800
+#define BT_UUID_GATT				0x1801
+#define BT_UUID_GATT_PRIMARY			0x2800
+#define BT_UUID_GATT_SECONDARY			0x2801
+#define BT_UUID_GATT_INCLUDE			0x2802
+#define BT_UUID_GATT_CHRC			0x2803
+#define BT_UUID_GATT_CEP			0x2900
+#define BT_UUID_GATT_CUD			0x2901
+#define BT_UUID_GATT_CCC			0x2902
+#define BT_UUID_GAP_DEVICE_NAME			0x2a00
+#define BT_UUID_GAP_APPEARANCE			0x2a01
+
 /* Bluetooth UUID types */
 enum bt_uuid_type {
 	BT_UUID_16,
