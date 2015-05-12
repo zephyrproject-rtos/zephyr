@@ -81,15 +81,15 @@ struct bt_att_find_info_req {
 } PACK_STRUCT;
 
 /* Format field values for BT_ATT_OP_FIND_INFO_RSP */
-#define BT_ATT_INFO_1				0x01
-#define BT_ATT_INFO_2				0x02
+#define BT_ATT_INFO_16				0x01
+#define BT_ATT_INFO_128				0x02
 
-struct bt_att_info_1 {
+struct bt_att_info_16 {
 	uint16_t handle;
 	uint16_t uuid;
 } PACK_STRUCT;
 
-struct bt_att_info_2 {
+struct bt_att_info_128 {
 	uint16_t handle;
 	uint8_t  uuid[16];
 } PACK_STRUCT;
