@@ -721,15 +721,13 @@ static void rx_queue_init(void)
 int bt_init(void)
 {
 	struct bt_driver *drv = dev.drv;
-	int acl_out;
 	int err;
 
 	if (!drv) {
 		return -ENODEV;
 	}
 
-	/* Initialize buffers with zero ACL for starters */
-	bt_buf_init(0, 0);
+	bt_buf_init(ACL_IN_MAX, ACL_OUT_MAX);
 
 	cmd_queue_init();
 	rx_queue_init();
@@ -739,19 +737,7 @@ int bt_init(void)
 		return err;
 	}
 
-	err = hci_init();
-	if (err) {
-		return err;
-	}
-
-	/* Re-initialize buffers now that we know the ACL counts */
-	if (dev.le_pkts > ACL_OUT_MAX) {
-		acl_out = ACL_OUT_MAX;
-	} else {
-		acl_out = dev.le_pkts;
-	}
-
-	return bt_buf_init(ACL_IN_MAX, acl_out);
+	return hci_init();
 }
 
 int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
