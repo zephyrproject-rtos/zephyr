@@ -33,23 +33,8 @@
 #
 # Bluetooth options
 #
-menu "Bluetooth Options"
-
-config	BLUETOOTH
-	bool
-	prompt "Bluetooth LE support [EXPERIMENTAL]"
-	default n
-	help
-	  This option enables Bluetooth Low Energy support.
-
-config	BLUETOOTH_DEBUG
-	bool
-	prompt "Bluetooth LE debug support"
-	depends on BLUETOOTH
-	default n
-	help
-	  This option enables Bluetooth debug going to standard
-	  serial console.
+menu "Bluetooth Stack Options"
+depends on BLUETOOTH
 
 config	BLUETOOTH_DEBUG_UART
 	bool
@@ -59,15 +44,6 @@ config	BLUETOOTH_DEBUG_UART
 	help
 	  This option enables debug support for Bluetooth UART
 	  driver
-
-config	BLUETOOTH_DEBUG_HCI_CORE
-	bool
-	prompt "Bluetooth HCI core debug"
-	depends on BLUETOOTH_DEBUG
-	default n
-	help
-	  This option enables debug support for Bluetooth HCI
-	  core
 
 config	BLUETOOTH_UART
 	bool

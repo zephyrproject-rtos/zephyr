@@ -1,0 +1,24 @@
+config	BLUETOOTH
+	bool
+	prompt "Bluetooth LE support [EXPERIMENTAL]"
+	default n
+	help
+	  This option enables Bluetooth Low Energy support.
+
+config	BLUETOOTH_DEBUG
+	bool
+	prompt "Bluetooth LE debug support"
+	depends on BLUETOOTH
+	default n
+	help
+	  This option enables Bluetooth debug going to standard
+	  serial console.
+
+config	BLUETOOTH_DEBUG_HCI_CORE
+	bool
+	prompt "Bluetooth HCI core debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for Bluetooth HCI
+	  core

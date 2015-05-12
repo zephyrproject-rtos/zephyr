@@ -105,6 +105,8 @@ config  COMPILER_OPT
 
 endmenu
 
+source "net/Kconfig"
+
 source "drivers/Kconfig"
 
 config  EXPERIMENTAL
