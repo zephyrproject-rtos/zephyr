@@ -60,18 +60,14 @@ qemu: $(CONFIG_DEPS)
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) qemu
 
-cmd_defconfig = \
+initconfig:
+	set -e;
 	$(Q)test -s .config || $(Q) $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) defconfig
-
-cmd_merge_config = set -e; \
-	$(call cmd_defconfig) \
-	$(Q)test -s $(CONF_OVERLAY) || \
+ifneq (($strip $(CONF_OVERLAY)),)
 	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
 	-m -O $(PROJECT_BASE) $(PROJECT_BASE)/.config $(CONF_OVERLAY)
-
-initconfig:
-	$(call cmd_merge_config)
+endif
 	$(Q)yes "" | $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) oldconfig
 
