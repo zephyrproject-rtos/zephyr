@@ -38,11 +38,13 @@
 
 # Generates:
 #   - kernel_main.c file
+#   - kernel_main.h file
 #   - microkernel_objects.h file
 #   - vxmicro.h file
 
 import os
 import sys
+import subprocess
 
 # global variables describing system
 
@@ -303,7 +305,7 @@ def kernel_main_c_header():
         do_not_edit_warning +
         "\n" +
         "#include <microkernel.h>\n" +
-        "#include <../kernel/microkernel/include/kernel_main.h>\n" +
+        "#include <kernel_main.h>\n" +
         "#include <toolchain.h>\n" +
         "#include <sections.h>\n" +
         "#include <vxmicro.h>\n")
@@ -1034,6 +1036,24 @@ def kernel_main_c_generate():
 
 
 #
+# GENERATE kernel_main.h FILE
+#
+
+
+def kernel_main_h_generate():
+    """ Generate kernel_main.h file """
+
+    global output_dir
+
+    subprocess.check_call([
+        "cp",
+        "-f",
+        os.environ["VXMICRO_BASE"] +
+        "/kernel/microkernel/include/kernel_main.h",
+        output_dir])
+
+
+#
 # GENERATE microkernel_objects.h FILE
 #
 
@@ -1242,5 +1262,6 @@ def vxmicro_h_generate():
 vpf_parse()
 get_output_dir()
 kernel_main_c_generate()
+kernel_main_h_generate()
 vxmicro_h_generate()
 micro_objs_h_generate()
