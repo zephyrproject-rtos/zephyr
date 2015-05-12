@@ -71,9 +71,6 @@ struct bt_dev {
 	/* Queue for outgoing HCI commands */
 	struct nano_fifo	cmd_queue;
 
-	/* Pending outgoing ACL packets */
-	struct nano_fifo	acl_pend;
-
 	/* Registered HCI driver */
 	struct bt_driver	*drv;
 };
