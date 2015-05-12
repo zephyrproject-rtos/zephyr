@@ -363,7 +363,7 @@ def kernel_main_c_timers():
     kernel_main_c_out("\n" +
         "struct nano_lifo _k_timer_free = " +
         "{{NULL, &_k_timer_free.wait_q.head}, " +
-        "(void *) &_k_timer_blocks[%d]};\n"  % (num_timers - 1))
+        "(void *) &_k_timer_blocks[%d]};\n" % (num_timers - 1))
 
 
 def kernel_main_c_tasks():
