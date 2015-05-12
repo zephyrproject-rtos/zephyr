@@ -48,7 +48,7 @@ iGCC_arm_ASMFLAGS = -mthumb -Wa,-mthumb ${iGCC_arm_DEFS}
 # Instruction-Set Architecture (ISA)
 iMCPU_CortexM3 = m3
 iMCPU_CortexM4 = m4f
-iMCPU ?= -mcpu=cortex-${iMCPU_${vCPU}}
+iMCPU ?= -mcpu=cortex-${iMCPU_${vCPU}} -march=armv7-m
 
 iGCC_${vCPU}_CFLAGS   ?= ${iMCPU}
 iGCC_${vCPU}_CXXFLAGS ?= ${iMCPU}
