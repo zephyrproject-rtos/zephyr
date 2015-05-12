@@ -118,11 +118,11 @@ void MemcpyTask(void)
 	uint8_t buf2[BUFSIZE + 1];
 
     /* do correct memory copy */
-	k_memcpy_s (buf2, sizeof (buf2), buf1, sizeof (buf1));
+	k_memcpy_s(buf2, sizeof(buf2), buf1, sizeof(buf1));
 	task_sem_give(SEMA1);
 	task_yield();
     /* do incorrect memory copy */
-	k_memcpy_s (buf1, sizeof (buf1), buf2, sizeof (buf2));
+	k_memcpy_s(buf1, sizeof(buf1), buf2, sizeof(buf2));
 	task_sem_give(SEMA1);
 	}
 
@@ -141,7 +141,7 @@ void StrcpyTask(void)
 			   '6', '7', '8', '9', 0 };
 
     /* do correct string copy */
-	strcpy_s (buf1, sizeof (buf1), buf2);
+	strcpy_s(buf1, sizeof(buf1), buf2);
 	task_sem_give(SEMA2);
 	task_yield();
 
@@ -151,6 +151,6 @@ void StrcpyTask(void)
      */
 	buf2[BUFSIZE - 1] = '0';
     /* do incorrect string copy */
-	strcpy_s (buf1, sizeof (buf1), buf2);
+	strcpy_s(buf1, sizeof(buf1), buf2);
 	task_sem_give(SEMA2);
 	}

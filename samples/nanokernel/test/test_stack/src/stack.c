@@ -119,8 +119,8 @@ int retCode = TC_PASS;
 
 static ISR_STACK_INFO  isrStackInfo = {&nanoStackObj, 0};
 
-static void (*_trigger_nano_isr_stack_push) (void) = (vvfn)sw_isr_trigger_0;
-static void (*_trigger_nano_isr_stack_pop) (void) = (vvfn)sw_isr_trigger_1;
+static void (*_trigger_nano_isr_stack_push)(void) = (vvfn)sw_isr_trigger_0;
+static void (*_trigger_nano_isr_stack_pop)(void) = (vvfn)sw_isr_trigger_1;
 
 /* forward declarations */
 
@@ -191,7 +191,7 @@ void isr_stack_pop(void *parameter)
 {
 	ISR_STACK_INFO *pInfo = (ISR_STACK_INFO *) parameter;
 
-	if (nano_isr_stack_pop (pInfo->channel, &(pInfo->data)) == 0) {
+	if (nano_isr_stack_pop(pInfo->channel, &(pInfo->data)) == 0) {
         /* the stack is empty, set data to INVALID_DATA */
 		pInfo->data = INVALID_DATA;
 		}
@@ -499,7 +499,7 @@ void initNanoObjects(void)
 	{&isrStackInfo, &isrStackInfo},
 	};
 
-	(void)initIRQ (&i);
+	(void)initIRQ(&i);
 
 	nano_stack_init(&nanoStackObj,  stack1);
 	nano_stack_init(&nanoStackObj2, stack2);
@@ -530,7 +530,7 @@ void main(void)
 	initNanoObjects();
 
     /* Start fiber3 */
-	task_fiber_start (&fiberStack3[0], STACKSIZE, (nano_fiber_entry_t) fiber3,
+	task_fiber_start(&fiberStack3[0], STACKSIZE, (nano_fiber_entry_t) fiber3,
 		                0, 0, 7, 0);
     /*
      * While fiber3 blocks (for one second), wait for an item to be pushed

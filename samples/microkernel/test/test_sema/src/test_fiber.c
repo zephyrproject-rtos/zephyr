@@ -101,6 +101,6 @@ static void testFiberEntry(void)
 void testFiberInit(void)
 	{
 	nano_sem_init(&fiberSem);
-	task_fiber_start (fiberStack, FIBER_STACK_SIZE, (nano_fiber_entry_t)testFiberEntry,
+	task_fiber_start(fiberStack, FIBER_STACK_SIZE, (nano_fiber_entry_t)testFiberEntry,
 		    0, 0, FIBER_PRIORITY, 0);
 	}

@@ -148,7 +148,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 		}
 
 	tick++;
-	(void) nano_tick_delta (&reftime);
+	(void) nano_tick_delta(&reftime);
 	startRtn(pTimer, ticks);       /* Start the timer */
 	result = waitRtn(pTimer);      /* Wait for the timer to expire */
 
@@ -173,9 +173,9 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 		}
 
 	tick++;
-	(void) nano_tick_delta (&reftime);
+	(void) nano_tick_delta(&reftime);
 	startRtn(pTimer, ticks);       /* Start the timer */
-	while ((result = getRtn (pTimer)) == NULL) {
+	while ((result = getRtn(pTimer)) == NULL) {
 		busywaited = 1;
 		}
 	elapsed = nano_tick_delta(&reftime);
@@ -211,7 +211,7 @@ void startTimers(timer_start_func startRtn)
 	int  tick;                    /* current tick */
 
 	tick = nano_tick_get_32();
-	while (nano_tick_get_32 () == tick) {
+	while (nano_tick_get_32() == tick) {
         /* Wait for the end of the tick */
 		}
 
@@ -244,7 +244,7 @@ int busyWaitTimers(timer_get_func getRtn)
 	TC_PRINT("  - test expected to take five or six seconds\n");
 
 	ticks = nano_tick_get_32() + SIX_SECONDS;
-	while ((numExpired != 4) && (nano_tick_get_32 () < ticks)) {
+	while ((numExpired != 4) && (nano_tick_get_32() < ticks)) {
 		result = getRtn(&timer);
 		if (result != NULL) {
 		    numExpired++;
@@ -286,7 +286,7 @@ int busyWaitTimers(timer_get_func getRtn)
 		    }
 		}
 
-	return (nano_tick_get_32 () < ticks) ? TC_PASS : TC_FAIL;
+	return (nano_tick_get_32() < ticks) ? TC_PASS : TC_FAIL;
 }
 
 /*******************************************************************************
@@ -318,14 +318,14 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
 	TC_PRINT("  - test expected to take six seconds\n");
 
 	startTick = nano_tick_get_32();
-	while (nano_tick_get_32 () == startTick) {
+	while (nano_tick_get_32() == startTick) {
 		}
 	startTick++;
 	endTick = startTick + SIX_SECONDS;
 
-	while (nano_tick_get_32 () < endTick) {
-		if ((getRtn (&timer) != NULL) || (getRtn (&shortTimer) != NULL) ||
-		    (getRtn (&midTimer) != NULL) || (getRtn (&longTimer) != NULL)) {
+	while (nano_tick_get_32() < endTick) {
+		if ((getRtn(&timer) != NULL) || (getRtn(&shortTimer) != NULL) ||
+		    (getRtn(&midTimer) != NULL) || (getRtn(&longTimer) != NULL)) {
 		    return TC_FAIL;
 		    }
 		}

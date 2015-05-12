@@ -113,7 +113,7 @@ void RegressionTaskEntry(void)
 {
 	extern int RegressionTask(void);
 
-	task_sem_give (resultSems[RegressionTask ()]);
+	task_sem_give(resultSems[RegressionTask()]);
 }
 
 /*******************************************************************************
@@ -130,7 +130,7 @@ void AlternateTaskEntry(void)
 {
 	extern int AlternateTask(void);
 
-	task_sem_give (resultSems[AlternateTask ()]);
+	task_sem_give(resultSems[AlternateTask()]);
 }
 
 /*******************************************************************************
@@ -147,7 +147,7 @@ void HighPriTaskEntry(void)
 {
 	extern int HighPriTask(void);
 
-	task_sem_give (resultSems[HighPriTask ()]);
+	task_sem_give(resultSems[HighPriTask()]);
 }
 
 /*******************************************************************************
@@ -164,7 +164,7 @@ void LowPriTaskEntry(void)
 {
 	extern int LowPriTask(void);
 
-	task_sem_give (resultSems[LowPriTask ()]);
+	task_sem_give(resultSems[LowPriTask()]);
 }
 
 /*******************************************************************************
@@ -225,7 +225,7 @@ static void testInterruptsInit(void)
 	{ &testIsrInfo, NULL},
 	};
 
-	(void) initIRQ (&i);
+	(void) initIRQ(&i);
 }
 
 /*******************************************************************************

@@ -212,10 +212,10 @@ static void genIdt(void)
      * First find the address of the spurious interrupt handlers. They are the
      * contained in the first 8 bytes of the input file.
      */
-	if (read (fds[IFILE], &spurAddr, 4) < 4)
+	if (read(fds[IFILE], &spurAddr, 4) < 4)
 	goto readError;
 
-	if (read (fds[IFILE], &spurNoErrAddr, 4) < 4)
+	if (read(fds[IFILE], &spurNoErrAddr, 4) < 4)
 	goto readError;
 
 	PRINTF("Spurious int handlers found at %p and %p\n",
@@ -234,7 +234,7 @@ static void genIdt(void)
      * entries is the next 4 bytes
      */
 
-	if (read (fds[IFILE], &size, 4) < 4)
+	if (read(fds[IFILE], &size, 4) < 4)
 	goto readError;
 
 	PRINTF("There are %d ISR(s)\n", size);
@@ -251,13 +251,13 @@ static void genIdt(void)
 	unsigned int dpl;
 
 	/* Get address */
-	if (read (fds[IFILE], &addr, 4) < 4)
+	if (read(fds[IFILE], &addr, 4) < 4)
 	    goto readError;
 	/* Get vector */
-	if (read (fds[IFILE], &vec, 4) < 4)
+	if (read(fds[IFILE], &vec, 4) < 4)
 	    goto readError;
 	/* Get dpl */
-	if (read (fds[IFILE], &dpl, 4) < 4)
+	if (read(fds[IFILE], &dpl, 4) < 4)
 	    goto readError;
 
 	PRINTF("ISR @ %p on Vector %d: dpl %d\n", addr, vec, dpl);

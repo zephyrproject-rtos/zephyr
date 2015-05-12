@@ -73,9 +73,9 @@ extern int sys_clock_hw_cycles_per_tick;
  * and calculates the average cycle time
  */
 #define SYS_CLOCK_HW_CYCLES_TO_NS_AVG(X, NCYCLES) \
-	(uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64 (X) / NCYCLES)
+	(uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X) / NCYCLES)
 
-#define SYS_CLOCK_HW_CYCLES_TO_NS(X) (uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64 (X))
+#define SYS_CLOCK_HW_CYCLES_TO_NS(X) (uint32_t)(SYS_CLOCK_HW_CYCLES_TO_NS64(X))
 
 #ifdef CONFIG_NANOKERNEL
 extern int64_t _nano_ticks;

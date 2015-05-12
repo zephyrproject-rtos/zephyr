@@ -85,7 +85,7 @@ void RegressionTaskEntry(void)
 	{
 	extern int RegressionTask(void);
 
-	task_sem_give (resultSems[RegressionTask ()]);
+	task_sem_give(resultSems[RegressionTask()]);
 	}
 
 /*******************************************************************************
@@ -102,7 +102,7 @@ void AlternateTaskEntry(void)
 	{
 	extern int AlternateTask(void);
 
-	task_sem_give (resultSems[AlternateTask ()]);
+	task_sem_give(resultSems[AlternateTask()]);
 	}
 
 /*******************************************************************************

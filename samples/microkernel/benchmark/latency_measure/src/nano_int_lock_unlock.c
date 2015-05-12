@@ -73,7 +73,7 @@ int nanoIntLockUnlock(void)
 	irq_unlock(mask);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
-	if (bench_test_end () == 0) {
+	if (bench_test_end() == 0) {
 	PRINT_FORMAT(" Average time for lock then unlock "
 		      "is %lu tcs = %lu nsec",
 		      timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, NTESTS));
@@ -93,7 +93,7 @@ int nanoIntLockUnlock(void)
 	irq_unlock_inline(mask);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
-	if (bench_test_end () == 0) {
+	if (bench_test_end() == 0) {
 	PRINT_FORMAT(" Average time for lock then unlock "
 		      "is %lu tcs = %lu nsec",
 		      timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, NTESTS));

@@ -91,7 +91,7 @@ void MsgSenderTaskEntry(void)
 	{
 	extern int MsgSenderTask(void);
 
-	task_sem_give (resultSems[MsgSenderTask ()]);
+	task_sem_give(resultSems[MsgSenderTask()]);
 	}
 
 /*******************************************************************************
@@ -108,7 +108,7 @@ void MsgRcvrTaskEntry(void)
 	{
 	extern int MsgRcvrTask(void);
 
-	task_sem_give (resultSems[MsgRcvrTask ()]);
+	task_sem_give(resultSems[MsgRcvrTask()]);
 	}
 
 /*******************************************************************************

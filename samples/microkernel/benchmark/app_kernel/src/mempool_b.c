@@ -60,7 +60,7 @@ void mempool_test(void)
 
 	PRINT_F(output_file, FORMAT,
 	     "average alloc and dealloc memory pool block",
-	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, (2 * NR_OF_POOL_RUNS)));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_POOL_RUNS)));
 	}
 
 #endif /* MEMPOOL_BENCH */

@@ -140,7 +140,7 @@ extern void event_test(void);
  * Macro to print an ASCII NULL terminated string. fprintf is used
  * so output can go to console.
  */
-#define PRINT_STRING(string, stream)  fprintf (stream, string)
+#define PRINT_STRING(string, stream)  fprintf(stream, string)
 
 /* PRINT_F
  * Macro to print a formatted output string. fprintf is used when
@@ -169,7 +169,7 @@ static inline uint32_t BENCH_START(void)
 
 #define check_result()				\
 	{						\
-	if (bench_test_end () < 0)			\
+	if (bench_test_end() < 0)			\
 	{					\
 	PRINT_OVERFLOW_ERROR();		\
 	return; /* error */			\

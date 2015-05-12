@@ -40,7 +40,7 @@
 #include <toolchain/common.h>
 
 #define FUNC_ALIAS(func, aliasToFunc, retType)			\
-	retType aliasToFunc () __attribute__((alias (#func)))
+	retType aliasToFunc() __attribute__((alias(#func)))
 
 #define _ALIAS_OF(of) __attribute__((alias(#of)))
 
@@ -73,7 +73,7 @@
 #define UNALIGNED_WRITE(p, v)						\
 	do  {								\
 		unsigned int __attribute__((__may_alias__)) *pp = (unsigned int *)(p); \
-		_Unaligned32Write (pp, (v));				\
+		_Unaligned32Write(pp, (v));				\
 	}								\
 	while (0)
 #else  /* !CONFIG_UNALIGNED_WRITE_UNSUPPORTED */

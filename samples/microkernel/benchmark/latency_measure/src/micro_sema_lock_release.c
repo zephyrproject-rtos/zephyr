@@ -77,7 +77,7 @@ int microSemaLockUnlock(void)
 	task_sem_give(i);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
-	if (bench_test_end () == 0) {
+	if (bench_test_end() == 0) {
 	PRINT_FORMAT(" Average semaphore signal time %lu tcs = %lu nsec",
 		      timestamp / N_TEST_SEMA,
 		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_SEMA));
@@ -93,7 +93,7 @@ int microSemaLockUnlock(void)
 	task_sem_take_wait(i);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
-	if (bench_test_end () == 0) {
+	if (bench_test_end() == 0) {
 	PRINT_FORMAT(" Average semaphore test time %lu tcs = %lu nsec",
 		      timestamp / N_TEST_SEMA,
 		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_SEMA));

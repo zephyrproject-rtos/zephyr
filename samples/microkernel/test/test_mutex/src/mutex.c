@@ -293,7 +293,7 @@ void RegressionTask(void)
 
     /* ~ 4 seconds have passed */
 
-	TC_PRINT ("Done LOCKING!  Current priority = %d\n", task_priority_get ());
+	TC_PRINT("Done LOCKING!  Current priority = %d\n", task_priority_get());
 
 	task_sleep(ONE_SECOND);       /* Task10 should time out */
 

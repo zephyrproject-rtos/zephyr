@@ -50,7 +50,7 @@
 
 #include <nanokernel.h>
 
-#define OS_GET_TIME() nano_cycle_get_32 ()
+#define OS_GET_TIME() nano_cycle_get_32()
 
 /* number of ticks before timer overflows */
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
@@ -67,10 +67,10 @@ static inline void TICK_SYNCH(void)
 	}
 }
 
-#elif (defined (CONFIG_MICROKERNEL) && defined (KERNEL))
+#elif (defined(CONFIG_MICROKERNEL) && defined(KERNEL))
 #include <vxmicro.h>
 
-#define OS_GET_TIME() task_cycle_get_32 ()
+#define OS_GET_TIME() task_cycle_get_32()
 
 typedef int64_t TICK_TYPE;
 #define TICK_GET(x) (TICK_TYPE)task_tick_delta(x)
@@ -109,14 +109,14 @@ static inline void bench_test_init(void)
 	tm_off = OS_GET_TIME() - t;
 	}
 
-#if defined (CONFIG_MICROKERNEL) && defined (KERNEL)
+#if defined(CONFIG_MICROKERNEL) && defined(KERNEL)
 
 /* number of ticks before timer overflows */
 #define BENCH_MAX_TICKS (sys_clock_ticks_per_sec - 1)
 
 #endif /* CONFIG_MICROKERNEL */
 
-#if (defined (CONFIG_NANOKERNEL) || defined (CONFIG_MICROKERNEL))  && defined (KERNEL)
+#if (defined(CONFIG_NANOKERNEL) || defined(CONFIG_MICROKERNEL))  && defined(KERNEL)
 /* tickstamp used for timer counter overflow check */
 static TICK_TYPE tCheck;
 

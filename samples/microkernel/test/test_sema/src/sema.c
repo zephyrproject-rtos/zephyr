@@ -610,7 +610,7 @@ int RegressionTask(void)
 
 	task_sleep(OBJ_TIMEOUT);     /* Time for low priority task to run. */
 	task_sem_give(hpSem);	   /* Wake high priority task */
-	task_sem_give (altSem);	   /* Wake alternate task (medium priority) */
+	task_sem_give(altSem);	   /* Wake alternate task (medium priority) */
 	task_sleep(OBJ_TIMEOUT);     /* Give alternate task time to run */
 
 	task_sem_give(manyBlockSem);

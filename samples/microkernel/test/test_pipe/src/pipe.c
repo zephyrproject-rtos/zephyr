@@ -178,7 +178,7 @@ void microObjectsInit(void)
 {
 	int  i;    /* loop counter */
 
-	for (i = 0; i < sizeof (rxBuffer); i++) {
+	for (i = 0; i < sizeof(rxBuffer); i++) {
 		txBuffer[i] = (char) i;
 		}
 }
@@ -228,8 +228,8 @@ int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
 	int  bytesReceived;          /* number of bytes received */
 
 	for (i = 0; i < nSingles; i++) {
-		(void)task_sem_take_wait (altSem);
-		for (j = 0; j < sizeof (rxBuffer); j++) {
+		(void)task_sem_take_wait(altSem);
+		for (j = 0; j < sizeof(rxBuffer); j++) {
 		    rxBuffer[j] = 0;
 		    }
 
@@ -266,10 +266,10 @@ int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
      * stored in it.
      */
 
-	(void)task_sem_take_wait (altSem);
+	(void)task_sem_take_wait(altSem);
 
 	for (i = 0; i < nMany; i++) {
-		for (j = 0; j < sizeof (rxBuffer); j++) {
+		for (j = 0; j < sizeof(rxBuffer); j++) {
 		    rxBuffer[j] = 0;
 		    }
 
@@ -384,7 +384,7 @@ int pipePutTestWork(SIZE_EXPECT *singleItems, int nSingles,
 		    }
 
 		task_sem_give(altSem);
-		(void)task_sem_take_wait (regSem);
+		(void)task_sem_take_wait(regSem);
 
 	nitem = task_sem_count_get(counterSem) - 1;
 		if (nitem != i) {
@@ -419,9 +419,9 @@ int pipePutTestWork(SIZE_EXPECT *singleItems, int nSingles,
 
 	task_sem_give(altSem);   /* Wake the alternate task */
     /* wait for other task reading all the items from pipe */
-	(void)task_sem_take_wait (regSem);
+	(void)task_sem_take_wait(regSem);
 
-	if (task_sem_count_get (counterSem) != nMany) {
+	if (task_sem_count_get(counterSem) != nMany) {
 		TC_ERROR("Expected number of items %d, not %d\n",
 		          nMany, task_sem_count_get(counterSem));
 		return TC_FAIL;
@@ -480,7 +480,7 @@ int pipePutWaitHelper(void)
 	int  rv;          /* return value from task_pipe_get_wait */
 	int  bytesRead;   /* # of bytes read from task_pipe_get_wait() */
 
-	(void)task_sem_take_wait (altSem);    /* Wait until test is ready */
+	(void)task_sem_take_wait(altSem);    /* Wait until test is ready */
 
     /* 1. task_pipe_get_wait() will force a context switch to RegressionTask() */
 	rv = task_pipe_get_wait(pipeId, rxBuffer, PIPE_SIZE,
@@ -586,7 +586,7 @@ int pipePutWaitTest(void)
 		}
 
     /* Wait for AlternateTask()'s pipePutWaitHelper() to finish */
-	(void)task_sem_take_wait (regSem);
+	(void)task_sem_take_wait(regSem);
 
 	return TC_PASS;
 }
@@ -604,7 +604,7 @@ int pipePutTimeoutHelper(void)
 	int  rv;        /* return value from task_pipe_get_wait_timeout() */
 	int  bytesRead; /* # of bytes read from task_pipe_get_wait_timeout() */
 
-	(void)task_sem_take_wait (altSem);    /* Wait until test is ready */
+	(void)task_sem_take_wait(altSem);    /* Wait until test is ready */
 
     /* 1. task_pipe_get_wait_timeout() will force a context switch to RegressionTask() */
 	rv = task_pipe_get_wait_timeout(pipeId, rxBuffer, PIPE_SIZE,
@@ -728,7 +728,7 @@ int pipePutTimeoutTest(void)
 		}
 
     /* Wait for AlternateTask()'s pipePutWaitHelper() to finish */
-	(void)task_sem_take_wait (regSem);
+	(void)task_sem_take_wait(regSem);
 
 	return TC_PASS;
 }
@@ -830,7 +830,7 @@ int pipeGetWaitHelper(void)
 {
 	int  rv;    /* return coded form pipeGetWaitHelperWork() */
 
-	(void)task_sem_take_wait (altSem);
+	(void)task_sem_take_wait(altSem);
 
 	rv = pipeGetWaitHelperWork(wait_all_N, ARRAY_SIZE(wait_all_N));
 	if (rv != TC_PASS) {

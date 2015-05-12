@@ -43,7 +43,7 @@
 #include "utils.h"      /* PRINT () and other macros */
 
 /* <stdlib.h> is not supported */
-static int abs (int i) { return (i >= 0) ? i : -i; }
+static int abs(int i) { return (i >= 0) ? i : -i; }
 
 /* context switch enough time so our measurement is precise */
 #define NB_OF_YIELD     1000
@@ -111,11 +111,11 @@ void microTaskSwitchYield(void)
      * and forth.
      */
 	delta = iterations - helper_task_iterations;
-	if (bench_test_end () < 0) {
+	if (bench_test_end() < 0) {
 	errorCount++;
 	PRINT_OVERFLOW_ERROR();
 	}
-	else if (abs (delta) > 1) {
+	else if (abs(delta) > 1) {
 	/* expecting even alternating context switch, seems one routine
 	 * called yield without the other having chance to execute
 	 */

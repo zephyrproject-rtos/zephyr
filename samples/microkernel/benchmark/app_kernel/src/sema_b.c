@@ -91,7 +91,7 @@ void sema_test(void)
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
-	PRINT_F (output_file, FORMAT, "signal to waitm (2)",
+	PRINT_F(output_file, FORMAT, "signal to waitm (2)",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_SEMA_RUNS));
 
 	et = BENCH_START();
@@ -101,7 +101,7 @@ void sema_test(void)
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
-	PRINT_F (output_file, FORMAT, "signal to waitm (2), with timeout",
+	PRINT_F(output_file, FORMAT, "signal to waitm (2), with timeout",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_SEMA_RUNS));
 
 	et = BENCH_START();
@@ -111,7 +111,7 @@ void sema_test(void)
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
-	PRINT_F (output_file, FORMAT, "signal to waitm (3)",
+	PRINT_F(output_file, FORMAT, "signal to waitm (3)",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_SEMA_RUNS));
 
 	et = BENCH_START();
@@ -121,7 +121,7 @@ void sema_test(void)
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
-	PRINT_F (output_file, FORMAT, "signal to waitm (3), with timeout",
+	PRINT_F(output_file, FORMAT, "signal to waitm (3), with timeout",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_SEMA_RUNS));
 
 	et = BENCH_START();
@@ -131,7 +131,7 @@ void sema_test(void)
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
-	PRINT_F (output_file, FORMAT, "signal to waitm (4)",
+	PRINT_F(output_file, FORMAT, "signal to waitm (4)",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_SEMA_RUNS));
 
 	et = BENCH_START();
@@ -141,7 +141,7 @@ void sema_test(void)
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
-	PRINT_F (output_file, FORMAT, "signal to waitm (4), with timeout",
+	PRINT_F(output_file, FORMAT, "signal to waitm (4), with timeout",
 	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_SEMA_RUNS));
 	}
 

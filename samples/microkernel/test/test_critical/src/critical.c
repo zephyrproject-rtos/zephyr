@@ -84,7 +84,7 @@ uint32_t criticalLoop(uint32_t count)
 	int32_t  ticks;
 
 	ticks = task_tick_get_32();
-	while (task_tick_get_32 () < ticks + NUM_TICKS) {
+	while (task_tick_get_32() < ticks + NUM_TICKS) {
 		task_offload_to_fiber(criticalRtn, &criticalVar);
 		count++;
 		}

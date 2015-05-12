@@ -119,7 +119,7 @@ void sema_fiber3(
 
 	for (i = 0; i < par2; i++) {
 	nano_fiber_sem_give(&nanoSem1);
-	while (!nano_fiber_sem_take (&nanoSem2))
+	while (!nano_fiber_sem_take(&nanoSem2))
 	    fiber_yield();
 	(*pcounter)++;
 	}
@@ -154,7 +154,7 @@ int sema_test(void)
 
 	task_fiber_start(fiber_stack1, STACK_SIZE, sema_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-	task_fiber_start (fiber_stack2, STACK_SIZE, sema_fiber2, (int) &i,
+	task_fiber_start(fiber_stack2, STACK_SIZE, sema_fiber2, (int) &i,
 		    NUMBER_OF_LOOPS, 3, 0);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -175,7 +175,7 @@ int sema_test(void)
 
 	task_fiber_start(fiber_stack1, STACK_SIZE, sema_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-	task_fiber_start (fiber_stack2, STACK_SIZE, sema_fiber3, (int) &i,
+	task_fiber_start(fiber_stack2, STACK_SIZE, sema_fiber3, (int) &i,
 		    NUMBER_OF_LOOPS, 3, 0);
 
 	t = TIME_STAMP_DELTA_GET(t);

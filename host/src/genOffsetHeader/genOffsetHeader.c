@@ -276,15 +276,15 @@ static int ehdrLoad(int fd  /* file descriptor of file from which to read */
 
 	lseek(fd, 0, SEEK_SET);
 
-	nBytes = read (fd, &ehdr, sizeof (ehdr));
-	if (nBytes != sizeof (ehdr)) {
+	nBytes = read(fd, &ehdr, sizeof(ehdr));
+	if (nBytes != sizeof(ehdr)) {
 		fprintf(stderr, "Failed to read ELF header\n");
 		return -1;
 		}
 
     /* perform some rudimentary ELF file validation */
 
-	if (strncmp ((char *)ehdr.e_ident, ELFMAG, 4) != 0) {
+	if (strncmp((char *)ehdr.e_ident, ELFMAG, 4) != 0) {
 	fprintf(stderr, "Input object module not ELF format\n");
 	return -1;
 	}
@@ -308,7 +308,7 @@ static int ehdrLoad(int fd  /* file descriptor of file from which to read */
 	DBG_PRINT("Swab required\n");
 	}
 
-	swabElfHdr (&ehdr);   /* swap bytes (if required) */
+	swabElfHdr(&ehdr);   /* swap bytes (if required) */
 
     /* debugging: dump some important ELF header fields */
 
@@ -333,7 +333,7 @@ int shdrsLoad(int fd  /* file descriptor of file from which to read */
 	size_t    nBytes;    /* number of bytes read from file */
 	unsigned  ix;        /* loop index */
 
-	shdr = malloc (ehdr.e_shnum * sizeof (Elf32_Shdr));
+	shdr = malloc(ehdr.e_shnum * sizeof(Elf32_Shdr));
 	if (shdr == NULL) {
 		fprintf(stderr, "No memory for section headers!\n");
 		return -1;
@@ -343,14 +343,14 @@ int shdrsLoad(int fd  /* file descriptor of file from which to read */
 	lseek(fd, ehdr.e_shoff, SEEK_SET);
 
 	for (ix = 0; ix < ehdr.e_shnum; ix++) {
-	nBytes = read (fd, &shdr[ix], sizeof (Elf32_Shdr));
-	if (nBytes != sizeof (Elf32_Shdr)) {
-	    fprintf (stderr, "Unable to read entire section header (#%d)\n",
+	nBytes = read(fd, &shdr[ix], sizeof(Elf32_Shdr));
+	if (nBytes != sizeof(Elf32_Shdr)) {
+		fprintf(stderr, "Unable to read entire section header (#%d)\n",
 		             ix);
 	    return -1;
 		    }
 
-	swabElfSectionHdr (&shdr[ix]);   /* swap bytes (if required) */
+	swabElfSectionHdr(&shdr[ix]);   /* swap bytes (if required) */
 		}
 
 	return 0;
@@ -532,7 +532,7 @@ void headerAbsoluteSymbolsDump(int fd,   /* file descriptor of file from which t
 
 	read(fd, &aSym, sizeof(Elf32_Sym));
 
-	swabElfSym (&aSym);    /* swap bytes (if required) */
+	swabElfSym(&aSym);    /* swap bytes (if required) */
 
 	/*
 	 * Only generate definitions for global absolute symbols
@@ -541,9 +541,9 @@ void headerAbsoluteSymbolsDump(int fd,   /* file descriptor of file from which t
 
 	if ((aSym.st_shndx == SHN_ABS) &&
 	    (ELF_ST_BIND(aSym.st_info) == STB_GLOBAL)) {
-	    if ((strstr (&pStringTable[aSym.st_name],
+	    if ((strstr(&pStringTable[aSym.st_name],
 		                 STRUCT_OFF_SUFFIX) != NULL) ||
-	        (strstr (&pStringTable[aSym.st_name],
+	        (strstr(&pStringTable[aSym.st_name],
 		                 STRUCT_SIZ_SUFFIX) != NULL)) {
 		fprintf(fp, "#define\t%s\t0x%X\n",
 		                 &pStringTable[aSym.st_name], aSym.st_value);
@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
 	goto errorReturn;
 	}
 
-	while ((option = getopt (argc, argv, "i:o:")) != -1) {
+	while ((option = getopt(argc, argv, "i:o:")) != -1) {
 	switch (option) {
 	    case 'i':
 	        inFileName = optarg;
@@ -633,11 +633,11 @@ int main(int argc, char *argv[])
      * Bail if any of those steps fail.
      */
 
-	if ((ehdrLoad (inFd) != 0) ||
-		(shdrsLoad (inFd) != 0) ||
-		(symTblFind (&symTblOffset, &symTblSize) != 0) ||
-		(strTblFind (&strTblIx) != 0) ||
-		(strTblLoad (inFd, strTblIx, &pStringTable) != 0)) {
+	if ((ehdrLoad(inFd) != 0) ||
+		(shdrsLoad(inFd) != 0) ||
+		(symTblFind(&symTblOffset, &symTblSize) != 0) ||
+		(strTblFind(&strTblIx) != 0) ||
+		(strTblLoad(inFd, strTblIx, &pStringTable) != 0)) {
 		goto errorReturn;
 		}
 

@@ -100,7 +100,7 @@ static void myDelay
 #else
 	struct nano_timer timer;
 
-	nano_timer_init  (&timer, (void *) 0);
+	nano_timer_init(&timer, (void *) 0);
 	nano_fiber_timer_start(&timer, ticks);
 	nano_fiber_timer_wait(&timer);
 #endif

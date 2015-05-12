@@ -114,7 +114,7 @@ int mailbox_get(
 
 	t = TIME_STAMP_DELTA_GET(t);
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
-	if (bench_test_end () < 0)
+	if (bench_test_end() < 0)
 	PRINT_OVERFLOW_ERROR();
 	return 0;
 	}

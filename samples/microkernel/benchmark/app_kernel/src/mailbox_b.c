@@ -73,7 +73,7 @@ static struct k_msg Message;
 	     "          |\n", EmptyMsgPutTime)
 
 #define PRINT_XFER_RATE()                                                    \
-	PRINT_F (output_file, "| raw transfer rate:     %10lu KB/sec (without" \
+	PRINT_F(output_file, "| raw transfer rate:     %10lu KB/sec (without" \
 	     " overhead)                 |\n",                               \
 	     (uint32_t)(1000000 * (uint64_t)(putsize >> 1)                   \
 	     / (puttime - EmptyMsgPutTime)))

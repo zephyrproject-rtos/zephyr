@@ -37,7 +37,7 @@
 #define __section_stringify(x)  #x
 
 #define __section(seg, hash, line)					\
-	__attribute__((section ("." __section_stringify(seg)		\
+	__attribute__((section("." __section_stringify(seg)		\
 				"." __section_stringify(hash)		\
 				"." __section_stringify(line))))
 

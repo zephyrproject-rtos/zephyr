@@ -104,7 +104,7 @@ typedef struct idtEntry {
 static inline void _IdtEntCreate
 	(
 	unsigned long long *pIdtEntry,      /* Pointer to where the entry is be built */
-	void (*routine) (void *),	    /* Routine to call when interrupt occurs  */
+	void (*routine)(void *),	    /* Routine to call when interrupt occurs  */
 	unsigned int dpl		    /* priv level for interrupt descriptor    */
 	)
 	{

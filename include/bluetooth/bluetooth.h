@@ -65,10 +65,10 @@ struct bt_driver {
 	size_t head_reserve;
 
 	/* Open the HCI transport */
-	int (*open) (void);
+	int (*open)(void);
 
 	/* Send data to HCI */
-	int (*send) (struct bt_buf *buf);
+	int (*send)(struct bt_buf *buf);
 };
 
 /* Register a new HCI driver to the Bluetooth stack */

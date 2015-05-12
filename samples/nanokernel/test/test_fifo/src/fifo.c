@@ -136,8 +136,8 @@ int retCode = TC_PASS;
 
 static ISR_FIFO_INFO  isrFifoInfo = {&nanoFifoObj, NULL};
 
-static void (*_trigger_nano_isr_fifo_put) (void) = (vvfn)sw_isr_trigger_0;
-static void (*_trigger_nano_isr_fifo_get) (void) = (vvfn)sw_isr_trigger_1;
+static void (*_trigger_nano_isr_fifo_put)(void) = (vvfn)sw_isr_trigger_0;
+static void (*_trigger_nano_isr_fifo_get)(void) = (vvfn)sw_isr_trigger_1;
 
 /* forward declarations */
 
@@ -205,7 +205,7 @@ void fiber1(void)
     /* Wait for data to be added to <nanoFifoObj> by task */
 	pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
 	if (pData != pPutList1[0]) {
-		TC_ERROR ("fiber1 (1) - expected 0x%x, got 0x%x\n",
+		TC_ERROR("fiber1 (1) - expected 0x%x, got 0x%x\n",
 		          pPutList1[0], pData);
 		retCode = TC_FAIL;
 		return;
@@ -214,7 +214,7 @@ void fiber1(void)
     /* Wait for data to be added to <nanoFifoObj2> by fiber3 */
 	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
 	if (pData != pPutList2[0]) {
-		TC_ERROR ("fiber1 (2) - expected 0x%x, got 0x%x\n",
+		TC_ERROR("fiber1 (2) - expected 0x%x, got 0x%x\n",
 		          pPutList2[0], pData);
 		retCode = TC_FAIL;
 		return;
@@ -439,7 +439,7 @@ void fiber2(void)
     /* Wait for data to be added to <nanoFifoObj> */
 	pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
 	if (pData != pPutList1[1]) {
-		TC_ERROR ("fiber2 (1) - expected 0x%x, got 0x%x\n",
+		TC_ERROR("fiber2 (1) - expected 0x%x, got 0x%x\n",
 		          pPutList1[1], pData);
 		retCode = TC_FAIL;
 		return;
@@ -448,7 +448,7 @@ void fiber2(void)
     /* Wait for data to be added to <nanoFifoObj2> by fiber3 */
 	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
 	if (pData != pPutList2[1]) {
-		TC_ERROR ("fiber2 (2) - expected 0x%x, got 0x%x\n",
+		TC_ERROR("fiber2 (2) - expected 0x%x, got 0x%x\n",
 		          pPutList2[1], pData);
 		retCode = TC_FAIL;
 		return;
@@ -460,7 +460,7 @@ void fiber2(void)
 	for (int i = 0; i < 4; i++) {
 		pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
 		if (pData != pPutList1[i]) {
-		    TC_ERROR ("fiber2 (3) - iteration %d expected 0x%x, got 0x%x\n",
+		    TC_ERROR("fiber2 (3) - iteration %d expected 0x%x, got 0x%x\n",
 		              i, pPutList1[i], pData);
 		    retCode = TC_FAIL;
 		    return;
@@ -502,7 +502,7 @@ void fiber3(void)
 	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
 	if (pData != pPutList2[0]) {
 		retCode = TC_FAIL;
-		TC_ERROR ("fiber3 (1) - got 0x%x from <nanoFifoObj2>, expected 0x%x\n",
+		TC_ERROR("fiber3 (1) - got 0x%x from <nanoFifoObj2>, expected 0x%x\n",
 		          pData, pPutList2[0]);
 		}
 
@@ -579,7 +579,7 @@ void initNanoObjects(void)
 	{&isrFifoInfo, &isrFifoInfo},
 	};
 
-	(void)initIRQ (&i);
+	(void)initIRQ(&i);
 
 	nano_fifo_init(&nanoFifoObj);
 	nano_fifo_init(&nanoFifoObj2);
@@ -613,13 +613,13 @@ void main(void)
 
     /* Create and start the three (3) fibers. */
 
-	task_fiber_start (&fiberStack1[0], STACKSIZE, (nano_fiber_entry_t) fiber1,
+	task_fiber_start(&fiberStack1[0], STACKSIZE, (nano_fiber_entry_t) fiber1,
 		                0, 0, 7, 0);
 
-	task_fiber_start (&fiberStack2[0], STACKSIZE, (nano_fiber_entry_t) fiber2,
+	task_fiber_start(&fiberStack2[0], STACKSIZE, (nano_fiber_entry_t) fiber2,
 		                0, 0, 7, 0);
 
-	task_fiber_start (&fiberStack3[0], STACKSIZE, (nano_fiber_entry_t) fiber3,
+	task_fiber_start(&fiberStack3[0], STACKSIZE, (nano_fiber_entry_t) fiber3,
 		                0, 0, 7, 0);
 
     /*

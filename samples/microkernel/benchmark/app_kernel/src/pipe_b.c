@@ -36,7 +36,7 @@
 
 #ifdef FLOAT
 #define PRINT_ALL_TO_N_HEADER_UNIT()                                       \
-	PRINT_STRING ("|   size(B) |       time/packet (usec)       |         "\
+	PRINT_STRING("|   size(B) |       time/packet (usec)       |         "\
 		  " MB/sec                |\n", output_file);
 
 #define PRINT_ALL_TO_N() \
@@ -49,7 +49,7 @@
 	     (1000.0 * putsize) / puttime[2])
 
 #define PRINT_1_TO_N_HEADER()                                             \
-	PRINT_STRING ("|   size(B) |       time/packet (usec)       |        "\
+	PRINT_STRING("|   size(B) |       time/packet (usec)       |        "\
 		  "  MB/sec                |\n", output_file);            \
 	PRINT_STRING(dashline, output_file);
 
@@ -67,7 +67,7 @@
 
 #else
 #define PRINT_ALL_TO_N_HEADER_UNIT()                                       \
-	PRINT_STRING ("|   size(B) |       time/packet (nsec)       |         "\
+	PRINT_STRING("|   size(B) |       time/packet (nsec)       |         "\
 		  " KB/sec                |\n", output_file);
 
 #define PRINT_ALL_TO_N() \
@@ -80,7 +80,7 @@
 	     (1000000 * putsize) / puttime[2]);
 
 #define PRINT_1_TO_N_HEADER()                                             \
-	PRINT_STRING ("|   size(B) |       time/packet (nsec)       |        "\
+	PRINT_STRING("|   size(B) |       time/packet (nsec)       |        "\
 		  "  KB/sec                |\n", output_file);            \
 	PRINT_STRING(dashline, output_file);
 
@@ -177,7 +177,7 @@ void pipe_test(void)
 	    PRINT_STRING("|                      "
 			  "non-matching sizes (1_TO_N) to lower priority"
 			  "          |\n", output_file);
-	    task_priority_set (task_id_get (), TaskPrio - 2);
+	    task_priority_set(task_id_get(), TaskPrio - 2);
 	    }
 	PRINT_STRING(dashline, output_file);
 	PRINT_1_TO_N_HEADER();
@@ -197,7 +197,7 @@ void pipe_test(void)
 	    PRINT_1_TO_N();
 	    }
 	PRINT_STRING(dashline, output_file);
-	task_priority_set (task_id_get (), TaskPrio);
+	task_priority_set(task_id_get(), TaskPrio);
 	}
 	}
 
@@ -249,8 +249,8 @@ int pipeput(
 
 	t = TIME_STAMP_DELTA_GET(t);
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
-	if (bench_test_end () < 0) {
-	if (high_timer_overflow ()) {
+	if (bench_test_end() < 0) {
+	if (high_timer_overflow()) {
 	    PRINT_STRING("| Timer overflow. Results are invalid            ",
 			  output_file);
 	    }

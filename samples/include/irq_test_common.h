@@ -150,11 +150,11 @@ static int initIRQ
 #elif defined(VXMICRO_ARCH_arm)
 #if defined(CONFIG_CPU_CORTEXM)
 	if (i->isr[0]) {
-	(void) irq_connect (0, IRQ_PRIORITY, i->isr[0], i->arg[0]);
+	(void) irq_connect(0, IRQ_PRIORITY, i->isr[0], i->arg[0]);
 	irq_enable(0);
 	}
 	if (i->isr[1]) {
-	(void) irq_connect (1, IRQ_PRIORITY, i->isr[1], i->arg[1]);
+	(void) irq_connect(1, IRQ_PRIORITY, i->isr[1], i->arg[1]);
 	irq_enable(1);
 	}
 #endif /* CONFIG_CPU_CORTEXM */

@@ -58,7 +58,7 @@ void mutex_test(void)
 	check_result();
 
 	PRINT_F(output_file, FORMAT, "average lock and unlock mutex",
-	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG (et, (2 * NR_OF_MUTEX_RUNS)));
+	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MUTEX_RUNS)));
 	}
 
 #endif /* MUTEX_BENCH */

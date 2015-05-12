@@ -87,7 +87,7 @@ SECTIONS
 	*(.*)
 		}
 	}
-ASSERT (SIZEOF (.trashcan) == 0, "Section(s) undefined in the linker script used.")
+ASSERT(SIZEOF(.trashcan) == 0, "Section(s) undefined in the linker script used.")
 
 #endif /* (__GCC_LINKER_CMD__) */
 #endif /* _LINKER */

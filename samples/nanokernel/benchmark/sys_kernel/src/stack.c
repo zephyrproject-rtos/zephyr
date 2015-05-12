@@ -139,7 +139,7 @@ void stack_fiber3(
 	data = i;
 	nano_fiber_stack_push(&nanoChannel1, data);
 	data = 0xffffffff;
-	while (!nano_fiber_stack_pop (&nanoChannel2, &data))
+	while (!nano_fiber_stack_pop(&nanoChannel2, &data))
 	    fiber_yield();
 	if (data != i)
 	    break;
@@ -177,7 +177,7 @@ int stack_test(void)
 
 	task_fiber_start(fiber_stack1, STACK_SIZE, stack_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-	task_fiber_start (fiber_stack2, STACK_SIZE, stack_fiber2, (int) &i,
+	task_fiber_start(fiber_stack2, STACK_SIZE, stack_fiber2, (int) &i,
 		    NUMBER_OF_LOOPS, 3, 0);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -201,7 +201,7 @@ int stack_test(void)
 	i = 0;
 	task_fiber_start(fiber_stack1, STACK_SIZE, stack_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
-	task_fiber_start (fiber_stack2, STACK_SIZE, stack_fiber3, (int) &i,
+	task_fiber_start(fiber_stack2, STACK_SIZE, stack_fiber3, (int) &i,
 		    NUMBER_OF_LOOPS, 3, 0);
 
 	t = TIME_STAMP_DELTA_GET(t);

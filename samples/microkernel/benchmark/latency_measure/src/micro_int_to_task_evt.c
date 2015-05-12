@@ -85,7 +85,7 @@ void microInt(void)
 	task_sem_take_wait(INTSEMA);
 	setSwInterrupt(latencyTestIsr);
 	raiseIntFunc();
-	task_suspend (task_id_get ());
+	task_suspend(task_id_get());
 	}
 
 /*******************************************************************************

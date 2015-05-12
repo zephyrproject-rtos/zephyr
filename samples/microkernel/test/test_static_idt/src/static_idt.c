@@ -240,7 +240,7 @@ void main(void)
 	rv = TC_FAIL;
 	goto doneTests;
 	} else if (intHandlerExecuted != 1) {
-	TC_ERROR ("Interrupt handler executed more than once! (%d)\n",
+	TC_ERROR("Interrupt handler executed more than once! (%d)\n",
 		   intHandlerExecuted);
 	rv = TC_FAIL;
 	goto doneTests;
@@ -260,7 +260,7 @@ void main(void)
 	goto doneTests;
 	}
 	else if (excHandlerExecuted != 1) {
-	TC_ERROR ("Exception handler executed more than once! (%d)\n",
+	TC_ERROR("Exception handler executed more than once! (%d)\n",
 		   excHandlerExecuted);
 	rv = TC_FAIL;
 	goto doneTests;

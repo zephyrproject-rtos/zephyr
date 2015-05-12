@@ -134,7 +134,7 @@ int nanoCtxSwitch(void)
 	if (ctxSwitchBalancer > 3 || ctxSwitchBalancer < -3) {
 	PRINT_FORMAT(" Balance is %d. FAILED", ctxSwitchBalancer);
 	}
-	else if (bench_test_end () != 0) {
+	else if (bench_test_end() != 0) {
 	errorCount++;
 	PRINT_OVERFLOW_ERROR();
 	}

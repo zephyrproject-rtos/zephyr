@@ -122,7 +122,7 @@ static int  fiberEvidence = 0;
 
 static ISR_INFO  isrInfo;
 
-static void (*_trigger_isrHandler) (void) = (vvfn)sw_isr_trigger_0;
+static void (*_trigger_isrHandler)(void) = (vvfn)sw_isr_trigger_0;
 
 /*******************************************************************************
 *
@@ -140,7 +140,7 @@ void isr_handler(void *data)
 
 	switch (isrInfo.command) {
 		case CTX_SELF_CMD:
-		    isrInfo.data = (void *) context_self_get ();
+		    isrInfo.data = (void *) context_self_get();
 		    break;
 
 		case CTX_TYPE_CMD:
@@ -222,14 +222,14 @@ int nano_cpu_idleTest(void)
 
     /* Align to a "tick boundary". */
 	tick = nano_tick_get_32();
-	while (tick == nano_tick_get_32 ()) {
+	while (tick == nano_tick_get_32()) {
 		}
 	tick = nano_tick_get_32();
 
 	for (i = 0; i < 5; i++) {     /* Repeat the test five times */
 		nano_cpu_idle();
 		tick++;
-		if (nano_tick_get_32 () != tick) {
+		if (nano_tick_get_32() != tick) {
 		    return TC_FAIL;
 		    }
 		}
@@ -336,11 +336,11 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
     /* Align to a "tick boundary" */
 	tick = nano_tick_get_32();
-	while (nano_tick_get_32 () == tick) {
+	while (nano_tick_get_32() == tick) {
 		}
 	tick++;
 
-	while (nano_tick_get_32 () == tick) {
+	while (nano_tick_get_32() == tick) {
 		count++;
 		}
 
@@ -377,7 +377,7 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 		nano_tick_get_32();
 		}
 
-	return (tick == nano_tick_get_32 ()) ? TC_FAIL : TC_PASS;
+	return (tick == nano_tick_get_32()) ? TC_FAIL : TC_PASS;
 }
 
 /*******************************************************************************
@@ -704,7 +704,7 @@ void main(void)
 	TC_PRINT("Spawning a fiber from a task\n");
 	fiberEvidence = 0;
 	task_fiber_start(fiberStack1, FIBER_STACKSIZE, fiberEntry,
-		                (int) context_self_get (), 0, FIBER_PRIORITY, 0);
+		                (int) context_self_get(), 0, FIBER_PRIORITY, 0);
 
 	if (fiberEvidence != 1) {
 	rv = TC_FAIL;

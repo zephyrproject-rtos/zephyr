@@ -188,7 +188,7 @@ void main(void)
 #endif /* TEST_max */
 #ifndef TEST_min
     /* start a trivial fiber */
-	task_fiber_start (pStack, FIBER_STACK_SIZE, fiberEntry, (int) MESSAGE,
+	task_fiber_start(pStack, FIBER_STACK_SIZE, fiberEntry, (int) MESSAGE,
 		    (int) func_array, 10, 0);
 #endif /* !TEST_min */
 

@@ -173,7 +173,7 @@ void microObjectsInit(void)
 	{ &isrInfo, NULL },
 	};
 
-	(void) initIRQ (&i);
+	(void) initIRQ(&i);
 
 	TC_PRINT("Microkernel objects initialized\n");
 }
@@ -307,7 +307,7 @@ int taskSleepTest(void)
 	int32_t  tick;
 
 	tick = task_tick_get_32();           /* Busy wait to align */
-	while (tick == task_tick_get_32 ()) {   /* to tick boundary */
+	while (tick == task_tick_get_32()) {   /* to tick boundary */
 		}
 
 	task_sem_give(HT_SEM);
@@ -369,7 +369,7 @@ int taskYieldTest(void)
 		task_yield();
 
 		if (helperData == prevHelperData) {
-		    TC_ERROR ("Iter %d.  helperData did not change (%d) \n",
+		    TC_ERROR("Iter %d.  helperData did not change (%d) \n",
 		              i + 1, helperData);
 		    return TC_FAIL;
 		    }
@@ -512,25 +512,25 @@ void RegressionTask(void)
 	task_sem_take_wait(RT_SEM);
 
 	TC_PRINT("Testing task_priority_set()\n");
-	if (taskSetPrioTest () != TC_PASS) {
+	if (taskSetPrioTest() != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
 		}
 
 	TC_PRINT("Testing task_sleep()\n");
-	if (taskSleepTest () != TC_PASS) {
+	if (taskSleepTest() != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
 		}
 
 	TC_PRINT("Testing task_yield()\n");
-	if (taskYieldTest () != TC_PASS) {
+	if (taskYieldTest() != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
 		}
 
 	TC_PRINT("Testing task_suspend() and task_resume()\n");
-	if (taskSuspendTest () != TC_PASS) {
+	if (taskSuspendTest() != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
 		}

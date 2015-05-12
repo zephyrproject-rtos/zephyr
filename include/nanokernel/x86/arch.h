@@ -111,7 +111,7 @@ typedef struct s_isrList {
  * configuration.
  */
   #define NANO_CPU_INT_STUB_DECL(s) \
-	_NODATA_SECTION(.intStubSect) NANO_INT_STUB (s)
+	_NODATA_SECTION(.intStubSect) NANO_INT_STUB(s)
 
 /*
  * A pointer to an "exception stack frame" (ESF) is passed as an argument
@@ -314,13 +314,13 @@ extern unsigned int find_first_set(unsigned int op);
 extern unsigned int find_last_set(unsigned int op);
 
 extern void	irq_handler_set(unsigned int vector,
-					 void (*oldRoutine) (void *parameter),
-					 void (*newRoutine) (void *parameter),
+					 void (*oldRoutine)(void *parameter),
+					 void (*newRoutine)(void *parameter),
 					 void *parameter);
 
 extern int	irq_connect(unsigned int irq,
 					 unsigned int priority,
-					 void (*routine) (void *parameter),
+					 void (*routine)(void *parameter),
 					 void *parameter,
 					 NANO_INT_STUB pIntStubMem);
 

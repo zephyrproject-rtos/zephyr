@@ -48,8 +48,8 @@ extern int errorCount;
 
 #define TMP_STRING_SIZE  100
 
-#define PRINT(fmt, ...) printk (fmt, ##__VA_ARGS__)
-#define PRINTF(fmt, ...) printf (fmt, ##__VA_ARGS__)
+#define PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#define PRINTF(fmt, ...) printf(fmt, ##__VA_ARGS__)
 
 #define PRINT_FORMAT(fmt, ...)                                       \
 	do                                                               \

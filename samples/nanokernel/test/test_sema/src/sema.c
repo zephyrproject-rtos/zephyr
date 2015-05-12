@@ -92,8 +92,8 @@ static void *timerData[1];
 
 static char           fiberStack[FIBER_STACKSIZE];
 
-static void (*_trigger_nano_isr_sem_give) (void) = (vvfn)sw_isr_trigger_0;
-static void (*_trigger_nano_isr_sem_take) (void) = (vvfn)sw_isr_trigger_1;
+static void (*_trigger_nano_isr_sem_give)(void) = (vvfn)sw_isr_trigger_0;
+static void (*_trigger_nano_isr_sem_take)(void) = (vvfn)sw_isr_trigger_1;
 
 static struct nano_sem multi_waiters;
 static struct nano_sem reply_multi_waiters;
@@ -151,7 +151,7 @@ int testSemFiberNoWait(void)
 {
 	int  i;
 
-	TC_PRINT ("Giving and taking a semaphore in a fiber (non-blocking)\n");
+	TC_PRINT("Giving and taking a semaphore in a fiber (non-blocking)\n");
 
     /*
      * Give the semaphore many times and then make sure that it can only be
@@ -163,13 +163,13 @@ int testSemFiberNoWait(void)
 		}
 
 	for (i = 0; i < 32; i++) {
-		if (nano_fiber_sem_take (&testSem) != 1) {
+		if (nano_fiber_sem_take(&testSem) != 1) {
 		    TC_ERROR(" *** Expected nano_fiber_sem_take() to succeed, not fail\n");
 		    goto errorReturn;
 		    }
 		}
 
-	if (nano_fiber_sem_take (&testSem) != 0) {
+	if (nano_fiber_sem_take(&testSem) != 0) {
 		TC_ERROR(" *** Expected  nano_fiber_sem_take() to fail, not succeed\n");
 		goto errorReturn;
 		}
@@ -272,7 +272,7 @@ void initNanoObjects(void)
 	{&isrSemInfo, &isrSemInfo},
 	};
 
-	(void)initIRQ (&i);
+	(void)initIRQ(&i);
 
 	nano_sem_init(&testSem);
 	nano_sem_init(&multi_waiters);
@@ -296,7 +296,7 @@ int testSemIsrNoWait(void)
 {
 	int  i;
 
-	TC_PRINT ("Giving and taking a semaphore in an ISR (non-blocking)\n");
+	TC_PRINT("Giving and taking a semaphore in an ISR (non-blocking)\n");
 
     /*
      * Give the semaphore many times and then make sure that it can only be
@@ -343,7 +343,7 @@ int testSemTaskNoWait(void)
 {
 	int  i;     /* loop counter */
 
-	TC_PRINT ("Giving and taking a semaphore in a task (non-blocking)\n");
+	TC_PRINT("Giving and taking a semaphore in a task (non-blocking)\n");
 
     /*
      * Give the semaphore many times and then make sure that it can only be
@@ -355,13 +355,13 @@ int testSemTaskNoWait(void)
 		}
 
 	for (i = 0; i < 32; i++) {
-		if (nano_task_sem_take (&testSem) != 1) {
+		if (nano_task_sem_take(&testSem) != 1) {
 		    TC_ERROR(" *** Expected nano_task_sem_take() to succeed, not fail\n");
 		    goto errorReturn;
 		    }
 		}
 
-	if (nano_task_sem_take (&testSem) != 0) {
+	if (nano_task_sem_take(&testSem) != 0) {
 		TC_ERROR(" *** Expected  nano_task_sem_take() to fail, not succeed!\n");
 		goto errorReturn;
 		}

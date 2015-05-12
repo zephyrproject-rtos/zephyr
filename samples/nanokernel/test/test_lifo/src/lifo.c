@@ -101,8 +101,8 @@ static volatile int  fiberDetectedFailure = 0; /* non-zero on failure */
 
 static char fiberStack[FIBER_STACKSIZE];
 
-static void (*_trigger_nano_isr_lifo_put) (void) = (vvfn)sw_isr_trigger_0;
-static void (*_trigger_nano_isr_lifo_get) (void) = (vvfn)sw_isr_trigger_1;
+static void (*_trigger_nano_isr_lifo_put)(void) = (vvfn)sw_isr_trigger_0;
+static void (*_trigger_nano_isr_lifo_get)(void) = (vvfn)sw_isr_trigger_1;
 
 static struct nano_lifo multi_waiters;
 static struct nano_sem reply_multi_waiters;
@@ -246,7 +246,7 @@ int fiberLifoNonWaitTest(void)
 	TC_PRINT("Task to get LIFO items without waiting\n");
 	nano_fiber_lifo_put(&lifoChannel, &lifoItem[0]);
 	nano_fiber_lifo_put(&lifoChannel, &lifoItem[1]);
-	nano_fiber_sem_give (&taskWaitSem);       /* Wake the task (if blocked) */
+	nano_fiber_sem_give(&taskWaitSem);       /* Wake the task (if blocked) */
 
     /*
      * Wait for the task to get the items and then trigger an ISR to populate
@@ -464,7 +464,7 @@ void initNanoObjects(void)
 	{&isrLifoInfo, &isrLifoInfo},
 	};
 
-	(void)initIRQ (&i);
+	(void)initIRQ(&i);
 
 	nano_lifo_init(&lifoChannel);   /* Initialize the LIFO channel */
 	nano_sem_init(&taskWaitSem);   /* Initialize the task waiting semaphore */
