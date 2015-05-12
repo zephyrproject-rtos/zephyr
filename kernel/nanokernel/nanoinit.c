@@ -108,6 +108,9 @@ extern void _Ctors(void);
 * This routine initializes various nanokernel data structures, including
 * the background (or idle) task and any architecture-specific initialization.
 *
+* Note that all fields of "_nanokernel" are set to zero on entry, which may
+* be all the initialization many of them require.
+*
 * RETURNS: N/A
 */
 
@@ -166,13 +169,6 @@ static void nano_init(tCCS *dummyOutContext)
 	_k_task_list[_k_task_count].workspace = (char *)_nanokernel.task;
 	_k_task_list[_k_task_count].worksize = CONFIG_MAIN_STACK_SIZE;
 #endif
-
-	/* indicate that no fibers are ready to run */
-
-	_nanokernel.fiber = NULL;
-#ifdef CONFIG_FP_SHARING
-	_nanokernel.current_fp = NULL;
-#endif /* CONFIG_FP_SHARING */
 
 	/* perform any architecture-specific initialization */
 
