@@ -203,24 +203,20 @@ static void att_find_type_req(struct bt_conn *conn, struct bt_buf *data)
 	return;
 }
 
-static bool uuid_create(struct bt_uuid *uuid, uint8_t *data, uint8_t len)
+static bool uuid_create(struct bt_uuid *uuid, struct bt_buf *data)
 {
-	uint16_t u16;
-
-	if (len > sizeof(uuid->u128)) {
+	if (data->len > sizeof(uuid->u128)) {
 		return false;
 	}
 
-	switch (len) {
+	switch (data->len) {
 	case 2:
 		uuid->type = BT_UUID_16;
-		/* TODO: Add unaligned helpers for these operations */
-		memcpy(&u16, data, len);
-		uuid->u16 = sys_le16_to_cpu(u16);
+		uuid->u16 = bt_buf_pull_le16(data);
 		return true;
 	case 16:
 		uuid->type = BT_UUID_128;
-		memcpy(uuid->u128, data, len);
+		memcpy(uuid->u128, data->data, data->len);
 		return true;
 	}
 
@@ -247,7 +243,7 @@ static void att_read_type_req(struct bt_conn *conn, struct bt_buf *data)
 	end_handle = sys_le16_to_cpu(req->end_handle);
 	bt_buf_pull(data, sizeof(*req));
 
-	if (!uuid_create(&uuid, data->data, data->len)) {
+	if (!uuid_create(&uuid, data)) {
 		send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, 0,
 			     BT_ATT_ERR_UNLIKELY);
 		return;
@@ -366,7 +362,7 @@ static void att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
 	end_handle = sys_le16_to_cpu(req->end_handle);
 	bt_buf_pull(data, sizeof(*req));
 
-	if (!uuid_create(&uuid, data->data, data->len)) {
+	if (!uuid_create(&uuid, data)) {
 		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, 0,
 			     BT_ATT_ERR_UNLIKELY);
 		return;
