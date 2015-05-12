@@ -72,12 +72,12 @@ static uint32_t timestamp = 0;
 * \NOMANUAL
 */
 
-static void latencyTestIsr (void *unused)
+static void latencyTestIsr(void *unused)
 	{
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 
-	nano_isr_sem_give (&testSema);
-	timestamp = TIME_STAMP_DELTA_GET (0);
+	nano_isr_sem_give(&testSema);
+	timestamp = TIME_STAMP_DELTA_GET(0);
 	}
 
 /*******************************************************************************
@@ -92,11 +92,11 @@ static void latencyTestIsr (void *unused)
 * \NOMANUAL
 */
 
-static void fiberInt (void)
+static void fiberInt(void)
 	{
-	setSwInterrupt (latencyTestIsr);
-	raiseIntFunc ();
-	fiber_yield ();
+	setSwInterrupt(latencyTestIsr);
+	raiseIntFunc();
+	fiber_yield();
 	}
 
 /*******************************************************************************
@@ -111,10 +111,10 @@ static void fiberInt (void)
  * \NOMANUAL
  */
 
-static void fiberWaiter (void)
+static void fiberWaiter(void)
 	{
-	nano_fiber_sem_take_wait (&testSema);
-	timestamp = TIME_STAMP_DELTA_GET (timestamp);
+	nano_fiber_sem_take_wait(&testSema);
+	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	}
 
 /*******************************************************************************
@@ -126,19 +126,19 @@ static void fiberWaiter (void)
  * \NOMANUAL
  */
 
-int nanoIntToFiberSem (void)
+int nanoIntToFiberSem(void)
 	{
-	PRINT_FORMAT (" 3- Measure time from ISR to executing a different fiber"
+	PRINT_FORMAT(" 3- Measure time from ISR to executing a different fiber"
 		  " (rescheduled)");
-	nano_sem_init (&testSema);
+	nano_sem_init(&testSema);
 
-	TICK_SYNCH ();
-	task_fiber_start (&waiterStack[0], STACKSIZE,
+	TICK_SYNCH();
+	task_fiber_start(&waiterStack[0], STACKSIZE,
 		    (nano_fiber_entry_t) fiberWaiter, 0, 0, 5, 0);
-	task_fiber_start (&intStack[0], STACKSIZE,
+	task_fiber_start(&intStack[0], STACKSIZE,
 		    (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
 
-	PRINT_FORMAT (" switching time is %lu tcs = %lu nsec",
-		  timestamp, SYS_CLOCK_HW_CYCLES_TO_NS (timestamp));
+	PRINT_FORMAT(" switching time is %lu tcs = %lu nsec",
+		  timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	return 0;
 	}

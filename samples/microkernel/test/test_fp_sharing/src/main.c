@@ -188,7 +188,7 @@ void load_store_low(void)
 			 5,	/* priority */
 			 FP_OPTION /* options */
 			 );
-#elif defined (CONFIG_MICROKERNEL)
+#elif defined(CONFIG_MICROKERNEL)
 	/*
 	 * For microkernel builds, preemption tasks are specified in the .vpf file.
 	 *

@@ -38,7 +38,7 @@
 /*
  * Function prototypes.
  */
-int pipeget (kpipe_t pipe, K_PIPE_OPTION option,
+int pipeget(kpipe_t pipe, K_PIPE_OPTION option,
 		int size, int count, unsigned int* time);
 
 /*
@@ -56,7 +56,7 @@ int pipeget (kpipe_t pipe, K_PIPE_OPTION option,
  * \NOMANUAL
  */
 
-void piperecvtask (void)
+void piperecvtask(void)
 	{
 	int getsize;
 	unsigned int gettime;
@@ -70,12 +70,12 @@ void piperecvtask (void)
 	for (getsize = 8; getsize <= MESSAGE_SIZE_PIPE; getsize <<= 1) {
 	for (pipe = 0; pipe < 3; pipe++) {
 	    getcount = NR_OF_PIPE_RUNS;
-	    pipeget (TestPipes[pipe], _ALL_N, getsize,
+	    pipeget(TestPipes[pipe], _ALL_N, getsize,
 			getcount, &gettime);
 	    getinfo.time = gettime;
 	    getinfo.size = getsize;
 	    getinfo.count = getcount;
-	    task_fifo_put_wait (CH_COMM, &getinfo); /* acknowledge to master */
+	    task_fifo_put_wait(CH_COMM, &getinfo); /* acknowledge to master */
 	    }
 	}
 
@@ -85,12 +85,12 @@ void piperecvtask (void)
 	    getcount = MESSAGE_SIZE_PIPE / getsize;
 	    for (pipe = 0; pipe < 3; pipe++) {
 		/* size*count == MESSAGE_SIZE_PIPE */
-		pipeget (TestPipes[pipe], _1_TO_N,
+		pipeget(TestPipes[pipe], _1_TO_N,
 			    getsize, getcount, &gettime);
 		getinfo.time = gettime;
 		getinfo.size = getsize;
 		getinfo.count = getcount;
-		task_fifo_put_wait (CH_COMM, &getinfo); /* acknowledge to master */
+		task_fifo_put_wait(CH_COMM, &getinfo); /* acknowledge to master */
 		}
 	    }
 	}
@@ -107,7 +107,7 @@ void piperecvtask (void)
  * \NOMANUAL
  */
 
-int pipeget (
+int pipeget(
 	kpipe_t pipe, /* pipe to read data from */
 	K_PIPE_OPTION option, /* _ALL_TO_N or _1_TO_N */
 	int size, /* data chunk size */
@@ -121,14 +121,14 @@ int pipeget (
 	int size2xfer_total = size * count;
 
     /* sync with the sender */
-	task_sem_take_wait (SEM0);
-	t = BENCH_START ();
+	task_sem_take_wait(SEM0);
+	t = BENCH_START();
 	for (i = 0; _1_TO_N == option || (i < count); i++) {
 	int sizexferd = 0;
 	int size2xfer = min(size, size2xfer_total - sizexferd_total);
 	int ret;
 
-	ret = task_pipe_get_wait (pipe, data_recv, size2xfer,
+	ret = task_pipe_get_wait(pipe, data_recv, size2xfer,
 			      &sizexferd, option);
 	if (RC_OK != ret)
 	    return 1;
@@ -144,18 +144,18 @@ int pipeget (
 	    return 1;
 	}
 
-	t = TIME_STAMP_DELTA_GET (t);
-	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
+	t = TIME_STAMP_DELTA_GET(t);
+	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
 	if (bench_test_end () < 0) {
 	if (high_timer_overflow ()) {
-	    PRINT_STRING ("| Timer overflow. Results are invalid            ",
+	    PRINT_STRING("| Timer overflow. Results are invalid            ",
 			  output_file);
 	    }
 	else {
-	    PRINT_STRING ("| Tick occured. Results may be inaccurate        ",
+	    PRINT_STRING("| Tick occured. Results may be inaccurate        ",
 			  output_file);
 	    }
-	PRINT_STRING ("                             |\n",
+	PRINT_STRING("                             |\n",
 		      output_file);
 	}
 	return 0;

@@ -141,7 +141,7 @@ void fiber1(void)
      * Expect this task to terminate due to stack check fail and will not
      * execute pass here.
      */
-	printLoop (__func__);
+	printLoop(__func__);
 
 	tcRC = TC_FAIL;
 }
@@ -172,7 +172,7 @@ void main(void)
 	task_start(ALTERNATETASK);       /* refer to prj.vpf file */
 #else
     /* Start fiber */
-	task_fiber_start (&fiberStack[0], STACKSIZE,
+	task_fiber_start(&fiberStack[0], STACKSIZE,
 		                (nano_fiber_entry_t) fiber1, 0, 0, 7, 0);
 #endif /* ! CONFIG_MICROKERNEL */
 
@@ -180,9 +180,9 @@ void main(void)
 		goto errorExit;
 		}
 
-	printLoop (__func__);
+	printLoop(__func__);
 
 errorExit:
 	TC_END_RESULT(tcRC);
-	TC_END_REPORT (tcRC);
+	TC_END_REPORT(tcRC);
 }

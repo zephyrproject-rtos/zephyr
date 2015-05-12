@@ -67,7 +67,7 @@ extern unsigned char _idt_base_address[];
 extern void *nanoIntStub;
 extern void *exc_divide_error_handlerStub;
 
-NANO_CPU_INT_REGISTER (nanoIntStub, TEST_SOFT_INT, 0);
+NANO_CPU_INT_REGISTER(nanoIntStub, TEST_SOFT_INT, 0);
 
 /* locals */
 
@@ -142,14 +142,14 @@ int nanoIdtStubTest(void)
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) & 0xFFFF);
 	if (pIdtEntry->lowOffset != offset) {
-	TC_ERROR ("Failed to find low offset of nanoIntStub \
+	TC_ERROR("Failed to find low offset of nanoIntStub \
 		   (0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
 	return TC_FAIL;
 	}
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) >> 16);
 	if (pIdtEntry->hiOffset != offset) {
-	TC_ERROR ("Failed to find high offset of nanoIntStub \
+	TC_ERROR("Failed to find high offset of nanoIntStub \
 		   (0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
 	return TC_FAIL;
 	}
@@ -159,14 +159,14 @@ int nanoIdtStubTest(void)
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) & 0xFFFF);
 	if (pIdtEntry->lowOffset != offset) {
-	TC_ERROR ("Failed to find low offset of exc stub \
+	TC_ERROR("Failed to find low offset of exc stub \
 		   (0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
 	return TC_FAIL;
 	}
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) >> 16);
 	if (pIdtEntry->hiOffset != offset) {
-	TC_ERROR ("Failed to find high offset of exc stub \
+	TC_ERROR("Failed to find high offset of exc stub \
 		   (0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
 	return TC_FAIL;
 	}
@@ -192,13 +192,13 @@ static void idtSpurFiber(int a1, int a2)
 #endif
 {
 #ifndef CONFIG_MICROKERNEL
-	ARG_UNUSED (a1);
-	ARG_UNUSED (a2);
+	ARG_UNUSED(a1);
+	ARG_UNUSED(a2);
 #endif /* !CONFIG_MICROKERNEL */
 
-	TC_PRINT ("- Expect to see unhandled interrupt/exception message\n");
+	TC_PRINT("- Expect to see unhandled interrupt/exception message\n");
 
-	_trigger_spurHandler ();
+	_trigger_spurHandler();
 
     /* Shouldn't get here */
 	spurHandlerAbortedContext = 0;
@@ -223,20 +223,20 @@ void main(void)
 	int           rv;       /* return value from tests */
 	volatile int  error;    /* used to create a divide by zero error */
 
-	TC_START ("Test Nanokernel static IDT tests");
+	TC_START("Test Nanokernel static IDT tests");
 
 
-	TC_PRINT ("Testing to see if IDT has address of test stubs()\n");
-	rv = nanoIdtStubTest ();
+	TC_PRINT("Testing to see if IDT has address of test stubs()\n");
+	rv = nanoIdtStubTest();
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
-	TC_PRINT ("Testing to see interrupt handler executes properly\n");
+	TC_PRINT("Testing to see interrupt handler executes properly\n");
 	_trigger_isrHandler();
 
 	if (intHandlerExecuted == 0) {
-	TC_ERROR ("Interrupt handler did not execute\n");
+	TC_ERROR("Interrupt handler did not execute\n");
 	rv = TC_FAIL;
 	goto doneTests;
 	} else if (intHandlerExecuted != 1) {
@@ -246,7 +246,7 @@ void main(void)
 	goto doneTests;
 	}
 
-	TC_PRINT ("Testing to see exception handler executes properly\n");
+	TC_PRINT("Testing to see exception handler executes properly\n");
 
     /*
      * Use excHandlerExecuted instead of 0 to prevent the compiler issuing a
@@ -255,7 +255,7 @@ void main(void)
 	error = error / excHandlerExecuted;
 
 	if (excHandlerExecuted == 0) {
-	TC_ERROR ("Exception handler did not execute\n");
+	TC_ERROR("Exception handler did not execute\n");
 	rv = TC_FAIL;
 	goto doneTests;
 	}
@@ -269,23 +269,23 @@ void main(void)
     /*
      * Start fiber/task to trigger the spurious interrupt handler
      */
-	TC_PRINT ("Testing to see spurious handler executes properly\n");
+	TC_PRINT("Testing to see spurious handler executes properly\n");
 #ifdef CONFIG_MICROKERNEL
-	task_start (tSpurTask);
+	task_start(tSpurTask);
 #else
-	task_fiber_start (fiberStack, sizeof(fiberStack), idtSpurFiber, 0, 0, 5, 0);
+	task_fiber_start(fiberStack, sizeof(fiberStack), idtSpurFiber, 0, 0, 5, 0);
 #endif
     /*
      * The fiber/task should not run past where the spurious interrupt is
      * generated. Therefore spurHandlerAbortedContext should remain at 1.
      */
 	if (spurHandlerAbortedContext == 0) {
-	TC_ERROR ("Spurious handler did not execute as expected\n");
+	TC_ERROR("Spurious handler did not execute as expected\n");
 	rv = TC_FAIL;
 	goto doneTests;
 	}
 
 doneTests:
-	TC_END (rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
-	TC_END_REPORT (rv);
+	TC_END(rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
+	TC_END_REPORT(rv);
 }

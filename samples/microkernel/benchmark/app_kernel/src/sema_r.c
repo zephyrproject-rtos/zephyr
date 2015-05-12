@@ -46,7 +46,7 @@
  * \NOMANUAL
  */
 
-void waittask (void)
+void waittask(void)
 	{
 	int i;
 
@@ -59,26 +59,26 @@ void waittask (void)
 	slist[4] = ENDLIST;
 
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	task_sem_take_wait (SEM1);
+	task_sem_take_wait(SEM1);
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	task_sem_take_wait_timeout (SEM1, SEMA_WAIT_TIME);
+	task_sem_take_wait_timeout(SEM1, SEMA_WAIT_TIME);
 
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	task_sem_group_take_wait (slist);
+	task_sem_group_take_wait(slist);
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	task_sem_group_take_wait_timeout (slist, SEMA_WAIT_TIME);
+	task_sem_group_take_wait_timeout(slist, SEMA_WAIT_TIME);
 
 	slist[2] = SEM3;
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	task_sem_group_take_wait (slist);
+	task_sem_group_take_wait(slist);
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	task_sem_group_take_wait_timeout (slist, SEMA_WAIT_TIME);
+	task_sem_group_take_wait_timeout(slist, SEMA_WAIT_TIME);
 
 	slist[3] = SEM4;
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	task_sem_group_take_wait (slist);
+	task_sem_group_take_wait(slist);
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++)
-	task_sem_group_take_wait_timeout (slist, SEMA_WAIT_TIME);
+	task_sem_group_take_wait_timeout(slist, SEMA_WAIT_TIME);
 	}
 
 #endif /* SEMA_BENCH */

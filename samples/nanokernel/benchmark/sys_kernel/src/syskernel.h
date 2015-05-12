@@ -65,20 +65,20 @@ extern const char sz_case_details_fmt[];
 extern const char sz_case_end_fmt[];
 extern const char sz_case_timing_fmt[];
 
-int check_result (int i, uint32_t ticks);
+int check_result(int i, uint32_t ticks);
 
-int sema_test (void);
-int lifo_test (void);
-int fifo_test (void);
-int stack_test (void);
-void begin_test (void);
+int sema_test(void);
+int lifo_test(void);
+int fifo_test(void);
+int stack_test(void);
+void begin_test(void);
 
-static inline uint32_t BENCH_START (void)
+static inline uint32_t BENCH_START(void)
 	{
 	uint32_t et;
 
-	begin_test ();
-	et = TIME_STAMP_DELTA_GET (0);
+	begin_test();
+	et = TIME_STAMP_DELTA_GET(0);
 	return et;
 	}
 

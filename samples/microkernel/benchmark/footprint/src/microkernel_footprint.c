@@ -78,8 +78,8 @@ volatile int i = 0;		/* counter used by foreground task */
 #ifdef TEST_max
 static NANO_CPU_INT_STUB_DECL(isrDummyHandlerStub);
 #else
-static void isrDummyIntStub (void *);
-NANO_CPU_INT_REGISTER (isrDummyIntStub, TEST_SOFT_INT, 0);
+static void isrDummyIntStub(void *);
+NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0);
 #endif /* TEST_max */
 
 /* pointer array ensures specified functions are linked into the image */
@@ -151,9 +151,9 @@ static pfunc func_array[] = {
  * RETURNS: N/A
  */
 
-void dummyIsr (void *unused)
+void dummyIsr(void *unused)
 	{
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 	}
 
 #ifdef TEST_reg
@@ -168,9 +168,9 @@ void dummyIsr (void *unused)
  * RETURNS: N/A
  */
 
-static void isrDummyIntStub (void *unused)
+static void isrDummyIntStub(void *unused)
 	{
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 
 	isr_dummy();
 
@@ -190,19 +190,19 @@ static void isrDummyIntStub (void *unused)
  * \NOMANUAL
  */
 
-void fgTaskEntry (void)
+void fgTaskEntry(void)
 	{
 #ifdef TEST_max
     /* dynamically link in dummy ISR */
-	irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
+	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
 		       (void *) 0, isrDummyHandlerStub);
 #endif /* TEST_max */
 
     /* note: referencing "func_array" ensures it isn't optimized out */
 #ifdef TEST_max
-	printf ((char *)MESSAGE, func_array);
+	printf((char *)MESSAGE, func_array);
 #else
-	printk ((char *)MESSAGE, func_array);
+	printk((char *)MESSAGE, func_array);
 #endif /* TEST_max */
 
 	while (1) {

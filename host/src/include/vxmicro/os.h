@@ -33,13 +33,13 @@
 #ifndef _os__h_
 #define _os__h_
 
-#if defined (WINDOWS)
+#if defined(WINDOWS)
   #define ENDL "\r\n"
 #else
   #define ENDL "\n"
 #endif
 
-#if defined (WINDOWS)
+#if defined(WINDOWS)
 static inline
 int is_path_separator(const char c)
 {

@@ -100,9 +100,9 @@ void isr2(void)
 * RETURNS: N/A
 */
 
-void main (void)
+void main(void)
 	{
-	TC_START ("Test Cortex-M3 IRQ installed directly in vector table");
+	TC_START("Test Cortex-M3 IRQ installed directly in vector table");
 
 	for (int ii = 0; ii < 3; ii++) {
 	irq_enable(ii);
@@ -126,8 +126,8 @@ void main (void)
 		 nano_task_sem_take(&sem[2]) ? TC_PASS : TC_FAIL;
 
 get_out:
-	TC_END_RESULT (rv);
-	TC_END_REPORT (rv);
+	TC_END_RESULT(rv);
+	TC_END_REPORT(rv);
 	}
 
 typedef void (*vth)(void); /* Vector Table Handler */

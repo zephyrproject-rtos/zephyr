@@ -83,9 +83,9 @@ uint32_t criticalLoop(uint32_t count)
 {
 	int32_t  ticks;
 
-	ticks = task_tick_get_32 ();
+	ticks = task_tick_get_32();
 	while (task_tick_get_32 () < ticks + NUM_TICKS) {
-		task_offload_to_fiber (criticalRtn, &criticalVar);
+		task_offload_to_fiber(criticalRtn, &criticalVar);
 		count++;
 		}
 
@@ -103,17 +103,17 @@ uint32_t criticalLoop(uint32_t count)
 
 void AlternateTask(void)
 {
-	task_sem_take_wait (ALT_SEM);     /* Wait to be activated */
+	task_sem_take_wait(ALT_SEM);     /* Wait to be activated */
 
-	altTaskIterations = criticalLoop (altTaskIterations);
+	altTaskIterations = criticalLoop(altTaskIterations);
 
-	task_sem_give (REGRESS_SEM);
+	task_sem_give(REGRESS_SEM);
 
-	task_sem_take_wait (ALT_SEM);    /* Wait to be re-activated */
+	task_sem_take_wait(ALT_SEM);    /* Wait to be re-activated */
 
-	altTaskIterations = criticalLoop (altTaskIterations);
+	altTaskIterations = criticalLoop(altTaskIterations);
 
-	task_sem_give (REGRESS_SEM);
+	task_sem_give(REGRESS_SEM);
 }
 
 /*******************************************************************************
@@ -132,53 +132,53 @@ void RegressionTask(void)
 	uint32_t nCalls = 0;
 	int      status;
 
-	TC_START ("Test Microkernel Critical Section API\n");
+	TC_START("Test Microkernel Critical Section API\n");
 
-	task_sem_give (ALT_SEM);      /* Activate AlternateTask() */
+	task_sem_give(ALT_SEM);      /* Activate AlternateTask() */
 
-	nCalls = criticalLoop (nCalls);
+	nCalls = criticalLoop(nCalls);
 
     /* Wait for AlternateTask() to complete */
-	status = task_sem_take_wait_timeout (REGRESS_SEM, TEST_TIMEOUT);
+	status = task_sem_take_wait_timeout(REGRESS_SEM, TEST_TIMEOUT);
 	if (status != RC_OK) {
-		TC_ERROR ("Timed out waiting for REGRESS_SEM\n");
+		TC_ERROR("Timed out waiting for REGRESS_SEM\n");
 		goto errorReturn;
 		}
 
 	if (criticalVar != nCalls + altTaskIterations) {
-		TC_ERROR ("Unexpected value for <criticalVar>.  Expected %d, got %d\n",
+		TC_ERROR("Unexpected value for <criticalVar>.  Expected %d, got %d\n",
 		          nCalls + altTaskIterations, criticalVar);
 		goto errorReturn;
 		}
-	TC_PRINT ("Obtained expected <criticalVar> value of %u\n", criticalVar);
+	TC_PRINT("Obtained expected <criticalVar> value of %u\n", criticalVar);
 
-	TC_PRINT ("Enabling time slicing ...\n");
+	TC_PRINT("Enabling time slicing ...\n");
 
-	scheduler_time_slice_set (1, 10);
+	scheduler_time_slice_set(1, 10);
 
-	task_sem_give (ALT_SEM);      /* Re-activate AlternateTask() */
+	task_sem_give(ALT_SEM);      /* Re-activate AlternateTask() */
 
-	nCalls = criticalLoop (nCalls);
+	nCalls = criticalLoop(nCalls);
 
     /* Wait for AlternateTask() to finish */
-	status = task_sem_take_wait_timeout (REGRESS_SEM, TEST_TIMEOUT);
+	status = task_sem_take_wait_timeout(REGRESS_SEM, TEST_TIMEOUT);
 	if (status != RC_OK) {
-		TC_ERROR ("Timed out waiting for REGRESS_SEM\n");
+		TC_ERROR("Timed out waiting for REGRESS_SEM\n");
 		goto errorReturn;
 		}
 
 	if (criticalVar != nCalls + altTaskIterations) {
-		TC_ERROR ("Unexpected value for <criticalVar>.  Expected %d, got %d\n",
+		TC_ERROR("Unexpected value for <criticalVar>.  Expected %d, got %d\n",
 		          nCalls + altTaskIterations, criticalVar);
 		goto errorReturn;
 		}
-	TC_PRINT ("Obtained expected <criticalVar> value of %u\n", criticalVar);
+	TC_PRINT("Obtained expected <criticalVar> value of %u\n", criticalVar);
 
-	TC_END_RESULT (TC_PASS);
-	TC_END_REPORT (TC_PASS);
+	TC_END_RESULT(TC_PASS);
+	TC_END_REPORT(TC_PASS);
 	return;
 
 errorReturn:
-	TC_END_RESULT (TC_FAIL);
-	TC_END_REPORT (TC_FAIL);
+	TC_END_RESULT(TC_FAIL);
+	TC_END_REPORT(TC_FAIL);
 }

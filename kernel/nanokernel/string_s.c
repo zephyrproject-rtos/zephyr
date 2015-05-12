@@ -143,7 +143,7 @@ errno_t __strcpy_s(char *dest, size_t nDestElem, const char *src)
 		dest[0] = '\0';
 	}
 
-	_NanoFatalErrorHandler (_NANO_ERR_INVALID_STRING_OP, &_default_esf);
+	_NanoFatalErrorHandler(_NANO_ERR_INVALID_STRING_OP, &_default_esf);
 
     /*
      * the following statement is included in case the compiler

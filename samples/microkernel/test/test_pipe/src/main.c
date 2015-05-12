@@ -81,9 +81,9 @@ kpipe_t pipeId	= PIPE_ID;
 * RETURNS: N/A
 */
 
-void RegressionTaskEntry (void)
+void RegressionTaskEntry(void)
 	{
-	extern int RegressionTask (void);
+	extern int RegressionTask(void);
 
 	task_sem_give (resultSems[RegressionTask ()]);
 	}
@@ -98,9 +98,9 @@ void RegressionTaskEntry (void)
 * RETURNS: N/A
 */
 
-void AlternateTaskEntry (void)
+void AlternateTaskEntry(void)
 	{
-	extern int AlternateTask (void);
+	extern int AlternateTask(void);
 
 	task_sem_give (resultSems[AlternateTask ()]);
 	}
@@ -115,12 +115,12 @@ void AlternateTaskEntry (void)
 * RETURNS: N/A
 */
 
-void MonitorTaskEntry (void)
+void MonitorTaskEntry(void)
 	{
 	ksem_t result;
 	int tasksDone;
 
-	PRINT_DATA ("Starting pipe tests\n");
+	PRINT_DATA("Starting pipe tests\n");
 	PRINT_LINE;
 
     /*
@@ -130,17 +130,17 @@ void MonitorTaskEntry (void)
      */
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
-	result = task_sem_group_take_wait_timeout (resultSems, TIMEOUT);
+	result = task_sem_group_take_wait_timeout(resultSems, TIMEOUT);
 	if (result != resultSems[TC_PASS]) {
 	    if (result != resultSems[TC_FAIL]) {
-		TC_ERROR ("Monitor task timed out\n");
+		TC_ERROR("Monitor task timed out\n");
 		}
-	    TC_END_RESULT (TC_FAIL);
-	    TC_END_REPORT (TC_FAIL);
+	    TC_END_RESULT(TC_FAIL);
+	    TC_END_REPORT(TC_FAIL);
 	    return;
 	    }
 	}
 
-	TC_END_RESULT (TC_PASS);
-	TC_END_REPORT (TC_PASS);
+	TC_END_RESULT(TC_PASS);
+	TC_END_REPORT(TC_PASS);
 	}

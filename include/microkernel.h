@@ -86,7 +86,7 @@ extern PFN_CHANNEL_RWT pKS_Channel_PutWT;
 extern PFN_CHANNEL_RWT pKS_Channel_GetWT;
 
 /* needed by generated kernel_main.c */
-extern void	timer_driver	(int priority);
+extern void	timer_driver(int priority);
 
 /* common event numbers */
 #define TICK_EVENT	0

@@ -46,7 +46,7 @@
 #include <test_asm_inline_other.h>
 #endif
 
-#if defined (CONFIG_NANOKERNEL)
+#if defined(CONFIG_NANOKERNEL)
 
 #include <nanokernel.h>
 
@@ -58,7 +58,7 @@
 typedef int64_t TICK_TYPE;
 #define TICK_GET(x) (TICK_TYPE)nano_tick_delta(x)
 
-static inline void TICK_SYNCH (void)
+static inline void TICK_SYNCH(void)
 {
 	TICK_TYPE  reftime;
 
@@ -84,14 +84,14 @@ typedef int64_t TICK_TYPE;
 /* time necessary to read the time */
 extern uint32_t tm_off;
 
-static inline uint32_t TIME_STAMP_DELTA_GET (uint32_t ts)
+static inline uint32_t TIME_STAMP_DELTA_GET(uint32_t ts)
 	{
 	uint32_t t;
 
     /* serialize so OS_GET_TIME() is not reordered */
 	timestamp_serialize();
 
-	t = OS_GET_TIME ();
+	t = OS_GET_TIME();
 	uint32_t res = (t >= ts)? (t - ts): (ULONG_MAX - ts + t);
 	if (ts > 0)
 	res -= tm_off;
@@ -102,11 +102,11 @@ static inline uint32_t TIME_STAMP_DELTA_GET (uint32_t ts)
  * Routine initializes the benchmark timing measurement
  * The function sets up the global variable tm_off
  */
-static inline void bench_test_init (void)
+static inline void bench_test_init(void)
 	{
-	uint32_t t = OS_GET_TIME ();
+	uint32_t t = OS_GET_TIME();
 
-	tm_off = OS_GET_TIME () - t;
+	tm_off = OS_GET_TIME() - t;
 	}
 
 #if defined (CONFIG_MICROKERNEL) && defined (KERNEL)
@@ -126,17 +126,17 @@ static TICK_TYPE tCheck;
  * high precision timer register overflow.
  * Functions modify the tCheck global variable.
  */
-static inline void bench_test_start (void)
+static inline void bench_test_start(void)
 	{
 	tCheck = 0;
     /* before reading time we synchronize to the start of the timer tick */
-	TICK_SYNCH ();
+	TICK_SYNCH();
 	tCheck = TICK_GET(&tCheck);
 	}
 
 
 /* returns 0 if the number of ticks is valid and -1 if not */
-static inline int bench_test_end (void)
+static inline int bench_test_end(void)
 	{
 	tCheck = TICK_GET(&tCheck);
 	if (tCheck > BENCH_MAX_TICKS)
@@ -151,7 +151,7 @@ static inline int bench_test_end (void)
  * Called after bench_test_end to see if we still can use timing
  * results or is it completely invalid
  */
-static inline int high_timer_overflow (void)
+static inline int high_timer_overflow(void)
 	{
 	if (tCheck >= (UINT_MAX / sys_clock_hw_cycles_per_tick))
 	return -1;

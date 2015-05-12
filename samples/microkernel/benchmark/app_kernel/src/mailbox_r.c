@@ -38,7 +38,7 @@
 /*
  * Function prototypes.
  */
-int mailbox_get (kmbox_t mailbox,int size,int count,unsigned int* time);
+int mailbox_get(kmbox_t mailbox,int size,int count,unsigned int* time);
 
 /*
  * Function declarations.
@@ -55,7 +55,7 @@ int mailbox_get (kmbox_t mailbox,int size,int count,unsigned int* time);
  * \NOMANUAL
  */
 
-void mailrecvtask (void)
+void mailrecvtask(void)
 	{
 	int getsize;
 	unsigned int gettime;
@@ -65,18 +65,18 @@ void mailrecvtask (void)
 	getcount = NR_OF_MBOX_RUNS;
 
 	getsize = 0;
-	mailbox_get (MAILB1, getsize, getcount, &gettime);
+	mailbox_get(MAILB1, getsize, getcount, &gettime);
 	getinfo.time = gettime;
 	getinfo.size = getsize;
 	getinfo.count = getcount;
-	task_fifo_put_wait (MB_COMM, &getinfo); /* acknowledge to master */
+	task_fifo_put_wait(MB_COMM, &getinfo); /* acknowledge to master */
 
 	for (getsize = 8; getsize <= MESSAGE_SIZE; getsize <<= 1) {
-	mailbox_get (MAILB1, getsize, getcount, &gettime);
+	mailbox_get(MAILB1, getsize, getcount, &gettime);
 	getinfo.time = gettime;
 	getinfo.size = getsize;
 	getinfo.count = getcount;
-	task_fifo_put_wait (MB_COMM, &getinfo); /* acknowledge to master */
+	task_fifo_put_wait(MB_COMM, &getinfo); /* acknowledge to master */
 	}
 	}
 
@@ -90,7 +90,7 @@ void mailrecvtask (void)
  * \NOMANUAL
  */
 
-int mailbox_get (
+int mailbox_get(
 	kmbox_t mailbox, /* the mailbox to read data from */
 	int size, /* size of each data portion */
 	int count, /* number of data portions */
@@ -106,16 +106,16 @@ int mailbox_get (
 	Message.size = size;
 
     /* sync with the sender */
-	task_sem_take_wait (SEM0);
-	t = BENCH_START ();
+	task_sem_take_wait(SEM0);
+	t = BENCH_START();
 	for (i = 0; i < count; i++) {
-	task_mbox_get_wait (mailbox, &Message);
+	task_mbox_get_wait(mailbox, &Message);
 	}
 
-	t = TIME_STAMP_DELTA_GET (t);
-	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG (t, count);
+	t = TIME_STAMP_DELTA_GET(t);
+	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
 	if (bench_test_end () < 0)
-	PRINT_OVERFLOW_ERROR ();
+	PRINT_OVERFLOW_ERROR();
 	return 0;
 	}
 

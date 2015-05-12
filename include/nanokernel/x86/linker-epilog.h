@@ -41,7 +41,7 @@
  * DIAB linker does not support multiple SECTIONS commands
  * in linker script
  */
-#if defined (__GCC_LINKER_CMD__)
+#if defined(__GCC_LINKER_CMD__)
 
 /*
  * The following guard prevents usage of orphaned sections --

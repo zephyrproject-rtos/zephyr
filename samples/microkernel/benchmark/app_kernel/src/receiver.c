@@ -41,14 +41,14 @@
 
 #include "receiver.h"
 
-char data_recv[OCTET_TO_SIZEOFUNIT (MESSAGE_SIZE)] = {
+char data_recv[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)] = {
 	0
 	};
 
-void dequtask (void);
-void waittask (void);
-void mailrecvtask (void);
-void piperecvtask (void);
+void dequtask(void);
+void waittask(void);
+void mailrecvtask(void);
+void piperecvtask(void);
 
 /*******************************************************************************
  *
@@ -59,23 +59,23 @@ void piperecvtask (void);
  * \NOMANUAL
  */
 
-void recvtask (void)
+void recvtask(void)
 	{
     /* order must be compatible with master.c ! */
 #ifdef FIFO_BENCH
-	task_sem_take_wait (STARTRCV);
-	dequtask ();
+	task_sem_take_wait(STARTRCV);
+	dequtask();
 #endif
 #ifdef SEMA_BENCH
-	task_sem_take_wait (STARTRCV);
-	waittask ();
+	task_sem_take_wait(STARTRCV);
+	waittask();
 #endif
 #ifdef MAILBOX_BENCH
-	task_sem_take_wait (STARTRCV);
-	mailrecvtask ();
+	task_sem_take_wait(STARTRCV);
+	mailrecvtask();
 #endif
 #ifdef PIPE_BENCH
-	task_sem_take_wait (STARTRCV);
-	piperecvtask ();
+	task_sem_take_wait(STARTRCV);
+	piperecvtask();
 #endif
 	}

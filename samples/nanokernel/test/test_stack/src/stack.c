@@ -170,7 +170,7 @@ void isr_stack_push(void *parameter)
 {
 	ISR_STACK_INFO *pInfo = (ISR_STACK_INFO *) parameter;
 
-	nano_isr_stack_push (pInfo->channel, pInfo->data);
+	nano_isr_stack_push(pInfo->channel, pInfo->data);
 
 }  /* isr_stack_push */
 
@@ -447,7 +447,7 @@ void testTaskStackPopW(void)
 	nano_task_stack_push(&nanoStackObj2, data);
 
     /* Start fiber */
-	task_fiber_start (&fiberStack2[0], STACKSIZE,
+	task_fiber_start(&fiberStack2[0], STACKSIZE,
 		                (nano_fiber_entry_t) fiber2, 0, 0, 7, 0);
 
 	data = nano_task_stack_pop_wait(&nanoStackObj);
@@ -478,8 +478,8 @@ void testTaskStackPopW(void)
 
 void fiber3(void)
 {
-	nano_fiber_timer_start (&timer, SECONDS(1));
-	nano_fiber_timer_wait (&timer);
+	nano_fiber_timer_start(&timer, SECONDS(1));
+	nano_fiber_timer_wait(&timer);
 	nano_fiber_stack_push(&nanoStackObj, myData[0]);
 }
 
@@ -501,10 +501,10 @@ void initNanoObjects(void)
 
 	(void)initIRQ (&i);
 
-	nano_stack_init (&nanoStackObj,  stack1);
-	nano_stack_init (&nanoStackObj2, stack2);
-	nano_sem_init   (&nanoSemObj);
-	nano_timer_init (&timer, timerData);
+	nano_stack_init(&nanoStackObj,  stack1);
+	nano_stack_init(&nanoStackObj2, stack2);
+	nano_sem_init(&nanoSemObj);
+	nano_timer_init(&timer, timerData);
 } /* initNanoObjects */
 
 /*******************************************************************************
@@ -538,9 +538,9 @@ void main(void)
      * into an idle state.
      */
 
-	data = nano_task_stack_pop_wait (&nanoStackObj);
+	data = nano_task_stack_pop_wait(&nanoStackObj);
 	if (data != myData[0]) {
-		TC_ERROR ("nano_task_stack_pop_wait() expected 0x%x, but got 0x%x\n",
+		TC_ERROR("nano_task_stack_pop_wait() expected 0x%x, but got 0x%x\n",
 		          myData[0], data);
 		retCode = TC_FAIL;
 		goto exit;
@@ -558,7 +558,7 @@ void main(void)
 	PRINT_LINE;
 
     /* Start fiber */
-	task_fiber_start (&fiberStack1[0], STACKSIZE,
+	task_fiber_start(&fiberStack1[0], STACKSIZE,
 		                (nano_fiber_entry_t) fiber1, 0, 0, 7, 0);
 
 	if (retCode == TC_FAIL) {
@@ -598,6 +598,6 @@ void main(void)
 	PRINT_LINE;
 
 exit:
-	TC_END_RESULT (retCode);
-	TC_END_REPORT (retCode);
+	TC_END_RESULT(retCode);
+	TC_END_REPORT(retCode);
 }

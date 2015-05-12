@@ -66,7 +66,7 @@ typedef uint64_t _timer_res_t;
 
 #elif defined(CONFIG_ARM)
 
-#  if defined (CONFIG_BSP_TI_LM3S6965_QEMU)
+#  if defined(CONFIG_BSP_TI_LM3S6965_QEMU)
 /* A bug in the QEMU ARMv7-M sysTick timer prevents tickless idle support */
 #error "This QEMU target does not support tickless idle!"
 #  endif
@@ -75,9 +75,9 @@ typedef uint32_t _timer_res_t;
 #define _TIMER_ZERO  0
 
 /* timestamp routines, from timestamps.c */
-extern void _TimestampOpen (void);
-extern uint32_t _TimestampRead (void);
-extern void _TimestampClose (void);
+extern void _TimestampOpen(void);
+extern uint32_t _TimestampRead(void);
+extern void _TimestampClose(void);
 
 #define _TIMESTAMP_OPEN()	(_TimestampOpen())
 #define _TIMESTAMP_READ()	(_TimestampRead())
@@ -87,7 +87,7 @@ extern void _TimestampClose (void);
 #error "Unknown target"
 #endif
 
-void ticklessTestTask (void)
+void ticklessTestTask(void)
 	{
 	int32_t start_ticks;
 	int32_t end_ticks;

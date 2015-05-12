@@ -37,7 +37,7 @@
 
 #include <vxmicro.h>
 
-#if defined (WINDOWS)
+#if defined(WINDOWS)
   #define WITH_BINARY(x) (x | O_BINARY)
 #else
   #define WITH_BINARY(x) (x)

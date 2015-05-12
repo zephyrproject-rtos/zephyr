@@ -45,16 +45,16 @@
  * \NOMANUAL
  */
 
-void dequtask (void)
+void dequtask(void)
 	{
 	int x, i;
 
 	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
-	task_fifo_get_wait (DEMOQX1, &x);
+	task_fifo_get_wait(DEMOQX1, &x);
 	}
 
 	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
-	task_fifo_get_wait (DEMOQX4, &x);
+	task_fifo_get_wait(DEMOQX4, &x);
 	}
 	}
 

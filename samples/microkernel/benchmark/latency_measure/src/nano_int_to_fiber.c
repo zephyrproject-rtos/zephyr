@@ -61,12 +61,12 @@ static uint32_t timestamp;
 * \NOMANUAL
 */
 
-static void latencyTestIsr (void *unused)
+static void latencyTestIsr(void *unused)
 	{
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 
 	flagVar = 1;
-	timestamp = TIME_STAMP_DELTA_GET (0);
+	timestamp = TIME_STAMP_DELTA_GET(0);
 	}
 
 /*******************************************************************************
@@ -81,16 +81,16 @@ static void latencyTestIsr (void *unused)
 * \NOMANUAL
 */
 
-static void fiberInt (void)
+static void fiberInt(void)
 	{
-	setSwInterrupt (latencyTestIsr);
+	setSwInterrupt(latencyTestIsr);
 	flagVar = 0;
-	raiseIntFunc ();
+	raiseIntFunc();
 	if (flagVar != 1) {
-	PRINT_FORMAT (" Flag variable has not changed. FAILED");
+	PRINT_FORMAT(" Flag variable has not changed. FAILED");
 	}
 	else
-	timestamp = TIME_STAMP_DELTA_GET (timestamp);
+	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	}
 
 /*******************************************************************************
@@ -102,16 +102,16 @@ static void fiberInt (void)
  * \NOMANUAL
  */
 
-int nanoIntToFiber (void)
+int nanoIntToFiber(void)
 	{
-	PRINT_FORMAT (" 2- Measure time to switch from ISR back to interrupted"
+	PRINT_FORMAT(" 2- Measure time to switch from ISR back to interrupted"
 		  " fiber");
-	TICK_SYNCH ();
-	task_fiber_start (&fiberStack[0], STACKSIZE,
+	TICK_SYNCH();
+	task_fiber_start(&fiberStack[0], STACKSIZE,
 		    (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
 	if (flagVar == 1) {
-	PRINT_FORMAT (" switching time is %lu tcs = %lu nsec",
-		      timestamp, SYS_CLOCK_HW_CYCLES_TO_NS (timestamp));
+	PRINT_FORMAT(" switching time is %lu tcs = %lu nsec",
+		      timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	}
 	return 0;
 	}

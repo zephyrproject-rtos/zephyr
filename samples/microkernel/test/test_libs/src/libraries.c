@@ -63,9 +63,9 @@ it guarantee that ALL functionality provided is working correctly.
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int ctypeTest (void)
+int ctypeTest(void)
 	{
-	TC_PRINT ("Testing ctype.h library ...\n");
+	TC_PRINT("Testing ctype.h library ...\n");
 
 	if (!isalpha ('a') || isalpha ('.'))
 	return TC_FAIL;
@@ -88,13 +88,13 @@ volatile int d = 7;
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int inttypesTest (void)
+int inttypesTest(void)
 	{
-	TC_PRINT ("Testing inttypes.h library ...\n");
+	TC_PRINT("Testing inttypes.h library ...\n");
 
 	intmax_t numer = n;
 	intmax_t denom = d;
-	imaxdiv_t result = imaxdiv (numer, denom);
+	imaxdiv_t result = imaxdiv(numer, denom);
 
 	if ((result.quot != n/d) || (result.rem != n%d))
 	return TC_FAIL;
@@ -117,9 +117,9 @@ volatile int y = 0x0ff0;
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int iso646Test (void)
+int iso646Test(void)
 	{
-	TC_PRINT ("Testing iso646.h library ...\n");
+	TC_PRINT("Testing iso646.h library ...\n");
 
 	int mainExpr = (x & y) ^ ~x;
 	int altExpr  = (x bitand y) xor compl x;
@@ -145,9 +145,9 @@ volatile long longOne = 1L;
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int limitsTest (void)
+int limitsTest(void)
 	{
-	TC_PRINT ("Testing limits.h library ...\n");
+	TC_PRINT("Testing limits.h library ...\n");
 
 	if (longMax + longOne != LONG_MIN)
 	return TC_FAIL;
@@ -162,9 +162,9 @@ int limitsTest (void)
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int stdboolTest (void)
+int stdboolTest(void)
 	{
-	TC_PRINT ("Testing stdbool.h library ...\n");
+	TC_PRINT("Testing stdbool.h library ...\n");
 
 	if ((true != 1) || (false != 0))
 	return TC_FAIL;
@@ -178,7 +178,7 @@ int stdboolTest (void)
  */
 
 volatile long longVariable;
-volatile size_t sizeOfLongVariable = sizeof (longVariable);
+volatile size_t sizeOfLongVariable = sizeof(longVariable);
 
 /*******************************************************************************
 *
@@ -187,9 +187,9 @@ volatile size_t sizeOfLongVariable = sizeof (longVariable);
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int stddefTest (void)
+int stddefTest(void)
 	{
-	TC_PRINT ("Testing stddef.h library ...\n");
+	TC_PRINT("Testing stddef.h library ...\n");
 
 	if (sizeOfLongVariable != 4)
 	return TC_FAIL;
@@ -212,9 +212,9 @@ volatile uint32_t unsignedInt = 0xffffff00;
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int stdintTest (void)
+int stdintTest(void)
 	{
-	TC_PRINT ("Testing stdint.h library ...\n");
+	TC_PRINT("Testing stdint.h library ...\n");
 
 	if (unsignedInt + unsignedByte + 1u != 0)
 	return TC_FAIL;
@@ -237,11 +237,11 @@ char buffer[BUFSIZE];
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int stringTest (void)
+int stringTest(void)
 	{
-	TC_PRINT ("Testing string.h library ...\n");
+	TC_PRINT("Testing string.h library ...\n");
 
-	memset (buffer, 'a', BUFSIZE);
+	memset(buffer, 'a', BUFSIZE);
 	if (buffer[0] != 'a' || buffer[BUFSIZE-1] != 'a')
 	return TC_FAIL;
 
@@ -259,16 +259,16 @@ int stringTest (void)
 * RETURNS: TC_PASS or TC_FAIL
 */
 
-int RegressionTask (void)
+int RegressionTask(void)
 	{
-	TC_PRINT ("Validating access to supported libraries\n");
+	TC_PRINT("Validating access to supported libraries\n");
 
 	if (ctypeTest () || inttypesTest () || iso646Test () || limitsTest () ||
 	stdboolTest () || stddefTest () || stdintTest () || stringTest ()) {
-	TC_PRINT ("Library validation failed\n");
+	TC_PRINT("Library validation failed\n");
 	return TC_FAIL;
 	}
 
-	TC_PRINT ("Validation complete\n");
+	TC_PRINT("Validation complete\n");
 	return TC_PASS;
 	}

@@ -70,7 +70,7 @@
 #define SEMA_WAIT_TIME (5 * sys_clock_ticks_per_sec)
 /* global data */
 extern char Msg[MAX_MSG];
-extern char data_bench[OCTET_TO_SIZEOFUNIT (MESSAGE_SIZE)];
+extern char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 extern kpipe_t TestPipes[];
 extern FILE * output_file;
 extern const char dashline[];
@@ -79,59 +79,59 @@ extern char sline[];
 
 /* dummy_test is a function that is mapped when we */
 /* do not want to test a specific Benchmark */
-extern void dummy_test (void);
+extern void dummy_test(void);
 
 /* other external functions */
 #ifdef MICROKERNEL_CALL_BENCH
-extern void call_test (void);
+extern void call_test(void);
 #else
 #define call_test dummy_test
 #endif
 
 #ifdef MAILBOX_BENCH
-extern void mailbox_test (void);
+extern void mailbox_test(void);
 #else
 #define mailbox_test dummy_test
 #endif
 
 #ifdef SEMA_BENCH
-extern void sema_test (void);
+extern void sema_test(void);
 #else
 #define sema_test dummy_test
 #endif
 
 #ifdef FIFO_BENCH
-extern void queue_test (void);
+extern void queue_test(void);
 #else
 #define queue_test dummy_test
 #endif
 
 #ifdef MUTEX_BENCH
-extern void mutex_test (void);
+extern void mutex_test(void);
 #else
 #define mutex_test dummy_test
 #endif
 
 #ifdef MEMMAP_BENCH
-extern void memorymap_test (void);
+extern void memorymap_test(void);
 #else
 #define memorymap_test dummy_test
 #endif
 
 #ifdef MEMPOOL_BENCH
-extern void mempool_test (void);
+extern void mempool_test(void);
 #else
 #define mempool_test dummy_test
 #endif
 
 #ifdef PIPE_BENCH
-extern void pipe_test (void);
+extern void pipe_test(void);
 #else
 #define pipe_test dummy_test
 #endif
 
 #ifdef EVENT_BENCH
-extern void event_test (void);
+extern void event_test(void);
 #else
 #define event_test dummy_test
 #endif
@@ -150,20 +150,20 @@ extern void event_test (void);
 
 #define PRINT_F(stream, fmt, ...)			\
 	{							\
-	snprintf (sline, SLINE_LEN, fmt, ##__VA_ARGS__);	\
-	PRINT_STRING (sline, stream);			\
+	snprintf(sline, SLINE_LEN, fmt, ##__VA_ARGS__);	\
+	PRINT_STRING(sline, stream);			\
 	}
 
 #define PRINT_OVERFLOW_ERROR()						\
-	PRINT_F (output_file,						\
+	PRINT_F(output_file,						\
 	     __FILE__":%d Error: tick occured\n", __LINE__)
 
-static inline uint32_t BENCH_START (void)
+static inline uint32_t BENCH_START(void)
 	{
 	uint32_t et;
 
-	bench_test_start ();
-	et = TIME_STAMP_DELTA_GET (0);
+	bench_test_start();
+	et = TIME_STAMP_DELTA_GET(0);
 	return et;
 	}
 
@@ -171,7 +171,7 @@ static inline uint32_t BENCH_START (void)
 	{						\
 	if (bench_test_end () < 0)			\
 	{					\
-	PRINT_OVERFLOW_ERROR ();		\
+	PRINT_OVERFLOW_ERROR();		\
 	return; /* error */			\
 	}					\
 	}

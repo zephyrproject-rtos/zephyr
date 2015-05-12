@@ -129,7 +129,7 @@ static int initIRQ
 	int  vector;     /* vector to which interrupt is connected */
 
 	if (i->isr[0]) {
-	vector = irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
+	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
 				    i->arg[0], nanoIntStub1);
 	if (-1 == vector) {
 	    return -1;
@@ -139,7 +139,7 @@ static int initIRQ
 
 #if NUM_SW_IRQS >= 2
 	if (i->isr[1]) {
-	vector = irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
+	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
 				    i->arg[1], nanoIntStub2);
 	if (-1 == vector) {
 	    return -1;
@@ -151,11 +151,11 @@ static int initIRQ
 #if defined(CONFIG_CPU_CORTEXM)
 	if (i->isr[0]) {
 	(void) irq_connect (0, IRQ_PRIORITY, i->isr[0], i->arg[0]);
-	irq_enable (0);
+	irq_enable(0);
 	}
 	if (i->isr[1]) {
 	(void) irq_connect (1, IRQ_PRIORITY, i->isr[1], i->arg[1]);
-	irq_enable (1);
+	irq_enable(1);
 	}
 #endif /* CONFIG_CPU_CORTEXM */
 #endif /* VXMICRO_ARCH_x86 */

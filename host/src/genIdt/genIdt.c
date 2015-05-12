@@ -165,7 +165,7 @@ static void get_exec_name(char *pathname)
 	int end = strlen(pathname)-1;
 
 	while(end != -1) {
-    #if defined (WINDOWS) /* Might have both slashes in path */
+    #if defined(WINDOWS) /* Might have both slashes in path */
 	if (pathname[end] == '/' || pathname[end] == '\\')
     #else
 	if (pathname[end] == '/')
@@ -196,7 +196,7 @@ static void open_files(void)
 	    for(--ii; ii >= 0; ii--) {
 		close(fds[ii]);
 		}
-	    exit (-1);
+	    exit(-1);
 	    }
 	}
 	}
@@ -218,7 +218,7 @@ static void genIdt(void)
 	if (read (fds[IFILE], &spurNoErrAddr, 4) < 4)
 	goto readError;
 
-	PRINTF ("Spurious int handlers found at %p and %p\n",
+	PRINTF("Spurious int handlers found at %p and %p\n",
 		    spurAddr, spurNoErrAddr);
 
     /* Initially fill in the IDT array with the spurious handlers */
@@ -237,10 +237,10 @@ static void genIdt(void)
 	if (read (fds[IFILE], &size, 4) < 4)
 	goto readError;
 
-	PRINTF ("There are %d ISR(s)\n", size);
+	PRINTF("There are %d ISR(s)\n", size);
 
 	if (size > numVecs) {
-	fprintf (stderr, "Too many ISRs found. Got %u. Expected less than %u."
+	fprintf(stderr, "Too many ISRs found. Got %u. Expected less than %u."
 	                 " Malformed input file?\n", size, numVecs);
 	clean_exit(-1);
 	}
@@ -260,7 +260,7 @@ static void genIdt(void)
 	if (read (fds[IFILE], &dpl, 4) < 4)
 	    goto readError;
 
-	PRINTF ("ISR @ %p on Vector %d: dpl %d\n", addr, vec, dpl);
+	PRINTF("ISR @ %p on Vector %d: dpl %d\n", addr, vec, dpl);
 	idt[vec].fnc = addr;
 	idt[vec].dpl = dpl;
 	}
@@ -273,9 +273,9 @@ static void genIdt(void)
 	for (i = 0; i < numVecs; i++) {
 	unsigned long long idtEnt;
 
-	 _IdtEntCreate (&idtEnt, idt[i].fnc, idt[i].dpl);
+	 _IdtEntCreate(&idtEnt, idt[i].fnc, idt[i].dpl);
 
-	write (fds[OFILE], &idtEnt, 8);
+	write(fds[OFILE], &idtEnt, 8);
 	}
 
 	return;

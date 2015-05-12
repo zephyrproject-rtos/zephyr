@@ -80,7 +80,7 @@ static void myPrint
 	char *str    /* EATING or THINKING */
 	)
 	{
-	PRINTF ("\x1b[%d;%dHPhilosopher %d %s\n", id + 1, 1, id, str);
+	PRINTF("\x1b[%d;%dHPhilosopher %d %s\n", id + 1, 1, id, str);
 	}
 
 /*******************************************************************************
@@ -96,13 +96,13 @@ static void myDelay
 	)
 	{
 #ifdef CONFIG_MICROKERNEL
-	task_sleep (ticks);
+	task_sleep(ticks);
 #else
 	struct nano_timer timer;
 
 	nano_timer_init  (&timer, (void *) 0);
-	nano_fiber_timer_start (&timer, ticks);
-	nano_fiber_timer_wait  (&timer);
+	nano_fiber_timer_start(&timer, ticks);
+	nano_fiber_timer_wait(&timer);
 #endif
 	}
 
@@ -116,7 +116,7 @@ static void myDelay
 * RETURNS: N/A
 */
 
-void philEntry (void)
+void philEntry(void)
 	{
 #ifdef CONFIG_NANOKERNEL
 	struct nano_sem *f1;	/* fork #1 */
@@ -126,32 +126,32 @@ void philEntry (void)
 	kmutex_t f2;		/* fork #2 */
 #endif
 	static int myId;                /* next philosopher ID */
-	int pri = irq_lock ();    /* interrupt lock level */
+	int pri = irq_lock();    /* interrupt lock level */
 	int id = myId++;                /* current philosopher ID */
 
-	irq_unlock (pri);
+	irq_unlock(pri);
 
     /* always take the lowest fork first */
 	if ((id+1) != N_PHILOSOPHERS) {
-	f1 = FORK (id);
-	f2 = FORK (id + 1);
+	f1 = FORK(id);
+	f2 = FORK(id + 1);
 	}
 	else {
-	f1 = FORK (0);
-	f2 = FORK (id);
+	f1 = FORK(0);
+	f2 = FORK(id);
 	}
 
 	while (1) {
-	TAKE (f1);
-	TAKE (f2);
+	TAKE(f1);
+	TAKE(f2);
 
 		PRINT(id, "EATING  ");
-	RANDDELAY (id);
+	RANDDELAY(id);
 
-	GIVE (f2);
-	GIVE (f1);
+	GIVE(f2);
+	GIVE(f1);
 
 		PRINT(id, "THINKING");
-	RANDDELAY (id);
+	RANDDELAY(id);
 	}
 	}

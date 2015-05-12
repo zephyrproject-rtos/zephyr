@@ -46,7 +46,7 @@
 
 #define FUNC_CONSTRUCT(lvl) __attribute__((constructor(lvl)))
 
-#define CODE_UNREACHABLE __builtin_unreachable ()
+#define CODE_UNREACHABLE __builtin_unreachable()
 #define FUNC_NORETURN    __attribute__((__noreturn__))
 
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not

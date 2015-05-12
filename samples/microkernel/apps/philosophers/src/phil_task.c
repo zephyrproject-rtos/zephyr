@@ -57,7 +57,7 @@
 
 /* externs */
 
-extern void philEntry (void);
+extern void philEntry(void);
 
 /* globals */
 
@@ -73,26 +73,26 @@ struct nano_sem forks[N_PHILOSOPHERS];
 * RETURNS: does not return
 */
 
-int main (void)
+int main(void)
 	{
 	int i;
 
-	PRINTF (DEMO_DESCRIPTION, "fibers", "nanokernel");
+	PRINTF(DEMO_DESCRIPTION, "fibers", "nanokernel");
 
 	for (i = 0; i < N_PHILOSOPHERS; i++) {
-	nano_sem_init (&forks[i]);
-	nano_task_sem_give (&forks[i]);
+	nano_sem_init(&forks[i]);
+	nano_task_sem_give(&forks[i]);
 	}
 
     /* create philosopher fibers */
 	for (i = 0; i < N_PHILOSOPHERS; i++)
-		task_fiber_start (&philStack[i][0], STSIZE,
+		task_fiber_start(&philStack[i][0], STSIZE,
 			(nano_fiber_entry_t) philEntry, 0, 0, 6, 0);
 
     /* wait forever */
 	while (1) {
-	extern void nano_cpu_idle (void);
-	nano_cpu_idle ();
+	extern void nano_cpu_idle(void);
+	nano_cpu_idle();
 	}
 	}
 
@@ -104,15 +104,15 @@ int main (void)
 * RETURNS: does not return
 */
 
-void philDemo (void)
+void philDemo(void)
 	{
-	PRINTF (DEMO_DESCRIPTION, "tasks", "microkernel");
+	PRINTF(DEMO_DESCRIPTION, "tasks", "microkernel");
 
-	 task_group_start (PHI);
+	 task_group_start(PHI);
 
     /* wait forever */
 	while (1) {
-	task_sleep (10000);
+	task_sleep(10000);
 		}
 	}
 #endif

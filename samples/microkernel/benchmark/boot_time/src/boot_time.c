@@ -55,7 +55,7 @@ extern uint64_t __start_tsc; /* timestamp when VxMicro begins executing */
 extern uint64_t __main_tsc;  /* timestamp when main() begins executing */
 extern uint64_t __idle_tsc;  /* timestamp when CPU went idle */
 
-void bootTimeTask (void)
+void bootTimeTask(void)
 	{
 	uint64_t task_tsc;  /* timestamp at beginning of first task  */
 	uint64_t _start_us; /* being of __start timestamp in us	 */
@@ -85,7 +85,7 @@ void bootTimeTask (void)
 #endif
 
     /* Indicate start for sanity test suite */
-	TC_START ("Boot Time Measurement");
+	TC_START("Boot Time Measurement");
 
     /* Only print lower 32bit of time result */
 #ifdef CONFIG_NANOKERNEL
@@ -130,13 +130,13 @@ char fiberStack[512];
 * RETURNS: N/A
 */
 
-void main (void)
+void main(void)
 	{
     /* record timestamp for nanokernel's main() function */
 	__main_tsc = _NanoTscRead();
 
     /* create bootTime fibers */
-	task_fiber_start (fiberStack, 512,
+	task_fiber_start(fiberStack, 512,
 	    (nano_fiber_entry_t) bootTimeTask, 0, 0, 6, 0);
 	}
 

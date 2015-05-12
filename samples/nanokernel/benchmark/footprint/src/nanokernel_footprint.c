@@ -78,8 +78,8 @@ typedef void* (*pfunc) (void*);
 #ifdef TEST_max
 static NANO_CPU_INT_STUB_DECL(isrDummyHandlerStub);
 #else
-static void isrDummyIntStub (void *);
-NANO_CPU_INT_REGISTER (isrDummyIntStub, TEST_SOFT_INT, 0);
+static void isrDummyIntStub(void *);
+NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0);
 #endif /* TEST_max */
 
 /* stack used by fiber */
@@ -118,9 +118,9 @@ volatile pfunc func_array[] = {
  * RETURNS: N/A
  */
 
-void dummyIsr (void *unused)
+void dummyIsr(void *unused)
 	{
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 	}
 
 #ifdef TEST_reg
@@ -135,9 +135,9 @@ void dummyIsr (void *unused)
  * RETURNS: N/A
  */
 
-static void isrDummyIntStub (void *unused)
+static void isrDummyIntStub(void *unused)
 	{
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 
 	isr_dummy();
 
@@ -158,12 +158,12 @@ static void fiberEntry
 	int  arg1		/* unused */
 	)
 	{
-	ARG_UNUSED (arg1);
+	ARG_UNUSED(arg1);
 
 #ifdef TEST_max
-	printf ((char *)message);
+	printf((char *)message);
 #else
-	printk ((char *)message);
+	printk((char *)message);
 #endif /* TEST_max */
 	}
 
@@ -179,11 +179,11 @@ static void fiberEntry
  * RETURNS: N/A
  */
 
-void main (void)
+void main(void)
 	{
 #ifdef TEST_max
     /* dynamically link in dummy ISR */
-	irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
+	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
 		       (void *) 0, isrDummyHandlerStub);
 #endif /* TEST_max */
 #ifndef TEST_min

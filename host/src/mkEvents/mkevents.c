@@ -40,17 +40,17 @@ in decimal notation. Each event object is outputted on stdout.
 #include <stdio.h>
 #include <stdlib.h>
 
-void usage (
+void usage(
 	char *progname /* name of the program to use */
 	)
 	{
-	fprintf (stderr, "Utility creates a series of microkernel VPF event objects. Output is sent to stdout.\n");
-	fprintf (stderr, "Usage: %s <decimal number>\n", progname);
+	fprintf(stderr, "Utility creates a series of microkernel VPF event objects. Output is sent to stdout.\n");
+	fprintf(stderr, "Usage: %s <decimal number>\n", progname);
 	}
 
 #define EVENT_STR "  EVENT    _TaskIrqEvt%d  NULL\n"
 
-int main (
+int main(
 	int argc,
 	char *argv[]
 	)
@@ -58,13 +58,13 @@ int main (
 	int i, j;
 
 	if (argc != 2) {
-	usage (argv[0]);
+	usage(argv[0]);
 	return -1;
 	}
 
 	j = atoi(argv[1]);
 	for (i = 0; i < j; i++)
-	printf (EVENT_STR, i);
+	printf(EVENT_STR, i);
 
 	return 0;
 	}

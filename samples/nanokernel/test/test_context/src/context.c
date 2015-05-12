@@ -136,7 +136,7 @@ static void (*_trigger_isrHandler) (void) = (vvfn)sw_isr_trigger_0;
 
 void isr_handler(void *data)
 {
-	ARG_UNUSED (data);
+	ARG_UNUSED(data);
 
 	switch (isrInfo.command) {
 		case CTX_SELF_CMD:
@@ -144,7 +144,7 @@ void isr_handler(void *data)
 		    break;
 
 		case CTX_TYPE_CMD:
-		    isrInfo.value = context_type_get ();
+		    isrInfo.value = context_type_get();
 		    break;
 
         default:
@@ -187,12 +187,12 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
 
 int initNanoObjects(void)
 {
-	nano_sem_init (&wakeFiber);
-	nano_timer_init (&timer, timerData);
+	nano_sem_init(&wakeFiber);
+	nano_timer_init(&timer, timerData);
 
 /* no nanoCpuExcConnect on Cortex-M3/4 */
 #if !defined(CONFIG_CPU_CORTEXM3)
-	nanoCpuExcConnect (IV_DIVIDE_ERROR, exc_divide_error_handler, nanoExcStub);
+	nanoCpuExcConnect(IV_DIVIDE_ERROR, exc_divide_error_handler, nanoExcStub);
 #endif
 
 	struct isrInitInfo i = {
@@ -221,13 +221,13 @@ int nano_cpu_idleTest(void)
 	int  i;      /* loop variable */
 
     /* Align to a "tick boundary". */
-	tick = nano_tick_get_32 ();
+	tick = nano_tick_get_32();
 	while (tick == nano_tick_get_32 ()) {
 		}
-	tick = nano_tick_get_32 ();
+	tick = nano_tick_get_32();
 
 	for (i = 0; i < 5; i++) {     /* Repeat the test five times */
-		nano_cpu_idle ();
+		nano_cpu_idle();
 		tick++;
 		if (nano_tick_get_32 () != tick) {
 		    return TC_FAIL;
@@ -246,9 +246,9 @@ int nano_cpu_idleTest(void)
 
 int irq_lockWrapper(int unused)
 {
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 
-	return irq_lock ();
+	return irq_lock();
 }
 
 /*******************************************************************************
@@ -260,7 +260,7 @@ int irq_lockWrapper(int unused)
 
 void irq_unlockWrapper(int imask)
 {
-	irq_unlock (imask);
+	irq_unlock(imask);
 }
 
 /*******************************************************************************
@@ -272,9 +272,9 @@ void irq_unlockWrapper(int imask)
 
 int irq_lock_inlineWrapper(int unused)
 {
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 
-	return irq_lock_inline ();
+	return irq_lock_inline();
 }
 
 /*******************************************************************************
@@ -286,7 +286,7 @@ int irq_lock_inlineWrapper(int unused)
 
 void irq_unlock_inlineWrapper(int imask)
 {
-	irq_unlock_inline (imask);
+	irq_unlock_inline(imask);
 }
 
 /*******************************************************************************
@@ -298,7 +298,7 @@ void irq_unlock_inlineWrapper(int imask)
 
 int irq_disableWrapper(int irq)
 {
-	irq_disable (irq);
+	irq_disable(irq);
 	return irq;
 }
 
@@ -311,7 +311,7 @@ int irq_disableWrapper(int irq)
 
 void irq_enableWrapper(int irq)
 {
-	irq_enable (irq);
+	irq_enable(irq);
 }
 
 /*******************************************************************************
@@ -335,7 +335,7 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	int  imask;
 
     /* Align to a "tick boundary" */
-	tick = nano_tick_get_32 ();
+	tick = nano_tick_get_32();
 	while (nano_tick_get_32 () == tick) {
 		}
 	tick++;
@@ -353,20 +353,20 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
 	count <<= 4;
 
-	imask = disableRtn (irq);
-	tick = nano_tick_get_32 ();
+	imask = disableRtn(irq);
+	tick = nano_tick_get_32();
 	for (i = 0; i < count; i++) {
-		nano_tick_get_32 ();
+		nano_tick_get_32();
 		}
 
-	tick2 = nano_tick_get_32 ();
+	tick2 = nano_tick_get_32();
 
     /*
      * Re-enable interrupts before returning (for both success and failure
      * cases).
      */
 
-	enableRtn (imask);
+	enableRtn(imask);
 
 	if (tick2 != tick) {
 		return TC_FAIL;
@@ -374,7 +374,7 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
     /* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
-		nano_tick_get_32 ();
+		nano_tick_get_32();
 		}
 
 	return (tick == nano_tick_get_32 ()) ? TC_FAIL : TC_PASS;
@@ -395,11 +395,11 @@ int nanoCtxTaskTest(void)
 {
 	nano_context_id_t  ctxId;
 
-	TC_PRINT ("Testing context_self_get() from an ISR and task\n");
-	ctxId = context_self_get ();
+	TC_PRINT("Testing context_self_get() from an ISR and task\n");
+	ctxId = context_self_get();
 	isrInfo.command = CTX_SELF_CMD;
 	isrInfo.error = 0;
-	_trigger_isrHandler ();
+	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId)) {
         /*
          * Either the ISR detected an error, or the ISR context ID does not
@@ -408,15 +408,15 @@ int nanoCtxTaskTest(void)
 		return TC_FAIL;
 		}
 
-	TC_PRINT ("Testing context_type_get() from an ISR\n");
+	TC_PRINT("Testing context_type_get() from an ISR\n");
 	isrInfo.command = CTX_TYPE_CMD;
 	isrInfo.error = 0;
-	_trigger_isrHandler ();
+	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
 		return TC_FAIL;
 		}
 
-	TC_PRINT ("Testing context_type_get() from a task\n");
+	TC_PRINT("Testing context_type_get() from a task\n");
 	if (context_type_get() != NANO_CTX_TASK) {
 		return TC_FAIL;
 		}
@@ -445,7 +445,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 {
 	nano_context_id_t  ctxId;
 
-	ctxId = context_self_get ();
+	ctxId = context_self_get();
 	if (ctxId == taskCtxId) {
 		fiberDetectedError = 1;
 		return TC_FAIL;
@@ -453,7 +453,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 
 	isrInfo.command = CTX_SELF_CMD;
 	isrInfo.error = 0;
-	_trigger_isrHandler ();
+	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId)) {
         /*
          * Either the ISR detected an error, or the ISR context ID does not
@@ -465,7 +465,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 
 	isrInfo.command = CTX_TYPE_CMD;
 	isrInfo.error = 0;
-	_trigger_isrHandler ();
+	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
 		fiberDetectedError = 3;
 		return TC_FAIL;
@@ -496,8 +496,8 @@ static void fiberHelper(int arg1, int arg2)
 {
 	nano_context_id_t  ctxId;
 
-	ARG_UNUSED (arg1);
-	ARG_UNUSED (arg2);
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
 
     /*
      * This fiber starts off at a higher priority than fiberEntry().  Thus, it
@@ -507,9 +507,9 @@ static void fiberHelper(int arg1, int arg2)
 	fiberEvidence++;
 
     /* Test that helper will yield to a fiber of equal priority */
-	ctxId = context_self_get ();
+	ctxId = context_self_get();
 	ctxId->prio++;            /* Lower priority to that of fiberEntry() */
-	fiber_yield ();        /* Yield to fiber of equal priority */
+	fiber_yield();        /* Yield to fiber of equal priority */
 
 	fiberEvidence++;
     /* <fiberEvidence> should now be 2 */
@@ -544,9 +544,9 @@ int fiber_yieldTest(void)
      * fiber as it would if done from a task.
      */
 
-	ctxId = context_self_get ();
+	ctxId = context_self_get();
 	fiberEvidence = 0;
-	fiber_fiber_start (fiberStack2, FIBER_STACKSIZE, fiberHelper,
+	fiber_fiber_start(fiberStack2, FIBER_STACKSIZE, fiberHelper,
 		                 0, 0, FIBER_PRIORITY - 1, 0);
 
 	if (fiberEvidence != 0) {
@@ -560,7 +560,7 @@ int fiber_yieldTest(void)
      * <fiberEvidence> is still 0.
      */
 
-	fiber_yield ();
+	fiber_yield();
 
 	if (fiberEvidence == 0) {
 		/* ERROR! Did not yield to higher */
@@ -580,7 +580,7 @@ int fiber_yieldTest(void)
      */
 
 	ctxId->prio--;
-	fiber_yield ();
+	fiber_yield();
 
 	if (fiberEvidence != 1) {
 		/* ERROR! Context switched to a lower */
@@ -593,7 +593,7 @@ int fiber_yieldTest(void)
      * The main task will wake this fiber.
      */
 
-	nano_fiber_sem_take_wait (&wakeFiber);
+	nano_fiber_sem_take_wait(&wakeFiber);
 
 	return TC_PASS;
 }
@@ -614,20 +614,20 @@ static void fiberEntry(int taskCtxId, int arg1)
 {
 	int          rv;
 
-	ARG_UNUSED (arg1);
+	ARG_UNUSED(arg1);
 
 	fiberEvidence++;    /* Prove to the task that the fiber has run */
-	nano_fiber_sem_take_wait (&wakeFiber);
+	nano_fiber_sem_take_wait(&wakeFiber);
 
-	rv = nanoCtxFiberTest ((nano_context_id_t) taskCtxId);
+	rv = nanoCtxFiberTest((nano_context_id_t) taskCtxId);
 	if (rv != TC_PASS) {
 		return;
 		}
 
     /* Allow the task to print any messages before the next test runs */
-	nano_fiber_sem_take_wait (&wakeFiber);
+	nano_fiber_sem_take_wait(&wakeFiber);
 
-	rv = fiber_yieldTest ();
+	rv = fiber_yieldTest();
 	if (rv != TC_PASS) {
 		return;
 		}
@@ -646,30 +646,30 @@ void main(void)
 {
 	int           rv;       /* return value from tests */
 
-	TC_START ("Test Nanokernel CPU and context routines");
+	TC_START("Test Nanokernel CPU and context routines");
 
-	TC_PRINT ("Initializing nanokernel objects\n");
-	rv = initNanoObjects ();
+	TC_PRINT("Initializing nanokernel objects\n");
+	rv = initNanoObjects();
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
-	TC_PRINT ("Testing nano_cpu_idle()\n");
-	rv = nano_cpu_idleTest ();
+	TC_PRINT("Testing nano_cpu_idle()\n");
+	rv = nano_cpu_idleTest();
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
-	TC_PRINT ("Testing interrupt locking and unlocking\n");
-	rv = nanoCpuDisableInterruptsTest (irq_lockWrapper,
+	TC_PRINT("Testing interrupt locking and unlocking\n");
+	rv = nanoCpuDisableInterruptsTest(irq_lockWrapper,
 		                               irq_unlockWrapper, -1);
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
 
-	TC_PRINT ("Testing inline interrupt locking and unlocking\n");
-	rv = nanoCpuDisableInterruptsTest (irq_lock_inlineWrapper,
+	TC_PRINT("Testing inline interrupt locking and unlocking\n");
+	rv = nanoCpuDisableInterruptsTest(irq_lock_inlineWrapper,
 		                               irq_unlock_inlineWrapper, -1);
 	if (rv != TC_PASS) {
 		goto doneTests;
@@ -688,52 +688,52 @@ void main(void)
      * be necessary when porting to another BSP.
      */
 
-	TC_PRINT ("Testing irq_disable() and irq_enable()\n");
-	rv = nanoCpuDisableInterruptsTest (irq_disableWrapper,
+	TC_PRINT("Testing irq_disable() and irq_enable()\n");
+	rv = nanoCpuDisableInterruptsTest(irq_disableWrapper,
 		                               irq_enableWrapper, TICK_IRQ);
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 #endif
 
-	rv = nanoCtxTaskTest ();
+	rv = nanoCtxTaskTest();
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
-	TC_PRINT ("Spawning a fiber from a task\n");
+	TC_PRINT("Spawning a fiber from a task\n");
 	fiberEvidence = 0;
-	task_fiber_start (fiberStack1, FIBER_STACKSIZE, fiberEntry,
+	task_fiber_start(fiberStack1, FIBER_STACKSIZE, fiberEntry,
 		                (int) context_self_get (), 0, FIBER_PRIORITY, 0);
 
 	if (fiberEvidence != 1) {
 	rv = TC_FAIL;
-		TC_ERROR ("  - fiber did not execute as expected!\n");
+		TC_ERROR("  - fiber did not execute as expected!\n");
 		goto doneTests;
 		}
 
     /* The fiber ran, now wake it so it can test context_self_get and context_type_get */
-	TC_PRINT ("Fiber to test context_self_get() and context_type_get\n");
-	nano_task_sem_give (&wakeFiber);
+	TC_PRINT("Fiber to test context_self_get() and context_type_get\n");
+	nano_task_sem_give(&wakeFiber);
 
 	if (fiberDetectedError != 0) {
 	rv = TC_FAIL;
-		TC_ERROR ("  - failure detected in fiber; fiberDetectedError = %d\n",
+		TC_ERROR("  - failure detected in fiber; fiberDetectedError = %d\n",
 		          fiberDetectedError);
 		goto doneTests;
 		}
 
-	TC_PRINT ("Fiber to test fiber_yield()\n");
-	nano_task_sem_give (&wakeFiber);
+	TC_PRINT("Fiber to test fiber_yield()\n");
+	nano_task_sem_give(&wakeFiber);
 
 	if (fiberDetectedError != 0) {
 	rv = TC_FAIL;
-		TC_ERROR ("  - failure detected in fiber; fiberDetectedError = %d\n",
+		TC_ERROR("  - failure detected in fiber; fiberDetectedError = %d\n",
 		          fiberDetectedError);
 		goto doneTests;
 		}
 
-	nano_task_sem_give (&wakeFiber);
+	nano_task_sem_give(&wakeFiber);
 
 /* Cortex-M3 does not implement connecting non-IRQ exception handlers */
 #if !defined(CONFIG_CPU_CORTEXM3)
@@ -749,15 +749,15 @@ void main(void)
      */
 
 	volatile int error;    /* used to create a divide by zero error */
-	TC_PRINT ("Verifying exception handler installed\n");
+	TC_PRINT("Verifying exception handler installed\n");
 	excHandlerExecuted = 0;
 	error = error / excHandlerExecuted;
-	TC_PRINT ("excHandlerExecuted: %d\n", excHandlerExecuted);
+	TC_PRINT("excHandlerExecuted: %d\n", excHandlerExecuted);
 
 	rv = (excHandlerExecuted == 1) ? TC_PASS : TC_FAIL;
 #endif
 
 doneTests:
-	TC_END_RESULT (rv);
-	TC_END_REPORT (rv);
+	TC_END_RESULT(rv);
+	TC_END_REPORT(rv);
 }

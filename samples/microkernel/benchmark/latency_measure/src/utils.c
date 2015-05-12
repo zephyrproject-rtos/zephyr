@@ -40,7 +40,7 @@
 
 #ifdef CONFIG_NANOKERNEL
 
-#elif defined (CONFIG_MICROKERNEL)
+#elif defined(CONFIG_MICROKERNEL)
 
 #include <microkernel.h>
 
@@ -72,9 +72,9 @@ char tmpString[TMP_STRING_SIZE];
  * \NOMANUAL
  */
 
-int initSwInterrupt (ptestIsr pIsrHdlr)
+int initSwInterrupt(ptestIsr pIsrHdlr)
 	{
-	vector = irq_connect (NANO_SOFT_IRQ, IRQ_PRIORITY, pIsrHdlr,
+	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, pIsrHdlr,
 				(void *) 0, isrLatencyHandlerStub);
 	pcurrIsrFunc = pIsrHdlr;
 
@@ -94,7 +94,7 @@ int initSwInterrupt (ptestIsr pIsrHdlr)
  * \NOMANUAL
  */
 
-void setSwInterrupt (ptestIsr pIsrHdlr)
+void setSwInterrupt(ptestIsr pIsrHdlr)
 	{
 	irq_handler_set (vector, pcurrIsrFunc, pIsrHdlr, (void *)0);
 	pcurrIsrFunc = pIsrHdlr;
@@ -113,7 +113,7 @@ void setSwInterrupt (ptestIsr pIsrHdlr)
  *
  * \NOMANUAL
  */
-void raiseIntFunc (void)
+void raiseIntFunc(void)
 	{
 	raiseInt(vector);
 	}

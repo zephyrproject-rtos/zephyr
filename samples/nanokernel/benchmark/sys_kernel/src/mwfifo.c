@@ -47,10 +47,10 @@ static struct nano_fifo nanoFifo_sync; /* for synchronization */
  * \NOMANUAL
  */
 
-void fifo_test_init (void)
+void fifo_test_init(void)
 	{
-	nano_fifo_init (&nanoFifo1);
-	nano_fifo_init (&nanoFifo2);
+	nano_fifo_init(&nanoFifo1);
+	nano_fifo_init(&nanoFifo2);
 	}
 
 
@@ -63,7 +63,7 @@ void fifo_test_init (void)
  * \NOMANUAL
  */
 
-void fifo_fiber1 (
+void fifo_fiber1(
 	int par1, /* ignored parameter */
 	int par2 /* number of test loops */
 	)
@@ -72,16 +72,16 @@ void fifo_fiber1 (
 	int element[2];
 	int * pelement;
 
-	ARG_UNUSED (par1);
+	ARG_UNUSED(par1);
 	for (i = 0; i < par2; i++) {
 	pelement = (int *) nano_fiber_fifo_get_wait (&nanoFifo1);
 	if (pelement[1] != i)
 	    break;
 	element[1] = i;
-	nano_fiber_fifo_put (&nanoFifo2, element);
+	nano_fiber_fifo_put(&nanoFifo2, element);
 	}
     /* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait (&nanoFifo_sync);
+	nano_fiber_fifo_get_wait(&nanoFifo_sync);
 	}
 
 
@@ -94,7 +94,7 @@ void fifo_fiber1 (
  * \NOMANUAL
  */
 
-void fifo_fiber2 (
+void fifo_fiber2(
 	int par1,  /* address of the counter */
 	int par2 /* number of test cycles */
 	)
@@ -106,14 +106,14 @@ void fifo_fiber2 (
 
 	for (i = 0; i < par2; i++) {
 	element[1] = i;
-	nano_fiber_fifo_put (&nanoFifo1, element);
+	nano_fiber_fifo_put(&nanoFifo1, element);
 	pelement = (int *) nano_fiber_fifo_get_wait (&nanoFifo2);
 	if (pelement[1] != i)
 	    break;
 	(*pcounter)++;
 	}
     /* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait (&nanoFifo_sync);
+	nano_fiber_fifo_get_wait(&nanoFifo_sync);
 	}
 
 
@@ -126,7 +126,7 @@ void fifo_fiber2 (
  * \NOMANUAL
  */
 
-void fifo_fiber3 (
+void fifo_fiber3(
 	int par1, /* address of the counter */
 	int par2 /* number of test cycles */
 	)
@@ -138,15 +138,15 @@ void fifo_fiber3 (
 
 	for (i = 0; i < par2; i++) {
 	element[1] = i;
-	nano_fiber_fifo_put (&nanoFifo1, element);
+	nano_fiber_fifo_put(&nanoFifo1, element);
 	while (NULL == (pelement = (int *) nano_fiber_fifo_get (&nanoFifo2)))
-	    fiber_yield ();
+	    fiber_yield();
 	if (pelement[1] != i)
 	    break;
 	(*pcounter)++;
 	}
     /* wait till it is safe to end: */
-	nano_fiber_fifo_get_wait (&nanoFifo_sync);
+	nano_fiber_fifo_get_wait(&nanoFifo_sync);
 	}
 
 
@@ -159,7 +159,7 @@ void fifo_fiber3 (
  * \NOMANUAL
  */
 
-int fifo_test (void)
+int fifo_test(void)
 	{
 	uint32_t t;
 	int i = 0;
@@ -167,86 +167,86 @@ int fifo_test (void)
 	int element[2];
 	int j;
 
-	nano_fifo_init (&nanoFifo_sync);
+	nano_fifo_init(&nanoFifo_sync);
 
     /* test get wait & put fiber functions */
-	fprintf (output_file, sz_test_case_fmt,
+	fprintf(output_file, sz_test_case_fmt,
 	     "FIFO channel - 'nano_fiber_fifo_get_wait'");
-	fprintf (output_file, sz_description,
+	fprintf(output_file, sz_description,
 	     "testing 'nano_fifo_init','nano_fiber_fifo_get_wait',"
 	     " 'nano_fiber_fifo_put' functions;");
-	printf (sz_test_start_fmt, "'nano_fiber_fifo_get_wait'");
+	printf(sz_test_start_fmt, "'nano_fiber_fifo_get_wait'");
 
-	fifo_test_init ();
+	fifo_test_init();
 
-	t = BENCH_START ();
+	t = BENCH_START();
 
-	task_fiber_start (fiber_stack1, STACK_SIZE, fifo_fiber1, 0,
+	task_fiber_start(fiber_stack1, STACK_SIZE, fifo_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
 	task_fiber_start (fiber_stack2, STACK_SIZE, fifo_fiber2, (int) &i,
 		    NUMBER_OF_LOOPS, 3, 0);
 
-	t = TIME_STAMP_DELTA_GET (t);
+	t = TIME_STAMP_DELTA_GET(t);
 
-	return_value += check_result (i, t);
+	return_value += check_result(i, t);
 
     /* fiber contexts have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++)
 	nano_task_fifo_put (&nanoFifo_sync, (void *) element);
 
     /* test get/yield & put fiber functions */
-	fprintf (output_file, sz_test_case_fmt,
+	fprintf(output_file, sz_test_case_fmt,
 	     "FIFO channel - 'nano_fiber_fifo_get'");
-	fprintf (output_file, sz_description,
+	fprintf(output_file, sz_description,
 	     "testing 'nano_fifo_init','nano_fiber_fifo_get_wait',"
 	     " 'nano_fiber_fifo_get',\n");
-	fprintf (output_file,
+	fprintf(output_file,
 	     "\t'nano_fiber_fifo_put', 'fiber_yield' functions;");
-	printf (sz_test_start_fmt, "'nano_fiber_fifo_get'");
+	printf(sz_test_start_fmt, "'nano_fiber_fifo_get'");
 
-	fifo_test_init ();
+	fifo_test_init();
 
-	t = BENCH_START ();
+	t = BENCH_START();
 
 	i = 0;
-	task_fiber_start (fiber_stack1, STACK_SIZE, fifo_fiber1, 0,
+	task_fiber_start(fiber_stack1, STACK_SIZE, fifo_fiber1, 0,
 		    NUMBER_OF_LOOPS, 3, 0);
 	task_fiber_start (fiber_stack2, STACK_SIZE, fifo_fiber3, (int) &i,
 		    NUMBER_OF_LOOPS, 3, 0);
 
-	t = TIME_STAMP_DELTA_GET (t);
+	t = TIME_STAMP_DELTA_GET(t);
 
-	return_value += check_result (i, t);
+	return_value += check_result(i, t);
 
     /* fiber contexts have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++)
 	nano_task_fifo_put (&nanoFifo_sync, (void *) element);
 
     /* test get wait & put fiber/task functions */
-	fprintf (output_file, sz_test_case_fmt,
+	fprintf(output_file, sz_test_case_fmt,
 	     "FIFO channel - 'nano_task_fifo_get_wait'");
-	fprintf (output_file, sz_description,
+	fprintf(output_file, sz_description,
 	     "testing 'nano_fifo_init','nano_fiber_fifo_get_wait',"
 	     " 'nano_fiber_fifo_put',\n");
-	fprintf (output_file,
+	fprintf(output_file,
 	     "\t'nano_task_fifo_get_wait', 'nano_task_fifo_put' functions;");
-	printf (sz_test_start_fmt, "'nano_task_fifo_get_wait'");
+	printf(sz_test_start_fmt, "'nano_task_fifo_get_wait'");
 
-	fifo_test_init ();
+	fifo_test_init();
 
-	t = BENCH_START ();
+	t = BENCH_START();
 
-	task_fiber_start (fiber_stack1, STACK_SIZE, fifo_fiber1, 0,
+	task_fiber_start(fiber_stack1, STACK_SIZE, fifo_fiber1, 0,
 		    NUMBER_OF_LOOPS / 2, 3, 0);
-	task_fiber_start (fiber_stack2, STACK_SIZE, fifo_fiber1, 0,
+	task_fiber_start(fiber_stack2, STACK_SIZE, fifo_fiber1, 0,
 		    NUMBER_OF_LOOPS / 2, 3, 0);
 	for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
 	int element[2];
 	int *	pelement;
 	element[1] = i;
-	nano_task_fifo_put (&nanoFifo1, element);
+	nano_task_fifo_put(&nanoFifo1, element);
 	element[1] = i;
-	nano_task_fifo_put (&nanoFifo1, element);
+	nano_task_fifo_put(&nanoFifo1, element);
 
 	pelement = (int *) nano_task_fifo_get_wait (&nanoFifo2);
 	if (pelement[1] != i)
@@ -255,9 +255,9 @@ int fifo_test (void)
 	if (pelement[1] != i)
 	    break;
 	}
-	t = TIME_STAMP_DELTA_GET (t);
+	t = TIME_STAMP_DELTA_GET(t);
 
-	return_value += check_result (i * 2, t);
+	return_value += check_result(i * 2, t);
 
     /* fiber contexts have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++)

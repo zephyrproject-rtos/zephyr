@@ -211,8 +211,8 @@ static inline void irq_unlock(unsigned int key) {}
 #else /* CONFIG_NO_ISRS */
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-void _int_latency_start (void);
-void _int_latency_stop (void);
+void _int_latency_start(void);
+void _int_latency_stop(void);
 #endif
 
 /*******************************************************************************
@@ -252,7 +252,7 @@ static inline __attribute__((always_inline))
 	unsigned int key = _do_irq_lock_inline();
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	_int_latency_start ();
+	_int_latency_start();
 #endif
 
 	return key;
@@ -280,7 +280,7 @@ static inline __attribute__((always_inline))
 	if (!(key & 0x200))
 		return;
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	_int_latency_stop ();
+	_int_latency_stop();
 #endif
 	_do_irq_unlock_inline();
 	return;
@@ -307,21 +307,21 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
 
-extern void	_nano_init		(nano_context_id_t dummyOutContext, int argc,
+extern void	_nano_init(nano_context_id_t dummyOutContext, int argc,
 					 char *argv[], char *envp[]);
 
-extern void	_nano_fiber_swap (void);
+extern void	_nano_fiber_swap(void);
 
-extern unsigned int find_first_set		(unsigned int op);
+extern unsigned int find_first_set(unsigned int op);
 
-extern unsigned int find_last_set		(unsigned int op);
+extern unsigned int find_last_set(unsigned int op);
 
-extern void	irq_handler_set	(unsigned int vector,
+extern void	irq_handler_set(unsigned int vector,
 					 void (*oldRoutine) (void *parameter),
 					 void (*newRoutine) (void *parameter),
 					 void *parameter);
 
-extern int	irq_connect	(unsigned int irq,
+extern int	irq_connect(unsigned int irq,
 					 unsigned int priority,
 					 void (*routine) (void *parameter),
 					 void *parameter,
@@ -334,12 +334,12 @@ extern int	irq_connect	(unsigned int irq,
  * irq_unlock()  : unlock all interrupts
  */
 
-extern void	irq_enable	(unsigned int irq);
-extern void	irq_disable	(unsigned int irq);
+extern void	irq_enable(unsigned int irq);
+extern void	irq_disable(unsigned int irq);
 
 #ifndef CONFIG_NO_ISRS
-extern int	irq_lock		(void);
-extern void	irq_unlock	(int key);
+extern int	irq_lock(void);
+extern void	irq_unlock(int key);
 #endif /* CONFIG_NO_ISRS */
 
 #ifdef CONFIG_FP_SHARING
@@ -349,16 +349,16 @@ extern void	irq_unlock	(int key);
  * nanoFiberStart() are accepted by these APIs (i.e. USE_FP and USE_SSE).
  */
 
-extern void	fiber_float_enable	(nano_context_id_t ctx, unsigned int options);
-extern void	task_float_enable	(nano_context_id_t ctx, unsigned int options);
-extern void	fiber_float_disable	(nano_context_id_t ctx);
-extern void	task_float_disable	(nano_context_id_t ctx);
+extern void	fiber_float_enable(nano_context_id_t ctx, unsigned int options);
+extern void	task_float_enable(nano_context_id_t ctx, unsigned int options);
+extern void	fiber_float_disable(nano_context_id_t ctx);
+extern void	task_float_disable(nano_context_id_t ctx);
 #endif /* CONFIG_FP_SHARING */
 
 #include <stddef.h>	/* for size_t */
 
 #ifdef CONFIG_NANOKERNEL
-extern void	nano_cpu_idle		(void);
+extern void	nano_cpu_idle(void);
 #endif
 
 /* Nanokernel provided routine to report any detected fatal error. */
@@ -377,7 +377,7 @@ extern const NANO_ESF _default_esf;
  * and returns the vector number along with its associated BOI/EOI information
  */
 
-extern int	_SysIntVecAlloc		(unsigned int irq,
+extern int	_SysIntVecAlloc(unsigned int irq,
 					 unsigned int priority,
 					 NANO_EOI_GET_FUNC *boiRtn,
 					 NANO_EOI_GET_FUNC *eoiRtn,
@@ -389,11 +389,11 @@ extern int	_SysIntVecAlloc		(unsigned int irq,
 
 /* functions provided by the kernel for usage by the BSP's _SysIntVecAlloc() */
 
-extern int	_IntVecAlloc		(unsigned int priority);
+extern int	_IntVecAlloc(unsigned int priority);
 
-extern void	_IntVecMarkAllocated	(unsigned int vector);
+extern void	_IntVecMarkAllocated(unsigned int vector);
 
-extern void	_IntVecMarkFree		(unsigned int vector);
+extern void	_IntVecMarkFree(unsigned int vector);
 
 #endif /* !_ASMLANGUAGE */
 

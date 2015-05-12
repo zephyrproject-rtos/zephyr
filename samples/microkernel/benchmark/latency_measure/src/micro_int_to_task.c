@@ -57,12 +57,12 @@ static uint32_t timestamp;
 * \NOMANUAL
 */
 
-static void latencyTestIsr (void *unused)
+static void latencyTestIsr(void *unused)
 	{
-	ARG_UNUSED (unused);
+	ARG_UNUSED(unused);
 
 	flagVar = 1;
-	timestamp = TIME_STAMP_DELTA_GET (0);
+	timestamp = TIME_STAMP_DELTA_GET(0);
 	}
 
 /*******************************************************************************
@@ -77,16 +77,16 @@ static void latencyTestIsr (void *unused)
 * \NOMANUAL
 */
 
-static void makeInt (void)
+static void makeInt(void)
 	{
-	initSwInterrupt (latencyTestIsr);
+	initSwInterrupt(latencyTestIsr);
 	flagVar = 0;
-	raiseIntFunc ();
+	raiseIntFunc();
 	if (flagVar != 1) {
-	PRINT_FORMAT (" Flag variable has not changed. FAILED\n");
+	PRINT_FORMAT(" Flag variable has not changed. FAILED\n");
 	}
 	else
-	timestamp = TIME_STAMP_DELTA_GET (timestamp);
+	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	}
 
 /*******************************************************************************
@@ -98,14 +98,14 @@ static void makeInt (void)
  * \NOMANUAL
  */
 
-int microIntToTask (void)
+int microIntToTask(void)
 	{
-	PRINT_FORMAT (" 1- Measure time to switch from ISR to back to"
+	PRINT_FORMAT(" 1- Measure time to switch from ISR to back to"
 		  " interrupted task");
-	TICK_SYNCH ();
-	makeInt ();
+	TICK_SYNCH();
+	makeInt();
 	if (flagVar == 1) {
-	PRINT_FORMAT (" switching time is %lu tcs = %lu nsec",
+	PRINT_FORMAT(" switching time is %lu tcs = %lu nsec",
 		      timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	}
 	return 0;

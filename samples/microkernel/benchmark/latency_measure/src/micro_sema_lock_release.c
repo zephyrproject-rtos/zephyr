@@ -65,42 +65,42 @@ static uint32_t timestamp;
  * \NOMANUAL
  */
 
-int microSemaLockUnlock (void)
+int microSemaLockUnlock(void)
 	{
 	int i;
 
-	PRINT_FORMAT (" 3- Measure average time to signal a sema then test"
+	PRINT_FORMAT(" 3- Measure average time to signal a sema then test"
 		  " that sema");
-	bench_test_start ();
-	timestamp = TIME_STAMP_DELTA_GET (0);
+	bench_test_start();
+	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = SEMASTART; i <= SEMAEND; i++) {
-	task_sem_give (i);
+	task_sem_give(i);
 	}
-	timestamp = TIME_STAMP_DELTA_GET (timestamp);
+	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end () == 0) {
-	PRINT_FORMAT (" Average semaphore signal time %lu tcs = %lu nsec",
+	PRINT_FORMAT(" Average semaphore signal time %lu tcs = %lu nsec",
 		      timestamp / N_TEST_SEMA,
-		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, N_TEST_SEMA));
+		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_SEMA));
 	}
 	else {
 	errorCount++;
-	PRINT_OVERFLOW_ERROR ();
+	PRINT_OVERFLOW_ERROR();
 	}
 
-	bench_test_start ();
-	timestamp = TIME_STAMP_DELTA_GET (0);
+	bench_test_start();
+	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = SEMASTART; i <= SEMAEND; i++) {
-	task_sem_take_wait (i);
+	task_sem_take_wait(i);
 	}
-	timestamp = TIME_STAMP_DELTA_GET (timestamp);
+	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end () == 0) {
-	PRINT_FORMAT (" Average semaphore test time %lu tcs = %lu nsec",
+	PRINT_FORMAT(" Average semaphore test time %lu tcs = %lu nsec",
 		      timestamp / N_TEST_SEMA,
-		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, N_TEST_SEMA));
+		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_SEMA));
 	}
 	else {
 	errorCount++;
-	PRINT_OVERFLOW_ERROR ();
+	PRINT_OVERFLOW_ERROR();
 	}
 	return 0;
 	}
@@ -117,28 +117,28 @@ int microSemaLockUnlock (void)
  * \NOMANUAL
  */
 
-int microMutexLockUnlock (void)
+int microMutexLockUnlock(void)
 	{
 	int i;
 
-	PRINT_FORMAT (" 4- Measure average time to lock a mutex then"
+	PRINT_FORMAT(" 4- Measure average time to lock a mutex then"
 		  " unlock that mutex");
-	timestamp = TIME_STAMP_DELTA_GET (0);
+	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i < N_TEST_MUTEX; i++) {
-	task_mutex_lock_wait (TEST_MUTEX);
+	task_mutex_lock_wait(TEST_MUTEX);
 	}
-	timestamp = TIME_STAMP_DELTA_GET (timestamp);
-	PRINT_FORMAT (" Average time to lock the mutex %lu tcs = %lu nsec",
+	timestamp = TIME_STAMP_DELTA_GET(timestamp);
+	PRINT_FORMAT(" Average time to lock the mutex %lu tcs = %lu nsec",
 		  timestamp / N_TEST_MUTEX,
-		  SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, N_TEST_MUTEX));
-	timestamp = TIME_STAMP_DELTA_GET (0);
+		  SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_MUTEX));
+	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i <= N_TEST_MUTEX; i++) {
-	task_mutex_unlock (TEST_MUTEX);
+	task_mutex_unlock(TEST_MUTEX);
 	}
-	timestamp = TIME_STAMP_DELTA_GET (timestamp);
-	PRINT_FORMAT (" Average time to unlock the mutex %lu tcs = %lu nsec",
+	timestamp = TIME_STAMP_DELTA_GET(timestamp);
+	PRINT_FORMAT(" Average time to unlock the mutex %lu tcs = %lu nsec",
 		  timestamp / N_TEST_MUTEX,
-		  SYS_CLOCK_HW_CYCLES_TO_NS_AVG (timestamp, N_TEST_MUTEX));
+		  SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_MUTEX));
 	return 0;
 	}
 

@@ -147,7 +147,7 @@ static void open_files(void)
 			for(--ii; ii >= 0; ii--) {
 				close(fds[ii]);
 			}
-			exit (-1);
+			exit(-1);
 		}
 	}
 }

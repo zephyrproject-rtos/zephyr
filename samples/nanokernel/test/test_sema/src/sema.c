@@ -114,7 +114,7 @@ void isr_sem_take(void *data)
 {
 	ISR_SEM_INFO *pInfo = (ISR_SEM_INFO *) data;
 
-	pInfo->data = nano_isr_sem_take (pInfo->sem);
+	pInfo->data = nano_isr_sem_take(pInfo->sem);
 }
 
 /*******************************************************************************
@@ -133,7 +133,7 @@ void isr_sem_give(void *data)
 {
 	ISR_SEM_INFO *pInfo = (ISR_SEM_INFO *) data;
 
-	nano_isr_sem_give (pInfo->sem);
+	nano_isr_sem_give(pInfo->sem);
 	pInfo->data = 1;     /* Indicate semaphore has been given */
 }
 
@@ -159,18 +159,18 @@ int testSemFiberNoWait(void)
      */
 
 	for (i = 0; i < 32; i++) {
-		nano_fiber_sem_give (&testSem);
+		nano_fiber_sem_give(&testSem);
 		}
 
 	for (i = 0; i < 32; i++) {
 		if (nano_fiber_sem_take (&testSem) != 1) {
-		    TC_ERROR (" *** Expected nano_fiber_sem_take() to succeed, not fail\n");
+		    TC_ERROR(" *** Expected nano_fiber_sem_take() to succeed, not fail\n");
 		    goto errorReturn;
 		    }
 		}
 
 	if (nano_fiber_sem_take (&testSem) != 0) {
-		TC_ERROR (" *** Expected  nano_fiber_sem_take() to fail, not succeed\n");
+		TC_ERROR(" *** Expected  nano_fiber_sem_take() to fail, not succeed\n");
 		goto errorReturn;
 		}
 
@@ -198,10 +198,10 @@ static void fiberEntry(int arg1, int arg2)
 {
 	int  rv;      /* return value from a test */
 
-	ARG_UNUSED (arg1);
-	ARG_UNUSED (arg2);
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
 
-	rv = testSemFiberNoWait ();
+	rv = testSemFiberNoWait();
 	if (rv != TC_PASS) {
 		return;
 		}
@@ -211,7 +211,7 @@ static void fiberEntry(int arg1, int arg2)
      * available (the main task will give it).
      */
 
-	nano_fiber_sem_take_wait (&testSem);
+	nano_fiber_sem_take_wait(&testSem);
 
 	semTestState = STS_TASK_WOKE_FIBER;
 
@@ -222,15 +222,15 @@ static void fiberEntry(int arg1, int arg2)
      * thus waking the main task.
      */
 
-	nano_fiber_timer_start (&timer, SECONDS(2));
-	nano_fiber_timer_wait (&timer);
+	nano_fiber_timer_start(&timer, SECONDS(2));
+	nano_fiber_timer_wait(&timer);
 
     /*
      * The main task is now waiting on <testSem>.  Give the semaphore <testSem>
      * to wake it.
      */
 
-	nano_fiber_sem_give (&testSem);
+	nano_fiber_sem_give(&testSem);
 
     /*
      * Some small delay must be done so that the main task can process the
@@ -239,8 +239,8 @@ static void fiberEntry(int arg1, int arg2)
 
 	semTestState = STS_FIBER_WOKE_TASK;
 
-	nano_fiber_timer_start (&timer, SECONDS(2));
-	nano_fiber_timer_wait (&timer);
+	nano_fiber_timer_start(&timer, SECONDS(2));
+	nano_fiber_timer_wait(&timer);
 
     /*
      * The main task should be waiting on <testSem> again.  This time, instead
@@ -250,7 +250,7 @@ static void fiberEntry(int arg1, int arg2)
 
 	isrSemInfo.data = 0;
 	isrSemInfo.sem = &testSem;
-	_trigger_nano_isr_sem_give ();
+	_trigger_nano_isr_sem_give();
 
 	if (isrSemInfo.data == 1)
 		semTestState = STS_ISR_WOKE_TASK;
@@ -274,12 +274,12 @@ void initNanoObjects(void)
 
 	(void)initIRQ (&i);
 
-	nano_sem_init (&testSem);
-	nano_sem_init (&multi_waiters);
-	nano_sem_init (&reply_multi_waiters);
-	nano_timer_init (&timer, timerData);
+	nano_sem_init(&testSem);
+	nano_sem_init(&multi_waiters);
+	nano_sem_init(&reply_multi_waiters);
+	nano_timer_init(&timer, timerData);
 
-	TC_PRINT ("Nano objects initialized\n");
+	TC_PRINT("Nano objects initialized\n");
 }
 
 /*******************************************************************************
@@ -305,21 +305,21 @@ int testSemIsrNoWait(void)
 
 	isrSemInfo.sem = &testSem;
 	for (i = 0; i < 32; i++) {
-		_trigger_nano_isr_sem_give ();
+		_trigger_nano_isr_sem_give();
 		}
 
 	for (i = 0; i < 32; i++) {
 		isrSemInfo.data = 0;
-		_trigger_nano_isr_sem_take ();
+		_trigger_nano_isr_sem_take();
 		if (isrSemInfo.data != 1) {
-		    TC_ERROR (" *** Expected nano_isr_sem_take() to succeed, not fail\n");
+		    TC_ERROR(" *** Expected nano_isr_sem_take() to succeed, not fail\n");
 		    goto errorReturn;
 		    }
 		}
 
-	_trigger_nano_isr_sem_take ();
+	_trigger_nano_isr_sem_take();
 	if (isrSemInfo.data != 0) {
-		TC_ERROR (" *** Expected  nano_isr_sem_take() to fail, not succeed!\n");
+		TC_ERROR(" *** Expected  nano_isr_sem_take() to fail, not succeed!\n");
 		goto errorReturn;
 		}
 
@@ -351,18 +351,18 @@ int testSemTaskNoWait(void)
      */
 
 	for (i = 0; i < 32; i++) {
-		nano_task_sem_give (&testSem);
+		nano_task_sem_give(&testSem);
 		}
 
 	for (i = 0; i < 32; i++) {
 		if (nano_task_sem_take (&testSem) != 1) {
-		    TC_ERROR (" *** Expected nano_task_sem_take() to succeed, not fail\n");
+		    TC_ERROR(" *** Expected nano_task_sem_take() to succeed, not fail\n");
 		    goto errorReturn;
 		    }
 		}
 
 	if (nano_task_sem_take (&testSem) != 0) {
-		TC_ERROR (" *** Expected  nano_task_sem_take() to fail, not succeed!\n");
+		TC_ERROR(" *** Expected  nano_task_sem_take() to fail, not succeed!\n");
 		goto errorReturn;
 		}
 
@@ -385,36 +385,36 @@ errorReturn:
 int testSemWait(void)
 {
 	if (fiberDetectedFailure != 0) {
-		TC_ERROR (" *** Failure detected in the fiber.");
+		TC_ERROR(" *** Failure detected in the fiber.");
 		return TC_FAIL;
 		}
 
-	nano_task_sem_give (&testSem);    /* Wake the fiber. */
+	nano_task_sem_give(&testSem);    /* Wake the fiber. */
 
 	if (semTestState != STS_TASK_WOKE_FIBER) {
-		TC_ERROR (" *** Expected task to wake fiber.  It did not.\n");
+		TC_ERROR(" *** Expected task to wake fiber.  It did not.\n");
 		return TC_FAIL;
 		}
 
-	TC_PRINT ("Semaphore from the task woke the fiber\n");
+	TC_PRINT("Semaphore from the task woke the fiber\n");
 
-	nano_task_sem_take_wait (&testSem);   /* Wait on <testSem> */
+	nano_task_sem_take_wait(&testSem);   /* Wait on <testSem> */
 
 	if (semTestState != STS_FIBER_WOKE_TASK) {
-		TC_ERROR (" *** Expected fiber to wake task.  It did not.\n");
+		TC_ERROR(" *** Expected fiber to wake task.  It did not.\n");
 		return TC_FAIL;
 		}
 
-	TC_PRINT ("Semaphore from the fiber woke the task\n");
+	TC_PRINT("Semaphore from the fiber woke the task\n");
 
-	nano_task_sem_take_wait (&testSem);  /* Wait on <testSem> again. */
+	nano_task_sem_take_wait(&testSem);  /* Wait on <testSem> again. */
 
 	if (semTestState != STS_ISR_WOKE_TASK) {
-		TC_ERROR (" *** Expected ISR to wake task.  It did not.\n");
+		TC_ERROR(" *** Expected ISR to wake task.  It did not.\n");
 		return TC_FAIL;
 		}
 
-	TC_PRINT ("Semaphore from the ISR woke the task.\n");
+	TC_PRINT("Semaphore from the ISR woke the task.\n");
 	return TC_PASS;
 }
 
@@ -439,9 +439,9 @@ static char fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
 
 static void fiber_multi_waiters(int arg1, int arg2)
 {
-	TC_PRINT ("multiple-waiter fiber %d trying to get semaphore...\n", arg1);
+	TC_PRINT("multiple-waiter fiber %d trying to get semaphore...\n", arg1);
 	nano_fiber_sem_take_wait(&multi_waiters);
-	TC_PRINT ("multiple-waiter fiber %d acquired semaphore, sending reply\n",
+	TC_PRINT("multiple-waiter fiber %d acquired semaphore, sending reply\n",
 				arg1);
 	nano_fiber_sem_give(&reply_multi_waiters);
 }
@@ -471,7 +471,7 @@ static int do_test_multiple_waiters(void)
 	/* reply_multi_waiters will have been given once for each fiber */
 	for (ii = 0; ii < NUM_WAITERS; ii++) {
 		if (!nano_task_sem_take(&reply_multi_waiters)) {
-			TC_ERROR (" *** Cannot take sem supposedly given by waiters.\n");
+			TC_ERROR(" *** Cannot take sem supposedly given by waiters.\n");
 			return TC_FAIL;
 		}
 	}
@@ -480,12 +480,12 @@ static int do_test_multiple_waiters(void)
 				NUM_WAITERS);
 
 	if (nano_task_sem_take(&multi_waiters)) {
-		TC_ERROR (" *** multi_waiters should have been empty.\n");
+		TC_ERROR(" *** multi_waiters should have been empty.\n");
 		return TC_FAIL;
 	}
 
 	if (nano_task_sem_take(&reply_multi_waiters)) {
-		TC_ERROR (" *** reply_multi_waiters should have been empty.\n");
+		TC_ERROR(" *** reply_multi_waiters should have been empty.\n");
 		return TC_FAIL;
 	}
 
@@ -503,7 +503,7 @@ static int test_multiple_waiters(void)
 {
 	TC_PRINT("First pass\n");
 	if (do_test_multiple_waiters() == TC_FAIL) {
-		TC_ERROR (" *** First pass test failed.\n");
+		TC_ERROR(" *** First pass test failed.\n");
 		return TC_FAIL;
 	}
 
@@ -514,7 +514,7 @@ static int test_multiple_waiters(void)
 
 	TC_PRINT("Second pass\n");
 	if (do_test_multiple_waiters() == TC_FAIL) {
-		TC_ERROR (" *** Second pass test failed.\n");
+		TC_ERROR(" *** Second pass test failed.\n");
 		return TC_FAIL;
 	}
 
@@ -534,16 +534,16 @@ void main(void)
 {
 	int     rv;       /* return value from tests */
 
-	TC_START ("Test Nanokernel Semaphores");
+	TC_START("Test Nanokernel Semaphores");
 
-	initNanoObjects ();
+	initNanoObjects();
 
-	rv = testSemTaskNoWait ();
+	rv = testSemTaskNoWait();
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
 
-	rv = testSemIsrNoWait ();
+	rv = testSemIsrNoWait();
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
@@ -555,10 +555,10 @@ void main(void)
      * main task.
      */
 
-	task_fiber_start (fiberStack, FIBER_STACKSIZE, fiberEntry,
+	task_fiber_start(fiberStack, FIBER_STACKSIZE, fiberEntry,
 		                0, 0, FIBER_PRIORITY, 0);
 
-	rv = testSemWait ();
+	rv = testSemWait();
 	if (rv != TC_PASS) {
 		goto doneTests;
 		}
@@ -569,6 +569,6 @@ void main(void)
 		}
 
 doneTests:
-	TC_END_RESULT (rv);
-	TC_END_REPORT (rv);
+	TC_END_RESULT(rv);
+	TC_END_REPORT(rv);
 }

@@ -164,7 +164,7 @@ void isr_fifo_put(void *parameter)
 {
 	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
 
-	nano_isr_fifo_put (pInfo->channel, pInfo->data);
+	nano_isr_fifo_put(pInfo->channel, pInfo->data);
 }
 
 /*******************************************************************************
@@ -183,7 +183,7 @@ void isr_fifo_get(void *parameter)
 {
 	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
 
-	pInfo->data = nano_isr_fifo_get (pInfo->channel);
+	pInfo->data = nano_isr_fifo_get(pInfo->channel);
 }
 
 
@@ -200,10 +200,10 @@ void fiber1(void)
 	int     count = 0;  /* counter */
 
     /* Wait for fiber1 to be activated. */
-	nano_fiber_sem_take_wait (&nanoSemObj1);
+	nano_fiber_sem_take_wait(&nanoSemObj1);
 
     /* Wait for data to be added to <nanoFifoObj> by task */
-	pData = nano_fiber_fifo_get_wait (&nanoFifoObj);
+	pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
 	if (pData != pPutList1[0]) {
 		TC_ERROR ("fiber1 (1) - expected 0x%x, got 0x%x\n",
 		          pPutList1[0], pData);
@@ -212,7 +212,7 @@ void fiber1(void)
 		}
 
     /* Wait for data to be added to <nanoFifoObj2> by fiber3 */
-	pData = nano_fiber_fifo_get_wait (&nanoFifoObj2);
+	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
 	if (pData != pPutList2[0]) {
 		TC_ERROR ("fiber1 (2) - expected 0x%x, got 0x%x\n",
 		          pPutList2[0], pData);
@@ -220,7 +220,7 @@ void fiber1(void)
 		return;
 		}
 
-	nano_fiber_sem_take_wait (&nanoSemObj1);   /* Wait for fiber1 to be reactivated */
+	nano_fiber_sem_take_wait(&nanoSemObj1);   /* Wait for fiber1 to be reactivated */
 
 	TC_PRINT("Test Fiber FIFO Get\n\n");
     /* Get all FIFOs */
@@ -434,10 +434,10 @@ void fiber2(void)
 
     /* Wait for fiber2 to be activated */
 
-	nano_fiber_sem_take_wait (&nanoSemObj2);
+	nano_fiber_sem_take_wait(&nanoSemObj2);
 
     /* Wait for data to be added to <nanoFifoObj> */
-	pData = nano_fiber_fifo_get_wait (&nanoFifoObj);
+	pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
 	if (pData != pPutList1[1]) {
 		TC_ERROR ("fiber2 (1) - expected 0x%x, got 0x%x\n",
 		          pPutList1[1], pData);
@@ -446,7 +446,7 @@ void fiber2(void)
 		}
 
     /* Wait for data to be added to <nanoFifoObj2> by fiber3 */
-	pData = nano_fiber_fifo_get_wait (&nanoFifoObj2);
+	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
 	if (pData != pPutList2[1]) {
 		TC_ERROR ("fiber2 (2) - expected 0x%x, got 0x%x\n",
 		          pPutList2[1], pData);
@@ -454,11 +454,11 @@ void fiber2(void)
 		return;
 		}
 
-	nano_fiber_sem_take_wait (&nanoSemObj2);   /* Wait for fiber2 to be reactivated */
+	nano_fiber_sem_take_wait(&nanoSemObj2);   /* Wait for fiber2 to be reactivated */
 
     /* Fiber #2 has been reactivated by main task */
 	for (int i = 0; i < 4; i++) {
-		pData = nano_fiber_fifo_get_wait (&nanoFifoObj);
+		pData = nano_fiber_fifo_get_wait(&nanoFifoObj);
 		if (pData != pPutList1[i]) {
 		    TC_ERROR ("fiber2 (3) - iteration %d expected 0x%x, got 0x%x\n",
 		              i, pPutList1[i], pData);
@@ -467,8 +467,8 @@ void fiber2(void)
 		    }
 		}
 
-	nano_fiber_sem_give (&nanoSemObjTask); /* Wake main task */
-	nano_fiber_sem_take_wait (&nanoSemObj2);   /* Wait for fiber2 to be reactivated */
+	nano_fiber_sem_give(&nanoSemObjTask); /* Wake main task */
+	nano_fiber_sem_take_wait(&nanoSemObj2);   /* Wait for fiber2 to be reactivated */
 
 	testFiberFifoGetW();
 	PRINT_LINE;
@@ -489,17 +489,17 @@ void fiber3(void)
 	void *pData;
 
     /* Wait for fiber3 to be activated */
-	nano_fiber_sem_take_wait (&nanoSemObj3);
+	nano_fiber_sem_take_wait(&nanoSemObj3);
 
     /* Put two items onto <nanoFifoObj2> to unblock fibers #1 and #2. */
-	nano_fiber_fifo_put (&nanoFifoObj2, pPutList2[0]);    /* Wake fiber1 */
-	nano_fiber_fifo_put (&nanoFifoObj2, pPutList2[1]);    /* Wake fiber2 */
+	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[0]);    /* Wake fiber1 */
+	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[1]);    /* Wake fiber2 */
 
     /* Wait for fiber3 to be re-activated */
-	nano_fiber_sem_take_wait (&nanoSemObj3);
+	nano_fiber_sem_take_wait(&nanoSemObj3);
 
     /* Immediately get the data from <nanoFifoObj2>. */
-	pData = nano_fiber_fifo_get_wait (&nanoFifoObj2);
+	pData = nano_fiber_fifo_get_wait(&nanoFifoObj2);
 	if (pData != pPutList2[0]) {
 		retCode = TC_FAIL;
 		TC_ERROR ("fiber3 (1) - got 0x%x from <nanoFifoObj2>, expected 0x%x\n",
@@ -507,19 +507,19 @@ void fiber3(void)
 		}
 
     /* Put three items onto the FIFO for the task to get */
-	nano_fiber_fifo_put (&nanoFifoObj2, pPutList2[0]);
-	nano_fiber_fifo_put (&nanoFifoObj2, pPutList2[1]);
-	nano_fiber_fifo_put (&nanoFifoObj2, pPutList2[2]);
+	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[0]);
+	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[1]);
+	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[2]);
 
     /* Sleep for 2 seconds */
-	nano_fiber_timer_start (&timer, SECONDS(2));
-	nano_fiber_timer_wait (&timer);
+	nano_fiber_timer_start(&timer, SECONDS(2));
+	nano_fiber_timer_wait(&timer);
 
     /* Put final item onto the FIFO for the task to get */
-	nano_fiber_fifo_put (&nanoFifoObj2, pPutList2[3]);
+	nano_fiber_fifo_put(&nanoFifoObj2, pPutList2[3]);
 
     /* Wait for fiber3 to be re-activated (not expected to occur) */
-	nano_fiber_sem_take_wait (&nanoSemObj3);
+	nano_fiber_sem_take_wait(&nanoSemObj3);
 }
 
 
@@ -545,7 +545,7 @@ void testTaskFifoGetW(void)
 	nano_task_fifo_put(&nanoFifoObj2, pPutData);
 
     /* Activate fiber2 */
-	nano_task_sem_give (&nanoSemObj2);
+	nano_task_sem_give(&nanoSemObj2);
 
 	pGetData = nano_task_fifo_get_wait(&nanoFifoObj);
 	TC_PRINT("TASK FIFO Get from queue1: %p\n", pGetData);
@@ -581,15 +581,15 @@ void initNanoObjects(void)
 
 	(void)initIRQ (&i);
 
-	nano_fifo_init (&nanoFifoObj);
-	nano_fifo_init (&nanoFifoObj2);
+	nano_fifo_init(&nanoFifoObj);
+	nano_fifo_init(&nanoFifoObj2);
 
-	nano_sem_init  (&nanoSemObj1);
-	nano_sem_init  (&nanoSemObj2);
-	nano_sem_init  (&nanoSemObj3);
-	nano_sem_init  (&nanoSemObjTask);
+	nano_sem_init(&nanoSemObj1);
+	nano_sem_init(&nanoSemObj2);
+	nano_sem_init(&nanoSemObj3);
+	nano_sem_init(&nanoSemObjTask);
 
-	nano_timer_init (&timer, timerData);
+	nano_timer_init(&timer, timerData);
 } /* initNanoObjects */
 
 /*******************************************************************************
@@ -629,28 +629,28 @@ void main(void)
      * Activate fibers #1 and #2.  They will each block on nanoFifoObj.
      */
 
-	nano_task_sem_give (&nanoSemObj1);
-	nano_task_sem_give (&nanoSemObj2);
+	nano_task_sem_give(&nanoSemObj1);
+	nano_task_sem_give(&nanoSemObj2);
 
     /* Put two items into <nanoFifoObj> to unblock fibers #1 and #2. */
-	nano_task_fifo_put (&nanoFifoObj, pPutList1[0]);    /* Wake fiber1 */
-	nano_task_fifo_put (&nanoFifoObj, pPutList1[1]);    /* Wake fiber2 */
+	nano_task_fifo_put(&nanoFifoObj, pPutList1[0]);    /* Wake fiber1 */
+	nano_task_fifo_put(&nanoFifoObj, pPutList1[1]);    /* Wake fiber2 */
 
     /* Activate fiber #3 */
-	nano_task_sem_give (&nanoSemObj3);
+	nano_task_sem_give(&nanoSemObj3);
 
     /*
      * All three fibers should be blocked on their semaphores.  Put data into
      * <nanoFifoObj2>.  Fiber #3 will read it after it is reactivated.
      */
 
-	nano_task_fifo_put (&nanoFifoObj2, pPutList2[0]);
-	nano_task_sem_give (&nanoSemObj3);    /* Reactivate fiber #3 */
+	nano_task_fifo_put(&nanoFifoObj2, pPutList2[0]);
+	nano_task_sem_give(&nanoSemObj3);    /* Reactivate fiber #3 */
 
 	for (int i = 0; i < 4; i++) {
-		pData = nano_task_fifo_get_wait (&nanoFifoObj2);
+		pData = nano_task_fifo_get_wait(&nanoFifoObj2);
 		if (pData != pPutList2[i]) {
-		    TC_ERROR ("nano_task_fifo_get_wait() expected 0x%x, got 0x%x\n",
+		    TC_ERROR("nano_task_fifo_get_wait() expected 0x%x, got 0x%x\n",
 		              pPutList2[i], pData);
 		    goto exit;
 		    }
@@ -658,13 +658,13 @@ void main(void)
 
     /* Add items to <nanoFifoObj> for fiber #2 */
 	for (int i = 0; i < 4; i++) {
-		nano_task_fifo_put (&nanoFifoObj, pPutList1[i]);
+		nano_task_fifo_put(&nanoFifoObj, pPutList1[i]);
 		}
 
-	nano_task_sem_give (&nanoSemObj2);   /* Activate fiber #2 */
+	nano_task_sem_give(&nanoSemObj2);   /* Activate fiber #2 */
 
     /* Wait for fibers to finish */
-	nano_task_sem_take_wait (&nanoSemObjTask);
+	nano_task_sem_take_wait(&nanoSemObjTask);
 
 	if (retCode == TC_FAIL) {
 		goto exit;
@@ -685,7 +685,7 @@ void main(void)
 
 	PRINT_LINE;
 
-	nano_task_sem_give (&nanoSemObj1);      /* Activate fiber1 */
+	nano_task_sem_give(&nanoSemObj1);      /* Activate fiber1 */
 
 	if (retCode == TC_FAIL) {
 		goto exit;
@@ -718,6 +718,6 @@ void main(void)
 	PRINT_LINE;
 
 exit:
-	TC_END_RESULT (retCode);
-	TC_END_REPORT (retCode);
+	TC_END_RESULT(retCode);
+	TC_END_REPORT(retCode);
 }

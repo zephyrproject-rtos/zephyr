@@ -55,7 +55,7 @@ then announces the result of the test.
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-extern void testFiberInit (void);
+extern void testFiberInit(void);
 extern struct nano_sem fiberSem; /* semaphore that allows test control the fiber */
 
 /* defines */
@@ -111,7 +111,7 @@ static vvfn _trigger_isrSemaSignal = (vvfn) sw_isr_trigger_0;
 
 void RegressionTaskEntry(void)
 {
-	extern int RegressionTask (void);
+	extern int RegressionTask(void);
 
 	task_sem_give (resultSems[RegressionTask ()]);
 }
@@ -128,7 +128,7 @@ void RegressionTaskEntry(void)
 
 void AlternateTaskEntry(void)
 {
-	extern int AlternateTask (void);
+	extern int AlternateTask(void);
 
 	task_sem_give (resultSems[AlternateTask ()]);
 }
@@ -145,7 +145,7 @@ void AlternateTaskEntry(void)
 
 void HighPriTaskEntry(void)
 {
-	extern int HighPriTask (void);
+	extern int HighPriTask(void);
 
 	task_sem_give (resultSems[HighPriTask ()]);
 }
@@ -162,7 +162,7 @@ void HighPriTaskEntry(void)
 
 void LowPriTaskEntry(void)
 {
-	extern int LowPriTask (void);
+	extern int LowPriTask(void);
 
 	task_sem_give (resultSems[LowPriTask ()]);
 }
@@ -178,7 +178,7 @@ void LowPriTaskEntry(void)
 
 static void testIsrHandler(void *isrData)
 {
-	isr_sem_give (*(ksem_t *)isrData, &CMD_PKT_SET(cmdPktSet));
+	isr_sem_give(*(ksem_t *)isrData, &CMD_PKT_SET(cmdPktSet));
 }
 
 /*******************************************************************************
@@ -193,7 +193,7 @@ static void testIsrHandler(void *isrData)
 void trigger_isrSemaSignal(ksem_t semaphore)
 {
 	testIsrInfo = semaphore;
-	_trigger_isrSemaSignal ();
+	_trigger_isrSemaSignal();
 }
 
 /*******************************************************************************
@@ -205,7 +205,7 @@ void trigger_isrSemaSignal(ksem_t semaphore)
 
 void releaseTestFiber(void)
 {
-	nano_task_sem_give (&fiberSem);
+	nano_task_sem_give(&fiberSem);
 }
 
 /*******************************************************************************
@@ -243,10 +243,10 @@ void MonitorTaskEntry(void)
 	ksem_t result;
 	int tasksDone;
 
-	testInterruptsInit ();
-	testFiberInit ();
+	testInterruptsInit();
+	testFiberInit();
 
-	PRINT_DATA ("Starting semaphore tests\n");
+	PRINT_DATA("Starting semaphore tests\n");
 	PRINT_LINE;
 
     /*
@@ -256,17 +256,17 @@ void MonitorTaskEntry(void)
      */
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
-	result = task_sem_group_take_wait_timeout (resultSems, SECONDS(60));
+	result = task_sem_group_take_wait_timeout(resultSems, SECONDS(60));
 	if (result != resultSems[TC_PASS]) {
 	    if (result != resultSems[TC_FAIL]) {
-		TC_ERROR ("Monitor task timed out\n");
+		TC_ERROR("Monitor task timed out\n");
 		}
-	    TC_END_RESULT (TC_FAIL);
-	    TC_END_REPORT (TC_FAIL);
+	    TC_END_RESULT(TC_FAIL);
+	    TC_END_REPORT(TC_FAIL);
 	    return;
 	    }
 	}
 
-	TC_END_RESULT (TC_PASS);
-	TC_END_REPORT (TC_PASS);
+	TC_END_RESULT(TC_PASS);
+	TC_END_REPORT(TC_PASS);
 }

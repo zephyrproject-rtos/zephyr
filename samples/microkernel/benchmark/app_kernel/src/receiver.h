@@ -45,6 +45,6 @@ typedef struct {
 	} GetInfo;
 
 /* global data */
-extern char data_recv[OCTET_TO_SIZEOFUNIT (MESSAGE_SIZE)];
+extern char data_recv[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 
 #endif /* _RECEIVER_H */

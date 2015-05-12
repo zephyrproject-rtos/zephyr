@@ -88,17 +88,17 @@ static int tcRC = TC_PASS;         /* test case return code */
 * RETURNS:  N/A
 */
 
-void Task10 (void)
+void Task10(void)
 	{
 	int  rv;
 
-	task_sleep (3 * ONE_SECOND + HALF_SECOND);
+	task_sleep(3 * ONE_SECOND + HALF_SECOND);
 
     /* Wait and boost owner priority to 10 */
-	rv = task_mutex_lock_wait_timeout (Mutex4, ONE_SECOND);
+	rv = task_mutex_lock_wait_timeout(Mutex4, ONE_SECOND);
 	if (rv != RC_TIME) {
 		tcRC = TC_FAIL;
-		TC_ERROR ("Failed to timeout on mutex 0x%x\n", Mutex4);
+		TC_ERROR("Failed to timeout on mutex 0x%x\n", Mutex4);
 		return;
 		}
 	}   /* Task10 */
@@ -111,11 +111,11 @@ void Task10 (void)
 * RETURNS:  N/A
 */
 
-void Task15 (void)
+void Task15(void)
 	{
 	int  rv;
 
-	task_sleep (3 * ONE_SECOND + 3 * FOURTH_SECOND);
+	task_sleep(3 * ONE_SECOND + 3 * FOURTH_SECOND);
 
     /*
      * Wait for the mutex.  There is a higher priority level task waiting
@@ -126,14 +126,14 @@ void Task15 (void)
      * instead drop to 15.
      */
 
-	rv = task_mutex_lock_wait_timeout (Mutex4, 2 * ONE_SECOND);
+	rv = task_mutex_lock_wait_timeout(Mutex4, 2 * ONE_SECOND);
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
-		TC_ERROR ("Failed to take mutex 0x%x\n", Mutex4);
+		TC_ERROR("Failed to take mutex 0x%x\n", Mutex4);
 		return;
 		}
 
-	task_mutex_unlock (Mutex4);
+	task_mutex_unlock(Mutex4);
 	}
 
 /*******************************************************************************
@@ -143,11 +143,11 @@ void Task15 (void)
 * RETURNS:  N/A
 */
 
-void Task20 (void)
+void Task20(void)
 	{
 	int  rv;
 
-	task_sleep (2 * ONE_SECOND + HALF_SECOND);
+	task_sleep(2 * ONE_SECOND + HALF_SECOND);
 
     /*
      * Wait and boost owner priority to 20.  While waiting, another task of
@@ -157,10 +157,10 @@ void Task20 (void)
      * priority of the owning task RegressionTask will drop to 25.
      */
 
-	rv = task_mutex_lock_wait_timeout (Mutex3, 3 * ONE_SECOND);
+	rv = task_mutex_lock_wait_timeout(Mutex3, 3 * ONE_SECOND);
 	if (rv != RC_TIME) {
 		tcRC = TC_FAIL;
-		TC_ERROR ("Failed to timeout on mutex 0x%x\n", Mutex3);
+		TC_ERROR("Failed to timeout on mutex 0x%x\n", Mutex3);
 		return;
 		}
 
@@ -173,16 +173,16 @@ void Task20 (void)
 * RETURNS:  N/A
 */
 
-void Task25 (void)
+void Task25(void)
 	{
 	int  rv;
 
-	task_sleep (ONE_SECOND + HALF_SECOND);
+	task_sleep(ONE_SECOND + HALF_SECOND);
 
-	rv = task_mutex_lock_wait (Mutex2);      /* Wait and boost owner priority to 25 */
+	rv = task_mutex_lock_wait(Mutex2);      /* Wait and boost owner priority to 25 */
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
-		TC_ERROR ("Failed to take mutex 0x%x\n", Mutex2);
+		TC_ERROR("Failed to take mutex 0x%x\n", Mutex2);
 		return;
 		}
 
@@ -196,24 +196,24 @@ void Task25 (void)
 * RETURNS:  N/A
 */
 
-void Task30 (void)
+void Task30(void)
 	{
 	int  rv;
 
-	task_sleep (HALF_SECOND);   /* Allow lower priority task to run */
+	task_sleep(HALF_SECOND);   /* Allow lower priority task to run */
 
-	rv = task_mutex_lock (Mutex1);       /* <Mutex1> is already locked. */
+	rv = task_mutex_lock(Mutex1);       /* <Mutex1> is already locked. */
 	if (rv != RC_FAIL) {            /* This attempt to lock the mutex */
 		/* should not succeed. */
 		tcRC = TC_FAIL;
-		TC_ERROR ("Failed to NOT take locked mutex 0x%x\n", Mutex1);
+		TC_ERROR("Failed to NOT take locked mutex 0x%x\n", Mutex1);
 		return;
 		}
 
-	rv = task_mutex_lock_wait (Mutex1);      /* Wait and boost owner priority to 30 */
+	rv = task_mutex_lock_wait(Mutex1);      /* Wait and boost owner priority to 30 */
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
-		TC_ERROR ("Failed to take mutex 0x%x\n", Mutex1);
+		TC_ERROR("Failed to take mutex 0x%x\n", Mutex1);
 		return;
 		}
 
@@ -227,18 +227,18 @@ void Task30 (void)
 * RETURNS: N/A
 */
 
-void Task45 (void)
+void Task45(void)
 	{
 	int rv;
 
-	task_sleep (3 * ONE_SECOND + HALF_SECOND);
-	rv = task_mutex_lock_wait (Mutex3);
+	task_sleep(3 * ONE_SECOND + HALF_SECOND);
+	rv = task_mutex_lock_wait(Mutex3);
 	if (rv != RC_OK) {
 		tcRC = TC_FAIL;
-		TC_ERROR ("Failed to take mutex 0x%x\n", Mutex2);
+		TC_ERROR("Failed to take mutex 0x%x\n", Mutex2);
 		return;
 		}
-	task_mutex_unlock (Mutex3);
+	task_mutex_unlock(Mutex3);
 	}
 
 /*******************************************************************************
@@ -250,7 +250,7 @@ void Task45 (void)
 * RETURNS:  N/A
 */
 
-void RegressionTask (void)
+void RegressionTask(void)
 	{
 	int    rv;
 	int    i;
@@ -271,17 +271,17 @@ void RegressionTask (void)
      */
 
 	for (i = 0; i < 4; i++) {
-		rv = task_mutex_lock (mutexes[i]);
+		rv = task_mutex_lock(mutexes[i]);
 		if (rv != RC_OK) {
-		    TC_ERROR ("Failed to lock mutex 0x%x\n", mutexes[i]);
+		    TC_ERROR("Failed to lock mutex 0x%x\n", mutexes[i]);
 		    tcRC = TC_FAIL;
 		    goto errorReturn;
 		    }
-		task_sleep (ONE_SECOND);
+		task_sleep(ONE_SECOND);
 
-		rv = task_priority_get ();
+		rv = task_priority_get();
 		if (rv != priority[i]) {
-		    TC_ERROR ("Expected priority %d, not %d\n", priority[i], rv);
+		    TC_ERROR("Expected priority %d, not %d\n", priority[i], rv);
 		    tcRC = TC_FAIL;
 		    goto errorReturn;
 		    }
@@ -295,59 +295,59 @@ void RegressionTask (void)
 
 	TC_PRINT ("Done LOCKING!  Current priority = %d\n", task_priority_get ());
 
-	task_sleep (ONE_SECOND);       /* Task10 should time out */
+	task_sleep(ONE_SECOND);       /* Task10 should time out */
 
     /* ~ 5 seconds have passed */
 
-	rv = task_priority_get ();
+	rv = task_priority_get();
 	if (rv != 15) {
-		TC_ERROR ("%s timed out and out priority should drop.\n", "Task10");
-		TC_ERROR ("Expected priority %d, not %d\n", 15, rv);
+		TC_ERROR("%s timed out and out priority should drop.\n", "Task10");
+		TC_ERROR("Expected priority %d, not %d\n", 15, rv);
 		tcRC = TC_FAIL;
 		goto errorReturn;
 		}
 
-	task_mutex_unlock (Mutex4);
-	rv = task_priority_get ();
+	task_mutex_unlock(Mutex4);
+	rv = task_priority_get();
 	if (rv != 20) {
-		TC_ERROR ("Gave %s and priority should drop.\n", "Mutex4");
-		TC_ERROR ("Expected priority %d, not %d\n", 20, rv);
+		TC_ERROR("Gave %s and priority should drop.\n", "Mutex4");
+		TC_ERROR("Expected priority %d, not %d\n", 20, rv);
 		tcRC = TC_FAIL;
 		goto errorReturn;
 		}
 
-	task_sleep (ONE_SECOND);       /* Task20 should time out */
+	task_sleep(ONE_SECOND);       /* Task20 should time out */
 
     /* ~ 6 seconds have passed */
 
 	for (i = 0; i < 3; i++) {
-		rv = task_priority_get ();
+		rv = task_priority_get();
 		if (rv != dropPri[i]) {
-		    TC_ERROR ("Expected priority %d, not %d\n", dropPri[i], rv);
+		    TC_ERROR("Expected priority %d, not %d\n", dropPri[i], rv);
 		    tcRC = TC_FAIL;
 		    goto errorReturn;
 		    }
-		task_mutex_unlock (giveMutex[i]);
+		task_mutex_unlock(giveMutex[i]);
 
 		if (tcRC != TC_PASS) {
 		    goto errorReturn;
 		    }
 		}
 
-	rv = task_priority_get ();
+	rv = task_priority_get();
 	if (rv != 40) {
-		TC_ERROR ("Expected priority %d, not %d\n", 40, rv);
+		TC_ERROR("Expected priority %d, not %d\n", 40, rv);
 		tcRC = TC_FAIL;
 		goto errorReturn;
 		}
 
-	task_sleep (ONE_SECOND);     /* Give Task45 time to run */
+	task_sleep(ONE_SECOND);     /* Give Task45 time to run */
 
 	if (tcRC != TC_PASS) {
 		goto errorReturn;
 		}
 
 errorReturn:
-	TC_END_RESULT (tcRC);
-	TC_END_REPORT (tcRC);
+	TC_END_RESULT(tcRC);
+	TC_END_REPORT(tcRC);
 	}  /* RegressionTask */

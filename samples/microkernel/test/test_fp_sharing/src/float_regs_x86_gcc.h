@@ -60,7 +60,7 @@
 * RETURNS: N/A
 */
 
-static inline void _LoadAllFloatRegisters (FP_REG_SET *pFromBuffer)
+static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
 {
 	/*
 	 * The 'movdqu' is the "move double quad unaligned" instruction: Move
@@ -127,7 +127,7 @@ static inline void _LoadAllFloatRegisters (FP_REG_SET *pFromBuffer)
 * RETURNS: N/A
 */
 
-static inline void _LoadThenStoreAllFloatRegisters (FP_REG_SET *pFromToBuffer)
+static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
 {
 	__asm__ volatile (
 		"movdqu  0(%0), %%xmm0\n\t;"
@@ -176,7 +176,7 @@ static inline void _LoadThenStoreAllFloatRegisters (FP_REG_SET *pFromToBuffer)
 * RETURNS: N/A
 */
 
-static inline void _StoreAllFloatRegisters (FP_REG_SET *pToBuffer)
+static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
 {
 	__asm__ volatile (
 		"movdqu %%xmm0, 0(%0)\n\t;"
@@ -216,9 +216,9 @@ static inline void _StoreAllFloatRegisters (FP_REG_SET *pToBuffer)
 * RETURNS: N/A
 */
 
-void _StoreNonVolatileFloatRegisters (FP_NONVOLATILE_REG_SET *pToBuffer)
+void _StoreNonVolatileFloatRegisters(FP_NONVOLATILE_REG_SET *pToBuffer)
 {
-	ARG_UNUSED (pToBuffer);
+	ARG_UNUSED(pToBuffer);
 	/* do nothing; there are no non-volatile floating point registers */
 }
 #endif /* _FLOAT_REGS_X86_GCC_H */

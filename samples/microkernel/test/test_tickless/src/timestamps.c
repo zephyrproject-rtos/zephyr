@@ -37,7 +37,7 @@ BSP-specific timestamp support for the tickless idle test.
 
 #include <tc_util.h>
 
-#if defined (CONFIG_BSP_TI_LM3S6965_QEMU)
+#if defined(CONFIG_BSP_TI_LM3S6965_QEMU)
 /*
  * TI LM3S6965EVM QEMU target - use a General Purpose Timer in
  * 32-bit periodic timer mode (down-counter)
@@ -81,7 +81,7 @@ BSP-specific timestamp support for the tickless idle test.
 * \NOMANUAL
 */
 
-void _TimestampOpen (void)
+void _TimestampOpen(void)
 	{
     /* QEMU does not currently support the 32-bit timer modes of the GPTM */
 	printk("WARNING! Timestamp is not supported for this target!\n");
@@ -113,7 +113,7 @@ void _TimestampOpen (void)
 * \NOMANUAL
 */
 
-uint32_t _TimestampRead (void)
+uint32_t _TimestampRead(void)
 	{
 	static uint32_t lastTimerVal = 0;
 	static uint32_t cnt = 0;
@@ -150,7 +150,7 @@ uint32_t _TimestampRead (void)
 * \NOMANUAL
 */
 
-void _TimestampClose (void)
+void _TimestampClose(void)
 	{
 
     /* disable/reset timer */
@@ -197,7 +197,7 @@ void _TimestampClose (void)
 * \NOMANUAL
 */
 
-void _TimestampOpen (void)
+void _TimestampOpen(void)
 	{
     /* enable timer access */
 	_CLKGATECTRL |= _CLKGATECTRL_TIMESTAMP_EN;
@@ -234,7 +234,7 @@ void _TimestampOpen (void)
 * \NOMANUAL
 */
 
-uint32_t _TimestampRead (void)
+uint32_t _TimestampRead(void)
 	{
 	static uint32_t lastPrescale = 0;
 	static uint32_t cnt = 0;
@@ -271,7 +271,7 @@ uint32_t _TimestampRead (void)
 * \NOMANUAL
 */
 
-void _TimestampClose (void)
+void _TimestampClose(void)
 	{
 	_TIMESTAMP_STATUS = 0x0;  /* disable counter */
 	_TIMESTAMP_CTRL = 0x0;  /* disable oscillator */

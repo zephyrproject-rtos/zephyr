@@ -121,7 +121,7 @@ Macros to abstract compiler capabilities (common to all toolchains).
 #endif
 
 #ifdef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
-extern void     _Unaligned32Write (unsigned int *ptr, unsigned int val);
-extern unsigned _Unaligned32Read  (unsigned int *ptr);
+extern void     _Unaligned32Write(unsigned int *ptr, unsigned int val);
+extern unsigned _Unaligned32Read(unsigned int *ptr);
 #endif /* CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
 

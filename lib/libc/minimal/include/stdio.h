@@ -75,8 +75,8 @@ int vfprintf(FILE *restrict stream, const char *restrict format, va_list ap);
 
 int puts(const char *s);
 
-int fputc (int c, FILE *stream);
-int fputs (const char *restrict s, FILE *restrict stream);
+int fputc(int c, FILE *stream);
+int fputs(const char *restrict s, FILE *restrict stream);
 size_t fwrite(const void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
 
 #endif /* __INC_stdio_h__ */
