@@ -464,12 +464,6 @@ struct sem_struct {
 	int Count;
 };
 
-struct mon_struct {
-	int timer;
-	int action;
-	ktask_t task;
-};
-
 struct block_stat {
 	char *mem_blocks;
 	uint32_t mem_status;
