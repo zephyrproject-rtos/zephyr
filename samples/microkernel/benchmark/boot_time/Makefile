@@ -1,5 +1,3 @@
-TIMO_BASE = $(strip $(subst /samples/microkernel/benchmark/boot_time,,$(shell pwd) ))
-
 BSP ?= generic_pc
 # default, best, worst
 BOOTTIME_QUALIFIER ?= default

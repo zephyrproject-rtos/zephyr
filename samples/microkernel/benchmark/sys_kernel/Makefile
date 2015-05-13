@@ -1,5 +1,3 @@
-TIMO_BASE = $(strip $(subst /samples/microkernel/benchmark/sys_kernel,,$(shell pwd) ))
-
 PC8253_BSP_VARIANTS=generic_pc pentium4 minuteia
 
 BSP ?= generic_pc

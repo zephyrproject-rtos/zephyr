@@ -1,5 +1,3 @@
-TIMO_BASE = $(strip $(subst /samples/microkernel/benchmark/footprint,,$(shell pwd) ))
-
 # default configuration
 TEST ?= min
 BSP ?= generic_pc
