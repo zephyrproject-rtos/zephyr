@@ -12,3 +12,7 @@ host/x86-linux2/bin/genIdt
 host/x86-linux2/bin/genOffsetHeader
 host/x86-linux2/bin/gen_config_abssym
 host/x86-linux2/bin/wrsconfig
+doc/_build
+xml
+html/
+doc/latex/
