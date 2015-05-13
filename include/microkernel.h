@@ -37,7 +37,6 @@
 
 #include <cputype.h>
 #include <microkernel/k_types.h>
-#include <microkernel/k_struct.h>
 #include <clock_vars.h>
 
 #include <microkernel/task.h>
