@@ -76,18 +76,6 @@ void nano_stack_init(
 	stack->fiber = (tCCS *)0;
 }
 
-#ifdef CONFIG_MICROKERNEL
-
-/*
- * For legacy reasons, the microkernel utilizes the _Cpsh() API which is
- * functionally equivalent to nano_fiber_stack_pushC() (which has been renamed
- * nano_fiber_stack_push() given that, by default, APIs will be a C
- * interface), an an alias will be generated.
- */
-
-FUNC_ALIAS(_stack_push_non_preemptible, _Cpsh, void);
-#endif /* CONFIG_MICROKERNEL */
-
 FUNC_ALIAS(_stack_push_non_preemptible, nano_isr_stack_push, void);
 FUNC_ALIAS(_stack_push_non_preemptible, nano_fiber_stack_push, void);
 

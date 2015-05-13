@@ -76,17 +76,6 @@ void nano_lifo_init(
 	_nano_wait_q_init(&lifo->wait_q);
 }
 
-#ifdef CONFIG_MICROKERNEL
-/*
- * For legacy reasons, the microkernel utilizes the _Cput() API which
- * is functionally equivalent to nano_fiber_lifo_putC() (which has been renamed
- * nano_fiber_lifo_put() given that, by default, APIs will be a C interface), an
- * an alias will be generated.
- */
-
-FUNC_ALIAS(_lifo_put_non_preemptible, _Cput, void);
-#endif /* CONFIG_MICROKERNEL */
-
 FUNC_ALIAS(_lifo_put_non_preemptible, nano_isr_lifo_put, void);
 FUNC_ALIAS(_lifo_put_non_preemptible, nano_fiber_lifo_put, void);
 

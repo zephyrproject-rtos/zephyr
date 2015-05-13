@@ -141,8 +141,6 @@ extern void _k_mem_pool_block_get(struct k_args *A);
 extern void _k_defrag(struct k_args *A);
 extern void _k_mem_pool_block_get_timeout_handle(struct k_args *A);
 
-extern void _Cput(struct nano_lifo *, void *);
-extern void _Cpsh(struct nano_stack *, uint32_t);
 extern void *_Cget(struct nano_lifo *);
 
 extern void set_state_bit(struct k_proc *, uint32_t);
@@ -273,11 +271,11 @@ extern void _k_workload_monitor_idle_end(void);
 		(T) = _Cget(&_k_timer_free); \
 	} while (0)
 
-#define FREEARGS(A) _Cput(&_k_server_command_packet_free, (A))
-#define FREETIMER(T) _Cput(&_k_timer_free, (T))
+#define FREEARGS(A) nano_fiber_lifo_put(&_k_server_command_packet_free, (A))
+#define FREETIMER(T) nano_fiber_lifo_put(&_k_timer_free, (T))
 
-#define TO_ALIST(L, A) _Cpsh((L), (uint32_t)(A))
+#define TO_ALIST(L, A) nano_fiber_stack_push((L), (uint32_t)(A))
 
-#define SENDARGS(A) _Cpsh(&_k_command_stack, (uint32_t)(A))
+#define SENDARGS(A) nano_fiber_stack_push(&_k_command_stack, (uint32_t)(A))
 
 #endif
