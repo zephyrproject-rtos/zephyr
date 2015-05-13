@@ -657,8 +657,9 @@ static int hci_init(void)
 	 * available ACL packet buffers.
 	 */
 	nano_sem_init(&dev.le_pkts_sem);
-	for (i = 0; i < dev.le_pkts; i++)
+	for (i = 0; i < dev.le_pkts; i++) {
 		nano_sem_give(&dev.le_pkts_sem);
+	}
 
 	return 0;
 }
