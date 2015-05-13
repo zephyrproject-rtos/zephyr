@@ -251,13 +251,6 @@ struct bt_att_exec_write_req {
 /* Execute Write Response */
 #define BT_ATT_OP_EXEC_WRITE_RSP		0x19
 
-/* Write Command */
-#define BT_ATT_OP_WRITE_CMD			0x52
-struct bt_att_write_cmd {
-	uint16_t handle;
-	uint8_t  value[0];
-} PACK_STRUCT;
-
 /* Handle Value Notification */
 #define BT_ATT_OP_NOTIFY			0x1b
 struct bt_att_notify {
@@ -278,6 +271,14 @@ struct bt_att_indicate {
 struct bt_att_signature {
 	uint8_t  value[12];
 } PACK_STRUCT;
+
+/* Write Command */
+#define BT_ATT_OP_WRITE_CMD			0x52
+struct bt_att_write_cmd {
+	uint16_t handle;
+	uint8_t  value[0];
+} PACK_STRUCT;
+
 
 /* Signed Write Command */
 #define BT_ATT_OP_SIGNED_WRITE_CMD		0xD2
