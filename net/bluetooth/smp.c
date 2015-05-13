@@ -152,7 +152,7 @@ void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 		err = smp_pairing_confirm(conn, buf);
 		break;
 	default:
-		BT_DBG("Unhandled SMP code %u\n", hdr->code);
+		BT_WARN("Unhandled SMP code %u\n", hdr->code);
 		err = BT_SMP_ERR_CMD_NOTSUPP;
 		break;
 	}
