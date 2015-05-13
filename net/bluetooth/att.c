@@ -471,7 +471,7 @@ static void att_exec_write_req(struct bt_conn *conn, struct bt_buf *data)
 
 static void att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 {
-	struct bt_att_write_req *req;
+	struct bt_att_write_cmd *req;
 	uint16_t handle;
 
 	if (data->len < sizeof(*req)) {
@@ -489,7 +489,7 @@ static void att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 
 static void att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 {
-	struct bt_att_write_req *req;
+	struct bt_att_signed_write_cmd *req;
 	uint16_t handle;
 
 	if (data->len < sizeof(*req) + sizeof(struct bt_att_signature)) {

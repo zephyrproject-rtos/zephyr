@@ -281,7 +281,7 @@ struct bt_att_write_cmd {
 
 /* Signed Write Command */
 #define BT_ATT_OP_SIGNED_WRITE_CMD		0xd2
-struct bt_att_signed_write_req {
+struct bt_att_signed_write_cmd {
 	uint16_t handle;
 	uint8_t  value[0];
 } PACK_STRUCT;
