@@ -44,6 +44,11 @@
 #include "conn.h"
 #include "l2cap.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_CONN)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 #define MAX_CONN_COUNT 1
 static struct bt_conn conns[MAX_CONN_COUNT];
 

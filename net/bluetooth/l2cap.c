@@ -45,6 +45,11 @@
 #include "att.h"
 #include "smp.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 #define LE_CONN_MIN_INTERVAL	0x0028
 #define LE_CONN_MAX_INTERVAL	0x0038
 #define LE_CONN_LATENCY		0x0000

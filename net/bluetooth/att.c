@@ -46,6 +46,11 @@
 #include "l2cap.h"
 #include "att.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_ATT)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 			 uint8_t err)
 {

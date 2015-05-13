@@ -44,6 +44,11 @@
 #include "l2cap.h"
 #include "smp.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_SMP)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 {
 	struct bt_smp_hdr *hdr;
