@@ -265,14 +265,19 @@ proj_info_set() {
 
 		if [ ${bsp2use} = "pentium4" ] ; then
 			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=pentium4"
+			BSP[${NUM_PROJ}]=generic_pc
 		elif [ ${bsp2use} = "minuteia" ] ; then
 			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=minuteia"
+			BSP[${NUM_PROJ}]=generic_pc
 		elif [ ${bsp2use} = "atom" ] ; then
 			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=atom_n28xx"
+			BSP[${NUM_PROJ}]=generic_pc
 		elif [ ${bsp2use} = "quark" ] ; then
 			BSP_INFO[${NUM_PROJ}]="BSP=quark"
+			BSP[${NUM_PROJ}]=quark
 		else
 			BSP_INFO[${NUM_PROJ}]="BSP=${bsp2use}"
+			BSP[${NUM_PROJ}]=${bsp2use}
 		fi
 
 		BSP_FLAG[${NUM_PROJ}]=`${AWK} '/!/ {print "!"}' <<< ${line}`
@@ -334,7 +339,16 @@ build_project() {
 	${MAKE} distclean
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
-	${MAKE} ARCH=${ARCH_NAME}  ${BUILD_INFO} ${PRJ_ARGS[$1]} ${BSP_INFO[$1]}
+	if [[ $arm_BSP_LIST == *"${BSP[$1]}"* ]]; then
+		arch=arm
+	else
+		arch=x86
+	fi
+	if [ ! -z ${ARCH_NAME} ]; then
+		arch=${ARCH_NAME}
+	fi
+
+	${MAKE} ARCH=${arch} ${BUILD_INFO} ${PRJ_ARGS[$1]} ${BSP_INFO[$1]}
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	if [ x$2 == x ] ; then

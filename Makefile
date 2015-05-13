@@ -628,6 +628,9 @@ endif # $(dot-config)
 #File that includes all prepare special embedded architecture targets.
 include $(srctree)/scripts/Makefile.preparch
 sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch
+ifdef VXMICRO_GCC_VARIANT
+include $(srctree)/scripts/Makefile.toolchain.$(VXMICRO_GCC_VARIANT)
+endif
 
 # The all: target is the default when no target is given on the
 # command line.
@@ -900,7 +903,7 @@ export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(tinymountain-alldirs)) arc
 tinymountain-deps := $(KBUILD_LDS) $(KBUILD_TIMO_INIT) $(KBUILD_TIMO_MAIN)
 
 # Final link of tinymountain
-      cmd_link-tinymountain = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_tinymountain)
+      cmd_link-tinymountain = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_tinymountain) $(LIB_INCLUDE_DIR)
 quiet_cmd_link-tinymountain = LINK    $@
 
 # Include targets which we want to
