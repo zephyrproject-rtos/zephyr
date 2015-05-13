@@ -47,7 +47,7 @@ linker_params()
 	echo "-L ${objtree}/include/generated" >> ${1}
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
 	echo "-Wl,--start-group ${KBUILD_TIMO_MAIN}" >> ${1}
-	echo "${LIB_INCLUDE_DIR} -lgcc" >> ${1}
+	echo "${LIB_INCLUDE_DIR} ${LDLIBS_TOOLCHAIN}" >> ${1}
 	echo "${objtree}/include/generated/offsets.o" >> ${1}
 }
 
