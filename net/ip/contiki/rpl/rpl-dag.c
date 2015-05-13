@@ -100,7 +100,7 @@ rpl_print_neighbor_list()
           p->rank, nbr ? nbr->link_metric : 0,
           default_instance->of->calculate_rank(p, 0),
           p == default_instance->current_dag->preferred_parent ? '*' : ' ',
-          (now - p->last_tx_time) / (60 * CLOCK_SECOND));
+          (unsigned)((now - p->last_tx_time) / (60 * CLOCK_SECOND)));
       p = nbr_table_next(rpl_parents, p);
     }
     printf("RPL: end of list\n");
