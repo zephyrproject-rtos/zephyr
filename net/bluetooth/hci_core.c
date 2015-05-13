@@ -272,7 +272,7 @@ static void hci_cmd_complete(struct bt_buf *buf)
 		hci_reset_complete(buf);
 		break;
 	default:
-		BT_ERR("Unknown opcode %x\n", opcode);
+		BT_DBG("Unhandled opcode %x\n", opcode);
 		break;
 	}
 
@@ -296,7 +296,7 @@ static void hci_cmd_status(struct bt_buf *buf)
 
 	switch (opcode) {
 	default:
-		BT_ERR("Unknown opcode %x\n", opcode);
+		BT_DBG("Unhandled opcode %x\n", opcode);
 		break;
 	}
 
@@ -388,7 +388,7 @@ static void hci_event(struct bt_buf *buf)
 		hci_le_meta_event(buf);
 		break;
 	default:
-		BT_ERR("Unknown event %u\n", hdr->evt);
+		BT_WARN("Unhandled event %u\n", hdr->evt);
 		break;
 
 	}
