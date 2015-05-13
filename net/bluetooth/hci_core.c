@@ -296,7 +296,7 @@ static void hci_cmd_status(struct bt_buf *buf)
 
 	switch (opcode) {
 	default:
-		BT_ERR("Unknown opcode %x", opcode);
+		BT_ERR("Unknown opcode %x\n", opcode);
 		break;
 	}
 
