@@ -50,15 +50,6 @@ config	BLUETOOTH_DEBUG
 	  This option enables Bluetooth debug going to standard
 	  serial console.
 
-config	BLUETOOTH_DEBUG_UART
-	bool
-	prompt "Bluetooth UART driver debug"
-	depends on BLUETOOTH_DEBUG
-	default n
-	help
-	  This option enables debug support for Bluetooth UART
-	  driver
-
 config	BLUETOOTH_DEBUG_HCI_CORE
 	bool
 	prompt "Bluetooth HCI core debug"
@@ -84,3 +75,12 @@ config	BLUETOOTH_UART
 	default n
 	help
 	  Enable Bluetooth UART driver.
+
+config	BLUETOOTH_DEBUG_UART
+	bool
+	prompt "Bluetooth UART driver debug"
+	depends on BLUETOOTH_UART && BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for Bluetooth UART
+	  driver
