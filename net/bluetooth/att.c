@@ -560,7 +560,7 @@ void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		att_signed_write_cmd(conn, buf);
 		break;
 	default:
-		BT_DBG("Unhandled ATT code %u\n", hdr->code);
+		BT_WARN("Unhandled ATT code %u\n", hdr->code);
 		send_err_rsp(conn, hdr->code, 0, BT_ATT_ERR_NOT_SUPPORTED);
 		break;
 	}
