@@ -39,6 +39,11 @@ extern "C" {
 
 #include <microkernel/cmdPkt.h>
 
+/* well-known events */
+
+#define TICK_EVENT	0
+
+
 extern void isr_event_send(kevent_t event);
 extern void fiber_event_send(kevent_t event);
 extern int task_event_set_handler(kevent_t event, kevent_handler_t handler);

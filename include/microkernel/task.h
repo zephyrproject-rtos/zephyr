@@ -61,6 +61,8 @@ extern void task_priority_set(ktask_t task, kpriority_t prio);
 extern void task_entry_set(ktask_t task, void (*func)(void));
 extern void task_abort_handler_set(void (*func)(void));
 
+extern int task_offload_to_fiber(int (*)(), void *);
+
 /*
  * Operations supported by _task_ioctl() and _task_group_ioctl()
  */

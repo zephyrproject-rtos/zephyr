@@ -61,21 +61,6 @@ extern "C" {
 #define MON_EVENT 8
 #define MON_ALL 15
 
-extern int task_offload_to_fiber(int (*)(), void *);
-
-/* The following two typedefs are used in kernel_main.c */
-typedef void (*taskstartfunction)(void);
-typedef void (*taskabortfunction)(void);
-
-extern PFN_CHANNEL_RWT pKS_Channel_PutWT;
-extern PFN_CHANNEL_RWT pKS_Channel_GetWT;
-
-/* needed by generated kernel_main.c */
-extern void	timer_driver(int priority);
-
-/* common event numbers */
-#define TICK_EVENT	0
-
 #ifdef __cplusplus
 }
 #endif

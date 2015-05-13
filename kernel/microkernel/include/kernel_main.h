@@ -39,6 +39,11 @@
 extern "C" {
 #endif
 
+/* Format of a task's entry routine and (optional) abort routine */
+
+typedef void (*taskstartfunction)(void);
+typedef void (*taskabortfunction)(void);
+
 /* APIs referenced by generated routines */
 
 extern void _pipe_init(void);

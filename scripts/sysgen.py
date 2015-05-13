@@ -304,6 +304,7 @@ def kernel_main_c_header():
         do_not_edit_warning +
         "\n" +
         "#include <vxmicro.h>\n" +
+        "#include <drivers/system_timer.h>\n" +
         "#include <kernel_main.h>\n" +
         "#include <toolchain.h>\n" +
         "#include <sections.h>\n")
