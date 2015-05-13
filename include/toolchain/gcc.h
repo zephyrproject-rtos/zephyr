@@ -87,6 +87,15 @@
 	while (0)
 #endif /* !CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
 
+/* Unaligned access */
+#define UNALIGNED_GET(p)						\
+__extension__ ({							\
+	struct  __attribute__((__packed__)) {				\
+		__typeof__(*(p)) __v;					\
+	} *__p = (__typeof__(__p)) (p);					\
+	__p->__v;							\
+})
+
 #define _GENERIC_SECTION(segment) __attribute__((section(#segment)))
 
 #define PACK_STRUCT     __attribute__((__packed__))
