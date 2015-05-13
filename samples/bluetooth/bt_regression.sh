@@ -46,6 +46,7 @@ main() {
 	BSP_NAME=""
 	ARCH_NAME=""
 	KEEP_LOGS=0
+	VXMICRO_TOOL=gcc
 
 	# set up environment info used to build projects
 	build_info_set
