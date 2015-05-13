@@ -39,11 +39,11 @@ extern "C" {
 
 /* includes */
 
-#include <microkernel/k_struct.h>
+#include <microkernel/k_types.h>
 
-/* defines */
+/* define size of command packet (without exposing its internal structure) */
 
-#define CMD_PKT_SIZE_IN_WORDS (sizeof(struct k_args) / sizeof(uint32_t))
+#define CMD_PKT_SIZE_IN_WORDS (19)
 
 /*******************************************************************************
 *
