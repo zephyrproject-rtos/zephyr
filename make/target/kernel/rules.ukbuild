@@ -46,12 +46,9 @@ $(foreach node,${NODES},$(eval $(call iPerNodeRules,${node})))
 ${iKERNEL_MAIN_C}: ${iVXMICRO_H}
 	@${HOS_true}
 
-${iVXMICRO_H}: ${iMICROKERNEL_OBJECTS_H}
-	@${HOS_true}
-
-${iMICROKERNEL_OBJECTS_H}: ${iSYSGEN_OUT}/${iVPF_BASE} ${HOS_SysGen} | $$(dir $$@).dir
+${iVXMICRO_H}: ${iSYSGEN_OUT}/${iVPF_BASE} ${HOS_SysGen} | $$(dir $$@).dir
 	$q${HOS_DeleteFiles} $@
-	-@${HOS_Echo} '[sysgen] Generating microkernel headers and objects from $(notdir $<)'
+	-@${HOS_Echo} '[sysgen] Generating $(notdir $@) from $(notdir $<)'
 	-@${HOS_Echo} '[sysgen] Check for sysgen error messages if $(notdir $@) not found'
 	$q${HOS_SysGen} $< $(dir $@)
 

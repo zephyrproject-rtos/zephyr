@@ -39,7 +39,6 @@
 # Generates:
 #   - kernel_main.c file
 #   - kernel_main.h file
-#   - microkernel_objects.h file
 #   - vxmicro.h file
 
 import os
@@ -1060,122 +1059,6 @@ def kernel_main_h_generate():
 
 
 #
-# GENERATE microkernel_objects.h FILE
-#
-
-
-micro_objs_h_data = ""
-
-micro_objs_h_filename_str = \
-    "/* microkernel_objects.h - microkernel objects */\n\n"
-
-micro_objs_h_include_guard = "_MICROKERNEL_OBJECTS__H_"
-
-micro_objs_h_header_include_guard_str = \
-    "#ifndef " + micro_objs_h_include_guard + "\n" \
-    "#define " + micro_objs_h_include_guard + "\n\n"
-
-
-def generate_micro_objs_h_header():
-
-    global micro_objs_h_data
-    micro_objs_h_data += \
-        micro_objs_h_filename_str + \
-        copyright + \
-        do_not_edit_warning + \
-        micro_objs_h_header_include_guard_str
-
-micro_objs_h_footer_include_guard_str = \
-    "\n#endif /* " + micro_objs_h_include_guard + " */\n"
-
-
-def generate_micro_objs_h_footer():
-
-    global micro_objs_h_data
-    micro_objs_h_data += \
-        micro_objs_h_footer_include_guard_str
-
-
-def generate_taskgroup_line(taskgroup, group_id):
-
-    global micro_objs_h_data
-    micro_objs_h_data += \
-        "#define " + taskgroup + " 0x%8.8x\n" % group_id
-
-
-def generate_micro_objs_h_taskgroups():
-
-    for group in group_key_list:
-        generate_taskgroup_line(group, group_dictionary[group])
-
-
-def generate_micro_objs_h_nodes():
-
-    global micro_objs_h_data
-    micro_objs_h_data += \
-        "\n#define NODE1 0x00010000\n\n"
-
-
-def generate_obj_id_line(name, obj_id):
-
-    return "#define " + name + " 0x0001%4.4x\n" % obj_id
-
-
-def generate_obj_id_lines(obj_types):
-
-    data = ""
-    for obj_type in obj_types:
-        for obj in obj_type[0]:
-            data += generate_obj_id_line(str(obj[0]), obj_type[1])
-            obj_type[1] += 1
-        if obj_type[1] > 0:
-            data += "\n"
-
-    return data
-
-
-def generate_micro_objs_h_obj_ids():
-
-    global micro_objs_h_data
-
-    obj_types = [
-        [task_list,  0],
-        [mutex_list, 0],
-        [sema_list,  0],
-        [fifo_list,  0],
-        [pipe_list,  0],
-        [mbx_list,   0],
-        [pool_list,  0],
-    ]
-
-    micro_objs_h_data += generate_obj_id_lines(obj_types)
-
-
-def generate_micro_objs_h_misc():
-
-    global micro_objs_h_data
-    micro_objs_h_data += "\n" + \
-        "#define TICKFREQ 1000\n" + \
-        "#define DATALEN 32768\n" + \
-        "#define CEILING_PRIO 5\n" + \
-        "#define KERNEL_PRIO 0\n" + \
-        "#define DRIVER_PRIO 1\n" + \
-        "#define TICKTIME 1000\n"
-
-
-def micro_objs_h_generate():
-
-    generate_micro_objs_h_header()
-    generate_micro_objs_h_taskgroups()
-    generate_micro_objs_h_nodes()
-    generate_micro_objs_h_obj_ids()
-    generate_micro_objs_h_misc()    # XXX - remove when ready
-    generate_micro_objs_h_footer()
-
-    write_file(output_dir + 'microkernel_objects.h', micro_objs_h_data)
-
-
-#
 # GENERATE vxmicro.h FILE
 #
 
@@ -1201,8 +1084,42 @@ def generate_vxmicro_h_header():
         do_not_edit_warning + \
         vxmicro_h_header_include_guard_str + \
         "#include <microkernel.h>\n" + \
-        "#include <microkernel_objects.h>\n" + \
         "\n"
+
+
+def generate_taskgroup_line(taskgroup, group_id):
+
+    global vxmicro_h_data
+    vxmicro_h_data += \
+        "#define " + taskgroup + " 0x%8.8x\n" % group_id
+
+
+def generate_vxmicro_h_taskgroups():
+
+    global vxmicro_h_data
+
+    for group in group_key_list:
+        generate_taskgroup_line(group, group_dictionary[group])
+
+    vxmicro_h_data += "\n"
+
+
+def generate_obj_id_line(name, obj_id):
+
+    return "#define " + name + " 0x0001%4.4x\n" % obj_id
+
+
+def generate_obj_id_lines(obj_types):
+
+    data = ""
+    for obj_type in obj_types:
+        for obj in obj_type[0]:
+            data += generate_obj_id_line(str(obj[0]), obj_type[1])
+            obj_type[1] += 1
+        if obj_type[1] > 0:
+            data += "\n"
+
+    return data
 
 
 def generate_vxmicro_h_obj_ids():
@@ -1218,9 +1135,28 @@ def generate_vxmicro_h_obj_ids():
         vxmicro_h_data += "\n"
 
     obj_types = [
+        [task_list, 0],
+        [mutex_list, 0],
+        [sema_list, 0],
+        [fifo_list, 0],
+        [pipe_list, 0],
+        [mbx_list, 0],
         [map_list, 0],
+        [pool_list, 0],
     ]
     vxmicro_h_data += generate_obj_id_lines(obj_types)
+
+
+def generate_vxmicro_h_misc():
+
+    global vxmicro_h_data
+    vxmicro_h_data += \
+        "#define TICKFREQ 1000\n" + \
+        "#define DATALEN 32768\n" + \
+        "#define CEILING_PRIO 5\n" + \
+        "#define KERNEL_PRIO 0\n" + \
+        "#define DRIVER_PRIO 1\n" + \
+        "#define TICKTIME 1000\n"
 
 
 vxmicro_h_footer_include_guard_str = \
@@ -1238,7 +1174,9 @@ def vxmicro_h_generate():
     """ Generate vxmicro.h file """
 
     generate_vxmicro_h_header()
+    generate_vxmicro_h_taskgroups()
     generate_vxmicro_h_obj_ids()
+    generate_vxmicro_h_misc()    # XXX - remove when ready
     generate_vxmicro_h_footer()
 
     write_file(output_dir + 'vxmicro.h', vxmicro_h_data)
@@ -1254,4 +1192,3 @@ get_output_dir()
 kernel_main_c_generate()
 kernel_main_h_generate()
 vxmicro_h_generate()
-micro_objs_h_generate()

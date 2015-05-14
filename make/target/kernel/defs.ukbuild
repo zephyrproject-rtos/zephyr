@@ -48,7 +48,6 @@ iCFG_ORIG_VPF  = ${iCFG_ORIG_STEM}.vpf
 iSYSGEN_OUT = ${vOUT_DIR}/sysgen
 
 iVXMICRO_H = ${iSYSGEN_OUT}/vxmicro.$h
-iMICROKERNEL_OBJECTS_H = ${iSYSGEN_OUT}/microkernel_objects.$h
 iKERNEL_MAIN_C = ${iSYSGEN_OUT}/kernel_main.$c
 
 #####
@@ -59,7 +58,6 @@ iKTYPE_kapp_INC += $(strip \
 )
 iKTYPE_kapp_SRC += ${iKERNEL_MAIN_C}
 
-iKTYPE_kapp_DEP += ${iMICROKERNEL_OBJECTS_H}
 define iPerNodeDep
   iKTYPE_kapp_DEP += ${iVXMICRO_H} ${iKERNEL_MAIN_C}
 
