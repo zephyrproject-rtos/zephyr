@@ -68,45 +68,44 @@ GTEXT(_IntExit)
 */
 SECTION_FUNC(TEXT, _isr_wrapper)
 
-    _GDB_STUB_EXC_ENTRY
+	_GDB_STUB_EXC_ENTRY
 
-    push {lr}		/* lr is now the first item on the stack */
+	push {lr}		/* lr is now the first item on the stack */
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
-    /*
-     * All interrupts are disabled when handling idle wakeup.
-     * For tickless idle, this ensures that the calculation and programming of
-     * the device for the next timer deadline is not interrupted.
-     * For non-tickless idle, this ensures that the clearing of the kernel idle
-     * state is not interrupted.
-     * In each case, _sys_power_save_idle_exit is called with interrupts 
-     * disabled.
-     */
-    cpsid i  /* PRIMASK = 1 */
+	/*
+	 * All interrupts are disabled when handling idle wakeup.  For tickless
+	 * idle, this ensures that the calculation and programming of the device
+	 * for the next timer deadline is not interrupted.  For non-tickless idle,
+	 * this ensures that the clearing of the kernel idle state is not
+	 * interrupted.  In each case, _sys_power_save_idle_exit is called with
+	 * interrupts disabled.
+	 */
+	cpsid i  /* PRIMASK = 1 */
 
-    /* is this a wakeup from idle ? */
-    ldr r2, =_nanokernel
-    ldr r0, [r2, #__tNANO_idle_OFFSET]  /* requested idle duration, in ticks */
-    cmp r0, #0
-    ittt ne
+	/* is this a wakeup from idle ? */
+	ldr r2, =_nanokernel
+	ldr r0, [r2, #__tNANO_idle_OFFSET]  /* requested idle duration, in ticks */
+	cmp r0, #0
+	ittt ne
 	movne	r1, #0
-        strne	r1, [r2, #__tNANO_idle_OFFSET]  /* clear kernel idle state */
-	blxne	_sys_power_save_idle_exit
+		strne	r1, [r2, #__tNANO_idle_OFFSET]  /* clear kernel idle state */
+		blxne	_sys_power_save_idle_exit
 
-    cpsie i		/* re-enable interrupts (PRIMASK = 0) */
+	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
-    mrs r0, IPSR	/* get exception number */
-    sub r0, r0, #16	/* get IRQ number */
-    lsl r0, r0, #3	/* table is 8-byte wide */
-    ldr r1, =_sw_isr_table
-    add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
-			 *              in thumb mode */
+	mrs r0, IPSR	/* get exception number */
+	sub r0, r0, #16	/* get IRQ number */
+	lsl r0, r0, #3	/* table is 8-byte wide */
+	ldr r1, =_sw_isr_table
+	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
+			 *			  in thumb mode */
 
-    ldmia r1,{r0,r3}	/* arg in r0, ISR in r3 */
-    blx r3		/* call ISR */
+	ldmia r1,{r0,r3}	/* arg in r0, ISR in r3 */
+	blx r3		/* call ISR */
 
-    pop {lr}
+	pop {lr}
 
-    /* exception return is done in _IntExit(), including _GDB_STUB_EXC_EXIT */
-    b _IntExit
+	/* exception return is done in _IntExit(), including _GDB_STUB_EXC_EXIT */
+	b _IntExit
