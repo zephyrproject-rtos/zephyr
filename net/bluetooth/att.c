@@ -119,15 +119,17 @@ static bool range_is_valid(uint16_t start, uint16_t end, uint16_t *err)
 {
 	/* Handle 0 is invalid */
 	if (!start || !end) {
-		if (err)
+		if (err) {
 			*err = 0;
+		}
 		return false;
 	}
 
 	/* Check if range is valid */
 	if (start > end) {
-		if (err)
+		if (err) {
 			*err = start;
+		}
 		return false;
 	}
 
@@ -205,8 +207,9 @@ static bool uuid_create(struct bt_uuid *uuid, uint8_t *data, uint8_t len)
 {
 	uint16_t u16;
 
-	if (len > sizeof(uuid->u128))
+	if (len > sizeof(uuid->u128)) {
 		return false;
+	}
 
 	switch (len) {
 	case 2:
