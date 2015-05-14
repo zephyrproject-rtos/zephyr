@@ -384,6 +384,12 @@ def kernel_main_c_tasks():
         kernel_main_c_out("char __noinit __%s_stack[%d];\n" %
                           (task[0], task[3]))
 
+    # declare task entry points
+
+    kernel_main_c_out("\n")
+    for task in task_list:
+        kernel_main_c_out("extern void %s(void);\n" % task[2])
+
     # task descriptors (including one for idle task)
 
     kernel_main_c_out("\n" +
@@ -1221,13 +1227,6 @@ vxmicro_h_footer_include_guard_str = \
     "\n#endif /* " + vxmicro_h_include_guard + " */\n"
 
 
-def generate_vxmicro_h_task_entry_points():
-
-    global vxmicro_h_data
-    for task in task_list:
-        vxmicro_h_data += "extern void %s(void);\n" % task[2]
-
-
 def generate_vxmicro_h_footer():
 
     global vxmicro_h_data
@@ -1240,7 +1239,6 @@ def vxmicro_h_generate():
 
     generate_vxmicro_h_header()
     generate_vxmicro_h_obj_ids()
-    generate_vxmicro_h_task_entry_points()
     generate_vxmicro_h_footer()
 
     write_file(output_dir + 'vxmicro.h', vxmicro_h_data)
