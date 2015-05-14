@@ -1146,18 +1146,6 @@ def generate_vxmicro_h_obj_ids():
     vxmicro_h_data += generate_obj_id_lines(obj_types)
 
 
-def generate_vxmicro_h_misc():
-
-    global vxmicro_h_data
-    vxmicro_h_data += \
-        "#define TICKFREQ 1000\n" + \
-        "#define DATALEN 32768\n" + \
-        "#define CEILING_PRIO 5\n" + \
-        "#define KERNEL_PRIO 0\n" + \
-        "#define DRIVER_PRIO 1\n" + \
-        "#define TICKTIME 1000\n"
-
-
 vxmicro_h_footer_include_guard_str = \
     "\n#endif /* " + vxmicro_h_include_guard + " */\n"
 
@@ -1175,7 +1163,6 @@ def vxmicro_h_generate():
     generate_vxmicro_h_header()
     generate_vxmicro_h_taskgroups()
     generate_vxmicro_h_obj_ids()
-    generate_vxmicro_h_misc()    # XXX - remove when ready
     generate_vxmicro_h_footer()
 
     write_file(output_dir + 'vxmicro.h', vxmicro_h_data)
