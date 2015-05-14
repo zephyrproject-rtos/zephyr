@@ -1,3 +1,6 @@
+ifndef XTOOLS_TOOLCHAIN_PATH
+$(error XTOOLS_TOOLCHAIN_PATH is not set)
+endif
 
 CROSS_COMPILE_TARGET_arm = arm-none-eabi
 CROSS_COMPILE_arm_version = 4.9.2

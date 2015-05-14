@@ -1,3 +1,8 @@
+
+ifndef YOCTO_SDK_INSTALL_DIR
+$(error YOCTO_SDK_INSTALL_DIR is not set)
+endif
+
 # arm
 CROSS_COMPILE_TARGET_arm = arm-poky-eabi
 CROSS_COMPILE_arm_version = 4.9.2
