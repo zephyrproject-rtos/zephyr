@@ -77,9 +77,8 @@ define filechk_offsets.h
 	echo; \
 	echo "/* defines */"; \
 	echo; \
-	nm -g $(CURDIR)/include/generated/offsets.o | awk \
-	--non-decimal-data \
-	'{ if($$1 ~ /[0-9a-f]+/) {p1= "0x" $$1; printf "#define %s \t 0x%X\n", $$3, p1;} }'; \
+	nm -g $(CURDIR)/include/generated/offsets.o | grep -E '^[0-9a-zA-Z]+' | \
+	python -c 'import sys; [ sys.stdout.write("#define %s 0x%s\n" % (l.split()[2], l.split()[0])) for l in sys.stdin]'; \
 	echo; \
 	echo "#ifdef __cplusplus"; \
 	echo "}"; \
