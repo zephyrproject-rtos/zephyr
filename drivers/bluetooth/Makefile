@@ -5,7 +5,7 @@ EXTRA_CFLAGS +=-I$(srctree)/arch/x86/generic_pc
 endif
 
 ifeq (${CONFIG_BSP_QUARK},y)
-EXTRA_CFLAGS +=-I$(srctree)/arch/x86/quark
+EXTRA_CFLAGS +=-I$(srctree)/arch/x86/generic_pc
 endif
 
 ifeq (${CONFIG_BSP_FSL_FRDM_K64F},y)

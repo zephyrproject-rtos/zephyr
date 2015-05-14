@@ -111,7 +111,7 @@ CONFIG_HPET_TIMER=y
 # Interrupt Controller Configuration
 #
 CONFIG_IOAPIC=y
-# CONFIG_LOAPIC is not set
+CONFIG_LOAPIC=y
 
 #
 # General Setup
