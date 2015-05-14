@@ -1195,15 +1195,8 @@ def generate_vxmicro_h_header():
         do_not_edit_warning + \
         vxmicro_h_header_include_guard_str + \
         "#include <microkernel.h>\n" + \
-        "#include <microkernel_objects.h>\n"
-
-
-def generate_vxmicro_h_misc():
-
-    global vxmicro_h_data
-    vxmicro_h_data += "\n" + \
-        "extern const int _k_num_events;\n" + \
-        "extern struct evstr _k_event_list[];\n\n"
+        "#include <microkernel_objects.h>\n" + \
+        "\n"
 
 
 def generate_vxmicro_h_obj_ids():
@@ -1246,7 +1239,6 @@ def vxmicro_h_generate():
     """ Generate vxmicro.h file """
 
     generate_vxmicro_h_header()
-    generate_vxmicro_h_misc()
     generate_vxmicro_h_obj_ids()
     generate_vxmicro_h_task_entry_points()
     generate_vxmicro_h_footer()

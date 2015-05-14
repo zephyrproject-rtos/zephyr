@@ -69,6 +69,8 @@ static int  handlerRetVal = 0;
 extern void testFiberInit(void);
 extern struct nano_sem fiberSem; /* semaphore that allows test control the fiber */
 
+extern const int _k_num_events; /* non-public microkernel global variable */
+
 /*******************************************************************************
 *
 * isr_event_signal_handler - ISR handler to signal an event
