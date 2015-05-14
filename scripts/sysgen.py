@@ -322,11 +322,11 @@ def kernel_main_c_kargs():
         "    {NULL, NULL, 0, 0, (K_COMM) UNDEFINED},\n")
     for i in range(1, num_kargs - 1):
         kernel_main_c_out(
-            "    {&_k_server_command_packets[%d], NULL, 0, 0, (K_COMM) UNDEFINED},\n" %
-            (i - 1))
+            "    {&_k_server_command_packets[%d], " % (i - 1) +
+            "NULL, 0, 0, (K_COMM) UNDEFINED},\n")
     kernel_main_c_out(
-        "    {&_k_server_command_packets[%d], NULL, 0, 0, (K_COMM) UNDEFINED}\n" %
-        (num_kargs - 2) +
+        "    {&_k_server_command_packets[%d], " % (num_kargs - 2) +
+        "NULL, 0, 0, (K_COMM) UNDEFINED}\n" +
         "};\n")
 
     # linked list of free command packets
@@ -351,11 +351,11 @@ def kernel_main_c_timers():
         "    {NULL, NULL, 0, 0, (struct k_args *)0xffffffff},\n")
     for i in range(1, num_timers - 1):
         kernel_main_c_out(
-            "    {&_k_timer_blocks[%d], NULL, 0, 0, " % (i - 1) +
-            "(struct k_args *)0xffffffff},\n")
+            "    {&_k_timer_blocks[%d], " % (i - 1) +
+            "NULL, 0, 0, (struct k_args *)0xffffffff},\n")
     kernel_main_c_out(
-        "    {&_k_timer_blocks[%d], NULL, 0, 0, (struct k_args *)0xffffffff}\n" %
-        (num_timers - 2) +
+        "    {&_k_timer_blocks[%d], " % (num_timers - 2) +
+        "NULL, 0, 0, (struct k_args *)0xffffffff}\n" +
         "};\n")
 
     # linked list of free timers
