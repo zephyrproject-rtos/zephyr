@@ -266,10 +266,12 @@ int task_workload_get(void)
 void workload_time_slice_set(int32_t t)
 {
 #ifdef CONFIG_WORKLOAD_MONITOR
-	if (t < 10)
+	if (t < 10) {
 		t = 10;
-	if (t > 1000)
+	}
+	if (t > 1000) {
 		t = 1000;
+	}
 	_k_workload_slice = t;
 #else
 	ARG_UNUSED(t);
@@ -386,8 +388,9 @@ void _sys_power_save_idle_exit(int32_t ticks)
 
 static inline int32_t _get_next_timer_expiry(void)
 {
-	if (_k_timer_list_head)
+	if (_k_timer_list_head) {
 		return _k_timer_list_head->duration;
+	}
 
 	return TICKS_UNLIMITED;
 }

@@ -119,8 +119,7 @@ void irq_handler_set(unsigned int vector,
 			/* does the encoded offset match <oldRoutine> ? */
 
 			if (opcodeOff == opcodeOffToMatch) {
-/* match found -> write new routine and parameter */
-
+				/* match found -> write new routine and parameter */
 
 				UNALIGNED_WRITE(
 					(unsigned int *)&pIntStubMem[ix + 1],

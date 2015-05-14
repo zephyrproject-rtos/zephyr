@@ -73,12 +73,12 @@ These scenarios will be tested using a combinations of tasks, fibers and ISRs.
 typedef struct {
 	struct nano_lifo *channel;  /* LIFO channel */
 	void *data;     /* pointer to data to add */
-	} ISR_LIFO_INFO;
+} ISR_LIFO_INFO;
 
 typedef struct {
 	uint32_t   link;     /* 32-bit word for LIFO to use as a link */
 	uint32_t   data;     /* miscellaneous data put on LIFO (not important) */
-	} LIFO_ITEM;
+} LIFO_ITEM;
 
 /* locals */
 
@@ -160,10 +160,10 @@ int fiberLifoWaitTest(void)
 {
 	void *data;     /* ptr to data retrieved from LIFO */
 
-    /*
-     * The LIFO is empty; wait for an item to be added to the LIFO
-     * from the task.
-     */
+	/*
+	 * The LIFO is empty; wait for an item to be added to the LIFO
+	 * from the task.
+	 */
 
 	TC_PRINT("Fiber waiting on an empty LIFO\n");
 	nano_fiber_sem_give(&taskWaitSem);
@@ -171,35 +171,35 @@ int fiberLifoWaitTest(void)
 	if (data != &lifoItem[0]) {
 		fiberDetectedFailure = 1;
 		return -1;
-		}
+	}
 
 	nano_fiber_sem_take_wait(&fiberWaitSem);
 	data = nano_fiber_lifo_get_wait(&lifoChannel);
 	if (data != &lifoItem[2]) {
 		fiberDetectedFailure = 1;
 		return -1;
-		}
+	}
 
-    /*
-     * Give the task some time to check the results.  Ideally, this would
-     * be waiting for a semaphore instead of a using a delay, but if the
-     * main task wakes the fiber before it blocks on the LIFO, the fiber
-     * will add the item to the LIFO too soon.  Obviously, a semaphore could
-     * not be given if the task is blocked on the LIFO; hence the delay.
-     */
+	/*
+	 * Give the task some time to check the results.  Ideally, this would
+	 * be waiting for a semaphore instead of a using a delay, but if the
+	 * main task wakes the fiber before it blocks on the LIFO, the fiber
+	 * will add the item to the LIFO too soon.  Obviously, a semaphore could
+	 * not be given if the task is blocked on the LIFO; hence the delay.
+	 */
 
 	nano_fiber_timer_start(&timer, SECONDS(2));
 	nano_fiber_timer_wait(&timer);
 
-    /* The task is waiting on an empty LIFO.  Wake it up. */
+	/* The task is waiting on an empty LIFO.  Wake it up. */
 	nano_fiber_lifo_put(&lifoChannel, &lifoItem[3]);
 	nano_fiber_lifo_put(&lifoChannel, &lifoItem[1]);
 
-    /*
-     * Wait for the task to check the results.  If the results pass, then the
-     * the task will wake the fiber.  If the results do not pass, then the
-     * fiber will wait forever.
-     */
+	/*
+	 * Wait for the task to check the results.  If the results pass, then the
+	 * the task will wake the fiber.  If the results do not pass, then the
+	 * fiber will wait forever.
+	 */
 
 	nano_fiber_sem_take_wait(&fiberWaitSem);
 
@@ -220,62 +220,62 @@ int fiberLifoNonWaitTest(void)
 {
 	void *data;    /* pointer to data retrieved from LIFO */
 
-    /* The LIFO has two items in it; retrieve them both */
+	/* The LIFO has two items in it; retrieve them both */
 
 	data = nano_fiber_lifo_get(&lifoChannel);
 	if (data != (void *) &lifoItem[3]) {
 		goto errorReturn;
-		}
+	}
 
 	data = nano_fiber_lifo_get(&lifoChannel);
 	if (data != (void *) &lifoItem[2]) {
 		goto errorReturn;
-		}
+	}
 
-    /* LIFO should be empty--verify. */
+	/* LIFO should be empty--verify. */
 	data = nano_fiber_lifo_get(&lifoChannel);
 	if (data != NULL) {
 		goto errorReturn;
-		}
+	}
 
-    /*
-     * The LIFO is now empty.  Add two items to the LIFO and then wait
-     * for the semaphore so that the task can retrieve them.
-     */
+	/*
+	 * The LIFO is now empty.  Add two items to the LIFO and then wait
+	 * for the semaphore so that the task can retrieve them.
+	 */
 
 	TC_PRINT("Task to get LIFO items without waiting\n");
 	nano_fiber_lifo_put(&lifoChannel, &lifoItem[0]);
 	nano_fiber_lifo_put(&lifoChannel, &lifoItem[1]);
 	nano_fiber_sem_give(&taskWaitSem);       /* Wake the task (if blocked) */
 
-    /*
-     * Wait for the task to get the items and then trigger an ISR to populate
-     * the LIFO.
-     */
+	/*
+	 * Wait for the task to get the items and then trigger an ISR to populate
+	 * the LIFO.
+	 */
 
 	nano_fiber_sem_take_wait(&fiberWaitSem);
 
-    /*
-     * The task retrieved the two items from the LIFO and then triggered
-     * two interrupts to add two other items to the LIFO.  The fiber will
-     * now trigger two interrupts to read the two items.
-     */
+	/*
+	 * The task retrieved the two items from the LIFO and then triggered
+	 * two interrupts to add two other items to the LIFO.  The fiber will
+	 * now trigger two interrupts to read the two items.
+	 */
 
 	_trigger_nano_isr_lifo_get();
 	if (isrLifoInfo.data != &lifoItem[1]) {
 		goto errorReturn;
-		}
+	}
 
 	_trigger_nano_isr_lifo_get();
 	if (isrLifoInfo.data != &lifoItem[3]) {
 		goto errorReturn;
-		}
+	}
 
-    /* The LIFO should now be empty--verify */
+	/* The LIFO should now be empty--verify */
 	_trigger_nano_isr_lifo_get();
 	if (isrLifoInfo.data != NULL) {
 		goto errorReturn;
-		}
+	}
 
 	return 0;
 
@@ -308,7 +308,7 @@ static void fiberEntry(int arg1, int arg2)
 
 	if (rv == 0) {
 		fiberLifoNonWaitTest();
-		}
+	}
 
 }
 
@@ -327,45 +327,45 @@ int taskLifoWaitTest(void)
 {
 	void *data;    /* ptr to data retrieved from LIFO */
 
-    /* Wait on <taskWaitSem> in case fiber's print message blocked */
+	/* Wait on <taskWaitSem> in case fiber's print message blocked */
 	nano_fiber_sem_take_wait(&taskWaitSem);
 
-    /* The fiber is waiting on the LIFO.  Wake it. */
+	/* The fiber is waiting on the LIFO.  Wake it. */
 	nano_task_lifo_put(&lifoChannel, &lifoItem[0]);
 
-    /*
-     * The fiber ran, but is now blocked on the semaphore.  Add an item to the
-     * LIFO before giving the semaphore that wakes the fiber so that we can
-     * cover the path of nano_fiber_lifo_get_wait() not waiting on the LIFO.
-     */
+	/*
+	 * The fiber ran, but is now blocked on the semaphore.  Add an item to the
+	 * LIFO before giving the semaphore that wakes the fiber so that we can
+	 * cover the path of nano_fiber_lifo_get_wait() not waiting on the LIFO.
+	 */
 
 	nano_task_lifo_put(&lifoChannel, &lifoItem[2]);
 	nano_task_sem_give(&fiberWaitSem);
 
-    /* Check that the fiber got the correct item (lifoItem[0]) */
+	/* Check that the fiber got the correct item (lifoItem[0]) */
 
 	if (fiberDetectedFailure) {
 		TC_ERROR(" *** nano_task_lifo_put()/nano_fiber_lifo_get_wait() failure\n");
 		return TC_FAIL;
-		}
+	}
 
-    /* The LIFO is empty.  This time the task will wait for the item. */
+	/* The LIFO is empty.  This time the task will wait for the item. */
 
 	TC_PRINT("Task waiting on an empty LIFO\n");
 	data = nano_task_lifo_get_wait(&lifoChannel);
 	if (data != (void *) &lifoItem[1]) {
 		TC_ERROR(" *** nano_task_lifo_get_wait()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
-		}
+	}
 
 	data = nano_task_lifo_get_wait(&lifoChannel);
 	if (data != (void *) &lifoItem[3]) {
 		TC_ERROR(" *** nano_task_lifo_get_wait()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
-		}
+	}
 
 
-    /* Waiting on an empty LIFO passed for both fiber and task. */
+	/* Waiting on an empty LIFO passed for both fiber and task. */
 
 	return TC_PASS;
 }
@@ -384,51 +384,51 @@ int taskLifoNonWaitTest(void)
 {
 	void *data;    /* ptr to data retrieved from LIFO */
 
-    /*
-     * The fiber is presently waiting for <fiberWaitSem>.  Populate the LIFO
-     * before waking the fiber.
-     */
+	/*
+	 * The fiber is presently waiting for <fiberWaitSem>.  Populate the LIFO
+	 * before waking the fiber.
+	 */
 
 	TC_PRINT("Fiber to get LIFO items without waiting\n");
 	nano_task_lifo_put(&lifoChannel, &lifoItem[2]);
 	nano_task_lifo_put(&lifoChannel, &lifoItem[3]);
 	nano_task_sem_give(&fiberWaitSem);    /* Wake the fiber */
 
-    /* Check that fiber received the items correctly */
+	/* Check that fiber received the items correctly */
 	if (fiberDetectedFailure) {
 		TC_ERROR(" *** nano_task_lifo_put()/nano_fiber_lifo_get() failure\n");
 		return TC_FAIL;
-		}
+	}
 
-    /* Wait for the fiber to be ready */
+	/* Wait for the fiber to be ready */
 	nano_task_sem_take_wait(&taskWaitSem);
 
 	data = nano_task_lifo_get(&lifoChannel);
 	if (data != (void *) &lifoItem[1]) {
 		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
-		}
+	}
 
 	data = nano_task_lifo_get(&lifoChannel);
 	if (data != (void *) &lifoItem[0]) {
 		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
-		}
+	}
 
 	data = nano_task_lifo_get(&lifoChannel);
 	if (data != NULL) {
 		TC_ERROR(" *** nano_task_lifo_get()/nano_fiber_lifo_put() failure\n");
 		return TC_FAIL;
-		}
+	}
 
-    /*
-     * Software interrupts have been configured so that when invoked,
-     * the ISR will add an item to the LIFO.  The fiber (when unblocked)
-     * trigger software interrupts to get the items from the LIFO from
-     * within an ISR.
-     *
-     * Populate the LIFO.
-     */
+	/*
+	 * Software interrupts have been configured so that when invoked,
+	 * the ISR will add an item to the LIFO.  The fiber (when unblocked)
+	 * trigger software interrupts to get the items from the LIFO from
+	 * within an ISR.
+	 *
+	 * Populate the LIFO.
+	 */
 
 	TC_PRINT("ISR to get LIFO items without waiting\n");
 	isrLifoInfo.data = &lifoItem[3];
@@ -443,7 +443,7 @@ int taskLifoNonWaitTest(void)
 	if (fiberDetectedFailure) {
 		TC_ERROR(" *** nano_isr_lifo_put()/nano_isr_lifo_get() failure\n");
 		return TC_FAIL;
-		}
+	}
 
 	return TC_PASS;
 }
@@ -510,13 +510,13 @@ static void fiber_multi_waiters(int arg1, int arg2)
 	if (item != &multi_waiters_items[arg1]) {
 		TC_ERROR(" *** fiber %d did not receive correct item\n", arg1);
 		TC_ERROR(" *** received %p instead of %p.\n",
-					item, &multi_waiters_items[arg1]);
+				 item, &multi_waiters_items[arg1]);
 
 		/* do NOT give the semaphore, signifying an error */
 		return;
 	}
 	TC_PRINT("multiple-waiter fiber %d got correct item, giving semaphore\n",
-				arg1);
+			 arg1);
 	nano_fiber_sem_give(&reply_multi_waiters);
 }
 
@@ -534,7 +534,7 @@ static int do_test_multiple_waiters(void)
 	/* pend all fibers one the same lifo */
 	for (ii = 0; ii < NUM_WAITERS; ii++) {
 		task_fiber_start(fiber_multi_waiters_stacks[ii], FIBER_STACKSIZE,
-							fiber_multi_waiters, ii, 0, FIBER_PRIORITY, 0);
+						 fiber_multi_waiters, ii, 0, FIBER_PRIORITY, 0);
 	}
 
 	/* wake up all the fibers: the task is preempted each time */
@@ -551,7 +551,7 @@ static int do_test_multiple_waiters(void)
 	}
 
 	TC_PRINT("Task took multi-waiter reply semaphore %d times, as expected.\n",
-				NUM_WAITERS);
+			 NUM_WAITERS);
 
 	if (nano_task_lifo_get(&multi_waiters)) {
 		TC_ERROR(" *** multi_waiters should have been empty.\n");
@@ -607,23 +607,23 @@ void main(void)
 
 	initNanoObjects();
 
-    /*
-     * Start the fiber.  The fiber will be given a higher priority than the
-     * main task.
-     */
+	/*
+	 * Start the fiber.  The fiber will be given a higher priority than the
+	 * main task.
+	 */
 
 	task_fiber_start(fiberStack, FIBER_STACKSIZE, fiberEntry,
-		                0, 0, FIBER_PRIORITY, 0);
+		0, 0, FIBER_PRIORITY, 0);
 
 	rv = taskLifoWaitTest();
 
 	if (rv == TC_PASS) {
 		rv = taskLifoNonWaitTest();
-		}
+	}
 
 	if (rv == TC_PASS) {
 		rv = test_multiple_waiters();
-		}
+	}
 
 	TC_END_RESULT(rv);
 	TC_END_REPORT(rv);

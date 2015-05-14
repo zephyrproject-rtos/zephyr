@@ -137,44 +137,44 @@ int nanoIdtStubTest(void)
 	IDT_ENTRY *pIdtEntry;
 	uint16_t offset;
 
-    /* Check for the interrupt stub */
+	/* Check for the interrupt stub */
 	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (TEST_SOFT_INT << 3));
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) & 0xFFFF);
 	if (pIdtEntry->lowOffset != offset) {
-	TC_ERROR("Failed to find low offset of nanoIntStub \
-		   (0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
-	return TC_FAIL;
+		TC_ERROR("Failed to find low offset of nanoIntStub "
+				 "(0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
+		return TC_FAIL;
 	}
 
 	offset = (uint16_t)((uint32_t)(&nanoIntStub) >> 16);
 	if (pIdtEntry->hiOffset != offset) {
-	TC_ERROR("Failed to find high offset of nanoIntStub \
-		   (0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
-	return TC_FAIL;
+		TC_ERROR("Failed to find high offset of nanoIntStub "
+				 "(0x%x) at vector %d\n", (uint32_t)offset, TEST_SOFT_INT);
+		return TC_FAIL;
 	}
 
-    /* Check for the exception stub */
+	/* Check for the exception stub */
 	pIdtEntry = (IDT_ENTRY *) (_idt_base_address + (IV_DIVIDE_ERROR << 3));
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) & 0xFFFF);
 	if (pIdtEntry->lowOffset != offset) {
-	TC_ERROR("Failed to find low offset of exc stub \
-		   (0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
-	return TC_FAIL;
+		TC_ERROR("Failed to find low offset of exc stub "
+				 "(0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
+		return TC_FAIL;
 	}
 
 	offset = (uint16_t)((uint32_t)(&exc_divide_error_handlerStub) >> 16);
 	if (pIdtEntry->hiOffset != offset) {
-	TC_ERROR("Failed to find high offset of exc stub \
-		   (0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
-	return TC_FAIL;
+		TC_ERROR("Failed to find high offset of exc stub "
+				 "(0x%x) at vector %d\n", (uint32_t)offset, IV_DIVIDE_ERROR);
+		return TC_FAIL;
 	}
 
-    /*
-     * If the other fields are wrong, the system will crash when the exception
-     * and software interrupt are triggered so we don't check them.
-     */
+	/*
+	 * If the other fields are wrong, the system will crash when the exception
+	 * and software interrupt are triggered so we don't check them.
+	 */
 	return TC_PASS;
 }
 
@@ -200,7 +200,7 @@ static void idtSpurFiber(int a1, int a2)
 
 	_trigger_spurHandler();
 
-    /* Shouldn't get here */
+	/* Shouldn't get here */
 	spurHandlerAbortedContext = 0;
 
 }
@@ -230,59 +230,59 @@ void main(void)
 	rv = nanoIdtStubTest();
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 	TC_PRINT("Testing to see interrupt handler executes properly\n");
 	_trigger_isrHandler();
 
 	if (intHandlerExecuted == 0) {
-	TC_ERROR("Interrupt handler did not execute\n");
-	rv = TC_FAIL;
-	goto doneTests;
+		TC_ERROR("Interrupt handler did not execute\n");
+		rv = TC_FAIL;
+		goto doneTests;
 	} else if (intHandlerExecuted != 1) {
-	TC_ERROR("Interrupt handler executed more than once! (%d)\n",
-		   intHandlerExecuted);
-	rv = TC_FAIL;
-	goto doneTests;
+		TC_ERROR("Interrupt handler executed more than once! (%d)\n",
+				 intHandlerExecuted);
+		rv = TC_FAIL;
+		goto doneTests;
 	}
 
 	TC_PRINT("Testing to see exception handler executes properly\n");
 
-    /*
-     * Use excHandlerExecuted instead of 0 to prevent the compiler issuing a
-     * 'divide by zero' warning.
-     */
+	/*
+	 * Use excHandlerExecuted instead of 0 to prevent the compiler issuing a
+	 * 'divide by zero' warning.
+	 */
 	error = error / excHandlerExecuted;
 
 	if (excHandlerExecuted == 0) {
-	TC_ERROR("Exception handler did not execute\n");
-	rv = TC_FAIL;
-	goto doneTests;
+		TC_ERROR("Exception handler did not execute\n");
+		rv = TC_FAIL;
+		goto doneTests;
 	}
 	else if (excHandlerExecuted != 1) {
-	TC_ERROR("Exception handler executed more than once! (%d)\n",
-		   excHandlerExecuted);
-	rv = TC_FAIL;
-	goto doneTests;
+		TC_ERROR("Exception handler executed more than once! (%d)\n",
+				 excHandlerExecuted);
+		rv = TC_FAIL;
+		goto doneTests;
 	}
 
-    /*
-     * Start fiber/task to trigger the spurious interrupt handler
-     */
+	/*
+	 * Start fiber/task to trigger the spurious interrupt handler
+	 */
 	TC_PRINT("Testing to see spurious handler executes properly\n");
 #ifdef CONFIG_MICROKERNEL
 	task_start(tSpurTask);
 #else
 	task_fiber_start(fiberStack, sizeof(fiberStack), idtSpurFiber, 0, 0, 5, 0);
 #endif
-    /*
-     * The fiber/task should not run past where the spurious interrupt is
-     * generated. Therefore spurHandlerAbortedContext should remain at 1.
-     */
+	/*
+	 * The fiber/task should not run past where the spurious interrupt is
+	 * generated. Therefore spurHandlerAbortedContext should remain at 1.
+	 */
 	if (spurHandlerAbortedContext == 0) {
-	TC_ERROR("Spurious handler did not execute as expected\n");
-	rv = TC_FAIL;
-	goto doneTests;
+		TC_ERROR("Spurious handler did not execute as expected\n");
+		rv = TC_FAIL;
+		goto doneTests;
 	}
 
 doneTests:

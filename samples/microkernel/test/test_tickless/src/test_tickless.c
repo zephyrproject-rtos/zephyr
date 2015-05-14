@@ -88,7 +88,7 @@ extern void _TimestampClose(void);
 #endif
 
 void ticklessTestTask(void)
-	{
+{
 	int32_t start_ticks;
 	int32_t end_ticks;
 	int32_t diff_ticks;
@@ -111,25 +111,25 @@ void ticklessTestTask(void)
 	printk("Calibrating TSC...\n");
 #ifdef CONFIG_TICKLESS_IDLE
 	oldThreshold = _sys_idle_threshold_ticks;
-    /* make sure we do not enter tickless idle mode */
+	/* make sure we do not enter tickless idle mode */
 	_sys_idle_threshold_ticks = 0x7FFFFFFF;
 #endif
 
-    /* initialize the timer, if necessary */
+	/* initialize the timer, if necessary */
 	_TIMESTAMP_OPEN();
 
 	for (i = 0; i < CAL_REPS; i++) {
-	/*
-         * Do a single tick sleep to get us as close to a tick boundary
-         * as we can.
-         */
-	task_sleep(1);
-	start_ticks = task_tick_get_32();
-	start_tsc = _TIMESTAMP_READ();
-	task_sleep(SLEEP_TICKS);
-	end_tsc = _TIMESTAMP_READ();
-	end_ticks = task_tick_get_32();
-	cal_tsc += end_tsc - start_tsc;
+		/*
+		 * Do a single tick sleep to get us as close to a tick boundary
+		 * as we can.
+		 */
+		task_sleep(1);
+		start_ticks = task_tick_get_32();
+		start_tsc = _TIMESTAMP_READ();
+		task_sleep(SLEEP_TICKS);
+		end_tsc = _TIMESTAMP_READ();
+		end_ticks = task_tick_get_32();
+		cal_tsc += end_tsc - start_tsc;
 	}
 	cal_tsc /= CAL_REPS;
 
@@ -149,17 +149,17 @@ void ticklessTestTask(void)
 	printk("Going idle for %d ticks...\n", SLEEP_TICKS);
 
 	for (i = 0; i < CAL_REPS; i++) {
-	/*
-         * Do a single tick sleep to get us as close to a tick boundary
-         * as we can.
-         */
-	task_sleep(1);
-	start_ticks = task_tick_get_32();
-	start_tsc = _TIMESTAMP_READ();
-	task_sleep(SLEEP_TICKS);
-	end_tsc = _TIMESTAMP_READ();
-	end_ticks = task_tick_get_32();
-	diff_tsc += end_tsc - start_tsc;
+		/*
+		 * Do a single tick sleep to get us as close to a tick boundary
+		 * as we can.
+		 */
+		task_sleep(1);
+		start_ticks = task_tick_get_32();
+		start_tsc = _TIMESTAMP_READ();
+		task_sleep(SLEEP_TICKS);
+		end_tsc = _TIMESTAMP_READ();
+		end_ticks = task_tick_get_32();
+		diff_tsc += end_tsc - start_tsc;
 	}
 
 	diff_tsc /= CAL_REPS;
@@ -180,25 +180,27 @@ void ticklessTestTask(void)
 	printk("Cal   time stamp: 0x%x\n", cal_tsc);
 #endif
 
-    /* Calculate percentage difference between calibrated TSC diff and measured result */
-	if (diff_tsc > cal_tsc)
-	diff_per = (100 * (diff_tsc - cal_tsc)) / cal_tsc;
-	else
-	diff_per = (100 * (cal_tsc - diff_tsc)) / cal_tsc;
+	/* Calculate percentage difference between calibrated TSC diff and measured result */
+	if (diff_tsc > cal_tsc) {
+		diff_per = (100 * (diff_tsc - cal_tsc)) / cal_tsc;
+	}
+	else {
+		diff_per = (100 * (cal_tsc - diff_tsc)) / cal_tsc;
+	}
 
 	printk("variance in time stamp diff: %d percent\n", (int32_t)diff_per);
 
 	if (diff_ticks != SLEEP_TICKS) {
-	printk("* TEST FAILED. TICK COUNT INCORRECT *\n");
-	TC_END_REPORT(TC_FAIL);
+		printk("* TEST FAILED. TICK COUNT INCORRECT *\n");
+		TC_END_REPORT(TC_FAIL);
 	}
 	else {
-	TC_END_REPORT(TC_PASS);
-		}
+		TC_END_REPORT(TC_PASS);
+	}
 
-    /* release the timer, if necessary */
+	/* release the timer, if necessary */
 	_TIMESTAMP_CLOSE();
 
 	while(1);
 
-	}
+}

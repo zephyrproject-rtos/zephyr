@@ -66,15 +66,15 @@ static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
 /* globals */
 
 ktask_t msgSenderTask	= MSGSENDERTASK;
-ktask_t msgRcvrTask	= MSGRCVRTASK;
+ktask_t msgRcvrTask		= MSGRCVRTASK;
 
-ksem_t semSync1		= SEM_SYNC1;
-ksem_t semSync2		= SEM_SYNC2;
+ksem_t semSync1			= SEM_SYNC1;
+ksem_t semSync2			= SEM_SYNC2;
 
-kmbox_t myMbox		= MYMBOX;
-kmbox_t noRcvrMbox	= NORCVRMBOX;
+kmbox_t myMbox			= MYMBOX;
+kmbox_t noRcvrMbox		= NORCVRMBOX;
 
-kmemory_pool_t testPool		= TESTPOOL;
+kmemory_pool_t testPool			= TESTPOOL;
 kmemory_pool_t smallBlkszPool	= SMALLBLKSZPOOL;
 
 /*******************************************************************************
@@ -88,11 +88,11 @@ kmemory_pool_t smallBlkszPool	= SMALLBLKSZPOOL;
 */
 
 void MsgSenderTaskEntry(void)
-	{
+{
 	extern int MsgSenderTask(void);
 
 	task_sem_give(resultSems[MsgSenderTask()]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -105,11 +105,11 @@ void MsgSenderTaskEntry(void)
 */
 
 void MsgRcvrTaskEntry(void)
-	{
+{
 	extern int MsgRcvrTask(void);
 
 	task_sem_give(resultSems[MsgRcvrTask()]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -122,31 +122,31 @@ void MsgRcvrTaskEntry(void)
 */
 
 void MonitorTaskEntry(void)
-	{
+{
 	ksem_t result;
 	int tasksDone;
 
 	PRINT_DATA("Starting mailbox tests\n");
 	PRINT_LINE;
 
-    /*
-     * the various test tasks start executing automatically;
-     * wait for all tasks to complete or a failure to occur,
-     * then issue the appropriate test case summary message
-     */
+	/*
+	 * the various test tasks start executing automatically;
+	 * wait for all tasks to complete or a failure to occur,
+	 * then issue the appropriate test case summary message
+	 */
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
-	result = task_sem_group_take_wait_timeout(resultSems, TIMEOUT);
-	if (result != resultSems[TC_PASS]) {
-	    if (result != resultSems[TC_FAIL]) {
-		TC_ERROR("Monitor task timed out\n");
+		result = task_sem_group_take_wait_timeout(resultSems, TIMEOUT);
+		if (result != resultSems[TC_PASS]) {
+			if (result != resultSems[TC_FAIL]) {
+				TC_ERROR("Monitor task timed out\n");
+			}
+			TC_END_RESULT(TC_FAIL);
+			TC_END_REPORT(TC_FAIL);
+			return;
 		}
-	    TC_END_RESULT(TC_FAIL);
-	    TC_END_REPORT(TC_FAIL);
-	    return;
-	    }
 	}
 
 	TC_END_RESULT(TC_PASS);
 	TC_END_REPORT(TC_PASS);
-	}
+}

@@ -42,7 +42,7 @@ typedef struct {
 	int count;
 	unsigned int time;
 	int size;
-	} GetInfo;
+} GetInfo;
 
 /* global data */
 extern char data_recv[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];

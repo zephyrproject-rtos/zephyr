@@ -100,7 +100,7 @@ void mailbox_put(uint32_t size, int count, uint32_t *time);
  */
 
 void mailbox_test(void)
-	{
+{
 	uint32_t putsize;
 	uint32_t puttime;
 	int putcount;
@@ -109,14 +109,14 @@ void mailbox_test(void)
 
 	PRINT_STRING(dashline, output_file);
 	PRINT_STRING("|                "
-		  "M A I L B O X   M E A S U R E M E N T S"
-		  "                      |\n", output_file);
+				 "M A I L B O X   M E A S U R E M E N T S"
+				 "                      |\n", output_file);
 	PRINT_STRING(dashline, output_file);
 	PRINT_STRING("| Send mailbox message to waiting high "
-		  "priority task and wait                 |\n", output_file);
+				 "priority task and wait                 |\n", output_file);
 	PRINT_F(output_file, "| repeat for %4d times and take the "
-	     "average                                  |\n",
-	     NR_OF_MBOX_RUNS);
+			"average                                  |\n",
+			NR_OF_MBOX_RUNS);
 	PRINT_STRING(dashline, output_file);
 	PRINT_HEADER();
 	PRINT_STRING(dashline, output_file);
@@ -131,14 +131,14 @@ void mailbox_test(void)
 	PRINT_ONE_RESULT();
 	EmptyMsgPutTime = puttime;
 	for (putsize = 8; putsize <= MESSAGE_SIZE; putsize <<= 1) {
-	mailbox_put(putsize, putcount, &puttime);
-	task_fifo_get_wait(MB_COMM, &getinfo); /* waiting for ack */
-	PRINT_ONE_RESULT();
+		mailbox_put(putsize, putcount, &puttime);
+		task_fifo_get_wait(MB_COMM, &getinfo); /* waiting for ack */
+		PRINT_ONE_RESULT();
 	}
 	PRINT_STRING(dashline, output_file);
 	PRINT_OVERHEAD();
 	PRINT_XFER_RATE();
-	}
+}
 
 
 /*******************************************************************************
@@ -147,15 +147,15 @@ void mailbox_test(void)
  *
  * RETURNS: N/A
  *
+ * @param size    The size of the data chunk.
+ * @param count   Number of data chunks.
+ * @param time    The total time.
+ *
  * \NOMANUAL
  */
 
-void mailbox_put(
-	uint32_t size, /* the size of the data chunk */
-	int count, /* number of data chunks */
-	uint32_t *time /* the total time */
-	)
-	{
+void mailbox_put(uint32_t size, int count, uint32_t *time)
+{
 	int i;
 	unsigned int t;
 
@@ -163,15 +163,15 @@ void mailbox_put(
 	Message.tx_data = data_bench;
 	Message.size = size;
 
-    /* first sync with the receiver */
+	/* first sync with the receiver */
 	task_sem_give(SEM0);
 	t = BENCH_START();
 	for (i = 0; i < count; i++) {
-	task_mbox_put_wait(MAILB1, 1, &Message);
+		task_mbox_put_wait(MAILB1, 1, &Message);
 	}
 	t = TIME_STAMP_DELTA_GET(t);
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
 	check_result();
-	}
+}
 
 #endif /* MAILBOX_BENCH */

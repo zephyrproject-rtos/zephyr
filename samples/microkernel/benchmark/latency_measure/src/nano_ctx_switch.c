@@ -77,16 +77,16 @@ static volatile int ctxSwitchBalancer = 0;
 */
 
 static void fiberOne(void)
-	{
+{
 	nano_fiber_sem_take_wait(&syncSema);
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	while (ctxSwitchCounter < NCTXSWITCH) {
-	fiber_yield();
-	ctxSwitchCounter++;
-	ctxSwitchBalancer--;
+		fiber_yield();
+		ctxSwitchCounter++;
+		ctxSwitchBalancer--;
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
-	}
+}
 
 /*******************************************************************************
  *
@@ -101,14 +101,14 @@ static void fiberOne(void)
  */
 
 static void fiberTwo(void)
-	{
+{
 	nano_fiber_sem_give(&syncSema);
 	while (ctxSwitchCounter < NCTXSWITCH) {
-	fiber_yield();
-	ctxSwitchCounter++;
-	ctxSwitchBalancer++;
+		fiber_yield();
+		ctxSwitchCounter++;
+		ctxSwitchBalancer++;
 	}
-	}
+}
 
 /*******************************************************************************
  *
@@ -120,7 +120,7 @@ static void fiberTwo(void)
  */
 
 int nanoCtxSwitch(void)
-	{
+{
 	PRINT_FORMAT(" 4- Measure average context switch time between fibers");
 	nano_sem_init(&syncSema);
 	ctxSwitchCounter = 0;
@@ -128,19 +128,20 @@ int nanoCtxSwitch(void)
 
 	bench_test_start();
 	task_fiber_start(&fiberOneStack[0], STACKSIZE,
-		    (nano_fiber_entry_t) fiberOne, 0, 0, 6, 0);
+					 (nano_fiber_entry_t) fiberOne, 0, 0, 6, 0);
 	task_fiber_start(&fiberTwoStack[0], STACKSIZE,
-		    (nano_fiber_entry_t) fiberTwo, 0, 0, 6, 0);
+					 (nano_fiber_entry_t) fiberTwo, 0, 0, 6, 0);
 	if (ctxSwitchBalancer > 3 || ctxSwitchBalancer < -3) {
-	PRINT_FORMAT(" Balance is %d. FAILED", ctxSwitchBalancer);
+		PRINT_FORMAT(" Balance is %d. FAILED", ctxSwitchBalancer);
 	}
 	else if (bench_test_end() != 0) {
-	errorCount++;
-	PRINT_OVERFLOW_ERROR();
+		errorCount++;
+		PRINT_OVERFLOW_ERROR();
 	}
-	else
-	PRINT_FORMAT(" Average context switch time is %lu tcs = %lu nsec",
-		      timestamp / ctxSwitchCounter,
-		      SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, ctxSwitchCounter));
+	else {
+		PRINT_FORMAT(" Average context switch time is %lu tcs = %lu nsec",
+					 timestamp / ctxSwitchCounter,
+					 SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, ctxSwitchCounter));
+	}
 	return 0;
-	}
+}

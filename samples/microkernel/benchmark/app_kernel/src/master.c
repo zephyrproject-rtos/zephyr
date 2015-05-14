@@ -45,8 +45,7 @@ char Msg[MAX_MSG];
 char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 
 #ifdef PIPE_BENCH
-kpipe_t TestPipes[] = {
-PIPE_NOBUFF, PIPE_SMALLBUFF, PIPE_BIGBUFF};
+kpipe_t TestPipes[] = {PIPE_NOBUFF, PIPE_SMALLBUFF, PIPE_BIGBUFF};
 #endif
 const char dashline[] =
 	"|--------------------------------------"
@@ -83,22 +82,22 @@ int kbhit(void)
  *
  * RETURNS: N/A
  *
+ * @param continuously   Run test till the user presses the key.
+ * @param autorun        Expect user input.
+ *
  * \NOMANUAL
  */
 
-void init_output(
-	int *continuously, /* run test till the user presses the key */
-	int *autorun /* expect user input */
-	)
-	{
+void init_output(int *continuously, int *autorun)
+{
 	ARG_UNUSED(continuously);
 	ARG_UNUSED(autorun);
 
-    /*
-     * send all printf and fprintf to console
-     */
+	/*
+	 * send all printf and fprintf to console
+	 */
 	output_file = stdout;
-	}
+}
 
 /*******************************************************************************
  *
@@ -110,8 +109,8 @@ void init_output(
  */
 
 void output_close(void)
-	{
-	}
+{
+}
 
 /* no need to wait for user key press when using console */
 #define WAIT_FOR_USER() {}
@@ -128,7 +127,7 @@ void output_close(void)
 
 /* see config.h to select or to unselect*/
 void BenchTask(void)
-	{
+{
 	int autorun = 0, continuously = 0;
 
 	init_output(&continuously, &autorun);
@@ -136,40 +135,40 @@ void BenchTask(void)
 
 	PRINT_STRING(newline, output_file);
 	do {
-	PRINT_STRING(dashline, output_file);
-	PRINT_STRING("|          S I M P L E   S E R V I C E    "
-		      "M E A S U R E M E N T S  |  nsec    |\n",
-		      output_file);
-	PRINT_STRING(dashline, output_file);
-	task_start(RECVTASK);
-	call_test();
-	queue_test();
-	sema_test();
-	mutex_test();
-	memorymap_test();
-	mempool_test();
-	event_test();
-	mailbox_test();
-	pipe_test();
-	PRINT_STRING("|         END OF TESTS                     "
-		      "                                   |\n",
-		      output_file);
-	PRINT_STRING(dashline, output_file);
-	PRINT_STRING("VXMICRO PROJECT EXECUTION SUCCESSFUL\n",output_file);
-	}
-	while (continuously && !kbhit());
+		PRINT_STRING(dashline, output_file);
+		PRINT_STRING("|          S I M P L E   S E R V I C E    "
+					 "M E A S U R E M E N T S  |  nsec    |\n",
+					 output_file);
+		PRINT_STRING(dashline, output_file);
+		task_start(RECVTASK);
+		call_test();
+		queue_test();
+		sema_test();
+		mutex_test();
+		memorymap_test();
+		mempool_test();
+		event_test();
+		mailbox_test();
+		pipe_test();
+		PRINT_STRING("|         END OF TESTS                     "
+					 "                                   |\n",
+					 output_file);
+		PRINT_STRING(dashline, output_file);
+		PRINT_STRING("VXMICRO PROJECT EXECUTION SUCCESSFUL\n",output_file);
+	} while (continuously && !kbhit());
 
 	WAIT_FOR_USER();
 
-    /*
-     * Make a 2 second delay. sys_clock_ticks_per_sec in this context is
-     * a number of system times ticks in a second.
-     */
-	if (autorun)
-	task_sleep(2 * sys_clock_ticks_per_sec);
+	/*
+	 * Make a 2 second delay. sys_clock_ticks_per_sec in this context is
+	 * a number of system times ticks in a second.
+	 */
+	if (autorun) {
+		task_sleep(2 * sys_clock_ticks_per_sec);
+	}
 
 	output_close();
-	}
+}
 
 
 /*******************************************************************************
@@ -182,6 +181,6 @@ void BenchTask(void)
  */
 
 void dummy_test(void)
-	{
+{
 	return;
-	}
+}

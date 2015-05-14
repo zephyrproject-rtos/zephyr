@@ -87,7 +87,7 @@ uint32_t criticalLoop(uint32_t count)
 	while (task_tick_get_32() < ticks + NUM_TICKS) {
 		task_offload_to_fiber(criticalRtn, &criticalVar);
 		count++;
-		}
+	}
 
 	return count;
 }
@@ -138,18 +138,18 @@ void RegressionTask(void)
 
 	nCalls = criticalLoop(nCalls);
 
-    /* Wait for AlternateTask() to complete */
+	/* Wait for AlternateTask() to complete */
 	status = task_sem_take_wait_timeout(REGRESS_SEM, TEST_TIMEOUT);
 	if (status != RC_OK) {
 		TC_ERROR("Timed out waiting for REGRESS_SEM\n");
 		goto errorReturn;
-		}
+	}
 
 	if (criticalVar != nCalls + altTaskIterations) {
 		TC_ERROR("Unexpected value for <criticalVar>.  Expected %d, got %d\n",
-		          nCalls + altTaskIterations, criticalVar);
+				 nCalls + altTaskIterations, criticalVar);
 		goto errorReturn;
-		}
+	}
 	TC_PRINT("Obtained expected <criticalVar> value of %u\n", criticalVar);
 
 	TC_PRINT("Enabling time slicing ...\n");
@@ -160,18 +160,18 @@ void RegressionTask(void)
 
 	nCalls = criticalLoop(nCalls);
 
-    /* Wait for AlternateTask() to finish */
+	/* Wait for AlternateTask() to finish */
 	status = task_sem_take_wait_timeout(REGRESS_SEM, TEST_TIMEOUT);
 	if (status != RC_OK) {
 		TC_ERROR("Timed out waiting for REGRESS_SEM\n");
 		goto errorReturn;
-		}
+	}
 
 	if (criticalVar != nCalls + altTaskIterations) {
 		TC_ERROR("Unexpected value for <criticalVar>.  Expected %d, got %d\n",
-		          nCalls + altTaskIterations, criticalVar);
+				 nCalls + altTaskIterations, criticalVar);
 		goto errorReturn;
-		}
+	}
 	TC_PRINT("Obtained expected <criticalVar> value of %u\n", criticalVar);
 
 	TC_END_RESULT(TC_PASS);

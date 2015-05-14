@@ -54,9 +54,9 @@ static int driver_send(struct bt_buf *buf)
 }
 
 static struct bt_driver drv = {
-	.head_reserve	= 0,
-	.open		= driver_open,
-	.send		= driver_send,
+	.head_reserve = 0,
+	.open         = driver_open,
+	.send         = driver_send,
 };
 
 static void driver_init(void)
@@ -75,13 +75,15 @@ void main(void)
 	driver_init();
 
 	ret = bt_init();
-	if (ret == EXPECTED_ERROR)
+	if (ret == EXPECTED_ERROR) {
 		ret_code = TC_PASS;
-	else
+	}
+	else {
 		ret_code = TC_FAIL;
+	}
 
 	TC_END(ret_code, "%s - %s.\n", ret_code == TC_PASS ? PASS : FAIL,
-	       __func__);
+		   __func__);
 
 	TC_END_REPORT(ret_code);
 }

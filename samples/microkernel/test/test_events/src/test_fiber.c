@@ -64,27 +64,27 @@ static char fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 * RETURNS: N/A
 */
 static void testFiberEntry(void)
-	{
-    /* signal event for eventWaitTest() */
-    /* single test */
+{
+	/* signal event for eventWaitTest() */
+	/* single test */
 	nano_fiber_sem_take_wait(&fiberSem);
 	fiber_event_send(EVENT_ID);
-    /* test in cycle */
-	nano_fiber_sem_take_wait(&fiberSem);
-	fiber_event_send(EVENT_ID);
-
-    /* signal event for eventTimeoutTest() */
+	/* test in cycle */
 	nano_fiber_sem_take_wait(&fiberSem);
 	fiber_event_send(EVENT_ID);
 
-    /*
-     * Signal two events for fiberEventSignalTest ().
-     * It has to detect only one
-     */
+	/* signal event for eventTimeoutTest() */
+	nano_fiber_sem_take_wait(&fiberSem);
+	fiber_event_send(EVENT_ID);
+
+	/*
+	 * Signal two events for fiberEventSignalTest ().
+	 * It has to detect only one
+	 */
 	nano_fiber_sem_take_wait(&fiberSem);
 	fiber_event_send(EVENT_ID);
 	fiber_event_send(EVENT_ID);
-	}
+}
 
 /*******************************************************************************
 *
@@ -94,8 +94,8 @@ static void testFiberEntry(void)
 */
 
 void testFiberInit(void)
-	{
+{
 	nano_sem_init(&fiberSem);
 	task_fiber_start(fiberStack, FIBER_STACK_SIZE, (nano_fiber_entry_t)testFiberEntry,
-		    0, 0, FIBER_PRIORITY, 0);
-	}
+					 0, 0, FIBER_PRIORITY, 0);
+}

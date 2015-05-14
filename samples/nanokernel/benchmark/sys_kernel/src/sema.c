@@ -45,85 +45,86 @@ struct nano_sem nanoSem2;
  */
 
 void sema_test_init(void)
-	{
+{
 	nano_sem_init(&nanoSem1);
 	nano_sem_init(&nanoSem2);
-	}
+}
 
 
 /*******************************************************************************
  *
  * sema_fiber1 - semaphore test context
  *
+ * @param par1   Ignored parameter.
+ * @param par2   Number of test loops.
+ *
  * RETURNS: N/A
  *
  * \NOMANUAL
  */
 
-void sema_fiber1(
-	int par1, /* ignored parameter */
-	int par2 /* number of test loops */
-	)
-	{
+void sema_fiber1(int par1, int par2)
+{
 	int i;
 
 	ARG_UNUSED(par1);
 
 	for (i = 0; i < par2; i++) {
-	nano_fiber_sem_take_wait(&nanoSem1);
-	nano_fiber_sem_give(&nanoSem2);
+		nano_fiber_sem_take_wait(&nanoSem1);
+		nano_fiber_sem_give(&nanoSem2);
 	}
-	}
+}
 
 
 /*******************************************************************************
  *
  * sema_fiber2 - semaphore test context
  *
+ * @param par1   Address of the counter.
+ * @param par2   Number of test cycles.
+ *
  * RETURNS: N/A
  *
  * \NOMANUAL
  */
 
-void sema_fiber2(
-	int par1, /* address of the counter */
-	int par2 /* number of test cycles */
-	)
-	{
+void sema_fiber2(int par1, int par2)
+{
 	int i;
 	int * pcounter = (int *) par1;
 
 	for (i = 0; i < par2; i++) {
-	nano_fiber_sem_give(&nanoSem1);
-	nano_fiber_sem_take_wait(&nanoSem2);
-	(*pcounter)++;
+		nano_fiber_sem_give(&nanoSem1);
+		nano_fiber_sem_take_wait(&nanoSem2);
+		(*pcounter)++;
 	}
-	}
+}
 
 /*******************************************************************************
  *
  * sema_fiber3 - semaphore test context
  *
+ * @param par1   Address of the counter.
+ * @param par2   Number of test cycles.
+ *
  * RETURNS: N/A
  *
  * \NOMANUAL
  */
 
-void sema_fiber3(
-	int par1, /* address of the counter */
-	int par2 /* number of test cycles */
-	)
-	{
+void sema_fiber3(int par1, int par2)
+{
 	int i;
 	int * pcounter = (int *) par1;
 
 	for (i = 0; i < par2; i++) {
-	nano_fiber_sem_give(&nanoSem1);
-	while (!nano_fiber_sem_take(&nanoSem2))
-	    fiber_yield();
-	(*pcounter)++;
+		nano_fiber_sem_give(&nanoSem1);
+		while (!nano_fiber_sem_take(&nanoSem2)) {
+			fiber_yield();
+		}
+		(*pcounter)++;
 	}
-	}
+}
 
 
 /*******************************************************************************
@@ -136,16 +137,16 @@ void sema_fiber3(
  */
 
 int sema_test(void)
-	{
+{
 	uint32_t t;
 	int i = 0;
 	int return_value = 0;
 
 	fprintf(output_file, sz_test_case_fmt,
-	     "Semaphore channel - 'nano_fiber_sem_take_wait'");
+			"Semaphore channel - 'nano_fiber_sem_take_wait'");
 	fprintf(output_file, sz_description,
-	     "testing 'nano_sem_init','nano_fiber_sem_take_wait',"
-	     " 'nano_fiber_sem_give' functions;");
+			"testing 'nano_sem_init','nano_fiber_sem_take_wait',"
+			" 'nano_fiber_sem_give' functions;");
 	printf(sz_test_start_fmt, "'nano_fiber_sem_take_wait'");
 
 	sema_test_init();
@@ -153,18 +154,18 @@ int sema_test(void)
 	t = BENCH_START();
 
 	task_fiber_start(fiber_stack1, STACK_SIZE, sema_fiber1, 0,
-		    NUMBER_OF_LOOPS, 3, 0);
+					 NUMBER_OF_LOOPS, 3, 0);
 	task_fiber_start(fiber_stack2, STACK_SIZE, sema_fiber2, (int) &i,
-		    NUMBER_OF_LOOPS, 3, 0);
+					 NUMBER_OF_LOOPS, 3, 0);
 
 	t = TIME_STAMP_DELTA_GET(t);
 
 	return_value += check_result(i, t);
 
 	fprintf(output_file, sz_test_case_fmt,
-	     "Semaphore channel - 'nano_fiber_sem_take'");
+			"Semaphore channel - 'nano_fiber_sem_take'");
 	fprintf(output_file, sz_description,
-	     "testing 'nano_sem_init','nano_fiber_sem_take', 'fiber_yield',\n");
+			"testing 'nano_sem_init','nano_fiber_sem_take', 'fiber_yield',\n");
 	fprintf(output_file, "\t'nano_fiber_sem_give' functions;");
 	printf(sz_test_start_fmt, "'nano_fiber_sem_take'");
 
@@ -174,21 +175,21 @@ int sema_test(void)
 	t = BENCH_START();
 
 	task_fiber_start(fiber_stack1, STACK_SIZE, sema_fiber1, 0,
-		    NUMBER_OF_LOOPS, 3, 0);
+					 NUMBER_OF_LOOPS, 3, 0);
 	task_fiber_start(fiber_stack2, STACK_SIZE, sema_fiber3, (int) &i,
-		    NUMBER_OF_LOOPS, 3, 0);
+					 NUMBER_OF_LOOPS, 3, 0);
 
 	t = TIME_STAMP_DELTA_GET(t);
 
 	return_value += check_result(i, t);
 
 	fprintf(output_file, sz_test_case_fmt,
-	     "Semaphore channel - 'nano_task_sem_take_wait'");
+			"Semaphore channel - 'nano_task_sem_take_wait'");
 	fprintf(output_file, sz_description,
-	     "testing 'nano_sem_init','nano_fiber_sem_take_wait',"
-	     " 'nano_fiber_sem_give',\n");
+			"testing 'nano_sem_init','nano_fiber_sem_take_wait',"
+			" 'nano_fiber_sem_give',\n");
 	fprintf(output_file,
-	     "\t'nano_task_sem_give', 'nano_task_sem_take_wait' functions;");
+			"\t'nano_task_sem_give', 'nano_task_sem_take_wait' functions;");
 	printf(sz_test_start_fmt, "'nano_task_sem_take_wait'");
 
 	sema_test_init();
@@ -196,10 +197,10 @@ int sema_test(void)
 	t = BENCH_START();
 
 	task_fiber_start(fiber_stack1, STACK_SIZE, sema_fiber1, 0,
-		    NUMBER_OF_LOOPS, 3, 0);
+					 NUMBER_OF_LOOPS, 3, 0);
 	for (i = 0; i < NUMBER_OF_LOOPS; i++) {
-	nano_task_sem_give(&nanoSem1);
-	nano_task_sem_take_wait(&nanoSem2);
+		nano_task_sem_give(&nanoSem1);
+		nano_task_sem_take_wait(&nanoSem2);
 	}
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -207,4 +208,4 @@ int sema_test(void)
 	return_value += check_result(i, t);
 
 	return return_value;
-	}
+}

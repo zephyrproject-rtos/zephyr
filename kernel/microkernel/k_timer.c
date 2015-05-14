@@ -98,12 +98,15 @@ void enlist_timer(struct k_timer *T)
 	if (P) {
 		P->duration -= T->duration;
 		P->Back = T;
-	} else
+	} else {
 		_k_timer_list_tail = T;
-	if (Q)
+	}
+	if (Q) {
 		Q->Forw = T;
-	else
+	}
+	else {
 		_k_timer_list_head = T;
+	}
 	T->Forw = P;
 	T->Back = Q;
 }
@@ -239,12 +242,12 @@ void _k_timer_list_update(int ticks)
 * This routine, called by K_swapper(), handles the request for allocating a
 * timer.
 *
+* @param P   Pointer to timer allocation request arguments.
+*
 * RETURNS: N/A
 */
 
-void _k_timer_alloc(
-	struct k_args *P /* pointer to timer allocation request arguments */
-	)
+void _k_timer_alloc(struct k_args *P)
 {
 	struct k_timer *T;
 	struct k_args *A;
@@ -309,11 +312,12 @@ void _k_timer_dealloc(struct k_args *P)
 * This routine frees the resources associated with the timer.  If a timer was
 * started, it has to be stopped using task_timer_stop() before it can be freed.
 *
+* @param timer   Timer to deallocate.
+*
 * RETURNS: N/A
 */
 
-void task_timer_free(ktimer_t timer /* timer to deallocate */
-		     )
+void task_timer_free(ktimer_t timer)
 {
 	struct k_args A;
 
@@ -329,25 +333,26 @@ void task_timer_free(ktimer_t timer /* timer to deallocate */
 * This routine, called by K_swapper(), handles the start timer request from
 * both task_timer_start() and task_timer_restart().
 *
+* @param P   Pointer to timer start request arguments.
+*
 * RETURNS: N/A
 */
 
-void _k_timer_start(struct k_args *P /* pointer to timer start
-						      request arguments */
-					 )
+void _k_timer_start(struct k_args *P)
 {
 	struct k_timer *T = P->Args.c1.timer; /* ptr to the timer to start */
 
-	if (T->duration != -1) /* Stop the timer if it is active */
+	if (T->duration != -1) { /* Stop the timer if it is active */
 		delist_timer(T);
+	}
 
 	T->duration = (int32_t)P->Args.c1.time1; /* Set the initial delay */
 	T->period = P->Args.c1.time2;	  /* Set the period */
 
-    /*
-     * Either the initial delay and/or the period is invalid.  Mark
-     * the timer as inactive.
-     */
+	/*
+	 * Either the initial delay and/or the period is invalid.  Mark
+	 * the timer as inactive.
+	 */
 	if ((T->duration < 0) || (T->period < 0)) {
 		T->duration = -1;
 		return;
@@ -362,9 +367,8 @@ void _k_timer_start(struct k_args *P /* pointer to timer start
 		}
 	}
 
-	if (P->Args.c1.sema != ENDLIST) { /* Track the semaphore to
-                                       * signal for when the timer
-                                       * expires. */
+	/* Track the semaphore to signal for when the timer expires. */
+	if (P->Args.c1.sema != ENDLIST) {
 		T->Args->Comm = SIGNALS;
 		T->Args->Args.s1.sema = P->Args.c1.sema;
 	}
@@ -388,14 +392,16 @@ void _k_timer_start(struct k_args *P /* pointer to timer start
 * task_timer_stop(): if the allocated timer was still running (from a
 * previous call), it will be cancelled; if not, nothing will happen.
 *
+* @param timer      Timer to start.
+* @param duration   Initial delay in ticks.
+* @param period     Repetition interval in ticks.
+* @param sema       Semaphore to signal.
+*
 * RETURNS: N/A
 */
 
-void task_timer_start(ktimer_t timer, /* timer to start */
-		      int32_t duration,       /* initial delay in ticks */
-		      int32_t period,         /* repetition interval in ticks */
-		      ksem_t sema     /* semaphore to signal */
-		      )
+void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
+					  ksem_t sema)
 {
 	struct k_args A;
 
@@ -413,13 +419,14 @@ void task_timer_start(ktimer_t timer, /* timer to start */
 *
 * This routine restarts the timer specified by <timer>.
 *
+* @param timer      Timer to restart.
+* @param duration   Initial delay.
+* @param period     Repetition interval.
+*
 * RETURNS: N/A
 */
 
-void task_timer_restart(ktimer_t timer, /* timer to restart */
-			int32_t duration,           /* initial delay */
-			int32_t period              /* repetition interval */
-			)
+void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
 {
 	struct k_args A;
 
@@ -456,11 +463,12 @@ void _k_timer_stop(struct k_args *P)
 * This routine stops the specified timer. If the timer period has already
 * elapsed, the call has no effect.
 *
+* @param timer   Timer to stop.
+*
 * RETURNS: N/A
 */
 
-void task_timer_stop(ktimer_t timer /* timer to stop */
-		     )
+void task_timer_stop(ktimer_t timer)
 {
 	struct k_args A;
 
@@ -505,8 +513,9 @@ void _k_task_sleep(struct k_args *P)
 {
 	struct k_timer *T;
 
-	if ((P->Time.ticks) <= 0)
+	if ((P->Time.ticks) <= 0) {
 		return;
+	}
 
 	GETTIMER(T);
 	T->duration = P->Time.ticks;
@@ -529,11 +538,12 @@ void _k_task_sleep(struct k_args *P)
 * ticks.  When the task is awakened, it is rescheduled according to its
 * priority.
 *
+* @param ticks   Number of ticks for which to sleep.
+*
 * RETURNS: N/A
 */
 
-void task_sleep(int32_t ticks /* number of ticks for which to sleep */
-		  )
+void task_sleep(int32_t ticks)
 {
 	struct k_args A;
 

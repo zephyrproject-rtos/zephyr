@@ -59,7 +59,7 @@ This modules tests the following memory pool routines:
 
 typedef struct {
 	struct k_block *block;    /* pointer to block data */
-	kmemory_pool_t    poolId;   /* pool ID */
+	kmemory_pool_t  poolId;   /* pool ID */
 	int       size;     /* request size in bytes */
 	int32_t   timeout;  /* # of ticks to wait */
 	int       rcode;    /* expected return code */

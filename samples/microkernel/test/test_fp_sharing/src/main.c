@@ -207,8 +207,9 @@ void load_store_low(void)
 	 */
 
 	floatRegInitByte = MAIN_FLOAT_REG_CHECK_BYTE;
-	for (bufIx = 0; bufIx < SIZEOF_FP_REG_SET; ++bufIx)
+	for (bufIx = 0; bufIx < SIZEOF_FP_REG_SET; ++bufIx) {
 		((unsigned char *)&floatRegSetLoad)[bufIx] = floatRegInitByte++;
+	}
 
 	/* Keep cranking forever, or until an error is detected. */
 
@@ -353,8 +354,9 @@ void load_store_high(void)
 
 		floatRegInitByte = FIBER_FLOAT_REG_CHECK_BYTE;
 
-		for (bufIx = 0; bufIx < SIZEOF_FP_REG_SET; ++bufIx)
+		for (bufIx = 0; bufIx < SIZEOF_FP_REG_SET; ++bufIx) {
 			floatRegisterSetBytePtr[bufIx] = floatRegInitByte++;
+		}
 
 		/*
 		 * Utilize an architecture specific function to load all the floating
@@ -395,9 +397,10 @@ void load_store_high(void)
 
 		/* periodically issue progress report */
 
-		if ((++load_store_high_count % 100) == 0)
+		if ((++load_store_high_count % 100) == 0) {
 			PRINT_DATA("Load and store OK after %u (high) + %u (low) tests\n",
 					   load_store_high_count, load_store_low_count);
+		}
 
 #if (MAX_TESTS != 0)
 		/* terminate testing if specified limit has been reached */

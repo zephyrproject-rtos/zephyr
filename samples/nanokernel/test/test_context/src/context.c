@@ -96,9 +96,8 @@ typedef struct {
 	union {
 		void   *data;   /* pointer to data to use or return */
 		int     value;  /* value to be passed or returned */
-		};
-	}
-ISR_INFO;
+	};
+} ISR_INFO;
 
 typedef int  (* disable_interrupt_func)(int);
 typedef void (* enable_interrupt_func)(int);
@@ -139,18 +138,18 @@ void isr_handler(void *data)
 	ARG_UNUSED(data);
 
 	switch (isrInfo.command) {
-		case CTX_SELF_CMD:
-		    isrInfo.data = (void *) context_self_get();
-		    break;
+	case CTX_SELF_CMD:
+		isrInfo.data = (void *) context_self_get();
+		break;
 
-		case CTX_TYPE_CMD:
-		    isrInfo.value = context_type_get();
-		    break;
+	case CTX_TYPE_CMD:
+		isrInfo.value = context_type_get();
+		break;
 
-        default:
-		    isrInfo.error = UNKNOWN_COMMAND;
-		    break;
-		}
+	default:
+		isrInfo.error = UNKNOWN_COMMAND;
+		break;
+	}
 }
 
 /* Cortex-M3 does not implement connecting non-IRQ exception handlers */
@@ -220,19 +219,19 @@ int nano_cpu_idleTest(void)
 	int  tick;   /* current tick count */
 	int  i;      /* loop variable */
 
-    /* Align to a "tick boundary". */
+	/* Align to a "tick boundary". */
 	tick = nano_tick_get_32();
 	while (tick == nano_tick_get_32()) {
-		}
+	}
 	tick = nano_tick_get_32();
 
 	for (i = 0; i < 5; i++) {     /* Repeat the test five times */
 		nano_cpu_idle();
 		tick++;
 		if (nano_tick_get_32() != tick) {
-		    return TC_FAIL;
-		    }
+			return TC_FAIL;
 		}
+	}
 
 	return TC_PASS;
 }
@@ -334,22 +333,22 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	int  tick2;
 	int  imask;
 
-    /* Align to a "tick boundary" */
+	/* Align to a "tick boundary" */
 	tick = nano_tick_get_32();
 	while (nano_tick_get_32() == tick) {
-		}
+	}
 	tick++;
 
 	while (nano_tick_get_32() == tick) {
 		count++;
-		}
+	}
 
-    /*
-     * Inflate <count> so that when we loop later, many ticks should have
-     * elapsed during the loop.  This later loop will not exactly match the
-     * previous loop, but it should be close enough in structure that when
-     * combined with the inflated count, many ticks will have passed.
-     */
+	/*
+	 * Inflate <count> so that when we loop later, many ticks should have
+	 * elapsed during the loop.  This later loop will not exactly match the
+	 * previous loop, but it should be close enough in structure that when
+	 * combined with the inflated count, many ticks will have passed.
+	 */
 
 	count <<= 4;
 
@@ -357,25 +356,25 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	tick = nano_tick_get_32();
 	for (i = 0; i < count; i++) {
 		nano_tick_get_32();
-		}
+	}
 
 	tick2 = nano_tick_get_32();
 
-    /*
-     * Re-enable interrupts before returning (for both success and failure
-     * cases).
-     */
+	/*
+	 * Re-enable interrupts before returning (for both success and failure
+	 * cases).
+	 */
 
 	enableRtn(imask);
 
 	if (tick2 != tick) {
 		return TC_FAIL;
-		}
+	}
 
-    /* Now repeat with interrupts unlocked. */
+	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
 		nano_tick_get_32();
-		}
+	}
 
 	return (tick == nano_tick_get_32()) ? TC_FAIL : TC_PASS;
 }
@@ -401,12 +400,12 @@ int nanoCtxTaskTest(void)
 	isrInfo.error = 0;
 	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId)) {
-        /*
-         * Either the ISR detected an error, or the ISR context ID does not
-         * match the interrupted task's context ID.
-         */
+		/*
+		 * Either the ISR detected an error, or the ISR context ID does not
+		 * match the interrupted task's context ID.
+		 */
 		return TC_FAIL;
-		}
+	}
 
 	TC_PRINT("Testing context_type_get() from an ISR\n");
 	isrInfo.command = CTX_TYPE_CMD;
@@ -414,12 +413,12 @@ int nanoCtxTaskTest(void)
 	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
 		return TC_FAIL;
-		}
+	}
 
 	TC_PRINT("Testing context_type_get() from a task\n");
 	if (context_type_get() != NANO_CTX_TASK) {
 		return TC_FAIL;
-		}
+	}
 
 	return TC_PASS;
 }
@@ -449,19 +448,19 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 	if (ctxId == taskCtxId) {
 		fiberDetectedError = 1;
 		return TC_FAIL;
-		}
+	}
 
 	isrInfo.command = CTX_SELF_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId)) {
-        /*
-         * Either the ISR detected an error, or the ISR context ID does not
-         * match the interrupted fiber's context ID.
-         */
+		/*
+		 * Either the ISR detected an error, or the ISR context ID does not
+		 * match the interrupted fiber's context ID.
+		 */
 		fiberDetectedError = 2;
 		return TC_FAIL;
-		}
+	}
 
 	isrInfo.command = CTX_TYPE_CMD;
 	isrInfo.error = 0;
@@ -469,12 +468,12 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
 		fiberDetectedError = 3;
 		return TC_FAIL;
-		}
+	}
 
 	if (context_type_get() != NANO_CTX_FIBER) {
 		fiberDetectedError = 4;
 		return TC_FAIL;
-		}
+	}
 
 	return TC_PASS;
 }
@@ -499,20 +498,20 @@ static void fiberHelper(int arg1, int arg2)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 
-    /*
-     * This fiber starts off at a higher priority than fiberEntry().  Thus, it
-     * should execute immediately.
-     */
+	/*
+	 * This fiber starts off at a higher priority than fiberEntry().  Thus, it
+	 * should execute immediately.
+	 */
 
 	fiberEvidence++;
 
-    /* Test that helper will yield to a fiber of equal priority */
+	/* Test that helper will yield to a fiber of equal priority */
 	ctxId = context_self_get();
 	ctxId->prio++;            /* Lower priority to that of fiberEntry() */
 	fiber_yield();        /* Yield to fiber of equal priority */
 
 	fiberEvidence++;
-    /* <fiberEvidence> should now be 2 */
+	/* <fiberEvidence> should now be 2 */
 
 }
 
@@ -538,27 +537,27 @@ int fiber_yieldTest(void)
 {
 	nano_context_id_t  ctxId;
 
-    /*
-     * Start a fiber of higher priority.  Note that since the new fiber is
-     * being started from a fiber, it will not automatically switch to the
-     * fiber as it would if done from a task.
-     */
+	/*
+	 * Start a fiber of higher priority.  Note that since the new fiber is
+	 * being started from a fiber, it will not automatically switch to the
+	 * fiber as it would if done from a task.
+	 */
 
 	ctxId = context_self_get();
 	fiberEvidence = 0;
 	fiber_fiber_start(fiberStack2, FIBER_STACKSIZE, fiberHelper,
-		                 0, 0, FIBER_PRIORITY - 1, 0);
+		0, 0, FIBER_PRIORITY - 1, 0);
 
 	if (fiberEvidence != 0) {
 		/* ERROR! Helper spawned at higher */
 		fiberDetectedError = 10;    /* priority ran prematurely. */
 		return TC_FAIL;
-		}
+	}
 
-    /*
-     * Test that the fiber will yield to the higher priority helper.
-     * <fiberEvidence> is still 0.
-     */
+	/*
+	 * Test that the fiber will yield to the higher priority helper.
+	 * <fiberEvidence> is still 0.
+	 */
 
 	fiber_yield();
 
@@ -566,18 +565,18 @@ int fiber_yieldTest(void)
 		/* ERROR! Did not yield to higher */
 		fiberDetectedError = 11;    /* priority fiber. */
 		return TC_FAIL;
-		}
+	}
 
 	if (fiberEvidence > 1) {
 		/* ERROR! Helper did not yield to */
 		fiberDetectedError = 12;    /* equal priority fiber. */
 		return TC_FAIL;
-		}
+	}
 
-    /*
-     * Raise the priority of fiberEntry().  Calling fiber_yield() should
-     * not result in switching to the helper.
-     */
+	/*
+	 * Raise the priority of fiberEntry().  Calling fiber_yield() should
+	 * not result in switching to the helper.
+	 */
 
 	ctxId->prio--;
 	fiber_yield();
@@ -586,12 +585,12 @@ int fiber_yieldTest(void)
 		/* ERROR! Context switched to a lower */
 		fiberDetectedError = 13;    /* priority fiber! */
 		return TC_FAIL;
-		}
+	}
 
-    /*
-     * Block on <wakeFiber>.  This will allow the helper fiber to complete.
-     * The main task will wake this fiber.
-     */
+	/*
+	 * Block on <wakeFiber>.  This will allow the helper fiber to complete.
+	 * The main task will wake this fiber.
+	 */
 
 	nano_fiber_sem_take_wait(&wakeFiber);
 
@@ -622,15 +621,15 @@ static void fiberEntry(int taskCtxId, int arg1)
 	rv = nanoCtxFiberTest((nano_context_id_t) taskCtxId);
 	if (rv != TC_PASS) {
 		return;
-		}
+	}
 
-    /* Allow the task to print any messages before the next test runs */
+	/* Allow the task to print any messages before the next test runs */
 	nano_fiber_sem_take_wait(&wakeFiber);
 
 	rv = fiber_yieldTest();
 	if (rv != TC_PASS) {
 		return;
-		}
+	}
 }
 
 /*******************************************************************************
@@ -652,101 +651,101 @@ void main(void)
 	rv = initNanoObjects();
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 	TC_PRINT("Testing nano_cpu_idle()\n");
 	rv = nano_cpu_idleTest();
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 	TC_PRINT("Testing interrupt locking and unlocking\n");
 	rv = nanoCpuDisableInterruptsTest(irq_lockWrapper,
-		                               irq_unlockWrapper, -1);
+									  irq_unlockWrapper, -1);
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 
 	TC_PRINT("Testing inline interrupt locking and unlocking\n");
 	rv = nanoCpuDisableInterruptsTest(irq_lock_inlineWrapper,
-		                               irq_unlock_inlineWrapper, -1);
+									  irq_unlock_inlineWrapper, -1);
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 /*
  * The Cortex-M3/M4 use the SYSTICK exception for the system timer, which is
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
 #if !defined(CONFIG_CPU_CORTEXM3)
-    /*
-     * !!! TAKE NOTE !!!
-     * Disable interrupts coming from the timer.  In the pcPentium case, this
-     * is IRQ0 (see board.h for definition of PIT_INT_LVL).  Other BSPs may
-     * not be using the i8253 timer on IRQ0 and so a different IRQ value may
-     * be necessary when porting to another BSP.
-     */
+	/*
+	 * !!! TAKE NOTE !!!
+	 * Disable interrupts coming from the timer.  In the pcPentium case, this
+	 * is IRQ0 (see board.h for definition of PIT_INT_LVL).  Other BSPs may
+	 * not be using the i8253 timer on IRQ0 and so a different IRQ value may
+	 * be necessary when porting to another BSP.
+	 */
 
 	TC_PRINT("Testing irq_disable() and irq_enable()\n");
 	rv = nanoCpuDisableInterruptsTest(irq_disableWrapper,
-		                               irq_enableWrapper, TICK_IRQ);
+									  irq_enableWrapper, TICK_IRQ);
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 #endif
 
 	rv = nanoCtxTaskTest();
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 	TC_PRINT("Spawning a fiber from a task\n");
 	fiberEvidence = 0;
 	task_fiber_start(fiberStack1, FIBER_STACKSIZE, fiberEntry,
-		                (int) context_self_get(), 0, FIBER_PRIORITY, 0);
+					 (int) context_self_get(), 0, FIBER_PRIORITY, 0);
 
 	if (fiberEvidence != 1) {
-	rv = TC_FAIL;
+		rv = TC_FAIL;
 		TC_ERROR("  - fiber did not execute as expected!\n");
 		goto doneTests;
-		}
+	}
 
-    /* The fiber ran, now wake it so it can test context_self_get and context_type_get */
+	/* The fiber ran, now wake it so it can test context_self_get and context_type_get */
 	TC_PRINT("Fiber to test context_self_get() and context_type_get\n");
 	nano_task_sem_give(&wakeFiber);
 
 	if (fiberDetectedError != 0) {
-	rv = TC_FAIL;
+		rv = TC_FAIL;
 		TC_ERROR("  - failure detected in fiber; fiberDetectedError = %d\n",
-		          fiberDetectedError);
+				 fiberDetectedError);
 		goto doneTests;
-		}
+	}
 
 	TC_PRINT("Fiber to test fiber_yield()\n");
 	nano_task_sem_give(&wakeFiber);
 
 	if (fiberDetectedError != 0) {
-	rv = TC_FAIL;
+		rv = TC_FAIL;
 		TC_ERROR("  - failure detected in fiber; fiberDetectedError = %d\n",
-		          fiberDetectedError);
+				 fiberDetectedError);
 		goto doneTests;
-		}
+	}
 
 	nano_task_sem_give(&wakeFiber);
 
 /* Cortex-M3 does not implement connecting non-IRQ exception handlers */
 #if !defined(CONFIG_CPU_CORTEXM3)
-    /*
-     * Test divide by zero exception handler.
-     *
-     * WARNING: This code has been very carefully crafted so that it does
-     * what it is supposed to. Both "error" and "excHandlerExecuted" must be
-     * volatile to prevent the compiler from issuing a "divide by zero"
-     * warning (since otherwise in knows "excHandlerExecuted" is zero),
-     * and to ensure the compiler issues the two byte "idiv" instruction
-     * that the exception handler is designed to deal with.
-     */
+	/*
+	 * Test divide by zero exception handler.
+	 *
+	 * WARNING: This code has been very carefully crafted so that it does
+	 * what it is supposed to. Both "error" and "excHandlerExecuted" must be
+	 * volatile to prevent the compiler from issuing a "divide by zero"
+	 * warning (since otherwise in knows "excHandlerExecuted" is zero),
+	 * and to ensure the compiler issues the two byte "idiv" instruction
+	 * that the exception handler is designed to deal with.
+	 */
 
 	volatile int error;    /* used to create a divide by zero error */
 	TC_PRINT("Verifying exception handler installed\n");

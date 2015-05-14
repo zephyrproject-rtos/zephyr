@@ -65,7 +65,7 @@ This module tests the following task APIs:
 typedef struct {
 	int  cmd;
 	int  data;
-	} ISR_INFO;
+} ISR_INFO;
 
 /* locals */
 
@@ -91,14 +91,14 @@ void isr_task_command_handler(void *data)
 	int         value = -1;
 
 	switch (pInfo->cmd) {
-		case  CMD_TASKID:
-		    value = isr_task_id_get();
-		    break;
+	case CMD_TASKID:
+		value = isr_task_id_get();
+		break;
 
-		case  CMD_PRIORITY:
-		    value = isr_task_priority_get();
-		    break;
-		}
+	case CMD_PRIORITY:
+		value = isr_task_priority_get();
+		break;
+	}
 
 	pInfo->data = value;
 }
@@ -116,17 +116,17 @@ int isrAPIsTest(int taskId, int taskPrio)
 	_trigger_isrTaskCommand();
 	if (isrInfo.data != taskId) {
 		TC_ERROR("isr_task_id_get() returned %d, not %d\n",
-		          isrInfo.data, taskId);
+				 isrInfo.data, taskId);
 		return TC_FAIL;
-		}
+	}
 
 	isrInfo.cmd = CMD_PRIORITY;
 	_trigger_isrTaskCommand();
 	if (isrInfo.data != taskPrio) {
 		TC_ERROR("isr_task_priority_get() returned %d, not %d\n",
-		          isrInfo.data, taskPrio);
+				 isrInfo.data, taskPrio);
 		return TC_FAIL;
-		}
+	}
 
 	return TC_PASS;
 }
@@ -145,16 +145,16 @@ int taskMacrosTest(int taskId, int taskPrio)
 	value = task_id_get();
 	if (value != taskId) {
 		TC_ERROR("task_id_get() returned 0x%x, not 0x%x\n",
-		          value, taskId);
+				 value, taskId);
 		return TC_FAIL;
-		}
+	}
 
 	value = task_priority_get();
 	if (value != taskPrio) {
 		TC_ERROR("task_priority_get() returned %d, not %d\n",
-		          value, taskPrio);
+				 value, taskPrio);
 		return TC_FAIL;
-		}
+	}
 
 	return TC_PASS;
 }
@@ -211,65 +211,65 @@ int taskSetPrioTest(void)
 {
 	int  rv;
 
-    /* Lower the priority of the current task (RegressionTask) */
+	/* Lower the priority of the current task (RegressionTask) */
 	task_priority_set(RT_TASKID, RT_PRIO + 5);
 	rv = task_priority_get();
 	if (rv != RT_PRIO + 5) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-		          RT_PRIO + 5, rv);
+				 RT_PRIO + 5, rv);
 		return TC_FAIL;
-		}
+	}
 
-    /* Raise the priority of the current task (RegressionTask) */
+	/* Raise the priority of the current task (RegressionTask) */
 	task_priority_set(RT_TASKID, RT_PRIO - 5);
 	rv = task_priority_get();
 	if (rv != RT_PRIO - 5) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-		          RT_PRIO - 5, rv);
+				 RT_PRIO - 5, rv);
 		return TC_FAIL;
-		}
+	}
 
 
-    /* Restore the priority of the current task (RegressionTask) */
+	/* Restore the priority of the current task (RegressionTask) */
 	task_priority_set(RT_TASKID, RT_PRIO);
 	rv = task_priority_get();
 	if (rv != RT_PRIO) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-		          RT_PRIO, rv);
+				 RT_PRIO, rv);
 		return TC_FAIL;
-		}
+	}
 
 
-    /* Lower the priority of the helper task (HelperTask) */
+	/* Lower the priority of the helper task (HelperTask) */
 	task_priority_set(HT_TASKID, HT_PRIO + 5);
 	task_sem_give(HT_SEM);
 	task_sem_take_wait(RT_SEM);
 	if (helperData != HT_PRIO + 5) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-		          HT_PRIO + 5, helperData);
+				 HT_PRIO + 5, helperData);
 		return TC_FAIL;
-		}
+	}
 
-    /* Raise the priority of the helper task (HelperTask) */
+	/* Raise the priority of the helper task (HelperTask) */
 	task_priority_set(HT_TASKID, HT_PRIO - 5);
 	task_sem_give(HT_SEM);
 	task_sem_take_wait(RT_SEM);
 	if (helperData != HT_PRIO - 5) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-		          HT_PRIO - 5, helperData);
+				 HT_PRIO - 5, helperData);
 		return TC_FAIL;
-		}
+	}
 
 
-    /* Restore the priority of the helper task (HelperTask) */
+	/* Restore the priority of the helper task (HelperTask) */
 	task_priority_set(HT_TASKID, HT_PRIO);
 	task_sem_give(HT_SEM);
 	task_sem_take_wait(RT_SEM);
 	if (helperData != HT_PRIO) {
 		TC_ERROR("Expected priority to be changed to %d, not %d\n",
-		          HT_PRIO, helperData);
+				 HT_PRIO, helperData);
 		return TC_FAIL;
-		}
+	}
 
 	return TC_PASS;
 }
@@ -289,7 +289,7 @@ void helperTaskSleepTest(void)
 
 	firstTick = task_tick_get_32();
 	while (mainTaskNotReady) {
-		}
+	}
 	helperData = task_tick_get_32() - firstTick;
 
 	task_sem_give(RT_SEM);
@@ -308,7 +308,7 @@ int taskSleepTest(void)
 
 	tick = task_tick_get_32();           /* Busy wait to align */
 	while (tick == task_tick_get_32()) {   /* to tick boundary */
-		}
+	}
 
 	task_sem_give(HT_SEM);
 
@@ -319,9 +319,9 @@ int taskSleepTest(void)
 
 	if (helperData != SLEEP_TIME) {
 		TC_ERROR("task_sleep() slept for %d ticks, not %d\n",
-		          helperData, SLEEP_TIME);
+				 helperData, SLEEP_TIME);
 		return TC_FAIL;
-		}
+	}
 
 	return TC_PASS;
 }
@@ -341,7 +341,7 @@ void helperTaskYieldTest(void)
 	for (i = 0; i < 5; i++) {
 		helperData++;
 		task_yield();
-		}
+	}
 
 	task_sem_give(RT_SEM);
 }
@@ -360,7 +360,7 @@ int taskYieldTest(void)
 
 	helperData = 0;
 
-    /* 1st raise the priority of the helper task */
+	/* 1st raise the priority of the helper task */
 	task_priority_set(HT_TASKID, RT_PRIO);
 	task_sem_give(HT_SEM);
 
@@ -369,16 +369,16 @@ int taskYieldTest(void)
 		task_yield();
 
 		if (helperData == prevHelperData) {
-		    TC_ERROR("Iter %d.  helperData did not change (%d) \n",
-		              i + 1, helperData);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("Iter %d.  helperData did not change (%d) \n",
+					 i + 1, helperData);
+			return TC_FAIL;
 		}
+	}
 
-    /* Restore helper task priority */
+	/* Restore helper task priority */
 	task_priority_set(HT_TASKID, HT_PRIO);
 
-    /* Ensure that the helper task finishes */
+	/* Ensure that the helper task finishes */
 	task_sem_take_wait(RT_SEM);
 
 	return TC_PASS;
@@ -424,7 +424,7 @@ int taskSuspendTest(void)
 	if (prevHelperData != helperData) {
 		TC_ERROR("Helper task did not suspend!\n");
 		return TC_FAIL;
-		}
+	}
 
 	task_resume(HT_TASKID);
 	task_sleep(SLEEP_TIME);
@@ -432,7 +432,7 @@ int taskSuspendTest(void)
 	if (prevHelperData == helperData) {
 		TC_ERROR("Helper task did not resume!\n");
 		return TC_FAIL;
-		}
+	}
 
 	task_sem_give(HT_SEM);
 	return TC_PASS;
@@ -454,7 +454,7 @@ void HelperTask(void)
 	if (rv != TC_PASS) {
 		tcRC = TC_FAIL;
 		return;
-		}
+	}
 	task_sem_give(RT_SEM);
 
 	task_sem_take_wait(HT_SEM);
@@ -462,7 +462,7 @@ void HelperTask(void)
 	if (rv != TC_PASS) {
 		tcRC = TC_FAIL;
 		return;
-		}
+	}
 	task_sem_give(RT_SEM);
 
 	helperTaskSetPrioTest();
@@ -496,7 +496,7 @@ void RegressionTask(void)
 	if (rv != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
-		}
+	}
 
 	task_sem_give(HT_SEM);
 	task_sem_take_wait(RT_SEM);
@@ -506,7 +506,7 @@ void RegressionTask(void)
 	if (rv != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
-		}
+	}
 
 	task_sem_give(HT_SEM);
 	task_sem_take_wait(RT_SEM);
@@ -515,25 +515,25 @@ void RegressionTask(void)
 	if (taskSetPrioTest() != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
-		}
+	}
 
 	TC_PRINT("Testing task_sleep()\n");
 	if (taskSleepTest() != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
-		}
+	}
 
 	TC_PRINT("Testing task_yield()\n");
 	if (taskYieldTest() != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
-		}
+	}
 
 	TC_PRINT("Testing task_suspend() and task_resume()\n");
 	if (taskSuspendTest() != TC_PASS) {
 		tcRC = TC_FAIL;
 		goto errorReturn;
-		}
+	}
 
 errorReturn:
 	TC_END_RESULT(tcRC);

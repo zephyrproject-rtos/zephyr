@@ -665,7 +665,7 @@ struct _pci_msi_hdr {
 		struct {
 			/* offset 04:			  */
 			uint32_t addr;      /*   message address register	  */
-					    /* offset 08:			  */
+						/* offset 08:			  */
 			uint32_t data : 16; /*   message data register
 					       */
 			uint32_t spare
@@ -1017,7 +1017,7 @@ extern int pci_config_ext_cap_ptr_find(
 				     /* Fixed addr */
 #define HT_MSI_FIXED_ADDR 0x00000000FEE00000ULL
 #define HT_MSI_ADDR_LO 0x04 /* Offset to low addr bits */
-			    /* Low address bit mask */
+				/* Low address bit mask */
 #define HT_MSI_ADDR_LO_MASK 0xFFF00000
 #define HT_MSI_ADDR_HI 0x08	  /* Offset to high addr bits */
 #define HT_CAPTYPE_DIRECT_ROUTE 0xB0 /* Direct routing configuration */
@@ -1045,7 +1045,7 @@ extern int pci_config_ext_cap_ptr_find(
 #define PCIE_ATS_MAX_QDEP 32	/* Max Invalidate Queue Depth */
 #define PCIE_ATS_CTRL 0x06	  /* ATS Control Register */
 #define PCIE_ATS_CTRL_ENABLE 0x8000 /* ATS Enable */
-				    /* Smallest Translation Unit */
+					/* Smallest Translation Unit */
 #define PCIE_ATS_CTRL_STU(x) ((x) & 0x1f)
 #define PCIE_ATS_MIN_STU 12 /* shift of minimum STU block */
 

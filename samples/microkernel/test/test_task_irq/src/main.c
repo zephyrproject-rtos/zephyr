@@ -64,10 +64,10 @@ static ksem_t rdySem = SEM_RDY;
 */
 
 void taskAMain(void)
-	{
+{
 	extern int taskA(ksem_t semRdy);
 	task_sem_give(resultSems[taskA(rdySem)]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -80,10 +80,10 @@ void taskAMain(void)
 */
 
 void taskBMain(void)
-	{
+{
 	extern int taskB(ksem_t semRdy);
 	task_sem_give(resultSems[taskB(rdySem)]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -96,29 +96,30 @@ void taskBMain(void)
 * RETURNS: N/A
 */
 void registerWait(void)
-	{
+{
 	extern void raiseInt(uint8_t id);
 	int tasksDone;
 	int irq_obj;
 
-    /* Wait for the 2 tasks to finish registering their IRQ objects*/
+	/* Wait for the 2 tasks to finish registering their IRQ objects*/
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS - 1; tasksDone++) {
 		if (task_sem_take_wait_timeout(SEM_RDY, TIMEOUT) != RC_OK) {
-		    TC_ERROR("Monitor task timed out\n");
-		    task_sem_give(resultSems[TC_FAIL]);
-		    return;
-		    }
+			TC_ERROR("Monitor task timed out\n");
+			task_sem_give(resultSems[TC_FAIL]);
+			return;
 		}
+	}
 
 	TC_PRINT("Generating interrupts for all allocated IRQ objects...\n");
 	for (irq_obj = 0; irq_obj < NUM_TASK_IRQS; irq_obj++) {
-	if (task_irq_object[irq_obj].irq != INVALID_VECTOR)
-	    raiseInt((uint8_t)task_irq_object[irq_obj].vector);
+		if (task_irq_object[irq_obj].irq != INVALID_VECTOR) {
+			raiseInt((uint8_t)task_irq_object[irq_obj].vector);
 		}
+	}
 
 	task_sem_give(resultSems[TC_PASS]);
-	}
+}
 
 /*******************************************************************************
 *
@@ -131,7 +132,7 @@ void registerWait(void)
 */
 
 void MonitorTaskEntry(void)
-	{
+{
 	extern struct task_irq_info task_irq_object[NUM_TASK_IRQS];
 	ksem_t result;
 	int tasksDone;
@@ -139,24 +140,24 @@ void MonitorTaskEntry(void)
 	PRINT_DATA("Starting task level interrupt handling tests\n");
 	PRINT_LINE;
 
-    /*
-     * the various test tasks start executing automatically;
-     * wait for all tasks to complete or a failure to occur,
-     * then issue the appropriate test case summary message
-     */
+	/*
+	 * the various test tasks start executing automatically;
+	 * wait for all tasks to complete or a failure to occur,
+	 * then issue the appropriate test case summary message
+	 */
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
 		result = task_sem_group_take_wait_timeout(resultSems, TIMEOUT);
 		if (result != resultSems[TC_PASS]) {
-		    if (result != resultSems[TC_FAIL]) {
-		        TC_ERROR("Monitor task timed out\n");
-		        }
-		    TC_END_RESULT(TC_FAIL);
-		    TC_END_REPORT(TC_FAIL);
-		    return;
-		    }
+			if (result != resultSems[TC_FAIL]) {
+				TC_ERROR("Monitor task timed out\n");
+			}
+			TC_END_RESULT(TC_FAIL);
+			TC_END_REPORT(TC_FAIL);
+			return;
 		}
+	}
 
 	TC_END_RESULT(TC_PASS);
 	TC_END_REPORT(TC_PASS);
-	}
+}

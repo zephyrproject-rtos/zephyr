@@ -33,23 +33,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void usage(
-	char *progname /* name of the program to use */
-	)
-	{
+/*
+*
+* @param progname   Name of the program to use.
+*
+*/
+
+void usage(char *progname)
+{
 	fprintf(stderr, "Utility converts decimal numbers to hexadecimal\n");
 	fprintf(stderr, "Usage: %s <decimal number>\n", progname);
-	}
+}
 
-int main(
-	int argc,
-	char *argv[]
-	)
-	{
+int main(int argc, char *argv[])
+{
 	if (argc != 2) {
-	usage(argv[0]);
-	return -1;
+		usage(argv[0]);
+		return -1;
 	}
 	printf("%X\n", atoi(argv[1]));
 	return 0;
-	}
+}

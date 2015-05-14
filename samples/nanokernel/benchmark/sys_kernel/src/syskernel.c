@@ -87,13 +87,13 @@ uint32_t tm_off;
  * \NOMANUAL
  */
 void begin_test(void)
-	{
-    /*
-       Invoke bench_test_start in order to be able to use
-       tCheck static variable.
-    */
+{
+	/*
+	 * Invoke bench_test_start in order to be able to use
+	 * tCheck static variable.
+	 */
 	bench_test_start();
-	}
+}
 
 /*******************************************************************************
  *
@@ -101,41 +101,41 @@ void begin_test(void)
  *
  * RETURNS: 1 if success and 0 on failure
  *
+ * @param i   Number of tests.
+ * @param t   Time in ticks for the whole test.
+ *
  * \NOMANUAL
  */
 
-int check_result(
-	int i, /* number of tests */
-	uint32_t t /* time in ticks for the whole test */
-	)
-	{
-    /*
-       bench_test_end checks tCheck static variable.
-       bench_test_start modifies it
-    */
+int check_result(int i, uint32_t t)
+{
+	/*
+	 * bench_test_end checks tCheck static variable.
+	 * bench_test_start modifies it
+	 */
 	if (bench_test_end() != 0) {
-	fprintf(output_file, sz_case_result_fmt, sz_fail);
-	fprintf(output_file, sz_case_details_fmt,
-		 "timer tick happened. Results are inaccurate");
-	fprintf(output_file, sz_case_end_fmt);
-	return 0;
+		fprintf(output_file, sz_case_result_fmt, sz_fail);
+		fprintf(output_file, sz_case_details_fmt,
+				"timer tick happened. Results are inaccurate");
+		fprintf(output_file, sz_case_end_fmt);
+		return 0;
 	}
 	if (i != NUMBER_OF_LOOPS) {
-	fprintf(output_file, sz_case_result_fmt, sz_fail);
-	fprintf(output_file, sz_case_details_fmt, "loop counter = ");
-	fprintf(output_file, "%i !!!", i);
-	fprintf(output_file, sz_case_end_fmt);
-	return 0;
+		fprintf(output_file, sz_case_result_fmt, sz_fail);
+		fprintf(output_file, sz_case_details_fmt, "loop counter = ");
+		fprintf(output_file, "%i !!!", i);
+		fprintf(output_file, sz_case_end_fmt);
+		return 0;
 	}
 	fprintf(output_file, sz_case_result_fmt, sz_success);
 	fprintf(output_file, sz_case_details_fmt,
-	     "Average time for 1 iteration: ");
+			"Average time for 1 iteration: ");
 	fprintf(output_file, sz_case_timing_fmt,
-	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, NUMBER_OF_LOOPS));
+			SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, NUMBER_OF_LOOPS));
 
 	fprintf(output_file, sz_case_end_fmt);
 	return 1;
-	}
+}
 
 
 /*******************************************************************************
@@ -159,20 +159,20 @@ int kbhit(void)
  *
  * RETURNS: N/A
  *
+ * @param continuously   Run test till the user presses the key.
+ *
  * \NOMANUAL
  */
 
-void init_output(
-	int *continuously /* run test till the user presses the key */
-	)
-	{
+void init_output(int *continuously)
+{
 	ARG_UNUSED(continuously);
 
-    /*
-     * send all printf and fprintf to console
-     */
+	/*
+	 * send all printf and fprintf to console
+	 */
 	output_file = stdout;
-	}
+}
 
 
 /*******************************************************************************
@@ -185,8 +185,8 @@ void init_output(
  */
 
 void output_close(void)
-	{
-	}
+{
+}
 
 /*******************************************************************************
  *
@@ -202,7 +202,7 @@ void SysKernelBench(void)
 #else
 void main(void)
 #endif
-	{
+{
 	int	    continuously = 0;
 	int	    test_result;
 
@@ -210,31 +210,33 @@ void main(void)
 	bench_test_init();
 
 	do {
-	fprintf(output_file, sz_module_title_fmt, "Nanokernel API test");
-	fprintf(output_file, sz_kernel_ver_fmt, kernel_version_get());
-	fprintf(output_file,
-		 "\n\nEach test below are repeated %d times and the average\n"
-		 "time for one iteration is displayed.", NUMBER_OF_LOOPS);
+		fprintf(output_file, sz_module_title_fmt, "Nanokernel API test");
+		fprintf(output_file, sz_kernel_ver_fmt, kernel_version_get());
+		fprintf(output_file,
+				"\n\nEach test below are repeated %d times and the average\n"
+				"time for one iteration is displayed.", NUMBER_OF_LOOPS);
 
-	test_result = 0;
+		test_result = 0;
 
-	test_result += sema_test();
-	test_result += lifo_test();
-	test_result += fifo_test();
-	test_result += stack_test();
+		test_result += sema_test();
+		test_result += lifo_test();
+		test_result += fifo_test();
+		test_result += stack_test();
 
-	if (test_result) {
-	    /* sema, lifo, fifo, stack account for twelve tests in total */
-	    if (test_result == 12)
-		fprintf(output_file, sz_module_result_fmt, sz_success);
-	    else
-		fprintf(output_file, sz_module_result_fmt, sz_partial);
-	    }
-	else
-	    fprintf(output_file, sz_module_result_fmt, sz_fail);
+		if (test_result) {
+			/* sema, lifo, fifo, stack account for twelve tests in total */
+			if (test_result == 12) {
+				fprintf(output_file, sz_module_result_fmt, sz_success);
+			}
+			else {
+				fprintf(output_file, sz_module_result_fmt, sz_partial);
+			}
+		}
+		else {
+			fprintf(output_file, sz_module_result_fmt, sz_fail);
+		}
 
-	}
-	while (continuously && !kbhit());
+	} while (continuously && !kbhit());
 
 	output_close();
-	}
+}

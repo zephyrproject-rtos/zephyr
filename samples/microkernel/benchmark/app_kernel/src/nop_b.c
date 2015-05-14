@@ -48,19 +48,19 @@ extern void _task_nop(void);
  */
 
 void call_test(void)
-	{
+{
 	uint32_t et; /* Elapsed Time */
 	int i;
 
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_NOP_RUNS; i++) {
-	_task_nop();
+		_task_nop();
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
 	PRINT_F(output_file, FORMAT, "minimum VxMicro call time",
-	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_NOP_RUNS));
-	}
+			SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_NOP_RUNS));
+}
 
 #endif /* MICROKERNEL_CALL_BENCH */

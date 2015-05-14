@@ -122,7 +122,7 @@ static void get_options(int argc, char *argv[])
 			exit(-1);
 		}
 	}
-	for(ii = IFILE; ii < NUSERFILES; ii++) {
+	for (ii = IFILE; ii < NUSERFILES; ii++) {
 		if (!filenames[ii]) {
 			usage(SHORT_USAGE);
 			exit(-1);
@@ -139,12 +139,12 @@ static void open_files(void)
 	fds[IFILE] = open_binary(filenames[IFILE], O_RDONLY);
 	fds[OFILE] = open(filenames[OFILE], open_w_flags, open_mode);
 
-	for(ii = 0; ii < NUSERFILES; ii++) {
+	for (ii = 0; ii < NUSERFILES; ii++) {
 		int invalid = fds[ii] == -1;
 		if (invalid) {
 			const char *invalid = filenames[ii];
 			fprintf(stderr, "invalid file %s\n", invalid);
-			for(--ii; ii >= 0; ii--) {
+			for (--ii; ii >= 0; ii--) {
 				close(fds[ii]);
 			}
 			exit(-1);
@@ -229,7 +229,7 @@ static void close_files(void)
 {
 	int ii;
 
-	for(ii = 0; ii < NUSERFILES; ii++) {
+	for (ii = 0; ii < NUSERFILES; ii++) {
 		close(fds[ii]);
 	}
 }

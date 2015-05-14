@@ -60,12 +60,12 @@ static uint32_t timestamp = 0;
 */
 
 static void latencyTestIsr(void *unused)
-	{
+{
 	ARG_UNUSED(unused);
 
 	isr_event_send(EVENT0);
 	timestamp = TIME_STAMP_DELTA_GET(0);
-	}
+}
 
 /*******************************************************************************
  *
@@ -81,12 +81,12 @@ static void latencyTestIsr(void *unused)
  */
 
 void microInt(void)
-	{
+{
 	task_sem_take_wait(INTSEMA);
 	setSwInterrupt(latencyTestIsr);
 	raiseIntFunc();
 	task_suspend(task_id_get());
-	}
+}
 
 /*******************************************************************************
  *
@@ -98,16 +98,16 @@ void microInt(void)
  */
 
 int microIntToTaskEvt(void)
-	{
+{
 	PRINT_FORMAT(" 2- Measure time from ISR to executing a different task"
-		  " (rescheduled)");
+				 " (rescheduled)");
 	TICK_SYNCH();
 	task_sem_give(INTSEMA);
 	task_event_recv_wait(EVENT0);
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	PRINT_FORMAT(" switch time is %lu tcs = %lu nsec",
-		  timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
+				 timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
 	return 0;
-	}
+}
 
 #endif /* CONFIG_MICROKERNEL */

@@ -71,7 +71,7 @@ typedef struct {
 	Elf32_Half	e_shentsize;
 	Elf32_Half	e_shnum;
 	Elf32_Half	e_shstrndx;
-	} Elf32_Ehdr;
+} Elf32_Ehdr;
 
 #define EHDRSZ sizeof(Elf32_Ehdr)
 
@@ -245,7 +245,7 @@ typedef struct {
 	unsigned char	st_info;
 	unsigned char	st_other;
 	Elf32_Half	st_shndx;
-	} Elf32_Sym;
+} Elf32_Sym;
 
 #define STN_UNDEF	0
 
@@ -289,13 +289,13 @@ typedef struct {
 typedef struct {
 	Elf32_Addr	r_offset;
 	Elf32_Word	r_info;
-	} Elf32_Rel;
+} Elf32_Rel;
 
 typedef struct {
 	Elf32_Addr	r_offset;
 	Elf32_Word	r_info;
 	Elf32_Sword	r_addend;
-	} Elf32_Rela;
+} Elf32_Rela;
 
 #define ELF32_R_SYM(info)	((info)>>8)
 #define ELF32_R_TYPE(info)	((unsigned char)(info))
@@ -313,7 +313,7 @@ typedef struct {
 	Elf32_Word	p_memsz;
 	Elf32_Word	p_flags;
 	Elf32_Word	p_align;
-	} Elf32_Phdr;
+} Elf32_Phdr;
 
 #define PHDRSZ sizeof(Elf32_Phdr)
 
@@ -341,10 +341,10 @@ typedef struct {
 typedef struct {
 	Elf32_Sword	d_tag;
 	union {
-	Elf32_Word  d_val;
-	Elf32_Addr  d_ptr;
-		} d_un;
-	} Elf32_Dyn;
+		Elf32_Word  d_val;
+		Elf32_Addr  d_ptr;
+	} d_un;
+} Elf32_Dyn;
 
 #define DT_NULL		0
 #define DT_NEEDED	1

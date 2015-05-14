@@ -148,33 +148,31 @@ extern void event_test(void);
  * is defined in the main file
  */
 
-#define PRINT_F(stream, fmt, ...)			\
-	{							\
+#define PRINT_F(stream, fmt, ...)					\
+{													\
 	snprintf(sline, SLINE_LEN, fmt, ##__VA_ARGS__);	\
-	PRINT_STRING(sline, stream);			\
-	}
+	PRINT_STRING(sline, stream);					\
+}
 
 #define PRINT_OVERFLOW_ERROR()						\
-	PRINT_F(output_file,						\
-	     __FILE__":%d Error: tick occured\n", __LINE__)
+	PRINT_F(output_file, __FILE__":%d Error: tick occured\n", __LINE__)
 
 static inline uint32_t BENCH_START(void)
-	{
+{
 	uint32_t et;
 
 	bench_test_start();
 	et = TIME_STAMP_DELTA_GET(0);
 	return et;
-	}
+}
 
 #define check_result()				\
-	{						\
-	if (bench_test_end() < 0)			\
-	{					\
-	PRINT_OVERFLOW_ERROR();		\
-	return; /* error */			\
-	}					\
-	}
+{									\
+	if (bench_test_end() < 0) {		\
+		PRINT_OVERFLOW_ERROR();		\
+		return; /* error */			\
+	}								\
+}
 
 
 #endif /* _MASTER_H */

@@ -56,7 +56,7 @@ extern uint64_t __main_tsc;  /* timestamp when main() begins executing */
 extern uint64_t __idle_tsc;  /* timestamp when CPU went idle */
 
 void bootTimeTask(void)
-	{
+{
 	uint64_t task_tsc;  /* timestamp at beginning of first task  */
 	uint64_t _start_us; /* being of __start timestamp in us	 */
 	uint64_t main_us;   /* begin of main timestamp in us	 */
@@ -70,7 +70,7 @@ void bootTimeTask(void)
 
 	task_tsc = _NanoTscRead();
 #ifndef  CONFIG_NANOKERNEL
-    /* Go to sleep for 1 tick in order to timestamp when IdleTask halts. */
+	/* Go to sleep for 1 tick in order to timestamp when IdleTask halts. */
 	task_sleep(1);
 #endif /* ! CONFIG_NANOKERNEL */
 
@@ -84,30 +84,30 @@ void bootTimeTask(void)
 	idle_us   =  s_idle_tsc / CONFIG_CPU_CLOCK_FREQ_MHZ;
 #endif
 
-    /* Indicate start for sanity test suite */
+	/* Indicate start for sanity test suite */
 	TC_START("Boot Time Measurement");
 
-    /* Only print lower 32bit of time result */
+	/* Only print lower 32bit of time result */
 #ifdef CONFIG_NANOKERNEL
 	TC_PRINT("NanoKernel Boot Result: Clock Frequency: %d MHz\n",
-		     CONFIG_CPU_CLOCK_FREQ_MHZ);
+			 CONFIG_CPU_CLOCK_FREQ_MHZ);
 #else	/* CONFIG_MICROKERNEL */
 	TC_PRINT("MicroKernel Boot Result: Clock Frequency: %d MHz\n",
-		     CONFIG_CPU_CLOCK_FREQ_MHZ);
+			 CONFIG_CPU_CLOCK_FREQ_MHZ);
 #endif
 	TC_PRINT("__start       : %d cycles, %d us\n",
-	(uint32_t)(__start_tsc & 0xFFFFFFFFULL),
-	(uint32_t) (_start_us  & 0xFFFFFFFFULL));
+			 (uint32_t)(__start_tsc & 0xFFFFFFFFULL),
+			 (uint32_t) (_start_us  & 0xFFFFFFFFULL));
 	TC_PRINT("_start->main(): %d cycles, %d us\n",
-	(uint32_t)(s_main_tsc & 0xFFFFFFFFULL),
-	(uint32_t)  (main_us  & 0xFFFFFFFFULL));
+			 (uint32_t)(s_main_tsc & 0xFFFFFFFFULL),
+			 (uint32_t)  (main_us  & 0xFFFFFFFFULL));
 	TC_PRINT("_start->task  : %d cycles, %d us\n",
-	(uint32_t)(s_task_tsc & 0xFFFFFFFFULL),
-	(uint32_t)  (task_us  & 0xFFFFFFFFULL));
+			 (uint32_t)(s_task_tsc & 0xFFFFFFFFULL),
+			 (uint32_t)  (task_us  & 0xFFFFFFFFULL));
 #ifndef  CONFIG_NANOKERNEL  /* CONFIG_MICROKERNEL */
 	TC_PRINT("_start->idle  : %d cycles, %d us\n",
-	(uint32_t)(s_idle_tsc & 0xFFFFFFFFULL),
-	(uint32_t)  (idle_us  & 0xFFFFFFFFULL));
+			 (uint32_t)(s_idle_tsc & 0xFFFFFFFFULL),
+			 (uint32_t)  (idle_us  & 0xFFFFFFFFULL));
 
 #endif
 
@@ -117,7 +117,7 @@ void bootTimeTask(void)
 	TC_END_RESULT(TC_PASS);
 	TC_END_REPORT(TC_PASS);
 
-	}
+}
 
 #ifdef CONFIG_NANOKERNEL
 
@@ -131,13 +131,13 @@ char fiberStack[512];
 */
 
 void main(void)
-	{
-    /* record timestamp for nanokernel's main() function */
+{
+	/* record timestamp for nanokernel's main() function */
 	__main_tsc = _NanoTscRead();
 
-    /* create bootTime fibers */
+	/* create bootTime fibers */
 	task_fiber_start(fiberStack, 512,
-	    (nano_fiber_entry_t) bootTimeTask, 0, 0, 6, 0);
-	}
+					 (nano_fiber_entry_t) bootTimeTask, 0, 0, 6, 0);
+}
 
 #endif /*  CONFIG_NANOKERNEL */

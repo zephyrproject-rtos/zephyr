@@ -46,7 +46,7 @@
  */
 
 void memorymap_test(void)
-	{
+{
 	uint32_t et; /* elapsed time */
 	int i;
 	void* p;
@@ -54,14 +54,14 @@ void memorymap_test(void)
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_MAP_RUNS; i++) {
-	task_mem_map_alloc_wait(MAP1, &p);
-	task_mem_map_free(MAP1, &p);
+		task_mem_map_alloc_wait(MAP1, &p);
+		task_mem_map_free(MAP1, &p);
 	}
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
 	PRINT_F(output_file, FORMAT, "average alloc and dealloc memory page",
-	     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MAP_RUNS)));
-	}
+			SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MAP_RUNS)));
+}
 
 #endif /* MEMMAP_BENCH */

@@ -85,10 +85,10 @@ void check_input(const char *name, const char *input);
 void printLoop(const char *name)
 {
 	while (count < 6) {
-        /* A short input string to check_input.  It will pass. */
+		/* A short input string to check_input.  It will pass. */
 		check_input(name, "Stack ok");
 		count++;
-	    }
+	}
 }
 
 /*******************************************************************************
@@ -109,7 +109,7 @@ void printLoop(const char *name)
 
 void check_input(const char *name, const char *input)
 {
-    /* Stack will overflow when input is more than 16 characters */
+	/* Stack will overflow when input is more than 16 characters */
 	char buf[16];
 
 	strcpy(buf, input);
@@ -135,12 +135,11 @@ void fiber1(void)
 #endif /* ! CONFIG_MICROKERNEL */
 {
 	TC_PRINT("Starts %s\n", __func__);
-	check_input(__func__,
-		       "Input string is too long and stack overflowed!\n");
-    /*
-     * Expect this task to terminate due to stack check fail and will not
-     * execute pass here.
-     */
+	check_input(__func__, "Input string is too long and stack overflowed!\n");
+	/*
+	 * Expect this task to terminate due to stack check fail and will not
+	 * execute pass here.
+	 */
 	printLoop(__func__);
 
 	tcRC = TC_FAIL;
@@ -168,17 +167,17 @@ void main(void)
 	TC_PRINT("Starts %s\n", __func__);
 
 #ifdef CONFIG_MICROKERNEL
-    /* Start task */
+	/* Start task */
 	task_start(ALTERNATETASK);       /* refer to prj.vpf file */
 #else
-    /* Start fiber */
+	/* Start fiber */
 	task_fiber_start(&fiberStack[0], STACKSIZE,
-		                (nano_fiber_entry_t) fiber1, 0, 0, 7, 0);
+					 (nano_fiber_entry_t) fiber1, 0, 0, 7, 0);
 #endif /* ! CONFIG_MICROKERNEL */
 
 	if (tcRC == TC_FAIL) {
 		goto errorExit;
-		}
+	}
 
 	printLoop(__func__);
 

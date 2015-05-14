@@ -82,14 +82,14 @@ BSP-specific timestamp support for the tickless idle test.
 */
 
 void _TimestampOpen(void)
-	{
-    /* QEMU does not currently support the 32-bit timer modes of the GPTM */
+{
+	/* QEMU does not currently support the 32-bit timer modes of the GPTM */
 	printk("WARNING! Timestamp is not supported for this target!\n");
 
-    /* enable timer access */
+	/* enable timer access */
 	_CLKGATECTRL |= _CLKGATECTRL_TIMESTAMP_EN;
 
-    /* minimum 3 clk delay is required before timer register access */
+	/* minimum 3 clk delay is required before timer register access */
 	task_sleep(3);
 
 	_TIMESTAMP_CTRL = 0x0;  /* disable/reset timer */
@@ -100,7 +100,7 @@ void _TimestampOpen(void)
 	_TIMESTAMP_ICLEAR = 0x70F;  /* clear all interrupt status */
 
 	_TIMESTAMP_CTRL = 0x1;  /* enable timer */
-	}
+}
 
 /*******************************************************************************
 *
@@ -114,30 +114,30 @@ void _TimestampOpen(void)
 */
 
 uint32_t _TimestampRead(void)
-	{
+{
 	static uint32_t lastTimerVal = 0;
 	static uint32_t cnt = 0;
 	uint32_t timerVal = _TIMESTAMP_VAL;
 
-    /* handle rollover for every other read (end of sleep) */
+	/* handle rollover for every other read (end of sleep) */
 
 	if ((cnt % 2) && (timerVal > lastTimerVal)) {
-	lastTimerVal = timerVal;
+		lastTimerVal = timerVal;
 
-	/* convert to extended up-counter value */
-	timerVal = _TIMESTAMP_EXT + (_TIMESTAMP_MAX - timerVal);
+		/* convert to extended up-counter value */
+		timerVal = _TIMESTAMP_EXT + (_TIMESTAMP_MAX - timerVal);
 	}
 	else {
-	lastTimerVal = timerVal;
+		lastTimerVal = timerVal;
 
-	/* convert to up-counter value */
-	timerVal = _TIMESTAMP_MAX - timerVal;
+		/* convert to up-counter value */
+		timerVal = _TIMESTAMP_MAX - timerVal;
 	}
 
 	cnt++;
 
 	return timerVal;
-	}
+}
 
 /*******************************************************************************
 *
@@ -151,15 +151,15 @@ uint32_t _TimestampRead(void)
 */
 
 void _TimestampClose(void)
-	{
+{
 
-    /* disable/reset timer */
+	/* disable/reset timer */
 	_TIMESTAMP_CTRL = 0x0;
 	_TIMESTAMP_CFG = 0x0;
 
-    /* disable timer access */
+	/* disable timer access */
 	_CLKGATECTRL &= ~_CLKGATECTRL_TIMESTAMP_EN;
-	}
+}
 
 #elif defined(CONFIG_BSP_FSL_FRDM_K64F)
 /* Freescale FRDM-K64F target - use RTC (prescale value) */
@@ -198,11 +198,11 @@ void _TimestampClose(void)
 */
 
 void _TimestampOpen(void)
-	{
-    /* enable timer access */
+{
+	/* enable timer access */
 	_CLKGATECTRL |= _CLKGATECTRL_TIMESTAMP_EN;
 
-    /* set 32 KHz RTC clk */
+	/* set 32 KHz RTC clk */
 	_SYSOPTCTRL2 |= _SYSOPTCTRL2_32KHZRTCCLK;
 
 	_TIMESTAMP_STATUS = 0x0;  /* disable counter */
@@ -215,13 +215,13 @@ void _TimestampOpen(void)
 	_TIMESTAMP_WACCESS = 0xFF;  /* allow register write access */
 	_TIMESTAMP_IMASK = 0x0;  /* mask all timer interrupts */
 
-    /* minimum 0.3 sec delay required for oscillator stabilization */
+	/* minimum 0.3 sec delay required for oscillator stabilization */
 	task_sleep(300000/sys_clock_us_per_tick);
 
 	_TIMESTAMP_VAL = 0x0;  /* clear invalid time flag in status register */
 
 	_TIMESTAMP_STATUS = 0x10;  /* enable counter */
-	}
+}
 
 /*******************************************************************************
 *
@@ -235,30 +235,30 @@ void _TimestampOpen(void)
 */
 
 uint32_t _TimestampRead(void)
-	{
+{
 	static uint32_t lastPrescale = 0;
 	static uint32_t cnt = 0;
 	uint32_t prescale1 = _TIMESTAMP_PRESCALE;
 	uint32_t prescale2 = _TIMESTAMP_PRESCALE;
 
-    /* ensure a valid reading */
+	/* ensure a valid reading */
 
 	while (prescale1 != prescale2) {
 		prescale1 = _TIMESTAMP_PRESCALE;
 		prescale2 = _TIMESTAMP_PRESCALE;
-		}
+	}
 
-    /* handle prescale rollover @ 0x8000 for every other read (end of sleep) */
+	/* handle prescale rollover @ 0x8000 for every other read (end of sleep) */
 
 	if ((cnt % 2) && (prescale1 < lastPrescale)) {
 		prescale1 += 0x8000;
-		}
+	}
 
 	lastPrescale = prescale2;
 	cnt++;
 
 	return prescale1;
-	}
+}
 
 /*******************************************************************************
 *
@@ -272,10 +272,10 @@ uint32_t _TimestampRead(void)
 */
 
 void _TimestampClose(void)
-	{
+{
 	_TIMESTAMP_STATUS = 0x0;  /* disable counter */
 	_TIMESTAMP_CTRL = 0x0;  /* disable oscillator */
-	}
+}
 
 #else
 #error "Unknown BSP"

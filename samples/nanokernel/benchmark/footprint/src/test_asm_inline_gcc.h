@@ -42,7 +42,7 @@ static inline void isr_dummy(void)
 	extern void _IntEnt(void);
 	extern void _IntExit(void);
 
-        /* compiler-generated preamble pushes & modifies EBP */
+	/* compiler-generated preamble pushes & modifies EBP */
 	__asm__ volatile (
 		"pop     %%ebp;\n\t"
 		"call    _IntEnt;\n\t"

@@ -58,43 +58,46 @@ This modules tests the following secure routines:
  */
 
 void MainTask(void)
-	{
+{
 	int result;
-    /* wait for the first task to start */
+	/* wait for the first task to start */
 	result = task_sem_take_wait_timeout(SEMA1, WAIT_TOUT);
 	if (result != RC_OK) {
-	TC_ERROR("Test task 1 did not start properly\n");
-	goto fail;
-	}
-    /* now we check the first task to perform the test and die */
-	result = task_sem_take_wait_timeout(SEMA1, WAIT_TOUT);
-	if (result == RC_TIME) {
-	TC_PRINT("As expected, test task 1 did not continue operating \n");
-	TC_PRINT("after calling memcpy_s with incorrect parameters\n");
-	}
-	else {
-	TC_ERROR("Test task 1 unexpectedly continued\n"
-		  "after calling memcpy_s with incorrect parameters\n");
-	goto fail;
+		TC_ERROR("Test task 1 did not start properly\n");
+		goto fail;
 	}
 
-    /* wait for the second task to start */
-	result = task_sem_take_wait_timeout(SEMA2, WAIT_TOUT);
-	if (result != RC_OK) {
-	TC_ERROR("Test task 2 did not start properly\n");
-	goto fail;
-	}
-    /* now we check the second task to perform the test and die */
-	result = task_sem_take_wait_timeout(SEMA2, WAIT_TOUT);
+	/* now we check the first task to perform the test and die */
+	result = task_sem_take_wait_timeout(SEMA1, WAIT_TOUT);
 	if (result == RC_TIME) {
-	TC_PRINT("As expected, test task 2 did not continue operating \n");
-	TC_PRINT("after calling strcpy_s with incorrect parameters\n");
+		TC_PRINT("As expected, test task 1 did not continue operating \n");
+		TC_PRINT("after calling memcpy_s with incorrect parameters\n");
 	}
 	else {
-	TC_ERROR("Test task 2 unexpectedly continued\n"
-		  "after calling memcpy_s with incorrect parameters\n");
-	goto fail;
+		TC_ERROR("Test task 1 unexpectedly continued\n"
+				 "after calling memcpy_s with incorrect parameters\n");
+		goto fail;
 	}
+
+	/* wait for the second task to start */
+	result = task_sem_take_wait_timeout(SEMA2, WAIT_TOUT);
+	if (result != RC_OK) {
+		TC_ERROR("Test task 2 did not start properly\n");
+		goto fail;
+	}
+
+	/* now we check the second task to perform the test and die */
+	result = task_sem_take_wait_timeout(SEMA2, WAIT_TOUT);
+	if (result == RC_TIME) {
+		TC_PRINT("As expected, test task 2 did not continue operating \n");
+		TC_PRINT("after calling strcpy_s with incorrect parameters\n");
+	}
+	else {
+		TC_ERROR("Test task 2 unexpectedly continued\n"
+				 "after calling memcpy_s with incorrect parameters\n");
+		goto fail;
+	}
+
 	TC_END_RESULT(TC_PASS);
 	TC_END_REPORT(TC_PASS);
 	return;
@@ -102,7 +105,7 @@ void MainTask(void)
 fail:
 	TC_END_RESULT(TC_FAIL);
 	TC_END_REPORT(TC_FAIL);
-	}
+}
 
 /*******************************************************************************
  *
@@ -113,18 +116,19 @@ fail:
  * RETURNS: N/A
  */
 void MemcpyTask(void)
-	{
+{
 	uint8_t buf1[BUFSIZE];
 	uint8_t buf2[BUFSIZE + 1];
 
-    /* do correct memory copy */
+	/* do correct memory copy */
 	k_memcpy_s(buf2, sizeof(buf2), buf1, sizeof(buf1));
 	task_sem_give(SEMA1);
 	task_yield();
-    /* do incorrect memory copy */
+
+	/* do incorrect memory copy */
 	k_memcpy_s(buf1, sizeof(buf1), buf2, sizeof(buf2));
 	task_sem_give(SEMA1);
-	}
+}
 
 /*******************************************************************************
  *
@@ -135,22 +139,22 @@ void MemcpyTask(void)
  * RETURNS: N/A
  */
 void StrcpyTask(void)
-	{
+{
 	char buf1[BUFSIZE];
-	char buf2[BUFSIZE] = { '1', '2', '3', '4', '5',
-			   '6', '7', '8', '9', 0 };
+	char buf2[BUFSIZE] = { '1', '2', '3', '4', '5', '6', '7', '8', '9', 0 };
 
-    /* do correct string copy */
+	/* do correct string copy */
 	strcpy_s(buf1, sizeof(buf1), buf2);
 	task_sem_give(SEMA2);
 	task_yield();
 
-    /*
-     * Make the string not \0 terminated as a result
-     * strcpy_s has to make an error
-     */
+	/*
+	 * Make the string not \0 terminated as a result
+	 * strcpy_s has to make an error
+	 */
 	buf2[BUFSIZE - 1] = '0';
-    /* do incorrect string copy */
+
+	/* do incorrect string copy */
 	strcpy_s(buf1, sizeof(buf1), buf2);
 	task_sem_give(SEMA2);
-	}
+}

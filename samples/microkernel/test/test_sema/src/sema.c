@@ -81,15 +81,15 @@ extern ksem_t semList[];
 */
 
 int simpleSemaTest(void)
-	{
+{
 	int  signalCount;
 	int  i;
 	int  status;
 
-    /*
-     * Signal the semaphore several times from an ISR.  After each signal,
-     * check the signal count.
-     */
+	/*
+	 * Signal the semaphore several times from an ISR.  After each signal,
+	 * check the signal count.
+	 */
 
 	for (i = 0; i < 5; i++) {
 		trigger_isrSemaSignal(simpleSem);
@@ -97,74 +97,74 @@ int simpleSemaTest(void)
 		task_sleep(10);     /* Time for low priority task to run. */
 		signalCount = task_sem_count_get(simpleSem);
 		if (signalCount != (i + 1)) {
-		    TC_ERROR("<signalCount> error.  Expected %d, got %d\n",
-		              i + 1, signalCount);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("<signalCount> error.  Expected %d, got %d\n",
+					 i + 1, signalCount);
+			return TC_FAIL;
 		}
+	}
 
-    /*
-     * Signal the semaphore several times from a task.  After each signal,
-     * check the signal count.
-     */
+	/*
+	 * Signal the semaphore several times from a task.  After each signal,
+	 * check the signal count.
+	 */
 
 	for (i = 5; i < 10; i++) {
 		task_sem_give(simpleSem);
 
 		signalCount = task_sem_count_get(simpleSem);
 		if (signalCount != (i + 1)) {
-		    TC_ERROR("<signalCount> error.  Expected %d, got %d\n",
-		              i + 1, signalCount);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("<signalCount> error.  Expected %d, got %d\n",
+					 i + 1, signalCount);
+			return TC_FAIL;
 		}
+	}
 
-    /*
-     * Test the semaphore without wait.  Check the signal count after each
-     * attempt (it should be decrementing by 1 each time).
-     */
+	/*
+	 * Test the semaphore without wait.  Check the signal count after each
+	 * attempt (it should be decrementing by 1 each time).
+	 */
 
 	for (i = 9; i >= 4; i--) {
 		status = task_sem_take(simpleSem);
 		if (status != RC_OK) {
-		    TC_ERROR("task_sem_take(SIMPLE_SEM) error.  Expected %d, not %d.\n",
-		              RC_OK, status);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_take(SIMPLE_SEM) error.  Expected %d, not %d.\n",
+					 RC_OK, status);
+			return TC_FAIL;
+		}
 
 		signalCount = task_sem_count_get(simpleSem);
 		if (signalCount != i) {
-		    TC_ERROR("<signalCount> error.  Expected %d, not %d\n",
-		              i, signalCount);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("<signalCount> error.  Expected %d, not %d\n",
+					 i, signalCount);
+			return TC_FAIL;
 		}
+	}
 
 	task_sem_reset(simpleSem);
 
-    /*
-     * The semaphore's signal count should now be zero (0).  Test the
-     * semaphore without wait.  It should fail.
-     */
+	/*
+	 * The semaphore's signal count should now be zero (0).  Test the
+	 * semaphore without wait.  It should fail.
+	 */
 
 	for (i = 0; i < 10; i++) {
 		status = task_sem_take(simpleSem);
 		if (status != RC_FAIL) {
-		    TC_ERROR("task_sem_take(SIMPLE_SEM) error.  Expected %d, got %d.\n",
-		              RC_FAIL, status);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_take(SIMPLE_SEM) error.  Expected %d, got %d.\n",
+					 RC_FAIL, status);
+			return TC_FAIL;
+		}
 
 		signalCount = task_sem_count_get(simpleSem);
 		if (signalCount != 0) {
-		    TC_ERROR("<signalCount> error.  Expected %d, not %d\n",
-		              0, signalCount);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("<signalCount> error.  Expected %d, not %d\n",
+					 0, signalCount);
+			return TC_FAIL;
 		}
+	}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -174,55 +174,55 @@ int simpleSemaTest(void)
 */
 
 int simpleSemaWaitTest(void)
-	{
+{
 	int  status;
 	int  i;
 
 	for (i = 0; i < 5; i++) {
-        /* Wait one second for SIMPLE_SEM.  Timeout is expected. */
+		/* Wait one second for SIMPLE_SEM.  Timeout is expected. */
 		status = task_sem_take_wait_timeout(simpleSem, OBJ_TIMEOUT);
 		if (status != RC_TIME) {
-		    TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
-		              RC_TIME, status);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
+					 RC_TIME, status);
+			return TC_FAIL;
 		}
+	}
 
-    /*
-     * Signal the semaphore upon which the alternate task is waiting.  The
-     * alternate task (which is at a lower priority) will cause SIMPLE_SEM
-     * to be signalled, thus waking this task.
-     */
+	/*
+	 * Signal the semaphore upon which the alternate task is waiting.  The
+	 * alternate task (which is at a lower priority) will cause SIMPLE_SEM
+	 * to be signalled, thus waking this task.
+	 */
 
 	task_sem_give(altSem);
 
 	status = task_sem_take_wait_timeout(simpleSem, OBJ_TIMEOUT);
 	if (status != RC_OK) {
 		TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
-		          RC_OK, status);
+				 RC_OK, status);
 		return TC_FAIL;
-		}
+	}
 
-    /*
-     * Note that task_sem_take_wait() has been tested when waking up the alternate
-     * task.  Since previous tests had this task waiting, the alternate task
-     * must have had the time to enter the state where it is waiting for the
-     * ALTTASK_SEM semaphore to be given.  Thus, we do not need to test for
-     * it here.
-     *
-     * Now wait on SIMPLE_SEM again.  This time it will be woken up by an
-     * ISR signalling the semaphore.
-     */
+	/*
+	 * Note that task_sem_take_wait() has been tested when waking up the alternate
+	 * task.  Since previous tests had this task waiting, the alternate task
+	 * must have had the time to enter the state where it is waiting for the
+	 * ALTTASK_SEM semaphore to be given.  Thus, we do not need to test for
+	 * it here.
+	 *
+	 * Now wait on SIMPLE_SEM again.  This time it will be woken up by an
+	 * ISR signalling the semaphore.
+	 */
 
 	status = task_sem_take_wait_timeout(simpleSem, OBJ_TIMEOUT);
 	if (status != RC_OK) {
 		TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
-		          RC_OK, status);
+				 RC_OK, status);
 		return TC_FAIL;
-		}
+	}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -232,77 +232,77 @@ int simpleSemaWaitTest(void)
 */
 
 int simpleGroupTest(void)
-	{
+{
 	int     i;
 	int     j;
 	int     status;
 	ksem_t  value;
 
-    /* Ensure that the semaphores in the group are reset */
+	/* Ensure that the semaphores in the group are reset */
 
 	task_sem_group_reset(semList);
 
 	for (i = 0; semList[i] != ENDLIST; i++) {
 		status = task_sem_count_get(semList[i]);
 		if (status != 0) {
-		    TC_ERROR("task_sem_count_get() returned %d not %d\n", status, 0);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_count_get() returned %d not %d\n", status, 0);
+			return TC_FAIL;
 		}
+	}
 
-    /* Timeout while waiting for a semaphore from the group */
+	/* Timeout while waiting for a semaphore from the group */
 
 	value = task_sem_group_take_wait_timeout(semList, OBJ_TIMEOUT);
 	if (value != ENDLIST) {
 		TC_ERROR("task_sem_group_take_wait_timeout() returned %d not %d\n",
-		          value, ENDGROUP);
+				 value, ENDGROUP);
 		return TC_FAIL;
-		}
+	}
 
-    /* Signal the semaphores in the group */
+	/* Signal the semaphores in the group */
 
 	for (i = 0; i < 10; i++) {
 		task_sem_group_give(semList);
 
 		for (j = 0; semList[j] != ENDLIST; j++) {
-		    status = task_sem_count_get(semList[j]);
-		    if (status != i + 1) {
-		        TC_ERROR("task_sem_count_get() returned %d not %d\n",
-		                  status, i + 1);
-		        return TC_FAIL;
-		        }
-		    }
+			status = task_sem_count_get(semList[j]);
+			if (status != i + 1) {
+				TC_ERROR("task_sem_count_get() returned %d not %d\n",
+						 status, i + 1);
+				return TC_FAIL;
+			}
 		}
+	}
 
-    /* Get the semaphores */
+	/* Get the semaphores */
 
 	for (i = 9; i >= 5; i--) {
 		value = task_sem_group_take_wait_timeout(semList, 0);
 
 		for (j = 0; semList[j] != ENDLIST; j++) {
-		    status = task_sem_count_get(semList[j]);
-		    if (status != (value == semList[j] ? i : 10)) {
-		        TC_ERROR("task_sem_count_get(0x%x) returned %d not %d\n",
-		                  semList[j], status, (value == semList[j]) ? i : 10);
-		        return TC_FAIL;
-		        }
-		    }
+			status = task_sem_count_get(semList[j]);
+			if (status != (value == semList[j] ? i : 10)) {
+				TC_ERROR("task_sem_count_get(0x%x) returned %d not %d\n",
+						 semList[j], status, (value == semList[j]) ? i : 10);
+				return TC_FAIL;
+			}
 		}
+	}
 
-    /* Reset the semaphores in the group */
+	/* Reset the semaphores in the group */
 
 	task_sem_group_reset(semList);
 
 	for (i = 0; semList[i] != ENDLIST; i++) {
 		status = task_sem_count_get(semList[i]);
 		if (status != 0) {
-		    TC_ERROR("task_sem_count_get() returned %d not %d\n", status, 0);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_count_get() returned %d not %d\n", status, 0);
+			return TC_FAIL;
 		}
+	}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -315,57 +315,57 @@ int simpleGroupTest(void)
 */
 
 int simpleGroupWaitTest(void)
-	{
+{
 	int     i;
 	ksem_t  sema;
 
 	task_sem_give(altSem);    /* Wake the alternate task */
 
-    /*
-     * Wait for a semaphore to be signalled by the alternate task.
-     * Each semaphore in the group will be tested.
-     */
+	/*
+	 * Wait for a semaphore to be signalled by the alternate task.
+	 * Each semaphore in the group will be tested.
+	 */
 
 	for (i = 0; semList[i] != ENDLIST; i++) {
 		sema = task_sem_group_take_wait(semList);
 		if (sema != semList[i]) {
-		    TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
-		              (int) semList[i], (int) sema);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
+					 (int) semList[i], (int) sema);
+			return TC_FAIL;
 		}
+	}
 
-    /*
-     * The Alternate Task will signal the semaphore group once.  Note that
-     * when the semaphore group is signalled, the last semaphore in the
-     * group is the value that is returned, not the first.
-     */
+	/*
+	 * The Alternate Task will signal the semaphore group once.  Note that
+	 * when the semaphore group is signalled, the last semaphore in the
+	 * group is the value that is returned, not the first.
+	 */
 
 	for (i = 3; i >= 0; i--) {
 		sema = task_sem_group_take_wait(semList);
 		if (sema != semList[i]) {
-		    TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
-		              (int) semList[3], (int) sema);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
+					 (int) semList[3], (int) sema);
+			return TC_FAIL;
 		}
+	}
 
-    /*
-     * Again wait for a semaphore to be signalled.  This time, the alternate
-     * task will trigger an interrupt that signals the semaphore.
-     */
+	/*
+	 * Again wait for a semaphore to be signalled.  This time, the alternate
+	 * task will trigger an interrupt that signals the semaphore.
+	 */
 
 	for (i = 0; semList[i] != ENDLIST; i++) {
 		sema = task_sem_group_take_wait(semList);
 		if (sema != semList[i]) {
-		    TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
-		              (int) semList[i], (int) sema);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
+					 (int) semList[i], (int) sema);
+			return TC_FAIL;
 		}
+	}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -382,7 +382,7 @@ int simpleGroupWaitTest(void)
 * RETURNS: TC_PASS on success or TC_FAIL on failure
 */
 static int simpleFiberSemTest(void)
-	{
+{
 	int signalCount;
 	int status;
 	int i;
@@ -391,36 +391,36 @@ static int simpleFiberSemTest(void)
 	task_sem_reset(simpleSem);
 	task_sem_group_reset(semList);
 
-    /* let the fiber signal the semaphore and wait on it */
+	/* let the fiber signal the semaphore and wait on it */
 	releaseTestFiber();
 	status = task_sem_take_wait_timeout(simpleSem, OBJ_TIMEOUT);
 	if (status != RC_OK) {
-	TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
-		  RC_OK, status);
-	return TC_FAIL;
+		TC_ERROR("task_sem_take_wait_timeout() error.  Expected %d, got %d\n",
+				 RC_OK, status);
+		return TC_FAIL;
 	}
 
-    /* release the fiber and let it signal the semaphore N_TESTS times */
+	/* release the fiber and let it signal the semaphore N_TESTS times */
 	releaseTestFiber();
 	signalCount = task_sem_count_get(simpleSem);
 	if (signalCount != N_TESTS) {
-	TC_ERROR("<signalCount> error.  Expected %d, got %d\n",
-		  N_TESTS, signalCount);
-	return TC_FAIL;
+		TC_ERROR("<signalCount> error.  Expected %d, got %d\n",
+				 N_TESTS, signalCount);
+		return TC_FAIL;
 	}
 
-    /* wait on the semaphore group while the fiber signals each semaphore in it */
+	/* wait on the semaphore group while the fiber signals each semaphore in it */
 	for (i = 0; semList[i] != ENDLIST; i++) {
-	releaseTestFiber();
+		releaseTestFiber();
 		sema = task_sem_group_take_wait_timeout(semList, OBJ_TIMEOUT);
 		if (sema != semList[i]) {
-		    TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
-		              (int) semList[i], (int) sema);
-		    return TC_FAIL;
-		    }
+			TC_ERROR("task_sem_group_take_wait() error.  Expected %d, not %d\n",
+					 (int) semList[i], (int) sema);
+			return TC_FAIL;
 		}
-	return TC_PASS;
 	}
+	return TC_PASS;
+}
 
 /*******************************************************************************
 *
@@ -430,31 +430,31 @@ static int simpleFiberSemTest(void)
 */
 
 int HighPriTask(void)
-	{
+{
 	int  status;
 
-    /* Wait until task is activated */
+	/* Wait until task is activated */
 	status = task_sem_take_wait(hpSem);
 	if (status != RC_OK) {
 		TC_ERROR("%s priority task failed to wait on %s: %d\n",
-		          "High", "HIGH_PRI_SEM", status);
+				 "High", "HIGH_PRI_SEM", status);
 		return TC_FAIL;
-		}
+	}
 
-    /* Wait on a semaphore along with other tasks */
+	/* Wait on a semaphore along with other tasks */
 	status = task_sem_take_wait(manyBlockSem);
 	if (status != RC_OK) {
 		TC_ERROR("%s priority task failed to wait on %s: %d\n",
-		          "High", "MANY_BLOCKED_SEM", status);
+				 "High", "MANY_BLOCKED_SEM", status);
 		return TC_FAIL;
-		}
+	}
 
-    /* Inform Regression test HP task is no longer blocked on MANY_BLOCKED_SEM*/
+	/* Inform Regression test HP task is no longer blocked on MANY_BLOCKED_SEM*/
 	task_sem_give(blockHpSem);
 
 	return TC_PASS;
 
-	}
+}
 
 /*******************************************************************************
 *
@@ -464,22 +464,22 @@ int HighPriTask(void)
 */
 
 int LowPriTask(void)
-	{
+{
 	int  status;
 
-    /* Wait on a semaphore along with other tasks */
+	/* Wait on a semaphore along with other tasks */
 	status = task_sem_take_wait(manyBlockSem);
 	if (status != RC_OK) {
 		TC_ERROR("%s priority task failed to wait on %s: %d\n",
-		          "Low", "MANY_BLOCKED_SEM", status);
+				 "Low", "MANY_BLOCKED_SEM", status);
 		return TC_FAIL;
-		}
+	}
 
-    /* Inform Regression test LP task is no longer blocked on MANY_BLOCKED_SEM*/
+	/* Inform Regression test LP task is no longer blocked on MANY_BLOCKED_SEM*/
 	task_sem_give(blockLpSem);
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -491,74 +491,74 @@ int LowPriTask(void)
 */
 
 int AlternateTask(void)
-	{
+{
 	int  status;
 	int  i;
 
-    /* Wait until it is time to continue */
+	/* Wait until it is time to continue */
 	status = task_sem_take_wait(altSem);
 	if (status != RC_OK) {
 		TC_ERROR("task_sem_take_wait() error.  Expected %d, got %d\n",
-		          RC_OK, status);
+				 RC_OK, status);
 		return TC_FAIL;
-		}
+	}
 
-    /*
-     * After signalling the semaphore upon which the main (RegressionTask) task
-     * is waiting, control will pass back to the main (RegressionTask) task.
-     */
+	/*
+	 * After signalling the semaphore upon which the main (RegressionTask) task
+	 * is waiting, control will pass back to the main (RegressionTask) task.
+	 */
 
 	task_sem_give(simpleSem);
 
-    /*
-     * Control has returned to the alternate task.  Trigger an ISR that will
-     * signal the semaphore upon which RegressionTask is waiting.
-     */
+	/*
+	 * Control has returned to the alternate task.  Trigger an ISR that will
+	 * signal the semaphore upon which RegressionTask is waiting.
+	 */
 
 	trigger_isrSemaSignal(simpleSem);
 
-    /* Wait for RegressionTask to wake this task up */
+	/* Wait for RegressionTask to wake this task up */
 	status = task_sem_take_wait(altSem);
 	if (status != RC_OK) {
 		TC_ERROR("task_sem_take_wait() error.  Expected %d, got %d",
-		          RC_OK, status);
+				 RC_OK, status);
 		return TC_FAIL;
-		}
+	}
 
-    /* Wait on a semaphore that will have many waiters */
+	/* Wait on a semaphore that will have many waiters */
 	status = task_sem_take_wait(manyBlockSem);
 	if (status != RC_OK) {
 		TC_ERROR("task_sem_take_wait() error.  Expected %d, got %d",
-		          RC_OK, status);
+				 RC_OK, status);
 		return TC_FAIL;
-		}
+	}
 
-    /* Inform Regression test MP task is no longer blocked on MANY_BLOCKED_SEM*/
+	/* Inform Regression test MP task is no longer blocked on MANY_BLOCKED_SEM*/
 	task_sem_give(blockMpSem);
 
-    /* Wait until the alternate task is needed again */
+	/* Wait until the alternate task is needed again */
 	status = task_sem_take_wait(altSem);
 	if (status != RC_OK) {
 		TC_ERROR("task_sem_take_wait() error.  Expected %d, got %d",
-		          RC_OK, status);
+				 RC_OK, status);
 		return TC_FAIL;
-		}
+	}
 
 	for (i = 0; semList[i] != ENDLIST; i++) {
 		task_sem_give(semList[i]);
-        /* Context switch back to Regression Task */
-		}
+		/* Context switch back to Regression Task */
+	}
 
 	task_sem_group_give(semList);
-    /* Context switch back to Regression Task */
+	/* Context switch back to Regression Task */
 
 	for (i = 0; semList[i] != ENDLIST; i++) {
 		trigger_isrSemaSignal(semList[i]);
-        /* Context switch back to Regression Task */
-		}
+		/* Context switch back to Regression Task */
+	}
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -570,7 +570,7 @@ int AlternateTask(void)
 */
 
 int RegressionTask(void)
-	{
+{
 	int  tcRC;
 	int  value;
 	ksem_t semBlockList[4];
@@ -580,31 +580,31 @@ int RegressionTask(void)
 	semBlockList[2] = blockLpSem;
 	semBlockList[3] = ENDLIST;
 
-    /* Signal a semaphore that has no waiting tasks. */
+	/* Signal a semaphore that has no waiting tasks. */
 	TC_PRINT("Signal and test a semaphore without blocking\n");
 	tcRC = simpleSemaTest();
 	if (tcRC != TC_PASS) {
 		return TC_FAIL;
-		}
+	}
 
-    /* Wait on a semaphore. */
+	/* Wait on a semaphore. */
 	TC_PRINT("Signal and test a semaphore with blocking\n");
 	tcRC = simpleSemaWaitTest();
 	if (tcRC != TC_PASS) {
-	return TC_FAIL;
-		}
+		return TC_FAIL;
+	}
 
-    /*
-     * Have many tasks wait on a semaphore (MANY_BLOCKED_SEM).  They will
-     * block in the following order:
-     *    LowPriorityTask    (low priority)
-     *    HighPriorityTask   (high priority)
-     *    AlternateTask      (medium priority)
-     *
-     * When the semaphore (MANY_BLOCKED_SEM) is signalled, HighPriorityTask
-     * will be woken first.
-     *
-     */
+	/*
+	 * Have many tasks wait on a semaphore (MANY_BLOCKED_SEM).  They will
+	 * block in the following order:
+	 *    LowPriorityTask    (low priority)
+	 *    HighPriorityTask   (high priority)
+	 *    AlternateTask      (medium priority)
+	 *
+	 * When the semaphore (MANY_BLOCKED_SEM) is signalled, HighPriorityTask
+	 * will be woken first.
+	 *
+	 */
 
 	TC_PRINT("Testing many tasks blocked on the same semaphore\n");
 
@@ -619,18 +619,18 @@ int RegressionTask(void)
 	value = task_sem_group_take_wait_timeout(semBlockList, OBJ_TIMEOUT);
 	if (value != blockHpSem) {
 		TC_ERROR("%s priority task did not get semaphore: 0x%x\n",
-		          "High", value);
+				 "High", value);
 		return TC_FAIL;
-		}
+	}
 
 	task_sem_give(manyBlockSem);
 	task_sleep(OBJ_TIMEOUT);    /* Ensure medium priority task can run */
 	value = task_sem_group_take_wait_timeout(semBlockList, OBJ_TIMEOUT);
 	if (value != blockMpSem) {
 		TC_ERROR("%s priority task did not get semaphore: 0x%x\n",
-		          "Medium", value);
+				 "Medium", value);
 		return TC_FAIL;
-		}
+	}
 
 	task_sem_give(manyBlockSem);
 
@@ -639,35 +639,35 @@ int RegressionTask(void)
 	value = task_sem_group_take_wait_timeout(semBlockList, OBJ_TIMEOUT);
 	if (value != blockLpSem) {
 		TC_ERROR("%s priority task did not get semaphore: 0x%x\n",
-		          "Low", value);
+				 "Low", value);
 		return TC_FAIL;
-		}
+	}
 
 	value = task_sem_group_take_wait_timeout(semBlockList, OBJ_TIMEOUT);
 	if (value != ENDLIST) {
 		TC_ERROR("Group test Expecting ENDLIST, but got 0x%x\n",
-		          value);
+				 value);
 		return TC_FAIL;
-		}
+	}
 
 
 	TC_PRINT("Testing semaphore groups without blocking\n");
 	tcRC = simpleGroupTest();
 	if (tcRC != TC_PASS) {
-	return TC_FAIL;
-		}
+		return TC_FAIL;
+	}
 
 	TC_PRINT("Testing semaphore groups with blocking\n");
 	tcRC = simpleGroupWaitTest();
 	if (tcRC != TC_PASS) {
-	return TC_FAIL;
-		}
+		return TC_FAIL;
+	}
 
 	TC_PRINT("Testing semaphore release by fiber\n");
 	tcRC = simpleFiberSemTest();
 	if (tcRC != TC_PASS) {
-	return TC_FAIL;
-		}
+		return TC_FAIL;
+	}
 
 	return TC_PASS;
-	}
+}

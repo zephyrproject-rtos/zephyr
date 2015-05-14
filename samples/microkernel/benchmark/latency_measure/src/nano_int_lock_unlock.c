@@ -59,48 +59,48 @@ static uint32_t timestamp = 0;
  */
 
 int nanoIntLockUnlock(void)
-	{
+{
 	int i;
 	unsigned int mask;
 
 	PRINT_FORMAT(" 5- Measure average time to lock then unlock interrupts");
 	PRINT_FORMAT(" 5.1- When each lock and unlock is executed as a function"
-		  " call");
+				 " call");
 	bench_test_start();
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i < NTESTS; i++) {
-	mask = irq_lock();
-	irq_unlock(mask);
+		mask = irq_lock();
+		irq_unlock(mask);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
-	PRINT_FORMAT(" Average time for lock then unlock "
-		      "is %lu tcs = %lu nsec",
-		      timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, NTESTS));
+		PRINT_FORMAT(" Average time for lock then unlock "
+			"is %lu tcs = %lu nsec",
+			timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, NTESTS));
 	}
 	else {
-	errorCount++;
-	PRINT_OVERFLOW_ERROR();
+		errorCount++;
+		PRINT_OVERFLOW_ERROR();
 	}
 
 	PRINT_FORMAT(" ");
 	PRINT_FORMAT(" 5.2- When each lock and unlock is executed as inline"
-		  " function call");
+		" function call");
 	bench_test_start();
 	timestamp = TIME_STAMP_DELTA_GET(0);
 	for (i = 0; i < NTESTS; i++) {
-	mask = irq_lock_inline();
-	irq_unlock_inline(mask);
+		mask = irq_lock_inline();
+		irq_unlock_inline(mask);
 	}
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	if (bench_test_end() == 0) {
-	PRINT_FORMAT(" Average time for lock then unlock "
-		      "is %lu tcs = %lu nsec",
-		      timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, NTESTS));
+		PRINT_FORMAT(" Average time for lock then unlock "
+			"is %lu tcs = %lu nsec",
+			timestamp / NTESTS, SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, NTESTS));
 	}
 	else {
-	errorCount++;
-	PRINT_OVERFLOW_ERROR();
+		errorCount++;
+		PRINT_OVERFLOW_ERROR();
 	}
 	return 0;
-	}
+}

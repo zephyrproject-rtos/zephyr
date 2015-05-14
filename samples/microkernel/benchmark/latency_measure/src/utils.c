@@ -73,13 +73,13 @@ char tmpString[TMP_STRING_SIZE];
  */
 
 int initSwInterrupt(ptestIsr pIsrHdlr)
-	{
+{
 	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, pIsrHdlr,
 				(void *) 0, isrLatencyHandlerStub);
 	pcurrIsrFunc = pIsrHdlr;
 
 	return vector;
-	}
+}
 
 /*******************************************************************************
  *
@@ -95,10 +95,10 @@ int initSwInterrupt(ptestIsr pIsrHdlr)
  */
 
 void setSwInterrupt(ptestIsr pIsrHdlr)
-	{
+{
 	irq_handler_set(vector, pcurrIsrFunc, pIsrHdlr, (void *)0);
 	pcurrIsrFunc = pIsrHdlr;
-	}
+}
 
 /*******************************************************************************
  *
@@ -114,6 +114,6 @@ void setSwInterrupt(ptestIsr pIsrHdlr)
  * \NOMANUAL
  */
 void raiseIntFunc(void)
-	{
+{
 	raiseInt(vector);
-	}
+}

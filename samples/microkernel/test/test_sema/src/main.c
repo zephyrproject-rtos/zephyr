@@ -249,22 +249,22 @@ void MonitorTaskEntry(void)
 	PRINT_DATA("Starting semaphore tests\n");
 	PRINT_LINE;
 
-    /*
-     * the various test tasks start executing automatically;
-     * wait for all tasks to complete or a failure to occur,
-     * then issue the appropriate test case summary message
-     */
+	/*
+	 * the various test tasks start executing automatically;
+	 * wait for all tasks to complete or a failure to occur,
+	 * then issue the appropriate test case summary message
+	 */
 
 	for (tasksDone = 0; tasksDone < NUM_TEST_TASKS; tasksDone++) {
-	result = task_sem_group_take_wait_timeout(resultSems, SECONDS(60));
-	if (result != resultSems[TC_PASS]) {
-	    if (result != resultSems[TC_FAIL]) {
-		TC_ERROR("Monitor task timed out\n");
+		result = task_sem_group_take_wait_timeout(resultSems, SECONDS(60));
+		if (result != resultSems[TC_PASS]) {
+			if (result != resultSems[TC_FAIL]) {
+				TC_ERROR("Monitor task timed out\n");
+			}
+			TC_END_RESULT(TC_FAIL);
+			TC_END_REPORT(TC_FAIL);
+			return;
 		}
-	    TC_END_RESULT(TC_FAIL);
-	    TC_END_REPORT(TC_FAIL);
-	    return;
-	    }
 	}
 
 	TC_END_RESULT(TC_PASS);

@@ -71,30 +71,28 @@ kmutex_t forks[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4, 
 *
 * myPrint - print a philosophers state
 *
+* @param id    Philosopher ID.
+* @param str   EATING or THINKING.
+*
 * RETURNS: N/A
 */
 
-static void myPrint
-	(
-	int   id,    /* philosopher ID */
-	char *str    /* EATING or THINKING */
-	)
-	{
+static void myPrint(int id, char *str)
+{
 	PRINTF("\x1b[%d;%dHPhilosopher %d %s\n", id + 1, 1, id, str);
-	}
+}
 
 /*******************************************************************************
 *
 * myDelay - wait for a number of ticks to elapse
 *
+* @param ticks   Number of ticks to delay.
+*
 * RETURNS: N/A
 */
 
-static void myDelay
-	(
-	int ticks    /* # of ticks to delay */
-	)
-	{
+static void myDelay(int ticks)
+{
 #ifdef CONFIG_MICROKERNEL
 	task_sleep(ticks);
 #else
@@ -104,7 +102,7 @@ static void myDelay
 	nano_fiber_timer_start(&timer, ticks);
 	nano_fiber_timer_wait(&timer);
 #endif
-	}
+}
 
 /*******************************************************************************
 *
@@ -117,7 +115,7 @@ static void myDelay
 */
 
 void philEntry(void)
-	{
+{
 #ifdef CONFIG_NANOKERNEL
 	struct nano_sem *f1;	/* fork #1 */
 	struct nano_sem *f2;	/* fork #2 */
@@ -125,33 +123,33 @@ void philEntry(void)
 	kmutex_t f1;		/* fork #1 */
 	kmutex_t f2;		/* fork #2 */
 #endif
-	static int myId;                /* next philosopher ID */
-	int pri = irq_lock();    /* interrupt lock level */
-	int id = myId++;                /* current philosopher ID */
+	static int myId;        /* next philosopher ID */
+	int pri = irq_lock();   /* interrupt lock level */
+	int id = myId++;        /* current philosopher ID */
 
 	irq_unlock(pri);
 
-    /* always take the lowest fork first */
+	/* always take the lowest fork first */
 	if ((id+1) != N_PHILOSOPHERS) {
-	f1 = FORK(id);
-	f2 = FORK(id + 1);
+		f1 = FORK(id);
+		f2 = FORK(id + 1);
 	}
 	else {
-	f1 = FORK(0);
-	f2 = FORK(id);
+		f1 = FORK(0);
+		f2 = FORK(id);
 	}
 
 	while (1) {
-	TAKE(f1);
-	TAKE(f2);
+		TAKE(f1);
+		TAKE(f2);
 
 		PRINT(id, "EATING  ");
-	RANDDELAY(id);
+		RANDDELAY(id);
 
-	GIVE(f2);
-	GIVE(f1);
+		GIVE(f2);
+		GIVE(f1);
 
 		PRINT(id, "THINKING");
-	RANDDELAY(id);
+		RANDDELAY(id);
 	}
-	}
+}

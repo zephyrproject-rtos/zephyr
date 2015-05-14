@@ -248,7 +248,7 @@ void _int_latency_stop(void);
 
 static inline __attribute__((always_inline))
 	unsigned int irq_lock_inline(void)
-	{
+{
 	unsigned int key = _do_irq_lock_inline();
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
@@ -256,7 +256,7 @@ static inline __attribute__((always_inline))
 #endif
 
 	return key;
-	}
+}
 
 
 /*******************************************************************************
@@ -276,15 +276,16 @@ static inline __attribute__((always_inline))
 
 static inline __attribute__((always_inline))
 	void irq_unlock_inline(unsigned int key)
-	{
-	if (!(key & 0x200))
+{
+	if (!(key & 0x200)) {
 		return;
+	}
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	_int_latency_stop();
 #endif
 	_do_irq_unlock_inline();
 	return;
-	}
+}
 #endif /* CONFIG_NO_ISRS */
 
 /* interrupt/exception/error related definitions */

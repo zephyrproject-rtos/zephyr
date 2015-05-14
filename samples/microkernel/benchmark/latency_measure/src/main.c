@@ -54,7 +54,7 @@ int errorCount = 0; /* track number of errors */
  */
 
 void nanoTest(void)
-	{
+{
 	PRINT_NANO_BANNER();
 	PRINT_TIME_BANNER();
 
@@ -72,7 +72,7 @@ void nanoTest(void)
 
 	nanoIntLockUnlock();
 	printDashLine();
-	}
+}
 
 #ifdef CONFIG_NANOKERNEL
 /*******************************************************************************
@@ -85,14 +85,14 @@ void nanoTest(void)
  */
 
 void main(void)
-	{
+{
 	bench_test_init();
 
 	nanoTest();
 
 	PRINT_END_BANNER();
 	TC_END_REPORT(errorCount);
-	}
+}
 
 #else
 
@@ -112,7 +112,7 @@ void microTaskSwitchYield(void);
  */
 
 void microTest(void)
-	{
+{
 	PRINT_MICRO_BANNER();
 	PRINT_TIME_BANNER();
 
@@ -130,7 +130,7 @@ void microTest(void)
 
 	microTaskSwitchYield();
 	printDashLine();
-	}
+}
 
 /*******************************************************************************
  *
@@ -142,7 +142,7 @@ void microTest(void)
  */
 
 void microMain(void)
-	{
+{
 	bench_test_init();
 
 	nanoTest();
@@ -150,5 +150,5 @@ void microMain(void)
 
 	PRINT_END_BANNER();
 	TC_END_REPORT(errorCount);
-	}
+}
 #endif /* CONFIG_NANOKERNEL */

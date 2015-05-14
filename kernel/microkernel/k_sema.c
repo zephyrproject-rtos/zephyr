@@ -66,10 +66,12 @@ static void signal_semaphore(int n, struct sem_struct *S)
 #endif
 		{
 			S->Level--;
-			if (Y)
+			if (Y) {
 				Y->Forw = X;
-			else
+			}
+			else {
 				S->Waiters = X;
+			}
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.timer) {
 				force_timeout(A);
@@ -77,7 +79,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 			} else {
 #endif
 				A->Time.rcode = RC_OK;
-					reset_state_bit(A->Ctxt.proc, TF_SEMA);
+				reset_state_bit(A->Ctxt.proc, TF_SEMA);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			}
 #endif
@@ -90,8 +92,9 @@ static void signal_semaphore(int n, struct sem_struct *S)
 			SENDARGS(Y);
 			Y = A;
 		}
-		else
+		else {
 			Y = A;
+		}
 		A = X;
 	}
 }
@@ -108,8 +111,9 @@ void _k_sem_group_wait(struct k_args *R)
 	struct k_args *A = R->Ctxt.args;
 
 	FREEARGS(R);
-	if (--(A->Args.s1.nsem) == 0)
+	if (--(A->Args.s1.nsem) == 0) {
 		reset_state_bit(A->Ctxt.proc, TF_LIST);
+	}
 }
 
 /*******************************************************************************
@@ -132,10 +136,12 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 
 	while (X && (X->Prio <= A->Prio)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
-			if (Y)
+			if (Y) {
 				Y->Forw = X->Forw;
-			else
+			}
+			else {
 				S->Waiters = X->Forw;
+			}
 			if (X->Comm == WAITMREQ || X->Comm == WAITMRDY) {
 				if (X->Comm == WAITMRDY) {
 					/* obtain struct k_args of waiting task */
@@ -150,18 +156,19 @@ void _k_sem_group_wait_cancel(struct k_args *A)
  * timer expiry occurs between the update of the packet state
  * and the processing of the WAITMRDY packet.
  */
-					if (unlikely(waitTaskArgs->Args.s1
-								  .sema ==
-							  ENDLIST))
-						waitTaskArgs->Args.s1.sema =
-							A->Args.s1.sema;
-					else
+					if (unlikely(waitTaskArgs->Args.s1.sema ==
+						ENDLIST)) {
+						waitTaskArgs->Args.s1.sema = A->Args.s1.sema;
+					}
+					else {
 						signal_semaphore(1, S);
+					}
 				}
 
 				_k_sem_group_wait(X);
-			} else
+			} else {
 				FREEARGS(X); /* ERROR */
+			}
 			FREEARGS(A);
 			return;
 		} else {
@@ -170,10 +177,12 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 		}
 	}
 	A->Forw = X;
-	if (Y)
+	if (Y) {
 		Y->Forw = A;
-	else
+	}
+	else {
 		S->Waiters = A;
+	}
 }
 
 /*******************************************************************************
@@ -195,14 +204,17 @@ void _k_sem_group_wait_accept(struct k_args *A)
 
 	while (X && (X->Prio <= A->Prio)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
-			if (Y)
+			if (Y) {
 				Y->Forw = X->Forw;
-			else
+			}
+			else {
 				S->Waiters = X->Forw;
+			}
 			if (X->Comm == WAITMRDY) {
-					_k_sem_group_wait(X);
-			} else
+				_k_sem_group_wait(X);
+			} else {
 				FREEARGS(X); /* ERROR */
+			}
 			FREEARGS(A);
 			return;
 		} else {
@@ -225,8 +237,9 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 	ksem_t *L;
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	if (A->Time.timer)
+	if (A->Time.timer) {
 		FREETIMER(A->Time.timer);
+	}
 #endif
 
 	L = A->Args.s1.list;
@@ -262,8 +275,9 @@ void _k_sem_group_ready(struct k_args *R)
 		A->Args.s1.sema = R->Args.s1.sema;
 		A->Comm = WAITMTMO;
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-		if (A->Time.timer)
+		if (A->Time.timer) {
 			force_timeout(A);
+		}
 		else
 #endif
 			_k_sem_group_wait_timeout(A);
@@ -281,15 +295,16 @@ void _k_sem_group_ready(struct k_args *R)
 void _k_sem_wait_reply(struct k_args *A)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	if (A->Time.timer)
+	if (A->Time.timer) {
 		FREETIMER(A->Time.timer);
+	}
 	if (A->Comm == WAITSTMO) {
 		REMOVE_ELM(A);
 		A->Time.rcode = RC_TIME;
 	} else
 #endif
 		A->Time.rcode = RC_OK;
-   	reset_state_bit(A->Ctxt.proc, TF_SEMA);
+	reset_state_bit(A->Ctxt.proc, TF_SEMA);
 }
 
 /*******************************************************************************
@@ -308,14 +323,17 @@ void _k_sem_group_wait_request(struct k_args *A)
 
 	while (X && (X->Prio <= A->Prio)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
-			if (Y)
+			if (Y) {
 				Y->Forw = X->Forw;
-			else
+			}
+			else {
 				S->Waiters = X->Forw;
+			}
 			if (X->Comm == WAITMCAN) {
 				_k_sem_group_wait(X);
-			} else
+			} else {
 				FREEARGS(X); /* ERROR */
+			}
 			FREEARGS(A);
 			return;
 		} else {
@@ -324,10 +342,12 @@ void _k_sem_group_wait_request(struct k_args *A)
 		}
 	}
 	A->Forw = X;
-	if (Y)
+	if (Y) {
 		Y->Forw = A;
-	else
+	}
+	else {
 		S->Waiters = A;
+	}
 	signal_semaphore(0, S);
 }
 
@@ -349,8 +369,9 @@ void _k_sem_group_wait_any(struct k_args *A)
 	A->Args.s1.sema = ENDLIST;
 	A->Args.s1.nsem = 0;
 
-	if (*L == ENDLIST)
+	if (*L == ENDLIST) {
 		return;
+	}
 
 	while (*L != ENDLIST) {
 		struct k_args *R;
@@ -369,8 +390,9 @@ void _k_sem_group_wait_any(struct k_args *A)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (A->Time.ticks != TICKS_NONE) {
-		if (A->Time.ticks == TICKS_UNLIMITED)
+		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;
+		}
 		else {
 			A->Comm = WAITMTMO;
 			enlist_timeout(A);
@@ -403,16 +425,18 @@ void _k_sem_wait_request(struct k_args *A)
 		set_state_bit(_k_current_task, TF_SEMA);
 		INSERT_ELM(S->Waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-		if (A->Time.ticks == TICKS_UNLIMITED)
+		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;
+		}
 		else {
 			A->Comm = WAITSTMO;
 			enlist_timeout(A);
 		}
 #endif
 		return;
-	} else
+	} else {
 		A->Time.rcode = RC_FAIL;
+	}
 }
 
 /*******************************************************************************
@@ -422,12 +446,13 @@ void _k_sem_wait_request(struct k_args *A)
 * This routine tests a semaphore to see if it has been signaled.  If the signal
 * count is greater than zero, it is decremented.
 *
+* @param sema   Semaphore to test.
+* @param time   Maximum number of ticks to wait.
+*
 * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
 */
 
-int _task_sem_take(ksem_t sema, /* semaphore to test */
-		 int32_t time /* maximum number of ticks to wait */
-		 )
+int _task_sem_take(ksem_t sema, int32_t time)
 {
 	struct k_args A;
 
@@ -448,12 +473,13 @@ int _task_sem_take(ksem_t sema, /* semaphore to test */
 * It returns the ID of the first semaphore in the group whose signal count is
 * greater than zero, and decrements the signal count.
 *
+* @param group   Group of semaphores to test.
+* @param time    Maximum number of ticks to wait.
+*
 * RETURNS: N/A
 */
 
-ksem_t _task_sem_group_take(ksemg_t group, /* group of semaphores to test */
-			 int32_t time   /* maximum number of ticks to wait */
-			 )
+ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
 {
 	struct k_args A;
 
@@ -490,8 +516,9 @@ void _k_sem_group_signal(struct k_args *A)
 {
 	ksem_t *L = A->Args.s1.list;
 
-	while ((A->Args.s1.sema = *L++) != ENDLIST)
+	while ((A->Args.s1.sema = *L++) != ENDLIST) {
 		_k_sem_signal(A);
+	}
 }
 
 /*******************************************************************************
@@ -500,11 +527,12 @@ void _k_sem_group_signal(struct k_args *A)
 *
 * This routine signals the specified semaphore.
 *
+* @param sema   Semaphore to signal.
+*
 * RETURNS: N/A
 */
 
-void task_sem_give(ksem_t sema /* semaphore to signal */
-		   )
+void task_sem_give(ksem_t sema)
 {
 	struct k_args A;
 
@@ -526,11 +554,12 @@ void task_sem_give(ksem_t sema /* semaphore to signal */
 * Using task_sem_group_give() is faster than using multiple single signals,
 * and ensures all signals take place before other tasks run.
 *
+* @param group   Group of semaphores to signal.
+*
 * RETURNS: N/A
 */
 
-void task_sem_group_give(ksemg_t group /* group of semaphores to signal */
-			)
+void task_sem_group_give(ksemg_t group)
 {
 	struct k_args A;
 
@@ -562,13 +591,13 @@ FUNC_ALIAS(isr_sem_give, fiber_sem_give, void);
 * that is implicitly released once the command packet has been processed.
 * To signal a semaphore from a task, task_sem_give() should be used instead.
 *
+* @param sema   Semaphore to signal.
+* @param pSet   Pointer to command packet set.
+*
 * RETURNS: N/A
 */
 
-void isr_sem_give(ksem_t sema, /* semaphore to signal */
-					  struct cmd_pkt_set *pSet /* ptr to command
-							       packet set */
-					  )
+void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
 {
 	struct k_args *pCommand; /* ptr to command packet */
 
@@ -610,8 +639,9 @@ void _k_sem_group_reset(struct k_args *A)
 {
 	ksem_t *L = A->Args.s1.list;
 
-	while ((A->Args.s1.sema = *L++) != ENDLIST)
+	while ((A->Args.s1.sema = *L++) != ENDLIST) {
 		_k_sem_reset(A);
+	}
 }
 
 /*******************************************************************************
@@ -620,11 +650,12 @@ void _k_sem_group_reset(struct k_args *A)
 *
 * This routine resets the signal count of the specified semaphore to zero.
 *
+* @param sema   Semaphore to reset.
+*
 * RETURNS: N/A
 */
 
-void task_sem_reset(ksem_t sema /* semaphore to reset */
-		  )
+void task_sem_reset(ksem_t sema)
 {
 	struct k_args A;
 
@@ -641,11 +672,12 @@ void task_sem_reset(ksem_t sema /* semaphore to reset */
 * group is an array of semaphore names terminated by the predefined constant
 * ENDLIST.
 *
+* @param group   Group of semaphores to reset.
+*
 * RETURNS: N/A
 */
 
-void task_sem_group_reset(ksemg_t group /* group of semaphores to reset */
-		       )
+void task_sem_group_reset(ksemg_t group)
 {
 	struct k_args A;
 
@@ -677,11 +709,12 @@ void _k_sem_inquiry(struct k_args *A)
 *
 * This routine reads the signal count of the specified semaphore.
 *
+* @param sema   Semaphore to query.
+*
 * RETURNS: signal count
 */
 
-int task_sem_count_get(ksem_t sema /* semaphore to query */
-		  )
+int task_sem_count_get(ksem_t sema)
 {
 	struct k_args A;
 

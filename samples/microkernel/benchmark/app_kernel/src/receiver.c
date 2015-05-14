@@ -41,9 +41,7 @@
 
 #include "receiver.h"
 
-char data_recv[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)] = {
-	0
-	};
+char data_recv[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)] = { 0 };
 
 void dequtask(void);
 void waittask(void);
@@ -60,8 +58,8 @@ void piperecvtask(void);
  */
 
 void recvtask(void)
-	{
-    /* order must be compatible with master.c ! */
+{
+	/* order must be compatible with master.c ! */
 #ifdef FIFO_BENCH
 	task_sem_take_wait(STARTRCV);
 	dequtask();
@@ -78,4 +76,4 @@ void recvtask(void)
 	task_sem_take_wait(STARTRCV);
 	piperecvtask();
 #endif
-	}
+}

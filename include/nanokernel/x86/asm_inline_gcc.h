@@ -407,16 +407,16 @@ static inline void k_memcpy(void *_d, const void *_s, size_t _n)
 	/* _d & _s must be aligned to use movsl. */
 #ifndef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
 	if ((_n&3) == 0) {
-	/* _n is multiple of words, much more efficient to do word moves */
-	_n >>= 2;
-	__asm__ volatile ("rep movsl" :
+		/* _n is multiple of words, much more efficient to do word moves */
+		_n >>= 2;
+		__asm__ volatile ("rep movsl" :
 			  "+D" (_d), "+S" (_s), "+c" (_n) :
 			  :
 			  "cc", "memory");
 	} else
 #endif /* CONFIG_UNALIGNED_WRITE_UNSUPPORTED */
 	{
-	__asm__ volatile ("rep movsb" :
+		__asm__ volatile ("rep movsb" :
 			  "+D" (_d), "+S" (_s), "+c" (_n) :
 			  :
 			  "cc", "memory");
@@ -440,11 +440,11 @@ static inline void k_memset(void *_d, int _v, size_t _n)
 	/* _d must be aligned to use stosl. */
 #ifndef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
 	if ((_n&3) == 0) {
-	/* _n is multiple of words, much more efficient to do word stores */
-	_n >>= 2;
-	_v |= _v<<8;
-	_v |= _v<<16;
-	__asm__ volatile ("rep stosl" :
+		/* _n is multiple of words, much more efficient to do word stores */
+		_n >>= 2;
+		_v |= _v<<8;
+		_v |= _v<<16;
+		__asm__ volatile ("rep stosl" :
 			  "+D" (_d), "+c" (_n) :
 			  "a" (_v) :
 			  "cc", "memory");

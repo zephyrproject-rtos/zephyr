@@ -198,8 +198,8 @@ static Elf32_Shdr      *shdr;    /* pointer to array ELF section headers */
 static void swabElfHdr(Elf32_Ehdr *pHdrToSwab)
 {
 	if (swabRequired == 0) {
-	   return;  /* do nothing */
-	   }
+		return;  /* do nothing */
+	}
 
 	pHdrToSwab->e_type		= SWAB_Elf32_Half(pHdrToSwab->e_type);
 	pHdrToSwab->e_machine	= SWAB_Elf32_Half(pHdrToSwab->e_machine);
@@ -226,8 +226,8 @@ static void swabElfHdr(Elf32_Ehdr *pHdrToSwab)
 static void swabElfSectionHdr(Elf32_Shdr *pHdrToSwab)
 {
 	if (swabRequired == 0) {
-	   return;  /* do nothing */
-	   }
+		return;  /* do nothing */
+	}
 
 	pHdrToSwab->sh_name		= SWAB_Elf32_Word(pHdrToSwab->sh_name);
 	pHdrToSwab->sh_type		= SWAB_Elf32_Word(pHdrToSwab->sh_type);
@@ -252,8 +252,8 @@ static void swabElfSectionHdr(Elf32_Shdr *pHdrToSwab)
 static void swabElfSym(Elf32_Sym *pHdrToSwab)
 {
 	if (swabRequired == 0) {
-	   return;  /* do nothing */
-	   }
+		return;  /* do nothing */
+	}
 
 	pHdrToSwab->st_name		= SWAB_Elf32_Word(pHdrToSwab->st_name);
 	pHdrToSwab->st_value	= SWAB_Elf32_Addr(pHdrToSwab->st_value);
@@ -265,11 +265,12 @@ static void swabElfSym(Elf32_Sym *pHdrToSwab)
 *
 * ehdrLoad - load the ELF header
 *
+* @param fd   File descriptor of file from which to read.
+*
 * RETURNS: 0 on success, -1 on failure
 */
 
-static int ehdrLoad(int fd  /* file descriptor of file from which to read */
-					)
+static int ehdrLoad(int fd)
 {
 	unsigned  ix = 0x12345678;  /* used to auto-detect endian-ness */
 	size_t    nBytes;           /* number of bytes read from file */
@@ -280,37 +281,37 @@ static int ehdrLoad(int fd  /* file descriptor of file from which to read */
 	if (nBytes != sizeof(ehdr)) {
 		fprintf(stderr, "Failed to read ELF header\n");
 		return -1;
-		}
-
-    /* perform some rudimentary ELF file validation */
-
-	if (strncmp((char *)ehdr.e_ident, ELFMAG, 4) != 0) {
-	fprintf(stderr, "Input object module not ELF format\n");
-	return -1;
 	}
 
-    /* 64-bit ELF module not supported (for now) */
+	/* perform some rudimentary ELF file validation */
+
+	if (strncmp((char *)ehdr.e_ident, ELFMAG, 4) != 0) {
+		fprintf(stderr, "Input object module not ELF format\n");
+		return -1;
+	}
+
+	/* 64-bit ELF module not supported (for now) */
 
 	if (ehdr.e_ident[EI_CLASS] != ELFCLASS32) {
 	fprintf(stderr, "ELF64 class not supported\n");
-	return -1;
+		return -1;
 	}
 
-    /*
-     * Dynamically determine the endianess of the host (in the absence of
-     * a compile time macro ala _BYTE_ORDER).  The ELF structures will require
-     * byte swapping if the host and target have different byte ordering.
-     */
+	/*
+	 * Dynamically determine the endianess of the host (in the absence of
+	 * a compile time macro ala _BYTE_ORDER).  The ELF structures will require
+	 * byte swapping if the host and target have different byte ordering.
+	 */
 
 	if (((*(char *)&ix == 0x78) && (ehdr.e_ident[EI_DATA] == ELFDATA2MSB)) ||
 		((*(char *)&ix == 0x12) && (ehdr.e_ident[EI_DATA] == ELFDATA2LSB))) {
-	swabRequired = 1;
-	DBG_PRINT("Swab required\n");
+		swabRequired = 1;
+		DBG_PRINT("Swab required\n");
 	}
 
 	swabElfHdr(&ehdr);   /* swap bytes (if required) */
 
-    /* debugging: dump some important ELF header fields */
+	/* debugging: dump some important ELF header fields */
 
 	DBG_PRINT("Elf header Magic = %s\n", ehdr.e_ident);
 	DBG_PRINT("Elf header e_type = %d\n", ehdr.e_type);
@@ -324,11 +325,12 @@ static int ehdrLoad(int fd  /* file descriptor of file from which to read */
 *
 * shdrsLoad - load the section headers
 *
+* @param fd   File descriptor of file from which to read.
+*
 * RETURNS: 0 on success, -1 on failure
 */
 
-int shdrsLoad(int fd  /* file descriptor of file from which to read */
-			  )
+int shdrsLoad(int fd)
 {
 	size_t    nBytes;    /* number of bytes read from file */
 	unsigned  ix;        /* loop index */
@@ -337,21 +339,21 @@ int shdrsLoad(int fd  /* file descriptor of file from which to read */
 	if (shdr == NULL) {
 		fprintf(stderr, "No memory for section headers!\n");
 		return -1;
-		}
+	}
 
-    /* Seek to the start of the table of section headers */
+	/* Seek to the start of the table of section headers */
 	lseek(fd, ehdr.e_shoff, SEEK_SET);
 
 	for (ix = 0; ix < ehdr.e_shnum; ix++) {
-	nBytes = read(fd, &shdr[ix], sizeof(Elf32_Shdr));
-	if (nBytes != sizeof(Elf32_Shdr)) {
-		fprintf(stderr, "Unable to read entire section header (#%d)\n",
-		             ix);
-	    return -1;
-		    }
-
-	swabElfSectionHdr(&shdr[ix]);   /* swap bytes (if required) */
+		nBytes = read(fd, &shdr[ix], sizeof(Elf32_Shdr));
+		if (nBytes != sizeof(Elf32_Shdr)) {
+			fprintf(stderr, "Unable to read entire section header (#%d)\n",
+					ix);
+			return -1;
 		}
+
+		swabElfSectionHdr(&shdr[ix]);   /* swap bytes (if required) */
+	}
 
 	return 0;
 }
@@ -363,23 +365,24 @@ int shdrsLoad(int fd  /* file descriptor of file from which to read */
 * This routine searches the section headers for the symbol table.  There is
 * expected to be only one symbol table in the section headers.
 *
+* @param pSymTblOffset   Pointer to symbol table offset.
+* @param pSymTblSize     Pointer to symbol table size.
+*
 * RETURNS: 0 if found, -1 if not
 */
 
-int symTblFind(unsigned *pSymTblOffset,  /* ptr to symbol table offset */
-			   unsigned *pSymTblSize     /* ptr to symbol table size */
-			   )
+int symTblFind(unsigned *pSymTblOffset, unsigned *pSymTblSize)
 {
 	unsigned  ix;    /* loop index */
 
 	for (ix = 0; ix < ehdr.e_shnum; ++ix) {
-	if (shdr[ix].sh_type == SHT_SYMTAB) {
-	    *pSymTblOffset = shdr[ix].sh_offset;
-	    *pSymTblSize   = shdr[ix].sh_size;
+		if (shdr[ix].sh_type == SHT_SYMTAB) {
+			*pSymTblOffset = shdr[ix].sh_offset;
+			*pSymTblSize   = shdr[ix].sh_size;
 
-		    return 0;
-	    }
+			return 0;
 		}
+	}
 
 	fprintf(stderr, "Object module missing symbol table!\n");
 
@@ -404,28 +407,29 @@ int symTblFind(unsigned *pSymTblOffset,  /* ptr to symbol table offset */
 * 2. If another string table is found, use that only if its section header
 *    index does not match the index for ".shstrtbl" stored in the ELF header.
 *
+* @param pStrTblIx   Pointer to string table's index.
+*
 * RETURNS 0 if found, -1 if not
 */
 
-int strTblFind(unsigned *pStrTblIx  /* ptr to string table's index */
-			   )
+int strTblFind(unsigned *pStrTblIx)
 {
 	unsigned  strTblIx = 0xffffffff;
 	unsigned  ix;
 
 	for (ix = 0; ix < ehdr.e_shnum; ++ix) {
 		if (shdr[ix].sh_type == SHT_STRTAB) {
-		    if ((strTblIx == 0xffffffff) ||
-		        (ix != ehdr.e_shstrndx)) {
-		        strTblIx = ix;
-		        }
-		    }
+			if ((strTblIx == 0xffffffff) ||
+				(ix != ehdr.e_shstrndx)) {
+				strTblIx = ix;
+			}
 		}
+	}
 
 	if (strTblIx == 0xffffffff) {
 		fprintf(stderr, "Object module missing string table!\n");
 		return -1;
-		}
+	}
 
 	*pStrTblIx = strTblIx;
 
@@ -436,25 +440,26 @@ int strTblFind(unsigned *pStrTblIx  /* ptr to string table's index */
 *
 * strTblLoad - load the string table
 *
+* @param fd              File descriptor of file from which to read.
+* @param strTblIx        String table's index.
+* @param ppStringTable   Pointer to ptr to string table.
+*
 * RETURNS: 0 on success, -1 on failure
 */
 
-int strTblLoad(int fd, /* file descriptor of file from which to read */
-			   unsigned strTblIx, /* string table's index */
-			   char **ppStringTable /* ptr to ptr to string table */
-			   )
+int strTblLoad(int fd, unsigned strTblIx, char **ppStringTable)
 {
 	char   *pTable;
 	int     nBytes;
 
 	DBG_PRINT("Allocating %d bytes for string table\n",
-		       shdr[strTblIx].sh_size);
+			   shdr[strTblIx].sh_size);
 
 	pTable = malloc(shdr[strTblIx].sh_size);
 	if (pTable == NULL) {
 		fprintf(stderr, "No memory for string table!");
 		return -1;
-		}
+	}
 
 	lseek(fd, shdr[strTblIx].sh_offset, SEEK_SET);
 
@@ -474,31 +479,32 @@ int strTblLoad(int fd, /* file descriptor of file from which to read */
 *
 * headerPreambleDump - dump the header preamble to the header file
 *
+* @param fp         File pointer to which to write.
+* @param filename   Name of the output file.
+*
 * RETURNS: N/A
 */
 
-void headerPreambleDump(FILE *fp,       /* file pointer to which to write */
-						char *filename  /* name of the output file */
-						)
+void headerPreambleDump(FILE *fp, char *filename)
 {
 	unsigned hash = 5381;      /* hash value */
 	size_t   ix;               /* loop counter */
 	char     fileNameHash[20]; /* '_HGUARD_' + 8 character hash + '\0' */
 
-    /* dump header file preamble1[] */
+	/* dump header file preamble1[] */
 
 	fprintf(fp, preamble1, filename, filename, filename);
 
-    /*
-     * Dump header file preamble2[]. Hash file name into something that
-     * is small enough to be a C macro name and does not have invalid
-     * characters for a macro name to use as a header guard. The result
-     * of the hash should be unique enough for our purposes.
-     */
+	/*
+	 * Dump header file preamble2[]. Hash file name into something that
+	 * is small enough to be a C macro name and does not have invalid
+	 * characters for a macro name to use as a header guard. The result
+	 * of the hash should be unique enough for our purposes.
+	 */
 
 	for (ix = 0; ix < sizeof(filename); ++ix) {
 		hash = (hash * 33) + (unsigned int) filename[ix];
-		}
+	}
 
 	sprintf(fileNameHash, "_HGUARD_%08x", hash);
 	fprintf(fp, preamble2, fileNameHash, fileNameHash);
@@ -508,47 +514,49 @@ void headerPreambleDump(FILE *fp,       /* file pointer to which to write */
 *
 * headerAbsoluteSymbolsDump - dump the absolute symbols to the header file
 *
+* @param fd             File descriptor of file from which to read.
+* @param fp             File pointer to which to write.
+* @param symTblOffset   Symbol table offset.
+* @param symTblSize     Size of the symbol table.
+* @param pStringTable   Pointer to the string table.
+*
 * RETURNS: N/A
 */
 
-void headerAbsoluteSymbolsDump(int fd,   /* file descriptor of file from which to read */
-							   FILE *fp, /* file pointer to which to write */
-							   Elf32_Off symTblOffset, /* symbol table offset */
-							   Elf32_Word symTblSize,  /* size of the symbol table */
-							   char *pStringTable      /* ptr to the string table */
-							   )
+void headerAbsoluteSymbolsDump(int fd, FILE *fp, Elf32_Off symTblOffset,
+							   Elf32_Word symTblSize, char *pStringTable)
 {
 	Elf32_Sym  aSym;     /* absolute symbol */
 	unsigned   ix;       /* loop counter */
 	unsigned   numSyms;  /* number of symbols in the symbol table */
 
-    /* context the symbol table: pick out absolute syms */
+	/* context the symbol table: pick out absolute syms */
 
 	numSyms = symTblSize / sizeof(Elf32_Sym);
 	lseek(fd, symTblOffset, SEEK_SET);
 
 	for (ix = 0; ix < numSyms; ++ix) {
-	/* read in a single symbol structure */
+		/* read in a single symbol structure */
 
-	read(fd, &aSym, sizeof(Elf32_Sym));
+		read(fd, &aSym, sizeof(Elf32_Sym));
 
-	swabElfSym(&aSym);    /* swap bytes (if required) */
+		swabElfSym(&aSym);    /* swap bytes (if required) */
 
-	/*
-	 * Only generate definitions for global absolute symbols
-	 * of the form *_OFFSET
-	 */
+		/*
+		 * Only generate definitions for global absolute symbols
+		 * of the form *_OFFSET
+		 */
 
-	if ((aSym.st_shndx == SHN_ABS) &&
-	    (ELF_ST_BIND(aSym.st_info) == STB_GLOBAL)) {
-	    if ((strstr(&pStringTable[aSym.st_name],
-		                 STRUCT_OFF_SUFFIX) != NULL) ||
-	        (strstr(&pStringTable[aSym.st_name],
-		                 STRUCT_SIZ_SUFFIX) != NULL)) {
-		fprintf(fp, "#define\t%s\t0x%X\n",
-		                 &pStringTable[aSym.st_name], aSym.st_value);
-	        }
-	   }
+		if ((aSym.st_shndx == SHN_ABS) &&
+			(ELF_ST_BIND(aSym.st_info) == STB_GLOBAL)) {
+			if ((strstr(&pStringTable[aSym.st_name],
+				STRUCT_OFF_SUFFIX) != NULL) ||
+				(strstr(&pStringTable[aSym.st_name],
+				STRUCT_SIZ_SUFFIX) != NULL)) {
+				fprintf(fp, "#define\t%s\t0x%X\n",
+						&pStringTable[aSym.st_name], aSym.st_value);
+			}
+		}
 	}
 }
 
@@ -556,11 +564,12 @@ void headerAbsoluteSymbolsDump(int fd,   /* file descriptor of file from which t
 *
 * headerPostscriptDump - dump the header postscript to the header file
 *
+* @param fp   File pointer to which to write.
+*
 * RETURNS: N/A
 */
 
-void headerPostscriptDump(FILE *fp  /* file pointer to which to write */
-						  )
+void headerPostscriptDump(FILE *fp)
 {
 	fputs(postscript, fp);
 }
@@ -586,52 +595,52 @@ int main(int argc, char *argv[])
 	FILE   *outFile = NULL;
 	unsigned    strTblIx;
 
-    /* argument parsing */
+	/* argument parsing */
 
 	if (argc != 5) {
 		fprintf(stderr, usage, argv[0]);
-	goto errorReturn;
+		goto errorReturn;
 	}
 
 	while ((option = getopt(argc, argv, "i:o:")) != -1) {
-	switch (option) {
-	    case 'i':
-	        inFileName = optarg;
-		break;
-	    case 'o':
-		outFileName = optarg;
-		break;
-	    default:
-		fprintf(stderr, usage, argv[0]);
-		goto errorReturn;
-	    }
+		switch (option) {
+		case 'i':
+			inFileName = optarg;
+			break;
+		case 'o':
+			outFileName = optarg;
+			break;
+		default:
+			fprintf(stderr, usage, argv[0]);
+			goto errorReturn;
+		}
 	}
 
-    /* open input object ELF module and output header file */
+	/* open input object ELF module and output header file */
 
 	inFd = open(inFileName, OPEN_FLAGS);
 
 	if (inFd == -1) {
-	fprintf(stderr, "Cannot open input object module");
-	goto errorReturn;
+		fprintf(stderr, "Cannot open input object module");
+		goto errorReturn;
 	}
 
 	outFile = fopen(outFileName, "w");
 
 	if (outFile == NULL) {
-	fprintf(stderr, "Cannot open output header file");
-	goto errorReturn;
+		fprintf(stderr, "Cannot open output header file");
+		goto errorReturn;
 	}
 
-    /*
-     * In the following order, attempt to ...
-     *  1. Load the ELF header
-     *  2. Load the section headers
-     *  3. Find the symbol table
-     *  4. Find the string table
-     *  5. Load the string table
-     * Bail if any of those steps fail.
-     */
+	/*
+	 * In the following order, attempt to ...
+	 *  1. Load the ELF header
+	 *  2. Load the section headers
+	 *  3. Find the symbol table
+	 *  4. Find the string table
+	 *  5. Load the string table
+	 * Bail if any of those steps fail.
+	 */
 
 	if ((ehdrLoad(inFd) != 0) ||
 		(shdrsLoad(inFd) != 0) ||
@@ -639,22 +648,22 @@ int main(int argc, char *argv[])
 		(strTblFind(&strTblIx) != 0) ||
 		(strTblLoad(inFd, strTblIx, &pStringTable) != 0)) {
 		goto errorReturn;
-		}
+	}
 
 
-    /*
-     * Dump the following to the header file ...
-     *  1. Header file preamble
-     *  2. Absolute symbols
-     *  3. Header file postscript
-     */
+	/*
+	 * Dump the following to the header file ...
+	 *  1. Header file preamble
+	 *  2. Absolute symbols
+	 *  3. Header file postscript
+	 */
 
 	headerPreambleDump(outFile, outFileName);
 	headerAbsoluteSymbolsDump(inFd, outFile,
-		                       symTblOffset, symTblSize, pStringTable);
+							  symTblOffset, symTblSize, pStringTable);
 	headerPostscriptDump(outFile);
 
-    /* done: cleanup */
+	/* done: cleanup */
 
 	close(inFd);
 	fclose(outFile);
@@ -666,19 +675,19 @@ int main(int argc, char *argv[])
 errorReturn:
 	if (inFd != -1) {
 		close(inFd);
-		}
+	}
 
 	if (outFile != NULL) {
 		fclose(outFile);
-		}
+	}
 
 	if (shdr != NULL) {
 		free(shdr);
-		}
+	}
 
 	if (pStringTable != NULL) {
 		free(pStringTable);
-		}
+	}
 
 	return 1;
 }

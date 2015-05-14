@@ -165,15 +165,15 @@ char buffer[BUFSIZE];
 
 int memset_test(void)
 {
-	TC_PRINT ("\tmemset ...\t");
+	TC_PRINT("\tmemset ...\t");
 
-	memset (buffer, 'a', BUFSIZE);
+	memset(buffer, 'a', BUFSIZE);
 	if (buffer[0] != 'a' || buffer[BUFSIZE-1] != 'a') {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	}
 
-	TC_PRINT ("passed\n");
+	TC_PRINT("passed\n");
 	return TC_PASS;
 }
 
@@ -186,16 +186,16 @@ int memset_test(void)
 
 int strlen_test(void)
 {
-	TC_PRINT ("\tstrlen ...\t");
+	TC_PRINT("\tstrlen ...\t");
 
-	memset (buffer, '\0', BUFSIZE);
-	memset (buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
+	memset(buffer, '\0', BUFSIZE);
+	memset(buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
 	if (strlen(buffer) != 5) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	}
 
-	TC_PRINT ("passed\n");
+	TC_PRINT("passed\n");
 	return TC_PASS;
 }
 
@@ -206,32 +206,32 @@ int strlen_test(void)
  * RETURNS: TC_PASS or TC_FAIL
  */
 
-int strcmp_test (void)
+int strcmp_test(void)
 {
 	strcpy(buffer, "eeeee");
 
-	TC_PRINT ("\tstrcmp less ...\t");
+	TC_PRINT("\tstrcmp less ...\t");
 	if (strcmp(buffer, "fffff") >= 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	} else {
-		TC_PRINT ("passed\n");
+		TC_PRINT("passed\n");
 	}
 
-	TC_PRINT ("\tstrcmp equal ...\t");
+	TC_PRINT("\tstrcmp equal ...\t");
 	if (strcmp(buffer, "eeeee") != 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	} else {
-		TC_PRINT ("passed\n");
+		TC_PRINT("passed\n");
 	}
 
-	TC_PRINT ("\tstrcmp greater ...\t");
+	TC_PRINT("\tstrcmp greater ...\t");
 	if (strcmp(buffer, "ddddd") <= 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	} else {
-		TC_PRINT ("passed\n");
+		TC_PRINT("passed\n");
 	}
 
 	return TC_PASS;
@@ -244,32 +244,32 @@ int strcmp_test (void)
  * RETURNS: TC_PASS or TC_FAIL
  */
 
-int strncmp_test (void)
+int strncmp_test(void)
 {
 	strncpy(buffer, "eeeeeeeeeeee", BUFSIZE);
 
-	TC_PRINT ("\tstrncmp 0 ...\t");
+	TC_PRINT("\tstrncmp 0 ...\t");
 	if (strncmp(buffer, "fffff", 0) != 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	} else {
-		TC_PRINT ("passed\n");
+		TC_PRINT("passed\n");
 	}
 
-	TC_PRINT ("\tstrncmp 3 ...\t");
+	TC_PRINT("\tstrncmp 3 ...\t");
 	if (strncmp(buffer, "eeeff", 3) != 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	} else {
-		TC_PRINT ("passed\n");
+		TC_PRINT("passed\n");
 	}
 
-	TC_PRINT ("\tstrncmp 10 ...\t");
+	TC_PRINT("\tstrncmp 10 ...\t");
 	if (strncmp(buffer, "eeeeeeeeeeeff", BUFSIZE) != 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	} else {
-		TC_PRINT ("passed\n");
+		TC_PRINT("passed\n");
 	}
 
 	return TC_PASS;
@@ -283,19 +283,19 @@ int strncmp_test (void)
  * RETURNS: TC_PASS or TC_FAIL
  */
 
-int strcpy_test (void)
+int strcpy_test(void)
 {
-	TC_PRINT ("\tstrcpy ...\t");
+	TC_PRINT("\tstrcpy ...\t");
 
-	memset (buffer, '\0', BUFSIZE);
+	memset(buffer, '\0', BUFSIZE);
 	strcpy(buffer, "10 chars!!\0");
 
 	if (strcmp(buffer, "10 chars!!\0") != 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	}
 
-	TC_PRINT ("passed\n");
+	TC_PRINT("passed\n");
 	return TC_PASS;
 }
 
@@ -306,20 +306,20 @@ int strcpy_test (void)
  * RETURNS: TC_PASS or TC_FAIL
  */
 
-int strncpy_test (void)
+int strncpy_test(void)
 {
-	TC_PRINT ("\tstrncpy ...\t");
+	TC_PRINT("\tstrncpy ...\t");
 
-	memset (buffer, '\0', BUFSIZE);
+	memset(buffer, '\0', BUFSIZE);
 	strncpy(buffer, "This is over 10 characters", BUFSIZE);
 
 	/* Purposely different values */
 	if (strncmp(buffer, "This is over 20 characters", BUFSIZE) != 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	}
 
-	TC_PRINT ("passed\n");
+	TC_PRINT("passed\n");
 	return TC_PASS;
 }
 
@@ -330,27 +330,27 @@ int strncpy_test (void)
  * RETURNS: TC_PASS or TC_FAIL
  */
 
-int strchr_test (void)
+int strchr_test(void)
 {
 	char *rs = NULL;
-	TC_PRINT ("\tstrchr ...\t");
+	TC_PRINT("\tstrchr ...\t");
 
-	memset (buffer, '\0', BUFSIZE);
+	memset(buffer, '\0', BUFSIZE);
 	strncpy(buffer, "Copy 10", BUFSIZE);
 
 	rs = strchr(buffer, '1');
 
 	if (!rs) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	}
 
 	if (strncmp(rs, "10", 2) != 0) {
-		TC_PRINT ("failed\n");
+		TC_PRINT("failed\n");
 		return TC_FAIL;
 	}
 
-	TC_PRINT ("passed\n");
+	TC_PRINT("passed\n");
 	return TC_PASS;
 }
 
@@ -366,7 +366,7 @@ int stringTest(void)
 	TC_PRINT("Testing string.h library ...\n");
 
 	if (memset_test() || strlen_test() || strcmp_test() || strcpy_test() ||
-	    strncpy_test() || strncmp_test() || strchr_test()) {
+		strncpy_test() || strncmp_test() || strchr_test()) {
 		return TC_FAIL;
 	}
 
@@ -388,8 +388,8 @@ int RegressionTask(void)
 {
 	TC_PRINT("Validating access to supported libraries\n");
 
-	if (limitsTest () || stdboolTest () || stddefTest () ||
-        stdintTest () || stringTest ()) {
+	if (limitsTest() || stdboolTest() || stddefTest() ||
+		stdintTest() || stringTest()) {
 		TC_PRINT("Library validation failed\n");
 		return TC_FAIL;
 	}

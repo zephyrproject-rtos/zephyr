@@ -97,8 +97,9 @@ size_t __strlen_s(const char *str, size_t maxElem)
 {
 	size_t len = 0; /* the calculated string length */
 
-	if (str == NULL)
+	if (str == NULL) {
 		return 0;
+	}
 
 	while ((len < maxElem) && (str[len] != '\0')) {
 		len++;
@@ -145,12 +146,12 @@ errno_t __strcpy_s(char *dest, size_t nDestElem, const char *src)
 
 	_NanoFatalErrorHandler(_NANO_ERR_INVALID_STRING_OP, &_default_esf);
 
-    /*
-     * the following statement is included in case the compiler
-     * doesn't recognize that _NanoFatalErrorHandler() never returns
-     * and complains about "missing return value for non-void function"
-     * (should be optimized away if compiler recognizes the non-return)
-     */
+	/*
+	 * the following statement is included in case the compiler
+	 * doesn't recognize that _NanoFatalErrorHandler() never returns
+	 * and complains about "missing return value for non-void function"
+	 * (should be optimized away if compiler recognizes the non-return)
+	 */
 
 	return 1;
 }

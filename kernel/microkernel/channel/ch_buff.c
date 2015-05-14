@@ -97,8 +97,7 @@ void BuffReset(struct chbuff *pChBuff)
 	ReadMarkersClear(pChBuff);
 }
 
-void BuffGetFreeSpaceTotal(struct chbuff *pChBuff,
-						 int *piFreeSpaceTotal)
+void BuffGetFreeSpaceTotal(struct chbuff *pChBuff, int *piFreeSpaceTotal)
 {
 	int dummy1, dummy2;
 	*piFreeSpaceTotal = CalcFreeSpace(pChBuff, &dummy1, &dummy2);
@@ -106,10 +105,8 @@ void BuffGetFreeSpaceTotal(struct chbuff *pChBuff,
 	__ASSERT_NO_MSG(dummy2 == pChBuff->iFreeSpaceAWA);
 }
 
-void BuffGetFreeSpace(struct chbuff *pChBuff,
-		      int *piFreeSpaceTotal,
-		      int *piFreeSpaceCont,
-		      int *piFreeSpaceAWA)
+void BuffGetFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceTotal,
+					  int *piFreeSpaceCont, int *piFreeSpaceAWA)
 {
 	int iFreeSpaceCont;
 	int iFreeSpaceAWA;
@@ -124,8 +121,7 @@ void BuffGetFreeSpace(struct chbuff *pChBuff,
 	*piFreeSpaceAWA = pChBuff->iFreeSpaceAWA;
 }
 
-void BuffGetAvailDataTotal(struct chbuff *pChBuff,
-						 int *piAvailDataTotal)
+void BuffGetAvailDataTotal(struct chbuff *pChBuff, int *piAvailDataTotal)
 {
 	int dummy1, dummy2;
 	*piAvailDataTotal = CalcAvailData(pChBuff, &dummy1, &dummy2);
@@ -133,10 +129,8 @@ void BuffGetAvailDataTotal(struct chbuff *pChBuff,
 	__ASSERT_NO_MSG(dummy2 == pChBuff->iAvailDataAWA);
 }
 
-void BuffGetAvailData(struct chbuff *pChBuff,
-		      int *piAvailDataTotal,
-		      int *piAvailDataCont,
-		      int *piAvailDataAWA)
+void BuffGetAvailData(struct chbuff *pChBuff, int *piAvailDataTotal,
+					  int *piAvailDataCont, int *piAvailDataAWA)
 {
 	int iAvailDataCont;
 	int iAvailDataAWA;
@@ -159,23 +153,25 @@ int BuffEnQ(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite)
 {
 	int iTransferID;
 	/*  int ret;*/
-	if (0 == BuffEnQA(pChBuff, iSize, ppWrite, &iTransferID))
+	if (0 == BuffEnQA(pChBuff, iSize, ppWrite, &iTransferID)) {
 		return 0;
-	BuffEnQA_End(pChBuff, iTransferID, iSize /*optional */); /* check ret
-								    value */
+	}
+
+	/* check ret value */
+	BuffEnQA_End(pChBuff, iTransferID, iSize /*optional */);
 	return iSize;
 }
 
-int BuffEnQA(struct chbuff *pChBuff,
-				   int iSize,
-				   unsigned char **ppWrite,
-				   int *piTransferID)
+int BuffEnQA(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite,
+			 int *piTransferID)
 {
-	if (iSize > pChBuff->iFreeSpaceCont)
+	if (iSize > pChBuff->iFreeSpaceCont) {
 		return 0;
+	}
 	*piTransferID = AsyncEnQRegstr(pChBuff, iSize);
-	if (-1 == *piTransferID)
+	if (-1 == *piTransferID) {
 		return 0;
+	}
 
 	*ppWrite = pChBuff->pWrite;
 
@@ -193,19 +189,20 @@ int BuffEnQA(struct chbuff *pChBuff,
 		pChBuff->iFreeSpaceCont -= iSize;
 	}
 
-	if (pChBuff->pWrite == pChBuff->pRead)
+	if (pChBuff->pWrite == pChBuff->pRead) {
 		pChBuff->BuffState = BUFF_FULL;
-	else
+	}
+	else {
 		pChBuff->BuffState = BUFF_OTHER;
+	}
 
 	CHECK_CHBUFF_POINTER(pChBuff->pWrite);
 
 	return iSize;
 }
 
-void BuffEnQA_End(struct chbuff *pChBuff,
-					int iTransferID,
-					int iSize /*optional */)
+void BuffEnQA_End(struct chbuff *pChBuff, int iTransferID,
+				  int iSize /*optional */)
 {
 	ARG_UNUSED(iSize);
 
@@ -228,14 +225,16 @@ int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
 		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingWrites);
 		(pChBuff->iNbrPendingWrites)++;
 		/* pReadGuard changes? */
-		if (NULL == pChBuff->pReadGuard)
+		if (NULL == pChBuff->pReadGuard) {
 			pChBuff->pReadGuard = pChBuff->pWrite;
+		}
 		__ASSERT_NO_MSG(pChBuff->WriteMarkers.aMarkers
-			       [pChBuff->WriteMarkers.iFirstMarker]
-				       .pointer == pChBuff->pReadGuard);
+						[pChBuff->WriteMarkers.iFirstMarker]
+						.pointer == pChBuff->pReadGuard);
 		/* iAWAMarker changes? */
-		if (-1 == pChBuff->WriteMarkers.iAWAMarker && pChBuff->bWriteWA)
+		if (-1 == pChBuff->WriteMarkers.iAWAMarker && pChBuff->bWriteWA) {
 			pChBuff->WriteMarkers.iAWAMarker = i;
+		}
 	}
 	return i;
 }
@@ -249,17 +248,19 @@ void AsyncEnQFinished(struct chbuff *pChBuff, int iTransferID)
 		   int isizeAWA=0; */
 		int iNewFirstMarker =
 			ScanMarkers(&(pChBuff->WriteMarkers),
-				    &(pChBuff->iAvailDataCont),
-				    &(pChBuff->iAvailDataAWA),
-				    &(pChBuff->iNbrPendingWrites));
+						&(pChBuff->iAvailDataCont),
+						&(pChBuff->iAvailDataAWA),
+						&(pChBuff->iNbrPendingWrites));
 		/*pChBuff->iAvailDataCont +=iSizeCont;
 		   pChBuff->iAvailDataAWA +=iSizeAWA; */
-		if (-1 != iNewFirstMarker)
+		if (-1 != iNewFirstMarker) {
 			pChBuff->pReadGuard =
 				pChBuff->WriteMarkers.aMarkers[iNewFirstMarker]
-					.pointer;
-		else
+				.pointer;
+		}
+		else {
 			pChBuff->pReadGuard = NULL;
+		}
 	}
 }
 
@@ -271,27 +272,27 @@ int BuffDeQ(struct chbuff *pChBuff, int iSize, unsigned char **ppRead)
 {
 	int iTransferID;
 	/*  int ret;*/
-	if (0 == BuffDeQA(pChBuff, iSize, ppRead, &iTransferID))
+	if (0 == BuffDeQA(pChBuff, iSize, ppRead, &iTransferID)) {
 		return 0;
+	}
 	BuffDeQA_End(pChBuff, iTransferID, iSize /*optional */);
 	return iSize;
 }
 
-int BuffDeQA(struct chbuff *pChBuff,
-				   int iSize,
-				   unsigned char **ppRead,
-				   int *piTransferID)
+int BuffDeQA(struct chbuff *pChBuff, int iSize, unsigned char **ppRead,
+			 int *piTransferID)
 {
 	/* asynchronous data transfer
-	   read guard pointers must be set
+	 * read guard pointers must be set
 	 */
-	if (iSize >
-	    pChBuff->iAvailDataCont) /* free space is from read to guard
-					pointer/end pointer */
+	if (iSize > pChBuff->iAvailDataCont) {
+		/* free space is from read to guard pointer/end pointer */
 		return 0;
+	}
 	*piTransferID = AsyncDeQRegstr(pChBuff, iSize);
-	if (-1 == *piTransferID)
+	if (-1 == *piTransferID) {
 		return 0;
+	}
 
 	*ppRead = pChBuff->pRead;
 
@@ -309,19 +310,20 @@ int BuffDeQA(struct chbuff *pChBuff,
 		pChBuff->iAvailDataCont -= iSize;
 	}
 
-	if (pChBuff->pWrite == pChBuff->pRead)
+	if (pChBuff->pWrite == pChBuff->pRead) {
 		pChBuff->BuffState = BUFF_EMPTY;
-	else
+	}
+	else {
 		pChBuff->BuffState = BUFF_OTHER;
+	}
 
 	CHECK_CHBUFF_POINTER(pChBuff->pRead);
 
 	return iSize;
 }
 
-void BuffDeQA_End(struct chbuff *pChBuff,
-					int iTransferID,
-					int iSize /*optional */)
+void BuffDeQA_End(struct chbuff *pChBuff, int iTransferID,
+				  int iSize /*optional */)
 {
 	ARG_UNUSED(iSize);
 
@@ -358,14 +360,16 @@ int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
 		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingReads);
 		(pChBuff->iNbrPendingReads)++;
 		/* pWriteGuard changes? */
-		if (NULL == pChBuff->pWriteGuard)
+		if (NULL == pChBuff->pWriteGuard) {
 			pChBuff->pWriteGuard = pChBuff->pRead;
+		}
 		__ASSERT_NO_MSG(pChBuff->ReadMarkers.aMarkers
-			       [pChBuff->ReadMarkers.iFirstMarker]
-				       .pointer == pChBuff->pWriteGuard);
+						[pChBuff->ReadMarkers.iFirstMarker]
+						.pointer == pChBuff->pWriteGuard);
 		/* iAWAMarker changes? */
-		if (-1 == pChBuff->ReadMarkers.iAWAMarker && pChBuff->bReadWA)
+		if (-1 == pChBuff->ReadMarkers.iAWAMarker && pChBuff->bReadWA) {
 			pChBuff->ReadMarkers.iAWAMarker = i;
+		}
 	}
 	return i;
 }
@@ -383,12 +387,14 @@ void AsyncDeQFinished(struct chbuff *pChBuff, int iTransferID)
 						  &(pChBuff->iNbrPendingReads));
 		/*pChBuff->iFreeSpaceCont +=iSizeCont;
 		   pChBuff->iFreeSpaceAWA +=iSizeAWA; */
-		if (-1 != iNewFirstMarker)
+		if (-1 != iNewFirstMarker) {
 			pChBuff->pWriteGuard =
 				pChBuff->ReadMarkers.aMarkers[iNewFirstMarker]
-					.pointer;
-		else
+				.pointer;
+		}
+		else {
 			pChBuff->pWriteGuard = NULL;
+		}
 	}
 }
 
@@ -430,10 +436,8 @@ available
 (either for writing xor reading).
 Note: such a series of areas starts from the beginning.
 */
-int ScanMarkers(struct marker_list *pMarkerList,
-				      int *piSizeBWA,
-				      int *piSizeAWA,
-				      int *piNbrPendingXfers)
+int ScanMarkers(struct marker_list *pMarkerList, int *piSizeBWA,
+				int *piSizeAWA, int *piNbrPendingXfers)
 {
 	struct marker *pM;
 	BOOL bMarkersAreNowAWA;
@@ -458,17 +462,20 @@ int ScanMarkers(struct marker_list *pMarkerList,
 
 		pM = &(pMarkerList->aMarkers[index]);
 
-		if (pM->bXferBusy == TRUE)
+		if (pM->bXferBusy == TRUE) {
 			break;
+		}
 
-		if (!bMarkersAreNowAWA)
+		if (!bMarkersAreNowAWA) {
 			*piSizeBWA += pM->size;
-		else
+		}
+		else {
 			*piSizeAWA += pM->size;
+		}
 
 		index_next = pM->Next;
-		MarkerDelete(pMarkerList, index); /* pMarkerList->iFirstMarker
-						     will be updated */
+		/* pMarkerList->iFirstMarker will be updated */
+		MarkerDelete(pMarkerList, index);
 		/* adjust *piNbrPendingXfers */
 		if (piNbrPendingXfers) {
 			__ASSERT_NO_MSG(0 <= *piNbrPendingXfers);
@@ -479,8 +486,9 @@ int ScanMarkers(struct marker_list *pMarkerList,
 
 	__ASSERT_NO_MSG(index == pMarkerList->iFirstMarker);
 
-	if (bMarkersAreNowAWA)
+	if (bMarkersAreNowAWA) {
 		pMarkerList->iAWAMarker = pMarkerList->iFirstMarker;
+	}
 
 #ifdef STORE_NBR_MARKERS
 	if (0 == pMarkerList->iNbrMarkers) {
@@ -495,15 +503,15 @@ int ScanMarkers(struct marker_list *pMarkerList,
 
 /**********************************************************/
 
-int CalcAvailData(struct chbuff *pChBuff,
-					int *piAvailDataCont,
-					int *piAvailDataAWA)
+int CalcAvailData(struct chbuff *pChBuff, int *piAvailDataCont,
+				  int *piAvailDataAWA)
 {
 	unsigned char *pStart = pChBuff->pRead;
 	unsigned char *pStop = pChBuff->pWrite;
 
-	if (NULL != pChBuff->pReadGuard)
+	if (NULL != pChBuff->pReadGuard) {
 		pStop = pChBuff->pReadGuard;
+	}
 	else {
 		/* else:
 		   if BuffState==BUFF_FULL but we have a ReadGuard, we still
@@ -532,15 +540,15 @@ int CalcAvailData(struct chbuff *pChBuff,
 	return (*piAvailDataCont + *piAvailDataAWA);
 }
 
-int CalcFreeSpace(struct chbuff *pChBuff,
-					int *piFreeSpaceCont,
-					int *piFreeSpaceAWA)
+int CalcFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceCont,
+				  int *piFreeSpaceAWA)
 {
 	unsigned char *pStart = pChBuff->pWrite;
 	unsigned char *pStop = pChBuff->pRead;
 
-	if (NULL != pChBuff->pWriteGuard)
+	if (NULL != pChBuff->pWriteGuard) {
 		pStop = pChBuff->pWriteGuard;
+	}
 	else {
 		/* else:
 		   if BuffState==BUFF_EMPTY but we have a WriteGuard, we still

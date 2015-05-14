@@ -77,63 +77,63 @@ exercises the task_irq_free() API.
 */
 
 int taskA(ksem_t semRdy)
-	{
+{
 	if (task_irq_alloc(DEV1_ID, DEV1_IRQ, 1) == INVALID_VECTOR) {
-	TC_ERROR("Not able to allocate IRQ object\n");
-	return TC_FAIL;
-		}
+		TC_ERROR("Not able to allocate IRQ object\n");
+		return TC_FAIL;
+	}
 	TC_PRINT("IRQ object %d using IRQ%d allocated\n", DEV1_ID, DEV1_IRQ);
 
 	if (task_irq_alloc(DEV2_ID, DEV2_IRQ, 2) == INVALID_VECTOR) {
-	TC_ERROR("Not able to allocate IRQ object\n");
-	return TC_FAIL;
-		}
+		TC_ERROR("Not able to allocate IRQ object\n");
+		return TC_FAIL;
+	}
 	TC_PRINT("IRQ object %d using IRQ%d allocated\n\n", DEV2_ID, DEV2_IRQ);
 
-    /* Send semaphore to let loader know IRQ objects have been allocated */
+	/* Send semaphore to let loader know IRQ objects have been allocated */
 
 	task_sem_give(semRdy);
 
 	if (task_irq_test_wait(DEV1_ID) != RC_OK) {
-	TC_ERROR("Not able to test IRQ object event\n");
-	return TC_FAIL;
-		}
+		TC_ERROR("Not able to test IRQ object event\n");
+		return TC_FAIL;
+	}
 	TC_PRINT("Received event for IRQ object %d\n", DEV1_ID);
 	task_irq_ack(DEV1_ID);
 
 	if (task_irq_test_wait(DEV2_ID) != RC_OK) {
-	TC_ERROR("Not able to test IRQ object event\n");
-	return TC_FAIL;
-		}
+		TC_ERROR("Not able to test IRQ object event\n");
+		return TC_FAIL;
+	}
 	TC_PRINT("Received event for IRQ object %d\n", DEV2_ID);
 	task_irq_ack(DEV2_ID);
 
-    /* Wait for other task to receive its events */
+	/* Wait for other task to receive its events */
 
 	(void)task_sem_take_wait(semRdy);
 
 	TC_PRINT("\nAttempt to allocate an IRQ object that\n");
 	TC_PRINT("is already allocated by another task...\n");
 	if (task_irq_alloc(DEV4_ID, DEV4_IRQ, 1) != INVALID_VECTOR) {
-	TC_ERROR("Error: Was able to allocate\n\n");
+		TC_ERROR("Error: Was able to allocate\n\n");
 		return TC_FAIL;
-		}
+	}
 	TC_PRINT("Re-allocation of IRQ object %d prevented\n", DEV4_ID);
 
 	TC_PRINT("\nAttempt to allocate an IRQ that\n"
 		      "is already allocated by another task...\n");
 	if (task_irq_alloc(DEV5_ID, DEV4_IRQ, 1) != INVALID_VECTOR) {
-	TC_ERROR("Error: Was able to allocate\n\n");
+		TC_ERROR("Error: Was able to allocate\n\n");
 		return TC_FAIL;
-		}
+	}
 	TC_PRINT("Re-allocation of IRQ%d prevented\n\n", DEV4_IRQ);
 
-    /* Signal other task that we are done processing */
+	/* Signal other task that we are done processing */
 
 	task_sem_give(semRdy);
 
 	return TC_PASS;
-	}
+}
 
 /*******************************************************************************
 *
@@ -147,46 +147,46 @@ int taskA(ksem_t semRdy)
 */
 
 int taskB(ksem_t semRdy)
-	{
+{
 	if (task_irq_alloc(DEV3_ID, DEV3_IRQ, 1) == INVALID_VECTOR) {
-	TC_ERROR("Not able to allocate IRQ object\n");
-	return TC_FAIL;
-		}
+		TC_ERROR("Not able to allocate IRQ object\n");
+		return TC_FAIL;
+	}
 	TC_PRINT("IRQ object %d using IRQ%d allocated\n", DEV3_ID, DEV3_IRQ);
 
 	if (task_irq_alloc(DEV4_ID, DEV4_IRQ, 1) == INVALID_VECTOR) {
-	TC_ERROR("Not able to allocate IRQ object\n");
-	return TC_FAIL;
-		}
+		TC_ERROR("Not able to allocate IRQ object\n");
+		return TC_FAIL;
+	}
 	TC_PRINT("IRQ object %d using IRQ%d allocated\n\n", DEV4_ID, DEV4_IRQ);
 
-    /* Send semaphore to let loader/main know objects have been allocated */
+	/* Send semaphore to let loader/main know objects have been allocated */
 
 	task_sem_give(semRdy);
 
 	if (task_irq_test_wait(DEV3_ID) != RC_OK) {
 		TC_ERROR("Not able to test IRQ object event\n");
 		return TC_FAIL;
-		}
+	}
 	TC_PRINT("Received event for IRQ object %d\n", DEV3_ID);
 	task_irq_ack(DEV3_ID);
 
 	if (task_irq_test_wait(DEV4_ID) != RC_OK) {
-	TC_ERROR("Not able to test IRQ object event\n");
-	return TC_FAIL;
-		}
+		TC_ERROR("Not able to test IRQ object event\n");
+		return TC_FAIL;
+	}
 	TC_PRINT("Received event for IRQ object %d\n", DEV4_ID);
 	task_irq_ack(DEV4_ID);
 
-    /* Signal other task that we are done receiving events */
+	/* Signal other task that we are done receiving events */
 
 	task_sem_give(semRdy);
 
-    /*
-     *  Wait for other task to finish processing. The signal just previously
-     *  sent will not be seen here as the other task is a higher priority and
-     *  will thus consume the signal first.
-     */
+	/*
+	 *  Wait for other task to finish processing. The signal just previously
+	 *  sent will not be seen here as the other task is a higher priority and
+	 *  will thus consume the signal first.
+	 */
 
 	(void)task_sem_take_wait(semRdy);
 
@@ -195,4 +195,4 @@ int taskB(ksem_t semRdy)
 	TC_PRINT("IRQ object %d freed\n", DEV3_ID);
 
 	return TC_PASS;
-	}
+}

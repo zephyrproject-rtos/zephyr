@@ -70,15 +70,15 @@ Scenario #3:
 
 typedef struct {
 	struct nano_sem *sem;    /* ptr to semaphore */
-	int         data;   /* data */
-	} ISR_SEM_INFO;
+	int              data;   /* data */
+} ISR_SEM_INFO;
 
 typedef enum {
 	STS_INIT = -1,
 	STS_TASK_WOKE_FIBER,
 	STS_FIBER_WOKE_TASK,
 	STS_ISR_WOKE_TASK
-	} SEM_TEST_STATE;
+} SEM_TEST_STATE;
 
 /* locals */
 
@@ -153,26 +153,26 @@ int testSemFiberNoWait(void)
 
 	TC_PRINT("Giving and taking a semaphore in a fiber (non-blocking)\n");
 
-    /*
-     * Give the semaphore many times and then make sure that it can only be
-     * taken that many times.
-     */
+	/*
+	 * Give the semaphore many times and then make sure that it can only be
+	 * taken that many times.
+	 */
 
 	for (i = 0; i < 32; i++) {
 		nano_fiber_sem_give(&testSem);
-		}
+	}
 
 	for (i = 0; i < 32; i++) {
 		if (nano_fiber_sem_take(&testSem) != 1) {
-		    TC_ERROR(" *** Expected nano_fiber_sem_take() to succeed, not fail\n");
-		    goto errorReturn;
-		    }
+			TC_ERROR(" *** Expected nano_fiber_sem_take() to succeed, not fail\n");
+			goto errorReturn;
 		}
+	}
 
 	if (nano_fiber_sem_take(&testSem) != 0) {
 		TC_ERROR(" *** Expected  nano_fiber_sem_take() to fail, not succeed\n");
 		goto errorReturn;
-		}
+	}
 
 	return TC_PASS;
 
@@ -204,56 +204,57 @@ static void fiberEntry(int arg1, int arg2)
 	rv = testSemFiberNoWait();
 	if (rv != TC_PASS) {
 		return;
-		}
+	}
 
-    /*
-     * At this point <testSem> is not available.  Wait for <testSem> to become
-     * available (the main task will give it).
-     */
+	/*
+	 * At this point <testSem> is not available.  Wait for <testSem> to become
+	 * available (the main task will give it).
+	 */
 
 	nano_fiber_sem_take_wait(&testSem);
 
 	semTestState = STS_TASK_WOKE_FIBER;
 
-    /*
-     * Delay for two seconds.  This gives the main task time to print
-     * any messages (very important if I/O link is slow!), and wait
-     * on <testSem>.  Once the delay is done, this fiber will give <testSem>
-     * thus waking the main task.
-     */
+	/*
+	 * Delay for two seconds.  This gives the main task time to print
+	 * any messages (very important if I/O link is slow!), and wait
+	 * on <testSem>.  Once the delay is done, this fiber will give <testSem>
+	 * thus waking the main task.
+	 */
 
 	nano_fiber_timer_start(&timer, SECONDS(2));
 	nano_fiber_timer_wait(&timer);
 
-    /*
-     * The main task is now waiting on <testSem>.  Give the semaphore <testSem>
-     * to wake it.
-     */
+	/*
+	 * The main task is now waiting on <testSem>.  Give the semaphore <testSem>
+	 * to wake it.
+	 */
 
 	nano_fiber_sem_give(&testSem);
 
-    /*
-     * Some small delay must be done so that the main task can process the
-     * semaphore signal.
-     */
+	/*
+	 * Some small delay must be done so that the main task can process the
+	 * semaphore signal.
+	 */
 
 	semTestState = STS_FIBER_WOKE_TASK;
 
 	nano_fiber_timer_start(&timer, SECONDS(2));
 	nano_fiber_timer_wait(&timer);
 
-    /*
-     * The main task should be waiting on <testSem> again.  This time, instead
-     * of giving the semaphore from the semaphore, give it from an ISR to wake
-     * the main task.
-     */
+	/*
+	 * The main task should be waiting on <testSem> again.  This time, instead
+	 * of giving the semaphore from the semaphore, give it from an ISR to wake
+	 * the main task.
+	 */
 
 	isrSemInfo.data = 0;
 	isrSemInfo.sem = &testSem;
 	_trigger_nano_isr_sem_give();
 
-	if (isrSemInfo.data == 1)
+	if (isrSemInfo.data == 1) {
 		semTestState = STS_ISR_WOKE_TASK;
+	}
 }
 
 /*******************************************************************************
@@ -298,30 +299,30 @@ int testSemIsrNoWait(void)
 
 	TC_PRINT("Giving and taking a semaphore in an ISR (non-blocking)\n");
 
-    /*
-     * Give the semaphore many times and then make sure that it can only be
-     * taken that many times.
-     */
+	/*
+	 * Give the semaphore many times and then make sure that it can only be
+	 * taken that many times.
+	 */
 
 	isrSemInfo.sem = &testSem;
 	for (i = 0; i < 32; i++) {
 		_trigger_nano_isr_sem_give();
-		}
+	}
 
 	for (i = 0; i < 32; i++) {
 		isrSemInfo.data = 0;
 		_trigger_nano_isr_sem_take();
 		if (isrSemInfo.data != 1) {
-		    TC_ERROR(" *** Expected nano_isr_sem_take() to succeed, not fail\n");
-		    goto errorReturn;
-		    }
+			TC_ERROR(" *** Expected nano_isr_sem_take() to succeed, not fail\n");
+			goto errorReturn;
 		}
+	}
 
 	_trigger_nano_isr_sem_take();
 	if (isrSemInfo.data != 0) {
 		TC_ERROR(" *** Expected  nano_isr_sem_take() to fail, not succeed!\n");
 		goto errorReturn;
-		}
+	}
 
 	return TC_PASS;
 
@@ -345,26 +346,26 @@ int testSemTaskNoWait(void)
 
 	TC_PRINT("Giving and taking a semaphore in a task (non-blocking)\n");
 
-    /*
-     * Give the semaphore many times and then make sure that it can only be
-     * taken that many times.
-     */
+	/*
+	 * Give the semaphore many times and then make sure that it can only be
+	 * taken that many times.
+	 */
 
 	for (i = 0; i < 32; i++) {
 		nano_task_sem_give(&testSem);
-		}
+	}
 
 	for (i = 0; i < 32; i++) {
 		if (nano_task_sem_take(&testSem) != 1) {
-		    TC_ERROR(" *** Expected nano_task_sem_take() to succeed, not fail\n");
-		    goto errorReturn;
-		    }
+			TC_ERROR(" *** Expected nano_task_sem_take() to succeed, not fail\n");
+			goto errorReturn;
 		}
+	}
 
 	if (nano_task_sem_take(&testSem) != 0) {
 		TC_ERROR(" *** Expected  nano_task_sem_take() to fail, not succeed!\n");
 		goto errorReturn;
-		}
+	}
 
 	return TC_PASS;
 
@@ -387,14 +388,14 @@ int testSemWait(void)
 	if (fiberDetectedFailure != 0) {
 		TC_ERROR(" *** Failure detected in the fiber.");
 		return TC_FAIL;
-		}
+	}
 
 	nano_task_sem_give(&testSem);    /* Wake the fiber. */
 
 	if (semTestState != STS_TASK_WOKE_FIBER) {
 		TC_ERROR(" *** Expected task to wake fiber.  It did not.\n");
 		return TC_FAIL;
-		}
+	}
 
 	TC_PRINT("Semaphore from the task woke the fiber\n");
 
@@ -403,7 +404,7 @@ int testSemWait(void)
 	if (semTestState != STS_FIBER_WOKE_TASK) {
 		TC_ERROR(" *** Expected fiber to wake task.  It did not.\n");
 		return TC_FAIL;
-		}
+	}
 
 	TC_PRINT("Semaphore from the fiber woke the task\n");
 
@@ -412,7 +413,7 @@ int testSemWait(void)
 	if (semTestState != STS_ISR_WOKE_TASK) {
 		TC_ERROR(" *** Expected ISR to wake task.  It did not.\n");
 		return TC_FAIL;
-		}
+	}
 
 	TC_PRINT("Semaphore from the ISR woke the task.\n");
 	return TC_PASS;
@@ -541,32 +542,32 @@ void main(void)
 	rv = testSemTaskNoWait();
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 	rv = testSemIsrNoWait();
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 	semTestState = STS_INIT;
 
-    /*
-     * Start the fiber.  The fiber will be given a higher priority than the
-     * main task.
-     */
+	/*
+	 * Start the fiber.  The fiber will be given a higher priority than the
+	 * main task.
+	 */
 
 	task_fiber_start(fiberStack, FIBER_STACKSIZE, fiberEntry,
-		                0, 0, FIBER_PRIORITY, 0);
+					 0, 0, FIBER_PRIORITY, 0);
 
 	rv = testSemWait();
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 	rv = test_multiple_waiters();
 	if (rv != TC_PASS) {
 		goto doneTests;
-		}
+	}
 
 doneTests:
 	TC_END_RESULT(rv);

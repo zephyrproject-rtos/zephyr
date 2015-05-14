@@ -59,11 +59,11 @@ struct nano_sem sem[3];
 */
 
 void isr0(void)
-	{
+{
 	printk("%s ran!\n", __FUNCTION__);
 	nano_isr_sem_give(&sem[0]);
 	_IntExit();
-	}
+}
 
 /*******************************************************************************
 *
@@ -73,11 +73,11 @@ void isr0(void)
 */
 
 void isr1(void)
-	{
+{
 	printk("%s ran!\n", __FUNCTION__);
 	nano_isr_sem_give(&sem[1]);
 	_IntExit();
-	}
+}
 
 /*******************************************************************************
 *
@@ -87,11 +87,11 @@ void isr1(void)
 */
 
 void isr2(void)
-	{
+{
 	printk("%s ran!\n", __FUNCTION__);
 	nano_isr_sem_give(&sem[2]);
 	_IntExit();
-	}
+}
 
 /*******************************************************************************
 *
@@ -101,13 +101,13 @@ void isr2(void)
 */
 
 void main(void)
-	{
+{
 	TC_START("Test Cortex-M3 IRQ installed directly in vector table");
 
 	for (int ii = 0; ii < 3; ii++) {
-	irq_enable(ii);
-	irq_priority_set(ii, _EXC_IRQ_DEFAULT_PRIO);
-	nano_sem_init(&sem[ii]);
+		irq_enable(ii);
+		irq_priority_set(ii, _EXC_IRQ_DEFAULT_PRIO);
+		nano_sem_init(&sem[ii]);
 	}
 
 	int rv;
@@ -115,11 +115,13 @@ void main(void)
 		 nano_task_sem_take(&sem[1]) ||
 		 nano_task_sem_take(&sem[2]) ? TC_FAIL : TC_PASS;
 
-	if (TC_FAIL == rv)
+	if (TC_FAIL == rv) {
 		goto get_out;
+	}
 
-	for (int ii = 0; ii < 3; ii++)
+	for (int ii = 0; ii < 3; ii++) {
 		_NvicSwInterruptTrigger(ii);
+	}
 
 	rv = nano_task_sem_take(&sem[0]) &&
 		 nano_task_sem_take(&sem[1]) &&
@@ -128,7 +130,7 @@ void main(void)
 get_out:
 	TC_END_RESULT(rv);
 	TC_END_REPORT(rv);
-	}
+}
 
 typedef void (*vth)(void); /* Vector Table Handler */
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {

@@ -63,29 +63,29 @@
 void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 {
 	while (1) {
-	task_sem_take_wait(mySem);
+		task_sem_take_wait(mySem);
 
-	/* say "hello" */
-	PRINT("%s: Hello World!\n", taskname);
+		/* say "hello" */
+		PRINT("%s: Hello World!\n", taskname);
 
-	/* wait a while, then let other task have a turn */
-	task_sleep(SLEEPTICKS);
-	task_sem_give(otherSem);
+		/* wait a while, then let other task have a turn */
+		task_sleep(SLEEPTICKS);
+		task_sem_give(otherSem);
 	}
 }
 
 void taskA(void)
 {
-    /* taskA gives its own semaphore, allowing it to say hello right away */
+	/* taskA gives its own semaphore, allowing it to say hello right away */
 	task_sem_give(TASKASEM);
 
-    /* invoke routine that allows task to ping-pong hello messages with taskB */
+	/* invoke routine that allows task to ping-pong hello messages with taskB */
 	helloLoop(__FUNCTION__, TASKASEM, TASKBSEM);
 }
 
 void taskB(void)
 {
-    /* invoke routine that allows task to ping-pong hello messages with taskA */
+	/* invoke routine that allows task to ping-pong hello messages with taskA */
 	helloLoop(__FUNCTION__, TASKBSEM, TASKASEM);
 }
 
@@ -121,16 +121,16 @@ void fiberEntry(void)
 	nano_timer_init(&timer, data);
 
 	while (1) {
-	/* wait for task to let us have a turn */
-	nano_fiber_sem_take_wait(&nanoSemFiber);
+		/* wait for task to let us have a turn */
+		nano_fiber_sem_take_wait(&nanoSemFiber);
 
-	/* say "hello" */
-	PRINT("%s: Hello World!\n", __FUNCTION__);
+		/* say "hello" */
+		PRINT("%s: Hello World!\n", __FUNCTION__);
 
-	/* wait a while, then let task have a turn */
-	nano_fiber_timer_start(&timer, SLEEPTICKS);
-	nano_fiber_timer_wait(&timer);
-	nano_fiber_sem_give(&nanoSemTask);
+		/* wait a while, then let task have a turn */
+		nano_fiber_timer_start(&timer, SLEEPTICKS);
+		nano_fiber_timer_wait(&timer);
+		nano_fiber_sem_give(&nanoSemTask);
 	}
 }
 
@@ -146,16 +146,16 @@ void main(void)
 	nano_timer_init(&timer, data);
 
 	while (1) {
-	/* say "hello" */
-	PRINT("%s: Hello World!\n", __FUNCTION__);
+		/* say "hello" */
+		PRINT("%s: Hello World!\n", __FUNCTION__);
 
-	/* wait a while, then let fiber have a turn */
-	nano_task_timer_start(&timer, SLEEPTICKS);
-	nano_task_timer_wait(&timer);
-	nano_task_sem_give(&nanoSemFiber);
+		/* wait a while, then let fiber have a turn */
+		nano_task_timer_start(&timer, SLEEPTICKS);
+		nano_task_timer_wait(&timer);
+		nano_task_sem_give(&nanoSemFiber);
 
-	/* now wait for fiber to let us have a turn */
-	nano_task_sem_take_wait(&nanoSemTask);
+		/* now wait for fiber to let us have a turn */
+		nano_task_sem_take_wait(&nanoSemTask);
 	}
 }
 

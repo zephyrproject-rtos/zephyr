@@ -65,10 +65,10 @@ are not (yet) tested include:
 
 /* defines */
 
-#define MSGSIZE		16	/* Standard message data size */
-#define XFER_PRIO	5	/* standard message transfer priority */
-#define MSG_INFO1	1234	/* Message info test value */
-#define MSG_INFO2	666	/* Message info test value */
+#define MSGSIZE		16    /* Standard message data size */
+#define XFER_PRIO	5     /* standard message transfer priority */
+#define MSG_INFO1	1234  /* Message info test value */
+#define MSG_INFO2	666   /* Message info test value */
 
 /* locals */
 
@@ -99,18 +99,18 @@ extern kmemory_pool_t smallBlkszPool;
 *   rx_task to receiverTask - destination for the message
 *   mailbox to inMbox
 *
+* @param inMsg          The message being received.
+* @param inMbox         Mail box to receive the message.
+* @param receiverTask   Destination for the message.
+* @param dataArea       Pointer to (optional) buffer to send.
+* @param dataSize       Size of (optional) buffer to send.
+* @param info           Additional (optional) info to send.
+*
 * RETURNS:  N/A
 */
 
-static void setMsg_Sender
-	(
-	struct k_msg *inMsg,         /* the message being received */
-	kmbox_t       inMbox,        /* mail box to receive the message */
-	ktask_t       receiverTask,  /* destination for the message */
-	void         *dataArea,      /* pointer to (optional) buffer to send */
-	uint32_t      dataSize,      /* size of (optional) buffer to send */
-	uint32_t      info           /* additional (optional) info to send */
-	)
+static void setMsg_Sender(struct k_msg *inMsg, kmbox_t inMbox, ktask_t receiverTask,
+						  void *dataArea, uint32_t dataSize, uint32_t info)
 {
 	inMsg->rx_task = receiverTask;
 	inMsg->mailbox = inMbox;
@@ -129,17 +129,17 @@ static void setMsg_Sender
 *   tx_task to senderTask - receiver tries to get message from this source
 *   mailbox to inMbox
 *
+* @param inMsg          Message descriptor.
+* @param inMbox         Mail box to receive from.
+* @param senderTask     Sending task to receive from.
+* @param inBuffer       Incoming data area
+* @param inBufferSize   Size of incoming data area.
+*
 * RETURNS:  N/A
 */
 
-static void setMsg_Receiver
-	(
-	struct k_msg *inMsg,        /* message descriptor */
-	kmbox_t       inMbox,       /* mail box to receive from */
-	ktask_t       senderTask,   /* sending task to receive from */
-	void         *inBuffer,     /* incoming data area */
-	uint32_t      inBufferSize  /* size of incoming data area */
-	)
+static void setMsg_Receiver(struct k_msg *inMsg, kmbox_t inMbox, ktask_t senderTask,
+							void *inBuffer, uint32_t inBufferSize)
 {
 	inMsg->mailbox = inMbox;
 	inMsg->tx_task = senderTask;
@@ -154,15 +154,14 @@ static void setMsg_Receiver
 *
 * setMsg_RecvBuf - sets rx_data field in msg and clears buffer
 *
+* @param inMsg          The message being received.
+* @param inBuffer       Incoming data area.
+* @param inBufferSize   Size of incoming data area.
+*
 * RETURNS:  N/A
 */
 
-static void setMsg_RecvBuf
-	(
-	struct k_msg *inMsg,       /* the message being received */
-	char         *inBuffer,    /* incoming data area */
-	uint32_t     inBufferSize  /* size of incoming data area */
-	)
+static void setMsg_RecvBuf(struct k_msg *inMsg, char *inBuffer, uint32_t inBufferSize)
 {
 	inMsg->rx_data = inBuffer;
 	inMsg->size = inBufferSize;

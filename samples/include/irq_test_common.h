@@ -96,15 +96,15 @@ static char sw_isr_trigger_1[] = {
 #if defined(CONFIG_CPU_CORTEXM)
 #include <nanokernel.h>
 static inline void sw_isr_trigger_0(void)
-	{
+{
 	_NvicSwInterruptTrigger(0);
-	}
+}
 
 #if NUM_SW_IRQS >= 2
 static inline void sw_isr_trigger_1(void)
-	{
+{
 	_NvicSwInterruptTrigger(1);
-	}
+}
 #endif /* NUM_SW_IRQS >= 2 */
 #endif  /* CONFIG_CPU_CORTEXM */
 #endif
@@ -112,7 +112,7 @@ static inline void sw_isr_trigger_1(void)
 struct isrInitInfo {
 	vvpfn isr[2];
 	void *arg[2];
-	};
+};
 
 /*******************************************************************************
 *
@@ -120,47 +120,44 @@ struct isrInitInfo {
 *
 */
 
-static int initIRQ
-	(
-	struct isrInitInfo *i
-	)
-	{
+static int initIRQ(struct isrInitInfo *i)
+{
 #if defined(VXMICRO_ARCH_x86)
 	int  vector;     /* vector to which interrupt is connected */
 
 	if (i->isr[0]) {
-	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
-				    i->arg[0], nanoIntStub1);
-	if (-1 == vector) {
-	    return -1;
-	    }
-	sw_isr_trigger_0[1] = vector;
+		vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
+			i->arg[0], nanoIntStub1);
+		if (-1 == vector) {
+			return -1;
+		}
+		sw_isr_trigger_0[1] = vector;
 	}
 
 #if NUM_SW_IRQS >= 2
 	if (i->isr[1]) {
-	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
-				    i->arg[1], nanoIntStub2);
-	if (-1 == vector) {
-	    return -1;
-	    }
-	sw_isr_trigger_1[1] = vector;
+		vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
+			i->arg[1], nanoIntStub2);
+		if (-1 == vector) {
+			return -1;
+		}
+		sw_isr_trigger_1[1] = vector;
 	}
 #endif /* NUM_SW_IRQS >= 2 */
 #elif defined(VXMICRO_ARCH_arm)
 #if defined(CONFIG_CPU_CORTEXM)
 	if (i->isr[0]) {
-	(void) irq_connect(0, IRQ_PRIORITY, i->isr[0], i->arg[0]);
-	irq_enable(0);
+		(void) irq_connect(0, IRQ_PRIORITY, i->isr[0], i->arg[0]);
+		irq_enable(0);
 	}
 	if (i->isr[1]) {
-	(void) irq_connect(1, IRQ_PRIORITY, i->isr[1], i->arg[1]);
-	irq_enable(1);
+		(void) irq_connect(1, IRQ_PRIORITY, i->isr[1], i->arg[1]);
+		irq_enable(1);
 	}
 #endif /* CONFIG_CPU_CORTEXM */
 #endif /* VXMICRO_ARCH_x86 */
 
 	return 0;
-	}
+}
 
 #endif /* _IRQ_TEST_COMMON__H_ */
