@@ -36,7 +36,6 @@ Microkernel idle logic. Different forms of idling are performed by the idle
 task, depending on how the kernel is configured.
 */
 
-#include <microkernel/k_struct.h>
 #include <minik.h>
 #include <nanok.h>
 #include <nanokernel/cpu.h>

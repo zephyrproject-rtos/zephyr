@@ -30,7 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <microkernel/k_struct.h>
 #include <minik.h>
 #include <kchan.h>
 #include <toolchain.h>

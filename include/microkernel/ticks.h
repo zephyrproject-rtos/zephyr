@@ -36,7 +36,6 @@
 /* includes */
 
 #include <nanokernel.h>
-#include <microkernel/k_struct.h>
 #include <clock_vars.h>
 
 /* externs */

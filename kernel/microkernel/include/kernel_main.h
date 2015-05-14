@@ -33,8 +33,6 @@
 #ifndef _ENTRIES_H
 #define _ENTRIES_H
 
-#include <microkernel/k_struct.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

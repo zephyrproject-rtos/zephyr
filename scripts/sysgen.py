@@ -38,7 +38,8 @@
 
 # Generates:
 #   - kernel_main.c file
-#   - kernel_main.h file
+#   - kernel_main.h file (local copy)
+#   - kernel_struct.h file (local copy)
 #   - vxmicro.h file
 
 import os
@@ -305,6 +306,7 @@ def kernel_main_c_header():
         "\n" +
         "#include <vxmicro.h>\n" +
         "#include <drivers/system_timer.h>\n" +
+        "#include <kernel_struct.h>\n" +
         "#include <kernel_main.h>\n" +
         "#include <toolchain.h>\n" +
         "#include <sections.h>\n")
@@ -1059,6 +1061,24 @@ def kernel_main_h_generate():
 
 
 #
+# GENERATE kernel_struct.h FILE
+#
+
+
+def kernel_struct_h_generate():
+    """ Generate kernel_struct.h file """
+
+    global output_dir
+
+    subprocess.check_call([
+        "cp",
+        "-f",
+        os.environ["VXMICRO_BASE"] +
+        "/kernel/microkernel/include/kernel_struct.h",
+        output_dir])
+
+
+#
 # GENERATE vxmicro.h FILE
 #
 
@@ -1178,4 +1198,5 @@ vpf_parse()
 get_output_dir()
 kernel_main_c_generate()
 kernel_main_h_generate()
+kernel_struct_h_generate()
 vxmicro_h_generate()

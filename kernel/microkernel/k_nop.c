@@ -40,7 +40,6 @@ single invocation of the K_swapper fiber. However, it can also be used by
 a task to measure the overhead involved in issuing a kernel service request.
 */
 
-#include <microkernel/k_struct.h>
 #include <minik.h>
 #include <toolchain.h>
 #include <sections.h>

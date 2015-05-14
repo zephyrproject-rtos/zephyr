@@ -43,7 +43,6 @@ Currently empty, only here for abstraction.
 #include <toolchain.h>
 #include <sections.h>
 
-#include <microkernel/k_struct.h>
 #include <minik.h>
 #include <nanok.h>
 #include <cputype.h>

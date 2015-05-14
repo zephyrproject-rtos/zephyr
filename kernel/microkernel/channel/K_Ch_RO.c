@@ -33,8 +33,8 @@
 /* includes */
 
 #include <microkernel.h>
-#include <kchan.h>
 #include <minik.h>
+#include <kchan.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>

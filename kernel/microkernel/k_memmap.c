@@ -30,7 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "microkernel/k_struct.h"
 #include "minik.h" /* _k_mem_map_list, _k_mem_map_count */
 #include <sections.h>
 

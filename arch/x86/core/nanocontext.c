@@ -39,8 +39,8 @@ processor architecture.
 /* includes */
 
 #ifdef CONFIG_MICROKERNEL
-#include <microkernel/k_struct.h>
 #include <microkernel.h>
+#include <kernel_struct.h>
 #endif /* CONFIG_MICROKERNEL */
 
 #include <toolchain.h>

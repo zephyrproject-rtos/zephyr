@@ -32,7 +32,6 @@
 
 #ifdef CONFIG_TASK_MONITOR
 
-#include <microkernel/k_struct.h>
 #include <minik.h>
 #include <microkernel/ticks.h>
 #include <drivers/system_timer.h>

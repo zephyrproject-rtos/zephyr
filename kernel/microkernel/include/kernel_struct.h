@@ -1,4 +1,4 @@
-/* microkernel/k_struct.h */
+/* major non-public microkernel structures */
 
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _K_STRUCT_H
-#define _K_STRUCT_H
+#ifndef _KERNEL_STRUCT_H
+#define _KERNEL_STRUCT_H
 
 #include <microkernel/k_types.h>
 #include <microkernel/k_chstr.h>
@@ -502,4 +502,4 @@ struct evstr {
 }
 #endif
 
-#endif /* _K_STRUCT_H */
+#endif /* _KERNEL_STRUCT_H */
