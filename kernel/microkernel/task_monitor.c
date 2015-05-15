@@ -69,8 +69,7 @@ void _k_task_monitor(struct k_proc *X, uint32_t D)
 		if (++K_monitor_wind == k_monitor_capacity) {
 			K_monitor_wind = 0;
 			k_monitor_wptr = k_monitor_buff;
-		}
-		else {
+		} else {
 			++k_monitor_wptr;
 		}
 		if (k_monitor_nrec < k_monitor_capacity) {
@@ -92,8 +91,7 @@ void _k_task_monitor_args(struct k_args *A)
 
 		if ((uint32_t)A < _k_num_events) {
 			k_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
-		}
-		else {
+		} else {
 			k_monitor_wptr->data1 = _k_current_task->Ident;
 			k_monitor_wptr->data2 = MO_LCOMM | A->Comm;
 		}
@@ -101,8 +99,7 @@ void _k_task_monitor_args(struct k_args *A)
 		if (++K_monitor_wind == k_monitor_capacity) {
 			K_monitor_wind = 0;
 			k_monitor_wptr = k_monitor_buff;
-		}
-		else {
+		} else {
 			++k_monitor_wptr;
 		}
 

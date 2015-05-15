@@ -105,8 +105,7 @@ void calculate_pi_low(void)
 
 		if (reference_pi == 0.0f) {
 			reference_pi = pi;
-		}
-		else if (reference_pi != pi) {
+		} else if (reference_pi != pi) {
 			TC_ERROR("Computed pi %1.6f, reference pi %1.6f\n",
 					 pi, reference_pi);
 			fpu_sharing_error = 1;
@@ -160,8 +159,7 @@ void calculate_pi_high(void)
 
 		if (reference_pi == 0.0f) {
 			reference_pi = pi;
-		}
-		else if (reference_pi != pi) {
+		} else if (reference_pi != pi) {
 			TC_ERROR("Computed pi %1.6f, reference pi %1.6f\n",
 					 pi, reference_pi);
 			fpu_sharing_error = 1;

@@ -77,8 +77,7 @@ void main(void)
 	ret = bt_init();
 	if (ret == EXPECTED_ERROR) {
 		ret_code = TC_PASS;
-	}
-	else {
+	} else {
 		ret_code = TC_FAIL;
 	}
 

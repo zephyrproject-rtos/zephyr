@@ -133,12 +133,10 @@ int nanoCtxSwitch(void)
 					 (nano_fiber_entry_t) fiberTwo, 0, 0, 6, 0);
 	if (ctxSwitchBalancer > 3 || ctxSwitchBalancer < -3) {
 		PRINT_FORMAT(" Balance is %d. FAILED", ctxSwitchBalancer);
-	}
-	else if (bench_test_end() != 0) {
+	} else if (bench_test_end() != 0) {
 		errorCount++;
 		PRINT_OVERFLOW_ERROR();
-	}
-	else {
+	} else {
 		PRINT_FORMAT(" Average context switch time is %lu tcs = %lu nsec",
 					 timestamp / ctxSwitchCounter,
 					 SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, ctxSwitchCounter));

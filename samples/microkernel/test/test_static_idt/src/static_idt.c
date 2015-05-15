@@ -258,8 +258,7 @@ void main(void)
 		TC_ERROR("Exception handler did not execute\n");
 		rv = TC_FAIL;
 		goto doneTests;
-	}
-	else if (excHandlerExecuted != 1) {
+	} else if (excHandlerExecuted != 1) {
 		TC_ERROR("Exception handler executed more than once! (%d)\n",
 				 excHandlerExecuted);
 		rv = TC_FAIL;

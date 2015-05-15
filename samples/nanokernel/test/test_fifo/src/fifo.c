@@ -412,8 +412,7 @@ void testIsrFifoFromTask(void)
 		retCode = TC_FAIL;
 		TCERR2;
 		return;
-	}
-	else {
+	} else {
 		TC_PRINT("\nTest ISR FIFO (invoked from Task) - put %p and get back %p\n",
 				 pPutData, pGetData);
 	}

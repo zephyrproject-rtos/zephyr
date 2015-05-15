@@ -227,12 +227,10 @@ void main(void)
 			/* sema, lifo, fifo, stack account for twelve tests in total */
 			if (test_result == 12) {
 				fprintf(output_file, sz_module_result_fmt, sz_success);
-			}
-			else {
+			} else {
 				fprintf(output_file, sz_module_result_fmt, sz_partial);
 			}
-		}
-		else {
+		} else {
 			fprintf(output_file, sz_module_result_fmt, sz_fail);
 		}
 

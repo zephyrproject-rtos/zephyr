@@ -114,16 +114,14 @@ void microTaskSwitchYield(void)
 	if (bench_test_end() < 0) {
 		errorCount++;
 		PRINT_OVERFLOW_ERROR();
-	}
-	else if (abs(delta) > 1) {
+	} else if (abs(delta) > 1) {
 		/* expecting even alternating context switch, seems one routine
 		 * called yield without the other having chance to execute
 		 */
 		errorCount++;
 		PRINT_FORMAT(" Error, iteration:%lu, helper iteration:%lu",
 					 iterations, helper_task_iterations);
-	}
-	else {
+	} else {
 		/* task_yield is called (iterations + helper_task_iterations)
 		 * times in total.
 		 */

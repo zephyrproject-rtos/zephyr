@@ -133,8 +133,7 @@ void philEntry(void)
 	if ((id+1) != N_PHILOSOPHERS) {
 		f1 = FORK(id);
 		f2 = FORK(id + 1);
-	}
-	else {
+	} else {
 		f1 = FORK(0);
 		f2 = FORK(id);
 	}

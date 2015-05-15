@@ -68,8 +68,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 			S->Level--;
 			if (Y) {
 				Y->Forw = X;
-			}
-			else {
+			} else {
 				S->Waiters = X;
 			}
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -83,16 +82,14 @@ static void signal_semaphore(int n, struct sem_struct *S)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			}
 #endif
-		}
-		else if (A->Comm == WAITMREQ) {
+		} else if (A->Comm == WAITMREQ) {
 			S->Level--;
 			A->Comm = WAITMRDY;
 			GETARGS(Y);
 			*Y = *A;
 			SENDARGS(Y);
 			Y = A;
-		}
-		else {
+		} else {
 			Y = A;
 		}
 		A = X;
@@ -138,8 +135,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
 				Y->Forw = X->Forw;
-			}
-			else {
+			} else {
 				S->Waiters = X->Forw;
 			}
 			if (X->Comm == WAITMREQ || X->Comm == WAITMRDY) {
@@ -159,8 +155,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 					if (unlikely(waitTaskArgs->Args.s1.sema ==
 						ENDLIST)) {
 						waitTaskArgs->Args.s1.sema = A->Args.s1.sema;
-					}
-					else {
+					} else {
 						signal_semaphore(1, S);
 					}
 				}
@@ -179,8 +174,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 	A->Forw = X;
 	if (Y) {
 		Y->Forw = A;
-	}
-	else {
+	} else {
 		S->Waiters = A;
 	}
 }
@@ -206,8 +200,7 @@ void _k_sem_group_wait_accept(struct k_args *A)
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
 				Y->Forw = X->Forw;
-			}
-			else {
+			} else {
 				S->Waiters = X->Forw;
 			}
 			if (X->Comm == WAITMRDY) {
@@ -277,8 +270,7 @@ void _k_sem_group_ready(struct k_args *R)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer) {
 			force_timeout(A);
-		}
-		else
+		} else
 #endif
 			_k_sem_group_wait_timeout(A);
 	}
@@ -325,8 +317,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
 				Y->Forw = X->Forw;
-			}
-			else {
+			} else {
 				S->Waiters = X->Forw;
 			}
 			if (X->Comm == WAITMCAN) {
@@ -344,8 +335,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 	A->Forw = X;
 	if (Y) {
 		Y->Forw = A;
-	}
-	else {
+	} else {
 		S->Waiters = A;
 	}
 	signal_semaphore(0, S);
@@ -392,8 +382,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 	if (A->Time.ticks != TICKS_NONE) {
 		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;
-		}
-		else {
+		} else {
 			A->Comm = WAITMTMO;
 			enlist_timeout(A);
 		}
@@ -427,8 +416,7 @@ void _k_sem_wait_request(struct k_args *A)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;
-		}
-		else {
+		} else {
 			A->Comm = WAITSTMO;
 			enlist_timeout(A);
 		}

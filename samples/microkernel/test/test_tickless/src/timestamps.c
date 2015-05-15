@@ -126,8 +126,7 @@ uint32_t _TimestampRead(void)
 
 		/* convert to extended up-counter value */
 		timerVal = _TIMESTAMP_EXT + (_TIMESTAMP_MAX - timerVal);
-	}
-	else {
+	} else {
 		lastTimerVal = timerVal;
 
 		/* convert to up-counter value */

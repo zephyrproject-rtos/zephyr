@@ -227,8 +227,7 @@ static void genIdt(void)
 	for (i = 0; i < numVecs; i++) {
 		if ((((1 << i) & _EXC_ERROR_CODE_FAULTS)) && (i < 32)) {
 			idt[i].fnc = spurAddr;
-		}
-		else {
+		} else {
 			idt[i].fnc = spurNoErrAddr;
 		}
 	}

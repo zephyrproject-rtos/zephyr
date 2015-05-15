@@ -84,8 +84,7 @@ static void makeInt(void)
 	raiseIntFunc();
 	if (flagVar != 1) {
 		PRINT_FORMAT(" Flag variable has not changed. FAILED\n");
-	}
-	else {
+	} else {
 		timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	}
 }

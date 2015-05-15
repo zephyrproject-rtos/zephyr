@@ -398,8 +398,7 @@ void testIsrStackFromTask(void)
 		TCERR2;
 		retCode = TC_FAIL;
 		return;
-	}
-	else {
+	} else {
 		TC_PRINT("\nTest ISR STACK (invoked from Task) - push %d and pop back %d\n",
 				 myIsrData[3], result);
 	}

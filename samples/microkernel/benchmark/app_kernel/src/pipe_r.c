@@ -155,8 +155,7 @@ int pipeget(kpipe_t pipe, K_PIPE_OPTION option, int size, int count,
 		if (high_timer_overflow()) {
 			PRINT_STRING("| Timer overflow. Results are invalid            ",
 						 output_file);
-		}
-		else {
+		} else {
 			PRINT_STRING("| Tick occured. Results may be inaccurate        ",
 						 output_file);
 		}

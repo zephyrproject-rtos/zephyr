@@ -72,8 +72,7 @@ void MainTask(void)
 	if (result == RC_TIME) {
 		TC_PRINT("As expected, test task 1 did not continue operating \n");
 		TC_PRINT("after calling memcpy_s with incorrect parameters\n");
-	}
-	else {
+	} else {
 		TC_ERROR("Test task 1 unexpectedly continued\n"
 				 "after calling memcpy_s with incorrect parameters\n");
 		goto fail;
@@ -91,8 +90,7 @@ void MainTask(void)
 	if (result == RC_TIME) {
 		TC_PRINT("As expected, test task 2 did not continue operating \n");
 		TC_PRINT("after calling strcpy_s with incorrect parameters\n");
-	}
-	else {
+	} else {
 		TC_ERROR("Test task 2 unexpectedly continued\n"
 				 "after calling memcpy_s with incorrect parameters\n");
 		goto fail;

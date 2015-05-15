@@ -183,8 +183,7 @@ void ticklessTestTask(void)
 	/* Calculate percentage difference between calibrated TSC diff and measured result */
 	if (diff_tsc > cal_tsc) {
 		diff_per = (100 * (diff_tsc - cal_tsc)) / cal_tsc;
-	}
-	else {
+	} else {
 		diff_per = (100 * (cal_tsc - diff_tsc)) / cal_tsc;
 	}
 
@@ -193,8 +192,7 @@ void ticklessTestTask(void)
 	if (diff_ticks != SLEEP_TICKS) {
 		printk("* TEST FAILED. TICK COUNT INCORRECT *\n");
 		TC_END_REPORT(TC_FAIL);
-	}
-	else {
+	} else {
 		TC_END_REPORT(TC_PASS);
 	}
 

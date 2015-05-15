@@ -191,8 +191,7 @@ int BuffEnQA(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite,
 
 	if (pChBuff->pWrite == pChBuff->pRead) {
 		pChBuff->BuffState = BUFF_FULL;
-	}
-	else {
+	} else {
 		pChBuff->BuffState = BUFF_OTHER;
 	}
 
@@ -257,8 +256,7 @@ void AsyncEnQFinished(struct chbuff *pChBuff, int iTransferID)
 			pChBuff->pReadGuard =
 				pChBuff->WriteMarkers.aMarkers[iNewFirstMarker]
 				.pointer;
-		}
-		else {
+		} else {
 			pChBuff->pReadGuard = NULL;
 		}
 	}
@@ -312,8 +310,7 @@ int BuffDeQA(struct chbuff *pChBuff, int iSize, unsigned char **ppRead,
 
 	if (pChBuff->pWrite == pChBuff->pRead) {
 		pChBuff->BuffState = BUFF_EMPTY;
-	}
-	else {
+	} else {
 		pChBuff->BuffState = BUFF_OTHER;
 	}
 
@@ -391,8 +388,7 @@ void AsyncDeQFinished(struct chbuff *pChBuff, int iTransferID)
 			pChBuff->pWriteGuard =
 				pChBuff->ReadMarkers.aMarkers[iNewFirstMarker]
 				.pointer;
-		}
-		else {
+		} else {
 			pChBuff->pWriteGuard = NULL;
 		}
 	}
@@ -468,8 +464,7 @@ int ScanMarkers(struct marker_list *pMarkerList, int *piSizeBWA,
 
 		if (!bMarkersAreNowAWA) {
 			*piSizeBWA += pM->size;
-		}
-		else {
+		} else {
 			*piSizeAWA += pM->size;
 		}
 
@@ -511,8 +506,7 @@ int CalcAvailData(struct chbuff *pChBuff, int *piAvailDataCont,
 
 	if (NULL != pChBuff->pReadGuard) {
 		pStop = pChBuff->pReadGuard;
-	}
-	else {
+	} else {
 		/* else:
 		   if BuffState==BUFF_FULL but we have a ReadGuard, we still
 		   need to calculate it as a normal [Start,Stop] interval
@@ -548,8 +542,7 @@ int CalcFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceCont,
 
 	if (NULL != pChBuff->pWriteGuard) {
 		pStop = pChBuff->pWriteGuard;
-	}
-	else {
+	} else {
 		/* else:
 		   if BuffState==BUFF_EMPTY but we have a WriteGuard, we still
 		   need to calculate it as a normal [Start,Stop] interval

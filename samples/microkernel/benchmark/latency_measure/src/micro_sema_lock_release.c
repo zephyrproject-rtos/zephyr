@@ -81,8 +81,7 @@ int microSemaLockUnlock(void)
 		PRINT_FORMAT(" Average semaphore signal time %lu tcs = %lu nsec",
 					 timestamp / N_TEST_SEMA,
 					 SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_SEMA));
-	}
-	else {
+	} else {
 		errorCount++;
 		PRINT_OVERFLOW_ERROR();
 	}
@@ -97,8 +96,7 @@ int microSemaLockUnlock(void)
 		PRINT_FORMAT(" Average semaphore test time %lu tcs = %lu nsec",
 					 timestamp / N_TEST_SEMA,
 					 SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp, N_TEST_SEMA));
-	}
-	else {
+	} else {
 		errorCount++;
 		PRINT_OVERFLOW_ERROR();
 	}

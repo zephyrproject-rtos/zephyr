@@ -88,8 +88,7 @@ static void fiberInt(void)
 	raiseIntFunc();
 	if (flagVar != 1) {
 		PRINT_FORMAT(" Flag variable has not changed. FAILED");
-	}
-	else {
+	} else {
 		timestamp = TIME_STAMP_DELTA_GET(timestamp);
 	}
 }

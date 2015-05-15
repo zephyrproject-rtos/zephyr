@@ -103,8 +103,7 @@ void enlist_timer(struct k_timer *T)
 	}
 	if (Q) {
 		Q->Forw = T;
-	}
-	else {
+	} else {
 		_k_timer_list_head = T;
 	}
 	T->Forw = P;
