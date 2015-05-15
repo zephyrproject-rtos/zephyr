@@ -1,3 +1,4 @@
+
 config	BLUETOOTH
 	bool
 	prompt "Bluetooth LE support [EXPERIMENTAL]"
@@ -22,3 +23,65 @@ config	BLUETOOTH_DEBUG_HCI_CORE
 	help
 	  This option enables debug support for Bluetooth HCI
 	  core
+
+config	BLUETOOTH_DEBUG_BUF
+	bool
+	prompt "Bluetooth buffers debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for Bluetooth buffers.
+
+config	BLUETOOTH_DEBUG_CONN
+	bool
+	prompt "Bluetooth connection debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for Bluetooth
+	  connection handling.
+
+config	BLUETOOTH_DEBUG_L2CAP
+	bool
+	prompt "Bluetooth L2CAP debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  L2ACP layer.
+
+config	BLUETOOTH_DEBUG_SMP
+	bool
+	prompt "Bluetooth Security Manager Protocol (SMP) debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  Security Manager Protocol (SMP).
+
+config	BLUETOOTH_DEBUG_ATT
+	bool
+	prompt "Bluetooth Attribute Protocol (ATT) debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  Attribute Protocol (ATT).
+
+config	BLUETOOTH_UART
+	bool
+	prompt "Bluetooth UART driver"
+	depends on BLUETOOTH
+	select UART_INTERRUPT_DRIVEN
+	default n
+	help
+	  Enable Bluetooth UART driver.
+
+config	BLUETOOTH_DEBUG_UART
+	bool
+	prompt "Bluetooth UART driver debug"
+	depends on BLUETOOTH_UART && BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for Bluetooth UART
+	  driver
