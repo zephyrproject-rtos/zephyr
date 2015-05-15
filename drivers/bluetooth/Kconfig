@@ -33,7 +33,7 @@
 #
 # Bluetooth options
 #
-menu "Bluetooth Stack Options"
+menu "Bluetooth UART Options"
 depends on BLUETOOTH
 
 config	BLUETOOTH_DEBUG_UART
