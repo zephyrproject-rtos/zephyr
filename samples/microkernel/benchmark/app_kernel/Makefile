@@ -47,4 +47,6 @@ PRJ_INCPATH += ${vBASE}/samples/include/
 
 PRJ_CONF = $(PRJ_CONF_CONSOLE_$(if ${CONFIG_CPU_FLOAT_UNSUPPORTED},NOFLOAT,FLOAT)_$(if $(filter ${vBSP}_${vBSP_VARIANT},${PC8253_BSP_VARIANTS}),8253,GEN))
 
+override EXTRA_CFLAGS += -I${vBASE}/kernel/microkernel/include/
+
 include ${vMAKE}/target/make.ukernel
