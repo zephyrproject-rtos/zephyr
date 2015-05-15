@@ -27,11 +27,11 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	Frequency of the hardware timer used for the system clock
 	(in Hz).
 
-config  TICKLESS_KERNEL
+config  SYS_CLOCK_EXISTS
 	bool
 	# omit prompt to signify a "hidden" option
-	default y if (SYS_CLOCK_TICKS_PER_SEC = 0)
-	default n
+	default n if (SYS_CLOCK_TICKS_PER_SEC = 0)
+	default y
 	help
 	This option specifies that the kernel lacks timer support.
 

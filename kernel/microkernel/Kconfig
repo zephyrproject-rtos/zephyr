@@ -61,8 +61,8 @@ config NUM_COMMAND_PACKETS
 
 config NUM_TIMER_PACKETS
 	int
-	prompt "Number of timer packets" if !TICKLESS_KERNEL
-	default 0 if TICKLESS_KERNEL
+	prompt "Number of timer packets" if SYS_CLOCK_EXISTS
+	default 0 if !SYS_CLOCK_EXISTS
 	default 10
 	depends on MICROKERNEL
 	help
@@ -203,7 +203,7 @@ config TIMESLICING
 	bool
 	prompt "Task time slicing"
 	default y
-	depends on MICROKERNEL && !TICKLESS_KERNEL
+	depends on MICROKERNEL && SYS_CLOCK_EXISTS
 	help
 	This option enables time slicing between tasks of equal priority.
 
