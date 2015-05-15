@@ -37,13 +37,6 @@
 
 #define INVALID_VECTOR 0xFFFFFFFF
 
-struct task_irq_info {
-	ktask_t taskId;  /* task ID of task IRQ object's owner */
-	uint32_t irq;    /* IRQ used by task IRQ object */
-	kevent_t event;  /* event number assigned to task IRQ object */
-	uint32_t vector; /* interrupt vector assigned to task IRQ object */
-};
-
 extern uint32_t task_irq_alloc(kirq_t irq_obj,
 				      uint32_t irq,
 				      uint32_t priority);

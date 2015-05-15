@@ -70,6 +70,15 @@ struct irq_obj_reg_arg {
 	ktask_t taskId; /* requesting task */
 };
 
+/* task IRQ object type */
+
+struct task_irq_info {
+	ktask_t taskId;  /* task ID of task IRQ object's owner */
+	uint32_t irq;    /* IRQ used by task IRQ object */
+	kevent_t event;  /* event number assigned to task IRQ object */
+	uint32_t vector; /* interrupt vector assigned to task IRQ object */
+};
+
 /* task IRQ object array */
 
 static struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
