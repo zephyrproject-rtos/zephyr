@@ -32,19 +32,13 @@
 
 # DESCRIPTION
 # Makefile for the console shell with Bluetooth commands
-
-include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
-
-# default BSP
 BSP ?= generic_pc
-
-PRJ_CONF = prj_${vARCH}.conf
 VPFILE = prj.vpf
+KERNEL_TYPE = micro
+CONF_OVERLAY = prj_$(ARCH).conf
+QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
 
+PRJ_INCPATH += ${TIMO_BASE}/include/drivers
+
+include $(TIMO_BASE)/Makefile.inc
 # console handler
-PRJ_INCPATH += ${vBASE}/include/drivers
-
-# UART for Bluetooth
-QEMU_EXTRA_FLAGS += -serial unix:/tmp/bt-server-bredr
-
-include ${vMAKE}/target/make.ukernel

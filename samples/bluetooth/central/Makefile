@@ -32,16 +32,10 @@
 
 # DESCRIPTION
 # Makefile for the Bluetooth LE central role sample
-
-include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
-
-# default BSP
 BSP ?= generic_pc
-
-PRJ_CONF = prj_${vARCH}.conf
 VPFILE = prj.vpf
+KERNEL_TYPE = micro
+CONF_OVERLAY = prj_$(ARCH).conf
+QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
 
-# UART for Bluetooth
-QEMU_EXTRA_FLAGS += -serial unix:/tmp/bt-server-bredr
-
-include ${vMAKE}/target/make.ukernel
+include $(TIMO_BASE)/Makefile.inc

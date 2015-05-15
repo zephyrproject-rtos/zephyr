@@ -32,19 +32,10 @@
 
 # DESCRIPTION
 # Makefile for the Bluetooth init sample
-
-include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
-
-# default BSP
 BSP ?= generic_pc
+KERNEL_TYPE = nano
+CONF_OVERLAY = prj_$(ARCH).conf
+QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
+SOURCE_DIR = $(TIMO_BASE)/samples/bluetooth/shell/src/
 
-PRJ_CONF = prj_${vARCH}.conf
-
-PRJ_SRCPATH = ${vBASE}/samples/bluetooth/shell/src
-
-# console handler
-PRJ_INCPATH += ${vBASE}/include/drivers
-
-QEMU_EXTRA_FLAGS += -serial unix:/tmp/bt-server-bredr
-
-include ${vMAKE}/target/make.nkernel
+include $(TIMO_BASE)/Makefile.inc
