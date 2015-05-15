@@ -1,15 +1,21 @@
-.. Tiny Mountain documentation master file, created by
-   sphinx-quickstart on Tue May  5 22:43:00 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+..
+   Tiny Mountain's documentation master file
+
+
+.. include:: documentation_license.rst
 
 .. toctree::
    :maxdepth: 2
 
+   installation/installation.rst
+   collaboration/collaboration.rst
+   doxygen/doxygen.rst
+
+
 
 Indices and tables
-==================
+##################
 
 * :ref:`genindex`
-* :ref:`search`
 
+* :ref:`search`
