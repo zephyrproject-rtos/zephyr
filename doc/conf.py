@@ -105,7 +105,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -225,7 +224,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'Tiny Mountain.tex', u'Tiny Mountain Documentation',
+  (master_doc, 'tiny_mountain.tex', u'Tiny Mountain Documentation',
    u'many', 'manual'),
 ]
 
@@ -255,7 +254,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'Tiny Mountain', u'Tiny Mountain Documentation',
+    (master_doc, 'tiny_mountain', u'Tiny Mountain Documentation',
      [author], 1)
 ]
 
@@ -269,7 +268,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'Tiny Mountain', u'Tiny Mountain Documentation',
+  (master_doc, 'tiny_mountain', u'Tiny Mountain Documentation',
    author, 'Tiny Mountain', 'One line description of project.',
    'Miscellaneous'),
 ]
@@ -286,8 +285,8 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-breathe_projects = { 
-    "Tiny Mountain": "../xml",
+breathe_projects = {
+    "Tiny Mountain": "xml",
     "doc-examples": "xml"
 }
 breathe_default_project = "Tiny Mountain"
