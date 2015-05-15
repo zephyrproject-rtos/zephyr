@@ -70,7 +70,7 @@ void MainTask(void)
 	/* now we check the first task to perform the test and die */
 	result = task_sem_take_wait_timeout(SEMA1, WAIT_TOUT);
 	if (result == RC_TIME) {
-		TC_PRINT("As expected, test task 1 did not continue operating \n");
+		TC_PRINT("As expected, test task 1 did not continue operating\n");
 		TC_PRINT("after calling memcpy_s with incorrect parameters\n");
 	} else {
 		TC_ERROR("Test task 1 unexpectedly continued\n"
@@ -88,7 +88,7 @@ void MainTask(void)
 	/* now we check the second task to perform the test and die */
 	result = task_sem_take_wait_timeout(SEMA2, WAIT_TOUT);
 	if (result == RC_TIME) {
-		TC_PRINT("As expected, test task 2 did not continue operating \n");
+		TC_PRINT("As expected, test task 2 did not continue operating\n");
 		TC_PRINT("after calling strcpy_s with incorrect parameters\n");
 	} else {
 		TC_ERROR("Test task 2 unexpectedly continued\n"

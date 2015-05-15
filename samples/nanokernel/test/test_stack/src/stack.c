@@ -333,7 +333,7 @@ void testIsrStackFromFiber(void)
 	}
 
 	/* Put more data into STACK */
-	TC_PRINT("ISR STACK (running in fiber context) Push to queue1: \n");
+	TC_PRINT("ISR STACK (running in fiber context) Push to queue1:\n");
 	for (int i=0; i<NUM_STACK_ELEMENT; i++) {
 		isrStackInfo.data = myIsrData[i];
 		TC_PRINT("  %d, ", myIsrData[i]);

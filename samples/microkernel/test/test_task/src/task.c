@@ -369,7 +369,7 @@ int taskYieldTest(void)
 		task_yield();
 
 		if (helperData == prevHelperData) {
-			TC_ERROR("Iter %d.  helperData did not change (%d) \n",
+			TC_ERROR("Iter %d.  helperData did not change (%d)\n",
 					 i + 1, helperData);
 			return TC_FAIL;
 		}

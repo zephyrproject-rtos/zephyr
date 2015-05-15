@@ -323,7 +323,7 @@ void _sys_power_save_idle(int32_t ticks)
 	if ((ticks == TICKS_UNLIMITED) || ticks >= _sys_idle_threshold_ticks) {
 		/*
 		 * Stop generating system timer interrupts until it's time for
-		 * the next scheduled microkernel timer to expire. 
+		 * the next scheduled microkernel timer to expire.
 		 */
 
 		_timer_idle_enter(ticks);

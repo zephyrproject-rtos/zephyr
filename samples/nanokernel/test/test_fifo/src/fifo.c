@@ -344,7 +344,7 @@ void testIsrFifoFromFiber(void)
 	}
 
 	/* Put more item into queue */
-	TC_PRINT("\nISR FIFO (running in fiber context) Put Order: \n");
+	TC_PRINT("\nISR FIFO (running in fiber context) Put Order:\n");
 	for (int i=0; i<NUM_FIFO_ELEMENT; i++) {
 		isrFifoInfo.data = pPutList1[i];
 		TC_PRINT(" %p,", pPutList1[i]);

@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module provides the VxMicro nanokernel (aka system-level) 'fifo' 
+This module provides the VxMicro nanokernel (aka system-level) 'fifo'
 implementation. This module provides the backing implementation for the
 following APIs:
 
