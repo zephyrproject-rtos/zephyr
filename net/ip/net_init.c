@@ -205,6 +205,10 @@ static int check_and_send_packet(struct net_buf *buf)
 	struct simple_udp_connection *udp;
 	int ret = 0;
 
+	if (!netdev.drv) {
+		return -EINVAL;
+	}
+
 	tuple = net_context_get_tuple(buf->context);
 	if (!tuple) {
 		return -EINVAL;
@@ -241,8 +245,6 @@ static int check_and_send_packet(struct net_buf *buf)
 
 static void net_tx_fiber(void)
 {
-	struct net_driver *drv = netdev.drv;
-
 	NET_DBG("Starting TX fiber\n");
 
 	while (1) {
@@ -324,6 +326,19 @@ int net_set_mac(uint8_t *mac, uint8_t len)
 	return 0;
 }
 
+static uint8_t net_tcpip_output(struct net_buf *buf, const uip_lladdr_t *lladdr)
+{
+	if (!netdev.drv) {
+		return 0;
+	}
+
+	if (netdev.drv->send(buf) < 0) {
+		return 0;
+	}
+
+	return 1;
+}
+
 static int network_initialization(void)
 {
 	/* Initialize and start Contiki uIP stack */
@@ -333,10 +348,7 @@ static int network_initialization(void)
 	ctimer_init();
 
 	process_init();
-	netstack_init();
-
-	NET_DBG("uIP: MAC %s, RDC %s, NETWORK %s\n", NETSTACK_MAC.name,
-		NETSTACK_RDC.name, NETSTACK_NETWORK.name);
+	tcpip_set_outputfunc(net_tcpip_output);
 
 	process_start(&tcpip_process, NULL);
 	process_start(&simple_udp_process, NULL);
@@ -347,12 +359,19 @@ static int network_initialization(void)
 
 int net_register_driver(struct net_driver *drv)
 {
+	int r;
+
 	if (netdev.drv) {
 		return -EALREADY;
 	}
 
 	if (!drv->open || !drv->send) {
 		return -EINVAL;
+	}
+
+	r = drv->open();
+	if (r < 0) {
+		return r;
 	}
 
 	netdev.drv = drv;
@@ -367,23 +386,10 @@ void net_unregister_driver(struct net_driver *drv)
 
 int net_init(void)
 {
-	struct net_driver *drv = netdev.drv;
-	int err;
-
-	if (!drv) {
-		NET_DBG("No network driver defined\n");
-		return -ENODEV;
-	}
-
 	net_context_init();
 	net_buf_init();
 	init_tx_queue();
 	init_rx_queue();
-
-	err = drv->open();
-	if (err) {
-		return err;
-	}
 
 	return network_initialization();
 }
