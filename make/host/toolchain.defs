@@ -31,10 +31,10 @@
 #
 
 # compilers
-vCC_linux2 = /usr/bin/gcc
+vCC_linux2 = gcc
 
 # archivers
-vAR_linux2 = /usr/bin/ar
+vAR_linux2 = ar
 
 #add in any extra hosts to build for
 sinclude ${VXMICRO_BASE}/make/host/toolchain_extra.defs
