@@ -37,8 +37,6 @@
 extern "C" {
 #endif
 
-extern struct k_proc *_k_current_task;
-
 /*
  * The following task groups are reserved for system use.
  * SysGen automatically generates corresponding TASKGROUPs with reserved
@@ -85,16 +83,18 @@ extern int task_offload_to_fiber(int (*)(), void *);
 extern void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func);
 #endif
 
-#define task_id_get() (_k_current_task->Ident)
-#define task_priority_get() (_k_current_task->Prio)
+extern ktask_t task_id_get();
+extern kpriority_t task_priority_get();
+
 #define task_start(t) _task_ioctl(t, TASK_START)
 #define task_abort(t) _task_ioctl(t, TASK_ABORT)
 #define task_suspend(t) _task_ioctl(t, TASK_SUSPEND)
 #define task_resume(t) _task_ioctl(t, TASK_RESUME)
 
-#define task_group_mask_get() (_k_current_task->Group)
-#define task_group_join(g) (_k_current_task->Group |= g)
-#define task_group_leave(g) (_k_current_task->Group &= ~g)
+extern uint32_t task_group_mask_get();
+extern void task_group_join(uint32_t groups);
+extern void task_group_leave(uint32_t groups);
+
 #define task_group_start(g) _task_group_ioctl(g, TASK_GROUP_START)
 #define task_group_abort(g) _task_group_ioctl(g, TASK_GROUP_ABORT)
 #define task_group_suspend(g) _task_group_ioctl(g, TASK_GROUP_SUSPEND)

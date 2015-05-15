@@ -44,6 +44,18 @@
 
 /*******************************************************************************
 *
+* task_id_get - get task identifer
+*
+* RETURNS: identifier for current task
+*/
+
+ktask_t task_id_get(void)
+{
+	return _k_current_task->Ident;
+}
+
+/*******************************************************************************
+*
 * reset_state_bit - reset the specified task state bits
 *
 * This routine resets the specified task state bits.  When a task's state bits
@@ -432,6 +444,54 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
 	A.Args.g1.group = group;
 	A.Args.g1.opt = opt;
 	KERNEL_ENTRY(&A);
+}
+
+/*******************************************************************************
+*
+* task_group_mask_get - get task groups for task
+*
+* RETURNS: task groups associated with current task
+*/
+
+kpriority_t task_group_mask_get(void)
+{
+	return _k_current_task->Group;
+}
+
+/*******************************************************************************
+*
+* task_group_join - add task to task group(s)
+*
+* RETURNS: N/A
+*/
+
+void task_group_join(uint32_t groups)
+{
+	_k_current_task->Group |= groups;
+}
+
+/*******************************************************************************
+*
+* task_group_leave - remove task from task group(s)
+*
+* RETURNS: N/A
+*/
+
+void task_group_leave(uint32_t groups)
+{
+	_k_current_task->Group &= ~groups;
+}
+
+/*******************************************************************************
+*
+* task_priority_get - get task priority
+*
+* RETURNS: priority of current task
+*/
+
+kpriority_t task_priority_get(void)
+{
+	return _k_current_task->Prio;
 }
 
 /*******************************************************************************
