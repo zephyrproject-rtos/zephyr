@@ -11,7 +11,7 @@ config NUM_IRQ_PRIO_BITS
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
-	default 32
+	default 34
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000
