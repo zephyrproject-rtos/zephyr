@@ -37,7 +37,7 @@ const char *basename(const char *pathname)
 {
 	int end = strlen(pathname)-1;
 
-	while(end != -1) {
+	while (end != -1) {
 		if (is_path_separator(pathname[end])) {
 			if (0 == end || pathname[end-1] != '\\') {
 				++end;

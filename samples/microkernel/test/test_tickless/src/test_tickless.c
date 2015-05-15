@@ -201,6 +201,6 @@ void ticklessTestTask(void)
 	/* release the timer, if necessary */
 	_TIMESTAMP_CLOSE();
 
-	while(1);
+	while (1);
 
 }

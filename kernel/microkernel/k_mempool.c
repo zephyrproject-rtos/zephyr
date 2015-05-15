@@ -318,7 +318,7 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 				end_of_list = 1;
 			}
 		}
-	} /* while(...) */
+	} /* while (...) */
 
 	*piblockindex = i;
 	return found;

@@ -152,7 +152,7 @@ static void get_options(int argc, char *argv[])
 		exit(-1);
 	}
 
-	for(ii = IFILE; ii < NUSERFILES; ii++) {
+	for (ii = IFILE; ii < NUSERFILES; ii++) {
 		if (!filenames[ii]) {
 			usage(SHORT_USAGE);
 			exit(-1);
@@ -164,7 +164,7 @@ static void get_exec_name(char *pathname)
 {
 	int end = strlen(pathname)-1;
 
-	while(end != -1) {
+	while (end != -1) {
 		#if defined(WINDOWS) /* Might have both slashes in path */
 		if (pathname[end] == '/' || pathname[end] == '\\')
 		#else
@@ -188,12 +188,12 @@ static void open_files(void)
 	fds[IFILE] = open(filenames[IFILE], O_RDONLY|O_BINARY);
 	fds[OFILE] = open(filenames[OFILE], O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,
 		                                S_IWUSR|S_IRUSR);
-	for(ii = 0; ii < NUSERFILES; ii++) {
+	for (ii = 0; ii < NUSERFILES; ii++) {
 		int invalid = fds[ii] == -1;
 		if (invalid) {
 			char *invalid = filenames[ii];
 			fprintf(stderr, "invalid file %s\n", invalid);
-			for(--ii; ii >= 0; ii--) {
+			for (--ii; ii >= 0; ii--) {
 				close(fds[ii]);
 			}
 			exit(-1);
@@ -297,7 +297,7 @@ static void close_files(void)
 {
 	int ii;
 
-	for(ii = 0; ii < NUSERFILES; ii++) {
+	for (ii = 0; ii < NUSERFILES; ii++) {
 		close(fds[ii]);
 	}
 }

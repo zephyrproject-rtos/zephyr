@@ -219,7 +219,7 @@ void fiber1(void)
 	/* Get all data */
 	while (nano_fiber_stack_pop(&nanoStackObj, &data) != 0) {
 		TC_PRINT("FIBER STACK Pop: count = %d, data is %d\n", count, data);
-		if((count >= NUM_STACK_ELEMENT) || (data != myData[NUM_STACK_ELEMENT - 1 - count])) {
+		if ((count >= NUM_STACK_ELEMENT) || (data != myData[NUM_STACK_ELEMENT - 1 - count])) {
 			TCERR1(count);
 			retCode = TC_FAIL;
 			return;
