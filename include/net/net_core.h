@@ -108,6 +108,9 @@ void net_unregister_driver(struct net_driver *drv);
  */
 int net_set_mac(uint8_t *mac, uint8_t len);
 
+/* Called by driver when an IP packet has been received */
+int net_recv(struct net_buf *buf);
+
 void net_context_init(void);
 
 #endif /* __NET_CORE_H */

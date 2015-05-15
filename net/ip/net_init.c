@@ -95,6 +95,18 @@ int net_send(struct net_buf *buf)
 	return 0;
 }
 
+/* Called by driver when an IP packet has been received */
+int net_recv(struct net_buf *buf)
+{
+	if (buf->len == 0) {
+		return -ENODATA;
+	}
+
+	nano_fifo_put(&netdev.rx_queue, buf);
+
+	return 0;
+}
+
 static void udp_packet_receive(struct simple_udp_connection *c,
 			       const uip_ipaddr_t *source_addr,
 			       uint16_t source_port,
@@ -263,8 +275,10 @@ static void net_rx_fiber(void)
 	NET_DBG("Starting RX fiber\n");
 
 	while (1) {
-		/* Wait next packet from network, pass it to IP stack */
+		/* Wait next packet from network */
 		buf = nano_fifo_get_wait(&netdev.rx_queue);
+
+		/* TBD: Pass it to IP stack */
 
 		net_buf_put(buf);
 	}
