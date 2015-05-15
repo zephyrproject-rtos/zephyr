@@ -32,10 +32,72 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string_s.h>
+#include <errno.h>
 #include <misc/printk.h>
+#include <misc/byteorder.h>
 
 #include "bluetooth/bluetooth.h"
 #include "bluetooth/hci.h"
+#include "bluetooth/uuid.h"
+#include "bluetooth/gatt.h"
+
+#define DEVICE_NAME		"Test peripheral"
+#define HEART_RATE_APPEARANCE	0x0341
+
+static struct bt_uuid gap_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GAP,
+};
+
+static struct bt_uuid device_name_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GAP_DEVICE_NAME,
+};
+
+static struct bt_gatt_chrc name_chrc = {
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x0003,
+	.uuid = &device_name_uuid,
+};
+
+static int read_name(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
+		     uint16_t offset)
+{
+	const char *name = attr->user_data;
+
+	return bt_gatt_attr_read(attr, buf, len, offset, name, strlen(name));
+}
+
+static struct bt_uuid appeareance_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GAP_APPEARANCE,
+};
+
+static struct bt_gatt_chrc appearance_chrc = {
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x0005,
+	.uuid = &appeareance_uuid,
+};
+
+static int read_appearance(const struct bt_gatt_attr *attr, void *buf,
+			   uint8_t len, uint16_t offset)
+{
+	uint16_t appearance = sys_cpu_to_le16(HEART_RATE_APPEARANCE);
+
+	return bt_gatt_attr_read(attr, buf, len, offset, &appearance,
+				 sizeof(appearance));
+}
+
+static const struct bt_gatt_attr attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
+	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
+	BT_GATT_DESCRIPTOR(0x0003, &device_name_uuid, read_name, NULL,
+			   DEVICE_NAME),
+	BT_GATT_CHARACTERISTIC(0x0004, &appearance_chrc),
+	BT_GATT_DESCRIPTOR(0x0005, &appeareance_uuid, read_appearance, NULL,
+			   NULL),
+};
 
 static const struct bt_eir ad[] = {
 	{
@@ -50,7 +112,7 @@ static const struct bt_eir sd[] = {
 	{
 		.len = 16,
 		.type = BT_EIR_NAME_COMPLETE,
-		.data = "Test peripheral",
+		.data = DEVICE_NAME,
 	},
 	{ }
 };
@@ -70,6 +132,8 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
 	err = bt_start_advertising(BT_LE_ADV_IND, ad, sd);
 	if (err) {
