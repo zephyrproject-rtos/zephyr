@@ -53,6 +53,11 @@ extern struct net_tuple *net_context_get_tuple(struct net_context *context);
 static struct net_buf		buffers[NUM_BUFS];
 static struct nano_fifo		free_bufs;
 
+/* Available (free) MAC buffers queue */
+#define NUM_MAC_BUFS		4
+static struct net_mbuf		mac_buffers[NUM_MAC_BUFS];
+static struct nano_fifo		free_mbufs;
+
 #ifdef DEBUG_NET_BUFS
 struct net_buf *net_buf_get_reserve_debug(uint16_t reserve_head, const char *caller, int line)
 #else
@@ -155,6 +160,60 @@ uint8_t *net_buf_pull(struct net_buf *buf, uint16_t len)
 	return buf->data += len;
 }
 
+struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head)
+{
+	struct net_mbuf *buf;
+
+	buf = nano_fifo_get(&free_mbufs);
+	if (!buf) {
+		NET_ERR("Failed to get free mac buffer\n");
+		return NULL;
+	}
+
+	buf->data = buf->buf + reserve_head;
+	buf->len = 0;
+
+	NET_DBG("buf %p reserve %u\n", buf, reserve_head);
+
+	return buf;
+}
+
+void net_mbuf_put(struct net_mbuf *buf)
+{
+	NET_DBG("buf %p\n", buf);
+
+	nano_fifo_put(&free_mbufs, buf);
+}
+
+uint8_t *net_mbuf_add(struct net_mbuf *buf, uint16_t len)
+{
+	uint8_t *tail = buf->data + buf->len;
+	buf->len += len;
+	return tail;
+}
+
+uint8_t *net_mbuf_push(struct net_mbuf *buf, uint16_t len)
+{
+	buf->data -= len;
+	buf->len += len;
+	return buf->data;
+}
+
+uint8_t *net_mbuf_pull(struct net_mbuf *buf, uint16_t len)
+{
+	buf->len -= len;
+	return buf->data += len;
+}
+
+static void net_mbuf_init(void)
+{
+	nano_fifo_init(&free_mbufs);
+
+	for (int i = 0; i < NUM_MAC_BUFS; i++) {
+		nano_fifo_put(&free_mbufs, &mac_buffers[i]);
+	}
+}
+
 void net_buf_init(void)
 {
 	nano_fifo_init(&free_bufs);
@@ -162,4 +221,6 @@ void net_buf_init(void)
 	for (int i = 0; i < NUM_BUFS; i++) {
 		nano_fifo_put(&free_bufs, &buffers[i]);
 	}
+
+	net_mbuf_init();
 }

@@ -274,4 +274,96 @@ uint8_t *net_buf_pull(struct net_buf *buf, uint16_t len);
 void net_buf_init(void);
 /* @endcond */
 
+/*! For the MAC layer (after the IPv6 packet is fragmented to smaller
+ * chunks), we can use much smaller buffers (depending on used radio
+ * technology). For 802.15.4 we use the 128 bytes long buffers.
+ */
+#ifndef NET_MAC_BUF_MAX_SIZE
+#define NET_MAC_BUF_MAX_SIZE PACKETBUF_SIZE
+#endif
+
+struct net_mbuf {
+	/*! @cond ignore */
+	/* FIFO uses first 4 bytes itself, reserve space */
+	int __unused;
+	/* @endcond */
+
+	/*! Buffer data variables */
+	uint16_t len;
+	uint8_t *data;                 /* this points to user data */
+	uint8_t buf[NET_MAC_BUF_MAX_SIZE];
+};
+
+/*!
+ * @brief Get buffer from the available buffers pool
+ * and also reserve headroom for potential headers.
+ *
+ * @details Normally this version is not useful for applications
+ * but is mainly used by network fragmentation code.
+ *
+ * @param reserve How many bytes to reserve for headroom.
+ *
+ * @return Network buffer if successful, NULL otherwise.
+ */
+struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head);
+
+/*!
+ * @brief Place buffer back into the available buffers pool.
+ *
+ * @details Releases the buffer to other use. This needs to be
+ * called by application after it has finished with
+ * the buffer.
+ *
+ * @param buf Network buffer to release.
+ */
+void net_mbuf_put(struct net_mbuf *buf);
+
+/*!
+ * @brief Prepare data to be added at the end of the buffer.
+ *
+ * @details Move the tail pointer forward.
+ *
+ * @param buf Network buffer.
+ * @param len Size of data to be added.
+ *
+ * @return Pointer to new tail.
+ */
+uint8_t *net_mbuf_add(struct net_mbuf *buf, uint16_t len);
+
+/*!
+ * @brief Push data to the beginning of the buffer.
+ *
+ * @details Move the data pointer backwards.
+ *
+ * @param buf Network buffer.
+ * @param len Size of data to be added.
+ *
+ * @return Pointer to new head.
+ */
+uint8_t *net_mbuf_push(struct net_mbuf *buf, uint16_t len);
+
+/*!
+ * @brief Remove data from the beginning of the buffer.
+ *
+ * @details Move the data pointer forward.
+ *
+ * @param buf Network buffer.
+ * @param len Size of data to be removed.
+ *
+ * @return Pointer to new head.
+ */
+uint8_t *net_mbuf_pull(struct net_mbuf *buf, uint16_t len);
+
+/*! @def net_buf_tail
+ *
+ * @brief Return pointer to the end of the data in the buffer.
+ *
+ * @details This macro returns the tail of the buffer.
+ *
+ * @param buf Network buffer.
+ *
+ * @return Pointer to tail.
+ */
+#define net_mbuf_tail(buf) ((buf)->data + (buf)->len)
+
 #endif /* __NET_BUF_H */
