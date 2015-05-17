@@ -42,13 +42,15 @@ info()
 # {2} symbol map file
 linker_params()
 {
+	LIBS=""
+	for tcl in ${ALL_LIBS}; do  LIBS="${LIBS} -l${tcl}"; done
 	echo "${LDFLAGS_tinymountain}" > ${1}
 	echo "-Wl,-Map,./${2}" >> ${1}
 	echo "-L ${objtree}/include/generated" >> ${1}
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
 	echo "-Wl,--start-group ${KBUILD_TIMO_MAIN}" >> ${1}
-	echo "${LIB_INCLUDE_DIR} ${LDLIBS_TOOLCHAIN}" >> ${1}
 	echo "${objtree}/include/generated/offsets.o" >> ${1}
+	echo "${LIB_INCLUDE_DIR} ${LIBS}" >> ${1}
 }
 
 #Creates linker command file

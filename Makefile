@@ -903,8 +903,11 @@ export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(tinymountain-alldirs)) arc
 
 tinymountain-deps := $(KBUILD_LDS) $(KBUILD_TIMO_INIT) $(KBUILD_TIMO_MAIN)
 
+ALL_LIBS += $(TOOLCHAIN_LIBS)
+export ALL_LIBS
+
 # Final link of tinymountain
-      cmd_link-tinymountain = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_tinymountain) $(LIB_INCLUDE_DIR)
+      cmd_link-tinymountain = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_tinymountain) $(LIB_INCLUDE_DIR) $(ALL_LIBS)
 quiet_cmd_link-tinymountain = LINK    $@
 
 # Include targets which we want to
