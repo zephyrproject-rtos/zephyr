@@ -242,6 +242,21 @@ struct bt_hci_cp_le_set_scan_enable {
 	uint8_t  filter_dup;
 } __packed;
 
+#define BT_HCI_OP_LE_CREATE_CONN		BT_OP(BT_OGF_LE, 0x000d)
+struct bt_hci_cp_le_create_conn {
+	uint16_t     scan_interval;
+	uint16_t     scan_window;
+	uint8_t      filter_policy;
+	bt_addr_le_t peer_addr;
+	uint8_t      own_addr_type;
+	uint16_t     conn_interval_min;
+	uint16_t     conn_interval_max;
+	uint16_t     conn_latency;
+	uint16_t     supervision_timeout;
+	uint16_t     min_ce_len;
+	uint16_t     max_ce_len;
+} __packed;
+
 #define BT_HCI_OP_LE_ENCRYPT			BT_OP(BT_OGF_LE, 0x0017)
 struct bt_hci_cp_le_encrypt {
 	uint8_t  key[16];

@@ -111,4 +111,14 @@ int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
 int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter);
 int bt_stop_scanning();
 
+/** @brief Setting LE connection to peer
+ *
+ *  Allows initiate new LE link to remote peer using its address
+ *
+ *  @param peer address of peer's object containing LE address
+ *
+ *  @return zero in success or error code otherwise.
+ */
+int bt_connect_le(const bt_addr_le_t *peer);
+
 #endif /* __BT_BLUETOOTH_H */
