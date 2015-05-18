@@ -361,9 +361,11 @@ static void le_conn_complete(struct bt_buf *buf)
 static void le_adv_report(struct bt_buf *buf)
 {
 	uint8_t num_reports = buf->data[0];
-	struct bt_hci_ev_le_advertising_info *info = (void *)&buf->data[1];
+	struct bt_hci_ev_le_advertising_info *info;
 
 	BT_DBG("Adv number of reports %u\n",  num_reports);
+
+	info = bt_buf_pull(buf, sizeof(num_reports));
 
 	while (num_reports--) {
 		int8_t rssi = info->data[info->length];
