@@ -662,7 +662,10 @@ static int hci_init(void)
 
 	enable = bt_buf_add(buf, sizeof(*enable));
 	*enable = 0x01;
-	bt_hci_cmd_send(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+	if (err) {
+		return err;
+	}
 
 	if (lmp_bredr_capable(dev)) {
 		struct bt_hci_cp_write_le_host_supp *cp;
