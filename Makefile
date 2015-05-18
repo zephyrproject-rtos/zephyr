@@ -632,6 +632,7 @@ endif
 
 ifdef CONFIG_TOOLCHAIN_NEWLIB
 libs-y += lib/libc/newlib/
+ALL_LIBS += c m
 endif
 
 #File that includes all prepare special embedded architecture targets.
