@@ -121,18 +121,6 @@ struct bt_att_find_type_rsp {
 	struct bt_att_handle_group list[0];
 } PACK_STRUCT;
 
-#define BT_UUID_16				0x00
-#define BT_UUID_128				0x01
-
-/* TODO: Move UUID to its own file */
-struct bt_uuid {
-	uint8_t type;
-	union {
-		uint16_t u16;
-		uint8_t  u128[16];
-	};
-};
-
 /* Read By Type Request */
 #define BT_ATT_OP_READ_TYPE_REQ			0x08
 struct bt_att_read_type_req {
