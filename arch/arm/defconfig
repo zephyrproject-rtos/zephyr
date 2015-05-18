@@ -26,10 +26,6 @@ CONFIG_ISR_STACK_SIZE=2048
 #
 # Microkernel Options
 #
-
-#
-# Core Microkernel Options
-#
 CONFIG_MICROKERNEL_SERVER_STACK_SIZE=1024
 CONFIG_MICROKERNEL_SERVER_PRIORITY=0
 CONFIG_PRIORITY_CEILING=0
@@ -110,6 +106,7 @@ CONFIG_WDOG_INIT=y
 # General Setup
 #
 CONFIG_CROSS_COMPILE=""
+CONFIG_MINIMAL_LIBC=y
 
 #
 # Debugging Options
@@ -125,6 +122,7 @@ CONFIG_CROSS_COMPILE=""
 # Compile and Link Features
 #
 CONFIG_COMPILER_OPT=""
+# CONFIG_BLUETOOTH is not set
 CONFIG_DRV_CONSOLE=y
 # CONFIG_UART_INTERRUPT_DRIVEN is not set
 # CONFIG_CONSOLE_HANDLER is not set
@@ -136,4 +134,9 @@ CONFIG_DRV_K20_UART=y
 # CONFIG_DRV_INTCTL is not set
 # CONFIG_DRV_PCI is not set
 # CONFIG_DRV_RANDOM is not set
+
+#
+# Random Generation Configuration
+#
+# CONFIG_TEST_RANDOM_GENERATOR is not set
 # CONFIG_EXPERIMENTAL is not set
