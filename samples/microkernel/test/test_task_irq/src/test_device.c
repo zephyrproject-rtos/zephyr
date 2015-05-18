@@ -65,6 +65,9 @@ exercises the task_irq_free() API.
   #error "Unknown target"
 #endif
 
+#define NUM_OBJECTS 4
+uint32_t irq_vectors[NUM_OBJECTS] = {[0 ... (NUM_OBJECTS - 1)] = INVALID_VECTOR};
+
 /*******************************************************************************
 *
 * taskA - first of 2 tasks to allocate IRQ objects and check for events
@@ -78,13 +81,15 @@ exercises the task_irq_free() API.
 
 int taskA(ksem_t semRdy)
 {
-	if (task_irq_alloc(DEV1_ID, DEV1_IRQ, 1) == INVALID_VECTOR) {
+	irq_vectors[DEV1_ID] = task_irq_alloc(DEV1_ID, DEV1_IRQ, 1);
+	if (irq_vectors[DEV1_ID] == INVALID_VECTOR) {
 		TC_ERROR("Not able to allocate IRQ object\n");
 		return TC_FAIL;
 	}
 	TC_PRINT("IRQ object %d using IRQ%d allocated\n", DEV1_ID, DEV1_IRQ);
 
-	if (task_irq_alloc(DEV2_ID, DEV2_IRQ, 2) == INVALID_VECTOR) {
+	irq_vectors[DEV2_ID] = task_irq_alloc(DEV2_ID, DEV2_IRQ, 2);
+	if (irq_vectors[DEV2_ID] == INVALID_VECTOR) {
 		TC_ERROR("Not able to allocate IRQ object\n");
 		return TC_FAIL;
 	}
@@ -148,13 +153,15 @@ int taskA(ksem_t semRdy)
 
 int taskB(ksem_t semRdy)
 {
-	if (task_irq_alloc(DEV3_ID, DEV3_IRQ, 1) == INVALID_VECTOR) {
+	irq_vectors[DEV3_ID] = task_irq_alloc(DEV3_ID, DEV3_IRQ, 1);
+	if (irq_vectors[DEV3_ID] == INVALID_VECTOR) {
 		TC_ERROR("Not able to allocate IRQ object\n");
 		return TC_FAIL;
 	}
 	TC_PRINT("IRQ object %d using IRQ%d allocated\n", DEV3_ID, DEV3_IRQ);
 
-	if (task_irq_alloc(DEV4_ID, DEV4_IRQ, 1) == INVALID_VECTOR) {
+	irq_vectors[DEV4_ID] = task_irq_alloc(DEV4_ID, DEV4_IRQ, 1);
+	if (irq_vectors[DEV4_ID] == INVALID_VECTOR) {
 		TC_ERROR("Not able to allocate IRQ object\n");
 		return TC_FAIL;
 	}

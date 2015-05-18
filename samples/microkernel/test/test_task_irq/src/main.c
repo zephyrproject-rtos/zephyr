@@ -53,6 +53,9 @@
 static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
 static ksem_t rdySem = SEM_RDY;
 
+#define NUM_OBJECTS 4
+extern uint32_t irq_vectors[NUM_OBJECTS];
+
 /*******************************************************************************
 *
 * taskAMain - entry point for taskA
@@ -112,9 +115,9 @@ void registerWait(void)
 	}
 
 	TC_PRINT("Generating interrupts for all allocated IRQ objects...\n");
-	for (irq_obj = 0; irq_obj < NUM_TASK_IRQS; irq_obj++) {
-		if (task_irq_object[irq_obj].irq != INVALID_VECTOR) {
-			raiseInt((uint8_t)task_irq_object[irq_obj].vector);
+	for (irq_obj = 0; irq_obj < NUM_OBJECTS; irq_obj++) {
+		if (irq_vectors[irq_obj] != INVALID_VECTOR) {
+			raiseInt((uint8_t)irq_vectors[irq_obj]);
 		}
 	}
 
@@ -133,7 +136,6 @@ void registerWait(void)
 
 void MonitorTaskEntry(void)
 {
-	extern struct task_irq_info task_irq_object[NUM_TASK_IRQS];
 	ksem_t result;
 	int tasksDone;
 

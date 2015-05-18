@@ -72,7 +72,7 @@ struct irq_obj_reg_arg {
 
 /* task IRQ object array */
 
-struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
+static struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
 	[0 ...(MAX_TASK_IRQS - 1)].taskId = INVALID_TASK
 };
 

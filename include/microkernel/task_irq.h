@@ -44,8 +44,6 @@ struct task_irq_info {
 	uint32_t vector; /* interrupt vector assigned to task IRQ object */
 };
 
-extern struct task_irq_info task_irq_object[];
-
 extern uint32_t task_irq_alloc(kirq_t irq_obj,
 				      uint32_t irq,
 				      uint32_t priority);
