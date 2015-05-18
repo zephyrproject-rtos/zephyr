@@ -43,6 +43,14 @@ struct bt_conn_l2cap {
 	uint8_t			ident;
 };
 
+/* ATT channel specific context */
+struct bt_conn_att {
+};
+
+/* SMP channel specific context */
+struct bt_conn_smp {
+};
+
 struct bt_conn {
 	struct bt_dev		*dev;
 	uint16_t		handle;
@@ -54,7 +62,10 @@ struct bt_conn {
 	struct nano_fifo	tx_queue;
 	struct nano_fifo	rx_queue;
 
+	/* Fixed channel contexts */
 	struct bt_conn_l2cap	l2cap;
+	struct bt_conn_att	att;
+	struct bt_conn_smp	smp;
 
 	uint8_t			le_conn_interval;
 
