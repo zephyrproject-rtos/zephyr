@@ -375,8 +375,8 @@ static void le_adv_report(struct bt_buf *buf)
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
 		 */
-		info = (void *)bt_buf_pull(buf, sizeof(*info) + info->length +
-					   sizeof(rssi));
+		info = bt_buf_pull(buf, sizeof(*info) + info->length +
+					sizeof(rssi));
 	}
 }
 

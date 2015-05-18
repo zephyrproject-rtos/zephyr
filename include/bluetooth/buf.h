@@ -101,10 +101,10 @@ struct bt_buf *bt_buf_hold(struct bt_buf *buf);
 void *bt_buf_add(struct bt_buf *buf, size_t len);
 
 /* Push data to the beginning of the buffer */
-uint8_t *bt_buf_push(struct bt_buf *buf, size_t len);
+void *bt_buf_push(struct bt_buf *buf, size_t len);
 
 /* Remove data from the beginning of the buffer */
-uint8_t *bt_buf_pull(struct bt_buf *buf, size_t len);
+void *bt_buf_pull(struct bt_buf *buf, size_t len);
 
 /* Remove and convert 16 bits from the beginning of the buffer */
 uint16_t bt_buf_pull_le16(struct bt_buf *buf);

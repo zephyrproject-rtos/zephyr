@@ -165,7 +165,7 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 
 	len = min(remaining, dev->le_mtu);
 
-	hdr = (void *)bt_buf_push(buf, sizeof(*hdr));
+	hdr = bt_buf_push(buf, sizeof(*hdr));
 	hdr->handle = sys_cpu_to_le16(conn->handle);
 	hdr->len = sys_cpu_to_le16(len);
 
@@ -184,7 +184,7 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 		memcpy(bt_buf_add(buf, len), ptr, len);
 		ptr += len;
 
-		hdr = (void *)bt_buf_push(buf, sizeof(*hdr));
+		hdr = bt_buf_push(buf, sizeof(*hdr));
 		hdr->handle = sys_cpu_to_le16(conn->handle | (1 << 12));
 		hdr->len = sys_cpu_to_le16(len);
 

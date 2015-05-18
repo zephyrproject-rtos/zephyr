@@ -160,7 +160,7 @@ void *bt_buf_add(struct bt_buf *buf, size_t len)
 	return tail;
 }
 
-uint8_t *bt_buf_push(struct bt_buf *buf, size_t len)
+void *bt_buf_push(struct bt_buf *buf, size_t len)
 {
 #if defined(CONFIG_BLUETOOTH_DEBUG_BUF)
 	if (bt_buf_headroom(buf) < len) {
@@ -173,7 +173,7 @@ uint8_t *bt_buf_push(struct bt_buf *buf, size_t len)
 	return buf->data;
 }
 
-uint8_t *bt_buf_pull(struct bt_buf *buf, size_t len)
+void *bt_buf_pull(struct bt_buf *buf, size_t len)
 {
 #if defined(CONFIG_BLUETOOTH_DEBUG_BUF)
 	if (buf->len < len) {
