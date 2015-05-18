@@ -331,7 +331,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	 */
 
 	if (_sys_idle_elapsed_ticks == 1) {
-		__sys_clock_tick_announce();
+		_sys_clock_tick_announce();
 	}
 
 #else
@@ -339,13 +339,13 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	clock_accumulated_count += counterLoadVal;
 
 #if defined(CONFIG_MICROKERNEL)
-	__sys_clock_tick_announce();
+	_sys_clock_tick_announce();
 #endif
 
 #endif /*TIMER_SUPPORTS_TICKLESS*/
 
 #if defined(CONFIG_NANOKERNEL)
-	__sys_clock_tick_announce();
+	_sys_clock_tick_announce();
 #endif /*  CONFIG_NANOKERNEL */
 
 #ifdef LOAPIC_TIMER_PERIODIC_WORKAROUND
@@ -515,7 +515,7 @@ void _timer_idle_exit(void)
 		 * is
 		 * serviced.
 		 */
-		__sys_clock_tick_announce();
+		_sys_clock_tick_announce();
 	} else {
 		uint32_t elapsed;   /* elapsed "counter time" */
 		uint32_t remaining; /* remaining "counter time" */
@@ -538,7 +538,7 @@ void _timer_idle_exit(void)
 		_sys_idle_elapsed_ticks = elapsed / counterLoadVal;
 
 		if (_sys_idle_elapsed_ticks) {
-			__sys_clock_tick_announce();
+			_sys_clock_tick_announce();
 		}
 	}
 	_loApicTimerStart();
