@@ -130,10 +130,10 @@ void bt_buf_put(struct bt_buf *buf)
 		return;
 	}
 
-	cp = (void *)bt_buf_add(buf, sizeof(*cp));
+	cp = bt_buf_add(buf, sizeof(*cp));
 	cp->num_handles = sys_cpu_to_le16(1);
 
-	hc = (void *)bt_buf_add(buf, sizeof(*hc));
+	hc = bt_buf_add(buf, sizeof(*hc));
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count  = sys_cpu_to_le16(1);
 
@@ -147,7 +147,7 @@ struct bt_buf *bt_buf_hold(struct bt_buf *buf)
 	return buf;
 }
 
-uint8_t *bt_buf_add(struct bt_buf *buf, size_t len)
+void *bt_buf_add(struct bt_buf *buf, size_t len)
 {
 	uint8_t *tail = buf->data + buf->len;
 #if defined(CONFIG_BLUETOOTH_DEBUG_BUF)

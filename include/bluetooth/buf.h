@@ -98,7 +98,7 @@ void bt_buf_put(struct bt_buf *buf);
 struct bt_buf *bt_buf_hold(struct bt_buf *buf);
 
 /* Prepare data to be added at the end of the buffer */
-uint8_t *bt_buf_add(struct bt_buf *buf, size_t len);
+void *bt_buf_add(struct bt_buf *buf, size_t len);
 
 /* Push data to the beginning of the buffer */
 uint8_t *bt_buf_push(struct bt_buf *buf, size_t len);
