@@ -58,7 +58,7 @@ struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	if (!buf)
 		return NULL;
 
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	hdr = bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = op;
 
 	return buf;
@@ -73,7 +73,7 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 	if (!buf)
 		return;
 
-	rsp = (void *)bt_buf_add(buf, sizeof(*rsp));
+	rsp = bt_buf_add(buf, sizeof(*rsp));
 	rsp->reason = reason;
 
 	bt_conn_send(conn, buf);
@@ -99,7 +99,7 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_ENC_KEY_SIZE;
 	}
 
-	rsp = (void *)bt_buf_add(rsp_buf, sizeof(*rsp));
+	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));
 
 	/* For JustWorks pairing simplify rsp parameters.
 	 * TODO: needs to be reworked later on

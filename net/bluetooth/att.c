@@ -62,7 +62,7 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 		return;
 	}
 
-	rsp = (void *)bt_buf_add(buf, sizeof(*rsp));
+	rsp = bt_buf_add(buf, sizeof(*rsp));
 	rsp->request = req;
 	rsp->handle = sys_cpu_to_le16(handle);
 	rsp->error = err;
@@ -109,7 +109,7 @@ static void att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
 
 	/* TODO: Store the MTU negotiated */
 
-	rsp = (void *)bt_buf_add(buf, sizeof(*rsp));
+	rsp = bt_buf_add(buf, sizeof(*rsp));
 	rsp->mtu = sys_cpu_to_le16(mtu);
 
 	bt_conn_send(conn, buf);
@@ -578,7 +578,7 @@ struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 		return NULL;
 	}
 
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	hdr = bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = op;
 
 	return buf;

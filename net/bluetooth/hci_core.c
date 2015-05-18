@@ -88,7 +88,7 @@ struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	buf->hci.opcode = opcode;
 	buf->hci.sync = NULL;
 
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	hdr = bt_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
 	hdr->param_len = param_len;
 
@@ -617,7 +617,7 @@ static int hci_init(void)
 		return -ENOBUFS;
 	}
 
-	ev = (void *)bt_buf_add(buf, sizeof(*ev));
+	ev = bt_buf_add(buf, sizeof(*ev));
 	memset(ev, 0, sizeof(*ev));
 	ev->events[0] |= 0x10; /* Disconnection Complete */
 	ev->events[1] |= 0x08; /* Read Remote Version Information Complete */
@@ -640,7 +640,7 @@ static int hci_init(void)
 		return -ENOBUFS;
 	}
 
-	hbs = (void *)bt_buf_add(buf, sizeof(*hbs));
+	hbs = bt_buf_add(buf, sizeof(*hbs));
 	memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(BT_BUF_MAX_DATA -
 				       sizeof(struct bt_hci_acl_hdr));
@@ -658,7 +658,7 @@ static int hci_init(void)
 		return -ENOBUFS;
 	}
 
-	enable = (void *)bt_buf_add(buf, sizeof(*enable));
+	enable = bt_buf_add(buf, sizeof(*enable));
 	*enable = 0x01;
 	bt_hci_cmd_send(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf);
 
@@ -676,7 +676,7 @@ static int hci_init(void)
 			return -ENOBUFS;
 		}
 
-		cp = (void *)bt_buf_add(buf, sizeof*cp);
+		cp = bt_buf_add(buf, sizeof*cp);
 
 		/* Excplicitly enable LE for dual-mode controllers */
 		cp->le = 0x01;
@@ -795,7 +795,7 @@ int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
 		return -ENOBUFS;
 	}
 
-	set_data = (void *)bt_buf_add(buf, sizeof(*set_data));
+	set_data = bt_buf_add(buf, sizeof(*set_data));
 
 	memset(set_data, 0, sizeof(*set_data));
 
@@ -822,7 +822,7 @@ send_scan_rsp:
 		return -ENOBUFS;
 	}
 
-	scan_rsp = (void *)bt_buf_add(buf, sizeof(*scan_rsp));
+	scan_rsp = bt_buf_add(buf, sizeof(*scan_rsp));
 
 	memset(scan_rsp, 0, sizeof(*scan_rsp));
 
@@ -845,7 +845,7 @@ send_set_param:
 		return -ENOBUFS;
 	}
 
-	set_param = (void *)bt_buf_add(buf, sizeof(*set_param));
+	set_param = bt_buf_add(buf, sizeof(*set_param));
 
 	memset(set_param, 0, sizeof(*set_param));
 	set_param->min_interval		= sys_cpu_to_le16(0x0800);
@@ -882,7 +882,7 @@ int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 		return -ENOBUFS;
 	}
 
-	set_param = (void *)bt_buf_add(buf, sizeof(*set_param));
+	set_param = bt_buf_add(buf, sizeof(*set_param));
 	memset(set_param, 0, sizeof(*set_param));
 	set_param->scan_type = scan_type;
 
@@ -900,7 +900,7 @@ int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 		return -ENOBUFS;
 	}
 
-	scan_enable = (void *)bt_buf_add(buf, sizeof(*scan_enable));
+	scan_enable = bt_buf_add(buf, sizeof(*scan_enable));
 	memset(scan_enable, 0, sizeof(*scan_enable));
 	scan_enable->filter_dup = scan_filter;
 	scan_enable->enable = BT_LE_SCAN_ENABLE;
@@ -935,7 +935,7 @@ int bt_stop_scanning()
 		return -ENOBUFS;
 	}
 
-	scan_enable = (void *)bt_buf_add(buf, sizeof(*scan_enable));
+	scan_enable = bt_buf_add(buf, sizeof(*scan_enable));
 	memset(scan_enable, 0x0, sizeof(*scan_enable));
 	scan_enable->filter_dup = 0x00;
 	scan_enable->enable = BT_LE_SCAN_DISABLE;

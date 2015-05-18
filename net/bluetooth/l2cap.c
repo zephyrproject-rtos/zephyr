@@ -85,7 +85,7 @@ struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
 		return NULL;
 	}
 
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	hdr = bt_buf_add(buf, sizeof(*hdr));
 	hdr->len = sys_cpu_to_le16(len);
 	hdr->cid = sys_cpu_to_le16(cid);
 
@@ -104,12 +104,12 @@ static void rej_not_understood(struct bt_conn *conn, uint8_t ident)
 		return;
 	}
 
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	hdr = bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CMD_REJECT;
 	hdr->ident = ident;
 	hdr->len = sys_cpu_to_le16(sizeof(*rej));
 
-	rej = (void *)bt_buf_add(buf, sizeof(*rej));
+	rej = bt_buf_add(buf, sizeof(*rej));
 	rej->reason = sys_cpu_to_le16(BT_L2CAP_REJ_NOT_UNDERSTOOD);
 
 	bt_conn_send(conn, buf);
@@ -218,12 +218,12 @@ void bt_l2cap_update_conn_param(struct bt_conn *conn)
 		return;
 	}
 
-	hdr = (void *)bt_buf_add(buf, sizeof(*hdr));
+	hdr = bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONN_PARAM_REQ;
 	hdr->ident = get_ident(conn);
 	hdr->len = sys_cpu_to_le16(sizeof(*req));
 
-	req = (void *)bt_buf_add(buf, sizeof(*req));
+	req = bt_buf_add(buf, sizeof(*req));
 	req->min_interval = sys_cpu_to_le16(LE_CONN_MIN_INTERVAL);
 	req->max_interval = sys_cpu_to_le16(LE_CONN_MAX_INTERVAL);
 	req->latency = sys_cpu_to_le16(LE_CONN_LATENCY);
