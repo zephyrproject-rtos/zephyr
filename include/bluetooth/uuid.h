@@ -32,8 +32,11 @@
 #ifndef __BT_UUID_H
 #define __BT_UUID_H
 
-#define BT_UUID_16				0x00
-#define BT_UUID_128				0x01
+/* Bluetooth UUID types */
+enum bt_uuid_type {
+	BT_UUID_16,
+	BT_UUID_128,
+};
 
 /* Bluetooth UUID structure */
 struct bt_uuid {
