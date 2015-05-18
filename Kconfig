@@ -17,6 +17,13 @@ config CROSS_COMPILE
 	directory to select the cross-compiler automatically.
 endmenu
 
+config MINIMAL_LIBC
+	bool
+	prompt "Build minimal c library"
+	default y
+	help
+	Build integrated minimal c library.
+
 menu "Debugging Options"
 
 config STDOUT_CONSOLE

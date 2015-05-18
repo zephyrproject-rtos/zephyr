@@ -385,7 +385,6 @@ CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
-STDINCLUDE := -I$(srctree)/lib/libc/minimal/include
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
@@ -575,11 +574,9 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf \
 	 asm-generic
 	$(Q)$(MAKE) $(build)=$(@)
 
-# Objects we will link into tinymountain / subdirs we need to visit
-KLIBC_DIR := lib/libc/minimal
+
 core-y := arch/ kernel/ misc/ net/
 bsp-y  := drivers/
-libs-y := $(KLIBC_DIR)/
 
 ifneq ($(strip $(PROJECT)),)
 core-y += $(SOURCE_DIR)
@@ -625,6 +622,13 @@ else
 # Dummy target needed, because used as prerequisite
 include/config/auto.conf: ;
 endif # $(dot-config)
+
+ifdef CONFIG_MINIMAL_LIBC
+# Objects we will link into tinymountain / subdirs we need to visit
+KLIBC_DIR := lib/libc/minimal
+libs-y := $(KLIBC_DIR)/
+TIMOINCLUDE += -I$(srctree)/lib/libc/minimal/include
+endif
 
 #File that includes all prepare special embedded architecture targets.
 include $(srctree)/scripts/Makefile.preparch
