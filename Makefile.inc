@@ -44,6 +44,8 @@ clean: FORCE
 	@rm $(SOURCE_DIR)/modules.order -f
 	$(call cmd_clean_inner_files)
 
+pristine: distclean
+
 distclean: clean
 	@rm $(PROJECT_BASE)/.config -f
 
