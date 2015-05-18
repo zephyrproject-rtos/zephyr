@@ -38,6 +38,11 @@ enum {
 	BT_CONN_CONNECTED,
 };
 
+/* L2CAP signaling channel specific context */
+struct bt_conn_l2cap {
+	uint8_t			ident;
+};
+
 struct bt_conn {
 	struct bt_dev		*dev;
 	uint16_t		handle;
@@ -49,13 +54,13 @@ struct bt_conn {
 	struct nano_fifo	tx_queue;
 	struct nano_fifo	rx_queue;
 
+	struct bt_conn_l2cap	l2cap;
+
 	uint8_t			le_conn_interval;
 
 	uint8_t			ref;
 
 	uint8_t			state;
-
-	uint8_t			l2_ident;
 
 	char			tx_stack[BT_CONN_TX_STACK_SIZE];
 	char			rx_stack[BT_CONN_RX_STACK_SIZE];

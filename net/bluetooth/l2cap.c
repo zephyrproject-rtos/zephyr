@@ -57,14 +57,14 @@
 
 static uint8_t get_ident(struct bt_conn *conn)
 {
-	conn->l2_ident++;
+	conn->l2cap.ident++;
 
 	/* handle integer overflow (0 is not valid) */
-	if (!conn->l2_ident) {
-		conn->l2_ident++;
+	if (!conn->l2cap.ident) {
+		conn->l2cap.ident++;
 	}
 
-	return conn->l2_ident;
+	return conn->l2cap.ident;
 }
 
 struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
