@@ -630,6 +630,10 @@ libs-y := $(KLIBC_DIR)/
 TIMOINCLUDE += -I$(srctree)/lib/libc/minimal/include
 endif
 
+ifdef CONFIG_TOOLCHAIN_NEWLIB
+libs-y += lib/libc/newlib/
+endif
+
 #File that includes all prepare special embedded architecture targets.
 include $(srctree)/scripts/Makefile.preparch
 sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch

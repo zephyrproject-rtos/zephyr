@@ -15,14 +15,24 @@ config CROSS_COMPILE
 	default make runs in this kernel build directory.  You don't
 	need to set this unless you want the configured kernel build
 	directory to select the cross-compiler automatically.
-endmenu
 
 config MINIMAL_LIBC
 	bool
 	prompt "Build minimal c library"
 	default y
+	depends on !NEWLIB
 	help
 	Build integrated minimal c library.
+
+config TOOLCHAIN_NEWLIB
+	bool
+	prompt "Build with newlib c library"
+	depends on !MINIMAL_LIBC
+	default n
+	help
+	Build with newlib library. The newlib library is expected to be
+	part of the SDK in this case.
+endmenu
 
 menu "Debugging Options"
 
