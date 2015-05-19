@@ -31,10 +31,11 @@ all: $(CONFIG_DEPS)
 
 rm-files:= final-linker.cmd linker.cmd modules.order \
 	staticIdt.o System.map *kernel.lnk \
-	*kernel.map *kernel.elf qemu.pid
+	*kernel.map *kernel.elf qemu.pid \
+	.tinymountain.cmd
 rm-objects:= *.o
 rm-dirs := arch drivers include kernel lib misc \
-	scripts source net
+	scripts source net .tmp_versions
 
 cmd_clean_inner_files = \
 	 $(shell cd $(PROJECT_BASE);rm $(rm-files) -f; rm $(rm-dirs) -rf)
@@ -48,6 +49,8 @@ pristine: distclean
 
 distclean: clean
 	@rm $(PROJECT_BASE)/.config -f
+	@rm $(PROJECT_BASE)/.config.old -f
+	@rm $(PROJECT_BASE)/.version -f
 
 mrproper: FORCE
 	$(call cmd_clean_inner_files)
