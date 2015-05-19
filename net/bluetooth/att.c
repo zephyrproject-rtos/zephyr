@@ -62,6 +62,16 @@ struct bt_att {
 
 static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
+static const struct bt_uuid primary_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GATT_PRIMARY,
+};
+
+static const struct bt_uuid secondary_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GATT_SECONDARY,
+};
+
 static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 			 uint8_t err)
 {
@@ -396,14 +406,12 @@ static void att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
 	 * Request. The «Characteristic» grouping type shall not be used in
 	 * the ATT Read By Group Type Request.
 	 */
-	if (uuid.type == BT_UUID_16) {
-		if (uuid.u16 != 0x2800 && uuid.u16 != 0x2801) {
-			send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ,
-				     start_handle,
+	if (bt_uuid_cmp(&uuid, &primary_uuid) &&
+	    bt_uuid_cmp(&uuid, &secondary_uuid)) {
+		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, start_handle,
 				     BT_ATT_ERR_UNSUPPORTED_GROUP_TYPE);
-			return;
-		}
-	} /* TODO: Add UUID helpers for UUID formats */
+		return;
+	}
 
 	/* TODO: Generate proper response once a database is defined */
 
