@@ -69,9 +69,9 @@ initconfig:
 	set -e;
 	$(Q)test -s .config || $(Q) $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) defconfig
-ifneq (($strip $(CONF_OVERLAY)),)
+ifneq (($strip $(CONF_FILE)),)
 	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
-	-m -O $(PROJECT_BASE) $(PROJECT_BASE)/.config $(CONF_OVERLAY)
+	-m -O $(PROJECT_BASE) $(PROJECT_BASE)/.config $(CONF_FILE)
 endif
 	$(Q)yes "" | $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) oldconfig

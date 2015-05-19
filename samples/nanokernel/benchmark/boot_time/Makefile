@@ -8,17 +8,17 @@ CONF_atom_n28xx = generic_pc/prj_expert_test.conf
 CONF_quark = quark/prj.conf
 
 KERNEL_TYPE = nano
-CONF_OVERLAY = $(CONF_$(BSP))
+CONF_FILE = $(CONF_$(BSP))
 SOURCE_DIR = $(TIMO_BASE)/samples/microkernel/benchmark/boot_time/src/
 
 include $(TIMO_BASE)/Makefile.inc
 
-$(if $(CONF_OVERLAY),,$(error no prj.conf file available))
-$(if $(wildcard $(CONF_OVERLAY)),,$(error no $(CONF_OVERLAY) file available))
+$(if $(CONF_FILE),,$(error no prj.conf file available))
+$(if $(wildcard $(CONF_FILE)),,$(error no $(CONF_FILE) file available))
 
 NO_QUALIFIED_PRJ_CONF_WARNING = $(strip \
   no prj.conf for $(BOOTTIME_QUALIFIER) and $(BSP), using default prj.conf \
 )
-$(if $(filter $(BSP)/prj.conf,$(CONF_OVERLAY)),$(warning *** $(NO_QUALIFIED_PRJ_CONF_WARNING) ***),)
+$(if $(filter $(BSP)/prj.conf,$(CONF_FILE)),$(warning *** $(NO_QUALIFIED_PRJ_CONF_WARNING) ***),)
 
-$(info using CONF_OVERLAY = $(CONF_OVERLAY))
+$(info using CONF_FILE = $(CONF_FILE))

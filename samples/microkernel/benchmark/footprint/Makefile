@@ -4,7 +4,7 @@ BSP ?= generic_pc
 
 VPFILE = micro_${TEST}.vpf
 KERNEL_TYPE = micro
-CONF_OVERLAY = prj_$(TEST)_$(ARCH).conf
+CONF_FILE = prj_$(TEST)_$(ARCH).conf
 CFLAGS += -DTEST_${TEST}
 
 include ${TIMO_BASE}/Makefile.inc
