@@ -148,3 +148,20 @@ int bt_gatt_attr_read_chrc(const struct bt_gatt_attr *attr, void *buf,
 
 	return bt_gatt_attr_read(attr, buf, len, offset, &pdu, value_len);
 }
+
+void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
+			  bt_gatt_attr_func_t func, void *user_data)
+{
+	size_t i;
+
+	for (i = 0; i < attr_count; i++) {
+		const struct bt_gatt_attr *attr = &db[i];
+
+		/* Check if attribute handle is within range */
+		if (attr->handle < start_handle || attr->handle > end_handle)
+			continue;
+
+		if (func(attr, user_data) == BT_GATT_ITER_STOP)
+			break;
+	}
+}

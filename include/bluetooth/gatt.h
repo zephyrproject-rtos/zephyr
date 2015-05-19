@@ -110,6 +110,34 @@ struct bt_gatt_ccc {
  */
 void bt_gatt_register(const struct bt_gatt_attr *attrs, size_t count);
 
+enum {
+	BT_GATT_ITER_STOP = 0,
+	BT_GATT_ITER_CONTINUE,
+};
+
+/** @brief Attribute iterator callback
+ *
+ *  @param attr attribute found
+ *  @param user_data data given
+ *
+ *  @return BT_GATT_ITER_CONTINUE if should continue to the next attribute
+ *   or BT_GATT_ITER_STOP to stop.
+ */
+typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
+				       void *user_data);
+
+/** @brief Attribute iterator
+ *
+ *  Iterate attributes in the given range.
+ *
+ *  @param start_handle uint16_t start handle
+ *  @param end_handle uint16_t end handle
+ *  @param func bt_gatt_attr_func_t callback function
+ *  @param user_data void * data to pass to the callback
+ */
+void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
+			  bt_gatt_attr_func_t func, void *user_data);
+
 /** @brief Generic Read Attribute value helper
  *
  *  Read attribute value storing the result into buffer.
