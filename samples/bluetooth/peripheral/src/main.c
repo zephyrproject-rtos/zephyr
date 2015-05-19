@@ -37,7 +37,7 @@
 #include "bluetooth/bluetooth.h"
 #include "bluetooth/hci.h"
 
-const struct bt_eir ad[] = {
+static const struct bt_eir ad[] = {
 	{
 		.len = 2,
 		.type = BT_EIR_FLAGS,
@@ -45,7 +45,8 @@ const struct bt_eir ad[] = {
 	},
 	{ }
 };
-const struct bt_eir sd[] = {
+
+static const struct bt_eir sd[] = {
 	{
 		.len = 16,
 		.type = BT_EIR_NAME_COMPLETE,
