@@ -154,6 +154,27 @@ int strncmp(const char *s1, const char *s2, size_t n)
 
 /*******************************************************************************
 *
+* memcmp - compare two memory areas
+*
+* RETURNS: negative # if <m1> < <m2>, 0 if <m1> == <m2>, else positive #
+*/
+
+int memcmp(const void *m1, const void *m2, size_t n)
+{
+	const char *c1 = m1;
+	const char *c2 = m2;
+
+	while ((n > 0) && (*c1 == *c2)) {
+		c1++;
+		c2++;
+		n--;
+	}
+
+	return *c1 - *c2;
+}
+
+/*******************************************************************************
+*
 * memmove - copy bytes in memory with overlapping areas
 *
 * RETURNS: pointer to destination buffer <d>
