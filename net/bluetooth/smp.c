@@ -35,6 +35,9 @@
 
 #include <nanokernel.h>
 #include <stddef.h>
+#include <errno.h>
+#include <string.h>
+#include <misc/util.h>
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -44,10 +47,70 @@
 #include "l2cap.h"
 #include "smp.h"
 
-#if !defined(CONFIG_BLUETOOTH_DEBUG_SMP)
+#if defined(CONFIG_BLUETOOTH_DEBUG_SMP)
+
+/* Helper for printk parameters to convert from binary to hex.
+ * We declare multiple buffers so the helper can be used multiple times
+ * in a single printk call.
+ */
+static const char *h(const void *buf, size_t len)
+{
+	static const char hex[] = "0123456789abcdef";
+	static char hexbufs[4][129];
+	static uint8_t curbuf;
+	const uint8_t *b = buf;
+	char *str;
+	int i;
+
+	str = hexbufs[curbuf++];
+	curbuf %= ARRAY_SIZE(hexbufs);
+
+	len = min(len, (sizeof(hexbufs[0]) - 1) / 2);
+
+	for (i = 0; i < len; i++) {
+		str[i * 2]     = hex[b[i] >> 4];
+		str[i * 2 + 1] = hex[b[i] & 0xf];
+	}
+
+	str[i * 2] = '\0';
+
+	return str;
+}
+#else
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
 #endif
+
+static int le_rand(uint8_t rand[16])
+{
+	struct bt_hci_rp_le_rand *rp;
+	struct bt_buf *rsp;
+	int err;
+
+	/* First 8 bytes */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	memcpy(rand, rp->rand, 8);
+	bt_buf_put(rsp);
+
+	/* Second 8 bytes */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	memcpy(rand + 8, rp->rand, 8);
+	bt_buf_put(rsp);
+
+	BT_DBG("rand %s\n", h(rand, 16));
+
+	return 0;
+}
 
 struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 {
@@ -79,24 +142,48 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 	bt_conn_send(conn, buf);
 }
 
+static int smp_init(struct bt_conn_smp *smp)
+{
+	/* Initialize SMP context */
+	memset(smp, 0, sizeof(*smp));
+
+	/* Generate local random number */
+	if (le_rand(smp->prnd)) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	BT_DBG("prnd %s\n", h(smp->prnd, 16));
+
+	return 0;
+}
+
 static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_smp_pairing *rsp;
 	struct bt_buf *rsp_buf;
+	struct bt_conn_smp *smp = &conn->smp;
+	int ret;
 
 	BT_DBG("\n");
 
-	if (buf->len != sizeof(*req))
+	if (buf->len != sizeof(*req)) {
 		return BT_SMP_ERR_INVALID_PARAMS;
-
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
-	if (!rsp_buf)
-		return BT_SMP_ERR_UNSPECIFIED;
+	}
 
 	if ((req->max_key_size > BT_SMP_MAX_ENC_KEY_SIZE) ||
 	    (req->max_key_size < BT_SMP_MIN_ENC_KEY_SIZE)) {
 		return BT_SMP_ERR_ENC_KEY_SIZE;
+	}
+
+	ret = smp_init(smp);
+	if (ret) {
+		return ret;
+	}
+
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));

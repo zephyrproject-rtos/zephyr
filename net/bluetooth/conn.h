@@ -49,6 +49,8 @@ struct bt_conn_att {
 
 /* SMP channel specific context */
 struct bt_conn_smp {
+	/* Local random number */
+	uint8_t			prnd[16];
 };
 
 struct bt_conn {
