@@ -164,10 +164,12 @@ int memcmp(const void *m1, const void *m2, size_t n)
 	const char *c1 = m1;
 	const char *c2 = m2;
 
-	while ((n > 0) && (*c1 == *c2)) {
+	if (!n)
+		return 0;
+
+	while ((--n > 0) && (*c1 == *c2)) {
 		c1++;
 		c2++;
-		n--;
 	}
 
 	return *c1 - *c2;
