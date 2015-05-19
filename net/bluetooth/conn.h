@@ -55,6 +55,9 @@ struct bt_conn {
 	struct bt_dev		*dev;
 	uint16_t		handle;
 
+	uint8_t			dst[6];
+	uint8_t			dst_type;
+
 	uint16_t		rx_len;
 	struct bt_buf		*rx;
 

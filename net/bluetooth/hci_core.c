@@ -355,6 +355,8 @@ static void le_conn_complete(struct bt_buf *buf)
 		return;
 	}
 
+	memcpy(conn->dst, evt->peer_addr, sizeof(evt->peer_addr));
+	conn->dst_type = evt->peer_addr_type;
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 }
 
