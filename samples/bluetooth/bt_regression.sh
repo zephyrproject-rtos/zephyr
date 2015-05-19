@@ -33,6 +33,8 @@ nanokernel/test/test_bluetooth              <nq> quark           \n\
 nanokernel/test/test_bluetooth              <nq> minuteia!       \n\
 nanokernel/test/test_bluetooth              <nq> ti_lm3s6965!    \n\
 nanokernel/test/test_bluetooth              <nq> fsl_frdm_k64f   \n\
+bluetooth/peripheral                         <u> pentium4        \n\
+bluetooth/peripheral                         <u> ti_lm3s6965     \n\
 microkernel/test/test_bluetooth             <uq> pentium4!       \n\
 microkernel/test/test_bluetooth             <uq> quark           \n\
 #  microkernel/test/test_bluetooth             <uq> atom           \n\
