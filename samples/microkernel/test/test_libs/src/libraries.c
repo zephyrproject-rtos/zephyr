@@ -354,6 +354,33 @@ int strchr_test(void)
 	return TC_PASS;
 }
 
+/*******************************************************************************
+ *
+ * memcmp_test - test memory comparison function
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
+
+int memcmp_test(void)
+{
+	unsigned char m1[5] = { 1, 2, 3, 4, 5 };
+	unsigned char m2[5] = { 1, 2, 3, 4, 6 };
+
+	TC_PRINT("\tmemcmp ...\t");
+
+	if (memcmp(m1, m2, 4)) {
+		TC_PRINT("failed\n");
+		return TC_FAIL;
+	}
+
+	if (!memcmp(m1, m2, 5)) {
+		TC_PRINT("failed\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT("passed\n");
+	return TC_PASS;
+}
 
 /*******************************************************************************
 *
@@ -366,7 +393,8 @@ int stringTest(void)
 	TC_PRINT("Testing string.h library ...\n");
 
 	if (memset_test() || strlen_test() || strcmp_test() || strcpy_test() ||
-		strncpy_test() || strncmp_test() || strchr_test()) {
+		strncpy_test() || strncmp_test() || strchr_test() ||
+		memcmp_test()) {
 		return TC_FAIL;
 	}
 
