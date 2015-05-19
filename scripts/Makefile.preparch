@@ -22,8 +22,10 @@ define filechk_prj.vpf
 		echo "% Task IRQ objects";\
 		echo "% EVENT    NAME              HANDLER"; \
 		echo "% ======================================="; \
-		for (( i=0; i < $(CONFIG_MAX_NUM_TASK_IRQS); i++ )) do \
+		i=0; \
+		while [ $$i -lt $(CONFIG_MAX_NUM_TASK_IRQS) ]; do \
 			echo "  EVENT    _TaskIrqEvt$$i     NULL"; \
+		i=$$(($$i+1));\
 		done; \
 	fi; \
 	cat $(VPFILE); \
