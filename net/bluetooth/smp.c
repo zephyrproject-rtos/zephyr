@@ -118,8 +118,9 @@ struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	struct bt_buf *buf;
 
 	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_SMP, sizeof(*hdr) + len);
-	if (!buf)
+	if (!buf) {
 		return NULL;
+	}
 
 	hdr = bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = op;
@@ -133,8 +134,9 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 	struct bt_buf *buf;
 
 	buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_FAIL, sizeof(*rsp));
-	if (!buf)
+	if (!buf) {
 		return;
+	}
 
 	rsp = bt_buf_add(buf, sizeof(*rsp));
 	rsp->reason = reason;
