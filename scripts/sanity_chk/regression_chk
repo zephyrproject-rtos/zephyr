@@ -79,11 +79,11 @@ nanokernel/apps/bluetooth/init               <n>  pentium4  minuteia  atom quark
 nanokernel/apps/bluetooth/init               <n>  fsl_frdm_k64f ti_lm3s6965      \n\
 nanokernel/apps/bluetooth/shell              <n>  pentium4  minuteia  atom quark \n\
 nanokernel/apps/bluetooth/shell              <n>  fsl_frdm_k64f ti_lm3s6965      \n\
-nanokernel/apps/hello_world                  <n>  pentium4  minuteia  atom quark \n\
+nanokernel/apps/hello_world                  <n>  quark pentium4  minuteia  atom \n\
 nanokernel/apps/philosophers                 <n>  pentium4  minuteia  atom quark \n\
 nanokernel/apps/hello_world                  <n>  fsl_frdm_k64f ti_lm3s6965      \n\
 nanokernel/apps/philosophers                 <n>  fsl_frdm_k64f ti_lm3s6965      \n\
-microkernel/apps/hello_world                 <u>  pentium4  minuteia  atom quark \n\
+microkernel/apps/hello_world                 <u>  atom pentium4  minuteia  quark \n\
 microkernel/apps/philosophers                <u>  pentium4  minuteia  atom quark \n\
 microkernel/apps/hello_world                 <u>  fsl_frdm_k64f ti_lm3s6965      \n\
 microkernel/apps/philosophers                <u>  fsl_frdm_k64f ti_lm3s6965      \n\
@@ -123,16 +123,16 @@ microkernel/test/test_task              <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_task_irq          <u>  ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_timer             <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_xip               <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
-microkernel/test/test_bluetooth         <uq> pentium4! minuteia! atom quark \n\
-microkernel/test/test_critical          <u>  pentium4! minuteia! atom quark \n\
-microkernel/test/test_events            <uq> pentium4! minuteia! atom quark \n\
-microkernel/test/test_fifo              <uq> pentium4! minuteia! atom quark \n\
-microkernel/test/test_libs              <uq> pentium4! minuteia! atom quark \n\
-microkernel/test/test_mail              <uq> pentium4! minuteia! atom quark \n\
-microkernel/test/test_map               <uq> pentium4! minuteia! atom quark \n\
-microkernel/test/test_pipe              <uq> pentium4! minuteia! atom quark \n\
-microkernel/test/test_pool              <uq> pentium4! minuteia! atom quark \n\
-microkernel/test/test_mutex             <uq> pentium4! minuteia! atom quark \n\
+microkernel/test/test_bluetooth         <uq> minuteia! pentium4! atom quark \n\
+microkernel/test/test_critical          <u>  minuteia! pentium4! atom quark \n\
+microkernel/test/test_events            <uq> minuteia! pentium4! atom quark \n\
+microkernel/test/test_fifo              <uq> minuteia! pentium4! atom quark \n\
+microkernel/test/test_libs              <uq> minuteia! pentium4! atom quark \n\
+microkernel/test/test_mail              <uq> minuteia! pentium4! atom quark \n\
+microkernel/test/test_map               <uq> minuteia! pentium4! atom quark \n\
+microkernel/test/test_pipe              <uq> minuteia! pentium4! atom quark \n\
+microkernel/test/test_pool              <uq> minuteia! pentium4! atom quark \n\
+microkernel/test/test_mutex             <uq> minuteia! pentium4! atom quark \n\
 microkernel/test/test_secure_string_api <u>  pentium4! minuteia! atom quark \n\
 microkernel/test/test_sema              <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_sprintf           <u>  pentium4! minuteia! atom quark \n\
