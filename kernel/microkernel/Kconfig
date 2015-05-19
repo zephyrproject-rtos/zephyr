@@ -90,114 +90,17 @@ config	WORKLOAD_MONITOR
 	This option instructs the kernel to record the percentage of time
 	the system is doing useful work (i.e. is not idle).
 
-# NOTE:
-# All the API_* config options are being introduced to have the capability
-# to enable or disable all different microkernel APIs and to remove them
-# from the conpilation set in the future.
-# Right now, they are hidden options because the source code does not
-# necessarily support the capability to be eliminated from the compilation
-# set, since there are some dependencies that might need to be solved.
-
-config API_MEMMAP
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option adds the memory map API
-	to the microkernel image.
-
-config API_MEMPOOL
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the memory pool API
-	to the microkernel image.
-
-config API_TASKIRQ
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the task irq API
-	to the microkernel image.
-
 config	MAX_NUM_TASK_IRQS
 	int
 	prompt "Number of task IRQ objects"
 	default 0
-	depends on MICROKERNEL && API_TASKIRQ
+	depends on MICROKERNEL
 	help
 	This option specifies the maximum number of IRQs that may be
 	utilized by task level device drivers. A value of zero disables
 	this feature.
 
-config API_DONOTHING
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the idle API
-	to the microkernel image.
-
-config API_OFFLD2FIBER
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the offload to fiber API
-	to the microkernel image.
-
-config API_EVENTS
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the event mangement API
-	to the microkernel image.
-
-config API_MAILBOX
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the mailbox API
-	to the microkernel image.
-
-config API_MUTEX
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the mutex API
-	to the microkernel image.
-
-config API_FIFO
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the FIFO API
-	to the microkernel image.
-
-config API_SEMAPHORES
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the semaphores API
-	to the microkernel image.
-
-config API_TIMER
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the timer API
-	to the microkernel image.
-
 menu "Timer API Options"
-	depends on API_TIMER
 
 config TIMESLICING
 	bool
@@ -229,14 +132,6 @@ config  TIMESLICE_PRIORITY
 	are not subject to time slicing. A threshold level of zero means
 	that all tasks are potentially subject to time slicing.
 endmenu
-
-config API_CHANNEL
-	bool
-	default y
-	depends on MICROKERNEL
-	help
-	This option add the channel API
-	to the microkernel image.
 
 config  TASK_MONITOR
 	bool

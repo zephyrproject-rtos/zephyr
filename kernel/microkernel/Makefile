@@ -1,24 +1,23 @@
 EXTRA_CFLAGS +=-I$(srctree)/kernel/microkernel/include
 
-obj-y = k_task.o idle.o
-obj-y += global.o cmdPkt.o
+obj-y = k_task.o
+obj-y += idle.o
+obj-y += global.o
+obj-y += cmdPkt.o
 obj-y += movedata.o
 obj-y += ticker.o
+obj-y += k_memmap.o
+obj-y += k_mempool.o
+obj-y += k_irq.o
+obj-y += k_nop.o
+obj-y += k_offload.o
+obj-y += k_event.o
+obj-y += k_mbox.o
+obj-y += k_mutex.o
+obj-y += k_queue.o
+obj-y += k_sema.o
+obj-y += k_timer.o
+obj-$(CONFIG_MICROKERNEL)  += server.o
+obj-$(CONFIG_TASK_MONITOR) += task_monitor.o
 
-obj-$(CONFIG_MICROKERNEL)     += server.o
-obj-$(CONFIG_TASK_MONITOR)    += task_monitor.o
-obj-$(CONFIG_API_MEMMAP)      += k_memmap.o
-obj-$(CONFIG_API_MEMPOOL)     += k_mempool.o
-obj-$(CONFIG_API_TASKIRQ)     += k_irq.o
-obj-$(CONFIG_API_DONOTHING)   += k_nop.o
-obj-$(CONFIG_API_OFFLD2FIBER) += k_offload.o
-obj-$(CONFIG_API_EVENTS)      += k_event.o
-obj-$(CONFIG_API_MAILBOX)     += k_mbox.o
-obj-$(CONFIG_API_MUTEX)       += k_mutex.o
-obj-$(CONFIG_API_FIFO)        += k_queue.o
-obj-$(CONFIG_API_SEMAPHORES)  += k_sema.o
-obj-$(CONFIG_API_TIMER)       += k_timer.o
-
-obj-$(CONFIG_API_CHANNEL) += channel/
-
-
+obj-y += channel/
