@@ -80,6 +80,11 @@ struct bt_smp_pairing_confirm {
 	uint8_t  val[16];
 } PACK_STRUCT;
 
+#define BT_SMP_CMD_PAIRING_RANDOM		0x04
+struct bt_smp_pairing_random {
+	uint8_t  val[16];
+} PACK_STRUCT;
+
 #define BT_SMP_CMD_PAIRING_FAIL			0x05
 struct bt_smp_pairing_fail {
 	uint8_t  reason;

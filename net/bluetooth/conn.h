@@ -55,8 +55,17 @@ struct bt_conn_smp {
 	/* Pairing Response PDU */
 	uint8_t			prsp[7];
 
+	/* Pairing Confirm PDU */
+	uint8_t			pcnf[16];
+
 	/* Local random number */
 	uint8_t			prnd[16];
+
+	/* Remote random number */
+	uint8_t			rrnd[16];
+
+	/* Temporary key */
+	uint8_t			tk[16];
 };
 
 struct bt_conn {

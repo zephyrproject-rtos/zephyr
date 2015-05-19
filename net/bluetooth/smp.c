@@ -81,6 +81,50 @@ static const char *h(const void *buf, size_t len)
 #define BT_DBG(fmt, ...)
 #endif
 
+typedef struct {
+	uint64_t a;
+	uint64_t b;
+} uint128_t;
+
+static void xor_128(const uint128_t *p, const uint128_t *q, uint128_t *r)
+{
+	r->a = p->a ^ q->a;
+	r->b = p->b ^ q->b;
+}
+
+static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
+		      uint8_t enc_data[16])
+{
+	struct bt_hci_cp_le_encrypt *cp;
+	struct bt_hci_rp_le_encrypt *rp;
+	struct bt_buf *buf, *rsp;
+	int err;
+
+	BT_DBG("key %s plaintext %s\n", h(key, 16), h(plaintext, 16));
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ENCRYPT, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_add(buf, sizeof(*cp));
+	memcpy(cp->key, key, sizeof(cp->key));
+	memcpy(cp->plaintext, plaintext, sizeof(cp->plaintext));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ENCRYPT, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	memcpy(enc_data, rp->enc_data, sizeof(rp->enc_data));
+	bt_buf_put(rsp);
+
+	BT_DBG("enc_data %s\n", h(enc_data, 16));
+
+	return 0;
+}
+
 static int le_rand(uint8_t rand[16])
 {
 	struct bt_hci_rp_le_rand *rp;
@@ -110,6 +154,49 @@ static int le_rand(uint8_t rand[16])
 	BT_DBG("rand %s\n", h(rand, 16));
 
 	return 0;
+}
+
+static int smp_c1(const uint8_t k[16], const uint8_t r[16],
+		  const uint8_t preq[7], const uint8_t pres[7],
+		  uint8_t iat, const uint8_t ia[6],
+		  uint8_t rat, const uint8_t ra[6],
+		  uint8_t enc_data[16])
+{
+	uint8_t p1[16], p2[16];
+	int err;
+
+	BT_DBG("k %s r %s\n", h(k, 16), h(r, 16));
+	BT_DBG("iat %u ia %s rat %u ra %s\n", iat, h(ia, 6), rat, h(ra, 6));
+	BT_DBG("preq %s pres %s\n", h(preq, 7), h(pres, 7));
+
+	/* pres, preq, rat and iat are concatenated to generate p1 */
+	p1[0] = iat;
+	p1[1] = rat;
+	memcpy(p1 + 2, preq, 7);
+	memcpy(p1 + 9, pres, 7);
+
+	BT_DBG("p1 %s\n", h(p1, 16));
+
+	/* c1 = e(k, e(k, r XOR p1) XOR p2) */
+
+	/* Using enc_data as temporary output buffer */
+	xor_128((uint128_t *)r, (uint128_t *)p1, (uint128_t *)enc_data);
+
+	err = le_encrypt(k, enc_data, enc_data);
+	if (err) {
+		return err;
+	}
+
+	/* ra is concatenated with ia and padding to generate p2 */
+	memcpy(p2, ra, 6);
+	memcpy(p2 + 6, ia, 6);
+	memset(p2 + 12, 0, 4);
+
+	BT_DBG("p2 %s\n", h(p2, 16));
+
+	xor_128((uint128_t *)enc_data, (uint128_t *)p2, (uint128_t *)enc_data);
+
+	return le_encrypt(k, enc_data, enc_data);
 }
 
 struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
@@ -200,6 +287,8 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	rsp->init_key_dist = 0;
 	rsp->resp_key_dist = 0;
 
+	memset(smp->tk, 0, sizeof(smp->tk));
+
 	/* Store req/rsp for later use */
 	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
 	memcpy(smp->preq + 1, req, sizeof(*req));
@@ -214,13 +303,96 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 static int smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_confirm *req = (void *)buf->data;
+	struct bt_smp_pairing_confirm *rsp;
+	struct bt_conn_smp *smp = &conn->smp;
+	uint8_t init_addr_type, resp_addr_type;
+	uint8_t *init_addr, *resp_addr;
+	struct bt_buf *rsp_buf;
+	int err;
 
 	BT_DBG("\n");
 
-	if (buf->len != sizeof(*req))
+	if (buf->len != sizeof(*req)) {
 		return BT_SMP_ERR_INVALID_PARAMS;
+	}
 
-	/* TODO: Send pairing_confirm(Sconfirm) back */
+	memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
+
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
+				    sizeof(*rsp));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));
+
+	/* FIXME: Right now we assume peripheral role */
+	init_addr = conn->dst;
+	init_addr_type = conn->dst_type;
+	resp_addr = conn->dev->bdaddr;
+	resp_addr_type = BT_ADDR_LE_DEV_PUBLIC;
+
+	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp, init_addr_type,
+		     init_addr, resp_addr_type, resp_addr, rsp->val);
+	if (err) {
+		bt_buf_put(rsp_buf);
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	bt_conn_send(conn, rsp_buf);
+
+	return 0;
+}
+
+static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_pairing_random *req = (void *)buf->data;
+	struct bt_smp_pairing_random *rsp;
+	struct bt_buf *rsp_buf;
+	struct bt_conn_smp *smp = &conn->smp;
+	uint8_t init_addr_type, resp_addr_type;
+	uint8_t *init_addr, *resp_addr;
+	uint8_t cfm[16];
+	int err;
+
+	BT_DBG("\n");
+
+	if (buf->len != sizeof(*req)) {
+		return BT_SMP_ERR_INVALID_PARAMS;
+	}
+
+	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
+
+	/* FIXME: Right now we assume peripheral role */
+	init_addr = conn->dst;
+	init_addr_type = conn->dst_type;
+	resp_addr = conn->dev->bdaddr;
+	resp_addr_type = BT_ADDR_LE_DEV_PUBLIC;
+
+	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp, init_addr_type,
+		     init_addr, resp_addr_type, resp_addr, cfm);
+	if (err) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	BT_DBG("pcnf %s cfm %s\n", h(smp->pcnf, 16), h(cfm, 16));
+
+	if (memcmp(smp->pcnf, cfm, sizeof(smp->pcnf))) {
+		return BT_SMP_ERR_CONFIRM_FAILED;
+	}
+
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
+				    sizeof(*rsp));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));
+	memcpy(rsp->val, smp->prnd, sizeof(rsp->val));
+
+	bt_conn_send(conn, rsp_buf);
+
+	/*smp_s1(smp->tk, smp->prnd, smp->rrnd, stk);*/
 
 	return 0;
 }
@@ -245,6 +417,9 @@ void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	case BT_SMP_CMD_PAIRING_CONFIRM:
 		err = smp_pairing_confirm(conn, buf);
+		break;
+	case BT_SMP_CMD_PAIRING_RANDOM:
+		err = smp_pairing_random(conn, buf);
 		break;
 	default:
 		BT_WARN("Unhandled SMP code %u\n", hdr->code);
