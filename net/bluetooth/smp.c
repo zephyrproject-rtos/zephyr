@@ -200,6 +200,12 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	rsp->init_key_dist = 0;
 	rsp->resp_key_dist = 0;
 
+	/* Store req/rsp for later use */
+	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
+	memcpy(smp->preq + 1, req, sizeof(*req));
+	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
+	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
+
 	bt_conn_send(conn, rsp_buf);
 
 	return 0;

@@ -49,6 +49,12 @@ struct bt_conn_att {
 
 /* SMP channel specific context */
 struct bt_conn_smp {
+	/* Pairing Request PDU */
+	uint8_t			preq[7];
+
+	/* Pairing Response PDU */
+	uint8_t			prsp[7];
+
 	/* Local random number */
 	uint8_t			prnd[16];
 };
