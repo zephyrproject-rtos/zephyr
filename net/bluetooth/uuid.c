@@ -1,4 +1,4 @@
-/* uuid.h - Bluetooth UUID definitions */
+/* uuid.c - Bluetooth UUID handling */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -29,42 +29,57 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __BT_UUID_H
-#define __BT_UUID_H
 
-#define BT_UUID_GAP				0x1800
-#define BT_UUID_GATT				0x1801
-#define BT_UUID_HRS				0x180d
-#define BT_UUID_BAS				0x180f
-#define BT_UUID_GATT_PRIMARY			0x2800
-#define BT_UUID_GATT_SECONDARY			0x2801
-#define BT_UUID_GATT_INCLUDE			0x2802
-#define BT_UUID_GATT_CHRC			0x2803
-#define BT_UUID_GATT_CEP			0x2900
-#define BT_UUID_GATT_CUD			0x2901
-#define BT_UUID_GATT_CCC			0x2902
-#define BT_UUID_GAP_DEVICE_NAME			0x2a00
-#define BT_UUID_GAP_APPEARANCE			0x2a01
-#define BT_UUID_BATTERY_LEVEL			0x2a19
-#define BT_UUID_HR_MEASUREMENT			0x2a37
-#define BT_UUID_HR_BODY_SENSOR			0x2a38
-#define BT_UUID_HR_CONTROL_POINT		0x2a39
+#include <nanokernel.h>
+#include <toolchain.h>
+#include <string.h>
+#include <errno.h>
 
-/* Bluetooth UUID types */
-enum bt_uuid_type {
-	BT_UUID_16,
-	BT_UUID_128,
+#include <bluetooth/uuid.h>
+
+/* TODO: Decide wether to continue using BLE format or switch to RFC 4122 */
+static const struct bt_uuid uuid128_base = {
+	.type = BT_UUID_128,
+	.u128 = { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10,
+		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+
 };
 
-/* Bluetooth UUID structure */
-struct bt_uuid {
-	uint8_t  type;
-	union {
-		uint16_t u16;
-		uint8_t  u128[16];
-	};
-};
+static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid *dst)
+{
+	switch (src->type) {
+	case BT_UUID_16:
+		*dst = uuid128_base;
+		memcpy(&dst->u128[2], &src->u16, sizeof(src->u16));
+		return;
+	case BT_UUID_128:
+		memcpy(dst, src, sizeof(*dst));
+		return;
+	}
+}
 
-int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
+static int uuid128_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
+{
+	struct bt_uuid uuid1, uuid2;
 
-#endif /* __BT_UUID_H */
+	uuid_to_uuid128(u1, &uuid1);
+	uuid_to_uuid128(u2, &uuid2);
+
+	return memcmp(uuid1.u128, uuid2.u128, sizeof(uuid1.u128));
+}
+
+int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
+{
+	/* Convert to 128 bit if types don't match */
+	if (u1->type != u2->type)
+		return uuid128_cmp(u1, u2);
+
+	switch (u1->type) {
+	case BT_UUID_16:
+		return (int)u1->u16 - (int)u2->u16;
+	case BT_UUID_128:
+		return memcmp(u1->u128, u2->u128, sizeof(u1->u128));
+	}
+
+	return -EINVAL;
+}
