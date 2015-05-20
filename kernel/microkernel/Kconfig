@@ -32,13 +32,6 @@
 
 menu "Microkernel Options"
 
-
-#The Kconfig symbols for API are hidden symbols.
-#In the current sate of the system is not possible to remove
-#API source code without affecting dependencies in the source code.
-#This symbols will allow to select which APIs we want to include
-#in the kernel binary from the configuration menu in the near future.
-
 config MICROKERNEL_SERVER_STACK_SIZE
 	int
 	prompt "Microkernel server fiber (K_swapper) stack size"
