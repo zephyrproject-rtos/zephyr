@@ -658,7 +658,8 @@ static int hci_init(void)
 	hbs = bt_buf_add(buf, sizeof(*hbs));
 	memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(BT_BUF_MAX_DATA -
-				       sizeof(struct bt_hci_acl_hdr));
+				       sizeof(struct bt_hci_acl_hdr) -
+				       dev.drv->head_reserve);
 	hbs->acl_pkts = sys_cpu_to_le16(ACL_IN_MAX);
 
 	err = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
