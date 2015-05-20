@@ -635,12 +635,6 @@ def kernel_main_c_pipes():
         kernel_main_c_out("    {%d, %s},\n" % (size, buffer))
     kernel_main_c_out("};\n")
 
-    # pipe variables [should probably be eliminated]
-
-    kernel_main_c_out("\n" +
-        "PFN_CHANNEL_RWT pKS_Channel_PutWT = _task_pipe_put;\n" +
-        "PFN_CHANNEL_RWT pKS_Channel_GetWT = _task_pipe_get;\n")
-
 
 def kernel_main_c_mailboxes():
     """ Generate mailbox variables """

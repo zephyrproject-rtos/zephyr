@@ -37,83 +37,44 @@
 extern "C" {
 #endif
 
-/* GENERIC channel interface functions (map to host / target channels) */
-
-#define _DEVICE_CHANNEL 0x00008000 /* mask for channels to a ser/par dev */
-
-extern int task_pipe_put(kpipe_t id,
-			 void *buffer,
-			 int NrOfBytesToWrite,
-			 int *NrOfBytesWritten,
-			 K_PIPE_OPTION opt);
-extern int task_pipe_put_wait(kpipe_t id,
-			  void *buffer,
-			  int NrOfBytesToWrite,
-			  int *NrOfBytesWritten,
-			  K_PIPE_OPTION opt);
-extern int task_pipe_put_wait_timeout(kpipe_t id,
-			   void *buffer,
-			   int NrOfBytesToWrite,
-			   int *NrOfBytesWritten,
-			   K_PIPE_OPTION opt,
-			   int32_t TimeOut);
-extern int task_pipe_get(kpipe_t id,
-			 void *buffer,
-			 int NrOfBytesToRead,
-			 int *NrOfBytesRead,
-			 K_PIPE_OPTION opt);
-extern int task_pipe_get_wait(kpipe_t id,
-			  void *buffer,
-			  int NrOfBytesToRead,
-			  int *NrOfBytesRead,
-			  K_PIPE_OPTION opt);
-extern int task_pipe_get_wait_timeout(kpipe_t id,
-			   void *buffer,
-			   int NrOfBytesToRead,
-			   int *NrOfBytesRead,
-			   K_PIPE_OPTION opt,
-			   int32_t timeout);
-
-extern int _task_pipe_put_async(kpipe_t id, struct k_block block, int size, ksem_t sema);
-
-#define task_pipe_put_async(Id, block, size, sema) \
-	_task_pipe_put_async(Id, block, size, sema)
-
-
-typedef int (*PFN_CHANNEL_RW)(kpipe_t, void *, int, int *, K_PIPE_OPTION);
-typedef int (*PFN_CHANNEL_RWT)(kpipe_t,
-			       void *,
-			       int,
-			       int *,
-			       K_PIPE_OPTION,
-			       int32_t);
-
-extern PFN_CHANNEL_RWT pKS_Channel_PutWT; /* maps to KS__ChannelPutWT
-							== _task_pipe_put */
-
-extern PFN_CHANNEL_RWT pKS_Channel_GetWT; /* maps to KS__ChannelGetWT
-							== _task_pipe_get */
-
-/* mapping of KS__ChannelXXX() to _task_pipe_xxx() functions */
-#define KS__ChannelPutWT _task_pipe_put
-
-#define KS__ChannelGetWT _task_pipe_get
-
-/* base API functions */
-
 extern int _task_pipe_put(kpipe_t id,
-		       void *pBuffer,
-		       int iNbrBytesToWrite,
-		       int *piNbrBytesWritten,
-		       K_PIPE_OPTION Option,
-		       int32_t TimeOut);
+						  void *pBuffer,
+						  int iNbrBytesToWrite,
+						  int *piNbrBytesWritten,
+						  K_PIPE_OPTION Option,
+						  int32_t TimeOut);
+
+#define task_pipe_put(i, b, n, pn, o) \
+			_task_pipe_put(i, b, n, pn, o, TICKS_NONE)
+#define task_pipe_put_wait(i, b, n, pn, o) \
+			_task_pipe_put(i, b, n, pn, o, TICKS_UNLIMITED)
+#define task_pipe_put_wait_timeout(i, b, n, pn, o, t) \
+			_task_pipe_put(i, b, n, pn, o, t)
+
 
 extern int _task_pipe_get(kpipe_t id,
-		       void *pBuffer,
-		       int iNbrBytesToRead,
-		       int *piNbrBytesRead,
-		       K_PIPE_OPTION Option,
-		       int32_t TimeOut);
+						  void *pBuffer,
+						  int iNbrBytesToRead,
+						  int *piNbrBytesRead,
+						  K_PIPE_OPTION Option,
+						  int32_t TimeOut);
+
+#define task_pipe_get(i, b, n, pn, o) \
+			_task_pipe_get(i, b, n, pn, o, TICKS_NONE)
+#define task_pipe_get_wait(i, b, n, pn, o) \
+			_task_pipe_get(i, b, n, pn, o, TICKS_UNLIMITED)
+#define task_pipe_get_wait_timeout(i, b, n, pn, o, t) \
+			_task_pipe_get(i, b, n, pn, o, t)
+
+
+extern int _task_pipe_put_async(kpipe_t id,
+								struct k_block block,
+								int size,
+								ksem_t sema);
+
+#define task_pipe_put_async(id, block, size, sema) \
+			_task_pipe_put_async(id, block, size, sema)
+
 
 #ifdef __cplusplus
 }
