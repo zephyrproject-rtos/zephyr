@@ -63,7 +63,7 @@ typedef struct {
 
 /* locals */
 
-static _k20Uart_t __noinit uart[CONFIG_UART_NUM_SYSTEM_PORTS];
+CONFIGURE_UART_PORTS(_k20Uart_t, uart);
 
 /*******************************************************************************
 *
@@ -85,8 +85,6 @@ void uart_init(int port, /* UART channel to initialize */
 	C1_t c1;				   /* UART C1 register value */
 	C2_t c2;				   /* UART C2 register value */
 
-	uart[port].base = (uint8_t *)init_info->regs;
-	uart[port].irq = init_info->irq;
 	uart[port].intPri = init_info->int_pri;
 
 	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;

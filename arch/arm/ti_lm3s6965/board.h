@@ -111,12 +111,35 @@ the 'ti_lm3s6965' BSP.
 #define CONFIG_UART_NUM_EXTRA_PORTS 1
 #define CONFIG_UART_NUM_PORTS \
 	(CONFIG_UART_NUM_SYSTEM_PORTS + CONFIG_UART_NUM_EXTRA_PORTS)
+#define CONFIG_UART_PORT_0_REGS PERIPH_ADDR_BASE_UART0
+#define CONFIG_UART_PORT_0_IRQ IRQ_UART0
+#define CONFIG_UART_PORT_1_REGS PERIPH_ADDR_BASE_UART1
+#define CONFIG_UART_PORT_1_IRQ IRQ_UART1
+#define CONFIG_UART_PORT_2_REGS PERIPH_ADDR_BASE_UART2
+#define CONFIG_UART_PORT_2_IRQ IRQ_UART2
+
+#define CONFIGURE_UART_PORTS(__type, __name)				\
+	static __type __name[CONFIG_UART_NUM_PORTS] = {			\
+		{							\
+			.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,	\
+			.irq = CONFIG_UART_PORT_0_IRQ			\
+		},							\
+		{							\
+			.base = (uint8_t *)CONFIG_UART_PORT_1_REGS,	\
+			.irq = CONFIG_UART_PORT_1_IRQ			\
+		},							\
+		{							\
+			.base = (uint8_t *)CONFIG_UART_PORT_2_REGS,	\
+			.irq = CONFIG_UART_PORT_2_IRQ			\
+		}							\
+	}
+
+/* Uart console configuration */
 
 #define CONFIG_UART_CONSOLE_INDEX 0
 #define CONFIG_UART_CONSOLE_BAUDRATE 115200
 #define CONFIG_UART_CONSOLE_IRQ IRQ_UART0
 #define CONFIG_UART_CONSOLE_INT_PRI 3
-#define CONFIG_UART_CONSOLE_REGS PERIPH_ADDR_BASE_UART0
 
 /* Bluetooth UART definitions */
 #define CONFIG_BLUETOOTH_UART_INDEX 1

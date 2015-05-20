@@ -273,10 +273,8 @@ static void consoleInit(void)
 
 	struct uart_init_info info = {
 		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
-		.regs = CONFIG_UART_CONSOLE_REGS,
 		.sys_clk_freq = CONFIG_UART_CONSOLE_CLK_FREQ,
 		/* Only supported in polling mode, but init all info fields */
-		.irq = CONFIG_UART_CONSOLE_IRQ,
 		.int_pri = CONFIG_UART_CONSOLE_INT_PRI
 	};
 

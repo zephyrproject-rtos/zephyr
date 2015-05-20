@@ -170,10 +170,48 @@ This header file is used to specify and describe board-level aspects for the
 
 #include <drivers/k20_pcr.h>
 
-#define CONFIG_UART_NUM_SYSTEM_PORTS 1
+#define CONFIG_UART_NUM_SYSTEM_PORTS 5
 #define CONFIG_UART_NUM_EXTRA_PORTS 0
 #define CONFIG_UART_NUM_PORTS \
 	(CONFIG_UART_NUM_SYSTEM_PORTS + CONFIG_UART_NUM_EXTRA_PORTS)
+
+#define CONFIG_UART_PORT_0_REGS PERIPH_ADDR_BASE_UART0
+#define CONFIG_UART_PORT_0_IRQ IRQ_UART0_STATUS
+#define CONFIG_UART_PORT_1_REGS PERIPH_ADDR_BASE_UART1
+#define CONFIG_UART_PORT_1_IRQ IRQ_UART1_STATUS
+#define CONFIG_UART_PORT_2_REGS PERIPH_ADDR_BASE_UART2
+#define CONFIG_UART_PORT_2_IRQ IRQ_UART2_STATUS
+#define CONFIG_UART_PORT_3_REGS PERIPH_ADDR_BASE_UART3
+#define CONFIG_UART_PORT_3_IRQ IRQ_UART3_STATUS
+#define CONFIG_UART_PORT_4_REGS PERIPH_ADDR_BASE_UART4
+#define CONFIG_UART_PORT_4_IRQ IRQ_UART4_STATUS
+
+#define CONFIGURE_UART_PORTS(__type, __name)				\
+	static __type __name[CONFIG_UART_NUM_PORTS] = {			\
+		{							\
+			.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,	\
+			.irq = CONFIG_UART_PORT_0_IRQ			\
+		},							\
+		{							\
+			.base = (uint8_t *)CONFIG_UART_PORT_1_REGS,	\
+			.irq = CONFIG_UART_PORT_1_IRQ			\
+		},							\
+		{							\
+			.base = (uint8_t *)CONFIG_UART_PORT_2_REGS,	\
+			.irq = CONFIG_UART_PORT_2_IRQ			\
+		},							\
+		{							\
+			.base = (uint8_t *)CONFIG_UART_PORT_3_REGS,	\
+			.irq = CONFIG_UART_PORT_3_IRQ			\
+		},							\
+		{							\
+			.base = (uint8_t *)CONFIG_UART_PORT_4_REGS,	\
+			.irq = CONFIG_UART_PORT_4_IRQ			\
+		}							\
+	}
+
+
+/* Uart console settings */
 
 #define CONFIG_UART_CONSOLE_INDEX 0
 #define CONFIG_UART_CONSOLE_PORT PCR_PORT_B
@@ -182,7 +220,6 @@ This header file is used to specify and describe board-level aspects for the
 #define CONFIG_UART_CONSOLE_PORT_MUX_FUNC PCR_MUX_ALT3
 #define CONFIG_UART_CONSOLE_CLK_FREQ SYSCLK_DEFAULT_IOSC_HZ
 #define CONFIG_UART_CONSOLE_BAUDRATE 115200
-#define CONFIG_UART_CONSOLE_REGS PERIPH_ADDR_BASE_UART0
 #define CONFIG_UART_CONSOLE_IRQ IRQ_UART0_STATUS
 #define CONFIG_UART_CONSOLE_INT_PRI 3
 

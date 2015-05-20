@@ -151,7 +151,7 @@ struct _StellarisUartPort {
 	uint8_t intPri; /* interrupt priority level */
 };
 
-static struct _StellarisUartPort ports[CONFIG_UART_NUM_PORTS] = { { 0 } };
+CONFIGURE_UART_PORTS(struct _StellarisUartPort, ports);
 
 /*******************************************************************************
 *
@@ -262,8 +262,6 @@ void uart_init(int port, /* UART channel to initialize */
 	       const struct uart_init_info * const init_info
 	       )
 {
-	ports[port].base = (void *)init_info->regs;
-	ports[port].irq = init_info->irq;
 	ports[port].intPri = init_info->int_pri;
 
 	disable(port);

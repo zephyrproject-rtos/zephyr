@@ -73,6 +73,8 @@ static inline void uartGenericInfoInit(struct uart_init_info *pInfo)
 {
 	pInfo->sys_clk_freq = SYSCLK_DEFAULT_IOSC_HZ;
 	pInfo->baud_rate = CONFIG_UART_CONSOLE_BAUDRATE;
+	/* Only supported in polling mode, but init all info fields */
+	pInfo->int_pri = CONFIG_UART_CONSOLE_INT_PRI;
 }
 
 #endif /* DO_CONSOLE_INIT */
@@ -99,11 +101,6 @@ static void consoleInit(void)
 	RCGC1 |= RCGC1_UART0_EN;
 
 	uartGenericInfoInit(&info);
-	info.regs = CONFIG_UART_CONSOLE_REGS;
-
-	/* Only supported in polling mode, but init all info fields */
-	info.irq = CONFIG_UART_CONSOLE_IRQ;
-	info.int_pri = CONFIG_UART_CONSOLE_INT_PRI;
 
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
 
