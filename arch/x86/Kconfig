@@ -126,7 +126,7 @@ endmenu
 
 #FIXME This symbols is not being used.
 config  CUSTOM_RANDOM_GENERATOR
-        bool "Custom randmon generator"
+        bool "Custom random generator"
         default n
         help
           This option signifies that the target uses custom random number
