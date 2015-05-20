@@ -40,10 +40,8 @@ extern "C" {
 /* generic UART info structure */
 struct uart_init_info {
 	int baud_rate;
-	uint32_t regs; /* base port number or MM base address */
 	uint32_t sys_clk_freq; /* in Hz */
 	uint8_t options; /* HW Flow Control option */
-	uint8_t irq; /* interrupt request number */
 	uint8_t int_pri; /* interrupt priority level */
 };
 /* UART driver has to configure the device to 8n1 */
