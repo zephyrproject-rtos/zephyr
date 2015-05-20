@@ -67,29 +67,24 @@ static uint8_t get_ident(struct bt_conn *conn)
 	return conn->l2cap.ident;
 }
 
-struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
-				   size_t len)
+struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn)
+{
+	size_t head_reserve = sizeof(struct bt_l2cap_hdr) +
+				sizeof(struct bt_hci_acl_hdr) +
+				conn->dev->drv->head_reserve;
+
+	return bt_buf_get(BT_ACL_OUT, head_reserve);
+}
+
+void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct bt_buf *buf)
 {
 	struct bt_l2cap_hdr *hdr;
-	struct bt_buf *buf;
 
-	buf = bt_conn_create_pdu(conn);
-	if (!buf) {
-		return NULL;
-	}
-
-	/* Check if buf created has enough space */
-	if (bt_buf_tailroom(buf) - sizeof(*hdr) < len) {
-		BT_ERR("Buffer too short\n");
-		bt_buf_put(buf);
-		return NULL;
-	}
-
-	hdr = bt_buf_add(buf, sizeof(*hdr));
-	hdr->len = sys_cpu_to_le16(len);
+	hdr = bt_buf_push(buf, sizeof(*hdr));
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 	hdr->cid = sys_cpu_to_le16(cid);
 
-	return buf;
+	bt_conn_send(conn, buf);
 }
 
 static void rej_not_understood(struct bt_conn *conn, uint8_t ident)
@@ -98,8 +93,7 @@ static void rej_not_understood(struct bt_conn *conn, uint8_t ident)
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_buf *buf;
 
-	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_LE_SIG,
-				  sizeof(*hdr) + sizeof(*rej));
+	buf = bt_l2cap_create_pdu(conn);
 	if (!buf) {
 		return;
 	}
@@ -112,7 +106,7 @@ static void rej_not_understood(struct bt_conn *conn, uint8_t ident)
 	rej = bt_buf_add(buf, sizeof(*rej));
 	rej->reason = sys_cpu_to_le16(BT_L2CAP_REJ_NOT_UNDERSTOOD);
 
-	bt_conn_send(conn, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
 
 static void le_conn_param_rsp(struct bt_conn *conn, struct bt_buf *buf)
@@ -212,8 +206,7 @@ void bt_l2cap_update_conn_param(struct bt_conn *conn)
 		return;
 	}
 
-	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_LE_SIG,
-				  sizeof(*hdr) + sizeof(*req));
+	buf = bt_l2cap_create_pdu(conn);
 	if (!buf) {
 		return;
 	}
@@ -229,5 +222,5 @@ void bt_l2cap_update_conn_param(struct bt_conn *conn)
 	req->latency = sys_cpu_to_le16(LE_CONN_LATENCY);
 	req->timeout = sys_cpu_to_le16(LE_CONN_TIMEOUT);
 
-	bt_conn_send(conn, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }

@@ -67,7 +67,7 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 	rsp->handle = sys_cpu_to_le16(handle);
 	rsp->error = err;
 
-	bt_conn_send(conn, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
 }
 
 static void att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
@@ -112,7 +112,7 @@ static void att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
 	rsp = bt_buf_add(buf, sizeof(*rsp));
 	rsp->mtu = sys_cpu_to_le16(mtu);
 
-	bt_conn_send(conn, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
 }
 
 static bool range_is_valid(uint16_t start, uint16_t end, uint16_t *err)
@@ -573,7 +573,7 @@ struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	struct bt_att_hdr *hdr;
 	struct bt_buf *buf;
 
-	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_ATT, sizeof(*hdr) + len);
+	buf = bt_l2cap_create_pdu(conn);
 	if (!buf) {
 		return NULL;
 	}

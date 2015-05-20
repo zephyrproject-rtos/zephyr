@@ -204,7 +204,7 @@ struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	struct bt_smp_hdr *hdr;
 	struct bt_buf *buf;
 
-	buf = bt_l2cap_create_pdu(conn, BT_L2CAP_CID_SMP, sizeof(*hdr) + len);
+	buf = bt_l2cap_create_pdu(conn);
 	if (!buf) {
 		return NULL;
 	}
@@ -228,7 +228,7 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 	rsp = bt_buf_add(buf, sizeof(*rsp));
 	rsp->reason = reason;
 
-	bt_conn_send(conn, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 }
 
 static int smp_init(struct bt_conn_smp *smp)
@@ -295,7 +295,7 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
 	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
-	bt_conn_send(conn, rsp_buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
 
 	return 0;
 }
@@ -339,7 +339,7 @@ static int smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	bt_conn_send(conn, rsp_buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
 
 	return 0;
 }
@@ -390,7 +390,7 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));
 	memcpy(rsp->val, smp->prnd, sizeof(rsp->val));
 
-	bt_conn_send(conn, rsp_buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
 
 	/*smp_s1(smp->tk, smp->prnd, smp->rrnd, stk);*/
 

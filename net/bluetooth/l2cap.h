@@ -69,8 +69,10 @@ struct bt_l2cap_conn_param_rsp {
 } PACK_STRUCT;
 
 /* Prepare an L2CAP PDU to be sent over a connection */
-struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn, uint16_t cid,
-				   size_t len);
+struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn);
+
+/* Send L2CAP PDU over a connection */
+void bt_l2cap_send(struct bt_conn *conn, uint16_t cid, struct bt_buf *buf);
 
 /* Receive a new L2CAP PDU from a connection */
 void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf);

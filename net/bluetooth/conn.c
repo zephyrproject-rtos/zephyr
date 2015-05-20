@@ -176,7 +176,7 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 	remaining -= len;
 
 	while (remaining) {
-		buf = bt_conn_create_pdu(conn);
+		buf = bt_l2cap_create_pdu(conn);
 
 		len = min(remaining, dev->le_mtu);
 
@@ -365,11 +365,4 @@ void bt_conn_put(struct bt_conn *conn)
 	}
 
 	conn->handle = 0;
-}
-
-struct bt_buf *bt_conn_create_pdu(struct bt_conn *conn)
-{
-	size_t reserve = conn->dev->drv->head_reserve;
-
-	return bt_buf_get(BT_ACL_OUT, reserve + sizeof(struct bt_hci_acl_hdr));
 }
