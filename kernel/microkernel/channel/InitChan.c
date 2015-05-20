@@ -33,17 +33,24 @@
 #include <minik.h>
 #include <ch_buff.h>
 
+/*******************************************************************************
+*
+* _pipe_init - initialize kernel pipe subsystem
+*
+* Performs any initialization of statically-defined pipes that wasn't done
+* at build time. (Note: most pipe structure fields are set to zero by sysgen.)
+*
+* RETURNS: N/A
+*/
+
 void _pipe_init(void)
 {
 	int i;
 	struct pipe_struct *pPipe;
 
 	for (i = 0, pPipe = _k_pipe_list; i < _k_pipe_count; i++, pPipe++) {
-		pPipe->Readers = NULL;
-		pPipe->Writers = NULL;
 		BuffInit((unsigned char *)pPipe->Buffer,
 				 &(pPipe->iBufferSize),
 				 &(pPipe->Buff));
-		pPipe->Count = 0;
 	}
 }
