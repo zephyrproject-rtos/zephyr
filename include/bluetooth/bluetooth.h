@@ -38,7 +38,8 @@
 /* Bluetooth subsystem logging helpers */
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-#define BT_DBG(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
+#define BT_DBG(fmt, ...) printf("bt: %s (%x): " fmt, __func__, \
+				context_self_get(), ##__VA_ARGS__)
 #else
 #define BT_DBG(fmt, ...)
 #endif /* CONFIG_BLUETOOTH_DEBUG */
