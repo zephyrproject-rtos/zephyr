@@ -99,11 +99,9 @@ struct k_msg {
 };
 
 typedef enum {
-	_ALL_OPT = 0x000000FF,
 	_0_TO_N = 0x00000001,
 	_1_TO_N = 0x00000002,
-	_ALL_N = 0x00000004,
-	_X_TO_N = _0_TO_N | _1_TO_N
+	_ALL_N = 0x00000004
 } K_PIPE_OPTION;
 
 #ifdef __cplusplus

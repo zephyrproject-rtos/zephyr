@@ -37,6 +37,8 @@
 #include <misc/__assert.h>
 #include <ch_buff.h>
 
+#define _X_TO_N		(_0_TO_N | _1_TO_N)
+
 /*
 * - artefacts: ???
 * - non-optimal:

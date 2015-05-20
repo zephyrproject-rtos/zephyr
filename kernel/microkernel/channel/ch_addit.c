@@ -37,6 +37,8 @@
 #include <sections.h>
 #include <misc/__assert.h>
 
+#define _ALL_OPT	(0x000000FF)
+
 /*****************************************************************************/
 
 void DeListWaiter(struct k_args *pReqProc)
