@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #include <microkernel.h>
 #include <minik.h>
 #include <kchan.h>
@@ -65,14 +63,13 @@ void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pNewReader)
 	pReader = (pNewReader != NULL) ? pNewReader : pPipe->Readers;
 
 	__ASSERT_NO_MSG((pPipe->Readers == pNewReader) ||
-	       (NULL == pPipe->Readers) || (NULL == pNewReader));
+					(NULL == pPipe->Readers) || (NULL == pNewReader));
 
 	pReaderArgs = &pReader->Args.ChProc;
 
 	do {
-		iSize = min(
-			pPipe->Buff.iAvailDataCont,
-			pReaderArgs->iSizeTotal - pReaderArgs->iSizeXferred);
+		iSize = min(pPipe->Buff.iAvailDataCont,
+					pReaderArgs->iSizeTotal - pReaderArgs->iSizeXferred);
 
 		if (iSize == 0) {
 			return;
@@ -86,17 +83,10 @@ void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pNewReader)
 		}
 
 		GETARGS(Moved_req);
-		setup_movedata(
-			Moved_req,
-			pPipe,
-			XFER_B2R,
-			NULL,
-			pReader,
+		setup_movedata(Moved_req, pPipe, XFER_B2R, NULL, pReader,
 			(char *)(pReaderArgs->pData) +
-				OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
-			pRead,
-			ret,
-			id);
+			OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
+			pRead, ret, id);
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
@@ -110,8 +100,9 @@ void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pNewReader)
 				myfreetimer(&pReader->Time.timer);
 			}
 			return;
-		} else
+		} else {
 			ChReqSetStatus(pReaderArgs, XFER_BUSY);
+		}
 
 	} while (--numIterations != 0);
 }

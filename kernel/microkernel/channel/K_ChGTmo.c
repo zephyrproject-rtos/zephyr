@@ -36,7 +36,6 @@
 #include <sections.h>
 #include <misc/__assert.h>
 
-/****************************************************************************/
 
 void K_ChRecvTmo(struct k_args *ReqProc)
 {
@@ -46,8 +45,7 @@ void K_ChRecvTmo(struct k_args *ReqProc)
 	ChReqSetStatus(&(ReqProc->Args.ChProc), TERM_TMO);
 
 	DeListWaiter(ReqProc);
-	if (0 == ReqProc->Args.ChProc.iNbrPendXfers)
+	if (0 == ReqProc->Args.ChProc.iNbrPendXfers) {
 		K_ChRecvRpl(ReqProc);
+	}
 }
-
-/*****************************************************************************/

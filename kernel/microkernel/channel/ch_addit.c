@@ -39,7 +39,6 @@
 
 #define _ALL_OPT	(0x000000FF)
 
-/*****************************************************************************/
 
 void DeListWaiter(struct k_args *pReqProc)
 {
@@ -61,8 +60,7 @@ void myfreetimer(struct k_timer * *ppTimer)
 void mycopypacket(struct k_args **out, struct k_args *in)
 {
 	GETARGS(*out);
-	k_memcpy_s(*out, sizeof(struct k_args),
-			   in, sizeof(struct k_args));
+	k_memcpy_s(*out, sizeof(struct k_args), in, sizeof(struct k_args));
 	(*out)->Ctxt.args = in;
 }
 
@@ -96,8 +94,6 @@ int CalcAvailWriterData(struct k_args *pWriterList)
 	return iSize;
 }
 
-/********************************************************/
-
 K_PIPE_OPTION ChxxxGetChOpt(K_ARGS_ARGS * pChxxx)
 {
 	return (K_PIPE_OPTION)(pChxxx->ChProc.ReqInfo.Params & _ALL_OPT);
@@ -108,8 +104,7 @@ void ChxxxSetChOpt(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option)
 	pChxxx->ChProc.ReqInfo.Params &=
 		(~_ALL_OPT); /* clear destination field */
 	pChxxx->ChProc.ReqInfo.Params |=
-		(option &
-		 _ALL_OPT); /* to make sure we do not screw up other fields */
+		(option & _ALL_OPT); /* make sure we do not screw up other fields */
 }
 
 REQ_TYPE ChxxxGetReqType(K_ARGS_ARGS *pChxxx)
@@ -122,8 +117,7 @@ void ChxxxSetReqType(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType)
 	pChxxx->ChProc.ReqInfo.Params &=
 		(~_ALLREQ); /* clear destination field */
 	pChxxx->ChProc.ReqInfo.Params |=
-		(ReqType &
-		 _ALLREQ); /* to make sure we do not screw up other fields */
+		(ReqType & _ALLREQ); /* make sure we do not screw up other fields */
 }
 
 TIME_TYPE ChxxxGetTimeType(K_ARGS_ARGS *pChxxx)
@@ -137,26 +131,24 @@ void ChxxxSetTimeType(K_ARGS_ARGS *pChxxx,
 	pChxxx->ChProc.ReqInfo.Params &=
 		(~_ALLTIME); /* clear destination field */
 	pChxxx->ChProc.ReqInfo.Params |=
-		(TimeType &
-		 _ALLTIME); /* to make sure we do not screw up other fields */
+		(TimeType & _ALLTIME); /* make sure we do not screw up other fields */
 }
-
-/*********************************************************************/
 
 CHREQ_STATUS ChReqGetStatus(struct k_chproc *pChProc)
 {
 	return pChProc->Status;
 }
 
-void ChReqSetStatus(struct k_chproc *pChProc,
-					  CHREQ_STATUS Status)
+void ChReqSetStatus(struct k_chproc *pChProc, CHREQ_STATUS Status)
 {
 #ifdef CONFIG_OBJECT_MONITOR
-	/* if transition XFER_IDLE --> XFER_BUSY, TERM_XXX, increment channel
-	 * counter: */
+	/*
+	 * if transition XFER_IDLE --> XFER_BUSY, TERM_XXX
+	 * increment channel counter
+	 */
+
 	if (XFER_IDLE == pChProc->Status /* current (old) status */
-	    &&
-	    (XFER_BUSY | TERM_XXX) & Status /* new status */) {
+	    && (XFER_BUSY | TERM_XXX) & Status /* new status */) {
 		(pChProc->ReqInfo.ChRef.pPipe->Count)++;
 	}
 #endif
@@ -173,29 +165,25 @@ int ChReqSizeLeft(struct k_chproc *pChProc)
 	return (pChProc->iSizeTotal - pChProc->iSizeXferred);
 }
 
-/********************************************************/
-
-BOOL AreasCheck4Intrusion(unsigned char *pBegin1,
-			  int iSize1,
-			  unsigned char *pBegin2,
-			  int iSize2);
+BOOL AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
+						  unsigned char *pBegin2, int iSize2);
 
 void ChannelCheck4Intrusion(struct chbuff *pChBuff,
-						  unsigned char *pBegin,
-						  int iSize)
+							unsigned char *pBegin, int iSize)
 {
-	/* check possible collision with all existing data areas,
-	   both for read and write areas: */
+	/*
+	 * check possible collision with all existing data areas,
+	 * both for read and write areas
+	 */
 
 	int index;
 	struct marker_list *pMarkerList;
 
-/* write markers:
- */
+	/* write markers */
 
-/* first a small consistency check:
- */
 #ifdef STORE_NBR_MARKERS
+	/* first a small consistency check */
+
 	if (0 == pChBuff->WriteMarkers.iNbrMarkers) {
 		__ASSERT_NO_MSG(-1 == pChBuff->WriteMarkers.iFirstMarker);
 		__ASSERT_NO_MSG(-1 == pChBuff->WriteMarkers.iLastMarker);
@@ -211,18 +199,17 @@ void ChannelCheck4Intrusion(struct chbuff *pChBuff,
 
 		pM = &(pMarkerList->aMarkers[index]);
 
-		if (0 != AreasCheck4Intrusion(
-				 pBegin, iSize, pM->pointer, pM->size)) {
+		if (0 != AreasCheck4Intrusion(pBegin, iSize, pM->pointer, pM->size)) {
 			__ASSERT_NO_MSG(1 == 0);
 		}
 		index = pM->Next;
 	}
 
-/* read markers:
- */
-/* first a small consistency check:
- */
+	/* read markers */
+
 #ifdef STORE_NBR_MARKERS
+	/* first a small consistency check */
+
 	if (0 == pChBuff->ReadMarkers.iNbrMarkers) {
 		__ASSERT_NO_MSG(-1 == pChBuff->ReadMarkers.iFirstMarker);
 		__ASSERT_NO_MSG(-1 == pChBuff->ReadMarkers.iLastMarker);
@@ -238,48 +225,47 @@ void ChannelCheck4Intrusion(struct chbuff *pChBuff,
 
 		pM = &(pMarkerList->aMarkers[index]);
 
-		if (0 != AreasCheck4Intrusion(
-				 pBegin, iSize, pM->pointer, pM->size)) {
+		if (0 != AreasCheck4Intrusion(pBegin, iSize, pM->pointer, pM->size)) {
 			__ASSERT_NO_MSG(1 == 0);
 		}
 		index = pM->Next;
 	}
 }
 
-BOOL AreasCheck4Intrusion(unsigned char *pBegin1,
-						int iSize1,
-						unsigned char *pBegin2,
-						int iSize2)
+BOOL AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
+						  unsigned char *pBegin2, int iSize2)
 {
-	unsigned char *pEnd1, *pEnd2;
+	unsigned char *pEnd1;
+	unsigned char *pEnd2;
 
 	pEnd1 = pBegin1 + OCTET_TO_SIZEOFUNIT(iSize1);
 	pEnd2 = pBegin2 + OCTET_TO_SIZEOFUNIT(iSize2);
 
-	/* 2 tests are required to determine the status of the 2 areas, in terms
-	   of
-	   their position wrt each other */
+	/*
+	 * 2 tests are required to determine the status of the 2 areas,
+	 * in terms of their position wrt each other
+	 */
 
-	if (pBegin2 >=
-	    pBegin1) {/* check intrusion of pBegin2 in [pBegin1, pEnd1( */
-		if (pBegin2 < pEnd1)
-			return TRUE; /* intrusion!! */
-		else
-			return FALSE; /* pBegin2 lies outside and to the right
-					 of the first area, intrusion is
-					 impossible */
-	} else
+	if (pBegin2 >= pBegin1) {
+		/* check intrusion of pBegin2 in [pBegin1, pEnd1( */
+		if (pBegin2 < pEnd1) {
+			/* intrusion!! */
+			return TRUE;
+		} else {
+			/* pBegin2 lies outside and to the right of the first area,
+			  intrusion is impossible */
+			return FALSE;
+		}
+	} else {
 		/* pBegin2 lies to the left of (pBegin1, pEnd1) */
-	{
-		if (
-			    pEnd2 > pBegin1) /* check end pointer: is pEnd2 in
-						(pBegin1, pEnd1( ?? */
-			return TRUE; /* intrusion!! */
-		else
-			return FALSE; /* pEnd2 lies outside and to the left of
-					 the first area, intrusion is impossible
-					 */
+		/* check end pointer: is pEnd2 in (pBegin1, pEnd1( ?? */
+		if (pEnd2 > pBegin1) {
+			/* intrusion!! */
+			return TRUE;
+		} else {
+			/* pEnd2 lies outside and to the left of the first area,
+			   intrusion is impossible */
+			return FALSE;
+		}
 	}
 }
-
-/******************************************************************************/

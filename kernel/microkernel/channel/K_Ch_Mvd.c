@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #include <minik.h>
 #include <kchan.h>
 #include <toolchain.h>
@@ -56,79 +54,74 @@ void setup_movedata(struct k_args *A,
 					  uint32_t size,
 					  int XferID)
 {
+	struct k_args *pContSend;
+	struct k_args *pContRecv;
+
 	A->Comm = MVD_REQ;
 
-	A->Ctxt.proc = NULL; /* this caused problems when != NULL related to
-				set/reset of state bits */
+	A->Ctxt.proc = NULL;
+	/* this caused problems when != NULL related to set/reset of state bits */
 
 	A->Args.MovedReq.Action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
 	A->Args.MovedReq.source = source;
 	A->Args.MovedReq.destination = destination;
 	A->Args.MovedReq.iTotalSize = size;
 
-	/* continuation packet:
-	 */
+	/* continuation packet */
+
+	GETARGS(pContSend);
+	GETARGS(pContRecv);
+
+	pContSend->Forw = NULL;
+	pContSend->Comm = CH_MOVED_ACK;
+	pContSend->Args.ChMovedAck.pPipe = pPipe;
+	pContSend->Args.ChMovedAck.XferType = XferType;
+	pContSend->Args.ChMovedAck.ID = XferID;
+	pContSend->Args.ChMovedAck.iSize = size;
+
+	pContRecv->Forw = NULL;
+	pContRecv->Comm = CH_MOVED_ACK;
+	pContRecv->Args.ChMovedAck.pPipe = pPipe;
+	pContRecv->Args.ChMovedAck.XferType = XferType;
+	pContRecv->Args.ChMovedAck.ID = XferID;
+	pContRecv->Args.ChMovedAck.iSize = size;
+
+	SetChanProcPrio(A, pContSend, pContRecv, pWriter, pReader);
+
+	switch (XferType) {
+	case XFER_W2B: /* Writer to Buffer */
 	{
-		struct k_args *pContSend, *pContRecv;
-		GETARGS(pContSend);
-		GETARGS(pContRecv);
-
-		pContSend->Forw = NULL;
-		pContSend->Comm = CH_MOVED_ACK;
-		pContSend->Args.ChMovedAck.pPipe = pPipe;
-		pContSend->Args.ChMovedAck.XferType = XferType;
-		pContSend->Args.ChMovedAck.ID = XferID;
-		pContSend->Args.ChMovedAck.iSize = size;
-
-		pContRecv->Forw = NULL;
-		pContRecv->Comm = CH_MOVED_ACK;
-		pContRecv->Args.ChMovedAck.pPipe = pPipe;
-		pContRecv->Args.ChMovedAck.XferType = XferType;
-		pContRecv->Args.ChMovedAck.ID = XferID;
-		pContRecv->Args.ChMovedAck.iSize = size;
-
-		SetChanProcPrio(A, pContSend, pContRecv, pWriter, pReader);
-
-		switch (XferType) {
-		case XFER_W2B: /* Writer to Buffer */
-		{
-			__ASSERT_NO_MSG(NULL == pReader);
-			pContSend->Args.ChMovedAck.pWriter = pWriter;
-			/*pContSend->Args.ChMovedAck.pReader =NULL; */
-			pContRecv->Args.ChMovedAck.pWriter = NULL;
-			/*pContRecv->Args.ChMovedAck.pReader =NULL; */
-			break;
-		}
-		case XFER_B2R: {
-			__ASSERT_NO_MSG(NULL == pWriter);
-			/*pContSend->Args.ChMovedAck.pWriter =NULL; */
-			pContSend->Args.ChMovedAck.pReader = NULL;
-			/*pContRecv->Args.ChMovedAck.pWriter =NULL; */
-			pContRecv->Args.ChMovedAck.pReader = pReader;
-			break;
-		}
-		case XFER_W2R: {
-			__ASSERT_NO_MSG(NULL != pWriter && NULL != pReader);
-			pContSend->Args.ChMovedAck.pWriter = pWriter;
-			pContSend->Args.ChMovedAck.pReader = NULL;
-			pContRecv->Args.ChMovedAck.pWriter = NULL;
-			pContRecv->Args.ChMovedAck.pReader = pReader;
-			break;
-		}
-		default:
-			__ASSERT_NO_MSG(1 == 0); /* we should not come here */
-		}
-
-		A->Args.MovedReq.Extra.Setup.ContSnd = pContSend;
-		A->Args.MovedReq.Extra.Setup.ContRcv = pContRecv;
-
-		/* Remark (possible optimisation)
-		   if we could know if it was a send/recv completion, we could
-		   use the
-		   SAME cmd packet for continuation on both completion of send
-		   and recv !!
-		 */
+		__ASSERT_NO_MSG(NULL == pReader);
+		pContSend->Args.ChMovedAck.pWriter = pWriter;
+		pContRecv->Args.ChMovedAck.pWriter = NULL;
+		break;
 	}
+	case XFER_B2R: {
+		__ASSERT_NO_MSG(NULL == pWriter);
+		pContSend->Args.ChMovedAck.pReader = NULL;
+		pContRecv->Args.ChMovedAck.pReader = pReader;
+		break;
+	}
+	case XFER_W2R: {
+		__ASSERT_NO_MSG(NULL != pWriter && NULL != pReader);
+		pContSend->Args.ChMovedAck.pWriter = pWriter;
+		pContSend->Args.ChMovedAck.pReader = NULL;
+		pContRecv->Args.ChMovedAck.pWriter = NULL;
+		pContRecv->Args.ChMovedAck.pReader = pReader;
+		break;
+	}
+	default:
+		__ASSERT_NO_MSG(1 == 0); /* we should not come here */
+	}
+
+	A->Args.MovedReq.Extra.Setup.ContSnd = pContSend;
+	A->Args.MovedReq.Extra.Setup.ContRcv = pContRecv;
+
+	/*
+	 * (possible optimisation)
+	 * if we could know if it was a send/recv completion, we could use the
+	 * SAME cmd packet for continuation on both completion of send and recv !!
+	 */
 }
 
 /*******************************************************************************
@@ -150,45 +143,37 @@ void K_ChMovedAck(struct k_args *pEOXfer)
 		if (pWriter) { /* Xfer from Writer finished */
 			struct k_chproc *pWriterArg =
 				&(pEOXferArgs->pWriter->Args.ChProc);
+
 			--(pWriterArg->iNbrPendXfers);
 			if (0 == pWriterArg->iNbrPendXfers) {
 				if (TERM_XXX & pWriterArg->Status) {
-					/* request is terminated, send
-					 * reply:
-					 */
+					/* request is terminated, send reply */
 					K_ChSendRpl(pEOXferArgs->pWriter);
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				} else {
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
 				if (TERM_XXX & pWriterArg->Status) {
 					/* do nothing */
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				} else {
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				}
 			}
 		} else {
 			/* Xfer to Buffer finished */
 
 			int XferId = pEOXferArgs->ID;
-			BuffEnQA_End(&(pEOXferArgs->pPipe->Buff),
-				     XferId,
-				     pEOXferArgs->iSize);
+			BuffEnQA_End(&(pEOXferArgs->pPipe->Buff), XferId,
+						 pEOXferArgs->iSize);
 		}
-		/* invoke continuation mechanism:
-		 */
-		{
-			K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
-			FREEARGS(pEOXfer);
-			return;
-		}
-		/*			break;*/
+
+		/* invoke continuation mechanism */
+
+		K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
+		FREEARGS(pEOXfer);
+		return;
 	} /* XFER_W2B */
 
 	case XFER_B2R: {
@@ -197,113 +182,92 @@ void K_ChMovedAck(struct k_args *pEOXfer)
 		if (pReader) { /* Xfer to Reader finished */
 			struct k_chproc *pReaderArg =
 				&(pEOXferArgs->pReader->Args.ChProc);
+
 			--(pReaderArg->iNbrPendXfers);
 			if (0 == pReaderArg->iNbrPendXfers) {
 				if (TERM_XXX & pReaderArg->Status) {
-					/* request is terminated, send
-					 * reply:
-					 */
-					K_ChRecvRpl(
-						pEOXferArgs->pReader);
+					/* request is terminated, send reply */
+					K_ChRecvRpl(pEOXferArgs->pReader);
 				} else {
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
 				if (TERM_XXX & pReaderArg->Status) {
 					/* do nothing */
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				} else {
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				}
 			}
-		} else
+		} else {
 			/* Xfer from Buffer finished */
-		{
+
 			int XferId = pEOXferArgs->ID;
-			BuffDeQA_End(&(pEOXferArgs->pPipe->Buff),
-				     XferId,
-				     pEOXferArgs->iSize);
+
+			BuffDeQA_End(&(pEOXferArgs->pPipe->Buff), XferId,
+						 pEOXferArgs->iSize);
 		}
 
-		/* continuation mechanism:
-		 */
-		{
-			K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
-			FREEARGS(pEOXfer);
-			return;
-		}
-			/*			break;*/
+		/* continuation mechanism */
+
+		K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
+		FREEARGS(pEOXfer);
+		return;
+
 	} /* XFER_B2R */
 
 	case XFER_W2R: {
 		struct k_args *pWriter = pEOXferArgs->pWriter;
-		/*			struct k_args *pReader
-		 * =pEOXferArgs->pReader;*/
 
 		if (pWriter) { /* Transfer from writer finished */
 			struct k_chproc *pWriterArg =
 				&(pEOXferArgs->pWriter->Args.ChProc);
+
 			--(pWriterArg->iNbrPendXfers);
 			if (0 == pWriterArg->iNbrPendXfers) {
 				if (TERM_XXX & pWriterArg->Status) {
-					/* request is terminated, send
-					 * reply:
-					 */
+					/* request is terminated, send reply */
 					K_ChSendRpl(pEOXferArgs->pWriter);
 				} else {
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
 				if (TERM_XXX & pWriterArg->Status) {
 					/* do nothing */
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				} else {
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				}
 			}
-		} else
+		} else {
 			/* Transfer to Reader finished */
-		{
+
 			struct k_chproc *pReaderArg =
 				&(pEOXferArgs->pReader->Args.ChProc);
+
 			--(pReaderArg->iNbrPendXfers);
 			if (0 == pReaderArg->iNbrPendXfers) {
 				if (TERM_XXX & pReaderArg->Status) {
-					/* request is terminated, send
-					 * reply:
-					 */
-					K_ChRecvRpl(
-						pEOXferArgs->pReader);
+					/* request is terminated, send reply */
+					K_ChRecvRpl(pEOXferArgs->pReader);
 				} else {
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
 				if (TERM_XXX & pReaderArg->Status) {
 					/* do nothing */
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				} else {
-					/* invoke continuation mechanism
-					 * (fall through) */
+					/* invoke continuation mechanism (fall through) */
 				}
 			}
 		}
 
-		/* invoke continuation mechanism:
-		 */
-		{
-			K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
-			FREEARGS(pEOXfer);
-			return;
-		}
-		/*			break;*/
+		/* invoke continuation mechanism */
+
+		K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
+		FREEARGS(pEOXfer);
+		return;
 	} /* XFER_W2B */
 
 	default:
@@ -318,9 +282,7 @@ void K_ChMovedAck(struct k_args *pEOXfer)
 * RETURNS: priority
 */
 
-int CalcChanProcPrio(int iChanDefaultPrio,
-					   int iWriterPrio,
-					   int iReaderPrio)
+int CalcChanProcPrio(int iChanDefaultPrio, int iWriterPrio, int iReaderPrio)
 {
 	int iMaxPrio;
 
@@ -337,27 +299,26 @@ int CalcChanProcPrio(int iChanDefaultPrio,
 */
 
 void SetChanProcPrio(struct k_args *pMvdReq,
-					   struct k_args *pContSend,
-					   struct k_args *pContRecv,
-					   struct k_args *pWriter,
-					   struct k_args *pReader)
+					 struct k_args *pContSend, struct k_args *pContRecv,
+					 struct k_args *pWriter, struct k_args *pReader)
 {
 	int iProcPrio;
 	int iWriterPrio;
 	int iReaderPrio;
 
-	if (pWriter != NULL)
+	if (pWriter != NULL) {
 		iWriterPrio = pWriter->Prio;
-	else
+	} else {
 		iWriterPrio = PRIO_MIN;
+	}
 
-	if (pReader != NULL)
+	if (pReader != NULL) {
 		iReaderPrio = pReader->Prio;
-	else
+	} else {
 		iReaderPrio = PRIO_MIN;
+	}
 
-	iProcPrio =
-		CalcChanProcPrio(CHANPRIO_DEFAULT, iWriterPrio, iReaderPrio);
+	iProcPrio = CalcChanProcPrio(CHANPRIO_DEFAULT, iWriterPrio, iReaderPrio);
 
 	pMvdReq->Prio = iProcPrio;
 	pContSend->Prio = iProcPrio;

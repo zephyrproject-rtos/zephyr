@@ -36,54 +36,46 @@
 #include <sections.h>
 #include <misc/__assert.h>
 
-/*****************************************************************************/
 
 void K_ChRecvRpl(struct k_args *ReqProc)
 {
-	__ASSERT_NO_MSG(0 == ReqProc->Args.ChProc.iNbrPendXfers /*  no pending Xfers */
-	       &&
-	       NULL == ReqProc->Time.timer /*  no pending timer */
-	       &&
-	       NULL == ReqProc->Head); /*  not in list */
+	__ASSERT_NO_MSG(
+		(0 == ReqProc->Args.ChProc.iNbrPendXfers) /*  no pending Xfers */
+	    && (NULL == ReqProc->Time.timer) /*  no pending timer */
+	    && (NULL == ReqProc->Head)); /*  not in list */
 
-	/* orig packet must be sent back, not ReqProc:
-	 */
-	{
-		struct k_args *ReqOrig = ReqProc->Ctxt.args;
-		CHREQ_STATUS ChReqStatus;
-		ReqOrig->Comm = CHDEQ_ACK;
+	/* orig packet must be sent back, not ReqProc */
 
-		/* determine return value:
-		 */
-		ChReqStatus = ChReqGetStatus(&(ReqProc->Args.ChProc));
-		if (TERM_TMO == ChReqStatus) {
-			ReqOrig->Time.rcode = RC_TIME;
-		} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {
-			K_PIPE_OPTION Option = ChxxxGetChOpt(&(ReqProc->Args));
+	struct k_args *ReqOrig = ReqProc->Ctxt.args;
+	CHREQ_STATUS ChReqStatus;
+	ReqOrig->Comm = CHDEQ_ACK;
 
-			if (likely(0 == ChReqSizeLeft(&(ReqProc->Args.ChProc)))) {
-				/* All data has been transferred */
-				ReqOrig->Time.rcode = RC_OK;
-			} else if (ChReqSizeXferred(&(ReqProc->Args.ChProc))) {
-				/* Some but not all data has been transferred */
-				ReqOrig->Time.rcode = (Option == _ALL_N) ?
-									  RC_INCOMPLETE : RC_OK;
-			} else {
-				/* No data has been transferred */
-				ReqOrig->Time.rcode = (Option == _0_TO_N) ?
-									  RC_OK : RC_FAIL;
-			}
-		} else
-			/* { unknown (invalid) status } */
-		{
-			__ASSERT_NO_MSG(1 == 0); /* should not come here */
+	/* determine return value */
+
+	ChReqStatus = ChReqGetStatus(&(ReqProc->Args.ChProc));
+	if (TERM_TMO == ChReqStatus) {
+		ReqOrig->Time.rcode = RC_TIME;
+	} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {
+		K_PIPE_OPTION Option = ChxxxGetChOpt(&(ReqProc->Args));
+
+		if (likely(0 == ChReqSizeLeft(&(ReqProc->Args.ChProc)))) {
+			/* All data has been transferred */
+			ReqOrig->Time.rcode = RC_OK;
+		} else if (ChReqSizeXferred(&(ReqProc->Args.ChProc))) {
+			/* Some but not all data has been transferred */
+			ReqOrig->Time.rcode = (Option == _ALL_N) ?
+								  RC_INCOMPLETE : RC_OK;
+		} else {
+			/* No data has been transferred */
+			ReqOrig->Time.rcode = (Option == _0_TO_N) ? RC_OK : RC_FAIL;
 		}
-
-		ReqOrig->Args.ChAck.iSizeXferred =
-			ReqProc->Args.ChProc.iSizeXferred;
-		SENDARGS(ReqOrig);
+	} else {
+		/* unknown (invalid) status */
+		__ASSERT_NO_MSG(1 == 0); /* should not come here */
 	}
+
+	ReqOrig->Args.ChAck.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
+	SENDARGS(ReqOrig);
+
 	FREEARGS(ReqProc);
 }
-
-/*****************************************************************************/

@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #include <minik.h>
 #include <kchan.h>
 #include <toolchain.h>
@@ -43,43 +41,38 @@
 * RETURNS: RC_ALIGNMENT, RC_FAIL, RC_OK
 */
 
-int _task_pipe_put_async(
-	kpipe_t Id,
-	struct k_block Block,
-	int iReqSize2Xfer,
-	ksem_t Sema
-)
+int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
+						 int iReqSize2Xfer, ksem_t Sema)
 {
 	unsigned int iSize2Xfer;
 	struct k_args A;
 
 	iSize2Xfer = min((unsigned)iReqSize2Xfer, (unsigned)(Block.req_size));
 
-	if (unlikely(iSize2Xfer % SIZEOFUNIT_TO_OCTET(1)))
+	if (unlikely(iSize2Xfer % SIZEOFUNIT_TO_OCTET(1))) {
 		return RC_ALIGNMENT;
-	if (unlikely(0 == iSize2Xfer))
-		return RC_FAIL; /* not allowed because enlisted requests with
-				   zero size will hang in K_ChProc() */
+	}
+	if (unlikely(0 == iSize2Xfer)) {
+		/* not allowed because enlisted requests with zero size
+		   will hang in K_ChProc() */
+		return RC_FAIL;
+	}
 
 	A.Prio = _k_current_task->Prio;
 	A.Comm = CHENQ_REQ;
-	A.Time
-		.ticks = TICKS_UNLIMITED; /* same behavior in flow as a blocking
-					  call w/o a timeout */
-	{
-		struct k_chreq ChReq;
-		ChReq.ReqInfo.ChRef.Id = Id;
-		/* asynchr. Xfer: */
-		{
-			ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _ASYNCREQ);
-			ChxxxSetChOpt((K_ARGS_ARGS *)&ChReq,
-				      _ALL_N); /* force ALL_N */
-			ChReq.ReqType.Async.block = Block;
-			ChReq.ReqType.Async.iSizeTotal = iSize2Xfer;
-			ChReq.ReqType.Async.sema = Sema;
-		}
-		A.Args.ChReq = ChReq;
-	}
+	A.Time.ticks = TICKS_UNLIMITED;
+		/* same behavior in flow as a blocking call w/o a timeout */
+
+	struct k_chreq ChReq;
+	ChReq.ReqInfo.ChRef.Id = Id;
+
+	ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _ASYNCREQ);
+	ChxxxSetChOpt((K_ARGS_ARGS *)&ChReq, _ALL_N); /* force ALL_N */
+	ChReq.ReqType.Async.block = Block;
+	ChReq.ReqType.Async.iSizeTotal = iSize2Xfer;
+	ChReq.ReqType.Async.sema = Sema;
+
+	A.Args.ChReq = ChReq;
 
 	KERNEL_ENTRY(&A);
 	return RC_OK;

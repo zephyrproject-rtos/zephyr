@@ -50,279 +50,226 @@ possibly copy the remaining data
 	  * ...
 */
 
-/*****************************************************************************/
 
 int WriterInProgressIsBlocked(struct pipe_struct *pPipe, struct k_args *pWriter);
 int ReaderInProgressIsBlocked(struct pipe_struct *pPipe, struct k_args *pReader);
 
-void K_ChProc(struct pipe_struct *pPipe,
-			    struct k_args *pNLWriter,
-			    struct k_args *pNLReader) /* this is not a K_ function */
+void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
+			  struct k_args *pNLReader) /* this is not a K_ function */
 {
 
 	struct k_args *pReader = NULL;
 	struct k_args *pWriter = NULL;
 
-	__ASSERT_NO_MSG(!(pNLWriter && pNLReader)); /* both a pNLWriter and pNLReader, is
-					      that allowed?
-					      Code below has not been designed
-					      for that.
-					      Anyway, this will not happen in
-					      current version. */
+	__ASSERT_NO_MSG(!(pNLWriter && pNLReader));
+	/* both a pNLWriter and pNLReader, is that allowed?
+	   Code below has not been designed for that.
+	   Anyway, this will not happen in current version. */
 
-	{
-		struct k_args *pNextReader;
-		struct k_args *pNextWriter;
+	struct k_args *pNextReader;
+	struct k_args *pNextWriter;
 
-		do {
-			BOOL bALLNWriterNoGo = FALSE;
-			BOOL bALLNReaderNoGo = FALSE;
+	do {
+		BOOL bALLNWriterNoGo = FALSE;
+		BOOL bALLNReaderNoGo = FALSE;
 
-			/* Reader:
-			 */
-			if (NULL != pNLReader) {
-				if (pReader != pNLReader) {
-					pNextReader = pPipe->Readers;
-					if (NULL == pNextReader) {
-						if (!(TERM_XXX &
-						      ChReqGetStatus(
-							      &(pNLReader->Args
-									.ChProc))))
-							pNextReader = pNLReader;
-					}
-				} else {
-					/* we already used the extra non-listed
-					 * Reader */
-					if (TERM_XXX &
-					    ChReqGetStatus(
-						    &(pReader->Args.ChProc)))
-						pNextReader = NULL;
-					else
-						pNextReader =
-							pReader; /* == pNLReader
-								    */
-				}
-			} else {
+		/* Reader */
+
+		if (NULL != pNLReader) {
+			if (pReader != pNLReader) {
 				pNextReader = pPipe->Readers;
-			}
-
-			/* Writer:
-			 */
-			if (NULL != pNLWriter) {
-				if (pWriter != pNLWriter) {
-					pNextWriter = pPipe->Writers;
-					if (NULL == pNextWriter) {
-						if (!(TERM_XXX &
-						      ChReqGetStatus(
-							      &(pNLWriter->Args
-									.ChProc))))
-							pNextWriter = pNLWriter;
-					}
-				} else {
-					/* we already used the extra non-listed
-					 * Writer */
-					if (TERM_XXX &
-					    ChReqGetStatus(
-						    &(pWriter->Args.ChProc)))
-						pNextWriter = NULL;
-					else
-						pNextWriter = pWriter;
+				if (NULL == pNextReader) {
+					if (!(TERM_XXX & ChReqGetStatus(&(pNLReader->Args.ChProc))))
+						pNextReader = pNLReader;
 				}
 			} else {
+				/* we already used the extra non-listed Reader */
+				if (TERM_XXX & ChReqGetStatus(&(pReader->Args.ChProc))) {
+					pNextReader = NULL;
+				} else {
+					pNextReader = pReader; /* == pNLReader */
+				}
+			}
+		} else {
+			pNextReader = pPipe->Readers;
+		}
+
+		/* Writer */
+
+		if (NULL != pNLWriter) {
+			if (pWriter != pNLWriter) {
 				pNextWriter = pPipe->Writers;
-			}
-
-			/* check if there is uberhaupt something to do:
-			 */
-			if (NULL == pNextReader && NULL == pNextWriter)
-				return;
-			if (pNextReader == pReader && pNextWriter == pWriter)
-				break; /* nothing changed, so stop */
-
-			/* go with pNextReader and pNextWriter:
-			 */
-			pReader = pNextReader;
-			pWriter = pNextWriter;
-
-			if (pWriter) {
-				if (_ALL_N == ChxxxGetChOpt(&(pWriter->Args)) &&
-				    !ChReqSizeXferred(
-					     &(pWriter->Args.ChProc)) &&
-				    _TIME_B !=
-					    ChxxxGetTimeType((
-						    K_ARGS_ARGS *)&(pWriter->Args))) {
-					/* investigate if there is a problem for
-					 * his request to be satisfied
-					 */
-					int iSizeDataInWriter;
-					int iSpace2WriteinReaders,
-						iFreeBufferSpace;
-					int iTotalSpace2Write;
-
-					iSpace2WriteinReaders =
-						CalcFreeReaderSpace(
-							pPipe->Readers);
-					if (pNLReader)
-						iSpace2WriteinReaders +=
-							(pNLReader->Args.ChProc
-								 .iSizeTotal -
-							 pNLReader->Args.ChProc
-								 .iSizeXferred);
-					BuffGetFreeSpaceTotal(
-						&(pPipe->Buff),
-						&iFreeBufferSpace);
-					iTotalSpace2Write =
-						iFreeBufferSpace +
-						iSpace2WriteinReaders;
-					iSizeDataInWriter =
-						pWriter->Args.ChProc
-							.iSizeTotal -
-						pWriter->Args.ChProc
-							.iSizeXferred;
-
-					if (iSizeDataInWriter >
-					    iTotalSpace2Write)
-						bALLNWriterNoGo = TRUE;
-				}
-			}
-			if (pReader) {
-				if (_ALL_N == ChxxxGetChOpt(&(pReader->Args)) &&
-				    !ChReqSizeXferred(
-					     &(pReader->Args.ChProc)) &&
-				    _TIME_B !=
-					    ChxxxGetTimeType((
-						    K_ARGS_ARGS *)&(pReader->Args))) {
-					/* investigate if there is a problem for
-					 * his request to be satisfied
-					 */
-					int iSizeFreeSpaceInReader;
-					int iData2ReadFromWriters,
-						iAvailBufferData;
-					int iTotalData2Read;
-
-					iData2ReadFromWriters =
-						CalcAvailWriterData(
-							pPipe->Writers);
-					if (pNLWriter)
-						iData2ReadFromWriters +=
-							(pNLWriter->Args.ChProc
-								 .iSizeTotal -
-							 pNLWriter->Args.ChProc
-								 .iSizeXferred);
-					BuffGetAvailDataTotal(
-						&(pPipe->Buff),
-						&iAvailBufferData);
-					iTotalData2Read = iAvailBufferData +
-							  iData2ReadFromWriters;
-					iSizeFreeSpaceInReader =
-						pReader->Args.ChProc
-							.iSizeTotal -
-						pReader->Args.ChProc
-							.iSizeXferred;
-
-					if (iSizeFreeSpaceInReader >
-					    iTotalData2Read)
-						bALLNReaderNoGo = TRUE;
-				}
-			}
-
-			__ASSERT_NO_MSG(!(bALLNWriterNoGo && bALLNReaderNoGo));
-
-			/************/
-			/* ACTION:  */
-			/************/
-
-			if (bALLNWriterNoGo) {
-				/* investigate if we must force a transfer to
-				 * avoid a stall
-				 */
-				if (!BuffEmpty(&(pPipe->Buff))) {
-					if (pReader) {
-						K_ChProcRO(pPipe, pReader);
-						continue;
-					} else
-						return; /* we could break as
-							   well, but then
-							   nothing else will
-							   happen */
-				} else {
-#ifdef FORCE_XFER_ON_STALL
-					if (pReader &&
-					    _TIME_NB !=
-						    ChxxxGetTimeType((
-							    K_ARGS_ARGS *)&(pWriter->Args))) {
-						/* force transfer (we make exception for non-blocked writer) */
-						K_ChProcWR(pPipe,
-							   pWriter,
-							   pReader);
-						continue;
-					} else
-#endif
-						return; /* we could break as
-							   well, but then
-							   nothing else will
-							   happen */
-				}
-			} else if (bALLNReaderNoGo) {
-				/* investigate if we must force a transfer to
-				 * avoid a stall
-				 */
-				if (!BuffFull(&(pPipe->Buff))) {
-					if (pWriter) {
-						K_ChProcWO(pPipe, pWriter);
-						continue;
-					} else
-						return;
-				} else {
-#ifdef FORCE_XFER_ON_STALL
-					if (pWriter &&
-					    _TIME_NB !=
-						    ChxxxGetTimeType((
-							    K_ARGS_ARGS *)&(pReader->Args))) {
-						/* force transfer (we make exception for non-blocked reader) */
-						K_ChProcWR(pPipe,
-							   pWriter,
-							   pReader);
-						continue;
-					} else
-#endif
-						return;
+				if (NULL == pNextWriter) {
+					if (!(TERM_XXX & ChReqGetStatus(&(pNLWriter->Args.ChProc))))
+						pNextWriter = pNLWriter;
 				}
 			} else {
-				/* no blocked reader and no blocked writer (if
-				   there are any of them)
-				   == NOMINAL operation
-				 */
-				if (pReader) {
-					if (pWriter) {
-						K_ChProcWR(pPipe,
-							   pWriter,
-							   pReader);
-						continue;
-					} else {
-						K_ChProcRO(pPipe, pReader);
-						continue;
-					}
+				/* we already used the extra non-listed Writer */
+				if (TERM_XXX & ChReqGetStatus(&(pWriter->Args.ChProc))) {
+					pNextWriter = NULL;
 				} else {
-					if (pWriter) {
-						K_ChProcWO(pPipe, pWriter);
-						continue;
-					} else {
-						/* we should not come here */
-						__ASSERT_NO_MSG(1 == 0);
-						return;
-					}
+					pNextWriter = pWriter;
 				}
 			}
-		} while (1);
+		} else {
+			pNextWriter = pPipe->Writers;
+		}
 
-		/* {We stopped processing because nothing changed anymore
-		(stall)}
-		Let's examine the situation a little bit further:
-		*/
+		/* check if there is uberhaupt something to do */
+
+		if (NULL == pNextReader && NULL == pNextWriter)
+			return;
+		if (pNextReader == pReader && pNextWriter == pWriter)
+			break; /* nothing changed, so stop */
+
+		/* go with pNextReader and pNextWriter */
+
 		pReader = pNextReader;
 		pWriter = pNextWriter;
-	}
+
+		if (pWriter) {
+			if (_ALL_N == ChxxxGetChOpt(&(pWriter->Args)) &&
+				!ChReqSizeXferred(&(pWriter->Args.ChProc)) &&
+				_TIME_B != ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args))) {
+				/* investigate if there is a problem for
+				 * his request to be satisfied
+				 */
+				int iSizeDataInWriter;
+				int iSpace2WriteinReaders;
+				int iFreeBufferSpace;
+				int iTotalSpace2Write;
+
+				iSpace2WriteinReaders = CalcFreeReaderSpace(pPipe->Readers);
+				if (pNLReader)
+					iSpace2WriteinReaders +=
+						(pNLReader->Args.ChProc.iSizeTotal -
+						 pNLReader->Args.ChProc.iSizeXferred);
+				BuffGetFreeSpaceTotal(&(pPipe->Buff), &iFreeBufferSpace);
+				iTotalSpace2Write =
+					iFreeBufferSpace + iSpace2WriteinReaders;
+				iSizeDataInWriter =
+					pWriter->Args.ChProc.iSizeTotal -
+					pWriter->Args.ChProc.iSizeXferred;
+
+				if (iSizeDataInWriter > iTotalSpace2Write) {
+					bALLNWriterNoGo = TRUE;
+				}
+			}
+		}
+		if (pReader) {
+			if (_ALL_N == ChxxxGetChOpt(&(pReader->Args)) &&
+				!ChReqSizeXferred(&(pReader->Args.ChProc)) &&
+				_TIME_B != ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args))) {
+				/* investigate if there is a problem for
+				 * his request to be satisfied
+				 */
+				int iSizeFreeSpaceInReader;
+				int iData2ReadFromWriters;
+				int iAvailBufferData;
+				int iTotalData2Read;
+
+				iData2ReadFromWriters = CalcAvailWriterData(pPipe->Writers);
+				if (pNLWriter)
+					iData2ReadFromWriters +=
+						(pNLWriter->Args.ChProc.iSizeTotal -
+						 pNLWriter->Args.ChProc.iSizeXferred);
+				BuffGetAvailDataTotal( &(pPipe->Buff), &iAvailBufferData);
+				iTotalData2Read = iAvailBufferData + iData2ReadFromWriters;
+				iSizeFreeSpaceInReader =
+					pReader->Args.ChProc.iSizeTotal -
+					pReader->Args.ChProc.iSizeXferred;
+
+				if (iSizeFreeSpaceInReader > iTotalData2Read) {
+					bALLNReaderNoGo = TRUE;
+				}
+			}
+		}
+
+		__ASSERT_NO_MSG(!(bALLNWriterNoGo && bALLNReaderNoGo));
+
+		/************/
+		/* ACTION:  */
+		/************/
+
+		if (bALLNWriterNoGo) {
+			/* investigate if we must force a transfer to avoid a stall */
+			if (!BuffEmpty(&(pPipe->Buff))) {
+				if (pReader) {
+					K_ChProcRO(pPipe, pReader);
+					continue;
+				} else {
+					/* we could break as well,
+					   but then nothing else will happen */
+					return;
+				}
+			} else {
+#ifdef FORCE_XFER_ON_STALL
+				if (pReader && (_TIME_NB !=
+					ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args)))) {
+					/* force transfer
+					   (we make exception for non-blocked writer) */
+					K_ChProcWR(pPipe, pWriter, pReader);
+					continue;
+				} else
+#endif
+					/* we could break as well,
+					   but then nothing else will happen */
+					return;
+			}
+		} else if (bALLNReaderNoGo) {
+			/* investigate if we must force a transfer to avoid a stall */
+			if (!BuffFull(&(pPipe->Buff))) {
+				if (pWriter) {
+					K_ChProcWO(pPipe, pWriter);
+					continue;
+				} else {
+					return;
+				}
+			} else {
+#ifdef FORCE_XFER_ON_STALL
+				if (pWriter && (_TIME_NB !=
+						ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args)))) {
+					/* force transfer
+					   (we make exception for non-blocked reader) */
+					K_ChProcWR(pPipe, pWriter, pReader);
+					continue;
+				} else
+#endif
+					return;
+			}
+		} else {
+			/* no blocked reader and no blocked writer
+			   (if there are any of them)
+			   == NOMINAL operation
+			 */
+			if (pReader) {
+				if (pWriter) {
+					K_ChProcWR(pPipe, pWriter, pReader);
+					continue;
+				} else {
+					K_ChProcRO(pPipe, pReader);
+					continue;
+				}
+			} else {
+				if (pWriter) {
+					K_ChProcWO(pPipe, pWriter);
+					continue;
+				} else {
+					/* we should not come here */
+					__ASSERT_NO_MSG(1 == 0);
+					return;
+				}
+			}
+		}
+	} while (1);
+
+	/* We stopped processing because nothing changed anymore (stall)
+	   Let's examine the situation a little bit further
+	*/
+
+	pReader = pNextReader;
+	pWriter = pNextWriter;
+
 	/* if we come here, it is b/c pReader and pWriter did not change
 	anymore.
 	- Normally one of them is NULL, which means only a writer, resp. a
@@ -351,7 +298,7 @@ void K_ChProc(struct pipe_struct *pPipe,
 	 */
 	if (pReader && pWriter) {
 		__ASSERT_NO_MSG(!(TERM_XXX & ChReqGetStatus(&(pReader->Args.ChProc))) &&
-		       !(TERM_XXX & ChReqGetStatus(&(pWriter->Args.ChProc))));
+						!(TERM_XXX & ChReqGetStatus(&(pWriter->Args.ChProc))));
 		/* this could be possible when data Xfer operations are jammed
 		   (out of data Xfer resources e.g.) */
 
@@ -380,13 +327,10 @@ void K_ChProc(struct pipe_struct *pPipe,
 		if (ReaderInProgressIsBlocked(pPipe, pReader)) {
 			if (_X_TO_N & ChxxxGetChOpt(&(pReader->Args)) &&
 			    ChReqSizeXferred(&(pReader->Args.ChProc))) {
-				ChReqSetStatus(&(pReader->Args.ChProc),
-					       TERM_SATISFIED);
+				ChReqSetStatus(&(pReader->Args.ChProc), TERM_SATISFIED);
 			} else {
-				ChReqSetStatus(&(pReader->Args.ChProc),
-					       TERM_FORCED); /* in all other
-								cases: forced
-								termination */
+				/* in all other cases: forced termination */
+				ChReqSetStatus(&(pReader->Args.ChProc), TERM_FORCED);
 			}
 
 			if (pReader->Head) {
@@ -395,10 +339,9 @@ void K_ChProc(struct pipe_struct *pPipe,
 			}
 			if (0 == pReader->Args.ChProc.iNbrPendXfers) {
 				pReader->Comm = CHDEQ_RPL;
-				K_ChRecvRpl(
-					pReader); /* if terminated and no
-						     pending Xfers anymore, we
-						     have to reply */
+				/* if terminated and no pending Xfers anymore,
+				   we have to reply */
+				K_ChRecvRpl(pReader);
 			}
 		} else {
 			/* temporary stall (must be, processing will continue
@@ -406,21 +349,17 @@ void K_ChProc(struct pipe_struct *pPipe,
 		}
 	} else if (pWriter) {
 		__ASSERT_NO_MSG(!(TERM_SATISFIED &
-			 ChReqGetStatus(&(pWriter->Args.ChProc))));
+						  ChReqGetStatus(&(pWriter->Args.ChProc))));
 
 		/* check if this lonely Writer is really blocked, then we will
-		   delist him
-		   (if he was listed uberhaupt) == EMERGENCY BREAK */
+		   delist him (if he was listed uberhaupt) == EMERGENCY BREAK */
 		if (WriterInProgressIsBlocked(pPipe, pWriter)) {
 			if (_X_TO_N & ChxxxGetChOpt(&(pWriter->Args)) &&
 			    ChReqSizeXferred(&(pWriter->Args.ChProc))) {
-				ChReqSetStatus(&(pWriter->Args.ChProc),
-					       TERM_SATISFIED);
+				ChReqSetStatus(&(pWriter->Args.ChProc), TERM_SATISFIED);
 			} else {
-				ChReqSetStatus(&(pWriter->Args.ChProc),
-					       TERM_FORCED); /* in all other
-								cases: forced
-								termination */
+				/* in all other cases: forced termination */
+				ChReqSetStatus(&(pWriter->Args.ChProc), TERM_FORCED);
 			}
 
 			if (pWriter->Head) {
@@ -429,10 +368,9 @@ void K_ChProc(struct pipe_struct *pPipe,
 			}
 			if (0 == pWriter->Args.ChProc.iNbrPendXfers) {
 				pWriter->Comm = CHENQ_RPL;
-				K_ChSendRpl(
-					pWriter); /* if terminated and no
-						     pending Xfers anymore, we
-						     have to reply */
+				/* if terminated and no pending Xfers anymore,
+				   we have to reply */
+				K_ChSendRpl(pWriter);
 			}
 
 		} else {
@@ -443,121 +381,116 @@ void K_ChProc(struct pipe_struct *pPipe,
 		__ASSERT_NO_MSG(1 == 0); /* we should not come ... here :-) */
 	}
 
-/* check if we have to cancel a timer for a request:
- */
+	/* check if we have to cancel a timer for a request */
 
 #ifdef CANCEL_TIMERS
 
 	if (pReader) {
 		if (ChReqSizeXferred(&(pReader->Args.ChProc))) {
-			if (pReader->Head)
-				myfreetimer(
-					&(pReader->Time.timer)); /* do not
-								    delist
-								    however */
+			if (pReader->Head) {
+				myfreetimer(&(pReader->Time.timer));
+				/* do not delist however */
+			}
 		}
 	}
 	if (pWriter) {
 		if (ChReqSizeXferred(&(pWriter->Args.ChProc))) {
-			if (pWriter->Head)
-				myfreetimer(
-					&(pWriter->Time.timer)); /* do not
-								    delist
-								    however */
+			if (pWriter->Head) {
+				myfreetimer(&(pWriter->Time.timer));
+				/* do not delist however */
+			}
 		}
 	}
 
 #endif
 }
 
-/*****************************************************************************/
-
 int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
-						    struct k_args *pWriter)
+							  struct k_args *pWriter)
 {
 	int iSizeDataInWriter;
 	int iFreeBufferSpace;
 	TIME_TYPE TimeType;
 	K_PIPE_OPTION option;
 
-	/* premises: */
-	/*__ASSERT_NO_MSG( NULL==pReader); */
-
 	/* first condition: request cannot wait any longer: must be -
 	 * (non-blocked) or a finite timed wait with a killed timer */
+
 	TimeType = ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args));
 	option = ChxxxGetChOpt((K_ARGS_ARGS *)&(pWriter->Args));
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
 	    ((_TIME_B == TimeType) && (_X_TO_N & option) &&
 	     !(pWriter->Args.ChProc.iSizeXferred))
 #ifdef CANCEL_TIMERS
-	    ||
-	    ((_TIME_BT == TimeType) && pWriter->Time.timer)
+	    || ((_TIME_BT == TimeType) && pWriter->Time.timer)
 #endif
 	    ) {
-		return 0; /* requester can still wait (for some time or
-			     forever), no problem for now */
+		/* requester can still wait (for some time or forever),
+		   no problem for now */
+		return 0;
 	}
 
 	/* second condition: buffer activity is null */
+
 	if (0 != pPipe->Buff.iNbrPendingWrites ||
-	    0 != pPipe->Buff.iNbrPendingReads)
-		return 0; /* buffer activity detected, can't say now that
-			     processing is blocked */
+	    0 != pPipe->Buff.iNbrPendingReads) {
+		/* buffer activity detected, can't say now that processing is blocked */
+		return 0; 
+	}
 
 	/* third condition: */
-	iSizeDataInWriter = pWriter->Args.ChProc.iSizeTotal -
-			    pWriter->Args.ChProc.iSizeXferred;
+
+	iSizeDataInWriter =
+		pWriter->Args.ChProc.iSizeTotal - pWriter->Args.ChProc.iSizeXferred;
 	BuffGetFreeSpaceTotal(&(pPipe->Buff), &iFreeBufferSpace);
-	if (iFreeBufferSpace >= iSizeDataInWriter)
+	if (iFreeBufferSpace >= iSizeDataInWriter) {
 		return 0;
-	else
+	} else {
 		return 1;
+	}
 }
 
-/*****************************************************************************/
-
 int ReaderInProgressIsBlocked(struct pipe_struct *pPipe,
-						    struct k_args *pReader)
+							  struct k_args *pReader)
 {
 	int iSizeSpaceInReader;
 	int iAvailBufferData;
 	TIME_TYPE TimeType;
 	K_PIPE_OPTION option;
 
-	/* premises: */
-	/*__ASSERT_NO_MSG( NULL==pWriter); */
-
 	/* first condition: request cannot wait any longer: must be -
 	 * (non-blocked) or a finite timed wait with a killed timer */
+
 	TimeType = ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args));
 	option = ChxxxGetChOpt((K_ARGS_ARGS *)&(pReader->Args));
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
 	    ((_TIME_B == TimeType) && (_X_TO_N & option) &&
 	     !(pReader->Args.ChProc.iSizeXferred))
 #ifdef CANCEL_TIMERS
-	    ||
-	    ((_TIME_BT == TimeType) && pReader->Time.timer)
+	    || ((_TIME_BT == TimeType) && pReader->Time.timer)
 #endif
 	    ) {
-		return 0; /* requester can still wait (for some time or
-			     forever), no problem for now */
+		/* requester can still wait (for some time or forever),
+		   no problem for now */
+		return 0;
 	}
 
 	/* second condition: buffer activity is null */
+
 	if (0 != pPipe->Buff.iNbrPendingWrites ||
-	    0 != pPipe->Buff.iNbrPendingReads)
-		return 0; /* buffer activity detected, can't say now that
-			     processing is blocked */
+	    0 != pPipe->Buff.iNbrPendingReads) {
+		/* buffer activity detected, can't say now that processing is blocked */
+		return 0;
+	}
 
 	/* third condition: */
-	iSizeSpaceInReader = pReader->Args.ChProc.iSizeTotal -
-			     pReader->Args.ChProc.iSizeXferred;
-	BuffGetAvailDataTotal(&(pPipe->Buff), &iAvailBufferData);
-	if (iAvailBufferData >= iSizeSpaceInReader)
-		return 0;
-	else
-		return 1;
-}
 
-/*****************************************************************************/
+	iSizeSpaceInReader =
+		pReader->Args.ChProc.iSizeTotal - pReader->Args.ChProc.iSizeXferred;
+	BuffGetAvailDataTotal(&(pPipe->Buff), &iAvailBufferData);
+	if (iAvailBufferData >= iSizeSpaceInReader) {
+		return 0;
+	} else {
+		return 1;
+	}
+}

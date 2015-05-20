@@ -33,8 +33,6 @@
 #include <minik.h>
 #include <ch_buff.h>
 
-/****************************************************************************/
-
 void _pipe_init(void)
 {
 	int i;
@@ -44,10 +42,8 @@ void _pipe_init(void)
 		pPipe->Readers = NULL;
 		pPipe->Writers = NULL;
 		BuffInit((unsigned char *)pPipe->Buffer,
-			 &(pPipe->iBufferSize),
-			 &(pPipe->Buff));
+				 &(pPipe->iBufferSize),
+				 &(pPipe->Buff));
 		pPipe->Count = 0;
 	}
 }
-
-/*****************************************************************************/

@@ -34,50 +34,48 @@
 #include <kchan.h>
 #include <toolchain.h>
 
-/*****************************************************************************/
 
-int _task_pipe_put(kpipe_t Id,
-		void *pBuffer,
-		int iNbrBytesToWrite,
-		int *piNbrBytesWritten,
-		K_PIPE_OPTION Option,
-		int32_t TimeOut)
+int _task_pipe_put(kpipe_t Id, void *pBuffer,
+				   int iNbrBytesToWrite, int *piNbrBytesWritten,
+				   K_PIPE_OPTION Option, int32_t TimeOut)
 {
 	struct k_args A;
 
-	*piNbrBytesWritten =
-		0; /* some users do not check the FUNCTION return value,
-		      but immediately use iNbrBytesWritten; make sure it always
-		      has a good value, even when we return failure immediately
-		      (see below) */
+	/* some users do not check the FUNCTION return value,
+	   but immediately use iNbrBytesWritten; make sure it always
+	   has a good value, even when we return failure immediately
+	   (see below) */
 
-	if (unlikely(iNbrBytesToWrite % SIZEOFUNIT_TO_OCTET(1)))
+	*piNbrBytesWritten = 0;
+
+	if (unlikely(iNbrBytesToWrite % SIZEOFUNIT_TO_OCTET(1))) {
 		return RC_ALIGNMENT;
-	if (unlikely(0 == iNbrBytesToWrite))
-		return RC_FAIL; /* not allowed because enlisted requests with
-				   zero size will hang in K_ChProc() */
-	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut))
+	}
+	if (unlikely(0 == iNbrBytesToWrite)) {
+		/* not allowed because enlisted requests with zero size
+		   will hang in K_ChProc() */
 		return RC_FAIL;
+	}
+	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut)) {
+		return RC_FAIL;
+	}
 
 	A.Prio = _k_current_task->Prio;
 	A.Comm = CHENQ_REQ;
 	A.Time.ticks = TimeOut;
-	{
-		struct k_chreq ChReq;
-		ChReq.ReqInfo.ChRef.Id = Id;
-		ChxxxSetChOpt((K_ARGS_ARGS *)&ChReq, Option);
 
-		ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
-		ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
-		ChReq.ReqType.Sync.pData = pBuffer;
+	struct k_chreq ChReq;
+	ChReq.ReqInfo.ChRef.Id = Id;
+	ChxxxSetChOpt((K_ARGS_ARGS *)&ChReq, Option);
 
-		A.Args.ChReq = ChReq;
-	}
+	ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
+	ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
+	ChReq.ReqType.Sync.pData = pBuffer;
+
+	A.Args.ChReq = ChReq;
 
 	KERNEL_ENTRY(&A);
 
 	*piNbrBytesWritten = A.Args.ChAck.iSizeXferred;
 	return A.Time.rcode;
 }
-
-/*****************************************************************************/

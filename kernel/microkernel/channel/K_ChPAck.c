@@ -36,35 +36,33 @@
 #include <sections.h>
 #include <misc/__assert.h>
 
-/*****************************************************************************/
 
 void K_ChSendAck(struct k_args *Request)
 {
 	if (_ASYNCREQ == ChxxxGetReqType(&(Request->Args))) {
 		struct k_chack *pChAck = (struct k_chack *)&(Request->Args.ChAck);
+		struct k_args A;
+		struct k_block *blockptr;
 
-		{
-			/* invoke command to release block: */
-			struct k_args A;
-			struct k_block *blockptr;
-			blockptr = &(pChAck->ReqType.Async.block);
-			A.Comm = REL_BLOCK;
-			A.Args.p1.poolid = blockptr->poolid;
-			A.Args.p1.req_size = blockptr->req_size;
-			A.Args.p1.rep_poolptr = blockptr->address_in_pool;
-			A.Args.p1.rep_dataptr = blockptr->pointer_to_data;
-			_k_mem_pool_block_release(&A); /* will return immediately */
-		}
+		/* invoke command to release block */
+		blockptr = &(pChAck->ReqType.Async.block);
+		A.Comm = REL_BLOCK;
+		A.Args.p1.poolid = blockptr->poolid;
+		A.Args.p1.req_size = blockptr->req_size;
+		A.Args.p1.rep_poolptr = blockptr->address_in_pool;
+		A.Args.p1.rep_dataptr = blockptr->pointer_to_data;
+		_k_mem_pool_block_release(&A); /* will return immediately */
 
 		if ((ksem_t)NULL != pChAck->ReqType.Async.sema) {
-			/* invoke command to signal sema: */
+			/* invoke command to signal sema */
 			struct k_args A;
+
 			A.Comm = SIGNALS;
 			A.Args.s1.sema = pChAck->ReqType.Async.sema;
 			_k_sem_signal(&A); /* will return immediately */
 		}
 	} else {
-		/* Reschedule the sender task: */
+		/* Reschedule the sender task */
 		struct k_args *LocalReq;
 
 		LocalReq = Request->Ctxt.args;
@@ -73,7 +71,6 @@ void K_ChSendAck(struct k_args *Request)
 
 		reset_state_bit(LocalReq->Ctxt.proc, TF_SEND | TF_SENDDATA);
 	}
+
 	FREEARGS(Request);
 }
-
-/*****************************************************************************/

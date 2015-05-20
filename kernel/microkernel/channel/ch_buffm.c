@@ -31,12 +31,6 @@
  */
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/******************************************************************/
-
 #include <stddef.h>
 #include <kernel_struct.h>
 #include <ch_buffm.h>
@@ -45,33 +39,30 @@ extern "C" {
 #include <sections.h>
 #include <misc/__assert.h>
 
-/*************************************************************************/
 
-int MarkerAddLast(struct marker_list *pMarkerList,
-					unsigned char *pointer,
-					int iSize,
-					BOOL bXferBusy)
+int MarkerAddLast(struct marker_list *pMarkerList, unsigned char *pointer,
+				  int iSize, BOOL bXferBusy)
 {
 	int i = MarkerFindFree(pMarkerList->aMarkers);
 
-	if (i == -1)
+	if (i == -1) {
 		return i;
+	}
+
 	pMarkerList->aMarkers[i].pointer = pointer;
 	pMarkerList->aMarkers[i].size = iSize;
 	pMarkerList->aMarkers[i].bXferBusy = bXferBusy;
 
 	if (-1 == pMarkerList->iFirstMarker) {
 		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
-		pMarkerList->iFirstMarker =
-			i; /* we still need to set Prev & Next */
+		pMarkerList->iFirstMarker = i; /* we still need to set Prev & Next */
 	} else {
 		__ASSERT_NO_MSG(-1 != pMarkerList->iLastMarker);
 		__ASSERT_NO_MSG(-1 ==
 		       pMarkerList->aMarkers[pMarkerList->iLastMarker].Next);
 	}
 
-	MarkerLinkToListAfter(
-		pMarkerList->aMarkers, pMarkerList->iLastMarker, i);
+	MarkerLinkToListAfter(pMarkerList->aMarkers, pMarkerList->iLastMarker, i);
 
 	__ASSERT_NO_MSG(-1 == pMarkerList->aMarkers[i].Next);
 	pMarkerList->iLastMarker = i;
@@ -84,26 +75,26 @@ int MarkerAddLast(struct marker_list *pMarkerList,
 	return i;
 }
 
-void MarkerDelete(struct marker_list *pMarkerList,
-					/*unsigned char* pointer */ int index)
+void MarkerDelete(struct marker_list *pMarkerList, int index)
 {
 	int i;
-	int iPredecessor, iSuccessor;
-	/*if ( -1 ==(i =MarkerFind( pMarkerList->aMarkers, pointer)) )
-	   return i; */
+	int iPredecessor;
+	int iSuccessor;
+
 	i = index;
 
 	__ASSERT_NO_MSG(-1 != i);
 
 	pMarkerList->aMarkers[i].pointer = NULL;
-	MarkerUnlinkFromList(
-		pMarkerList->aMarkers, i, &iPredecessor, &iSuccessor);
-	/* update first/last info:
-	 */
-	if (i == pMarkerList->iLastMarker /*&& -1 != i */)
+	MarkerUnlinkFromList(pMarkerList->aMarkers, i, &iPredecessor, &iSuccessor);
+	
+	/* update first/last info */
+	if (i == pMarkerList->iLastMarker) {
 		pMarkerList->iLastMarker = iPredecessor;
-	if (i == pMarkerList->iFirstMarker /*&& -1 != i */)
+	}
+	if (i == pMarkerList->iFirstMarker) {
 		pMarkerList->iFirstMarker = iSuccessor;
+	}
 
 #ifdef STORE_NBR_MARKERS
 	pMarkerList->iNbrMarkers--;
@@ -116,8 +107,6 @@ void MarkerDelete(struct marker_list *pMarkerList,
 #endif
 }
 
-/*************************************************************************/
-
 void MarkersClear(struct marker_list *pMarkerList)
 {
 	struct marker *pM = pMarkerList->aMarkers;
@@ -125,7 +114,6 @@ void MarkersClear(struct marker_list *pMarkerList)
 
 	for (i = 0; i < MAXNBR_MARKERS; i++, pM++) {
 		k_memset(pM, 0, sizeof(struct marker));
-		/*pM->pointer =NULL; */
 		pM->Next = -1;
 		pM->Prev = -1;
 	}
@@ -137,23 +125,6 @@ void MarkersClear(struct marker_list *pMarkerList)
 	pMarkerList->iAWAMarker = -1;
 }
 
-/*int MarkerFind( struct marker aMarkers[], unsigned char* pointer)
-{
-  struct marker *pM =aMarkers;
-  int i;
-  for ( i=0; i<MAXNBR_MARKERS; i++, pM++)  {
-    if ( pointer==pM->pointer ) {
-      break;
-    }
-  }
-  return i;
-}
-
-int MarkerGetNext( int index)
-{
-  return -1;
-}*/
-
 int MarkerFindFree(struct marker aMarkers[])
 {
 	struct marker *pM = aMarkers;
@@ -164,55 +135,53 @@ int MarkerFindFree(struct marker aMarkers[])
 			break;
 		}
 	}
-	if (MAXNBR_MARKERS == i)
+	if (MAXNBR_MARKERS == i) {
 		i = -1;
+	}
 
 	return i;
 }
 
 void MarkerLinkToListAfter(struct marker aMarkers[],
-						 int iMarker,
-						 int iNewMarker)
+						   int iMarker, int iNewMarker)
 {
 	int iNextMarker; /* index of next marker in original list */
-	/* let the original list be aware of the new marker: */
+
+	/* let the original list be aware of the new marker */
 	if (-1 != iMarker) {
 		iNextMarker = aMarkers[iMarker].Next;
 		aMarkers[iMarker].Next = iNewMarker;
-		if (-1 != iNextMarker)
+		if (-1 != iNextMarker) {
 			aMarkers[iNextMarker].Prev = iNewMarker;
-		else {
+		} else {
 			/* there was no next marker */
 		}
 	} else {
 		iNextMarker = -1; /* there wasn't even a marker */
 	}
-	/* link the new marker with the marker and next marker: */
+
+	/* link the new marker with the marker and next marker */
 	aMarkers[iNewMarker].Prev = iMarker;
 	aMarkers[iNewMarker].Next = iNextMarker;
 }
 
-void MarkerUnlinkFromList(struct marker aMarkers[],
-						int iMarker,
-						int *piPredecessor,
-						int *piSuccessor)
+void MarkerUnlinkFromList(struct marker aMarkers[], int iMarker,
+						  int *piPredecessor, int *piSuccessor)
 {
 	int iNextMarker = aMarkers[iMarker].Next;
 	int iPrevMarker = aMarkers[iMarker].Prev;
-	/* remove the marker from the list: */
+
+	/* remove the marker from the list */
 	aMarkers[iMarker].Next = -1;
 	aMarkers[iMarker].Prev = -1;
-	/* repair the chain: */
-	if (-1 != iPrevMarker)
+
+	/* repair the chain */
+	if (-1 != iPrevMarker) {
 		aMarkers[iPrevMarker].Next = iNextMarker;
-	if (-1 != iNextMarker)
+	}
+	if (-1 != iNextMarker) {
 		aMarkers[iNextMarker].Prev = iPrevMarker;
+	}
 	*piPredecessor = iPrevMarker;
 	*piSuccessor = iNextMarker;
 }
-
-/******************************************************************/
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif

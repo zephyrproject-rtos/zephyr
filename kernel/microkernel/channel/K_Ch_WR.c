@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #include <microkernel.h>
 #include <minik.h>
 #include <kchan.h>
@@ -61,8 +59,9 @@ static void _UpdateChannelXferStatus(
 			DeListWaiter(pActor);
 			myfreetimer(&pActor->Time.timer);
 		}
-	} else
+	} else {
 		ChReqSetStatus(pActorArgs, XFER_BUSY);
+	}
 }
 
 /*******************************************************************************
@@ -90,12 +89,12 @@ void K_ChProcWR(
 	pWriter = (pNewWriter != NULL) ? pNewWriter : pPipe->Writers;
 
 	__ASSERT_NO_MSG((pPipe->Writers == pNewWriter) ||
-	       (NULL == pPipe->Writers) || (NULL == pNewWriter));
+					(NULL == pPipe->Writers) || (NULL == pNewWriter));
 
 	pReader = (pNewReader != NULL) ? pNewReader : pPipe->Readers;
 
 	__ASSERT_NO_MSG((pPipe->Readers == pNewReader) ||
-	       (NULL == pPipe->Readers) || (NULL == pNewReader));
+					(NULL == pPipe->Readers) || (NULL == pNewReader));
 
 	/* Preparation */
 	pWriterArgs = &pWriter->Args.ChProc;
@@ -103,8 +102,7 @@ void K_ChProcWR(
 
 	/* Calculate iT1, iT2 and iT3 */
 	int iFreeSpaceReader =
-		(pReaderArgs->iSizeTotal -
-		 pReaderArgs->iSizeXferred);
+		(pReaderArgs->iSizeTotal - pReaderArgs->iSizeXferred);
 	int iAvailDataWriter =
 		(pWriterArgs->iSizeTotal - pWriterArgs->iSizeXferred);
 	int iFreeSpaceBuffer =
@@ -116,8 +114,8 @@ void K_ChProcWR(
 
 	iFreeSpaceReader -= iT1;
 
-	if (0 == pPipe->Buff.iNbrPendingWrites) {/* { no incoming data
-						       anymore } */
+	if (0 == pPipe->Buff.iNbrPendingWrites) {
+		/* no incoming data anymore */
 
 		iT2 = min(iFreeSpaceReader, iAvailDataWriter);
 
@@ -128,8 +126,7 @@ void K_ChProcWR(
 		/*
 		 * There is still data coming into the buffer from a writer.
 		 * Therefore <iT2> must be zero; there is no direct W-to-R
-		 * transfer as
-		 * the buffer is not really 'empty'.
+		 * transfer as the buffer is not really 'empty'.
 		 */
 
 		iT2 = 0;
@@ -140,30 +137,25 @@ void K_ChProcWR(
 	/* ACTION !!!! */
 	/***************/
 
-	/* T1 transfer: */
+	/* T1 transfer */
 	if (iT1 != 0) {
 		K_ChProcRO(pPipe, pReader);
 	}
 
-	/* T2 transfer: */
+	/* T2 transfer */
 	if (iT2 != 0) {
 		struct k_args *Moved_req;
 
-		__ASSERT_NO_MSG(TERM_SATISFIED != ChReqGetStatus(&pReader->Args.ChProc));
+		__ASSERT_NO_MSG(TERM_SATISFIED !=
+						ChReqGetStatus(&pReader->Args.ChProc));
 
 		GETARGS(Moved_req);
-		setup_movedata(
-			Moved_req,
-			pPipe,
-			XFER_W2R,
-			pWriter,
-			pReader,
+		setup_movedata(Moved_req, pPipe, XFER_W2R, pWriter, pReader,
 			(char *)(pReaderArgs->pData) +
-				OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
+			OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
 			(char *)(pWriterArgs->pData) +
-				OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
-			iT2,
-			-1);
+			OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
+			iT2, -1);
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
@@ -172,9 +164,10 @@ void K_ChProcWR(
 		_UpdateChannelXferStatus(pReader, pReaderArgs, iT2);
 	}
 
-	/* T3 transfer: */
+	/* T3 transfer */
 	if (iT3 != 0) {
-		__ASSERT_NO_MSG(TERM_SATISFIED != ChReqGetStatus(&pWriter->Args.ChProc));
+		__ASSERT_NO_MSG(TERM_SATISFIED !=
+						ChReqGetStatus(&pWriter->Args.ChProc));
 		K_ChProcWO(pPipe, pWriter);
 	}
 }

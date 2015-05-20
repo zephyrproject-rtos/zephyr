@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #include <microkernel.h>
 #include <minik.h>
 #include <kchan.h>
@@ -65,15 +63,14 @@ void K_ChProcWO(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 	pWriter = (pNewWriter != NULL) ? pNewWriter : pPipe->Writers;
 
 	__ASSERT_NO_MSG(!((pPipe->Writers != pNewWriter) &&
-		 (NULL != pPipe->Writers) && (NULL != pNewWriter)));
+					  (NULL != pPipe->Writers) && (NULL != pNewWriter)));
 
 	pWriterArgs = &pWriter->Args.ChProc;
 
 	do {
-		iSize = min(
-			(numIterations == 2) ? pPipe->Buff.iFreeSpaceCont
-					     : pPipe->Buff.iFreeSpaceAWA,
-			pWriterArgs->iSizeTotal - pWriterArgs->iSizeXferred);
+		iSize = min((numIterations == 2) ? pPipe->Buff.iFreeSpaceCont
+					: pPipe->Buff.iFreeSpaceAWA,
+					pWriterArgs->iSizeTotal - pWriterArgs->iSizeXferred);
 
 		if (iSize == 0) {
 			continue;
@@ -87,17 +84,10 @@ void K_ChProcWO(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 		}
 
 		GETARGS(Moved_req);
-		setup_movedata(
-			Moved_req,
-			pPipe,
-			XFER_W2B,
-			pWriter,
-			NULL,
-			pWrite,
+		setup_movedata(Moved_req, pPipe, XFER_W2B, pWriter, NULL, pWrite,
 			(char *)(pWriterArgs->pData) +
-				OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
-			ret,
-			(numIterations == 2) ? id : -1);
+			OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
+			ret, (numIterations == 2) ? id : -1);
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
@@ -112,8 +102,9 @@ void K_ChProcWO(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 				myfreetimer(&pWriter->Time.timer);
 			}
 			return;
-		} else
+		} else {
 			ChReqSetStatus(pWriterArgs, XFER_BUSY);
+		}
 
 	} while (--numIterations != 0);
 }

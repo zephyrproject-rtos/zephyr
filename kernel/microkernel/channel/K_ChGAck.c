@@ -34,8 +34,6 @@
 #include <toolchain.h>
 #include <sections.h>
 
-/*****************************************************************************/
-
 void K_ChRecvAck(struct k_args *Request)
 {
 	struct k_args *LocalReq;
@@ -44,10 +42,9 @@ void K_ChRecvAck(struct k_args *Request)
 	LocalReq->Time.rcode = Request->Time.rcode;
 	LocalReq->Args.ChAck = Request->Args.ChAck;
 
-	reset_state_bit(LocalReq->Ctxt.proc,
-			TF_RECV | TF_RECVDATA); /* Reschedule the sender task */
+	/* Reschedule the sender task */
+
+	reset_state_bit(LocalReq->Ctxt.proc, TF_RECV | TF_RECVDATA);
 
 	FREEARGS(Request);
 }
-
-/*****************************************************************************/
