@@ -75,7 +75,7 @@ static _k20Uart_t __noinit uart[CONFIG_UART_NUM_SYSTEM_PORTS];
 * RETURNS: N/A
 */
 
-void uart_init(int which, /* UART channel to initialize */
+void uart_init(int port, /* UART channel to initialize */
 	       const struct uart_init_info * const init_info
 	       )
 {
@@ -85,17 +85,17 @@ void uart_init(int which, /* UART channel to initialize */
 	C1_t c1;				   /* UART C1 register value */
 	C2_t c2;				   /* UART C2 register value */
 
-	uart[which].baseAddr = (uint8_t *)init_info->regs;
-	uart[which].irq = init_info->irq;
-	uart[which].intPri = init_info->int_pri;
+	uart[port].baseAddr = (uint8_t *)init_info->regs;
+	uart[port].irq = init_info->irq;
+	uart[port].intPri = init_info->int_pri;
 
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
 	/* enable clock to Uart - must be done prior to device access */
-	_k20SimUartClkEnable(sim_p, which);
+	_k20SimUartClkEnable(sim_p, port);
 
 	_k20UartBaudRateSet(uart_p, init_info->sys_clk_freq, init_info->baud_rate);
 
@@ -122,11 +122,11 @@ void uart_init(int which, /* UART channel to initialize */
 * RETURNS: 0 if a character arrived, -1 if the input buffer if empty.
 */
 
-int uart_poll_in(int which,		/* UART channel to select for input */
+int uart_poll_in(int port,		/* UART channel to select for input */
 		 unsigned char *pChar /* pointer to char */
 		 )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	if (uart_p->s1.field.rxDataFull == 0)
 		return (-1);
@@ -150,11 +150,11 @@ int uart_poll_in(int which,		/* UART channel to select for input */
 * RETURNS: sent character
 */
 unsigned char uart_poll_out(
-	int which,	    /* UART channel to select for output */
+	int port,	    /* UART channel to select for output */
 	unsigned char outChar /* char to send */
 	)
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	/* wait for transmitter to ready to accept a character */
 	while (uart_p->s1.field.txDataEmpty == 0)
@@ -174,12 +174,12 @@ unsigned char uart_poll_out(
 * RETURNS: number of bytes sent
 */
 
-int uart_fifo_fill(int which, /* UART on which to send */
+int uart_fifo_fill(int port, /* UART on port to send */
 			    const uint8_t *txData, /* data to transmit */
 			    int len /* number of bytes to send */
 			    )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 	uint8_t numTx = 0;
 
 	while ((len - numTx > 0) && (uart_p->s1.field.txDataEmpty == 1)) {
@@ -196,12 +196,12 @@ int uart_fifo_fill(int which, /* UART on which to send */
 * RETURNS: number of bytes read
 */
 
-int uart_fifo_read(int which, /* UART to receive from */
+int uart_fifo_read(int port, /* UART to receive from */
 			    uint8_t *rxData, /* data container */
 			    const int size   /* container size */
 			    )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 	uint8_t numRx = 0;
 
 	while ((size - numRx > 0) && (uart_p->s1.field.rxDataFull == 0)) {
@@ -218,11 +218,11 @@ int uart_fifo_read(int which, /* UART to receive from */
 * RETURNS: N/A
 */
 
-void uart_irq_tx_enable(int which /* UART to enable Tx
+void uart_irq_tx_enable(int port /* UART to enable Tx
 					      interrupt */
 				 )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	uart_p->c2.field.txInt_DmaTx_en = 1;
 }
@@ -235,10 +235,10 @@ void uart_irq_tx_enable(int which /* UART to enable Tx
 */
 
 void uart_irq_tx_disable(
-	int which /* UART to disable Tx interrupt */
+	int port /* UART to disable Tx interrupt */
 	)
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	uart_p->c2.field.txInt_DmaTx_en = 0;
 }
@@ -250,10 +250,10 @@ void uart_irq_tx_disable(
 * RETURNS: 1 if an IRQ is ready, 0 otherwise
 */
 
-int uart_irq_tx_ready(int which /* UART to check */
+int uart_irq_tx_ready(int port /* UART to check */
 			       )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	return uart_p->s1.field.txDataEmpty;
 }
@@ -265,11 +265,11 @@ int uart_irq_tx_ready(int which /* UART to check */
 * RETURNS: N/A
 */
 
-void uart_irq_rx_enable(int which /* UART to enable Rx
+void uart_irq_rx_enable(int port /* UART to enable Rx
 					      interrupt */
 				 )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	uart_p->c2.field.rxFullInt_dmaTx_en = 1;
 }
@@ -282,10 +282,10 @@ void uart_irq_rx_enable(int which /* UART to enable Rx
 */
 
 void uart_irq_rx_disable(
-	int which /* UART to disable Rx interrupt */
+	int port /* UART to disable Rx interrupt */
 	)
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	uart_p->c2.field.rxFullInt_dmaTx_en = 0;
 }
@@ -297,10 +297,10 @@ void uart_irq_rx_disable(
 * RETURNS: 1 if an IRQ is ready, 0 otherwise
 */
 
-int uart_irq_rx_ready(int which /* UART to check */
+int uart_irq_rx_ready(int port /* UART to check */
 			       )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	return uart_p->s1.field.rxDataFull;
 }
@@ -312,9 +312,9 @@ int uart_irq_rx_ready(int which /* UART to check */
 * RETURNS: N/A
 */
 
-void uart_irq_err_enable(int which)
+void uart_irq_err_enable(int port)
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 	C3_t c3 = uart_p->c3;
 
 	c3.field.parityErrIntEn = 1;
@@ -331,10 +331,10 @@ void uart_irq_err_enable(int which)
 * RETURNS: N/A
 */
 
-void uart_irq_err_disable(int which /* UART to disable Rx interrupt */
+void uart_irq_err_disable(int port /* UART to disable Rx interrupt */
 			  )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 	C3_t c3 = uart_p->c3;
 
 	c3.field.parityErrIntEn = 0;
@@ -351,10 +351,10 @@ void uart_irq_err_disable(int which /* UART to disable Rx interrupt */
 * RETURNS: 1 if a Tx or Rx IRQ is pending, 0 otherwise
 */
 
-int uart_irq_is_pending(int which /* UART to check */
+int uart_irq_is_pending(int port /* UART to check */
 				 )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[which].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
 
 	/* Look only at Tx and Rx data interrupt flags */
 
@@ -370,7 +370,7 @@ int uart_irq_is_pending(int which /* UART to check */
 * RETURNS: always 1
 */
 
-int uart_irq_update(int which)
+int uart_irq_update(int port)
 {
 	return 1;
 }
@@ -386,7 +386,7 @@ int uart_irq_update(int which)
 * RETURNS: N/A
 */
 
-void uart_int_connect(int which,	   /* UART to which to connect */
+void uart_int_connect(int port,	   /* UART to port to connect */
 		      void (*isr)(void *), /* interrupt handler */
 		      void *arg,	   /* argument to pass to handler */
 		      void *stub	   /* ptr to interrupt stub code */
@@ -397,12 +397,12 @@ void uart_int_connect(int which,	   /* UART to which to connect */
 	ARG_UNUSED(arg);
 	ARG_UNUSED(stub);
 #else
-	irq_connect((unsigned int)uart[which].irq,
-			  (unsigned int)uart[which].intPri,
+	irq_connect((unsigned int)uart[port].irq,
+			  (unsigned int)uart[port].intPri,
 			  isr,
 			  arg);
 #endif
 
-	irq_enable((unsigned int)uart[which].irq);
+	irq_enable((unsigned int)uart[port].irq);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
