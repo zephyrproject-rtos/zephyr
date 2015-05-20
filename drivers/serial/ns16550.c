@@ -207,18 +207,18 @@ INCLUDE FILES: drivers/uart.h
 #define OUTBYTE(x, d) outByte(d, x)
 
 #if defined(VXMICRO_ARCH_Intel)
-#define INT_CONNECT(which, isr, arg, stub)                  \
-	irq_connect((unsigned int)uart[which].irq,    \
-			  (unsigned int)uart[which].intPri, \
+#define INT_CONNECT(port, isr, arg, stub)                  \
+	irq_connect((unsigned int)uart[port].irq,    \
+			  (unsigned int)uart[port].intPri, \
 			  isr,                              \
 			  arg,                              \
 			  stub)
 #else
-#define INT_CONNECT(which, isr, arg, stub)                          \
+#define INT_CONNECT(port, isr, arg, stub)                          \
 	do {                                                        \
 		ARG_UNUSED(stub);                                   \
-		irq_connect((unsigned int)uart[which].irq,    \
-				  (unsigned int)uart[which].intPri, \
+		irq_connect((unsigned int)uart[port].irq,    \
+				  (unsigned int)uart[port].intPri, \
 				  isr,                              \
 				  arg);                             \
 	} while (0)
@@ -246,17 +246,17 @@ static struct ns16550 __noinit uart[CONFIG_UART_NUM_SYSTEM_PORTS];
 * RETURNS: N/A
 */
 
-void uart_init(int which, /* UART channel to initialize */
+void uart_init(int port, /* UART channel to initialize */
 	       const struct uart_init_info * const init_info
 	       )
 {
 	int oldLevel;     /* old interrupt lock level */
 	uint32_t divisor; /* baud rate divisor */
 
-	uart[which].port = init_info->regs;
-	uart[which].irq = init_info->irq;
-	uart[which].intPri = init_info->int_pri;
-	uart[which].iirCache = 0;
+	uart[port].port = init_info->regs;
+	uart[port].irq = init_info->irq;
+	uart[port].intPri = init_info->int_pri;
+	uart[port].iirCache = 0;
 
 	oldLevel = irq_lock();
 
@@ -264,28 +264,28 @@ void uart_init(int which, /* UART channel to initialize */
 	divisor = (init_info->sys_clk_freq / init_info->baud_rate) >> 4;
 
 	/* set the DLAB to access the baud rate divisor registers */
-	OUTBYTE(LCR(which), LCR_DLAB);
-	OUTBYTE(BRDL(which), (unsigned char)(divisor & 0xff));
-	OUTBYTE(BRDH(which), (unsigned char)((divisor >> 8) & 0xff));
+	OUTBYTE(LCR(port), LCR_DLAB);
+	OUTBYTE(BRDL(port), (unsigned char)(divisor & 0xff));
+	OUTBYTE(BRDH(port), (unsigned char)((divisor >> 8) & 0xff));
 
 	/* 8 data bits, 1 stop bit, no parity, clear DLAB */
-	OUTBYTE(LCR(which), LCR_CS8 | LCR_1_STB | LCR_PDIS);
+	OUTBYTE(LCR(port), LCR_CS8 | LCR_1_STB | LCR_PDIS);
 
-	OUTBYTE(MDC(which), MCR_OUT2 | MCR_RTS | MCR_DTR);
+	OUTBYTE(MDC(port), MCR_OUT2 | MCR_RTS | MCR_DTR);
 
 	/*
 	 * Program FIFO: enabled, mode 0 (set for compatibility with quark),
 	 * generate the interrupt at 8th byte
 	 * Clear TX and RX FIFO
 	 */
-	OUTBYTE(FCR(which),
+	OUTBYTE(FCR(port),
 		FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR);
 
 	/* clear the port */
-	INBYTE(RDR(which));
+	INBYTE(RDR(port));
 
 	/* disable interrupts  */
-	OUTBYTE(IER(which), 0x00);
+	OUTBYTE(IER(port), 0x00);
 
 	irq_unlock(oldLevel);
 }
@@ -297,15 +297,15 @@ void uart_init(int which, /* UART channel to initialize */
 * RETURNS: 0 if a character arrived, -1 if the input buffer if empty.
 */
 
-int uart_poll_in(int which,		/* UART channel to select for input */
+int uart_poll_in(int port,		/* UART channel to select for input */
 		 unsigned char *pChar /* pointer to char */
 		 )
 {
-	if ((INBYTE(LSR(which)) & LSR_RXRDY) == 0x00)
+	if ((INBYTE(LSR(port)) & LSR_RXRDY) == 0x00)
 		return (-1);
 
 	/* got a character */
-	*pChar = INBYTE(RDR(which));
+	*pChar = INBYTE(RDR(port));
 
 	return 0;
 }
@@ -323,15 +323,15 @@ int uart_poll_in(int which,		/* UART channel to select for input */
 * RETURNS: sent character
 */
 unsigned char uart_poll_out(
-	int which,	    /* UART channel to select for output */
+	int port,	    /* UART channel to select for output */
 	unsigned char outChar /* char to send */
 	)
 {
 	/* wait for transmitter to ready to accept a character */
-	while ((INBYTE(LSR(which)) & LSR_TEMT) == 0)
+	while ((INBYTE(LSR(port)) & LSR_TEMT) == 0)
 		;
 
-	OUTBYTE(THR(which), outChar);
+	OUTBYTE(THR(port), outChar);
 
 	return outChar;
 }
@@ -344,15 +344,15 @@ unsigned char uart_poll_out(
 * RETURNS: number of bytes sent
 */
 
-int uart_fifo_fill(int which, /* UART on which to send */
+int uart_fifo_fill(int port, /* UART on port to send */
 			    const uint8_t *txData, /* data to transmit */
 			    int size /* number of bytes to send */
 			    )
 {
 	int i;
 
-	for (i = 0; i < size && (INBYTE(LSR(which)) & LSR_THRE) != 0; i++) {
-		OUTBYTE(THR(which), txData[i]);
+	for (i = 0; i < size && (INBYTE(LSR(port)) & LSR_THRE) != 0; i++) {
+		OUTBYTE(THR(port), txData[i]);
 	}
 	return i;
 }
@@ -364,15 +364,15 @@ int uart_fifo_fill(int which, /* UART on which to send */
 * RETURNS: number of bytes read
 */
 
-int uart_fifo_read(int which, /* UART to receive from */
+int uart_fifo_read(int port, /* UART to receive from */
 			    uint8_t *rxData, /* data container */
 			    const int size   /* container size */
 			    )
 {
 	int i;
 
-	for (i = 0; i < size && (INBYTE(LSR(which)) & LSR_RXRDY) != 0; i++) {
-		rxData[i] = INBYTE(RDR(which));
+	for (i = 0; i < size && (INBYTE(LSR(port)) & LSR_RXRDY) != 0; i++) {
+		rxData[i] = INBYTE(RDR(port));
 	}
 
 	return i;
@@ -385,11 +385,11 @@ int uart_fifo_read(int which, /* UART to receive from */
 * RETURNS: N/A
 */
 
-void uart_irq_tx_enable(int which /* UART to enable Tx
+void uart_irq_tx_enable(int port /* UART to enable Tx
 					      interrupt */
 				 )
 {
-	OUTBYTE(IER(which), INBYTE(IER(which)) | IER_TBE);
+	OUTBYTE(IER(port), INBYTE(IER(port)) | IER_TBE);
 }
 
 /*******************************************************************************
@@ -399,10 +399,10 @@ void uart_irq_tx_enable(int which /* UART to enable Tx
 * RETURNS: N/A
 */
 
-void uart_irq_tx_disable(int which /* UART to disable Tx interrupt */
+void uart_irq_tx_disable(int port /* UART to disable Tx interrupt */
 				  )
 {
-	OUTBYTE(IER(which), INBYTE(IER(which)) & (~IER_TBE));
+	OUTBYTE(IER(port), INBYTE(IER(port)) & (~IER_TBE));
 }
 
 /*******************************************************************************
@@ -412,10 +412,10 @@ void uart_irq_tx_disable(int which /* UART to disable Tx interrupt */
 * RETURNS: N/A
 */
 
-int uart_irq_tx_ready(int which /* UART to check */
+int uart_irq_tx_ready(int port /* UART to check */
 			       )
 {
-	return ((IIRC(which) & IIR_ID) == IIR_THRE);
+	return ((IIRC(port) & IIR_ID) == IIR_THRE);
 }
 
 /*******************************************************************************
@@ -425,11 +425,11 @@ int uart_irq_tx_ready(int which /* UART to check */
 * RETURNS: N/A
 */
 
-void uart_irq_rx_enable(int which /* UART to enable Rx
+void uart_irq_rx_enable(int port /* UART to enable Rx
 					      interrupt */
 				 )
 {
-	OUTBYTE(IER(which), INBYTE(IER(which)) | IER_RXRDY);
+	OUTBYTE(IER(port), INBYTE(IER(port)) | IER_RXRDY);
 }
 
 /*******************************************************************************
@@ -439,10 +439,10 @@ void uart_irq_rx_enable(int which /* UART to enable Rx
 * RETURNS: N/A
 */
 
-void uart_irq_rx_disable(int which /* UART to disable Rx interrupt */
+void uart_irq_rx_disable(int port /* UART to disable Rx interrupt */
 				  )
 {
-	OUTBYTE(IER(which), INBYTE(IER(which)) & (~IER_RXRDY));
+	OUTBYTE(IER(port), INBYTE(IER(port)) & (~IER_RXRDY));
 }
 
 /*******************************************************************************
@@ -452,10 +452,10 @@ void uart_irq_rx_disable(int which /* UART to disable Rx interrupt */
 * RETURNS: 1 if an IRQ is ready, 0 otherwise
 */
 
-int uart_irq_rx_ready(int which /* UART to check */
+int uart_irq_rx_ready(int port /* UART to check */
 			       )
 {
-	return ((IIRC(which) & IIR_ID) == IIR_RBRF);
+	return ((IIRC(port) & IIR_ID) == IIR_RBRF);
 }
 
 /*******************************************************************************
@@ -465,10 +465,10 @@ int uart_irq_rx_ready(int which /* UART to check */
 * RETURNS: N/A
 */
 
-void uart_irq_err_enable(int which /* UART to enable Rx interrupt */
+void uart_irq_err_enable(int port /* UART to enable Rx interrupt */
 			 )
 {
-	OUTBYTE(IER(which), INBYTE(IER(which)) | IER_LSR);
+	OUTBYTE(IER(port), INBYTE(IER(port)) | IER_LSR);
 }
 
 /*******************************************************************************
@@ -478,10 +478,10 @@ void uart_irq_err_enable(int which /* UART to enable Rx interrupt */
 * RETURNS: 1 if an IRQ is ready, 0 otherwise
 */
 
-void uart_irq_err_disable(int which /* UART to disable Rx interrupt */
+void uart_irq_err_disable(int port /* UART to disable Rx interrupt */
 			  )
 {
-	OUTBYTE(IER(which), INBYTE(IER(which)) & (~IER_LSR));
+	OUTBYTE(IER(port), INBYTE(IER(port)) & (~IER_LSR));
 }
 
 /*******************************************************************************
@@ -491,10 +491,10 @@ void uart_irq_err_disable(int which /* UART to disable Rx interrupt */
 * RETURNS: 1 if an IRQ is pending, 0 otherwise
 */
 
-int uart_irq_is_pending(int which /* UART to check */
+int uart_irq_is_pending(int port /* UART to check */
 				 )
 {
-	return (!(IIRC(which) & IIR_IP));
+	return (!(IIRC(port) & IIR_IP));
 }
 
 /*******************************************************************************
@@ -504,10 +504,10 @@ int uart_irq_is_pending(int which /* UART to check */
 * RETURNS: always 1
 */
 
-int uart_irq_update(int which /* UART to update */
+int uart_irq_update(int port /* UART to update */
 			     )
 {
-	IIRC(which) = INBYTE(IIR(which));
+	IIRC(port) = INBYTE(IIR(port));
 
 	return 1;
 }
@@ -523,7 +523,7 @@ int uart_irq_update(int which /* UART to update */
 * RETURNS: N/A
 */
 
-void uart_int_connect(int which,	   /* UART to which to connect */
+void uart_int_connect(int port,	   /* UART to port to connect */
 		      void (*isr)(void *), /* interrupt handler */
 		      void *arg,	   /* argument to pass to handler */
 		      void *stub	   /* ptr to interrupt stub code */
@@ -534,9 +534,9 @@ void uart_int_connect(int which,	   /* UART to which to connect */
 	ARG_UNUSED(arg);
 	ARG_UNUSED(stub);
 #else
-	INT_CONNECT(which, isr, arg, stub);
+	INT_CONNECT(port, isr, arg, stub);
 #endif /* CONFIG_DYNAMIC_INT_STUBS */
 
-	irq_enable((unsigned int)uart[which].irq);
+	irq_enable((unsigned int)uart[port].irq);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
