@@ -34,7 +34,6 @@
 #define _KERNEL_STRUCT_H
 
 #include <microkernel/k_types.h>
-#include <microkernel/k_chstr.h>
 #include <nanokernel.h>
 #include <stdbool.h>
 
@@ -176,7 +175,56 @@ struct k_mrec {
 	uint32_t data2;
 };
 
-/* target channels types: */
+/* Pipe-related structures */
+
+#define MAXNBR_MARKERS 10 /* 1==disable parallel transfers */
+
+
+struct marker {
+	unsigned char *pointer; /* NULL == non valid marker == free */
+	int size;
+	BOOL bXferBusy;
+	int Prev; /* -1 == no predecessor */
+	int Next; /* -1 == no successor */
+};
+
+struct marker_list {
+	int iNbrMarkers;   /* Only used if STORE_NBR_MARKERS is defined */
+	int iFirstMarker;
+	int iLastMarker;
+	int iAWAMarker; /* -1 means no AWAMarkers */
+	struct marker aMarkers[MAXNBR_MARKERS];
+};
+
+typedef enum {
+	BUFF_EMPTY, /* buffer is empty, disregarding the pending data Xfers
+		       (reads) still finishing up */
+	BUFF_FULL, /* buffer is full, disregarding the pending data Xfers
+		      (writes) still finishing up */
+	BUFF_OTHER
+} BUFF_STATE;
+
+struct chbuff {
+	int iBuffSize;
+	unsigned char *pBegin;
+	unsigned char *pWrite;
+	unsigned char *pRead;
+	unsigned char *pWriteGuard; /* can be NULL --> invalid */
+	unsigned char *pReadGuard;  /* can be NULL --> invalid */
+	int iFreeSpaceCont;
+	int iFreeSpaceAWA;
+	int iNbrPendingReads;
+	int iAvailDataCont;
+	int iAvailDataAWA; /* AWA == After Wrap Around */
+	int iNbrPendingWrites;
+	BOOL bWriteWA;
+	BOOL bReadWA;
+	BUFF_STATE BuffState;
+	struct marker_list WriteMarkers;
+	struct marker_list ReadMarkers;
+	unsigned char *pEnd;
+	unsigned char *pEndOrig;
+};
 
 struct pipe_struct {
 	int iBufferSize; /* size in bytes, must be first for sysgen */

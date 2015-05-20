@@ -38,8 +38,7 @@
 extern "C" {
 #endif
 
-#include "microkernel/k_chstr.h" /* definition of all channel related data \
-				    structures */
+#include <kernel_struct.h>
 
 /* low-level parameters: */
 
