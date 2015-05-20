@@ -52,7 +52,7 @@ void uart_init(int port, const struct uart_init_info *const pinfo);
 
 /* console I/O functions */
 int uart_poll_in(int port, unsigned char *pChar);
-unsigned char uart_poll_out(int which, unsigned char outChar);
+unsigned char uart_poll_out(int port, unsigned char outChar);
 
 /* interrupt driven I/O functions */
 int uart_fifo_fill(int port, const uint8_t *txData, int len);
