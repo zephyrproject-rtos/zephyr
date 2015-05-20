@@ -364,6 +364,94 @@ static void att_read_mult_req(struct bt_conn *conn, struct bt_buf *data)
 		     BT_ATT_ERR_INVALID_HANDLE);
 }
 
+struct read_group_data {
+	struct bt_conn *conn;
+	struct bt_uuid *uuid;
+	struct bt_buf *buf;
+	struct bt_att_read_group_rsp *rsp;
+	struct bt_att_group_data *group;
+};
+
+static uint8_t read_group_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct read_group_data *data = user_data;
+	struct bt_att *att = data->conn->att;
+	int read;
+
+	/* If UUID don't match update group end_handle */
+	if (bt_uuid_cmp(attr->uuid, data->uuid)) {
+		if (data->group && attr->handle > data->group->end_handle) {
+			data->group->end_handle = sys_cpu_to_le16(attr->handle);
+		}
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	BT_DBG("handle %u\n", attr->handle);
+
+	/* Stop if there is no space left */
+	if (data->rsp->len && att->mtu - data->buf->len < data->rsp->len)
+		return BT_GATT_ITER_STOP;
+
+	/* Fast foward to next group position */
+	data->group = bt_buf_add(data->buf, sizeof(*data->group));
+
+	/* Initialize group handle range */
+	data->group->start_handle = sys_cpu_to_le16(attr->handle);
+	data->group->end_handle = sys_cpu_to_le16(attr->handle);
+
+	/* Read attribute value and store in the buffer */
+	read = attr->read(attr, data->buf->data + data->buf->len,
+			  att->mtu - data->buf->len, 0);
+	if (read < 0) {
+		/* TODO: Handle read errors */
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (!data->rsp->len) {
+		/* Set len to be the first group found */
+		data->rsp->len = read + sizeof(*data->group);
+	} else if (data->rsp->len != read + sizeof(*data->group)) {
+		/* All groups entries should have the same size */
+		data->buf->len -= sizeof(*data->group);
+		return false;
+	}
+
+	bt_buf_add(data->buf, read);
+
+	/* Continue to find the end handle */
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void att_read_group_rsp(struct bt_conn *conn, struct bt_uuid *uuid,
+			       uint16_t start_handle, uint16_t end_handle)
+{
+	struct read_group_data data;
+
+	memset(&data, 0, sizeof(data));
+
+	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_GROUP_RSP,
+				     sizeof(*data.rsp));
+	if (!data.buf) {
+		return;
+	}
+
+	data.conn = conn;
+	data.uuid = uuid;
+	data.rsp = bt_buf_add(data.buf, sizeof(*data.rsp));
+	data.rsp->len = 0;
+
+	bt_gatt_foreach_attr(start_handle, end_handle, read_group_cb, &data);
+
+	if (!data.rsp->len) {
+		bt_buf_put(data.buf);
+		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, start_handle,
+			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		return;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+}
+
 static void att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_read_group_req *req;
@@ -394,7 +482,7 @@ static void att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
 	       start_handle, end_handle, uuid.u16);
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
-		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, err_handle,
+		send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, err_handle,
 			     BT_ATT_ERR_INVALID_HANDLE);
 		return;
 	}
@@ -413,11 +501,7 @@ static void att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
 		return;
 	}
 
-	/* TODO: Generate proper response once a database is defined */
-
-	send_err_rsp(conn, BT_ATT_OP_READ_GROUP_REQ, start_handle,
-		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
-	return;
+	att_read_group_rsp(conn, &uuid, start_handle, end_handle);
 }
 
 static void att_write_req(struct bt_conn *conn, struct bt_buf *data)
