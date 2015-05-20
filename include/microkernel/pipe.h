@@ -1,4 +1,4 @@
-/* microkernel/chan.h */
+/* microkernel/pipe.h */
 
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CHAN_H
-#define CHAN_H
+#ifndef PIPE_H
+#define PIPE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,4 +80,4 @@ extern int _task_pipe_put_async(kpipe_t id,
 }
 #endif
 
-#endif /* CHAN_H */
+#endif /* PIPE_H */

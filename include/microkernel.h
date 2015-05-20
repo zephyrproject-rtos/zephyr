@@ -48,7 +48,7 @@
 #include <microkernel/sema.h>
 #include <microkernel/event.h>
 #include <microkernel/pool.h>
-#include <microkernel/chan.h>
+#include <microkernel/pipe.h>
 #include <microkernel/task_irq.h>
 
 #ifdef __cplusplus
