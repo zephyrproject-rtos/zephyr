@@ -9,6 +9,7 @@
 
    installation/installation.rst
    collaboration/collaboration.rst
+   object/object.rst
    doxygen/doxygen.rst
 
 
