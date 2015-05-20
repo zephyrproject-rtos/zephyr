@@ -293,7 +293,7 @@ struct bt_hci_evt_le_conn_complete {
 #define BT_ADDR_LE_DEV_PUBLIC			0x00
 #define BT_ADDR_LE_DEV_RANDOM			0x01
 
-#define BT_HCI_EVT_LE_ADVERTISING_REPORT		0x02
+#define BT_HCI_EVT_LE_ADVERTISING_REPORT	0x02
 struct bt_hci_ev_le_advertising_info {
 	uint8_t  evt_type;
 	uint8_t  bdaddr_type;
