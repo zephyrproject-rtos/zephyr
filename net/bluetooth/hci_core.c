@@ -173,6 +173,8 @@ static void hci_acl(struct bt_buf *buf)
 	struct bt_conn *conn;
 	uint8_t flags;
 
+	BT_DBG("buf %p\n", buf);
+
 	handle = sys_le16_to_cpu(hdr->handle);
 	flags = (handle >> 12);
 	buf->acl.handle = bt_acl_handle(handle);
@@ -446,15 +448,17 @@ static void hci_cmd_fiber(void)
 {
 	struct bt_driver *drv = dev.drv;
 
-	BT_DBG("\n");
+	BT_DBG("started\n");
 
 	while (1) {
 		struct bt_buf *buf;
 
 		/* Wait until ncmd > 0 */
+		BT_DBG("calling sem_take_wait\n");
 		nano_fiber_sem_take_wait(&dev.ncmd_sem);
 
 		/* Get next command - wait if necessary */
+		BT_DBG("calling fifo_get_wait\n");
 		buf = nano_fifo_get_wait(&dev.cmd_queue);
 		dev.ncmd = 0;
 
@@ -478,9 +482,10 @@ static void hci_rx_fiber(void)
 {
 	struct bt_buf *buf;
 
-	BT_DBG("\n");
+	BT_DBG("started\n");
 
 	while (1) {
+		BT_DBG("calling fifo_get_wait\n");
 		buf = nano_fifo_get_wait(&dev.rx_queue);
 
 		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
@@ -725,6 +730,7 @@ int bt_hci_reset(void)
 
 void bt_recv(struct bt_buf *buf)
 {
+	BT_DBG("buf %p len %u\n", buf, buf->len);
 	nano_fifo_put(&dev.rx_queue, buf);
 }
 
