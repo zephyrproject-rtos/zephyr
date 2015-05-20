@@ -446,6 +446,71 @@ static void att_read_type_req(struct bt_conn *conn, struct bt_buf *data)
 	att_read_type_rsp(conn, &uuid, start_handle, end_handle);
 }
 
+struct read_data {
+	struct bt_conn *conn;
+	uint16_t offset;
+	struct bt_buf *buf;
+	struct bt_att_read_rsp *rsp;
+};
+
+static uint8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct read_data *data = user_data;
+	struct bt_att *att = data->conn->att;
+	int read;
+
+	BT_DBG("handle %u\n", attr->handle);
+
+	data->rsp = bt_buf_add(data->buf, sizeof(*data->rsp));
+
+	if (!attr->read) {
+		/* TODO: Respond with BT_ATT_ERR_READ_NOT_PERMITTED */
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Read attribute value and store in the buffer */
+	read = attr->read(attr, data->buf->data + data->buf->len,
+			  att->mtu - data->buf->len, data->offset);
+	if (read < 0) {
+		/* TODO: Handle read error */
+		return BT_GATT_ITER_STOP;
+	}
+
+	bt_buf_add(data->buf, read);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void att_read_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
+			 uint16_t handle, uint16_t offset)
+{
+	struct read_data data;
+
+	if (!handle) {
+		send_err_rsp(conn, op, 0, BT_ATT_ERR_INVALID_HANDLE);
+		return;
+	}
+
+	memset(&data, 0, sizeof(data));
+
+	data.buf = bt_att_create_pdu(conn, rsp, 0);
+	if (!data.buf) {
+		return;
+	}
+
+	data.offset = offset;
+
+	bt_gatt_foreach_attr(handle, handle, read_cb, &data);
+
+	if (!data.rsp) {
+		bt_buf_put(data.buf);
+		send_err_rsp(conn, op, handle, BT_ATT_ERR_INVALID_HANDLE);
+		return;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+}
+
 static void att_read_req(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_read_req *req;
@@ -463,16 +528,7 @@ static void att_read_req(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("handle %u\n", handle);
 
-	if (!handle) {
-		send_err_rsp(conn, BT_ATT_OP_READ_REQ, 0,
-			     BT_ATT_ERR_INVALID_HANDLE);
-		return;
-	}
-
-	/* TODO: Generate proper response once a database is defined */
-
-	send_err_rsp(conn, BT_ATT_OP_READ_REQ, handle,
-		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+	att_read_rsp(conn, BT_ATT_OP_READ_REQ, BT_ATT_OP_READ_RSP, handle, 0);
 }
 
 static void att_read_blob_req(struct bt_conn *conn, struct bt_buf *data)
@@ -493,10 +549,8 @@ static void att_read_blob_req(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("handle %u offset %u\n", handle, offset);
 
-	/* TODO: Generate proper response once a database is defined */
-
-	send_err_rsp(conn, BT_ATT_OP_READ_BLOB_REQ, handle,
-		     BT_ATT_ERR_INVALID_HANDLE);
+	att_read_rsp(conn, BT_ATT_OP_READ_BLOB_REQ, BT_ATT_OP_READ_BLOB_RSP,
+		     handle, offset);
 }
 
 static void att_read_mult_req(struct bt_conn *conn, struct bt_buf *data)
