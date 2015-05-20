@@ -14,8 +14,8 @@
  * and/or other materials provided with the distribution.
  *
  * 3) Neither the name of Wind River Systems nor the names of its contributors
- * may be used to endorse or promote products derived from this software without
- * specific prior written permission.
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -85,7 +85,7 @@ In order to use the driver, BSP has to define:
 static struct pci_dev_info __noinit dev_info[CONFIG_MAX_PCI_DEVS];
 static int dev_info_index = 0;
 
-/*******************************************************************************
+/******************************************************************************
 *
 * pci_get_bar_config - return the configuration for the specified BAR
 *
@@ -93,10 +93,10 @@ static int dev_info_index = 0;
 */
 
 static int pci_bar_config_get(uint32_t bus,
-			   uint32_t dev,
-			   uint32_t func,
-			   uint32_t bar,
-			   uint32_t *config)
+				uint32_t dev,
+				uint32_t func,
+				uint32_t bar,
+				uint32_t *config)
 {
 	union pci_addr_reg pci_ctrl_addr;
 	uint32_t old_value;
@@ -109,36 +109,39 @@ static int pci_bar_config_get(uint32_t bus,
 	pci_ctrl_addr.field.reg = 4 + bar;
 
 	/* save the current setting */
-
 	pci_read(DEFAULT_PCI_CONTROLLER,
-		pci_ctrl_addr,
-		sizeof(old_value),
-		&old_value);
+			pci_ctrl_addr,
+			sizeof(old_value),
+			&old_value);
 
 	/* write to the BAR to see how large it is */
 	pci_write(DEFAULT_PCI_CONTROLLER,
-		 pci_ctrl_addr,
-		 sizeof(uint32_t),
-		 0xffffffff);
-	pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr, sizeof(*config), config);
+			pci_ctrl_addr,
+			sizeof(uint32_t),
+			0xffffffff);
+
+	pci_read(DEFAULT_PCI_CONTROLLER,
+			pci_ctrl_addr,
+			sizeof(*config),
+			config);
 
 	/* put back the old configuration */
-
 	pci_write(DEFAULT_PCI_CONTROLLER,
-		 pci_ctrl_addr,
-		 sizeof(old_value),
-		 old_value);
+			pci_ctrl_addr,
+			sizeof(old_value),
+			old_value);
 
 	/* check if this BAR is implemented */
-	if (*config != 0xffffffff && *config != 0)
+	if (*config != 0xffffffff && *config != 0) {
 		return 0;
+	}
 
 	/* BAR not supported */
 
 	return -1;
 }
 
-/*******************************************************************************
+/******************************************************************************
  *
  * pci_bar_params_get - retrieve the I/O address and IRQ of the specified BAR
  *
@@ -150,10 +153,10 @@ static int pci_bar_config_get(uint32_t bus,
  */
 
 static inline int pci_bar_params_get(uint32_t bus,
-				  uint32_t dev,
-				  uint32_t func,
-				  uint32_t bar,
-				  struct pci_dev_info *dev_info)
+					uint32_t dev,
+					uint32_t func,
+					uint32_t bar,
+					struct pci_dev_info *dev_info)
 {
 	static union pci_addr_reg pci_ctrl_addr;
 	uint32_t bar_value;
@@ -169,17 +172,19 @@ static inline int pci_bar_params_get(uint32_t bus,
 	pci_ctrl_addr.field.reg = 4 + bar;
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
-		pci_ctrl_addr,
-		sizeof(bar_value),
-		&bar_value);
-	if (pci_bar_config_get(bus, dev, func, bar, &bar_config) != 0)
+			pci_ctrl_addr,
+			sizeof(bar_value),
+			&bar_value);
+	if (pci_bar_config_get(bus, dev, func, bar, &bar_config) != 0) {
 		return -1;
+	}
 
 	if (BAR_SPACE(bar_config) == BAR_SPACE_MEM) {
 		dev_info->mem_type = BAR_SPACE_MEM;
 		mask = ~0xf;
-		if (bar < 5 && BAR_TYPE(bar_config) == BAR_TYPE_64BIT)
+		if (bar < 5 && BAR_TYPE(bar_config) == BAR_TYPE_64BIT) {
 			return 1; /* 64-bit MEM */
+		}
 	} else {
 		dev_info->mem_type = BAR_SPACE_IO;
 		mask = ~0x3;
@@ -196,7 +201,7 @@ static inline int pci_bar_params_get(uint32_t bus,
 	return 0;
 }
 
-/*******************************************************************************
+/******************************************************************************
  *
  * pci_dev_scan - scan the specified PCI device for all sub functions
  *
@@ -204,10 +209,8 @@ static inline int pci_bar_params_get(uint32_t bus,
  */
 
 static void pci_dev_scan(uint32_t bus,
-		       uint32_t dev,
-		       uint32_t class_mask /* bitmask, bits set for each needed
-					     class */
-		       )
+				uint32_t dev,
+				uint32_t class_mask)
 {
 	uint32_t func;
 	uint32_t pci_data;
@@ -222,44 +225,46 @@ static void pci_dev_scan(uint32_t bus,
 	}
 
 	/* initialise the PCI controller address register value */
-
 	pci_ctrl_addr.value = 0;
 	pci_ctrl_addr.field.enable = 1;
 	pci_ctrl_addr.field.bus = bus;
 	pci_ctrl_addr.field.device = dev;
 
 	/* scan all the possible functions for this device */
-
 	for (func = 0; func < LSPCI_MAX_FUNC; func++) {
 		pci_ctrl_addr.field.func = func;
-		pci_read(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(pci_data),
-			&pci_data);
 
-		if (pci_data == 0xffffffff)
+		pci_read(DEFAULT_PCI_CONTROLLER,
+				pci_ctrl_addr,
+				sizeof(pci_data),
+				&pci_data);
+
+		if (pci_data == 0xffffffff) {
 			continue;
+		}
 
 		/* get the PCI header from the device */
-		pci_header_get(
-			DEFAULT_PCI_CONTROLLER, bus, dev, func, &pci_dev_header);
+		pci_header_get(DEFAULT_PCI_CONTROLLER,
+				bus, dev, func, &pci_dev_header);
 
 		/* Skip a device if it's class is not specified by the caller */
-		if (!((1 << pci_dev_header.field.class) & class_mask))
+		if (!((1 << pci_dev_header.field.class) & class_mask)) {
 			continue;
+		}
 
 		/* Get memory and interrupt information */
-		if ((pci_dev_header.field.hdr_type & 0x7f) == 1)
+		if ((pci_dev_header.field.hdr_type & 0x7f) == 1) {
 			max_bars = 2;
-		else
+		} else {
 			max_bars = MAX_BARS;
+		}
+
 		for (i = 0; i < max_bars; ++i) {
 			/* Ignore BARs with errors and 64 bit BARs */
-			if (pci_bar_params_get(
-				    bus, dev, func, i, dev_info + dev_info_index) !=
-			    0)
+			if (pci_bar_params_get(bus, dev, func, i,
+					dev_info + dev_info_index) != 0) {
 				continue;
-			else {
+			} else {
 				dev_info[dev_info_index].vendor_id =
 					pci_dev_header.field.vendor_id;
 				dev_info[dev_info_index].device_id =
@@ -278,7 +283,7 @@ static void pci_dev_scan(uint32_t bus,
 	}
 }
 
-/*******************************************************************************
+/******************************************************************************
  *
  * pci_bus_scan - scans PCI bus for devices
  *
@@ -290,8 +295,7 @@ static void pci_dev_scan(uint32_t bus,
  * \NOMANUAL
  */
 
-void pci_bus_scan(uint32_t class_mask /* bitmask, bits set for each needed class */
-		)
+void pci_bus_scan(uint32_t class_mask)
 {
 	uint32_t bus;
 	uint32_t dev;
@@ -305,24 +309,26 @@ void pci_bus_scan(uint32_t class_mask /* bitmask, bits set for each needed class
 	/* run through the buses and devices */
 	for (bus = 0; bus < LSPCI_MAX_BUS; bus++) {
 		for (dev = 0; (dev < LSPCI_MAX_DEV) &&
-				      (dev_info_index < CONFIG_MAX_PCI_DEVS);
+				(dev_info_index < CONFIG_MAX_PCI_DEVS);
 		     dev++) {
 			pci_ctrl_addr.field.bus = bus;
 			pci_ctrl_addr.field.device = dev;
+
 			/* try and read register zero of the first function */
 			pci_read(DEFAULT_PCI_CONTROLLER,
-				pci_ctrl_addr,
-				sizeof(pci_data),
-				&pci_data);
+					pci_ctrl_addr,
+					sizeof(pci_data),
+					&pci_data);
 
 			/* scan the device if we found something */
-			if (pci_data != 0xffffffff)
+			if (pci_data != 0xffffffff) {
 				pci_dev_scan(bus, dev, class_mask);
+			}
 		}
 	}
 }
 
-/*******************************************************************************
+/******************************************************************************
  *
  * pci_info_get - returns list of PCI devices
  *
@@ -333,7 +339,7 @@ struct pci_dev_info *pci_info_get(void)
 	return dev_info;
 }
 
-/*******************************************************************************
+/******************************************************************************
  *
  * pci_dev_find - find PCI device of a specified class and specified index
  *
@@ -355,8 +361,9 @@ int pci_dev_find(int class, int idx, uint32_t *addr, uint32_t *size, int *irq)
 	int j;
 
 	for (i = 0, j = 0; i < dev_info_index; i++) {
-		if (dev_info[i].class != class)
+		if (dev_info[i].class != class) {
 			continue;
+		}
 
 		if (j == idx) {
 			*addr = dev_info[i].addr;
@@ -366,11 +373,12 @@ int pci_dev_find(int class, int idx, uint32_t *addr, uint32_t *size, int *irq)
 		}
 		j++;
 	}
+
 	return -1;
 }
 
 #ifdef PCI_DEBUG
-/*******************************************************************************
+/******************************************************************************
  *
  * pci_show - Show PCI devices
  *
