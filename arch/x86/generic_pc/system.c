@@ -101,6 +101,7 @@ static void uartGenericInfoInit(struct uart_init_info *p_info)
 	p_info->options = 0;
 	p_info->sys_clk_freq = UART_XTAL_FREQ;
 	p_info->baud_rate = CONFIG_UART_BAUDRATE;
+	p_info->int_pri = CONFIG_UART_CONSOLE_INT_PRI;
 }
 
 #endif /* DO_CONSOLE_INIT  */
@@ -130,13 +131,6 @@ static void consoleInit(void)
 	struct uart_init_info info;
 
 	uartGenericInfoInit(&info);
-	/*
-	 * Need type casting to avoid compiler warnings about assigning a
-	 * pointer to a smaller integer. We know the size is right...
-	 */
-	info.regs = (uint16_t)((unsigned long)CONFIG_UART_CONSOLE_REGS);
-	info.irq = CONFIG_UART_CONSOLE_IRQ;
-	info.int_pri = CONFIG_UART_CONSOLE_INT_PRI;
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
 	uart_console_init();
 }

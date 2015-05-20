@@ -48,31 +48,10 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/uart.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
-#include <pci/pci.h>
-#include <pci/pci_mgr.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 #define DO_CONSOLE_INIT
 #endif
-
-
-
-/*******************************************************************************
- *
- * _SysPciMap - maps PCI memory region
- *
- * This routine is defined in the BSP as the memory layout of the board is
- * board specific. However, the prototype is located in pci.h.
- *
- * RETURNS: virtual address
- *
- */
-
-uint32_t _SysPciMap(uint32_t addr, uint32_t size)
-{
-	ARG_UNUSED(size);
-	return addr;
-}
 
 #if defined(DO_CONSOLE_INIT)
 
@@ -109,32 +88,11 @@ static void uartGenericInfoInit(struct uart_init_info *p_info)
 
 static void consoleInit(void)
 {
-	struct pci_dev_info dev_info = {
-		.class = PCI_CLASS_COMM_CTLR,
-		.vendor_id = 0x8086,
-		.device_id = 0x0936,
-	};
 	struct uart_init_info info;
-	int i;
 
 	uartGenericInfoInit(&info);
-
-	pci_bus_scan_init();
-
-	i = 0;
-	while (pci_bus_scan(&dev_info) && i < CONFIG_UART_CONSOLE_PCI_IDX) {
-		i++;
-	}
-
-	info.regs = _SysPciMap(dev_info.addr, dev_info.size);
-	info.irq = dev_info.irq;
-
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
 	uart_console_init();
-
-#ifdef PCI_DEBUG
-	pci_show(&dev_info);
-#endif /* PCI_DEBUG */
 }
 
 #else

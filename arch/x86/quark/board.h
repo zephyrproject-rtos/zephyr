@@ -96,6 +96,8 @@ the 'Quark' BSP.
 /* uart configuration settings */
 
 /* Generic definitions */
+#define CONFIG_UART_PCI_VENDOR_ID 0x8086
+#define CONFIG_UART_PCI_DEVICE_ID 0x0936
 #define CONFIG_UART_NUM_SYSTEM_PORTS 2
 #define CONFIG_UART_NUM_EXTRA_PORTS 0
 #define CONFIG_UART_BAUDRATE COM1_BAUD_RATE

@@ -66,6 +66,10 @@ INCLUDE FILES: drivers/uart.h
 #include <toolchain.h>
 #include <sections.h>
 #include <drivers/uart.h>
+#ifdef CONFIG_PCI
+#include <pci/pci.h>
+#include <pci/pci_mgr.h>
+#endif /* CONFIG_PCI */
 
 /* defines */
 
@@ -235,7 +239,46 @@ struct ns16550 {
 
 /* locals */
 
-static struct ns16550 __noinit uart[CONFIG_UART_NUM_SYSTEM_PORTS];
+#if !(defined(CONFIGURE_UART_PORTS)) && !(defined(CONFIG_PCI))
+
+  #error "CONFIG_PCI or CONFIGURE_UART_PORTS is needed"
+
+#elif !(defined(CONFIGURE_UART_PORTS)) && defined(CONFIG_PCI)
+
+static struct ns16550 uart[CONFIG_UART_NUM_SYSTEM_PORTS] = {};
+
+static inline void ns16550_uart_init()
+{
+	struct pci_dev_info dev_info = {
+		.class = PCI_CLASS_COMM_CTLR,
+		.vendor_id = CONFIG_UART_PCI_VENDOR_ID,
+		.device_id = CONFIG_UART_PCI_DEVICE_ID,
+	};
+	int i;
+
+	if (uart[0].port && uart[0].irq)
+		return;
+
+	pci_bus_scan_init();
+
+	for (i = 0; pci_bus_scan(&dev_info) &&
+				i < CONFIG_UART_NUM_SYSTEM_PORTS; i++) {
+		uart[i].port = dev_info.addr;
+		uart[i].irq = dev_info.irq;
+#ifdef PCI_DEBUG
+		pci_show(&dev_info);
+#endif /* PCI_DEBUG */
+	}
+}
+
+#else
+
+#define ns16550_uart_init() \
+	do {} while ((0))
+
+CONFIGURE_UART_PORTS(struct ns16550, uart);
+
+#endif /* CONFIGURE_UART_PORTS */
 
 /*******************************************************************************
 *
@@ -253,8 +296,8 @@ void uart_init(int port, /* UART channel to initialize */
 	int oldLevel;     /* old interrupt lock level */
 	uint32_t divisor; /* baud rate divisor */
 
-	uart[port].port = init_info->regs;
-	uart[port].irq = init_info->irq;
+	ns16550_uart_init();
+
 	uart[port].intPri = init_info->int_pri;
 	uart[port].iirCache = 0;
 
