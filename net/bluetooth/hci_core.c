@@ -532,7 +532,7 @@ static void read_le_features_complete(struct bt_buf *buf)
 	memcpy(dev.le_features, rp->features, sizeof(dev.le_features));
 }
 
-static void host_buffer_size_complete(struct bt_buf *buf)
+static void read_buffer_size_complete(struct bt_buf *buf)
 {
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
 
@@ -650,12 +650,10 @@ static int hci_init(void)
 				       sizeof(struct bt_hci_acl_hdr));
 	hbs->acl_pkts = sys_cpu_to_le16(ACL_IN_MAX);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, &rsp);
+	err = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
 	if (err) {
 		return err;
 	}
-	host_buffer_size_complete(rsp);
-	bt_buf_put(rsp);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
 	if (!buf) {
@@ -674,7 +672,12 @@ static int hci_init(void)
 
 		/* Use BR/EDR buffer size if LE reports zero buffers */
 		if (!dev.le_mtu) {
-			bt_hci_cmd_send(BT_HCI_OP_READ_BUFFER_SIZE, NULL);
+			err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &rsp);
+			if (err) {
+				return err;
+			}
+			read_buffer_size_complete(rsp);
+			bt_buf_put(rsp);
 		}
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP,
