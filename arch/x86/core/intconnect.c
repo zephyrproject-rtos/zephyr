@@ -83,8 +83,7 @@ a "beginning of interrupt" (BOI) callout and an "end of interrupt" (EOI) callout
 
 NOTE: Be sure to update the arch specific definition of the _INT_STUB_SIZE macro
 to reflect the maximum potential size of the interrupt stub (as shown above).
-The _INT_STUB_SIZE macro is defined in kernel/arch/Intel/include/nanok.h
-and include/Intel/nanokernel.h
+The _INT_STUB_SIZE macro is defined in include/nanokernel/x86/arch.h.
 
 */
 

@@ -73,9 +73,7 @@ an error code is present on the stack or not.
 
 NOTE: Be sure to update the arch specific definition of the _EXC_STUB_SIZE
 macro to reflect the size of the full exception stub (as shown above).
-The _EXC_STUB_SIZE macro is defined in kernel/arch/Intel/include/nanok.h
-and include/Intel/nanokernel.h.
-
+The _EXC_STUB_SIZE macro is defined in arch/x86/include/nanok.h.
 */
 
 

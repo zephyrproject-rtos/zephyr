@@ -77,7 +77,7 @@ typedef struct PACK_STRUCT s_gdtHeader
 
 /* externs */
 
-extern tGdtHeader _gdt; /* GDT is implemented in Intel/core/gdt.c */
+extern tGdtHeader _gdt; /* GDT is implemented in arch/x86/core/gdt.c */
 
 
 #endif /* _ASMLANGUAGE */
