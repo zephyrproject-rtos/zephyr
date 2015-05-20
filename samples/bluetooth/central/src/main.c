@@ -32,8 +32,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <string_s.h>
 #include <vxmicro.h>
+#include <misc/printk.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>

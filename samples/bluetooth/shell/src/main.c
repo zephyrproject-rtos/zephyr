@@ -32,6 +32,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <misc/printk.h>
 
 #include <console/uart_console.h>
 #include <bluetooth/bluetooth.h>

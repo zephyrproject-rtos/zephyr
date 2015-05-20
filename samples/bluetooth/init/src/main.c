@@ -32,7 +32,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
+#include <misc/printk.h>
 
 #include <bluetooth/bluetooth.h>
 
