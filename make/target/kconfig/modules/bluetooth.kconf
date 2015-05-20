@@ -45,6 +45,7 @@ config	BLUETOOTH_DEBUG
 	bool
 	prompt "Bluetooth LE debug support"
 	depends on BLUETOOTH
+	select STDOUT_CONSOLE
 	default n
 	help
 	  This option enables Bluetooth debug going to standard

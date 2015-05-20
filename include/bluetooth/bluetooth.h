@@ -32,20 +32,20 @@
 #ifndef __BT_BLUETOOTH_H
 #define __BT_BLUETOOTH_H
 
-#include <misc/printk.h>
+#include <stdio.h>
 #include <bluetooth/buf.h>
 
 /* Bluetooth subsystem logging helpers */
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-#define BT_DBG(fmt, ...) printk("bt: %s: " fmt, __func__, ##__VA_ARGS__)
+#define BT_DBG(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
 #else
 #define BT_DBG(fmt, ...)
 #endif /* CONFIG_BLUETOOTH_DEBUG */
 
-#define BT_ERR(fmt, ...) printk("bt: %s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_WARN(fmt, ...) printk("bt: %s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_INFO(fmt, ...) printk("bt: " fmt,  ##__VA_ARGS__)
+#define BT_ERR(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
+#define BT_WARN(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
+#define BT_INFO(fmt, ...) printf("bt: " fmt,  ##__VA_ARGS__)
 
 /* HCI control APIs */
 
