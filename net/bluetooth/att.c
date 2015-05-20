@@ -189,6 +189,85 @@ static void att_find_info_req(struct bt_conn *conn, struct bt_buf *data)
 	return;
 }
 
+struct find_type_data {
+	struct bt_conn *conn;
+	struct bt_buf *buf;
+	struct bt_att_handle_group *group;
+	const void *value;
+	uint8_t value_len;
+};
+
+static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct find_type_data *data = user_data;
+	struct bt_att *att = data->conn->att;
+	int read;
+	uint8_t uuid[16];
+
+	/* Skip if not a primary service */
+	if (bt_uuid_cmp(attr->uuid, &primary_uuid)) {
+		if (data->group && attr->handle > data->group->end_handle) {
+			data->group->end_handle = sys_cpu_to_le16(attr->handle);
+		}
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	BT_DBG("handle %u\n", attr->handle);
+
+	/* stop if there is no space left */
+	if (att->mtu - data->buf->len < sizeof(*data->group))
+		return BT_GATT_ITER_STOP;
+
+	/* Read attribute value and store in the buffer */
+	read = attr->read(attr, uuid, sizeof(uuid), 0);
+	if (read < 0) {
+		/* TODO: Return an error if this fails */
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Check if data matches */
+	if (read != data->value_len || memcmp(data->value, uuid, read)) {
+		/* If a group exists stop otherwise continue */
+		return data->group ? BT_GATT_ITER_STOP : BT_GATT_ITER_CONTINUE;
+	}
+
+	/* Fast foward to next item position */
+	data->group = bt_buf_add(data->buf, sizeof(*data->group));
+	data->group->start_handle = sys_cpu_to_le16(attr->handle);
+	data->group->end_handle = sys_cpu_to_le16(attr->handle);
+
+	/* continue to find the end_handle */
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void att_find_type_rsp(struct bt_conn *conn, uint16_t start_handle,
+			      uint16_t end_handle, const void *value,
+			      uint8_t value_len)
+{
+	struct find_type_data data;
+
+	memset(&data, 0, sizeof(data));
+
+	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_TYPE_RSP, 0);
+	if (!data.buf) {
+		return;
+	}
+
+	data.value = value;
+	data.value_len = value_len;
+
+	bt_gatt_foreach_attr(start_handle, end_handle, find_type_cb, &data);
+
+	if (!data.group) {
+		bt_buf_put(data.buf);
+		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, start_handle,
+			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		return;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+}
+
 static void att_find_type_req(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_find_type_req *req;
@@ -217,12 +296,18 @@ static void att_find_type_req(struct bt_conn *conn, struct bt_buf *data)
 		return;
 	}
 
-	/* TODO: Generate proper response once a database is defined */
+	/* The Attribute Protocol Find By Type Value Request shall be used with
+	 * the Attribute Type parameter set to the UUID for «Primary Service»
+	 * and the Attribute Value set to the 16-bit Bluetooth UUID or 128-bit
+	 * UUID for the specific primary service.
+	 */
+	if (type != BT_UUID_GATT_PRIMARY) {
+		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, start_handle,
+				     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		return;
+	}
 
-	send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, start_handle,
-		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
-
-	return;
+	att_find_type_rsp(conn, start_handle, end_handle, value, data->len);
 }
 
 static bool uuid_create(struct bt_uuid *uuid, struct bt_buf *data)
