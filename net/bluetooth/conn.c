@@ -241,7 +241,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Wait until the controller can accept ACL packets */
-		BT_DBG("calling sem_get_wait\n");
+		BT_DBG("calling sem_take_wait\n");
 		nano_fiber_sem_take_wait(&dev->le_pkts_sem);
 
 		/* check for disconnection */
