@@ -66,12 +66,12 @@ static char cmd_fiber_stack[CMD_STACK_SIZE];
 
 static struct bt_dev dev;
 
-const char *bt_bdaddr_str(const uint8_t bdaddr[6])
+const char *bt_bdaddr_str(const uint8_t bda[6])
 {
 	static char bdaddr_str[18];
 
 	sprintf(bdaddr_str, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
-		bdaddr[5], bdaddr[4], bdaddr[3], bdaddr[2], bdaddr[1], bdaddr[0]);
+		bda[5], bda[4], bda[3], bda[2], bda[1], bda[0]);
 
 	return bdaddr_str;
 }
@@ -683,7 +683,8 @@ static int hci_init(void)
 
 		/* Use BR/EDR buffer size if LE reports zero buffers */
 		if (!dev.le_mtu) {
-			err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE, NULL, &rsp);
+			err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE,
+						   NULL, &rsp);
 			if (err) {
 				return err;
 			}
@@ -899,7 +900,8 @@ int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 		return -EALREADY;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS, sizeof(*set_param));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS,
+				sizeof(*set_param));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -917,7 +919,8 @@ int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	set_param->addr_type = 0x00;
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*scan_enable));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
+				sizeof(*scan_enable));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -952,7 +955,8 @@ int bt_stop_scanning()
 		return -EALREADY;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*scan_enable));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
+				sizeof(*scan_enable));
 	if (!buf) {
 		return -ENOBUFS;
 	}
