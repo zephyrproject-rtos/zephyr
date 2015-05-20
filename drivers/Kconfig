@@ -38,9 +38,7 @@ config DRV_CONSOLE
 	help
 	This option enables the UART console driver.
 
-if DRV_CONSOLE
 source "drivers/console/Kconfig"
-endif
 
 config DRV_SERIAL
 	bool
@@ -48,9 +46,7 @@ config DRV_SERIAL
 	help
 	This option enables the serial driver.
 
-if DRV_SERIAL
 source "drivers/serial/Kconfig"
-endif
 
 config DRV_TIMER
 	bool
@@ -58,9 +54,7 @@ config DRV_TIMER
 	help
 	This option enables the timer driver.
 
-if DRV_TIMER
 source "drivers/timer/Kconfig"
-endif
 
 config DRV_INTCTL
 	bool

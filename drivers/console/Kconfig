@@ -33,6 +33,7 @@
 config UART_INTERRUPT_DRIVEN
 	bool
 	prompt "Interrupt driven UART support"
+	depends on DRV_CONSOLE
 	default n
 	help
 	This option enables interrupt support for UART allowing console
@@ -41,6 +42,7 @@ config UART_INTERRUPT_DRIVEN
 config CONSOLE_HANDLER
 	bool
 	prompt "Enable console input handler"
+	depends on DRV_CONSOLE
 	select UART_INTERRUPT_DRIVEN
 	default n
 	help

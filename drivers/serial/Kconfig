@@ -33,6 +33,7 @@
 
 config DRV_NS16550
 	bool
+	depends on DRV_SERIAL
 	default n
 	help
 	This option enables the NS16550 serial driver.
@@ -42,6 +43,7 @@ config DRV_NS16550
 config DRV_K20_UART
 	bool
 	default n
+	depends on DRV_SERIAL
 	help
 	This option enables the K20 serial driver.
 	This specific driver can be used for the serial hardware
@@ -50,6 +52,7 @@ config DRV_K20_UART
 config DRV_STELLARIS_UART
 	bool
 	default n
+	depends on DRV_SERIAL
 	help
 	This option enables the Stellaris serial driver.
 	This specific driver can be used for the serial hardware
@@ -58,6 +61,7 @@ config DRV_STELLARIS_UART
 config  UART_INTERRUPT_DRIVEN
 	bool
 	prompt "Interrupt driven UART support"
+	depends on DRV_SERIAL
 	default n
 	help
 	This option enables interrupt support for UART allowing console
