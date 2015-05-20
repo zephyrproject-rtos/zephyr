@@ -205,6 +205,7 @@ static void conn_rx_fiber(int arg1, int arg2)
 	BT_DBG("Started for handle %u\n", conn->handle);
 
 	while (conn->state == BT_CONN_CONNECTED) {
+		BT_DBG("calling fifo_get_wait\n");
 		buf = nano_fifo_get_wait(&conn->rx_queue);
 
 		/* check for disconnection */
@@ -213,6 +214,7 @@ static void conn_rx_fiber(int arg1, int arg2)
 			break;
 		}
 
+		BT_DBG("passing buf %p len %u to L2CAP\n", buf, buf->len);
 		bt_l2cap_recv(conn, buf);
 	}
 
@@ -239,6 +241,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Wait until the controller can accept ACL packets */
+		BT_DBG("calling sem_get_wait\n");
 		nano_fiber_sem_take_wait(&dev->le_pkts_sem);
 
 		/* check for disconnection */
@@ -255,6 +258,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 			break;
 		}
 
+		BT_DBG("passing buf %p len %u to driver\n", buf, buf->len);
 		dev->drv->send(buf);
 		bt_buf_put(buf);
 	}
