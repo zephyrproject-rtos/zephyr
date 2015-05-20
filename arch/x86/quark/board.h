@@ -138,6 +138,8 @@ the 'Quark' BSP.
 #endif
 
 /* PCI definitions */
+#define PCI_BUS_NUMBERS 2
+
 #define PCI_CTRL_ADDR_REG 0xCF8
 #define PCI_CTRL_DATA_REG 0xCFC
 

@@ -33,11 +33,11 @@
 /*
 DESCRIPTION
 Module implements routines for PCI bus initialization and query.
-Note that the BSP must call pci_bus_scan() before any other PCI
-API is called.
 
 USAGE
 In order to use the driver, BSP has to define:
+- Numbers of BUSes:
+    - PCI_BUS_NUMBERS;
 - Register addresses:
     - PCI_CTRL_ADDR_REG;
     - PCI_CTRL_DATA_REG;
@@ -47,6 +47,72 @@ In order to use the driver, BSP has to define:
     - PLB_BYTE_REG_READ() / PLB_BYTE_REG_WRITE();
 - pci_pin2irq() - the routine that converts the PCI interrupt pin
   number to IRQ number.
+
+About scanning the PCI buses:
+At every new usage of this API, the code should call pci_bus_scan_init().
+It should own a struct pci_dev_info, filled in with the parameters it is
+interested to look for: class and/or vendor_id/device_id.
+
+Then it can loop on pci_bus_scan() providing a pointer on that structure.
+Such function can be called as long as it returns 1. At every successful
+return of pci_bus_scan() it means the provided structure pointer will have
+been updated with the current scan result which the code might be interested
+in. On pci_bus_scan() returning 0, the code should discard the result and
+stop calling pci_bus_scan(). If it wants to retrieve the result, it will
+have to restart the procedure all over again.
+
+EXAMPLE
+struct pci_dev_info info = {
+	.class = PCI_CLASS_COMM_CTLR
+};
+
+pci_bus_scan_init();
+
+while (pci_bus_scan(&info) {
+	// do something with "info" which holds a valid result, i.e. some
+	// device information matching the PCI class PCI_CLASS_COMM_CTLR
+}
+
+INTERNALS
+The whole logic runs around a structure: struct lookup_data, which exists
+on one instanciation called 'lookup'.
+Such structure is used for 2 distinct roles:
+- to match devices the caller is looking for
+- to loop on PCI bus, devices, function and BARs
+
+The search criterias are the class and/or the vendor_id/device_id of a PCI
+device. The caller first initializes the lookup structure by calling
+pci_bus_scan_init(), which will reset the search criterias as well as the
+loop paramaters to 0. At the very first subsequent call of pci_bus_scan()
+the lookup structure will store the search criterias. Then the loop starts.
+For each bus it will run through each device on which it will loop on each
+function and BARs, as long as the criterias does not match or until it hit
+the limit of bus/dev/functions to scan.
+
+On a successful match, it will stop the loop, fill in the caller's
+pci_dev_info structure with the found device information, and return 1.
+Hopefully, the lookup structure still remembers where it stopped and the
+original search criterias. Thus, when the caller asks to scan again for
+a possible result next, the loop will restart where it stopped.
+That will work as long as there are relevant results found.
+
+Running through every buses and devices can be gready. Thus, in order to
+optimize any subsequent new search, the code holds another structure:
+struct bus_dev. Such structure exists for every possible PCI classes, in
+a table 'class_bd'.
+Every time a loop will hit a class, if such class is unknown yet from its
+relevant class_bd's bus_dev, it will fill in the information in class_bd.
+Basically, class_bd stores for every class, at which bus and which dev
+a search loop should start. This permits to accelerate a bit any
+class-specific bus scan since this is most of the time what the caller will
+be interested in.
+
+For instance, if a previous pci_bus_scan() searching for class z has hit
+various classes in between like classes x and y, class_bd will then know
+where to start a loop on these classes. Thus, a subsequent pci scan looking
+for class y will directly start at the relevant bus and device instead of
+restarting from 0.
+
 */
 
 #include <nanokernel.h>
@@ -61,7 +127,7 @@ In order to use the driver, BSP has to define:
 #include <pci/pci.h>
 
 /* NOTE. These parameters may need to be configurable */
-#define LSPCI_MAX_BUS 256 /* maximum number of buses to scan */
+#define LSPCI_MAX_BUS PCI_BUS_NUMBERS /* maximum number of buses to scan */
 #define LSPCI_MAX_DEV 32  /* maximum number of devices to scan */
 #define LSPCI_MAX_FUNC 8  /* maximum device functions to scan */
 #define LSPCI_MAX_REG 64  /* maximum device registers to read */
@@ -82,8 +148,25 @@ In order to use the driver, BSP has to define:
 
 #define MAX_BARS 6
 
-static struct pci_dev_info __noinit dev_info[CONFIG_MAX_PCI_DEVS];
-static int dev_info_index = 0;
+struct bus_dev {
+	uint16_t set:1;
+	uint16_t bus:8;
+	uint16_t dev:5;
+	uint16_t unused:2;
+};
+
+struct lookup_data {
+	struct pci_dev_info info;
+	uint32_t bus:9;
+	uint32_t dev:6;
+	uint32_t func:4;
+	uint32_t bar:4;
+	uint32_t unused:9;
+};
+
+#define PCI_CLASS_MAX PCI_CLASS_DAQ_DSP + 1
+static struct bus_dev class_bd[PCI_CLASS_MAX] = {};
+static struct lookup_data __noinit lookup;
 
 /******************************************************************************
 *
@@ -92,21 +175,10 @@ static int dev_info_index = 0;
 * RETURNS: 0 if BAR is implemented, -1 if not.
 */
 
-static int pci_bar_config_get(uint32_t bus,
-				uint32_t dev,
-				uint32_t func,
-				uint32_t bar,
-				uint32_t *config)
+static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
+							uint32_t *config)
 {
-	union pci_addr_reg pci_ctrl_addr;
 	uint32_t old_value;
-
-	pci_ctrl_addr.value = 0;
-	pci_ctrl_addr.field.enable = 1;
-	pci_ctrl_addr.field.bus = bus;
-	pci_ctrl_addr.field.device = dev;
-	pci_ctrl_addr.field.func = func;
-	pci_ctrl_addr.field.reg = 4 + bar;
 
 	/* save the current setting */
 	pci_read(DEFAULT_PCI_CONTROLLER,
@@ -145,44 +217,35 @@ static int pci_bar_config_get(uint32_t bus,
  *
  * pci_bar_params_get - retrieve the I/O address and IRQ of the specified BAR
  *
- * RETURN: -1 on error, 0 if 32 bit BAR retrieved or 1 if 64 bit BAR retrieved
+ * RETURNS: -1 on error, 0 if 32 bit BAR retrieved or 1 if 64 bit BAR retrieved
  *
  * NOTE: Routine does not set up parameters for 64 bit BARS, they are ignored.
  *
  * \NOMANUAL
  */
 
-static inline int pci_bar_params_get(uint32_t bus,
-					uint32_t dev,
-					uint32_t func,
-					uint32_t bar,
+static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 					struct pci_dev_info *dev_info)
 {
-	static union pci_addr_reg pci_ctrl_addr;
 	uint32_t bar_value;
 	uint32_t bar_config;
 	uint32_t addr;
 	uint32_t mask;
 
-	pci_ctrl_addr.value = 0;
-	pci_ctrl_addr.field.enable = 1;
-	pci_ctrl_addr.field.bus = bus;
-	pci_ctrl_addr.field.device = dev;
-	pci_ctrl_addr.field.func = func;
-	pci_ctrl_addr.field.reg = 4 + bar;
+	pci_ctrl_addr.field.reg = 4 + lookup.bar;
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
 			sizeof(bar_value),
 			&bar_value);
-	if (pci_bar_config_get(bus, dev, func, bar, &bar_config) != 0) {
+	if (pci_bar_config_get(pci_ctrl_addr, &bar_config) != 0) {
 		return -1;
 	}
 
 	if (BAR_SPACE(bar_config) == BAR_SPACE_MEM) {
 		dev_info->mem_type = BAR_SPACE_MEM;
 		mask = ~0xf;
-		if (bar < 5 && BAR_TYPE(bar_config) == BAR_TYPE_64BIT) {
+		if (lookup.bar < 5 && BAR_TYPE(bar_config) == BAR_TYPE_64BIT) {
 			return 1; /* 64-bit MEM */
 		}
 	} else {
@@ -205,34 +268,21 @@ static inline int pci_bar_params_get(uint32_t bus,
  *
  * pci_dev_scan - scan the specified PCI device for all sub functions
  *
- * RETURNS: N/A
+ * RETURNS: 1 if a device has been found, 0 otherwise.
+ *
+ * \NOMANUAL
  */
 
-static void pci_dev_scan(uint32_t bus,
-				uint32_t dev,
-				uint32_t class_mask)
+static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
+					struct pci_dev_info *dev_info)
 {
-	uint32_t func;
-	uint32_t pci_data;
-	static union pci_addr_reg pci_ctrl_addr;
 	static union pci_dev pci_dev_header;
-	int i;
+	uint32_t pci_data;
 	int max_bars;
 
-	if (dev_info_index == CONFIG_MAX_PCI_DEVS) {
-		/* No more room in the table */
-		return;
-	}
-
-	/* initialise the PCI controller address register value */
-	pci_ctrl_addr.value = 0;
-	pci_ctrl_addr.field.enable = 1;
-	pci_ctrl_addr.field.bus = bus;
-	pci_ctrl_addr.field.device = dev;
-
 	/* scan all the possible functions for this device */
-	for (func = 0; func < LSPCI_MAX_FUNC; func++) {
-		pci_ctrl_addr.field.func = func;
+	for (; lookup.func < LSPCI_MAX_FUNC; lookup.bar = 0, lookup.func++) {
+		pci_ctrl_addr.field.func = lookup.func;
 
 		pci_read(DEFAULT_PCI_CONTROLLER,
 				pci_ctrl_addr,
@@ -240,15 +290,34 @@ static void pci_dev_scan(uint32_t bus,
 				&pci_data);
 
 		if (pci_data == 0xffffffff) {
+			if (lookup.func == 0) {
+				return 0;
+			}
+
 			continue;
 		}
 
 		/* get the PCI header from the device */
 		pci_header_get(DEFAULT_PCI_CONTROLLER,
-				bus, dev, func, &pci_dev_header);
+					pci_ctrl_addr,
+					&pci_dev_header);
 
-		/* Skip a device if it's class is not specified by the caller */
-		if (!((1 << pci_dev_header.field.class) & class_mask)) {
+		if (!class_bd[pci_dev_header.field.class].set) {
+			class_bd[pci_dev_header.field.class].set = 1;
+			class_bd[pci_dev_header.field.class].bus =
+						pci_ctrl_addr.field.bus;
+			class_bd[pci_dev_header.field.class].dev =
+						pci_ctrl_addr.field.device;
+		}
+
+		/* Skip a device if its class is not specified by the caller */
+		if (pci_dev_header.field.class != lookup.info.class) {
+			continue;
+		}
+
+		if (lookup.info.vendor_id && lookup.info.device_id &&
+		    lookup.info.vendor_id != pci_dev_header.field.vendor_id &&
+		    lookup.info.device_id != pci_dev_header.field.device_id) {
 			continue;
 		}
 
@@ -259,148 +328,118 @@ static void pci_dev_scan(uint32_t bus,
 			max_bars = MAX_BARS;
 		}
 
-		for (i = 0; i < max_bars; ++i) {
+		for (; lookup.bar < max_bars; lookup.bar++) {
 			/* Ignore BARs with errors and 64 bit BARs */
-			if (pci_bar_params_get(bus, dev, func, i,
-					dev_info + dev_info_index) != 0) {
+			if (pci_bar_params_get(pci_ctrl_addr, dev_info) != 0) {
 				continue;
 			} else {
-				dev_info[dev_info_index].vendor_id =
+				dev_info->vendor_id =
 					pci_dev_header.field.vendor_id;
-				dev_info[dev_info_index].device_id =
+				dev_info->device_id =
 					pci_dev_header.field.device_id;
-				dev_info[dev_info_index].class =
+				dev_info->class =
 					pci_dev_header.field.class;
-				dev_info[dev_info_index].irq = pci_pin2irq(
+				dev_info->irq = pci_pin2irq(
 					pci_dev_header.field.interrupt_pin);
-				dev_info_index++;
-				if (dev_info_index == CONFIG_MAX_PCI_DEVS) {
-					/* No more room in the table */
-					return;
-				}
+				dev_info->function = lookup.func;
+				dev_info->bar = lookup.bar;
+
+				lookup.bar++;
+				if (lookup.bar >= max_bars)
+					lookup.bar = 0;
+
+				return 1;
 			}
 		}
 	}
+
+	return 0;
+}
+
+void pci_bus_scan_init(void)
+{
+	lookup.info.class = 0;
+	lookup.info.vendor_id = 0;
+	lookup.info.device_id = 0;
+	lookup.bus = 0;
+	lookup.dev = 0;
+	lookup.func = 0;
+	lookup.bar = 0;
 }
 
 /******************************************************************************
  *
  * pci_bus_scan - scans PCI bus for devices
  *
- * The routine scans the PCI bus for the devices, which classes are provided
- * in the classMask argument.
- * classMask is constructed as:
- * (1 << class1) | (1 << class2) | ... | (1 << classN)
+ * The routine scans the PCI bus for the devices on criterias provided in the
+ * given dev_info at first call. Which criterias can be class and/or
+ * vendor_id/device_id.
+ *
+ * RETURNS: 1 on success, 0 otherwise. On success, dev_info is filled in with
+ * currently found device information
  *
  * \NOMANUAL
  */
 
-void pci_bus_scan(uint32_t class_mask)
+int pci_bus_scan(struct pci_dev_info *dev_info)
 {
-	uint32_t bus;
-	uint32_t dev;
 	union pci_addr_reg pci_ctrl_addr;
-	uint32_t pci_data;
+
+	if (!lookup.info.class &&
+	    !lookup.info.vendor_id &&
+	    !lookup.info.device_id) {
+		lookup.info.class = dev_info->class;
+		lookup.info.vendor_id = dev_info->vendor_id;
+		lookup.info.device_id = dev_info->device_id;
+
+		if (class_bd[lookup.info.class].set) {
+			lookup.bus = class_bd[lookup.info.class].bus;
+			lookup.dev = class_bd[lookup.info.class].dev;
+		}
+	}
 
 	/* initialise the PCI controller address register value */
 	pci_ctrl_addr.value = 0;
 	pci_ctrl_addr.field.enable = 1;
 
 	/* run through the buses and devices */
-	for (bus = 0; bus < LSPCI_MAX_BUS; bus++) {
-		for (dev = 0; (dev < LSPCI_MAX_DEV) &&
-				(dev_info_index < CONFIG_MAX_PCI_DEVS);
-		     dev++) {
-			pci_ctrl_addr.field.bus = bus;
-			pci_ctrl_addr.field.device = dev;
+	for (; lookup.bus < LSPCI_MAX_BUS; lookup.bus++) {
+		for (; (lookup.dev < LSPCI_MAX_DEV);
+		     lookup.func = 0, lookup.dev++) {
+			pci_ctrl_addr.field.bus = lookup.bus;
+			pci_ctrl_addr.field.device = lookup.dev;
 
-			/* try and read register zero of the first function */
-			pci_read(DEFAULT_PCI_CONTROLLER,
-					pci_ctrl_addr,
-					sizeof(pci_data),
-					&pci_data);
-
-			/* scan the device if we found something */
-			if (pci_data != 0xffffffff) {
-				pci_dev_scan(bus, dev, class_mask);
+			if (pci_dev_scan(pci_ctrl_addr, dev_info)) {
+				return 1;
 			}
 		}
 	}
-}
 
-/******************************************************************************
- *
- * pci_info_get - returns list of PCI devices
- *
- * \NOMANUAL
- */
-struct pci_dev_info *pci_info_get(void)
-{
-	return dev_info;
-}
-
-/******************************************************************************
- *
- * pci_dev_find - find PCI device of a specified class and specified index
- *
- * Routine looks through the list of detected PCI devices and if the device
- * of specified <class> and <index> exists, sets up <address>, <size> and <irq>.
- *
- * This function can return error if the specified device is not found. In most
- * cases the device class and index are known to exist and therefore will be
- * found. However, due to the somewhat dynamic nature of PCI, we allow for the
- * fact the device may not be found and another attempt with different
- * parameters maybe made.
- *
- * RETURNS: 0, if device is found, -1 otherwise
- */
-
-int pci_dev_find(int class, int idx, uint32_t *addr, uint32_t *size, int *irq)
-{
-	int i;
-	int j;
-
-	for (i = 0, j = 0; i < dev_info_index; i++) {
-		if (dev_info[i].class != class) {
-			continue;
-		}
-
-		if (j == idx) {
-			*addr = dev_info[i].addr;
-			*size = dev_info[i].size;
-			*irq = dev_info[i].irq;
-			return 0;
-		}
-		j++;
-	}
-
-	return -1;
+	return 0;
 }
 
 #ifdef PCI_DEBUG
 /******************************************************************************
  *
- * pci_show - Show PCI devices
+ * pci_show - Show PCI device
  *
- * Shows the PCI devices found.
+ * Shows the PCI device found provided as parameter.
  *
  * RETURNS: N/A
  */
 
-void pci_show(void)
+void pci_show(struct pci_dev_info *dev_info)
 {
-	int i;
-
-	printk("PCI devices:\n");
-	for (i = 0; i < dev_info_index; i++) {
-		printk("%X:%X class: 0x%X, %s, addrs: 0x%X-0x%X, IRQ %d\n",
-		       dev_info[i].vendor_id,
-		       dev_info[i].device_id,
-		       dev_info[i].class,
-		       (dev_info[i].mem_type == BAR_SPACE_MEM) ? "MEM" : "I/O",
-		       (uint32_t)dev_info[i].addr,
-		       (uint32_t)(dev_info[i].addr + dev_info[i].size - 1),
-		       dev_info[i].irq);
-	}
+	printk("PCI device:\n");
+	printk("%X:%X class: 0x%X, %u, %u, %s, addrs: 0x%X-0x%X, IRQ %d\n",
+		dev_info->vendor_id,
+		dev_info->device_id,
+		dev_info->class,
+		dev_info->function,
+		dev_info->bar,
+		(dev_info->mem_type == BAR_SPACE_MEM) ? "MEM" : "I/O",
+		(uint32_t)dev_info->addr,
+		(uint32_t)(dev_info->addr + dev_info->size - 1),
+		dev_info->irq);
 }
 #endif /* PCI_DEBUG */

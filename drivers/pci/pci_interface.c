@@ -391,23 +391,11 @@ void pci_write(uint32_t controller, /* controller to use   */
 * RETURNS: N/A
 */
 
-void pci_header_get(uint32_t controller,  /* controller to use	   */
-		  uint32_t bus,		/* PCI bus number	   */
-		  uint32_t dev,		/* PCI device number	   */
-		  uint32_t func,	/* PCI function number   */
-		  union pci_dev *pci_dev_header /* output: device header */
-		  )
+void pci_header_get(uint32_t controller,
+			union pci_addr_reg pci_ctrl_addr,
+			union pci_dev *pci_dev_header)
 {
-	union pci_addr_reg pci_ctrl_addr;
 	uint32_t i;
-
-	/* initialise the PCI controller address register value */
-
-	pci_ctrl_addr.value = 0;
-	pci_ctrl_addr.field.enable = 1;
-	pci_ctrl_addr.field.bus = bus;
-	pci_ctrl_addr.field.device = dev;
-	pci_ctrl_addr.field.func = func;
 
 	/* clear out the header */
 

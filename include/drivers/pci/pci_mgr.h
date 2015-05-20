@@ -730,9 +730,7 @@ extern void pci_write(uint32_t controller,
 		     uint32_t data);
 
 extern void pci_header_get(uint32_t controller,
-			 uint32_t bus,
-			 uint32_t dev,
-			 uint32_t func,
+			 union pci_addr_reg pci_ctrl_addr,
 			 union pci_dev *pci_dev_header);
 
 /* General PCI configuration access routines */

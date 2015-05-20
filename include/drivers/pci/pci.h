@@ -49,22 +49,20 @@ struct pci_dev_info {
 	uint32_t addr; /* I/O or memory region address */
 	uint32_t size; /* memory region size */
 	int irq;
-	uint16_t mem_type; /* memory type: BAR_SPACE_MEM/BAR_SPACE_IO */
+	uint16_t mem_type:1; /* memory type: BAR_SPACE_MEM/BAR_SPACE_IO */
+	uint16_t class:8;
+	uint16_t function:3;
+	uint16_t bar:3;
+	uint16_t unused:1;
 	uint16_t vendor_id;
 	uint16_t device_id;
-	uint16_t class;
 };
 
-extern void pci_bus_scan(uint32_t classMask);
-extern struct pci_dev_info *pci_info_get(void);
-extern int pci_dev_find(int class,
-		      int idx,
-		      uint32_t *addr,
-		      uint32_t *size,
-		      int *irq);
+extern void pci_bus_scan_init(void);
+extern int pci_bus_scan(struct pci_dev_info *dev_info);
 
 #ifdef PCI_DEBUG
-extern void pci_show(void);
+extern void pci_show(struct pci_dev_info *dev_info);
 #endif /* PCI_DEBUG */
 
 #endif /* _PCI_H_ */

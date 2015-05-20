@@ -109,36 +109,32 @@ static void uartGenericInfoInit(struct uart_init_info *p_info)
 
 static void consoleInit(void)
 {
+	struct pci_dev_info dev_info = {
+		.class = PCI_CLASS_COMM_CTLR,
+		.vendor_id = 0x8086,
+		.device_id = 0x0936,
+	};
 	struct uart_init_info info;
-	uint32_t addr;
-	uint32_t size;
-	int irq;
+	int i;
 
 	uartGenericInfoInit(&info);
 
-	/*
-	 * Even though, pci_dev_find() returns an error if the device isn't found,
-	 * we
-	 * ignore it as an error means that the class and/or index supplied is
-	 * incorrect. The serial device *SHOULD* be found.
-	 */
-	__ASSERT_EVAL((void)pci_dev_find(PCI_CLASS_COMM_CTLR,
-				       CONFIG_UART_CONSOLE_PCI_IDX,
-				       &addr,
-				       &size,
-				       &irq),
-		      int res = pci_dev_find(PCI_CLASS_COMM_CTLR,
-					   CONFIG_UART_CONSOLE_PCI_IDX,
-					   &addr,
-					   &size,
-					   &irq),
-		      res != -1,
-		      "");
+	pci_bus_scan_init();
 
-	info.regs = _SysPciMap(addr, size);
+	i = 0;
+	while (pci_bus_scan(&dev_info) && i < CONFIG_UART_CONSOLE_PCI_IDX) {
+		i++;
+	}
+
+	info.regs = _SysPciMap(dev_info.addr, dev_info.size);
+	info.irq = dev_info.irq;
 
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
 	uart_console_init();
+
+#ifdef PCI_DEBUG
+	pci_show(&dev_info);
+#endif /* PCI_DEBUG */
 }
 
 #else
@@ -164,8 +160,6 @@ void _InitHardware(void)
 	_ioapic_init();
 
 	_ioapic_irq_set(HPET_TIMER0_IRQ, HPET_TIMER0_VEC, HPET_IOAPIC_FLAGS);
-
-	pci_bus_scan(1 << PCI_CLASS_COMM_CTLR);
 
 	consoleInit(); /* NOP if not needed */
 
