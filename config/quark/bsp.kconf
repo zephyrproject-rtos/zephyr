@@ -52,14 +52,6 @@ config	BSP_QUARK
 	select BOOTLOADER_UNKNOWN
 	select EXTRA_SERIAL_PORT
 
-config  MAX_PCI_DEVS
-        int
-        prompt "Maximum number of PCI devices"
-        default 8
-        help
-          This option sets the maximum number of PCI devices the BSP supports.
-
-
 config  BOOTLOADER_KEXEC
 	bool
 	prompt "VxMicro boots using Linux kexec() system call"
