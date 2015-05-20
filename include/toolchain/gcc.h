@@ -32,7 +32,7 @@
 
 /*
   DESCRIPTION
-  Macros to abstract compiler capabilities for GCC/ICC toolchains.
+  Macros to abstract compiler capabilities for GCC toolchain.
 
   \NOMANUAL
 */

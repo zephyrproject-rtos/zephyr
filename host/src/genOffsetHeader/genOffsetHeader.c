@@ -399,9 +399,9 @@ int symTblFind(unsigned *pSymTblOffset, unsigned *pSymTblSize)
 * Typically, there are two string tables defined in the section headers.  These
 * are ".shstrtbl" and ".strtbl" for section header names and symbol names
 * respectively.  It has been observed with the DIAB compiler (but not with
-* either the GCC nor ICC compilers) that the two tables may be mashed together
-* into one.  Consequently, the following algorithm is used to select the
-* appropriate string table.
+* the GCC compiler) that the two tables may be mashed together into one.
+* Consequently, the following algorithm is used to select the appropriate
+* string table.
 *
 * 1. Assume that the first found string table is valid.
 * 2. If another string table is found, use that only if its section header

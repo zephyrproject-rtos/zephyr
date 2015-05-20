@@ -289,7 +289,7 @@ main() {
 
 	# determine which projects are to be built
 	if [ x${VXMICRO_TOOL} != x"diab" ] ; then
-		# build extra projects only when GCC or ICC is being used
+		# build extra projects only when GCC is being used
 		PRJ_LIST="${PRJ_LIST_STD}\n${PRJ_LIST_EXTRA}"
 	else
 		PRJ_LIST=${PRJ_LIST_STD}

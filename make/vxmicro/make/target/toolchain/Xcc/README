@@ -1,4 +1,4 @@
-This directory contains the common files between ICC and GCC since they
-are so similar.
+This directory contains the common files between GCC and GCC-compliant
+compilers.
 
-The differences are data-driven via make variables.
+Any differences are data-driven via make variables.

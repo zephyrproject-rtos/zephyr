@@ -127,9 +127,9 @@ void *__attribute__((section(".spurNoErrIsr")))
  * The array is initialized to indicate all vectors are currently available.
  *
  * NOTE: For portability reasons, the ROUND_UP() macro can NOT be used to
- * perform the rounding up calculation below.  Unlike both GCC and ICC, the
- * Diab compiler generates an error when a macro that takes a parameter is
- * used to define the size of an array.
+ * perform the rounding up calculation below.  Unlike GCC, the Diab compiler
+ * generates an error when a macro that takes a parameter is used to define
+ * the size of an array.
  */
 
 #define VEC_ALLOC_NUM_INTS ((CONFIG_IDT_NUM_VECTORS + 31) & ~31) / 32

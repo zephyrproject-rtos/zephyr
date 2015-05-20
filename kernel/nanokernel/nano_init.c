@@ -184,9 +184,8 @@ static void nano_init(tCCS *dummyOutContext)
  * __stack_chk_guard, with a random value.
  *
  * INTERNAL
- * Modifying __stack_chk_guard directly at runtime generates a build error
- * with ICC 13.0.2 20121114 on Windows 7. In-line assembly is used as a
- * workaround.
+ * Depending upon the compiler, modifying __stack_chk_guard directly at runtime
+ * may generate a build error.  In-line assembly is used as a workaround.
  */
 
 extern void *__stack_chk_guard;

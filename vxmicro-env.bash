@@ -26,9 +26,7 @@ unset vxmicro_answer_file
 #
 # 1) create useful aliases
 # alias GCC='export VXMICRO_TOOL=gcc'
-# alias ICC='export VXMICRO_TOOL=icc'
 # alias VIP='export | grep VXMICRO'
 #
 # 2) specify toolchain location
 # declare -x VXMICRO_GCC_DIR="<path to installation directory>"
-# declare -x VXMICRO_ICC_DIR="<path>/icc/composer_xe_2013.1.117"

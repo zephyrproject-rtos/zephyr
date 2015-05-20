@@ -162,8 +162,6 @@ build_info_set() {
 	# set up toolchain-specific build environment stuff
 	if [ x${VXMICRO_TOOL} = x"gcc" ] ; then
 		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
-	elif [ x${VXMICRO_TOOL} = x"icc" ] ; then
-		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Werror-all EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
 	elif [ x${VXMICRO_TOOL} = x"diab" ] ; then
 		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Xstop-on-warning EXTRA_LFLAGS=-Xstop-on-warning"
 	else
@@ -273,11 +271,6 @@ proj_info_set() {
 			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=atom_n28xx"
 		elif [ ${bsp2use} = "quark" ] ; then
 			BSP_INFO[${NUM_PROJ}]="BSP=quark"
-		elif [ x${VXMICRO_TOOL} = x"icc" ]; then
-			# This is a non-x86 BSP.  ICC can only
-			# be used with an x86 BSP.
-			let NUM_PROJ--
-			continue
 		else
 			BSP_INFO[${NUM_PROJ}]="BSP=${bsp2use}"
 		fi
