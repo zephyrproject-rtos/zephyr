@@ -62,7 +62,7 @@ config BSP_PCMINUTEIA
 	select BSP_GENERIC_PC
 
 config BSP_PCPENTIUM4
-	bool "Minimum configuratio for PENTIUM 4 BSP"
+	bool "Minimum configuration for PENTIUM 4 BSP"
 	select CPU_PENTIUM4
 	select PIC
 	select PIT
