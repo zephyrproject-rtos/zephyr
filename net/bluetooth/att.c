@@ -245,6 +245,84 @@ static bool uuid_create(struct bt_uuid *uuid, struct bt_buf *data)
 	return false;
 }
 
+struct read_type_data {
+	struct bt_conn *conn;
+	struct bt_uuid *uuid;
+	struct bt_buf *buf;
+	struct bt_att_read_type_rsp *rsp;
+	struct bt_att_data *item;
+};
+
+static uint8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct read_type_data *data = user_data;
+	struct bt_att *att = data->conn->att;
+	int read;
+
+	/* Skip if doesn't match */
+	if (bt_uuid_cmp(attr->uuid, data->uuid)) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	BT_DBG("handle %u\n", attr->handle);
+
+	/* Fast foward to next item position */
+	data->item = bt_buf_add(data->buf, sizeof(*data->item));
+	data->item->handle = sys_cpu_to_le16(attr->handle);
+
+	/* Read attribute value and store in the buffer */
+	read = attr->read(attr, data->buf->data + data->buf->len,
+			  att->mtu - data->buf->len, 0);
+	if (read < 0) {
+		/* TODO: Handle read errors */
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (!data->rsp->len) {
+		/* Set len to be the first item found */
+		data->rsp->len = read + sizeof(*data->item);
+	} else if (data->rsp->len != read + sizeof(*data->item)) {
+		/* All items should have the same size */
+		data->buf->len -= sizeof(*data->item);
+		return BT_GATT_ITER_STOP;
+	}
+
+	bt_buf_add(data->buf, read);
+
+	/* return true only if there are still space for more items */
+	return att->mtu - data->buf->len > data->rsp->len ?
+	       BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
+}
+
+static void att_read_type_rsp(struct bt_conn *conn, struct bt_uuid *uuid,
+			       uint16_t start_handle, uint16_t end_handle)
+{
+	struct read_type_data data;
+
+	memset(&data, 0, sizeof(data));
+
+	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_TYPE_RSP,
+				     sizeof(*data.rsp));
+	if (!data.buf) {
+		return;
+	}
+
+	data.uuid = uuid;
+	data.rsp = bt_buf_add(data.buf, sizeof(*data.rsp));
+	data.rsp->len = 0;
+
+	bt_gatt_foreach_attr(start_handle, end_handle, read_type_cb, &data);
+
+	if (!data.rsp->len) {
+		bt_buf_put(data.buf);
+		send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, start_handle,
+			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		return;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+}
+
 static void att_read_type_req(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_read_type_req *req;
@@ -280,11 +358,7 @@ static void att_read_type_req(struct bt_conn *conn, struct bt_buf *data)
 		return;
 	}
 
-	/* TODO: Generate proper response once a database is defined */
-
-	send_err_rsp(conn, BT_ATT_OP_READ_TYPE_REQ, start_handle,
-		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
-	return;
+	att_read_type_rsp(conn, &uuid, start_handle, end_handle);
 }
 
 static void att_read_req(struct bt_conn *conn, struct bt_buf *data)
