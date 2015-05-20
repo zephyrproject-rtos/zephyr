@@ -53,8 +53,14 @@
 #define ACL_OUT_MAX	7
 
 /* Stacks for the fibers */
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+#define RX_STACK_SIZE	2048
+#define CMD_STACK_SIZE	512
+#else
 #define RX_STACK_SIZE	1024
 #define CMD_STACK_SIZE	256
+#endif
+
 static char rx_fiber_stack[RX_STACK_SIZE];
 static char cmd_fiber_stack[CMD_STACK_SIZE];
 
