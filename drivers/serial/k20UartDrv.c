@@ -56,7 +56,7 @@ INCLUDE FILES: drivers/serial/k20_uart.h
 /* typedefs */
 
 typedef struct {
-	uint8_t *baseAddr; /* base address of registers */
+	uint8_t *base; /* base address of registers */
 	uint8_t irq;       /* interrupt request level */
 	uint8_t intPri;    /* interrupt priority */
 } _k20Uart_t;
@@ -85,11 +85,11 @@ void uart_init(int port, /* UART channel to initialize */
 	C1_t c1;				   /* UART C1 register value */
 	C2_t c2;				   /* UART C2 register value */
 
-	uart[port].baseAddr = (uint8_t *)init_info->regs;
+	uart[port].base = (uint8_t *)init_info->regs;
 	uart[port].irq = init_info->irq;
 	uart[port].intPri = init_info->int_pri;
 
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
@@ -126,7 +126,7 @@ int uart_poll_in(int port,		/* UART channel to select for input */
 		 unsigned char *pChar /* pointer to char */
 		 )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	if (uart_p->s1.field.rxDataFull == 0)
 		return (-1);
@@ -154,7 +154,7 @@ unsigned char uart_poll_out(
 	unsigned char outChar /* char to send */
 	)
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	/* wait for transmitter to ready to accept a character */
 	while (uart_p->s1.field.txDataEmpty == 0)
@@ -179,7 +179,7 @@ int uart_fifo_fill(int port, /* UART on port to send */
 			    int len /* number of bytes to send */
 			    )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 	uint8_t numTx = 0;
 
 	while ((len - numTx > 0) && (uart_p->s1.field.txDataEmpty == 1)) {
@@ -201,7 +201,7 @@ int uart_fifo_read(int port, /* UART to receive from */
 			    const int size   /* container size */
 			    )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 	uint8_t numRx = 0;
 
 	while ((size - numRx > 0) && (uart_p->s1.field.rxDataFull == 0)) {
@@ -222,7 +222,7 @@ void uart_irq_tx_enable(int port /* UART to enable Tx
 					      interrupt */
 				 )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	uart_p->c2.field.txInt_DmaTx_en = 1;
 }
@@ -238,7 +238,7 @@ void uart_irq_tx_disable(
 	int port /* UART to disable Tx interrupt */
 	)
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	uart_p->c2.field.txInt_DmaTx_en = 0;
 }
@@ -253,7 +253,7 @@ void uart_irq_tx_disable(
 int uart_irq_tx_ready(int port /* UART to check */
 			       )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	return uart_p->s1.field.txDataEmpty;
 }
@@ -269,7 +269,7 @@ void uart_irq_rx_enable(int port /* UART to enable Rx
 					      interrupt */
 				 )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	uart_p->c2.field.rxFullInt_dmaTx_en = 1;
 }
@@ -285,7 +285,7 @@ void uart_irq_rx_disable(
 	int port /* UART to disable Rx interrupt */
 	)
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	uart_p->c2.field.rxFullInt_dmaTx_en = 0;
 }
@@ -300,7 +300,7 @@ void uart_irq_rx_disable(
 int uart_irq_rx_ready(int port /* UART to check */
 			       )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	return uart_p->s1.field.rxDataFull;
 }
@@ -314,7 +314,7 @@ int uart_irq_rx_ready(int port /* UART to check */
 
 void uart_irq_err_enable(int port)
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 	C3_t c3 = uart_p->c3;
 
 	c3.field.parityErrIntEn = 1;
@@ -334,7 +334,7 @@ void uart_irq_err_enable(int port)
 void uart_irq_err_disable(int port /* UART to disable Rx interrupt */
 			  )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 	C3_t c3 = uart_p->c3;
 
 	c3.field.parityErrIntEn = 0;
@@ -354,7 +354,7 @@ void uart_irq_err_disable(int port /* UART to disable Rx interrupt */
 int uart_irq_is_pending(int port /* UART to check */
 				 )
 {
-	K20_UART_t *uart_p = (K20_UART_t *)uart[port].baseAddr;
+	K20_UART_t *uart_p = (K20_UART_t *)uart[port].base;
 
 	/* Look only at Tx and Rx data interrupt flags */
 
