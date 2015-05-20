@@ -37,7 +37,7 @@
 #include "bluetooth/bluetooth.h"
 #include "bluetooth/hci.h"
 
-const struct bt_eir ad[] = {
+static const struct bt_eir ad[] = {
 	{
 		.len = 3,
 		.type = BT_EIR_UUID16_ALL,
@@ -51,9 +51,10 @@ const struct bt_eir ad[] = {
 	},
 	{ }
 };
-const struct bt_eir sd[] = {
+
+static const struct bt_eir sd[] = {
 	{
-		.len = 16,
+		.len = 12,
 		.type = BT_EIR_NAME_COMPLETE,
 		.data = "Test beacon",
 	},
