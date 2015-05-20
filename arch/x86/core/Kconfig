@@ -112,7 +112,7 @@ config LOCK_INSTRUCTION_UNSUPPORTED
 endmenu
 
 menu "Floating Point Options"
-	depends on !CPU_FLOAT_UNSUPPORTED
+	depends on !CPU_FLOAT_UNSUPPORTED && FLOAT && !ENHANCED_SECURITY
 
 config  FP_SHARING
 	bool
