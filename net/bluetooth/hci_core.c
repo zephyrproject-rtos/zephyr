@@ -785,6 +785,7 @@ int bt_init(void)
 	int err;
 
 	if (!drv) {
+		BT_ERR("No HCI driver registered\n");
 		return -ENODEV;
 	}
 
@@ -795,6 +796,7 @@ int bt_init(void)
 
 	err = drv->open();
 	if (err) {
+		BT_ERR("HCI driver open failed (%d)\n", err);
 		return err;
 	}
 
