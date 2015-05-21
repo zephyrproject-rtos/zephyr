@@ -294,11 +294,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff)
 
 	pChBuff->pEnd = pChBuff->pBegin + OCTET_TO_SIZEOFUNIT(pChBuff->iBuffSize);
 	pChBuff->pEndOrig = pChBuff->pEnd;
-	BuffReset(pChBuff);
-}
 
-void BuffReset(struct chbuff *pChBuff)
-{
 	/* assumed it is allowed */
 	pChBuff->BuffState = BUFF_EMPTY;
 	pChBuff->pEnd = pChBuff->pEndOrig;
@@ -316,14 +312,44 @@ void BuffReset(struct chbuff *pChBuff)
 	pChBuff->iNbrPendingWrites = 0;
 	MarkersClear(&(pChBuff->WriteMarkers));
 	MarkersClear(&(pChBuff->ReadMarkers));
+
 }
 
-void BuffGetFreeSpaceTotal(struct chbuff *pChBuff, int *piFreeSpaceTotal)
+int CalcFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceCont,
+				  int *piFreeSpaceAWA)
 {
-	int dummy1, dummy2;
-	*piFreeSpaceTotal = CalcFreeSpace(pChBuff, &dummy1, &dummy2);
-	__ASSERT_NO_MSG(dummy1 == pChBuff->iFreeSpaceCont);
-	__ASSERT_NO_MSG(dummy2 == pChBuff->iFreeSpaceAWA);
+	unsigned char *pStart = pChBuff->pWrite;
+	unsigned char *pStop = pChBuff->pRead;
+
+	if (NULL != pChBuff->pWriteGuard) {
+		pStop = pChBuff->pWriteGuard;
+	} else {
+		/*
+		 * if BuffState==BUFF_EMPTY but we have a WriteGuard,
+		 * we still need to calculate it as a normal [Start,Stop] interval
+		 */
+
+		if (BUFF_EMPTY == pChBuff->BuffState) {
+			*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
+			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
+			return (*piFreeSpaceCont + *piFreeSpaceAWA);
+			/* this sum equals pEnd-pBegin */
+		}
+	}
+
+	/*
+	 * on the other hand, if BuffState is full, we do not need a special flow;
+	 * it will be correct as (pStop - pStart) equals 0
+	 */
+
+	if (pStop >= pStart) {
+		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
+		*piFreeSpaceAWA = 0;
+	} else {
+		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
+		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
+	}
+	return (*piFreeSpaceCont + *piFreeSpaceAWA);
 }
 
 void BuffGetFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceTotal,
@@ -342,13 +368,59 @@ void BuffGetFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceTotal,
 	*piFreeSpaceAWA = pChBuff->iFreeSpaceAWA;
 }
 
-void BuffGetAvailDataTotal(struct chbuff *pChBuff, int *piAvailDataTotal)
+void BuffGetFreeSpaceTotal(struct chbuff *pChBuff, int *piFreeSpaceTotal)
 {
 	int dummy1, dummy2;
+	*piFreeSpaceTotal = CalcFreeSpace(pChBuff, &dummy1, &dummy2);
+	__ASSERT_NO_MSG(dummy1 == pChBuff->iFreeSpaceCont);
+	__ASSERT_NO_MSG(dummy2 == pChBuff->iFreeSpaceAWA);
+}
 
-	*piAvailDataTotal = CalcAvailData(pChBuff, &dummy1, &dummy2);
-	__ASSERT_NO_MSG(dummy1 == pChBuff->iAvailDataCont);
-	__ASSERT_NO_MSG(dummy2 == pChBuff->iAvailDataAWA);
+int BuffEmpty(struct chbuff *pChBuff)
+{
+	/* 0==iAvailDataTotal is an INcorrect condition b/c of async behavior */
+
+	int iTotalFreeSpace;
+
+	BuffGetFreeSpaceTotal(pChBuff, &iTotalFreeSpace);
+	return (pChBuff->iBuffSize == iTotalFreeSpace);
+}
+
+int CalcAvailData(struct chbuff *pChBuff, int *piAvailDataCont,
+				  int *piAvailDataAWA)
+{
+	unsigned char *pStart = pChBuff->pRead;
+	unsigned char *pStop = pChBuff->pWrite;
+
+	if (NULL != pChBuff->pReadGuard) {
+		pStop = pChBuff->pReadGuard;
+	} else {
+		/*
+		 * if BuffState==BUFF_FULL but we have a ReadGuard,
+		 * we still need to calculate it as a normal [Start,Stop] interval
+		 */
+
+		if (BUFF_FULL == pChBuff->BuffState) {
+			*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
+			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
+			return (*piAvailDataCont + *piAvailDataAWA);
+			/* this sum equals pEnd-pBegin */
+		}
+	}
+
+	/*
+	 * on the other hand, if BuffState is empty, we do not need a special flow;
+	 * it will be correct as (pStop - pStart) equals 0
+	 */
+
+	if (pStop >= pStart) {
+		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
+		*piAvailDataAWA = 0;
+	} else {
+		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
+		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
+	}
+	return (*piAvailDataCont + *piAvailDataAWA);
 }
 
 void BuffGetAvailData(struct chbuff *pChBuff, int *piAvailDataTotal,
@@ -367,9 +439,72 @@ void BuffGetAvailData(struct chbuff *pChBuff, int *piAvailDataTotal,
 	*piAvailDataAWA = pChBuff->iAvailDataAWA;
 }
 
+void BuffGetAvailDataTotal(struct chbuff *pChBuff, int *piAvailDataTotal)
+{
+	int dummy1, dummy2;
+
+	*piAvailDataTotal = CalcAvailData(pChBuff, &dummy1, &dummy2);
+	__ASSERT_NO_MSG(dummy1 == pChBuff->iAvailDataCont);
+	__ASSERT_NO_MSG(dummy2 == pChBuff->iAvailDataAWA);
+}
+
+int BuffFull(struct chbuff *pChBuff)
+{
+	/* 0==iTotalFreeSpace is an INcorrect condition b/c of async behavior */
+
+	int iAvailDataTotal;
+
+	BuffGetAvailDataTotal(pChBuff, &iAvailDataTotal);
+	return (pChBuff->iBuffSize == iAvailDataTotal);
+}
+
 /*******************/
 /* Buffer en-queuing:
 ********************/
+
+static int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
+{
+	int i;
+
+	ChannelCheck4Intrusion(pChBuff, pChBuff->pWrite, iSize);
+
+	i = MarkerAddLast(&(pChBuff->WriteMarkers), pChBuff->pWrite, iSize, TRUE);
+	if (i != -1) {
+		/* adjust iNbrPendingWrites */
+		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingWrites);
+		(pChBuff->iNbrPendingWrites)++;
+		/* pReadGuard changes? */
+		if (NULL == pChBuff->pReadGuard) {
+			pChBuff->pReadGuard = pChBuff->pWrite;
+		}
+		__ASSERT_NO_MSG(pChBuff->WriteMarkers.aMarkers
+						[pChBuff->WriteMarkers.iFirstMarker].pointer ==
+						pChBuff->pReadGuard);
+		/* iAWAMarker changes? */
+		if (-1 == pChBuff->WriteMarkers.iAWAMarker && pChBuff->bWriteWA) {
+			pChBuff->WriteMarkers.iAWAMarker = i;
+		}
+	}
+	return i;
+}
+
+static void AsyncEnQFinished(struct chbuff *pChBuff, int iTransferID)
+{
+	pChBuff->WriteMarkers.aMarkers[iTransferID].bXferBusy = FALSE;
+
+	if (pChBuff->WriteMarkers.iFirstMarker == iTransferID) {
+		int iNewFirstMarker = ScanMarkers(&(pChBuff->WriteMarkers),
+										  &(pChBuff->iAvailDataCont),
+										  &(pChBuff->iAvailDataAWA),
+										  &(pChBuff->iNbrPendingWrites));
+		if (-1 != iNewFirstMarker) {
+			pChBuff->pReadGuard =
+				pChBuff->WriteMarkers.aMarkers[iNewFirstMarker].pointer;
+		} else {
+			pChBuff->pReadGuard = NULL;
+		}
+	}
+}
 
 int BuffEnQ(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite)
 {
@@ -433,53 +568,53 @@ void BuffEnQA_End(struct chbuff *pChBuff, int iTransferID,
 	AsyncEnQFinished(pChBuff, iTransferID);
 }
 
-int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
+/**********************/
+/* Buffer de-queuing: */
+/**********************/
+
+static int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
 {
 	int i;
 
-	ChannelCheck4Intrusion(pChBuff, pChBuff->pWrite, iSize);
+	ChannelCheck4Intrusion(pChBuff, pChBuff->pRead, iSize);
 
-	i = MarkerAddLast(&(pChBuff->WriteMarkers), pChBuff->pWrite, iSize, TRUE);
+	i = MarkerAddLast(&(pChBuff->ReadMarkers), pChBuff->pRead, iSize, TRUE);
 	if (i != -1) {
-		/* adjust iNbrPendingWrites */
-		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingWrites);
-		(pChBuff->iNbrPendingWrites)++;
-		/* pReadGuard changes? */
-		if (NULL == pChBuff->pReadGuard) {
-			pChBuff->pReadGuard = pChBuff->pWrite;
+		/* adjust iNbrPendingReads */
+		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingReads);
+		(pChBuff->iNbrPendingReads)++;
+		/* pWriteGuard changes? */
+		if (NULL == pChBuff->pWriteGuard) {
+			pChBuff->pWriteGuard = pChBuff->pRead;
 		}
-		__ASSERT_NO_MSG(pChBuff->WriteMarkers.aMarkers
-						[pChBuff->WriteMarkers.iFirstMarker].pointer ==
-						pChBuff->pReadGuard);
+		__ASSERT_NO_MSG(pChBuff->ReadMarkers.aMarkers
+						[pChBuff->ReadMarkers.iFirstMarker].pointer ==
+						pChBuff->pWriteGuard);
 		/* iAWAMarker changes? */
-		if (-1 == pChBuff->WriteMarkers.iAWAMarker && pChBuff->bWriteWA) {
-			pChBuff->WriteMarkers.iAWAMarker = i;
+		if (-1 == pChBuff->ReadMarkers.iAWAMarker && pChBuff->bReadWA) {
+			pChBuff->ReadMarkers.iAWAMarker = i;
 		}
 	}
 	return i;
 }
 
-void AsyncEnQFinished(struct chbuff *pChBuff, int iTransferID)
+static void AsyncDeQFinished(struct chbuff *pChBuff, int iTransferID)
 {
-	pChBuff->WriteMarkers.aMarkers[iTransferID].bXferBusy = FALSE;
+	pChBuff->ReadMarkers.aMarkers[iTransferID].bXferBusy = FALSE;
 
-	if (pChBuff->WriteMarkers.iFirstMarker == iTransferID) {
-		int iNewFirstMarker = ScanMarkers(&(pChBuff->WriteMarkers),
-										  &(pChBuff->iAvailDataCont),
-										  &(pChBuff->iAvailDataAWA),
-										  &(pChBuff->iNbrPendingWrites));
+	if (pChBuff->ReadMarkers.iFirstMarker == iTransferID) {
+		int iNewFirstMarker = ScanMarkers(&(pChBuff->ReadMarkers),
+										  &(pChBuff->iFreeSpaceCont),
+										  &(pChBuff->iFreeSpaceAWA),
+										  &(pChBuff->iNbrPendingReads));
 		if (-1 != iNewFirstMarker) {
-			pChBuff->pReadGuard =
-				pChBuff->WriteMarkers.aMarkers[iNewFirstMarker].pointer;
+			pChBuff->pWriteGuard =
+				pChBuff->ReadMarkers.aMarkers[iNewFirstMarker].pointer;
 		} else {
-			pChBuff->pReadGuard = NULL;
+			pChBuff->pWriteGuard = NULL;
 		}
 	}
 }
-
-/**********************/
-/* Buffer de-queuing: */
-/**********************/
 
 int BuffDeQ(struct chbuff *pChBuff, int iSize, unsigned char **ppRead)
 {
@@ -541,142 +676,4 @@ void BuffDeQA_End(struct chbuff *pChBuff, int iTransferID,
 	/* An asynchronous data transfer from the buffer has finished */
 
 	AsyncDeQFinished(pChBuff, iTransferID);
-}
-
-int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
-{
-	int i;
-
-	ChannelCheck4Intrusion(pChBuff, pChBuff->pRead, iSize);
-
-	i = MarkerAddLast(&(pChBuff->ReadMarkers), pChBuff->pRead, iSize, TRUE);
-	if (i != -1) {
-		/* adjust iNbrPendingReads */
-		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingReads);
-		(pChBuff->iNbrPendingReads)++;
-		/* pWriteGuard changes? */
-		if (NULL == pChBuff->pWriteGuard) {
-			pChBuff->pWriteGuard = pChBuff->pRead;
-		}
-		__ASSERT_NO_MSG(pChBuff->ReadMarkers.aMarkers
-						[pChBuff->ReadMarkers.iFirstMarker].pointer ==
-						pChBuff->pWriteGuard);
-		/* iAWAMarker changes? */
-		if (-1 == pChBuff->ReadMarkers.iAWAMarker && pChBuff->bReadWA) {
-			pChBuff->ReadMarkers.iAWAMarker = i;
-		}
-	}
-	return i;
-}
-
-void AsyncDeQFinished(struct chbuff *pChBuff, int iTransferID)
-{
-	pChBuff->ReadMarkers.aMarkers[iTransferID].bXferBusy = FALSE;
-
-	if (pChBuff->ReadMarkers.iFirstMarker == iTransferID) {
-		int iNewFirstMarker = ScanMarkers(&(pChBuff->ReadMarkers),
-										  &(pChBuff->iFreeSpaceCont),
-										  &(pChBuff->iFreeSpaceAWA),
-										  &(pChBuff->iNbrPendingReads));
-		if (-1 != iNewFirstMarker) {
-			pChBuff->pWriteGuard =
-				pChBuff->ReadMarkers.aMarkers[iNewFirstMarker].pointer;
-		} else {
-			pChBuff->pWriteGuard = NULL;
-		}
-	}
-}
-
-int CalcAvailData(struct chbuff *pChBuff, int *piAvailDataCont,
-				  int *piAvailDataAWA)
-{
-	unsigned char *pStart = pChBuff->pRead;
-	unsigned char *pStop = pChBuff->pWrite;
-
-	if (NULL != pChBuff->pReadGuard) {
-		pStop = pChBuff->pReadGuard;
-	} else {
-		/*
-		 * if BuffState==BUFF_FULL but we have a ReadGuard,
-		 * we still need to calculate it as a normal [Start,Stop] interval
-		 */
-
-		if (BUFF_FULL == pChBuff->BuffState) {
-			*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
-			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
-			return (*piAvailDataCont + *piAvailDataAWA);
-			/* this sum equals pEnd-pBegin */
-		}
-	}
-
-	/*
-	 * on the other hand, if BuffState is empty, we do not need a special flow;
-	 * it will be correct as (pStop - pStart) equals 0
-	 */
-
-	if (pStop >= pStart) {
-		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
-		*piAvailDataAWA = 0;
-	} else {
-		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
-		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
-	}
-	return (*piAvailDataCont + *piAvailDataAWA);
-}
-
-int CalcFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceCont,
-				  int *piFreeSpaceAWA)
-{
-	unsigned char *pStart = pChBuff->pWrite;
-	unsigned char *pStop = pChBuff->pRead;
-
-	if (NULL != pChBuff->pWriteGuard) {
-		pStop = pChBuff->pWriteGuard;
-	} else {
-		/*
-		 * if BuffState==BUFF_EMPTY but we have a WriteGuard,
-		 * we still need to calculate it as a normal [Start,Stop] interval
-		 */
-
-		if (BUFF_EMPTY == pChBuff->BuffState) {
-			*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
-			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
-			return (*piFreeSpaceCont + *piFreeSpaceAWA);
-			/* this sum equals pEnd-pBegin */
-		}
-	}
-
-	/*
-	 * on the other hand, if BuffState is full, we do not need a special flow;
-	 * it will be correct as (pStop - pStart) equals 0
-	 */
-
-	if (pStop >= pStart) {
-		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
-		*piFreeSpaceAWA = 0;
-	} else {
-		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
-		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
-	}
-	return (*piFreeSpaceCont + *piFreeSpaceAWA);
-}
-
-int BuffFull(struct chbuff *pChBuff)
-{
-	/* 0==iTotalFreeSpace is an INcorrect condition b/c of async behavior */
-
-	int iAvailDataTotal;
-
-	BuffGetAvailDataTotal(pChBuff, &iAvailDataTotal);
-	return (pChBuff->iBuffSize == iAvailDataTotal);
-}
-
-int BuffEmpty(struct chbuff *pChBuff)
-{
-	/* 0==iAvailDataTotal is an INcorrect condition b/c of async behavior */
-
-	int iTotalFreeSpace;
-
-	BuffGetFreeSpaceTotal(pChBuff, &iTotalFreeSpace);
-	return (pChBuff->iBuffSize == iTotalFreeSpace);
 }

@@ -60,49 +60,33 @@ extern "C" {
    acceptable I think)
  */
 
-/* exported functions:
-*/
 void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff);
-void BuffReset(struct chbuff *pBuff);
 
 void BuffGetFreeSpaceTotal(struct chbuff *pBuff, int *piTotalFreeSpace);
-void BuffGetFreeSpace(struct chbuff *pBuff,
-		      int *piTotalFreeSpace,
-		      int *piFreeSpaceCont,
-		      int *piFreeSpaceAWA);
+void BuffGetFreeSpace(struct chbuff *pBuff, int *piTotalFreeSpace,
+					  int *piFreeSpaceCont, int *piFreeSpaceAWA);
+
 void BuffGetAvailDataTotal(struct chbuff *pBuff, int *piAvailDataTotal);
-void BuffGetAvailData(struct chbuff *pBuff,
-		      int *piAvailDataTotal,
-		      int *piAvailDataCont,
-		      int *piAvailDataAWA);
+void BuffGetAvailData(struct chbuff *pBuff, int *piAvailDataTotal,
+					  int *piAvailDataCont, int *piAvailDataAWA);
+
+int BuffEmpty(struct chbuff *pBuff);
+int BuffFull(struct chbuff *pBuff);
 
 int BuffEnQ(struct chbuff *pBuff, int iSize, unsigned char **ppWrite);
-int BuffEnQA(struct chbuff *pBuff,
-	     int iSize,
-	     unsigned char **ppWrite,
-	     int *piTransferID);
-void BuffEnQA_End(struct chbuff *pBuff, int iTransferID, int iSize /*optional */);
+int BuffEnQA(struct chbuff *pBuff, int iSize, unsigned char **ppWrite,
+			 int *piTransferID);
+void BuffEnQA_End(struct chbuff *pBuff, int iTransferID,
+				  int iSize /* optional */);
+
 int BuffDeQ(struct chbuff *pBuff, int iSize, unsigned char **ppRead);
-int BuffDeQA(struct chbuff *pBuff,
-	     int iSize,
-	     unsigned char **ppRead,
-	     int *piTransferID);
-void BuffDeQA_End(struct chbuff *pBuff, int iTransferID, int iSize /*optional */);
+int BuffDeQA(struct chbuff *pBuff, int iSize, unsigned char **ppRead,
+			 int *piTransferID);
+void BuffDeQA_End(struct chbuff *pBuff, int iTransferID,
+				  int iSize /* optional */);
 
-/* internal functions:
-*/
-int AsyncEnQRegstr(struct chbuff *pBuff, int iSize);
-int AsyncDeQRegstr(struct chbuff *pBuff, int iSize);
-void AsyncEnQFinished(struct chbuff *pBuff, int iTransferID);
-void AsyncDeQFinished(struct chbuff *pBuff, int iTransferID);
-
-int CalcAvailData(struct chbuff *pBuff, int *piDataAvailCont, int *piDataAvailAWA);
-int CalcFreeSpace(struct chbuff *pBuff, int *piFreeSpaceCont, int *piFreeSpaceAWA);
-
-int BuffFull(struct chbuff *pBuff);
-int BuffEmpty(struct chbuff *pBuff);
-
-void ChannelCheck4Intrusion(struct chbuff *pChBuff, unsigned char *pBegin, int iSize);
+void ChannelCheck4Intrusion(struct chbuff *pChBuff,
+							unsigned char *pBegin, int iSize);
 
 #ifdef __cplusplus
 } /* extern "C" */
