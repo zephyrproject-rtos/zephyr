@@ -120,6 +120,8 @@ Macros to abstract compiler capabilities (common to all toolchains).
   #define ALWAYS_INLINE inline __attribute__((always_inline))
 #endif
 
+#define _STRINGIFY(x) #x
+
 #ifdef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
 extern void     _Unaligned32Write(unsigned int *ptr, unsigned int val);
 extern unsigned _Unaligned32Read(unsigned int *ptr);

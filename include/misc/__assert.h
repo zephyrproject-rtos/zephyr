@@ -88,8 +88,6 @@ provided to assist the user in diagnosing the problem; its use is discouraged.
 #endif
 #endif
 
-#define __STRINGIFY(x) #x
-
 #ifdef __ASSERT_ON
 #if (__ASSERT_ON < 0) || (__ASSERT_ON > 2)
 #error "Invalid __ASSERT() level: must be between 0 and 2"
@@ -101,7 +99,7 @@ provided to assist the user in diagnosing the problem; its use is discouraged.
 	do {                                                       \
 		if (!(test)) {                                     \
 			printk("ASSERTION FAIL [%s] @ %s:%d:\n\t", \
-			       __STRINGIFY(test),                  \
+			       _STRINGIFY(test),                  \
 			       __FILE__,                           \
 			       __LINE__);                          \
 			printk(fmt);                               \

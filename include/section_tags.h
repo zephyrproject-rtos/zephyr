@@ -34,12 +34,11 @@
 #define _section_tags__h_
 
 #if !defined(_ASMLANGUAGE)
-#define __section_stringify(x)  #x
 
 #define __section(seg, hash, line)					\
-	__attribute__((section("." __section_stringify(seg)		\
-				"." __section_stringify(hash)		\
-				"." __section_stringify(line))))
+	__attribute__((section("." _STRINGIFY(seg)		\
+				"." _STRINGIFY(hash)				\
+				"." _STRINGIFY(line))))
 
 #define __noinit     __section(NOINIT,    _FILE_PATH_HASH, __COUNTER__)
 
