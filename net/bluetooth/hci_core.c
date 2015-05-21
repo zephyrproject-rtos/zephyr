@@ -264,11 +264,15 @@ static void hci_acl(struct bt_buf *buf)
 static void hci_disconn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
-	uint16_t handle = bt_acl_handle(sys_le16_to_cpu(evt->handle));
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
 	BT_DBG("status %u handle %u reason %u\n", evt->status, handle,
 	       evt->reason);
+
+	if (evt->status) {
+		return;
+	}
 
 	conn = bt_conn_lookup(handle);
 	if (!conn) {
@@ -414,8 +418,12 @@ static void le_conn_complete(struct bt_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	BT_DBG("status %u handle %u role %u peer_type %u\n", evt->status,
-	       handle, evt->role, evt->peer_addr_type);
+	BT_DBG("status %u handle %u role %u %s (%u)\n", evt->status, handle,
+	       evt->role, bt_bdaddr_str(evt->peer_addr), evt->peer_addr_type);
+
+	if (evt->status) {
+		return;
+	}
 
 	conn = bt_conn_add(&dev, handle);
 	if (!conn) {
