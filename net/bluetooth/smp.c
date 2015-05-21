@@ -199,6 +199,24 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	return le_encrypt(k, enc_data, enc_data);
 }
 
+static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
+		  const uint8_t r2[16], uint8_t out[16])
+{
+	/* The most significant 64-bits of r1 are discarded to generate
+	 * r1' and the most significant 64-bits of r2 are discarded to
+	 * generate r2'.
+	 * r1' is concatenated with r2' to generate r' which is used as
+	 * the 128-bit input parameter plaintextData to security function e:
+	 *
+	 *    r' = r1' || r2'
+	 */
+	memcpy(out, r2, 8);
+	memcpy(out + 8, r1, 8);
+
+	/* s1(k, r1 , r2) = e(k, r') */
+	return le_encrypt(k, out, out);
+}
+
 struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 {
 	struct bt_smp_hdr *hdr;
@@ -352,7 +370,7 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	struct bt_conn_smp *smp = &conn->smp;
 	uint8_t init_addr_type, resp_addr_type;
 	uint8_t *init_addr, *resp_addr;
-	uint8_t cfm[16];
+	uint8_t cfm[16], stk[16];
 	int err;
 
 	BT_DBG("\n");
@@ -381,6 +399,13 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
+	err = smp_s1(smp->tk, smp->prnd, smp->rrnd, stk);
+	if (err) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	BT_DBG("generated STK %s\n", h(stk, 16));
+
 	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
 				    sizeof(*rsp));
 	if (!rsp_buf) {
@@ -391,8 +416,6 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	memcpy(rsp->val, smp->prnd, sizeof(rsp->val));
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
-
-	/*smp_s1(smp->tk, smp->prnd, smp->rrnd, stk);*/
 
 	return 0;
 }
