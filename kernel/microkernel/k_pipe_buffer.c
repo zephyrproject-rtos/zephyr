@@ -1,4 +1,4 @@
-/* ch_buff.c */
+/* k_pipe_buffer.c */
 
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.
@@ -37,7 +37,7 @@
 */
 
 #include <microkernel/k_types.h>
-#include <ch_buff.h>
+#include <k_pipe_buffer.h>
 #include <string.h>
 #include <toolchain.h>
 #include <sections.h>

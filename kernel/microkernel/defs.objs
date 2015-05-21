@@ -39,7 +39,6 @@ ukernel_INCLUDE_DIR = $(strip \
 
 ukernel_PATH = $(strip \
 	. \
-	channel \
 )
 
 ukernel_ABS_PATH = $(addprefix ${ukernel_BASE},${ukernel_PATH})

@@ -1,4 +1,4 @@
-/* kchan.h */
+/* k_pipe_util.h */
 
 /*
  * Copyright (c) 1997-2012, 2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef KCHAN_H
-#define KCHAN_H
+#ifndef _K_PIPE_UTIL_H
+#define _K_PIPE_UTIL_H
 
 /* high-level behavior of the channel service */
 
@@ -90,5 +90,5 @@ int /*BOOL */ ChReqSizeLeft(struct k_chproc *pChProc);
 
 TIME_TYPE ChxxxGetTimeType(K_ARGS_ARGS *pChxxx);
 void ChxxxSetTimeType(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType);
-/*********************************************************************/
-#endif
+
+#endif /* _K_PIPE_UTIL_H */

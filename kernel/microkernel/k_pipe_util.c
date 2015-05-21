@@ -1,4 +1,4 @@
-/* ch_addit.c */
+/* k_pipe_util.c */
 
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.
@@ -31,7 +31,7 @@
  */
 
 #include <minik.h>
-#include <kchan.h>
+#include <k_pipe_util.h>
 #include <string_s.h>
 #include <toolchain.h>
 #include <sections.h>

@@ -31,8 +31,8 @@
  */
 
 #include <minik.h>
-#include <ch_buff.h>
-#include <kchan.h>
+#include <k_pipe_buffer.h>
+#include <k_pipe_util.h>
 
 /*******************************************************************************
 *

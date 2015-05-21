@@ -1,4 +1,4 @@
-/* ch_buff.h */
+/* k_pipe_buffer.h */
 
 /*
  * Copyright (c) 1997-2010, 2014-2015 Wind River Systems, Inc.
@@ -30,9 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CH_BUFF_H
-#define CH_BUFF_H
-/**************************************/
+#ifndef _K_PIPE_BUFFER_H
+#define _K_PIPE_BUFFER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,5 +108,4 @@ void ChannelCheck4Intrusion(struct chbuff *pChBuff, unsigned char *pBegin, int i
 } /* extern "C" */
 #endif
 
-/*****************************************/
-#endif
+#endif /* _K_PIPE_BUFFER_H */

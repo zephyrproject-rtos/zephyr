@@ -31,11 +31,11 @@
  */
 
 #include <minik.h>
-#include <kchan.h>
+#include <k_pipe_buffer.h>
+#include <k_pipe_util.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
-#include <ch_buff.h>
 
 #define FORCE_XFER_ON_STALL
 
