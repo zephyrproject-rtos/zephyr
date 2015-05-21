@@ -63,13 +63,10 @@ extern void K_ChRecvRpl(struct k_args *ReqProc);
 extern void K_ChRecvAck(struct k_args *ReqOrig);
 extern void K_ChMovedAck(struct k_args *pEOXfer);
 
-/* these are not real K_ functions: */
-extern void K_ChProcWO(struct pipe_struct *pPipe, struct k_args *pWriter);
-extern void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pReader);
-extern void K_ChProcWR(struct pipe_struct *pPipe, struct k_args *pWriter, struct k_args *pReader);
-extern void K_ChProc(struct pipe_struct *pPipe, struct k_args *pWriter, struct k_args *pReader);
-
 /* internal functions: */
+
+extern void K_ChProc(struct pipe_struct *pPipe,
+					 struct k_args *pWriter, struct k_args *pReader);
 
 extern void mycopypacket(struct k_args **out, struct k_args *in);
 
@@ -78,22 +75,6 @@ int CalcAvailWriterData(struct k_args *pWriterList);
 
 void DeListWaiter(struct k_args *pReqProc);
 void myfreetimer(struct k_timer **ppTimer);
-
-void setup_movedata(struct k_args *A,
-		    struct pipe_struct *pPipe,
-		    XFER_TYPE XferType,
-		    struct k_args *pWriter,
-		    struct k_args *pReader,
-		    void *destination,
-		    void *source,
-		    uint32_t size,
-		    int XferID);
-int CalcChanProcPrio(int iChanDefaultPrio, int iWriterPrio, int iReaderPrio);
-void SetChanProcPrio(struct k_args *pMvdReq,
-		     struct k_args *pContSend,
-		     struct k_args *pContRecv,
-		     struct k_args *pWriter,
-		     struct k_args *pReader);
 
 K_PIPE_OPTION ChxxxGetChOpt(K_ARGS_ARGS *pChxxx);
 void ChxxxSetChOpt(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option);
