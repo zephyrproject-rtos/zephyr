@@ -1,4 +1,4 @@
-/* K_ChGReq.c */
+/* command processing for pipe get operation */
 
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.
@@ -35,6 +35,13 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
+
+/*******************************************************************************
+*
+* K_ChRecvReq - process request command for a pipe get operation
+*
+* RETURNS: N/A
+*/
 
 void K_ChRecvReq(struct k_args *RequestOrig)
 {
@@ -182,4 +189,96 @@ void K_ChRecvReq(struct k_args *RequestOrig)
 		}
 		return;
 	}
+}
+
+/*******************************************************************************
+*
+* K_ChRecvTmo - process timeout command for a pipe get operation
+*
+* RETURNS: N/A
+*/
+
+void K_ChRecvTmo(struct k_args *ReqProc)
+{
+	__ASSERT_NO_MSG(NULL != ReqProc->Time.timer);
+
+	myfreetimer(&(ReqProc->Time.timer));
+	ChReqSetStatus(&(ReqProc->Args.ChProc), TERM_TMO);
+
+	DeListWaiter(ReqProc);
+	if (0 == ReqProc->Args.ChProc.iNbrPendXfers) {
+		K_ChRecvRpl(ReqProc);
+	}
+}
+
+/*******************************************************************************
+*
+* K_ChRecvRpl - process reply command for a pipe get operation
+*
+* RETURNS: N/A
+*/
+
+void K_ChRecvRpl(struct k_args *ReqProc)
+{
+	__ASSERT_NO_MSG(
+		(0 == ReqProc->Args.ChProc.iNbrPendXfers) /*  no pending Xfers */
+	    && (NULL == ReqProc->Time.timer) /*  no pending timer */
+	    && (NULL == ReqProc->Head)); /*  not in list */
+
+	/* orig packet must be sent back, not ReqProc */
+
+	struct k_args *ReqOrig = ReqProc->Ctxt.args;
+	CHREQ_STATUS ChReqStatus;
+	ReqOrig->Comm = CHDEQ_ACK;
+
+	/* determine return value */
+
+	ChReqStatus = ChReqGetStatus(&(ReqProc->Args.ChProc));
+	if (TERM_TMO == ChReqStatus) {
+		ReqOrig->Time.rcode = RC_TIME;
+	} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {
+		K_PIPE_OPTION Option = ChxxxGetChOpt(&(ReqProc->Args));
+
+		if (likely(0 == ChReqSizeLeft(&(ReqProc->Args.ChProc)))) {
+			/* All data has been transferred */
+			ReqOrig->Time.rcode = RC_OK;
+		} else if (ChReqSizeXferred(&(ReqProc->Args.ChProc))) {
+			/* Some but not all data has been transferred */
+			ReqOrig->Time.rcode = (Option == _ALL_N) ?
+								  RC_INCOMPLETE : RC_OK;
+		} else {
+			/* No data has been transferred */
+			ReqOrig->Time.rcode = (Option == _0_TO_N) ? RC_OK : RC_FAIL;
+		}
+	} else {
+		/* unknown (invalid) status */
+		__ASSERT_NO_MSG(1 == 0); /* should not come here */
+	}
+
+	ReqOrig->Args.ChAck.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
+	SENDARGS(ReqOrig);
+
+	FREEARGS(ReqProc);
+}
+
+/*******************************************************************************
+*
+* K_ChRecvAck - process acknowledgement command for a pipe get operation
+*
+* RETURNS: N/A
+*/
+
+void K_ChRecvAck(struct k_args *Request)
+{
+	struct k_args *LocalReq;
+
+	LocalReq = Request->Ctxt.args;
+	LocalReq->Time.rcode = Request->Time.rcode;
+	LocalReq->Args.ChAck = Request->Args.ChAck;
+
+	/* Reschedule the sender task */
+
+	reset_state_bit(LocalReq->Ctxt.proc, TF_RECV | TF_RECVDATA);
+
+	FREEARGS(Request);
 }

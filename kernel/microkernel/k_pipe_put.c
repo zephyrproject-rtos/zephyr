@@ -1,4 +1,4 @@
-/* K_ChPReq.c */
+/* command processing for pipe put operation */
 
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.
@@ -36,6 +36,13 @@
 #include <sections.h>
 #include <misc/__assert.h>
 
+
+/*******************************************************************************
+*
+* K_ChSendReq - process request  command for a pipe put operation
+*
+* RETURNS: N/A
+*/
 
 void K_ChSendReq(struct k_args *RequestOrig)
 {
@@ -200,4 +207,121 @@ void K_ChSendReq(struct k_args *RequestOrig)
 		}
 		return;
 	}
+}
+
+/*******************************************************************************
+*
+* K_ChSendTmo - perform timeout command for a pipe put operation
+*
+* RETURNS: N/A
+*/
+
+void K_ChSendTmo(struct k_args *ReqProc)
+{
+	__ASSERT_NO_MSG(NULL != ReqProc->Time.timer);
+
+	myfreetimer(&(ReqProc->Time.timer));
+	ChReqSetStatus(&(ReqProc->Args.ChProc), TERM_TMO);
+
+	DeListWaiter(ReqProc);
+	if (0 == ReqProc->Args.ChProc.iNbrPendXfers) {
+		K_ChSendRpl(ReqProc);
+	}
+}
+
+/*******************************************************************************
+*
+* K_ChSendRpl - process reply command for a pipe put operation
+*
+* RETURNS: N/A
+*/
+
+void K_ChSendRpl(struct k_args *ReqProc)
+{
+	__ASSERT_NO_MSG(
+		0 == ReqProc->Args.ChProc.iNbrPendXfers /*  no pending Xfers */
+	    && NULL == ReqProc->Time.timer /*  no pending timer */
+	    && NULL == ReqProc->Head); /*  not in list */
+
+	/* orig packet must be sent back, not ReqProc */
+
+	struct k_args *ReqOrig = ReqProc->Ctxt.args;
+	CHREQ_STATUS ChReqStatus;
+
+	ReqOrig->Comm = CHENQ_ACK;
+
+	/* determine return value:
+	 */
+	ChReqStatus = ChReqGetStatus(&(ReqProc->Args.ChProc));
+	if (unlikely(TERM_TMO == ChReqStatus)) {
+		ReqOrig->Time.rcode = RC_TIME;
+	} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {
+		K_PIPE_OPTION Option = ChxxxGetChOpt(&(ReqProc->Args));
+
+		if (likely(0 == ChReqSizeLeft(&(ReqProc->Args.ChProc)))) {
+			/* All data has been transferred */
+			ReqOrig->Time.rcode = RC_OK;
+		} else if (ChReqSizeXferred(&(ReqProc->Args.ChProc))) {
+			/* Some but not all data has been transferred */
+			ReqOrig->Time.rcode = (Option == _ALL_N) ? RC_INCOMPLETE : RC_OK;
+		} else {
+			/* No data has been transferred */
+			ReqOrig->Time.rcode = (Option == _0_TO_N) ? RC_OK : RC_FAIL;
+		}
+	} else {
+		/* unknown (invalid) status */
+		__ASSERT_NO_MSG(1 == 0); /* should not come here */
+	}
+	if (_ASYNCREQ != ChxxxGetReqType(&(ReqOrig->Args))) {
+		ReqOrig->Args.ChAck.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
+	}
+
+	SENDARGS(ReqOrig);
+
+	FREEARGS(ReqProc);
+}
+
+/*******************************************************************************
+*
+* K_ChSendAck - process acknowledgement command for a pipe put operation
+*
+* RETURNS: N/A
+*/
+
+void K_ChSendAck(struct k_args *Request)
+{
+	if (_ASYNCREQ == ChxxxGetReqType(&(Request->Args))) {
+		struct k_chack *pChAck = (struct k_chack *)&(Request->Args.ChAck);
+		struct k_args A;
+		struct k_block *blockptr;
+
+		/* invoke command to release block */
+		blockptr = &(pChAck->ReqType.Async.block);
+		A.Comm = REL_BLOCK;
+		A.Args.p1.poolid = blockptr->poolid;
+		A.Args.p1.req_size = blockptr->req_size;
+		A.Args.p1.rep_poolptr = blockptr->address_in_pool;
+		A.Args.p1.rep_dataptr = blockptr->pointer_to_data;
+		_k_mem_pool_block_release(&A); /* will return immediately */
+
+		if ((ksem_t)NULL != pChAck->ReqType.Async.sema) {
+			/* invoke command to signal sema */
+			struct k_args A;
+
+			A.Comm = SIGNALS;
+			A.Args.s1.sema = pChAck->ReqType.Async.sema;
+			_k_sem_signal(&A); /* will return immediately */
+		}
+	} else {
+		/* Reschedule the sender task */
+		struct k_args *LocalReq;
+
+		LocalReq = Request->Ctxt.args;
+		LocalReq->Time.rcode = Request->Time.rcode;
+		LocalReq->Args.ChAck = Request->Args.ChAck;
+
+		reset_state_bit(LocalReq->Ctxt.proc, TF_SEND | TF_SENDDATA);
+	}
+
+	FREEARGS(Request);
 }
