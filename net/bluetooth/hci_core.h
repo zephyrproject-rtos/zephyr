@@ -78,6 +78,17 @@ struct bt_dev {
 	struct bt_driver	*drv;
 };
 
+struct bt_keys {
+	uint8_t			bdaddr[6];
+	uint8_t			bdaddr_type;
+
+	uint8_t			slave_ltk[16];
+};
+
+struct bt_keys *bt_keys_create(uint8_t bdaddr[6], uint8_t bdaddr_type);
+struct bt_keys *bt_keys_find(uint8_t bdaddr[6], uint8_t bdaddr_type);
+void bt_keys_clear(struct bt_keys *keys);
+
 struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,

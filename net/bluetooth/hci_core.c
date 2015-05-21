@@ -35,6 +35,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <misc/util.h>
 #include <misc/byteorder.h>
 
 #include <bluetooth/hci.h>
@@ -61,10 +62,14 @@
 #define CMD_STACK_SIZE	256
 #endif
 
+static const uint8_t BDADDR_ANY[6] = { 0, 0, 0, 0, 0 };
+
 static char rx_fiber_stack[RX_STACK_SIZE];
 static char cmd_fiber_stack[CMD_STACK_SIZE];
 
 static struct bt_dev dev;
+
+static struct bt_keys key_list[CONFIG_BLUETOOTH_MAX_PAIRED];
 
 const char *bt_bdaddr_str(const uint8_t bda[6])
 {
@@ -74,6 +79,61 @@ const char *bt_bdaddr_str(const uint8_t bda[6])
 		bda[5], bda[4], bda[3], bda[2], bda[1], bda[0]);
 
 	return bdaddr_str;
+}
+
+struct bt_keys *bt_keys_create(uint8_t bdaddr[6], uint8_t bdaddr_type)
+{
+	struct bt_keys *keys;
+	int i;
+
+	BT_DBG("%s (%u)\n", bt_bdaddr_str(bdaddr), bdaddr_type);
+
+	keys = bt_keys_find(bdaddr, bdaddr_type);
+	if (keys) {
+		return keys;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(key_list); i++) {
+		keys = &key_list[i];
+
+		if (!memcmp(keys->bdaddr, BDADDR_ANY, 6)) {
+			memcpy(keys->bdaddr, bdaddr, 6);
+			keys->bdaddr_type = bdaddr_type;
+			BT_DBG("created keys %p\n", keys);
+			return keys;
+		}
+	}
+
+	BT_DBG("no match\n");
+
+	return NULL;
+}
+
+struct bt_keys *bt_keys_find(uint8_t bdaddr[6], uint8_t bdaddr_type)
+{
+	int i;
+
+	BT_DBG("%s (%u)\n", bt_bdaddr_str(bdaddr), bdaddr_type);
+
+	for (i = 0; i < ARRAY_SIZE(key_list); i++) {
+		struct bt_keys *keys = &key_list[i];
+
+		if (!memcmp(keys->bdaddr, bdaddr, 6) &&
+		    keys->bdaddr_type == bdaddr_type) {
+			BT_DBG("found keys %p\n", keys);
+			return keys;
+		}
+	}
+
+	BT_DBG("no match\n");
+
+	return NULL;
+}
+
+void bt_keys_clear(struct bt_keys *keys)
+{
+	BT_DBG("keys %p\n", keys);
+	memset(keys, 0, sizeof(*keys));
 }
 
 struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
