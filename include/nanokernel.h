@@ -214,44 +214,30 @@ extern int atomic_cas(atomic_t *target,
 			 atomic_val_t newValue);
 #define ATOMIC_INIT(i) {(i)}
 
-/* auto-initialization */
-
-#define NANO_CONSTRUCTOR(lvl) FUNC_CONSTRUCT(lvl)
-
-#define NANO_INIT_PRI_SYS_FIRST 225
-#define NANO_INIT_PRI_SYS_NORMAL 250
-#define NANO_INIT_PRI_SYS_LAST 275
-
-#define NANO_INIT_PRI_DRV_FIRST 325
-#define NANO_INIT_PRI_DRV_NORMAL 350
-#define NANO_INIT_PRI_DRV_LAST 375
-
-#define NANO_INIT_PRI_USR_FIRST 425
-#define NANO_INIT_PRI_USR_NORMAL 450
-#define NANO_INIT_PRI_USR_LAST 475
-
-/* To define an init function, write the function as:
- * NANO_INIT_DRV_NORMAL(myDrv) {<implementation>}
- * and it will be automatically invoked when the system initializes.
+/*
+ * Auto-initialization
  *
- * Always use _NORMAL priority init functions, unless you cant.
- * _FIRST priorities can be used to initialize ahead of the _NORMAL.
- * Likewise, _LAST priorities can be used to initialize afterwards.
- * _SYS priorities are normally for the kernel itself.
- * _DRV priorities are for device drivers.
- * _USR priorities are for utilities and libraries.
+ * The SYS_PREKERNEL_INIT() macro is used to indicate that the specified
+ * routine be executed before the kernel initializes.  All such routines
+ * are issued in order of highest priority level to lowest priority level.
+ * Values are 000 (highest priority) to 999 (lowest priority).  If all
+ * three (3) digits are not supplied, unexpected results may occur, as
+ * the linker would interpret priority 19 as a lower priority than 2.  To
+ * prevent that scenario, the proper priorities to specify would be 019
+ * and 002 respectively.
+ *
+ * Example:
+ *    void my_library_init(void)
+ *    {
+ *        ...
+ *    }
+ *
+ * SYS_PREKERNEL_INIT(my_library_init, 500);
+ *
  */
-#define NANO_INIT_SYS_FIRST NANO_CONSTRUCTOR(NANO_INIT_PRI_SYS_FIRST)
-#define NANO_INIT_SYS_NORMAL NANO_CONSTRUCTOR(NANO_INIT_PRI_SYS_NORMAL)
-#define NANO_INIT_SYS_LAST NANO_CONSTRUCTOR(NANO_INIT_PRI_SYS_LAST)
 
-#define NANO_INIT_DRV_FIRST NANO_CONSTRUCTOR(NANO_INIT_PRI_DRV_FIRST)
-#define NANO_INIT_DRV_NORMAL NANO_CONSTRUCTOR(NANO_INIT_PRI_DRV_NORMAL)
-#define NANO_INIT_DRV_LAST NANO_CONSTRUCTOR(NANO_INIT_PRI_DRV_LAST)
-
-#define NANO_INIT_USR_FIRST NANO_CONSTRUCTOR(NANO_INIT_PRI_USR_FIRST)
-#define NANO_INIT_USR_NORMAL NANO_CONSTRUCTOR(NANO_INIT_PRI_USR_NORMAL)
-#define NANO_INIT_USR_LAST NANO_CONSTRUCTOR(NANO_INIT_PRI_USR_LAST)
+#define SYS_PREKERNEL_INIT(name, level) \
+			void (*__ctor_##name)(void) __prekernel_init_level(level) = name
 
 extern uint32_t kernel_version_get(void);
 

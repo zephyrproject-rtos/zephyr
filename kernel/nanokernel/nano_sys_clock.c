@@ -61,15 +61,12 @@ uint32_t _sys_idle_elapsed_ticks = 1;
 *
 */
 
-NANO_INIT_SYS_NORMAL void nano_time_init(void)
+void nano_time_init(void)
 {
 	timer_driver(0); /* note: priority parameter is unused */
 }
 
-#ifdef VXMICRO_ARCH_arm
-void (*__ctor_nano_time_init)(void) __attribute__((section(".ctors.250"))) =
-	nano_time_init;
-#endif
+SYS_PREKERNEL_INIT(nano_time_init, 250);
 
 /*******************************************************************************
 *
