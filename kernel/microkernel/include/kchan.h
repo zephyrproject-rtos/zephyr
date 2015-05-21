@@ -33,12 +33,14 @@
 #ifndef KCHAN_H
 #define KCHAN_H
 
+/* high-level behavior of the channel service */
+
+#define CANCEL_TIMERS
+
 /***********************************/
 /*	TARGET channels functionality: */
 /***********************************/
 
-#include "ch_cfg.h" /* defines the high-level behavior of the channel service \
-		       */
 typedef uint32_t REQ_TYPE;
 #define _ALLREQ ((REQ_TYPE)0x0000FF00)
 #define _SYNCREQ ((REQ_TYPE)0x00000100)

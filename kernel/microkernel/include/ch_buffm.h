@@ -38,8 +38,6 @@
 extern "C" {
 #endif
 
-/*#include "ch_cfg.h"*/
-
 int MarkerAddLast(struct marker_list *pMarkerList,
 		  unsigned char *pointer,
 		  int iSize,

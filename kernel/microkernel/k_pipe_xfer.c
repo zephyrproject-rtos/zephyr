@@ -37,6 +37,11 @@
 #include <misc/__assert.h>
 #include <ch_buff.h>
 
+#define PRIO_MIN 62 /* lowest priority */
+#define CHANPRIO_DEFAULT PRIO_MIN
+
+#define FORCE_XFER_ON_STALL
+
 #define _X_TO_N		(_0_TO_N | _1_TO_N)
 
 /*
