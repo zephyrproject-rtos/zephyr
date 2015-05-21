@@ -92,8 +92,6 @@ void BuffDeQA_End(struct chbuff *pBuff, int iTransferID, int iSize /*optional */
 
 /* internal functions:
 */
-void WriteMarkersClear(struct chbuff *pBuff);
-void ReadMarkersClear(struct chbuff *pBuff);
 int AsyncEnQRegstr(struct chbuff *pBuff, int iSize);
 int AsyncDeQRegstr(struct chbuff *pBuff, int iSize);
 void AsyncEnQFinished(struct chbuff *pBuff, int iTransferID);
@@ -101,13 +99,6 @@ void AsyncDeQFinished(struct chbuff *pBuff, int iTransferID);
 
 int CalcAvailData(struct chbuff *pBuff, int *piDataAvailCont, int *piDataAvailAWA);
 int CalcFreeSpace(struct chbuff *pBuff, int *piFreeSpaceCont, int *piFreeSpaceAWA);
-
-void WriteMarkersClear(struct chbuff *pBuff);
-void ReadMarkersClear(struct chbuff *pBuff);
-int ScanMarkers(struct marker_list *pMarkerList,
-		int *piSizeBWA,
-		int *pisizeAWA,
-		int *piNbrPendingXfers);
 
 int BuffFull(struct chbuff *pBuff);
 int BuffEmpty(struct chbuff *pBuff);

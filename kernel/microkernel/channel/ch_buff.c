@@ -196,6 +196,90 @@ static void MarkersClear(struct marker_list *pMarkerList)
 	pMarkerList->iAWAMarker = -1;
 }
 
+/********************************************************************************/
+
+/* note on setting/clearing markers/guards:
+
+  If there is at least one marker, there is a guard and equals one of the
+  markers; if there are no markers (*), there is no guard.
+  Consequently, if a marker is add when there were none, the guard will equal
+  it. If additional markers are add, the guard will not change.
+  However, if a marker is deleted:
+    if it equals the guard a new guard must be selected (**)
+    if not, guard doesn't change
+
+  (*) we need to housekeep how much markers there are or we can inspect the
+  guard
+  (**) for this, the complete markers table needs to be investigated
+*/
+
+/***************************************/
+
+/* This function will see if one or more 'areas' in the buffer
+   can be made available (either for writing xor reading).
+   Note: such a series of areas starts from the beginning.
+*/
+static int ScanMarkers(struct marker_list *pMarkerList,
+					   int *piSizeBWA, int *piSizeAWA, int *piNbrPendingXfers)
+{
+	struct marker *pM;
+	BOOL bMarkersAreNowAWA;
+	int index;
+
+	index = pMarkerList->iFirstMarker;
+
+	__ASSERT_NO_MSG(-1 != index);
+
+	bMarkersAreNowAWA = FALSE;
+	do {
+		int index_next;
+
+		__ASSERT_NO_MSG(index == pMarkerList->iFirstMarker);
+
+		if (index == pMarkerList->iAWAMarker) {
+			bMarkersAreNowAWA = TRUE; /* from now on, everything is AWA */
+		}
+
+		pM = &(pMarkerList->aMarkers[index]);
+
+		if (pM->bXferBusy == TRUE) {
+			break;
+		}
+
+		if (!bMarkersAreNowAWA) {
+			*piSizeBWA += pM->size;
+		} else {
+			*piSizeAWA += pM->size;
+		}
+
+		index_next = pM->Next;
+		/* pMarkerList->iFirstMarker will be updated */
+		MarkerDelete(pMarkerList, index);
+		/* adjust *piNbrPendingXfers */
+		if (piNbrPendingXfers) {
+			__ASSERT_NO_MSG(0 <= *piNbrPendingXfers);
+			(*piNbrPendingXfers)--;
+		}
+		index = index_next;
+	} while (-1 != index);
+
+	__ASSERT_NO_MSG(index == pMarkerList->iFirstMarker);
+
+	if (bMarkersAreNowAWA) {
+		pMarkerList->iAWAMarker = pMarkerList->iFirstMarker;
+	}
+
+#ifdef STORE_NBR_MARKERS
+	if (0 == pMarkerList->iNbrMarkers) {
+		__ASSERT_NO_MSG(-1 == pMarkerList->iFirstMarker);
+		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
+		__ASSERT_NO_MSG(-1 == pMarkerList->iAWAMarker);
+	}
+#endif
+
+	return pMarkerList->iFirstMarker;
+}
+
 /*******************/
 /* General
 ********************/
@@ -230,8 +314,8 @@ void BuffReset(struct chbuff *pChBuff)
 	pChBuff->iAvailDataCont = 0;
 	pChBuff->iAvailDataAWA = 0;
 	pChBuff->iNbrPendingWrites = 0;
-	WriteMarkersClear(pChBuff);
-	ReadMarkersClear(pChBuff);
+	MarkersClear(&(pChBuff->WriteMarkers));
+	MarkersClear(&(pChBuff->ReadMarkers));
 }
 
 void BuffGetFreeSpaceTotal(struct chbuff *pChBuff, int *piFreeSpaceTotal)
@@ -501,100 +585,6 @@ void AsyncDeQFinished(struct chbuff *pChBuff, int iTransferID)
 			pChBuff->pWriteGuard = NULL;
 		}
 	}
-}
-
-void WriteMarkersClear(struct chbuff *pChBuff)
-{
-	MarkersClear(&(pChBuff->WriteMarkers));
-}
-
-void ReadMarkersClear(struct chbuff *pChBuff)
-{
-	MarkersClear(&(pChBuff->ReadMarkers));
-}
-
-/********************************************************************************/
-
-/* note on setting/clearing markers/guards:
-
-  If there is at least one marker, there is a guard and equals one of the
-  markers; if there are no markers (*), there is no guard.
-  Consequently, if a marker is add when there were none, the guard will equal
-  it. If additional markers are add, the guard will not change.
-  However, if a marker is deleted:
-    if it equals the guard a new guard must be selected (**)
-    if not, guard doesn't change
-
-  (*) we need to housekeep how much markers there are or we can inspect the
-  guard
-  (**) for this, the complete markers table needs to be investigated
-*/
-
-/***************************************/
-
-/* This function will see if one or more 'areas' in the buffer
-   can be made available (either for writing xor reading).
-   Note: such a series of areas starts from the beginning.
-*/
-int ScanMarkers(struct marker_list *pMarkerList, int *piSizeBWA,
-				int *piSizeAWA, int *piNbrPendingXfers)
-{
-	struct marker *pM;
-	BOOL bMarkersAreNowAWA;
-	int index;
-
-	index = pMarkerList->iFirstMarker;
-
-	__ASSERT_NO_MSG(-1 != index);
-
-	bMarkersAreNowAWA = FALSE;
-	do {
-		int index_next;
-
-		__ASSERT_NO_MSG(index == pMarkerList->iFirstMarker);
-
-		if (index == pMarkerList->iAWAMarker) {
-			bMarkersAreNowAWA = TRUE; /* from now on, everything is AWA */
-		}
-
-		pM = &(pMarkerList->aMarkers[index]);
-
-		if (pM->bXferBusy == TRUE) {
-			break;
-		}
-
-		if (!bMarkersAreNowAWA) {
-			*piSizeBWA += pM->size;
-		} else {
-			*piSizeAWA += pM->size;
-		}
-
-		index_next = pM->Next;
-		/* pMarkerList->iFirstMarker will be updated */
-		MarkerDelete(pMarkerList, index);
-		/* adjust *piNbrPendingXfers */
-		if (piNbrPendingXfers) {
-			__ASSERT_NO_MSG(0 <= *piNbrPendingXfers);
-			(*piNbrPendingXfers)--;
-		}
-		index = index_next;
-	} while (-1 != index);
-
-	__ASSERT_NO_MSG(index == pMarkerList->iFirstMarker);
-
-	if (bMarkersAreNowAWA) {
-		pMarkerList->iAWAMarker = pMarkerList->iFirstMarker;
-	}
-
-#ifdef STORE_NBR_MARKERS
-	if (0 == pMarkerList->iNbrMarkers) {
-		__ASSERT_NO_MSG(-1 == pMarkerList->iFirstMarker);
-		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
-		__ASSERT_NO_MSG(-1 == pMarkerList->iAWAMarker);
-	}
-#endif
-
-	return pMarkerList->iFirstMarker;
 }
 
 int CalcAvailData(struct chbuff *pChBuff, int *piAvailDataCont,
