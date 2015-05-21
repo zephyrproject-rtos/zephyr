@@ -41,6 +41,16 @@ config	BLUETOOTH
 	help
 	  This option enables Bluetooth Low Energy support.
 
+config	BLUETOOTH_MAX_CONN
+	int
+	prompt "Maximum number of simultaneous connections"
+	depends on BLUETOOTH
+	default 1
+	range 1 16
+	help
+	  Maximum number of simultaneous Bluetooth connections
+	  supported. The minimum (and default) number is 1.
+
 config	BLUETOOTH_DEBUG
 	bool
 	prompt "Bluetooth LE debug support"

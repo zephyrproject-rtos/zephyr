@@ -49,8 +49,7 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define MAX_CONN_COUNT 1
-static struct bt_conn conns[MAX_CONN_COUNT];
+static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 
 static void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
@@ -279,7 +278,7 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle)
 	struct bt_conn *conn = NULL;
 	int i;
 
-	for (i = 0; i < MAX_CONN_COUNT; i++) {
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
 		if (!conns[i].handle) {
 			conn = &conns[i];
 			break;
@@ -332,7 +331,7 @@ struct bt_conn *bt_conn_lookup(uint16_t handle)
 {
 	int i;
 
-	for (i = 0; i < MAX_CONN_COUNT; i++) {
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
 		if (conns[i].state != BT_CONN_CONNECTED) {
 			continue;
 		}
