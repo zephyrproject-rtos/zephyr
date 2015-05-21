@@ -68,6 +68,18 @@ struct bt_l2cap_conn_param_rsp {
 	uint16_t result;
 } PACK_STRUCT;
 
+struct bt_l2cap_chan {
+	uint16_t		cid;
+
+	void			(*recv)(struct bt_conn *conn,
+					struct bt_buf *buf);
+
+	struct bt_l2cap_chan	*_next;
+};
+
+/* Register a fixed L2CAP channel for L2CAP */
+void bt_l2cap_chan_register(struct bt_l2cap_chan *chan);
+
 /* Prepare an L2CAP PDU to be sent over a connection */
 struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn);
 
@@ -79,3 +91,6 @@ void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf);
 
 /* Perform connection parameter update request */
 void bt_l2cap_update_conn_param(struct bt_conn *conn);
+
+/* Initialize L2CAP and supported channels */
+void bt_l2cap_init(void);

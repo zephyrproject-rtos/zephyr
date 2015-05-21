@@ -43,6 +43,7 @@
 
 #include "hci_core.h"
 #include "conn.h"
+#include "l2cap.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #undef BT_DBG
@@ -945,6 +946,8 @@ int bt_init(void)
 		BT_ERR("HCI driver open failed (%d)\n", err);
 		return err;
 	}
+
+	bt_l2cap_init();
 
 	return hci_init();
 }

@@ -90,4 +90,4 @@ struct bt_smp_pairing_fail {
 	uint8_t  reason;
 } PACK_STRUCT;
 
-void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf);
+void bt_smp_init();

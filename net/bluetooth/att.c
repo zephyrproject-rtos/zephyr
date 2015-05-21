@@ -505,7 +505,7 @@ static void att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 	/* TODO: Perform write once database is defined */
 }
 
-void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
+static void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_att_hdr *hdr = (void *)buf->data;
 
@@ -582,4 +582,14 @@ struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	hdr->code = op;
 
 	return buf;
+}
+
+void bt_att_init(void)
+{
+	static struct bt_l2cap_chan chan = {
+		.cid		= BT_L2CAP_CID_ATT,
+		.recv		= bt_att_recv,
+	};
+
+	bt_l2cap_chan_register(&chan);
 }

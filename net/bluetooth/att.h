@@ -286,5 +286,5 @@ struct bt_att_signed_write_cmd {
 	uint8_t  value[0];
 } PACK_STRUCT;
 
-void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf);
+void bt_att_init();
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);

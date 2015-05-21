@@ -55,6 +55,8 @@
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
 
+static struct bt_l2cap_chan *channels;
+
 static uint8_t get_ident(struct bt_conn *conn)
 {
 	conn->l2cap.ident++;
@@ -65,6 +67,14 @@ static uint8_t get_ident(struct bt_conn *conn)
 	}
 
 	return conn->l2cap.ident;
+}
+
+void bt_l2cap_chan_register(struct bt_l2cap_chan *chan)
+{
+	BT_DBG("CID 0x%04x\n", chan->cid);
+
+	chan->_next = channels;
+	channels = chan;
 }
 
 struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn)
@@ -164,6 +174,7 @@ drop:
 void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_l2cap_hdr *hdr = (void *)buf->data;
+	struct bt_l2cap_chan *chan;
 	uint16_t cid;
 
 	if (buf->len < sizeof(*hdr)) {
@@ -177,21 +188,19 @@ void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("Packet for CID %u len %u\n", cid, buf->len);
 
-	switch (cid) {
-	case BT_L2CAP_CID_LE_SIG:
-		le_sig(conn, buf);
-		break;
-	case BT_L2CAP_CID_ATT:
-		bt_att_recv(conn, buf);
-		break;
-	case BT_L2CAP_CID_SMP:
-		bt_smp_recv(conn, buf);
-		break;
-	default:
+	for (chan = channels; chan; chan = chan->_next) {
+		if (chan->cid == cid) {
+			break;
+		}
+	}
+
+	if (!chan) {
 		BT_WARN("Ignoring data for unknown CID 0x%04x\n", cid);
 		bt_buf_put(buf);
-		break;
+		return;
 	}
+
+	chan->recv(conn, buf);
 }
 
 void bt_l2cap_update_conn_param(struct bt_conn *conn)
@@ -223,4 +232,17 @@ void bt_l2cap_update_conn_param(struct bt_conn *conn)
 	req->timeout = sys_cpu_to_le16(LE_CONN_TIMEOUT);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+}
+
+void bt_l2cap_init(void)
+{
+	static struct bt_l2cap_chan chan = {
+		.cid	= BT_L2CAP_CID_LE_SIG,
+		.recv	= le_sig,
+	};
+
+	bt_att_init();
+	bt_smp_init();
+
+	bt_l2cap_chan_register(&chan);
 }

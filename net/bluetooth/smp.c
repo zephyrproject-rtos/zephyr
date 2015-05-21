@@ -429,7 +429,7 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
+static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_hdr *hdr = (void *)buf->data;
 	int err;
@@ -465,4 +465,14 @@ void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 
 done:
 	bt_buf_put(buf);
+}
+
+void bt_smp_init(void)
+{
+	static struct bt_l2cap_chan chan = {
+		.cid		= BT_L2CAP_CID_SMP,
+		.recv		= bt_smp_recv,
+	};
+
+	bt_l2cap_chan_register(&chan);
 }
