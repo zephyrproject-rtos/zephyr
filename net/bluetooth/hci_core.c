@@ -293,6 +293,28 @@ static void hci_disconn_complete(struct bt_buf *buf)
 	}
 }
 
+static void hci_encrypt_change(struct bt_buf *buf)
+{
+	struct bt_hci_evt_encrypt_change *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
+
+	BT_DBG("status %u handle %u encrypt 0x%02x\n", evt->status, handle,
+	       evt->encrypt);
+
+	if (evt->status) {
+		return;
+	}
+
+	conn = bt_conn_lookup(handle);
+	if (!conn) {
+		BT_ERR("Unable to look up conn with handle %u\n", handle);
+		return;
+	}
+
+	conn->encrypt = evt->encrypt;
+}
+
 static void hci_reset_complete(struct bt_buf *buf)
 {
 	uint8_t status = buf->data[0];
@@ -543,6 +565,9 @@ static void hci_event(struct bt_buf *buf)
 	switch (hdr->evt) {
 	case BT_HCI_EVT_DISCONN_COMPLETE:
 		hci_disconn_complete(buf);
+		break;
+	case BT_HCI_EVT_ENCRYPT_CHANGE:
+		hci_encrypt_change(buf);
 		break;
 	case BT_HCI_EVT_CMD_COMPLETE:
 		hci_cmd_complete(buf);

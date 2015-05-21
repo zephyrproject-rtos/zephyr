@@ -80,6 +80,8 @@ struct bt_conn {
 	uint8_t			dst[6];
 	uint8_t			dst_type;
 
+	uint8_t			encrypt;
+
 	uint16_t		rx_len;
 	struct bt_buf		*rx;
 
