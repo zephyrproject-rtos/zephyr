@@ -37,9 +37,6 @@
 #include <misc/__assert.h>
 #include <ch_buff.h>
 
-#define PRIO_MIN 62 /* lowest priority */
-#define CHANPRIO_DEFAULT PRIO_MIN
-
 #define FORCE_XFER_ON_STALL
 
 #define _X_TO_N		(_0_TO_N | _1_TO_N)
@@ -209,53 +206,30 @@ void K_ChMovedAck(struct k_args *pEOXfer)
 
 /*******************************************************************************
 *
-* CalcChanProcPrio -
+* move_priority_compute - determines priority for data move operation
 *
-* RETURNS: priority
-*/
-
-static int CalcChanProcPrio(int iChanDefaultPrio,
-							int iWriterPrio, int iReaderPrio)
-{
-	int iMaxPrio;
-
-	iMaxPrio = min(iChanDefaultPrio, iWriterPrio);
-	iMaxPrio = min(iMaxPrio, iReaderPrio);
-	return iMaxPrio;
-}
-
-/*******************************************************************************
+* Uses priority level of most important participant.
 *
-* SetChanProcPrio -
+* Note: It's OK to have one or two participants, but there can't be none!
 *
 * RETURNS: N/A
 */
 
-static void SetChanProcPrio(struct k_args *pMvdReq,
-							struct k_args *pContSend, struct k_args *pContRecv,
-							struct k_args *pWriter, struct k_args *pReader)
+static kpriority_t move_priority_compute(struct k_args *pWriter,
+										 struct k_args *pReader)
 {
-	int iProcPrio;
-	int iWriterPrio;
-	int iReaderPrio;
+	kpriority_t move_priority;
 
-	if (pWriter != NULL) {
-		iWriterPrio = pWriter->Prio;
+	if (!pWriter) {
+		move_priority = pReader->Prio;
 	} else {
-		iWriterPrio = PRIO_MIN;
+		move_priority = pWriter->Prio;
+		if (pReader && (pReader->Prio < move_priority)) {
+			move_priority = pReader->Prio;
+		}
 	}
 
-	if (pReader != NULL) {
-		iReaderPrio = pReader->Prio;
-	} else {
-		iReaderPrio = PRIO_MIN;
-	}
-
-	iProcPrio = CalcChanProcPrio(CHANPRIO_DEFAULT, iWriterPrio, iReaderPrio);
-
-	pMvdReq->Prio = iProcPrio;
-	pContSend->Prio = iProcPrio;
-	pContRecv->Prio = iProcPrio;
+	return move_priority;
 }
 
 /*******************************************************************************
@@ -303,7 +277,9 @@ static void setup_movedata(struct k_args *A,
 	pContRecv->Args.ChMovedAck.ID = XferID;
 	pContRecv->Args.ChMovedAck.iSize = size;
 
-	SetChanProcPrio(A, pContSend, pContRecv, pWriter, pReader);
+	A->Prio = move_priority_compute(pWriter, pReader);
+	pContSend->Prio = A->Prio;
+	pContRecv->Prio = A->Prio;
 
 	switch (XferType) {
 	case XFER_W2B: /* Writer to Buffer */
