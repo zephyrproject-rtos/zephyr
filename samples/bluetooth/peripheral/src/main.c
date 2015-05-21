@@ -89,6 +89,65 @@ static int read_appearance(const struct bt_gatt_attr *attr, void *buf,
 				 sizeof(appearance));
 }
 
+static struct bt_uuid hrs_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_HRS,
+};
+
+static struct bt_uuid hrmc_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_HR_MEASUREMENT,
+};
+
+static struct bt_gatt_chrc hrmc_chrc = {
+	.properties = BT_GATT_CHRC_NOTIFY,
+	.value_handle = 0x0008,
+	.uuid = &hrmc_uuid,
+};
+
+static struct bt_uuid bslc_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_HR_BODY_SENSOR,
+};
+
+static struct bt_gatt_chrc bslc_chrc = {
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x000b,
+	.uuid = &bslc_uuid,
+};
+
+static struct bt_uuid hrcpc_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_HR_CONTROL_POINT,
+};
+
+static struct bt_gatt_chrc hrcpc_chrc = {
+	.properties = BT_GATT_CHRC_WRITE,
+	.value_handle = 0x000d,
+	.uuid = &hrcpc_uuid,
+};
+
+static struct bt_uuid ccc_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GATT_CCC,
+};
+
+static int read_ccc(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
+		    uint16_t offset)
+{
+	uint16_t value = 0x0000;
+
+	return bt_gatt_attr_read(attr, buf, len, offset, &value, sizeof(value));
+}
+
+static int read_blsc(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
+			   uint16_t offset)
+{
+	uint8_t value = 0x01;
+
+	return bt_gatt_attr_read(attr, buf, len, offset, &value, sizeof(value));
+}
+
 static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
@@ -97,6 +156,17 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_CHARACTERISTIC(0x0004, &appearance_chrc),
 	BT_GATT_DESCRIPTOR(0x0005, &appeareance_uuid, read_appearance, NULL,
 			   NULL),
+	/* Heart Rate Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(0x0006, &hrs_uuid),
+	BT_GATT_CHARACTERISTIC(0x0007, &hrmc_chrc),
+	BT_GATT_DESCRIPTOR(0x0008, &hrmc_uuid, NULL, NULL, NULL),
+	/* TODO: Add write support CCC */
+	BT_GATT_DESCRIPTOR(0x0009, &ccc_uuid, read_ccc, NULL, NULL),
+	BT_GATT_CHARACTERISTIC(0x000a, &bslc_chrc),
+	BT_GATT_DESCRIPTOR(0x000b, &bslc_uuid, read_blsc, NULL, NULL),
+	BT_GATT_CHARACTERISTIC(0x000c, &hrcpc_chrc),
+	/* TODO: Add write permission and callback */
+	BT_GATT_DESCRIPTOR(0x000d, &hrcpc_uuid, NULL, NULL, NULL),
 };
 
 static const struct bt_eir ad[] = {
@@ -104,6 +174,11 @@ static const struct bt_eir ad[] = {
 		.len = 2,
 		.type = BT_EIR_FLAGS,
 		.data = { BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR },
+	},
+	{
+		.len = 3,
+		.type = BT_EIR_UUID16_ALL,
+		.data = { 0x0d, 0x18 },
 	},
 	{ }
 };

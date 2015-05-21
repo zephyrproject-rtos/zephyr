@@ -34,6 +34,7 @@
 
 #define BT_UUID_GAP				0x1800
 #define BT_UUID_GATT				0x1801
+#define BT_UUID_HRS				0x180d
 #define BT_UUID_GATT_PRIMARY			0x2800
 #define BT_UUID_GATT_SECONDARY			0x2801
 #define BT_UUID_GATT_INCLUDE			0x2802
@@ -43,6 +44,9 @@
 #define BT_UUID_GATT_CCC			0x2902
 #define BT_UUID_GAP_DEVICE_NAME			0x2a00
 #define BT_UUID_GAP_APPEARANCE			0x2a01
+#define BT_UUID_HR_MEASUREMENT			0x2a37
+#define BT_UUID_HR_BODY_SENSOR			0x2a38
+#define BT_UUID_HR_CONTROL_POINT		0x2a39
 
 /* Bluetooth UUID types */
 enum bt_uuid_type {
