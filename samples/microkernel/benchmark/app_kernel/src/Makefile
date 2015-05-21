@@ -1,5 +1,5 @@
 EXTRA_CFLAGS += -I$(CURDIR)/misc/generated/nodes
-EXTRA_CFLAGS += -I$(CURDIR)/../latency_measure/src
+EXTRA_CFLAGS += -I$(CURDIR)/../../latency_measure/src
 
 obj-y := fifo_b.o mailbox_b.o master.o mempool_b.o \
 	nop_b.o  pipe_r.o sema_r.o event_b.o \

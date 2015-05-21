@@ -352,7 +352,7 @@ build_project() {
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	if [ x$2 == x ] ; then
-		elf_name=`${LS} ${PRJ_TYPE[$1]}.elf`
+		elf_name=`${LS} outdir/${PRJ_TYPE[$1]}.elf`
 		[ x${elf_name} != "x" ] || \
 			fail_exit $? $FUNCNAME $LINENO "couldn't build ${proj_name}"
 	fi
@@ -408,12 +408,12 @@ qemu_project() {
 	# get QEMU's pid
 	# (wait for QEMU process to be spawned by examining list of tasks
 	# associated with this script's terminal, then grab the pid)
-	while ! [ -f qemu.pid ]
+	while ! [ -f outdir/qemu.pid ]
 	do
 		${SLEEP} 1
 	done
 
-        qemu_pid=$(<qemu.pid)
+        qemu_pid=$(<outdir/qemu.pid)
 
 	# assume execution will fail
 	let RESULT=1

@@ -28,13 +28,13 @@ define filechk_prj.vpf
 		i=$$(($$i+1));\
 		done; \
 	fi; \
-	cat $(VPFILE); \
+	cat $(PROJECT_BASE)/$(VPFILE); \
 	cat $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf;)
 endef
 
 #Specific source code generation for Viper
 misc/generated/nodes/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf \
-				$(VPFILE) \
+				$(PROJECT_BASE)/$(VPFILE) \
 				include/config/auto.conf FORCE
 	$(call filechk,prj.vpf)
 
