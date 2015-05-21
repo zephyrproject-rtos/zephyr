@@ -67,7 +67,7 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 	struct bt_l2cap_hdr *hdr;
 	uint16_t len;
 
-	BT_DBG("handle %u len %u flags %x\n", conn->handle, buf->len, flags);
+	BT_DBG("handle %u len %u flags %02x\n", conn->handle, buf->len, flags);
 
 	/* Check packet boundary flags */
 	switch (flags) {
@@ -130,7 +130,7 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 
 		break;
 	default:
-		BT_ERR("Unexpected ACL flags (%u)\n", flags);
+		BT_ERR("Unexpected ACL flags (0x%02x)\n", flags);
 		bt_conn_reset_rx_state(conn);
 		bt_buf_put(buf);
 		return;

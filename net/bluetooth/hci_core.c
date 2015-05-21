@@ -309,7 +309,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct bt_buf *buf)
 	}
 
 	if (dev.sent_cmd->hci.opcode != opcode) {
-		BT_ERR("Unexpected completion of opcode %x\n", opcode);
+		BT_ERR("Unexpected completion of opcode 0x%04x\n", opcode);
 		return;
 	}
 
@@ -549,7 +549,7 @@ static void hci_event(struct bt_buf *buf)
 		hci_le_meta_event(buf);
 		break;
 	default:
-		BT_WARN("Unhandled event %u\n", hdr->evt);
+		BT_WARN("Unhandled event 0x%02x\n", hdr->evt);
 		break;
 
 	}

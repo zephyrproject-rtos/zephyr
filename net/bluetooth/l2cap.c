@@ -134,7 +134,7 @@ static void le_sig(struct bt_conn *conn, struct bt_buf *buf)
 	len = sys_le16_to_cpu(hdr->len);
 	bt_buf_pull(buf, sizeof(*hdr));
 
-	BT_DBG("LE signaling code %u ident %u len %u\n", hdr->code,
+	BT_DBG("LE signaling code 0x%02x ident %u len %u\n", hdr->code,
 	       hdr->ident, len);
 
 	if (buf->len != len) {
@@ -152,7 +152,7 @@ static void le_sig(struct bt_conn *conn, struct bt_buf *buf)
 		le_conn_param_rsp(conn, buf);
 		break;
 	default:
-		BT_WARN("Unknown L2CAP PDU code %u\n", hdr->code);
+		BT_WARN("Unknown L2CAP PDU code 0x%02x\n", hdr->code);
 		rej_not_understood(conn, hdr->ident);
 		break;
 	}
@@ -188,7 +188,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf)
 		bt_smp_recv(conn, buf);
 		break;
 	default:
-		BT_WARN("Ignoring data for unknown CID %u\n", cid);
+		BT_WARN("Ignoring data for unknown CID 0x%04x\n", cid);
 		bt_buf_put(buf);
 		break;
 	}

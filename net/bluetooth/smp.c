@@ -439,7 +439,7 @@ void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 		goto done;
 	}
 
-	BT_DBG("Received SMP code %u len %u\n", hdr->code, buf->len);
+	BT_DBG("Received SMP code 0x%02x len %u\n", hdr->code, buf->len);
 
 	bt_buf_pull(buf, sizeof(*hdr));
 
@@ -454,7 +454,7 @@ void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 		err = smp_pairing_random(conn, buf);
 		break;
 	default:
-		BT_WARN("Unhandled SMP code %u\n", hdr->code);
+		BT_WARN("Unhandled SMP code 0x%02x\n", hdr->code);
 		err = BT_SMP_ERR_CMD_NOTSUPP;
 		break;
 	}
