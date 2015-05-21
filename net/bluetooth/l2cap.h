@@ -71,6 +71,10 @@ struct bt_l2cap_conn_param_rsp {
 struct bt_l2cap_chan {
 	uint16_t		cid;
 
+	void			(*connected)(struct bt_conn *conn);
+	void			(*disconnected)(struct bt_conn *conn);
+	void			(*encrypt_change)(struct bt_conn *conn);
+
 	void			(*recv)(struct bt_conn *conn,
 					struct bt_buf *buf);
 
@@ -79,6 +83,15 @@ struct bt_l2cap_chan {
 
 /* Register a fixed L2CAP channel for L2CAP */
 void bt_l2cap_chan_register(struct bt_l2cap_chan *chan);
+
+/* Notify L2CAP channels of a new connection */
+void bt_l2cap_connected(struct bt_conn *conn);
+
+/* Notify L2CAP channels of a disconnect event */
+void bt_l2cap_disconnected(struct bt_conn *conn);
+
+/* Notify L2CAP channels of a change in encryption state */
+void bt_l2cap_encrypt_change(struct bt_conn *conn);
 
 /* Prepare an L2CAP PDU to be sent over a connection */
 struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn);

@@ -281,6 +281,8 @@ static void hci_disconn_complete(struct bt_buf *buf)
 		return;
 	}
 
+	bt_l2cap_disconnected(conn);
+
 	bt_conn_del(conn);
 
 	if (dev.adv_enable) {
@@ -314,6 +316,8 @@ static void hci_encrypt_change(struct bt_buf *buf)
 	}
 
 	conn->encrypt = evt->encrypt;
+
+	bt_l2cap_encrypt_change(conn);
 }
 
 static void hci_reset_complete(struct bt_buf *buf)
@@ -457,6 +461,8 @@ static void le_conn_complete(struct bt_buf *buf)
 	memcpy(conn->dst, evt->peer_addr, sizeof(evt->peer_addr));
 	conn->dst_type = evt->peer_addr_type;
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
+
+	bt_l2cap_connected(conn);
 }
 
 static void le_adv_report(struct bt_buf *buf)

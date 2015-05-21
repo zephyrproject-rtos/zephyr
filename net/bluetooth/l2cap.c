@@ -77,6 +77,39 @@ void bt_l2cap_chan_register(struct bt_l2cap_chan *chan)
 	channels = chan;
 }
 
+void bt_l2cap_connected(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan;
+
+	for (chan = channels; chan; chan = chan->_next) {
+		if (chan->connected) {
+			chan->connected(conn);
+		}
+	}
+}
+
+void bt_l2cap_disconnected(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan;
+
+	for (chan = channels; chan; chan = chan->_next) {
+		if (chan->disconnected) {
+			chan->disconnected(conn);
+		}
+	}
+}
+
+void bt_l2cap_encrypt_change(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan;
+
+	for (chan = channels; chan; chan = chan->_next) {
+		if (chan->encrypt_change) {
+			chan->encrypt_change(conn);
+		}
+	}
+}
+
 struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn)
 {
 	size_t head_reserve = sizeof(struct bt_l2cap_hdr) +
