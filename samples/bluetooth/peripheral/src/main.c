@@ -148,6 +148,31 @@ static int read_blsc(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
 	return bt_gatt_attr_read(attr, buf, len, offset, &value, sizeof(value));
 }
 
+/* Battery Service Variables */
+static struct bt_uuid bas_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_BAS,
+};
+
+static struct bt_uuid blvl_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_BATTERY_LEVEL,
+};
+
+static struct bt_gatt_chrc blvl_chrc = {
+	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+	.value_handle = 0x0010,
+	.uuid = &blvl_uuid,
+};
+
+static int read_blvl(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
+		     uint16_t offset)
+{
+	uint8_t value = 100;
+
+	return bt_gatt_attr_read(attr, buf, len, offset, &value, sizeof(value));
+}
+
 static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
@@ -167,6 +192,12 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_CHARACTERISTIC(0x000c, &hrcpc_chrc),
 	/* TODO: Add write permission and callback */
 	BT_GATT_DESCRIPTOR(0x000d, &hrcpc_uuid, NULL, NULL, NULL),
+	/* Battery Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(0x000e, &bas_uuid),
+	BT_GATT_CHARACTERISTIC(0x000f, &blvl_chrc),
+	BT_GATT_DESCRIPTOR(0x0010, &blvl_uuid, read_blvl, NULL, NULL),
+	/* TODO: Add write support CCC */
+	BT_GATT_DESCRIPTOR(0x0011, &ccc_uuid, read_ccc, NULL, NULL),
 };
 
 static const struct bt_eir ad[] = {
@@ -179,6 +210,11 @@ static const struct bt_eir ad[] = {
 		.len = 3,
 		.type = BT_EIR_UUID16_ALL,
 		.data = { 0x0d, 0x18 },
+	},
+	{
+		.len = 3,
+		.type = BT_EIR_UUID16_ALL,
+		.data = { 0x0f, 0x18 },
 	},
 	{ }
 };
