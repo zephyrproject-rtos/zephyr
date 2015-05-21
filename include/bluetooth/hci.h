@@ -244,6 +244,17 @@ struct bt_hci_rp_le_rand {
 	uint8_t  rand[8];
 } PACK_STRUCT;
 
+#define BT_HCI_OP_LE_LTK_REQ_REPLY		BT_OP(BT_OGF_LE, 0x001a)
+struct bt_hci_cp_le_ltk_req_reply {
+	uint16_t handle;
+	uint8_t  ltk[16];
+} PACK_STRUCT;
+
+#define BT_HCI_OP_LE_LTK_REQ_NEG_REPLY		BT_OP(BT_OGF_LE, 0x001b)
+struct bt_hci_cp_le_ltk_req_neg_reply {
+	uint16_t handle;
+} PACK_STRUCT;
+
 /* Event definitions */
 
 #define BT_HCI_EVT_DISCONN_COMPLETE		0x05
@@ -300,6 +311,13 @@ struct bt_hci_ev_le_advertising_info {
 	uint8_t  bdaddr[6];
 	uint8_t  length;
 	uint8_t  data[0];
+} PACK_STRUCT;
+
+#define BT_HCI_EVT_LE_LTK_REQUEST		0x05
+struct bt_hci_evt_le_ltk_request {
+	uint16_t handle;
+	uint64_t rand;
+	uint16_t ediv;
 } PACK_STRUCT;
 
 #endif /* __BT_HCI_H */

@@ -452,6 +452,56 @@ static void le_adv_report(struct bt_buf *buf)
 	}
 }
 
+static void le_ltk_request(struct bt_buf *buf)
+{
+	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
+	struct bt_conn *conn;
+	struct bt_keys *keys;
+	uint16_t handle;
+
+	handle = sys_le16_to_cpu(evt->handle);
+
+	BT_DBG("handle %u\n", handle);
+
+	conn = bt_conn_lookup(handle);
+	if (!conn) {
+		BT_ERR("Unable to lookup conn for handle %u\n", handle);
+		return;
+	}
+
+	keys = bt_keys_find(conn->dst, conn->dst_type);
+	if (keys) {
+		struct bt_hci_cp_le_ltk_req_reply *cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
+					sizeof(*cp));
+		if (!buf) {
+			BT_ERR("Out of command buffers\n");
+			return;
+		}
+
+		cp = bt_buf_add(buf, sizeof(*cp));
+		cp->handle = evt->handle;
+		memcpy(cp->ltk, keys->slave_ltk, 16);
+
+		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
+	} else {
+		struct bt_hci_cp_le_ltk_req_neg_reply *cp;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY,
+					sizeof(*cp));
+		if (!buf) {
+			BT_ERR("Out of command buffers\n");
+			return;
+		}
+
+		cp = bt_buf_add(buf, sizeof(*cp));
+		cp->handle = evt->handle;
+
+		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, buf);
+	}
+}
+
 static void hci_le_meta_event(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_meta_event *evt = (void *)buf->data;
@@ -464,6 +514,9 @@ static void hci_le_meta_event(struct bt_buf *buf)
 		break;
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 		le_adv_report(buf);
+		break;
+	case BT_HCI_EVT_LE_LTK_REQUEST:
+		le_ltk_request(buf);
 		break;
 	default:
 		BT_DBG("Unhandled LE event %x\n", evt->subevent);
