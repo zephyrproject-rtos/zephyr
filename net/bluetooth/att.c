@@ -51,6 +51,14 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+/* ATT channel specific context */
+struct bt_att {
+	/* The connection this context is associated with */
+	struct bt_conn		*conn;
+};
+
+static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
+
 static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 			 uint8_t err)
 {
@@ -584,11 +592,45 @@ struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	return buf;
 }
 
+static void bt_att_connected(struct bt_conn *conn)
+{
+	int i;
+
+	BT_DBG("conn %p handle %u\n", conn, conn->handle);
+
+	for (i = 0; i < ARRAY_SIZE(bt_att_pool); i++) {
+		struct bt_att *att = &bt_att_pool[i];
+
+		if (!att->conn) {
+			att->conn = conn;
+			conn->att = att;
+			return;
+		}
+	}
+
+	BT_ERR("No available ATT context for conn %p\n", conn);
+}
+
+static void bt_att_disconnected(struct bt_conn *conn)
+{
+	struct bt_att *att = conn->att;
+
+	if (!att)
+		return;
+
+	BT_DBG("conn %p handle %u\n", conn, conn->handle);
+
+	conn->att = NULL;
+	memset(att, 0, sizeof(*att));
+}
+
 void bt_att_init(void)
 {
 	static struct bt_l2cap_chan chan = {
 		.cid		= BT_L2CAP_CID_ATT,
 		.recv		= bt_att_recv,
+		.connected	= bt_att_connected,
+		.disconnected	= bt_att_disconnected,
 	};
 
 	bt_l2cap_chan_register(&chan);

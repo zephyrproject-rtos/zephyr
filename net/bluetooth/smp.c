@@ -47,8 +47,33 @@
 #include "l2cap.h"
 #include "smp.h"
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_SMP)
+/* SMP channel specific context */
+struct bt_smp {
+	/* The connection this context is associated with */
+	struct bt_conn		*conn;
 
+	/* Pairing Request PDU */
+	uint8_t			preq[7];
+
+	/* Pairing Response PDU */
+	uint8_t			prsp[7];
+
+	/* Pairing Confirm PDU */
+	uint8_t			pcnf[16];
+
+	/* Local random number */
+	uint8_t			prnd[16];
+
+	/* Remote random number */
+	uint8_t			rrnd[16];
+
+	/* Temporary key */
+	uint8_t			tk[16];
+};
+
+static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
+
+#if defined(CONFIG_BLUETOOTH_DEBUG_SMP)
 /* Helper for printk parameters to convert from binary to hex.
  * We declare multiple buffers so the helper can be used multiple times
  * in a single printk call.
@@ -249,7 +274,7 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 }
 
-static int smp_init(struct bt_conn_smp *smp)
+static int smp_init(struct bt_smp *smp)
 {
 	/* Initialize SMP context */
 	memset(smp, 0, sizeof(*smp));
@@ -269,7 +294,7 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_smp_pairing *rsp;
 	struct bt_buf *rsp_buf;
-	struct bt_conn_smp *smp = &conn->smp;
+	struct bt_smp *smp = conn->smp;
 	int ret;
 
 	BT_DBG("\n");
@@ -322,7 +347,7 @@ static int smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_confirm *req = (void *)buf->data;
 	struct bt_smp_pairing_confirm *rsp;
-	struct bt_conn_smp *smp = &conn->smp;
+	struct bt_smp *smp = conn->smp;
 	uint8_t init_addr_type, resp_addr_type;
 	uint8_t *init_addr, *resp_addr;
 	struct bt_buf *rsp_buf;
@@ -367,7 +392,7 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	struct bt_smp_pairing_random *req = (void *)buf->data;
 	struct bt_smp_pairing_random *rsp;
 	struct bt_buf *rsp_buf;
-	struct bt_conn_smp *smp = &conn->smp;
+	struct bt_smp *smp = conn->smp;
 	uint8_t init_addr_type, resp_addr_type;
 	uint8_t *init_addr, *resp_addr;
 	struct bt_keys *keys;
@@ -467,11 +492,45 @@ done:
 	bt_buf_put(buf);
 }
 
+static void bt_smp_connected(struct bt_conn *conn)
+{
+	int i;
+
+	BT_DBG("conn %p handle %u\n", conn, conn->handle);
+
+	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
+		struct bt_smp *smp = &bt_smp_pool[i];
+
+		if (!smp->conn) {
+			smp->conn = conn;
+			conn->smp = smp;
+			return;
+		}
+	}
+
+	BT_ERR("No available SMP context for conn %p\n", conn);
+}
+
+static void bt_smp_disconnected(struct bt_conn *conn)
+{
+	struct bt_smp *smp = conn->smp;
+
+	if (!smp)
+		return;
+
+	BT_DBG("conn %p handle %u\n", conn, conn->handle);
+
+	conn->smp = NULL;
+	memset(smp, 0, sizeof(*smp));
+}
+
 void bt_smp_init(void)
 {
 	static struct bt_l2cap_chan chan = {
 		.cid		= BT_L2CAP_CID_SMP,
 		.recv		= bt_smp_recv,
+		.connected	= bt_smp_connected,
+		.disconnected	= bt_smp_disconnected,
 	};
 
 	bt_l2cap_chan_register(&chan);

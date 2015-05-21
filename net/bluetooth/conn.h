@@ -48,31 +48,6 @@ struct bt_conn_l2cap {
 	uint8_t			ident;
 };
 
-/* ATT channel specific context */
-struct bt_conn_att {
-};
-
-/* SMP channel specific context */
-struct bt_conn_smp {
-	/* Pairing Request PDU */
-	uint8_t			preq[7];
-
-	/* Pairing Response PDU */
-	uint8_t			prsp[7];
-
-	/* Pairing Confirm PDU */
-	uint8_t			pcnf[16];
-
-	/* Local random number */
-	uint8_t			prnd[16];
-
-	/* Remote random number */
-	uint8_t			rrnd[16];
-
-	/* Temporary key */
-	uint8_t			tk[16];
-};
-
 struct bt_conn {
 	struct bt_dev		*dev;
 	uint16_t		handle;
@@ -91,8 +66,8 @@ struct bt_conn {
 
 	/* Fixed channel contexts */
 	struct bt_conn_l2cap	l2cap;
-	struct bt_conn_att	att;
-	struct bt_conn_smp	smp;
+	void			*att;
+	void			*smp;
 
 	uint8_t			le_conn_interval;
 
