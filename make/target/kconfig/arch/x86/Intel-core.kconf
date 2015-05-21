@@ -262,6 +262,14 @@ config PIT
 	help
 	  This option selects legacy i8253 timer as system timer.
 
+config PCI
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+	help
+	  This options enables support of PCI bus enumeration for device
+	  drivers.
+
 config	EXTRA_SERIAL_PORT
 	bool
 	# omit prompt to signify a "hidden" option

@@ -54,10 +54,15 @@ bsp_drivers_SRC = $(strip \
 	arch/${vARCH}/interrupt_controller/loApicIntr.c \
 	drivers/serial/ns16550.c \
 	drivers/console/uart_console.c \
+)
+
+ifeq (${CONFIG_PCI},y)
+  bsp_drivers_SRC += $(strip \
 	drivers/pci/pci_config.c \
 	drivers/pci/pci_interface.c \
 	drivers/pci/pci.c \
-)
+  )
+endif
 
 ifeq (${CONFIG_MICROKERNEL},y)
   bsp_kernel_SRC += $(strip \
