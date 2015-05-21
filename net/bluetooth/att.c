@@ -157,6 +157,84 @@ static bool range_is_valid(uint16_t start, uint16_t end, uint16_t *err)
 
 	return true;
 }
+struct find_info_data {
+	struct bt_conn *conn;
+	struct bt_buf *buf;
+	struct bt_att_find_info_rsp *rsp;
+	union {
+		struct bt_att_info_16 *info16;
+		struct bt_att_info_128 *info128;
+	};
+};
+
+static uint8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct find_info_data *data = user_data;
+	struct bt_att *att = data->conn->att;
+
+	BT_DBG("handle %u\n", attr->handle);
+
+	/* Initialize rsp at first entry */
+	if (!data->rsp) {
+		data->rsp = bt_buf_add(data->buf, sizeof(*data->rsp));
+		data->rsp->format = (attr->uuid->type == BT_UUID_16) ?
+				    BT_ATT_INFO_16 : BT_ATT_INFO_128;
+	}
+
+	switch (data->rsp->format) {
+	case BT_ATT_INFO_16:
+		if (attr->uuid->type != BT_UUID_16) {
+			return BT_GATT_ITER_STOP;
+		}
+
+		/* Fast foward to next item position */
+		data->info16 = bt_buf_add(data->buf, sizeof(*data->info16));
+		data->info16->handle = sys_cpu_to_le16(attr->handle);
+		data->info16->uuid = sys_cpu_to_le16(attr->uuid->u16);
+
+		return att->mtu - data->buf->len > sizeof(*data->info16) ?
+			BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
+	case BT_ATT_INFO_128:
+		if (attr->uuid->type != BT_UUID_128) {
+			return BT_GATT_ITER_STOP;
+		}
+
+		/* Fast foward to next item position */
+		data->info128 = bt_buf_add(data->buf, sizeof(*data->info128));
+		data->info128->handle = sys_cpu_to_le16(attr->handle);
+		memcpy(data->info128->uuid, attr->uuid->u128,
+		       sizeof(data->info128->uuid));
+
+		return att->mtu - data->buf->len > sizeof(*data->info128) ?
+			BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void att_find_info_rsp(struct bt_conn *conn, uint16_t start_handle,
+			      uint16_t end_handle)
+{
+	struct find_info_data data;
+
+	memset(&data, 0, sizeof(data));
+
+	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_INFO_RSP, 0);
+	if (!data.buf) {
+		return;
+	}
+
+	bt_gatt_foreach_attr(start_handle, end_handle, find_info_cb, &data);
+
+	if (!data.rsp) {
+		bt_buf_put(data.buf);
+		send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, start_handle,
+			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		return;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+}
 
 static void att_find_info_req(struct bt_conn *conn, struct bt_buf *data)
 {
@@ -182,11 +260,7 @@ static void att_find_info_req(struct bt_conn *conn, struct bt_buf *data)
 		return;
 	}
 
-	/* TODO: Generate proper response once a database is defined */
-
-	send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, start_handle,
-		     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
-	return;
+	att_find_info_rsp(conn, start_handle, end_handle);
 }
 
 struct find_type_data {
