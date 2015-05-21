@@ -80,6 +80,8 @@ endif
 	$(Q)yes "" | $(MAKE) -C $(TIMO_BASE) O=$(PROJECT_BASE) \
 	PROJECT=$(PROJECT_BASE) oldconfig
 
+help:
+	$(Q)$(MAKE) -C $(TIMO_BASE) help
 
 PHONY += FORCE clean mrproper
 FORCE:
