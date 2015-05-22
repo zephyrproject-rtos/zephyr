@@ -385,6 +385,8 @@ def kernel_main_c_tasks():
         kernel_main_c_out("char __noinit __stack __%s_stack[%d];\n" %
                           (task[0], task[3]))
 
+    kernel_main_c_out("extern char main_task_stack[CONFIG_MAIN_STACK_SIZE];\n")
+
     # declare task entry points
 
     kernel_main_c_out("\n")
@@ -429,7 +431,8 @@ def kernel_main_c_tasks():
 
     kernel_main_c_out("    {NULL, NULL, %d, 0x00000000, " % (num_prios - 1) +
         "0x00000000, 0x00000000,\n" +
-        "(taskstartfunction)NULL, NULL, 0, (taskabortfunction)NULL}\n")
+        "(taskstartfunction)NULL, main_task_stack, CONFIG_MAIN_STACK_SIZE, " +
+        "(taskabortfunction)NULL}\n")
     kernel_main_c_out("};\n")
 
     # currently scheduled task (idle task)
