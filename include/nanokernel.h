@@ -45,9 +45,6 @@
 extern "C" {
 #endif
 
-typedef int atomic_t;
-typedef atomic_t atomic_val_t;
-
 typedef struct s_CCS *nano_context_id_t;
 
 typedef void (*nano_fiber_entry_t)(int i1, int i2);
@@ -196,24 +193,6 @@ extern int64_t nano_tick_delta(int64_t *reftime);
 extern uint32_t nano_tick_delta_32(int64_t *reftime);
 
 #endif /* CONFIG_NANOKERNEL */
-
-/* atomic operator APIs */
-
-extern atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
-extern atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
-extern atomic_val_t atomic_dec(atomic_t *target);
-extern atomic_val_t atomic_inc(atomic_t *target);
-extern atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
-extern atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
-extern atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
-extern atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
-extern atomic_val_t atomic_clear(atomic_t *target);
-extern atomic_val_t atomic_get(atomic_t *target);
-extern atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
-extern int atomic_cas(atomic_t *target,
-			 atomic_val_t oldValue,
-			 atomic_val_t newValue);
-#define ATOMIC_INIT(i) {(i)}
 
 /*
  * Auto-initialization
