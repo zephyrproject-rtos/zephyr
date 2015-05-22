@@ -292,6 +292,7 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	struct bt_smp_pairing *rsp;
 	struct bt_buf *rsp_buf;
 	struct bt_smp *smp = conn->smp;
+	uint8_t auth;
 	int ret;
 
 	BT_DBG("\n");
@@ -320,7 +321,9 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	/* For JustWorks pairing simplify rsp parameters.
 	 * TODO: needs to be reworked later on
 	 */
-	rsp->auth_req = req->auth_req;
+	auth = (req->auth_req & BT_SMP_AUTH_MASK);
+	auth &= ~(BT_SMP_AUTH_MITM | BT_SMP_AUTH_SC | BT_SMP_AUTH_KEYPRESS);
+	rsp->auth_req = auth;
 	rsp->io_capability = BT_SMP_IO_NO_INPUT_OUTPUT;
 	rsp->oob_flag = BT_SMP_OOB_NOT_PRESENT;
 	rsp->max_key_size = req->max_key_size;
