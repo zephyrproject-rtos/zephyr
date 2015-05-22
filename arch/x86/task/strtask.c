@@ -71,7 +71,7 @@ void _StartTaskArch(
 	 * both. The USE_SSE flag bit will only be set if a context uses SSE
 	 * instructions.
 	 *
-	 * However, callers of nanoFiberStart(), task_fiber_start(), or even
+	 * However, callers of fiber_fiber_start(), task_fiber_start(), or even
 	 * _NewContext() don't need to follow the protocol used by the IA-32
 	 * nanokernel w.r.t. managing the tCCS->flags field.  If a context
 	 * will be utilizing just the x87 FPU capability, then the USE_FP

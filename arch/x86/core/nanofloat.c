@@ -54,7 +54,7 @@ enabled or disabled at run-time:
 	void task_float_disable  (nano_context_id_t ctxId)
 
 The 'options' parameter is used to specify what non-integer capabilities are
-being used.  The same options accepted by nanoFiberStart() are used in the
+being used.  The same options accepted by fiber_fiber_start() are used in the
 aforementioned APIs, namely USE_FP and USE_SSE.
 
 If the VxMicro nanokernel has been built with support for automatic enabling

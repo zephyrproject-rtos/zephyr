@@ -300,7 +300,7 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #define NANO_SOFT_IRQ	((unsigned int) (-1))
 
 #ifdef CONFIG_FP_SHARING
-/* Definitions for the 'options' parameter to the nanoFiberStart() API */
+/* Definitions for the 'options' parameter to the fiber_fiber_start() API */
 
 #define USE_FP		0x10	/* context uses floating point unit */
 #ifdef CONFIG_SSE
@@ -344,7 +344,7 @@ extern void	irq_unlock(int key);
 /*
  * Dynamically enable/disable the capability of a context to share floating
  * point hardware resources.  The same "floating point" options accepted by
- * nanoFiberStart() are accepted by these APIs (i.e. USE_FP and USE_SSE).
+ * fiber_fiber_start() are accepted by these APIs (i.e. USE_FP and USE_SSE).
  */
 
 extern void	fiber_float_enable(nano_context_id_t ctx, unsigned int options);
