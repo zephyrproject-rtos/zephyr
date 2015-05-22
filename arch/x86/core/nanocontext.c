@@ -76,7 +76,7 @@ void _ContextEntryWrapper(_ContextEntry, _ContextArg, _ContextArg, _ContextArg);
 */
 
 static void _NewContextInternal(
-	tCCS * ccs,	  /* pointer to the new task's ccs */
+	tCCS *ccs,	  /* pointer to the new task's ccs */
 	char *pStackMem,    /* pointer to context stack memory */
 	unsigned stackSize, /* size of stack in bytes */
 	int priority,       /* context priority */
