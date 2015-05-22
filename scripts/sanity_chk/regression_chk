@@ -117,7 +117,6 @@ microkernel/test/test_map               <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_pool              <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_mutex             <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_rand32            <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
-microkernel/test/test_secure_string_api <u>  ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_sema              <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_sprintf           <u>  ti_lm3s6965! fsl_frdm_k64f     \n\
 microkernel/test/test_task              <uq> ti_lm3s6965! fsl_frdm_k64f     \n\
@@ -135,7 +134,6 @@ microkernel/test/test_pipe              <uq> minuteia! pentium4! atom quark \n\
 microkernel/test/test_pool              <uq> minuteia! pentium4! atom quark \n\
 microkernel/test/test_mutex             <uq> minuteia! pentium4! atom quark \n\
 microkernel/test/test_rand32            <uq> minuteia! pentium4! atom quark \n\
-microkernel/test/test_secure_string_api <u>  pentium4! minuteia! atom quark \n\
 microkernel/test/test_sema              <uq> pentium4! minuteia! atom quark \n\
 microkernel/test/test_sprintf           <u>  pentium4! minuteia! atom quark \n\
 microkernel/test/test_static_idt        <uq> pentium4! minuteia! atom quark \n\
