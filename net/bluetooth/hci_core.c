@@ -68,6 +68,10 @@ static const uint8_t BDADDR_ANY[6] = { 0, 0, 0, 0, 0 };
 static char rx_fiber_stack[RX_STACK_SIZE];
 static char cmd_fiber_stack[CMD_STACK_SIZE];
 
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+static nano_context_id_t rx_fiber_id;
+#endif
+
 static struct bt_dev dev;
 
 static struct bt_keys key_list[CONFIG_BLUETOOTH_MAX_PAIRED];
@@ -192,6 +196,17 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 {
 	struct nano_sem sync_sem;
 	int err;
+
+	/* This function cannot be called from the rx fiber since it
+	 * relies on the very same fiber in processing the cmd_complete
+	 * event and giving back the blocking semaphore.
+	 */
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+	if (context_self_get() == rx_fiber_id) {
+		BT_ERR("called from invalid context!\n");
+		return -EDEADLK;
+	}
+#endif
 
 	if (!buf) {
 		buf = bt_hci_cmd_create(opcode, 0);
@@ -637,6 +652,11 @@ static void hci_rx_fiber(void)
 	struct bt_buf *buf;
 
 	BT_DBG("started\n");
+
+	/* So we can avoid bt_hci_cmd_send_sync deadlocks */
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+	rx_fiber_id = context_self_get();
+#endif
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait\n");
