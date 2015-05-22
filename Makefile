@@ -970,7 +970,7 @@ PHONY += prepare archprepare prepare0 prepare1 prepare2 prepare3
 # prepare3 is used to check if we are building in a separate output directory,
 # and if so do:
 # 1) Check that make has not been executed in the kernel src $(srctree)
-prepare3: include/config/kernel.release
+prepare3:
 ifneq ($(KBUILD_SRC),)
 	@$(kecho) '  Using $(srctree) as source for kernel'
 	$(Q)if [ -f $(srctree)/.config ]; then \
@@ -981,9 +981,9 @@ ifneq ($(KBUILD_SRC),)
 endif
 
 # prepare2 creates a makefile if using a separate output directory
-prepare2: prepare3 outputmakefile asm-generic
+prepare2: prepare3 outputmakefile
 
-prepare1: prepare2 $(version_h) include/generated/utsrelease.h \
+prepare1: prepare2 $(version_h) \
                    include/config/auto.conf
 	$(cmd_crmodverdir)
 
