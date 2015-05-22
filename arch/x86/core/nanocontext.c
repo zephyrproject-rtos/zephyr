@@ -67,8 +67,7 @@ void _ContextEntryWrapper(_ContextEntry, _ContextArg, _ContextArg, _ContextArg);
 * contexts, kernel task contexts and user mode task contexts.  The 'priority'
 * parameter will be set to -1 for the creation of task context.
 *
-* This function is called by _NewContext() and _NewContextUsr() to initialize
-* task contexts.
+* This function is called by _NewContext() to initialize task contexts.
 *
 * RETURNS: N/A
 *
