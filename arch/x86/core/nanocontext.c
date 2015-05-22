@@ -63,9 +63,9 @@ void _ContextEntryWrapper(_ContextEntry, _ContextArg, _ContextArg, _ContextArg);
 *
 * _NewContextInternal - initialize a new execution context
 *
-* This function is utilized to initialize all execution contexts, both fiber
-* contexts, kernel task contexts and user mode task contexts.  The 'priority'
-* parameter will be set to -1 for the creation of task context.
+* This function is utilized to initialize all execution contexts (both fiber
+* and task).  The 'priority' parameter will be set to -1 for the creation of
+* task context.
 *
 * This function is called by _NewContext() to initialize task contexts.
 *
@@ -108,11 +108,11 @@ static void _NewContextInternal(
 
 
 	/*
-	 * The creation of the initial stack for the task (user or kernel) has
-	 * already been done. Now all that is needed is to set the ESP. However,
-	 * we have been passed the base address of the stack which is past the
-	 * initial stack frame. Therefore some of the calculations done in the
-	 * other routines that initialize the stack frame need to be repeated.
+	 * The creation of the initial stack for the task has already been done.
+	 * Now all that is needed is to set the ESP. However, we have been passed
+	 * the base address of the stack which is past the initial stack frame.
+	 * Therefore some of the calculations done in the other routines that
+	 * initialize the stack frame need to be repeated.
 	 */
 
 	pInitialCtx = (unsigned long *)STACK_ROUND_DOWN(pStackMem + stackSize);
