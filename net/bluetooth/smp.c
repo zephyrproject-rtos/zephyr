@@ -150,33 +150,30 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 	return 0;
 }
 
-static int le_rand(uint8_t rand[16])
+static int le_rand(void *buf, size_t len)
 {
-	struct bt_hci_rp_le_rand *rp;
-	struct bt_buf *rsp;
-	int err;
+	uint8_t *ptr = buf;
 
-	/* First 8 bytes */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
-	if (err) {
-		return err;
+	while (len > 0) {
+		struct bt_hci_rp_le_rand *rp;
+		struct bt_buf *rsp;
+		size_t copy;
+		int err;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+		if (err) {
+			BT_ERR("HCI_LE_Random failed (%d)\n", err);
+			return err;
+		}
+
+		rp = (void *)rsp->data;
+		copy = min(len, sizeof(rp->rand));
+		memcpy(ptr, rp->rand, copy);
+		bt_buf_put(rsp);
+
+		len -= copy;
+		ptr += copy;
 	}
-
-	rp = (void *)rsp->data;
-	memcpy(rand, rp->rand, 8);
-	bt_buf_put(rsp);
-
-	/* Second 8 bytes */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
-	if (err) {
-		return err;
-	}
-
-	rp = (void *)rsp->data;
-	memcpy(rand + 8, rp->rand, 8);
-	bt_buf_put(rsp);
-
-	BT_DBG("rand %s\n", h(rand, 16));
 
 	return 0;
 }
@@ -280,7 +277,7 @@ static int smp_init(struct bt_smp *smp)
 	memset(smp, 0, sizeof(*smp));
 
 	/* Generate local random number */
-	if (le_rand(smp->prnd)) {
+	if (le_rand(smp->prnd, 16)) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
