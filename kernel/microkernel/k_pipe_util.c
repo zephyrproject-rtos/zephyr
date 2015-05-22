@@ -32,7 +32,7 @@
 
 #include <minik.h>
 #include <k_pipe_util.h>
-#include <string_s.h>
+#include <string.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
@@ -60,7 +60,7 @@ void myfreetimer(struct k_timer * *ppTimer)
 void mycopypacket(struct k_args **out, struct k_args *in)
 {
 	GETARGS(*out);
-	k_memcpy_s(*out, sizeof(struct k_args), in, sizeof(struct k_args));
+	k_memcpy(*out, in, sizeof(struct k_args));
 	(*out)->Ctxt.args = in;
 }
 

@@ -32,7 +32,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <string_s.h>
+#include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
 #include <misc/byteorder.h>

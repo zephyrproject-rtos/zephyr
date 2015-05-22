@@ -9,7 +9,6 @@ obj-y = nano_fiber.o nano_lifo.o \
 	nano_context.o nano_init.o nano_sema.o \
 	version.o  ctors.o
 
-obj-$(CONFIG_ENHANCED_SECURITY) += string_s.o
 obj-$(CONFIG_STACK_CANARIES) += compiler_stack_protect.o
 obj-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
 obj-$(CONFIG_PERFORMANCE_METRICS) += nanometrics.o
