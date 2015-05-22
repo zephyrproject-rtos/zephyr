@@ -46,6 +46,7 @@ ifeq ($(CONFIG_NETWORKING_WITH_LOGGING),y)
      obj-y += contiki/uip-log.o
 endif
 
+obj-$(CONFIG_NETWORKING_WITH_LOOPBACK) += net_driver_loopback.o
 
 # workaround for include file location
 CREATE_INCLUDE_LINK_net := $(shell ln -s ${ZEPHYR_BASE}/net/ip/contiki ${ZEPHYR_BASE}/net/ip/contiki/net > /dev/null 2>&1)

@@ -56,3 +56,14 @@ config	NETWORKING_WITH_LOGGING
 	default n
 	help
 	  Enable packet and uIP stack logging
+
+config	NETWORKING_WITH_LOOPBACK
+	bool
+	prompt "Enable loopback driver"
+	depends on NETWORKING
+	default n
+	help
+	  Enable a simple loopback driver that installs
+	  IPv6 loopback addresses into routing table and
+	  neighbor cache. All packets transmitted are
+	  looped back to the receiving fifo/fiber.
