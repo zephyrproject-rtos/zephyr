@@ -92,6 +92,22 @@ int net_register_driver(struct net_driver *drv);
  */
 void net_unregister_driver(struct net_driver *drv);
 
+/*!
+ * @brief Set the MAC/EUI-64 address of the device.
+ *
+ * @details Network device driver should call this function to
+ * tell the used MAC or EUI-64 address to the IP stack.
+ *
+ * @param mac MAC or EUI-64 address
+ * @param len If len == 6, then the first parameter is interpreted
+ * to be the MAC address and the function sets the U/L bits etc.
+ * If the len == 8, then the value is used as is to generate the
+ * link local IPv6 address.
+ *
+ * @return 0 if ok, < 0 in case of error.
+ */
+int net_set_mac(uint8_t *mac, uint8_t len);
+
 void net_context_init(void);
 
 #endif /* __NET_CORE_H */

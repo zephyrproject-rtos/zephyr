@@ -120,6 +120,30 @@ static void init_tx_queue(void)
 		    (nano_fiber_entry_t) net_tx_fiber, 0, 0, 7, 0);
 }
 
+int net_set_mac(uint8_t *mac, uint8_t len)
+{
+	uip_ds6_addr_t *lladdr;
+
+	if ((len > UIP_LLADDR_LEN) || (len != 6 && len != 8)) {
+		NET_ERR("Wrong ll addr len, len %d, max %d\n",
+			len, UIP_LLADDR_LEN);
+		return -EINVAL;
+	}
+
+	linkaddr_set_node_addr((linkaddr_t *)mac);
+	uip_ds6_set_lladdr((uip_lladdr_t *)mac);
+
+	lladdr = uip_ds6_get_link_local(-1);
+
+	NET_DBG("Tentative link-local IPv6 address ");
+	PRINT6ADDR(&lladdr->ipaddr);
+	PRINTF("\n");
+
+	lladdr->state = ADDR_AUTOCONF;
+
+	return 0;
+}
+
 static int network_initialization(void)
 {
 	/* Initialize and start Contiki uIP stack */
