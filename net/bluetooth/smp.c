@@ -69,6 +69,14 @@ struct bt_smp {
 
 	/* Temporary key */
 	uint8_t			tk[16];
+
+	/* Local key distribution */
+	uint8_t			local_dist;
+
+	/* Locally generated LTK */
+	uint8_t			ltk[16];
+	uint64_t		rand;
+	uint16_t		ediv;
 };
 
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -328,7 +336,9 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	rsp->oob_flag = BT_SMP_OOB_NOT_PRESENT;
 	rsp->max_key_size = req->max_key_size;
 	rsp->init_key_dist = 0;
-	rsp->resp_key_dist = 0;
+	rsp->resp_key_dist = (req->resp_key_dist & BT_SMP_DIST_ENC_KEY);
+
+	smp->local_dist = rsp->resp_key_dist;
 
 	memset(smp->tk, 0, sizeof(smp->tk));
 
@@ -443,6 +453,15 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("generated STK %s\n", h(keys->slave_ltk.val, 16));
 
+	/* Generate LTK here since doing it in the encrypt_change
+	 * handler would cause a deadlock for hci_cmd_send_sync.
+	 */
+	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
+		le_rand(smp->ltk, sizeof(smp->ltk));
+		le_rand(&smp->rand, sizeof(smp->rand));
+		le_rand(&smp->ediv, sizeof(smp->ediv));
+	}
+
 	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
 				    sizeof(*rsp));
 	if (!rsp_buf) {
@@ -529,6 +548,64 @@ static void bt_smp_disconnected(struct bt_conn *conn)
 	memset(smp, 0, sizeof(*smp));
 }
 
+static void bt_smp_encrypt_change(struct bt_conn *conn)
+{
+	struct bt_smp *smp = conn->smp;
+	struct bt_keys *keys;
+	struct bt_buf *buf;
+
+	BT_DBG("conn %p handle %u encrypt 0x%02x\n", conn, conn->handle,
+	        conn->encrypt);
+
+	if (!smp || !conn->encrypt) {
+		return;
+	}
+
+	keys = bt_keys_find(conn->dst, conn->dst_type);
+	if (!keys) {
+		BT_ERR("Unable to look up keys for conn %p\n");
+		return;
+	}
+
+	if (!smp->local_dist) {
+		return;
+	}
+
+	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
+		struct bt_smp_encrypt_info *info;
+		struct bt_smp_master_ident *ident;
+
+		memcpy(keys->slave_ltk.val, smp->ltk, 16);
+		keys->slave_ltk.rand = smp->rand;
+		keys->slave_ltk.ediv = smp->ediv;
+
+		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
+					sizeof(*info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Encrypt Info buffer\n");
+			return;
+		}
+
+		info = bt_buf_add(buf, sizeof(*info));
+		memcpy(info->ltk, smp->ltk, sizeof(info->ltk));
+
+		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+
+		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
+					sizeof(*ident));
+		if (!buf) {
+			BT_ERR("Unable to allocate Master Ident buffer\n");
+			return;
+		}
+
+		ident = bt_buf_add(buf, sizeof(*ident));
+		ident->rand = smp->rand;
+		ident->ediv = smp->ediv;
+
+		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+	}
+}
+
 void bt_smp_init(void)
 {
 	static struct bt_l2cap_chan chan = {
@@ -536,6 +613,7 @@ void bt_smp_init(void)
 		.recv		= bt_smp_recv,
 		.connected	= bt_smp_connected,
 		.disconnected	= bt_smp_disconnected,
+		.encrypt_change	= bt_smp_encrypt_change,
 	};
 
 	bt_l2cap_chan_register(&chan);
