@@ -382,7 +382,7 @@ def kernel_main_c_tasks():
 
     kernel_main_c_out("\n")
     for task in task_list:
-        kernel_main_c_out("char __noinit __%s_stack[%d];\n" %
+        kernel_main_c_out("char __noinit __stack __%s_stack[%d];\n" %
                           (task[0], task[3]))
 
     # declare task entry points

@@ -79,7 +79,7 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 
 /* stack space for the background (or idle) task context */
 
-static char __noinit main_task_stack[CONFIG_MAIN_STACK_SIZE];
+static char __noinit __stack main_task_stack[CONFIG_MAIN_STACK_SIZE];
 
 /*
  * storage space for the interrupt stack

@@ -44,7 +44,7 @@
 extern void init_node(void);        /* defined by sysgen */
 extern void init_drivers(void);     /* defined by sysgen */
 
-char __noinit _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];
+char __noinit __stack _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];
 
 struct nano_stack __noinit _k_command_stack;
 
