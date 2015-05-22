@@ -56,6 +56,7 @@
 struct bt_att {
 	/* The connection this context is associated with */
 	struct bt_conn		*conn;
+	uint16_t		mtu;
 };
 
 static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -81,6 +82,7 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 
 static void att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
 {
+	struct bt_att *att = conn->att;
 	struct bt_att_exchange_mtu_req *req;
 	struct bt_att_exchange_mtu_rsp *rsp;
 	struct bt_buf *buf;
@@ -116,7 +118,7 @@ static void att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("Server MTU %u\n", mtu);
 
-	/* TODO: Store the MTU negotiated */
+	att->mtu = mtu;
 
 	rsp = bt_buf_add(buf, sizeof(*rsp));
 	rsp->mtu = sys_cpu_to_le16(mtu);
@@ -605,6 +607,7 @@ static void bt_att_connected(struct bt_conn *conn)
 		if (!att->conn) {
 			att->conn = conn;
 			conn->att = att;
+			att->mtu = BT_ATT_DEFAULT_LE_MTU;
 			return;
 		}
 	}
