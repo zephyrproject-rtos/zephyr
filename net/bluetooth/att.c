@@ -616,8 +616,9 @@ static void bt_att_disconnected(struct bt_conn *conn)
 {
 	struct bt_att *att = conn->att;
 
-	if (!att)
+	if (!att) {
 		return;
+	}
 
 	BT_DBG("conn %p handle %u\n", conn, conn->handle);
 

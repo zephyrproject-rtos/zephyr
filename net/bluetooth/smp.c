@@ -515,8 +515,9 @@ static void bt_smp_disconnected(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
 
-	if (!smp)
+	if (!smp) {
 		return;
+	}
 
 	BT_DBG("conn %p handle %u\n", conn, conn->handle);
 
