@@ -289,7 +289,7 @@ __asm__("\t.globl _context_entry\n"
 */
 
 void *_NewContext(
-	char *pStackMem,      /* pointer to context stack memory */
+	char *pStackMem,      /* pointer to aligned stack memory */
 	unsigned stackSize,   /* size of stack in bytes */
 	_ContextEntry pEntry, /* context entry point function */
 	void *parameter1, /* first parameter to context entry point function */
@@ -354,7 +354,7 @@ void *_NewContext(
 	 * stack
 	 */
 
-	ccs = (tCCS *)ROUND_UP(pStackMem, STACK_ALIGN);
+	ccs = (tCCS *) pStackMem;
 
 	_NewContextInternal(ccs, pStackMem, stackSize, priority, options);
 
