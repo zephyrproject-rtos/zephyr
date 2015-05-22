@@ -78,11 +78,17 @@ struct bt_dev {
 	struct bt_driver	*drv;
 };
 
+struct bt_ltk {
+	uint64_t		rand;
+	uint16_t		ediv;
+	uint8_t			val[16];
+};
+
 struct bt_keys {
 	uint8_t			bdaddr[6];
 	uint8_t			bdaddr_type;
 
-	uint8_t			slave_ltk[16];
+	struct bt_ltk		slave_ltk;
 };
 
 struct bt_keys *bt_keys_create(uint8_t bdaddr[6], uint8_t bdaddr_type);

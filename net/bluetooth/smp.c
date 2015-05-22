@@ -428,13 +428,17 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	err = smp_s1(smp->tk, smp->prnd, smp->rrnd, keys->slave_ltk);
+	err = smp_s1(smp->tk, smp->prnd, smp->rrnd, keys->slave_ltk.val);
 	if (err) {
 		bt_keys_clear(keys);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	BT_DBG("generated STK %s\n", h(keys->slave_ltk, 16));
+	/* Rand and EDiv are 0 for the STK */
+	keys->slave_ltk.rand = 0;
+	keys->slave_ltk.ediv = 0;
+
+	BT_DBG("generated STK %s\n", h(keys->slave_ltk.val, 16));
 
 	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
 				    sizeof(*rsp));

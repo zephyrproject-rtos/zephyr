@@ -507,7 +507,8 @@ static void le_ltk_request(struct bt_buf *buf)
 	}
 
 	keys = bt_keys_find(conn->dst, conn->dst_type);
-	if (keys) {
+	if (keys && keys->slave_ltk.rand == evt->rand &&
+	    keys->slave_ltk.ediv == evt->ediv) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
@@ -519,7 +520,7 @@ static void le_ltk_request(struct bt_buf *buf)
 
 		cp = bt_buf_add(buf, sizeof(*cp));
 		cp->handle = evt->handle;
-		memcpy(cp->ltk, keys->slave_ltk, 16);
+		memcpy(cp->ltk, keys->slave_ltk.val, 16);
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
 	} else {
