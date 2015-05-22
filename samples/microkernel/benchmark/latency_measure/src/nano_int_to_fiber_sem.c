@@ -53,8 +53,8 @@
 #define STACKSIZE 2000
 
 /* stack used by the fibers */
-static char waiterStack[STACKSIZE];
-static char intStack[STACKSIZE];
+static char __stack waiterStack[STACKSIZE];
+static char __stack intStack[STACKSIZE];
 
 /* semaphore taken by waiting fiber ad released by the interrupt handler */
 static struct nano_sem testSema;

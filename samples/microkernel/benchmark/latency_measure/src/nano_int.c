@@ -44,7 +44,7 @@
 #define STACKSIZE 2000
 
 /* stack used by the fiber that generates the interrupt */
-static char fiberStack[STACKSIZE];
+static char __stack fiberStack[STACKSIZE];
 
 static uint32_t timestamp;
 

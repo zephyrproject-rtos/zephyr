@@ -34,6 +34,7 @@
 
 #ifdef CONFIG_NANOKERNEL
 #include <nanokernel.h>
+#include <arch/cpu.h>
 #include "phil.h"
 #else
 #include <vxmicro.h>
@@ -61,7 +62,7 @@ extern void philEntry(void);
 
 /* globals */
 
-char philStack[N_PHILOSOPHERS][STSIZE];
+char __stack philStack[N_PHILOSOPHERS][STSIZE];
 struct nano_sem forks[N_PHILOSOPHERS];
 #endif  /*  CONFIG_NANOKERNEL */
 

@@ -90,7 +90,7 @@ static int             fiberDetectedFailure = 0;
 static struct nano_timer     timer;
 static void *timerData[1];
 
-static char           fiberStack[FIBER_STACKSIZE];
+static char __stack fiberStack[FIBER_STACKSIZE];
 
 static void (*_trigger_nano_isr_sem_give)(void) = (vvfn)sw_isr_trigger_0;
 static void (*_trigger_nano_isr_sem_take)(void) = (vvfn)sw_isr_trigger_1;
@@ -429,7 +429,7 @@ int testSemWait(void)
  * to obtain the reply_multi_waiters semaphore NUM_WAITERS times.
  */
 #define NUM_WAITERS 3
-static char fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
+static char __stack fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
 
 /*******************************************************************************
 *

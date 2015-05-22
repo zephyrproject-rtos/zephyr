@@ -121,7 +121,7 @@ void bootTimeTask(void)
 
 #ifdef CONFIG_NANOKERNEL
 
-char fiberStack[512];
+char __stack fiberStack[512];
 
 /*******************************************************************************
 *

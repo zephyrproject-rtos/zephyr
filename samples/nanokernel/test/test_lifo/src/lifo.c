@@ -99,7 +99,7 @@ static ISR_LIFO_INFO  isrLifoInfo = {&lifoChannel, NULL};
 
 static volatile int  fiberDetectedFailure = 0; /* non-zero on failure */
 
-static char fiberStack[FIBER_STACKSIZE];
+static char __stack fiberStack[FIBER_STACKSIZE];
 
 static void (*_trigger_nano_isr_lifo_put)(void) = (vvfn)sw_isr_trigger_0;
 static void (*_trigger_nano_isr_lifo_get)(void) = (vvfn)sw_isr_trigger_1;
@@ -488,7 +488,7 @@ void initNanoObjects(void)
  * NUM_WAITERS times.
  */
 #define NUM_WAITERS 3
-static char fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
+static char __stack fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
 static LIFO_ITEM multi_waiters_items[NUM_WAITERS] = {
 	[0 ...(NUM_WAITERS-1)].link = 0,
 	[0 ...(NUM_WAITERS-1)].data = 0xabad1dea,

@@ -91,9 +91,9 @@ typedef struct {
 
 /* globals */
 
-char fiberStack1[STACKSIZE];
-char fiberStack2[STACKSIZE];
-char fiberStack3[STACKSIZE];
+char __stack fiberStack1[STACKSIZE];
+char __stack fiberStack2[STACKSIZE];
+char __stack fiberStack3[STACKSIZE];
 
 struct nano_fifo  nanoFifoObj;
 struct nano_fifo  nanoFifoObj2;

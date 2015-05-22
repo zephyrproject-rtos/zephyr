@@ -115,8 +115,8 @@ static struct nano_timer      timer;
 static void *timerData[1];
 
 static int  fiberDetectedError = 0;
-static char fiberStack1[FIBER_STACKSIZE];
-static char fiberStack2[FIBER_STACKSIZE];
+static char __stack fiberStack1[FIBER_STACKSIZE];
+static char __stack fiberStack2[FIBER_STACKSIZE];
 static int  fiberEvidence = 0;
 
 static ISR_INFO  isrInfo;

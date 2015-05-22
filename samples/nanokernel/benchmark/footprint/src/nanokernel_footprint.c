@@ -83,7 +83,7 @@ NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0);
 #endif /* TEST_max */
 
 /* stack used by fiber */
-static char pStack[FIBER_STACK_SIZE];
+static char __stack pStack[FIBER_STACK_SIZE];
 
 /* pointer array ensures specified functions are linked into the image */
 volatile pfunc func_array[] = {

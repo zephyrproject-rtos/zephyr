@@ -119,7 +119,7 @@ static FP_REG_SET floatRegisterSet;
 #ifdef CONFIG_NANOKERNEL
 /* stack for high priority fiber context (also use .bss for floatRegisterSet) */
 
-static char fiberStack[1024];
+static char __stack fiberStack[1024];
 
 static struct nano_timer fiberTimer;
 static void *dummyTimerData;	/* allocate just enough room for a pointer */

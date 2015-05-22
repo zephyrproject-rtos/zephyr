@@ -60,7 +60,7 @@ DESCRIPTION
 /* defines */
 #define STACKSIZE               1024
 /* locals */
-char fiberStack[STACKSIZE];
+char __stack fiberStack[STACKSIZE];
 
 #endif /* CONFIG_MICROKERNEL */
 

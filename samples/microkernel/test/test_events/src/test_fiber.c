@@ -51,7 +51,7 @@ struct nano_sem fiberSem; /* semaphore that allows test control the fiber */
 
 /* locals */
 
-static char fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
+static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 
 /*******************************************************************************
 *

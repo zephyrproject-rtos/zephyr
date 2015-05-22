@@ -53,7 +53,7 @@ struct nano_sem fiberSem; /* semaphore that allows test control the fiber */
 extern ksem_t simpleSem;
 extern ksem_t semList[];
 
-static char fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
+static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 
 /* array of command packets used by test fiber to signal semaphores */
 static CMD_PKT_SET_INSTANCE(cmdPktSet, N_TESTS + 1)

@@ -43,8 +43,8 @@
 
 /* #define FLOAT */
 
-char fiber_stack1[STACK_SIZE];
-char fiber_stack2[STACK_SIZE];
+char __stack fiber_stack1[STACK_SIZE];
+char __stack fiber_stack2[STACK_SIZE];
 
 char Msg[256];
 

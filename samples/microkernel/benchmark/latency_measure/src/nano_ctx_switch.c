@@ -50,8 +50,8 @@
 #define STACKSIZE    2000
 
 /* stack used by the fibers */
-static char fiberOneStack[STACKSIZE];
-static char fiberTwoStack[STACKSIZE];
+static char __stack fiberOneStack[STACKSIZE];
+static char __stack fiberTwoStack[STACKSIZE];
 
 /* semaphore used for fibers synchronization */
 static struct nano_sem syncSema;

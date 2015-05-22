@@ -82,8 +82,8 @@ static void *longTimerData[1];
 static void *midTimerData[1];
 
 static int  fiberDetectedError = 0;
-static char fiberStack[FIBER_STACKSIZE];
-static char fiber2Stack[FIBER2_STACKSIZE];
+static char __stack fiberStack[FIBER_STACKSIZE];
+static char __stack fiber2Stack[FIBER2_STACKSIZE];
 
 /*******************************************************************************
 *

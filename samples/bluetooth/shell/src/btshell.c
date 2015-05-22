@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include <nanokernel.h>
+#include <arch/cpu.h>
 
 #include <console/uart_console.h>
 #include <misc/printk.h>
@@ -58,7 +59,7 @@ static uint8_t last_cmd_index = 0;
 static const char *prompt;
 
 #define STACKSIZE 512
-static char stack[STACKSIZE];
+static char __stack stack[STACKSIZE];
 
 #define MAX_CMD_QUEUED 3
 static struct uart_console_input buf[MAX_CMD_QUEUED];

@@ -77,7 +77,7 @@ static volatile int    intHandlerExecuted;
 static volatile int    spurHandlerAbortedContext = 1;
 
 #ifdef CONFIG_NANOKERNEL
-static char fiberStack[512];
+static char __stack fiberStack[512];
 #endif
 
 

@@ -107,7 +107,7 @@ void taskB(void)
 
 #define STACKSIZE 2000
 
-char fiberStack[STACKSIZE];
+char __stack fiberStack[STACKSIZE];
 
 struct nano_sem nanoSemTask;
 struct nano_sem nanoSemFiber;
