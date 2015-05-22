@@ -39,27 +39,6 @@ extern "C" {
 
 #include <kernel_struct.h>
 
-/* low-level parameters: */
-
-#define STORE_NBR_MARKERS
-/* NOTE: the number of pending write and read Xfers is always stored,
-   as it is required for the channels to function properly. It is stored in the
-   field ChBuff.iNbrPendingWrites and iNbrPendingReads.
-
-   In the Writer and Reader MarkersList, the number of markers (==nbr. of
-   unreleased Xfers)
-   is monitored as well. They actually equal iNbrPendingWrites and
-   iNbrPendingReads.
-   Their existence depends on STORE_NBR_MARKERS. A reason to have them
-   additionally is that
-   some extra consistency checking is performed in the markers manipulation
-   functionality
-   itself.
-   Drawback: double storage of nbr. of pending write Xfers (but for test
-   purposes this is
-   acceptable I think)
- */
-
 void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff);
 
 void BuffGetFreeSpaceTotal(struct chbuff *pBuff, int *piTotalFreeSpace);

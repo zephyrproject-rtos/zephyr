@@ -43,6 +43,25 @@
 #include <sections.h>
 #include <misc/__assert.h>
 
+#define STORE_NBR_MARKERS
+/* NOTE: the number of pending write and read Xfers is always stored,
+   as it is required for the channels to function properly. It is stored in the
+   field ChBuff.iNbrPendingWrites and iNbrPendingReads.
+
+   In the Writer and Reader MarkersList, the number of markers (==nbr. of
+   unreleased Xfers)
+   is monitored as well. They actually equal iNbrPendingWrites and
+   iNbrPendingReads.
+   Their existence depends on STORE_NBR_MARKERS. A reason to have them
+   additionally is that
+   some extra consistency checking is performed in the markers manipulation
+   functionality
+   itself.
+   Drawback: double storage of nbr. of pending write Xfers (but for test
+   purposes this is
+   acceptable I think)
+ */
+
 #define CHECK_CHBUFF_POINTER(pData) \
 	__ASSERT_NO_MSG(pChBuff->pBegin <= pData && pData < pChBuff->pEnd)
 
@@ -676,4 +695,110 @@ void BuffDeQA_End(struct chbuff *pChBuff, int iTransferID,
 	/* An asynchronous data transfer from the buffer has finished */
 
 	AsyncDeQFinished(pChBuff, iTransferID);
+}
+
+/**********************/
+/* Buffer instrusion */
+/**********************/
+
+static BOOL AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
+								 unsigned char *pBegin2, int iSize2)
+{
+	unsigned char *pEnd1;
+	unsigned char *pEnd2;
+
+	pEnd1 = pBegin1 + OCTET_TO_SIZEOFUNIT(iSize1);
+	pEnd2 = pBegin2 + OCTET_TO_SIZEOFUNIT(iSize2);
+
+	/*
+	 * 2 tests are required to determine the status of the 2 areas,
+	 * in terms of their position wrt each other
+	 */
+
+	if (pBegin2 >= pBegin1) {
+		/* check intrusion of pBegin2 in [pBegin1, pEnd1( */
+		if (pBegin2 < pEnd1) {
+			/* intrusion!! */
+			return TRUE;
+		} else {
+			/* pBegin2 lies outside and to the right of the first area,
+			  intrusion is impossible */
+			return FALSE;
+		}
+	} else {
+		/* pBegin2 lies to the left of (pBegin1, pEnd1) */
+		/* check end pointer: is pEnd2 in (pBegin1, pEnd1( ?? */
+		if (pEnd2 > pBegin1) {
+			/* intrusion!! */
+			return TRUE;
+		} else {
+			/* pEnd2 lies outside and to the left of the first area,
+			   intrusion is impossible */
+			return FALSE;
+		}
+	}
+}
+
+void ChannelCheck4Intrusion(struct chbuff *pChBuff,
+							unsigned char *pBegin, int iSize)
+{
+	/*
+	 * check possible collision with all existing data areas,
+	 * both for read and write areas
+	 */
+
+	int index;
+	struct marker_list *pMarkerList;
+
+	/* write markers */
+
+#ifdef STORE_NBR_MARKERS
+	/* first a small consistency check */
+
+	if (0 == pChBuff->WriteMarkers.iNbrMarkers) {
+		__ASSERT_NO_MSG(-1 == pChBuff->WriteMarkers.iFirstMarker);
+		__ASSERT_NO_MSG(-1 == pChBuff->WriteMarkers.iLastMarker);
+		__ASSERT_NO_MSG(-1 == pChBuff->WriteMarkers.iAWAMarker);
+	}
+#endif
+
+	pMarkerList = &(pChBuff->WriteMarkers);
+	index = pMarkerList->iFirstMarker;
+
+	while (-1 != index) {
+		struct marker *pM;
+
+		pM = &(pMarkerList->aMarkers[index]);
+
+		if (0 != AreasCheck4Intrusion(pBegin, iSize, pM->pointer, pM->size)) {
+			__ASSERT_NO_MSG(1 == 0);
+		}
+		index = pM->Next;
+	}
+
+	/* read markers */
+
+#ifdef STORE_NBR_MARKERS
+	/* first a small consistency check */
+
+	if (0 == pChBuff->ReadMarkers.iNbrMarkers) {
+		__ASSERT_NO_MSG(-1 == pChBuff->ReadMarkers.iFirstMarker);
+		__ASSERT_NO_MSG(-1 == pChBuff->ReadMarkers.iLastMarker);
+		__ASSERT_NO_MSG(-1 == pChBuff->ReadMarkers.iAWAMarker);
+	}
+#endif
+
+	pMarkerList = &(pChBuff->ReadMarkers);
+	index = pMarkerList->iFirstMarker;
+
+	while (-1 != index) {
+		struct marker *pM;
+
+		pM = &(pMarkerList->aMarkers[index]);
+
+		if (0 != AreasCheck4Intrusion(pBegin, iSize, pM->pointer, pM->size)) {
+			__ASSERT_NO_MSG(1 == 0);
+		}
+		index = pM->Next;
+	}
 }
