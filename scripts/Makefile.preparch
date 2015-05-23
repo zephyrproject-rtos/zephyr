@@ -79,8 +79,7 @@ define filechk_offsets.h
 	echo; \
 	echo "/* defines */"; \
 	echo; \
-	nm -g $(CURDIR)/include/generated/offsets.o | grep -E '^[0-9a-zA-Z]+' | \
-	python -c 'import sys; [ sys.stdout.write("#define %s 0x%s\n" % (l.split()[2], l.split()[0])) for l in sys.stdin]'; \
+	nm -g $(CURDIR)/include/generated/offsets.o | sed -n 's/^\([0-9a-z]*\)\s\w\s\(\S*\)$$/#define \2  0x\1/p'; \
 	echo; \
 	echo "#ifdef __cplusplus"; \
 	echo "}"; \
