@@ -32,10 +32,8 @@
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 #define BT_CONN_TX_STACK_SIZE		1024
-#define BT_CONN_RX_STACK_SIZE		2048
 #else
 #define BT_CONN_TX_STACK_SIZE		256
-#define BT_CONN_RX_STACK_SIZE		1024
 #endif
 
 enum {
@@ -62,7 +60,6 @@ struct bt_conn {
 
 	/* Queue for outgoing ACL data */
 	struct nano_fifo	tx_queue;
-	struct nano_fifo	rx_queue;
 
 	/* Fixed channel contexts */
 	struct bt_conn_l2cap	l2cap;
@@ -76,7 +73,6 @@ struct bt_conn {
 	uint8_t			state;
 
 	char			tx_stack[BT_CONN_TX_STACK_SIZE];
-	char			rx_stack[BT_CONN_RX_STACK_SIZE];
 };
 
 /* Process incoming data for a connection */

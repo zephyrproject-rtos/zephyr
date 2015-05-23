@@ -147,7 +147,7 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 
 	BT_DBG("Successfully parsed %u byte L2CAP packet\n", buf->len);
 
-	nano_fiber_fifo_put(&conn->rx_queue, buf);
+	bt_l2cap_recv(conn, buf);
 }
 
 void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
@@ -196,40 +196,6 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 	}
 }
 
-static void conn_rx_fiber(int arg1, int arg2)
-{
-	struct bt_conn *conn = (struct bt_conn *)arg1;
-	struct bt_buf *buf;
-
-	BT_DBG("Started for handle %u\n", conn->handle);
-
-	while (conn->state == BT_CONN_CONNECTED) {
-		BT_DBG("calling fifo_get_wait\n");
-		buf = nano_fifo_get_wait(&conn->rx_queue);
-
-		/* check for disconnection */
-		if (conn->state != BT_CONN_CONNECTED) {
-			bt_buf_put(buf);
-			break;
-		}
-
-		BT_DBG("passing buf %p len %u to L2CAP\n", buf, buf->len);
-		bt_l2cap_recv(conn, buf);
-	}
-
-	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
-
-	/* Give back any allocated buffers */
-	while ((buf = nano_fifo_get(&conn->rx_queue))) {
-		bt_buf_put(buf);
-	}
-
-	bt_conn_reset_rx_state(conn);
-
-	BT_DBG("handle %u exiting\n", conn->handle);
-	bt_conn_put(conn);
-}
-
 static void conn_tx_fiber(int arg1, int arg2)
 {
 	struct bt_conn *conn = (struct bt_conn *)arg1;
@@ -269,6 +235,8 @@ static void conn_tx_fiber(int arg1, int arg2)
 		bt_buf_put(buf);
 	}
 
+	bt_conn_reset_rx_state(conn);
+
 	BT_DBG("handle %u exiting\n", conn->handle);
 	bt_conn_put(conn);
 }
@@ -297,10 +265,6 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle)
 	conn->dev	= dev;
 
 	nano_fifo_init(&conn->tx_queue);
-	nano_fifo_init(&conn->rx_queue);
-
-	fiber_start(conn->rx_stack, BT_CONN_RX_STACK_SIZE, conn_rx_fiber,
-		    (int)bt_conn_get(conn), 0, 7, 0);
 
 	fiber_start(conn->tx_stack, BT_CONN_TX_STACK_SIZE, conn_tx_fiber,
 		    (int)bt_conn_get(conn), 0, 7, 0);
@@ -320,9 +284,8 @@ void bt_conn_del(struct bt_conn *conn)
 
 	conn->state = BT_CONN_DISCONNECTED;
 
-	/* Send dummy buffers to wake up and kill the fibers */
+	/* Send dummy buffer to wake up and kill the tx fiber */
 	nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
-	nano_fifo_put(&conn->rx_queue, bt_buf_get(BT_DUMMY, 0));
 
 	bt_conn_put(conn);
 }
