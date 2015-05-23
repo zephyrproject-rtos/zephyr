@@ -5,8 +5,54 @@ The following installation procedures are optional. At the beginning of
 each procedure you will find under what conditions the procedure has to
 be followed.
 
-Installing the Crosstool Next Generation Toolchain (Optional)
-*************************************************************
+Packages Required for Building Crosstool-NG
+****************************************************************
+
+Your host system must have the following packages for crosstool-NG:
+
+.. code-block:: bash
+
+   $ sudo apt-get install gperf gawk bison flex texinfo libtool \
+     automake ncurses- devexpat libexpat1-dev libexpat1 python-dev
+
+Install libtool-bin for Debian systems, type:
+
+.. code-block:: bash
+
+   $ sudo apt-get install libtool-bin
+
+Requirements for building ARC Toolchain
+****************************************
+Install the needed packages for building ARC in Ubuntu, type:
+
+.. code-block:: bash
+
+   $ sudo apt-get install texinfo byacc flex libncurses5-dev \
+     zlib1g-dev libexpat1-dev libx11-dev texlive build-essential
+
+Install the needed packages for building ARC in Fedora, type:
+
+.. code-block:: bash
+
+   $ sudo yum groupinstall "Development Tools"
+
+   $ sudo yum install texinfo-tex byacc flex ncurses-devel \
+     zlib-devel expat-devel libX11-devel git
+
+Optional Packages for building Crosstool-NG
+********************************************
+
+The following packages are optional since the first crosstool-NG
+build downloads them if they are not installed.
+
+Install the optional packages on your host system manually, type:
+
+.. code-block:: bash
+
+   $ sudo apt-get install gmp mpfr isl cloog mpc binutils
+
+Installing the Crosstool-NG Toolchain (Optional)
+************************************************
 
 If you have installed the Tiny Mountain SDK provided by Yocto, you can
 skip these steps.
@@ -16,8 +62,7 @@ skip these steps.
 
 .. code-block:: bash
 
-   $ curl -O http://crosstool-ng.org/download/crosstool-ng/crosstool-
-   ng-1.20.0.tar.bz2
+   $ curl -O http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.20.0.tar.bz2
 
 
 #. Extract the toolchain by typing the following commands in the
@@ -52,7 +97,7 @@ skip these steps.
 
    $ sudo make install
 
-   $sudo cp ct-ng.comp /etc/bash_completion.d/
+   $ sudo cp ct-ng.comp /etc/bash_completion.d/
 
 
 #. Create the installation directory for the tool by typing the
@@ -119,7 +164,7 @@ Create the Needed Build Tools
 
 Alternatively you can add it to your :file:`~/.bashrc` file.
 
-Adding in the ARC toolchain
+Adding in the ARC Toolchain
 ***************************
 
 If you have installed the Tiny Mountain SDK provided by Yocto, you can
@@ -183,7 +228,7 @@ cannot assist in debugging what might go wrong.
    The commands above are not verified.
 
 #. Ensure that the pre-built toolchain is found automatically by
-   defs.gcc.x86-linux2.variant_otc and gcc/arch/arc/defs.exec, type:
+   defs.gcc.x86-linux2.variant_xtools and gcc/arch/arc/defs.exec, type:
 
 .. code-block:: bash
 

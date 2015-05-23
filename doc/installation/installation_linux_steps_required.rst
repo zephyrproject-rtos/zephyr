@@ -38,7 +38,7 @@ Follow these steps to install the SDK on your host system.
 
 #. Download the Yocto self-extractable binary from:
 
-   http://yct- rtos02.ostc.intel.com/tm-toolchains-i686-setup.run
+   http://yct-rtos02.ostc.intel.com/tm-toolchains-i686-setup.run
 
 #. Run the binary, type:
 
