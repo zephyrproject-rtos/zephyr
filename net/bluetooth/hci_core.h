@@ -72,7 +72,7 @@ struct bt_dev {
 	struct nano_fifo	rx_queue;
 
 	/* Queue for outgoing HCI commands */
-	struct nano_fifo	cmd_queue;
+	struct nano_fifo	cmd_tx_queue;
 
 	/* Registered HCI driver */
 	struct bt_driver	*drv;

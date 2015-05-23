@@ -56,17 +56,17 @@
 
 /* Stacks for the fibers */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-#define RX_STACK_SIZE	2048
-#define CMD_STACK_SIZE	512
+#define RX_STACK_SIZE		2048
+#define CMD_TX_STACK_SIZE	512
 #else
-#define RX_STACK_SIZE	1024
-#define CMD_STACK_SIZE	256
+#define RX_STACK_SIZE		1024
+#define CMD_TX_STACK_SIZE	256
 #endif
 
 static const uint8_t BDADDR_ANY[6] = { 0, 0, 0, 0, 0 };
 
 static char rx_fiber_stack[RX_STACK_SIZE];
-static char cmd_fiber_stack[CMD_STACK_SIZE];
+static char cmd_tx_fiber_stack[CMD_TX_STACK_SIZE];
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 static nano_context_id_t rx_fiber_id;
@@ -186,7 +186,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf)
 		return 0;
 	}
 
-	nano_fifo_put(&dev.cmd_queue, buf);
+	nano_fifo_put(&dev.cmd_tx_queue, buf);
 
 	return 0;
 }
@@ -220,7 +220,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 	nano_sem_init(&sync_sem);
 	buf->hci.sync = &sync_sem;
 
-	nano_fifo_put(&dev.cmd_queue, buf);
+	nano_fifo_put(&dev.cmd_tx_queue, buf);
 
 	nano_sem_take_wait(&sync_sem);
 
@@ -613,7 +613,7 @@ static void hci_event(struct bt_buf *buf)
 	bt_buf_put(buf);
 }
 
-static void hci_cmd_fiber(void)
+static void hci_cmd_tx_fiber(void)
 {
 	struct bt_driver *drv = dev.drv;
 
@@ -628,7 +628,7 @@ static void hci_cmd_fiber(void)
 
 		/* Get next command - wait if necessary */
 		BT_DBG("calling fifo_get_wait\n");
-		buf = nano_fifo_get_wait(&dev.cmd_queue);
+		buf = nano_fifo_get_wait(&dev.cmd_tx_queue);
 		dev.ncmd = 0;
 
 		BT_DBG("Sending command %x (buf %p) to driver\n",
@@ -935,15 +935,15 @@ void bt_driver_unregister(struct bt_driver *drv)
 
 static void cmd_queue_init(void)
 {
-	nano_fifo_init(&dev.cmd_queue);
+	nano_fifo_init(&dev.cmd_tx_queue);
 	nano_sem_init(&dev.ncmd_sem);
 
 	/* Give cmd_sem allowing to send first HCI_Reset cmd */
 	dev.ncmd = 1;
 	nano_task_sem_give(&dev.ncmd_sem);
 
-	fiber_start(cmd_fiber_stack, CMD_STACK_SIZE,
-		    (nano_fiber_entry_t) hci_cmd_fiber, 0, 0, 7, 0);
+	fiber_start(cmd_tx_fiber_stack, CMD_TX_STACK_SIZE,
+		    (nano_fiber_entry_t) hci_cmd_tx_fiber, 0, 0, 7, 0);
 }
 
 static void rx_queue_init(void)
