@@ -48,8 +48,10 @@ linker_params()
 	echo "-Wl,-Map,./${2}" >> ${1}
 	echo "-L ${objtree}/include/generated" >> ${1}
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
+	echo "-Wl,-e,__start" >> ${1}
 	echo "-Wl,--start-group ${KBUILD_TIMO_MAIN}" >> ${1}
 	echo "${objtree}/include/generated/offsets.o" >> ${1}
+	echo "-Wl,--end-group" >> ${1}
 	echo "${LIB_INCLUDE_DIR} ${LIBS}" >> ${1}
 }
 
