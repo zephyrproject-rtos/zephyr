@@ -665,15 +665,15 @@ static void hci_rx_fiber(void)
 		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
 
 		switch (buf->type) {
-			case BT_ACL_IN:
-				hci_acl(buf);
-				break;
-			case BT_EVT:
-				hci_event(buf);
-				break;
-			default:
-				BT_ERR("Unknown buf type %u\n", buf->type);
-				return;
+		case BT_ACL_IN:
+			hci_acl(buf);
+			break;
+		case BT_EVT:
+			hci_event(buf);
+			break;
+		default:
+			BT_ERR("Unknown buf type %u\n", buf->type);
+			return;
 		}
 
 	}
