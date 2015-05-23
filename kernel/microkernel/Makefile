@@ -17,7 +17,9 @@ obj-y += k_mutex.o
 obj-y += k_queue.o
 obj-y += k_sema.o
 obj-y += k_timer.o
+obj-y += k_pipe_buffer.o k_pipe.o k_pipe_get.o \
+	k_pipe_put.o k_pipe_util.o k_pipe_xfer.o
+
 obj-$(CONFIG_MICROKERNEL)  += server.o
 obj-$(CONFIG_TASK_MONITOR) += task_monitor.o
 
-obj-y += channel/
