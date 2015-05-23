@@ -73,7 +73,7 @@ initconfig: $(O)/.dir
 	PROJECT=$(PROJECT_BASE) defconfig
 ifneq (($strip $(CONF_FILE)),)
 	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
-	-m -O $(O) $(O)/.config $(CONF_FILE)
+	-q -m -O $(O) $(O)/.config $(CONF_FILE)
 endif
 	$(Q)yes "" | $(MAKE) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) oldconfig

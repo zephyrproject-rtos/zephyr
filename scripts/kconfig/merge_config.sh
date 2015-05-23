@@ -24,6 +24,7 @@ clean_up() {
 	rm -f $TMP_FILE
 	exit
 }
+
 trap clean_up HUP INT TERM
 
 usage() {
@@ -36,6 +37,7 @@ usage() {
 }
 
 MAKE=true
+ECHO=echo
 ALLTARGET=alldefconfig
 WARNREDUN=false
 OUTPUT=.
@@ -44,6 +46,11 @@ while true; do
 	case $1 in
 	"-n")
 		ALLTARGET=allnoconfig
+		shift
+		continue
+		;;
+	"-q")
+		ECHO=false
 		shift
 		continue
 		;;
@@ -98,12 +105,12 @@ for MERGE_FILE in $MERGE_LIST ; do
 			PREV_VAL=$(grep -w $CFG $TMP_FILE)
 			NEW_VAL=$(grep -w $CFG $MERGE_FILE)
 			if [ "x$PREV_VAL" != "x$NEW_VAL" ] ; then
-			echo Value of $CFG is redefined by fragment $MERGE_FILE:
-			echo Previous  value: $PREV_VAL
-			echo New value:       $NEW_VAL
-			echo
+			$ECHO Value of $CFG is redefined by fragment $MERGE_FILE:
+			$ECHO Previous  value: $PREV_VAL
+			$ECHO New value:       $NEW_VAL
+			$ECHO
 			elif [ "$WARNREDUN" = "true" ]; then
-			echo Value of $CFG is redundant by fragment $MERGE_FILE:
+			$ECHO Value of $CFG is redundant by fragment $MERGE_FILE:
 			fi
 			sed -i "/$CFG[ =]/d" $TMP_FILE
 		fi
@@ -113,9 +120,9 @@ done
 
 if [ "$MAKE" = "false" ]; then
 	cp $TMP_FILE $OUTPUT/.config
-	echo "#"
-	echo "# merged configuration written to $OUTPUT/.config (needs make)"
-	echo "#"
+	$ECHO "#"
+	$ECHO "# merged configuration written to $OUTPUT/.config (needs make)"
+	$ECHO "#"
 	clean_up
 	exit
 fi
@@ -140,10 +147,10 @@ for CFG in $(sed -n "$SED_CONFIG_EXP" $TMP_FILE); do
 	REQUESTED_VAL=$(grep -w -e "$CFG" $TMP_FILE)
 	ACTUAL_VAL=$(grep -w -e "$CFG" $OUTPUT/.config)
 	if [ "x$REQUESTED_VAL" != "x$ACTUAL_VAL" ] ; then
-		echo "Value requested for $CFG not in final .config"
-		echo "Requested value:  $REQUESTED_VAL"
-		echo "Actual value:     $ACTUAL_VAL"
-		echo ""
+		$ECHO "Value requested for $CFG not in final .config"
+		$ECHO "Requested value:  $REQUESTED_VAL"
+		$ECHO "Actual value:     $ACTUAL_VAL"
+		$ECHO ""
 	fi
 done
 
