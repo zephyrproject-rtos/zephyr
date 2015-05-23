@@ -71,6 +71,9 @@ struct bt_dev {
 	/* Queue for incoming HCI events & ACL data */
 	struct nano_fifo	rx_queue;
 
+	/* Queue for incoming HCI Command Complete/Status events */
+	struct nano_fifo	cmd_rx_queue;
+
 	/* Queue for outgoing HCI commands */
 	struct nano_fifo	cmd_tx_queue;
 

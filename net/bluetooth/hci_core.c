@@ -57,19 +57,22 @@
 /* Stacks for the fibers */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 #define RX_STACK_SIZE		2048
+#define CMD_RX_STACK_SIZE	512
 #define CMD_TX_STACK_SIZE	512
 #else
 #define RX_STACK_SIZE		1024
+#define CMD_RX_STACK_SIZE	256
 #define CMD_TX_STACK_SIZE	256
 #endif
 
 static const uint8_t BDADDR_ANY[6] = { 0, 0, 0, 0, 0 };
 
 static char rx_fiber_stack[RX_STACK_SIZE];
+static char cmd_rx_fiber_stack[CMD_RX_STACK_SIZE];
 static char cmd_tx_fiber_stack[CMD_TX_STACK_SIZE];
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-static nano_context_id_t rx_fiber_id;
+static nano_context_id_t cmd_rx_fiber_id;
 #endif
 
 static struct bt_dev dev;
@@ -202,7 +205,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 	 * event and giving back the blocking semaphore.
 	 */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-	if (context_self_get() == rx_fiber_id) {
+	if (context_self_get() == cmd_rx_fiber_id) {
 		BT_ERR("called from invalid context!\n");
 		return -EDEADLK;
 	}
@@ -592,12 +595,6 @@ static void hci_event(struct bt_buf *buf)
 	case BT_HCI_EVT_ENCRYPT_CHANGE:
 		hci_encrypt_change(buf);
 		break;
-	case BT_HCI_EVT_CMD_COMPLETE:
-		hci_cmd_complete(buf);
-		break;
-	case BT_HCI_EVT_CMD_STATUS:
-		hci_cmd_status(buf);
-		break;
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 		hci_num_completed_packets(buf);
 		break;
@@ -653,11 +650,6 @@ static void hci_rx_fiber(void)
 
 	BT_DBG("started\n");
 
-	/* So we can avoid bt_hci_cmd_send_sync deadlocks */
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-	rx_fiber_id = context_self_get();
-#endif
-
 	while (1) {
 		BT_DBG("calling fifo_get_wait\n");
 		buf = nano_fifo_get_wait(&dev.rx_queue);
@@ -677,6 +669,50 @@ static void hci_rx_fiber(void)
 			break;
 		}
 
+	}
+}
+
+static void cmd_rx_fiber(void)
+{
+	struct bt_buf *buf;
+
+	BT_DBG("started\n");
+
+	/* So we can avoid bt_hci_cmd_send_sync deadlocks */
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+	cmd_rx_fiber_id = context_self_get();
+#endif
+
+	while (1) {
+		struct bt_hci_evt_hdr *hdr;
+
+		BT_DBG("calling fifo_get_wait\n");
+		buf = nano_fifo_get_wait(&dev.cmd_rx_queue);
+
+		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
+
+		if (buf->type != BT_EVT) {
+			BT_ERR("Unknown buf type %u\n", buf->type);
+			bt_buf_put(buf);
+			continue;
+		}
+
+		hdr = (void *)buf->data;
+		bt_buf_pull(buf, sizeof(*hdr));
+
+		switch (hdr->evt) {
+		case BT_HCI_EVT_CMD_COMPLETE:
+			hci_cmd_complete(buf);
+			break;
+		case BT_HCI_EVT_CMD_STATUS:
+			hci_cmd_status(buf);
+			break;
+		default:
+			BT_ERR("Unknown event 0x%02x\n", hdr->evt);
+			break;
+		}
+
+		bt_buf_put(buf);
 	}
 }
 
@@ -907,7 +943,31 @@ int bt_hci_reset(void)
 
 void bt_recv(struct bt_buf *buf)
 {
+	struct bt_hci_evt_hdr *hdr;
+
 	BT_DBG("buf %p len %u\n", buf, buf->len);
+
+	if (buf->type == BT_ACL_IN) {
+		nano_fifo_put(&dev.rx_queue, buf);
+		return;
+	}
+
+	if (buf->type != BT_EVT) {
+		BT_ERR("Invalid buf type %u\n", buf->type);
+		bt_buf_put(buf);
+		return;
+	}
+
+	/* Command Complete/Status events have their own cmd_rx queue,
+	 * all other events go through rx queue.
+	 */
+	hdr = (void *)buf->data;
+	if (hdr->evt == BT_HCI_EVT_CMD_COMPLETE ||
+	    hdr->evt == BT_HCI_EVT_CMD_STATUS) {
+		nano_fifo_put(&dev.cmd_rx_queue, buf);
+		return;
+	}
+
 	nano_fifo_put(&dev.rx_queue, buf);
 }
 
@@ -949,9 +1009,12 @@ static void cmd_queue_init(void)
 static void rx_queue_init(void)
 {
 	nano_fifo_init(&dev.rx_queue);
-
 	fiber_start(rx_fiber_stack, RX_STACK_SIZE,
 		    (nano_fiber_entry_t) hci_rx_fiber, 0, 0, 7, 0);
+
+	nano_fifo_init(&dev.cmd_rx_queue);
+	fiber_start(cmd_rx_fiber_stack, RX_STACK_SIZE,
+		    (nano_fiber_entry_t) cmd_rx_fiber, 0, 0, 7, 0);
 }
 
 int bt_init(void)
