@@ -72,11 +72,6 @@ struct bt_smp {
 
 	/* Local key distribution */
 	uint8_t			local_dist;
-
-	/* Locally generated LTK */
-	uint8_t			ltk[16];
-	uint64_t		rand;
-	uint16_t		ediv;
 };
 
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -453,15 +448,6 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("generated STK %s\n", h(keys->slave_ltk.val, 16));
 
-	/* Generate LTK here since doing it in the encrypt_change
-	 * handler would cause a deadlock for hci_cmd_send_sync.
-	 */
-	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
-		le_rand(smp->ltk, sizeof(smp->ltk));
-		le_rand(&smp->rand, sizeof(smp->rand));
-		le_rand(&smp->ediv, sizeof(smp->ediv));
-	}
-
 	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
 				    sizeof(*rsp));
 	if (!rsp_buf) {
@@ -575,9 +561,9 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 		struct bt_smp_encrypt_info *info;
 		struct bt_smp_master_ident *ident;
 
-		memcpy(keys->slave_ltk.val, smp->ltk, 16);
-		keys->slave_ltk.rand = smp->rand;
-		keys->slave_ltk.ediv = smp->ediv;
+		le_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
+		le_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
+		le_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
 					sizeof(*info));
@@ -587,7 +573,7 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 		}
 
 		info = bt_buf_add(buf, sizeof(*info));
-		memcpy(info->ltk, smp->ltk, sizeof(info->ltk));
+		memcpy(info->ltk, keys->slave_ltk.val, sizeof(info->ltk));
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 
@@ -599,8 +585,8 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 		}
 
 		ident = bt_buf_add(buf, sizeof(*ident));
-		ident->rand = smp->rand;
-		ident->ediv = smp->ediv;
+		ident->rand = keys->slave_ltk.rand;
+		ident->ediv = keys->slave_ltk.ediv;
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 	}
