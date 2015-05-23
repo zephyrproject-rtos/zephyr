@@ -673,7 +673,8 @@ static void hci_rx_fiber(void)
 			break;
 		default:
 			BT_ERR("Unknown buf type %u\n", buf->type);
-			return;
+			bt_buf_put(buf);
+			break;
 		}
 
 	}
