@@ -48,6 +48,8 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/uart.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
+#include <drivers/pci/pci.h>
+#include <drivers/pci/pci_mgr.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 #define DO_CONSOLE_INIT
@@ -122,6 +124,20 @@ void _InitHardware(void)
 	consoleInit(); /* NOP if not needed */
 
 #ifdef PCI_DEBUG
-	pci_show();
-#endif		       /* PCI_DEBUG */
+	/* Rescan PCI and display the list of PCI attached devices */
+	struct pci_dev_info info = {
+		.bar = PCI_BAR_ANY,
+	};
+
+	pci_bus_scan_init();
+
+	while (pci_bus_scan(&info))
+	{
+		pci_show(&info);
+		info.class = 0;
+		info.vendor_id = 0;
+		info.device_id = 0;
+		info.bar = PCI_BAR_ANY;
+	}
+#endif /* PCI_DEBUG */
 }
