@@ -60,7 +60,7 @@ void myfreetimer(struct k_timer * *ppTimer)
 void mycopypacket(struct k_args **out, struct k_args *in)
 {
 	GETARGS(*out);
-	k_memcpy(*out, in, sizeof(struct k_args));
+	memcpy(*out, in, sizeof(struct k_args));
 	(*out)->Ctxt.args = in;
 }
 

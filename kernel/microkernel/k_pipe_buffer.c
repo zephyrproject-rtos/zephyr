@@ -203,7 +203,7 @@ static void MarkersClear(struct marker_list *pMarkerList)
 	int i;
 
 	for (i = 0; i < MAXNBR_MARKERS; i++, pM++) {
-		k_memset(pM, 0, sizeof(struct marker));
+		memset(pM, 0, sizeof(struct marker));
 		pM->Next = -1;
 		pM->Prev = -1;
 	}

@@ -399,7 +399,7 @@ void pci_header_get(uint32_t controller,
 
 	/* clear out the header */
 
-	k_memset((char *)pci_dev_header, sizeof(union pci_dev), 0);
+	memset((char *)pci_dev_header, sizeof(union pci_dev), 0);
 
 	/* fill in the PCI header from the device */
 

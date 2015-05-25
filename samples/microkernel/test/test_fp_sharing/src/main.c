@@ -91,6 +91,7 @@ x87 FPU registers are being saved/restored.
 #include <tc_util.h>
 #include "float_context.h"
 #include <stddef.h>
+#include <string.h>
 
 #ifndef MAX_TESTS
 /* test duration, unless overridden by project builder (0 => run forever) */
@@ -220,7 +221,7 @@ void load_store_low(void)
 		 * floating point values that have been saved.
 		 */
 
-		k_memset(&floatRegSetStore, 0, SIZEOF_FP_REG_SET);
+		memset(&floatRegSetStore, 0, SIZEOF_FP_REG_SET);
 
 		/*
 		 * Utilize an architecture specific function to load all the floating

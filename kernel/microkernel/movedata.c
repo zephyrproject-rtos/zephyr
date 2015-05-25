@@ -65,8 +65,8 @@ static void mvdreq_docont(struct k_args *Cont)
 
 static void mvdreq_copy(struct moved_req *ReqArgs)
 {
-	k_memcpy(ReqArgs->destination, ReqArgs->source,
-			 OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize));
+	memcpy(ReqArgs->destination, ReqArgs->source,
+		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize));
 
 	if (ReqArgs->Action & MVDACT_SNDACK)
 		mvdreq_docont(ReqArgs->Extra.Setup.ContSnd);

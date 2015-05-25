@@ -84,7 +84,7 @@ void _k_fifo_enque_request(struct k_args *A)
 		if (W) {
 			Q->Waiters = W->Forw;
 			p = W->Args.q1.data;
-			k_memcpy(p, q, w);
+			memcpy(p, q, w);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (W->Time.timer) {
@@ -100,7 +100,7 @@ void _k_fifo_enque_request(struct k_args *A)
 #endif
 		else {
 			p = Q->Enqp;
-			k_memcpy(p, q, w);
+			memcpy(p, q, w);
 			p = (char *)((int)p + w);
 			if (p == Q->Endp)
 				Q->Enqp = Q->Base;
@@ -208,7 +208,7 @@ void _k_fifo_deque_request(struct k_args *A)
 	n = Q->Nused;
 	if (n) {
 		q = Q->Deqp;
-		k_memcpy(p, q, w);
+		memcpy(p, q, w);
 		q = (char *)((int)q + w);
 		if (q == Q->Endp)
 			Q->Deqp = Q->Base;
@@ -222,7 +222,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			p = Q->Enqp;
 			q = W->Args.q1.data;
 			w = OCTET_TO_SIZEOFUNIT(Q->Esize);
-			k_memcpy(p, q, w);
+			memcpy(p, q, w);
 			p = (char *)((int)p + w);
 			if (p == Q->Endp)
 				Q->Enqp = Q->Base;

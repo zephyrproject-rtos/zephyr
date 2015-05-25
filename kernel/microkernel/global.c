@@ -33,6 +33,7 @@
 #include "minik.h"
 #include "nanokernel.h"
 #include "nanok.h"
+#include <string.h>
 #include <toolchain.h>
 #include <sections.h>
 
@@ -76,8 +77,8 @@ void kernel_init(void)
 	init_node();
 
 #ifdef CONFIG_INIT_STACKS
-	k_memset((char *)_k_server_command_stack_storage, 0xaa,
-			 sizeof(_k_server_command_stack_storage));
+	memset((char *)_k_server_command_stack_storage, 0xaa,
+		   sizeof(_k_server_command_stack_storage));
 #endif
 	nano_stack_init(&_k_command_stack, _k_server_command_stack_storage);
 

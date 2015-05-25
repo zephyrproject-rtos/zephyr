@@ -37,6 +37,7 @@ either in the form of an actual function or an alias to a function.
 */
 
 #include <nanok.h>
+#include <string.h>
 #include <toolchain.h>
 #include <sections.h>
 
@@ -79,7 +80,7 @@ void _fiber_start(char *pStack,
 	unsigned int imask;
 
 #ifdef CONFIG_INIT_STACKS
-	k_memset((char *)pStack, 0xaa, stackSize);
+	memset((char *)pStack, 0xaa, stackSize);
 #endif
 
 	ccs = _NewContext((char *)pStack,
