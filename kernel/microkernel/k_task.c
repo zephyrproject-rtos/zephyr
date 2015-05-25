@@ -208,10 +208,6 @@ void start_task(struct k_proc *X,	 /* ptr to task control block */
 
 /* Note: the field X->worksize now represents the task size in bytes */
 
-#ifdef CONFIG_INIT_STACKS
-	memset(X->workspace, 0xaa, X->worksize);
-#endif
-
 	contextOptions = 0;
 	_START_TASK_ARCH(X, &contextOptions);
 

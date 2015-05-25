@@ -79,10 +79,6 @@ void _fiber_start(char *pStack,
 	tCCS *ccs;
 	unsigned int imask;
 
-#ifdef CONFIG_INIT_STACKS
-	memset((char *)pStack, 0xaa, stackSize);
-#endif
-
 	ccs = (tCCS *) pStack;
 	_NewContext(pStack,
 			  stackSize,

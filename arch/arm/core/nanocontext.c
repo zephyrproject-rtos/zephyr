@@ -117,6 +117,10 @@ void _NewContext(
 	struct __esf *pInitCtx;
 	tCCS *pCcs = (tCCS *) pStackMem;
 
+#ifdef CONFIG_INIT_STACKS
+    k_memset(pStackMem, 0xaa, stackSize);
+#endif
+
 	/* carve the context entry struct from the "base" of the stack */
 
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd) -

@@ -301,6 +301,10 @@ void _NewContext(
 {
 	unsigned long *pInitialContext;
 
+#ifdef CONFIG_INIT_STACKS
+    k_memset(pStackMem, 0xaa, stackSize);
+#endif
+
 	/* carve the context entry struct from the "base" of the stack */
 
 	pInitialContext =
