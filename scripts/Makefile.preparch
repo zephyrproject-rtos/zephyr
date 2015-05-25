@@ -44,7 +44,7 @@ misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.vpf FORCE
 define filechk_configs.c
 	(echo "/* file is auto-generated, do not modify ! */"; \
 	echo; \
-	echo "#include <abs_sym.h>"; \
+	echo "#include <toolchain.h>"; \
 	echo; \
 	echo "GEN_ABS_SYM_BEGIN (_ConfigAbsSyms)"; \
 	echo; \

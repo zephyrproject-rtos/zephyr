@@ -253,6 +253,45 @@ A##a:
 #else
 #define _ASM_FILE_PROLOGUE .text; .code 32
 #endif
+#endif
 
+/*
+ * These macros generate absolute symbols for GCC
+ */
 
+/* create an extern reference to the absolute symbol */
+
+#define GEN_OFFSET_EXTERN(name) extern const char name[]
+
+#define GEN_ABS_SYM_BEGIN(name) \
+	extern void name(void); \
+	void name(void)         \
+	{
+
+#define GEN_ABS_SYM_END }
+
+#if defined(VXMICRO_ARCH_arm)
+
+/*
+ * GNU/ARM backend does not have a proper operand modifier which does not
+ * produces prefix # followed by value, such as %0 for PowerPC, Intel, and
+ * MIPS. The workaround performed here is using %B0 which converts
+ * the value to ~(value). Thus "n"(~(value)) is set in operand constraint
+ * to output (value) in the ARM specific GEN_OFFSET macro.
+ */
+
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+		",%B0"                              \
+		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
+
+#elif defined(VXMICRO_ARCH_x86) || defined(VXMICRO_ARCH_arc)
+
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+		",%c0"                              \
+		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+#else
+#error processor architecture not supported
 #endif

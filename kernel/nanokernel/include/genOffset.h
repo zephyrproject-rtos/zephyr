@@ -104,7 +104,7 @@ $ nm offsets.o
 #ifndef _GEN_OFFSET_H
 #define _GEN_OFFSET_H
 
-#include <abs_sym.h>
+#include <toolchain.h>
 #include <stddef.h>
 
 /* definition of the GEN_OFFSET_SYM() macros is toolchain independant  */
