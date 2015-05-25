@@ -43,19 +43,8 @@ static uint32_t kernel_version = KERNELVERSION;
 *
 * kernel_version_get - return the kernel version of the present build
 *
-* The kernel version is a four-byte word divided into three parts.
-*
-* Part 1: The two most significant bytes are sub-divided into four nibbles,
-* representing the kernel's numeric version -- that is, w.x.y.z.
-* (Each numeric element must therefore be in the range 0 to 15, inclusive.)
-*
-* Part 2: The next most significant byte is used for a variety of flags and
-* is broken down as follows:
-*      Bit 7     - Set for VSP builds; clear for SP builds
-*      Bit 6     - Set for release builds; clear for debug builds
-*      Bits 5..0 - Cleared as they are currently unused
-*
-* Part 3: The least significant byte is reserved for future use.
+* The kernel version is a four-byte value, whose format is decribed in the
+* file "kernel_version.h".
 *
 * RETURNS: kernel version
 */
