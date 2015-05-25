@@ -43,6 +43,9 @@ Module declares routines of PCI bus initialization and query
 #define BAR_SPACE_MEM 0
 #define BAR_SPACE_IO 1
 
+#define PCI_MAX_BARS 6
+#define PCI_BAR_ANY PCI_MAX_BARS
+
 /* PCI device information */
 
 struct pci_dev_info {

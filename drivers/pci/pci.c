@@ -146,7 +146,6 @@ restarting from 0.
 #define BAR_IO_MASK(x) ((x) & ~0x3)
 #define BAR_MEM_MASK(x) ((x) & ~0xf)
 
-#define MAX_BARS 6
 
 struct bus_dev {
 	uint16_t set:1;
@@ -310,8 +309,12 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 						pci_ctrl_addr.field.device;
 		}
 
-		/* Skip a device if its class is not specified by the caller */
-		if (pci_dev_header.field.class != lookup.info.class) {
+		/*
+		 * Skip a device if its class is specified by the
+		 * caller and does not match
+		 */
+		if (lookup.info.class &&
+		    pci_dev_header.field.class != lookup.info.class) {
 			continue;
 		}
 
@@ -325,12 +328,15 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 		if ((pci_dev_header.field.hdr_type & 0x7f) == 1) {
 			max_bars = 2;
 		} else {
-			max_bars = MAX_BARS;
+			max_bars = PCI_MAX_BARS;
 		}
 
 		for (; lookup.bar < max_bars; lookup.bar++) {
 			/* Ignore BARs with errors and 64 bit BARs */
 			if (pci_bar_params_get(pci_ctrl_addr, dev_info) != 0) {
+				continue;
+			} else if (lookup.info.bar != PCI_BAR_ANY &&
+				   lookup.bar != lookup.info.bar) {
 				continue;
 			} else {
 				dev_info->vendor_id =
@@ -361,6 +367,7 @@ void pci_bus_scan_init(void)
 	lookup.info.class = 0;
 	lookup.info.vendor_id = 0;
 	lookup.info.device_id = 0;
+	lookup.info.bar = PCI_BAR_ANY;
 	lookup.bus = 0;
 	lookup.dev = 0;
 	lookup.func = 0;
@@ -387,10 +394,12 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 
 	if (!lookup.info.class &&
 	    !lookup.info.vendor_id &&
-	    !lookup.info.device_id) {
+	    !lookup.info.device_id &&
+	    lookup.info.bar == PCI_BAR_ANY) {
 		lookup.info.class = dev_info->class;
 		lookup.info.vendor_id = dev_info->vendor_id;
 		lookup.info.device_id = dev_info->device_id;
+		lookup.info.bar = dev_info->bar;
 
 		if (class_bd[lookup.info.class].set) {
 			lookup.bus = class_bd[lookup.info.class].bus;
