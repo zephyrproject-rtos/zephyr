@@ -3,6 +3,7 @@
 
 
 .. include:: documentation_license.rst
+.. include:: disclaimers.rst
 
 .. toctree::
    :maxdepth: 2
