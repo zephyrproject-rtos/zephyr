@@ -312,6 +312,82 @@ static void hci_acl(struct bt_buf *buf)
 	bt_conn_recv(conn, buf, flags);
 }
 
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
+#include <offsets.h>
+#include <misc/printk.h>
+
+enum {
+	STACK_DIRECTION_UP,
+	STACK_DIRECTION_DOWN,
+};
+
+static unsigned calculate_unused(const char *stack, unsigned size,
+				 int stack_growth)
+{
+	unsigned i, unused = 0;
+
+	printk("stack %p size %u\n", size);
+
+	if (stack_growth == STACK_DIRECTION_DOWN) {
+		for (i = __tCCS_SIZEOF; i < size; i++) {
+			if ((unsigned char)stack[i] == 0xaa) {
+				unused++;
+			} else {
+				break;
+			}
+		}
+	} else {
+		for (i = size - 1; i >= __tCCS_SIZEOF; i--) {
+			if ((unsigned char)stack[i] == 0xaa) {
+				unused++;
+			} else {
+				break;
+			}
+		}
+	}
+
+	return unused;
+}
+
+static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
+{
+	unsigned unused;
+	int stack_growth;
+
+	printk("sizeof(tCCS) = %u\n", __tCCS_SIZEOF);
+
+	if (conn > *ref) {
+		printk("stack grows up\n");
+		stack_growth = STACK_DIRECTION_UP;
+	} else {
+		printk("stack grows down\n");
+		stack_growth = STACK_DIRECTION_DOWN;
+	}
+
+	unused = calculate_unused(rx_fiber_stack, sizeof(rx_fiber_stack),
+				  stack_growth);
+	printk("rx stack:      unused %u / %u\n", unused,
+	       sizeof(rx_fiber_stack));
+
+	unused = calculate_unused(cmd_rx_fiber_stack,
+				  sizeof(cmd_rx_fiber_stack), stack_growth);
+	printk("cmd rx stack:  unused %u / %u\n", unused,
+	       sizeof(cmd_rx_fiber_stack));
+
+	unused = calculate_unused(cmd_tx_fiber_stack,
+				  sizeof(cmd_tx_fiber_stack), stack_growth);
+	printk("cmd tx stack:  unused %u / %u\n", unused,
+	       sizeof(cmd_tx_fiber_stack));
+
+	unused = calculate_unused(conn->tx_stack, sizeof(conn->tx_stack),
+				  stack_growth);
+	printk("conn tx_stack: unused %u / %u\n", unused,
+	       sizeof(conn->tx_stack));
+}
+#else
+#define analyze_stacks(...)
+#endif
+
 /* HCI event processing */
 
 static void hci_disconn_complete(struct bt_buf *buf)
@@ -334,6 +410,9 @@ static void hci_disconn_complete(struct bt_buf *buf)
 	}
 
 	bt_l2cap_disconnected(conn);
+
+	/* Check stack usage (no-op if not enabled) */
+	analyze_stacks(conn, &conn);
 
 	bt_conn_del(conn);
 
