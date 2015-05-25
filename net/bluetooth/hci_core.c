@@ -1048,7 +1048,7 @@ static void rx_queue_init(void)
 		    (nano_fiber_entry_t)hci_rx_fiber, 0, 0, 7, 0);
 
 	nano_fifo_init(&dev.cmd_rx_queue);
-	fiber_start(cmd_rx_fiber_stack, RX_STACK_SIZE,
+	fiber_start(cmd_rx_fiber_stack, CMD_RX_STACK_SIZE,
 		    (nano_fiber_entry_t)cmd_rx_fiber, 0, 0, 7, 0);
 }
 
