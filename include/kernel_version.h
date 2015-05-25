@@ -51,16 +51,16 @@
  *
  * Part 3: The least significant byte is reserved for future use.
  */
-#define KERNEL_VER_GENERATION(ver) ((ver >> 28) & 0x0F)
-#define KERNEL_VER_MAJOR(ver) ((ver >> 24) & 0x0F)
-#define KERNEL_VER_MINOR(ver) ((ver >> 20) & 0x0F)
-#define KERNEL_VER_SERVICEPACK(ver) ((ver >> 16) & 0x0F)
+#define SYS_KERNEL_VER_GENERATION(ver) ((ver >> 28) & 0x0F)
+#define SYS_KERNEL_VER_MAJOR(ver) ((ver >> 24) & 0x0F)
+#define SYS_KERNEL_VER_MINOR(ver) ((ver >> 20) & 0x0F)
+#define SYS_KERNEL_VER_SERVICEPACK(ver) ((ver >> 16) & 0x0F)
 
 /* return 8-bit flags */
-#define KERNEL_VER_FLAGS(ver) ((ver >> 8) & 0xFF)
+#define SYS_KERNEL_VER_FLAGS(ver) ((ver >> 8) & 0xFF)
 
 /* kernel version routines */
 
-extern uint32_t kernel_version_get(void);
+extern uint32_t sys_kernel_version_get(void);
 
 #endif /* _kernel_version__h_ */

@@ -211,7 +211,7 @@ void main(void)
 
 	do {
 		fprintf(output_file, sz_module_title_fmt, "Nanokernel API test");
-		fprintf(output_file, sz_kernel_ver_fmt, kernel_version_get());
+		fprintf(output_file, sz_kernel_ver_fmt, sys_kernel_version_get());
 		fprintf(output_file,
 				"\n\nEach test below are repeated %d times and the average\n"
 				"time for one iteration is displayed.", NUMBER_OF_LOOPS);
