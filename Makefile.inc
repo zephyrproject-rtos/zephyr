@@ -31,7 +31,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
-all: $(CONFIG_DEPS) $(O)/.dir
+all: $(CONFIG_DEPS) $(O)/include/config/.dir
 	$(Q)$(MAKE) -C $(TIMO_BASE)  O=$(O) \
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS)
 
@@ -59,15 +59,15 @@ mrproper: FORCE
 	$(Q)$(MAKE) -C $(TIMO_BASE) \
 	PROJECT=$(PROJECT_BASE) mrproper
 
-%config: $(O)/.dir FORCE
+%config: $(O)/include/config/.dir FORCE
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) $@
 
-qemu: $(CONFIG_DEPS) $(O)/.dir
+qemu: $(CONFIG_DEPS) $(O)/include/config/.dir
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS) qemu
 
-initconfig: $(O)/.dir
+initconfig: $(O)/include/config/.dir $(O)/include/generated/.dir
 	set -e;
 	$(Q)test -s $(O)/.config || $(Q) $(MAKE) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) defconfig
@@ -80,7 +80,7 @@ endif
 
 %/.dir:
 	set -e;
-	$(Q)test -s $(abspath $(dir $@)) || $(Q)mkdir $(abspath $(dir $@))
+	$(Q)test -s $(abspath $(dir $@)) || $(Q)mkdir $(abspath $(dir $@)) -p
 	@touch $@
 
 help:

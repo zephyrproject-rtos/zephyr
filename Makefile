@@ -292,8 +292,17 @@ endif
 # Where to locate arch specific headers
 hdr-arch  := $(SRCARCH)
 
-KCONFIG_CONFIG	?= .config
-export KCONFIG_CONFIG
+ifdef O
+KCONFIG_CONFIG     := $(O)/.config
+KCONFIG_AUTOCONFIG := $(O)/include/config/auto.conf
+KCONFIG_AUTOHEADER := $(O)/include/generated/autoconf.h
+KCONFIG_TRISTATE   := $(O)/include/config/tristate.conf
+KCONFIG_AUTOCMD    := $(O)/include/config/auto.conf.cmd
+else
+KCONFIG_CONFIG     := .config
+endif
+
+export KCONFIG_CONFIG KCONFIG_AUTOCONFIG KCONFIG_AUTOHEADER KCONFIG_TRISTATE KCONFIG_AUTOCMD
 
 # SHELL used by kbuild
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
@@ -367,8 +376,9 @@ STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 AWK		= awk
-GENKSYMS	= scripts/genksyms/genksyms
-GENIDT		= scripts/gen_idt/gen_idt
+GENKSYMS	= $(TIMO_BASE)/scripts/genksyms/genksyms
+GENIDT		= $(TIMO_BASE)/scripts/gen_idt/gen_idt
+FIXDEP		= $(TIMO_BASE)/scripts/basic/fixdep
 INSTALLKERNEL  := installkernel
 DEPMOD		= /sbin/depmod
 PERL		= perl
@@ -437,7 +447,7 @@ export VERSION_GENERATION VERSION_MAJOR VERSION_MINOR VERSION_REVISION VERSION_R
 export PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP
-export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE GENIDT
+export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE GENIDT FIXDEP
 export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS TIMOINCLUDE OBJCOPYFLAGS LDFLAGS
@@ -466,8 +476,8 @@ export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn \
 # Basic helpers built in scripts/
 PHONY += scripts_basic
 scripts_basic:
-	$(Q)$(MAKE) $(build)=scripts/basic
-	$(Q)$(MAKE) $(build)=scripts/gen_idt
+	$(Q)$(MAKE) -C $(TIMO_BASE) $(build)=scripts/basic
+	$(Q)$(MAKE) -C $(TIMO_BASE) $(build)=scripts/gen_idt
 	$(Q)rm -f .tmp_quiet_recordmcount
 
 # To avoid any implicit rule to kick in, define an empty command.
@@ -555,10 +565,10 @@ include $(srctree)/arch/$(SRCARCH)/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
 config: scripts_basic outputmakefile FORCE
-	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) -C $(TIMO_BASE) $(build)=scripts/kconfig $@
 
 %config: scripts_basic outputmakefile FORCE
-	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) -C $(TIMO_BASE) $(build)=scripts/kconfig $@
 
 else
 # ===========================================================================
