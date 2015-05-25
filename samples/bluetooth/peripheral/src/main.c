@@ -207,14 +207,9 @@ static const struct bt_eir ad[] = {
 		.data = { BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR },
 	},
 	{
-		.len = 3,
+		.len = 5,
 		.type = BT_EIR_UUID16_ALL,
-		.data = { 0x0d, 0x18 },
-	},
-	{
-		.len = 3,
-		.type = BT_EIR_UUID16_ALL,
-		.data = { 0x0f, 0x18 },
+		.data = { 0x0d, 0x18, 0x0f, 0x18 },
 	},
 	{ }
 };
