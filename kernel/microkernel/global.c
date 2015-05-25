@@ -46,15 +46,17 @@ extern void init_drivers(void);     /* defined by sysgen */
 
 char __noinit __stack _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];
 
-struct nano_stack __noinit _k_command_stack;
-
-
 #ifdef CONFIG_TASK_DEBUG
 int _k_debug_halt = 0;
 #endif
 
 static uint32_t __noinit _k_server_command_stack_storage
 						[CONFIG_COMMAND_STACK_SIZE];
+
+struct nano_stack _k_command_stack = {NULL,
+									  _k_server_command_stack_storage,
+									  _k_server_command_stack_storage};
+
 
 extern void K_swapper(int i1, int i2);
 
@@ -81,7 +83,6 @@ void kernel_init(void)
 	memset((char *)_k_server_command_stack_storage, 0xaa,
 		   sizeof(_k_server_command_stack_storage));
 #endif
-	nano_stack_init(&_k_command_stack, _k_server_command_stack_storage);
 
 	task_fiber_start(_k_server_stack,
 			   CONFIG_MICROKERNEL_SERVER_STACK_SIZE,
