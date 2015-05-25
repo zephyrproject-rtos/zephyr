@@ -534,7 +534,7 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 
 	keys = bt_keys_find(&conn->dst);
 	if (!keys) {
-		BT_ERR("Unable to look up keys for conn %p\n");
+		BT_ERR("Unable to look up keys for conn %p\n", conn);
 		return;
 	}
 
