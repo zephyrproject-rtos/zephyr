@@ -191,9 +191,8 @@ uip_ds6_nbr_lladdr_from_ipaddr(const uip_ipaddr_t *ipaddr)
 }
 /*---------------------------------------------------------------------------*/
 void
-uip_ds6_link_neighbor_callback(struct net_buf *buf, int status, int numtx)
+uip_ds6_link_neighbor_callback(const linkaddr_t *dest, int status, int numtx)
 {
-  const linkaddr_t *dest = packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER);
   if(linkaddr_cmp(dest, &linkaddr_null)) {
     return;
   }

@@ -58,13 +58,15 @@
 
 #include "sys/etimer.h"
 
+struct net_mbuf;
+
 struct ctimer {
   struct ctimer *next;
   struct etimer etimer;
   struct process *p;
-  void (*f)(struct net_buf *, void *);
+  void (*f)(struct net_mbuf *, void *);
   void *ptr;
-  struct net_buf *buf;
+  struct net_mbuf *buf;
 };
 
 /**
@@ -113,8 +115,8 @@ void ctimer_restart(struct ctimer *c);
  *             the callback function f will be called with ptr as argument.
  *
  */
-void ctimer_set(struct net_buf *buf, struct ctimer *c, clock_time_t t,
-		void (*f)(struct net_buf *, void *), void *ptr);
+void ctimer_set(struct net_mbuf *buf, struct ctimer *c, clock_time_t t,
+		void (*f)(struct net_mbuf *, void *), void *ptr);
 
 /**
  * \brief      Stop a pending callback timer.

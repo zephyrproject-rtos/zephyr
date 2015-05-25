@@ -85,7 +85,7 @@ void uip_log(char *msg);
 
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_clear(struct net_buf *buf)
+packetbuf_clear(struct net_mbuf *buf)
 {
   uip_pkt_buflen(buf) = uip_pkt_bufptr(buf) = 0;
   uip_pkt_hdrptr(buf) = PACKETBUF_HDR_SIZE;
@@ -95,13 +95,13 @@ packetbuf_clear(struct net_buf *buf)
 }
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_clear_hdr(struct net_buf *buf)
+packetbuf_clear_hdr(struct net_mbuf *buf)
 {
   uip_pkt_hdrptr(buf) = PACKETBUF_HDR_SIZE;
 }
 /*---------------------------------------------------------------------------*/
 int
-packetbuf_copyfrom(struct net_buf *buf, const void *from, uint16_t len)
+packetbuf_copyfrom(struct net_mbuf *buf, const void *from, uint16_t len)
 {
   uint16_t l;
 
@@ -113,7 +113,7 @@ packetbuf_copyfrom(struct net_buf *buf, const void *from, uint16_t len)
 }
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_compact(struct net_buf *buf)
+packetbuf_compact(struct net_mbuf *buf)
 {
   int i, len;
 
@@ -131,7 +131,7 @@ packetbuf_compact(struct net_buf *buf)
 }
 /*---------------------------------------------------------------------------*/
 int
-packetbuf_copyto_hdr(struct net_buf *buf, uint8_t *to)
+packetbuf_copyto_hdr(struct net_mbuf *buf, uint8_t *to)
 {
 #if DEBUG_LEVEL > 0
   {
@@ -149,7 +149,7 @@ packetbuf_copyto_hdr(struct net_buf *buf, uint8_t *to)
 }
 /*---------------------------------------------------------------------------*/
 int
-packetbuf_copyto(struct net_buf *buf, void *to)
+packetbuf_copyto(struct net_mbuf *buf, void *to)
 {
 #if DEBUG_LEVEL > 0
   {
@@ -181,7 +181,7 @@ packetbuf_copyto(struct net_buf *buf, void *to)
 }
 /*---------------------------------------------------------------------------*/
 int
-packetbuf_hdralloc(struct net_buf *buf, int size)
+packetbuf_hdralloc(struct net_mbuf *buf, int size)
 {
   if(uip_pkt_hdrptr(buf) >= size && packetbuf_totlen(buf) + size <= PACKETBUF_SIZE) {
     uip_pkt_hdrptr(buf) -= size;
@@ -191,13 +191,13 @@ packetbuf_hdralloc(struct net_buf *buf, int size)
 }
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_hdr_remove(struct net_buf *buf, int size)
+packetbuf_hdr_remove(struct net_mbuf *buf, int size)
 {
   uip_pkt_hdrptr(buf) += size;
 }
 /*---------------------------------------------------------------------------*/
 int
-packetbuf_hdrreduce(struct net_buf *buf, int size)
+packetbuf_hdrreduce(struct net_mbuf *buf, int size)
 {
   if(uip_pkt_buflen(buf) < size) {
     return 0;
@@ -209,26 +209,26 @@ packetbuf_hdrreduce(struct net_buf *buf, int size)
 }
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_set_datalen(struct net_buf *buf, uint16_t len)
+packetbuf_set_datalen(struct net_mbuf *buf, uint16_t len)
 {
   PRINTF("packetbuf_set_len: len %d\n", len);
   uip_pkt_buflen(buf) = len;
 }
 /*---------------------------------------------------------------------------*/
 void *
-packetbuf_dataptr(struct net_buf *buf)
+packetbuf_dataptr(struct net_mbuf *buf)
 {
   return (void *)(&uip_pkt_packetbuf(buf)[uip_pkt_bufptr(buf) + PACKETBUF_HDR_SIZE]);
 }
 /*---------------------------------------------------------------------------*/
 void *
-packetbuf_hdrptr(struct net_buf *buf)
+packetbuf_hdrptr(struct net_mbuf *buf)
 {
   return (void *)(&uip_pkt_packetbuf(buf)[uip_pkt_hdrptr(buf)]);
 }
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_reference(struct net_buf *buf, void *ptr, uint16_t len)
+packetbuf_reference(struct net_mbuf *buf, void *ptr, uint16_t len)
 {
   packetbuf_clear(buf);
   uip_pkt_packetbufptr(buf) = ptr;
@@ -236,25 +236,25 @@ packetbuf_reference(struct net_buf *buf, void *ptr, uint16_t len)
 }
 /*---------------------------------------------------------------------------*/
 int
-packetbuf_is_reference(struct net_buf *buf)
+packetbuf_is_reference(struct net_mbuf *buf)
 {
   return uip_pkt_packetbufptr(buf) != &uip_pkt_packetbuf(buf)[PACKETBUF_HDR_SIZE];
 }
 /*---------------------------------------------------------------------------*/
 void *
-packetbuf_reference_ptr(struct net_buf *buf)
+packetbuf_reference_ptr(struct net_mbuf *buf)
 {
   return uip_pkt_packetbufptr(buf);
 }
 /*---------------------------------------------------------------------------*/
 uint16_t
-packetbuf_datalen(struct net_buf *buf)
+packetbuf_datalen(struct net_mbuf *buf)
 {
   return uip_pkt_buflen(buf);
 }
 /*---------------------------------------------------------------------------*/
 uint8_t
-packetbuf_hdrlen(struct net_buf *buf)
+packetbuf_hdrlen(struct net_mbuf *buf)
 {
   uint8_t hdrlen;
   
@@ -269,13 +269,13 @@ packetbuf_hdrlen(struct net_buf *buf)
 }
 /*---------------------------------------------------------------------------*/
 uint16_t
-packetbuf_totlen(struct net_buf *buf)
+packetbuf_totlen(struct net_mbuf *buf)
 {
   return packetbuf_hdrlen(buf) + packetbuf_datalen(buf);
 }
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_attr_clear(struct net_buf *buf)
+packetbuf_attr_clear(struct net_mbuf *buf)
 {
   int i;
   for(i = 0; i < PACKETBUF_NUM_ATTRS; ++i) {
@@ -287,7 +287,7 @@ packetbuf_attr_clear(struct net_buf *buf)
 }
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_attr_copyto(struct net_buf *buf, struct packetbuf_attr *attrs,
+packetbuf_attr_copyto(struct net_mbuf *buf, struct packetbuf_attr *attrs,
 		    struct packetbuf_addr *addrs)
 {
   memcpy(attrs, uip_pkt_packetbuf_attrs(buf), sizeof(uip_pkt_packetbuf_attrs(buf)));
@@ -295,7 +295,7 @@ packetbuf_attr_copyto(struct net_buf *buf, struct packetbuf_attr *attrs,
 }
 /*---------------------------------------------------------------------------*/
 void
-packetbuf_attr_copyfrom(struct net_buf *buf, struct packetbuf_attr *attrs,
+packetbuf_attr_copyfrom(struct net_mbuf *buf, struct packetbuf_attr *attrs,
 		      struct packetbuf_addr *addrs)
 {
   memcpy(uip_pkt_packetbuf_attrs(buf), attrs, sizeof(uip_pkt_packetbuf_attrs(buf)));
@@ -304,7 +304,7 @@ packetbuf_attr_copyfrom(struct net_buf *buf, struct packetbuf_attr *attrs,
 /*---------------------------------------------------------------------------*/
 #if !PACKETBUF_CONF_ATTRS_INLINE
 int
-packetbuf_set_attr(struct net_buf *buf, uint8_t type, const packetbuf_attr_t val)
+packetbuf_set_attr(struct net_mbuf *buf, uint8_t type, const packetbuf_attr_t val)
 {
 /*   uip_pkt_packetbuf_attrs(buf)[type].type = type; */
   uip_pkt_packetbuf_attrs(buf)[type].val = val;
@@ -312,13 +312,13 @@ packetbuf_set_attr(struct net_buf *buf, uint8_t type, const packetbuf_attr_t val
 }
 /*---------------------------------------------------------------------------*/
 packetbuf_attr_t
-packetbuf_attr(struct net_buf *buf, uint8_t type)
+packetbuf_attr(struct net_mbuf *buf, uint8_t type)
 {
   return uip_pkt_packetbuf_attrs(buf)[type].val;
 }
 /*---------------------------------------------------------------------------*/
 int
-packetbuf_set_addr(struct net_buf *buf, uint8_t type, const linkaddr_t *addr)
+packetbuf_set_addr(struct net_mbuf *buf, uint8_t type, const linkaddr_t *addr)
 {
 /*   uip_pkt_packetbuf_addrs(buf)[type - PACKETBUF_ADDR_FIRST].type = type; */
   linkaddr_copy(&uip_pkt_packetbuf_addrs(buf)[type - PACKETBUF_ADDR_FIRST].addr, addr);
@@ -326,14 +326,14 @@ packetbuf_set_addr(struct net_buf *buf, uint8_t type, const linkaddr_t *addr)
 }
 /*---------------------------------------------------------------------------*/
 const linkaddr_t *
-packetbuf_addr(struct net_buf *buf, uint8_t type)
+packetbuf_addr(struct net_mbuf *buf, uint8_t type)
 {
   return &uip_pkt_packetbuf_addrs(buf)[type - PACKETBUF_ADDR_FIRST].addr;
 }
 /*---------------------------------------------------------------------------*/
 #endif /* PACKETBUF_CONF_ATTRS_INLINE */
 int
-packetbuf_holds_broadcast(struct net_buf *buf)
+packetbuf_holds_broadcast(struct net_mbuf *buf)
 {
   return linkaddr_cmp(&uip_pkt_packetbuf_addrs(buf)[PACKETBUF_ADDR_RECEIVER - PACKETBUF_ADDR_FIRST].addr, &linkaddr_null);
 }

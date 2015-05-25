@@ -34,7 +34,7 @@
 
 /*---------------------------------------------------------------------------*/
 int
-framer_canonical_create_and_secure(struct net_buf *buf)
+framer_canonical_create_and_secure(struct net_mbuf *buf)
 {
   int hdr_len;
   

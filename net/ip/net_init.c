@@ -52,7 +52,6 @@
 #include "contiki/os/sys/process.h"
 #include "contiki/os/sys/etimer.h"
 #include "contiki/netstack.h"
-#include "contiki/uip-driver.h"
 #include "contiki/ipv6/uip-ds6.h"
 #include "contiki/ip/simple-udp.h"
 

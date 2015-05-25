@@ -313,7 +313,7 @@ queuebuf_init(void)
 }
 /*---------------------------------------------------------------------------*/
 int
-queuebuf_numfree(struct net_buf *buf)
+queuebuf_numfree(struct net_mbuf *buf)
 {
   if(packetbuf_is_reference(buf)) {
     return memb_numfree(&refbufmem);
@@ -324,10 +324,10 @@ queuebuf_numfree(struct net_buf *buf)
 /*---------------------------------------------------------------------------*/
 #if QUEUEBUF_DEBUG
 struct queuebuf *
-queuebuf_new_from_packetbuf_debug(struct net_buf *netbuf, const char *file, int line)
+queuebuf_new_from_packetbuf_debug(struct net_mbuf *netbuf, const char *file, int line)
 #else /* QUEUEBUF_DEBUG */
 struct queuebuf *
-queuebuf_new_from_packetbuf(struct net_buf *netbuf)
+queuebuf_new_from_packetbuf(struct net_mbuf *netbuf)
 #endif /* QUEUEBUF_DEBUG */
 {
   struct queuebuf *buf;
@@ -409,7 +409,7 @@ queuebuf_new_from_packetbuf(struct net_buf *netbuf)
 }
 /*---------------------------------------------------------------------------*/
 void
-queuebuf_update_attr_from_packetbuf(struct net_buf *netbuf, struct queuebuf *buf)
+queuebuf_update_attr_from_packetbuf(struct net_mbuf *netbuf, struct queuebuf *buf)
 {
   struct queuebuf_data *buframptr = queuebuf_load_to_ram(buf);
   packetbuf_attr_copyto(netbuf, buframptr->attrs, buframptr->addrs);
@@ -421,7 +421,7 @@ queuebuf_update_attr_from_packetbuf(struct net_buf *netbuf, struct queuebuf *buf
 }
 /*---------------------------------------------------------------------------*/
 void
-queuebuf_update_from_packetbuf(struct net_buf *netbuf, struct queuebuf *buf)
+queuebuf_update_from_packetbuf(struct net_mbuf *netbuf, struct queuebuf *buf)
 {
   struct queuebuf_data *buframptr = queuebuf_load_to_ram(buf);
   packetbuf_attr_copyto(netbuf, buframptr->attrs, buframptr->addrs);
@@ -463,7 +463,7 @@ queuebuf_free(struct queuebuf *buf)
 }
 /*---------------------------------------------------------------------------*/
 void
-queuebuf_to_packetbuf(struct net_buf *netbuf, struct queuebuf *b)
+queuebuf_to_packetbuf(struct net_mbuf *netbuf, struct queuebuf *b)
 {
   struct queuebuf_ref *r;
   if(memb_inmemb(&bufmem, b)) {

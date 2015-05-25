@@ -62,7 +62,7 @@ static struct seqno received_seqnos[MAX_SEQNOS];
 
 /*---------------------------------------------------------------------------*/
 int
-mac_sequence_is_duplicate(struct net_buf *buf)
+mac_sequence_is_duplicate(struct net_mbuf *buf)
 {
   int i;
 
@@ -84,7 +84,7 @@ mac_sequence_is_duplicate(struct net_buf *buf)
 }
 /*---------------------------------------------------------------------------*/
 void
-mac_sequence_register_seqno(struct net_buf *buf)
+mac_sequence_register_seqno(struct net_mbuf *buf)
 {
   int i, j;
 

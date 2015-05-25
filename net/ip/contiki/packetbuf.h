@@ -74,6 +74,8 @@
 #define PACKETBUF_HDR_SIZE 48
 #endif
 
+struct net_mbuf;
+
 /**
  * \brief      Clear and reset the packetbuf
  *
@@ -83,7 +85,7 @@
  *             packet in the packetbuf.
  *
  */
-void packetbuf_clear(struct net_buf *buf);
+void packetbuf_clear(struct net_mbuf *buf);
 
 /**
  * \brief      Clear and reset the header of the packetbuf
@@ -96,9 +98,9 @@ void packetbuf_clear(struct net_buf *buf);
  *             packet buffer for a later retransmission.
  *
  */
-void packetbuf_clear_hdr(struct net_buf *buf);
+void packetbuf_clear_hdr(struct net_mbuf *buf);
 
-void packetbuf_hdr_remove(struct net_buf *buf, int bytes);
+void packetbuf_hdr_remove(struct net_mbuf *buf, int bytes);
 
 /**
  * \brief      Get a pointer to the data in the packetbuf
@@ -118,7 +120,7 @@ void packetbuf_hdr_remove(struct net_buf *buf, int bytes);
  *             the header for incoming packets.
  *
  */
-void *packetbuf_dataptr(struct net_buf *buf);
+void *packetbuf_dataptr(struct net_mbuf *buf);
 
 /**
  * \brief      Get a pointer to the header in the packetbuf, for outbound packets
@@ -130,7 +132,7 @@ void *packetbuf_dataptr(struct net_buf *buf);
  *             stored in the packetbuf.
  *
  */
-void *packetbuf_hdrptr(struct net_buf *buf);
+void *packetbuf_hdrptr(struct net_mbuf *buf);
 
 /**
  * \brief      Get the length of the header in the packetbuf
@@ -143,7 +145,7 @@ void *packetbuf_hdrptr(struct net_buf *buf);
  *             packetbuf_hdrptr() function.
  *
  */
-uint8_t packetbuf_hdrlen(struct net_buf *buf);
+uint8_t packetbuf_hdrlen(struct net_mbuf *buf);
 
 
 /**
@@ -162,14 +164,14 @@ uint8_t packetbuf_hdrlen(struct net_buf *buf);
  *             length of the packet - both header and data.
  *
  */
-uint16_t packetbuf_datalen(struct net_buf *buf);
+uint16_t packetbuf_datalen(struct net_mbuf *buf);
 
 /**
  * \brief      Get the total length of the header and data in the packetbuf
  * \return     Length of data and header in the packetbuf
  *
  */
-uint16_t packetbuf_totlen(struct net_buf *buf);
+uint16_t packetbuf_totlen(struct net_mbuf *buf);
 
 /**
  * \brief      Set the length of the data in the packetbuf
@@ -179,7 +181,7 @@ uint16_t packetbuf_totlen(struct net_buf *buf);
  *             parts: header and data. This function is used to set
  *             the length of the data in the packetbuf.
  */
-void packetbuf_set_datalen(struct net_buf *buf, uint16_t len);
+void packetbuf_set_datalen(struct net_mbuf *buf, uint16_t len);
 
 /**
  * \brief      Point the packetbuf to external data
@@ -192,7 +194,7 @@ void packetbuf_set_datalen(struct net_buf *buf, uint16_t len);
  *             specifies the length of the external data that the
  *             packetbuf references.
  */
-void packetbuf_reference(struct net_buf *buf, void *ptr, uint16_t len);
+void packetbuf_reference(struct net_mbuf *buf, void *ptr, uint16_t len);
 
 /**
  * \brief      Check if the packetbuf references external data
@@ -204,7 +206,7 @@ void packetbuf_reference(struct net_buf *buf, void *ptr, uint16_t len);
  *             previously been referenced with packetbuf_reference().
  *
  */
-int packetbuf_is_reference(struct net_buf *buf);
+int packetbuf_is_reference(struct net_mbuf *buf);
 
 /**
  * \brief      Get a pointer to external data referenced by the packetbuf
@@ -217,7 +219,7 @@ int packetbuf_is_reference(struct net_buf *buf);
  *             pointer to the external data.
  *
  */
-void *packetbuf_reference_ptr(struct net_buf *buf);
+void *packetbuf_reference_ptr(struct net_mbuf *buf);
 
 /**
  * \brief      Compact the packetbuf
@@ -233,7 +235,7 @@ void *packetbuf_reference_ptr(struct net_buf *buf);
  *             that the entire packet is consecutive in memory.
  *
  */
-void packetbuf_compact(struct net_buf *buf);
+void packetbuf_compact(struct net_mbuf *buf);
 
 /**
  * \brief      Copy from external data into the packetbuf
@@ -248,7 +250,7 @@ void packetbuf_compact(struct net_buf *buf);
  *             copied into the rimbuf is returned.
  *
  */
-int packetbuf_copyfrom(struct net_buf *buf, const void *from, uint16_t len);
+int packetbuf_copyfrom(struct net_mbuf *buf, const void *from, uint16_t len);
 
 /**
  * \brief      Copy the entire packetbuf to an external buffer
@@ -268,7 +270,7 @@ int packetbuf_copyfrom(struct net_buf *buf, const void *from, uint16_t len);
  *             returned.
  *
  */
-int packetbuf_copyto(struct net_buf *buf, void *to);
+int packetbuf_copyto(struct net_mbuf *buf, void *to);
 
 /**
  * \brief      Copy the header portion of the packetbuf to an external buffer
@@ -284,7 +286,7 @@ int packetbuf_copyto(struct net_buf *buf, void *to);
  *             copied to the external buffer is returned.
  *
  */
-int packetbuf_copyto_hdr(struct net_buf *buf, uint8_t *to);
+int packetbuf_copyto_hdr(struct net_mbuf *buf, uint8_t *to);
 
 /**
  * \brief      Extend the header of the packetbuf, for outbound packets
@@ -298,7 +300,7 @@ int packetbuf_copyto_hdr(struct net_buf *buf, uint8_t *to);
  *             zero and does not allocate anything.
  *
  */
-int packetbuf_hdralloc(struct net_buf *buf, int size);
+int packetbuf_hdralloc(struct net_mbuf *buf, int size);
 
 /**
  * \brief      Reduce the header in the packetbuf, for incoming packets
@@ -312,7 +314,7 @@ int packetbuf_hdralloc(struct net_buf *buf, int size);
  *             zero and does not allocate anything.
  *
  */
-int packetbuf_hdrreduce(struct net_buf *buf, int size);
+int packetbuf_hdrreduce(struct net_mbuf *buf, int size);
 
 /* Packet attributes stuff below: */
 
@@ -428,26 +430,26 @@ extern struct packetbuf_attr packetbuf_attrs[];
 extern struct packetbuf_addr packetbuf_addrs[];
 #endif
 
-static int               packetbuf_set_attr(struct net_buf *buf, uint8_t type, const packetbuf_attr_t val);
-static packetbuf_attr_t    packetbuf_attr(struct net_buf *buf, uint8_t type);
-static int               packetbuf_set_addr(struct net_buf *buf, uint8_t type, const linkaddr_t *addr);
-static const linkaddr_t *packetbuf_addr(struct net_buf *buf, uint8_t type);
+static int               packetbuf_set_attr(struct net_mbuf *buf, uint8_t type, const packetbuf_attr_t val);
+static packetbuf_attr_t    packetbuf_attr(struct net_mbuf *buf, uint8_t type);
+static int               packetbuf_set_addr(struct net_mbuf *buf, uint8_t type, const linkaddr_t *addr);
+static const linkaddr_t *packetbuf_addr(struct net_mbuf *buf, uint8_t type);
 
 static inline int
-packetbuf_set_attr(struct net_buf *buf, uint8_t type, const packetbuf_attr_t val)
+packetbuf_set_attr(struct net_mbuf *buf, uint8_t type, const packetbuf_attr_t val)
 {
 /*   packetbuf_attrs[type].type = type; */
   uip_pkt_packetbuf_attrs(buf)[type].val = val;
   return 1;
 }
 static inline packetbuf_attr_t
-packetbuf_attr(struct net_buf *buf, uint8_t type)
+packetbuf_attr(struct net_mbuf *buf, uint8_t type)
 {
   return uip_pkt_packetbuf_attrs(buf)[type].val;
 }
 
 static inline int
-packetbuf_set_addr(struct net_buf *buf, uint8_t type, const linkaddr_t *addr)
+packetbuf_set_addr(struct net_mbuf *buf, uint8_t type, const linkaddr_t *addr)
 {
 /*   packetbuf_addrs[type - PACKETBUF_ADDR_FIRST].type = type; */
   linkaddr_copy(&uip_pkt_packetbuf_addrs(buf)[type - PACKETBUF_ADDR_FIRST].addr, addr);
@@ -455,29 +457,29 @@ packetbuf_set_addr(struct net_buf *buf, uint8_t type, const linkaddr_t *addr)
 }
 
 static inline const linkaddr_t *
-packetbuf_addr(struct net_buf *buf, uint8_t type)
+packetbuf_addr(struct net_mbuf *buf, uint8_t type)
 {
   return &uip_pkt_packetbuf_addrs(buf)[type - PACKETBUF_ADDR_FIRST].addr;
 }
 #else /* PACKETBUF_CONF_ATTRS_INLINE */
-int               packetbuf_set_attr(struct net_buf *buf, uint8_t type, const packetbuf_attr_t val);
-packetbuf_attr_t packetbuf_attr(struct net_buf *buf, uint8_t type);
-int               packetbuf_set_addr(struct net_buf *buf, uint8_t type, const linkaddr_t *addr);
-const linkaddr_t *packetbuf_addr(struct net_buf *buf, uint8_t type);
+int               packetbuf_set_attr(struct net_mbuf *buf, uint8_t type, const packetbuf_attr_t val);
+packetbuf_attr_t packetbuf_attr(struct net_mbuf *buf, uint8_t type);
+int               packetbuf_set_addr(struct net_mbuf *buf, uint8_t type, const linkaddr_t *addr);
+const linkaddr_t *packetbuf_addr(struct net_mbuf *buf, uint8_t type);
 #endif /* PACKETBUF_CONF_ATTRS_INLINE */
 
 /**
  * \brief      Checks whether the current packet is a broadcast.
  * \retval 0   iff current packet is not a broadcast
  */
-int               packetbuf_holds_broadcast(struct net_buf *buf);
+int               packetbuf_holds_broadcast(struct net_mbuf *buf);
 
-void              packetbuf_attr_clear(struct net_buf *buf);
+void              packetbuf_attr_clear(struct net_mbuf *buf);
 
-void              packetbuf_attr_copyto(struct net_buf *buf,
+void              packetbuf_attr_copyto(struct net_mbuf *buf,
 					struct packetbuf_attr *attrs,
 					struct packetbuf_addr *addrs);
-void              packetbuf_attr_copyfrom(struct net_buf *buf,
+void              packetbuf_attr_copyfrom(struct net_mbuf *buf,
 					  struct packetbuf_attr *attrs,
 					  struct packetbuf_addr *addrs);
 

@@ -36,9 +36,9 @@ obj-y += net_init.o \
 
 ifeq ($(CONFIG_NETWORKING_WITH_6LOWPAN),y)
      EXTRA_CFLAGS += -DSICSLOWPAN_CONF_ENABLE
-     obj-y += contiki/ipv6/sicslowpan.o
 else
-     obj-y += contiki/uip-driver.o
+     obj-y += contiki/sicslowpan/null_compression.o
+     obj-y += contiki/sicslowpan/null_fragmentation.o
 endif
 
 ifeq ($(CONFIG_NETWORKING_WITH_LOGGING),y)

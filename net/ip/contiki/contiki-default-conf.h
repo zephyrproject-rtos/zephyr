@@ -78,20 +78,20 @@
 #define NETSTACK_CONF_LLSEC nullsec_driver
 #endif /* NETSTACK_CONF_LLSEC */
 
+#ifndef NETSTACK_CONF_FRAGMENT
+#define NETSTACK_CONF_FRAGMENT null_fragmentation
+#endif /* NETSTACK_CONF_FRAGMENT */
+
+#ifndef NETSTACK_CONF_COMPRESS
+#define NETSTACK_CONF_COMPRESS null_compression
+#endif /* NETSTACK_CONF_COMPRESS */
+
 /* To avoid unnecessary complexity, we assume the common case of
    a constant LoWPAN-wide IEEE 802.15.4 security level, which
    can be specified by defining LLSEC802154_CONF_SECURITY_LEVEL. */
 #ifndef LLSEC802154_CONF_SECURITY_LEVEL
 #define LLSEC802154_CONF_SECURITY_LEVEL 0
 #endif /* LLSEC802154_CONF_SECURITY_LEVEL */
-
-/* NETSTACK_CONF_NETWORK specifies the network layer and can be either
-   sicslowpan_driver, for IPv6 networking, or rime_driver, for the
-   custom Rime network stack. */
-#ifndef NETSTACK_CONF_NETWORK
-#define NETSTACK_CONF_NETWORK rime_driver
-/* #define NETSTACK_CONF_NETWORK sicslowpan_driver */
-#endif /* NETSTACK_CONF_NETWORK */
 
 /* NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE specifies the channel check
    rate of the RDC layer. This defines how often the RDC will wake up

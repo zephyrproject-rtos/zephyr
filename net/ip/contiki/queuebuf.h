@@ -90,15 +90,15 @@ struct queuebuf;
 void queuebuf_init(void);
 
 #if QUEUEBUF_DEBUG
-struct queuebuf *queuebuf_new_from_packetbuf_debug(struct net_buf *buf, const char *file, int line);
+struct queuebuf *queuebuf_new_from_packetbuf_debug(struct net_mbuf *buf, const char *file, int line);
 #define queuebuf_new_from_packetbuf(buf) queuebuf_new_from_packetbuf_debug(buf,__FILE__, __LINE__)
 #else /* QUEUEBUF_DEBUG */
-struct queuebuf *queuebuf_new_from_packetbuf(struct net_buf *buf);
+struct queuebuf *queuebuf_new_from_packetbuf(struct net_mbuf *buf);
 #endif /* QUEUEBUF_DEBUG */
-void queuebuf_update_attr_from_packetbuf(struct net_buf *buf, struct queuebuf *b);
-void queuebuf_update_from_packetbuf(struct net_buf *buf, struct queuebuf *b);
+void queuebuf_update_attr_from_packetbuf(struct net_mbuf *buf, struct queuebuf *b);
+void queuebuf_update_from_packetbuf(struct net_mbuf *buf, struct queuebuf *b);
 
-void queuebuf_to_packetbuf(struct net_buf *buf, struct queuebuf *b);
+void queuebuf_to_packetbuf(struct net_mbuf *buf, struct queuebuf *b);
 void queuebuf_free(struct queuebuf *b);
 
 void *queuebuf_dataptr(struct queuebuf *b);
@@ -109,7 +109,7 @@ packetbuf_attr_t queuebuf_attr(struct queuebuf *b, uint8_t type);
 
 void queuebuf_debug_print(void);
 
-int queuebuf_numfree(struct net_buf *buf);
+int queuebuf_numfree(struct net_mbuf *buf);
 
 #endif /* __QUEUEBUF_H__ */
 

@@ -93,24 +93,6 @@ struct net_buf {
 	uint8_t *nd6_opt_llao;
 	uip_ipaddr_t ipaddr;
 	uint8_t nd6_opt_offset;
-
-	/* 6LoWPAN pointers */
-	uint8_t *packetbuf_ptr;
-	uint8_t packetbuf_hdr_len;
-	int packetbuf_payload_len;
-	uint8_t uncomp_hdr_len;
-	int last_tx_status;
-
-	/* 802.15.4 specific stuff */
-	/* FIXME - put behind #ifdef
-	 *       - have a separate buffers for these packets
-	 */
-	struct packetbuf_attr pkt_packetbuf_attrs[PACKETBUF_NUM_ATTRS];
-	struct packetbuf_addr pkt_packetbuf_addrs[PACKETBUF_NUM_ADDRS];
-	uint16_t pkt_buflen, pkt_bufptr;
-	uint8_t pkt_hdrptr;
-	uint8_t pkt_packetbuf[PACKETBUF_SIZE + PACKETBUF_HDR_SIZE];
-	uint8_t *pkt_packetbufptr;
 	/* @endcond */
 
 	/*! Buffer data length */
@@ -152,18 +134,6 @@ struct net_buf {
 #define uip_nd6_opt_llao(buf) ((buf)->nd6_opt_llao)
 #define uip_set_nd6_opt_llao(buf) ((buf)->nd6_opt_llao)
 #define uip_nd6_ipaddr(buf) ((buf)->ipaddr)
-#define uip_packetbuf_ptr(buf) ((buf)->packetbuf_ptr)
-#define uip_packetbuf_hdr_len(buf) ((buf)->packetbuf_hdr_len)
-#define uip_packetbuf_payload_len(buf) ((buf)->packetbuf_payload_len)
-#define uip_uncomp_hdr_len(buf) ((buf)->uncomp_hdr_len)
-#define uip_last_tx_status(buf) ((buf)->last_tx_status)
-#define uip_pkt_buflen(buf) ((buf)->pkt_buflen)
-#define uip_pkt_bufptr(buf) ((buf)->pkt_bufptr)
-#define uip_pkt_hdrptr(buf) ((buf)->pkt_hdrptr)
-#define uip_pkt_packetbuf(buf) ((buf)->pkt_packetbuf)
-#define uip_pkt_packetbufptr(buf) ((buf)->pkt_packetbufptr)
-#define uip_pkt_packetbuf_attrs(buf) ((buf)->pkt_packetbuf_attrs)
-#define uip_pkt_packetbuf_addrs(buf) ((buf)->pkt_packetbuf_addrs)
 /* @endcond */
 
 /*!
@@ -288,6 +258,22 @@ struct net_mbuf {
 	int __unused;
 	/* @endcond */
 
+	/*! @cond ignore */
+	/* 6LoWPAN pointers */
+	uint8_t *packetbuf_ptr;
+	uint8_t packetbuf_hdr_len;
+	int packetbuf_payload_len;
+	uint8_t uncomp_hdr_len;
+	int last_tx_status;
+
+	struct packetbuf_attr pkt_packetbuf_attrs[PACKETBUF_NUM_ATTRS];
+	struct packetbuf_addr pkt_packetbuf_addrs[PACKETBUF_NUM_ADDRS];
+	uint16_t pkt_buflen, pkt_bufptr;
+	uint8_t pkt_hdrptr;
+	uint8_t pkt_packetbuf[PACKETBUF_SIZE + PACKETBUF_HDR_SIZE];
+	uint8_t *pkt_packetbufptr;
+	/* @endcond */
+
 	/*! Buffer data variables */
 	uint16_t len;
 	uint8_t *data;                 /* this points to user data */
@@ -365,5 +351,20 @@ uint8_t *net_mbuf_pull(struct net_mbuf *buf, uint16_t len);
  * @return Pointer to tail.
  */
 #define net_mbuf_tail(buf) ((buf)->data + (buf)->len)
+
+/*! @cond ignore */
+#define uip_packetbuf_ptr(buf) ((buf)->packetbuf_ptr)
+#define uip_packetbuf_hdr_len(buf) ((buf)->packetbuf_hdr_len)
+#define uip_packetbuf_payload_len(buf) ((buf)->packetbuf_payload_len)
+#define uip_uncomp_hdr_len(buf) ((buf)->uncomp_hdr_len)
+#define uip_last_tx_status(buf) ((buf)->last_tx_status)
+#define uip_pkt_buflen(buf) ((buf)->pkt_buflen)
+#define uip_pkt_bufptr(buf) ((buf)->pkt_bufptr)
+#define uip_pkt_hdrptr(buf) ((buf)->pkt_hdrptr)
+#define uip_pkt_packetbuf(buf) ((buf)->pkt_packetbuf)
+#define uip_pkt_packetbufptr(buf) ((buf)->pkt_packetbufptr)
+#define uip_pkt_packetbuf_attrs(buf) ((buf)->pkt_packetbuf_attrs)
+#define uip_pkt_packetbuf_addrs(buf) ((buf)->pkt_packetbuf_addrs)
+/* @endcond */
 
 #endif /* __NET_BUF_H */

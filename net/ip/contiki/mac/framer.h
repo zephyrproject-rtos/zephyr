@@ -47,15 +47,15 @@
 
 struct framer {
 
-  int (* length)(void);
-  int (* create)(struct net_buf *buf);
+  int (* length)(struct net_mbuf *buf);
+  int (* create)(struct net_mbuf *buf);
   
   /** Creates the frame and calls LLSEC.on_frame_created() */
-  int (* create_and_secure)(void);
-  int (* parse)(struct net_buf *buf);
+  int (* create_and_secure)(struct net_mbuf *buf);
+  int (* parse)(struct net_mbuf *buf);
 
 };
 
-int framer_canonical_create_and_secure(struct net_buf *buf);
+int framer_canonical_create_and_secure(struct net_mbuf *buf);
 
 #endif /* FRAMER_H_ */

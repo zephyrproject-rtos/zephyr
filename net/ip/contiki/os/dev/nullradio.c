@@ -17,13 +17,13 @@ prepare(const void *payload, unsigned short payload_len)
 }
 /*---------------------------------------------------------------------------*/
 static int
-transmit(struct net_buf *buf, unsigned short transmit_len)
+transmit(struct net_mbuf *buf, unsigned short transmit_len)
 {
   return RADIO_TX_OK;
 }
 /*---------------------------------------------------------------------------*/
 static int
-send(struct net_buf *buf, const void *payload, unsigned short payload_len)
+send(struct net_mbuf *buf, const void *payload, unsigned short payload_len)
 {
   prepare(payload, payload_len);
   return transmit(buf, payload_len);

@@ -232,10 +232,10 @@ struct radio_driver {
   int (* prepare)(const void *payload, unsigned short payload_len);
 
   /** Send the packet that has previously been prepared. */
-  int (* transmit)(struct net_buf *buf, unsigned short transmit_len);
+  int (* transmit)(struct net_mbuf *buf, unsigned short transmit_len);
 
   /** Prepare & transmit a packet. */
-  int (* send)(struct net_buf *buf, const void *payload, unsigned short payload_len);
+  int (* send)(struct net_mbuf *buf, const void *payload, unsigned short payload_len);
 
   /** Read a received packet into a buffer. */
   int (* read)(void *buf, unsigned short buf_len);

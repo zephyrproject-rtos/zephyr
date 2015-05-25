@@ -45,14 +45,6 @@
 
 #include "contiki-conf.h"
 
-#ifndef NETSTACK_NETWORK
-#ifdef NETSTACK_CONF_NETWORK
-#define NETSTACK_NETWORK NETSTACK_CONF_NETWORK
-#else /* NETSTACK_CONF_NETWORK */
-#define NETSTACK_NETWORK rime_driver
-#endif /* NETSTACK_CONF_NETWORK */
-#endif /* NETSTACK_NETWORK */
-
 #ifndef NETSTACK_LLSEC
 #ifdef NETSTACK_CONF_LLSEC
 #define NETSTACK_LLSEC NETSTACK_CONF_LLSEC
@@ -107,11 +99,29 @@
 #endif /* NETSTACK_CONF_FRAMER */
 #endif /* NETSTACK_FRAMER */
 
+#ifndef NETSTACK_COMPRESS
+#ifdef NETSTACK_CONF_COMPRESS
+#define NETSTACK_COMPRESS NETSTACK_CONF_COMPRESS
+#else /* NETSTACK_CONF_COMPRESS */
+#define NETSTACK_COMPRESS   null_compression
+#endif /* NETSTACK_CONF_COMPRESS */
+#endif /* NETSTACK_COMPRESS */
+
+#ifndef NETSTACK_FRAGMENT
+#ifdef NETSTACK_CONF_FRAGMENT
+#define NETSTACK_FRAGMENT NETSTACK_CONF_FRAGMENT
+#else /* NETSTACK_CONF_FRAGMENT */
+#define NETSTACK_FRAGMENT   null_fragmentation
+#endif /* NETSTACK_CONF_FRAGMENT */
+#endif /* NETSTACK_FRAGEMENT */
+
 #include "net/llsec/llsec.h"
 #include "net/mac/mac.h"
 #include "net/mac/rdc.h"
 #include "net/mac/framer.h"
 #include "dev/radio.h"
+#include "net/sicslowpan/compression.h"
+#include "net/sicslowpan/fragmentation.h"
 
 /**
  * The structure of a network driver in Contiki.
@@ -126,12 +136,13 @@ struct network_driver {
   uint8_t (* input)(struct net_buf *buf);
 };
 
-extern const struct network_driver NETSTACK_NETWORK;
 extern const struct llsec_driver   NETSTACK_LLSEC;
 extern const struct rdc_driver     NETSTACK_RDC;
 extern const struct mac_driver     NETSTACK_MAC;
 extern const struct radio_driver   NETSTACK_RADIO;
 extern const struct framer         NETSTACK_FRAMER;
+extern const struct compression    NETSTACK_COMPRESS;
+extern const struct fragmentation  NETSTACK_FRAGMENT;
 
 void netstack_init(void);
 

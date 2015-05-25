@@ -101,8 +101,8 @@ ctimer_init(void)
 }
 /*---------------------------------------------------------------------------*/
 void
-ctimer_set(struct net_buf *buf, struct ctimer *c, clock_time_t t,
-	   void (*f)(struct net_buf *, void *), void *ptr)
+ctimer_set(struct net_mbuf *buf, struct ctimer *c, clock_time_t t,
+	   void (*f)(struct net_mbuf *, void *), void *ptr)
 {
   PRINTF("ctimer_set %p %u\n", c, (unsigned)t);
   c->p = PROCESS_CURRENT();

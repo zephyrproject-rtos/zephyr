@@ -46,7 +46,7 @@ void uip_log(char *msg);
 
 /*---------------------------------------------------------------------------*/
 void
-mac_call_sent_callback(struct net_buf *buf, mac_callback_t sent, void *ptr, int status, int num_tx)
+mac_call_sent_callback(struct net_mbuf *buf, mac_callback_t sent, void *ptr, int status, int num_tx)
 {
   PRINTF("buf %p mac_callback_t %p ptr %p status %d num_tx %d\n", buf,
          (void *)sent, ptr, status, num_tx);

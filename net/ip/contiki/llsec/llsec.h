@@ -72,7 +72,7 @@ struct llsec_driver {
   void (* bootstrap)(llsec_on_bootstrapped_t on_bootstrapped);
   
   /** Secures outgoing frames before passing them to NETSTACK_MAC. */
-  uint8_t (* send)(struct net_buf *buf, mac_callback_t sent_callback, void *ptr);
+  uint8_t (* send)(struct net_mbuf *buf, mac_callback_t sent_callback, void *ptr);
   
   /**
    * Once the NETSTACK_FRAMER wrote the headers, the LLSEC driver
@@ -85,7 +85,7 @@ struct llsec_driver {
    * Decrypts incoming frames;
    * filters out injected or replayed frames.
    */
-  uint8_t (* input)(struct net_buf *buf);
+  uint8_t (* input)(struct net_mbuf *buf);
   
   /** Returns the security-related overhead per frame in bytes */
   uint8_t (* get_overhead)(void);

@@ -134,8 +134,8 @@ MEMB(packet_memb, struct rdc_buf_list, MAX_QUEUED_PACKETS);
 MEMB(metadata_memb, struct qbuf_metadata, MAX_QUEUED_PACKETS);
 LIST(neighbor_list);
 
-static void packet_sent(struct net_buf *buf, void *ptr, int status, int num_transmissions);
-static void transmit_packet_list(struct net_buf *buf, void *ptr);
+static void packet_sent(struct net_mbuf *buf, void *ptr, int status, int num_transmissions);
+static void transmit_packet_list(struct net_mbuf *buf, void *ptr);
 
 /*---------------------------------------------------------------------------*/
 static struct neighbor_queue *
@@ -169,7 +169,7 @@ default_timebase(void)
 }
 /*---------------------------------------------------------------------------*/
 static void
-free_packet(struct net_buf *buf, struct neighbor_queue *n, struct rdc_buf_list *p)
+free_packet(struct net_mbuf *buf, struct neighbor_queue *n, struct rdc_buf_list *p)
 {
   if(p != NULL) {
     /* Remove packet from list and deallocate */
@@ -193,12 +193,13 @@ free_packet(struct net_buf *buf, struct neighbor_queue *n, struct rdc_buf_list *
       ctimer_stop(&n->transmit_timer);
       list_remove(neighbor_list, n);
       memb_free(&neighbor_memb, n);
+      net_mbuf_put(buf);
     }
   }
 }
 /*---------------------------------------------------------------------------*/
 static void
-transmit_packet_list(struct net_buf *buf, void *ptr)
+transmit_packet_list(struct net_mbuf *buf, void *ptr)
 {
   struct neighbor_queue *n = ptr;
   if(n) {
@@ -207,15 +208,18 @@ transmit_packet_list(struct net_buf *buf, void *ptr)
       PRINTF("csma: preparing number %d %p, queue len %d\n", n->transmissions, q,
           list_length(n->queued_packet_list));
       /* Send packets in the neighbor's list */
-      if (!NETSTACK_RDC.send_list(buf, packet_sent, n, q)) {
+      /*FIXME: if rdc failed to send discard all packets */
+      NETSTACK_RDC.send_list(buf, packet_sent, n, q);
+/*      if (!NETSTACK_RDC.send_list(buf, packet_sent, n, q)) {
         free_packet(buf, n, q);
       }
+*/
     }
   }
 }
 /*---------------------------------------------------------------------------*/
 static void
-packet_sent(struct net_buf *buf, void *ptr, int status, int num_transmissions)
+packet_sent(struct net_mbuf *buf, void *ptr, int status, int num_transmissions)
 {
   struct neighbor_queue *n;
   struct rdc_buf_list *q;
@@ -329,7 +333,7 @@ packet_sent(struct net_buf *buf, void *ptr, int status, int num_transmissions)
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
+send_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
 {
   struct rdc_buf_list *q;
   struct neighbor_queue *n;
@@ -338,7 +342,7 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
   const linkaddr_t *addr = packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER);
 
   if (!buf) {
-    UIP_LOG("csma: send_packet(): net_buf is NULL, cannot send packet");
+    UIP_LOG("csma: send_packet(): net_mbuf is NULL, cannot send packet");
     return 0;
   }
 
@@ -432,7 +436,7 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-input_packet(struct net_buf *buf)
+input_packet(struct net_mbuf *buf)
 {
   return NETSTACK_LLSEC.input(buf);
 }
