@@ -497,8 +497,8 @@ static void le_conn_complete(struct bt_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
-	BT_DBG("status %u handle %u role %u %s (%u)\n", evt->status, handle,
-	       evt->role, bt_bdaddr_str(evt->peer_addr), evt->peer_addr_type);
+	BT_DBG("status %u handle %u role %u %s\n", evt->status, handle,
+	       evt->role, bt_addr_le_str(&evt->peer_addr));
 
 	if (evt->status) {
 		return;
@@ -530,8 +530,8 @@ static void le_adv_report(struct bt_buf *buf)
 	while (num_reports--) {
 		int8_t rssi = info->data[info->length];
 
-		BT_DBG("addr [%s], type:%u, event:%u, len:%u, rssi:%d dBm\n",
-			bt_bdaddr_str(info->bdaddr), info->bdaddr_type,
+		BT_DBG("%s event %u, len %u, rssi %d dBm\n",
+			bt_addr_le_str(&info->addr),
 			info->evt_type, info->length, rssi);
 
 		/* Get next report iteration by moving pointer to right offset
