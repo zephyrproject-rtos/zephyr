@@ -65,8 +65,6 @@
 #define CMD_TX_STACK_SIZE	256
 #endif
 
-static const uint8_t BDADDR_ANY[6] = { 0, 0, 0, 0, 0 };
-
 static char rx_fiber_stack[RX_STACK_SIZE];
 static char cmd_rx_fiber_stack[CMD_RX_STACK_SIZE];
 static char cmd_tx_fiber_stack[CMD_TX_STACK_SIZE];
