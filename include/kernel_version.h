@@ -1,4 +1,4 @@
-/* kernel version macros */
+/* kernel version support */
 
 /*
  * Copyright (c) 2015 Wind River Systems, Inc.
@@ -58,5 +58,9 @@
 
 /* return 8-bit flags */
 #define KERNEL_VER_FLAGS(ver) ((ver >> 8) & 0xFF)
+
+/* kernel version routines */
+
+extern uint32_t kernel_version_get(void);
 
 #endif /* _kernel_version__h_ */

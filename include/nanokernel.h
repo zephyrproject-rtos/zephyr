@@ -219,8 +219,6 @@ extern uint32_t nano_tick_delta_32(int64_t *reftime);
 #define SYS_PREKERNEL_INIT(name, level) \
 			void (*__ctor_##name)(void) __prekernel_init_level(level) = name
 
-extern uint32_t kernel_version_get(void);
-
 #ifdef __cplusplus
 }
 #endif
