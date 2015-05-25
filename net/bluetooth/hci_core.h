@@ -30,6 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdbool.h>
+
 /* LMP feature helpers */
 #define lmp_bredr_capable(dev)	(!((dev).features[4] & BT_LMP_NO_BREDR))
 #define lmp_le_capable(dev)	((dev).features[4] & BT_LMP_LE)
@@ -99,6 +101,29 @@ static inline void bt_addr_copy(bt_addr_t *dst, const bt_addr_t *src)
 static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 {
 	memcpy(dst, src, sizeof(*dst));
+}
+
+static inline bool bt_addr_is_rpa(const bt_addr_le_t *addr)
+{
+	if (addr->type != BT_ADDR_LE_RANDOM)
+		return false;
+
+	if ((addr->val[5] & 0xc0) == 0x40)
+	       return true;
+
+	return false;
+}
+
+static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
+{
+	if (addr->type == BT_ADDR_LE_PUBLIC)
+		return true;
+
+	/* Check for Random Static address type */
+	if ((addr->val[5] & 0xc0) == 0xc0)
+		return true;
+
+	return false;
 }
 
 struct bt_ltk {
