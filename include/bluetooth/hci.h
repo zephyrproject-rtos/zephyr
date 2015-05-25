@@ -35,6 +35,21 @@
 #include <toolchain.h>
 #include <stdint.h>
 
+#define BT_ADDR_LE_PUBLIC  0x00
+#define BT_ADDR_LE_RANDOM  0x01
+
+typedef struct {
+	uint8_t  val[6];
+} bt_addr_t;
+
+typedef struct {
+	uint8_t  type;
+	uint8_t  val[6];
+} bt_addr_le_t;
+
+#define BT_ADDR_ANY    (&(bt_addr_t) {{0, 0, 0, 0, 0, 0}})
+#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0}})
+
 /* EIR/AD definitions */
 #define BT_EIR_FLAGS			0x01 /* AD flags */
 #define BT_EIR_UUID16_SOME		0x02 /* 16-bit UUID, more available */
@@ -150,8 +165,8 @@ struct bt_hci_rp_read_buffer_size {
 
 #define BT_HCI_OP_READ_BD_ADDR			BT_OP(BT_OGF_INFO, 0x0009)
 struct bt_hci_rp_read_bd_addr {
-	uint8_t  status;
-	uint8_t  bdaddr[6];
+	uint8_t   status;
+	bt_addr_t bdaddr;
 } PACK_STRUCT;
 
 #define BT_HCI_OP_LE_READ_BUFFER_SIZE		BT_OP(BT_OGF_LE, 0x0002)
@@ -177,14 +192,13 @@ struct bt_hci_rp_le_read_local_features {
 
 #define BT_HCI_OP_LE_SET_ADV_PARAMETERS		BT_OP(BT_OGF_LE, 0x0006)
 struct bt_hci_cp_le_set_adv_parameters {
-	uint16_t min_interval;
-	uint16_t max_interval;
-	uint8_t  type;
-	uint8_t  own_addr_type;
-	uint8_t  direct_addr_type;
-	uint8_t  direct_addr[6];
-	uint8_t  channel_map;
-	uint8_t  filter_policy;
+	uint16_t     min_interval;
+	uint16_t     max_interval;
+	uint8_t      type;
+	uint8_t      own_addr_type;
+	bt_addr_le_t direct_addr;
+	uint8_t      channel_map;
+	uint8_t      filter_policy;
 } PACK_STRUCT;
 
 #define BT_HCI_OP_LE_SET_ADV_DATA		BT_OP(BT_OGF_LE, 0x0008)
@@ -297,27 +311,22 @@ struct bt_hci_evt_le_meta_event {
 
 #define BT_HCI_EVT_LE_CONN_COMPLETE		0x01
 struct bt_hci_evt_le_conn_complete {
-	uint8_t  status;
-	uint16_t handle;
-	uint8_t  role;
-	uint8_t  peer_addr_type;
-	uint8_t  peer_addr[6];
-	uint16_t interval;
-	uint16_t latency;
-	uint16_t supv_timeout;
-	uint8_t  clock_accuracy;
+	uint8_t      status;
+	uint16_t     handle;
+	uint8_t      role;
+	bt_addr_le_t peer_addr;
+	uint16_t     interval;
+	uint16_t     latency;
+	uint16_t     supv_timeout;
+	uint8_t      clock_accuracy;
 } PACK_STRUCT;
-
-#define BT_ADDR_LE_DEV_PUBLIC			0x00
-#define BT_ADDR_LE_DEV_RANDOM			0x01
 
 #define BT_HCI_EVT_LE_ADVERTISING_REPORT	0x02
 struct bt_hci_ev_le_advertising_info {
-	uint8_t  evt_type;
-	uint8_t  bdaddr_type;
-	uint8_t  bdaddr[6];
-	uint8_t  length;
-	uint8_t  data[0];
+	uint8_t      evt_type;
+	bt_addr_le_t addr;
+	uint8_t      length;
+	uint8_t      data[0];
 } PACK_STRUCT;
 
 #define BT_HCI_EVT_LE_LTK_REQUEST		0x05

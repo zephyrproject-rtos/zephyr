@@ -38,8 +38,8 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 
-#include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 
 #include "hci_core.h"
 #include "conn.h"
@@ -79,24 +79,60 @@ static struct bt_dev dev;
 
 static struct bt_keys key_list[CONFIG_BLUETOOTH_MAX_PAIRED];
 
-const char *bt_bdaddr_str(const uint8_t bda[6])
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+const char *bt_addr_str(const bt_addr_t *addr)
 {
-	static char bdaddr_str[18];
+	static char bufs[2][18];
+	static uint8_t cur;
+	char *str;
 
-	sprintf(bdaddr_str, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
-		bda[5], bda[4], bda[3], bda[2], bda[1], bda[0]);
+	str = bufs[cur++];
+	cur %= ARRAY_SIZE(bufs);
 
-	return bdaddr_str;
+	sprintf(str, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+		addr->val[5], addr->val[4], addr->val[3],
+		addr->val[2], addr->val[1], addr->val[0]);
+
+	return str;
 }
 
-struct bt_keys *bt_keys_create(uint8_t bdaddr[6], uint8_t bdaddr_type)
+const char *bt_addr_le_str(const bt_addr_le_t *addr)
+{
+	static char bufs[2][27];
+	static uint8_t cur;
+	char *str, type[7];
+
+	str = bufs[cur++];
+	cur %= ARRAY_SIZE(bufs);
+
+	switch (addr->type) {
+	case BT_ADDR_LE_PUBLIC:
+		strcpy(type, "public");
+		break;
+	case BT_ADDR_LE_RANDOM:
+		strcpy(type, "random");
+		break;
+	default:
+		sprintf(type, "0x%02x", addr->type);
+		break;
+	}
+
+	sprintf(str, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)",
+		addr->val[5], addr->val[4], addr->val[3],
+		addr->val[2], addr->val[1], addr->val[0], type);
+
+	return str;
+}
+#endif /* CONFIG_BLUETOOTH_DEBUG */
+
+struct bt_keys *bt_keys_create(const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
 	int i;
 
-	BT_DBG("%s (%u)\n", bt_bdaddr_str(bdaddr), bdaddr_type);
+	BT_DBG("%s\n", bt_addr_le_str(addr));
 
-	keys = bt_keys_find(bdaddr, bdaddr_type);
+	keys = bt_keys_find(addr);
 	if (keys) {
 		return keys;
 	}
@@ -104,9 +140,8 @@ struct bt_keys *bt_keys_create(uint8_t bdaddr[6], uint8_t bdaddr_type)
 	for (i = 0; i < ARRAY_SIZE(key_list); i++) {
 		keys = &key_list[i];
 
-		if (!memcmp(keys->bdaddr, BDADDR_ANY, 6)) {
-			memcpy(keys->bdaddr, bdaddr, 6);
-			keys->bdaddr_type = bdaddr_type;
+		if (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
+			bt_addr_le_copy(&keys->addr, addr);
 			BT_DBG("created keys %p\n", keys);
 			return keys;
 		}
@@ -117,17 +152,16 @@ struct bt_keys *bt_keys_create(uint8_t bdaddr[6], uint8_t bdaddr_type)
 	return NULL;
 }
 
-struct bt_keys *bt_keys_find(uint8_t bdaddr[6], uint8_t bdaddr_type)
+struct bt_keys *bt_keys_find(const bt_addr_le_t *addr)
 {
 	int i;
 
-	BT_DBG("%s (%u)\n", bt_bdaddr_str(bdaddr), bdaddr_type);
+	BT_DBG("%s\n", bt_addr_le_str(addr));
 
 	for (i = 0; i < ARRAY_SIZE(key_list); i++) {
 		struct bt_keys *keys = &key_list[i];
 
-		if (!memcmp(keys->bdaddr, bdaddr, 6) &&
-		    keys->bdaddr_type == bdaddr_type) {
+		if (!bt_addr_le_cmp(&keys->addr, addr)) {
 			BT_DBG("found keys %p\n", keys);
 			return keys;
 		}
@@ -476,8 +510,9 @@ static void le_conn_complete(struct bt_buf *buf)
 		return;
 	}
 
-	memcpy(conn->dst, evt->peer_addr, sizeof(evt->peer_addr));
-	conn->dst_type = evt->peer_addr_type;
+	conn->src.type = BT_ADDR_LE_PUBLIC;
+	memcpy(conn->src.val, dev.bdaddr.val, sizeof(dev.bdaddr.val));
+	bt_addr_le_copy(&conn->dst, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 
 	bt_l2cap_connected(conn);
@@ -524,7 +559,7 @@ static void le_ltk_request(struct bt_buf *buf)
 		return;
 	}
 
-	keys = bt_keys_find(conn->dst, conn->dst_type);
+	keys = bt_keys_find(&conn->dst);
 	if (keys && keys->slave_ltk.rand == evt->rand &&
 	    keys->slave_ltk.ediv == evt->ediv) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
@@ -742,7 +777,7 @@ static void read_bdaddr_complete(struct bt_buf *buf)
 
 	BT_DBG("status %u\n", rp->status);
 
-	memcpy(dev.bdaddr, rp->bdaddr, sizeof(dev.bdaddr));
+	bt_addr_copy(&dev.bdaddr, &rp->bdaddr);
 }
 
 static void read_le_features_complete(struct bt_buf *buf)

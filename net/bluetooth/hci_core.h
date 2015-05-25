@@ -37,7 +37,7 @@
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Bluetooth Device Address */
-	uint8_t			bdaddr[6];
+	bt_addr_t		bdaddr;
 
 	/* Controller version & manufacturer information */
 	uint8_t			hci_version;
@@ -81,6 +81,26 @@ struct bt_dev {
 	struct bt_driver	*drv;
 };
 
+static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
+{
+	return memcmp(a, b, sizeof(*a));
+}
+
+static inline int bt_addr_le_cmp(const bt_addr_le_t *a, const bt_addr_le_t *b)
+{
+	return memcmp(a, b, sizeof(*a));
+}
+
+static inline void bt_addr_copy(bt_addr_t *dst, const bt_addr_t *src)
+{
+	memcpy(dst, src, sizeof(*dst));
+}
+
+static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
+{
+	memcpy(dst, src, sizeof(*dst));
+}
+
 struct bt_ltk {
 	uint64_t		rand;
 	uint16_t		ediv;
@@ -88,14 +108,13 @@ struct bt_ltk {
 };
 
 struct bt_keys {
-	uint8_t			bdaddr[6];
-	uint8_t			bdaddr_type;
+	bt_addr_le_t		addr;
 
 	struct bt_ltk		slave_ltk;
 };
 
-struct bt_keys *bt_keys_create(uint8_t bdaddr[6], uint8_t bdaddr_type);
-struct bt_keys *bt_keys_find(uint8_t bdaddr[6], uint8_t bdaddr_type);
+struct bt_keys *bt_keys_create(const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_find(const bt_addr_le_t *addr);
 void bt_keys_clear(struct bt_keys *keys);
 
 struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
@@ -106,4 +125,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 /* The helper is only safe to be called from internal fibers as it's
  * not multi-threading safe
  */
-const char *bt_bdaddr_str(const uint8_t bdaddr[6]);
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+const char *bt_addr_str(const bt_addr_t *addr);
+const char *bt_addr_le_str(const bt_addr_le_t *addr);
+#endif

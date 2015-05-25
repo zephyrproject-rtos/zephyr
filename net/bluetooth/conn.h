@@ -50,8 +50,8 @@ struct bt_conn {
 	struct bt_dev		*dev;
 	uint16_t		handle;
 
-	uint8_t			dst[6];
-	uint8_t			dst_type;
+	bt_addr_le_t		src;
+	bt_addr_le_t		dst;
 
 	uint8_t			encrypt;
 
