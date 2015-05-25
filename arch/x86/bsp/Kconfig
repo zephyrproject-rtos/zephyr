@@ -270,7 +270,7 @@ endmenu
 config PIC
 	bool "PIC (i8259)"
 	default n
-	depends on BSP_GENERIC_PC
+	depends on BSP_GENERIC_PC && !LOAPIC && !IOAPIC
 	help
 	This option selects legacy i8259 as the interrupt controller.
 
