@@ -57,7 +57,7 @@
 /* Stacks for the fibers */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 #define RX_STACK_SIZE		2048
-#define CMD_RX_STACK_SIZE	512
+#define CMD_RX_STACK_SIZE	1024
 #define CMD_TX_STACK_SIZE	512
 #else
 #define RX_STACK_SIZE		1024
