@@ -21,7 +21,7 @@ LIB_INCLUDE_DIR_x86 = -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/lib
 # arc
 CROSS_COMPILE_TARGET_arc = arc-poky-elf
 CROSS_COMPILE_arc_version = 4.8.3
-CROSS_COMPILE_arc=${YOCTO_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
+CROSS_COMPILE_arc=${YOCTO_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_arc)/$(CROSS_COMPILE_TARGET_arc)-
 
 LIB_INCLUDE_DIR_arc = -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/arc-poky-elf/usr/lib/arc-poky-elf/$(CROSS_COMPILE_arc_version)
 
