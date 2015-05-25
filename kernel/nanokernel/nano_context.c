@@ -80,6 +80,38 @@ nano_context_type_t context_type_get(void)
 
 /*******************************************************************************
 *
+* _context_essential_set - mark context as essential to system
+*
+* This function tags the running fiber or task as essential to system
+* option; exceptions raised by this context will be treated as a fatal
+* system error.
+*
+* RETURNS: N/A
+*/
+
+void _context_essential_set(void)
+{
+	_nanokernel.current->flags |= ESSENTIAL;
+}
+
+/*******************************************************************************
+*
+* _context_essential_clear - mark context as not essential to system
+*
+* This function tags the running fiber or task as not essential to system
+* option; exceptions raised by this context may be recoverable.
+* (This is the default tag for a context.)
+*
+* RETURNS: N/A
+*/
+
+void _context_essential_clear(void)
+{
+	_nanokernel.current->flags &= ~ESSENTIAL;
+}
+
+/*******************************************************************************
+*
 * _context_essential_check - is the specified context essential?
 *
 * This routine indicates if the specified context is an essential system

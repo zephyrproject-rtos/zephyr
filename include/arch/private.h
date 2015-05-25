@@ -83,8 +83,8 @@ typedef void (*_ContextEntry)(_ContextArg arg1,
 			      _ContextArg arg3);
 
 /* Private API to set and clear essential fiber/task flag */
-extern void _NanoEssentialContextSet(void);
-extern void _NanoEssentialContextClear(void);
+extern void _context_essential_set(void);
+extern void _context_essential_clear(void);
 
 /* Private API to clean up when a context is aborted */
 #if defined(CONFIG_CONTEXT_MONITOR)
