@@ -82,7 +82,7 @@ extern struct nano_stack _k_command_stack;
 #define TIMER_SUPPORTS_TICKLESS
 #endif
 
-#endif /*  CONFIG_NANOKERNEL */
+#endif /*  CONFIG_MICROKERNEL */
 
 /*
  * A board support package's board.h header must provide definitions for the

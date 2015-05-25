@@ -155,7 +155,7 @@ static uint32_t old_accumulated_count = 0; /* previous accumulated value value *
 
 #ifdef CONFIG_MICROKERNEL
 extern struct nano_stack _k_command_stack;
-#endif /* ! CONFIG_MICROKERNEL */
+#endif /* CONFIG_MICROKERNEL */
 
 /*******************************************************************************
 *
