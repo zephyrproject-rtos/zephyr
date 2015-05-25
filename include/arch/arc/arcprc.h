@@ -55,10 +55,6 @@ extern "C" {
 #define OCTET_TO_SIZEOFUNIT(X) (X)
 #define SIZEOFUNIT_TO_OCTET(X) (X)
 
-/* arch-specific event numbers */
-
-#define TICK_EVENT 0
-
 #ifdef __cplusplus
 }
 #endif
