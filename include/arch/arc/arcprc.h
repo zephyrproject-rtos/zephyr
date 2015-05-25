@@ -59,9 +59,6 @@ extern "C" {
 
 #define TICK_EVENT 0
 
-#define k_memcpy memcpy
-#define k_memset memset
-
 #ifdef __cplusplus
 }
 #endif

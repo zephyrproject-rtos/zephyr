@@ -55,9 +55,6 @@ extern "C" {
 #define OCTET_TO_SIZEOFUNIT(X) (X)
 #define SIZEOFUNIT_TO_OCTET(X) (X)
 
-#define k_memcpy memcpy
-#define k_memset memset
-
 #ifdef __cplusplus
 }
 #endif
