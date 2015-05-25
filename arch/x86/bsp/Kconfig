@@ -235,8 +235,6 @@ config ADVANCED_IDLE_SUPPORTED
 
 endmenu
 
-menu "Boot Sequence Options"
-
 config BOOTLOADER_UNKNOWN
 	bool
 	default n
@@ -245,6 +243,9 @@ config BOOTLOADER_UNKNOWN
 	or that it supports multiple ways of booting and it isn't clear
 	at build time which method is to be used. When this option is enabled
 	the BSP may have to do extra work to ensure a propert startup.
+
+menu "Boot Sequence Options"
+depends on PROT_MODE_SWITCH_PROMPT
 
 config PROT_MODE_SWITCH
 	bool
