@@ -83,7 +83,8 @@ void _fiber_start(char *pStack,
 	memset((char *)pStack, 0xaa, stackSize);
 #endif
 
-	ccs = _NewContext((char *)pStack,
+	ccs = (tCCS *) pStack;
+	_NewContext(pStack,
 			  stackSize,
 			  (_ContextEntry)pEntry,
 			  (void *)parameter1,

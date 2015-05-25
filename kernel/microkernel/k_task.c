@@ -205,7 +205,6 @@ void start_task(struct k_proc *X,	 /* ptr to task control block */
 			      )
 {
 	unsigned int contextOptions;
-	void *pNewContext;
 
 /* Note: the field X->worksize now represents the task size in bytes */
 
@@ -225,17 +224,16 @@ void start_task(struct k_proc *X,	 /* ptr to task control block */
 	 * the context is a task, rather than a fiber.
 	 */
 
-	pNewContext = (tCCS *)_NewContext((char *)X->workspace, /* pStackMem */
-					  X->worksize,		/* stackSize */
-					  (_ContextEntry)func,  /* pEntry */
-					  (void *)0,		/* parameter1 */
-					  (void *)0,		/* parameter2 */
-					  (void *)0,		/* parameter3 */
-					  -1,			/* priority */
-					  contextOptions	/* options */
-					  );
+	_NewContext((char *)X->workspace, /* pStackMem */
+				X->worksize,		/* stackSize */
+				(_ContextEntry)func,  /* pEntry */
+				(void *)0,		/* parameter1 */
+				(void *)0,		/* parameter2 */
+				(void *)0,		/* parameter3 */
+				-1,			/* priority */
+				contextOptions	/* options */
+				);
 
-	X->workspace = (char *)pNewContext;
 	X->fabort = NULL;
 
 	reset_state_bit(X, TF_STOP | TF_TERM);

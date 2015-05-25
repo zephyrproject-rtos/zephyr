@@ -199,7 +199,7 @@ static ALWAYS_INLINE void fiberRtnValueSet(
 }
 
 extern void _insert_ccs(tCCS **, tCCS *);
-extern void *_NewContext(char *,
+extern void _NewContext(char *,
 			 unsigned,
 			 _ContextEntry,
 			 _ContextArg,

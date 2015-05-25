@@ -102,7 +102,7 @@ static ALWAYS_INLINE void _context_monitor_init(struct s_CCS *pCcs /* context */
 * RETURNS: N/A
 */
 
-void *_NewContext(
+void _NewContext(
 	char *pStackMem,      /* aligned stack memory */
 	unsigned stackSize,   /* stack size in bytes */
 	_ContextEntry pEntry, /* entry point */
@@ -146,6 +146,4 @@ void *_NewContext(
 	/* initial values in all other registers/CCS entries are irrelevant */
 
 	CONTEXT_MONITOR_INIT(pCcs);
-
-	return pCcs;
 }

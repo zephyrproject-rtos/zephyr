@@ -152,8 +152,9 @@ static void nano_init(tCCS *dummyOutContext)
 	 * (or idle task). The entry point for this context is 'main'.
 	 */
 
-	_nanokernel.task =
-		_NewContext(main_task_stack,	/* pStackMem */
+	_nanokernel.task = (tCCS *) main_task_stack;
+
+	_NewContext(main_task_stack,	/* pStackMem */
 			    CONFIG_MAIN_STACK_SIZE, /* stackSize */
 			    (_ContextEntry)main,	 /* pEntry */
 			    (_ContextArg)0,	 /* parameter1 */

@@ -865,7 +865,7 @@ extern void nano_cpu_atomic_idle(unsigned int imask);
 extern unsigned _Swap(unsigned int mask);
 extern void _insert_ccs(tCCS **queue, tCCS *ccs);
 
-extern void *_NewContext(char *pStack,
+extern void _NewContext(char *pStack,
 			 unsigned stackSize,
 			 _ContextEntry pEntry,
 			 _ContextArg arg1,

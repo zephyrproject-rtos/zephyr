@@ -75,7 +75,6 @@ void _ContextEntryWrapper(_ContextEntry, _ContextArg, _ContextArg, _ContextArg);
 */
 
 static void _NewContextInternal(
-	tCCS *ccs,	  /* pointer to the new task's ccs */
 	char *pStackMem,    /* pointer to context stack memory */
 	unsigned stackSize, /* size of stack in bytes */
 	int priority,       /* context priority */
@@ -83,6 +82,7 @@ static void _NewContextInternal(
 	)
 {
 	unsigned long *pInitialCtx;
+	tCCS *ccs = (tCCS *) pStackMem;    /* pointer to the new task's ccs */
 
 #ifndef CONFIG_FP_SHARING
 	ARG_UNUSED(options);
@@ -288,7 +288,7 @@ __asm__("\t.globl _context_entry\n"
 * \NOMANUAL
 */
 
-void *_NewContext(
+void _NewContext(
 	char *pStackMem,      /* pointer to aligned stack memory */
 	unsigned stackSize,   /* size of stack in bytes */
 	_ContextEntry pEntry, /* context entry point function */
@@ -299,7 +299,6 @@ void *_NewContext(
 	unsigned options  /* context options: USE_FP, USE_SSE */
 	)
 {
-	tCCS *ccs;
 	unsigned long *pInitialContext;
 
 	/* carve the context entry struct from the "base" of the stack */
@@ -354,10 +353,5 @@ void *_NewContext(
 	 * stack
 	 */
 
-	ccs = (tCCS *) pStackMem;
-
-	_NewContextInternal(ccs, pStackMem, stackSize, priority, options);
-
-
-	return ((void *)ccs);
+	_NewContextInternal(pStackMem, stackSize, priority, options);
 }
