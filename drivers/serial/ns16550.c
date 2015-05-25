@@ -249,10 +249,15 @@ static struct ns16550 uart[CONFIG_UART_NUM_SYSTEM_PORTS] = {};
 
 static inline void ns16550_uart_init()
 {
+	/*
+	 * This device information is specific to Quark UART
+	 * for another device it may need to be changed
+	 */
 	struct pci_dev_info dev_info = {
 		.class = PCI_CLASS_COMM_CTLR,
 		.vendor_id = CONFIG_UART_PCI_VENDOR_ID,
 		.device_id = CONFIG_UART_PCI_DEVICE_ID,
+		.bar = CONFIG_UART_PCI_BAR,
 	};
 	int i;
 
@@ -265,9 +270,6 @@ static inline void ns16550_uart_init()
 				i < CONFIG_UART_NUM_SYSTEM_PORTS; i++) {
 		uart[i].port = dev_info.addr;
 		uart[i].irq = dev_info.irq;
-#ifdef PCI_DEBUG
-		pci_show(&dev_info);
-#endif /* PCI_DEBUG */
 	}
 }
 

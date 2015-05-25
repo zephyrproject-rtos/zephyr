@@ -82,10 +82,8 @@ the 'Quark' BSP.
 
 /* serial port (aka COM port) information */
 #define COM1_BAUD_RATE 115200
-#define COM1_PCI_IDX 2
 
 #define COM2_BAUD_RATE 115200
-#define COM2_PCI_IDX 0
 #define COM2_INT_LVL 0x11 /* COM2 connected to IRQ17 */
 
 #define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
@@ -98,6 +96,7 @@ the 'Quark' BSP.
 /* Generic definitions */
 #define CONFIG_UART_PCI_VENDOR_ID 0x8086
 #define CONFIG_UART_PCI_DEVICE_ID 0x0936
+#define CONFIG_UART_PCI_BAR       0
 #define CONFIG_UART_NUM_SYSTEM_PORTS 2
 #define CONFIG_UART_NUM_EXTRA_PORTS 0
 #define CONFIG_UART_BAUDRATE COM1_BAUD_RATE
@@ -105,7 +104,7 @@ the 'Quark' BSP.
 	(CONFIG_UART_NUM_SYSTEM_PORTS + CONFIG_UART_NUM_EXTRA_PORTS)
 
 /* Console definitions */
-#define CONFIG_UART_CONSOLE_INDEX 0
+#define CONFIG_UART_CONSOLE_INDEX 1
 #define CONFIG_UART_CONSOLE_PCI_IDX COM1_PCI_IDX
 
 /*
