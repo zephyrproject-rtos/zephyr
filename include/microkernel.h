@@ -38,6 +38,7 @@
 #include <cputype.h>
 #include <microkernel/k_types.h>
 #include <clock_vars.h>
+#include <drivers/rand32.h>
 
 #include <microkernel/task.h>
 #include <microkernel/ticks.h>

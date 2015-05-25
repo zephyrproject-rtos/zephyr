@@ -69,6 +69,14 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 #define PRINT_BOOT_BANNER() printk(BOOT_BANNER " %s\n", build_timestamp)
 #endif
 
+/* random number generator items */
+#if defined(CONFIG_TEST_RANDOM_GENERATOR) || \
+	defined(CONFIG_CUSTOM_RANDOM_GENERATOR)
+#define RAND32_INIT() sys_rand32_init()
+#else
+#define RAND32_INIT()
+#endif
+
 /* stack space for the background (or idle) task context */
 
 static char __noinit main_task_stack[CONFIG_MAIN_STACK_SIZE];
@@ -201,8 +209,7 @@ extern void *__stack_chk_guard;
 #define STACK_CANARY_INIT()                                \
 	do {                                               \
 		register void *tmp;                        \
-		_Rand32Init();                             \
-		tmp = (void *)_Rand32Get();                \
+		tmp = (void *)sys_rand32_get();            \
 		__asm__ volatile(_MOVE_INSTR "%1, %0;\n\t" \
 				 : "=m"(__stack_chk_guard) \
 				 : "r"(tmp));              \
@@ -240,6 +247,15 @@ FUNC_NORETURN void _Cstart(void)
 	/* perform basic hardware initialization */
 
 	_InitHardware();
+
+	/*
+	 * Initialize random number generator
+	 * As a platform may implement it in hardware, it has to be
+	 * initialized after rest of hardware initialization and
+	 * before stack canaries that use it
+	 */
+
+	RAND32_INIT();
 
 	/* initialize stack canaries */
 

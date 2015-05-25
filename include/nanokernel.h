@@ -39,6 +39,7 @@
 #include <nanokernel/private.h>
 #include <kernel_version.h>
 #include <clock_vars.h>
+#include <drivers/rand32.h>
 
 #ifdef __cplusplus
 extern "C" {
