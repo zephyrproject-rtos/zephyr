@@ -40,8 +40,17 @@ was provided to allow testing of kernel stack canaries on a BSP that does not
 
 #include <drivers/rand32.h>
 #include <drivers/system_timer.h>
+#include <nanokernel.h>
 
 #if defined(__GNUC__)
+
+/*
+ * Symbols used to ensure a rapid series of calls to random number generator
+ * return different values.
+ */
+static atomic_val_t _rand32_counter = 0;
+
+#define _RAND32_INC 1000000013
 
 /*******************************************************************************
  *
@@ -62,15 +71,15 @@ void _Rand32Init(void)
  * _Rand32Get - get a 32 bit random number
  *
  * The non-random number generator returns values that are based off the
- * target's clock counter, which means that successive calls will normally
- * display ever-increasing values.
+ * target's clock counter, which means that successive calls will return
+ * different values.
  *
  * RETURNS: a 32-bit number
  */
 
 uint32_t _Rand32Get(void)
 {
-	return timer_read();
+	return timer_read() + atomic_add(&_rand32_counter, _RAND32_INC);
 }
 
 #endif /* __GNUC__ */
