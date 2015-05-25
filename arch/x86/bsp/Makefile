@@ -1,11 +1,5 @@
-ifeq (${CONFIG_BSP_GENERIC_PC},y)
-EXTRA_CFLAGS +=-I$(srctree)/arch/x86/generic_pc
-EXTRA_AFLAGS +=-I$(srctree)/arch/x86/generic_pc
-endif
-
-ifeq (${CONFIG_BSP_QUARK},y)
-EXTRA_CFLAGS +=-I$(srctree)/arch/x86/quark
-endif
+EXTRA_CFLAGS +=-I$(srctree)/arch/x86/$(strip $(CONFIG_BSP_DIR))
+EXTRA_AFLAGS +=-I$(srctree)/arch/x86/$(strip $(CONFIG_BSP_DIR))
 
 obj-y = crt0.o sysFatalErrorHandler.o driver_static_irq_stubs.o
 

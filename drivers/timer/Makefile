@@ -1,9 +1,4 @@
-ifeq (${CONFIG_BSP_GENERIC_PC},y)
-EXTRA_CFLAGS +=-I$(srctree)/arch/x86/generic_pc
-endif
-
-ifeq (${CONFIG_BSP_QUARK},y)
-EXTRA_CFLAGS +=-I$(srctree)/arch/x86/quark
-endif
+EXTRA_CFLAGS +=-I$(srctree)/arch/$(ARCH)
+EXTRA_CFLAGS +=-I$(srctree)/arch/$(ARCH)/$(strip $(CONFIG_BSP_DIR))
 
 obj-$(CONFIG_PIT) = i8253.o
