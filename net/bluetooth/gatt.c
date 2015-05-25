@@ -43,6 +43,11 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_GATT)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 static const struct bt_gatt_attr *db = NULL;
 static size_t attr_count = 0;
 

@@ -124,6 +124,15 @@ config	BLUETOOTH_DEBUG_ATT
 	  This option enables debug support for the Bluetooth
 	  Attribute Protocol (ATT).
 
+config	BLUETOOTH_DEBUG_GATT
+	bool
+	prompt "Bluetooth Generic Attribute Profile (GATT) debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  Generic Attribute Profile (GATT).
+
 config	BLUETOOTH_UART
 	bool
 	prompt "Bluetooth UART driver"
