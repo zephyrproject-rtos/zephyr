@@ -28,6 +28,8 @@ typedef unsigned int uip_stats_t;
 /* Min and Max compressible UDP ports */
 #define SICSLOWPAN_UDP_PORT_MIN                     0xF0B0
 #define SICSLOWPAN_UDP_PORT_MAX                     0xF0BF   /* F0B0 + 15 */
+#define NETSTACK_CONF_COMPRESS sicslowpan_compression
+#define NETSTACK_CONF_FRAGMENT sicslowpan_fragmentation
 #else
 #define NETSTACK_CONF_COMPRESS null_compression
 #define NETSTACK_CONF_FRAGMENT null_fragmentation
