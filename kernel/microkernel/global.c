@@ -53,7 +53,8 @@ struct nano_stack __noinit _k_command_stack;
 int _k_debug_halt = 0;
 #endif
 
-uint32_t __noinit _k_server_command_stack_storage[CONFIG_COMMAND_STACK_SIZE];
+static uint32_t __noinit _k_server_command_stack_storage
+						[CONFIG_COMMAND_STACK_SIZE];
 
 extern void K_swapper(int i1, int i2);
 
