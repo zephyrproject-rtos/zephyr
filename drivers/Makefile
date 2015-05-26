@@ -1,6 +1,6 @@
-obj-$(CONFIG_DRV_CONSOLE) = console/
-obj-$(CONFIG_DRV_SERIAL) += serial/
-obj-$(CONFIG_DRV_TIMER) += timer/
-obj-$(CONFIG_DRV_INTCTL) += interrupt_controller/
-obj-$(CONFIG_DRV_PCI) += pci/
+obj-y = console/
+obj-y += serial/
+obj-y += timer/
+obj-y += interrupt_controller/
+obj-$(CONFIG_PCI) += pci/
 obj-$(CONFIG_BLUETOOTH) += bluetooth/

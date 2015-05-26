@@ -30,6 +30,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+
+menu "Device Drivers"
+
 source "drivers/bluetooth/Kconfig"
 
 source "drivers/console/Kconfig"
@@ -39,3 +42,5 @@ source "drivers/serial/Kconfig"
 source "drivers/timer/Kconfig"
 
 source "drivers/random/Kconfig"
+
+endmenu
