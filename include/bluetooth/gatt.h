@@ -378,4 +378,16 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 	.user_data = _value,						\
 }
 
+/** @brief Notify attribute value change
+ *
+ *  Send notification of attribute value change.
+ *  Note: This function should only be called if CCC is declared with
+ *  BT_GATT_CCC otherwise it cannot find a valid peer configuration.
+ *
+ *  @param handle attribute handle
+ *  @param value attribute value
+ *  @param len attribute value length
+ */
+void bt_gatt_notify(uint16_t handle, const void *data, size_t len);
+
 #endif /* __BT_GATT_H */
