@@ -185,7 +185,7 @@ static struct bt_uuid ct_uuid = {
 };
 
 static struct bt_gatt_chrc ct_chrc = {
-	.properties =  BT_GATT_CHRC_READ,
+	.properties =  BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 	.value_handle = 0x0014,
 	.uuid = &ct_uuid,
 };
@@ -256,6 +256,8 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0012, &cts_uuid),
 	BT_GATT_CHARACTERISTIC(0x0013, &ct_chrc),
 	BT_GATT_DESCRIPTOR(0x0014, &ct_uuid, read_ct, NULL, NULL),
+	/* TODO: Add write support CCC */
+	BT_GATT_DESCRIPTOR(0x0015, &ccc_uuid, read_ccc, NULL, NULL),
 };
 
 static const struct bt_eir ad[] = {
