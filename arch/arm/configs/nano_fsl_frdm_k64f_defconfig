@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Tiny Mountain Build Options
+# Tiny Mountain/arm Configuration
 #
 CONFIG_NANOKERNEL=y
 # CONFIG_MICROKERNEL is not set
@@ -10,7 +10,7 @@ CONFIG_NANOKERNEL=y
 #
 CONFIG_SYS_CLOCK_TICKS_PER_SEC=100
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=25000000
-# CONFIG_SYS_CLOCK_EXISTS is not set
+CONFIG_SYS_CLOCK_EXISTS=y
 # CONFIG_INIT_STACKS is not set
 # CONFIG_XIP is not set
 # CONFIG_ENHANCED_SECURITY is not set
@@ -23,7 +23,28 @@ CONFIG_MAIN_STACK_SIZE=1024
 CONFIG_ISR_STACK_SIZE=2048
 # CONFIG_CONTEXT_CUSTOM_DATA is not set
 CONFIG_PRINTK=y
-CONFIG_BSP_DIR="fsl_frdm_k64f"
+
+#
+# General Setup
+#
+# CONFIG_EXPERIMENTAL is not set
+CONFIG_CROSS_COMPILE=""
+
+#
+# Compile and Link Features
+#
+CONFIG_COMPILER_OPT=""
+CONFIG_MINIMAL_LIBC=y
+
+#
+# Debugging Options
+#
+# CONFIG_STDOUT_CONSOLE is not set
+# CONFIG_ASSERT is not set
+
+#
+# System Monitoring Options
+#
 
 #
 # ARM family options
@@ -51,7 +72,7 @@ CONFIG_CPU_CORTEXM4=y
 CONFIG_LDREX_STREX_AVAILABLE=y
 CONFIG_DATA_ENDIANNESS_LITTLE=y
 CONFIG_STACK_ALIGN_DOUBLE_WORD=y
-CONFIG_NUM_IRQS=34
+CONFIG_NUM_IRQS=1
 CONFIG_STACK_GROWS_DOWN=y
 CONFIG_NUM_IRQ_PRIO_BITS=4
 # CONFIG_RUNTIME_NMI is not set
@@ -67,36 +88,25 @@ CONFIG_IRQ_VECTOR_TABLE_BSP=y
 # CONFIG_ZERO_LATENCY_IRQS is not set
 CONFIG_ARCH_HAS_TASK_ABORT=y
 CONFIG_ARCH_HAS_NANO_FIBER_ABORT=y
+CONFIG_BSP_DIR="fsl_frdm_k64f"
 CONFIG_WDOG_INIT=y
 
 #
-# General Setup
+# Device Drivers
 #
-CONFIG_CROSS_COMPILE=""
-
-#
-# Debugging Options
-#
-# CONFIG_STDOUT_CONSOLE is not set
-# CONFIG_ASSERT is not set
-
-#
-# System Monitoring Options
-#
-
-#
-# Compile and Link Features
-#
-CONFIG_COMPILER_OPT=""
-CONFIG_DRV_CONSOLE=y
-# CONFIG_UART_INTERRUPT_DRIVEN is not set
 # CONFIG_CONSOLE_HANDLER is not set
-CONFIG_DRV_SERIAL=y
-# CONFIG_DRV_NS16550 is not set
-CONFIG_DRV_K20_UART=y
-# CONFIG_DRV_STELLARIS_UART is not set
-# CONFIG_DRV_TIMER is not set
-# CONFIG_DRV_INTCTL is not set
-# CONFIG_DRV_PCI is not set
-# CONFIG_DRV_RANDOM is not set
-# CONFIG_EXPERIMENTAL is not set
+
+#
+# Serial Drivers
+#
+# CONFIG_NS16550 is not set
+CONFIG_K20_UART=y
+# CONFIG_STELLARIS_UART is not set
+# CONFIG_UART_INTERRUPT_DRIVEN is not set
+
+#
+# Random Generation Configuration
+#
+# CONFIG_TEST_RANDOM_GENERATOR is not set
+# CONFIG_BLUETOOTH is not set
+CONFIG_DEFCONFIG_LIST="$ARCH_DEFCONFIG"
