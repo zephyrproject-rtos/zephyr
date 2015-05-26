@@ -49,89 +49,89 @@ K20 Family of microprocessors
 typedef union {
 	uint32_t value; /* reset = 0x8000 F03F */
 	struct {
-		uint32_t res_0_11 : 12 __attribute__((packed));
-		uint32_t ramSize : 4 __attribute__((packed));
-		uint32_t res_16_17 : 2 __attribute__((packed));
-		uint32_t osc32kSel : 2 __attribute__((packed));
-		uint32_t res_20_28 : 9 __attribute__((packed));
-		uint32_t usbVoltStby : 1 __attribute__((packed));
-		uint32_t usbStopStby : 1 __attribute__((packed));
-		uint32_t usbRegEn : 1 __attribute__((packed));
+		uint32_t res_0_11 : 12 __packed;
+		uint32_t ramSize : 4 __packed;
+		uint32_t res_16_17 : 2 __packed;
+		uint32_t osc32kSel : 2 __packed;
+		uint32_t res_20_28 : 9 __packed;
+		uint32_t usbVoltStby : 1 __packed;
+		uint32_t usbStopStby : 1 __packed;
+		uint32_t usbRegEn : 1 __packed;
 	} field;
 } SIM_SOPT1_t; /* 0x000 */
 
 typedef union {
 	uint32_t value;
 	struct {
-		uint32_t res_0_23 : 24 __attribute__((packed));
-		uint32_t usbRegWriteEn : 1 __attribute__((packed));
-		uint32_t usbVoltWriteEn : 1 __attribute__((packed));
-		uint32_t usbStopWriteEn : 1 __attribute__((packed));
-		uint32_t res_27_31 : 5 __attribute__((packed));
+		uint32_t res_0_23 : 24 __packed;
+		uint32_t usbRegWriteEn : 1 __packed;
+		uint32_t usbVoltWriteEn : 1 __packed;
+		uint32_t usbStopWriteEn : 1 __packed;
+		uint32_t res_27_31 : 5 __packed;
 	} field;
 } SIM_SOPT1CFG_t; /* 0x004 */
 
 typedef union {
 	uint32_t value;
 	struct {
-		uint32_t res_0_3 : 4 __attribute__((packed));
-		uint32_t rtcClkOutSel : 1 __attribute__((packed));
-		uint32_t clkOutSel : 3 __attribute__((packed));
-		uint32_t flexBusSL : 2 __attribute__((packed));
-		uint32_t res_10 : 1 __attribute__((packed));
-		uint32_t ptd7Pad : 1 __attribute__((packed));
-		uint32_t traceClkSel : 1 __attribute__((packed));
-		uint32_t res_13_15 : 3 __attribute__((packed));
-		uint32_t fllPllClkSel : 1 __attribute__((packed));
-		uint32_t res_17 : 1 __attribute__((packed));
-		uint32_t usbSrc : 1 __attribute__((packed));
-		uint32_t res_19_31 : 13 __attribute__((packed));
+		uint32_t res_0_3 : 4 __packed;
+		uint32_t rtcClkOutSel : 1 __packed;
+		uint32_t clkOutSel : 3 __packed;
+		uint32_t flexBusSL : 2 __packed;
+		uint32_t res_10 : 1 __packed;
+		uint32_t ptd7Pad : 1 __packed;
+		uint32_t traceClkSel : 1 __packed;
+		uint32_t res_13_15 : 3 __packed;
+		uint32_t fllPllClkSel : 1 __packed;
+		uint32_t res_17 : 1 __packed;
+		uint32_t usbSrc : 1 __packed;
+		uint32_t res_19_31 : 13 __packed;
 	} field;
 } SIM_SOPT2_t; /* 0x1004 */
 
 typedef union {
 	uint32_t value;
 	struct {
-		uint32_t ftm0Flt0 : 1 __attribute__((packed));
-		uint32_t ftm0Flt1 : 1 __attribute__((packed));
-		uint32_t ftm0Flt2 : 1 __attribute__((packed));
-		uint32_t res_3 : 1 __attribute__((packed));
-		uint32_t ftm1Flt0 : 1 __attribute__((packed));
-		uint32_t res_5_7 : 3 __attribute__((packed));
-		uint32_t ftm2Flt0 : 1 __attribute__((packed));
-		uint32_t res_9_17 : 9 __attribute__((packed));
-		uint32_t ftm1Ch0Src : 2 __attribute__((packed));
-		uint32_t ftm2Ch0Src : 2 __attribute__((packed));
-		uint32_t res_22_23 : 2 __attribute__((packed));
-		uint32_t ftm0ClkSel : 1 __attribute__((packed));
-		uint32_t ftm1ClkSel : 1 __attribute__((packed));
-		uint32_t ftm2ClkSel : 1 __attribute__((packed));
-		uint32_t res_27 : 1 __attribute__((packed));
-		uint32_t ftm0Trg0Src : 1 __attribute__((packed));
-		uint32_t ftm0Trg1Src : 1 __attribute__((packed));
-		uint32_t res_30_31 : 2 __attribute__((packed));
+		uint32_t ftm0Flt0 : 1 __packed;
+		uint32_t ftm0Flt1 : 1 __packed;
+		uint32_t ftm0Flt2 : 1 __packed;
+		uint32_t res_3 : 1 __packed;
+		uint32_t ftm1Flt0 : 1 __packed;
+		uint32_t res_5_7 : 3 __packed;
+		uint32_t ftm2Flt0 : 1 __packed;
+		uint32_t res_9_17 : 9 __packed;
+		uint32_t ftm1Ch0Src : 2 __packed;
+		uint32_t ftm2Ch0Src : 2 __packed;
+		uint32_t res_22_23 : 2 __packed;
+		uint32_t ftm0ClkSel : 1 __packed;
+		uint32_t ftm1ClkSel : 1 __packed;
+		uint32_t ftm2ClkSel : 1 __packed;
+		uint32_t res_27 : 1 __packed;
+		uint32_t ftm0Trg0Src : 1 __packed;
+		uint32_t ftm0Trg1Src : 1 __packed;
+		uint32_t res_30_31 : 2 __packed;
 	} field;
 } SIM_SOPT4_t; /* 0x100C */
 
 typedef union {
 	uint32_t value;
 	struct {
-		uint32_t uart0TxSrc : 2 __attribute__((packed));
-		uint32_t uart0RxSrc : 2 __attribute__((packed));
-		uint32_t uart1TxSrc : 2 __attribute__((packed));
-		uint32_t uart1RxSrc : 2 __attribute__((packed));
-		uint32_t res_8_31 : 24 __attribute__((packed));
+		uint32_t uart0TxSrc : 2 __packed;
+		uint32_t uart0RxSrc : 2 __packed;
+		uint32_t uart1TxSrc : 2 __packed;
+		uint32_t uart1RxSrc : 2 __packed;
+		uint32_t res_8_31 : 24 __packed;
 	} field;
 } SIM_SOPT5_t; /* 0x1010 */
 
 typedef union {
 	uint32_t value;
 	struct {
-		uint32_t uart0TxSrc : 2 __attribute__((packed));
-		uint32_t uart0RxSrc : 2 __attribute__((packed));
-		uint32_t uart1TxSrc : 2 __attribute__((packed));
-		uint32_t uart1RxSrc : 2 __attribute__((packed));
-		uint32_t res_8_31 : 24 __attribute__((packed));
+		uint32_t uart0TxSrc : 2 __packed;
+		uint32_t uart0RxSrc : 2 __packed;
+		uint32_t uart1TxSrc : 2 __packed;
+		uint32_t uart1RxSrc : 2 __packed;
+		uint32_t res_8_31 : 24 __packed;
 	} field;
 } SIM_SCGC1_t; /* 0x1028*/
 
@@ -139,22 +139,22 @@ typedef union {
 typedef union {
 	uint32_t value;
 	struct {
-		uint32_t res_0 : 1 __attribute__((packed));
-		uint32_t ewmClkEn_0 : 1 __attribute__((packed));
-		uint32_t cmtClkEn_0 : 1 __attribute__((packed));
-		uint32_t res_3_5 : 3 __attribute__((packed));
-		uint32_t i2c0ClkEn : 1 __attribute__((packed));
-		uint32_t i2c1ClkEn : 1 __attribute__((packed));
-		uint32_t res_8_9 : 2 __attribute__((packed));
-		uint32_t uart0ClkEn : 1 __attribute__((packed));
-		uint32_t uart1ClkEn : 1 __attribute__((packed));
-		uint32_t uart2ClkEn : 1 __attribute__((packed));
-		uint32_t uart3ClkEn : 1 __attribute__((packed));
-		uint32_t res_14_17 : 4 __attribute__((packed));
-		uint32_t usbClkEn : 1 __attribute__((packed));
-		uint32_t cmpClkEn : 1 __attribute__((packed));
-		uint32_t vrefClkEn : 1 __attribute__((packed));
-		uint32_t res_21_31 : 11 __attribute__((packed));
+		uint32_t res_0 : 1 __packed;
+		uint32_t ewmClkEn_0 : 1 __packed;
+		uint32_t cmtClkEn_0 : 1 __packed;
+		uint32_t res_3_5 : 3 __packed;
+		uint32_t i2c0ClkEn : 1 __packed;
+		uint32_t i2c1ClkEn : 1 __packed;
+		uint32_t res_8_9 : 2 __packed;
+		uint32_t uart0ClkEn : 1 __packed;
+		uint32_t uart1ClkEn : 1 __packed;
+		uint32_t uart2ClkEn : 1 __packed;
+		uint32_t uart3ClkEn : 1 __packed;
+		uint32_t res_14_17 : 4 __packed;
+		uint32_t usbClkEn : 1 __packed;
+		uint32_t cmpClkEn : 1 __packed;
+		uint32_t vrefClkEn : 1 __packed;
+		uint32_t res_21_31 : 11 __packed;
 	} field;
 } SIM_SCGC4_t; /* 0x1034 */
 
@@ -167,16 +167,16 @@ typedef union {
 typedef union {
 	uint32_t value; /* reset 0 */
 	struct {
-		uint32_t lptimer : 1 __attribute__((packed));
-		uint32_t res_1_4 : 4 __attribute__((packed));
-		uint32_t tsi : 1 __attribute__((packed));
-		uint32_t res_6_8 : 3 __attribute__((packed));
-		uint32_t portA_ClkEn : 1 __attribute__((packed));
-		uint32_t portB_ClkEn : 1 __attribute__((packed));
-		uint32_t portC_ClkEn : 1 __attribute__((packed));
-		uint32_t portD_ClkEn : 1 __attribute__((packed));
-		uint32_t portE_ClkEn : 1 __attribute__((packed));
-		uint32_t res_14_31 : 18 __attribute__((packed));
+		uint32_t lptimer : 1 __packed;
+		uint32_t res_1_4 : 4 __packed;
+		uint32_t tsi : 1 __packed;
+		uint32_t res_6_8 : 3 __packed;
+		uint32_t portA_ClkEn : 1 __packed;
+		uint32_t portB_ClkEn : 1 __packed;
+		uint32_t portC_ClkEn : 1 __packed;
+		uint32_t portD_ClkEn : 1 __packed;
+		uint32_t portE_ClkEn : 1 __packed;
+		uint32_t res_14_31 : 18 __packed;
 	} field;
 } SIM_SCGC5_t; /* 0x1038 */
 
@@ -193,11 +193,11 @@ typedef union {
 typedef union {
 	uint32_t value; /* reset 0x0001 0000 */
 	struct {
-		uint32_t res_0_15 : 16 __attribute__((packed));
-		uint32_t outdiv4 : 4 __attribute__((packed));
-		uint32_t outdiv3 : 4 __attribute__((packed));
-		uint32_t outdiv2 : 4 __attribute__((packed));
-		uint32_t outdiv1 : 4 __attribute__((packed));
+		uint32_t res_0_15 : 16 __packed;
+		uint32_t outdiv4 : 4 __packed;
+		uint32_t outdiv3 : 4 __packed;
+		uint32_t outdiv2 : 4 __packed;
+		uint32_t outdiv1 : 4 __packed;
 	} field;
 } SIM_CLKDIV1_t; /* 0x1044 */
 

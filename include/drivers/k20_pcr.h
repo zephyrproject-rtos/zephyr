@@ -59,29 +59,29 @@ K20 Family of microprocessors
 typedef union {
 	uint32_t value;
 	struct {
-		uint8_t ps : 1 __attribute__((packed));
-		uint8_t pe : 1 __attribute__((packed));
-		uint8_t sre : 1 __attribute__((packed));
-		uint8_t res_3 : 1 __attribute__((packed));
-		uint8_t pfe : 1 __attribute__((packed));
-		uint8_t ode : 1 __attribute__((packed));
-		uint8_t dse : 1 __attribute__((packed));
-		uint8_t res_7 : 1 __attribute__((packed));
-		uint8_t mux : 3 __attribute__((packed));
-		uint8_t res_11_14 : 4 __attribute__((packed));
-		uint8_t lk : 1 __attribute__((packed));
-		uint8_t irqc : 4 __attribute__((packed));
-		uint8_t res_20_23 : 4 __attribute__((packed));
-		uint8_t isf : 1 __attribute__((packed));
-		uint8_t res_25_31 : 7 __attribute__((packed));
+		uint8_t ps : 1 __packed;
+		uint8_t pe : 1 __packed;
+		uint8_t sre : 1 __packed;
+		uint8_t res_3 : 1 __packed;
+		uint8_t pfe : 1 __packed;
+		uint8_t ode : 1 __packed;
+		uint8_t dse : 1 __packed;
+		uint8_t res_7 : 1 __packed;
+		uint8_t mux : 3 __packed;
+		uint8_t res_11_14 : 4 __packed;
+		uint8_t lk : 1 __packed;
+		uint8_t irqc : 4 __packed;
+		uint8_t res_20_23 : 4 __packed;
+		uint8_t isf : 1 __packed;
+		uint8_t res_25_31 : 7 __packed;
 	} field;
 } K20_PCR_t; /* Pin Control Register n, n= 0-31 */
 
 typedef union {
 	uint32_t value;
 	struct {
-		uint16_t gpwe : 16 __attribute__((packed));
-		uint16_t gpwd : 16 __attribute__((packed));
+		uint16_t gpwe : 16 __packed;
+		uint16_t gpwd : 16 __packed;
 	} field;
 } K20_GPC_t; /* Global Pin Control Low/High Register */
 
@@ -89,11 +89,11 @@ typedef union {
 
 typedef volatile struct {
 	struct {
-		K20_PCR_t pcr[32] __attribute__((packed)); /* 0x00-07C */
-		K20_GPC_t gpchr __attribute__((packed));   /* 0x80 */
-		K20_GPC_t gpclr __attribute__((packed));   /* 0x84 */
+		K20_PCR_t pcr[32] __packed; /* 0x00-07C */
+		K20_GPC_t gpchr __packed;   /* 0x80 */
+		K20_GPC_t gpclr __packed;   /* 0x84 */
 		uint8_t res_88_9F[0xA0 - 0x88];	/* 0x88-0x9F Reserved */
-		uint32_t isfr __attribute__((packed)); /* 0xA0 */
+		uint32_t isfr __packed; /* 0xA0 */
 		uint8_t res_A4_FF[0x1000 - 0xA4];      /* 0xA4-0xFFF Reserved */
 	} port[5];
 } K20_PORT_PCR_t;

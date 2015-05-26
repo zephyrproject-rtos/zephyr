@@ -77,7 +77,7 @@ typedef struct idtEntry {
 	unsigned short	descPrivLevel:2;
 	unsigned short	present:1;
 	unsigned short	hiOffset;
-	} __attribute__ ((packed)) IDT_ENTRY;
+	} __packed IDT_ENTRY;
 
 /*******************************************************************************
 *

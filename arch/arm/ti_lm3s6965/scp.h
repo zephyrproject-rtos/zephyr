@@ -79,39 +79,39 @@ section 5.4/5.5, pp .184-200.
 union __rcc {
 	uint32_t value;
 	struct {
-		uint32_t moscdis : 1 __attribute__((packed));
-		uint32_t ioscdis : 1 __attribute__((packed));
-		uint32_t rsvd__2_3 : 2 __attribute__((packed));
-		uint32_t oscsrc : 2 __attribute__((packed));
-		uint32_t xtal : 4 __attribute__((packed));
-		uint32_t rsvd__10 : 1 __attribute__((packed));
-		uint32_t bypass : 1 __attribute__((packed));
-		uint32_t rsvd__12 : 1 __attribute__((packed));
-		uint32_t pwrdn : 1 __attribute__((packed));
-		uint32_t rsvd__14_16 : 3 __attribute__((packed));
-		uint32_t pwmdiv : 3 __attribute__((packed)); /* 2**(n+1) */
-		uint32_t usepwmdiv : 1 __attribute__((packed));
-		uint32_t rsvd__21 : 1 __attribute__((packed));
-		uint32_t usesysdiv : 1 __attribute__((packed));
-		uint32_t sysdiv : 4 __attribute__((packed));
-		uint32_t acg : 1 __attribute__((packed));
-		uint32_t rsvd__28_31 : 4 __attribute__((packed));
+		uint32_t moscdis : 1 __packed;
+		uint32_t ioscdis : 1 __packed;
+		uint32_t rsvd__2_3 : 2 __packed;
+		uint32_t oscsrc : 2 __packed;
+		uint32_t xtal : 4 __packed;
+		uint32_t rsvd__10 : 1 __packed;
+		uint32_t bypass : 1 __packed;
+		uint32_t rsvd__12 : 1 __packed;
+		uint32_t pwrdn : 1 __packed;
+		uint32_t rsvd__14_16 : 3 __packed;
+		uint32_t pwmdiv : 3 __packed; /* 2**(n+1) */
+		uint32_t usepwmdiv : 1 __packed;
+		uint32_t rsvd__21 : 1 __packed;
+		uint32_t usesysdiv : 1 __packed;
+		uint32_t sysdiv : 4 __packed;
+		uint32_t acg : 1 __packed;
+		uint32_t rsvd__28_31 : 4 __packed;
 	} bit;
 };
 
 union __rcc2 {
 	uint32_t value;
 	struct {
-		uint8_t rsvd__0_3 : 4 __attribute__((packed));
-		uint8_t oscsrc2 : 3 __attribute__((packed));
-		uint16_t rsvd__7_10 : 4 __attribute__((packed));
-		uint8_t bypass2 : 1 __attribute__((packed));
-		uint8_t rsvd__12 : 1 __attribute__((packed));
-		uint8_t pwrdn2 : 1 __attribute__((packed));
-		uint16_t rsvd__14_22 : 9 __attribute__((packed));
-		uint16_t sysdiv2 : 6 __attribute__((packed));
-		uint8_t rsvd__29_30 : 2 __attribute__((packed));
-		uint8_t usercc2 : 1 __attribute__((packed));
+		uint8_t rsvd__0_3 : 4 __packed;
+		uint8_t oscsrc2 : 3 __packed;
+		uint16_t rsvd__7_10 : 4 __packed;
+		uint8_t bypass2 : 1 __packed;
+		uint8_t rsvd__12 : 1 __packed;
+		uint8_t pwrdn2 : 1 __packed;
+		uint16_t rsvd__14_22 : 9 __packed;
+		uint16_t sysdiv2 : 6 __packed;
+		uint8_t rsvd__29_30 : 2 __packed;
+		uint8_t usercc2 : 1 __packed;
 	} bit;
 };
 

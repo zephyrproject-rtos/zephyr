@@ -48,17 +48,13 @@ currently used.
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t bandgapBufEn : 1
-			__attribute__((packed)); /* bandgap buffering */
-		uint8_t res_1 : 1 __attribute__((packed)); /* SBZ */
-		uint8_t regOnStatus : 1
-			__attribute__((packed)); /* regulator on, R/O */
-		uint8_t ackIsolation : 1
-			__attribute__((packed)); /* ack I/O isolation */
-		uint8_t bandgapEn : 1
-			__attribute__((packed)); /* bandgap enable */
-		uint8_t res_5 : 1 __attribute__((packed));
-		uint8_t res_6 : 2 __attribute__((packed)); /* RAZ/WI */
+		uint8_t bandgapBufEn : 1 __packed; /* bandgap buffering */
+		uint8_t res_1 : 1 __packed; /* SBZ */
+		uint8_t regOnStatus : 1 __packed; /* regulator on, R/O */
+		uint8_t ackIsolation : 1 __packed; /* ack I/O isolation */
+		uint8_t bandgapEn : 1 __packed; /* bandgap enable */
+		uint8_t res_5 : 1 __packed;
+		uint8_t res_6 : 2 __packed; /* RAZ/WI */
 	} field;
 } REGSC_t; /* 0x0002 Regulator Status/Control Register */
 

@@ -49,20 +49,15 @@ currently used.
 typedef union {
 	uint32_t value;
 	struct {
-		uint8_t valid : 1
-			__attribute__((packed)); /* MPU valid/enable */
-		uint8_t res_1 : 7 __attribute__((packed)); /* RAZ/WI */
-		uint8_t numRgnDescs : 4
-			__attribute__((packed)); /* # of regions */
-		uint8_t numSlvPorts : 4
-			__attribute__((packed)); /* # of slave ports */
-		uint8_t hwRevLvl : 4
-			__attribute__((packed)); /* Hardware revision */
-		uint8_t res_20 : 3 __attribute__((packed)); /* RAZ/WI */
-		uint8_t res_23 : 1 __attribute__((packed)); /* RAO/WI */
-		uint8_t res_24 : 3 __attribute__((packed)); /* RAZ/WI */
-		uint8_t slvPortNErr : 5
-			__attribute__((packed)); /* slave port N err */
+		uint8_t valid : 1 __packed; /* MPU valid/enable */
+		uint8_t res_1 : 7 __packed; /* RAZ/WI */
+		uint8_t numRgnDescs : 4 __packed; /* # of regions */
+		uint8_t numSlvPorts : 4 __packed; /* # of slave ports */
+		uint8_t hwRevLvl : 4 __packed; /* Hardware revision */
+		uint8_t res_20 : 3 __packed; /* RAZ/WI */
+		uint8_t res_23 : 1 __packed; /* RAO/WI */
+		uint8_t res_24 : 3 __packed; /* RAZ/WI */
+		uint8_t slvPortNErr : 5 __packed; /* slave port N err */
 	} field;
 } CESR_t; /* 0x000 Control/Error Status Register */
 

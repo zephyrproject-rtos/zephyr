@@ -57,6 +57,9 @@ from within the VxMicro build system during the link stage.
 #include <sys/stat.h>
 #include "version.h"
 
+/* Define __packed for the idtEntry structure defined in idtEnt.h */
+#define __packed __attribute__((__packed__))
+
 /* These come from the shared directory */
 #include "segselect.h"
 #include "idtEnt.h"

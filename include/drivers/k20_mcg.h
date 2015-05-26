@@ -204,14 +204,14 @@ typedef volatile struct {
 typedef union {
 	uint32_t value; /* reset 0x00 */
 	struct {
-		uint8_t sc16p : 1 __attribute__((packed));
-		uint8_t sc8p : 1 __attribute__((packed));
-		uint8_t sc4p : 1 __attribute__((packed));
-		uint8_t sc2p : 1 __attribute__((packed));
-		uint8_t res_4 : 1 __attribute__((packed));
-		uint8_t erefsten : 1 __attribute__((packed));
-		uint8_t res_6 : 1 __attribute__((packed));
-		uint8_t erclken : 1 __attribute__((packed));
+		uint8_t sc16p : 1 __packed;
+		uint8_t sc8p : 1 __packed;
+		uint8_t sc4p : 1 __packed;
+		uint8_t sc2p : 1 __packed;
+		uint8_t res_4 : 1 __packed;
+		uint8_t erefsten : 1 __packed;
+		uint8_t res_6 : 1 __packed;
+		uint8_t erclken : 1 __packed;
 	} field;
 } OSC_CR_t; /* 0x0 */
 

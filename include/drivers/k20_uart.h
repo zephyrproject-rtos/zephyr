@@ -44,26 +44,24 @@ This module defines the UART Registers for the K20 Family of microprocessors
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t sbr : 5 __attribute__((packed)); /* Hi Baud Rate Bits */
-		uint8_t res_5 : 1 __attribute__((packed));
-		uint8_t rxEdgeIntEn : 1
-			__attribute__((packed)); /* RxD Active Edge */
-		uint8_t lbkdIntEn : 1
-			__attribute__((packed)); /* LIN Break Detect */
+		uint8_t sbr : 5 __packed; /* Hi Baud Rate Bits */
+		uint8_t res_5 : 1 __packed;
+		uint8_t rxEdgeIntEn : 1 __packed; /* RxD Active Edge */
+		uint8_t lbkdIntEn : 1 __packed; /* LIN Break Detect */
 	} field;
 } BDH_t; /* 0x000 BaudRate High */
 
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t oddParity : 1 __attribute__((packed));
-		uint8_t parityEnable : 1 __attribute__((packed));
-		uint8_t idleLineType : 1 __attribute__((packed));
-		uint8_t rxWakepMethod : 1 __attribute__((packed));
-		uint8_t mode9Bit : 1 __attribute__((packed));
-		uint8_t remoteLoopback : 1 __attribute__((packed));
-		uint8_t uartStopWait : 1 __attribute__((packed));
-		uint8_t loopbackEn : 1 __attribute__((packed));
+		uint8_t oddParity : 1 __packed;
+		uint8_t parityEnable : 1 __packed;
+		uint8_t idleLineType : 1 __packed;
+		uint8_t rxWakepMethod : 1 __packed;
+		uint8_t mode9Bit : 1 __packed;
+		uint8_t remoteLoopback : 1 __packed;
+		uint8_t uartStopWait : 1 __packed;
+		uint8_t loopbackEn : 1 __packed;
 	} field;
 } C1_t; /* 0x002 Control 1 */
 
@@ -73,39 +71,38 @@ typedef union {
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t sendBreak : 1 __attribute__((packed));
-		uint8_t rxWakeupCtrl : 1 __attribute__((packed));
-		uint8_t rxEnable : 1 __attribute__((packed));
-		uint8_t txEnable : 1 __attribute__((packed));
-		uint8_t idleLineIntEn : 1 __attribute__((packed));
-		uint8_t rxFullInt_dmaTx_en : 1 __attribute__((packed));
-		uint8_t txCompleteIntEn : 1 __attribute__((packed));
-		uint8_t txInt_DmaTx_en : 1 __attribute__((packed));
+		uint8_t sendBreak : 1 __packed;
+		uint8_t rxWakeupCtrl : 1 __packed;
+		uint8_t rxEnable : 1 __packed;
+		uint8_t txEnable : 1 __packed;
+		uint8_t idleLineIntEn : 1 __packed;
+		uint8_t rxFullInt_dmaTx_en : 1 __packed;
+		uint8_t txCompleteIntEn : 1 __packed;
+		uint8_t txInt_DmaTx_en : 1 __packed;
 	} field;
 } C2_t; /* 0x003 Control 2 */
 
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t parityErrIntEn : 1 __attribute__((packed));
-		uint8_t frameErrIntEn : 1 __attribute__((packed));
-		uint8_t noiseErrIntEn : 1 __attribute__((packed));
-		uint8_t overrunErrIntEn : 1 __attribute__((packed));
-		uint8_t txDataInvert : 1 __attribute__((packed));
-		uint8_t txDataPinOuttDir : 1 __attribute__((packed));
-		uint8_t txBit8 : 1 __attribute__((packed));
-		uint8_t rxBit8 : 1 __attribute__((packed));
+		uint8_t parityErrIntEn : 1 __packed;
+		uint8_t frameErrIntEn : 1 __packed;
+		uint8_t noiseErrIntEn : 1 __packed;
+		uint8_t overrunErrIntEn : 1 __packed;
+		uint8_t txDataInvert : 1 __packed;
+		uint8_t txDataPinOuttDir : 1 __packed;
+		uint8_t txBit8 : 1 __packed;
+		uint8_t rxBit8 : 1 __packed;
 	} field;
 } C3_t; /* 0x006 Control 3 */
 
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t brfa : 5
-			__attribute__((packed)); /* BaudRateFineAdjust*/
-		uint8_t mode10Bit : 1 __attribute__((packed));
-		uint8_t matechAddrMode1En : 1 __attribute__((packed));
-		uint8_t matchAddrMode2En : 1 __attribute__((packed));
+		uint8_t brfa : 5 __packed; /* BaudRateFineAdjust*/
+		uint8_t mode10Bit : 1 __packed;
+		uint8_t matechAddrMode1En : 1 __packed;
+		uint8_t matchAddrMode2En : 1 __packed;
 	} field;
 } C4_t; /* 0x00A Control 4 */
 
@@ -115,28 +112,28 @@ typedef union {
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t parityErr : 1 __attribute__((packed));
-		uint8_t framingErr : 1 __attribute__((packed));
-		uint8_t noice : 1 __attribute__((packed));
-		uint8_t rxOverrun : 1 __attribute__((packed));
-		uint8_t idleLine : 1 __attribute__((packed));
-		uint8_t rxDataFull : 1 __attribute__((packed));
-		uint8_t txComplete : 1 __attribute__((packed));
-		uint8_t txDataEmpty : 1 __attribute__((packed));
+		uint8_t parityErr : 1 __packed;
+		uint8_t framingErr : 1 __packed;
+		uint8_t noice : 1 __packed;
+		uint8_t rxOverrun : 1 __packed;
+		uint8_t idleLine : 1 __packed;
+		uint8_t rxDataFull : 1 __packed;
+		uint8_t txComplete : 1 __packed;
+		uint8_t txDataEmpty : 1 __packed;
 	} field;
 } S1_t; /* 0x004 Status 1 */
 
 typedef union {
 	uint8_t value;
 	struct e {
-		uint8_t rxActive : 1 __attribute__((packed));
-		uint8_t linBkDetectEn : 1 __attribute__((packed));
-		uint8_t brkCharLen13 : 1 __attribute__((packed));
-		uint8_t rxWakeupIdleDetect : 1 __attribute__((packed));
-		uint8_t rxDataInverted : 1 __attribute__((packed));
-		uint8_t msbFirst : 1 __attribute__((packed));
-		uint8_t rxedgif : 1 __attribute__((packed));
-		uint8_t lbkdif : 1 __attribute__((packed));
+		uint8_t rxActive : 1 __packed;
+		uint8_t linBkDetectEn : 1 __packed;
+		uint8_t brkCharLen13 : 1 __packed;
+		uint8_t rxWakeupIdleDetect : 1 __packed;
+		uint8_t rxDataInverted : 1 __packed;
+		uint8_t msbFirst : 1 __packed;
+		uint8_t rxedgif : 1 __packed;
+		uint8_t lbkdif : 1 __packed;
 	} field;
 } S2_t; /* 0x005 Status 2 */
 
@@ -155,10 +152,10 @@ typedef union {
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t rxFifoSize : 3 __attribute__((packed)); /* read-only */
-		uint8_t rxFifoEn : 1 __attribute__((packed));
-		uint8_t txFifoSize : 3 __attribute__((packed)); /* read-only */
-		uint8_t txFifoEn : 1 __attribute__((packed));
+		uint8_t rxFifoSize : 3 __packed; /* read-only */
+		uint8_t rxFifoEn : 1 __packed;
+		uint8_t txFifoSize : 3 __packed; /* read-only */
+		uint8_t txFifoEn : 1 __packed;
 	} field;
 } PFIFO_t; /* 0x010 Fifo Parameter 1 */
 
@@ -168,14 +165,12 @@ typedef union {
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t rxFifoUnderflowIntEn : 1 __attribute__((packed));
-		uint8_t txFifoOverflowIntEn : 1 __attribute__((packed));
-		uint8_t rxFifoOverflowIntEn : 1 __attribute__((packed));
-		uint8_t res_3 : 3 __attribute__((packed));
-		uint8_t rxFifoFlush : 1
-			__attribute__((packed)); /* write-only */
-		uint8_t txFifoFlush : 1
-			__attribute__((packed)); /* write-only */
+		uint8_t rxFifoUnderflowIntEn : 1 __packed;
+		uint8_t txFifoOverflowIntEn : 1 __packed;
+		uint8_t rxFifoOverflowIntEn : 1 __packed;
+		uint8_t res_3 : 3 __packed;
+		uint8_t rxFifoFlush : 1 __packed; /* write-only */
+		uint8_t txFifoFlush : 1 __packed; /* write-only */
 	} field;
 } CFIFO_t; /* 0x011 Fifo Control */
 

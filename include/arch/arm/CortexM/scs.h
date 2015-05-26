@@ -84,96 +84,96 @@ still considered part of the NVIC and an API for it is provided in nvic.h.
 union __ictr {
 	uint32_t val;
 	struct {
-		uint32_t intlinesnum : 4 __attribute__((packed));
-		uint32_t rsvd__4_31 : 28 __attribute__((packed));
+		uint32_t intlinesnum : 4 __packed;
+		uint32_t rsvd__4_31 : 28 __packed;
 	} bit;
 };
 
 union __actlr {
 	uint32_t val;
 	struct {
-		uint32_t dismcycint : 1 __attribute__((packed));
-		uint32_t disdefwbuf : 1 __attribute__((packed));
-		uint32_t disfold : 1 __attribute__((packed));
-		uint32_t rsvd__3_31 : 28 __attribute__((packed));
+		uint32_t dismcycint : 1 __packed;
+		uint32_t disdefwbuf : 1 __packed;
+		uint32_t disfold : 1 __packed;
+		uint32_t rsvd__3_31 : 28 __packed;
 	} bit;
 };
 
 union __stcsr {
 	uint32_t val;
 	struct {
-		uint8_t enable : 1 __attribute__((packed));
-		uint8_t tickint : 1 __attribute__((packed));
-		uint8_t clksource : 1 __attribute__((packed));
-		uint16_t rsvd__3_15 : 13 __attribute__((packed));
-		uint16_t countflag : 1 __attribute__((packed));
-		uint16_t rsvd__17_31 : 15 __attribute__((packed));
+		uint8_t enable : 1 __packed;
+		uint8_t tickint : 1 __packed;
+		uint8_t clksource : 1 __packed;
+		uint16_t rsvd__3_15 : 13 __packed;
+		uint16_t countflag : 1 __packed;
+		uint16_t rsvd__17_31 : 15 __packed;
 	} bit;
 };
 
 union __cpuid {
 	uint32_t val;
 	struct {
-		uint32_t revision : 4 __attribute__((packed));
-		uint32_t partno : 12 __attribute__((packed));
-		uint32_t constant : 4 __attribute__((packed));
-		uint32_t variant : 4 __attribute__((packed));
-		uint32_t implementer : 8 __attribute__((packed));
+		uint32_t revision : 4 __packed;
+		uint32_t partno : 12 __packed;
+		uint32_t constant : 4 __packed;
+		uint32_t variant : 4 __packed;
+		uint32_t implementer : 8 __packed;
 	} bit;
 };
 
 union __icsr {
 	uint32_t val;
 	struct {
-		uint32_t vectactive : 9 __attribute__((packed));
-		uint32_t rsvd__9_10 : 2 __attribute__((packed));
-		uint32_t rettobase : 1 __attribute__((packed));
-		uint32_t vectpending : 10 __attribute__((packed));
-		uint32_t isrpending : 1 __attribute__((packed));
-		uint32_t rsvd__23 : 1 __attribute__((packed));
-		uint32_t rsvd__24 : 1 __attribute__((packed));
-		uint32_t pendstclr : 1 __attribute__((packed));
-		uint32_t pendstset : 1 __attribute__((packed));
-		uint32_t pendsvclr : 1 __attribute__((packed));
-		uint32_t pendsvset : 1 __attribute__((packed));
-		uint32_t rsvd__29_30 : 2 __attribute__((packed));
-		uint32_t nmipendset : 1 __attribute__((packed));
+		uint32_t vectactive : 9 __packed;
+		uint32_t rsvd__9_10 : 2 __packed;
+		uint32_t rettobase : 1 __packed;
+		uint32_t vectpending : 10 __packed;
+		uint32_t isrpending : 1 __packed;
+		uint32_t rsvd__23 : 1 __packed;
+		uint32_t rsvd__24 : 1 __packed;
+		uint32_t pendstclr : 1 __packed;
+		uint32_t pendstset : 1 __packed;
+		uint32_t pendsvclr : 1 __packed;
+		uint32_t pendsvset : 1 __packed;
+		uint32_t rsvd__29_30 : 2 __packed;
+		uint32_t nmipendset : 1 __packed;
 	} bit;
 };
 
 union __vtor {
 	uint32_t val;
 	struct {
-		uint32_t rsvd__0_6 : 7 __attribute__((packed));
-		uint32_t tbloff : 22 __attribute__((packed));
-		uint32_t tblbase : 1 __attribute__((packed));
-		uint32_t rsvd__30_31 : 2 __attribute__((packed));
+		uint32_t rsvd__0_6 : 7 __packed;
+		uint32_t tbloff : 22 __packed;
+		uint32_t tblbase : 1 __packed;
+		uint32_t rsvd__30_31 : 2 __packed;
 	} bit;
 };
 
 union __aircr {
 	uint32_t val;
 	struct {
-		uint32_t vecreset : 1 __attribute__((packed));      /* WO */
-		uint32_t vectclractive : 1 __attribute__((packed)); /* WO */
-		uint32_t sysresetreq : 1 __attribute__((packed));   /* WO */
-		uint32_t rsvd__3_7 : 5 __attribute__((packed));
-		uint32_t prigroup : 3 __attribute__((packed));
-		uint32_t rsvd__11_14 : 4 __attribute__((packed));
-		uint32_t endianness : 1 __attribute__((packed)); /* RO */
-		uint32_t vectkey : 16 __attribute__((packed));
+		uint32_t vecreset : 1 __packed;      /* WO */
+		uint32_t vectclractive : 1 __packed; /* WO */
+		uint32_t sysresetreq : 1 __packed;   /* WO */
+		uint32_t rsvd__3_7 : 5 __packed;
+		uint32_t prigroup : 3 __packed;
+		uint32_t rsvd__11_14 : 4 __packed;
+		uint32_t endianness : 1 __packed; /* RO */
+		uint32_t vectkey : 16 __packed;
 	} bit;
 };
 
 union __scr {
 	uint32_t val;
 	struct {
-		uint32_t rsvd__0 : 1 __attribute__((packed));
-		uint32_t sleeponexit : 1 __attribute__((packed));
-		uint32_t sleepdeep : 1 __attribute__((packed));
-		uint32_t rsvd__3 : 1 __attribute__((packed));
-		uint32_t sevonpend : 1 __attribute__((packed));
-		uint32_t rsvd__5_31 : 27 __attribute__((packed));
+		uint32_t rsvd__0 : 1 __packed;
+		uint32_t sleeponexit : 1 __packed;
+		uint32_t sleepdeep : 1 __packed;
+		uint32_t rsvd__3 : 1 __packed;
+		uint32_t sevonpend : 1 __packed;
+		uint32_t rsvd__5_31 : 27 __packed;
 	} bit;
 };
 
@@ -182,39 +182,39 @@ union __scr {
 union __ccr {
 	uint32_t val;
 	struct {
-		uint32_t nonbasethrdena : 1 __attribute__((packed));
-		uint32_t usersetmpend : 1 __attribute__((packed));
-		uint32_t rsvd__2 : 1 __attribute__((packed));
-		uint32_t unalign_trp : 1 __attribute__((packed));
-		uint32_t div_0_trp : 1 __attribute__((packed));
-		uint32_t rsvd__5_7 : 3 __attribute__((packed));
-		uint32_t bfhfnmign : 1 __attribute__((packed));
-		uint32_t stkalign : 1 __attribute__((packed));
-		uint32_t rsvd__10_31 : 22 __attribute__((packed));
+		uint32_t nonbasethrdena : 1 __packed;
+		uint32_t usersetmpend : 1 __packed;
+		uint32_t rsvd__2 : 1 __packed;
+		uint32_t unalign_trp : 1 __packed;
+		uint32_t div_0_trp : 1 __packed;
+		uint32_t rsvd__5_7 : 3 __packed;
+		uint32_t bfhfnmign : 1 __packed;
+		uint32_t stkalign : 1 __packed;
+		uint32_t rsvd__10_31 : 22 __packed;
 	} bit;
 };
 
 union __shcsr {
 	uint32_t val;
 	struct {
-		uint32_t memfaultact : 1 __attribute__((packed));
-		uint32_t busfaultact : 1 __attribute__((packed));
-		uint32_t rsvd__2 : 1 __attribute__((packed));
-		uint32_t usgfaultact : 1 __attribute__((packed));
-		uint32_t rsvd__4_6 : 3 __attribute__((packed));
-		uint32_t svcallact : 1 __attribute__((packed));
-		uint32_t monitoract : 1 __attribute__((packed));
-		uint32_t rsvd__9 : 1 __attribute__((packed));
-		uint32_t pendsvact : 1 __attribute__((packed));
-		uint32_t systickact : 1 __attribute__((packed));
-		uint32_t usgfaultpended : 1 __attribute__((packed));
-		uint32_t memfaultpended : 1 __attribute__((packed));
-		uint32_t busfaultpended : 1 __attribute__((packed));
-		uint32_t svcallpended : 1 __attribute__((packed));
-		uint32_t memfaultena : 1 __attribute__((packed));
-		uint32_t busfaultena : 1 __attribute__((packed));
-		uint32_t usgfaultena : 1 __attribute__((packed));
-		uint32_t rsvd__19_31 : 13 __attribute__((packed));
+		uint32_t memfaultact : 1 __packed;
+		uint32_t busfaultact : 1 __packed;
+		uint32_t rsvd__2 : 1 __packed;
+		uint32_t usgfaultact : 1 __packed;
+		uint32_t rsvd__4_6 : 3 __packed;
+		uint32_t svcallact : 1 __packed;
+		uint32_t monitoract : 1 __packed;
+		uint32_t rsvd__9 : 1 __packed;
+		uint32_t pendsvact : 1 __packed;
+		uint32_t systickact : 1 __packed;
+		uint32_t usgfaultpended : 1 __packed;
+		uint32_t memfaultpended : 1 __packed;
+		uint32_t busfaultpended : 1 __packed;
+		uint32_t svcallpended : 1 __packed;
+		uint32_t memfaultena : 1 __packed;
+		uint32_t busfaultena : 1 __packed;
+		uint32_t usgfaultena : 1 __packed;
+		uint32_t rsvd__19_31 : 13 __packed;
 	} bit;
 };
 
@@ -224,39 +224,38 @@ union __cfsr {
 		union {
 			uint8_t val;
 			struct {
-				uint8_t iaccviol : 1 __attribute__((packed));
-				uint8_t daccviol : 1 __attribute__((packed));
-				uint8_t rsvd__2 : 1 __attribute__((packed));
-				uint8_t munstkerr : 1 __attribute__((packed));
-				uint8_t mstkerr : 1 __attribute__((packed));
-				uint8_t rsvd__5_6 : 2 __attribute__((packed));
-				uint8_t mmarvalid : 1 __attribute__((packed));
+				uint8_t iaccviol : 1 __packed;
+				uint8_t daccviol : 1 __packed;
+				uint8_t rsvd__2 : 1 __packed;
+				uint8_t munstkerr : 1 __packed;
+				uint8_t mstkerr : 1 __packed;
+				uint8_t rsvd__5_6 : 2 __packed;
+				uint8_t mmarvalid : 1 __packed;
 			} bit;
 		} mmfsr;
 		union {
 			uint8_t val;
 			struct {
-				uint8_t ibuserr : 1 __attribute__((packed));
-				uint8_t preciserr : 1 __attribute__((packed));
-				uint8_t impreciserr : 1 __attribute__((packed));
-				uint8_t unstkerr : 1 __attribute__((packed));
-				uint8_t stkerr : 1 __attribute__((packed));
-				uint8_t rsvd__5_6 : 2 __attribute__((packed));
-				uint8_t bfarvalid : 1 __attribute__((packed));
+				uint8_t ibuserr : 1 __packed;
+				uint8_t preciserr : 1 __packed;
+				uint8_t impreciserr : 1 __packed;
+				uint8_t unstkerr : 1 __packed;
+				uint8_t stkerr : 1 __packed;
+				uint8_t rsvd__5_6 : 2 __packed;
+				uint8_t bfarvalid : 1 __packed;
 			} bit;
 		} bfsr;
 		union {
 			uint16_t val;
 			struct {
-				uint16_t undefinstr : 1 __attribute__((packed));
-				uint16_t invstate : 1 __attribute__((packed));
-				uint16_t invpc : 1 __attribute__((packed));
-				uint16_t nocp : 1 __attribute__((packed));
-				uint16_t rsvd__4_7 : 4 __attribute__((packed));
-				uint16_t unaligned : 1 __attribute__((packed));
-				uint16_t divbyzero : 1 __attribute__((packed));
-				uint16_t rsvd__10_15 : 6
-					__attribute__((packed));
+				uint16_t undefinstr : 1 __packed;
+				uint16_t invstate : 1 __packed;
+				uint16_t invpc : 1 __packed;
+				uint16_t nocp : 1 __packed;
+				uint16_t rsvd__4_7 : 4 __packed;
+				uint16_t unaligned : 1 __packed;
+				uint16_t divbyzero : 1 __packed;
+				uint16_t rsvd__10_15 : 6 __packed;
 			} bit;
 		} ufsr;
 	} byte;
@@ -265,68 +264,68 @@ union __cfsr {
 union __hfsr {
 	uint32_t val;
 	struct {
-		uint32_t rsvd__0 : 1 __attribute__((packed));
-		uint32_t vecttbl : 1 __attribute__((packed));
-		uint32_t rsvd__2_29 : 28 __attribute__((packed));
-		uint32_t forced : 1 __attribute__((packed));
-		uint32_t debugevt : 1 __attribute__((packed));
+		uint32_t rsvd__0 : 1 __packed;
+		uint32_t vecttbl : 1 __packed;
+		uint32_t rsvd__2_29 : 28 __packed;
+		uint32_t forced : 1 __packed;
+		uint32_t debugevt : 1 __packed;
 	} bit;
 };
 
 union __mpu_type {
 	uint32_t val;
 	struct {
-		uint32_t separate : 1 __attribute__((packed));
-		uint32_t rsvd__1_7 : 7 __attribute__((packed));
-		uint32_t dregion : 8 __attribute__((packed));
-		uint32_t iregion : 8 __attribute__((packed));
-		uint32_t rsvd__24_31 : 8 __attribute__((packed));
+		uint32_t separate : 1 __packed;
+		uint32_t rsvd__1_7 : 7 __packed;
+		uint32_t dregion : 8 __packed;
+		uint32_t iregion : 8 __packed;
+		uint32_t rsvd__24_31 : 8 __packed;
 	} bit;
 };
 
 union __mpu_ctrl {
 	uint32_t val;
 	struct {
-		uint32_t enable : 1 __attribute__((packed));
-		uint32_t hfnmiena : 1 __attribute__((packed));
-		uint32_t privdefena : 1 __attribute__((packed));
-		uint32_t rsvd__24_31 : 29 __attribute__((packed));
+		uint32_t enable : 1 __packed;
+		uint32_t hfnmiena : 1 __packed;
+		uint32_t privdefena : 1 __packed;
+		uint32_t rsvd__24_31 : 29 __packed;
 	} bit;
 };
 
 union __mpu_rnr {
 	uint32_t val;
 	struct {
-		uint32_t region : 8 __attribute__((packed));
-		uint32_t rsvd__24_31 : 24 __attribute__((packed));
+		uint32_t region : 8 __packed;
+		uint32_t rsvd__24_31 : 24 __packed;
 	} bit;
 };
 
 union __mpu_rbar {
 	uint32_t val;
 	struct {
-		uint8_t region : 4 __attribute__((packed));
-		uint8_t valid : 1 __attribute__((packed));
-		uint32_t addr : 27 __attribute__((packed));
+		uint8_t region : 4 __packed;
+		uint8_t valid : 1 __packed;
+		uint32_t addr : 27 __packed;
 	} bit;
 };
 
 union __mpu_rasr {
 	uint32_t val;
 	struct {
-		uint32_t enable : 1 __attribute__((packed));
-		uint32_t size : 5 __attribute__((packed));
-		uint32_t rsvd__6_7 : 2 __attribute__((packed));
-		uint32_t srd : 8 __attribute__((packed));
-		uint32_t b : 1 __attribute__((packed));
-		uint32_t c : 1 __attribute__((packed));
-		uint32_t s : 1 __attribute__((packed));
-		uint32_t tex : 3 __attribute__((packed));
-		uint32_t rsvd__22_23 : 2 __attribute__((packed));
-		uint32_t ap : 3 __attribute__((packed));
-		uint32_t rsvd__27 : 1 __attribute__((packed));
-		uint32_t xn : 1 __attribute__((packed));
-		uint32_t rsvd__29_31 : 3 __attribute__((packed));
+		uint32_t enable : 1 __packed;
+		uint32_t size : 5 __packed;
+		uint32_t rsvd__6_7 : 2 __packed;
+		uint32_t srd : 8 __packed;
+		uint32_t b : 1 __packed;
+		uint32_t c : 1 __packed;
+		uint32_t s : 1 __packed;
+		uint32_t tex : 3 __packed;
+		uint32_t rsvd__22_23 : 2 __packed;
+		uint32_t ap : 3 __packed;
+		uint32_t rsvd__27 : 1 __packed;
+		uint32_t xn : 1 __packed;
+		uint32_t rsvd__29_31 : 3 __packed;
 	} bit;
 };
 

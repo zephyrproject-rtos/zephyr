@@ -49,20 +49,20 @@ This module defines Watch Dog Registers for the K20 Family of microprocessors
 typedef union {
 	uint16_t value; /* reset= 0x01D3 */
 	struct {
-		uint8_t wdogen : 1 __attribute__((packed));
-		uint8_t clksrc : 1 __attribute__((packed));
-		uint8_t irqrsten : 1 __attribute__((packed));
-		uint8_t winen : 1 __attribute__((packed));
-		uint8_t allowupdate : 1 __attribute__((packed));
-		uint8_t dbgen : 1 __attribute__((packed));
-		uint8_t stopen : 1 __attribute__((packed));
-		uint8_t waiten : 1 __attribute__((packed));
-		uint8_t res_8_9 : 2 __attribute__((packed));
-		uint8_t testwdog : 1 __attribute__((packed));
-		uint8_t testsel : 1 __attribute__((packed));
-		uint8_t bytesel : 2 __attribute__((packed));
-		uint8_t disestwdog : 1 __attribute__((packed));
-		uint8_t res_15 : 1 __attribute__((packed));
+		uint8_t wdogen : 1 __packed;
+		uint8_t clksrc : 1 __packed;
+		uint8_t irqrsten : 1 __packed;
+		uint8_t winen : 1 __packed;
+		uint8_t allowupdate : 1 __packed;
+		uint8_t dbgen : 1 __packed;
+		uint8_t stopen : 1 __packed;
+		uint8_t waiten : 1 __packed;
+		uint8_t res_8_9 : 2 __packed;
+		uint8_t testwdog : 1 __packed;
+		uint8_t testsel : 1 __packed;
+		uint8_t bytesel : 2 __packed;
+		uint8_t disestwdog : 1 __packed;
+		uint8_t res_15 : 1 __packed;
 	} field;
 } WDOG_STCTRLH_t;
 
