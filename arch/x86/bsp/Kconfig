@@ -84,6 +84,7 @@ config BSP_QUARK
 	select DRV_NS16550
 	select DRV_SERIAL
 	select DRV_PCI
+	select PCI
 
 endchoice
 

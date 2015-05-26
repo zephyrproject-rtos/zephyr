@@ -124,6 +124,14 @@ config XIP
 
 endmenu
 
+config PCI
+        bool
+        # omit prompt to signify a "hidden" option
+        default n
+        help
+          This options enables support of PCI bus enumeration for device
+          drivers.
+
 #FIXME This symbols is not being used.
 config  CUSTOM_RANDOM_GENERATOR
         bool "Custom random generator"
