@@ -173,6 +173,60 @@ static int read_blvl(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
 	return bt_gatt_attr_read(attr, buf, len, offset, &value, sizeof(value));
 }
 
+/* Current Time Service Variables */
+static struct bt_uuid cts_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_CTS,
+};
+
+static struct bt_uuid ct_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_CURRENT_TIME,
+};
+
+static struct bt_gatt_chrc ct_chrc = {
+	.properties =  BT_GATT_CHRC_READ,
+	.value_handle = 0x0014,
+	.uuid = &ct_uuid,
+};
+
+static void generate_current_time(uint8_t *buf)
+{
+	uint16_t year;
+
+	/* 'Exact Time 256' contains 'Day Date Time' which contains
+	 * 'Date Time' - characteristic contains fields for:
+	 * year, month, day, hours, minutes and seconds.
+	 */
+
+	year = sys_cpu_to_le16(2015);
+	memcpy(buf,  &year, 2); /* year */
+	buf[2] = 5; /* months starting from 1 */
+	buf[3] = 30; /* day */
+	buf[4] = 12; /* hours */
+	buf[5] = 45; /* minutes */
+	buf[6] = 30; /* seconds */
+
+	/* 'Day of Week' part of 'Day Date Time' */
+	buf[7] = 1; /* day of week starting from 1 */
+
+	/* 'Fractions 256 part of 'Exact Time 256' */
+	buf[8] = 0;
+
+	/* Adjust reason */
+	buf[9] = 0; /* No update, change, etc */
+}
+
+static int read_ct(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
+		   uint16_t offset)
+{
+	uint8_t ct[10];
+
+	generate_current_time(ct);
+
+	return bt_gatt_attr_read(attr, buf, len, offset, &ct, sizeof(ct));
+}
+
 static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
@@ -198,6 +252,10 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_DESCRIPTOR(0x0010, &blvl_uuid, read_blvl, NULL, NULL),
 	/* TODO: Add write support CCC */
 	BT_GATT_DESCRIPTOR(0x0011, &ccc_uuid, read_ccc, NULL, NULL),
+	/* Current Time Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(0x0012, &cts_uuid),
+	BT_GATT_CHARACTERISTIC(0x0013, &ct_chrc),
+	BT_GATT_DESCRIPTOR(0x0014, &ct_uuid, read_ct, NULL, NULL),
 };
 
 static const struct bt_eir ad[] = {
@@ -207,9 +265,9 @@ static const struct bt_eir ad[] = {
 		.data = { BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR },
 	},
 	{
-		.len = 5,
+		.len = 7,
 		.type = BT_EIR_UUID16_ALL,
-		.data = { 0x0d, 0x18, 0x0f, 0x18 },
+		.data = { 0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18 },
 	},
 	{ }
 };
