@@ -23,4 +23,5 @@ This would be an example of referencing function
 .. toctree::
    :maxdepth: 2
 
+   doxygen_guidelines.rst
    doxygen_output.rst
