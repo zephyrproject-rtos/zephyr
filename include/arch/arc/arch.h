@@ -60,6 +60,8 @@ extern "C" {
 #include <arch/arc/v2/arcv2_irq_unit.h>
 #endif
 
+#define STACK_ALIGN  4
+
 #ifdef __cplusplus
 }
 #endif

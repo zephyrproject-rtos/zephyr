@@ -64,6 +64,8 @@ extern "C" {
 #include <arch/arm/CortexM/asm_inline.h>
 #endif
 
+#define STACK_ALIGN  4
+
 #ifdef __cplusplus
 }
 #endif

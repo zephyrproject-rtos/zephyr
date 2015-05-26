@@ -71,8 +71,30 @@ by the generic nanokernel interface header (nanokernel.h)
 #define _INT_STUB_ALIGN	1
 #endif
 
-typedef unsigned char __aligned(_INT_STUB_ALIGN) NANO_INT_STUB[_INT_STUB_SIZE];
+/*
+ * Floating point register set alignment.
+ *
+ * If support for SSEx extensions is enabled a 16 byte boundary is required,
+ * since the 'fxsave' and 'fxrstor' instructions require this.  In all other
+ * cases a 4 byte bounday is sufficient.
+ */
 
+#ifdef CONFIG_SSE
+#define FP_REG_SET_ALIGN  16
+#else
+#define FP_REG_SET_ALIGN  4
+#endif
+
+/*
+ * The CCS must be aligned to the same boundary as that used by the floating
+ * point register set.  This applies even for contexts that don't initially
+ * use floating point, since it is possible to enable floating point support
+ * later on.
+ */
+
+#define STACK_ALIGN  FP_REG_SET_ALIGN
+
+typedef unsigned char __aligned(_INT_STUB_ALIGN) NANO_INT_STUB[_INT_STUB_SIZE];
 
 typedef struct s_isrList {
 	void		*fnc;    /* Address of ISR/stub */

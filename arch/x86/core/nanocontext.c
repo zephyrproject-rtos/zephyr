@@ -354,7 +354,7 @@ void *_NewContext(
 	 * stack
 	 */
 
-	ccs = (tCCS *)ROUND_UP(pStackMem, CCS_ALIGN);
+	ccs = (tCCS *)ROUND_UP(pStackMem, STACK_ALIGN);
 
 	_NewContextInternal(ccs, pStackMem, stackSize, priority, options);
 

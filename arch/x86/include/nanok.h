@@ -69,31 +69,6 @@ offsets.o module.
 #define STACK_ALIGN_SIZE 4
 
 /*
- * Alignment requirement for the tFpRegSet structure
- *
- * If support for SSEx extensions is enabled a 16 byte boundary is required,
- * since the 'fxsave' and 'fxrstor' instructions require this.  In all other
- * cases a 4 byte bounday is sufficient.
- */
-
-#ifdef CONFIG_SSE
-#define FP_REG_SET_ALIGN 16
-#else
-#define FP_REG_SET_ALIGN 4
-#endif /* CONFIG_SSE */
-
-/*
- * Alignment requirement for the CCS structure
- *
- * The CCS must be aligned to the same boundary as that used by
- * the FP register set that appears at the end of the structure.
- * This applies even for contexts that don't initially use floating point,
- * since it is possible to enable floating point support later on.
- */
-
-#define CCS_ALIGN FP_REG_SET_ALIGN
-
-/*
  * Bitmask definitions for the tCCS->flags bit field
  *
  * The USE_FP flag bit will be set whenever a context uses any non-integer

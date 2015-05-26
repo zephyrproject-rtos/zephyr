@@ -34,6 +34,7 @@
 #define _MICROKERNEL_H
 
 #include <nanokernel.h>
+#include <arch/cpu.h>
 
 #include <cputype.h>
 #include <microkernel/k_types.h>
