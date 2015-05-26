@@ -35,7 +35,7 @@
 
 /* Enabling debug increases stack size requirement considerably */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-#define BT_STACK_DEBUG_EXTRA	1024
+#define BT_STACK_DEBUG_EXTRA	512
 #else
 #define BT_STACK_DEBUG_EXTRA	0
 #endif
