@@ -132,12 +132,32 @@ static struct bt_uuid ccc_uuid = {
 	.u16 = BT_UUID_GATT_CCC,
 };
 
+static uint16_t hrmc_ccc = 0x0000;
+
 static int read_ccc(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
 		    uint16_t offset)
 {
-	uint16_t value = 0x0000;
+	uint16_t *value = attr->user_data;
+	uint16_t data = sys_cpu_to_le16(*value);
 
-	return bt_gatt_attr_read(attr, buf, len, offset, &value, sizeof(value));
+	return bt_gatt_attr_read(attr, buf, len, offset, &data, sizeof(data));
+}
+
+static int write_ccc(const struct bt_gatt_attr *attr, const void *buf,
+		     uint8_t len, uint16_t offset)
+{
+	uint16_t *value = attr->user_data;
+	const uint16_t *data = buf;
+
+	if (len != sizeof(*data) || offset) {
+		return -EINVAL;
+	}
+
+	/* TODO: Write per client */
+
+	*value = sys_le16_to_cpu(*data);
+
+	return len;
 }
 
 static int read_blsc(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
@@ -165,6 +185,8 @@ static struct bt_gatt_chrc blvl_chrc = {
 	.uuid = &blvl_uuid,
 };
 
+static uint16_t blvl_ccc = 0x0000;
+
 static int read_blvl(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
 		     uint16_t offset)
 {
@@ -189,6 +211,8 @@ static struct bt_gatt_chrc ct_chrc = {
 	.value_handle = 0x0014,
 	.uuid = &ct_uuid,
 };
+
+static uint16_t ct_ccc = 0x0000;
 
 static void generate_current_time(uint8_t *buf)
 {
@@ -239,8 +263,7 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0006, &hrs_uuid),
 	BT_GATT_CHARACTERISTIC(0x0007, &hrmc_chrc),
 	BT_GATT_DESCRIPTOR(0x0008, &hrmc_uuid, NULL, NULL, NULL),
-	/* TODO: Add write support CCC */
-	BT_GATT_DESCRIPTOR(0x0009, &ccc_uuid, read_ccc, NULL, NULL),
+	BT_GATT_DESCRIPTOR(0x0009, &ccc_uuid, read_ccc, write_ccc, &hrmc_ccc),
 	BT_GATT_CHARACTERISTIC(0x000a, &bslc_chrc),
 	BT_GATT_DESCRIPTOR(0x000b, &bslc_uuid, read_blsc, NULL, NULL),
 	BT_GATT_CHARACTERISTIC(0x000c, &hrcpc_chrc),
@@ -250,14 +273,12 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x000e, &bas_uuid),
 	BT_GATT_CHARACTERISTIC(0x000f, &blvl_chrc),
 	BT_GATT_DESCRIPTOR(0x0010, &blvl_uuid, read_blvl, NULL, NULL),
-	/* TODO: Add write support CCC */
-	BT_GATT_DESCRIPTOR(0x0011, &ccc_uuid, read_ccc, NULL, NULL),
+	BT_GATT_DESCRIPTOR(0x0011, &ccc_uuid, read_ccc, write_ccc, &blvl_ccc),
 	/* Current Time Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(0x0012, &cts_uuid),
 	BT_GATT_CHARACTERISTIC(0x0013, &ct_chrc),
 	BT_GATT_DESCRIPTOR(0x0014, &ct_uuid, read_ct, NULL, NULL),
-	/* TODO: Add write support CCC */
-	BT_GATT_DESCRIPTOR(0x0015, &ccc_uuid, read_ccc, NULL, NULL),
+	BT_GATT_DESCRIPTOR(0x0015, &ccc_uuid, read_ccc, write_ccc, &ct_ccc),
 };
 
 static const struct bt_eir ad[] = {
