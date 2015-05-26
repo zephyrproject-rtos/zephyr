@@ -318,10 +318,16 @@ enum {
 static unsigned calculate_unused(const char *stack, unsigned size,
 				 int stack_growth)
 {
-	unsigned i, unused = 0;
+	unsigned i, stack_offset, unused = 0;
+
+	/* The CCS is always placed on a 4-byte aligned boundary - if
+	 * the stack beginning doesn't match that there will be some
+	 * unused bytes in the beginning.
+	 */
+	stack_offset = __tCCS_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
 
 	if (stack_growth == STACK_DIRECTION_DOWN) {
-		for (i = __tCCS_SIZEOF; i < size; i++) {
+		for (i = stack_offset; i < size; i++) {
 			if ((unsigned char)stack[i] == 0xaa) {
 				unused++;
 			} else {
@@ -329,7 +335,7 @@ static unsigned calculate_unused(const char *stack, unsigned size,
 			}
 		}
 	} else {
-		for (i = size - 1; i >= __tCCS_SIZEOF; i--) {
+		for (i = size - 1; i >= stack_offset; i--) {
 			if ((unsigned char)stack[i] == 0xaa) {
 				unused++;
 			} else {
