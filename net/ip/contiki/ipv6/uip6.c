@@ -1545,6 +1545,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
   uip_icmp6_error_output(buf, ICMP6_DST_UNREACH, ICMP6_DST_UNREACH_NOPORT, 0);
   goto send;
 #else
+  uip_len(buf) = 0;
   goto drop;
 #endif
 

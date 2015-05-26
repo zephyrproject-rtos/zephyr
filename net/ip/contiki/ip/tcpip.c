@@ -535,12 +535,7 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
 #endif /* UIP_UDP */
 
     case PACKET_INPUT:
-      if (!packet_input(buf)) {
-         /* failure, discard the net_buf here because the
-          * return value cannot be passed to driver any longer
-          */
-         net_buf_put(buf);
-      }
+      packet_input(buf);
       break;
   };
 }

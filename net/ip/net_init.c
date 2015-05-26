@@ -347,15 +347,12 @@ static void net_rx_fiber(void)
 	NET_DBG("Starting RX fiber\n");
 
 	while (1) {
-		/* Wait next packet from network */
 		buf = nano_fifo_get_wait(&netdev.rx_queue);
 
 		/* Check stack usage (no-op if not enabled) */
 		analyze_stacks(buf, &buf);
 
-		/* TBD: Pass it to IP stack */
-
-		net_buf_put(buf);
+		tcpip_input(buf);
 	}
 }
 
