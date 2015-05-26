@@ -309,6 +309,23 @@ struct bt_conn *bt_conn_lookup(uint16_t handle)
 	return NULL;
 }
 
+struct bt_conn *bt_conn_lookup_by_addr_le(const bt_addr_le_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (conns[i].state != BT_CONN_CONNECTED) {
+			continue;
+		}
+
+		if (!bt_addr_le_cmp(peer, &conns[i].dst)) {
+			return &conns[i];
+		}
+	}
+
+	return NULL;
+}
+
 struct bt_conn *bt_conn_get(struct bt_conn *conn)
 {
 	conn->ref++;
