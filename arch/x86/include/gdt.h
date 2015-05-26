@@ -69,7 +69,7 @@ typedef struct s_gdtDesc {
  * so the aligned attribute is used.
  */
 
-typedef struct PACK_STRUCT s_gdtHeader
+typedef struct __packed s_gdtHeader
 {
 	uint16_t limit;     /* GDT limit */
 	tGdtDesc *pEntries; /* pointer to the GDT entries */
