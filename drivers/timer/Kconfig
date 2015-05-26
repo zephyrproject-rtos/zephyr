@@ -33,6 +33,6 @@
 config PIT
 	bool "PIT (i8253)"
 	default n
-	depends on ARCH="x86" && DRV_TIMER
+	depends on ARCH="x86"
 	help
 	This option selects legacy i8253 timer as system timer.

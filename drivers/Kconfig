@@ -32,46 +32,10 @@
 
 source "drivers/bluetooth/Kconfig"
 
-config DRV_CONSOLE
-	bool
-	default y
-	help
-	This option enables the UART console driver.
-
 source "drivers/console/Kconfig"
-
-config DRV_SERIAL
-	bool
-	default n
-	help
-	This option enables the serial driver.
 
 source "drivers/serial/Kconfig"
 
-config DRV_TIMER
-	bool
-	default n
-	help
-	This option enables the timer driver.
-
 source "drivers/timer/Kconfig"
-
-config DRV_INTCTL
-	bool
-	default n
-	help
-	This option enables the interrupt controller driver.
-
-config DRV_PCI
-	bool
-	default n
-	help
-	This option enables the PCI driver.
-
-config DRV_RANDOM
-	bool
-	default n
-	help
-	This option enables the random number generator driver.
 
 source "drivers/random/Kconfig"

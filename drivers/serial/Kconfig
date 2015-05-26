@@ -32,8 +32,7 @@
 
 
 config DRV_NS16550
-	bool
-	depends on DRV_SERIAL
+	bool "NS16550 serial driver"
 	default n
 	help
 	This option enables the NS16550 serial driver.
@@ -41,18 +40,16 @@ config DRV_NS16550
 	available at the Generic PC and Quark.
 
 config DRV_K20_UART
-	bool
+	bool "K20 serial driver"
 	default n
-	depends on DRV_SERIAL
 	help
 	This option enables the K20 serial driver.
 	This specific driver can be used for the serial hardware
 	available at the Freescale FRDM K64F BSP.
 
 config DRV_STELLARIS_UART
-	bool
+	bool "Stellaris serial driver"
 	default n
-	depends on DRV_SERIAL
 	help
 	This option enables the Stellaris serial driver.
 	This specific driver can be used for the serial hardware
@@ -61,7 +58,6 @@ config DRV_STELLARIS_UART
 config  UART_INTERRUPT_DRIVEN
 	bool
 	prompt "Interrupt driven UART support"
-	depends on DRV_SERIAL
 	default n
 	help
 	This option enables interrupt support for UART allowing console
