@@ -32,6 +32,21 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
+ifeq ("$(origin V)", "command line")
+  KBUILD_VERBOSE = $(V)
+endif
+ifndef KBUILD_VERBOSE
+  KBUILD_VERBOSE = 0
+endif
+
+ifeq ($(KBUILD_VERBOSE),1)
+  Q =
+  S =
+else
+  Q = @
+  S = -s
+endif
+
 all: $(CONFIG_DEPS) $(O)/include/config/.dir
 	$(Q)$(MAKE) -C $(TIMO_BASE)  O=$(O) \
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS)
@@ -44,9 +59,9 @@ cmd_clean_inner_files = \
 	 $(shell cd $(PROJECT_BASE);rm $(rm-files) -f; rm $(rm-dirs) -rf)
 
 clean: FORCE
-	@rm $(SOURCE_DIR)$(rm-objects) -f
-	@rm $(SOURCE_DIR)/modules.order -f
-	@rm $(SOURCE_DIR)/.*.cmd -f
+	$(Q)rm $(SOURCE_DIR)$(rm-objects) -f
+	$(Q)rm $(SOURCE_DIR)/modules.order -f
+	$(Q)rm $(SOURCE_DIR)/.*.cmd -f
 	$(call cmd_clean_inner_files)
 
 pristine: distclean
@@ -62,7 +77,7 @@ mrproper: FORCE
 	PROJECT=$(PROJECT_BASE) mrproper
 
 %config: $(O)/include/config/.dir FORCE
-	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(O) \
+	$(Q)$(MAKE) $(S) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) $@
 
 qemu: $(CONFIG_DEPS) $(O)/include/config/.dir
@@ -70,22 +85,22 @@ qemu: $(CONFIG_DEPS) $(O)/include/config/.dir
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS) qemu
 
 $(O)/.initconfig: $(O)/include/config/.dir $(O)/include/generated/.dir
-	set -e;
-	$(Q)test -s $(O)/.config || $(Q) $(MAKE) -C $(TIMO_BASE) O=$(O) \
+	$(Q)set -e;
+	$(Q)test -s $(O)/.config || $(MAKE) $(S) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) defconfig
 ifneq (($strip $(CONF_FILE)),)
 	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
 	-q -m -O $(O) $(O)/.config $(CONF_FILE)
 endif
-	$(Q)yes "" | $(MAKE) -C $(TIMO_BASE) O=$(O) \
+	$(Q)yes "" | $(MAKE) $(S) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) oldconfig
-	@touch $@
+	$(Q)touch $@
 
 
 %/.dir:
-	set -e;
-	$(Q)test -s $(abspath $(dir $@)) || $(Q)mkdir $(abspath $(dir $@)) -p
-	@touch $@
+	$(Q)set -e;
+	$(Q)test -s $(abspath $(dir $@)) || mkdir $(abspath $(dir $@)) -p
+	$(Q)touch $@
 
 help:
 	$(Q)$(MAKE) -C $(TIMO_BASE) help
