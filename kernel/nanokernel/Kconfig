@@ -54,7 +54,6 @@ config INT_LATENCY_BENCHMARK
 	each time intLatencyShow() is called thereafter.
 
 config MAIN_STACK_SIZE
-
 	int
 	prompt "Background task stack size (in bytes)"
 	default 1024
