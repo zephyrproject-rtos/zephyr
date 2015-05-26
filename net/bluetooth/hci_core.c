@@ -1108,18 +1108,18 @@ static void cmd_queue_init(void)
 	dev.ncmd = 1;
 	nano_task_sem_give(&dev.ncmd_sem);
 
-	fiber_start(cmd_tx_fiber_stack, CMD_TX_STACK_SIZE,
+	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
 		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
 }
 
 static void rx_queue_init(void)
 {
 	nano_fifo_init(&dev.rx_queue);
-	fiber_start(rx_fiber_stack, RX_STACK_SIZE,
+	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t)hci_rx_fiber, 0, 0, 7, 0);
 
 	nano_fifo_init(&dev.cmd_rx_queue);
-	fiber_start(cmd_rx_fiber_stack, CMD_RX_STACK_SIZE,
+	fiber_start(cmd_rx_fiber_stack, sizeof(cmd_rx_fiber_stack),
 		    (nano_fiber_entry_t)cmd_rx_fiber, 0, 0, 7, 0);
 }
 
