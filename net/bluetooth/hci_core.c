@@ -320,8 +320,6 @@ static unsigned calculate_unused(const char *stack, unsigned size,
 {
 	unsigned i, unused = 0;
 
-	printk("stack %p size %u\n", size);
-
 	if (stack_growth == STACK_DIRECTION_DOWN) {
 		for (i = __tCCS_SIZEOF; i < size; i++) {
 			if ((unsigned char)stack[i] == 0xaa) {
