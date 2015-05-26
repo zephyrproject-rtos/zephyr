@@ -32,6 +32,13 @@
 
 #include <stdbool.h>
 
+/* Enabling debug increases stack size requirement considerably */
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+#define BT_STACK_DEBUG_EXTRA	1024
+#else
+#define BT_STACK_DEBUG_EXTRA	0
+#endif
+
 /* LMP feature helpers */
 #define lmp_bredr_capable(dev)	(!((dev).features[4] & BT_LMP_NO_BREDR))
 #define lmp_le_capable(dev)	((dev).features[4] & BT_LMP_LE)
