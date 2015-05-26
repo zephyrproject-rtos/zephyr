@@ -30,8 +30,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+config X86_32
+        def_bool y
+
+config ARCH_DEFCONFIG
+        string
+        default "arch/x86/defconfig" if X86_32
+
+source "kernel/Kconfig"
+
+source "misc/Kconfig"
 
 source "arch/x86/core/Kconfig"
+
 source "arch/x86/bsp/Kconfig"
 
 menu "Floating Point Options"
@@ -149,4 +160,9 @@ source "arch/x86/quark/Kconfig"
 endif
 
 source "arch/x86/timer/Kconfig"
+
 source "arch/x86/interrupt_controller/Kconfig"
+
+source "drivers/Kconfig"
+
+source "net/Kconfig"

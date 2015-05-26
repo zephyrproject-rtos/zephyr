@@ -31,9 +31,24 @@
 #
 mainmenu "Tiny Mountain/$SRCARCH Configuration"
 
+
 config SRCARCH
         string
         option env="SRCARCH"
 
 source "arch/$SRCARCH/Kconfig"
 
+
+config ARCH
+        string
+        option env="ARCH"
+
+config KERNELVERSION
+        string
+        option env="KERNELVERSION"
+
+config DEFCONFIG_LIST
+        string
+        option defconfig_list
+        default "$ARCH_DEFCONFIG"
+        default "arch/$ARCH/defconfig"
