@@ -41,6 +41,7 @@
 
 #include <nanokernel.h>
 #include <toolchain.h>
+#include <sections.h>
 #include <string.h>
 #include <errno.h>
 
@@ -68,8 +69,8 @@ void net_context_set_receiver_registered(struct net_context *context);
  * FIXME: stack size needs fine-tuning
  */
 #define STACKSIZE 2048
-static char rx_fiber_stack[STACKSIZE];
-static char tx_fiber_stack[STACKSIZE];
+static char __noinit rx_fiber_stack[STACKSIZE];
+static char __noinit tx_fiber_stack[STACKSIZE];
 
 static struct net_dev {
 	/* Queue for incoming packets from driver */
