@@ -99,20 +99,3 @@ config	BLUETOOTH_DEBUG_ATT
 	  This option enables debug support for the Bluetooth
 	  Attribute Protocol (ATT).
 
-config	BLUETOOTH_UART
-	bool
-	prompt "Bluetooth UART driver"
-	depends on BLUETOOTH
-	select UART_INTERRUPT_DRIVEN
-	default n
-	help
-	  Enable Bluetooth UART driver.
-
-config	BLUETOOTH_DEBUG_UART
-	bool
-	prompt "Bluetooth UART driver debug"
-	depends on BLUETOOTH_UART && BLUETOOTH_DEBUG
-	default n
-	help
-	  This option enables debug support for Bluetooth UART
-	  driver
