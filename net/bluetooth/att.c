@@ -79,6 +79,11 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 	struct bt_att_error_rsp *rsp;
 	struct bt_buf *buf;
 
+	/* Ignore opcode 0x00 */
+	if (!req) {
+		return;
+	}
+
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
 	if (!buf) {
 		return;
@@ -792,6 +797,80 @@ static void att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
 	att_read_group_rsp(conn, &uuid, start_handle, end_handle);
 }
 
+struct write_data {
+	struct bt_conn *conn;
+	struct bt_buf *buf;
+	const void *value;
+	uint8_t len;
+	uint16_t offset;
+	uint8_t err;
+};
+
+static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct write_data *data = user_data;
+	int write;
+
+	BT_DBG("handle %u\n", attr->handle);
+
+	if (!attr->write) {
+		data->err = BT_ATT_ERR_WRITE_NOT_PERMITTED;
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Read attribute value and store in the buffer */
+	write = attr->write(attr, data->value, data->len, data->offset);
+	if (write < 0 || write != data->len) {
+		/* TODO: Handle write error */
+		return BT_GATT_ITER_STOP;
+	}
+
+	data->err = 0;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
+			  uint16_t handle, const void *value, uint8_t len)
+{
+	struct write_data data;
+
+	if (!handle) {
+		send_err_rsp(conn, op, 0, BT_ATT_ERR_INVALID_HANDLE);
+		return;
+	}
+
+	memset(&data, 0, sizeof(data));
+
+	/* Only allocate buf if required to respond */
+	if (rsp) {
+		data.buf = bt_att_create_pdu(conn, rsp, 0);
+		if (!data.buf) {
+			return;
+		}
+	}
+
+	data.conn = conn;
+	data.value = value;
+	data.len = len;
+	data.err = BT_ATT_ERR_INVALID_HANDLE;
+
+	bt_gatt_foreach_attr(handle, handle, write_cb, &data);
+
+	/* In case of error discard data and respond with an error */
+	if (data.err) {
+		if (rsp) {
+			bt_buf_put(data.buf);
+			send_err_rsp(conn, op, handle, data.err);
+		}
+		return;
+	}
+
+	if (data.buf) {
+		bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+	}
+}
+
 static void att_write_req(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_write_req *req;
@@ -810,10 +889,8 @@ static void att_write_req(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("handle %u\n", handle);
 
-	/* TODO: Generate proper response once a database is defined */
-
-	send_err_rsp(conn, BT_ATT_OP_WRITE_REQ, handle,
-		     BT_ATT_ERR_INVALID_HANDLE);
+	att_write_rsp(conn, BT_ATT_OP_WRITE_REQ, BT_ATT_OP_WRITE_RSP, handle,
+		      data->data, data->len);
 }
 
 static void att_prepare_write_req(struct bt_conn *conn, struct bt_buf *data)
@@ -875,7 +952,7 @@ static void att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("handle %u\n", handle);
 
-	/* TODO: Perform write once database is defined */
+	att_write_rsp(conn, 0, 0, handle, data->data, data->len);
 }
 
 static void att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
