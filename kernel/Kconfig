@@ -35,10 +35,10 @@ prompt "Kernel Type"
 default MICROKERNEL
 
 config NANOKERNEL
-	bool "NANOKERNEL"
+	bool "Nano Kernel"
 
 config MICROKERNEL
-	bool "MICROKERNEL"
+	bool "Micro Kernel"
 
 endchoice
 
