@@ -45,6 +45,7 @@ cmd_clean_inner_files = \
 clean: FORCE
 	@rm $(SOURCE_DIR)$(rm-objects) -f
 	@rm $(SOURCE_DIR)/modules.order -f
+	@rm $(SOURCE_DIR)/.*.cmd -f
 	$(call cmd_clean_inner_files)
 
 pristine: distclean
