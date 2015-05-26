@@ -268,7 +268,7 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle)
 
 	nano_fifo_init(&conn->tx_queue);
 
-	fiber_start(conn->tx_stack, BT_CONN_TX_STACK_SIZE, conn_tx_fiber,
+	fiber_start(conn->tx_stack, sizeof(conn->tx_stack), conn_tx_fiber,
 		    (int)bt_conn_get(conn), 0, 7, 0);
 
 	bt_l2cap_update_conn_param(conn);

@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define BT_CONN_TX_STACK_SIZE		(256 + BT_STACK_DEBUG_EXTRA)
-
 enum {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_CONNECTED,
@@ -68,7 +66,8 @@ struct bt_conn {
 
 	uint8_t			state;
 
-	char			__stack tx_stack[BT_CONN_TX_STACK_SIZE];
+	/* TX fiber stack */
+	BT_STACK(tx_stack, 256);
 };
 
 /* Process incoming data for a connection */
