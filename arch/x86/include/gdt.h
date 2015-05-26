@@ -73,7 +73,7 @@ typedef struct PACK_STRUCT s_gdtHeader
 {
 	uint16_t limit;     /* GDT limit */
 	tGdtDesc *pEntries; /* pointer to the GDT entries */
-} tGdtHeader __attribute__((aligned(4)));
+} tGdtHeader __aligned(4);
 
 /* externs */
 

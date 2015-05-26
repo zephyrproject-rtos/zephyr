@@ -71,8 +71,7 @@ by the generic nanokernel interface header (nanokernel.h)
 #define _INT_STUB_ALIGN	1
 #endif
 
-typedef unsigned char __attribute__((aligned(_INT_STUB_ALIGN)))
-						NANO_INT_STUB[_INT_STUB_SIZE];
+typedef unsigned char __aligned(_INT_STUB_ALIGN) NANO_INT_STUB[_INT_STUB_SIZE];
 
 
 typedef struct s_isrList {

@@ -70,8 +70,7 @@ for the IA-32 architecture.
  */
 static
 	tGdtDesc
-		_gdt_entries[MAX_GDT_ENTRIES]
-	__attribute__((aligned(8))) = {
+		_gdt_entries[MAX_GDT_ENTRIES] __aligned(8) = {
 		{/* Entry 0 (selector=0x0000): The "NULL descriptor" */
 		 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00},
 		{	/* Entry 1 (selector=0x0008): Code descriptor: DPL0 */

@@ -547,7 +547,7 @@ typedef struct s_FpRegSet {  /* # of bytes: name of register */
 	unsigned short ds;       /* 2  : x87 FPU instr operand ptr selector */
 	unsigned short pad5;     /* 2  : N/A */
 	tFpReg fpReg[8];	 /* 80 : ST0 -> ST7 */
-} tFpRegSet __attribute__((aligned(FP_REG_SET_ALIGN)));
+} tFpRegSet __aligned(FP_REG_SET_ALIGN);
 
 #ifdef CONFIG_SSE
 
@@ -595,7 +595,7 @@ typedef struct s_FpRegSetEx /* # of bytes: name of register */
 	tFpRegEx fpReg[8];      /* 128 : x87 FPU/MMX registers */
 	tXmmReg xmmReg[8];      /* 128 : XMM registers */
 	unsigned char rsrvd3[176]; /* 176 : reserved */
-} tFpRegSetEx __attribute__((aligned(FP_REG_SET_ALIGN)));
+} tFpRegSetEx __aligned(FP_REG_SET_ALIGN);
 
 #else /* CONFIG_SSE == 0 */
 
@@ -875,8 +875,7 @@ static inline void fiberRtnValueSet(
 #define _EXC_STUB_ALIGN 1
 #endif
 
-typedef unsigned char
-	__attribute__((aligned(_EXC_STUB_ALIGN))) NANO_EXC_STUB[_EXC_STUB_SIZE];
+typedef unsigned char __aligned(_EXC_STUB_ALIGN) NANO_EXC_STUB[_EXC_STUB_SIZE];
 
 /*
  * Macro to declare a dynamic exception stub. Using the macro places the stub
