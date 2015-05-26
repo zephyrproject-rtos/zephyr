@@ -311,10 +311,10 @@ enum {
 	STACK_DIRECTION_DOWN,
 };
 
-static unsigned calculate_unused(const char *stack, unsigned size,
-				 int stack_growth)
+static void analyze_stack(const char *name, const char *stack, unsigned size,
+			  int stack_growth)
 {
-	unsigned i, stack_offset, unused = 0;
+	unsigned i, stack_offset, pcnt, unused = 0;
 
 	/* The CCS is always placed on a 4-byte aligned boundary - if
 	 * the stack beginning doesn't match that there will be some
@@ -340,12 +340,16 @@ static unsigned calculate_unused(const char *stack, unsigned size,
 		}
 	}
 
-	return unused;
+	/* Calculate the real size reserved for the stack */
+	size -= stack_offset;
+	pcnt = ((size - unused) * 100) / size;
+
+	printk("%s (real size %u):\tunused %u\tusage %u / %u (%u %%)\n", name,
+	       size + stack_offset, unused, size - unused, size, pcnt);
 }
 
 static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 {
-	unsigned unused;
 	int stack_growth;
 
 	printk("sizeof(tCCS) = %u\n", __tCCS_SIZEOF);
@@ -358,25 +362,14 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 		stack_growth = STACK_DIRECTION_DOWN;
 	}
 
-	unused = calculate_unused(rx_fiber_stack, sizeof(rx_fiber_stack),
-				  stack_growth);
-	printk("rx stack:      unused %u / %u\n", unused,
-	       sizeof(rx_fiber_stack));
-
-	unused = calculate_unused(cmd_rx_fiber_stack,
-				  sizeof(cmd_rx_fiber_stack), stack_growth);
-	printk("cmd rx stack:  unused %u / %u\n", unused,
-	       sizeof(cmd_rx_fiber_stack));
-
-	unused = calculate_unused(cmd_tx_fiber_stack,
-				  sizeof(cmd_tx_fiber_stack), stack_growth);
-	printk("cmd tx stack:  unused %u / %u\n", unused,
-	       sizeof(cmd_tx_fiber_stack));
-
-	unused = calculate_unused(conn->tx_stack, sizeof(conn->tx_stack),
-				  stack_growth);
-	printk("conn tx_stack: unused %u / %u\n", unused,
-	       sizeof(conn->tx_stack));
+	analyze_stack("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack),
+		      stack_growth);
+	analyze_stack("cmd rx stack", cmd_rx_fiber_stack,
+		      sizeof(cmd_rx_fiber_stack), stack_growth);
+	analyze_stack("cmd tx stack", cmd_tx_fiber_stack,
+		      sizeof(cmd_tx_fiber_stack), stack_growth);
+	analyze_stack("conn tx stack", conn->tx_stack, sizeof(conn->tx_stack),
+		      stack_growth);
 }
 #else
 #define analyze_stacks(...)
