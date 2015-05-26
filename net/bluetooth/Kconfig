@@ -37,10 +37,31 @@ config	BLUETOOTH
 	help
 	  This option enables Bluetooth Low Energy support.
 
+config	BLUETOOTH_MAX_CONN
+	int
+	prompt "Maximum number of simultaneous connections"
+	depends on BLUETOOTH
+	default 1
+	range 1 16
+	help
+	  Maximum number of simultaneous Bluetooth connections
+	  supported. The minimum (and default) number is 1.
+
+config	BLUETOOTH_MAX_PAIRED
+	int
+	prompt "Maximum number of paired devices"
+	depends on BLUETOOTH
+	default 1
+	range 1 32
+	help
+	  Maximum number of paired Bluetooth devices. The minimum (and
+	  default) number is 1.
+
 config	BLUETOOTH_DEBUG
 	bool
 	prompt "Bluetooth LE debug support"
 	depends on BLUETOOTH
+	select STDOUT_CONSOLE
 	default n
 	help
 	  This option enables Bluetooth debug going to standard
@@ -99,3 +120,11 @@ config	BLUETOOTH_DEBUG_ATT
 	  This option enables debug support for the Bluetooth
 	  Attribute Protocol (ATT).
 
+config	BLUETOOTH_DEBUG_GATT
+	bool
+	prompt "Bluetooth Generic Attribute Profile (GATT) debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for the Bluetooth
+	  Generic Attribute Profile (GATT).
