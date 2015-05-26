@@ -61,12 +61,13 @@ static struct bt_gatt_chrc name_chrc = {
 	.uuid = &device_name_uuid,
 };
 
-static int read_name(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
-		     uint16_t offset)
+static int read_name(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		     void *buf, uint8_t len, uint16_t offset)
 {
 	const char *name = attr->user_data;
 
-	return bt_gatt_attr_read(attr, buf, len, offset, name, strlen(name));
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, name,
+				 strlen(name));
 }
 
 static struct bt_uuid appeareance_uuid = {
@@ -80,12 +81,13 @@ static struct bt_gatt_chrc appearance_chrc = {
 	.uuid = &appeareance_uuid,
 };
 
-static int read_appearance(const struct bt_gatt_attr *attr, void *buf,
+static int read_appearance(const bt_addr_le_t *peer,
+			   const struct bt_gatt_attr *attr, void *buf,
 			   uint8_t len, uint16_t offset)
 {
 	uint16_t appearance = sys_cpu_to_le16(HEART_RATE_APPEARANCE);
 
-	return bt_gatt_attr_read(attr, buf, len, offset, &appearance,
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &appearance,
 				 sizeof(appearance));
 }
 
@@ -134,17 +136,18 @@ static struct bt_uuid ccc_uuid = {
 
 static uint16_t hrmc_ccc = 0x0000;
 
-static int read_ccc(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
-		    uint16_t offset)
+static int read_ccc(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		    void *buf, uint8_t len, uint16_t offset)
 {
 	uint16_t *value = attr->user_data;
 	uint16_t data = sys_cpu_to_le16(*value);
 
-	return bt_gatt_attr_read(attr, buf, len, offset, &data, sizeof(data));
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &data,
+				 sizeof(data));
 }
 
-static int write_ccc(const struct bt_gatt_attr *attr, const void *buf,
-		     uint8_t len, uint16_t offset)
+static int write_ccc(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		     const void *buf, uint8_t len, uint16_t offset)
 {
 	uint16_t *value = attr->user_data;
 	const uint16_t *data = buf;
@@ -160,12 +163,13 @@ static int write_ccc(const struct bt_gatt_attr *attr, const void *buf,
 	return len;
 }
 
-static int read_blsc(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
-			   uint16_t offset)
+static int read_blsc(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		     void *buf, uint8_t len, uint16_t offset)
 {
 	uint8_t value = 0x01;
 
-	return bt_gatt_attr_read(attr, buf, len, offset, &value, sizeof(value));
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &value,
+				 sizeof(value));
 }
 
 /* Battery Service Variables */
@@ -187,12 +191,13 @@ static struct bt_gatt_chrc blvl_chrc = {
 
 static uint16_t blvl_ccc = 0x0000;
 
-static int read_blvl(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
-		     uint16_t offset)
+static int read_blvl(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		     void *buf, uint8_t len, uint16_t offset)
 {
 	uint8_t value = 100;
 
-	return bt_gatt_attr_read(attr, buf, len, offset, &value, sizeof(value));
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &value,
+				 sizeof(value));
 }
 
 /* Current Time Service Variables */
@@ -241,14 +246,14 @@ static void generate_current_time(uint8_t *buf)
 	buf[9] = 0; /* No update, change, etc */
 }
 
-static int read_ct(const struct bt_gatt_attr *attr, void *buf, uint8_t len,
-		   uint16_t offset)
+static int read_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		   void *buf, uint8_t len, uint16_t offset)
 {
 	uint8_t ct[10];
 
 	generate_current_time(ct);
 
-	return bt_gatt_attr_read(attr, buf, len, offset, &ct, sizeof(ct));
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &ct, sizeof(ct));
 }
 
 static const struct bt_gatt_attr attrs[] = {

@@ -36,10 +36,12 @@
 struct bt_gatt_attr {
 	uint16_t		handle;
 	const struct bt_uuid	*uuid;
-	int			(*read)(const struct bt_gatt_attr *attr,
+	int			(*read)(const bt_addr_le_t *peer,
+					const struct bt_gatt_attr *attr,
 					void *buf, uint8_t len,
 					uint16_t offset);
-	int			(*write)(const struct bt_gatt_attr *attr,
+	int			(*write)(const bt_addr_le_t *peer,
+					 const struct bt_gatt_attr *attr,
 					 const void *buf, uint8_t len,
 					 uint16_t offset);
 	void			*user_data;
@@ -142,6 +144,7 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
  *
  *  Read attribute value storing the result into buffer.
  *
+ *  @param peer remote address
  *  @param attr attribute to read
  *  @param buf buffer to store the value
  *  @param buf_len buffer length
@@ -152,9 +155,9 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
  *  @return int number of bytes read in case of success or negative values in
  *  case of error.
  */
-int bt_gatt_attr_read(const struct bt_gatt_attr *attr, void *buf,
-		      uint8_t buf_len, uint16_t offset, const void *value,
-		      uint8_t value_len);
+int bt_gatt_attr_read(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		      void *buf, uint8_t buf_len, uint16_t offset,
+		      const void *value, uint8_t value_len);
 
 /** @brief Read Service Attribute helper
  *
@@ -162,6 +165,7 @@ int bt_gatt_attr_read(const struct bt_gatt_attr *attr, void *buf,
  *  enconding it.
  *  NOTE: Only use this with attributes which user_data is a bt_uuid.
  *
+ *  @param peer remote address
  *  @param attr attribute to read
  *  @param buf buffer to store the value read
  *  @param len buffer length
@@ -170,7 +174,8 @@ int bt_gatt_attr_read(const struct bt_gatt_attr *attr, void *buf,
  *  @return int number of bytes read in case of success or negative values in
  *  case of error.
  */
-int bt_gatt_attr_read_service(const struct bt_gatt_attr *attr,
+int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
+			      const struct bt_gatt_attr *attr,
 			      void *buf, uint8_t len, uint16_t offset);
 
 /** @brief Generic Service Declaration Macro
@@ -227,6 +232,7 @@ int bt_gatt_attr_read_service(const struct bt_gatt_attr *attr,
  *  enconding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_include.
  *
+ *  @param peer remote address
  *  @param attr attribute to read
  *  @param buf buffer to store the value read
  *  @param len buffer length
@@ -235,7 +241,8 @@ int bt_gatt_attr_read_service(const struct bt_gatt_attr *attr,
  *  @return int number of bytes read in case of success or negative values in
  *  case of error.
  */
-int bt_gatt_attr_read_included(const struct bt_gatt_attr *attr,
+int bt_gatt_attr_read_included(const bt_addr_le_t *peer,
+			       const struct bt_gatt_attr *attr,
 			       void *buf, uint8_t len, uint16_t offset);
 
 /* Include Service Declaration */
@@ -254,6 +261,7 @@ int bt_gatt_attr_read_included(const struct bt_gatt_attr *attr,
  *  enconding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_chrc.
  *
+ *  @param peer remote address
  *  @param attr attribute to read
  *  @param buf buffer to store the value read
  *  @param len buffer length
@@ -262,7 +270,8 @@ int bt_gatt_attr_read_included(const struct bt_gatt_attr *attr,
  *  @return number of bytes read in case of success or negative values in
  *  case of error.
  */
-int bt_gatt_attr_read_chrc(const struct bt_gatt_attr *attr, void *buf,
+int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
+			   const struct bt_gatt_attr *attr, void *buf,
 			   uint8_t len, uint16_t offset);
 
 /** @brief Characteristic Declaration Macro

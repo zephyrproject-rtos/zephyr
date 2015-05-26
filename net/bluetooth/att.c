@@ -299,7 +299,7 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_STOP;
 
 	/* Read attribute value and store in the buffer */
-	read = attr->read(attr, uuid, sizeof(uuid), 0);
+	read = attr->read(&data->conn->dst, attr, uuid, sizeof(uuid), 0);
 	if (read < 0) {
 		/* TODO: Return an error if this fails */
 		return BT_GATT_ITER_STOP;
@@ -436,7 +436,8 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	data->item->handle = sys_cpu_to_le16(attr->handle);
 
 	/* Read attribute value and store in the buffer */
-	read = attr->read(attr, data->buf->data + data->buf->len,
+	read = attr->read(&data->conn->dst, attr,
+			  data->buf->data + data->buf->len,
 			  att->mtu - data->buf->len, 0);
 	if (read < 0) {
 		/* TODO: Handle read errors */
@@ -549,7 +550,8 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	/* Read attribute value and store in the buffer */
-	read = attr->read(attr, data->buf->data + data->buf->len,
+	read = attr->read(&data->conn->dst, attr,
+			  data->buf->data + data->buf->len,
 			  att->mtu - data->buf->len, data->offset);
 	if (read < 0) {
 		/* TODO: Handle read error */
@@ -693,7 +695,8 @@ static uint8_t read_group_cb(const struct bt_gatt_attr *attr, void *user_data)
 	data->group->end_handle = sys_cpu_to_le16(attr->handle);
 
 	/* Read attribute value and store in the buffer */
-	read = attr->read(attr, data->buf->data + data->buf->len,
+	read = attr->read(&data->conn->dst,attr,
+			  data->buf->data + data->buf->len,
 			  att->mtu - data->buf->len, 0);
 	if (read < 0) {
 		/* TODO: Handle read errors */
@@ -819,7 +822,8 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	/* Read attribute value and store in the buffer */
-	write = attr->write(attr, data->value, data->len, data->offset);
+	write = attr->write(&data->conn->dst, attr, data->value, data->len,
+			    data->offset);
 	if (write < 0 || write != data->len) {
 		/* TODO: Handle write error */
 		return BT_GATT_ITER_STOP;

@@ -57,9 +57,9 @@ void bt_gatt_register(const struct bt_gatt_attr *attrs, size_t count)
 	attr_count = count;
 }
 
-int bt_gatt_attr_read(const struct bt_gatt_attr *attr, void *buf,
-		      uint8_t buf_len, uint16_t offset, const void *value,
-		      uint8_t value_len)
+int bt_gatt_attr_read(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		      void *buf, uint8_t buf_len, uint16_t offset,
+		      const void *value, uint8_t value_len)
 {
 	uint8_t len;
 
@@ -76,7 +76,8 @@ int bt_gatt_attr_read(const struct bt_gatt_attr *attr, void *buf,
 	return len;
 }
 
-int bt_gatt_attr_read_service(const struct bt_gatt_attr *attr,
+int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
+			      const struct bt_gatt_attr *attr,
 			      void *buf, uint8_t len, uint16_t offset)
 {
 	struct bt_uuid *uuid = attr->user_data;
@@ -84,11 +85,11 @@ int bt_gatt_attr_read_service(const struct bt_gatt_attr *attr,
 	if (uuid->type == BT_UUID_16) {
 		uint16_t uuid16 = sys_cpu_to_le16(uuid->u16);
 
-		return bt_gatt_attr_read(attr, buf, len, offset, &uuid16,
+		return bt_gatt_attr_read(peer, attr, buf, len, offset, &uuid16,
 					 sizeof(uuid16));
 	}
 
-	return bt_gatt_attr_read(attr, buf, len, offset, uuid->u128,
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, uuid->u128,
 				 sizeof(uuid->u128));
 }
 
@@ -101,8 +102,9 @@ struct gatt_incl {
 	};
 } PACK_STRUCT;
 
-int bt_gatt_attr_read_include(struct bt_gatt_attr *attr, void *buf, uint8_t len,
-			      uint16_t offset)
+int bt_gatt_attr_read_include(const bt_addr_le_t *peer,
+			      const struct bt_gatt_attr *attr,
+			      void *buf, uint8_t len, uint16_t offset)
 {
 	struct bt_gatt_include *incl = attr->user_data;
 	struct gatt_incl pdu;
@@ -120,7 +122,7 @@ int bt_gatt_attr_read_include(struct bt_gatt_attr *attr, void *buf, uint8_t len,
 		value_len += sizeof(incl->uuid->u128);
 	}
 
-	return bt_gatt_attr_read(attr, buf, len, offset, &pdu, value_len);
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &pdu, value_len);
 }
 
 struct gatt_chrc {
@@ -132,7 +134,8 @@ struct gatt_chrc {
 	};
 } PACK_STRUCT;
 
-int bt_gatt_attr_read_chrc(const struct bt_gatt_attr *attr, void *buf,
+int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
+			   const struct bt_gatt_attr *attr, void *buf,
 			   uint8_t len, uint16_t offset)
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
@@ -151,7 +154,7 @@ int bt_gatt_attr_read_chrc(const struct bt_gatt_attr *attr, void *buf,
 		value_len = sizeof(chrc->uuid->u128);
 	}
 
-	return bt_gatt_attr_read(attr, buf, len, offset, &pdu, value_len);
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &pdu, value_len);
 }
 
 void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
