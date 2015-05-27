@@ -84,12 +84,6 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 #endif
 
-#ifdef CONFIG_ENHANCED_SECURITY
-	case _NANO_ERR_INVALID_STRING_OP:
-		PR_EXC("**** Invalid string operation! ****\n");
-		break;
-#endif
-
 	default:
 		PR_EXC("**** Unknown Fatal Error %d! ****\n", reason);
 		break;

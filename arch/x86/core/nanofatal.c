@@ -114,12 +114,6 @@ FUNC_NORETURN void _NanoFatalErrorHandler(
 #endif /* CONFIG_STACK_CANARIES */
 
 
-#ifdef CONFIG_ENHANCED_SECURITY
-	case _NANO_ERR_INVALID_STRING_OP:
-		printk("**** Invalid string operation! ****\n");
-		break;
-#endif /* CONFIG_ENHANCED_SECURITY */
-
 	default:
 		printk("**** Unknown Fatal Error %d! ****\n", reason);
 		break;

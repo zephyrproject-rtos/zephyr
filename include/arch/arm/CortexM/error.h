@@ -49,6 +49,5 @@ extern void _SysFatalErrorHandler(unsigned int, const NANO_ESF *);
 #define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
 #define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
 #define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
-#define _NANO_ERR_INVALID_STRING_OP (3) /* Invalid string operation */
 
 #endif /* _ARCH_ARM_CORTEXM_ERROR_H_ */
