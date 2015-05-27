@@ -119,7 +119,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	}
 
 	for (i = 0; i < NET_MAX_CONTEXT; i++) {
-		if (!contexts[i].tuple.remote_port) {
+		if (!contexts[i].tuple.ip_proto) {
 			contexts[i].tuple.ip_proto = ip_proto;
 			contexts[i].tuple.remote_addr = (struct net_addr *)remote_addr;
 			contexts[i].tuple.remote_port = remote_port;
