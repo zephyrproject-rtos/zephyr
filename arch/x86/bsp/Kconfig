@@ -81,9 +81,7 @@ config BSP_QUARK
 	select BOOTLOADER_UNKNOWN
 	select EXTRA_SERIAL_PORT
 	select LINK_AUX_COMPILER_LIBS
-	select DRV_NS16550
-	select DRV_SERIAL
-	select DRV_PCI
+	select NS16550
 	select PCI
 
 endchoice
@@ -91,13 +89,12 @@ endchoice
 config BSP_GENERIC_PC
 	bool
 	default n
-	select DRV_TIMER
-	select DRV_INTCTL
-	select DRV_NS16550
-	select DRV_SERIAL
+	select NS16550
 
 
-menu "Intel Processor"
+choice
+prompt "Intel Processor"
+default CPU_PENTIUM4
 
 config CPU_MINUTEIA
 	bool "Minute IA"
@@ -108,7 +105,7 @@ config CPU_PENTIUM4
 	bool "Pentium 4"
 	help
 	This option signifies the use of a CPU from the Pentium 4 family.
-endmenu
+endchoice
 
 config ADVANCED_IDLE
 	bool
@@ -163,9 +160,8 @@ config ISA_IA32
 	instruction set architecture.
 
 config HARDWARE_BP_SUPPORTED
-	bool "Hardware BP supported"
-	default y if ISA_IA32
-	default n
+	def_bool y
+	depends on ISA_IA32
 	help
 	This option signifies that the target supports hardware-based
 	instruction breakpoints and/or data watchpoints.
@@ -179,17 +175,15 @@ config TICKLESS_IDLE_UNSUPPORTED
 	support for tickless idle.
 
 config CMOV_UNSUPPORTED
-	bool "CMOV Unsupported"
-	default y if CPU_MINUTEIA
-	default n
+	def_bool y
+	depends on CPU_MINUTEIA
 	help
 	This option signifies the use of an Intel CPU that lacks support
 	for the CMOV instruction.
 
 config CPU_FLOAT_UNSUPPORTED
-	bool "CPU float unsupported"
-	default y if CPU_MINUTEIA
-	default n
+	def_bool y
+	depends on CPU_MINUTEIA
 	select CPU_SSE_UNSUPPORTED
 	help
 	This option signifies the use of an Intel CPU that lacks support
