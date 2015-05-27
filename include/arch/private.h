@@ -95,6 +95,8 @@ extern void _context_exit(tCCS *ccs);
 	} while (0)
 #endif /* CONFIG_CONTEXT_MONITOR */
 
+extern void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo);
+
 #ifdef __cplusplus
 }
 #endif

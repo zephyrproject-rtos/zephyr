@@ -285,3 +285,28 @@ void *nano_task_lifo_get_wait(
 
 	return data;
 }
+
+/*******************************************************************************
+*
+* _nano_fiber_lifo_get_panic - get first element from lifo and panic if NULL
+*
+* Get the first element from the specified lifo but generate a fatal error
+* if the element is NULL.
+*
+* RETURNS: Pointer to first element in the list
+*
+* \NOMANUAL
+*/
+
+void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo)
+{
+	void *element;
+
+	element = nano_fiber_lifo_get(lifo);
+
+	if (element == NULL) {
+		_NanoFatalErrorHandler(_NANO_ERR_ALLOCATION_FAIL, &_default_esf);
+	}
+
+	return element;
+}

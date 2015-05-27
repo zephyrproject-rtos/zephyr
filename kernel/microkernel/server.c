@@ -175,36 +175,3 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 
 	CODE_UNREACHABLE;
 }
-
-/*******************************************************************************
-*
-* _Cget - remove the first element from a linked list LIFO
-*
-* Remove the first element from the specified system-level linked list LIFO.
-* If no elements are available, a context yield will occur.  Upon return from
-* the context yield operation, an attempt to remove the first element from the
-* LIFO will occur again.
-*
-* This routine will only return when an element becomes available.
-*
-* RETURNS: Pointer to first element in the list
-*
-* INTERNAL
-* Apparently only the microkernel utilizes the _Cget() API.  Thus to
-* prevent (very minor) code bloat in a nanokernel only system, the _Cget()
-* implementation appears in microk.c instead of nano_lifo.c
-*
-* \NOMANUAL
-*/
-
-void *_Cget(struct nano_lifo *chan)
-{
-	void *element;
-
-	element = nano_fiber_lifo_get(chan);
-	__ASSERT(element != NULL,
-		 "panic: depleted CMD packets from LIFO @ 0x%x\n",
-		 chan);
-
-	return element;
-}

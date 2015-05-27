@@ -141,8 +141,6 @@ extern void _k_mem_pool_block_get(struct k_args *A);
 extern void _k_defrag(struct k_args *A);
 extern void _k_mem_pool_block_get_timeout_handle(struct k_args *A);
 
-extern void *_Cget(struct nano_lifo *);
-
 extern void set_state_bit(struct k_proc *, uint32_t);
 extern void reset_state_bit(struct k_proc *, uint32_t);
 extern void _k_task_call(struct k_args *);
@@ -264,11 +262,11 @@ extern void _k_workload_monitor_idle_end(void);
 
 #define GETARGS(A)                        \
 	do {                              \
-		(A) = _Cget(&_k_server_command_packet_free); \
+		(A) = _nano_fiber_lifo_get_panic(&_k_server_command_packet_free); \
 	} while (0)
 #define GETTIMER(T)                        \
 	do {                               \
-		(T) = _Cget(&_k_timer_free); \
+		(T) = _nano_fiber_lifo_get_panic(&_k_timer_free); \
 	} while (0)
 
 #define FREEARGS(A) nano_fiber_lifo_put(&_k_server_command_packet_free, (A))
