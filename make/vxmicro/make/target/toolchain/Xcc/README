@@ -1,4 +1,0 @@
-This directory contains the common files between GCC and GCC-compliant
-compilers.
-
-Any differences are data-driven via make variables.
