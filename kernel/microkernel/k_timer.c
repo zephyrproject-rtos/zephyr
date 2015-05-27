@@ -251,7 +251,7 @@ void _k_timer_alloc(struct k_args *P)
 	struct k_timer *T;
 	struct k_args *A;
 
-	T = _Cget(&_k_timer_free);
+	GETTIMER(T);
 	P->Args.c1.timer = T;
 
 	if (T) {
