@@ -180,7 +180,7 @@ void bt_uart_isr(void *unused)
 					return;
 			}
 
-			if (remaining > bt_buf_tailroom(buf)) {
+			if (buf && remaining > bt_buf_tailroom(buf)) {
 				BT_ERR("Not enough space in buffer\n");
 				goto failed;
 			}
