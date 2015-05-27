@@ -39,9 +39,11 @@ config BSP_DIR
 	to locate the correct linker file.
 
 config NUM_IRQ_PRIO_BITS
+	int
 	default 3
 
 config NUM_IRQS
+	int
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
 	default 7
@@ -52,4 +54,5 @@ config BSP_TI_LM3S6965_QEMU
 	# assume it is used for a QEMU target.
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
 	default 12000000

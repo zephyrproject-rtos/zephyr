@@ -88,18 +88,6 @@ config STACK_ALIGN_DOUBLE_WORD
 	This is needed to conform to AAPCS, the procedure call standard for
 	the ARM. It wastes stack space.
 
-config NUM_IRQS
-	int
-	prompt "Upper limit of interrupt numbers/IDs used"
-	default 1
-	range 1 1000
-	help
-	Interrupts available will be 0 to NUM_IRQS-1.
-
-	The minimal value is 1.
-
-	The BSP must provide a valid default. This drives the size of the
-	vector table.
 
 config STACK_GROWS_DOWN
 	bool
