@@ -132,7 +132,7 @@ Create the Needed Build Tools
 
 .. code-block:: bash
 
-   $ cd $VXMICRO_BASE
+   $ cd $TIMO_BASE
 
 #. Copy the toolchain configurations to the build directories by
    typing the following commands in the console:
@@ -264,7 +264,7 @@ Follow these steps to enable a customized build of QEMU:
 
 .. code-block:: bash
 
-   $ git am $VXMICRO\_BASE/scripts/0001-armv7m-support-basepri-primask-interrupt-locking.patch
+   $ git am $TIMO_BASE/scripts/0001-armv7m-support-basepri-primask-interrupt-locking.patch
 
 #. Update the submodules as needed, type:
 
@@ -284,7 +284,7 @@ Follow these steps to enable a customized build of QEMU:
 
 .. code-block:: bash
 
-   $ ./configure --prefix=$MY\_PREFERED\_INSTALL\_LOCATION && make
+   $ ./configure --prefix=$MY_PREFERED_INSTALL_LOCATION && make
 
 * Install QEMU, type:
 
@@ -412,9 +412,9 @@ In Fedora, type:
 
     $ cd grub-core
 
-    $ ../grub-mkimage -O i386-efi -d . -o grub.efi -p "" part\_gpt part\_msdos
+    $ ../grub-mkimage -O i386-efi -d . -o grub.efi -p "" part_gpt part_msdos
      fat ext2 normal chain boot configfile linux multiboot help serial terminal
-     elf efi\_gop efi\_uga terminfo
+     elf efi_gop efi_uga terminfo
 
 #. Look for the binary at :file:`~/grub/grub-core/grub.efi`.
 
