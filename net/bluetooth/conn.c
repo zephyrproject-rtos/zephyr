@@ -292,7 +292,7 @@ void bt_conn_del(struct bt_conn *conn)
 	bt_conn_put(conn);
 }
 
-struct bt_conn *bt_conn_lookup(uint16_t handle)
+struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 {
 	int i;
 

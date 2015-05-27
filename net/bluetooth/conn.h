@@ -83,7 +83,7 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle);
 void bt_conn_del(struct bt_conn *conn);
 
 /* Look up an existing connection */
-struct bt_conn *bt_conn_lookup(uint16_t handle);
+struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
 
 /* Look up an existing connection by address */
 struct bt_conn *bt_conn_lookup_by_addr_le(const bt_addr_le_t *peer);
