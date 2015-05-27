@@ -32,14 +32,13 @@ Install the current version of :program:`Sphinx`, type:
 
 .. code-block:: bash
 
-   $ git clone:: $ export http_proxy=http://PROXY:PORT $ export
-   https_proxy=http://PROXY:PORT
-
    $ git clone https://github.com/sphinx-doc/sphinx.git sphinx
 
    $ cd sphinx
 
    $ sudo -E python setup.py install
+
+   $ cd ..
 
    $ git clone https://github.com/michaeljones/breathe.git breathe
 
