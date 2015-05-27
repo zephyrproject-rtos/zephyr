@@ -143,6 +143,14 @@ config PCI
           This options enables support of PCI bus enumeration for device
           drivers.
 
+config PCI_DEBUG
+	bool
+	prompt "Enable PCI debugging"
+	depends on PCI
+	default n
+	help
+	  This options enables PCI debigging functions
+
 #FIXME This symbols is not being used.
 config  CUSTOM_RANDOM_GENERATOR
         bool "Custom random generator"

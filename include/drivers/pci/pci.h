@@ -38,8 +38,6 @@ Module declares routines of PCI bus initialization and query
 #ifndef _PCI_H_
 #define _PCI_H_
 
-#undef PCI_DEBUG
-
 #define BAR_SPACE_MEM 0
 #define BAR_SPACE_IO 1
 
@@ -64,8 +62,8 @@ struct pci_dev_info {
 extern void pci_bus_scan_init(void);
 extern int pci_bus_scan(struct pci_dev_info *dev_info);
 
-#ifdef PCI_DEBUG
+#ifdef CONFIG_PCI_DEBUG
 extern void pci_show(struct pci_dev_info *dev_info);
-#endif /* PCI_DEBUG */
+#endif
 
 #endif /* _PCI_H_ */

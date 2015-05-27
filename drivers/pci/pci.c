@@ -427,7 +427,7 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 	return 0;
 }
 
-#ifdef PCI_DEBUG
+#ifdef CONFIG_PCI_DEBUG
 /******************************************************************************
  *
  * pci_show - Show PCI device
@@ -451,4 +451,4 @@ void pci_show(struct pci_dev_info *dev_info)
 		(uint32_t)(dev_info->addr + dev_info->size - 1),
 		dev_info->irq);
 }
-#endif /* PCI_DEBUG */
+#endif /* CONFIG_PCI_DEBUG */

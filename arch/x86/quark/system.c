@@ -123,7 +123,7 @@ void _InitHardware(void)
 
 	consoleInit(); /* NOP if not needed */
 
-#ifdef PCI_DEBUG
+#ifdef CONFIG_PCI_DEBUG
 	/* Rescan PCI and display the list of PCI attached devices */
 	struct pci_dev_info info = {
 		.bar = PCI_BAR_ANY,
@@ -139,5 +139,5 @@ void _InitHardware(void)
 		info.device_id = 0;
 		info.bar = PCI_BAR_ANY;
 	}
-#endif /* PCI_DEBUG */
+#endif /* CONFIG_PCI_DEBUG */
 }
