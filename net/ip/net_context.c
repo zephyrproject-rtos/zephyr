@@ -44,6 +44,8 @@
 
 #include "ip/simple-udp.h"
 
+#include "contiki/os/lib/random.h"
+
 struct net_context {
 	/* Connection tuple identifies the connection */
 	struct net_tuple tuple;
@@ -83,6 +85,19 @@ static void context_sem_give(struct nano_sem *chan)
 	}
 }
 
+static int context_port_used(enum ip_protocol ip_proto, uint16_t local_port)
+{
+	int i;
+
+	for (i = 0; i < NET_MAX_CONTEXT; i++) {
+		if (contexts[i].tuple.ip_proto == ip_proto &&
+			contexts[i].tuple.local_port == local_port)
+			return -EEXIST;
+	}
+
+	return 0;
+}
+
 struct net_context *net_context_get(enum ip_protocol ip_proto,
 					const struct net_addr *remote_addr,
 					uint16_t remote_port,
@@ -93,6 +108,15 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	struct net_context *context = NULL;
 
 	nano_sem_take_wait(&contexts_lock);
+
+	if (local_port) {
+		if (context_port_used(ip_proto, local_port) < 0)
+			return NULL;
+	} else {
+		do {
+			local_port = random_rand() | 0x8000;
+		} while (context_port_used(ip_proto, local_port) == -EEXIST);
+	}
 
 	for (i = 0; i < NET_MAX_CONTEXT; i++) {
 		if (!contexts[i].tuple.remote_port) {
