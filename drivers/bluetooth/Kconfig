@@ -36,15 +36,6 @@
 menu "Bluetooth UART Options"
 depends on BLUETOOTH
 
-config	BLUETOOTH_DEBUG_UART
-	bool
-	prompt "Bluetooth UART driver debug"
-	depends on BLUETOOTH_DEBUG
-	default n
-	help
-	  This option enables debug support for Bluetooth UART
-	  driver
-
 config	BLUETOOTH_UART
 	bool
 	prompt "Bluetooth UART driver"
@@ -53,5 +44,14 @@ config	BLUETOOTH_UART
 	default n
 	help
 	  Enable Bluetooth UART driver.
+
+config	BLUETOOTH_DEBUG_UART
+	bool
+	prompt "Bluetooth UART driver debug"
+	depends on BLUETOOTH_DEBUG && BLUETOOTH_UART
+	default n
+	help
+	  This option enables debug support for Bluetooth UART
+	  driver
 
 endmenu
