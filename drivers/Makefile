@@ -1,4 +1,5 @@
 obj-y = console/
+obj-y += random/
 obj-y += serial/
 obj-y += timer/
 obj-y += interrupt_controller/

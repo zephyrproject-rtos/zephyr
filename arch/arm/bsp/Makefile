@@ -10,4 +10,4 @@ EXTRA_CFLAGS +=-I$(srctree)/arch/arm/ti_lm3s6965
 endif
 
 obj-y = CortexM/
-obj-y += sysFatalErrorHandler.o rand32.o
+obj-y += sysFatalErrorHandler.o

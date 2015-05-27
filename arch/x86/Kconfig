@@ -151,14 +151,6 @@ config PCI_DEBUG
 	help
 	  This options enables PCI debigging functions
 
-#FIXME This symbols is not being used.
-config  CUSTOM_RANDOM_GENERATOR
-        bool "Custom random generator"
-        default n
-        help
-          This option signifies that the target uses custom random number
-          generator.
-
 if BSP_GENERIC_PC
 source "arch/x86/generic_pc/Kconfig"
 endif

@@ -42,7 +42,6 @@ was provided to allow testing of kernel stack canaries on a BSP that does not
 #include <nanokernel/cpu.h>
 #include <drivers/rand32.h>
 
-#if defined(CONFIG_TEST_RANDOM_GENERATOR)
 /*******************************************************************************
  *
  * _Rand32Init - initialize the random number generator
@@ -71,5 +70,3 @@ uint32_t _Rand32Get(void)
 {
 	return _do_read_cpu_timestamp32();
 }
-
-#endif /* CONFIG_TEST_RANDOM_GENERATOR */

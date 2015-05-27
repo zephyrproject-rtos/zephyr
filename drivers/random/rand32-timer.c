@@ -41,7 +41,6 @@ was provided to allow testing of kernel stack canaries on a BSP that does not
 #include <drivers/rand32.h>
 #include <drivers/system_timer.h>
 
-#if defined(CONFIG_TEST_RANDOM_GENERATOR)
 #if defined(__GNUC__)
 
 /*******************************************************************************
@@ -75,4 +74,3 @@ uint32_t _Rand32Get(void)
 }
 
 #endif /* __GNUC__ */
-#endif /* CONFIG_TEST_RANDOM_GENERATOR */
