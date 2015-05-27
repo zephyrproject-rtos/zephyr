@@ -95,7 +95,7 @@ x87 FPU registers are being saved/restored.
 
 #ifndef MAX_TESTS
 /* test duration, unless overridden by project builder (0 => run forever) */
-#define MAX_TESTS 1000
+#define MAX_TESTS 500
 #endif
 
 /* macro used to read system clock value */

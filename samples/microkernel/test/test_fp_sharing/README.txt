@@ -37,15 +37,5 @@ Pi calculation OK after 350 (high) + 5 (low) tests (computed 3.141594)
 Load and store OK after 400 (high) + 83352 (low) tests
 Pi calculation OK after 450 (high) + 7 (low) tests (computed 3.141594)
 Load and store OK after 500 (high) + 92290 (low) tests
-Pi calculation OK after 550 (high) + 9 (low) tests (computed 3.141594)
-Load and store OK after 600 (high) + 123288 (low) tests
-Pi calculation OK after 650 (high) + 11 (low) tests (computed 3.141594)
-Load and store OK after 700 (high) + 153272 (low) tests
-Pi calculation OK after 750 (high) + 14 (low) tests (computed 3.141594)
-Load and store OK after 800 (high) + 175104 (low) tests
-Pi calculation OK after 850 (high) + 16 (low) tests (computed 3.141594)
-Load and store OK after 900 (high) + 193801 (low) tests
-Pi calculation OK after 950 (high) + 17 (low) tests (computed 3.141594)
-Load and store OK after 1000 (high) + 215252 (low) tests
 ===================================================================
 VXMICRO PROJECT EXECUTION SUCCESSFUL
