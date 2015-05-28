@@ -580,6 +580,7 @@ static void att_read_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 		return;
 	}
 
+	data.conn = conn;
 	data.offset = offset;
 
 	bt_gatt_foreach_attr(handle, handle, read_cb, &data);
