@@ -118,7 +118,7 @@ the 'ti_lm3s6965' BSP.
 #define CONFIG_UART_PORT_2_REGS PERIPH_ADDR_BASE_UART2
 #define CONFIG_UART_PORT_2_IRQ IRQ_UART2
 
-#define CONFIGURE_UART_PORTS(__type, __name)				\
+#define UART_PORTS_CONFIGURE(__type, __name)				\
 	static __type __name[CONFIG_UART_NUM_PORTS] = {			\
 		{							\
 			.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,	\

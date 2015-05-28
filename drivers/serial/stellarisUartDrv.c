@@ -151,7 +151,7 @@ struct _StellarisUartPort {
 	uint8_t intPri; /* interrupt priority level */
 };
 
-CONFIGURE_UART_PORTS(struct _StellarisUartPort, ports);
+UART_PORTS_CONFIGURE(struct _StellarisUartPort, ports);
 
 /*******************************************************************************
 *

@@ -186,7 +186,7 @@ This header file is used to specify and describe board-level aspects for the
 #define CONFIG_UART_PORT_4_REGS PERIPH_ADDR_BASE_UART4
 #define CONFIG_UART_PORT_4_IRQ IRQ_UART4_STATUS
 
-#define CONFIGURE_UART_PORTS(__type, __name)				\
+#define UART_PORTS_CONFIGURE(__type, __name)				\
 	static __type __name[CONFIG_UART_NUM_PORTS] = {			\
 		{							\
 			.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,	\

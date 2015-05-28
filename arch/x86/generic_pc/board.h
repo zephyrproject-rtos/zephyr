@@ -129,7 +129,7 @@ the 'generic_pc' BSP.
 #define CONFIG_UART_PORT_1_REGS COM2_BASE_ADRS
 #define CONFIG_UART_PORT_1_IRQ COM2_INT_LVL
 
-#define CONFIGURE_UART_PORTS(__type, __name)			\
+#define UART_PORTS_CONFIGURE(__type, __name)			\
 	static __type __name[CONFIG_UART_NUM_PORTS] = {		\
 		{						\
 			.port = CONFIG_UART_PORT_0_REGS,	\

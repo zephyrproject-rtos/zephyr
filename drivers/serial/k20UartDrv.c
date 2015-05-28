@@ -63,7 +63,7 @@ typedef struct {
 
 /* locals */
 
-CONFIGURE_UART_PORTS(_k20Uart_t, uart);
+UART_PORTS_CONFIGURE(_k20Uart_t, uart);
 
 /*******************************************************************************
 *

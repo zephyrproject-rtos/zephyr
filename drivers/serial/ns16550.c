@@ -239,11 +239,11 @@ struct ns16550 {
 
 /* locals */
 
-#if !(defined(CONFIGURE_UART_PORTS)) && !(defined(CONFIG_PCI))
+#if !(defined(UART_PORTS_CONFIGURE)) && !(defined(CONFIG_PCI))
 
-  #error "CONFIG_PCI or CONFIGURE_UART_PORTS is needed"
+  #error "CONFIG_PCI or UART_PORTS_CONFIGURE is needed"
 
-#elif !(defined(CONFIGURE_UART_PORTS)) && defined(CONFIG_PCI)
+#elif !(defined(UART_PORTS_CONFIGURE)) && defined(CONFIG_PCI)
 
 static struct ns16550 uart[CONFIG_UART_NUM_SYSTEM_PORTS] = {};
 
@@ -278,9 +278,9 @@ static inline void ns16550_uart_init()
 #define ns16550_uart_init() \
 	do {} while ((0))
 
-CONFIGURE_UART_PORTS(struct ns16550, uart);
+UART_PORTS_CONFIGURE(struct ns16550, uart);
 
-#endif /* CONFIGURE_UART_PORTS */
+#endif /* UART_PORTS_CONFIGURE */
 
 /*******************************************************************************
 *
