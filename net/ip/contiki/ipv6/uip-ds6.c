@@ -346,6 +346,9 @@ uip_ds6_addr_add(uip_ipaddr_t *ipaddr, unsigned long vlifetime, uint8_t type)
     locaddr->isused = 1;
     uip_ipaddr_copy(&locaddr->ipaddr, ipaddr);
     locaddr->type = type;
+    PRINTF("Adding addr ");
+    PRINT6ADDR(&locaddr->ipaddr);
+    PRINTF(" lifetime %d type %d\n", vlifetime, type);
     if(vlifetime == 0) {
       locaddr->isinfinite = 1;
     } else {
