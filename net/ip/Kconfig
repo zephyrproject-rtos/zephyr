@@ -67,3 +67,23 @@ config	NETWORKING_WITH_LOOPBACK
 	  IPv6 loopback addresses into routing table and
 	  neighbor cache. All packets transmitted are
 	  looped back to the receiving fifo/fiber.
+
+config	NETWORKING_UART
+	bool
+	prompt "Network UART/slip driver"
+	depends on NETWORKING
+	select UART_SIMPLE
+	default n
+	help
+	  Enable UART driver for passing IPv6 packets using slip.
+	  This requires running tunslip6 tool in host. See README
+	  file at net/ip/contiki/tools directory for details.
+
+config	NETWORKING_DEBUG_UART
+	bool
+	prompt "Network UART driver debug"
+	depends on NETWORKING_UART && NETWORKING_WITH_LOGGING
+	default n
+	help
+	  This option enables debug support for network UART
+	  driver.

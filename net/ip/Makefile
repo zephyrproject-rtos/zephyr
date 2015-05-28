@@ -12,6 +12,7 @@ EXTRA_CFLAGS += -I${srctree}/net/ip/contiki
 EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os/lib
 EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os
 EXTRA_CFLAGS += -I${srctree}/net/ip
+EXTRA_CFLAGS += -I${srctree}/include/drivers
 EXTRA_CFLAGS += -DNETSTACK_CONF_WITH_IPV6=1
 
 ifeq ($(CONFIG_NETWORKING_WITH_RPL),y)

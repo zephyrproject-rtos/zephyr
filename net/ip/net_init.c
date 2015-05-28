@@ -55,6 +55,7 @@
 #include "contiki/netstack.h"
 #include "contiki/ipv6/uip-ds6.h"
 #include "contiki/ip/simple-udp.h"
+#include "contiki/os/dev/slip.h"
 
 /* Declare some private functions only to be used in this file so the
  * prototypes are not found in .h file.
@@ -425,6 +426,8 @@ static int network_initialization(void)
 	process_start(&tcpip_process, NULL);
 	process_start(&simple_udp_process, NULL);
 	process_start(&etimer_process, NULL);
+
+	slip_start();
 
 	return 0;
 }
