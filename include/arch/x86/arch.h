@@ -42,7 +42,7 @@ by the generic nanokernel interface header (nanokernel.h)
 /* WARNING: must include nanokernel.h before this file */
 
 #ifndef _ASMLANGUAGE
-#include <nanokernel/x86/Intelprc.h>
+#include <arch/x86/Intelprc.h>
 #endif
 
 /*

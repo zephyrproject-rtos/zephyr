@@ -39,7 +39,7 @@ ARCv2 CPUs.
 #include <nanok.h>
 #include <offsets.h>
 #include <toolchain.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>

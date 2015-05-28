@@ -47,7 +47,7 @@ Measure boot time for both nanokernel and microkernel project which includes
 #include <vxmicro.h>
 #include <version.h>
 #endif
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <tc_util.h>
 
 /* externs */

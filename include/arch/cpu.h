@@ -1,7 +1,7 @@
-/* Intel x86 inline assembler functions and macros for public functions */
+/* cpu.h - automatically selects the correct arch.h file to include */
 
 /*
- * Copyright (c) 2015, Wind River Systems, Inc.
+ * Copyright (c) 1997-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,18 +30,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ASM_INLINE_PUBLIC_H
-#define _ASM_INLINE_PUBLIC_H
+#ifndef __ARCHCPU_H__
+#define __ARCHCPU_H__
 
-/*
- * The file must not be included directly
- * Include nanokernel/cpu.h instead
- */
-
-#if defined(__GNUC__)
-#include <nanokernel/x86/asm_inline_gcc.h>
+#if defined(VXMICRO_ARCH_x86)
+#include <arch/x86/arch.h>
+#elif defined(VXMICRO_ARCH_arm)
+#include <arch/arm/arch.h>
+#elif defined(VXMICRO_ARCH_arc)
+#include <arch/arc/arch.h>
 #else
-#include <nanokernel/x86/asm_inline_other.h>
+#error "Unknown VXMICRO_ARCH"
 #endif
 
-#endif /* _ASM_INLINE_PUBLIC_H */
+#endif /* __ARCHCPU_H__ */

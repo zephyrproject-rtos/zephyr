@@ -90,7 +90,7 @@ The _INT_STUB_SIZE macro is defined in include/nanokernel/x86/arch.h.
 #ifndef CONFIG_NO_ISRS
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <nanok.h>
 
 /* the _idt_base_address symbol is generated via a linker script */

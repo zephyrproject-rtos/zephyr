@@ -40,7 +40,7 @@ Common fault handler for ARM Cortex-M processors.
 
 #include <cputype.h>
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <nanok.h>
 
 #ifdef CONFIG_PRINTK

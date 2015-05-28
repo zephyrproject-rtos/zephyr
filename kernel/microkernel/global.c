@@ -37,7 +37,7 @@
 #include <sections.h>
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #endif
 
 extern void init_node(void);        /* defined by sysgen */

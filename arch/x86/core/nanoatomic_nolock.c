@@ -50,7 +50,7 @@ as there is no requirement for this capability.
 #if defined(CONFIG_LOCK_INSTRUCTION_UNSUPPORTED)
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /*******************************************************************************
 *

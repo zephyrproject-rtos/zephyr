@@ -41,7 +41,7 @@ on ARM Cortex-M3/M4 CPUs.
 #include <nanok.h>
 #include <offsets.h>
 #include <toolchain.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 

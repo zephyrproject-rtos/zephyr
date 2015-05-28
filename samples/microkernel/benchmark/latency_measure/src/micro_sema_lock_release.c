@@ -43,7 +43,7 @@
 #include "timestamp.h"
 #include "utils.h"
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* the number of semaphores used in lock/unlock test */
 #define N_TEST_SEMA (SEMAEND - SEMASTART)

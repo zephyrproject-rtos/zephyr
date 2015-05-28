@@ -39,7 +39,7 @@ number generator.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <drivers/rand32.h>
 
 /*******************************************************************************

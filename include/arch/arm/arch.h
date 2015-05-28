@@ -1,7 +1,7 @@
-/* cpu.h - automatically selects the correct arch.h file to include */
+/* arch.h - ARM specific nanokernel interface header */
 
 /*
- * Copyright (c) 1997-2014 Wind River Systems, Inc.
+ * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,17 +30,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __NANOKERNELCPU_H__
-#define __NANOKERNELCPU_H__
+/*
+DESCRIPTION
+This header contains the ARM specific nanokernel interface.  It is
+included by the nanokernel interface architecture-abstraction header
+(nanokernel/cpu.h)
+*/
 
-#if defined(VXMICRO_ARCH_x86)
-#include <nanokernel/x86/arch.h>
-#elif defined(VXMICRO_ARCH_arm)
-#include <nanokernel/arm/arch.h>
-#elif defined(VXMICRO_ARCH_arc)
-#include <nanokernel/arc/arch.h>
-#else
-#error "Unknown VXMICRO_ARCH"
+#ifndef _ARM_ARCH__H_
+#define _ARM_ARCH__H_
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#endif /* __NANOKERNELCPU_H__ */
+#ifndef _ASMLANGUAGE
+#include <nanokernel.h>
+#include <cputype.h>
+#endif
+
+#ifdef CONFIG_CPU_CORTEXM
+#include <arch/arm/CortexM/init.h>
+#include <arch/arm/CortexM/exc.h>
+#include <arch/arm/CortexM/irq.h>
+#include <arch/arm/CortexM/ffs.h>
+#include <arch/arm/CortexM/error.h>
+#include <arch/arm/CortexM/misc.h>
+#include <arch/arm/CortexM/scs.h>
+#include <arch/arm/CortexM/scb.h>
+#include <arch/arm/CortexM/nvic.h>
+#include <arch/arm/CortexM/memory_map.h>
+#include <arch/arm/CortexM/gdb_stub.h>
+#include <arch/arm/CortexM/asm_inline.h>
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _ARM_ARCH__H_ */

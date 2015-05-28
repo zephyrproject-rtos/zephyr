@@ -1,7 +1,7 @@
-/* arc/v2/irq.h - ARCv2 public interrupt handling */
+/* CortexM/irq.h - Cortex-M public interrupt handling */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,17 +31,17 @@
  */
 
 /*
- * DESCRIPTION
- * ARCv2 nanokernel interrupt handling interface. Included by ARC/v2/arch.h.
- */
+DESCRIPTION
+ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
+*/
 
-#ifndef _ARCH_ARC_V2_IRQ__H_
-#define _ARCH_ARC_V2_IRQ__H_
+#ifndef _ARCH_ARM_CORTEXM_IRQ_H_
+#define _ARCH_ARM_CORTEXM_IRQ_H_
 
-#include <nanokernel/arc/v2/aux_regs.h>
+#include <arch/arm/CortexM/nvic.h>
 
 #ifdef _ASMLANGUAGE
-GTEXT(_irq_exit);
+GTEXT(_IntExit);
 GTEXT(irq_lock)
 GTEXT(irq_unlock)
 GTEXT(irq_handler_set)
@@ -69,43 +69,8 @@ extern void irq_disable(unsigned int irq);
 
 extern void irq_priority_set(unsigned int irq, unsigned int prio);
 
-extern void _irq_exit(void);
-
-/*******************************************************************************
-*
-* irq_lock_inline - disable all interrupts on the CPU (inline)
-*
-* See irq_lock() for full description
-*
-* RETURNS: An architecture-dependent lock-out key representing the
-* "interrupt disable state" prior to the call.
-*
-* \NOMANUAL
-*/
-
-static ALWAYS_INLINE unsigned int irq_lock_inline(void)
-{
-	unsigned int key;
-
-	__asm__ volatile("clri %0" : "=r"(key));
-	return key;
-}
-
-/*******************************************************************************
-*
-* irq_unlock_inline - enable all interrupts on the CPU (inline)
-*
-* See irq_unlock() for full description
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
-
-static ALWAYS_INLINE void irq_unlock_inline(unsigned int key)
-{
-	__asm__ volatile("seti %0" : : "ir"(key));
-}
+extern void _IntExit(void);
 
 #endif /* _ASMLANGUAGE */
-#endif /* _ARCH_ARC_V2_IRQ__H_ */
+
+#endif /* _ARCH_ARM_CORTEXM_IRQ_H_ */

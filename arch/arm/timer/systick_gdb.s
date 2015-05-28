@@ -42,7 +42,7 @@ correct state of the thread that was interrupted.
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 

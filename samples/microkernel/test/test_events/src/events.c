@@ -42,7 +42,7 @@ This modules tests the following event APIs:
 
 #include <tc_util.h>
 #include <vxmicro.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <toolchain.h>
 
 /* test uses 1 software IRQs */

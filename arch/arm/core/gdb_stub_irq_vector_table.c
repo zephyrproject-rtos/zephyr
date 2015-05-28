@@ -39,7 +39,7 @@ user-installed ISRs.
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 typedef void (*vth)(void); /* Vector Table Handler */
 

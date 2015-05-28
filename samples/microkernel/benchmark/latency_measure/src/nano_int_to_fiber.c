@@ -39,7 +39,7 @@
 #include "timestamp.h"
 #include "utils.h"
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #define STACKSIZE 2000
 

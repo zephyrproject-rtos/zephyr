@@ -52,7 +52,7 @@ Supports up to 240 IRQs and 256 priority levels.
 #define _NVIC_H_
 
 #include <misc/__assert.h>
-#include <nanokernel/arm/CortexM/scs.h>
+#include <arch/arm/CortexM/scs.h>
 
 /* for assembler, only works with constants */
 #define _EXC_PRIO(pri) (((pri) << (8 - CONFIG_NUM_IRQ_PRIO_BITS)) & 0xff)

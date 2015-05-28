@@ -40,7 +40,7 @@ and STDOUT_CONSOLE APIs.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <misc/__assert.h>
 #include <board.h>
 #include <drivers/uart.h>

@@ -41,8 +41,8 @@ and exiting a C exception handler.
 #define _ASMLANGUAGE
 
 #include <nanok.h>
-#include <nanokernel/x86/asm.h>
-#include <nanokernel/x86/arch.h> /* For MK_ISR_NAME */
+#include <arch/x86/asm.h>
+#include <arch/x86/arch.h> /* For MK_ISR_NAME */
 #include <offsets.h>	/* nanokernel structure offset definitions */
 
 

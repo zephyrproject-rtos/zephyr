@@ -35,7 +35,7 @@ This module contains functions for manipulation caches.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <misc/util.h>
 
 #ifdef CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED

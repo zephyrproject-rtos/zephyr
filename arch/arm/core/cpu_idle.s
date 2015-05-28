@@ -39,7 +39,7 @@ DESCRIPTION
 #include <offsets.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #ifdef CONFIG_TICKLESS_IDLE
 #include <nanok.h>
 #endif

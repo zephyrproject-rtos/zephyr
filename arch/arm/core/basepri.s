@@ -52,7 +52,7 @@ unlocked. This achieves two purposes:
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 

@@ -40,7 +40,7 @@ Reset handler that prepares the system for running C code.
 #include <board.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #define _RAM_END (CONFIG_RAM_START + CONFIG_RAM_SIZE)
 

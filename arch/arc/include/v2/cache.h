@@ -39,7 +39,7 @@
 #ifndef _ARCV2_CACHE__H_
 #define _ARCV2_CACHE__H_
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
 

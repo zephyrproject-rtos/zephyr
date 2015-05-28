@@ -45,7 +45,7 @@
  */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <misc/__assert.h>
 #include <toolchain.h>
 #include <sections.h>

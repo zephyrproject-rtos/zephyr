@@ -64,9 +64,9 @@ registers is the way to implement it.
 #else
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <misc/__assert.h>
-#include <nanokernel/arm/CortexM/scs.h>
+#include <arch/arm/CortexM/scs.h>
 #include <misc/util.h>
 #include <stdint.h>
 

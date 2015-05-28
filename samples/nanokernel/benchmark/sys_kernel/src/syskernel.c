@@ -34,7 +34,7 @@
 #include <vxmicro.h>
 #else
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #endif
 
 #include "syskernel.h"

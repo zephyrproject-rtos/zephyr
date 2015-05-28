@@ -49,7 +49,7 @@ as there is no requirement for this capability.
 
 #define _ASMLANGUAGE
 
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 
 	/* exports (public APIs) */
 

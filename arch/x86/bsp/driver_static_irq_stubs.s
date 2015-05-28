@@ -40,7 +40,7 @@ by x86 BSPs.
 
 #ifndef CONFIG_DYNAMIC_INT_STUBS
 
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
 #include <drivers/pic.h>

@@ -41,7 +41,7 @@ This module provides the _NanoFatalErrorHandler() routine.
 
 #include <cputype.h>
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <nanok.h>
 #include <misc/printk.h>
 

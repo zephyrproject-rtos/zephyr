@@ -37,7 +37,7 @@
 
 #include <tc_util.h>
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <vxmicro.h>
 
 /* One of the task IRQ objects will not be allocated */

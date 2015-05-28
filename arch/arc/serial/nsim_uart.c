@@ -29,7 +29,7 @@
  */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <sections.h>
 #include <misc/__assert.h>
 #include <stdint.h>

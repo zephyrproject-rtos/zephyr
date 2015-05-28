@@ -43,7 +43,7 @@ for the IA-32 architecture.
 #include <sections.h>
 
 #include <nanok.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <gdt.h>
 
 /* defines */

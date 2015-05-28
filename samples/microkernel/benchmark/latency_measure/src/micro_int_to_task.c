@@ -40,7 +40,7 @@
 #include "timestamp.h"
 #include "utils.h"
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 static volatile int flagVar = 0;
 

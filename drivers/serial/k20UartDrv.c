@@ -43,7 +43,7 @@ INCLUDE FILES: drivers/serial/k20_uart.h
 /* includes */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <stdint.h>
 
 #include <board.h>

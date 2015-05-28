@@ -39,7 +39,7 @@
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include "swap_macros.h"
 
 GTEXT(_Fault)

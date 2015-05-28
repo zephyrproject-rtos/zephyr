@@ -51,7 +51,7 @@ by nano_cpu_atomic_idle().
 
 #define _ASMLANGUAGE
 
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 
 	/* exports (external APIs) */
 

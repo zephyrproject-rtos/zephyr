@@ -50,7 +50,7 @@
 
 #else /* !_ASMLANGUAGE */
 #include <stdint.h>
-#include <nanokernel/arm/CortexM/nvic.h>
+#include <arch/arm/CortexM/nvic.h>
 
 /*******************************************************************************
 *

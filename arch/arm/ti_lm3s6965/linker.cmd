@@ -35,4 +35,4 @@
 #define FLASH_SIZE  256K
 #define SRAM_SIZE   64K
 
-#include <nanokernel/arm/CortexM/scripts/linker.cmd>
+#include <arch/arm/CortexM/scripts/linker.cmd>

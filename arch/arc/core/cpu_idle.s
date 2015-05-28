@@ -41,7 +41,7 @@ CPU power management routines.
 #include <offsets.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 GTEXT(nano_cpu_idle)
 GTEXT(nano_cpu_atomic_idle)

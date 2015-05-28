@@ -52,7 +52,7 @@ directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
 /* includes */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <limits.h>

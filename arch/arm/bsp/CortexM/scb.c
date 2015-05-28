@@ -39,7 +39,7 @@ definitions and more complex routines, if needed.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <misc/util.h>
 
 #define SCB_AIRCR_VECTKEY_EN_W 0x05FA

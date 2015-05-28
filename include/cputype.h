@@ -37,11 +37,11 @@
 #define _CPUTYPE_H
 
 #if defined(VXMICRO_ARCH_x86)
-#include <nanokernel/x86/Intelprc.h>
+#include <arch/x86/Intelprc.h>
 #elif defined(VXMICRO_ARCH_arm)
-#include <nanokernel/arm/ARMprc.h>
+#include <arch/arm/ARMprc.h>
 #elif defined(VXMICRO_ARCH_arc)
-#include <nanokernel/arc/arcprc.h>
+#include <arch/arc/arcprc.h>
 #else
 #error "Unknown VXMICRO_ARCH type"
 #endif

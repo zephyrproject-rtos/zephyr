@@ -1406,7 +1406,7 @@ void raiseInt(uint8_t id)
 #endif /* Intel */
 
 #if defined(CONFIG_CPU_CORTEXM3)
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 /*******************************************************************************
  *
  * raiseInt - generate a software interrupt

@@ -38,7 +38,7 @@ utilities.
 
 #define _ASMLANGUAGE
 
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 
 	/* exports (internal APIs) */
 

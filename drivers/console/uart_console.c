@@ -38,7 +38,7 @@
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #include <stdio.h>
 #include <stdint.h>

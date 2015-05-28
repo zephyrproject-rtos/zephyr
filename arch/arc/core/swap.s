@@ -43,7 +43,7 @@ See isr_wrapper.s for details.
 #include <nanok.h>
 #include <offsets.h>
 #include <toolchain.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <v2/irq.h>
 #include "swap_macros.h"
 

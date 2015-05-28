@@ -47,7 +47,7 @@ anymore.
 #include <toolchain.h>
 #include <sections.h>
 #include <nanok.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 

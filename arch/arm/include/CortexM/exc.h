@@ -38,7 +38,7 @@ Exception/interrupt context helpers.
 #ifndef _ARM_CORTEXM_ISR__H_
 #define _ARM_CORTEXM_ISR__H_
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <asm_inline.h>
 
 #ifdef _ASMLANGUAGE

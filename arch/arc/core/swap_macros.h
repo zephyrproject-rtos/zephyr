@@ -36,7 +36,7 @@
 #include <nanok.h>
 #include <offsets.h>
 #include <toolchain.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #ifdef _ASMLANGUAGE
 

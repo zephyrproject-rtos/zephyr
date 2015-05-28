@@ -38,7 +38,7 @@ run time handler.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <misc/printk.h>
 #include <toolchain.h>
 #include <sections.h>

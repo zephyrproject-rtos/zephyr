@@ -37,7 +37,7 @@ for the ti_lm3s6965 BSP.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <cputype.h>
 #include <board.h>
 #include <drivers/uart.h>

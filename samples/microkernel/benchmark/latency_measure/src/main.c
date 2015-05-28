@@ -39,7 +39,7 @@
 #include "utils.h"
 #include <tc_util.h>
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 uint32_t tm_off; /* time necessary to read the time */
 int errorCount = 0; /* track number of errors */

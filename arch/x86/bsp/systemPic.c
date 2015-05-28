@@ -38,7 +38,7 @@ for the pentium4 and minuteia variants of the generic_pc BSP.
 
 #include "board.h"
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <drivers/pic.h>
 
 /* Handle possible stray or spurious interrupts on the master and slave PICs */

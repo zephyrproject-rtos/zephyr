@@ -45,7 +45,7 @@ then announces the result of the test.
 /* includes */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <vxmicro.h>
 #include <tc_util.h>
 

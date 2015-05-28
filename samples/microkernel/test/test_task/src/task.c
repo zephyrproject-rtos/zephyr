@@ -42,7 +42,7 @@ This module tests the following task APIs:
 
 #include <tc_util.h>
 #include <vxmicro.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* test uses 1 software IRQs */
 #define NUM_SW_IRQS 1

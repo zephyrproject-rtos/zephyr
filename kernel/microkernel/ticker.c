@@ -36,7 +36,7 @@ This module implements the microkernel's tick event handler.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #include <minik.h>
 #include <drivers/system_timer.h>

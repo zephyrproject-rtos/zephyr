@@ -47,8 +47,8 @@ a real IRQ has been inserted.
 /* includes */
 #define _ASMLANGUAGE
 
-#include <nanokernel/cpu.h>
-#include <nanokernel/x86/asm.h>
+#include <arch/cpu.h>
+#include <arch/x86/asm.h>
 
 #include <drivers/pic.h>
 #include <board.h>

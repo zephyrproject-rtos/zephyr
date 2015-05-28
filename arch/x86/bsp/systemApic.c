@@ -39,7 +39,7 @@ for the atom_n28xx variant of generic_pc BSP.
 #include <misc/__assert.h>
 #include "board.h"
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
 

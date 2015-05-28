@@ -40,7 +40,7 @@ Ensures interrupt and exception stubs are installed correctly.
 #include <tc_util.h>
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <nanok.h>
 #if defined(__GNUC__)
 #include <test_asm_inline_gcc.h>

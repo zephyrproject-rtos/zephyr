@@ -55,7 +55,7 @@ These scenarios will be tested using a combinations of tasks, fibers and ISRs.
 /* includes */
 
 #include <tc_util.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* test uses 2 software IRQs */
 #define NUM_SW_IRQS 2

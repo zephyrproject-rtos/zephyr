@@ -43,7 +43,7 @@ wrapped around by _isr_wrapper()).
 #include <nanok.h>
 #include <offsets.h>
 #include <toolchain.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 

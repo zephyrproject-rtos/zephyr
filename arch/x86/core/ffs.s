@@ -42,7 +42,7 @@ are defined in arch.h.
 
 #define _ASMLANGUAGE
 
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 #include <offsets.h>	/* nanokernel structure offset definitions */
 
 

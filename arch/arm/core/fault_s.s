@@ -39,7 +39,7 @@ Fault handlers for ARM Cortex-M processors.
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 

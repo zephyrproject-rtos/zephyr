@@ -98,7 +98,7 @@ void taskB(void)
  */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 

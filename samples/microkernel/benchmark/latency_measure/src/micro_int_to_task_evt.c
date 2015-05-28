@@ -44,7 +44,7 @@
 #include "timestamp.h"
 #include "utils.h"
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 static uint32_t timestamp = 0;
 

@@ -1,7 +1,7 @@
-/* Intelprc.h - IA-32 specific definitions for cputype.h */
+/* CortexM/error.h - Cortex-M public error handling */
 
 /*
- * Copyright (c) 2010-2015 Wind River Systems, Inc.
+ * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,40 +32,23 @@
 
 /*
 DESCRIPTION
-This file is included by cputype.h when the VXMICRO_ARCH_x86 macro is defined,
-i.e. whenever a build for the IA-32 architecture is being performed.  This
-file shall only contain the CPU/compiler specific definitions that are
-necessary to build the EMBEDDED kernel library.
+ARM-specific nanokernel error handling interface. Included by ARM/arch.h.
 */
 
-#ifndef _INTELPRC_H
-#define _INTELPRC_H
+#ifndef _ARCH_ARM_CORTEXM_ERROR_H_
+#define _ARCH_ARM_CORTEXM_ERROR_H_
 
-#ifdef __cplusplus
-extern "C"
-	{
+#include <arch/arm/CortexM/exc.h>
+
+#ifndef _ASMLANGUAGE
+extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int,
+						 const NANO_ESF *);
+extern void _SysFatalErrorHandler(unsigned int, const NANO_ESF *);
 #endif
 
-#define OCTET_TO_SIZEOFUNIT(X) (X)	  /* byte addressing */
-#define SIZEOFUNIT_TO_OCTET(X) (X)
+#define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
+#define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
+#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
+#define _NANO_ERR_INVALID_STRING_OP (3) /* Invalid string operation */
 
-#include <stdint.h>
-#include <toolchain.h>
-#include <misc/util.h>
-#include <nanokernel/x86/addr_types.h>
-#include <nanokernel/x86/asm_inline.h>
-#include <drivers/system_timer.h> /* timer_driver() needed by kernel_main.c */
-
-/*
- * Notification event reserved for use by GDB Agent.
- * It is used to signal the agent notification task whenever
- * a task has been stopped by the agent.
- */
-
-#define GDB_NOTIFICATION_EVENT 1
-
-#ifdef __cplusplus
-	}
-#endif
-
-#endif /* _INTELPRC_H */
+#endif /* _ARCH_ARM_CORTEXM_ERROR_H_ */

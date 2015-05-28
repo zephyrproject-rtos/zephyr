@@ -41,7 +41,7 @@ IA-32 architecture.
 
 /* includes */
 
-#include <nanokernel/x86/arch.h>
+#include <arch/x86/arch.h>
 
 #ifndef _ASMLANGUAGE
 

@@ -1,7 +1,7 @@
-/* arch.h - ARM specific nanokernel interface header */
+/* v2/error.h - ARCv2 public error handling */
 
 /*
- * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,40 +32,23 @@
 
 /*
 DESCRIPTION
-This header contains the ARM specific nanokernel interface.  It is
-included by the nanokernel interface architecture-abstraction header
-(nanokernel/cpu.h)
+ARC-specific nanokernel error handling interface. Included by ARC/arch.h.
 */
 
-#ifndef _ARM_ARCH__H_
-#define _ARM_ARCH__H_
+#ifndef _ARCH_ARC_V2_ERROR_H_
+#define _ARCH_ARC_V2_ERROR_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <arch/arc/v2/exc.h>
 
 #ifndef _ASMLANGUAGE
-#include <nanokernel.h>
-#include <cputype.h>
+extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int,
+						 const NANO_ESF *);
+extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 #endif
 
-#ifdef CONFIG_CPU_CORTEXM
-#include <nanokernel/arm/CortexM/init.h>
-#include <nanokernel/arm/CortexM/exc.h>
-#include <nanokernel/arm/CortexM/irq.h>
-#include <nanokernel/arm/CortexM/ffs.h>
-#include <nanokernel/arm/CortexM/error.h>
-#include <nanokernel/arm/CortexM/misc.h>
-#include <nanokernel/arm/CortexM/scs.h>
-#include <nanokernel/arm/CortexM/scb.h>
-#include <nanokernel/arm/CortexM/nvic.h>
-#include <nanokernel/arm/CortexM/memory_map.h>
-#include <nanokernel/arm/CortexM/gdb_stub.h>
-#include <nanokernel/arm/CortexM/asm_inline.h>
-#endif
+#define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
+#define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
+#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
+#define _NANO_ERR_INVALID_STRING_OP (3) /* Invalid string operation */
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _ARM_ARCH__H_ */
+#endif /* _ARCH_ARC_V2_ERROR_H_ */

@@ -38,7 +38,7 @@ Unit test for tickless idle feature.
 #include <vxmicro.h>
 
 #include <misc/printk.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <tc_util.h>
 
 #define SLEEP_TICKS 10

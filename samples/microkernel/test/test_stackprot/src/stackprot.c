@@ -55,7 +55,7 @@ DESCRIPTION
 /* locals */
 
 #else
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* defines */
 #define STACKSIZE               1024

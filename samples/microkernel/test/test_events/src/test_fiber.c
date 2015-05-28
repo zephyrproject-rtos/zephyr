@@ -38,7 +38,7 @@ event signaling
 
 /* includes */
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <vxmicro.h>
 
 /* defines */

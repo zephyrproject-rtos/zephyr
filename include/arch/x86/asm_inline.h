@@ -1,7 +1,7 @@
-/* CortexM/error.h - Cortex-M public error handling */
+/* Intel x86 inline assembler functions and macros for public functions */
 
 /*
- * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,25 +30,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _ASM_INLINE_PUBLIC_H
+#define _ASM_INLINE_PUBLIC_H
+
 /*
-DESCRIPTION
-ARM-specific nanokernel error handling interface. Included by ARM/arch.h.
-*/
+ * The file must not be included directly
+ * Include nanokernel/cpu.h instead
+ */
 
-#ifndef _ARCH_ARM_CORTEXM_ERROR_H_
-#define _ARCH_ARM_CORTEXM_ERROR_H_
-
-#include <nanokernel/arm/CortexM/exc.h>
-
-#ifndef _ASMLANGUAGE
-extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int,
-						 const NANO_ESF *);
-extern void _SysFatalErrorHandler(unsigned int, const NANO_ESF *);
+#if defined(__GNUC__)
+#include <arch/x86/asm_inline_gcc.h>
+#else
+#include <arch/x86/asm_inline_other.h>
 #endif
 
-#define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
-#define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
-#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
-#define _NANO_ERR_INVALID_STRING_OP (3) /* Invalid string operation */
-
-#endif /* _ARCH_ARM_CORTEXM_ERROR_H_ */
+#endif /* _ASM_INLINE_PUBLIC_H */

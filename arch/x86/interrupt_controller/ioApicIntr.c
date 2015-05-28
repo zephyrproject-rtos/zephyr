@@ -78,7 +78,7 @@ SEE ALSO: loApicIntr.c
 /* includes */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #include "board.h"
 

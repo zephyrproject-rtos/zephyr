@@ -40,7 +40,7 @@ Reset handler that prepares the system for running C code.
 #include <board.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE

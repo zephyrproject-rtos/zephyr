@@ -46,7 +46,7 @@
 
 #endif /*  CONFIG_NANOKERNEL */
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 static uint8_t vector; /* the interrupt vector we allocate */
 

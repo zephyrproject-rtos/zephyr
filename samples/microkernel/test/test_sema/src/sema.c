@@ -44,7 +44,7 @@ This modules tests the following semaphore routines:
 /* includes */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <vxmicro.h>
 #include <tc_util.h>
 

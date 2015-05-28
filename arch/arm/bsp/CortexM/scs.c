@@ -38,7 +38,7 @@ definitions and more complex routines, if needed.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 

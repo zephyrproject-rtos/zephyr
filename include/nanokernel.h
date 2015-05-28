@@ -36,7 +36,7 @@
 #include <stdint.h>
 #include <toolchain.h> /* compiler specific configuration options */
 
-#include <nanokernel/private.h>
+#include <arch/private.h>
 #include <kernel_version.h>
 #include <clock_vars.h>
 #include <drivers/rand32.h>

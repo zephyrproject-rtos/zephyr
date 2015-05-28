@@ -44,7 +44,7 @@ The following target pipe routine does not yet have a test case:
 /* includes */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <tc_util.h>
 #include <vxmicro.h>
 #include <misc/util.h>

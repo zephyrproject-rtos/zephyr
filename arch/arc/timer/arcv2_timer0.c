@@ -40,11 +40,11 @@ The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero counter.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
-#include <nanokernel/arc/v2/aux_regs.h>
+#include <arch/arc/v2/aux_regs.h>
 #include <clock_vars.h>
 #include <drivers/system_timer.h>
 

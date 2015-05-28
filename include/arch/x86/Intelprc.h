@@ -1,7 +1,7 @@
-/* v2/error.h - ARCv2 public error handling */
+/* Intelprc.h - IA-32 specific definitions for cputype.h */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,23 +32,40 @@
 
 /*
 DESCRIPTION
-ARC-specific nanokernel error handling interface. Included by ARC/arch.h.
+This file is included by cputype.h when the VXMICRO_ARCH_x86 macro is defined,
+i.e. whenever a build for the IA-32 architecture is being performed.  This
+file shall only contain the CPU/compiler specific definitions that are
+necessary to build the EMBEDDED kernel library.
 */
 
-#ifndef _ARCH_ARC_V2_ERROR_H_
-#define _ARCH_ARC_V2_ERROR_H_
+#ifndef _INTELPRC_H
+#define _INTELPRC_H
 
-#include <nanokernel/arc/v2/exc.h>
-
-#ifndef _ASMLANGUAGE
-extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int,
-						 const NANO_ESF *);
-extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
+#ifdef __cplusplus
+extern "C"
+	{
 #endif
 
-#define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
-#define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
-#define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
-#define _NANO_ERR_INVALID_STRING_OP (3) /* Invalid string operation */
+#define OCTET_TO_SIZEOFUNIT(X) (X)	  /* byte addressing */
+#define SIZEOFUNIT_TO_OCTET(X) (X)
 
-#endif /* _ARCH_ARC_V2_ERROR_H_ */
+#include <stdint.h>
+#include <toolchain.h>
+#include <misc/util.h>
+#include <arch/x86/addr_types.h>
+#include <arch/x86/asm_inline.h>
+#include <drivers/system_timer.h> /* timer_driver() needed by kernel_main.c */
+
+/*
+ * Notification event reserved for use by GDB Agent.
+ * It is used to signal the agent notification task whenever
+ * a task has been stopped by the agent.
+ */
+
+#define GDB_NOTIFICATION_EVENT 1
+
+#ifdef __cplusplus
+	}
+#endif
+
+#endif /* _INTELPRC_H */

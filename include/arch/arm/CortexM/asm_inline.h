@@ -1,7 +1,7 @@
-/* CortexM/irq.h - Cortex-M public interrupt handling */
+/* Intel ARM inline assembler functions and macros for public functions */
 
 /*
- * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2015, Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,47 +30,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _ASM_INLINE_PUBLIC_H
+#define _ASM_INLINE_PUBLIC_H
+
 /*
-DESCRIPTION
-ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
-*/
+ * The file must not be included directly
+ * Include nanokernel/cpu.h instead
+ */
 
-#ifndef _ARCH_ARM_CORTEXM_IRQ_H_
-#define _ARCH_ARM_CORTEXM_IRQ_H_
-
-#include <nanokernel/arm/CortexM/nvic.h>
-
-#ifdef _ASMLANGUAGE
-GTEXT(_IntExit);
-GTEXT(irq_lock)
-GTEXT(irq_unlock)
-GTEXT(irq_handler_set)
-GTEXT(irq_connect)
-GTEXT(irq_disconnect)
-GTEXT(irq_enable)
-GTEXT(irq_disable)
-GTEXT(irq_priority_set)
+#if defined(__GNUC__)
+#include <arch/arm/CortexM/asm_inline_gcc.h>
 #else
-extern int irq_lock(void);
-extern void irq_unlock(int key);
+#include <arch/arm/CortexM/asm_inline_other.h>
+#endif
 
-extern void irq_handler_set(unsigned int irq,
-				 void (*old)(void *arg),
-				 void (*new)(void *arg),
-				 void *arg);
-extern int irq_connect(unsigned int irq,
-			     unsigned int prio,
-			     void (*isr)(void *arg),
-			     void *arg);
-extern void irq_disconnect(unsigned int irq);
-
-extern void irq_enable(unsigned int irq);
-extern void irq_disable(unsigned int irq);
-
-extern void irq_priority_set(unsigned int irq, unsigned int prio);
-
-extern void _IntExit(void);
-
-#endif /* _ASMLANGUAGE */
-
-#endif /* _ARCH_ARM_CORTEXM_IRQ_H_ */
+#endif /* _ASM_INLINE_PUBLIC_H */

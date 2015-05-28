@@ -44,7 +44,7 @@ a parameter.
 #include <sections.h>
 #include <sw_isr_table.h>
 #include <nanok.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 

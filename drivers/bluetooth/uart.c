@@ -34,7 +34,7 @@
 #include <stddef.h>
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #include <board.h>
 #include <drivers/uart.h>

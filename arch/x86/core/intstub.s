@@ -43,9 +43,9 @@ entering and exiting a C interrupt handler.
 #ifndef CONFIG_NO_ISRS
 
 #include <nanok.h>
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 #include <offsets.h>	/* nanokernel structure offset definitions */
-#include <nanokernel/cpu.h>	/* _NANO_ERR_SPURIOUS_INT */
+#include <arch/cpu.h>	/* _NANO_ERR_SPURIOUS_INT */
 
 
 

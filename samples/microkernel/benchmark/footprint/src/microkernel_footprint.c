@@ -43,7 +43,7 @@
 
 /* includes */
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <misc/printk.h>
 #include <stdio.h>
 

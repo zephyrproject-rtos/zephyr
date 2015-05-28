@@ -73,12 +73,12 @@ still considered part of the NVIC and an API for it is provided in nvic.h.
 
 #ifdef _ASMLANGUAGE
 
-#include <nanokernel/arm/CortexM/memory_map.h>
+#include <arch/arm/CortexM/memory_map.h>
 
 #else /* _ASMLANGUAGE */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <stdint.h>
 
 union __ictr {

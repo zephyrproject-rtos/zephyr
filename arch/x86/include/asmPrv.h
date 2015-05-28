@@ -33,7 +33,7 @@
 #ifndef __INCsysX86AsmPrvh
 #define __INCsysX86AsmPrvh
 
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 
 #ifdef __cplusplus
 extern "C" {

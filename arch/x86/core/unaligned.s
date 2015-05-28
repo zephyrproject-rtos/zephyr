@@ -42,7 +42,7 @@ performed byte-by-byte.
 
 #ifdef CONFIG_UNALIGNED_WRITE_UNSUPPORTED
 
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 
 	/* exports (internal APIs) */
 

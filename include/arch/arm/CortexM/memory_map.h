@@ -73,9 +73,9 @@ processors.
 /* 0xe0000000 -> 0xffffffff is different between M3 and M0 */
 
 #if defined(CONFIG_CPU_CORTEXM3)
-#include <nanokernel/arm/CortexM/memory_map-m3.h>
+#include <arch/arm/CortexM/memory_map-m3.h>
 #elif defined(CONFIG_CPU_CORTEXM0)
-#include <nanokernel/arm/CortexM/memory_map-m0.h>
+#include <arch/arm/CortexM/memory_map-m0.h>
 #else
 #error Unknown CPU
 #endif

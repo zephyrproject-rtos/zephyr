@@ -1,7 +1,7 @@
-/* nano_int.c - measure the time from task to ISR */
+/* arc/v2/irq.h - ARCv2 public interrupt handling */
 
 /*
- * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,75 +32,80 @@
 
 /*
  * DESCRIPTION
- * This file contains test that measures time to switch time from a fiber
- * to the interrupt handler when an interrupt is generated.
+ * ARCv2 nanokernel interrupt handling interface. Included by ARC/v2/arch.h.
  */
 
-#include "timestamp.h"
-#include "utils.h"
+#ifndef _ARCH_ARC_V2_IRQ__H_
+#define _ARCH_ARC_V2_IRQ__H_
 
-#include <arch/cpu.h>
+#include <arch/arc/v2/aux_regs.h>
 
-#define STACKSIZE 2000
+#ifdef _ASMLANGUAGE
+GTEXT(_irq_exit);
+GTEXT(irq_lock)
+GTEXT(irq_unlock)
+GTEXT(irq_handler_set)
+GTEXT(irq_connect)
+GTEXT(irq_disconnect)
+GTEXT(irq_enable)
+GTEXT(irq_disable)
+GTEXT(irq_priority_set)
+#else
+extern int irq_lock(void);
+extern void irq_unlock(int key);
 
-/* stack used by the fiber that generates the interrupt */
-static char fiberStack[STACKSIZE];
+extern void irq_handler_set(unsigned int irq,
+				 void (*old)(void *arg),
+				 void (*new)(void *arg),
+				 void *arg);
+extern int irq_connect(unsigned int irq,
+			     unsigned int prio,
+			     void (*isr)(void *arg),
+			     void *arg);
+extern void irq_disconnect(unsigned int irq);
 
-static uint32_t timestamp;
+extern void irq_enable(unsigned int irq);
+extern void irq_disable(unsigned int irq);
+
+extern void irq_priority_set(unsigned int irq, unsigned int prio);
+
+extern void _irq_exit(void);
 
 /*******************************************************************************
 *
-* latencyTestIsr - test ISR used to measure best case interrupt latency
+* irq_lock_inline - disable all interrupts on the CPU (inline)
 *
-* The interrupt handler gets the second timestamp.
+* See irq_lock() for full description
+*
+* RETURNS: An architecture-dependent lock-out key representing the
+* "interrupt disable state" prior to the call.
+*
+* \NOMANUAL
+*/
+
+static ALWAYS_INLINE unsigned int irq_lock_inline(void)
+{
+	unsigned int key;
+
+	__asm__ volatile("clri %0" : "=r"(key));
+	return key;
+}
+
+/*******************************************************************************
+*
+* irq_unlock_inline - enable all interrupts on the CPU (inline)
+*
+* See irq_unlock() for full description
 *
 * RETURNS: N/A
 *
 * \NOMANUAL
 */
 
-static void latencyTestIsr(void *unused)
+static ALWAYS_INLINE void irq_unlock_inline(unsigned int key)
 {
-	ARG_UNUSED(unused);
-
-	timestamp = TIME_STAMP_DELTA_GET(timestamp);
+	__asm__ volatile("seti %0" : : "ir"(key));
 }
 
-/*******************************************************************************
-*
-* fiberInt - interrupt preparation fiber
-*
-* Fiber makes all the test preparations: registers the interrupt handler,
-* gets the first timestamp and invokes the software interrupt.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
-
-static void fiberInt(void)
-{
-	initSwInterrupt(latencyTestIsr);
-	timestamp = TIME_STAMP_DELTA_GET(0);
-	raiseIntFunc();
-}
-
-/*******************************************************************************
- *
- * nanoIntLatency - the test main function
- *
- * RETURNS: 0 on success
- *
- * \NOMANUAL
- */
-
-int nanoIntLatency(void)
-{
-	PRINT_FORMAT(" 1- Measure time to switch from fiber to ISR execution");
-	TICK_SYNCH();
-	task_fiber_start(&fiberStack[0], STACKSIZE,
-					 (nano_fiber_entry_t) fiberInt, 0, 0, 6, 0);
-	PRINT_FORMAT(" switching time is %lu tcs = %lu nsec",
-				 timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
-	return 0;
-}
+#endif /* _ASMLANGUAGE */
+#endif /* _ARCH_ARC_V2_IRQ__H_ */

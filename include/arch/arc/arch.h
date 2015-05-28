@@ -1,7 +1,7 @@
-/* Intel ARM inline assembler functions and macros for public functions */
+/* arch.h - ARC specific nanokernel interface header */
 
 /*
- * Copyright (c) 2015, Wind River Systems, Inc.
+ * Copyright (c) 2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,18 +30,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ASM_INLINE_PUBLIC_H
-#define _ASM_INLINE_PUBLIC_H
-
 /*
- * The file must not be included directly
- * Include nanokernel/cpu.h instead
- */
+DESCRIPTION
+This header contains the ARC specific nanokernel interface.  It is
+included by the nanokernel interface architecture-abstraction header
+(nanokernel/cpu.h)
+*/
 
-#if defined(__GNUC__)
-#include <nanokernel/arm/CortexM/asm_inline_gcc.h>
-#else
-#include <nanokernel/arm/CortexM/asm_inline_other.h>
+#ifndef _ARC_ARCH__H_
+#define _ARC_ARCH__H_
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#endif /* _ASM_INLINE_PUBLIC_H */
+#ifndef _ASMLANGUAGE
+#include <nanokernel.h>
+#include <cputype.h>
+#endif
+
+#ifdef CONFIG_CPU_ARCV2
+#include <arch/arc/v2/init.h>
+#include <arch/arc/v2/exc.h>
+#include <arch/arc/v2/irq.h>
+#include <arch/arc/v2/ffs.h>
+#include <arch/arc/v2/error.h>
+#include <arch/arc/v2/misc.h>
+#include <arch/arc/v2/aux_regs.h>
+#include <arch/arc/v2/arcv2_irq_unit.h>
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _ARC_ARCH__H_ */

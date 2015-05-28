@@ -39,7 +39,7 @@
   #include "phil.h"
 #endif /*  CONFIG_NANOKERNEL */
 
-#include <nanokernel/cpu.h>	/* irq_lock/irq_unlock */
+#include <arch/cpu.h>	/* irq_lock/irq_unlock */
 
 /* defines */
 

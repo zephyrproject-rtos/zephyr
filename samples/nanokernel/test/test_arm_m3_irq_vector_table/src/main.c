@@ -45,7 +45,7 @@ The ISRs are installed at build time, directly in the vector table.
   #error project can only run on Cortex-M3
 #endif
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <tc_util.h>
 #include <sections.h>
 

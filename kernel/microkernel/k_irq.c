@@ -98,7 +98,7 @@ NANO_CPU_INT_STUB_DECL(irq_obj_mem_stub[MAX_TASK_IRQS]);
 #define RELEASE_VECTOR(v) _IntVecMarkFree(v)
 
 #elif defined(CONFIG_CPU_CORTEXM3)
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #define IRQ_STUB
 #define RELEASE_VECTOR(v) irq_disconnect(v)
 #else

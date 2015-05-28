@@ -42,7 +42,7 @@
 #include "timestamp.h"
 #include "utils.h"
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* total number of interrupt lock/unlock cycles */
 #define NTESTS 100000

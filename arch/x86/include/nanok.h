@@ -55,7 +55,7 @@ offsets.o module.
 
 #ifndef _ASMLANGUAGE
 #include <nanokernel.h>		   /* public nanokernel API */
-#include <nanokernel/x86/arch.h> /* private IA-32 definitions */
+#include <arch/x86/arch.h> /* private IA-32 definitions */
 #include <stdint.h>
 /*
  * This pulls in the code shared with the IDT generator that actually

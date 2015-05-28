@@ -43,7 +43,7 @@
 #include "timestamp.h"
 #include "utils.h"
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* number of context switches */
 #define NCTXSWITCH   10000

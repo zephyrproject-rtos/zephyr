@@ -65,9 +65,9 @@ MEMORY
     IDT_LIST        : ORIGIN = 2K, LENGTH = 2K
     }
 
-#include <nanokernel/x86/linker-common-sections.h>
+#include <arch/x86/linker-common-sections.h>
 
 /* start adding bsp specific linker sections here */
 
 /* no sections should appear after linker-epilog.h */
-#include <nanokernel/x86/linker-epilog.h>
+#include <arch/x86/linker-epilog.h>

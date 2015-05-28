@@ -42,7 +42,7 @@ This module tests the following timer related routines:
 /* includes */
 
 #include <tc_util.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* defines */
 

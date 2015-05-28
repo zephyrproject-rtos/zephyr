@@ -46,7 +46,7 @@ This file may be included by:
 
 /* include platform dependent linker-defs */
 #ifdef VXMICRO_ARCH_x86
-#include <nanokernel/x86/linker-defs-arch.h>
+#include <arch/x86/linker-defs-arch.h>
 #elif defined(VXMICRO_ARCH_arm)
 /* Nothing yet to include */
 #elif defined(VXMICRO_ARCH_arc)

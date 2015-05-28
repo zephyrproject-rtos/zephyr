@@ -65,7 +65,7 @@ In a nanokernel-only system this device driver omits more complex capabilities
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <clock_vars.h>

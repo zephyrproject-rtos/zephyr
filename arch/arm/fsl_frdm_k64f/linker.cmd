@@ -57,4 +57,4 @@ This is the linker script for both standard images and XIP images.
 #define SRAM_START  0x20000000  /* 192K in SRAM space */
 #define SRAM_SIZE   192K
 
-#include <nanokernel/arm/CortexM/scripts/linker.cmd>
+#include <arch/arm/CortexM/scripts/linker.cmd>

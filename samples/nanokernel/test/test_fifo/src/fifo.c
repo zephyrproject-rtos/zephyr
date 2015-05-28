@@ -64,7 +64,7 @@ in ISR context.
 /* includes */
 
 #include <tc_util.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /* test uses 2 software IRQs */
 #define NUM_SW_IRQS 2

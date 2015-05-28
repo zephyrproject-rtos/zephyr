@@ -43,7 +43,7 @@ the PendSV exception.
 #include <toolchain.h>
 #include <sections.h>
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 /*******************************************************************************
 *

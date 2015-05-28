@@ -44,7 +44,7 @@ been left in place should future booting scenarios arise which require its use.
 
 #define _ASMLANGUAGE
 
-#include <nanokernel/x86/asm.h>
+#include <arch/x86/asm.h>
 
 	/* exports (private APIs) */
 

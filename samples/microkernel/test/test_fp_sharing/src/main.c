@@ -87,7 +87,7 @@ x87 FPU registers are being saved/restored.
 #include <float_regs_x86_other.h>
 #endif /* __GNUC__ */
 
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <tc_util.h>
 #include "float_context.h"
 #include <stddef.h>

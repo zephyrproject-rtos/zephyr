@@ -38,7 +38,7 @@ SW_ISR_TABLE_DYNAMIC has to be enabled for connecting ISRs at runtime.
 */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <misc/__assert.h>
 #include <toolchain.h>
 #include <sections.h>

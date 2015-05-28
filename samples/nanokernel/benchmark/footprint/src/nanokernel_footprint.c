@@ -40,7 +40,7 @@ volatile int i = 0;		/* counter used by background task */
 /* includes */
 
 #include <misc/printk.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <stdio.h>
 
 #ifdef TEST_reg

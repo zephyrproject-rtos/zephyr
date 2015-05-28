@@ -50,7 +50,7 @@ extern "C" {
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
 #include <stdint.h>

@@ -55,7 +55,7 @@ that have an ISR component should use their own command packet set.
 /* includes */
 
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <microkernel/cmdPkt.h>
 #include <minik.h>
 #include <sections.h>

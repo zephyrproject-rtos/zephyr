@@ -38,7 +38,7 @@ task, depending on how the kernel is configured.
 
 #include <minik.h>
 #include <nanok.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <microkernel.h>
@@ -283,7 +283,7 @@ unsigned char _sys_power_save_flag = 1;
 
 #include <cputype.h>
 #include <nanokernel.h>
-#include <nanokernel/cpu.h>
+#include <arch/cpu.h>
 #include <microkernel/k_types.h>
 #ifdef CONFIG_ADVANCED_IDLE
 #include <advidle.h>
