@@ -540,14 +540,23 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
   };
 }
 /*---------------------------------------------------------------------------*/
-void
+uint8_t
 tcpip_input(struct net_buf *buf)
 {
   process_post_synch(&tcpip_process, PACKET_INPUT, NULL, buf);
+  if (uip_len(buf) == 0) {
+    /* This indicates that there was a parsing/other error
+     * in packet.
+     */
+    return 0;
+  }
+
   uip_len(buf) = 0;
 #if NETSTACK_CONF_WITH_IPV6
   uip_ext_len(buf) = 0;
 #endif /*NETSTACK_CONF_WITH_IPV6*/
+
+  return 1;
 }
 /*---------------------------------------------------------------------------*/
 #if NETSTACK_CONF_WITH_IPV6

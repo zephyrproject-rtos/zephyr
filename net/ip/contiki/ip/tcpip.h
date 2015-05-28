@@ -333,9 +333,11 @@ CCIF extern process_event_t tcpip_event;
  *             deliver an incoming packet to the TCP/IP stack. The
  *             incoming packet must be present in the uip_buf buffer,
  *             and the length of the packet must be in the global
- *             uip_len variable.
+ *             uip_len variable. If 0 is returned, then there was
+ *             an error in the packet and it is discarded. The caller
+ *             can then release the net_buf
  */
-CCIF void tcpip_input(struct net_buf *buf);
+CCIF uint8_t tcpip_input(struct net_buf *buf);
 
 /**
  * \brief Output packet to layer 2

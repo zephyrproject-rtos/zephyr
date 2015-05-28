@@ -352,7 +352,9 @@ static void net_rx_fiber(void)
 		/* Check stack usage (no-op if not enabled) */
 		analyze_stacks(buf, &buf);
 
-		tcpip_input(buf);
+		if (!tcpip_input(buf)) {
+			net_buf_put(buf);
+		}
 	}
 }
 
