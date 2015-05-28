@@ -84,6 +84,10 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 #endif
 
+	case _NANO_ERR_ALLOCATION_FAIL:
+		PR_EXC("**** Kernel Allocation Failure! ****\n");
+		break;
+
 	default:
 		PR_EXC("**** Unknown Fatal Error %d! ****\n", reason);
 		break;
