@@ -44,7 +44,7 @@ This module tests the following ukernel timer routines:
 #include <tc_util.h>
 #include <vxmicro.h>
 
-#define NTIMERS   4     /* This must match the value in the VPF */
+#define NTIMERS  CONFIG_NUM_TIMER_PACKETS
 
 #define WITHIN_ERROR(var, target, epsilon)       \
 		(((var) >= (target)) && ((var) <= (target) + (epsilon)))
