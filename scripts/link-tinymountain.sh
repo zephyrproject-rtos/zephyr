@@ -102,6 +102,13 @@ tinymountain_link()
 	rm elf.tmp
 }
 
+tinymountain_bin_strip()
+{
+	${OBJDUMP} -S ${1} >${2}
+	${OBJCOPY} -S -O binary -R .note -R .comment -R COMMON -R .eh_frame ${1} ${3}
+	${STRIP} -s -o ${4} ${1}
+}
+
 
 # Create ${2} .o file with all symbols from the ${1} object file
 kallsyms()
@@ -158,6 +165,9 @@ cleanup()
 	rm -f ${KERNEL_NAME}.lnk
 	rm -f ${KERNEL_NAME}.map
 	rm -f ${KERNEL_NAME}.elf
+	rm -f ${KERNEL_NAME}.lst
+	rm -f ${KERNEL_NAME}.bin
+	rm -f ${KERNEL_NAME}.strip
 	rm -f staticIdt.o
 	rm -f linker.cmd
 	rm -f final-linker.cmd
@@ -254,6 +264,9 @@ if [ "${SRCARCH}" = "x86" ]; then
 	linker_command final-linker.cmd -DFINAL_LINK
 	tinymountain_link ${KERNEL_NAME}.lnk final-linker.cmd staticIdt.o ${KERNEL_NAME}.elf
 fi
+
+info BIN ${KERNEL_NAME}.bin
+tinymountain_bin_strip ${KERNEL_NAME}.elf ${KERNEL_NAME}.lst ${KERNEL_NAME}.bin ${KERNEL_NAME}.strip
 
 if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
 	info SORTEX ${KERNEL_NAME}
