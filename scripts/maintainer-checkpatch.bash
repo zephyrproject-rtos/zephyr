@@ -48,9 +48,9 @@ checkpatch_switches="\
 "
 ignore_list=BRACES,PRINTK_WITHOUT_KERN_LEVEL,SPLIT_STRING,FILE_PATH_CHANGES
 
-timestamp_bin=${VXMICRO_BASE}/scripts/timestamp
+timestamp_bin=${TIMO_BASE}/scripts/timestamp
 timestamp="${timestamp_bin} -u"
-checkpatch_bin=${VXMICRO_BASE}/scripts/checkpatch.pl
+checkpatch_bin=${TIMO_BASE}/scripts/checkpatch.pl
 checkpatch="${checkpatch_bin} ${checkpatch_switches} --ignore ${ignore_list}"
 
 ts=$(${timestamp})
