@@ -45,6 +45,7 @@
 #include "ip/simple-udp.h"
 
 #include "contiki/os/lib/random.h"
+#include "contiki/ipv6/uip-ds6.h"
 
 struct net_context {
 	/* Connection tuple identifies the connection */
@@ -105,6 +106,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 					uint16_t local_port)
 {
 	int i;
+	uip_ipaddr_t ipaddr;
 	struct net_context *context = NULL;
 
 	nano_sem_take_wait(&contexts_lock);
@@ -131,6 +133,10 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	}
 
 	context_sem_give(&contexts_lock);
+
+	/* Set our local address */
+	memcpy(&ipaddr.u8, local_addr->in6_addr.s6_addr, sizeof(ipaddr.u8));
+	uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
 
 	return context;
 }
