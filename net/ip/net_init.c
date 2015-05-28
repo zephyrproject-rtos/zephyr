@@ -458,6 +458,13 @@ void net_unregister_driver(struct net_driver *drv)
 
 int net_init(void)
 {
+	static uint8_t initialized;
+
+	if (initialized)
+		return -EALREADY;
+
+	initialized = 1;
+
 	net_context_init();
 	net_buf_init();
 	init_tx_queue();
