@@ -11,12 +11,7 @@ fi
 # identify OS source tree root directory
 export TIMO_BASE=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-# prepend VxMicro build system tools to PATH, if not already present
-timo_linux_bin=${TIMO_BASE}/host/x86-linux2/bin
 scripts_path=${TIMO_BASE}/scripts
-echo "${PATH}" | grep -q "${timo_linux_bin}"
-[ $? != 0 ] && export PATH=${timo_linux_bin}:${PATH}
-unset timo_linux_bin
 echo "${PATH}" | grep -q "${scripts_path}"
 [ $? != 0 ] && export PATH=${scripts_path}:${PATH}
 unset scripts_path
