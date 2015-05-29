@@ -58,10 +58,6 @@ extern void _irq_spurious(void *arg);
 _IsrTableEntry_t __isr_table_section _sw_isr_table[CONFIG_NUM_IRQS] = {
 	[0 ...(CONFIG_NUM_IRQS - 1)].arg = (void *)0xABAD1DEA,
 	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _irq_spurious,
-#if defined(CONFIG_CONSOLE_HANDLER)
-	[CONFIG_UART_CONSOLE_IRQ].arg = NULL,
-	[CONFIG_UART_CONSOLE_IRQ].isr = uart_console_isr,
-#endif
 };
 
 #else
