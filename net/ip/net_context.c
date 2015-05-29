@@ -43,6 +43,7 @@
 #include <net/net_socket.h>
 
 #include "ip/simple-udp.h"
+#include "contiki/ipv6/uip-ds6.h"
 
 #include "contiki/os/lib/random.h"
 #include "contiki/ipv6/uip-ds6.h"
@@ -105,9 +106,25 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 					const struct net_addr *local_addr,
 					uint16_t local_port)
 {
+	const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 	int i;
 	uip_ipaddr_t ipaddr;
 	struct net_context *context = NULL;
+	const uip_ds6_addr_t *uip_addr;
+	struct net_addr laddr;
+
+	if (!local_addr || memcmp(&local_addr->in6_addr, &in6addr_any,
+				  sizeof(in6addr_any)) == 0) {
+		uip_addr = uip_ds6_get_global(-1);
+		if (!uip_addr)
+			uip_addr = uip_ds6_get_link_local(-1);
+		if (!uip_addr)
+			return NULL;
+
+		memcpy(&laddr, local_addr, sizeof(struct net_addr));
+		laddr.in6_addr = *(struct in6_addr *)&uip_addr->ipaddr;
+		local_addr = (const struct net_addr *)&laddr;
+	}
 
 	nano_sem_take_wait(&contexts_lock);
 
@@ -125,7 +142,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 			contexts[i].tuple.ip_proto = ip_proto;
 			contexts[i].tuple.remote_addr = (struct net_addr *)remote_addr;
 			contexts[i].tuple.remote_port = remote_port;
-			contexts[i].tuple.local_addr = (struct net_addr *)local_addr;
+			contexts[i].tuple.local_addr = &laddr;
 			contexts[i].tuple.local_port = local_port;
 			context = &contexts[i];
 			break;
