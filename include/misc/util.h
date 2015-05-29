@@ -58,10 +58,6 @@ extern "C" {
 #define INLINE
 #endif
 
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
-
 #ifndef max
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #endif

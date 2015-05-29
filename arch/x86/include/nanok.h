@@ -744,10 +744,6 @@ typedef struct s_NANO {
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
-#ifndef NULL
-#define NULL (void *)0
-#endif
-
 /* variable declarations */
 
 /*

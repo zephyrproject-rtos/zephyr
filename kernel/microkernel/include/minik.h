@@ -33,6 +33,7 @@
 #ifndef MINIK_H
 #define MINIK_H
 
+#include <stddef.h>
 #include <kernel_struct.h>
 #include <kernel_main.h>
 #include <clock_vars.h>

@@ -54,11 +54,6 @@ struct List {
 };
 
 
-
-#ifndef NULL
-#define NULL (void *)0
-#endif
-
 #ifndef INLINED
 extern void InitList(struct list_head *list);
 extern unsigned int TestListEmpty(struct list_head *list);

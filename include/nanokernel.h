@@ -33,6 +33,7 @@
 #ifndef __NANOKERNEL_H__
 #define __NANOKERNEL_H__
 
+#include <stddef.h>
 #include <stdint.h>
 #include <toolchain.h> /* compiler specific configuration options */
 
