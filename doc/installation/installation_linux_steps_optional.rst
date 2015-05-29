@@ -304,7 +304,7 @@ Follow the directions in :ref:`RequiredSteps`
 
 .. code-block:: bash
 
-   make BSP=quark**
+   make BSP=quark ARCH=x86**
 
 #. Use one of these cables for serial output:
 

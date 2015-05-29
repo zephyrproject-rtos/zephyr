@@ -169,17 +169,24 @@ To build a Tiny Mountain example follow these steps:
 .. note::
 
    You can override the default BSP with the one you want by adding
-   :makevar:`BSP=` and the options you want to the make command, for example
-   :command:`make BSP=generic_pc`. The complete options available for the BSP
-   flag can be found at :file:`$TIMO_BASE/arch` under the
-   respective architecture, for example :file:`$TIMO_BASE/arch/x86/generic_pc`.
+   :makevar:`BSP=`. The complete options available for the BSP flag
+   can be found at :file:`$TIMO_BASE/arch` under the respective
+   architecture, for example :file:`$TIMO_BASE/arch/x86/generic_pc`.
+   You need to override the ARCH flag with the architecture that
+   corresponds to your BSP by adding :makevar:`ARCH=` and the options
+   you need to the make command, for example:
+
+   :command:`make BSP=generic_pc ARCH=x86`
+
+   The complete options available for the ARCH flag can be found at
+   :file:`$TIMO_BASE`, for example  :file:`$TIMO_BASE/arch/x86`.
 
 The sample projects for the microkernel are found
-at:file:`$TIMO_BASE/samples/microkernel/apps` and the results are at
+at :file:`$TIMO_BASE/samples/microkernel/apps` and the results are at
 :file:`$SAMPLE_PROJECT/outdir/microkernel.{ bin | elf }`.
 
 For sample projects in the :file:`$TIMO_BASE/samples/nanokernel/apps`
-directory, the results can be found in
+directory, the results can be found at
 :file:`$SAMPLE_PROJECT/outdir/nanokernel.{ bin | elf }`.
 
 Running Your Projects on QEMU
@@ -214,13 +221,13 @@ Run a project using the quark BSP, type:
 
 .. code-block:: bash
 
-   $ make pristine && make BSP=quark qemu
+   $ make pristine && make BSP=quark ARCH=x86 qemu
 
 Run a project using the ARM BSP, type:
 
 .. code-block:: bash
 
-   $ make pristine && make BSP=ti_lm3s6965 qemu
+   $ make pristine && make BSP=ti_lm3s6965 ARCH=arm qemu
 
 Running a Nanokernel Project
 ----------------------------
@@ -236,10 +243,10 @@ Run a project using the quark BSP use the following commands:
 
 .. code-block:: bash
 
-   $ make pristine && make BSP=quark qemu
+   $ make pristine && make BSP=quark ARCH=x86 qemu
 
 Run a project using the ARM BSP use the following commands:
 
 .. code-block:: bash
 
-   $ make pristine && make BSP=ti_lm3s6965 qemu
+   $ make pristine && make BSP=ti_lm3s6965 ARCH=arm qemu
