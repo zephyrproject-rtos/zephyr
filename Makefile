@@ -412,9 +412,6 @@ KBUILD_CFLAGS   := -c -g -std=c99 \
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -c -g -xassembler-with-cpp
-KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE
-KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 LDFLAGS += $(call cc-ldoption,-nostartfiles)
 LDFLAGS += $(call cc-ldoption,-nodefaultlibs)
