@@ -43,6 +43,8 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
+#include "hci_core.h"
+
 #if !defined(CONFIG_BLUETOOTH_DEBUG_GATT)
 #undef BT_DBG
 #define BT_DBG(fmt, ...)
@@ -172,4 +174,94 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 		if (func(attr, user_data) == BT_GATT_ITER_STOP)
 			break;
 	}
+}
+
+int bt_gatt_attr_read_ccc(const bt_addr_le_t *peer,
+			  const struct bt_gatt_attr *attr, void *buf,
+			  uint8_t len, uint16_t offset)
+{
+	struct _bt_gatt_ccc *ccc = attr->user_data;
+	uint16_t value;
+	size_t i;
+
+	for (i = 0; i < ccc->cfg_len; i++) {
+		if (bt_addr_le_cmp(&ccc->cfg[i].peer, peer)) {
+			continue;
+		}
+
+		value = sys_cpu_to_le16(ccc->cfg[i].value);
+		break;
+	}
+
+	/* Default to disable if there is no cfg for the peer */
+	if (i == ccc->cfg_len) {
+		value = 0x0000;
+	}
+
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &value,
+				 sizeof(value));
+}
+
+static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
+{
+	int i;
+	uint16_t value = 0x0000;
+
+	for (i = 0; i < ccc->cfg_len; i++) {
+		if (ccc->cfg[i].value > value) {
+			value = ccc->cfg[i].value;
+		}
+	}
+
+	if (value != ccc->value) {
+		ccc->value = value;
+		ccc->cfg_changed(value);
+	}
+}
+
+int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
+			   const struct bt_gatt_attr *attr, const void *buf,
+			   uint8_t len, uint16_t offset)
+{
+	struct _bt_gatt_ccc *ccc = attr->user_data;
+	const uint16_t *data = buf;
+	size_t i;
+
+	if (len != sizeof(*data) || offset) {
+		return -EINVAL;
+	}
+
+	for (i = 0; i < ccc->cfg_len; i++) {
+		/* Check for existing configuration */
+		if (!bt_addr_le_cmp(&ccc->cfg[i].peer, peer)) {
+			break;
+		}
+	}
+
+	if (i == ccc->cfg_len) {
+		for (i = 0; i < ccc->cfg_len; i++) {
+			/* Check for unused configuration */
+			if (!bt_addr_le_cmp(&ccc->cfg[i].peer,
+					    BT_ADDR_LE_ANY)) {
+				bt_addr_le_copy(&ccc->cfg[i].peer, peer);
+				break;
+			}
+		}
+
+		if (i == ccc->cfg_len) {
+			BT_WARN("No space to store CCC cfg");
+			return -ENOMEM;
+		}
+	}
+
+	ccc->cfg[i].value = sys_le16_to_cpu(*data);
+
+	BT_DBG("handle %u value %u\n", attr->handle, ccc->cfg[i].value);
+
+	/* Update cfg if don't match */
+	if (ccc->cfg[i].value != ccc->value) {
+		gatt_ccc_changed(ccc);
+	}
+
+	return len;
 }

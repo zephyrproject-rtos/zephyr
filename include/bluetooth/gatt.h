@@ -290,6 +290,78 @@ int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
 	.user_data = _value,						\
 }
 
+struct bt_gatt_ccc_cfg {
+	bt_addr_le_t		peer;
+	uint16_t		value;
+};
+
+struct _bt_gatt_ccc {
+	struct bt_gatt_ccc_cfg	*cfg;
+	size_t			cfg_len;
+	uint16_t		value;
+	uint16_t		value_handle;
+	void			(*cfg_changed)(uint16_t value);
+};
+
+/** @brief Read Client Characteristic Configuration Attribute helper
+ *
+ *  Read CCC attribute value storing the result into buffer after
+ *  enconding it.
+ *  NOTE: Only use this with attributes which user_data is a _bt_gatt_ccc.
+ *
+ *  @param peer remote address
+ *  @param attr attribute to read
+ *  @param buf buffer to store the value read
+ *  @param len buffer length
+ *  @param offset start offset
+ *
+ *  @return number of bytes read in case of success or negative values in
+ *  case of error.
+ */
+int bt_gatt_attr_read_ccc(const bt_addr_le_t *peer,
+			  const struct bt_gatt_attr *attr, void *buf,
+			  uint8_t len, uint16_t offset);
+
+/** @brief Write Client Characteristic Configuration Attribute helper
+ *
+ *  Write value in the buffer into CCC attribute.
+ *  NOTE: Only use this with attributes which user_data is a _bt_gatt_ccc.
+ *
+ *  @param peer remote address
+ *  @param attr attribute to read
+ *  @param buf buffer to store the value read
+ *  @param len buffer length
+ *  @param offset start offset
+ *
+ *  @return number of bytes written in case of success or negative values in
+ *  case of error.
+ */
+int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
+			   const struct bt_gatt_attr *attr, const void *buf,
+			   uint8_t len, uint16_t offset);
+
+/** @brief Client Characteristic Configuration Declaration Macro
+ *
+ *  Helper macro to declare a CCC attribute.
+ *
+ *  @param _handle descriptor attribute handle
+ *  @param _value_handle characteristic attribute value handle
+ *  @param _cfg initial configuration
+ *  @param _cfg_changed configuration changed callback
+ */
+#define BT_GATT_CCC(_handle, _value_handle, _cfg, _cfg_changed)		\
+{									\
+	.handle = _handle,						\
+	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
+				     .u16 = BT_UUID_GATT_CCC }),	\
+	.read = bt_gatt_attr_read_ccc,					\
+	.write = bt_gatt_attr_write_ccc,				\
+	.user_data = (&(struct _bt_gatt_ccc) { .cfg = _cfg,		\
+					       .cfg_len = ARRAY_SIZE(_cfg), \
+					       .value_handle = _value_handle, \
+					       .cfg_changed = _cfg_changed, }),\
+}
+
 /** @brief Descriptor Declaration Macro
  *
  *  Helper macro to declare a descriptor attribute.
