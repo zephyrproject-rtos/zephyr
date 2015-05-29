@@ -129,38 +129,11 @@ static struct bt_gatt_chrc hrcpc_chrc = {
 	.uuid = &hrcpc_uuid,
 };
 
-static struct bt_uuid ccc_uuid = {
-	.type = BT_UUID_16,
-	.u16 = BT_UUID_GATT_CCC,
-};
+struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 
-static uint16_t hrmc_ccc = 0x0000;
-
-static int read_ccc(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
-		    void *buf, uint8_t len, uint16_t offset)
+static void hrmc_ccc_cfg_changed(uint16_t value)
 {
-	uint16_t *value = attr->user_data;
-	uint16_t data = sys_cpu_to_le16(*value);
-
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &data,
-				 sizeof(data));
-}
-
-static int write_ccc(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
-		     const void *buf, uint8_t len, uint16_t offset)
-{
-	uint16_t *value = attr->user_data;
-	const uint16_t *data = buf;
-
-	if (len != sizeof(*data) || offset) {
-		return -EINVAL;
-	}
-
-	/* TODO: Write per client */
-
-	*value = sys_le16_to_cpu(*data);
-
-	return len;
+	/* TODO: Handle value */
 }
 
 static int read_blsc(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
@@ -189,7 +162,12 @@ static struct bt_gatt_chrc blvl_chrc = {
 	.uuid = &blvl_uuid,
 };
 
-static uint16_t blvl_ccc = 0x0000;
+static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+
+static void blvl_ccc_cfg_changed(uint16_t value)
+{
+	/* TODO: Handle value */
+}
 
 static int read_blvl(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 		     void *buf, uint8_t len, uint16_t offset)
@@ -216,8 +194,6 @@ static struct bt_gatt_chrc ct_chrc = {
 	.value_handle = 0x0014,
 	.uuid = &ct_uuid,
 };
-
-static uint16_t ct_ccc = 0x0000;
 
 static void generate_current_time(uint8_t *buf)
 {
@@ -246,6 +222,13 @@ static void generate_current_time(uint8_t *buf)
 	buf[9] = 0; /* No update, change, etc */
 }
 
+static struct bt_gatt_ccc_cfg ct_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+
+static void ct_ccc_cfg_changed(uint16_t value)
+{
+	/* TODO: Handle value */
+}
+
 static int read_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 		   void *buf, uint8_t len, uint16_t offset)
 {
@@ -268,7 +251,7 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0006, &hrs_uuid),
 	BT_GATT_CHARACTERISTIC(0x0007, &hrmc_chrc),
 	BT_GATT_DESCRIPTOR(0x0008, &hrmc_uuid, NULL, NULL, NULL),
-	BT_GATT_DESCRIPTOR(0x0009, &ccc_uuid, read_ccc, write_ccc, &hrmc_ccc),
+	BT_GATT_CCC(0x0009, 0x0008, hrmc_ccc_cfg, hrmc_ccc_cfg_changed),
 	BT_GATT_CHARACTERISTIC(0x000a, &bslc_chrc),
 	BT_GATT_DESCRIPTOR(0x000b, &bslc_uuid, read_blsc, NULL, NULL),
 	BT_GATT_CHARACTERISTIC(0x000c, &hrcpc_chrc),
@@ -278,12 +261,12 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x000e, &bas_uuid),
 	BT_GATT_CHARACTERISTIC(0x000f, &blvl_chrc),
 	BT_GATT_DESCRIPTOR(0x0010, &blvl_uuid, read_blvl, NULL, NULL),
-	BT_GATT_DESCRIPTOR(0x0011, &ccc_uuid, read_ccc, write_ccc, &blvl_ccc),
+	BT_GATT_CCC(0x0011, 0x0010, blvl_ccc_cfg, blvl_ccc_cfg_changed),
 	/* Current Time Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(0x0012, &cts_uuid),
 	BT_GATT_CHARACTERISTIC(0x0013, &ct_chrc),
 	BT_GATT_DESCRIPTOR(0x0014, &ct_uuid, read_ct, NULL, NULL),
-	BT_GATT_DESCRIPTOR(0x0015, &ccc_uuid, read_ccc, write_ccc, &ct_ccc),
+	BT_GATT_CCC(0x0015, 0x0014, ct_ccc_cfg, ct_ccc_cfg_changed),
 };
 
 static const struct bt_eir ad[] = {
