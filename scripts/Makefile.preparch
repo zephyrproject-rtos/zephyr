@@ -33,13 +33,13 @@ define filechk_prj.vpf
 endef
 
 #Specific source code generation for Viper
-misc/generated/nodes/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf \
+misc/generated/sysgen/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf \
 				$(PROJECT_BASE)/$(VPFILE) \
 				include/config/auto.conf FORCE
 	$(call filechk,prj.vpf)
 
-misc/generated/nodes/microkernel_objects.h: misc/generated/nodes/prj.vpf FORCE
-	$(Q)$(srctree)/scripts/sysgen.py $(CURDIR)/misc/generated/nodes/prj.vpf $(CURDIR)/misc/generated/nodes/
+misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.vpf FORCE
+	$(Q)$(srctree)/scripts/sysgen.py $(CURDIR)/misc/generated/sysgen/prj.vpf $(CURDIR)/misc/generated/sysgen/
 
 define filechk_configs.c
 	(echo "/* file is auto-generated, do not modify ! */"; \

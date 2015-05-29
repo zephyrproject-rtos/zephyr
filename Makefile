@@ -382,7 +382,7 @@ CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
 PROJECTINCLUDE := $(strip -I$(srctree)/include/microkernel \
-		-I$(CURDIR)/misc/generated/nodes) \
+		-I$(CURDIR)/misc/generated/sysgen) \
 		$(USERINCLUDE)
 
 # Use TIMOINCLUDE when you must reference the include/ directory.
@@ -942,7 +942,7 @@ archprepare_common = $(strip \
 		include/generated/offsets.h \
 		)
 
-archprepare_microkernel-y = misc/generated/nodes/microkernel_objects.h
+archprepare_microkernel-y = misc/generated/sysgen/kernel_main.c
 
 archprepare_prereq = $(strip \
 		$(archprepare_common) \
@@ -1066,10 +1066,9 @@ kselftest:
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR)
 
-CLEAN_FILES += misc/generated/nodes/kernel_main.c \
-		misc/generated/nodes/microkernel_objects.h \
-		misc/generated/nodes/vxmicro.h \
-		misc/generated/nodes/prj.vpf
+CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
+		misc/generated/sysgen/vxmicro.h \
+		misc/generated/sysgen/prj.vpf
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
