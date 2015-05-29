@@ -71,8 +71,6 @@ typedef int (*kevent_handler_t)(int event);
 #define TICKS_UNLIMITED (-1)
 #define TICKS_NONE 0
 
-#define INVALID_OBJECT (0xffffffff)		/* invalid microkernel object id */
-
 struct k_args;
 
 struct k_block {

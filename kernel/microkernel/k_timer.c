@@ -254,32 +254,26 @@ void _k_timer_alloc(struct k_args *P)
 	GETTIMER(T);
 	P->Args.c1.timer = T;
 
-	if (T) {
-		GETARGS(A);
-		T->Args = A;
-		T->duration = -1; /* -1 indicates that timer is disabled */
-	}
+	GETARGS(A);
+	T->Args = A;
+	T->duration = -1; /* -1 indicates that timer is disabled */
 }
 
 /*******************************************************************************
 *
 * task_timer_alloc - allocate a timer and return its object identifier
 *
-* This routine allocates a timer object and returns its identifier,
-* or INVALID_OBJECT if no timer is available.
-*
-* RETURNS: timer identifier on success, INVALID_OBJECT on error
+* RETURNS: timer identifier
 */
 
 ktimer_t task_timer_alloc(void)
 {
 	struct k_args A;
-	struct k_timer *timer;
 
 	A.Comm = TALLOC;
 	KERNEL_ENTRY(&A);
-	timer = A.Args.c1.timer;
-	return timer ? _timer_ptr_to_id(timer) : INVALID_OBJECT;
+
+	return _timer_ptr_to_id(A.Args.c1.timer);
 }
 
 /*******************************************************************************
