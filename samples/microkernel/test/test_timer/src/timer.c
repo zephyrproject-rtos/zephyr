@@ -44,6 +44,8 @@ This module tests the following ukernel timer routines:
 #include <tc_util.h>
 #include <vxmicro.h>
 
+extern struct nano_lifo _k_timer_free;    /* For white box testing only */
+
 #define NTIMERS  CONFIG_NUM_TIMER_PACKETS
 
 #define WITHIN_ERROR(var, target, epsilon)       \
@@ -242,9 +244,8 @@ int testLowTimerOneShot(void)
 * testLowTimerGet - test the task_timer_alloc() API
 *
 * This routine allocates all the timers in the system using task_timer_alloc().
-* It verifies that once all the timers have been allocated, another call to
-* task_timer_alloc() will return INVALID_OBJECT. It then frees the allocated
-* timers using task_timer_free().
+* It verifies that all the allocated timers have unique IDs before freeing
+* them using task_timer_free().
 *
 * This routine also does some partial testing of task_timer_free().  That is,
 * it checks that timers that have been freed are available to be allocated
@@ -257,22 +258,25 @@ int testLowTimerGet(void)
 {
 	int  i;
 	int  j;
+	int  k;
 
 	for (j = 0; j < 2; j++) {
 		for (i = 0; i < NTIMERS; i++) {
 			pTimer[i] = task_timer_alloc();
-			if (pTimer[i] == INVALID_OBJECT) {
-				TC_ERROR("** task_timer_alloc() unexpectedly returned "
-						 "INVALID_OBJECT\n");
-				return TC_FAIL;
+
+			for (k = 0; k < i; k++) {
+				if (pTimer[i] == pTimer[k]) {
+					TC_ERROR("** task_timer_alloc() did not return a unique "
+							"timer ID.\n");
+					return TC_FAIL;
+				}
 			}
 		}
 
-		pTimer[NTIMERS] = task_timer_alloc();
-		if (pTimer[NTIMERS] != INVALID_OBJECT) {
-			TC_ERROR("** task_timer_alloc() unexpectedly did not return "
-					 "INVALID_OBJECT\n");
-			return TC_FAIL;
+		/* Whitebox test to ensure that all timers were allocated. */
+
+		if (_k_timer_free.list != NULL) {
+			TC_ERROR("** Not all timers were allocated!\n");
 		}
 
 		for (i = 0; i < NTIMERS; i++) {
