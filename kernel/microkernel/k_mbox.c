@@ -131,10 +131,10 @@ static int match(struct k_args *Reader, struct k_args *Writer)
 *
 * prepare_transfer -
 *
-* RETURNS: TRUE or FALSE
+* RETURNS: true or false
 */
 
-static BOOL prepare_transfer(struct k_args *move,
+static bool prepare_transfer(struct k_args *move,
 					    struct k_args *reader,
 					    struct k_args *writer)
 {
@@ -157,7 +157,7 @@ static BOOL prepare_transfer(struct k_args *move,
 	if (move) {
 		/* { move != NULL, which means full data exchange } */
 
-		BOOL all_data_present = TRUE;
+		bool all_data_present = true;
 		move->Comm = MVD_REQ;
 		/*
 		 * transfer the data with the highest
@@ -173,7 +173,7 @@ static BOOL prepare_transfer(struct k_args *move,
 
 		/* reader: */
 		if (reader->Args.m1.mess.rx_data == NULL) {
-			all_data_present = FALSE;
+			all_data_present = false;
 			__ASSERT_NO_MSG(0 == reader->Args.m1.mess.extra
 					    .transfer); /* == extra.sema */
 			reader->Args.m1.mess.extra.transfer = move;
@@ -329,7 +329,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 	struct k_args *CopyReader;
 	struct k_args *CopyWriter;
 	struct k_args *temp;
-	BOOL bAsync;
+	bool bAsync;
 
 	bAsync = ISASYNCMSG(&Writer->Args.m1.mess);
 

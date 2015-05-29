@@ -85,8 +85,8 @@ void ChxxxSetReqType(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType);
 
 CHREQ_STATUS ChReqGetStatus(struct k_chproc *pChProc);
 void ChReqSetStatus(struct k_chproc *pChProc, CHREQ_STATUS Status);
-int /*BOOL */ ChReqSizeXferred(struct k_chproc *pChProc);
-int /*BOOL */ ChReqSizeLeft(struct k_chproc *pChProc);
+int ChReqSizeXferred(struct k_chproc *pChProc);
+int ChReqSizeLeft(struct k_chproc *pChProc);
 
 TIME_TYPE ChxxxGetTimeType(K_ARGS_ARGS *pChxxx);
 void ChxxxSetTimeType(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType);

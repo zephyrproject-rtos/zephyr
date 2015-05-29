@@ -36,6 +36,7 @@ BSP-specific timestamp support for the tickless idle test.
 */
 
 #include <tc_util.h>
+#include <stddef.h>
 
 #if defined(CONFIG_BSP_TI_LM3S6965_QEMU)
 /*
@@ -163,7 +164,7 @@ void _TimestampClose(void)
 #elif defined(CONFIG_BSP_FSL_FRDM_K64F)
 /* Freescale FRDM-K64F target - use RTC (prescale value) */
 
-#define _COUNTDOWN_TIMER FALSE
+#define _COUNTDOWN_TIMER false
 
 #define _CLKGATECTRL *((volatile uint32_t *)0x4004803C)
 #define _CLKGATECTRL_TIMESTAMP_EN (1 << 29)

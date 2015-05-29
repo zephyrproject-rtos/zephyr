@@ -51,12 +51,12 @@ void K_ChSendReq(struct k_args *RequestOrig)
 
 	kpipe_t pipeId = RequestOrig->Args.ChReq.ReqInfo.ChRef.Id;
 
-	BOOL bAsync;
+	bool bAsync;
 
 	if (_ASYNCREQ == ChxxxGetReqType(&(RequestOrig->Args))) {
-		bAsync = TRUE;
+		bAsync = true;
 	} else {
-		bAsync = FALSE;
+		bAsync = false;
 	}
 
 	if (!bAsync) {

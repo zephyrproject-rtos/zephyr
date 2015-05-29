@@ -110,7 +110,7 @@ static void MarkerLinkToListAfter(struct marker aMarkers[],
 }
 
 static int MarkerAddLast(struct marker_list *pMarkerList,
-						 unsigned char *pointer, int iSize, BOOL bXferBusy)
+						 unsigned char *pointer, int iSize, bool bXferBusy)
 {
 	int i = MarkerFindFree(pMarkerList->aMarkers);
 
@@ -242,26 +242,26 @@ static int ScanMarkers(struct marker_list *pMarkerList,
 					   int *piSizeBWA, int *piSizeAWA, int *piNbrPendingXfers)
 {
 	struct marker *pM;
-	BOOL bMarkersAreNowAWA;
+	bool bMarkersAreNowAWA;
 	int index;
 
 	index = pMarkerList->iFirstMarker;
 
 	__ASSERT_NO_MSG(-1 != index);
 
-	bMarkersAreNowAWA = FALSE;
+	bMarkersAreNowAWA = false;
 	do {
 		int index_next;
 
 		__ASSERT_NO_MSG(index == pMarkerList->iFirstMarker);
 
 		if (index == pMarkerList->iAWAMarker) {
-			bMarkersAreNowAWA = TRUE; /* from now on, everything is AWA */
+			bMarkersAreNowAWA = true; /* from now on, everything is AWA */
 		}
 
 		pM = &(pMarkerList->aMarkers[index]);
 
-		if (pM->bXferBusy == TRUE) {
+		if (pM->bXferBusy == true) {
 			break;
 		}
 
@@ -319,10 +319,10 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff)
 	pChBuff->pEnd = pChBuff->pEndOrig;
 	pChBuff->pWrite = pChBuff->pBegin;
 	pChBuff->pWriteGuard = NULL;
-	pChBuff->bWriteWA = FALSE;
+	pChBuff->bWriteWA = false;
 	pChBuff->pRead = pChBuff->pBegin;
 	pChBuff->pReadGuard = NULL;
-	pChBuff->bReadWA = TRUE; /* YES!! */
+	pChBuff->bReadWA = true; /* YES!! */
 	pChBuff->iFreeSpaceCont = pChBuff->iBuffSize;
 	pChBuff->iFreeSpaceAWA = 0;
 	pChBuff->iNbrPendingReads = 0;
@@ -487,7 +487,7 @@ static int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
 
 	ChannelCheck4Intrusion(pChBuff, pChBuff->pWrite, iSize);
 
-	i = MarkerAddLast(&(pChBuff->WriteMarkers), pChBuff->pWrite, iSize, TRUE);
+	i = MarkerAddLast(&(pChBuff->WriteMarkers), pChBuff->pWrite, iSize, true);
 	if (i != -1) {
 		/* adjust iNbrPendingWrites */
 		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingWrites);
@@ -509,7 +509,7 @@ static int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
 
 static void AsyncEnQFinished(struct chbuff *pChBuff, int iTransferID)
 {
-	pChBuff->WriteMarkers.aMarkers[iTransferID].bXferBusy = FALSE;
+	pChBuff->WriteMarkers.aMarkers[iTransferID].bXferBusy = false;
 
 	if (pChBuff->WriteMarkers.iFirstMarker == iTransferID) {
 		int iNewFirstMarker = ScanMarkers(&(pChBuff->WriteMarkers),
@@ -559,8 +559,8 @@ int BuffEnQA(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite,
 		pChBuff->pWrite = pChBuff->pBegin;
 		pChBuff->iFreeSpaceCont = pChBuff->iFreeSpaceAWA;
 		pChBuff->iFreeSpaceAWA = 0;
-		pChBuff->bWriteWA = TRUE;
-		pChBuff->bReadWA = FALSE;
+		pChBuff->bWriteWA = true;
+		pChBuff->bReadWA = false;
 		pChBuff->ReadMarkers.iAWAMarker = -1;
 	} else {
 		pChBuff->iFreeSpaceCont -= iSize;
@@ -597,7 +597,7 @@ static int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
 
 	ChannelCheck4Intrusion(pChBuff, pChBuff->pRead, iSize);
 
-	i = MarkerAddLast(&(pChBuff->ReadMarkers), pChBuff->pRead, iSize, TRUE);
+	i = MarkerAddLast(&(pChBuff->ReadMarkers), pChBuff->pRead, iSize, true);
 	if (i != -1) {
 		/* adjust iNbrPendingReads */
 		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingReads);
@@ -619,7 +619,7 @@ static int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
 
 static void AsyncDeQFinished(struct chbuff *pChBuff, int iTransferID)
 {
-	pChBuff->ReadMarkers.aMarkers[iTransferID].bXferBusy = FALSE;
+	pChBuff->ReadMarkers.aMarkers[iTransferID].bXferBusy = false;
 
 	if (pChBuff->ReadMarkers.iFirstMarker == iTransferID) {
 		int iNewFirstMarker = ScanMarkers(&(pChBuff->ReadMarkers),
@@ -669,8 +669,8 @@ int BuffDeQA(struct chbuff *pChBuff, int iSize, unsigned char **ppRead,
 		pChBuff->pRead = pChBuff->pBegin;
 		pChBuff->iAvailDataCont = pChBuff->iAvailDataAWA;
 		pChBuff->iAvailDataAWA = 0;
-		pChBuff->bWriteWA = FALSE;
-		pChBuff->bReadWA = TRUE;
+		pChBuff->bWriteWA = false;
+		pChBuff->bReadWA = true;
 		pChBuff->WriteMarkers.iAWAMarker = -1;
 	} else {
 		pChBuff->iAvailDataCont -= iSize;
@@ -701,7 +701,7 @@ void BuffDeQA_End(struct chbuff *pChBuff, int iTransferID,
 /* Buffer instrusion */
 /**********************/
 
-static BOOL AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
+static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 								 unsigned char *pBegin2, int iSize2)
 {
 	unsigned char *pEnd1;
@@ -719,22 +719,22 @@ static BOOL AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 		/* check intrusion of pBegin2 in [pBegin1, pEnd1( */
 		if (pBegin2 < pEnd1) {
 			/* intrusion!! */
-			return TRUE;
+			return true;
 		} else {
 			/* pBegin2 lies outside and to the right of the first area,
 			  intrusion is impossible */
-			return FALSE;
+			return false;
 		}
 	} else {
 		/* pBegin2 lies to the left of (pBegin1, pEnd1) */
 		/* check end pointer: is pEnd2 in (pBegin1, pEnd1( ?? */
 		if (pEnd2 > pBegin1) {
 			/* intrusion!! */
-			return TRUE;
+			return true;
 		} else {
 			/* pEnd2 lies outside and to the left of the first area,
 			   intrusion is impossible */
-			return FALSE;
+			return false;
 		}
 	}
 }

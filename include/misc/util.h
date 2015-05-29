@@ -58,18 +58,6 @@ extern "C" {
 #define INLINE
 #endif
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef TRUE
-#define TRUE (!FALSE)
-#endif
-
-#ifndef BOOL
-#define BOOL int
-#endif
-
 #ifndef NULL
 #define NULL ((void *)0)
 #endif

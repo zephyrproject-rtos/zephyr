@@ -183,7 +183,7 @@ struct k_mrec {
 struct marker {
 	unsigned char *pointer; /* NULL == non valid marker == free */
 	int size;
-	BOOL bXferBusy;
+	bool bXferBusy;
 	int Prev; /* -1 == no predecessor */
 	int Next; /* -1 == no successor */
 };
@@ -217,8 +217,8 @@ struct chbuff {
 	int iAvailDataCont;
 	int iAvailDataAWA; /* AWA == After Wrap Around */
 	int iNbrPendingWrites;
-	BOOL bWriteWA;
-	BOOL bReadWA;
+	bool bWriteWA;
+	bool bReadWA;
 	BUFF_STATE BuffState;
 	struct marker_list WriteMarkers;
 	struct marker_list ReadMarkers;

@@ -698,8 +698,8 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 	struct k_args *pNextWriter;
 
 	do {
-		BOOL bALLNWriterNoGo = FALSE;
-		BOOL bALLNReaderNoGo = FALSE;
+		bool bALLNWriterNoGo = false;
+		bool bALLNReaderNoGo = false;
 
 		/* Reader */
 
@@ -780,7 +780,7 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 					pWriter->Args.ChProc.iSizeXferred;
 
 				if (iSizeDataInWriter > iTotalSpace2Write) {
-					bALLNWriterNoGo = TRUE;
+					bALLNWriterNoGo = true;
 				}
 			}
 		}
@@ -808,7 +808,7 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 					pReader->Args.ChProc.iSizeXferred;
 
 				if (iSizeFreeSpaceInReader > iTotalData2Read) {
-					bALLNReaderNoGo = TRUE;
+					bALLNReaderNoGo = true;
 				}
 			}
 		}

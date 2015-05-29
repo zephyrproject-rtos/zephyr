@@ -48,6 +48,7 @@ Scenarios tested include:
 /* includes */
 
 #include <tc_util.h>
+#include <stdbool.h>
 #include <vxmicro.h>
 
 /* defines */
@@ -105,15 +106,15 @@ void printMyData(void)
 * verifyRetValue - verify return value
 *
 * This routine verifies current value against expected value
-* and returns TRUE if they are the same.
+* and returns true if they are the same.
 *
 * \param expectRetValue     expect value
 * \param currentRetValue    current value
 *
-* RETURNS:  TRUE, FALSE
+* RETURNS:  true, false
 */
 
-BOOL verifyRetValue(int expectRetValue, int currentRetValue)
+bool verifyRetValue(int expectRetValue, int currentRetValue)
 {
 	return (expectRetValue == currentRetValue);
 } /* verifyRetValue */

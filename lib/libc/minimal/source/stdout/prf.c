@@ -32,13 +32,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <string.h>
-
-#ifndef FALSE
-#define	FALSE	0
-#define	TRUE	1
-#endif
 
 #ifndef MAXFLD
 #define	MAXFLD	200
@@ -112,7 +108,7 @@ static int _to_octal(char *buf, uint32_t value, int alt_form, int precision)
 			precision = i;
 			if ((temp != 0) && alt_form)
 				*buf++ = '0';
-			alt_form = FALSE;
+			alt_form = false;
 			*buf++ = (char) (temp + '0');
 		}
 	}
@@ -360,9 +356,9 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
 		else
 			exp -= (127 - 1);	/* +1 since .1 vs 1. */
 		fract[1] |= 0x80000000;
-		decexp = TRUE;		/* Wasn't zero */
+		decexp = true;		/* Wasn't zero */
 	} else
-		decexp = FALSE;		/* It was zero */
+		decexp = false;		/* It was zero */
 
 	if (decexp && ((full && (double_temp[1] & 0x80000000))
 					|| (!full && (double_temp[0] & 0x80000000)))) {
@@ -409,10 +405,10 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
 
 	if (precision < 0)
 		precision = 6;		/* Default precision if none given */
-	prune_zero = FALSE;		/* Assume trailing 0's allowed     */
+	prune_zero = false;		/* Assume trailing 0's allowed     */
 	if ((c == 'g') || (c == 'G')) {
 		if (!falt && (precision > 0))
-			prune_zero = TRUE;
+			prune_zero = true;
 		if ((decexp < (-4 + 1)) || (decexp > (precision + 1))) {
 			if (c == 'g')
 				c = 'e';
@@ -573,26 +569,26 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 			else
 				count++;
 		} else {
-			fminus = fplus = fspace = falt = FALSE;
+			fminus = fplus = fspace = falt = false;
 			pad = ' ';		/* Default pad character    */
 			precision = -1;	/* No precision specified   */
 
 			while (strchr("-+ #0", (c = *format++)) != NULL) {
 				switch (c) {
 				case '-':
-					fminus = TRUE;
+					fminus = true;
 					break;
 
 				case '+':
-					fplus = TRUE;
+					fplus = true;
 					break;
 
 				case ' ':
-					fspace = TRUE;
+					fspace = true;
 					break;
 
 				case '#':
-					falt = TRUE;
+					falt = true;
 					break;
 
 				case '0':
@@ -608,7 +604,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 				/* Is the width a parameter? */
 				width = (int32_t) va_arg(vargs, int32_t);
 				if (width < 0) {
-					fminus = TRUE;
+					fminus = true;
 					width = -width;
 				}
 				c = *format++;
@@ -665,13 +661,13 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 				}
 			}
 
-			need_justifying = FALSE;
+			need_justifying = false;
 			prefix = 0;
 			switch (c) {
 			case 'c':
 				buf[0] = (char) ((int32_t) va_arg(vargs, int32_t));
 				buf[1] = '\0';
-				need_justifying = TRUE;
+				need_justifying = true;
 				c = 1;
 				break;
 
@@ -681,7 +677,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 				c = _to_dec(buf, int32_temp, fplus, fspace, precision);
 				if (fplus || fspace || (int32_temp < 0))
 					prefix = 1;
-				need_justifying = TRUE;
+				need_justifying = true;
 				if (precision != -1)
 					pad = ' ';
 				break;
@@ -715,7 +711,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 								fspace, precision);
 				if (fplus || fspace || (buf[0] == '-'))
 					prefix = 1;
-				need_justifying = TRUE;
+				need_justifying = true;
 				break;
 
 			case 'n':
@@ -726,15 +722,15 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 			case 'o':
 				uint32_temp = (uint32_t) va_arg(vargs, uint32_t);
 				c = _to_octal(buf, uint32_temp, falt, precision);
-				need_justifying = TRUE;
+				need_justifying = true;
 				if (precision != -1)
 					pad = ' ';
 				break;
 
 			case 'p':
 				uint32_temp = (uint32_t) va_arg(vargs, uint32_t);
-				c = _to_hex(buf, uint32_temp, TRUE, 8, (int) 'x');
-				need_justifying = TRUE;
+				c = _to_hex(buf, uint32_temp, true, 8, (int) 'x');
+				need_justifying = true;
 				if (precision != -1)
 					pad = ' ';
 				break;
@@ -751,14 +747,14 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 					c = precision;
 				if (c > 0) {
 					memcpy(buf, cptr_temp, (size_t) c);
-					need_justifying = TRUE;
+					need_justifying = true;
 				}
 				break;
 
 			case 'u':
 				uint32_temp = (uint32_t) va_arg(vargs, uint32_t);
 				c = _to_udec(buf, uint32_temp, precision);
-				need_justifying = TRUE;
+				need_justifying = true;
 				if (precision != -1)
 					pad = ' ';
 				break;
@@ -769,7 +765,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 				c = _to_hex(buf, uint32_temp, falt, precision, c);
 				if (falt)
 					prefix = 2;
-				need_justifying = TRUE;
+				need_justifying = true;
 				if (precision != -1)
 					pad = ' ';
 				break;
