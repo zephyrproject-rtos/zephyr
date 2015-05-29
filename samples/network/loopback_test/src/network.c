@@ -100,8 +100,8 @@ char fiberStack[STACKSIZE];
 struct nano_sem nanoSemTask;
 struct nano_sem nanoSemFiber;
 
-extern const struct in6_addr in6addr_any;
-extern const struct in6_addr in6addr_loopback;
+const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;            /* ::  */
+const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;  /* ::1 */
 
 static struct net_addr any_addr;
 static struct net_addr loopback_addr;

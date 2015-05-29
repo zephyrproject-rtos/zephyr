@@ -50,9 +50,6 @@
 #include <net/net_ip.h>
 #include <net/net_socket.h>
 
-const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;            /* ::  */
-const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;  /* ::1 */
-
 /* The following uIP includes are for testing purposes only. Never
  * ever use them in your application.
  */
@@ -61,9 +58,14 @@ const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;  /* ::1 */
 
 static int net_driver_loopback_open(void)
 {
-	uint8_t eui64[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};
+	const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
+	uint8_t eui64[] = { };
 
 	net_set_mac(eui64, sizeof(eui64));
+
+	if (!uip_ds6_addr_add((uip_ipaddr_t *)&in6addr_loopback, 0,
+				ADDR_MANUAL))
+		return -EINVAL;
 
 	if (!uip_ds6_nbr_add((uip_ipaddr_t *)&in6addr_loopback,
 				&uip_lladdr, 0, NBR_REACHABLE)) {
