@@ -50,7 +50,7 @@ extern void _SysNmiOnReset(void);
 
 #ifdef CONFIG_RUNTIME_NMI
 typedef void (*_NmiHandler_t)(void);
-static handler = _SysNmiOnReset;
+static _NmiHandler_t handler = _SysNmiOnReset;
 
 /*******************************************************************************
 *
