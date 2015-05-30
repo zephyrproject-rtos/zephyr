@@ -44,6 +44,7 @@
 #include <bluetooth/bluetooth.h>
 
 #include "hci_core.h"
+#include "keys.h"
 #include "conn.h"
 #include "l2cap.h"
 #include "smp.h"

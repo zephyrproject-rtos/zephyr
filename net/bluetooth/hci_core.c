@@ -44,6 +44,7 @@
 #include <bluetooth/hci.h>
 
 #include "hci_core.h"
+#include "keys.h"
 #include "conn.h"
 #include "l2cap.h"
 
@@ -66,8 +67,6 @@ static nano_context_id_t cmd_rx_fiber_id;
 #endif
 
 static struct bt_dev dev;
-
-static struct bt_keys key_list[CONFIG_BLUETOOTH_MAX_PAIRED];
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
@@ -114,59 +113,6 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr)
 	return str;
 }
 #endif /* CONFIG_BLUETOOTH_DEBUG */
-
-struct bt_keys *bt_keys_create(const bt_addr_le_t *addr)
-{
-	struct bt_keys *keys;
-	int i;
-
-	BT_DBG("%s\n", bt_addr_le_str(addr));
-
-	keys = bt_keys_find(addr);
-	if (keys) {
-		return keys;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(key_list); i++) {
-		keys = &key_list[i];
-
-		if (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
-			bt_addr_le_copy(&keys->addr, addr);
-			BT_DBG("created keys %p\n", keys);
-			return keys;
-		}
-	}
-
-	BT_DBG("no match\n");
-
-	return NULL;
-}
-
-struct bt_keys *bt_keys_find(const bt_addr_le_t *addr)
-{
-	int i;
-
-	BT_DBG("%s\n", bt_addr_le_str(addr));
-
-	for (i = 0; i < ARRAY_SIZE(key_list); i++) {
-		struct bt_keys *keys = &key_list[i];
-
-		if (!bt_addr_le_cmp(&keys->addr, addr)) {
-			BT_DBG("found keys %p\n", keys);
-			return keys;
-		}
-	}
-
-	BT_DBG("no match\n");
-
-	return NULL;
-}
-
-void bt_keys_clear(struct bt_keys *keys)
-{
-	BT_DBG("keys %p\n", keys);
-	memset(keys, 0, sizeof(*keys));
-}
 
 struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 {
