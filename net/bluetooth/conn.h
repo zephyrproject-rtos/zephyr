@@ -55,6 +55,8 @@ struct bt_conn {
 	/* Queue for outgoing ACL data */
 	struct nano_fifo	tx_queue;
 
+	struct bt_keys		*keys;
+
 	/* Fixed channel contexts */
 	struct bt_conn_l2cap	l2cap;
 	void			*att;
