@@ -57,6 +57,9 @@ struct bt_smp {
 	/* The connection this context is associated with */
 	struct bt_conn		*conn;
 
+	/* If we're waiting for an encryption change event */
+	bool			pending_encrypt;
+
 	/* Pairing Request PDU */
 	uint8_t			preq[7];
 
@@ -438,6 +441,8 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("generated STK %s\n", h(keys->slave_ltk.val, 16));
 
+	smp->pending_encrypt = true;
+
 	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
 				    sizeof(*rsp));
 	if (!rsp_buf) {
@@ -598,6 +603,12 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 	if (!smp || !conn->encrypt) {
 		return;
 	}
+
+	if (!smp->pending_encrypt) {
+		return;
+	}
+
+	smp->pending_encrypt = false;
 
 	keys = bt_keys_get_addr(&conn->dst);
 	if (!keys) {
