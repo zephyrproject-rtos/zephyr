@@ -417,7 +417,7 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
-	keys = bt_keys_create(&conn->dst);
+	keys = bt_keys_get_type(BT_KEYS_SLAVE_LTK, &conn->dst);
 	if (!keys) {
 		BT_ERR("Unable to create new keys\n");
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -425,7 +425,7 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 
 	err = smp_s1(smp->tk, smp->prnd, smp->rrnd, keys->slave_ltk.val);
 	if (err) {
-		bt_keys_clear(keys);
+		bt_keys_clear(keys, BT_KEYS_SLAVE_LTK);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -438,7 +438,7 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
 				    sizeof(*rsp));
 	if (!rsp_buf) {
-		bt_keys_clear(keys);
+		bt_keys_clear(keys, BT_KEYS_SLAVE_LTK);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -534,13 +534,14 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 		return;
 	}
 
-	keys = bt_keys_find(&conn->dst);
+	keys = bt_keys_get_addr(&conn->dst);
 	if (!keys) {
-		BT_ERR("Unable to look up keys for conn %p\n", conn);
+		BT_ERR("Unable to look up keys for %s\n", &conn->dst);
 		return;
 	}
 
 	if (!smp->local_dist) {
+		bt_keys_clear(keys, BT_KEYS_ALL);
 		return;
 	}
 

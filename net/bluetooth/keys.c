@@ -40,57 +40,106 @@
 #include "hci_core.h"
 #include "keys.h"
 
-static struct bt_keys key_list[CONFIG_BLUETOOTH_MAX_PAIRED];
+#define bt_keys_foreach(list, cur, member)   \
+	for (cur = list; *cur; cur = &(*cur)->member)
 
-struct bt_keys *bt_keys_create(const bt_addr_le_t *addr)
+static struct bt_keys key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
+
+static struct bt_keys *slave_ltks;
+
+struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
 	int i;
 
 	BT_DBG("%s\n", bt_addr_le_str(addr));
 
-	keys = bt_keys_find(addr);
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		keys = &key_pool[i];
+
+		if (!bt_addr_le_cmp(&keys->addr, addr)) {
+			return keys;
+		}
+
+		if (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
+			bt_addr_le_copy(&keys->addr, addr);
+			BT_DBG("created %p for %s\n", keys,
+			       bt_addr_le_str(addr));
+			return keys;
+		}
+	}
+
+	BT_DBG("unable to create keys for %s\n", bt_addr_le_str(addr));
+
+	return NULL;
+}
+
+void bt_keys_clear(struct bt_keys *keys, int type)
+{
+	struct bt_keys **cur;
+
+	BT_DBG("keys %p\n", keys);
+
+	if (((type & keys->keys) & BT_KEYS_SLAVE_LTK)) {
+		bt_keys_foreach(&slave_ltks, cur, slave_ltk.next) {
+			if (*cur == keys) {
+				*cur = (*cur)->slave_ltk.next;
+				break;
+			}
+		}
+		keys->keys &= ~BT_KEYS_SLAVE_LTK;
+	}
+
+	if (!keys->keys) {
+		memset(keys, 0, sizeof(*keys));
+	}
+}
+
+struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
+{
+	struct bt_keys **cur;
+
+	BT_DBG("type %d %s\n", type, bt_addr_le_str(addr));
+
+	switch (type) {
+	case BT_KEYS_SLAVE_LTK:
+		bt_keys_foreach(&slave_ltks, cur, slave_ltk.next) {
+			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
+				break;
+			}
+		}
+		return *cur;
+	default:
+		return NULL;
+	}
+}
+
+struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr)
+{
+	struct bt_keys *keys;
+
+	BT_DBG("type %d %s\n", type, bt_addr_le_str(addr));
+
+	keys = bt_keys_find(type, addr);
 	if (keys) {
 		return keys;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(key_list); i++) {
-		keys = &key_list[i];
-
-		if (!bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
-			bt_addr_le_copy(&keys->addr, addr);
-			BT_DBG("created keys %p\n", keys);
-			return keys;
-		}
+	keys = bt_keys_get_addr(addr);
+	if (!keys) {
+		return NULL;
 	}
 
-	BT_DBG("no match\n");
-
-	return NULL;
-}
-
-struct bt_keys *bt_keys_find(const bt_addr_le_t *addr)
-{
-	int i;
-
-	BT_DBG("%s\n", bt_addr_le_str(addr));
-
-	for (i = 0; i < ARRAY_SIZE(key_list); i++) {
-		struct bt_keys *keys = &key_list[i];
-
-		if (!bt_addr_le_cmp(&keys->addr, addr)) {
-			BT_DBG("found keys %p\n", keys);
-			return keys;
-		}
+	switch (type) {
+	case BT_KEYS_SLAVE_LTK:
+		keys->slave_ltk.next = slave_ltks;
+		slave_ltks = keys;
+		break;
+	default:
+		return NULL;
 	}
 
-	BT_DBG("no match\n");
+	keys->keys |= type;
 
-	return NULL;
-}
-
-void bt_keys_clear(struct bt_keys *keys)
-{
-	BT_DBG("keys %p\n", keys);
-	memset(keys, 0, sizeof(*keys));
+	return keys;
 }

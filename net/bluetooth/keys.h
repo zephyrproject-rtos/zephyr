@@ -30,18 +30,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+enum {
+	BT_KEYS_SLAVE_LTK      = (1 << 0),
+
+	BT_KEYS_ALL            = (BT_KEYS_SLAVE_LTK),
+};
+
 struct bt_ltk {
 	uint64_t		rand;
 	uint16_t		ediv;
 	uint8_t			val[16];
+	struct bt_keys		*next;
 };
 
 struct bt_keys {
 	bt_addr_le_t		addr;
+	int			keys;
 
 	struct bt_ltk		slave_ltk;
 };
 
-struct bt_keys *bt_keys_create(const bt_addr_le_t *addr);
-struct bt_keys *bt_keys_find(const bt_addr_le_t *addr);
-void bt_keys_clear(struct bt_keys *keys);
+struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
+struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr);
+void bt_keys_clear(struct bt_keys *keys, int type);
+struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr);

@@ -571,7 +571,7 @@ static void le_ltk_request(struct bt_buf *buf)
 		return;
 	}
 
-	keys = bt_keys_find(&conn->dst);
+	keys = bt_keys_find(BT_KEYS_SLAVE_LTK, &conn->dst);
 	if (keys && keys->slave_ltk.rand == evt->rand &&
 	    keys->slave_ltk.ediv == evt->ediv) {
 		struct bt_hci_cp_le_ltk_req_reply *cp;
