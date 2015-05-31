@@ -38,6 +38,7 @@
 #include <bluetooth/hci.h>
 
 #include "hci_core.h"
+#include "smp.h"
 #include "keys.h"
 
 #define bt_keys_foreach(list, cur, member)   \
@@ -79,7 +80,7 @@ void bt_keys_clear(struct bt_keys *keys, int type)
 {
 	struct bt_keys **cur;
 
-	BT_DBG("keys %p\n", keys);
+	BT_DBG("keys for %s type %d\n", bt_addr_le_str(&keys->addr), type);
 
 	if (((type & keys->keys) & BT_KEYS_SLAVE_LTK)) {
 		bt_keys_foreach(&slave_ltks, cur, slave_ltk.next) {
@@ -164,4 +165,52 @@ struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr)
 	keys->keys |= type;
 
 	return keys;
+}
+
+struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr)
+{
+	struct bt_keys **cur;
+
+	BT_DBG("%s\n", bt_addr_le_str(addr));
+
+	if (!bt_addr_le_is_rpa(addr)) {
+		return NULL;
+	}
+
+	bt_keys_foreach(&irks, cur, irk.next) {
+		struct bt_irk *irk = &(*cur)->irk;
+
+		if (!bt_addr_cmp((bt_addr_t *)addr->val, &irk->rpa)) {
+			BT_DBG("cached RPA %s for %s\n", bt_addr_str(&irk->rpa),
+			       bt_addr_le_str(&(*cur)->addr));
+			return *cur;
+		}
+
+		if (bt_smp_irk_matches(irk->val, (bt_addr_t *)addr->val)) {
+			struct bt_keys *match = *cur;
+
+			BT_DBG("RPA %s matches %s\n", bt_addr_str(&irk->rpa),
+			       bt_addr_le_str(&(*cur)->addr));
+
+			bt_addr_copy(&irk->rpa, (bt_addr_t *)addr->val);
+
+			/* Move to the beginning of the list for faster
+			 * future lookups.
+			 */
+			if (match != irks) {
+				/* Remove match from list */
+				*cur = irk->next;
+
+				/* Add match to the beginning */
+				irk->next = irks;
+				irks = match;
+			}
+
+			return match;
+		}
+	}
+
+	BT_DBG("No IRK for %s\n", bt_addr_le_str(addr));
+
+	return NULL;
 }
