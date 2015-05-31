@@ -503,6 +503,24 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 	}
 }
 
+static void copy_id_addr(struct bt_conn *conn, const bt_addr_le_t *addr)
+{
+	struct bt_keys *keys;
+
+	/* If we have a keys struct we already know the identity */
+	if (conn->keys) {
+		return;
+	}
+
+	keys = bt_keys_find_irk(addr);
+	if (keys) {
+		bt_addr_le_copy(&conn->dst, &keys->addr);
+		conn->keys = keys;
+	} else {
+		bt_addr_le_copy(&conn->dst, addr);
+	}
+}
+
 static void le_conn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
@@ -524,7 +542,7 @@ static void le_conn_complete(struct bt_buf *buf)
 
 	conn->src.type = BT_ADDR_LE_PUBLIC;
 	memcpy(conn->src.val, dev.bdaddr.val, sizeof(dev.bdaddr.val));
-	bt_addr_le_copy(&conn->dst, &evt->peer_addr);
+	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 
 	bt_l2cap_connected(conn);
