@@ -46,6 +46,7 @@
 static struct bt_keys key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
 
 static struct bt_keys *slave_ltks;
+static struct bt_keys *irks;
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 {
@@ -90,6 +91,16 @@ void bt_keys_clear(struct bt_keys *keys, int type)
 		keys->keys &= ~BT_KEYS_SLAVE_LTK;
 	}
 
+	if (((type & keys->keys) & BT_KEYS_IRK)) {
+		bt_keys_foreach(&irks, cur, irk.next) {
+			if (*cur == keys) {
+				*cur = (*cur)->irk.next;
+				break;
+			}
+		}
+		keys->keys &= ~BT_KEYS_IRK;
+	}
+
 	if (!keys->keys) {
 		memset(keys, 0, sizeof(*keys));
 	}
@@ -104,6 +115,13 @@ struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
 	switch (type) {
 	case BT_KEYS_SLAVE_LTK:
 		bt_keys_foreach(&slave_ltks, cur, slave_ltk.next) {
+			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
+				break;
+			}
+		}
+		return *cur;
+	case BT_KEYS_IRK:
+		bt_keys_foreach(&irks, cur, irk.next) {
 			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
 				break;
 			}
@@ -134,6 +152,10 @@ struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr)
 	case BT_KEYS_SLAVE_LTK:
 		keys->slave_ltk.next = slave_ltks;
 		slave_ltks = keys;
+		break;
+	case BT_KEYS_IRK:
+		keys->irk.next = irks;
+		irks = keys;
 		break;
 	default:
 		return NULL;

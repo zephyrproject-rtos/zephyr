@@ -32,8 +32,9 @@
 
 enum {
 	BT_KEYS_SLAVE_LTK      = (1 << 0),
+	BT_KEYS_IRK            = (1 << 1),
 
-	BT_KEYS_ALL            = (BT_KEYS_SLAVE_LTK),
+	BT_KEYS_ALL            = (BT_KEYS_SLAVE_LTK | BT_KEYS_IRK),
 };
 
 struct bt_ltk {
@@ -43,11 +44,18 @@ struct bt_ltk {
 	struct bt_keys		*next;
 };
 
+struct bt_irk {
+	uint8_t			val[16];
+	bt_addr_t		rpa;
+	struct bt_keys		*next;
+};
+
 struct bt_keys {
 	bt_addr_le_t		addr;
 	int			keys;
 
 	struct bt_ltk		slave_ltk;
+	struct bt_irk		irk;
 };
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
