@@ -189,6 +189,33 @@ static int le_rand(void *buf, size_t len)
 	return 0;
 }
 
+static int smp_ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
+{
+	uint8_t res[16];
+	int err;
+
+	BT_DBG("irk %s\n, r %s", h(irk, 16), h(r, 3));
+
+	/* r' = padding || r */
+	memcpy(res, r, 3);
+	memset(res + 3, 0, 13);
+
+	err = le_encrypt(irk, res, res);
+	if (err) {
+		return err;
+	}
+
+	/* The output of the random address function ah is:
+	 *      ah(h, r) = e(k, r') mod 2^24
+	 * The output of the security function e is then truncated to 24 bits
+	 * by taking the least significant 24 bits of the output of e as the
+	 * result of ah.
+	 */
+	memcpy(out, res, 3);
+
+	return 0;
+}
+
 static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 		  const uint8_t preq[7], const uint8_t pres[7],
 		  const bt_addr_le_t *ia, const bt_addr_le_t *ra,
@@ -654,6 +681,21 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 	}
+}
+
+bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
+{
+	uint8_t hash[3];
+	int err;
+
+	BT_DBG("IRK %s bdaddr %s", h(val, 16), bt_addr_str(addr));
+
+	err = smp_ah(irk, addr->val + 3, hash);
+	if (err) {
+		return false;
+	}
+
+	return !memcmp(addr->val, hash, 3);
 }
 
 void bt_smp_init(void)

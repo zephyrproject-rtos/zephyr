@@ -126,4 +126,6 @@ struct bt_smp_ident_addr_info {
 	bt_addr_le_t addr;
 } PACK_STRUCT;
 
+bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr);
+
 void bt_smp_init();
