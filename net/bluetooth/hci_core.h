@@ -116,7 +116,7 @@ static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 	memcpy(dst, src, sizeof(*dst));
 }
 
-static inline bool bt_addr_is_rpa(const bt_addr_le_t *addr)
+static inline bool bt_addr_le_is_rpa(const bt_addr_le_t *addr)
 {
 	if (addr->type != BT_ADDR_LE_RANDOM)
 		return false;
