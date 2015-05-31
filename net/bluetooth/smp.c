@@ -49,6 +49,9 @@
 #include "l2cap.h"
 #include "smp.h"
 
+#define RECV_KEYS (BT_SMP_DIST_ID_KEY)
+#define SEND_KEYS (BT_SMP_DIST_ENC_KEY)
+
 /* SMP channel specific context */
 struct bt_smp {
 	/* The connection this context is associated with */
@@ -331,8 +334,8 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	rsp->io_capability = BT_SMP_IO_NO_INPUT_OUTPUT;
 	rsp->oob_flag = BT_SMP_OOB_NOT_PRESENT;
 	rsp->max_key_size = req->max_key_size;
-	rsp->init_key_dist = 0;
-	rsp->resp_key_dist = (req->resp_key_dist & BT_SMP_DIST_ENC_KEY);
+	rsp->init_key_dist = (req->init_key_dist & RECV_KEYS);
+	rsp->resp_key_dist = (req->resp_key_dist & SEND_KEYS);
 
 	smp->local_dist = rsp->resp_key_dist;
 
@@ -450,6 +453,62 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static int smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_ident_info *req = (void *)buf->data;
+	struct bt_keys *keys;
+
+	BT_DBG("\n");
+
+	if (buf->len != sizeof(*req)) {
+		return BT_SMP_ERR_INVALID_PARAMS;
+	}
+
+	keys = bt_keys_get_type(BT_KEYS_IRK, &conn->dst);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s\n", &conn->dst);
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	memcpy(keys->irk.val, req->irk, 16);
+
+	return 0;
+}
+
+static int smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_ident_addr_info *req = (void *)buf->data;
+	struct bt_keys *keys;
+
+	BT_DBG("\n");
+
+	if (buf->len != sizeof(*req)) {
+		return BT_SMP_ERR_INVALID_PARAMS;
+	}
+
+	BT_DBG("identity %s\n", bt_addr_le_str(&req->addr));
+
+	if (!bt_addr_le_is_identity(&req->addr)) {
+		BT_ERR("Invalid identity %s for %s\n",
+		       bt_addr_le_str(&req->addr), bt_addr_le_str(&conn->dst));
+		return BT_SMP_ERR_INVALID_PARAMS;
+	}
+
+	keys = bt_keys_get_type(BT_KEYS_IRK, &conn->dst);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s\n", &conn->dst);
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	if (bt_addr_le_is_rpa(&conn->dst)) {
+		bt_addr_copy(&keys->irk.rpa, (bt_addr_t *)&conn->dst.val);
+		bt_addr_le_copy(&keys->addr, &req->addr);
+		bt_addr_le_copy(&conn->dst, &req->addr);
+	}
+
+	return 0;
+}
+
 static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_hdr *hdr = (void *)buf->data;
@@ -473,6 +532,12 @@ static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	case BT_SMP_CMD_PAIRING_RANDOM:
 		err = smp_pairing_random(conn, buf);
+		break;
+	case BT_SMP_CMD_IDENT_INFO:
+		err = smp_ident_info(conn, buf);
+		break;
+	case BT_SMP_CMD_IDENT_ADDR_INFO:
+		err = smp_ident_addr_info(conn, buf);
 		break;
 	default:
 		BT_WARN("Unhandled SMP code 0x%02x\n", hdr->code);

@@ -116,4 +116,14 @@ struct bt_smp_master_ident {
 	uint64_t rand;
 } PACK_STRUCT;
 
+#define BT_SMP_CMD_IDENT_INFO			0x08
+struct bt_smp_ident_info {
+	uint8_t  irk[16];
+} PACK_STRUCT;
+
+#define BT_SMP_CMD_IDENT_ADDR_INFO		0x09
+struct bt_smp_ident_addr_info {
+	bt_addr_le_t addr;
+} PACK_STRUCT;
+
 void bt_smp_init();
