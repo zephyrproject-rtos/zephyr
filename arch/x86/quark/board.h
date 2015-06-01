@@ -77,6 +77,7 @@ the 'Quark' BSP.
 
 #define HPET_TIMER0_IRQ (20)
 #define HPET_TIMER0_VEC (HPET_TIMER0_IRQ + INT_VEC_IRQ0)
+#define HPET_TIMER0_INT_PRI (4)
 /* HPET uses falling edge triggered interrupt */
 #define HPET_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
 
@@ -128,15 +129,6 @@ the 'Quark' BSP.
  *       IRQ29 -> LOAPIC_ERROR
  */
 #define LOAPIC_VEC_BASE(x) (x + INT_VEC_IRQ0 + IOAPIC_NUM_RTES)
-
-#ifndef _ASMLANGUAGE
-/*
- * The <pri> parameter is deliberately ignored. For this BSP, the macro just has
- * to make sure that unique vector numbers are generated.
- */
-#define SYS_INT_REGISTER(s, irq, pri) \
-	NANO_CPU_INT_REGISTER(s, INT_VEC_IRQ0 + (irq), 0)
-#endif
 
 /* PCI definitions */
 #define PCI_BUS_NUMBERS 2

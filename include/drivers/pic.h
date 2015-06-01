@@ -71,6 +71,29 @@ GTEXT(_i8259_boi_slave)
 GTEXT(_i8259_eoi_master)
 GTEXT(_i8259_eoi_slave)
 
+.macro pic_master_mkstub device isr
+GTEXT(_\()\device\()_\()\isr\()_stub)
+
+SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
+        call    _IntEnt           /* Inform kernel interrupt has begun */
+        pushl   $0                /* Push dummy parameter */
+        call    \isr              /* Call actual interrupt handler */
+        call    _i8259_eoi_master /* Inform PIC interrupt is done */
+        addl    $4, %esp          /* Clean-up stack from push above */
+        jmp     _IntExit          /* Inform kernel interrupt is done */
+.endm
+
+.macro pic_slave_mkstub device isr
+GTEXT(_\()\device\()_\()\isr\()_stub)
+
+SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
+        call    _IntEnt           /* Inform kernel interrupt has begun */
+        pushl   $0                /* Push dummy parameter */
+        call    \isr              /* Call actual interrupt handler */
+        call    _i8259_eoi_slave  /* Inform PIC interrupt is done */
+        addl    $4, %esp          /* Clean-up stack from push above */
+        jmp     _IntExit          /* Inform kernel interrupt is done */
+.endm
 #else /* _ASMLANGUAGE */
 
 extern void _i8259_init(void);

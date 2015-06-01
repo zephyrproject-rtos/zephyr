@@ -115,9 +115,9 @@ static NANO_CPU_INT_STUB_DECL(
 	_loapic_timer_irq_stub); /* interrupt stub memory for */
 			      /* irq_connect()       */
 #else			      /* !CONFIG_DYNAMIC_INT_STUBS */
-extern void *_loapic_timer_irq_stub;
-SYS_INT_REGISTER(_loapic_timer_irq_stub, LOAPIC_TIMER_IRQ, LOAPIC_TIMER_INT_PRI);
-#endif			      /* CONFIG_DYNAMIC_INT_STUBS */
+IRQ_CONNECT_STATIC(loapic, LOAPIC_TIMER_IRQ, LOAPIC_TIMER_INT_PRI,
+		   _timer_int_handler, 0);
+#endif
 
 static uint32_t __noinit counterLoadVal; /* computed counter 0
 							  initial count value */
@@ -580,7 +580,7 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 	 * still
 	 * has to be programmed into the interrupt controller.
 	 */
-	_SysIntVecProgram(LOAPIC_TIMER_VEC, LOAPIC_TIMER_IRQ);
+	IRQ_CONFIG(loapic, LOAPIC_TIMER_IRQ);
 #endif /* CONFIG_DYNAMIC_INT_STUBS */
 
 	_loApicTimerTicklessIdleSkew();

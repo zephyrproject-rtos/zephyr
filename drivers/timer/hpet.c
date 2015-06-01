@@ -195,9 +195,9 @@ extern struct nano_stack _k_command_stack;
 #ifdef CONFIG_DYNAMIC_INT_STUBS
 static NANO_CPU_INT_STUB_DECL(_hpetIntStub); /* interrupt stub memory */
 #else					     /* !CONFIG_DYNAMIC_INT_STUBS */
-extern void *_hpetIntStub(void); /* interrupt stub code */
-SYS_INT_REGISTER(_hpetIntStub, HPET_TIMER0_IRQ, HPET_TIMER0_INT_PRI);
-#endif					     /* CONFIG_DYNAMIC_INT_STUBS */
+IRQ_CONNECT_STATIC(hpet, HPET_TIMER0_IRQ, HPET_TIMER0_INT_PRI,
+		   _timer_int_handler, 0);
+#endif
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 static uint32_t main_count_first_irq_value = 0;
@@ -626,7 +626,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 	 * has to be programmed into the interrupt controller.
 	 */
 
-	_SysIntVecProgram(HPET_TIMER0_VEC, HPET_TIMER0_IRQ);
+	IRQ_CONFIG(hpet, HPET_TIMER0_IRQ);
 #endif
 
 	/* enable the IRQ in the interrupt controller */

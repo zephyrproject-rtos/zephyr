@@ -42,10 +42,8 @@ for the pentium4 and minuteia variants of the generic_pc BSP.
 #include <drivers/pic.h>
 
 /* Handle possible stray or spurious interrupts on the master and slave PICs */
-extern void _masterStrayIntStub(void);
-extern void _slaveStrayIntStub(void);
-SYS_INT_REGISTER(_masterStrayIntStub, PIC_MASTER_STRAY_INT_LVL, 0);
-SYS_INT_REGISTER(_slaveStrayIntStub, PIC_SLAVE_STRAY_INT_LVL, 0);
+IRQ_CONNECT_STATIC(pic_master, PIC_MASTER_STRAY_INT_LVL, 0, _i8259_boi_master, 0);
+IRQ_CONNECT_STATIC(pic_slave, PIC_SLAVE_STRAY_INT_LVL, 0, _i8259_boi_slave, 0);
 
 /*******************************************************************************
 *
@@ -147,4 +145,27 @@ int _SysIntVecAlloc(
 	}
 
 	return vector;
+}
+
+/*******************************************************************************
+*
+* _SysIntVecProgram - program interrupt controller
+*
+* This BSP provided routine programs the appropriate interrupt controller
+* with the given vector based on the given IRQ parameter.
+*
+* Drivers call this routine instead of irq_connect() when interrupts are
+* configured statically.
+*
+* For PIC-equipped boards this routine does nothing, as PIC does not need
+* any additional setup
+*
+*/
+
+void _SysIntVecProgram(unsigned int vector, /* vector number */
+		       unsigned int irq     /* virtualized IRQ */
+		       )
+{
+	ARG_UNUSED(vector);
+	ARG_UNUSED(irq);
 }

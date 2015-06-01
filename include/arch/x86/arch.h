@@ -137,6 +137,41 @@ typedef struct s_isrList {
   #define NANO_CPU_INT_STUB_DECL(s) \
 	_NODATA_SECTION(.intStubSect) NANO_INT_STUB(s)
 
+
+/*******************************************************************************
+ *
+ * IRQ_CONNECT_STATIC - connect a routine to interrupt number
+ *
+ * For the device <device> associates IRQ number <irq> with priority
+ * <priority> with the interrupt routine <isr>, that receives parameter
+ * <parameter>
+ *
+ * RETURNS: N/A
+ *
+ */
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	\
+	const uint32_t _##device##_int_vector = INT_VEC_IRQ0 + (irq);	\
+	extern void *_##device##_##isr##_stub;				\
+	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, INT_VEC_IRQ0 + (irq), priority)
+
+
+/*******************************************************************************
+ *
+ * IRQ_CONFIG - configure interrupt for the device
+ *
+ * For the given device do the neccessary configuration steps.
+ * For x86 platform configure APIC and mark interrupt vector allocated
+ *
+ * RETURNS: N/A
+ *
+ */
+#define IRQ_CONFIG(device, irq)					\
+	do {							\
+		_SysIntVecProgram(_##device##_int_vector, irq); \
+		_IntVecMarkAllocated(_##device##_int_vector);	\
+	} while(0)
+
+
 /*
  * A pointer to an "exception stack frame" (ESF) is passed as an argument
  * to exception handlers registered via nanoCpuExcConnect().  When an exception

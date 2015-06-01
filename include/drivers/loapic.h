@@ -70,6 +70,18 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 GTEXT(_loapic_eoi)
+
+.macro loapic_mkstub device isr
+GTEXT(_\()\device\()_\()\isr\()_stub)
+
+SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
+        call    _IntEnt         /* Inform kernel interrupt has begun */
+        pushl   $0              /* Push dummy parameter */
+        call    \isr            /* Call actual interrupt handler */
+        call    _loapic_eoi     /* Inform loapic interrupt is done */
+        addl    $4, %esp        /* Clean-up stack from push above */
+        jmp     _IntExit        /* Inform kernel interrupt is done */
+.endm
 #else /* _ASMLANGUAGE */
 extern void _loapic_init(void);
 extern void _loapic_eoi(unsigned int irq);

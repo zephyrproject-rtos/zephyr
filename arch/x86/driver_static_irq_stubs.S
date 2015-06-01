@@ -46,30 +46,37 @@ by x86 BSPs.
 #include <drivers/pic.h>
 #include <drivers/system_timer.h>
 
-	/* exports (internal APIs) */
-#if defined(CONFIG_LOAPIC_TIMER)
-	GTEXT(_loapic_timer_irq_stub)
-#endif
-
-#if defined(CONFIG_HPET_TIMER)
-	GTEXT(_hpetIntStub)
-#endif
-
 #if defined (CONFIG_PIC)
-	GTEXT(_masterStrayIntStub)
-	GTEXT(_slaveStrayIntStub)
+	GTEXT(_pic_master__i8259_boi_master_stub)
+	GTEXT(_pic_slave__i8259_boi_slave_stub)
 #endif
 
 #if defined (CONFIG_PIT)
-	GTEXT(_i8253_interrupt_stub)
+	pic_master_mkstub i8253 _timer_int_handler
+#endif
+
+#if defined(CONFIG_LOAPIC_TIMER)
+	loapic_mkstub loapic _timer_int_handler
+#endif
+
+#if defined(CONFIG_HPET_TIMER)
+	ioapic_mkstub hpet _timer_int_handler
 #endif
 
 #if defined(CONFIG_BLUETOOTH_UART)
-	GTEXT(_bluetooth_uart_stub)
-#endif /* CONFIG_BLUETOOTH */
+#if defined(CONFIG_PIC)
+	pic_master_mkstub bluetooth bt_uart_isr
+#elif defined(CONFIG_IOAPIC)
+	ioapic_mkstub bluetooth bt_uart_isr
+#endif /* CONFIG_PIC */
+#endif /* CONFIG_BLUETOOTH_UART */
 
 #if defined(CONFIG_CONSOLE_HANDLER)
-	GTEXT(_console_uart_stub)
+#if defined(CONFIG_PIC)
+	pic_master_mkstub console uart_console_isr
+#elif defined(CONFIG_IOAPIC)
+	ioapic_mkstub console uart_console_isr
+#endif /* CONFIG_PIC */
 #endif /* CONFIG_CONSOLE_HANDLER */
 
 	/* externs (internal APIs) */
@@ -77,28 +84,8 @@ by x86 BSPs.
 	GTEXT(_IntEnt)
 	GTEXT(_IntExit)
 
-#if defined(CONFIG_LOAPIC_TIMER)
-SECTION_FUNC (TEXT, _loapic_timer_irq_stub)
-	call    _IntEnt			/* Inform kernel interrupt has begun */
-	pushl   $0			/* Push dummy parameter */
-	call    _timer_int_handler	/* Call actual interrupt handler */
-	call    _loapic_eoi		/* Inform loapic interrupt is done */
-	addl    $4, %esp		/* Clean-up stack from push above */
-	jmp     _IntExit		/* Inform kernel interrupt is done */
-#endif /* CONFIG_LOAPIC_TIMER */
-
-#if defined(CONFIG_HPET_TIMER)
-SECTION_FUNC(TEXT, _hpetIntStub)
-	call    _IntEnt			/* Inform kernel interrupt has begun */
-	pushl   $0			/* Push dummy parameter */
-	call    _timer_int_handler	/* Call actual interrupt handler */
-	call    _ioapic_eoi		/* Inform ioapic interrupt is done */
-	addl    $4, %esp		/* Clean-up stack from push above */
-	jmp     _IntExit		/* Inform kernel interrupt is done */
-#endif /* CONFIG_HPET_TIMER */
-
 #if defined(CONFIG_PIC)
-SECTION_FUNC(TEXT, _masterStrayIntStub)
+SECTION_FUNC(TEXT, _pic_master__i8259_boi_master_stub)
 	/*
 	 * Handle possible spurious (stray) interrupts on IRQ 7. Since on this
 	 * particular BSP, no device is hooked up to IRQ 7, a C level ISR is
@@ -118,7 +105,7 @@ SECTION_FUNC(TEXT, _masterStrayIntStub)
 	 * jmp	_IntExit	/+ Inform kernel interrupt is done +/
 	 */
 
-SECTION_FUNC(TEXT, _slaveStrayIntStub)
+SECTION_FUNC(TEXT, _pic_slave__i8259_boi_slave_stub)
 	/*
 	 * Handle possible spurious (stray) interrupts on IRQ 15 (slave PIC
 	 * IRQ 7). Since on this particular BSP, no device is hooked up to
@@ -139,57 +126,5 @@ SECTION_FUNC(TEXT, _slaveStrayIntStub)
 	 * jmp	_IntExit	/+ Inform kernel interrupt is done +/
 	 */
 #endif /* CONFIG_PIC */
-
-#if defined(CONFIG_PIT)
-SECTION_FUNC(TEXT, _i8253_interrupt_stub)
-	call    _IntEnt			/* Inform kernel interrupt has begun */
-	pushl   $0			/* Push dummy parameter */
-	call    _timer_int_handler	/* Call actual interrupt handler */
-	call    _i8259_eoi_master	/* Inform the PIC interrupt is done */
-	addl    $4, %esp		/* Clean-up stack from push above */
-	jmp     _IntExit		/* Inform kernel interrupt is done */
-#endif /* CONFIG_PIT */
-
-#if defined(CONFIG_BLUETOOTH_UART)
-#if defined(CONFIG_PIC)
-SECTION_FUNC(TEXT, _bluetooth_uart_stub)
-	call	_IntEnt			/* Inform kernel interrupt has begun */
-	pushl	$0			/* Push dummy parameter */
-	call	bt_uart_isr		/* Call actual interrupt handler */
-	call	_i8259_eoi_master	/* Inform the PIC interrupt is done */
-	addl	$4, %esp		/* Clean-up stack from push above */
-	jmp	_IntExit		/* Inform kernel interrupt is done */
-#elif defined(CONFIG_IOAPIC)
-SECTION_FUNC(TEXT, _bluetooth_uart_stub)
-	call	_IntEnt			/* Inform kernel interrupt has begun */
-	pushl	$0			/* Push dummy parameter */
-	call	bt_uart_isr		/* Call actual interrupt handler */
-	call	_ioapic_eoi		/* Inform the PIC interrupt is done */
-	addl	$4, %esp		/* Clean-up stack from push above */
-	jmp	_IntExit		/* Inform kernel interrupt is done */
-#endif /* CONFIG_PIC */
-#endif /* CONFIG_BLUETOOTH_UART */
-
-#if defined(CONFIG_CONSOLE_HANDLER)
-
-#if defined(CONFIG_PIC)
-SECTION_FUNC(TEXT, _console_uart_stub)
-	call	_IntEnt			/* Inform kernel interrupt has begun */
-	pushl	$0			/* Push dummy parameter */
-	call	uart_console_isr	/* Call actual interrupt handler */
-	call	_i8259_eoi_master	/* Inform the PIC interrupt is done */
-	addl	$4, %esp		/* Clean-up stack from push above */
-	jmp	_IntExit		/* Inform kernel interrupt is done */
-#elif defined(CONFIG_IOAPIC)
-SECTION_FUNC(TEXT, _console_uart_stub)
-	call	_IntEnt			/* Inform kernel interrupt has begun */
-	pushl	$0			/* Push dummy parameter */
-	call	uart_console_isr	/* Call actual interrupt handler */
-	call	_ioapic_eoi		/* Inform the PIC interrupt is done */
-	addl	$4, %esp		/* Clean-up stack from push above */
-	jmp	_IntExit		/* Inform kernel interrupt is done */
-#endif /* CONFIG_PIC */
-
-#endif /* CONFIG_CONSOLE_HANDLER */
 
 #endif /* !CONFIG_DYNAMIC_INT_STUBS */

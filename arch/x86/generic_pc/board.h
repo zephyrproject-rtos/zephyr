@@ -167,15 +167,6 @@ the 'generic_pc' BSP.
 
 #ifndef _ASMLANGUAGE
 /*
- * The <pri> parameter is deliberately ignored. For this BSP, the macro just has
- * to make sure that unique vector numbers are generated.
- */
-#define SYS_INT_REGISTER(s, irq, pri) \
-	NANO_CPU_INT_REGISTER(s, INT_VEC_IRQ0 + (irq), 0)
-#endif
-
-#ifndef _ASMLANGUAGE
-/*
  * Device drivers utilize the macros PLB_BYTE_REG_WRITE() and
  * PLB_BYTE_REG_READ() to access byte-wide registers on the processor
  * local bus (PLB), as opposed to a PCI bus, for example.  Boards are
