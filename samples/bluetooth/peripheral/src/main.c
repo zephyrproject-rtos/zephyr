@@ -239,6 +239,32 @@ static int read_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 	return bt_gatt_attr_read(peer, attr, buf, len, offset, &ct, sizeof(ct));
 }
 
+/* Device Information Service Variables */
+static struct bt_uuid dis_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_DIS,
+};
+
+static struct bt_uuid model_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_DIS_MODEL_NUMBER_STRING,
+};
+
+static struct bt_gatt_chrc model_chrc = {
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x0018,
+	.uuid = &model_uuid,
+};
+
+static int read_model(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		   void *buf, uint8_t len, uint16_t offset)
+{
+	const char *value = attr->user_data;
+
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+				 strlen(value));
+}
+
 static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
@@ -267,6 +293,11 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_CHARACTERISTIC(0x0013, &ct_chrc),
 	BT_GATT_DESCRIPTOR(0x0014, &ct_uuid, read_ct, NULL, NULL),
 	BT_GATT_CCC(0x0015, 0x0014, ct_ccc_cfg, ct_ccc_cfg_changed),
+	/* Device Information Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(0x0016, &dis_uuid),
+	BT_GATT_CHARACTERISTIC(0x0017, &model_chrc),
+	BT_GATT_DESCRIPTOR(0x0018, &model_uuid, read_model, NULL,
+			   CONFIG_BSP_DIR),
 };
 
 static const struct bt_eir ad[] = {
