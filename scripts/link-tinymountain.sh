@@ -45,13 +45,13 @@ linker_params()
 	LIBS=""
 	for tcl in ${ALL_LIBS}; do  LIBS="${LIBS} -l${tcl}"; done
 	echo "${LDFLAGS_tinymountain}" > ${1}
-	echo "-Wl,-Map,./${2}" >> ${1}
+	echo "-Map ./${2}" >> ${1}
 	echo "-L ${objtree}/include/generated" >> ${1}
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
-	echo "-Wl,-e,__start" >> ${1}
-	echo "-Wl,--start-group ${KBUILD_TIMO_MAIN}" >> ${1}
+	echo "-e __start" >> ${1}
+	echo "--start-group ${KBUILD_TIMO_MAIN}" >> ${1}
 	echo "${objtree}/include/generated/offsets.o" >> ${1}
-	echo "-Wl,--end-group" >> ${1}
+	echo "--end-group" >> ${1}
 	echo "${LIB_INCLUDE_DIR} ${LIBS}" >> ${1}
 }
 
@@ -60,7 +60,7 @@ linker_params()
 # {2} optional additional link parameters
 linker_command()
 {
-	${CC} -x assembler-with-cpp -nostdinc -undef -E -P  \
+	${CC} -x assembler-with-cpp -nostdinc -undef -E -P \
 		${LDFLAG_LINKERCMD} \
 		${LD_TOOLCHAIN} ${2} \
 		-I${srctree}/include -I${objtree}/include/generated \
@@ -74,7 +74,7 @@ linker_command()
 # ${3} linker command file
 initial_link()
 {
-	${CC} -o ${1} @${2}  -T ${3}
+	${LD}  -T ${3} @${2} -o ${1}
 }
 
 #Generates IDT and merge them into final binary
@@ -96,7 +96,7 @@ gen_idt()
 # ${4} - output file
 tinymountain_link()
 {
-	${CC} -o ${4} @${1} ${3} -T ${2}
+	${LD} -T ${2} @${1} ${3} -o ${4}
 	${OBJCOPY} --set-section-flags intList=noload ${4} elf.tmp
 	${OBJCOPY} -R intList elf.tmp ${4}
 	rm elf.tmp

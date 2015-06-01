@@ -389,10 +389,10 @@ KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -c -g -xassembler-with-cpp
 
-LDFLAGS += $(call cc-ldoption,-nostartfiles)
-LDFLAGS += $(call cc-ldoption,-nodefaultlibs)
-LDFLAGS += $(call cc-ldoption,-nostdlib)
-LDFLAGS += $(call cc-ldoption,-static)
+LDFLAGS += $(call ld-option,-nostartfiles)
+LDFLAGS += $(call ld-option,-nodefaultlibs)
+LDFLAGS += $(call ld-option,-nostdlib)
+LDFLAGS += $(call ld-option,-static)
 LDLIBS_TOOLCHAIN ?= -lgcc
 
 KERNELVERSION = $(VERSION_GENERATION).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_REVISION)
@@ -720,15 +720,14 @@ KBUILD_CFLAGS += $(KCFLAGS)
 
 # Use --build-id when available.
 
-LDFLAGS_tinymountain += $(call cc-ldoption,-nostartfiles)
-LDFLAGS_tinymountain += $(call cc-ldoption,-nodefaultlibs)
-LDFLAGS_tinymountain += $(call cc-ldoption,-nostdlib)
-LDFLAGS_tinymountain += $(call cc-ldoption,-static)
-#LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)--unresolved-symbols=ignore-in-object-files)
-LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)-X)
-LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)-N)
-LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)--gc-sections)
-LDFLAGS_tinymountain += $(call cc-ldoption,-Wl$(comma)--build-id=none)
+LDFLAGS_tinymountain += $(call ld-option,-nostartfiles)
+LDFLAGS_tinymountain += $(call ld-option,-nodefaultlibs)
+LDFLAGS_tinymountain += $(call ld-option,-nostdlib)
+LDFLAGS_tinymountain += $(call ld-option,-static)
+LDFLAGS_tinymountain += $(call ld-option,-X)
+LDFLAGS_tinymountain += $(call ld-option,-N)
+LDFLAGS_tinymountain += $(call ld-option,--gc-sections)
+LDFLAGS_tinymountain += $(call ld-option,--build-id=none)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 
