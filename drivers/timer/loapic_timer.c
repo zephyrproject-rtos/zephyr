@@ -571,9 +571,8 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 	 */
 	irq_connect(LOAPIC_TIMER_IRQ,
 			  LOAPIC_TIMER_INT_PRI,
-			  _loApicTimerIntHandler,
-			  0,
-			  _loapic_timer_irq_stub);
+			  _timer_int_handler,
+			  0);
 #else  /* !CONFIG_DYNAMIC_INT_STUBS */
 	/*
 	 * Although the stub has already been "connected", the vector number

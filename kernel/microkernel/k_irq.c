@@ -89,17 +89,10 @@ static struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
 
 #if defined(CONFIG_X86_32)
 
-/* task IRQ interrupt stub array */
-NANO_CPU_INT_STUB_DECL(irq_obj_mem_stub[MAX_TASK_IRQS]);
-
-/* note the comma */
-#define IRQ_STUB , irq_obj_mem_stub[irq_obj]
-
 #define RELEASE_VECTOR(v) _IntVecMarkFree(v)
 
 #elif defined(CONFIG_CPU_CORTEX_M3_M4)
 #include <arch/cpu.h>
-#define IRQ_STUB
 #define RELEASE_VECTOR(v) irq_disconnect(v)
 #else
 #error "Unknown target"
@@ -281,7 +274,7 @@ uint32_t task_irq_alloc(
 	 *       definition to abstract the different irq_connect signatures
 	 */
 	irq_obj_ptr->vector = irq_connect(
-		irq, priority, task_irq_int_handler, (void *)irq_obj_ptr IRQ_STUB);
+		irq, priority, task_irq_int_handler, (void *)irq_obj_ptr);
 	irq_enable(irq);
 
 	return irq_obj_ptr->vector;

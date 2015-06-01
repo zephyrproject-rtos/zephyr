@@ -69,9 +69,7 @@ typedef void* (*pfunc) (void*);
 /* variables */
 
 /* ISR stub data structure */
-#ifdef TEST_max
-static NANO_CPU_INT_STUB_DECL(isrDummyHandlerStub);
-#else
+#ifndef TEST_max
 static void isrDummyIntStub(void *);
 NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0);
 #endif /* TEST_max */
@@ -177,7 +175,7 @@ void main(void)
 #ifdef TEST_max
 	/* dynamically link in dummy ISR */
 	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
-				(void *) 0, isrDummyHandlerStub);
+				(void *) 0);
 #endif /* TEST_max */
 #ifndef TEST_min
 	/* start a trivial fiber */

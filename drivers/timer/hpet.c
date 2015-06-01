@@ -616,9 +616,8 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 
 	irq_connect(HPET_TIMER0_IRQ,
 			  HPET_TIMER0_INT_PRI,
-			  _hpetIntHandler,
-			  0,
-			  _hpetIntStub);
+			  _timer_int_handler,
+			  0);
 #else
 	/*
 	 * Although the stub has already been "connected", the vector number

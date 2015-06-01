@@ -231,6 +231,14 @@ config DYNAMIC_INT_STUBS
 	at run time, if desired. If not enabled, interrupt handlers can only
 	be installed statically when the image is created.
 
+config NUM_DYNAMIC_STUBS
+	int "Number of dynamic int stubs"
+	default 10 if DYNAMIC_INT_STUBS
+	default 0
+	help
+	This option specifies the number of interrupt handlers that can be
+	installed dynamically using irq_connect().
+
 config PROT_MODE_SWITCH_PROMPT
 	bool "Prot Mode switch prompt"
 	default n

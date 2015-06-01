@@ -67,9 +67,7 @@ typedef void* (*pfunc) (void*);
 volatile int i = 0;		/* counter used by foreground task */
 
 /* ISR stub data structure */
-#ifdef TEST_max
-static NANO_CPU_INT_STUB_DECL(isrDummyHandlerStub);
-#else
+#ifndef TEST_max
 static void isrDummyIntStub(void *);
 NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0);
 #endif /* TEST_max */
@@ -180,8 +178,7 @@ void fgTaskEntry(void)
 {
 #ifdef TEST_max
 	/* dynamically link in dummy ISR */
-	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr,
-				(void *) 0, isrDummyHandlerStub);
+	irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, dummyIsr, (void *) 0);
 #endif /* TEST_max */
 
 	/* note: referencing "func_array" ensures it isn't optimized out */

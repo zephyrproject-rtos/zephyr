@@ -379,8 +379,7 @@ extern void	irq_handler_set(unsigned int vector,
 extern int	irq_connect(unsigned int irq,
 					 unsigned int priority,
 					 void (*routine)(void *parameter),
-					 void *parameter,
-					 NANO_INT_STUB pIntStubMem);
+					 void *parameter);
 
 /*
  * irq_enable()  : enable a specific IRQ

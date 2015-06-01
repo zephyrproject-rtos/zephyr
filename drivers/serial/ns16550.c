@@ -206,23 +206,6 @@ INCLUDE FILES: drivers/uart.h
 #define INBYTE(x) inByte(x)
 #define OUTBYTE(x, d) outByte(d, x)
 
-#if defined(CONFIG_X86_32)
-#define INT_CONNECT(port, isr, arg, stub)                  \
-	irq_connect((unsigned int)uart[port].irq,    \
-			  (unsigned int)uart[port].intPri, \
-			  isr,                              \
-			  arg,                              \
-			  stub)
-#else
-#define INT_CONNECT(port, isr, arg, stub)                          \
-	do {                                                        \
-		ARG_UNUSED(stub);                                   \
-		irq_connect((unsigned int)uart[port].irq,    \
-				  (unsigned int)uart[port].intPri, \
-				  isr,                              \
-				  arg);                             \
-	} while (0)
-#endif /* CONFIG_X86_32 */
 
 struct ns16550 {
 	uint32_t port;    /* base port number or MM base address */
@@ -571,7 +554,7 @@ void uart_int_connect(int port,	   /* UART to port to connect */
 	ARG_UNUSED(arg);
 	ARG_UNUSED(stub);
 #else
-	INT_CONNECT(port, isr, arg, stub);
+	irq_connect(port, isr, arg);
 #endif /* CONFIG_DYNAMIC_INT_STUBS */
 
 	irq_enable((unsigned int)uart[port].irq);

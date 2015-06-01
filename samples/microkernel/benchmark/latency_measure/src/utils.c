@@ -50,9 +50,6 @@
 
 static uint8_t vector; /* the interrupt vector we allocate */
 
-/* memory for synthesized stub code */
-static NANO_CPU_INT_STUB_DECL(isrLatencyHandlerStub);
-
 /* current pointer to the ISR */
 static ptestIsr pcurrIsrFunc;
 
@@ -75,7 +72,7 @@ char tmpString[TMP_STRING_SIZE];
 int initSwInterrupt(ptestIsr pIsrHdlr)
 {
 	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, pIsrHdlr,
-				(void *) 0, isrLatencyHandlerStub);
+			     (void *) 0);
 	pcurrIsrFunc = pIsrHdlr;
 
 	return vector;

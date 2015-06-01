@@ -57,13 +57,6 @@ Interrupt stuff, abstracted across CPU architectures.
   #error NUM_SW_IRQS only supports 1 or 2 IRQs
 #endif
 
-#if defined(CONFIG_X86_32)
-  static NANO_CPU_INT_STUB_DECL(nanoIntStub1);
-#if NUM_SW_IRQS >= 2
-  static NANO_CPU_INT_STUB_DECL(nanoIntStub2);
-#endif /* NUM_SW_IRQS >= 2 */
-#endif
-
 typedef void (*vvfn)(void);	/* void-void function pointer */
 typedef void (*vvpfn)(void *);	/* void-void_pointer function pointer */
 
@@ -125,7 +118,7 @@ static int initIRQ(struct isrInitInfo *i)
 
 	if (i->isr[0]) {
 		vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[0],
-			i->arg[0], nanoIntStub1);
+				     i->arg[0]);
 		if (-1 == vector) {
 			return -1;
 		}
@@ -135,7 +128,7 @@ static int initIRQ(struct isrInitInfo *i)
 #if NUM_SW_IRQS >= 2
 	if (i->isr[1]) {
 		vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, i->isr[1],
-			i->arg[1], nanoIntStub2);
+				     i->arg[1]);
 		if (-1 == vector) {
 			return -1;
 		}

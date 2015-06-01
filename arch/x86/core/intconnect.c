@@ -92,6 +92,7 @@ The _INT_STUB_SIZE macro is defined in include/nanokernel/x86/arch.h.
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <nanok.h>
+#include <misc/__assert.h>
 
 /* the _idt_base_address symbol is generated via a linker script */
 
@@ -136,6 +137,47 @@ void *__attribute__((section(".spurNoErrIsr")))
 static unsigned int interrupt_vectors_allocated[VEC_ALLOC_NUM_INTS] = {
 	[0 ...(VEC_ALLOC_NUM_INTS - 1)] = 0xffffffff
 };
+
+/*
+ * Array of interrupt stubs for dynamic interrupt connection.
+ */
+#ifdef CONFIG_MICROKERNEL
+
+#define ALL_DYNAMIC_STUBS (CONFIG_NUM_DYNAMIC_STUBS + CONFIG_MAX_NUM_TASK_IRQS)
+
+#elif defined (CONFIG_NANOKERNEL)
+
+#define ALL_DYNAMIC_STUBS (CONFIG_NUM_DYNAMIC_STUBS)
+
+#endif
+
+#if ALL_DYNAMIC_STUBS > 0
+
+#define _STUB_AVAIL 0xff
+
+static NANO_INT_STUB dynamic_stubs[ALL_DYNAMIC_STUBS] = {
+	[0 ... (ALL_DYNAMIC_STUBS - 1)] = { _STUB_AVAIL, }
+};
+
+/*******************************************************************************
+ * _int_stub_alloc - allocate dynamic interrupt stub
+ *
+ * RETURNS: index of the first available element of the STUB array or -1
+ *          if all elements are used
+ */
+static int _int_stub_alloc(void)
+{
+	int i;
+	for (i = 0; i < ALL_DYNAMIC_STUBS &&
+		     dynamic_stubs[i][0] != _STUB_AVAIL; i++) {
+	}
+	if (i == ALL_DYNAMIC_STUBS) {
+		return -1;
+	} else {
+		return i;
+	}
+}
+#endif /* ALL_DYNAMIC_STUBS > 0 */
 
 /*******************************************************************************
 *
@@ -184,6 +226,13 @@ void _IntVecSet(
 
 }
 
+/*
+ * Guard against situations when ALL_DYNAMIC_STUBS is left equal to 0,
+ * but irq_connect is still used, which causes system failure.
+ * If ALL_DYNAMIC_STUBS is left 0, but irq_connect is used, linker
+ * generates an error
+ */
+#if ALL_DYNAMIC_STUBS > 0
 /*******************************************************************************
 *
 * irq_connect - connect a C routine to a hardware interrupt
@@ -208,11 +257,8 @@ void _IntVecSet(
 * will then be invoked with the single <parameter>.  When the ISR returns, a
 * context switch may occur.
 *
-* The <pIntStubMem> argument points to memory that the system can use to
-* synthesize the interrupt stub that calls <routine>.  The memory need not be
-* initialized, but must be persistent (i.e. it cannot be on the caller's stack).
-* Declaring a global or static variable of type NANO_INT_STUB will provide a
-* suitable area of the proper size.
+* The routine searches for the first available element in the synamic_stubs
+* array and uses it for the stub.
 *
 * RETURNS: the allocated interrupt vector
 *
@@ -239,8 +285,7 @@ int irq_connect(
 	unsigned int irq,		  /* virtualized IRQ to connect to */
 	unsigned int priority,		  /* requested priority of interrupt */
 	void (*routine)(void *parameter), /* C interrupt handler */
-	void *parameter,		  /* parameter passed to C routine */
-	NANO_INT_STUB pIntStubMem	 /* memory for synthesized stub code */
+	void *parameter			  /* parameter passed to C routine */
 	)
 {
 	unsigned char offsetAdjust;
@@ -256,8 +301,7 @@ int irq_connect(
 	void *eoiRtnParm;
 	unsigned char boiParamRequired;
 	unsigned char eoiParamRequired;
-
-#define STUB_PTR pIntStubMem
+	int stub_idx;
 
 	/*
 	 * Invoke the BSP provided routine _SysIntVecAlloc() which will:
@@ -295,6 +339,11 @@ int irq_connect(
 		return (-1);
 #endif /* DEBUG */
 
+	stub_idx = _int_stub_alloc();
+	__ASSERT(stub_idx != -1, "No available interrupt stubs found");
+
+#define STUB_PTR dynamic_stubs[stub_idx]
+
 	/*
 	 * A minimal interrupt stub code will be synthesized based on the
 	 * values of <boiRtn>, <eoiRtn>, <boiRtnParm>, <eoiRtnParm>,
@@ -304,7 +353,7 @@ int irq_connect(
 
 	STUB_PTR[0] = IA32_CALL_OPCODE;
 	UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1],
-			(unsigned int)&_IntEnt - (unsigned int)&pIntStubMem[5]);
+			(unsigned int)&_IntEnt - (unsigned int)&STUB_PTR[5]);
 
 	offsetAdjust = 5;
 
@@ -323,7 +372,7 @@ int irq_connect(
 		UNALIGNED_WRITE(
 			(unsigned int *)&STUB_PTR[6 + offsetAdjust],
 			(unsigned int)boiRtn -
-				(unsigned int)&pIntStubMem[10 + offsetAdjust]);
+				(unsigned int)&STUB_PTR[10 + offsetAdjust]);
 
 		offsetAdjust += 10;
 		++numParameters;
@@ -332,7 +381,7 @@ int irq_connect(
 		UNALIGNED_WRITE(
 			(unsigned int *)&STUB_PTR[1 + offsetAdjust],
 			(unsigned int)boiRtn -
-				(unsigned int)&pIntStubMem[5 + offsetAdjust]);
+				(unsigned int)&STUB_PTR[5 + offsetAdjust]);
 
 		offsetAdjust += 5;
 	}
@@ -348,7 +397,7 @@ int irq_connect(
 	STUB_PTR[5 + offsetAdjust] = IA32_CALL_OPCODE;
 	UNALIGNED_WRITE((unsigned int *)&STUB_PTR[6 + offsetAdjust],
 			(unsigned int)routine -
-				(unsigned int)&pIntStubMem[10 + offsetAdjust]);
+				(unsigned int)&STUB_PTR[10 + offsetAdjust]);
 
 	offsetAdjust += 10;
 
@@ -367,7 +416,7 @@ int irq_connect(
 		UNALIGNED_WRITE(
 			(unsigned int *)&STUB_PTR[6 + offsetAdjust],
 			(unsigned int)eoiRtn -
-				(unsigned int)&pIntStubMem[10 + offsetAdjust]);
+				(unsigned int)&STUB_PTR[10 + offsetAdjust]);
 
 		offsetAdjust += 10;
 		++numParameters;
@@ -376,7 +425,7 @@ int irq_connect(
 		UNALIGNED_WRITE(
 			(unsigned int *)&STUB_PTR[1 + offsetAdjust],
 			(unsigned int)eoiRtn -
-				(unsigned int)&pIntStubMem[5 + offsetAdjust]);
+				(unsigned int)&STUB_PTR[5 + offsetAdjust]);
 
 		offsetAdjust += 5;
 	}
@@ -406,7 +455,7 @@ int irq_connect(
 	STUB_PTR[offsetAdjust] = IA32_JMP_OPCODE;
 	UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1 + offsetAdjust],
 			(unsigned int)&_IntExit -
-				(unsigned int)&pIntStubMem[5 + offsetAdjust]);
+				(unsigned int)&STUB_PTR[5 + offsetAdjust]);
 
 
 	/*
@@ -423,10 +472,11 @@ int irq_connect(
 	 * however, the call and return that follows meets this requirement.
 	 */
 
-	_IntVecSet(vector, (void (*)(void *))pIntStubMem, 0);
+	_IntVecSet(vector, (void (*)(void *))STUB_PTR, 0);
 
 	return vector;
 }
+#endif /* ALL_DYNAMIC_STUBS > 0 */
 
 /*******************************************************************************
 *

@@ -502,8 +502,7 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 	(void)irq_connect(PIT_INT_LVL,
 				PIT_INT_PRI,
 				_timer_int_handler,
-				0,
-				_i8253_interrupt_stub);
+				0);
 
 #endif /* CONFIG_DYNAMIC_INT_STUBS */
 
