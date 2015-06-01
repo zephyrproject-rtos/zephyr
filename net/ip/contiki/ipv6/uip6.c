@@ -949,7 +949,7 @@ ext_hdr_options_process(struct net_buf *buf)
 
 
 /*---------------------------------------------------------------------------*/
-void
+uint8_t
 uip_process(struct net_buf *buf, uint8_t flag)
 {
 #if UIP_TCP
@@ -2321,7 +2321,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
   UIP_STAT(++uip_stat.ip.sent);
   /* Return and let the caller do the actual transmission. */
   uip_flags(buf) = 0;
-  return;
+  return 1;
 
  drop:
   /* If there is an error, then just return the buffer to pool */
@@ -2333,7 +2333,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
   uip_ext_len(buf) = 0;
   uip_ext_bitmap(buf) = 0;
   uip_flags(buf) = 0;
-  return;
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 uint16_t

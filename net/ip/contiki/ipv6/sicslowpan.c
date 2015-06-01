@@ -1602,7 +1602,7 @@ output(struct net_buf *buf, const uip_lladdr_t *localdest)
  * \note We do not check for overlapping sicslowpan fragments
  * (it is a SHALL in the RFC 4944 and should never happen)
  */
-static void
+static uint8_t
 input(struct net_buf *buf)
 {
   /* size of the IP packet (read from fragment) */
@@ -1713,7 +1713,7 @@ input(struct net_buf *buf)
        * being reassembled or the packet is not a fragment.
        */
       PRINTFI("sicslowpan input: Dropping 6lowpan packet that is not a fragment of the packet currently being reassembled\n");
-      return;
+      return 0;
     }
   } else {
     /*
@@ -1724,7 +1724,7 @@ input(struct net_buf *buf)
       /* We are currently not reassembling a packet, but have received a packet fragment
        * that is not the first one. */
       if(is_fragment && !first_fragment) {
-        return;
+        return 0;
       }
 
       sicslowpan_len(buf) = frag_size;
@@ -1771,7 +1771,7 @@ input(struct net_buf *buf)
       /* unknown header */
       PRINTFI("sicslowpan input: unknown dispatch: %u\n",
              PACKETBUF_HC1_PTR(buf)[PACKETBUF_HC1_DISPATCH]);
-      return;
+      return 0;
   }
    
     
@@ -1787,7 +1787,7 @@ input(struct net_buf *buf)
    */
   if(packetbuf_datalen(buf) < uip_packetbuf_hdr_len(buf)) {
     PRINTF("SICSLOWPAN: packet dropped due to header > total packet\n");
-    return;
+    return 0;
   }
   uip_packetbuf_payload_len(buf) = packetbuf_datalen(buf) - uip_packetbuf_hdr_len(buf);
 
@@ -1800,7 +1800,7 @@ input(struct net_buf *buf)
           "SICSLOWPAN: packet dropped, minimum required SICSLOWPAN_IP_BUF size: %d+%d+%d+%d=%d (current size: %d)\n",
           UIP_LLH_LEN, uip_uncomp_hdr_len(buf), (uint16_t)(frag_offset << 3),
           uip_packetbuf_payload_len(buf), req_size, sizeof(sicslowpan_buf(buf)));
-      return;
+      return 0;
     }
   }
 
@@ -1865,9 +1865,11 @@ input(struct net_buf *buf)
 #endif
 
     tcpip_input(buf);
+    return 1;
 #if SICSLOWPAN_CONF_FRAG
   }
 #endif /* SICSLOWPAN_CONF_FRAG */
+  return 0;
 }
 /** @} */
 

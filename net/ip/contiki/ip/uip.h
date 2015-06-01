@@ -1544,7 +1544,7 @@ uip_ext_hdr_options_process(); */
  *
  * The actual uIP function which does all the work.
  */
-void uip_process(struct net_buf *buf, uint8_t flag);
+uint8_t uip_process(struct net_buf *buf, uint8_t flag);
 
   /* The following flags are passed as an argument to the uip_process()
    function. They are used to distinguish between the two cases where

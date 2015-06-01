@@ -200,7 +200,7 @@ send_list(struct net_buf *buf, mac_callback_t sent, void *ptr, struct rdc_buf_li
   return 1;
 }
 /*---------------------------------------------------------------------------*/
-static void
+static uint8_t
 input_packet(struct net_buf *buf)
 {
   frame802154_t frame;
@@ -239,13 +239,12 @@ input_packet(struct net_buf *buf)
     PRINTF(" receiver ");
     PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
     PRINTF(" len %u\n", packetbuf_datalen(buf));
-    NETSTACK_MAC.input(buf);
-    return;
+    return NETSTACK_MAC.input(buf);
   } else {
     PRINTF("6MAC: failed to parse hdr\n");
   }
 error:
-  net_buf_put(buf);
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 static int

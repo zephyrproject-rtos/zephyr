@@ -123,7 +123,7 @@ struct network_driver {
   void (* init)(void);
 
   /** Callback for getting notified of incoming packet. */
-  void (* input)(struct net_buf *buf);
+  uint8_t (* input)(struct net_buf *buf);
 };
 
 extern const struct network_driver NETSTACK_NETWORK;

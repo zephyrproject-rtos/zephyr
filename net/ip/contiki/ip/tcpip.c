@@ -183,9 +183,10 @@ check_for_tcp_syn(struct net_buf *buf)
 #endif /* UIP_TCP || UIP_CONF_IP_FORWARD */
 }
 /*---------------------------------------------------------------------------*/
-static void
+static uint8_t
 packet_input(struct net_buf *buf)
 {
+  uint8_t ret = 0;
 #if UIP_CONF_IP_FORWARD
   if(uip_len > 0) {
     tcpip_is_forwarding = 1;
@@ -211,8 +212,8 @@ packet_input(struct net_buf *buf)
 #else /* UIP_CONF_IP_FORWARD */
   if(uip_len(buf) > 0) {
     check_for_tcp_syn(buf);
-    uip_input(buf);
-    if(uip_len(buf) > 0) {
+    ret = uip_input(buf);
+    if(ret && uip_len(buf) > 0) {
 #if UIP_CONF_TCP_SPLIT
       uip_split_output(buf);
 #else /* UIP_CONF_TCP_SPLIT */
@@ -227,6 +228,7 @@ packet_input(struct net_buf *buf)
     }
   }
 #endif /* UIP_CONF_IP_FORWARD */
+  return ret;
 }
 /*---------------------------------------------------------------------------*/
 #if UIP_TCP
@@ -533,7 +535,12 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
 #endif /* UIP_UDP */
 
     case PACKET_INPUT:
-      packet_input(buf);
+      if (!packet_input(buf)) {
+         /* failure, discard the net_buf here because the
+          * return value cannot be passed to driver any longer
+          */
+         net_buf_put(buf);
+      }
       break;
   };
 }
@@ -692,6 +699,8 @@ tcpip_ipv6_output(struct net_buf *buf)
         stimer_set(&nbr->sendns, uip_ds6_if.retrans_timer / 1000);
         nbr->nscount = 1;
       }
+
+      return 1; /* packet was passed to network successfully */
 #endif /* UIP_ND6_SEND_NA */
     } else {
 #if UIP_ND6_SEND_NA
@@ -741,7 +750,7 @@ tcpip_ipv6_output(struct net_buf *buf)
 
       return ret;
     }
-    return;
+    return 0; /* discard packet */
   }
   /* Multicast IP destination address. */
   ret = tcpip_output(buf, NULL);

@@ -75,7 +75,7 @@ init(void)
   tcpip_set_outputfunc(uip_driver_send);
 }
 /*--------------------------------------------------------------------*/
-static void
+static uint8_t
 input(struct net_buf *buf)
 {
   PRINTF("uip-driver(%p): input %d bytes\n", buf, packetbuf_datalen(buf));
@@ -84,9 +84,11 @@ input(struct net_buf *buf)
     memcpy(&uip_buf(buf)[UIP_LLH_LEN], packetbuf_dataptr(buf), packetbuf_datalen(buf));
     uip_len(buf) = packetbuf_datalen(buf);
     tcpip_input(buf);
+    return 1;
   } else {
     PRINTF("datalen %d MAX %d\n", packetbuf_datalen(buf), UIP_BUFSIZE - UIP_LLH_LEN);
     UIP_LOG("uip-driver: too long packet discarded");
+    return 0;
   }
 }
 /*--------------------------------------------------------------------*/

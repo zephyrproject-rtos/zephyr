@@ -80,10 +80,10 @@ on_frame_created(void)
   return 1;
 }
 /*---------------------------------------------------------------------------*/
-static void
+static uint8_t
 input(struct net_buf *buf)
 {
-  NETSTACK_NETWORK.input(buf);
+  return NETSTACK_NETWORK.input(buf);
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t

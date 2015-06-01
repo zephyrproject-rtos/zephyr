@@ -63,7 +63,7 @@ struct mac_driver {
   uint8_t (* send)(struct net_buf *buf, mac_callback_t sent_callback, void *ptr);
 
   /** Callback for getting notified of incoming packet. */
-  void (* input)(struct net_buf *buf);
+  uint8_t (* input)(struct net_buf *buf);
   
   /** Turn the MAC layer on. */
   int (* on)(void);

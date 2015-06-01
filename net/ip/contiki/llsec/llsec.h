@@ -85,7 +85,7 @@ struct llsec_driver {
    * Decrypts incoming frames;
    * filters out injected or replayed frames.
    */
-  void (* input)(struct net_buf *buf);
+  uint8_t (* input)(struct net_buf *buf);
   
   /** Returns the security-related overhead per frame in bytes */
   uint8_t (* get_overhead)(void);

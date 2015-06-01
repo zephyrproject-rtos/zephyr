@@ -428,12 +428,13 @@ send_packet(struct net_buf *buf, mac_callback_t sent, void *ptr)
     PRINTF("csma: could not allocate neighbor, dropping packet\n");
   }
   mac_call_sent_callback(buf, sent, ptr, MAC_TX_ERR, 1);
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
-static void
+static uint8_t
 input_packet(struct net_buf *buf)
 {
-  NETSTACK_LLSEC.input(buf);
+  return NETSTACK_LLSEC.input(buf);
 }
 /*---------------------------------------------------------------------------*/
 static int
