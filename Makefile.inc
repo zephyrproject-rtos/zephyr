@@ -1,6 +1,8 @@
 PROJECT_BASE ?= $(shell pwd)
 ARCH?=x86
 
+O ?= $(PROJECT_BASE)/outdir
+
 export ARCH VPFILE QEMU_EXTRA_FLAGS PROJECT_BASE
 
 ifdef BSP_VARIANT
@@ -15,7 +17,7 @@ endif
 endif
 
 ifdef KBUILD_DEFCONFIG
-CONFIG_DEPS=initconfig
+CONFIG_DEPS=$(O)/.initconfig
 else
 CONFIG_DEPS=FORCE
 endif
@@ -25,7 +27,6 @@ SOURCE_DIR=$(PROJECT_BASE)/src/
 export SOURCE_DIR
 endif
 
-O ?= $(PROJECT_BASE)/outdir
 
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
@@ -68,7 +69,7 @@ qemu: $(CONFIG_DEPS) $(O)/include/config/.dir
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS) qemu
 
-initconfig: $(O)/include/config/.dir $(O)/include/generated/.dir
+$(O)/.initconfig: $(O)/include/config/.dir $(O)/include/generated/.dir
 	set -e;
 	$(Q)test -s $(O)/.config || $(Q) $(MAKE) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) defconfig
@@ -78,6 +79,8 @@ ifneq (($strip $(CONF_FILE)),)
 endif
 	$(Q)yes "" | $(MAKE) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) oldconfig
+	@touch $@
+
 
 %/.dir:
 	set -e;
