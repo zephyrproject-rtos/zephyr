@@ -36,6 +36,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
+#include <misc/util.h>
 
 #define FORCE_XFER_ON_STALL
 

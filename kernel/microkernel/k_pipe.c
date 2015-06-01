@@ -33,6 +33,7 @@
 #include <minik.h>
 #include <k_pipe_buffer.h>
 #include <k_pipe_util.h>
+#include <misc/util.h>
 
 /*******************************************************************************
 *

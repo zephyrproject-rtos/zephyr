@@ -41,6 +41,8 @@ ARM-specific nanokernel exception handling interface. Included by ARM/arch.h.
 #ifdef _ASMLANGUAGE
 GTEXT(_ExcExit);
 #else
+#include <stdint.h>
+
 struct __esf {
 	uint32_t a1; /* r0 */
 	uint32_t a2; /* r1 */
