@@ -48,14 +48,24 @@ This nanokernel project does not generate any output in the default case
 (TEST=min). In the regular case (TEST=reg) and the maximal case (TEST=max),
 it outputs to the console. It can be built and executed on QEMU as follows:
 
-    make pristine
     make TEST=min nanokernel.qemu         (minimal configuration)
 
-    make pristine
     make TEST=reg nanokernel.qemu         (regular configuration)
 
-    make pristine
     make TEST=max nanokernel.qemu         (maximal configuration)
+
+--------------------------------------------------------------------------------
+
+Troubleshooting:
+
+Problems caused by out-dated project information can be addressed by
+issuing one of the following commands then rebuilding the project:
+
+    make clean          # discard results of previous builds
+                        # but keep existing configuration info
+or
+    make pristine       # discard results of previous builds
+                        # and restore pre-defined configuration info
 
 --------------------------------------------------------------------------------
 
