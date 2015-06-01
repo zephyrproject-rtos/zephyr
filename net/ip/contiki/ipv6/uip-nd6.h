@@ -233,7 +233,7 @@
 typedef struct uip_nd6_ns {
   uint32_t reserved;
   uip_ipaddr_t tgtipaddr;
-} uip_nd6_ns;
+} PACK_ALIAS_STRUCT uip_nd6_ns;
 
 /**
  * \brief A neighbor advertisement constant part.
@@ -244,7 +244,7 @@ typedef struct uip_nd6_na {
   uint8_t flagsreserved;
   uint8_t reserved[3];
   uip_ipaddr_t tgtipaddr;
-} uip_nd6_na;
+} PACK_ALIAS_STRUCT uip_nd6_na;
 
 /**
  * \brief A router solicitation  constant part
@@ -266,7 +266,7 @@ typedef struct uip_nd6_ra {
   uint16_t router_lifetime;
   uint32_t reachable_time;
   uint32_t retrans_timer;
-} uip_nd6_ra;
+} PACK_ALIAS_STRUCT uip_nd6_ra;
 
 /**
  * \brief A redirect message constant part
@@ -289,7 +289,7 @@ typedef struct uip_nd6_redirect {
 typedef struct uip_nd6_opt_hdr {
   uint8_t type;
   uint8_t len;
-} uip_nd6_opt_hdr;
+} PACK_ALIAS_STRUCT uip_nd6_opt_hdr;
 
 /** \brief ND option prefix information */
 typedef struct uip_nd6_opt_prefix_info {
@@ -309,7 +309,7 @@ typedef struct uip_nd6_opt_mtu {
   uint8_t len;
   uint16_t reserved;
   uint32_t mtu;
-} uip_nd6_opt_mtu;
+} PACK_ALIAS_STRUCT uip_nd6_opt_mtu;
 
 /** \brief ND option RDNSS */
 typedef struct uip_nd6_opt_dns {

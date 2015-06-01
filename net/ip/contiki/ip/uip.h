@@ -1643,7 +1643,7 @@ struct uip_udpip_hdr {
     destport;
   uint16_t udplen;
   uint16_t udpchksum;
-};
+} PACK_ALIAS_STRUCT;
 
 /*
  * In IPv6 the length of the L3 headers before the transport header is
@@ -1672,7 +1672,7 @@ struct uip_ip_hdr {
   uint16_t ipchksum;
   uip_ipaddr_t srcipaddr, destipaddr;
 #endif /* NETSTACK_CONF_WITH_IPV6 */
-};
+} PACK_ALIAS_STRUCT;
 
 
 /*
@@ -1699,7 +1699,7 @@ struct uip_ip_hdr {
 typedef struct uip_ext_hdr {
   uint8_t next;
   uint8_t len;
-} uip_ext_hdr;
+} PACK_ALIAS_STRUCT uip_ext_hdr;
 
 /* Hop by Hop option header */
 typedef struct uip_hbho_hdr {
@@ -1728,7 +1728,7 @@ typedef struct uip_routing_hdr {
   uint8_t len;
   uint8_t routing_type;
   uint8_t seg_left;
-} uip_routing_hdr;
+} PACK_ALIAS_STRUCT uip_routing_hdr;
 
 /* fragmentation header */
 typedef struct uip_frag_hdr {
@@ -1745,13 +1745,13 @@ typedef struct uip_frag_hdr {
 typedef struct uip_ext_hdr_opt {
   uint8_t type;
   uint8_t len;
-} uip_ext_hdr_opt;
+} PACK_ALIAS_STRUCT uip_ext_hdr_opt;
 
 /* PADN option */
 typedef struct uip_ext_hdr_opt_padn {
   uint8_t opt_type;
   uint8_t opt_len;
-} uip_ext_hdr_opt_padn;
+} PACK_ALIAS_STRUCT uip_ext_hdr_opt_padn;
 
 /* RPL option */
 typedef struct uip_ext_hdr_opt_rpl {
@@ -1774,7 +1774,7 @@ struct uip_tcp_hdr {
   uint16_t tcpchksum;
   uint8_t urgp[2];
   uint8_t optdata[4];
-};
+} PACK_ALIAS_STRUCT;
 
 /* The ICMP headers. */
 struct uip_icmp_hdr {
@@ -1783,7 +1783,7 @@ struct uip_icmp_hdr {
 #if !NETSTACK_CONF_WITH_IPV6
   uint16_t id, seqno;
 #endif /* !NETSTACK_CONF_WITH_IPV6 */
-};
+} PACK_ALIAS_STRUCT;
 
 
 /* The UDP headers. */
@@ -1792,7 +1792,7 @@ struct uip_udp_hdr {
   uint16_t destport;
   uint16_t udplen;
   uint16_t udpchksum;
-};
+} PACK_ALIAS_STRUCT;
 
 
 /**

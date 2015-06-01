@@ -104,7 +104,7 @@
 /** \brief ICMPv6 Error message constant part */
 typedef struct uip_icmp6_error{
   uint32_t param;
-} uip_icmp6_error;
+} PACK_ALIAS_STRUCT uip_icmp6_error;
 
 /** \name ICMPv6 RFC4443 Message processing and sending */
 /** @{ */

@@ -46,7 +46,7 @@ typedef union uip_ip4addr_t {
 typedef union uip_ip6addr_t {
   uint8_t  u8[16];			/* Initializer, must come first. */
   uint16_t u16[8];
-} uip_ip6addr_t;
+} PACK_ALIAS_STRUCT uip_ip6addr_t;
 
 #if NETSTACK_CONF_WITH_IPV6
 typedef uip_ip6addr_t uip_ipaddr_t;
