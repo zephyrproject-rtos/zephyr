@@ -1,4 +1,4 @@
-/* timer.c - test ukernel timer APIs */
+/* timer.c - test microkernel timer APIs */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module tests the following ukernel timer routines:
+This module tests the following microkernel timer routines:
 
   task_timer_alloc(), task_timer_free()
   task_timer_start(), task_timer_restart(), task_timer_stop()

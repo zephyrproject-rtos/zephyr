@@ -1,4 +1,4 @@
-Title: Critical section ukernel test
+Title: Critical section test
 
 Description:
 
