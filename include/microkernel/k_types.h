@@ -33,7 +33,7 @@
 #ifndef K_TYPES_H
 #define K_TYPES_H
 
-#include <cputype.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

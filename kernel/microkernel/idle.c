@@ -281,9 +281,7 @@ unsigned char _sys_power_save_flag = 1;
 
 #if defined(CONFIG_ADVANCED_POWER_MANAGEMENT)
 
-#include <cputype.h>
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <microkernel/k_types.h>
 #ifdef CONFIG_ADVANCED_IDLE
 #include <advidle.h>

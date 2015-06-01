@@ -45,7 +45,6 @@ Currently empty, only here for abstraction.
 
 #include <minik.h>
 #include <nanok.h>
-#include <cputype.h>
 #include <microkernel/task.h>
 
 #define _START_TASK_ARCH(pKproc, pOpt) \

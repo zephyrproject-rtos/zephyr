@@ -52,7 +52,6 @@ conjunction with a microkernel.
 */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
@@ -62,7 +61,6 @@ conjunction with a microkernel.
 #ifdef CONFIG_MICROKERNEL
 
 #include <microkernel.h>
-#include <cputype.h>
 
 extern struct nano_stack _k_command_stack;
 

@@ -97,12 +97,6 @@ extern char __data_ram_start[];
 extern int __data_num_words[];
 #endif
 
-/* C FILES: declaration defined by the linker script */
-
-#ifdef VXMICRO_ARCH_x86
-#include <cputype.h>
-#endif /* VXMICRO_ARCH_x86 */
-
 /* end address of image. */
 extern char _end[];
 #define _END_VPAGE (VIRT_ADDR) _end

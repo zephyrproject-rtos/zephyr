@@ -50,7 +50,6 @@ directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
 */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <limits.h>
@@ -60,7 +59,6 @@ directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
 #ifdef CONFIG_MICROKERNEL
 
 #include <microkernel.h>
-#include <cputype.h>
 
 #endif /* CONFIG_MICROKERNEL */
 

@@ -65,7 +65,6 @@ In a nanokernel-only system this device driver omits more complex capabilities
 */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <clock_vars.h>
@@ -74,7 +73,6 @@ In a nanokernel-only system this device driver omits more complex capabilities
 #ifdef CONFIG_MICROKERNEL
 
 #include <microkernel.h>
-#include <cputype.h>
 
 extern struct nano_stack _k_command_stack;
 

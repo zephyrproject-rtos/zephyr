@@ -36,9 +36,7 @@ This module provides the _SysFatalErrorHandler() routine which is common to
 supported BSPs.
 */
 
-#include <cputype.h>
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 

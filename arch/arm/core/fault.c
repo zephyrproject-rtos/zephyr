@@ -38,9 +38,7 @@ Common fault handler for ARM Cortex-M processors.
 #include <toolchain.h>
 #include <sections.h>
 
-#include <cputype.h>
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <nanok.h>
 
 #ifdef CONFIG_PRINTK

@@ -36,9 +36,7 @@ This module contains routines that are used to initialize the nanokernel.
 */
 
 #include <offsets.h>
-#include <cputype.h>
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <misc/printk.h>
 #include <drivers/rand32.h>
 #include <sections.h>

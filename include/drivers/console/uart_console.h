@@ -37,7 +37,6 @@
 extern "C" {
 #endif
 
-#include <cputype.h>
 #include <nanokernel.h>
 
 extern void uart_console_init(void);

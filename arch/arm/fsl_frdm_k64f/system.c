@@ -37,8 +37,6 @@ for the fsl_frdm_k64f BSP.
 */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
-#include <cputype.h>
 #include <board.h>
 #include <drivers/k20_mcg.h>
 #include <drivers/uart.h>

@@ -44,7 +44,6 @@ After reset, the timer is initialized to zero.
 */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <clock_vars.h>
@@ -53,7 +52,6 @@ After reset, the timer is initialized to zero.
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
-#include <cputype.h>
 #endif /* CONFIG_MICROKERNEL */
 
 /*

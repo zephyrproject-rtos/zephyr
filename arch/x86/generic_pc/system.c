@@ -36,9 +36,7 @@ This module provides routines to initialize and support board-level hardware
 for the generic_pc BSP.
 */
 
-#include <cputype.h>
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include "board.h"
 #include <drivers/uart.h>
 #include <drivers/pic.h>
