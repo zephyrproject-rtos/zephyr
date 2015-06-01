@@ -303,6 +303,11 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		struct bt_buf *buf;
 		struct bt_att_notify *nfy;
 
+		/* TODO: Handle indications */
+		if (ccc->value != BT_GATT_CCC_NOTIFY) {
+			continue;
+		}
+
 		conn = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
 		if (!conn) {
 			continue;
@@ -313,11 +318,6 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		if (!buf) {
 			BT_WARN("No buffer available to send notification");
 			return BT_GATT_ITER_STOP;
-		}
-
-		/* TODO: Handle indications */
-		if (ccc->value != BT_GATT_CCC_NOTIFY) {
-			continue;
 		}
 
 		BT_DBG("conn %p handle %u\n", conn, data->handle);
