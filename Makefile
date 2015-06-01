@@ -861,6 +861,7 @@ quiet_cmd_link-tinymountain = LINK    $@
 # Include targets which we want to
 # execute if the rest of the kernel build went well.
 tinymountain: scripts/link-tinymountain.sh $(tinymountain-deps) FORCE
+	@touch tinymountain
 ifdef CONFIG_HEADERS_CHECK
 	$(Q)$(MAKE) -f $(srctree)/Makefile headers_check
 endif
