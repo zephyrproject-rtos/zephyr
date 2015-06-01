@@ -498,7 +498,8 @@ static int smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
 
 	keys = bt_keys_get_type(BT_KEYS_IRK, &conn->dst);
 	if (!keys) {
-		BT_ERR("Unable to get keys for %s\n", &conn->dst);
+		BT_ERR("Unable to get keys for %s\n",
+		       bt_addr_le_str(&conn->dst));
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -528,7 +529,8 @@ static int smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 
 	keys = bt_keys_get_type(BT_KEYS_IRK, &conn->dst);
 	if (!keys) {
-		BT_ERR("Unable to get keys for %s\n", &conn->dst);
+		BT_ERR("Unable to get keys for %s\n",
+		       bt_addr_le_str(&conn->dst));
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -639,7 +641,8 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 
 	keys = bt_keys_get_addr(&conn->dst);
 	if (!keys) {
-		BT_ERR("Unable to look up keys for %s\n", &conn->dst);
+		BT_ERR("Unable to look up keys for %s\n",
+		       bt_addr_le_str(&conn->dst));
 		return;
 	}
 
