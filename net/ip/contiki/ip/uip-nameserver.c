@@ -56,8 +56,10 @@ typedef struct uip_nameserver_record {
   uint32_t lifetime;
 } uip_nameserver_record;
 
+#if UIP_NAMESERVER_POOL_SIZE > 1
 /** \brief Initialization flag */
 static uint8_t initialized = 0;
+#endif
 
 /** \name List and memory block
  * @{
