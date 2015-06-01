@@ -39,8 +39,6 @@ semaphores.
 The ISRs are installed at build time, directly in the vector table.
 */
 
-/* includes */
-
 #if !defined(CONFIG_CPU_CORTEXM3)
   #error project can only run on Cortex-M3
 #endif

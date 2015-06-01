@@ -35,8 +35,6 @@ DESCRIPTION
 This module provides the _SysFatalErrorHandler() routine for ARCv2 BSPs.
 */
 
-/* includes */
-
 #include <cputype.h>
 #include <nanokernel.h>
 #include <arch/cpu.h>

@@ -39,12 +39,8 @@ This module tests the following timer related routines:
   nano_time_init(), nano_tick_get_32(), nano_cycle_get_32(), nano_tick_delta()
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <arch/cpu.h>
-
-/* defines */
 
 #define TWO_SECONDS     (2 * sys_clock_ticks_per_sec)
 #define SIX_SECONDS     (6 * sys_clock_ticks_per_sec)
@@ -59,14 +55,10 @@ This module tests the following timer related routines:
 #define FIBER2_STACKSIZE   2000
 #define FIBER2_PRIORITY    10
 
-/* typedefs */
-
 typedef void  (* timer_start_func)(struct nano_timer *, int);
 typedef void  (* timer_stop_func)(struct nano_timer *);
 typedef void* (* timer_getw_func)(struct nano_timer *);
 typedef void* (* timer_get_func)(struct nano_timer *);
-
-/* locals */
 
 static struct nano_timer  timer;
 static struct nano_timer  shortTimer;

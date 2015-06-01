@@ -81,8 +81,6 @@ The _EXC_STUB_SIZE macro is defined in arch/x86/include/nanok.h.
 #include <nanok.h>
 
 
-/* forward declarations */
-
 void _NanoCpuExcConnectAtDpl(unsigned int vector,
 			     void (*routine)(NANO_ESF * pEsf),
 			     NANO_EXC_STUB pExcStubMem,

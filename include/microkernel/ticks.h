@@ -33,8 +33,6 @@
 #ifndef TICKS_H
 #define TICKS_H
 
-/* includes */
-
 #include <nanokernel.h>
 #include <clock_vars.h>
 

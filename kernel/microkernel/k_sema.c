@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #include <microkernel.h>
 #include <toolchain.h>
 #include <sections.h>

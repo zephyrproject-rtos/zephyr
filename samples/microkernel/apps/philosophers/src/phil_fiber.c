@@ -29,8 +29,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-/* includes */
-
 #ifdef CONFIG_NANOKERNEL
   #include <nanokernel.h>
   #include "phil.h"
@@ -40,8 +38,6 @@
 #endif /*  CONFIG_NANOKERNEL */
 
 #include <arch/cpu.h>	/* irq_lock/irq_unlock */
-
-/* defines */
 
 #ifdef CONFIG_NANOKERNEL
   #define FORK(x) &forks[x]
@@ -62,8 +58,6 @@
 
 extern struct nano_sem forks[N_PHILOSOPHERS];
 #else  /* ! CONFIG_NANOKERNEL */
-/* globals */
-
 kmutex_t forks[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4, forkMutex5};
 #endif /*  CONFIG_NANOKERNEL */
 

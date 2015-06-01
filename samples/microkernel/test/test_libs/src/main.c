@@ -44,21 +44,15 @@ NOTE: At present only a single test task is used, but more tasks may be added
 in the future to enhance test coverage.
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <vxmicro.h>
 
 #include <util_test_common.h>
 
-/* defines */
-
 #define NUM_TEST_TASKS	1	/* # of test tasks to monitor */
 
 /* # ticks to wait for test completion */
 #define TIMEOUT	(60 * sys_clock_ticks_per_sec)
-
-/* locals */
 
 /*
  * Note that semaphore group entries are arranged so that resultSems[TC_PASS]
@@ -66,9 +60,6 @@ in the future to enhance test coverage.
  */
 
 static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
-
-/* globals */
-
 
 /*******************************************************************************
  *

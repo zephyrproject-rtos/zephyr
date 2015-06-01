@@ -48,8 +48,6 @@
 /* # ticks to wait for test completion */
 #define TIMEOUT	(60 * sys_clock_ticks_per_sec)
 
-/* locals */
-
 static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
 static ksem_t rdySem = SEM_RDY;
 

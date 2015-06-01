@@ -58,27 +58,19 @@ are not (yet) tested include:
   to ensure higher priority tasks get preference.
 */
 
-/* includes */
-
 #include <microkernel.h>
 
 #include <tc_util.h>
-
-/* defines */
 
 #define MSGSIZE		16    /* Standard message data size */
 #define XFER_PRIO	5     /* standard message transfer priority */
 #define MSG_INFO1	1234  /* Message info test value */
 #define MSG_INFO2	666   /* Message info test value */
 
-/* locals */
-
 static char myData1[MSGSIZE] = "This is myData1";
 static char myData2[MSGSIZE] = "This is myData2";
 static char myData3[MSGSIZE] = "This is myData3";
 static char myData4[MSGSIZE] = "This is myData4";
-
-/* globals */
 
 extern ktask_t msgSenderTask;
 extern ktask_t msgRcvrTask;

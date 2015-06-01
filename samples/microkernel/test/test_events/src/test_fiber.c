@@ -36,20 +36,16 @@ The module implements functions for the fiber that tests
 event signaling
 */
 
-/* includes */
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <vxmicro.h>
 
-/* defines */
 #define N_TESTS 10 /* number of tests to run */
 #define FIBER_PRIORITY 6
 #define FIBER_STACK_SIZE 1024
 
 /* exports */
 struct nano_sem fiberSem; /* semaphore that allows test control the fiber */
-
-/* locals */
 
 static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 

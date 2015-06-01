@@ -47,8 +47,6 @@ offsets.o module.
 #ifndef _NANOK_H
 #define _NANOK_H
 
-/* includes */
-
 #include <toolchain.h>
 #include <sections.h>
 #include <asm_inline.h>

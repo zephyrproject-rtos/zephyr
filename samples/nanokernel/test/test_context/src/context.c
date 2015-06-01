@@ -41,8 +41,6 @@ This module tests the following CPU and context related routines:
   irq_enable(), irq_disable(),
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <nanok.h>
 #include <arch/cpu.h>
@@ -60,8 +58,6 @@ This module tests the following CPU and context related routines:
 #if !defined(CONFIG_CPU_CORTEXM3)
   #include <board.h>
 #endif
-
-/* defines */
 
 #define FIBER_STACKSIZE    2000
 #define FIBER_PRIORITY     4
@@ -88,8 +84,6 @@ This module tests the following CPU and context related routines:
   #error Timer type is not defined for this BSP
 #endif
 
-/* typedefs */
-
 typedef struct {
 	int     command;    /* command to process */
 	int     error;      /* error value (if any) */
@@ -101,8 +95,6 @@ typedef struct {
 
 typedef int  (* disable_interrupt_func)(int);
 typedef void (* enable_interrupt_func)(int);
-
-/* locals */
 
 /* Cortex-M3 does not implement connecting non-IRQ exception handlers */
 #if !defined(CONFIG_CPU_CORTEXM3)

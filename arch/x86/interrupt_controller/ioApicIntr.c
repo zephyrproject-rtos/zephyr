@@ -75,8 +75,6 @@ INCLUDE FILES: ioapic.h loapic.h
 SEE ALSO: loApicIntr.c
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
@@ -87,8 +85,6 @@ SEE ALSO: loApicIntr.c
 
 #include <drivers/ioapic.h> /* public API declarations */
 #include <drivers/loapic.h> /* public API declarations and registers */
-
-/* defines */
 
 /* IO APIC direct register offsets */
 
@@ -195,8 +191,6 @@ SEE ALSO: loApicIntr.c
 #define IOAPIC_RTE_CONFIG_DISABLE_INT_EXT 0x80
 
 #endif /* IOAPIC_MSI_REDIRECT */
-
-/* forward declarations */
 
 #ifndef XIOAPIC_DIRECT_ADDRESSING
 static uint32_t __IoApicGet(int32_t offset);

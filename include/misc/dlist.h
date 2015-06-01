@@ -39,8 +39,6 @@ linked list.
 #ifndef _DLIST_H
 #define _DLIST_H
 
-/* typedefs */
-
 typedef struct dnode_s {
 	union {
 		struct dnode_s *head; /* ptr to head of list (dlist_t) */

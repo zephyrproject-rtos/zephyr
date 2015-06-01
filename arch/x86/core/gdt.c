@@ -36,8 +36,6 @@ This module contains routines for updating the global descriptor table (GDT)
 for the IA-32 architecture.
 */
 
-/* includes */
-
 #include <linker-defs.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -45,8 +43,6 @@ for the IA-32 architecture.
 #include <nanok.h>
 #include <arch/cpu.h>
 #include <gdt.h>
-
-/* defines */
 
 #if (CONFIG_NUM_GDT_SPARE_ENTRIES < 0)
 #error "**** CONFIG_NUM_GDT_SPARE_ENTRIES must be at least 0\n\n"
@@ -56,8 +52,6 @@ for the IA-32 architecture.
 
 #define MAX_GDT_ENTRIES \
 	(NUM_BASE_GDT_ENTRIES + CONFIG_NUM_GDT_SPARE_ENTRIES)
-
-/* locals */
 
 /*
  * The RAM based global descriptor table. It is aligned on an 8 byte boundary
@@ -90,8 +84,6 @@ static
 		 0x00    /* base : 00xxxxxx */
 		},
 };
-
-/* globals */
 
 tGdtHeader _gdt = {
 	sizeof(tGdtDesc[MAX_GDT_ENTRIES - CONFIG_NUM_GDT_SPARE_ENTRIES]) -

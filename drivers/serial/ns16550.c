@@ -56,8 +56,6 @@ A board support package's board.h header must provide definitions for:
 INCLUDE FILES: drivers/uart.h
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <stdint.h>
@@ -70,8 +68,6 @@ INCLUDE FILES: drivers/uart.h
 #include <pci/pci.h>
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
-
-/* defines */
 
 /* register definitions */
 
@@ -228,16 +224,12 @@ INCLUDE FILES: drivers/uart.h
 	} while (0)
 #endif /* VXMICRO_ARCH_Intel */
 
-/* typedefs */
-
 struct ns16550 {
 	uint32_t port;    /* base port number or MM base address */
 	uint8_t irq;      /* interrupt request level */
 	uint8_t intPri;   /* interrupt priority */
 	uint8_t iirCache; /* cache of IIR since it clears when read */
 };
-
-/* locals */
 
 #if !(defined(UART_PORTS_CONFIGURE)) && !(defined(CONFIG_PCI))
 

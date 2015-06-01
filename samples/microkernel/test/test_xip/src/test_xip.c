@@ -38,8 +38,6 @@ working. However, the test does do some some testing on
 global variables for completeness sake.
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <nanokernel.h>
 #include "test.h"

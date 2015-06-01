@@ -40,7 +40,6 @@ When this feature is enabled, the compiler generated code refers to
 function __stack_chk_fail and global variable __stack_chk_guard.
 */
 
-/* includes */
 #include <toolchain.h> /* compiler specific configurations */
 
 #if defined(CONFIG_STACK_CANARIES)

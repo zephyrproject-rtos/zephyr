@@ -38,8 +38,6 @@ This modules tests the following event APIs:
 
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <vxmicro.h>
 #include <arch/cpu.h>
@@ -51,13 +49,9 @@ This modules tests the following event APIs:
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-/* typedefs */
-
 typedef struct {
 	kevent_t  event;
 } ISR_INFO;
-
-/* locals */
 
 static int  evidence = 0;
 

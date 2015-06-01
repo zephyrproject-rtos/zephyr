@@ -61,8 +61,6 @@ the queue and puts and gets one last item to the queue.  All these are run
 in ISR context.
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <arch/cpu.h>
 
@@ -72,8 +70,6 @@ in ISR context.
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-/* defines */
-
 #define STACKSIZE               2048
 #define NUM_FIFO_ELEMENT        4
 #define INVALID_DATA            NULL
@@ -82,14 +78,10 @@ in ISR context.
 #define TCERR2         TC_ERROR("Didn't get back correct FIFO\n")
 #define TCERR3         TC_ERROR("The queue should be empty!\n")
 
-/* typedefs */
-
 typedef struct {
 	struct nano_fifo *channel;  /* FIFO channel */
 	void *data;     /* pointer to data to add */
 } ISR_FIFO_INFO;
-
-/* globals */
 
 char __stack fiberStack1[STACKSIZE];
 char __stack fiberStack2[STACKSIZE];
@@ -132,14 +124,10 @@ void * const pPutList2[NUM_FIFO_ELEMENT] = {
 
 int retCode = TC_PASS;
 
-/* locals */
-
 static ISR_FIFO_INFO  isrFifoInfo = {&nanoFifoObj, NULL};
 
 static void (*_trigger_nano_isr_fifo_put)(void) = (vvfn)sw_isr_trigger_0;
 static void (*_trigger_nano_isr_fifo_get)(void) = (vvfn)sw_isr_trigger_1;
-
-/* forward declarations */
 
 void fiber1(void);
 void fiber2(void);

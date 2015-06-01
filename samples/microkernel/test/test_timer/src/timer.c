@@ -39,8 +39,6 @@ This module tests the following ukernel timer routines:
   task_tick_delta(), task_tick_get_32()
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <vxmicro.h>
 
@@ -50,8 +48,6 @@ extern struct nano_lifo _k_timer_free;    /* For white box testing only */
 
 #define WITHIN_ERROR(var, target, epsilon)       \
 		(((var) >= (target)) && ((var) <= (target) + (epsilon)))
-
-/* locals */
 
 static ktimer_t pTimer[NTIMERS + 1];
 

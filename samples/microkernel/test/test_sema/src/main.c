@@ -42,8 +42,6 @@ these semaphores until it detects a failure or the completion of all test tasks,
 then announces the result of the test.
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <vxmicro.h>
@@ -58,11 +56,7 @@ then announces the result of the test.
 extern void testFiberInit(void);
 extern struct nano_sem fiberSem; /* semaphore that allows test control the fiber */
 
-/* defines */
-
 #define NUM_TEST_TASKS	4	/* # of test tasks to monitor */
-
-/* locals */
 
 static ksem_t testIsrInfo;
 
@@ -74,8 +68,6 @@ static CMD_PKT_SET_INSTANCE(cmdPktSet, 2)
  */
 
 static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
-
-/* globals */
 
 ksem_t simpleSem	= SIMPLE_SEM;
 ksem_t altSem		= ALTTASK_SEM;

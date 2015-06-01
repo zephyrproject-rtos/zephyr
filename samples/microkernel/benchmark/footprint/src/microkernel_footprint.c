@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #include <microkernel.h>
 #include <toolchain.h>
 
@@ -40,8 +38,6 @@
 /* INTENTIONALLY LEFT EMPTY (I.E. NO APPLICATION TASKS, FIBERS, OR ISRS) */
 
 #else
-
-/* includes */
 
 #include <arch/cpu.h>
 #include <misc/printk.h>
@@ -55,8 +51,6 @@
 #endif /* __GNUC__ */
 #endif /* TEST_reg */
 
-/* defines */
-
 #define IRQ_PRIORITY      3
 #define TEST_SOFT_INT	  64
 
@@ -65,8 +59,6 @@
 #else
 #define MESSAGE "Running regular microkernel configuration\n"
 #endif /* TEST_max */
-
-/* typedefs */
 
 typedef void* (*pfunc) (void*);
 

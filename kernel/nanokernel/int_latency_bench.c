@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 
 #include "toolchain.h"
@@ -42,11 +40,7 @@
 #include <clock_vars.h>
 #include <drivers/system_timer.h>
 
-/* defines */
-
 #define NB_CACHE_WARMING_DRY_RUN 7
-
-/* locals */
 
 /*
  * Timestamp corresponding to when interrupt were turned off.
@@ -68,8 +62,6 @@ static uint32_t int_lock_unlock_nest = 0;
 
 /* indicate if the interrupt latency benchamrk is ready to be used */
 static uint32_t int_latency_bench_ready = 0;
-
-/* globals */
 
 /* min amount of time it takes from HW interrupt generation to 'C' handler */
 uint32_t _hw_irq_to_c_handler_latency = ULONG_MAX;

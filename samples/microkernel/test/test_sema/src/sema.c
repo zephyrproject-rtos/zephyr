@@ -41,8 +41,6 @@ This modules tests the following semaphore routines:
   isr_sem_give(),  fiber_sem_give()
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <vxmicro.h>
@@ -53,7 +51,6 @@ This modules tests the following semaphore routines:
 extern void trigger_isrSemaSignal(ksem_t semaphore);
 extern void releaseTestFiber(void);
 
-/* defines */
 #define N_TESTS 10 /* number of tests to run */
 
 #define OBJ_TIMEOUT  SECONDS(1)

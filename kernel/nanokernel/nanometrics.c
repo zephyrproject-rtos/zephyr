@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #include <nanok.h>
 #include <toolchain.h>
 #include <sections.h>

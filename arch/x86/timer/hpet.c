@@ -96,8 +96,6 @@ extern struct nano_stack _k_command_stack;
 
 #include <board.h>
 
-/* defines */
-
 /* HPET register offsets */
 
 #define GENERAL_CAPS_REG 0	  /* 64-bit register */
@@ -196,7 +194,6 @@ extern struct nano_stack _k_command_stack;
 
 #define HPET_COMP_DELAY 192
 
-/* locals */
 #ifdef CONFIG_DYNAMIC_INT_STUBS
 static NANO_CPU_INT_STUB_DECL(_hpetIntStub); /* interrupt stub memory */
 #else					     /* !CONFIG_DYNAMIC_INT_STUBS */

@@ -36,8 +36,6 @@ This module provides core nanokernel fiber related primitives for the IA-32
 processor architecture.
 */
 
-/* includes */
-
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
 #include <kernel_struct.h>

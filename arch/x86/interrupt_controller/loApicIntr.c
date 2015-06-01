@@ -103,8 +103,6 @@ per priority level.
 INCLUDE FILES: loapic.h
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <stdint.h>
@@ -113,8 +111,6 @@ INCLUDE FILES: loapic.h
 #include <toolchain.h>
 #include <sections.h>
 #include <drivers/loapic.h> /* public API declarations */
-
-/* defines */
 
 /* IA32_APIC_BASE MSR Bits */
 

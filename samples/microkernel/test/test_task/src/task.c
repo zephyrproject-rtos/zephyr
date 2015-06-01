@@ -38,8 +38,6 @@ This module tests the following task APIs:
     task_sleep(), task_yield()
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <vxmicro.h>
 #include <arch/cpu.h>
@@ -50,8 +48,6 @@ This module tests the following task APIs:
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-/* defines */
-
 #define  RT_PRIO         10     /* RegressionTask prio - must match prj.vpf */
 #define  HT_PRIO         20     /* HelperTask prio - must match prj.vpf */
 
@@ -60,14 +56,10 @@ This module tests the following task APIs:
 #define  CMD_TASKID    0
 #define  CMD_PRIORITY  1
 
-/* typedefs */
-
 typedef struct {
 	int  cmd;
 	int  data;
 } ISR_INFO;
-
-/* locals */
 
 static vvfn _trigger_isrTaskCommand = (vvfn)sw_isr_trigger_0;
 

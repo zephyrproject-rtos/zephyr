@@ -32,8 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* includes */
-
 #ifdef CONFIG_NANOKERNEL
 /* For the nanokernel. */
 #include <nanokernel.h>
@@ -45,8 +43,6 @@
 #endif
 
 #include <nanokernel/cpu.h>	//!< Used to be know as: irq_lock/irq_unlock
-
-/* defines */
 
 #ifdef CONFIG_NANOKERNEL
 /* For the nanokernel. */

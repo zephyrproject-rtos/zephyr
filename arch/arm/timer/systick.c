@@ -82,8 +82,6 @@ static uint32_t clock_accumulated_count = 0;
 
 #include <board.h>
 
-/* defines */
-
 /*
  * When GDB_INFO is enabled, the handler installed in the vector table
  * (__systick), can be found in systick_gdb.s. In this case, the handler
@@ -103,8 +101,6 @@ static uint32_t clock_accumulated_count = 0;
 #define IDLE_TICKLESS 1     /* tickless idle  mode */
 #endif			    /* CONFIG_TICKLESS_IDLE */
 
-/* globals */
-
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 extern uint32_t _hw_irq_to_c_handler_latency;
 #endif
@@ -118,8 +114,6 @@ extern void _sys_power_save_idle_exit(int32_t ticks);
 #ifdef CONFIG_TICKLESS_IDLE
 extern int32_t _sys_idle_elapsed_ticks;
 #endif /* CONFIG_TICKLESS_IDLE */
-
-/* locals */
 
 #ifdef CONFIG_TICKLESS_IDLE
 static uint32_t __noinit default_load_value; /* default count */

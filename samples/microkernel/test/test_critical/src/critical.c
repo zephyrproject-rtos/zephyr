@@ -35,18 +35,12 @@ DESCRIPTION
 This module tests the task_offload_to_fiber() API.
 */
 
-/* includes */
-
 #include <vxmicro.h>
 #include <tc_util.h>
 #include <sections.h>
 
-/* defines */
-
 #define NUM_TICKS    500
 #define TEST_TIMEOUT 2000
-
-/* locals */
 
 static uint32_t  criticalVar = 0;
 static uint32_t altTaskIterations = 0;

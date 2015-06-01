@@ -42,19 +42,13 @@ these semaphores until it detects a failure or the completion of all test tasks,
 then announces the result of the test.
 */
 
-/* includes */
-
 #include <vxmicro.h>
 #include <tc_util.h>
-
-/* defines */
 
 #define NUM_TEST_TASKS	2	/* # of test tasks to monitor */
 
 /* # ticks to wait for test completion */
 #define TIMEOUT	(60 * sys_clock_ticks_per_sec)
-
-/* locals */
 
 /*
  * Note that semaphore group entries are arranged so that resultSems[TC_PASS]
@@ -62,8 +56,6 @@ then announces the result of the test.
  */
 
 static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
-
-/* globals */
 
 ksem_t regSem		= REGRESSION_SEM;
 ksem_t altSem		= ALTERNATE_SEM;

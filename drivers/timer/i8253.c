@@ -49,8 +49,6 @@ An interrupt controller driver will not be utilized, so this driver will
 directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
@@ -84,8 +82,6 @@ directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
 
 #include <board.h>
 
-/* defines */
-
 #if defined(CONFIG_TICKLESS_IDLE)
 #define TIMER_SUPPORTS_TICKLESS
 #endif
@@ -115,13 +111,9 @@ directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
 #define PIT_CNT2(base) PIT_ADRS(base, 0x02) /* counter/channel 2 */
 #define PIT_CMD(base) PIT_ADRS(base, 0x03)  /* control word */
 
-/* globals */
-
 #if defined(TIMER_SUPPORTS_TICKLESS)
 extern int32_t _sys_idle_elapsed_ticks;
 #endif
-
-/* locals */
 
 /* interrupt stub memory for irq_connect() */
 

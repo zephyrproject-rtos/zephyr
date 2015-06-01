@@ -52,8 +52,6 @@ corruption of command packets that are already in use.  To this end, drivers
 that have an ISR component should use their own command packet set.
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <microkernel/cmdPkt.h>

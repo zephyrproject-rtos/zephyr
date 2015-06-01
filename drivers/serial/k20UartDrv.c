@@ -40,8 +40,6 @@ values in the uart_init_info structure before calling uart_init().
 INCLUDE FILES: drivers/serial/k20_uart.h
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <stdint.h>
@@ -53,15 +51,11 @@ INCLUDE FILES: drivers/serial/k20_uart.h
 #include <toolchain.h>
 #include <sections.h>
 
-/* typedefs */
-
 typedef struct {
 	uint8_t *base; /* base address of registers */
 	uint8_t irq;       /* interrupt request level */
 	uint8_t intPri;    /* interrupt priority */
 } _k20Uart_t;
-
-/* locals */
 
 UART_PORTS_CONFIGURE(_k20Uart_t, uart);
 

@@ -29,15 +29,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-/* includes */
-
 #if defined(CONFIG_STDOUT_CONSOLE)
   #include <stdio.h>
 #else
   #include <misc/printk.h>
 #endif
-
-/* defines */
 
 #define N_PHILOSOPHERS	6
 /*

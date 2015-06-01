@@ -39,7 +39,6 @@ Interrupt stuff, abstracted across CPU architectures.
 #ifndef _IRQ_TEST_COMMON__H_
 #define _IRQ_TEST_COMMON__H_
 
-/* defines */
 
 #if defined(VXMICRO_ARCH_x86)
   #define IRQ_PRIORITY 3

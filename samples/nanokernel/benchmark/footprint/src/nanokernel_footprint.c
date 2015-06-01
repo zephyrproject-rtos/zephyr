@@ -37,8 +37,6 @@ volatile int i = 0;		/* counter used by background task */
 
 #ifndef TEST_min
 
-/* includes */
-
 #include <misc/printk.h>
 #include <arch/cpu.h>
 #include <stdio.h>
@@ -50,8 +48,6 @@ volatile int i = 0;		/* counter used by background task */
 #include <test_asm_inline_other.h>
 #endif /* __GNUC__ */
 #endif /* TEST_reg */
-
-/* defines */
 
 #define IRQ_PRIORITY      3
 #define TEST_SOFT_INT	  64
@@ -67,8 +63,6 @@ volatile int i = 0;		/* counter used by background task */
 #else
 #define MESSAGE "Running regular nanokernel configuration\n"
 #endif /* TEST_max */
-
-/* typedefs */
 
 typedef void* (*pfunc) (void*);
 

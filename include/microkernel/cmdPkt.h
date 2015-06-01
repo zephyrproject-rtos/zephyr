@@ -37,8 +37,6 @@
 extern "C" {
 #endif
 
-/* includes */
-
 #include <microkernel/k_types.h>
 
 /* define size of command packet (without exposing its internal structure) */
@@ -71,8 +69,6 @@ extern "C" {
 */
 
 #define CMD_PKT_SET(name) (*(struct cmd_pkt_set *)(name))
-
-/* typedefs */
 
 typedef uint32_t cmdPkt_t[CMD_PKT_SIZE_IN_WORDS];
 

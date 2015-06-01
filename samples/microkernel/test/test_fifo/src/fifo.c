@@ -45,13 +45,9 @@ Scenarios tested include:
 - Verify the return codes are correct for the APIs
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <stdbool.h>
 #include <vxmicro.h>
-
-/* defines */
 
 #define MULTIPLIER              100     /* Used to initialize myData */
 #define NUM_OF_ELEMENT          5       /* Number of elements in myData array */
@@ -62,8 +58,6 @@ Scenarios tested include:
                                          */
 
 #define SPECIAL_DATA            999     /* Special number to put in queue */
-
-/* locals */
 
 static int myData[NUM_OF_ELEMENT];
 static int tcRC = TC_PASS;              /* test case return code */

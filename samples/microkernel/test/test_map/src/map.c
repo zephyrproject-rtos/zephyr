@@ -44,13 +44,9 @@ allocated, and is only released once.  Using an invalid pointer will have
 unpredictable side effects.
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <stdbool.h>
 #include <vxmicro.h>
-
-/* defines */
 
 #define NUMBLOCKS   2       /*
                              * Number of memory blocks.  This number
@@ -59,11 +55,7 @@ unpredictable side effects.
                              * test is 2
                              */
 
-/* locals */
-
 static int tcRC = TC_PASS;     /* test case return code */
-
-/* forward declarations */
 
 int testMapGetAllBlocks(void **P);
 int testMapFreeAllBlocks(void **P);

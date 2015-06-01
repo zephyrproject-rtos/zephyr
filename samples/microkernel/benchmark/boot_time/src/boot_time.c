@@ -39,8 +39,6 @@ Measure boot time for both nanokernel and microkernel project which includes
 - from _start to idle (for microkernel)
 */
 
-/* includes */
-
 #ifdef CONFIG_NANOKERNEL
 #include <nanokernel.h>
 #else

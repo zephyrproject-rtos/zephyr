@@ -50,8 +50,6 @@ Scenario #3:
    Multiple fibers pend on the same semaphore.
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <arch/cpu.h>
 
@@ -61,12 +59,8 @@ Scenario #3:
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-/* defines */
-
 #define FIBER_STACKSIZE    2000
 #define FIBER_PRIORITY     4
-
-/* typedefs */
 
 typedef struct {
 	struct nano_sem *sem;    /* ptr to semaphore */
@@ -79,8 +73,6 @@ typedef enum {
 	STS_FIBER_WOKE_TASK,
 	STS_ISR_WOKE_TASK
 } SEM_TEST_STATE;
-
-/* locals */
 
 static SEM_TEST_STATE  semTestState;
 static ISR_SEM_INFO    isrSemInfo;

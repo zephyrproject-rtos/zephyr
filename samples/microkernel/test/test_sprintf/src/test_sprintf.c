@@ -35,12 +35,8 @@ DESCRIPTION
 This module contains the code for testing sprintf() functionality.
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <stdio.h>
-
-/* defines */
 
 #define DEADBEEF  0xdeadbeef
 
@@ -67,8 +63,6 @@ This module contains the code for testing sprintf() functionality.
 		"66666666666666666666666666666666666666666666666666666666666666666"
 
 #define PRINTF_MAX_STRING_LENGTH   200
-
-/* typedefs */
 
 typedef union {
 	double  d;

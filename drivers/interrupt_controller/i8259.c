@@ -83,8 +83,6 @@ the last level acknowledged and serviced.
  * specific and implemented in assembler
  */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
@@ -93,14 +91,10 @@ the last level acknowledged and serviced.
 #include <drivers/pic.h>
 #include <board.h>
 
-/* defines */
-
 #define OCW3_DEF 0x08 /* 3rd default control word */
 #define OCW3_PCB 0x04 /* Polling Control Bit */
 #define OCW3_ISR 0x03 /* Read in-service reg */
 #define OCW3_IRR 0x02 /* Read inter request reg */
-
-/* globals */
 
 #ifndef CONFIG_SHUTOFF_PIC
 unsigned int _i8259_spurious_interrupt_count =

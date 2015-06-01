@@ -37,8 +37,6 @@ This module implements the PCI H/W access functions.
 
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 

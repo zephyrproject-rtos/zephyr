@@ -43,8 +43,6 @@ divided by a value specified in the divide configuration register.
 After reset, the timer is initialized to zero.
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
@@ -71,8 +69,6 @@ After reset, the timer is initialized to zero.
  */
 
 #include <board.h>
-
-/* defines */
 
 /* Local APIC Timer Bits */
 
@@ -112,13 +108,10 @@ After reset, the timer is initialized to zero.
 	do {/* nothing */              \
 	} while (0)
 #endif /* !TIMER_SUPPORTS_TICKLESS */
-/* globals */
-
 #if defined(TIMER_SUPPORTS_TICKLESS)
 extern int32_t _sys_idle_elapsed_ticks;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-/* locals */
 #ifdef CONFIG_DYNAMIC_INT_STUBS
 static NANO_CPU_INT_STUB_DECL(
 	_loapic_timer_irq_stub); /* interrupt stub memory for */

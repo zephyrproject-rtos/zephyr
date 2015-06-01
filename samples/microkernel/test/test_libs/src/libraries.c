@@ -41,8 +41,6 @@ NOT guarantee that ALL standards-defined functionality is present, nor does
 it guarantee that ALL functionality provided is working correctly.
 */
 
-/* includes */
-
 #include <microkernel.h>
 #include <tc_util.h>
 

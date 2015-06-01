@@ -36,8 +36,6 @@ This module contains support code for the XIP regression
 test.
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include "test.h"
 

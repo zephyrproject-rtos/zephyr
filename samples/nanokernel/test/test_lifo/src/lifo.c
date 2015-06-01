@@ -52,8 +52,6 @@ Scenario #3:
 These scenarios will be tested using a combinations of tasks, fibers and ISRs.
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <arch/cpu.h>
 
@@ -63,12 +61,8 @@ These scenarios will be tested using a combinations of tasks, fibers and ISRs.
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-/* defines */
-
 #define FIBER_STACKSIZE    2000
 #define FIBER_PRIORITY     4
-
-/* typedefs */
 
 typedef struct {
 	struct nano_lifo *channel;  /* LIFO channel */
@@ -79,8 +73,6 @@ typedef struct {
 	uint32_t   link;     /* 32-bit word for LIFO to use as a link */
 	uint32_t   data;     /* miscellaneous data put on LIFO (not important) */
 } LIFO_ITEM;
-
-/* locals */
 
 /* Items to be added/removed from LIFO during the test */
 static LIFO_ITEM  lifoItem[4] = {

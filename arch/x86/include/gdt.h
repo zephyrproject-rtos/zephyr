@@ -39,16 +39,12 @@ IA-32 architecture.
 #ifndef _GDT_H
 #define _GDT_H
 
-/* includes */
-
 #include <arch/x86/arch.h>
 
 #ifndef _ASMLANGUAGE
 
 #include <stdint.h>
 #include <toolchain.h>
-
-/* typedefs */
 
 /* a generic GDT entry structure definition */
 

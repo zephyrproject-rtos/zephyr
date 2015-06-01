@@ -60,8 +60,6 @@ it popped all data from queue1, push and pop one last item to the queue.  All
 these are run in ISR context.
 */
 
-/* includes */
-
 #include <tc_util.h>
 #include <arch/cpu.h>
 
@@ -71,7 +69,6 @@ these are run in ISR context.
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-/* defines */
 #define STACKSIZE               2048
 #define NUM_STACK_ELEMENT       4
 #define STARTNUM                1       /* Used to compute data to put in the stack */
@@ -83,15 +80,11 @@ these are run in ISR context.
 #define TCERR2         TC_ERROR("Didn't get back correct data\n")
 #define TCERR3         TC_ERROR("The stack should be empty!\n")
 
-/* typedefs */
-
 typedef struct {
 	struct nano_stack *channel;      /* STACK channel */
 	uint32_t           data;         /* data to add */
 } ISR_STACK_INFO;
 
-
-/* globals */
 
 char fiberStack1[STACKSIZE];
 char fiberStack2[STACKSIZE];
@@ -115,14 +108,10 @@ uint32_t stack2[NUM_STACK_ELEMENT];
 void *timerData[1];
 int retCode = TC_PASS;
 
-/* locals */
-
 static ISR_STACK_INFO  isrStackInfo = {&nanoStackObj, 0};
 
 static void (*_trigger_nano_isr_stack_push)(void) = (vvfn)sw_isr_trigger_0;
 static void (*_trigger_nano_isr_stack_pop)(void) = (vvfn)sw_isr_trigger_1;
-
-/* forward declarations */
 
 void initData(void);
 void fiber1(void);

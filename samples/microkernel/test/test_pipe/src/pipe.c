@@ -41,15 +41,11 @@ The following target pipe routine does not yet have a test case:
   task_pipe_put_async()
 */
 
-/* includes */
-
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <tc_util.h>
 #include <vxmicro.h>
 #include <misc/util.h>
-
-/* defines */
 
 #define  ONE_SECOND     (sys_clock_ticks_per_sec)
 
@@ -57,17 +53,12 @@ The following target pipe routine does not yet have a test case:
 
 #define  PIPE_SIZE  256    /* This must match the value in the VPF file */
 
-/* typedefs */
-
 typedef struct {
 	int  size;                 /* number of bytes to send/receive */
 	K_PIPE_OPTION  options;    /* options for task_pipe_XXX() APIs */
 	int  sent;                 /* expected # of bytes sent */
 	int  rcode;                /* expected return code */
 } SIZE_EXPECT;
-
-/* locals */
-
 
 static char txBuffer[PIPE_SIZE + 32];
 static char rxBuffer[PIPE_SIZE + 32];
@@ -158,8 +149,6 @@ static SIZE_EXPECT  timeout_cases[] = {
 		{PIPE_SIZE, _0_TO_N, 0, RC_FAIL},
 		{PIPE_SIZE + 1, _0_TO_N, 0, RC_FAIL}
 	};
-
-/* globals */
 
 extern ksem_t regSem;
 extern ksem_t altSem;

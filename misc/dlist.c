@@ -40,8 +40,6 @@ simplifies the adding and removing of nodes to/from the list.
 \NOMANUAL
 */
 
-/* includes */
-
 #include <stddef.h>
 #include <misc/dlist.h>
 

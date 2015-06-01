@@ -46,20 +46,15 @@ DESCRIPTION
   prints out a short string couple times.
 */
 
-/* includes */
 #include <tc_util.h>
 
 #ifdef CONFIG_MICROKERNEL
 #include <vxmicro.h>
 
-/* locals */
-
 #else
 #include <arch/cpu.h>
 
-/* defines */
 #define STACKSIZE               1024
-/* locals */
 char __stack fiberStack[STACKSIZE];
 
 #endif /* CONFIG_MICROKERNEL */
@@ -67,7 +62,6 @@ char __stack fiberStack[STACKSIZE];
 static int count = 0;
 static int tcRC = TC_PASS;
 
-/* forward declarations */
 void check_input(const char *name, const char *input);
 
 /*******************************************************************************

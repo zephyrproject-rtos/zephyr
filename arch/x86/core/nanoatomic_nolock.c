@@ -45,8 +45,6 @@ These operators are currently unavailable to user space applications
 as there is no requirement for this capability.
 */
 
-/* includes */
-
 #if defined(CONFIG_LOCK_INSTRUCTION_UNSUPPORTED)
 
 #include <nanokernel.h>

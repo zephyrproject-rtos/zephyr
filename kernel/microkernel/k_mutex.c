@@ -55,8 +55,6 @@ levels (too high, or too low).
 NOMANUAL
 */
 
-/* includes */
-
 #include <microkernel.h>
 #include <minik.h>
 #include <nanok.h>
