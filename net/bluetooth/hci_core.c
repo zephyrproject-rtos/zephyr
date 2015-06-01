@@ -503,6 +503,30 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 	}
 }
 
+static void hci_encrypt_key_refresh_complete(struct bt_buf *buf)
+{
+	struct bt_hci_evt_encrypt_key_refresh_complete *evt = (void *)buf->data;
+	struct bt_conn *conn;
+	uint16_t handle;
+
+	handle = sys_le16_to_cpu(evt->handle);
+
+	BT_DBG("status %u handle %u encrypt 0x%02x\n", evt->status, handle,
+	       evt->encrypt);
+
+	if (evt->status) {
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Unable to look up conn with handle %u\n", handle);
+		return;
+	}
+
+	bt_l2cap_encrypt_change(conn);
+}
+
 static void copy_id_addr(struct bt_conn *conn, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
@@ -664,6 +688,9 @@ static void hci_event(struct bt_buf *buf)
 		break;
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 		hci_num_completed_packets(buf);
+		break;
+	case BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE:
+		hci_encrypt_key_refresh_complete(buf);
 		break;
 	case BT_HCI_EVT_LE_META_EVENT:
 		hci_le_meta_event(buf);

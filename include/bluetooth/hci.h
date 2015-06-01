@@ -304,6 +304,12 @@ struct bt_hci_evt_num_completed_packets {
 	struct bt_hci_handle_count h[0];
 } PACK_STRUCT;
 
+#define BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE	0x30
+struct bt_hci_evt_encrypt_key_refresh_complete {
+	uint8_t  status;
+	uint16_t handle;
+} PACK_STRUCT;
+
 #define BT_HCI_EVT_LE_META_EVENT		0x3e
 struct bt_hci_evt_le_meta_event {
 	uint8_t  subevent;
