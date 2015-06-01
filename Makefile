@@ -367,8 +367,6 @@ DEPMOD		= /sbin/depmod
 PERL		= perl
 PYTHON		= python
 CHECK		= sparse
-QEMU_BIN_PATH	?= /usr/bin
-QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
 
 CHECKFLAGS     := -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   =
@@ -607,6 +605,9 @@ sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch
 ifdef VXMICRO_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(VXMICRO_GCC_VARIANT)
 endif
+
+QEMU_BIN_PATH	?= /usr/bin
+QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
 
 # The all: target is the default when no target is given on the
 # command line.
