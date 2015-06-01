@@ -190,7 +190,8 @@ static struct bt_uuid ct_uuid = {
 };
 
 static struct bt_gatt_chrc ct_chrc = {
-	.properties =  BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
+	.properties =  BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY |
+		BT_GATT_CHRC_WRITE,
 	.value_handle = 0x0014,
 	.uuid = &ct_uuid,
 };
@@ -229,14 +230,29 @@ static void ct_ccc_cfg_changed(uint16_t value)
 	/* TODO: Handle value */
 }
 
+static uint8_t ct[10];
+
 static int read_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 		   void *buf, uint8_t len, uint16_t offset)
 {
-	uint8_t ct[10];
+	const char *value = attr->user_data;
 
-	generate_current_time(ct);
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+				 sizeof(ct));
+}
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &ct, sizeof(ct));
+static int write_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		    const void *buf, uint8_t len, uint16_t offset)
+{
+	uint8_t *value = attr->user_data;
+
+	if (offset + len > sizeof(ct)) {
+		return -EINVAL;
+	}
+
+	memcpy(value + offset, buf, len);
+
+	return len;
 }
 
 /* Device Information Service Variables */
@@ -351,8 +367,9 @@ static const struct bt_gatt_attr attrs[] = {
 	/* Current Time Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(0x0012, &cts_uuid),
 	BT_GATT_CHARACTERISTIC(0x0013, &ct_chrc),
-	BT_GATT_DESCRIPTOR(0x0014, &ct_uuid, BT_GATT_PERM_READ, read_ct,
-			   NULL, NULL),
+	BT_GATT_DESCRIPTOR(0x0014, &ct_uuid,
+			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			   read_ct, write_ct, ct),
 	BT_GATT_CCC(0x0015, 0x0014, ct_ccc_cfg, ct_ccc_cfg_changed),
 	/* Device Information Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(0x0016, &dis_uuid),
@@ -417,6 +434,9 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	/* Simulate current time for Current Time Service */
+	generate_current_time(ct);
 
 	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
