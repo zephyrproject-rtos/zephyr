@@ -32,10 +32,20 @@
 #ifndef __BT_GATT_H
 #define __BT_GATT_H
 
+/* GATT attribute permission bitfield values */
+#define BT_GATT_PERM_READ			0x01
+#define BT_GATT_PERM_WRITE			0x02
+#define BT_GATT_PERM_READ_ENCRYPT		0x04
+#define BT_GATT_PERM_WRITE_ENCRYPT		0x08
+#define BT_GATT_PERM_READ_AUTHEN		0x10
+#define BT_GATT_PERM_WRITE_AUTHEN		0x20
+#define BT_GATT_PERM_AUTHOR			0x40
+
 /* GATT Attribute structure */
 struct bt_gatt_attr {
 	uint16_t		handle;
 	const struct bt_uuid	*uuid;
+	uint8_t			perm;
 	int			(*read)(const bt_addr_le_t *peer,
 					const struct bt_gatt_attr *attr,
 					void *buf, uint8_t len,
@@ -190,6 +200,7 @@ int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
 {									\
 	.handle = _handle,						\
 	.uuid = _uuid,							\
+	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_service,				\
 	.user_data = _service,						\
 }
@@ -206,6 +217,7 @@ int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
 	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_PRIMARY }),	\
+	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_service,				\
 	.user_data = _service,						\
 }
@@ -222,6 +234,7 @@ int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
 	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_SECONDARY }),	\
+	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_service,				\
 	.user_data = _service,						\
 }
@@ -251,6 +264,7 @@ int bt_gatt_attr_read_included(const bt_addr_le_t *peer,
 	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_INCLUDE }),	\
+	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_included,				\
 	.user_data = _service,						\
 }
@@ -286,6 +300,7 @@ int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
 	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_CHRC }),	\
+	.perm = BT_GATT_PERM_READ,					\
 	.read = bt_gatt_attr_read_chrc,					\
 	.user_data = _value,						\
 }
@@ -354,6 +369,7 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 	.handle = _handle,						\
 	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
 				     .u16 = BT_UUID_GATT_CCC }),	\
+	.perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,			\
 	.read = bt_gatt_attr_read_ccc,					\
 	.write = bt_gatt_attr_write_ccc,				\
 	.user_data = (&(struct _bt_gatt_ccc) { .cfg = _cfg,		\
@@ -369,10 +385,11 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
  *  @param _handle descriptor attribute handle
  *  @param _value descriptor attribute value
  */
-#define BT_GATT_DESCRIPTOR(_handle, _uuid, _read, _write, _value)	\
+#define BT_GATT_DESCRIPTOR(_handle, _uuid, _perm, _read, _write, _value) \
 {									\
 	.handle = _handle,						\
 	.uuid = _uuid,							\
+	.perm = _perm,							\
 	.read = _read,							\
 	.write = _write,						\
 	.user_data = _value,						\
