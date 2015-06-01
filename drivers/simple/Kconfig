@@ -1,7 +1,7 @@
-# Kconfig - drivers configuration options
+# Kconfig - simple UART driver configuration options
 
 #
-# Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -13,7 +13,7 @@
 # this list of conditions and the following disclaimer in the documentation
 # and/or other materials provided with the distribution.
 #
-# 3) Neither the name of Intel Corporation nor the names of its contributors
+# 3) Neither the name of Wind River Systems nor the names of its contributors
 # may be used to endorse or promote products derived from this software without
 # specific prior written permission.
 #
@@ -30,19 +30,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-
-menu "Device Drivers"
-
-source "drivers/simple/Kconfig"
-
-source "drivers/bluetooth/Kconfig"
-
-source "drivers/console/Kconfig"
-
-source "drivers/serial/Kconfig"
-
-source "drivers/timer/Kconfig"
-
-source "drivers/random/Kconfig"
-
-endmenu
+config	UART_SIMPLE
+	bool
+	prompt "Simple UART driver"
+	select UART_INTERRUPT_DRIVEN
+	default n
+	help
+	  Enable Simple UART driver.

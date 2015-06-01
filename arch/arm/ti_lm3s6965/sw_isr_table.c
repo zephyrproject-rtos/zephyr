@@ -53,6 +53,11 @@ extern void _irq_spurious(void *arg);
 #include <bluetooth/uart.h>
 #endif /* CONFIG_BLUETOOTH_UART */
 
+#if defined(CONFIG_UART_SIMPLE)
+#include <board.h>
+#include <simple/uart.h>
+#endif /* CONFIG_UART_SIMPLE */
+
 #if defined(CONFIG_SW_ISR_TABLE_DYNAMIC)
 
 _IsrTableEntry_t __isr_table_section _sw_isr_table[CONFIG_NUM_IRQS] = {
@@ -76,6 +81,10 @@ _IsrTableEntry_t __isr_table_section _sw_isr_table[CONFIG_NUM_IRQS] = {
 #if defined(CONFIG_BLUETOOTH_UART)
 	[CONFIG_BLUETOOTH_UART_IRQ].arg = NULL,
 	[CONFIG_BLUETOOTH_UART_IRQ].isr = bt_uart_isr,
+#endif
+#if defined(CONFIG_UART_SIMPLE)
+	[CONFIG_UART_SIMPLE_IRQ].arg = NULL,
+	[CONFIG_UART_SIMPLE_IRQ].isr = uart_simple_isr,
 #endif
 };
 

@@ -46,7 +46,7 @@ config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
-	default 7
+	default 34
 
 config BSP_TI_LM3S6965_QEMU
 	def_bool y
