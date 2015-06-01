@@ -49,6 +49,11 @@ extern "C" {
 #include <cputype.h>
 #endif
 
+/* APIs need to support non-byte addressible architectures */
+
+#define OCTET_TO_SIZEOFUNIT(X) (X)
+#define SIZEOFUNIT_TO_OCTET(X) (X)
+
 #ifdef CONFIG_CPU_ARCV2
 #include <arch/arc/v2/init.h>
 #include <arch/arc/v2/exc.h>

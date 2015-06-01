@@ -45,6 +45,11 @@ by the generic nanokernel interface header (nanokernel.h)
 #include <arch/x86/Intelprc.h>
 #endif
 
+/* APIs need to support non-byte addressible architectures */
+
+#define OCTET_TO_SIZEOFUNIT(X) (X)
+#define SIZEOFUNIT_TO_OCTET(X) (X)
+
 /*
  * Macro used internally by NANO_CPU_INT_REGISTER and NANO_CPU_INT_REGISTER_ASM.
  * Not meant to be used explicitly by BSP, driver or application code.

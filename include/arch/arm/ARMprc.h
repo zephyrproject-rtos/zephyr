@@ -50,11 +50,6 @@ extern "C" {
 #include <misc/util.h>
 #include <drivers/system_timer.h> /* timer_driver() needed by kernel_main.c */
 
-/* sizes */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
 #ifdef __cplusplus
 }
 #endif

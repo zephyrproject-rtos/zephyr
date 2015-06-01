@@ -46,9 +46,6 @@ extern "C"
 	{
 #endif
 
-#define OCTET_TO_SIZEOFUNIT(X) (X)	  /* byte addressing */
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
 #include <stdint.h>
 #include <toolchain.h>
 #include <misc/util.h>
