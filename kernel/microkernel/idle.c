@@ -42,6 +42,7 @@ task, depending on how the kernel is configured.
 #include <toolchain.h>
 #include <sections.h>
 #include <microkernel.h>
+#include <drivers/system_timer.h>
 
 #if defined(CONFIG_WORKLOAD_MONITOR)
 

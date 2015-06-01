@@ -237,6 +237,5 @@ extern uint32_t nano_tick_delta_32(int64_t *reftime);
 /* architecture-specific nanokernel public APIs */
 
 #include <arch/cpu.h>
-#include <cputype.h>
 
 #endif /* __NANOKERNEL_H__ */

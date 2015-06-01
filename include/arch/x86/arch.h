@@ -39,10 +39,8 @@ by the generic nanokernel interface header (nanokernel.h)
 #ifndef _ARCH_IFACE_H
 #define _ARCH_IFACE_H
 
-/* WARNING: must include nanokernel.h before this file */
-
 #ifndef _ASMLANGUAGE
-#include <arch/x86/Intelprc.h>
+#include <arch/x86/asm_inline.h>
 #endif
 
 /* APIs need to support non-byte addressible architectures */
