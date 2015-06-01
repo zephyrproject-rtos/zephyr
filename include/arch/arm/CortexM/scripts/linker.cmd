@@ -43,6 +43,10 @@ Linker script for the Cortex-M3 BSPs.
 
 #include <linker-tool.h>
 
+#define INIT_LEVEL(level)				\
+		__initconfig##level##_start = .;	\
+		*(.initconfig##level##.init)		\
+
 /* physical address of RAM */
 #ifdef CONFIG_XIP
   #define ROMABLE_REGION FLASH
@@ -100,6 +104,14 @@ SECTIONS
 	*(".text.*")
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	SECTION_PROLOGUE (devconfig, (OPTIONAL),)
+	{
+		__devconfig_start = .;
+		*(".devconfig.*")
+		KEEP(*(SORT_BY_NAME(".devconfig*")))
+		__devconfig_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
     SECTION_PROLOGUE(.ARM.exidx,,)
 	{
 	/*
@@ -153,6 +165,21 @@ SECTIONS
 	__data_ram_start = .;
 	*(.data)
 	*(".data.*")
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+	SECTION_PROLOGUE (initlevel, (OPTIONAL),)
+	{
+		__initconfig_start = .;
+		INIT_LEVEL(0)
+		INIT_LEVEL(1)
+		INIT_LEVEL(2)
+		INIT_LEVEL(3)
+		INIT_LEVEL(4)
+		INIT_LEVEL(5)
+		INIT_LEVEL(6)
+		INIT_LEVEL(7)
+		KEEP(*(SORT_BY_NAME(".initconfig*")))
+		__initconfig_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
     __data_ram_end = .;
