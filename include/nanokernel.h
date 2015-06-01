@@ -33,14 +33,23 @@
 #ifndef __NANOKERNEL_H__
 #define __NANOKERNEL_H__
 
+/* fundamental include files */
+
 #include <stddef.h>
 #include <stdint.h>
-#include <toolchain.h> /* compiler specific configuration options */
+#include <toolchain.h>
 
-#include <arch/private.h>
+/* generic kernel public APIs */
+
 #include <kernel_version.h>
 #include <clock_vars.h>
 #include <drivers/rand32.h>
+
+/* nanokernel non-public APIs that can't be completely hidden */
+
+#include <arch/private.h>
+
+/* architecture-independent nanokernel public APIs */
 
 #ifdef __cplusplus
 extern "C" {
@@ -223,5 +232,11 @@ extern uint32_t nano_tick_delta_32(int64_t *reftime);
 #ifdef __cplusplus
 }
 #endif
+
+
+/* architecture-specific nanokernel public APIs */
+
+#include <arch/cpu.h>
+#include <cputype.h>
 
 #endif /* __NANOKERNEL_H__ */

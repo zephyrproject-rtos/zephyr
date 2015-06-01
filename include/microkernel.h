@@ -33,13 +33,14 @@
 #ifndef _MICROKERNEL_H
 #define _MICROKERNEL_H
 
+/* nanokernel and generic kernel public APIs */
+
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
-#include <cputype.h>
+/* microkernel public APIs */
+
 #include <microkernel/k_types.h>
-#include <clock_vars.h>
-#include <drivers/rand32.h>
 
 #include <microkernel/task.h>
 #include <microkernel/ticks.h>
