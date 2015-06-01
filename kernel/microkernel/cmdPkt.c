@@ -60,12 +60,12 @@ that have an ISR component should use their own command packet set.
 
 /*
  * generate build error by defining a negative-size array if the hard-coded
- * command packet size is smaller than the actual size; otherwise, define
+ * command packet size differs from the actual size; otherwise, define
  * a zero-element array that gets thrown away by linker
  */
 
 uint32_t _k_test_cmd_pkt_size
-	[0 - ((CMD_PKT_SIZE_IN_WORDS * sizeof(uint32_t)) < sizeof(struct k_args))];
+	[0 - ((CMD_PKT_SIZE_IN_WORDS * sizeof(uint32_t)) != sizeof(struct k_args))];
 
 /*******************************************************************************
  *

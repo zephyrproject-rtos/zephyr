@@ -448,12 +448,23 @@ union k_args_args {
 	struct k_chack ChAck;
 };
 
+/*
+ * The size of the k_args structure must be equivalent to ...
+ *     CMD_PKT_SIZE_IN_WORDS * sizeof(uint32_t)
+ * To this end the entire structure is packed.  This ensures that the compiler
+ * aligns 'Args' to a 4-byte boundary.  If left unpacked, then some compilers
+ * may provide an extra 4 bytes of padding to align it to an 8-byte boundary,
+ * thereby violating the previously stated equivalence.
+ */
 struct k_args {
 	struct k_args *Forw;
 	struct k_args **Head;
 	kpriority_t Prio;
-	bool    alloc;          /* true if allocated via GETARGS(); else false */
-	K_COMM Comm;
+
+	/* 'alloc' is true if k_args is allocated via GETARGS() */
+	bool   alloc __aligned(4);
+	K_COMM Comm __aligned(4);
+
 	K_CREF Ctxt;
 	union {
 		int32_t ticks;
@@ -461,7 +472,7 @@ struct k_args {
 		int rcode;
 	} Time;
 	K_ARGS_ARGS Args;
-};
+} __packed;
 
 /* ---------------------------------------------------------------------- */
 /* KERNEL OBJECT STRUCTURES */
