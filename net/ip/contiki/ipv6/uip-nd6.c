@@ -862,7 +862,7 @@ ra_input(struct net_buf *buf)
                               (uip_lladdr_t *)&uip_nd6_opt_llao(buf)[UIP_ND6_OPT_DATA_OFFSET],
 			      1, NBR_STALE);
       } else {
-        uip_lladdr_t *lladdr = uip_ds6_nbr_get_ll(uip_nbr(buf));
+        uip_lladdr_t *lladdr = (uip_lladdr_t *)uip_ds6_nbr_get_ll(uip_nbr(buf));
         if(uip_nbr(buf)->state == NBR_INCOMPLETE) {
           uip_nbr(buf)->state = NBR_STALE;
         }
