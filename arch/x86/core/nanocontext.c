@@ -281,9 +281,6 @@ __asm__("\t.globl _context_entry\n"
 * This function is utilized to create execution contexts for both fiber
 * contexts and kernel task contexts.
 *
-* This function is called by start_task() to initialize task contexts, and
-* by _fiber_start() (nanoFiberStart) to initialize fiber contexts.
-*
 * The "context control block" (CCS) is carved from the "end" of the specified
 * context stack memory.
 *
