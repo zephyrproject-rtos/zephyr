@@ -323,7 +323,7 @@ static int smp_init(struct bt_smp *smp)
 	return 0;
 }
 
-static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
+static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_smp_pairing *rsp;
@@ -333,10 +333,6 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	int ret;
 
 	BT_DBG("\n");
-
-	if (buf->len != sizeof(*req)) {
-		return BT_SMP_ERR_INVALID_PARAMS;
-	}
 
 	if ((req->max_key_size > BT_SMP_MAX_ENC_KEY_SIZE) ||
 	    (req->max_key_size < BT_SMP_MIN_ENC_KEY_SIZE)) {
@@ -382,7 +378,7 @@ static int smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-static int smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
+static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_confirm *req = (void *)buf->data;
 	struct bt_smp_pairing_confirm *rsp;
@@ -391,10 +387,6 @@ static int smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 	int err;
 
 	BT_DBG("\n");
-
-	if (buf->len != sizeof(*req)) {
-		return BT_SMP_ERR_INVALID_PARAMS;
-	}
 
 	memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
 
@@ -419,7 +411,7 @@ static int smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
+static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_random *req = (void *)buf->data;
 	struct bt_smp_pairing_random *rsp;
@@ -430,10 +422,6 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	int err;
 
 	BT_DBG("\n");
-
-	if (buf->len != sizeof(*req)) {
-		return BT_SMP_ERR_INVALID_PARAMS;
-	}
 
 	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
 
@@ -485,16 +473,12 @@ static int smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-static int smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
+static uint8_t smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_ident_info *req = (void *)buf->data;
 	struct bt_keys *keys;
 
 	BT_DBG("\n");
-
-	if (buf->len != sizeof(*req)) {
-		return BT_SMP_ERR_INVALID_PARAMS;
-	}
 
 	keys = bt_keys_get_type(BT_KEYS_IRK, &conn->dst);
 	if (!keys) {
@@ -508,16 +492,12 @@ static int smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-static int smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
+static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
 	struct bt_keys *keys;
 
 	BT_DBG("\n");
-
-	if (buf->len != sizeof(*req)) {
-		return BT_SMP_ERR_INVALID_PARAMS;
-	}
 
 	BT_DBG("identity %s\n", bt_addr_le_str(&req->addr));
 
@@ -543,10 +523,26 @@ static int smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static const struct {
+	uint8_t  (*func)(struct bt_conn *conn, struct bt_buf *buf);
+	uint8_t  expect_len;
+} handlers[] = {
+	{ }, /* No op-code defined for 0x00 */
+	{ smp_pairing_req,         sizeof(struct bt_smp_pairing) },
+	{ }, /* Pairing Response - Not yet implemented */
+	{ smp_pairing_confirm,     sizeof(struct bt_smp_pairing_confirm) },
+	{ smp_pairing_random,      sizeof(struct bt_smp_pairing_random) },
+	{ }, /* Pairing Failed - Not yet implemented */
+	{ }, /* Encrypt Information - Not yet implemented */
+	{ }, /* Master Identification - Not yet implemented */
+	{ smp_ident_info,          sizeof(struct bt_smp_ident_info) },
+	{ smp_ident_addr_info,     sizeof(struct bt_smp_ident_addr_info) },
+};
+
 static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_hdr *hdr = (void *)buf->data;
-	int err;
+	uint8_t err;
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small SMP PDU received\n");
@@ -557,26 +553,17 @@ static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 
 	bt_buf_pull(buf, sizeof(*hdr));
 
-	switch (hdr->code) {
-	case BT_SMP_CMD_PAIRING_REQ:
-		err = smp_pairing_req(conn, buf);
-		break;
-	case BT_SMP_CMD_PAIRING_CONFIRM:
-		err = smp_pairing_confirm(conn, buf);
-		break;
-	case BT_SMP_CMD_PAIRING_RANDOM:
-		err = smp_pairing_random(conn, buf);
-		break;
-	case BT_SMP_CMD_IDENT_INFO:
-		err = smp_ident_info(conn, buf);
-		break;
-	case BT_SMP_CMD_IDENT_ADDR_INFO:
-		err = smp_ident_addr_info(conn, buf);
-		break;
-	default:
+	if (hdr->code >= ARRAY_SIZE(handlers) || !handlers[hdr->code].func) {
 		BT_WARN("Unhandled SMP code 0x%02x\n", hdr->code);
 		err = BT_SMP_ERR_CMD_NOTSUPP;
-		break;
+	} else {
+		if (buf->len != handlers[hdr->code].expect_len) {
+			BT_ERR("Invalid len %u for code 0x%02x\n", buf->len,
+			       hdr->code);
+			err = BT_SMP_ERR_INVALID_PARAMS;
+		} else {
+			err = handlers[hdr->code].func(conn, buf);
+		}
 	}
 
 	if (err) {
