@@ -422,6 +422,21 @@ static const struct bt_eir sd[] = {
 	{ }
 };
 
+static void connected(const bt_addr_le_t *addr)
+{
+	printk("Connected\n");
+}
+
+static void disconnected(const bt_addr_le_t *addr)
+{
+	printk("Disconnected\n");
+}
+
+static struct bt_conn_cb conn_callbacks = {
+		.connected = connected,
+		.disconnected = disconnected,
+};
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -448,6 +463,8 @@ void main(void)
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
 	}
+
+	bt_conn_cb_register(&conn_callbacks);
 
 	printk("Advertising successfully started\n");
 
