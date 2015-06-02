@@ -19,7 +19,7 @@ PRJ_PATH=${ZEPHYR_BASE}/samples
 
 PRJ_LIST="\
 nanokernel/apps/bluetooth/init               <n> pentium4        \n\
-nanokernel/apps/bluetooth/init               <n> quark           \n\
+#  nanokernel/apps/bluetooth/init               <n> quark           \n\
 #  nanokernel/apps/bluetooth/init               <n> atom            \n\
 nanokernel/apps/bluetooth/init               <n> minuteia        \n\
 nanokernel/apps/bluetooth/init               <n> fsl_frdm_k64f   \n\
@@ -28,7 +28,7 @@ nanokernel/apps/bluetooth/shell              <n> pentium4        \n\
 nanokernel/apps/bluetooth/shell              <n> ti_lm3s6965     \n\
 nanokernel/apps/bluetooth/shell              <n> fsl_frdm_k64f   \n\
 nanokernel/test/test_bluetooth              <nq> pentium4!       \n\
-nanokernel/test/test_bluetooth              <nq> quark           \n\
+#  nanokernel/test/test_bluetooth              <nq> quark           \n\
 #  nanokernel/test/test_bluetooth              <nq> atom            \n\
 nanokernel/test/test_bluetooth              <nq> minuteia!       \n\
 nanokernel/test/test_bluetooth              <nq> ti_lm3s6965!    \n\
@@ -36,7 +36,7 @@ nanokernel/test/test_bluetooth              <nq> fsl_frdm_k64f   \n\
 bluetooth/peripheral                         <u> pentium4        \n\
 bluetooth/peripheral                         <u> ti_lm3s6965     \n\
 microkernel/test/test_bluetooth             <uq> pentium4!       \n\
-microkernel/test/test_bluetooth             <uq> quark           \n\
+#  microkernel/test/test_bluetooth             <uq> quark           \n\
 #  microkernel/test/test_bluetooth             <uq> atom           \n\
 microkernel/test/test_bluetooth             <uq> minuteia!       \n\
 microkernel/test/test_bluetooth             <uq> ti_lm3s6965!    \n\
