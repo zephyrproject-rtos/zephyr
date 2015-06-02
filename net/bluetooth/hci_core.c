@@ -70,6 +70,7 @@ static nano_context_id_t rx_prio_fiber_id;
 static struct bt_dev dev;
 
 static struct bt_conn_cb *callback_list;
+static bt_le_scan_cb_t *scan_dev_found_cb;
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
@@ -428,6 +429,9 @@ static void hci_reset_complete(struct bt_buf *buf)
 	if (status) {
 		return;
 	}
+
+	scan_dev_found_cb = NULL;
+	dev.scan_enable = BT_LE_SCAN_DISABLE;
 }
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct bt_buf *buf)
@@ -620,6 +624,7 @@ static void le_adv_report(struct bt_buf *buf)
 	while (num_reports--) {
 		int8_t rssi = info->data[info->length];
 		struct bt_keys *keys;
+		bt_addr_le_t addr;
 
 		BT_DBG("%s event %u, len %u, rssi %d dBm\n",
 			bt_addr_le_str(&info->addr),
@@ -627,9 +632,17 @@ static void le_adv_report(struct bt_buf *buf)
 
 		keys = bt_keys_find_irk(&info->addr);
 		if (keys) {
+			bt_addr_le_copy(&addr, &keys->addr);
 			BT_DBG("Identity %s matched RPA %s\n",
 			       bt_addr_le_str(&keys->addr),
 			       bt_addr_le_str(&info->addr));
+		} else {
+			bt_addr_le_copy(&addr, &info->addr);
+		}
+
+		if (scan_dev_found_cb) {
+			scan_dev_found_cb(&addr, rssi, info->evt_type,
+					  info->data, info->length);
 		}
 
 		/* Get next report iteration by moving pointer to right offset
@@ -1270,7 +1283,7 @@ send_set_param:
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
 
-int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
+int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 {
 	struct bt_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_params *set_param;
@@ -1278,6 +1291,10 @@ int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	int err;
 
 	if (dev.scan_enable == BT_LE_SCAN_ENABLE) {
+		return -EALREADY;
+	}
+
+	if (scan_dev_found_cb != NULL) {
 		return -EALREADY;
 	}
 
@@ -1289,7 +1306,7 @@ int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 
 	set_param = bt_buf_add(buf, sizeof(*set_param));
 	memset(set_param, 0, sizeof(*set_param));
-	set_param->scan_type = scan_type;
+	set_param->scan_type = BT_LE_SCAN_ENABLE;
 
 	/* for the rest parameters apply default values according to
 	 *  spec 4.2, vol2, part E, 7.8.10
@@ -1319,6 +1336,7 @@ int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	/* Update scan state in case of success (0) status */
 	if (!rsp->data[0]) {
 		dev.scan_enable = BT_LE_SCAN_ENABLE;
+		scan_dev_found_cb = cb;
 	}
 
 	bt_buf_put(rsp);
@@ -1355,6 +1373,7 @@ int bt_stop_scanning(void)
 	/* Update scan state in case of success (0) status */
 	if (!rsp->data[0]) {
 		dev.scan_enable = BT_LE_SCAN_DISABLE;
+		scan_dev_found_cb = NULL;
 	}
 
 	bt_buf_put(rsp);

@@ -55,6 +55,24 @@ struct bt_eir {
 	uint8_t data[29];
 } __packed;
 
+/*! @brief Define a type allowing user to implement a function that can be used
+ *  to get back active LE scan results.
+ *
+ *  A function of this type will be called back when user application triggers
+ *  active LE scan. The caller will populate all needed parameters based on data
+ *  coming from scan result.
+ *  Such function can be set by user when LE active scan API is used.
+ *
+ *  @param addr  Advertiser LE address and type.
+ *  @param rssi  Strength of advertiser signal.
+ *  @param adv_type  Type of advertising response from advertiser.
+ *  @param adv_data  Address of buffer containig advertiser data.
+ *  @param len  Length of advertiser data contained in buffer.
+ */
+typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
+		             uint8_t adv_type, const uint8_t *adv_data,
+		             uint8_t len);
+
 /** @brief Start advertising
  *
  *  Set advertisement data,  scan response data, advertisement parameters
@@ -68,7 +86,8 @@ struct bt_eir {
  */
 int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
 			 const struct bt_eir *sd);
-int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter);
+
+int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb);
 int bt_stop_scanning(void);
 
 /** @brief Setting LE connection to peer

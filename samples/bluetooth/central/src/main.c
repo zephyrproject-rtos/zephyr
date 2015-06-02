@@ -58,8 +58,7 @@ void main(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_start_scanning(BT_LE_SCAN_ENABLE,
-				BT_LE_SCAN_FILTER_DUP_DISABLE);
+	err = bt_start_scanning(BT_LE_SCAN_FILTER_DUP_DISABLE, NULL);
 
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
