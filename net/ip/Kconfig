@@ -49,6 +49,15 @@ config	NETWORKING_WITH_6LOWPAN
 	help
 	  Enable 6LoWPAN in uIP stack
 
+config	NETWORKING_WITH_RPL
+	bool
+	prompt "Enable RPL (ripple) IPv6 mesh routing protocol"
+	depends on NETWORKING
+	default n
+	help
+	  Enable RPL (RFC 6550) IPv6 Routing Protocol for
+	  Low-Power and Lossy Networks.
+
 config	NETWORKING_WITH_LOGGING
 	bool
 	prompt "Enable logging of the uIP stack"
