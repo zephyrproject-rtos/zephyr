@@ -511,8 +511,7 @@ static void hci_encrypt_key_refresh_complete(struct bt_buf *buf)
 
 	handle = sys_le16_to_cpu(evt->handle);
 
-	BT_DBG("status %u handle %u encrypt 0x%02x\n", evt->status, handle,
-	       evt->encrypt);
+	BT_DBG("status %u handle %u\n", evt->status, handle);
 
 	if (evt->status) {
 		return;
