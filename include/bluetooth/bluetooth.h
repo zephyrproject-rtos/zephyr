@@ -34,6 +34,7 @@
 
 #include <stdio.h>
 #include <bluetooth/buf.h>
+#include <bluetooth/hci.h>
 
 /* Bluetooth subsystem logging helpers */
 
@@ -92,5 +93,14 @@ int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
 			 const struct bt_eir *sd);
 int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter);
 int bt_stop_scanning();
+
+struct bt_conn_cb {
+	void (*connected)(const bt_addr_le_t *addr);
+	void (*disconnected)(const bt_addr_le_t *addr);
+
+	struct bt_conn_cb *_next;
+};
+
+void bt_conn_cb_register(struct bt_conn_cb *cb);
 
 #endif /* __BT_BLUETOOTH_H */
