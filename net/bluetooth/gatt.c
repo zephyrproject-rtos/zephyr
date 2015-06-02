@@ -156,7 +156,7 @@ int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
 		value_len += sizeof(pdu.uuid16);
 	} else {
 		memcpy(pdu.uuid, chrc->uuid->u128, sizeof(chrc->uuid->u128));
-		value_len = sizeof(chrc->uuid->u128);
+		value_len += sizeof(chrc->uuid->u128);
 	}
 
 	return bt_gatt_attr_read(peer, attr, buf, len, offset, &pdu, value_len);
