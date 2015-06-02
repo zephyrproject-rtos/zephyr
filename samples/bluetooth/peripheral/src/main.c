@@ -265,6 +265,62 @@ static int read_model(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
+/* Custom Service Variables */
+static struct bt_uuid vnd_uuid = {
+	.type = BT_UUID_128,
+	.u128 = { 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
+};
+
+static struct bt_uuid vnd_enc_uuid = {
+	.type = BT_UUID_128,
+	.u128 = { 0xf1, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
+};
+
+static struct bt_gatt_chrc vnd_enc_chrc = {
+	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+	.value_handle = 0x001b,
+	.uuid = &vnd_enc_uuid,
+};
+
+static struct bt_uuid vnd_auth_uuid = {
+	.type = BT_UUID_128,
+	.u128 = { 0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
+};
+
+static struct bt_gatt_chrc vnd_auth_chrc = {
+	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+	.value_handle = 0x001d,
+	.uuid = &vnd_auth_uuid,
+};
+
+static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+
+static int read_vnd(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		   void *buf, uint8_t len, uint16_t offset)
+{
+	const char *value = attr->user_data;
+
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+				 strlen(value));
+}
+
+static int write_vnd(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		     const void *buf, uint8_t len, uint16_t offset)
+{
+	uint8_t *value = attr->user_data;
+
+	if (offset + len > sizeof(vnd_value)) {
+		return -EINVAL;
+	}
+
+	memcpy(value + offset, buf, len);
+
+	return len;
+}
+
 static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
@@ -303,6 +359,18 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_CHARACTERISTIC(0x0017, &model_chrc),
 	BT_GATT_DESCRIPTOR(0x0018, &model_uuid, BT_GATT_PERM_READ,
 			   read_model, NULL, CONFIG_BSP_DIR),
+	/* Vendor Primary Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(0x0019, &vnd_uuid),
+	BT_GATT_CHARACTERISTIC(0x001a, &vnd_enc_chrc),
+	BT_GATT_DESCRIPTOR(0x001b, &vnd_enc_uuid,
+			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_ENCRYPT |
+			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT,
+			   read_vnd, write_vnd, vnd_value),
+	BT_GATT_CHARACTERISTIC(0x001c, &vnd_auth_chrc),
+	BT_GATT_DESCRIPTOR(0x001d, &vnd_auth_uuid,
+			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_AUTHEN |
+			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_AUTHEN,
+			   read_vnd, write_vnd, vnd_value),
 };
 
 static const struct bt_eir ad[] = {
@@ -315,6 +383,12 @@ static const struct bt_eir ad[] = {
 		.len = 7,
 		.type = BT_EIR_UUID16_ALL,
 		.data = { 0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18 },
+	},
+	{
+		.len = 17,
+		.type = BT_EIR_UUID128_ALL,
+		.data = { 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+			  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
 	},
 	{ }
 };
