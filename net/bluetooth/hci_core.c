@@ -693,9 +693,6 @@ static void hci_event(struct bt_buf *buf)
 	case BT_HCI_EVT_ENCRYPT_CHANGE:
 		hci_encrypt_change(buf);
 		break;
-	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
-		hci_num_completed_packets(buf);
-		break;
 	case BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE:
 		hci_encrypt_key_refresh_complete(buf);
 		break;
@@ -807,6 +804,9 @@ static void cmd_rx_fiber(void)
 			break;
 		case BT_HCI_EVT_CMD_STATUS:
 			hci_cmd_status(buf);
+			break;
+		case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+			hci_num_completed_packets(buf);
 			break;
 		default:
 			BT_ERR("Unknown event 0x%02x\n", hdr->evt);
@@ -1064,7 +1064,8 @@ void bt_recv(struct bt_buf *buf)
 	 */
 	hdr = (void *)buf->data;
 	if (hdr->evt == BT_HCI_EVT_CMD_COMPLETE ||
-	    hdr->evt == BT_HCI_EVT_CMD_STATUS) {
+	    hdr->evt == BT_HCI_EVT_CMD_STATUS ||
+	    hdr->evt == BT_HCI_EVT_NUM_COMPLETED_PACKETS) {
 		nano_fifo_put(&dev.cmd_rx_queue, buf);
 		return;
 	}
