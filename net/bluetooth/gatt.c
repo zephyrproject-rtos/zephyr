@@ -285,8 +285,9 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	if (bt_uuid_cmp(attr->uuid, &uuid)) {
 		/* Stop if we reach the next characteristic */
-		if (!bt_uuid_cmp(attr->uuid, &chrc))
+		if (!bt_uuid_cmp(attr->uuid, &chrc)) {
 			return BT_GATT_ITER_STOP;
+		}
 		return BT_GATT_ITER_CONTINUE;
 	}
 
