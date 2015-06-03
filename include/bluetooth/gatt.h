@@ -32,6 +32,8 @@
 #ifndef __BT_GATT_H
 #define __BT_GATT_H
 
+#include <misc/util.h>
+
 /* GATT attribute permission bitfield values */
 #define BT_GATT_PERM_READ			0x01
 #define BT_GATT_PERM_WRITE			0x02
