@@ -54,18 +54,4 @@
 #include <microkernel/pipe.h>
 #include <microkernel/task_irq.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define MON_TSWAP 1
-#define MON_STATE 2
-#define MON_KSERV 4
-#define MON_EVENT 8
-#define MON_ALL 15
-
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _MICROKERNEL_H */

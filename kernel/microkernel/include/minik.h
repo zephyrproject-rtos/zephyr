@@ -203,6 +203,12 @@ extern int _k_debug_halt;
 
 #ifdef CONFIG_TASK_MONITOR
 
+#define MON_TSWAP 1
+#define MON_STATE 2
+#define MON_KSERV 4
+#define MON_EVENT 8
+#define MON_ALL 15
+
 extern void _k_task_monitor(struct k_proc *, uint32_t d2);
 extern void _k_task_monitor_args(struct k_args *);
 extern void _k_task_monitor_read(struct k_args *);
