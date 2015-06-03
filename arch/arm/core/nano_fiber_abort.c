@@ -51,8 +51,6 @@ the PendSV exception.
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
-extern void _nano_fiber_swap(void);
-
 /*******************************************************************************
 *
 * fiber_abort - abort the currently executing fiber

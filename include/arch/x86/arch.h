@@ -332,8 +332,6 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
 
-extern void	_nano_fiber_swap(void);
-
 extern unsigned int find_first_set(unsigned int op);
 
 extern unsigned int find_last_set(unsigned int op);

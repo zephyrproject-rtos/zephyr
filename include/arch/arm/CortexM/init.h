@@ -39,7 +39,6 @@ ARM-specific nanokernel initialization interface. Included by ARM/arch.h.
 #define _ARCH_ARM_CORTEXM_INIT_H_
 
 #ifndef _ASMLANGUAGE
-extern void _nano_fiber_swap(void);
 #endif
 
 #endif /* _ARCH_ARM_CORTEXM_INIT_H_ */
