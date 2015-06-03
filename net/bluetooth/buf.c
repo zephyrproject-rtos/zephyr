@@ -49,7 +49,7 @@
 #endif
 
 /* Total number of all types of buffers */
-#define NUM_BUFS		20
+#define NUM_BUFS		22
 static struct bt_buf		buffers[NUM_BUFS];
 
 /* Available (free) buffers queues */
@@ -239,6 +239,9 @@ int bt_buf_init(int acl_in, int acl_out)
 	for (; i < NUM_BUFS; i++) {
 		nano_fifo_put(&avail_hci, &buffers[i]);
 	}
+
+	BT_DBG("%u buffers * %u bytes = %u bytes\n", NUM_BUFS,
+	       sizeof(buffers[0]), sizeof(buffers));
 
 	return 0;
 }
