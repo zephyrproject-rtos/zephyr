@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <misc/printk.h>
 #include <misc/byteorder.h>
+#include <vxmicro.h>
 
 #include "bluetooth/bluetooth.h"
 #include "bluetooth/hci.h"
@@ -231,6 +232,7 @@ static void ct_ccc_cfg_changed(uint16_t value)
 }
 
 static uint8_t ct[10];
+static uint8_t ct_update = 0;
 
 static int read_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 		   void *buf, uint8_t len, uint16_t offset)
@@ -251,6 +253,7 @@ static int write_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 	}
 
 	memcpy(value + offset, buf, len);
+	ct_update = 1;
 
 	return len;
 }
@@ -447,4 +450,16 @@ void main(void)
 	}
 
 	printk("Advertising successfully started\n");
+
+	/* Implement notification. At the moment there is no suitable way
+	 * of starting delayed work so we do it here
+	 */
+	while (1) {
+		task_sleep(sys_clock_ticks_per_sec);
+
+		if (ct_update) {
+			ct_update = 0;
+			bt_gatt_notify(0x0014, &ct, sizeof(ct));
+		}
+	}
 }
