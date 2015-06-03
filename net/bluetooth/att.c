@@ -540,6 +540,20 @@ static void att_read_type_req(struct bt_conn *conn, struct bt_buf *data)
 	att_read_type_rsp(conn, &uuid, start_handle, end_handle);
 }
 
+static uint8_t err_to_att(int err)
+{
+	BT_DBG("%d", err);
+
+	switch (err) {
+	case -EINVAL:
+		return BT_ATT_ERR_INVALID_OFFSET;
+	case -EFBIG:
+		return BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+	default:
+		return BT_ATT_ERR_UNLIKELY;
+	}
+}
+
 static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  uint8_t mask)
 {
@@ -603,7 +617,7 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 			  data->buf->data + data->buf->len,
 			  att->mtu - data->buf->len, data->offset);
 	if (read < 0) {
-		/* TODO: Handle read error */
+		data->err = err_to_att(read);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -882,7 +896,7 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	write = attr->write(&data->conn->dst, attr, data->value, data->len,
 			    data->offset);
 	if (write < 0 || write != data->len) {
-		/* TODO: Handle write error */
+		data->err = err_to_att(write);
 		return BT_GATT_ITER_STOP;
 	}
 
