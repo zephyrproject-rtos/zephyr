@@ -50,7 +50,6 @@ extern "C" {
 #define SIZEOFUNIT_TO_OCTET(X) (X)
 
 #ifdef CONFIG_CPU_ARCV2
-#include <arch/arc/v2/init.h>
 #include <arch/arc/v2/exc.h>
 #include <arch/arc/v2/irq.h>
 #include <arch/arc/v2/ffs.h>

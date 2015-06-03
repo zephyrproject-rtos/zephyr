@@ -50,7 +50,6 @@ extern "C" {
 #define SIZEOFUNIT_TO_OCTET(X) (X)
 
 #ifdef CONFIG_CPU_CORTEXM
-#include <arch/arm/CortexM/init.h>
 #include <arch/arm/CortexM/exc.h>
 #include <arch/arm/CortexM/irq.h>
 #include <arch/arm/CortexM/ffs.h>
