@@ -63,7 +63,7 @@ static inline tCCS *_nano_wait_q_remove_no_check(struct _nano_queue *wait_q)
 	}
 	ccs->link = 0;
 
-	_insert_ccs((tCCS **)&_nanokernel.fiber, ccs);
+	_nano_fiber_schedule(ccs);
 	return ccs;
 }
 

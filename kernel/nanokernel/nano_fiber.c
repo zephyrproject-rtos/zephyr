@@ -41,6 +41,40 @@ either in the form of an actual function or an alias to a function.
 #include <toolchain.h>
 #include <sections.h>
 
+/*******************************************************************************
+*
+* _nano_fiber_schedule - add a fiber to the list of runnable fibers
+*
+* The list of runnable fibers is maintained via a single linked list
+* in priority order. Numerically lower priorities represent higher priority
+* contexts.
+*
+* Interrupts must already be locked to ensure list cannot change
+* while this routine is executing!
+*
+* RETURNS: N/A
+*/
+
+void _nano_fiber_schedule(tCCS *ccs)
+{
+	tCCS *pQ = (tCCS *)&_nanokernel.fiber; 
+
+	/*
+	 * Search until end of list or until a fiber with numerically
+	 * higher priority is located.
+	 */
+
+	while (pQ->link && (ccs->prio >= pQ->link->prio)) {
+		pQ = pQ->link;
+	}
+
+	/* Insert fiber, following any equal priority fibers */
+
+	ccs->link = pQ->link;
+	pQ->link = ccs;
+}
+
+
 /* currently the fiber and task implementations are identical */
 
 FUNC_ALIAS(_fiber_start, fiber_fiber_start, void);
@@ -92,13 +126,13 @@ void _fiber_start(char *pStack,
 	/* _NewContext() has already set the flags depending on the 'options'
 	 * and 'priority' parameters passed to it */
 
-	/* lock interrupts to prevent corruption of the runnable context list */
+	/* lock interrupts to prevent corruption of the runnable fiber list */
 
 	imask = irq_lock();
 
-	/* insert thew newly crafted CCS into the fiber runnable context list */
+	/* make the newly crafted CCS a runnable fiber */
 
-	_insert_ccs((tCCS **)&_nanokernel.fiber, ccs);
+	_nano_fiber_schedule(ccs);
 
 	/*
 	 * Simply return to the caller if the current context is FIBER,
@@ -137,7 +171,7 @@ void fiber_yield(void)
 		 * then swap to the context at the head of the fiber list.
 		 */
 
-		_insert_ccs(&(_nanokernel.fiber), _nanokernel.current);
+		_nano_fiber_schedule(_nanokernel.current);
 		_Swap(imask);
 	} else
 		irq_unlock_inline(imask);

@@ -198,7 +198,7 @@ static ALWAYS_INLINE void fiberRtnValueSet(
 	pEsf->a1 = value;
 }
 
-extern void _insert_ccs(tCCS **, tCCS *);
+extern void _nano_fiber_schedule(tCCS *ccs);
 extern void _nano_fiber_swap(void);
 extern void _NewContext(char *,
 			 unsigned,

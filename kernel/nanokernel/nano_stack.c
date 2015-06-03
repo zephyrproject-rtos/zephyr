@@ -110,7 +110,7 @@ void _stack_push_non_preemptible(
 	if (ccs) {
 		stack->fiber = 0;
 		fiberRtnValueSet(ccs, data);
-		_insert_ccs((tCCS **)&_nanokernel.fiber, ccs);
+		_nano_fiber_schedule(ccs);
 	} else {
 		*(stack->next) = data;
 		stack->next++;
@@ -144,7 +144,7 @@ void nano_task_stack_push(
 	if (ccs) {
 		stack->fiber = 0;
 		fiberRtnValueSet(ccs, data);
-		_insert_ccs((tCCS **)&_nanokernel.fiber, ccs);
+		_nano_fiber_schedule(ccs);
 		_Swap(imask);
 		return;
 	} else {

@@ -857,7 +857,7 @@ typedef unsigned char __aligned(_EXC_STUB_ALIGN) NANO_EXC_STUB[_EXC_STUB_SIZE];
 
 extern void nano_cpu_atomic_idle(unsigned int imask);
 extern unsigned _Swap(unsigned int mask);
-extern void _insert_ccs(tCCS **queue, tCCS *ccs);
+extern void _nano_fiber_schedule(tCCS *ccs);
 extern void _nano_fiber_swap(void);
 
 
