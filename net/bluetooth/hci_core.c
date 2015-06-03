@@ -59,11 +59,11 @@
 
 /* Stacks for the fibers */
 static BT_STACK_NOINIT(rx_fiber_stack, 1024);
-static BT_STACK_NOINIT(cmd_rx_fiber_stack, 256);
+static BT_STACK_NOINIT(rx_prio_fiber_stack, 256);
 static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-static nano_context_id_t cmd_rx_fiber_id;
+static nano_context_id_t rx_prio_fiber_id;
 #endif
 
 static struct bt_dev dev;
@@ -175,7 +175,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 	 * event and giving back the blocking semaphore.
 	 */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-	if (context_self_get() == cmd_rx_fiber_id) {
+	if (context_self_get() == rx_prio_fiber_id) {
 		BT_ERR("called from invalid context!\n");
 		return -EDEADLK;
 	}
@@ -310,8 +310,8 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 
 	analyze_stack("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack),
 		      stack_growth);
-	analyze_stack("cmd rx stack", cmd_rx_fiber_stack,
-		      sizeof(cmd_rx_fiber_stack), stack_growth);
+	analyze_stack("cmd rx stack", rx_prio_fiber_stack,
+		      sizeof(rx_prio_fiber_stack), stack_growth);
 	analyze_stack("cmd tx stack", cmd_tx_fiber_stack,
 		      sizeof(cmd_tx_fiber_stack), stack_growth);
 	analyze_stack("conn tx stack", conn->tx_stack, sizeof(conn->tx_stack),
@@ -770,7 +770,7 @@ static void hci_rx_fiber(void)
 	}
 }
 
-static void cmd_rx_fiber(void)
+static void rx_prio_fiber(void)
 {
 	struct bt_buf *buf;
 
@@ -778,14 +778,14 @@ static void cmd_rx_fiber(void)
 
 	/* So we can avoid bt_hci_cmd_send_sync deadlocks */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-	cmd_rx_fiber_id = context_self_get();
+	rx_prio_fiber_id = context_self_get();
 #endif
 
 	while (1) {
 		struct bt_hci_evt_hdr *hdr;
 
 		BT_DBG("calling fifo_get_wait\n");
-		buf = nano_fifo_get_wait(&dev.cmd_rx_queue);
+		buf = nano_fifo_get_wait(&dev.rx_prio_queue);
 
 		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
 
@@ -1066,7 +1066,7 @@ void bt_recv(struct bt_buf *buf)
 	if (hdr->evt == BT_HCI_EVT_CMD_COMPLETE ||
 	    hdr->evt == BT_HCI_EVT_CMD_STATUS ||
 	    hdr->evt == BT_HCI_EVT_NUM_COMPLETED_PACKETS) {
-		nano_fifo_put(&dev.cmd_rx_queue, buf);
+		nano_fifo_put(&dev.rx_prio_queue, buf);
 		return;
 	}
 
@@ -1114,9 +1114,9 @@ static void rx_queue_init(void)
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t)hci_rx_fiber, 0, 0, 7, 0);
 
-	nano_fifo_init(&dev.cmd_rx_queue);
-	fiber_start(cmd_rx_fiber_stack, sizeof(cmd_rx_fiber_stack),
-		    (nano_fiber_entry_t)cmd_rx_fiber, 0, 0, 7, 0);
+	nano_fifo_init(&dev.rx_prio_queue);
+	fiber_start(rx_prio_fiber_stack, sizeof(rx_prio_fiber_stack),
+		    (nano_fiber_entry_t)rx_prio_fiber, 0, 0, 7, 0);
 }
 
 int bt_init(void)
