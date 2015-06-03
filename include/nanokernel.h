@@ -102,8 +102,16 @@ extern void task_fiber_start(char *pStack,
 			       unsigned prio,
 			       unsigned options);
 
-/* FIFO APIs
- */
+/* FIFO APIs */
+
+struct nano_fifo {
+	union {
+		struct _nano_queue wait_q;
+		struct _nano_queue data_q;
+	};
+	int stat;
+};
+
 extern void nano_fifo_init(struct nano_fifo *chan);
 /* scheduling context independent methods (when context is not known) */
 extern void nano_fifo_put(struct nano_fifo *chan, void *data);
@@ -121,8 +129,13 @@ extern void nano_task_fifo_put(struct nano_fifo *chan, void *data);
 extern void *nano_task_fifo_get(struct nano_fifo *chan);
 extern void *nano_task_fifo_get_wait(struct nano_fifo *chan);
 
-/* LIFO APIs
- */
+/* LIFO APIs */
+
+struct nano_lifo {
+	struct _nano_queue wait_q;
+	void *list;
+};
+
 extern void nano_lifo_init(struct nano_lifo *chan);
 /* methods for ISRs */
 extern void nano_isr_lifo_put(struct nano_lifo *chan, void *data);
@@ -136,8 +149,13 @@ extern void nano_task_lifo_put(struct nano_lifo *chan, void *data);
 extern void *nano_task_lifo_get(struct nano_lifo *chan);
 extern void *nano_task_lifo_get_wait(struct nano_lifo *chan);
 
-/* semaphore APIs
- */
+/* semaphore APIs */
+
+struct nano_sem {
+	struct _nano_queue wait_q;
+	int nsig;
+};
+
 extern void nano_sem_init(struct nano_sem *chan);
 /* scheduling context independent methods (when context is not known) */
 extern void nano_sem_give(struct nano_sem *chan);
@@ -154,8 +172,14 @@ extern void nano_task_sem_give(struct nano_sem *chan);
 extern int nano_task_sem_take(struct nano_sem *chan);
 extern void nano_task_sem_take_wait(struct nano_sem *chan);
 
-/* stack APIs
- */
+/* stack APIs */
+
+struct nano_stack {
+	tCCS *fiber;
+	uint32_t *base;
+	uint32_t *next;
+};
+
 extern void nano_stack_init(struct nano_stack *chan, uint32_t *data);
 /* methods for ISRs */
 extern void nano_isr_stack_push(struct nano_stack *chan, uint32_t data);
@@ -179,6 +203,13 @@ extern void *context_custom_data_get(void);
 #if defined(CONFIG_NANOKERNEL)
 
 /* nanokernel-only timers */
+
+struct nano_timer {
+	struct nano_timer *link;
+	uint32_t ticks;
+	struct nano_lifo lifo;
+	void *userData;
+};
 
 extern void nano_timer_init(struct nano_timer *chan, void *data);
 

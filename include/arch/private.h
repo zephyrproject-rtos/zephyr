@@ -44,37 +44,6 @@ struct _nano_queue {
 	void *tail;
 };
 
-struct nano_sem {
-	struct _nano_queue wait_q;
-	int nsig;
-};
-
-struct nano_lifo {
-	struct _nano_queue wait_q;
-	void *list;
-};
-
-struct nano_fifo {
-	union {
-		struct _nano_queue wait_q;
-		struct _nano_queue data_q;
-	};
-	int stat;
-};
-
-struct nano_stack {
-	tCCS *fiber;
-	uint32_t *base;
-	uint32_t *next;
-};
-
-struct nano_timer {
-	struct nano_timer *link;
-	uint32_t ticks;
-	struct nano_lifo lifo;
-	void *userData;
-};
-
 /* context entry point function typedef */
 
 typedef void *_ContextArg;
@@ -94,6 +63,8 @@ extern void _context_exit(tCCS *ccs);
 	do {/* nothing */    \
 	} while (0)
 #endif /* CONFIG_CONTEXT_MONITOR */
+
+struct nano_lifo;
 
 extern void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo);
 
