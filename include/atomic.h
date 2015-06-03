@@ -49,7 +49,7 @@ extern atomic_val_t atomic_or(atomic_t *target, atomic_val_t value);
 extern atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value);
 extern atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value);
 extern atomic_val_t atomic_clear(atomic_t *target);
-extern atomic_val_t atomic_get(atomic_t *target);
+extern atomic_val_t atomic_get(const atomic_t *target);
 extern atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
 extern int atomic_cas(atomic_t *target,
 					  atomic_val_t oldValue, atomic_val_t newValue);

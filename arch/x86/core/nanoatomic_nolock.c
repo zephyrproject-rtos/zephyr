@@ -199,7 +199,7 @@ atomic_val_t atomic_dec(
 * RETURNS: The value read from <target>
 */
 
-atomic_val_t atomic_get(atomic_t *target /* memory location to read from */
+atomic_val_t atomic_get(const atomic_t *target /* memory location to read from */
 			  )
 {
 	return *target;
