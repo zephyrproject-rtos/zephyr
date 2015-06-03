@@ -571,8 +571,7 @@ static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_ATT_ERR_AUTHENTICATION;
 	}
 
-	if (mask & BT_GATT_PERM_ENCRYPT_MASK) {
-		/* TODO: Check conn encryption */
+	if ((mask & BT_GATT_PERM_ENCRYPT_MASK) && !conn->encrypt) {
 		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
 	}
 
