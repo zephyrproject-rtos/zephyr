@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include <net/net_buf.h>
+#include <net_driver_15_4.h>
 #include <net/sicslowpan/sicslowpan_fragmentation.h>
 #include <net/netstack.h>
 #include "net/packetbuf.h"
@@ -162,7 +163,7 @@ packet_sent(struct net_mbuf *buf, void *ptr, int status, int transmissions)
  * \param dest the link layer destination address of the packet
  */
 static void
-send_packet(struct net_mbuf *buf, linkaddr_t *dest, void *ptr)
+send_packet(struct net_mbuf *buf, linkaddr_t *dest, bool last_fragment, void *ptr)
 {
   /* Set the link layer destination address for the packet as a
    * packetbuf attribute. The MAC layer can access the destination
@@ -182,23 +183,23 @@ send_packet(struct net_mbuf *buf, linkaddr_t *dest, void *ptr)
 
   /* Provide a callback function to receive the result of
      a packet transmission. */
-  NETSTACK_LLSEC.send(buf, &packet_sent, ptr);
+  NETSTACK_LLSEC.send(buf, &packet_sent, last_fragment, ptr);
 
   /* If we are sending multiple packets in a row, we need to let the
      watchdog know that we are still alive. */
   watchdog_periodic();
 }
 
-static int fragment(struct net_buf *buf, const uip_lladdr_t *localdest, void *ptr)
+static int fragment(struct net_buf *buf, void *ptr)
 {
    struct queuebuf *q;
    int max_payload;
    int framer_hdrlen;
-   /* The MAC address of the destination of the packet */
-   linkaddr_t dest;
+
    /* Number of bytes processed. */
    uint16_t processed_ip_out_len;
    struct net_mbuf *mbuf;
+   bool last_fragment = false;
 
 #define USE_FRAMER_HDRLEN 0
 #if USE_FRAMER_HDRLEN
@@ -224,18 +225,13 @@ static int fragment(struct net_buf *buf, const uip_lladdr_t *localdest, void *pt
    * packet. If the argument localdest is NULL, we are sending a
    * broadcast packet.
    */
-  if(localdest == NULL) {
-    linkaddr_copy(&dest, &linkaddr_null);
-  } else {
-    linkaddr_copy(&dest, (const linkaddr_t *)localdest);
-  }
 
   if((int)uip_len(buf) <= max_payload) {
     /* The packet does not need to be fragmented, send buf */
     packetbuf_copyfrom(mbuf, uip_buf(buf), uip_len(buf));
-    packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER, &dest);
+    packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER, &buf->dest);
     net_buf_put(buf);
-    NETSTACK_LLSEC.send(mbuf, &packet_sent, ptr);
+    NETSTACK_LLSEC.send(mbuf, &packet_sent, true, ptr);
     return 1;
    }
 
@@ -285,7 +281,7 @@ static int fragment(struct net_buf *buf, const uip_lladdr_t *localdest, void *pt
       PRINTFO("could not allocate queuebuf for first fragment, dropping packet\n");
       goto fail;
     }
-    send_packet(mbuf, &dest, ptr);
+    send_packet(mbuf, &buf->dest, last_fragment, ptr);
     queuebuf_to_packetbuf(mbuf, q);
     queuebuf_free(q);
     q = NULL;
@@ -320,6 +316,7 @@ static int fragment(struct net_buf *buf, const uip_lladdr_t *localdest, void *pt
       /* Copy payload and send */
       if(uip_len(buf) - processed_ip_out_len < uip_packetbuf_payload_len(mbuf)) {
         /* last fragment */
+        last_fragment = true;
         uip_packetbuf_payload_len(mbuf) = uip_len(buf) - processed_ip_out_len;
       }
       PRINTFO("(offset %d, len %d, tag %d)\n",
@@ -332,7 +329,7 @@ static int fragment(struct net_buf *buf, const uip_lladdr_t *localdest, void *pt
         PRINTFO("could not allocate queuebuf, dropping fragment\n");
         goto fail;
       }
-      send_packet(mbuf, &dest, ptr);
+      send_packet(mbuf, &buf->dest, last_fragment, ptr);
       queuebuf_to_packetbuf(mbuf, q);
       queuebuf_free(q);
       q = NULL;
@@ -557,7 +554,7 @@ static int reassemble(struct net_mbuf *mbuf)
   if(processed_ip_in_len == 0 || (processed_ip_in_len == sicslowpan_len(buf))) {
     PRINTFI("reassemble: IP packet ready (length %d)\n",
            sicslowpan_len(buf));
-    if (!NETSTACK_COMPRESS.uncompress(buf)) {
+    if (net_driver_15_4_recv(buf) < 0) {
         goto fail;
     } else {
       /* set to default after reassemble is completed */

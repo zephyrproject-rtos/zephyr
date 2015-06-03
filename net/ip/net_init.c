@@ -50,6 +50,8 @@
 #include <net/net_ip.h>
 #include <net/net_socket.h>
 
+#include "net_driver_15_4.h"
+
 #include "contiki/os/sys/process.h"
 #include "contiki/os/sys/etimer.h"
 #include "contiki/netstack.h"
@@ -405,6 +407,12 @@ static uint8_t net_tcpip_output(struct net_buf *buf, const uip_lladdr_t *lladdr)
 		return 0;
 	}
 
+	if(lladdr == NULL) {
+		linkaddr_copy(&buf->dest, &linkaddr_null);
+	} else {
+		linkaddr_copy(&buf->dest, (const linkaddr_t *)lladdr);
+	}
+
 	if (netdev.drv->send(buf) < 0) {
 		return 0;
 	}
@@ -472,6 +480,10 @@ int net_init(void)
 	net_buf_init();
 	init_tx_queue();
 	init_rx_queue();
+
+#if defined (CONFIG_NETWORKING_WITH_15_4)
+	net_driver_15_4_init();
+#endif
 
 	return network_initialization();
 }

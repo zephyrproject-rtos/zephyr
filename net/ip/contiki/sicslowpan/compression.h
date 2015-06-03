@@ -38,7 +38,7 @@
 
 struct compression {
   void (* init)(void);
-//  int (* compress)(struct net_buf *buf, const uip_lladdr_t *localdest);
+  int (* compress)(struct net_buf *buf);
   int (* uncompress)(struct net_buf *buf);
 };
 

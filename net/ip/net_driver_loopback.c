@@ -84,7 +84,7 @@ static int net_driver_loopback_open(void)
 	return 0;
 }
 
-static int net_driver_loopback_send(struct net_buf *buf)
+static int net_driver_loopback_send(struct net_buf *buf, const uip_lladdr_t *lladdr)
 {
 	NET_DBG("received %d bytes\n", buf->len);
 

@@ -48,27 +48,22 @@ void uip_log(char *msg);
 #define UIP_LOG(m)
 #endif
 
-static uint8_t compress(struct net_buf *buf, const uip_lladdr_t *localdest)
-{
-	return NETSTACK_FRAGMENT.fragment(buf, localdest, NULL);
-}
-
 static void init(void)
 {
-	/*
-	* Set out output function as the function to be called from uIP to
-	* send a packet.
-	*/
-	tcpip_set_outputfunc(compress);
+}
+
+static int compress(struct net_buf *buf)
+{
+	return 1;
 }
 
 static int uncompress(struct net_buf *buf)
 {
-	tcpip_input(buf);
 	return 1;
 }
 
 const struct compression null_compression = {
-	init,
-	uncompress
+	.init = init,
+	.compress = compress,
+	.uncompress = uncompress,
 };

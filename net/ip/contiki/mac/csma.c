@@ -185,12 +185,9 @@ free_packet(struct net_mbuf *buf, struct neighbor_queue *n, struct rdc_buf_list 
       n->transmissions = 0;
       n->collisions = 0;
       n->deferrals = 0;
-      /* Set a timer for next transmissions */
-      ctimer_set(buf, &n->transmit_timer, default_timebase(),
-                 transmit_packet_list, n);
+      transmit_packet_list(buf, n);
     } else {
       /* This was the last packet in the queue, we free the neighbor */
-      ctimer_stop(&n->transmit_timer);
       list_remove(neighbor_list, n);
       memb_free(&neighbor_memb, n);
       net_mbuf_put(buf);
@@ -210,10 +207,6 @@ transmit_packet_list(struct net_mbuf *buf, void *ptr)
       /* Send packets in the neighbor's list */
       /*FIXME: if rdc failed to send discard all packets */
       NETSTACK_RDC.send_list(buf, packet_sent, n, q);
-/*      if (!NETSTACK_RDC.send_list(buf, packet_sent, n, q)) {
-        free_packet(buf, n, q);
-      }
-*/
     }
   }
 }
@@ -333,7 +326,7 @@ packet_sent(struct net_mbuf *buf, void *ptr, int status, int num_transmissions)
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-send_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
+send_packet(struct net_mbuf *buf, mac_callback_t sent, bool last_fragment, void *ptr)
 {
   struct rdc_buf_list *q;
   struct neighbor_queue *n;
@@ -407,9 +400,10 @@ send_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
 
             PRINTF("csma: send_packet, queue length %d, free packets %d\n",
                    list_length(n->queued_packet_list), memb_numfree(&packet_memb));
-            /* If q is the first packet in the neighbor's queue, send asap */
-            if(list_head(n->queued_packet_list) == q) {
-              ctimer_set(buf, &n->transmit_timer, 0, transmit_packet_list, n);
+            /* if received packet is last fragment/only one packet start sending
+             * packets in list, do not start any timer.*/
+            if (last_fragment) {
+               transmit_packet_list(buf, n);
             }
             return 1;
           }

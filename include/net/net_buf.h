@@ -83,6 +83,7 @@ struct net_buf {
 	void *uip_sappdata; /* app data to be sent */
 	void *uip_conn;
 	void *uip_udp_conn;
+	linkaddr_t dest;
 
 	/* Neighbor discovery vars */
 	void *nd6_opt_prefix_info;

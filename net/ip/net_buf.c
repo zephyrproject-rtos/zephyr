@@ -54,7 +54,7 @@ static struct net_buf		buffers[NUM_BUFS];
 static struct nano_fifo		free_bufs;
 
 /* Available (free) MAC buffers queue */
-#define NUM_MAC_BUFS		4
+#define NUM_MAC_BUFS		8
 static struct net_mbuf		mac_buffers[NUM_MAC_BUFS];
 static struct nano_fifo		free_mbufs;
 

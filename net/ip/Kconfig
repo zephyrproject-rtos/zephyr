@@ -96,3 +96,25 @@ config	NETWORKING_DEBUG_UART
 	help
 	  This option enables debug support for network UART
 	  driver.
+
+config	NETWORKING_WITH_15_4
+	bool
+	prompt "Enable 802.15.4 driver"
+	depends on NETWORKING
+	default n
+	help
+	  Enable 802.15.4 driver that receives the IPv6 packet,
+	  does header compression on it and writes it to the
+	  802.15.4 stack Tx FIFO. The 802.15.4 Tx fiber will pick up
+	  the header compressed IPv6 6lowpan packet and fragment
+	  it into suitable chunks ready to be sent to the 802.15.4
+	  hw driver
+
+config	NETWORKING_WITH_15_4_LOOPBACK
+	bool
+	prompt "Enable 802.15.4 loopback radio driver"
+	depends on NETWORKING && NETWORKING_WITH_15_4
+	default n
+	help
+	  Enable 802.15.4 loopback radio driver that receives
+	  the 802.15.4 frame and put it back 802.15.4 Rx Fifo.

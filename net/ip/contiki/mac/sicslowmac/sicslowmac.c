@@ -57,12 +57,6 @@ struct net_buf;
 #define DEBUG 0
 #include "net/ip/uip-debug.h"
 
-#if DEBUG
-#define PRINTADDR(addr) PRINTF(" %02x%02x:%02x%02x:%02x%02x:%02x%02x ", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7])
-#else
-#define PRINTADDR(addr)
-#endif
-
 #if UIP_LOGGING
 #include <stdio.h>
 void uip_log(char *msg);
@@ -164,9 +158,9 @@ send_packet(struct net_mbuf *buf, mac_callback_t sent, void *ptr)
   if(packetbuf_hdralloc(buf, len)) {
     frame802154_create(&params, packetbuf_hdrptr(buf));
 
-    PRINTF("6MAC-UT: type %X dest ", params.fcf.frame_type);
-    PRINTLLADDR(params.dest_addr);
-    PRINTF(" len %u datalen %u (totlen %u)\n", len, packetbuf_datalen(buf),
+    PRINTF("6MAC-UT: type %X\ndest:", params.fcf.frame_type);
+    PRINTLLADDR((uip_lladdr_t *)params.dest_addr);
+    PRINTF("\nlen %u datalen %u (totlen %u)\n", len, packetbuf_datalen(buf),
 	   packetbuf_totlen(buf));
 
     ret = NETSTACK_RADIO.send(buf, packetbuf_hdrptr(buf), packetbuf_totlen(buf));
@@ -225,8 +219,8 @@ input_packet(struct net_mbuf *buf)
                          &linkaddr_node_addr)) {
           /* Not for this node */
           PRINTF("6MAC: not for us\n");
-	  PRINTF("6MAC: we are "); PRINTLLADDR(&linkaddr_node_addr); PRINTF("\n");
-	  PRINTF("6MAC: recipient is "); PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER)); PRINTF("\n");
+	  PRINTF("6MAC: we are "); PRINTLLADDR((uip_lladdr_t *)&linkaddr_node_addr); PRINTF("\n");
+	  PRINTF("6MAC: recipient is "); PRINTLLADDR((uip_lladdr_t *)packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER)); PRINTF("\n");
 	  goto error;
         }
 #endif
@@ -234,11 +228,11 @@ input_packet(struct net_mbuf *buf)
     }
     packetbuf_set_addr(buf, PACKETBUF_ADDR_SENDER, (linkaddr_t *)&frame.src_addr);
 
-    PRINTF("6MAC-IN: type 0x%X sender ", frame.fcf.frame_type);
-    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
-    PRINTF(" receiver ");
-    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
-    PRINTF(" len %u\n", packetbuf_datalen(buf));
+    PRINTF("6MAC-IN: type 0x%X\nsender:", frame.fcf.frame_type);
+    PRINTLLADDR((uip_lladdr_t *)packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
+    PRINTF("\nreceiver:");
+    PRINTLLADDR((uip_lladdr_t *)packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
+    PRINTF("\nlen %u\n", packetbuf_datalen(buf));
     return NETSTACK_MAC.input(buf);
   } else {
     PRINTF("6MAC: failed to parse hdr\n");

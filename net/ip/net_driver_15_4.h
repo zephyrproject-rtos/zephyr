@@ -1,5 +1,3 @@
-/* fragmentation.h - Fragmentation */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
@@ -30,16 +28,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "contiki-conf.h"
-#include <net/net_buf.h>
-#include <net/mac/mac.h>
-
-#ifndef FRAGMENTATION_H_
-#define FRAGMENTATION_H_
-
-struct fragmentation {
-  int (* fragment)(struct net_buf *buf, void *ptr);
-  int (* reassemble)(struct net_mbuf *buf);
-};
-
-#endif /* FRAGMENTATION_H_ */
+int net_driver_15_4_init(void);
+int net_driver_15_4_recv(struct net_buf *buf);
+int net_driver_15_4_recv_from_hw(struct net_mbuf *buf);

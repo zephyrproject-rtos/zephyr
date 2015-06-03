@@ -55,6 +55,7 @@
  * @{
  */
 
+#include <stdbool.h>
 #include "net/mac/mac.h"
 
 #ifndef LLSEC_H_
@@ -72,7 +73,8 @@ struct llsec_driver {
   void (* bootstrap)(llsec_on_bootstrapped_t on_bootstrapped);
   
   /** Secures outgoing frames before passing them to NETSTACK_MAC. */
-  uint8_t (* send)(struct net_mbuf *buf, mac_callback_t sent_callback, void *ptr);
+  uint8_t (* send)(struct net_mbuf *buf, mac_callback_t sent_callback,
+                                         bool last_fragment, void *ptr);
   
   /**
    * Once the NETSTACK_FRAMER wrote the headers, the LLSEC driver

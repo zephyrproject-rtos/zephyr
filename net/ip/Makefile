@@ -49,6 +49,8 @@ ifeq ($(CONFIG_NETWORKING_WITH_LOGGING),y)
      obj-y += contiki/uip-log.o
 endif
 
+obj-$(CONFIG_NETWORKING_WITH_15_4) += net_driver_15_4.o
+obj-$(CONFIG_NETWORKING_WITH_15_4_LOOPBACK) += dummy_15_4_radio.o
 obj-$(CONFIG_NETWORKING_WITH_LOOPBACK) += net_driver_loopback.o
 
 # workaround for include file location

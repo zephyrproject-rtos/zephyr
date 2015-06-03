@@ -1140,12 +1140,10 @@ compress_hdr_ipv6(struct net_mbuf *mbuf, struct net_buf *buf, linkaddr_t *link_d
  * @{                                                                 */
 /*--------------------------------------------------------------------*/
 
-static uint8_t compress(struct net_buf *buf, const uip_lladdr_t *localdest)
+static int compress(struct net_buf *buf)
 {
   uint8_t hdr_diff;
   struct net_mbuf *mbuf;
-  /* The MAC address of the destination of the packet */
-  linkaddr_t dest;
 
   mbuf = net_mbuf_get_reserve(0);
   if (!mbuf) {
@@ -1191,28 +1189,24 @@ static uint8_t compress(struct net_buf *buf, const uip_lladdr_t *localdest)
    * packet. If the argument localdest is NULL, we are sending a
    * broadcast packet.
    */
-  if(localdest == NULL) {
-    linkaddr_copy(&dest, &linkaddr_null);
-  } else {
-    linkaddr_copy(&dest, (const linkaddr_t *)localdest);
-  }
 
   PRINTFO("compression output: sending packet len %d\n", uip_len(buf));
 
   if(uip_len(buf) >= COMPRESSION_THRESHOLD) {
     /* Try to compress the headers */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1
-    compress_hdr_hc1(mbuf, buf, &dest);
+    compress_hdr_hc1(mbuf, buf, &buf->dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1 */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6
-    compress_hdr_ipv6(mbuf, buf, &dest);
+    compress_hdr_ipv6(mbuf, buf, &buf->dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6 */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06
-    compress_hdr_hc06(mbuf, buf, &dest);
+    compress_hdr_hc06(mbuf, buf, &buf->dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06 */
   } else {
-    compress_hdr_ipv6(mbuf, buf, &dest);
+    compress_hdr_ipv6(mbuf, buf, &buf->dest);
   }
+
   PRINTF("compression output: header len %d\n", uip_packetbuf_hdr_len(mbuf));
 
   hdr_diff = uip_packetbuf_hdr_len(mbuf) - uip_uncomp_hdr_len(mbuf);
@@ -1234,7 +1228,7 @@ static uint8_t compress(struct net_buf *buf, const uip_lladdr_t *localdest)
    net_mbuf_put(mbuf);
    uip_len(buf) += hdr_diff;
 
-   return NETSTACK_FRAGMENT.fragment(buf, localdest, NULL);
+   return 1;
 }
 
 static int uncompress(struct net_buf *buf)
@@ -1347,7 +1341,6 @@ static int uncompress(struct net_buf *buf)
 #endif
 
   net_mbuf_put(mbuf);
-  tcpip_input(buf);
 
   return 1;
 
@@ -1359,12 +1352,6 @@ fail:
 
 static void init(void)
 {
-  /*
-   * Set out output function as the function to be called from uIP to
-   * send a packet.
-   */
-  tcpip_set_outputfunc(compress);
-
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06
 /* Preinitialize any address contexts for better header compression
  * (Saves up to 13 bytes per 6lowpan packet)
@@ -1414,5 +1401,6 @@ static void init(void)
 
 const struct compression sicslowpan_compression = {
 	.init = init,
+	.compress = compress,
 	.uncompress = uncompress
 };

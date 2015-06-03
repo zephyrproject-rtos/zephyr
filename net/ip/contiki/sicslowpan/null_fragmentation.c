@@ -58,7 +58,7 @@ packet_sent(struct net_mbuf *buf, void *ptr, int status, int transmissions)
 	uip_last_tx_status(buf) = status;
 }
 
-static int fragment(struct net_buf *buf, const uip_lladdr_t *localdest, void *ptr)
+static int fragment(struct net_buf *buf, void *ptr)
 {
 	struct net_mbuf *mbuf;
 
@@ -68,15 +68,15 @@ static int fragment(struct net_buf *buf, const uip_lladdr_t *localdest, void *pt
 	}
 
 	packetbuf_copyfrom(mbuf, &uip_buf(buf)[UIP_LLH_LEN], uip_len(buf));
+	packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER, &buf->dest);
 	net_buf_put(buf);
 
-	return NETSTACK_LLSEC.send(mbuf, &packet_sent, ptr);
+	return NETSTACK_LLSEC.send(mbuf, &packet_sent, true, ptr);
 }
 
 static int reassemble(struct net_mbuf *mbuf)
 {
         struct net_buf *buf;
-	int ret;
 
 	buf = net_buf_get_reserve(0);
 	if (!buf) {
@@ -88,14 +88,14 @@ static int reassemble(struct net_mbuf *mbuf)
 		memcpy(uip_buf(buf), packetbuf_dataptr(mbuf),
 						packetbuf_datalen(mbuf));
 		uip_len(buf) = packetbuf_datalen(mbuf);
-		ret = NETSTACK_COMPRESS.uncompress(buf);
-		if (!ret) {
+
+		if (net_driver_15_4_recv(buf) < 0) {
 			net_buf_put(buf);
 		} else {
 			net_mbuf_put(mbuf);
 		}
 
-		return ret;
+		return 1;
         } else {
                 PRINTF("packet discarded, datalen %d MAX %d\n",
 				packetbuf_datalen(mbuf), UIP_BUFSIZE - UIP_LLH_LEN);

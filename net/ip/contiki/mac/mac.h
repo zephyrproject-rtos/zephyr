@@ -40,6 +40,7 @@
 #ifndef MAC_H_
 #define MAC_H_
 
+#include <stdbool.h>
 #include "contiki-conf.h"
 #include "dev/radio.h"
 
@@ -60,7 +61,8 @@ struct mac_driver {
   void (* init)(void);
 
   /** Send a packet from the Rime buffer  */
-  uint8_t (* send)(struct net_mbuf *buf, mac_callback_t sent_callback, void *ptr);
+  uint8_t (* send)(struct net_mbuf *buf, mac_callback_t sent_callback,
+                                         bool last_fragment, void *ptr);
 
   /** Callback for getting notified of incoming packet. */
   uint8_t (* input)(struct net_mbuf *buf);

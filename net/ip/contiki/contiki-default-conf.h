@@ -42,7 +42,11 @@
 /* NETSTACK_CONF_RADIO specifies the radio driver. The radio driver
    typically depends on the radio used on the target hardware. */
 #ifndef NETSTACK_CONF_RADIO
+#if defined (CONFIG_NETWORKING_WITH_15_4_LOOPBACK)
+#define NETSTACK_CONF_RADIO dummy154radio_driver
+#else
 #define NETSTACK_CONF_RADIO nullradio_driver
+#endif /* CONFIG_NETWORKING_WITH_15_4_LOOPBACK */
 /* #define NETSTACK_CONF_RADIO cc2420_driver */
 #endif /* NETSTACK_CONF_RADIO */
 
