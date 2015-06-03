@@ -37,9 +37,31 @@
 
 #include "bttester.h"
 
+static uint8_t start_advertising(uint8_t *data, uint16_t len)
+{
+	struct cmd_start_advertising *cmd = (void *) data;
+
+	if (bt_start_advertising(cmd->adv_type, NULL, NULL) < 0) {
+		return STATUS_FAILED;
+	}
+
+	return STATUS_SUCCESS;
+}
+
 void tester_handle_gap(uint8_t opcode, uint8_t *data, uint16_t len)
 {
-	tester_rsp(SERVICE_ID_GAP, opcode, STATUS_UNKNOWN_CMD);
+	uint8_t status;
+
+	switch (opcode) {
+	case OP_GAP_START_ADV:
+		status = start_advertising(data, len);
+		break;
+	default:
+		status = STATUS_UNKNOWN_CMD;
+		break;
+	}
+
+	tester_rsp(SERVICE_ID_GAP, opcode, status);
 }
 
 uint8_t tester_init_gap(void)

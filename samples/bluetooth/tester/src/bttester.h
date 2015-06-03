@@ -59,6 +59,10 @@ struct cmd_register_service {
 } __packed;
 
 /* GAP Service */
+#define OP_GAP_START_ADV		0x01
+struct cmd_start_advertising {
+	uint8_t adv_type;
+} __packed;
 
 /* no commands yet */
 
