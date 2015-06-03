@@ -72,7 +72,7 @@ struct bt_conn {
 
 	uint8_t			state;
 
-	char			tx_stack[BT_CONN_TX_STACK_SIZE];
+	char			__stack tx_stack[BT_CONN_TX_STACK_SIZE];
 };
 
 /* Process incoming data for a connection */

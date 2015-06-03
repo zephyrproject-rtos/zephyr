@@ -34,6 +34,7 @@
  */
 
 #include <nanokernel.h>
+#include <arch/cpu.h>
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>

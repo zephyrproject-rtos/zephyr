@@ -31,6 +31,7 @@
  */
 
 #include <nanokernel.h>
+#include <arch/cpu.h>
 #include <toolchain.h>
 #include <string.h>
 #include <stdio.h>
@@ -65,9 +66,9 @@
 #define CMD_TX_STACK_SIZE	256
 #endif
 
-static char rx_fiber_stack[RX_STACK_SIZE];
-static char cmd_rx_fiber_stack[CMD_RX_STACK_SIZE];
-static char cmd_tx_fiber_stack[CMD_TX_STACK_SIZE];
+static char __stack rx_fiber_stack[RX_STACK_SIZE];
+static char __stack cmd_rx_fiber_stack[CMD_RX_STACK_SIZE];
+static char __stack cmd_tx_fiber_stack[CMD_TX_STACK_SIZE];
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 static nano_context_id_t cmd_rx_fiber_id;
