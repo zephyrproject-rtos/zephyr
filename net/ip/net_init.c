@@ -287,15 +287,18 @@ static int check_and_send_packet(struct net_buf *buf)
 	switch (tuple->ip_proto) {
 	case IPPROTO_UDP:
 		udp = net_context_get_udp_connection(buf->context);
-		ret = simple_udp_register(udp, tuple->local_port,
+		if (!net_context_get_receiver_registered(buf->context)) {
+			ret = simple_udp_register(udp, tuple->local_port,
 					  (uip_ip6addr_t *)tuple->remote_addr,
 					  tuple->remote_port,
 					  udp_packet_reply,
 					  buf);
-		if (!ret) {
-			NET_DBG("UDP connection creation failed\n");
-			ret = -ENOENT;
-			break;
+			if (!ret) {
+				NET_DBG("UDP connection creation failed\n");
+				ret = -ENOENT;
+				break;
+			}
+			net_context_set_receiver_registered(buf->context);
 		}
 		simple_udp_send(buf, udp, buf->data, buf->len);
 		ret = 0;
