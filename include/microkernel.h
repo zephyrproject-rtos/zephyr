@@ -36,7 +36,6 @@
 /* nanokernel and generic kernel public APIs */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
 
 /* microkernel public APIs */
 
