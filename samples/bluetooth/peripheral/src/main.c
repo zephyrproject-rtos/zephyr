@@ -130,7 +130,7 @@ static struct bt_gatt_chrc hrcpc_chrc = {
 	.uuid = &hrcpc_uuid,
 };
 
-struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
 static uint8_t simulate_hrm = 0;
 
 static void hrmc_ccc_cfg_changed(uint16_t value)
