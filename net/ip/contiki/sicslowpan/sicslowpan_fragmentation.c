@@ -389,6 +389,10 @@ static int reassemble(struct net_mbuf *mbuf)
   switch((GET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_DISPATCH_SIZE) & 0xf800) >> 8) {
     case SICSLOWPAN_DISPATCH_FRAG1:
 
+      if (buf) {
+         PRINTFI("net_buf %p already exits, freeing it!\n", buf);
+         net_buf_put(buf);
+      }
       /* reserve when first fragment appears */
       buf = net_buf_get_reserve(0);
       if(!buf) {
