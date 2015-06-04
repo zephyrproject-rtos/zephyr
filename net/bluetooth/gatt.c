@@ -105,7 +105,7 @@ struct gatt_incl {
 		uint16_t uuid16;
 		uint8_t  uuid[16];
 	};
-} PACK_STRUCT;
+} __packed;
 
 int bt_gatt_attr_read_include(const bt_addr_le_t *peer,
 			      const struct bt_gatt_attr *attr,
@@ -137,7 +137,7 @@ struct gatt_chrc {
 		uint16_t uuid16;
 		uint8_t  uuid[16];
 	};
-} PACK_STRUCT;
+} __packed;
 
 int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
 			   const struct bt_gatt_attr *attr, void *buf,

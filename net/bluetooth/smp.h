@@ -35,7 +35,7 @@
 
 struct bt_smp_hdr {
 	uint8_t  code;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_SMP_ERR_PASSKEY_ENTRY_FAILED		0x01
 #define BT_SMP_ERR_OOB_NOT_AVAIL		0x02
@@ -88,43 +88,43 @@ struct bt_smp_pairing {
 	uint8_t  max_key_size;
 	uint8_t  init_key_dist;
 	uint8_t  resp_key_dist;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_SMP_CMD_PAIRING_CONFIRM		0x03
 struct bt_smp_pairing_confirm {
 	uint8_t  val[16];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_SMP_CMD_PAIRING_RANDOM		0x04
 struct bt_smp_pairing_random {
 	uint8_t  val[16];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_SMP_CMD_PAIRING_FAIL			0x05
 struct bt_smp_pairing_fail {
 	uint8_t  reason;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_SMP_CMD_ENCRYPT_INFO			0x06
 struct bt_smp_encrypt_info {
 	uint8_t  ltk[16];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_SMP_CMD_MASTER_IDENT			0x07
 struct bt_smp_master_ident {
 	uint16_t ediv;
 	uint64_t rand;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_SMP_CMD_IDENT_INFO			0x08
 struct bt_smp_ident_info {
 	uint8_t  irk[16];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_SMP_CMD_IDENT_ADDR_INFO		0x09
 struct bt_smp_ident_addr_info {
 	bt_addr_le_t addr;
-} PACK_STRUCT;
+} __packed;
 
 bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr);
 

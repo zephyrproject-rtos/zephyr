@@ -37,13 +37,13 @@
 struct bt_l2cap_hdr {
 	uint16_t len;
 	uint16_t cid;
-} PACK_STRUCT;
+} __packed;
 
 struct bt_l2cap_sig_hdr {
 	uint8_t  code;
 	uint8_t  ident;
 	uint16_t len;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_L2CAP_REJ_NOT_UNDERSTOOD	0x0000
 #define BT_L2CAP_REJ_MTU_EXCEEDED	0x0001
@@ -53,7 +53,7 @@ struct bt_l2cap_sig_hdr {
 struct bt_l2cap_cmd_reject {
 	uint16_t reason;
 	uint8_t  data[0];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_L2CAP_CONN_PARAM_REQ		0x12
 struct bt_l2cap_conn_param_req {
@@ -61,12 +61,12 @@ struct bt_l2cap_conn_param_req {
 	uint16_t max_interval;
 	uint16_t latency;
 	uint16_t timeout;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_L2CAP_CONN_PARAM_RSP		0x13
 struct bt_l2cap_conn_param_rsp {
 	uint16_t result;
-} PACK_STRUCT;
+} __packed;
 
 struct bt_l2cap_chan {
 	uint16_t		cid;

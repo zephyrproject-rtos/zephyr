@@ -75,19 +75,19 @@ typedef struct {
 struct bt_hci_evt_hdr {
 	uint8_t  evt;
 	uint8_t  len;
-} PACK_STRUCT;
+} __packed;
 
 #define bt_acl_handle(h)		((h) & 0x0fff)
 
 struct bt_hci_acl_hdr {
 	uint16_t handle;
 	uint16_t len;
-} PACK_STRUCT;
+} __packed;
 
 struct bt_hci_cmd_hdr {
 	uint16_t opcode;
 	uint8_t  param_len;
-} PACK_STRUCT;
+} __packed;
 
 /* LMP features */
 #define BT_LMP_NO_BREDR				0x20
@@ -107,7 +107,7 @@ struct bt_hci_cmd_hdr {
 #define BT_HCI_OP_SET_EVENT_MASK		BT_OP(BT_OGF_BASEBAND, 0x0001)
 struct bt_hci_cp_set_event_mask {
 	uint8_t  events[8];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_RESET				BT_OP(BT_OGF_BASEBAND, 0x0003)
 
@@ -119,24 +119,24 @@ struct bt_hci_cp_host_buffer_size {
 	uint8_t  sco_mtu;
 	uint16_t acl_pkts;
 	uint16_t sco_pkts;
-} PACK_STRUCT;
+} __packed;
 
 struct bt_hci_handle_count {
 	uint16_t handle;
 	uint16_t count;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS	BT_OP(BT_OGF_BASEBAND, 0x0035)
 struct bt_hci_cp_host_num_completed_packets {
 	uint8_t  num_handles;
 	struct bt_hci_handle_count h[0];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_WRITE_LE_HOST_SUPP		BT_OP(BT_OGF_BASEBAND, 0x006d)
 struct bt_hci_cp_write_le_host_supp {
 	uint8_t  le;
 	uint8_t  simul;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO	BT_OP(BT_OGF_INFO, 0x0001)
 struct bt_hci_rp_read_local_version_info {
@@ -146,13 +146,13 @@ struct bt_hci_rp_read_local_version_info {
 	uint8_t  lmp_version;
 	uint16_t manufacturer;
 	uint16_t lmp_subversion;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_READ_LOCAL_FEATURES		BT_OP(BT_OGF_INFO, 0x0003)
 struct bt_hci_rp_read_local_features {
 	uint8_t  status;
 	uint8_t  features[8];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_READ_BUFFER_SIZE		BT_OP(BT_OGF_INFO, 0x0005)
 struct bt_hci_rp_read_buffer_size {
@@ -161,26 +161,26 @@ struct bt_hci_rp_read_buffer_size {
 	uint8_t  sco_max_len;
 	uint16_t acl_max_num;
 	uint16_t sco_max_num;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_READ_BD_ADDR			BT_OP(BT_OGF_INFO, 0x0009)
 struct bt_hci_rp_read_bd_addr {
 	uint8_t   status;
 	bt_addr_t bdaddr;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_READ_BUFFER_SIZE		BT_OP(BT_OGF_LE, 0x0002)
 struct bt_hci_rp_le_read_buffer_size {
 	uint8_t  status;
 	uint16_t le_max_len;
 	uint8_t  le_max_num;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_READ_LOCAL_FEATURES	BT_OP(BT_OGF_LE, 0x0003)
 struct bt_hci_rp_le_read_local_features {
 	uint8_t  status;
 	uint8_t  features[8];
-} PACK_STRUCT;
+} __packed;
 
 /* Advertising types */
 #define BT_LE_ADV_IND				0x00
@@ -199,24 +199,24 @@ struct bt_hci_cp_le_set_adv_parameters {
 	bt_addr_le_t direct_addr;
 	uint8_t      channel_map;
 	uint8_t      filter_policy;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_SET_ADV_DATA		BT_OP(BT_OGF_LE, 0x0008)
 struct bt_hci_cp_le_set_adv_data {
 	uint8_t  len;
 	uint8_t  data[31];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_SET_SCAN_RSP_DATA		BT_OP(BT_OGF_LE, 0x0009)
 struct bt_hci_cp_le_set_scan_rsp_data {
 	uint8_t  len;
 	uint8_t  data[31];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_SET_ADV_ENABLE		BT_OP(BT_OGF_LE, 0x000a)
 struct bt_hci_cp_le_set_adv_enable {
 	uint8_t  enable;
-} PACK_STRUCT;
+} __packed;
 
 /* Scan types */
 #define BT_HCI_OP_LE_SET_SCAN_PARAMS		BT_OP(BT_OGF_LE, 0x000b)
@@ -229,7 +229,7 @@ struct bt_hci_cp_le_set_scan_params {
 	uint16_t window;
 	uint8_t  addr_type;
 	uint8_t  filter_policy;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_SET_SCAN_ENABLE		BT_OP(BT_OGF_LE, 0x000c)
 #define BT_LE_SCAN_DISABLE			0x00
@@ -240,34 +240,34 @@ struct bt_hci_cp_le_set_scan_params {
 struct bt_hci_cp_le_set_scan_enable {
 	uint8_t  enable;
 	uint8_t  filter_dup;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_ENCRYPT			BT_OP(BT_OGF_LE, 0x0017)
 struct bt_hci_cp_le_encrypt {
 	uint8_t  key[16];
 	uint8_t  plaintext[16];
-} PACK_STRUCT;
+} __packed;
 struct bt_hci_rp_le_encrypt {
 	uint8_t  status;
 	uint8_t  enc_data[16];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_RAND			BT_OP(BT_OGF_LE, 0x0018)
 struct bt_hci_rp_le_rand {
 	uint8_t  status;
 	uint8_t  rand[8];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_LTK_REQ_REPLY		BT_OP(BT_OGF_LE, 0x001a)
 struct bt_hci_cp_le_ltk_req_reply {
 	uint16_t handle;
 	uint8_t  ltk[16];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_OP_LE_LTK_REQ_NEG_REPLY		BT_OP(BT_OGF_LE, 0x001b)
 struct bt_hci_cp_le_ltk_req_neg_reply {
 	uint16_t handle;
-} PACK_STRUCT;
+} __packed;
 
 /* Event definitions */
 
@@ -276,44 +276,44 @@ struct bt_hci_evt_disconn_complete {
 	uint8_t  status;
 	uint16_t handle;
 	uint8_t  reason;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_ENCRYPT_CHANGE		0x08
 struct bt_hci_evt_encrypt_change {
 	uint8_t  status;
 	uint16_t handle;
 	uint8_t  encrypt;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_CMD_COMPLETE			0x0e
 struct hci_evt_cmd_complete {
 	uint8_t  ncmd;
 	uint16_t opcode;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_CMD_STATUS			0x0f
 struct bt_hci_evt_cmd_status {
 	uint8_t  status;
 	uint8_t  ncmd;
 	uint16_t opcode;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_NUM_COMPLETED_PACKETS	0x13
 struct bt_hci_evt_num_completed_packets {
 	uint8_t  num_handles;
 	struct bt_hci_handle_count h[0];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE	0x30
 struct bt_hci_evt_encrypt_key_refresh_complete {
 	uint8_t  status;
 	uint16_t handle;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_LE_META_EVENT		0x3e
 struct bt_hci_evt_le_meta_event {
 	uint8_t  subevent;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_LE_CONN_COMPLETE		0x01
 struct bt_hci_evt_le_conn_complete {
@@ -325,7 +325,7 @@ struct bt_hci_evt_le_conn_complete {
 	uint16_t     latency;
 	uint16_t     supv_timeout;
 	uint8_t      clock_accuracy;
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_LE_ADVERTISING_REPORT	0x02
 struct bt_hci_ev_le_advertising_info {
@@ -333,13 +333,13 @@ struct bt_hci_ev_le_advertising_info {
 	bt_addr_le_t addr;
 	uint8_t      length;
 	uint8_t      data[0];
-} PACK_STRUCT;
+} __packed;
 
 #define BT_HCI_EVT_LE_LTK_REQUEST		0x05
 struct bt_hci_evt_le_ltk_request {
 	uint16_t handle;
 	uint64_t rand;
 	uint16_t ediv;
-} PACK_STRUCT;
+} __packed;
 
 #endif /* __BT_HCI_H */
