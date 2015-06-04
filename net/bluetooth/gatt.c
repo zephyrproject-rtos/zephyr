@@ -252,7 +252,7 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 		}
 
 		if (i == ccc->cfg_len) {
-			BT_WARN("No space to store CCC cfg");
+			BT_WARN("No space to store CCC cfg\n");
 			return -ENOMEM;
 		}
 	}
