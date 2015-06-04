@@ -856,19 +856,7 @@ typedef unsigned char __aligned(_EXC_STUB_ALIGN) NANO_EXC_STUB[_EXC_STUB_SIZE];
 /* function prototypes */
 
 extern void nano_cpu_atomic_idle(unsigned int imask);
-extern unsigned _Swap(unsigned int mask);
-extern void _nano_fiber_schedule(tCCS *ccs);
-extern void _nano_fiber_swap(void);
 
-
-extern void _NewContext(char *pStack,
-			 unsigned stackSize,
-			 _ContextEntry pEntry,
-			 _ContextArg arg1,
-			 _ContextArg arg2,
-			 _ContextArg arg3,
-			 int prio,
-			 unsigned options);
 extern void nanoCpuExcConnect(unsigned int vector,
 			      void (*routine)(NANO_ESF * pEsf),
 			      NANO_EXC_STUB pExcStubMem);

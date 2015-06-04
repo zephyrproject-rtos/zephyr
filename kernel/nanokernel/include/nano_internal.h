@@ -56,6 +56,18 @@ extern void _context_entry(_ContextEntry,
 			     _ContextArg,
 			     _ContextArg);
 
+extern void _NewContext(char *pStack, unsigned stackSize,
+						_ContextEntry pEntry, _ContextArg arg1,
+						_ContextArg arg2, _ContextArg arg3,
+						int prio, unsigned options);
+
+/* context switching and scheduling-related routines */
+
+extern void _nano_fiber_schedule(tCCS *ccs);
+extern void _nano_fiber_swap(void);
+
+extern unsigned int _Swap(unsigned int);
+
 /* set and clear essential fiber/task flag */
 
 extern void _context_essential_set(void);

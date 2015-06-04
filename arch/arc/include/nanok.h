@@ -265,13 +265,6 @@ static ALWAYS_INLINE int _IS_IN_ISR(void)
 	return ((act & 0xffff) != 0);
 }
 
-extern void _nano_fiber_schedule(tCCS *ccs);
-extern void _nano_fiber_swap(void);
-extern void _NewContext(char *, unsigned, _ContextEntry,
-						_ContextArg, _ContextArg, _ContextArg,
-						int, unsigned);
-
-extern unsigned int _Swap(unsigned int);
 extern void nanoCpuAtomicIdle(unsigned int);
 extern void _ContextEntryWrapper(void);
 
