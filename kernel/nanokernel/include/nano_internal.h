@@ -44,6 +44,10 @@ This file contains private nanokernel APIs that are not architecture-specific.
 extern "C" {
 #endif
 
+/* helper type alias for context control structure */
+
+typedef struct s_CCS tCCS;
+
 /* context entry point declarations */
 
 typedef void *_ContextArg;

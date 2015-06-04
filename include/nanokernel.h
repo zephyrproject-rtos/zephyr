@@ -55,12 +55,12 @@ extern "C" {
  * THESE ITEMS SHOULD NOT BE REFERENCED EXCEPT BY THE KERNEL ITSELF!
  */
 
-typedef struct s_CCS tCCS;
-
 struct _nano_queue {
 	void *head;
 	void *tail;
 };
+
+struct s_CCS;
 
 /* architecture-independent nanokernel public APIs */
 
@@ -79,7 +79,7 @@ typedef int nano_context_type_t;
  */
 extern nano_context_id_t context_self_get(void);
 extern nano_context_type_t context_type_get(void);
-extern int _context_essential_check(tCCS *pCtx);
+extern int _context_essential_check(nano_context_id_t pCtx);
 
 /* fiber APIs
  */
@@ -184,7 +184,7 @@ extern void nano_task_sem_take_wait(struct nano_sem *chan);
 /* stack APIs */
 
 struct nano_stack {
-	tCCS *fiber;
+	nano_context_id_t fiber;
 	uint32_t *base;
 	uint32_t *next;
 };
