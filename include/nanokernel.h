@@ -45,15 +45,24 @@
 #include <clock_vars.h>
 #include <drivers/rand32.h>
 
-/* nanokernel non-public APIs that can't be completely hidden */
-
-#include <arch/private.h>
-
-/* architecture-independent nanokernel public APIs */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * nanokernel private APIs that are exposed via the public API
+ *
+ * THESE ITEMS SHOULD NOT BE REFERENCED EXCEPT BY THE KERNEL ITSELF!
+ */
+
+typedef struct s_CCS tCCS;
+
+struct _nano_queue {
+	void *head;
+	void *tail;
+};
+
+/* architecture-independent nanokernel public APIs */
 
 typedef struct s_CCS *nano_context_id_t;
 
