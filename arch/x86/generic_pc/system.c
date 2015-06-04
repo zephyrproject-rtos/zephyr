@@ -104,11 +104,6 @@ static void uartGenericInfoInit(struct uart_init_info *p_info)
 
 #endif /* DO_CONSOLE_INIT  */
 
-#if defined(CONFIG_CONSOLE_HANDLER)
-IRQ_CONNECT_STATIC(console, CONFIG_UART_CONSOLE_IRQ,
-		   CONFIG_UART_CONSOLE_INT_PRI, uart_console_isr, 0);
-#endif /* CONFIG_CONSOLE_HANDLER */
-
 #if defined(DO_CONSOLE_INIT)
 
 /*******************************************************************************
@@ -141,9 +136,6 @@ static void consoleInit(void)
 #if defined(CONFIG_BLUETOOTH)
 #if defined(CONFIG_BLUETOOTH_UART)
 #include <bluetooth/uart.h>
-/* Interrupt handling */
-IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
-		   CONFIG_BLUETOOTH_UART_INT_PRI, bt_uart_isr, 0);
 #endif /* CONFIG_BLUETOOTH_UART */
 static void bluetooth_init(void)
 {

@@ -250,6 +250,9 @@ static int bt_uart_send(struct bt_buf *buf)
 	return uart_fifo_fill(UART, buf->data, buf->len);
 }
 
+IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
+		   CONFIG_BLUETOOTH_UART_INT_PRI, bt_uart_isr, 0);
+
 static void bt_uart_setup(int uart, struct uart_init_info *info)
 {
 	BT_DBG("\n");
@@ -258,7 +261,8 @@ static void bt_uart_setup(int uart, struct uart_init_info *info)
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-	uart_int_connect(uart, bt_uart_isr, NULL, NULL);
+	IRQ_CONFIG(bluetooth, uart_irq_get(uart));
+	irq_enable(uart_irq_get(uart));
 
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(uart)) {

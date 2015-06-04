@@ -38,8 +38,6 @@ by x86 BSPs.
 
 #define _ASMLANGUAGE
 
-#ifndef CONFIG_DYNAMIC_INT_STUBS
-
 #include <arch/x86/asm.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
@@ -78,6 +76,14 @@ by x86 BSPs.
 	ioapic_mkstub console uart_console_isr
 #endif /* CONFIG_PIC */
 #endif /* CONFIG_CONSOLE_HANDLER */
+
+#if defined(CONFIG_UART_SIMPLE)
+#if defined(CONFIG_PIC)
+	pic_master_mkstub uart_simple uart_simple_isr
+#elif defined(CONFIG_IOAPIC)
+	ioapic_mkstub uart_simple uart_simple_isr
+#endif /* CONFIG_PIC */
+#endif /* CONFIG_UART_SIMPLE */
 
 	/* externs (internal APIs) */
 
@@ -126,5 +132,3 @@ SECTION_FUNC(TEXT, _pic_slave__i8259_boi_slave_stub)
 	 * jmp	_IntExit	/+ Inform kernel interrupt is done +/
 	 */
 #endif /* CONFIG_PIC */
-
-#endif /* !CONFIG_DYNAMIC_INT_STUBS */

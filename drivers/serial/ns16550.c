@@ -534,29 +534,16 @@ int uart_irq_update(int port /* UART to update */
 
 /*******************************************************************************
 *
-* uart_int_connect - connect an ISR to an interrupt line
+* uart_irq_get - returns UART interrupt number
 *
-* The kernel configuration allows to setup an interrupt line for a particular
-* DUART. This routine installs the ISR of a UART user to the interrupt line
-* chosen for the hardware at configuration time.
+* Returns the IRQ number used by the specified UART port
 *
 * RETURNS: N/A
 */
 
-void uart_int_connect(int port,	   /* UART to port to connect */
-		      void (*isr)(void *), /* interrupt handler */
-		      void *arg,	   /* argument to pass to handler */
-		      void *stub	   /* ptr to interrupt stub code */
-		      )
+unsigned int uart_irq_get(int port /* UART port */
+			  )
 {
-#if !defined(CONFIG_DYNAMIC_INT_STUBS)
-	ARG_UNUSED(isr);
-	ARG_UNUSED(arg);
-	ARG_UNUSED(stub);
-#else
-	irq_connect(port, isr, arg);
-#endif /* CONFIG_DYNAMIC_INT_STUBS */
-
-	irq_enable((unsigned int)uart[port].irq);
+	return (unsigned int)uart[port].irq;
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

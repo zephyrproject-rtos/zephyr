@@ -110,14 +110,8 @@ After reset, the timer is initialized to zero.
 extern int32_t _sys_idle_elapsed_ticks;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-#ifdef CONFIG_DYNAMIC_INT_STUBS
-static NANO_CPU_INT_STUB_DECL(
-	_loapic_timer_irq_stub); /* interrupt stub memory for */
-			      /* irq_connect()       */
-#else			      /* !CONFIG_DYNAMIC_INT_STUBS */
 IRQ_CONNECT_STATIC(loapic, LOAPIC_TIMER_IRQ, LOAPIC_TIMER_INT_PRI,
 		   _timer_int_handler, 0);
-#endif
 
 static uint32_t __noinit counterLoadVal; /* computed counter 0
 							  initial count value */
@@ -562,25 +556,12 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 	_loApicTimerSetCount(counterLoadVal);
 	_loApicTimerPeriodic();
 
-#ifdef CONFIG_DYNAMIC_INT_STUBS
-	/*
-	 * Connect specified routine/parameter to LOAPIC interrupt vector.
-	 * The "connect" will result in the LOAPIC interrupt controller being
-	 * programmed with the allocated vector, i.e. there is no need for
-	 * an explicit setting of the interrupt vector in this driver.
-	 */
-	irq_connect(LOAPIC_TIMER_IRQ,
-			  LOAPIC_TIMER_INT_PRI,
-			  _timer_int_handler,
-			  0);
-#else  /* !CONFIG_DYNAMIC_INT_STUBS */
 	/*
 	 * Although the stub has already been "connected", the vector number
 	 * still
 	 * has to be programmed into the interrupt controller.
 	 */
 	IRQ_CONFIG(loapic, LOAPIC_TIMER_IRQ);
-#endif /* CONFIG_DYNAMIC_INT_STUBS */
 
 	_loApicTimerTicklessIdleSkew();
 

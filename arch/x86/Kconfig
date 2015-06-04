@@ -223,17 +223,9 @@ config CACHE_LINE_SIZE
 endmenu
 
 menu "Specific BSP Capability Support"
-config DYNAMIC_INT_STUBS
-	bool "Dynamic INT stubs"
-	default n
-	help
-	This option allows a BSP's drivers to install interrupt handlers
-	at run time, if desired. If not enabled, interrupt handlers can only
-	be installed statically when the image is created.
 
 config NUM_DYNAMIC_STUBS
 	int "Number of dynamic int stubs"
-	default 10 if DYNAMIC_INT_STUBS
 	default 0
 	help
 	This option specifies the number of interrupt handlers that can be

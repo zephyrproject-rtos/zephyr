@@ -192,12 +192,8 @@ extern struct nano_stack _k_command_stack;
 
 #define HPET_COMP_DELAY 192
 
-#ifdef CONFIG_DYNAMIC_INT_STUBS
-static NANO_CPU_INT_STUB_DECL(_hpetIntStub); /* interrupt stub memory */
-#else					     /* !CONFIG_DYNAMIC_INT_STUBS */
 IRQ_CONNECT_STATIC(hpet, HPET_TIMER0_IRQ, HPET_TIMER0_INT_PRI,
 		   _timer_int_handler, 0);
-#endif
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 static uint32_t main_count_first_irq_value = 0;
@@ -606,19 +602,6 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 		;
 #endif
 
-#ifdef CONFIG_DYNAMIC_INT_STUBS
-	/*
-	 * Connect specified routine/parameter to LOAPIC interrupt vector.
-	 * The "connect" will result in the LOAPIC interrupt controller being
-	 * programmed with the allocated vector, i.e. there is no need for
-	 * an explicit setting of the interrupt vector in this driver.
-	 */
-
-	irq_connect(HPET_TIMER0_IRQ,
-			  HPET_TIMER0_INT_PRI,
-			  _timer_int_handler,
-			  0);
-#else
 	/*
 	 * Although the stub has already been "connected", the vector number
 	 * still
@@ -626,7 +609,6 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 	 */
 
 	IRQ_CONFIG(hpet, HPET_TIMER0_IRQ);
-#endif
 
 	/* enable the IRQ in the interrupt controller */
 

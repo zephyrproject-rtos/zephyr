@@ -81,13 +81,17 @@ int uart_simple_send(const uint8_t *data, int len)
 	return uart_fifo_fill(UART, data, len);
 }
 
+IRQ_CONNECT_STATIC(uart_simple, CONFIG_UART_SIMPLE_IRQ,
+                   CONFIG_UART_SIMPLE_INT_PRI, uart_simple_isr, 0);
+
 static void uart_simple_setup(int uart, struct uart_init_info *info)
 {
 	uart_init(uart, info);
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-	uart_int_connect(uart, uart_simple_isr, NULL, NULL);
+	IRQ_CONFIG(uart_simple, uart_irq_get(uart));
+	irq_enable(uart_irq_get(uart));
 
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(uart)) {
