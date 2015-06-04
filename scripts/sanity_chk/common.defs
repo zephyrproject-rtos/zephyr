@@ -165,7 +165,7 @@ build_info_set() {
 #
 # ON EXIT: ${PRJ_NAME} array specifies project directory name
 #          ${PRJ_ARGS} array specifies any additional project build arguments
-#          ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#          ${PRJ_TYPE} array specifies project type ("nano" or "micro")
 #          ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
 #          ${BSP_INFO} array specifies project BSP and BSP_VARIANT
 #          ${BSP_FLAG} array specifies optional BSP flag ('!' or empty)
@@ -218,9 +218,9 @@ proj_info_set() {
 		PRJ_FLAG[${NUM_PROJ}]=`${AWK} '{match($0,/<.*>/); \
 			print substr($0,RSTART+1,RLENGTH-2)}' <<< ${line}`
 		if [ ${PRJ_FLAG[${NUM_PROJ}]:0:1} = "u" ] ; then
-			PRJ_TYPE[${NUM_PROJ}]="microkernel"
+			PRJ_TYPE[${NUM_PROJ}]="micro"
 		elif [ ${PRJ_FLAG[${NUM_PROJ}]:0:1} = "n" ] ; then
-			PRJ_TYPE[${NUM_PROJ}]="nanokernel"
+			PRJ_TYPE[${NUM_PROJ}]="nano"
 		else
 			${ECHO} "unrecognized project type"
 			exit 1
@@ -279,7 +279,7 @@ proj_info_set() {
 # ON ENTRY: ${PRJ_PATH} is path to master project directory
 #           ${PRJ_NAME} array specifies project directory name
 #           ${PRJ_ARGS} array specifies any additional project build arguments
-#           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#           ${PRJ_TYPE} array specifies project type ("nano" or "micro")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
 #           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
 #           ${BUILD_INFO} specifies build options
@@ -301,7 +301,7 @@ skip_project() {
 # ON ENTRY: ${PRJ_PATH} is path to master project directory
 #           ${PRJ_NAME} array specifies project directory name
 #           ${PRJ_ARGS} array specifies any additional project build arguments
-#           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#           ${PRJ_TYPE} array specifies project type ("nano" or "micro")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
 #           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
 #           ${BUILD_INFO} specifies build options
@@ -337,7 +337,7 @@ build_project() {
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	if [ x$2 == x ] ; then
-		elf_name=`${LS} outdir/${PRJ_TYPE[$1]}.elf`
+		elf_name=`${LS} outdir/${PRJ_TYPE[$1]}kernel.elf`
 		[ x${elf_name} != "x" ] || \
 			fail_exit $? $FUNCNAME $LINENO "couldn't build ${proj_name}"
 	fi
@@ -350,7 +350,7 @@ build_project() {
 # ON ENTRY: ${PRJ_PATH} is path to master project directory
 #           ${PRJ_NAME} array specifies project directory name
 #           ${PRJ_ARGS} array specifies any additional project build arguments
-#           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
+#           ${PRJ_TYPE} array specifies project type ("nano" or "micro")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
 #           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
 #           ${BUILD_INFO} specifies build options
