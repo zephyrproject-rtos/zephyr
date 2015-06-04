@@ -560,6 +560,7 @@ static int reassemble(struct net_mbuf *mbuf)
       /* set to default after reassemble is completed */
       processed_ip_in_len = my_tag = reass_tag = 0;
     }
+    buf = NULL;
   }
 
   /* free MAC buffer */
@@ -570,6 +571,7 @@ fail:
    /* set to default if reassemble is failed */
    processed_ip_in_len = my_tag = reass_tag = 0;
    net_buf_put(buf);
+   buf = NULL;
    return 0;
 }
 
