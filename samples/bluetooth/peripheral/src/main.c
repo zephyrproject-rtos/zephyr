@@ -285,6 +285,26 @@ static int read_model(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 				 strlen(value));
 }
 
+static struct bt_uuid manuf_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_DIS_MANUFACTURER_NAME_STRING,
+};
+
+static struct bt_gatt_chrc manuf_chrc = {
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x001a,
+	.uuid = &manuf_uuid,
+};
+
+static int read_manuf(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+		      void *buf, uint8_t len, uint16_t offset)
+{
+	const char *value = attr->user_data;
+
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+				 strlen(value));
+}
+
 /* Custom Service Variables */
 static struct bt_uuid vnd_uuid = {
 	.type = BT_UUID_128,
@@ -300,7 +320,7 @@ static struct bt_uuid vnd_enc_uuid = {
 
 static struct bt_gatt_chrc vnd_enc_chrc = {
 	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-	.value_handle = 0x001b,
+	.value_handle = 0x001d,
 	.uuid = &vnd_enc_uuid,
 };
 
@@ -312,7 +332,7 @@ static struct bt_uuid vnd_auth_uuid = {
 
 static struct bt_gatt_chrc vnd_auth_chrc = {
 	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
-	.value_handle = 0x001d,
+	.value_handle = 0x001f,
 	.uuid = &vnd_auth_uuid,
 };
 
@@ -380,15 +400,18 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_CHARACTERISTIC(0x0017, &model_chrc),
 	BT_GATT_DESCRIPTOR(0x0018, &model_uuid, BT_GATT_PERM_READ,
 			   read_model, NULL, CONFIG_BSP_DIR),
+	BT_GATT_CHARACTERISTIC(0x0019, &manuf_chrc),
+	BT_GATT_DESCRIPTOR(0x001a, &manuf_uuid, BT_GATT_PERM_READ,
+			   read_manuf, NULL, "Manufacturer"),
 	/* Vendor Primary Service Declaration */
-	BT_GATT_PRIMARY_SERVICE(0x0019, &vnd_uuid),
-	BT_GATT_CHARACTERISTIC(0x001a, &vnd_enc_chrc),
-	BT_GATT_DESCRIPTOR(0x001b, &vnd_enc_uuid,
+	BT_GATT_PRIMARY_SERVICE(0x001b, &vnd_uuid),
+	BT_GATT_CHARACTERISTIC(0x001c, &vnd_enc_chrc),
+	BT_GATT_DESCRIPTOR(0x001d, &vnd_enc_uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_ENCRYPT |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT,
 			   read_vnd, write_vnd, vnd_value),
-	BT_GATT_CHARACTERISTIC(0x001c, &vnd_auth_chrc),
-	BT_GATT_DESCRIPTOR(0x001d, &vnd_auth_uuid,
+	BT_GATT_CHARACTERISTIC(0x001f, &vnd_auth_chrc),
+	BT_GATT_DESCRIPTOR(0x001f, &vnd_auth_uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_AUTHEN |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_AUTHEN,
 			   read_vnd, write_vnd, vnd_value),
