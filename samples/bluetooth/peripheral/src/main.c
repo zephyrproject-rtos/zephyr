@@ -131,10 +131,11 @@ static struct bt_gatt_chrc hrcpc_chrc = {
 };
 
 struct bt_gatt_ccc_cfg hrmc_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static uint8_t simulate_hrm = 0;
 
 static void hrmc_ccc_cfg_changed(uint16_t value)
 {
-	/* TODO: Handle value */
+	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
 static int read_blsc(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
@@ -472,11 +473,22 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
+		static uint8_t hrm[2];
+
 		task_sleep(sys_clock_ticks_per_sec);
 
+		/* Current Time Service updates only when time is changed */
 		if (ct_update) {
 			ct_update = 0;
 			bt_gatt_notify(0x0014, &ct, sizeof(ct));
+		}
+
+		/* Heartrate measurements simulation */
+		if (simulate_hrm) {
+			hrm[0] = 0x06; /* uint8, sensor contact */
+			hrm[1] = 90 + (sys_rand32_get() % 20);
+
+			bt_gatt_notify(0x0008, &hrm, sizeof(hrm));
 		}
 	}
 }
