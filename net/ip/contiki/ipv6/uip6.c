@@ -1558,6 +1558,14 @@ uip_process(struct net_buf *buf, uint8_t flag)
   uip_sappdata(buf) = uip_appdata(buf) = &uip_buf(buf)[UIP_IPUDPH_LEN + UIP_LLH_LEN];
   uip_slen(buf) = 0;
   UIP_UDP_APPCALL(buf);
+  if(uip_slen(buf) == 0) {
+    /* If the application does not want to send anything, then uip_slen(buf)
+     * will be 0. In this case we MUST NOT set uip_len(buf) to 0 as that would
+     * cause the net_buf to be released by rx fiber. In this case it is
+     * application responsibility to release the buffer.
+     */
+    return 0;
+  }
 
  udp_send:
   PRINTF("In udp_send\n");
