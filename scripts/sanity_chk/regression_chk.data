@@ -1,0 +1,74 @@
+    # projects that don't indicate completion
+nanokernel/apps/bluetooth/init               <n>  pentium4  minuteia  atom
+nanokernel/apps/bluetooth/init               <n>  fsl_frdm_k64f ti_lm3s6965
+nanokernel/apps/bluetooth/shell              <n>  pentium4  minuteia  atom
+nanokernel/apps/bluetooth/shell              <n>  fsl_frdm_k64f ti_lm3s6965
+nanokernel/apps/hello_world                  <n>  quark pentium4  minuteia
+nanokernel/apps/philosophers                 <n>  pentium4  minuteia  atom quark
+nanokernel/apps/hello_world                  <n>  fsl_frdm_k64f ti_lm3s6965
+nanokernel/apps/philosophers                 <n>  fsl_frdm_k64f ti_lm3s6965
+microkernel/apps/hello_world                 <u>  atom pentium4  minuteia  quark
+microkernel/apps/philosophers                <u>  pentium4  minuteia  atom quark
+microkernel/apps/hello_world                 <u>  fsl_frdm_k64f ti_lm3s6965
+microkernel/apps/philosophers                <u>  fsl_frdm_k64f ti_lm3s6965
+    # projects that have been temporarily disabled
+    # projects that don't require any special capabilities
+nanokernel/test/test_bluetooth          <nq> pentium4! minuteia! atom
+nanokernel/test/test_context            <nq> pentium4! minuteia! atom quark
+nanokernel/test/test_fifo               <nq> pentium4! minuteia! atom quark
+nanokernel/test/test_fp_sharing         <n>  pentium4!           atom
+nanokernel/test/test_lifo               <nq> pentium4! minuteia! atom quark
+nanokernel/test/test_sema               <nq> pentium4! minuteia! atom quark
+nanokernel/test/test_stack              <nq> pentium4! minuteia! atom quark
+nanokernel/test/test_stackprot          <n>  pentium4! minuteia! atom quark
+nanokernel/test/test_static_idt         <nq> pentium4! minuteia! atom quark
+nanokernel/test/test_timer              <nq> pentium4! minuteia! atom quark
+nanokernel/test/test_xip                <nq> pentium4! minuteia! atom quark
+nanokernel/test/test_arm_m3_irq_vector_table <nq> ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_bluetooth          <nq> ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_context            <nq> ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_fifo               <nq> ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_lifo               <nq> ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_sema               <nq> ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_stack              <nq> ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_stackprot          <n>  ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_timer              <nq> ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_xip                <nq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_bluetooth         <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_critical          <u>  ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_events            <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_fifo              <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_mail              <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_map               <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_pipe              <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_pool              <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_mutex             <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_rand32            <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_sema              <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_sprintf           <u>  ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_stackprot         <u>  ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_task              <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_task_irq          <u>  ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_timer             <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_xip               <uq> ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_bluetooth         <uq> minuteia! pentium4! atom
+microkernel/test/test_critical          <u>  minuteia! pentium4! atom quark
+microkernel/test/test_events            <uq> minuteia! pentium4! atom quark
+microkernel/test/test_fifo              <uq> minuteia! pentium4! atom quark
+microkernel/test/test_fp_sharing        <u>  pentium4!           atom
+microkernel/test/test_libs              <uq> minuteia! pentium4! atom quark
+microkernel/test/test_mail              <uq> minuteia! pentium4! atom quark
+microkernel/test/test_map               <uq> minuteia! pentium4! atom quark
+microkernel/test/test_pipe              <uq> minuteia! pentium4! atom quark
+microkernel/test/test_pool              <uq> minuteia! pentium4! atom quark
+microkernel/test/test_mutex             <uq> minuteia! pentium4! atom quark
+microkernel/test/test_rand32            <uq> minuteia! pentium4! atom quark
+microkernel/test/test_sema              <uq> pentium4! minuteia! atom quark
+microkernel/test/test_sprintf           <u>  pentium4! minuteia! atom quark
+microkernel/test/test_stackprot         <u>  pentium4! minuteia! atom quark
+microkernel/test/test_static_idt        <uq> pentium4! minuteia! atom quark
+microkernel/test/test_task              <uq> pentium4! minuteia! atom quark
+microkernel/test/test_task_irq          <u>  pentium4! minuteia! atom quark
+microkernel/test/test_tickless          <uq> pentium4! minuteia! atom quark
+microkernel/test/test_timer             <uq> pentium4! minuteia! atom quark
+microkernel/test/test_xip               <uq> pentium4! minuteia! atom quark

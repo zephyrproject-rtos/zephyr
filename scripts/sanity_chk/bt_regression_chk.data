@@ -1,0 +1,23 @@
+nanokernel/apps/bluetooth/init               <n> pentium4
+#  nanokernel/apps/bluetooth/init               <n> quark
+#  nanokernel/apps/bluetooth/init               <n> atom
+nanokernel/apps/bluetooth/init               <n> minuteia
+nanokernel/apps/bluetooth/init               <n> fsl_frdm_k64f
+nanokernel/apps/bluetooth/init               <n> ti_lm3s6965
+nanokernel/apps/bluetooth/shell              <n> pentium4
+nanokernel/apps/bluetooth/shell              <n> ti_lm3s6965
+nanokernel/apps/bluetooth/shell              <n> fsl_frdm_k64f
+nanokernel/test/test_bluetooth              <nq> pentium4!
+#  nanokernel/test/test_bluetooth              <nq> quark
+#  nanokernel/test/test_bluetooth              <nq> atom
+nanokernel/test/test_bluetooth              <nq> minuteia!
+nanokernel/test/test_bluetooth              <nq> ti_lm3s6965!
+nanokernel/test/test_bluetooth              <nq> fsl_frdm_k64f
+bluetooth/peripheral                         <u> pentium4
+bluetooth/peripheral                         <u> ti_lm3s6965
+microkernel/test/test_bluetooth             <uq> pentium4!
+#  microkernel/test/test_bluetooth             <uq> quark
+#  microkernel/test/test_bluetooth             <uq> atom
+microkernel/test/test_bluetooth             <uq> minuteia!
+microkernel/test/test_bluetooth             <uq> ti_lm3s6965!
+microkernel/test/test_bluetooth             <uq> fsl_frdm_k64f

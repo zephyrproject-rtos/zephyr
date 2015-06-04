@@ -1,0 +1,16 @@
+	# Nanokernel projects
+nanokernel/test/test_fifo        <n>  ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_lifo        <n>  ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_sema        <n>  ti_lm3s6965! fsl_frdm_k64f
+	# Microkernel projects
+microkernel/test/test_fifo       <u>  ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_events     <u>  ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_sema       <u>  ti_lm3s6965! fsl_frdm_k64f
+	# Nanokernel projects
+nanokernel/test/test_fifo        <n>  pentium4!  minuteia!  quark
+nanokernel/test/test_lifo        <n>  pentium4!  minuteia!  quark
+nanokernel/test/test_sema        <n>  pentium4!  minuteia!  quark
+	# Microkernel projects
+microkernel/test/test_fifo       <u>  pentium4!  minuteia!  quark
+microkernel/test/test_events     <u>  pentium4!  minuteia!  quark
+microkernel/test/test_sema       <u>  pentium4!  minuteia!  quark
