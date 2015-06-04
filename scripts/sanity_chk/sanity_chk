@@ -79,7 +79,6 @@ The full sanity check consists of the following phases:
     - Rebuild host tools to ensure they are up to date.
     - Run "footprint_chk" to characterize kernel footprint.
     - Run "regression_chk" to regression test kernel operation.
-    - Run "common-klibs_chk" to verify if projects can share a set of common kernel libs
     - Run "out-of-tree_chk" to verify if projects and BSPs can reside outside the normal tree.
 
 The full sanity check is run by default. If desired, some steps can be omitted
@@ -182,8 +181,6 @@ main() {
 		[ $? -eq 0 ] || exit $?
 		${SCRIPT_PATH}/regression_chk -c
 		[ $? -eq 0 ] || exit $?
-		#${SCRIPT_PATH}/common-klibs_chk -c
-		#[ $? -eq 0 ] || exit $?
 		${SCRIPT_PATH}/out-of-tree_chk -c
 		exit $?
 	fi
@@ -204,13 +201,6 @@ main() {
 	${ECHO}
 	${SCRIPT_PATH}/regression_chk ${args_passed_on}
 	[ $? -eq 0 ] || exit $?
-
-	# run the common klibs regression check
-	print_header
-	${ECHO} "Running Common klibs Regression Check"
-	${ECHO}
-	#${SCRIPT_PATH}/common-klibs_chk ${args_passed_on}
-	#[ $? -eq 0 ] || exit $?
 
 	# run the out of tree regression check
 	print_header
