@@ -1,6 +1,6 @@
-EXTRA_CFLAGS +=-I$(srctree)/arch/x86
-EXTRA_CFLAGS +=-I$(srctree)/include/drivers
-EXTRA_CFLAGS +=-I$(srctree)/drivers
-EXTRA_AFLAGS := ${EXTRA_CFLAGS}
+ccflags-y +=-I$(srctree)/arch/x86
+ccflags-y +=-I$(srctree)/include/drivers
+ccflags-y +=-I$(srctree)/drivers
+asflags-y := ${ccflags-y}
 
 obj-y = system.o

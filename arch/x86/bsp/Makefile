@@ -1,5 +1,5 @@
-EXTRA_CFLAGS +=-I$(srctree)/arch/x86/$(strip $(CONFIG_BSP_DIR))
-EXTRA_AFLAGS +=-I$(srctree)/arch/x86/$(strip $(CONFIG_BSP_DIR))
+ccflags-y +=-I$(srctree)/arch/x86/$(strip $(CONFIG_BSP_DIR))
+asflags-y +=-I$(srctree)/arch/x86/$(strip $(CONFIG_BSP_DIR))
 
 obj-y = crt0.o sysFatalErrorHandler.o driver_static_irq_stubs.o
 

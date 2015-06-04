@@ -1,6 +1,6 @@
-EXTRA_CFLAGS += -I$(srctree)/include/bsp
-EXTRA_CFLAGS += -I$(srctree)/include/drivers
+ccflags-y += -I$(srctree)/include/bsp
+ccflags-y += -I$(srctree)/include/drivers
 
-EXTRA_AFLAGS := ${EXTRA_CFLAGS}
+asflags-y := ${ccflags-y}
 
 obj-y = system.o

@@ -1,3 +1,3 @@
-EXTRA_CFLAGS += ${PROJECTINCLUDE}
+ccflags-y += ${PROJECTINCLUDE}
 
 obj-y = hello.o

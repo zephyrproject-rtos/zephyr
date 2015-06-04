@@ -1,3 +1,3 @@
-EXTRA_CFLAGS += ${PROJECTINCLUDE}
+ccflags-y += ${PROJECTINCLUDE}
 
 obj-y =  phil_fiber.o phil_task.o

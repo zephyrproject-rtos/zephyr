@@ -1,8 +1,8 @@
-EXTRA_CFLAGS +=-I$(srctree)/kernel/nanokernel/include
-EXTRA_CFLAGS +=-I$(srctree)/kernel/microkernel/include
+ccflags-y +=-I$(srctree)/kernel/nanokernel/include
+ccflags-y +=-I$(srctree)/kernel/microkernel/include
 
 
-EXTRA_AFLAGS := ${EXTRA_CFLAGS}
+asflags-y := ${ccflags-y}
 
 obj-y = nano_fiber.o nano_lifo.o \
 	nano_fifo.o nano_stack.o nano_timer.o \

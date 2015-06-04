@@ -1,9 +1,9 @@
-EXTRA_CFLAGS +=-I$(srctree)/include/bsp
-EXTRA_CFLAGS +=-I$(srctree)/include/drivers
-EXTRA_CFLAGS +=-I$(srctree)/drivers
-EXTRA_CFLAGS +=-I$(srctree)/arch/arm/fsl_frdm_k64f
+ccflags-y +=-I$(srctree)/include/bsp
+ccflags-y +=-I$(srctree)/include/drivers
+ccflags-y +=-I$(srctree)/drivers
+ccflags-y +=-I$(srctree)/arch/arm/fsl_frdm_k64f
 
-EXTRA_AFLAGS := ${EXTRA_CFLAGS}
+asflags-y := ${ccflags-y}
 
 
 obj-y += system.o

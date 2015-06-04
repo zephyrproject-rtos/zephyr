@@ -1,3 +1,3 @@
-EXTRA_CFLAGS += -I${srctree}/samples/include
+ccflags-y += -I${srctree}/samples/include
 
 obj-y=timer.o

@@ -1,3 +1,3 @@
-EXTRA_CFLAGS += ${PROJECTINCLUDE} -I${srctree}/samples/include
+ccflags-y += ${PROJECTINCLUDE} -I${srctree}/samples/include
 
 obj-y = fifo.o

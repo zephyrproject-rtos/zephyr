@@ -1,4 +1,4 @@
-EXTRA_CFLAGS +=-I$(srctree)/kernel/microkernel/include
+ccflags-y +=-I$(srctree)/kernel/microkernel/include
 
 obj-y = k_task.o
 obj-y += idle.o

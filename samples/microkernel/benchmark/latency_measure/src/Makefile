@@ -1,5 +1,5 @@
-EXTRA_CFLAGS += -I$(CURDIR)/misc/generated/sysgen
-EXTRA_CFLAGS += -I$(srctree)/samples/include
+ccflags-y += -I$(CURDIR)/misc/generated/sysgen
+ccflags-y += -I$(srctree)/samples/include
 
 obj-y = main.o \
 	micro_int_to_task_evt.o \

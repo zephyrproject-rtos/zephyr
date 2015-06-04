@@ -1,8 +1,8 @@
-EXTRA_CFLAGS += -I$(srctree)/kernel/nanokernel/include
-EXTRA_CFLAGS += -I$(srctree)/kernel/microkernel/include
-EXTRA_CFLAGS += -I$(srctree)/target/src/bsp/arm
+ccflags-y += -I$(srctree)/kernel/nanokernel/include
+ccflags-y += -I$(srctree)/kernel/microkernel/include
+ccflags-y += -I$(srctree)/target/src/bsp/arm
 
-EXTRA_AFLAGS := ${EXTRA_CFLAGS}
+asflags-y := ${ccflags-y}
 
 obj-y = atomic.o exc_exit.o ffs.o irq_init.o \
 	nano_fiber_abort.o swap.o basepri.o \
