@@ -42,9 +42,6 @@ config ARM
 	help
 	This option signifies the use of an ARM system.
 
-config XIP
-	default n
-
 config ISA_THUMB2
 	bool "Thumb-2 Technology"
 	default y
