@@ -1,10 +1,5 @@
 % Application       : kernel task level device interrupt test
 
-% Warning: Saving a VxMicro project file (.vpf) with the
-% VxMicro Project Manager (VPM) tool will result in any
-% manually entered comments being removed, along with
-% any format changes being undone.
-
 % TASK NAME          PRIO ENTRY           STACK GROUPS
 % ===================================================
  TASK MONITORTASK    10   MonitorTaskEntry 1024 [EXE]

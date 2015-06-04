@@ -31,11 +31,6 @@
 % POSSIBILITY OF SUCH DAMAGE.
 %
 
-% Warning: Saving a VxMicro project file (.vpf) with the 
-% VxMicro Project Manager (VPM) tool will result in any 
-% manually entered comments being removed, along with 
-% any format changes being undone.
-
 % DRIVERTYPE     CALL
 % ===============================================
   TIMERDRIVER    'timer_driver(0)'

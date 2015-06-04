@@ -1,11 +1,6 @@
 % Application       : SysKernel benchmark
 % Part common for all platforms
 
-% Warning: Saving a VxMicro project file (.vpf) with the
-% VxMicro Project Manager (VPM) tool will result in any
-% manually entered comments being removed, along with
-% any format changes being undone.
-
 % TASK NAME             PRIO ENTRY           STACK GROUPS
 % =======================================================
   TASK SYSKERNELBENCH      6 SysKernelBench  16384 [FPU,EXE]
