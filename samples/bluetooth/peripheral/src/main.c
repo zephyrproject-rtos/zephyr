@@ -165,19 +165,21 @@ static struct bt_gatt_chrc blvl_chrc = {
 };
 
 static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED] = {};
+static uint8_t simulate_blvl = 0;
+static uint8_t battery = 100;
 
 static void blvl_ccc_cfg_changed(uint16_t value)
 {
-	/* TODO: Handle value */
+	simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
 static int read_blvl(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 		     void *buf, uint8_t len, uint16_t offset)
 {
-	uint8_t value = 100;
+	const char *value = attr->user_data;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &value,
-				 sizeof(value));
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+				 sizeof(*value));
 }
 
 /* Current Time Service Variables */
@@ -386,7 +388,7 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x000e, &bas_uuid),
 	BT_GATT_CHARACTERISTIC(0x000f, &blvl_chrc),
 	BT_GATT_DESCRIPTOR(0x0010, &blvl_uuid, BT_GATT_PERM_READ, read_blvl,
-			   NULL, NULL),
+			   NULL, &battery),
 	BT_GATT_CCC(0x0011, 0x0010, blvl_ccc_cfg, blvl_ccc_cfg_changed),
 	/* Current Time Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(0x0012, &cts_uuid),
@@ -512,6 +514,18 @@ void main(void)
 			hrm[1] = 90 + (sys_rand32_get() % 20);
 
 			bt_gatt_notify(0x0008, &hrm, sizeof(hrm));
+		}
+
+		/* Battery level simulation */
+		if (simulate_blvl) {
+			battery -= 1;
+
+			if (!battery) {
+				/* Software eco battery charger */
+				battery = 100;
+			}
+
+			bt_gatt_notify(0x0010, &battery, sizeof(battery));
 		}
 	}
 }
