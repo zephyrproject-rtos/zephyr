@@ -79,10 +79,6 @@ extern int task_offload_to_fiber(int (*)(), void *);
 #define TASK_GROUP_BLOCK 4
 #define TASK_GROUP_UNBLOCK 5
 
-#ifdef CONFIG_TASK_MONITOR
-extern void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func);
-#endif
-
 extern ktask_t task_id_get();
 extern kpriority_t task_priority_get();
 

@@ -47,11 +47,11 @@ static struct k_mrec *k_monitor_wptr = k_monitor_buff;
 static int k_monitor_nrec = 0;
 static int K_monitor_wind = 0;
 
-taskswitchcallbackfunc _k_task_switch_callback = NULL;
+k_task_monitor_hook_t _k_task_switch_callback = NULL;
 
 extern const int _k_num_events;
 
-void KS_TaskSetSwitchCallBack(taskswitchcallbackfunc func)
+void task_monitor_hook_set(k_task_monitor_hook_t func)
 {
 	_k_task_switch_callback = func;
 }

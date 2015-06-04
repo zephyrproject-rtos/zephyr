@@ -54,7 +54,6 @@ typedef uint32_t kmemory_pool_t;
 typedef unsigned int kevent_t;
 typedef uint32_t kirq_t;
 
-typedef void (*taskswitchcallbackfunc)(ktask_t taskid, uint32_t timestamp);
 typedef int (*kevent_handler_t)(int event);
 
 #define RC_OK 0

@@ -209,6 +209,10 @@ extern int _k_debug_halt;
 #define MON_EVENT 8
 #define MON_ALL 15
 
+typedef void (*k_task_monitor_hook_t)(ktask_t taskid, uint32_t timestamp);
+
+extern void task_monitor_hook_set(k_task_monitor_hook_t func);
+
 extern void _k_task_monitor(struct k_proc *, uint32_t d2);
 extern void _k_task_monitor_args(struct k_args *);
 extern void _k_task_monitor_read(struct k_args *);
