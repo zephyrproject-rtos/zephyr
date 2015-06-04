@@ -172,8 +172,8 @@ typedef struct firq_regs tFirqRegs;
 
 #ifndef _ASMLANGUAGE
 
-struct s_CCS {
-	struct s_CCS *link;        /* node in singly-linked list
+struct ccs {
+	struct ccs *link;        /* node in singly-linked list
 								* _nanokernel.fibers */
 	uint32_t flags;            /* bitmask of flags above */
 	uint32_t intlock_key;      /* interrupt key when relinquishing control */
@@ -186,7 +186,7 @@ struct s_CCS {
 	struct coop coopReg;
 	struct preempt preempReg;
 #ifdef CONFIG_CONTEXT_MONITOR
-	struct s_CCS *next_context;  /* next item in list of ALL fiber+tasks */
+	struct ccs *next_context;  /* next item in list of ALL fiber+tasks */
 #endif
 };
 

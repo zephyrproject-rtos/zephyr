@@ -46,7 +46,7 @@ extern "C" {
 
 /* helper type alias for context control structure */
 
-typedef struct s_CCS tCCS;
+typedef struct ccs tCCS;
 
 /* context entry point declarations */
 

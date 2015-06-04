@@ -61,7 +61,7 @@ tNANO _nanokernel = {0};
 * RETURNS: N/A
 */
 
-static ALWAYS_INLINE void _context_monitor_init(struct s_CCS *pCcs /* context */
+static ALWAYS_INLINE void _context_monitor_init(struct ccs *pCcs /* context */
 					   )
 {
 	unsigned int key;

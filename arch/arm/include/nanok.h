@@ -125,8 +125,8 @@ typedef struct preempt tPreempt;
 #endif
 
 #ifndef _ASMLANGUAGE
-struct s_CCS {
-	struct s_CCS *link; /* singly-linked list in _nanokernel.fibers */
+struct ccs {
+	struct ccs *link; /* singly-linked list in _nanokernel.fibers */
 	uint32_t flags;
 	uint32_t basepri;
 	int prio;
@@ -136,7 +136,7 @@ struct s_CCS {
 	struct coop coopReg;
 	struct preempt preempReg;
 #if defined(CONFIG_CONTEXT_MONITOR)
-	struct s_CCS *next_context; /* next item in list of ALL fiber+tasks */
+	struct ccs *next_context; /* next item in list of ALL fiber+tasks */
 #endif
 };
 

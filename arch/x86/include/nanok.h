@@ -628,7 +628,7 @@ typedef struct s_preempFloatReg {
  * _NewContext() call.
  */
 
-struct s_CCS {
+struct ccs {
 	/*
 	 * Link to next context in singly-linked context list (such as
 	 * prioritized
@@ -636,7 +636,7 @@ struct s_CCS {
 	 * FIFO).
 	 */
 
-	struct s_CCS *link;
+	struct ccs *link;
 
 	/*
 	 * See the above flag definitions above for valid bit settings.  This
@@ -658,7 +658,7 @@ struct s_CCS {
 	tPreempReg preempReg; /* volatile integer register storage */
 
 #if defined(CONFIG_CONTEXT_MONITOR)
-	struct s_CCS *next_context; /* next item in list of ALL fiber+tasks */
+	struct ccs *next_context; /* next item in list of ALL fiber+tasks */
 #endif
 #ifdef CONFIG_GDB_INFO
 	void *esfPtr; /* pointer to exception stack frame saved by */

@@ -60,11 +60,11 @@ struct _nano_queue {
 	void *tail;
 };
 
-struct s_CCS;
+struct ccs;
 
 /* architecture-independent nanokernel public APIs */
 
-typedef struct s_CCS *nano_context_id_t;
+typedef struct ccs *nano_context_id_t;
 
 typedef void (*nano_fiber_entry_t)(int i1, int i2);
 
