@@ -1,4 +1,4 @@
-/* nanocontextentry.h - context entry wrapper definitions */
+/* architecture-independent private nanokernel APIs */
 
 /*
  * Copyright (c) 2010-2012, 2014-2015 Wind River Systems, Inc.
@@ -32,13 +32,11 @@
 
 /*
 DESCRIPTION
-This module provides definitions for a wrapper
+This file contains private nanokernel APIs that are not architecture-specific.
 */
 
-#ifndef _NANOCONTEXTENTRY__H_
-#define _NANOCONTEXTENTRY__H_
-
-#include <nanok.h>
+#ifndef _NANO_INTERNAL__H_
+#define _NANO_INTERNAL__H_
 
 #ifndef _ASMLANGUAGE
 
@@ -46,10 +44,38 @@ This module provides definitions for a wrapper
 extern "C" {
 #endif
 
+/* context entry point declarations */
+
+typedef void *_ContextArg;
+typedef void (*_ContextEntry)(_ContextArg arg1,
+							  _ContextArg arg2,
+							  _ContextArg arg3);
+
 extern void _context_entry(_ContextEntry,
 			     _ContextArg,
 			     _ContextArg,
 			     _ContextArg);
+
+/* set and clear essential fiber/task flag */
+
+extern void _context_essential_set(void);
+extern void _context_essential_clear(void);
+
+/* clean up when a context is aborted */
+
+#if defined(CONFIG_CONTEXT_MONITOR)
+extern void _context_exit(tCCS *ccs);
+#else
+#define _context_exit(ccs) \
+	do {/* nothing */    \
+	} while (0)
+#endif /* CONFIG_CONTEXT_MONITOR */
+
+/* special nanokernel object APIs */
+
+struct nano_lifo;
+
+extern void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo);
 
 #ifdef __cplusplus
 }
@@ -57,4 +83,4 @@ extern void _context_entry(_ContextEntry,
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _NANOCONTEXTENTRY__H_ */
+#endif /* _NANO_INTERNAL__H_ */

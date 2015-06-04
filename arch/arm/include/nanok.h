@@ -53,6 +53,7 @@ extern "C" {
 #include <arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
+#include <../../../kernel/nanokernel/include/nano_internal.h>
 #include <stdint.h>
 #endif
 

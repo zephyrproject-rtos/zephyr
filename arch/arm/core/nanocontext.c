@@ -40,7 +40,6 @@ architecture.
 #include <arch/cpu.h>
 #include <toolchain.h>
 #include <nanok.h>
-#include <nanocontextentry.h>
 
 tNANO _nanokernel = {0};
 

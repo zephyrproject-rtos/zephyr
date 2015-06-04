@@ -44,30 +44,6 @@ struct _nano_queue {
 	void *tail;
 };
 
-/* context entry point function typedef */
-
-typedef void *_ContextArg;
-typedef void (*_ContextEntry)(_ContextArg arg1,
-			      _ContextArg arg2,
-			      _ContextArg arg3);
-
-/* Private API to set and clear essential fiber/task flag */
-extern void _context_essential_set(void);
-extern void _context_essential_clear(void);
-
-/* Private API to clean up when a context is aborted */
-#if defined(CONFIG_CONTEXT_MONITOR)
-extern void _context_exit(tCCS *ccs);
-#else
-#define _context_exit(ccs) \
-	do {/* nothing */    \
-	} while (0)
-#endif /* CONFIG_CONTEXT_MONITOR */
-
-struct nano_lifo;
-
-extern void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo);
-
 #ifdef __cplusplus
 }
 #endif

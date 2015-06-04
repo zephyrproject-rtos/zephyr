@@ -40,7 +40,6 @@ tasks or fibers.
 #include <sections.h>
 
 #include <nanok.h>
-#include <nanocontextentry.h>
 #include <misc/printk.h>
 
 /*******************************************************************************

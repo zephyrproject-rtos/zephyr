@@ -36,7 +36,7 @@
 #include <stddef.h>
 #include <kernel_struct.h>
 #include <kernel_main.h>
-#include <clock_vars.h>
+#include <nanok.h>
 
 #define KERNEL_ENTRY(A) _k_task_call(A)
 

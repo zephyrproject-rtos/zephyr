@@ -44,7 +44,6 @@ processor architecture.
 #include <toolchain.h>
 #include <sections.h>
 #include <nanok.h>
-#include <nanocontextentry.h>
 
 
 /* the one and only nanokernel control structure */
