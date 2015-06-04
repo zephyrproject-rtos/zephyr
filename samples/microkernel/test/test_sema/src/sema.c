@@ -252,7 +252,7 @@ int simpleGroupTest(void)
 	value = task_sem_group_take_wait_timeout(semList, OBJ_TIMEOUT);
 	if (value != ENDLIST) {
 		TC_ERROR("task_sem_group_take_wait_timeout() returned %d not %d\n",
-				 value, ENDGROUP);
+				 value, ENDLIST);
 		return TC_FAIL;
 	}
 

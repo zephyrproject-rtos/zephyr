@@ -65,8 +65,6 @@ typedef int (*kevent_handler_t)(int event);
 
 #define ANYTASK (-1)  /* for mail sender or receiver parameter  */
 #define ENDLIST (-1)  /* this value terminates a semaphore list */
-#define ENDGROUP (-1) /* terminates semaphore group (id. above) */
-#define EMPTYID (-1)
 
 #define TICKS_UNLIMITED (-1)
 #define TICKS_NONE 0
