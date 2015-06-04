@@ -67,9 +67,177 @@ static const char *lorem_ipsum =
 	"\n"
 	"Donec vehicula magna ut varius aliquam. Ut vitae commodo nulla, quis ornare dolor. Nulla tortor sem, venenatis eu iaculis id, commodo ut massa. Sed est lorem, euismod vitae enim sed, hendrerit gravida felis. Donec eros lacus, auctor ut ultricies eget, lobortis quis nisl. Aliquam sit amet blandit eros. Interdum et malesuada fames ac ante ipsum primis in faucibus. Quisque egestas nisl leo, sed consectetur leo ornare eu. Suspendisse vitae urna vel purus maximus finibus. Proin sed sollicitudin turpis. Mauris interdum neque eu tellus pellentesque, id fringilla nisi fermentum. Suspendisse gravida pharetra sodales orci aliquam.";
 */
+
+static void set_routes()
+{
+	const uip_lladdr_t null_addr = { };
+
+	/* Workaround to get packets from this task to listening fiber.
+	 * Do not attempt to do anything like this in live environment.
+	 */
+	if (!uip_ds6_nbr_add((uip_ipaddr_t *)&in6addr_loopback,
+					&null_addr, 0, NBR_REACHABLE))
+		PRINT("Cannot add neighbor cache\n");
+
+	if (!uip_ds6_route_add((uip_ipaddr_t *)&in6addr_loopback, 128,
+					(uip_ipaddr_t *)&in6addr_loopback))
+		PRINT("Cannot add localhost route\n");
+}
+
+static void send_data(const char *taskname, struct net_context *ctx)
+{
+	int len = strlen(lorem_ipsum);
+	struct net_buf *buf;
+
+	buf = net_buf_get(ctx);
+	if (buf) {
+		uint8_t *ptr;
+		uint16_t sent_len;
+
+		ptr = net_buf_add(buf, 0);
+		memcpy(ptr, lorem_ipsum, len);
+		ptr = net_buf_add(buf, len);
+		ptr = net_buf_add(buf, 1); /* add \0 */
+		*ptr = '\0';
+		sent_len = buf->len;
+
+		if (net_send(buf) < 0) {
+			PRINT("%s: %s(): sending %d bytes failed\n",
+			      taskname, __FUNCTION__, len);
+			net_buf_put(buf);
+		} else {
+			PRINT("%s: %s(): sent %d bytes\n", taskname,
+			      __FUNCTION__, sent_len);
+		}
+	}
+}
+
+static void receive_data(const char *taskname, struct net_context *ctx)
+{
+	struct net_buf *buf;
+
+	buf = net_receive(ctx);
+	if (buf) {
+		PRINT("%s: %s(): received %d bytes\n%s\n", taskname,
+		      __FUNCTION__, uip_appdatalen(buf),
+		      uip_appdata(buf));
+		net_buf_put(buf);
+	}
+}
+
+static struct net_context *get_context(const struct net_addr *remote,
+				       uint16_t remote_port,
+				       const struct net_addr *local,
+				       uint16_t local_port)
+{
+	struct net_context *ctx;
+
+	ctx = net_context_get(IPPROTO_UDP,
+			      remote, remote_port,
+			      local, local_port);
+	if (!ctx) {
+		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		return NULL;
+	}
+
+	return ctx;
+}
+
 #ifdef CONFIG_MICROKERNEL
 
-#error "Microkernel version not supported yet."
+/*
+ * Microkernel version of hello world demo has two tasks that utilize
+ * semaphores and sleeps to take turns printing a greeting message at
+ * a controlled rate.
+ */
+
+#include <zephyr.h>
+
+/* specify delay between greetings (in ms); compute equivalent in ticks */
+
+#define SLEEPTIME  500
+#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
+
+/* specify delay between greetings (in ms); compute equivalent in ticks */
+
+#define SLEEPTIME  500
+#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
+
+#define TASK_IPADDR { { { 0xaa,0xaa,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
+
+/*
+*
+* \param taskname    task identification string
+* \param mySem       task's own semaphore
+* \param otherSem    other task's semaphore
+*
+*/
+static void listen(const char *taskname, ksem_t mySem, ksem_t otherSem,
+		   struct net_context *ctx)
+{
+	while (1) {
+		task_sem_take_wait(mySem);
+
+		receive_data(taskname, ctx);
+
+		/* wait a while, then let other task have a turn */
+		task_sleep(SLEEPTICKS);
+		task_sem_give(otherSem);
+	}
+}
+
+void taskA(void)
+{
+	struct net_context *ctx;
+
+	net_init();
+
+	any_addr.in6_addr = in6addr_any;
+	any_addr.family = AF_INET6;
+
+	loopback_addr.in6_addr = in6addr_loopback;
+	loopback_addr.family = AF_INET6;
+
+	ctx = get_context(&any_addr, 0, &loopback_addr, 4242);
+	if (!ctx) {
+		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		return;
+	}
+
+	/* taskA gives its own semaphore, allowing it to say hello right away */
+	task_sem_give(TASKASEM);
+
+	listen(__FUNCTION__, TASKASEM, TASKBSEM, ctx);
+}
+
+static void send(const char *taskname, ksem_t mySem, ksem_t otherSem,
+		 struct net_context *ctx)
+{
+	while (1) {
+		task_sem_take_wait(mySem);
+
+		send_data(taskname, ctx);
+
+		/* wait a while, then let other task have a turn */
+		task_sleep(SLEEPTICKS);
+		task_sem_give(otherSem);
+	}
+}
+
+void taskB(void)
+{
+	struct net_context *ctx;
+
+	ctx = get_context(&loopback_addr, 4242, &any_addr, 0);
+	if (!ctx) {
+		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		return;
+	}
+
+	set_routes();
+
+	send(__FUNCTION__, TASKBSEM, TASKASEM, ctx);
+}
 
 #else /*  CONFIG_NANOKERNEL */
 
@@ -98,11 +266,8 @@ void fiberEntry(void)
 	struct nano_timer timer;
 	uint32_t data[2] = {0, 0};
 	struct net_context *ctx;
-	struct net_buf *buf;
 
-	ctx = net_context_get(IPPROTO_UDP,
-			      &any_addr, 0,
-			      &loopback_addr, 4242);
+	ctx = get_context(&any_addr, 0, &loopback_addr, 4242);
 	if (!ctx) {
 		PRINT("%s: Cannot get network context\n", __FUNCTION__);
 		return;
@@ -115,12 +280,7 @@ void fiberEntry(void)
 		/* wait for task to let us have a turn */
 		nano_fiber_sem_take_wait (&nanoSemFiber);
 
-		buf = net_receive(ctx);
-		if (buf) {
-			PRINT("%s: received %d bytes\n%s\n", __FUNCTION__,
-				uip_appdatalen(buf), uip_appdata(buf));
-			net_buf_put(buf);
-		}
+		receive_data("listenFiber", ctx);
 
 		/* wait a while, then let task have a turn */
 		nano_fiber_timer_start (&timer, SLEEPTICKS);
@@ -134,9 +294,6 @@ void main(void)
 	struct nano_timer timer;
 	uint32_t data[2] = {0, 0};
 	struct net_context *ctx;
-	struct net_buf *buf;
-	int len = strlen(lorem_ipsum);
-	const uip_lladdr_t null_addr = { };
 
 	PRINT("%s: run test_15_4\n", __FUNCTION__);
 
@@ -148,9 +305,7 @@ void main(void)
 	loopback_addr.in6_addr = in6addr_loopback;
 	loopback_addr.family = AF_INET6;
 
-	ctx = net_context_get(IPPROTO_UDP,
-			      &loopback_addr, 4242,
-			      &any_addr, 0);
+	ctx = get_context(&loopback_addr, 4242, &any_addr, 0);
 	if (!ctx) {
 		PRINT("Cannot get network context\n");
 		return;
@@ -162,39 +317,11 @@ void main(void)
 	nano_sem_init(&nanoSemTask);
 	nano_timer_init(&timer, data);
 
-	/* Workaround to get packets from this task to listening fiber.
-	* Do not attempt to do anything like this in live environment.
-	*/
-	if (!uip_ds6_nbr_add((uip_ipaddr_t *)&in6addr_loopback,
-					&null_addr, 0, NBR_REACHABLE))
-		PRINT("Cannot add neighbor cache\n");
-
-	if (!uip_ds6_route_add((uip_ipaddr_t *)&in6addr_loopback, 128,
-					(uip_ipaddr_t *)&in6addr_loopback))
-		PRINT("Cannot add localhost route\n");
-
+	set_routes();
 
 	while (1) {
-		buf = net_buf_get(ctx);
-		if (buf) {
-			uint8_t *ptr;
-			uint16_t sent_len;
 
-			ptr = net_buf_add(buf, 0);
-			memcpy(ptr, lorem_ipsum, len);
-			ptr = net_buf_add(buf, len);
-			ptr = net_buf_add(buf, 1); /* add \0 */
-			*ptr = '\0';
-			sent_len = buf->len;
-
-			if (net_send(buf) < 0) {
-				PRINT("%s: sending %d bytes failed\n",
-					__FUNCTION__, len);
-				net_buf_put(buf);
-			} else
-				PRINT("%s: sent %d bytes\n", __FUNCTION__,
-					sent_len);
-		}
+		send_data("sendFiber", ctx);
 
 		/* wait a while, then let fiber have a turn */
 		nano_task_timer_start(&timer, SLEEPTICKS);

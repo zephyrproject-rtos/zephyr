@@ -1,0 +1,16 @@
+% Application       : Network demo
+
+% Warning: Saving a VxMicro project file (.vpf) with the
+% VxMicro Project Manager (VPM) tool will result in any
+% manually entered comments being removed, along with
+% any format changes being undone.
+
+% TASK NAME  PRIO ENTRY STACK GROUPS
+% ==================================
+  TASK TASKA    7 taskA  2048 [EXE]
+  TASK TASKB    7 taskB  2048 [EXE]
+
+% SEMA NAME
+% =============
+  SEMA TASKASEM
+  SEMA TASKBSEM
