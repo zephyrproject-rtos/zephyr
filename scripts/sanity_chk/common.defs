@@ -161,7 +161,7 @@ build_info_set() {
 
 	# set up toolchain-specific build environment stuff
 	if [ x${VXMICRO_TOOL} = x"gcc" ] ; then
-		MAKE_EXTRA_FLAGS="EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
+		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
 	elif [ x${VXMICRO_TOOL} = x"diab" ] ; then
 		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Xstop-on-warning EXTRA_LFLAGS=-Xstop-on-warning"
 	else
