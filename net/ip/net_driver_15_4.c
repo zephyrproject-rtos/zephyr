@@ -85,7 +85,7 @@ static int net_driver_15_4_send(struct net_buf *buf)
 	return 0;
 }
 
-static void net_tx_fiber(void)
+static void net_tx_15_4_fiber(void)
 {
 	NET_DBG("Starting 15.4 TX fiber\n");
 
@@ -105,7 +105,7 @@ static void net_tx_fiber(void)
 	}
 }
 
-static void net_rx_fiber(void)
+static void net_rx_15_4_fiber(void)
 {
 	struct net_mbuf *buf;
 
@@ -126,7 +126,7 @@ static void init_rx_queue(void)
         nano_fifo_init(&rx_queue);
 
 	fiber_start(rx_fiber_stack, STACKSIZE,
-				(nano_fiber_entry_t) net_rx_fiber, 0, 0, 7, 0);
+		    (nano_fiber_entry_t) net_rx_15_4_fiber, 0, 0, 7, 0);
 }
 
 static void init_tx_queue(void)
@@ -134,7 +134,7 @@ static void init_tx_queue(void)
 	nano_fifo_init(&tx_queue);
 
 	fiber_start(tx_fiber_stack, STACKSIZE,
-				(nano_fiber_entry_t) net_tx_fiber, 0, 0, 7, 0);
+		    (nano_fiber_entry_t) net_tx_15_4_fiber, 0, 0, 7, 0);
 }
 
 static struct net_driver net_driver_15_4 = {
