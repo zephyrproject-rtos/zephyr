@@ -36,29 +36,34 @@
 unsigned char heap[HEAP_SIZE];
 unsigned int heap_sz = 0;
 
-static int _stdout_hook_default(int c) {
-        (void)(c);  /* Prevent warning about unused argument */
+static int _stdout_hook_default(int c)
+{
+	(void)(c);  /* Prevent warning about unused argument */
 
-        return EOF;
+	return EOF;
 }
 
 static int (*_stdout_hook)(int) = _stdout_hook_default;
 
-void __stdout_hook_install(int (*hook)(int)) {
-        _stdout_hook = hook;
+void __stdout_hook_install(int (*hook)(int))
+{
+	_stdout_hook = hook;
 }
 
-static unsigned char _stdin_hook_default(void) {
-        return 0;
+static unsigned char _stdin_hook_default(void)
+{
+	return 0;
 }
 
 static unsigned char (*_stdin_hook)(void) = _stdin_hook_default;
 
-void __stdin_hook_install(unsigned char (*hook)(void)) {
-        _stdin_hook = hook;
+void __stdin_hook_install(unsigned char (*hook)(void))
+{
+	_stdin_hook = hook;
 }
 
-int read( int fd, char *buf, int nbytes) {
+int read(int fd, char *buf, int nbytes)
+{
 	int i = 0;
 
 	for (i = 0; i < nbytes; i++) {
@@ -68,64 +73,75 @@ int read( int fd, char *buf, int nbytes) {
 			break;
 		}
 	}
-	return (i);
+	return i;
 }
 
-int write(int fd, char *buf, int nbytes) {
+int write(int fd, char *buf, int nbytes)
+{
 	int i;
 
 	for (i = 0; i < nbytes; i++) {
 		if (*(buf + i) == '\n') {
-			_stdout_hook ('\r');
+			_stdout_hook('\r');
 		}
-		_stdout_hook (*(buf + i));
+		_stdout_hook(*(buf + i));
 	}
-	return (nbytes);
+	return nbytes;
 }
 
-int fstat( int fd, struct stat *buf) {
+int fstat(int fd, struct stat *buf)
+{
 	buf->st_mode = S_IFCHR;       /* Always pretend to be a tty */
 	buf->st_blksize = 0;
 
-	return (0);
+	return 0;
 }
 
-int isatty(int file) {
+int isatty(int file)
+{
 	return 1;
 }
 
 
-int kill(int i, int j) {
+int kill(int i, int j)
+{
 	return 0;
 }
 
-int getpid() {
+int getpid(void)
+{
 	return 0;
 }
 
-int _fstat(int file, struct stat *st) {
+int _fstat(int file, struct stat *st)
+{
 	st->st_mode = S_IFCHR;
 	return 0;
 }
 
 
-void exit(int status) {
+void exit(int status)
+{
 	write(1, "exit", 4);
 	while (1) {
 		;
 	}
 }
 
-int close(int file) {
+int close(int file)
+{
 	return -1;
 }
 
-int lseek(int file, int ptr, int dir) {
+int lseek(int file, int ptr, int dir)
+{
 	return 0;
 }
 
-void *sbrk(int count) {
+void *sbrk(int count)
+{
 	void *ptr = heap + heap_sz;
+
 	if ((heap_sz + count) <= HEAP_SIZE) {
 		heap_sz += count;
 		return ptr;
