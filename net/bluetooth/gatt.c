@@ -227,11 +227,18 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 			   uint8_t len, uint16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
+	struct bt_conn *conn;
 	const uint16_t *data = buf;
 	size_t i;
 
 	if (len != sizeof(*data) || offset) {
 		return -EINVAL;
+	}
+
+	conn = bt_conn_lookup_addr_le(peer);
+	if (!conn) {
+		BT_WARN("%s not connected", bt_addr_le_str(peer));
+		return -ENOTCONN;
 	}
 
 	for (i = 0; i < ccc->cfg_len; i++) {
@@ -244,9 +251,10 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 	if (i == ccc->cfg_len) {
 		for (i = 0; i < ccc->cfg_len; i++) {
 			/* Check for unused configuration */
-			if (!bt_addr_le_cmp(&ccc->cfg[i].peer,
-					    BT_ADDR_LE_ANY)) {
+			if (!ccc->cfg[i].valid) {
 				bt_addr_le_copy(&ccc->cfg[i].peer, peer);
+				/* Only set valid if bonded */
+				ccc->cfg[i].valid = conn->keys ? 1 : 0;
 				break;
 			}
 		}

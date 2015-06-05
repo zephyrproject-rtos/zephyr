@@ -310,6 +310,7 @@ int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
 struct bt_gatt_ccc_cfg {
 	bt_addr_le_t		peer;
 	uint16_t		value;
+	uint8_t			valid;
 };
 
 struct _bt_gatt_ccc {
