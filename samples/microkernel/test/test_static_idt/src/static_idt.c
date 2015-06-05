@@ -47,7 +47,7 @@ Ensures interrupt and exception stubs are installed correctly.
 #endif
 
 #ifdef CONFIG_MICROKERNEL
-#include <vxmicro.h>
+#include <zephyr.h>
 #endif
 
 /* These vectors are somewhat arbitrary. We try and use unused vectors */

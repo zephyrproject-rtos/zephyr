@@ -44,7 +44,7 @@ then announces the result of the test.
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <tc_util.h>
 
 /* test uses 1 software IRQs */

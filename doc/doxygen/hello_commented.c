@@ -64,7 +64,7 @@
 
 #ifdef CONFIG_MICROKERNEL
 
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #define SLEEPTIME  500
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000) 

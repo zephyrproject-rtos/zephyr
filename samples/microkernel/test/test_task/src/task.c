@@ -39,7 +39,7 @@ This module tests the following task APIs:
 */
 
 #include <tc_util.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <arch/cpu.h>
 
 /* test uses 1 software IRQs */

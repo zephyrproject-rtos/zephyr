@@ -35,7 +35,7 @@ DESCRIPTION
 Unit test for tickless idle feature.
 */
 
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #include <misc/printk.h>
 #include <arch/cpu.h>

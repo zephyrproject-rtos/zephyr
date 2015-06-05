@@ -38,7 +38,7 @@ semaphore signaling
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #define N_TESTS 10 /* number of tests to run */
 #define FIBER_PRIORITY 6

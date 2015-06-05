@@ -66,7 +66,7 @@ Timeline
 */
 
 #include <tc_util.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #define  ONE_SECOND                 (sys_clock_ticks_per_sec)
 #define  HALF_SECOND                (sys_clock_ticks_per_sec / 2)

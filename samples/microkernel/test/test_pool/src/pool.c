@@ -41,7 +41,7 @@ This modules tests the following memory pool routines:
 #include <tc_util.h>
 #include <nanokernel.h>
 #include <arch/cpu.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <misc/util.h>
 
 #define  ONE_SECOND     (sys_clock_ticks_per_sec)

@@ -33,7 +33,7 @@
 #ifndef _RECEIVER_H
 #define _RECEIVER_H
 
-#include <vxmicro.h>
+#include <zephyr.h>
 #include "config.h"
 #include "memcfg.h"
 

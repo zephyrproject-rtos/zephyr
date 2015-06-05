@@ -44,7 +44,7 @@ The following target pipe routine does not yet have a test case:
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <tc_util.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <misc/util.h>
 
 #define  ONE_SECOND     (sys_clock_ticks_per_sec)

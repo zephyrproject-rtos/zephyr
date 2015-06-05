@@ -31,7 +31,7 @@
  */
 
 #include "master.h"
-#include "vxmicro.h"
+#include <zephyr.h>
 
 #ifdef MEMMAP_BENCH
 

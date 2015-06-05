@@ -39,7 +39,7 @@ This modules tests the following event APIs:
 */
 
 #include <tc_util.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
 

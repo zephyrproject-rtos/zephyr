@@ -43,7 +43,7 @@ This modules tests the following semaphore routines:
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <tc_util.h>
 
 #include <util_test_common.h>

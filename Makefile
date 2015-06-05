@@ -1042,7 +1042,7 @@ kselftest:
 CLEAN_DIRS  += $(MODVERDIR)
 
 CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
-		misc/generated/sysgen/vxmicro.h \
+		misc/generated/sysgen/zephyr.h \
 		misc/generated/sysgen/prj.vpf
 
 # Directories & files removed with 'make mrproper'

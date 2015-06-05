@@ -35,7 +35,7 @@ DESCRIPTION
 This module tests the task_offload_to_fiber() API.
 */
 
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <tc_util.h>
 #include <sections.h>
 

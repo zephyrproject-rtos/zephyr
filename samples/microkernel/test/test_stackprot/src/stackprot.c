@@ -49,7 +49,7 @@ DESCRIPTION
 #include <tc_util.h>
 
 #ifdef CONFIG_MICROKERNEL
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #else
 #include <arch/cpu.h>

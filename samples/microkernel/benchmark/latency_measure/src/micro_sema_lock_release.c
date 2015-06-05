@@ -38,7 +38,7 @@
  */
 
 #ifdef CONFIG_MICROKERNEL
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #include "timestamp.h"
 #include "utils.h"

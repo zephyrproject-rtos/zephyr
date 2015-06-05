@@ -46,7 +46,7 @@ unpredictable side effects.
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #define NUMBLOCKS   2       /*
                              * Number of memory blocks.  This number

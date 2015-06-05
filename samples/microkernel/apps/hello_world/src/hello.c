@@ -46,7 +46,7 @@
  * a controlled rate.
  */
 
-#include <vxmicro.h>
+#include <zephyr.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 

@@ -68,7 +68,7 @@ static inline void TICK_SYNCH(void)
 }
 
 #elif (defined(CONFIG_MICROKERNEL) && defined(KERNEL))
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #define OS_GET_TIME() task_cycle_get_32()
 

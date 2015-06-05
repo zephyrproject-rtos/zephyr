@@ -47,7 +47,7 @@ Scenarios tested include:
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #define MULTIPLIER              100     /* Used to initialize myData */
 #define NUM_OF_ELEMENT          5       /* Number of elements in myData array */

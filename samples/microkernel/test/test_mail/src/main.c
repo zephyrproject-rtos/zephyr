@@ -43,7 +43,7 @@ then announces the result of the test.
 */
 
 #include <tc_util.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #define NUM_TEST_TASKS	2	/* # of test tasks to monitor */
 

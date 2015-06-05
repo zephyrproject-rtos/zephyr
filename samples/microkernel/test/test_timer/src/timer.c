@@ -40,7 +40,7 @@ This module tests the following microkernel timer routines:
 */
 
 #include <tc_util.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 extern struct nano_lifo _k_timer_free;    /* For white box testing only */
 

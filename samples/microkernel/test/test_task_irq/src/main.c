@@ -38,7 +38,7 @@
 #include <tc_util.h>
 #include <nanokernel.h>
 #include <arch/cpu.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 /* One of the task IRQ objects will not be allocated */
 #define NUM_TASK_IRQS   CONFIG_MAX_NUM_TASK_IRQS - 1

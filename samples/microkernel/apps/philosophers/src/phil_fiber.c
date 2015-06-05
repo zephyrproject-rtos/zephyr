@@ -33,7 +33,7 @@
   #include <nanokernel.h>
   #include "phil.h"
 #else  /* ! CONFIG_NANOKERNEL */
-  #include <vxmicro.h>
+  #include <zephyr.h>
   #include "phil.h"
 #endif /*  CONFIG_NANOKERNEL */
 

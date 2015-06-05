@@ -31,7 +31,7 @@
  */
 
 #ifdef CONFIG_MICROKERNEL
-#include <vxmicro.h>
+#include <zephyr.h>
 #else
 #include <nanokernel.h>
 #include <arch/cpu.h>

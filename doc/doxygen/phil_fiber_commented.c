@@ -38,7 +38,7 @@
 #include "phil.h"
 #else
 /* For the microkernel. */
-#include <vxmicro.h>
+#include <zephyr.h>
 #include "phil.h"
 #endif
 

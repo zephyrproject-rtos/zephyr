@@ -37,7 +37,7 @@
  */
 
 #include <tc_util.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #define N_VALUES 10
 

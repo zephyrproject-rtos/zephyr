@@ -45,7 +45,7 @@ in the future to enhance test coverage.
 */
 
 #include <tc_util.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 
 #include <util_test_common.h>
 

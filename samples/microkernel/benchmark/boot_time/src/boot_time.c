@@ -42,7 +42,7 @@ Measure boot time for both nanokernel and microkernel project which includes
 #ifdef CONFIG_NANOKERNEL
 #include <nanokernel.h>
 #else
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <version.h>
 #endif
 #include <arch/cpu.h>

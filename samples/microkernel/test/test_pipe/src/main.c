@@ -42,7 +42,7 @@ these semaphores until it detects a failure or the completion of all test tasks,
 then announces the result of the test.
 */
 
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <tc_util.h>
 
 #define NUM_TEST_TASKS	2	/* # of test tasks to monitor */

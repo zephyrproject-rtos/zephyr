@@ -32,7 +32,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <vxmicro.h>
+#include <zephyr.h>
 #include <misc/printk.h>
 
 #include <bluetooth/bluetooth.h>

@@ -35,7 +35,7 @@
 #include <arch/cpu.h>
 #include "phil.h"
 #else
-#include <vxmicro.h>
+#include <zephyr.h>
 #include "phil.h"
 #endif
 

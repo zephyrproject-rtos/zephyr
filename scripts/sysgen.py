@@ -40,7 +40,7 @@
 #   - kernel_main.c file
 #   - kernel_main.h file (local copy)
 #   - kernel_struct.h file (local copy)
-#   - vxmicro.h file
+#   - zephyr.h file
 
 import os
 import sys
@@ -304,7 +304,7 @@ def kernel_main_c_header():
         copyright +
         do_not_edit_warning +
         "\n" +
-        "#include <vxmicro.h>\n" +
+        "#include <zephyr.h>\n" +
         "#include <drivers/system_timer.h>\n" +
         "#include <kernel_struct.h>\n" +
         "#include <kernel_main.h>\n" +
@@ -1076,49 +1076,49 @@ def kernel_struct_h_generate():
 
 
 #
-# GENERATE vxmicro.h FILE
+# GENERATE zephyr.h FILE
 #
 
 
-vxmicro_h_data = ""
+zephyr_h_data = ""
 
-vxmicro_h_filename_str = \
-    "/* vxmicro.h - microkernel master header file */\n\n"
+zephyr_h_filename_str = \
+    "/* zephyr.h - microkernel master header file */\n\n"
 
-vxmicro_h_include_guard = "_VXMICRO__H_"
+zephyr_h_include_guard = "_ZEPHYR__H_"
 
-vxmicro_h_header_include_guard_str = \
-    "#ifndef " + vxmicro_h_include_guard + "\n" \
-    "#define " + vxmicro_h_include_guard + "\n\n"
+zephyr_h_header_include_guard_str = \
+    "#ifndef " + zephyr_h_include_guard + "\n" \
+    "#define " + zephyr_h_include_guard + "\n\n"
 
 
-def generate_vxmicro_h_header():
+def generate_zephyr_h_header():
 
-    global vxmicro_h_data
-    vxmicro_h_data += \
-        vxmicro_h_filename_str + \
+    global zephyr_h_data
+    zephyr_h_data += \
+        zephyr_h_filename_str + \
         copyright + \
         do_not_edit_warning + \
-        vxmicro_h_header_include_guard_str + \
+        zephyr_h_header_include_guard_str + \
         "#include <microkernel.h>\n" + \
         "\n"
 
 
 def generate_taskgroup_line(taskgroup, group_id):
 
-    global vxmicro_h_data
-    vxmicro_h_data += \
+    global zephyr_h_data
+    zephyr_h_data += \
         "#define " + taskgroup + " 0x%8.8x\n" % group_id
 
 
-def generate_vxmicro_h_taskgroups():
+def generate_zephyr_h_taskgroups():
 
-    global vxmicro_h_data
+    global zephyr_h_data
 
     for group in group_key_list:
         generate_taskgroup_line(group, group_dictionary[group])
 
-    vxmicro_h_data += "\n"
+    zephyr_h_data += "\n"
 
 
 def generate_obj_id_line(name, obj_id):
@@ -1139,17 +1139,17 @@ def generate_obj_id_lines(obj_types):
     return data
 
 
-def generate_vxmicro_h_obj_ids():
+def generate_zephyr_h_obj_ids():
 
-    global vxmicro_h_data
+    global zephyr_h_data
 
     base_event = 4  # no need to generate ids for the 4 pre-defined events
     event_id = base_event
     for event in event_list:
-        vxmicro_h_data += "#define %s %u\n" % (str(event[0]), event_id)
+        zephyr_h_data += "#define %s %u\n" % (str(event[0]), event_id)
         event_id += 1
     if event_id > base_event:
-        vxmicro_h_data += "\n"
+        zephyr_h_data += "\n"
 
     obj_types = [
         [task_list, 0],
@@ -1161,29 +1161,29 @@ def generate_vxmicro_h_obj_ids():
         [map_list, 0],
         [pool_list, 0],
     ]
-    vxmicro_h_data += generate_obj_id_lines(obj_types)
+    zephyr_h_data += generate_obj_id_lines(obj_types)
 
 
-vxmicro_h_footer_include_guard_str = \
-    "\n#endif /* " + vxmicro_h_include_guard + " */\n"
+zephyr_h_footer_include_guard_str = \
+    "\n#endif /* " + zephyr_h_include_guard + " */\n"
 
 
-def generate_vxmicro_h_footer():
+def generate_zephyr_h_footer():
 
-    global vxmicro_h_data
-    vxmicro_h_data += \
-        vxmicro_h_footer_include_guard_str
+    global zephyr_h_data
+    zephyr_h_data += \
+        zephyr_h_footer_include_guard_str
 
 
-def vxmicro_h_generate():
-    """ Generate vxmicro.h file """
+def zephyr_h_generate():
+    """ Generate zephyr.h file """
 
-    generate_vxmicro_h_header()
-    generate_vxmicro_h_taskgroups()
-    generate_vxmicro_h_obj_ids()
-    generate_vxmicro_h_footer()
+    generate_zephyr_h_header()
+    generate_zephyr_h_taskgroups()
+    generate_zephyr_h_obj_ids()
+    generate_zephyr_h_footer()
 
-    write_file(output_dir + 'vxmicro.h', vxmicro_h_data)
+    write_file(output_dir + 'zephyr.h', zephyr_h_data)
 
 
 #
@@ -1196,4 +1196,4 @@ get_output_dir()
 kernel_main_c_generate()
 kernel_main_h_generate()
 kernel_struct_h_generate()
-vxmicro_h_generate()
+zephyr_h_generate()
