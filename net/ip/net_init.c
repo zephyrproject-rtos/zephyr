@@ -71,9 +71,9 @@ void net_context_set_receiver_registered(struct net_context *context);
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning
  */
-#define STACKSIZE 2048
-static char __noinit rx_fiber_stack[STACKSIZE];
-static char __noinit tx_fiber_stack[STACKSIZE];
+#define STACKSIZE_UNIT 1024
+static char __noinit rx_fiber_stack[STACKSIZE_UNIT * 1];
+static char __noinit tx_fiber_stack[STACKSIZE_UNIT * 1];
 
 static struct net_dev {
 	/* Queue for incoming packets from driver */
@@ -368,7 +368,7 @@ static void init_rx_queue(void)
 {
 	nano_fifo_init(&netdev.rx_queue);
 
-	fiber_start(rx_fiber_stack, STACKSIZE,
+	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t) net_rx_fiber, 0, 0, 7, 0);
 }
 
@@ -376,7 +376,7 @@ static void init_tx_queue(void)
 {
 	nano_fifo_init(&netdev.tx_queue);
 
-	fiber_start(tx_fiber_stack, STACKSIZE,
+	fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
 		    (nano_fiber_entry_t) net_tx_fiber, 0, 0, 7, 0);
 }
 
