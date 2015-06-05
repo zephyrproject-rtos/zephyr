@@ -1,6 +1,6 @@
 
 if [ "X$(basename -- "$0")" == "Xtimo-env.bash" ]; then
-    echo "Source this file (do NOT execute it!) to set the VxMicro environment."
+    echo "Source this file (do NOT execute it!) to set the Zephyr OS environment."
     exit
 fi
 

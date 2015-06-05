@@ -39,12 +39,12 @@ This program expects to be invoked as follows:
 All parameters are required.
 
 <file name> is assumed to be a binary file containing the intList section from
-the VxMicro ELF image (microkernel.elf, nanokernel.elf, etc.)
+the Zephyr OS ELF image (microkernel.elf, nanokernel.elf, etc.)
 
 <number of interrupt vectors> is the same as CONFIG_IDT_NUM_VECTORS.
 
 No help on usage is provided as it is expected that this program is invoked
-from within the VxMicro build system during the link stage.
+from within the build system during the link stage.
 */
 
 #include <stdio.h>
