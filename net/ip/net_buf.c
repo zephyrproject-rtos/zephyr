@@ -49,13 +49,21 @@
 extern struct net_tuple *net_context_get_tuple(struct net_context *context);
 
 /* Available (free) buffers queue */
-#define NUM_BUFS		2
-static struct net_buf		buffers[NUM_BUFS];
+#ifndef NET_NUM_BUFS
+#define NET_NUM_BUFS		2
+#endif
+static struct net_buf		buffers[NET_NUM_BUFS];
 static struct nano_fifo		free_bufs;
 
 /* Available (free) MAC buffers queue */
-#define NUM_MAC_BUFS		8
-static struct net_mbuf		mac_buffers[NUM_MAC_BUFS];
+#ifndef NET_NUM_MAC_BUFS
+/* Default value is 13 (receiving side) which means that max. UDP data
+ * (1232 bytes) can be received in one go. In sending side we need 1
+ * mbuf + some extras.
+ */
+#define NET_NUM_MAC_BUFS		16
+#endif
+static struct net_mbuf		mac_buffers[NET_NUM_MAC_BUFS];
 static struct nano_fifo		free_mbufs;
 
 #ifdef DEBUG_NET_BUFS
@@ -209,7 +217,7 @@ static void net_mbuf_init(void)
 {
 	nano_fifo_init(&free_mbufs);
 
-	for (int i = 0; i < NUM_MAC_BUFS; i++) {
+	for (int i = 0; i < NET_NUM_MAC_BUFS; i++) {
 		nano_fifo_put(&free_mbufs, &mac_buffers[i]);
 	}
 }
@@ -218,7 +226,7 @@ void net_buf_init(void)
 {
 	nano_fifo_init(&free_bufs);
 
-	for (int i = 0; i < NUM_BUFS; i++) {
+	for (int i = 0; i < NET_NUM_BUFS; i++) {
 		nano_fifo_put(&free_bufs, &buffers[i]);
 	}
 
