@@ -417,8 +417,6 @@ LDFLAGS += $(call cc-ldoption,-nostdlib)
 LDFLAGS += $(call cc-ldoption,-static)
 LDLIBS_TOOLCHAIN ?= -lgcc
 
-# Read KERNELRELEASE from include/config/kernel.release (if it exists)
-KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
 KERNELVERSION = $(VERSION_GENERATION).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_REVISION)
 
 export VERSION_GENERATION VERSION_MAJOR VERSION_MINOR VERSION_REVISION VERSION_RESERVED
@@ -890,14 +888,6 @@ PHONY += $(tinymountain-dirs)
 $(tinymountain-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
 
-define filechk_kernel.release
-	echo "$(KERNELVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))"
-endef
-
-# Store (new) KERNELRELEASE string in include/config/kernel.release
-include/config/kernel.release: include/config/auto.conf FORCE
-	$(call filechk,kernel.release)
-
 # Things we need to do before we recursively start building the kernel
 # or the modules are listed in "prepare".
 # A multi level approach is used. prepareN is processed before prepareN-1.
@@ -964,15 +954,6 @@ prepare: prepare0
 # KERNELRELEASE can change from a few different places, meaning version.h
 # needs to be updated, so this check is forced on all builds
 
-uts_len := 64
-define filechk_utsrelease.h
-	if [ `echo -n "$(KERNELRELEASE)" | wc -c ` -gt $(uts_len) ]; then \
-	  echo '"$(KERNELRELEASE)" exceeds $(uts_len) characters' >&2;    \
-	  exit 1;                                                         \
-	fi;                                                               \
-	(echo \#define UTS_RELEASE \"$(KERNELRELEASE)\";)
-endef
-
 KERNEL_VERSION_HEX=0x$(VERSION_GENERATION)$(VERSION_MAJOR)$(VERSION_MINOR)$(VERSION_REVISION)
 KERNEL_CODE=40
 
@@ -994,9 +975,6 @@ endef
 
 $(version_h): $(srctree)/Makefile FORCE
 	$(call filechk,version.h)
-
-include/generated/utsrelease.h: include/config/kernel.release FORCE
-	$(call filechk,utsrelease.h)
 
 PHONY += headerdep
 headerdep:
@@ -1128,9 +1106,9 @@ package-dir	:= scripts/package
 
 %src-pkg: FORCE
 	$(Q)$(MAKE) $(build)=$(package-dir) $@
-%pkg: include/config/kernel.release FORCE
+%pkg: $(version_h) FORCE
 	$(Q)$(MAKE) $(build)=$(package-dir) $@
-rpm: include/config/kernel.release FORCE
+rpm: $(version_h) FORCE
 	$(Q)$(MAKE) $(build)=$(package-dir) $@
 
 
@@ -1257,7 +1235,7 @@ export_report:
 endif #ifeq ($(config-targets),1)
 endif #ifeq ($(mixed-targets),1)
 
-PHONY += checkstack kernelrelease kernelversion image_name
+PHONY += checkstack kernelversion image_name
 
 # UML needs a little special treatment here.  It wants to use the host
 # toolchain, so needs $(SUBARCH) passed to checkstack.pl.  Everyone
@@ -1271,9 +1249,6 @@ endif
 checkstack:
 	$(OBJDUMP) -d tinymountain $$(find . -name '*.ko') | \
 	$(PERL) $(src)/scripts/checkstack.pl $(CHECKSTACK_ARCH)
-
-kernelrelease:
-	@echo "$(KERNELVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))"
 
 kernelversion:
 	@echo $(KERNELVERSION)
