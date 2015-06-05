@@ -29,12 +29,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Script to sanitize standard VxMicro
+# Script to regression test kernel operation
 
 # Import common sanity check definitions
 #
 if [ -z ${TIMO_BASE} ]; then
-	echo "shell variables required to build VxMicro are not set"
+	echo "shell variables required to build Zephyr OS are not set"
 	exit 1
 fi
 if [ ! -d ${TIMO_BASE} ] ; then
@@ -179,7 +179,7 @@ EOF
 long_help() {
 cat << EOF
 
-Script to sanitize the standard portion of VxMicro.
+Script to regression test kernel operation.
 
 The sanity check builds all sample projects supported by the specified BSP
 variant; if no BSP has been specified, a default BSP for each project is used.
@@ -275,7 +275,7 @@ main() {
 	# handle case where we're just cleaning up
 	if [ ${clean_only} = 1 ] ; then
 		print_header
-		${ECHO} "Cleaning all standard VxMicro sample projects"
+		${ECHO} "Cleaning all regression test sample projects"
 		${ECHO}
 
 		PRJ_LIST="${PRJ_LIST_STD}\n${PRJ_LIST_EXTRA}"

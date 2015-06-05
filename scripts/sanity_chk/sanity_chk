@@ -29,12 +29,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Wrapper script to sanitize the various aspects of VxMicro
+# Wrapper script to perform all operating system sanity tests
 
 # Import common sanity check definitions
 #
 if [ -z ${TIMO_BASE} ]; then
-	echo "shell variables required to build VxMicro are not set"
+	echo "shell variables required to build Zephyr OS are not set"
 	exit 1
 fi
 if [ ! -d ${TIMO_BASE} ] ; then
@@ -73,23 +73,22 @@ EOF
 long_help() {
 cat << EOF
 
-Script to sanitize VxMicro.
+Script to sanitize Zephyr OS.
 
 The full sanity check consists of the following phases:
 
-    - Rebuild host tools to ensure they are compatible with the rest of VxMicro.
-    - Run "footprint_chk" to characterize the footprint of VxMicro.
-    - Run "regression_chk" to sanitize the standard portion of VxMicro.
+    - Rebuild host tools to ensure they are up to date.
+    - Run "footprint_chk" to characterize kernel footprint.
+    - Run "regression_chk" to regression test kernel operation.
     - Run "common-klibs_chk" to verify if projects can share a set of common kernel libs
-    - Run "out-of-tree_chk" to verify if projects and BSPs can reside outside the normal VxMicro tree.
+    - Run "out-of-tree_chk" to verify if projects and BSPs can reside outside the normal tree.
 
 The full sanity check is run by default. If desired, some steps can be omitted
 by using the available command options.
 
 *-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=
 
-Before running the script, ensure Linux shell environment variables are set
-appropriately to build VxMicro on a Linux host.
+Before running the script, ensure Zephyr OS environment variables are set.
 
 The script returns 0 on success. If an error is encountered at any point
 the script terminates with an error message and returns the exit value

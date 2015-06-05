@@ -34,7 +34,7 @@
 # Import common sanity check definitions
 #
 if [ -z ${TIMO_BASE} ]; then
-	echo "shell variables required to build VxMicro are not set"
+	echo "shell variables required to build Zephyr OS are not set"
 	exit 1
 fi
 if [ ! -d ${TIMO_BASE} ] ; then
@@ -117,7 +117,7 @@ EOF
 long_help() {
 cat << EOF
 
-Script to verify VxMicro projects can share a set of common kernel libs
+Script to verify that projects can share a set of common kernel libs
 
 The sanity check builds a selection of sample of projects supported by the
 specified BSP variant; if no BSP has been specified, a default BSP for each
@@ -214,7 +214,7 @@ main() {
 	# handle case where we're just cleaning up
 	if [ ${clean_only} = 1 ] ; then
 		print_header
-		${ECHO} "Cleaning common klibs VxMicro sample projects"
+		${ECHO} "Cleaning common klibs sample projects"
 		${ECHO}
 
 		clean_all_projects

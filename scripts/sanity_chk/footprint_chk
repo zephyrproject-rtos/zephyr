@@ -29,12 +29,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Script to characterize footprint of VxMicro
+# Script to characterize kernel footprint
 
 # Import common sanity check definitions
 #
 if [ -z ${TIMO_BASE} ]; then
-	echo "shell variables required to build VxMicro are not set"
+	echo "shell variables required to build Zephyr OS are not set"
 	exit 1
 fi
 if [ ! -d ${TIMO_BASE} ] ; then
@@ -118,7 +118,7 @@ EOF
 long_help() {
 cat << EOF
 
-Script to determine footprint characteristics of VxMicro.
+Script to determine kernel footprint characteristics.
 
 The script builds nanokernel and microkernel footprint
 projects for their various configurations and measures the size of the

@@ -37,7 +37,7 @@ exit 0
 # Import common sanity check definitions
 #
 if [ -z ${TIMO_BASE} ]; then
-	echo "shell variables required to build VxMicro are not set"
+	echo "shell variables required to build Zephyr OS are not set"
 	exit 1
 fi
 if [ ! -d ${TIMO_BASE} ] ; then
@@ -123,7 +123,7 @@ EOF
 long_help() {
 cat << EOF
 
-Script to verify VxMicro projects can be built out of tree with a BSP
+Script to verify projects can be built out of tree with a BSP
 residing out of tree.
 
 The sanity check builds a selection of sample of projects supported by the
@@ -223,7 +223,7 @@ main() {
 	fi
 
 	print_header
-	${ECHO} "Deleting all **OUT OF TREE** VxMicro BSPs and sample projects"
+	${ECHO} "Deleting all **OUT OF TREE** BSPs and sample projects"
 
 	${RM} -rf ${OUT_OF_TREE_BASE}
 

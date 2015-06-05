@@ -1,4 +1,4 @@
-# common definitions used by other VxMicro sanity check scripts
+# common definitions used by other sanity check scripts
 
 # Copyright (c) 2015 Wind River Systems, Inc.
 #
@@ -287,7 +287,7 @@ proj_info_set() {
 	${RM} -f ${TEMP_AWK_PROG} ${TEMP_PRJ_LIST}
 }
 
-# skip building of a standard VxMicro project
+# skip building of a standard project
 #
 # PARAMETERS: $1 is project array entry to use
 #
@@ -308,7 +308,7 @@ skip_project() {
 	${ECHO}
 }
 
-# build a standard VxMicro project
+# build a standard project
 #
 # PARAMETERS: $1 is project array entry to use
 #             $2 if set, tells the routine not to check for an elf file
@@ -358,7 +358,7 @@ build_project() {
 	fi
 }
 
-# use QEMU to run a standard VxMicro project that is already built
+# use QEMU to run a standard project that is already built
 #
 # PARAMETERS: $1 is project array entry to use
 #
