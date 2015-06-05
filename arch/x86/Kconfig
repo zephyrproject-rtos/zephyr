@@ -161,8 +161,6 @@ endif
 
 source "arch/x86/timer/Kconfig"
 
-source "arch/x86/interrupt_controller/Kconfig"
-
 source "drivers/Kconfig"
 
 source "net/Kconfig"

@@ -9,4 +9,5 @@ obj-$(CONFIG_PIC) += i8259_boi.o
 obj-$(CONFIG_PIC) += system_pic.o
 obj-$(CONFIG_LOAPIC) += system_apic.o
 obj-$(CONFIG_LOAPIC) += loapic_intr.o
+obj-$(CONFIG_IOAPIC) += ioapic_intr.o
 
