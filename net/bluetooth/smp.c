@@ -678,7 +678,7 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 	uint8_t hash[3];
 	int err;
 
-	BT_DBG("IRK %s bdaddr %s", h(val, 16), bt_addr_str(addr));
+	BT_DBG("IRK %s bdaddr %s", h(irk, 16), bt_addr_str(addr));
 
 	err = smp_ah(irk, addr->val + 3, hash);
 	if (err) {
