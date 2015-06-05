@@ -76,7 +76,7 @@ The full sanity check consists of the following phases:
 
     - Run "footprint_chk" to characterize kernel footprint.
     - Run "regression_chk" to regression test kernel operation.
-    - Run "out-of-tree_chk" to verify if projects and platforms can reside outside the normal tree
+    - Run "out-of-tree_chk" to verify if projects can reside outside the normal tree
 
 The full sanity check is run by default. If desired, some steps can be omitted
 by using the available command options.
