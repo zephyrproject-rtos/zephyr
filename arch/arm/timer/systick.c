@@ -32,8 +32,8 @@
 
 /*
 DESCRIPTION
-This module implements the VxMicro's CORTEX-M3 ARM's systick device driver.
-It provides the standard VxMicro "system clock driver" interfaces.
+This module implements the kernel's CORTEX-M3 ARM's systick device driver.
+It provides the standard kernel "system clock driver" interfaces.
 
 The driver utilizes systick to provide kernel ticks.
 
@@ -659,7 +659,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 * timer_read - read the BSP timer hardware
 *
 * This routine returns the current time in terms of timer hardware clock cycles.
-* Some VxMicro facilities (e.g. benchmarking code) directly call timer_read()
+* Some kernel facilities (e.g. benchmarking code) directly call timer_read()
 * instead of utilizing the 'timer_read_fptr' function pointer.
 *
 * RETURNS: up counter of elapsed clock cycles

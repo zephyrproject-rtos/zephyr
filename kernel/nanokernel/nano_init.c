@@ -53,7 +53,7 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 
 /* boot banner items */
 
-#define BOOT_BANNER "****** BOOTING VXMICRO ******"
+#define BOOT_BANNER "****** BOOTING ZEPHYR OS ******"
 
 #if !defined(CONFIG_BOOT_BANNER)
 #define PRINT_BOOT_BANNER() do { } while (0)

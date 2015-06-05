@@ -32,9 +32,8 @@
 
 /*
 DESCRIPTION
-This module provides the VxMicro nanokernel (aka system-level) 'stack'
-implementation.  This module provides the backing implementation for the
-following APIs:
+This module provides the nanokernel stack object implementation, including
+the following APIs:
 
    nano_stack_init
    nano_fiber_stack_push, nano_task_stack_push, nano_isr_stack_push

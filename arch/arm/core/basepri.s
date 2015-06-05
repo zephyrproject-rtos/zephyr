@@ -34,7 +34,7 @@
 DESCRIPTION
 
 Provide irq_lock() and irq_unlock() via the BASEPRI register. This
-allows locking up to a certain interrupt priority. VxMicro locks out priorities
+allows locking up to a certain interrupt priority. Kernel locks out priorities
 2 and lower (higher numbered priorities), in essence leaving priorities 0 and 1
 unlocked. This achieves two purposes:
 

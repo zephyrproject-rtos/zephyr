@@ -1,4 +1,4 @@
-/* intstub.s - VxMicro interrupt management support for IA-32 architecture */
+/* intstub.s - interrupt management support for IA-32 architecture */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module implements assembly routines to manage interrupts in VxMicro on
+This module implements assembly routines to manage interrupts on
 the Intel IA-32 architecture.  More specifically, the interrupt (asynchronous
 exception) stubs are implemented in this module.  The stubs are invoked when
 entering and exiting a C interrupt handler.
@@ -76,10 +76,10 @@ entering and exiting a C interrupt handler.
 #endif
 /*******************************************************************************
 *
-* _IntEnt - inform the VxMicro kernel of an interrupt
+* _IntEnt - inform the kernel of an interrupt
 *
 * This function is called from the interrupt stub created by irq_connect()
-* to inform the VxMicro kernel of an interrupt.  This routine increments
+* to inform the kernel of an interrupt.  This routine increments
 * _nanokernel.nested (to support interrupt nesting), switches to the
 * base of the interrupt stack, if not already on the interrupt stack, and then
 * saves the volatile integer registers onto the stack.  Finally, control is
@@ -242,10 +242,10 @@ BRANCH_LABEL(_HandleIdle)
 
 /*******************************************************************************
 *
-* _IntExit - inform the VxMicro kernel of an interrupt exit
+* _IntExit - inform the kernel of an interrupt exit
 *
 * This function is called from the interrupt stub created by irq_connect()
-* to inform the VxMicro kernel that the processing of an interrupt has
+* to inform the kernel that the processing of an interrupt has
 * completed.  This routine decrements _nanokernel.nested (to support interrupt
 * nesting), restores the volatile integer registers, and then switches
 * back to the interrupted context's stack, if this isn't a nested interrupt.
@@ -476,14 +476,14 @@ BRANCH_LABEL(callFatalHandler)
 * interrupts or to inspect or manipulate the contents of the source register.
 *
 * WARNINGS
-* Invoking a VxMicro system routine with interrupts locked may result in
+* Invoking a kernel routine with interrupts locked may result in
 * interrupts being re-enabled for an unspecified period of time.  If the
 * called routine blocks, interrupts will be re-enabled while another
 * context executes, or while the system is idle.
 *
 * The "interrupt disable state" is an attribute of a context, i.e. it's part
 * of the context context.  Thus, if a context disables interrupts and
-* subsequently invokes a VxMicro system routine that causes the calling context
+* subsequently invokes a kernel routine that causes the calling context
 * to block, the interrupt disable state will be restored when the context is
 * later rescheduled for execution.
 *

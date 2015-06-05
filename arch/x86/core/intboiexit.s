@@ -1,4 +1,4 @@
-/* intboiexit.s - VxMicro spurious interrupt support for IA-32 architecture */
+/* intboiexit.s - spurious interrupt support for IA-32 architecture */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.

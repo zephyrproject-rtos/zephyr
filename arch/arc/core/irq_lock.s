@@ -54,14 +54,14 @@
 * interrupts or to inspect or manipulate the contents of the source register.
 *
 * WARNINGS
-* Invoking a VxMicro routine with interrupts locked may result in
+* Invoking a kernel routine with interrupts locked may result in
 * interrupts being re-enabled for an unspecified period of time.  If the
 * called routine blocks, interrupts will be re-enabled while another
 * context executes, or while the system is idle.
 *
 * The "interrupt disable state" is an attribute of a context.  Thus, if a
-* fiber or task disables interrupts and subsequently invokes a VxMicro
-* system routine that causes the calling context to block, the interrupt
+* fiber or task disables interrupts and subsequently invokes a kernel
+* routine that causes the calling context to block, the interrupt
 * disable state will be restored when the context is later rescheduled
 * for execution.
 *

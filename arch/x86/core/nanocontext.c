@@ -1,4 +1,4 @@
-/* nanocontext.c - VxMicro nanokernel context support primitives */
+/* nanocontext.c - nanokernel context support primitives */
 
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-/* linker-common-sections.h - common linker sections in VxMicro */
+/* linker-common-sections.h - common linker sections */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
@@ -32,11 +32,12 @@
 
 /*
 DESCRIPTION
-This script defines where the various sections of a VxMicro image go in memory.
-It is usable by most BSPs supported in VxMicro. This file is used by the linker.
+This script defines the memory location of the various sections that make up
+a Zephyr OS image. It is usable by most supported BSPs. This file is used
+by the linker.
 
-This script places the various sections of the image according to what feature
-is used in VxMicro.
+This script places the various sections of the image according to what features
+are enabled by the kernel's configuration options.
 
 For a build that does not use the execute in place (XIP) feature, the script
 generates an image suitable for loading into and executing from RAM by placing
@@ -53,7 +54,7 @@ end of the RODATA section.  At runtime, the DATA section is copied into the RAM
 region so it can be accessed with read and write permission.
 
 Most symbols defined in the sections below are subject to be referenced in the
-VxMicro image. If a symbol is used but not defined the linker will emit an
+Zephyr OS image. If a symbol is used but not defined the linker will emit an
 undefined symbol error.
 
 Please do not change the order of the section as the nanokernel expects this

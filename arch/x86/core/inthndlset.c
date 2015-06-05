@@ -1,4 +1,4 @@
-/* inthndlset.c - VxMicro interrupt management support for IA-32 arch */
+/* inthndlset.c - interrupt management support for IA-32 arch */
 
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.

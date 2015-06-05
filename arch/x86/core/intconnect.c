@@ -1,4 +1,4 @@
-/* intconnect.c - VxMicro interrupt management support for IA-32 arch */
+/* intconnect.c - interrupt management support for IA-32 arch */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module provides routines to manage asynchronous interrupts in VxMicro
+This module provides routines to manage asynchronous interrupts
 on the IA-32 architecture.
 
 This module provides the public routine irq_connect(), the private

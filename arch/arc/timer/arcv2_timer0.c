@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module implements a VxMicro device driver for the ARCv2 processor timer 0
+This module implements a kernel device driver for the ARCv2 processor timer 0
 and provides the standard "system clock driver" interfaces.
 
 \INTERNAL IMPLEMENTATION DETAILS

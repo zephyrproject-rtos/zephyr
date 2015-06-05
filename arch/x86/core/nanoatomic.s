@@ -1,4 +1,4 @@
-/* nanoatomic.s - VxMicro nanokernel atomic operators for IA-32 */
+/* nanoatomic.s - nanokernel atomic operators for IA-32 */
 
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.

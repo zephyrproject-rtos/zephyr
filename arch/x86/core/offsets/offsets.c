@@ -1,4 +1,4 @@
-/* offsets.c - VxMicro nanokernel structure member offset definition file */
+/* offsets.c - nanokernel structure member offset definition file */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.

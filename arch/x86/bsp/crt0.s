@@ -31,7 +31,7 @@
  */
 /*
 DESCRIPTION
-This module contains the initial code executed by the VxMicro ELF image
+This module contains the initial code executed by the Zephyr OS ELF image
 after having been loaded into RAM.
 
 INTERNAL
@@ -102,7 +102,7 @@ __start:
 #endif
 	/*
 	 * Ensure interrupts are disabled.  Interrupts are enabled when
-	 * the first VxMicro thread context switch occurs.
+	 * the first kernel thread context switch occurs.
 	 */
 
 	cli
@@ -247,7 +247,7 @@ SECTION_FUNC(TEXT_START, __start)
 
 	/*
 	 * Ensure interrupts are disabled.  Interrupts are enabled when
-	 * the first VxMicro thread context switch occurs.
+	 * the first kernel thread context switch occurs.
 	 */
 
 	cli
@@ -467,7 +467,7 @@ memInitDone:
 	/*
 	 * Set the stack pointer to the area used for the interrupt stack.
 	 * Note this stack is only used during the execution of __start() and
-	 * _Cstart(), i.e. only until the multi-tasking VxMicro kernel is
+	 * _Cstart(), i.e. only until the multi-tasking kernel is
 	 * initialized.  The dual-purposing of this area of memory is safe since
 	 * interrupts are disabled until the first context switch.
 	 */
@@ -500,7 +500,7 @@ memInitDone:
 	pushl	$_Cstart
 	call	_AdvIdleStart
 #else
-	/* Jump to C portion of VxMicro kernel initialization and never return */
+	/* Jump to C portion of kernel initialization and never return */
 
 	jmp	_Cstart
 
@@ -577,7 +577,7 @@ _GdtRom:
 	/*
 	 * The following 3 GDT entries implement the so-called "basic
 	 * flat model", i.e. a single code segment descriptor and a single
-	 * data segment descriptor such that VxMicro has access to a continuous,
+	 * data segment descriptor, giving the kernel access to a continuous,
 	 * unsegmented address space.  Both segment descriptors map the entire
 	 * linear address space (i.e. 0 to 4 GB-1), thus the segmentation
 	 * mechanism will never generate "out of limit memory reference"

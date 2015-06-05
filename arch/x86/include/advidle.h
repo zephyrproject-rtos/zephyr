@@ -67,9 +67,9 @@ extern int _AdvIdleCheckSleep(void);
  */
 
 extern void _AdvIdleStart(
-	void (*_Cstart)(void), /* addr of VxMicro _Cstart function */
+	void (*_Cstart)(void), /* addr of _Cstart function */
 	void *_gdt,	    /* addr of global descriptor table in RAM */
-	void *_GlobalTss       /* addr of VxMicro TSS descriptor */
+	void *_GlobalTss       /* addr of TSS descriptor */
 	);
 
 /*

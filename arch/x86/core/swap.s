@@ -1,4 +1,4 @@
-/* swap.s - VxMicro nanokernel swapper code for IA-32 */
+/* swap.s - nanokernel swapper code for IA-32 */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.

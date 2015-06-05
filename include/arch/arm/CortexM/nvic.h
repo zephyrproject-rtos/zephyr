@@ -36,7 +36,7 @@ Provide an interface to the Nested Vectored Interrupt Controller found on
 ARM Cortex-M processors.
 
 The API does not account for all possible usages of the NVIC, only the
-functionalities needed by the VxMicro kernel.
+functionalities needed by the kernel.
 
 The same effect can be achieved by directly writing in the registers of the
 NVIC, with the layout available from scs.h, using the __scs.nvic data

@@ -32,9 +32,8 @@
 
 /*
 DESCRIPTION
-This module provides the VxMicro nanokernel (aka system-level) 'sema'
-implementation.  This module provides the backing implementation for the
-following APIs:
+This module provides the nanokernel semaphore object implementation,
+including the following APIs:
 
    nano_sem_init
    nano_fiber_sem_give, nano_task_sem_give, nano_isr_sem_give

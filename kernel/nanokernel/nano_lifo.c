@@ -32,9 +32,8 @@
 
 /*
 DESCRIPTION
-This module provides the VxMicro nanokernel (aka system-level) 'lifo'
-implementation. This module provides the backing implementation for the
-following APIs:
+This module provides the nanokernel LIFO object implementation, including
+the following APIs:
 
    nano_lifo_init
    nano_fiber_lifo_put, nano_task_lifo_put, nano_isr_lifo_put

@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module implements a VxMicro device driver for the Intel 8253 PIT
+This module implements a kernel device driver for the Intel 8253 PIT
 (Programmable Interval Timer) device, and provides the standard "system
 clock driver" interfaces.
 

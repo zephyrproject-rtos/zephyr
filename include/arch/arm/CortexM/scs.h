@@ -51,7 +51,7 @@ and
 documents from ARM.
 
 The API does not account for all possible usages of the SCS, only the
-functionalities needed by the VxMicro kernel. It does not contain NVIC and
+functionalities needed by the kernel. It does not contain NVIC and
 SCB functionalities either: these can be found in nvic.h and scb.h.
 
 MPU functionalities are not implemented.

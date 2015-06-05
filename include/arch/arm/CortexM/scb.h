@@ -36,7 +36,7 @@ Provide an interface to the System Control Block found on ARM Cortex-M
 processors.
 
 The API does not account for all possible usages of the SCB, only the
-functionalities needed by the VxMicro kernel. It does not contain NVIC
+functionalities needed by the kernel. It does not contain NVIC
 functionalities either: these can be found in nvic.h. MPU functionalities
 are not implemented.
 

@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module implements a VxMicro device driver for the Intel High Precision
+This module implements a kernel device driver for the Intel High Precision
 Event Timer (HPET) device, and provides the standard "system clock driver"
 interfaces.
 

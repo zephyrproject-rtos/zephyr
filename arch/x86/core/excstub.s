@@ -1,4 +1,4 @@
-/* excstub.s - VxMicro exception management support for IA-32 architecture */
+/* excstub.s - exception management support for IA-32 architecture */
 
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module implements assembly routines to manage exceptions (synchronous
-interrupts) in VxMicro on the Intel IA-32 architecture.  More specifically,
+interrupts) on the Intel IA-32 architecture.  More specifically,
 exceptions are implemented in this module.  The stubs are invoked when entering
 and exiting a C exception handler.
 */
@@ -59,10 +59,10 @@ and exiting a C exception handler.
 
 /*******************************************************************************
 *
-* _ExcEnt - inform the VxMicro kernel of an exception
+* _ExcEnt - inform the kernel of an exception
 *
 * This function is called from the exception stub created by nanoCpuExcConnect()
-* to inform the VxMicro kernel of an exception.  This routine currently does
+* to inform the kernel of an exception.  This routine currently does
 * _not_ increment a context/interrupt specific exception count.  Also,
 * execution of the exception handler occurs on the current stack, i.e.
 * _ExcEnt() does not switch to another stack.  The volatile integer
@@ -217,10 +217,10 @@ BRANCH_LABEL(allDone)
 
 /*******************************************************************************
 *
-* _ExcExit - inform the VxMicro kernel of an exception exit
+* _ExcExit - inform the kernel of an exception exit
 *
 * This function is called from the exception stub created by nanoCpuExcConnect()
-* to inform the VxMicro kernel that the processing of an exception has
+* to inform the kernel that the processing of an exception has
 * completed.  This routine restores the volatile integer registers and
 * then control is returned back to the interrupted context or ISR.
 *

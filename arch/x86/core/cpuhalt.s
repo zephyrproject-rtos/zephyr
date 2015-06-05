@@ -1,4 +1,4 @@
-/* cpuhalt.s - VxMicro CPU power management code for IA-32 */
+/* cpuhalt.s - CPU power management code for IA-32 */
 
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-/* nanokernel.h - public API for VxMicro nanokernel */
+/* nanokernel.h - public API for nanokernel */
 
 /*
  * Copyright (c) 1997-2015, Wind River Systems, Inc.

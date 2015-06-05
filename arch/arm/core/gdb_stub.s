@@ -134,8 +134,8 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
 * _irq_vector_table_entry_with_gdb_stub - stub for ISRs installed directly in
 *                               vector table
 *
-* VxMicro on Cortex-M3/4 allows users to configure the kernel such that
-* ISRs are installed directly in the vector table for maximum efficiency.
+* The kernel on Cortex-M3/4 can be configured so that ISRs
+* are installed directly in the vector table for maximum efficiency.
 *
 * When OS-awareness is enabled, a stub must be inserted to invoke
 * _GdbStubExcEntry() before the user ISR runs, to save the current task's

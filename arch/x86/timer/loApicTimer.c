@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module implements a VxMicro device driver for the Intel local APIC
+This module implements a kernel device driver for the Intel local APIC
 device, and provides the standard "system clock driver" interfaces.
 This library contains routines for the timer in the Intel local APIC/xAPIC
 (Advanced Programmable Interrupt Controller) in P6 (PentiumPro, II, III)

@@ -1,4 +1,4 @@
-/* excconnect.c - VxMicro exception management support for IA-32 arch */
+/* excconnect.c - exception management support for IA-32 arch */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides routines to manage exceptions (synchronous interrupts)
-in VxMicro on the IA-32 architecture.
+on the IA-32 architecture.
 
 This module provides the public routine nanoCpuExcConnect().
 

@@ -66,7 +66,7 @@ GDATA(_nanokernel)
 * _IntExit - kernel housekeeping when exiting interrupt handler installed
 *            directly in vector table
 *
-* VxMicro allows installing interrupt handlers (ISRs) directly into the vector
+* Kernel allows installing interrupt handlers (ISRs) directly into the vector
 * table to get the lowest interrupt latency possible. This allows the ISR to be
 * invoked directly without going through a software interrupt table. However,
 * upon exiting the ISR, some kernel work must still be performed, namely

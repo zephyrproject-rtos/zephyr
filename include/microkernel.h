@@ -1,4 +1,4 @@
-/* microkernel.h - public API for VxMicro microkernel */
+/* microkernel.h - public API for microkernel */
 
 /*
  * Copyright (c) 1997-2015, Wind River Systems, Inc.

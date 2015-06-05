@@ -1,4 +1,4 @@
-/* nanofloat.c - VxMicro floating point resource sharing routines */
+/* nanofloat.c - floating point resource sharing routines */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
@@ -57,17 +57,17 @@ The 'options' parameter is used to specify what non-integer capabilities are
 being used.  The same options accepted by fiber_fiber_start() are used in the
 aforementioned APIs, namely USE_FP and USE_SSE.
 
-If the VxMicro nanokernel has been built with support for automatic enabling
+If the nanokernel has been built with support for automatic enabling
 of floating point resource sharing (CONFIG_AUTOMATIC_FP_ENABLING) the
 system automatically enables sharing for any non-enabled task or fiber as soon
 as it begins using floating point instructions.  (Note: The task or fiber must
 have enough room available on its stack to allow floating point state info
 to be saved, otherwise stack corruption will occur.)
 
-If the VxMicro nanokernel has been built without SSE instruction support
+If the nanokernel has been built without SSE instruction support
 (CONFIG_SSE), the system treats USE_SSE as if it was USE_FP.
 
-If the VxMicro nanokernel has been built without floating point resource
+If the nanokernel has been built without floating point resource
 sharing support (CONFIG_FP_SHARING), the aforementioned APIs and
 capabilities do not exist.
 
@@ -78,7 +78,7 @@ fiber uses the FPU the FP registers won't change when the FP-capable task or
 fiber isn't executing, meaning there is no need to save the registers.
 
 WARNING
-The use of floating point instructions by ISRs is not supported by VxMicro.
+The use of floating point instructions by ISRs is not supported by the kernel.
 
 INTERNAL
 If automatic enabling of floating point resource sharing _is not_ configured
