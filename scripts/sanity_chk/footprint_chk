@@ -191,7 +191,7 @@ main() {
 			${ECHO}
 			${ECHO} "Footprint for ${PRJ_NAME[${cur_proj}]}"
 			${ECHO}
-			${ECHO} "target:    ${BSP_INFO[${cur_proj}]}"
+			${ECHO} "target:    ${PLATFORM[${cur_proj}]}"
 			${ECHO} "arguments: ${PRJ_ARGS[$cur_proj]}"
 			${ECHO}
 			${SIZE} outdir/*.elf

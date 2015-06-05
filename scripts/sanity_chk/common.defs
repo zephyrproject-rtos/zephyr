@@ -167,7 +167,8 @@ build_info_set() {
 #          ${PRJ_ARGS} array specifies any additional project build arguments
 #          ${PRJ_TYPE} array specifies project type ("nano" or "micro")
 #          ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
-#          ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#          ${PLATFORM} array specifies the platform name
+#          ${PLATFORM_BUILD} array specifies the platform's kbuild defconfig
 #          ${BSP_FLAG} array specifies optional BSP flag ('!' or empty)
 #          ${NUM_PROJ} specifies number of projects described in arrays
 #
@@ -249,21 +250,23 @@ proj_info_set() {
 		fi
 
 		if [ ${bsp2use} = "pentium4" ] ; then
-			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=pentium4"
 			BSP[${NUM_PROJ}]=generic_pc
+			PLATFORM[${NUM_PROJ}]=generic_pc_pentium4
 		elif [ ${bsp2use} = "minuteia" ] ; then
-			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=minuteia"
 			BSP[${NUM_PROJ}]=generic_pc
+			PLATFORM[${NUM_PROJ}]=generic_pc_minuteia
 		elif [ ${bsp2use} = "atom" ] ; then
-			BSP_INFO[${NUM_PROJ}]="BSP=generic_pc BSP_VARIANT=atom_n28xx"
 			BSP[${NUM_PROJ}]=generic_pc
+			PLATFORM[${NUM_PROJ}]=generic_pc_atom_n28xx
 		elif [ ${bsp2use} = "quark" ] ; then
-			BSP_INFO[${NUM_PROJ}]="BSP=quark"
 			BSP[${NUM_PROJ}]=quark
+			PLATFORM[${NUM_PROJ}]=quark
 		else
-			BSP_INFO[${NUM_PROJ}]="BSP=${bsp2use}"
 			BSP[${NUM_PROJ}]=${bsp2use}
+			PLATFORM[${NUM_PROJ}]=${bsp2use}
 		fi
+
+		PLATFORM_BUILD[${NUM_PROJ}]="KBUILD_DEFCONFIG=${PRJ_TYPE[${NUM_PROJ}]}_${PLATFORM[${NUM_PROJ}]}_defconfig"
 
 		BSP_FLAG[${NUM_PROJ}]=`${AWK} '/!/ {print "!"}' <<< ${line}`
 	done < ${TEMP_PRJ_LIST}
@@ -281,7 +284,8 @@ proj_info_set() {
 #           ${PRJ_ARGS} array specifies any additional project build arguments
 #           ${PRJ_TYPE} array specifies project type ("nano" or "micro")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
-#           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#           ${PLATFORM} array specifies the platform name
+#           ${PLATFORM_BUILD} array specifies the platform's kbuild defconfig
 #           ${BUILD_INFO} specifies build options
 #           ${NUM_PROJ} specifies # of projects described in arrays
 #           ${PRJ_CLASS} specifies type of projects being sanitized
@@ -303,7 +307,8 @@ skip_project() {
 #           ${PRJ_ARGS} array specifies any additional project build arguments
 #           ${PRJ_TYPE} array specifies project type ("nano" or "micro")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
-#           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#           ${PLATFORM} array specifies the platform name
+#           ${PLATFORM_BUILD} array specifies the platform's kbuild defconfig
 #           ${BUILD_INFO} specifies build options
 #           ${NUM_PROJ} specifies # of projects described in arrays
 #           ${PRJ_CLASS} specifies type of projects being sanitized
@@ -313,7 +318,7 @@ build_project() {
 
 	${ECHO} "Building ${proj_name} [${PRJ_CLASS} project $1 of ${NUM_PROJ}]"
 	${ECHO}
-	${ECHO} "target:    ${BSP_INFO[$1]}"
+	${ECHO} "target:    ${PLATFORM[$1]}"
 	${ECHO} "arguments: ${PRJ_ARGS[$1]}"
 	${ECHO}
 
@@ -333,7 +338,7 @@ build_project() {
 		arch=${ARCH_NAME}
 	fi
 
-	${MAKE} ARCH=${arch} ${BUILD_INFO} ${PRJ_ARGS[$1]} ${BSP_INFO[$1]}
+	${MAKE} ARCH=${arch} ${BUILD_INFO} ${PRJ_ARGS[$1]} ${PLATFORM_BUILD[$1]}
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
 	if [ x$2 == x ] ; then
@@ -352,7 +357,8 @@ build_project() {
 #           ${PRJ_ARGS} array specifies any additional project build arguments
 #           ${PRJ_TYPE} array specifies project type ("nano" or "micro")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
-#           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
+#           ${PLATFORM} array specifies the platform name
+#           ${PLATFORM_BUILD} array specifies the platform's kbuild defconfig
 #           ${BUILD_INFO} specifies build options
 #           ${NUM_PROJ} specifies # of projects described in arrays
 #           ${PRJ_CLASS} specifies type of projects being sanitized
@@ -363,7 +369,7 @@ qemu_project() {
 	${ECHO}
 	${ECHO} "Running ${proj_name} using QEMU [${PRJ_CLASS} project $1 of ${NUM_PROJ}]"
 	${ECHO}
-	${ECHO} "target:    ${BSP_INFO[$1]}"
+	${ECHO} "target:    ${PLATFORM[$1]}"
 	${ECHO} "arguments: ${PRJ_ARGS[$1]}"
 	${ECHO}
 
@@ -387,7 +393,7 @@ qemu_project() {
 	# and append the logs into the empty log file created above
 	# (supply all build-related arguments to allow final linking
 	# to be done using the same arguments as the original build)
-	( ${MAKE} ARCH=${arch} qemu ${PRJ_ARGS[$1]} ${BSP_INFO[$1]} \
+	( ${MAKE} ARCH=${arch} qemu ${PRJ_ARGS[$1]} ${PLATFORM_BUILD[$1]} \
 	    ${BUILD_INFO} | tee ${SANITY_CHK_LOG} )&
 
 	# get QEMU's pid
@@ -431,7 +437,7 @@ qemu_project() {
 		$ECHO >> ${SANITY_CHK_LOG}
 		$ECHO "Project name: ${PRJ_NAME[$1]}" >> ${SANITY_CHK_LOG}
 		$ECHO "Project arguments: ${PRJ_ARGS[$1]}" >> ${SANITY_CHK_LOG}
-		$ECHO "BSP info: ${BSP_INFO[$1]}" >> ${SANITY_CHK_LOG}
+		$ECHO "Platform name: ${PLATFORM[$1]}" >> ${SANITY_CHK_LOG}
 		$ECHO "Build info: ${BUILD_INFO}" >> ${SANITY_CHK_LOG}
 
 		# ensure log file name is unique to avoid overwriting
