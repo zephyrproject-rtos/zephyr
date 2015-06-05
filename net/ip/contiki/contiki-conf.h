@@ -24,6 +24,12 @@ typedef unsigned int uip_stats_t;
 /* No Rime */
 #define NETSTACK_CONF_WITH_RIME 0
 
+/* The queuebuf count defines how many fragments we are able to
+ * receive. Value 13 means that we can receive full IPv6 data
+ * (1280 bytes), we need also some extra buffers for temp use.
+ */
+#define QUEUEBUF_CONF_NUM (13 + 5)
+
 #ifdef SICSLOWPAN_CONF_ENABLE
 /* Min and Max compressible UDP ports */
 #define SICSLOWPAN_UDP_PORT_MIN                     0xF0B0
