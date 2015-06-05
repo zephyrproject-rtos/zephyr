@@ -7,6 +7,5 @@ ifneq ($(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED),y)
 obj-y += cache_s.o
 endif
 
-obj-$(CONFIG_LOAPIC) += systemApic.o
 obj-$(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED) += cache.o
 obj-$(CONFIG_X86_TSC_RANDOM_GENERATOR) += rand32-timestamp.o

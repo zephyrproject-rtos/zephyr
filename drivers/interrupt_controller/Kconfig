@@ -38,4 +38,11 @@ config PIC
 	default n
         depends on X86_32
 
+config LOAPIC
+	bool "LOAPIC"
+	default n
+        depends on X86_32
+	help
+	This option selects local APIC as the interrupt controller.
+
 endmenu

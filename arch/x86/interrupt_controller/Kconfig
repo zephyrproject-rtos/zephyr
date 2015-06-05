@@ -39,10 +39,4 @@ config  IOAPIC
 	This option signifies that the target has an IO-APIC device. This
 	capability allows IO-APIC-dependent code to be included.
 
-config LOAPIC
-	bool "LOAPIC"
-	default n
-	help
-	This option selects local APIC as the interrupt controller.
-
 endmenu
