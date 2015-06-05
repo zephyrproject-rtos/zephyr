@@ -1,4 +1,4 @@
-/* pool.c - test microkernel memory pool APIs under VxMicro */
+/* pool.c - test microkernel memory pool APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
@@ -455,7 +455,7 @@ void AlternateTask(void)
 *
 * RegressionTask - main task in the test suite
 *
-* This is the entry point to the VxMicro memory pool test suite.
+* This is the entry point to the memory pool test suite.
 *
 * RETURNS: N/A
 */

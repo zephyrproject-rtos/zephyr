@@ -49,7 +49,7 @@ Measure boot time for both nanokernel and microkernel project which includes
 #include <tc_util.h>
 
 /* externs */
-extern uint64_t __start_tsc; /* timestamp when VxMicro begins executing */
+extern uint64_t __start_tsc; /* timestamp when kernel begins executing */
 extern uint64_t __main_tsc;  /* timestamp when main() begins executing */
 extern uint64_t __idle_tsc;  /* timestamp when CPU went idle */
 

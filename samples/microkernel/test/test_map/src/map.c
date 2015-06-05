@@ -1,4 +1,4 @@
-/* map.c - test microkernel Map APIs under VxMicro */
+/* map.c - test microkernel memory map APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

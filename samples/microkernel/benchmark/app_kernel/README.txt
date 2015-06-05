@@ -2,9 +2,8 @@ Title: AppKernel
 
 Description:
 
-AppKernel is used to measure the performance of VxMicro.  It performs benchmarks
-for sema, mutex, memmap, mempool, event, mailbox and pipe when used by
-tasks in microkernel.
+AppKernel is used to measure the performance of microkernel events, mutexes,
+semaphores, FIFOs, mailboxes, pipes, memory maps, and memory pools.
 
 --------------------------------------------------------------------------------
 
@@ -35,7 +34,7 @@ Sample Output:
 |-----------------------------------------------------------------------------|
 |          S I M P L E   S E R V I C E    M E A S U R E M E N T S  |  nsec    |
 |-----------------------------------------------------------------------------|
-| minimum VxMicro call time                                        |     NNNNN|
+| kernel service request overhead                                  |     NNNNN|
 |-----------------------------------------------------------------------------|
 | enqueue 1 byte msg in FIFO                                       |    NNNNNN|
 | dequeue 1 byte msg in FIFO                                       |    NNNNNN|

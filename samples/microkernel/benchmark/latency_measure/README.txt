@@ -2,7 +2,7 @@ Title: latency measure
 
 Description:
 
-This benchmark measures the latency of selected capabilities of both the VxMicro
+This benchmark measures the latency of selected capabilities of both the
 nanokernel and microkernel.
 
 IMPORTANT: The sample output below was generated using a simulation
@@ -36,7 +36,7 @@ or
 Sample Output:
 
 |-----------------------------------------------------------------------------|
-|                    VxMicro Nanokernel Latency Benchmark                     |
+|                        Nanokernel Latency Benchmark                         |
 |-----------------------------------------------------------------------------|
 |  tcs = timer clock cycles: 1 tcs is N nsec                                  |
 |-----------------------------------------------------------------------------|
@@ -60,7 +60,7 @@ Sample Output:
 | Average time for lock then unlock is NNN tcs = NNNN nsec                    |
 |-----------------------------------------------------------------------------|
 |-----------------------------------------------------------------------------|
-|                    VxMicro Microkernel Latency Benchmark                    |
+|                        Microkernel Latency Benchmark                        |
 |-----------------------------------------------------------------------------|
 |  tcs = timer clock cycles: 1 tcs is N nsec                                  |
 |-----------------------------------------------------------------------------|

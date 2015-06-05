@@ -59,7 +59,7 @@ void call_test(void)
 	et = TIME_STAMP_DELTA_GET(et);
 	check_result();
 
-	PRINT_F(output_file, FORMAT, "minimum VxMicro call time",
+	PRINT_F(output_file, FORMAT, "kernel service request overhead",
 			SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_NOP_RUNS));
 }
 

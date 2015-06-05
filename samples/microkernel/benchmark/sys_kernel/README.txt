@@ -3,7 +3,7 @@ Title: SysKernel
 Description:
 
 The SysKernel test measures the performance of the sema, lifo, fifo and stack
-objects provided by the VxMicro nanokernel.
+objects provided by the nanokernel.
 
 --------------------------------------------------------------------------------
 

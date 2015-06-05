@@ -2,7 +2,7 @@ Title: Hello
 
 Description:
 
-A simple application that demonstrates basic sanity of the VxMicro nanokernel.
+A simple application that demonstrates basic sanity of the nanokernel.
 The background task and a fiber take turns printing a greeting message to the
 console, and use timers and semaphores to control the rate at which messages
 are generated. This demonstrates that nanokernel scheduling, communication,

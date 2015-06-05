@@ -1,4 +1,4 @@
-/* fifo.c - test nanokernel FIFO APIs under VxMicro */
+/* fifo.c - test nanokernel FIFO APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

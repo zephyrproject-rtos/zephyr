@@ -2,8 +2,7 @@ Title: latency measure
 
 Description:
 
-This benchmark measures the latency of selected capabilities of VxMicro
-nanokernel features.
+This benchmark measures the latency of selected nanokernel features.
 
 IMPORTANT: The results below were generated using a simulation environment,
 and may not reflect the results that will be generated using other
@@ -36,7 +35,7 @@ or
 Sample Output:
 
 |-----------------------------------------------------------------------------|
-|                    VxMicro Nanokernel Latency Benchmark                     |
+|                        Nanokernel Latency Benchmark                         |
 |-----------------------------------------------------------------------------|
 |  tcs = timer clock cycles: 1 tcs is N nsec                                  |
 |-----------------------------------------------------------------------------|

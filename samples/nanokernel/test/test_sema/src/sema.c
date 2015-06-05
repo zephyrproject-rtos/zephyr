@@ -1,4 +1,4 @@
-/* sema.c - test semaphore APIs under VxMicro */
+/* sema.c - test nanokernel semaphore APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

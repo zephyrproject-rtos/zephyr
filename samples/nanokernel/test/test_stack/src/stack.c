@@ -1,4 +1,4 @@
-/* stack.c - test nanokernel STACK APIs under VxMicro */
+/* stack.c - test nanokernel stack APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-/* context.c - test CPU and context APIs under VxMicro */
+/* context.c - test nanokernel CPU and context APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

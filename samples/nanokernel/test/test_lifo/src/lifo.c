@@ -1,4 +1,4 @@
-/* lifo.c - test LIFO APIs under VxMicro */
+/* lifo.c - test nanokernel LIFO APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

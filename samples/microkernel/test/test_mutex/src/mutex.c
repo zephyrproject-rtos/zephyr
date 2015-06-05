@@ -1,4 +1,4 @@
-/* mutex.c - test microkernel mutex APIs under VxMicro */
+/* mutex.c - test microkernel mutex APIs */
 
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module demonstrates the priority inheritance algorithm used in VxMicro.
+This module demonstrates the microkernel's priority inheritance algorithm.
 A task that owns a mutex is promoted to the priority level of the
 highest-priority task attempting to lock the mutex.
 

@@ -3,7 +3,7 @@
 # Import common sanity check definitions
 #
 if [ -z ${TIMO_BASE} ]; then
-	echo "shell variables required to build VxMicro are not set"
+	echo "shell variables required to build Zephyr OS are not set"
 	exit 1
 fi
 if [ ! -d ${TIMO_BASE} ] ; then

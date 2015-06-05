@@ -1,4 +1,4 @@
-/* events.c - test microkernel event APIs under VxMicro */
+/* events.c - test microkernel event APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

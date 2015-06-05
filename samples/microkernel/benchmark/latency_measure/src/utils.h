@@ -79,13 +79,13 @@ static inline void printDashLine(void)
 
 #define PRINT_NANO_BANNER()                                                   \
 	printDashLine();                                                          \
-	PRINTF("|                    VxMicro Nanokernel Latency Benchmark        "\
+	PRINTF("|                        Nanokernel Latency Benchmark            "\
 		   "             |\n");                                               \
 	printDashLine();
 
 #define PRINT_MICRO_BANNER()                                                  \
 	printDashLine();                                                          \
-	PRINTF("|                    VxMicro Microkernel Latency Benchmark       "\
+	PRINTF("|                        Microkernel Latency Benchmark           "\
 		   "             |\n");                                               \
 	printDashLine();
 
@@ -98,7 +98,7 @@ static inline void printDashLine(void)
 	PRINT_FORMAT(" Error: tick occured")
 
 #else
-#error PRINTK needs to be enabled in VxMicro configuration
+#error PRINTK configuration option needs to be enabled
 #endif
 
 void raiseIntFunc(void);

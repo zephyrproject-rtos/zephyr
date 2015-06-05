@@ -2,7 +2,7 @@ Title: kernel access to standard libraries
 
 Description:
 
-This test verifies kernel access to VxMicro's standard libraries.
+This test verifies kernel access to the standard C libraries.
 It is intended to catch issues in which a library is completely absent
 or non-functional, and is NOT intended to be a comprehensive test suite
 of all functionality provided by the libraries.

@@ -1,4 +1,4 @@
-/* main.c - test access to VxMicro standard libraries (kernel version) */
+/* main.c - test access to standard libraries */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -32,8 +32,8 @@
 
 /*
 DESCRIPTION
-This module contains the entry points for the tasks used by the kernel version
-of the standard libraries test application.
+This module contains the entry points for the tasks used by the standard
+libraries test application.
 
 Each test task entry point invokes a test routine that returns a success/failure
 indication, then gives a corresponding semaphore. An additional task monitors

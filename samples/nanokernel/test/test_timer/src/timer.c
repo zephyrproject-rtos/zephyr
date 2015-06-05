@@ -1,4 +1,4 @@
-/* timer.c - test timer APIs under VxMicro */
+/* timer.c - test nanokernel timer APIs */
 
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.

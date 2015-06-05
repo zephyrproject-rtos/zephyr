@@ -559,9 +559,9 @@ int AlternateTask(void)
 
 /*******************************************************************************
 *
-* RegressionTask - entry point to VxMicro semaphore test suite
+* RegressionTask - entry point to semaphore test suite
 *
-* This is the entry point to the VxMicro semaphore test suite.
+* This is the entry point to the semaphore test suite.
 *
 * RETURNS: TC_PASS or TC_FAIL
 */

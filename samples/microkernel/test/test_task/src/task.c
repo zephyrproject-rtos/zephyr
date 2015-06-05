@@ -1,4 +1,4 @@
-/* task.c - test microkernel task APIs under VxMicro */
+/* task.c - test microkernel task APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

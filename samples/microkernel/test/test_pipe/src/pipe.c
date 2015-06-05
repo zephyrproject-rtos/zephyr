@@ -1,4 +1,4 @@
-/* pipe.c - test microkernel target pipe APIs under VxMicro */
+/* pipe.c - test microkernel target pipe APIs */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
@@ -991,7 +991,7 @@ int AlternateTask(void)
 *
 * RegressionTask - main task in the test suite
 *
-* This is the entry point to the VxMicro target pipe test suite.
+* This is the entry point to the pipe test suite.
 *
 * RETURNS: TC_PASS or TC_FAIL
 */

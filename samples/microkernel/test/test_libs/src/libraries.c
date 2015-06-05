@@ -1,4 +1,4 @@
-/* libraries.c - test access to VxMicro standard libraries */
+/* libraries.c - test access to the minimal C libraries */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -32,8 +32,7 @@
 
 /*
 DESCRIPTION
-This module verifies that the various standard libraries supported by VxMicro
-can be used.
+This module verifies that the various minimal C libraries can be used.
 
 IMPORTANT: The module only ensures that each supported library is present,
 and that a bare minimum of its functionality is operating correctly. It does

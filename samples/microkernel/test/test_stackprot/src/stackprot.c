@@ -1,4 +1,4 @@
-/* stackprot.c - test Stack Protector feature using canary under VxMicro */
+/* stackprot.c - test Stack Protector feature using canary */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.

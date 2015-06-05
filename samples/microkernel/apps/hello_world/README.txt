@@ -2,7 +2,7 @@ Title: Hello
 
 Description:
 
-A simple application that demonstates basic sanity of the VxMicro microkernel.
+A simple application that demonstates basic sanity of the microkernel.
 Two tasks (A and B) take turns printing a greeting message to the console,
 and use sleep requests and semaphores to control the rate at which messages
 are generated. This demonstrates that microkernel scheduling, communication,
