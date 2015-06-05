@@ -50,50 +50,9 @@ SIZE="${ZEPHYR_BASE}/scripts/truesize"
 #
 PRJ_PATH=${ZEPHYR_BASE}/samples
 
-# Pseudo-file describing sample projects to be characterized
+# Identify the file containing the projects to be built (or cleaned)
 #
-# Project info must be specified on a single line
-# (which must terminate with a '\n' character, EXCEPT for the final entry).
-#
-# Project info consists of:
-# - project directory (relative to PRJ_PATH)
-# - build arguments (optional)
-# - project flags, enclosed in angle brackets "<>"
-#   - 'u' => microkernel; 'n' => nanokernel (required; must be first flag)
-#   - 'q' => run as part of quick sanity check (optional)
-# - list of BSP names that can be used with the project
-#
-# Sanity check will select first BSP name listed if the user does not specify
-# a BSP name when running sanity check (i.e. is the "default" BSP).
-#
-# A given project can appear more than once, allowing the project to be
-# sanitized multiple times. This can be useful if the project has multiple
-# configurations, or if the project should be characterized on more than one BSP
-# during a default BSP sanity check.
-#
-# List of sample projects can contain comment lines (denoted by '#'),
-# but be sure to terminate line with a '\n' character!
-#
-PRJ_LIST="\
-nanokernel/benchmark/footprint     TEST=min         <nq> ti_lm3s6965 \n\
-nanokernel/benchmark/footprint     TEST=min         <nq> fsl_frdm_k64f \n\
-nanokernel/benchmark/footprint     TEST=min         <n>  pentium4 minuteia \n\
-nanokernel/benchmark/footprint     TEST=reg         <n>  pentium4 minuteia \n\
-nanokernel/benchmark/footprint     TEST=max         <nq> pentium4 minuteia \n\
-microkernel/benchmark/footprint    TEST=min         <uq> ti_lm3s6965 \n\
-microkernel/benchmark/footprint    TEST=min         <uq> fsl_frdm_k64f \n\
-microkernel/benchmark/footprint    TEST=min         <u>  pentium4 minuteia \n\
-microkernel/benchmark/footprint    TEST=reg         <u>  pentium4 minuteia \n\
-microkernel/benchmark/footprint    TEST=max         <uq> pentium4 minuteia \n\
-    # projects that don't indicate completion                        \n\
-nanokernel/benchmark/latency_measure   <n>  pentium4  minuteia  atom quark \n\
-nanokernel/benchmark/sys_kernel        <n>  pentium4  minuteia  atom quark \n\
-microkernel/benchmark/app_kernel       <u>  pentium4  minuteia  atom quark \n\
-microkernel/benchmark/latency_measure  <u>  pentium4  minuteia  atom quark \n\
-microkernel/benchmark/sys_kernel       <u>  pentium4  minuteia  atom quark \n\
-    # projects that don't require any special capabilities           \n\
-nanokernel/benchmark/boot_time         <n>  pentium4! minuteia! atom quark \n\
-microkernel/benchmark/boot_time        <u>  pentium4! minuteia! atom quark "
+PRJ_LIST=${ZEPHYR_BASE}/scripts/sanity_chk/footprint_chk.data
 
 # print script usage
 #

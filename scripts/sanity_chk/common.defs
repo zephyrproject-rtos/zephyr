@@ -126,13 +126,13 @@ clean_project() {
 
 # restore all projects to their pristine state
 #
-# ON ENTRY: ${PRJ_LIST} is pseudo-file of project information
+# ON ENTRY: ${PRJ_LIST} is a file containing the project info
 #
 # Note that routine will clean a project multiple times if it appears multiple
 # times in ${PRJ_LIST}. It's not worth optimizing to prevent this ...
 #
 clean_all_projects() {
-	project_dirs=`${ECHO} -e ${PRJ_LIST} | ${AWK} '!/#/ {print $1}'`
+	project_dirs=`${AWK} '!/#/ {print $1}' ${PRJ_LIST}`
 	for project in ${project_dirs}
 	do
 		clean_project ${project}
@@ -159,7 +159,7 @@ build_info_set() {
 # set up project info used to build projects
 #
 # ON ENTRY: ${PRJ_PATH} is path to master project directory
-#           ${PRJ_LIST} is pseudo-file of project information
+#           ${PRJ_LIST} is a file containing the  project info
 #           ${BSP_NAME} is BSP to use (empty => use per-project default)
 #           ${ARCH_NAME} is architecture to use (empty => no arch restrictions)
 #
@@ -201,7 +201,7 @@ proj_info_set() {
 	fi
 
 	${ECHO} "${awk_string}" > ${TEMP_AWK_PROG}
-	${ECHO} -e ${PRJ_LIST} | ${AWK} -f ${TEMP_AWK_PROG} > ${TEMP_PRJ_LIST}
+	${AWK} -f ${TEMP_AWK_PROG} ${PRJ_LIST} > ${TEMP_PRJ_LIST}
 
 	# deconstruct the filtered project list file
 	# into a set of arrays containing project info

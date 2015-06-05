@@ -54,50 +54,9 @@ OUT_OF_TREE_BASE=$(${ABS_PATH} ${OUT_OF_TREE_BASE_REL})
 #
 PRJ_PATH=${OUT_OF_TREE_BASE}/samples
 
-# Pseudo-file describing sample projects to be sanitized
+# Identify the file containing the projects to be built (or cleaned)
 #
-# Project info must be specified on a single line
-# (which must terminate with a '\n' character, EXCEPT for the final entry).
-#
-# Project info consists of:
-# - project directory (relative to PRJ_PATH)
-# - build arguments (optional)
-# - project flags, enclosed in angle brackets "<>"
-#   - 'u' => microkernel; 'n' => nanokernel (required; must be first flag)
-#   - 'q' => run as part of quick sanity check (optional)
-# - list of BSP names that can be used with the project
-#
-# A BSP name followed by "!" indicates the project can executed using QEMU.
-#
-# Sanity check will select first BSP name listed if the user does not specify
-# a BSP name when running sanity check (i.e. is the "default" BSP).
-#
-# A given project can appear more than once, allowing the project to be
-# sanitized multiple times. This can be useful if the project has multiple
-# configurations, or if the project should be run on more than one BSP
-# during a default BSP sanity check.
-#
-# List of sample projects can contain comment lines (denoted by '#'),
-# but be sure to terminate line with a '\n' character!
-#
-
-PRJ_LIST="\
-	# Nanokernel projects \n\
-nanokernel/test/test_fifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
-nanokernel/test/test_lifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
-nanokernel/test/test_sema   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
-	# Microkernel projects \n\
-microkernel/test/test_fifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
-microkernel/test/test_events ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
-microkernel/test/test_sema   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
-	# Nanokernel projects \n\
-nanokernel/test/test_fifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
-nanokernel/test/test_lifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
-nanokernel/test/test_sema   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
-	# Microkernel projects \n\
-microkernel/test/test_fifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark \n\
-microkernel/test/test_events ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark \n\
-microkernel/test/test_sema   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark "
+PRJ_LIST=${ZEPHYR_BASE}/scripts/sanity_chk/out-of-tree_chk.data
 
 # print script usage
 #
