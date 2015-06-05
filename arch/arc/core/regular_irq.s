@@ -96,7 +96,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 
 	asl r0, 1, r0
 
-	/* Viper on ARCv2 always runs in kernel mode, so assume bit31 [U] in
+	/* the OS on ARCv2 always runs in kernel mode, so assume bit31 [U] in
 	 * AUX_IRQ_ACT is always 0: if the contents of AUX_IRQ_ACT is greater
 	 * than FFS(AUX_IRQ_ACT), it means that another bit is set so an
 	 * interrupt was interrupted.

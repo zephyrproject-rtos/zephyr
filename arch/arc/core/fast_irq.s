@@ -133,7 +133,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 	lr r3, [_ARC_V2_AUX_IRQ_ACT]
 
-	/* Viper on ARCv2 always runs in kernel mode, so assume bit31 [U] in
+	/* the OS on ARCv2 always runs in kernel mode, so assume bit31 [U] in
 	 * AUX_IRQ_ACT is always 0: if the contents of AUX_IRQ_ACT is not 1, it
 	 * means that another bit is set so an interrupt was interrupted.
 	 */

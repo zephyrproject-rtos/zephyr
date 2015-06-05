@@ -32,7 +32,6 @@ define filechk_prj.vpf
 	cat $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf;)
 endef
 
-#Specific source code generation for Viper
 misc/generated/sysgen/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf \
 				$(PROJECT_BASE)/$(VPFILE) \
 				include/config/auto.conf FORCE
