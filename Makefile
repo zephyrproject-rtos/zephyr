@@ -895,7 +895,7 @@ $(tinymountain-dirs): prepare scripts
 # version.h and scripts_basic is processed / created.
 
 # Listed in dependency order
-PHONY += prepare archprepare prepare0 prepare1 prepare2 prepare3
+PHONY += prepare prepare1 prepare2 prepare3
 
 # prepare3 is used to check if we are building in a separate output directory,
 # and if so do:
@@ -935,18 +935,14 @@ archprepare_common = $(strip \
 
 archprepare_microkernel-y = misc/generated/sysgen/kernel_main.c
 
-archprepare_prereq = $(strip \
+archprepare = $(strip \
 		$(archprepare_common) \
 		$(archprepare_microkernel-$(SYSGEN_EXEC)) \
 		)
 
-archprepare: $(archprepare_prereq)
-
-prepare0: archprepare FORCE
-	$(Q)$(MAKE) $(build)=.
-
 # All the preparing..
-prepare: prepare0
+prepare: $(archprepare)  FORCE
+	$(Q)$(MAKE) $(build)=.
 
 # Generate some files
 # ---------------------------------------------------------------------------
