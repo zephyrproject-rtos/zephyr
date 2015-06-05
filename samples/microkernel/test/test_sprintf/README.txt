@@ -42,4 +42,4 @@ Testing sprintf() with doubles ....
 ===================================================================
 PASS - RegressionTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

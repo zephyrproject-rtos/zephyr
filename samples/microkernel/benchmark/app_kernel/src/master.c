@@ -154,7 +154,7 @@ void BenchTask(void)
 					 "                                   |\n",
 					 output_file);
 		PRINT_STRING(dashline, output_file);
-		PRINT_STRING("VXMICRO PROJECT EXECUTION SUCCESSFUL\n",output_file);
+		PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n",output_file);
 	} while (continuously && !kbhit());
 
 	WAIT_FOR_USER();

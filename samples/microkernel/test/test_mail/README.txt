@@ -58,4 +58,4 @@ MsgRcvrTask: task_mbox_get_wait of message header #3 is OK
 MsgRcvrTask: task_mbox_data_get of message data #3 is OK
 MsgSenderTask: task_mbox_put_wait_timeout for long-duration receive test is OK
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

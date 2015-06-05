@@ -49,4 +49,4 @@ RegressionTask: Stack ok
 ===================================================================
 PASS - RegressionTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

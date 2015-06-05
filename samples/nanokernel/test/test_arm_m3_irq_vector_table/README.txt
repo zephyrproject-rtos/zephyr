@@ -37,4 +37,4 @@ isr1 ran!
 isr2 ran!
 PASS - main.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

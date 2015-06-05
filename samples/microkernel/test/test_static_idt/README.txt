@@ -42,4 +42,4 @@ Faulting instruction address = 0x0010342c
 Fatal task error! Aborting task.
 PASS - idtTestTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

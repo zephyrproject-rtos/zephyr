@@ -42,4 +42,4 @@ Test that a timer does not start.
 Test the periodic feature of a timer
 Test the stopping of a timer
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

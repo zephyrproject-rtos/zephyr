@@ -45,4 +45,4 @@ Task to get LIFO items without waiting
 ISR to get LIFO items without waiting
 PASS - main.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

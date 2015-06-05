@@ -63,4 +63,4 @@ Boot Time Measurement finished
 ===================================================================
 PASS - bootTimeTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

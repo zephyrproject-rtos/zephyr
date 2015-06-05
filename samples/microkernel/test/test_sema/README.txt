@@ -39,4 +39,4 @@ Testing semaphore groups without blocking
 Testing semaphore groups with blocking
 Testing semaphore release by fiber
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

@@ -41,4 +41,4 @@ Load and store OK after 300 (high) + 245956 (low) tests
 Load and store OK after 400 (high) + 330408 (low) tests
 Load and store OK after 500 (high) + 411981 (low) tests
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

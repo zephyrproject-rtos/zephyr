@@ -81,7 +81,7 @@
 	do {                                                    \
 		PRINT_LINE;                                         \
 		TC_END(result,                                      \
-			"VXMICRO PROJECT EXECUTION %s\n",               \
+			"PROJECT EXECUTION %s\n",               \
 			result == TC_PASS ? "SUCCESSFUL" : "FAILED");   \
 	} while (0)
 

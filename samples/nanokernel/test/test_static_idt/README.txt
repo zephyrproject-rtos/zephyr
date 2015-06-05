@@ -43,4 +43,4 @@ Faulting instruction address = 0x00102c50
 Fatal fiber error! Aborting fiber.
 PASS - main.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

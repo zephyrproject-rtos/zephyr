@@ -42,4 +42,4 @@ Testing task_event_set_handler() ...
 ===================================================================
 PASS - RegressionTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

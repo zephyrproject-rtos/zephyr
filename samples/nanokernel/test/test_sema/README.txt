@@ -57,4 +57,4 @@ Task took multi-waiter reply semaphore 3 times, as expected.
 ===================================================================
 PASS - main.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

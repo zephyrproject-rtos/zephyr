@@ -46,4 +46,4 @@ Verifying exception handler installed
 excHandlerExecuted: 1
 PASS - main.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

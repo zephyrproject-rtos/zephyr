@@ -55,4 +55,4 @@ Re-allocation of IRQ34 prevented
 Attempt to free an IRQ object...
 IRQ object 2 freed
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

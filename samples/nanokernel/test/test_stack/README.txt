@@ -87,4 +87,4 @@ PASS - testIsrStackFromTask.
 ===================================================================
 PASS - main.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

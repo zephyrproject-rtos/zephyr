@@ -36,4 +36,4 @@ Done LOCKING!  Current priority = 10
 ===================================================================
 PASS - RegressionTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

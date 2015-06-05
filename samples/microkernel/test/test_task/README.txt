@@ -42,4 +42,4 @@ Testing task_suspend() and task_resume()
 ===================================================================
 PASS - RegressionTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

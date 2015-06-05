@@ -47,4 +47,4 @@ Fiber to stop a timer that has a waiting fiber
 Task to stop a timer that has a waiting fiber
 PASS - main.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

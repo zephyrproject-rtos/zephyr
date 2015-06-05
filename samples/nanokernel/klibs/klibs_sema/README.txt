@@ -46,4 +46,4 @@ Semaphore from the fiber woke the task
 Semaphore from the ISR woke the task.
 PASS - main.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

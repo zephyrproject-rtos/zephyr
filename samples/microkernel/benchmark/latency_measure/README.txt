@@ -84,4 +84,4 @@ Sample Output:
 |                                    E N D                                    |
 |-----------------------------------------------------------------------------|
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

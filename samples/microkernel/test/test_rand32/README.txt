@@ -27,4 +27,4 @@ Generated 10 values with expected randomness
 ===================================================================
 PASS - RegressionTaskEntry.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

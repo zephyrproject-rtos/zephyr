@@ -48,4 +48,4 @@ Obtained expected <criticalVar> value of 15123296
 ===================================================================
 PASS - RegressionTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

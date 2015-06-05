@@ -50,4 +50,4 @@ Load and store OK after 400 (high) + 83352 (low) tests
 Pi calculation OK after 450 (high) + 7 (low) tests (computed 3.141594)
 Load and store OK after 500 (high) + 92290 (low) tests
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

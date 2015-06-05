@@ -55,7 +55,7 @@ const char sz_partial[] = "PARTIAL";
 const char sz_fail[] = "FAILED";
 
 const char sz_module_title_fmt[] = "\nMODULE: %s";
-const char sz_module_result_fmt[] = "\n\nVXMICRO PROJECT EXECUTION %s\n";
+const char sz_module_result_fmt[] = "\n\nPROJECT EXECUTION %s\n";
 const char sz_module_end_fmt[] = "\nEND MODULE";
 
 const char sz_date_fmt[] = "\nBUILD_DATE: %s %s";

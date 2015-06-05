@@ -34,4 +34,4 @@ Starting XIP tests
 ===================================================================
 Test globals
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

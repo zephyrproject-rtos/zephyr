@@ -146,4 +146,4 @@ Sample Output:
 |-----------------------------------------------------------------------------|
 |         END OF TESTS                                                        |
 |-----------------------------------------------------------------------------|
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

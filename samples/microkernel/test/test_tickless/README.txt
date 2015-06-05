@@ -52,4 +52,4 @@ diff  time stamp: 0x0000000018a69898
 Cal   time stamp: 0x00000000163adc3a
 variance in time stamp diff: 10 percent
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL

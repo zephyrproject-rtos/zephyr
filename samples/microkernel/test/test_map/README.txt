@@ -77,4 +77,4 @@ RegressionTask: 1 block freed, used 0 block
 ===================================================================
 PASS - RegressionTask.
 ===================================================================
-VXMICRO PROJECT EXECUTION SUCCESSFUL
+PROJECT EXECUTION SUCCESSFUL
