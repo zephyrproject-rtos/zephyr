@@ -39,7 +39,7 @@ include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
 BSP ?= generic_pc
 
 PRJ_CONF = prj_${vARCH}.conf
-VPFILE = prj.vpf
+MDEF_FILE = prj.mdef
 
 # UART for Bluetooth
 QEMU_EXTRA_FLAGS ?= -serial unix:/tmp/bt-server-bredr

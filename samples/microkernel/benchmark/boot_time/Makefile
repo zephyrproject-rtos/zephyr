@@ -7,7 +7,7 @@ CONF_minuteia   = generic_pc/prj.conf
 CONF_atom_n28xx = generic_pc/prj_expert_test.conf
 CONF_quark = quark/prj.conf
 
-VPFILE = prj.vpf
+MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 CONF_FILE = ${CONF_${BSP}}
 

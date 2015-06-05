@@ -15,7 +15,7 @@ Defining Tasks
 **************
 
 Microkernel tasks are statically defined in the Tiny Mountain project
-file (which has a file extension of .vpf). The number of tasks in a
+file (which has a file extension of .mdef). The number of tasks in a
 project file is limited only by the available memory on the platform. A
 task definition in the project file must specify its name, priority,
 entry point, task group, and stack size. As shown below:

@@ -54,7 +54,7 @@ Scenarios tested include:
 #define DEPTH_OF_FIFO_QUEUE     2       /*
                                          * Depth of FIFO queue, this has to
 										 * be aligned with the number in
-                                         * prj.vpf file
+                                         * prj.mdef file
                                          */
 
 #define SPECIAL_DATA            999     /* Special number to put in queue */

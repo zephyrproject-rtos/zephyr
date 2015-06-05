@@ -162,7 +162,7 @@ void main(void)
 
 #ifdef CONFIG_MICROKERNEL
 	/* Start task */
-	task_start(ALTERNATETASK);       /* refer to prj.vpf file */
+	task_start(ALTERNATETASK);       /* refer to prj.mdef file */
 #else
 	/* Start fiber */
 	task_fiber_start(&fiberStack[0], STACKSIZE,

@@ -51,7 +51,7 @@ The following target pipe routine does not yet have a test case:
 
 #define  IRQ_PRIORITY   3
 
-#define  PIPE_SIZE  256    /* This must match the value in the VPF file */
+#define  PIPE_SIZE  256    /* This must match the value in the MDEF file */
 
 typedef struct {
 	int  size;                 /* number of bytes to send/receive */

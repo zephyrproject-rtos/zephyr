@@ -2,7 +2,7 @@
 TEST ?= min
 BSP ?= generic_pc
 
-VPFILE = micro_${TEST}.vpf
+MDEF_FILE = micro_${TEST}.mdef
 KERNEL_TYPE = micro
 CONF_FILE = prj_$(TEST)_$(ARCH).conf
 CFLAGS += -DTEST_${TEST}

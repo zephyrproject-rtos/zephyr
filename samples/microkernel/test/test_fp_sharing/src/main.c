@@ -191,7 +191,7 @@ void load_store_low(void)
 			 );
 #elif defined(CONFIG_MICROKERNEL)
 	/*
-	 * For microkernel builds, preemption tasks are specified in the .vpf file.
+	 * For microkernel builds, preemption tasks are specified in the .mdef file.
 	 *
 	 * Enable round robin scheduling to allow both the low priority pi
 	 * computation and load/store tasks to execute. The high priority pi

@@ -33,7 +33,7 @@
 #
 
 # Arguments:
-#   - name of VPF file
+#   - name of MDEF file
 #   - name of directory for output files (optional)
 
 # Generates:
@@ -158,8 +158,8 @@ def error_arg_count(line):
 #
 
 
-def vpf_parse():
-    """ Parse VPF file """
+def mdef_parse():
+    """ Parse MDEF file """
 
     global num_kargs
     global num_timers
@@ -1191,7 +1191,7 @@ def zephyr_h_generate():
 #
 
 
-vpf_parse()
+mdef_parse()
 get_output_dir()
 kernel_main_c_generate()
 kernel_main_h_generate()

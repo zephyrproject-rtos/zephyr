@@ -50,7 +50,7 @@ unpredictable side effects.
 
 #define NUMBLOCKS   2       /*
                              * Number of memory blocks.  This number
-                             * has to be aligned with the number in VPF file
+                             * has to be aligned with the number in MDEF file
                              * The minimum number of blocks needed to run the
                              * test is 2
                              */
@@ -164,7 +164,7 @@ int testMapGetAllBlocks(void **p)
 
 	TC_PRINT("Function %s\n", __func__);
 
-	/* Number of blocks in the map is defined in VPF file */
+	/* Number of blocks in the map is defined in MDEF file */
 	for (int i = 0; i < NUMBLOCKS; i++) {
 		/* Verify number of used blocks in the map */
 		retValue = task_mem_map_used_get(MAP_LgBlks);
@@ -235,7 +235,7 @@ int testMapFreeAllBlocks(void **p)
 
 	TC_PRINT("Function %s\n", __func__);
 
-	/* Number of blocks in the map is defined in VPF file */
+	/* Number of blocks in the map is defined in MDEF file */
 	for (int i = 0; i < NUMBLOCKS; i++) {
 		/* Verify number of used blocks in the map */
 		retValue = task_mem_map_used_get(MAP_LgBlks);

@@ -4,7 +4,7 @@ TASK_IRQS=y
 endif
 endif
 
-define filechk_prj.vpf
+define filechk_prj.mdef
 	(echo "% WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!"; \
 	echo; \
 	echo "% CONFIG NUM_COMMAND_PACKETS NUM_TIMER_PACKETS NUM_TASK_PRIORITIES"; \
@@ -28,17 +28,17 @@ define filechk_prj.vpf
 		i=$$(($$i+1));\
 		done; \
 	fi; \
-	cat $(PROJECT_BASE)/$(VPFILE); \
-	cat $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf;)
+	cat $(PROJECT_BASE)/$(MDEF_FILE); \
+	cat $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.mdef;)
 endef
 
-misc/generated/sysgen/prj.vpf:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf \
-				$(PROJECT_BASE)/$(VPFILE) \
+misc/generated/sysgen/prj.mdef:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.mdef \
+				$(PROJECT_BASE)/$(MDEF_FILE) \
 				include/config/auto.conf FORCE
-	$(call filechk,prj.vpf)
+	$(call filechk,prj.mdef)
 
-misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.vpf FORCE
-	$(Q)$(srctree)/scripts/sysgen.py $(CURDIR)/misc/generated/sysgen/prj.vpf $(CURDIR)/misc/generated/sysgen/
+misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.mdef FORCE
+	$(Q)$(srctree)/scripts/sysgen.py $(CURDIR)/misc/generated/sysgen/prj.mdef $(CURDIR)/misc/generated/sysgen/
 
 define filechk_configs.c
 	(echo "/* file is auto-generated, do not modify ! */"; \
@@ -108,4 +108,4 @@ cmd_cc_o_c = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) $(USERINCLUDE) -c -o $@ $
 include/generated/offsets.o: $(srctree)/arch/$(SRCARCH)/core/offsets/offsets.c FORCE
 	$(call if_changed_rule,cc_o_c)
 
-.PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.vpf
+.PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.mdef

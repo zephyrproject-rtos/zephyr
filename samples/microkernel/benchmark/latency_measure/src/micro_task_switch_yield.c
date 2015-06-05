@@ -54,7 +54,7 @@ static uint32_t helper_task_iterations = 0;
  *
  * yieldingTask - helper task for measuring task switch latency using yield
  *
- * This task is define in .vpf as SEMYIELDTSK
+ * This task is define in .mdef as SEMYIELDTSK
  *
  * RETURNS: N/A
  *

@@ -33,7 +33,7 @@ Function
 
 
 FIFO objects store data in a statically allocated buffer defined within
-the project’s VPF file. The depth of the FIFO object buffer is only
+the project’s MDEF file. The depth of the FIFO object buffer is only
 limited by the available memory on the platform. Individual FIFO data
 objects can be at most 40 bytes in size, and are stored in an ordered
 first-come, first-serve basis, not by priority.
@@ -57,16 +57,16 @@ addresses of the destination pointer.
 Initialization
 ==============
 FIFO objects are created by defining them in a project file, for example
-:file:`projName.vpf`. Specify the name of the FIFO object, the width in
+:file:`projName.mdef`. Specify the name of the FIFO object, the width in
 bytes of a single entry, the number of entries, and, if desired, the
 location defined in the architecture file to be used for the FIFO. Use
-the following syntax in the VPF file to define a FIFO:
+the following syntax in the MDEF file to define a FIFO:
 
 .. code-block:: console
 
    FIFO %name %depthNumEntries %widthBytes [ bufSegLocation ]
 
-An example of a FIFO entry for use in the VPF file:
+An example of a FIFO entry for use in the MDEF file:
 
 .. code-block:: console
 
@@ -153,17 +153,17 @@ Initialization
 
 
 A target pipe has to be defined in the project file, for example
-:file:`projName.vpf`. Specify the name of the pipe, the size of the
+:file:`projName.mdef`. Specify the name of the pipe, the size of the
 buffer in bytes, and the memory location for the pipe buffer as defined
 in the linker script. The buffer’s memory is allocated on the processor
-that manages the pipe. Use the following syntax in the VPF file to
+that manages the pipe. Use the following syntax in the MDEF file to
 define a pipe:
 
 .. code-block:: console
 
    PIPE %name %buffersize [%bufferSegment]
 
-An example of a pipe entry for use in the VPF file:
+An example of a pipe entry for use in the MDEF file:
 
 .. code-block:: console
 
@@ -232,15 +232,15 @@ Initialization
 ==============
 
 A mailbox has to be defined in the project file, for example
-:file:`projName.vpf`, which will specify the object type, and the name
-of the mailbox. Use the following syntax in the VPF file to define a
+:file:`projName.mdef`, which will specify the object type, and the name
+of the mailbox. Use the following syntax in the MDEF file to define a
 Mailbox:
 
 .. code-block:: console
 
    MAILBOX %name
 
-An example of a mailbox entry for use in the VPF file:
+An example of a mailbox entry for use in the MDEF file:
 
 .. code-block:: console
 
@@ -325,15 +325,15 @@ Initialization
 ==============
 
 A semaphore has to be defined in the project file, for example
-:file:`projName.vpf`, which will specify the object type, and the name
-of the semaphore. Use the following syntax in the VPF file to define a
+:file:`projName.mdef`, which will specify the object type, and the name
+of the semaphore. Use the following syntax in the MDEF file to define a
 semaphore::
 
 .. code-block:: console
 
    SEMA %name %node
 
-An example of a semaphore entry for use in the VPF file:
+An example of a semaphore entry for use in the MDEF file:
 
 .. code-block:: console
 
@@ -408,7 +408,7 @@ Initialization
 ==============
 
 
-An event has to be defined in the project file, :file:`projName.vpf`.
+An event has to be defined in the project file, :file:`projName.mdef`.
 Specify the name of the event, the name of the processor node that
 manages it, and its event-handler function. Use the following syntax:
 
@@ -421,8 +421,8 @@ manages it, and its event-handler function. Use the following syntax:
    In the project file, you can specify the name of the event and the
    event handler, but not the event's number.
 
-Define application events in the project’s VPF file. Define the driver’s
-events in either the project’s VPF file or a BSP-specific VPF file.
+Define application events in the project’s MDEF file. Define the driver’s
+events in either the project’s MDEF file or a BSP-specific MDEF file.
 
 Application Program Interfaces
 ==============================

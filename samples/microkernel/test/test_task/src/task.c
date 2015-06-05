@@ -48,8 +48,8 @@ This module tests the following task APIs:
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-#define  RT_PRIO         10     /* RegressionTask prio - must match prj.vpf */
-#define  HT_PRIO         20     /* HelperTask prio - must match prj.vpf */
+#define  RT_PRIO         10     /* RegressionTask prio - must match prj.mdef */
+#define  HT_PRIO         20     /* HelperTask prio - must match prj.mdef */
 
 #define  SLEEP_TIME SECONDS(1)
 

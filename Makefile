@@ -7,7 +7,7 @@ PATCHLEVEL 	   = 0
 SUBLEVEL	   = 0
 NAME 		   = Tiny Mountain
 
-export SOURCE_DIR PROJECT VPFILE KLIBC_DIR
+export SOURCE_DIR PROJECT MDEF_FILE KLIBC_DIR
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
@@ -1043,7 +1043,7 @@ CLEAN_DIRS  += $(MODVERDIR)
 
 CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
 		misc/generated/sysgen/zephyr.h \
-		misc/generated/sysgen/prj.vpf
+		misc/generated/sysgen/prj.mdef
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \

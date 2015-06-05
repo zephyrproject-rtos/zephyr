@@ -36,7 +36,7 @@ config BSP_DIR
 	default quark
 	help
 	This option holds the directory name used by sysgen to identify
-	the location of the config1p.vpf file and is used by the build system
+	the location of the config1p.mdef file and is used by the build system
 	to locate the correct linker file.
 
 config MAX_PCI_DEVS
