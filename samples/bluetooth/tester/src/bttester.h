@@ -64,10 +64,26 @@ struct cmd_start_advertising {
 	uint8_t adv_type;
 } __packed;
 
+/* Tester BD Address type */
+#define T_BDADDR_LE_PUBLIC	0x01
+#define T_BDADDR_LE_RANDOM	0x02
+
+#define OP_GAP_EV_CONNECTED		0x81
+struct ev_connected {
+	uint8_t addr_type;
+	uint8_t addr[6];
+} __packed;
+#define OP_GAP_EV_DISCONNECTED		0x82
+struct ev_disconnected {
+	uint8_t addr_type;
+	uint8_t addr[6];
+} __packed;
 /* no commands yet */
 
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status);
+void tester_rsp_full(uint8_t service, uint8_t opcode, uint8_t *data,
+		     size_t len);
 
 void tester_handle_gap(uint8_t opcode, uint8_t *data, uint16_t len);
 uint8_t tester_init_gap(void);

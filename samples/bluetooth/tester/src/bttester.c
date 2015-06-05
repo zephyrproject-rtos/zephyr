@@ -184,3 +184,8 @@ void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status)
 	s.code = status;
 	tester_send(service, OP_STATUS, (uint8_t *) &s, sizeof(s));
 }
+
+void tester_rsp_full(uint8_t service, uint8_t opcode, uint8_t *data, size_t len)
+{
+	tester_send(service, opcode, data, len);
+}

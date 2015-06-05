@@ -31,11 +31,66 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 
 #include "bttester.h"
+
+static void le_connected(struct bt_conn *conn)
+{
+	struct ev_connected ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	memcpy(&ev.addr, addr->val, sizeof(ev.addr));
+
+	/* Convert addr_type to the type defined by tester */
+	switch (addr->type) {
+	case BT_ADDR_LE_PUBLIC:
+		ev.addr_type = T_BDADDR_LE_PUBLIC;
+		break;
+	case BT_ADDR_LE_RANDOM:
+		ev.addr_type = T_BDADDR_LE_RANDOM;
+		break;
+	default:
+		tester_rsp(SERVICE_ID_GAP, OP_GAP_EV_CONNECTED, STATUS_FAILED);
+		return;
+	}
+
+	tester_rsp_full(SERVICE_ID_GAP, OP_GAP_EV_CONNECTED, (uint8_t *) &ev,
+			sizeof(ev));
+}
+
+static void le_disconnected(struct bt_conn *conn)
+{
+	struct ev_disconnected ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	memcpy(&ev.addr, addr->val, sizeof(ev.addr));
+
+	/* Convert addr_type to the type defined by tester */
+	switch (addr->type) {
+	case BT_ADDR_LE_PUBLIC:
+		ev.addr_type = T_BDADDR_LE_PUBLIC;
+		break;
+	case BT_ADDR_LE_RANDOM:
+		ev.addr_type = T_BDADDR_LE_RANDOM;
+		break;
+	default:
+		tester_rsp(SERVICE_ID_GAP, OP_GAP_EV_DISCONNECTED,
+			   STATUS_FAILED);
+		return;
+	}
+
+	tester_rsp_full(SERVICE_ID_GAP, OP_GAP_EV_DISCONNECTED, (uint8_t *) &ev,
+			sizeof(ev));
+}
+
+static struct bt_conn_cb conn_callbacks = {
+		.connected = le_connected,
+		.disconnected = le_disconnected,
+};
 
 static uint8_t start_advertising(uint8_t *data, uint16_t len)
 {
@@ -69,6 +124,8 @@ uint8_t tester_init_gap(void)
 	if (bt_init() < 0) {
 		return STATUS_FAILED;
 	}
+
+	bt_conn_cb_register(&conn_callbacks);
 
 	return STATUS_SUCCESS;
 }
