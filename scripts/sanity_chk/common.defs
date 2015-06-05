@@ -77,10 +77,13 @@ RUN_UNTIL="PROJECT EXECUTION"
 RUN_PASSED="PROJECT EXECUTION SUCCESSFUL"
 RUN_FAILED="PROJECT EXECUTION FAILED"
 
-# architecture BSP lists
-arm_BSP_LIST="fsl_frdm_k64f ti_lm3s6965"
-x86_BSP_LIST="pentium4 minuteia atom quark"
-_BSP_LIST="${arc_BSP_LIST} ${arm_BSP_LIST} ${x86_BSP_LIST}"
+# architecture platform lists
+arm_PLATFORM_LIST="fsl_frdm_k64f ti_lm3s6965"
+x86_PLATFORM_LIST="generic_pc_pentium4   \
+				   generic_pc_minuteia   \
+				   generic_pc_atom_n28xx \
+				   quark"
+_PLATFORM_LIST="${arc_PLATFORM_LIST} ${arm_PLATFORM_LIST} ${x86_PLATFORM_LIST}"
 
 # header used to identify script output during execution
 #
@@ -141,7 +144,8 @@ clean_all_projects() {
 
 # set up environment info used to build projects
 #
-# ON ENTRY: ${BSP_NAME} is BSP to use (empty => use per-project default)
+# ON ENTRY: ${BSP_NAME} is BSP to use (empty => use project default)
+#           ${PLATFORM_NAME} is platform to use (empty => get from ${BSP_NAME})
 #
 # ON EXIT: ${BUILD_INFO} specifies build options
 #
@@ -152,15 +156,39 @@ build_info_set() {
 		exit 1
 	fi
 
+	# ensure platform name isn't a script option that was entered by mistake
+	if [ x${PLATFORM_NAME:0:1} = "x-" ] ; then
+		${ECHO} "invalid platform '${PLATFORM_NAME}' specified"
+		exit 1
+	fi
+
 	# set up toolchain-specific build environment stuff
 	BUILD_INFO="EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
+
+	# If a BSP name was specified, translate it to a platform name
+	if [ x${BSP_NAME} = x"pentium4" ] ; then
+		PLATFORM_NAME=generic_pc_pentium4
+	elif [ x${BSP_NAME} = x"minuteia" ] ; then
+		PLATFORM_NAME=generic_pc_minuteia
+	elif [ x${BSP_NAME} = x"atom" ] ; then
+		PLATFORM_NAME=generic_pc_atom_n28xx
+	elif [ x${BSP_NAME} = x"quark" ] ; then
+		PLATFORM_NAME=quark
+	elif [ x${BSP_NAME} = x"ti_lm3s6965" ] ; then
+		PLATFORM_NAME=ti_lm3s6965
+	elif [ x${BSP_NAME} = x"fsl_frdm_k64f" ] ; then
+		PLATFORM_NAME=fsl_frdm_k64f
+	elif [ x${BSP_NAME} != x"" ] ; then
+		# Temporary until Jenkins no longer specifies "-B generic_pc"
+		PLATFORM_NAME=unrecognized
+	fi
 }
 
 # set up project info used to build projects
 #
 # ON ENTRY: ${PRJ_PATH} is path to master project directory
 #           ${PRJ_LIST} is a file containing the  project info
-#           ${BSP_NAME} is BSP to use (empty => use per-project default)
+#           ${PLATFORM_NAME} is platform to use (empty => use project default)
 #           ${ARCH_NAME} is architecture to use (empty => no arch restrictions)
 #
 # ON EXIT: ${PRJ_NAME} array specifies project directory name
@@ -169,7 +197,7 @@ build_info_set() {
 #          ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
 #          ${PLATFORM} array specifies the platform name
 #          ${PLATFORM_BUILD} array specifies the platform's kbuild defconfig
-#          ${BSP_FLAG} array specifies optional BSP flag ('!' or empty)
+#          ${PLATFORM_FLAG} array specifies optional flag ('!' or empty)
 #          ${NUM_PROJ} specifies number of projects described in arrays
 #
 proj_info_set() {
@@ -177,28 +205,28 @@ proj_info_set() {
 	${RM} -f ${TEMP_AWK_PROG} ${TEMP_PRJ_LIST}
 
 	# create list of projects to sanitize
-	# - specified BSP: choose only projects that support that BSP,
-	#   then filter out info about all other BSPs for those projects
-	# - no specified BSP: choose all projects, then filter out info
-	#   about all BSPs except the first one listed
+	# - specified platform: choose only projects that support that platform,
+	#   then filter out info about all other platforms for those projects
+	# - no specified platform: choose all projects, then filter out info
+	#   about all platforms except the first one listed
 	# note: ignores any comment lines in the project information file
 	#       (i.e. any lines containing a '#' character)
 	dollar='$'
-	if [  x${BSP_NAME} != x ] ; then
-	    awk_string="!/#/ && /${BSP_NAME}/ {match(${dollar}0,/.+[>]/); \
+	if [  x${PLATFORM_NAME} != x ] ; then
+	    awk_string="!/#/ && /${PLATFORM_NAME}/ {match(${dollar}0,/.+[>]/); \
 	    prjpart = substr(${dollar}0,RSTART,RLENGTH); \
-	    bsppart = substr(${dollar}0,RLENGTH+1);
-	    match(bsppart,/${BSP_NAME}!?/); \
-	    bsp = substr(bsppart,RSTART,RLENGTH); \
-	    if(length(bsp) > 0) \
-	        print prjpart \" \" bsp}"
+	    platformpart = substr(${dollar}0,RLENGTH+1);
+	    match(platformpart,/${PLATFORM_NAME}!?/); \
+	    platform = substr(platformpart,RSTART,RLENGTH); \
+	    if(length(platform) > 0) \
+	        print prjpart \" \" platform}"
 	else
 	    awk_string="!/#/ {match(${dollar}0,/.+[>]/); \
 	    prjpart = substr(${dollar}0,RSTART,RLENGTH); \
-	    bsppart = substr(${dollar}0,RLENGTH+1);
-	    match(bsppart,/[-a-zA-Z0-9_]+!?/); \
-	    bsp = substr(bsppart,RSTART,RLENGTH); \
-	    print prjpart \" \" bsp}"
+	    platformpart = substr(${dollar}0,RLENGTH+1);
+	    match(platformpart,/[-a-zA-Z0-9_]+!?/); \
+	    platform = substr(platformpart,RSTART,RLENGTH); \
+	    print prjpart \" \" platform}"
 	fi
 
 	${ECHO} "${awk_string}" > ${TEMP_AWK_PROG}
@@ -227,48 +255,33 @@ proj_info_set() {
 			exit 1
 		fi
 
-		bsp2use_tmp=`${AWK} '{match($0,/[>] [-a-zA-Z0-9_]+/); \
+		_platform=`${AWK} '{match($0,/[>] [-a-zA-Z0-9_]+/); \
 			print substr($0,RSTART+1,RLENGTH-1)}' <<< ${line}`
-		bsp2use="$(${ECHO} -e "${bsp2use_tmp}" | ${SED} -e 's/^[[:space:]]*//')"
+		platform="$(${ECHO} -e "${_platform}" | ${SED} -e 's/^[[:space:]]*//')"
 
-		${ECHO} ${_BSP_LIST} | ${GREP} -q -w ${bsp2use}
+		${ECHO} ${_PLATFORM_LIST} | ${GREP} -q -w ${platform}
 		if [ $? -ne 0 ]; then
-			${ECHO} "Unrecognized BSP or BSP variant"
+			${ECHO} "Unrecognized platform"
 			exit 1
 		fi
 
 		if [ x${ARCH_NAME} != x ] ; then
 			# An architecture has been specified.
-			bsp_list=${ARCH_NAME}_BSP_LIST
-			${ECHO} ${!bsp_list} | ${GREP} -q -w ${bsp2use}
+			platform_list=${ARCH_NAME}_PLATFORM_LIST
+			${ECHO} ${!platform_list} | ${GREP} -q -w ${platform}
 			if [ $? -ne 0 ] ; then
 				# The specified architecture does not support the
-				# BSP or BSP variant ${bsp2use}
+				# specified platform
 				let NUM_PROJ--
 				continue
 			fi
 		fi
 
-		if [ ${bsp2use} = "pentium4" ] ; then
-			BSP[${NUM_PROJ}]=generic_pc
-			PLATFORM[${NUM_PROJ}]=generic_pc_pentium4
-		elif [ ${bsp2use} = "minuteia" ] ; then
-			BSP[${NUM_PROJ}]=generic_pc
-			PLATFORM[${NUM_PROJ}]=generic_pc_minuteia
-		elif [ ${bsp2use} = "atom" ] ; then
-			BSP[${NUM_PROJ}]=generic_pc
-			PLATFORM[${NUM_PROJ}]=generic_pc_atom_n28xx
-		elif [ ${bsp2use} = "quark" ] ; then
-			BSP[${NUM_PROJ}]=quark
-			PLATFORM[${NUM_PROJ}]=quark
-		else
-			BSP[${NUM_PROJ}]=${bsp2use}
-			PLATFORM[${NUM_PROJ}]=${bsp2use}
-		fi
+		PLATFORM[${NUM_PROJ}]=${platform}
 
 		PLATFORM_BUILD[${NUM_PROJ}]="KBUILD_DEFCONFIG=${PRJ_TYPE[${NUM_PROJ}]}_${PLATFORM[${NUM_PROJ}]}_defconfig"
 
-		BSP_FLAG[${NUM_PROJ}]=`${AWK} '/!/ {print "!"}' <<< ${line}`
+		PLATFORM_FLAG[${NUM_PROJ}]=`${AWK} '/!/ {print "!"}' <<< ${line}`
 	done < ${TEMP_PRJ_LIST}
 
 	# clean up temporary files
@@ -329,7 +342,7 @@ build_project() {
 	${MAKE} distclean
 	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
 
-	if [[ $arm_BSP_LIST == *"${BSP[$1]}"* ]]; then
+	if [[ $arm_PLATFORM_LIST == *"${PLATFORM[$1]}"* ]]; then
 		arch=arm
 	else
 		arch=x86
@@ -381,7 +394,7 @@ qemu_project() {
 	# create the file by the time the grep loop starts
 	${RM} -f ${SANITY_CHK_LOG}
 	:> ${SANITY_CHK_LOG}
-	if [[ $arm_BSP_LIST == *"${BSP[$1]}"* ]]; then
+	if [[ $arm_PLATFORM_LIST == *"${PLATFORM[$1]}"* ]]; then
 		arch=arm
 	else
 		arch=x86

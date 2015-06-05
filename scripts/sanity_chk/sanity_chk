@@ -52,7 +52,7 @@ SCRIPT_PATH=${ZEPHYR_BASE}/scripts/sanity_chk
 help() {
 cat << EOF
 
-Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>]
+Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-P <platform>]
        -h display this help message
        -H display more detailed documentation
        -c just clean projects and delete execution logs
@@ -60,7 +60,7 @@ Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>]
        -b just build projects
        -l keep successful project execution logs
        -A build projects for the specified architecture
-       -B build projects for the specified BSP or BSP variant
+       -P build projects for the specified platform
 
 EOF
 }
@@ -76,7 +76,7 @@ The full sanity check consists of the following phases:
 
     - Run "footprint_chk" to characterize kernel footprint.
     - Run "regression_chk" to regression test kernel operation.
-    - Run "out-of-tree_chk" to verify if projects and BSPs can reside outside the normal tree.
+    - Run "out-of-tree_chk" to verify if projects and platforms can reside outside the normal tree
 
 The full sanity check is run by default. If desired, some steps can be omitted
 by using the available command options.
@@ -101,7 +101,7 @@ main() {
 	args_passed_on=""
 
 	# process command options
-	while getopts ":hHcqblA:B:" arg $*
+	while getopts ":hHcqblA:B:P:" arg $*
 	do
 		case $arg in
 		h)
@@ -128,7 +128,12 @@ main() {
 			args_passed_on="${args_passed_on} -A $OPTARG"
 			;;
 		B)
+			# Unlisted option.  Exists only until migration to
+			# -P <platform> is complete
 			args_passed_on="${args_passed_on} -B $OPTARG"
+			;;
+		P)
+			args_passed_on="${args_passed_on} -P $OPTARG"
 			;;
 		\?)
 			${ECHO} "invalid option -$OPTARG"

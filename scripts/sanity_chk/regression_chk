@@ -56,7 +56,7 @@ PRJ_LIST=${ZEPHYR_BASE}/scripts/sanity_chk/regression_chk.data
 help() {
 cat << EOF
 
-Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>]
+Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-P <platform>]
        -h display this help message
        -H display more detailed documentation
        -c just clean projects and delete execution logs
@@ -64,7 +64,7 @@ Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>]
        -b just build projects
        -l keep successful project execution logs
        -A build projects for the specified architecture
-       -B build projects for the specified BSP or BSP variant
+       -P build projects for the specified platform
 
 EOF
 }
@@ -76,8 +76,8 @@ cat << EOF
 
 Script to regression test kernel operation.
 
-The sanity check builds all sample projects supported by the specified BSP
-variant; if no BSP has been specified, a default BSP for each project is used.
+The sanity check builds all sample projects supported by the specified platform;
+if no platform has been specified, a default platform for each project is used.
 The script also runs each sample project using QEMU, where possible; if desired
 the script can be instructed to skip the QEMU execution step.
 
@@ -111,11 +111,12 @@ main() {
 	quick_sanity=0
 	build_only=0
 	BSP_NAME=""
+	PLATFORM_NAME=""
 	ARCH_NAME=""
 	KEEP_LOGS=0
 
 	# process command options
-	while getopts ":hHcqbklA:B:" arg $*
+	while getopts ":hHcqbklA:B:P:" arg $*
 	do
 		case $arg in
 		h)
@@ -142,7 +143,14 @@ main() {
 			ARCH_NAME=$OPTARG
 			;;
 		B)
+			# Unlisted option.  Exists only until migration to
+			# -P <platform> is complete
 			BSP_NAME=$OPTARG
+			BSP_SPECIFIED=1
+			;;
+		P)
+			PLATFORM_NAME=$OPTARG
+			PLATFORM_SPECIFIED=1
 			;;
 		\?)
 			${ECHO} "invalid option -$OPTARG"
@@ -162,6 +170,12 @@ main() {
 	if [ x$1 != x ] ; then
 		${ECHO} "unexpected argument $1"
 		exit 1
+	fi
+
+	# Do not permit the use of both -P and deprecated -B options
+	if [ x${BSP_SPECIFIED} != x ] && [ x${PLATFORM_SPECIFIED} != x ] ; then
+		${ECHO} "Do not use both the -P and the deprecated -B options"
+		exit 1;
 	fi
 
 	# handle case where we're just cleaning up
@@ -204,7 +218,7 @@ main() {
 		let build_proj++
 
 		# skip non-executable projects (or when doing "build only")
-		if [ ${build_only} = 1 -o x${BSP_FLAG[${cur_proj}]} = x ] ; then
+		if [ ${build_only} = 1 -o x${PLATFORM_FLAG[${cur_proj}]} = x ] ; then
 			continue
 		fi
 
