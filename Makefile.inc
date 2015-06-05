@@ -84,18 +84,24 @@ qemu: $(CONFIG_DEPS) $(O)/include/config/.dir
 	$(Q)$(MAKE) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS) qemu
 
-$(O)/.initconfig: $(O)/include/config/.dir $(O)/include/generated/.dir
-	$(Q)set -e;
-	$(Q)test -s $(O)/.config || $(MAKE) $(S) -C $(TIMO_BASE) O=$(O) \
-	PROJECT=$(PROJECT_BASE) defconfig
-ifneq (($strip $(CONF_FILE)),)
-	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
-	-q -m -O $(O) $(O)/.config $(CONF_FILE)
-endif
+
+$(O)/.config: $(O)/include/config/.dir $(O)/include/generated/.dir
+	$(Q)cp $(TIMO_BASE)/arch/$(ARCH)/configs/$(KBUILD_DEFCONFIG) $(O)/.config
+
+$(O)/.initconfig: mergeconfig
 	$(Q)yes "" | $(MAKE) $(S) -C $(TIMO_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) oldconfig
-	$(Q)touch $@
+	touch $@
 
+ifneq (($strip $(CONF_FILE)),)
+mergeconfig: $(O)/.config $(CONF_FILE)
+	$(Q)$(CONFIG_SHELL) $(TIMO_BASE)/scripts/kconfig/merge_config.sh \
+	-q -m -O $(O) $(O)/.config $(CONF_FILE)
+else
+mergeconfig: defconfig $(CONF_FILE);
+endif
+
+$(CONF_FILE):;
 
 %/.dir:
 	$(Q)set -e;
