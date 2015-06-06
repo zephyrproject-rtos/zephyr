@@ -40,7 +40,7 @@
 
 #include <stdint.h>
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 
 static void genInt0(void)
 {

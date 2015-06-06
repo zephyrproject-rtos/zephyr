@@ -51,7 +51,7 @@ exercises the task_irq_free() API.
 #define DEV4_ID	3
 #define DEV5_ID	4
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
   #define DEV1_IRQ  8
   #define DEV2_IRQ 14
   #define DEV3_IRQ 32

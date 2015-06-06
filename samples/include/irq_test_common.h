@@ -39,7 +39,7 @@ Interrupt stuff, abstracted across CPU architectures.
 #ifndef _IRQ_TEST_COMMON__H_
 #define _IRQ_TEST_COMMON__H_
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
   #define IRQ_PRIORITY 3
 #elif defined(VXMICRO_ARCH_arm)
   #if defined(CONFIG_CPU_CORTEXM)
@@ -57,7 +57,7 @@ Interrupt stuff, abstracted across CPU architectures.
   #error NUM_SW_IRQS only supports 1 or 2 IRQs
 #endif
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
   static NANO_CPU_INT_STUB_DECL(nanoIntStub1);
 #if NUM_SW_IRQS >= 2
   static NANO_CPU_INT_STUB_DECL(nanoIntStub2);
@@ -67,7 +67,7 @@ Interrupt stuff, abstracted across CPU architectures.
 typedef void (*vvfn)(void);	/* void-void function pointer */
 typedef void (*vvpfn)(void *);	/* void-void_pointer function pointer */
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 /*
  * Opcode for generating a software interrupt.  The ISR associated with each
  * of these software interrupts will call either nano_isr_lifo_put() or
@@ -120,7 +120,7 @@ struct isrInitInfo {
 
 static int initIRQ(struct isrInitInfo *i)
 {
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 	int  vector;     /* vector to which interrupt is connected */
 
 	if (i->isr[0]) {
@@ -153,7 +153,7 @@ static int initIRQ(struct isrInitInfo *i)
 		irq_enable(1);
 	}
 #endif /* CONFIG_CPU_CORTEXM */
-#endif /* VXMICRO_ARCH_x86 */
+#endif /* CONFIG_X86_32 */
 
 	return 0;
 }

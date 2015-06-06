@@ -85,7 +85,7 @@ Macros to abstract compiler capabilities (common to all toolchains).
 
 #ifdef _ASMLANGUAGE
 
-  #ifdef VXMICRO_ARCH_x86
+  #ifdef CONFIG_X86_32
 
     #ifdef PERF_OPT
       #define PERFOPT_ALIGN .balign 16

@@ -294,7 +294,7 @@ A##a:
 		",%B0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
 
-#elif defined(VXMICRO_ARCH_x86) || defined(VXMICRO_ARCH_arc)
+#elif defined(CONFIG_X86_32) || defined(VXMICRO_ARCH_arc)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \

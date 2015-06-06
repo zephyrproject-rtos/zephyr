@@ -55,7 +55,7 @@ extern int32_t _sys_idle_threshold_ticks;
  * timestamp routines.
  */
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 typedef uint64_t _timer_res_t;
 #define _TIMER_ZERO  0ULL
 
@@ -133,7 +133,7 @@ void ticklessTestTask(void)
 	}
 	cal_tsc /= CAL_REPS;
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 	printk("Calibrated time stamp period = 0x%x%x\n",
 		   (uint32_t)(cal_tsc >> 32), (uint32_t)(cal_tsc & 0xFFFFFFFFLL));
 #elif defined(CONFIG_ARM)
@@ -170,7 +170,7 @@ void ticklessTestTask(void)
 	printk("end   ticks     : %d\n", end_ticks);
 	printk("diff  ticks     : %d\n", diff_ticks);
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 	printk("diff  time stamp: 0x%x%x\n",
 		   (uint32_t)(diff_tsc >> 32), (uint32_t)(diff_tsc & 0xFFFFFFFFULL));
 	printk("Cal   time stamp: 0x%x%x\n",

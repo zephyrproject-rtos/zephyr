@@ -186,7 +186,7 @@ static void nano_init(tCCS *dummyOutContext)
 
 extern void *__stack_chk_guard;
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 #define _MOVE_INSTR "movl "
 #elif defined(VXMICRO_ARCH_arm)
 #define _MOVE_INSTR "str "

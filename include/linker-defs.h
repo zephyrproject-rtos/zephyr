@@ -45,7 +45,7 @@ This file may be included by:
 #include <sections.h>
 
 /* include platform dependent linker-defs */
-#ifdef VXMICRO_ARCH_x86
+#ifdef CONFIG_X86_32
 #include <arch/x86/linker-defs-arch.h>
 #elif defined(VXMICRO_ARCH_arm)
 /* Nothing yet to include */
@@ -56,7 +56,7 @@ This file may be included by:
 #endif
 
 #ifdef _LINKER
-#ifdef VXMICRO_ARCH_x86 /* LINKER FILES: defines used by linker script */
+#ifdef CONFIG_X86_32 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
 #if defined(CONFIG_XIP)
 #define ROMABLE_REGION ROM

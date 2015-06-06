@@ -33,7 +33,7 @@
 #ifndef __ARCHCPU_H__
 #define __ARCHCPU_H__
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 #include <arch/x86/arch.h>
 #elif defined(VXMICRO_ARCH_arm)
 #include <arch/arm/arch.h>

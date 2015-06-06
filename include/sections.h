@@ -50,7 +50,7 @@
 
 /* Various text section names */
 #define TEXT text
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 #define TEXT_START text_start /* beginning of TEXT section */
 #else
 #define TEXT_START text /* beginning of TEXT section */

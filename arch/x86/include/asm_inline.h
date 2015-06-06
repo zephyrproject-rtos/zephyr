@@ -33,7 +33,7 @@
 #ifndef _ASM_INLINE_H
 #define _ASM_INLINE_H
 
-#if !defined(VXMICRO_ARCH_x86)
+#if !defined(CONFIG_X86_32)
 #error The arch/x86/include/asm_inline.h is only for x86 architecture
 #endif
 

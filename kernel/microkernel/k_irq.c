@@ -87,7 +87,7 @@ static struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
 
 /* architecture-specific */
 
-#if defined(VXMICRO_ARCH_x86)
+#if defined(CONFIG_X86_32)
 
 /* task IRQ interrupt stub array */
 NANO_CPU_INT_STUB_DECL(irq_obj_mem_stub[MAX_TASK_IRQS]);
