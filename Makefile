@@ -1073,17 +1073,6 @@ distclean: mrproper
 		-type f -print | xargs rm -f
 
 
-# Packaging of the kernel to various formats
-# ---------------------------------------------------------------------------
-# rpm target kept for backward compatibility
-package-dir	:= scripts/package
-
-%src-pkg: FORCE
-	$(Q)$(MAKE) $(build)=$(package-dir) $@
-%pkg: $(version_h) FORCE
-	$(Q)$(MAKE) $(build)=$(package-dir) $@
-rpm: $(version_h) FORCE
-	$(Q)$(MAKE) $(build)=$(package-dir) $@
 
 
 # Brief documentation of the typical targets used
