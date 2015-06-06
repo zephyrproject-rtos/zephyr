@@ -140,7 +140,7 @@ but can be summarized with the following steps:
 
     .. code-block:: bash
 
-       $ source timo-env.bash
+       $ source zephyr-env.bash
 
 Building a Tiny Mountain Example
 ================================
@@ -154,7 +154,7 @@ To build a Tiny Mountain example follow these steps:
 
     .. code-block:: bash
 
-       $ source timo-env.bash
+       $ source zephyr-env.bash
 
 #. Build Tiny Mountain with the example project, type:
 
