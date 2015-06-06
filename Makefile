@@ -759,45 +759,6 @@ export	INSTALL_PATH ?= /boot
 #
 export INSTALL_DTBS_PATH ?= $(INSTALL_PATH)/dtbs/$(KERNELRELEASE)
 
-#
-# INSTALL_MOD_PATH specifies a prefix to MODLIB for module directory
-# relocations required by build roots.  This is not defined in the
-# makefile but the argument can be passed to make if needed.
-#
-
-MODLIB	= $(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)
-export MODLIB
-
-#
-# INSTALL_MOD_STRIP, if defined, will cause modules to be
-# stripped after they are installed.  If INSTALL_MOD_STRIP is '1', then
-# the default option --strip-debug will be used.  Otherwise,
-# INSTALL_MOD_STRIP value will be used as the options to the strip command.
-
-ifdef INSTALL_MOD_STRIP
-ifeq ($(INSTALL_MOD_STRIP),1)
-mod_strip_cmd = $(STRIP) --strip-debug
-else
-mod_strip_cmd = $(STRIP) $(INSTALL_MOD_STRIP)
-endif # INSTALL_MOD_STRIP=1
-else
-mod_strip_cmd = true
-endif # INSTALL_MOD_STRIP
-export mod_strip_cmd
-
-
-
-ifdef CONFIG_MODULE_SIG_ALL
-MODSECKEY = ./signing_key.priv
-MODPUBKEY = ./signing_key.x509
-export MODPUBKEY
-mod_sign_cmd = perl $(srctree)/scripts/sign-file $(CONFIG_MODULE_SIG_HASH) $(MODSECKEY) $(MODPUBKEY)
-else
-mod_sign_cmd = true
-endif
-export mod_sign_cmd
-
-
 core-y		+=
 
 tinymountain-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
@@ -1012,7 +973,6 @@ kselftest:
 ###
 # Cleaning is done on three levels.
 # make clean     Delete most generated files
-#                Leave enough to build external modules
 # make mrproper  Delete the current configuration, and all generated files
 # make distclean Remove editor backup files, patch leftover files and the like
 
@@ -1032,7 +992,7 @@ MRPROPER_FILES += .config .config.old .version $(version_h) \
 		  extra_certificates signing_key.x509.keyid		\
 		  signing_key.x509.signer
 
-# clean - Delete most, but leave enough to build external modules
+# clean - Delete most
 #
 clean: rm-dirs  := $(CLEAN_DIRS)
 clean: rm-files := $(CLEAN_FILES)
@@ -1072,9 +1032,6 @@ distclean: mrproper
 		-o -name '.*.rej' -o -name '*%'  -o -name 'core' \) \
 		-type f -print | xargs rm -f
 
-
-
-
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
 
@@ -1086,7 +1043,6 @@ board-dirs := $(sort $(notdir $(board-dirs:/=)))
 help:
 	@echo  'Cleaning targets:'
 	@echo  '  clean		  - Remove most generated files but keep the config and'
-	@echo  '                    enough build support to build external modules'
 	@echo  '  mrproper	  - Remove all generated files + config + various backup files'
 	@echo  '  distclean	  - mrproper + remove editor backup and patch files'
 	@echo  ''
@@ -1240,7 +1196,6 @@ qemu: tinymountain
 # Single targets are compatible with:
 # - build with mixed source and output
 # - build with separate output dir 'make O=...'
-# - external modules
 #
 #  target-dir => where to store outputfile
 #  build-dir  => directory in kernel source tree to use
@@ -1266,14 +1221,12 @@ qemu: tinymountain
 # Modules
 /: prepare scripts FORCE
 	$(cmd_crmodverdir)
-	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
-	$(build)=$(build-dir)
+	$(Q)$(MAKE) $(build)=$(build-dir)
 # Make sure the latest headers are built for Documentation
 Documentation/: headers_install
 %/: prepare scripts FORCE
 	$(cmd_crmodverdir)
-	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
-	$(build)=$(build-dir)
+	$(Q)$(MAKE) $(build)=$(build-dir)
 
 # FIXME Should go into a make.lib or something
 # ===========================================================================
