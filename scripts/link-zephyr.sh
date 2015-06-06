@@ -1,13 +1,13 @@
 #!/bin/sh
 #
-# link tinymountain
+# link the kernel
 #
-# zephyr is linked from the objects selected by $(KBUILD_ZEPHYR_INIT) and
+# The kernel is linked from the objects selected by $(KBUILD_ZEPHYR_INIT) and
 # $(KBUILD_ZEPHYR_MAIN). Most are built-in.o files from top-level directories
 # in the kernel tree, others are specified in arch/$(ARCH)/Makefile.
 # Ordering when linking is important, and $(KBUILD_ZEPHYR_INIT) must be first.
 #
-# tinymountain
+# microkernel/nanokernel
 #   ^
 #   |
 #   +-< $(KBUILD_ZEPHYR_INIT)
@@ -18,12 +18,6 @@
 #   |
 #   +-< ${kallsymso} (see description in KALLSYMS section)
 #
-# tinymountain version (uname -v) cannot be updated during normal
-# descending-into-subdirs phase since we do not yet know if we need to
-# update tinymountain.
-# Therefore this step is delayed until just before final link of tinymountain.
-#
-# System.map is generated to document addresses of all kernel symbols
 
 # Error out on error
 set -e
@@ -44,7 +38,7 @@ linker_params()
 {
 	LIBS=""
 	for tcl in ${ALL_LIBS}; do  LIBS="${LIBS} -l${tcl}"; done
-	echo "${LDFLAGS_tinymountain}" > ${1}
+	echo "${LDFLAGS_zephyr}" > ${1}
 	echo "-Map ./${2}" >> ${1}
 	echo "-L ${objtree}/include/generated" >> ${1}
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
@@ -89,12 +83,12 @@ gen_idt()
 	rm -f isrList.bin
 }
 
-# Link of tinymountain
+# Linking the kernel
 # ${1} - linker params file (${KERNEL_NAME}.lnk)
 # ${2} - linker command file (final-linker.cmd)
 # ${3} - input file (staticIdt.o)
 # ${4} - output file
-tinymountain_link()
+zephyr_link()
 {
 	${LD} -T ${2} @${1} ${3} -o ${4}
 	${OBJCOPY} --set-section-flags intList=noload ${4} elf.tmp
@@ -102,7 +96,7 @@ tinymountain_link()
 	rm elf.tmp
 }
 
-tinymountain_bin_strip()
+zephyr_bin_strip()
 {
 	${OBJDUMP} -S ${1} >${2}
 	${OBJCOPY} -S -O binary -R .note -R .comment -R COMMON -R .eh_frame ${1} ${3}
@@ -214,11 +208,11 @@ else
 fi;
 
 kallsymso=""
-kallsyms_tinymountain=""
+kallsyms_zephyr=""
 if [ -n "${CONFIG_KALLSYMS}" ]; then
 
 	# kallsyms support
-	# Generate section listing all symbols and add it into tinymountain
+	# Generate section listing all symbols and add it into the kernel
 	# It's a three step process:
 	# 1)  Link .tmp_${KERNEL_NAME} so it has all symbols and sections,
 	#     but __kallsyms is empty.
@@ -231,28 +225,28 @@ if [ -n "${CONFIG_KALLSYMS}" ]; then
 	# 2a) We may use an extra pass as this has been necessary to
 	#     woraround some alignment related bugs.
 	#     KALLSYMS_EXTRA_PASS=1 is used to trigger this.
-	# 3)  The correct ${kallsymso} is linked into the final tinymountain.
+	# 3)  The correct ${kallsymso} is linked into the final kernel.
 	#
-	# a)  Verify that the System.map from tinymountain matches the map from
+	# a)  Verify that the System.map matches the map from
 	#     ${kallsymso}.
 
 	kallsymso=.tmp_kallsyms2.o
-	kallsyms_tinymountain=.tmp_${KERNEL_NAME}2
+	kallsyms_zephyr=.tmp_${KERNEL_NAME}2
 
 	# step 1
-	tinymountain_link "" .tmp_${KERNEL_NAME}1
+	zephyr_link "" .tmp_${KERNEL_NAME}1
 	kallsyms .tmp_${KERNEL_NAME}1 .tmp_kallsyms1.o
 
 	# step 2
-	tinymountain_link .tmp_kallsyms1.o .tmp_${KERNEL_NAME}2
+	zephyr_link .tmp_kallsyms1.o .tmp_${KERNEL_NAME}2
 	kallsyms .tmp_${KERNEL_NAME}2 .tmp_kallsyms2.o
 
 	# step 2a
 	if [ -n "${KALLSYMS_EXTRA_PASS}" ]; then
 		kallsymso=.tmp_kallsyms3.o
-		kallsyms_tinymountain=.tmp_${KERNEL_NAME}3
+		kallsyms_zephyr=.tmp_${KERNEL_NAME}3
 
-		tinymountain_link .tmp_kallsyms2.o .tmp_${KERNEL_NAME}3
+		zephyr_link .tmp_kallsyms2.o .tmp_${KERNEL_NAME}3
 
 		kallsyms .tmp_${KERNEL_NAME}3 .tmp_kallsyms3.o
 	fi
@@ -262,11 +256,11 @@ if [ "${SRCARCH}" = "x86" ]; then
 	info SIDT ${KERNEL_NAME}.elf
 	gen_idt ${KERNEL_NAME}.elf staticIdt.o
 	linker_command final-linker.cmd -DFINAL_LINK
-	tinymountain_link ${KERNEL_NAME}.lnk final-linker.cmd staticIdt.o ${KERNEL_NAME}.elf
+	zephyr_link ${KERNEL_NAME}.lnk final-linker.cmd staticIdt.o ${KERNEL_NAME}.elf
 fi
 
 info BIN ${KERNEL_NAME}.bin
-tinymountain_bin_strip ${KERNEL_NAME}.elf ${KERNEL_NAME}.lst ${KERNEL_NAME}.bin ${KERNEL_NAME}.strip
+zephyr_bin_strip ${KERNEL_NAME}.elf ${KERNEL_NAME}.lst ${KERNEL_NAME}.bin ${KERNEL_NAME}.strip
 
 if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
 	info SORTEX ${KERNEL_NAME}
@@ -278,7 +272,7 @@ mksysmap ${KERNEL_NAME}.elf System.map
 
 # step a (see comment above)
 if [ -n "${CONFIG_KALLSYMS}" ]; then
-	mksysmap ${kallsyms_tinymountain} .tmp_System.map
+	mksysmap ${kallsyms_zephyr} .tmp_System.map
 
 	if ! cmp -s System.map .tmp_System.map; then
 		echo >&2 Inconsistent kallsyms data

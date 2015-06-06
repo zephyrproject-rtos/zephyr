@@ -35,9 +35,9 @@ unexport GREP_OPTIONS
 # their own directory. If in some directory we have a dependency on
 # a file in another dir (which doesn't happen often, but it's often
 # unavoidable when linking the built-in.o targets which finally
-# turn into tinymountain), we will call a sub make in that other dir, and
-# after that we are sure that everything which is in that other dir
-# is now up to date.
+# turn into the kernel binary), we will call a sub make in that other
+# dir, and after that we are sure that everything which is in that
+# other dir is now up to date.
 #
 # The only cases where we need to modify files which have global
 # effects are thus separated out and done before the recursive
@@ -520,7 +520,7 @@ config: scripts_basic outputmakefile FORCE
 
 else
 # ===========================================================================
-# Build targets only - this includes tinymountain, arch specific targets, clean
+# Build targets only - this includes zephyr, arch specific targets, clean
 # targets and others. In general all targets except *config targets.
 
 # Additional helpers built in scripts/
@@ -563,7 +563,7 @@ include/config/auto.conf: ;
 endif # $(dot-config)
 
 ifdef CONFIG_MINIMAL_LIBC
-# Objects we will link into tinymountain / subdirs we need to visit
+# Objects we will link into the kernel / subdirs we need to visit
 KLIBC_DIR := lib/libc/minimal
 libs-y := $(KLIBC_DIR)/
 ZEPHYRINCLUDE += -I$(srctree)/lib/libc/minimal/include
@@ -587,8 +587,8 @@ QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
 # The all: target is the default when no target is given on the
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
-# Defaults to tinymountain, but the arch makefile usually adds further targets
-all: tinymountain
+# Defaults to zephyr, but the arch makefile usually adds further targets
+all: zephyr
 
 ifdef CONFIG_READABLE_ASM
 # Disable optimizations that make assembler listings hard to read.
@@ -720,14 +720,14 @@ KBUILD_CFLAGS += $(KCFLAGS)
 
 # Use --build-id when available.
 
-LDFLAGS_tinymountain += $(call ld-option,-nostartfiles)
-LDFLAGS_tinymountain += $(call ld-option,-nodefaultlibs)
-LDFLAGS_tinymountain += $(call ld-option,-nostdlib)
-LDFLAGS_tinymountain += $(call ld-option,-static)
-LDFLAGS_tinymountain += $(call ld-option,-X)
-LDFLAGS_tinymountain += $(call ld-option,-N)
-LDFLAGS_tinymountain += $(call ld-option,--gc-sections)
-LDFLAGS_tinymountain += $(call ld-option,--build-id=none)
+LDFLAGS_zephyr += $(call ld-option,-nostartfiles)
+LDFLAGS_zephyr += $(call ld-option,-nodefaultlibs)
+LDFLAGS_zephyr += $(call ld-option,-nostdlib)
+LDFLAGS_zephyr += $(call ld-option,-static)
+LDFLAGS_zephyr += $(call ld-option,-X)
+LDFLAGS_zephyr += $(call ld-option,-N)
+LDFLAGS_zephyr += $(call ld-option,--gc-sections)
+LDFLAGS_zephyr += $(call ld-option,--build-id=none)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 
@@ -744,7 +744,7 @@ export LD_TOOLCHAIN KERNEL_NAME
 # set in the environment
 # Also any assignments in arch/$(ARCH)/Makefile take precedence over
 # this default value
-export KBUILD_IMAGE ?= tinymountain
+export KBUILD_IMAGE ?= zephyr
 
 #
 # INSTALL_PATH specifies where to place the updated kernel and system map
@@ -760,11 +760,11 @@ export INSTALL_DTBS_PATH ?= $(INSTALL_PATH)/dtbs/$(KERNELRELEASE)
 
 core-y		+=
 
-tinymountain-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
+zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
 		     $(bsp-y) $(bsp-m) $(libs-y) $(libs-m)))
 
-tinymountain-alldirs	:= $(sort $(tinymountain-dirs) $(patsubst %/,%,$(filter %/, \
+zephyr-alldirs	:= $(sort $(zephyr-dirs) $(patsubst %/,%,$(filter %/, \
 		     $(init-) $(core-) $(drivers-) $(bsp-) $(libs-))))
 
 init-y		:= $(patsubst %/, %/built-in.o, $(init-y))
@@ -775,29 +775,29 @@ libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
-# Externally visible symbols (used by link-tinymountain.sh)
+# Externally visible symbols (used by link-zephyr.sh)
 DQUOTE = "
 #This comment line is to fix the highlighting of some editors due the quote effect."
 export KBUILD_ZEPHYR_INIT := $(head-y) $(init-y)
 export KBUILD_ZEPHYR_MAIN := $(core-y) $(libs-y) $(drivers-y) $(bsp-y)
 export KBUILD_LDS          := $(srctree)/arch/$(SRCARCH)/$(subst $(DQUOTE),,$(CONFIG_BSP_DIR))/linker.cmd
-export LDFLAGS_tinymountain
+export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
-export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(tinymountain-alldirs)) arch Documentation include samples scripts tools virt)
+export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(zephyr-alldirs)) arch Documentation include samples scripts tools virt)
 
-tinymountain-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_INIT) $(KBUILD_ZEPHYR_MAIN)
+zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_INIT) $(KBUILD_ZEPHYR_MAIN)
 
 ALL_LIBS += $(TOOLCHAIN_LIBS)
 export ALL_LIBS
 
-# Final link of tinymountain
-      cmd_link-tinymountain = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_tinymountain) $(LIB_INCLUDE_DIR) $(ALL_LIBS)
-quiet_cmd_link-tinymountain = LINK    $@
+# Final link of zephyr
+      cmd_link-zephyr = $(CONFIG_SHELL) $< $(LD) $(LDFLAGS) $(LDFLAGS_zephyr) $(LIB_INCLUDE_DIR) $(ALL_LIBS)
+quiet_cmd_link-zephyr = LINK    $@
 
 # Include targets which we want to
 # execute if the rest of the kernel build went well.
-tinymountain: scripts/link-tinymountain.sh $(tinymountain-deps) FORCE
-	@touch tinymountain
+zephyr: scripts/link-zephyr.sh $(zephyr-deps) FORCE
+	@touch zephyr
 ifdef CONFIG_HEADERS_CHECK
 	$(Q)$(MAKE) -f $(srctree)/Makefile headers_check
 endif
@@ -809,21 +809,21 @@ ifdef CONFIG_BUILD_DOCSRC
 endif
 
 ifneq ($(strip $(PROJECT)),)
-	+$(call if_changed,link-tinymountain)
+	+$(call if_changed,link-zephyr)
 endif
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
-$(sort $(tinymountain-deps)): $(tinymountain-dirs) ;
+$(sort $(zephyr-deps)): $(zephyr-dirs) ;
 
-# Handle descending into subdirectories listed in $(tinymountain-dirs)
+# Handle descending into subdirectories listed in $(zephyr-dirs)
 # Preset locale variables to speed up the build process. Limit locale
 # tweaks to this spot to avoid wrong language settings when running
 # make menuconfig etc.
 # Error messages still appears in the original language
 
-PHONY += $(tinymountain-dirs)
-$(tinymountain-dirs): prepare scripts
+PHONY += $(zephyr-dirs)
+$(zephyr-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
 
 # Things we need to do before we recursively start building the kernel
@@ -995,16 +995,16 @@ MRPROPER_FILES += .config .config.old .version $(version_h) \
 #
 clean: rm-dirs  := $(CLEAN_DIRS)
 clean: rm-files := $(CLEAN_FILES)
-clean-dirs      := $(addprefix _clean_, . $(tinymountain-alldirs) )
+clean-dirs      := $(addprefix _clean_, . $(zephyr-alldirs) )
 
-PHONY += $(clean-dirs) clean archclean tinymountainclean
+PHONY += $(clean-dirs) clean archclean zephyrclean
 $(clean-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
 
-tinymountainclean:
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/link-tinymountain.sh clean
+zephyrclean:
+	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/link-zephyr.sh clean
 
-clean: archclean tinymountainclean
+clean: archclean zephyrclean
 
 # mrproper - Delete all generated files, including .config
 #
@@ -1050,7 +1050,7 @@ help:
 	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
-	@echo  '* tinymountain	  - Build the bare kernel'
+	@echo  '* zephyr	  - Build the bare kernel'
 	@echo  '  qemu		  - Build the bare kernel and runs the emulation with qemu'
 	@echo  'Architecture specific targets ($(SRCARCH)):'
 	@$(if $(archhelp),$(archhelp),\
@@ -1165,7 +1165,7 @@ else
 CHECKSTACK_ARCH := $(ARCH)
 endif
 checkstack:
-	$(OBJDUMP) -d tinymountain $$(find . -name '*.ko') | \
+	$(OBJDUMP) -d zephyr $$(find . -name '*.ko') | \
 	$(PERL) $(src)/scripts/checkstack.pl $(CHECKSTACK_ARCH)
 
 kernelversion:
@@ -1185,7 +1185,7 @@ tools/%: FORCE
 
 QEMU_FLAGS = $(QEMU_FLAGS_$(SRCARCH)) -pidfile qemu.pid
 
-qemu: tinymountain
+qemu: zephyr
 	@echo "To exit from QEMU enter: 'CTRL+a, x'"
 	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(SRCARCH))'
 	$(Q)$(QEMU) $(QEMU_FLAGS) $(QEMU_EXTRA_FLAGS) -kernel $(KERNEL_NAME).elf
