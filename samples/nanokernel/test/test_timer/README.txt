@@ -11,7 +11,7 @@ Building and Running Project:
 This nanokernel project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
-    make nanokernel.qemu
+    make qemu
 
 ---------------------------------------------------------------------------
 

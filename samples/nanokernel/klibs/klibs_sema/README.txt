@@ -17,7 +17,7 @@ In nkernel/test/test_fifo:
 
 In nkernel/klibs/klibs_sema:
     make KLIB_DIR=<path to nkernel/test/test_fifo>/outdir/klib
-    make KLIB_DIR=<path to nkernel/test/test_fifo>/outdir/klib nanokernel.qemu
+    make KLIB_DIR=<path to nkernel/test/test_fifo>/outdir/klib qemu
 
 ---------------------------------------------------------------------------
 

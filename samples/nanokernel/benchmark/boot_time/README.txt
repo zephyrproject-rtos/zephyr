@@ -31,11 +31,11 @@ Building and Running Project:
 This nanokernel project outputs to the console.  It can be built and executed
 on QEMU in three possibile configurations as follows:
 
-    make BOOTTIME_QUALIFIER=best nanokernel.qemu
+    make BOOTTIME_QUALIFIER=best qemu
 
-    make BOOTTIME_QUALIFIER=default nanokernel.qemu
+    make BOOTTIME_QUALIFIER=default qemu
 
-    make BOOTTIME_QUALIFIER=worst nanokernel.qemu
+    make BOOTTIME_QUALIFIER=worst qemu
 
 --------------------------------------------------------------------------------
 
