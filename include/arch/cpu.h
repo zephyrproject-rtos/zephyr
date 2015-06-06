@@ -40,7 +40,7 @@
 #elif defined(CONFIG_ARC)
 #include <arch/arc/arch.h>
 #else
-#error "Unknown VXMICRO_ARCH"
+#error "Unknown Architecture"
 #endif
 
 #endif /* __ARCHCPU_H__ */

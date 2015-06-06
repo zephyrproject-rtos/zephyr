@@ -191,8 +191,8 @@ extern void *__stack_chk_guard;
 #elif defined(CONFIG_ARM)
 #define _MOVE_INSTR "str "
 #else
-#error "Unknown VXMICRO_ARCH type"
-#endif /* VXMICRO_ARCH */
+#error "Unknown Architecture type"
+#endif /* CONFIG_X86_32 */
 
 #define STACK_CANARY_INIT()                                \
 	do {                                               \

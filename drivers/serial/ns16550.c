@@ -206,7 +206,7 @@ INCLUDE FILES: drivers/uart.h
 #define INBYTE(x) inByte(x)
 #define OUTBYTE(x, d) outByte(d, x)
 
-#if defined(VXMICRO_ARCH_Intel)
+#if defined(CONFIG_X86_32)
 #define INT_CONNECT(port, isr, arg, stub)                  \
 	irq_connect((unsigned int)uart[port].irq,    \
 			  (unsigned int)uart[port].intPri, \
@@ -222,7 +222,7 @@ INCLUDE FILES: drivers/uart.h
 				  isr,                              \
 				  arg);                             \
 	} while (0)
-#endif /* VXMICRO_ARCH_Intel */
+#endif /* CONFIG_X86_32 */
 
 struct ns16550 {
 	uint32_t port;    /* base port number or MM base address */
