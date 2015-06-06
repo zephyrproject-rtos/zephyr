@@ -173,7 +173,7 @@ A##a:
 #define GDATA(sym) .global FUNC(sym); .type FUNC(sym),%object
 #define WTEXT(sym) .weak FUNC(sym); .type FUNC(sym),%function
 #define WDATA(sym) .weak FUNC(sym); .type FUNC(sym),%object
-#elif defined(VXMICRO_ARCH_arc)
+#elif defined(CONFIG_ARC)
 /*
  * Need to use assembly macros because ';' is interpreted as the start of
  * a single line comment in the ARC assembler.
@@ -191,7 +191,7 @@ A##a:
 
 #define GTEXT(sym) glbl_text sym
 #define GDATA(sym) glbl_data sym
-#else  /* !CONFIG_ARM && !VXMICRO_ARCH_arc */
+#else  /* !CONFIG_ARM && !CONFIG_ARC */
 #define GTEXT(sym) .globl FUNC(sym); .type FUNC(sym),@function
 #define GDATA(sym) .globl FUNC(sym); .type FUNC(sym),@object
 #endif
@@ -206,7 +206,7 @@ A##a:
  *   if all functions in the sub-section are not referenced.
  */
 
-#if defined(VXMICRO_ARCH_arc)
+#if defined(CONFIG_ARC)
 /*
  * Need to use assembly macros because ';' is interpreted as the start of
  * a single line comment in the ARC assembler.
@@ -238,7 +238,7 @@ A##a:
 #define SECTION_FUNC(sect, sym) section_func sect, sym
 #define SECTION_SUBSEC_FUNC(sect, subsec, sym) \
 	section_subsec_func sect, subsec, sym
-#else /* !VXMICRO_ARCH_arc */
+#else /* !CONFIG_ARC */
 
 #define SECTION_VAR(sect, sym)  .section .sect.FUNC(sym); FUNC(sym):
 #define SECTION_FUNC(sect, sym)						\
@@ -249,7 +249,7 @@ A##a:
 #define SECTION_SUBSEC_FUNC(sect, subsec, sym)				\
 		.section .sect.subsec, "ax"; PERFOPT_ALIGN; FUNC(sym):
 
-#endif /* VXMICRO_ARCH_arc */
+#endif /* CONFIG_ARC */
 
 #endif /* _ASMLANGUAGE && !_LINKER */
 
@@ -294,7 +294,7 @@ A##a:
 		",%B0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
 
-#elif defined(CONFIG_X86_32) || defined(VXMICRO_ARCH_arc)
+#elif defined(CONFIG_X86_32) || defined(CONFIG_ARC)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \

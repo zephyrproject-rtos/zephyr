@@ -79,7 +79,7 @@
 #define GDB_STUB_IRQ_VECTOR_TABLE  gdb_stub_irq_vector_table
 #endif  /* CONFIG_GDB_INFO && !CONFIG_SW_ISR_TABLE */
 
-#elif defined(VXMICRO_ARCH_arc)
+#elif defined(CONFIG_ARC)
 
 	#ifdef CONFIG_SW_ISR_TABLE_DYNAMIC
 		#define ISR_TABLE_SECTION  DATA

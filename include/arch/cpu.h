@@ -37,7 +37,7 @@
 #include <arch/x86/arch.h>
 #elif defined(CONFIG_ARM)
 #include <arch/arm/arch.h>
-#elif defined(VXMICRO_ARCH_arc)
+#elif defined(CONFIG_ARC)
 #include <arch/arc/arch.h>
 #else
 #error "Unknown VXMICRO_ARCH"

@@ -49,7 +49,7 @@ This file may be included by:
 #include <arch/x86/linker-defs-arch.h>
 #elif defined(CONFIG_ARM)
 /* Nothing yet to include */
-#elif defined(VXMICRO_ARCH_arc)
+#elif defined(CONFIG_ARC)
 /* Nothing yet to include */
 #else
 #error Arch not supported.

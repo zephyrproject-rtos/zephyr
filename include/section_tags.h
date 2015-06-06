@@ -60,7 +60,7 @@
 					       _FILE_PATH_HASH, __COUNTER__)
 #endif  /* CONFIG_GDB_INFO && !CONFIG_SW_ISR_TABLE */
 
-#elif defined(VXMICRO_ARCH_arc)
+#elif defined(CONFIG_ARC)
 
 	#define __irq_vector_table \
 		__section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, __COUNTER__)
@@ -68,7 +68,7 @@
 	#define __isr_table_section \
 		__section(ISR_TABLE_SECTION, _FILE_PATH_HASH, __COUNTER__)
 
-#endif /* VXMICRO_ARCH_arc */
+#endif /* CONFIG_ARC */
 
 #endif /* !_ASMLANGUAGE */
 
