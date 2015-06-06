@@ -9,9 +9,9 @@ CONF_quark = quark/prj.conf
 
 KERNEL_TYPE = nano
 CONF_FILE = $(CONF_$(BSP))
-SOURCE_DIR = $(TIMO_BASE)/samples/microkernel/benchmark/boot_time/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/microkernel/benchmark/boot_time/src/
 
-include $(TIMO_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.inc
 
 $(if $(CONF_FILE),,$(error no prj.conf file available))
 $(if $(wildcard $(CONF_FILE)),,$(error no $(CONF_FILE) file available))

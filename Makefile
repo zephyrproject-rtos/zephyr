@@ -339,9 +339,9 @@ STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 AWK		= awk
-GENKSYMS	= $(TIMO_BASE)/scripts/genksyms/genksyms
-GENIDT		= $(TIMO_BASE)/scripts/gen_idt/gen_idt
-FIXDEP		= $(TIMO_BASE)/scripts/basic/fixdep
+GENKSYMS	= $(ZEPHYR_BASE)/scripts/genksyms/genksyms
+GENIDT		= $(ZEPHYR_BASE)/scripts/gen_idt/gen_idt
+FIXDEP		= $(ZEPHYR_BASE)/scripts/basic/fixdep
 PERL		= perl
 PYTHON		= python
 CHECK		= sparse
@@ -361,9 +361,9 @@ PROJECTINCLUDE := $(strip -I$(srctree)/include/microkernel \
 		-I$(CURDIR)/misc/generated/sysgen) \
 		$(USERINCLUDE)
 
-# Use TIMOINCLUDE when you must reference the include/ directory.
+# Use ZEPHYRINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
-TIMOINCLUDE    := \
+ZEPHYRINCLUDE    := \
 		-I$(srctree)/arch/$(hdr-arch)/include \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
@@ -404,7 +404,7 @@ export CPP AR NM STRIP OBJCOPY OBJDUMP
 export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE GENIDT FIXDEP
 export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
-export KBUILD_CPPFLAGS NOSTDINC_FLAGS TIMOINCLUDE OBJCOPYFLAGS LDFLAGS
+export KBUILD_CPPFLAGS NOSTDINC_FLAGS ZEPHYRINCLUDE OBJCOPYFLAGS LDFLAGS
 export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
@@ -426,8 +426,8 @@ export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn \
 # Basic helpers built in scripts/
 PHONY += scripts_basic
 scripts_basic:
-	$(Q)$(MAKE) -C $(TIMO_BASE) $(build)=scripts/basic
-	$(Q)$(MAKE) -C $(TIMO_BASE) $(build)=scripts/gen_idt
+	$(Q)$(MAKE) -C $(ZEPHYR_BASE) $(build)=scripts/basic
+	$(Q)$(MAKE) -C $(ZEPHYR_BASE) $(build)=scripts/gen_idt
 	$(Q)rm -f .tmp_quiet_recordmcount
 
 # To avoid any implicit rule to kick in, define an empty command.
@@ -513,10 +513,10 @@ include $(srctree)/arch/$(SRCARCH)/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
 config: scripts_basic outputmakefile FORCE
-	$(Q)$(MAKE) -C $(TIMO_BASE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) -C $(ZEPHYR_BASE) $(build)=scripts/kconfig $@
 
 %config: scripts_basic outputmakefile FORCE
-	$(Q)$(MAKE) -C $(TIMO_BASE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) -C $(ZEPHYR_BASE) $(build)=scripts/kconfig $@
 
 else
 # ===========================================================================
@@ -566,7 +566,7 @@ ifdef CONFIG_MINIMAL_LIBC
 # Objects we will link into tinymountain / subdirs we need to visit
 KLIBC_DIR := lib/libc/minimal
 libs-y := $(KLIBC_DIR)/
-TIMOINCLUDE += -I$(srctree)/lib/libc/minimal/include
+ZEPHYRINCLUDE += -I$(srctree)/lib/libc/minimal/include
 endif
 
 ifdef CONFIG_TOOLCHAIN_NEWLIB
@@ -778,14 +778,14 @@ libs-y		:= $(libs-y1) $(libs-y2)
 # Externally visible symbols (used by link-tinymountain.sh)
 DQUOTE = "
 #This comment line is to fix the highlighting of some editors due the quote effect."
-export KBUILD_TIMO_INIT := $(head-y) $(init-y)
-export KBUILD_TIMO_MAIN := $(core-y) $(libs-y) $(drivers-y) $(bsp-y)
+export KBUILD_ZEPHYR_INIT := $(head-y) $(init-y)
+export KBUILD_ZEPHYR_MAIN := $(core-y) $(libs-y) $(drivers-y) $(bsp-y)
 export KBUILD_LDS          := $(srctree)/arch/$(SRCARCH)/$(subst $(DQUOTE),,$(CONFIG_BSP_DIR))/linker.cmd
 export LDFLAGS_tinymountain
 # used by scripts/pacmage/Makefile
 export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(tinymountain-alldirs)) arch Documentation include samples scripts tools virt)
 
-tinymountain-deps := $(KBUILD_LDS) $(KBUILD_TIMO_INIT) $(KBUILD_TIMO_MAIN)
+tinymountain-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_INIT) $(KBUILD_ZEPHYR_MAIN)
 
 ALL_LIBS += $(TOOLCHAIN_LIBS)
 export ALL_LIBS

@@ -33,20 +33,20 @@
 
 # Import common sanity check definitions
 #
-if [ -z ${TIMO_BASE} ]; then
+if [ -z ${ZEPHYR_BASE} ]; then
 	echo "shell variables required to build Zephyr OS are not set"
 	exit 1
 fi
-if [ ! -d ${TIMO_BASE} ] ; then
-	echo "directory ${TIMO_BASE} not found"
+if [ ! -d ${ZEPHYR_BASE} ] ; then
+	echo "directory ${ZEPHYR_BASE} not found"
 	exit 1
 fi
-source ${TIMO_BASE}/scripts/sanity_chk/common.defs
+source ${ZEPHYR_BASE}/scripts/sanity_chk/common.defs
 
 # Location of master project directory
 #
-PRJ_PATH=${TIMO_BASE}/samples
-KLIBS_PRJ_PATH=${TIMO_BASE}/samples
+PRJ_PATH=${ZEPHYR_BASE}/samples
+KLIBS_PRJ_PATH=${ZEPHYR_BASE}/samples
 TEST_PRJ_PATH=./
 
 # Pseudo-file describing sample projects to be sanitized

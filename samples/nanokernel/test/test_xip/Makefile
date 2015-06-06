@@ -1,6 +1,6 @@
 BSP ?= generic_pc
 KERNEL_TYPE = nano
 CONF_FILE = prj_$(ARCH).conf
-SOURCE_DIR = $(TIMO_BASE)/samples/microkernel/test/test_xip/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/microkernel/test/test_xip/src/
 
-include $(TIMO_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.inc

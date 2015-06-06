@@ -1052,7 +1052,7 @@ def kernel_main_h_generate():
     subprocess.check_call([
         "cp",
         "-f",
-        os.environ["TIMO_BASE"] +
+        os.environ["ZEPHYR_BASE"] +
         "/kernel/microkernel/include/kernel_main.h",
         output_dir])
 
@@ -1070,7 +1070,7 @@ def kernel_struct_h_generate():
     subprocess.check_call([
         "cp",
         "-f",
-        os.environ["TIMO_BASE"] +
+        os.environ["ZEPHYR_BASE"] +
         "/kernel/microkernel/include/kernel_struct.h",
         output_dir])
 

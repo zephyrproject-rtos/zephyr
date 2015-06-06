@@ -37,7 +37,7 @@
 dirs_to_check="arch drivers include kernel lib"
 files=$(for d in ${dirs_to_check}; do find $d/ -type f -name '*.[ch]'; done)
 for i in $files; do
-	${TIMO_BASE}/scripts/checkpatch.pl --mailback --no-tree -f --emacs --summary-file --show-types --ignore BRACES,PRINTK_WITHOUT_KERN_LEVEL,SPLIT_STRING --max-line-length=100 $i >> $1
+	${ZEPHYR_BASE}/scripts/checkpatch.pl --mailback --no-tree -f --emacs --summary-file --show-types --ignore BRACES,PRINTK_WITHOUT_KERN_LEVEL,SPLIT_STRING --max-line-length=100 $i >> $1
 done
 grep ERROR: $1 |cut -d : -f 3,4 |sort -u > $1_error.types
 grep WARNING: $1 |cut -d : -f 3,4 |sort -u > $1_warning.types

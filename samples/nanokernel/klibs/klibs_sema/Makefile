@@ -28,7 +28,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-include $(subst \,/,${TIMO_BASE})/make/env/defs.base
+include $(subst \,/,${ZEPHYR_BASE})/make/env/defs.base
 
 # default BSP
 BSP ?= generic_pc

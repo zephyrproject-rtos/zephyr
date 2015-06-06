@@ -149,7 +149,7 @@ To build a Tiny Mountain example follow these steps:
 
 #. Go to the root directory of your foss-rtos checkout
 
-#. Set the paths properly in the :file:`$TIMO_BASE` directory,
+#. Set the paths properly in the :file:`$ZEPHYR_BASE` directory,
    type:
 
     .. code-block:: bash
@@ -160,7 +160,7 @@ To build a Tiny Mountain example follow these steps:
 
     .. code-block:: bash
 
-       $ cd $TIMO_BASE/samples/microkernel/apps/hello_world
+       $ cd $ZEPHYR_BASE/samples/microkernel/apps/hello_world
 
        $ make pristine && make
 
@@ -170,8 +170,8 @@ To build a Tiny Mountain example follow these steps:
 
    You can override the default BSP with the one you want by adding
    :makevar:`BSP=`. The complete options available for the BSP flag
-   can be found at :file:`$TIMO_BASE/arch` under the respective
-   architecture, for example :file:`$TIMO_BASE/arch/x86/generic_pc`.
+   can be found at :file:`$ZEPHYR_BASE/arch` under the respective
+   architecture, for example :file:`$ZEPHYR_BASE/arch/x86/generic_pc`.
    You need to override the ARCH flag with the architecture that
    corresponds to your BSP by adding :makevar:`ARCH=` and the options
    you need to the make command, for example:
@@ -179,13 +179,13 @@ To build a Tiny Mountain example follow these steps:
    :command:`make BSP=generic_pc ARCH=x86`
 
    The complete options available for the ARCH flag can be found at
-   :file:`$TIMO_BASE`, for example  :file:`$TIMO_BASE/arch/x86`.
+   :file:`$ZEPHYR_BASE`, for example  :file:`$ZEPHYR_BASE/arch/x86`.
 
 The sample projects for the microkernel are found
-at :file:`$TIMO_BASE/samples/microkernel/apps` and the results are at
+at :file:`$ZEPHYR_BASE/samples/microkernel/apps` and the results are at
 :file:`$SAMPLE_PROJECT/outdir/microkernel.{ bin | elf }`.
 
-For sample projects in the :file:`$TIMO_BASE/samples/nanokernel/apps`
+For sample projects in the :file:`$ZEPHYR_BASE/samples/nanokernel/apps`
 directory, the results can be found at
 :file:`$SAMPLE_PROJECT/outdir/nanokernel.{ bin | elf }`.
 

@@ -2,18 +2,18 @@
 #
 # link tinymountain
 #
-# tinymountain is linked from the objects selected by $(KBUILD_TIMO_INIT) and
-# $(KBUILD_TIMO_MAIN). Most are built-in.o files from top-level directories
+# zephyr is linked from the objects selected by $(KBUILD_ZEPHYR_INIT) and
+# $(KBUILD_ZEPHYR_MAIN). Most are built-in.o files from top-level directories
 # in the kernel tree, others are specified in arch/$(ARCH)/Makefile.
-# Ordering when linking is important, and $(KBUILD_TIMO_INIT) must be first.
+# Ordering when linking is important, and $(KBUILD_ZEPHYR_INIT) must be first.
 #
 # tinymountain
 #   ^
 #   |
-#   +-< $(KBUILD_TIMO_INIT)
+#   +-< $(KBUILD_ZEPHYR_INIT)
 #   |   +--< init/version.o + more
 #   |
-#   +--< $(KBUILD_TIMO_MAIN)
+#   +--< $(KBUILD_ZEPHYR_MAIN)
 #   |    +--< drivers/built-in.o mm/built-in.o + more
 #   |
 #   +-< ${kallsymso} (see description in KALLSYMS section)
@@ -49,7 +49,7 @@ linker_params()
 	echo "-L ${objtree}/include/generated" >> ${1}
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
 	echo "-e __start" >> ${1}
-	echo "--start-group ${KBUILD_TIMO_MAIN}" >> ${1}
+	echo "--start-group ${KBUILD_ZEPHYR_MAIN}" >> ${1}
 	echo "${objtree}/include/generated/offsets.o" >> ${1}
 	echo "--end-group" >> ${1}
 	echo "${LIB_INCLUDE_DIR} ${LIBS}" >> ${1}
@@ -133,7 +133,7 @@ kallsyms()
 	fi
 
 	local aflags="${KBUILD_AFLAGS} ${KBUILD_AFLAGS_KERNEL}               \
-		      ${NOSTDINC_FLAGS} ${TIMOINCLUDE} ${KBUILD_CPPFLAGS}"
+		      ${NOSTDINC_FLAGS} ${ZEPHYRINCLUDE} ${KBUILD_CPPFLAGS}"
 
 	${NM} -n ${1} | \
 		scripts/kallsyms ${kallsymopt} | \

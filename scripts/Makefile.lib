@@ -139,14 +139,14 @@ __a_flags	=                          $(call flags,_a_flags)
 __cpp_flags     =                          $(call flags,_cpp_flags)
 endif
 
-c_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(TIMOINCLUDE)     \
+c_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(ZEPHYRINCLUDE)     \
 		 $(__c_flags) $(modkern_cflags)                           \
 		 -D"KBUILD_STR(s)=\#s" $(basename_flags) $(modname_flags)
 
-a_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(TIMOINCLUDE)     \
+a_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(ZEPHYRINCLUDE)     \
 		 $(__a_flags) $(modkern_aflags)
 
-cpp_flags      = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(TIMOINCLUDE)     \
+cpp_flags      = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(ZEPHYRINCLUDE)     \
 		 $(__cpp_flags)
 
 ld_flags       = $(LDFLAGS) $(ldflags-y)

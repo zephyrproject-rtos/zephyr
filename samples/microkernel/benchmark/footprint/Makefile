@@ -7,7 +7,7 @@ KERNEL_TYPE = micro
 CONF_FILE = prj_$(TEST)_$(ARCH).conf
 CFLAGS += -DTEST_${TEST}
 
-include ${TIMO_BASE}/Makefile.inc
+include ${ZEPHYR_BASE}/Makefile.inc
 
 ifeq ($(ARCH),ARM)
   ifneq ($(TEST),min)

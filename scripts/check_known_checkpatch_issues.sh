@@ -39,8 +39,8 @@
 
 exe_name=$(basename $0)
 
-do_checkpatch_bin=${TIMO_BASE}/scripts/do_checkpatch.sh
-timestamp_bin=${TIMO_BASE}/scripts/timestamp
+do_checkpatch_bin=${ZEPHYR_BASE}/scripts/do_checkpatch.sh
+timestamp_bin=${ZEPHYR_BASE}/scripts/timestamp
 
 declare update=n
 declare quiet=n
@@ -89,7 +89,7 @@ uid=$(id -u)
 pid=$$
 suffix=${uid}-${pid}-${ts}
 checkpatch_results=/tmp/checkpatch.results-${suffix}
-known_checkpatch_issues=${TIMO_BASE}/scripts/known_checkpatch_issues
+known_checkpatch_issues=${ZEPHYR_BASE}/scripts/known_checkpatch_issues
 checkpatch_issues=/tmp/checkpatch_issues-${suffix}
 git_log_params="\
 	--abbrev=8 \

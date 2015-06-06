@@ -30,7 +30,7 @@
 
 BSP ?= generic_pc
 
-include $(subst \,/,${TIMO_BASE})/make/env/defs.base
+include $(subst \,/,${ZEPHYR_BASE})/make/env/defs.base
 
 PRJ_SRCPATH = ${vBASE}/samples/microkernel/test/test_sema/src
 

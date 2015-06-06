@@ -22,4 +22,4 @@ $(if $(filter $(BSP)/prj.conf,$(CONF_FILE)),$(warning *** $(NO_QUALIFIED_PRJ_CON
 
 $(info using CONF_FILE = $(CONF_FILE))
 
-include ${TIMO_BASE}/Makefile.inc
+include ${ZEPHYR_BASE}/Makefile.inc

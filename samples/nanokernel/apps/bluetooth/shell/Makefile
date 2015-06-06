@@ -36,6 +36,6 @@ BSP ?= generic_pc
 KERNEL_TYPE = nano
 CONF_FILE = prj_$(ARCH).conf
 QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
-SOURCE_DIR = $(TIMO_BASE)/samples/bluetooth/shell/src/
+SOURCE_DIR = $(ZEPHYR_BASE)/samples/bluetooth/shell/src/
 
-include $(TIMO_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.inc

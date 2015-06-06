@@ -132,7 +132,7 @@ Create the Needed Build Tools
 
 .. code-block:: bash
 
-   $ cd $TIMO_BASE
+   $ cd $ZEPHYR_BASE
 
 #. Copy the toolchain configurations to the build directories by
    typing the following commands in the console:
@@ -264,7 +264,7 @@ Follow these steps to enable a customized build of QEMU:
 
 .. code-block:: bash
 
-   $ git am $TIMO_BASE/scripts/0001-armv7m-support-basepri-primask-interrupt-locking.patch
+   $ git am $ZEPHYR_BASE/scripts/0001-armv7m-support-basepri-primask-interrupt-locking.patch
 
 #. Update the submodules as needed, type:
 
