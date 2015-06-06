@@ -188,7 +188,7 @@ extern void *__stack_chk_guard;
 
 #if defined(CONFIG_X86_32)
 #define _MOVE_INSTR "movl "
-#elif defined(VXMICRO_ARCH_arm)
+#elif defined(CONFIG_ARM)
 #define _MOVE_INSTR "str "
 #else
 #error "Unknown VXMICRO_ARCH type"

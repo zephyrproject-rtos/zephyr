@@ -137,7 +137,7 @@ void set_state_bit(
 		 * tasks.
 		 */
 #if defined(__GNUC__)
-#if defined(VXMICRO_ARCH_arm)
+#if defined(CONFIG_ARM)
 		/*
 		 * Avoid bad code generation by certain gcc toolchains for ARM
 		 * when an optimization setting of -O2 or above is used.

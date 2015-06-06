@@ -53,7 +53,7 @@
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not
  * comments, so the @nobits# trick does not work.
  */
-#if defined(VXMICRO_ARCH_arm)
+#if defined(CONFIG_ARM)
 #define _NODATA_SECTION(segment)  __attribute__((section(#segment)))
 #else
 #define _NODATA_SECTION(segment)				\
@@ -120,7 +120,7 @@ __extension__ ({							\
 
 #if defined(_ASMLANGUAGE) && !defined(_LINKER)
 
-#ifdef VXMICRO_ARCH_arm
+#ifdef CONFIG_ARM
 
 #if defined(CONFIG_ISA_THUMB)
 
@@ -155,7 +155,7 @@ A##a:
 #define FUNC_CODE()
 #define FUNC_INSTR(a)
 
-#endif /* !VXMICRO_ARCH_arm */
+#endif /* !CONFIG_ARM */
 
 #endif /* _ASMLANGUAGE && !_LINKER */
 
@@ -168,7 +168,7 @@ A##a:
 
 #if defined(_ASMLANGUAGE) && !defined(_LINKER)
 
-#ifdef VXMICRO_ARCH_arm
+#ifdef CONFIG_ARM
 #define GTEXT(sym) .global FUNC(sym); .type FUNC(sym),%function
 #define GDATA(sym) .global FUNC(sym); .type FUNC(sym),%object
 #define WTEXT(sym) .weak FUNC(sym); .type FUNC(sym),%function
@@ -191,7 +191,7 @@ A##a:
 
 #define GTEXT(sym) glbl_text sym
 #define GDATA(sym) glbl_data sym
-#else  /* !VXMICRO_ARCH_arm && !VXMICRO_ARCH_arc */
+#else  /* !CONFIG_ARM && !VXMICRO_ARCH_arc */
 #define GTEXT(sym) .globl FUNC(sym); .type FUNC(sym),@function
 #define GDATA(sym) .globl FUNC(sym); .type FUNC(sym),@object
 #endif
@@ -279,7 +279,7 @@ A##a:
 
 #define GEN_ABS_SYM_END }
 
-#if defined(VXMICRO_ARCH_arm)
+#if defined(CONFIG_ARM)
 
 /*
  * GNU/ARM backend does not have a proper operand modifier which does not

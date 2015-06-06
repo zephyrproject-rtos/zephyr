@@ -62,7 +62,7 @@
 #define DATA data
 #define NOINIT noinit
 
-#if defined(VXMICRO_ARCH_arm)
+#if defined(CONFIG_ARM)
 #define SCS_SECTION scs
 #define SCP_SECTION scp
 

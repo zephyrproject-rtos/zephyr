@@ -35,7 +35,7 @@
 
 #if defined(CONFIG_X86_32)
 #include <arch/x86/arch.h>
-#elif defined(VXMICRO_ARCH_arm)
+#elif defined(CONFIG_ARM)
 #include <arch/arm/arch.h>
 #elif defined(VXMICRO_ARCH_arc)
 #include <arch/arc/arch.h>

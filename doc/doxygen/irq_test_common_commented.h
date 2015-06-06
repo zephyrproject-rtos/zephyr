@@ -42,7 +42,7 @@ Interrupt stuff, abstracted across CPU architectures.
 
 #if defined(CONFIG_X86_32)
   #define IRQ_PRIORITY 3
-#elif defined(VXMICRO_ARCH_arm)
+#elif defined(CONFIG_ARM)
   #if defined(CONFIG_CPU_CORTEXM)
     #define IRQ_PRIORITY _EXC_PRIO(3)
   #endif /* CONFIG_CPU_CORTEXM */
@@ -96,7 +96,7 @@ static char sw_isr_trigger_1[] =
 	};
 #endif /* NUM_SW_IRQS >= 2 */
 
-#elif defined(VXMICRO_ARCH_arm)
+#elif defined(CONFIG_ARM)
 #if defined(CONFIG_CPU_CORTEXM)
 #include <nanokernel.h>
 static inline void sw_isr_trigger_0(void)
@@ -160,7 +160,7 @@ static int initIRQ
 	sw_isr_trigger_1[1] = vector;
 	}
 #endif /* NUM_SW_IRQS >= 2 */
-#elif defined(VXMICRO_ARCH_arm)
+#elif defined(CONFIG_ARM)
 #if defined(CONFIG_CPU_CORTEXM)
 	if (i->isr[0])
 	{

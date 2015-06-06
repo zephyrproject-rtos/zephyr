@@ -93,7 +93,7 @@ Macros to abstract compiler capabilities (common to all toolchains).
       #define PERFOPT_ALIGN .balign  1
     #endif
 
-  #elif defined(VXMICRO_ARCH_arm)
+  #elif defined(CONFIG_ARM)
 
     #ifdef CONFIG_ISA_THUMB
       #define PERFOPT_ALIGN .balign  2

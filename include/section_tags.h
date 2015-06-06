@@ -42,7 +42,7 @@
 
 #define __noinit     __section(NOINIT,    _FILE_PATH_HASH, __COUNTER__)
 
-#if defined(VXMICRO_ARCH_arm)
+#if defined(CONFIG_ARM)
 #define __scs_section  __section(SCS_SECTION, _FILE_PATH_HASH, __COUNTER__)
 #define __scp_section  __section(SCP_SECTION, _FILE_PATH_HASH, __COUNTER__)
 

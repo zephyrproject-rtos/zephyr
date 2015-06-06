@@ -47,7 +47,7 @@ This file may be included by:
 /* include platform dependent linker-defs */
 #ifdef CONFIG_X86_32
 #include <arch/x86/linker-defs-arch.h>
-#elif defined(VXMICRO_ARCH_arm)
+#elif defined(CONFIG_ARM)
 /* Nothing yet to include */
 #elif defined(VXMICRO_ARCH_arc)
 /* Nothing yet to include */
