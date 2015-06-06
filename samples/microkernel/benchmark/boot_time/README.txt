@@ -32,11 +32,11 @@ Building and Running Project:
 This microkernel project outputs to the console.  It can be built and executed
 on QEMU in three possibile configurations as follows:
 
-    make BOOTTIME_QUALIFIER=best microkernel.qemu
+    make BOOTTIME_QUALIFIER=best qemu
 
-    make BOOTTIME_QUALIFIER=default microkernel.qemu
+    make BOOTTIME_QUALIFIER=default qemu
 
-    make BOOTTIME_QUALIFIER=worst microkernel.qemu
+    make BOOTTIME_QUALIFIER=worst qemu
 
 --------------------------------------------------------------------------------
 

@@ -17,7 +17,7 @@ In ukernel/test/test/test_fifo:
 
 In ukernel/klibs/klibs_sema:
     make KLIB_DIR=<path to ukernel/test/test_fifo>/outdir/klib
-    make KLIB_DIR=<path to ukernel/test/test_fifo>/outdir/klib microkernel.qemu
+    make KLIB_DIR=<path to ukernel/test/test_fifo>/outdir/klib qemu
 
 --------------------------------------------------------------------------------
 

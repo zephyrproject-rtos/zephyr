@@ -14,7 +14,7 @@ This microkernel project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
     make pristine
-    make microkernel.qemu
+    make qemu
 
 --------------------------------------------------------------------------------
 
