@@ -85,7 +85,7 @@ Follow these steps to install the SDK on your host system.
 
     .. code-block:: bash
 
-       $ export VXMICRO_GCC_VARIANT=yocto
+       $ export ZEPHYR_GCC_VARIANT=yocto
 
        $ export YOCTO_SDK_INSTALL_DIR=/opt/poky-tm/1.8
 

@@ -599,8 +599,8 @@ endif
 #File that includes all prepare special embedded architecture targets.
 include $(srctree)/scripts/Makefile.preparch
 sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch
-ifdef VXMICRO_GCC_VARIANT
-include $(srctree)/scripts/Makefile.toolchain.$(VXMICRO_GCC_VARIANT)
+ifdef ZEPHYR_GCC_VARIANT
+include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 endif
 
 QEMU_BIN_PATH	?= /usr/bin

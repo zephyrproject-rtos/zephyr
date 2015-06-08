@@ -160,7 +160,7 @@ Create the Needed Build Tools
 
 .. code-block:: bash
 
-   $ export VXMICRO_GCC_VARIANT=xtools
+   $ export ZEPHYR_GCC_VARIANT=xtools
 
 Alternatively you can add it to your :file:`~/.bashrc` file.
 
