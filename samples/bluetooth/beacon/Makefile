@@ -33,7 +33,7 @@
 # DESCRIPTION
 # Makefile for the Bluetooth beacon sample
 
-include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
+include $(subst \,/,${TIMO_BASE})/make/env/defs.base
 
 # default BSP
 BSP ?= generic_pc

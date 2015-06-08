@@ -30,7 +30,7 @@
 
 BSP ?= generic_pc
 
-include $(subst \,/,${VXMICRO_BASE})/make/env/defs.base
+include $(subst \,/,${TIMO_BASE})/make/env/defs.base
 
 PRJ_SRCPATH = ${vBASE}/samples/microkernel/test/test_events/src
 
