@@ -98,7 +98,7 @@ microkernel/klibs/klibs_sema    KLIB_DIR=${KLIBS_PRJ_PATH}/microkernel/test/test
 help() {
 cat << EOF
 
-Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>] [-T <toolchain>]
+Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>]
        -h display this help message
        -H display more detailed documentation
        -c just clean projects and delete execution logs
@@ -107,7 +107,6 @@ Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>] [-T <toolchain>]
        -l keep successful project execution logs
        -A build projects for the specified architecture
        -B build projects for the specified BSP or BSP variant
-       -T build projects using the specified toolchain
 
 EOF
 }
@@ -159,7 +158,7 @@ main() {
 	KEEP_LOGS=0
 
 	# process command options
-	while getopts ":hHcqblA:B:T:" arg $*
+	while getopts ":hHcqblA:B:" arg $*
 	do
 		case $arg in
 		h)
@@ -187,9 +186,6 @@ main() {
 			;;
 		B)
 			BSP_NAME=$OPTARG
-			;;
-		T)
-			export VXMICRO_TOOL="$OPTARG"
 			;;
 		\?)
 			${ECHO} "invalid option -$OPTARG"

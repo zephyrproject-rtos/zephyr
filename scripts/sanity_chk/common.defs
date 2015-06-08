@@ -143,7 +143,7 @@ clean_all_projects() {
 #
 # ON ENTRY: ${BSP_NAME} is BSP to use (empty => use per-project default)
 #
-# ON EXIT: ${BUILD_INFO} specifies build tool to use (and other build options)
+# ON EXIT: ${BUILD_INFO} specifies build options
 #
 build_info_set() {
 	# ensure BSP name isn't a script option that was entered by mistake
@@ -152,23 +152,8 @@ build_info_set() {
 		exit 1
 	fi
 
-	# ensure a toolchain has been specified
-	if [ x${VXMICRO_TOOL} = x ] ; then
-		print_header
-		${ECHO} "no toolchain specified"
-		exit 1
-	fi
-
 	# set up toolchain-specific build environment stuff
-	if [ x${VXMICRO_TOOL} = x"gcc" ] ; then
-		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
-	elif [ x${VXMICRO_TOOL} = x"diab" ] ; then
-		MAKE_EXTRA_FLAGS="EXTRA_CFLAGS=-Xstop-on-warning EXTRA_LFLAGS=-Xstop-on-warning"
-	else
-		${ECHO} "invalid toolchain '${VXMICRO_TOOL}' specified"
-		exit 1
-	fi
-	BUILD_INFO="VXMICRO_TOOL=${VXMICRO_TOOL} ${MAKE_EXTRA_FLAGS}"
+	BUILD_INFO="EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
 }
 
 # set up project info used to build projects
@@ -297,7 +282,7 @@ proj_info_set() {
 #           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
 #           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
-#           ${BUILD_INFO} specifies build tool to use (and other build options)
+#           ${BUILD_INFO} specifies build options
 #           ${NUM_PROJ} specifies # of projects described in arrays
 #           ${PRJ_CLASS} specifies type of projects being sanitized
 #
@@ -319,7 +304,7 @@ skip_project() {
 #           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
 #           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
-#           ${BUILD_INFO} specifies build tool to use (and other build options)
+#           ${BUILD_INFO} specifies build options
 #           ${NUM_PROJ} specifies # of projects described in arrays
 #           ${PRJ_CLASS} specifies type of projects being sanitized
 #
@@ -368,7 +353,7 @@ build_project() {
 #           ${PRJ_TYPE} array specifies project type ("nanokernel" or "microkernel")
 #           ${PRJ_FLAG} array specifies project flags ('u' or 'n'; optional 'q')
 #           ${BSP_INFO} array specifies project BSP and BSP_VARIANT
-#           ${BUILD_INFO} specifies build tool to use (and other build options)
+#           ${BUILD_INFO} specifies build options
 #           ${NUM_PROJ} specifies # of projects described in arrays
 #           ${PRJ_CLASS} specifies type of projects being sanitized
 #

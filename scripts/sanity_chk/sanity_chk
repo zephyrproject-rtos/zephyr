@@ -53,7 +53,7 @@ HOST_TOOLS_SRC_PATH=${TIMO_BASE}/host/src
 help() {
 cat << EOF
 
-Usage : ${SCRIPT_NAME} [-hHcqbls] [-A <arch>] [-B <board>] [-T <toolchain>]
+Usage : ${SCRIPT_NAME} [-hHcqbls] [-A <arch>] [-B <board>]
        -h display this help message
        -H display more detailed documentation
        -c just clean projects and delete execution logs
@@ -63,7 +63,6 @@ Usage : ${SCRIPT_NAME} [-hHcqbls] [-A <arch>] [-B <board>] [-T <toolchain>]
        -s do not build host tools
        -A build projects for the specified architecture
        -B build projects for the specified BSP or BSP variant
-       -T build projects using the specified toolchain
 
 EOF
 }
@@ -158,7 +157,7 @@ main() {
 			args_passed_on="${args_passed_on} -B $OPTARG"
 			;;
 		T)
-			export VXMICRO_TOOL="$OPTARG"
+			# temporarily retained until CI scripts are revised
 			;;
 		\?)
 			${ECHO} "invalid option -$OPTARG"
@@ -191,15 +190,6 @@ main() {
 		${SCRIPT_PATH}/out-of-tree_chk -c
 		exit $?
 	fi
-
-	# ensure a toolchain has been specified
-	if [ x${VXMICRO_TOOL} = x ] ; then
-		print_header
-		${ECHO} "no toolchain specified"
-		exit 1
-	fi
-
-	export VXMICRO_TOOL
 
 	# rebuild host tools (optional)
         #update_host_tools ${skip_host_tools}
