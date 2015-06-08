@@ -83,21 +83,21 @@ PRJ_PATH=${OUT_OF_TREE_BASE}/samples
 
 PRJ_LIST="\
 	# Nanokernel projects \n\
-nanokernel/test/test_fifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
-nanokernel/test/test_lifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
-nanokernel/test/test_sema   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
+nanokernel/test/test_fifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
+nanokernel/test/test_lifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
+nanokernel/test/test_sema   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  ti_lm3s6965! fsl_frdm_k64f \n\
 	# Microkernel projects \n\
-microkernel/test/test_fifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
-microkernel/test/test_events VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
-microkernel/test/test_sema   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
+microkernel/test/test_fifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
+microkernel/test/test_events ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
+microkernel/test/test_sema   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  ti_lm3s6965! fsl_frdm_k64f \n\
 	# Nanokernel projects \n\
-nanokernel/test/test_fifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
-nanokernel/test/test_lifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
-nanokernel/test/test_sema   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
+nanokernel/test/test_fifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
+nanokernel/test/test_lifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
+nanokernel/test/test_sema   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <n>  pentium4!  minuteia!  quark \n\
 	# Microkernel projects \n\
-microkernel/test/test_fifo   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark \n\
-microkernel/test/test_events VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark \n\
-microkernel/test/test_sema   VXMICRO_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark "
+microkernel/test/test_fifo   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark \n\
+microkernel/test/test_events ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark \n\
+microkernel/test/test_sema   ZEPHYR_BSP_BASE=${OUT_OF_TREE_BASE}/bsp  <u>  pentium4!  minuteia!  quark "
 
 # print script usage
 #
