@@ -34,9 +34,9 @@
 
 num_cpus=$(\grep -c "^processor" /proc/cpuinfo)
 
-if [ x${VXMICRO_JOBS} = x ]; then
-	VXMICRO_JOBS=$((${num_cpus} * 2 + 1))
+if [ x${ZEPHYR_JOBS} = x ]; then
+	ZEPHYR_JOBS=$((${num_cpus} * 2 + 1))
 fi
 
-echo Using $VXMICRO_JOBS threads
-nice make --jobs=${VXMICRO_JOBS} --load-average=${num_cpus} $@
+echo Using $ZEPHYR_JOBS threads
+nice make --jobs=${ZEPHYR_JOBS} --load-average=${num_cpus} $@
