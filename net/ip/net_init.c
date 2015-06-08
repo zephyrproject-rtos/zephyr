@@ -47,8 +47,11 @@
 #include <net/net_core.h>
 #include <net/net_buf.h>
 
-#include "net/core/netstack.h"
-#include "net/core/uip-driver.h"
+#include "contiki/os/sys/process.h"
+#include "contiki/os/sys/etimer.h"
+#include "contiki/netstack.h"
+#include "contiki/uip-driver.h"
+#include "contiki/ipv6/uip-ds6.h"
 
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning
@@ -119,7 +122,21 @@ static void init_tx_queue(void)
 
 static int network_initialization(void)
 {
+	/* Initialize and start Contiki uIP stack */
+	clock_init();
+
+	rtimer_init();
+	ctimer_init();
+
+	process_init();
 	netstack_init();
+
+	NET_DBG("uIP: MAC %s, RDC %s, NETWORK %s\n", NETSTACK_MAC.name,
+		NETSTACK_RDC.name, NETSTACK_NETWORK.name);
+
+	process_start(&tcpip_process, NULL);
+	process_start(&etimer_process, NULL);
+
 	return 0;
 }
 
