@@ -1,6 +1,5 @@
 obj-y = core/
 obj-y += bsp/
-obj-y += timer/
 
 obj-$(CONFIG_MICROKERNEL) += task/
 obj-$(CONFIG_BSP_QUARK) += quark/

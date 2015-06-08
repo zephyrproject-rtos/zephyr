@@ -159,8 +159,6 @@ if BSP_QUARK
 source "arch/x86/quark/Kconfig"
 endif
 
-source "arch/x86/timer/Kconfig"
-
 source "drivers/Kconfig"
 
 source "net/Kconfig"

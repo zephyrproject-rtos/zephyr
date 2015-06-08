@@ -41,6 +41,20 @@ config HPET_TIMER
 	This option selects High Precision Event Timer (HPET) as a
 	system timer.
 
+config LOAPIC_TIMER
+	bool "LOAPIC timer"
+	depends on LOAPIC && X86_32
+	default n
+	help
+	This option selects LOAPIC timer as a system timer.
+
+config LOAPIC_TIMER_FREQ
+	int "LOAPIC timer frequency"
+	depends on LOAPIC_TIMER && X86_32
+	default 0
+	help
+	This option specifies LOAPIC timer frequency in HZ.
+
 config PIT
 	bool "PIT (i8253)"
 	default n
