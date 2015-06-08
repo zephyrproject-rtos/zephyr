@@ -191,9 +191,9 @@ uip_ds6_nbr_lladdr_from_ipaddr(const uip_ipaddr_t *ipaddr)
 }
 /*---------------------------------------------------------------------------*/
 void
-uip_ds6_link_neighbor_callback(int status, int numtx)
+uip_ds6_link_neighbor_callback(struct net_buf *buf, int status, int numtx)
 {
-  const linkaddr_t *dest = packetbuf_addr(PACKETBUF_ADDR_RECEIVER);
+  const linkaddr_t *dest = packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER);
   if(linkaddr_cmp(dest, &linkaddr_null)) {
     return;
   }
@@ -232,7 +232,7 @@ uip_ds6_link_neighbor_callback(int status, int numtx)
 }
 /*---------------------------------------------------------------------------*/
 void
-uip_ds6_neighbor_periodic(void)
+uip_ds6_neighbor_periodic(struct net_buf *buf)
 {
   /* Periodic processing on neighbors */
   uip_ds6_nbr_t *nbr = nbr_table_head(ds6_neighbors);
@@ -272,10 +272,10 @@ uip_ds6_neighbor_periodic(void)
     case NBR_INCOMPLETE:
       if(nbr->nscount >= UIP_ND6_MAX_MULTICAST_SOLICIT) {
         uip_ds6_nbr_rm(nbr);
-      } else if(stimer_expired(&nbr->sendns) && (uip_len == 0)) {
+      } else if(stimer_expired(&nbr->sendns) && (uip_len(buf) == 0)) {
         nbr->nscount++;
         PRINTF("NBR_INCOMPLETE: NS %u\n", nbr->nscount);
-        uip_nd6_ns_output(NULL, NULL, &nbr->ipaddr);
+        uip_nd6_ns_output(buf, NULL, NULL, &nbr->ipaddr);
         stimer_set(&nbr->sendns, uip_ds6_if.retrans_timer / 1000);
       }
       break;
@@ -297,10 +297,10 @@ uip_ds6_neighbor_periodic(void)
           }
         }
         uip_ds6_nbr_rm(nbr);
-      } else if(stimer_expired(&nbr->sendns) && (uip_len == 0)) {
+      } else if(stimer_expired(&nbr->sendns) && (uip_len(buf) == 0)) {
         nbr->nscount++;
         PRINTF("PROBE: NS %u\n", nbr->nscount);
-        uip_nd6_ns_output(NULL, &nbr->ipaddr, &nbr->ipaddr);
+        uip_nd6_ns_output(buf, NULL, &nbr->ipaddr, &nbr->ipaddr);
         stimer_set(&nbr->sendns, uip_ds6_if.retrans_timer / 1000);
       }
       break;

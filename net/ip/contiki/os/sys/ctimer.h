@@ -51,6 +51,8 @@
  *
  */
 
+#include <net/net_buf.h>
+
 #ifndef CTIMER_H_
 #define CTIMER_H_
 
@@ -60,8 +62,9 @@ struct ctimer {
   struct ctimer *next;
   struct etimer etimer;
   struct process *p;
-  void (*f)(void *);
+  void (*f)(struct net_buf *, void *);
   void *ptr;
+  struct net_buf *buf;
 };
 
 /**
@@ -110,8 +113,8 @@ void ctimer_restart(struct ctimer *c);
  *             the callback function f will be called with ptr as argument.
  *
  */
-void ctimer_set(struct ctimer *c, clock_time_t t,
-		void (*f)(void *), void *ptr);
+void ctimer_set(struct net_buf *buf, struct ctimer *c, clock_time_t t,
+		void (*f)(struct net_buf *, void *), void *ptr);
 
 /**
  * \brief      Stop a pending callback timer.

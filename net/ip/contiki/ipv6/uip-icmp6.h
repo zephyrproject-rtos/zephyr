@@ -42,6 +42,8 @@
  * \author Mathilde Durvy <mdurvy@cisco.com>
  */
 
+#include <net/net_buf.h>
+
 #ifndef ICMP6_H_
 #define ICMP6_H_
 
@@ -115,7 +117,7 @@ typedef struct uip_icmp6_error{
  * \param param 32 bit parameter of the error message, semantic depends on error
  */
 void
-uip_icmp6_error_output(uint8_t type, uint8_t code, uint32_t param); 
+uip_icmp6_error_output(struct net_buf *buf, uint8_t type, uint8_t code, uint32_t param); 
 
 /**
  * \brief Send an icmpv6 message
@@ -125,7 +127,7 @@ uip_icmp6_error_output(uint8_t type, uint8_t code, uint32_t param);
  * \param payload_len length of the payload
  */
 void
-uip_icmp6_send(const uip_ipaddr_t *dest, int type, int code, int payload_len);
+uip_icmp6_send(struct net_buf *buf, const uip_ipaddr_t *dest, int type, int code, int payload_len);
 
 
 
@@ -178,7 +180,7 @@ typedef struct uip_icmp6_input_handler {
   struct uip_icmp6_input_handler *next;
   uint8_t type;
   uint8_t icode;
-  void (*handler)(void);
+  void (*handler)(struct net_buf *buf);
 } uip_icmp6_input_handler_t;
 
 #define UIP_ICMP6_INPUT_SUCCESS     0
@@ -220,7 +222,7 @@ typedef struct uip_icmp6_input_handler {
  * type and that it was invoked. It does NOT provide any indication whatsoever
  * regarding whether the handler itself succeeded.
  */
-uint8_t uip_icmp6_input(uint8_t type, uint8_t icode);
+uint8_t uip_icmp6_input(struct net_buf *buf, uint8_t type, uint8_t icode);
 
 /**
  * \brief Register a handler which can handle a specific ICMPv6 message type

@@ -29,6 +29,8 @@
  *
  */
 
+#include <net/net_buf.h>
+
 #include "contiki-net.h"
 #include "udp-socket.h"
 
@@ -36,9 +38,12 @@
 
 PROCESS(udp_socket_process, "UDP socket process");
 
+#if 0
+/* Moved to net_buf */
 static uint8_t buf[UIP_BUFSIZE];
+#endif
 
-#define UIP_IP_BUF   ((struct uip_udpip_hdr *)&uip_buf[UIP_LLH_LEN])
+#define UIP_IP_BUF(buf)   ((struct uip_udpip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
 
 
 /*---------------------------------------------------------------------------*/
@@ -118,19 +123,19 @@ udp_socket_connect(struct udp_socket *c,
 }
 /*---------------------------------------------------------------------------*/
 int
-udp_socket_send(struct udp_socket *c,
+udp_socket_send(struct net_buf *buf, struct udp_socket *c,
                 const void *data, uint16_t datalen)
 {
   if(c == NULL || c->udp_conn == NULL) {
     return -1;
   }
 
-  uip_udp_packet_send(c->udp_conn, data, datalen);
+  uip_udp_packet_send(buf, c->udp_conn, data, datalen);
   return datalen;
 }
 /*---------------------------------------------------------------------------*/
 int
-udp_socket_sendto(struct udp_socket *c,
+udp_socket_sendto(struct net_buf *buf, struct udp_socket *c,
                   const void *data, uint16_t datalen,
                   const uip_ipaddr_t *to,
                   uint16_t port)
@@ -140,14 +145,14 @@ udp_socket_sendto(struct udp_socket *c,
   }
 
   if(c->udp_conn != NULL) {
-    uip_udp_packet_sendto(c->udp_conn, data, datalen,
+    uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
                           to, UIP_HTONS(port));
     return datalen;
   }
   return -1;
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(udp_socket_process, ev, data)
+PROCESS_THREAD(udp_socket_process, ev, data, buf)
 {
   struct udp_socket *c;
   PROCESS_BEGIN();
@@ -169,23 +174,27 @@ PROCESS_THREAD(udp_socket_process, ev, data)
 
         /* If we were called because of incoming data, we should call
            the reception callback. */
-        if(uip_newdata()) {
+        if(uip_newdata(buf)) {
           /* Copy the data from the uIP data buffer into our own
              buffer to avoid the uIP buffer being messed with by the
              callee. */
-          memcpy(buf, uip_appdata, uip_datalen());
-
+#if 0
+          /* Note that we cannot do this as the stack is suppose to be
+	   * re-entrant.
+	   */
+          memcpy(bad_buf, uip_appdata(buf), uip_datalen(buf));
+#endif
           /* Call the client process. We use the PROCESS_CONTEXT
              mechanism to temporarily switch process context to the
              client process. */
           if(c->input_callback != NULL) {
             PROCESS_CONTEXT_BEGIN(c->p);
             c->input_callback(c, c->ptr,
-                              &(UIP_IP_BUF->srcipaddr),
-                              UIP_HTONS(UIP_IP_BUF->srcport),
-                              &(UIP_IP_BUF->destipaddr),
-                              UIP_HTONS(UIP_IP_BUF->destport),
-                              buf, uip_datalen());
+                              &(UIP_IP_BUF(buf)->srcipaddr),
+                              UIP_HTONS(UIP_IP_BUF(buf)->srcport),
+                              &(UIP_IP_BUF(buf)->destipaddr),
+                              UIP_HTONS(UIP_IP_BUF(buf)->destport),
+                              uip_buf(buf), uip_datalen(buf));
             PROCESS_CONTEXT_END();
           }
         }

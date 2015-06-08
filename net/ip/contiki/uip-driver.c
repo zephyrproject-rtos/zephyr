@@ -45,13 +45,13 @@
 
 /*--------------------------------------------------------------------*/
 uint8_t
-uip_driver_send(const uip_lladdr_t *lladdr)
+uip_driver_send(struct net_buf *buf, const uip_lladdr_t *lladdr)
 {
-  packetbuf_copyfrom(&uip_buf[UIP_LLH_LEN], uip_len);
+  packetbuf_copyfrom(buf, &uip_buf(buf)[UIP_LLH_LEN], uip_len(buf));
 
   /* XXX we should provide a callback function that is called when the
      packet is sent. For now, we just supply a NULL pointer. */
-  NETSTACK_LLSEC.send(NULL, NULL);
+  NETSTACK_LLSEC.send(buf, NULL, NULL);
   return 1;
 }
 /*--------------------------------------------------------------------*/
@@ -66,13 +66,13 @@ init(void)
 }
 /*--------------------------------------------------------------------*/
 static void
-input(void)
+input(struct net_buf *buf)
 {
-  if(packetbuf_datalen() > 0 &&
-     packetbuf_datalen() <= UIP_BUFSIZE - UIP_LLH_LEN) {
-    memcpy(&uip_buf[UIP_LLH_LEN], packetbuf_dataptr(), packetbuf_datalen());
-    uip_len = packetbuf_datalen();
-    tcpip_input();
+  if(packetbuf_datalen(buf) > 0 &&
+     packetbuf_datalen(buf) <= UIP_BUFSIZE - UIP_LLH_LEN) {
+    memcpy(&uip_buf(buf)[UIP_LLH_LEN], packetbuf_dataptr(buf), packetbuf_datalen(buf));
+    uip_len(buf) = packetbuf_datalen(buf);
+    tcpip_input(buf);
   }
 }
 /*--------------------------------------------------------------------*/

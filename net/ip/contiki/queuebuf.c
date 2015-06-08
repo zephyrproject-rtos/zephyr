@@ -43,6 +43,8 @@
  */
 
 #include "contiki-net.h"
+#include "memb.h"
+#include "queuebuf.h"
 #if WITH_SWAP
 #include "cfs/cfs.h"
 #endif
@@ -308,9 +310,9 @@ queuebuf_init(void)
 }
 /*---------------------------------------------------------------------------*/
 int
-queuebuf_numfree(void)
+queuebuf_numfree(struct net_buf *buf)
 {
-  if(packetbuf_is_reference()) {
+  if(packetbuf_is_reference(buf)) {
     return memb_numfree(&refbufmem);
   } else {
     return memb_numfree(&bufmem);
@@ -319,24 +321,24 @@ queuebuf_numfree(void)
 /*---------------------------------------------------------------------------*/
 #if QUEUEBUF_DEBUG
 struct queuebuf *
-queuebuf_new_from_packetbuf_debug(const char *file, int line)
+queuebuf_new_from_packetbuf_debug(struct net_buf *netbuf, const char *file, int line)
 #else /* QUEUEBUF_DEBUG */
 struct queuebuf *
-queuebuf_new_from_packetbuf(void)
+queuebuf_new_from_packetbuf(struct net_buf *netbuf)
 #endif /* QUEUEBUF_DEBUG */
 {
   struct queuebuf *buf;
   struct queuebuf_ref *rbuf;
 
-  if(packetbuf_is_reference()) {
+  if(packetbuf_is_reference(netbuf)) {
     rbuf = memb_alloc(&refbufmem);
     if(rbuf != NULL) {
 #if QUEUEBUF_STATS
       ++queuebuf_ref_len;
 #endif /* QUEUEBUF_STATS */
-      rbuf->len = packetbuf_datalen();
-      rbuf->ref = packetbuf_reference_ptr();
-      rbuf->hdrlen = packetbuf_copyto_hdr(rbuf->hdr);
+      rbuf->len = packetbuf_datalen(netbuf);
+      rbuf->ref = packetbuf_reference_ptr(netbuf);
+      rbuf->hdrlen = packetbuf_copyto_hdr(netbuf, rbuf->hdr);
     } else {
       PRINTF("queuebuf_new_from_packetbuf: could not allocate a reference queuebuf\n");
     }
@@ -372,8 +374,8 @@ queuebuf_new_from_packetbuf(void)
       buframptr = buf->ram_ptr;
 #endif
 
-      buframptr->len = packetbuf_copyto(buframptr->data);
-      packetbuf_attr_copyto(buframptr->attrs, buframptr->addrs);
+      buframptr->len = packetbuf_copyto(netbuf, buframptr->data);
+      packetbuf_attr_copyto(netbuf, buframptr->attrs, buframptr->addrs);
 
 #if WITH_SWAP
       if(buf->location == IN_CFS) {
@@ -404,10 +406,10 @@ queuebuf_new_from_packetbuf(void)
 }
 /*---------------------------------------------------------------------------*/
 void
-queuebuf_update_attr_from_packetbuf(struct queuebuf *buf)
+queuebuf_update_attr_from_packetbuf(struct net_buf *netbuf, struct queuebuf *buf)
 {
   struct queuebuf_data *buframptr = queuebuf_load_to_ram(buf);
-  packetbuf_attr_copyto(buframptr->attrs, buframptr->addrs);
+  packetbuf_attr_copyto(netbuf, buframptr->attrs, buframptr->addrs);
 #if WITH_SWAP
   if(buf->location == IN_CFS) {
     queuebuf_flush_tmpdata();
@@ -416,11 +418,11 @@ queuebuf_update_attr_from_packetbuf(struct queuebuf *buf)
 }
 /*---------------------------------------------------------------------------*/
 void
-queuebuf_update_from_packetbuf(struct queuebuf *buf)
+queuebuf_update_from_packetbuf(struct net_buf *netbuf, struct queuebuf *buf)
 {
   struct queuebuf_data *buframptr = queuebuf_load_to_ram(buf);
-  packetbuf_attr_copyto(buframptr->attrs, buframptr->addrs);
-  buframptr->len = packetbuf_copyto(buframptr->data);
+  packetbuf_attr_copyto(netbuf, buframptr->attrs, buframptr->addrs);
+  buframptr->len = packetbuf_copyto(netbuf, buframptr->data);
 #if WITH_SWAP
   if(buf->location == IN_CFS) {
     queuebuf_flush_tmpdata();
@@ -458,19 +460,19 @@ queuebuf_free(struct queuebuf *buf)
 }
 /*---------------------------------------------------------------------------*/
 void
-queuebuf_to_packetbuf(struct queuebuf *b)
+queuebuf_to_packetbuf(struct net_buf *netbuf, struct queuebuf *b)
 {
   struct queuebuf_ref *r;
   if(memb_inmemb(&bufmem, b)) {
     struct queuebuf_data *buframptr = queuebuf_load_to_ram(b);
-    packetbuf_copyfrom(buframptr->data, buframptr->len);
-    packetbuf_attr_copyfrom(buframptr->attrs, buframptr->addrs);
+    packetbuf_copyfrom(netbuf, buframptr->data, buframptr->len);
+    packetbuf_attr_copyfrom(netbuf, buframptr->attrs, buframptr->addrs);
   } else if(memb_inmemb(&refbufmem, b)) {
     r = (struct queuebuf_ref *)b;
-    packetbuf_clear();
-    packetbuf_copyfrom(r->ref, r->len);
-    packetbuf_hdralloc(r->hdrlen);
-    memcpy(packetbuf_hdrptr(), r->hdr, r->hdrlen);
+    packetbuf_clear(netbuf);
+    packetbuf_copyfrom(netbuf, r->ref, r->len);
+    packetbuf_hdralloc(netbuf, r->hdrlen);
+    memcpy(packetbuf_hdrptr(netbuf), r->hdr, r->hdrlen);
   }
 }
 /*---------------------------------------------------------------------------*/

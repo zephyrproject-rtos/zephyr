@@ -31,6 +31,7 @@
  */
 
 #include "net/mac/mac.h"
+#include "net/net_buf.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -42,7 +43,7 @@
 
 /*---------------------------------------------------------------------------*/
 void
-mac_call_sent_callback(mac_callback_t sent, void *ptr, int status, int num_tx)
+mac_call_sent_callback(struct net_buf *buf, mac_callback_t sent, void *ptr, int status, int num_tx)
 {
   PRINTF("mac_callback_t %p ptr %p status %d num_tx %d\n",
          (void *)sent, ptr, status, num_tx);
@@ -61,7 +62,7 @@ mac_call_sent_callback(mac_callback_t sent, void *ptr, int status, int num_tx)
   }
 
   if(sent) {
-    sent(ptr, status, num_tx);
+    sent(buf, ptr, status, num_tx);
   }
 }
 /*---------------------------------------------------------------------------*/

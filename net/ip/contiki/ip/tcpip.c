@@ -60,9 +60,9 @@ void uip_log(char *msg);
 #define UIP_LOG(m)
 #endif
 
-#define UIP_ICMP_BUF ((struct uip_icmp_hdr *)&uip_buf[UIP_LLIPH_LEN + uip_ext_len])
-#define UIP_IP_BUF ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
-#define UIP_TCP_BUF ((struct uip_tcpip_hdr *)&uip_buf[UIP_LLH_LEN])
+#define UIP_ICMP_BUF(buf) ((struct uip_icmp_hdr *)&uip_buf(buf)[UIP_LLIPH_LEN + uip_ext_len(buf)])
+#define UIP_IP_BUF(buf) ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
+#define UIP_TCP_BUF(buf) ((struct uip_tcpip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
 
 #ifdef UIP_FALLBACK_INTERFACE
 extern struct uip_fallback_interface UIP_FALLBACK_INTERFACE;
@@ -109,14 +109,14 @@ enum {
 /* Called on IP packet output. */
 #if NETSTACK_CONF_WITH_IPV6
 
-static uint8_t (* outputfunc)(const uip_lladdr_t *a);
+static uint8_t (* outputfunc)(struct net_buf *buf, const uip_lladdr_t *a);
 
 uint8_t
-tcpip_output(const uip_lladdr_t *a)
+tcpip_output(struct net_buf *buf, const uip_lladdr_t *a)
 {
   int ret;
   if(outputfunc != NULL) {
-    ret = outputfunc(a);
+    ret = outputfunc(buf, a);
     return ret;
   }
   UIP_LOG("tcpip_output: Use tcpip_set_outputfunc() to set an output function");
@@ -124,7 +124,7 @@ tcpip_output(const uip_lladdr_t *a)
 }
 
 void
-tcpip_set_outputfunc(uint8_t (*f)(const uip_lladdr_t *))
+tcpip_set_outputfunc(uint8_t (*f)(struct net_buf *buf, const uip_lladdr_t *))
 {
   outputfunc = f;
 }
@@ -152,6 +152,8 @@ tcpip_set_outputfunc(uint8_t (*f)(void))
 unsigned char tcpip_is_forwarding; /* Forwarding right now? */
 #endif /* UIP_CONF_IP_FORWARD */
 
+struct net_buf;
+
 PROCESS(tcpip_process, "TCP/IP stack");
 
 /*---------------------------------------------------------------------------*/
@@ -167,7 +169,7 @@ start_periodic_tcp_timer(void)
 
 /*---------------------------------------------------------------------------*/
 static void
-check_for_tcp_syn(void)
+check_for_tcp_syn(struct net_buf *buf)
 {
 #if UIP_TCP || UIP_CONF_IP_FORWARD
   /* This is a hack that is needed to start the periodic TCP timer if
@@ -176,15 +178,15 @@ check_for_tcp_syn(void)
      this timer.  This function is called for every incoming IP packet
      to check for such SYNs. */
 #define TCP_SYN 0x02
-  if(UIP_IP_BUF->proto == UIP_PROTO_TCP &&
-     (UIP_TCP_BUF->flags & TCP_SYN) == TCP_SYN) {
+  if(UIP_IP_BUF(buf)->proto == UIP_PROTO_TCP &&
+     (UIP_TCP_BUF(buf)->flags & TCP_SYN) == TCP_SYN) {
     start_periodic_tcp_timer();
   }
 #endif /* UIP_TCP || UIP_CONF_IP_FORWARD */
 }
 /*---------------------------------------------------------------------------*/
 static void
-packet_input(void)
+packet_input(struct net_buf *buf)
 {
 #if UIP_CONF_IP_FORWARD
   if(uip_len > 0) {
@@ -209,18 +211,18 @@ packet_input(void)
     tcpip_is_forwarding = 0;
   }
 #else /* UIP_CONF_IP_FORWARD */
-  if(uip_len > 0) {
-    check_for_tcp_syn();
-    uip_input();
-    if(uip_len > 0) {
+  if(uip_len(buf) > 0) {
+    check_for_tcp_syn(buf);
+    uip_input(buf);
+    if(uip_len(buf) > 0) {
 #if UIP_CONF_TCP_SPLIT
-      uip_split_output();
+      uip_split_output(buf);
 #else /* UIP_CONF_TCP_SPLIT */
 #if NETSTACK_CONF_WITH_IPV6
-      tcpip_ipv6_output();
+      tcpip_ipv6_output(buf);
 #else
       PRINTF("tcpip packet_input output len %d\n", uip_len);
-      tcpip_output();
+      tcpip_output(buf);
 #endif
 #endif /* UIP_CONF_TCP_SPLIT */
     }
@@ -364,14 +366,15 @@ tcpip_icmp6_call(uint8_t type)
   if(uip_icmp6_conns.appstate.p != PROCESS_NONE) {
     /* XXX: This is a hack that needs to be updated. Passing a pointer (&type)
        like this only works with process_post_synch. */
-    process_post_synch(uip_icmp6_conns.appstate.p, tcpip_icmp6_event, &type);
+    process_post_synch(uip_icmp6_conns.appstate.p, tcpip_icmp6_event, &type,
+		       NULL);
   }
   return;
 }
 #endif /* UIP_CONF_ICMP6 */
 /*---------------------------------------------------------------------------*/
 static void
-eventhandler(process_event_t ev, process_data_t data)
+eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
 {
 #if UIP_TCP
   static unsigned char i;
@@ -438,7 +441,7 @@ eventhandler(process_event_t ev, process_data_t data)
               etimer_restart(&periodic);
               uip_periodic(i);
 #if NETSTACK_CONF_WITH_IPV6
-              tcpip_ipv6_output();
+              tcpip_ipv6_output(buf);
 #else
               if(uip_len > 0) {
 		PRINTF("tcpip_output from periodic len %d\n", uip_len);
@@ -462,7 +465,7 @@ eventhandler(process_event_t ev, process_data_t data)
         if(data == &uip_reass_timer &&
            etimer_expired(&uip_reass_timer)) {
           uip_reass_over();
-          tcpip_ipv6_output();
+          tcpip_ipv6_output(buf);
         }
 #endif /* UIP_CONF_IPV6_REASSEMBLY */
         /*
@@ -477,14 +480,14 @@ eventhandler(process_event_t ev, process_data_t data)
 #if !UIP_CONF_ROUTER
         if(data == &uip_ds6_timer_rs &&
            etimer_expired(&uip_ds6_timer_rs)) {
-          uip_ds6_send_rs();
-          tcpip_ipv6_output();
+          uip_ds6_send_rs(buf);
+          tcpip_ipv6_output(buf);
         }
 #endif /* !UIP_CONF_ROUTER */
         if(data == &uip_ds6_timer_periodic &&
            etimer_expired(&uip_ds6_timer_periodic)) {
-          uip_ds6_periodic();
-          tcpip_ipv6_output();
+          uip_ds6_periodic(buf);
+          tcpip_ipv6_output(buf);
         }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
       }
@@ -495,7 +498,7 @@ eventhandler(process_event_t ev, process_data_t data)
       if(data != NULL) {
         uip_poll_conn(data);
 #if NETSTACK_CONF_WITH_IPV6
-        tcpip_ipv6_output();
+        tcpip_ipv6_output(buf);
 #else /* NETSTACK_CONF_WITH_IPV6 */
         if(uip_len > 0) {
 	  PRINTF("tcpip_output from tcp poll len %d\n", uip_len);
@@ -510,9 +513,9 @@ eventhandler(process_event_t ev, process_data_t data)
 #if UIP_UDP
     case UDP_POLL:
       if(data != NULL) {
-        uip_udp_periodic_conn(data);
+        uip_udp_periodic_conn(buf, data);
 #if NETSTACK_CONF_WITH_IPV6
-        tcpip_ipv6_output();
+        tcpip_ipv6_output(buf);
 #else
         if(uip_len > 0) {
           tcpip_output();
@@ -523,57 +526,57 @@ eventhandler(process_event_t ev, process_data_t data)
 #endif /* UIP_UDP */
 
     case PACKET_INPUT:
-      packet_input();
+      packet_input(buf);
       break;
   };
 }
 /*---------------------------------------------------------------------------*/
 void
-tcpip_input(void)
+tcpip_input(struct net_buf *buf)
 {
-  process_post_synch(&tcpip_process, PACKET_INPUT, NULL);
-  uip_len = 0;
+  process_post_synch(&tcpip_process, PACKET_INPUT, NULL, buf);
+  uip_len(buf) = 0;
 #if NETSTACK_CONF_WITH_IPV6
-  uip_ext_len = 0;
+  uip_ext_len(buf) = 0;
 #endif /*NETSTACK_CONF_WITH_IPV6*/
 }
 /*---------------------------------------------------------------------------*/
 #if NETSTACK_CONF_WITH_IPV6
 void
-tcpip_ipv6_output(void)
+tcpip_ipv6_output(struct net_buf *buf)
 {
   uip_ds6_nbr_t *nbr = NULL;
   uip_ipaddr_t *nexthop;
 
-  if(uip_len == 0) {
+  if(uip_len(buf) == 0) {
     return;
   }
 
-  if(uip_len > UIP_LINK_MTU) {
+  if(uip_len(buf) > UIP_LINK_MTU) {
     UIP_LOG("tcpip_ipv6_output: Packet to big");
-    uip_len = 0;
+    uip_len(buf) = 0;
     return;
   }
 
-  if(uip_is_addr_unspecified(&UIP_IP_BUF->destipaddr)){
+  if(uip_is_addr_unspecified(&UIP_IP_BUF(buf)->destipaddr)){
     UIP_LOG("tcpip_ipv6_output: Destination address unspecified");
-    uip_len = 0;
+    uip_len(buf) = 0;
     return;
   }
 
-  if(!uip_is_addr_mcast(&UIP_IP_BUF->destipaddr)) {
+  if(!uip_is_addr_mcast(&UIP_IP_BUF(buf)->destipaddr)) {
     /* Next hop determination */
     nbr = NULL;
 
     /* We first check if the destination address is on our immediate
        link. If so, we simply use the destination address as our
        nexthop address. */
-    if(uip_ds6_is_addr_onlink(&UIP_IP_BUF->destipaddr)){
-      nexthop = &UIP_IP_BUF->destipaddr;
+    if(uip_ds6_is_addr_onlink(&UIP_IP_BUF(buf)->destipaddr)){
+      nexthop = &UIP_IP_BUF(buf)->destipaddr;
     } else {
       uip_ds6_route_t *route;
       /* Check if we have a route to the destination address. */
-      route = uip_ds6_route_lookup(&UIP_IP_BUF->destipaddr);
+      route = uip_ds6_route_lookup(&UIP_IP_BUF(buf)->destipaddr);
 
       /* No route was found - we send to the default route instead. */
       if(route == NULL) {
@@ -582,19 +585,19 @@ tcpip_ipv6_output(void)
         if(nexthop == NULL) {
 #ifdef UIP_FALLBACK_INTERFACE
 	  PRINTF("FALLBACK: removing ext hdrs & setting proto %d %d\n", 
-		 uip_ext_len, *((uint8_t *)UIP_IP_BUF + 40));
-	  if(uip_ext_len > 0) {
+		 uip_ext_len(buf), *((uint8_t *)UIP_IP_BUF(buf) + 40));
+	  if(uip_ext_len(buf) > 0) {
 	    extern void remove_ext_hdr(void);
-	    uint8_t proto = *((uint8_t *)UIP_IP_BUF + 40);
+	    uint8_t proto = *((uint8_t *)UIP_IP_BUF(buf) + 40);
 	    remove_ext_hdr();
 	    /* This should be copied from the ext header... */
-	    UIP_IP_BUF->proto = proto;
+	    UIP_IP_BUF(buf)->proto = proto;
 	  }
 	  UIP_FALLBACK_INTERFACE.output();
 #else
           PRINTF("tcpip_ipv6_output: Destination off-link but no route\n");
 #endif /* !UIP_FALLBACK_INTERFACE */
-          uip_len = 0;
+          uip_len(buf) = 0;
           return;
         }
 
@@ -646,7 +649,7 @@ tcpip_ipv6_output(void)
 
 #if UIP_CONF_IPV6_RPL
     if(rpl_update_header_final(nexthop)) {
-      uip_len = 0;
+      uip_len(buf) = 0;
       return;
     }
 #endif /* UIP_CONF_IPV6_RPL */
@@ -654,14 +657,14 @@ tcpip_ipv6_output(void)
     if(nbr == NULL) {
 #if UIP_ND6_SEND_NA
       if((nbr = uip_ds6_nbr_add(nexthop, NULL, 0, NBR_INCOMPLETE)) == NULL) {
-        uip_len = 0;
+        uip_len(buf) = 0;
         return;
       } else {
 #if UIP_CONF_IPV6_QUEUE_PKT
         /* Copy outgoing pkt in the queuing buffer for later transmit. */
         if(uip_packetqueue_alloc(&nbr->packethandle, UIP_DS6_NBR_PACKET_LIFETIME) != NULL) {
-          memcpy(uip_packetqueue_buf(&nbr->packethandle), UIP_IP_BUF, uip_len);
-          uip_packetqueue_set_buflen(&nbr->packethandle, uip_len);
+          memcpy(uip_packetqueue_buf(&nbr->packethandle), UIP_IP_BUF(buf), uip_len(buf));
+          uip_packetqueue_set_buflen(&nbr->packethandle, uip_len(buf));
         }
 #endif
       /* RFC4861, 7.2.2:
@@ -670,10 +673,10 @@ tcpip_ipv6_output(void)
        * address SHOULD be placed in the IP Source Address of the outgoing
        * solicitation.  Otherwise, any one of the addresses assigned to the
        * interface should be used."*/
-       if(uip_ds6_is_my_addr(&UIP_IP_BUF->srcipaddr)){
-          uip_nd6_ns_output(&UIP_IP_BUF->srcipaddr, NULL, &nbr->ipaddr);
+       if(uip_ds6_is_my_addr(&UIP_IP_BUF(buf)->srcipaddr)){
+          uip_nd6_ns_output(buf, &UIP_IP_BUF(buf)->srcipaddr, NULL, &nbr->ipaddr);
         } else {
-          uip_nd6_ns_output(NULL, NULL, &nbr->ipaddr);
+          uip_nd6_ns_output(buf, NULL, NULL, &nbr->ipaddr);
         }
 
         stimer_set(&nbr->sendns, uip_ds6_if.retrans_timer / 1000);
@@ -688,11 +691,11 @@ tcpip_ipv6_output(void)
         /* Copy outgoing pkt in the queuing buffer for later transmit and set
            the destination nbr to nbr. */
         if(uip_packetqueue_alloc(&nbr->packethandle, UIP_DS6_NBR_PACKET_LIFETIME) != NULL) {
-          memcpy(uip_packetqueue_buf(&nbr->packethandle), UIP_IP_BUF, uip_len);
-          uip_packetqueue_set_buflen(&nbr->packethandle, uip_len);
+          memcpy(uip_packetqueue_buf(&nbr->packethandle), UIP_IP_BUF(buf), uip_len(buf));
+          uip_packetqueue_set_buflen(&nbr->packethandle, uip_len(buf));
         }
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
-        uip_len = 0;
+        uip_len(buf) = 0;
         return;
       }
       /* Send in parallel if we are running NUD (nbc state is either STALE,
@@ -705,7 +708,7 @@ tcpip_ipv6_output(void)
       }
 #endif /* UIP_ND6_SEND_NA */
 
-      tcpip_output(uip_ds6_nbr_get_ll(nbr));
+      tcpip_output(buf, uip_ds6_nbr_get_ll(nbr));
 
 #if UIP_CONF_IPV6_QUEUE_PKT
       /*
@@ -715,22 +718,22 @@ tcpip_ipv6_output(void)
        * to STALE, and you must both send a NA and the queued packet.
        */
       if(uip_packetqueue_buflen(&nbr->packethandle) != 0) {
-        uip_len = uip_packetqueue_buflen(&nbr->packethandle);
-        memcpy(UIP_IP_BUF, uip_packetqueue_buf(&nbr->packethandle), uip_len);
+        uip_len(buf) = uip_packetqueue_buflen(&nbr->packethandle);
+        memcpy(UIP_IP_BUF(buf), uip_packetqueue_buf(&nbr->packethandle), uip_len(buf));
         uip_packetqueue_free(&nbr->packethandle);
         tcpip_output(uip_ds6_nbr_get_ll(nbr));
       }
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
 
-      uip_len = 0;
+      uip_len(buf) = 0;
       return;
     }
     return;
   }
   /* Multicast IP destination address. */
-  tcpip_output(NULL);
-  uip_len = 0;
-  uip_ext_len = 0;
+  tcpip_output(buf, NULL);
+  uip_len(buf) = 0;
+  uip_ext_len(buf) = 0;
 }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
 /*---------------------------------------------------------------------------*/
@@ -751,18 +754,18 @@ tcpip_poll_tcp(struct uip_conn *conn)
 #endif /* UIP_TCP */
 /*---------------------------------------------------------------------------*/
 void
-tcpip_uipcall(void)
+tcpip_uipcall(struct net_buf *buf)
 {
   uip_udp_appstate_t *ts;
   
 #if UIP_UDP
-  if(uip_conn != NULL) {
-    ts = &uip_conn->appstate;
+  if(uip_conn(buf) != NULL) {
+    ts = &uip_conn(buf)->appstate;
   } else {
-    ts = &uip_udp_conn->appstate;
+    ts = &uip_udp_conn(buf)->appstate;
   }
 #else /* UIP_UDP */
-  ts = &uip_conn->appstate;
+  ts = &uip_conn(buf)->appstate;
 #endif /* UIP_UDP */
 
 #if UIP_TCP
@@ -791,11 +794,11 @@ tcpip_uipcall(void)
 #endif /* UIP_TCP */
   
   if(ts->p != NULL) {
-    process_post_synch(ts->p, tcpip_event, ts->state);
+    process_post_synch(ts->p, tcpip_event, ts->state, buf);
   }
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(tcpip_process, ev, data)
+PROCESS_THREAD(tcpip_process, ev, data, buf)
 {
   PROCESS_BEGIN();
   
@@ -827,7 +830,7 @@ PROCESS_THREAD(tcpip_process, ev, data)
 
   while(1) {
     PROCESS_YIELD();
-    eventhandler(ev, data);
+    eventhandler(ev, data, buf);
   }
   
   PROCESS_END();

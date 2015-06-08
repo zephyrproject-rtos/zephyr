@@ -77,7 +77,7 @@ update_time(void)
   }
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(etimer_process, ev, data)
+PROCESS_THREAD(etimer_process, ev, data, buf)
 {
   struct etimer *t, *u;
 	

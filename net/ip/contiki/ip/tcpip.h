@@ -68,6 +68,7 @@
 #define TCPIP_H_
 
 #include "contiki.h"
+#include "net/ip/uipaddr.h"
 
 struct uip_conn;
 
@@ -77,7 +78,7 @@ struct tcpip_uipstate {
 };
 
 #define UIP_APPCALL tcpip_uipcall
-#define UIP_UDP_APPCALL tcpip_uipcall
+#define UIP_UDP_APPCALL(buf) tcpip_uipcall(buf)
 #define UIP_ICMP6_APPCALL tcpip_icmp6_call
 
 /*#define UIP_APPSTATE_SIZE sizeof(struct tcpip_uipstate)*/
@@ -86,7 +87,7 @@ typedef struct tcpip_uipstate uip_udp_appstate_t;
 typedef struct tcpip_uipstate uip_tcp_appstate_t;
 typedef struct tcpip_uipstate uip_icmp6_appstate_t;
 #include "net/ip/uip.h"
-void tcpip_uipcall(void);
+void tcpip_uipcall(struct net_buf *buf);
 
 /**
  * \name TCP functions
@@ -334,15 +335,15 @@ CCIF extern process_event_t tcpip_event;
  *             and the length of the packet must be in the global
  *             uip_len variable.
  */
-CCIF void tcpip_input(void);
+CCIF void tcpip_input(struct net_buf *buf);
 
 /**
  * \brief Output packet to layer 2
  * The eventual parameter is the MAC address of the destination.
  */
 #if NETSTACK_CONF_WITH_IPV6
-uint8_t tcpip_output(const uip_lladdr_t *);
-void tcpip_set_outputfunc(uint8_t (* f)(const uip_lladdr_t *));
+uint8_t tcpip_output(struct net_buf *buf, const uip_lladdr_t *);
+void tcpip_set_outputfunc(uint8_t (* f)(struct net_buf *buf, const uip_lladdr_t *));
 #else
 uint8_t tcpip_output(void);
 void tcpip_set_outputfunc(uint8_t (* f)(void));
@@ -352,7 +353,7 @@ void tcpip_set_outputfunc(uint8_t (* f)(void));
  * \brief This function does address resolution and then calls tcpip_output
  */
 #if NETSTACK_CONF_WITH_IPV6
-void tcpip_ipv6_output(void);
+void tcpip_ipv6_output(struct net_buf *buf);
 #endif
 
 /**

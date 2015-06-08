@@ -32,12 +32,15 @@
 #ifndef UDP_SOCKET_H
 #define UDP_SOCKET_H
 
+#include <net/net_buf.h>
+
 #include "net/ip/uip.h"
 
 struct udp_socket;
 
 /**
  * \brief      A UDP socket callback function
+ * \param buf  Buffer that received the data
  * \param c    A pointer to the struct udp_socket that received the data
  * \param ptr  An opaque pointer that was specified when the UDP socket was registered with udp_socket_register()
  * \param source_addr The IP address from which the datagram was sent
@@ -68,7 +71,6 @@ struct udp_socket {
   struct process *p;
 
   struct uip_udp_conn *udp_conn;
-
 };
 
 /**
@@ -142,6 +144,7 @@ int udp_socket_connect(struct udp_socket *c,
                        uint16_t remote_port);
 /**
  * \brief      Send data on a UDP socket
+ * \param buf  Buffer to send
  * \param c    A pointer to the struct udp_socket on which the data should be sent
  * \param data A pointer to the data that should be sent
  * \param datalen The length of the data to be sent
@@ -152,11 +155,12 @@ int udp_socket_connect(struct udp_socket *c,
  *             port with udp_socket_connect().
  *
  */
-int udp_socket_send(struct udp_socket *c,
+int udp_socket_send(struct net_buf *buf, struct udp_socket *c,
                     const void *data, uint16_t datalen);
 
 /**
  * \brief      Send data on a UDP socket to a specific address and port
+ * \param buf  Buffer to send
  * \param c    A pointer to the struct udp_socket on which the data should be sent
  * \param data A pointer to the data that should be sent
  * \param datalen The length of the data to be sent
@@ -171,7 +175,7 @@ int udp_socket_send(struct udp_socket *c,
  *             this function.
  *
  */
-int udp_socket_sendto(struct udp_socket *c,
+int udp_socket_sendto(struct net_buf *buf, struct udp_socket *c,
                       const void *data, uint16_t datalen,
                       const uip_ipaddr_t *addr, uint16_t port);
 

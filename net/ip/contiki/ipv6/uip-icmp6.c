@@ -42,6 +42,8 @@
  * \author Mathilde Durvy <mdurvy@cisco.com>
  */
 
+#include <net/net_buf.h>
+
 #include <string.h>
 #include "net/ipv6/uip-ds6.h"
 #include "net/ipv6/uip-icmp6.h"
@@ -58,18 +60,21 @@
 #define PRINT6ADDR(addr)
 #endif
 
-#define UIP_IP_BUF                ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
-#define UIP_ICMP_BUF            ((struct uip_icmp_hdr *)&uip_buf[uip_l2_l3_hdr_len])
-#define UIP_ICMP6_ERROR_BUF  ((struct uip_icmp6_error *)&uip_buf[uip_l2_l3_icmp_hdr_len])
-#define UIP_EXT_BUF              ((struct uip_ext_hdr *)&uip_buf[uip_l2_l3_hdr_len])
-#define UIP_FIRST_EXT_BUF        ((struct uip_ext_hdr *)&uip_buf[UIP_LLIPH_LEN])
+#define UIP_IP_BUF(buf)                ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
+#define UIP_ICMP_BUF(buf)            ((struct uip_icmp_hdr *)&uip_buf(buf)[uip_l2_l3_hdr_len(buf)])
+#define UIP_ICMP6_ERROR_BUF(buf)  ((struct uip_icmp6_error *)&uip_buf(buf)[uip_l2_l3_icmp_hdr_len(buf)])
+#define UIP_EXT_BUF(buf)              ((struct uip_ext_hdr *)&uip_buf(buf)[uip_l2_l3_hdr_len(buf)])
+#define UIP_FIRST_EXT_BUF(buf)        ((struct uip_ext_hdr *)&uip_buf(buf)[UIP_LLIPH_LEN])
 
 #if UIP_CONF_IPV6_RPL
 #include "rpl/rpl.h"
 #endif /* UIP_CONF_IPV6_RPL */
 
+#if 0
+/* Moved this to individual functions to make the API re-entrant */
 /** \brief temporary IP address */
 static uip_ipaddr_t tmp_ipaddr;
+#endif
 
 LIST(echo_reply_callback_list);
 /*---------------------------------------------------------------------------*/
@@ -95,7 +100,7 @@ input_handler_lookup(uint8_t type, uint8_t icode)
 }
 /*---------------------------------------------------------------------------*/
 uint8_t
-uip_icmp6_input(uint8_t type, uint8_t icode)
+uip_icmp6_input(struct net_buf *buf, uint8_t type, uint8_t icode)
 {
   uip_icmp6_input_handler_t *handler = input_handler_lookup(type, icode);
 
@@ -107,7 +112,7 @@ uip_icmp6_input(uint8_t type, uint8_t icode)
     return UIP_ICMP6_INPUT_ERROR;
   }
 
-  handler->handler();
+  handler->handler(buf);
   return UIP_ICMP6_INPUT_SUCCESS;
 }
 /*---------------------------------------------------------------------------*/
@@ -118,7 +123,7 @@ uip_icmp6_register_input_handler(uip_icmp6_input_handler_t *handler)
 }
 /*---------------------------------------------------------------------------*/
 static void
-echo_request_input(void)
+echo_request_input(struct net_buf *buf)
 {
 #if UIP_CONF_IPV6_RPL
   uint8_t temp_ext_len;
@@ -129,58 +134,60 @@ echo_request_input(void)
    * headers and change a few fields
    */
   PRINTF("Received Echo Request from");
-  PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
+  PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("to");
-  PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+  PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF("\n");
 
   /* IP header */
-  UIP_IP_BUF->ttl = uip_ds6_if.cur_hop_limit;
+  UIP_IP_BUF(buf)->ttl = uip_ds6_if.cur_hop_limit;
 
-  if(uip_is_addr_mcast(&UIP_IP_BUF->destipaddr)){
-    uip_ipaddr_copy(&UIP_IP_BUF->destipaddr, &UIP_IP_BUF->srcipaddr);
-    uip_ds6_select_src(&UIP_IP_BUF->srcipaddr, &UIP_IP_BUF->destipaddr);
+  if(uip_is_addr_mcast(&UIP_IP_BUF(buf)->destipaddr)){
+    uip_ipaddr_copy(&UIP_IP_BUF(buf)->destipaddr, &UIP_IP_BUF(buf)->srcipaddr);
+    uip_ds6_select_src(&UIP_IP_BUF(buf)->srcipaddr, &UIP_IP_BUF(buf)->destipaddr);
   } else {
-    uip_ipaddr_copy(&tmp_ipaddr, &UIP_IP_BUF->srcipaddr);
-    uip_ipaddr_copy(&UIP_IP_BUF->srcipaddr, &UIP_IP_BUF->destipaddr);
-    uip_ipaddr_copy(&UIP_IP_BUF->destipaddr, &tmp_ipaddr);
+    uip_ipaddr_t tmp_ipaddr;
+
+    uip_ipaddr_copy(&tmp_ipaddr, &UIP_IP_BUF(buf)->srcipaddr);
+    uip_ipaddr_copy(&UIP_IP_BUF(buf)->srcipaddr, &UIP_IP_BUF(buf)->destipaddr);
+    uip_ipaddr_copy(&UIP_IP_BUF(buf)->destipaddr, &tmp_ipaddr);
   }
 
-  if(uip_ext_len > 0) {
+  if(uip_ext_len(buf) > 0) {
 #if UIP_CONF_IPV6_RPL
     if((temp_ext_len = rpl_invert_header())) {
       /* If there were other extension headers*/
-      UIP_FIRST_EXT_BUF->next = UIP_PROTO_ICMP6;
-      if (uip_ext_len != temp_ext_len) {
-        uip_len -= (uip_ext_len - temp_ext_len);
-        UIP_IP_BUF->len[0] = ((uip_len - UIP_IPH_LEN) >> 8);
-        UIP_IP_BUF->len[1] = ((uip_len - UIP_IPH_LEN) & 0xff);
+      UIP_FIRST_EXT_BUF(buf)->next = UIP_PROTO_ICMP6;
+      if (uip_ext_len(buf) != temp_ext_len) {
+        uip_len(buf) -= (uip_ext_len(buf) - temp_ext_len);
+        UIP_IP_BUF(buf)->len[0] = ((uip_len(buf) - UIP_IPH_LEN) >> 8);
+        UIP_IP_BUF(buf)->len[1] = ((uip_len(buf) - UIP_IPH_LEN) & 0xff);
         /* move the echo request payload (starting after the icmp header)
          * to the new location in the reply.
          * The shift is equal to the length of the remaining extension headers present
          * Note: UIP_ICMP_BUF still points to the echo request at this stage
          */
-      memmove((uint8_t *)UIP_ICMP_BUF + UIP_ICMPH_LEN - (uip_ext_len - temp_ext_len),
-              (uint8_t *)UIP_ICMP_BUF + UIP_ICMPH_LEN,
-              (uip_len - UIP_IPH_LEN - temp_ext_len - UIP_ICMPH_LEN));
+        memmove((uint8_t *)UIP_ICMP_BUF(buf) + UIP_ICMPH_LEN - (uip_ext_len(buf) - temp_ext_len),
+              (uint8_t *)UIP_ICMP_BUF(buf) + UIP_ICMPH_LEN,
+              (uip_len(buf) - UIP_IPH_LEN - temp_ext_len - UIP_ICMPH_LEN));
       }
-      uip_ext_len = temp_ext_len;
+      uip_ext_len(buf) = temp_ext_len;
     } else {
 #endif /* UIP_CONF_IPV6_RPL */
       /* If there were extension headers*/
-      UIP_IP_BUF->proto = UIP_PROTO_ICMP6;
-      uip_len -= uip_ext_len;
-      UIP_IP_BUF->len[0] = ((uip_len - UIP_IPH_LEN) >> 8);
-      UIP_IP_BUF->len[1] = ((uip_len - UIP_IPH_LEN) & 0xff);
+      UIP_IP_BUF(buf)->proto = UIP_PROTO_ICMP6;
+      uip_len(buf) -= uip_ext_len(buf);
+      UIP_IP_BUF(buf)->len[0] = ((uip_len(buf) - UIP_IPH_LEN) >> 8);
+      UIP_IP_BUF(buf)->len[1] = ((uip_len(buf) - UIP_IPH_LEN) & 0xff);
       /* move the echo request payload (starting after the icmp header)
        * to the new location in the reply.
        * The shift is equal to the length of the extension headers present
        * Note: UIP_ICMP_BUF still points to the echo request at this stage
        */
-      memmove((uint8_t *)UIP_ICMP_BUF + UIP_ICMPH_LEN - uip_ext_len,
-              (uint8_t *)UIP_ICMP_BUF + UIP_ICMPH_LEN,
-              (uip_len - UIP_IPH_LEN - UIP_ICMPH_LEN));
-      uip_ext_len = 0;
+      memmove((uint8_t *)UIP_ICMP_BUF(buf) + UIP_ICMPH_LEN - uip_ext_len(buf),
+              (uint8_t *)UIP_ICMP_BUF(buf) + UIP_ICMPH_LEN,
+              (uip_len(buf) - UIP_IPH_LEN - UIP_ICMPH_LEN));
+      uip_ext_len(buf) = 0;
 #if UIP_CONF_IPV6_RPL
     }
 #endif /* UIP_CONF_IPV6_RPL */
@@ -190,134 +197,136 @@ echo_request_input(void)
    */
 
   /* Note: now UIP_ICMP_BUF points to the beginning of the echo reply */
-  UIP_ICMP_BUF->type = ICMP6_ECHO_REPLY;
-  UIP_ICMP_BUF->icode = 0;
-  UIP_ICMP_BUF->icmpchksum = 0;
-  UIP_ICMP_BUF->icmpchksum = ~uip_icmp6chksum();
+  UIP_ICMP_BUF(buf)->type = ICMP6_ECHO_REPLY;
+  UIP_ICMP_BUF(buf)->icode = 0;
+  UIP_ICMP_BUF(buf)->icmpchksum = 0;
+  UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
   PRINTF("Sending Echo Reply to");
-  PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+  PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF("from");
-  PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
+  PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
   UIP_STAT(++uip_stat.icmp.sent);
   return;
 }
 /*---------------------------------------------------------------------------*/
 void
-uip_icmp6_error_output(uint8_t type, uint8_t code, uint32_t param) {
+uip_icmp6_error_output(struct net_buf *buf, uint8_t type, uint8_t code, uint32_t param) {
+
+ uip_ipaddr_t tmp_ipaddr;
 
  /* check if originating packet is not an ICMP error*/
-  if (uip_ext_len) {
-    if(UIP_EXT_BUF->next == UIP_PROTO_ICMP6 && UIP_ICMP_BUF->type < 128){
-      uip_len = 0;
+  if (uip_ext_len(buf)) {
+    if(UIP_EXT_BUF(buf)->next == UIP_PROTO_ICMP6 && UIP_ICMP_BUF(buf)->type < 128){
+      uip_len(buf) = 0;
       return;
     }
   } else {
-    if(UIP_IP_BUF->proto == UIP_PROTO_ICMP6 && UIP_ICMP_BUF->type < 128){
-      uip_len = 0;
+    if(UIP_IP_BUF(buf)->proto == UIP_PROTO_ICMP6 && UIP_ICMP_BUF(buf)->type < 128){
+      uip_len(buf) = 0;
       return;
     }
   }
 
 #if UIP_CONF_IPV6_RPL
-  uip_ext_len = rpl_invert_header();
+  uip_ext_len(buf) = rpl_invert_header();
 #else /* UIP_CONF_IPV6_RPL */
-  uip_ext_len = 0;
+  uip_ext_len(buf) = 0;
 #endif /* UIP_CONF_IPV6_RPL */
 
   /* remember data of original packet before shifting */
-  uip_ipaddr_copy(&tmp_ipaddr, &UIP_IP_BUF->destipaddr);
+  uip_ipaddr_copy(&tmp_ipaddr, &UIP_IP_BUF(buf)->destipaddr);
 
-  uip_len += UIP_IPICMPH_LEN + UIP_ICMP6_ERROR_LEN;
+  uip_len(buf) += UIP_IPICMPH_LEN + UIP_ICMP6_ERROR_LEN;
 
-  if(uip_len > UIP_LINK_MTU)
-    uip_len = UIP_LINK_MTU;
+  if(uip_len(buf) > UIP_LINK_MTU)
+    uip_len(buf) = UIP_LINK_MTU;
 
-  memmove((uint8_t *)UIP_ICMP6_ERROR_BUF + uip_ext_len + UIP_ICMP6_ERROR_LEN,
-          (void *)UIP_IP_BUF, uip_len - UIP_IPICMPH_LEN - uip_ext_len - UIP_ICMP6_ERROR_LEN);
+  memmove((uint8_t *)UIP_ICMP6_ERROR_BUF(buf) + uip_ext_len(buf) + UIP_ICMP6_ERROR_LEN,
+          (void *)UIP_IP_BUF(buf), uip_len(buf) - UIP_IPICMPH_LEN - uip_ext_len(buf) - UIP_ICMP6_ERROR_LEN);
 
-  UIP_IP_BUF->vtc = 0x60;
-  UIP_IP_BUF->tcflow = 0;
-  UIP_IP_BUF->flow = 0;
-  if (uip_ext_len) {
-    UIP_FIRST_EXT_BUF->next = UIP_PROTO_ICMP6;
+  UIP_IP_BUF(buf)->vtc = 0x60;
+  UIP_IP_BUF(buf)->tcflow = 0;
+  UIP_IP_BUF(buf)->flow = 0;
+  if (uip_ext_len(buf)) {
+    UIP_FIRST_EXT_BUF(buf)->next = UIP_PROTO_ICMP6;
   } else {
-    UIP_IP_BUF->proto = UIP_PROTO_ICMP6;
+    UIP_IP_BUF(buf)->proto = UIP_PROTO_ICMP6;
   }
-  UIP_IP_BUF->ttl = uip_ds6_if.cur_hop_limit;
+  UIP_IP_BUF(buf)->ttl = uip_ds6_if.cur_hop_limit;
 
   /* the source should not be unspecified nor multicast, the check for
      multicast is done in uip_process */
-  if(uip_is_addr_unspecified(&UIP_IP_BUF->srcipaddr)){
-    uip_len = 0;
+  if(uip_is_addr_unspecified(&UIP_IP_BUF(buf)->srcipaddr)){
+    uip_len(buf) = 0;
     return;
   }
 
-  uip_ipaddr_copy(&UIP_IP_BUF->destipaddr, &UIP_IP_BUF->srcipaddr);
+  uip_ipaddr_copy(&UIP_IP_BUF(buf)->destipaddr, &UIP_IP_BUF(buf)->srcipaddr);
 
   if(uip_is_addr_mcast(&tmp_ipaddr)){
     if(type == ICMP6_PARAM_PROB && code == ICMP6_PARAMPROB_OPTION){
-      uip_ds6_select_src(&UIP_IP_BUF->srcipaddr, &tmp_ipaddr);
+      uip_ds6_select_src(&UIP_IP_BUF(buf)->srcipaddr, &tmp_ipaddr);
     } else {
-      uip_len = 0;
+      uip_len(buf) = 0;
       return;
     }
   } else {
 #if UIP_CONF_ROUTER
     /* need to pick a source that corresponds to this node */
-    uip_ds6_select_src(&UIP_IP_BUF->srcipaddr, &tmp_ipaddr);
+    uip_ds6_select_src(&UIP_IP_BUF(buf)->srcipaddr, &tmp_ipaddr);
 #else
-    uip_ipaddr_copy(&UIP_IP_BUF->srcipaddr, &tmp_ipaddr);
+    uip_ipaddr_copy(&UIP_IP_BUF(buf)->srcipaddr, &tmp_ipaddr);
 #endif
   }
 
-  UIP_ICMP_BUF->type = type;
-  UIP_ICMP_BUF->icode = code;
-  UIP_ICMP6_ERROR_BUF->param = uip_htonl(param);
-  UIP_IP_BUF->len[0] = ((uip_len - UIP_IPH_LEN) >> 8);
-  UIP_IP_BUF->len[1] = ((uip_len - UIP_IPH_LEN) & 0xff);
-  UIP_ICMP_BUF->icmpchksum = 0;
-  UIP_ICMP_BUF->icmpchksum = ~uip_icmp6chksum();
+  UIP_ICMP_BUF(buf)->type = type;
+  UIP_ICMP_BUF(buf)->icode = code;
+  UIP_ICMP6_ERROR_BUF(buf)->param = uip_htonl(param);
+  UIP_IP_BUF(buf)->len[0] = ((uip_len(buf) - UIP_IPH_LEN) >> 8);
+  UIP_IP_BUF(buf)->len[1] = ((uip_len(buf) - UIP_IPH_LEN) & 0xff);
+  UIP_ICMP_BUF(buf)->icmpchksum = 0;
+  UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
   UIP_STAT(++uip_stat.icmp.sent);
 
   PRINTF("Sending ICMPv6 ERROR message type %d code %d to", type, code);
-  PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+  PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF("from");
-  PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
+  PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
   return;
 }
 
 /*---------------------------------------------------------------------------*/
 void
-uip_icmp6_send(const uip_ipaddr_t *dest, int type, int code, int payload_len)
+uip_icmp6_send(struct net_buf *buf, const uip_ipaddr_t *dest, int type, int code, int payload_len)
 {
 
-  UIP_IP_BUF->vtc = 0x60;
-  UIP_IP_BUF->tcflow = 0;
-  UIP_IP_BUF->flow = 0;
-  UIP_IP_BUF->proto = UIP_PROTO_ICMP6;
-  UIP_IP_BUF->ttl = uip_ds6_if.cur_hop_limit;
-  UIP_IP_BUF->len[0] = (UIP_ICMPH_LEN + payload_len) >> 8;
-  UIP_IP_BUF->len[1] = (UIP_ICMPH_LEN + payload_len) & 0xff;
+  UIP_IP_BUF(buf)->vtc = 0x60;
+  UIP_IP_BUF(buf)->tcflow = 0;
+  UIP_IP_BUF(buf)->flow = 0;
+  UIP_IP_BUF(buf)->proto = UIP_PROTO_ICMP6;
+  UIP_IP_BUF(buf)->ttl = uip_ds6_if.cur_hop_limit;
+  UIP_IP_BUF(buf)->len[0] = (UIP_ICMPH_LEN + payload_len) >> 8;
+  UIP_IP_BUF(buf)->len[1] = (UIP_ICMPH_LEN + payload_len) & 0xff;
 
-  memcpy(&UIP_IP_BUF->destipaddr, dest, sizeof(*dest));
-  uip_ds6_select_src(&UIP_IP_BUF->srcipaddr, &UIP_IP_BUF->destipaddr);
+  memcpy(&UIP_IP_BUF(buf)->destipaddr, dest, sizeof(*dest));
+  uip_ds6_select_src(&UIP_IP_BUF(buf)->srcipaddr, &UIP_IP_BUF(buf)->destipaddr);
 
-  UIP_ICMP_BUF->type = type;
-  UIP_ICMP_BUF->icode = code;
+  UIP_ICMP_BUF(buf)->type = type;
+  UIP_ICMP_BUF(buf)->icode = code;
 
-  UIP_ICMP_BUF->icmpchksum = 0;
-  UIP_ICMP_BUF->icmpchksum = ~uip_icmp6chksum();
+  UIP_ICMP_BUF(buf)->icmpchksum = 0;
+  UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
-  uip_len = UIP_IPH_LEN + UIP_ICMPH_LEN + payload_len;
-  tcpip_ipv6_output();
+  uip_len(buf) = UIP_IPH_LEN + UIP_ICMPH_LEN + payload_len;
+  tcpip_ipv6_output(buf);
 }
 /*---------------------------------------------------------------------------*/
 static void
-echo_reply_input(void)
+echo_reply_input(struct net_buf *buf)
 {
   int ttl;
   uip_ipaddr_t sender;
@@ -325,46 +334,46 @@ echo_reply_input(void)
   uint8_t temp_ext_len;
 #endif /* UIP_CONF_IPV6_RPL */
 
-  uip_ipaddr_copy(&sender, &UIP_IP_BUF->srcipaddr);
-  ttl = UIP_IP_BUF->ttl;
+  uip_ipaddr_copy(&sender, &UIP_IP_BUF(buf)->srcipaddr);
+  ttl = UIP_IP_BUF(buf)->ttl;
 
-  if(uip_ext_len > 0) {
+  if(uip_ext_len(buf) > 0) {
 #if UIP_CONF_IPV6_RPL
     if((temp_ext_len = rpl_invert_header())) {
       /* If there were other extension headers*/
-      UIP_FIRST_EXT_BUF->next = UIP_PROTO_ICMP6;
-      if (uip_ext_len != temp_ext_len) {
-        uip_len -= (uip_ext_len - temp_ext_len);
-        UIP_IP_BUF->len[0] = ((uip_len - UIP_IPH_LEN) >> 8);
-        UIP_IP_BUF->len[1] = ((uip_len - UIP_IPH_LEN) & 0xff);
+      UIP_FIRST_EXT_BUF(buf)->next = UIP_PROTO_ICMP6;
+      if (uip_ext_len(buf) != temp_ext_len) {
+        uip_len(buf) -= (uip_ext_len(buf) - temp_ext_len);
+        UIP_IP_BUF(buf)->len[0] = ((uip_len(buf) - UIP_IPH_LEN) >> 8);
+        UIP_IP_BUF(buf)->len[1] = ((uip_len(buf) - UIP_IPH_LEN) & 0xff);
         /* move the echo reply payload (starting after the icmp
          * header) to the new location in the reply.  The shift is
          * equal to the length of the remaining extension headers
          * present Note: UIP_ICMP_BUF still points to the echo reply
          * at this stage
          */
-        memmove((uint8_t *)UIP_ICMP_BUF + UIP_ICMPH_LEN - (uip_ext_len - temp_ext_len),
-                (uint8_t *)UIP_ICMP_BUF + UIP_ICMPH_LEN,
-                (uip_len - UIP_IPH_LEN - temp_ext_len - UIP_ICMPH_LEN));
+        memmove((uint8_t *)UIP_ICMP_BUF(buf) + UIP_ICMPH_LEN - (uip_ext_len(buf) - temp_ext_len),
+                (uint8_t *)UIP_ICMP_BUF(buf) + UIP_ICMPH_LEN,
+                (uip_len(buf) - UIP_IPH_LEN - temp_ext_len - UIP_ICMPH_LEN));
       }
-      uip_ext_len = temp_ext_len;
-      uip_len -= uip_ext_len;
+      uip_ext_len(buf) = temp_ext_len;
+      uip_len(buf) -= uip_ext_len(buf);
     } else {
 #endif /* UIP_CONF_IPV6_RPL */
       /* If there were extension headers*/
-      UIP_IP_BUF->proto = UIP_PROTO_ICMP6;
-      uip_len -= uip_ext_len;
-      UIP_IP_BUF->len[0] = ((uip_len - UIP_IPH_LEN) >> 8);
-      UIP_IP_BUF->len[1] = ((uip_len - UIP_IPH_LEN) & 0xff);
+      UIP_IP_BUF(buf)->proto = UIP_PROTO_ICMP6;
+      uip_len(buf) -= uip_ext_len(buf);
+      UIP_IP_BUF(buf)->len[0] = ((uip_len(buf) - UIP_IPH_LEN) >> 8);
+      UIP_IP_BUF(buf)->len[1] = ((uip_len(buf) - UIP_IPH_LEN) & 0xff);
       /* move the echo reply payload (starting after the icmp header)
        * to the new location in the reply.  The shift is equal to the
        * length of the extension headers present Note: UIP_ICMP_BUF
        * still points to the echo request at this stage
        */
-      memmove((uint8_t *)UIP_ICMP_BUF + UIP_ICMPH_LEN - uip_ext_len,
-              (uint8_t *)UIP_ICMP_BUF + UIP_ICMPH_LEN,
-              (uip_len - UIP_IPH_LEN - UIP_ICMPH_LEN));
-      uip_ext_len = 0;
+      memmove((uint8_t *)UIP_ICMP_BUF(buf) + UIP_ICMPH_LEN - uip_ext_len(buf),
+              (uint8_t *)UIP_ICMP_BUF(buf) + UIP_ICMPH_LEN,
+              (uip_len(buf) - UIP_IPH_LEN - UIP_ICMPH_LEN));
+      uip_ext_len(buf) = 0;
 #if UIP_CONF_IPV6_RPL
     }
 #endif /* UIP_CONF_IPV6_RPL */
@@ -379,13 +388,13 @@ echo_reply_input(void)
         n = list_item_next(n)) {
       if(n->callback != NULL) {
         n->callback(&sender, ttl,
-                    (uint8_t *)&UIP_ICMP_BUF[sizeof(struct uip_icmp_hdr)],
-                    uip_len - sizeof(struct uip_icmp_hdr) - UIP_IPH_LEN);
+                    (uint8_t *)&UIP_ICMP_BUF(buf)[sizeof(struct uip_icmp_hdr)],
+                    uip_len(buf) - sizeof(struct uip_icmp_hdr) - UIP_IPH_LEN);
       }
     }
   }
 
-  uip_len = 0;
+  uip_len(buf) = 0;
   return;
 }
 /*---------------------------------------------------------------------------*/

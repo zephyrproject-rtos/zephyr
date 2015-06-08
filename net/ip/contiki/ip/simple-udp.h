@@ -104,6 +104,7 @@ int simple_udp_register(struct simple_udp_connection *c,
 
 /**
  * \brief      Send a UDP packet
+ * \param buf  Buffer to send
  * \param c    A pointer to a struct simple_udp_connection
  * \param data A pointer to the data to be sent
  * \param datalen The length of the data
@@ -115,11 +116,12 @@ int simple_udp_register(struct simple_udp_connection *c,
  *
  * \sa simple_udp_sendto()
  */
-int simple_udp_send(struct simple_udp_connection *c,
+int simple_udp_send(struct net_buf *buf, struct simple_udp_connection *c,
                     const void *data, uint16_t datalen);
 
 /**
  * \brief      Send a UDP packet to a specified IP address
+ * \param buf  Buffer to send
  * \param c    A pointer to a struct simple_udp_connection
  * \param data A pointer to the data to be sent
  * \param datalen The length of the data
@@ -132,12 +134,13 @@ int simple_udp_send(struct simple_udp_connection *c,
  *
  * \sa simple_udp_send()
  */
-int simple_udp_sendto(struct simple_udp_connection *c,
+int simple_udp_sendto(struct net_buf *buf, struct simple_udp_connection *c,
                       const void *data, uint16_t datalen,
                       const uip_ipaddr_t *to);
 
 /**
  * \brief      Send a UDP packet to a specified IP address and UDP port
+ * \param buf  Buffer to send
  * \param c    A pointer to a struct simple_udp_connection
  * \param data A pointer to the data to be sent
  * \param datalen The length of the data
@@ -151,7 +154,7 @@ int simple_udp_sendto(struct simple_udp_connection *c,
  *
  * \sa simple_udp_sendto()
  */
-int simple_udp_sendto_port(struct simple_udp_connection *c,
+int simple_udp_sendto_port(struct net_buf *buf, struct simple_udp_connection *c,
 			   const void *data, uint16_t datalen,
 			   const uip_ipaddr_t *to, uint16_t to_port);
 

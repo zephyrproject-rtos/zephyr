@@ -81,6 +81,7 @@ uint8_t uip_ds6_netif_addr_list_offset;
 static uip_ipaddr_t loc_fipaddr;
 
 /* Pointers used in this file */
+/* FIXME - we cannot do this as would prevent re-entrancy */
 static uip_ds6_addr_t *locaddr;
 static uip_ds6_maddr_t *locmaddr;
 static uip_ds6_aaddr_t *locaaddr;
@@ -142,8 +143,10 @@ uip_ds6_init(void)
 
 /*---------------------------------------------------------------------------*/
 void
-uip_ds6_periodic(void)
+uip_ds6_periodic(struct net_buf *buf)
 {
+  uip_ds6_addr_t *locaddr;
+  uip_ds6_prefix_t *locprefix;
 
   /* Periodic processing on unicast addresses */
   for(locaddr = uip_ds6_if.addr_list;
@@ -155,8 +158,8 @@ uip_ds6_periodic(void)
       } else if((locaddr->state == ADDR_TENTATIVE)
                 && (locaddr->dadnscount <= uip_ds6_if.maxdadns)
                 && (timer_expired(&locaddr->dadtimer))
-                && (uip_len == 0)) {
-        uip_ds6_dad(locaddr);
+                && (uip_len(buf) == 0)) {
+        uip_ds6_dad(buf, locaddr);
 #endif /* UIP_ND6_DEF_MAXDADNS > 0 */
       }
     }
@@ -184,7 +187,7 @@ uip_ds6_periodic(void)
   }
 #endif /* !UIP_CONF_ROUTER */
 
-  uip_ds6_neighbor_periodic();
+  uip_ds6_neighbor_periodic(buf);
 
 #if UIP_CONF_ROUTER && UIP_ND6_SEND_RA
   /* Periodic RA sending */
@@ -577,11 +580,11 @@ get_match_length(uip_ipaddr_t *src, uip_ipaddr_t *dst)
 /*---------------------------------------------------------------------------*/
 #if UIP_ND6_DEF_MAXDADNS > 0
 void
-uip_ds6_dad(uip_ds6_addr_t *addr)
+uip_ds6_dad(struct net_buf *buf, uip_ds6_addr_t *addr)
 {
   /* send maxdadns NS for DAD  */
   if(addr->dadnscount < uip_ds6_if.maxdadns) {
-    uip_nd6_ns_output(NULL, NULL, &addr->ipaddr);
+    uip_nd6_ns_output(buf, NULL, NULL, &addr->ipaddr);
     addr->dadnscount++;
     timer_set(&addr->dadtimer,
               uip_ds6_if.retrans_timer / 1000 * CLOCK_SECOND);
@@ -672,12 +675,12 @@ uip_ds6_send_ra_periodic(void)
 #else /* UIP_CONF_ROUTER */
 /*---------------------------------------------------------------------------*/
 void
-uip_ds6_send_rs(void)
+uip_ds6_send_rs(struct net_buf *buf)
 {
   if((uip_ds6_defrt_choose() == NULL)
      && (rscount < UIP_ND6_MAX_RTR_SOLICITATIONS)) {
     PRINTF("Sending RS %u\n", rscount);
-    uip_nd6_rs_output();
+    uip_nd6_rs_output(buf);
     rscount++;
     etimer_set(&uip_ds6_timer_rs,
                UIP_ND6_RTR_SOLICITATION_INTERVAL * CLOCK_SECOND);

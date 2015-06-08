@@ -47,7 +47,6 @@
 #include "contiki-net.h"
 #include "net/mac/mac-sequence.h"
 #include "net/packetbuf.h"
-#include "net/rime/rime.h"
 
 struct seqno {
   linkaddr_t sender;
@@ -63,7 +62,7 @@ static struct seqno received_seqnos[MAX_SEQNOS];
 
 /*---------------------------------------------------------------------------*/
 int
-mac_sequence_is_duplicate(void)
+mac_sequence_is_duplicate(struct net_buf *buf)
 {
   int i;
 
@@ -72,9 +71,9 @@ mac_sequence_is_duplicate(void)
    * packet with the last few ones we saw.
    */
   for(i = 0; i < MAX_SEQNOS; ++i) {
-    if(linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_SENDER),
+      if(linkaddr_cmp(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER),
                     &received_seqnos[i].sender)) {
-      if(packetbuf_attr(PACKETBUF_ATTR_PACKET_ID) == received_seqnos[i].seqno) {
+      if(packetbuf_attr(buf, PACKETBUF_ATTR_PACKET_ID) == received_seqnos[i].seqno) {
         /* Duplicate packet. */
         return 1;
       }
@@ -85,13 +84,13 @@ mac_sequence_is_duplicate(void)
 }
 /*---------------------------------------------------------------------------*/
 void
-mac_sequence_register_seqno(void)
+mac_sequence_register_seqno(struct net_buf *buf)
 {
   int i, j;
 
   /* Locate possible previous sequence number for this address. */
   for(i = 0; i < MAX_SEQNOS; ++i) {
-    if(linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_SENDER),
+    if(linkaddr_cmp(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER),
                     &received_seqnos[i].sender)) {
       i++;
       break;
@@ -102,8 +101,8 @@ mac_sequence_register_seqno(void)
   for(j = i - 1; j > 0; --j) {
     memcpy(&received_seqnos[j], &received_seqnos[j - 1], sizeof(struct seqno));
   }
-  received_seqnos[0].seqno = packetbuf_attr(PACKETBUF_ATTR_PACKET_ID);
+  received_seqnos[0].seqno = packetbuf_attr(buf, PACKETBUF_ATTR_PACKET_ID);
   linkaddr_copy(&received_seqnos[0].sender,
-                packetbuf_addr(PACKETBUF_ADDR_SENDER));
+                packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
 }
 /*---------------------------------------------------------------------------*/

@@ -50,7 +50,7 @@
 
 /*---------------------------------------------------------------------------*/
 static void
-set_nonce(uint8_t *nonce,
+set_nonce(struct net_buf *buf, uint8_t *nonce,
     uint8_t flags,
     const uint8_t *extended_source_address,
     uint8_t counter)
@@ -60,18 +60,18 @@ set_nonce(uint8_t *nonce,
   
   nonce[0] = flags;
   memcpy(nonce + 1, extended_source_address, 8);
-  nonce[9] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3) >> 8;
-  nonce[10] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3) & 0xff;
-  nonce[11] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1) >> 8;
-  nonce[12] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1) & 0xff;
-  nonce[13] = packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL);
+  nonce[9] = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3) >> 8;
+  nonce[10] = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3) & 0xff;
+  nonce[11] = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1) >> 8;
+  nonce[12] = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1) & 0xff;
+  nonce[13] = packetbuf_attr(buf, PACKETBUF_ATTR_SECURITY_LEVEL);
   nonce[14] = 0;
   nonce[15] = counter;
 }
 /*---------------------------------------------------------------------------*/
 /* XORs the block m[pos] ... m[pos + 15] with K_{counter} */
 static void
-ctr_step(const uint8_t *extended_source_address,
+ctr_step(struct net_buf *buf, const uint8_t *extended_source_address,
     uint8_t pos,
     uint8_t *m_and_result,
     uint8_t m_len,
@@ -80,7 +80,7 @@ ctr_step(const uint8_t *extended_source_address,
   uint8_t a[AES_128_BLOCK_SIZE];
   uint8_t i;
   
-  set_nonce(a, CCM_STAR_ENCRYPTION_FLAGS, extended_source_address, counter);
+  set_nonce(buf, a, CCM_STAR_ENCRYPTION_FLAGS, extended_source_address, counter);
   AES_128.encrypt(a);
   
   for(i = 0; (pos + i < m_len) && (i < AES_128_BLOCK_SIZE); i++) {
@@ -89,7 +89,7 @@ ctr_step(const uint8_t *extended_source_address,
 }
 /*---------------------------------------------------------------------------*/
 static void
-mic(const uint8_t *extended_source_address,
+mic(struct net_buf *buf, const uint8_t *extended_source_address,
     uint8_t *result,
     uint8_t mic_len)
 {
@@ -103,7 +103,7 @@ mic(const uint8_t *extended_source_address,
   uint8_t m_len;
   uint8_t *m;
   
-  shall_encrypt = packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL) & (1 << 2);
+  shall_encrypt = packetbuf_attr(buf, PACKETBUF_ATTR_SECURITY_LEVEL) & (1 << 2);
   if(shall_encrypt) {
     a_len = packetbuf_hdrlen();
     m_len = packetbuf_datalen();
@@ -116,15 +116,15 @@ mic(const uint8_t *extended_source_address,
       extended_source_address,
       m_len);
 #else /* LLSEC802154_USES_ENCRYPTION */
-  a_len = packetbuf_totlen();
-  set_nonce(x,
+  a_len = packetbuf_totlen(buf);
+  set_nonce(buf, x,
       CCM_STAR_AUTH_FLAGS(a_len, mic_len),
       extended_source_address,
       0);
 #endif /* LLSEC802154_USES_ENCRYPTION */
   AES_128.encrypt(x);
   
-  a = packetbuf_hdrptr();
+  a = packetbuf_hdrptr(buf);
   if(a_len) {
     x[1] = x[1] ^ a_len;
     for(i = 2; (i - 2 < a_len) && (i < AES_128_BLOCK_SIZE); i++) {
@@ -157,26 +157,26 @@ mic(const uint8_t *extended_source_address,
   }
 #endif /* LLSEC802154_USES_ENCRYPTION */
   
-  ctr_step(extended_source_address, 0, x, AES_128_BLOCK_SIZE, 0);
+  ctr_step(buf, extended_source_address, 0, x, AES_128_BLOCK_SIZE, 0);
   
   memcpy(result, x, mic_len);
 }
 /*---------------------------------------------------------------------------*/
 static void
-ctr(const uint8_t *extended_source_address)
+ctr(struct net_buf *buf, const uint8_t *extended_source_address)
 {
   uint8_t m_len;
   uint8_t *m;
   uint8_t pos;
   uint8_t counter;
   
-  m_len = packetbuf_datalen();
-  m = (uint8_t *) packetbuf_dataptr();
+  m_len = packetbuf_datalen(buf);
+  m = (uint8_t *) packetbuf_dataptr(buf);
   
   pos = 0;
   counter = 1;
   while(pos < m_len) {
-    ctr_step(extended_source_address, pos, m, m_len, counter++);
+    ctr_step(buf, extended_source_address, pos, m, m_len, counter++);
     pos += AES_128_BLOCK_SIZE;
   }
 }

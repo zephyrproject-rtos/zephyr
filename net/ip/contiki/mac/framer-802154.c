@@ -88,7 +88,7 @@ is_broadcast_addr(uint8_t mode, uint8_t *addr)
 }
 /*---------------------------------------------------------------------------*/
 static int
-create_frame(int type, int do_create)
+create_frame(struct net_buf *buf, int type, int do_create)
 {
   frame802154_t params;
   int hdr_len;
@@ -102,12 +102,12 @@ create_frame(int type, int do_create)
   }
 
   /* Build the FCF. */
-  params.fcf.frame_type = packetbuf_attr(PACKETBUF_ATTR_FRAME_TYPE);
-  params.fcf.frame_pending = packetbuf_attr(PACKETBUF_ATTR_PENDING);
-  if(packetbuf_holds_broadcast()) {
+  params.fcf.frame_type = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_TYPE);
+  params.fcf.frame_pending = packetbuf_attr(buf, PACKETBUF_ATTR_PENDING);
+  if(packetbuf_holds_broadcast(buf)) {
     params.fcf.ack_required = 0;
   } else {
-    params.fcf.ack_required = packetbuf_attr(PACKETBUF_ATTR_MAC_ACK);
+    params.fcf.ack_required = packetbuf_attr(buf, PACKETBUF_ATTR_MAC_ACK);
   }
   params.fcf.panid_compression = 0;
 
@@ -115,17 +115,17 @@ create_frame(int type, int do_create)
   params.fcf.frame_version = FRAME802154_IEEE802154_2006;
   
 #if LLSEC802154_SECURITY_LEVEL
-  if(packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL)) {
+  if(packetbuf_attr(buf, PACKETBUF_ATTR_SECURITY_LEVEL)) {
     params.fcf.security_enabled = 1;
   }
   /* Setting security-related attributes */
-  params.aux_hdr.security_control.security_level = packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL);
-  params.aux_hdr.frame_counter.u16[0] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1);
-  params.aux_hdr.frame_counter.u16[1] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3);
+  params.aux_hdr.security_control.security_level = packetbuf_attr(buf, PACKETBUF_ATTR_SECURITY_LEVEL);
+  params.aux_hdr.frame_counter.u16[0] = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1);
+  params.aux_hdr.frame_counter.u16[1] = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3);
 #if LLSEC802154_USES_EXPLICIT_KEYS
-  params.aux_hdr.security_control.key_id_mode = packetbuf_attr(PACKETBUF_ATTR_KEY_ID_MODE);
-  params.aux_hdr.key_index = packetbuf_attr(PACKETBUF_ATTR_KEY_INDEX);
-  params.aux_hdr.key_source.u16[0] = packetbuf_attr(PACKETBUF_ATTR_KEY_SOURCE_BYTES_0_1);
+  params.aux_hdr.security_control.key_id_mode = packetbuf_attr(buf, PACKETBUF_ATTR_KEY_ID_MODE);
+  params.aux_hdr.key_index = packetbuf_attr(buf, PACKETBUF_ATTR_KEY_INDEX);
+  params.aux_hdr.key_source.u16[0] = packetbuf_attr(buf, PACKETBUF_ATTR_KEY_SOURCE_BYTES_0_1);
 #endif /* LLSEC802154_USES_EXPLICIT_KEYS */
 #endif /* LLSEC802154_SECURITY_LEVEL */
 
@@ -134,8 +134,8 @@ create_frame(int type, int do_create)
     /* Only length calculation - no sequence number is needed and
        should not be consumed. */
 
-  } else if(packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO)) {
-    params.seq = packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO);
+  } else if(packetbuf_attr(buf, PACKETBUF_ATTR_MAC_SEQNO)) {
+    params.seq = packetbuf_attr(buf, PACKETBUF_ATTR_MAC_SEQNO);
 
   } else {
     /* Ensure that the sequence number 0 is not used as it would bypass the above check. */
@@ -143,7 +143,7 @@ create_frame(int type, int do_create)
       mac_dsn++;
     }
     params.seq = mac_dsn++;
-    packetbuf_set_attr(PACKETBUF_ATTR_MAC_SEQNO, params.seq);
+    packetbuf_set_attr(buf, PACKETBUF_ATTR_MAC_SEQNO, params.seq);
   }
 
   /* Complete the addressing fields. */
@@ -159,7 +159,7 @@ create_frame(int type, int do_create)
   }
   params.dest_pid = mac_dst_pan_id;
 
-  if(packetbuf_holds_broadcast()) {
+  if(packetbuf_holds_broadcast(buf)) {
     /* Broadcast requires short address mode. */
     params.fcf.dest_addr_mode = FRAME802154_SHORTADDRMODE;
     params.dest_addr[0] = 0xFF;
@@ -167,7 +167,7 @@ create_frame(int type, int do_create)
 
   } else {
     linkaddr_copy((linkaddr_t *)&params.dest_addr,
-                  packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
+                  packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
     /* Use short address mode if linkaddr size is small */
     if(LINKADDR_SIZE == 2) {
       params.fcf.dest_addr_mode = FRAME802154_SHORTADDRMODE;
@@ -185,19 +185,19 @@ create_frame(int type, int do_create)
    */
   linkaddr_copy((linkaddr_t *)&params.src_addr, &linkaddr_node_addr);
 
-  params.payload = packetbuf_dataptr();
-  params.payload_len = packetbuf_datalen();
+  params.payload = packetbuf_dataptr(buf);
+  params.payload_len = packetbuf_datalen(buf);
   hdr_len = frame802154_hdrlen(&params);
   if(!do_create) {
     /* Only calculate header length */
     return hdr_len;
 
-  } else if(packetbuf_hdralloc(hdr_len)) {
-    frame802154_create(&params, packetbuf_hdrptr());
+  } else if(packetbuf_hdralloc(buf, hdr_len)) {
+    frame802154_create(&params, packetbuf_hdrptr(buf));
 
     PRINTF("15.4-OUT: %2X", params.fcf.frame_type);
     PRINTADDR(params.dest_addr);
-    PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(), packetbuf_totlen());
+    PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
 
     return hdr_len;
   } else {
@@ -207,27 +207,27 @@ create_frame(int type, int do_create)
 }
 /*---------------------------------------------------------------------------*/
 static int
-hdr_length(void)
+hdr_length(struct net_buf *buf)
 {
-  return create_frame(FRAME802154_DATAFRAME, 0);
+  return create_frame(buf, FRAME802154_DATAFRAME, 0);
 }
 /*---------------------------------------------------------------------------*/
 static int
-create(void)
+create(struct net_buf *buf)
 {
-  return create_frame(FRAME802154_DATAFRAME, 1);
+  return create_frame(buf, FRAME802154_DATAFRAME, 1);
 }
 /*---------------------------------------------------------------------------*/
 static int
-parse(void)
+parse(struct net_buf *buf)
 {
   frame802154_t frame;
   int hdr_len;
   
-  hdr_len = frame802154_parse(packetbuf_dataptr(), packetbuf_datalen(), &frame);
+  hdr_len = frame802154_parse(packetbuf_dataptr(buf), packetbuf_datalen(buf), &frame);
   
-  if(hdr_len && packetbuf_hdrreduce(hdr_len)) {
-    packetbuf_set_attr(PACKETBUF_ATTR_FRAME_TYPE, frame.fcf.frame_type);
+  if(hdr_len && packetbuf_hdrreduce(buf, hdr_len)) {
+    packetbuf_set_attr(buf, PACKETBUF_ATTR_FRAME_TYPE, frame.fcf.frame_type);
     
     if(frame.fcf.dest_addr_mode) {
       if(frame.dest_pid != mac_src_pan_id &&
@@ -237,31 +237,31 @@ parse(void)
         return FRAMER_FAILED;
       }
       if(!is_broadcast_addr(frame.fcf.dest_addr_mode, frame.dest_addr)) {
-        packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, (linkaddr_t *)&frame.dest_addr);
+        packetbuf_set_addr(buf, PACKETBUF_ADDR_RECEIVER, (linkaddr_t *)&frame.dest_addr);
       }
     }
-    packetbuf_set_addr(PACKETBUF_ADDR_SENDER, (linkaddr_t *)&frame.src_addr);
-    packetbuf_set_attr(PACKETBUF_ATTR_PENDING, frame.fcf.frame_pending);
+    packetbuf_set_addr(buf, PACKETBUF_ADDR_SENDER, (linkaddr_t *)&frame.src_addr);
+    packetbuf_set_attr(buf, PACKETBUF_ATTR_PENDING, frame.fcf.frame_pending);
     /*    packetbuf_set_attr(PACKETBUF_ATTR_RELIABLE, frame.fcf.ack_required);*/
-    packetbuf_set_attr(PACKETBUF_ATTR_PACKET_ID, frame.seq);
+    packetbuf_set_attr(buf, PACKETBUF_ATTR_PACKET_ID, frame.seq);
     
 #if LLSEC802154_SECURITY_LEVEL
     if(frame.fcf.security_enabled) {
-      packetbuf_set_attr(PACKETBUF_ATTR_SECURITY_LEVEL, frame.aux_hdr.security_control.security_level);
-      packetbuf_set_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1, frame.aux_hdr.frame_counter.u16[0]);
-      packetbuf_set_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3, frame.aux_hdr.frame_counter.u16[1]);
+      packetbuf_set_attr(buf, PACKETBUF_ATTR_SECURITY_LEVEL, frame.aux_hdr.security_control.security_level);
+      packetbuf_set_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1, frame.aux_hdr.frame_counter.u16[0]);
+      packetbuf_set_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3, frame.aux_hdr.frame_counter.u16[1]);
 #if LLSEC802154_USES_EXPLICIT_KEYS
-      packetbuf_set_attr(PACKETBUF_ATTR_KEY_ID_MODE, frame.aux_hdr.security_control.key_id_mode);
-      packetbuf_set_attr(PACKETBUF_ATTR_KEY_INDEX, frame.aux_hdr.key_index);
-      packetbuf_set_attr(PACKETBUF_ATTR_KEY_SOURCE_BYTES_0_1, frame.aux_hdr.key_source.u16[0]);
+      packetbuf_set_attr(buf, PACKETBUF_ATTR_KEY_ID_MODE, frame.aux_hdr.security_control.key_id_mode);
+      packetbuf_set_attr(buf, PACKETBUF_ATTR_KEY_INDEX, frame.aux_hdr.key_index);
+      packetbuf_set_attr(buf, PACKETBUF_ATTR_KEY_SOURCE_BYTES_0_1, frame.aux_hdr.key_source.u16[0]);
 #endif /* LLSEC802154_USES_EXPLICIT_KEYS */
     }
 #endif /* LLSEC802154_SECURITY_LEVEL */
 
     PRINTF("15.4-IN: %2X", frame.fcf.frame_type);
-    PRINTADDR(packetbuf_addr(PACKETBUF_ADDR_SENDER));
-    PRINTADDR(packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
-    PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(), packetbuf_totlen());
+    PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
+    PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
+    PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
     
     return hdr_len;
   }

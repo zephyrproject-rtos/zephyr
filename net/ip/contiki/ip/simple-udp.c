@@ -42,6 +42,8 @@
  * @{
  */
 
+#include <net/net_buf.h>
+
 #include "contiki-net.h"
 #include "net/ip/simple-udp.h"
 
@@ -50,9 +52,11 @@
 
 PROCESS(simple_udp_process, "Simple UDP process");
 static uint8_t started = 0;
+#if 0
+/* Moved to net_buf */
 static uint8_t databuffer[UIP_BUFSIZE];
-
-#define UIP_IP_BUF   ((struct uip_udpip_hdr *)&uip_buf[UIP_LLH_LEN])
+#endif
+#define UIP_IP_BUF(buf)   ((struct uip_udpip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
 
 /*---------------------------------------------------------------------------*/
 static void
@@ -65,36 +69,36 @@ init_simple_udp(void)
 }
 /*---------------------------------------------------------------------------*/
 int
-simple_udp_send(struct simple_udp_connection *c,
+simple_udp_send(struct net_buf *buf, struct simple_udp_connection *c,
                 const void *data, uint16_t datalen)
 {
   if(c->udp_conn != NULL) {
-    uip_udp_packet_sendto(c->udp_conn, data, datalen,
+    uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
                           &c->remote_addr, UIP_HTONS(c->remote_port));
   }
   return 0;
 }
 /*---------------------------------------------------------------------------*/
 int
-simple_udp_sendto(struct simple_udp_connection *c,
+simple_udp_sendto(struct net_buf *buf, struct simple_udp_connection *c,
                   const void *data, uint16_t datalen,
                   const uip_ipaddr_t *to)
 {
   if(c->udp_conn != NULL) {
-    uip_udp_packet_sendto(c->udp_conn, data, datalen,
+    uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
                           to, UIP_HTONS(c->remote_port));
   }
   return 0;
 }
 /*---------------------------------------------------------------------------*/
 int
-simple_udp_sendto_port(struct simple_udp_connection *c,
+simple_udp_sendto_port(struct net_buf *buf, struct simple_udp_connection *c,
 		       const void *data, uint16_t datalen,
 		       const uip_ipaddr_t *to,
 		       uint16_t port)
 {
   if(c->udp_conn != NULL) {
-    uip_udp_packet_sendto(c->udp_conn, data, datalen,
+    uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
                           to, UIP_HTONS(port));
   }
   return 0;
@@ -130,7 +134,7 @@ simple_udp_register(struct simple_udp_connection *c,
   return 1;
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(simple_udp_process, ev, data)
+PROCESS_THREAD(simple_udp_process, ev, data, buf)
 {
   struct simple_udp_connection *c;
   PROCESS_BEGIN();
@@ -152,23 +156,24 @@ PROCESS_THREAD(simple_udp_process, ev, data)
 
         /* If we were called because of incoming data, we should call
            the reception callback. */
-        if(uip_newdata()) {
+        if(uip_newdata(buf)) {
+#if 0
           /* Copy the data from the uIP data buffer into our own
              buffer to avoid the uIP buffer being messed with by the
              callee. */
           memcpy(databuffer, uip_appdata, uip_datalen());
-
+#endif
           /* Call the client process. We use the PROCESS_CONTEXT
              mechanism to temporarily switch process context to the
              client process. */
           if(c->receive_callback != NULL) {
             PROCESS_CONTEXT_BEGIN(c->client_process);
             c->receive_callback(c,
-                                &(UIP_IP_BUF->srcipaddr),
-                                UIP_HTONS(UIP_IP_BUF->srcport),
-                                &(UIP_IP_BUF->destipaddr),
-                                UIP_HTONS(UIP_IP_BUF->destport),
-                                databuffer, uip_datalen());
+                                &(UIP_IP_BUF(buf)->srcipaddr),
+                                UIP_HTONS(UIP_IP_BUF(buf)->srcport),
+                                &(UIP_IP_BUF(buf)->destipaddr),
+                                UIP_HTONS(UIP_IP_BUF(buf)->destport),
+                                uip_buf(buf), uip_datalen(buf));
             PROCESS_CONTEXT_END();
           }
         }

@@ -45,6 +45,8 @@
 #ifndef UIP_ND6_H_
 #define UIP_ND6_H_
 
+#include <net/net_buf.h>
+
 #include "net/ip/uip.h"
 #include "sys/stimer.h"
 /**
@@ -377,7 +379,7 @@ uip_nd6_ns_input(void);
  *   a SLLAO option, otherwise no.
  */
 void
-uip_nd6_ns_output(uip_ipaddr_t *src, uip_ipaddr_t *dest, uip_ipaddr_t *tgt);
+uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t *src, uip_ipaddr_t *dest, uip_ipaddr_t *tgt);
 
 #if UIP_CONF_ROUTER
 #if UIP_ND6_SEND_RA
@@ -401,7 +403,7 @@ void uip_nd6_ra_output(uip_ipaddr_t *dest);
  * possible option is SLLAO, MUST NOT be included if source = unspecified
  * SHOULD be included otherwise
  */
-void uip_nd6_rs_output(void);
+void uip_nd6_rs_output(struct net_buf *buf);
 
 /**
  * \brief Initialise the uIP ND core

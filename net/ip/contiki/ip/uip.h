@@ -50,9 +50,16 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 
 #ifndef UIP_H_
 #define UIP_H_
+
+struct net_buf;
+
+#include "net/ip/uipopt.h"
+#include "net/ip/uipaddr.h"
+#include "net/ip/tcpip.h"
 
 /* Header sizes. */
 #if NETSTACK_CONF_WITH_IPV6
@@ -84,10 +91,10 @@
  * we need values with and without LLH_LEN we do not use capital
  * letters as these values are variable
  */
-#define uip_l2_l3_hdr_len (UIP_LLH_LEN + UIP_IPH_LEN + uip_ext_len)
-#define uip_l2_l3_icmp_hdr_len (UIP_LLH_LEN + UIP_IPH_LEN + uip_ext_len + UIP_ICMPH_LEN)
-#define uip_l3_hdr_len (UIP_IPH_LEN + uip_ext_len)
-#define uip_l3_icmp_hdr_len (UIP_IPH_LEN + uip_ext_len + UIP_ICMPH_LEN)
+#define uip_l2_l3_hdr_len(buf) (UIP_LLH_LEN + UIP_IPH_LEN + uip_ext_len(buf))
+#define uip_l2_l3_icmp_hdr_len(buf) (UIP_LLH_LEN + UIP_IPH_LEN + uip_ext_len(buf) + UIP_ICMPH_LEN)
+#define uip_l3_hdr_len(buf) (UIP_IPH_LEN + uip_ext_len(buf))
+#define uip_l3_icmp_hdr_len(buf) (UIP_IPH_LEN + uip_ext_len(buf) + UIP_ICMPH_LEN)
 #endif /*NETSTACK_CONF_WITH_IPV6*/
 
 
@@ -277,7 +284,7 @@ void uip_setipid(uint16_t id);
  *
  * \hideinitializer
  */
-#define uip_input()        uip_process(UIP_DATA)
+#define uip_input(buf)        uip_process(buf, UIP_DATA)
 
 
 /**
@@ -415,8 +422,8 @@ void uip_setipid(uint16_t id);
  *
  * \hideinitializer
  */
-#define uip_udp_periodic_conn(conn) do { uip_udp_conn = conn;   \
-    uip_process(UIP_UDP_TIMER); } while(0)
+#define uip_udp_periodic_conn(buf, conn) do { uip_set_udp_conn(buf) = conn; \
+		uip_process(buf, UIP_UDP_TIMER); } while(0)
 #endif /* UIP_UDP */
 
 /** \brief Abandon the reassembly of the current packet */
@@ -454,11 +461,13 @@ typedef union {
   uint8_t u8[UIP_BUFSIZE];
 } uip_buf_t;
 
+#if 0
+/* Moved to net_buf */
 CCIF extern uip_buf_t uip_aligned_buf;
 
 /** Macro to access uip_aligned_buf as an array of bytes */
 #define uip_buf (uip_aligned_buf.u8)
-
+#endif
 
 /** @} */
 
@@ -574,7 +583,9 @@ struct uip_conn *uip_connect(uip_ipaddr_t *ripaddr, uint16_t port);
  *
  * \hideinitializer
  */
+#if UIP_TCP
 CCIF void uip_send(const void *data, int len);
+#endif
 
 /**
  * The length of any incoming data that is currently available (if available)
@@ -585,8 +596,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-/*void uip_datalen(void);*/
-#define uip_datalen()       uip_len
+#define uip_datalen(buf)       uip_len(buf)
 
 /**
  * The length of any out-of-band data (urgent data) that has arrived
@@ -646,7 +656,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_restart()         do { uip_flags |= UIP_NEWDATA;    \
+#define uip_restart(buf)    do { uip_flags(buf) |= UIP_NEWDATA;	\
     uip_conn->tcpstateflags &= ~UIP_STOPPED;                    \
   } while(0)
 
@@ -673,7 +683,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_newdata()   (uip_flags & UIP_NEWDATA)
+#define uip_newdata(buf)   (uip_flags(buf) & UIP_NEWDATA)
 
 /**
  * Has previously sent data been acknowledged?
@@ -738,7 +748,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_rexmit()     (uip_flags & UIP_REXMIT)
+#define uip_rexmit(buf)     (uip_flags(buf) & UIP_REXMIT)
 
 /**
  * Is the connection being polled by uIP?
@@ -752,7 +762,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_poll()       (uip_flags & UIP_POLL)
+#define uip_poll(buf)       (uip_flags(buf) & UIP_POLL)
 
 /**
  * Get the initial maximum segment size (MSS) of the current
@@ -760,7 +770,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_initialmss()             (uip_conn->initialmss)
+#define uip_initialmss(buf)             (uip_conn(buf)->initialmss)
 
 /**
  * Get the current maximum segment size that can be sent on the current
@@ -773,7 +783,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_mss()             (uip_conn->mss)
+#define uip_mss(buf)             (uip_conn(buf)->mss)
 
 /**
  * Set up a new UDP connection.
@@ -836,7 +846,7 @@ struct uip_udp_conn *uip_udp_new(const uip_ipaddr_t *ripaddr, uint16_t rport);
  *
  * \hideinitializer
  */
-#define uip_udp_send(len) uip_send((char *)uip_appdata, len)
+#define uip_udp_send(buf, len) uip_send((char *)uip_appdata(buf), len)
 
 /** @} */
 
@@ -1213,7 +1223,10 @@ CCIF uint32_t uip_htonl(uint32_t val);
  * called. If the application wishes to send data, the application may
  * use this space to write the data into before calling uip_send().
  */
+#if 0
+/* part of net_buf */
 CCIF extern void *uip_appdata;
+#endif
 
 #if UIP_URGDATA > 0
 /* uint8_t *uip_urgdata:
@@ -1248,12 +1261,18 @@ extern void *uip_urgdata;
  * packet.
  *
  */
+#if 0
+/* No longer used as len is part of net_buf */
 CCIF extern uint16_t uip_len;
+#endif
 
 /**
  * The length of the extension headers
  */
+#if 0
+/* No longer used as len is part of net_buf */
 extern uint8_t uip_ext_len;
+#endif
 /** @} */
 
 #if UIP_URGDATA > 0
@@ -1299,6 +1318,9 @@ struct uip_conn {
 
   /** The application state. */
   uip_tcp_appstate_t appstate;
+
+  /* buffer holding the data to this connection */
+  struct net_buf *buf;
 };
 
 
@@ -1308,8 +1330,10 @@ struct uip_conn {
  * The uip_conn pointer can be used to access the current TCP
  * connection.
  */
-
+#if 0
+/* Moved to net_buf */
 CCIF extern struct uip_conn *uip_conn;
+#endif
 #if UIP_TCP
 /* The array containing all uIP connections. */
 CCIF extern struct uip_conn uip_conns[UIP_CONNS];
@@ -1337,12 +1361,18 @@ struct uip_udp_conn {
 
   /** The application state. */
   uip_udp_appstate_t appstate;
+
+  /* buffer holding the data to this connection */
+  struct net_buf *buf;
 };
 
 /**
  * The current UDP connection.
  */
+#if 0
+/* Moved to net_buf */
 extern struct uip_udp_conn *uip_udp_conn;
+#endif
 extern struct uip_udp_conn uip_udp_conns[UIP_UDP_CONNS];
 
 struct uip_fallback_interface {
@@ -1353,6 +1383,9 @@ struct uip_fallback_interface {
 #if UIP_CONF_ICMP6
 struct uip_icmp6_conn {
   uip_icmp6_appstate_t appstate;
+
+  /* buffer holding the data to this connection */
+  struct net_buf *buf;
 };
 extern struct uip_icmp6_conn uip_icmp6_conns;
 #endif /*UIP_CONF_ICMP6*/
@@ -1456,7 +1489,10 @@ struct uip_stats {
  * that are defined in this file. Please read below for more
  * information.
  */
+#if 0
+/* Moved to net_buf */
 CCIF extern uint8_t uip_flags;
+#endif
 
 /* The following flags may be set in the global variable uip_flags
    before calling the application callback. The UIP_ACKDATA,
@@ -1508,7 +1544,7 @@ uip_ext_hdr_options_process(); */
  *
  * The actual uIP function which does all the work.
  */
-void uip_process(uint8_t flag);
+void uip_process(struct net_buf *buf, uint8_t flag);
 
   /* The following flags are passed as an argument to the uip_process()
    function. They are used to distinguish between the two cases where
@@ -1810,7 +1846,7 @@ struct uip_udp_hdr {
  * \hideinitializer
  */
 #define UIP_APPDATA_SIZE (UIP_BUFSIZE - UIP_LLH_LEN - UIP_TCPIP_HLEN)
-#define UIP_APPDATA_PTR (void *)&uip_buf[UIP_LLH_LEN + UIP_TCPIP_HLEN]
+#define UIP_APPDATA_PTR(buf) (void *)&uip_buf(buf)[UIP_LLH_LEN + UIP_TCPIP_HLEN]
 
 #define UIP_PROTO_ICMP  1
 #define UIP_PROTO_TCP   6
@@ -2129,7 +2165,7 @@ uint16_t uip_chksum(uint16_t *data, uint16_t len);
  * \return The IP header checksum of the IP header in the uip_buf
  * buffer.
  */
-uint16_t uip_ipchksum(void);
+uint16_t uip_ipchksum(struct net_buf *buf);
 
 /**
  * Calculate the TCP checksum of the packet in uip_buf and uip_appdata.
@@ -2151,14 +2187,14 @@ uint16_t uip_tcpchksum(void);
  * \return The UDP checksum of the UDP segment in uip_buf and pointed
  * to by uip_appdata.
  */
-uint16_t uip_udpchksum(void);
+uint16_t uip_udpchksum(struct net_buf *buf);
 
 /**
  * Calculate the ICMP checksum of the packet in uip_buf.
  *
  * \return The ICMP checksum of the ICMP packet in uip_buf
  */
-uint16_t uip_icmp6chksum(void);
+uint16_t uip_icmp6chksum(struct net_buf *buf);
 
 
 #endif /* UIP_H_ */

@@ -43,10 +43,12 @@
 #include "contiki-conf.h"
 #include "dev/radio.h"
 
+#include <net/net_buf.h>
 
-typedef void (* mac_callback_t)(void *ptr, int status, int transmissions);
 
-void mac_call_sent_callback(mac_callback_t sent, void *ptr, int status, int num_tx);
+typedef void (* mac_callback_t)(struct net_buf *buf, void *ptr, int status, int transmissions);
+
+void mac_call_sent_callback(struct net_buf *buf, mac_callback_t sent, void *ptr, int status, int num_tx);
 
 /**
  * The structure of a MAC protocol driver in Contiki.
@@ -58,10 +60,10 @@ struct mac_driver {
   void (* init)(void);
 
   /** Send a packet from the Rime buffer  */
-  void (* send)(mac_callback_t sent_callback, void *ptr);
+  void (* send)(struct net_buf *buf, mac_callback_t sent_callback, void *ptr);
 
   /** Callback for getting notified of incoming packet. */
-  void (* input)(void);
+  void (* input)(struct net_buf *buf);
   
   /** Turn the MAC layer on. */
   int (* on)(void);

@@ -42,6 +42,8 @@
 #ifndef UIP_DS6_H_
 #define UIP_DS6_H_
 
+#include <net/net_buf.h>
+
 #include "net/ip/uip.h"
 #include "sys/stimer.h"
 /* The size of uip_ds6_addr_t depends on UIP_ND6_DEF_MAXDADNS. Include uip-nd6.h to define it. */
@@ -244,7 +246,7 @@ extern struct etimer uip_ds6_timer_rs;
 void uip_ds6_init(void);
 
 /** \brief Periodic processing of data structures */
-void uip_ds6_periodic(void);
+void uip_ds6_periodic(struct net_buf *buf);
 
 /** \brief Generic loop routine on an abstract data structure, which generalizes
  * all data structures used in DS6 */
@@ -310,7 +312,7 @@ uint8_t get_match_length(uip_ipaddr_t *src, uip_ipaddr_t *dst);
 
 #if UIP_ND6_DEF_MAXDADNS >0
 /** \brief Perform Duplicate Address Selection on one address */
-void uip_ds6_dad(uip_ds6_addr_t *ifaddr);
+void uip_ds6_dad(struct net_buf *buf, uip_ds6_addr_t *ifaddr);
 
 /** \brief Callback when DAD failed */
 int uip_ds6_dad_failed(uip_ds6_addr_t *ifaddr);
@@ -329,7 +331,7 @@ void uip_ds6_send_ra_periodic(void);
 #endif /* UIP_ND6_SEND_RA */
 #else /* UIP_CONF_ROUTER */
 /** \brief Send periodic RS to find router */
-void uip_ds6_send_rs(void);
+void uip_ds6_send_rs(struct net_buf *buf);
 #endif /* UIP_CONF_ROUTER */
 
 /** \brief Compute the reachable time based on base reachable time, see RFC 4861*/

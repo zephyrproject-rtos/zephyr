@@ -42,6 +42,8 @@
  * @{
  */
 
+#include <net/net_buf.h>
+
 #include "net/llsec/nullsec.h"
 #include "net/mac/frame802154.h"
 #include "net/netstack.h"
@@ -55,10 +57,10 @@ bootstrap(llsec_on_bootstrapped_t on_bootstrapped)
 }
 /*---------------------------------------------------------------------------*/
 static void
-send(mac_callback_t sent, void *ptr)
+send(struct net_buf *buf, mac_callback_t sent, void *ptr)
 {
-  packetbuf_set_attr(PACKETBUF_ATTR_FRAME_TYPE, FRAME802154_DATAFRAME);
-  NETSTACK_MAC.send(sent, ptr);
+  packetbuf_set_attr(buf, PACKETBUF_ATTR_FRAME_TYPE, FRAME802154_DATAFRAME);
+  NETSTACK_MAC.send(buf, sent, ptr);
 }
 /*---------------------------------------------------------------------------*/
 static int
@@ -68,9 +70,9 @@ on_frame_created(void)
 }
 /*---------------------------------------------------------------------------*/
 static void
-input(void)
+input(struct net_buf *buf)
 {
-  NETSTACK_NETWORK.input();
+  NETSTACK_NETWORK.input(buf);
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t

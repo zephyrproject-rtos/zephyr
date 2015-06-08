@@ -34,13 +34,13 @@
 
 /*---------------------------------------------------------------------------*/
 int
-framer_canonical_create_and_secure(void)
+framer_canonical_create_and_secure(struct net_buf *buf)
 {
   int hdr_len;
   
-  hdr_len = NETSTACK_FRAMER.create();
+  hdr_len = NETSTACK_FRAMER.create(buf);
   if(hdr_len >= 0) {
-    packetbuf_compact();
+    packetbuf_compact(buf);
     if(!NETSTACK_LLSEC.on_frame_created()) {
       return FRAMER_FAILED;
     }

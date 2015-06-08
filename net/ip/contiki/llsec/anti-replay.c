@@ -51,43 +51,43 @@ static uint32_t counter;
 
 /*---------------------------------------------------------------------------*/
 void
-anti_replay_set_counter(void)
+anti_replay_set_counter(struct net_buf *buf)
 {
   frame802154_frame_counter_t reordered_counter;
   
   reordered_counter.u32 = LLSEC802154_HTONL(++counter);
   
-  packetbuf_set_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1, reordered_counter.u16[0]);
-  packetbuf_set_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3, reordered_counter.u16[1]);
+  packetbuf_set_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1, reordered_counter.u16[0]);
+  packetbuf_set_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3, reordered_counter.u16[1]);
 }
 /*---------------------------------------------------------------------------*/
 uint32_t
-anti_replay_get_counter(void)
+anti_replay_get_counter(struct net_buf *buf)
 {
   frame802154_frame_counter_t disordered_counter;
   
-  disordered_counter.u16[0] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1);
-  disordered_counter.u16[1] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3);
+  disordered_counter.u16[0] = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1);
+  disordered_counter.u16[1] = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3);
   
   return LLSEC802154_HTONL(disordered_counter.u32); 
 }
 /*---------------------------------------------------------------------------*/
 void
-anti_replay_init_info(struct anti_replay_info *info)
+anti_replay_init_info(struct net_buf *buf, struct anti_replay_info *info)
 {
   info->last_broadcast_counter
       = info->last_unicast_counter
-      = anti_replay_get_counter();
+      = anti_replay_get_counter(buf);
 }
 /*---------------------------------------------------------------------------*/
 int
-anti_replay_was_replayed(struct anti_replay_info *info)
+anti_replay_was_replayed(struct net_buf *buf, struct anti_replay_info *info)
 {
   uint32_t received_counter;
   
-  received_counter = anti_replay_get_counter();
+  received_counter = anti_replay_get_counter(buf);
   
-  if(packetbuf_holds_broadcast()) {
+  if(packetbuf_holds_broadcast(buf)) {
     /* broadcast */
     if(received_counter <= info->last_broadcast_counter) {
       return 1;

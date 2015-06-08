@@ -41,6 +41,8 @@
 #ifndef NETSTACK_H
 #define NETSTACK_H
 
+#include <net/net_buf.h>
+
 #include "contiki-conf.h"
 
 #ifndef NETSTACK_NETWORK
@@ -121,7 +123,7 @@ struct network_driver {
   void (* init)(void);
 
   /** Callback for getting notified of incoming packet. */
-  void (* input)(void);
+  void (* input)(struct net_buf *buf);
 };
 
 extern const struct network_driver NETSTACK_NETWORK;

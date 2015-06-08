@@ -50,11 +50,14 @@
  * Adam Dunkels <adam@sics.se>
  *
  */
+
 #ifndef PROCESS_H_
 #define PROCESS_H_
 
 #include "sys/pt.h"
 #include "sys/cc.h"
+
+struct net_buf;
 
 typedef unsigned char process_event_t;
 typedef void *        process_data_t;
@@ -270,10 +273,11 @@ typedef unsigned char process_num_events_t;
  *
  * \hideinitializer
  */
-#define PROCESS_THREAD(name, ev, data) 				\
+#define PROCESS_THREAD(name, ev, data, buf)			\
 static PT_THREAD(process_thread_##name(struct pt *process_pt,	\
 				       process_event_t ev,	\
-				       process_data_t data))
+				       process_data_t data,	\
+				       struct net_buf *buf))
 
 /**
  * Declare the name of a process.
@@ -305,7 +309,7 @@ static PT_THREAD(process_thread_##name(struct pt *process_pt,	\
                           process_thread_##name }
 #else
 #define PROCESS(name, strname)				\
-  PROCESS_THREAD(name, ev, data);			\
+  PROCESS_THREAD(name, ev, data, buf);			\
   struct process name = { NULL, strname,		\
                           process_thread_##name }
 #endif
@@ -320,7 +324,8 @@ struct process {
   const char *name;
 #define PROCESS_NAME_STRING(process) (process)->name
 #endif
-  PT_THREAD((* thread)(struct pt *, process_event_t, process_data_t));
+  PT_THREAD((* thread)(struct pt *, process_event_t, process_data_t,
+                       struct net_buf *));
   struct pt pt;
   unsigned char state, needspoll;
 };
@@ -375,7 +380,8 @@ CCIF int process_post(struct process *p, process_event_t ev, process_data_t data
  * with the event.
  */
 CCIF void process_post_synch(struct process *p,
-			     process_event_t ev, process_data_t data);
+			     process_event_t ev, process_data_t data,
+			     struct net_buf *buf);
 
 /**
  * \brief      Cause a process to exit
@@ -497,7 +503,7 @@ void process_init(void);
  * \return The number of events that are currently waiting in the
  * event queue.
  */
-int process_run(void);
+int process_run(struct net_buf *buf);
 
 
 /**

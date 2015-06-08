@@ -37,9 +37,9 @@
  *         Adam Dunkels <adam@sics.se>
  */
 
-#include "contiki-conf.h"
+#include <net/net_buf.h>
 
-extern uint16_t uip_slen;
+#include "contiki-conf.h"
 
 #include "net/ip/uip-udp-packet.h"
 #include "net/ipv6/multicast/uip-mcast6.h"
@@ -48,38 +48,38 @@ extern uint16_t uip_slen;
 
 /*---------------------------------------------------------------------------*/
 void
-uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len)
+uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len)
 {
 #if UIP_UDP
   if(data != NULL) {
-    uip_udp_conn = c;
-    uip_slen = len;
-    memcpy(&uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN], data,
+    uip_set_udp_conn(buf) = c;
+    uip_slen(buf) = len;
+    memcpy(&uip_buf(buf)[UIP_LLH_LEN + UIP_IPUDPH_LEN], data,
            len > UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN?
            UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
-    uip_process(UIP_UDP_SEND_CONN);
+    uip_process(buf, UIP_UDP_SEND_CONN);
 
 #if UIP_CONF_IPV6_MULTICAST
   /* Let the multicast engine process the datagram before we send it */
-  if(uip_is_addr_mcast_routable(&uip_udp_conn->ripaddr)) {
+ if(uip_is_addr_mcast_routable(&uip_udp_conn(buf)->ripaddr)) {
     UIP_MCAST6.out();
   }
 #endif /* UIP_IPV6_MULTICAST */
 
 #if NETSTACK_CONF_WITH_IPV6
-    tcpip_ipv6_output();
+    tcpip_ipv6_output(buf);
 #else
     if(uip_len > 0) {
       tcpip_output();
     }
 #endif
   }
-  uip_slen = 0;
+  uip_slen(buf) = 0;
 #endif /* UIP_UDP */
 }
 /*---------------------------------------------------------------------------*/
 void
-uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
+uip_udp_packet_sendto(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len,
 		      const uip_ipaddr_t *toaddr, uint16_t toport)
 {
   uip_ipaddr_t curaddr;
@@ -94,7 +94,7 @@ uip_udp_packet_sendto(struct uip_udp_conn *c, const void *data, int len,
     uip_ipaddr_copy(&c->ripaddr, toaddr);
     c->rport = toport;
 
-    uip_udp_packet_send(c, data, len);
+    uip_udp_packet_send(buf, c, data, len);
 
     /* Restore old IP addr/port */
     uip_ipaddr_copy(&c->ripaddr, &curaddr);

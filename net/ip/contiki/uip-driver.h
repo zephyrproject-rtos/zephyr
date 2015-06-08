@@ -40,8 +40,9 @@
 #define UIP_DRIVER_H_
 
 #include "net/netstack.h"
+#include "net/ip/uip.h"
 
-uint8_t uip_driver_send(const uip_lladdr_t *lladdr);
+uint8_t uip_driver_send(struct net_buf *buf, const uip_lladdr_t *lladdr);
 
 extern const struct network_driver uip_driver;
 

@@ -42,6 +42,8 @@
  * @{
  */
 
+#include <net/net_buf.h>
+
 #include "sys/ctimer.h"
 #include "contiki.h"
 #include "lib/list.h"
@@ -60,7 +62,7 @@ static char initialized;
 
 /*---------------------------------------------------------------------------*/
 PROCESS(ctimer_process, "Ctimer process");
-PROCESS_THREAD(ctimer_process, ev, data)
+PROCESS_THREAD(ctimer_process, ev, data, buf)
 {
   struct ctimer *c;
   PROCESS_BEGIN();
@@ -77,7 +79,7 @@ PROCESS_THREAD(ctimer_process, ev, data)
 	list_remove(ctimer_list, c);
 	PROCESS_CONTEXT_BEGIN(c->p);
 	if(c->f != NULL) {
-	  c->f(c->ptr);
+          c->f(c->buf, c->ptr);
 	}
 	PROCESS_CONTEXT_END(c->p);
 	break;
@@ -96,13 +98,14 @@ ctimer_init(void)
 }
 /*---------------------------------------------------------------------------*/
 void
-ctimer_set(struct ctimer *c, clock_time_t t,
-	   void (*f)(void *), void *ptr)
+ctimer_set(struct net_buf *buf, struct ctimer *c, clock_time_t t,
+	   void (*f)(struct net_buf *, void *), void *ptr)
 {
   PRINTF("ctimer_set %p %u\n", c, (unsigned)t);
   c->p = PROCESS_CURRENT();
   c->f = f;
   c->ptr = ptr;
+  c->buf = buf;
   if(initialized) {
     PROCESS_CONTEXT_BEGIN(&ctimer_process);
     etimer_set(&c->etimer, t);

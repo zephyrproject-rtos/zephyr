@@ -43,8 +43,7 @@
  *
  */
 
-#ifndef UIP_DS6_NEIGHBOR_H_
-#define UIP_DS6_NEIGHBOR_H_
+#include <net/net_buf.h>
 
 #include "net/ip/uip.h"
 #include "net/nbr-table.h"
@@ -55,6 +54,9 @@
 #if UIP_CONF_IPV6_QUEUE_PKT
 #include "net/ip/uip-packetqueue.h"
 #endif                          /*UIP_CONF_QUEUE_PKT */
+
+#ifndef UIP_DS6_NEIGHBOR_H_
+#define UIP_DS6_NEIGHBOR_H_
 
 /*--------------------------------------------------*/
 /** \brief Possible states for the nbr cache entries */
@@ -93,8 +95,8 @@ uip_ds6_nbr_t *uip_ds6_nbr_lookup(const uip_ipaddr_t *ipaddr);
 uip_ds6_nbr_t *uip_ds6_nbr_ll_lookup(const uip_lladdr_t *lladdr);
 uip_ipaddr_t *uip_ds6_nbr_ipaddr_from_lladdr(const uip_lladdr_t *lladdr);
 const uip_lladdr_t *uip_ds6_nbr_lladdr_from_ipaddr(const uip_ipaddr_t *ipaddr);
-void uip_ds6_link_neighbor_callback(int status, int numtx);
-void uip_ds6_neighbor_periodic(void);
+void uip_ds6_link_neighbor_callback(struct net_buf *buf, int status, int numtx);
+void uip_ds6_neighbor_periodic(struct net_buf *buf);
 int uip_ds6_nbr_num(void);
 
 /**

@@ -45,6 +45,9 @@
 
 #include <stdio.h>
 
+#include <net/net_buf.h>
+#include <net/net_core.h>
+
 #include "sys/process.h"
 #include "sys/arg.h"
 
@@ -78,7 +81,7 @@ static volatile unsigned char poll_requested;
 #define PROCESS_STATE_RUNNING     1
 #define PROCESS_STATE_CALLED      2
 
-static void call_process(struct process *p, process_event_t ev, process_data_t data);
+static void call_process(struct process *p, process_event_t ev, process_data_t data, struct net_buf *buf);
 
 #define DEBUG 0
 #if DEBUG
@@ -117,11 +120,11 @@ process_start(struct process *p, process_data_t data)
   PRINTF("process: starting '%s'\n", PROCESS_NAME_STRING(p));
 
   /* Post a synchronous initialization event to the process. */
-  process_post_synch(p, PROCESS_EVENT_INIT, data);
+  process_post_synch(p, PROCESS_EVENT_INIT, data, NULL);
 }
 /*---------------------------------------------------------------------------*/
 static void
-exit_process(struct process *p, struct process *fromprocess)
+exit_process(struct process *p, struct process *fromprocess, struct net_buf *buf)
 {
   register struct process *q;
   struct process *old_current = process_current;
@@ -146,14 +149,14 @@ exit_process(struct process *p, struct process *fromprocess)
      */
     for(q = process_list; q != NULL; q = q->next) {
       if(p != q) {
-	call_process(q, PROCESS_EVENT_EXITED, (process_data_t)p);
+        call_process(q, PROCESS_EVENT_EXITED, (process_data_t)p, NULL);
       }
     }
 
     if(p->thread != NULL && p != fromprocess) {
       /* Post the exit event to the process that is about to exit. */
       process_current = p;
-      p->thread(&p->pt, PROCESS_EVENT_EXIT, NULL);
+      p->thread(&p->pt, PROCESS_EVENT_EXIT, NULL, buf);
     }
   }
 
@@ -172,26 +175,28 @@ exit_process(struct process *p, struct process *fromprocess)
 }
 /*---------------------------------------------------------------------------*/
 static void
-call_process(struct process *p, process_event_t ev, process_data_t data)
+call_process(struct process *p, process_event_t ev, process_data_t data,
+		struct net_buf *buf)
 {
   int ret;
 
 #if DEBUG
   if(p->state == PROCESS_STATE_CALLED) {
-    printf("process: process '%s' called again with event %d\n", PROCESS_NAME_STRING(p), ev);
+    printf("process: process '%s' called again with event %d buf %p\n",
+	   PROCESS_NAME_STRING(p), ev, buf);
   }
 #endif /* DEBUG */
   
   if((p->state & PROCESS_STATE_RUNNING) &&
      p->thread != NULL) {
-    PRINTF("process: calling process '%s' with event %d\n", PROCESS_NAME_STRING(p), ev);
+    PRINTF("process: calling process '%s' with event %d buf %p\n", PROCESS_NAME_STRING(p), ev, buf);
     process_current = p;
     p->state = PROCESS_STATE_CALLED;
-    ret = p->thread(&p->pt, ev, data);
+    ret = p->thread(&p->pt, ev, data, buf);
     if(ret == PT_EXITED ||
        ret == PT_ENDED ||
        ev == PROCESS_EVENT_EXIT) {
-      exit_process(p, p);
+	    exit_process(p, p, buf);
     } else {
       p->state = PROCESS_STATE_RUNNING;
     }
@@ -201,7 +206,7 @@ call_process(struct process *p, process_event_t ev, process_data_t data)
 void
 process_exit(struct process *p)
 {
-  exit_process(p, PROCESS_CURRENT());
+	exit_process(p, PROCESS_CURRENT(), NULL);
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -222,7 +227,7 @@ process_init(void)
  */
 /*---------------------------------------------------------------------------*/
 static void
-do_poll(void)
+do_poll(struct net_buf *buf)
 {
   struct process *p;
 
@@ -232,7 +237,7 @@ do_poll(void)
     if(p->needspoll) {
       p->state = PROCESS_STATE_RUNNING;
       p->needspoll = 0;
-      call_process(p, PROCESS_EVENT_POLL, NULL);
+      call_process(p, PROCESS_EVENT_POLL, NULL, buf);
     }
   }
 }
@@ -243,7 +248,7 @@ do_poll(void)
  */
 /*---------------------------------------------------------------------------*/
 static void
-do_event(void)
+do_event(struct net_buf *buf)
 {
   static process_event_t ev;
   static process_data_t data;
@@ -279,9 +284,9 @@ do_event(void)
 	/* If we have been requested to poll a process, we do this in
 	   between processing the broadcast event. */
 	if(poll_requested) {
-	  do_poll();
+	  do_poll(buf);
 	}
-	call_process(p, ev, data);
+	call_process(p, ev, data, buf);
       }
     } else {
       /* This is not a broadcast event, so we deliver it to the
@@ -293,21 +298,21 @@ do_event(void)
       }
 
       /* Make sure that the process actually is running. */
-      call_process(receiver, ev, data);
+      call_process(receiver, ev, data, buf);
     }
   }
 }
 /*---------------------------------------------------------------------------*/
 int
-process_run(void)
+process_run(struct net_buf *buf)
 {
   /* Process poll events. */
   if(poll_requested) {
-    do_poll();
+    do_poll(buf);
   }
 
   /* Process one event from the queue */
-  do_event();
+  do_event(buf);
 
   return nevents + poll_requested;
 }
@@ -359,11 +364,12 @@ process_post(struct process *p, process_event_t ev, process_data_t data)
 }
 /*---------------------------------------------------------------------------*/
 void
-process_post_synch(struct process *p, process_event_t ev, process_data_t data)
+process_post_synch(struct process *p, process_event_t ev, process_data_t data,
+		   struct net_buf *buf)
 {
   struct process *caller = process_current;
 
-  call_process(p, ev, data);
+  call_process(p, ev, data, buf);
   process_current = caller;
 }
 /*---------------------------------------------------------------------------*/
