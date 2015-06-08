@@ -1315,9 +1315,11 @@ packet_sent(void *ptr, int status, int transmissions)
 {
   uip_ds6_link_neighbor_callback(status, transmissions);
 
+#if NETSTACK_CONF_WITH_RIME
   if(callback != NULL) {
     callback->output_callback(status);
   }
+#endif /* NETSTACK_CONF_WITH_RIME */
   last_tx_status = status;
 }
 /*--------------------------------------------------------------------*/
