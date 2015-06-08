@@ -47,7 +47,10 @@
 #include "net/ipv6/uip-ds6.h"
 #endif /* NETSTACK_CONF_WITH_IPV6 */
 
+#if UIP_TCP
+/* psock.h is only needed for TCP */
 #include "net/ip/psock.h"
+#endif
 
 #include "net/ip/udp-socket.h"
 
