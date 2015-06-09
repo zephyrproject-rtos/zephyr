@@ -43,7 +43,7 @@ extern "C" {
 
 typedef union k_args_args K_ARGS_ARGS;
 
-/* Kernel timer structure (non-public) */
+/* Kernel timer structure */
 
 struct k_timer {
 	struct k_timer *Forw;
@@ -53,10 +53,7 @@ struct k_timer {
 	struct k_args *Args;
 };
 
-/* ---------------------------------------------------------------------- */
-/* PROCESSOR SPECIFIC TYPES & DATA STRUCTURES */
-
-/* Service codes */
+/* Kernel server command codes */
 
 typedef enum {
 	NOP,
