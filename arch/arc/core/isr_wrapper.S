@@ -35,6 +35,10 @@
 GTEXT(_isr_enter)
 GTEXT(_isr_demux)
 
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
+GTEXT(_power_save_idle_exit)
+#endif
+
 /*
 The symbols in this file are not real functions, and neither are
 _rirq_enter/_firq_enter: they are jump points.
@@ -207,9 +211,28 @@ SECTION_FUNC(TEXT, _isr_enter)
 
 	j_s.nd [r2]
 
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
+.macro exit_tickless_idle
+	clri r0 /* do not interrupt exiting tickless idle operations */
+	push_s r0
+	push_s blink
+	jl _power_save_idle_exit
+	pop_s blink
+	pop_s r0
+	seti r0
+.endm
+#else
+	#define exit_tickless_idle
+#endif
+
 /* when getting here, r3 contains the interrupt exit stub to call */
 SECTION_FUNC(TEXT, _isr_demux)
 	push_s r3
+
+	/* cannot be done before this point because we must be able to run C */
+	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
+	exit_tickless_idle
+
 	lr r0, [_ARC_V2_ICAUSE]
 	sub r0, r0, 16
 
