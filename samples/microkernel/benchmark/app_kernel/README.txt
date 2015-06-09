@@ -88,7 +88,7 @@ Sample Output:
 | message overhead:      NNNNNN     nsec/packet                               |
 | raw transfer rate:           NNNN KB/sec (without overhead)                 |
 |-----------------------------------------------------------------------------|
-|                C H A N N E L   M E A S U R E M E N T S                      |
+|                   P I P E   M E A S U R E M E N T S                         |
 |-----------------------------------------------------------------------------|
 | Send data into a pipe towards a receiving high priority task and wait       |
 |-----------------------------------------------------------------------------|

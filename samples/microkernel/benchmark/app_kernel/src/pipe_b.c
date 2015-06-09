@@ -134,9 +134,9 @@ void pipe_test(void)
 
 	/* non-buffered operation, matching (ALL_N) */
 	PRINT_STRING(dashline, output_file);
-	PRINT_STRING("|                "
-				 "C H A N N E L   M E A S U R E M E N T S"
-				 "                      |\n", output_file);
+	PRINT_STRING("|                   "
+				 "P I P E   M E A S U R E M E N T S"
+				 "                         |\n", output_file);
 	PRINT_STRING(dashline, output_file);
 	PRINT_STRING("| Send data into a pipe towards a "
 				 "receiving high priority task and wait       |\n",
