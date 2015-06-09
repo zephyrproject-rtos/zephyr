@@ -2,4 +2,4 @@
 
 .. |PM| replace:: Hirally Rodriguez Santiago
 
-.. |project| replace:: Tiny Mountain
+.. |project| replace:: Zephyr Project

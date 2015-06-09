@@ -3,30 +3,30 @@
 Required Installation Steps
 ###########################
 
-Install all required packages for a Tiny Mountain development
+Install all required packages for a Zephyr development
 environment.
 
-Use the following procedures to build a Tiny Mountain example starting
+Use the following procedures to build an example starting
 with a clean system.
 
 #. `Installing the Yocto Software Development Kit`_
 
-#. `Installing the Tiny Mountain Software`_
+#. `Downloading the Code`_
 
-#. `Building a Tiny Mountain Example`_
+#. `Building an Example`_
 
 #. `Running Your Projects on QEMU`_
 
 Installing the Yocto Software Development Kit
 *********************************************
 
-The Tiny Mountain :abbr:`Software Development Kit (SDK)` provided by
+The |project| :abbr:`Software Development Kit (SDK)` provided by
 Yocto contains all necessary tools and cross compilers needed to build
-Tiny Mountain on all supported architectures. In addition it includes
-host tools such as Qemu built with the needed patch to support Tiny
-Mountain and a host compiler for building host tools if necessary. If
-you use this SDK, there is no need to build any cross compilers or
-emulation environments. The SDK supports the following architectures:
+Zephyr kernels on all supported architectures. In addition it includes
+host tools such as a custom QEMU and a host compiler for building host
+tools if necessary. With this SDK, there is no need to build any cross
+compilers or emulation environments. The SDK supports the following
+architectures:
 
 * :abbr:`IA-32 (Intel Architecture 32 bits)`
 
@@ -89,13 +89,13 @@ Follow these steps to install the SDK on your host system.
 
        $ export YOCTO_SDK_INSTALL_DIR=/opt/poky-tm/1.8
 
-#. When you build Tiny Mountain now, the Yocto SDK will be used.
+#. When you build the Yocto SDK will be used.
 
 
 Installing the General Development Requirements
 ***********************************************
 
-Install the required software for a Tiny Mountain environment. See:
+Install the required software for a Zephyr development environment. See:
 :ref:`Requirements` to learn what packages are needed.
 
 If you are using Ubuntu, use:
@@ -112,40 +112,39 @@ If you are using Fedora, use:
 
 .. note:: For troubleshooting information, refer to the appropriate component's documentation.
 
-Installing the Tiny Mountain Software
-*************************************
+Downloading the Code
+********************
 
-The current source is housed on Intel’s 01.org service. The process for
-getting access is not detailed in this document, but can be found in
-the document. Section 3 details the steps for checking out the code,
-but can be summarized with the following steps:
+The source is housed on Intel Corporation’s 01.org service. The process for
+getting access is not detailed in this document. See the
+:ref:`Accessing Gerrit`_ for more details.  Section 3 details the steps for
+checking out the code. A quick summary follows:
 
-#. Ensure that SSH has been set up porperly. See :ref:`GerritSSH` for
-   details.
+#. Ensure that SSH has been set up properly.
 
-#. Clone the repository, type:
+#. Clone the repository. Make sure to replace 01ORGUSERNAME with your
+   actual 01.org user name and type:
 
     .. code-block:: bash
 
        $ git clone ssh://01ORGUSERNAME@oic-review.01.org:29418/forto-collab`
 
-#. Change to the Tiny Mountain directory, type:
+#. Change to the main project directory, type:
 
     .. code-block:: bash
 
        $ cd forto-collab
 
-#. Source the build environment to set the Tiny Mountain environment
-   variables, type:
+#. Source the project environment file to setup project variables, type:
 
     .. code-block:: bash
 
        $ source zephyr-env.bash
 
-Building a Tiny Mountain Example
-================================
+Building an Example
+===================
 
-To build a Tiny Mountain example follow these steps:
+To build an example application follow these steps:
 
 #. Go to the root directory of your foss-rtos checkout
 
@@ -156,7 +155,7 @@ To build a Tiny Mountain example follow these steps:
 
        $ source zephyr-env.bash
 
-#. Build Tiny Mountain with the example project, type:
+#. Build the example project, type:
 
     .. code-block:: bash
 
@@ -189,8 +188,8 @@ For sample projects in the :file:`$ZEPHYR_BASE/samples/nanokernel/apps`
 directory, the results can be found at
 :file:`$SAMPLE_PROJECT/outdir/nanokernel.{ bin | elf }`.
 
-Running Your Projects on QEMU
-*****************************
+Running Projects on QEMU
+************************
 
 Using QEMU from a different path
 ================================

@@ -1,8 +1,8 @@
-Tiny Mountain Linux Installation Guide
+Linux Installation Guide
 ######################################
 
-Currently, Tiny Mountain supports Linux host systems. The installation
-guide was tested by compiling and testing Tiny Mountain on the Ubuntu
+Currently, the |project| supports Linux host systems only. The installation
+guide was tested by compiling and testing Zephyr on Ubuntu
 14.04 LTS 64 bit distribution.
 
 .. toctree::

@@ -5,235 +5,6 @@ The following installation procedures are optional. At the beginning of
 each procedure you will find under what conditions the procedure has to
 be followed.
 
-Packages Required for Building Crosstool-NG
-****************************************************************
-
-Your host system must have the following packages for crosstool-NG:
-
-.. code-block:: bash
-
-   $ sudo apt-get install gperf gawk bison flex texinfo libtool \
-     automake ncurses- devexpat libexpat1-dev libexpat1 python-dev
-
-Install libtool-bin for Debian systems, type:
-
-.. code-block:: bash
-
-   $ sudo apt-get install libtool-bin
-
-Requirements for building ARC Toolchain
-****************************************
-Install the needed packages for building ARC in Ubuntu, type:
-
-.. code-block:: bash
-
-   $ sudo apt-get install texinfo byacc flex libncurses5-dev \
-     zlib1g-dev libexpat1-dev libx11-dev texlive build-essential
-
-Install the needed packages for building ARC in Fedora, type:
-
-.. code-block:: bash
-
-   $ sudo yum groupinstall "Development Tools"
-
-   $ sudo yum install texinfo-tex byacc flex ncurses-devel \
-     zlib-devel expat-devel libX11-devel git
-
-Optional Packages for building Crosstool-NG
-********************************************
-
-The following packages are optional since the first crosstool-NG
-build downloads them if they are not installed.
-
-Install the optional packages on your host system manually, type:
-
-.. code-block:: bash
-
-   $ sudo apt-get install gmp mpfr isl cloog mpc binutils
-
-Installing the Crosstool-NG Toolchain (Optional)
-************************************************
-
-If you have installed the Tiny Mountain SDK provided by Yocto, you can
-skip these steps.
-
- #. Use the curl command to install the crosstool next generation
-    toolchain. Type:
-
-.. code-block:: bash
-
-   $ curl -O http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.20.0.tar.bz2
-
-
-#. Extract the toolchain by typing the following commands in the
-   console:
-
-.. code-block:: bash
-
-   $ tar xjf crosstool-ng-1.20.0.tar.bz2
-
-
-#. Move to the crosstool folder:
-
-.. code-block:: bash
-
-   $ cd crosstool-ng-1.20.0
-
-
-#. Specify the location where to install the crosstool-ng using
-   configure. Note that the prefix path must be absolute.
-
-.. code-block:: bash
-
-   $ ./configure
-
-   $ make
-
-
-#. Install the toolchain by typing the following commands in the
-   console:
-
-.. code-block:: bash
-
-   $ sudo make install
-
-   $ sudo cp ct-ng.comp /etc/bash_completion.d/
-
-
-#. Create the installation directory for the tool by typing the
-   following commands in the console:
-
-.. code-block:: bash
-
-   $ sudo mkdir /opt/crosstool-ng
-
-   $ sudo chown $USER:/opt/crosstool-ng
-
-.. note::
-
-   The preconfigured path can be changed via ct-ng menuconfig.
-   Changing the path may result in the rest of the instructions not
-   working.
-
-Create the Needed Build Tools
-=============================
-
-#. Create the directories for the builds x86 and ARM. Type:
-
-.. code-block:: bash
-
-   $ mkdir ${HOME}/x86-build
-
-   $ mkdir ${HOME}/arm-build
-
-   $ mkdir ${HOME}/cross-src
-
-#. Return to the parent directory. Type:
-
-.. code-block:: bash
-
-   $ cd $ZEPHYR_BASE
-
-#. Copy the toolchain configurations to the build directories by
-   typing the following commands in the console:
-
-.. code-block:: bash
-
-   $ cp scripts/cross_compiler/x86.config ${HOME}/x86-build/.config
-
-   $ cp scripts/cross_compiler/arm.config ${HOME}/arm-build/.config
-
-#. Build and install the toolchains by typing the following commands
-   in the console:
-
-.. code-block:: bash
-
-   $ cd ${HOME}/x86-build
-
-   $ ct-ng build
-
-   $ cd ${HOME}/arm-build
-
-   $ ct-ng build
-
-#. Add xtools to your shell, type:
-
-.. code-block:: bash
-
-   $ export ZEPHYR_GCC_VARIANT=xtools
-
-Alternatively you can add it to your :file:`~/.bashrc` file.
-
-Adding in the ARC Toolchain
-***************************
-
-If you have installed the Tiny Mountain SDK provided by Yocto, you can
-skip these steps.
-
-Building the Toolchain Locally
-==============================
-
-Currently the documentation for building the toolchain locally is in the
-process of being written, but the short version is found below (taken
-liberally from the toolchain/README.mk)
-
-#. Grab the compiler by running git clone:
-
-.. code-block:: bash
-
-   $ git clone https://github.com/foss-for-synopsys-dwc-arc-processors/toolchain
-
-#. When this completes:
-
-.. code-block:: bash
-
-   $ cd toolchain ; ./arc-clone-all.sh
-
-#. This will copy all the ARC toolchains into your directory.
-
-.. code-block:: bash
-
-   $ git checkout arc-releases ./build-all.sh --no-pdf --install-dir
-   /opt/arc --jobs <number of cores>
-
-#. Add the new binary to your path:
-
-.. code-block:: bash
-
-   $ export PATH=/opt/arc/bin:$PATH
-
-Using a Pre-Built Binary
-========================
-
-Synopsys does provide a pre-built binary for use. Currently it supports
-Ubuntu installs. When using this option, the Tiny Mountain project
-cannot assist in debugging what might go wrong.
-
-#. Download the pre-built binary, type:
-
-.. code-block:: bash
-
-   $ curl -o https://github.com/foss-for-synopsys-dwc-arc-processors/toolchain/releases/download/arc-2014.12/arc_gnu_2014.12_prebuilt_elf32_le_linux_install.tar.gz
-
-#. Install the binary in /opt/arc, type:
-
-.. code-block:: bash
-
-   $ tar xf arc-2014.12/arc_gnu_2014.12_prebuilt_elf32_le_linux_install. tar.gz -C /opt/arc/x-tools
-
-   $ cd /opt/arc/x-tools
-
-.. warning::
-
-   The commands above are not verified.
-
-#. Ensure that the pre-built toolchain is found automatically by
-   defs.gcc.x86-linux2.variant_xtools and gcc/arch/arc/defs.exec, type:
-
-.. code-block:: bash
-
-   $ ln -s arc_gnu_2014.12_prebuilt_elf32_le_linux_install/ arc-elf32
-
 Running on Additional Hardware
 ******************************
 
@@ -242,8 +13,8 @@ Installing a Custom QEMU for ARM Platforms
 
 If you require to test ARM builds, a localized patch to the QEMU source
 is needed. The patch corrects the issues with the locking interfaces
-QEMU uses. If you are working only with the x86 builds of Tiny
-Mountain, install QEMU from your systems default package manager.
+QEMU uses. If you are working only with the x86 builds of the Zephyr kernel,
+install QEMU from your systems default package manager.
 
 Follow these steps to enable a customized build of QEMU:
 
@@ -368,12 +139,11 @@ Follow the directions in :ref:`RequiredSteps`
 Building a Custom GRUB
 ----------------------
 
-If you are having problems runing Tiny Mountain using the default GRUB
-of the hardware, follow these steps to test Tiny Mountain on Galileo2
+If you are having problems running an application using the default GRUB
+of the hardware, follow these steps to test on Galileo2
 boards using a custom GRUB.
 
-#. Install the requirements to build Tiny Mountain for GRUB on host
-   machine.
+#. Install the requirements to build GRUB on your host machine.
 
 In Ubuntu, type:
 

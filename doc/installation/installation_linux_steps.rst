@@ -1,9 +1,9 @@
 Linux Installation Steps
 ########################
 
-Follow the required steps to install the the Tiny Mountain operating
-system. Follow the optional steps to install additional software that
-might be useful in your development.
+Follow the required steps to install a Zephyr development environment.
+Follow the optional steps to install additional software that might
+be useful in your development.
 
 .. toctree::
    :maxdepth: 2

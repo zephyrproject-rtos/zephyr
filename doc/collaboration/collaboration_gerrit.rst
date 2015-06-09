@@ -4,14 +4,14 @@ Submitting a Patch Via Gerrit
 #############################
 
 
-Follow this instructions to collaborate on the |project| project using
+Follow these instructions to collaborate on the |project| using
 the infrastructure within Intel’s Open Source site, 01.org_. First, let
 us answer a couple of common questions regarding the use of Gerrit
-within |project|.
+within the |project|.
 
 #. Who has access to the Gerrit infrastructure?
 
-   Intel, WindRiver and other partners who have agreed to collaborate
+   Intel, WindRiver, and other partners who have agreed to collaborate
    in this project.
 
 #. How long will this infrastructure be used?
@@ -107,8 +107,8 @@ type:
    The output is the contents of :file:`~/.id/id_rsa.pub`.
    Paste it into the Add SSH key window in Gerrit.
 .. warning:: Potential Security Risk 
-   Do not copy your private key :file:`~/.ssh/id_rsa` Use the public
-   :file:`~/.id/id_rsa.pub` instead.
+   Do not copy your private key :file:`~/.ssh/id_rsa` Use only the public
+   :file:`~/.id/id_rsa.pub`.
 
 
 Coding with Gerrit
@@ -165,7 +165,7 @@ changes be pushed to a special branch.  The name of this special branch
 contains a reference to the final branch where the code should reside
 once accepted.
 
-For |project|, the special branch is called refs/for/master .
+For the |project|, the special branch is called refs/for/master .
 
 1. Push the current local development branch to the gerrit server, type:
 
@@ -378,7 +378,7 @@ highlighted to add comments to that section.
 
    Shows a comment saved as a draft.
 
-8. Once you are done commenting all the files of the patch, click the
+8. Once reviewing all the files of the patch is complete, click the
 green up arrow at the top right to return to the main patch page. Click
 the reply button, write some final comments and submit your score for
 the patch set. Click post to submit the review of each reviewed file as

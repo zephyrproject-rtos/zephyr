@@ -8,20 +8,20 @@ Welcome to |codename|
    More information at `<http://sphinx-doc.org/rest.html>`_.
    This is a comment that won't show up in formatted output
 
-Welcome to |project|.
+Welcome to the |project|.
 
-Thank you for your interest in |project|. Read the instructions
-carefully to generate the |project|'s documentation.
+Thank you for your interest in the |project|. These instructions are
+designed to walk you through generating the |project|'s documentation.
 
 
 Documentation Notes
 *******************
 
-The documentation of |project| currently comprises the following items:
+The project's documentation currently comprises the following items:
 
 * An Installation Guide for Linux host systems
 
-* A set of Collaboration Guidelines for the |project| project.
+* A set of Collaboration Guidelines for the project.
 
 * Raw Doxygen output from the code base.
 
@@ -54,7 +54,7 @@ Install the current version of :program:`Sphinx`, type:
 Running the documentation generators
 ************************************
 
-Assuming that the |project| tree with the doc patches is in
+Assuming that the |project| tree with the doc directory is in
 :file:`DIRECTORY`, type:
 
 .. code-block:: bash

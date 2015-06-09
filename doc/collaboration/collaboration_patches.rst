@@ -11,7 +11,7 @@ New to Open Source?
 Welcome to open source software development. Whether you are an
 experienced developer within a corporate environment, a beginner trying
 out something new or someone in between, we thank you for your interest
-in the development of Tiny Mountain.
+in the development of the |project|.
 
 Before you begin we suggest you read the `Patch Philosophy`_.
 
