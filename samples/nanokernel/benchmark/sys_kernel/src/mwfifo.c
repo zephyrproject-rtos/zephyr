@@ -175,11 +175,12 @@ int fifo_test(void)
 
 	/* test get wait & put fiber functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"FIFO channel - 'nano_fiber_fifo_get_wait'");
+			"FIFO #1");
 	fprintf(output_file, sz_description,
-			"testing 'nano_fifo_init','nano_fiber_fifo_get_wait',"
-			" 'nano_fiber_fifo_put' functions;");
-	printf(sz_test_start_fmt, "'nano_fiber_fifo_get_wait'");
+			"\n\tnano_fifo_init"
+			"\n\tnano_fiber_fifo_get_wait"
+			"\n\tnano_fiber_fifo_put");
+	printf(sz_test_start_fmt);
 
 	fifo_test_init();
 
@@ -201,13 +202,14 @@ int fifo_test(void)
 
 	/* test get/yield & put fiber functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"FIFO channel - 'nano_fiber_fifo_get'");
+			"FIFO #2");
 	fprintf(output_file, sz_description,
-			"testing 'nano_fifo_init','nano_fiber_fifo_get_wait',"
-			" 'nano_fiber_fifo_get',\n");
-	fprintf(output_file,
-			"\t'nano_fiber_fifo_put', 'fiber_yield' functions;");
-	printf(sz_test_start_fmt, "'nano_fiber_fifo_get'");
+			"\n\tnano_fifo_init"
+			"\n\tnano_fiber_fifo_get_wait"
+			"\n\tnano_fiber_fifo_get"
+			"\n\tnano_fiber_fifo_put"
+			"\n\tfiber_yield");
+	printf(sz_test_start_fmt);
 
 	fifo_test_init();
 
@@ -230,13 +232,14 @@ int fifo_test(void)
 
 	/* test get wait & put fiber/task functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"FIFO channel - 'nano_task_fifo_get_wait'");
+			"FIFO #3");
 	fprintf(output_file, sz_description,
-			"testing 'nano_fifo_init','nano_fiber_fifo_get_wait',"
-			" 'nano_fiber_fifo_put',\n");
-	fprintf(output_file,
-			"\t'nano_task_fifo_get_wait', 'nano_task_fifo_put' functions;");
-	printf(sz_test_start_fmt, "'nano_task_fifo_get_wait'");
+			"\n\tnano_fifo_init"
+			"\n\tnano_fiber_fifo_get_wait"
+			"\n\tnano_fiber_fifo_put"
+			"\n\tnano_task_fifo_get_wait"
+			"\n\tnano_task_fifo_put");
+	printf(sz_test_start_fmt);
 
 	fifo_test_init();
 

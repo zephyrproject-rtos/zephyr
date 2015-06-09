@@ -170,11 +170,12 @@ int stack_test(void)
 
 	/* test get wait & put fiber functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"Stack channel - 'nano_fiber_stack_pop_wait'");
+			"Stack #1");
 	fprintf(output_file, sz_description,
-			"testing 'nano_stack_init','nano_fiber_stack_pop_wait',"
-			" 'nano_fiber_stack_push' functions;");
-	printf(sz_test_start_fmt, "'nano_fiber_stack_pop_wait'");
+			"\n\tnano_stack_init"
+			"\n\tnano_fiber_stack_pop_wait"
+			"\n\tnano_fiber_stack_push");
+	printf(sz_test_start_fmt);
 
 	stack_test_init();
 
@@ -191,13 +192,14 @@ int stack_test(void)
 
 	/* test get/yield & put fiber functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"Stack channel - 'nano_fiber_stack_pop'");
+			"Stack #2");
 	fprintf(output_file, sz_description,
-			"testing 'nano_stack_init','nano_fiber_stack_pop_wait',"
-			" 'nano_fiber_stack_pop',\n");
-	fprintf(output_file,
-			"\t'nano_fiber_stack_push', 'fiber_yield' functions;");
-	printf(sz_test_start_fmt, "'nano_fiber_stack_pop'");
+			"\n\tnano_stack_init"
+			"\n\tnano_fiber_stack_pop_wait"
+			"\n\tnano_fiber_stack_pop"
+			"\n\tnano_fiber_stack_push"
+			"\n\tfiber_yield");
+	printf(sz_test_start_fmt);
 
 	stack_test_init();
 
@@ -215,13 +217,14 @@ int stack_test(void)
 
 	/* test get wait & put fiber/task functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"Stack channel - 'nano_task_stack_pop_wait'");
+			"Stack #3");
 	fprintf(output_file, sz_description,
-			"testing 'nano_stack_init','nano_fiber_stack_pop_wait',"
-			" 'nano_fiber_stack_push',\n");
-	fprintf(output_file,
-			"\t'nano_task_stack_pop_wait', 'nano_task_stack_push' functions;");
-	printf(sz_test_start_fmt, "'nano_task_stack_pop_wait'");
+			"\n\tnano_stack_init"
+			"\n\tnano_fiber_stack_pop_wait"
+			"\n\tnano_fiber_stack_push"
+			"\n\tnano_task_stack_pop_wait"
+			"\n\tnano_task_stack_push");
+	printf(sz_test_start_fmt);
 
 	stack_test_init();
 

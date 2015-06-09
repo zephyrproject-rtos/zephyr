@@ -180,11 +180,12 @@ int lifo_test(void)
 
 	/* test get wait & put fiber functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"LIFO channel - 'nano_fiber_lifo_get_wait'");
+			"LIFO #1");
 	fprintf(output_file, sz_description,
-			"testing 'nano_lifo_init','nano_fiber_lifo_get_wait',"
-			" 'nano_fiber_lifo_put' functions;");
-	printf(sz_test_start_fmt, "'nano_fiber_lifo_get_wait'");
+			"\n\tnano_lifo_init"
+			"\n\tnano_fiber_lifo_get_wait"
+			"\n\tnano_fiber_lifo_put");
+	printf(sz_test_start_fmt);
 
 	lifo_test_init();
 
@@ -206,13 +207,14 @@ int lifo_test(void)
 
 	/* test get/yield & put fiber functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"LIFO channel - 'nano_fiber_lifo_get'");
+			"LIFO #2");
 	fprintf(output_file, sz_description,
-			"testing 'nano_lifo_init','nano_fiber_lifo_get_wait',"
-			" 'nano_fiber_lifo_get',\n");
-	fprintf(output_file,
-			"\t'nano_fiber_lifo_put', 'fiber_yield' functions;");
-	printf(sz_test_start_fmt, "'nano_fiber_lifo_get'");
+			"\n\tnano_lifo_init"
+			"\n\tnano_fiber_lifo_get_wait"
+			"\n\tnano_fiber_lifo_get"
+			"\n\tnano_fiber_lifo_put"
+			"\n\tfiber_yield");
+	printf(sz_test_start_fmt);
 
 	lifo_test_init();
 
@@ -235,12 +237,14 @@ int lifo_test(void)
 
 	/* test get wait & put fiber/task functions */
 	fprintf(output_file, sz_test_case_fmt,
-			"LIFO channel - 'nano_task_lifo_get_wait'");
+			"LIFO #3");
 	fprintf(output_file, sz_description,
-			"testing 'nano_lifo_init','nano_fiber_lifo_get_wait',"
-			" 'nano_fiber_lifo_put',\n");
-	fprintf(output_file, "\t'nano_task_lifo_get_wait', 'nano_task_lifo_put' functions;");
-	printf(sz_test_start_fmt, "'nano_task_lifo_get_wait'");
+			"\n\tnano_lifo_init"
+			"\n\tnano_fiber_lifo_get_wait"
+			"\n\tnano_fiber_lifo_put"
+			"\n\tnano_task_lifo_get_wait"
+			"\n\tnano_task_lifo_put");
+	printf(sz_test_start_fmt);
 
 	lifo_test_init();
 
