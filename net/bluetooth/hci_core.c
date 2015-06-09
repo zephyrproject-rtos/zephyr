@@ -588,7 +588,7 @@ static void le_conn_complete(struct bt_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_add(&dev, handle);
+	conn = bt_conn_add(&dev, handle, evt->role);
 	if (!conn) {
 		BT_ERR("Unable to add new conn for handle %u\n", handle);
 		return;

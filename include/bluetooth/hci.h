@@ -315,6 +315,9 @@ struct bt_hci_evt_le_meta_event {
 	uint8_t  subevent;
 } __packed;
 
+#define BT_HCI_ROLE_MASTER			0x00
+#define BT_HCI_ROLE_SLAVE			0x01
+
 #define BT_HCI_EVT_LE_CONN_COMPLETE		0x01
 struct bt_hci_evt_le_conn_complete {
 	uint8_t      status;

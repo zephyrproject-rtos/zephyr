@@ -243,7 +243,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	bt_conn_put(conn);
 }
 
-struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle)
+struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role)
 {
 	struct bt_conn *conn = NULL;
 	int i;
@@ -265,13 +265,16 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle)
 	conn->state	= BT_CONN_CONNECTED;
 	conn->handle	= handle;
 	conn->dev	= dev;
+	conn->role	= role;
 
 	nano_fifo_init(&conn->tx_queue);
 
 	fiber_start(conn->tx_stack, sizeof(conn->tx_stack), conn_tx_fiber,
 		    (int)bt_conn_get(conn), 0, 7, 0);
 
-	bt_l2cap_update_conn_param(conn);
+	if (role == BT_HCI_ROLE_SLAVE) {
+		bt_l2cap_update_conn_param(conn);
+	}
 
 	return conn;
 }
