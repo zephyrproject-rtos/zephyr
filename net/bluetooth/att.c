@@ -1002,8 +1002,10 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("handle %u\n", handle);
 
-	/* TODO: Perform write once database is defined */
-	return 0;
+	/* TODO: Validate signature */
+
+	return att_write_rsp(conn, 0, 0, handle, data->data,
+			     data->len - sizeof(struct bt_att_signature));
 }
 
 static const struct {
