@@ -192,7 +192,7 @@ uint32_t nano_tick_delta_32(int64_t *reftime)
 
 /*******************************************************************************
 *
-* _do_sys_clock_tick_announce - announce a tick to the nanokernel
+* _nano_sys_clock_tick_announce - announce a tick to the nanokernel
 *
 * This function is only to be called by the system clock timer driver when a
 * tick is to be announced to the nanokernel. It takes care of dequeuing the
@@ -201,7 +201,7 @@ uint32_t nano_tick_delta_32(int64_t *reftime)
 * RETURNS: N/A
 */
 
-void _do_sys_clock_tick_announce(uint32_t ticks)
+void _nano_sys_clock_tick_announce(uint32_t ticks)
 {
 	_nano_ticks += ticks;
 
