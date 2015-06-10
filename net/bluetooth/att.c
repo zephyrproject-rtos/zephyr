@@ -880,7 +880,8 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
-			  uint16_t handle, const void *value, uint8_t len)
+			     uint16_t handle, uint16_t offset,
+			     const void *value, uint8_t len)
 {
 	struct write_data data;
 
@@ -899,6 +900,7 @@ static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 	}
 
 	data.conn = conn;
+	data.offset = offset;
 	data.value = value;
 	data.len = len;
 	data.err = BT_ATT_ERR_INVALID_HANDLE;
@@ -916,6 +918,16 @@ static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 	}
 
 	if (data.buf) {
+		/* Add prepare write response */
+		if (rsp == BT_ATT_OP_PREPARE_WRITE_RSP) {
+			struct bt_att_prepare_write_rsp *rsp;
+
+			rsp = bt_buf_add(data.buf, sizeof(*rsp));
+			rsp->handle = sys_cpu_to_le16(handle);
+			rsp->offset = sys_cpu_to_le16(offset);
+			bt_buf_add(data.buf, len);
+			memcpy(rsp->value, value, len);
+		}
 		bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
 	}
 
@@ -935,7 +947,7 @@ static uint8_t att_write_req(struct bt_conn *conn, struct bt_buf *data)
 	BT_DBG("handle %u\n", handle);
 
 	return att_write_rsp(conn, BT_ATT_OP_WRITE_REQ, BT_ATT_OP_WRITE_RSP,
-			     handle, data->data, data->len);
+			     handle, 0, data->data, data->len);
 }
 
 static uint8_t att_prepare_write_req(struct bt_conn *conn, struct bt_buf *data)
@@ -947,15 +959,13 @@ static uint8_t att_prepare_write_req(struct bt_conn *conn, struct bt_buf *data)
 
 	handle = sys_le16_to_cpu(req->handle);
 	offset = sys_le16_to_cpu(req->offset);
+	bt_buf_pull(data, sizeof(*req));
 
-	BT_DBG("handle %u offset %u\n", handle);
+	BT_DBG("handle %u offset %u\n", handle, offset);
 
-	/* TODO: Generate proper response once a database is defined */
-
-	send_err_rsp(conn, BT_ATT_OP_PREPARE_WRITE_REQ, handle,
-		     BT_ATT_ERR_INVALID_HANDLE);
-
-	return 0;
+	return att_write_rsp(conn, BT_ATT_OP_PREPARE_WRITE_REQ,
+			     BT_ATT_OP_PREPARE_WRITE_RSP, handle, offset,
+			     data->data, data->len);
 }
 
 static uint8_t att_exec_write_req(struct bt_conn *conn, struct bt_buf *data)
@@ -987,7 +997,7 @@ static uint8_t att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("handle %u\n", handle);
 
-	return att_write_rsp(conn, 0, 0, handle, data->data, data->len);
+	return att_write_rsp(conn, 0, 0, handle, 0, data->data, data->len);
 }
 
 static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
@@ -1004,7 +1014,7 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 
 	/* TODO: Validate signature */
 
-	return att_write_rsp(conn, 0, 0, handle, data->data,
+	return att_write_rsp(conn, 0, 0, handle, 0, data->data,
 			     data->len - sizeof(struct bt_att_signature));
 }
 
