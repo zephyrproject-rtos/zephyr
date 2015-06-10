@@ -641,14 +641,6 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 
 #endif /* CONFIG_TICKLESS_IDLE */
 
-#ifdef CONFIG_MICROKERNEL
-
-	/* specify the kernel routine that will handle the TICK_EVENT event */
-
-	task_event_set_handler(TICK_EVENT, K_ticker);
-
-#endif /* CONFIG_MICROKERNEL */
-
 	_ScbExcPrioSet(_EXC_SYSTICK, _EXC_IRQ_DEFAULT_PRIO);
 
 	__scs.systick.stcsr.val = stcsr.val;

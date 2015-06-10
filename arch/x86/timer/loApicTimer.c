@@ -585,14 +585,6 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 
 	_loApicTimerTicklessIdleSkew();
 
-#if defined(CONFIG_MICROKERNEL)
-
-/* timer_read() is available for microkernel libraries to call directly */
-
-/* K_ticker() is the pre-defined event handler for TICK_EVENT */
-
-#endif /* CONFIG_MICROKERNEL */
-
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt */
 	irq_enable(LOAPIC_TIMER_IRQ);

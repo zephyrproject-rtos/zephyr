@@ -629,14 +629,6 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 	_SysIntVecProgram(HPET_TIMER0_VEC, HPET_TIMER0_IRQ);
 #endif
 
-#ifdef CONFIG_MICROKERNEL
-
-/* timer_read() is available for microkernel libraries to call directly */
-
-/* K_ticker() is the pre-defined event handler for TICK_EVENT */
-
-#endif /* CONFIG_MICROKERNEL */
-
 	/* enable the IRQ in the interrupt controller */
 
 	irq_enable(HPET_TIMER0_IRQ);
