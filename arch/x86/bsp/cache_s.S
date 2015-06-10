@@ -1,7 +1,7 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
+/* cache_s.S - cache manipulation */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,47 +29,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
-  DESCRIPTION
-
-  Prep work done when entering exceptions consists of saving the callee-saved
-  registers before they get used by exception handlers, and recording the fact
-  that we are running in an exception.
+DESCRIPTION
+This module contains functions for manipulating caches.
 */
 
-#ifndef _GDB_STUB__H_
-#define _GDB_STUB__H_
+#ifndef CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED
 
-#ifdef _ASMLANGUAGE
+#define _ASMLANGUAGE
+#include <arch/x86/asm.h>
 
-#if CONFIG_GDB_INFO
-GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcEntry
-	bl irq_unlock
-	pop {lr}
-.endm
+	/* externs (internal APIs) */
+	GTEXT(_SysCacheFlush)
 
-GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcExit
-	bl irq_unlock
-	pop {lr}
-.endm
+/*******************************************************************************
+*
+* _SysCacheFlush - flush a page to main memory
+*
+* This implementation flushes the whole cache.
+*
+* C signature:
+*
+*   void _SysCacheFlush (VIRT_ADDR virt, size_t size)
+*
+* Both parameters are ignored in this implementation.
+*
+* RETURNS: N/A
+*/
 
-GTEXT(_irq_vector_table_entry_with_gdb_stub)
+SECTION_FUNC(TEXT, _SysCacheFlush)
+	wbinvd
+	ret
 
-#else
-#define _GDB_STUB_EXC_ENTRY
-#define _GDB_STUB_EXC_EXIT
-#endif /* CONFIG_GDB_INFO */
-
-#else
-extern void _irq_vector_table_entry_with_gdb_stub(void);
-#endif /* _ASMLANGUAGE */
-#endif /* _GDB_STUB__H_ */
+#endif /* !CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED */

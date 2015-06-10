@@ -1,7 +1,7 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
+/* systick_gdb.S - ARM systick handler stub for GDB debugging */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,45 +31,27 @@
  */
 
 /*
-  DESCRIPTION
-
-  Prep work done when entering exceptions consists of saving the callee-saved
-  registers before they get used by exception handlers, and recording the fact
-  that we are running in an exception.
+DESCRIPTION
+GDB stub needed before the real systick handler runs to be able to display the
+correct state of the thread that was interrupted.
 */
 
-#ifndef _GDB_STUB__H_
-#define _GDB_STUB__H_
+#ifdef CONFIG_GDB_INFO
 
-#ifdef _ASMLANGUAGE
+#define _ASMLANGUAGE
 
-#if CONFIG_GDB_INFO
-GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcEntry
-	bl irq_unlock
-	pop {lr}
-.endm
+#include <toolchain.h>
+#include <sections.h>
+#include <arch/cpu.h>
 
-GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcExit
-	bl irq_unlock
-	pop {lr}
-.endm
+_ASM_FILE_PROLOGUE
 
-GTEXT(_irq_vector_table_entry_with_gdb_stub)
+GTEXT(_timer_int_handler)
+GTEXT(_real_timer_int_handler)
+SECTION_FUNC(TEXT, _timer_int_handler)
 
-#else
-#define _GDB_STUB_EXC_ENTRY
-#define _GDB_STUB_EXC_EXIT
+    _GDB_STUB_EXC_ENTRY
+
+    b _real_timer_int_handler
+
 #endif /* CONFIG_GDB_INFO */
-
-#else
-extern void _irq_vector_table_entry_with_gdb_stub(void);
-#endif /* _ASMLANGUAGE */
-#endif /* _GDB_STUB__H_ */

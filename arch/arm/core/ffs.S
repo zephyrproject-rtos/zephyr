@@ -1,7 +1,7 @@
-/* v2/ffs.h - ARCv2 public nanokernel find-first-set interface */
+/* ffs.S - ARM find first set assembly routines */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,51 +32,46 @@
 
 /*
 DESCRIPTION
-ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
+This library implements find_last_set() and find_first_set() which returns the
+most and least significant bit set respectively.
 */
 
-#ifndef _ARCH_ARC_V2_FFS_H_
-#define _ARCH_ARC_V2_FFS_H_
+#define _ASMLANGUAGE
 
-#ifdef _ASMLANGUAGE
-GTEXT(nanoFfsLsb);
-GTEXT(nanoFfsMsb);
-#else
-extern unsigned nanoFfsLsb(unsigned int);
-extern unsigned nanoFfsMsb(unsigned int);
+#include <toolchain.h>
+#include <sections.h>
+
+_ASM_FILE_PROLOGUE
+
+/* Exports */
+
+GTEXT(find_last_set)
+GTEXT(find_first_set)
 
 /*******************************************************************************
 *
-* nanoFfsMsb_inline - Find First Set bit (searching from most significant bit)
+* find_last_set - find first set bit (searching from the most significant bit)
 *
-* This routine finds the first bit set in the argument passed it and returns
-* the index of that bit.  Bits are numbered starting at 1 from the least
-* significant bit.  A return value of zero indicates that the value passed
-* is zero.
+* This routine finds the first bit set in the argument passed it and
+* returns the index of that bit.  Bits are numbered starting
+* at 1 from the least significant bit.  A return value of zero indicates that
+* the value passed is zero.
 *
 * RETURNS: most significant bit set
 */
 
-#if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
-{
-	unsigned int bit;
+SECTION_FUNC(TEXT, find_last_set)
 
-	__asm__ volatile(
+    cmp r0, #0
+    itt ne
+	clzne r0, r0
+	rsbne r0, r0, #32
 
-		/* see explanation in ffs.S */
-		"fls.f %0, %1;\n\t"
-		"add.nz %0, %0, 1;\n\t"
-		: "=r"(bit)
-		: "r"(op));
-
-	return bit;
-}
-#endif
+    mov pc, lr
 
 /*******************************************************************************
 *
-* nanoFfsLsb - find first set bit (searching from the least significant bit)
+* find_first_set - find first set bit (searching from the least significant bit)
 *
 * This routine finds the first bit set in the argument passed it and
 * returns the index of that bit.  Bits are numbered starting
@@ -86,24 +81,13 @@ static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
 * RETURNS: least significant bit set
 */
 
-#if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int nanoFfsLsb_inline(unsigned int op)
-{
-	unsigned int bit;
+SECTION_FUNC(TEXT, find_first_set)
 
-	__asm__ volatile(
+    rsb r1, r0, #0
+    ands r0, r1, r0	/* r0 = x & (-x): only LSB set */
 
-		/* see explanation in ffs.S */
-		"ffs.f %0, %1;\n\t"
-		"add.nz %0, %0, 1;\n\t"
-		"mov.z %0, 0;\n\t"
-		: "=&r"(bit)
-		: "r"(op));
+    itt ne
+	clzne r0, r0	/* count leading zeroes */
+	rsbne r0, r0, #32
 
-	return bit;
-}
-#endif
-
-#endif /* _ASMLANGUAGE */
-
-#endif /* _ARCH_ARC_V2_FFS_H_ */
+    mov pc, lr

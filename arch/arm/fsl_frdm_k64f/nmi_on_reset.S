@@ -1,7 +1,7 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
+/* nmi_on_reset.S - default basic NMI handler before the kernel is up */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,45 +31,23 @@
  */
 
 /*
-  DESCRIPTION
+DESCRIPTION
+Provide a default handler for NMI before the system is up. The default action
+is to hard hang, sleeping.
 
-  Prep work done when entering exceptions consists of saving the callee-saved
-  registers before they get used by exception handlers, and recording the fact
-  that we are running in an exception.
+This might be preferable than rebooting to help debugging, or because
+rebooting might trigger the exact same problem over and over.
 */
 
-#ifndef _GDB_STUB__H_
-#define _GDB_STUB__H_
+#define _ASMLANGUAGE
 
-#ifdef _ASMLANGUAGE
+#include <toolchain.h>
+#include <sections.h>
 
-#if CONFIG_GDB_INFO
-GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcEntry
-	bl irq_unlock
-	pop {lr}
-.endm
+_ASM_FILE_PROLOGUE
 
-GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcExit
-	bl irq_unlock
-	pop {lr}
-.endm
+GTEXT(_SysNmiOnReset)
 
-GTEXT(_irq_vector_table_entry_with_gdb_stub)
-
-#else
-#define _GDB_STUB_EXC_ENTRY
-#define _GDB_STUB_EXC_EXIT
-#endif /* CONFIG_GDB_INFO */
-
-#else
-extern void _irq_vector_table_entry_with_gdb_stub(void);
-#endif /* _ASMLANGUAGE */
-#endif /* _GDB_STUB__H_ */
+SECTION_FUNC(TEXT, _SysNmiOnReset)
+    wfi
+    b _SysNmiOnReset

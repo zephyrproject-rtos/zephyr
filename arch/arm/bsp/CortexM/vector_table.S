@@ -1,7 +1,7 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
+/* vector_table.S - populated vector table in ROM */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2013-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,45 +31,43 @@
  */
 
 /*
-  DESCRIPTION
+DESCRIPTION
+Vector table in ROM for starting system. The reset vector is the system entry
+point, ie. the first instruction executed.
 
-  Prep work done when entering exceptions consists of saving the callee-saved
-  registers before they get used by exception handlers, and recording the fact
-  that we are running in an exception.
+The table is populated with all the system exception handlers. The NMI vector
+must be populated with a valid handler since it can happen at any time. The
+rest should not be triggered until the kernel is ready to handle them.
 */
 
-#ifndef _GDB_STUB__H_
-#define _GDB_STUB__H_
+#define _ASMLANGUAGE
 
-#ifdef _ASMLANGUAGE
+#include <board.h>
+#include <toolchain.h>
+#include <sections.h>
+#include <drivers/system_timer.h>
+#include "vector_table.h"
 
-#if CONFIG_GDB_INFO
-GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcEntry
-	bl irq_unlock
-	pop {lr}
-.endm
+_ASM_FILE_PROLOGUE
 
-GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcExit
-	bl irq_unlock
-	pop {lr}
-.endm
+/* Diab requires a __start symbol */
+SECTION_SUBSEC_FUNC(exc_vector_table,_Start,__start)
+SECTION_SUBSEC_FUNC(exc_vector_table,_Start,_VectorTableROM)
 
-GTEXT(_irq_vector_table_entry_with_gdb_stub)
+    .word __CORTEXM_BOOT_MSP
+    .word __reset
+    .word __nmi
 
-#else
-#define _GDB_STUB_EXC_ENTRY
-#define _GDB_STUB_EXC_EXIT
-#endif /* CONFIG_GDB_INFO */
-
-#else
-extern void _irq_vector_table_entry_with_gdb_stub(void);
-#endif /* _ASMLANGUAGE */
-#endif /* _GDB_STUB__H_ */
+    .word __hard_fault
+    .word __mpu_fault
+    .word __bus_fault
+    .word __usage_fault
+    .word __reserved
+    .word __reserved
+    .word __reserved
+    .word __reserved
+    .word __svc
+    .word __debug_monitor
+    .word __reserved
+    .word __pendsv
+    .word _timer_int_handler

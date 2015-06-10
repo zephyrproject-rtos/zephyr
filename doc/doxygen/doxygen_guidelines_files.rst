@@ -3,7 +3,7 @@
 File Header Documentation
 #########################
 
-Every .c, .h and .s file must contain a file header comment at the
+Every .c, .h and .S file must contain a file header comment at the
 beginning of the file. The file header must contain:
 
 #. The filename. Use **@file** for Doxygen to auto-complete the

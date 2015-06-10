@@ -264,7 +264,7 @@ static void _NewContextInternal(
 
 __asm__("\t.globl _context_entry\n"
 	"\t.section .text\n"
-	"_ContextEntryWrapper:\n" /* should place this func .s file and use
+	"_ContextEntryWrapper:\n" /* should place this func .S file and use
 				     SECTION_FUNC */
 	"\tmovl $0, (%esp)\n" /* zero initialEFLAGS location */
 	"\tjmp _context_entry\n");

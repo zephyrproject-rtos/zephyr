@@ -1102,15 +1102,11 @@ $(help-board-dirs): help-%:
 	$(Q)$(MAKE) $(build)=scripts build_docproc
 	$(Q)$(MAKE) $(build)=Documentation/DocBook $@
 
-
-#BUG [oas] regular expression is substituted by [oa] to ommit the removal
-#    of .s files. This change can be undone once all .s files have been
-#    renamed to .S files.
 clean: $(clean-dirs)
 	$(call cmd,rmdirs)
 	$(call cmd,rmfiles)
 	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
-		\( -name '*.[oa]' -o -name '*.ko' -o -name '.*.cmd' \
+		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '*.ko.*' \
 		-o -name '*.dwo'  \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \

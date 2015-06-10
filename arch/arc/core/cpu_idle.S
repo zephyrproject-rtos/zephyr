@@ -1,4 +1,4 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
+/* cpu_idle.S - CPU power management */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -31,45 +31,49 @@
  */
 
 /*
-  DESCRIPTION
-
-  Prep work done when entering exceptions consists of saving the callee-saved
-  registers before they get used by exception handlers, and recording the fact
-  that we are running in an exception.
+DESCRIPTION
+CPU power management routines.
 */
 
-#ifndef _GDB_STUB__H_
-#define _GDB_STUB__H_
+#define _ASMLANGUAGE
 
-#ifdef _ASMLANGUAGE
+#include <nanok.h>
+#include <offsets.h>
+#include <toolchain.h>
+#include <sections.h>
+#include <arch/cpu.h>
 
-#if CONFIG_GDB_INFO
-GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcEntry
-	bl irq_unlock
-	pop {lr}
-.endm
+GTEXT(nano_cpu_idle)
+GTEXT(nano_cpu_atomic_idle)
+GDATA(nano_cpu_sleep_mode)
 
-GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcExit
-	bl irq_unlock
-	pop {lr}
-.endm
+SECTION_VAR(BSS, nano_cpu_sleep_mode)
+	.word 0
 
-GTEXT(_irq_vector_table_entry_with_gdb_stub)
+/*
+ * nano_cpu_idle - put the CPU in low-power mode
+ *
+ * This function always exits with interrupts unlocked.
+ *
+ * void nanCpuIdle(void)
+ */
+SECTION_FUNC(TEXT, nano_cpu_idle)
+	ld r1, [nano_cpu_sleep_mode]
+	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
+	sleep r1
+	j_s.nd [blink]
+	nop
 
-#else
-#define _GDB_STUB_EXC_ENTRY
-#define _GDB_STUB_EXC_EXIT
-#endif /* CONFIG_GDB_INFO */
-
-#else
-extern void _irq_vector_table_entry_with_gdb_stub(void);
-#endif /* _ASMLANGUAGE */
-#endif /* _GDB_STUB__H_ */
+/*
+ * nano_cpu_atomic_idle - put the CPU in low-power mode, entered with IRQs locked
+ *
+ * This function exits with interrupts restored to <key>.
+ *
+ * void nano_cpu_atomic_idle(unsigned int key)
+ */
+SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
+	ld r1, [nano_cpu_sleep_mode]
+	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
+	sleep r1
+	j_s.d [blink]
+	seti r0

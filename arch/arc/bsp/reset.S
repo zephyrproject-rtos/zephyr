@@ -1,4 +1,4 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
+/* reset.S - reset handler */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -31,45 +31,41 @@
  */
 
 /*
-  DESCRIPTION
-
-  Prep work done when entering exceptions consists of saving the callee-saved
-  registers before they get used by exception handlers, and recording the fact
-  that we are running in an exception.
+DESCRIPTION
+Reset handler that prepares the system for running C code.
 */
 
-#ifndef _GDB_STUB__H_
-#define _GDB_STUB__H_
+#define _ASMLANGUAGE
 
-#ifdef _ASMLANGUAGE
+#include <board.h>
+#include <toolchain.h>
+#include <sections.h>
+#include <arch/cpu.h>
 
-#if CONFIG_GDB_INFO
-GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcEntry
-	bl irq_unlock
-	pop {lr}
-.endm
+#define _RAM_END (CONFIG_RAM_START + CONFIG_RAM_SIZE)
 
-GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcExit
-	bl irq_unlock
-	pop {lr}
-.endm
+GTEXT(__reset)
 
-GTEXT(_irq_vector_table_entry_with_gdb_stub)
+/*******************************************************************************
+*
+* __reset - reset vector
+*
+* Ran when the system comes out of reset. The processor is at supervisor level.
+*
+* Locking interrupts prevents anything from interrupting the CPU.
+*
+* When these steps are completed, jump to _PrepC(), which will finish setting
+* up the system for running C code.
+*
+* RETURNS: N/A
+*/
 
-#else
-#define _GDB_STUB_EXC_ENTRY
-#define _GDB_STUB_EXC_EXIT
-#endif /* CONFIG_GDB_INFO */
+SECTION_FUNC(TEXT,__reset)
 
-#else
-extern void _irq_vector_table_entry_with_gdb_stub(void);
-#endif /* _ASMLANGUAGE */
-#endif /* _GDB_STUB__H_ */
+	/* lock interrupts: will get unlocked when switch to main task */
+	clri
+
+	/* setup a stack at the end of the RAM */
+	mov sp, _RAM_END
+
+	j @_PrepC

@@ -1,7 +1,7 @@
-/* v2/ffs.h - ARCv2 public nanokernel find-first-set interface */
+/* basepri.S - ARM Cortex-M interrupt locking via BASEPRI */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,78 +32,64 @@
 
 /*
 DESCRIPTION
-ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
+
+Provide irq_lock() and irq_unlock() via the BASEPRI register. This
+allows locking up to a certain interrupt priority. Kernel locks out priorities
+2 and lower (higher numbered priorities), in essence leaving priorities 0 and 1
+unlocked. This achieves two purposes:
+
+1. The service call exception is installed at priority 0, allowing it to be
+   invoked with interrupts locked. This is needed since 'svc #0' is the
+   implementation of _Swap(), which is invoked with interrupts locked in the
+   common implementation of nanokernel objects.
+
+2. Zero Interrupt Latency (ZLI) is achievable via this by allowing certain
+   interrupts to set their priority to 1, thus being allowed in when interrupts
+   are locked for regular interrupts.
 */
 
-#ifndef _ARCH_ARC_V2_FFS_H_
-#define _ARCH_ARC_V2_FFS_H_
+#define _ASMLANGUAGE
 
-#ifdef _ASMLANGUAGE
-GTEXT(nanoFfsLsb);
-GTEXT(nanoFfsMsb);
-#else
-extern unsigned nanoFfsLsb(unsigned int);
-extern unsigned nanoFfsMsb(unsigned int);
+#include <toolchain.h>
+#include <sections.h>
+#include <arch/cpu.h>
+
+_ASM_FILE_PROLOGUE
+
+GTEXT(irq_lock)
+GTEXT(irq_unlock)
 
 /*******************************************************************************
 *
-* nanoFfsMsb_inline - Find First Set bit (searching from most significant bit)
+* irq_lock - lock interrupts
 *
-* This routine finds the first bit set in the argument passed it and returns
-* the index of that bit.  Bits are numbered starting at 1 from the least
-* significant bit.  A return value of zero indicates that the value passed
-* is zero.
+* Prevent exceptions of priority lower than to the two highest priorities from
+* interrupting the CPU.
 *
-* RETURNS: most significant bit set
+* This function can be called recursively: it will return a key to return the
+* state of interrupt locking to the previous level.
+*
+* RETURNS: a key to return to the previous interrupt locking level
 */
 
-#if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
-{
-	unsigned int bit;
-
-	__asm__ volatile(
-
-		/* see explanation in ffs.S */
-		"fls.f %0, %1;\n\t"
-		"add.nz %0, %0, 1;\n\t"
-		: "=r"(bit)
-		: "r"(op));
-
-	return bit;
-}
-#endif
+SECTION_FUNC(TEXT,irq_lock)
+    movs.n r1, #_EXC_IRQ_DEFAULT_PRIO
+    mrs r0, BASEPRI
+    msr BASEPRI, r1
+    bx lr
 
 /*******************************************************************************
 *
-* nanoFfsLsb - find first set bit (searching from the least significant bit)
+* irq_unlock - unlock interrupts
 *
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit.  A return value of zero indicates that
-* the value passed is zero.
+* Return the state of interrupt locking to a previous level, passed in via the
+* <key> parameter, obtained from a previous call to irq_lock().
 *
-* RETURNS: least significant bit set
+* RETURNS: N/A
 */
 
-#if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int nanoFfsLsb_inline(unsigned int op)
-{
-	unsigned int bit;
+SECTION_FUNC(TEXT,irq_unlock)
+    msr BASEPRI, r0
+    bx lr
 
-	__asm__ volatile(
-
-		/* see explanation in ffs.S */
-		"ffs.f %0, %1;\n\t"
-		"add.nz %0, %0, 1;\n\t"
-		"mov.z %0, 0;\n\t"
-		: "=&r"(bit)
-		: "r"(op));
-
-	return bit;
-}
-#endif
-
-#endif /* _ASMLANGUAGE */
-
-#endif /* _ARCH_ARC_V2_FFS_H_ */
+    .end

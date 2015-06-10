@@ -292,9 +292,7 @@ $(obj)/%.s: $(src)/%.S FORCE
 quiet_cmd_as_o_S = AS $(quiet_modtag)  $@
 cmd_as_o_S       = $(CC) $(a_flags) -c -o $@ $<
 
-#BUG: Asm files are currently name with the .s extension. They will need to
-#     change their extension names to .S and restore this rule to handle it.
-$(obj)/%.o: $(src)/%.s FORCE
+$(obj)/%.o: $(src)/%.S FORCE
 	$(call if_changed_dep,as_o_S)
 
 targets += $(real-objs-y) $(real-objs-m) $(lib-y)

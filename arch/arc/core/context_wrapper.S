@@ -1,4 +1,4 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
+/* ctx_wrapper.S - wrapper for _context_entry */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -31,45 +31,34 @@
  */
 
 /*
-  DESCRIPTION
+ * DESCRIPTION
+ * Wrapper for _context_entry routine when called from
+ * the initial context
+ */
 
-  Prep work done when entering exceptions consists of saving the callee-saved
-  registers before they get used by exception handlers, and recording the fact
-  that we are running in an exception.
-*/
+#define _ASMLANGUAGE
 
-#ifndef _GDB_STUB__H_
-#define _GDB_STUB__H_
+#include <toolchain.h>
+#include <sections.h>
 
-#ifdef _ASMLANGUAGE
+GTEXT(_ContextEntryWrapper)
+GTEXT(_context_entry)
 
-#if CONFIG_GDB_INFO
-GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcEntry
-	bl irq_unlock
-	pop {lr}
-.endm
 
-GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcExit
-	bl irq_unlock
-	pop {lr}
-.endm
+/*
+ * _ContextEntryWrapper - wrapper for _context_entry
+ *
+ * The routine pops parameters for the _context_entry from
+ * stack frame, prepared by the _NewContext() routine
+ *
+ * RETURNS: N/A
+ */
 
-GTEXT(_irq_vector_table_entry_with_gdb_stub)
+SECTION_FUNC(TEXT, _ContextEntryWrapper)
 
-#else
-#define _GDB_STUB_EXC_ENTRY
-#define _GDB_STUB_EXC_EXIT
-#endif /* CONFIG_GDB_INFO */
-
-#else
-extern void _irq_vector_table_entry_with_gdb_stub(void);
-#endif /* _ASMLANGUAGE */
-#endif /* _GDB_STUB__H_ */
+	pop_s r3
+	pop_s r2
+	pop_s r1
+	pop_s r0
+	j _context_entry
+	nop

@@ -1,7 +1,7 @@
-/* gdb_stub.h - extra work performed upon exception entry/exit for GDB */
+/* test_stubs.S - Exception and interrupt stubs */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,45 +31,48 @@
  */
 
 /*
-  DESCRIPTION
-
-  Prep work done when entering exceptions consists of saving the callee-saved
-  registers before they get used by exception handlers, and recording the fact
-  that we are running in an exception.
+DESCRIPTION
+This module implements assembler exception and interrupt stubs for regression
+testing.
 */
 
-#ifndef _GDB_STUB__H_
-#define _GDB_STUB__H_
+#define _ASMLANGUAGE
 
-#ifdef _ASMLANGUAGE
+#ifdef CONFIG_ISA_IA32
 
-#if CONFIG_GDB_INFO
-GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcEntry
-	bl irq_unlock
-	pop {lr}
-.endm
+/* IA-32 specific */
 
-GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
-	push {lr}
-	bl irq_lock
-	bl _GdbStubExcExit
-	bl irq_unlock
-	pop {lr}
-.endm
+#include <arch/cpu.h>
+#include <nanok.h>
+#include <arch/x86/asm.h>
+#include <asmPrv.h>
+#include <asm_inline.h>
 
-GTEXT(_irq_vector_table_entry_with_gdb_stub)
+	/* exports (internal APIs) */
+
+	GTEXT(_ExcEnt)
+	GTEXT(_ExcExit)
+	GTEXT(_IntEnt)
+	GTEXT(_IntExit)
+
+
+/* Static exception handler stubs */
+SYS_NANO_CPU_EXC_CONNECT(exc_divide_error_handler,IV_DIVIDE_ERROR)
+
+/* Static interrupt handler stubs */
+
+
+	GTEXT(nanoIntStub)
+
+SECTION_FUNC(TEXT, nanoIntStub)
+        call    _IntEnt
+        pushl   $0
+        call    isr_handler
+        addl    $4, %esp
+        jmp     _IntExit
 
 #else
-#define _GDB_STUB_EXC_ENTRY
-#define _GDB_STUB_EXC_EXIT
-#endif /* CONFIG_GDB_INFO */
 
-#else
-extern void _irq_vector_table_entry_with_gdb_stub(void);
-#endif /* _ASMLANGUAGE */
-#endif /* _GDB_STUB__H_ */
+#error Arch not supported
+
+#endif /* CONFIG_ISA_IA32 */
