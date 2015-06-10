@@ -71,8 +71,6 @@ extern struct nano_stack _k_command_stack;
 extern struct nano_lifo _k_server_command_packet_free;
 extern struct nano_lifo _k_timer_free;
 
-extern void start_task(struct k_proc *X, void (*func)(void));
-extern void abort_task(struct k_proc *X);
 extern void _k_task_op(struct k_args *A);
 extern void _k_task_group_op(struct k_args *A);
 extern void _k_task_priority_set(struct k_args *A);

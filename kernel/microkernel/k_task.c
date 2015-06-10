@@ -200,9 +200,9 @@ void set_state_bit(
 * RETURNS: N/A
 */
 
-void start_task(struct k_proc *X,	 /* ptr to task control block */
-			      void (*func)(void) /* entry point for task */
-			      )
+static void start_task(struct k_proc *X,  /* ptr to task control block */
+					   void (*func)(void) /* entry point for task */
+					   )
 {
 	unsigned int contextOptions;
 
@@ -244,7 +244,7 @@ void start_task(struct k_proc *X,	 /* ptr to task control block */
 * RETURNS: N/A
 */
 
-void abort_task(struct k_proc *X)
+static void abort_task(struct k_proc *X)
 {
 
 	/* Do normal context exit cleanup */
