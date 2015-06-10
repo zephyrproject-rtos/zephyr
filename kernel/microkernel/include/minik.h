@@ -146,10 +146,6 @@ extern void set_state_bit(struct k_proc *, uint32_t);
 extern void reset_state_bit(struct k_proc *, uint32_t);
 extern void _k_task_call(struct k_args *);
 
-extern void delist_timeout(struct k_timer *T);
-extern void enlist_timeout(struct k_args *A);
-extern void force_timeout(struct k_args *A);
-
 /*
  * The task status flags may be OR'ed together to form a task's state.  The
  * existence of one or more non-zero bits indicates that the task can not be
