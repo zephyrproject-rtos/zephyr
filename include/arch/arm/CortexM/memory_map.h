@@ -70,12 +70,10 @@ processors.
 #define _EDEV_BASE_ADDR (_ERAM_END_ADDR + 1)
 #define _EDEV_END_ADDR (_EDEV_BASE_ADDR + GB(1) - 1)
 
-/* 0xe0000000 -> 0xffffffff is different between M3 and M0 */
+/* 0xe0000000 -> 0xffffffff: varies by processor (see below) */
 
 #if defined(CONFIG_CPU_CORTEX_M3_M4)
 #include <arch/arm/CortexM/memory_map-m3-m4.h>
-#elif defined(CONFIG_CPU_CORTEXM0)
-#include <arch/arm/CortexM/memory_map-m0.h>
 #else
 #error Unknown CPU
 #endif
