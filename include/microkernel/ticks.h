@@ -42,8 +42,6 @@
 extern "C" {
 #endif
 
-extern int K_ticker(int event);
-
 extern void scheduler_time_slice_set(int32_t t, kpriority_t p);
 
 extern uint32_t task_cycle_get_32(void);
