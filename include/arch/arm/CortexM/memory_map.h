@@ -72,8 +72,8 @@ processors.
 
 /* 0xe0000000 -> 0xffffffff is different between M3 and M0 */
 
-#if defined(CONFIG_CPU_CORTEXM3)
-#include <arch/arm/CortexM/memory_map-m3.h>
+#if defined(CONFIG_CPU_CORTEX_M3_M4)
+#include <arch/arm/CortexM/memory_map-m3-m4.h>
 #elif defined(CONFIG_CPU_CORTEXM0)
 #include <arch/arm/CortexM/memory_map-m0.h>
 #else

@@ -1,4 +1,4 @@
-/* memory_map-m3.h - ARM CORTEX-M3 memory map */
+/* memory_map-m3-m4.h - ARM CORTEX-M3/M4 memory map */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -33,12 +33,12 @@
 /*
 DESCRIPTION
 This module contains definitions for the memory map parts specific to the
-CORTEX-M3 series of processors. It is included by nanokernel/ARM/memory_map.h
+CORTEX-M3/M4 series of processors. It is included by nanokernel/ARM/memory_map.h
 
 */
 
-#ifndef _MEMORY_MAP_M3__H_
-#define _MEMORY_MAP_M3__H_
+#ifndef _MEMORY_MAP_M3_M4__H_
+#define _MEMORY_MAP_M3_M4__H_
 
 /* 0xe0000000 -> 0xe00fffff: private peripheral bus */
 
@@ -64,4 +64,4 @@ CORTEX-M3 series of processors. It is included by nanokernel/ARM/memory_map.h
 #define _VENDOR_BASE_ADDR (_PPB_EXT_END_ADDR + 1)
 #define _VENDOR_END_ADDR 0xffffffff
 
-#endif /* _MEMORY_MAP_M3__H_ */
+#endif /* _MEMORY_MAP_M3_M4__H_ */

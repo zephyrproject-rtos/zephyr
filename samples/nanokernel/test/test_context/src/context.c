@@ -53,9 +53,9 @@ This module tests the following CPU and context related routines:
 
 /*
  * Include board.h from BSP to get IRQ number.
- * NOTE: Cortex-M3 does not need IRQ numbers
+ * NOTE: Cortex-M3/M4 does not need IRQ numbers
  */
-#if !defined(CONFIG_CPU_CORTEXM3)
+#if !defined(CONFIG_CPU_CORTEX_M3_M4)
   #include <board.h>
 #endif
 
@@ -77,7 +77,7 @@ This module tests the following CPU and context related routines:
   #define TICK_IRQ LOAPIC_TIMER_IRQ
 #elif defined(CONFIG_PIT)
   #define TICK_IRQ PIT_INT_LVL
-#elif defined(CONFIG_CPU_CORTEXM3)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4)
   /* no need for TICK_IRQ definition, see note where it is used */
 #else
   /* generate an error */
@@ -96,8 +96,8 @@ typedef struct {
 typedef int  (* disable_interrupt_func)(int);
 typedef void (* enable_interrupt_func)(int);
 
-/* Cortex-M3 does not implement connecting non-IRQ exception handlers */
-#if !defined(CONFIG_CPU_CORTEXM3)
+/* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
+#if !defined(CONFIG_CPU_CORTEX_M3_M4)
 static NANO_CPU_EXC_STUB_DECL(nanoExcStub);
 static volatile int    excHandlerExecuted;
 #endif
@@ -146,8 +146,8 @@ void isr_handler(void *data)
 	}
 }
 
-/* Cortex-M3 does not implement connecting non-IRQ exception handlers */
-#if !defined(CONFIG_CPU_CORTEXM3)
+/* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
+#if !defined(CONFIG_CPU_CORTEX_M3_M4)
 /*******************************************************************************
 *
 * exc_divide_error_handler - divide by zero exception handler
@@ -184,8 +184,8 @@ int initNanoObjects(void)
 	nano_timer_init(&timer, timerData);
 	nano_fifo_init(&timeout_order_fifo);
 
-/* no nanoCpuExcConnect on Cortex-M3/4 */
-#if !defined(CONFIG_CPU_CORTEXM3)
+/* no nanoCpuExcConnect on Cortex-M3/M4 */
+#if !defined(CONFIG_CPU_CORTEX_M3_M4)
 	nanoCpuExcConnect(IV_DIVIDE_ERROR, exc_divide_error_handler, nanoExcStub);
 #endif
 
@@ -861,7 +861,7 @@ void main(void)
  * The Cortex-M3/M4 use the SYSTICK exception for the system timer, which is
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
-#if !defined(CONFIG_CPU_CORTEXM3)
+#if !defined(CONFIG_CPU_CORTEX_M3_M4)
 	/*
 	 * !!! TAKE NOTE !!!
 	 * Disable interrupts coming from the timer.  In the pcPentium case, this
@@ -922,8 +922,8 @@ void main(void)
 		goto doneTests;
 	}
 
-/* Cortex-M3 does not implement connecting non-IRQ exception handlers */
-#if !defined(CONFIG_CPU_CORTEXM3)
+/* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
+#if !defined(CONFIG_CPU_CORTEX_M3_M4)
 	/*
 	 * Test divide by zero exception handler.
 	 *

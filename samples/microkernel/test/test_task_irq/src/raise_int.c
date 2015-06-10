@@ -1405,7 +1405,7 @@ void raiseInt(uint8_t id)
 }
 #endif /* Intel */
 
-#if defined(CONFIG_CPU_CORTEXM3)
+#if defined(CONFIG_CPU_CORTEX_M3_M4)
 #include <arch/cpu.h>
 /*******************************************************************************
  *

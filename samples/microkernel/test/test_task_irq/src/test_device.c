@@ -56,7 +56,7 @@ exercises the task_irq_free() API.
   #define DEV2_IRQ 14
   #define DEV3_IRQ 32
   #define DEV4_IRQ 34
-#elif defined(CONFIG_CPU_CORTEXM3)
+#elif defined(CONFIG_CPU_CORTEX_M3_M4)
   #define DEV1_IRQ  0
   #define DEV2_IRQ  1
   #define DEV3_IRQ  2
