@@ -62,7 +62,7 @@ config CPU_CORTEX_M3
 	help
 	This option signifies the use of a Cortex-M3+ CPU
 
-config CPU_CORTEXM4
+config CPU_CORTEX_M4
 	# omit prompt to signify a "hidden" option
 	bool "ARM Cortex-M4"
 	default n
