@@ -74,6 +74,16 @@
  */
 #define BT_GATT_PERM_AUTHOR			0x40
 
+/* GATT attribute flush flags */
+/*! @def BT_GATT_FLUSH_DISCARD
+ *  @brief Attribute flush discard flag.
+ */
+#define BT_GATT_FLUSH_DISCARD			0x00
+/*! @def BT_GATT_FLUSH_DISCARD
+ *  @brief Attribute flush syncronize flag.
+ */
+#define BT_GATT_FLUSH_SYNC			0x01
+
 /*! @brief GATT Attribute structure. */
 struct bt_gatt_attr {
 	/*! Attribute handle */
@@ -92,6 +102,10 @@ struct bt_gatt_attr {
 					 const struct bt_gatt_attr *attr,
 					 const void *buf, uint8_t len,
 					 uint16_t offset);
+	/*! Attribute flush callback */
+	int			(*flush)(const bt_addr_le_t *peer,
+					 const struct bt_gatt_attr *attr,
+					 uint8_t flags);
 	/*! Attribute user data */
 	void			*user_data;
 };

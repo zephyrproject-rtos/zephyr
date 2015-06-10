@@ -842,6 +842,7 @@ static uint8_t att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
 struct write_data {
 	struct bt_conn *conn;
 	struct bt_buf *buf;
+	uint8_t op;
 	const void *value;
 	uint8_t len;
 	uint16_t offset;
@@ -855,7 +856,9 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	BT_DBG("handle %u\n", attr->handle);
 
-	if (!attr->write) {
+	/* Check for write support and flush support in case of prepare */
+	if (!attr->write ||
+	    (data->op == BT_ATT_OP_PREPARE_WRITE_REQ && !attr->flush)) {
 		data->err = BT_ATT_ERR_WRITE_NOT_PERMITTED;
 		return BT_GATT_ITER_STOP;
 	}
@@ -872,6 +875,15 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	if (write < 0 || write != data->len) {
 		data->err = err_to_att(write);
 		return BT_GATT_ITER_STOP;
+	}
+
+	/* Flush in case of regular write operation */
+	if (attr->flush && data->op != BT_ATT_OP_PREPARE_WRITE_REQ) {
+		write = attr->flush(&data->conn->dst, attr, BT_GATT_FLUSH_SYNC);
+		if (write < 0) {
+			data->err = err_to_att(write);
+			return BT_GATT_ITER_STOP;
+		}
 	}
 
 	data->err = 0;
@@ -900,6 +912,7 @@ static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 	}
 
 	data.conn = conn;
+	data.op = op;
 	data.offset = offset;
 	data.value = value;
 	data.len = len;
@@ -968,6 +981,64 @@ static uint8_t att_prepare_write_req(struct bt_conn *conn, struct bt_buf *data)
 			     data->data, data->len);
 }
 
+struct flush_data {
+	struct bt_conn *conn;
+	struct bt_buf *buf;
+	uint8_t flags;
+	uint8_t err;
+};
+
+static uint8_t flush_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct flush_data *data = user_data;
+	int err;
+
+	/* If attribute cannot be flushed continue to next */
+	if (!attr->flush) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	BT_DBG("handle 0x%04x flags 0x%02x\n", attr->handle, data->flags);
+
+	/* Flush attribute any data cached to be written */
+	err = attr->flush(&data->conn->dst, attr, data->flags);
+	if (err < 0) {
+		data->err = err_to_att(err);
+		return BT_GATT_ITER_STOP;
+	}
+
+	data->err = 0;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static uint8_t att_exec_write_rsp(struct bt_conn *conn, uint8_t flags)
+{
+	struct flush_data data;
+
+	memset(&data, 0, sizeof(data));
+
+	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_EXEC_WRITE_RSP, 0);
+	if (!data.buf) {
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	data.flags = flags;
+
+	/* Apply to the whole database */
+	bt_gatt_foreach_attr(0x0000, 0xffff, flush_cb, &data);
+
+	/* In case of error discard data */
+	if (data.err) {
+		bt_buf_put(data.buf);
+		return data.err;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+
+	return 0;
+}
+
 static uint8_t att_exec_write_req(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_exec_write_req *req;
@@ -976,9 +1047,7 @@ static uint8_t att_exec_write_req(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("flags %u\n", req->flags);
 
-	/* TODO: Generate proper response once a database is defined */
-
-	return BT_ATT_ERR_NOT_SUPPORTED;
+	return att_exec_write_rsp(conn, req->flags);
 }
 
 static uint8_t att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
