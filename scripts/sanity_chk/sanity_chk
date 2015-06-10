@@ -124,7 +124,7 @@ main() {
 	args_passed_on=""
 
 	# process command options
-	while getopts ":hHcqblsA:B:T:" arg $*
+	while getopts ":hHcqblsA:B:" arg $*
 	do
 		case $arg in
 		h)
@@ -155,9 +155,6 @@ main() {
 			;;
 		B)
 			args_passed_on="${args_passed_on} -B $OPTARG"
-			;;
-		T)
-			# temporarily retained until CI scripts are revised
 			;;
 		\?)
 			${ECHO} "invalid option -$OPTARG"
