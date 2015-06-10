@@ -1,17 +1,6 @@
 Bluetooth subsystem
 
-= Architecture =
-
-All processing is done in fibers. Basic structure for packet processing
-is bt_buf. Packets are queued to different queues and processed. Packet
-allocation is done through a free packets queue which gets populated
-during the initialization.
-
 = Building =
-
-Build host tools:
-
-$ make -C host/src
 
 Build samples
 
@@ -31,13 +20,7 @@ Listening on /tmp/bt-server-bredr
 Now qemu can connect serial line to the 'bt-server-bredr' UNIX socket
 with following command:
 
-For microkernel configuration run:
-
-$ make microkernel.qemu
-
-For nanokernel configuration run:
-
-$ make nanokernel.qemu
+$ make qemu
 
 Extra parameter to qemu might be added through QEMU_EXTRA_FLAGS.
 
