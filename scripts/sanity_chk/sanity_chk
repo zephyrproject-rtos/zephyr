@@ -46,21 +46,19 @@ source ${ZEPHYR_BASE}/scripts/sanity_chk/common.defs
 # Symbols used in this script only
 #
 SCRIPT_PATH=${ZEPHYR_BASE}/scripts/sanity_chk
-HOST_TOOLS_SRC_PATH=${ZEPHYR_BASE}/host/src
 
 # print script usage
 #
 help() {
 cat << EOF
 
-Usage : ${SCRIPT_NAME} [-hHcqbls] [-A <arch>] [-B <board>]
+Usage : ${SCRIPT_NAME} [-hHcqbl] [-A <arch>] [-B <board>]
        -h display this help message
        -H display more detailed documentation
        -c just clean projects and delete execution logs
        -q just do quick sanity check
        -b just build projects
        -l keep successful project execution logs
-       -s do not build host tools
        -A build projects for the specified architecture
        -B build projects for the specified BSP or BSP variant
 
@@ -76,7 +74,6 @@ Script to sanitize Zephyr OS.
 
 The full sanity check consists of the following phases:
 
-    - Rebuild host tools to ensure they are up to date.
     - Run "footprint_chk" to characterize kernel footprint.
     - Run "regression_chk" to regression test kernel operation.
     - Run "out-of-tree_chk" to verify if projects and BSPs can reside outside the normal tree.
@@ -95,35 +92,16 @@ of the command that failed.
 EOF
 }
 
-# If the parameter is zero, build the host tools.
-#
-update_host_tools() {
-    if [ ${1} -eq 0 ] ; then
-	print_header
-	${ECHO} "Building host tools"
-
-	${CD} ${HOST_TOOLS_SRC_PATH}
-	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
-
-	${MAKE} clean
-	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
-
-	${MAKE}
-	[ $? -eq 0 ] || fail_exit $? $FUNCNAME $LINENO
-    fi
-}
-
 # main routine
 #
 main() {
 	# set up default behaviors
 	clean_only=0
-	skip_host_tools=0
 
 	args_passed_on=""
 
 	# process command options
-	while getopts ":hHcqblsA:B:" arg $*
+	while getopts ":hHcqblA:B:" arg $*
 	do
 		case $arg in
 		h)
@@ -145,9 +123,6 @@ main() {
 			;;
 		l)
 			args_passed_on="${args_passed_on} -l"
-			;;
-		s)
-			skip_host_tools=1
 			;;
 		A)
 			args_passed_on="${args_passed_on} -A $OPTARG"
@@ -184,9 +159,6 @@ main() {
 		${SCRIPT_PATH}/out-of-tree_chk -c
 		exit $?
 	fi
-
-	# rebuild host tools (optional)
-        #update_host_tools ${skip_host_tools}
 
 	# run the footprint characterization check
 	print_header
