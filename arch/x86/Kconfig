@@ -51,7 +51,7 @@ default BSP_PCPENTIUM4
 
 config BSP_ATOM_N28XX
 	bool "Minimum configuration for ATOM N28XX BSP"
-	select CPU_PENTIUM4
+	select CPU_ATOM
 	select IOAPIC
 	select LOAPIC
 	select LOAPIC_TIMER
@@ -107,6 +107,11 @@ config BSP_GENERIC_PC
 choice
 prompt "Intel Processor"
 default CPU_PENTIUM4
+
+config CPU_ATOM
+	bool "Atom"
+	help
+	This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	bool "Minute IA"
@@ -165,7 +170,7 @@ menu "Specific CPU Capability Support"
 
 config ISA_IA32
 	bool
-	default y if CPU_MINUTEIA || CPU_PENTIUM4
+	default y if CPU_ATOM || CPU_MINUTEIA || CPU_PENTIUM4
 	default n
 	help
 	This option signifies the use of a CPU based on the Intel IA-32
@@ -210,7 +215,7 @@ config CPU_SSE_UNSUPPORTED
 
 config CACHE_LINE_SIZE
 	int "Cache line size"
-	default 64 if CPU_PENTIUM4
+	default 64 if CPU_ATOM || CPU_PENTIUM4
 	default 0
 	help
 	Size in bytes of a CPU cache line.
