@@ -6,10 +6,11 @@ Build samples
 
 $ make -C samples/bluetooth/<app>
 
-= Testing =
+= Bluetooth Sample application =
 
-Host Bluetooth controler is connected to the second qemu serial line
+Host Bluetooth controller is connected to the second qemu serial line
 through a UNIX socket (qemu option -serial unix:/tmp/bt-server-bredr).
+This option is already added to qemu through QEMU_EXTRA_FLAGS in Makefile.
 
 On the host side BlueZ allows to "connect" Bluetooth controller through
 a so-called user channel. Use the btproxy tool for that:
@@ -17,12 +18,17 @@ a so-called user channel. Use the btproxy tool for that:
 $ sudo tools/btproxy -u
 Listening on /tmp/bt-server-bredr
 
-Now qemu can connect serial line to the 'bt-server-bredr' UNIX socket
-with following command:
+Note that before calling btproxy make sure that Bluetooth controller is down.
+
+Now running qemu result connecting second serial line to 'bt-server-bredr'
+UNIX socket. When Bluetooth (CONFIG_BLUETOOTH) and Bluetooth HCI UART driver
+(CONFIG_BLUETOOTH_UART) are enabled, Bluetooth driver registers to the system.
+From now on Bluetooth might be used by the application. To run application in
+the qemu run:
 
 $ make qemu
 
-Extra parameter to qemu might be added through QEMU_EXTRA_FLAGS.
+= Bluetooth sanity check =
 
 There is smoke test application in nanokernel and microkernel test
 directories which gets run in sanity check script:
