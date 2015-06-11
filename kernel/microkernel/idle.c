@@ -101,7 +101,7 @@ static void workload_loop(void)
 
 /*******************************************************************************
 *
-* workload_monitor_calibrate - calibrate the workload monitoring subsystem
+* _k_workload_monitor_calibrate - calibrate the workload monitoring subsystem
 *
 * Measures the time required to do a fixed amount of "dummy work", and
 * sets default values for the workload measuring period.
@@ -110,7 +110,7 @@ static void workload_loop(void)
 *
 */
 
-void workload_monitor_calibrate(void)
+void _k_workload_monitor_calibrate(void)
 {
 	_k_workload_n0 = _k_workload_i = 0;
 	_k_workload_n1 = 1000;
