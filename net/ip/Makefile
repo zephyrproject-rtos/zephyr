@@ -53,5 +53,22 @@ obj-$(CONFIG_NETWORKING_WITH_15_4) += net_driver_15_4.o
 obj-$(CONFIG_NETWORKING_WITH_15_4_LOOPBACK) += dummy_15_4_radio.o
 obj-$(CONFIG_NETWORKING_WITH_LOOPBACK) += net_driver_loopback.o
 
+ifneq ($(CONFIG_NETWORKING_WITH_15_4),y)
+     # remove files that are not needed
+     obj-y := $(filter-out contiki/mac/frame802154.o \
+		contiki/mac/framer-802154.o \
+		contiki/mac/csma.o \
+		contiki/mac/mac-sequence.o \
+		contiki/mac/sicslowmac/sicslowmac.o,$(obj-y))
+else
+     obj-y := $(filter-out contiki/mac/nullmac.o \
+		contiki/mac/framer-nullmac.o ,$(obj-y))
+endif
+
+# At the moment we only need nullsec driver
+obj-y := $(filter-out contiki/llsec/ccm-star.o \
+		contiki/llsec/ccm-star.o \
+		contiki/llsec/anti-replay.o,$(obj-y))
+
 # workaround for include file location
 CREATE_INCLUDE_LINK_net := $(shell ln -s ${ZEPHYR_BASE}/net/ip/contiki ${ZEPHYR_BASE}/net/ip/contiki/net > /dev/null 2>&1)

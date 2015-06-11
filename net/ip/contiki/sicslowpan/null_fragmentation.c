@@ -32,8 +32,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include <net/net_buf.h>
+#include <net/net_core.h>
+
 #include <net/sicslowpan/null_fragmentation.h>
 #include <net/netstack.h>
 
@@ -74,6 +77,21 @@ static int fragment(struct net_buf *buf, void *ptr)
 	return NETSTACK_LLSEC.send(mbuf, &packet_sent, true, ptr);
 }
 
+static int send_upstream(struct net_buf *buf)
+{
+	if (!NETSTACK_COMPRESS.uncompress(buf)) {
+		UIP_LOG("Uncompression failed.");
+		return -EINVAL;
+	}
+
+	if (net_recv(buf) < 0) {
+		UIP_LOG("Input to IP stack failed.");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int reassemble(struct net_mbuf *mbuf)
 {
         struct net_buf *buf;
@@ -89,7 +107,7 @@ static int reassemble(struct net_mbuf *mbuf)
 						packetbuf_datalen(mbuf));
 		uip_len(buf) = packetbuf_datalen(mbuf);
 
-		if (net_driver_15_4_recv(buf) < 0) {
+		if (send_upstream(buf) < 0) {
 			net_buf_put(buf);
 		} else {
 			net_mbuf_put(mbuf);

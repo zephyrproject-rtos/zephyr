@@ -41,10 +41,16 @@ typedef unsigned int uip_stats_t;
 #define NETSTACK_CONF_FRAGMENT null_fragmentation
 #endif /* SICSLOWPAN_CONF_ENABLE */
 
+#ifdef CONFIG_NETWORKING_WITH_15_4
 #define NETSTACK_CONF_FRAMER	framer_802154
-#define NETSTACK_CONF_LLSEC	nullsec_driver
-#define NETSTACK_CONF_MAC	csma_driver
 #define NETSTACK_CONF_RDC	sicslowmac_driver
+#define NETSTACK_CONF_MAC	csma_driver
+#else
+#define NETSTACK_CONF_FRAMER	framer_nullmac
+#define NETSTACK_CONF_RDC	nullrdc_driver
+#define NETSTACK_CONF_MAC	nullmac_driver
+#endif
+#define NETSTACK_CONF_LLSEC	nullsec_driver
 
 #ifndef NETSTACK_CONF_RADIO
 /* #error "No radio configured, cannot continue!" */
