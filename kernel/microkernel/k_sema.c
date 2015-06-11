@@ -71,7 +71,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 			}
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.timer) {
-				force_timeout(A);
+				_k_timeout_cancel(A);
 				A->Comm = WAITSRPL;
 			} else {
 #endif
@@ -267,7 +267,7 @@ void _k_sem_group_ready(struct k_args *R)
 		A->Comm = WAITMTMO;
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer) {
-			force_timeout(A);
+			_k_timeout_cancel(A);
 		} else
 #endif
 			_k_sem_group_wait_timeout(A);
@@ -382,7 +382,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 			A->Time.timer = NULL;
 		} else {
 			A->Comm = WAITMTMO;
-			enlist_timeout(A);
+			_k_timeout_alloc(A);
 		}
 	}
 #endif
@@ -416,7 +416,7 @@ void _k_sem_wait_request(struct k_args *A)
 			A->Time.timer = NULL;
 		} else {
 			A->Comm = WAITSTMO;
-			enlist_timeout(A);
+			_k_timeout_alloc(A);
 		}
 #endif
 		return;

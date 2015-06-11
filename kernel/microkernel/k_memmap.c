@@ -79,7 +79,7 @@ void _k_mem_map_init(void)
 
 void _k_mem_map_alloc_timeout(struct k_args *A)
 {
-	delist_timeout(A->Time.timer);
+	_k_timeout_free(A->Time.timer);
 	REMOVE_ELM(A);
 	A->Time.rcode = RC_TIME;
 	_k_state_bit_reset(A->Ctxt.proc, TF_ALLO);
@@ -123,7 +123,7 @@ void _k_mem_map_alloc(struct k_args *A)
 			A->Time.timer = NULL;
 		else {
 			A->Comm = ALLOCTMO;
-			enlist_timeout(A);
+			_k_timeout_alloc(A);
 		}
 #endif
 	} else
@@ -178,7 +178,7 @@ void _k_mem_map_dealloc(struct k_args *A)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (X->Time.timer) {
-			delist_timeout(X->Time.timer);
+			_k_timeout_free(X->Time.timer);
 			X->Comm = NOP;
 		}
 #endif

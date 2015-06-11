@@ -455,7 +455,7 @@ void _k_block_waiters_get(struct k_args *A)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (curr_task->Time.timer) {
-				delist_timeout(curr_task->Time.timer);
+				_k_timeout_free(curr_task->Time.timer);
 			}
 #endif
 			curr_task->Time.rcode = RC_OK;
@@ -487,7 +487,7 @@ void _k_block_waiters_get(struct k_args *A)
 
 void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 {
-	delist_timeout(A->Time.timer);
+	_k_timeout_free(A->Time.timer);
 	REMOVE_ELM(A);
 	A->Time.rcode = RC_TIME;
 	_k_state_bit_reset(A->Ctxt.proc, TF_GTBL);
@@ -546,7 +546,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 			A->Time.timer = NULL;
 		} else {
 			A->Comm = GTBLTMO;
-			enlist_timeout(A);
+			_k_timeout_alloc(A);
 		}
 #endif
 	} else {

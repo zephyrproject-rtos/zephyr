@@ -229,7 +229,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 				 * the request time out.
 				 */
 				A->Comm = LOCK_TMO;
-				enlist_timeout(A);
+				_k_timeout_alloc(A);
 			}
 #endif
 			if (A->Prio < Mutex->OwnerCurrentPrio) {
@@ -364,7 +364,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 				 * Trigger a call to _k_mutex_lock_reply()--it will
 				 * send a reply with a return code of RC_OK.
 				 */
-				force_timeout(X);
+				_k_timeout_cancel(X);
 				X->Comm = LOCK_RPL;
 			} else {
 #endif

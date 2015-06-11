@@ -136,12 +136,14 @@ void _k_timer_delist(struct k_timer *T)
 
 /*******************************************************************************
 *
-* enlist_timeout - allocate and insert a timer into the timer queue
+* _k_timeout_alloc - allocate timer used for command packet timeout
+*
+* Allocates timer for command packet and inserts it into the timer queue.
 *
 * RETURNS: N/A
 */
 
-void enlist_timeout(struct k_args *P)
+void _k_timeout_alloc(struct k_args *P)
 {
 	struct k_timer *T;
 
@@ -155,12 +157,18 @@ void enlist_timeout(struct k_args *P)
 
 /*******************************************************************************
 *
-* force_timeout - remove a non-expired timer from the timer queue
+* _k_timeout_cancel - cancel timer used for command packet timeout
 *
+* Cancels timer (if not already expired), then reschedules the command packet
+* for further processing.
+*
+* The command that is processed following cancellation is typically NOT the
+* command that would have occurred had the timeout expired on its own.
+* 
 * RETURNS: N/A
 */
 
-void force_timeout(struct k_args *A)
+void _k_timeout_cancel(struct k_args *A)
 {
 	struct k_timer *T = A->Time.timer;
 
@@ -172,12 +180,14 @@ void force_timeout(struct k_args *A)
 
 /*******************************************************************************
 *
-* delist_timeout - remove a non-expired timer from the timer queue and free it
+* _k_timeout_free - free timer used for command packet timeout
+*
+* Cancels timer (if not already expired), then frees it.
 *
 * RETURNS: N/A
 */
 
-void delist_timeout(struct k_timer *T)
+void _k_timeout_free(struct k_timer *T)
 {
 	if (T->duration != -1)
 		_k_timer_delist(T);

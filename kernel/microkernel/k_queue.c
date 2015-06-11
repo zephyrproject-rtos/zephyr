@@ -88,7 +88,7 @@ void _k_fifo_enque_request(struct k_args *A)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (W->Time.timer) {
-				force_timeout(W);
+				_k_timeout_cancel(W);
 				W->Comm = DEQ_RPL;
 			} else {
 #endif
@@ -128,7 +128,7 @@ void _k_fifo_enque_request(struct k_args *A)
 				A->Time.timer = NULL;
 			else {
 				A->Comm = ENQ_TMO;
-				enlist_timeout(A);
+				_k_timeout_alloc(A);
 			}
 #endif
 		} else {
@@ -231,7 +231,7 @@ void _k_fifo_deque_request(struct k_args *A)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (W->Time.timer) {
-				force_timeout(W);
+				_k_timeout_cancel(W);
 				W->Comm = ENQ_RPL;
 			} else {
 #endif
@@ -257,7 +257,7 @@ void _k_fifo_deque_request(struct k_args *A)
 				A->Time.timer = NULL;
 			else {
 				A->Comm = DEQ_TMO;
-				enlist_timeout(A);
+				_k_timeout_alloc(A);
 			}
 #endif
 		} else {
@@ -317,7 +317,7 @@ void _k_fifo_ioctl(struct k_args *A)
 				Q->Waiters = X->Forw;
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 				if (likely(X->Time.timer)) {
-					force_timeout(X);
+					_k_timeout_cancel(X);
 					X->Comm = ENQ_RPL;
 				} else {
 #endif

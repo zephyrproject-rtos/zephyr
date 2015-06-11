@@ -184,7 +184,7 @@ void K_ChSendReq(struct k_args *RequestOrig)
 			} else
 #endif
 				/* enlist a new timer into the timeout chain */
-				enlist_timeout(RequestProc);
+				_k_timeout_alloc(RequestProc);
 
 			return;
 		}

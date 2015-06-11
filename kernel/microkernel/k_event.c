@@ -148,7 +148,7 @@ void _k_event_test(struct k_args *A)
 						A->Time.timer = NULL;
 					} else {
 						A->Comm = EVENT_TMO;
-						enlist_timeout(A);
+						_k_timeout_alloc(A);
 					}
 #endif
 				} else {
@@ -217,7 +217,7 @@ void _k_do_event_signal(kevent_t event)
 	if (((A) != NULL) && (E->status != 0)) {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer != NULL) {
-			delist_timeout(A->Time.timer);
+			_k_timeout_free(A->Time.timer);
 			A->Comm = NOP;
 		}
 #endif

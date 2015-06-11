@@ -460,7 +460,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 			 * This is a wait with timeout operation.
 			 * Enlist a new timeout.
 			 */
-			enlist_timeout(CopyWriter);
+			_k_timeout_alloc(CopyWriter);
 		}
 #endif
 	} else {
@@ -676,7 +676,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 			 * This is a wait with timeout operation.
 			 * Enlist a new timeout.
 			 */
-			enlist_timeout(CopyReader);
+			_k_timeout_alloc(CopyReader);
 		}
 #endif
 	} else {

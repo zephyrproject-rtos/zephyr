@@ -73,9 +73,11 @@ extern struct nano_lifo _k_timer_free;
 
 extern void _k_timer_enlist(struct k_timer *T);
 extern void _k_timer_delist(struct k_timer *T);
-extern void enlist_timeout(struct k_args *P);
-extern void delist_timeout(struct k_timer *T);
-extern void force_timeout(struct k_args *A);
+
+extern void _k_timeout_alloc(struct k_args *P);
+extern void _k_timeout_free(struct k_timer *T);
+extern void _k_timeout_cancel(struct k_args *A);
+
 extern void _k_timer_list_update(int ticks);
 
 extern void _k_do_event_signal(kevent_t event);
