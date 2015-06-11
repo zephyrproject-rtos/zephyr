@@ -41,14 +41,6 @@ config	NETWORKING
 	help
 	  This option enabled generic networking support.
 
-config	NETWORKING_WITH_6LOWPAN
-	bool
-	prompt "Enable 6LoWPAN (IPv6 compression) in the uIP stack"
-	depends on NETWORKING
-	default n
-	help
-	  Enable 6LoWPAN in uIP stack
-
 config	NETWORKING_WITH_RPL
 	bool
 	prompt "Enable RPL (ripple) IPv6 mesh routing protocol"
@@ -118,3 +110,12 @@ config	NETWORKING_WITH_15_4_LOOPBACK
 	help
 	  Enable 802.15.4 loopback radio driver that receives
 	  the 802.15.4 frame and put it back 802.15.4 Rx Fifo.
+
+config	NETWORKING_WITH_6LOWPAN
+	bool
+	prompt "Enable 6LoWPAN (IPv6 compression) in the uIP stack"
+	depends on NETWORKING
+	depends on NETWORKING_WITH_15_4
+	default n
+	help
+	  Enable 6LoWPAN in uIP stack
