@@ -71,8 +71,8 @@ extern struct nano_stack _k_command_stack;
 extern struct nano_lifo _k_server_command_packet_free;
 extern struct nano_lifo _k_timer_free;
 
-extern void enlist_timer(struct k_timer *T);
-extern void delist_timer(struct k_timer *T);
+extern void _k_timer_enlist(struct k_timer *T);
+extern void _k_timer_delist(struct k_timer *T);
 extern void enlist_timeout(struct k_args *P);
 extern void delist_timeout(struct k_timer *T);
 extern void force_timeout(struct k_args *A);

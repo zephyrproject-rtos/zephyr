@@ -395,7 +395,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 				 * The reader was trying to handshake with
 				 * timeout
 				 */
-				delist_timer(CopyReader->Time.timer);
+				_k_timer_delist(CopyReader->Time.timer);
 				FREETIMER(CopyReader->Time.timer);
 			}
 #endif
@@ -621,7 +621,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 				 * The writer was trying to handshake with
 				 * timeout.
 				 */
-				delist_timer(CopyWriter->Time.timer);
+				_k_timer_delist(CopyWriter->Time.timer);
 				FREETIMER(CopyWriter->Time.timer);
 			}
 #endif
