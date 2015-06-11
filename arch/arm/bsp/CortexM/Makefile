@@ -4,4 +4,5 @@ ccflags-y +=-I$(srctree)/arch/$(ARCH)/$(strip $(CONFIG_BSP_DIR))
 asflags-y = $(ccflags-y)
 
 obj-y = vector_table.o reset.o \
-	prep_c.o scs.o scb.o nmi.o
+	prep_c.o scs.o scb.o nmi.o \
+	sw_isr_table.o

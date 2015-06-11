@@ -39,6 +39,7 @@ ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
 #define _ARCH_ARM_CORTEXM_IRQ_H_
 
 #include <arch/arm/CortexM/nvic.h>
+#include <sw_isr_table.h>
 
 #ifdef _ASMLANGUAGE
 GTEXT(_IntExit);
@@ -70,6 +71,43 @@ extern void irq_disable(unsigned int irq);
 extern void irq_priority_set(unsigned int irq, unsigned int prio);
 
 extern void _IntExit(void);
+
+/* macros convert value of it's argument to a string */
+#define DO_TOSTR(s) #s
+#define TOSTR(s) DO_TOSTR(s)
+
+/* concatenate the values of the arguments into one */
+#define DO_CONCAT(x, y) x ## y
+#define CONCAT(x, y) DO_CONCAT(x, y)
+
+/*******************************************************************************
+ *
+ * IRQ_CONNECT_STATIC - connect a routine to interrupt number
+ *
+ * For the device <device> associates IRQ number <irq> with priority
+ * <priority> with the interrupt routine <isr>, that receives parameter
+ * <parameter>
+ *
+ * RETURNS: N/A
+ *
+ */
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	\
+	const unsigned int _##device##_int_priority = (priority);		\
+	struct _IsrTableEntry CONCAT(_isr_irq, irq)			\
+	__attribute__ ((section (TOSTR(CONCAT(.gnu.linkonce.isr_irq, irq))))) = \
+	{parameter, isr}
+
+/*******************************************************************************
+ *
+ * IRQ_CONFIG - configure interrupt for the device
+ *
+ * For the given device do the neccessary configuration steps.
+ * Fpr ARM platform, set the interrupt priority
+ *
+ * RETURNS: N/A
+ *
+ */
+#define IRQ_CONFIG(device, irq) irq_priority_set(irq, _##device##_int_priority)
 
 #endif /* _ASMLANGUAGE */
 

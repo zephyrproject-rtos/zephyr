@@ -1,7 +1,7 @@
-/* sw_isr_table.c - Software ISR table for fsl_frdm_k64f BSP */
+/* ISR table for static ISR declarations for ARM */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,53 +32,52 @@
 
 /*
 DESCRIPTION
-This contains the ISR table meant to be used for ISRs that take a parameter.
-It is also used when ISRs are to be connected at runtime, and in this case
-provides a table that is filled with _irq_spurious bindings.
+Software ISR table for ARM
 */
+
+#define _ASMLANGUAGE
 
 #include <toolchain.h>
 #include <sections.h>
-#include <sw_isr_table.h>
+#include <arch/cpu.h>
 
-extern void _irq_spurious(void *arg);
+_ASM_FILE_PROLOGUE
 
-#if defined(CONFIG_CONSOLE_HANDLER)
-#include <board.h>
-#include <console/uart_console.h>
-#endif /* CONFIG_CONSOLE_HANDLER */
+/*
+ * enable proprocessor features, such
+ * as %expr - evaluate the expression and use it as a string
+ */
+.altmacro
 
-#if defined(CONFIG_BLUETOOTH_UART)
-#include <board.h>
-#include <bluetooth/uart.h>
-#endif /* CONFIG_BLUETOOTH_UART */
+/*
+ * Define an ISR table entry
+ * Define symbol as weak and give the section .gnu.linkonce
+ * prefix. This allows linker overload the symbol and the
+ * whole section by the one defined by a device driver
+ */
+.macro _isr_table_entry_declare index
+	WDATA(_isr_irq\index)
+	.section .gnu.linkonce.isr_irq\index
+	_isr_irq\index: .word 0xABAD1DEA, _irq_spurious
+.endm
 
-#if defined(CONFIG_SW_ISR_TABLE_DYNAMIC)
+/*
+ * Declare the ISR table
+ * Macro is recursive
+ */
+.macro _isr_table_declare from, to
+	_isr_table_entry_declare \from
+	.if \to-\from
+		_isr_table_declare %(\from + 1), \to
+	.endif
+.endm
 
-_IsrTableEntry_t __isr_table_section _sw_isr_table[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)].arg = (void *)0xABAD1DEA,
-	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _irq_spurious,
-};
+GTEXT(_irq_spurious)
+GDATA(_sw_isr_table)
 
-#else
-#if defined(CONFIG_SW_ISR_TABLE)
-#if !defined(CONFIG_SW_ISR_TABLE_STATIC_CUSTOM)
+.section .isr_irq0
+.align
+_sw_isr_table:
 
-/* placeholders: fill with real ISRs */
+_isr_table_declare 0 CONFIG_NUM_IRQS
 
-_IsrTableEntry_t __isr_table_section _sw_isr_table[CONFIG_NUM_IRQS] = {
-	[0 ...(CONFIG_NUM_IRQS - 1)].arg = (void *)0xABAD1DEA,
-	[0 ...(CONFIG_NUM_IRQS - 1)].isr = _irq_spurious,
-#if defined(CONFIG_CONSOLE_HANDLER)
-	[CONFIG_UART_CONSOLE_IRQ].arg = NULL,
-	[CONFIG_UART_CONSOLE_IRQ].isr = uart_console_isr,
-#endif
-#if defined(CONFIG_BLUETOOTH_UART)
-	[CONFIG_BLUETOOTH_UART_IRQ].arg = NULL,
-	[CONFIG_BLUETOOTH_UART_IRQ].isr = bt_uart_isr,
-#endif
-};
-
-#endif /* !CONFIG_SW_ISR_TABLE_STATIC_CUSTOM */
-#endif /* CONFIG_SW_ISR_TABLE */
-#endif /* CONFIG_SW_ISR_TABLE_DYNAMIC */
