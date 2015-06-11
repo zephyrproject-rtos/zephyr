@@ -49,20 +49,22 @@
  *  @param id The init level id where the init object will be placed
  *  in the image.
  *
+ *  @param driver_data The pointer to the driver data for the driver instance.
  *  @sa DECLARE_DEVICE_INIT_CONFIG()
  */
-#define __define_initconfig(cfg_name, id) \
+#define __define_initconfig(cfg_name, id, data)			    \
 	 static struct device (__initconfig_##cfg_name##id) __used  \
 	__attribute__((__section__(".initconfig" #id ".init"))) = { \
-		.config = &(config_##cfg_name)};
+		 .config = &(config_##cfg_name),\
+		 .driver_data = data};
 
-#define pure_init(cfg)			__define_initconfig(cfg, 0)
-#define nano_early_init(cfg)		__define_initconfig(cfg, 1)
-#define nano_late_init(cfg)		__define_initconfig(cfg, 2)
-#define micro_early_init(cfg)		__define_initconfig(cfg, 3)
-#define micro_late_init(cfg)		__define_initconfig(cfg, 4)
-#define pre_app_init(cfg)		__define_initconfig(cfg, 5)
-#define late_initconfig(cfg)		__define_initconfig(cfg, 6)
+#define pure_init(cfg, data)		__define_initconfig(cfg, 0, data)
+#define nano_early_init(cfg, data)	__define_initconfig(cfg, 1, data)
+#define nano_late_init(cfg, data)	__define_initconfig(cfg, 2, data)
+#define micro_early_init(cfg, data)	__define_initconfig(cfg, 3, data)
+#define micro_late_init(cfg, data)	__define_initconfig(cfg, 4, data)
+#define pre_app_init(cfg, data)		__define_initconfig(cfg, 5, data)
+#define late_initconfig(cfg, data)	__define_initconfig(cfg, 6, data)
 
 
 #endif /* _INIT_H_ */
