@@ -16,6 +16,7 @@
    collaboration/collaboration.rst
    development/index.rst
    object/object.rst
+   net/network.rst
    doxygen/doxygen.rst
 
 
