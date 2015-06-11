@@ -37,7 +37,7 @@
 
 /*******************************************************************************
 *
-* _pipe_init - initialize kernel pipe subsystem
+* _k_pipe_init - initialize kernel pipe subsystem
 *
 * Performs any initialization of statically-defined pipes that wasn't done
 * at build time. (Note: most pipe structure fields are set to zero by sysgen.)
@@ -45,7 +45,7 @@
 * RETURNS: N/A
 */
 
-void _pipe_init(void)
+void _k_pipe_init(void)
 {
 	int i;
 	struct pipe_struct *pPipe;

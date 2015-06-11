@@ -41,8 +41,8 @@
 #include <arch/cpu.h>
 #endif
 
-extern void init_node(void);        /* defined by sysgen */
-extern void init_drivers(void);     /* defined by sysgen */
+extern void _k_init_node(void);     /* defined by sysgen */
+extern void _k_init_drivers(void);  /* defined by sysgen */
 
 char __noinit __stack _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];
 
@@ -60,7 +60,7 @@ struct nano_stack _k_command_stack = {NULL,
 
 extern void K_swapper(int i1, int i2);
 
-void kernel_init(void)
+void _k_kernel_init(void)
 {
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/*
@@ -77,7 +77,7 @@ void kernel_init(void)
 	 * Note: most variables & data structure are globally initialized in
 	 * kernel_main.c
 	 */
-	init_node();
+	_k_init_node();
 
 #ifdef CONFIG_INIT_STACKS
 	memset((char *)_k_server_command_stack_storage, 0xaa,
@@ -92,7 +92,7 @@ void kernel_init(void)
 			   CONFIG_MICROKERNEL_SERVER_PRIORITY,
 			   0);
 
-	init_drivers();
+	_k_init_drivers();
 
 #ifdef CONFIG_WORKLOAD_MONITOR
 	_k_workload_monitor_calibrate();

@@ -400,7 +400,7 @@ static inline int32_t _get_next_timer_expiry(void)
 *
 * If the BSP sets the _sys_power_save_flag flag, this routine will call the
 * _sys_power_save_idle() routine in an infinite loop. If the flag is not set,
-* this routine will fall through and kernel_idle() will try the next idling
+* this routine will fall through and _k_kernel_idle() will try the next idling
 * mechanism.
 *
 * RETURNS: N/A
@@ -446,7 +446,7 @@ static void _power_save(void)
 
 /*******************************************************************************
 *
-* kernel_idle - microkernel idle task
+* _k_kernel_idle - microkernel idle task
 *
 * If power save is on, we sleep; if power save is off, we "busy wait".
 *
@@ -454,7 +454,7 @@ static void _power_save(void)
 *
 */
 
-int kernel_idle(void)
+int _k_kernel_idle(void)
 {
 	_power_save(); /* never returns if power saving is enabled */
 
@@ -470,7 +470,7 @@ int kernel_idle(void)
 	}
 
 	/*
-	 * Code analyzers may complain that kernel_idle() uses an infinite loop
+	 * Code analyzers may complain that _k_kernel_idle() uses an infinite loop
 	 * unless we indicate that this is intentional
 	 */
 

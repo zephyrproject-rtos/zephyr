@@ -981,7 +981,7 @@ def kernel_main_c_driver_init():
     """ Generate driver initialization routine """
 
     kernel_main_c_out("\n" +
-        "void init_drivers(void)\n" +
+        "void _k_init_drivers(void)\n" +
         "{\n")
     for driver_call in driver_list:
         kernel_main_c_out("    " + driver_call + ";\n")
@@ -992,13 +992,13 @@ def kernel_main_c_node_init():
     """ Generate node initialization routine """
 
     kernel_main_c_out("\n" +
-        "void init_node(void)\n{\n")
+        "void _k_init_node(void)\n{\n")
     if (len(pipe_list) > 0):
-        kernel_main_c_out("    _pipe_init();\n")
+        kernel_main_c_out("    _k_pipe_init();\n")
     if (len(map_list) > 0):
-        kernel_main_c_out("    _mem_map_init();\n")
+        kernel_main_c_out("    _k_mem_map_init();\n")
     if (len(pool_list) > 0):
-        kernel_main_c_out("    _mem_pools_init();\n")
+        kernel_main_c_out("    _k_mem_pool_init();\n")
     kernel_main_c_out("}\n")
 
 
@@ -1008,9 +1008,9 @@ def kernel_main_c_main():
     kernel_main_c_out("\n" +
         "void main(void)\n" +
         "{\n" +
-        "    kernel_init();\n" +
+        "    _k_kernel_init();\n" +
         "    task_group_start(EXE);\n" +
-        "    kernel_idle();\n" +
+        "    _k_kernel_idle();\n" +
         "}\n")
 
 
