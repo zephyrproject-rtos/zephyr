@@ -62,7 +62,7 @@ void K_ChSendReq(struct k_args *RequestOrig)
 	if (!bAsync) {
 		/* First save the pointer to the task's TCB for rescheduling later */
 		RequestOrig->Ctxt.proc = _k_current_task;
-		set_state_bit(_k_current_task, TF_SEND);
+		_k_state_bit_set(_k_current_task, TF_SEND);
 	} else {
 		/* No need to put in data about sender, since it's a poster */
 		RequestOrig->Ctxt.proc = NULL;
@@ -320,7 +320,7 @@ void K_ChSendAck(struct k_args *Request)
 		LocalReq->Time.rcode = Request->Time.rcode;
 		LocalReq->Args.ChAck = Request->Args.ChAck;
 
-		reset_state_bit(LocalReq->Ctxt.proc, TF_SEND | TF_SENDDATA);
+		_k_state_bit_reset(LocalReq->Ctxt.proc, TF_SEND | TF_SENDDATA);
 	}
 
 	FREEARGS(Request);

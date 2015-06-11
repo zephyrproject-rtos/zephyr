@@ -54,7 +54,7 @@ void K_ChRecvReq(struct k_args *RequestOrig)
 
 	/* First we save the pointer to the task's TCB for rescheduling later */
 	RequestOrig->Ctxt.proc = _k_current_task;
-	set_state_bit(_k_current_task, TF_RECV);
+	_k_state_bit_set(_k_current_task, TF_RECV);
 
 	mycopypacket(&Request, RequestOrig);
 
@@ -278,7 +278,7 @@ void K_ChRecvAck(struct k_args *Request)
 
 	/* Reschedule the sender task */
 
-	reset_state_bit(LocalReq->Ctxt.proc, TF_RECV | TF_RECVDATA);
+	_k_state_bit_reset(LocalReq->Ctxt.proc, TF_RECV | TF_RECVDATA);
 
 	FREEARGS(Request);
 }

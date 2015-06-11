@@ -57,7 +57,7 @@ ktask_t task_id_get(void)
 
 /*******************************************************************************
 *
-* reset_state_bit - reset the specified task state bits
+* _k_state_bit_reset - reset the specified task state bits
 *
 * This routine resets the specified task state bits.  When a task's state bits
 * are zero, the task may be scheduled to run.  The tasks's state bits are a
@@ -67,7 +67,7 @@ ktask_t task_id_get(void)
 * RETURNS: N/A
 */
 
-void reset_state_bit(struct k_proc *X,    /* ptr to task */
+void _k_state_bit_reset(struct k_proc *X,    /* ptr to task */
 					   uint32_t bits /* bitmask of TF_xxx
 							    bits to reset */
 					   )
@@ -109,7 +109,7 @@ void reset_state_bit(struct k_proc *X,    /* ptr to task */
 
 /*******************************************************************************
 *
-* set_state_bit - set specified task state bits
+* _k_state_bit_set - set specified task state bits
 *
 * This routine sets the specified task state bits.  When a task's state bits
 * are non-zero, the task will not be scheduled to run.  The task's state bits
@@ -119,7 +119,7 @@ void reset_state_bit(struct k_proc *X,    /* ptr to task */
 * RETURNS: N/A
 */
 
-void set_state_bit(
+void _k_state_bit_set(
 	struct k_proc *task_ptr,
 	uint32_t bits /* bitmask of TF_xxx bits to set */
 	)
@@ -232,7 +232,7 @@ static void start_task(struct k_proc *X,  /* ptr to task control block */
 
 	X->fabort = NULL;
 
-	reset_state_bit(X, TF_STOP | TF_TERM);
+	_k_state_bit_reset(X, TF_STOP | TF_TERM);
 }
 
 /*******************************************************************************
@@ -253,7 +253,7 @@ static void abort_task(struct k_proc *X)
 
 	/* Set TF_TERM and TF_STOP state flags */
 
-	set_state_bit(X, TF_STOP | TF_TERM);
+	_k_state_bit_set(X, TF_STOP | TF_TERM);
 
 	/* Invoke abort function, if there is one */
 
@@ -337,16 +337,16 @@ void _k_task_op(struct k_args *A)
 			abort_task(X);
 			break;
 		case TASK_SUSPEND:
-			set_state_bit(X, TF_SUSP);
+			_k_state_bit_set(X, TF_SUSP);
 			break;
 		case TASK_RESUME:
-			reset_state_bit(X, TF_SUSP);
+			_k_state_bit_reset(X, TF_SUSP);
 			break;
 		case TASK_BLOCK:
-			set_state_bit(X, TF_BLCK);
+			_k_state_bit_set(X, TF_BLCK);
 			break;
 		case TASK_UNBLOCK:
-			reset_state_bit(X, TF_BLCK);
+			_k_state_bit_reset(X, TF_BLCK);
 			break;
 		}
 }
@@ -405,16 +405,16 @@ void _k_task_group_op(struct k_args *A)
 				abort_task(X);
 				break;
 			case TASK_GROUP_SUSPEND:
-				set_state_bit(X, TF_SUSP);
+				_k_state_bit_set(X, TF_SUSP);
 				break;
 			case TASK_GROUP_RESUME:
-				reset_state_bit(X, TF_SUSP);
+				_k_state_bit_reset(X, TF_SUSP);
 				break;
 			case TASK_GROUP_BLOCK:
-				set_state_bit(X, TF_BLCK);
+				_k_state_bit_set(X, TF_BLCK);
 				break;
 			case TASK_GROUP_UNBLOCK:
-				reset_state_bit(X, TF_BLCK);
+				_k_state_bit_reset(X, TF_BLCK);
 				break;
 			}
 		}
@@ -501,9 +501,9 @@ void _k_task_priority_set(struct k_args *A)
 	ktask_t Tid = A->Args.g1.task;
 		struct k_proc *X = _k_task_list + OBJ_INDEX(Tid);
 
-		set_state_bit(X, TF_PRIO);
+		_k_state_bit_set(X, TF_PRIO);
 		X->Prio = A->Args.g1.prio;
-		reset_state_bit(X, TF_PRIO);
+		_k_state_bit_reset(X, TF_PRIO);
 
 	if (A->alloc)
 		FREEARGS(A);

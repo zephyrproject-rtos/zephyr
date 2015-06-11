@@ -489,7 +489,7 @@ void _k_task_wakeup(struct k_args *P)
 	T = P->Time.timer;
 
 	FREETIMER(T);
-	reset_state_bit(X, TF_TIME);
+	_k_state_bit_reset(X, TF_TIME);
 }
 
 /*******************************************************************************
@@ -520,7 +520,7 @@ void _k_task_sleep(struct k_args *P)
 	P->Time.timer = T;
 
 	enlist_timer(T);
-	set_state_bit(_k_current_task, TF_TIME);
+	_k_state_bit_set(_k_current_task, TF_TIME);
 }
 
 /*******************************************************************************

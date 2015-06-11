@@ -292,7 +292,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 		Starter = pCopyWriter->Ctxt.args;
 		Starter->Time.rcode = pCopyWriter->Time.rcode;
 		Starter->Args.m1.mess = pCopyWriter->Args.m1.mess;
-		reset_state_bit(Starter->Ctxt.proc, TF_SEND | TF_SENDDATA);
+		_k_state_bit_reset(Starter->Ctxt.proc, TF_SEND | TF_SENDDATA);
 
 		FREEARGS(pCopyWriter);
 	}
@@ -341,7 +341,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 
 	if (!bAsync) {
 		sender = _k_current_task;
-		set_state_bit(sender, TF_SEND);
+		_k_state_bit_set(sender, TF_SEND);
 	}
 
 	Writer->Ctxt.proc = sender;
@@ -540,7 +540,7 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 	Starter->Args.m1.mess = pCopyReader->Args.m1.mess;
 
 	/* Reschedule the sender task */
-	reset_state_bit(Starter->Ctxt.proc, TF_RECV | TF_RECVDATA);
+	_k_state_bit_reset(Starter->Ctxt.proc, TF_RECV | TF_RECVDATA);
 
 	FREEARGS(pCopyReader);
 }
@@ -579,7 +579,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 	struct k_args *CopyReader;
 
 	Reader->Ctxt.proc = _k_current_task;
-	set_state_bit(Reader->Ctxt.proc, TF_RECV);
+	_k_state_bit_set(Reader->Ctxt.proc, TF_RECV);
 
 	copy_packet(&CopyReader, Reader);
 
@@ -781,7 +781,7 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	struct k_args *Writer;
 
 	Starter->Ctxt.proc = _k_current_task;
-	set_state_bit(_k_current_task, TF_RECVDATA);
+	_k_state_bit_set(_k_current_task, TF_RECVDATA);
 
 	GETARGS(CopyStarter);
 	memcpy(CopyStarter, Starter, sizeof(struct k_args));
@@ -958,7 +958,7 @@ void _k_mbox_send_data(struct k_args *Starter)
 	struct k_args *Reader;
 
 	Starter->Ctxt.proc = _k_current_task;
-	set_state_bit(_k_current_task, TF_SENDDATA);
+	_k_state_bit_set(_k_current_task, TF_SENDDATA);
 
 	GETARGS(CopyStarter);
 	memcpy(CopyStarter, Starter, sizeof(struct k_args));

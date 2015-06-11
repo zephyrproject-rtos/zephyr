@@ -116,7 +116,7 @@ void _k_event_test_timeout(struct k_args *A)
 	FREETIMER(A->Time.timer);
 	A->Time.rcode = RC_TIME;
 	E->waiter = NULL;
-	reset_state_bit(A->Ctxt.proc, TF_EVNT);
+	_k_state_bit_reset(A->Ctxt.proc, TF_EVNT);
 }
 
 /*******************************************************************************
@@ -142,7 +142,7 @@ void _k_event_test(struct k_args *A)
 				if (likely(E->waiter == NULL)) {
 					A->Ctxt.proc = _k_current_task;
 					E->waiter = A;
-					set_state_bit(_k_current_task, TF_EVNT);
+					_k_state_bit_set(_k_current_task, TF_EVNT);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 					if (A->Time.ticks == TICKS_UNLIMITED) {
 						A->Time.timer = NULL;
@@ -223,7 +223,7 @@ void _k_do_event_signal(kevent_t event)
 #endif
 		A->Time.rcode = RC_OK;
 
-		reset_state_bit(A->Ctxt.proc, TF_EVNT);
+		_k_state_bit_reset(A->Ctxt.proc, TF_EVNT);
 		E->waiter = NULL;
 		E->status = 0;
 	}

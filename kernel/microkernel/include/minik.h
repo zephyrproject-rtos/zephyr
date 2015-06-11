@@ -80,8 +80,8 @@ extern void _k_timer_list_update(int ticks);
 
 extern void _k_do_event_signal(kevent_t event);
 
-extern void set_state_bit(struct k_proc *, uint32_t);
-extern void reset_state_bit(struct k_proc *, uint32_t);
+extern void _k_state_bit_set(struct k_proc *, uint32_t);
+extern void _k_state_bit_reset(struct k_proc *, uint32_t);
 extern void _k_task_call(struct k_args *);
 
 /*
