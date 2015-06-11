@@ -199,7 +199,7 @@ void load_store_low(void)
 	 * periodically.
 	 */
 
-	scheduler_time_slice_set(1, 10);
+	sys_scheduler_time_slice_set(1, 10);
 #endif /*  CONFIG_NANOKERNEL */
 
 	/*

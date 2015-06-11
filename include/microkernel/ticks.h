@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-extern void scheduler_time_slice_set(int32_t t, kpriority_t p);
+extern void sys_scheduler_time_slice_set(int32_t t, kpriority_t p);
 
 extern uint32_t task_cycle_get_32(void);
 extern int32_t task_tick_get_32(void);

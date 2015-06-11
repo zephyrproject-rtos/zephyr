@@ -82,7 +82,7 @@ program interfaces see the application program interfaces documentation.
 +----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | **Call**                                                             | **Description**                                                                                                                     |
 +----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`scheduler_time_slice_set()`                                 | Specifies the time slice period for round\-robin task scheduling.                                                                   |
+| :c:func:`sys_scheduler_time_slice_set()`                             | Specifies the time slice period for round\-robin task scheduling.                                                                   |
 +----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
 | :c:func:`task_abort()`                                               | Aborts a task.                                                                                                                      |
 +----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
@@ -269,7 +269,7 @@ handler function immediately.
 Time-Slicing
 ------------
 
-Time-slicing, enabled through the :c:func:`scheduler_time_slice_set()`
+Time-slicing, enabled through the :c:func:`sys_scheduler_time_slice_set()`
 function, can share a processor between multiple tasks with the same
 priority. When enabled, the kernel preempts a task that has run for a
 certain amount of time, the time slice, and schedules another runnable

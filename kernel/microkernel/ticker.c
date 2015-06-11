@@ -257,7 +257,7 @@ int _k_ticker(int event)
 
 /*******************************************************************************
 *
-* scheduler_time_slice_set - set time slicing period and scope
+* sys_scheduler_time_slice_set - set time slicing period and scope
 *
 * This routine controls how task time slicing is performed by the task
 * scheduler, by specifying the maximum time slice length (in ticks) and
@@ -284,10 +284,7 @@ int _k_ticker(int event)
 * RETURNS: N/A
 */
 
-void scheduler_time_slice_set(int32_t t, /* time slice in ticks */
-				kpriority_t p   /* beginning priority level to which
-					    time slicing applies */
-				)
+void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
 {
 	slice_time = t;
 	slice_prio = p;

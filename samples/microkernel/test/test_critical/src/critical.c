@@ -148,7 +148,7 @@ void RegressionTask(void)
 
 	TC_PRINT("Enabling time slicing ...\n");
 
-	scheduler_time_slice_set(1, 10);
+	sys_scheduler_time_slice_set(1, 10);
 
 	task_sem_give(ALT_SEM);      /* Re-activate AlternateTask() */
 
