@@ -277,6 +277,17 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 	return len;
 }
 
+int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
+			  const struct bt_gatt_attr *attr, void *buf,
+			  uint8_t len, uint16_t offset)
+{
+	struct bt_gatt_cep *value = attr->user_data;
+	uint16_t props = sys_cpu_to_le16(value->properties);
+
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, &props,
+				 sizeof(props));
+}
+
 struct notify_data {
 	uint8_t handle;
 	const void *data;

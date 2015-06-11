@@ -512,6 +512,43 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 					       .cfg_changed = _cfg_changed, }),\
 }
 
+/*! @brief Read Characteristic Extended Properties Attribute helper
+ *
+ *  Read CEP attribute value storing the result into buffer after
+ *  enconding it.
+ *  NOTE: Only use this with attributes which user_data is a bt_gatt_cep.
+ *
+ *  @param peer remote address
+ *  @param attr attribute to read
+ *  @param buf buffer to store the value read
+ *  @param len buffer length
+ *  @param offset start offset
+ *
+ *  @return number of bytes read in case of success or negative values in
+ *  case of error.
+ */
+int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
+			  const struct bt_gatt_attr *attr, void *buf,
+			  uint8_t len, uint16_t offset);
+
+/*! @def BT_GATT_CEP
+ *  @brief Characteristic Extended Properties Declaration Macro.
+ *
+ *  Helper macro to declare a CEP attribute.
+ *
+ *  @param _handle descriptor attribute handle.
+ *  @param _value descriptor attribute value.
+ */
+#define BT_GATT_CEP(_handle, _value)					\
+{									\
+	.handle = _handle,						\
+	.uuid = (&(struct bt_uuid) { .type = BT_UUID_16,		\
+				     .u16 = BT_UUID_GATT_CEP }),	\
+	.perm = BT_GATT_PERM_READ,					\
+	.read = bt_gatt_attr_read_cep,					\
+	.user_data = _value,						\
+}
+
 /*! @def BT_GATT_DESCRIPTOR
  *  @brief Descriptor Declaration Macro.
  *
@@ -531,6 +568,31 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 	.perm = _perm,							\
 	.read = _read,							\
 	.write = _write,						\
+	.user_data = _value,						\
+}
+
+/*! @def BT_GATT_LONG_DESCRIPTOR
+ *  @brief Descriptor Declaration Macro.
+ *
+ *  Helper macro to declare a descriptor attribute.
+ *
+ *  @param _handle descriptor attribute handle.
+ *  @param _value descriptor attribute value.
+ *  @param _perm descriptor attribute access permissions.
+ *  @param _read descriptor attribute read callback.
+ *  @param _write descriptor attribute write callback.
+ *  @param _flush descriptor attribute flush callback.
+ *  @param _value descriptor attribute value.
+ */
+#define BT_GATT_LONG_DESCRIPTOR(_handle, _uuid, _perm, _read, _write, _flush, \
+				_value)					\
+{									\
+	.handle = _handle,						\
+	.uuid = _uuid,							\
+	.perm = _perm,							\
+	.read = _read,							\
+	.write = _write,						\
+	.flush = _flush,						\
 	.user_data = _value,						\
 }
 
