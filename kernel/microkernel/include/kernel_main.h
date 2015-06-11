@@ -44,7 +44,7 @@ typedef void (*taskabortfunction)(void);
 
 /* APIs referenced by generated data structures */
 
-extern int K_ticker(int event);
+extern int _k_ticker(int event);
 
 /* APIs referenced by generated routines */
 

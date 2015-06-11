@@ -494,7 +494,8 @@ def kernel_main_c_events():
     # pre-defined events
     if (num_timers > 0):
         kernel_main_c_out(
-            "    {0, (kevent_handler_t)K_ticker, (struct k_args *)NULL, 0},\n")
+            "    {0, (kevent_handler_t)_k_ticker, " +
+            "(struct k_args *)NULL, 0},\n")
     else:
         kernel_main_c_out(
             "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n")

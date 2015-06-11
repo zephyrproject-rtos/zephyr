@@ -227,7 +227,7 @@ static inline int32_t _SysIdleElapsedTicksGet(void)
 
 /*******************************************************************************
 *
-* K_ticker - microkernel tick handler
+* _k_ticker - microkernel tick handler
 *
 * This routine informs other microkernel subsystems that a tick event has
 * occurred.
@@ -235,7 +235,7 @@ static inline int32_t _SysIdleElapsedTicksGet(void)
 * RETURNS: 1
 */
 
-int K_ticker(int event)
+int _k_ticker(int event)
 {
 	(void)event; /* prevent "unused argument" compiler warning */
 	int32_t ticks;
