@@ -363,6 +363,77 @@ static int write_vnd(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 	return len;
 }
 
+static struct vnd_long_value {
+	/* TODO: buffer needs to be per connection */
+	uint8_t buf[BT_BUF_MAX_DATA];
+	uint8_t data[BT_BUF_MAX_DATA];
+} vnd_long_value = {
+	.buf = { 'V', 'e', 'n', 'd', 'o', 'r' },
+	.data = { 'V', 'e', 'n', 'd', 'o', 'r' },
+};
+
+static int read_long_vnd(const bt_addr_le_t *peer,
+			 const struct bt_gatt_attr *attr, void *buf,
+			 uint8_t len, uint16_t offset)
+{
+	struct vnd_long_value *value = attr->user_data;
+
+	return bt_gatt_attr_read(peer, attr, buf, len, offset, value->data,
+				 sizeof(value->data));
+}
+
+static int write_long_vnd(const bt_addr_le_t *peer,
+			  const struct bt_gatt_attr *attr, const void *buf,
+			  uint8_t len, uint16_t offset)
+{
+	struct vnd_long_value *value = attr->user_data;
+
+	if (offset + len > sizeof(value->buf)) {
+		return -EINVAL;
+	}
+
+	/* Copy to buffer */
+	memcpy(value->buf + offset, buf, len);
+
+	return len;
+}
+
+static int flush_long_vnd(const bt_addr_le_t *peer,
+			  const struct bt_gatt_attr *attr, uint8_t flags)
+{
+	struct vnd_long_value *value = attr->user_data;
+
+	switch (flags) {
+	case BT_GATT_FLUSH_DISCARD:
+		/* Discard buffer reseting it back with data */
+		memcpy(value->buf, value->data, sizeof(value->buf));
+		return 0;
+	case BT_GATT_FLUSH_SYNC:
+		/* Sync buffer to data */
+		memcpy(value->data, value->buf, sizeof(value->data));
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
+static const struct bt_uuid vnd_long_uuid = {
+	.type = BT_UUID_128,
+	.u128 = { 0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12 },
+};
+
+static struct bt_gatt_chrc vnd_long_chrc = {
+	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
+		      BT_GATT_CHRC_EXT_PROP,
+	.value_handle = 0x0021,
+	.uuid = &vnd_long_uuid,
+};
+
+static struct bt_gatt_cep vnd_long_cep = {
+	.properties = BT_GATT_CEP_RELIABLE_WRITE,
+};
+
 static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
@@ -417,6 +488,12 @@ static const struct bt_gatt_attr attrs[] = {
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_AUTHEN |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_AUTHEN,
 			   read_vnd, write_vnd, vnd_value),
+	BT_GATT_CHARACTERISTIC(0x0020, &vnd_long_chrc),
+	BT_GATT_LONG_DESCRIPTOR(0x0021, &vnd_long_uuid,
+			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			   read_long_vnd, write_long_vnd, flush_long_vnd,
+			   &vnd_long_value),
+	BT_GATT_CEP(0x0022, &vnd_long_cep),
 };
 
 static const struct bt_eir ad[] = {
