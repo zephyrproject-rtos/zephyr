@@ -65,6 +65,11 @@ else
 		contiki/mac/framer-nullmac.o ,$(obj-y))
 endif
 
+ifneq ($(CONFIG_NETWORKING_UART),y)
+     obj-y := $(filter-out contiki/os/dev/slip.o \
+		contiki/os/dev/slip-arch.o,$(obj-y))
+endif
+
 # At the moment we only need nullsec driver
 obj-y := $(filter-out contiki/llsec/ccm-star.o \
 		contiki/llsec/ccm-star.o \
