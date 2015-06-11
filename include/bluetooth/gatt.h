@@ -190,13 +190,13 @@ struct bt_gatt_chrc {
 };
 
 /* Characteristic Extended Properties Bitfield values */
-#define BT_GATT_CEP_RELIABLE_WRITE		0x01
-#define BT_GATT_CEP_WRITABLE_AUX		0x02
+#define BT_GATT_CEP_RELIABLE_WRITE		0x0001
+#define BT_GATT_CEP_WRITABLE_AUX		0x0002
 
 /*! @brief Characteristic Extended Properties Attribute Value. */
 struct bt_gatt_cep {
-	/*! Characteristic Extended properties. */
-	uint8_t			properties;
+	/*! Characteristic Extended properties */
+	uint16_t		properties;
 };
 
 /* @brief Characteristic User Description Attribute Value. */
