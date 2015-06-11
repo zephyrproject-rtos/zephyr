@@ -65,7 +65,7 @@ static inline int32_t task_tick_delta_32(int64_t *reftime)
 
 extern void task_sleep(int32_t ticks);
 extern int task_workload_get(void);
-extern void workload_time_slice_set(int32_t t);
+extern void sys_workload_time_slice_set(int32_t t);
 
 #define isr_cycle_get_32() task_cycle_get_32()
 #define isr_tick_get_32() task_tick_get_32()

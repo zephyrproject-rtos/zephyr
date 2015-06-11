@@ -235,7 +235,7 @@ void _k_workload_get(struct k_args *P)
 * This routine returns the workload as a number ranging from 0 to 1000.
 *
 * Each unit equals 0.1% of the time the idle task was not scheduled by the
-* microkernel during the period set by workload_time_slice_set().
+* microkernel during the period set by sys_workload_time_slice_set().
 *
 * IMPORTANT: This workload monitor ignores any time spent servicing ISRs and
 * fibers! Thus, a system which has no meaningful task work to do may spend
@@ -256,14 +256,14 @@ int task_workload_get(void)
 
 /*******************************************************************************
 *
-* workload_time_slice_set - set workload period
+* sys_workload_time_slice_set - set workload period
 *
 * This routine specifies the workload measuring period for task_workload_get().
 *
 * RETURNS: N/A
 */
 
-void workload_time_slice_set(int32_t t)
+void sys_workload_time_slice_set(int32_t t)
 {
 #ifdef CONFIG_WORKLOAD_MONITOR
 	if (t < 10) {
