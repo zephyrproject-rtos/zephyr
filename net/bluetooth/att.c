@@ -1023,6 +1023,7 @@ static uint8_t att_exec_write_rsp(struct bt_conn *conn, uint8_t flags)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
+	data.conn = conn;
 	data.flags = flags;
 
 	/* Apply to the whole database */
