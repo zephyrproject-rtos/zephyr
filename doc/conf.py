@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Tiny Mountain documentation build configuration file, created by
+# Zephyr documentation build configuration file, created by
 # sphinx-quickstart on Fri May  8 11:43:01 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -30,7 +30,7 @@ import shlex
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc', 'breathe',
+    'sphinx.ext.autodoc', 'breathe', 'sphinx.ext.todo'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -48,7 +48,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Tiny Mountain'
+project = u'Zephyr Project'
 copyright = u'2015, many'
 author = u'many'
 
@@ -103,7 +103,11 @@ pygments_style = 'sphinx'
 #keep_warnings = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = True
+
+rst_epilog = """
+.. include:: /substitutions.rst
+"""
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -202,7 +206,7 @@ html_last_updated_fmt = '%b %d, %Y'
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Tiny Mountaindoc'
+htmlhelp_basename = 'zephyrdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -224,7 +228,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'tiny_mountain.tex', u'Tiny Mountain Documentation',
+  (master_doc, 'zephyr.tex', u'Zephyr Project Documentation',
    u'many', 'manual'),
 ]
 
@@ -254,7 +258,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'tiny_mountain', u'Tiny Mountain Documentation',
+    (master_doc, 'zephyr', u'Zephyr Project Documentation',
      [author], 1)
 ]
 
@@ -268,8 +272,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'tiny_mountain', u'Tiny Mountain Documentation',
-   author, 'Tiny Mountain', 'One line description of project.',
+  (master_doc, 'zephyr', u'Zephyr Project Documentation',
+   author, 'Zephyr', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -286,7 +290,7 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 breathe_projects = {
-    "Tiny Mountain": "xml",
+    "Zephyr": "xml",
     "doc-examples": "xml"
 }
-breathe_default_project = "Tiny Mountain"
+breathe_default_project = "Zephyr"
