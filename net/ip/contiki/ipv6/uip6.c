@@ -1287,8 +1287,10 @@ uip_process(struct net_buf *buf, uint8_t flag)
   uip_ext_bitmap(buf) = 0;
 #endif /* UIP_CONF_ROUTER */
 
+#if UIP_CONF_ROUTER
 #if UIP_CONF_IPV6_MULTICAST
   process:
+#endif
 #endif
 
   while(1) {
