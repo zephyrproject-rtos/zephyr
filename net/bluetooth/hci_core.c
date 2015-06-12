@@ -1384,3 +1384,20 @@ int bt_connect_le(const bt_addr_le_t *peer)
 {
 	return hci_le_create_conn(peer);
 }
+
+int bt_disconnect(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_buf *buf;
+	struct bt_hci_cp_disconnect *disconn;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	disconn = bt_buf_add(buf, sizeof(*disconn));
+	disconn->handle = sys_cpu_to_le16(conn->handle);
+	disconn->reason = reason;
+
+	return bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
+}

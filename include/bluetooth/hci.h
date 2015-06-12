@@ -97,12 +97,19 @@ struct bt_hci_cmd_hdr {
 #define BT_HCI_LE_ENCRYPTION			0x01
 
 /* OpCode Group Fields */
+#define BT_OGF_LINK_CTRL			0x01
 #define BT_OGF_BASEBAND				0x03
 #define BT_OGF_INFO				0x04
 #define BT_OGF_LE				0x08
 
 /* Construct OpCode from OGF and OCF */
 #define BT_OP(ogf, ocf)				((ocf) | ((ogf) << 10))
+
+#define BT_HCI_OP_DISCONNECT			BT_OP(BT_OGF_LINK_CTRL, 0x0006)
+struct bt_hci_cp_disconnect {
+	uint16_t handle;
+	uint8_t  reason;
+} __packed;
 
 #define BT_HCI_OP_SET_EVENT_MASK		BT_OP(BT_OGF_BASEBAND, 0x0001)
 struct bt_hci_cp_set_event_mask {

@@ -34,6 +34,7 @@
 
 #include <stdio.h>
 #include <bluetooth/buf.h>
+#include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 
 /* Bluetooth subsystem logging helpers */
@@ -120,5 +121,6 @@ int bt_stop_scanning();
  *  @return zero in success or error code otherwise.
  */
 int bt_connect_le(const bt_addr_le_t *peer);
+int bt_disconnect(struct bt_conn *conn, uint8_t reason);
 
 #endif /* __BT_BLUETOOTH_H */
