@@ -903,7 +903,7 @@ ext_hdr_options_process(struct net_buf *buf)
 		 */
 #if UIP_CONF_IPV6_RPL
         PRINTF("Processing RPL option\n");
-        if(rpl_verify_header(uip_ext_opt_offset(buf))) {
+        if(rpl_verify_header(buf, uip_ext_opt_offset(buf))) {
           PRINTF("RPL Option Error: Dropping Packet\n");
           return 1;
         }
@@ -1605,7 +1605,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
 #endif /* UIP_UDP_CHECKSUMS */
 
 #if UIP_CONF_IPV6_RPL
-  rpl_insert_header();
+  rpl_insert_header(buf);
 #endif /* UIP_CONF_IPV6_RPL */
 
   UIP_STAT(++uip_stat.udp.sent);

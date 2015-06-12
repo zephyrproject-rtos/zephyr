@@ -1741,7 +1741,7 @@ typedef struct uip_ext_hdr {
 typedef struct uip_hbho_hdr {
   uint8_t next;
   uint8_t len;
-} uip_hbho_hdr;
+} PACK_ALIAS_STRUCT uip_hbho_hdr;
 
 /* destination option header */
 typedef struct uip_desto_hdr {
@@ -1796,7 +1796,7 @@ typedef struct uip_ext_hdr_opt_rpl {
   uint8_t flags;
   uint8_t instance;
   uint16_t senderrank;
-} uip_ext_hdr_opt_rpl;
+} PACK_ALIAS_STRUCT uip_ext_hdr_opt_rpl;
 
 /* TCP header */
 struct uip_tcp_hdr {

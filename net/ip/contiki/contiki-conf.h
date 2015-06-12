@@ -52,6 +52,11 @@ typedef unsigned int uip_stats_t;
 #endif
 #define NETSTACK_CONF_LLSEC	nullsec_driver
 
+#ifdef CONFIG_NETWORKING_WITH_RPL
+#define UIP_MCAST6_CONF_ENGINE UIP_MCAST6_ENGINE_SMRF
+#define UIP_CONF_IPV6_MULTICAST 1
+#endif
+
 #ifndef NETSTACK_CONF_RADIO
 /* #error "No radio configured, cannot continue!" */
 #endif

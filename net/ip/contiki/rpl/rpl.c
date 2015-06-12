@@ -59,6 +59,12 @@
 rpl_stats_t rpl_stats;
 #endif
 
+static struct net_buf netbuf;
+struct net_buf *rpl_get_netbuf(void)
+{
+  return &netbuf;
+}
+
 static enum rpl_mode mode = RPL_MODE_MESH;
 /*---------------------------------------------------------------------------*/
 enum rpl_mode
@@ -68,7 +74,7 @@ rpl_get_mode(void)
 }
 /*---------------------------------------------------------------------------*/
 enum rpl_mode
-rpl_set_mode(enum rpl_mode m)
+rpl_set_mode(struct net_buf *buf, enum rpl_mode m)
 {
   enum rpl_mode oldmode = mode;
 
@@ -84,7 +90,7 @@ rpl_set_mode(enum rpl_mode m)
     mode = m;
 
     if(default_instance != NULL) {
-      rpl_schedule_dao_immediately(default_instance);
+      rpl_schedule_dao_immediately(buf, default_instance);
     }
   } else if(m == RPL_MODE_FEATHER) {
 
@@ -102,7 +108,7 @@ rpl_set_mode(enum rpl_mode m)
 }
 /*---------------------------------------------------------------------------*/
 void
-rpl_purge_routes(void)
+rpl_purge_routes(struct net_buf *buf)
 {
   uip_ds6_route_t *r;
   uip_ipaddr_t prefix;
@@ -142,7 +148,7 @@ rpl_purge_routes(void)
       /* Propagate this information with a No-Path DAO to preferred parent if we are not a RPL Root */
       if(dag->rank != ROOT_RANK(default_instance)) {
         PRINTF(" -> generate No-Path DAO\n");
-        dao_output_target(dag->preferred_parent, &prefix, RPL_ZERO_LIFETIME);
+        dao_output_target(buf, dag->preferred_parent, &prefix, RPL_ZERO_LIFETIME);
         /* Don't schedule more than 1 No-Path DAO, let next iteration handle that */
         return;
       }
@@ -300,7 +306,7 @@ rpl_init(void)
   default_instance = NULL;
 
   rpl_dag_init();
-  rpl_reset_periodic_timer();
+  rpl_reset_periodic_timer(rpl_get_netbuf());
   rpl_icmp6_register_handlers();
 
   /* add rpl multicast address */

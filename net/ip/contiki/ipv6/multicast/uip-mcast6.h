@@ -59,6 +59,8 @@
 #ifndef UIP_MCAST6_H_
 #define UIP_MCAST6_H_
 
+#include <net/net_buf.h>
+
 #include "contiki-conf.h"
 #include "net/ipv6/multicast/uip-mcast6-engines.h"
 #include "net/ipv6/multicast/uip-mcast6-route.h"
@@ -134,7 +136,7 @@ struct uip_mcast6_driver {
    *        return value whether the datagram needs delivered up the network
    *        stack.
    */
-  uint8_t (* in)(void);
+  uint8_t (* in)(struct net_buf *buf);
 };
 /*---------------------------------------------------------------------------*/
 /**

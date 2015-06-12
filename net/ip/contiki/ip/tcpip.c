@@ -641,7 +641,7 @@ tcpip_ipv6_output(struct net_buf *buf)
           if(dag != NULL) {
             instance = dag->instance;
 
-            rpl_repair_root(instance->instance_id);
+            rpl_repair_root(buf, instance->instance_id);
           }
 #endif /* UIP_CONF_IPV6_RPL */
           uip_ds6_route_rm(route);
@@ -669,7 +669,7 @@ tcpip_ipv6_output(struct net_buf *buf)
     /* End of next hop determination */
 
 #if UIP_CONF_IPV6_RPL
-    if(rpl_update_header_final(nexthop)) {
+    if(rpl_update_header_final(buf, nexthop)) {
       uip_len(buf) = 0;
       return 0;
     }

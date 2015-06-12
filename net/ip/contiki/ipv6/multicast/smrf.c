@@ -41,6 +41,8 @@
  *    George Oikonomou - <oikonomou@users.sourceforge.net>
  */
 
+#include <net/net_buf.h>
+
 #include "contiki.h"
 #include "contiki-net.h"
 #include "net/ipv6/multicast/uip-mcast6.h"
@@ -49,6 +51,7 @@
 #include "net/ipv6/multicast/smrf.h"
 #include "net/rpl/rpl.h"
 #include "net/netstack.h"
+#include "contiki/os/lib/random.h"
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
@@ -65,27 +68,27 @@
 /* Internal Data */
 /*---------------------------------------------------------------------------*/
 static struct ctimer mcast_periodic;
-static uint8_t mcast_len;
-static uip_buf_t mcast_buf;
+static struct net_buf netbuf;
 static uint8_t fwd_delay;
 static uint8_t fwd_spread;
+
 /*---------------------------------------------------------------------------*/
 /* uIPv6 Pointers */
 /*---------------------------------------------------------------------------*/
-#define UIP_IP_BUF        ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
+#define UIP_IP_BUF(buf)        ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
 /*---------------------------------------------------------------------------*/
 static void
-mcast_fwd(void *p)
+mcast_fwd(struct net_mbuf *mbuf, void *p)
 {
-  memcpy(uip_buf, &mcast_buf, mcast_len);
-  uip_len = mcast_len;
-  UIP_IP_BUF->ttl--;
-  tcpip_output(NULL);
-  uip_len = 0;
+  struct net_buf *buf = (struct net_buf *)mbuf;
+
+  UIP_IP_BUF(buf)->ttl--;
+  tcpip_output(buf, NULL);
+  uip_len(buf) = 0;
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-in()
+in(struct net_buf *buf)
 {
   rpl_dag_t *d;                 /* Our DODAG */
   uip_ipaddr_t *parent_ipaddr;  /* Our pref. parent's IPv6 address */
@@ -118,14 +121,14 @@ in()
    * We accept a datagram if it arrived from our preferred parent, discard
    * otherwise.
    */
-  if(memcmp(parent_lladdr, packetbuf_addr(PACKETBUF_ADDR_SENDER),
+  if(memcmp(parent_lladdr, &buf->src,
             UIP_LLADDR_LEN)) {
     PRINTF("SMRF: Routable in but SMRF ignored it\n");
     UIP_MCAST6_STATS_ADD(mcast_dropped);
     return UIP_MCAST6_DROP;
   }
 
-  if(UIP_IP_BUF->ttl <= 1) {
+  if(UIP_IP_BUF(buf)->ttl <= 1) {
     UIP_MCAST6_STATS_ADD(mcast_dropped);
     return UIP_MCAST6_DROP;
   }
@@ -135,7 +138,7 @@ in()
 
   /* If we have an entry in the mcast routing table, something with
    * a higher RPL rank (somewhere down the tree) is a group member */
-  if(uip_mcast6_route_lookup(&UIP_IP_BUF->destipaddr)) {
+  if(uip_mcast6_route_lookup(&UIP_IP_BUF(buf)->destipaddr)) {
     /* If we enter here, we will definitely forward */
     UIP_MCAST6_STATS_ADD(mcast_fwd);
 
@@ -155,9 +158,9 @@ in()
 
     if(fwd_delay == 0) {
       /* No delay required, send it, do it now, why wait? */
-      UIP_IP_BUF->ttl--;
-      tcpip_output(NULL);
-      UIP_IP_BUF->ttl++;        /* Restore before potential upstack delivery */
+      UIP_IP_BUF(buf)->ttl--;
+      tcpip_output(buf, NULL);
+      UIP_IP_BUF(buf)->ttl++;        /* Restore before potential upstack delivery */
     } else {
       /* Randomise final delay in [D , D*Spread], step D */
       fwd_spread = SMRF_INTERVAL_COUNT;
@@ -168,16 +171,15 @@ in()
         fwd_delay = fwd_delay * (1 + ((random_rand() >> 11) % fwd_spread));
       }
 
-      memcpy(&mcast_buf, uip_buf, uip_len);
-      mcast_len = uip_len;
-      ctimer_set(&mcast_periodic, fwd_delay, mcast_fwd, NULL);
+      memcpy(&netbuf, buf, sizeof(*buf));
+      ctimer_set((struct net_mbuf *)&netbuf, &mcast_periodic, fwd_delay, mcast_fwd, NULL);
     }
     PRINTF("SMRF: %u bytes: fwd in %u [%u]\n",
-           uip_len, fwd_delay, fwd_spread);
+           uip_len(buf), fwd_delay, fwd_spread);
   }
 
   /* Done with this packet unless we are a member of the mcast group */
-  if(!uip_ds6_is_my_maddr(&UIP_IP_BUF->destipaddr)) {
+  if(!uip_ds6_is_my_maddr(&UIP_IP_BUF(buf)->destipaddr)) {
     PRINTF("SMRF: Not a group member. No further processing\n");
     return UIP_MCAST6_DROP;
   } else {

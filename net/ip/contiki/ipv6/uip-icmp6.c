@@ -155,7 +155,7 @@ echo_request_input(struct net_buf *buf)
 
   if(uip_ext_len(buf) > 0) {
 #if UIP_CONF_IPV6_RPL
-    if((temp_ext_len = rpl_invert_header())) {
+    if((temp_ext_len = rpl_invert_header(buf))) {
       /* If there were other extension headers*/
       UIP_FIRST_EXT_BUF(buf)->next = UIP_PROTO_ICMP6;
       if (uip_ext_len(buf) != temp_ext_len) {
@@ -230,7 +230,7 @@ uip_icmp6_error_output(struct net_buf *buf, uint8_t type, uint8_t code, uint32_t
   }
 
 #if UIP_CONF_IPV6_RPL
-  uip_ext_len(buf) = rpl_invert_header();
+  uip_ext_len(buf) = rpl_invert_header(buf);
 #else /* UIP_CONF_IPV6_RPL */
   uip_ext_len(buf) = 0;
 #endif /* UIP_CONF_IPV6_RPL */
@@ -339,7 +339,7 @@ echo_reply_input(struct net_buf *buf)
 
   if(uip_ext_len(buf) > 0) {
 #if UIP_CONF_IPV6_RPL
-    if((temp_ext_len = rpl_invert_header())) {
+    if((temp_ext_len = rpl_invert_header(buf))) {
       /* If there were other extension headers*/
       UIP_FIRST_EXT_BUF(buf)->next = UIP_PROTO_ICMP6;
       if (uip_ext_len(buf) != temp_ext_len) {

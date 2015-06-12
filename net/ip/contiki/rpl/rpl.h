@@ -38,6 +38,8 @@
 #ifndef RPL_H
 #define RPL_H
 
+#include <net/net_buf.h>
+
 #include "rpl-conf.h"
 
 #include "lib/list.h"
@@ -233,18 +235,18 @@ struct rpl_instance {
 /* Public RPL functions. */
 void rpl_init(void);
 void uip_rpl_input(void);
-rpl_dag_t *rpl_set_root(uint8_t instance_id, uip_ipaddr_t *dag_id);
+rpl_dag_t *rpl_set_root(struct net_buf *buf, uint8_t instance_id, uip_ipaddr_t *dag_id);
 int rpl_set_prefix(rpl_dag_t *dag, uip_ipaddr_t *prefix, unsigned len);
-int rpl_repair_root(uint8_t instance_id);
+int rpl_repair_root(struct net_buf *buf, uint8_t instance_id);
 int rpl_set_default_route(rpl_instance_t *instance, uip_ipaddr_t *from);
 rpl_dag_t *rpl_get_any_dag(void);
 rpl_instance_t *rpl_get_instance(uint8_t instance_id);
-int rpl_update_header_empty(void);
-int rpl_update_header_final(uip_ipaddr_t *addr);
-int rpl_verify_header(int);
-void rpl_insert_header(void);
-void rpl_remove_header(void);
-uint8_t rpl_invert_header(void);
+int rpl_update_header_empty(struct net_buf *buf);
+int rpl_update_header_final(struct net_buf *buf, uip_ipaddr_t *addr);
+int rpl_verify_header(struct net_buf *buf, int);
+void rpl_insert_header(struct net_buf *buf);
+void rpl_remove_header(struct net_buf *buf);
+uint8_t rpl_invert_header(struct net_buf *buf);
 uip_ipaddr_t *rpl_get_parent_ipaddr(rpl_parent_t *nbr);
 rpl_parent_t *rpl_get_parent(uip_lladdr_t *addr);
 rpl_rank_t rpl_get_parent_rank(uip_lladdr_t *addr);
@@ -274,7 +276,7 @@ enum rpl_mode {
  * \param mode The new RPL mode
  * \retval The previous RPL mode
  */
-enum rpl_mode rpl_set_mode(enum rpl_mode mode);
+enum rpl_mode rpl_set_mode(struct net_buf *buf, enum rpl_mode mode);
 
 /**
  * Get the RPL mode
