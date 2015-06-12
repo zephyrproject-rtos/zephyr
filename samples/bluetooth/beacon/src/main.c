@@ -37,6 +37,7 @@
 #include "bluetooth/bluetooth.h"
 #include "bluetooth/hci.h"
 
+/* Set Advertisement data */
 static const struct bt_eir ad[] = {
 	{
 		.len = 3,
@@ -52,6 +53,7 @@ static const struct bt_eir ad[] = {
 	{ }
 };
 
+/* Set Scan Response data */
 static const struct bt_eir sd[] = {
 	{
 		.len = 12,
@@ -69,6 +71,7 @@ void main(void)
 {
 	int err;
 
+	/* Initialize the Bluetooth Subsystem */
 	err = bt_init();
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
@@ -77,6 +80,7 @@ void main(void)
 
 	printk("Bluetooth initialized\n");
 
+	/* Start advertising */
 	err = bt_start_advertising(BT_LE_ADV_SCAN_IND, ad, sd);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
