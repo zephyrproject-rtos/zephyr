@@ -57,6 +57,9 @@
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
 
+#define BT_L2CAP_CONN_PARAM_ACCEPTED 0
+#define BT_L2CAP_CONN_PARAM_REJECTED 1
+
 static struct bt_l2cap_chan *channels;
 
 static uint8_t get_ident(struct bt_conn *conn)
@@ -166,6 +169,77 @@ static void le_conn_param_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	BT_DBG("LE conn param rsp result %u\n", sys_le16_to_cpu(rsp->result));
 }
 
+static uint16_t le_validate_conn_params(uint16_t min, uint16_t max, uint16_t latency,
+				   uint16_t timeout)
+{
+	uint16_t max_latency;
+
+	if (min > max || min < 6 || max > 3200) {
+		return BT_L2CAP_CONN_PARAM_REJECTED;
+	}
+
+	if (timeout < 10 || timeout > 3200) {
+		return BT_L2CAP_CONN_PARAM_REJECTED;
+	}
+
+	/* calculation based on BT spec 4.2 [Vol3, PartA, 4.20]
+	 * max_latency = ((timeout * 4)/(max * 1.25 * 2)) - 1;
+	 */
+	max_latency = (timeout * 4 / max) - 1;
+	if (latency > 499 || latency > max_latency) {
+		return BT_L2CAP_CONN_PARAM_REJECTED;
+	}
+
+	return BT_L2CAP_CONN_PARAM_ACCEPTED;
+}
+
+static void le_conn_param_update_req(struct bt_conn *conn, uint8_t ident,
+				     struct bt_buf *buf)
+{
+	uint16_t min, max, latency, timeout, result;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct bt_l2cap_conn_param_rsp *rsp;
+	struct bt_l2cap_conn_param_req *req = (void *)buf->data;
+
+	if (buf->len < sizeof(*req)) {
+		BT_ERR("Too small LE conn update param req\n");
+		return;
+	}
+
+	if (conn->role != BT_HCI_ROLE_MASTER) {
+		return;
+	}
+
+	min = sys_le16_to_cpu(req->min_interval);
+	max = sys_le16_to_cpu(req->max_interval);
+	latency = sys_le16_to_cpu(req->latency);
+	timeout = sys_le16_to_cpu(req->timeout);
+
+	BT_DBG("min 0x%4.4x max 0x%4.4x latency: 0x%4.4x timeout: 0x%4.4x",
+	       min, max, latency, timeout);
+
+	buf = bt_l2cap_create_pdu(conn);
+	if (!buf) {
+		return;
+	}
+
+	result = le_validate_conn_params(min, max, latency, timeout);
+
+	hdr = bt_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_CONN_PARAM_RSP;
+	hdr->ident = ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
+
+	rsp = bt_buf_add(buf, sizeof(*rsp));
+	memset(rsp, 0, sizeof(*rsp));
+	rsp->result = sys_cpu_to_le16(result);
+	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+
+	if (result == BT_L2CAP_CONN_PARAM_ACCEPTED) {
+		bt_hci_le_conn_update(conn->handle, min, max, latency, timeout);
+	}
+}
+
 static void le_sig(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_l2cap_sig_hdr *hdr = (void *)buf->data;
@@ -195,6 +269,9 @@ static void le_sig(struct bt_conn *conn, struct bt_buf *buf)
 	switch (hdr->code) {
 	case BT_L2CAP_CONN_PARAM_RSP:
 		le_conn_param_rsp(conn, buf);
+		break;
+	case BT_L2CAP_CONN_PARAM_REQ:
+		le_conn_param_update_req(conn, hdr->ident, buf);
 		break;
 	default:
 		BT_WARN("Unknown L2CAP PDU code 0x%02x\n", hdr->code);

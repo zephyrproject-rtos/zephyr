@@ -1363,6 +1363,28 @@ int bt_stop_scanning(void)
 	return 0;
 }
 
+int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
+			  uint16_t latency, uint16_t timeout)
+{
+	struct hci_cp_le_conn_update *conn_update;
+	struct bt_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE, sizeof(*conn_update));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	conn_update = bt_buf_add(buf, sizeof(*conn_update));
+	memset(conn_update, 0, sizeof(*conn_update));
+	conn_update->handle = sys_cpu_to_le16(handle);
+	conn_update->conn_interval_min = sys_cpu_to_le16(min);
+	conn_update->conn_interval_max = sys_cpu_to_le16(max);
+	conn_update->conn_latency = sys_cpu_to_le16(latency);
+	conn_update->supervision_timeout = sys_cpu_to_le16(timeout);
+
+	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
+}
+
 static int hci_le_create_conn(const bt_addr_le_t *addr)
 {
 	struct bt_buf *buf;

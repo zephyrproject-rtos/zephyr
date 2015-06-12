@@ -271,6 +271,17 @@ struct bt_hci_cp_le_create_conn {
 	uint16_t     max_ce_len;
 } __packed;
 
+#define BT_HCI_OP_LE_CONN_UPDATE		BT_OP(BT_OGF_LE, 0x0013)
+struct hci_cp_le_conn_update {
+	uint16_t handle;
+	uint16_t conn_interval_min;
+	uint16_t conn_interval_max;
+	uint16_t conn_latency;
+	uint16_t supervision_timeout;
+	uint16_t min_ce_len;
+	uint16_t max_ce_len;
+} __packed;
+
 #define BT_HCI_OP_LE_ENCRYPT			BT_OP(BT_OGF_LE, 0x0017)
 struct bt_hci_cp_le_encrypt {
 	uint8_t  key[16];
