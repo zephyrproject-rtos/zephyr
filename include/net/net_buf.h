@@ -84,6 +84,7 @@ struct net_buf {
 	void *uip_conn;
 	void *uip_udp_conn;
 	linkaddr_t dest;
+	linkaddr_t src;
 
 	/* Neighbor discovery vars */
 	void *nd6_opt_prefix_info;
