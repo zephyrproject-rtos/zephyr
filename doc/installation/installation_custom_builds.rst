@@ -122,6 +122,7 @@ Follow these steps to enable a customized build of QEMU:
 #. Clone the QEMU repository, type:
 
 .. code-block:: bash
+
    $ git clone git://git.qemu-project.org/qemu.git
 
 #. Checkout the v2.1 stable branch, type:
