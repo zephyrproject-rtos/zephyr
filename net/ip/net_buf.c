@@ -178,9 +178,6 @@ struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head)
 		return NULL;
 	}
 
-	buf->data = buf->buf + reserve_head;
-	buf->len = 0;
-
 	NET_DBG("buf %p reserve %u\n", buf, reserve_head);
 
 	return buf;
@@ -191,26 +188,6 @@ void net_mbuf_put(struct net_mbuf *buf)
 	NET_DBG("buf %p\n", buf);
 
 	nano_fifo_put(&free_mbufs, buf);
-}
-
-uint8_t *net_mbuf_add(struct net_mbuf *buf, uint16_t len)
-{
-	uint8_t *tail = buf->data + buf->len;
-	buf->len += len;
-	return tail;
-}
-
-uint8_t *net_mbuf_push(struct net_mbuf *buf, uint16_t len)
-{
-	buf->data -= len;
-	buf->len += len;
-	return buf->data;
-}
-
-uint8_t *net_mbuf_pull(struct net_mbuf *buf, uint16_t len)
-{
-	buf->len -= len;
-	return buf->data += len;
 }
 
 static void net_mbuf_init(void)

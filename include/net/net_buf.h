@@ -275,11 +275,6 @@ struct net_mbuf {
 	uint8_t pkt_packetbuf[PACKETBUF_SIZE + PACKETBUF_HDR_SIZE];
 	uint8_t *pkt_packetbufptr;
 	/* @endcond */
-
-	/*! Buffer data variables */
-	uint16_t len;
-	uint8_t *data;                 /* this points to user data */
-	uint8_t buf[NET_MAC_BUF_MAX_SIZE];
 };
 
 /*!
@@ -305,54 +300,6 @@ struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head);
  * @param buf Network buffer to release.
  */
 void net_mbuf_put(struct net_mbuf *buf);
-
-/*!
- * @brief Prepare data to be added at the end of the buffer.
- *
- * @details Move the tail pointer forward.
- *
- * @param buf Network buffer.
- * @param len Size of data to be added.
- *
- * @return Pointer to new tail.
- */
-uint8_t *net_mbuf_add(struct net_mbuf *buf, uint16_t len);
-
-/*!
- * @brief Push data to the beginning of the buffer.
- *
- * @details Move the data pointer backwards.
- *
- * @param buf Network buffer.
- * @param len Size of data to be added.
- *
- * @return Pointer to new head.
- */
-uint8_t *net_mbuf_push(struct net_mbuf *buf, uint16_t len);
-
-/*!
- * @brief Remove data from the beginning of the buffer.
- *
- * @details Move the data pointer forward.
- *
- * @param buf Network buffer.
- * @param len Size of data to be removed.
- *
- * @return Pointer to new head.
- */
-uint8_t *net_mbuf_pull(struct net_mbuf *buf, uint16_t len);
-
-/*! @def net_buf_tail
- *
- * @brief Return pointer to the end of the data in the buffer.
- *
- * @details This macro returns the tail of the buffer.
- *
- * @param buf Network buffer.
- *
- * @return Pointer to tail.
- */
-#define net_mbuf_tail(buf) ((buf)->data + (buf)->len)
 
 /*! @cond ignore */
 #define uip_packetbuf_ptr(buf) ((buf)->packetbuf_ptr)

@@ -101,6 +101,12 @@ void uip_log(char *msg);
 #define sicslowpan_buf uip_buf
 #define sicslowpan_len uip_len
 
+#ifdef SICSLOWPAN_CONF_MAX_MAC_TRANSMISSIONS
+#define SICSLOWPAN_MAX_MAC_TRANSMISSIONS SICSLOWPAN_CONF_MAX_MAC_TRANSMISSIONS
+#else
+#define SICSLOWPAN_MAX_MAC_TRANSMISSIONS 4
+#endif
+
 /** \brief Maximum available size for frame headers,
            link layer security-related overhead, as well as
            6LoWPAN payload. */
@@ -113,18 +119,6 @@ void uip_log(char *msg);
 /** \name Fragmentation related variables
  *  @{
  */
-//static uint16_t sicslowpan_len;
-
-/**
- * The buffer used for the 6lowpan reassembly.
- * This buffer contains only the IPv6 packet (no MAC header, 6lowpan, etc).
- * It has a fix size as we do not use dynamic memory allocation.
- */
-//static uip_buf_t sicslowpan_aligned_buf;
-//#define sicslowpan_buf (sicslowpan_aligned_buf.u8)
-
-/** The total length of the IPv6 packet in the sicslowpan_buf. */
-
 /**
  * length of the ip packet already sent / received.
  * It includes IP and transport headers.
@@ -239,6 +233,9 @@ static int fragment(struct net_buf *buf, void *ptr)
     uip_packetbuf_hdr_len(mbuf) = 0;
     packetbuf_clear(mbuf);
     uip_packetbuf_ptr(mbuf) = packetbuf_dataptr(mbuf);
+
+    packetbuf_set_attr(mbuf, PACKETBUF_ATTR_MAX_MAC_TRANSMISSIONS,
+                                     SICSLOWPAN_MAX_MAC_TRANSMISSIONS);
 
     PRINTFO("fragmentation: total packet len %d\n", uip_len(buf));
 
@@ -411,6 +408,9 @@ static int reassemble(struct net_mbuf *mbuf)
       /*      printf("frag1 %d %d\n", reass_tag, frag_tag);*/
       first_fragment = 1;
       is_fragment = 1;
+
+      linkaddr_copy(&buf->dest, (linkaddr_t *)packetbuf_addr(mbuf, PACKETBUF_ADDR_RECEIVER));
+      linkaddr_copy(&buf->src, (linkaddr_t *)packetbuf_addr(mbuf, PACKETBUF_ADDR_SENDER));
       break;
     case SICSLOWPAN_DISPATCH_FRAGN:
       /*
