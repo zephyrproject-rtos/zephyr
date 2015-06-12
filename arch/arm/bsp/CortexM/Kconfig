@@ -54,21 +54,22 @@ config CPU_CORTEX_M3_M4
 	help
 	This option signifies the use of either a Cortex-M3 or Cortex-M4 CPU.
 
+choice
+prompt "ARM Cortex M3 or M4 Processor"
+default CPU_CORTEX_M4
+
 config CPU_CORTEX_M3
-	# omit prompt to signify a "hidden" option
 	bool "ARM Cortex-M3"
-	default n
 	select CPU_CORTEX_M3_M4
 	help
-	This option signifies the use of a Cortex-M3+ CPU
+	This option signifies the use of a Cortex-M3 CPU
 
 config CPU_CORTEX_M4
-	# omit prompt to signify a "hidden" option
 	bool "ARM Cortex-M4"
-	default n
-	select CPU_CORTEX_M3
+	select CPU_CORTEX_M3_M4
 	help
 	This option signifies the use of a Cortex-M4 CPU
+endchoice
 
 endmenu
 
