@@ -51,7 +51,6 @@ Supports up to 240 IRQs and 256 priority levels.
 #ifndef _NVIC_H_
 #define _NVIC_H_
 
-#include <misc/__assert.h>
 #include <arch/arm/CortexM/scs.h>
 
 /* for assembler, only works with constants */
@@ -84,6 +83,7 @@ Supports up to 240 IRQs and 256 priority levels.
 #if !defined(_ASMLANGUAGE)
 
 #include <stdint.h>
+#include <misc/__assert.h>
 
 /*******************************************************************************
 *
