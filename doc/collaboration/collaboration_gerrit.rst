@@ -1,5 +1,3 @@
-.. include:: ../substitutions.rst
-
 Submitting a Patch Via Gerrit
 #############################
 
