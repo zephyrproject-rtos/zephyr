@@ -1,9 +1,9 @@
 .. _Install:
 
-Installation Guide
-##################
+|project| Quick Start
+######################
 
-The installation guide includes all the information you need
+This guide includes all the information you need
 to install the Zephyr development environment on your host system.
 Follow the steps appropriate for your host system's operating system.
 
@@ -23,7 +23,7 @@ Perform the steps in the installation procedures in the order they
 appear.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    installation_linux.rst
    installation_building.rst
