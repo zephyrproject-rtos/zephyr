@@ -1,9 +1,13 @@
 ..
-   Tiny Mountain's documentation master file
+    Zephyr Project documentation master file
 
 
 .. include:: documentation_license.rst
+
 .. include:: disclaimers.rst
+
+|project|
+##################
 
 .. toctree::
    :maxdepth: 2
@@ -21,3 +25,4 @@ Indices and tables
 * :ref:`genindex`
 
 * :ref:`search`
+

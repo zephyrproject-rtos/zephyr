@@ -1,7 +1,7 @@
 .. _disclaimers:
 
-Disclaimers
-###########
+
+.. rubric:: Disclaimer
 
 .. important::
 
