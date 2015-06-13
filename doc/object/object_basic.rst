@@ -17,7 +17,7 @@ meant to replace the detailed in-code documentation.
 
 
 
-.. toctree:: Table of Contents
+.. toctree::
    :maxdepth: 2
 
 

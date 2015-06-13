@@ -29,7 +29,7 @@ moving on to the :ref:`nanokernelObjects` or the
 | XIP           | eXecute In Place                                                  |
 +---------------+-------------------------------------------------------------------+
 
-.. toctree:: Table of Contents
+.. toctree::
    :maxdepth: 2
 
    object_basic.rst
