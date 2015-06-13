@@ -3,7 +3,7 @@ Setup A Local Development Environment
 
 The |project| source code is maintained using GIT and is served using Gerrit.
 
-Gerrit access requires some basic user setup.  The following process has
+Gerrit access requires some basic user setup. The following process has
 been defined as a simple walk-through to enable quick access to the
 Gerrit services.
 
