@@ -17,11 +17,12 @@ the code in the documentation and viceversa.
 For example, :cpp:type:`K_COMM`. :cpp:class:`k_timer` has been modified
 to have more stuff, visit it's documentation.
 
-This would be an example of referencing function
-:c:func:`__k_memcpy_s()`.
+This would be an example of referencing function :c:func:`__k_memcpy_s()`.
+
+The guidelines for in-code documentation can be found in the collaboration
+guidelines available here: :ref:`In-Code Documentation Guidelines`.
 
 .. toctree::
    :maxdepth: 2
 
-   doxygen_guidelines.rst
    doxygen_output.rst

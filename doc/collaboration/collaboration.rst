@@ -14,4 +14,5 @@ submitting any work for review.
    collaboration_patches
    collaboration_gerrit
    collaboration_coding
+   ../doxygen/doxygen_guidelines
    collaboration_maintainers
