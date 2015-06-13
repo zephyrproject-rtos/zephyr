@@ -1,4 +1,4 @@
-Submitting a Patch Via Gerrit
+Submitting a Change Via Gerrit
 #############################
 
 
@@ -26,91 +26,12 @@ Make sure to subscribe to the `mailing list`_ by filling out the
 .. contents:: Table of Contents
    :depth: 2
 
-Configuring Gerrit Access
-*************************
 
-Gerrit access requires some basic user setup.  The following process has
-been defined as a simple walk-through to enable quick access to the
-Gerrit services.
+Follow the steps available at :ref:`Getting Access` for information about how to access the source
+code using GIT and Gerrit.
 
-Accessing Gerrit
-================
-
-#. `Create`_ or `update`_ a 01.org_ account.
-
-#. Submit your your 01.org_ account and corporate email address to
-   |PM| `<mailto:hirally.santiago.rodriguez@intel.com>`_.
-
-#. Once access is granted, `access Gerrit`_.
-
-#. Log in using your 01.org account credentials.
-
-.. _Create: https://01.org/user/register
-
-.. _update: https://01.org/user/login
-
-.. _access Gerrit: https://oic-review.01.org/gerrit/
-
-.. _01.org: https://01.org/
-
-Configuring SSH to Use Gerrit
-=============================
-
-Gerrit uses SSH to interact with your GIT client. A SSH private key
-needs to be generated on the development machine with a matching public
-key on the Gerrit server.
-
-If you already have a SSH key-pair you would like to use, please skip
-down to step.
-
-Please follow the steps below to get started.
-
-1. Create a key-pair in your Linux machine, type:
-
-.. code-block:: bash
-
-   $ ssh-keygen -t rsa -C "John Doe john.doe@example.com"
-
-.. note:: This will ask you for a password to protect the private key as it
-   generates a unique key. Please keep this password private, and DO
-   NOT enter a blank password.  
-
-The generated key-pair is found at:
-:file:`~/.ssh/id_rsa and ~/.ssh/id_rsa.pub`.
-
-2. Add the the private key in the :file:`id_rsa` file in your key ring,
-type:
-
-.. code-block:: bash
-
-   $ ssh-add ~/.ssh/id_rsa
-
-3. Add your the public key :file:`id_rsa.pub` to the Gerrit account:
-
-   a. Go to `access Gerrit`_.
-
-   b. Click on your account name in the upper right corner.
-
-   c. From the pop-up menu, select :guilabel:`Settings`.
-
-   d. On the left hand menu select, click on
-   :guilabel:`SSH Public Keys`.
-
-   e. Click Add key and paste the contents of your public key
-   :file:`~/.id/id_rsa.pub`.
-
-.. note:: To obtain the contents of your public key
-   on a Linux machine type:
-   :command:`$ cat ~/.ssh/id_rsa.pub`
-   The output is the contents of :file:`~/.id/id_rsa.pub`.
-   Paste it into the Add SSH key window in Gerrit.
-.. warning:: Potential Security Risk 
-   Do not copy your private key :file:`~/.ssh/id_rsa` Use only the public
-   :file:`~/.id/id_rsa.pub`.
-
-
-Coding with Gerrit
-******************
+Working with Gerrit
+********************
 
 Gerrit is a review system, and as such, assigns the following roles to
 users:
@@ -131,19 +52,6 @@ good summaries can be found here:
 For more detailed information visit:
 `<http://gerrit-documentation.googlecode.com/svn/Documentation/2.6/intro-quick.html>`_
 
-
-Checking the Code Out
-=====================
-
-#. Ensure that SSH has been set up porperly. See
-   `Configuring SSH to Use Gerrit`_ for details.
-
-#. Clone the repository, type:
-
-   :command:`$ git clone ssh://01ORGUSERNAME@oic-review.01.org:29418/forto-collab`
-
-#. You have checked out a local copy of the source code. Develop
-   freely, issuing as many commits and rebases as needed.
 
 
 Submitting a Patch
@@ -216,7 +124,7 @@ tracked.
 .. note::
    In the examples, actual email addresses should be used instead of the
    :literal:`@email.com and @notemail.com` addressses.
-   
+
 Reviewing Using Gerrit
 **********************
 
@@ -225,12 +133,12 @@ Reviewing Using Gerrit
 .. figure:: figures/gs_collaboration_gerrit01.png
    :scale: 75 %
    :alt: Gerrit Review Page
-   
+
    An example of a Gerrit change review page.
 
    The fields highlighted in yellow are of interest and require a
    little more explanation.
-   
+
 * Add: This button allows the patch submitter to manually add names of
   people who should review this changeset; type a name and the system
   will auto-complete based on the list of people registered and with
