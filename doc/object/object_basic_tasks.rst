@@ -4,17 +4,16 @@ Tasks
 Properties of Tasks
 *******************
 
-A Tiny Mountain task is an execution thread that implements part or all
-of the application functionality using the Tiny Mountain objects
-described in detail by the Nanokernel Objects and Microkernel Objects
-documents. Tasks are cooperatively scheduled, and will run until they
-explicitly yield, call a blocking interface or are preempted by a
-higher priority task.
+A task is an execution thread that implements part or all
+of the application functionality using the objects described in detail by the
+Nanokernel Objects and Microkernel Objects sections. Tasks are cooperatively
+scheduled, and will run until they explicitly yield, call a blocking interface
+or are preempted by a higher priority task.
 
 Defining Tasks
 **************
 
-Microkernel tasks are statically defined in the Tiny Mountain project
+Microkernel tasks are statically defined in the Microkernel definition
 file (which has a file extension of .mdef). The number of tasks in a
 project file is limited only by the available memory on the platform. A
 task definition in the project file must specify its name, priority,
@@ -57,14 +56,14 @@ guidelines:
 
 .. note::
 
-   To maximize portability, use Tiny Mountain -defined objects, such
+   To maximize portability, use kernel-defined objects, such
    as memory maps or memory pools, instead of user-defined array
    buffers.
 
 Task Behavior
 *************
 
-When a task calls an API to operate on a Tiny Mountain object, it passes
+When a task calls an API to operate on a kernel object, it passes
 an abstract object identifier called objectID. A task shall always
 manipulate kernel data structures through the APIs and shall not
 directly access the internals of any object, for example, the internals
@@ -133,7 +132,7 @@ name is chosen by the user it can be changed. Using
 Task Implementation
 *******************
 
-Use Tiny Mountain objects and routine calls to interface a task with
+Use kernel objects and routine calls to interface a task with
 other tasks running in the system. For example, achieve cooperation
 between tasks by using synchronization objects, such as resources and
 semaphores, or by passing parameters from one task to another using a
@@ -166,7 +165,7 @@ orange.
 Starting and Stopping Tasks
 ---------------------------
 
-Tasks in Tiny Mountain are started in one of three ways:
+Tasks are started in one of three ways:
 
 
 + Automatically at boot time if it is assigned to the EXE task group.
@@ -216,7 +215,7 @@ Task Completion
 Task Priorities
 ^^^^^^^^^^^^^^^
 
-Tiny Mountain offers a configurable number of task priority levels. The
+The kernel offers a configurable number of task priority levels. The
 number ranges from 0 to :literal:`NUM_TASK_PRIORITIES-1`. The lowest
 priority level ( :literal:`NUM_TASK_PRIORITIES-1` is reserved for use
 by the microkernel's idle task. The priority of tasks is assigned
@@ -293,6 +292,6 @@ If no other task of the same priority is runnable, the task that called
 Task Context Switches
 ^^^^^^^^^^^^^^^^^^^^^
 
-When a task swap occurs, Tiny Mountain saves the context of the task
+When a task swap occurs, the kernel saves the context of the task
 that is swapped out and restores the context of the task that is
 swapped in.

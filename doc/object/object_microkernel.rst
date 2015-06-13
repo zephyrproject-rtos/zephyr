@@ -20,10 +20,9 @@ Microkernel FIFO Objects
 Definition
 ==========
 
-Tiny Mountain FIFO object is defined in
-:file:`include/microkernel/fifo.h` as a simple first-in, first-out
-queue that handle small amounts of fixed size data. FIFO objects have a
-buffer that stores a number of data transmits, and are the most
+The FIFO object is defined in :file:`include/microkernel/fifo.h` as a simple
+first-in, first-out queue that handle small amounts of fixed size data.
+FIFO objects have a buffer that stores a number of data transmits, and are the most
 efficient way to pass small amounts of data between tasks. FIFO objects
 are suitable for asynchronously transferring small amounts of data,
 such as parameters, between tasks.
@@ -203,10 +202,8 @@ Mailbox Objects
 Definition
 ==========
 
-A Tiny Mountain mailbox object is defined in include
-:file:`/microkernel/mail.h`. Mailboxes are a flexible way to pass data
-and for tasks to exchange messages.
-
+A mailbox object is defined in include :file:`/microkernel/mail.h`.
+Mailboxes are a flexible way to pass data and for tasks to exchange messages.
 
 Function
 ========

@@ -1,10 +1,10 @@
 Fibers
 ######
 
-A Tiny Mountain fiber is an execution thread and a lightweight
-alternative to a task. It can use nanokernel objects but not
-microkernel objects. A runnable fiber will preempt the execution of any
-task but it will not preempt the execution of another fiber.
+A fiber is an execution thread and a lightweight alternative to a task. It can
+use nanokernel objects but not microkernel objects. A runnable fiber will
+preempt the execution of any task but it will not preempt the execution of
+another fiber.
 
 
 Defining Fibers
@@ -92,13 +92,13 @@ computational cannot call :c:func:`fiber_yield()`.
 Scheduling Fibers
 *****************
 
-The fibers in Tiny Mountain are priority-scheduled. When several fibers
+The fibers in the Zephyr OS are priority-scheduled. When several fibers
 are ready to run, they run in the order of their priority. When more
 than one fiber of the same priority is ready to run, they are ordered
 by the time that each became runnable. Each fiber runs until it is
 unscheduled by an invoked kernel service or until it terminates. Using
 prioritized fibers, avoiding interrupts, and considering the interrupts
-worst case arrival rate and cost allows Tiny Mountain to use a simple
+worst case arrival rate and cost allows the kernel to use a simple
 rate-monotonic analysis techniques with the nanokernel. Using this
 technique an application can meet its deadlines.
 

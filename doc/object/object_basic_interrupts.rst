@@ -89,7 +89,7 @@ the macros detailed in following table. The table lists the macros you
 can use to identify and register your static ISRs into the Interrupt
 Descriptor Table. The IA-32 interrupt descriptor allows for the setting
 of the privilege level, DPL, at which the interrupt can be triggered.
-Tiny Mountain assumes all device drivers are kernel mode (ring 0) as
+The Zephyr OS assumes all device drivers are kernel mode (ring 0) as
 opposed to user-mode (ring 3). Therefore, these macros always set the
 DPL to 0.
 
@@ -120,7 +120,7 @@ Interrupt Descriptor Table
 The Interrupt Descriptor Table (IDT) is a data structure that implements
 an interrupt vector table used by the processor to determine the
 correct response to interrupts and exceptions. To optimize boot
-performance and increase security, Tiny Mountain implements targets
+performance and increase security, the kernel implements targets
 using a statically created Interrupt Descriptor Table, interrupt stubs
 and exception stubs. A static Interrupt Descriptor Table improves boot
 performance because:
@@ -186,7 +186,7 @@ The following is an example of a dynamic interrupt stub for x86:
 
    }
 
-This feature is part of Tiny Mountain's enhanced security profile.
+This feature is part of the enhanced security profile in Zephyr OS.
 
 
 Working with ISRs
@@ -199,7 +199,7 @@ Triggering Interrupts
 The processor starts up an ISR when a hardware interrupt is received.
 When one of the interrupt pins of the processor core is triggered, the
 processor jumps to the appropriate interrupt routine. To interface this
-hardware event with software, Tiny Mountain allows you to attach an ISR
+hardware event with software, the kernel allows you to attach an ISR
 to the interrupt signal.
 
 An ISR can interface with a fiber using the nanokernel Application
@@ -234,7 +234,7 @@ An ISR must never call any blocking channel Application Program
 Interface. It would block the current fiber and all other interrupt
 handlers that are stacked below the ISR.
 
-Tiny Mountain supports interrupt nesting. When an ISR is running, it can
+The kernel supports interrupt nesting. When an ISR is running, it can
 be interrupted when a new interrupt is received.
 
 
@@ -302,7 +302,7 @@ not track the use-status of any statically-allocated command packet.
 
 There is a small but unavoidable risk of a command packet's processing
 being incomplete before the ISR runs again and tries to reuse the
-packet. To further minimize this risk Tiny Mountain introduces command
+packet. To further minimize this risk the kernel introduces command
 packet sets. Fundamentally, a command packet set is a simple ring
 buffer. Retrieve command packets from the set using
 :c:func:`cmdPktGet()`. Each command packet has to be processed in a
@@ -330,7 +330,7 @@ The default setting of 0 disables the following interfaces:
 :c:func:`task_irq_ack()` and :c:func:`task_irq_test()`. Each device has
 a well-known identifier in the range from 0 to *MAX_NUM_TASK_DEVS*-1.
 
-Tiny Mountain allows kernel tasks to bind to devices at run-time by
+The Zephyr OS allows kernel tasks to bind to devices at run-time by
 calling :c:func:`task_irq_alloc()`. A task may bind itself to multiple
 devices by calling this routine multiple times but a given device can
 be bound to only a single task at any point in time. The registering
