@@ -1,5 +1,5 @@
-Object Documentation
-####################
+Kernel Object Documentation
+############################
 
 Use this information to understand how the different kernel objects of
 Tiny Mountain function. The purpose of this section is to help you
