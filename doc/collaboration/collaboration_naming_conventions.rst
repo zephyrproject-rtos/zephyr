@@ -7,7 +7,7 @@ The Purpose of Naming Conventions
 
 Unlike desktop operating systems, where applications are written in user-space
 and drivers are used to cross the boundary between kernel and user space, all
-applications on Tiny Mountain are written in kernel space.  These are then
+applications in the Zephyr OS are written in kernel space.  These are then
 linked against the kernel creating a shared and common namespace.
 
 To ensure proper execution of both kernel and applications, it makes sense to

@@ -5,4 +5,4 @@ In-code Documentation
 #####################
 
 .. doxygenindex::
-   :project: Tiny Mountain
+   :project: Zephyr

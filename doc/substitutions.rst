@@ -1,4 +1,4 @@
-.. |codename| replace:: Tiny Mountain
+.. |codename| replace:: Zephyr OS
 
 .. |PM| replace:: Hirally Rodriguez Santiago
 
