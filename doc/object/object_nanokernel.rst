@@ -269,8 +269,7 @@ Example Code
 Step-by-Step Description
 ========================
 
- A quick breakdown of the major objects in use
-by this sample includes:
+A quick breakdown of the major objects in use by this sample includes:
 
 - One fiber, executing in the :c:func:`fiberEntry()` routine.
 
