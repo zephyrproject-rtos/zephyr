@@ -272,9 +272,7 @@ extern void context_custom_data_set(void *value);
 extern void *context_custom_data_get(void);
 #endif /* CONFIG_CONTEXT_CUSTOM_DATA */
 
-#if defined(CONFIG_NANOKERNEL)
-
-/* nanokernel-only timers */
+/* nanokernel timers */
 
 struct nano_timer {
 	struct nano_timer *link;
@@ -304,8 +302,6 @@ extern uint32_t nano_tick_get_32(void);
 extern uint32_t nano_cycle_get_32(void);
 extern int64_t nano_tick_delta(int64_t *reftime);
 extern uint32_t nano_tick_delta_32(int64_t *reftime);
-
-#endif /* CONFIG_NANOKERNEL */
 
 /*
  * Auto-initialization
