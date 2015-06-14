@@ -40,6 +40,7 @@ This module tests the following microkernel timer routines:
 */
 
 #include <tc_util.h>
+#include <util_test_common.h>
 #include <zephyr.h>
 
 extern struct nano_lifo _k_timer_free;    /* For white box testing only */
@@ -283,6 +284,39 @@ int testLowTimerGet(void)
 	return TC_PASS;
 }
 
+extern int test_fifo_timeout(void);
+void test_nano_timeouts(void)
+{
+	if (test_fifo_timeout() == TC_PASS) {
+		task_sem_give(test_nano_timeouts_sem);
+	}
+
+	/* on failure, don't give semaphore, main test will time out */
+}
+
+#define TEST_NANO_TIMERS_DELAY 4
+static struct nano_sem test_nano_timers_sem;
+static char test_nano_timers_stack[512];
+static void test_nano_timers(int unused1, int unused2)
+{
+	struct nano_timer timer;
+
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
+
+	nano_timer_init(&timer, (void *)0xdeadbeef);
+	TC_PRINT("starting nano timer to expire in %d seconds\n",
+				TEST_NANO_TIMERS_DELAY);
+	nano_fiber_timer_start(&timer, SECONDS(TEST_NANO_TIMERS_DELAY));
+	TC_PRINT("fiber pending on timer\n");
+	nano_fiber_timer_wait(&timer);
+	TC_PRINT("fiber back from waiting on timer: giving semaphore.\n");
+	nano_task_sem_give(&test_nano_timers_sem);
+	TC_PRINT("fiber semaphore given.\n");
+
+	/* on failure, don't give semaphore, main test will not obtain it */
+}
+
 /*******************************************************************************
 *
 * RegressionTaskEntry - regression test's entry point
@@ -294,8 +328,12 @@ void RegressionTaskEntry(void)
 {
 	int  tcRC;
 
+	nano_sem_init(&test_nano_timers_sem);
+
 	PRINT_DATA("Starting timer tests\n");
 	PRINT_LINE;
+
+	task_fiber_start(test_nano_timers_stack, 512, test_nano_timers, 0, 0, 5, 0);
 
 	/* Test the task_timer_alloc() API */
 
@@ -328,6 +366,16 @@ void RegressionTaskEntry(void)
 	if (tcRC != TC_PASS) {
 		goto exitRtn;
 	}
+
+	TC_PRINT("Verifying the nanokernel timer fired\n");
+	if (!nano_task_sem_take(&test_nano_timers_sem)) {
+		tcRC = TC_FAIL;
+		goto exitRtn;
+	}
+
+	TC_PRINT("Verifying the nanokernel timeouts worked\n");
+	tcRC = task_sem_take_wait_timeout(test_nano_timeouts_sem, SECONDS(5));
+	tcRC = tcRC == RC_OK ? TC_PASS : TC_FAIL;
 
 exitRtn:
 	TC_END_RESULT(tcRC);

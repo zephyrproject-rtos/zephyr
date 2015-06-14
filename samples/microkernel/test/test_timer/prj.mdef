@@ -1,9 +1,11 @@
 % Application       : test microkernel timer APIs
 
-% TASK NAME       PRIO   ENTRY               STACK GROUPS
-% =======================================================
-  TASK tStartTask    5   RegressionTaskEntry  2048 [EXE]
+% TASK NAME             PRIO   ENTRY               STACK GROUPS
+% =================================================================
+  TASK tStartTask          5   RegressionTaskEntry  2048 [EXE]
+  TASK tNanoTimeoutTest    6   test_nano_timeouts   2048 [EXE]
 
 % SEMA NAME
 % ==============
   SEMA TIMER_SEM
+  SEMA test_nano_timeouts_sem
