@@ -42,6 +42,7 @@ task, depending on how the kernel is configured.
 #include <toolchain.h>
 #include <sections.h>
 #include <microkernel.h>
+#include <misc/util.h>
 #include <drivers/system_timer.h>
 
 #if defined(CONFIG_WORKLOAD_MONITOR)
@@ -386,11 +387,13 @@ void _sys_power_save_idle_exit(int32_t ticks)
 
 static inline int32_t _get_next_timer_expiry(void)
 {
+	uint32_t closest_deadline = (uint32_t)TICKS_UNLIMITED;
+
 	if (_k_timer_list_head) {
-		return _k_timer_list_head->duration;
+		closest_deadline = _k_timer_list_head->duration;
 	}
 
-	return TICKS_UNLIMITED;
+	return (int32_t)min(closest_deadline, _nano_get_earliest_deadline());
 }
 #endif
 
