@@ -30,13 +30,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef CONFIG_NANOKERNEL
 
 #include <nanok.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>
 #include <drivers/system_timer.h>
+
+#ifdef CONFIG_NANOKERNEL
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
@@ -48,7 +49,6 @@ int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #endif
 
-int64_t _nano_ticks = 0;
 
 /* updated by timer driver for tickless, stays at 1 for non-tickless */
 uint32_t _sys_idle_elapsed_ticks = 1;
@@ -67,6 +67,10 @@ void nano_time_init(void)
 }
 
 SYS_PREKERNEL_INIT(nano_time_init, 250);
+
+#endif /*  CONFIG_NANOKERNEL */
+
+int64_t _nano_ticks = 0;
 
 /*******************************************************************************
 *
@@ -271,5 +275,3 @@ uint32_t _nano_get_earliest_deadline(void)
 	return min(_nano_get_earliest_timeouts_deadline(),
 				_nano_get_earliest_timers_deadline());
 }
-
-#endif /*  CONFIG_NANOKERNEL */

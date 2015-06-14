@@ -64,11 +64,18 @@ extern void _timer_idle_enter(int32_t ticks);
 extern void _timer_idle_exit(void);
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
+extern uint32_t _nano_get_earliest_deadline(void);
+
+#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
+	extern void _nano_sys_clock_tick_announce(uint32_t ticks);
+#else
+	#define _nano_sys_clock_tick_announce(ticks) do { } while((0))
+#endif
+
 #ifdef CONFIG_MICROKERNEL
 	#define _sys_clock_tick_announce() \
 		nano_isr_stack_push(&_k_command_stack, TICK_EVENT)
 #else
-	extern void _nano_sys_clock_tick_announce(uint32_t ticks);
 	extern uint32_t _sys_idle_elapsed_ticks;
 	#define _sys_clock_tick_announce() \
 		_nano_sys_clock_tick_announce(_sys_idle_elapsed_ticks)

@@ -30,8 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef CONFIG_NANOKERNEL
-
 #include <nanok.h>
 
 struct nano_timer *_nano_timer_list = NULL;
@@ -295,5 +293,3 @@ void *nano_task_timer_wait(struct nano_timer *timer /* timer to pend on */
 {
 	return nano_task_lifo_get_wait(&timer->lifo);
 }
-
-#endif /*  CONFIG_NANOKERNEL */
