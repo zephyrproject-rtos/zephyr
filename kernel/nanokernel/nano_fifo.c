@@ -140,6 +140,7 @@ void _fifo_put_non_preemptible(
 	fifo->stat++;
 	if (fifo->stat <= 0) {
 		tCCS *ccs = _nano_wait_q_remove_no_check(&fifo->wait_q);
+		_nano_timeout_abort(ccs);
 		fiberRtnValueSet(ccs, (unsigned int)data);
 	} else {
 		enqueue_data(fifo, data);
@@ -174,6 +175,7 @@ void nano_task_fifo_put(
 	fifo->stat++;
 	if (fifo->stat <= 0) {
 		tCCS *ccs = _nano_wait_q_remove_no_check(&fifo->wait_q);
+		_nano_timeout_abort(ccs);
 		fiberRtnValueSet(ccs, (unsigned int)data);
 		_Swap(imask);
 		return;
@@ -376,3 +378,118 @@ void *nano_fifo_get_wait(struct nano_fifo *fifo)
 	};
 	return func[context_type_get()](fifo);
 }
+
+
+#ifdef CONFIG_NANO_TIMEOUTS
+/*!
+ * @brief get the head element of a fifo, pend with a timeout if empty
+ *
+ * Remove the head element from the specified nanokernel fifo; it can only be
+ * called from a task context.
+ *
+ * If no elements are available, the calling task will pend until an element
+ * is put onto the fifo, or the timeout expires, whichever comes first.
+ *
+ * The first word in the element contains invalid data because that memory
+ * location was used to store a pointer to the next element in the linked
+ * list.
+ *
+ * @param fifo the FIFO on which to operate
+ * @param timeout_in_ticks time to wait in ticks
+ *
+ * return Pointer to head element in the list, NULL if timed out
+ */
+
+void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
+										int32_t timeout_in_ticks)
+{
+	unsigned int key;
+	void *data;
+
+	if (unlikely(TICKS_UNLIMITED == timeout_in_ticks)) {
+		return nano_fiber_fifo_get_wait(fifo);
+	}
+
+	if (unlikely(TICKS_NONE == timeout_in_ticks)) {
+		return nano_fiber_fifo_get(fifo);
+	}
+
+	key = irq_lock_inline();
+
+	fifo->stat--;
+	if (fifo->stat < 0) {
+		_nano_timeout_add(_nanokernel.current, &fifo->wait_q, timeout_in_ticks);
+		_nano_wait_q_put(&fifo->wait_q);
+		data = (void *)_Swap(key);
+	} else {
+		data = dequeue_data(fifo);
+		irq_unlock_inline(key);
+	}
+
+	return data;
+}
+
+/*!
+ * @brief get the head element of a fifo, poll with a timeout if empty
+ *
+ * Remove the head element from the specified nanokernel fifo; it can only be
+ * called from a task context.
+ *
+ * If no elements are available, the calling task will poll until an element
+ * is put onto the fifo, or the timeout expires, whichever comes first.
+ *
+ * The first word in the element contains invalid data because that memory
+ * location was used to store a pointer to the next element in the linked
+ * list.
+ *
+ * @param fifo the FIFO on which to operate
+ * @param timeout_in_ticks time to wait in ticks
+ *
+ * return Pointer to head element in the list, NULL if timed out
+ */
+
+void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
+										int32_t timeout_in_ticks)
+{
+	int64_t cur_ticks, limit;
+	unsigned int key;
+	void *data;
+
+	if (unlikely(TICKS_UNLIMITED == timeout_in_ticks)) {
+		return nano_task_fifo_get_wait(fifo);
+	}
+
+	if (unlikely(TICKS_NONE == timeout_in_ticks)) {
+		return nano_task_fifo_get(fifo);
+	}
+
+	key = irq_lock_inline();
+	cur_ticks = nano_tick_get();
+	limit = cur_ticks + timeout_in_ticks;
+
+	while (cur_ticks < limit) {
+
+		/*
+		 * Predict that the branch will be taken to break out of the loop.
+		 * There is little cost to a misprediction since that leads to idle.
+		 */
+
+		if (likely(fifo->stat > 0)) {
+			fifo->stat--;
+			data = dequeue_data(fifo);
+			irq_unlock_inline(key);
+			return data;
+		}
+
+		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
+
+		nano_cpu_atomic_idle(key);
+
+		key = irq_lock_inline();
+		cur_ticks = nano_tick_get();
+	}
+
+	irq_unlock_inline(key);
+	return NULL;
+}
+#endif /* CONFIG_NANO_TIMEOUTS */

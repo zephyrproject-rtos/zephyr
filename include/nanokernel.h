@@ -165,10 +165,19 @@ extern void *nano_isr_fifo_get(struct nano_fifo *chan);
 extern void nano_fiber_fifo_put(struct nano_fifo *chan, void *data);
 extern void *nano_fiber_fifo_get(struct nano_fifo *chan);
 extern void *nano_fiber_fifo_get_wait(struct nano_fifo *chan);
+#ifdef CONFIG_NANO_TIMEOUTS
+extern void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *chan,
+												int32_t timeout_in_ticks);
+#endif
+
 /* methods for tasks */
 extern void nano_task_fifo_put(struct nano_fifo *chan, void *data);
 extern void *nano_task_fifo_get(struct nano_fifo *chan);
 extern void *nano_task_fifo_get_wait(struct nano_fifo *chan);
+#ifdef CONFIG_NANO_TIMEOUTS
+extern void *nano_task_fifo_get_wait_timeout(struct nano_fifo *chan,
+												int32_t timeout_in_ticks);
+#endif
 
 /* LIFO APIs */
 
