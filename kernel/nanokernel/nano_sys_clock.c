@@ -249,4 +249,27 @@ void _nano_sys_clock_tick_announce(uint32_t ticks)
 }
 #endif
 
+/* get closest nano timers deadline expiry, (uint32_t)TICKS_UNLIMITED if none */
+#ifdef CONFIG_NANO_TIMERS
+static inline uint32_t _nano_get_earliest_timers_deadline(void)
+{
+	return _nano_timer_list ? _nano_timer_list->ticks : TICKS_UNLIMITED;
+}
+#else
+static inline uint32_t _nano_get_earliest_timers_deadline(void)
+{
+	return TICKS_UNLIMITED;
+}
+#endif
+
+/*
+ * Get closest nano timeouts/timers deadline expiry, (uint32_t)TICKS_UNLIMITED
+ * if none.
+ */
+uint32_t _nano_get_earliest_deadline(void)
+{
+	return min(_nano_get_earliest_timeouts_deadline(),
+				_nano_get_earliest_timers_deadline());
+}
+
 #endif /*  CONFIG_NANOKERNEL */
