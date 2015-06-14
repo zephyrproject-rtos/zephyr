@@ -83,6 +83,10 @@ typedef int nano_context_type_t;
 #define NANO_CTX_FIBER (1)
 #define NANO_CTX_TASK (2)
 
+/* timeout special values */
+#define TICKS_UNLIMITED (-1)
+#define TICKS_NONE 0
+
 /* context APIs
  */
 extern nano_context_id_t context_self_get(void);
