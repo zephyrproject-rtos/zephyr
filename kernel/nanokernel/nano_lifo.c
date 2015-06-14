@@ -106,6 +106,7 @@ void _lifo_put_non_preemptible(
 	imask = irq_lock_inline();
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs) {
+		_nano_timeout_abort(ccs);
 		fiberRtnValueSet(ccs, (unsigned int)data);
 	} else {
 		*(void **)data = lifo->list;
@@ -139,6 +140,7 @@ void nano_task_lifo_put(
 	imask = irq_lock_inline();
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs) {
+		_nano_timeout_abort(ccs);
 		fiberRtnValueSet(ccs, (unsigned int)data);
 		_Swap(imask);
 		return;
@@ -309,3 +311,112 @@ void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo)
 
 	return element;
 }
+
+#ifdef CONFIG_NANO_TIMEOUTS
+/*!
+ * @brief get the first element from a LIFO, wait with a timeout if empty
+ *
+ * Remove the first element from the specified system-level linked list lifo;
+ * it can only be called from a fiber context.
+ *
+ * If no elements are available, the calling fiber will pend until an element
+ * is put onto the list, or the timeout expires, whichever comes first.
+ *
+ * The first word in the element contains invalid data because that memory
+ * location was used to store a pointer to the next element in the linked list.
+ *
+ * @param lifo LIFO on which to operate
+ * @timeout_in_ticks time to wait in ticks
+ *
+ * @return Pointer to first element in the list, NULL if timed out.
+ */
+
+void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
+										int32_t timeout_in_ticks)
+{
+	unsigned int key = irq_lock_inline();
+	void *data;
+
+	if (!lifo->list) {
+		if (unlikely(TICKS_NONE == timeout_in_ticks)) {
+			irq_unlock_inline(key);
+			return NULL;
+		}
+		if (likely(timeout_in_ticks != TICKS_UNLIMITED)) {
+			_nano_timeout_add(_nanokernel.current, &lifo->wait_q,
+								timeout_in_ticks);
+		}
+		_nano_wait_q_put(&lifo->wait_q);
+		data = (void *)_Swap(key);
+	} else {
+		data = lifo->list;
+		lifo->list = *(void **)data;
+		irq_unlock_inline(key);
+	}
+
+	return data;
+}
+
+/*!
+ * @brief get the first element from a lifo, poll if empty
+ *
+ * Remove the first element from the specified nanokernel linked list lifo; it
+ * can only be called from a task context.
+ *
+ * If no elements are available, the calling task will poll until an element is
+ * put onto the list, or the timeout expires, whichever comes first.
+ *
+ * The first word in the element contains invalid data because that memory
+ * location was used to store a pointer to the next element in the linked list.
+ *
+ * @param lifo LIFO on which to operate
+ * @timeout_in_ticks time to wait in ticks
+ *
+ * @return Pointer to first element in the list, NULL if timed out.
+ */
+
+void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
+										int32_t timeout_in_ticks)
+{
+	int64_t cur_ticks, limit;
+	unsigned int key;
+	void *data;
+
+	if (unlikely(TICKS_UNLIMITED == timeout_in_ticks)) {
+		return nano_task_lifo_get_wait(lifo);
+	}
+
+	if (unlikely(TICKS_NONE == timeout_in_ticks)) {
+		return nano_task_lifo_get(lifo);
+	}
+
+	key = irq_lock_inline();
+	cur_ticks = nano_tick_get();
+	limit = cur_ticks + timeout_in_ticks;
+
+	while (cur_ticks < limit) {
+
+		/*
+		 * Predict that the branch will be taken to break out of the loop.
+		 * There is little cost to a misprediction since that leads to idle.
+		 */
+
+		if (likely(lifo->list)) {
+			data = lifo->list;
+			lifo->list = *(void **)data;
+			irq_unlock_inline(key);
+			return data;
+		}
+
+		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
+
+		nano_cpu_atomic_idle(key);
+
+		key = irq_lock_inline();
+		cur_ticks = nano_tick_get();
+	}
+
+	irq_unlock_inline(key);
+	return NULL;
+}
+#endif /* CONFIG_NANO_TIMEOUTS */

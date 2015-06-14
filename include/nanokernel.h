@@ -194,10 +194,19 @@ extern void *nano_isr_lifo_get(struct nano_lifo *chan);
 extern void nano_fiber_lifo_put(struct nano_lifo *chan, void *data);
 extern void *nano_fiber_lifo_get(struct nano_lifo *chan);
 extern void *nano_fiber_lifo_get_wait(struct nano_lifo *chan);
+#ifdef CONFIG_NANO_TIMEOUTS
+extern void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *chan,
+												int32_t timeout_in_ticks);
+#endif
+
 /* methods for tasks */
 extern void nano_task_lifo_put(struct nano_lifo *chan, void *data);
 extern void *nano_task_lifo_get(struct nano_lifo *chan);
 extern void *nano_task_lifo_get_wait(struct nano_lifo *chan);
+#ifdef CONFIG_NANO_TIMEOUTS
+extern void *nano_task_lifo_get_wait_timeout(struct nano_lifo *chan,
+												int32_t timeout_in_ticks);
+#endif
 
 /* semaphore APIs */
 
