@@ -83,4 +83,34 @@ static inline void _nano_wait_q_put(struct _nano_queue *wait_q)
 	wait_q->tail = _nanokernel.current;
 }
 
+#ifdef CONFIG_NANO_TIMEOUTS
+static inline void _nano_timeout_remove_ccs_from_wait_q(struct ccs *ccs)
+{
+	struct _nano_queue *wait_q = ccs->nano_timeout.wait_q;
+
+	if (wait_q->head == ccs) {
+		if (wait_q->tail == wait_q->head) {
+			_nano_wait_q_reset(wait_q);
+		} else {
+			wait_q->head = ccs->link;
+		}
+	} else {
+		tCCS *prev = wait_q->head;
+
+		while (prev->link != ccs) {
+			prev = prev->link;
+		}
+		prev->link = ccs->link;
+		if (wait_q->tail == ccs) {
+			wait_q->tail = prev;
+		}
+	}
+}
+#include <timeout_q.h>
+#else
+	#define _nano_timeout_ccs_init(ccs) do { } while ((0))
+	#define _nano_timeout_abort(ccs) do { } while ((0))
+	#define _nano_get_earliest_timeouts_deadline() ((uint32_t)TICKS_UNLIMITED)
+#endif
+
 #endif /* _kernel_nanokernel_include_wait_q__h_ */

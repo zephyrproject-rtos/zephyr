@@ -60,6 +60,14 @@ struct _nano_queue {
 	void *tail;
 };
 
+#include <misc/dlist.h>
+
+struct _nano_timeout {
+	sys_dlist_t node;
+	struct _nano_queue *wait_q;
+	int32_t delta_ticks_from_prev;
+};
+
 struct ccs;
 
 /* architecture-independent nanokernel public APIs */
