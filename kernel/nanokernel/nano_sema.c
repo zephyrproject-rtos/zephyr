@@ -84,6 +84,12 @@ void nano_sem_init(
 FUNC_ALIAS(_sem_give_non_preemptible, nano_isr_sem_give, void);
 FUNC_ALIAS(_sem_give_non_preemptible, nano_fiber_sem_give, void);
 
+#ifdef CONFIG_NANO_TIMEOUTS
+	#define set_sem_available(ccs) fiberRtnValueSet(ccs, 1)
+#else
+	#define set_sem_available(ccs) do { } while ((0))
+#endif
+
 /*******************************************************************************
 *
 * _sem_give_non_preemptible - give a nanokernel semaphore (no context switch)
@@ -113,6 +119,9 @@ void _sem_give_non_preemptible(
 	ccs = _nano_wait_q_remove(&sem->wait_q);
 	if (!ccs) {
 		sem->nsig++;
+	} else {
+		_nano_timeout_abort(ccs);
+		set_sem_available(ccs);
 	}
 
 	irq_unlock_inline(imask);
@@ -140,6 +149,8 @@ void nano_task_sem_give(
 	imask = irq_lock_inline();
 	ccs = _nano_wait_q_remove(&sem->wait_q);
 	if (ccs) {
+		_nano_timeout_abort(ccs);
+		set_sem_available(ccs);
 		_Swap(imask);
 		return;
 	} else {
@@ -292,3 +303,107 @@ void nano_sem_take_wait(struct nano_sem *sem)
 	};
 	func[context_type_get()](sem);
 }
+
+#ifdef CONFIG_NANO_TIMEOUTS
+/*!
+ * @brief test a nanokernel semaphore, wait with a timeout if unavailable
+ *
+ * Take a nanokernel sempahore; it can only be called from a fiber context.
+ *
+ * If the nanokernel semaphore is not available, i.e. the event counter
+ * is 0, the calling fiber context will wait (pend) until the semaphore is
+ * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give). A
+ * timeout can be specified.
+ *
+ * @param sem the semaphore to take
+ * @param timeout_in_ticks time to wait in ticks
+ *
+ * @return 1 if semaphore is available, 0 if timed out
+ */
+
+int nano_fiber_sem_take_wait_timeout(struct nano_sem *sem,
+										int32_t timeout_in_ticks)
+{
+	unsigned int key = irq_lock_inline();
+
+	if (sem->nsig == 0) {
+		if (unlikely(TICKS_NONE == timeout_in_ticks)) {
+			irq_unlock_inline(key);
+			return 0;
+		}
+		if (likely(timeout_in_ticks != TICKS_UNLIMITED)) {
+			_nano_timeout_add(_nanokernel.current, &sem->wait_q,
+								timeout_in_ticks);
+		}
+		_nano_wait_q_put(&sem->wait_q);
+		return _Swap(key);
+	}
+
+	sem->nsig--;
+
+	irq_unlock_inline(key);
+
+	return 1;
+}
+
+/*!
+ * @brief test a nanokernel semaphore, poll with a timeout if unavailable
+ *
+ * Take a nanokernel sempahore; it can only be called from a task context.
+ *
+ * If the nanokernel semaphore is not available, i.e. the event counter is 0,
+ * the calling task will poll until the semaphore is given (via
+ * nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give). A timeout can be
+ * specified.
+ *
+ * @param sem the semaphore to take
+ * @param timeout time to wait in ticks
+ *
+ * @return 1 if semaphore is available, 0 if timed out
+ */
+
+int nano_task_sem_take_wait_timeout(struct nano_sem *sem,
+									int32_t timeout_in_ticks)
+{
+	int64_t cur_ticks, limit;
+	unsigned int key;
+
+	if (unlikely(TICKS_UNLIMITED == timeout_in_ticks)) {
+		nano_task_sem_take_wait(sem);
+		return 1;
+	}
+
+	if (unlikely(TICKS_NONE == timeout_in_ticks)) {
+		return nano_task_sem_take(sem);
+	}
+
+	key = irq_lock_inline();
+	cur_ticks = nano_tick_get();
+	limit = cur_ticks + timeout_in_ticks;
+
+	while (cur_ticks < limit) {
+
+		/*
+		 * Predict that the branch will be taken to break out of the loop.
+		 * There is little cost to a misprediction since that leads to idle.
+		 */
+
+		if (likely(sem->nsig > 0)) {
+			sem->nsig--;
+			irq_unlock_inline(key);
+			return 1;
+		}
+
+		/* see explanation in nano_stack.c:nano_task_stack_pop_wait() */
+
+		nano_cpu_atomic_idle(key);
+
+		key = irq_lock_inline();
+		cur_ticks = nano_tick_get();
+	}
+
+	irq_unlock_inline(key);
+	return 0;
+}
+
+#endif /* CONFIG_NANO_TIMEOUTS */

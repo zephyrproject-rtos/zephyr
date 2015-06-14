@@ -208,10 +208,19 @@ extern int nano_isr_sem_take(struct nano_sem *chan);
 extern void nano_fiber_sem_give(struct nano_sem *chan);
 extern int nano_fiber_sem_take(struct nano_sem *chan);
 extern void nano_fiber_sem_take_wait(struct nano_sem *chan);
+#ifdef CONFIG_NANO_TIMEOUTS
+extern int nano_fiber_sem_take_wait_timeout(struct nano_sem *chan,
+											int32_t timeout);
+#endif
+
 /* methods for tasks */
 extern void nano_task_sem_give(struct nano_sem *chan);
 extern int nano_task_sem_take(struct nano_sem *chan);
 extern void nano_task_sem_take_wait(struct nano_sem *chan);
+#ifdef CONFIG_NANO_TIMEOUTS
+extern int nano_task_sem_take_wait_timeout(struct nano_sem *chan,
+											int32_t timeout);
+#endif
 
 /* stack APIs */
 
