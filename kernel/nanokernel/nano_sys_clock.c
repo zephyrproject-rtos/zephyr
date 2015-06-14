@@ -35,6 +35,7 @@
 #include <nanok.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <wait_q.h>
 #include <drivers/system_timer.h>
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -190,6 +191,25 @@ uint32_t nano_tick_delta_32(int64_t *reftime)
 	return (uint32_t)_nano_tick_delta(reftime);
 }
 
+/* handle the expired timeouts in the nano timeout queue */
+
+#ifdef CONFIG_NANO_TIMEOUTS
+#include <wait_q.h>
+
+static inline void handle_expired_nano_timeouts(int ticks)
+{
+	struct _nano_timeout *head =
+		(struct _nano_timeout *)sys_dlist_peek_head(&_nanokernel.timeout_q);
+
+	if (head) {
+		head->delta_ticks_from_prev -= ticks;
+		_nano_timeout_handle_timeouts();
+	}
+}
+#else
+	#define handle_expired_nano_timeouts(ticks) do { } while((0))
+#endif
+
 /* handle the expired nano timers in the nano timers queue */
 #ifdef CONFIG_NANO_TIMERS
 #include <clock_vars.h>
@@ -210,7 +230,7 @@ static inline void handle_expired_nano_timers(int ticks)
 	#define handle_expired_nano_timers(ticks) do { } while((0))
 #endif
 
-#if defined(CONFIG_NANO_TIMERS)
+#if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 /*******************************************************************************
 *
 * _nano_sys_clock_tick_announce - announce a tick to the nanokernel
@@ -225,6 +245,7 @@ static inline void handle_expired_nano_timers(int ticks)
 void _nano_sys_clock_tick_announce(uint32_t ticks)
 {
 	_nano_ticks += ticks;
+	handle_expired_nano_timeouts((int)ticks);
 	handle_expired_nano_timers((int)ticks);
 }
 #endif
