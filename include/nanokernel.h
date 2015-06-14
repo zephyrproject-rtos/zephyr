@@ -110,6 +110,22 @@ extern void fiber_fiber_start(char *pStack,
 				unsigned options);
 extern void fiber_yield(void);
 extern void fiber_abort(void);
+
+#ifdef CONFIG_NANO_TIMEOUTS
+extern void fiber_sleep(int32_t timeout);
+extern void *fiber_fiber_delayed_start(char *stack,
+	unsigned int stack_size_in_bytes,
+	nano_fiber_entry_t entry_point, int param1,
+	int param2, unsigned int priority,
+	unsigned int options, int32_t timeout_in_ticks);
+extern void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
+							nano_fiber_entry_t entry_point, int param1,
+							int param2, unsigned int priority,
+							unsigned int options, int32_t timeout_in_ticks);
+extern void fiber_delayed_start_cancel(void *handle);
+extern void fiber_fiber_delayed_start_cancel(void *handle);
+#endif
+
 /* methods for tasks */
 extern void task_fiber_start(char *pStack,
 			       unsigned int stackSize,
@@ -118,6 +134,14 @@ extern void task_fiber_start(char *pStack,
 			       int arg2,
 			       unsigned prio,
 			       unsigned options);
+#ifdef CONFIG_NANO_TIMEOUTS
+extern void *task_fiber_delayed_start(char *stack,
+	unsigned int stack_size_in_bytes,
+	nano_fiber_entry_t entry_point, int param1,
+	int param2, unsigned int priority,
+	unsigned int options, int32_t timeout_in_ticks);
+extern void task_fiber_delayed_start_cancel(void *handle);
+#endif
 
 /* FIFO APIs */
 

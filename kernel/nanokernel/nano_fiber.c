@@ -235,3 +235,92 @@ FUNC_NORETURN void fiber_abort(void)
 	_nano_fiber_swap();
 }
 #endif
+
+#ifdef CONFIG_NANO_TIMEOUTS
+
+#include <wait_q.h>
+
+/*!
+ * @brief put the current fiber to sleep
+ *
+ * Put the currently running fiber to sleep for an amount of system ticks
+ * passed in the timeout_in_ticks parameter.
+ *
+ * @param timeout number of system ticks to sleep
+ *
+ * @return None
+ */
+
+void fiber_sleep(int32_t timeout_in_ticks)
+{
+	int key;
+
+	if (TICKS_NONE == timeout_in_ticks) {
+		fiber_yield();
+		return;
+	}
+
+	key = irq_lock_inline();
+	_nano_timeout_add(_nanokernel.current, NULL, timeout_in_ticks);
+	_Swap(key);
+}
+
+/*!
+ * @brief start a fiber, but delay its execution
+ *
+ * @param stack pointer to the stack space
+ * @param stack_size_in_bytes stack size in bytes
+ * @param entry_point fiber entry point
+ * @param param1 1st parameter to entry point
+ * @param param2 2nd parameter to entry point
+ * @param priority fiber priority
+ * @param options unused
+ * @param timeout_in_ticks timeout in ticks
+ *
+ * @return a handle to allow cancelling the delayed start
+ */
+
+FUNC_ALIAS(fiber_delayed_start, fiber_fiber_delayed_start, void *);
+FUNC_ALIAS(fiber_delayed_start, task_fiber_delayed_start, void *);
+
+void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
+							nano_fiber_entry_t entry_point, int param1,
+							int param2, unsigned int priority,
+							unsigned int options, int32_t timeout_in_ticks)
+{
+	unsigned int key;
+	struct ccs *ccs;
+
+	ccs = (struct ccs *)stack;
+	_NewContext(stack, stack_size_in_bytes, (_ContextEntry)entry_point,
+				(void *)param1, (void *)param2, (void *)0, priority, options);
+
+	key = irq_lock_inline();
+
+	_nano_timeout_add(ccs, NULL, timeout_in_ticks);
+
+	irq_unlock_inline(key);
+	return ccs;
+}
+
+/*!
+ * @brief cancel a delayed fiber start
+ *
+ * @param handle a handle returned when asking to start the fiber
+ *
+ * @return None
+ */
+
+FUNC_ALIAS(fiber_delayed_start_cancel, fiber_fiber_delayed_start_cancel, void);
+FUNC_ALIAS(fiber_delayed_start_cancel, task_fiber_delayed_start_cancel, void);
+
+void fiber_delayed_start_cancel(void *handle)
+{
+	int key = irq_lock_inline();
+
+	_nano_timeout_abort((struct ccs *)handle);
+
+	irq_unlock_inline(key);
+}
+
+#endif /* CONFIG_NANO_TIMEOUTS */
