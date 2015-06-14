@@ -1,3 +1,3 @@
 ccflags-y += ${PROJECTINCLUDE} -I${srctree}/samples/include
 
-obj-y = fifo.o
+obj-y = fifo.o fifo_timeout.o

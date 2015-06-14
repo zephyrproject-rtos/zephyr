@@ -86,6 +86,36 @@ Get from queue1: count = 3, ptr is 00103e80
 Test ISR FIFO (invoked from Task) - put 001056dc and get back 001056dc
 PASS - testIsrFifoFromTask.
 ===================================================================
+test nano_task_fifo_get_wait_timeout with timeout > 0
+nano_task_fifo_get_wait_timeout timed out as expected
+nano_task_fifo_get_wait_timeout got fifo in time, as expected
+testing timeouts of 5 fibers on same fifo
+ got fiber (q order: 2, t/o: 10, fifo 200049c0) as expected
+ got fiber (q order: 3, t/o: 15, fifo 200049c0) as expected
+ got fiber (q order: 0, t/o: 20, fifo 200049c0) as expected
+ got fiber (q order: 4, t/o: 25, fifo 200049c0) as expected
+ got fiber (q order: 1, t/o: 30, fifo 200049c0) as expected
+testing timeouts of 9 fibers on different fifos
+ got fiber (q order: 0, t/o: 10, fifo 200049cc) as expected
+ got fiber (q order: 5, t/o: 15, fifo 200049c0) as expected
+ got fiber (q order: 7, t/o: 20, fifo 200049c0) as expected
+ got fiber (q order: 1, t/o: 25, fifo 200049c0) as expected
+ got fiber (q order: 8, t/o: 30, fifo 200049cc) as expected
+ got fiber (q order: 2, t/o: 35, fifo 200049c0) as expected
+ got fiber (q order: 6, t/o: 40, fifo 200049c0) as expected
+ got fiber (q order: 4, t/o: 45, fifo 200049cc) as expected
+ got fiber (q order: 3, t/o: 50, fifo 200049cc) as expected
+testing 5 fibers timing out, but obtaining the data in time
+(except the last one, which times out)
+ got fiber (q order: 0, t/o: 20, fifo 200049c0) as expected
+ got fiber (q order: 1, t/o: 30, fifo 200049c0) as expected
+ got fiber (q order: 2, t/o: 10, fifo 200049c0) as expected
+ got fiber (q order: 3, t/o: 15, fifo 200049c0) as expected
+ got fiber (q order: 4, t/o: 25, fifo 200049c0) as expected
+===================================================================
+PASS - test_timeout.
+===================================================================
+===================================================================
 PASS - main.
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

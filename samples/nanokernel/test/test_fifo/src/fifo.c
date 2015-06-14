@@ -32,12 +32,13 @@
 
 /*
 DESCRIPTION
-This module tests three basic scenarios with the usage of the following FIFO
+This module tests four basic scenarios with the usage of the following FIFO
 routines:
 
    nano_fiber_fifo_get, nano_fiber_fifo_get_wait, nano_fiber_fifo_put
    nano_task_fifo_get, nano_task_fifo_get_wait, nano_task_fifo_put
    nano_isr_fifo_get, nano_isr_fifo_put
+   nano_fiber_fifo_take_wait_timeout, nano_task_fifo_take_wait_timeout
 
 Scenario #1
   Task enters items into a queue, starts the fiber and waits for a semaphore.
@@ -59,10 +60,15 @@ testTaskFifoGetW which also finished it's execution and returned to main.
 Finally function testIsrFifoFromTask is run and it gets all data from
 the queue and puts and gets one last item to the queue.  All these are run
 in ISR context.
+
+Scenario #4:
+   Timeout scenarios with multiple FIFOs and fibers.
 */
 
 #include <tc_util.h>
-#include <arch/cpu.h>
+#include <nanokernel.h>
+#include <misc/__assert.h>
+#include <misc/util.h>
 
 /* test uses 2 software IRQs */
 #define NUM_SW_IRQS 2
@@ -135,6 +141,8 @@ void fiber3(void);
 
 void initNanoObjects(void);
 void testTaskFifoGetW(void);
+
+extern int test_fifo_timeout(void);
 
 /*******************************************************************************
 *
@@ -577,6 +585,7 @@ void initNanoObjects(void)
 	nano_sem_init(&nanoSemObjTask);
 
 	nano_timer_init(&timer, timerData);
+
 } /* initNanoObjects */
 
 /*******************************************************************************
@@ -702,6 +711,13 @@ void main(void)
 	PRINT_LINE;
 
 	testIsrFifoFromTask();
+	PRINT_LINE;
+
+	/* test timeouts */
+	if (test_fifo_timeout() != TC_PASS) {
+		retCode = TC_FAIL;
+		goto exit;
+	}
 	PRINT_LINE;
 
 exit:
