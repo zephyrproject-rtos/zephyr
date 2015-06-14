@@ -43,6 +43,8 @@ extern "C" {
 #endif
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#define CONTAINER_OF(ptr, type, field) \
+	((type *)(((char *)(ptr)) - offsetof(type, field)))
 
 #ifndef _ASMLANGUAGE
 
