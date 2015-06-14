@@ -34,7 +34,7 @@
 
 #include <nanok.h>
 
-extern struct nano_timer *_nano_timer_list;
+struct nano_timer *_nano_timer_list = NULL;
 
 /*******************************************************************************
 *

@@ -49,7 +49,6 @@ int sys_clock_hw_cycles_per_tick;
 #endif
 
 int64_t _nano_ticks = 0;
-struct nano_timer *_nano_timer_list = NULL;
 
 /* updated by timer driver for tickless, stays at 1 for non-tickless */
 uint32_t _sys_idle_elapsed_ticks = 1;
