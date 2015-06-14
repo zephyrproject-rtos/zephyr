@@ -1,7 +1,7 @@
 /* context.c - test nanokernel CPU and context APIs */
 
 /*
- * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -104,6 +104,8 @@ static volatile int    excHandlerExecuted;
 
 static struct nano_sem        wakeFiber;
 static struct nano_timer      timer;
+static struct nano_sem        reply_timeout;
+struct nano_fifo              timeout_order_fifo;
 static void *timerData[1];
 
 static int  fiberDetectedError = 0;
@@ -180,6 +182,7 @@ int initNanoObjects(void)
 {
 	nano_sem_init(&wakeFiber);
 	nano_timer_init(&timer, timerData);
+	nano_fifo_init(&timeout_order_fifo);
 
 /* no nanoCpuExcConnect on Cortex-M3/4 */
 #if !defined(CONFIG_CPU_CORTEXM3)
@@ -624,6 +627,194 @@ static void fiberEntry(int taskCtxId, int arg1)
 	}
 }
 
+/*
+ * Timeout tests
+ *
+ * Test the fiber_sleep() API, as well as the fiber_delayed_start() ones.
+ */
+
+#include <tc_nano_timeout_common.h>
+
+struct timeout_order_data {
+	void *link_in_fifo;
+	int32_t timeout;
+	int timeout_order;
+	int q_order;
+};
+
+struct timeout_order_data timeout_order_data[] = {
+	{0, TIMEOUT(2), 2, 0},
+	{0, TIMEOUT(4), 4, 1},
+	{0, TIMEOUT(0), 0, 2},
+	{0, TIMEOUT(1), 1, 3},
+	{0, TIMEOUT(5), 5, 4},
+	{0, TIMEOUT(6), 6, 5},
+	{0, TIMEOUT(3), 3, 6},
+};
+
+#define NUM_TIMEOUT_FIBERS ARRAY_SIZE(timeout_order_data)
+static char __stack timeout_stacks[NUM_TIMEOUT_FIBERS][FIBER_STACKSIZE];
+
+/* a fiber sleeps and times out, then reports through a fifo */
+static void test_fiber_sleep(int timeout, int arg2)
+{
+	int64_t orig_ticks = nano_tick_get();
+
+	TC_PRINT(" fiber sleeping for %d ticks\n", timeout);
+	fiber_sleep(timeout);
+	TC_PRINT(" fiber back from sleep\n");
+	if (!is_timeout_in_range(orig_ticks, timeout)) {
+		return;
+	}
+
+	nano_fiber_sem_give(&reply_timeout);
+}
+
+/* a fiber is started with a delay, then it reports that it ran via a fifo */
+void delayed_fiber(int num, int unused)
+{
+	struct timeout_order_data *data = &timeout_order_data[num];
+
+	ARG_UNUSED(unused);
+
+	TC_PRINT(" fiber (q order: %d, t/o: %d) is running\n",
+				data->q_order, data->timeout);
+
+	nano_fiber_fifo_put(&timeout_order_fifo, data);
+}
+
+static int test_timeout(void)
+{
+	int32_t timeout;
+	int rv;
+	int ii;
+	struct timeout_order_data *data;
+
+	/* test fiber_sleep() */
+
+	TC_PRINT("Testing fiber_sleep()\n");
+	timeout = 5;
+	task_fiber_start(timeout_stacks[0], FIBER_STACKSIZE,
+						test_fiber_sleep, (int)timeout, 0,
+						FIBER_PRIORITY, 0);
+
+	rv = nano_task_sem_take_wait_timeout(&reply_timeout, timeout + 5);
+	if (!rv) {
+		rv = TC_FAIL;
+		TC_ERROR(" *** task timed out waiting for fiber on fiber_sleep().\n");
+		return TC_FAIL;
+	}
+
+	/* test fiber_delayed_start() without cancellation */
+
+	TC_PRINT("Testing fiber_delayed_start() without cancellation\n");
+
+	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
+		(void)task_fiber_delayed_start(timeout_stacks[ii], FIBER_STACKSIZE,
+										delayed_fiber, ii, 0, 5, 0,
+										timeout_order_data[ii].timeout);
+	}
+	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
+
+		data = nano_task_fifo_get_wait_timeout(&timeout_order_fifo,
+												TIMEOUT_TWO_INTERVALS);
+
+		if (!data) {
+			TC_ERROR(" *** timeout while waiting for delayed fiber\n");
+			return TC_FAIL;
+		}
+
+		if (data->timeout_order != ii) {
+			TC_ERROR(" *** wrong delayed fiber ran (got %d, expected %d)\n",
+						data->timeout_order, ii);
+			return TC_FAIL;
+		}
+
+		TC_PRINT(" got fiber (q order: %d, t/o: %d) as expected\n",
+					data->q_order, data->timeout);
+	}
+
+	/* ensure no more fibers fire */
+
+	data = nano_task_fifo_get_wait_timeout(&timeout_order_fifo,
+											TIMEOUT_TWO_INTERVALS);
+
+	if (data) {
+		TC_ERROR(" *** got something on the fifo, but shouldn't have...\n");
+		return TC_FAIL;
+	}
+
+	/* test fiber_delayed_start() with cancellation */
+
+	TC_PRINT("Testing fiber_delayed_start() with cancellations\n");
+
+	int cancellations[] = {0, 3, 4, 6};
+	int num_cancellations = ARRAY_SIZE(cancellations);
+	int next_cancellation = 0;
+
+	void *delayed_fibers[NUM_TIMEOUT_FIBERS];
+
+	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
+		delayed_fibers[ii] =
+			task_fiber_delayed_start(timeout_stacks[ii], FIBER_STACKSIZE,
+										delayed_fiber, ii, 0, 5, 0,
+										timeout_order_data[ii].timeout);
+	}
+
+	for (ii = 0; ii < NUM_TIMEOUT_FIBERS; ii++) {
+		int jj;
+
+		if (ii == cancellations[next_cancellation]) {
+			TC_PRINT(" cancelling [q order: %d, t/o: %d, t/o order: %d]\n",
+						timeout_order_data[ii].q_order,
+						timeout_order_data[ii].timeout, ii);
+			for (jj = 0; jj < NUM_TIMEOUT_FIBERS; jj++) {
+				if (timeout_order_data[jj].timeout_order == ii) {
+					break;
+				}
+			}
+			task_fiber_delayed_start_cancel(delayed_fibers[jj]);
+			++next_cancellation;
+			continue;
+		}
+
+		data = nano_task_fifo_get_wait_timeout(&timeout_order_fifo,
+												TIMEOUT_TEN_INTERVALS);
+
+		if (!data) {
+			TC_ERROR(" *** timeout while waiting for delayed fiber\n");
+			return TC_FAIL;
+		}
+
+		if (data->timeout_order != ii) {
+			TC_ERROR(" *** wrong delayed fiber ran (got %d, expected %d)\n",
+						data->timeout_order, ii);
+			return TC_FAIL;
+		}
+
+		TC_PRINT(" got (q order: %d, t/o: %d, t/o order %d) as expected\n",
+					data->q_order, data->timeout);
+	}
+
+	if (num_cancellations != next_cancellation) {
+		TC_ERROR(" *** wrong number of cancellations (expected %d, got %d\n",
+					num_cancellations, next_cancellation);
+		return TC_FAIL;
+	}
+
+	/* ensure no more fibers fire */
+
+	data = nano_task_fifo_get_wait_timeout(&timeout_order_fifo,
+											TIMEOUT_TWO_INTERVALS);
+
+	if (data) {
+		TC_ERROR(" *** got something on the fifo, but shouldn't have...\n");
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
 /*******************************************************************************
 *
 * main - entry point to timer tests
@@ -725,6 +916,11 @@ void main(void)
 	}
 
 	nano_task_sem_give(&wakeFiber);
+
+	rv = test_timeout();
+	if (rv != TC_PASS) {
+		goto doneTests;
+	}
 
 /* Cortex-M3 does not implement connecting non-IRQ exception handlers */
 #if !defined(CONFIG_CPU_CORTEXM3)
