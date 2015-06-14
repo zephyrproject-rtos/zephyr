@@ -60,6 +60,7 @@ offsets.o module.
  * constructs an IDT entry.
  */
 #include <idtEnt.h>
+#include <misc/dlist.h>
 #endif
 
 /* increase to 16 bytes (or more?) to support SSE/SSE2 instructions? */
@@ -679,6 +680,9 @@ struct ccs {
 	void *custom_data;     /* available for custom use */
 #endif
 
+#ifdef CONFIG_NANO_TIMEOUTS
+	struct _nano_timeout nano_timeout;
+#endif
 
 	/*
 	 * The location of all floating point related structures/fields MUST be
@@ -735,6 +739,9 @@ typedef struct s_NANO {
 
 	tCCS *current_fp; /* context (fiber or task) that owns the FP regs */
 #endif			  /* CONFIG_FP_SHARING */
+#ifdef CONFIG_NANO_TIMEOUTS
+	sys_dlist_t timeout_q;
+#endif
 } tNANO;
 
 /* stack alignment related macros: STACK_ALIGN_SIZE is defined above */

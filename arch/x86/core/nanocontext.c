@@ -44,6 +44,7 @@ processor architecture.
 #include <toolchain.h>
 #include <sections.h>
 #include <nanok.h>
+#include <wait_q.h>
 
 
 /* the one and only nanokernel control structure */
@@ -200,6 +201,8 @@ static void _NewContextInternal(
 		irq_unlock(imask);
 	}
 #endif /* CONFIG_CONTEXT_MONITOR */
+
+	_nano_timeout_ccs_init(ccs);
 }
 
 #ifdef CONFIG_GDB_INFO

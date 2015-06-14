@@ -103,6 +103,13 @@ extern void _InitHardware(void);
 
 extern void _Ctors(void);
 
+#ifdef CONFIG_NANO_TIMEOUTS
+	#include <misc/dlist.h>
+	#define initialize_nano_timeouts() sys_dlist_init(&_nanokernel.timeout_q)
+#else
+	#define initialize_nano_timeouts() do { } while ((0))
+#endif
+
 /*******************************************************************************
 *
 * nano_init - initializes nanokernel data structures
@@ -165,6 +172,8 @@ static void nano_init(tCCS *dummyOutContext)
 	/* indicate that failure of this task may be fatal to the entire system */
 
 	_nanokernel.task->flags |= ESSENTIAL;
+
+	initialize_nano_timeouts();
 
 	/* perform any architecture-specific initialization */
 
