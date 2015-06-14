@@ -76,4 +76,13 @@ config  CONTEXT_CUSTOM_DATA
 	help
 	This option allows each task and fiber to store 32 bits of custom data,
 	which can be accessed using the context_custom_data_xxx() APIs.
+
+config  NANO_TIMERS
+	bool
+	prompt "Enable nanokernel timers"
+	default y
+	depends on NANOKERNEL && SYS_CLOCK_EXISTS
+	help
+	Allow fibers and tasks to wait on nanokernel timers, which can be
+	accessed using the nano_timer_xxx() APIs.
 endmenu
