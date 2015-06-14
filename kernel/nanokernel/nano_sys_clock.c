@@ -190,6 +190,27 @@ uint32_t nano_tick_delta_32(int64_t *reftime)
 	return (uint32_t)_nano_tick_delta(reftime);
 }
 
+/* handle the expired nano timers in the nano timers queue */
+#ifdef CONFIG_NANO_TIMERS
+#include <clock_vars.h>
+static inline void handle_expired_nano_timers(int ticks)
+{
+	if (_nano_timer_list) {
+		_nano_timer_list->ticks -= ticks;
+
+		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
+			struct nano_timer *expired = _nano_timer_list;
+			struct nano_lifo *lifo = &expired->lifo;
+			_nano_timer_list = expired->link;
+			nano_isr_lifo_put(lifo, expired->userData);
+		}
+	}
+}
+#else
+	#define handle_expired_nano_timers(ticks) do { } while((0))
+#endif
+
+#if defined(CONFIG_NANO_TIMERS)
 /*******************************************************************************
 *
 * _nano_sys_clock_tick_announce - announce a tick to the nanokernel
@@ -204,17 +225,8 @@ uint32_t nano_tick_delta_32(int64_t *reftime)
 void _nano_sys_clock_tick_announce(uint32_t ticks)
 {
 	_nano_ticks += ticks;
-
-	if (_nano_timer_list) {
-		_nano_timer_list->ticks -= ticks;
-
-		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
-			struct nano_timer *expired = _nano_timer_list;
-			struct nano_lifo *lifo = &expired->lifo;
-			_nano_timer_list = expired->link;
-			nano_isr_lifo_put(lifo, expired->userData);
-		}
-	}
+	handle_expired_nano_timers((int)ticks);
 }
+#endif
 
 #endif /*  CONFIG_NANOKERNEL */
