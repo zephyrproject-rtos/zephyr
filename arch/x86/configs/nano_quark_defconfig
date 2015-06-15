@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Tiny Mountain/x86 Configuration
+# Zephyr OS/x86 Configuration
 #
 CONFIG_X86_32=y
 CONFIG_ARCH_DEFCONFIG="arch/x86/defconfig"
@@ -106,7 +106,7 @@ CONFIG_CACHE_LINE_SIZE=0
 CONFIG_BOOTLOADER_UNKNOWN=y
 # CONFIG_SHUTOFF_PIC is not set
 CONFIG_PCI=y
-# CONFIG_CUSTOM_RANDOM_GENERATOR is not set
+# CONFIG_PCI_DEBUG is not set
 CONFIG_BSP_DIR="quark"
 CONFIG_EXTRA_SERIAL_PORT=y
 CONFIG_SERIAL_INTERRUPT_LEVEL=y
@@ -133,6 +133,7 @@ CONFIG_LOAPIC=y
 #
 # Device Drivers
 #
+# CONFIG_UART_SIMPLE is not set
 # CONFIG_CONSOLE_HANDLER is not set
 
 #
@@ -147,7 +148,7 @@ CONFIG_NS16550=y
 #
 # Random Generation Configuration
 #
-# CONFIG_TEST_RANDOM_GENERATOR is not set
 # CONFIG_RANDOM_GENERATOR is not set
+# CONFIG_TEST_RANDOM_GENERATOR is not set
 # CONFIG_BLUETOOTH is not set
 CONFIG_DEFCONFIG_LIST="$ARCH_DEFCONFIG"

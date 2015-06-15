@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Tiny Mountain/arm Configuration
+# Zephyr OS/arm Configuration
 #
 CONFIG_NANOKERNEL=y
 # CONFIG_MICROKERNEL is not set
@@ -94,6 +94,7 @@ CONFIG_WDOG_INIT=y
 #
 # Device Drivers
 #
+# CONFIG_UART_SIMPLE is not set
 # CONFIG_CONSOLE_HANDLER is not set
 
 #
@@ -107,7 +108,7 @@ CONFIG_K20_UART=y
 #
 # Random Generation Configuration
 #
-# CONFIG_TEST_RANDOM_GENERATOR is not set
 # CONFIG_RANDOM_GENERATOR is not set
+# CONFIG_TEST_RANDOM_GENERATOR is not set
 # CONFIG_BLUETOOTH is not set
 CONFIG_DEFCONFIG_LIST="$ARCH_DEFCONFIG"

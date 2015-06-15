@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Tiny Mountain/arm Configuration
+# Zephyr OS/arm Configuration
 #
 # CONFIG_NANOKERNEL is not set
 CONFIG_MICROKERNEL=y
@@ -109,12 +109,13 @@ CONFIG_IRQ_VECTOR_TABLE_BSP=y
 CONFIG_ARCH_HAS_TASK_ABORT=y
 CONFIG_ARCH_HAS_NANO_FIBER_ABORT=y
 CONFIG_BSP_DIR="ti_lm3s6965"
-CONFIG_NUM_IRQS=7
+CONFIG_NUM_IRQS=34
 CONFIG_BSP_TI_LM3S6965_QEMU=y
 
 #
 # Device Drivers
 #
+# CONFIG_UART_SIMPLE is not set
 # CONFIG_CONSOLE_HANDLER is not set
 
 #
@@ -128,7 +129,7 @@ CONFIG_STELLARIS_UART=y
 #
 # Random Generation Configuration
 #
-# CONFIG_TEST_RANDOM_GENERATOR is not set
 # CONFIG_RANDOM_GENERATOR is not set
+# CONFIG_TEST_RANDOM_GENERATOR is not set
 # CONFIG_BLUETOOTH is not set
 CONFIG_DEFCONFIG_LIST="$ARCH_DEFCONFIG"
