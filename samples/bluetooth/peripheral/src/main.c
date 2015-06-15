@@ -100,7 +100,7 @@ static struct bt_uuid hrs_uuid = {
 
 static struct bt_uuid hrmc_uuid = {
 	.type = BT_UUID_16,
-	.u16 = BT_UUID_HR_MEASUREMENT,
+	.u16 = BT_UUID_HRS_MEASUREMENT,
 };
 
 static struct bt_gatt_chrc hrmc_chrc = {
@@ -111,7 +111,7 @@ static struct bt_gatt_chrc hrmc_chrc = {
 
 static struct bt_uuid bslc_uuid = {
 	.type = BT_UUID_16,
-	.u16 = BT_UUID_HR_BODY_SENSOR,
+	.u16 = BT_UUID_HRS_BODY_SENSOR,
 };
 
 static struct bt_gatt_chrc bslc_chrc = {
@@ -122,7 +122,7 @@ static struct bt_gatt_chrc bslc_chrc = {
 
 static struct bt_uuid hrcpc_uuid = {
 	.type = BT_UUID_16,
-	.u16 = BT_UUID_HR_CONTROL_POINT,
+	.u16 = BT_UUID_HRS_CONTROL_POINT,
 };
 
 static struct bt_gatt_chrc hrcpc_chrc = {
@@ -156,7 +156,7 @@ static struct bt_uuid bas_uuid = {
 
 static struct bt_uuid blvl_uuid = {
 	.type = BT_UUID_16,
-	.u16 = BT_UUID_BATTERY_LEVEL,
+	.u16 = BT_UUID_BAS_BATTERY_LEVEL,
 };
 
 static struct bt_gatt_chrc blvl_chrc = {
@@ -191,7 +191,7 @@ static struct bt_uuid cts_uuid = {
 
 static struct bt_uuid ct_uuid = {
 	.type = BT_UUID_16,
-	.u16 = BT_UUID_CURRENT_TIME,
+	.u16 = BT_UUID_CTS_CURRENT_TIME,
 };
 
 static struct bt_gatt_chrc ct_chrc = {

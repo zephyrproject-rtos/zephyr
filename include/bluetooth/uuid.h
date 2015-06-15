@@ -94,10 +94,10 @@
  *  @brief GAP Characteristic Appearance
  */
 #define BT_UUID_GAP_APPEARANCE			0x2a01
-/*! @def BT_UUID_BATTERY_LEVEL
+/*! @def BT_UUID_BAS_BATTERY_LEVEL
  *  @brief BAS Characteristic Battery Level
  */
-#define BT_UUID_BATTERY_LEVEL			0x2a19
+#define BT_UUID_BAS_BATTERY_LEVEL		0x2a19
 /*! @def BT_UUID_DIS_SYSTEM_ID
  *  @brief DIS Characteristic System ID
  */
@@ -130,22 +130,22 @@
  *  @brief DIS Characteristic PnP ID
  */
 #define BT_UUID_DIS_PNP_ID			0x2a50
-/*! @def BT_UUID_CURRENT_TIME
+/*! @def BT_UUID_CTS_CURRENT_TIME
  *  @brief CTS Characteristic Current Time
  */
-#define BT_UUID_CURRENT_TIME			0x2a2b
+#define BT_UUID_CTS_CURRENT_TIME		0x2a2b
 /*! @def BT_UUID_HR_MEASUREMENT
  *  @brief HRS Characteristic Measurement Interval
  */
-#define BT_UUID_HR_MEASUREMENT			0x2a37
-/*! @def BT_UUID_HR_BODY_SENSOR
+#define BT_UUID_HRS_MEASUREMENT			0x2a37
+/*! @def BT_UUID_HRS_BODY_SENSOR
  *  @brief HRS Characteristic Body Sensor Location
  */
-#define BT_UUID_HR_BODY_SENSOR			0x2a38
+#define BT_UUID_HRS_BODY_SENSOR			0x2a38
 /*! @def BT_UUID_HR_CONTROL_POINT
  *  @brief HRS Characteristic Control Point
  */
-#define BT_UUID_HR_CONTROL_POINT		0x2a39
+#define BT_UUID_HRS_CONTROL_POINT		0x2a39
 
 /*! @brief Bluetooth UUID types */
 enum bt_uuid_type {
