@@ -759,7 +759,7 @@ libs-y		:= $(libs-y1) $(libs-y2)
 DQUOTE = "
 #This comment line is to fix the highlighting of some editors due the quote effect."
 export KBUILD_ZEPHYR_INIT := $(head-y) $(init-y)
-export KBUILD_ZEPHYR_MAIN := $(core-y) $(libs-y) $(drivers-y) $(bsp-y)
+export KBUILD_ZEPHYR_MAIN := $(bsp-y) $(drivers-y) $(core-y) $(libs-y)
 export KBUILD_LDS          := $(srctree)/arch/$(SRCARCH)/$(subst $(DQUOTE),,$(CONFIG_BSP_DIR))/linker.cmd
 export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
