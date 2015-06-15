@@ -150,6 +150,9 @@ void main(void)
 	struct net_buf *buf;
 	int len = strlen(lorem_ipsum);
 
+	/* Pretend to be ethernet with 6 byte mac */
+	uint8_t mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+
 	PRINT("%s: run net_loopback_test\n", __FUNCTION__);
 
 	net_init();
@@ -160,6 +163,8 @@ void main(void)
 
 	loopback_addr.in6_addr = in6addr_loopback;
 	loopback_addr.family = AF_INET6;
+
+	net_set_mac(mac, sizeof(mac));
 
 	ctx = net_context_get(IPPROTO_UDP,
 			      &loopback_addr, 4242,
