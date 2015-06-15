@@ -239,7 +239,7 @@ static inline void _i8253CounterOneShot(
 
 /*******************************************************************************
 *
-* _i8253IntHandlerPeriodic - system clock periodic tick handler
+* _timer_int_handler - system clock periodic tick handler
 *
 * This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
 * event is pushed onto the microkernel stack.
@@ -502,7 +502,7 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 
 	(void)irq_connect(PIT_INT_LVL,
 				PIT_INT_PRI,
-				_i8253IntHandlerPeriodic,
+				_timer_int_handler,
 				0,
 				_i8253_interrupt_stub);
 #endif /* CONFIG_DYNAMIC_INT_STUBS */
