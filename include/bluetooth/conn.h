@@ -1,5 +1,5 @@
 /*! @file
- *  @brief Internal APIs for Bluetooth connection handling.
+ *  @brief Bluetooth connection handling
  */
 
 /*
@@ -31,66 +31,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef __BT_CONN_H
+#define __BT_CONN_H
 
-#include <bluetooth/conn.h>
+struct bt_conn;
 
-enum {
-	BT_CONN_DISCONNECTED,
-	BT_CONN_CONNECTED,
+/* Increment conn reference count */
+struct bt_conn *bt_conn_get(struct bt_conn *conn);
+
+/* Decrement conn reference count */
+void bt_conn_put(struct bt_conn *conn);
+
+struct bt_conn_cb {
+	void (*connected)(const bt_addr_le_t *addr);
+	void (*disconnected)(const bt_addr_le_t *addr);
+
+	struct bt_conn_cb *_next;
 };
 
-/* L2CAP signaling channel specific context */
-struct bt_conn_l2cap {
-	uint8_t			ident;
-};
+void bt_conn_cb_register(struct bt_conn_cb *cb);
 
-struct bt_conn {
-	struct bt_dev		*dev;
-	uint16_t		handle;
-	uint8_t			role;
-
-	bt_addr_le_t		src;
-	bt_addr_le_t		dst;
-
-	uint8_t			encrypt;
-
-	uint16_t		rx_len;
-	struct bt_buf		*rx;
-
-	/* Queue for outgoing ACL data */
-	struct nano_fifo	tx_queue;
-
-	struct bt_keys		*keys;
-
-	/* Fixed channel contexts */
-	struct bt_conn_l2cap	l2cap;
-	void			*att;
-	void			*smp;
-
-	uint8_t			le_conn_interval;
-
-	uint8_t			ref;
-
-	uint8_t			state;
-
-	/* TX fiber stack */
-	BT_STACK(tx_stack, 256);
-};
-
-/* Process incoming data for a connection */
-void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags);
-
-/* Send data over a connection */
-void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf);
-
-/* Add a new connection */
-struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role);
-
-/* Delete an existing connection */
-void bt_conn_del(struct bt_conn *conn);
-
-/* Look up an existing connection */
-struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
-
-/* Look up an existing connection by address */
-struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
+#endif /* __BT_CONN_H */
