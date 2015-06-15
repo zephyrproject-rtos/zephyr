@@ -39,6 +39,17 @@ extern "C" {
 
 #if defined(CONFIG_PIC) || defined(CONFIG_SHUTOFF_PIC)
 
+/* programmable interrupt controller info (pair of cascaded 8259A devices) */
+
+#define PIC_MASTER_BASE_ADRS 0x20
+#define PIC_SLAVE_BASE_ADRS 0xa0
+#define PIC_MASTER_STRAY_INT_LVL 0x07 /* master PIC stray IRQ */
+#define PIC_SLAVE_STRAY_INT_LVL 0x0f  /* slave PIC stray IRQ */
+#define PIC_MAX_INT_LVL 0x0f	  /* max interrupt level in PIC */
+#define PIC_REG_ADDR_INTERVAL 1
+#define INT_VEC_IRQ0 0x20 /* vector number for PIC IRQ0 */
+#define N_PIC_IRQS 16     /* number of PIC IRQs */
+
 #define I8259_EOI 0x20 /* EOI bit in OCW2 */
 
 /* register definitions */

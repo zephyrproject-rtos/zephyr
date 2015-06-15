@@ -1,4 +1,4 @@
-# Kconfig - drivers configuration options
+# Kconfig - interrupt controller configuration options
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -31,21 +31,11 @@
 #
 
 
-menu "Device Drivers"
+menu "Interrupt Controllers"
 
-
-source "drivers/simple/Kconfig"
-
-source "drivers/interrupt_controller/Kconfig"
-
-source "drivers/bluetooth/Kconfig"
-
-source "drivers/console/Kconfig"
-
-source "drivers/serial/Kconfig"
-
-source "drivers/timer/Kconfig"
-
-source "drivers/random/Kconfig"
+config PIC
+	bool "PIC (i8259)"
+	default n
+        depends on X86_32
 
 endmenu

@@ -9,6 +9,4 @@ endif
 
 obj-$(CONFIG_LOAPIC) += systemApic.o
 obj-$(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED) += cache.o
-obj-$(CONFIG_PIC) += systemPic.o
-obj-$(CONFIG_PIC) += i8259Boi.o
 obj-$(CONFIG_X86_TSC_RANDOM_GENERATOR) += rand32-timestamp.o

@@ -262,13 +262,6 @@ config BOOT_A20_ENABLE
 
 endmenu
 
-config PIC
-	bool "PIC (i8259)"
-	default n
-	depends on BSP_GENERIC_PC && !LOAPIC && !IOAPIC
-	help
-	This option selects legacy i8259 as the interrupt controller.
-
 config SHUTOFF_PIC
 	bool "Shutoff PIC"
 	depends on !PIC
