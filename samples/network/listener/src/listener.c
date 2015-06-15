@@ -41,6 +41,12 @@
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
+static void set_mac(void)
+{
+	uint8_t mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+
+	net_set_mac(mac, sizeof(mac));
+}
 
 #ifdef CONFIG_MICROKERNEL
 
@@ -125,6 +131,8 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 
 void taskA(void)
 {
+	set_mac();
+
 	/* taskA gives its own semaphore, allowing it to say hello right away */
 	task_sem_give(TASKASEM);
 
@@ -217,6 +225,8 @@ void main(void)
 	net_init();
 
 	PRINT("%s: run listener\n", __FUNCTION__);
+
+	set_mac();
 
 	task_fiber_start (&fiberStack[0], STACKSIZE,
 			(nano_fiber_entry_t) fiberEntry, 0, 0, 7, 0);
