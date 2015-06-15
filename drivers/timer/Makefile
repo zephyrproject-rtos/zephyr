@@ -1,5 +1,5 @@
 ccflags-y +=-I$(srctree)/arch/$(ARCH)
-ccflags-y +=-I$(srctree)/arch/$(ARCH)/$(subst $(DQUOTE),,$(CONFIG_BSP_DIR))
+ccflags-y +=-I$(srctree)/arch/$(ARCH)/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))
 
 obj-$(CONFIG_PIT) = i8253.o
 obj-$(CONFIG_HPET_TIMER) += hpet.o

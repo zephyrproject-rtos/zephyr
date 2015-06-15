@@ -118,7 +118,7 @@ CONFIG_SHUTOFF_PIC=y
 # Bus options (PCI etc.)
 #
 # CONFIG_PCI is not set
-CONFIG_BSP_DIR="generic_pc"
+CONFIG_PLATFORM="generic_pc"
 CONFIG_LOAPIC_TIMER_FREQ=150000000
 
 #

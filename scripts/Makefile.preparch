@@ -29,10 +29,10 @@ define filechk_prj.mdef
 		done; \
 	fi; \
 	cat $(PROJECT_BASE)/$(MDEF_FILE); \
-	cat $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.mdef;)
+	cat $(srctree)/config/$(CONFIG_PLATFORM)/ukernel/config1p.mdef;)
 endef
 
-misc/generated/sysgen/prj.mdef:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.mdef \
+misc/generated/sysgen/prj.mdef:	$(srctree)/config/$(CONFIG_PLATFORM)/ukernel/config1p.mdef \
 				$(PROJECT_BASE)/$(MDEF_FILE) \
 				include/config/auto.conf FORCE
 	$(call filechk,prj.mdef)
@@ -108,4 +108,4 @@ cmd_cc_o_c = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) $(USERINCLUDE) -c -o $@ $
 include/generated/offsets.o: $(srctree)/arch/$(SRCARCH)/core/offsets/offsets.c FORCE
 	$(call if_changed_rule,cc_o_c)
 
-.PHONY: $(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/config1p.mdef
+.PHONY: $(srctree)/config/$(CONFIG_PLATFORM)/ukernel/config1p.mdef

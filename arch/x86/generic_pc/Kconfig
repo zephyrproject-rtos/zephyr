@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-config BSP_DIR
+config PLATFORM
 	string
 	default generic_pc
 	help

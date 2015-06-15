@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-config BSP_DIR
+config PLATFORM
 	string
 	default ti_lm3s6965
 	help

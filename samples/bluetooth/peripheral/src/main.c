@@ -473,7 +473,7 @@ static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0016, &dis_uuid),
 	BT_GATT_CHARACTERISTIC(0x0017, &model_chrc),
 	BT_GATT_DESCRIPTOR(0x0018, &model_uuid, BT_GATT_PERM_READ,
-			   read_model, NULL, CONFIG_BSP_DIR),
+			   read_model, NULL, CONFIG_PLATFORM),
 	BT_GATT_CHARACTERISTIC(0x0019, &manuf_chrc),
 	BT_GATT_DESCRIPTOR(0x001a, &manuf_uuid, BT_GATT_PERM_READ,
 			   read_manuf, NULL, "Manufacturer"),

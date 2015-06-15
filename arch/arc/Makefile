@@ -1,5 +1,5 @@
-ccflags-y +=-I$(srctree)/arch/arc/$(strip $(CONFIG_BSP_DIR))
-asflags-y +=-I$(srctree)/arch/arc/$(strip $(CONFIG_BSP_DIR))
+ccflags-y +=-I$(srctree)/arch/arc/$(strip $(CONFIG_PLATFORM))
+asflags-y +=-I$(srctree)/arch/arc/$(strip $(CONFIG_PLATFORM))
 
 obj-y = core/
 

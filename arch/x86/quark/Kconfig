@@ -31,7 +31,7 @@
 #
 
 
-config BSP_DIR
+config PLATFORM
 	string
 	default quark
 	help
