@@ -99,14 +99,6 @@ __extension__ ({							\
 
 #define _GENERIC_SECTION(segment) __attribute__((section(#segment)))
 
-/*
- * Do not use either PACK_STRUCT or ALIGN_STRUCT(x).
- * Use __packed or __aligned(x) instead.
- */
-
-#define PACK_STRUCT     __attribute__((__packed__))
-#define ALIGN_STRUCT(x) __attribute__((aligned(x)))
-
 #define __packed        __attribute__((__packed__))
 #define __aligned(x)    __attribute__((aligned(x)))
 #define __may_alias     __attribute__((__may_alias__))
