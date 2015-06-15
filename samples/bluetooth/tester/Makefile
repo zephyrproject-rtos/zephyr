@@ -46,6 +46,6 @@ QEMU_EXTRA_FLAGS = -serial unix:/tmp/bt-server-bredr
 # UART for Tester
 QEMU_EXTRA_FLAGS += -serial pipe:/tmp/bt-stack-tester
 
-PRJ_INCPATH += ${TIMO_BASE}/include/drivers
+PRJ_INCPATH += ${ZEPHYR_BASE}/include/drivers
 
-include $(TIMO_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/Makefile.inc
