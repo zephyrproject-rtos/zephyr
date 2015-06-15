@@ -43,8 +43,8 @@ struct bt_conn *bt_conn_get(struct bt_conn *conn);
 void bt_conn_put(struct bt_conn *conn);
 
 struct bt_conn_cb {
-	void (*connected)(const bt_addr_le_t *addr);
-	void (*disconnected)(const bt_addr_le_t *addr);
+	void (*connected)(struct bt_conn *conn);
+	void (*disconnected)(struct bt_conn *conn);
 
 	struct bt_conn_cb *_next;
 };

@@ -122,7 +122,7 @@ static void bt_connected(struct bt_conn *conn)
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->connected) {
-			cb->connected(&conn->dst);
+			cb->connected(conn);
 		}
 	}
 }
@@ -133,7 +133,7 @@ static void bt_disconnected(struct bt_conn *conn)
 
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->disconnected) {
-			cb->disconnected(&conn->dst);
+			cb->disconnected(conn);
 		}
 	}
 }

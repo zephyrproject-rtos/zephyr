@@ -526,12 +526,12 @@ static const struct bt_eir sd[] = {
 	{ }
 };
 
-static void connected(const bt_addr_le_t *addr)
+static void connected(struct bt_conn *conn)
 {
 	printk("Connected\n");
 }
 
-static void disconnected(const bt_addr_le_t *addr)
+static void disconnected(struct bt_conn *conn)
 {
 	printk("Disconnected\n");
 }
