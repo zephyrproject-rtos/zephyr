@@ -1,4 +1,6 @@
-/* conn.h - Bluetooth connection handling */
+/*! @file
+ *  @brief Internal APIs for Bluetooth connection handling.
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation

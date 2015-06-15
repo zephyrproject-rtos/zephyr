@@ -45,7 +45,7 @@
 #include <bluetooth/gatt.h>
 
 #include "hci_core.h"
-#include "conn.h"
+#include "conn_internal.h"
 #include "l2cap.h"
 #include "att.h"
 
