@@ -17,6 +17,8 @@ bluetooth/peripheral                         <u> generic_pc_pentium4
 bluetooth/peripheral                         <u> ti_lm3s6965
 bluetooth/beacon                             <u> generic_pc_pentium4
 bluetooth/beacon                             <u> ti_lm3s6965
+bluetooth/central                            <u> generic_pc_pentium4
+bluetooth/tester                             <u> ti_lm3s6965
 #  microkernel/test/test_bluetooth             <uq> quark
 #  microkernel/test/test_bluetooth             <uq> atom
 microkernel/test/test_bluetooth             <uq> generic_pc_minuteia!
