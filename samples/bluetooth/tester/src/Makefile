@@ -1,3 +1,3 @@
-EXTRA_CFLAGS +=-I$(srctree)/include/drivers
+ccflags-y +=-I$(srctree)/include/drivers
 
 obj-y = bttester.o gap.o main.o
