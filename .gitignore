@@ -4,7 +4,6 @@
 *.cmd
 .dir
 outdir
-samples/libc/minimal-*-O?
 scripts/basic/fixdep
 scripts/gen_idt/gen_idt
 scripts/kconfig/conf
