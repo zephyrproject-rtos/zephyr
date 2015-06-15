@@ -34,8 +34,8 @@
 #include <stddef.h>
 #include <misc/printk.h>
 
-#include "bluetooth/bluetooth.h"
-#include "bluetooth/hci.h"
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 
 /* Set Advertisement data */
 static const struct bt_eir ad[] = {
