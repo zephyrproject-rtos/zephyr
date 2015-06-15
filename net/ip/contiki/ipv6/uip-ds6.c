@@ -112,21 +112,9 @@ uip_ds6_init(void)
   uip_ds6_if.retrans_timer = UIP_ND6_RETRANS_TIMER;
   uip_ds6_if.maxdadns = UIP_ND6_DEF_MAXDADNS;
 
-  /* Create link local address, prefix, multicast addresses, anycast addresses */
-  uip_create_linklocal_prefix(&loc_fipaddr);
-#if UIP_CONF_ROUTER
-  uip_ds6_prefix_add(&loc_fipaddr, UIP_DEFAULT_PREFIX_LEN, 0, 0, 0, 0);
-#else /* UIP_CONF_ROUTER */
-  uip_ds6_prefix_add(&loc_fipaddr, UIP_DEFAULT_PREFIX_LEN, 0);
-#endif /* UIP_CONF_ROUTER */
-  uip_ds6_set_addr_iid(&loc_fipaddr, &uip_lladdr);
-  uip_ds6_addr_add(&loc_fipaddr, 0, ADDR_AUTOCONF);
+  uip_ds6_set_lladdr(&uip_lladdr);
 
-  uip_create_linklocal_allnodes_mcast(&loc_fipaddr);
-  uip_ds6_maddr_add(&loc_fipaddr);
 #if UIP_CONF_ROUTER
-  uip_create_linklocal_allrouters_mcast(&loc_fipaddr);
-  uip_ds6_maddr_add(&loc_fipaddr);
 #if UIP_ND6_SEND_RA
   stimer_set(&uip_ds6_timer_ra, 2);     /* wait to have a link local IP address */
 #endif /* UIP_ND6_SEND_RA */
@@ -140,6 +128,34 @@ uip_ds6_init(void)
   return;
 }
 
+/*---------------------------------------------------------------------------*/
+void uip_ds6_set_lladdr(uip_lladdr_t *lladdr)
+{
+  /* First remove the current address from system as this function
+   * can be called many times.
+   */
+  uip_ds6_addr_rm(uip_ds6_addr_lookup(&loc_fipaddr));
+
+  /* Create link local address, prefix, multicast addresses,
+   * anycast addresses
+   */
+  uip_create_linklocal_prefix(&loc_fipaddr);
+#if UIP_CONF_ROUTER
+  uip_ds6_prefix_add(&loc_fipaddr, UIP_DEFAULT_PREFIX_LEN, 0, 0, 0, 0);
+#else /* UIP_CONF_ROUTER */
+  uip_ds6_prefix_add(&loc_fipaddr, UIP_DEFAULT_PREFIX_LEN, 0);
+#endif /* UIP_CONF_ROUTER */
+  uip_ds6_set_addr_iid(&loc_fipaddr, &uip_lladdr);
+  uip_ds6_addr_add(&loc_fipaddr, 0, ADDR_AUTOCONF);
+
+  uip_create_linklocal_allnodes_mcast(&loc_fipaddr);
+  uip_ds6_maddr_add(&loc_fipaddr);
+
+#if UIP_CONF_ROUTER
+  uip_create_linklocal_allrouters_mcast(&loc_fipaddr);
+  uip_ds6_maddr_add(&loc_fipaddr);
+#endif /* UIP_CONF_ROUTER */
+}
 
 /*---------------------------------------------------------------------------*/
 void
