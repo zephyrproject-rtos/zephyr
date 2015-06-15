@@ -80,8 +80,9 @@ config  CONTEXT_CUSTOM_DATA
 config  NANO_TIMERS
 	bool
 	prompt "Enable nanokernel timers"
-	default y
-	depends on NANOKERNEL && SYS_CLOCK_EXISTS
+	default y if NANOKERNEL
+	default n
+	depends on SYS_CLOCK_EXISTS
 	help
 	Allow fibers and tasks to wait on nanokernel timers, which can be
 	accessed using the nano_timer_xxx() APIs.
