@@ -1,5 +1,5 @@
 /*! @file
- *  @bried Generic Attribute Profile handling
+ *  @brief Generic Attribute Profile handling
  */
 
 /*
