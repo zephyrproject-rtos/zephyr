@@ -21,8 +21,8 @@ else
 	EXTRA_CFLAGS += -DUIP_CONF_IPV6_RPL=0
 endif
 
-MODULES_SOURCES = ${foreach d, $(UIP_MODULES), ${wildcard $(TIMO_BASE)/$(d)/*.c}}
-MODULES_FILES = ${foreach f, $(MODULES_SOURCES), ${subst $(TIMO_BASE)/net/ip/,,${f}}}
+MODULES_SOURCES = ${foreach d, $(UIP_MODULES), ${wildcard $(ZEPHYR_BASE)/$(d)/*.c}}
+MODULES_FILES = ${foreach f, $(MODULES_SOURCES), ${subst $(ZEPHYR_BASE)/net/ip/,,${f}}}
 obj-y = ${foreach f, $(MODULES_FILES), ${subst .c,.o,${f}}}
 
 obj-y += net_init.o \
@@ -36,4 +36,4 @@ obj-y += net_init.o \
 	 contiki/queuebuf.o
 
 # workaround for include file location
-CREATE_INCLUDE_LINK_net := $(shell ln -s ${TIMO_BASE}/net/ip/contiki ${TIMO_BASE}/net/ip/contiki/net > /dev/null 2>&1)
+CREATE_INCLUDE_LINK_net := $(shell ln -s ${ZEPHYR_BASE}/net/ip/contiki ${ZEPHYR_BASE}/net/ip/contiki/net > /dev/null 2>&1)
