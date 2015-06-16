@@ -1,4 +1,4 @@
-/* crt0.s - crt0 module for the IA-32 boards */
+/* crt0.S - crt0 module for the IA-32 boards */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.

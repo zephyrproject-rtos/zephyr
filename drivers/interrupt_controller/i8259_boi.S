@@ -1,4 +1,4 @@
-/* i8259Boi.s - Intel 8259A PIC BOI Handler */
+/* i8259Boi.S - Intel 8259A PIC BOI Handler */
 
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.

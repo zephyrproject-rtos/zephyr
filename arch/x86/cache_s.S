@@ -1,4 +1,4 @@
-/* cache_s.s - cache manipulation */
+/* cache_s.S - cache manipulation */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.

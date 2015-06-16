@@ -1,4 +1,4 @@
-/* driver_static_irq_stubs.s - interrupt stubs */
+/* driver_static_irq_stubs.S - interrupt stubs */
 
 /*
  * Copyright (c) 2012-2015, Wind River Systems, Inc.
