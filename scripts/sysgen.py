@@ -145,7 +145,7 @@ def write_file(filename, contents):
 
 
 def sysgen_error(msg):
-    print "\n*** sysgen error: " + msg + "\n"
+    print("\n*** sysgen error: " + msg + "\n")
     sys.exit(1)
 
 
@@ -472,7 +472,7 @@ def kernel_main_c_priorities():
     # priority queue bit map (indicates which priority queues are non-empty;
     # initially only the idle task's queue has a runnable task)
 
-    num_bit_maps = ((num_prios + 31) / 32)
+    num_bit_maps = ((num_prios + 31) // 32)
 
     kernel_main_c_out("\n" +
         "uint32_t _k_task_priority_bitmap[%d] = {" % (num_bit_maps))
