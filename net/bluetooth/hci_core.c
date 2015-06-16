@@ -40,6 +40,7 @@
 #include <misc/util.h>
 #include <misc/byteorder.h>
 
+#include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 

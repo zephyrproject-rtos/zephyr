@@ -37,6 +37,7 @@
 #include <string.h>
 #include <misc/byteorder.h>
 
+#include <bluetooth/log.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/buf.h>
