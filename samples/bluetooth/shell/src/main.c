@@ -45,7 +45,7 @@ static int cmd_init(int argc, const char *line)
 
 	err = bt_init();
 	if (err) {
-		printk("Bluetoot init failed (err %d)\n", err);
+		printk("Bluetooth init failed (err %d)\n", err);
 	} else {
 		printk("Bluetooth initialized\n");
 	}
