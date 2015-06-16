@@ -1068,11 +1068,6 @@ static int hci_init(void)
 	return 0;
 }
 
-int bt_hci_reset(void)
-{
-	return hci_init();
-}
-
 /* Interface to HCI driver layer */
 
 void bt_recv(struct bt_buf *buf)

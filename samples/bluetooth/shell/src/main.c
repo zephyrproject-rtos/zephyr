@@ -53,13 +53,6 @@ static int cmd_init(int argc, const char *line)
 	return 0;
 }
 
-static int cmd_reset(int argc, const char *line)
-{
-	bt_hci_reset();
-
-	return 0;
-}
-
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -69,5 +62,4 @@ void main(void)
 	shell_init("btshell> ");
 
 	shell_cmd_register("init", cmd_init);
-	shell_cmd_register("reset", cmd_reset);
 }

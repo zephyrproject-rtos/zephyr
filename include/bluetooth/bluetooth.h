@@ -38,9 +38,6 @@
 
 /* HCI control APIs */
 
-/* Reset the state of the controller (i.e. perform full HCI init */
-int bt_hci_reset(void);
-
 /** @brief Initialize the Bluetooth Subsystem.
  *
  *  Initialize Bluetooth. Must be the called before anything else.
