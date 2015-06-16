@@ -33,4 +33,3 @@
 
 % DRIVERTYPE      CALL
 % ================================================
-  TIMERDRIVER     '_sys_clock_driver_init()'
