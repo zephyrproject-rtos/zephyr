@@ -615,14 +615,10 @@ void _timer_idle_exit(void)
  *
  * @return N/A
  */
-void timer_driver(int priority /* priority parameter is ignored by this driver
-				  */
-		  )
+void timer_driver(void)
 {
 	/* enable counter, interrupt and set clock src to system clock */
 	union __stcsr stcsr = {.bit = {1, 1, 1, 0, 0, 0} };
-
-	ARG_UNUSED(priority);
 
 	/*
 	 * Determine the reload value to achieve the configured tick rate.

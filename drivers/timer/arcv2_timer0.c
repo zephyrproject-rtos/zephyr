@@ -163,14 +163,10 @@ void _timer_int_handler(void *unused)
  * @return N/A
  */
 
-void timer_driver(
-	int priority /* priority parameter ignored by this driver */
-)
+void timer_driver(void)
 {
 	int irq = CONFIG_ARCV2_TIMER0_INT_LVL;
 	int prio = CONFIG_ARCV2_TIMER0_INT_PRI;
-
-	ARG_UNUSED(priority);
 
 	/* ensure that the timer will not generate interrupts */
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, 0);

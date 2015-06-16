@@ -33,4 +33,4 @@
 
 % DRIVERTYPE     CALL
 % ===============================================
-  TIMERDRIVER    'timer_driver(0)'
+  TIMERDRIVER    'timer_driver()'

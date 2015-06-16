@@ -497,17 +497,13 @@ void _timer_idle_exit(void)
  * @return N/A
  */
 
-void timer_driver(int priority /* priority parameter is ignored by this driver
-				  */
-		  )
+void timer_driver(void)
 {
 	uint64_t hpetClockPeriod;
 	uint64_t tickFempto;
 #ifndef TIMER_SUPPORTS_TICKLESS
 	uint32_t counter_load_value;
 #endif
-
-	ARG_UNUSED(priority);
 
 	/*
 	 * Initial state of HPET is unknown, so put it back in a reset-like

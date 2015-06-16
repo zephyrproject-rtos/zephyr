@@ -540,11 +540,8 @@ void _timer_idle_exit(void)
  * @return N/A
  */
 
-void timer_driver(int priority /* priority parameter ignored by this driver */
-		  )
+void timer_driver(void)
 {
-	ARG_UNUSED(priority);
-
 	/* determine the PIT counter value (in timer clock cycles/system tick)
 	 */
 
