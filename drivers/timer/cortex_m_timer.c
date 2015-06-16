@@ -615,7 +615,7 @@ void _timer_idle_exit(void)
  *
  * @return N/A
  */
-void timer_driver(void)
+void _sys_clock_driver_init(void)
 {
 	/* enable counter, interrupt and set clock src to system clock */
 	union __stcsr stcsr = {.bit = {1, 1, 1, 0, 0, 0} };

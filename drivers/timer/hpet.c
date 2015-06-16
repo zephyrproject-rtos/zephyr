@@ -497,7 +497,7 @@ void _timer_idle_exit(void)
  * @return N/A
  */
 
-void timer_driver(void)
+void _sys_clock_driver_init(void)
 {
 	uint64_t hpetClockPeriod;
 	uint64_t tickFempto;

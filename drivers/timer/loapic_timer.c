@@ -540,7 +540,7 @@ void _timer_idle_exit(void)
  * @return N/A
  */
 
-void timer_driver(void)
+void _sys_clock_driver_init(void)
 {
 	/* determine the PIT counter value (in timer clock cycles/system tick)
 	 */

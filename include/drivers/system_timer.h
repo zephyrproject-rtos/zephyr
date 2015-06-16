@@ -46,7 +46,7 @@ GTEXT(_timer_int_handler)
 #else /* _ASMLANGUAGE */
 
 extern uint32_t timer_read(void);
-extern void timer_driver(void);
+extern void _sys_clock_driver_init(void);
 /*
  * Timer interrupt handler is one of the routines that the driver
  * has to implement, but it is not necessarily an external function.

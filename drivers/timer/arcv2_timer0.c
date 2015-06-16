@@ -163,7 +163,7 @@ void _timer_int_handler(void *unused)
  * @return N/A
  */
 
-void timer_driver(void)
+void _sys_clock_driver_init(void)
 {
 	int irq = CONFIG_ARCV2_TIMER0_INT_LVL;
 	int prio = CONFIG_ARCV2_TIMER0_INT_PRI;
