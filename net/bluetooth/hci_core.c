@@ -1322,7 +1322,7 @@ int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	return 0;
 }
 
-int bt_stop_scanning()
+int bt_stop_scanning(void)
 {
 	struct bt_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_enable *scan_enable;
