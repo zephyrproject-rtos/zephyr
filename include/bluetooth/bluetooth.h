@@ -1,4 +1,6 @@
-/* bluetooth.h - HCI core Bluetooth definitions */
+/*! @file
+ *  @brief Bluetooth subsystem core APIs.
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -35,8 +37,6 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
-
-/* HCI control APIs */
 
 /** @brief Initialize the Bluetooth Subsystem.
  *
