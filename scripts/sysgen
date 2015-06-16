@@ -256,16 +256,6 @@ def mdef_parse():
                               int(words[4])))
             continue
 
-        if (words[0] == "TIMERDRIVER"):
-            if (len(words) == 1):
-                error_arg_count(line)
-            if (num_timers == 0):
-                continue    # ignore timer driver for a tickless microkernel
-            start_quote = line.find("'")
-            end_quote = line.rfind("'")
-            driver_list.append(line[start_quote + 1:end_quote])
-            continue
-
         if (words[0] == "USERDRIVER"):
             if (len(words) == 1):
                 error_arg_count(line)
