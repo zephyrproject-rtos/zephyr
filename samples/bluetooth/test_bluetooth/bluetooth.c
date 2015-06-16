@@ -37,6 +37,7 @@
 #include <arch/cpu.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/driver.h>
 
 #define EXPECTED_ERROR -ENOSYS
 

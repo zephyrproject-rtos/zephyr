@@ -44,6 +44,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/driver.h>
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_UART)
 #undef BT_DBG

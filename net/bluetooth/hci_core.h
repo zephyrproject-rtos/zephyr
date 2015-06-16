@@ -32,6 +32,7 @@
 
 #include <stdbool.h>
 #include <arch/cpu.h>
+#include <bluetooth/driver.h>
 
 /* Enabling debug increases stack size requirement considerably */
 #if defined(CONFIG_BLUETOOTH_DEBUG)

@@ -1,4 +1,6 @@
-/* bluetooth.h - HCI core Bluetooth definitions */
+/*! @file
+ *  @brief Bluetooth HCI driver API.
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -29,60 +31,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __BT_BLUETOOTH_H
-#define __BT_BLUETOOTH_H
+#ifndef __BT_DRIVER_H
+#define __BT_DRIVER_H
 
 #include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
 
-/* HCI control APIs */
+/* Receive data from the controller/HCI driver */
+void bt_recv(struct bt_buf *buf);
 
-/* Reset the state of the controller (i.e. perform full HCI init */
-int bt_hci_reset(void);
+struct bt_driver {
+	/* How much headroom is needed for HCI transport headers */
+	size_t head_reserve;
 
-/** @brief Initialize the Bluetooth Subsystem.
- *
- *  Initialize Bluetooth. Must be the called before anything else.
- *  Caller shall be either task or a fiber.
- *
- *  @return zero in success or error code otherwise
- */
-int bt_init(void);
+	/* Open the HCI transport */
+	int (*open)(void);
 
-/* Advertising API */
+	/* Send data to HCI */
+	int (*send)(struct bt_buf *buf);
+};
 
-struct bt_eir {
-	uint8_t len;
-	uint8_t type;
-	uint8_t data[29];
-} __packed;
+/* Register a new HCI driver to the Bluetooth stack */
+int bt_driver_register(struct bt_driver *drv);
 
-/** @brief Start advertising
- *
- *  Set advertisement data,  scan response data, advertisement parameters
- *  and start advertising.
- *
- *  @param type advertising type
- *  @param ad data to be used in advertisement packets
- *  @param sd data to be used in scan response packets
- *
- *  @return zero in success or error code otherwise.
- */
-int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
-			 const struct bt_eir *sd);
-int bt_start_scanning(uint8_t scan_type, uint8_t scan_filter);
-int bt_stop_scanning(void);
+/* Unregister a previously registered HCI driver */
+void bt_driver_unregister(struct bt_driver *drv);
 
-/** @brief Setting LE connection to peer
- *
- *  Allows initiate new LE link to remote peer using its address
- *
- *  @param peer address of peer's object containing LE address
- *
- *  @return zero in success or error code otherwise.
- */
-int bt_connect_le(const bt_addr_le_t *peer);
-int bt_disconnect(struct bt_conn *conn, uint8_t reason);
-
-#endif /* __BT_BLUETOOTH_H */
+#endif /* __BT_DRIVER_H */
