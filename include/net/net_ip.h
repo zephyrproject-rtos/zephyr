@@ -89,7 +89,7 @@ struct net_addr {
 	union {
 		struct in6_addr in6_addr;
 		struct in_addr in_addr;
-	} addr;
+	};
 };
 
 /*! IPv6/IPv4 network connection tuple */
