@@ -34,6 +34,8 @@
 #ifndef __BT_CONN_H
 #define __BT_CONN_H
 
+#include <bluetooth/hci.h>
+
 struct bt_conn;
 
 /* Increment conn reference count */
@@ -41,6 +43,9 @@ struct bt_conn *bt_conn_get(struct bt_conn *conn);
 
 /* Decrement conn reference count */
 void bt_conn_put(struct bt_conn *conn);
+
+/* Look up an existing connection by address */
+struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
 
 struct bt_conn_cb {
 	void (*connected)(struct bt_conn *conn);
