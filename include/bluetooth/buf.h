@@ -32,6 +32,7 @@
 #ifndef __BT_BUF_H
 #define __BT_BUF_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 /* The biggest foreseeable buffer size requirement right now comes from
