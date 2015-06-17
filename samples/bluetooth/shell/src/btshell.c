@@ -147,7 +147,7 @@ static void shell(int arg1, int arg2)
 
 		cb = get_cb(argv[0]);
 		if (!cb) {
-			printk("%s Unrecognozed command: %s\n",
+			printk("%s Unrecognized command: %s\n",
 			       prompt, argv[0]);
 			nano_fiber_fifo_put(&avail_queue, cmd);
 			continue;
