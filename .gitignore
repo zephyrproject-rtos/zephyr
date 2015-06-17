@@ -3,6 +3,7 @@
 *.d
 *.cmd
 *~
+cscope.*
 .dir
 outdir
 scripts/basic/fixdep
