@@ -652,8 +652,9 @@ static void le_ltk_request(struct bt_buf *buf)
 		return;
 	}
 
-	if (!conn->keys)
+	if (!conn->keys) {
 		conn->keys = bt_keys_find(BT_KEYS_SLAVE_LTK, &conn->dst);
+	}
 
 	if (conn->keys && (conn->keys->keys & BT_KEYS_SLAVE_LTK) &&
 	    conn->keys->slave_ltk.rand == evt->rand &&
