@@ -1,5 +1,5 @@
 
-if [ "X$(basename -- "$0")" == "Xzephyr-env.bash" ]; then
+if [ "X$(basename -- "$0")" == "Xzephyr-env.sh" ]; then
     echo "Source this file (do NOT execute it!) to set the Zephyr OS environment."
     exit
 fi
