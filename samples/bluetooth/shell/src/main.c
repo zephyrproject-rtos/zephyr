@@ -75,7 +75,7 @@ static struct bt_conn_cb conn_callbacks = {
 		.disconnected = disconnected,
 };
 
-static int cmd_init(int argc, char *argv[])
+static void cmd_init(int argc, char *argv[])
 {
 	int err;
 
@@ -85,8 +85,6 @@ static int cmd_init(int argc, char *argv[])
 	} else {
 		printk("Bluetooth initialized\n");
 	}
-
-	return 0;
 }
 
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
@@ -129,44 +127,41 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int cmd_connect_le(int argc, char *argv[])
+static void cmd_connect_le(int argc, char *argv[])
 {
 	int err;
 	bt_addr_le_t addr;
 
 	if (argc < 2) {
 		printk("Peer address required\n");
-		return -EINVAL;
+		return;
 	}
 
 	if (argc < 3) {
 		printk("Peer address type required\n");
-		return -EINVAL;
+		return;
 	}
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
 		printk("Invalid peer address (err %d)\n", err);
-		return err;
+		return;
 	}
 
 	err = bt_connect_le(&addr);
 	if (err) {
 		printk("Connection failed (err %d)\n", err);
-		return err;
 	}
-
-	return 0;
 }
 
-static int cmd_disconnect(int argc, char *argv[])
+static void cmd_disconnect(int argc, char *argv[])
 {
 	int err;
 	uint8_t conn_id;
 
 	if (argc < 2) {
 		printk("Disconnect reason code required\n");
-		return -EINVAL;
+		return;
 	}
 
 	conn_id = *argv[1] - '0';
@@ -176,13 +171,9 @@ static int cmd_disconnect(int argc, char *argv[])
 	}
 
 	err = bt_disconnect(conns[conn_id], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-
 	if (err) {
 		printk("Disconnection failed (err %d)\n", err);
-		return err;
 	}
-
-	return 0;
 }
 
 #ifdef CONFIG_MICROKERNEL

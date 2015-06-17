@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-typedef int (*cmd_function_t)(int argc, char *argv[]);
+typedef void (*cmd_function_t)(int argc, char *argv[]);
 
 /** @brief Initialize shell with optional prompt, NULL in case no prompt is
  *         needed

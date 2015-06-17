@@ -122,7 +122,7 @@ static cmd_function_t get_cb(const char *string)
 	return NULL;
 }
 
-static int show_commands(int argc, char *argv[])
+static void show_commands(int argc, char *argv[])
 {
 	int i;
 
@@ -131,8 +131,6 @@ static int show_commands(int argc, char *argv[])
 	for (i = 0; commands[i].cmd_name; i++) {
 		printk("%s\n", commands[i].cmd_name);
 	}
-
-	return 0;
 }
 
 static void shell(int arg1, int arg2)
