@@ -188,7 +188,7 @@ static uint8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
 	struct find_info_data *data = user_data;
 	struct bt_att *att = data->conn->att;
 
-	BT_DBG("handle %u\n", attr->handle);
+	BT_DBG("handle 0x%04x\n", attr->handle);
 
 	/* Initialize rsp at first entry */
 	if (!data->rsp) {
@@ -265,7 +265,8 @@ static uint8_t att_find_info_req(struct bt_conn *conn, struct bt_buf *data)
 	start_handle = sys_le16_to_cpu(req->start_handle);
 	end_handle = sys_le16_to_cpu(req->end_handle);
 
-	BT_DBG("start_handle %u end_handle %u\n", start_handle, end_handle);
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x\n", start_handle,
+	       end_handle);
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
 		send_err_rsp(conn, BT_ATT_OP_FIND_INFO_REQ, err_handle,
@@ -299,7 +300,7 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	BT_DBG("handle %u\n", attr->handle);
+	BT_DBG("handle 0x%04x\n", attr->handle);
 
 	/* stop if there is no space left */
 	if (att->mtu - data->buf->len < sizeof(*data->group))
@@ -371,7 +372,7 @@ static uint8_t att_find_type_req(struct bt_conn *conn, struct bt_buf *data)
 	type = sys_le16_to_cpu(req->type);
 	value = bt_buf_pull(data, sizeof(*req));
 
-	BT_DBG("start_handle %u end_handle %u type %u\n", start_handle,
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x type %u\n", start_handle,
 	       end_handle, type);
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
@@ -434,7 +435,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	BT_DBG("handle %u\n", attr->handle);
+	BT_DBG("handle 0x%04x\n", attr->handle);
 
 	/* Fast foward to next item position */
 	data->item = bt_buf_add(data->buf, sizeof(*data->item));
@@ -519,7 +520,7 @@ static uint8_t att_read_type_req(struct bt_conn *conn, struct bt_buf *data)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	BT_DBG("start_handle %u end_handle %u type %u\n",
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x type %u\n",
 	       start_handle, end_handle, uuid.u16);
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
@@ -587,7 +588,7 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 	struct bt_att *att = data->conn->att;
 	int read;
 
-	BT_DBG("handle %u\n", attr->handle);
+	BT_DBG("handle 0x%04x\n", attr->handle);
 
 	data->rsp = bt_buf_add(data->buf, sizeof(*data->rsp));
 
@@ -667,7 +668,7 @@ static uint8_t att_read_req(struct bt_conn *conn, struct bt_buf *data)
 
 	handle = sys_le16_to_cpu(req->handle);
 
-	BT_DBG("handle %u\n", handle);
+	BT_DBG("handle 0x%04x\n", handle);
 
 	return att_read_rsp(conn, BT_ATT_OP_READ_REQ, BT_ATT_OP_READ_RSP,
 			    &handle, 1, 0);
@@ -683,7 +684,7 @@ static uint8_t att_read_blob_req(struct bt_conn *conn, struct bt_buf *data)
 	handle = sys_le16_to_cpu(req->handle);
 	offset = sys_le16_to_cpu(req->offset);
 
-	BT_DBG("handle %u offset %u\n", handle, offset);
+	BT_DBG("handle 0x%04x offset %u\n", handle, offset);
 
 	return att_read_rsp(conn, BT_ATT_OP_READ_BLOB_REQ,
 			    BT_ATT_OP_READ_BLOB_RSP, &handle, 1, offset);
@@ -704,13 +705,13 @@ static uint8_t att_read_mult_req(struct bt_conn *conn, struct bt_buf *data)
 	handles[0] = sys_le16_to_cpu(req->handle1);
 	handles[1] = sys_le16_to_cpu(req->handle2);
 
-	BT_DBG("handle1 %u handle2 %u\n", handles[0], handles[1]);
+	BT_DBG("handle1 0x%04x handle2 0x%04x\n", handles[0], handles[1]);
 
 	bt_buf_pull(data, sizeof(*req));
 
 	for (i = 0; data->len; i++) {
 		handles[2 + i] = bt_buf_pull_le16(data);
-		BT_DBG("handle%d %u \n", 2 + i, handles[2 + i]);
+		BT_DBG("handle%d 0x%04x\n", 2 + i, handles[2 + i]);
 	}
 
 	return att_read_rsp(conn, BT_ATT_OP_READ_MULT_REQ,
@@ -739,7 +740,7 @@ static uint8_t read_group_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	BT_DBG("handle %u\n", attr->handle);
+	BT_DBG("handle 0x%04x\n", attr->handle);
 
 	/* Stop if there is no space left */
 	if (data->rsp->len && att->mtu - data->buf->len < data->rsp->len)
@@ -831,7 +832,7 @@ static uint8_t att_read_group_req(struct bt_conn *conn, struct bt_buf *data)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	BT_DBG("start_handle %u end_handle %u type %u\n",
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x type %u\n",
 	       start_handle, end_handle, uuid.u16);
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
@@ -872,7 +873,7 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	struct write_data *data = user_data;
 	int write;
 
-	BT_DBG("handle %u\n", attr->handle);
+	BT_DBG("handle 0x%04x\n", attr->handle);
 
 	/* Check for write support and flush support in case of prepare */
 	if (!attr->write ||
@@ -975,7 +976,7 @@ static uint8_t att_write_req(struct bt_conn *conn, struct bt_buf *data)
 	handle = sys_le16_to_cpu(req->handle);
 	bt_buf_pull(data, sizeof(*req));
 
-	BT_DBG("handle %u\n", handle);
+	BT_DBG("handle 0x%04x\n", handle);
 
 	return att_write_rsp(conn, BT_ATT_OP_WRITE_REQ, BT_ATT_OP_WRITE_RSP,
 			     handle, 0, data->data, data->len);
@@ -992,7 +993,7 @@ static uint8_t att_prepare_write_req(struct bt_conn *conn, struct bt_buf *data)
 	offset = sys_le16_to_cpu(req->offset);
 	bt_buf_pull(data, sizeof(*req));
 
-	BT_DBG("handle %u offset %u\n", handle, offset);
+	BT_DBG("handle 0x%04x offset %u\n", handle, offset);
 
 	return att_write_rsp(conn, BT_ATT_OP_PREPARE_WRITE_REQ,
 			     BT_ATT_OP_PREPARE_WRITE_RSP, handle, offset,
@@ -1064,7 +1065,7 @@ static uint8_t att_exec_write_req(struct bt_conn *conn, struct bt_buf *data)
 
 	req = (void *)data->data;
 
-	BT_DBG("flags %u\n", req->flags);
+	BT_DBG("flags 0x%02x\n", req->flags);
 
 	return att_exec_write_rsp(conn, req->flags);
 }
@@ -1083,7 +1084,7 @@ static uint8_t att_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 
 	handle = sys_le16_to_cpu(req->handle);
 
-	BT_DBG("handle %u\n", handle);
+	BT_DBG("handle 0x%04x\n", handle);
 
 	return att_write_rsp(conn, 0, 0, handle, 0, data->data, data->len);
 }
@@ -1098,7 +1099,7 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 	handle = sys_le16_to_cpu(req->handle);
 	bt_buf_pull(data, sizeof(*req));
 
-	BT_DBG("handle %u\n", handle);
+	BT_DBG("handle 0x%04x\n", handle);
 
 	/* TODO: Validate signature */
 
@@ -1150,7 +1151,7 @@ static void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 		goto done;
 	}
 
-	BT_DBG("Received ATT code %u len %u\n", hdr->code, buf->len);
+	BT_DBG("Received ATT code 0x%02x len %u\n", hdr->code, buf->len);
 
 	bt_buf_pull(buf, sizeof(*hdr));
 

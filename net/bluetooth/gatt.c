@@ -77,7 +77,8 @@ int bt_gatt_attr_read(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 
 	len = min(buf_len, value_len - offset);
 
-	BT_DBG("handle %u offset %u length %u\n", attr->handle, offset, len);
+	BT_DBG("handle 0x%04x offset %u length %u\n", attr->handle, offset,
+	       len);
 
 	memcpy(buf, value + offset, len);
 
@@ -271,7 +272,7 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 
 	ccc->cfg[i].value = sys_le16_to_cpu(*data);
 
-	BT_DBG("handle %u value %u\n", attr->handle, ccc->cfg[i].value);
+	BT_DBG("handle 0x%04x value %u\n", attr->handle, ccc->cfg[i].value);
 
 	/* Update cfg if don't match */
 	if (ccc->cfg[i].value != ccc->value) {
@@ -345,7 +346,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 			return BT_GATT_ITER_STOP;
 		}
 
-		BT_DBG("conn %p handle %u\n", conn, data->handle);
+		BT_DBG("conn %p handle 0x%04x\n", conn, data->handle);
 
 		nfy = bt_buf_add(buf, sizeof(*nfy));
 		nfy->handle = sys_cpu_to_le16(data->handle);
