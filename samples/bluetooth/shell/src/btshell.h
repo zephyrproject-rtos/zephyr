@@ -30,23 +30,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*! @brief Callback called when command is entered.
+ *
+ *  @param argc Number of parameters passed.
+ *  @param argv Array of option strings. First option is always command name.
+ */
 typedef void (*cmd_function_t)(int argc, char *argv[]);
 
-/** @brief Initialize shell with optional prompt, NULL in case no prompt is
- *         needed
+/*! @brief Initialize shell with optional prompt, NULL in case no prompt is
+ *         needed.
  *
- *  @param prompt Prompt to be printed on serial console
- *
- *  @return None
+ *  @param prompt Prompt to be printed on serial console.
  */
 void shell_init(const char *prompt);
 
-/** @brief Register collback which would be run when string is entered in
- *         console
+/*! @brief Register callback which would be run when string is entered in
+ *         console.
  *
- *  @param argc Number of parameters and
- *  @param line String of argc parameters separated by '\0'
- *
- *  @return None
+ *  @param string Command name.
+ *  @param cb Command handler.
  */
 void shell_cmd_register(const char *string, cmd_function_t cb);
