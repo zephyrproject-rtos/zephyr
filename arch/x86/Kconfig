@@ -274,6 +274,12 @@ config BOOT_A20_ENABLE
 
 endmenu
 
+config SHUTOFF_PIC
+        bool "Shutoff PIC"
+        depends on !PIC
+        default n
+        help
+        This option disables all interrupts on the PIC
 
 endmenu
 
