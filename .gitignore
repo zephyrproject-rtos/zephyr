@@ -2,6 +2,7 @@
 *.a
 *.d
 *.cmd
+*~
 .dir
 outdir
 scripts/basic/fixdep
