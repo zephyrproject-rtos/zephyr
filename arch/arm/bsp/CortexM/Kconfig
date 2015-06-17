@@ -39,7 +39,7 @@ config CPU_CORTEX
 	help
 	This option signifies the use of a CPU of the Cortex family.
 
-config CPU_CORTEXM
+config CPU_CORTEX_M
 	bool "ARM Cortex-M"
 	default n
 	select CPU_CORTEX
@@ -50,7 +50,7 @@ config CPU_CORTEXM
 config CPU_CORTEX_M3_M4
 	bool "ARM Cortex-M3 or ARM Cortex-M4"
 	default n
-	select CPU_CORTEXM
+	select CPU_CORTEX_M
 	help
 	This option signifies the use of either a Cortex-M3 or Cortex-M4 CPU.
 
@@ -73,7 +73,7 @@ config CPU_CORTEX_M4
 endmenu
 
 menu "ARM Cortex-M family options"
-	depends on CPU_CORTEXM
+	depends on CPU_CORTEX_M
 
 config LDREX_STREX_AVAILABLE
 	bool

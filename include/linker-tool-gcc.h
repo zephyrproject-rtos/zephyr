@@ -39,7 +39,7 @@ use with the GCC linker.
 #ifndef __LINKER_TOOL_GCC_H
 #define __LINKER_TOOL_GCC_H
 
-#if defined(CONFIG_CPU_CORTEXM)
+#if defined(CONFIG_CPU_CORTEX_M)
 OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
 #elif defined(CONFIG_ARC)
 OUTPUT_FORMAT("elf32-littlearc", "elf32-bigarc", "elf32-littlearc")

@@ -33,7 +33,7 @@
 #ifndef _ASM_INLINE_H
 #define _ASM_INLINE_H
 
-#if !defined(CONFIG_ARM) || !defined(CONFIG_CPU_CORTEXM)
+#if !defined(CONFIG_ARM) || !defined(CONFIG_CPU_CORTEX_M)
 #error arch/arm/include/asm_inline.h is for ARM CortexM only
 #endif
 

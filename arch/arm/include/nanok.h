@@ -120,7 +120,7 @@ typedef struct preempt tPreempt;
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
-#ifdef CONFIG_CPU_CORTEXM
+#ifdef CONFIG_CPU_CORTEX_M
 #include <CortexM/stack.h>
 #include <CortexM/exc.h>
 #endif

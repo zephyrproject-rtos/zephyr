@@ -43,9 +43,9 @@ Interrupt stuff, abstracted across CPU architectures.
 #if defined(CONFIG_X86_32)
   #define IRQ_PRIORITY 3
 #elif defined(CONFIG_ARM)
-  #if defined(CONFIG_CPU_CORTEXM)
+  #if defined(CONFIG_CPU_CORTEX_M)
     #define IRQ_PRIORITY _EXC_PRIO(3)
-  #endif /* CONFIG_CPU_CORTEXM */
+  #endif /* CONFIG_CPU_CORTEX_M */
 #endif
 
 /*
@@ -97,7 +97,7 @@ static char sw_isr_trigger_1[] =
 #endif /* NUM_SW_IRQS >= 2 */
 
 #elif defined(CONFIG_ARM)
-#if defined(CONFIG_CPU_CORTEXM)
+#if defined(CONFIG_CPU_CORTEX_M)
 #include <nanokernel.h>
 static inline void sw_isr_trigger_0(void)
 	{
@@ -110,7 +110,7 @@ static inline void sw_isr_trigger_1(void)
 	_NvicSwInterruptTrigger(1);
 	}
 #endif /* NUM_SW_IRQS >= 2 */
-#endif  /* CONFIG_CPU_CORTEXM */
+#endif  /* CONFIG_CPU_CORTEX_M */
 #endif
 
 /*! Defines the ISR initialization information. */
@@ -161,7 +161,7 @@ static int initIRQ
 	}
 #endif /* NUM_SW_IRQS >= 2 */
 #elif defined(CONFIG_ARM)
-#if defined(CONFIG_CPU_CORTEXM)
+#if defined(CONFIG_CPU_CORTEX_M)
 	if (i->isr[0])
 	{
 	(void) irq_connect (0, IRQ_PRIORITY, i->isr[0], i->arg[0]);
@@ -172,7 +172,7 @@ static int initIRQ
 	(void) irq_connect (1, IRQ_PRIORITY, i->isr[1], i->arg[1]);
 	irq_enable (1);
 	}
-#endif /* CONFIG_CPU_CORTEXM */
+#endif /* CONFIG_CPU_CORTEX_M */
 #endif /* CONFIG_X86_32 */
 
 	return 0;
