@@ -306,7 +306,7 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 		}
 
 		if (conns[i].handle == handle) {
-			return &conns[i];
+			return bt_conn_get(&conns[i]);
 		}
 	}
 
@@ -323,7 +323,7 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 		}
 
 		if (!bt_addr_le_cmp(peer, &conns[i].dst)) {
-			return &conns[i];
+			return bt_conn_get(&conns[i]);
 		}
 	}
 

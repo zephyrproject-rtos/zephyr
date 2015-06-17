@@ -34,6 +34,7 @@
 #include <toolchain.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
@@ -46,6 +47,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
+#include "keys.h"
 #include "l2cap.h"
 #include "att.h"
 
@@ -228,19 +230,18 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 			   uint8_t len, uint16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
-	struct bt_conn *conn;
 	const uint16_t *data = buf;
+	bool bonded;
 	size_t i;
 
 	if (len != sizeof(*data) || offset) {
 		return -EINVAL;
 	}
 
-	conn = bt_conn_lookup_addr_le(peer);
-	if (!conn) {
-		BT_WARN("%s not connected", bt_addr_le_str(peer));
-		return -ENOTCONN;
-	}
+	if (bt_keys_get_addr(peer))
+		bonded = true;
+	else
+		bonded = false;
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Check for existing configuration */
@@ -255,7 +256,7 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 			if (!ccc->cfg[i].valid) {
 				bt_addr_le_copy(&ccc->cfg[i].peer, peer);
 				/* Only set valid if bonded */
-				ccc->cfg[i].valid = conn->keys ? 1 : 0;
+				ccc->cfg[i].valid = bonded;
 				break;
 			}
 		}
@@ -338,6 +339,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 					sizeof(*nfy) + data->len);
 		if (!buf) {
 			BT_WARN("No buffer available to send notification");
+			bt_conn_put(conn);
 			return BT_GATT_ITER_STOP;
 		}
 
@@ -350,6 +352,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		memcpy(nfy->value, data->data, data->len);
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
+		bt_conn_put(conn);
 	}
 
 	return BT_GATT_ITER_CONTINUE;

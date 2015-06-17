@@ -277,6 +277,7 @@ static void hci_acl(struct bt_buf *buf)
 	}
 
 	bt_conn_recv(conn, buf, flags);
+	bt_conn_put(conn);
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
@@ -380,6 +381,7 @@ static void hci_disconn_complete(struct bt_buf *buf)
 	analyze_stacks(conn, &conn);
 
 	bt_conn_del(conn);
+	bt_conn_put(conn);
 
 	if (dev.adv_enable) {
 		struct bt_buf *buf;
@@ -414,6 +416,7 @@ static void hci_encrypt_change(struct bt_buf *buf)
 	conn->encrypt = evt->encrypt;
 
 	bt_l2cap_encrypt_change(conn);
+	bt_conn_put(conn);
 }
 
 static void hci_reset_complete(struct bt_buf *buf)
@@ -556,6 +559,7 @@ static void hci_encrypt_key_refresh_complete(struct bt_buf *buf)
 	}
 
 	bt_l2cap_encrypt_change(conn);
+	bt_conn_put(conn);
 }
 
 static void copy_id_addr(struct bt_conn *conn, const bt_addr_le_t *addr)
@@ -665,7 +669,7 @@ static void le_ltk_request(struct bt_buf *buf)
 					sizeof(*cp));
 		if (!buf) {
 			BT_ERR("Out of command buffers\n");
-			return;
+			goto done;
 		}
 
 		cp = bt_buf_add(buf, sizeof(*cp));
@@ -680,7 +684,7 @@ static void le_ltk_request(struct bt_buf *buf)
 					sizeof(*cp));
 		if (!buf) {
 			BT_ERR("Out of command buffers\n");
-			return;
+			goto done;
 		}
 
 		cp = bt_buf_add(buf, sizeof(*cp));
@@ -688,6 +692,9 @@ static void le_ltk_request(struct bt_buf *buf)
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, buf);
 	}
+
+done:
+	bt_conn_put(conn);
 }
 
 static void hci_le_meta_event(struct bt_buf *buf)
