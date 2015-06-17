@@ -1212,6 +1212,7 @@ static void bt_att_connected(struct bt_conn *conn)
 			att->conn = conn;
 			conn->att = att;
 			att->mtu = BT_ATT_DEFAULT_LE_MTU;
+			bt_gatt_connected(conn);
 			return;
 		}
 	}
@@ -1231,6 +1232,7 @@ static void bt_att_disconnected(struct bt_conn *conn)
 
 	conn->att = NULL;
 	memset(att, 0, sizeof(*att));
+	bt_gatt_disconnected(conn);
 }
 
 void bt_att_init(void)

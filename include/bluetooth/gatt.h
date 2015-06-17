@@ -608,4 +608,10 @@ int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
  */
 void bt_gatt_notify(uint16_t handle, const void *data, size_t len);
 
+/*! @brief connected callback */
+void bt_gatt_connected(struct bt_conn *conn);
+
+/*! @brief disconnected callback */
+void bt_gatt_disconnected(struct bt_conn *conn);
+
 #endif /* __BT_GATT_H */

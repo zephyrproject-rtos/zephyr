@@ -219,6 +219,8 @@ static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
 		}
 	}
 
+	BT_DBG("ccc %p value 0x%04x\n", ccc, value);
+
 	if (value != ccc->value) {
 		ccc->value = value;
 		ccc->cfg_changed(value);
@@ -367,4 +369,94 @@ void bt_gatt_notify(uint16_t handle, const void *data, size_t len)
 	nfy.len = len;
 
 	bt_gatt_foreach_attr(handle, 0xffff, notify_cb, &nfy);
+}
+
+static uint8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct bt_conn *conn = user_data;
+	struct _bt_gatt_ccc *ccc;
+	size_t i;
+
+	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* If already enabled skip */
+	if (ccc->value) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	for (i = 0; i < ccc->cfg_len; i++) {
+		/* Ignore configuration for different peer */
+		if (bt_addr_le_cmp(&conn->dst, &ccc->cfg[i].peer)) {
+			continue;
+		}
+
+		if (ccc->cfg[i].value) {
+			gatt_ccc_changed(ccc);
+			return BT_GATT_ITER_CONTINUE;
+		}
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+void bt_gatt_connected(struct bt_conn *conn)
+{
+	BT_DBG("conn %p\n", conn);
+	bt_gatt_foreach_attr(0x0001, 0xffff, connected_cb, conn);
+}
+
+static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct bt_conn *conn = user_data;
+	struct _bt_gatt_ccc *ccc;
+	size_t i;
+
+	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* If already disabled skip */
+	if (!ccc->value) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	for (i = 0; i < ccc->cfg_len; i++) {
+		/* Ignore configurations with disabled value */
+		if (!ccc->cfg[i].value) {
+			continue;
+		}
+
+		if (bt_addr_le_cmp(&conn->dst, &ccc->cfg[i].peer)) {
+			struct bt_conn *tmp;
+
+			/* Skip if there is another peer connected */
+			tmp = bt_conn_lookup_addr_le(&ccc->cfg[i].peer);
+			if (tmp) {
+				bt_conn_put(tmp);
+				return BT_GATT_ITER_CONTINUE;
+			}
+		}
+	}
+
+	/* Reset value while disconnected */
+	memset(&ccc->value, 0, sizeof(ccc->value));
+	ccc->cfg_changed(ccc->value);
+
+	BT_DBG("ccc %p reseted\n", ccc);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+void bt_gatt_disconnected(struct bt_conn *conn)
+{
+	BT_DBG("conn %p\n", conn);
+	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
 }
