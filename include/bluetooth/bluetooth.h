@@ -106,7 +106,7 @@ int bt_disconnect(struct bt_conn *conn, uint8_t reason);
 
 /*! @def BT_ADDR_STR_LEN
  *
- *  @brief Recommended length of user string buffer for bluetooth address
+ *  @brief Recommended length of user string buffer for Bluetooth address
  *
  *  @details The recommended length guarantee the output of address conversion
  *  will not lose valuable information about address being processed.
@@ -115,16 +115,16 @@ int bt_disconnect(struct bt_conn *conn, uint8_t reason);
 
 /*! @def BT_ADDR_LE_STR_LEN
  *
- *  @brief Recommended length of user string buffer for bluetooth LE address
+ *  @brief Recommended length of user string buffer for Bluetooth LE address
  *
  *  @details The recommended length guarantee the output of address conversion
  *  will not lose valuable information about address being processed.
  */
 #define BT_ADDR_LE_STR_LEN 27
 
-/*! @brief Converts binary bluetooth address to string.
+/*! @brief Converts binary Bluetooth address to string.
  *
- *  @param addr Address of buffer containing binary bluetooth address.
+ *  @param addr Address of buffer containing binary Bluetooth address.
  *  @param str Address of user buffer with enough room to store formatted
  *  string containing binary address.
  *  @param len Length of data to be copied to user string buffer. Refer to
@@ -139,9 +139,9 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 			addr->val[2], addr->val[1], addr->val[0]);
 }
 
-/*! @brief Converts binary LE bluetooth address to string.
+/*! @brief Converts binary LE Bluetooth address to string.
  *
- *  @param addr Address of buffer containing binary LE bluetooth address.
+ *  @param addr Address of buffer containing binary LE Bluetooth address.
  *  @param user_buf Address of user buffer with enough room to store formatted
  *  string containing binary LE address.
  *  @param len Length of data to be copied to user string buffer. Refer to
