@@ -41,6 +41,9 @@
 
 #include "btshell.h"
 
+/* maximum number of command parameters */
+#define ARGC_MAX 5
+
 /* Static command array, commands identified by string cmd_name,
  * which shall be allocated in the caller
  * TODO: Check possibility of using statically allocated array
@@ -57,6 +60,9 @@ static struct {
 static uint8_t last_cmd_index = 0;
 
 static const char *prompt;
+
+static char *argv[ARGC_MAX + 1];
+static size_t argc;
 
 #define STACKSIZE 512
 static char __stack stack[STACKSIZE];
@@ -88,16 +94,19 @@ void shell_cmd_register(const char *string, cmd_function_t cb)
 	last_cmd_index++;
 }
 
-static size_t parse_string(char *p)
+static void line2argv(char *str)
 {
-	size_t argc = 0;
+	argc = 0;
 
-	while ((p = strchr(p, ' '))) {
-		*p++ = '\0';
-		argc++;
+	argv[argc++] = str;
+
+	while ((str = strchr(str, ' '))) {
+		*str++ = '\0';
+		argv[argc++] = str;
 	}
 
-	return argc;
+	/* keep it POSIX style where argv[argc] is required to be NULL */
+	argv[argc] = NULL;
 }
 
 static cmd_function_t get_cb(const char *string)
@@ -113,7 +122,7 @@ static cmd_function_t get_cb(const char *string)
 	return NULL;
 }
 
-static int show_commands(int argc, const char *argv)
+static int show_commands(int argc, char *argv[])
 {
 	int i;
 
@@ -131,32 +140,23 @@ static void shell(int arg1, int arg2)
 	while (1) {
 		struct uart_console_input *cmd;
 		cmd_function_t cb;
-		size_t argc;
 
 		printk(prompt);
 
 		cmd = nano_fiber_fifo_get_wait(&cmds_queue);
 
-		argc = parse_string(cmd->line);
+		line2argv(cmd->line);
 
-		/* NOTE: example of using command line and arguments
-		 *
-		 * for (int i = 0; i <= argc; i++) {
-		 *	printk("%s: arg %d: %s\n", __func__, i, p);
-		 *	p += strlen(p) + 1;
-		 * }
-		 */
-
-		cb = get_cb(cmd->line);
+		cb = get_cb(argv[0]);
 		if (!cb) {
 			printk("%s Unrecognozed command: %s\n",
-			       prompt, cmd->line);
+			       prompt, argv[0]);
 			nano_fiber_fifo_put(&avail_queue, cmd);
 			continue;
 		}
 
 		/* Execute callback with arguments */
-		cb(argc, cmd->line);
+		cb(argc, argv);
 
 		nano_fiber_fifo_put(&avail_queue, cmd);
 	}

@@ -75,7 +75,7 @@ static struct bt_conn_cb conn_callbacks = {
 		.disconnected = disconnected,
 };
 
-static int cmd_init(int argc, const char *line)
+static int cmd_init(int argc, char *argv[])
 {
 	int err;
 
@@ -89,7 +89,7 @@ static int cmd_init(int argc, const char *line)
 	return 0;
 }
 
-static int str2bt_addr_le(const char *str, bt_addr_le_t *addr)
+static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int i, j;
 
@@ -118,9 +118,9 @@ static int str2bt_addr_le(const char *str, bt_addr_le_t *addr)
 		}
 	}
 
-	if (strcmp(++str, "public") == 0) {
+	if (strcmp(type, "public") == 0) {
 		addr->type = BT_ADDR_LE_PUBLIC;
-	} else if (strcmp(str, "random") == 0) {
+	} else if (strcmp(type, "random") == 0) {
 		addr->type = BT_ADDR_LE_RANDOM;
 	} else {
 		return -EINVAL;
@@ -129,12 +129,22 @@ static int str2bt_addr_le(const char *str, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int cmd_connect_le(int argc, const char *line)
+static int cmd_connect_le(int argc, char *argv[])
 {
 	int err;
 	bt_addr_le_t addr;
 
-	err = str2bt_addr_le(line += strlen(line) + 1, &addr);
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return -EINVAL;
+	}
+
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return -EINVAL;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
 		printk("Invalid peer address (err %d)\n", err);
 		return err;
@@ -149,10 +159,17 @@ static int cmd_connect_le(int argc, const char *line)
 	return 0;
 }
 
-static int cmd_disconnect(int argc, const char *line)
+static int cmd_disconnect(int argc, char *argv[])
 {
 	int err;
-	uint8_t conn_id = *(line += strlen(line) + 1) - '0';
+	uint8_t conn_id;
+
+	if (argc < 2) {
+		printk("Disconnect reason code required\n");
+		return -EINVAL;
+	}
+
+	conn_id = *argv[1] - '0';
 
 	if (conn_id > CONFIG_BLUETOOTH_MAX_CONN - 1 || conns[conn_id] == NULL) {
 		printk("Invalid conn id %d\n", conn_id);
