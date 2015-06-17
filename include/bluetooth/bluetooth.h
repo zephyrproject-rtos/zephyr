@@ -34,6 +34,9 @@
 #ifndef __BT_BLUETOOTH_H
 #define __BT_BLUETOOTH_H
 
+#include <stdio.h>
+#include <string.h>
+
 #include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
@@ -101,4 +104,70 @@ int bt_stop_scanning(void);
 int bt_connect_le(const bt_addr_le_t *peer);
 int bt_disconnect(struct bt_conn *conn, uint8_t reason);
 
+/*! @def BT_ADDR_STR_LEN
+ *
+ *  @brief Recommended length of user string buffer for bluetooth address
+ *
+ *  @details The recommended length guarantee the output of address conversion
+ *  will not lose valuable information about address being processed.
+ */
+#define BT_ADDR_STR_LEN 18
+
+/*! @def BT_ADDR_LE_STR_LEN
+ *
+ *  @brief Recommended length of user string buffer for bluetooth LE address
+ *
+ *  @details The recommended length guarantee the output of address conversion
+ *  will not lose valuable information about address being processed.
+ */
+#define BT_ADDR_LE_STR_LEN 27
+
+/*! @brief Converts binary bluetooth address to string.
+ *
+ *  @param addr Address of buffer containing binary bluetooth address.
+ *  @param str Address of user buffer with enough room to store formatted
+ *  string containing binary address.
+ *  @param len Length of data to be copied to user string buffer. Refer to
+ *  BT_ADDR_STR_LEN about recommended value.
+ *
+ *  @return Number of successfully formatted bytes from binary address.
+ */
+static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
+{
+	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+			addr->val[5], addr->val[4], addr->val[3],
+			addr->val[2], addr->val[1], addr->val[0]);
+}
+
+/*! @brief Converts binary LE bluetooth address to string.
+ *
+ *  @param addr Address of buffer containing binary LE bluetooth address.
+ *  @param user_buf Address of user buffer with enough room to store formatted
+ *  string containing binary LE address.
+ *  @param len Length of data to be copied to user string buffer. Refer to
+ *  BT_ADDR_LE_STR_LEN about recommended value.
+ *
+ *  @return Number of successfully formatted bytes from binary address.
+ */
+static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
+				    size_t len)
+{
+	char type[7];
+
+	switch (addr->type) {
+	case BT_ADDR_LE_PUBLIC:
+		strcpy(type, "public");
+		break;
+	case BT_ADDR_LE_RANDOM:
+		strcpy(type, "random");
+		break;
+	default:
+		sprintf(type, "0x%02x", addr->type);
+		break;
+	}
+
+	return snprintf(str, len, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)",
+			addr->val[5], addr->val[4], addr->val[3],
+			addr->val[2], addr->val[1], addr->val[0], type);
+}
 #endif /* __BT_BLUETOOTH_H */

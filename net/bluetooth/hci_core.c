@@ -81,10 +81,7 @@ const char *bt_addr_str(const bt_addr_t *addr)
 
 	str = bufs[cur++];
 	cur %= ARRAY_SIZE(bufs);
-
-	sprintf(str, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
-		addr->val[5], addr->val[4], addr->val[3],
-		addr->val[2], addr->val[1], addr->val[0]);
+	bt_addr_to_str(addr, str, sizeof(bufs[cur]));
 
 	return str;
 }
@@ -93,26 +90,11 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr)
 {
 	static char bufs[2][27];
 	static uint8_t cur;
-	char *str, type[7];
+	char *str;
 
 	str = bufs[cur++];
 	cur %= ARRAY_SIZE(bufs);
-
-	switch (addr->type) {
-	case BT_ADDR_LE_PUBLIC:
-		strcpy(type, "public");
-		break;
-	case BT_ADDR_LE_RANDOM:
-		strcpy(type, "random");
-		break;
-	default:
-		sprintf(type, "0x%02x", addr->type);
-		break;
-	}
-
-	sprintf(str, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X (%s)",
-		addr->val[5], addr->val[4], addr->val[3],
-		addr->val[2], addr->val[1], addr->val[0], type);
+	bt_addr_le_to_str(addr, str, sizeof(bufs[cur]));
 
 	return str;
 }
