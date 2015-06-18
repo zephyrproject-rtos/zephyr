@@ -46,7 +46,7 @@
  *  Initialize Bluetooth. Must be the called before anything else.
  *  Caller shall be either task or a fiber.
  *
- *  @return zero in success or error code otherwise
+ *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_init(void);
 
@@ -58,58 +58,86 @@ struct bt_eir {
 	uint8_t data[29];
 } __packed;
 
-/*! @brief Define a type allowing user to implement a function that can be used
- *  to get back active LE scan results.
+/*! @brief Define a type allowing user to implement a function that can
+ *  be used to get back active LE scan results.
  *
- *  A function of this type will be called back when user application triggers
- *  active LE scan. The caller will populate all needed parameters based on data
- *  coming from scan result.
+ *  A function of this type will be called back when user application
+ *  triggers active LE scan. The caller will populate all needed
+ *  parameters based on data coming from scan result.
  *  Such function can be set by user when LE active scan API is used.
  *
- *  @param addr  Advertiser LE address and type.
- *  @param rssi  Strength of advertiser signal.
- *  @param adv_type  Type of advertising response from advertiser.
- *  @param adv_data  Address of buffer containig advertiser data.
- *  @param len  Length of advertiser data contained in buffer.
+ *  @param addr Advertiser LE address and type.
+ *  @param rssi Strength of advertiser signal.
+ *  @param adv_type Type of advertising response from advertiser.
+ *  @param adv_data Address of buffer containig advertiser data.
+ *  @param len Length of advertiser data contained in buffer.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 		             uint8_t adv_type, const uint8_t *adv_data,
 		             uint8_t len);
 
-/** @brief Start advertising
+/*! @brief Start advertising
  *
- *  Set advertisement data,  scan response data, advertisement parameters
+ *  Set advertisement data, scan response data, advertisement parameters
  *  and start advertising.
  *
- *  @param type advertising type
- *  @param ad data to be used in advertisement packets
- *  @param sd data to be used in scan response packets
+ *  @param type Advertising type.
+ *  @param ad Data to be used in advertisement packets.
+ *  @param sd Data to be used in scan response packets.
  *
- *  @return zero in success or error code otherwise.
+ *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
 			 const struct bt_eir *sd);
 
-int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb);
+/*! @brief Start (LE) scanning
+ *
+ *  Start LE scanning with and provide results through the specified
+ *  callback.
+ *
+ *  @param filter_dups Enable duplicate filtering (or not).
+ *  @param cb Callback to notify scan results.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
+
+/*! @brief Stop (LE) scanning.
+ *
+ *  Stops ongoing LE scanning.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
 int bt_stop_scanning(void);
 
-/** @brief Setting LE connection to peer
+/*! @brief Initiate an LE connection to a remote device.
  *
- *  Allows initiate new LE link to remote peer using its address
+ *  Allows initiate new LE link to remote peer using its address.
  *
- *  @param peer address of peer's object containing LE address
+ *  @param Remote address.
  *
- *  @return zero in success or error code otherwise.
+ *  @return Zero in success or (negative) error code otherwise.
  */
 int bt_connect_le(const bt_addr_le_t *peer);
+
+/*! @brief Disconnect from a remote device.
+ *
+ *  Disconnect an active connection with the specified reason code.
+ *
+ *  @param conn Connection to disconnect.
+ *  @param reason Reason code for the disconnection.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
 int bt_disconnect(struct bt_conn *conn, uint8_t reason);
 
 /*! @def BT_ADDR_STR_LEN
  *
  *  @brief Recommended length of user string buffer for Bluetooth address
  *
- *  @details The recommended length guarantee the output of address conversion
- *  will not lose valuable information about address being processed.
+ *  @details The recommended length guarantee the output of address
+ *  conversion will not lose valuable information about address being
+ *  processed.
  */
 #define BT_ADDR_STR_LEN 18
 
@@ -117,8 +145,9 @@ int bt_disconnect(struct bt_conn *conn, uint8_t reason);
  *
  *  @brief Recommended length of user string buffer for Bluetooth LE address
  *
- *  @details The recommended length guarantee the output of address conversion
- *  will not lose valuable information about address being processed.
+ *  @details The recommended length guarantee the output of address
+ *  conversion will not lose valuable information about address being
+ *  processed.
  */
 #define BT_ADDR_LE_STR_LEN 27
 
@@ -142,8 +171,8 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 /*! @brief Converts binary LE Bluetooth address to string.
  *
  *  @param addr Address of buffer containing binary LE Bluetooth address.
- *  @param user_buf Address of user buffer with enough room to store formatted
- *  string containing binary LE address.
+ *  @param user_buf Address of user buffer with enough room to store
+ *  formatted string containing binary LE address.
  *  @param len Length of data to be copied to user string buffer. Refer to
  *  BT_ADDR_LE_STR_LEN about recommended value.
  *
