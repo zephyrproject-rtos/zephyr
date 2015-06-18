@@ -81,6 +81,7 @@ SECTIONS
 	.debug_ranges   0 (OPTIONAL): { *(.debug_ranges) }
 	.debug_str	  0 (OPTIONAL): { *(.debug_str) }
 	.debug_frame	0 (OPTIONAL): { *(.debug_frame) }
+	.debug_macro	0 (OPTIONAL): { *(.debug_macro) }
 	/* generate a linker error if orphan section is used */
 	.trashcan :
 		{
