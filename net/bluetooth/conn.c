@@ -351,3 +351,8 @@ void bt_conn_put(struct bt_conn *conn)
 
 	conn->handle = 0;
 }
+
+const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
+{
+	return &conn->dst;
+}

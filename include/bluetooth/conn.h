@@ -69,6 +69,14 @@ void bt_conn_put(struct bt_conn *conn);
  */
 struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
 
+/*! @brief Get destination (peer) address of a connection.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return Destination address.
+ */
+const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
+
 /*! Connection callback structure */
 struct bt_conn_cb {
 	void (*connected)(struct bt_conn *conn);
