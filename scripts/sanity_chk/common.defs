@@ -78,6 +78,7 @@ RUN_PASSED="PROJECT EXECUTION SUCCESSFUL"
 RUN_FAILED="PROJECT EXECUTION FAILED"
 
 # architecture platform lists
+arc_PLATFORM_LIST=""
 arm_PLATFORM_LIST="fsl_frdm_k64f ti_lm3s6965"
 x86_PLATFORM_LIST="generic_pc_pentium4   \
 				   generic_pc_minuteia   \
@@ -344,6 +345,8 @@ build_project() {
 
 	if [[ $arm_PLATFORM_LIST == *"${PLATFORM[$1]}"* ]]; then
 		arch=arm
+	elif [[ $arc_PLATFORM_LIST == *"${PLATFORM[$1]}"* ]]; then
+		arch=arc
 	else
 		arch=x86
 	fi
