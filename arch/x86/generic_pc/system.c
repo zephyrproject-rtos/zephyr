@@ -94,7 +94,7 @@ static inline void ioapicInit(void)
 *
 */
 
-static void uartGenericInfoInit(struct uart_init_info *p_info)
+void uartGenericInfoInit(struct uart_init_info *p_info)
 {
 	p_info->options = 0;
 	p_info->sys_clk_freq = UART_XTAL_FREQ;

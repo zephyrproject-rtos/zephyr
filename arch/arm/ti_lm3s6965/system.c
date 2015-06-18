@@ -67,7 +67,7 @@ extern void _NmiInit(void);
 *
 */
 
-static inline void uartGenericInfoInit(struct uart_init_info *pInfo)
+inline void uartGenericInfoInit(struct uart_init_info *pInfo)
 {
 	pInfo->sys_clk_freq = SYSCLK_DEFAULT_IOSC_HZ;
 	pInfo->baud_rate = CONFIG_UART_CONSOLE_BAUDRATE;
