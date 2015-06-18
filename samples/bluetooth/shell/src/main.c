@@ -46,8 +46,6 @@
 
 #include "btshell.h"
 
-static struct bt_conn *conns[CONFIG_BLUETOOTH_MAX_CONN];
-
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 			 const uint8_t *ad, uint8_t len)
 {
@@ -60,29 +58,20 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 
 static void connected(struct bt_conn *conn)
 {
-	int i;
+	char addr[BT_ADDR_LE_STR_LEN];
 
-	for (i = 0; i < CONFIG_BLUETOOTH_MAX_CONN + 1; i++) {
-		if (conns[i] == NULL) {
-			conns[i] = bt_conn_get(conn);;
-			printk("Connected %p, id %d\n", conn, i);
-			return;
-		}
-	}
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Connected: %s\n", addr);
 }
 
 static void disconnected(struct bt_conn *conn)
 {
-	int i;
+	char addr[BT_ADDR_LE_STR_LEN];
 
-	for (i = 0; i < CONFIG_BLUETOOTH_MAX_CONN + 1; i++) {
-		if (conns[i] == conn) {
-			bt_conn_put(conn);
-			conns[i] = NULL;
-			printk("Disconnected %p\n", conn);
-			return;
-		}
-	}
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Disconnected: %s\n", addr);
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -172,23 +161,37 @@ static void cmd_connect_le(int argc, char *argv[])
 static void cmd_disconnect(int argc, char *argv[])
 {
 	int err;
-	uint8_t conn_id;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
 
 	if (argc < 2) {
-		printk("Disconnect reason code required\n");
+		printk("Peer address required\n");
 		return;
 	}
 
-	conn_id = *argv[1] - '0';
-
-	if (conn_id > CONFIG_BLUETOOTH_MAX_CONN - 1 || conns[conn_id] == NULL) {
-		printk("Invalid conn id %d\n", conn_id);
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return;
 	}
 
-	err = bt_disconnect(conns[conn_id], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	conn = bt_conn_lookup_addr_le(&addr);
+	if (!conn) {
+		printk("Peer not connected\n");
+		return;
+	}
+
+	err = bt_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Disconnection failed (err %d)\n", err);
 	}
+
+	bt_conn_put(conn);
 }
 
 static void cmd_active_scan_on()
