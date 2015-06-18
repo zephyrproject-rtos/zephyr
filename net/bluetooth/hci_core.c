@@ -1288,7 +1288,7 @@ int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 
 	set_param = bt_buf_add(buf, sizeof(*set_param));
 	memset(set_param, 0, sizeof(*set_param));
-	set_param->scan_type = BT_LE_SCAN_ENABLE;
+	set_param->scan_type = BT_LE_SCAN_ACTIVE;
 
 	/* for the rest parameters apply default values according to
 	 *  spec 4.2, vol2, part E, 7.8.10
