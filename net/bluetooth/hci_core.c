@@ -1369,7 +1369,8 @@ int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
 	struct hci_cp_le_conn_update *conn_update;
 	struct bt_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE, sizeof(*conn_update));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE,
+				sizeof(*conn_update));
 	if (!buf) {
 		return -ENOBUFS;
 	}
