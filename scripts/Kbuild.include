@@ -259,7 +259,7 @@ if_changed = $(if $(strip $(any-prereq) $(arg-check)),                       \
 if_changed_dep = $(if $(strip $(any-prereq) $(arg-check) ),                  \
 	@set -e;                                                             \
 	$(echo-cmd) $(cmd_$(1));                                             \
-	$(FIXDEP) $(depfile) $@ '$(make-cmd)' > $(dot-target).tmp;\
+	scripts/basic/fixdep $(depfile) $@ '$(make-cmd)' > $(dot-target).tmp;\
 	rm -f $(depfile);                                                    \
 	mv -f $(dot-target).tmp $(dot-target).cmd)
 

@@ -275,17 +275,8 @@ endif
 # Where to locate arch specific headers
 hdr-arch  := $(SRCARCH)
 
-ifdef O
-KCONFIG_CONFIG     := $(O)/.config
-KCONFIG_AUTOCONFIG := $(O)/include/config/auto.conf
-KCONFIG_AUTOHEADER := $(O)/include/generated/autoconf.h
-KCONFIG_TRISTATE   := $(O)/include/config/tristate.conf
-KCONFIG_AUTOCMD    := $(O)/include/config/auto.conf.cmd
-else
-KCONFIG_CONFIG     := .config
-endif
-
-export KCONFIG_CONFIG KCONFIG_AUTOCONFIG KCONFIG_AUTOHEADER KCONFIG_TRISTATE KCONFIG_AUTOCMD
+KCONFIG_CONFIG	?= .config
+export KCONFIG_CONFIG
 
 # SHELL used by kbuild
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
@@ -339,9 +330,8 @@ STRIP		= $(CROSS_COMPILE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 AWK		= awk
-GENKSYMS	= $(ZEPHYR_BASE)/scripts/genksyms/genksyms
-GENIDT		= $(ZEPHYR_BASE)/scripts/gen_idt/gen_idt
-FIXDEP		= $(ZEPHYR_BASE)/scripts/basic/fixdep
+GENKSYMS	= scripts/genksyms/genksyms
+GENIDT		= scripts/gen_idt/gen_idt
 PERL		= perl
 PYTHON		= python
 CHECK		= sparse
@@ -401,7 +391,7 @@ export VERSION_GENERATION VERSION_MAJOR VERSION_MINOR VERSION_REVISION VERSION_R
 export PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP
-export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE GENIDT FIXDEP
+export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE GENIDT
 export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
 export KBUILD_CPPFLAGS NOSTDINC_FLAGS ZEPHYRINCLUDE OBJCOPYFLAGS LDFLAGS
@@ -426,8 +416,8 @@ export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn \
 # Basic helpers built in scripts/
 PHONY += scripts_basic
 scripts_basic:
-	$(Q)$(MAKE) -C $(ZEPHYR_BASE) $(build)=scripts/basic
-	$(Q)$(MAKE) -C $(ZEPHYR_BASE) $(build)=scripts/gen_idt
+	$(Q)$(MAKE) $(build)=scripts/basic
+	$(Q)$(MAKE) $(build)=scripts/gen_idt
 	$(Q)rm -f .tmp_quiet_recordmcount
 
 # To avoid any implicit rule to kick in, define an empty command.
@@ -513,10 +503,10 @@ include $(srctree)/arch/$(SRCARCH)/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
 config: scripts_basic outputmakefile FORCE
-	$(Q)$(MAKE) -C $(ZEPHYR_BASE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
 %config: scripts_basic outputmakefile FORCE
-	$(Q)$(MAKE) -C $(ZEPHYR_BASE) $(build)=scripts/kconfig $@
+	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
 else
 # ===========================================================================

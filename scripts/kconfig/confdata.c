@@ -953,11 +953,7 @@ int conf_write_autoconf(void)
 
 	sym_clear_all_valid();
 
-	name = getenv("KCONFIG_AUTOCMD");
-        if (!name)
-                name = "include/config/auto.conf.cmd";
-
-	file_write_dep(name);
+	file_write_dep("include/config/auto.conf.cmd");
 
 	if (conf_split_config())
 		return 1;

@@ -47,7 +47,7 @@ else
   S = -s
 endif
 
-all: $(CONFIG_DEPS) $(O)/include/config/.dir
+all: $(CONFIG_DEPS) $(O)/.dir
 	$(Q)$(MAKE) -C $(ZEPHYR_BASE)  O=$(O) \
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS)
 
@@ -76,16 +76,16 @@ mrproper: FORCE
 	$(Q)$(MAKE) -C $(ZEPHYR_BASE) \
 	PROJECT=$(PROJECT_BASE) mrproper
 
-%config: $(O)/include/config/.dir FORCE
+%config: $(O)/.dir FORCE
 	$(Q)$(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) $@
 
-qemu: $(CONFIG_DEPS) $(O)/include/config/.dir
+qemu: $(CONFIG_DEPS) $(O)/.dir
 	$(Q)$(MAKE) -C $(ZEPHYR_BASE) O=$(O) \
 	PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) CFLAGS=$(CFLAGS) qemu
 
 
-$(O)/.config: $(O)/include/config/.dir $(O)/include/generated/.dir
+$(O)/.config: $(O)/.dir
 	$(Q)cp $(ZEPHYR_BASE)/arch/$(ARCH)/configs/$(KBUILD_DEFCONFIG) $(O)/.config
 
 $(O)/.initconfig: mergeconfig
