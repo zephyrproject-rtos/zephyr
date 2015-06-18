@@ -1,5 +1,5 @@
 /*! @file
- *  @brief Generic Attribute Profile handling
+ *  @brief Generic Attribute Profile handling.
  */
 
 /*
@@ -37,6 +37,7 @@
 #include <misc/util.h>
 
 /* GATT attribute permission bitfield values */
+
 /*! @def BT_GATT_PERM_READ
  *  @brief Attribute read permission.
  */
@@ -127,6 +128,7 @@ struct bt_gatt_include {
 };
 
 /* Characteristic Properties Bitfield values */
+
 /*! @def BT_GATT_CHRC_BROADCAST
  *  @brief Characteristic broadcast property.
  *
@@ -168,7 +170,7 @@ struct bt_gatt_include {
 /*! @def BT_GATT_CHRC_AUTH
  *  @brief Characteristic Authenticated Signed Writes property.
  *
- *  If set, permits signed writes to the Characteristic Value
+ *  If set, permits signed writes to the Characteristic Value.
  */
 #define BT_GATT_CHRC_AUTH			0x40
 /*! @def BT_GATT_CHRC_EXT_PROP
@@ -199,23 +201,24 @@ struct bt_gatt_cep {
 	uint16_t		properties;
 };
 
-/* @brief Characteristic User Description Attribute Value. */
+/*! @brief Characteristic User Description Attribute Value. */
 struct bt_gatt_cud {
 	/*! Characteristic User Description string. */
 	char			*string;
 };
 
-/* Client Characteristic Configuration Values*/
-/* @def BT_GATT_CCC_NOTIFY
- * @brief Client Characteristic Configuration Notification.
+/* Client Characteristic Configuration Values */
+
+/*! @def BT_GATT_CCC_NOTIFY
+ *  @brief Client Characteristic Configuration Notification.
  *
- * If set, changes to Characteristic Value shall be notified.
+ *  If set, changes to Characteristic Value shall be notified.
  */
 #define BT_GATT_CCC_NOTIFY			0x0001
-/* @def BT_GATT_CCC_INDICATE
- * @brief Client Characteristic Configuration Indication.
+/*! @def BT_GATT_CCC_INDICATE
+ *  @brief Client Characteristic Configuration Indication.
  *
- * If set, changes to Characteristic Value shall be indicated.
+ *  If set, changes to Characteristic Value shall be indicated.
  */
 #define BT_GATT_CCC_INDICATE			0x0002
 
@@ -233,8 +236,8 @@ struct bt_gatt_ccc {
  *  macros such as BT_GATT_PRIMARY_SERVICE, BT_GATT_CHARACTERISTIC,
  *  BT_GATT_DESCRIPTOR, etc.
  *
- *  @param attrs dabase table containing the available attributes.
- *  @param count size of database table.
+ *  @param attrs Database table containing the available attributes.
+ *  @param count Size of the database table.
  */
 void bt_gatt_register(const struct bt_gatt_attr *attrs, size_t count);
 
@@ -245,11 +248,11 @@ enum {
 
 /*! @brief Attribute iterator callback.
  *
- *  @param attr attribute found.
- *  @param user_data data given.
+ *  @param attr Attribute found.
+ *  @param user_data Data given.
  *
  *  @return BT_GATT_ITER_CONTINUE if should continue to the next attribute
- *   or BT_GATT_ITER_STOP to stop.
+ *  or BT_GATT_ITER_STOP to stop.
  */
 typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
 				       void *user_data);
@@ -258,10 +261,10 @@ typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
  *
  *  Iterate attributes in the given range.
  *
- *  @param start_handle start handle.
- *  @param end_handle end handle.
- *  @param func callback function.
- *  @param user_data data to pass to the callback.
+ *  @param start_handle Start handle.
+ *  @param end_handle End handle.
+ *  @param func Callback function.
+ *  @param user_data Data to pass to the callback.
  */
 void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 			  bt_gatt_attr_func_t func, void *user_data);
@@ -270,13 +273,13 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
  *
  *  Read attribute value storing the result into buffer.
  *
- *  @param peer remote address.
- *  @param attr attribute to read.
- *  @param buf buffer to store the value.
- *  @param buf_len buffer length.
- *  @param offset start offset.
- *  @param value attribute value.
- *  @param value_len length of the attribute value.
+ *  @param peer Remote address.
+ *  @param attr Attribute to read.
+ *  @param buf Buffer to store the value.
+ *  @param buf_len Buffer length.
+ *  @param offset Start offset.
+ *  @param value Attribute value.
+ *  @param value_len Length of the attribute value.
  *
  *  @return int number of bytes read in case of success or negative values in
  *  case of error.
@@ -291,11 +294,11 @@ int bt_gatt_attr_read(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
  *  enconding it.
  *  NOTE: Only use this with attributes which user_data is a bt_uuid.
  *
- *  @param peer remote address.
- *  @param attr attribute to read.
- *  @param buf buffer to store the value read.
- *  @param len buffer length.
- *  @param offset start offset.
+ *  @param peer Remote address.
+ *  @param attr Attribute to read.
+ *  @param buf Buffer to store the value read.
+ *  @param len Buffer length.
+ *  @param offset Start offset.
  *
  *  @return int number of bytes read in case of success or negative values in
  *  case of error.
@@ -309,9 +312,9 @@ int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a service attribute.
  *
- *  @param _handle service attribute handle.
- *  @param _uuid service attribute type.
- *  @param _data service attribute value.
+ *  @param _handle Service attribute handle.
+ *  @param _uuid Service attribute type.
+ *  @param _data Service attribute value.
  */
 #define BT_GATT_SERVICE(_handle, _uuid, _service)			\
 {									\
@@ -327,8 +330,8 @@ int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a primary service attribute.
  *
- *  @param _handle service attribute handle.
- *  @param _service service attribute value.
+ *  @param _handle Service attribute handle.
+ *  @param _service Service attribute value.
  */
 #define BT_GATT_PRIMARY_SERVICE(_handle, _service)			\
 {									\
@@ -345,8 +348,8 @@ int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a secondary service attribute.
  *
- *  @param _handle service attribute handle.
- *  @param _service service attribute value.
+ *  @param _handle Service attribute handle.
+ *  @param _service Service attribute value.
  */
 #define BT_GATT_SECONDARY_SERVICE(_handle, _service)			\
 {									\
@@ -364,11 +367,11 @@ int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
  *  enconding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_include.
  *
- *  @param peer remote address.
- *  @param attr attribute to read.
- *  @param buf buffer to store the value read.
- *  @param len buffer length.
- *  @param offset start offset.
+ *  @param peer Remote address.
+ *  @param attr Attribute to read.
+ *  @param buf Buffer to store the value read.
+ *  @param len Buffer length.
+ *  @param offset Start offset.
  *
  *  @return int number of bytes read in case of success or negative values in
  *  case of error.
@@ -382,8 +385,8 @@ int bt_gatt_attr_read_included(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a include service attribute.
  *
- *  @param _handle service attribute handle.
- *  @param _service service attribute value.
+ *  @param _handle Service attribute handle.
+ *  @param _service Service attribute value.
  */
 #define BT_GATT_INCLUDE_SERVICE(_handle, _service)			\
 {									\
@@ -401,11 +404,11 @@ int bt_gatt_attr_read_included(const bt_addr_le_t *peer,
  *  enconding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_chrc.
  *
- *  @param peer remote address.
- *  @param attr attribute to read.
- *  @param buf buffer to store the value read.
- *  @param len buffer length.
- *  @param offset start offset.
+ *  @param peer Remote address.
+ *  @param attr Attribute to read.
+ *  @param buf Buffer to store the value read.
+ *  @param len Buffer length.
+ *  @param offset Start offset.
  *
  *  @return number of bytes read in case of success or negative values in
  *  case of error.
@@ -419,8 +422,8 @@ int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a characteristic attribute.
  *
- *  @param _handle characteristic attribute handle.
- *  @param _value characteristic attribute value.
+ *  @param _handle Characteristic attribute handle.
+ *  @param _value Characteristic attribute value.
  */
 #define BT_GATT_CHARACTERISTIC(_handle, _value)				\
 {									\
@@ -457,11 +460,11 @@ struct _bt_gatt_ccc {
  *  enconding it.
  *  NOTE: Only use this with attributes which user_data is a _bt_gatt_ccc.
  *
- *  @param peer remote address.
- *  @param attr attribute to read.
- *  @param buf buffer to store the value read.
- *  @param len buffer length.
- *  @param offset start offset.
+ *  @param peer Remote address.
+ *  @param attr Attribute to read.
+ *  @param buf Buffer to store the value read.
+ *  @param len Buffer length.
+ *  @param offset Start offset.
  *
  *  @return number of bytes read in case of success or negative values in
  *  case of error.
@@ -475,11 +478,11 @@ int bt_gatt_attr_read_ccc(const bt_addr_le_t *peer,
  *  Write value in the buffer into CCC attribute.
  *  NOTE: Only use this with attributes which user_data is a _bt_gatt_ccc.
  *
- *  @param peer remote address.
- *  @param attr attribute to read.
- *  @param buf buffer to store the value read.
- *  @param len buffer length.
- *  @param offset start offset.
+ *  @param peer Remote address.
+ *  @param attr Attribute to read.
+ *  @param buf Buffer to store the value read.
+ *  @param len Buffer length.
+ *  @param offset Start offset.
  *
  *  @return number of bytes written in case of success or negative values in
  *  case of error.
@@ -493,10 +496,10 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a CCC attribute.
  *
- *  @param _handle descriptor attribute handle.
- *  @param _value_handle characteristic attribute value handle.
- *  @param _cfg initial configuration.
- *  @param _cfg_changed configuration changed callback.
+ *  @param _handle Descriptor attribute handle.
+ *  @param _value_handle Characteristic attribute value handle.
+ *  @param _cfg Initial configuration.
+ *  @param _cfg_changed Configuration changed callback.
  */
 #define BT_GATT_CCC(_handle, _value_handle, _cfg, _cfg_changed)		\
 {									\
@@ -518,11 +521,11 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
  *  enconding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_cep.
  *
- *  @param peer remote address
- *  @param attr attribute to read
- *  @param buf buffer to store the value read
- *  @param len buffer length
- *  @param offset start offset
+ *  @param peer Remote address
+ *  @param attr Attribute to read
+ *  @param buf Buffer to store the value read
+ *  @param len Buffer length
+ *  @param offset Start offset
  *
  *  @return number of bytes read in case of success or negative values in
  *  case of error.
@@ -536,8 +539,8 @@ int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a CEP attribute.
  *
- *  @param _handle descriptor attribute handle.
- *  @param _value descriptor attribute value.
+ *  @param _handle Descriptor attribute handle.
+ *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_CEP(_handle, _value)					\
 {									\
@@ -554,12 +557,12 @@ int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a descriptor attribute.
  *
- *  @param _handle descriptor attribute handle.
- *  @param _value descriptor attribute value.
- *  @param _perm descriptor attribute access permissions.
- *  @param _read descriptor attribute read callback.
- *  @param _write descriptor attribute write callback.
- *  @param _value descriptor attribute value.
+ *  @param _handle Descriptor attribute handle.
+ *  @param _value Descriptor attribute value.
+ *  @param _perm Descriptor attribute access permissions.
+ *  @param _read Descriptor attribute read callback.
+ *  @param _write Descriptor attribute write callback.
+ *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_DESCRIPTOR(_handle, _uuid, _perm, _read, _write, _value) \
 {									\
@@ -576,13 +579,13 @@ int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
  *
  *  Helper macro to declare a descriptor attribute.
  *
- *  @param _handle descriptor attribute handle.
- *  @param _value descriptor attribute value.
- *  @param _perm descriptor attribute access permissions.
- *  @param _read descriptor attribute read callback.
- *  @param _write descriptor attribute write callback.
- *  @param _flush descriptor attribute flush callback.
- *  @param _value descriptor attribute value.
+ *  @param _handle Descriptor attribute handle.
+ *  @param _value Descriptor attribute value.
+ *  @param _perm Descriptor attribute access permissions.
+ *  @param _read Descriptor attribute read callback.
+ *  @param _write Descriptor attribute write callback.
+ *  @param _flush Descriptor attribute flush callback.
+ *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_LONG_DESCRIPTOR(_handle, _uuid, _perm, _read, _write, _flush, \
 				_value)					\
@@ -602,16 +605,22 @@ int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
  *  Note: This function should only be called if CCC is declared with
  *  BT_GATT_CCC otherwise it cannot find a valid peer configuration.
  *
- *  @param handle attribute handle.
- *  @param value attribute value.
- *  @param len attribute value length.
+ *  @param handle Attribute handle.
+ *  @param value Attribute value.
+ *  @param len Attribute value length.
  */
 void bt_gatt_notify(uint16_t handle, const void *data, size_t len);
 
-/*! @brief connected callback */
+/*! @brief connected callback.
+ *
+ *  @param conn Connection object.
+ */
 void bt_gatt_connected(struct bt_conn *conn);
 
-/*! @brief disconnected callback */
+/*! @brief disconnected callback.
+ *
+ *  @param conn Connection object.
+ */
 void bt_gatt_disconnected(struct bt_conn *conn);
 
 #endif /* __BT_GATT_H */
