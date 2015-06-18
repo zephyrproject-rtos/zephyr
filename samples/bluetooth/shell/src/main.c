@@ -1,4 +1,9 @@
-/* main.c - Application main entry point */
+/*! @file
+ *  @brief Interactive Bluetooth LE shell application
+ *
+ *  Application allows implement Bluetooth LE functional commands performing
+ *  simple diagnostic interaction between LE host stack and LE controller
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -42,6 +47,16 @@
 #include "btshell.h"
 
 static struct bt_conn *conns[CONFIG_BLUETOOTH_MAX_CONN];
+
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
+			 const uint8_t *ad, uint8_t len)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
+	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
+		le_addr, evtype, len, rssi);
+}
 
 static void connected(struct bt_conn *conn)
 {
@@ -176,6 +191,49 @@ static void cmd_disconnect(int argc, char *argv[])
 	}
 }
 
+static void cmd_active_scan_on()
+{
+	int err;
+
+	err = bt_start_scanning(BT_LE_SCAN_FILTER_DUP_ENABLE, device_found);
+	if (err) {
+		printk("Bluetooth set active scan failed (err %d)\n", err);
+	} else {
+		printk("Bluetooth active scan enabled\n");
+	}
+}
+
+static void cmd_scan_off()
+{
+	int err;
+
+	err = bt_stop_scanning();
+	if (err) {
+		printk("Stopping scanning failed (err %d)\n", err);
+	} else {
+		printk("Scan successfully stopped\n");
+	}
+}
+
+static void cmd_scan(int argc, char *argv[])
+{
+	const char *action;
+
+	if (argc < 2) {
+		printk("Scan [on/off] parameter required\n");
+		return;
+	}
+
+	action = (char*)argv[1];
+	if (!strncmp(action, "on", strlen("on"))) {
+		cmd_active_scan_on();
+	} else if (!strncmp(action, "off", strlen("off"))) {
+		cmd_scan_off();
+	} else {
+		printk("Scan [on/off] parameter required\n");
+	}
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -188,4 +246,5 @@ void main(void)
 	shell_cmd_register("init", cmd_init);
 	shell_cmd_register("connect", cmd_connect_le);
 	shell_cmd_register("disconnect", cmd_disconnect);
+	shell_cmd_register("scan", cmd_scan);
 }
