@@ -43,8 +43,12 @@ if [ ! -d ${ZEPHYR_BASE} ] ; then
 fi
 source ${ZEPHYR_BASE}/scripts/sanity_chk/common.defs
 
+if [ -z ${TMP} ]; then
+	TMP=/tmp
+fi
+
 # Out of tree location
-OUT_OF_TREE_BASE=/tmp/${ZEPHYR_BASE}/$(basename ${ZEPHYR_BASE})-sanity
+OUT_OF_TREE_BASE=${TMP}/${ZEPHYR_BASE}/$(basename ${ZEPHYR_BASE})-sanity
 
 # Location of master project directory
 #
