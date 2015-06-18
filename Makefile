@@ -569,6 +569,9 @@ include $(srctree)/scripts/Makefile.preparch
 sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
+else
+$(if $(CROSS_COMPILE),, \
+     $(error ZEPHYR_GCC_VARIANT is not set. ))
 endif
 
 QEMU_BIN_PATH	?= /usr/bin
