@@ -183,7 +183,7 @@ static uint16_t le_validate_conn_params(uint16_t min, uint16_t max, uint16_t lat
 	}
 
 	/* calculation based on BT spec 4.2 [Vol3, PartA, 4.20]
-	 * max_latency = ((timeout * 4)/(max * 1.25 * 2)) - 1;
+	 * max_latency = ((timeout * 10)/(max * 1.25 * 2)) - 1;
 	 */
 	max_latency = (timeout * 4 / max) - 1;
 	if (latency > 499 || latency > max_latency) {
