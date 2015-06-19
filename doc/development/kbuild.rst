@@ -4,11 +4,11 @@ Kbuild User Guide
 #################
 
 The |project| build system is based on the Kbuild system used in the
-Linux kernel (version 3.19-rc7). This way the |zos| embraces
+Linux kernel (version 3.19-rc7). This way the |codename| embraces
 the recursive model proposed by Linux and the configuration model
 proposed by Kconfig.
 
-The main difference between the Linux Kbuild system and the |zos|
+The main difference between the Linux Kbuild system and the |codename|
 build system is that the build is project centered. The consequence
 is the need to define a project or application. The project drives
 the build of the operating system.
@@ -288,7 +288,7 @@ consulted with the project maintainer.
 Creating a New Project
 **********************
 
-The build system is a project centric system. The |zos|
+The build system is a project centric system. The |codename|
 kernel must have a defined project that allows the build of the kernel
 binary.
 
@@ -296,7 +296,7 @@ A project can be organized in three independent directories: the
 kernel base directory, the project directory, and the project source
 code directory.
 
-The kernel base directory is the |zos| base directory. This directory
+The kernel base directory is the |codename| base directory. This directory
 hosts the kernel source code, the configuration options and the kernel
 build definitions.
 
@@ -314,7 +314,7 @@ Development Project
 A common development project is composed of the following files:
 
 * Makefile: Configures the project and integrates the
-  developer's project with the |zos| Kbuild system.
+  developer's project with the |codename| Kbuild system.
 
 * Configuration file: Allows the user
   to override the standard configuration.
@@ -345,7 +345,7 @@ including the Makefile.inc file provided.
 
 The following predefined variables configure the development project:
 
-* :makevar:`ARCH`: Specifies the build architecture for the |zos|
+* :makevar:`ARCH`: Specifies the build architecture for the |codename|
   The architectures currently supported are x86, arm and arc. The build
   system sets C flags, selects the default configuration and the
   toolchain tools. The default value is x86.
@@ -354,7 +354,7 @@ The following predefined variables configure the development project:
   This variable is usually set by the :file:`timo_env.sh` script.
   It can be used to get the |project| base directory (as used in the
   Makefile.inc inclusion) or it can be overridden to select an
-  specific instance of the |zos|.
+  specific instance of the |codename|.
 
 * :makevar:`PROJECT_BASE`: Provides the developer
   project directory path. It is set by the :file:`Makefile.inc`,
