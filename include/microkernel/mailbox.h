@@ -1,4 +1,4 @@
-/* microkernel/mail.h - microkernel mailbox header file */
+/* microkernel/mailbox.h - microkernel mailbox header file */
 
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef MAIL_H
-#define MAIL_H
+#ifndef _MAILBOX_H
+#define _MAILBOX_H
 
 /* externs */
 
@@ -88,4 +88,4 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
 }
 #endif
 
-#endif /* MAIL_H */
+#endif /* _MAILBOX_H */

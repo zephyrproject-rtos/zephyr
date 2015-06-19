@@ -201,7 +201,7 @@ Mailbox Objects
 Definition
 ==========
 
-A mailbox object is defined in include :file:`/microkernel/mail.h`.
+A mailbox object is defined in include :file:`/microkernel/mailbox.h`.
 Mailboxes are a flexible way to pass data and for tasks to exchange messages.
 
 Function

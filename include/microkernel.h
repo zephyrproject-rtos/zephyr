@@ -45,7 +45,7 @@
 #include <microkernel/ticks.h>
 #include <microkernel/mmap.h>
 #include <microkernel/mutex.h>
-#include <microkernel/mail.h>
+#include <microkernel/mailbox.h>
 #include <microkernel/fifo.h>
 #include <microkernel/sema.h>
 #include <microkernel/event.h>
