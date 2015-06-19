@@ -54,6 +54,24 @@
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 
+#if defined(CONFIG_BLUETOOTH_DEBUG_CONN)
+static const char *state2str(bt_conn_state_t state)
+{
+	switch (state) {
+	case BT_CONN_DISCONNECTED:
+		return "disconnected";
+	case BT_CONN_CONNECT:
+		return "connect";
+	case BT_CONN_CONNECTED:
+		return "connected";
+	case BT_CONN_DISCONNECT:
+		return "disconnect";
+	default:
+		return "(unknown)";
+	}
+}
+#endif
+
 static void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
 	if (!conn->rx_len) {
@@ -277,7 +295,7 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role)
 
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
-	BT_DBG("%u -> %u\n", conn->state, state);
+	BT_DBG("%s -> %s\n", state2str(conn->state), state2str(state));
 
 	if (conn->state == state) {
 		BT_WARN("no transition\n");
