@@ -363,7 +363,7 @@ static void hci_disconn_complete(struct bt_buf *buf)
 	/* Check stack usage (no-op if not enabled) */
 	analyze_stacks(conn, &conn);
 
-	bt_conn_del(conn);
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	bt_conn_put(conn);
 
 	if (dev.adv_enable) {

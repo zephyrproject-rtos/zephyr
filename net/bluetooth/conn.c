@@ -263,15 +263,10 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role)
 	memset(conn, 0, sizeof(*conn));
 
 	conn->ref	= 1;
-	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 	conn->handle	= handle;
 	conn->dev	= dev;
 	conn->role	= role;
-
-	nano_fifo_init(&conn->tx_queue);
-
-	fiber_start(conn->tx_stack, sizeof(conn->tx_stack), conn_tx_fiber,
-		    (int)bt_conn_get(conn), 0, 7, 0);
+	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
 	if (role == BT_HCI_ROLE_SLAVE) {
 		bt_l2cap_update_conn_param(conn);
@@ -280,25 +275,9 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role)
 	return conn;
 }
 
-void bt_conn_del(struct bt_conn *conn)
-{
-	BT_DBG("handle %u\n", conn->handle);
-
-	if (conn->state != BT_CONN_CONNECTED) {
-		return;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-
-	/* Send dummy buffer to wake up and kill the tx fiber */
-	nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
-
-	bt_conn_put(conn);
-}
-
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
-	BT_DBG("%u -> %u", conn->state, state);
+	BT_DBG("%u -> %u\n", conn->state, state);
 
 	if (conn->state == state) {
 		BT_WARN("no transition\n");
@@ -307,7 +286,29 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 	conn->state = state;
 
-	/* TODO: Validate states and make certain actions based on set state */
+	switch (conn->state){
+	case BT_CONN_CONNECTED:
+		nano_fifo_init(&conn->tx_queue);
+		fiber_start(conn->tx_stack, sizeof(conn->tx_stack),
+			    conn_tx_fiber, (int)bt_conn_get(conn), 0, 7, 0);
+
+		break;
+	case BT_CONN_DISCONNECTED:
+		/* Send dummy buffer to wake up and kill the tx fiber */
+		nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
+
+		bt_conn_put(conn);
+
+		break;
+	case BT_CONN_CONNECT:
+	case BT_CONN_DISCONNECT:
+
+		break;
+	default:
+		BT_WARN("no valid (%u) state was set\n", state);
+
+		break;
+	}
 }
 
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle)

@@ -88,11 +88,8 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf);
 /* Add a new connection */
 struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role);
 
-/* Delete an existing connection */
-void bt_conn_del(struct bt_conn *conn);
-
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
 
-/* Set connection object in certain state */
+/* Set connection object in certain state and perform action related to state */
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
