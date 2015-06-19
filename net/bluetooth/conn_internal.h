@@ -36,7 +36,9 @@
 
 typedef enum {
 	BT_CONN_DISCONNECTED,
+	BT_CONN_CONNECT,
 	BT_CONN_CONNECTED,
+	BT_CONN_DISCONNECT,
 } bt_conn_state_t;
 
 /* L2CAP signaling channel specific context */
