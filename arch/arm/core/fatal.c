@@ -1,4 +1,4 @@
-/* nanofatal.c - nanokernel fatal error handler for ARM Cortex-M */
+/* fatal.c - nanokernel fatal error handler for ARM Cortex-M */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.

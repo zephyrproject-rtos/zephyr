@@ -1,4 +1,4 @@
-/* nano_fiber_abort.c - ARM Cortex-M fiber_abort() routine */
+/* fiber_abort.c - ARM Cortex-M fiber_abort() routine */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.

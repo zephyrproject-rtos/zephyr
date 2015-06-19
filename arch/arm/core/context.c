@@ -1,4 +1,4 @@
-/* nanocontext.c - new context creation for ARM Cortex-M */
+/* context.c - new context creation for ARM Cortex-M */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
