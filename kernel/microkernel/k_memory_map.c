@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "minik.h" /* _k_mem_map_list, _k_mem_map_count */
+#include <micro_private.h>
 #include <sections.h>
 
 /*******************************************************************************

@@ -41,7 +41,7 @@ interfering with each other.
 
 #include <toolchain.h>
 #include <sections.h>
-#include <minik.h>
+#include <micro_private.h>
 #include <nanok.h>
 #include <microkernel.h>
 #include <nanokernel.h>

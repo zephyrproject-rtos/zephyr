@@ -55,7 +55,7 @@ a task cannot impact the operation of an IRQ object it does not own.
 
 #include <nanok.h>
 #include <microkernel.h>
-#include <minik.h>
+#include <micro_private.h>
 #include <misc/__assert.h>
 
 #define MAX_TASK_IRQS CONFIG_MAX_NUM_TASK_IRQS

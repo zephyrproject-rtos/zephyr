@@ -35,7 +35,7 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#include <minik.h>
+#include <micro_private.h>
 #include <drivers/system_timer.h>
 
 extern struct k_timer _k_timer_blocks[];

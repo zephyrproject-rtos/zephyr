@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <minik.h>
+#include <micro_private.h>
 #include <k_pipe_buffer.h>
 #include <k_pipe_util.h>
 #include <misc/util.h>

@@ -32,7 +32,7 @@
 
 #ifdef CONFIG_TASK_MONITOR
 
-#include <minik.h>
+#include <micro_private.h>
 #include <microkernel/ticks.h>
 #include <drivers/system_timer.h>
 #include <toolchain.h>

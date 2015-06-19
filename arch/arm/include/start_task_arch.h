@@ -43,7 +43,7 @@ Currently empty, only here for abstraction.
 #include <toolchain.h>
 #include <sections.h>
 
-#include <minik.h>
+#include <micro_private.h>
 #include <nanok.h>
 #include <microkernel/task.h>
 

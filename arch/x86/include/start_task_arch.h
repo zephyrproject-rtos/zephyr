@@ -41,7 +41,7 @@ Intel-specific parts of start_task(). Only FP functionality currently.
 #include <toolchain.h>
 #include <sections.h>
 
-#include <minik.h>
+#include <micro_private.h>
 #include <nanok.h>
 #include <microkernel/task.h>
 

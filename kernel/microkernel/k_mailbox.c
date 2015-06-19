@@ -35,7 +35,7 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#include <minik.h>
+#include <micro_private.h>
 
 #include <misc/__assert.h>
 #include <misc/util.h>

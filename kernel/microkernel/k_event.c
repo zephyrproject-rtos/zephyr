@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "minik.h"
+#include <micro_private.h>
 #include "microkernel/event.h"
 #include <toolchain.h>
 #include <sections.h>

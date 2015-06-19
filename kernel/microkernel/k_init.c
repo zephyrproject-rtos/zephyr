@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "minik.h"
+#include <micro_private.h>
 #include "nanokernel.h"
 #include "nanok.h"
 #include <string.h>

@@ -1,4 +1,4 @@
-/* minik.h */
+/* micro_private.h */
 
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.
