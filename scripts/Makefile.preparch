@@ -38,7 +38,7 @@ misc/generated/sysgen/prj.mdef:	$(srctree)/config/$(CONFIG_BSP_DIR)/ukernel/conf
 	$(call filechk,prj.mdef)
 
 misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.mdef FORCE
-	$(Q)$(srctree)/scripts/sysgen.py $(CURDIR)/misc/generated/sysgen/prj.mdef $(CURDIR)/misc/generated/sysgen/
+	$(Q)$(srctree)/scripts/sysgen $(CURDIR)/misc/generated/sysgen/prj.mdef $(CURDIR)/misc/generated/sysgen/
 
 define filechk_configs.c
 	(echo "/* file is auto-generated, do not modify ! */"; \
