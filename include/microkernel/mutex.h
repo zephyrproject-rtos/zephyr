@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-#include  <microkernel/k_types.h>
+#include  <microkernel/base_api.h>
 
 extern int _task_mutex_lock(kmutex_t mutex, int32_t time);
 extern void _task_mutex_unlock(kmutex_t mutex);

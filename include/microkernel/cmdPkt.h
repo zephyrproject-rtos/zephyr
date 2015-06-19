@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-#include <microkernel/k_types.h>
+#include <microkernel/base_api.h>
 
 /* define size of command packet (without exposing its internal structure) */
 

@@ -1,4 +1,4 @@
-/* microkernel/k_types.h */
+/* microkernel/base_api.h */
 
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef K_TYPES_H
-#define K_TYPES_H
+#ifndef _BASE_API_H
+#define _BASE_API_H
 
 #include <stdint.h>
 
@@ -100,4 +100,4 @@ typedef enum {
 }
 #endif
 
-#endif /* K_TYPES_H */
+#endif /* _BASE_API_H */

@@ -33,7 +33,7 @@
 #ifndef TASK_IRQ_H
 #define TASK_IRQ_H
 
-#include <microkernel/k_types.h>
+#include <microkernel/base_api.h>
 
 #define INVALID_VECTOR 0xFFFFFFFF
 

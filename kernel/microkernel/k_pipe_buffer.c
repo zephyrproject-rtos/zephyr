@@ -36,7 +36,7 @@
   (Buff->pEnd - pChBuff->pBegin)
 */
 
-#include <microkernel/k_types.h>
+#include <microkernel/base_api.h>
 #include <k_pipe_buffer.h>
 #include <string.h>
 #include <toolchain.h>

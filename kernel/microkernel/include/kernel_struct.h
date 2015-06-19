@@ -33,7 +33,7 @@
 #ifndef _KERNEL_STRUCT_H
 #define _KERNEL_STRUCT_H
 
-#include <microkernel/k_types.h>
+#include <microkernel/base_api.h>
 #include <nanokernel.h>
 #include <stdbool.h>
 

@@ -39,7 +39,7 @@
 
 /* microkernel public APIs */
 
-#include <microkernel/k_types.h>
+#include <microkernel/base_api.h>
 
 #include <microkernel/task.h>
 #include <microkernel/ticks.h>
