@@ -63,6 +63,14 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 #define PRINT_BOOT_BANNER() printk(BOOT_BANNER " %s\n", build_timestamp)
 #endif
 
+/* boot time measurement items */
+
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+uint64_t __noinit __start_tsc; /* timestamp when kernel starts */
+uint64_t __noinit __main_tsc;  /* timestamp when main() starts */
+uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
+#endif
+
 /* random number generator items */
 #if defined(CONFIG_TEST_RANDOM_GENERATOR) || \
 	defined(CONFIG_CUSTOM_RANDOM_GENERATOR)
