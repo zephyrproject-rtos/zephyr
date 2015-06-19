@@ -1,4 +1,4 @@
-/* cmdPkt.h - statically allocated command packet header file */
+/* command_packet.h - command packet header file */
 
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __INCcmdPkth
-#define __INCcmdPkth
+#ifndef _COMMAND_PACKET_H
+#define _COMMAND_PACKET_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,4 +86,4 @@ extern cmdPkt_t *_cmd_pkt_get(struct cmd_pkt_set *pSet);
 }
 #endif
 
-#endif /* __INCcmdPkth */
+#endif /* _COMMAND_PACKET_H */

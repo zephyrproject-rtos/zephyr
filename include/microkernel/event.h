@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-#include <microkernel/cmdPkt.h>
+#include <microkernel/command_packet.h>
 
 /* well-known events */
 

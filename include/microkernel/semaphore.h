@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-#include <microkernel/cmdPkt.h>
+#include <microkernel/command_packet.h>
 
 extern void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet);
 extern void fiber_sem_give(ksem_t sema, struct cmd_pkt_set *pSet);
