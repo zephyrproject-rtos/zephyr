@@ -1,4 +1,4 @@
-/* genOffset.h - macros to generate structure member offset definitions */
+/* gen_offset.h - macros to generate structure member offset definitions */
 
 /*
  * Copyright (c) 2010, 2012, 2014 Wind River Systems, Inc.
@@ -66,7 +66,7 @@ in this file:
 
 <START of sample source file: offsets.c>
 
-#include <genOffset.h>
+#include <gen_offset.h>
 
 /@ include struct definitions for which offsets symbols are to be generated @/
 

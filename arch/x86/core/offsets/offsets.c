@@ -47,7 +47,7 @@ completeness.
 
 */
 
-#include <genOffset.h> /* located in kernel/arch/common/include */
+#include <gen_offset.h> /* located in kernel/arch/common/include */
 
 /* list of headers that define whose structure offsets will be generated */
 
