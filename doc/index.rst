@@ -14,6 +14,7 @@
 
    installation/installation.rst
    collaboration/collaboration.rst
+   development/index.rst
    object/object.rst
    doxygen/doxygen.rst
 
