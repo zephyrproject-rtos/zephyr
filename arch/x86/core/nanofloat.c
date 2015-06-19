@@ -97,7 +97,7 @@ enable FP resource sharing on its behalf.
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
-#include <kernel_struct.h>
+#include <micro_private_types.h>
 #endif /* CONFIG_MICROKERNEL */
 
 #include <nanok.h>

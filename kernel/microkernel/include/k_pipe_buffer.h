@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-#include <kernel_struct.h>
+#include <micro_private_types.h>
 
 void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff);
 

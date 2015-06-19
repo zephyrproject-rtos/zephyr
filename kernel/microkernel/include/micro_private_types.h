@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _KERNEL_STRUCT_H
-#define _KERNEL_STRUCT_H
+#ifndef _MICRO_PRIVATE_TYPES_H
+#define _MICRO_PRIVATE_TYPES_H
 
 #include <microkernel/base_api.h>
 #include <nanokernel.h>
@@ -558,4 +558,4 @@ struct evstr {
 }
 #endif
 
-#endif /* _KERNEL_STRUCT_H */
+#endif /* _MICRO_PRIVATE_TYPES_H */

@@ -39,7 +39,7 @@
 # Generates:
 #   - kernel_main.c file
 #   - kernel_main.h file (local copy)
-#   - kernel_struct.h file (local copy)
+#   - micro_private_types.h file (local copy)
 #   - zephyr.h file
 
 import os
@@ -306,7 +306,7 @@ def kernel_main_c_header():
         "\n" +
         "#include <zephyr.h>\n" +
         "#include <drivers/system_timer.h>\n" +
-        "#include <kernel_struct.h>\n" +
+        "#include <micro_private_types.h>\n" +
         "#include <kernel_main.h>\n" +
         "#include <toolchain.h>\n" +
         "#include <sections.h>\n")
@@ -1059,12 +1059,12 @@ def kernel_main_h_generate():
 
 
 #
-# GENERATE kernel_struct.h FILE
+# GENERATE micro_private_types.h FILE
 #
 
 
-def kernel_struct_h_generate():
-    """ Generate kernel_struct.h file """
+def micro_private_types_h_generate():
+    """ Generate micro_private_types.h file """
 
     global output_dir
 
@@ -1072,7 +1072,7 @@ def kernel_struct_h_generate():
         "cp",
         "-f",
         os.environ["ZEPHYR_BASE"] +
-        "/kernel/microkernel/include/kernel_struct.h",
+        "/kernel/microkernel/include/micro_private_types.h",
         output_dir])
 
 
@@ -1196,5 +1196,5 @@ mdef_parse()
 get_output_dir()
 kernel_main_c_generate()
 kernel_main_h_generate()
-kernel_struct_h_generate()
+micro_private_types_h_generate()
 zephyr_h_generate()

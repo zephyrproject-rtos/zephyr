@@ -42,7 +42,7 @@ the PendSV exception.
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
-#include <kernel_struct.h>
+#include <micro_private_types.h>
 #endif
 
 #include <nanok.h>

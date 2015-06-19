@@ -34,7 +34,7 @@
 #define MINIK_H
 
 #include <stddef.h>
-#include <kernel_struct.h>
+#include <micro_private_types.h>
 #include <kernel_main.h>
 #include <nanok.h>
 
