@@ -18,6 +18,7 @@
    development/index.rst
    object/object.rst
    net/network.rst
+   platform/platform.rst
    doxygen/doxygen.rst
    documentation/documentation.rst
 
