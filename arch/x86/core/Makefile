@@ -1,17 +1,17 @@
 ccflags-y += -I$(srctree)/kernel/nanokernel/include
 ccflags-y += -I$(srctree)/kernel/microkernel/include
 
-obj-y = gdt.o nanocontext.o nanofatal.o cpuhalt.o \
+obj-y = gdt.o context.o fatal.o cpuhalt.o \
 	excstub.o swap.o ffs.o intboiexit.o msr.o \
 	excconnect.o inthndlset.o
 
 ifeq ($(CONFIG_LOCK_INSTRUCTION_UNSUPPORTED),y)
-obj-y += nanoatomic_nolock.o
+obj-y += atomic_nolock.o
 else
-obj-y += nanoatomic.o
+obj-y += atomic.o
 endif
 
-obj-$(CONFIG_FP_SHARING) += nanofloat.o
+obj-$(CONFIG_FP_SHARING) += float.o
 obj-$(CONFIG_UNALIGNED_WRITE_UNSUPPORTED) += unaligned.o
 
 ifneq ($(CONFIG_NO_ISRS),y)

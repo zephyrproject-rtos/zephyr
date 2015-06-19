@@ -42,7 +42,7 @@ Intel-specific parts of start_task(). Only FP functionality currently.
 /*
  * The following IA-32-specific task group is used for tasks that use SSE
  * instructions. It is *not* formally reserved by SysGen for this purpose.
- * See comments in nanocontext.c regarding the use of SSE_GROUP, and comments
+ * See comments in context.c regarding the use of SSE_GROUP, and comments
  * in task.h regarding task groups reserved by SysGen.
  *
  * This identifier corresponds to the first user-defined task group.

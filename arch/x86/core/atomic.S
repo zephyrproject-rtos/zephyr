@@ -1,4 +1,4 @@
-/* nanoatomic.S - nanokernel atomic operators for IA-32 */
+/* atomic.S - nanokernel atomic operators for IA-32 */
 
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.

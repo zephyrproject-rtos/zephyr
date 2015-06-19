@@ -1,4 +1,4 @@
-/* nanofloat.c - floating point resource sharing routines */
+/* float.c - floating point resource sharing routines */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.

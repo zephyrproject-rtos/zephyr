@@ -1,4 +1,4 @@
-/* nanocontext.c - nanokernel context support primitives */
+/* context.c - nanokernel context support primitives */
 
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.
