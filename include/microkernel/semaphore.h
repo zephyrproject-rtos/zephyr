@@ -1,4 +1,4 @@
-/* microkernel/sema.h - microkernel semaphore header file */
+/* microkernel/semaphore.h - microkernel semaphore header file */
 
 /*
  * Copyright (c) 1997-2010, 2012-2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SEMA_H
-#define SEMA_H
+#ifndef _SEMAPHORE_H
+#define _SEMAPHORE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,4 +63,4 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 }
 #endif
 
-#endif /* SEMA_H */
+#endif /* _SEMAPHORE_H */

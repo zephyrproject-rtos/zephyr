@@ -47,7 +47,7 @@
 #include <microkernel/mutex.h>
 #include <microkernel/mailbox.h>
 #include <microkernel/fifo.h>
-#include <microkernel/sema.h>
+#include <microkernel/semaphore.h>
 #include <microkernel/event.h>
 #include <microkernel/memory_pool.h>
 #include <microkernel/pipe.h>
