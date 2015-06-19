@@ -299,7 +299,7 @@ Definition
 ==========
 
 The microkernel semaphore is defined in
-:file:`kernel/microkernel/k_sema.c` and are an implementation of
+:file:`kernel/microkernel/k_semaphore.c` and are an implementation of
 traditional counting semaphores. Semaphores are used to synchronize
 application task activities.
 
