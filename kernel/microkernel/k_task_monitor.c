@@ -1,4 +1,4 @@
-/* task_monitor.c - microkernel task monitoring subsystem */
+/* k_task_monitor.c - microkernel task monitoring subsystem */
 
 /*
  * Copyright (c) 1997-2010, 2013-2015 Wind River Systems, Inc.

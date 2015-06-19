@@ -1,4 +1,4 @@
-/* cmdPkt.c - library to manage statically allocated command packets */
+/* k_command_packet.c - microkernel command packet library */
 
 /*
  * Copyright (c) 2012, 2014 Wind River Systems, Inc.

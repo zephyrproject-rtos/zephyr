@@ -1,4 +1,4 @@
-/* movedata.c */
+/* k_move_data.c */
 
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-/* server.c - microkernel server */
+/* k_server.c - microkernel server */
 
 /*
  * Copyright (c) 2010, 2012-2015 Wind River Systems, Inc.
