@@ -49,7 +49,7 @@
 #include <microkernel/fifo.h>
 #include <microkernel/sema.h>
 #include <microkernel/event.h>
-#include <microkernel/pool.h>
+#include <microkernel/memory_pool.h>
 #include <microkernel/pipe.h>
 #include <microkernel/task_irq.h>
 

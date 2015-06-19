@@ -1,4 +1,4 @@
-/* microkernel/pool.h */
+/* microkernel/memory_pool.h */
 
 /*
  * Copyright (c) 1997-2012, 2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef POOL_H
-#define POOL_H
+#ifndef _MEMORY_POOL_H
+#define _MEMORY_POOL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,4 +53,4 @@ extern void task_mem_pool_defragment(kmemory_pool_t pid);
 }
 #endif
 
-#endif /* POOL_H */
+#endif /* _MEMORY_POOL_H */
