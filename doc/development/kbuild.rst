@@ -72,7 +72,7 @@ follow to be either selected or allowed to have a specific value.
 For example, the following configuration symbol states a dependency on
 another one.
 
-.. code-block::
+.. code-block:: kconfig
 
    config B bool
 
@@ -100,7 +100,7 @@ listed with the experimental option.
 The following convention applies: Always make new experimental
 symbols dependent on the **EXPERIMENTAL** symbol.
 
-.. code-block::
+.. code-block:: kconfig
 
    config NEW_EXP_SYMBOLS depends on EXPERIMENTAL
 
