@@ -50,7 +50,7 @@ completeness.
 
 #include <gen_offset.h>
 #include <nano_private.h>
-#include <offsets/common.h>
+#include <nano_offsets.h>
 
 /* ARM-specific tNANO structure member offsets */
 

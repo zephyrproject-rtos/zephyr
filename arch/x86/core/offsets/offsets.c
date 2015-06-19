@@ -55,7 +55,7 @@ completeness.
 #include <swapstk.h>
 
 
-#include <offsets/common.h>
+#include <nano_offsets.h>
 
 /* Intel-specific tNANO structure member offsets */
 

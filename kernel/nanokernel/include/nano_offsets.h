@@ -1,4 +1,4 @@
-/* offsets.h - Arch-agnostic nano kernel structure member offset definitions */
+/* nano_offsets.h - nanokernel structure member offset definitions */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _OFFSETS_COMMON__H_
-#define _OFFSETS_COMMON__H_
+#ifndef _NANO_OFFSETS__H_
+#define _NANO_OFFSETS__H_
 
 /*
  * The final link step uses the symbol _OffsetAbsSyms to force the linkage of
@@ -75,4 +75,4 @@ GEN_OFFSET_SYM(tCCS, next_context);
 
 GEN_ABSOLUTE_SYM(__tCCS_SIZEOF, sizeof(tCCS));
 
-#endif /* _OFFSETS_COMMON__H_ */
+#endif /* _NANO_OFFSETS__H_ */
