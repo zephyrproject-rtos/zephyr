@@ -2,7 +2,7 @@ ccflags-y +=-I$(srctree)/kernel/microkernel/include
 
 obj-y = k_task.o
 obj-y += k_idle.o
-obj-y += global.o
+obj-y += k_init.o
 obj-y += k_command_packet.o
 obj-y += k_move_data.o
 obj-y += k_ticker.o

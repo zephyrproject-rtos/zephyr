@@ -1,4 +1,4 @@
-/* global.c */
+/* k_init.c */
 
 /*
  * Copyright (c) 1997-2010, 2012-2014 Wind River Systems, Inc.
