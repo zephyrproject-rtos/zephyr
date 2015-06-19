@@ -33,7 +33,7 @@
 #ifndef _SWAP_MACROS__H_
 #define _SWAP_MACROS__H_
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <offsets.h>
 #include <toolchain.h>
 #include <arch/cpu.h>

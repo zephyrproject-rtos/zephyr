@@ -73,12 +73,12 @@ an error code is present on the stack or not.
 
 NOTE: Be sure to update the arch specific definition of the _EXC_STUB_SIZE
 macro to reflect the size of the full exception stub (as shown above).
-The _EXC_STUB_SIZE macro is defined in arch/x86/include/nanok.h.
+The _EXC_STUB_SIZE macro is defined in arch/x86/include/nano_private.h.
 */
 
 
 #include <nanokernel.h>
-#include <nanok.h>
+#include <nano_private.h>
 
 
 void _NanoCpuExcConnectAtDpl(unsigned int vector,
@@ -113,7 +113,7 @@ void _NanoCpuExcConnectAtDpl(unsigned int vector,
 * RETURNS: N/A
 *
 * INTERNAL
-* The function prototype for nanoCpuExcConnect() only exists in nanok.h,
+* The function prototype for nanoCpuExcConnect() only exists in nano_private.h,
 * in other words, it's still considered private since the definitions for
 * the NANO_ESF structures have not been completed.
 */
@@ -153,7 +153,7 @@ void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
 * RETURNS: N/A
 *
 * INTERNAL
-* The function prototype for nanoCpuExcConnect() only exists in nanok.h,
+* The function prototype for nanoCpuExcConnect() only exists in nano_private.h,
 * in other words, it's still considered private since the definitions for
 * the NANO_ESF structures have not been completed.
 */

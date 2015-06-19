@@ -43,7 +43,7 @@ save frame on the stack.
 
 #define _ASMLANGUAGE
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <arch/x86/asm.h>
 #include <offsets.h>	/* nanokernel structure offset definitions */
 

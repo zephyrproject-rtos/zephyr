@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <nanok.h>
+#include <nano_private.h>
 
 struct nano_timer *_nano_timer_list = NULL;
 

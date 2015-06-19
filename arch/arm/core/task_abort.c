@@ -45,7 +45,7 @@ PendSV exception and cause the immediate context switch to K_swapper.
 #include <toolchain.h>
 #include <sections.h>
 #include <micro_private.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <microkernel.h>
 #include <nanokernel.h>
 #include <misc/__assert.h>

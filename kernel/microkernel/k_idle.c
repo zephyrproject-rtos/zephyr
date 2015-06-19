@@ -37,7 +37,7 @@ task, depending on how the kernel is configured.
 */
 
 #include <micro_private.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>

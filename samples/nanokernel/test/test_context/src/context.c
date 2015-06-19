@@ -42,7 +42,7 @@ This module tests the following CPU and context related routines:
 */
 
 #include <tc_util.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <arch/cpu.h>
 
 /* test uses 1 software IRQs */

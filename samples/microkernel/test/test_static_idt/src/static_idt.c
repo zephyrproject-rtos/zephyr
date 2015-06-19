@@ -39,7 +39,7 @@ Ensures interrupt and exception stubs are installed correctly.
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
-#include <nanok.h>
+#include <nano_private.h>
 #if defined(__GNUC__)
 #include <test_asm_inline_gcc.h>
 #else

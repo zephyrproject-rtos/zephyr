@@ -51,7 +51,7 @@ In some cases the compiler "alias" attribute is used to map two or more
 APIs to the same function, since they have identical implementations.
 */
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>

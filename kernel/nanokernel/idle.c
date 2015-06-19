@@ -39,7 +39,7 @@ data structure.
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 
 #include <nanokernel.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
 

@@ -45,7 +45,7 @@ the PendSV exception.
 #include <micro_private_types.h>
 #endif
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <nanokernel.h>

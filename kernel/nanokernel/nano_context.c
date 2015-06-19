@@ -39,7 +39,7 @@ tasks or fibers.
 #include <toolchain.h>
 #include <sections.h>
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <misc/printk.h>
 
 /*******************************************************************************

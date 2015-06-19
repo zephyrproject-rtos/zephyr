@@ -46,7 +46,7 @@ anymore.
 #include <offsets.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <arch/cpu.h>
 
 _ASM_FILE_PROLOGUE

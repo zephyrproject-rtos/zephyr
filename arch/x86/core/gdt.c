@@ -40,7 +40,7 @@ for the IA-32 architecture.
 #include <toolchain.h>
 #include <sections.h>
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <arch/cpu.h>
 #include <gdt.h>
 

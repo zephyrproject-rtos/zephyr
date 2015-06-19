@@ -43,7 +43,7 @@ a parameter.
 #include <toolchain.h>
 #include <sections.h>
 #include <sw_isr_table.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <arch/cpu.h>
 
 GTEXT(_isr_enter)

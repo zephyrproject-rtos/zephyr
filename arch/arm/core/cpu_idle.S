@@ -41,7 +41,7 @@ DESCRIPTION
 #include <sections.h>
 #include <arch/cpu.h>
 #ifdef CONFIG_TICKLESS_IDLE
-#include <nanok.h>
+#include <nano_private.h>
 #endif
 
 _ASM_FILE_PROLOGUE

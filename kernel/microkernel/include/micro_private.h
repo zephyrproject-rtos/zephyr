@@ -36,7 +36,7 @@
 #include <stddef.h>
 #include <micro_private_types.h>
 #include <kernel_main.h>
-#include <nanok.h>
+#include <nano_private.h>
 
 #define KERNEL_ENTRY(A) _k_task_call(A)
 

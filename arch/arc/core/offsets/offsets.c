@@ -49,7 +49,7 @@ completeness.
 */
 
 #include <genOffset.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <offsets/common.h>
 
 /* ARCv2-specific tCCS structure member offsets */

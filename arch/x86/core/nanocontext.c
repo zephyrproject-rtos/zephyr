@@ -43,7 +43,7 @@ processor architecture.
 
 #include <toolchain.h>
 #include <sections.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <wait_q.h>
 
 

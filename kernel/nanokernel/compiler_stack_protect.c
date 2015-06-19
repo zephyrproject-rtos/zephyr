@@ -44,7 +44,7 @@ function __stack_chk_fail and global variable __stack_chk_guard.
 
 #if defined(CONFIG_STACK_CANARIES)
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
 

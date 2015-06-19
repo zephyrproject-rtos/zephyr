@@ -51,7 +51,7 @@ completeness.
 
 /* list of headers that define whose structure offsets will be generated */
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <swapstk.h>
 
 

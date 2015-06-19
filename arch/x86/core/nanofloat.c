@@ -100,7 +100,7 @@ enable FP resource sharing on its behalf.
 #include <micro_private_types.h>
 #endif /* CONFIG_MICROKERNEL */
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <toolchain.h>
 #include <asm_inline.h>
 

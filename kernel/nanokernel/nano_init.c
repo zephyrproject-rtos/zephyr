@@ -41,7 +41,7 @@ This module contains routines that are used to initialize the nanokernel.
 #include <drivers/rand32.h>
 #include <sections.h>
 #include <toolchain.h>
-#include <nanok.h>
+#include <nano_private.h>
 
 /* kernel build timestamp items */
 

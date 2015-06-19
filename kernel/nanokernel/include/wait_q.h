@@ -33,7 +33,7 @@
 #ifndef _kernel_nanokernel_include_wait_q__h_
 #define _kernel_nanokernel_include_wait_q__h_
 
-#include <nanok.h>
+#include <nano_private.h>
 
 /* reset a wait queue, call during operation */
 static inline void _nano_wait_q_reset(struct _nano_queue *wait_q)

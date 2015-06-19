@@ -36,7 +36,7 @@ This module implements the routines necessary for handling fatal faults on
 ARCv2 CPUs.
 */
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <offsets.h>
 #include <toolchain.h>
 #include <arch/cpu.h>

@@ -36,7 +36,7 @@ This module provides various nanokernel fiber related primitives,
 either in the form of an actual function or an alias to a function.
 */
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <string.h>
 #include <toolchain.h>
 #include <sections.h>

@@ -70,7 +70,7 @@ in this file:
 
 /@ include struct definitions for which offsets symbols are to be generated @/
 
-#include <nanok.h>
+#include <nano_private.h>
 
 GEN_ABS_SYM_BEGIN (_OffsetAbsSyms)	/@ the name parameter is arbitrary @/
 

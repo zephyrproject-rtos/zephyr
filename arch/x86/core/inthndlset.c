@@ -42,7 +42,7 @@
 */
 
 
-#include <nanok.h>
+#include <nano_private.h>
 
 
 /* the _idt_base_address symbol is generated via a linker script */

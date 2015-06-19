@@ -53,7 +53,7 @@ a task cannot impact the operation of an IRQ object it does not own.
 
 #if (CONFIG_MAX_NUM_TASK_IRQS > 0)
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <microkernel.h>
 #include <micro_private.h>
 #include <misc/__assert.h>

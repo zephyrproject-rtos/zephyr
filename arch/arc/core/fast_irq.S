@@ -39,7 +39,7 @@ See isr_wrapper.S for details.
 
 #define _ASMLANGUAGE
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <offsets.h>
 #include <toolchain.h>
 #include <arch/cpu.h>

@@ -38,7 +38,7 @@ Stack helper functions.
 #ifndef _ARM_CORTEXM_STACK__H_
 #define _ARM_CORTEXM_STACK__H_
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <asm_inline.h>
 
 #ifdef CONFIG_STACK_GROWS_DOWN

@@ -32,7 +32,7 @@
 
 #include <micro_private.h>
 #include "nanokernel.h"
-#include "nanok.h"
+#include <nano_private.h>
 #include <string.h>
 #include <toolchain.h>
 #include <sections.h>

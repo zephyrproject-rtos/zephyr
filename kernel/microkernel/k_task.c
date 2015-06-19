@@ -39,7 +39,7 @@
 #include <sections.h>
 
 #include <micro_private.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <start_task_arch.h>
 
 

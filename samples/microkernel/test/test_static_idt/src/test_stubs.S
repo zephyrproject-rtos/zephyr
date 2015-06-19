@@ -43,7 +43,7 @@ testing.
 /* IA-32 specific */
 
 #include <arch/cpu.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <arch/x86/asm.h>
 #include <asmPrv.h>
 #include <asm_inline.h>

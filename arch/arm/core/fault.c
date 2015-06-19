@@ -39,7 +39,7 @@ Common fault handler for ARM Cortex-M processors.
 #include <sections.h>
 
 #include <nanokernel.h>
-#include <nanok.h>
+#include <nano_private.h>
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>

@@ -31,7 +31,7 @@
  */
 
 
-#include <nanok.h>
+#include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <wait_q.h>

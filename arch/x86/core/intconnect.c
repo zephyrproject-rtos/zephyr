@@ -91,7 +91,7 @@ The _INT_STUB_SIZE macro is defined in include/nanokernel/x86/arch.h.
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <misc/__assert.h>
 
 /* the _idt_base_address symbol is generated via a linker script */
@@ -106,7 +106,7 @@ extern void _SpuriousIntNoErrCodeHandler(void *);
  * the spurious interrupt handlers. They *must* be declared in a module other
  * than the one they are used in to get around garbage collection issues and
  * warnings issued some compilers that they aren't used. Therefore care must
- * be taken if they are to be moved. See nanok.h for more information.
+ * be taken if they are to be moved. See nano_private.h for more information.
  */
 void *_dummy_spurious_interrupt;
 void *_dummy_exception_vector_stub;

@@ -39,7 +39,7 @@ This module provides the _NanoFatalErrorHandler() routine.
 #include <sections.h>
 
 #include <nanokernel.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <misc/printk.h>
 
 

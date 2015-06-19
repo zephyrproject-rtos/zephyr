@@ -57,7 +57,7 @@ NOMANUAL
 
 #include <microkernel.h>
 #include <micro_private.h>
-#include <nanok.h>
+#include <nano_private.h>
 
 /*******************************************************************************
 *

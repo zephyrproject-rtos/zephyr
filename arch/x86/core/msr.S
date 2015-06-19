@@ -56,7 +56,7 @@ utilities.
 *   void _MsrWrite (unsigned int msr, uint64_t msrData);
 *
 * The definitions of the so-called  "Architectural MSRs" are contained
-* in nanok.h and have the format: IA32_XXX_MSR
+* in nano_private.h and have the format: IA32_XXX_MSR
 *
 * INTERNAL
 * 1) The 'wrmsr' instruction was introduced in the Pentium processor; executing
@@ -87,7 +87,7 @@ SECTION_FUNC(TEXT, _MsrWrite)
 *   uint64_t _MsrRead (unsigned int msr);
 *
 * The definitions of the so-called  "Architectural MSRs" are contained
-* in nanok.h and have the format: IA32_XXX_MSR
+* in nano_private.h and have the format: IA32_XXX_MSR
 *
 * INTERNAL
 * 1) The 'rdmsr' instruction was introduced in the Pentium processor; executing

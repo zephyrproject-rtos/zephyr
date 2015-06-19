@@ -1,4 +1,4 @@
-/* nanok.h - private nanokernel definitions */
+/* nano_private.h - private nanokernel definitions */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -41,8 +41,8 @@ source files obtains structure offset values via "absolute symbols" in the
 offsets.o module.
 */
 
-#ifndef _NANOK__H_
-#define _NANOK__H_
+#ifndef _NANO_PRIVATE_H
+#define _NANO_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -286,4 +286,4 @@ static inline void _IntLibInit(void)
 }
 #endif
 
-#endif /* _NANOK__H_ */
+#endif /* _NANO_PRIVATE_H */

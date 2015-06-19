@@ -39,7 +39,7 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
-#include <nanok.h>
+#include <nano_private.h>
 #include <offsets.h>
 #include <wait_q.h>
 

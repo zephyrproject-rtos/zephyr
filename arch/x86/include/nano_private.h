@@ -1,4 +1,4 @@
-/* nanok.h - private nanokernel definitions (IA-32) */
+/* nano_private.h - private nanokernel definitions (IA-32) */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
@@ -44,8 +44,8 @@ source files obtains structure offset values via "absolute symbols" in the
 offsets.o module.
 */
 
-#ifndef _NANOK_H
-#define _NANOK_H
+#ifndef _NANO_PRIVATE_H
+#define _NANO_PRIVATE_H
 
 #include <toolchain.h>
 #include <sections.h>
@@ -900,4 +900,4 @@ static inline void _IntLibInit(void)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _NANOK_H */
+#endif /* _NANO_PRIVATE_H */

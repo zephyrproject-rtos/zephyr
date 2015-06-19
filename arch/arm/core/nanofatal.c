@@ -39,7 +39,7 @@ This module provides the _NanoFatalErrorHandler() routine for ARM Cortex-M.
 #include <sections.h>
 
 #include <nanokernel.h>
-#include <nanok.h>
+#include <nano_private.h>
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
