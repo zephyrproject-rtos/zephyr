@@ -37,7 +37,7 @@
 #include <stdint.h>	    /* uint32_t */
 #include <limits.h>	    /* ULONG_MAX */
 #include <misc/printk.h> /* printk */
-#include <clock_vars.h>
+#include <sys_clock.h>
 #include <drivers/system_timer.h>
 
 #define NB_CACHE_WARMING_DRY_RUN 7

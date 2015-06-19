@@ -55,7 +55,7 @@ conjunction with a microkernel.
 #include <toolchain.h>
 #include <sections.h>
 #include <misc/__assert.h>
-#include <clock_vars.h>
+#include <sys_clock.h>
 #include <drivers/system_timer.h>
 
 #ifdef CONFIG_MICROKERNEL

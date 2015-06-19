@@ -45,7 +45,7 @@ The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero counter.
 #include <sections.h>
 #include <misc/__assert.h>
 #include <arch/arc/v2/aux_regs.h>
-#include <clock_vars.h>
+#include <sys_clock.h>
 #include <drivers/system_timer.h>
 
 /*

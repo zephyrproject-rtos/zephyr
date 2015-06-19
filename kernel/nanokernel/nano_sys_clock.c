@@ -215,7 +215,7 @@ static inline void handle_expired_nano_timeouts(int ticks)
 
 /* handle the expired nano timers in the nano timers queue */
 #ifdef CONFIG_NANO_TIMERS
-#include <clock_vars.h>
+#include <sys_clock.h>
 static inline void handle_expired_nano_timers(int ticks)
 {
 	if (_nano_timer_list) {

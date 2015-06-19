@@ -42,7 +42,7 @@
 /* generic kernel public APIs */
 
 #include <kernel_version.h>
-#include <clock_vars.h>
+#include <sys_clock.h>
 #include <drivers/rand32.h>
 
 #ifdef __cplusplus

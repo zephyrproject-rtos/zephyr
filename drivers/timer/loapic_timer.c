@@ -46,7 +46,7 @@ After reset, the timer is initialized to zero.
 #include <nanokernel.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <clock_vars.h>
+#include <sys_clock.h>
 #include <drivers/system_timer.h>
 #include <drivers/loapic.h> /* LOAPIC registers */
 

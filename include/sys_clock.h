@@ -37,8 +37,8 @@ Declare variables used by both system timer device driver and kernel components
 that use timer functionality.
 */
 
-#ifndef _CLOCK_VARS__H_
-#define _CLOCK_VARS__H_
+#ifndef _SYS_CLOCK__H_
+#define _SYS_CLOCK__H_
 
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
@@ -82,4 +82,4 @@ extern struct nano_timer *_nano_timer_list;
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* _CLOCK_VARS__H_ */
+#endif /* _SYS_CLOCK__H_ */

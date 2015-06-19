@@ -34,7 +34,7 @@
 #define TICKS_H
 
 #include <nanokernel.h>
-#include <clock_vars.h>
+#include <sys_clock.h>
 
 /* externs */
 

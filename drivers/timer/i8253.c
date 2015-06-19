@@ -53,7 +53,7 @@ directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
 #include <toolchain.h>
 #include <sections.h>
 #include <limits.h>
-#include <clock_vars.h>
+#include <sys_clock.h>
 #include <drivers/system_timer.h>
 
 #ifdef CONFIG_MICROKERNEL
