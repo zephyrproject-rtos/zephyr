@@ -34,10 +34,10 @@
 
 #include <bluetooth/conn.h>
 
-enum {
+typedef enum {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_CONNECTED,
-};
+} bt_conn_state_t;
 
 /* L2CAP signaling channel specific context */
 struct bt_conn_l2cap {
@@ -71,7 +71,7 @@ struct bt_conn {
 
 	uint8_t			ref;
 
-	uint8_t			state;
+	bt_conn_state_t		state;
 
 	/* TX fiber stack */
 	BT_STACK(tx_stack, 256);
@@ -91,3 +91,6 @@ void bt_conn_del(struct bt_conn *conn);
 
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
+
+/* Set connection object in certain state */
+void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);

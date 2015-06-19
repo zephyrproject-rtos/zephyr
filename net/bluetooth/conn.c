@@ -263,7 +263,7 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role)
 	memset(conn, 0, sizeof(*conn));
 
 	conn->ref	= 1;
-	conn->state	= BT_CONN_CONNECTED;
+	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 	conn->handle	= handle;
 	conn->dev	= dev;
 	conn->role	= role;
@@ -288,12 +288,26 @@ void bt_conn_del(struct bt_conn *conn)
 		return;
 	}
 
-	conn->state = BT_CONN_DISCONNECTED;
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 	/* Send dummy buffer to wake up and kill the tx fiber */
 	nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
 
 	bt_conn_put(conn);
+}
+
+void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
+{
+	BT_DBG("%u -> %u", conn->state, state);
+
+	if (conn->state == state) {
+		BT_WARN("no transition\n");
+		return;
+	}
+
+	conn->state = state;
+
+	/* TODO: Validate states and make certain actions based on set state */
 }
 
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
