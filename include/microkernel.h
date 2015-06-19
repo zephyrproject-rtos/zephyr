@@ -43,7 +43,7 @@
 
 #include <microkernel/task.h>
 #include <microkernel/ticks.h>
-#include <microkernel/mmap.h>
+#include <microkernel/memory_map.h>
 #include <microkernel/mutex.h>
 #include <microkernel/mailbox.h>
 #include <microkernel/fifo.h>

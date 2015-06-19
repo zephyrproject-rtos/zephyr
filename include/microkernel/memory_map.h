@@ -1,4 +1,4 @@
-/* microkernel/mmap.h */
+/* microkernel/memory_map.h */
 
 /*
  * Copyright (c) 1997-2012, 2014 Wind River Systems, Inc.
@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef MMAP_H
-#define MMAP_H
+#ifndef _MEMORY_MAP_H
+#define _MEMORY_MAP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,4 +53,4 @@ extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
 }
 #endif
 
-#endif /* MMAP_H */
+#endif /* _MEMORY_MAP_H */
