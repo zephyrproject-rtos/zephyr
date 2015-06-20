@@ -132,7 +132,7 @@ config ASSERT_LEVEL
 endmenu
 
 menu "System Monitoring Options"
-
+	depends on EXPERIMENTAL
 
 config  PERFORMANCE_METRICS
 	bool
