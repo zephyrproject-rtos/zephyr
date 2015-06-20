@@ -30,16 +30,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-config PRINTK
-	bool
-	prompt "Send printk() to console"
-	default y
-	help
-	This option directs printk() debugging output to the supported
-	console device (UART), rather than suppressing the generation
-	of printk() output entirely. Output is sent immediately, without
-	any mutual exclusion or	buffering.
-
 
 menu "General Setup"
 config  EXPERIMENTAL
@@ -97,6 +87,16 @@ endmenu
 endmenu
 
 menu "Debugging Options"
+
+config PRINTK
+	bool
+	prompt "Send printk() to console"
+	default y
+	help
+	This option directs printk() debugging output to the supported
+	console device (UART), rather than suppressing the generation
+	of printk() output entirely. Output is sent immediately, without
+	any mutual exclusion or buffering.
 
 config STDOUT_CONSOLE
 	bool
