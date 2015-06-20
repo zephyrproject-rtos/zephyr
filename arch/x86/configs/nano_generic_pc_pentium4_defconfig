@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Zephyr OS/x86 Configuration
+# Zephyr Kernel/x86 Configuration
 #
 CONFIG_X86_32=y
 CONFIG_ARCH_DEFCONFIG="arch/x86/defconfig"
@@ -30,7 +30,8 @@ CONFIG_ENHANCED_SECURITY=y
 CONFIG_MAIN_STACK_SIZE=1024
 CONFIG_ISR_STACK_SIZE=2048
 # CONFIG_CONTEXT_CUSTOM_DATA is not set
-CONFIG_PRINTK=y
+# CONFIG_NANO_TIMEOUTS is not set
+CONFIG_NANO_TIMERS=y
 
 #
 # General Setup
@@ -47,12 +48,16 @@ CONFIG_MINIMAL_LIBC=y
 #
 # Debugging Options
 #
+CONFIG_PRINTK=y
 # CONFIG_STDOUT_CONSOLE is not set
 # CONFIG_ASSERT is not set
 
 #
-# System Monitoring Options
+# Bootloader Options
 #
+# CONFIG_BOOTLOADER_KEXEC is not set
+# CONFIG_BOOTLOADER_GRUB is not set
+CONFIG_BOOTLOADER_UNKNOWN=y
 
 #
 # x86 Core Options
@@ -99,33 +104,20 @@ CONFIG_CACHE_LINE_SIZE=64
 #
 # Specific BSP Capability Support
 #
+CONFIG_NUM_DYNAMIC_STUBS=0
 # CONFIG_PROT_MODE_SWITCH_PROMPT is not set
 # CONFIG_ADVANCED_IDLE_SUPPORTED is not set
-CONFIG_BOOTLOADER_UNKNOWN=y
-CONFIG_PIC=y
 
 #
 # Floating Point Options
 #
 # CONFIG_FLOAT is not set
+
+#
+# Bus options (PCI etc.)
+#
 # CONFIG_PCI is not set
 CONFIG_BSP_DIR="generic_pc"
-
-#
-# Serial Ports
-#
-CONFIG_EXTRA_SERIAL_PORT=y
-
-#
-# Timer Configuration
-#
-# CONFIG_HPET_TIMER is not set
-
-#
-# Interrupt Controller Configuration
-#
-# CONFIG_IOAPIC is not set
-# CONFIG_LOAPIC is not set
 
 #
 # Device Drivers
@@ -136,10 +128,27 @@ CONFIG_EXTRA_SERIAL_PORT=y
 #
 # Serial Drivers
 #
+
+#
+# Serial Port Options
+#
+CONFIG_EXTRA_SERIAL_PORT=y
 CONFIG_NS16550=y
 # CONFIG_K20_UART is not set
 # CONFIG_STELLARIS_UART is not set
 # CONFIG_UART_INTERRUPT_DRIVEN is not set
+
+#
+# Interrupt Controllers
+#
+CONFIG_PIC=y
+# CONFIG_LOAPIC is not set
+# CONFIG_IOAPIC is not set
+
+#
+# Timer Drivers
+#
+# CONFIG_HPET_TIMER is not set
 CONFIG_PIT=y
 
 #
@@ -147,5 +156,10 @@ CONFIG_PIT=y
 #
 # CONFIG_RANDOM_GENERATOR is not set
 # CONFIG_TEST_RANDOM_GENERATOR is not set
+
+#
+# Networking
+#
 # CONFIG_BLUETOOTH is not set
+# CONFIG_NETWORKING is not set
 CONFIG_DEFCONFIG_LIST="$ARCH_DEFCONFIG"

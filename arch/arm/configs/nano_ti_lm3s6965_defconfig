@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Zephyr OS/arm Configuration
+# Zephyr Kernel/arm Configuration
 #
 CONFIG_NANOKERNEL=y
 # CONFIG_MICROKERNEL is not set
@@ -22,7 +22,8 @@ CONFIG_XIP=y
 CONFIG_MAIN_STACK_SIZE=1024
 CONFIG_ISR_STACK_SIZE=2048
 # CONFIG_CONTEXT_CUSTOM_DATA is not set
-CONFIG_PRINTK=y
+# CONFIG_NANO_TIMEOUTS is not set
+CONFIG_NANO_TIMERS=y
 
 #
 # General Setup
@@ -39,12 +40,14 @@ CONFIG_MINIMAL_LIBC=y
 #
 # Debugging Options
 #
+CONFIG_PRINTK=y
 # CONFIG_STDOUT_CONSOLE is not set
 # CONFIG_ASSERT is not set
 
 #
-# System Monitoring Options
+# Bootloader Options
 #
+# CONFIG_BOOTLOADER_UNKNOWN is not set
 
 #
 # ARM family options
@@ -107,9 +110,22 @@ CONFIG_STELLARIS_UART=y
 # CONFIG_UART_INTERRUPT_DRIVEN is not set
 
 #
+# Interrupt Controllers
+#
+
+#
+# Timer Drivers
+#
+
+#
 # Random Generation Configuration
 #
 # CONFIG_RANDOM_GENERATOR is not set
 # CONFIG_TEST_RANDOM_GENERATOR is not set
+
+#
+# Networking
+#
 # CONFIG_BLUETOOTH is not set
+# CONFIG_NETWORKING is not set
 CONFIG_DEFCONFIG_LIST="$ARCH_DEFCONFIG"

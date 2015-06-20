@@ -44,7 +44,6 @@ CONFIG_TIMESLICE_SIZE=0
 CONFIG_TIMESLICE_PRIORITY=0
 # CONFIG_TASK_MONITOR is not set
 # CONFIG_ADVANCED_POWER_MANAGEMENT is not set
-CONFIG_PRINTK=y
 
 #
 # General Setup
@@ -61,12 +60,14 @@ CONFIG_MINIMAL_LIBC=y
 #
 # Debugging Options
 #
+CONFIG_PRINTK=y
 # CONFIG_STDOUT_CONSOLE is not set
 # CONFIG_ASSERT is not set
 
 #
-# System Monitoring Options
+# Bootloader Options
 #
+# CONFIG_BOOTLOADER_UNKNOWN is not set
 
 #
 # ARC family options
@@ -124,6 +125,10 @@ CONFIG_ARCV2_TIMER=y
 #
 # CONFIG_RANDOM_GENERATOR is not set
 # CONFIG_TEST_RANDOM_GENERATOR is not set
+
+#
+# Networking
+#
 # CONFIG_BLUETOOTH is not set
 # CONFIG_NETWORKING is not set
 CONFIG_DEFCONFIG_LIST="$ARCH_DEFCONFIG"
