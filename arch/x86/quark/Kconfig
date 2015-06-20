@@ -39,12 +39,6 @@ config BSP_DIR
 	the location of the config1p.mdef file and is used by the build system
 	to locate the correct linker file.
 
-config MAX_PCI_DEVS
-	int
-	prompt "Maximum number of PCI devices"
-	default 8
-	help
-	This option sets the maximum number of PCI devices the BSP supports.
 
 config BOOTLOADER_KEXEC
 	bool
