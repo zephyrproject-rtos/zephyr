@@ -247,37 +247,6 @@ config ADVANCED_IDLE_SUPPORTED
 
 endmenu
 
-config BOOTLOADER_UNKNOWN
-	bool
-	default n
-	help
-	This option signifies that the target has an unknown bootloader
-	or that it supports multiple ways of booting and it isn't clear
-	at build time which method is to be used. When this option is enabled
-	the BSP may have to do extra work to ensure a propert startup.
-
-menu "Boot Sequence Options"
-depends on PROT_MODE_SWITCH_PROMPT
-
-config PROT_MODE_SWITCH
-	bool
-	prompt "Switch to 32-bit protected mode when booting"
-	default n
-	depends on PROT_MODE_SWITCH_PROMPT
-	help
-	This option causes the kernel to transition from real mode (16-bit)
-	to protected mode (32-bit) during its initial booting sequence.
-
-config BOOT_A20_ENABLE
-	bool "Boot A20 enable"
-	depends on PROT_MODE_SWITCH
-	default n
-	help
-	This option causes the A20 line to be enabled during the transition
-	from real mode (16-bit) to protected mode (32-bit) during its initial
-	booting sequence.
-
-endmenu
 
 config SHUTOFF_PIC
         bool "Shutoff PIC"

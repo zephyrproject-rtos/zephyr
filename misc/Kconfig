@@ -137,6 +137,7 @@ menu "Bootloader Options"
 config BOOTLOADER_KEXEC
 	bool
 	prompt "Boot using Linux kexec() system call"
+	depends on X86_32
 	default n
 	help
 	This option signifies that Linux boots the kernel using kexec system call
@@ -150,6 +151,38 @@ config BOOTLOADER_GRUB
 	help
 	This option signifies that GRUB 2.0 is used to boot the kernel. GRUB 2.0
 	is used to boot the kernel from SD card.
+
+config BOOTLOADER_UNKNOWN
+	bool
+	default n
+	help
+	This option signifies that the target has an unknown bootloader
+	or that it supports multiple ways of booting and it isn't clear
+	at build time which method is to be used. When this option is enabled
+	the BSP may have to do extra work to ensure a proper startup.
+
+menu "Boot Sequence Options"
+depends on PROT_MODE_SWITCH_PROMPT
+
+config PROT_MODE_SWITCH
+	bool
+	prompt "Switch to 32-bit protected mode when booting"
+	default n
+	depends on PROT_MODE_SWITCH_PROMPT && X86_32
+	help
+	This option causes the kernel to transition from real mode (16-bit)
+	to protected mode (32-bit) during its initial booting sequence.
+
+config BOOT_A20_ENABLE
+	bool "Boot A20 enable"
+	depends on PROT_MODE_SWITCH && X86_32
+	default n
+	help
+	This option causes the A20 line to be enabled during the transition
+	from real mode (16-bit) to protected mode (32-bit) during its initial
+	booting sequence.
+
+endmenu
 
 endmenu
 
