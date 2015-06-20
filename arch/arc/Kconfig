@@ -1,0 +1,232 @@
+# ARC EM4 options
+
+#
+# Copyright (c) 2014 Wind River Systems, Inc.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+source "kernel/Kconfig"
+
+source "misc/Kconfig"
+
+menu "ARC family options"
+
+config	ARC
+	bool
+	default y
+	help
+	  This option signifies the use of an ARC system.
+
+endmenu
+
+menu "ARC EM4 processor options"
+
+config	CPU_ARCEM4
+	bool
+	default y
+	select CPU_ARCV2
+	help
+         This option signifies the use of an ARC EM4 CPU
+
+endmenu
+
+menu "ARCv2 Family Options"
+
+config	CPU_ARCV2
+	bool
+	default y
+	select ARC
+	help
+	  This option signifies the use of a CPU of the ARCv2 family.
+
+config	DATA_ENDIANNESS_LITTLE
+	bool
+	default y
+	help
+	  This is driven by the processor implementation, since it is fixed in
+	  hardware. The BSP should set this value to 'n' if the data is
+	  implemented as big endian.
+
+config	NUM_IRQ_PRIO_LEVELS
+	int
+	prompt "Number of supported interrupt priority levels"
+	default 1
+	range 1 16
+	help
+	  Interrupt priorities available will be 0 to NUM_IRQ_PRIO_LEVELS-1.
+	  The minimum value is 1.
+
+	  The BSP must provide a valid default for proper operation.
+
+config	NUM_REGULAR_IRQ_PRIO_LEVELS
+	int
+	prompt "Number of supported regular interrupt priority levels"
+	default 1
+	range 1 16
+	help
+	 This represents the number of Regular Interrupt priorities, which
+	 does NOT include the Fast (FIRQ) priority.
+	 The Regular Interrupt priorities available will be
+	  (NUM_IRQ_PRIO_LEVELS - NUM_REGULAR_IRQ_PRIO_LEVELS) to
+	  (NUM_REGULAR_IRQ_PRIO_LEVELS - 1).
+
+	  The maximum value is NUM_IRQ_PRIO_LEVELS.
+
+	  The BSP must provide a valid default for proper operation.
+
+config	NUM_IRQS
+	int
+	prompt "Upper limit of interrupt numbers/IDs used"
+	default 17
+	range 1 256
+	help
+	  Interrupts available will be 0 to NUM_IRQS-1.
+	  The minimum value is 1.
+
+	  The BSP must provide a valid default. This drives the size of the
+	  vector table.
+
+config	FIRQ_STACK_SIZE
+	int
+	prompt "Size of stack for FIRQs (in bytes)"
+	depends on CPU_ARCV2
+	default 1024
+	help
+	  FIRQs and regular IRQs have different stacks so that a FIRQ can start
+	  running without doing stack switching in software.
+
+config	STACK_CHECKING
+	bool
+	prompt "ARC CPU stack checking is enabled/disabled."
+	depends on ENHANCED_SECURITY
+	default y
+	help
+	  Enable or disable CPU stack checking.
+
+config	FAULT_DUMP
+	int
+	prompt "Fault dump level"
+	default 2
+	help
+	  Different levels for display information when a fault occurs.
+
+	  2: The default. Display specific and verbose information. Consumes
+	     the most memory (long strings).
+	  1: Display general and short information. Consumes less memory
+	     (short strings).
+	  0: Off.
+
+config	XIP
+	default n if NSIM
+	default y
+
+config  SW_ISR_TABLE
+	bool
+	prompt "Enable software interrupt handler table"
+	default y
+	help
+	  Enable an interrupt handler table implemented in software. This
+	  table, unlike ISRs connected directly in the vector table, allow
+	  a parameter to be passed to the interrupt handlers. Also, invoking
+	  the exeception/interrupt exit stub is automatically done.
+
+	  This has to be enabled for dynamically connecting interrupt handlers
+	  at runtime (SW_ISR_TABLE_DYNAMIC).
+
+config  SW_ISR_TABLE_DYNAMIC
+	bool
+	prompt "Allow installing interrupt handlers at runtime"
+	depends on SW_ISR_TABLE
+	default y
+	help
+	  This option enables nanoCpuIntConnect(). It moves the ISR table to
+	  SRAM so that it is writable. This has the side-effect of removing
+	  write-protection on the ISR table.
+
+config  SW_ISR_TABLE_STATIC_CUSTOM
+	bool
+	prompt "Projects provide a custom static software ISR table"
+	depends on SW_ISR_TABLE && !SW_ISR_TABLE_DYNAMIC
+	default n
+	help
+	  Projects, not the BSP, provide a software table of ISR and their
+	  parameters. The table is static, and thus ISRs cannot be connected
+	  at runtime.
+
+config	SW_ISR_TABLE_BSP
+	bool
+	# omit prompt to signify a "hidden" option
+	depends on SW_ISR_TABLE_DYNAMIC || (SW_ISR_TABLE && !SW_ISR_TABLE_STATIC_CUSTOM)
+	default y
+	help
+	  Not user-selectable, helps build system logic.
+
+config  IRQ_VECTOR_TABLE_CUSTOM
+	bool
+	prompt "Projects provide a custom static IRQ part of vector table"
+	depends on !SW_ISR_TABLE
+	default n
+	help
+	  Projects, not the BSP, provide the IRQ part of the vector table.
+
+	  This is the table of interrupt handlers with the best potential
+	  performance, but is the less flexible.
+
+	  The ISRs are installed directly in the vector table, thus are
+	  directly called by the CPU when an interrupt is taken. This adds
+	  the least overhead when handling an interrupt.
+
+	  Downsides:
+	  - ISRs cannot have a parameter
+	  - ISRs cannot be connected at runtime
+	  - ISRs must notify the kernel manually by invoking _ExcExit() when
+		then are about to return.
+
+config	IRQ_VECTOR_TABLE_BSP
+	bool
+	# omit prompt to signify a "hidden" option
+	depends on SW_ISR_TABLE || !IRQ_VECTOR_TABLE_CUSTOM
+	default y
+	help
+	  Not user-selectable, helps build system logic.
+
+config  ARCH_HAS_TASK_ABORT
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+config  ARCH_HAS_NANO_FIBER_ABORT
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+endmenu
+
+
+source "drivers/Kconfig"
+
+source "net/Kconfig"
