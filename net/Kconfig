@@ -30,5 +30,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+menu "Networking"
+
 source "net/bluetooth/Kconfig"
+
 source "net/ip/Kconfig"
+
+endmenu
