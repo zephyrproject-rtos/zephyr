@@ -108,7 +108,7 @@ and list the options you’ve set.
 Installing a Custom QEMU for ARM Platforms
 ============================================
 
-The Yocto SDK comes with a Qemu binary suitable for running sample Zephyr OS
+The Yocto SDK comes with a Qemu binary suitable for running sample Zephyr Kernel
 applications. The steps below are only needed if you choose not to use the
 provided binary and use a custom built binary instead.
 

@@ -39,7 +39,7 @@ This program expects to be invoked as follows:
 All parameters are required.
 
 <file name> is assumed to be a binary file containing the intList section from
-the Zephyr OS ELF image (microkernel.elf, nanokernel.elf, etc.)
+the Zephyr Kernel ELF image (microkernel.elf, nanokernel.elf, etc.)
 
 <number of interrupt vectors> is the same as CONFIG_IDT_NUM_VECTORS.
 

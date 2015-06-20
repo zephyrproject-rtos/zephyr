@@ -92,7 +92,7 @@ computational cannot call :c:func:`fiber_yield()`.
 Scheduling Fibers
 *****************
 
-The fibers in the Zephyr OS are priority-scheduled. When several fibers
+The fibers in the Zephyr Kernel are priority-scheduled. When several fibers
 are ready to run, they run in the order of their priority. When more
 than one fiber of the same priority is ready to run, they are ordered
 by the time that each became runnable. Each fiber runs until it is

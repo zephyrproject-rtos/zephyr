@@ -1,4 +1,4 @@
-.. |codename| replace:: Zephyr OS
+.. |codename| replace:: Zephyr Kernel
 
 .. |PM| replace:: Hirally Rodriguez Santiago
 

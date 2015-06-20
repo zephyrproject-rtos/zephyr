@@ -8,7 +8,7 @@ Section Scope
 
 This section provides an overview of the most important nanokernel
 objects. The information contained here is an aid to better understand
-how the Zephyr OS operates at the nanokernel level.
+how the Zephyr Kernel operates at the nanokernel level.
 
 Document Format
 ***************

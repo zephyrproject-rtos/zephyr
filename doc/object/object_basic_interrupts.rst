@@ -89,7 +89,7 @@ the macros detailed in following table. The table lists the macros you
 can use to identify and register your static ISRs into the Interrupt
 Descriptor Table. The IA-32 interrupt descriptor allows for the setting
 of the privilege level, DPL, at which the interrupt can be triggered.
-The Zephyr OS assumes all device drivers are kernel mode (ring 0) as
+The Zephyr Kernel assumes all device drivers are kernel mode (ring 0) as
 opposed to user-mode (ring 3). Therefore, these macros always set the
 DPL to 0.
 
@@ -186,7 +186,7 @@ The following is an example of a dynamic interrupt stub for x86:
 
    }
 
-This feature is part of the enhanced security profile in Zephyr OS.
+This feature is part of the enhanced security profile in Zephyr Kernel.
 
 
 Working with ISRs
@@ -330,7 +330,7 @@ The default setting of 0 disables the following interfaces:
 :c:func:`task_irq_ack()` and :c:func:`task_irq_test()`. Each device has
 a well-known identifier in the range from 0 to *MAX_NUM_TASK_DEVS*-1.
 
-The Zephyr OS allows kernel tasks to bind to devices at run-time by
+The Zephyr Kernel allows kernel tasks to bind to devices at run-time by
 calling :c:func:`task_irq_alloc()`. A task may bind itself to multiple
 devices by calling this routine multiple times but a given device can
 be bound to only a single task at any point in time. The registering

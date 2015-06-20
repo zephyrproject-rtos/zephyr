@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This script defines the memory location of the various sections that make up
-a Zephyr OS image. It is usable by most supported BSPs. This file is used
+a Zephyr Kernel image. It is usable by most supported BSPs. This file is used
 by the linker.
 
 This script places the various sections of the image according to what features
@@ -54,7 +54,7 @@ end of the RODATA section.  At runtime, the DATA section is copied into the RAM
 region so it can be accessed with read and write permission.
 
 Most symbols defined in the sections below are subject to be referenced in the
-Zephyr OS image. If a symbol is used but not defined the linker will emit an
+Zephyr Kernel image. If a symbol is used but not defined the linker will emit an
 undefined symbol error.
 
 Please do not change the order of the section as the nanokernel expects this

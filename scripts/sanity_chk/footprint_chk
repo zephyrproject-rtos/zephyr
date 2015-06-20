@@ -34,7 +34,7 @@
 # Import common sanity check definitions
 #
 if [ -z ${ZEPHYR_BASE} ]; then
-	echo "shell variables required to build Zephyr OS are not set"
+	echo "shell variables required to build Zephyr Kernel are not set"
 	exit 1
 fi
 if [ ! -d ${ZEPHYR_BASE} ] ; then

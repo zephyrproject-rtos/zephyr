@@ -34,7 +34,7 @@
 # Import common sanity check definitions
 #
 if [ -z ${ZEPHYR_BASE} ]; then
-	echo "shell variables required to build Zephyr OS are not set"
+	echo "shell variables required to build Zephyr Kernel are not set"
 	exit 1
 fi
 if [ ! -d ${ZEPHYR_BASE} ] ; then
@@ -70,7 +70,7 @@ EOF
 long_help() {
 cat << EOF
 
-Script to sanitize Zephyr OS.
+Script to sanitize Zephyr Kernel.
 
 The full sanity check consists of the following phases:
 
@@ -83,7 +83,7 @@ by using the available command options.
 
 *-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=*-=
 
-Before running the script, ensure Zephyr OS environment variables are set.
+Before running the script, ensure Zephyr Kernel environment variables are set.
 
 The script returns 0 on success. If an error is encountered at any point
 the script terminates with an error message and returns the exit value

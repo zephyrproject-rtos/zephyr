@@ -31,7 +31,7 @@
  */
 /*
 DESCRIPTION
-This module contains the initial code executed by the Zephyr OS ELF image
+This module contains the initial code executed by the Zephyr Kernel ELF image
 after having been loaded into RAM.
 
 INTERNAL
