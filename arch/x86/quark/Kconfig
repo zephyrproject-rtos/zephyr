@@ -39,24 +39,6 @@ config BSP_DIR
 	the location of the config1p.mdef file and is used by the build system
 	to locate the correct linker file.
 
-
-config BOOTLOADER_KEXEC
-	bool
-	prompt "Boot using Linux kexec() system call"
-	default n
-	help
-	This option signifies that Linux boots the kernel using kexec system call
-	and utility. This method is used to boot the kernel over the network.
-
-config BOOTLOADER_GRUB
-	bool
-	prompt "Boot using GRUB 2.0"
-	default y
-	depends on !BOOTLOADER_KEXEC
-	help
-	This option signifies that GRUB 2.0 is used to boot the kernel. GRUB 2.0
-	is used to boot the kernel from SD card.
-
 config PHYS_LOAD_ADDR
 	default 0x00100000
 

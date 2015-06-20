@@ -131,6 +131,28 @@ config ASSERT_LEVEL
 
 endmenu
 
+
+menu "Bootloader Options"
+
+config BOOTLOADER_KEXEC
+	bool
+	prompt "Boot using Linux kexec() system call"
+	default n
+	help
+	This option signifies that Linux boots the kernel using kexec system call
+	and utility. This method is used to boot the kernel over the network.
+
+config BOOTLOADER_GRUB
+	bool
+	prompt "Boot using GRUB 2.0"
+	default n
+	depends on !BOOTLOADER_KEXEC && X86_32
+	help
+	This option signifies that GRUB 2.0 is used to boot the kernel. GRUB 2.0
+	is used to boot the kernel from SD card.
+
+endmenu
+
 menu "System Monitoring Options"
 	depends on EXPERIMENTAL
 
