@@ -69,28 +69,3 @@ config PHYS_LOAD_ADDR
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000
 
-menu "Serial Ports"
-
-config EXTRA_SERIAL_PORT
-	bool "Extra serial port"
-	default n
-	help
-	This option signifies the number of serial ports the target has.
-
-config SERIAL_INTERRUPT_LEVEL
-	bool "Serial interrupt level"
-	depends on IOAPIC && EXTRA_SERIAL_PORT
-	default y
-	help
-	Option signifies that the serial controller uses level interrupts
-	instead of edge
-
-config SERIAL_INTERRUPT_LOW
-	bool "Serial interrupt low"
-	depends on IOAPIC && EXTRA_SERIAL_PORT
-	default n
-	help
-	Option signifies that the serial controller uses low level interrupts
-	instead of high
-
-endmenu
