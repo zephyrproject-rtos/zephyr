@@ -62,4 +62,12 @@ config PIT
 	help
 	This option selects legacy i8253 timer as system timer.
 
+config ARCV2_TIMER
+	bool "ARC Timer"
+	default y
+	depends on ARC
+	help
+	This module implements a kernel device driver for the ARCv2 processor timer 0
+	and provides the standard "system clock driver" interfaces.
+
 endmenu
