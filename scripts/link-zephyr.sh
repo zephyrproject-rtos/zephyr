@@ -76,9 +76,11 @@ initial_link()
 # ${2} output file (staticIdt.o)
 gen_idt()
 {
-	${OBJCOPY} -I elf32-i386 -O binary -j intList ${1} isrList.bin
+	test -z $OUTPUT_FORMAT && OUTPUT_FORMAT=elf32-i386
+	test -z $OUTPUT_ARCH && OUTPUT_ARCH=i386
+	${OBJCOPY} -I $OUTPUT_FORMAT  -O binary -j intList ${1} isrList.bin
 	${GENIDT} -i isrList.bin -n ${CONFIG_IDT_NUM_VECTORS:-256} -o staticIdt.bin
-	${OBJCOPY} -I binary -B i386 -O elf32-i386 --rename-section .data=staticIdt staticIdt.bin ${2}
+	${OBJCOPY} -I binary -B $OUTPUT_ARCH -O $OUTPUT_FORMAT  --rename-section .data=staticIdt staticIdt.bin ${2}
 	rm -f staticIdt.bin
 	rm -f isrList.bin
 }
