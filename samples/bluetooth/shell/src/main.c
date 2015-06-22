@@ -194,7 +194,7 @@ static void cmd_disconnect(int argc, char *argv[])
 	bt_conn_put(conn);
 }
 
-static void cmd_active_scan_on()
+static void cmd_active_scan_on(void)
 {
 	int err;
 
@@ -206,7 +206,7 @@ static void cmd_active_scan_on()
 	}
 }
 
-static void cmd_scan_off()
+static void cmd_scan_off(void)
 {
 	int err;
 
