@@ -1,4 +1,3 @@
-ccflags-y +=-I$(srctree)/include/bsp
 ccflags-y +=-I$(srctree)/include/drivers
 ccflags-y +=-I$(srctree)/drivers
 ccflags-y +=-I$(srctree)/arch/arm/fsl_frdm_k64f

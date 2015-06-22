@@ -1,6 +1,5 @@
 ccflags-y += -I$(srctree)/kernel/nanokernel/include
 ccflags-y += -I$(srctree)/kernel/microkernel/include
-ccflags-y += -I$(srctree)/target/src/bsp/arm
 
 asflags-y := ${ccflags-y}
 
