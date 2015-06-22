@@ -7,11 +7,12 @@
 .. include:: disclaimers.rst
 
 |project|
-##################
+#########
 
 .. toctree::
    :maxdepth: 2
 
+   architecture/architecture.rst
    installation/installation.rst
    collaboration/collaboration.rst
    development/index.rst
