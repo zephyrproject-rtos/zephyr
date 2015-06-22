@@ -49,7 +49,6 @@ extern int _k_task_count;
 
 extern struct map_struct _k_mem_map_list[];
 extern struct mbx_struct _k_mbox_list[];
-extern struct mutex_struct _k_mutex_list[];
 extern struct sem_struct _k_sem_list[];
 extern struct que_struct _k_fifo_list[];
 extern struct pool_struct _k_mem_pool_list[];
