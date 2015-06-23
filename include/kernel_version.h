@@ -35,29 +35,20 @@
 
 /*
  * The kernel version has been converted from a string to a four-byte
- * quantity that is divided into three parts.
+ * quantity that is divided into two parts.
  *
- * Part 1: The two most significant bytes are sub-divided into four nibbles,
- * representing the kernel's numeric version, w.x.y.z. These fields denote:
- *       w -- generation release number
+ * Part 1: The three most significant bytes represent the kernel's
+ * numeric version, x.y.z. These fields denote:
  *       x -- major release
  *       y -- minor release
- *       z -- servicepack release
- * Each of these elements must therefore be in the range 0 to 15, inclusive.
+ *       z -- patchlevel release
+ * Each of these elements must therefore be in the range 0 to 256, inclusive.
  *
- * Part 2: The next most significant byte is used for a variety of flags and is
- * broken down as follows:
- *     Bits 7..0 - Cleared as the are currently unused.
- *
- * Part 3: The least significant byte is reserved for future use.
+ * Part 2: The least significant byte is reserved for future use.
  */
-#define SYS_KERNEL_VER_GENERATION(ver) ((ver >> 28) & 0x0F)
 #define SYS_KERNEL_VER_MAJOR(ver) ((ver >> 24) & 0x0F)
-#define SYS_KERNEL_VER_MINOR(ver) ((ver >> 20) & 0x0F)
-#define SYS_KERNEL_VER_SERVICEPACK(ver) ((ver >> 16) & 0x0F)
-
-/* return 8-bit flags */
-#define SYS_KERNEL_VER_FLAGS(ver) ((ver >> 8) & 0xFF)
+#define SYS_KERNEL_VER_MINOR(ver) ((ver >> 16) & 0x0F)
+#define SYS_KERNEL_VER_PATCHLEVEL(ver) ((ver >> 8) & 0x0F)
 
 /* kernel version routines */
 
