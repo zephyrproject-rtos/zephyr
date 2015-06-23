@@ -61,13 +61,13 @@ extern void _NmiInit(void);
 
 /*******************************************************************************
 *
-* uartGenericInfoInit - initialize initialization information for one UART
+* uart_generic_info_init - initialize generic information for one UART
 *
 * RETURNS: N/A
 *
 */
 
-inline void uartGenericInfoInit(struct uart_init_info *pInfo)
+inline void uart_generic_info_init(struct uart_init_info *pInfo)
 {
 	pInfo->sys_clk_freq = SYSCLK_DEFAULT_IOSC_HZ;
 	pInfo->baud_rate = CONFIG_UART_CONSOLE_BAUDRATE;
@@ -98,7 +98,7 @@ static void consoleInit(void)
 	/* enable clock to UART0 */
 	RCGC1 |= RCGC1_UART0_EN;
 
-	uartGenericInfoInit(&info);
+	uart_generic_info_init(&info);
 
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
 

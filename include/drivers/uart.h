@@ -66,7 +66,7 @@ void uart_irq_err_disable(int port);
 int uart_irq_is_pending(int port);
 int uart_irq_update(int port);
 unsigned int uart_irq_get(int port);
-void uartGenericInfoInit(struct uart_init_info *p_info);
+void uart_generic_info_init(struct uart_init_info *p_info);
 
 #ifdef __cplusplus
 }

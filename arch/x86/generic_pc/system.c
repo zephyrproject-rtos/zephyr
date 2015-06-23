@@ -88,13 +88,13 @@ static inline void ioapicInit(void)
 
 /*******************************************************************************
 *
-* uartGenericInfoInit - initialize initialization information for one UART
+* uart_generic_info_init - initialize initialization information for one UART
 *
 * RETURNS: N/A
 *
 */
 
-void uartGenericInfoInit(struct uart_init_info *p_info)
+void uart_generic_info_init(struct uart_init_info *p_info)
 {
 	p_info->options = 0;
 	p_info->sys_clk_freq = UART_XTAL_FREQ;
@@ -122,7 +122,7 @@ static void consoleInit(void)
 {
 	struct uart_init_info info;
 
-	uartGenericInfoInit(&info);
+	uart_generic_info_init(&info);
 	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
 	uart_console_init();
 }
