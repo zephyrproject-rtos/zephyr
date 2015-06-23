@@ -1,6 +1,6 @@
 VERSION_MAJOR 	   = 0
 VERSION_MINOR 	   = 1
-VERSION_PATCHLEVEL = 0
+PATCHLEVEL 	   = 0
 VERSION_RESERVED   = 0
 EXTRAVERSION       =
 NAME 		   = Zephyr Kernel
@@ -383,9 +383,9 @@ LDFLAGS += $(call ld-option,-nostdlib)
 LDFLAGS += $(call ld-option,-static)
 LDLIBS_TOOLCHAIN ?= -lgcc
 
-KERNELVERSION = $(VERSION_MAJOR)$(if $(VERSION_MINOR),.$(VERSION_MINOR)$(if $(VERSION_PATCHLEVEL),.$(VERSION_PATCHLEVEL)))$(VERSION_EXTRAVERSION)
+KERNELVERSION = $(VERSION_MAJOR)$(if $(VERSION_MINOR),.$(VERSION_MINOR)$(if $(PATCHLEVEL),.$(PATCHLEVEL)))$(VERSION_EXTRAVERSION)
 
-export VERSION_MAJOR VERSION_MINOR VERSION_PATCHLEVEL VERSION_RESERVED EXTRAVERSION
+export VERSION_MAJOR VERSION_MINOR PATCHLEVEL VERSION_RESERVED EXTRAVERSION
 export KERNELRELEASE KERNELVERSION
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP
@@ -429,7 +429,7 @@ outputmakefile:
 ifneq ($(KBUILD_SRC),)
 	$(Q)ln -fsn $(srctree) source
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile \
-	    $(srctree) $(objtree) $(VERSION) $(PATCHLEVEL)
+	    $(srctree) $(objtree) $(VERSION_MAJOR) $(PATCHLEVEL)
 endif
 
 # Support for using generic headers in asm-generic
@@ -868,20 +868,24 @@ prepare: $(archprepare)  FORCE
 
 VERSION_MAJOR_HEX=$(shell printf '%02x\n' ${VERSION_MAJOR})
 VERSION_MINOR_HEX=$(shell printf '%02x\n' ${VERSION_MINOR})
-VERSION_PATCHLEVEL_HEX=$(shell printf '%02x\n' ${VERSION_PATCHLEVEL})
+PATCHLEVEL_HEX=$(shell printf '%02x\n' ${PATCHLEVEL})
 VERSION_RESERVED_HEX=00
-KERNEL_VERSION_HEX=0x$(VERSION_MAJOR_HEX)$(VERSION_MINOR_HEX)$(VERSION_PATCHLEVEL_HEX)
+KERNEL_VERSION_HEX=0x$(VERSION_MAJOR_HEX)$(VERSION_MINOR_HEX)$(PATCHLEVEL_HEX)
 
 define filechk_version.h
        (echo "#ifndef _KERNEL_VERSION_H_"; \
        echo "#define _KERNEL_VERSION_H_"; \
+       echo ;\
+       (echo \#define ZEPHYR_VERSION_CODE $(shell                         \
+       expr $(VERSION_MAJOR) \* 65536 + 0$(VERSION_MINOR) \* 256 + 0$(PATCHLEVEL)); \
+       echo '#define ZEPHYR_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))';); \
        echo ;\
        echo -n "#define KERNELVERSION "; \
        echo "$(KERNEL_VERSION_HEX)$(VERSION_RESERVED_HEX)"; \
        echo "#define KERNEL_VERSION_NUMBER     $(KERNEL_VERSION_HEX)"; \
        echo "#define KERNEL_VERSION_MAJOR      $(VERSION_MAJOR)"; \
        echo "#define KERNEL_VERSION_MINOR      $(VERSION_MINOR)"; \
-       echo "#define KERNEL_VERSION_PATCHLEVEL $(VERSION_PATCHLEVEL)"; \
+       echo "#define KERNEL_PATCHLEVEL         $(PATCHLEVEL)"; \
        echo "#define KERNEL_VERSION_STRING     \"$(KERNELVERSION)\""; \
        echo; \
        echo "#endif /* _KERNEL_VERSION_H_ */";)
