@@ -522,13 +522,6 @@ def kernel_main_c_mutexes():
         kernel_main_c_out("struct _k_mutex_struct _k_mutex_obj_%s = " % (name) +
 		"__MUTEX_DEFAULT;\n")
 
-    # mutex object identifiers
-
-    kernel_main_c_out("\n")
-    for mutex in mutex_list:
-        name = mutex[0]
-        kernel_main_c_out("const kmutex_t %s_objId = %s;\n" % (name, name))
-
 
 def kernel_main_c_semas():
     """ Generate semaphore variables """
