@@ -365,6 +365,7 @@ static void hci_disconn_complete(struct bt_buf *buf)
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	bt_conn_put(conn);
+	conn->handle = 0;
 
 	if (dev.adv_enable) {
 		struct bt_buf *buf;
@@ -579,16 +580,22 @@ static void le_conn_complete(struct bt_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_add(&dev, handle, evt->role);
+	conn = bt_conn_add(&dev, &evt->peer_addr, evt->role);
 	if (!conn) {
 		BT_ERR("Unable to add new conn for handle %u\n", handle);
 		return;
 	}
 
+	conn->handle   = handle;
 	conn->src.type = BT_ADDR_LE_PUBLIC;
 	memcpy(conn->src.val, dev.bdaddr.val, sizeof(dev.bdaddr.val));
 	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
+	bt_conn_set_state(conn, BT_CONN_CONNECTED);
+
+	if (evt->role == BT_HCI_ROLE_SLAVE) {
+		bt_l2cap_update_conn_param(conn);
+	}
 
 	bt_connected(conn);
 	bt_l2cap_connected(conn);

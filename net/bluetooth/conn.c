@@ -262,13 +262,14 @@ static void conn_tx_fiber(int arg1, int arg2)
 	bt_conn_put(conn);
 }
 
-struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role)
+struct bt_conn *bt_conn_add(struct bt_dev *dev, const bt_addr_le_t *peer,
+			    uint8_t role)
 {
 	struct bt_conn *conn = NULL;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		if (!conns[i].handle) {
+		if (!bt_addr_le_cmp(&conns[i].dst, BT_ADDR_LE_ANY)) {
 			conn = &conns[i];
 			break;
 		}
@@ -281,14 +282,9 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, uint16_t handle, uint8_t role)
 	memset(conn, 0, sizeof(*conn));
 
 	conn->ref	= 1;
-	conn->handle	= handle;
 	conn->dev	= dev;
 	conn->role	= role;
-	bt_conn_set_state(conn, BT_CONN_CONNECTED);
-
-	if (role == BT_HCI_ROLE_SLAVE) {
-		bt_l2cap_update_conn_param(conn);
-	}
+	bt_addr_le_copy(&conn->dst, peer);
 
 	return conn;
 }
@@ -382,7 +378,7 @@ void bt_conn_put(struct bt_conn *conn)
 		return;
 	}
 
-	conn->handle = 0;
+	bt_addr_le_copy(&conn->dst, BT_ADDR_LE_ANY);
 }
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
