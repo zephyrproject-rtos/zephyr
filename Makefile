@@ -866,10 +866,9 @@ prepare: $(archprepare)  FORCE
 # KERNELRELEASE can change from a few different places, meaning version.h
 # needs to be updated, so this check is forced on all builds
 
-VERSION_MAJOR_HEX=$(shell echo "obase=16; ${VERSION_MAJOR}" | bc)
-VERSION_MINOR_HEX=$(shell echo "obase=16; ${VERSION_MINOR}" | bc)
-VERSION_PATCHLEVEL_HEX=$(shell echo "obase=16; ${VERSION_PATCHLEVEL}" | bc)
-KERNEL_FLAGS=00
+VERSION_MAJOR_HEX=$(shell printf '%02x\n' ${VERSION_MAJOR})
+VERSION_MINOR_HEX=$(shell printf '%02x\n' ${VERSION_MINOR})
+VERSION_PATCHLEVEL_HEX=$(shell printf '%02x\n' ${VERSION_PATCHLEVEL})
 VERSION_RESERVED_HEX=00
 KERNEL_VERSION_HEX=0x$(VERSION_MAJOR_HEX)$(VERSION_MINOR_HEX)$(VERSION_PATCHLEVEL_HEX)
 
@@ -878,7 +877,7 @@ define filechk_version.h
        echo "#define _KERNEL_VERSION_H_"; \
        echo ;\
        echo -n "#define KERNELVERSION "; \
-       echo "$(KERNEL_VERSION_HEX)$(KERNEL_FLAGS)$(VERSION_RESERVED_HEX)"; \
+       echo "$(KERNEL_VERSION_HEX)$(VERSION_RESERVED_HEX)"; \
        echo "#define KERNEL_VERSION_NUMBER     $(KERNEL_VERSION_HEX)"; \
        echo "#define KERNEL_VERSION_MAJOR      $(VERSION_MAJOR)"; \
        echo "#define KERNEL_VERSION_MINOR      $(VERSION_MINOR)"; \
