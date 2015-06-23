@@ -576,11 +576,35 @@ static void le_conn_complete(struct bt_buf *buf)
 	BT_DBG("status %u handle %u role %u %s\n", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
 
+	/* Make lookup to check if there's a connection object in CONNECT state
+	 * associated with passed peer LE address.
+	 */
+	conn = bt_conn_lookup_addr_le(&evt->peer_addr);
+	if (conn && conn->state != BT_CONN_CONNECT) {
+		bt_conn_put(conn);
+		conn = NULL;
+	}
+
 	if (evt->status) {
+		if(!conn) {
+			return;
+		}
+
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+
+		/* Drop the reference got by lookup call in CONNECT state.
+		 * We are now in DISCONNECTED state since no successful LE
+		 * link been made.
+		 */
+		bt_conn_put(conn);
+
 		return;
 	}
 
-	conn = bt_conn_add(&dev, &evt->peer_addr, evt->role);
+	if (!conn) {
+		conn = bt_conn_add(&dev, &evt->peer_addr, evt->role);
+	}
+
 	if (!conn) {
 		BT_ERR("Unable to add new conn for handle %u\n", handle);
 		return;
@@ -591,6 +615,10 @@ static void le_conn_complete(struct bt_buf *buf)
 	memcpy(conn->src.val, dev.bdaddr.val, sizeof(dev.bdaddr.val));
 	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
+
+	/* Transform prepared object to CONNECTED state and make sure in callee
+	 * to drop object reference owned in CONNECT state for initiator case.
+	 */
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
 	if (evt->role == BT_HCI_ROLE_SLAVE) {
@@ -1415,9 +1443,38 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
 
-int bt_connect_le(const bt_addr_le_t *peer)
+struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 {
-	return hci_le_create_conn(peer);
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(peer);
+	if (conn) {
+		switch (conn->state) {
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return conn;
+		default:
+			bt_conn_put(conn);
+			return NULL;
+		}
+	}
+
+	conn = bt_conn_add(&dev, peer, BT_HCI_ROLE_MASTER);
+	if (!conn) {
+		return NULL;
+	}
+
+	err = hci_le_create_conn(peer);
+	if (err) {
+		bt_conn_put(conn);
+		return NULL;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+
+	return bt_conn_get(conn);
+
 }
 
 int bt_disconnect(struct bt_conn *conn, uint8_t reason)

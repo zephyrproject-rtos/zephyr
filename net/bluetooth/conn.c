@@ -293,6 +293,8 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, const bt_addr_le_t *peer,
 
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
+	bt_conn_state_t old_state;
+
 	BT_DBG("%s -> %s\n", state2str(conn->state), state2str(state));
 
 	if (conn->state == state) {
@@ -300,6 +302,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		return;
 	}
 
+	old_state = conn->state;
 	conn->state = state;
 
 	switch (conn->state){
@@ -307,6 +310,14 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		nano_fifo_init(&conn->tx_queue);
 		fiber_start(conn->tx_stack, sizeof(conn->tx_stack),
 			    conn_tx_fiber, (int)bt_conn_get(conn), 0, 7, 0);
+
+		/* Connection creation process, as initiator, has already owned
+		 * the reference. Drop such reference before transforms
+		 * the ownership to CONNECTED state.
+		 */
+		if (old_state == BT_CONN_CONNECT) {
+			bt_conn_put(conn);
+		}
 
 		break;
 	case BT_CONN_DISCONNECTED:

@@ -113,12 +113,13 @@ int bt_stop_scanning(void);
 /*! @brief Initiate an LE connection to a remote device.
  *
  *  Allows initiate new LE link to remote peer using its address.
+ *  Returns a new reference that the the caller is responsible for managing.
  *
  *  @param Remote address.
  *
- *  @return Zero in success or (negative) error code otherwise.
+ *  @return Valid connection object on success or NULL otherwise.
  */
-int bt_connect_le(const bt_addr_le_t *peer);
+struct bt_conn *bt_connect_le(const bt_addr_le_t *peer);
 
 /*! @brief Disconnect from a remote device.
  *

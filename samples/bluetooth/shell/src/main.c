@@ -135,6 +135,7 @@ static void cmd_connect_le(int argc, char *argv[])
 {
 	int err;
 	bt_addr_le_t addr;
+	struct bt_conn *conn;
 
 	if (argc < 2) {
 		printk("Peer address required\n");
@@ -152,9 +153,16 @@ static void cmd_connect_le(int argc, char *argv[])
 		return;
 	}
 
-	err = bt_connect_le(&addr);
-	if (err) {
-		printk("Connection failed (err %d)\n", err);
+	conn = bt_connect_le(&addr);
+
+	if (!conn) {
+		printk("Connection failed\n");
+	} else {
+
+		printk("Connection pending\n");
+
+		/* unref connection obj in advance as app user */
+		bt_conn_put(conn);
 	}
 }
 
