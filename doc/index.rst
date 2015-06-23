@@ -18,6 +18,7 @@
    object/object.rst
    net/network.rst
    doxygen/doxygen.rst
+   documentation/documentation.rst
 
 
 
