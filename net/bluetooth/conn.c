@@ -281,7 +281,7 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, const bt_addr_le_t *peer,
 
 	memset(conn, 0, sizeof(*conn));
 
-	conn->ref	= 1;
+	atomic_set(&conn->ref, 1);
 	conn->dev	= dev;
 	conn->role	= role;
 	bt_addr_le_copy(&conn->dst, peer);
@@ -361,20 +361,18 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 
 struct bt_conn *bt_conn_get(struct bt_conn *conn)
 {
-	conn->ref++;
-
 	BT_DBG("handle %u ref %u\n", conn->handle, conn->ref);
+
+	atomic_inc(&conn->ref);
 
 	return conn;
 }
 
 void bt_conn_put(struct bt_conn *conn)
 {
-	conn->ref--;
-
 	BT_DBG("handle %u ref %u\n", conn->handle, conn->ref);
 
-	if (conn->ref) {
+	if (atomic_dec(&conn->ref) > 1) {
 		return;
 	}
 

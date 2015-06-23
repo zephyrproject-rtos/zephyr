@@ -32,6 +32,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <atomic.h>
 #include <bluetooth/conn.h>
 
 typedef enum {
@@ -71,7 +72,7 @@ struct bt_conn {
 
 	uint8_t			le_conn_interval;
 
-	uint8_t			ref;
+	atomic_t		ref;
 
 	bt_conn_state_t		state;
 
