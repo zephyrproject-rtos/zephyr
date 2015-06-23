@@ -36,12 +36,15 @@ This module demonstrates the microkernel's priority inheritance algorithm.
 A task that owns a mutex is promoted to the priority level of the
 highest-priority task attempting to lock the mutex.
 
+In addition, recusive locking capabilities and the use of a private mutex
+are also tested.
+
 This module tests the following mutex routines:
 
    task_mutex_lock, task_mutex_lock_wait, task_mutex_lock_wait_timeout
-   task_mutex_unlock
+   task_mutex_unlock, task_mutex_init
 
-Timeline
+Timeline for priority inheritance testing:
   - 0.0  sec: Task10, Task15, Task20, Task25, Task30, sleep
             : RegressionTask takes Mutex1 then sleeps
   - 0.0  sec: Task45 sleeps
@@ -74,6 +77,8 @@ Timeline
 #define  FOURTH_SECOND              (sys_clock_ticks_per_sec / 4)
 
 static int tcRC = TC_PASS;         /* test case return code */
+
+DEFINE_MUTEX(private_mutex);
 
 /**
  *
@@ -239,7 +244,8 @@ void Task45(void)
  *
  * @brief Main task to test task_mutex_xxx interfaces
  *
- * This task will lock on Mutex1, Mutex2, Mutex3 and Mutex4.
+ * This task will lock on Mutex1, Mutex2, Mutex3 and Mutex4. It later
+ * recursively locks private_mutex, releases it, then re-locks it.
  *
  * @return  N/A
  */
@@ -340,6 +346,48 @@ void RegressionTask(void)
 	if (tcRC != TC_PASS) {
 		goto errorReturn;
 	}
+
+	/* test recursive locking using a private mutex */
+
+	TC_PRINT("Testing recursive locking\n");
+
+	rv = task_mutex_lock(private_mutex);
+	if (rv != RC_OK) {
+		TC_ERROR("Failed to lock private mutex\n");
+		tcRC = TC_FAIL;
+		goto errorReturn;
+	}
+
+	rv = task_mutex_lock(private_mutex);
+	if (rv != RC_OK) {
+		TC_ERROR("Failed to recursively lock private mutex\n");
+		tcRC = TC_FAIL;
+		goto errorReturn;
+	}
+
+	task_start(TASK50);		/* Start Task50 */
+	task_sleep(1);			/* Give Task50 a chance to block on the mutex */
+
+	task_mutex_unlock(private_mutex);
+	task_mutex_unlock(private_mutex);	/* Task50 should now have lock */
+
+	rv = task_mutex_lock(private_mutex);
+	if (rv != RC_FAIL) {
+		TC_ERROR("Unexpectedly got lock on private mutex\n");
+		tcRC = TC_FAIL;
+		goto errorReturn;
+	}
+
+	rv = task_mutex_lock_wait_timeout(private_mutex, ONE_SECOND);
+	if (rv != RC_OK) {
+		TC_ERROR("Failed to re-obtain lock on private mutex\n");
+		tcRC = TC_FAIL;
+		goto errorReturn;
+	}
+
+	task_mutex_unlock(private_mutex);
+
+	TC_PRINT("Recursive locking tests successful\n");
 
 errorReturn:
 	TC_END_RESULT(tcRC);
