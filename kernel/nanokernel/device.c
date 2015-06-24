@@ -35,7 +35,7 @@ static struct device *config_levels[] = {
  *
  * @param level init level to run.
  */
-void device_do_config_level(int level)
+void _sys_device_do_config_level(int level)
 {
 	struct device *info;
 

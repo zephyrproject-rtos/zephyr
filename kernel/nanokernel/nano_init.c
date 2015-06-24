@@ -42,6 +42,8 @@ This module contains routines that are used to initialize the nanokernel.
 #include <sections.h>
 #include <toolchain.h>
 #include <nano_private.h>
+#include <device.h>
+#include <init.h>
 
 /* kernel build timestamp items */
 
@@ -118,6 +120,34 @@ extern void _Ctors(void);
 	#define initialize_nano_timeouts() do { } while ((0))
 #endif
 
+/**********************************************************************
+ *
+ * In the nanokernel only configuration we still want to run the
+ * app_{early,late}_init levels to maintain the correct semantics. In
+ * a microkernel configuration these init levels are run in the
+ * microkernel initialization.
+ *
+ */
+
+#ifdef CONFIG_NANOKERNEL
+static void _main(void)
+{
+	_sys_device_do_config_level(NANO_EARLY);
+	_sys_device_do_config_level(NANO_LATE);
+	_sys_device_do_config_level(APP_EARLY);
+	_sys_device_do_config_level(APP_EARLY);
+	main();
+}
+#else
+static void _main(void)
+{
+	_sys_device_do_config_level(NANO_EARLY);
+	_sys_device_do_config_level(NANO_LATE);
+	main();
+}
+
+#endif
+
 /*******************************************************************************
 *
 * nano_init - initializes nanokernel data structures
@@ -169,7 +199,7 @@ static void nano_init(tCCS *dummyOutContext)
 
 	_NewContext(main_task_stack,	/* pStackMem */
 			    CONFIG_MAIN_STACK_SIZE, /* stackSize */
-			    (_ContextEntry)main,	 /* pEntry */
+			    (_ContextEntry)_main,	 /* pEntry */
 			    (_ContextArg)0,	 /* parameter1 */
 			    (_ContextArg)0,	 /* parameter2 */
 			    (_ContextArg)0,	 /* parameter3 */
@@ -252,6 +282,7 @@ FUNC_NORETURN void _Cstart(void)
 	/* perform basic hardware initialization */
 
 	_InitHardware();
+	_sys_device_do_config_level(PURE);
 
 	/*
 	 * Initialize random number generator

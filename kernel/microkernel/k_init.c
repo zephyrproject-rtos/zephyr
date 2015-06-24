@@ -36,6 +36,8 @@
 #include <string.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <device.h>
+#include <init.h>
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 #include <arch/cpu.h>
@@ -93,6 +95,11 @@ void _k_kernel_init(void)
 			   0);
 
 	_k_init_drivers();
+	_sys_device_do_config_level(MICRO_EARLY);
+	_sys_device_do_config_level(MICRO_LATE);
+	_sys_device_do_config_level(APP_EARLY);
+	_sys_device_do_config_level(APP_LATE);
+
 
 #ifdef CONFIG_WORKLOAD_MONITOR
 	_k_workload_monitor_calibrate();

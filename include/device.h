@@ -83,7 +83,7 @@ struct device {
 	void *driver_data;
 };
 
-void device_do_config_level(int level);
+void _sys_device_do_config_level(int level);
 struct device* device_get_binding(char *name);
 
 #endif /* _DEVICE_H_ */
