@@ -137,6 +137,7 @@ CONFIG_STELLARIS_UART=y
 #
 # Timer Drivers
 #
+CONFIG_CORTEX_M_TIMER=y
 
 #
 # Random Generation Configuration

@@ -70,4 +70,12 @@ config ARCV2_TIMER
 	This module implements a kernel device driver for the ARCv2 processor timer 0
 	and provides the standard "system clock driver" interfaces.
 
+config CORTEX_M_TIMER
+	bool "Cortex-M Timer"
+	default y
+	depends on CPU_CORTEX_M
+	help
+	This module implements a kernel device driver for the Cortex-M processor
+	systick timer and provides the standard "system clock driver" interfaces.
+
 endmenu

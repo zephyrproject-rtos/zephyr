@@ -36,8 +36,6 @@ GDB stub needed before the real systick handler runs to be able to display the
 correct state of the thread that was interrupted.
 */
 
-#ifdef CONFIG_GDB_INFO
-
 #define _ASMLANGUAGE
 
 #include <toolchain.h>
@@ -53,5 +51,3 @@ SECTION_FUNC(TEXT, _timer_int_handler)
     _GDB_STUB_EXC_ENTRY
 
     b _real_timer_int_handler
-
-#endif /* CONFIG_GDB_INFO */
