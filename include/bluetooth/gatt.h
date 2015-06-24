@@ -87,12 +87,8 @@
 
 /*! @brief GATT Attribute structure. */
 struct bt_gatt_attr {
-	/*! Attribute handle */
-	uint16_t		handle;
 	/*! Attribute UUID */
 	const struct bt_uuid	*uuid;
-	/*! Attribute permissions */
-	uint8_t			perm;
 	/*! Attribute read callback */
 	int			(*read)(const bt_addr_le_t *peer,
 					const struct bt_gatt_attr *attr,
@@ -109,6 +105,10 @@ struct bt_gatt_attr {
 					 uint8_t flags);
 	/*! Attribute user data */
 	void			*user_data;
+	/*! Attribute handle */
+	uint16_t		handle;
+	/*! Attribute permissions */
+	uint8_t			perm;
 };
 
 /*! @brief Service Attribute Value. */
@@ -119,12 +119,12 @@ struct bt_gatt_service {
 
 /*! @brief Include Attribute Value. */
 struct bt_gatt_include {
+	/*! Service UUID. */
+	const struct bt_uuid	*uuid;
 	/*! Service start handle. */
 	uint16_t		start_handle;
 	/*! Service end handle. */
 	uint16_t		end_handle;
-	/*! Service UUID. */
-	const struct bt_uuid	*uuid;
 };
 
 /* Characteristic Properties Bitfield values */
@@ -183,12 +183,12 @@ struct bt_gatt_include {
 
 /*! @brief Characteristic Attribute Value. */
 struct bt_gatt_chrc {
-	/*! Characteristic properties. */
-	uint8_t			properties;
-	/*! Characteristic value handle. */
-	uint16_t		value_handle;
 	/*! Characteristic UUID. */
 	const struct bt_uuid	*uuid;
+	/*! Characteristic value handle. */
+	uint16_t		value_handle;
+	/*! Characteristic properties. */
+	uint8_t			properties;
 };
 
 /* Characteristic Extended Properties Bitfield values */

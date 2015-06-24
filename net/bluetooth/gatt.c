@@ -294,9 +294,9 @@ int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
 }
 
 struct notify_data {
-	uint8_t handle;
 	const void *data;
 	size_t len;
+	uint8_t handle;
 };
 
 static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
