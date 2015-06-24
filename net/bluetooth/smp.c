@@ -478,6 +478,26 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	return smp_send_pairing_confirm(conn);
 }
 
+static uint8_t smp_send_pairing_random(struct bt_conn *conn)
+{
+	struct bt_smp_pairing_random *req;
+	struct bt_buf *rsp_buf;
+	struct bt_smp *smp = conn->smp;
+
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
+				    sizeof(*req));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	req = bt_buf_add(rsp_buf, sizeof(*req));
+	memcpy(req->val, smp->prnd, sizeof(req->val));
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
+
+	return 0;
+}
+
 static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_confirm *req = (void *)buf->data;
@@ -491,16 +511,13 @@ static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 		return smp_send_pairing_confirm(conn);
 	}
 
-	/* TODO random */
-	return BT_SMP_ERR_UNSPECIFIED;
+	return smp_send_pairing_random(conn);
 }
 
 static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_random *req = (void *)buf->data;
-	struct bt_smp_pairing_random *rsp;
 	const bt_addr_le_t *ra, *ia;
-	struct bt_buf *rsp_buf;
 	struct bt_smp *smp = conn->smp;
 	struct bt_keys *keys;
 	uint8_t cfm[16];
@@ -529,6 +546,11 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		/* TODO start encryption */
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
 	keys = bt_keys_get_type(BT_KEYS_SLAVE_LTK, &conn->dst);
 	if (!keys) {
 		BT_ERR("Unable to create new keys\n");
@@ -549,17 +571,7 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 
 	smp->pending_encrypt = true;
 
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_RANDOM,
-				    sizeof(*rsp));
-	if (!rsp_buf) {
-		bt_keys_clear(keys, BT_KEYS_SLAVE_LTK);
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));
-	memcpy(rsp->val, smp->prnd, sizeof(rsp->val));
-
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
+	smp_send_pairing_random(conn);
 
 	return 0;
 }
