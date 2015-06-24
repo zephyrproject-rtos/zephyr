@@ -399,7 +399,7 @@ static void sysTickTicklessIdleInit(void)
 {
 	/* enable counter, disable interrupt and set clock src to system clock
 	 */
-	union __stcsr stcsr = {.bit = {1, 0, 1, 0, 0, 0}};
+	union __stcsr stcsr = {.bit = {1, 0, 1, 0, 0, 0} };
 	volatile uint32_t dummy; /* used to help determine the 'skew time' */
 
 	/* store the default reload value (which has already been set) */
@@ -620,7 +620,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 		  )
 {
 	/* enable counter, interrupt and set clock src to system clock */
-	union __stcsr stcsr = {.bit = {1, 1, 1, 0, 0, 0}};
+	union __stcsr stcsr = {.bit = {1, 1, 1, 0, 0, 0} };
 
 	ARG_UNUSED(priority);
 
