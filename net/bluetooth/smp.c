@@ -421,6 +421,42 @@ int smp_send_pairing_req(struct bt_conn *conn)
 	return 0;
 }
 
+static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
+{
+	struct bt_smp_pairing_confirm *req;
+	struct bt_smp *smp = conn->smp;
+	const bt_addr_le_t *ra, *ia;
+	struct bt_buf *rsp_buf;
+	int err;
+
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
+				    sizeof(*req));
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	req = bt_buf_add(rsp_buf, sizeof(*req));
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		ra = &conn->dst;
+		ia = &conn->src;
+	} else {
+		ra = &conn->src;
+		ia = &conn->dst;
+	}
+
+	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp, ia, ra,
+		     req->val);
+	if (err) {
+		bt_buf_put(rsp_buf);
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
+
+	return 0;
+}
+
 static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *rsp = (void *)buf->data;
@@ -439,48 +475,24 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
 	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
-	return 0;
+	return smp_send_pairing_confirm(conn);
 }
 
 static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_confirm *req = (void *)buf->data;
-	struct bt_smp_pairing_confirm *rsp;
 	struct bt_smp *smp = conn->smp;
-	const bt_addr_le_t *ra, *ia;
-	struct bt_buf *rsp_buf;
-	int err;
 
 	BT_DBG("\n");
 
 	memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
 
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
-				    sizeof(*rsp));
-	if (!rsp_buf) {
-		return BT_SMP_ERR_UNSPECIFIED;
+	if (conn->role == BT_HCI_ROLE_SLAVE) {
+		return smp_send_pairing_confirm(conn);
 	}
 
-	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));
-
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		ra = &conn->dst;
-		ia = &conn->src;
-	} else {
-		ra = &conn->src;
-		ia = &conn->dst;
-	}
-
-	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp, ia, ra,
-		     rsp->val);
-	if (err) {
-		bt_buf_put(rsp_buf);
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
-
-	return 0;
+	/* TODO random */
+	return BT_SMP_ERR_UNSPECIFIED;
 }
 
 static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
