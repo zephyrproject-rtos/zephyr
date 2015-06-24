@@ -1,4 +1,4 @@
-/* systick.c - ARM systick device driver */
+/* ARM Cortex-M systick device driver */
 
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module implements the kernel's CORTEX-M3 ARM's systick device driver.
+This module implements the kernel's CORTEX-M ARM's systick device driver.
 It provides the standard kernel "system clock driver" interfaces.
 
 The driver utilizes systick to provide kernel ticks.

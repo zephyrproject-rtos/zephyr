@@ -1,4 +1,4 @@
-/* systick_gdb.S - ARM systick handler stub for GDB debugging */
+/* ARM Cortex-M systick handler stub for GDB debugging */
 
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
