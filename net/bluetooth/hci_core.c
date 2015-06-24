@@ -253,7 +253,7 @@ static void hci_acl(struct bt_buf *buf)
 	}
 
 	conn = bt_conn_lookup_handle(buf->acl.handle);
-	if (!conn) {
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("Unable to find conn for handle %u\n", buf->acl.handle);
 		bt_buf_put(buf);
 		return;
@@ -392,7 +392,7 @@ static void hci_encrypt_change(struct bt_buf *buf)
 	}
 
 	conn = bt_conn_lookup_handle(handle);
-	if (!conn) {
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("Unable to look up conn with handle %u\n", handle);
 		return;
 	}
@@ -540,7 +540,7 @@ static void hci_encrypt_key_refresh_complete(struct bt_buf *buf)
 	}
 
 	conn = bt_conn_lookup_handle(handle);
-	if (!conn) {
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("Unable to look up conn with handle %u\n", handle);
 		return;
 	}
@@ -653,7 +653,7 @@ static void le_ltk_request(struct bt_buf *buf)
 	BT_DBG("handle %u\n", handle);
 
 	conn = bt_conn_lookup_handle(handle);
-	if (!conn) {
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("Unable to lookup conn for handle %u\n", handle);
 		return;
 	}
