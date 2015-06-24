@@ -580,16 +580,16 @@ static void le_conn_complete(struct bt_buf *buf)
 	 * associated with passed peer LE address.
 	 */
 	conn = bt_conn_lookup_addr_le(&evt->peer_addr);
-	if (conn && conn->state != BT_CONN_CONNECT) {
-		bt_conn_put(conn);
-		conn = NULL;
+	if (conn && conn->state != BT_CONN_CONNECT &&
+	    conn->state != BT_CONN_DISCONNECT) {
+			bt_conn_put(conn);
+			conn = NULL;
 	}
 
 	if (evt->status) {
 		if (!conn) {
 			return;
 		}
-
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 		/* Drop the reference got by lookup call in CONNECT state.
@@ -1475,10 +1475,25 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 
 }
 
-int bt_disconnect(struct bt_conn *conn, uint8_t reason)
+static int bt_hci_connect_le_cancel(struct bt_conn *conn)
+{
+	int err;
+
+	err = bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
+	if (err) {
+		return err;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECT);
+
+	return 0;
+}
+
+static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_buf *buf;
 	struct bt_hci_cp_disconnect *disconn;
+	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
 	if (!buf) {
@@ -1489,7 +1504,29 @@ int bt_disconnect(struct bt_conn *conn, uint8_t reason)
 	disconn->handle = sys_cpu_to_le16(conn->handle);
 	disconn->reason = reason;
 
-	return bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
+	err = bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
+	if (err) {
+		return err;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECT);
+
+	return 0;
+}
+
+int bt_disconnect(struct bt_conn *conn, uint8_t reason)
+{
+	switch (conn->state) {
+	case BT_CONN_CONNECT:
+		return bt_hci_connect_le_cancel(conn);
+	case BT_CONN_CONNECTED:
+		return bt_hci_disconnect(conn, reason);
+	case BT_CONN_DISCONNECT:
+		return 0;
+	case BT_CONN_DISCONNECTED:
+	default:
+		return -ENOTCONN;
+	}
 }
 
 int bt_hci_le_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv,

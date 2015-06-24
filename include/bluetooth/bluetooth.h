@@ -121,9 +121,10 @@ int bt_stop_scanning(void);
  */
 struct bt_conn *bt_connect_le(const bt_addr_le_t *peer);
 
-/*! @brief Disconnect from a remote device.
+/*! @brief Disconnect from a remote device or cancel pending connection.
  *
- *  Disconnect an active connection with the specified reason code.
+ *  Disconnect an active connection with the specified reason code or cancel
+ *  pending outgoing connection.
  *
  *  @param conn Connection to disconnect.
  *  @param reason Reason code for the disconnection.

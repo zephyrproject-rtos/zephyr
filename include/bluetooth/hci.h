@@ -271,6 +271,8 @@ struct bt_hci_cp_le_create_conn {
 	uint16_t     max_ce_len;
 } __packed;
 
+#define BT_HCI_OP_LE_CREATE_CONN_CANCEL		BT_OP(BT_OGF_LE, 0x000e)
+
 #define BT_HCI_OP_LE_CONN_UPDATE		BT_OP(BT_OGF_LE, 0x0013)
 struct hci_cp_le_conn_update {
 	uint16_t handle;
