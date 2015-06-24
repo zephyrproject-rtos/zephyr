@@ -127,5 +127,6 @@ struct bt_smp_ident_addr_info {
 } __packed;
 
 bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr);
+int smp_send_pairing_req(struct bt_conn *conn);
 
 void bt_smp_init();

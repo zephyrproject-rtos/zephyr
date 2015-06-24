@@ -379,6 +379,69 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+int smp_send_pairing_req(struct bt_conn *conn)
+{
+	struct bt_smp *smp = conn->smp;
+	struct bt_smp_pairing *req;
+	struct bt_buf *req_buf;
+
+	BT_DBG("\n");
+
+	if (smp_init(smp)) {
+		return -ENOBUFS;
+	}
+
+	req_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_REQ, sizeof(*req));
+	if (!req_buf) {
+		return -ENOBUFS;
+	}
+
+	req = bt_buf_add(req_buf, sizeof(*req));
+
+	/* For JustWorks pairing simplify req parameters.
+	 * TODO: needs to be reworked later on
+	 */
+	req->auth_req = BT_SMP_AUTH_BONDING;
+	req->io_capability = BT_SMP_IO_NO_INPUT_OUTPUT;
+	req->oob_flag = BT_SMP_OOB_NOT_PRESENT;
+	req->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
+	req->init_key_dist = SEND_KEYS;
+	req->resp_key_dist = RECV_KEYS;
+
+	smp->local_dist = SEND_KEYS;
+
+	memset(smp->tk, 0, sizeof(smp->tk));
+
+	/* Store req for later use */
+	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
+	memcpy(smp->preq + 1, req, sizeof(*req));
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+
+	return 0;
+}
+
+static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_pairing *rsp = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
+
+	BT_DBG("\n");
+
+	if ((rsp->max_key_size > BT_SMP_MAX_ENC_KEY_SIZE) ||
+	    (rsp->max_key_size < BT_SMP_MIN_ENC_KEY_SIZE)) {
+		return BT_SMP_ERR_ENC_KEY_SIZE;
+	}
+
+	smp->local_dist &= rsp->resp_key_dist;
+
+	/* Store rsp for later use */
+	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
+	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
+
+	return 0;
+}
+
 static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_confirm *req = (void *)buf->data;
@@ -545,7 +608,7 @@ static const struct {
 } handlers[] = {
 	{ }, /* No op-code defined for 0x00 */
 	{ smp_pairing_req,         sizeof(struct bt_smp_pairing) },
-	{ }, /* Pairing Response - Not yet implemented */
+	{ smp_pairing_rsp,         sizeof(struct bt_smp_pairing) },
 	{ smp_pairing_confirm,     sizeof(struct bt_smp_pairing_confirm) },
 	{ smp_pairing_random,      sizeof(struct bt_smp_pairing_random) },
 	{ }, /* Pairing Failed - Not yet implemented */
