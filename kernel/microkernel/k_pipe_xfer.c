@@ -464,14 +464,14 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 		pReaderArgs->iSizeXferred += ret;
 
 		if (pReaderArgs->iSizeXferred == pReaderArgs->iSizeTotal) {
-			ChReqSetStatus(pReaderArgs, TERM_SATISFIED);
+			_k_pipe_request_status_set(pReaderArgs, TERM_SATISFIED);
 			if (pReader->Head != NULL) {
 				DeListWaiter(pReader);
 				myfreetimer(&pReader->Time.timer);
 			}
 			return;
 		} else {
-			ChReqSetStatus(pReaderArgs, XFER_BUSY);
+			_k_pipe_request_status_set(pReaderArgs, XFER_BUSY);
 		}
 
 	} while (--numIterations != 0);
@@ -534,7 +534,7 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 		pWriterArgs->iSizeXferred += ret;
 
 		if (pWriterArgs->iSizeXferred == pWriterArgs->iSizeTotal) {
-			ChReqSetStatus(pWriterArgs, TERM_SATISFIED);
+			_k_pipe_request_status_set(pWriterArgs, TERM_SATISFIED);
 			if (pWriter->Head != NULL) {
 				/* only listed requests have a timer */
 				DeListWaiter(pWriter);
@@ -542,7 +542,7 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 			}
 			return;
 		} else {
-			ChReqSetStatus(pWriterArgs, XFER_BUSY);
+			_k_pipe_request_status_set(pWriterArgs, XFER_BUSY);
 		}
 
 	} while (--numIterations != 0);
@@ -565,13 +565,13 @@ static void pipe_xfer_status_update(
 	pActorArgs->iSizeXferred += bytesXferred;
 
 	if (pActorArgs->iSizeXferred == pActorArgs->iSizeTotal) {
-		ChReqSetStatus(pActorArgs, TERM_SATISFIED);
+		_k_pipe_request_status_set(pActorArgs, TERM_SATISFIED);
 		if (pActor->Head != NULL) {
 			DeListWaiter(pActor);
 			myfreetimer(&pActor->Time.timer);
 		}
 	} else {
-		ChReqSetStatus(pActorArgs, XFER_BUSY);
+		_k_pipe_request_status_set(pActorArgs, XFER_BUSY);
 	}
 }
 
@@ -956,10 +956,11 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		if (ReaderInProgressIsBlocked(pPipe, pReader)) {
 			if (_X_TO_N & _k_pipe_option_get(&pReader->Args) &&
 			    ChReqSizeXferred(&(pReader->Args.ChProc))) {
-				ChReqSetStatus(&(pReader->Args.ChProc), TERM_SATISFIED);
+				_k_pipe_request_status_set(&pReader->Args.ChProc,
+					TERM_SATISFIED);
 			} else {
 				/* in all other cases: forced termination */
-				ChReqSetStatus(&(pReader->Args.ChProc), TERM_FORCED);
+				_k_pipe_request_status_set(&pReader->Args.ChProc, TERM_FORCED);
 			}
 
 			if (pReader->Head) {
@@ -985,10 +986,11 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		if (WriterInProgressIsBlocked(pPipe, pWriter)) {
 			if (_X_TO_N & _k_pipe_option_get(&pWriter->Args) &&
 			    ChReqSizeXferred(&(pWriter->Args.ChProc))) {
-				ChReqSetStatus(&(pWriter->Args.ChProc), TERM_SATISFIED);
+				_k_pipe_request_status_set(&pWriter->Args.ChProc,
+					TERM_SATISFIED);
 			} else {
 				/* in all other cases: forced termination */
-				ChReqSetStatus(&(pWriter->Args.ChProc), TERM_FORCED);
+				_k_pipe_request_status_set(&pWriter->Args.ChProc, TERM_FORCED);
 			}
 
 			if (pWriter->Head) {

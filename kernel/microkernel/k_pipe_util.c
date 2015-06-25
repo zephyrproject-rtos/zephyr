@@ -139,7 +139,7 @@ CHREQ_STATUS ChReqGetStatus(struct k_chproc *pChProc)
 	return pChProc->Status;
 }
 
-void ChReqSetStatus(struct k_chproc *pChProc, CHREQ_STATUS Status)
+void _k_pipe_request_status_set(struct k_chproc *pChProc, CHREQ_STATUS Status)
 {
 #ifdef CONFIG_OBJECT_MONITOR
 	/*

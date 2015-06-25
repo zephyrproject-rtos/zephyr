@@ -221,7 +221,7 @@ void _k_pipe_put_timeout(struct k_args *ReqProc)
 	__ASSERT_NO_MSG(NULL != ReqProc->Time.timer);
 
 	myfreetimer(&(ReqProc->Time.timer));
-	ChReqSetStatus(&(ReqProc->Args.ChProc), TERM_TMO);
+	_k_pipe_request_status_set(&ReqProc->Args.ChProc, TERM_TMO);
 
 	DeListWaiter(ReqProc);
 	if (0 == ReqProc->Args.ChProc.iNbrPendXfers) {
