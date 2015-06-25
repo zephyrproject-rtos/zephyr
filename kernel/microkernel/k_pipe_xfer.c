@@ -56,12 +56,12 @@ possibly copy the remaining data
 
 /*******************************************************************************
 *
-* K_ChMovedAck -
+* _k_pipe_movedata_ack -
 *
 * RETURNS: N/A
 */
 
-void K_ChMovedAck(struct k_args *pEOXfer)
+void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 {
 	struct k_chmovedack *pEOXferArgs = &(pEOXfer->Args.ChMovedAck);
 

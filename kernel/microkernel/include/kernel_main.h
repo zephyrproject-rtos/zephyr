@@ -131,7 +131,7 @@ extern void _k_pipe_get_request(struct k_args *Reader);
 extern void _k_pipe_get_timeout(struct k_args *Reader);
 extern void _k_pipe_get_reply(struct k_args *Reader);
 extern void _k_pipe_get_ack(struct k_args *Reader);
-extern void K_ChMovedAck(struct k_args *pEOXfer);
+extern void _k_pipe_movedata_ack(struct k_args *pEOXfer);
 extern void _k_event_test_timeout(struct k_args *A);
 
 #ifdef __cplusplus
