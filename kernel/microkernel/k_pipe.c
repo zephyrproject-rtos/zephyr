@@ -100,7 +100,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	ChReq.ReqInfo.ChRef.Id = Id;
 	_k_pipe_option_set((K_ARGS_ARGS *)&ChReq, Option);
 
-	ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
+	_k_pipe_request_type_set((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
 	ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
 	ChReq.ReqType.Sync.pData = pBuffer;
 
@@ -155,7 +155,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	ChReq.ReqInfo.ChRef.Id = Id;
 	_k_pipe_option_set((K_ARGS_ARGS *)&ChReq, Option);
 
-	ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
+	_k_pipe_request_type_set((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
 	ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
 	ChReq.ReqType.Sync.pData = pBuffer;
 
@@ -203,7 +203,7 @@ int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
 	struct k_chreq ChReq;
 	ChReq.ReqInfo.ChRef.Id = Id;
 
-	ChxxxSetReqType((K_ARGS_ARGS *)&ChReq, _ASYNCREQ);
+	_k_pipe_request_type_set((K_ARGS_ARGS *)&ChReq, _ASYNCREQ);
 	_k_pipe_option_set((K_ARGS_ARGS *)&ChReq, _ALL_N); /* force ALL_N */
 	ChReq.ReqType.Async.block = Block;
 	ChReq.ReqType.Async.iSizeTotal = iSize2Xfer;

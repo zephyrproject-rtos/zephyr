@@ -112,7 +112,7 @@ REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *pChxxx)
 	return (REQ_TYPE)(pChxxx->ChProc.ReqInfo.Params & _ALLREQ);
 }
 
-void ChxxxSetReqType(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType)
+void _k_pipe_request_type_set(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType)
 {
 	pChxxx->ChProc.ReqInfo.Params &=
 		(~_ALLREQ); /* clear destination field */
