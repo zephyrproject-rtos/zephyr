@@ -101,7 +101,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 		/* invoke continuation mechanism */
 
-		K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
+		_k_pipe_process(pEOXferArgs->pPipe, NULL, NULL);
 		FREEARGS(pEOXfer);
 		return;
 	} /* XFER_W2B */
@@ -140,7 +140,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 		/* continuation mechanism */
 
-		K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
+		_k_pipe_process(pEOXferArgs->pPipe, NULL, NULL);
 		FREEARGS(pEOXfer);
 		return;
 
@@ -195,7 +195,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 		/* invoke continuation mechanism */
 
-		K_ChProc(pEOXferArgs->pPipe, NULL, NULL);
+		_k_pipe_process(pEOXferArgs->pPipe, NULL, NULL);
 		FREEARGS(pEOXfer);
 		return;
 	} /* XFER_W2B */
@@ -410,7 +410,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 
 /*******************************************************************************
 *
-* K_ChProcRO - read from the channel
+* pipe_read - read from the channel
 *
 * This routine reads from the channel.  If <pPipe> is NULL, then it uses
 * <pNewReader> as the reader.  Otherwise it takes the reader from the channel
@@ -419,7 +419,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 * RETURNS: N/A
 */
 
-static void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pNewReader)
+static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 {
 	struct k_args *pReader;
 	struct k_chproc *pReaderArgs;
@@ -479,7 +479,7 @@ static void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pNewReader)
 
 /*******************************************************************************
 *
-* K_ChProcWO - write to the channel
+* pipe_write - write to the channel
 *
 * This routine writes to the channel.  If <pPipe> is NULL, then it uses
 * <pNewWriter> as the writer.  Otherwise it takes the writer from the channel
@@ -488,7 +488,7 @@ static void K_ChProcRO(struct pipe_struct *pPipe, struct k_args *pNewReader)
 * RETURNS: N/A
 */
 
-static void K_ChProcWO(struct pipe_struct *pPipe, struct k_args *pNewWriter)
+static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 {
 	struct k_args *pWriter;
 	struct k_chproc *pWriterArgs;
@@ -577,12 +577,12 @@ static void _UpdateChannelXferStatus(
 
 /*******************************************************************************
 *
-* K_ChProcWR - read and/or write from/to the channel
+* pipe_read_write - read and/or write from/to the channel
 *
 * RETURNS: N/A
 */
 
-static void K_ChProcWR(
+static void pipe_read_write(
 	struct pipe_struct *pPipe, /* ptr to channel structure */
 	struct k_args *pNewWriter,  /* ptr to new writer struct k_args */
 	struct k_args *pNewReader   /* ptr to new reader struct k_args */
@@ -650,7 +650,7 @@ static void K_ChProcWR(
 
 	/* T1 transfer */
 	if (iT1 != 0) {
-		K_ChProcRO(pPipe, pReader);
+		pipe_read(pPipe, pReader);
 	}
 
 	/* T2 transfer */
@@ -679,12 +679,12 @@ static void K_ChProcWR(
 	if (iT3 != 0) {
 		__ASSERT_NO_MSG(TERM_SATISFIED !=
 						ChReqGetStatus(&pWriter->Args.ChProc));
-		K_ChProcWO(pPipe, pWriter);
+		pipe_write(pPipe, pWriter);
 	}
 }
 
-void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
-			  struct k_args *pNLReader) /* this is not a K_ function */
+void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
+			  struct k_args *pNLReader)
 {
 
 	struct k_args *pReader = NULL;
@@ -824,7 +824,7 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			/* investigate if we must force a transfer to avoid a stall */
 			if (!BuffEmpty(&(pPipe->Buff))) {
 				if (pReader) {
-					K_ChProcRO(pPipe, pReader);
+					pipe_read(pPipe, pReader);
 					continue;
 				} else {
 					/* we could break as well,
@@ -837,7 +837,7 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 					ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args)))) {
 					/* force transfer
 					   (we make exception for non-blocked writer) */
-					K_ChProcWR(pPipe, pWriter, pReader);
+					pipe_read_write(pPipe, pWriter, pReader);
 					continue;
 				} else
 #endif
@@ -849,7 +849,7 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			/* investigate if we must force a transfer to avoid a stall */
 			if (!BuffFull(&(pPipe->Buff))) {
 				if (pWriter) {
-					K_ChProcWO(pPipe, pWriter);
+					pipe_write(pPipe, pWriter);
 					continue;
 				} else {
 					return;
@@ -860,7 +860,7 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 						ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args)))) {
 					/* force transfer
 					   (we make exception for non-blocked reader) */
-					K_ChProcWR(pPipe, pWriter, pReader);
+					pipe_read_write(pPipe, pWriter, pReader);
 					continue;
 				} else
 #endif
@@ -873,15 +873,15 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			 */
 			if (pReader) {
 				if (pWriter) {
-					K_ChProcWR(pPipe, pWriter, pReader);
+					pipe_read_write(pPipe, pWriter, pReader);
 					continue;
 				} else {
-					K_ChProcRO(pPipe, pReader);
+					pipe_read(pPipe, pReader);
 					continue;
 				}
 			} else {
 				if (pWriter) {
-					K_ChProcWO(pPipe, pWriter);
+					pipe_write(pPipe, pWriter);
 					continue;
 				} else {
 					/* we should not come here */

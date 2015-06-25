@@ -55,7 +55,7 @@ typedef uint32_t TIME_TYPE;
 
 /* internal functions: */
 
-extern void K_ChProc(struct pipe_struct *pPipe,
+extern void _k_pipe_process(struct pipe_struct *pPipe,
 					 struct k_args *pWriter, struct k_args *pReader);
 
 extern void mycopypacket(struct k_args **out, struct k_args *in);

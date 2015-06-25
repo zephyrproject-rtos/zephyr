@@ -144,7 +144,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 		ticks = RequestProc->Time.ticks;
 		RequestProc->Time.timer = NULL;
-		K_ChProc(pPipe, RequestProc /* writer */, NULL /* reader */);
+		_k_pipe_process(pPipe, RequestProc /* writer */, NULL /* reader */);
 		RequestProc->Time.ticks = ticks;
 
 		/* check if request was processed */

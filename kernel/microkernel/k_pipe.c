@@ -85,7 +85,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	}
 	if (unlikely(0 == iNbrBytesToRead)) {
 		/* not allowed because enlisted requests with zero size
-		   will hang in K_ChProc() */
+		   will hang in _k_pipe_process() */
 		return RC_FAIL;
 	}
 	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut)) {
@@ -140,7 +140,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	}
 	if (unlikely(0 == iNbrBytesToWrite)) {
 		/* not allowed because enlisted requests with zero size
-		   will hang in K_ChProc() */
+		   will hang in _k_pipe_process() */
 		return RC_FAIL;
 	}
 	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut)) {
@@ -191,7 +191,7 @@ int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
 	}
 	if (unlikely(0 == iSize2Xfer)) {
 		/* not allowed because enlisted requests with zero size
-		   will hang in K_ChProc() */
+		   will hang in _k_pipe_process() */
 		return RC_FAIL;
 	}
 
