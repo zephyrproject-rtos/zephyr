@@ -65,6 +65,8 @@
 #define CHECK_CHBUFF_POINTER(pData) \
 	__ASSERT_NO_MSG(pChBuff->pBegin <= pData && pData < pChBuff->pEnd)
 
+static void ChannelCheck4Intrusion(struct chbuff *pChBuff, unsigned char *pBegin, int iSize);
+
 /*******************/
 /* Markers
 ********************/
@@ -739,8 +741,7 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 	}
 }
 
-void ChannelCheck4Intrusion(struct chbuff *pChBuff,
-							unsigned char *pBegin, int iSize)
+static void ChannelCheck4Intrusion(struct chbuff *pChBuff, unsigned char *pBegin, int iSize)
 {
 	/*
 	 * check possible collision with all existing data areas,

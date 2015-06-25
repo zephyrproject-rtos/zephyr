@@ -64,9 +64,6 @@ int BuffDeQA(struct chbuff *pBuff, int iSize, unsigned char **ppRead,
 void BuffDeQA_End(struct chbuff *pBuff, int iTransferID,
 				  int iSize /* optional */);
 
-void ChannelCheck4Intrusion(struct chbuff *pChBuff,
-							unsigned char *pBegin, int iSize);
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
