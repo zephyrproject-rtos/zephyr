@@ -496,7 +496,7 @@ static void hci_cmd_status(struct bt_buf *buf)
 		break;
 	}
 
-	hci_cmd_done(opcode, evt->status, NULL);
+	hci_cmd_done(opcode, evt->status, buf);
 
 	if (evt->ncmd && !dev.ncmd) {
 		/* Allow next command to be sent */
