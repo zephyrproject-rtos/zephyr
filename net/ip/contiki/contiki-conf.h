@@ -45,10 +45,12 @@ typedef unsigned int uip_stats_t;
 #define NETSTACK_CONF_FRAMER	framer_802154
 #define NETSTACK_CONF_RDC	sicslowmac_driver
 #define NETSTACK_CONF_MAC	csma_driver
+#define LINKADDR_CONF_SIZE      8
 #else
 #define NETSTACK_CONF_FRAMER	framer_nullmac
 #define NETSTACK_CONF_RDC	nullrdc_driver
 #define NETSTACK_CONF_MAC	nullmac_driver
+#define LINKADDR_CONF_SIZE      6
 #endif
 #define NETSTACK_CONF_LLSEC	nullsec_driver
 
