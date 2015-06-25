@@ -361,6 +361,25 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 	return NULL;
 }
 
+struct bt_conn *bt_conn_lookup_state(const bt_addr_le_t *peer,
+				     const bt_conn_state_t state)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (bt_addr_le_cmp(peer, BT_ADDR_LE_ANY) &&
+		    bt_addr_le_cmp(peer, &conns[i].dst)) {
+			continue;
+		}
+
+		if (conns[i].state == state) {
+			return bt_conn_get(&conns[i]);
+		}
+	}
+
+	return NULL;
+}
+
 struct bt_conn *bt_conn_get(struct bt_conn *conn)
 {
 	atomic_inc(&conn->ref);

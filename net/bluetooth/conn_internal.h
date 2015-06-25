@@ -93,5 +93,11 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, const bt_addr_le_t *peer,
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);
 
+/* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
+ * with the specific state
+ */
+struct bt_conn *bt_conn_lookup_state(const bt_addr_le_t *peer,
+				     const bt_conn_state_t state);
+
 /* Set connection object in certain state and perform action related to state */
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
