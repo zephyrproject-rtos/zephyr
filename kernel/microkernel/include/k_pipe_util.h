@@ -66,7 +66,7 @@ int CalcAvailWriterData(struct k_args *pWriterList);
 void DeListWaiter(struct k_args *pReqProc);
 void myfreetimer(struct k_timer **ppTimer);
 
-K_PIPE_OPTION ChxxxGetChOpt(K_ARGS_ARGS *pChxxx);
+K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *pChxxx);
 void ChxxxSetChOpt(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option);
 REQ_TYPE ChxxxGetReqType(K_ARGS_ARGS *pChxxx);
 void ChxxxSetReqType(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType);

@@ -94,7 +94,7 @@ int CalcAvailWriterData(struct k_args *pWriterList)
 	return iSize;
 }
 
-K_PIPE_OPTION ChxxxGetChOpt(K_ARGS_ARGS *pChxxx)
+K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *pChxxx)
 {
 	return (K_PIPE_OPTION)(pChxxx->ChProc.ReqInfo.Params & _ALL_OPT);
 }

@@ -237,7 +237,7 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 	if (TERM_TMO == ChReqStatus) {
 		ReqOrig->Time.rcode = RC_TIME;
 	} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {
-		K_PIPE_OPTION Option = ChxxxGetChOpt(&(ReqProc->Args));
+		K_PIPE_OPTION Option = _k_pipe_option_get(&ReqProc->Args);
 
 		if (likely(0 == ChReqSizeLeft(&(ReqProc->Args.ChProc)))) {
 			/* All data has been transferred */

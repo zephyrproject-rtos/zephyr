@@ -330,7 +330,7 @@ static int ReaderInProgressIsBlocked(struct pipe_struct *pPipe,
 	 * (non-blocked) or a finite timed wait with a killed timer */
 
 	TimeType = ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args));
-	option = ChxxxGetChOpt((K_ARGS_ARGS *)&(pReader->Args));
+	option = _k_pipe_option_get(&pReader->Args);
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
 	    ((_TIME_B == TimeType) && (_X_TO_N & option) &&
 	     !(pReader->Args.ChProc.iSizeXferred))
@@ -375,7 +375,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 	 * (non-blocked) or a finite timed wait with a killed timer */
 
 	TimeType = ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args));
-	option = ChxxxGetChOpt((K_ARGS_ARGS *)&(pWriter->Args));
+	option = _k_pipe_option_get(&pWriter->Args);
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
 	    ((_TIME_B == TimeType) && (_X_TO_N & option) &&
 	     !(pWriter->Args.ChProc.iSizeXferred))
@@ -757,7 +757,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		pWriter = pNextWriter;
 
 		if (pWriter) {
-			if (_ALL_N == ChxxxGetChOpt(&(pWriter->Args)) &&
+			if (_ALL_N == _k_pipe_option_get(&pWriter->Args) &&
 				!ChReqSizeXferred(&(pWriter->Args.ChProc)) &&
 				_TIME_B != ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args))) {
 				/* investigate if there is a problem for
@@ -786,7 +786,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			}
 		}
 		if (pReader) {
-			if (_ALL_N == ChxxxGetChOpt(&(pReader->Args)) &&
+			if (_ALL_N == _k_pipe_option_get(&pReader->Args) &&
 				!ChReqSizeXferred(&(pReader->Args.ChProc)) &&
 				_TIME_B != ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args))) {
 				/* investigate if there is a problem for
@@ -954,7 +954,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		   delist him
 		   (if he was listed uberhaupt) == EMERGENCY BREAK */
 		if (ReaderInProgressIsBlocked(pPipe, pReader)) {
-			if (_X_TO_N & ChxxxGetChOpt(&(pReader->Args)) &&
+			if (_X_TO_N & _k_pipe_option_get(&pReader->Args) &&
 			    ChReqSizeXferred(&(pReader->Args.ChProc))) {
 				ChReqSetStatus(&(pReader->Args.ChProc), TERM_SATISFIED);
 			} else {
@@ -983,7 +983,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		/* check if this lonely Writer is really blocked, then we will
 		   delist him (if he was listed uberhaupt) == EMERGENCY BREAK */
 		if (WriterInProgressIsBlocked(pPipe, pWriter)) {
-			if (_X_TO_N & ChxxxGetChOpt(&(pWriter->Args)) &&
+			if (_X_TO_N & _k_pipe_option_get(&pWriter->Args) &&
 			    ChReqSizeXferred(&(pWriter->Args.ChProc))) {
 				ChReqSetStatus(&(pWriter->Args.ChProc), TERM_SATISFIED);
 			} else {
