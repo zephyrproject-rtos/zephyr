@@ -83,7 +83,7 @@ simple_udp_send(struct net_buf *buf, struct simple_udp_connection *c,
                 const void *data, uint16_t datalen)
 {
   if(c->udp_conn != NULL) {
-    uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
+    return uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
                           &c->remote_addr, UIP_HTONS(c->remote_port));
   }
   return 0;
@@ -95,7 +95,7 @@ simple_udp_sendto(struct net_buf *buf, struct simple_udp_connection *c,
                   const uip_ipaddr_t *to)
 {
   if(c->udp_conn != NULL) {
-    uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
+    return uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
                           to, UIP_HTONS(c->remote_port));
   }
   return 0;
@@ -108,7 +108,7 @@ simple_udp_sendto_port(struct net_buf *buf, struct simple_udp_connection *c,
 		       uint16_t port)
 {
   if(c->udp_conn != NULL) {
-    uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
+    return uip_udp_packet_sendto(buf, c->udp_conn, data, datalen,
                           to, UIP_HTONS(port));
   }
   return 0;

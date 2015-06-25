@@ -44,8 +44,11 @@
 
 #include "net/ip/uip.h"
 
-void uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len);
-void uip_udp_packet_sendto(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len,
+/* Return value: 0 - packet could not be sent, the net_buf is released by API
+ *               1 - packet sent, caller needs to de-allocate the buf
+ */
+uint8_t uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len);
+uint8_t uip_udp_packet_sendto(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len,
 			   const uip_ipaddr_t *toaddr, uint16_t toport);
 
 #endif /* UIP_UDP_PACKET_H_ */

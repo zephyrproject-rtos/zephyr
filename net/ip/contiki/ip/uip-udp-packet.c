@@ -47,7 +47,7 @@
 #include <string.h>
 
 /*---------------------------------------------------------------------------*/
-void
+uint8_t
 uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len)
 {
 #if UIP_UDP
@@ -67,8 +67,10 @@ uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *dat
 #endif /* UIP_IPV6_MULTICAST */
 
 #if NETSTACK_CONF_WITH_IPV6
- if (!tcpip_ipv6_output(buf))
+ if (!tcpip_ipv6_output(buf)) {
    net_buf_put(buf);
+   return 0;
+ }
 #else
     if(uip_len > 0) {
       tcpip_output();
@@ -77,14 +79,16 @@ uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *dat
   }
   uip_slen(buf) = 0;
 #endif /* UIP_UDP */
+  return 1;
 }
 /*---------------------------------------------------------------------------*/
-void
+uint8_t
 uip_udp_packet_sendto(struct net_buf *buf, struct uip_udp_conn *c, const void *data, int len,
 		      const uip_ipaddr_t *toaddr, uint16_t toport)
 {
   uip_ipaddr_t curaddr;
   uint16_t curport;
+  uint8_t ret = 0;
 
   if(toaddr != NULL) {
     /* Save current IP addr/port. */
@@ -95,11 +99,13 @@ uip_udp_packet_sendto(struct net_buf *buf, struct uip_udp_conn *c, const void *d
     uip_ipaddr_copy(&c->ripaddr, toaddr);
     c->rport = toport;
 
-    uip_udp_packet_send(buf, c, data, len);
+    ret = uip_udp_packet_send(buf, c, data, len);
 
     /* Restore old IP addr/port */
     uip_ipaddr_copy(&c->ripaddr, &curaddr);
     c->rport = curport;
   }
+
+  return ret;
 }
 /*---------------------------------------------------------------------------*/
