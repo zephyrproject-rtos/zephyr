@@ -331,7 +331,6 @@ struct net_buf *net_receive(struct net_context *context)
 {
 	struct nano_fifo *rx_queue = net_context_get_queue(context);
 	struct net_tuple *tuple;
-	struct simple_udp_connection *udp;
 	int ret = 0;
 
 	tuple = net_context_get_tuple(context);
@@ -341,13 +340,15 @@ struct net_buf *net_receive(struct net_context *context)
 
 	switch (tuple->ip_proto) {
 	case IPPROTO_UDP:
-		udp = net_context_get_udp_connection(context);
 		if (!net_context_get_receiver_registered(context)) {
+			struct simple_udp_connection *udp =
+				net_context_get_udp_connection(context);
+
 			ret = simple_udp_register(udp, tuple->local_port,
-					  (uip_ip6addr_t *)tuple->remote_addr,
-					  tuple->remote_port,
-					  udp_packet_receive,
-					  context);
+				(uip_ip6addr_t *)&tuple->remote_addr->in6_addr,
+				tuple->remote_port,
+				udp_packet_receive,
+				context);
 			if (!ret) {
 				NET_DBG("UDP connection listener failed\n");
 				ret = -ENOENT;
