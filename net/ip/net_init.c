@@ -51,6 +51,7 @@
 #include <net/net_socket.h>
 
 #include "net_driver_15_4.h"
+#include "net_driver_slip.h"
 
 #include "contiki/os/sys/process.h"
 #include "contiki/os/sys/etimer.h"
@@ -614,6 +615,8 @@ int net_init(void)
 #if defined (CONFIG_NETWORKING_WITH_15_4)
 	net_driver_15_4_init();
 #endif
+
+	net_driver_slip_init();
 
 	return network_initialization();
 }

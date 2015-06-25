@@ -102,7 +102,8 @@ ifeq ($(CONFIG_NETWORKING_WITH_15_4),)
 endif
 
 obj-$(CONFIG_NETWORKING_UART) += contiki/os/dev/slip.o \
-				contiki/os/dev/slip-arch.o
+				contiki/os/dev/slip-arch.o \
+				net_driver_slip.o
 
 # workaround for include file location
 CREATE_INCLUDE_LINK_net := $(shell ln -s ${ZEPHYR_BASE}/net/ip/contiki ${ZEPHYR_BASE}/net/ip/contiki/net > /dev/null 2>&1)
