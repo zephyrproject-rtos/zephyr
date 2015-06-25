@@ -130,7 +130,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		RequestProc->Time.ticks = ticks;
 
 		/* check if request was processed */
-		if (TERM_XXX & ChReqGetStatus(&(RequestProc->Args.ChProc))) {
+		if (TERM_XXX & RequestProc->Args.ChProc.Status) {
 			RequestProc->Time.timer = NULL; /* not really required */
 			return; /* not listed anymore --> completely processed */
 		}
@@ -177,11 +177,10 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		 */
 		RequestProc->Time.timer = NULL;
 
-		if (XFER_BUSY == ChReqGetStatus(&(RequestProc->Args.ChProc))) {
+		if (XFER_BUSY == RequestProc->Args.ChProc.Status) {
 			INSERT_ELM(pPipe->Readers, RequestProc);
 		} else {
-			__ASSERT_NO_MSG(XFER_IDLE ==
-				   ChReqGetStatus(&(RequestProc->Args.ChProc)));
+			__ASSERT_NO_MSG(XFER_IDLE == RequestProc->Args.ChProc.Status);
 			__ASSERT_NO_MSG(0 ==
 				   ChReqSizeXferred(&(RequestProc->Args.ChProc)));
 			RequestProc->Comm = PIPE_GET_REPLY;
@@ -233,7 +232,7 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 
 	/* determine return value */
 
-	ChReqStatus = ChReqGetStatus(&(ReqProc->Args.ChProc));
+	ChReqStatus = ReqProc->Args.ChProc.Status;
 	if (TERM_TMO == ChReqStatus) {
 		ReqOrig->Time.rcode = RC_TIME;
 	} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {

@@ -134,11 +134,6 @@ void ChxxxSetTimeType(K_ARGS_ARGS *pChxxx,
 		(TimeType & _ALLTIME); /* make sure we do not screw up other fields */
 }
 
-CHREQ_STATUS ChReqGetStatus(struct k_chproc *pChProc)
-{
-	return pChProc->Status;
-}
-
 void _k_pipe_request_status_set(struct k_chproc *pChProc, CHREQ_STATUS Status)
 {
 #ifdef CONFIG_OBJECT_MONITOR

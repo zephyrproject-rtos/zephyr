@@ -657,8 +657,7 @@ static void pipe_read_write(
 	if (iT2 != 0) {
 		struct k_args *Moved_req;
 
-		__ASSERT_NO_MSG(TERM_SATISFIED !=
-						ChReqGetStatus(&pReader->Args.ChProc));
+		__ASSERT_NO_MSG(TERM_SATISFIED != pReader->Args.ChProc.Status);
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_W2R, pWriter, pReader,
@@ -677,8 +676,7 @@ static void pipe_read_write(
 
 	/* T3 transfer */
 	if (iT3 != 0) {
-		__ASSERT_NO_MSG(TERM_SATISFIED !=
-						ChReqGetStatus(&pWriter->Args.ChProc));
+		__ASSERT_NO_MSG(TERM_SATISFIED != pWriter->Args.ChProc.Status);
 		pipe_write(pPipe, pWriter);
 	}
 }
@@ -708,12 +706,12 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			if (pReader != pNLReader) {
 				pNextReader = pPipe->Readers;
 				if (NULL == pNextReader) {
-					if (!(TERM_XXX & ChReqGetStatus(&(pNLReader->Args.ChProc))))
+					if (!(TERM_XXX & pNLReader->Args.ChProc.Status))
 						pNextReader = pNLReader;
 				}
 			} else {
 				/* we already used the extra non-listed Reader */
-				if (TERM_XXX & ChReqGetStatus(&(pReader->Args.ChProc))) {
+				if (TERM_XXX & pReader->Args.ChProc.Status) {
 					pNextReader = NULL;
 				} else {
 					pNextReader = pReader; /* == pNLReader */
@@ -729,12 +727,12 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			if (pWriter != pNLWriter) {
 				pNextWriter = pPipe->Writers;
 				if (NULL == pNextWriter) {
-					if (!(TERM_XXX & ChReqGetStatus(&(pNLWriter->Args.ChProc))))
+					if (!(TERM_XXX & pNLWriter->Args.ChProc.Status))
 						pNextWriter = pNLWriter;
 				}
 			} else {
 				/* we already used the extra non-listed Writer */
-				if (TERM_XXX & ChReqGetStatus(&(pWriter->Args.ChProc))) {
+				if (TERM_XXX & pWriter->Args.ChProc.Status) {
 					pNextWriter = NULL;
 				} else {
 					pNextWriter = pWriter;
@@ -926,8 +924,8 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 	   processing is really blocked (for some reason)
 	 */
 	if (pReader && pWriter) {
-		__ASSERT_NO_MSG(!(TERM_XXX & ChReqGetStatus(&(pReader->Args.ChProc))) &&
-						!(TERM_XXX & ChReqGetStatus(&(pWriter->Args.ChProc))));
+		__ASSERT_NO_MSG(!(TERM_XXX & pReader->Args.ChProc.Status) &&
+						!(TERM_XXX & pWriter->Args.ChProc.Status));
 		/* this could be possible when data Xfer operations are jammed
 		   (out of data Xfer resources e.g.) */
 
@@ -948,7 +946,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		 */
 		;
 	} else if (pReader) {
-		__ASSERT_NO_MSG(!(TERM_XXX & ChReqGetStatus(&(pReader->Args.ChProc))));
+		__ASSERT_NO_MSG(!(TERM_XXX & pReader->Args.ChProc.Status));
 
 		/* check if this lonely reader is really blocked, then we will
 		   delist him
@@ -978,8 +976,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			 * later on) */
 		}
 	} else if (pWriter) {
-		__ASSERT_NO_MSG(!(TERM_SATISFIED &
-						  ChReqGetStatus(&(pWriter->Args.ChProc))));
+		__ASSERT_NO_MSG(!(TERM_SATISFIED & pWriter->Args.ChProc.Status));
 
 		/* check if this lonely Writer is really blocked, then we will
 		   delist him (if he was listed uberhaupt) == EMERGENCY BREAK */
