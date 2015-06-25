@@ -63,12 +63,12 @@ static struct bt_gatt_chrc name_chrc = {
 	.uuid = &device_name_uuid,
 };
 
-static int read_name(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		     void *buf, uint8_t len, uint16_t offset)
 {
 	const char *name = attr->user_data;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, name,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
 				 strlen(name));
 }
 
@@ -83,13 +83,13 @@ static struct bt_gatt_chrc appearance_chrc = {
 	.uuid = &appeareance_uuid,
 };
 
-static int read_appearance(const bt_addr_le_t *peer,
+static int read_appearance(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
 			   uint8_t len, uint16_t offset)
 {
 	uint16_t appearance = sys_cpu_to_le16(HEART_RATE_APPEARANCE);
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &appearance,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
 				 sizeof(appearance));
 }
 
@@ -139,12 +139,12 @@ static void hrmc_ccc_cfg_changed(uint16_t value)
 	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static int read_blsc(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		     void *buf, uint8_t len, uint16_t offset)
 {
 	uint8_t value = 0x01;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &value,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
 				 sizeof(value));
 }
 
@@ -174,12 +174,12 @@ static void blvl_ccc_cfg_changed(uint16_t value)
 	simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
-static int read_blvl(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		     void *buf, uint8_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(*value));
 }
 
@@ -238,16 +238,16 @@ static void ct_ccc_cfg_changed(uint16_t value)
 static uint8_t ct[10];
 static uint8_t ct_update = 0;
 
-static int read_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int read_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   void *buf, uint8_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(ct));
 }
 
-static int write_ct(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		    const void *buf, uint8_t len, uint16_t offset)
 {
 	uint8_t *value = attr->user_data;
@@ -279,12 +279,12 @@ static struct bt_gatt_chrc model_chrc = {
 	.uuid = &model_uuid,
 };
 
-static int read_model(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int read_model(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   void *buf, uint8_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 strlen(value));
 }
 
@@ -299,12 +299,12 @@ static struct bt_gatt_chrc manuf_chrc = {
 	.uuid = &manuf_uuid,
 };
 
-static int read_manuf(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int read_manuf(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		      void *buf, uint8_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 strlen(value));
 }
 
@@ -341,16 +341,16 @@ static struct bt_gatt_chrc vnd_auth_chrc = {
 
 static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
-static int read_vnd(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		   void *buf, uint8_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, value,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 strlen(value));
 }
 
-static int write_vnd(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+static int write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		     const void *buf, uint8_t len, uint16_t offset)
 {
 	uint8_t *value = attr->user_data;
@@ -373,17 +373,17 @@ static struct vnd_long_value {
 	.data = { 'V', 'e', 'n', 'd', 'o', 'r' },
 };
 
-static int read_long_vnd(const bt_addr_le_t *peer,
+static int read_long_vnd(struct bt_conn *conn,
 			 const struct bt_gatt_attr *attr, void *buf,
 			 uint8_t len, uint16_t offset)
 {
 	struct vnd_long_value *value = attr->user_data;
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, value->data,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value->data,
 				 sizeof(value->data));
 }
 
-static int write_long_vnd(const bt_addr_le_t *peer,
+static int write_long_vnd(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, const void *buf,
 			  uint8_t len, uint16_t offset)
 {
@@ -399,7 +399,7 @@ static int write_long_vnd(const bt_addr_le_t *peer,
 	return len;
 }
 
-static int flush_long_vnd(const bt_addr_le_t *peer,
+static int flush_long_vnd(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, uint8_t flags)
 {
 	struct vnd_long_value *value = attr->user_data;

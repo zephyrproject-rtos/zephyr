@@ -65,7 +65,7 @@ void bt_gatt_register(const struct bt_gatt_attr *attrs, size_t count)
 	attr_count = count;
 }
 
-int bt_gatt_attr_read(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
+int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		      void *buf, uint8_t buf_len, uint16_t offset,
 		      const void *value, uint8_t value_len)
 {
@@ -85,7 +85,7 @@ int bt_gatt_attr_read(const bt_addr_le_t *peer, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
+int bt_gatt_attr_read_service(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      void *buf, uint8_t len, uint16_t offset)
 {
@@ -94,11 +94,11 @@ int bt_gatt_attr_read_service(const bt_addr_le_t *peer,
 	if (uuid->type == BT_UUID_16) {
 		uint16_t uuid16 = sys_cpu_to_le16(uuid->u16);
 
-		return bt_gatt_attr_read(peer, attr, buf, len, offset, &uuid16,
+		return bt_gatt_attr_read(conn, attr, buf, len, offset, &uuid16,
 					 sizeof(uuid16));
 	}
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, uuid->u128,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, uuid->u128,
 				 sizeof(uuid->u128));
 }
 
@@ -111,7 +111,7 @@ struct gatt_incl {
 	};
 } __packed;
 
-int bt_gatt_attr_read_include(const bt_addr_le_t *peer,
+int bt_gatt_attr_read_include(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      void *buf, uint8_t len, uint16_t offset)
 {
@@ -131,7 +131,7 @@ int bt_gatt_attr_read_include(const bt_addr_le_t *peer,
 		value_len += sizeof(incl->uuid->u128);
 	}
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &pdu, value_len);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
 }
 
 struct gatt_chrc {
@@ -143,7 +143,7 @@ struct gatt_chrc {
 	};
 } __packed;
 
-int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
+int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
 			   uint8_t len, uint16_t offset)
 {
@@ -163,7 +163,7 @@ int bt_gatt_attr_read_chrc(const bt_addr_le_t *peer,
 		value_len += sizeof(chrc->uuid->u128);
 	}
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &pdu, value_len);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
 }
 
 void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
@@ -183,7 +183,7 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 	}
 }
 
-int bt_gatt_attr_read_ccc(const bt_addr_le_t *peer,
+int bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint8_t len, uint16_t offset)
 {
@@ -192,7 +192,7 @@ int bt_gatt_attr_read_ccc(const bt_addr_le_t *peer,
 	size_t i;
 
 	for (i = 0; i < ccc->cfg_len; i++) {
-		if (bt_addr_le_cmp(&ccc->cfg[i].peer, peer)) {
+		if (bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->dst)) {
 			continue;
 		}
 
@@ -205,7 +205,7 @@ int bt_gatt_attr_read_ccc(const bt_addr_le_t *peer,
 		value = 0x0000;
 	}
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &value,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &value,
 				 sizeof(value));
 }
 
@@ -228,7 +228,7 @@ static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
 	}
 }
 
-int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
+int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
 			   uint8_t len, uint16_t offset)
 {
@@ -241,14 +241,14 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
-	if (bt_keys_get_addr(peer))
+	if (bt_keys_get_addr(&conn->dst))
 		bonded = true;
 	else
 		bonded = false;
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		/* Check for existing configuration */
-		if (!bt_addr_le_cmp(&ccc->cfg[i].peer, peer)) {
+		if (!bt_addr_le_cmp(&ccc->cfg[i].peer, &conn->dst)) {
 			break;
 		}
 	}
@@ -257,7 +257,7 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 		for (i = 0; i < ccc->cfg_len; i++) {
 			/* Check for unused configuration */
 			if (!ccc->cfg[i].valid) {
-				bt_addr_le_copy(&ccc->cfg[i].peer, peer);
+				bt_addr_le_copy(&ccc->cfg[i].peer, &conn->dst);
 				/* Only set valid if bonded */
 				ccc->cfg[i].valid = bonded;
 				break;
@@ -282,14 +282,14 @@ int bt_gatt_attr_write_ccc(const bt_addr_le_t *peer,
 	return len;
 }
 
-int bt_gatt_attr_read_cep(const bt_addr_le_t *peer,
+int bt_gatt_attr_read_cep(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint8_t len, uint16_t offset)
 {
 	struct bt_gatt_cep *value = attr->user_data;
 	uint16_t props = sys_cpu_to_le16(value->properties);
 
-	return bt_gatt_attr_read(peer, attr, buf, len, offset, &props,
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &props,
 				 sizeof(props));
 }
 

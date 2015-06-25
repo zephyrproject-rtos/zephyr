@@ -307,7 +307,7 @@ static uint8_t find_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_STOP;
 
 	/* Read attribute value and store in the buffer */
-	read = attr->read(&data->conn->dst, attr, uuid, sizeof(uuid), 0);
+	read = attr->read(data->conn, attr, uuid, sizeof(uuid), 0);
 	if (read < 0) {
 		/* TODO: Return an error if this fails */
 		return BT_GATT_ITER_STOP;
@@ -442,8 +442,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, void *user_data)
 	data->item->handle = sys_cpu_to_le16(attr->handle);
 
 	/* Read attribute value and store in the buffer */
-	read = attr->read(&data->conn->dst, attr,
-			  data->buf->data + data->buf->len,
+	read = attr->read(data->conn, attr, data->buf->data + data->buf->len,
 			  att->mtu - data->buf->len, 0);
 	if (read < 0) {
 		/* TODO: Handle read errors */
@@ -604,8 +603,7 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	/* Read attribute value and store in the buffer */
-	read = attr->read(&data->conn->dst, attr,
-			  data->buf->data + data->buf->len,
+	read = attr->read(data->conn, attr, data->buf->data + data->buf->len,
 			  att->mtu - data->buf->len, data->offset);
 	if (read < 0) {
 		data->err = err_to_att(read);
@@ -754,8 +752,7 @@ static uint8_t read_group_cb(const struct bt_gatt_attr *attr, void *user_data)
 	data->group->end_handle = sys_cpu_to_le16(attr->handle);
 
 	/* Read attribute value and store in the buffer */
-	read = attr->read(&data->conn->dst,attr,
-			  data->buf->data + data->buf->len,
+	read = attr->read(data->conn, attr, data->buf->data + data->buf->len,
 			  att->mtu - data->buf->len, 0);
 	if (read < 0) {
 		/* TODO: Handle read errors */
@@ -889,7 +886,7 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	/* Read attribute value and store in the buffer */
-	write = attr->write(&data->conn->dst, attr, data->value, data->len,
+	write = attr->write(data->conn, attr, data->value, data->len,
 			    data->offset);
 	if (write < 0 || write != data->len) {
 		data->err = err_to_att(write);
@@ -898,7 +895,7 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	/* Flush in case of regular write operation */
 	if (attr->flush && data->op != BT_ATT_OP_PREPARE_WRITE_REQ) {
-		write = attr->flush(&data->conn->dst, attr, BT_GATT_FLUSH_SYNC);
+		write = attr->flush(data->conn, attr, BT_GATT_FLUSH_SYNC);
 		if (write < 0) {
 			data->err = err_to_att(write);
 			return BT_GATT_ITER_STOP;
@@ -1020,7 +1017,7 @@ static uint8_t flush_cb(const struct bt_gatt_attr *attr, void *user_data)
 	BT_DBG("handle 0x%04x flags 0x%02x\n", attr->handle, data->flags);
 
 	/* Flush attribute any data cached to be written */
-	err = attr->flush(&data->conn->dst, attr, data->flags);
+	err = attr->flush(data->conn, attr, data->flags);
 	if (err < 0) {
 		data->err = err_to_att(err);
 		return BT_GATT_ITER_STOP;
