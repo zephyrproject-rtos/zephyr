@@ -237,6 +237,49 @@ static void cmd_scan(int argc, char *argv[])
 	}
 }
 
+static void cmd_security(int argc, char *argv[])
+{
+	int err, sec;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return;
+	}
+
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return;
+	}
+
+	if (argc < 4) {
+		printk("Security level required\n");
+		return;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	conn = bt_conn_lookup_addr_le(&addr);
+	if (!conn) {
+		printk("Peer not connected\n");
+		return;
+	}
+
+	sec = *argv[3] - '0';
+
+	err = bt_conn_security(conn, sec);
+	if (err) {
+		printk("Setting security failed (err %d)\n", err);
+	}
+
+	bt_conn_put(conn);
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -250,4 +293,5 @@ void main(void)
 	shell_cmd_register("connect", cmd_connect_le);
 	shell_cmd_register("disconnect", cmd_disconnect);
 	shell_cmd_register("scan", cmd_scan);
+	shell_cmd_register("security", cmd_security);
 }
