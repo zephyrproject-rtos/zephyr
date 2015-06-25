@@ -59,6 +59,12 @@ typedef unsigned int uip_stats_t;
 #define UIP_CONF_IPV6_MULTICAST 1
 #endif
 
+/* This will disable DAD for now in order to simplify the
+ * IPv6 address assignment. This needs to be re-enabled
+ * at some point.
+ */
+#define UIP_CONF_ND6_SEND_NA 0
+
 #ifndef NETSTACK_CONF_RADIO
 /* #error "No radio configured, cannot continue!" */
 #endif
