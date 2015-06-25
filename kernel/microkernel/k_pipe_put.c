@@ -166,10 +166,10 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		INSERT_ELM(pPipe->Writers, RequestProc);
 		/*
 		 * NOTE: It is both faster and simpler to blindly assign the
-		 * CHENQ_TMO microkernel command to the packet even though it
+		 * PIPE_PUT_TIMEOUT microkernel command to the packet even though it
 		 * is only useful to the finite timeout case.
 		 */
-		RequestProc->Comm = CHENQ_TMO;
+		RequestProc->Comm = PIPE_PUT_TIMEOUT;
 		if (_TIME_B == ChxxxGetTimeType((K_ARGS_ARGS *)&(RequestProc->Args))) {
 			/*
 			 * The writer specified TICKS_UNLIMITED; NULL the timer.
@@ -202,7 +202,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 							ChReqGetStatus(&(RequestProc->Args.ChProc)));
 			__ASSERT_NO_MSG(0 ==
 							ChReqSizeXferred(&(RequestProc->Args.ChProc)));
-			RequestProc->Comm = CHENQ_RPL;
+			RequestProc->Comm = PIPE_PUT_REPLY;
 			_k_pipe_put_reply(RequestProc);
 		}
 		return;
@@ -248,7 +248,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 	struct k_args *ReqOrig = ReqProc->Ctxt.args;
 	CHREQ_STATUS ChReqStatus;
 
-	ReqOrig->Comm = CHENQ_ACK;
+	ReqOrig->Comm = PIPE_PUT_ACK;
 
 	/* determine return value:
 	 */

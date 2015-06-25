@@ -147,10 +147,10 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		INSERT_ELM(pPipe->Readers, RequestProc);
 		/*
 		 * NOTE: It is both faster and simpler to blindly assign the
-		 * CHDEQ_TMO microkernel command to the packet even though it
+		 * PIPE_GET_TIMEOUT microkernel command to the packet even though it
 		 * is only useful to the finite timeout case.
 		 */
-		RequestProc->Comm = CHDEQ_TMO;
+		RequestProc->Comm = PIPE_GET_TIMEOUT;
 		if (_TIME_B ==
 			ChxxxGetTimeType((K_ARGS_ARGS *)&(RequestProc->Args))) {
 			/*
@@ -184,7 +184,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 				   ChReqGetStatus(&(RequestProc->Args.ChProc)));
 			__ASSERT_NO_MSG(0 ==
 				   ChReqSizeXferred(&(RequestProc->Args.ChProc)));
-			RequestProc->Comm = CHDEQ_RPL;
+			RequestProc->Comm = PIPE_GET_REPLY;
 			_k_pipe_get_reply(RequestProc);
 		}
 		return;
@@ -229,7 +229,7 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 
 	struct k_args *ReqOrig = ReqProc->Ctxt.args;
 	CHREQ_STATUS ChReqStatus;
-	ReqOrig->Comm = CHDEQ_ACK;
+	ReqOrig->Comm = PIPE_GET_ACK;
 
 	/* determine return value */
 

@@ -93,7 +93,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	}
 
 	A.Prio = _k_current_task->Prio;
-	A.Comm = CHDEQ_REQ;
+	A.Comm = PIPE_GET_REQUEST;
 	A.Time.ticks = TimeOut;
 
 	struct k_chreq ChReq;
@@ -148,7 +148,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	}
 
 	A.Prio = _k_current_task->Prio;
-	A.Comm = CHENQ_REQ;
+	A.Comm = PIPE_PUT_REQUEST;
 	A.Time.ticks = TimeOut;
 
 	struct k_chreq ChReq;
@@ -196,7 +196,7 @@ int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
 	}
 
 	A.Prio = _k_current_task->Prio;
-	A.Comm = CHENQ_REQ;
+	A.Comm = PIPE_PUT_REQUEST;
 	A.Time.ticks = TICKS_UNLIMITED;
 		/* same behavior in flow as a blocking call w/o a timeout */
 

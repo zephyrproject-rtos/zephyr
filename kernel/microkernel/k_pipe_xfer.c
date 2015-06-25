@@ -265,14 +265,14 @@ static void setup_movedata(struct k_args *A,
 	GETARGS(pContRecv);
 
 	pContSend->Forw = NULL;
-	pContSend->Comm = CH_MOVED_ACK;
+	pContSend->Comm = PIPE_MOVEDATA_ACK;
 	pContSend->Args.ChMovedAck.pPipe = pPipe;
 	pContSend->Args.ChMovedAck.XferType = XferType;
 	pContSend->Args.ChMovedAck.ID = XferID;
 	pContSend->Args.ChMovedAck.iSize = size;
 
 	pContRecv->Forw = NULL;
-	pContRecv->Comm = CH_MOVED_ACK;
+	pContRecv->Comm = PIPE_MOVEDATA_ACK;
 	pContRecv->Args.ChMovedAck.pPipe = pPipe;
 	pContRecv->Args.ChMovedAck.XferType = XferType;
 	pContRecv->Args.ChMovedAck.ID = XferID;
@@ -967,7 +967,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 				myfreetimer(&(pReader->Time.timer));
 			}
 			if (0 == pReader->Args.ChProc.iNbrPendXfers) {
-				pReader->Comm = CHDEQ_RPL;
+				pReader->Comm = PIPE_GET_REPLY;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
 				_k_pipe_get_reply(pReader);
@@ -996,7 +996,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 				myfreetimer(&(pWriter->Time.timer));
 			}
 			if (0 == pWriter->Args.ChProc.iNbrPendXfers) {
-				pWriter->Comm = CHENQ_RPL;
+				pWriter->Comm = PIPE_PUT_REPLY;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
 				_k_pipe_put_reply(pWriter);
