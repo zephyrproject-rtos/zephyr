@@ -99,7 +99,7 @@ K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *pChxxx)
 	return (K_PIPE_OPTION)(pChxxx->ChProc.ReqInfo.Params & _ALL_OPT);
 }
 
-void ChxxxSetChOpt(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option)
+void _k_pipe_option_set(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option)
 {
 	pChxxx->ChProc.ReqInfo.Params &=
 		(~_ALL_OPT); /* clear destination field */
