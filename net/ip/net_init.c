@@ -165,6 +165,132 @@ int net_send(struct net_buf *buf)
 	return 0;
 }
 
+#define UIP_IP_BUF(buf)   ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
+#define UIP_UDP_BUF(buf)  \
+	((struct uip_udp_hdr *)&uip_buf(buf)[UIP_LLH_LEN + UIP_IPH_LEN])
+
+/* Switch the ports and addresses and set route and neighbor cache.
+ * Returns 1 if packet was sent properly, in this case it is the caller
+ * that needs to release the net_buf. If 0 is returned, then uIP stack
+ * has released the net_buf already because there was an some net related
+ * error when sending the buffer.
+ */
+static inline int udp_prepare_and_send(struct net_context *context,
+				       struct net_buf *buf)
+{
+	uip_ds6_route_t *route_old, *route_new = NULL;
+	uip_ds6_nbr_t *nbr;
+	uip_ipaddr_t tmp;
+	uint16_t port;
+	uint8_t ret;
+
+	if (uip_len(buf) == 0) {
+		/* This is expected as uIP will typically set the
+		 * packet length to 0 after receiving it. So we need
+		 * to fix the length here. The protocol specific
+		 * part is added also here.
+		 */
+		uip_len(buf) = uip_slen(buf) = uip_appdatalen(buf);
+		buf->data = buf->buf + UIP_IPUDPH_LEN;
+	}
+
+	port = UIP_UDP_BUF(buf)->srcport;
+	UIP_UDP_BUF(buf)->srcport = UIP_UDP_BUF(buf)->destport;
+	UIP_UDP_BUF(buf)->destport = port;
+
+	uip_ipaddr_copy(&tmp, &UIP_IP_BUF(buf)->srcipaddr);
+	uip_ipaddr_copy(&UIP_IP_BUF(buf)->srcipaddr,
+			&UIP_IP_BUF(buf)->destipaddr);
+	uip_ipaddr_copy(&UIP_IP_BUF(buf)->destipaddr, &tmp);
+
+	/* The peer needs to be in neighbor cache before route can be added.
+	 */
+	nbr = uip_ds6_nbr_lookup((uip_ipaddr_t *)&UIP_IP_BUF(buf)->destipaddr);
+	if (!nbr) {
+		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&buf->src;
+		nbr = uip_ds6_nbr_add(
+			(uip_ipaddr_t *)&UIP_IP_BUF(buf)->destipaddr,
+			lladdr, 0, NBR_REACHABLE);
+		if (!nbr) {
+			NET_DBG("Cannot add peer ");
+			PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
+			PRINT(" to neighbor cache\n");
+		}
+	}
+
+	/* Temporarily add route to peer, delete the route after
+	 * sending the packet. Check if there was already a
+	 * route and do not remove it if there was existing
+	 * route to this peer.
+	 */
+	route_old = uip_ds6_route_lookup(&UIP_IP_BUF(buf)->destipaddr);
+	if (!route_old) {
+		route_new = uip_ds6_route_add(&UIP_IP_BUF(buf)->destipaddr,
+					      128,
+					      &UIP_IP_BUF(buf)->destipaddr);
+		if (!route_new) {
+			NET_DBG("Cannot add route to peer ");
+			PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
+			PRINT("\n");
+		}
+	}
+
+	ret = simple_udp_sendto_port(buf,
+				     net_context_get_udp_connection(context),
+				     buf->data, buf->len,
+				     &UIP_IP_BUF(buf)->destipaddr,
+				     uip_ntohs(UIP_UDP_BUF(buf)->destport));
+	if (!ret) {
+		NET_DBG("Packet could not be sent properly.\n");
+	}
+
+	if (!route_old && route_new) {
+		/* This will also remove the neighbor cache entry */
+		uip_ds6_route_rm(route_new);
+	}
+
+	return ret;
+}
+
+/* Application wants to send a reply */
+int net_reply(struct net_context *context, struct net_buf *buf)
+{
+	struct net_tuple *tuple;
+	struct uip_udp_conn *udp;
+	int ret = 0;
+
+	if (!context || !buf) {
+		return -EINVAL;
+	}
+
+	tuple = net_context_get_tuple(context);
+	if (!tuple) {
+		return -ENOENT;
+	}
+
+	switch (tuple->ip_proto) {
+	case IPPROTO_UDP:
+		udp = uip_udp_conn(buf);
+		if (!udp) {
+			NET_ERR("UDP connection missing\n");
+			return -ESRCH;
+		}
+
+		ret = udp_prepare_and_send(context, buf);
+		break;
+	case IPPROTO_TCP:
+		NET_DBG("TCP not yet supported\n");
+		return -EINVAL;
+		break;
+	case IPPROTO_ICMPV6:
+		NET_DBG("ICMPv6 not yet supported\n");
+		return -EINVAL;
+		break;
+	}
+
+	return ret;
+}
+
 /* Called by driver when an IP packet has been received */
 int net_recv(struct net_buf *buf)
 {

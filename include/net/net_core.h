@@ -108,6 +108,21 @@ void net_unregister_driver(struct net_driver *drv);
  */
 int net_set_mac(uint8_t *mac, uint8_t len);
 
+/*!
+ * @brief Send a reply packet to the message originator.
+ *
+ * @details Application can call this function if it has received
+ * a network packet from peer. The application needs to write
+ * reply data into net_buf. The app can use uip_appdata(buf) and
+ * uip_appdatalen(buf) to set the application data and length.
+ *
+ * @param context Network context
+ * @param buf Network buffer containing the network data.
+ *
+ * @return 0 if ok, < 0 in case of error.
+ */
+int net_reply(struct net_context *context, struct net_buf *buf);
+
 /* Called by driver when an IP packet has been received */
 int net_recv(struct net_buf *buf);
 
