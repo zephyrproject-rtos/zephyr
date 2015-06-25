@@ -39,12 +39,12 @@
 
 /*******************************************************************************
 *
-* K_ChSendReq - process request command for a pipe put operation
+* _k_pipe_put_request - process request command for a pipe put operation
 *
 * RETURNS: N/A
 */
 
-void K_ChSendReq(struct k_args *RequestOrig)
+void _k_pipe_put_request(struct k_args *RequestOrig)
 {
 	struct k_args *Request;
 	struct k_args *RequestProc;
@@ -203,7 +203,7 @@ void K_ChSendReq(struct k_args *RequestOrig)
 			__ASSERT_NO_MSG(0 ==
 							ChReqSizeXferred(&(RequestProc->Args.ChProc)));
 			RequestProc->Comm = CHENQ_RPL;
-			K_ChSendRpl(RequestProc);
+			_k_pipe_put_reply(RequestProc);
 		}
 		return;
 	}
@@ -211,12 +211,12 @@ void K_ChSendReq(struct k_args *RequestOrig)
 
 /*******************************************************************************
 *
-* K_ChSendTmo - perform timeout command for a pipe put operation
+* _k_pipe_put_timeout - perform timeout command for a pipe put operation
 *
 * RETURNS: N/A
 */
 
-void K_ChSendTmo(struct k_args *ReqProc)
+void _k_pipe_put_timeout(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(NULL != ReqProc->Time.timer);
 
@@ -225,18 +225,18 @@ void K_ChSendTmo(struct k_args *ReqProc)
 
 	DeListWaiter(ReqProc);
 	if (0 == ReqProc->Args.ChProc.iNbrPendXfers) {
-		K_ChSendRpl(ReqProc);
+		_k_pipe_put_reply(ReqProc);
 	}
 }
 
 /*******************************************************************************
 *
-* K_ChSendRpl - process reply command for a pipe put operation
+* _k_pipe_put_reply - process reply command for a pipe put operation
 *
 * RETURNS: N/A
 */
 
-void K_ChSendRpl(struct k_args *ReqProc)
+void _k_pipe_put_reply(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(
 		0 == ReqProc->Args.ChProc.iNbrPendXfers /*  no pending Xfers */
@@ -283,12 +283,12 @@ void K_ChSendRpl(struct k_args *ReqProc)
 
 /*******************************************************************************
 *
-* K_ChSendAck - process acknowledgment command for a pipe put operation
+* _k_pipe_put_ack - process acknowledgment command for a pipe put operation
 *
 * RETURNS: N/A
 */
 
-void K_ChSendAck(struct k_args *Request)
+void _k_pipe_put_ack(struct k_args *Request)
 {
 	if (_ASYNCREQ == ChxxxGetReqType(&(Request->Args))) {
 		struct k_chack *pChAck = (struct k_chack *)&(Request->Args.ChAck);

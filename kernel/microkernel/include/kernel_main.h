@@ -123,10 +123,10 @@ extern void K_rawdata(struct k_args *DataPacket);
 extern void K_mvdsndack(struct k_args *SndDAck);
 extern void K_mvdrcvack(struct k_args *RcvDAck);
 
-extern void K_ChSendReq(struct k_args *Writer);
-extern void K_ChSendTmo(struct k_args *Writer);
-extern void K_ChSendRpl(struct k_args *Writer);
-extern void K_ChSendAck(struct k_args *Writer);
+extern void _k_pipe_put_request(struct k_args *Writer);
+extern void _k_pipe_put_timeout(struct k_args *Writer);
+extern void _k_pipe_put_reply(struct k_args *Writer);
+extern void _k_pipe_put_ack(struct k_args *Writer);
 extern void _k_pipe_get_request(struct k_args *Reader);
 extern void _k_pipe_get_timeout(struct k_args *Reader);
 extern void _k_pipe_get_reply(struct k_args *Reader);

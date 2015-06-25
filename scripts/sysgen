@@ -867,10 +867,10 @@ def kernel_main_c_kernel_services():
 "/* 69 */ (kernelfunc) NULL,",                    # unused
 "/* 70 */ (kernelfunc) NULL,",                    # unused
 "/* 71 */ (kernelfunc) NULL,",                    # unused
-"/* 72 */ K_ChSendReq,",                          # depends on pipes
-"/* 73 */ K_ChSendTmo,",                          # depends on pipes and timers
-"/* 74 */ K_ChSendRpl,",                          # depends on pipes
-"/* 75 */ K_ChSendAck,",                          # depends on pipes
+"/* 72 */ _k_pipe_put_request,",                  # depends on pipes
+"/* 73 */ _k_pipe_put_timeout,",                  # depends on pipes and timers
+"/* 74 */ _k_pipe_put_reply,",                    # depends on pipes
+"/* 75 */ _k_pipe_put_ack,",                      # depends on pipes
 "/* 76 */ _k_pipe_get_request,",                  # depends on pipes
 "/* 77 */ _k_pipe_get_timeout,",                  # depends on pipes and timers
 "/* 78 */ _k_pipe_get_reply,",                    # depends on pipes
