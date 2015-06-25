@@ -283,7 +283,7 @@ void K_ChSendRpl(struct k_args *ReqProc)
 
 /*******************************************************************************
 *
-* K_ChSendAck - process acknowledgement command for a pipe put operation
+* K_ChSendAck - process acknowledgment command for a pipe put operation
 *
 * RETURNS: N/A
 */

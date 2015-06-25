@@ -263,7 +263,7 @@ void K_ChRecvRpl(struct k_args *ReqProc)
 
 /*******************************************************************************
 *
-* K_ChRecvAck - process acknowledgement command for a pipe get operation
+* K_ChRecvAck - process acknowledgment command for a pipe get operation
 *
 * RETURNS: N/A
 */

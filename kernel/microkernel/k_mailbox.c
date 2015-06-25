@@ -228,7 +228,7 @@ static void transfer(struct k_args *pMvdReq)
 
 /*******************************************************************************
 *
-* _k_mbox_send_ack - process the acknowledgement to a mailbox send request
+* _k_mbox_send_ack - process the acknowledgment to a mailbox send request
 *
 * RETURNS: N/A
 */
@@ -517,9 +517,9 @@ int _task_mbox_put(kmbox_t mbox, /* mailbox */
 
 /*******************************************************************************
 *
-* _k_mbox_receive_ack - process a mailbox receive acknowledgement
+* _k_mbox_receive_ack - process a mailbox receive acknowledgment
 *
-* This routine processes a mailbox receive acknowledgement.
+* This routine processes a mailbox receive acknowledgment.
 *
 * INTERNAL:  This routine frees the <pCopyReader> packet
 *

@@ -158,13 +158,13 @@ struct bt_gatt_include {
  *  @brief Characteristic notify property.
  *
  *  If set, permits notifications of a Characteristic Value without
- *  acknowledgement.
+ *  acknowledgment.
  */
 #define BT_GATT_CHRC_NOTIFY			0x10
 /*! @def BT_GATT_CHRC_INDICATE
  *  @brief Characteristic indicate property.
  *
- * If set, permits indications of a Characteristic Value with acknowledgement.
+ * If set, permits indications of a Characteristic Value with acknowledgment.
  */
 #define BT_GATT_CHRC_INDICATE			0x20
 /*! @def BT_GATT_CHRC_AUTH

@@ -84,7 +84,7 @@ enum {
      collision. */
   MAC_TX_COLLISION,
 
-  /**< The MAC layer did not get an acknowledgement for the packet. */
+  /**< The MAC layer did not get an acknowledgment for the packet. */
   MAC_TX_NOACK,
 
   /**< The MAC layer deferred the transmission for a later time. */
