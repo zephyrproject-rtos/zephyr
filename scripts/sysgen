@@ -871,10 +871,10 @@ def kernel_main_c_kernel_services():
 "/* 73 */ K_ChSendTmo,",                          # depends on pipes and timers
 "/* 74 */ K_ChSendRpl,",                          # depends on pipes
 "/* 75 */ K_ChSendAck,",                          # depends on pipes
-"/* 76 */ K_ChRecvReq,",                          # depends on pipes
-"/* 77 */ K_ChRecvTmo,",                          # depends on pipes and timers
-"/* 78 */ K_ChRecvRpl,",                          # depends on pipes
-"/* 79 */ K_ChRecvAck,",                          # depends on pipes
+"/* 76 */ _k_pipe_get_request,",                  # depends on pipes
+"/* 77 */ _k_pipe_get_timeout,",                  # depends on pipes and timers
+"/* 78 */ _k_pipe_get_reply,",                    # depends on pipes
+"/* 79 */ _k_pipe_get_ack,",                      # depends on pipes
 "/* 80 */ K_ChMovedAck,",                         # depends on pipes
 "/* 81 */ _k_event_test_timeout"                  # depends on timers
     ]

@@ -127,10 +127,10 @@ extern void K_ChSendReq(struct k_args *Writer);
 extern void K_ChSendTmo(struct k_args *Writer);
 extern void K_ChSendRpl(struct k_args *Writer);
 extern void K_ChSendAck(struct k_args *Writer);
-extern void K_ChRecvReq(struct k_args *Reader);
-extern void K_ChRecvTmo(struct k_args *Reader);
-extern void K_ChRecvRpl(struct k_args *Reader);
-extern void K_ChRecvAck(struct k_args *Reader);
+extern void _k_pipe_get_request(struct k_args *Reader);
+extern void _k_pipe_get_timeout(struct k_args *Reader);
+extern void _k_pipe_get_reply(struct k_args *Reader);
+extern void _k_pipe_get_ack(struct k_args *Reader);
 extern void K_ChMovedAck(struct k_args *pEOXfer);
 extern void _k_event_test_timeout(struct k_args *A);
 

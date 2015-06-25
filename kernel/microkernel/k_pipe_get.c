@@ -38,12 +38,12 @@
 
 /*******************************************************************************
 *
-* K_ChRecvReq - process request command for a pipe get operation
+* _k_pipe_get_request - process request command for a pipe get operation
 *
 * RETURNS: N/A
 */
 
-void K_ChRecvReq(struct k_args *RequestOrig)
+void _k_pipe_get_request(struct k_args *RequestOrig)
 {
 	struct k_args *Request;
 	struct k_args *RequestProc;
@@ -185,7 +185,7 @@ void K_ChRecvReq(struct k_args *RequestOrig)
 			__ASSERT_NO_MSG(0 ==
 				   ChReqSizeXferred(&(RequestProc->Args.ChProc)));
 			RequestProc->Comm = CHDEQ_RPL;
-			K_ChRecvRpl(RequestProc);
+			_k_pipe_get_reply(RequestProc);
 		}
 		return;
 	}
@@ -193,12 +193,12 @@ void K_ChRecvReq(struct k_args *RequestOrig)
 
 /*******************************************************************************
 *
-* K_ChRecvTmo - process timeout command for a pipe get operation
+* _k_pipe_get_timeout - process timeout command for a pipe get operation
 *
 * RETURNS: N/A
 */
 
-void K_ChRecvTmo(struct k_args *ReqProc)
+void _k_pipe_get_timeout(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(NULL != ReqProc->Time.timer);
 
@@ -207,18 +207,18 @@ void K_ChRecvTmo(struct k_args *ReqProc)
 
 	DeListWaiter(ReqProc);
 	if (0 == ReqProc->Args.ChProc.iNbrPendXfers) {
-		K_ChRecvRpl(ReqProc);
+		_k_pipe_get_reply(ReqProc);
 	}
 }
 
 /*******************************************************************************
 *
-* K_ChRecvRpl - process reply command for a pipe get operation
+* _k_pipe_get_reply - process reply command for a pipe get operation
 *
 * RETURNS: N/A
 */
 
-void K_ChRecvRpl(struct k_args *ReqProc)
+void _k_pipe_get_reply(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(
 		(0 == ReqProc->Args.ChProc.iNbrPendXfers) /*  no pending Xfers */
@@ -263,12 +263,12 @@ void K_ChRecvRpl(struct k_args *ReqProc)
 
 /*******************************************************************************
 *
-* K_ChRecvAck - process acknowledgment command for a pipe get operation
+* _k_pipe_get_ack - process acknowledgment command for a pipe get operation
 *
 * RETURNS: N/A
 */
 
-void K_ChRecvAck(struct k_args *Request)
+void _k_pipe_get_ack(struct k_args *Request)
 {
 	struct k_args *LocalReq;
 

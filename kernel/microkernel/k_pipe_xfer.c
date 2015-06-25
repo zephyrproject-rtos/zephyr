@@ -117,7 +117,7 @@ void K_ChMovedAck(struct k_args *pEOXfer)
 			if (0 == pReaderArg->iNbrPendXfers) {
 				if (TERM_XXX & pReaderArg->Status) {
 					/* request is terminated, send reply */
-					K_ChRecvRpl(pEOXferArgs->pReader);
+					_k_pipe_get_reply(pEOXferArgs->pReader);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
@@ -179,7 +179,7 @@ void K_ChMovedAck(struct k_args *pEOXfer)
 			if (0 == pReaderArg->iNbrPendXfers) {
 				if (TERM_XXX & pReaderArg->Status) {
 					/* request is terminated, send reply */
-					K_ChRecvRpl(pEOXferArgs->pReader);
+					_k_pipe_get_reply(pEOXferArgs->pReader);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
@@ -970,7 +970,7 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 				pReader->Comm = CHDEQ_RPL;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
-				K_ChRecvRpl(pReader);
+				_k_pipe_get_reply(pReader);
 			}
 		} else {
 			/* temporary stall (must be, processing will continue
