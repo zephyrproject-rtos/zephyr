@@ -46,6 +46,8 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap.h"
+#include "keys.h"
+#include "smp.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_CONN)
 #undef BT_DBG
@@ -382,4 +384,29 @@ void bt_conn_put(struct bt_conn *conn)
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 {
 	return &conn->dst;
+}
+
+int bt_conn_security(struct bt_conn *conn, bt_conn_security_t sec)
+{
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	/* for now we only support JustWorks */
+	if (sec > BT_CONN_SEC_MEDIUM) {
+		return -EINVAL;
+	}
+
+	if (conn->role == BT_HCI_ROLE_SLAVE) {
+		/* TODO Add Security Request support */
+		return -ENOTSUP;
+	}
+
+	if (conn->encrypt) {
+		return 0;
+	}
+
+	/* TODO check for master LTK */
+
+	return smp_send_pairing_req(conn);
 }
