@@ -1412,7 +1412,7 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 	cp->scan_window = sys_cpu_to_le16(0x0030);
 	cp->supervision_timeout = sys_cpu_to_le16(0x07D0);
 
-	return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN, buf);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
 
 int bt_connect_le(const bt_addr_le_t *peer)
