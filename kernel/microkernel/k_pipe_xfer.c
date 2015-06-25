@@ -1,4 +1,4 @@
-/* K_ChProc.c */
+/* pipe processing for data transfer */
 
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.
