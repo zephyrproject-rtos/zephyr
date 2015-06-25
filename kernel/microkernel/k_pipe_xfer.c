@@ -550,12 +550,12 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 
 /*******************************************************************************
 *
-* _UpdateChannelXferStatus - update the channel transfer status
+* pipe_xfer_status_update - update the channel transfer status
 *
 * RETURNS: N/A
 */
 
-static void _UpdateChannelXferStatus(
+static void pipe_xfer_status_update(
 	struct k_args *pActor,       /* ptr to struct k_args to be used by actor */
 	struct k_chproc *pActorArgs, /* ptr to actor's channel process structure */
 	int bytesXferred      /* # of bytes transferred */
@@ -670,9 +670,9 @@ static void pipe_read_write(
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
-		_UpdateChannelXferStatus(pWriter, pWriterArgs, iT2);
+		pipe_xfer_status_update(pWriter, pWriterArgs, iT2);
 
-		_UpdateChannelXferStatus(pReader, pReaderArgs, iT2);
+		pipe_xfer_status_update(pReader, pReaderArgs, iT2);
 	}
 
 	/* T3 transfer */
