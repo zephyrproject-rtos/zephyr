@@ -46,7 +46,7 @@ checkpatch_switches="\
 	--show-types \
 	--max-line-length=100 \
 "
-ignore_list=BRACES,PRINTK_WITHOUT_KERN_LEVEL,SPLIT_STRING,FILE_PATH_CHANGES
+ignore_list=BRACES,PRINTK_WITHOUT_KERN_LEVEL,SPLIT_STRING,FILE_PATH_CHANGES,GERRIT_CHANGE_ID
 
 timestamp_bin=${ZEPHYR_BASE}/scripts/timestamp
 timestamp="${timestamp_bin} -u"
