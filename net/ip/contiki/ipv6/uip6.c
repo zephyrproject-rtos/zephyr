@@ -956,6 +956,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
   register struct uip_conn *uip_connr = uip_conn;
 #endif /* UIP_TCP */
 #if UIP_UDP
+  int i;
   if(flag == UIP_UDP_SEND_CONN) {
     goto udp_send;
   }
@@ -1521,9 +1522,9 @@ uip_process(struct net_buf *buf, uint8_t flag)
   }
 
   /* Demultiplex this UDP packet between the UDP "connections". */
-  for(uip_set_udp_conn(buf) = &uip_udp_conns[0];
-      uip_udp_conn(buf) < &uip_udp_conns[UIP_UDP_CONNS];
-      ++uip_set_udp_conn(buf)) {
+  for(i = 0, uip_set_udp_conn(buf) = &uip_udp_conns[0];
+      i < UIP_UDP_CONNS && uip_udp_conn(buf) < &uip_udp_conns[UIP_UDP_CONNS];
+      i++, ++uip_set_udp_conn(buf)) {
     /* If the local UDP port is non-zero, the connection is considered
        to be used. If so, the local port number is checked against the
        destination port number in the received packet. If the two port
