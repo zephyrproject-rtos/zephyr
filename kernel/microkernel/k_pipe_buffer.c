@@ -65,7 +65,7 @@
 #define CHECK_CHBUFF_POINTER(pData) \
 	__ASSERT_NO_MSG(pChBuff->pBegin <= pData && pData < pChBuff->pEnd)
 
-static void ChannelCheck4Intrusion(struct chbuff *pChBuff, unsigned char *pBegin, int iSize);
+static void pipe_intrusion_check(struct chbuff *pChBuff, unsigned char *pBegin, int iSize);
 
 /*******************/
 /* Markers
@@ -487,7 +487,7 @@ static int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
 {
 	int i;
 
-	ChannelCheck4Intrusion(pChBuff, pChBuff->pWrite, iSize);
+	pipe_intrusion_check(pChBuff, pChBuff->pWrite, iSize);
 
 	i = MarkerAddLast(&(pChBuff->WriteMarkers), pChBuff->pWrite, iSize, true);
 	if (i != -1) {
@@ -597,7 +597,7 @@ static int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
 {
 	int i;
 
-	ChannelCheck4Intrusion(pChBuff, pChBuff->pRead, iSize);
+	pipe_intrusion_check(pChBuff, pChBuff->pRead, iSize);
 
 	i = MarkerAddLast(&(pChBuff->ReadMarkers), pChBuff->pRead, iSize, true);
 	if (i != -1) {
@@ -741,7 +741,7 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 	}
 }
 
-static void ChannelCheck4Intrusion(struct chbuff *pChBuff, unsigned char *pBegin, int iSize)
+static void pipe_intrusion_check(struct chbuff *pChBuff, unsigned char *pBegin, int iSize)
 {
 	/*
 	 * check possible collision with all existing data areas,
