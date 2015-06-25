@@ -68,7 +68,7 @@ void myfreetimer(struct k_timer **ppTimer);
 
 K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *pChxxx);
 void _k_pipe_option_set(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option);
-REQ_TYPE ChxxxGetReqType(K_ARGS_ARGS *pChxxx);
+REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *pChxxx);
 void ChxxxSetReqType(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType);
 
 CHREQ_STATUS ChReqGetStatus(struct k_chproc *pChProc);

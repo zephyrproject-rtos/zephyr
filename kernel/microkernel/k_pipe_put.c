@@ -53,7 +53,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 	bool bAsync;
 
-	if (_ASYNCREQ == ChxxxGetReqType(&(RequestOrig->Args))) {
+	if (_ASYNCREQ == _k_pipe_request_type_get(&RequestOrig->Args)) {
 		bAsync = true;
 	} else {
 		bAsync = false;
@@ -82,7 +82,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	RequestProc->Args.ChProc.ReqInfo.ChRef.pPipe =
 		&(_k_pipe_list[OBJ_INDEX(pipeId)]);
 
-	switch (ChxxxGetReqType(&(RequestProc->Args))) {
+	switch (_k_pipe_request_type_get(&RequestProc->Args)) {
 	case _SYNCREQ:
 		RequestProc->Args.ChProc.pData =
 			Request->Args.ChReq.ReqType.Sync.pData;
@@ -272,7 +272,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 		/* unknown (invalid) status */
 		__ASSERT_NO_MSG(1 == 0); /* should not come here */
 	}
-	if (_ASYNCREQ != ChxxxGetReqType(&(ReqOrig->Args))) {
+	if (_ASYNCREQ != _k_pipe_request_type_get(&ReqOrig->Args)) {
 		ReqOrig->Args.ChAck.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
 	}
 
@@ -290,7 +290,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 
 void _k_pipe_put_ack(struct k_args *Request)
 {
-	if (_ASYNCREQ == ChxxxGetReqType(&(Request->Args))) {
+	if (_ASYNCREQ == _k_pipe_request_type_get(&Request->Args)) {
 		struct k_chack *pChAck = (struct k_chack *)&(Request->Args.ChAck);
 		struct k_args A;
 		struct k_block *blockptr;

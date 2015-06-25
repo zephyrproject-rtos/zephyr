@@ -107,7 +107,7 @@ void _k_pipe_option_set(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option)
 		(option & _ALL_OPT); /* make sure we do not screw up other fields */
 }
 
-REQ_TYPE ChxxxGetReqType(K_ARGS_ARGS *pChxxx)
+REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *pChxxx)
 {
 	return (REQ_TYPE)(pChxxx->ChProc.ReqInfo.Params & _ALLREQ);
 }

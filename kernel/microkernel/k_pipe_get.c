@@ -70,7 +70,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	RequestProc->Args.ChProc.ReqInfo.ChRef.pPipe =
 		&(_k_pipe_list[OBJ_INDEX(pipeId)]);
 
-	switch (ChxxxGetReqType(&(RequestProc->Args))) {
+	switch (_k_pipe_request_type_get(&RequestProc->Args)) {
 	case _SYNCREQ:
 		RequestProc->Args.ChProc.pData =
 			Request->Args.ChReq.ReqType.Sync.pData;
