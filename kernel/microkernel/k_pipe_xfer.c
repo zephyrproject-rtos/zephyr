@@ -329,7 +329,7 @@ static int ReaderInProgressIsBlocked(struct pipe_struct *pPipe,
 	/* first condition: request cannot wait any longer: must be -
 	 * (non-blocked) or a finite timed wait with a killed timer */
 
-	TimeType = ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args));
+	TimeType = _k_pipe_time_type_get(&pReader->Args);
 	option = _k_pipe_option_get(&pReader->Args);
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
 	    ((_TIME_B == TimeType) && (_X_TO_N & option) &&
@@ -374,7 +374,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 	/* first condition: request cannot wait any longer: must be -
 	 * (non-blocked) or a finite timed wait with a killed timer */
 
-	TimeType = ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args));
+	TimeType = _k_pipe_time_type_get(&pWriter->Args);
 	option = _k_pipe_option_get(&pWriter->Args);
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
 	    ((_TIME_B == TimeType) && (_X_TO_N & option) &&
@@ -757,7 +757,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		if (pWriter) {
 			if (_ALL_N == _k_pipe_option_get(&pWriter->Args) &&
 				(pWriter->Args.ChProc.iSizeXferred == 0) &&
-				_TIME_B != ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args))) {
+				_TIME_B != _k_pipe_time_type_get(&pWriter->Args)) {
 				/* investigate if there is a problem for
 				 * his request to be satisfied
 				 */
@@ -786,7 +786,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		if (pReader) {
 			if (_ALL_N == _k_pipe_option_get(&pReader->Args) &&
 				(pReader->Args.ChProc.iSizeXferred == 0) &&
-				_TIME_B != ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args))) {
+				_TIME_B != _k_pipe_time_type_get(&pReader->Args)) {
 				/* investigate if there is a problem for
 				 * his request to be satisfied
 				 */
@@ -832,7 +832,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			} else {
 #ifdef FORCE_XFER_ON_STALL
 				if (pReader && (_TIME_NB !=
-					ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args)))) {
+					_k_pipe_time_type_get(&pWriter->Args))) {
 					/* force transfer
 					   (we make exception for non-blocked writer) */
 					pipe_read_write(pPipe, pWriter, pReader);
@@ -855,7 +855,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			} else {
 #ifdef FORCE_XFER_ON_STALL
 				if (pWriter && (_TIME_NB !=
-						ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args)))) {
+						_k_pipe_time_type_get(&pReader->Args))) {
 					/* force transfer
 					   (we make exception for non-blocked reader) */
 					pipe_read_write(pPipe, pWriter, pReader);

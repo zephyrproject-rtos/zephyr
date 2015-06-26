@@ -161,7 +161,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	 */
 
 	if (_TIME_NB !=
-		ChxxxGetTimeType((K_ARGS_ARGS *)&(RequestProc->Args))) {
+		_k_pipe_time_type_get(&RequestProc->Args)) {
 		/* call is blocking */
 		INSERT_ELM(pPipe->Writers, RequestProc);
 		/*
@@ -170,7 +170,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		 * is only useful to the finite timeout case.
 		 */
 		RequestProc->Comm = PIPE_PUT_TIMEOUT;
-		if (_TIME_B == ChxxxGetTimeType((K_ARGS_ARGS *)&(RequestProc->Args))) {
+		if (_TIME_B == _k_pipe_time_type_get(&RequestProc->Args)) {
 			/*
 			 * The writer specified TICKS_UNLIMITED; NULL the timer.
 			 */

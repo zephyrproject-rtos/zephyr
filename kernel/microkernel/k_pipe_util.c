@@ -120,7 +120,7 @@ void _k_pipe_request_type_set(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType)
 		(ReqType & _ALLREQ); /* make sure we do not screw up other fields */
 }
 
-TIME_TYPE ChxxxGetTimeType(K_ARGS_ARGS *pChxxx)
+TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *pChxxx)
 {
 	return (TIME_TYPE)(pChxxx->ChProc.ReqInfo.Params & _ALLTIME);
 }
