@@ -396,6 +396,11 @@ int bt_conn_security(struct bt_conn *conn, bt_conn_security_t sec)
 		return -ENOTCONN;
 	}
 
+	/* nothing to do */
+	if (sec == BT_CONN_SEC_LOW) {
+		return 0;
+	}
+
 	/* for now we only support JustWorks */
 	if (sec > BT_CONN_SEC_MEDIUM) {
 		return -EINVAL;
