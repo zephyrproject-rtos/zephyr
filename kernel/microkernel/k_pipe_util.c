@@ -150,11 +150,6 @@ void _k_pipe_request_status_set(struct k_chproc *pChProc, CHREQ_STATUS Status)
 	pChProc->Status = Status;
 }
 
-int ChReqSizeXferred(struct k_chproc *pChProc)
-{
-	return pChProc->iSizeXferred;
-}
-
 int ChReqSizeLeft(struct k_chproc *pChProc)
 {
 	return (pChProc->iSizeTotal - pChProc->iSizeXferred);

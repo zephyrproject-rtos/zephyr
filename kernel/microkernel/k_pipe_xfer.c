@@ -756,7 +756,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 
 		if (pWriter) {
 			if (_ALL_N == _k_pipe_option_get(&pWriter->Args) &&
-				!ChReqSizeXferred(&(pWriter->Args.ChProc)) &&
+				(pWriter->Args.ChProc.iSizeXferred == 0) &&
 				_TIME_B != ChxxxGetTimeType((K_ARGS_ARGS *)&(pWriter->Args))) {
 				/* investigate if there is a problem for
 				 * his request to be satisfied
@@ -785,7 +785,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		}
 		if (pReader) {
 			if (_ALL_N == _k_pipe_option_get(&pReader->Args) &&
-				!ChReqSizeXferred(&(pReader->Args.ChProc)) &&
+				(pReader->Args.ChProc.iSizeXferred == 0) &&
 				_TIME_B != ChxxxGetTimeType((K_ARGS_ARGS *)&(pReader->Args))) {
 				/* investigate if there is a problem for
 				 * his request to be satisfied
@@ -953,7 +953,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		   (if he was listed uberhaupt) == EMERGENCY BREAK */
 		if (ReaderInProgressIsBlocked(pPipe, pReader)) {
 			if (_X_TO_N & _k_pipe_option_get(&pReader->Args) &&
-			    ChReqSizeXferred(&(pReader->Args.ChProc))) {
+			    (pReader->Args.ChProc.iSizeXferred != 0)) {
 				_k_pipe_request_status_set(&pReader->Args.ChProc,
 					TERM_SATISFIED);
 			} else {
@@ -982,7 +982,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		   delist him (if he was listed uberhaupt) == EMERGENCY BREAK */
 		if (WriterInProgressIsBlocked(pPipe, pWriter)) {
 			if (_X_TO_N & _k_pipe_option_get(&pWriter->Args) &&
-			    ChReqSizeXferred(&(pWriter->Args.ChProc))) {
+			    (pWriter->Args.ChProc.iSizeXferred != 0)) {
 				_k_pipe_request_status_set(&pWriter->Args.ChProc,
 					TERM_SATISFIED);
 			} else {
@@ -1014,7 +1014,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 #ifdef CANCEL_TIMERS
 
 	if (pReader) {
-		if (ChReqSizeXferred(&(pReader->Args.ChProc))) {
+		if (pReader->Args.ChProc.iSizeXferred != 0) {
 			if (pReader->Head) {
 				myfreetimer(&(pReader->Time.timer));
 				/* do not delist however */
@@ -1022,7 +1022,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		}
 	}
 	if (pWriter) {
-		if (ChReqSizeXferred(&(pWriter->Args.ChProc))) {
+		if (pWriter->Args.ChProc.iSizeXferred != 0) {
 			if (pWriter->Head) {
 				myfreetimer(&(pWriter->Time.timer));
 				/* do not delist however */

@@ -179,7 +179,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		} else {
 			/* { TIME_BT } */
 #ifdef CANCEL_TIMERS
-			if (ChReqSizeXferred(&(RequestProc->Args.ChProc))) {
+			if (RequestProc->Args.ChProc.iSizeXferred != 0) {
 				RequestProc->Time.timer = NULL;
 			} else
 #endif
@@ -199,8 +199,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 			INSERT_ELM(pPipe->Writers, RequestProc);
 		} else {
 			__ASSERT_NO_MSG(XFER_IDLE == RequestProc->Args.ChProc.Status);
-			__ASSERT_NO_MSG(0 ==
-							ChReqSizeXferred(&(RequestProc->Args.ChProc)));
+			__ASSERT_NO_MSG(0 == RequestProc->Args.ChProc.iSizeXferred);
 			RequestProc->Comm = PIPE_PUT_REPLY;
 			_k_pipe_put_reply(RequestProc);
 		}
@@ -260,7 +259,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 		if (likely(0 == ChReqSizeLeft(&(ReqProc->Args.ChProc)))) {
 			/* All data has been transferred */
 			ReqOrig->Time.rcode = RC_OK;
-		} else if (ChReqSizeXferred(&(ReqProc->Args.ChProc))) {
+		} else if (ReqProc->Args.ChProc.iSizeXferred != 0) {
 			/* Some but not all data has been transferred */
 			ReqOrig->Time.rcode = (Option == _ALL_N) ? RC_INCOMPLETE : RC_OK;
 		} else {
