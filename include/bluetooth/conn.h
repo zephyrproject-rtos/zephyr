@@ -95,7 +95,6 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
 
 
 typedef enum {
-	BT_CONN_SEC_NONE,
 	BT_CONN_SEC_LOW,
 	BT_CONN_SEC_MEDIUM,
 	BT_CONN_SEC_HIGH,
