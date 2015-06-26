@@ -363,18 +363,22 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 
 struct bt_conn *bt_conn_get(struct bt_conn *conn)
 {
-	BT_DBG("handle %u ref %u\n", conn->handle, conn->ref);
-
 	atomic_inc(&conn->ref);
+
+	BT_DBG("handle %u ref %u\n", conn->handle, atomic_get(&conn->ref));
 
 	return conn;
 }
 
 void bt_conn_put(struct bt_conn *conn)
 {
-	BT_DBG("handle %u ref %u\n", conn->handle, conn->ref);
+	atomic_val_t old_ref;
 
-	if (atomic_dec(&conn->ref) > 1) {
+	old_ref = atomic_dec(&conn->ref);
+
+	BT_DBG("handle %u ref %u\n", conn->handle, atomic_get(&conn->ref));
+
+	if (old_ref > 1) {
 		return;
 	}
 
