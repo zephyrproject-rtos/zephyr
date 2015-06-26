@@ -256,7 +256,8 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 	} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {
 		K_PIPE_OPTION Option = _k_pipe_option_get(&ReqProc->Args);
 
-		if (likely(0 == ChReqSizeLeft(&(ReqProc->Args.ChProc)))) {
+		if (likely(ReqProc->Args.ChProc.iSizeXferred ==
+				   ReqProc->Args.ChProc.iSizeTotal)) {
 			/* All data has been transferred */
 			ReqOrig->Time.rcode = RC_OK;
 		} else if (ReqProc->Args.ChProc.iSizeXferred != 0) {
