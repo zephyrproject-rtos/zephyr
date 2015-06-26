@@ -115,6 +115,7 @@ CONFIG_NUM_DYNAMIC_STUBS=0
 #
 # CONFIG_PCI is not set
 CONFIG_PLATFORM="generic_pc"
+CONFIG_UART_CONSOLE_INDEX=0
 
 #
 # Device Drivers

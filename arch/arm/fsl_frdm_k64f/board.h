@@ -213,7 +213,6 @@ This header file is used to specify and describe board-level aspects for the
 
 /* Uart console settings */
 
-#define CONFIG_UART_CONSOLE_INDEX 0
 #define CONFIG_UART_CONSOLE_PORT PCR_PORT_B
 #define CONFIG_UART_CONSOLE_PORT_RX_PIN 16
 #define CONFIG_UART_CONSOLE_PORT_TX_PIN 17

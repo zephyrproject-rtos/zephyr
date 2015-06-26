@@ -142,7 +142,6 @@ the 'generic_pc' BSP.
 	}
 
 /* Console definitions */
-#define CONFIG_UART_CONSOLE_INDEX 0
 #define CONFIG_UART_CONSOLE_IRQ COM1_INT_LVL
 #define CONFIG_UART_CONSOLE_INT_PRI COM1_INT_PRI
 

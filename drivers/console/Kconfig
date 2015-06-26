@@ -38,3 +38,9 @@ config CONSOLE_HANDLER
 	help
 	This option enables console input handler allowing to write simple
 	interaction between serial console and the OS.
+
+config UART_CONSOLE_INDEX
+	int "UART Console Index"
+	default 0
+	help
+	This option specifies index for the console uart port.
