@@ -90,13 +90,13 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 	switch (RequestProc->Time.ticks) {
 	case TICKS_NONE:
-		ChxxxSetTimeType((K_ARGS_ARGS *)&(RequestProc->Args), _TIME_NB);
+		_k_pipe_time_type_set(&RequestProc->Args, _TIME_NB);
 		break;
 	case TICKS_UNLIMITED:
-		ChxxxSetTimeType((K_ARGS_ARGS *)&(RequestProc->Args), _TIME_B);
+		_k_pipe_time_type_set(&RequestProc->Args, _TIME_B);
 		break;
 	default:
-		ChxxxSetTimeType((K_ARGS_ARGS *)&(RequestProc->Args), _TIME_BT);
+		_k_pipe_time_type_set(&RequestProc->Args, _TIME_BT);
 		break;
 	}
 

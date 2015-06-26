@@ -125,8 +125,7 @@ TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *pChxxx)
 	return (TIME_TYPE)(pChxxx->ChProc.ReqInfo.Params & _ALLTIME);
 }
 
-void ChxxxSetTimeType(K_ARGS_ARGS *pChxxx,
-					    TIME_TYPE TimeType)
+void _k_pipe_time_type_set(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType)
 {
 	pChxxx->ChProc.ReqInfo.Params &=
 		(~_ALLTIME); /* clear destination field */
