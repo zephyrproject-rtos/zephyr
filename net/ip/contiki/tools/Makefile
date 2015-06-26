@@ -1,7 +1,7 @@
-all: tunslip6
+all: tunslip6 echo-client
 
 tunslip6: tunslip6.o
-	$(CC) -o tunslip6 tunslip6.o
+	$(CC) -o $@ $(CFLAGS) $(LIBS) tunslip6.c
 
-tunslip6.o: tunslip6.c
-	$(CC) -c -o tunslip6.o tunslip6.c
+echo-client: echo-client.o
+	$(CC) -o $@ $(CFLAGS) $(LIBS) echo-client.c

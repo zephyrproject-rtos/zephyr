@@ -31,3 +31,21 @@ $ sudo ./tunslip6 -s `readlink /tmp/slip.dev` aaaa::1/64
 $ nc -u -6 aaaa::2 4242 <<EOF
 foobar
 EOF
+
+
+echo-client
+===========
+
+echo-client is a tool that is run in Linux host side and
+which sends pre-defined UDP data packets to echo-server
+application that is running in qemu side. This client
+process verifies that it is able to receive data correctly
+from the echo-server and thus verify that the upper layer
+networking components in Zephyr IP stack work properly.
+
+You needs to setup the slip connection (see the steps 1 to 3)
+in tunslip6 section of this document.
+
+Example:
+
+$ ./echo-client aaaa::2
