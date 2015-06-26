@@ -272,7 +272,7 @@ static void cmd_security(int argc, char *argv[])
 
 	sec = *argv[3] - '0';
 
-	err = bt_conn_security(conn, sec);
+	err = bt_security(conn, sec);
 	if (err) {
 		printk("Setting security failed (err %d)\n", err);
 	}

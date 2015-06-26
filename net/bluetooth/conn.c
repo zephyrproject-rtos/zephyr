@@ -390,19 +390,19 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->dst;
 }
 
-int bt_conn_security(struct bt_conn *conn, bt_conn_security_t sec)
+int bt_security(struct bt_conn *conn, bt_security_t sec)
 {
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
 	/* nothing to do */
-	if (sec == BT_CONN_SEC_LOW) {
+	if (sec == BT_SECURITY_LOW) {
 		return 0;
 	}
 
 	/* for now we only support JustWorks */
-	if (sec > BT_CONN_SEC_MEDIUM) {
+	if (sec > BT_SECURITY_MEDIUM) {
 		return -EINVAL;
 	}
 
