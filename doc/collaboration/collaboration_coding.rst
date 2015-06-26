@@ -30,12 +30,15 @@ check the conformity to the coding style. The tool is available in the
 scripts directory. To invoke :program:`checkpatch` when you commit
 code, edit your :file:`.git/hooks/pre-commit` file to contain:
 
-.. code-block::bash
+.. code-block:: bash
 
    #!/bin/sh
 
    set -e exec
 
-   git diff --cached | /path/to/checkpatch.pl --no-signoff - || true
+   exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl --mailback --no-tree \
+        --no-signoff --emacs --summary-file --show-types \
+        --ignore BRACES,PRINTK_WITHOUT_KERN_LEVEL,SPLIT_STRING \
+        --max-line-length=100 - || true
 
 .. _Linux kernel coding style: https://www.kernel.org/doc/Documentation/CodingStyle
