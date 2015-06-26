@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  * @brief Dining philosophers header file.
  *
  * Collects the includes and defines needed to implement the dining philosophers
@@ -43,7 +43,7 @@
   #include <misc/printk.h>
 #endif
 
-/*!
+/**
  @def N_PHILOSOPHERS
  @brief Defines the number of philosophers.
 

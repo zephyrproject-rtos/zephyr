@@ -22,7 +22,7 @@ Full template:
 
 .. code-block:: c
 
-   /*!
+   /**
     * @brief Short description of my_function().
     *
     * @details Longer multi-paragraph description.
@@ -46,7 +46,7 @@ Simplified template:
 
 .. code-block:: c
 
-   /*!
+   /**
     * Short description of my_function().
     *
     * Longer multi-paragraph description.
@@ -107,7 +107,7 @@ Take the more complex function hello_loop():
 
 The function parameters have been documented using the correct Doxygen
 command but notice line 1. The comment block was not started with
-:literal:`/*!` and therefore Doxygen won't parse it correctly.
+:literal:`/**` and therefore Doxygen won't parse it correctly.
 
 The parameters have been documented using the \\param command. This is
 equivalent to using @param but incorrect according to these guidelines.

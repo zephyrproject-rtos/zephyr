@@ -15,7 +15,7 @@ Variable Comment Template
 
 .. code-block:: c
 
-   /*! Brief description of singificant_variable's purpose. */
+   /** Brief description of singificant_variable's purpose. */
    int significant_variable;
 
 Variable Documentation Examples
@@ -60,7 +60,7 @@ Variables outside of functions have to be documented as well.
    :linenos:
 
 As you can see the syntax of the comment does not change. Always start
-the comment with :literal:`/*!` and end it with :literal:`*/`. Remember
+the comment with :literal:`/**` and end it with :literal:`*/`. Remember
 to begin with a capital letter and end with a period, even if the
 comment is only a sentence fragment.
 

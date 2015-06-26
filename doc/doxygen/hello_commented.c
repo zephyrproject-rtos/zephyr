@@ -1,7 +1,7 @@
-/*! @file
+/** @file
  @brief Hello World Demo
 
- A Hello World demo for the Nanokernel and the Microkernel. 
+ A Hello World demo for the Nanokernel and the Microkernel.
  */
 
 /*
@@ -34,22 +34,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*! CONFIG_MICROKERNEL
+/** CONFIG_MICROKERNEL
  The microkernel hello world demo has two tasks that use semaphores
- and sleeps to take turns printing a greeting message at a 
+ and sleeps to take turns printing a greeting message at a
  controlled rate.*/
 
-/*! #else || CONFIG_NANOKERNEL 
+/** #else || CONFIG_NANOKERNEL
  * The nanokernel hello world demo has a task and a fiber that use
  * semaphores and timers to take turns printing a greeting message at
  * a controlled rate.
  */
 
-/*!
+/**
  @def SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
  @brief Compute equivalence in ticks.
  */
-/*! 
+/**
  @def SLEEPTIME
  @brief Specify delay between greetings (in ms).
  */
@@ -67,15 +67,15 @@
 #include <zephyr.h>
 
 #define SLEEPTIME  500
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000) 
+#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
-/*! 
+/**
  @brief A loop saying hello.
 
  @details
  Actions:
  	 -# Ouputs "Hello World!".
- 	 -# Waits, then lets another task run. 
+ 	 -# Waits, then lets another task run.
 
  @param taskname The task's identification string.
  @param mySem    The task's semaphore.
@@ -94,7 +94,7 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 	}
 }
 
-/*!
+/**
  @brief Exchanges Hello messages with taskB.
 
  @details
@@ -109,7 +109,7 @@ void taskA(void)
 	helloLoop (__FUNCTION__, TASKASEM, TASKBSEM); /* Action 2 */
 }
 
-/*!
+/**
  @brief Exchanges Hello messages with taskA.
 
  Actions:
@@ -120,26 +120,26 @@ void taskB(void)
 	helloLoop (__FUNCTION__, TASKBSEM, TASKASEM); /* Action 1 */
 }
 
-#else 
+#else
 
 #include <nanokernel.h>
 #include <nanokernel/cpu.h>
 
-#define SLEEPTIME  500 
+#define SLEEPTIME  500
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
 #define STACKSIZE 2000
 
-/*! Declares a stack for a fiber with a size of 2000.*/
+/** Declares a stack for a fiber with a size of 2000.*/
 char fiberStack[STACKSIZE];
 
-/*! Declares a nanokernel semaphore for a task. */
+/** Declares a nanokernel semaphore for a task. */
 struct nano_sem nanoSemTask;
 
-/*! Declares a nanokernel semaphore for a fiber.*/
+/** Declares a nanokernel semaphore for a fiber.*/
 struct nano_sem nanoSemFiber;
 
-/*!
+/**
  @brief Defines the turns taken by the tasks in the fiber.
 
  Actions:
@@ -169,7 +169,7 @@ void fiberEntry(void) {
 	}
 }
 
-/*!
+/**
  @brief Implements the Hello demo.
 
  Actions:
@@ -199,5 +199,4 @@ void main(void) {
 	}
 }
 
-#endif 
-
+#endif

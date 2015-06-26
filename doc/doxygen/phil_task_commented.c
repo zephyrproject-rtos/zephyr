@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  * @brief An implementation of a solution to the dining philosophers problem
  *  for both the nano- and microkernel.
  *
@@ -67,7 +67,7 @@ struct nano_sem forks[N_PHILOSOPHERS];//!< Declares global semaphore forks for t
 
 #ifdef CONFIG_NANOKERNEL
 
-/*!
+/**
  * @brief The nanokernel entry point.
  *
  * Actions:
@@ -102,7 +102,7 @@ int main (void)
 
 #else
 
-/*!
+/**
  * @brief Starts the dining philosophers demo of the microkernel.
  *
  * This function starts the dining philosophers demo and

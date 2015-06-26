@@ -22,7 +22,7 @@ Full template:
 
 .. code-block:: c
 
-   /*! @def name_of_define
+   /** @def name_of_define
 
        @brief Brief description of the define.
 
@@ -36,7 +36,7 @@ Simplified template:
 
 .. code-block:: c
 
-   /*! 
+   /**
        Brief description of the define.
 
        Multiple lines describing in detail what is the
@@ -71,6 +71,6 @@ Incorrect:
    :linenos:
 
 Observe that the comment does not start with
-:literal:`/*!` and therefore Doxygen will ignore it.
+:literal:`/**` and therefore Doxygen will ignore it.
 
 The comment is ambiguous; it could apply to either the define or the #if.

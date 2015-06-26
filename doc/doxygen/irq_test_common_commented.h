@@ -65,10 +65,10 @@ Interrupt stuff, abstracted across CPU architectures.
 #endif /* NUM_SW_IRQS >= 2 */
 #endif
 
-/*! Declares a void-void function pointer to test the ISR. */
+/** Declares a void-void function pointer to test the ISR. */
 typedef void (*vvfn)(void);
 
-/*! Declares a void-void_pointer function pointer to test the ISR. */
+/** Declares a void-void_pointer function pointer to test the ISR. */
 typedef void (*vvpfn)(void *);
 
 #if defined(CONFIG_X86_32)
@@ -113,13 +113,13 @@ static inline void sw_isr_trigger_1(void)
 #endif  /* CONFIG_CPU_CORTEX_M */
 #endif
 
-/*! Defines the ISR initialization information. */
+/** Defines the ISR initialization information. */
 struct isrInitInfo
 	{
-	/*! Declares the void-void function pointer for the ISR. */
+	/** Declares the void-void function pointer for the ISR. */
 	vvpfn isr[2];
 
-	/*! Declares a space for the information. */
+	/** Declares a space for the information. */
 	void *arg[2];
 	};
 

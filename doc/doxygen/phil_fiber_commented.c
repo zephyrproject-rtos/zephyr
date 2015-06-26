@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Solution to the dining philosophers problem using fibers.
  */
 
@@ -69,7 +69,7 @@ kmutex_t forks[] = { forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4,
 		forkMutex5 };
 #endif
 
-/*!
+/**
  * @brief Prints a philosopher's state.
  *
  * @param id A philosopher's ID.
@@ -83,7 +83,7 @@ static void myPrint(int id,
 	PRINTF("\x1b[%d;%dHPhilosopher %d %s\n", id + 1, 1, id, str);
 }
 
-/*!
+/**
  * @brief Waits for a number of ticks to elapse.
  *
  * @param ticks Number of ticks to delay.
@@ -103,7 +103,7 @@ static void myDelay(int ticks
 #endif
 }
 
-/*!
+/**
  * @brief Entry point to a philosopher's thread.
  *
  * @details This routine runs as a task in the microkernel environment
@@ -117,23 +117,23 @@ static void myDelay(int ticks
  */
 void philEntry(void) {
 #ifdef CONFIG_NANOKERNEL
-	/*! Declares a fork for the nanokernel. */
+	/** Declares a fork for the nanokernel. */
 	struct nano_sem *f1;
 
-	/*! Declares a second fork for the nanokernel. */
+	/** Declares a second fork for the nanokernel. */
 	struct nano_sem *f2;
 #else
-	/*! Declares a fork for the microkernel. */
+	/** Declares a fork for the microkernel. */
 	kmutex_t f1;
 	kmutex_t f2;
 #endif
-	/*! Declares the current philosopher's ID. */
+	/** Declares the current philosopher's ID. */
 	static int myId;
 
-	/*! Declares an interrupt lock level.*/
+	/** Declares an interrupt lock level.*/
 	int pri = irq_lock();
 
-	/*! Declares the next philosopher's ID. */
+	/** Declares the next philosopher's ID. */
 	int id = myId++;
 
 	irq_unlock(pri);

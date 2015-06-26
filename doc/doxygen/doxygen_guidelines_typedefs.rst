@@ -16,7 +16,7 @@ what type they are referencing.
 
 .. code-block:: c
 
-   /*! Brief description with the type that is being used and why. */
+   /** Brief description with the type that is being used and why. */
    typedef int t_ie;
 
 No further explanation is needed regarding the type even if it is
@@ -51,6 +51,6 @@ Incorrect:
 
 The comments on lines 3 and 4 offer little insight into the code's
 behavior. Furthermore, they do not start with
-:literal:`/*!` and end with :literal:`*/`. Doxygen won't add the
+:literal:`/**` and end with :literal:`*/`. Doxygen won't add the
 information to the documentation nor link it properly to the complex
 type documentation.

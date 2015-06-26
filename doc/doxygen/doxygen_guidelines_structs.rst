@@ -34,7 +34,7 @@ Correct:
    :linenos:
 
 Make sure to start every comment with
-:literal:`/*!` and end it with :literal:`*/`. Every comment must start
+:literal:`/**` and end it with :literal:`*/`. Every comment must start
 with a capital letter and end with a period.
 
 Doxygen requires that line 6 is left blank. Ensure a blank line
