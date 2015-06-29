@@ -547,8 +547,23 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	if (conn->role == BT_HCI_ROLE_MASTER) {
-		/* TODO start encryption */
-		return BT_SMP_ERR_UNSPECIFIED;
+		uint8_t stk[16];
+
+		/* No need to store master STK */
+		err = smp_s1(smp->tk, smp->rrnd, smp->prnd, stk);
+		if (err) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		/* Rand and EDiv are 0 for the STK */
+		if (bt_hci_le_start_encryption(conn->handle, 0, 0, stk)) {
+			BT_ERR("Failed to start encryption\n");
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		smp->pending_encrypt = true;
+
+		return 0;
 	}
 
 	keys = bt_keys_get_type(BT_KEYS_SLAVE_LTK, &conn->dst);
