@@ -321,7 +321,9 @@ PROCESS_THREAD(slip_process, ev, data, not_used)
         input_callback();
       }
 #ifdef SLIP_CONF_TCPIP_INPUT
-      SLIP_CONF_TCPIP_INPUT(buf);
+      if (SLIP_CONF_TCPIP_INPUT(buf) < 0) {
+	net_buf_put(buf);
+      }
 #else
       tcpip_input(buf);
 #endif
