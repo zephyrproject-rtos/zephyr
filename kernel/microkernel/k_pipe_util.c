@@ -47,7 +47,7 @@ void DeListWaiter(struct k_args *pReqProc)
 	pReqProc->Head = NULL;
 }
 
-void myfreetimer(struct k_timer * *ppTimer)
+void myfreetimer(struct k_timer **ppTimer)
 {
 	if (*ppTimer) {
 		_k_timer_delist(*ppTimer);
@@ -94,7 +94,7 @@ int CalcAvailWriterData(struct k_args *pWriterList)
 	return iSize;
 }
 
-K_PIPE_OPTION ChxxxGetChOpt(K_ARGS_ARGS * pChxxx)
+K_PIPE_OPTION ChxxxGetChOpt(K_ARGS_ARGS *pChxxx)
 {
 	return (K_PIPE_OPTION)(pChxxx->ChProc.ReqInfo.Params & _ALL_OPT);
 }
