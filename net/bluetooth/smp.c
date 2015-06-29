@@ -591,6 +591,25 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static uint8_t smp_pairing_encrypt(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_encrypt_info *req = (void *)buf->data;
+	struct bt_keys *keys;
+
+	BT_DBG("\n");
+
+	keys = bt_keys_get_type(BT_KEYS_LTK, &conn->dst);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s\n",
+		       bt_addr_le_str(&conn->dst));
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	memcpy(keys->ltk.val, req->ltk, 16);
+
+	return 0;
+}
+
 static uint8_t smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_ident_info *req = (void *)buf->data;
@@ -651,7 +670,7 @@ static const struct {
 	{ smp_pairing_confirm,     sizeof(struct bt_smp_pairing_confirm) },
 	{ smp_pairing_random,      sizeof(struct bt_smp_pairing_random) },
 	{ }, /* Pairing Failed - Not yet implemented */
-	{ }, /* Encrypt Information - Not yet implemented */
+	{ smp_pairing_encrypt,     sizeof(struct bt_smp_encrypt_info) },
 	{ }, /* Master Identification - Not yet implemented */
 	{ smp_ident_info,          sizeof(struct bt_smp_ident_info) },
 	{ smp_ident_addr_info,     sizeof(struct bt_smp_ident_addr_info) },
