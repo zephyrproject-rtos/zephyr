@@ -65,7 +65,7 @@
 #define CHECK_CHBUFF_POINTER(pData) \
 	__ASSERT_NO_MSG(pChBuff->pBegin <= pData && pData < pChBuff->pEnd)
 
-static void pipe_intrusion_check(struct chbuff *pChBuff, unsigned char *pBegin, int iSize);
+static void pipe_intrusion_check(struct pipe_desc *pChBuff, unsigned char *pBegin, int iSize);
 
 /**
  * Markers
@@ -305,7 +305,7 @@ static int ScanMarkers(struct marker_list *pMarkerList,
  * General
  */
 
-void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff)
+void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct pipe_desc *pChBuff)
 {
 	pChBuff->pBegin = pBuffer;
 
@@ -336,7 +336,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff)
 
 }
 
-int CalcFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceCont,
+int CalcFreeSpace(struct pipe_desc *pChBuff, int *piFreeSpaceCont,
 				  int *piFreeSpaceAWA)
 {
 	unsigned char *pStart = pChBuff->pWrite;
@@ -373,7 +373,7 @@ int CalcFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceCont,
 	return (*piFreeSpaceCont + *piFreeSpaceAWA);
 }
 
-void BuffGetFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceTotal,
+void BuffGetFreeSpace(struct pipe_desc *pChBuff, int *piFreeSpaceTotal,
 					  int *piFreeSpaceCont, int *piFreeSpaceAWA)
 {
 	int iFreeSpaceCont;
@@ -389,7 +389,7 @@ void BuffGetFreeSpace(struct chbuff *pChBuff, int *piFreeSpaceTotal,
 	*piFreeSpaceAWA = pChBuff->iFreeSpaceAWA;
 }
 
-void BuffGetFreeSpaceTotal(struct chbuff *pChBuff, int *piFreeSpaceTotal)
+void BuffGetFreeSpaceTotal(struct pipe_desc *pChBuff, int *piFreeSpaceTotal)
 {
 	int dummy1, dummy2;
 	*piFreeSpaceTotal = CalcFreeSpace(pChBuff, &dummy1, &dummy2);
@@ -397,7 +397,7 @@ void BuffGetFreeSpaceTotal(struct chbuff *pChBuff, int *piFreeSpaceTotal)
 	__ASSERT_NO_MSG(dummy2 == pChBuff->iFreeSpaceAWA);
 }
 
-int BuffEmpty(struct chbuff *pChBuff)
+int BuffEmpty(struct pipe_desc *pChBuff)
 {
 	/* 0==iAvailDataTotal is an INcorrect condition b/c of async behavior */
 
@@ -407,7 +407,7 @@ int BuffEmpty(struct chbuff *pChBuff)
 	return (pChBuff->iBuffSize == iTotalFreeSpace);
 }
 
-int CalcAvailData(struct chbuff *pChBuff, int *piAvailDataCont,
+int CalcAvailData(struct pipe_desc *pChBuff, int *piAvailDataCont,
 				  int *piAvailDataAWA)
 {
 	unsigned char *pStart = pChBuff->pRead;
@@ -444,7 +444,7 @@ int CalcAvailData(struct chbuff *pChBuff, int *piAvailDataCont,
 	return (*piAvailDataCont + *piAvailDataAWA);
 }
 
-void BuffGetAvailData(struct chbuff *pChBuff, int *piAvailDataTotal,
+void BuffGetAvailData(struct pipe_desc *pChBuff, int *piAvailDataTotal,
 					  int *piAvailDataCont, int *piAvailDataAWA)
 {
 	int iAvailDataCont;
@@ -460,7 +460,7 @@ void BuffGetAvailData(struct chbuff *pChBuff, int *piAvailDataTotal,
 	*piAvailDataAWA = pChBuff->iAvailDataAWA;
 }
 
-void BuffGetAvailDataTotal(struct chbuff *pChBuff, int *piAvailDataTotal)
+void BuffGetAvailDataTotal(struct pipe_desc *pChBuff, int *piAvailDataTotal)
 {
 	int dummy1, dummy2;
 
@@ -469,7 +469,7 @@ void BuffGetAvailDataTotal(struct chbuff *pChBuff, int *piAvailDataTotal)
 	__ASSERT_NO_MSG(dummy2 == pChBuff->iAvailDataAWA);
 }
 
-int BuffFull(struct chbuff *pChBuff)
+int BuffFull(struct pipe_desc *pChBuff)
 {
 	/* 0==iTotalFreeSpace is an INcorrect condition b/c of async behavior */
 
@@ -483,7 +483,7 @@ int BuffFull(struct chbuff *pChBuff)
  * Buffer en-queuing:
  */
 
-static int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
+static int AsyncEnQRegstr(struct pipe_desc *pChBuff, int iSize)
 {
 	int i;
 
@@ -509,7 +509,7 @@ static int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
 	return i;
 }
 
-static void AsyncEnQFinished(struct chbuff *pChBuff, int iTransferID)
+static void AsyncEnQFinished(struct pipe_desc *pChBuff, int iTransferID)
 {
 	pChBuff->WriteMarkers.aMarkers[iTransferID].bXferBusy = false;
 
@@ -527,7 +527,7 @@ static void AsyncEnQFinished(struct chbuff *pChBuff, int iTransferID)
 	}
 }
 
-int BuffEnQ(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite)
+int BuffEnQ(struct pipe_desc *pChBuff, int iSize, unsigned char **ppWrite)
 {
 	int iTransferID;
 
@@ -541,7 +541,7 @@ int BuffEnQ(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite)
 	return iSize;
 }
 
-int BuffEnQA(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite,
+int BuffEnQA(struct pipe_desc *pChBuff, int iSize, unsigned char **ppWrite,
 			 int *piTransferID)
 {
 	if (iSize > pChBuff->iFreeSpaceCont) {
@@ -579,7 +579,7 @@ int BuffEnQA(struct chbuff *pChBuff, int iSize, unsigned char **ppWrite,
 	return iSize;
 }
 
-void BuffEnQA_End(struct chbuff *pChBuff, int iTransferID,
+void BuffEnQA_End(struct pipe_desc *pChBuff, int iTransferID,
 				  int iSize /* optional */)
 {
 	ARG_UNUSED(iSize);
@@ -593,7 +593,7 @@ void BuffEnQA_End(struct chbuff *pChBuff, int iTransferID,
  * Buffer de-queuing:
  */
 
-static int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
+static int AsyncDeQRegstr(struct pipe_desc *pChBuff, int iSize)
 {
 	int i;
 
@@ -619,7 +619,7 @@ static int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
 	return i;
 }
 
-static void AsyncDeQFinished(struct chbuff *pChBuff, int iTransferID)
+static void AsyncDeQFinished(struct pipe_desc *pChBuff, int iTransferID)
 {
 	pChBuff->ReadMarkers.aMarkers[iTransferID].bXferBusy = false;
 
@@ -637,7 +637,7 @@ static void AsyncDeQFinished(struct chbuff *pChBuff, int iTransferID)
 	}
 }
 
-int BuffDeQ(struct chbuff *pChBuff, int iSize, unsigned char **ppRead)
+int BuffDeQ(struct pipe_desc *pChBuff, int iSize, unsigned char **ppRead)
 {
 	int iTransferID;
 
@@ -648,7 +648,7 @@ int BuffDeQ(struct chbuff *pChBuff, int iSize, unsigned char **ppRead)
 	return iSize;
 }
 
-int BuffDeQA(struct chbuff *pChBuff, int iSize, unsigned char **ppRead,
+int BuffDeQA(struct pipe_desc *pChBuff, int iSize, unsigned char **ppRead,
 			 int *piTransferID)
 {
 	/* asynchronous data transfer; read guard pointers must be set */
@@ -689,7 +689,7 @@ int BuffDeQA(struct chbuff *pChBuff, int iSize, unsigned char **ppRead,
 	return iSize;
 }
 
-void BuffDeQA_End(struct chbuff *pChBuff, int iTransferID,
+void BuffDeQA_End(struct pipe_desc *pChBuff, int iTransferID,
 				  int iSize /* optional */)
 {
 	ARG_UNUSED(iSize);
@@ -741,7 +741,7 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 	}
 }
 
-static void pipe_intrusion_check(struct chbuff *pChBuff, unsigned char *pBegin, int iSize)
+static void pipe_intrusion_check(struct pipe_desc *pChBuff, unsigned char *pBegin, int iSize)
 {
 	/*
 	 * check possible collision with all existing data areas,

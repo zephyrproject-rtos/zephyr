@@ -39,29 +39,29 @@ extern "C" {
 
 #include <micro_private_types.h>
 
-void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff);
+void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct pipe_desc *pChBuff);
 
-void BuffGetFreeSpaceTotal(struct chbuff *pBuff, int *piTotalFreeSpace);
-void BuffGetFreeSpace(struct chbuff *pBuff, int *piTotalFreeSpace,
+void BuffGetFreeSpaceTotal(struct pipe_desc *pBuff, int *piTotalFreeSpace);
+void BuffGetFreeSpace(struct pipe_desc *pBuff, int *piTotalFreeSpace,
 					  int *piFreeSpaceCont, int *piFreeSpaceAWA);
 
-void BuffGetAvailDataTotal(struct chbuff *pBuff, int *piAvailDataTotal);
-void BuffGetAvailData(struct chbuff *pBuff, int *piAvailDataTotal,
+void BuffGetAvailDataTotal(struct pipe_desc *pBuff, int *piAvailDataTotal);
+void BuffGetAvailData(struct pipe_desc *pBuff, int *piAvailDataTotal,
 					  int *piAvailDataCont, int *piAvailDataAWA);
 
-int BuffEmpty(struct chbuff *pBuff);
-int BuffFull(struct chbuff *pBuff);
+int BuffEmpty(struct pipe_desc *pBuff);
+int BuffFull(struct pipe_desc *pBuff);
 
-int BuffEnQ(struct chbuff *pBuff, int iSize, unsigned char **ppWrite);
-int BuffEnQA(struct chbuff *pBuff, int iSize, unsigned char **ppWrite,
+int BuffEnQ(struct pipe_desc *pBuff, int iSize, unsigned char **ppWrite);
+int BuffEnQA(struct pipe_desc *pBuff, int iSize, unsigned char **ppWrite,
 			 int *piTransferID);
-void BuffEnQA_End(struct chbuff *pBuff, int iTransferID,
+void BuffEnQA_End(struct pipe_desc *pBuff, int iTransferID,
 				  int iSize /* optional */);
 
-int BuffDeQ(struct chbuff *pBuff, int iSize, unsigned char **ppRead);
-int BuffDeQA(struct chbuff *pBuff, int iSize, unsigned char **ppRead,
+int BuffDeQ(struct pipe_desc *pBuff, int iSize, unsigned char **ppRead);
+int BuffDeQA(struct pipe_desc *pBuff, int iSize, unsigned char **ppRead,
 			 int *piTransferID);
-void BuffDeQA_End(struct chbuff *pBuff, int iTransferID,
+void BuffDeQA_End(struct pipe_desc *pBuff, int iTransferID,
 				  int iSize /* optional */);
 
 #ifdef __cplusplus

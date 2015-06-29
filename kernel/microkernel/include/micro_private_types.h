@@ -201,7 +201,7 @@ typedef enum {
 	BUFF_OTHER
 } BUFF_STATE;
 
-struct chbuff {
+struct pipe_desc {
 	int iBuffSize;
 	unsigned char *pBegin;
 	unsigned char *pWrite;
@@ -228,7 +228,7 @@ struct pipe_struct {
 	char *Buffer;    /* pointer to statically allocated buffer  */
 	struct k_args *Writers;
 	struct k_args *Readers;
-	struct chbuff Buff;
+	struct pipe_desc Buff;
 	int Count;
 };
 
