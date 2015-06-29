@@ -41,6 +41,9 @@
 #define __NET_BUF_H
 
 #include <stdint.h>
+#include <stdbool.h>
+
+#include <net/net_core.h>
 
 #include "contiki/ip/uipopt.h"
 #include "contiki/ip/uip.h"
@@ -49,6 +52,27 @@
 #if defined(CONFIG_NETWORKING_WITH_LOGGING)
 #undef DEBUG_NET_BUFS
 #define DEBUG_NET_BUFS
+#endif
+
+#ifdef DEBUG_NET_BUFS
+#define NET_BUF_CHECK_IF_IN_USE(buf)					\
+	do {								\
+		if (buf->in_use) {					\
+			NET_ERR("**ERROR** buf %p in use (%s:%s():%d)\n", \
+				buf, __FILE__, __FUNCTION__, __LINE__);	\
+		}							\
+	} while(0)
+
+#define NET_BUF_CHECK_IF_NOT_IN_USE(buf)				\
+	do {								\
+		if (!buf->in_use) {					\
+			NET_ERR("**ERROR** buf %p not in use (%s:%s():%d)\n",\
+				buf, __FILE__, __FUNCTION__, __LINE__);	\
+		}							\
+	} while(0)
+#else
+#define NET_BUF_CHECK_IF_IN_USE(buf)
+#define NET_BUF_CHECK_IF_NOT_IN_USE(buf)
 #endif
 
 struct net_context;
@@ -65,6 +89,7 @@ struct net_buf {
 	/** @cond ignore */
 	/* FIFO uses first 4 bytes itself, reserve space */
 	int __unused;
+	bool in_use;
 	/* @endcond */
 
 	/** Network connection context */

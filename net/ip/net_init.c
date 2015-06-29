@@ -45,8 +45,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include <net/net_core.h>
 #include <net/net_buf.h>
+#include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/net_socket.h>
 
@@ -464,6 +464,8 @@ static void net_tx_fiber(void)
 			continue;
 		}
 
+		NET_BUF_CHECK_IF_NOT_IN_USE(buf);
+
 		/* Check for any events that we might need to process */
 		do {
 			run = process_run(buf);
@@ -488,6 +490,8 @@ static void net_rx_fiber(void)
 
 		if (!tcpip_input(buf)) {
 			net_buf_put(buf);
+		} else {
+			NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 		}
 	}
 }

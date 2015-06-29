@@ -87,7 +87,15 @@ struct net_buf *net_buf_get_reserve(uint16_t reserve_head)
 	buf->data = buf->buf + reserve_head;
 	buf->len = 0;
 
-	NET_DBG("buf %p reserve %u\n", buf, reserve_head);
+	NET_BUF_CHECK_IF_IN_USE(buf);
+
+#ifdef DEBUG_NET_BUFS
+	NET_DBG("buf %p reserve %u inuse %d (%s():%d)\n", buf, reserve_head,
+		buf->in_use, caller, line);
+#else
+	NET_DBG("buf %p reserve %u inuse %d\n", buf, reserve_head, buf->in_use);
+#endif
+	buf->in_use = true;
 
 	return buf;
 }
@@ -139,11 +147,15 @@ void net_buf_put_debug(struct net_buf *buf, const char *caller, int line)
 void net_buf_put(struct net_buf *buf)
 #endif
 {
+	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
+
 #ifdef DEBUG_NET_BUFS
-	NET_DBG("buf %p (%s():%d)\n", buf, caller, line);
+	NET_DBG("buf %p inuse %d (%s():%d)\n", buf, buf->in_use, caller, line);
 #else
-	NET_DBG("buf %p\n", buf);
+	NET_DBG("buf %p inuse %d\n", buf, buf->in_use);
 #endif
+
+	buf->in_use = false;
 
 	nano_fifo_put(&free_bufs, buf);
 }
@@ -151,12 +163,14 @@ void net_buf_put(struct net_buf *buf)
 uint8_t *net_buf_add(struct net_buf *buf, uint16_t len)
 {
 	uint8_t *tail = buf->data + buf->len;
+	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 	buf->len += len;
 	return tail;
 }
 
 uint8_t *net_buf_push(struct net_buf *buf, uint16_t len)
 {
+	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 	buf->data -= len;
 	buf->len += len;
 	return buf->data;
@@ -164,6 +178,7 @@ uint8_t *net_buf_push(struct net_buf *buf, uint16_t len)
 
 uint8_t *net_buf_pull(struct net_buf *buf, uint16_t len)
 {
+	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 	buf->len -= len;
 	return buf->data += len;
 }
