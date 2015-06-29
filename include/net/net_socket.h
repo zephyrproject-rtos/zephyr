@@ -35,12 +35,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __NET_SOCKET_H
+#define __NET_SOCKET_H
+
 #include <stdint.h>
 #include <net/net_ip.h>
 #include <net/net_buf.h>
-
-#ifndef __NET_SOCKET_H
-#define __NET_SOCKET_H
 
 /**
  * @brief Get network context.

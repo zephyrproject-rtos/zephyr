@@ -34,11 +34,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <misc/printk.h>
-#include <string.h>
-
-#include <net/net_buf.h>
-
 #ifndef __NET_CORE_H
 #define __NET_CORE_H
 
@@ -48,6 +43,14 @@
 #define NET_ERR(fmt, ...) printk("net: %s: " fmt, __func__, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) printk("net: " fmt,  ##__VA_ARGS__)
 #define NET_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
+
+struct net_buf;
+struct net_context;
+
+#include <misc/printk.h>
+#include <string.h>
+
+#include <net/net_socket.h>
 
 /**
  * @brief Initialize network stack. This is will be automatically called

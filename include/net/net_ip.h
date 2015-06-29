@@ -34,10 +34,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-
 #ifndef __NET_IP_H
 #define __NET_IP_H
+
+#include <stdint.h>
 
 /** Protocol families */
 #define PF_UNSPEC	0	/* Unspecified.  */
