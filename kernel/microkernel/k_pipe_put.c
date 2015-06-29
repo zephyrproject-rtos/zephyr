@@ -39,7 +39,7 @@
 
 /*******************************************************************************
 *
-* K_ChSendReq - process request  command for a pipe put operation
+* K_ChSendReq - process request command for a pipe put operation
 *
 * RETURNS: N/A
 */

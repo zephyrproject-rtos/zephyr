@@ -909,7 +909,7 @@ void K_ChProc(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 
 	  Note that in the case there is only a reader or there is only a
 	writer, it can be a ALL_N request.
-	  This happens when his request has not been processed  completely yet
+	  This happens when his request has not been processed completely yet
 	(b/c of a copy in and copy out
 	  conflict in the buffer e.g.), but is expected to be processed
 	completely somewhat later (must be !)
