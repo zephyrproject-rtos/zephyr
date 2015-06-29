@@ -1146,8 +1146,11 @@ static int compress(struct net_buf *buf)
    ret = compress_hdr_hc06(mbuf, buf, &buf->dest);
 #endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06 */
 
+  /* if HC1 or HC06 compression fails then send uncompressed ipv6 packet */
   if (!ret) {
      net_mbuf_put(mbuf);
+     PRINTF("sending uncompressed IPv6 packet\n");
+     return compress_hdr_ipv6(buf);
      return 0;
   }
 
