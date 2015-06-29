@@ -70,11 +70,20 @@
 #define BT_ATT_OP_CMD_MASK			(BT_ATT_OP_WRITE_CMD & \
 						BT_ATT_OP_SIGNED_WRITE_CMD)
 
+/* ATT request context */
+struct bt_att_req {
+	bt_att_func_t		func;
+	void			*user_data;
+	bt_att_destroy_t	destroy;
+};
+
 /* ATT channel specific context */
 struct bt_att {
 	/* The connection this context is associated with */
 	struct bt_conn		*conn;
 	uint16_t		mtu;
+	struct bt_att_req	req;
+	 /* TODO: Allow more than one pending request */
 };
 
 static struct bt_att bt_att_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -88,6 +97,15 @@ static const struct bt_uuid secondary_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_GATT_SECONDARY,
 };
+
+static void att_req_destroy(struct bt_att *att)
+{
+	if (att->req.destroy) {
+		att->req.destroy(att->req.user_data);
+	}
+
+	memset(&att->req, 0, sizeof(att->req));
+}
 
 static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
 			 uint8_t err)
@@ -1243,4 +1261,50 @@ void bt_att_init(void)
 	};
 
 	bt_l2cap_chan_register(&chan);
+}
+
+int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
+		void *user_data, bt_att_destroy_t destroy)
+{
+	struct bt_att *att;
+
+	if (!conn) {
+		return -EINVAL;
+	}
+
+	att = conn->att;
+	if (!att) {
+		return -ENOTCONN;
+	}
+
+	if (func) {
+		/* Check if there is a request pending */
+		if (att->req.func) {
+			 /* TODO: Allow more than one pending request */
+			return -EBUSY;
+		}
+		att->req.func = func;
+		att->req.user_data = user_data;
+		att->req.destroy = destroy;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
+
+	return 0;
+}
+
+void bt_att_cancel(struct bt_conn *conn)
+{
+	struct bt_att *att;
+
+	if (!conn) {
+		return;
+	}
+
+	att = conn->att;
+	if (!att) {
+		return;
+	}
+
+	att_req_destroy(att);
 }

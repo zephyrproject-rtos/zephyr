@@ -276,3 +276,14 @@ struct bt_att_signed_write_cmd {
 
 void bt_att_init();
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
+
+typedef void (*bt_att_func_t)(uint8_t err, const void *pdu, uint16_t length,
+			      void *user_data);
+typedef void (*bt_att_destroy_t)(void *user_data);
+
+/* Send ATT PDU over a connection */
+int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
+		void *user_data, bt_att_destroy_t destroy);
+
+/* Cancel ATT request */
+void bt_att_cancel(struct bt_conn *conn);
