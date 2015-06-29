@@ -295,7 +295,7 @@ struct _pipe_ack_arg {
 	int iSizeXferred;
 };
 
-struct k_chmovedack {
+struct _pipe_xfer_ack_arg {
 	struct pipe_struct *pPipe;
 	XFER_TYPE XferType; /* W2B, B2R or W2R		    */
 	struct k_args *pWriter;    /* if there's a writer involved,
@@ -440,7 +440,7 @@ union k_args_args {
 	struct _u1arg u1;
 	struct _z4arg z4;
 	struct k_chproc ChProc;
-	struct k_chmovedack ChMovedAck;
+	struct _pipe_xfer_ack_arg ChMovedAck;
 	struct _pipe_req_arg ChReq;
 	struct _pipe_ack_arg ChAck;
 };

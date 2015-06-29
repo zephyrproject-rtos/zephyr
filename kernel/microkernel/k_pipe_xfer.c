@@ -63,7 +63,7 @@ possibly copy the remaining data
 
 void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 {
-	struct k_chmovedack *pEOXferArgs = &(pEOXfer->Args.ChMovedAck);
+	struct _pipe_xfer_ack_arg *pEOXferArgs = &pEOXfer->Args.ChMovedAck;
 
 	switch (pEOXferArgs->XferType) {
 	case XFER_W2B: /* Writer to Buffer */
