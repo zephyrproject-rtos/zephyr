@@ -1,0 +1,14 @@
+{#
+    zephyr/layout.html
+    ~~~~~~~~~~~~~~~~~~~~~
+
+    Sphinx layout template for the zephyr project theme.
+
+    :copyright: Copyright 2007-2015 by the Sphinx team, see AUTHORS.
+    :license: BSD, see LICENSE for details.
+#}
+{%- extends "basic/layout.html" %}
+
+{# put the sidebar before the body #}
+{% block sidebar1 %}{{ sidebar() }}{% endblock %}
+{% block sidebar2 %}{% endblock %}
