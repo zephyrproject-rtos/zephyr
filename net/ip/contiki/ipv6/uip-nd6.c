@@ -145,7 +145,7 @@ create_llao(uint8_t *llao, uint8_t type) {
 
 /*------------------------------------------------------------------*/
 
-
+#if UIP_ND6_SEND_NA
 static void
 ns_input(struct net_buf *buf)
 {
@@ -324,6 +324,7 @@ discard:
   uip_len(buf) = 0;
   return;
 }
+#endif /* UIP_ND6_SEND_NA */
 
 
 
@@ -408,6 +409,7 @@ uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, 
  * If the NS was for DAD, it means DAD failed
  *
  */
+#if UIP_ND6_SEND_NA
 static void
 na_input(struct net_buf *buf)
 {
@@ -559,6 +561,7 @@ discard:
   uip_len(buf) = 0;
   return;
 }
+#endif /* UIP_ND6_SEND_NA */
 
 
 #if UIP_CONF_ROUTER
