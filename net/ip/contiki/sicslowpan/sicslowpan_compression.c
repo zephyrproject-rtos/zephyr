@@ -1058,8 +1058,8 @@ uncompress_hdr_hc1(struct net_mbuf *mbuf, struct net_buf *ibuf)
   /* IP length field. */
    ip_len = uip_len(ibuf) + (uip_uncomp_hdr_len(mbuf) -
                                uip_packetbuf_hdr_len(mbuf)) - UIP_IPH_LEN;
-  SICSLOWPAN_IP_BUF(buf)->len[0] = (ip_len - UIP_IPH_LEN) >> 8;
-  SICSLOWPAN_IP_BUF(buf)->len[1] = (ip_len - UIP_IPH_LEN) & 0x00FF;
+  SICSLOWPAN_IP_BUF(buf)->len[0] = ip_len >> 8;
+  SICSLOWPAN_IP_BUF(buf)->len[1] = ip_len & 0x00FF;
 
   /* length field in UDP header */
   if(SICSLOWPAN_IP_BUF(buf)->proto == UIP_PROTO_UDP) {
@@ -1179,8 +1179,8 @@ static int uncompress(struct net_buf *buf)
   /* init */
   uip_uncomp_hdr_len(mbuf) = 0;
   uip_packetbuf_hdr_len(mbuf) = 0;
-  uip_packetbuf_ptr(mbuf) = packetbuf_dataptr(mbuf);
   packetbuf_copyfrom(mbuf, uip_buf(buf), UIP_IPUDPH_LEN); /* Size of (IP + UDP)  header*/
+  uip_packetbuf_ptr(mbuf) = packetbuf_dataptr(mbuf);
 
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06
   if((PACKETBUF_HC1_PTR(mbuf)[PACKETBUF_HC1_DISPATCH] & 0xe0) == SICSLOWPAN_DISPATCH_IPHC) {
