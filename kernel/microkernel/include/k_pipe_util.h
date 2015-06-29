@@ -53,18 +53,6 @@ typedef uint32_t TIME_TYPE;
 #define _TIME_B  ((TIME_TYPE)0x00020000)
 #define _TIME_BT ((TIME_TYPE)0x00040000)
 
-/* K functions: */
-
-extern void K_ChSendReq(struct k_args *ReqOrig);
-extern void K_ChSendTmo(struct k_args *ReqProc);
-extern void K_ChSendRpl(struct k_args *ReqProc);
-extern void K_ChSendAck(struct k_args *ReqOrig);
-extern void K_ChRecvReq(struct k_args *ReqOrig);
-extern void K_ChRecvTmo(struct k_args *ReqProc);
-extern void K_ChRecvRpl(struct k_args *ReqProc);
-extern void K_ChRecvAck(struct k_args *ReqOrig);
-extern void K_ChMovedAck(struct k_args *pEOXfer);
-
 /* internal functions: */
 
 extern void K_ChProc(struct pipe_struct *pPipe,
