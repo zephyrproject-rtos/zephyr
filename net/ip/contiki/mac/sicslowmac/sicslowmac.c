@@ -45,8 +45,6 @@
 
 #include <string.h>
 
-struct net_buf;
-
 #include "net/mac/sicslowmac/sicslowmac.h"
 #include "net/mac/frame802154.h"
 #include "net/packetbuf.h"
