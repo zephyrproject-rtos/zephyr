@@ -101,10 +101,9 @@ K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *pChxxx)
 
 void _k_pipe_option_set(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option)
 {
-	pChxxx->ChProc.ReqInfo.Params &=
-		(~_ALL_OPT); /* clear destination field */
-	pChxxx->ChProc.ReqInfo.Params |=
-		(option & _ALL_OPT); /* make sure we do not screw up other fields */
+	/* Ensure that only the pipe option bits are modified */
+	pChxxx->ChProc.ReqInfo.Params &= (~_ALL_OPT);
+	pChxxx->ChProc.ReqInfo.Params |= (option & _ALL_OPT);
 }
 
 REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *pChxxx)
@@ -114,10 +113,9 @@ REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *pChxxx)
 
 void _k_pipe_request_type_set(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType)
 {
-	pChxxx->ChProc.ReqInfo.Params &=
-		(~_ALLREQ); /* clear destination field */
-	pChxxx->ChProc.ReqInfo.Params |=
-		(ReqType & _ALLREQ); /* make sure we do not screw up other fields */
+	/* Ensure that only the request type bits are modified */
+	pChxxx->ChProc.ReqInfo.Params &= (~_ALLREQ);
+	pChxxx->ChProc.ReqInfo.Params |= (ReqType & _ALLREQ);
 }
 
 TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *pChxxx)
@@ -127,10 +125,9 @@ TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *pChxxx)
 
 void _k_pipe_time_type_set(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType)
 {
-	pChxxx->ChProc.ReqInfo.Params &=
-		(~_ALLTIME); /* clear destination field */
-	pChxxx->ChProc.ReqInfo.Params |=
-		(TimeType & _ALLTIME); /* make sure we do not screw up other fields */
+	/* Ensure that only the time type bits are modified */
+	pChxxx->ChProc.ReqInfo.Params &= (~_ALLTIME);
+	pChxxx->ChProc.ReqInfo.Params |= (TimeType & _ALLTIME);
 }
 
 void _k_pipe_request_status_set(struct k_chproc *pChProc, CHREQ_STATUS Status)
