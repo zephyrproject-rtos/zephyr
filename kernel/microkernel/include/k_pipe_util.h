@@ -71,7 +71,7 @@ void _k_pipe_option_set(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option);
 REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *pChxxx);
 void _k_pipe_request_type_set(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType);
 
-void _k_pipe_request_status_set(struct k_chproc *pChProc, CHREQ_STATUS Status);
+void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pChProc, CHREQ_STATUS Status);
 
 TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *pChxxx);
 void _k_pipe_time_type_set(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType);

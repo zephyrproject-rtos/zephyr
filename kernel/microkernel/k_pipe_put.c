@@ -120,7 +120,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	/* start processing */
 
 	struct pipe_struct *pPipe;
-	struct k_chproc *pReqProcArgs;
+	struct _pipe_xfer_req_arg *pReqProcArgs;
 
 	pReqProcArgs = &(RequestProc->Args.ChProc);
 	pPipe = pReqProcArgs->ReqInfo.ChRef.pPipe;

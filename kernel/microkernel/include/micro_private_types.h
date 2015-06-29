@@ -276,7 +276,7 @@ struct _pipe_req_arg {
 	int Dummy;
 };
 
-struct k_chproc {
+struct _pipe_xfer_req_arg {
 	struct req_info ReqInfo;
 	void *pData; /* if NULL, data is embedded in
 			     cmd packet		    */
@@ -439,7 +439,7 @@ union k_args_args {
 	struct _s1arg s1;
 	struct _u1arg u1;
 	struct _z4arg z4;
-	struct k_chproc ChProc;
+	struct _pipe_xfer_req_arg ChProc;
 	struct _pipe_xfer_ack_arg ChMovedAck;
 	struct _pipe_req_arg ChReq;
 	struct _pipe_ack_arg ChAck;

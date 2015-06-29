@@ -71,7 +71,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		struct k_args *pWriter = pEOXferArgs->pWriter;
 
 		if (pWriter) { /* Xfer from Writer finished */
-			struct k_chproc *pWriterArg =
+			struct _pipe_xfer_req_arg *pWriterArg =
 				&(pEOXferArgs->pWriter->Args.ChProc);
 
 			--(pWriterArg->iNbrPendXfers);
@@ -111,7 +111,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		struct k_args *pReader = pEOXferArgs->pReader;
 
 		if (pReader) { /* Xfer to Reader finished */
-			struct k_chproc *pReaderArg =
+			struct _pipe_xfer_req_arg *pReaderArg =
 				&(pEOXferArgs->pReader->Args.ChProc);
 
 			--(pReaderArg->iNbrPendXfers);
@@ -151,7 +151,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		struct k_args *pWriter = pEOXferArgs->pWriter;
 
 		if (pWriter) { /* Transfer from writer finished */
-			struct k_chproc *pWriterArg =
+			struct _pipe_xfer_req_arg *pWriterArg =
 				&(pEOXferArgs->pWriter->Args.ChProc);
 
 			--(pWriterArg->iNbrPendXfers);
@@ -173,7 +173,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		} else {
 			/* Transfer to Reader finished */
 
-			struct k_chproc *pReaderArg =
+			struct _pipe_xfer_req_arg *pReaderArg =
 				&(pEOXferArgs->pReader->Args.ChProc);
 
 			--(pReaderArg->iNbrPendXfers);
@@ -423,7 +423,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 {
 	struct k_args *pReader;
-	struct k_chproc *pReaderArgs;
+	struct _pipe_xfer_req_arg *pReaderArgs;
 
 	unsigned char *pRead;
 	int iSize;
@@ -492,7 +492,7 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 {
 	struct k_args *pWriter;
-	struct k_chproc *pWriterArgs;
+	struct _pipe_xfer_req_arg *pWriterArgs;
 
 	int iSize;
 	unsigned char *pWrite;
@@ -558,7 +558,7 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 
 static void pipe_xfer_status_update(
 	struct k_args *pActor,       /* ptr to struct k_args to be used by actor */
-	struct k_chproc *pActorArgs, /* ptr to actor's channel process structure */
+	struct _pipe_xfer_req_arg *pActorArgs, /* ptr to actor's channel process structure */
 	int bytesXferred      /* # of bytes transferred */
 	)
 {
@@ -591,8 +591,8 @@ static void pipe_read_write(
 {
 	struct k_args *pReader;       /* ptr to struct k_args to be used by reader */
 	struct k_args *pWriter;       /* ptr to struct k_args to be used by writer */
-	struct k_chproc *pWriterArgs; /* ptr to writer's channel process structure */
-	struct k_chproc *pReaderArgs; /* ptr to reader's channel process structure */
+	struct _pipe_xfer_req_arg *pWriterArgs; /* ptr to writer's channel process structure */
+	struct _pipe_xfer_req_arg *pReaderArgs; /* ptr to reader's channel process structure */
 
 	int iT1;
 	int iT2;
