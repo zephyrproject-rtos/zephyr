@@ -422,6 +422,8 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 
 int bt_security(struct bt_conn *conn, bt_security_t sec)
 {
+	struct bt_keys *keys;
+
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
@@ -436,16 +438,21 @@ int bt_security(struct bt_conn *conn, bt_security_t sec)
 		return -EINVAL;
 	}
 
+	if (conn->encrypt) {
+		return 0;
+	}
+
 	if (conn->role == BT_HCI_ROLE_SLAVE) {
 		/* TODO Add Security Request support */
 		return -ENOTSUP;
 	}
 
-	if (conn->encrypt) {
-		return 0;
+	keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
+	if (keys) {
+		return bt_hci_le_start_encryption(conn->handle, keys->ltk.rand,
+						  keys->ltk.ediv,
+						  keys->ltk.val);
 	}
-
-	/* TODO check for master LTK */
 
 	return smp_send_pairing_req(conn);
 }
