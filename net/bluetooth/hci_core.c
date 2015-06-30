@@ -616,9 +616,6 @@ static void le_conn_complete(struct bt_buf *buf)
 	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 
-	/* Transform prepared object to CONNECTED state and make sure in callee
-	 * to drop object reference owned in CONNECT state for initiator case.
-	 */
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
 	if (evt->role == BT_HCI_ROLE_SLAVE) {
