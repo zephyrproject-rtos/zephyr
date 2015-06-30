@@ -586,7 +586,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	}
 
 	if (evt->status) {
-		if(!conn) {
+		if (!conn) {
 			return;
 		}
 
