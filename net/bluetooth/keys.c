@@ -42,6 +42,11 @@
 #include "smp.h"
 #include "keys.h"
 
+#if !defined(CONFIG_BLUETOOTH_DEBUG_KEYS)
+#undef BT_DBG
+#define BT_DBG(fmt, ...)
+#endif
+
 #define bt_keys_foreach(list, cur, member)   \
 	for (cur = list; *cur; cur = &(*cur)->member)
 

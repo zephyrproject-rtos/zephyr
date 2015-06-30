@@ -93,6 +93,15 @@ config	BLUETOOTH_DEBUG_CONN
 	  This option enables debug support for Bluetooth
 	  connection handling.
 
+config	BLUETOOTH_DEBUG_KEYS
+	bool
+	prompt "Bluetooth security keys debug"
+	depends on BLUETOOTH_DEBUG
+	default n
+	help
+	  This option enables debug support for the handling of
+	  Bluetooth security keys.
+
 config	BLUETOOTH_DEBUG_L2CAP
 	bool
 	prompt "Bluetooth L2CAP debug"
