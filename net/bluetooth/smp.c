@@ -688,7 +688,7 @@ static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("\n");
 
-	keys = bt_keys_find(BT_KEYS_IRK, &conn->dst);
+	keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
 	if (!keys) {
 		goto pair;
 	}
