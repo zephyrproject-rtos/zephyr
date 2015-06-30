@@ -112,7 +112,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	uip_ipaddr_t ipaddr;
 	struct net_context *context = NULL;
 	const uip_ds6_addr_t *uip_addr;
-	struct net_addr laddr;
+	static struct net_addr laddr;
 
 	if (!local_addr || memcmp(&local_addr->in6_addr, &in6addr_any,
 				  sizeof(in6addr_any)) == 0) {
@@ -146,7 +146,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 			contexts[i].tuple.ip_proto = ip_proto;
 			contexts[i].tuple.remote_addr = (struct net_addr *)remote_addr;
 			contexts[i].tuple.remote_port = remote_port;
-			contexts[i].tuple.local_addr = &laddr;
+			contexts[i].tuple.local_addr = (struct net_addr *)local_addr;
 			contexts[i].tuple.local_port = local_port;
 			context = &contexts[i];
 			break;
