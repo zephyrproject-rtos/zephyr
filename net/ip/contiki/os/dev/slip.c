@@ -274,6 +274,7 @@ PROCESS_THREAD(slip_process, ev, data, not_used)
     buf = net_buf_get_reserve(0);
     if (!buf) {
       NET_ERR("No buffers left, slip msg discarded\n");
+      rxbuf_init();
       continue;
     }
 
