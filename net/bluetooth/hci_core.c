@@ -582,8 +582,8 @@ static void le_conn_complete(struct bt_buf *buf)
 	conn = bt_conn_lookup_addr_le(&evt->peer_addr);
 	if (conn && conn->state != BT_CONN_CONNECT &&
 	    conn->state != BT_CONN_DISCONNECT) {
-			bt_conn_put(conn);
-			conn = NULL;
+		bt_conn_put(conn);
+		conn = NULL;
 	}
 
 	if (evt->status) {
