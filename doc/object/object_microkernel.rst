@@ -186,11 +186,11 @@ The pipes APIs allow to sending and receiving data to and from a pipe.
 +----------------------------------------+----------------------------------------+
 | :c:func:`task_pipe_put_wait_timeout()` | Put data on a pipe with a timed delay. |
 +----------------------------------------+----------------------------------------+
-| :c:func:`task_pipe_get()`              | Put data on a pipe.                    |
+| :c:func:`task_pipe_get()`              | Get data off a pipe.                   |
 +----------------------------------------+----------------------------------------+
-| :c:func:`task_pipe_get_wait()`         | Put data on a pipe with a delay.       |
+| :c:func:`task_pipe_get_wait()`         | Get data off a pipe with a delay.      |
 +----------------------------------------+----------------------------------------+
-| :c:func:`task_pipe_get_wait_timeout()` | Put data on a pipe with a timed delay. |
+| :c:func:`task_pipe_get_wait_timeout()` | Get data off a pipe with a timed delay.|
 +----------------------------------------+----------------------------------------+
 | :c:func:`task_pipe_put_async()`        | Put data on a pipe asynchronously.     |
 +----------------------------------------+----------------------------------------+
