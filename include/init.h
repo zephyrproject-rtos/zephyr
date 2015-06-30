@@ -67,28 +67,21 @@
 		 .driver_data = data};
 
 /* Run on interrupt stack; no {micro,nano} kernel objects available */
-#define pure_init(cfg, data)		__define_initconfig(cfg, \
-							    PURE, data)
+#define pure_init(cfg, data)		__define_initconfig(cfg, 0, data)
 
 /* Run from nano kernel idle task; no micro kernel objects available */
-#define nano_early_init(cfg, data)	__define_initconfig(cfg, \
-							    NANO_EARLY, data)
-#define nano_late_init(cfg, data)	__define_initconfig(cfg, \
-							    NANO_LATE, data)
+#define nano_early_init(cfg, data)	__define_initconfig(cfg, 1, data)
+#define nano_late_init(cfg, data)	__define_initconfig(cfg, 2, data)
 
 /* Run from micro kernel idle task. */
-#define micro_early_init(cfg, data)	__define_initconfig(cfg, \
-							    MICRO_EARLY, data)
-#define micro_late_init(cfg, data)	__define_initconfig(cfg, \
-							    MICRO_LATE, data)
+#define micro_early_init(cfg, data)	__define_initconfig(cfg, 3, data)
+#define micro_late_init(cfg, data)	__define_initconfig(cfg, 4, data)
 
 /* Run in the idle task; In a nano kernel only system run after
  * nano_late_init(). In a micro kernel system after micro_late_init()
  */
-#define app_early_init(cfg, data)	__define_initconfig(cfg, \
-							    APP_EARLY, data)
-#define app_late_init(cfg, data)	__define_initconfig(cfg, \
-							    APP_LATE, data)
+#define app_early_init(cfg, data)	__define_initconfig(cfg, 5, data)
+#define app_late_init(cfg, data)	__define_initconfig(cfg, 6, data)
 
 
 #endif /* _INIT_H_ */
