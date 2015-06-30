@@ -126,6 +126,11 @@ struct bt_smp_ident_addr_info {
 	bt_addr_le_t addr;
 } __packed;
 
+#define BT_SMP_CMD_SECURITY_REQUEST		0x0b
+struct bt_smp_security_request {
+	uint8_t  auth_req;
+} __packed;
+
 bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr);
 int smp_send_pairing_req(struct bt_conn *conn);
 

@@ -680,6 +680,39 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_security_request *req = (void *)buf->data;
+	struct bt_keys *keys;
+	uint8_t auth;
+
+	BT_DBG("\n");
+
+	keys = bt_keys_find(BT_KEYS_IRK, &conn->dst);
+	if (!keys) {
+		goto pair;
+	}
+
+	auth = req->auth_req & BT_SMP_AUTH_MASK;
+	if (auth & (BT_SMP_AUTH_MITM | BT_SMP_AUTH_SC)) {
+		BT_WARN("Unsupported auth requirements: 0x%x, repairing", auth);
+		goto pair;
+	}
+
+	if (bt_hci_le_start_encryption(conn->handle, keys->ltk.rand,
+				       keys->ltk.ediv, keys->ltk.val) < 0) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	return 0;
+pair:
+	if (smp_send_pairing_req(conn) < 0) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	return 0;
+}
+
 static const struct {
 	uint8_t  (*func)(struct bt_conn *conn, struct bt_buf *buf);
 	uint8_t  expect_len;
@@ -694,6 +727,8 @@ static const struct {
 	{ smp_pairing_master,      sizeof(struct bt_smp_master_ident) },
 	{ smp_ident_info,          sizeof(struct bt_smp_ident_info) },
 	{ smp_ident_addr_info,     sizeof(struct bt_smp_ident_addr_info) },
+	{ }, /* Signing Information - Not yet implemented */
+	{ smp_security_request,    sizeof(struct bt_smp_security_request) },
 };
 
 static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
