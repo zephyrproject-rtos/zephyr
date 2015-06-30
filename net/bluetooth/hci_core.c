@@ -618,12 +618,13 @@ static void le_conn_complete(struct bt_buf *buf)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
+	bt_l2cap_connected(conn);
+
 	if (evt->role == BT_HCI_ROLE_SLAVE) {
 		bt_l2cap_update_conn_param(conn);
 	}
 
 	bt_connected(conn);
-	bt_l2cap_connected(conn);
 }
 
 static void le_adv_report(struct bt_buf *buf)
