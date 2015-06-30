@@ -93,8 +93,9 @@ static int context_port_used(enum ip_protocol ip_proto, uint16_t local_port)
 
 	for (i = 0; i < NET_MAX_CONTEXT; i++) {
 		if (contexts[i].tuple.ip_proto == ip_proto &&
-			contexts[i].tuple.local_port == local_port)
+		    contexts[i].tuple.local_port == local_port) {
 			return -EEXIST;
+		}
 	}
 
 	return 0;
@@ -116,10 +117,12 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	if (!local_addr || memcmp(&local_addr->in6_addr, &in6addr_any,
 				  sizeof(in6addr_any)) == 0) {
 		uip_addr = uip_ds6_get_global(-1);
-		if (!uip_addr)
+		if (!uip_addr) {
 			uip_addr = uip_ds6_get_link_local(-1);
-		if (!uip_addr)
+		}
+		if (!uip_addr) {
 			return NULL;
+		}
 
 		memcpy(&laddr, local_addr, sizeof(struct net_addr));
 		laddr.in6_addr = *(struct in6_addr *)&uip_addr->ipaddr;
@@ -129,8 +132,9 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	nano_sem_take_wait(&contexts_lock);
 
 	if (local_port) {
-		if (context_port_used(ip_proto, local_port) < 0)
+		if (context_port_used(ip_proto, local_port) < 0) {
 			return NULL;
+		}
 	} else {
 		do {
 			local_port = random_rand() | 0x8000;
