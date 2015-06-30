@@ -75,6 +75,7 @@ struct bt_att_req {
 	bt_att_func_t		func;
 	void			*user_data;
 	bt_att_destroy_t	destroy;
+	uint8_t			op;
 };
 
 /* ATT channel specific context */
@@ -98,13 +99,13 @@ static const struct bt_uuid secondary_uuid = {
 	.u16 = BT_UUID_GATT_SECONDARY,
 };
 
-static void att_req_destroy(struct bt_att *att)
+static void att_req_destroy(struct bt_att_req *req)
 {
-	if (att->req.destroy) {
-		att->req.destroy(att->req.user_data);
+	if (req->destroy) {
+		req->destroy(req->user_data);
 	}
 
-	memset(&att->req, 0, sizeof(att->req));
+	memset(req, 0, sizeof(*req));
 }
 
 static void send_err_rsp(struct bt_conn *conn, uint8_t req, uint16_t handle,
@@ -1122,11 +1123,43 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 			     data->len - sizeof(struct bt_att_signature));
 }
 
+static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *data)
+{
+	struct bt_att *att = conn->att;
+	struct bt_att_error_rsp *rsp;
+	struct bt_att_req req;
+	uint8_t err;
+
+	if (!att || !att->req.func) {
+		return 0;
+	}
+
+	rsp = (void *)data->data;
+
+	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
+	       sys_le16_to_cpu(rsp->handle), rsp->error);
+
+	/* Match request with response */
+	err = rsp->request == att->req.op ? rsp->error : BT_ATT_ERR_UNLIKELY;
+
+	/* Reset request before callback so another request can be queued */
+	memcpy(&req, &att->req, sizeof(req));
+	att->req.func = NULL;
+
+	req.func(conn, err, NULL, 0, req.user_data);
+
+	att_req_destroy(&req);
+
+	return 0;
+}
+
 static const struct {
 	uint8_t  op;
 	uint8_t  (*func)(struct bt_conn *conn, struct bt_buf *buf);
 	uint8_t  expect_len;
 } handlers[] = {
+	{ BT_ATT_OP_ERROR_RSP, att_error_rsp,
+	  sizeof(struct bt_att_error_rsp) },
 	{ BT_ATT_OP_MTU_REQ, att_mtu_req,
 	  sizeof(struct bt_att_exchange_mtu_req) },
 	{ BT_ATT_OP_FIND_INFO_REQ, att_find_info_req,
@@ -1187,7 +1220,7 @@ static void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	/* Commands don't have response */
-	if (hdr->code & BT_ATT_OP_CMD_MASK)
+	if ((hdr->code & BT_ATT_OP_CMD_MASK))
 		goto done;
 
 	if (err) {
@@ -1278,11 +1311,16 @@ int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
 	}
 
 	if (func) {
+		struct bt_att_hdr *hdr;
+
 		/* Check if there is a request pending */
 		if (att->req.func) {
 			 /* TODO: Allow more than one pending request */
 			return -EBUSY;
 		}
+
+		hdr = (void *)buf->data;
+		att->req.op = hdr->code;
 		att->req.func = func;
 		att->req.user_data = user_data;
 		att->req.destroy = destroy;
@@ -1306,5 +1344,5 @@ void bt_att_cancel(struct bt_conn *conn)
 		return;
 	}
 
-	att_req_destroy(att);
+	att_req_destroy(&att->req);
 }

@@ -277,7 +277,8 @@ struct bt_att_signed_write_cmd {
 void bt_att_init();
 struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len);
 
-typedef void (*bt_att_func_t)(uint8_t err, const void *pdu, uint16_t length,
+typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
+			      const void *pdu, uint16_t length,
 			      void *user_data);
 typedef void (*bt_att_destroy_t)(void *user_data);
 
