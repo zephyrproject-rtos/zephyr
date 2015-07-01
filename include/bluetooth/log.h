@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Bluetooth subsystem logging helpers.
  */
 

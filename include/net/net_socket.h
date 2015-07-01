@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  @brief Simple socket API
 
  Simple socket API for applications to connection establishment and
@@ -42,7 +42,7 @@
 #ifndef __NET_SOCKET_H
 #define __NET_SOCKET_H
 
-/*!
+/**
  * @brief Get network context.
  *
  * @details Network context is used to define the connection
@@ -66,7 +66,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 				    const struct net_addr *local_addr,
 				    uint16_t local_port);
 
-/*!
+/**
  * @brief Get network tuple.
  *
  * @details This function returns the used connection tuple.
@@ -77,7 +77,7 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
  */
 struct net_tuple *net_context_get_tuple(struct net_context *context);
 
-/*!
+/**
  * @brief Release network context.
  *
  * @details Free the resources allocated for the context.
@@ -88,7 +88,7 @@ struct net_tuple *net_context_get_tuple(struct net_context *context);
  */
 void net_context_put(struct net_context *context);
 
-/*!
+/**
  * @brief Send data to network.
  *
  * @details Send user specified data to network. This
@@ -101,7 +101,7 @@ void net_context_put(struct net_context *context);
  */
 int net_send(struct net_buf *buf);
 
-/*!
+/**
  * @brief Receive data from network.
  *
  * @details Application uses this to get data from network

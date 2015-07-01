@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Bluetooth connection handling
  */
 
@@ -36,10 +36,10 @@
 
 #include <bluetooth/hci.h>
 
-/*! Opaque type representing a connection to a remote device */
+/** Opaque type representing a connection to a remote device */
 struct bt_conn;
 
-/*! @brief Increment a connection's reference count.
+/** @brief Increment a connection's reference count.
  *
  *  Increment the reference count of a connection object.
  *
@@ -49,7 +49,7 @@ struct bt_conn;
  */
 struct bt_conn *bt_conn_get(struct bt_conn *conn);
 
-/*! @brief Decrement a connection's reference count.
+/** @brief Decrement a connection's reference count.
  *
  *  Decrement the reference count of a connection object.
  *
@@ -57,7 +57,7 @@ struct bt_conn *bt_conn_get(struct bt_conn *conn);
 */
 void bt_conn_put(struct bt_conn *conn);
 
-/*! @brief Look up an existing connection by address.
+/** @brief Look up an existing connection by address.
  *
  *  Look up an existing connection based on the remote address.
  *
@@ -69,7 +69,7 @@ void bt_conn_put(struct bt_conn *conn);
  */
 struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
 
-/*! @brief Get destination (peer) address of a connection.
+/** @brief Get destination (peer) address of a connection.
  *
  *  @param conn Connection object.
  *
@@ -77,7 +77,7 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
  */
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
 
-/*! Connection callback structure */
+/** Connection callback structure */
 struct bt_conn_cb {
 	void (*connected)(struct bt_conn *conn);
 	void (*disconnected)(struct bt_conn *conn);
@@ -85,7 +85,7 @@ struct bt_conn_cb {
 	struct bt_conn_cb *_next;
 };
 
-/*! @brief Register connection callbacks.
+/** @brief Register connection callbacks.
  *
  *  Register callbacks to monitor the state of connections.
  *

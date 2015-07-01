@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Generic Attribute Profile handling.
  */
 
@@ -39,142 +39,142 @@
 
 /* GATT attribute permission bitfield values */
 
-/*! @def BT_GATT_PERM_READ
+/** @def BT_GATT_PERM_READ
  *  @brief Attribute read permission.
  */
 #define BT_GATT_PERM_READ			0x01
-/*! @def BT_GATT_PERM_WRITE
+/** @def BT_GATT_PERM_WRITE
  *  @brief Attribute write permission.
  */
 #define BT_GATT_PERM_WRITE			0x02
-/*! @def BT_GATT_PERM_READ_ENCRYPT
+/** @def BT_GATT_PERM_READ_ENCRYPT
  *  @brief Attribute read permission with encryption.
  *
  *  If set, requires encryption for read access.
  */
 #define BT_GATT_PERM_READ_ENCRYPT		0x04
-/*! @def BT_GATT_PERM_WRITE_ENCRYPT
+/** @def BT_GATT_PERM_WRITE_ENCRYPT
  *  @brief Attribute write permission with encryption.
  *
  *  If set, requires encryption for write access.
  */
 #define BT_GATT_PERM_WRITE_ENCRYPT		0x08
-/*! @def BT_GATT_PERM_READ_AUTHEN
+/** @def BT_GATT_PERM_READ_AUTHEN
  *  @brief Attribute read permission with authentication.
  *
  *  If set, requires encryption using authenticated link-key for read access.
  */
 #define BT_GATT_PERM_READ_AUTHEN		0x10
-/*! @def BT_GATT_PERM_WRITE_AUTHEN
+/** @def BT_GATT_PERM_WRITE_AUTHEN
  *  @brief Attribute write permission with authentication.
  *
  *  If set, requires encryption using authenticated link-key for write access.
  */
 #define BT_GATT_PERM_WRITE_AUTHEN		0x20
-/*! @def BT_GATT_PERM_AUTHOR
+/** @def BT_GATT_PERM_AUTHOR
  *  @brief Attribute authorization permission.
  */
 #define BT_GATT_PERM_AUTHOR			0x40
 
 /* GATT attribute flush flags */
-/*! @def BT_GATT_FLUSH_DISCARD
+/** @def BT_GATT_FLUSH_DISCARD
  *  @brief Attribute flush discard flag.
  */
 #define BT_GATT_FLUSH_DISCARD			0x00
-/*! @def BT_GATT_FLUSH_DISCARD
+/** @def BT_GATT_FLUSH_DISCARD
  *  @brief Attribute flush syncronize flag.
  */
 #define BT_GATT_FLUSH_SYNC			0x01
 
-/*! @brief GATT Attribute structure. */
+/** @brief GATT Attribute structure. */
 struct bt_gatt_attr {
-	/*! Attribute UUID */
+	/** Attribute UUID */
 	const struct bt_uuid	*uuid;
-	/*! Attribute read callback */
+	/** Attribute read callback */
 	int			(*read)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
 					void *buf, uint8_t len,
 					uint16_t offset);
-	/*! Attribute write callback */
+	/** Attribute write callback */
 	int			(*write)(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 const void *buf, uint8_t len,
 					 uint16_t offset);
-	/*! Attribute flush callback */
+	/** Attribute flush callback */
 	int			(*flush)(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 uint8_t flags);
-	/*! Attribute user data */
+	/** Attribute user data */
 	void			*user_data;
-	/*! Attribute handle */
+	/** Attribute handle */
 	uint16_t		handle;
-	/*! Attribute permissions */
+	/** Attribute permissions */
 	uint8_t			perm;
 };
 
-/*! @brief Service Attribute Value. */
+/** @brief Service Attribute Value. */
 struct bt_gatt_service {
-	/*! Service UUID. */
+	/** Service UUID. */
 	const struct bt_uuid	*uuid;
 };
 
-/*! @brief Include Attribute Value. */
+/** @brief Include Attribute Value. */
 struct bt_gatt_include {
-	/*! Service UUID. */
+	/** Service UUID. */
 	const struct bt_uuid	*uuid;
-	/*! Service start handle. */
+	/** Service start handle. */
 	uint16_t		start_handle;
-	/*! Service end handle. */
+	/** Service end handle. */
 	uint16_t		end_handle;
 };
 
 /* Characteristic Properties Bitfield values */
 
-/*! @def BT_GATT_CHRC_BROADCAST
+/** @def BT_GATT_CHRC_BROADCAST
  *  @brief Characteristic broadcast property.
  *
  *  If set, permits broadcasts of the Characteristic Value using Server
  *  Characteristic Configuration Descriptor.
  */
 #define BT_GATT_CHRC_BROADCAST			0x01
-/*! @def BT_GATT_CHRC_READ
+/** @def BT_GATT_CHRC_READ
  *  @brief Characteristic read property.
  *
  *  If set, permits reads of the Characteristic Value.
  */
 #define BT_GATT_CHRC_READ			0x02
-/*! @def BT_GATT_CHRC_WRITE_WITHOUT_RESP
+/** @def BT_GATT_CHRC_WRITE_WITHOUT_RESP
  *  @brief Characteristic write without response property.
  *
  *  If set, permits write of the Characteristic Value without response.
  */
 #define BT_GATT_CHRC_WRITE_WITHOUT_RESP		0x04
-/*! @def BT_GATT_CHRC_WRITE
+/** @def BT_GATT_CHRC_WRITE
  *  @brief Characteristic write with response property.
  *
  *  If set, permits write of the Characteristic Value with response.
  */
 #define BT_GATT_CHRC_WRITE			0x08
-/*! @def BT_GATT_CHRC_NOTIFY
+/** @def BT_GATT_CHRC_NOTIFY
  *  @brief Characteristic notify property.
  *
  *  If set, permits notifications of a Characteristic Value without
  *  acknowledgment.
  */
 #define BT_GATT_CHRC_NOTIFY			0x10
-/*! @def BT_GATT_CHRC_INDICATE
+/** @def BT_GATT_CHRC_INDICATE
  *  @brief Characteristic indicate property.
  *
  * If set, permits indications of a Characteristic Value with acknowledgment.
  */
 #define BT_GATT_CHRC_INDICATE			0x20
-/*! @def BT_GATT_CHRC_AUTH
+/** @def BT_GATT_CHRC_AUTH
  *  @brief Characteristic Authenticated Signed Writes property.
  *
  *  If set, permits signed writes to the Characteristic Value.
  */
 #define BT_GATT_CHRC_AUTH			0x40
-/*! @def BT_GATT_CHRC_EXT_PROP
+/** @def BT_GATT_CHRC_EXT_PROP
  *  @brief Characteristic Extended Properties property.
  *
  * If set, additional characteristic properties are defined in the
@@ -182,13 +182,13 @@ struct bt_gatt_include {
  */
 #define BT_GATT_CHRC_EXT_PROP			0x80
 
-/*! @brief Characteristic Attribute Value. */
+/** @brief Characteristic Attribute Value. */
 struct bt_gatt_chrc {
-	/*! Characteristic UUID. */
+	/** Characteristic UUID. */
 	const struct bt_uuid	*uuid;
-	/*! Characteristic value handle. */
+	/** Characteristic value handle. */
 	uint16_t		value_handle;
-	/*! Characteristic properties. */
+	/** Characteristic properties. */
 	uint8_t			properties;
 };
 
@@ -196,27 +196,27 @@ struct bt_gatt_chrc {
 #define BT_GATT_CEP_RELIABLE_WRITE		0x0001
 #define BT_GATT_CEP_WRITABLE_AUX		0x0002
 
-/*! @brief Characteristic Extended Properties Attribute Value. */
+/** @brief Characteristic Extended Properties Attribute Value. */
 struct bt_gatt_cep {
-	/*! Characteristic Extended properties */
+	/** Characteristic Extended properties */
 	uint16_t		properties;
 };
 
-/*! @brief Characteristic User Description Attribute Value. */
+/** @brief Characteristic User Description Attribute Value. */
 struct bt_gatt_cud {
-	/*! Characteristic User Description string. */
+	/** Characteristic User Description string. */
 	char			*string;
 };
 
 /* Client Characteristic Configuration Values */
 
-/*! @def BT_GATT_CCC_NOTIFY
+/** @def BT_GATT_CCC_NOTIFY
  *  @brief Client Characteristic Configuration Notification.
  *
  *  If set, changes to Characteristic Value shall be notified.
  */
 #define BT_GATT_CCC_NOTIFY			0x0001
-/*! @def BT_GATT_CCC_INDICATE
+/** @def BT_GATT_CCC_INDICATE
  *  @brief Client Characteristic Configuration Indication.
  *
  *  If set, changes to Characteristic Value shall be indicated.
@@ -225,13 +225,13 @@ struct bt_gatt_cud {
 
 /* Client Characteristic Configuration Attribute Value */
 struct bt_gatt_ccc {
-	/*! Client Characteristic Configuration flags */
+	/** Client Characteristic Configuration flags */
 	uint16_t		flags;
 };
 
 /* Server API */
 
-/*! @brief Register attribute database.
+/** @brief Register attribute database.
  *
  *  Register GATT attribute database table. Applications can make use of
  *  macros such as BT_GATT_PRIMARY_SERVICE, BT_GATT_CHARACTERISTIC,
@@ -247,7 +247,7 @@ enum {
 	BT_GATT_ITER_CONTINUE,
 };
 
-/*! @brief Attribute iterator callback.
+/** @brief Attribute iterator callback.
  *
  *  @param attr Attribute found.
  *  @param user_data Data given.
@@ -258,7 +258,7 @@ enum {
 typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
 				       void *user_data);
 
-/*! @brief Attribute iterator.
+/** @brief Attribute iterator.
  *
  *  Iterate attributes in the given range.
  *
@@ -270,7 +270,7 @@ typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
 void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 			  bt_gatt_attr_func_t func, void *user_data);
 
-/*! @brief Generic Read Attribute value helper.
+/** @brief Generic Read Attribute value helper.
  *
  *  Read attribute value storing the result into buffer.
  *
@@ -289,7 +289,7 @@ int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		      void *buf, uint8_t buf_len, uint16_t offset,
 		      const void *value, uint8_t value_len);
 
-/*! @brief Read Service Attribute helper.
+/** @brief Read Service Attribute helper.
  *
  *  Read service attribute value storing the result into buffer after
  *  enconding it.
@@ -308,7 +308,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      void *buf, uint8_t len, uint16_t offset);
 
-/*! @def BT_GATT_SERVICE
+/** @def BT_GATT_SERVICE
  *  @brief Generic Service Declaration Macro.
  *
  *  Helper macro to declare a service attribute.
@@ -326,7 +326,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
 	.user_data = _service,						\
 }
 
-/*! @def BT_GATT_PRIMARY_SERVICE
+/** @def BT_GATT_PRIMARY_SERVICE
  *  @brief Primary Service Declaration Macro.
  *
  *  Helper macro to declare a primary service attribute.
@@ -344,7 +344,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
 	.user_data = _service,						\
 }
 
-/*! @def BT_GATT_SECONDARY_SERVICE
+/** @def BT_GATT_SECONDARY_SERVICE
  *  @brief Secondary Service Declaration Macro.
  *
  *  Helper macro to declare a secondary service attribute.
@@ -362,7 +362,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
 	.user_data = _service,						\
 }
 
-/*! @brief Read Include Attribute helper.
+/** @brief Read Include Attribute helper.
  *
  *  Read include service attribute value storing the result into buffer after
  *  enconding it.
@@ -381,7 +381,7 @@ int bt_gatt_attr_read_included(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       void *buf, uint8_t len, uint16_t offset);
 
-/*! @def BT_GATT_INCLUDE_SERVICE
+/** @def BT_GATT_INCLUDE_SERVICE
  *  @brief Include Service Declaration Macro.
  *
  *  Helper macro to declare a include service attribute.
@@ -399,7 +399,7 @@ int bt_gatt_attr_read_included(struct bt_conn *conn,
 	.user_data = _service,						\
 }
 
-/*! @brief Read Characteristic Attribute helper.
+/** @brief Read Characteristic Attribute helper.
  *
  *  Read characteristic attribute value storing the result into buffer after
  *  enconding it.
@@ -418,7 +418,7 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
 			   uint8_t len, uint16_t offset);
 
-/*! @def BT_GATT_CHARACTERISTIC
+/** @def BT_GATT_CHARACTERISTIC
  *  @brief Characteristic Declaration Macro.
  *
  *  Helper macro to declare a characteristic attribute.
@@ -436,13 +436,13 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	.user_data = _value,						\
 }
 
-/*! @brief GATT CCC configuration entry. */
+/** @brief GATT CCC configuration entry. */
 struct bt_gatt_ccc_cfg {
-	/*! Config peer address. */
+	/** Config peer address. */
 	bt_addr_le_t		peer;
-	/*! Config peer value. */
+	/** Config peer value. */
 	uint16_t		value;
-	/*! Config valid flag. */
+	/** Config valid flag. */
 	uint8_t			valid;
 };
 
@@ -455,7 +455,7 @@ struct _bt_gatt_ccc {
 	void			(*cfg_changed)(uint16_t value);
 };
 
-/*! @brief Read Client Characteristic Configuration Attribute helper.
+/** @brief Read Client Characteristic Configuration Attribute helper.
  *
  *  Read CCC attribute value storing the result into buffer after
  *  enconding it.
@@ -474,7 +474,7 @@ int bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint8_t len, uint16_t offset);
 
-/*! @brief Write Client Characteristic Configuration Attribute helper.
+/** @brief Write Client Characteristic Configuration Attribute helper.
  *
  *  Write value in the buffer into CCC attribute.
  *  NOTE: Only use this with attributes which user_data is a _bt_gatt_ccc.
@@ -492,7 +492,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
 			   uint8_t len, uint16_t offset);
 
-/*! @def BT_GATT_CCC
+/** @def BT_GATT_CCC
  *  @brief Client Characteristic Configuration Declaration Macro.
  *
  *  Helper macro to declare a CCC attribute.
@@ -516,7 +516,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 					       .cfg_changed = _cfg_changed, }),\
 }
 
-/*! @brief Read Characteristic Extended Properties Attribute helper
+/** @brief Read Characteristic Extended Properties Attribute helper
  *
  *  Read CEP attribute value storing the result into buffer after
  *  enconding it.
@@ -535,7 +535,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint8_t len, uint16_t offset);
 
-/*! @def BT_GATT_CEP
+/** @def BT_GATT_CEP
  *  @brief Characteristic Extended Properties Declaration Macro.
  *
  *  Helper macro to declare a CEP attribute.
@@ -553,7 +553,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 	.user_data = _value,						\
 }
 
-/*! @def BT_GATT_DESCRIPTOR
+/** @def BT_GATT_DESCRIPTOR
  *  @brief Descriptor Declaration Macro.
  *
  *  Helper macro to declare a descriptor attribute.
@@ -575,7 +575,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 	.user_data = _value,						\
 }
 
-/*! @def BT_GATT_LONG_DESCRIPTOR
+/** @def BT_GATT_LONG_DESCRIPTOR
  *  @brief Descriptor Declaration Macro.
  *
  *  Helper macro to declare a descriptor attribute.
@@ -600,7 +600,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 	.user_data = _value,						\
 }
 
-/*! @brief Notify attribute value change.
+/** @brief Notify attribute value change.
  *
  *  Send notification of attribute value change.
  *  Note: This function should only be called if CCC is declared with
@@ -612,13 +612,13 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  */
 void bt_gatt_notify(uint16_t handle, const void *data, size_t len);
 
-/*! @brief connected callback.
+/** @brief connected callback.
  *
  *  @param conn Connection object.
  */
 void bt_gatt_connected(struct bt_conn *conn);
 
-/*! @brief disconnected callback.
+/** @brief disconnected callback.
  *
  *  @param conn Connection object.
  */

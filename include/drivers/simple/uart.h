@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Simple UART driver header file.
  *
  *  A simple UART driver that allows applications to handle all aspects of
@@ -37,7 +37,7 @@
 
 #include <stdlib.h>
 
-/*! @brief Received data callback.
+/** @brief Received data callback.
  *
  *  This function is called when new data is received on UART. The off parameter
  *  can be used to alter offset at which received data is stored. Typically,
@@ -51,7 +51,7 @@
  */
 typedef uint8_t *(*uart_simple_recv_cb)(uint8_t *buf, size_t *off);
 
-/*! @brief Register UART application.
+/** @brief Register UART application.
  *
  *  This function is used to register new UART application.
  *
@@ -61,7 +61,7 @@ typedef uint8_t *(*uart_simple_recv_cb)(uint8_t *buf, size_t *off);
  */
 void uart_simple_register(uint8_t *buf, size_t len, uart_simple_recv_cb cb);
 
-/*! @brief Send data over UART.
+/** @brief Send data over UART.
  *
  *  This function is used to send data over UART.
  *
@@ -72,7 +72,7 @@ void uart_simple_register(uint8_t *buf, size_t len, uart_simple_recv_cb cb);
  */
 int uart_simple_send(const uint8_t *data, int len);
 
-/*! @brief Simple UART interrupt handler.
+/** @brief Simple UART interrupt handler.
  *
  *  This function is called from an interrupt and should not be called by
  *  an application directly.

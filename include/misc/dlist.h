@@ -58,7 +58,7 @@ struct _dnode {
 typedef struct _dnode sys_dlist_t;
 typedef struct _dnode sys_dnode_t;
 
-/*!
+/**
  * @brief initialize list
  *
  * @param list the doubly-linked list
@@ -72,7 +72,7 @@ static inline void sys_dlist_init(sys_dlist_t *list)
 	list->tail = (sys_dnode_t *)list;
 }
 
-/*!
+/**
  * @brief check if a node is the list's head
  *
  * @param list the doubly-linked list to operate on
@@ -86,7 +86,7 @@ static inline int sys_dlist_is_head(sys_dlist_t *list, sys_dnode_t *node)
 	return list->head == node;
 }
 
-/*!
+/**
  * @brief check if a node is the list's tail
  *
  * @param list the doubly-linked list to operate on
@@ -100,7 +100,7 @@ static inline int sys_dlist_is_tail(sys_dlist_t *list, sys_dnode_t *node)
 	return list->tail == node;
 }
 
-/*!
+/**
  * @brief check if the list is empty
  *
  * @param list the doubly-linked list to operate on
@@ -113,7 +113,7 @@ static inline int sys_dlist_is_empty(sys_dlist_t *list)
 	return list->head == list;
 }
 
-/*!
+/**
  * @brief get a reference to the head item in the list
  *
  * @param list the doubly-linked list to operate on
@@ -126,7 +126,7 @@ static inline sys_dnode_t *sys_dlist_peek_head(sys_dlist_t *list)
 	return sys_dlist_is_empty(list) ? NULL : list->head;
 }
 
-/*!
+/**
  * @brief get a reference to the next item in the list
  *
  * @param list the doubly-linked list to operate on
@@ -141,7 +141,7 @@ static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
 	return node == list->tail ? NULL : node->next;
 }
 
-/*!
+/**
  * @brief add node to tail of list
  *
  * @param list the doubly-linked list to operate on
@@ -159,7 +159,7 @@ static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
 	list->tail = node;
 }
 
-/*!
+/**
  * @brief add node to head of list
  *
  * @param list the doubly-linked list to operate on
@@ -177,7 +177,7 @@ static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
 	list->head = node;
 }
 
-/*!
+/**
  * @brief insert node after a node
  *
  * Insert a node after a specified node in a list.
@@ -202,7 +202,7 @@ static inline void sys_dlist_insert_after(sys_dlist_t *list,
 	}
 }
 
-/*!
+/**
  * @brief insert node before a node
  *
  * Insert a node before a specified node in a list.
@@ -227,7 +227,7 @@ static inline void sys_dlist_insert_before(sys_dlist_t *list,
 	}
 }
 
-/*!
+/**
  * @brief insert node at position
  *
  * Insert a node in a location depending on a external condition. The cond()
@@ -258,7 +258,7 @@ static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
 	}
 }
 
-/*!
+/**
  * @brief remove a specific node from a list
  *
  * The list is implicit from the node. The node must be part of a list.
@@ -274,7 +274,7 @@ static inline void sys_dlist_remove(sys_dnode_t *node)
 	node->next->prev = node->prev;
 }
 
-/*!
+/**
  * @brief get the first node in a list
  *
  * @param list the doubly-linked list to operate on

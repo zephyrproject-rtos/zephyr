@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Bluetooth buffer management.
  */
 
@@ -37,7 +37,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/*! @def BT_BUF_MAX_DATA
+/** @def BT_BUF_MAX_DATA
  *  @brief Maximum amount of data that can fit in a buffer.
  *
  *  The biggest foreseeable buffer size requirement right now comes from
@@ -48,34 +48,34 @@
  */
 #define BT_BUF_MAX_DATA 74
 
-/*! Type of data contained in a buffer */
+/** Type of data contained in a buffer */
 enum bt_buf_type {
-	BT_CMD,			/*! HCI command */
-	BT_EVT,			/*! HCI event */
-	BT_ACL_OUT,		/*! Outgoing ACL data */
-	BT_ACL_IN,		/*! Incoming ACL data */
-	BT_DUMMY = BT_CMD,	/*! Only used for waking up fibers */
+	BT_CMD,			/** HCI command */
+	BT_EVT,			/** HCI event */
+	BT_ACL_OUT,		/** Outgoing ACL data */
+	BT_ACL_IN,		/** Incoming ACL data */
+	BT_DUMMY = BT_CMD,	/** Only used for waking up fibers */
 };
 
-/*! HCI command specific information */
+/** HCI command specific information */
 struct bt_buf_hci_data {
-	/*! Used by bt_hci_cmd_send_sync. Initially contains the waiting
+	/** Used by bt_hci_cmd_send_sync. Initially contains the waiting
 	 *  semaphore, as the semaphore is given back contains the bt_buf
 	 *  for the return parameters.
 	 */
 	void *sync;
 
-	/*! The command OpCode that the buffer contains */
+	/** The command OpCode that the buffer contains */
 	uint16_t opcode;
 };
 
-/*! ACL data buffer specific information */
+/** ACL data buffer specific information */
 struct bt_buf_acl_data {
 	uint16_t handle;
 };
 
 struct bt_buf {
-	/*! FIFO uses first 4 bytes itself, reserve space */
+	/** FIFO uses first 4 bytes itself, reserve space */
 	int __unused;
 
 	union {
@@ -83,20 +83,20 @@ struct bt_buf {
 		struct bt_buf_acl_data	acl;
 	};
 
-	/*! Pointer to the start of data in the buffer. */
+	/** Pointer to the start of data in the buffer. */
 	uint8_t *data;
 
-	/*! Length of the data behind the data pointer. */
+	/** Length of the data behind the data pointer. */
 	uint8_t len;
 
-	uint8_t ref:5,   /*! Reference count */
-	        type:3;  /*! Type of data contained in the buffer */
+	uint8_t ref:5,   /** Reference count */
+	        type:3;  /** Type of data contained in the buffer */
 
-	/*! The full available buffer. */
+	/** The full available buffer. */
 	uint8_t buf[BT_BUF_MAX_DATA];
 };
 
-/*! @brief Get a new buffer from the pool.
+/** @brief Get a new buffer from the pool.
  *
  *  Get buffer from the available buffers pool with specified type and
  *  reserved headroom.
@@ -112,7 +112,7 @@ struct bt_buf {
  */
 struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head);
 
-/*! @brief Decrements the reference count of a buffer.
+/** @brief Decrements the reference count of a buffer.
  *
  *  Decrements the reference count of a buffer and puts it back into the
  *  pool if the count reaches zero.
@@ -121,7 +121,7 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head);
  */
 void bt_buf_put(struct bt_buf *buf);
 
-/*! Increment the reference count of a buffer.
+/** Increment the reference count of a buffer.
  *
  *  Increment the reference count of a buffer.
  *
@@ -129,7 +129,7 @@ void bt_buf_put(struct bt_buf *buf);
  */
 struct bt_buf *bt_buf_hold(struct bt_buf *buf);
 
-/*! @brief Prepare data to be added at the end of the buffer
+/** @brief Prepare data to be added at the end of the buffer
  *
  *  Increments the data length of a buffer to account for more data
  *  at the end.
@@ -141,7 +141,7 @@ struct bt_buf *bt_buf_hold(struct bt_buf *buf);
  */
 void *bt_buf_add(struct bt_buf *buf, size_t len);
 
-/*! @brief Push data to the beginning of the buffer.
+/** @brief Push data to the beginning of the buffer.
  *
  *  Modifies the data pointer and buffer length to account for more data
  *  in the beginning of the buffer.
@@ -153,7 +153,7 @@ void *bt_buf_add(struct bt_buf *buf, size_t len);
  */
 void *bt_buf_push(struct bt_buf *buf, size_t len);
 
-/*! @brief Remove data from the beginning of the buffer.
+/** @brief Remove data from the beginning of the buffer.
  *
  *  Removes data from the beginnig of the buffer by modifying the data
  *  pointer and buffer length.
@@ -165,7 +165,7 @@ void *bt_buf_push(struct bt_buf *buf, size_t len);
  */
 void *bt_buf_pull(struct bt_buf *buf, size_t len);
 
-/*! @brief Remove and convert 16 bits from the beginning of the buffer.
+/** @brief Remove and convert 16 bits from the beginning of the buffer.
  *
  *  Same idea as with bt_buf_pull(), but a helper for operating on
  *  16-bit little endian data.
@@ -176,7 +176,7 @@ void *bt_buf_pull(struct bt_buf *buf, size_t len);
  */
 uint16_t bt_buf_pull_le16(struct bt_buf *buf);
 
-/*! @brief Check buffer tailroom.
+/** @brief Check buffer tailroom.
  *
  *  Check how much free space there is at the end of the buffer.
  *
@@ -184,7 +184,7 @@ uint16_t bt_buf_pull_le16(struct bt_buf *buf);
  */
 size_t bt_buf_tailroom(struct bt_buf *buf);
 
-/*! @brief Check buffer headroom.
+/** @brief Check buffer headroom.
  *
  *  Check how much free space there is in the beginning of the buffer.
  *
@@ -192,7 +192,7 @@ size_t bt_buf_tailroom(struct bt_buf *buf);
  */
 size_t bt_buf_headroom(struct bt_buf *buf);
 
-/*! @def bt_buf_tail
+/** @def bt_buf_tail
  *  @brief Get the tail pointer for a buffer.
  *
  *  Get a pointer to the end of the data in a buffer.
@@ -203,7 +203,7 @@ size_t bt_buf_headroom(struct bt_buf *buf);
  */
 #define bt_buf_tail(buf) ((buf)->data + (buf)->len)
 
-/*! @brief Initialize buffer handling.
+/** @brief Initialize buffer handling.
  *
  *  Initialize the buffers with specified amount of incoming and outgoing
  *  ACL buffers. The HCI command and event buffers will be allocated from

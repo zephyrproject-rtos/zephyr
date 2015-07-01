@@ -42,7 +42,7 @@
 #define APP_EARLY	5
 #define APP_LATE	6
  
-/*! @def __define_initconfig
+/** @def __define_initconfig
  *
  *  @brief Define an init object
  *

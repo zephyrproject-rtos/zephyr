@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  @brief IPv6 and IPv4 definitions
 
  Generic IPv6 and IPv4 address definitions.
@@ -39,24 +39,24 @@
 #ifndef __NET_IP_H
 #define __NET_IP_H
 
-/*! Protocol families */
+/** Protocol families */
 #define PF_UNSPEC	0	/* Unspecified.  */
 #define PF_INET		2	/* IP protocol family.  */
 #define PF_INET6	10	/* IP version 6.  */
 
-/*! Address families.  */
+/** Address families.  */
 #define AF_UNSPEC	PF_UNSPEC
 #define AF_INET		PF_INET
 #define AF_INET6	PF_INET6
 
-/*! Protocol numbers from IANA */
+/** Protocol numbers from IANA */
 enum ip_protocol {
 	IPPROTO_TCP = 6,
 	IPPROTO_UDP = 17,
 	IPPROTO_ICMPV6 = 58,
 };
 
-/*! IPv6 address structure */
+/** IPv6 address structure */
 struct in6_addr {
 	union {
 		uint8_t		u6_addr8[16];
@@ -68,7 +68,7 @@ struct in6_addr {
 #define s6_addr32		in6_u.u6_addr32
 };
 
-/*! IPv4 address */
+/** IPv4 address */
 struct in_addr {
 	union {
 		uint8_t		u4_addr8[4];
@@ -97,17 +97,17 @@ struct net_addr {
 
 #define INET6_ADDRSTRLEN 46
 
-/*! IPv6/IPv4 network connection tuple */
+/** IPv6/IPv4 network connection tuple */
 struct net_tuple {
-	/*! IPv6/IPv4 remote address */
+	/** IPv6/IPv4 remote address */
 	struct net_addr *remote_addr;
-	/*! IPv6/IPv4 local address */
+	/** IPv6/IPv4 local address */
 	struct net_addr *local_addr;
-	/*! UDP/TCP remote port */
+	/** UDP/TCP remote port */
 	uint16_t remote_port;
-	/*! UDP/TCP local port */
+	/** UDP/TCP local port */
 	uint16_t local_port;
-	/*! IP protocol */
+	/** IP protocol */
 	enum ip_protocol ip_proto;
 };
 

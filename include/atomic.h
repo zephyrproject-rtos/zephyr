@@ -61,7 +61,7 @@ extern int atomic_cas(atomic_t *target,
 #define ATOMIC_MASK(bit) (1 << ((bit) & (ATOMIC_BITS - 1)))
 #define ATOMIC_ELEM(addr, bit) ((addr) + ((bit) / ATOMIC_BITS))
 
-/*! @brief Test whether a bit is set
+/** @brief Test whether a bit is set
  *
  *  Test whether bit number bit is set or not.
  *
@@ -81,7 +81,7 @@ static inline int atomic_test_bit(const atomic_t *addr, int bit)
 	return (1 & (val >> (bit & (ATOMIC_BITS - 1))));
 }
 
-/*! @brief Clear a bit and return its old value
+/** @brief Clear a bit and return its old value
  *
  *  Atomically clear a bit and return its old value.
  *
@@ -104,7 +104,7 @@ static inline int atomic_test_and_clear_bit(atomic_t *addr, int bit)
 	return (old & mask) != 0;
 }
 
-/*! @brief Set a bit and return its old value
+/** @brief Set a bit and return its old value
  *
  *  Atomically set a bit and return its old value.
  *
@@ -127,7 +127,7 @@ static inline int atomic_test_and_set_bit(atomic_t *addr, int bit)
 	return (old & mask) != 0;
 }
 
-/*! @brief Clear a bit
+/** @brief Clear a bit
  *
  *  Atomically clear a bit.
  *
@@ -145,7 +145,7 @@ static inline void atomic_clear_bit(atomic_t *addr, int bit)
 	atomic_and(ATOMIC_ELEM(addr, bit), ~mask);
 }
 
-/*! @brief Set a bit
+/** @brief Set a bit
  *
  *  Atomically set a bit.
  *

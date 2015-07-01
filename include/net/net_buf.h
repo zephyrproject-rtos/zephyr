@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  @brief Network buffer API
 
  Network data is passed between application and IP stack via
@@ -53,7 +53,7 @@
 
 struct net_context;
 
-/*! The default MTU is 1280 (minimum IPv6 packet size) + LL header
+/** The default MTU is 1280 (minimum IPv6 packet size) + LL header
  * In Contiki terms this is UIP_LINK_MTU + UIP_LLH_LEN = UIP_BUFSIZE
  *
  * Contiki assumes that this value is UIP_BUFSIZE so do not change it
@@ -62,15 +62,15 @@ struct net_context;
 #define NET_BUF_MAX_DATA UIP_BUFSIZE
 
 struct net_buf {
-	/*! @cond ignore */
+	/** @cond ignore */
 	/* FIFO uses first 4 bytes itself, reserve space */
 	int __unused;
 	/* @endcond */
 
-	/*! Network connection context */
+	/** Network connection context */
 	struct net_context *context;
 
-	/*! @cond ignore */
+	/** @cond ignore */
 	/* uIP stack specific data */
 	uint8_t uip_ext_len;
 	uint8_t uip_ext_bitmap;
@@ -97,15 +97,15 @@ struct net_buf {
 	uint8_t nd6_opt_offset;
 	/* @endcond */
 
-	/*! Buffer data length */
+	/** Buffer data length */
 	uint16_t len;
-	/*! Buffer head pointer */
+	/** Buffer head pointer */
 	uint8_t *data;
-	/*! Actual network buffer storage */
+	/** Actual network buffer storage */
 	uint8_t buf[NET_BUF_MAX_DATA];
 };
 
-/*! @cond ignore */
+/** @cond ignore */
 /* Macros to access net_buf when inside Contiki stack */
 #define uip_buf(buf) ((buf)->buf)
 #define uip_len(buf) ((buf)->len)
@@ -138,7 +138,7 @@ struct net_buf {
 #define uip_nd6_ipaddr(buf) ((buf)->ipaddr)
 /* @endcond */
 
-/*!
+/**
  * @brief Get buffer from the available buffers pool.
  *
  * @details Get network buffer from buffer pool. You must have
@@ -157,7 +157,7 @@ struct net_buf *net_buf_get_debug(struct net_context *context, const char *calle
 struct net_buf *net_buf_get(struct net_context *context);
 #endif
 
-/*!
+/**
  * @brief Get buffer from pool but also reserve headroom for
  * potential headers.
  *
@@ -176,7 +176,7 @@ struct net_buf *net_buf_get_reserve_debug(uint16_t reserve_head, const char *cal
 struct net_buf *net_buf_get_reserve(uint16_t reserve_head);
 #endif
 
-/*!
+/**
  * @brief Place buffer back into the available buffers pool.
  *
  * @details Releases the buffer to other use. This needs to be
@@ -194,7 +194,7 @@ void net_buf_put_debug(struct net_buf *buf, const char *caller, int line);
 void net_buf_put(struct net_buf *buf);
 #endif
 
-/*!
+/**
  * @brief Prepare data to be added at the end of the buffer.
  *
  * @details Move the tail pointer forward.
@@ -206,7 +206,7 @@ void net_buf_put(struct net_buf *buf);
  */
 uint8_t *net_buf_add(struct net_buf *buf, uint16_t len);
 
-/*!
+/**
  * @brief Push data to the beginning of the buffer.
  *
  * @details Move the data pointer backwards.
@@ -218,7 +218,7 @@ uint8_t *net_buf_add(struct net_buf *buf, uint16_t len);
  */
 uint8_t *net_buf_push(struct net_buf *buf, uint16_t len);
 
-/*!
+/**
  * @brief Remove data from the beginning of the buffer.
  *
  * @details Move the data pointer forward.
@@ -230,7 +230,7 @@ uint8_t *net_buf_push(struct net_buf *buf, uint16_t len);
  */
 uint8_t *net_buf_pull(struct net_buf *buf, uint16_t len);
 
-/*! @def net_buf_tail
+/** @def net_buf_tail
  *
  * @brief Return pointer to the end of the data in the buffer.
  *
@@ -242,11 +242,11 @@ uint8_t *net_buf_pull(struct net_buf *buf, uint16_t len);
  */
 #define net_buf_tail(buf) ((buf)->data + (buf)->len)
 
-/*! @cond ignore */
+/** @cond ignore */
 void net_buf_init(void);
 /* @endcond */
 
-/*! For the MAC layer (after the IPv6 packet is fragmented to smaller
+/** For the MAC layer (after the IPv6 packet is fragmented to smaller
  * chunks), we can use much smaller buffers (depending on used radio
  * technology). For 802.15.4 we use the 128 bytes long buffers.
  */
@@ -255,12 +255,12 @@ void net_buf_init(void);
 #endif
 
 struct net_mbuf {
-	/*! @cond ignore */
+	/** @cond ignore */
 	/* FIFO uses first 4 bytes itself, reserve space */
 	int __unused;
 	/* @endcond */
 
-	/*! @cond ignore */
+	/** @cond ignore */
 	/* 6LoWPAN pointers */
 	uint8_t *packetbuf_ptr;
 	uint8_t packetbuf_hdr_len;
@@ -277,7 +277,7 @@ struct net_mbuf {
 	/* @endcond */
 };
 
-/*!
+/**
  * @brief Get buffer from the available buffers pool
  * and also reserve headroom for potential headers.
  *
@@ -290,7 +290,7 @@ struct net_mbuf {
  */
 struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head);
 
-/*!
+/**
  * @brief Place buffer back into the available buffers pool.
  *
  * @details Releases the buffer to other use. This needs to be
@@ -301,7 +301,7 @@ struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head);
  */
 void net_mbuf_put(struct net_mbuf *buf);
 
-/*! @cond ignore */
+/** @cond ignore */
 #define uip_packetbuf_ptr(buf) ((buf)->packetbuf_ptr)
 #define uip_packetbuf_hdr_len(buf) ((buf)->packetbuf_hdr_len)
 #define uip_packetbuf_payload_len(buf) ((buf)->packetbuf_payload_len)

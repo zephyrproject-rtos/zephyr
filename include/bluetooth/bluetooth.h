@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Bluetooth subsystem core APIs.
  */
 
@@ -58,7 +58,7 @@ struct bt_eir {
 	uint8_t data[29];
 } __packed;
 
-/*! @brief Define a type allowing user to implement a function that can
+/** @brief Define a type allowing user to implement a function that can
  *  be used to get back active LE scan results.
  *
  *  A function of this type will be called back when user application
@@ -76,7 +76,7 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 		             uint8_t adv_type, const uint8_t *adv_data,
 		             uint8_t len);
 
-/*! @brief Start advertising
+/** @brief Start advertising
  *
  *  Set advertisement data, scan response data, advertisement parameters
  *  and start advertising.
@@ -90,7 +90,7 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
 			 const struct bt_eir *sd);
 
-/*! @brief Start (LE) scanning
+/** @brief Start (LE) scanning
  *
  *  Start LE scanning with and provide results through the specified
  *  callback.
@@ -102,7 +102,7 @@ int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
  */
 int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
 
-/*! @brief Stop (LE) scanning.
+/** @brief Stop (LE) scanning.
  *
  *  Stops ongoing LE scanning.
  *
@@ -110,7 +110,7 @@ int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
  */
 int bt_stop_scanning(void);
 
-/*! @brief Initiate an LE connection to a remote device.
+/** @brief Initiate an LE connection to a remote device.
  *
  *  Allows initiate new LE link to remote peer using its address.
  *  Returns a new reference that the the caller is responsible for managing.
@@ -121,7 +121,7 @@ int bt_stop_scanning(void);
  */
 struct bt_conn *bt_connect_le(const bt_addr_le_t *peer);
 
-/*! @brief Disconnect from a remote device or cancel pending connection.
+/** @brief Disconnect from a remote device or cancel pending connection.
  *
  *  Disconnect an active connection with the specified reason code or cancel
  *  pending outgoing connection.
@@ -133,17 +133,17 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer);
  */
 int bt_disconnect(struct bt_conn *conn, uint8_t reason);
 
-/*! Security level. */
+/** Security level. */
 typedef enum {
-	BT_SECURITY_LOW,    /*! No encryption and no authentication. */
-	BT_SECURITY_MEDIUM, /*! encryption and no authentication (no MITM). */
-	BT_SECURITY_HIGH,   /*! encryption and authentication (MITM). */
-	BT_SECURITY_FIPS,   /*! Authenticated LE Secure Connections and
+	BT_SECURITY_LOW,    /** No encryption and no authentication. */
+	BT_SECURITY_MEDIUM, /** encryption and no authentication (no MITM). */
+	BT_SECURITY_HIGH,   /** encryption and authentication (MITM). */
+	BT_SECURITY_FIPS,   /** Authenticated LE Secure Connections and
 			     *  encryption.
 			     */
 } bt_security_t;
 
-/*! @brief Set security level for a connection.
+/** @brief Set security level for a connection.
  *
  *  This function enable security (encryption) for a connection. If device is
  *  already paired with sufficiently strong key encryption will be enabled. If
@@ -165,7 +165,7 @@ typedef enum {
  */
 int bt_security(struct bt_conn *conn, bt_security_t sec);
 
-/*! @def BT_ADDR_STR_LEN
+/** @def BT_ADDR_STR_LEN
  *
  *  @brief Recommended length of user string buffer for Bluetooth address
  *
@@ -175,7 +175,7 @@ int bt_security(struct bt_conn *conn, bt_security_t sec);
  */
 #define BT_ADDR_STR_LEN 18
 
-/*! @def BT_ADDR_LE_STR_LEN
+/** @def BT_ADDR_LE_STR_LEN
  *
  *  @brief Recommended length of user string buffer for Bluetooth LE address
  *
@@ -185,7 +185,7 @@ int bt_security(struct bt_conn *conn, bt_security_t sec);
  */
 #define BT_ADDR_LE_STR_LEN 27
 
-/*! @brief Converts binary Bluetooth address to string.
+/** @brief Converts binary Bluetooth address to string.
  *
  *  @param addr Address of buffer containing binary Bluetooth address.
  *  @param str Address of user buffer with enough room to store formatted
@@ -202,7 +202,7 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 			addr->val[2], addr->val[1], addr->val[0]);
 }
 
-/*! @brief Converts binary LE Bluetooth address to string.
+/** @brief Converts binary LE Bluetooth address to string.
  *
  *  @param addr Address of buffer containing binary LE Bluetooth address.
  *  @param user_buf Address of user buffer with enough room to store

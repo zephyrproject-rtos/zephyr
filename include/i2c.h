@@ -92,7 +92,7 @@ struct i2c_driver_api {
 	i2c_api_resume resume;
 };
 
-/*!
+/**
  * @brief Configure a host controllers operation
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to the application provided configuration
@@ -105,7 +105,7 @@ inline int i2c_configure(struct device *dev, struct i2c_config *config)
 	return api->configure(dev, config);
 }
 
-/*!
+/**
  * @brief Configure a host controllers operation
  * @param dev Pointer to the device structure for the driver instance
  * @param buf Memory pool that data should be transferred from
@@ -119,7 +119,7 @@ inline int i2c_write(struct device *dev, unsigned char *buf, uint32_t len)
 	return api->write(dev, buf, len);
 }
 
-/*!
+/**
  * @brief Read a set amount of data from an I2C driver
  * @param dev Pointer to the device structure for the driver instance
  * @param buf Memory pool that data should be transferred to
@@ -133,7 +133,7 @@ inline int i2c_read(struct device *dev, unsigned char *buf, uint32_t len)
 	return api->read(dev, buf, len);
 }
 
-/*!
+/**
  * @brief Suspend an I2C driver
  * @param dev Pointer to the device structure for the driver instance
  */
@@ -145,7 +145,7 @@ inline int i2c_suspend(struct device *dev)
 	return api->suspend(dev);
 }
 
-/*!
+/**
  * @brief Resume an I2C driver
  * @param dev Pointer to the device structure for the driver instance
  */

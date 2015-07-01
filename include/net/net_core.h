@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  @brief Network core definitions
 
  Definitions for networking support.
@@ -49,7 +49,7 @@
 #define NET_INFO(fmt, ...) printk("net: " fmt,  ##__VA_ARGS__)
 #define NET_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
 
-/*!
+/**
  * @brief Initialize network stack. This is will be automatically called
  * by the OS.
  *
@@ -60,17 +60,17 @@
 int net_init(void);
 
 struct net_driver {
-	/*! How much headroom is needed for net transport headers */
+	/** How much headroom is needed for net transport headers */
 	size_t head_reserve;
 
-	/*! Open the net transport */
+	/** Open the net transport */
 	int (*open) (void);
 
-	/*! Send data to net */
+	/** Send data to net */
 	int (*send) (struct net_buf *buf);
 };
 
-/*!
+/**
  * @brief Register a new network driver to the network stack.
  *
  * @details Only one network device can be registered at a time.
@@ -81,7 +81,7 @@ struct net_driver {
  */
 int net_register_driver(struct net_driver *drv);
 
-/*!
+/**
  * @brief Unregister a previously registered network driver.
  *
  * @param buf Network driver.
@@ -92,7 +92,7 @@ int net_register_driver(struct net_driver *drv);
  */
 void net_unregister_driver(struct net_driver *drv);
 
-/*!
+/**
  * @brief Set the MAC/EUI-64 address of the device.
  *
  * @details Network device driver should call this function to

@@ -31,7 +31,7 @@
 #ifndef _DEVICE_H_
 #define _DEVICE_H_
 
-/*! @def DECLARE_DEVICE_INIT_CONFIG
+/** @def DECLARE_DEVICE_INIT_CONFIG
  *
  *  @brief Define an config object
  *
@@ -62,24 +62,24 @@ struct device;
 
 /* Static device infomation (In ROM) Per driver instance */
 struct device_config {
-	/*! name of the device */
+	/** name of the device */
 	char	*name;
-	/*! init function for the driver */
+	/** init function for the driver */
 	int (*init)(struct device *device);
-	/*! address of driver instance config information */
+	/** address of driver instance config information */
 	void *config_info;
 };
 
 /* Runtime device structure (In memory) Per driver instance */
 struct device {
-	/*! Build time config information */
+	/** Build time config information */
 	struct device_config *config;
-	/*! pointer to structure containing the API functions for the
+	/** pointer to structure containing the API functions for the
 	 * device type. This pointer is filled in by the driver at
 	 * init time.
 	 */
 	void *driver_api;
-	/*! Driver instance data. For driver use only*/
+	/** Driver instance data. For driver use only*/
 	void *driver_data;
 };
 

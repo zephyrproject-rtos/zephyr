@@ -84,10 +84,10 @@ typedef volatile struct {
 } K20_WDOG_t;
 
 /***********************************************************************/
-/*!< Macro to enable all interrupts. */
+/**< Macro to enable all interrupts. */
 #define EnableInterrupts __asm__(" CPSIE i");
 
-/*!< Macro to disable all interrupts. */
+/**< Macro to disable all interrupts. */
 #define DisableInterrupts __asm__(" CPSID i");
 /***********************************************************************/
 
