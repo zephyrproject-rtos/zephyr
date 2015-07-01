@@ -591,6 +591,59 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static void bt_smp_distribute_keys(struct bt_conn *conn)
+{
+	struct bt_smp *smp = conn->smp;
+	struct bt_keys *keys;
+	struct bt_buf *buf;
+
+	keys = bt_keys_get_addr(&conn->dst);
+	if (!keys) {
+		BT_ERR("Unable to look up keys for %s\n",
+		       bt_addr_le_str(&conn->dst));
+		return;
+	}
+
+	if (!smp->local_dist) {
+		bt_keys_clear(keys, BT_KEYS_ALL);
+		return;
+	}
+
+	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
+		struct bt_smp_encrypt_info *info;
+		struct bt_smp_master_ident *ident;
+
+		le_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
+		le_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
+		le_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
+
+		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
+					sizeof(*info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Encrypt Info buffer\n");
+			return;
+		}
+
+		info = bt_buf_add(buf, sizeof(*info));
+		memcpy(info->ltk, keys->slave_ltk.val, sizeof(info->ltk));
+
+		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+
+		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
+					sizeof(*ident));
+		if (!buf) {
+			BT_ERR("Unable to allocate Master Ident buffer\n");
+			return;
+		}
+
+		ident = bt_buf_add(buf, sizeof(*ident));
+		ident->rand = keys->slave_ltk.rand;
+		ident->ediv = keys->slave_ltk.ediv;
+
+		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+	}
+}
+
 static uint8_t smp_pairing_encrypt(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_encrypt_info *req = (void *)buf->data;
@@ -802,8 +855,6 @@ static void bt_smp_disconnected(struct bt_conn *conn)
 static void bt_smp_encrypt_change(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
-	struct bt_keys *keys;
-	struct bt_buf *buf;
 
 	BT_DBG("conn %p handle %u encrypt 0x%02x\n", conn, conn->handle,
 	        conn->encrypt);
@@ -818,51 +869,7 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 
 	smp->pending_encrypt = false;
 
-	keys = bt_keys_get_addr(&conn->dst);
-	if (!keys) {
-		BT_ERR("Unable to look up keys for %s\n",
-		       bt_addr_le_str(&conn->dst));
-		return;
-	}
-
-	if (!smp->local_dist) {
-		bt_keys_clear(keys, BT_KEYS_ALL);
-		return;
-	}
-
-	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
-		struct bt_smp_encrypt_info *info;
-		struct bt_smp_master_ident *ident;
-
-		le_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
-		le_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
-		le_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
-
-		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
-					sizeof(*info));
-		if (!buf) {
-			BT_ERR("Unable to allocate Encrypt Info buffer\n");
-			return;
-		}
-
-		info = bt_buf_add(buf, sizeof(*info));
-		memcpy(info->ltk, keys->slave_ltk.val, sizeof(info->ltk));
-
-		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
-
-		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
-					sizeof(*ident));
-		if (!buf) {
-			BT_ERR("Unable to allocate Master Ident buffer\n");
-			return;
-		}
-
-		ident = bt_buf_add(buf, sizeof(*ident));
-		ident->rand = keys->slave_ltk.rand;
-		ident->ediv = keys->slave_ltk.ediv;
-
-		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
-	}
+	bt_smp_distribute_keys(conn);
 }
 
 bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
