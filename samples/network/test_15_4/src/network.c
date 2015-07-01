@@ -48,8 +48,8 @@
 #include "contiki/ipv6/uip-ds6-route.h"  /* to set the route */
 #include "contiki/ipv6/uip-ds6-nbr.h"    /* to set the neighbor cache */
 
-const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;  /* ::1 */
-const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT; /* ::  */
+const static struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT; /* ::1 */
+const static struct in6_addr in6addr_any = IN6ADDR_ANY_INIT; /* ::  */
 
 static struct net_addr loopback_addr;
 static struct net_addr any_addr;
@@ -69,6 +69,15 @@ static const char *lorem_ipsum =
 	"\n"
 	"Donec vehicula magna ut varius aliquam. Ut vitae commodo nulla, quis ornare dolor. Nulla tortor sem, venenatis eu iaculis id, commodo ut massa. Sed est lorem, euismod vitae enim sed, hendrerit gravida felis. Donec eros lacus, auctor ut ultricies eget, lobortis quis nisl. Aliquam sit amet blandit eros. Interdum et malesuada fames ac ante ipsum primis in faucibus. Quisque egestas nisl leo, sed consectetur leo ornare eu. Suspendisse vitae urna vel purus maximus finibus. Proin sed sollicitudin turpis. Mauris interdum neque eu tellus pellentesque, id fringilla nisi fermentum. Suspendisse gravida pharetra sodales orci aliquam";
 #endif
+
+static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+
+static inline void init_test()
+{
+	PRINT("%s: run 802.15.4 loopback tester\n", __FUNCTION__);
+
+	net_set_mac(my_mac, sizeof(my_mac));
+}
 
 static void set_routes()
 {
@@ -193,6 +202,7 @@ void taskA(void)
 	struct net_context *ctx;
 
 	net_init();
+	init_test();
 
 	any_addr.in6_addr = in6addr_any;
 	any_addr.family = AF_INET6;
@@ -300,6 +310,7 @@ void main(void)
 	PRINT("%s: run test_15_4\n", __FUNCTION__);
 
 	net_init();
+	init_test();
 
 	any_addr.in6_addr = in6addr_any;
 	any_addr.family = AF_INET6;
