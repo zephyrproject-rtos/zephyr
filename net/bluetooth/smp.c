@@ -58,6 +58,9 @@ struct bt_smp {
 	/* The connection this context is associated with */
 	struct bt_conn		*conn;
 
+	/* Commands that remote is allowed to send */
+	atomic_t		allowed_cmds;
+
 	/* If we're waiting for an encryption change event */
 	bool			pending_encrypt;
 
@@ -380,6 +383,8 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
 
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+
 	return 0;
 }
 
@@ -422,6 +427,8 @@ int smp_send_pairing_req(struct bt_conn *conn)
 	memcpy(smp->preq + 1, req, sizeof(*req));
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
 
 	return 0;
 }
@@ -481,6 +488,8 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
 	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+
 	return smp_send_pairing_confirm(conn);
 }
 
@@ -512,6 +521,8 @@ static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 	BT_DBG("\n");
 
 	memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 
 	if (conn->role == BT_HCI_ROLE_SLAVE) {
 		return smp_send_pairing_confirm(conn);
@@ -653,6 +664,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 static uint8_t smp_pairing_encrypt(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_encrypt_info *req = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
 	struct bt_keys *keys;
 
 	BT_DBG("\n");
@@ -665,6 +677,8 @@ static uint8_t smp_pairing_encrypt(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	memcpy(keys->ltk.val, req->ltk, 16);
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
 
 	return 0;
 }
@@ -692,6 +706,12 @@ static uint8_t smp_pairing_master(struct bt_conn *conn, struct bt_buf *buf)
 		if (!smp->remote_dist) {
 			bt_smp_distribute_keys(conn);
 		}
+
+		return 0;
+	}
+
+	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	}
 
 	return 0;
@@ -700,6 +720,7 @@ static uint8_t smp_pairing_master(struct bt_conn *conn, struct bt_buf *buf)
 static uint8_t smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_ident_info *req = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
 	struct bt_keys *keys;
 
 	BT_DBG("\n");
@@ -712,6 +733,8 @@ static uint8_t smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	memcpy(keys->irk.val, req->irk, 16);
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_ADDR_INFO);
 
 	return 0;
 }
@@ -809,6 +832,7 @@ static const struct {
 static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_hdr *hdr = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
 	uint8_t err;
 
 	if (buf->len < sizeof(*hdr)) {
@@ -824,6 +848,11 @@ static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 		BT_WARN("Unhandled SMP code 0x%02x\n", hdr->code);
 		err = BT_SMP_ERR_CMD_NOTSUPP;
 	} else {
+		if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
+			BT_WARN("Unexpected SMP code 0x%02x\n", hdr->code);
+			goto done;
+		}
+
 		if (buf->len != handlers[hdr->code].expect_len) {
 			BT_ERR("Invalid len %u for code 0x%02x\n", buf->len,
 			       hdr->code);
@@ -835,6 +864,16 @@ static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 
 	if (err) {
 		send_err_rsp(conn, err);
+
+		atomic_set(&smp->allowed_cmds, 0);
+
+		if (conn->role == BT_HCI_ROLE_MASTER) {
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_SECURITY_REQUEST);
+		} else {
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_REQ);
+		}
 	}
 
 done:
@@ -850,11 +889,22 @@ static void bt_smp_connected(struct bt_conn *conn)
 	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
 		struct bt_smp *smp = &bt_smp_pool[i];
 
-		if (!smp->conn) {
-			smp->conn = conn;
-			conn->smp = smp;
-			return;
+		if (smp->conn) {
+			continue;
 		}
+
+		smp->conn = conn;
+		conn->smp = smp;
+
+		if (conn->role == BT_HCI_ROLE_MASTER) {
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_SECURITY_REQUEST);
+		} else {
+			atomic_set_bit(&smp->allowed_cmds,
+				       BT_SMP_CMD_PAIRING_REQ);
+		}
+
+		return;
 	}
 
 	BT_ERR("No available SMP context for conn %p\n", conn);
@@ -890,6 +940,12 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 	}
 
 	smp->pending_encrypt = false;
+
+	if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_ENCRYPT_INFO);
+	} else if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+	}
 
 	/* Slave distributes it's keys first */
 	if (conn->role == BT_HCI_ROLE_MASTER && smp->remote_dist) {
