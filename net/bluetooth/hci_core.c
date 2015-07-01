@@ -579,12 +579,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	/* Make lookup to check if there's a connection object in CONNECT state
 	 * associated with passed peer LE address.
 	 */
-	conn = bt_conn_lookup_addr_le(&evt->peer_addr);
-	if (conn && conn->state != BT_CONN_CONNECT &&
-	    conn->state != BT_CONN_DISCONNECT) {
-		bt_conn_put(conn);
-		conn = NULL;
-	}
+	conn = bt_conn_lookup_state(&evt->peer_addr, BT_CONN_CONNECT);
 
 	if (evt->status) {
 		if (!conn) {
@@ -1483,8 +1478,6 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 	if (err) {
 		return err;
 	}
-
-	bt_conn_set_state(conn, BT_CONN_DISCONNECT);
 
 	return 0;
 }
