@@ -72,8 +72,8 @@ uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *dat
    return 0;
  }
 #else
-    if(uip_len > 0) {
-      tcpip_output();
+    if(uip_len(buf) > 0) {
+      tcpip_output(buf, NULL);
     }
 #endif
   }

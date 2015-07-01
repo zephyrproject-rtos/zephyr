@@ -282,38 +282,49 @@ PROCESS_THREAD(slip_process, ev, data, not_used)
     uip_len(buf) = slip_poll_handler(&uip_buf(buf)[UIP_LLH_LEN],
 				UIP_BUFSIZE - UIP_LLH_LEN);
 #if !NETSTACK_CONF_WITH_IPV6
-    if(uip_len == 4 && strncmp((char*)&uip_buf[UIP_LLH_LEN], "?IPA", 4) == 0) {
-      char buf[8];
-      memcpy(&buf[0], "=IPA", 4);
-      memcpy(&buf[4], &uip_hostaddr, 4);
+    if(uip_len(buf) == 4 && strncmp((char*)&uip_buf(buf)[UIP_LLH_LEN], "?IPA", 4) == 0) {
+      char sbuf[8];
+      memcpy(&sbuf[0], "=IPA", 4);
+      memcpy(&sbuf[4], &uip_hostaddr, 4);
       if(input_callback) {
 	input_callback();
       }
-      slip_write(buf, 8);
-    } else if(uip_len > 0
-       && uip_len == (((uint16_t)(BUF->len[0]) << 8) + BUF->len[1])
-       && uip_ipchksum() == 0xffff) {
+      slip_write(sbuf, 8);
+      /* If the packet is being discarded in uip.c:uip_input(), then the
+       * uip_len(buf) is set to 0. If that is done, then do not release
+       * the buffer here as that would cause double free.
+       */
+      if (uip_len(buf) != 0) {
+	net_buf_put(buf);
+      }
+    } else if(uip_len(buf) > 0
+       && uip_len(buf) == (((uint16_t)(BUF(buf)->len[0]) << 8) + BUF(buf)->len[1])
+       && uip_ipchksum(buf) == 0xffff) {
 #define IP_DF   0x40
-      if(BUF->ipid[0] == 0 && BUF->ipid[1] == 0 && BUF->ipoffset[0] & IP_DF) {
+      if(BUF(buf)->ipid[0] == 0 && BUF(buf)->ipid[1] == 0 && BUF(buf)->ipoffset[0] & IP_DF) {
 	static uint16_t ip_id;
 	uint16_t nid = ip_id++;
-	BUF->ipid[0] = nid >> 8;
-	BUF->ipid[1] = nid;
+	BUF(buf)->ipid[0] = nid >> 8;
+	BUF(buf)->ipid[1] = nid;
 	nid = uip_htons(nid);
 	nid = ~nid;		/* negate */
-	BUF->ipchksum += nid;	/* add */
-	if(BUF->ipchksum < nid) { /* 1-complement overflow? */
-	  BUF->ipchksum++;
+	BUF(buf)->ipchksum += nid;	/* add */
+	if(BUF(buf)->ipchksum < nid) { /* 1-complement overflow? */
+	  BUF(buf)->ipchksum++;
 	}
       }
 
 #ifdef SLIP_CONF_TCPIP_INPUT
-      SLIP_CONF_TCPIP_INPUT();
+      if (SLIP_CONF_TCPIP_INPUT(buf) < 0) {
+	net_buf_put(buf);
+      }
 #else
-      tcpip_input();
+      tcpip_input(buf);
 #endif
     } else {
-      uip_len = 0;
+      NET_DBG("Dropping slip message buf %p\n", buf);
+      uip_len(buf) = 0;
+      net_buf_put(buf);
       SLIP_STATISTICS(slip_ip_drop++);
     }
 #else /* NETSTACK_CONF_WITH_IPV6 */

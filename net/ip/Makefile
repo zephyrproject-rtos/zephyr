@@ -4,7 +4,6 @@ EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os/lib
 EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os
 EXTRA_CFLAGS += -I${srctree}/net/ip
 EXTRA_CFLAGS += -I${srctree}/include/drivers
-EXTRA_CFLAGS += -DNETSTACK_CONF_WITH_IPV6=1
 
 # Zypher specific files
 obj-y = net_init.o \
@@ -25,12 +24,6 @@ obj-y += contiki/netstack.o \
 	contiki/ip/uiplib.o \
 	contiki/ip/uip-nameserver.o \
 	contiki/ip/tcpip.o \
-	contiki/ipv6/uip6.o \
-	contiki/ipv6/uip-icmp6.o \
-	contiki/ipv6/uip-ds6.o \
-	contiki/ipv6/uip-nd6.o \
-	contiki/ipv6/uip-ds6-route.o \
-	contiki/ipv6/uip-ds6-nbr.o \
 	contiki/os/sys/process.o \
 	contiki/os/sys/stimer.o \
 	contiki/os/sys/etimer.o \
@@ -49,6 +42,19 @@ obj-y += contiki/netstack.o \
 	contiki/mac/framer.o \
 	contiki/mac/mac-sequence.o \
 	contiki/llsec/nullsec.o
+
+obj-$(CONFIG_NETWORKING_WITH_IPV6) += \
+	contiki/ipv6/uip6.o \
+	contiki/ipv6/uip-icmp6.o \
+	contiki/ipv6/uip-ds6.o \
+	contiki/ipv6/uip-nd6.o \
+	contiki/ipv6/uip-ds6-route.o \
+	contiki/ipv6/uip-ds6-nbr.o
+
+obj-$(CONFIG_NETWORKING_WITH_IPV4) += \
+	contiki/ipv4/uip_arp.o \
+	contiki/ipv4/uip.o \
+	contiki/ipv4/uip-neighbor.o
 
 # RPL (RFC 6550) support
 ifeq ($(CONFIG_NETWORKING_WITH_RPL),y)

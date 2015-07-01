@@ -15,6 +15,15 @@ typedef unsigned int uip_stats_t;
 
 #define CLOCK_CONF_SECOND 100
 
+/* It is either IPv6 or IPv4 but not both at the same time. */
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+#define NETSTACK_CONF_WITH_IPV6 1
+#elif CONFIG_NETWORKING_WITH_IPV4
+#define NETSTACK_CONF_WITH_IPV6 0
+#else
+#error "Either IPv6 or IPv4 needs to be supported."
+#endif
+
 /* No TCP yet */
 #define UIP_CONF_TCP 0
 

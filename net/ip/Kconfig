@@ -41,10 +41,29 @@ config	NETWORKING
 	help
 	  This option enabled generic networking support.
 
+choice
+prompt "Internet Protocol version"
+depends on NETWORKING
+help
+	The IP stack can either support IPv6 or IPv4 but
+	not both at the same time. The IPv6 support should
+	be selected by default as there is limited set of
+	network bearers provided that support IPv4.
+default NETWORKING_WITH_IPV6
+config NETWORKING_WITH_IPV6
+	bool "IPv6"
+	help
+	  Choose this if unsure.
+config NETWORKING_WITH_IPV4
+	bool "IPv4"
+	help
+	  Legacy IP.
+endchoice
+
 config	NETWORKING_WITH_RPL
 	bool
 	prompt "Enable RPL (ripple) IPv6 mesh routing protocol"
-	depends on NETWORKING
+	depends on NETWORKING && NETWORKING_WITH_IPV6
 	default n
 	help
 	  Enable RPL (RFC 6550) IPv6 Routing Protocol for
@@ -92,7 +111,7 @@ config	NETWORKING_DEBUG_UART
 config	NETWORKING_WITH_15_4
 	bool
 	prompt "Enable 802.15.4 driver"
-	depends on NETWORKING
+	depends on NETWORKING && NETWORKING_WITH_IPV6
 	default n
 	help
 	  Enable 802.15.4 driver that receives the IPv6 packet,

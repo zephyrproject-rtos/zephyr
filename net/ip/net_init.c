@@ -179,8 +179,10 @@ int net_send(struct net_buf *buf)
 static inline int udp_prepare_and_send(struct net_context *context,
 				       struct net_buf *buf)
 {
+#ifdef CONFIG_NETWORKING_WITH_IPV6
 	uip_ds6_route_t *route_old, *route_new = NULL;
 	uip_ds6_nbr_t *nbr;
+#endif
 	uip_ipaddr_t tmp;
 	uint16_t port;
 	uint8_t ret;
@@ -204,6 +206,7 @@ static inline int udp_prepare_and_send(struct net_context *context,
 			&UIP_IP_BUF(buf)->destipaddr);
 	uip_ipaddr_copy(&UIP_IP_BUF(buf)->destipaddr, &tmp);
 
+#ifdef CONFIG_NETWORKING_WITH_IPV6
 	/* The peer needs to be in neighbor cache before route can be added.
 	 */
 	nbr = uip_ds6_nbr_lookup((uip_ipaddr_t *)&UIP_IP_BUF(buf)->destipaddr);
@@ -235,6 +238,7 @@ static inline int udp_prepare_and_send(struct net_context *context,
 			PRINT("\n");
 		}
 	}
+#endif
 
 	ret = simple_udp_sendto_port(buf,
 				     net_context_get_udp_connection(context),
@@ -245,10 +249,12 @@ static inline int udp_prepare_and_send(struct net_context *context,
 		NET_DBG("Packet could not be sent properly.\n");
 	}
 
+#ifdef CONFIG_NETWORKING_WITH_IPV6
 	if (!route_old && route_new) {
 		/* This will also remove the neighbor cache entry */
 		uip_ds6_route_rm(route_new);
 	}
+#endif
 
 	return ret;
 }
@@ -346,7 +352,11 @@ struct net_buf *net_receive(struct net_context *context)
 				net_context_get_udp_connection(context);
 
 			ret = simple_udp_register(udp, tuple->local_port,
+#ifdef CONFIG_NETWORKING_WITH_IPV6
 				(uip_ip6addr_t *)&tuple->remote_addr->in6_addr,
+#else
+				(uip_ip4addr_t *)&tuple->remote_addr->in_addr,
+#endif
 				tuple->remote_port,
 				udp_packet_receive,
 				context);
@@ -417,7 +427,11 @@ static int check_and_send_packet(struct net_buf *buf)
 		udp = net_context_get_udp_connection(buf->context);
 		if (!net_context_get_receiver_registered(buf->context)) {
 			ret = simple_udp_register(udp, tuple->local_port,
+#ifdef CONFIG_NETWORKING_WITH_IPV6
 				(uip_ip6addr_t *)&tuple->remote_addr->in6_addr,
+#else
+				(uip_ip4addr_t *)&tuple->remote_addr->in_addr,
+#endif
 				tuple->remote_port, udp_packet_reply, buf);
 			if (!ret) {
 				NET_DBG("UDP connection creation failed\n");
@@ -512,8 +526,6 @@ static void init_tx_queue(void)
 
 int net_set_mac(uint8_t *mac, uint8_t len)
 {
-	uip_ds6_addr_t *lladdr;
-
 	if ((len > UIP_LLADDR_LEN) || (len != 6 && len != 8)) {
 		NET_ERR("Wrong ll addr len, len %d, max %d\n",
 			len, UIP_LLADDR_LEN);
@@ -521,16 +533,22 @@ int net_set_mac(uint8_t *mac, uint8_t len)
 	}
 
 	linkaddr_set_node_addr((linkaddr_t *)mac);
-	uip_ds6_set_lladdr((uip_lladdr_t *)mac);
 
-	lladdr = uip_ds6_get_link_local(-1);
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+	{
+		uip_ds6_addr_t *lladdr;
 
-	NET_DBG("Tentative link-local IPv6 address ");
-	PRINT6ADDR(&lladdr->ipaddr);
-	PRINTF("\n");
+		uip_ds6_set_lladdr((uip_lladdr_t *)mac);
 
-	lladdr->state = ADDR_AUTOCONF;
+		lladdr = uip_ds6_get_link_local(-1);
 
+		NET_DBG("Tentative link-local IPv6 address ");
+		PRINT6ADDR(&lladdr->ipaddr);
+		PRINTF("\n");
+
+		lladdr->state = ADDR_AUTOCONF;
+	}
+#endif
 	return 0;
 }
 

@@ -343,13 +343,8 @@ CCIF uint8_t tcpip_input(struct net_buf *buf);
  * \brief Output packet to layer 2
  * The eventual parameter is the MAC address of the destination.
  */
-#if NETSTACK_CONF_WITH_IPV6
 uint8_t tcpip_output(struct net_buf *buf, const uip_lladdr_t *);
 void tcpip_set_outputfunc(uint8_t (* f)(struct net_buf *buf, const uip_lladdr_t *));
-#else
-uint8_t tcpip_output(void);
-void tcpip_set_outputfunc(uint8_t (* f)(void));
-#endif
 
 /**
  * \brief This function does address resolution and then calls tcpip_output

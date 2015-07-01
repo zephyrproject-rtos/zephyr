@@ -107,13 +107,16 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 					const struct net_addr *local_addr,
 					uint16_t local_port)
 {
+#ifdef CONFIG_NETWORKING_WITH_IPV6
 	const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
-	int i;
-	uip_ipaddr_t ipaddr;
-	struct net_context *context = NULL;
 	const uip_ds6_addr_t *uip_addr;
+	uip_ipaddr_t ipaddr;
+#endif
+	int i;
 	static struct net_addr laddr;
+	struct net_context *context = NULL;
 
+#ifdef CONFIG_NETWORKING_WITH_IPV6
 	if (!local_addr || memcmp(&local_addr->in6_addr, &in6addr_any,
 				  sizeof(in6addr_any)) == 0) {
 		uip_addr = uip_ds6_get_global(-1);
@@ -128,6 +131,13 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 		laddr.in6_addr = *(struct in6_addr *)&uip_addr->ipaddr;
 		local_addr = (const struct net_addr *)&laddr;
 	}
+#else
+	if (!local_addr || local_addr->in_addr.s_addr == INADDR_ANY) {
+		memcpy(&laddr, local_addr, sizeof(struct net_addr));
+		uip_gethostaddr((uip_ipaddr_t *)&laddr.in_addr);
+		local_addr = (const struct net_addr *)&laddr;
+	}
+#endif
 
 	nano_sem_take_wait(&contexts_lock);
 
@@ -156,8 +166,10 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	context_sem_give(&contexts_lock);
 
 	/* Set our local address */
+#ifdef CONFIG_NETWORKING_WITH_IPV6
 	memcpy(&ipaddr.u8, local_addr->in6_addr.s6_addr, sizeof(ipaddr.u8));
 	uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
+#endif
 
 	return context;
 }

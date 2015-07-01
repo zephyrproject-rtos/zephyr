@@ -107,7 +107,6 @@ enum {
 };
 
 /* Called on IP packet output. */
-#if NETSTACK_CONF_WITH_IPV6
 
 static uint8_t (* outputfunc)(struct net_buf *buf, const uip_lladdr_t *a);
 
@@ -126,25 +125,6 @@ tcpip_set_outputfunc(uint8_t (*f)(struct net_buf *buf, const uip_lladdr_t *))
 {
   outputfunc = f;
 }
-#else
-
-static uint8_t (* outputfunc)(void);
-uint8_t
-tcpip_output(void)
-{
-  if(outputfunc != NULL) {
-    return outputfunc();
-  }
-  UIP_LOG("tcpip_output: Use tcpip_set_outputfunc() to set an output function");
-  return 0;
-}
-
-void
-tcpip_set_outputfunc(uint8_t (*f)(void))
-{
-  outputfunc = f;
-}
-#endif
 
 #if UIP_CONF_IP_FORWARD
 unsigned char tcpip_is_forwarding; /* Forwarding right now? */
@@ -221,8 +201,8 @@ packet_input(struct net_buf *buf)
       PRINTF("tcpip packet_input output len %d\n", uip_len(buf));
       ret = tcpip_ipv6_output(buf);
 #else
-      PRINTF("tcpip packet_input output len %d\n", uip_len);
-      tcpip_output(buf);
+      PRINTF("tcpip packet_input output len %d\n", uip_len(buf));
+      ret = tcpip_output(buf, NULL);
 #endif
 #endif /* UIP_CONF_TCP_SPLIT */
     }
@@ -446,10 +426,10 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
                 net_buf_put(buf);
 	      }
 #else
-              if(uip_len > 0) {
-		PRINTF("tcpip_output from periodic len %d\n", uip_len);
-                tcpip_output();
-		PRINTF("tcpip_output after periodic len %d\n", uip_len);
+              if(uip_len(buf) > 0) {
+		PRINTF("tcpip_output from periodic len %d\n", uip_len(buf));
+                tcpip_output(buf, NULL);
+		PRINTF("tcpip_output after periodic len %d\n", uip_len(buf));
               }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
             }
@@ -507,9 +487,9 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
 #if NETSTACK_CONF_WITH_IPV6
         tcpip_ipv6_output(buf);
 #else /* NETSTACK_CONF_WITH_IPV6 */
-        if(uip_len > 0) {
-	  PRINTF("tcpip_output from tcp poll len %d\n", uip_len);
-          tcpip_output();
+        if(uip_len(buf) > 0) {
+	  PRINTF("tcpip_output from tcp poll len %d\n", uip_len(buf));
+          tcpip_output(buf, NULL);
         }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
         /* Start the periodic polling, if it isn't already active. */
@@ -526,8 +506,8 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
           net_buf_put(buf);
 	}
 #else
-        if(uip_len > 0) {
-          tcpip_output();
+        if(uip_len(buf) > 0) {
+          tcpip_output(buf, NULL);
         }
 #endif /* UIP_UDP */
       }

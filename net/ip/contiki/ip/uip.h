@@ -1616,7 +1616,7 @@ struct uip_tcpip_hdr {
   uint16_t tcpchksum;
   uint8_t urgp[2];
   uint8_t optdata[4];
-};
+} PACK_ALIAS_STRUCT;
 
 /* The ICMP and IP headers. */
 struct uip_icmpip_hdr {
@@ -1648,7 +1648,7 @@ struct uip_icmpip_hdr {
   uint16_t id, seqno;
   uint8_t payload[1];
 #endif /* !NETSTACK_CONF_WITH_IPV6 */
-};
+} PACK_ALIAS_STRUCT;
 
 
 /* The UDP and IP headers. */
@@ -2176,7 +2176,7 @@ uint16_t uip_ipchksum(struct net_buf *buf);
  * \return The TCP checksum of the TCP segment in uip_buf and pointed
  * to by uip_appdata.
  */
-uint16_t uip_tcpchksum(void);
+uint16_t uip_tcpchksum(struct net_buf *buf);
 
 /**
  * Calculate the UDP checksum of the packet in uip_buf and uip_appdata.
