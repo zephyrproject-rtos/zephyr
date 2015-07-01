@@ -34,7 +34,7 @@
 DESCRIPTION
 This module defines the SIM (System Integration Module) Registers for the
 K20 Family of microprocessors
-*/
+ */
 
 #ifndef _K20SIM_H_
 #define _K20SIM_H_

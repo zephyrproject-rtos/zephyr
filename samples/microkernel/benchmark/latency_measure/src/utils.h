@@ -57,7 +57,7 @@ extern int errorCount;
 		PRINTF("|%-77s|\n", tmpString);                             \
 	} while (0)
 
-/*******************************************************************************
+/**
  *
  * printDashLine - print dash line
  *
@@ -114,7 +114,7 @@ int nanoIntLockUnlock(void);
 /* pointer to the ISR */
 typedef void (*ptestIsr) (void *unused);
 
-/*******************************************************************************
+/**
  *
  * initSwInterrupt - initialize the interrupt handler
  *
@@ -129,7 +129,7 @@ typedef void (*ptestIsr) (void *unused);
 
 int initSwInterrupt(ptestIsr pIsrHdlr);
 
-/*******************************************************************************
+/**
  *
  * setSwInterrupt - set the new ISR for software interrupt
  *

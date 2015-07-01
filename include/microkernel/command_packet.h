@@ -43,30 +43,30 @@ extern "C" {
 
 #define CMD_PKT_SIZE_IN_WORDS (19)
 
-/*******************************************************************************
-*
-* CMD_PKT_SET_INSTANCE - define an instance of a command packet set
-*
-* This macro is used to create an instance of a command packet set in the
-* global namespace.  Each instance of the set may have its own unique number
-* of command packets.
-*
-* INTERNAL
-* It is critical that the word corresponding to the [alloc] field in the
-* equivalent struct k_args command packet be zero so that the system knows that the
-* command packet is not part of the free list.
-*/
+/**
+ *
+ * CMD_PKT_SET_INSTANCE - define an instance of a command packet set
+ *
+ * This macro is used to create an instance of a command packet set in the
+ * global namespace.  Each instance of the set may have its own unique number
+ * of command packets.
+ *
+ * INTERNAL
+ * It is critical that the word corresponding to the [alloc] field in the
+ * equivalent struct k_args command packet be zero so that the system knows that the
+ * command packet is not part of the free list.
+ */
 
 #define CMD_PKT_SET_INSTANCE(name, num) \
 	uint32_t name[2 + CMD_PKT_SIZE_IN_WORDS * (num)] = {num, 0};
 
-/*******************************************************************************
-*
-* CMD_PKT_SET - wrapper for accessing a command packet set
-*
-* As a command packet set is instantiated as an array of uint32_t, it is
-* necessary to typecast a command packet set before accessing it.
-*/
+/**
+ *
+ * CMD_PKT_SET - wrapper for accessing a command packet set
+ *
+ * As a command packet set is instantiated as an array of uint32_t, it is
+ * necessary to typecast a command packet set before accessing it.
+ */
 
 #define CMD_PKT_SET(name) (*(struct cmd_pkt_set *)(name))
 

@@ -36,7 +36,7 @@ This module defines the Memory Protection Unit (MPU) Registers for the
 K6x Family of microprocessors.
 NOTE: Not all the registers are currently defined here - only those that are
 currently used.
-*/
+ */
 
 #ifndef _K6xMPU_H_
 #define _K6xMPU_H_

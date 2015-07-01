@@ -34,7 +34,7 @@
 /* Implementation remarks:
 - when using a floating end pointer: do not use pChBuff->iBuffsize for
   (Buff->pEnd - pChBuff->pBegin)
-*/
+ */
 
 #include <microkernel/base_api.h>
 #include <k_pipe_buffer.h>
@@ -67,9 +67,9 @@
 
 static void pipe_intrusion_check(struct chbuff *pChBuff, unsigned char *pBegin, int iSize);
 
-/*******************/
-/* Markers
-********************/
+/**
+ * Markers
+ */
 
 static int MarkerFindFree(struct marker aMarkers[])
 {
@@ -217,7 +217,7 @@ static void MarkersClear(struct marker_list *pMarkerList)
 	pMarkerList->iAWAMarker = -1;
 }
 
-/********************************************************************************/
+/**/
 
 /* note on setting/clearing markers/guards:
 
@@ -232,14 +232,14 @@ static void MarkersClear(struct marker_list *pMarkerList)
   (*) we need to housekeep how much markers there are or we can inspect the
   guard
   (**) for this, the complete markers table needs to be investigated
-*/
+ */
 
-/***************************************/
+/**/
 
 /* This function will see if one or more 'areas' in the buffer
    can be made available (either for writing xor reading).
    Note: such a series of areas starts from the beginning.
-*/
+ */
 static int ScanMarkers(struct marker_list *pMarkerList,
 					   int *piSizeBWA, int *piSizeAWA, int *piNbrPendingXfers)
 {
@@ -301,9 +301,9 @@ static int ScanMarkers(struct marker_list *pMarkerList,
 	return pMarkerList->iFirstMarker;
 }
 
-/*******************/
-/* General
-********************/
+/**
+ * General
+ */
 
 void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct chbuff *pChBuff)
 {
@@ -479,9 +479,9 @@ int BuffFull(struct chbuff *pChBuff)
 	return (pChBuff->iBuffSize == iAvailDataTotal);
 }
 
-/*******************/
-/* Buffer en-queuing:
-********************/
+/**
+ * Buffer en-queuing:
+ */
 
 static int AsyncEnQRegstr(struct chbuff *pChBuff, int iSize)
 {
@@ -589,9 +589,9 @@ void BuffEnQA_End(struct chbuff *pChBuff, int iTransferID,
 	AsyncEnQFinished(pChBuff, iTransferID);
 }
 
-/**********************/
-/* Buffer de-queuing: */
-/**********************/
+/**
+ * Buffer de-queuing:
+ */
 
 static int AsyncDeQRegstr(struct chbuff *pChBuff, int iSize)
 {
@@ -699,9 +699,9 @@ void BuffDeQA_End(struct chbuff *pChBuff, int iTransferID,
 	AsyncDeQFinished(pChBuff, iTransferID);
 }
 
-/**********************/
-/* Buffer instrusion */
-/**********************/
+/**
+ * Buffer instrusion
+ */
 
 static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 								 unsigned char *pBegin2, int iSize2)

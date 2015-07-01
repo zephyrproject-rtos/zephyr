@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Linker script for the Cortex-M3 BSPs.
-*/
+ */
 
 #define _LINKER
 #define _ASMLANGUAGE

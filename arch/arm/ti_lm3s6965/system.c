@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
 for the ti_lm3s6965 BSP.
-*/
+ */
 
 #include <nanokernel.h>
 #include <board.h>
@@ -59,13 +59,13 @@ extern void _NmiInit(void);
 
 #if defined(DO_CONSOLE_INIT)
 
-/*******************************************************************************
-*
-* uart_generic_info_init - initialize generic information for one UART
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * uart_generic_info_init - initialize generic information for one UART
+ *
+ * RETURNS: N/A
+ *
+ */
 
 inline void uart_generic_info_init(struct uart_init_info *pInfo)
 {
@@ -79,15 +79,15 @@ inline void uart_generic_info_init(struct uart_init_info *pInfo)
 
 #if defined(DO_CONSOLE_INIT)
 
-/*******************************************************************************
-*
-* consoleInit - initialize target-only console
-*
-* Only used for debugging.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * consoleInit - initialize target-only console
+ *
+ * Only used for debugging.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 #include <console/uart_console.h>
 
@@ -132,16 +132,16 @@ static void bluetooth_init(void)
 	} while ((0))
 #endif /* CONFIG_BLUETOOTH */
 
-/*******************************************************************************
-*
-* _InitHardware - perform basic hardware initialization
-*
-* Initialize the interrupt controller device drivers and the
-* integrated 16550-compatible UART device driver.
-* Also initialize the timer device driver, if required.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _InitHardware - perform basic hardware initialization
+ *
+ * Initialize the interrupt controller device drivers and the
+ * integrated 16550-compatible UART device driver.
+ * Also initialize the timer device driver, if required.
+ *
+ * RETURNS: N/A
+ */
 
 void _InitHardware(void)
 {

@@ -35,7 +35,7 @@ DESCRIPTION
 
 This module implements the PCI config space access functions
 
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -52,18 +52,18 @@ This module implements the PCI config space access functions
 	} while (0)
 #endif
 
-/*******************************************************************************
-*
-* pci_config_out_long - write a 32bit data to pci reg in offset
-*
-* @param bus_no      Bus number.
-* @param device_no   Device number
-* @param func_no     Function number
-* @param offset      Offset into the configuration space.
-* @param data        Data written to the offset.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * pci_config_out_long - write a 32bit data to pci reg in offset
+ *
+ * @param bus_no      Bus number.
+ * @param device_no   Device number
+ * @param func_no     Function number
+ * @param offset      Offset into the configuration space.
+ * @param data        Data written to the offset.
+ *
+ * RETURNS: N/A
+ */
 void pci_config_out_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						 uint32_t offset, uint32_t data)
 {
@@ -82,18 +82,18 @@ void pci_config_out_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint32_t), data);
 }
 
-/*******************************************************************************
-*
-* pci_config_out_word - write a 16bit data to pci reg in offset
-*
-* @param bus_no      Bus number.
-* @param device_no   Device number.
-* @param func_no     Function number.
-* @param offset      Offset into the configuration space.
-* @param data        Data written to the offset.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * pci_config_out_word - write a 16bit data to pci reg in offset
+ *
+ * @param bus_no      Bus number.
+ * @param device_no   Device number.
+ * @param func_no     Function number.
+ * @param offset      Offset into the configuration space.
+ * @param data        Data written to the offset.
+ *
+ * RETURNS: N/A
+ */
 void pci_config_out_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						 uint32_t offset, uint16_t data)
 {
@@ -112,18 +112,18 @@ void pci_config_out_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint16_t), data);
 }
 
-/*******************************************************************************
-*
-* pci_config_out_byte - write a 8bit data to pci reg in offset
-*
-* @param bus_no      Bus number.
-* @param device_no   Device number.
-* @param func_no     Function number.
-* @param offset      Offset into the configuration space.
-* @param data        Data written to the offset.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * pci_config_out_byte - write a 8bit data to pci reg in offset
+ *
+ * @param bus_no      Bus number.
+ * @param device_no   Device number.
+ * @param func_no     Function number.
+ * @param offset      Offset into the configuration space.
+ * @param data        Data written to the offset.
+ *
+ * RETURNS: N/A
+ */
 void pci_config_out_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						 uint32_t offset, uint8_t data)
 {
@@ -142,19 +142,19 @@ void pci_config_out_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 	pci_write(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint8_t), data);
 }
 
-/*******************************************************************************
-*
-* pci_config_in_long - read a 32bit data from pci reg in offset
-*
-* @param bus_no      Bus number.
-* @param device_no   Device number.
-* @param func_no     Function number.
-* @param offset      Offset into the configuration space.
-* @param data        Data read from the offset.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * pci_config_in_long - read a 32bit data from pci reg in offset
+ *
+ * @param bus_no      Bus number.
+ * @param device_no   Device number.
+ * @param func_no     Function number.
+ * @param offset      Offset into the configuration space.
+ * @param data        Data read from the offset.
+ *
+ * RETURNS: N/A
+ *
+ */
 void pci_config_in_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						uint32_t offset, uint32_t *data)
 {
@@ -173,19 +173,19 @@ void pci_config_in_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 	pci_read(DEFAULT_PCI_CONTROLLER, pci_addr, sizeof(uint32_t), data);
 }
 
-/*******************************************************************************
-*
-* pci_config_in_word - read in a 16bit data from a pci reg in offset
-*
-* @param bus_no      Bus number.
-* @param device_no   Device number.
-* @param func_no     Function number.
-* @param offset      Offset into the configuration space.
-* @param data        Data read from the offset.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * pci_config_in_word - read in a 16bit data from a pci reg in offset
+ *
+ * @param bus_no      Bus number.
+ * @param device_no   Device number.
+ * @param func_no     Function number.
+ * @param offset      Offset into the configuration space.
+ * @param data        Data read from the offset.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void pci_config_in_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						uint32_t offset, uint16_t *data)
@@ -210,19 +210,19 @@ void pci_config_in_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 	*data = (uint16_t)pci_data;
 }
 
-/*******************************************************************************
-*
-* pci_config_in_byte - read in a 8bit data from a pci reg in offset
-*
-* @param bus_no      Bus number.
-* @param device_no   Device number.
-* @param func_no     Function number.
-* @param offset      Offset into the configuration space.
-* @param data        Data read from the offset.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * pci_config_in_byte - read in a 8bit data from a pci reg in offset
+ *
+ * @param bus_no      Bus number.
+ * @param device_no   Device number.
+ * @param func_no     Function number.
+ * @param offset      Offset into the configuration space.
+ * @param data        Data read from the offset.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void pci_config_in_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						uint32_t offset, uint8_t *data)
@@ -247,23 +247,23 @@ void pci_config_in_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 	*data = (uint8_t)pci_data;
 }
 
-/*******************************************************************************
-*
-* pci_config_ext_cap_ptr_find - find extended capability in ECP linked list
-*
-* This routine searches for an extended capability in the linked list of
-* capabilities in config space. If found, the offset of the first byte
-* of the capability of interest in config space is returned via pOffset.
-*
-* @param ext_cap_find_id   Extended capabilities ID to search for.
-* @param bus               PCI bus number.
-* @param device            PCI device number.
-* @param function          PCI function number.
-* @param p_offset          Returned config space offset.
-*
-* RETURNS: 0 if Extended Capability found, -1 otherwise
-*
-*/
+/**
+ *
+ * pci_config_ext_cap_ptr_find - find extended capability in ECP linked list
+ *
+ * This routine searches for an extended capability in the linked list of
+ * capabilities in config space. If found, the offset of the first byte
+ * of the capability of interest in config space is returned via pOffset.
+ *
+ * @param ext_cap_find_id   Extended capabilities ID to search for.
+ * @param bus               PCI bus number.
+ * @param device            PCI device number.
+ * @param function          PCI function number.
+ * @param p_offset          Returned config space offset.
+ *
+ * RETURNS: 0 if Extended Capability found, -1 otherwise
+ *
+ */
 
 int pci_config_ext_cap_ptr_find(uint8_t ext_cap_find_id, uint32_t bus,
 								uint32_t device, uint32_t function,

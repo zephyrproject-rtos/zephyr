@@ -101,7 +101,7 @@ expands this support of all acceptance of two interrupts per vector rather than
 per priority level.
 
 INCLUDE FILES: loapic.h
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -198,15 +198,15 @@ INCLUDE FILES: loapic.h
 #define IMCR_IOAPIC_OFF 0x00 /* IMCR IOAPIC route disable */
 
 
-/*******************************************************************************
-*
-* _loapic_init - initialize the Local APIC or xAPIC
-*
-* This routine initializes Local APIC or xAPIC.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * _loapic_init - initialize the Local APIC or xAPIC
+ *
+ * This routine initializes Local APIC or xAPIC.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void _loapic_init(void)
 {
@@ -260,14 +260,14 @@ void _loapic_init(void)
 	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_EOI) = 0;
 }
 
-/*******************************************************************************
-*
-* _loapic_enable - enable the Local xAPIC
-*
-* This routine enables the Local xAPIC.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _loapic_enable - enable the Local xAPIC
+ *
+ * This routine enables the Local xAPIC.
+ *
+ * RETURNS: N/A
+ */
 
 void _loapic_enable(void)
 {
@@ -278,14 +278,14 @@ void _loapic_enable(void)
 	irq_unlock(oldLevel); /* UNLOCK INTERRUPTS */
 }
 
-/*******************************************************************************
-*
-* _loapic_disable - disable the Local xAPIC
-*
-* This routine disables the Local xAPIC.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _loapic_disable - disable the Local xAPIC
+ *
+ * This routine disables the Local xAPIC.
+ *
+ * RETURNS: N/A
+ */
 
 void _loapic_disable(void)
 {
@@ -296,14 +296,14 @@ void _loapic_disable(void)
 	irq_unlock(oldLevel); /* UNLOCK INTERRUPTS */
 }
 
-/*******************************************************************************
-*
-* _loapic_eoi -  send EOI (End Of Interrupt) signal to Local APIC
-*
-* This routine sends an EOI signal to the Local APIC's interrupting source.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _loapic_eoi -  send EOI (End Of Interrupt) signal to Local APIC
+ *
+ * This routine sends an EOI signal to the Local APIC's interrupting source.
+ *
+ * RETURNS: N/A
+ */
 
 void _loapic_eoi(unsigned int irq)
 {
@@ -311,17 +311,17 @@ void _loapic_eoi(unsigned int irq)
 	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_EOI) = 0;
 }
 
-/*******************************************************************************
-*
-* _loapic_int_vec_set - set the vector field in the specified RTE
-*
-* This routine is utilized by the BSP provided routined _SysIntVecAllocate()
-* which in turn is provided to support the irq_connect() API.  Once
-* a vector has been allocated, this routine is invoked to update the LVT
-* entry associated with <irq> with the vector.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _loapic_int_vec_set - set the vector field in the specified RTE
+ *
+ * This routine is utilized by the BSP provided routined _SysIntVecAllocate()
+ * which in turn is provided to support the irq_connect() API.  Once
+ * a vector has been allocated, this routine is invoked to update the LVT
+ * entry associated with <irq> with the vector.
+ *
+ * RETURNS: N/A
+ */
 
 void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the
 						       interrupt */
@@ -354,14 +354,14 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the
 	irq_unlock(oldLevel);
 }
 
-/*******************************************************************************
-*
-* _loapic_irq_enable - enable an individual LOAPIC interrupt (IRQ)
-*
-* This routine clears the interrupt mask bit in the LVT for the specified IRQ
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _loapic_irq_enable - enable an individual LOAPIC interrupt (IRQ)
+ *
+ * This routine clears the interrupt mask bit in the LVT for the specified IRQ
+ *
+ * RETURNS: N/A
+ */
 
 void _loapic_irq_enable(unsigned int irq /* IRQ number of
 						     the interrupt */
@@ -384,14 +384,14 @@ void _loapic_irq_enable(unsigned int irq /* IRQ number of
 	irq_unlock(oldLevel);
 }
 
-/*******************************************************************************
-*
-* _loapic_irq_disable - disable an individual LOAPIC interrupt (IRQ)
-*
-* This routine clears the interrupt mask bit in the LVT for the specified IRQ
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _loapic_irq_disable - disable an individual LOAPIC interrupt (IRQ)
+ *
+ * This routine clears the interrupt mask bit in the LVT for the specified IRQ
+ *
+ * RETURNS: N/A
+ */
 
 void _loapic_irq_disable(unsigned int irq /* IRQ number of the
 						      interrupt */

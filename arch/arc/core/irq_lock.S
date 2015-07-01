@@ -40,55 +40,55 @@
 #include <toolchain.h>
 #include <arch/cpu.h>
 
-/*******************************************************************************
-*
-* irq_lock - disable all interrupts on the local CPU
-*
-* This routine disables interrupts.  It can be called from either interrupt,
-* task or fiber level.  This routine returns an architecture-dependent
-* lock-out key representing the "interrupt disable state" prior to the call;
-* this key can be passed to irq_unlock() to re-enable interrupts.
-*
-* The lock-out key should only be used as the argument to the
-* irq_unlock() API.  It should never be used to manually re-enable
-* interrupts or to inspect or manipulate the contents of the source register.
-*
-* WARNINGS
-* Invoking a kernel routine with interrupts locked may result in
-* interrupts being re-enabled for an unspecified period of time.  If the
-* called routine blocks, interrupts will be re-enabled while another
-* context executes, or while the system is idle.
-*
-* The "interrupt disable state" is an attribute of a context.  Thus, if a
-* fiber or task disables interrupts and subsequently invokes a kernel
-* routine that causes the calling context to block, the interrupt
-* disable state will be restored when the context is later rescheduled
-* for execution.
-*
-* RETURNS: An architecture-dependent lock-out key representing the
-* "interrupt disable state" prior to the call.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * irq_lock - disable all interrupts on the local CPU
+ *
+ * This routine disables interrupts.  It can be called from either interrupt,
+ * task or fiber level.  This routine returns an architecture-dependent
+ * lock-out key representing the "interrupt disable state" prior to the call;
+ * this key can be passed to irq_unlock() to re-enable interrupts.
+ *
+ * The lock-out key should only be used as the argument to the
+ * irq_unlock() API.  It should never be used to manually re-enable
+ * interrupts or to inspect or manipulate the contents of the source register.
+ *
+ * WARNINGS
+ * Invoking a kernel routine with interrupts locked may result in
+ * interrupts being re-enabled for an unspecified period of time.  If the
+ * called routine blocks, interrupts will be re-enabled while another
+ * context executes, or while the system is idle.
+ *
+ * The "interrupt disable state" is an attribute of a context.  Thus, if a
+ * fiber or task disables interrupts and subsequently invokes a kernel
+ * routine that causes the calling context to block, the interrupt
+ * disable state will be restored when the context is later rescheduled
+ * for execution.
+ *
+ * RETURNS: An architecture-dependent lock-out key representing the
+ * "interrupt disable state" prior to the call.
+ *
+ * \NOMANUAL
+ */
 
 SECTION_FUNC(TEXT, irq_lock)
 	j_s.d [blink]
 	clri r0
 
-/*******************************************************************************
-*
-* irq_unlock - enable all interrupts on the local CPU
-*
-* This routine re-enables interrupts on the local CPU.  The <key> parameter
-* is an architecture-dependent lock-out key that is returned by a previous
-* invocation of irq_lock().
-*
-* This routine can be called from either interrupt, task or fiber level.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * irq_unlock - enable all interrupts on the local CPU
+ *
+ * This routine re-enables interrupts on the local CPU.  The <key> parameter
+ * is an architecture-dependent lock-out key that is returned by a previous
+ * invocation of irq_lock().
+ *
+ * This routine can be called from either interrupt, task or fiber level.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 SECTION_FUNC(TEXT, irq_unlock)
 	j_s.d [blink]

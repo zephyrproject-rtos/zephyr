@@ -37,12 +37,12 @@
 
 extern struct evstr _k_event_list[];
 
-/*******************************************************************************
-*
-* _k_event_handler_set - perform set event handler request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_event_handler_set - perform set event handler request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_event_handler_set(struct k_args *A)
 {
@@ -71,22 +71,22 @@ void _k_event_handler_set(struct k_args *A)
 	}
 }
 
-/*******************************************************************************
-*
-* task_event_set_handler - set event handler request
-*
-* This routine specifies the event handler that runs (in the context of the
-* K_swapper fiber) when the associated event is signaled. Specifying a non-NULL
-* handler installs a new handler, while specifying a NULL event handler removes
-* the existing event handler.
-*
-* A new event handler cannot be installed if one already exists for that event;
-* the old handler must be removed first. However, it is permitted to replace
-* the NULL event handler with itself.
-*
-* RETURNS: RC_FAIL if an event handler exists or the event number is invalid,
-*          else RC_OK
-*/
+/**
+ *
+ * task_event_set_handler - set event handler request
+ *
+ * This routine specifies the event handler that runs (in the context of the
+ * K_swapper fiber) when the associated event is signaled. Specifying a non-NULL
+ * handler installs a new handler, while specifying a NULL event handler removes
+ * the existing event handler.
+ *
+ * A new event handler cannot be installed if one already exists for that event;
+ * the old handler must be removed first. However, it is permitted to replace
+ * the NULL event handler with itself.
+ *
+ * RETURNS: RC_FAIL if an event handler exists or the event number is invalid,
+ *          else RC_OK
+ */
 
 int task_event_set_handler(kevent_t event,     /* event upon which to reigster */
 		       kevent_handler_t handler /* function pointer to handler */
@@ -101,12 +101,12 @@ int task_event_set_handler(kevent_t event,     /* event upon which to reigster *
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _k_event_test_timeout - finish handling a test for event request that timed out
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_event_test_timeout - finish handling a test for event request that timed out
+ *
+ * RETURNS: N/A
+ */
 
 void _k_event_test_timeout(struct k_args *A)
 {
@@ -119,12 +119,12 @@ void _k_event_test_timeout(struct k_args *A)
 	_k_state_bit_reset(A->Ctxt.proc, TF_EVNT);
 }
 
-/*******************************************************************************
-*
-* _k_event_test - perform test for event request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_event_test - perform test for event request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_event_test(struct k_args *A)
 {
@@ -166,14 +166,14 @@ void _k_event_test(struct k_args *A)
 	}
 }
 
-/*******************************************************************************
-*
-* _task_event_recv - test for event request
-*
-* This routine tests an event to see if it has been signaled.
-*
-* RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
-*/
+/**
+ *
+ * _task_event_recv - test for event request
+ *
+ * This routine tests an event to see if it has been signaled.
+ *
+ * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ */
 
 int _task_event_recv(
 	kevent_t event, /* event for which to test */
@@ -189,16 +189,16 @@ int _task_event_recv(
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _k_do_event_signal - signal an event
-*
-* Lowest level event signalling routine, which is invoked directly when the
-* signal is issued by a task and indirectly when the signal is issued by a
-* fiber or ISR. The specified event number must be valid.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_do_event_signal - signal an event
+ *
+ * Lowest level event signalling routine, which is invoked directly when the
+ * signal is issued by a task and indirectly when the signal is issued by a
+ * fiber or ISR. The specified event number must be valid.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_do_event_signal(kevent_t event)
 {
@@ -233,12 +233,12 @@ void _k_do_event_signal(kevent_t event)
 #endif
 }
 
-/*******************************************************************************
-*
-* _k_event_signal - perform signal an event request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_event_signal - perform signal an event request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_event_signal(struct k_args *A)
 {
@@ -252,16 +252,16 @@ void _k_event_signal(struct k_args *A)
 	}
 }
 
-/*******************************************************************************
-*
-* task_event_send - signal an event request
-*
-* This routine signals the specified event from a task. If an event handler
-* is installed for that event, it will run; if no event handler is installed,
-* any task waiting on the event is released.
-*
-* RETURNS: RC_FAIL if event number is invalid, else RC_OK
-*/
+/**
+ *
+ * task_event_send - signal an event request
+ *
+ * This routine signals the specified event from a task. If an event handler
+ * is installed for that event, it will run; if no event handler is installed,
+ * any task waiting on the event is released.
+ *
+ * RETURNS: RC_FAIL if event number is invalid, else RC_OK
+ */
 
 int task_event_send(kevent_t event /* event to signal */
 					 )
@@ -274,7 +274,7 @@ int task_event_send(kevent_t event /* event to signal */
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
+/**
  *
  * fiber_event_send - signal an event from a fiber
  *
@@ -285,7 +285,7 @@ int task_event_send(kevent_t event /* event to signal */
 
 FUNC_ALIAS(isr_event_send, fiber_event_send, void);
 
-/*******************************************************************************
+/**
  *
  * isr_event_send - signal an event from an ISR
  *

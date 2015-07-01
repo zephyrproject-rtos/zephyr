@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Reset handler that prepares the system for running C code.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -47,28 +47,28 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(__reset)
 
-/*******************************************************************************
-*
-* __reset - reset vector
-*
-* Ran when the system comes out of reset. The processor is in thread mode with
-* privileged level. At this point, the main stack pointer (MSP) is already
-* pointing to a valid area in SRAM.
-*
-* Locking interrupts prevents anything but NMIs and hard faults from
-* interrupting the CPU. A default NMI handler is already in place in the
-* vector table, and the boot code should not generate hard fault, or we're in
-* deep trouble.
-* 
-* We want to use the process stack pointer (PSP) instead of the MSP, since the
-* MSP is to be set up to point to the one-and-only interrupt stack during later
-* boot. That would not be possible if in use for running C code.
-*
-* When these steps are completed, jump to _PrepC(), which will finish setting
-* up the system for running C code.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * __reset - reset vector
+ *
+ * Ran when the system comes out of reset. The processor is in thread mode with
+ * privileged level. At this point, the main stack pointer (MSP) is already
+ * pointing to a valid area in SRAM.
+ *
+ * Locking interrupts prevents anything but NMIs and hard faults from
+ * interrupting the CPU. A default NMI handler is already in place in the
+ * vector table, and the boot code should not generate hard fault, or we're in
+ * deep trouble.
+ * 
+ * We want to use the process stack pointer (PSP) instead of the MSP, since the
+ * MSP is to be set up to point to the one-and-only interrupt stack during later
+ * boot. That would not be possible if in use for running C code.
+ *
+ * When these steps are completed, jump to _PrepC(), which will finish setting
+ * up the system for running C code.
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT,__reset)
 

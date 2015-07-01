@@ -71,17 +71,17 @@ extern void irq_priority_set(unsigned int irq, unsigned int prio);
 
 extern void _irq_exit(void);
 
-/*******************************************************************************
-*
-* irq_lock_inline - disable all interrupts on the CPU (inline)
-*
-* See irq_lock() for full description
-*
-* RETURNS: An architecture-dependent lock-out key representing the
-* "interrupt disable state" prior to the call.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * irq_lock_inline - disable all interrupts on the CPU (inline)
+ *
+ * See irq_lock() for full description
+ *
+ * RETURNS: An architecture-dependent lock-out key representing the
+ * "interrupt disable state" prior to the call.
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE unsigned int irq_lock_inline(void)
 {
@@ -91,16 +91,16 @@ static ALWAYS_INLINE unsigned int irq_lock_inline(void)
 	return key;
 }
 
-/*******************************************************************************
-*
-* irq_unlock_inline - enable all interrupts on the CPU (inline)
-*
-* See irq_unlock() for full description
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * irq_unlock_inline - enable all interrupts on the CPU (inline)
+ *
+ * See irq_unlock() for full description
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE void irq_unlock_inline(unsigned int key)
 {

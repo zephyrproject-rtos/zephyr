@@ -42,7 +42,7 @@ The distinction between a spurious interrupt and a real one is detected by
 looking at the in service register (ISR). The bit (bit 7) will be 1 indicating
 a real IRQ has been inserted.
 
-*/
+ */
 
 /* includes */
 #define _ASMLANGUAGE
@@ -59,20 +59,20 @@ a real IRQ has been inserted.
 	GDATA(_i8259_spurious_interrupt_count)
 
 
-/*******************************************************************************
-*
-* _i8259_boi_master - detect whether it is spurious interrupt or not
-*
-* This routine is called before the user's interrupt handler to detect the
-* spurious interrupt on the master PIC.  If a spurious interrupt condition is
-* detected, a global variable is incremented and the execution of the interrupt
-* stub is "short circuited", i.e. a return to the interrupted context
-* occurs.
-*
-* void _i8259_boi_master (void)
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _i8259_boi_master - detect whether it is spurious interrupt or not
+ *
+ * This routine is called before the user's interrupt handler to detect the
+ * spurious interrupt on the master PIC.  If a spurious interrupt condition is
+ * detected, a global variable is incremented and the execution of the interrupt
+ * stub is "short circuited", i.e. a return to the interrupted context
+ * occurs.
+ *
+ * void _i8259_boi_master (void)
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _i8259_boi_master)
     /* disable interrupts */
@@ -93,20 +93,20 @@ SECTION_FUNC(TEXT, _i8259_boi_master)
     ret
 
 
-/*******************************************************************************
-*
-* _i8259_boi_slave - detect whether it is spurious interrupt or not
-*
-* This routine is called before the user's interrupt handler to detect the
-* spurious interrupt on the slave PIC.  If a spurious interrupt condition is
-* detected, a global variable is incremented and the execution of the interrupt
-* stub is "short circuited", i.e. a return to the interrupted context
-* occurs.
-*
-* void _i8259_boi_slave (void)
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _i8259_boi_slave - detect whether it is spurious interrupt or not
+ *
+ * This routine is called before the user's interrupt handler to detect the
+ * spurious interrupt on the slave PIC.  If a spurious interrupt condition is
+ * detected, a global variable is incremented and the execution of the interrupt
+ * stub is "short circuited", i.e. a return to the interrupted context
+ * occurs.
+ *
+ * void _i8259_boi_slave (void)
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _i8259_boi_slave)
     /* disable interrupts */

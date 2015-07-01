@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 BSP-specific timestamp support for the tickless idle test.
-*/
+ */
 
 #include <tc_util.h>
 #include <stddef.h>
@@ -71,16 +71,16 @@ BSP-specific timestamp support for the tickless idle test.
 #define _TIMESTAMP_MAX ((uint32_t)0x7FFFFFFF)
 #define _TIMESTAMP_EXT ((uint32_t)0x80000000)
 
-/*******************************************************************************
-*
-* _TimestampOpen - timestamp initialization
-*
-* This routine initializes the timestamp timer.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TimestampOpen - timestamp initialization
+ *
+ * This routine initializes the timestamp timer.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _TimestampOpen(void)
 {
@@ -103,16 +103,16 @@ void _TimestampOpen(void)
 	_TIMESTAMP_CTRL = 0x1;  /* enable timer */
 }
 
-/*******************************************************************************
-*
-* _TimestampRead - timestamp timer read
-*
-* This routine returns the timestamp value.
-*
-* RETURNS: timestamp value
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TimestampRead - timestamp timer read
+ *
+ * This routine returns the timestamp value.
+ *
+ * RETURNS: timestamp value
+ *
+ * \NOMANUAL
+ */
 
 uint32_t _TimestampRead(void)
 {
@@ -139,16 +139,16 @@ uint32_t _TimestampRead(void)
 	return timerVal;
 }
 
-/*******************************************************************************
-*
-* _TimestampClose - timestamp release
-*
-* This routine releases the timestamp timer.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TimestampClose - timestamp release
+ *
+ * This routine releases the timestamp timer.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _TimestampClose(void)
 {
@@ -186,16 +186,16 @@ void _TimestampClose(void)
 #define _TIMESTAMP_RACCESS *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x800))
 #define _TIMESTAMP_WACCESS *((volatile uint32_t *)(_TIMESTAMP_ADDR + 0x804))
 
-/*******************************************************************************
-*
-* _TimestampOpen - timestamp initialization
-*
-* This routine initializes the timestamp timer.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TimestampOpen - timestamp initialization
+ *
+ * This routine initializes the timestamp timer.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _TimestampOpen(void)
 {
@@ -223,16 +223,16 @@ void _TimestampOpen(void)
 	_TIMESTAMP_STATUS = 0x10;  /* enable counter */
 }
 
-/*******************************************************************************
-*
-* _TimestampRead - timestamp timer read
-*
-* This routine returns the timestamp value.
-*
-* RETURNS: timestamp value
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TimestampRead - timestamp timer read
+ *
+ * This routine returns the timestamp value.
+ *
+ * RETURNS: timestamp value
+ *
+ * \NOMANUAL
+ */
 
 uint32_t _TimestampRead(void)
 {
@@ -260,16 +260,16 @@ uint32_t _TimestampRead(void)
 	return prescale1;
 }
 
-/*******************************************************************************
-*
-* _TimestampClose - timestamp release
-*
-* This routine releases the timestamp timer.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TimestampClose - timestamp release
+ *
+ * This routine releases the timestamp timer.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _TimestampClose(void)
 {

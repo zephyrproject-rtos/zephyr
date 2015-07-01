@@ -34,7 +34,7 @@
 DESCRIPTION
 This module contains the static interrupt stubs for the various drivers employed
 by x86 BSPs.
-*/
+ */
 
 #define _ASMLANGUAGE
 

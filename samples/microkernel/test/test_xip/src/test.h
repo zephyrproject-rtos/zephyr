@@ -34,7 +34,7 @@
 DESCRIPTION
 This header contains defines, externs etc. for the XIP
 regression test.
-*/
+ */
 
 
 /* This test relies on these values being one larger than the one before */

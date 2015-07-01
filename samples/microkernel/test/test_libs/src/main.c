@@ -42,7 +42,7 @@ then announces the result of the test.
 
 NOTE: At present only a single test task is used, but more tasks may be added
 in the future to enhance test coverage.
-*/
+ */
 
 #include <tc_util.h>
 #include <zephyr.h>
@@ -61,7 +61,7 @@ in the future to enhance test coverage.
 
 static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
 
-/*******************************************************************************
+/**
  *
  * RegressionTaskEntry - entry point for RegressionTask
  *
@@ -78,7 +78,7 @@ void RegressionTaskEntry(void)
 	task_sem_give(resultSems[RegressionTask()]);
 }
 
-/*******************************************************************************
+/**
  *
  * MonitorTaskEntry - entry point for MonitorTask
  *

@@ -36,7 +36,7 @@ This module provides a non-random implementation of sys_rand32_get(), which is
 not meant to be used in a final product as a truly random number generator. It
 was provided to allow testing on a BSP that does not (yet) provide a random
 number generator.
-*/
+ */
 
 #include <drivers/rand32.h>
 #include <drivers/system_timer.h>
@@ -53,7 +53,7 @@ static atomic_val_t _rand32_counter = 0;
 
 #define _RAND32_INC 1000000013
 
-/*******************************************************************************
+/**
  *
  * sys_rand32_init - initialize the random number generator
  *
@@ -69,7 +69,7 @@ void sys_rand32_init(void)
 {
 }
 
-/*******************************************************************************
+/**
  *
  * sys_rand32_get - get a 32 bit random number
  *

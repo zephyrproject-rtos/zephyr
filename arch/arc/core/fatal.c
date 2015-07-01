@@ -34,7 +34,7 @@
 DESCRIPTION
 This module implements the routines necessary for handling fatal faults on
 ARCv2 CPUs.
-*/
+ */
 
 #include <nano_private.h>
 #include <offsets.h>
@@ -52,23 +52,23 @@ const NANO_ESF _default_esf = {
 	0xdeaddead, /* placeholder */
 };
 
-/*******************************************************************************
-*
-* _NanoFatalErrorHandler - nanokernel fatal error handler
-*
-* This routine is called when fatal error conditions are detected by software
-* and is responsible only for reporting the error. Once reported, it then
-* invokes the user provided routine _SysFatalErrorHandler() which is
-* responsible for implementing the error handling policy.
-*
-* The caller is expected to always provide a usable ESF. In the event that the
-* fatal error does not have a hardware generated ESF, the caller should either
-* create its own or use a pointer to the global default ESF <_default_esf>.
-*
-* RETURNS: This function does not return.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _NanoFatalErrorHandler - nanokernel fatal error handler
+ *
+ * This routine is called when fatal error conditions are detected by software
+ * and is responsible only for reporting the error. Once reported, it then
+ * invokes the user provided routine _SysFatalErrorHandler() which is
+ * responsible for implementing the error handling policy.
+ *
+ * The caller is expected to always provide a usable ESF. In the event that the
+ * fatal error does not have a hardware generated ESF, the caller should either
+ * create its own or use a pointer to the global default ESF <_default_esf>.
+ *
+ * RETURNS: This function does not return.
+ *
+ * \NOMANUAL
+ */
 
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 							const NANO_ESF *pEsf)

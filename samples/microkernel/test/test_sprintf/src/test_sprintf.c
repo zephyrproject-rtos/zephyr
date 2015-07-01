@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module contains the code for testing sprintf() functionality.
-*/
+ */
 
 #include <tc_util.h>
 #include <stdio.h>
@@ -73,12 +73,12 @@ typedef union {
 } raw_double_u;
 
 #ifdef CONFIG_FLOAT
-/*******************************************************************************
-*
-* sprintfDoubleTest - test sprintf with doubles
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * sprintfDoubleTest - test sprintf with doubles
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int sprintfDoubleTest(void)
 {
@@ -229,10 +229,10 @@ int sprintfDoubleTest(void)
 }
 #endif /* CONFIG_FLOAT */
 
-/*******************************************************************************
-*
-* tvsnprintf - a test wrapper for vsnprintf()
-*/
+/**
+ *
+ * tvsnprintf - a test wrapper for vsnprintf()
+ */
 
 int tvsnprintf(char *s, size_t len, const char *format, ...)
 {
@@ -246,17 +246,17 @@ int tvsnprintf(char *s, size_t len, const char *format, ...)
 	return r;
 }
 
-/*******************************************************************************
-*
-* vsnprintfTest - test the vsprintf() routine
-*
-* This routine does not aim to test the same underlying functionality as
-* sprintfTest().  Instead it tries to limit it to functionality specific to
-* vsnprintf().  Instead of calling vsnprintf() directly, it invokes the wrapper
-* routine tvsnprintf().
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * vsnprintfTest - test the vsprintf() routine
+ *
+ * This routine does not aim to test the same underlying functionality as
+ * sprintfTest().  Instead it tries to limit it to functionality specific to
+ * vsnprintf().  Instead of calling vsnprintf() directly, it invokes the wrapper
+ * routine tvsnprintf().
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int vsnprintfTest(void)
 {
@@ -317,10 +317,10 @@ int vsnprintfTest(void)
 	return status;
 }
 
-/*******************************************************************************
-*
-* tvsprintf - a test wrapper for vsprintf()
-*/
+/**
+ *
+ * tvsprintf - a test wrapper for vsprintf()
+ */
 
 int tvsprintf(char *s, const char *format, ...)
 {
@@ -334,16 +334,16 @@ int tvsprintf(char *s, const char *format, ...)
 	return r;
 }
 
-/*******************************************************************************
-*
-* vsprintfTest - test the vsprintf() routine
-*
-* This routine does not aim to test the same underlying functionality as
-* sprintfTest().  Instead it tries to limit it to functionality specific to
-* vsprintf().
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * vsprintfTest - test the vsprintf() routine
+ *
+ * This routine does not aim to test the same underlying functionality as
+ * sprintfTest().  Instead it tries to limit it to functionality specific to
+ * vsprintf().
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int vsprintfTest(void)
 {
@@ -368,16 +368,16 @@ int vsprintfTest(void)
 	return status;
 }
 
-/*******************************************************************************
-*
-* snprintfTest - test the snprintf() routine
-*
-* This routine does not aim to test the same underlying functionality as
-* sprintfTest().  Instead it tries to limit it to functionality specific to
-* snprintf().
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * snprintfTest - test the snprintf() routine
+ *
+ * This routine does not aim to test the same underlying functionality as
+ * sprintfTest().  Instead it tries to limit it to functionality specific to
+ * snprintf().
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int snprintfTest(void)
 {
@@ -438,12 +438,12 @@ int snprintfTest(void)
 	return status;
 }
 
-/*******************************************************************************
-*
-* sprintfMiscTest - test the sprintf() routine with miscellaneous specifiers
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * sprintfMiscTest - test the sprintf() routine with miscellaneous specifiers
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int sprintfMiscTest(void)
 {
@@ -514,12 +514,12 @@ int sprintfMiscTest(void)
 	return status;
 }
 
-/*******************************************************************************
-*
-* sprintfIntegerTest - test the sprintf() routine with integers
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * sprintfIntegerTest - test the sprintf() routine with integers
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int sprintfIntegerTest(void)
 {
@@ -667,12 +667,12 @@ int sprintfIntegerTest(void)
 	return status;
 }
 
-/*******************************************************************************
-*
-* sprintfStringTest - test sprintf with strings
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * sprintfStringTest - test sprintf with strings
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int sprintfStringTest(void)
 {
@@ -713,12 +713,12 @@ int sprintfStringTest(void)
 	return status;
 }
 
-/*******************************************************************************
-*
-* RegressionTask - test entry point
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * RegressionTask - test entry point
+ *
+ * RETURNS: N/A
+ */
 
 void RegressionTask(void)
 {

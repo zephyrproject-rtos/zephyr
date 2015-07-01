@@ -500,18 +500,18 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
 	return buf - start;
 }
 
-/*******************************************************************************
-*
-* _isdigit - is the input value an ASCII digit character?
-*
-* This function provides a traditional implementation of the isdigit()
-* primitive that is footprint conversative, i.e. it does not utilize a
-* lookup table.
-*
-* RETURNS: non-zero if input integer in an ASCII digit character
-*
-* INTERNAL
-*/
+/**
+ *
+ * _isdigit - is the input value an ASCII digit character?
+ *
+ * This function provides a traditional implementation of the isdigit()
+ * primitive that is footprint conversative, i.e. it does not utilize a
+ * lookup table.
+ *
+ * RETURNS: non-zero if input integer in an ASCII digit character
+ *
+ * INTERNAL
+ */
 
 static inline int _isdigit(int c)
 {

@@ -38,7 +38,7 @@ point returns or when it aborts itself, the CPU is in thread mode and must
 call the equivalent of task_abort(<self>), but when in handler mode, the
 CPU must queue a packet to K_swapper(), then exit handler mode to queue the
 PendSV exception and cause the immediate context switch to K_swapper.
-*/
+ */
 
 #ifdef CONFIG_MICROKERNEL
 
@@ -52,20 +52,20 @@ PendSV exception and cause the immediate context switch to K_swapper.
 
 static struct k_args cmd_packet;
 
-/*******************************************************************************
-*
-* _TaskAbort - abort the current task
-*
-* Possible reasons for a task aborting:
-*
-* - the task explicitly aborts itself by calling this routine
-* - the task implicitly aborts by returning from its entry point
-* - the task encounters a fatal exception
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TaskAbort - abort the current task
+ *
+ * Possible reasons for a task aborting:
+ *
+ * - the task explicitly aborts itself by calling this routine
+ * - the task implicitly aborts by returning from its entry point
+ * - the task encounters a fatal exception
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _TaskAbort(void)
 {

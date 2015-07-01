@@ -46,7 +46,7 @@ Typically, only those members that are accessed by assembly language routines
 are defined; however, it doesn't hurt to define all fields for the sake of
 completeness.
 
-*/
+ */
 
 #include <gen_offset.h>
 #include <nano_private.h>

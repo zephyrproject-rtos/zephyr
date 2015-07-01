@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Reset handler that prepares the system for running C code.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -46,19 +46,19 @@ Reset handler that prepares the system for running C code.
 
 GTEXT(__reset)
 
-/*******************************************************************************
-*
-* __reset - reset vector
-*
-* Ran when the system comes out of reset. The processor is at supervisor level.
-*
-* Locking interrupts prevents anything from interrupting the CPU.
-*
-* When these steps are completed, jump to _PrepC(), which will finish setting
-* up the system for running C code.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * __reset - reset vector
+ *
+ * Ran when the system comes out of reset. The processor is at supervisor level.
+ *
+ * Locking interrupts prevents anything from interrupting the CPU.
+ *
+ * When these steps are completed, jump to _PrepC(), which will finish setting
+ * up the system for running C code.
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT,__reset)
 

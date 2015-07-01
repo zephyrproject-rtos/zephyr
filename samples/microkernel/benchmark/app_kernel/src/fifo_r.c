@@ -36,7 +36,7 @@
 #ifdef FIFO_BENCH
 
 /* queue transfer speed test */
-/*******************************************************************************
+/**
  *
  * dequtask - data receive task
  *

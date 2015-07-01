@@ -34,7 +34,7 @@
 DESCRIPTION
 This module defines the Multipurpose Clock Generator (MCG) and Oscillator (OSC)
 registers for the K20 Family of microprocessors.
-*/
+ */
 #ifndef _K20MCG_H_
 #define _K20MCG_H_
 

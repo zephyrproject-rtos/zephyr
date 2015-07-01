@@ -36,7 +36,7 @@ This module implements assembly routines to manage exceptions (synchronous
 interrupts) on the Intel IA-32 architecture.  More specifically,
 exceptions are implemented in this module.  The stubs are invoked when entering
 and exiting a C exception handler.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -57,31 +57,31 @@ and exiting a C exception handler.
 
 
 
-/*******************************************************************************
-*
-* _ExcEnt - inform the kernel of an exception
-*
-* This function is called from the exception stub created by nanoCpuExcConnect()
-* to inform the kernel of an exception.  This routine currently does
-* _not_ increment a context/interrupt specific exception count.  Also,
-* execution of the exception handler occurs on the current stack, i.e.
-* _ExcEnt() does not switch to another stack.  The volatile integer
-* registers are saved on the stack, and control is returned back to the
-* exception stub.
-*
-* WARNINGS
-*
-* Host-based tools and the target-based GDB agent depend on the stack frame
-* created by this routine to determine the locations of volatile registers.
-* These tools must be updated to reflect any changes to the stack frame.
-*
-* RETURNS: N/A
-*
-* C function prototype:
-*
-* void _ExcEnt (void);
-*
-*/
+/**
+ *
+ * _ExcEnt - inform the kernel of an exception
+ *
+ * This function is called from the exception stub created by nanoCpuExcConnect()
+ * to inform the kernel of an exception.  This routine currently does
+ * _not_ increment a context/interrupt specific exception count.  Also,
+ * execution of the exception handler occurs on the current stack, i.e.
+ * _ExcEnt() does not switch to another stack.  The volatile integer
+ * registers are saved on the stack, and control is returned back to the
+ * exception stub.
+ *
+ * WARNINGS
+ *
+ * Host-based tools and the target-based GDB agent depend on the stack frame
+ * created by this routine to determine the locations of volatile registers.
+ * These tools must be updated to reflect any changes to the stack frame.
+ *
+ * RETURNS: N/A
+ *
+ * C function prototype:
+ *
+ * void _ExcEnt (void);
+ *
+ */
 
 SECTION_FUNC(TEXT, _ExcEnt)
 
@@ -215,22 +215,22 @@ BRANCH_LABEL(allDone)
 	jmp	*%eax			/* "return" back to stub */
 
 
-/*******************************************************************************
-*
-* _ExcExit - inform the kernel of an exception exit
-*
-* This function is called from the exception stub created by nanoCpuExcConnect()
-* to inform the kernel that the processing of an exception has
-* completed.  This routine restores the volatile integer registers and
-* then control is returned back to the interrupted context or ISR.
-*
-* RETURNS: N/A
-*
-* C function prototype:
-*
-* void _ExcExit (void);
-*
-*/
+/**
+ *
+ * _ExcExit - inform the kernel of an exception exit
+ *
+ * This function is called from the exception stub created by nanoCpuExcConnect()
+ * to inform the kernel that the processing of an exception has
+ * completed.  This routine restores the volatile integer registers and
+ * then control is returned back to the interrupted context or ISR.
+ *
+ * RETURNS: N/A
+ *
+ * C function prototype:
+ *
+ * void _ExcExit (void);
+ *
+ */
 
 SECTION_FUNC(TEXT, _ExcExit)
 

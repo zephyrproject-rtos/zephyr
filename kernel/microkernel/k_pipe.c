@@ -35,15 +35,15 @@
 #include <k_pipe_util.h>
 #include <misc/util.h>
 
-/*******************************************************************************
-*
-* _k_pipe_init - initialize kernel pipe subsystem
-*
-* Performs any initialization of statically-defined pipes that wasn't done
-* at build time. (Note: most pipe structure fields are set to zero by sysgen.)
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_pipe_init - initialize kernel pipe subsystem
+ *
+ * Performs any initialization of statically-defined pipes that wasn't done
+ * at build time. (Note: most pipe structure fields are set to zero by sysgen.)
+ *
+ * RETURNS: N/A
+ */
 
 void _k_pipe_init(void)
 {
@@ -57,15 +57,15 @@ void _k_pipe_init(void)
 	}
 }
 
-/*******************************************************************************
-*
-* _task_pipe_get - pipe read request
-*
-* This routine attempts to read data into a memory buffer area from the
-* specified pipe.
-*
-* RETURNS: RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
-*/
+/**
+ *
+ * _task_pipe_get - pipe read request
+ *
+ * This routine attempts to read data into a memory buffer area from the
+ * specified pipe.
+ *
+ * RETURNS: RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
+ */
 
 int _task_pipe_get(kpipe_t Id, void *pBuffer,
 				   int iNbrBytesToRead, int *piNbrBytesRead,
@@ -112,15 +112,15 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _task_pipe_put - pipe write request
-*
-* This routine attempts to write data from a memory buffer area to the
-* specified pipe.
-*
-* RETURNS: RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
-*/
+/**
+ *
+ * _task_pipe_put - pipe write request
+ *
+ * This routine attempts to write data from a memory buffer area to the
+ * specified pipe.
+ *
+ * RETURNS: RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
+ */
 
 int _task_pipe_put(kpipe_t Id, void *pBuffer,
 				   int iNbrBytesToWrite, int *piNbrBytesWritten,
@@ -167,16 +167,16 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _task_pipe_put_async - asynchronous pipe write request
-*
-* This routine attempts to write data from a memory pool block to the
-* specified pipe. (Note that partial transfers and timeouts are not
-* supported, unlike the case for synchronous write requests.)
-*
-* RETURNS: RC_OK, RC_FAIL, or RC_ALIGNMENT
-*/
+/**
+ *
+ * _task_pipe_put_async - asynchronous pipe write request
+ *
+ * This routine attempts to write data from a memory pool block to the
+ * specified pipe. (Note that partial transfers and timeouts are not
+ * supported, unlike the case for synchronous write requests.)
+ *
+ * RETURNS: RC_OK, RC_FAIL, or RC_ALIGNMENT
+ */
 
 int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
 						 int iReqSize2Xfer, ksem_t Sema)

@@ -34,7 +34,7 @@
 DESCRIPTION
 
 Common utility-type macros for use in the sample projects.
-*/
+ */
 
 #ifndef _UTIL_TEST_COMMON__H_
 #define _UTIL_TEST_COMMON__H_

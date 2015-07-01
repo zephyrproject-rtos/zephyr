@@ -47,7 +47,7 @@ ticks into the guest operating system.  However, this driver has been modified
 to access the PIT in scenarios where the PIT registers are mapped into a guest.
 An interrupt controller driver will not be utilized, so this driver will
 directly invoke the VIOAPIC APIs to configure/unmask the IRQ.
-*/
+ */
 
 #include <nanokernel.h>
 #include <toolchain.h>
@@ -142,16 +142,16 @@ static uint32_t old_accumulated_count = 0; /* previous accumulated value value *
 extern struct nano_stack _k_command_stack;
 #endif /* CONFIG_MICROKERNEL */
 
-/*******************************************************************************
-*
-* _i8253CounterRead - read the i8253 counter register's value
-*
-* This routine reads the 16 bit value from the i8253 counter register.
-*
-* RETURNS: counter register's 16 bit value
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _i8253CounterRead - read the i8253 counter register's value
+ *
+ * This routine reads the 16 bit value from the i8253 counter register.
+ *
+ * RETURNS: counter register's 16 bit value
+ *
+ * \NOMANUAL
+ */
 
 static inline uint16_t _i8253CounterRead(void)
 {
@@ -169,17 +169,17 @@ static inline uint16_t _i8253CounterRead(void)
 	return count;
 }
 
-/*******************************************************************************
-*
-* _i8253CounterSet - set the i8253 counter register's value
-*
-* This routine sets the 16 bit value from which the i8253 timer will
-* decrement and sets that counter register to its value.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _i8253CounterSet - set the i8253 counter register's value
+ *
+ * This routine sets the 16 bit value from which the i8253 timer will
+ * decrement and sets that counter register to its value.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _i8253CounterSet(
 	uint16_t count /* value from which the counter will decrement */
@@ -192,16 +192,16 @@ static inline void _i8253CounterSet(
 	_currentLoadVal = count;
 }
 
-/*******************************************************************************
-*
-* _i8253CounterPeriodic - set the i8253 timer to fire periodically
-*
-* This routine sets the i8253 to fire on a periodic basis.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _i8253CounterPeriodic - set the i8253 timer to fire periodically
+ *
+ * This routine sets the i8253 to fire on a periodic basis.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _i8253CounterPeriodic(
 	uint16_t count /* value from which the counter will decrement */
@@ -212,16 +212,16 @@ static inline void _i8253CounterPeriodic(
 }
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-/*******************************************************************************
-*
-* _i8253CounterOneShot - set the i8253 timer to fire once only
-*
-* This routine sets the i8253 to fire once only.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _i8253CounterOneShot - set the i8253 timer to fire once only
+ *
+ * This routine sets the i8253 to fire once only.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _i8253CounterOneShot(
 	uint16_t count /* value from which the counter will decrement */
@@ -232,17 +232,17 @@ static inline void _i8253CounterOneShot(
 }
 #endif /* !TIMER_SUPPORTS_TICKLESS */
 
-/*******************************************************************************
-*
-* _timer_int_handler - system clock periodic tick handler
-*
-* This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
-* event is pushed onto the microkernel stack.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _timer_int_handler - system clock periodic tick handler
+ *
+ * This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
+ * event is pushed onto the microkernel stack.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _timer_int_handler(void *unusedArg /* not used */
 				 )
@@ -305,21 +305,21 @@ void _timer_int_handler(void *unusedArg /* not used */
 }
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-/*******************************************************************************
-*
-* _i8253TicklessIdleInit - initialize the tickless idle feature
-*
-* This routine initializes the tickless idle feature.  Note that maximum
-* number of ticks that can elapse during a "tickless idle" is limited by
-* <counterLoadVal>.  The larger the value (the lower the tick frequency), the
-* fewer elapsed ticks during a "tickless idle".  Conversely, the smaller the
-* value (the higher the tick frequency), the more elapsed ticks during a
-* "tickless idle".
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _i8253TicklessIdleInit - initialize the tickless idle feature
+ *
+ * This routine initializes the tickless idle feature.  Note that maximum
+ * number of ticks that can elapse during a "tickless idle" is limited by
+ * <counterLoadVal>.  The larger the value (the lower the tick frequency), the
+ * fewer elapsed ticks during a "tickless idle".  Conversely, the smaller the
+ * value (the higher the tick frequency), the more elapsed ticks during a
+ * "tickless idle".
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _i8253TicklessIdleInit(void)
 {
@@ -328,14 +328,14 @@ static void _i8253TicklessIdleInit(void)
 	max_load_value = max_system_ticks * counterLoadVal;
 }
 
-/*******************************************************************************
-*
-* _i8253TicklessIdleSkew -
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _i8253TicklessIdleSkew -
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _i8253TicklessIdleSkew(void)
 {
@@ -343,15 +343,15 @@ static void _i8253TicklessIdleSkew(void)
 	timer_idle_skew = 0;
 }
 
-/*******************************************************************************
-*
-* _timer_idle_enter - Place system timer into idle state
-*
-* Re-program the timer to enter into the idle state for the given number of
-* ticks. It is placed into one shot mode where it will fire in the number of
-* ticks supplied or the maximum number of ticks that can be programmed into
-* hardware. A value of -1 means inifinite number of ticks.
-*/
+/**
+ *
+ * _timer_idle_enter - Place system timer into idle state
+ *
+ * Re-program the timer to enter into the idle state for the given number of
+ * ticks. It is placed into one shot mode where it will fire in the number of
+ * ticks supplied or the maximum number of ticks that can be programmed into
+ * hardware. A value of -1 means inifinite number of ticks.
+ */
 
 void _timer_idle_enter(int32_t ticks /* system ticks */
 				)
@@ -400,21 +400,21 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	irq_enable(PIT_INT_LVL);
 }
 
-/*******************************************************************************
-*
-* _timer_idle_exit - handling of tickless idle when interrupted
-*
-* The routine is responsible for taking the timer out of idle mode and
-* generating an interrupt at the next tick interval.
-*
-* Note that in this routine, _SysTimerElapsedTicks must be zero because the
-* ticker has done its work and consumed all the ticks. This has to be true
-* otherwise idle mode wouldn't have been entered in the first place.
-*
-* Called in _IntEnt()
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _timer_idle_exit - handling of tickless idle when interrupted
+ *
+ * The routine is responsible for taking the timer out of idle mode and
+ * generating an interrupt at the next tick interval.
+ *
+ * Note that in this routine, _SysTimerElapsedTicks must be zero because the
+ * ticker has done its work and consumed all the ticks. This has to be true
+ * otherwise idle mode wouldn't have been entered in the first place.
+ *
+ * Called in _IntEnt()
+ *
+ * RETURNS: N/A
+ */
 
 void _timer_idle_exit(void)
 {
@@ -466,15 +466,15 @@ void _timer_idle_exit(void)
 }
 #endif /* !TIMER_SUPPORTS_TICKLESS */
 
-/*******************************************************************************
-*
-* timer_driver - initialize and enable the system clock
-*
-* This routine is used to program the PIT to deliver interrupts at the
-* rate specified via the 'sys_clock_us_per_tick' global variable.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * timer_driver - initialize and enable the system clock
+ *
+ * This routine is used to program the PIT to deliver interrupts at the
+ * rate specified via the 'sys_clock_us_per_tick' global variable.
+ *
+ * RETURNS: N/A
+ */
 
 void timer_driver(int priority /* priority parameter ignored by this driver */
 		  )
@@ -501,14 +501,14 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 	irq_enable(PIT_INT_LVL);
 }
 
-/*******************************************************************************
-*
-* timer_read - read the BSP timer hardware
-*
-* This routine returns the current time in terms of timer hardware clock cycles.
-*
-* RETURNS: up counter of elapsed clock cycles
-*/
+/**
+ *
+ * timer_read - read the BSP timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock cycles.
+ *
+ * RETURNS: up counter of elapsed clock cycles
+ */
 
 uint32_t timer_read(void)
 {
@@ -556,15 +556,15 @@ uint32_t timer_read(void)
 }
 
 #if defined(CONFIG_SYSTEM_TIMER_DISABLE)
-/*******************************************************************************
-*
-* timer_disable - stop announcing ticks into the kernel
-*
-* This routine simply disables the PIT counter such that interrupts are no
-* longer delivered.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * timer_disable - stop announcing ticks into the kernel
+ *
+ * This routine simply disables the PIT counter such that interrupts are no
+ * longer delivered.
+ *
+ * RETURNS: N/A
+ */
 
 void timer_disable(void)
 {

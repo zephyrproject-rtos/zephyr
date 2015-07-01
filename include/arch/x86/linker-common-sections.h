@@ -59,7 +59,7 @@ undefined symbol error.
 
 Please do not change the order of the section as the nanokernel expects this
 order when programming the MMU.
-*/
+ */
 
 #define _LINKER
 #define _ASMLANGUAGE /* Needed to include mmustructs.h */

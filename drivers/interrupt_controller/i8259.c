@@ -61,7 +61,7 @@ command is issued, the 8259A will automatically reset the highest IS bit of
 those that are set, since in the fully nested mode the highest IS level is
 the last level acknowledged and serviced.
 
-*/
+ */
 
 /*
  * A board support package's board.h header must provide definitions for the
@@ -116,15 +116,15 @@ FUNC_ALIAS(_i8259_irq_enable, irq_enable, void);
 FUNC_ALIAS(_i8259_irq_disable, irq_disable, void);
 #endif /* CONFIG_SHUTOFF_PIC */
 
-/*******************************************************************************
-*
-* _i8259_init - initialize the Intel 8259A PIC device driver
-*
-* This routine initializes the Intel 8259A PIC device driver and the device
-* itself.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _i8259_init - initialize the Intel 8259A PIC device driver
+ *
+ * This routine initializes the Intel 8259A PIC device driver and the device
+ * itself.
+ *
+ * RETURNS: N/A
+ */
 
 void _i8259_init(void)
 {
@@ -185,16 +185,16 @@ void _i8259_init(void)
 }
 
 #ifndef CONFIG_SHUTOFF_PIC
-/*******************************************************************************
-*
-* _i8259_eoi_master - send EOI(end of interrupt) signal to the master PIC.
-*
-* This routine is called at the end of the interrupt handler.
-*
-* RETURNS: N/A
-*
-* ERRNO
-*/
+/**
+ *
+ * _i8259_eoi_master - send EOI(end of interrupt) signal to the master PIC.
+ *
+ * This routine is called at the end of the interrupt handler.
+ *
+ * RETURNS: N/A
+ *
+ * ERRNO
+ */
 
 void _i8259_eoi_master(unsigned int irq /* IRQ number to
 						   send EOI: unused */
@@ -207,17 +207,17 @@ void _i8259_eoi_master(unsigned int irq /* IRQ number to
 	PLB_BYTE_REG_WRITE(I8259_EOI, PIC_IACK(PIC_MASTER_BASE_ADRS));
 }
 
-/*******************************************************************************
-*
-* _i8259_eoi_slave - send EOI(end of interrupt) signal to the slave PIC.
-*
-* This routine is called at the end of the interrupt handler in the Normal
-* Fully Nested Mode.
-*
-* RETURNS: N/A
-*
-* ERRNO
-*/
+/**
+ *
+ * _i8259_eoi_slave - send EOI(end of interrupt) signal to the slave PIC.
+ *
+ * This routine is called at the end of the interrupt handler in the Normal
+ * Fully Nested Mode.
+ *
+ * RETURNS: N/A
+ *
+ * ERRNO
+ */
 
 void _i8259_eoi_slave(unsigned int irq /* IRQ number to
 						  send EOI: unused */
@@ -239,22 +239,22 @@ void _i8259_eoi_slave(unsigned int irq /* IRQ number to
 	__asm__ volatile("popfl;\n\t");
 }
 
-/*******************************************************************************
-*
-* __I8259IntEnable - enable/disable a specified PIC interrupt input line
-*
-* This routine enables or disables a specified PIC interrupt input line. To
-* enable an interrupt input line, the parameter <enable> must be non-zero.
-*
-* The nanokernel exports the irq_enable() and irq_disable()
-* APIs (mapped to _i8259_irq_enable() and _i8259_irq_disable(), respectively).
-* This function is called by _i8259_irq_enable() and _i8259_irq_disable() to
-* perform the actual enabling/disabling of an IRQ to minimize footprint.
-*
-* RETURNS: N/A
-*
-* see also: _i8259_irq_disable()/_i8259_irq_enable
-*/
+/**
+ *
+ * __I8259IntEnable - enable/disable a specified PIC interrupt input line
+ *
+ * This routine enables or disables a specified PIC interrupt input line. To
+ * enable an interrupt input line, the parameter <enable> must be non-zero.
+ *
+ * The nanokernel exports the irq_enable() and irq_disable()
+ * APIs (mapped to _i8259_irq_enable() and _i8259_irq_disable(), respectively).
+ * This function is called by _i8259_irq_enable() and _i8259_irq_disable() to
+ * perform the actual enabling/disabling of an IRQ to minimize footprint.
+ *
+ * RETURNS: N/A
+ *
+ * see also: _i8259_irq_disable()/_i8259_irq_enable
+ */
 
 static void __I8259IntEnable(
 	unsigned int irq,    /* IRQ number to enable */
@@ -290,16 +290,16 @@ static void __I8259IntEnable(
 
 }
 
-/*******************************************************************************
-*
-* _i8259_irq_disable - disable a specified PIC interrupt input line
-*
-* This routine disables a specified PIC interrupt input line.
-*
-* RETURNS: N/A
-*
-* SEE ALSO: _i8259_irq_enable()
-*/
+/**
+ *
+ * _i8259_irq_disable - disable a specified PIC interrupt input line
+ *
+ * This routine disables a specified PIC interrupt input line.
+ *
+ * RETURNS: N/A
+ *
+ * SEE ALSO: _i8259_irq_enable()
+ */
 
 void _i8259_irq_disable(unsigned int irq /* IRQ number to disable */
 				 )
@@ -307,16 +307,16 @@ void _i8259_irq_disable(unsigned int irq /* IRQ number to disable */
 	return __I8259IntEnable(irq, 0);
 }
 
-/*******************************************************************************
-*
-* _i8259_irq_enable - enable a specified PIC interrupt input line
-*
-* This routine enables a specified PIC interrupt input line.
-*
-* RETURNS: N/A
-*
-* SEE ALSO: _i8259_irq_disable()
-*/
+/**
+ *
+ * _i8259_irq_enable - enable a specified PIC interrupt input line
+ *
+ * This routine enables a specified PIC interrupt input line.
+ *
+ * RETURNS: N/A
+ *
+ * SEE ALSO: _i8259_irq_disable()
+ */
 
 void _i8259_irq_enable(unsigned int irq /* IRQ number to enable */
 				)

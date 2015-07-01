@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
 for the fsl_frdm_k64f BSP.
-*/
+ */
 
 #include <nanokernel.h>
 #include <board.h>
@@ -94,21 +94,21 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
 	/* Reserved for FlexNVM feature (unsupported by this MCU) */
 	0xFF, 0xFF};
 
-/*******************************************************************************
-*
-* clkInit - initialize the system clock
-*
-* This routine will configure the multipurpose clock generator (MCG) to
-* set up the system clock.
-* The MCG has nine possible modes, including Stop mode.  This routine assumes
-* that the current MCG mode is FLL Engaged Internal (FEI), as from reset.
-* It transitions through the FLL Bypassed External (FBE) and
-* PLL Bypassed External (PBE) modes to get to the desired
-* PLL Engaged External (PEE) mode and generate the maximum 120 MHz system clock.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * clkInit - initialize the system clock
+ *
+ * This routine will configure the multipurpose clock generator (MCG) to
+ * set up the system clock.
+ * The MCG has nine possible modes, including Stop mode.  This routine assumes
+ * that the current MCG mode is FLL Engaged Internal (FEI), as from reset.
+ * It transitions through the FLL Bypassed External (FBE) and
+ * PLL Bypassed External (PBE) modes to get to the desired
+ * PLL Engaged External (PEE) mode and generate the maximum 120 MHz system clock.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 static void clkInit(void)
 {
@@ -247,15 +247,15 @@ static void clkInit(void)
 
 #if defined(DO_CONSOLE_INIT)
 
-/*******************************************************************************
-*
-* consoleInit - initialize target-only console
-*
-* Only used for debugging.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * consoleInit - initialize target-only console
+ *
+ * Only used for debugging.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 #include <console/uart_console.h>
 
@@ -298,16 +298,16 @@ static void consoleInit(void)
 	} while ((0))
 #endif /* DO_CONSOLE_INIT */
 
-/*******************************************************************************
-*
-* _InitHardware - perform basic hardware initialization
-*
-* Initialize the interrupt controller device drivers and the
-* Kinetis UART device driver.
-* Also initialize the timer device driver, if required.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _InitHardware - perform basic hardware initialization
+ *
+ * Initialize the interrupt controller device drivers and the
+ * Kinetis UART device driver.
+ * Also initialize the timer device driver, if required.
+ *
+ * RETURNS: N/A
+ */
 
 void _InitHardware(void)
 {

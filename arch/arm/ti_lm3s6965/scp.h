@@ -46,7 +46,7 @@ These modules are not defined:
 The registers and bit field names are taken from the 'Stellaris LM3S6965
 Microcontroller DATA SHEET (DS-LM3S6965-12746.2515) revision H' document,
 section 5.4/5.5, pp .184-200.
-*/
+ */
 
 #ifndef _SCP_H_
 #define _SCP_H_

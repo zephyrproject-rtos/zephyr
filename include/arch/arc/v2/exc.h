@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 ARC-specific nanokernel exception handling interface. Included by ARC/arch.h.
-*/
+ */
 
 #ifndef _ARCH_ARC_V2_EXC_H_
 #define _ARCH_ARC_V2_EXC_H_

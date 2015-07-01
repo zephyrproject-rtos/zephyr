@@ -43,23 +43,23 @@
 #define _X_TO_N		(_0_TO_N | _1_TO_N)
 
 /*
-* - artefacts: ???
-* - non-optimal:
+ * - artefacts: ???
+ * - non-optimal:
 	  * from single requester to multiple requesters : basic function is
 K_ProcWR()
 		K_ProcWR() copies remaining data into buffer; better would be to
 possibly copy the remaining data
 		to the next requester (if there is one)
 	  * ...
-*/
+ */
 
 
-/*******************************************************************************
-*
-* _k_pipe_movedata_ack -
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_pipe_movedata_ack -
+ *
+ * RETURNS: N/A
+ */
 
 void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 {
@@ -205,16 +205,16 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 	}
 }
 
-/*******************************************************************************
-*
-* move_priority_compute - determines priority for data move operation
-*
-* Uses priority level of most important participant.
-*
-* Note: It's OK to have one or two participants, but there can't be none!
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * move_priority_compute - determines priority for data move operation
+ *
+ * Uses priority level of most important participant.
+ *
+ * Note: It's OK to have one or two participants, but there can't be none!
+ *
+ * RETURNS: N/A
+ */
 
 static kpriority_t move_priority_compute(struct k_args *pWriter,
 										 struct k_args *pReader)
@@ -233,12 +233,12 @@ static kpriority_t move_priority_compute(struct k_args *pWriter,
 	return move_priority;
 }
 
-/*******************************************************************************
-*
-* setup_movedata -
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * setup_movedata -
+ *
+ * RETURNS: N/A
+ */
 
 static void setup_movedata(struct k_args *A,
 						   struct pipe_struct *pPipe, XFER_TYPE XferType,
@@ -408,16 +408,16 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 	}
 }
 
-/*******************************************************************************
-*
-* pipe_read - read from the channel
-*
-* This routine reads from the channel.  If <pPipe> is NULL, then it uses
-* <pNewReader> as the reader.  Otherwise it takes the reader from the channel
-* structure.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * pipe_read - read from the channel
+ *
+ * This routine reads from the channel.  If <pPipe> is NULL, then it uses
+ * <pNewReader> as the reader.  Otherwise it takes the reader from the channel
+ * structure.
+ *
+ * RETURNS: N/A
+ */
 
 static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 {
@@ -477,16 +477,16 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 	} while (--numIterations != 0);
 }
 
-/*******************************************************************************
-*
-* pipe_write - write to the channel
-*
-* This routine writes to the channel.  If <pPipe> is NULL, then it uses
-* <pNewWriter> as the writer.  Otherwise it takes the writer from the channel
-* structure.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * pipe_write - write to the channel
+ *
+ * This routine writes to the channel.  If <pPipe> is NULL, then it uses
+ * <pNewWriter> as the writer.  Otherwise it takes the writer from the channel
+ * structure.
+ *
+ * RETURNS: N/A
+ */
 
 static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 {
@@ -548,12 +548,12 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 	} while (--numIterations != 0);
 }
 
-/*******************************************************************************
-*
-* pipe_xfer_status_update - update the channel transfer status
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * pipe_xfer_status_update - update the channel transfer status
+ *
+ * RETURNS: N/A
+ */
 
 static void pipe_xfer_status_update(
 	struct k_args *pActor,       /* ptr to struct k_args to be used by actor */
@@ -575,12 +575,12 @@ static void pipe_xfer_status_update(
 	}
 }
 
-/*******************************************************************************
-*
-* pipe_read_write - read and/or write from/to the channel
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * pipe_read_write - read and/or write from/to the channel
+ *
+ * RETURNS: N/A
+ */
 
 static void pipe_read_write(
 	struct pipe_struct *pPipe, /* ptr to channel structure */

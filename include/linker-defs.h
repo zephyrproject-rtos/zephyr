@@ -36,7 +36,7 @@ This file may be included by:
 - Linker script files: for linker section declarations
 - C files: for external declaration of address or size of linker section
 - Assembly files: for external declaration of address or size of linker section
-*/
+ */
 
 #ifndef _LINKERDEFS_H
 #define _LINKERDEFS_H

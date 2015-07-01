@@ -35,7 +35,7 @@
 #ifdef SEMA_BENCH
 
 
-/*******************************************************************************
+/**
  *
  * sema_test - semaphore signal speed test
  *

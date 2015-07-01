@@ -37,7 +37,7 @@ release a semaphore. The task then verifies it can obtain all three
 semaphores.
 
 The ISRs are installed at build time, directly in the vector table.
-*/
+ */
 
 #if !defined(CONFIG_CPU_CORTEX_M3_M4)
   #error project can only run on Cortex-M3/M4
@@ -49,12 +49,12 @@ The ISRs are installed at build time, directly in the vector table.
 
 struct nano_sem sem[3];
 
-/*******************************************************************************
-*
-* isr0 - ISR for IRQ0
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr0 - ISR for IRQ0
+ *
+ * RETURNS: N/A
+ */
 
 void isr0(void)
 {
@@ -63,12 +63,12 @@ void isr0(void)
 	_IntExit();
 }
 
-/*******************************************************************************
-*
-* isr1 - ISR for IRQ1
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr1 - ISR for IRQ1
+ *
+ * RETURNS: N/A
+ */
 
 void isr1(void)
 {
@@ -77,12 +77,12 @@ void isr1(void)
 	_IntExit();
 }
 
-/*******************************************************************************
-*
-* isr2 - ISR for IRQ2
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr2 - ISR for IRQ2
+ *
+ * RETURNS: N/A
+ */
 
 void isr2(void)
 {
@@ -91,12 +91,12 @@ void isr2(void)
 	_IntExit();
 }
 
-/*******************************************************************************
-*
-* main - task entry point
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - task entry point
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 {

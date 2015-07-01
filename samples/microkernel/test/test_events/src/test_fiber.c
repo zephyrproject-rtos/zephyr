@@ -34,7 +34,7 @@
 DESCRIPTION
 The module implements functions for the fiber that tests
 event signaling
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -49,16 +49,16 @@ struct nano_sem fiberSem; /* semaphore that allows test control the fiber */
 
 static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 
-/*******************************************************************************
-*
-* testFiberEntry - the test fiber entry function
-*
-* Fiber waits on the semaphore controlled by the test task
-* It signals the event for the eventWaitTest() function
-* in single and cycle test, for eventTimeoutTest()
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testFiberEntry - the test fiber entry function
+ *
+ * Fiber waits on the semaphore controlled by the test task
+ * It signals the event for the eventWaitTest() function
+ * in single and cycle test, for eventTimeoutTest()
+ *
+ * RETURNS: N/A
+ */
 static void testFiberEntry(void)
 {
 	/* signal event for eventWaitTest() */
@@ -82,12 +82,12 @@ static void testFiberEntry(void)
 	fiber_event_send(EVENT_ID);
 }
 
-/*******************************************************************************
-*
-* testFiberInit - initializes variables and starts the test fiber
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testFiberInit - initializes variables and starts the test fiber
+ *
+ * RETURNS: N/A
+ */
 
 void testFiberInit(void)
 {

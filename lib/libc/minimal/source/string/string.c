@@ -32,12 +32,12 @@
 
 #include <string.h>
 
-/*******************************************************************************
-*
-* strcpy - copy a string
-*
-* RETURNS: pointer to destination buffer <d>
-*/
+/**
+ *
+ * strcpy - copy a string
+ *
+ * RETURNS: pointer to destination buffer <d>
+ */
 
 char *strcpy(char *restrict d, const char *restrict s)
 {
@@ -54,12 +54,12 @@ char *strcpy(char *restrict d, const char *restrict s)
 	return dest;
 }
 
-/*******************************************************************************
-*
-* strncpy - copy part of a string
-*
-* RETURNS: pointer to destination buffer <d>
-*/
+/**
+ *
+ * strncpy - copy part of a string
+ *
+ * RETURNS: pointer to destination buffer <d>
+ */
 
 char *strncpy(char *restrict d, const char *restrict s, size_t n)
 {
@@ -81,12 +81,12 @@ char *strncpy(char *restrict d, const char *restrict s, size_t n)
 	return dest;
 }
 
-/*******************************************************************************
-*
-* strchr - string scanning operation
-*
-* RETURNS: pointer to 1st instance of found byte, or NULL if not found
-*/
+/**
+ *
+ * strchr - string scanning operation
+ *
+ * RETURNS: pointer to 1st instance of found byte, or NULL if not found
+ */
 
 char *strchr(const char *s, int c)
 {
@@ -98,12 +98,12 @@ char *strchr(const char *s, int c)
 	return (*s == tmp) ? (char *) s : NULL;
 }
 
-/*******************************************************************************
-*
-* strlen - get string length
-*
-* RETURNS: number of bytes in string <s>
-*/
+/**
+ *
+ * strlen - get string length
+ *
+ * RETURNS: number of bytes in string <s>
+ */
 
 size_t strlen(const char *s)
 {
@@ -117,12 +117,12 @@ size_t strlen(const char *s)
 	return n;
 }
 
-/*******************************************************************************
-*
-* strcmp - compare two strings
-*
-* RETURNS: negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
-*/
+/**
+ *
+ * strcmp - compare two strings
+ *
+ * RETURNS: negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
+ */
 
 int strcmp(const char *s1, const char *s2)
 {
@@ -134,12 +134,12 @@ int strcmp(const char *s1, const char *s2)
 	return *s1 - *s2;
 }
 
-/*******************************************************************************
-*
-* strncmp - compare part of two strings
-*
-* RETURNS: negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
-*/
+/**
+ *
+ * strncmp - compare part of two strings
+ *
+ * RETURNS: negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
+ */
 
 int strncmp(const char *s1, const char *s2, size_t n)
 {
@@ -152,12 +152,12 @@ int strncmp(const char *s1, const char *s2, size_t n)
 	return (n == 0) ? 0 : (*s1 - *s2);
 }
 
-/*******************************************************************************
-*
-* memcmp - compare two memory areas
-*
-* RETURNS: negative # if <m1> < <m2>, 0 if <m1> == <m2>, else positive #
-*/
+/**
+ *
+ * memcmp - compare two memory areas
+ *
+ * RETURNS: negative # if <m1> < <m2>, 0 if <m1> == <m2>, else positive #
+ */
 
 int memcmp(const void *m1, const void *m2, size_t n)
 {
@@ -175,12 +175,12 @@ int memcmp(const void *m1, const void *m2, size_t n)
 	return *c1 - *c2;
 }
 
-/*******************************************************************************
-*
-* memmove - copy bytes in memory with overlapping areas
-*
-* RETURNS: pointer to destination buffer <d>
-*/
+/**
+ *
+ * memmove - copy bytes in memory with overlapping areas
+ *
+ * RETURNS: pointer to destination buffer <d>
+ */
 
 void *memmove(void *d, const void *s, size_t n)
 {
@@ -210,12 +210,12 @@ void *memmove(void *d, const void *s, size_t n)
 	return d;
 }
 
-/*******************************************************************************
-*
-* memcpy - copy bytes in memory
-*
-* RETURNS: pointer to start of destination buffer
-*/
+/**
+ *
+ * memcpy - copy bytes in memory
+ *
+ * RETURNS: pointer to start of destination buffer
+ */
 
 void *memcpy(void *restrict d, const void *restrict s, size_t n)
 {
@@ -260,12 +260,12 @@ void *memcpy(void *restrict d, const void *restrict s, size_t n)
 	return d;
 }
 
-/*******************************************************************************
-*
-* memset - set bytes in memory
-*
-* RETURNS: pointer to start of buffer
-*/
+/**
+ *
+ * memset - set bytes in memory
+ *
+ * RETURNS: pointer to start of buffer
+ */
 
 void *memset(void *buf, int c, size_t n)
 {

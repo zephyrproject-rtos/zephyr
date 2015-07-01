@@ -107,7 +107,7 @@ int pipeput(kpipe_t pipe, K_PIPE_OPTION
  * Function declarations.
  */
 
-/*******************************************************************************
+/**
  *
  * pipe_test - test the pipes transfer speed
  *
@@ -202,7 +202,7 @@ void pipe_test(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * pipeput - write a data portion to the pipe and measure time
  *

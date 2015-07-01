@@ -44,7 +44,7 @@ initialization has completed.
 
 Although ctors are traditionally a C++ feature, normal C code can use them too.
 No destructor support (dtors) is provided.
-*/
+ */
 
 /* What a constructor function pointer looks like */
 
@@ -61,14 +61,14 @@ typedef void (*CtorFuncPtr)(void);
 extern CtorFuncPtr __CTOR_LIST__[];
 extern CtorFuncPtr __CTOR_END__[];
 
-/******************************************************************************
-*
-* _Ctors - invoke all C++ style global object constructors
-*
-* This function is invoked by _Cstart(), which is implemented in the BSP. It
-* invokes all routines that have been tagged using NANO_INIT_xxx, in order
-* of priority (i.e. lowest numbered to highest numbered).
-*/
+/**
+ *
+ * _Ctors - invoke all C++ style global object constructors
+ *
+ * This function is invoked by _Cstart(), which is implemented in the BSP. It
+ * invokes all routines that have been tagged using NANO_INIT_xxx, in order
+ * of priority (i.e. lowest numbered to highest numbered).
+ */
 
 void _Ctors(void)
 {

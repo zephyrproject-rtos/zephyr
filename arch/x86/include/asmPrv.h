@@ -63,33 +63,33 @@ extern "C" {
 	call h;                             \
 	jmp _ExcExit;
 
-/*******************************************************************************
-*
-* NANO_CPU_EXC_CONNECT - to generate and register an exception stub
-*
-* Generates an exception stub for the handler, <h>. It is registered
-* on the vector given by <v> with the privilege level <d>; <d> should always
-* be 0.
-*
-* Use this version of the macro if the processor pushes an error code for the
-* given exception.
-*/
+/**
+ *
+ * NANO_CPU_EXC_CONNECT - to generate and register an exception stub
+ *
+ * Generates an exception stub for the handler, <h>. It is registered
+ * on the vector given by <v> with the privilege level <d>; <d> should always
+ * be 0.
+ *
+ * Use this version of the macro if the processor pushes an error code for the
+ * given exception.
+ */
 
 #define NANO_CPU_EXC_CONNECT(h, v, d)                              \
 	NANO_CPU_INT_REGISTER_ASM(h, v, d) GTEXT(MK_STUB_NAME(h)); \
 	SECTION_FUNC(TEXT, MK_STUB_NAME(h)) NANO_CPU_EXC_CONNECT_CODE(h)
 
-/*******************************************************************************
-*
-* NANO_CPU_EXC_CONNECT_NO_ERR - to generate and register an exception stub
-*
-* Generates an exception stub for the handler, <h>. It is registered
-* on the vector given by <v> with the privilege level <d>; <d> should always
-* be 0.
-*
-* Use this version of the macro if the processor doesn't push an error code for
-* the given exception. The created stub pushes a dummy value of 0 to keep the
-* exception stack frame the same.
+/**
+ *
+ * NANO_CPU_EXC_CONNECT_NO_ERR - to generate and register an exception stub
+ *
+ * Generates an exception stub for the handler, <h>. It is registered
+ * on the vector given by <v> with the privilege level <d>; <d> should always
+ * be 0.
+ *
+ * Use this version of the macro if the processor doesn't push an error code for
+ * the given exception. The created stub pushes a dummy value of 0 to keep the
+ * exception stack frame the same.
  */
 #define NANO_CPU_EXC_CONNECT_NO_ERR(h, v, d)                       \
 	NANO_CPU_INT_REGISTER_ASM(h, v, d) GTEXT(MK_STUB_NAME(h)); \

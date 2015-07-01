@@ -44,36 +44,36 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/*******************************************************************************
-*
-* _do_irq_lock_inline - disable all interrupts on the CPU (inline)
-*
-* This routine disables interrupts.  It can be called from either interrupt,
-* task or fiber level.  This routine returns an architecture-dependent
-* lock-out key representing the "interrupt disable state" prior to the call;
-* this key can be passed to irq_unlock_inline() to re-enable interrupts.
-*
-* The lock-out key should only be used as the argument to the
-* irq_unlock_inline() API.  It should never be used to manually re-enable
-* interrupts or to inspect or manipulate the contents of the source register.
-*
-* WARNINGS
-* Invoking a kernel routine with interrupts locked may result in
-* interrupts being re-enabled for an unspecified period of time.  If the
-* called routine blocks, interrupts will be re-enabled while another
-* context executes, or while the system is idle.
-*
-* The "interrupt disable state" is an attribute of a context.  Thus, if a
-* fiber or task disables interrupts and subsequently invokes a kernel
-* routine that causes the calling context to block, the interrupt
-* disable state will be restored when the context is later rescheduled
-* for execution.
-*
-* RETURNS: An architecture-dependent lock-out key representing the
-* "interrupt disable state" prior to the call.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _do_irq_lock_inline - disable all interrupts on the CPU (inline)
+ *
+ * This routine disables interrupts.  It can be called from either interrupt,
+ * task or fiber level.  This routine returns an architecture-dependent
+ * lock-out key representing the "interrupt disable state" prior to the call;
+ * this key can be passed to irq_unlock_inline() to re-enable interrupts.
+ *
+ * The lock-out key should only be used as the argument to the
+ * irq_unlock_inline() API.  It should never be used to manually re-enable
+ * interrupts or to inspect or manipulate the contents of the source register.
+ *
+ * WARNINGS
+ * Invoking a kernel routine with interrupts locked may result in
+ * interrupts being re-enabled for an unspecified period of time.  If the
+ * called routine blocks, interrupts will be re-enabled while another
+ * context executes, or while the system is idle.
+ *
+ * The "interrupt disable state" is an attribute of a context.  Thus, if a
+ * fiber or task disables interrupts and subsequently invokes a kernel
+ * routine that causes the calling context to block, the interrupt
+ * disable state will be restored when the context is later rescheduled
+ * for execution.
+ *
+ * RETURNS: An architecture-dependent lock-out key representing the
+ * "interrupt disable state" prior to the call.
+ *
+ * \NOMANUAL
+ */
 
 static inline __attribute__((always_inline))
 	unsigned int _do_irq_lock_inline(void)
@@ -93,17 +93,17 @@ static inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* _do_irq_unlock_inline - enable all interrupts on the CPU (inline)
-*
-* This routine can be called from either interrupt, task or fiber level.
-* Invoked by kernel or by irq_unlock_inline()
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _do_irq_unlock_inline - enable all interrupts on the CPU (inline)
+ *
+ * This routine can be called from either interrupt, task or fiber level.
+ * Invoked by kernel or by irq_unlock_inline()
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline __attribute__((always_inline))
 	void _do_irq_unlock_inline(void)
@@ -115,24 +115,24 @@ static inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* find_first_set_inline - find first set bit searching from the LSB (inline)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit to 32 for the most significant bit.
-* A return value of zero indicates that the value passed is zero.
-*
-* RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
-*
-* INTERNAL
-* For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
-* and leverage the fact that the 'bsfl' doesn't modify the destination operand
-* when the source operand is zero.  The "bitpos" variable can be preloaded
-* into the destination register, and given the unconditional ++bitpos that
-* is performed after the 'cmovzl', the correct results are yielded.
-*/
+/**
+ *
+ * find_first_set_inline - find first set bit searching from the LSB (inline)
+ *
+ * This routine finds the first bit set in the argument passed it and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit to 32 for the most significant bit.
+ * A return value of zero indicates that the value passed is zero.
+ *
+ * RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
+ *
+ * INTERNAL
+ * For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
+ * and leverage the fact that the 'bsfl' doesn't modify the destination operand
+ * when the source operand is zero.  The "bitpos" variable can be preloaded
+ * into the destination register, and given the unconditional ++bitpos that
+ * is performed after the 'cmovzl', the correct results are yielded.
+ */
 
 static inline __attribute__((always_inline))
 	unsigned int find_first_set_inline (unsigned int op)
@@ -166,24 +166,24 @@ static inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* find_last_set_inline - find first set bit searching from the MSB (inline)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit to 32 for the most significant bit.
-* A return value of zero indicates that the value passed is zero.
-*
-* RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
-*
-* INTERNAL
-* For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
-* and leverage the fact that the 'bsfl' doesn't modify the destination operand
-* when the source operand is zero.  The "bitpos" variable can be preloaded
-* into the destination register, and given the unconditional ++bitpos that
-* is performed after the 'cmovzl', the correct results are yielded.
-*/
+/**
+ *
+ * find_last_set_inline - find first set bit searching from the MSB (inline)
+ *
+ * This routine finds the first bit set in the argument passed it and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit to 32 for the most significant bit.
+ * A return value of zero indicates that the value passed is zero.
+ *
+ * RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
+ *
+ * INTERNAL
+ * For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
+ * and leverage the fact that the 'bsfl' doesn't modify the destination operand
+ * when the source operand is zero.  The "bitpos" variable can be preloaded
+ * into the destination register, and given the unconditional ++bitpos that
+ * is performed after the 'cmovzl', the correct results are yielded.
+ */
 
 static inline inline __attribute__((always_inline))
 	unsigned int find_last_set_inline (unsigned int op)
@@ -216,10 +216,10 @@ static inline inline __attribute__((always_inline))
 }
 
 
-/********************************************************
-*
-*  _NanoTscRead - read timestamp register ensuring serialization
-*/
+/**
+ *
+ *  _NanoTscRead - read timestamp register ensuring serialization
+ */
 
 static inline uint64_t _NanoTscRead(void)
 {
@@ -250,7 +250,7 @@ static inline uint64_t _NanoTscRead(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * _do_read_cpu_timestamp - get a 32 bit CPU timestamp counter
  *
@@ -268,17 +268,17 @@ static inline inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* sys_out8 - output a byte to an IA-32 I/O port
-*
-* This function issues the 'out' instruction to write a byte to the specified
-* I/O port.
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
+/**
+ *
+ * sys_out8 - output a byte to an IA-32 I/O port
+ *
+ * This function issues the 'out' instruction to write a byte to the specified
+ * I/O port.
+ *
+ * RETURNS: N/A
+ *
+ * NOMANUAL
+ */
 
 static inline inline __attribute__((always_inline))
 	void sys_out8(unsigned char data, unsigned int port)
@@ -287,17 +287,17 @@ static inline inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* sys_in8 - input a byte from an IA-32 I/O port
-*
-* This function issues the 'in' instruction to read a byte from the specified
-* I/O port.
-*
-* RETURNS: the byte read from the specified I/O port
-*
-* NOMANUAL
-*/
+/**
+ *
+ * sys_in8 - input a byte from an IA-32 I/O port
+ *
+ * This function issues the 'in' instruction to read a byte from the specified
+ * I/O port.
+ *
+ * RETURNS: the byte read from the specified I/O port
+ *
+ * NOMANUAL
+ */
 
 static inline inline __attribute__((always_inline))
 	unsigned char sys_in8(unsigned int port)
@@ -309,17 +309,17 @@ static inline inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* sys_out16 - output a word to an IA-32 I/O port
-*
-* This function issues the 'out' instruction to write a word to the
-* specified I/O port.
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
+/**
+ *
+ * sys_out16 - output a word to an IA-32 I/O port
+ *
+ * This function issues the 'out' instruction to write a word to the
+ * specified I/O port.
+ *
+ * RETURNS: N/A
+ *
+ * NOMANUAL
+ */
 
 static inline inline __attribute__((always_inline))
 	void sys_out16(unsigned short data, unsigned int port)
@@ -328,17 +328,17 @@ static inline inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* sys_in16 - input a word from an IA-32 I/O port
-*
-* This function issues the 'in' instruction to read a word from the
-* specified I/O port.
-*
-* RETURNS: the word read from the specified I/O port
-*
-* NOMANUAL
-*/
+/**
+ *
+ * sys_in16 - input a word from an IA-32 I/O port
+ *
+ * This function issues the 'in' instruction to read a word from the
+ * specified I/O port.
+ *
+ * RETURNS: the word read from the specified I/O port
+ *
+ * NOMANUAL
+ */
 
 static inline inline __attribute__((always_inline))
 	unsigned short sys_in16(unsigned int port)
@@ -350,17 +350,17 @@ static inline inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* sys_out32 - output a long word to an IA-32 I/O port
-*
-* This function issues the 'out' instruction to write a long word to the
-* specified I/O port.
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
+/**
+ *
+ * sys_out32 - output a long word to an IA-32 I/O port
+ *
+ * This function issues the 'out' instruction to write a long word to the
+ * specified I/O port.
+ *
+ * RETURNS: N/A
+ *
+ * NOMANUAL
+ */
 
 static inline inline __attribute__((always_inline))
 	void sys_out32(unsigned int data, unsigned int port)
@@ -369,17 +369,17 @@ static inline inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* sys_in32 - input a long word from an IA-32 I/O port
-*
-* This function issues the 'in' instruction to read a long word from the
-* specified I/O port.
-*
-* RETURNS: the long read from the specified I/O port
-*
-* NOMANUAL
-*/
+/**
+ *
+ * sys_in32 - input a long word from an IA-32 I/O port
+ *
+ * This function issues the 'in' instruction to read a long word from the
+ * specified I/O port.
+ *
+ * RETURNS: the long read from the specified I/O port
+ *
+ * NOMANUAL
+ */
 
 static inline inline __attribute__((always_inline))
 	unsigned long sys_in32(unsigned int port)

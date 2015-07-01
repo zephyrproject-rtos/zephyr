@@ -39,7 +39,7 @@ This file is also included by assembly language files which must #define
 _ASMLANGUAGE before including this header file.  Note that nanokernel assembly
 source files obtains structure offset values via "absolute symbols" in the
 offsets.o module.
-*/
+ */
 
 #ifndef _NANO_PRIVATE_H
 #define _NANO_PRIVATE_H
@@ -238,32 +238,32 @@ static ALWAYS_INLINE void nanoArchInit(void)
 	_irq_setup();
 }
 
-/*******************************************************************************
-*
-* fiberRtnValueSet - set the return value for the specified fiber (inline)
-*
-* The register used to store the return value from a function call invocation
-* to <value>.  It is assumed that the specified <fiber> is pending, and thus
-* the fiber's context is stored in its tCCS structure.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * fiberRtnValueSet - set the return value for the specified fiber (inline)
+ *
+ * The register used to store the return value from a function call invocation
+ * to <value>.  It is assumed that the specified <fiber> is pending, and thus
+ * the fiber's context is stored in its tCCS structure.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE void fiberRtnValueSet(tCCS *fiber, unsigned int value)
 {
 	fiber->return_value = value;
 }
 
-/*******************************************************************************
-*
-* _IS_IN_ISR - indicates if kernel is handling interrupt
-*
-* RETURNS: 1 if interrupt handler is executed, 0 otherwise
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _IS_IN_ISR - indicates if kernel is handling interrupt
+ *
+ * RETURNS: 1 if interrupt handler is executed, 0 otherwise
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE int _IS_IN_ISR(void)
 {

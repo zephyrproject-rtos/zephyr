@@ -46,7 +46,7 @@ unlocked. This achieves two purposes:
 2. Zero Interrupt Latency (ZLI) is achievable via this by allowing certain
    interrupts to set their priority to 1, thus being allowed in when interrupts
    are locked for regular interrupts.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -59,18 +59,18 @@ _ASM_FILE_PROLOGUE
 GTEXT(irq_lock)
 GTEXT(irq_unlock)
 
-/*******************************************************************************
-*
-* irq_lock - lock interrupts
-*
-* Prevent exceptions of priority lower than to the two highest priorities from
-* interrupting the CPU.
-*
-* This function can be called recursively: it will return a key to return the
-* state of interrupt locking to the previous level.
-*
-* RETURNS: a key to return to the previous interrupt locking level
-*/
+/**
+ *
+ * irq_lock - lock interrupts
+ *
+ * Prevent exceptions of priority lower than to the two highest priorities from
+ * interrupting the CPU.
+ *
+ * This function can be called recursively: it will return a key to return the
+ * state of interrupt locking to the previous level.
+ *
+ * RETURNS: a key to return to the previous interrupt locking level
+ */
 
 SECTION_FUNC(TEXT,irq_lock)
     movs.n r1, #_EXC_IRQ_DEFAULT_PRIO
@@ -78,15 +78,15 @@ SECTION_FUNC(TEXT,irq_lock)
     msr BASEPRI, r1
     bx lr
 
-/*******************************************************************************
-*
-* irq_unlock - unlock interrupts
-*
-* Return the state of interrupt locking to a previous level, passed in via the
-* <key> parameter, obtained from a previous call to irq_lock().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * irq_unlock - unlock interrupts
+ *
+ * Return the state of interrupt locking to a previous level, passed in via the
+ * <key> parameter, obtained from a previous call to irq_lock().
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT,irq_unlock)
     msr BASEPRI, r0

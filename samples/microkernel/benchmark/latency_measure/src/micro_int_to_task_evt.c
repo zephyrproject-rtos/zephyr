@@ -48,16 +48,16 @@
 
 static uint32_t timestamp = 0;
 
-/*******************************************************************************
-*
-* latencyTestIsr - test ISR used to measure best case interrupt latency
-*
-* The interrupt handler gets the second timestamp.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * latencyTestIsr - test ISR used to measure best case interrupt latency
+ *
+ * The interrupt handler gets the second timestamp.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void latencyTestIsr(void *unused)
 {
@@ -67,7 +67,7 @@ static void latencyTestIsr(void *unused)
 	timestamp = TIME_STAMP_DELTA_GET(0);
 }
 
-/*******************************************************************************
+/**
  *
  * microInt - software interrupt generating task
  *
@@ -88,7 +88,7 @@ void microInt(void)
 	task_suspend(task_id_get());
 }
 
-/*******************************************************************************
+/**
  *
  * microIntToTaskEvt - the test main function
  *

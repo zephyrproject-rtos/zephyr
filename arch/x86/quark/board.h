@@ -34,7 +34,7 @@
 DESCRIPTION
 This header file is used to specify and describe board-level aspects for
 the 'Quark' BSP.
-*/
+ */
 
 #ifndef __INCboardh
 #define __INCboardh
@@ -152,31 +152,31 @@ the 'Quark' BSP.
 	sys_out8(data, (unsigned int)address)
 #define PLB_BYTE_REG_READ(address) sys_in8((unsigned int)address)
 
-/*******************************************************************************
-*
-* outByte - output byte to memory location
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
+/**
+ *
+ * outByte - output byte to memory location
+ *
+ * RETURNS: N/A
+ *
+ * NOMANUAL
+ */
 
 static inline void outByte(uint8_t data, uint32_t addr)
 {
 	*(volatile uint8_t *)addr = data;
 }
 
-/*******************************************************************************
-*
-* inByte - obtain byte value from memory location
-*
-* This function issues the 'move' instruction to read a byte from the specified
-* memory address.
-*
-* RETURNS: the byte read from the specified memory address
-*
-* NOMANUAL
-*/
+/**
+ *
+ * inByte - obtain byte value from memory location
+ *
+ * This function issues the 'move' instruction to read a byte from the specified
+ * memory address.
+ *
+ * RETURNS: the byte read from the specified memory address
+ *
+ * NOMANUAL
+ */
 
 static inline uint8_t inByte(uint32_t addr)
 {
@@ -194,31 +194,31 @@ static inline uint8_t inByte(uint32_t addr)
 	sys_out16(data, (unsigned int)address)
 #define PLB_WORD_REG_READ(address) sys_in16((unsigned int)address)
 
-/*******************************************************************************
-*
-* outWord - output word to memory location
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
+/**
+ *
+ * outWord - output word to memory location
+ *
+ * RETURNS: N/A
+ *
+ * NOMANUAL
+ */
 
 static inline void outWord(uint16_t data, uint32_t addr)
 {
 	*(volatile uint16_t *)addr = data;
 }
 
-/*******************************************************************************
-*
-* inWord - obtain word value from memory location
-*
-* This function issues the 'move' instruction to read a word from the specified
-* memory address.
-*
-* RETURNS: the word read from the specified memory address
-*
-* NOMANUAL
-*/
+/**
+ *
+ * inWord - obtain word value from memory location
+ *
+ * This function issues the 'move' instruction to read a word from the specified
+ * memory address.
+ *
+ * RETURNS: the word read from the specified memory address
+ *
+ * NOMANUAL
+ */
 
 static inline uint16_t inWord(uint32_t addr)
 {
@@ -236,31 +236,31 @@ static inline uint16_t inWord(uint32_t addr)
 	sys_out32(data, (unsigned int)address)
 #define PLB_LONG_REG_READ(address) sys_in32((unsigned int)address)
 
-/*******************************************************************************
-*
-* outLong - output long word to memory location
-*
-* RETURNS: N/A
-*
-* NOMANUAL
-*/
+/**
+ *
+ * outLong - output long word to memory location
+ *
+ * RETURNS: N/A
+ *
+ * NOMANUAL
+ */
 
 static inline void outLong(uint32_t data, uint32_t addr)
 {
 	*(volatile uint32_t *)addr = data;
 }
 
-/*******************************************************************************
-*
-* inLong - obtain long word value from memory location
-*
-* This function issues the 'move' instruction to read a word from the specified
-* memory address.
-*
-* RETURNS: the long word read from the specified memory address
-*
-* NOMANUAL
-*/
+/**
+ *
+ * inLong - obtain long word value from memory location
+ *
+ * This function issues the 'move' instruction to read a word from the specified
+ * memory address.
+ *
+ * RETURNS: the long word read from the specified memory address
+ *
+ * NOMANUAL
+ */
 
 static inline uint32_t inLong(uint32_t addr)
 {
@@ -268,19 +268,19 @@ static inline uint32_t inLong(uint32_t addr)
 }
 #endif /* !_ASMLANGUAGE */
 
-/*******************************************************************************
-*
-* pci_pin2irq - convert PCI interrupt PIN to IRQ
-*
-* The routine uses "standard design consideration" and implies that
-* INTA (pin 1) -> IRQ 16
-* INTB (pin 2) -> IRQ 17
-* INTC (pin 3) -> IRQ 18
-* INTD (pin 4) -> IRQ 19
-*
-* RETURNS: IRQ number, -1 if the result is incorrect
-*
-*/
+/**
+ *
+ * pci_pin2irq - convert PCI interrupt PIN to IRQ
+ *
+ * The routine uses "standard design consideration" and implies that
+ * INTA (pin 1) -> IRQ 16
+ * INTB (pin 2) -> IRQ 17
+ * INTC (pin 3) -> IRQ 18
+ * INTD (pin 4) -> IRQ 19
+ *
+ * RETURNS: IRQ number, -1 if the result is incorrect
+ *
+ */
 
 static inline int pci_pin2irq(int pin)
 {
@@ -289,13 +289,13 @@ static inline int pci_pin2irq(int pin)
 	return N_PIC_IRQS + pin - 1;
 }
 
-/*******************************************************************************
-*
-* pci_irq2pin - convert IRQ to PCI interrupt pin
-*
-* RETURNS: pin number, -1 if the result is incorrect
-*
-*/
+/**
+ *
+ * pci_irq2pin - convert IRQ to PCI interrupt pin
+ *
+ * RETURNS: pin number, -1 if the result is incorrect
+ *
+ */
 
 static inline int pci_irq2pin(int irq)
 {

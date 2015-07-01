@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 ARM-specific nanokernel ffs interface. Included by ARM/arch.h.
-*/
+ */
 
 #ifndef _ARCH_ARM_CORTEXM_FFS_H_
 #define _ARCH_ARM_CORTEXM_FFS_H_

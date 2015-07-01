@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 CPU power management routines.
-*/
+ */
 
 #define _ASMLANGUAGE
 

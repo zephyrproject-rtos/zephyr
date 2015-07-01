@@ -37,7 +37,7 @@ This module tests the following timer related routines:
   nano_fiber_timer_test(), nano_fiber_timer_wait(), nano_task_timer_start(),
   nano_task_timer_stop(), nano_task_timer_test(), nano_task_timer_wait(),
   nano_time_init(), nano_tick_get_32(), nano_cycle_get_32(), nano_tick_delta()
-*/
+ */
 
 #include <tc_util.h>
 #include <arch/cpu.h>
@@ -77,14 +77,14 @@ static int  fiberDetectedError = 0;
 static char __stack fiberStack[FIBER_STACKSIZE];
 static char __stack fiber2Stack[FIBER2_STACKSIZE];
 
-/*******************************************************************************
-*
-* initNanoObjects - initialize nanokernel objects
-*
-* This routine initializes the nanokernel objects used in the LIFO tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * initNanoObjects - initialize nanokernel objects
+ *
+ * This routine initializes the nanokernel objects used in the LIFO tests.
+ *
+ * RETURNS: N/A
+ */
 
 void initNanoObjects(void)
 {
@@ -96,29 +96,29 @@ void initNanoObjects(void)
 	nano_sem_init(&wakeFiber);
 }
 
-/*******************************************************************************
-*
-* basicTimerWait - basic checking of time spent waiting upon a timer
-*
-* This routine can be called from a task or a fiber to wait upon a timer.
-* It will busy wait until the current tick ends, at which point it will
-* start and then wait upon a timer.  The length of time it spent waiting
-* gets cross-checked with the nano_tick_get_32() and nanoTimeElapsed() APIs.
-* All three are expected to match up, but a tolerance of one (1) tick is
-* considered acceptable.
-*
-* This routine can be considered as testing nano_tick_get_32(),
-* nanoTimeElapsed() and nanoXXXTimerGetW() successful expiration cases.
-*
-* \param startRtn      routine to start the timer
-* \param waitRtn       routine to get and wait for the timer
-* \param getRtn        routine to get the timer (no waiting)
-* \param pTimer        pointer to the timer
-* \param pTimerData    pointer to the expected timer data
-* \param ticks         number of ticks to wait
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * basicTimerWait - basic checking of time spent waiting upon a timer
+ *
+ * This routine can be called from a task or a fiber to wait upon a timer.
+ * It will busy wait until the current tick ends, at which point it will
+ * start and then wait upon a timer.  The length of time it spent waiting
+ * gets cross-checked with the nano_tick_get_32() and nanoTimeElapsed() APIs.
+ * All three are expected to match up, but a tolerance of one (1) tick is
+ * considered acceptable.
+ *
+ * This routine can be considered as testing nano_tick_get_32(),
+ * nanoTimeElapsed() and nanoXXXTimerGetW() successful expiration cases.
+ *
+ * \param startRtn      routine to start the timer
+ * \param waitRtn       routine to get and wait for the timer
+ * \param getRtn        routine to get the timer (no waiting)
+ * \param pTimer        pointer to the timer
+ * \param pTimerData    pointer to the expected timer data
+ * \param ticks         number of ticks to wait
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 				   timer_get_func getRtn, struct nano_timer *pTimer,
@@ -181,22 +181,22 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* startTimers - start four timers
-*
-* This routine starts four timers.
-* The first (<timer>) is added to an empty list of timers.
-* The second (<longTimer>) is added to the end of the list of timers.
-* The third (<shortTimer>) is added to the head of the list of timers.
-* The fourth (<midTimer>) is added to the middle of the list of timers.
-*
-* Four timers are used so that the various paths can be tested.
-*
-* \param startRtn    routine to start the timers
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * startTimers - start four timers
+ *
+ * This routine starts four timers.
+ * The first (<timer>) is added to an empty list of timers.
+ * The second (<longTimer>) is added to the end of the list of timers.
+ * The third (<shortTimer>) is added to the head of the list of timers.
+ * The fourth (<midTimer>) is added to the middle of the list of timers.
+ *
+ * Four timers are used so that the various paths can be tested.
+ *
+ * \param startRtn    routine to start the timers
+ *
+ * RETURNS: N/A
+ */
 
 void startTimers(timer_start_func startRtn)
 {
@@ -213,19 +213,19 @@ void startTimers(timer_start_func startRtn)
 	startRtn(&midTimer, MID_TIMEOUT);
 }
 
-/*******************************************************************************
-*
-* busyWaitTimers - busy wait while checking timers expire in the correct order
-*
-* This routine checks that the four timers created using startTimers() finish
-* in the correct order.  It busy waits on all four timers waiting until they
-* expire.  The timers are expected to expire in the following order:
-*     <shortTimer>, <timer>, <midTimer>, <longTimer>
-*
-* \param getRtn    timer get routine (fiber or task)
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * busyWaitTimers - busy wait while checking timers expire in the correct order
+ *
+ * This routine checks that the four timers created using startTimers() finish
+ * in the correct order.  It busy waits on all four timers waiting until they
+ * expire.  The timers are expected to expire in the following order:
+ *     <shortTimer>, <timer>, <midTimer>, <longTimer>
+ *
+ * \param getRtn    timer get routine (fiber or task)
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int busyWaitTimers(timer_get_func getRtn)
 {
@@ -281,21 +281,21 @@ int busyWaitTimers(timer_get_func getRtn)
 	return (nano_tick_get_32() < ticks) ? TC_PASS : TC_FAIL;
 }
 
-/*******************************************************************************
-*
-* stopTimers - stop the four timers and make sure they did not expire
-*
-* This routine stops the four started timers and then checks the timers for
-* six seconds to make sure that they did not fire.  The four timers will be
-* stopped in the reverse order in which they were started.  Doing so will
-* exercise the code that removes timers from important locations in the list;
-* these include the middle, the head, the tail, and the last item.
-*
-* \param stopRtn    routine to stop timer (fiber or task)
-* \param getRtn     timer get routine (fiber or task)
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * stopTimers - stop the four timers and make sure they did not expire
+ *
+ * This routine stops the four started timers and then checks the timers for
+ * six seconds to make sure that they did not fire.  The four timers will be
+ * stopped in the reverse order in which they were started.  Doing so will
+ * exercise the code that removes timers from important locations in the list;
+ * these include the middle, the head, the tail, and the last item.
+ *
+ * \param stopRtn    routine to stop timer (fiber or task)
+ * \param getRtn     timer get routine (fiber or task)
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
 {
@@ -325,18 +325,18 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* fiber2Entry - entry point for the second fiber
-*
-* The second fiber has a lower priority than the first, but is still given
-* precedence over the task.
-*
-* \param arg1    unused
-* \param arg2    unused
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber2Entry - entry point for the second fiber
+ *
+ * The second fiber has a lower priority than the first, but is still given
+ * precedence over the task.
+ *
+ * \param arg1    unused
+ * \param arg2    unused
+ *
+ * RETURNS: N/A
+ */
 
 static void fiber2Entry(int arg1, int arg2)
 {
@@ -346,18 +346,18 @@ static void fiber2Entry(int arg1, int arg2)
 	nano_fiber_timer_stop(&timer);
 }
 
-/*******************************************************************************
-*
-* fiberEntry - entry point for the fiber portion of the timer tests
-*
-* NOTE: The fiber portion of the tests have higher priority than the task
-* portion of the tests.
-*
-* \param arg1    unused
-* \param arg2    unused
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiberEntry - entry point for the fiber portion of the timer tests
+ *
+ * NOTE: The fiber portion of the tests have higher priority than the task
+ * portion of the tests.
+ *
+ * \param arg1    unused
+ * \param arg2    unused
+ *
+ * RETURNS: N/A
+ */
 
 static void fiberEntry(int arg1, int arg2)
 {
@@ -427,12 +427,12 @@ static void fiberEntry(int arg1, int arg2)
 	nano_fiber_sem_give(&wakeTask);
 }
 
-/*******************************************************************************
-*
-* nano_cycle_get_32Test - test the nano_cycle_get_32() API
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * nano_cycle_get_32Test - test the nano_cycle_get_32() API
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int nano_cycle_get_32Test(void)
 {
@@ -454,14 +454,14 @@ int nano_cycle_get_32Test(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* main - entry point to timer tests
-*
-* This is the entry point to the timer tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - entry point to timer tests
+ *
+ * This is the entry point to the timer tests.
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 {

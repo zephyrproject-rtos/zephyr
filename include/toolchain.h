@@ -36,7 +36,7 @@ This file contains various macros to abstract compiler capabilities that
 utilize toolchain specific attributes and/or pragmas.
 
 \NOMANUAL
-*/
+ */
 
 #ifndef _TOOLCHAIN_H
 #define _TOOLCHAIN_H

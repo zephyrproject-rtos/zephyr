@@ -36,7 +36,7 @@ This module contains utilities to perform unaligned reads/writes from/to a
 32-bit quantity.  Some memory subsystems to not support the IA-32 byte
 enable lines, and thus accessing an unaligned 32-bit quantity is
 performed byte-by-byte.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -49,31 +49,31 @@ performed byte-by-byte.
 	GTEXT(_Unaligned32Write)
 	GTEXT(_Unaligned32Read)
 
-/*******************************************************************************
-*
-* _Unaligned32Write - perform an unaligned 32-bit write operation
-*
-* This function is used during the interrupt and exception stub code 
-* synthesis step when writing out the 32-bit relative jmp/branch
-* offsets.  
-*
-* Generally, the 32-bit offsets are located at an odd memory address.  For
-* target hardware that don't fully (or properly) decode the byte enable
-* lines from the IA-32 processor, this function shall be utilized to write out
-* the data byte-by-byte.
-*
-* The BSP specific configuration option CONFIG_UNALIGNED_WRITE_UNSUPPORTED 
-* shall be defined when the kernel is built for target hardware that cannot
-* support unaligned double word (32-bit) write operations.
-*
-* C function prototype:
-*
-*  void _Unaligned32Write
-*      (
-*      unsigned int * ptr, 
-*      unsigned int val
-*      );
-*/
+/**
+ *
+ * _Unaligned32Write - perform an unaligned 32-bit write operation
+ *
+ * This function is used during the interrupt and exception stub code 
+ * synthesis step when writing out the 32-bit relative jmp/branch
+ * offsets.  
+ *
+ * Generally, the 32-bit offsets are located at an odd memory address.  For
+ * target hardware that don't fully (or properly) decode the byte enable
+ * lines from the IA-32 processor, this function shall be utilized to write out
+ * the data byte-by-byte.
+ *
+ * The BSP specific configuration option CONFIG_UNALIGNED_WRITE_UNSUPPORTED 
+ * shall be defined when the kernel is built for target hardware that cannot
+ * support unaligned double word (32-bit) write operations.
+ *
+ * C function prototype:
+ *
+ *  void _Unaligned32Write
+ *      (
+ *      unsigned int * ptr, 
+ *      unsigned int val
+ *      );
+ */
 
 SECTION_FUNC(TEXT, _Unaligned32Write)
 	movl	0x4(%esp), %edx		/* fetch ptr argument */
@@ -86,30 +86,30 @@ SECTION_FUNC(TEXT, _Unaligned32Write)
 	ret
 
 
-/*******************************************************************************
-*
-* _Unaligned32Read - perform an unaligned 32-bit read operation
-*
-* This function is used during the interrupt and exception stub code
-* synthesis step when reading the 32-bit relative jmp/branch
-* offsets.  
-*
-* Generally, the 32-bit offsets are located at an odd memory address.  For
-* target hardware that don't fully (or properly) decode the byte enable
-* lines from the IA-32 processor, this function shall be utilized to read
-* the data byte-by-byte.
-*
-* The BSP specific configuration option CONFIG_UNALIGNED_WRITE_UNSUPPORTED 
-* shall be defined when the kernel is built for target hardware that cannot
-* support unaligned double word (32-bit) write operations.
-*
-* C function prototype:
-*
-*  unsigned int _Unaligned32Read
-*      (
-*      unsigned int * ptr
-*      );
-*/
+/**
+ *
+ * _Unaligned32Read - perform an unaligned 32-bit read operation
+ *
+ * This function is used during the interrupt and exception stub code
+ * synthesis step when reading the 32-bit relative jmp/branch
+ * offsets.  
+ *
+ * Generally, the 32-bit offsets are located at an odd memory address.  For
+ * target hardware that don't fully (or properly) decode the byte enable
+ * lines from the IA-32 processor, this function shall be utilized to read
+ * the data byte-by-byte.
+ *
+ * The BSP specific configuration option CONFIG_UNALIGNED_WRITE_UNSUPPORTED 
+ * shall be defined when the kernel is built for target hardware that cannot
+ * support unaligned double word (32-bit) write operations.
+ *
+ * C function prototype:
+ *
+ *  unsigned int _Unaligned32Read
+ *      (
+ *      unsigned int * ptr
+ *      );
+ */
 
 SECTION_FUNC(TEXT, _Unaligned32Read)
 	movl	0x4(%esp), %edx		/* fetch ptr argument */

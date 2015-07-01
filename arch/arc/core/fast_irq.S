@@ -35,7 +35,7 @@ DESCRIPTION
 This module implements the code for handling entry to and exit from Fast IRQs.
 
 See isr_wrapper.S for details.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -53,25 +53,25 @@ GDATA(_firq_stack)
 SECTION_VAR(NOINIT, _firq_stack)
 	.space CONFIG_FIRQ_STACK_SIZE
 
-/*******************************************************************************
-*
-* _firq_enter - work to be done before handing control to a FIRQ ISR
-*
-* The processor switches to a second register bank so registers from the
-* current bank do not have to be preserved yet. The only issue is the LP_START/
-* LP_COUNT/LP_END registers, which are not banked.
-*
-* If all FIRQ ISRs are programmed such that there are no use of the LP
-* registers (ie. no LPcc instruction), then the kernel can be configured to
-* remove the use of _firq_enter().
-*
-* When entering a FIRQ, interrupts might as well be locked: the processor is
-* running at its highest priority, and cannot be preempted by anything.
-*
-* Assumption by _isr_demux: r3 is untouched by _firq_enter.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _firq_enter - work to be done before handing control to a FIRQ ISR
+ *
+ * The processor switches to a second register bank so registers from the
+ * current bank do not have to be preserved yet. The only issue is the LP_START/
+ * LP_COUNT/LP_END registers, which are not banked.
+ *
+ * If all FIRQ ISRs are programmed such that there are no use of the LP
+ * registers (ie. no LPcc instruction), then the kernel can be configured to
+ * remove the use of _firq_enter().
+ *
+ * When entering a FIRQ, interrupts might as well be locked: the processor is
+ * running at its highest priority, and cannot be preempted by anything.
+ *
+ * Assumption by _isr_demux: r3 is untouched by _firq_enter.
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _firq_enter)
 
@@ -97,12 +97,12 @@ SECTION_FUNC(TEXT, _firq_enter)
 
 	j @_isr_demux
 
-/*******************************************************************************
-*
-* _firq_exit - work to be done exiting a FIRQ
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _firq_exit - work to be done exiting a FIRQ
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _firq_exit)
 
@@ -256,12 +256,12 @@ _firq_no_reschedule:
 	/* LP registers are already restored, just switch back to bank 0 */
 	rtie
 
-/*******************************************************************************
-*
-* _firq_stack_setup - install the FIRQ stack in register bank 1
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _firq_stack_setup - install the FIRQ stack in register bank 1
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _firq_stack_setup)
 

@@ -63,7 +63,7 @@ Timeline
             : RegressionTask (@ priority 25) gives Mutex2
             : RegressionTask (@ priority 30) gives Mutex1
             : RegressionTask (@ priority 40) sleeps
-*/
+ */
 
 #include <tc_util.h>
 #include <zephyr.h>
@@ -75,12 +75,12 @@ Timeline
 
 static int tcRC = TC_PASS;         /* test case return code */
 
-/*******************************************************************************
-*
-* Task10 -
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * Task10 -
+ *
+ * RETURNS:  N/A
+ */
 
 void Task10(void)
 {
@@ -98,12 +98,12 @@ void Task10(void)
 }   /* Task10 */
 
 
-/*******************************************************************************
-*
-* Task15 -
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * Task15 -
+ *
+ * RETURNS:  N/A
+ */
 
 void Task15(void)
 {
@@ -130,12 +130,12 @@ void Task15(void)
 	task_mutex_unlock(Mutex4);
 }
 
-/*******************************************************************************
-*
-* Task20 -
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * Task20 -
+ *
+ * RETURNS:  N/A
+ */
 
 void Task20(void)
 {
@@ -160,12 +160,12 @@ void Task20(void)
 
 }   /* Task20 */
 
-/*******************************************************************************
-*
-* Task25 -
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * Task25 -
+ *
+ * RETURNS:  N/A
+ */
 
 void Task25(void)
 {
@@ -183,12 +183,12 @@ void Task25(void)
 	task_mutex_unlock(Mutex2);
 }   /* Task25 */
 
-/*******************************************************************************
-*
-* Task30 -
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * Task30 -
+ *
+ * RETURNS:  N/A
+ */
 
 void Task30(void)
 {
@@ -214,12 +214,12 @@ void Task30(void)
 	task_mutex_unlock(Mutex1);
 }
 
-/*******************************************************************************
-*
-* Task45 -
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * Task45 -
+ *
+ * RETURNS: N/A
+ */
 
 void Task45(void)
 {
@@ -235,14 +235,14 @@ void Task45(void)
 	task_mutex_unlock(Mutex3);
 }
 
-/*******************************************************************************
-*
-* RegressionTask - main task to test task_mutex_xxx interfaces
-*
-* This task will lock on Mutex1, Mutex2, Mutex3 and Mutex4.
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * RegressionTask - main task to test task_mutex_xxx interfaces
+ *
+ * This task will lock on Mutex1, Mutex2, Mutex3 and Mutex4.
+ *
+ * RETURNS:  N/A
+ */
 
 void RegressionTask(void)
 {

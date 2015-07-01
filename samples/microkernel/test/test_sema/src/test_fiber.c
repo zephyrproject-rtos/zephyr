@@ -34,7 +34,7 @@
 DESCRIPTION
 The module implements functions for the fiber that tests
 semaphore signaling
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -55,19 +55,19 @@ static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 /* array of command packets used by test fiber to signal semaphores */
 static CMD_PKT_SET_INSTANCE(cmdPktSet, N_TESTS + 1)
 
-/*******************************************************************************
-*
-* testFiberEntry - the test fiber entry function
-*
-* Fiber waits on the semaphore controlled by the test task
-* It signals the semaphore, the testing task waits for,
-* then it signals the semaphore for N_TASKS times, testing task
-* checks this number.
-* Then fiber signals each of the semaphores in the group. Test
-* task checks this.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testFiberEntry - the test fiber entry function
+ *
+ * Fiber waits on the semaphore controlled by the test task
+ * It signals the semaphore, the testing task waits for,
+ * then it signals the semaphore for N_TASKS times, testing task
+ * checks this number.
+ * Then fiber signals each of the semaphores in the group. Test
+ * task checks this.
+ *
+ * RETURNS: N/A
+ */
 static void testFiberEntry(void)
 {
 	int i;
@@ -88,12 +88,12 @@ static void testFiberEntry(void)
 	}
 }
 
-/*******************************************************************************
-*
-* testFiberInit - initializes variables and starts the test fiber
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testFiberInit - initializes variables and starts the test fiber
+ *
+ * RETURNS: N/A
+ */
 
 void testFiberInit(void)
 {

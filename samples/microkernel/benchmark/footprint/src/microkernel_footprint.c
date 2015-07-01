@@ -128,7 +128,7 @@ static pfunc func_array[] = {
 #endif /* TEST_max */
 };
 
-/*******************************************************************************
+/**
  *
  * dummyIsr - dummy ISR
  *
@@ -141,7 +141,7 @@ void dummyIsr(void *unused)
 }
 
 #ifdef TEST_reg
-/*******************************************************************************
+/**
  *
  * isrDummyIntStub - static interrupt stub that invokes dummy ISR
  *
@@ -162,7 +162,7 @@ static void isrDummyIntStub(void *unused)
 }
 #endif /* TEST_reg */
 
-/*******************************************************************************
+/**
  *
  * fgTaskEntry - entry function for foreground task
  *

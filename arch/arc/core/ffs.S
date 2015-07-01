@@ -34,7 +34,7 @@
 DESCRIPTION
 This library implements nanoFfsMsb() and nanoFfsLsb() which returns the
 most and least significant bit set respectively.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -46,17 +46,17 @@ most and least significant bit set respectively.
 GTEXT(nanoFfsMsb)
 GTEXT(nanoFfsLsb)
 
-/*******************************************************************************
-*
-* nanoFfsMsb - find first set bit (searching from the most significant bit)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit.  A return value of zero indicates that
-* the value passed is zero.
-*
-* RETURNS: most significant bit set
-*/
+/**
+ *
+ * nanoFfsMsb - find first set bit (searching from the most significant bit)
+ *
+ * This routine finds the first bit set in the argument passed it and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit.  A return value of zero indicates that
+ * the value passed is zero.
+ *
+ * RETURNS: most significant bit set
+ */
 
 SECTION_FUNC(TEXT, nanoFfsMsb)
 
@@ -69,17 +69,17 @@ SECTION_FUNC(TEXT, nanoFfsMsb)
 	j_s.d [blink]
 	add.nz r0, r0, 1
 
-/*******************************************************************************
-*
-* nanoFfsLsb - find first set bit (searching from the least significant bit)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit.  A return value of zero indicates that
-* the value passed is zero.
-*
-* RETURNS: least significant bit set
-*/
+/**
+ *
+ * nanoFfsLsb - find first set bit (searching from the least significant bit)
+ *
+ * This routine finds the first bit set in the argument passed it and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit.  A return value of zero indicates that
+ * the value passed is zero.
+ *
+ * RETURNS: least significant bit set
+ */
 
 SECTION_FUNC(TEXT, nanoFfsLsb)
 

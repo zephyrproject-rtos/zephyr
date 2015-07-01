@@ -40,7 +40,7 @@ Each test task entry point invokes a test routine that returns a success/failure
 indication, then gives a corresponding semaphore. An additional task monitors
 these semaphores until it detects a failure or the completion of all test tasks,
 then announces the result of the test.
-*/
+ */
 
 #include <tc_util.h>
 #include <zephyr.h>
@@ -69,15 +69,15 @@ kmbox_t noRcvrMbox		= NORCVRMBOX;
 kmemory_pool_t testPool			= TESTPOOL;
 kmemory_pool_t smallBlkszPool	= SMALLBLKSZPOOL;
 
-/*******************************************************************************
-*
-* MsgSenderTaskEntry - entry point for MsgSenderTask
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* MsgSenderTask.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * MsgSenderTaskEntry - entry point for MsgSenderTask
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * MsgSenderTask.
+ *
+ * RETURNS: N/A
+ */
 
 void MsgSenderTaskEntry(void)
 {
@@ -86,15 +86,15 @@ void MsgSenderTaskEntry(void)
 	task_sem_give(resultSems[MsgSenderTask()]);
 }
 
-/*******************************************************************************
-*
-* MsgRcvrTaskEntry - entry point for MsgRcvrTask
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* MsgRcvrTask.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * MsgRcvrTaskEntry - entry point for MsgRcvrTask
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * MsgRcvrTask.
+ *
+ * RETURNS: N/A
+ */
 
 void MsgRcvrTaskEntry(void)
 {
@@ -103,15 +103,15 @@ void MsgRcvrTaskEntry(void)
 	task_sem_give(resultSems[MsgRcvrTask()]);
 }
 
-/*******************************************************************************
-*
-* MonitorTaskEntry - entry point for MonitorTask
-*
-* This routine keeps tabs on the progress of the tasks doing the actual testing
-* and generates the final test case summary message.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * MonitorTaskEntry - entry point for MonitorTask
+ *
+ * This routine keeps tabs on the progress of the tasks doing the actual testing
+ * and generates the final test case summary message.
+ *
+ * RETURNS: N/A
+ */
 
 void MonitorTaskEntry(void)
 {

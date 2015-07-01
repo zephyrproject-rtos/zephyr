@@ -46,7 +46,7 @@ int mailbox_get(kmbox_t mailbox,int size,int count,unsigned int* time);
 
 /* mailbox transfer speed test */
 
-/*******************************************************************************
+/**
  *
  * mailrecvtask - receive task
  *
@@ -81,7 +81,7 @@ void mailrecvtask(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * mailbox_get - receive data portions from the specified mailbox
  *

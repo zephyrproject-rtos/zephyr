@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides core nanokernel fiber related primitives for the IA-32
 processor architecture.
-*/
+ */
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
@@ -57,20 +57,20 @@ tNANO _nanokernel = {0};
 void _ContextEntryWrapper(_ContextEntry, _ContextArg, _ContextArg, _ContextArg);
 #endif /* CONFIG_GDB_INFO */
 
-/*******************************************************************************
-*
-* _NewContextInternal - initialize a new execution context
-*
-* This function is utilized to initialize all execution contexts (both fiber
-* and task).  The 'priority' parameter will be set to -1 for the creation of
-* task context.
-*
-* This function is called by _NewContext() to initialize task contexts.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _NewContextInternal - initialize a new execution context
+ *
+ * This function is utilized to initialize all execution contexts (both fiber
+ * and task).  The 'priority' parameter will be set to -1 for the creation of
+ * task context.
+ *
+ * This function is called by _NewContext() to initialize task contexts.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _NewContextInternal(
 	char *pStackMem,    /* pointer to context stack memory */
@@ -206,64 +206,64 @@ static void _NewContextInternal(
 }
 
 #ifdef CONFIG_GDB_INFO
-/*******************************************************************************
-*
-* _ContextEntryWrapper - adjust stack before invoking _context_entry
-*
-* This function adjusts the initial stack frame created by _NewContext()
-* such that the GDB stack frame unwinders recognize it as the outermost frame
-* in the context's stack.  The function then jumps to _context_entry().
-*
-* GDB normally stops unwinding a stack when it detects that it has
-* reached a function called main().  Kernel tasks, however, do not have
-* a main() function, and there does not appear to be a simple way of stopping
-* the unwinding of the stack.
-*
-* Given the initial context created by _NewContext(), GDB expects to find a
-* return address on the stack immediately above the context entry routine
-* _context_entry, in the location occupied by the initial EFLAGS.
-* GDB attempts to examine the memory at this return address, which typically
-* results in an invalid access to page 0 of memory.
-*
-* This function overwrites the initial EFLAGS with zero.  When GDB subsequently
-* attempts to examine memory at address zero, the PeekPoke driver detects
-* an invalid access to address zero and returns an error, which causes the
-* GDB stack unwinder to stop somewhat gracefully.
-*
-*       __________________
-*      |      param3      |   <------ Top of the stack
-*      |__________________|
-*      |      param2      |           Stack Grows Down
-*      |__________________|                  |
-*      |      param1      |                  V
-*      |__________________|
-*      |      pEntry      |
-*      |__________________|
-*      | initial EFLAGS   |  <----   ESP when invoked by _Swap()
-*      |__________________|             (Zeroed by this routine)
-*      |    entryRtn      |  <-----  Context Entry Routine invoked by _Swap()
-*      |__________________|             (This routine if GDB_INFO)
-*      |      <edi>       |  \
-*      |__________________|  |
-*      |      <esi>       |  |
-*      |__________________|  |
-*      |      <ebx>       |  |----   Initial registers restored by _Swap()
-*      |__________________|  |
-*      |      <ebp>       |  |
-*      |__________________|  |
-*      |      <eax>       | /
-*      |__________________|
-*
-*
-* The initial EFLAGS cannot be overwritten until after _Swap() has swapped in
-* the new context for the first time.  This routine is called by _Swap() the
-* first time that the new context is swapped in, and it jumps to
-* _context_entry after it has done its work.
-*
-* RETURNS: this routine does NOT return.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _ContextEntryWrapper - adjust stack before invoking _context_entry
+ *
+ * This function adjusts the initial stack frame created by _NewContext()
+ * such that the GDB stack frame unwinders recognize it as the outermost frame
+ * in the context's stack.  The function then jumps to _context_entry().
+ *
+ * GDB normally stops unwinding a stack when it detects that it has
+ * reached a function called main().  Kernel tasks, however, do not have
+ * a main() function, and there does not appear to be a simple way of stopping
+ * the unwinding of the stack.
+ *
+ * Given the initial context created by _NewContext(), GDB expects to find a
+ * return address on the stack immediately above the context entry routine
+ * _context_entry, in the location occupied by the initial EFLAGS.
+ * GDB attempts to examine the memory at this return address, which typically
+ * results in an invalid access to page 0 of memory.
+ *
+ * This function overwrites the initial EFLAGS with zero.  When GDB subsequently
+ * attempts to examine memory at address zero, the PeekPoke driver detects
+ * an invalid access to address zero and returns an error, which causes the
+ * GDB stack unwinder to stop somewhat gracefully.
+ *
+ *       __________________
+ *      |      param3      |   <------ Top of the stack
+ *      |__________________|
+ *      |      param2      |           Stack Grows Down
+ *      |__________________|                  |
+ *      |      param1      |                  V
+ *      |__________________|
+ *      |      pEntry      |
+ *      |__________________|
+ *      | initial EFLAGS   |  <----   ESP when invoked by _Swap()
+ *      |__________________|             (Zeroed by this routine)
+ *      |    entryRtn      |  <-----  Context Entry Routine invoked by _Swap()
+ *      |__________________|             (This routine if GDB_INFO)
+ *      |      <edi>       |  \
+ *      |__________________|  |
+ *      |      <esi>       |  |
+ *      |__________________|  |
+ *      |      <ebx>       |  |----   Initial registers restored by _Swap()
+ *      |__________________|  |
+ *      |      <ebp>       |  |
+ *      |__________________|  |
+ *      |      <eax>       | /
+ *      |__________________|
+ *
+ *
+ * The initial EFLAGS cannot be overwritten until after _Swap() has swapped in
+ * the new context for the first time.  This routine is called by _Swap() the
+ * first time that the new context is swapped in, and it jumps to
+ * _context_entry after it has done its work.
+ *
+ * RETURNS: this routine does NOT return.
+ *
+ * \NOMANUAL
+ */
 
 __asm__("\t.globl _context_entry\n"
 	"\t.section .text\n"
@@ -273,20 +273,20 @@ __asm__("\t.globl _context_entry\n"
 	"\tjmp _context_entry\n");
 #endif /* CONFIG_GDB_INFO */
 
-/*******************************************************************************
-*
-* _NewContext - create a new kernel execution context
-*
-* This function is utilized to create execution contexts for both fiber
-* contexts and kernel task contexts.
-*
-* The "context control block" (CCS) is carved from the "end" of the specified
-* context stack memory.
-*
-* RETURNS: opaque pointer to initialized CCS structure
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _NewContext - create a new kernel execution context
+ *
+ * This function is utilized to create execution contexts for both fiber
+ * contexts and kernel task contexts.
+ *
+ * The "context control block" (CCS) is carved from the "end" of the specified
+ * context stack memory.
+ *
+ * RETURNS: opaque pointer to initialized CCS structure
+ *
+ * \NOMANUAL
+ */
 
 void _NewContext(
 	char *pStackMem,      /* pointer to aligned stack memory */

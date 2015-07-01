@@ -37,7 +37,7 @@ This module tests the following microkernel timer routines:
   task_timer_alloc(), task_timer_free()
   task_timer_start(), task_timer_restart(), task_timer_stop()
   task_tick_delta(), task_tick_get_32()
-*/
+ */
 
 #include <tc_util.h>
 #include <util_test_common.h>
@@ -52,12 +52,12 @@ extern struct nano_lifo _k_timer_free;    /* For white box testing only */
 
 static ktimer_t pTimer[NTIMERS + 1];
 
-/*******************************************************************************
-*
-* testLowTimerStop - test that task_timer_stop() does stop a timer
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * testLowTimerStop - test that task_timer_stop() does stop a timer
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int testLowTimerStop(void)
 {
@@ -79,12 +79,12 @@ int testLowTimerStop(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* testLowTimerPeriodicity - test the periodic feature of a timer
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * testLowTimerPeriodicity - test the periodic feature of a timer
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int testLowTimerPeriodicity(void)
 {
@@ -149,15 +149,15 @@ int testLowTimerPeriodicity(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* testLowTimerDoesNotStart - test that the timer does not start
-*
-* This test checks that the timer does not start under a variety of
-* circumstances.
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * testLowTimerDoesNotStart - test that the timer does not start
+ *
+ * This test checks that the timer does not start under a variety of
+ * circumstances.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int testLowTimerDoesNotStart(void)
 {
@@ -188,12 +188,12 @@ int testLowTimerDoesNotStart(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* testLowTimerOneShot - test the one shot feature of a timer
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * testLowTimerOneShot - test the one shot feature of a timer
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int testLowTimerOneShot(void)
 {
@@ -236,20 +236,20 @@ int testLowTimerOneShot(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* testLowTimerGet - test the task_timer_alloc() API
-*
-* This routine allocates all the timers in the system using task_timer_alloc().
-* It verifies that all the allocated timers have unique IDs before freeing
-* them using task_timer_free().
-*
-* This routine also does some partial testing of task_timer_free().  That is,
-* it checks that timers that have been freed are available to be allocated
-* again at a later time.
-*
-* RETURNS: TC_PASS on success, TC_FAIL otherwise
-*/
+/**
+ *
+ * testLowTimerGet - test the task_timer_alloc() API
+ *
+ * This routine allocates all the timers in the system using task_timer_alloc().
+ * It verifies that all the allocated timers have unique IDs before freeing
+ * them using task_timer_free().
+ *
+ * This routine also does some partial testing of task_timer_free().  That is,
+ * it checks that timers that have been freed are available to be allocated
+ * again at a later time.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ */
 
 int testLowTimerGet(void)
 {
@@ -317,12 +317,12 @@ static void test_nano_timers(int unused1, int unused2)
 	/* on failure, don't give semaphore, main test will not obtain it */
 }
 
-/*******************************************************************************
-*
-* RegressionTaskEntry - regression test's entry point
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * RegressionTaskEntry - regression test's entry point
+ *
+ * RETURNS: N/A
+ */
 
 void RegressionTaskEntry(void)
 {

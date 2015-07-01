@@ -378,7 +378,7 @@ static int reassemble(struct net_mbuf *mbuf)
     sicslowpan_len(mbuf) = 0;
     processed_ip_in_len = 0;
   }
-*/
+ */
    /*
    * Since we don't support the mesh and broadcast header, the first header
    * we look for is the fragmentation header

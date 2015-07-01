@@ -34,7 +34,7 @@
 DESCRIPTION
 This header contains the IA-32 specific nanokernel interface.  It is included
 by the generic nanokernel interface header (nanokernel.h)
-*/
+ */
 
 #ifndef _ARCH_IFACE_H
 #define _ARCH_IFACE_H
@@ -105,26 +105,26 @@ typedef struct s_isrList {
 	unsigned int    dpl;    /* Privilege level associated with ISR/stub */
 } ISR_LIST;
 
-/*******************************************************************************
-*
-* NANO_CPU_INT_REGISTER - connect a routine to an interrupt vector
-*
-* This macro "connects" the specified routine, <r>, to the specified interrupt
-* vector, <v> using the descriptor privilege level <d>. On the IA-32
-* architecture, an interrupt vector is a value from 0 to 255. This macro
-* populates the special intList section with the address of the routine, the
-* vector number and the descriptor privilege level. The genIdt tool then picks
-* up this information and generates an actual IDT entry with this information
-* properly encoded. This macro replaces the _IntVecSet () routine in static
-* interrupt systems.
-*
-* The <d> argument specifies the privilege level for the interrupt-gate
-* descriptor; (hardware) interrupts and exceptions should specify a level of 0,
-* whereas handlers for user-mode software generated interrupts should specify 3.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * NANO_CPU_INT_REGISTER - connect a routine to an interrupt vector
+ *
+ * This macro "connects" the specified routine, <r>, to the specified interrupt
+ * vector, <v> using the descriptor privilege level <d>. On the IA-32
+ * architecture, an interrupt vector is a value from 0 to 255. This macro
+ * populates the special intList section with the address of the routine, the
+ * vector number and the descriptor privilege level. The genIdt tool then picks
+ * up this information and generates an actual IDT entry with this information
+ * properly encoded. This macro replaces the _IntVecSet () routine in static
+ * interrupt systems.
+ *
+ * The <d> argument specifies the privilege level for the interrupt-gate
+ * descriptor; (hardware) interrupts and exceptions should specify a level of 0,
+ * whereas handlers for user-mode software generated interrupts should specify 3.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 #define NANO_CPU_INT_REGISTER(r, v, d) \
 	 ISR_LIST __attribute__((section(".intList"))) MK_ISR_NAME(r) = {&r, v, d}
@@ -138,7 +138,7 @@ typedef struct s_isrList {
 	_NODATA_SECTION(.intStubSect) NANO_INT_STUB(s)
 
 
-/*******************************************************************************
+/**
  *
  * IRQ_CONNECT_STATIC - connect a routine to interrupt number
  *
@@ -155,7 +155,7 @@ typedef struct s_isrList {
 	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, INT_VEC_IRQ0 + (irq), priority)
 
 
-/*******************************************************************************
+/**
  *
  * IRQ_CONFIG - configure interrupt for the device
  *
@@ -274,36 +274,36 @@ void _int_latency_start(void);
 void _int_latency_stop(void);
 #endif
 
-/*******************************************************************************
-*
-* irq_lock_inline - disable all interrupts on the CPU (inline)
-*
-* This routine disables interrupts.  It can be called from either interrupt,
-* task or fiber level.  This routine returns an architecture-dependent
-* lock-out key representing the "interrupt disable state" prior to the call;
-* this key can be passed to irq_unlock_inline() to re-enable interrupts.
-*
-* The lock-out key should only be used as the argument to the
-* irq_unlock_inline() API.  It should never be used to manually re-enable
-* interrupts or to inspect or manipulate the contents of the source register.
-*
-* WARNINGS
-* Invoking a kernel routine with interrupts locked may result in
-* interrupts being re-enabled for an unspecified period of time.  If the
-* called routine blocks, interrupts will be re-enabled while another
-* context executes, or while the system is idle.
-*
-* The "interrupt disable state" is an attribute of a context.  Thus, if a
-* fiber or task disables interrupts and subsequently invokes a kernel
-* routine that causes the calling context to block, the interrupt
-* disable state will be restored when the context is later rescheduled
-* for execution.
-*
-* RETURNS: An architecture-dependent lock-out key representing the
-* "interrupt disable state" prior to the call.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * irq_lock_inline - disable all interrupts on the CPU (inline)
+ *
+ * This routine disables interrupts.  It can be called from either interrupt,
+ * task or fiber level.  This routine returns an architecture-dependent
+ * lock-out key representing the "interrupt disable state" prior to the call;
+ * this key can be passed to irq_unlock_inline() to re-enable interrupts.
+ *
+ * The lock-out key should only be used as the argument to the
+ * irq_unlock_inline() API.  It should never be used to manually re-enable
+ * interrupts or to inspect or manipulate the contents of the source register.
+ *
+ * WARNINGS
+ * Invoking a kernel routine with interrupts locked may result in
+ * interrupts being re-enabled for an unspecified period of time.  If the
+ * called routine blocks, interrupts will be re-enabled while another
+ * context executes, or while the system is idle.
+ *
+ * The "interrupt disable state" is an attribute of a context.  Thus, if a
+ * fiber or task disables interrupts and subsequently invokes a kernel
+ * routine that causes the calling context to block, the interrupt
+ * disable state will be restored when the context is later rescheduled
+ * for execution.
+ *
+ * RETURNS: An architecture-dependent lock-out key representing the
+ * "interrupt disable state" prior to the call.
+ *
+ * \NOMANUAL
+ */
 
 static inline __attribute__((always_inline))
 	unsigned int irq_lock_inline(void)
@@ -318,20 +318,20 @@ static inline __attribute__((always_inline))
 }
 
 
-/*******************************************************************************
-*
-* irq_unlock_inline - enable all interrupts on the CPU (inline)
-*
-* This routine re-enables interrupts on the CPU.  The <key> parameter
-* is an architecture-dependent lock-out key that is returned by a previous
-* invocation of irq_lock_inline().
-*
-* This routine can be called from either interrupt, task or fiber level.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * irq_unlock_inline - enable all interrupts on the CPU (inline)
+ *
+ * This routine re-enables interrupts on the CPU.  The <key> parameter
+ * is an architecture-dependent lock-out key that is returned by a previous
+ * invocation of irq_lock_inline().
+ *
+ * This routine can be called from either interrupt, task or fiber level.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline __attribute__((always_inline))
 	void irq_unlock_inline(unsigned int key)

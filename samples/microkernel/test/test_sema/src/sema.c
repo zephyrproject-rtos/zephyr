@@ -39,7 +39,7 @@ This modules tests the following semaphore routines:
   task_sem_reset(), task_sem_give(), task_sem_count_get(),
   task_sem_take(), task_sem_take_wait(), task_sem_take_wait_timeout(),
   isr_sem_give(),  fiber_sem_give()
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -70,12 +70,12 @@ extern ksem_t blockLpSem;
 extern ksem_t semList[];
 
 
-/*******************************************************************************
-*
-* simpleSemaTest - signal semaphore that has no waiting tasks from ISR
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * simpleSemaTest - signal semaphore that has no waiting tasks from ISR
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int simpleSemaTest(void)
 {
@@ -163,12 +163,12 @@ int simpleSemaTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* simpleSemaWaitTest - test the waiting of a semaphore
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * simpleSemaWaitTest - test the waiting of a semaphore
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int simpleSemaWaitTest(void)
 {
@@ -221,12 +221,12 @@ int simpleSemaWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* simpleGroupTest - test for a group of semaphores
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * simpleGroupTest - test for a group of semaphores
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int simpleGroupTest(void)
 {
@@ -301,15 +301,15 @@ int simpleGroupTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* simpleGroupWaitTest - test a group of semaphores with waiting
-*
-* This routine tests the waiting feature on a group of semaphores.  Note that
-* timing out on a wait has already been tested so it need not be done again.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * simpleGroupWaitTest - test a group of semaphores with waiting
+ *
+ * This routine tests the waiting feature on a group of semaphores.  Note that
+ * timing out on a wait has already been tested so it need not be done again.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int simpleGroupWaitTest(void)
 {
@@ -364,20 +364,20 @@ int simpleGroupWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* simpleFiberSemTest - test semaphore signaling from fiber
-*
-* Routine starts a fiber and does the following tests:
-* - fiber signals the semaphore N times, task checks that task_sem_count_get is N
-* - task waits on a semaphore and fiber signals it
-* - task waits on a semaphore group and fiber signals each of them once. Task
-*   checks which of the semaphores has been signaled
-*
-* See also: testFiber.c
-*
-* RETURNS: TC_PASS on success or TC_FAIL on failure
-*/
+/**
+ *
+ * simpleFiberSemTest - test semaphore signaling from fiber
+ *
+ * Routine starts a fiber and does the following tests:
+ * - fiber signals the semaphore N times, task checks that task_sem_count_get is N
+ * - task waits on a semaphore and fiber signals it
+ * - task waits on a semaphore group and fiber signals each of them once. Task
+ *   checks which of the semaphores has been signaled
+ *
+ * See also: testFiber.c
+ *
+ * RETURNS: TC_PASS on success or TC_FAIL on failure
+ */
 static int simpleFiberSemTest(void)
 {
 	int signalCount;
@@ -419,12 +419,12 @@ static int simpleFiberSemTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* HighPriTask - a high priority task
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+/**
+ *
+ * HighPriTask - a high priority task
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int HighPriTask(void)
 {
@@ -453,12 +453,12 @@ int HighPriTask(void)
 
 }
 
-/*******************************************************************************
-*
-* LowPriTask - a low priority task
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+/**
+ *
+ * LowPriTask - a low priority task
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int LowPriTask(void)
 {
@@ -478,14 +478,14 @@ int LowPriTask(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* AlternateTask - alternate task in the test suite
-*
-* This routine runs at a lower priority than RegressionTask().
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+/**
+ *
+ * AlternateTask - alternate task in the test suite
+ *
+ * This routine runs at a lower priority than RegressionTask().
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int AlternateTask(void)
 {
@@ -557,14 +557,14 @@ int AlternateTask(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* RegressionTask - entry point to semaphore test suite
-*
-* This is the entry point to the semaphore test suite.
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+/**
+ *
+ * RegressionTask - entry point to semaphore test suite
+ *
+ * This is the entry point to the semaphore test suite.
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int RegressionTask(void)
 {

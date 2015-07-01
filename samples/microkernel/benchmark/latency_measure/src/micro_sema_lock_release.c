@@ -53,7 +53,7 @@
 
 static uint32_t timestamp;
 
-/*******************************************************************************
+/**
  *
  * microSemaLockUnlock - the function tests semaphore lock/unlock time
  *
@@ -103,7 +103,7 @@ int microSemaLockUnlock(void)
 	return 0;
 }
 
-/*******************************************************************************
+/**
  *
  * microMutexLockUnlock - test for the multiple mutex lock/unlock time
  *

@@ -37,7 +37,7 @@ for the Quark BSP.
 
 Implementation Remarks:
 Handlers for the secondary serial port have not been added.
-*/
+ */
 
 #include <nanokernel.h>
 #include <misc/printk.h>
@@ -55,13 +55,13 @@ Handlers for the secondary serial port have not been added.
 
 #if defined(DO_CONSOLE_INIT)
 
-/*******************************************************************************
-*
-* uart_generic_info_init - initialize initialization information for one UART
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * uart_generic_info_init - initialize initialization information for one UART
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void uart_generic_info_init(struct uart_init_info *p_info)
 {
@@ -74,15 +74,15 @@ void uart_generic_info_init(struct uart_init_info *p_info)
 
 #if defined(DO_CONSOLE_INIT)
 
-/*******************************************************************************
-*
-* consoleInit - initialize target-only console
-*
-* Only used for debugging.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * consoleInit - initialize target-only console
+ *
+ * Only used for debugging.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 #include <console/uart_console.h>
 
@@ -101,16 +101,16 @@ static void consoleInit(void)
 	} while ((0))
 #endif /* DO_CONSOLE_INIT */
 
-/*******************************************************************************
-*
-* _InitHardware - perform basic hardware initialization
-*
-* Initialize the Intel LOAPIC and IOAPIC device driver and the
-* Intel 8250 UART device driver.
-* Also initialize the timer device driver, if required.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _InitHardware - perform basic hardware initialization
+ *
+ * Initialize the Intel LOAPIC and IOAPIC device driver and the
+ * Intel 8250 UART device driver.
+ * Also initialize the timer device driver, if required.
+ *
+ * RETURNS: N/A
+ */
 
 void _InitHardware(void)
 {

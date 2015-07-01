@@ -40,22 +40,22 @@
 #include <misc/__assert.h>
 #include <misc/util.h>
 
-/*******************************************************************************
-*
-* ISASYNCMSG - determines if mailbox message is synchronous or asynchronous
-*
-* Returns a non-zero value if the specified message contains a valid pool ID,
-* indicating that it is an asynchronous message.
-*/
+/**
+ *
+ * ISASYNCMSG - determines if mailbox message is synchronous or asynchronous
+ *
+ * Returns a non-zero value if the specified message contains a valid pool ID,
+ * indicating that it is an asynchronous message.
+ */
 
 #define ISASYNCMSG(message) ((message)->tx_block.poolid != 0)
 
-/*******************************************************************************
-*
-* copy_packet - copy a packet
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * copy_packet - copy a packet
+ *
+ * RETURNS: N/A
+ */
 
 static void copy_packet(struct k_args **out, struct k_args *in)
 {
@@ -70,12 +70,12 @@ static void copy_packet(struct k_args **out, struct k_args *in)
 	(*out)->Ctxt.args = in;
 }
 
-/*******************************************************************************
-*
-* match - determine if there is a match between the mailbox sender and receiver
-*
-* RETURNS: matched message size, or -1 if no match
-*/
+/**
+ *
+ * match - determine if there is a match between the mailbox sender and receiver
+ *
+ * RETURNS: matched message size, or -1 if no match
+ */
 
 static int match(struct k_args *Reader, struct k_args *Writer)
 {
@@ -126,12 +126,12 @@ static int match(struct k_args *Reader, struct k_args *Writer)
 	return -1; /* There was no match */
 }
 
-/*******************************************************************************
-*
-* prepare_transfer -
-*
-* RETURNS: true or false
-*/
+/**
+ *
+ * prepare_transfer -
+ *
+ * RETURNS: true or false
+ */
 
 static bool prepare_transfer(struct k_args *move,
 					    struct k_args *reader,
@@ -210,12 +210,12 @@ static bool prepare_transfer(struct k_args *move,
 	}
 }
 
-/*******************************************************************************
-*
-* transfer -
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * transfer -
+ *
+ * RETURNS: N/A
+ */
 
 static void transfer(struct k_args *pMvdReq)
 {
@@ -226,12 +226,12 @@ static void transfer(struct k_args *pMvdReq)
 	FREEARGS(pMvdReq);
 }
 
-/*******************************************************************************
-*
-* _k_mbox_send_ack - process the acknowledgment to a mailbox send request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mbox_send_ack - process the acknowledgment to a mailbox send request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mbox_send_ack(struct k_args *pCopyWriter)
 {
@@ -298,12 +298,12 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 	}
 }
 
-/*******************************************************************************
-*
-* _k_mbox_send_reply - process the timeout for a mailbox send request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mbox_send_reply - process the timeout for a mailbox send request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mbox_send_reply(struct k_args *pCopyWriter)
 {
@@ -314,12 +314,12 @@ void _k_mbox_send_reply(struct k_args *pCopyWriter)
 	SENDARGS(pCopyWriter);
 }
 
-/*******************************************************************************
-*
-* _k_mbox_send_request - process a mailbox send request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mbox_send_request - process a mailbox send request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mbox_send_request(struct k_args *Writer)
 {
@@ -474,14 +474,14 @@ void _k_mbox_send_request(struct k_args *Writer)
 	}
 }
 
-/*******************************************************************************
-*
-* _task_mbox_put - send a message to a mailbox
-*
-* This routine sends a message to a mailbox and looks for a matching receiver.
-*
-* RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
-*/
+/**
+ *
+ * _task_mbox_put - send a message to a mailbox
+ *
+ * This routine sends a message to a mailbox and looks for a matching receiver.
+ *
+ * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ */
 
 int _task_mbox_put(kmbox_t mbox, /* mailbox */
 	       kpriority_t prio, /* priority of data transfer */
@@ -515,16 +515,16 @@ int _task_mbox_put(kmbox_t mbox, /* mailbox */
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _k_mbox_receive_ack - process a mailbox receive acknowledgment
-*
-* This routine processes a mailbox receive acknowledgment.
-*
-* INTERNAL:  This routine frees the <pCopyReader> packet
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mbox_receive_ack - process a mailbox receive acknowledgment
+ *
+ * This routine processes a mailbox receive acknowledgment.
+ *
+ * INTERNAL:  This routine frees the <pCopyReader> packet
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mbox_receive_ack(struct k_args *pCopyReader)
 {
@@ -545,12 +545,12 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 	FREEARGS(pCopyReader);
 }
 
-/*******************************************************************************
-*
-* _k_mbox_receive_reply - process the timeout for a mailbox receive request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mbox_receive_reply - process the timeout for a mailbox receive request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mbox_receive_reply(struct k_args *pCopyReader)
 {
@@ -563,12 +563,12 @@ void _k_mbox_receive_reply(struct k_args *pCopyReader)
 #endif
 }
 
-/*******************************************************************************
-*
-* _k_mbox_receive_request - process a mailbox receive request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mbox_receive_request - process a mailbox receive request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mbox_receive_request(struct k_args *Reader)
 {
@@ -690,13 +690,13 @@ void _k_mbox_receive_request(struct k_args *Reader)
 	}
 }
 
-/*******************************************************************************
-*
-* _task_mbox_get - gets struct k_msg message header structure information
-*                  from a mailbox
-*
-* RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
-*/
+/**
+ *
+ * _task_mbox_get - gets struct k_msg message header structure information
+ *                  from a mailbox
+ *
+ * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ */
 
 int _task_mbox_get(kmbox_t mbox, /* mailbox */
 	       struct k_msg *M,    /* pointer to message */
@@ -724,16 +724,16 @@ int _task_mbox_get(kmbox_t mbox, /* mailbox */
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _task_mbox_put_async - send a message asynchronously to a mailbox
-*
-* This routine sends a message to a mailbox and does not wait for a matching
-* receiver. There is no exchange header returned to the sender. When the data
-* has been transferred to the receiver, the semaphore signaling is performed.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _task_mbox_put_async - send a message asynchronously to a mailbox
+ *
+ * This routine sends a message to a mailbox and does not wait for a matching
+ * receiver. There is no exchange header returned to the sender. When the data
+ * has been transferred to the receiver, the semaphore signaling is performed.
+ *
+ * RETURNS: N/A
+ */
 
 void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
 		 kpriority_t prio, /* priority of data transfer */
@@ -767,12 +767,12 @@ void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
 	KERNEL_ENTRY(&A);
 }
 
-/*******************************************************************************
-*
-* _k_mbox_receive_data - process a mailbox receive data request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mbox_receive_data - process a mailbox receive data request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mbox_receive_data(struct k_args *Starter)
 {
@@ -812,18 +812,18 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	}
 }
 
-/*******************************************************************************
-*
-* _task_mbox_data_get - get message data
-*
-* This routine is called for either of the two following purposes:
-* 1. To transfer data if the call to task_mbox_get() resulted in a non-zero size
-*    field in the struct k_msg header structure.
-* 2. To wake up and release a transmitting task that is blocked on a call to
-*    task_mbox_put[wait|wait_timeout]().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _task_mbox_data_get - get message data
+ *
+ * This routine is called for either of the two following purposes:
+ * 1. To transfer data if the call to task_mbox_get() resulted in a non-zero size
+ *    field in the struct k_msg header structure.
+ * 2. To wake up and release a transmitting task that is blocked on a call to
+ *    task_mbox_put[wait|wait_timeout]().
+ *
+ * RETURNS: N/A
+ */
 
 void _task_mbox_data_get(struct k_msg *M /* message from which to get data */
 		    )
@@ -845,13 +845,13 @@ void _task_mbox_data_get(struct k_msg *M /* message from which to get data */
 	KERNEL_ENTRY(&A);
 }
 
-/*******************************************************************************
-*
-* _task_mbox_data_get_async_block - get the mailbox data and place
-*                                   in a memory pool block
-*
-* RETURNS: RC_OK upon success, RC_FAIL upon failure, or RC_TIME upon timeout
-*/
+/**
+ *
+ * _task_mbox_data_get_async_block - get the mailbox data and place
+ *                                   in a memory pool block
+ *
+ * RETURNS: RC_OK upon success, RC_FAIL upon failure, or RC_TIME upon timeout
+ */
 
 int _task_mbox_data_get_async_block(struct k_msg *message,
 			  struct k_block *rxblock,
@@ -944,12 +944,12 @@ int _task_mbox_data_get_async_block(struct k_msg *message,
 	return RC_OK; /* task_mbox_data_get() doesn't return anything */
 }
 
-/*******************************************************************************
-*
-* _k_mbox_send_data - process a mailbox send data request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mbox_send_data - process a mailbox send data request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mbox_send_data(struct k_args *Starter)
 {

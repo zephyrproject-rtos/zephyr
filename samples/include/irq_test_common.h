@@ -34,7 +34,7 @@
 DESCRIPTION
 
 Interrupt stuff, abstracted across CPU architectures.
-*/
+ */
 
 #ifndef _IRQ_TEST_COMMON__H_
 #define _IRQ_TEST_COMMON__H_
@@ -105,11 +105,11 @@ struct isrInitInfo {
 	void *arg[2];
 };
 
-/*******************************************************************************
-*
-* initIRQ - init interrupts
-*
-*/
+/**
+ *
+ * initIRQ - init interrupts
+ *
+ */
 
 static int initIRQ(struct isrInitInfo *i)
 {

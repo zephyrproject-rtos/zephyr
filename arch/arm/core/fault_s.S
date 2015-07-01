@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Fault handlers for ARM Cortex-M processors.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -52,28 +52,28 @@ GTEXT(__usage_fault)
 GTEXT(__debug_monitor)
 GTEXT(__reserved)
 
-/*******************************************************************************
-*
-* __fault - fault handler installed in the fault and reserved vectors
-*
-* Entry point for the hard fault, MPU fault, bus fault, usage fault, debug
-* monitor and reserved exceptions.
-*
-* Save the values of the MSP and PSP in r0 and r1 respectively, so the first
-* and second parameters to the _Fault() C function that will handle the rest.
-* This has to be done because at this point we do not know if the fault
-* happened while handling an exception or not, and thus the ESF could be on
-* either stack. _Fault() will find out where the ESF resides.
-*
-* Provides these symbols:
-*
-*   __hard_fault
-*   __mpu_fault
-*   __bus_fault
-*   __usage_fault
-*   __debug_monitor
-*   __reserved
-*/
+/**
+ *
+ * __fault - fault handler installed in the fault and reserved vectors
+ *
+ * Entry point for the hard fault, MPU fault, bus fault, usage fault, debug
+ * monitor and reserved exceptions.
+ *
+ * Save the values of the MSP and PSP in r0 and r1 respectively, so the first
+ * and second parameters to the _Fault() C function that will handle the rest.
+ * This has to be done because at this point we do not know if the fault
+ * happened while handling an exception or not, and thus the ESF could be on
+ * either stack. _Fault() will find out where the ESF resides.
+ *
+ * Provides these symbols:
+ *
+ *   __hard_fault
+ *   __mpu_fault
+ *   __bus_fault
+ *   __usage_fault
+ *   __debug_monitor
+ *   __reserved
+ */
 
 SECTION_SUBSEC_FUNC(TEXT,__fault,__hard_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__mpu_fault)

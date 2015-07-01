@@ -64,17 +64,17 @@ static volatile uint32_t ctxSwitchCounter = 0;
 /* context switch balancer. Incremented by one fiber, decremented by another*/
 static volatile int ctxSwitchBalancer = 0;
 
-/*******************************************************************************
-*
-* fiberOne
-*
-* Fiber makes all the test preparations: registers the interrupt handler,
-* gets the first timestamp and invokes the software interrupt.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * fiberOne
+ *
+ * Fiber makes all the test preparations: registers the interrupt handler,
+ * gets the first timestamp and invokes the software interrupt.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void fiberOne(void)
 {
@@ -88,7 +88,7 @@ static void fiberOne(void)
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 }
 
-/*******************************************************************************
+/**
  *
  * fiberWaiter - check the time when it gets executed after the semaphore
  *
@@ -110,7 +110,7 @@ static void fiberTwo(void)
 	}
 }
 
-/*******************************************************************************
+/**
  *
  * nanoCtxSwitch - the test main function
  *

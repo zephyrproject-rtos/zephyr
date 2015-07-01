@@ -40,7 +40,7 @@ System exception handler names all have the same format:
   __<exception name with underscores>
 
 No other symbol has the same format, so they are easy to spot.
-*/
+ */
 
 #ifndef _VECTOR_TABLE__H_
 #define _VECTOR_TABLE__H_

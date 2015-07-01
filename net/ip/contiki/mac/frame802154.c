@@ -44,11 +44,11 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
-*/
+ */
 /*
  *  \brief This file is where the main functions that relate to frame
  *  manipulation will reside.
-*/
+ */
 
 /**
  *  \file
@@ -61,7 +61,7 @@
 /**
  *   \addtogroup frame802154
  *   @{
-*/
+ */
 
 #include "sys/cc.h"
 #include "net/mac/frame802154.h"
@@ -161,7 +161,7 @@ field_len(frame802154_t *p, field_length_t *flen)
  *   frame to send.
  *
  *   \return The length of the frame header.
-*/
+ */
 int
 frame802154_hdrlen(frame802154_t *p)
 {
@@ -181,7 +181,7 @@ frame802154_hdrlen(frame802154_t *p)
  *   \param buf Pointer to the buffer to use for the frame.
  *
  *   \return The length of the frame header
-*/
+ */
 int
 frame802154_create(frame802154_t *p, uint8_t *buf)
 {

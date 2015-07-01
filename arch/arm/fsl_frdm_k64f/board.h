@@ -34,7 +34,7 @@
 DESCRIPTION
 This header file is used to specify and describe board-level aspects for the
 'fsl_frdm_k64f' BSP.
-*/
+ */
 
 #ifndef _BOARD__H_
 #define _BOARD__H_

@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Ensures interrupt and exception stubs are installed correctly.
-*/
+ */
 
 #include <tc_util.h>
 
@@ -75,39 +75,39 @@ static char __stack fiberStack[512];
 #endif
 
 
-/*******************************************************************************
-*
-*  isr_handler - handler to perform various actions from within an ISR context
-*
-* This routine is the ISR handler for _trigger_isrHandler().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ *  isr_handler - handler to perform various actions from within an ISR context
+ *
+ * This routine is the ISR handler for _trigger_isrHandler().
+ *
+ * RETURNS: N/A
+ */
 
 void isr_handler(void)
 {
 	intHandlerExecuted++;
 }
 
-/*******************************************************************************
-*
-* exc_divide_error_handler -
-*
-* This is the handler for the divde by zero exception.  The source of this
-* divide-by-zero error comes from the following line in main() ...
-*         error = error / excHandlerExecuted;
-* Where excHandlerExecuted is zero.
-* The disassembled code for it looks something like ....
-*         f7 fb                   idiv   %ecx
-* This handler is part of a test that is only interested in detecting the
-* error so that we know the exception connect code is working.  Therefore,
-* a very quick and dirty approach is taken for dealing with the exception;
-* we skip the offending instruction by adding 2 to the EIP.  (If nothing is
-* done, then control goes back to the offending instruction and an infinite
-* loop of divide-by-zero errors would be created.)
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * exc_divide_error_handler -
+ *
+ * This is the handler for the divde by zero exception.  The source of this
+ * divide-by-zero error comes from the following line in main() ...
+ *         error = error / excHandlerExecuted;
+ * Where excHandlerExecuted is zero.
+ * The disassembled code for it looks something like ....
+ *         f7 fb                   idiv   %ecx
+ * This handler is part of a test that is only interested in detecting the
+ * error so that we know the exception connect code is working.  Therefore,
+ * a very quick and dirty approach is taken for dealing with the exception;
+ * we skip the offending instruction by adding 2 to the EIP.  (If nothing is
+ * done, then control goes back to the offending instruction and an infinite
+ * loop of divide-by-zero errors would be created.)
+ *
+ * RETURNS: N/A
+ */
 
 void exc_divide_error_handler(NANO_ESF *pEsf)
 {
@@ -116,15 +116,15 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
 }
 
 
-/*******************************************************************************
-*
-* nanoIdtStubTest - check the IDT.
-*
-* This test examines the IDT and verifies that the static interrupt and
-* exception stubs are installed at the correct place.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * nanoIdtStubTest - check the IDT.
+ *
+ * This test examines the IDT and verifies that the static interrupt and
+ * exception stubs are installed at the correct place.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int nanoIdtStubTest(void)
 {
@@ -172,12 +172,12 @@ int nanoIdtStubTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* idtSpurTask/Fiber - task/fiber to test spurious handlers
-*
-* RETURNS: 0
-*/
+/**
+ *
+ * idtSpurTask/Fiber - task/fiber to test spurious handlers
+ *
+ * RETURNS: 0
+ */
 
 #ifdef CONFIG_MICROKERNEL
 void idtSpurTask(void)
@@ -199,14 +199,14 @@ static void idtSpurFiber(int a1, int a2)
 
 }
 
-/*******************************************************************************
-*
-* idtTestTask/main - entry point to static IDT tests
-*
-* This is the entry point to the static IDT tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * idtTestTask/main - entry point to static IDT tests
+ *
+ * This is the entry point to the static IDT tests.
+ *
+ * RETURNS: N/A
+ */
 
 #ifdef CONFIG_MICROKERNEL
 void idtTestTask(void)

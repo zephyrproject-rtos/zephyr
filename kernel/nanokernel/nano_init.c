@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module contains routines that are used to initialize the nanokernel.
-*/
+ */
 
 #include <offsets.h>
 #include <nanokernel.h>
@@ -120,7 +120,7 @@ extern void _Ctors(void);
 	#define initialize_nano_timeouts() do { } while ((0))
 #endif
 
-/**********************************************************************
+/**
  *
  * In the nanokernel only configuration we still want to run the
  * app_{early,late}_init levels to maintain the correct semantics. In
@@ -148,18 +148,18 @@ static void _main(void)
 
 #endif
 
-/*******************************************************************************
-*
-* nano_init - initializes nanokernel data structures
-*
-* This routine initializes various nanokernel data structures, including
-* the background (or idle) task and any architecture-specific initialization.
-*
-* Note that all fields of "_nanokernel" are set to zero on entry, which may
-* be all the initialization many of them require.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * nano_init - initializes nanokernel data structures
+ *
+ * This routine initializes various nanokernel data structures, including
+ * the background (or idle) task and any architecture-specific initialization.
+ *
+ * Note that all fields of "_nanokernel" are set to zero on entry, which may
+ * be all the initialization many of them require.
+ *
+ * RETURNS: N/A
+ */
 
 static void nano_init(tCCS *dummyOutContext)
 {
@@ -219,7 +219,7 @@ static void nano_init(tCCS *dummyOutContext)
 }
 
 #ifdef CONFIG_STACK_CANARIES
-/*******************************************************************************
+/**
  *
  * STACK_CANARY_INIT - initialize the kernel's stack canary
  *
@@ -254,16 +254,16 @@ extern void *__stack_chk_guard;
 #define STACK_CANARY_INIT()
 #endif /* CONFIG_STACK_CANARIES */
 
-/*******************************************************************************
-*
-* _Cstart - initialize nanokernel
-*
-* This routine is invoked by the BSP when the system is ready to run C code.
-* The processor must be running in 32-bit mode, and the BSS must have been
-* cleared/zeroed.
-*
-* RETURNS: Does not return
-*/
+/**
+ *
+ * _Cstart - initialize nanokernel
+ *
+ * This routine is invoked by the BSP when the system is ready to run C code.
+ * The processor must be running in 32-bit mode, and the BSS must have been
+ * cleared/zeroed.
+ *
+ * RETURNS: Does not return
+ */
 
 FUNC_NORETURN void _Cstart(void)
 {

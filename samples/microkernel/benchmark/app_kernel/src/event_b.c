@@ -56,7 +56,7 @@ int example_handler (int event);
  * Function declarations.
  */
 
-/*******************************************************************************
+/**
  *
  * event_test - event signal speed test
  *
@@ -177,7 +177,7 @@ void event_test(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * example_handler - event handler for the tests
  *

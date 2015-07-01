@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides the _SysFatalErrorHandler() routine which is common to
 supported BSPs.
-*/
+ */
 
 #include <nanokernel.h>
 #include <toolchain.h>
@@ -47,25 +47,25 @@ supported BSPs.
 #define PRINTK(...)
 #endif /* CONFIG_PRINTK */
 
-/*******************************************************************************
-*
-* _SysFatalErrorHandler - fatal error handler
-*
-* This routine implements the corrective action to be taken when the system
-* detects a fatal error.
-*
-* This sample implementation attempts to abort the current context and allow
-* the system to continue executing, which may permit the system to continue
-* functioning with degraded capabilities.
-*
-* System designers may wish to enhance or substitute this sample
-* implementation to take other actions, such as logging error (or debug)
-* information to a persistent repository and/or rebooting the system.
-*
-* RETURNS: This function does not return.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _SysFatalErrorHandler - fatal error handler
+ *
+ * This routine implements the corrective action to be taken when the system
+ * detects a fatal error.
+ *
+ * This sample implementation attempts to abort the current context and allow
+ * the system to continue executing, which may permit the system to continue
+ * functioning with degraded capabilities.
+ *
+ * System designers may wish to enhance or substitute this sample
+ * implementation to take other actions, such as logging error (or debug)
+ * information to a persistent repository and/or rebooting the system.
+ *
+ * RETURNS: This function does not return.
+ *
+ * \NOMANUAL
+ */
 
 FUNC_NORETURN void _SysFatalErrorHandler(
 	unsigned int reason, /* fatal error reason */

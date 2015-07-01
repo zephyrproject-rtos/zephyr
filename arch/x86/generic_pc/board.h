@@ -34,7 +34,7 @@
 DESCRIPTION
 This header file is used to specify and describe board-level aspects for
 the 'generic_pc' BSP.
-*/
+ */
 
 #ifndef __INCboardh
 #define __INCboardh

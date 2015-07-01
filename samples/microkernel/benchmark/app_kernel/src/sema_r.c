@@ -37,7 +37,7 @@
 
 /* semaphore signal speed test */
 
-/*******************************************************************************
+/**
  *
  * waittask - receive task (Wait task)
  *

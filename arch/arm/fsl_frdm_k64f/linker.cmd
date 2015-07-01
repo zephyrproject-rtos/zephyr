@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This is the linker script for both standard images and XIP images.
-*/
+ */
 
 /* Flash base address and size */
 #define FLASH_START 0x00000000

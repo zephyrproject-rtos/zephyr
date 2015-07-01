@@ -37,7 +37,7 @@ and provides the standard "system clock driver" interfaces.
 
 \INTERNAL IMPLEMENTATION DETAILS
 The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero counter.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -68,19 +68,19 @@ The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero counter.
 static uint32_t clock_accumulated_count = 0;
 
 
-/*******************************************************************************
-*
-* enable - enable the timer with the given limit/countup value
-*
-* This routine sets up the timer for operation by:
-* - setting value to which the timer will count up to;
-* - setting the timer's start value to zero; and
-* - enabling interrupt generation.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * enable - enable the timer with the given limit/countup value
+ *
+ * This routine sets up the timer for operation by:
+ * - setting value to which the timer will count up to;
+ * - setting the timer's start value to zero; and
+ * - enabling interrupt generation.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE void enable(
 	uint32_t count /* interrupt triggers when up-counter reaches this value */
@@ -95,49 +95,49 @@ static ALWAYS_INLINE void enable(
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, 0); /* write the start value */
 }
 
-/*******************************************************************************
-*
-* count_get - get the current counter value
-*
-* This routine gets the value from the timer's count register.  This
-* value is the 'time' elapsed from the starting count (assumed to be 0).
-*
-* RETURNS: the current counter value
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * count_get - get the current counter value
+ *
+ * This routine gets the value from the timer's count register.  This
+ * value is the 'time' elapsed from the starting count (assumed to be 0).
+ *
+ * RETURNS: the current counter value
+ *
+ * \NOMANUAL
+ */
 static ALWAYS_INLINE uint32_t count_get(void)
 {
 	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
 }
 
-/*******************************************************************************
-*
-* limit_get - get the limit/countup value
-*
-* This routine gets the value from the timer's limit register, which is the
-* value to which the timer will count up to.
-*
-* RETURNS: the limit value
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * limit_get - get the limit/countup value
+ *
+ * This routine gets the value from the timer's limit register, which is the
+ * value to which the timer will count up to.
+ *
+ * RETURNS: the limit value
+ *
+ * \NOMANUAL
+ */
 static ALWAYS_INLINE uint32_t limit_get(void)
 {
 	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
 }
 
-/*******************************************************************************
-*
-* _timer_int_handler - system clock periodic tick handler
-*
-* This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
-* event is pushed onto the microkernel stack.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _timer_int_handler - system clock periodic tick handler
+ *
+ * This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
+ * event is pushed onto the microkernel stack.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _timer_int_handler(void *unused)
 {
@@ -153,15 +153,15 @@ void _timer_int_handler(void *unused)
 	_sys_clock_tick_announce();
 }
 
-/*******************************************************************************
-*
-* timer_driver - initialize and enable the system clock
-*
-* This routine is used to program the ARCv2 timer to deliver interrupts at the
-* rate specified via the 'sys_clock_us_per_tick' global variable.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * timer_driver - initialize and enable the system clock
+ *
+ * This routine is used to program the ARCv2 timer to deliver interrupts at the
+ * rate specified via the 'sys_clock_us_per_tick' global variable.
+ *
+ * RETURNS: N/A
+ */
 
 void timer_driver(
 	int priority /* priority parameter ignored by this driver */
@@ -189,14 +189,14 @@ void timer_driver(
 	irq_enable(CONFIG_ARCV2_TIMER0_INT_LVL);
 }
 
-/*******************************************************************************
-*
-* timer_read - read the BSP timer hardware
-*
-* This routine returns the current time in terms of timer hardware clock cycles.
-*
-* RETURNS: up counter of elapsed clock cycles
-*/
+/**
+ *
+ * timer_read - read the BSP timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock cycles.
+ *
+ * RETURNS: up counter of elapsed clock cycles
+ */
 
 uint32_t timer_read(void)
 {
@@ -204,15 +204,15 @@ uint32_t timer_read(void)
 }
 
 #if defined(CONFIG_SYSTEM_TIMER_DISABLE)
-/*******************************************************************************
-*
-* timer_disable - stop announcing ticks into the kernel
-*
-* This routine disables timer interrupt generation and delivery.
-* Note that the timer's counting cannot be stopped by software.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * timer_disable - stop announcing ticks into the kernel
+ *
+ * This routine disables timer interrupt generation and delivery.
+ * Note that the timer's counting cannot be stopped by software.
+ *
+ * RETURNS: N/A
+ */
 
 void timer_disable(void)
 {

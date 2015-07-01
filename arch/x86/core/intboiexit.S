@@ -49,7 +49,7 @@ The _IntBoiExit() routine is provided in a separate module so that it gets
 included in the final image only if an interrupt controller driver utilizing
 _IntBoiExit() is present.
 
-*/
+ */
 
 #define _ASMLANGUAGE
 #include <arch/x86/asm.h>
@@ -64,18 +64,18 @@ _IntBoiExit() is present.
 
 	GTEXT(_IntExit)
 
-/*******************************************************************************
-*
-* _IntBoiExit - exit interrupt handler stub without invoking ISR
-*
-* This routine exits an interrupt handler stub without invoking the associated
-* ISR handler (or the EOI handler, if present).  It should only be jumped to
-* by an interrupt controller driver's BOI routine, and only if the BOI routine
-* is passed a single parameter by the interrupt stub.
-*
-* \INTERNAL
-* A BOI routine that has no parameters can jump directly to _IntExit().
-*/
+/**
+ *
+ * _IntBoiExit - exit interrupt handler stub without invoking ISR
+ *
+ * This routine exits an interrupt handler stub without invoking the associated
+ * ISR handler (or the EOI handler, if present).  It should only be jumped to
+ * by an interrupt controller driver's BOI routine, and only if the BOI routine
+ * is passed a single parameter by the interrupt stub.
+ *
+ * \INTERNAL
+ * A BOI routine that has no parameters can jump directly to _IntExit().
+ */
 
 SECTION_FUNC(TEXT, _IntBoiExit)
         addl    $4, %esp		/* pop off the $BoiParameter */

@@ -35,7 +35,7 @@ DESCRIPTION
 
 Wrapper installed in vector table for handling dynamic interrupts that accept
 a parameter.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -207,7 +207,7 @@ From RIRQ:
 
     Both types of IRQs already have an IRQ stack frame: simply return from
     interrupt.
-*/
+ */
 
 SECTION_FUNC(TEXT, _isr_enter)
 	lr r0, [_ARC_V2_AUX_IRQ_ACT]

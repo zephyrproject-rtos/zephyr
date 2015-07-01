@@ -54,7 +54,7 @@ struct bt_conn *bt_conn_get(struct bt_conn *conn);
  *  Decrement the reference count of a connection object.
  *
  *  @param conn Connection object.
-*/
+ */
 void bt_conn_put(struct bt_conn *conn);
 
 /** @brief Look up an existing connection by address.

@@ -40,7 +40,7 @@ Each test task entry point invokes a test routine that returns a success/failure
 indication, then gives a corresponding semaphore. An additional task monitors
 these semaphores until it detects a failure or the completion of all test tasks,
 then announces the result of the test.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -91,15 +91,15 @@ ksem_t semList[] = {
 
 static vvfn _trigger_isrSemaSignal = (vvfn) sw_isr_trigger_0;
 
-/*******************************************************************************
-*
-* RegressionTaskEntry - entry point for RegressionTask
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* RegressionTask.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * RegressionTaskEntry - entry point for RegressionTask
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * RegressionTask.
+ *
+ * RETURNS: N/A
+ */
 
 void RegressionTaskEntry(void)
 {
@@ -108,15 +108,15 @@ void RegressionTaskEntry(void)
 	task_sem_give(resultSems[RegressionTask()]);
 }
 
-/*******************************************************************************
-*
-* AlternateTaskEntry - entry point for AlternateTask
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* MsgRcvrTask.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * AlternateTaskEntry - entry point for AlternateTask
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * MsgRcvrTask.
+ *
+ * RETURNS: N/A
+ */
 
 void AlternateTaskEntry(void)
 {
@@ -125,15 +125,15 @@ void AlternateTaskEntry(void)
 	task_sem_give(resultSems[AlternateTask()]);
 }
 
-/*******************************************************************************
-*
-* HighPriTaskEntry - entry point for HighPriTask
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* HighPriTask.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * HighPriTaskEntry - entry point for HighPriTask
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * HighPriTask.
+ *
+ * RETURNS: N/A
+ */
 
 void HighPriTaskEntry(void)
 {
@@ -142,15 +142,15 @@ void HighPriTaskEntry(void)
 	task_sem_give(resultSems[HighPriTask()]);
 }
 
-/*******************************************************************************
-*
-* LowPriTaskEntry - entry point for LowPriTask
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* LowPriTask.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * LowPriTaskEntry - entry point for LowPriTask
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * LowPriTask.
+ *
+ * RETURNS: N/A
+ */
 
 void LowPriTaskEntry(void)
 {
@@ -159,28 +159,28 @@ void LowPriTaskEntry(void)
 	task_sem_give(resultSems[LowPriTask()]);
 }
 
-/*******************************************************************************
-*
-* testIsrHandler - ISR that gives specified semaphore
-*
-* \param isrData    pointer to semaphore to be given
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testIsrHandler - ISR that gives specified semaphore
+ *
+ * \param isrData    pointer to semaphore to be given
+ *
+ * RETURNS: N/A
+ */
 
 static void testIsrHandler(void *isrData)
 {
 	isr_sem_give(*(ksem_t *)isrData, &CMD_PKT_SET(cmdPktSet));
 }
 
-/*******************************************************************************
-*
-* trigger_isrSemaSignal - generate interrupt that gives specified semaphore
-*
-* \param semaphore    semaphore to be given
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * trigger_isrSemaSignal - generate interrupt that gives specified semaphore
+ *
+ * \param semaphore    semaphore to be given
+ *
+ * RETURNS: N/A
+ */
 
 void trigger_isrSemaSignal(ksem_t semaphore)
 {
@@ -188,27 +188,27 @@ void trigger_isrSemaSignal(ksem_t semaphore)
 	_trigger_isrSemaSignal();
 }
 
-/*******************************************************************************
-*
-* releaseTestFiber - release the test fiber
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * releaseTestFiber - release the test fiber
+ *
+ * RETURNS: N/A
+ */
 
 void releaseTestFiber(void)
 {
 	nano_task_sem_give(&fiberSem);
 }
 
-/*******************************************************************************
-*
-* testInterruptsInit - initialize interrupt-related code
-*
-* Binds an ISR to the interrupt vector used to give semaphores from interrupt
-* level.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testInterruptsInit - initialize interrupt-related code
+ *
+ * Binds an ISR to the interrupt vector used to give semaphores from interrupt
+ * level.
+ *
+ * RETURNS: N/A
+ */
 
 static void testInterruptsInit(void)
 {
@@ -220,15 +220,15 @@ static void testInterruptsInit(void)
 	(void) initIRQ(&i);
 }
 
-/*******************************************************************************
-*
-* MonitorTaskEntry - entry point for MonitorTask
-*
-* This routine keeps tabs on the progress of the tasks doing the actual testing
-* and generates the final test case summary message.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * MonitorTaskEntry - entry point for MonitorTask
+ *
+ * This routine keeps tabs on the progress of the tasks doing the actual testing
+ * and generates the final test case summary message.
+ *
+ * RETURNS: N/A
+ */
 
 void MonitorTaskEntry(void)
 {

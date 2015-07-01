@@ -39,7 +39,7 @@ This module tests the following CPU and context related routines:
   irq_lock_inline(), irq_unlock_inline(),
   irq_connect(), nanoCpuExcConnect(),
   irq_enable(), irq_disable(),
-*/
+ */
 
 #include <tc_util.h>
 #include <nano_private.h>
@@ -117,15 +117,15 @@ static ISR_INFO  isrInfo;
 
 static void (*_trigger_isrHandler)(void) = (vvfn)sw_isr_trigger_0;
 
-/*******************************************************************************
-*
-* isr_handler - handler to perform various actions from within an ISR context
-*
-* This routine is the ISR handler for _trigger_isrHandler().  It performs
-* the command requested in <isrInfo.command>.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_handler - handler to perform various actions from within an ISR context
+ *
+ * This routine is the ISR handler for _trigger_isrHandler().  It performs
+ * the command requested in <isrInfo.command>.
+ *
+ * RETURNS: N/A
+ */
 
 void isr_handler(void *data)
 {
@@ -148,19 +148,19 @@ void isr_handler(void *data)
 
 /* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
 #if !defined(CONFIG_CPU_CORTEX_M3_M4)
-/*******************************************************************************
-*
-* exc_divide_error_handler - divide by zero exception handler
-*
-* This handler is part of a test that is only interested in detecting the
-* error so that we know the exception connect code is working. It simply
-* adds 2 to the EIP to skip over the offending instruction:
-*         f7 f9         idiv %ecx
-* thereby preventing the infinite loop of divide-by-zero errors which would
-* arise if control simply returns to that instruction.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * exc_divide_error_handler - divide by zero exception handler
+ *
+ * This handler is part of a test that is only interested in detecting the
+ * error so that we know the exception connect code is working. It simply
+ * adds 2 to the EIP to skip over the offending instruction:
+ *         f7 f9         idiv %ecx
+ * thereby preventing the infinite loop of divide-by-zero errors which would
+ * arise if control simply returns to that instruction.
+ *
+ * RETURNS: N/A
+ */
 
 void exc_divide_error_handler(NANO_ESF *pEsf)
 {
@@ -169,14 +169,14 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
 }
 #endif
 
-/*******************************************************************************
-*
-* initNanoObjects - initialize nanokernel objects
-*
-* This routine initializes the nanokernel objects used in this module's tests.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * initNanoObjects - initialize nanokernel objects
+ *
+ * This routine initializes the nanokernel objects used in this module's tests.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int initNanoObjects(void)
 {
@@ -197,17 +197,17 @@ int initNanoObjects(void)
 	return initIRQ(&i) < 0 ? TC_FAIL : TC_PASS;
 }
 
-/*******************************************************************************
-*
-* nano_cpu_idleTest - test the nano_cpu_idle() routine
-*
-* This tests the nano_cpu_idle() routine.  The first thing it does is align to
-* a tick boundary.  The only source of interrupts while the test is running is
-* expected to be the tick clock timer which should wake the CPU.  Thus after
-* each call to nano_cpu_idle(), the tick count should be one higher.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * nano_cpu_idleTest - test the nano_cpu_idle() routine
+ *
+ * This tests the nano_cpu_idle() routine.  The first thing it does is align to
+ * a tick boundary.  The only source of interrupts while the test is running is
+ * expected to be the tick clock timer which should wake the CPU.  Thus after
+ * each call to nano_cpu_idle(), the tick count should be one higher.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int nano_cpu_idleTest(void)
 {
@@ -231,12 +231,12 @@ int nano_cpu_idleTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* irq_lockWrapper - a wrapper for irq_lock()
-*
-* RETURNS: irq_lock() return value
-*/
+/**
+ *
+ * irq_lockWrapper - a wrapper for irq_lock()
+ *
+ * RETURNS: irq_lock() return value
+ */
 
 int irq_lockWrapper(int unused)
 {
@@ -245,24 +245,24 @@ int irq_lockWrapper(int unused)
 	return irq_lock();
 }
 
-/*******************************************************************************
-*
-* irq_unlockWrapper - a wrapper for irq_unlock()
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * irq_unlockWrapper - a wrapper for irq_unlock()
+ *
+ * RETURNS: N/A
+ */
 
 void irq_unlockWrapper(int imask)
 {
 	irq_unlock(imask);
 }
 
-/*******************************************************************************
-*
-* irq_lock_inlineWrapper - a wrapper for irq_lock_inline()
-*
-* RETURNS: irq_lock_inline() return value
-*/
+/**
+ *
+ * irq_lock_inlineWrapper - a wrapper for irq_lock_inline()
+ *
+ * RETURNS: irq_lock_inline() return value
+ */
 
 int irq_lock_inlineWrapper(int unused)
 {
@@ -271,24 +271,24 @@ int irq_lock_inlineWrapper(int unused)
 	return irq_lock_inline();
 }
 
-/*******************************************************************************
-*
-* irq_unlock_inlineWrapper - a wrapper for irq_unlock_inline()
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * irq_unlock_inlineWrapper - a wrapper for irq_unlock_inline()
+ *
+ * RETURNS: N/A
+ */
 
 void irq_unlock_inlineWrapper(int imask)
 {
 	irq_unlock_inline(imask);
 }
 
-/*******************************************************************************
-*
-* irq_disableWrapper - a wrapper for irq_disable()
-*
-* RETURNS: <irq>
-*/
+/**
+ *
+ * irq_disableWrapper - a wrapper for irq_disable()
+ *
+ * RETURNS: <irq>
+ */
 
 int irq_disableWrapper(int irq)
 {
@@ -296,28 +296,28 @@ int irq_disableWrapper(int irq)
 	return irq;
 }
 
-/*******************************************************************************
-*
-* irq_enableWrapper - a wrapper for irq_enable()
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * irq_enableWrapper - a wrapper for irq_enable()
+ *
+ * RETURNS: N/A
+ */
 
 void irq_enableWrapper(int irq)
 {
 	irq_enable(irq);
 }
 
-/*******************************************************************************
-*
-* nanoCpuDisableInterruptsTest - test routines for disabling and enabling ints
-*
-* This routine tests the routines for disabling and enabling interrupts.  These
-* include irq_lock() and irq_unlock(), irq_lock_inline() and
-* irq_unlock_inline(), irq_disable() and irq_enable().
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * nanoCpuDisableInterruptsTest - test routines for disabling and enabling ints
+ *
+ * This routine tests the routines for disabling and enabling interrupts.  These
+ * include irq_lock() and irq_unlock(), irq_lock_inline() and
+ * irq_unlock_inline(), irq_disable() and irq_enable().
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 								 enable_interrupt_func enableRtn, int irq)
@@ -374,16 +374,16 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 	return (tick == nano_tick_get_32()) ? TC_FAIL : TC_PASS;
 }
 
-/*******************************************************************************
-*
-* nanoCtxTaskTest - test the various nanoCtxXXX() routines from a task
-*
-* This routines tests the context_self_get() and context_type_get() routines from both
-* a task and an ISR (that interrupted a task).  Checking those routines with
-* fibers are done elsewhere.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * nanoCtxTaskTest - test the various nanoCtxXXX() routines from a task
+ *
+ * This routines tests the context_self_get() and context_type_get() routines from both
+ * a task and an ISR (that interrupted a task).  Checking those routines with
+ * fibers are done elsewhere.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int nanoCtxTaskTest(void)
 {
@@ -418,22 +418,22 @@ int nanoCtxTaskTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* nanoCtxFiberTest - test the various nanoCtxXXX() routines from a fiber
-*
-* This routines tests the context_self_get() and context_type_get() routines from both
-* a fiber and an ISR (that interrupted a fiber).  Checking those routines with
-* tasks are done elsewhere.
-*
-* This routine may set <fiberDetectedError> to the following values:
-*   1 - if fiber context ID matches that of the task
-*   2 - if context ID taken during ISR does not match that of the fiber
-*   3 - context_type_get() when called from an ISR is not NANO_TYPE_ISR
-*   3 - context_type_get() when called from a fiber is not NANO_TYPE_FIBER
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * nanoCtxFiberTest - test the various nanoCtxXXX() routines from a fiber
+ *
+ * This routines tests the context_self_get() and context_type_get() routines from both
+ * a fiber and an ISR (that interrupted a fiber).  Checking those routines with
+ * tasks are done elsewhere.
+ *
+ * This routine may set <fiberDetectedError> to the following values:
+ *   1 - if fiber context ID matches that of the task
+ *   2 - if context ID taken during ISR does not match that of the fiber
+ *   3 - context_type_get() when called from an ISR is not NANO_TYPE_ISR
+ *   3 - context_type_get() when called from a fiber is not NANO_TYPE_FIBER
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 {
@@ -473,18 +473,18 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* fiberHelper - entry point to the fiber's helper
-*
-* This routine is the entry point to the fiber's helper fiber.  It is used to
-* help test the behaviour of the fiber_yield() routine.
-*
-* \param arg1    unused
-* \param arg2    unused
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiberHelper - entry point to the fiber's helper
+ *
+ * This routine is the entry point to the fiber's helper fiber.  It is used to
+ * help test the behaviour of the fiber_yield() routine.
+ *
+ * \param arg1    unused
+ * \param arg2    unused
+ *
+ * RETURNS: N/A
+ */
 
 static void fiberHelper(int arg1, int arg2)
 {
@@ -510,23 +510,23 @@ static void fiberHelper(int arg1, int arg2)
 
 }
 
-/*******************************************************************************
-*
-* fiber_yieldTest - test the fiber_yield() routine
-*
-* This routine tests the fiber_yield() routine.  It starts another fiber
-* (thus also testing fiber_fiber_start()) and checks that behaviour of
-* fiber_yield() against the cases of there being a higher priority fiber,
-* a lower priority fiber, and another fiber of equal priority.
-*
-* On error, it may set <fiberDetectedError> to one of the following values:
-*   10 - helper fiber ran prematurely
-*   11 - fiber_yield() did not yield to a higher priority fiber
-*   12 - fiber_yield() did not yield to an equal prioirty fiber
-*   13 - fiber_yield() yielded to a lower priority fiber
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * fiber_yieldTest - test the fiber_yield() routine
+ *
+ * This routine tests the fiber_yield() routine.  It starts another fiber
+ * (thus also testing fiber_fiber_start()) and checks that behaviour of
+ * fiber_yield() against the cases of there being a higher priority fiber,
+ * a lower priority fiber, and another fiber of equal priority.
+ *
+ * On error, it may set <fiberDetectedError> to one of the following values:
+ *   10 - helper fiber ran prematurely
+ *   11 - fiber_yield() did not yield to a higher priority fiber
+ *   12 - fiber_yield() did not yield to an equal prioirty fiber
+ *   13 - fiber_yield() yielded to a lower priority fiber
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int fiber_yieldTest(void)
 {
@@ -592,17 +592,17 @@ int fiber_yieldTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* fiberEntry - entry point to fiber started by the task
-*
-* This routine is the entry point to the fiber started by the task.
-*
-* \param taskCtxId    context ID of the spawning task
-* \param arg1         unused
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiberEntry - entry point to fiber started by the task
+ *
+ * This routine is the entry point to the fiber started by the task.
+ *
+ * \param taskCtxId    context ID of the spawning task
+ * \param arg1         unused
+ *
+ * RETURNS: N/A
+ */
 
 static void fiberEntry(int taskCtxId, int arg1)
 {
@@ -815,14 +815,14 @@ static int test_timeout(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* main - entry point to timer tests
-*
-* This is the entry point to the CPU and context tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - entry point to timer tests
+ *
+ * This is the entry point to the CPU and context tests.
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 {

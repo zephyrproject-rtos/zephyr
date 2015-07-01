@@ -9,14 +9,14 @@ to contiki's uIPv6 engine.
 
 Currently, two modes are supported:
 
-* 'Stateless Multicast RPL Forwarding' (SMRF)
+ * 'Stateless Multicast RPL Forwarding' (SMRF)
     RPL in MOP 3 handles group management as per the RPL docs,
     SMRF is a lightweight engine which handles datagram forwarding.
     SMRF is documented here:
     http://dx.doi.org/10.1007/s11277-013-1250-5
     and here:
     http://dx.doi.org/10.1109/PerComW.2012.6197494
-* 'Multicast Forwarding with Trickle' according to the algorithm described
+ * 'Multicast Forwarding with Trickle' according to the algorithm described
     in the internet draft:
     http://tools.ietf.org/html/draft-ietf-roll-trickle-mcast
     The version of this draft that's currently implementated is documented
@@ -32,9 +32,9 @@ To be able to send multicast traffic from the internet to 6LoWPAN nodes or the o
 way round, we need border routers or other gateway devices to be able to achieve
 the following:
 
-* Add/Remove Trickle Multicast, RPL or other HBHO headers as necessary for datagrams
+ * Add/Remove Trickle Multicast, RPL or other HBHO headers as necessary for datagrams
   entering / exiting the 6LoWPAN
-* Advertise multicast group membership to the internet (e.g. with MLD)
+ * Advertise multicast group membership to the internet (e.g. with MLD)
 
 These are currently not implemented and are in the ToDo list. Contributions welcome.
 

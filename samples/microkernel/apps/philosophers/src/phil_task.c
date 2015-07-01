@@ -61,12 +61,12 @@ struct nano_sem forks[N_PHILOSOPHERS];
 #endif  /*  CONFIG_NANOKERNEL */
 
 #ifdef CONFIG_NANOKERNEL
-/*******************************************************************************
-*
-* main - nanokernel entry point
-*
-* RETURNS: does not return
-*/
+/**
+ *
+ * main - nanokernel entry point
+ *
+ * RETURNS: does not return
+ */
 
 int main(void)
 {
@@ -93,12 +93,12 @@ int main(void)
 }
 
 #else
-/*******************************************************************************
-*
-* philDemo - routine to start dining philosopher demo
-*
-* RETURNS: does not return
-*/
+/**
+ *
+ * philDemo - routine to start dining philosopher demo
+ *
+ * RETURNS: does not return
+ */
 
 void philDemo(void)
 {

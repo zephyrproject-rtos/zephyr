@@ -38,7 +38,7 @@ point, ie. the first instruction executed.
 The table is populated with all the system exception handlers. The NMI vector
 must be populated with a valid handler since it can happen at any time. The
 rest should not be triggered until the kernel is ready to handle them.
-*/
+ */
 
 #define _ASMLANGUAGE
 

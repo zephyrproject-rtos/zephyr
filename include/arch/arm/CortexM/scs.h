@@ -66,7 +66,7 @@ registers is the way to implement it.
 
 Note that the 'stir' register, even if not in the 'nvic' part of the SCB, is
 still considered part of the NVIC and an API for it is provided in nvic.h.
-*/
+ */
 
 #ifndef _SCS__H_
 #define _SCS__H_
@@ -431,110 +431,110 @@ extern volatile struct __scs __scs;
 
 /* API */
 
-/*******************************************************************************
-*
-* _ScsNumIrqGet - obtain the number of interrupt lines on the target
-*
-* RETURNS: the number of interrupts
-*/
+/**
+ *
+ * _ScsNumIrqGet - obtain the number of interrupt lines on the target
+ *
+ * RETURNS: the number of interrupts
+ */
 
 static inline int _ScsNumIrqGet(void)
 {
 	return 32 * (__scs.ictr.bit.intlinesnum + 1);
 }
 
-/*******************************************************************************
-*
-* _ScsIntMultiCycleInstDisable - disable load/store multiple instructions
-*
-* From the ARM manuals:
-*
-* LDM/STM instructions increase the interrupt latency of the processor because
-* they must complete before the processor can stack the current state and invoke
-* the interrupt handler.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScsIntMultiCycleInstDisable - disable load/store multiple instructions
+ *
+ * From the ARM manuals:
+ *
+ * LDM/STM instructions increase the interrupt latency of the processor because
+ * they must complete before the processor can stack the current state and invoke
+ * the interrupt handler.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _ScsIntMultiCycleInstDisable(void)
 {
 	__scs.actlr.bit.dismcycint = 1;
 }
 
-/*******************************************************************************
-*
-* _ScsIntMultiCycleInstEnable - enable load/store multiple instructions
-*
-* See _ScsIntMultiCycleInstDisable().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScsIntMultiCycleInstEnable - enable load/store multiple instructions
+ *
+ * See _ScsIntMultiCycleInstDisable().
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _ScsIntMultiCycleInstEnable(void)
 {
 	__scs.actlr.bit.dismcycint = 0;
 }
 
-/*******************************************************************************
-*
-* _ScsWriteBufDisable - disable write buffer
-*
-* From the ARM manuals:
-*
-* Disables write buffer use during default memory map accesses. This causes all
-* BusFaults to be precise BusFaults but decreases performance because any store
-* to memory must complete before the processor can execute the next instruction.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScsWriteBufDisable - disable write buffer
+ *
+ * From the ARM manuals:
+ *
+ * Disables write buffer use during default memory map accesses. This causes all
+ * BusFaults to be precise BusFaults but decreases performance because any store
+ * to memory must complete before the processor can execute the next instruction.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _ScsWriteBufDisable(void)
 {
 	__scs.actlr.bit.disdefwbuf = 1;
 }
 
-/*******************************************************************************
-*
-* _ScsWriteBufEnable - enable write buffer
-*
-* See _ScsWriteBufDisable().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScsWriteBufEnable - enable write buffer
+ *
+ * See _ScsWriteBufDisable().
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _ScsWriteBufEnable(void)
 {
 	__scs.actlr.bit.disdefwbuf = 0;
 }
 
-/*******************************************************************************
-*
-* _ScsFoldItDisable - disable IT folding
-*
-* From the ARM manuals:
-*
-* In some situations, the processor can start executing the first instruction
-* in an IT block while it is still executing the IT instruction. This behavior
-* is called IT folding, and improves performance, However, IT folding can cause
-* jitter in looping. If a task must avoid jitter, set the DISFOLD bit to 1
-* before executing the task, to disable IT folding.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScsFoldItDisable - disable IT folding
+ *
+ * From the ARM manuals:
+ *
+ * In some situations, the processor can start executing the first instruction
+ * in an IT block while it is still executing the IT instruction. This behavior
+ * is called IT folding, and improves performance, However, IT folding can cause
+ * jitter in looping. If a task must avoid jitter, set the DISFOLD bit to 1
+ * before executing the task, to disable IT folding.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _ScsFoldItDisable(void)
 {
 	__scs.actlr.bit.disfold = 1;
 }
 
-/*******************************************************************************
-*
-* _ScsFoldItEnable - enable IT folding
-*
-* See _ScsFoldItDisable().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScsFoldItEnable - enable IT folding
+ *
+ * See _ScsFoldItDisable().
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _ScsFoldItEnable(void)
 {

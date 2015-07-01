@@ -37,7 +37,7 @@ struct nano_lifo nanoLifo2;
 
 static struct nano_fifo nanoFifo_sync; /* for synchronization */
 
-/*******************************************************************************
+/**
  *
  * lifo_test_init - initialize LIFOs for the test
  *
@@ -53,7 +53,7 @@ void lifo_test_init(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * lifo_fiber1 - lifo test context
  *
@@ -93,7 +93,7 @@ void lifo_fiber1(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * lifo_fiber2 - lifo test context
  *
@@ -125,7 +125,7 @@ void lifo_fiber2(int par1, int par2)
 	nano_fiber_fifo_get_wait(&nanoFifo_sync);
 }
 
-/*******************************************************************************
+/**
  *
  * lifo_fiber3 - lifo test context
  *
@@ -159,7 +159,7 @@ void lifo_fiber3(int par1, int par2)
 	nano_fiber_fifo_get_wait(&nanoFifo_sync);
 }
 
-/*******************************************************************************
+/**
  *
  * lifo_test - the main test entry
  *

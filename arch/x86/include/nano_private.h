@@ -42,7 +42,7 @@ This file is also included by assembly language files which must #define
 _ASMLANGUAGE before including this header file.  Note that nanokernel assembly
 source files obtains structure offset values via "absolute symbols" in the
 offsets.o module.
-*/
+ */
 
 #ifndef _NANO_PRIVATE_H
 #define _NANO_PRIVATE_H
@@ -760,18 +760,18 @@ extern tNANO _nanokernel;
 
 /* inline function definitions */
 
-/*******************************************************************************
-*
-* nanoArchInit - performs architecture-specific initialization
-*
-* This routine performs architecture-specific initialization of the nanokernel.
-* Trivial stuff is done inline; more complex initialization is done via
-* function calls.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * nanoArchInit - performs architecture-specific initialization
+ *
+ * This routine performs architecture-specific initialization of the nanokernel.
+ * Trivial stuff is done inline; more complex initialization is done via
+ * function calls.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void nanoArchInit(void)
 {
@@ -809,18 +809,18 @@ static inline void nanoArchInit(void)
 
 }
 
-/*******************************************************************************
-*
-* fiberRtnValueSet - set the return value for the specified fiber (inline)
-*
-* The register used to store the return value from a function call invocation is
-* set to <value>.  It is assumed that the specified <fiber> is pending, and
-* thus the fibers context is stored in its tCCS structure.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * fiberRtnValueSet - set the return value for the specified fiber (inline)
+ *
+ * The register used to store the return value from a function call invocation is
+ * set to <value>.  It is assumed that the specified <fiber> is pending, and
+ * thus the fibers context is stored in its tCCS structure.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void fiberRtnValueSet(
 	tCCS *fiber,       /* pointer to fiber */

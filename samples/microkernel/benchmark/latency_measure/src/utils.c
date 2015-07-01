@@ -56,7 +56,7 @@ static ptestIsr pcurrIsrFunc;
 /* scratchpad for the string used to print on console */
 char tmpString[TMP_STRING_SIZE];
 
-/*******************************************************************************
+/**
  *
  * initSwInterrupt - initialize the interrupt handler
  *
@@ -78,7 +78,7 @@ int initSwInterrupt(ptestIsr pIsrHdlr)
 	return vector;
 }
 
-/*******************************************************************************
+/**
  *
  * setSwInterrupt - set the new ISR for software interrupt
  *
@@ -97,7 +97,7 @@ void setSwInterrupt(ptestIsr pIsrHdlr)
 	pcurrIsrFunc = pIsrHdlr;
 }
 
-/*******************************************************************************
+/**
  *
  * raiseIntFunc - generate a software interrupt
  *

@@ -37,7 +37,7 @@ Measure boot time for both nanokernel and microkernel project which includes
 - from _start to main()
 - from _start to task
 - from _start to idle (for microkernel)
-*/
+ */
 
 #ifdef CONFIG_NANOKERNEL
 #include <nanokernel.h>
@@ -121,12 +121,12 @@ void bootTimeTask(void)
 
 char __stack fiberStack[512];
 
-/*******************************************************************************
-*
-* main - nanokernel entry point
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - nanokernel entry point
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 {

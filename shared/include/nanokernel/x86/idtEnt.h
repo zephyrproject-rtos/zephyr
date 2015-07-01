@@ -34,7 +34,7 @@
 DESCRIPTION
 This header file provides code for constructing an IA-32 interrupt descriptor.
 
-*/
+ */
 
 #ifndef _IDTENT_H
 #define _IDTENT_H
@@ -79,27 +79,27 @@ typedef struct idtEntry {
 	unsigned short	hiOffset;
 	} __packed IDT_ENTRY;
 
-/*******************************************************************************
-*
-* _IdtEntCreate - Create an IDT entry
-*
-* This routine creates an interrupt-gate descriptor at the location defined by
-* <pIdtEntry>. The entry is created such that <routine> is invoked when an
-* interrupt vector is asserted.  The <dpl> argument specifies the privilege
-* level for the interrupt-gate descriptor; (hardware) interrupts and exceptions
-* should specify a level of 0, whereas handlers for user-mode software generated
-* interrupts should specify 3.
-*
-* RETURNS: N/A
-*
-* INTERNAL
-* This is a shared routine between the IA-32 nanokernel runtime code and the
-* genIdt host tool code. It is done this way to keep the two sides in sync.
-*
-* The runtime passes a pointer directly to the IDT entry to update whereas the
-* host side simply passes a pointer to a local variable.
-*
-*/
+/**
+ *
+ * _IdtEntCreate - Create an IDT entry
+ *
+ * This routine creates an interrupt-gate descriptor at the location defined by
+ * <pIdtEntry>. The entry is created such that <routine> is invoked when an
+ * interrupt vector is asserted.  The <dpl> argument specifies the privilege
+ * level for the interrupt-gate descriptor; (hardware) interrupts and exceptions
+ * should specify a level of 0, whereas handlers for user-mode software generated
+ * interrupts should specify 3.
+ *
+ * RETURNS: N/A
+ *
+ * INTERNAL
+ * This is a shared routine between the IA-32 nanokernel runtime code and the
+ * genIdt host tool code. It is done this way to keep the two sides in sync.
+ *
+ * The runtime passes a pointer directly to the IDT entry to update whereas the
+ * host side simply passes a pointer to a local variable.
+ *
+ */
 
 static inline void _IdtEntCreate
 	(

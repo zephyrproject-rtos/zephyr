@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module implements the microkernel's tick event handler.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -69,50 +69,50 @@ int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #endif
 
-/*******************************************************************************
-*
-* task_cycle_get_32 - read the processor's high precision timer
-*
-* This routine reads the processor's high precision timer.  It reads the
-* counter register on the timer device. This counter register increments
-* at a relatively high rate (e.g. 20 MHz), and thus is considered a
-* "high resolution" timer.  This is in contrast to nano_tick_get_32() and
-* task_tick_get_32() which return the value of the kernel ticks variable.
-*
-* RETURNS: current high precision clock value
-*/
+/**
+ *
+ * task_cycle_get_32 - read the processor's high precision timer
+ *
+ * This routine reads the processor's high precision timer.  It reads the
+ * counter register on the timer device. This counter register increments
+ * at a relatively high rate (e.g. 20 MHz), and thus is considered a
+ * "high resolution" timer.  This is in contrast to nano_tick_get_32() and
+ * task_tick_get_32() which return the value of the kernel ticks variable.
+ *
+ * RETURNS: current high precision clock value
+ */
 
 uint32_t task_cycle_get_32(void)
 {
 	return timer_read();
 }
 
-/*******************************************************************************
-*
-* task_tick_get_32 - read the current system clock value
-*
-* This routine returns the lower 32-bits of the current system clock value
-* as measured in ticks.
-*
-* RETURNS: lower 32-bit of the current system clock value
-*/
+/**
+ *
+ * task_tick_get_32 - read the current system clock value
+ *
+ * This routine returns the lower 32-bits of the current system clock value
+ * as measured in ticks.
+ *
+ * RETURNS: lower 32-bit of the current system clock value
+ */
 
 int32_t task_tick_get_32(void)
 {
 	return (int32_t)_k_sys_clock_tick_count;
 }
 
-/*******************************************************************************
-*
-* task_tick_get - read the current system clock value
-*
-* This routine returns the current system clock value as measured in ticks.
-*
-* Interrupts are locked while updating clock since some CPUs do not support
-* native atomic operations on 64 bit values.
-*
-* RETURNS: current system clock value
-*/
+/**
+ *
+ * task_tick_get - read the current system clock value
+ *
+ * This routine returns the current system clock value as measured in ticks.
+ *
+ * Interrupts are locked while updating clock since some CPUs do not support
+ * native atomic operations on 64 bit values.
+ *
+ * RETURNS: current system clock value
+ */
 
 int64_t task_tick_get(void)
 {
@@ -124,15 +124,15 @@ int64_t task_tick_get(void)
 	return ticks;
 }
 
-/*******************************************************************************
-*
-* sys_clock_increment - increment system clock by "N" ticks
-*
-* Interrupts are locked while updating clock since some CPUs do not support
-* native atomic operations on 64 bit values.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * sys_clock_increment - increment system clock by "N" ticks
+ *
+ * Interrupts are locked while updating clock since some CPUs do not support
+ * native atomic operations on 64 bit values.
+ *
+ * RETURNS: N/A
+ */
 
 static void sys_clock_increment(int inc)
 {
@@ -142,17 +142,17 @@ static void sys_clock_increment(int inc)
 	irq_unlock_inline(key);
 }
 
-/*******************************************************************************
-*
-* _TlDebugUpdate - task level debugging tick handler
-*
-* If task level debugging is configured this routine updates the low resolution
-* debugging timer and determines if task level processing should be suspended.
-*
-* RETURNS: 0 if task level processing should be halted or 1 if not
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TlDebugUpdate - task level debugging tick handler
+ *
+ * If task level debugging is configured this routine updates the low resolution
+ * debugging timer and determines if task level processing should be suspended.
+ *
+ * RETURNS: 0 if task level processing should be halted or 1 if not
+ *
+ * \NOMANUAL
+ */
 
 #ifdef CONFIG_TASK_DEBUG
 uint32_t __noinit _k_debug_sys_clock_tick_count;
@@ -166,17 +166,17 @@ static inline int _TlDebugUpdate(int32_t ticks)
 #define _TlDebugUpdate(ticks) 1
 #endif
 
-/*******************************************************************************
-*
-* _TimeSliceUpdate - tick handler time slice logic
-*
-* This routine checks to see if it is time for the current task
-* to relinquish control, and yields CPU if so.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _TimeSliceUpdate - tick handler time slice logic
+ *
+ * This routine checks to see if it is time for the current task
+ * to relinquish control, and yields CPU if so.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _TimeSliceUpdate(void)
 {
@@ -192,21 +192,21 @@ static inline void _TimeSliceUpdate(void)
 #endif /* CONFIG_TIMESLICING */
 }
 
-/*******************************************************************************
-*
-* _SysIdleElapsedTicksGet - get elapsed ticks
-*
-* If tickless idle support is configured this routine returns the number
-* of ticks since going idle and then resets the global elapsed tick counter back
-* to zero indicating all elapsed ticks have been consumed. This is done with
-* interrupts locked to prevent the timer ISR from modifying the global elapsed
-* tick counter.
-* If tickless idle support is not configured in it simply returns 1.
-*
-* RETURNS: number of ticks to process
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _SysIdleElapsedTicksGet - get elapsed ticks
+ *
+ * If tickless idle support is configured this routine returns the number
+ * of ticks since going idle and then resets the global elapsed tick counter back
+ * to zero indicating all elapsed ticks have been consumed. This is done with
+ * interrupts locked to prevent the timer ISR from modifying the global elapsed
+ * tick counter.
+ * If tickless idle support is not configured in it simply returns 1.
+ *
+ * RETURNS: number of ticks to process
+ *
+ * \NOMANUAL
+ */
 
 static inline int32_t _SysIdleElapsedTicksGet(void)
 {
@@ -225,15 +225,15 @@ static inline int32_t _SysIdleElapsedTicksGet(void)
 #endif
 }
 
-/*******************************************************************************
-*
-* _k_ticker - microkernel tick handler
-*
-* This routine informs other microkernel subsystems that a tick event has
-* occurred.
-*
-* RETURNS: 1
-*/
+/**
+ *
+ * _k_ticker - microkernel tick handler
+ *
+ * This routine informs other microkernel subsystems that a tick event has
+ * occurred.
+ *
+ * RETURNS: 1
+ */
 
 int _k_ticker(int event)
 {
@@ -256,34 +256,34 @@ int _k_ticker(int event)
 
 #ifdef CONFIG_TIMESLICING
 
-/*******************************************************************************
-*
-* sys_scheduler_time_slice_set - set time slicing period and scope
-*
-* This routine controls how task time slicing is performed by the task
-* scheduler, by specifying the maximum time slice length (in ticks) and
-* the highest priority task level for which time slicing is performed.
-*
-* To enable time slicing, a non-zero time slice length must be specified.
-* The task scheduler then ensures that no executing task runs for more than
-* the specified number of ticks before giving other tasks of that priority
-* a chance to execute. (However, any task whose priority is higher than the
-* specified task priority level is exempted, and may execute as long as
-* desired without being pre-empted due to time slicing.)
-*
-* Time slicing only limits that maximum amount of time a task may continuously
-* execute. Once the scheduler selects a task for execution, there is no minimum
-* guaranteed time the task will execute before tasks of greater or equal
-* priority are scheduled.
-*
-* If the currently executing task is the only one of that priority eligible
-* for execution this routine has no effect, as that task will be immediately
-* rescheduled once the slice period expires.
-*
-* To disable timeslicing, call the API with both parameters set to zero.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * sys_scheduler_time_slice_set - set time slicing period and scope
+ *
+ * This routine controls how task time slicing is performed by the task
+ * scheduler, by specifying the maximum time slice length (in ticks) and
+ * the highest priority task level for which time slicing is performed.
+ *
+ * To enable time slicing, a non-zero time slice length must be specified.
+ * The task scheduler then ensures that no executing task runs for more than
+ * the specified number of ticks before giving other tasks of that priority
+ * a chance to execute. (However, any task whose priority is higher than the
+ * specified task priority level is exempted, and may execute as long as
+ * desired without being pre-empted due to time slicing.)
+ *
+ * Time slicing only limits that maximum amount of time a task may continuously
+ * execute. Once the scheduler selects a task for execution, there is no minimum
+ * guaranteed time the task will execute before tasks of greater or equal
+ * priority are scheduled.
+ *
+ * If the currently executing task is the only one of that priority eligible
+ * for execution this routine has no effect, as that task will be immediately
+ * rescheduled once the slice period expires.
+ *
+ * To disable timeslicing, call the API with both parameters set to zero.
+ *
+ * RETURNS: N/A
+ */
 
 void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
 {
@@ -293,15 +293,15 @@ void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
 
 #endif /* CONFIG_TIMESLICING */
 
-/*******************************************************************************
-*
-* _k_time_elapse - handle elapsed ticks calculation request
-*
-* This routine, called by K_swapper(), handles the request for calculating the
-* time elapsed since the specified reference time.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_time_elapse - handle elapsed ticks calculation request
+ *
+ * This routine, called by K_swapper(), handles the request for calculating the
+ * time elapsed since the specified reference time.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_time_elapse(struct k_args *P)
 {
@@ -311,25 +311,25 @@ void _k_time_elapse(struct k_args *P)
 	P->Args.c1.time1 = now;
 }
 
-/*******************************************************************************
-*
-* task_tick_delta - return ticks between calls
-*
-* This function is meant to be used in contained fragments of code. The first
-* call to it in a particular code fragment fills in a reference time variable
-* which then gets passed and updated every time the function is called. From
-* the second call on, the delta between the value passed to it and the current
-* tick count is the return value. Since the first call is meant to only fill in
-* the reference time, its return value should be discarded.
-*
-* Since a code fragment that wants to use task_tick_delta() passes in its
-* own reference time variable, multiple code fragments can make use of this
-* function concurrently.
-*
-* Note that it is not necessary to allocate a timer to use this call.
-*
-* RETURNS: elapsed time in system ticks
-*/
+/**
+ *
+ * task_tick_delta - return ticks between calls
+ *
+ * This function is meant to be used in contained fragments of code. The first
+ * call to it in a particular code fragment fills in a reference time variable
+ * which then gets passed and updated every time the function is called. From
+ * the second call on, the delta between the value passed to it and the current
+ * tick count is the return value. Since the first call is meant to only fill in
+ * the reference time, its return value should be discarded.
+ *
+ * Since a code fragment that wants to use task_tick_delta() passes in its
+ * own reference time variable, multiple code fragments can make use of this
+ * function concurrently.
+ *
+ * Note that it is not necessary to allocate a timer to use this call.
+ *
+ * RETURNS: elapsed time in system ticks
+ */
 
 int64_t task_tick_delta(int64_t *reftime /* pointer to reference time */
 			)

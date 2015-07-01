@@ -61,16 +61,16 @@ static struct nano_sem testSema;
 
 static uint32_t timestamp = 0;
 
-/*******************************************************************************
-*
-* latencyTestIsr - test ISR used to measure best case interrupt latency
-*
-* The interrupt handler gets the second timestamp.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * latencyTestIsr - test ISR used to measure best case interrupt latency
+ *
+ * The interrupt handler gets the second timestamp.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void latencyTestIsr(void *unused)
 {
@@ -80,17 +80,17 @@ static void latencyTestIsr(void *unused)
 	timestamp = TIME_STAMP_DELTA_GET(0);
 }
 
-/*******************************************************************************
-*
-* fiberInt - interrupt preparation fiber
-*
-* Fiber makes all the test preparations: registers the interrupt handler,
-* gets the first timestamp and invokes the software interrupt.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * fiberInt - interrupt preparation fiber
+ *
+ * Fiber makes all the test preparations: registers the interrupt handler,
+ * gets the first timestamp and invokes the software interrupt.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void fiberInt(void)
 {
@@ -99,7 +99,7 @@ static void fiberInt(void)
 	fiber_yield();
 }
 
-/*******************************************************************************
+/**
  *
  * fiberWaiter - check the time when it gets executed after the semaphore
  *
@@ -117,7 +117,7 @@ static void fiberWaiter(void)
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 }
 
-/*******************************************************************************
+/**
  *
  * nanoIntToFiberSem - the test main function
  *

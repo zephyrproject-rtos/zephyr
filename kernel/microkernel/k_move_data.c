@@ -36,12 +36,12 @@
 #include <sections.h>
 #include <misc/__assert.h>
 
-/*******************************************************************************
-*
-* mvdreq_docont -
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * mvdreq_docont -
+ *
+ * RETURNS: N/A
+ */
 
 static void mvdreq_docont(struct k_args *Cont)
 {
@@ -54,12 +54,12 @@ static void mvdreq_docont(struct k_args *Cont)
 	}
 }
 
-/*******************************************************************************
-*
-* mvdreq_copy - perform movedata request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * mvdreq_copy - perform movedata request
+ *
+ * RETURNS: N/A
+ */
 
 static void mvdreq_copy(struct moved_req *ReqArgs)
 {
@@ -72,12 +72,12 @@ static void mvdreq_copy(struct moved_req *ReqArgs)
 		mvdreq_docont(ReqArgs->Extra.Setup.ContRcv);
 }
 
-/*******************************************************************************
-*
-* _k_movedata_request - process a movedata request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_movedata_request - process a movedata request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_movedata_request(struct k_args *Req)
 {

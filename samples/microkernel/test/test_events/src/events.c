@@ -36,7 +36,7 @@ This modules tests the following event APIs:
   task_event_set_handler(), task_event_send(), isr_event_send(),
   task_event_recv(), task_event_recv_wait(), task_event_recv_wait_timeout()
 
-*/
+ */
 
 #include <tc_util.h>
 #include <zephyr.h>
@@ -65,12 +65,12 @@ extern struct nano_sem fiberSem; /* semaphore that allows test control the fiber
 
 extern const int _k_num_events; /* non-public microkernel global variable */
 
-/*******************************************************************************
-*
-* isr_event_signal_handler - ISR handler to signal an event
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_event_signal_handler - ISR handler to signal an event
+ *
+ * RETURNS: N/A
+ */
 
 void isr_event_signal_handler(void *data)
 {
@@ -79,24 +79,24 @@ void isr_event_signal_handler(void *data)
 	isr_event_send(pInfo->event);
 }
 
-/*******************************************************************************
-*
-* releaseTestFiber - release the test fiber
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * releaseTestFiber - release the test fiber
+ *
+ * RETURNS: N/A
+ */
 
 void releaseTestFiber(void)
 {
 	nano_task_sem_give(&fiberSem);
 }
 
-/*******************************************************************************
-*
-* microObjectsInit - initialize objects used in this microkernel test suite
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * microObjectsInit - initialize objects used in this microkernel test suite
+ *
+ * RETURNS: N/A
+ */
 
 void microObjectsInit(void)
 {
@@ -111,18 +111,18 @@ void microObjectsInit(void)
 	TC_PRINT("Microkernel objects initialized\n");
 }
 
-/*******************************************************************************
-*
-* eventNoWaitTest - test the task_event_recv() API
-*
-* There are three cases to be tested here.  The first is for testing an invalid
-* event.  The second is for testing for an event when there is one.  The third
-* is for testing for an event when there are none.  Note that the "consumption"
-* of the event gets confirmed by the order in which the latter two checks are
-* done.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * eventNoWaitTest - test the task_event_recv() API
+ *
+ * There are three cases to be tested here.  The first is for testing an invalid
+ * event.  The second is for testing for an event when there is one.  The third
+ * is for testing for an event when there are none.  Note that the "consumption"
+ * of the event gets confirmed by the order in which the latter two checks are
+ * done.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int eventNoWaitTest(void)
 {
@@ -157,17 +157,17 @@ int eventNoWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* eventWaitTest - test the task_event_recv_wait() API
-*
-* This test checks task_event_recv_wait() against the following cases:
-*  1. There is already an event waiting (signalled from a task and ISR).
-*  2. The current task must wait on the event until it is signalled
-*     from either another task, an ISR or a fiber.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * eventWaitTest - test the task_event_recv_wait() API
+ *
+ * This test checks task_event_recv_wait() against the following cases:
+ *  1. There is already an event waiting (signalled from a task and ISR).
+ *  2. The current task must wait on the event until it is signalled
+ *     from either another task, an ISR or a fiber.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int eventWaitTest(void)
 {
@@ -229,18 +229,18 @@ int eventWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* eventTimeoutTest - test the task_event_recv_wait_timeout() API
-*
-* This test checks task_event_recv_wait_timeout() against the following cases:
-*  1. The current task times out while waiting for the event.
-*  2. There is already an event waiting (signalled from a task).
-*  3. The current task must wait on the event until it is signalled
-*     from either another task, an ISR or a fiber.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * eventTimeoutTest - test the task_event_recv_wait_timeout() API
+ *
+ * This test checks task_event_recv_wait_timeout() against the following cases:
+ *  1. The current task times out while waiting for the event.
+ *  2. There is already an event waiting (signalled from a task).
+ *  3. The current task must wait on the event until it is signalled
+ *     from either another task, an ISR or a fiber.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int eventTimeoutTest(void)
 {
@@ -280,17 +280,17 @@ int eventTimeoutTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* isrEventSignalTest - test the isr_event_send() API
-*
-* Although other tests have done some testing using isr_event_send(), none
-* of them have demonstrated that signalling an event more than once does not
-* "queue" events.  That is, should two or more signals of the same event occur
-* before it is tested, it can only be tested for successfully once.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * isrEventSignalTest - test the isr_event_send() API
+ *
+ * Although other tests have done some testing using isr_event_send(), none
+ * of them have demonstrated that signalling an event more than once does not
+ * "queue" events.  That is, should two or more signals of the same event occur
+ * before it is tested, it can only be tested for successfully once.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int isrEventSignalTest(void)
 {
@@ -322,16 +322,16 @@ int isrEventSignalTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* fiberEventSignalTest - test the fiber_event_send() API
-*
-* Signalling an event by fiber_event_send() more than once does not "queue"
-* events.  That is, should two or more signals of the same event occur before
-* it is tested, it can only be tested for successfully once.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * fiberEventSignalTest - test the fiber_event_send() API
+ *
+ * Signalling an event by fiber_event_send() more than once does not "queue"
+ * events.  That is, should two or more signals of the same event occur before
+ * it is tested, it can only be tested for successfully once.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int fiberEventSignalTest(void)
 {
@@ -359,14 +359,14 @@ int fiberEventSignalTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* eventHandler - handler to run on EVENT_ID event
-*
-* \param event    signalled event
-*
-* RETURNS: <handlerRetVal>
-*/
+/**
+ *
+ * eventHandler - handler to run on EVENT_ID event
+ *
+ * \param event    signalled event
+ *
+ * RETURNS: <handlerRetVal>
+ */
 
 int eventHandler(int event)
 {
@@ -377,14 +377,14 @@ int eventHandler(int event)
 	return handlerRetVal;    /* 0 if not to wake waiting task; 1 if to wake */
 }
 
-/*******************************************************************************
-*
-* altEventHandler - handler to run on ALT_EVENT event
-*
-* \param event    signalled event
-*
-* RETURNS: 1
-*/
+/**
+ *
+ * altEventHandler - handler to run on ALT_EVENT event
+ *
+ * \param event    signalled event
+ *
+ * RETURNS: 1
+ */
 
 int altEventHandler(int event)
 {
@@ -395,17 +395,17 @@ int altEventHandler(int event)
 	return 1;
 }
 
-/*******************************************************************************
-*
-* eventSignalHandlerTest - test the task_event_set_handler() API
-*
-* This test checks that the event handler is set up properly when
-* task_event_set_handler() is called.  It shows that event handlers are tied
-* to the specified event and that the return value from the handler affects
-* whether the event wakes a task waiting upon that event.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * eventSignalHandlerTest - test the task_event_set_handler() API
+ *
+ * This test checks that the event handler is set up properly when
+ * task_event_set_handler() is called.  It shows that event handlers are tied
+ * to the specified event and that the return value from the handler affects
+ * whether the event wakes a task waiting upon that event.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int eventSignalHandlerTest(void)
 {
@@ -518,12 +518,12 @@ int eventSignalHandlerTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* AlternateTask - alternate task to signal various events to a waiting task
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * AlternateTask - alternate task to signal various events to a waiting task
+ *
+ * RETURNS: N/A
+ */
 
 void AlternateTask(void)
 {
@@ -556,12 +556,12 @@ void AlternateTask(void)
 	task_event_send(EVENT_ID);
 }
 
-/*******************************************************************************
-*
-* RegressionTask - main entry point to the test suite
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * RegressionTask - main entry point to the test suite
+ *
+ * RETURNS: N/A
+ */
 
 void RegressionTask(void)
 {

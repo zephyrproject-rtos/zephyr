@@ -36,7 +36,7 @@
   Prep work done when entering exceptions consists of saving the callee-saved
   registers before they get used by exception handlers, and recording the fact
   that we are running in an exception.
-*/
+ */
 
 #ifndef _GDB_STUB__H_
 #define _GDB_STUB__H_

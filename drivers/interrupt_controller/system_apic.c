@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
 for the atom_n28xx variant of generic_pc BSP.
-*/
+ */
 
 #include <misc/__assert.h>
 #include "board.h"
@@ -43,51 +43,51 @@ for the atom_n28xx variant of generic_pc BSP.
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
 
-/*******************************************************************************
-*
-* _SysIntVecAlloc - allocate interrupt vector
-*
-* This BSP provided routine supports the irq_connect() API.  This
-* routine is required to perform the following 3 functions:
-*
-*  a) Allocate a vector satisfying the requested priority.  The utility routine
-*     _IntVecAlloc() provided by the nanokernel will be used to perform the
-*     the allocation since the local APIC prioritizes interrupts as assumed
-*     by _IntVecAlloc().
-*  b) Return End of Interrupt (EOI) and Beginning of Interrupt (BOI) related
-*     information to be used when generating the interrupt stub code, and
-*  c) If an interrupt vector can be allocated, and the <irq> argument is not
-*     equal to NANO_SOFT_IRQ, the IOAPIC redirection table (RED) or the
-*     LOAPIC local vector table (LVT) will be updated with the allocated
-*     interrupt vector.
-*
-* The board virtualizes IRQs as follows:
-*
-*   - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
-*   - The remaining IRQs are provided by the LOAPIC.
-*
-* Thus, for example, if the IOAPIC supports 24 IRQs:
-*
-*   - IRQ0 to IRQ23   map to IOAPIC IRQ0 to IRQ23
-*   - IRQ24 to IRQ29  map to LOAPIC LVT entries as follows:
-*
-*       IRQ24 -> LOAPIC_TIMER
-*       IRQ25 -> LOAPIC_THERMAL
-*       IRQ26 -> LOAPIC_PMC
-*       IRQ27 -> LOAPIC_LINT0
-*       IRQ28 -> LOAPIC_LINT1
-*       IRQ29 -> LOAPIC_ERROR
-*
-* The IOAPIC_NUM_RTES macro is provided by board.h, and it specifies the number
-* of IRQs supported by the on-board I/O APIC device.
-*
-* RETURNS: the allocated interrupt vector
-*
-* INTERNAL
-* For debug kernels, this routine will return -1 if there are no vectors
-* remaining in the specified <priority> level, or if the <priority> or <irq>
-* parameters are invalid.
-*/
+/**
+ *
+ * _SysIntVecAlloc - allocate interrupt vector
+ *
+ * This BSP provided routine supports the irq_connect() API.  This
+ * routine is required to perform the following 3 functions:
+ *
+ *  a) Allocate a vector satisfying the requested priority.  The utility routine
+ *     _IntVecAlloc() provided by the nanokernel will be used to perform the
+ *     the allocation since the local APIC prioritizes interrupts as assumed
+ *     by _IntVecAlloc().
+ *  b) Return End of Interrupt (EOI) and Beginning of Interrupt (BOI) related
+ *     information to be used when generating the interrupt stub code, and
+ *  c) If an interrupt vector can be allocated, and the <irq> argument is not
+ *     equal to NANO_SOFT_IRQ, the IOAPIC redirection table (RED) or the
+ *     LOAPIC local vector table (LVT) will be updated with the allocated
+ *     interrupt vector.
+ *
+ * The board virtualizes IRQs as follows:
+ *
+ *   - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
+ *   - The remaining IRQs are provided by the LOAPIC.
+ *
+ * Thus, for example, if the IOAPIC supports 24 IRQs:
+ *
+ *   - IRQ0 to IRQ23   map to IOAPIC IRQ0 to IRQ23
+ *   - IRQ24 to IRQ29  map to LOAPIC LVT entries as follows:
+ *
+ *       IRQ24 -> LOAPIC_TIMER
+ *       IRQ25 -> LOAPIC_THERMAL
+ *       IRQ26 -> LOAPIC_PMC
+ *       IRQ27 -> LOAPIC_LINT0
+ *       IRQ28 -> LOAPIC_LINT1
+ *       IRQ29 -> LOAPIC_ERROR
+ *
+ * The IOAPIC_NUM_RTES macro is provided by board.h, and it specifies the number
+ * of IRQs supported by the on-board I/O APIC device.
+ *
+ * RETURNS: the allocated interrupt vector
+ *
+ * INTERNAL
+ * For debug kernels, this routine will return -1 if there are no vectors
+ * remaining in the specified <priority> level, or if the <priority> or <irq>
+ * parameters are invalid.
+ */
 
 int _SysIntVecAlloc(
 	unsigned int irq,		 /* virtualized IRQ */
@@ -170,27 +170,27 @@ int _SysIntVecAlloc(
 	return vector;
 }
 
-/*******************************************************************************
-*
-* _SysIntVecProgram - program interrupt controller
-*
-* This BSP provided routine programs the appropriate interrupt controller
-* with the given vector based on the given IRQ parameter.
-*
-* Drivers call this routine instead of irq_connect() when interrupts are
-* configured statically.
-*
-* The Clanton board virtualizes IRQs as follows:
-*
-*   - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC so the IOAPIC
-*     is programmed for these IRQs
-*   - The remaining IRQs are provided by the LOAPIC and hence the LOAPIC is
-*     programmed.
-*
-* The IOAPIC_NUM_RTES macro is provided by board.h, and it specifies the number
-* of IRQs supported by the on-board I/O APIC device.
-*
-*/
+/**
+ *
+ * _SysIntVecProgram - program interrupt controller
+ *
+ * This BSP provided routine programs the appropriate interrupt controller
+ * with the given vector based on the given IRQ parameter.
+ *
+ * Drivers call this routine instead of irq_connect() when interrupts are
+ * configured statically.
+ *
+ * The Clanton board virtualizes IRQs as follows:
+ *
+ *   - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC so the IOAPIC
+ *     is programmed for these IRQs
+ *   - The remaining IRQs are provided by the LOAPIC and hence the LOAPIC is
+ *     programmed.
+ *
+ * The IOAPIC_NUM_RTES macro is provided by board.h, and it specifies the number
+ * of IRQs supported by the on-board I/O APIC device.
+ *
+ */
 
 void _SysIntVecProgram(unsigned int vector, /* vector number */
 		       unsigned int irq     /* virtualized IRQ */
@@ -205,22 +205,22 @@ void _SysIntVecProgram(unsigned int vector, /* vector number */
 }
 
 
-/*******************************************************************************
-*
-* irq_enable - enable an individual interrupt (IRQ)
-*
-* The public interface for enabling/disabling a specific IRQ for the IA-32
-* architecture is defined as follows in include/nanokernel/x86/arch.h
-*
-*   extern void  irq_enable  (unsigned int irq);
-*   extern void  irq_disable (unsigned int irq);
-*
-* The irq_enable() routine is provided by the BSP due to the
-* IRQ virtualization that is performed by this BSP.  See the comments
-* in _SysIntVecAlloc() for more information regarding IRQ virtualization.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * irq_enable - enable an individual interrupt (IRQ)
+ *
+ * The public interface for enabling/disabling a specific IRQ for the IA-32
+ * architecture is defined as follows in include/nanokernel/x86/arch.h
+ *
+ *   extern void  irq_enable  (unsigned int irq);
+ *   extern void  irq_disable (unsigned int irq);
+ *
+ * The irq_enable() routine is provided by the BSP due to the
+ * IRQ virtualization that is performed by this BSP.  See the comments
+ * in _SysIntVecAlloc() for more information regarding IRQ virtualization.
+ *
+ * RETURNS: N/A
+ */
 
 void irq_enable(unsigned int irq)
 {
@@ -231,16 +231,16 @@ void irq_enable(unsigned int irq)
 	}
 }
 
-/*******************************************************************************
-*
-* irq_disable - disable an individual interrupt (IRQ)
-*
-* The irq_disable() routine is provided by the BSP due to the
-* IRQ virtualization that is performed by this BSP.  See the comments
-* in _SysIntVecAlloc() for more information regarding IRQ virtualization.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * irq_disable - disable an individual interrupt (IRQ)
+ *
+ * The irq_disable() routine is provided by the BSP due to the
+ * IRQ virtualization that is performed by this BSP.  See the comments
+ * in _SysIntVecAlloc() for more information regarding IRQ virtualization.
+ *
+ * RETURNS: N/A
+ */
 
 void irq_disable(unsigned int irq)
 {

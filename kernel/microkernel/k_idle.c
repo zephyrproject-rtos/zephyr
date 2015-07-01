@@ -34,7 +34,7 @@
 DESCRIPTION
 Microkernel idle logic. Different forms of idling are performed by the idle
 task, depending on how the kernel is configured.
-*/
+ */
 
 #include <micro_private.h>
 #include <nano_private.h>
@@ -66,19 +66,19 @@ static extern uint32_t _k_workload_scale;
 
 #define MSEC_PER_SEC 1000
 
-/*******************************************************************************
-*
-* workload_loop - shared code between workload calibration and monitoring
-*
-* Perform idle task "dummy work".
-*
-* This routine increments _k_workload_i and checks it against _k_workload_n1.
-* _k_workload_n1 is updated by the system tick handler, and both are kept
-* in close synchronization.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * workload_loop - shared code between workload calibration and monitoring
+ *
+ * Perform idle task "dummy work".
+ *
+ * This routine increments _k_workload_i and checks it against _k_workload_n1.
+ * _k_workload_n1 is updated by the system tick handler, and both are kept
+ * in close synchronization.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 static void workload_loop(void)
 {
@@ -100,16 +100,16 @@ static void workload_loop(void)
 	}
 }
 
-/*******************************************************************************
-*
-* _k_workload_monitor_calibrate - calibrate the workload monitoring subsystem
-*
-* Measures the time required to do a fixed amount of "dummy work", and
-* sets default values for the workload measuring period.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * _k_workload_monitor_calibrate - calibrate the workload monitoring subsystem
+ *
+ * Measures the time required to do a fixed amount of "dummy work", and
+ * sets default values for the workload measuring period.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void _k_workload_monitor_calibrate(void)
 {
@@ -133,17 +133,17 @@ void _k_workload_monitor_calibrate(void)
 	_k_workload_ticks = 100;
 }
 
-/*******************************************************************************
-*
-* _k_workload_monitor_update - workload monitor tick handler
-*
-* If workload monitor is configured this routine updates the global variables
-* it uses to record the passage of time.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _k_workload_monitor_update - workload monitor tick handler
+ *
+ * If workload monitor is configured this routine updates the global variables
+ * it uses to record the passage of time.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _k_workload_monitor_update(void)
 {
@@ -156,29 +156,29 @@ void _k_workload_monitor_update(void)
 	}
 }
 
-/*******************************************************************************
-*
-* _k_workload_monitor_idle_start - workload monitor "start idling" handler
-*
-* Records time when idle task was selected for execution by the microkernel.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_workload_monitor_idle_start - workload monitor "start idling" handler
+ *
+ * Records time when idle task was selected for execution by the microkernel.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_workload_monitor_idle_start(void)
 {
 	_k_workload_start_time = timer_read();
 }
 
-/*******************************************************************************
-*
-* _k_workload_monitor_idle_end - workload monitor "end idling" handler
-*
-* Records time when idle task was no longer selected for execution by the
-* microkernel, and updates amount of time spent idling.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_workload_monitor_idle_end - workload monitor "end idling" handler
+ *
+ * Records time when idle task was no longer selected for execution by the
+ * microkernel, and updates amount of time spent idling.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_workload_monitor_idle_end(void)
 {
@@ -187,14 +187,14 @@ void _k_workload_monitor_idle_end(void)
 		(_k_workload_end_time - _k_workload_start_time)) / _k_workload_delta;
 }
 
-/*******************************************************************************
-*
-* _k_workload_get - process request to read the processor workload
-*
-* Computes workload, or uses 0 if workload monitoring is not configured.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_workload_get - process request to read the processor workload
+ *
+ * Computes workload, or uses 0 if workload monitoring is not configured.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_workload_get(struct k_args *P)
 {
@@ -229,22 +229,22 @@ void _k_workload_get(struct k_args *P)
 
 #endif /* CONFIG_WORKLOAD_MONITOR */
 
-/*******************************************************************************
-*
-* task_workload_get - read the processor workload
-*
-* This routine returns the workload as a number ranging from 0 to 1000.
-*
-* Each unit equals 0.1% of the time the idle task was not scheduled by the
-* microkernel during the period set by sys_workload_time_slice_set().
-*
-* IMPORTANT: This workload monitor ignores any time spent servicing ISRs and
-* fibers! Thus, a system which has no meaningful task work to do may spend
-* up to 100% of its time servicing ISRs and fibers, yet report a workload of 0%
-* because the idle task is always the task selected by the microkernel.
-*
-* RETURNS: workload
-*/
+/**
+ *
+ * task_workload_get - read the processor workload
+ *
+ * This routine returns the workload as a number ranging from 0 to 1000.
+ *
+ * Each unit equals 0.1% of the time the idle task was not scheduled by the
+ * microkernel during the period set by sys_workload_time_slice_set().
+ *
+ * IMPORTANT: This workload monitor ignores any time spent servicing ISRs and
+ * fibers! Thus, a system which has no meaningful task work to do may spend
+ * up to 100% of its time servicing ISRs and fibers, yet report a workload of 0%
+ * because the idle task is always the task selected by the microkernel.
+ *
+ * RETURNS: workload
+ */
 
 int task_workload_get(void)
 {
@@ -255,14 +255,14 @@ int task_workload_get(void)
 	return A.Args.u1.rval;
 }
 
-/*******************************************************************************
-*
-* sys_workload_time_slice_set - set workload period
-*
-* This routine specifies the workload measuring period for task_workload_get().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * sys_workload_time_slice_set - set workload period
+ *
+ * This routine specifies the workload measuring period for task_workload_get().
+ *
+ * RETURNS: N/A
+ */
 
 void sys_workload_time_slice_set(int32_t t)
 {
@@ -303,18 +303,18 @@ extern void nano_cpu_set_idle(int32_t ticks);
 int32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
 #endif /* CONFIG_TICKLESS_IDLE */
 
-/*******************************************************************************
-*
-* _sys_power_save_idle - power management policy when kernel begins idling
-*
-* This routine implements the power management policy based on the time
-* until the timer expires, in system ticks.
-* Routine is invoked from the idle task with interrupts disabled
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _sys_power_save_idle - power management policy when kernel begins idling
+ *
+ * This routine implements the power management policy based on the time
+ * until the timer expires, in system ticks.
+ * Routine is invoked from the idle task with interrupts disabled
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _sys_power_save_idle(int32_t ticks)
 {
@@ -348,18 +348,18 @@ void _sys_power_save_idle(int32_t ticks)
 #endif /* CONFIG_ADVANCED_IDLE */
 }
 
-/*******************************************************************************
-*
-* _sys_power_save_idle_exit - power management policy when kernel stops idling
-*
-* This routine is invoked when the kernel leaves the idle state.
-* Routine can be modified to wake up other devices.
-* The routine is invoked from interrupt context, with interrupts disabled.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _sys_power_save_idle_exit - power management policy when kernel stops idling
+ *
+ * This routine is invoked when the kernel leaves the idle state.
+ * Routine can be modified to wake up other devices.
+ * The routine is invoked from interrupt context, with interrupts disabled.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _sys_power_save_idle_exit(int32_t ticks)
 {
@@ -374,16 +374,16 @@ void _sys_power_save_idle_exit(int32_t ticks)
 #endif /* CONFIG_TICKLESS_IDLE */
 }
 
-/*******************************************************************************
-*
-* _get_next_timer_expiry - obtain number of ticks until next timer expires
-*
-* Must be called with interrupts locked to prevent the timer queues from
-* changing.
-*
-* RETURNS: Number of ticks until next timer expires.
-*
-*/
+/**
+ *
+ * _get_next_timer_expiry - obtain number of ticks until next timer expires
+ *
+ * Must be called with interrupts locked to prevent the timer queues from
+ * changing.
+ *
+ * RETURNS: Number of ticks until next timer expires.
+ *
+ */
 
 static inline int32_t _get_next_timer_expiry(void)
 {
@@ -397,18 +397,18 @@ static inline int32_t _get_next_timer_expiry(void)
 }
 #endif
 
-/*******************************************************************************
-*
-* _power_save - power saving when idle
-*
-* If the BSP sets the _sys_power_save_flag flag, this routine will call the
-* _sys_power_save_idle() routine in an infinite loop. If the flag is not set,
-* this routine will fall through and _k_kernel_idle() will try the next idling
-* mechanism.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * _power_save - power saving when idle
+ *
+ * If the BSP sets the _sys_power_save_flag flag, this routine will call the
+ * _sys_power_save_idle() routine in an infinite loop. If the flag is not set,
+ * this routine will fall through and _k_kernel_idle() will try the next idling
+ * mechanism.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 static void _power_save(void)
 {
@@ -447,15 +447,15 @@ static void _power_save(void)
 #define DO_IDLE_WORK()	do { /* do nothing */ } while (0)
 #endif
 
-/*******************************************************************************
-*
-* _k_kernel_idle - microkernel idle task
-*
-* If power save is on, we sleep; if power save is off, we "busy wait".
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * _k_kernel_idle - microkernel idle task
+ *
+ * If power save is on, we sleep; if power save is off, we "busy wait".
+ *
+ * RETURNS: N/A
+ *
+ */
 
 int _k_kernel_idle(void)
 {

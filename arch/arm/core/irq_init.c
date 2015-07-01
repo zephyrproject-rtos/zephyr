@@ -38,23 +38,23 @@ point returns or when it aborts itself, the CPU is in thread mode and must
 call _Swap() (which triggers a service call), but when in handler mode, the
 CPU must exit handler mode to cause the context switch, and thus must queue
 the PendSV exception.
-*/
+ */
 
 #include <toolchain.h>
 #include <sections.h>
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
-/*******************************************************************************
-*
-* _IntLibInit - initialize interrupts
-*
-* Ensures all interrupts have their priority set to _EXC_IRQ_DEFAULT_PRIO and
-* not 0, which they have it set to when coming out of reset. This ensures that
-* interrupt locking via BASEPRI works as expected.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _IntLibInit - initialize interrupts
+ *
+ * Ensures all interrupts have their priority set to _EXC_IRQ_DEFAULT_PRIO and
+ * not 0, which they have it set to when coming out of reset. This ensures that
+ * interrupt locking via BASEPRI works as expected.
+ *
+ * RETURNS: N/A
+ */
 
 void _IntLibInit(void)
 {

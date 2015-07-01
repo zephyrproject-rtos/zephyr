@@ -33,7 +33,7 @@
 /*
   DESCRIPTION
   Linker Section declarations used by linker script, C files and Assembly files.
-*/
+ */
 
 #ifndef _SECTIONS_H
 #define _SECTIONS_H

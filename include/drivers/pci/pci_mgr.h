@@ -110,7 +110,7 @@ device supports multiple functions). Bits 7 through 2 select the specific
 |   Device Number  | Function Number  | Register Number  |        00        |
 +---------------------------------------------------------------------------+
 
-*/
+ */
 
 union pci_addr_reg {
 	struct {
@@ -161,7 +161,7 @@ device supports multiple functions). Bits 7 through 2 select the specific
 |   Device Number  | Function Number  | Register Number  |        00        |
 +---------------------------------------------------------------------------+
 
-*/
+ */
 
 union pcie_addr_reg {
 	struct {
@@ -277,7 +277,7 @@ Header Type 0x01 (PCI-to-PCI bridge):
 |    3C    |  Bridge Control                 | Interrupt PIN  | Interrupt Line|
 +-----------------------------------------------------------------------------+
 
-*/
+ */
 
 union pci_dev {
 
@@ -568,7 +568,7 @@ Generic Capability register set header:
 +----------+----------------+----------------+----------------+---------------+
 |    00    |  Capability specific data       |  Next Pointer  |    Cap ID     |
 +-----------------------------------------------------------------------------+
-*/
+ */
 
 union pci_cap_hdr {
 	struct {
@@ -622,7 +622,7 @@ MSI Capability register set (64-bit):
 |    0C    |                                 |      Message Data Register     |
 +-----------------------------------------------------------------------------+
 
-*/
+ */
 
 struct _pci_msi_hdr {
 	/* common MSI header */

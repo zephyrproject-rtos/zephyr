@@ -35,7 +35,7 @@ DESCRIPTION
 
 Wrapper installed in vector table for handling dynamic interrupts that accept
 a parameter.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -53,19 +53,19 @@ GDATA(_sw_isr_table)
 GTEXT(_isr_wrapper)
 GTEXT(_IntExit)
 
-/*******************************************************************************
-*
-* _isr_wrapper - wrapper around ISRs when inserted in software ISR table
-*
-* When inserted in the vector table, _isr_wrapper() demuxes the ISR table using
-* the running interrupt number as the index, and invokes the registered ISR
-* with its correspoding argument. When returning from the ISR, it determines
-* if a context switch needs to happen (see documentation for __pendsv()) and
-* pends the PendSV exception if so: the latter will perform the context switch
-* itself.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _isr_wrapper - wrapper around ISRs when inserted in software ISR table
+ *
+ * When inserted in the vector table, _isr_wrapper() demuxes the ISR table using
+ * the running interrupt number as the index, and invokes the registered ISR
+ * with its correspoding argument. When returning from the ISR, it determines
+ * if a context switch needs to happen (see documentation for __pendsv()) and
+ * pends the PendSV exception if so: the latter will perform the context switch
+ * itself.
+ *
+ * RETURNS: N/A
+ */
 SECTION_FUNC(TEXT, _isr_wrapper)
 
 	_GDB_STUB_EXC_ENTRY

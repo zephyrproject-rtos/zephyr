@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides the _NanoFatalErrorHandler() routine.
-*/
+ */
 
 #include <toolchain.h>
 #include <sections.h>
@@ -65,21 +65,21 @@ const NANO_ESF _default_esf = {
 	0xdeaddead  /* SS */
 };
 
-/*******************************************************************************
-*
-* _NanoFatalErrorHandler - nanokernel fatal error handler
-*
-* This routine is called when a fatal error condition is detected by either
-* hardware or software.
-*
-* The caller is expected to always provide a usable ESF.  In the event that the
-* fatal error does not have a hardware generated ESF, the caller should either
-* create its own or use a pointer to the global default ESF <_default_esf>.
-*
-* RETURNS: This function does not return.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _NanoFatalErrorHandler - nanokernel fatal error handler
+ *
+ * This routine is called when a fatal error condition is detected by either
+ * hardware or software.
+ *
+ * The caller is expected to always provide a usable ESF.  In the event that the
+ * fatal error does not have a hardware generated ESF, the caller should either
+ * create its own or use a pointer to the global default ESF <_default_esf>.
+ *
+ * RETURNS: This function does not return.
+ *
+ * \NOMANUAL
+ */
 
 FUNC_NORETURN void _NanoFatalErrorHandler(
 	unsigned int reason, /* reason that handler was called */

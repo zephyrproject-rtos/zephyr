@@ -40,7 +40,7 @@ Each test task entry point invokes a test routine that returns a success/failure
 indication, then gives a corresponding semaphore. An additional task monitors
 these semaphores until it detects a failure or the completion of all test tasks,
 then announces the result of the test.
-*/
+ */
 
 #include <zephyr.h>
 #include <tc_util.h>
@@ -63,15 +63,15 @@ ksem_t counterSem	= COUNTER_SEM;
 
 kpipe_t pipeId	= PIPE_ID;
 
-/*******************************************************************************
-*
-* RegressionTaskEntry - entry point for RegressionTask
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* RegressionTask.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * RegressionTaskEntry - entry point for RegressionTask
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * RegressionTask.
+ *
+ * RETURNS: N/A
+ */
 
 void RegressionTaskEntry(void)
 {
@@ -80,15 +80,15 @@ void RegressionTaskEntry(void)
 	task_sem_give(resultSems[RegressionTask()]);
 }
 
-/*******************************************************************************
-*
-* AlternateTaskEntry - entry point for AlternateTask
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* AlternateTask.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * AlternateTaskEntry - entry point for AlternateTask
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * AlternateTask.
+ *
+ * RETURNS: N/A
+ */
 
 void AlternateTaskEntry(void)
 {
@@ -97,15 +97,15 @@ void AlternateTaskEntry(void)
 	task_sem_give(resultSems[AlternateTask()]);
 }
 
-/*******************************************************************************
-*
-* MonitorTaskEntry - entry point for MonitorTask
-*
-* This routine keeps tabs on the progress of the tasks doing the actual testing
-* and generates the final test case summary message.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * MonitorTaskEntry - entry point for MonitorTask
+ *
+ * This routine keeps tabs on the progress of the tasks doing the actual testing
+ * and generates the final test case summary message.
+ *
+ * RETURNS: N/A
+ */
 
 void MonitorTaskEntry(void)
 {

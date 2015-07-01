@@ -43,14 +43,14 @@
 
 #define AUTODEFRAG AD_AFTER_SEARCH4BIGGERBLOCK
 
-/*******************************************************************************
-*
-* _k_mem_pool_init - initialize kernel memory pool subsystem
-*
-* Perform any initialization of memory pool that wasn't done at build time.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mem_pool_init - initialize kernel memory pool subsystem
+ *
+ * Perform any initialization of memory pool that wasn't done at build time.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mem_pool_init(void)
 {
@@ -99,14 +99,14 @@ void _k_mem_pool_init(void)
 	}
 }
 
-/*******************************************************************************
-*
-* search_bp - ???
-*
-* marks ptr as free block in the given list [MYSTERIOUS LEGACY COMMENT]
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * search_bp - ???
+ *
+ * marks ptr as free block in the given list [MYSTERIOUS LEGACY COMMENT]
+ *
+ * RETURNS: N/A
+ */
 
 static void search_bp(char *ptr, struct pool_struct *P, int index)
 {
@@ -134,12 +134,12 @@ static void search_bp(char *ptr, struct pool_struct *P, int index)
 	}
 }
 
-/*******************************************************************************
-*
-* defrag - defragmentation algorithm for memory pool
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * defrag - defragmentation algorithm for memory pool
+ *
+ * RETURNS: N/A
+ */
 
 static void defrag(struct pool_struct *P,
 				  int ifraglevel_start,
@@ -190,12 +190,12 @@ static void defrag(struct pool_struct *P,
 	}
 }
 
-/*******************************************************************************
-*
-* _k_defrag - perform defragment memory pool request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_defrag - perform defragment memory pool request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_defrag(struct k_args *A)
 {
@@ -223,14 +223,14 @@ void _k_defrag(struct k_args *A)
 	}
 }
 
-/*******************************************************************************
-*
-* task_mem_pool_defragment - defragment memory pool request
-*
-* This routine concatenates unused memory in a memory pool.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_mem_pool_defragment - defragment memory pool request
+ *
+ * This routine concatenates unused memory in a memory pool.
+ *
+ * RETURNS: N/A
+ */
 
 void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
 		       )
@@ -242,14 +242,14 @@ void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
 	KERNEL_ENTRY(&A);
 }
 
-/*******************************************************************************
-*
-* search_block_on_frag_level - allocate block using specified fragmentation level
-*
-* This routine attempts to allocate a free block. [NEED TO EXPAND THIS]
-*
-* RETURNS: pointer to allocated block, or NULL if none available
-*/
+/**
+ *
+ * search_block_on_frag_level - allocate block using specified fragmentation level
+ *
+ * This routine attempts to allocate a free block. [NEED TO EXPAND THIS]
+ *
+ * RETURNS: pointer to allocated block, or NULL if none available
+ */
 
 static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 						    int *piblockindex)
@@ -324,17 +324,17 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 	return found;
 }
 
-/*******************************************************************************
-*
-* get_block_recusive - recursively get a block, doing fragmentation if necessary
-*
-* [NEED A BETTER DESCRIPTION HERE]
-*
-* not implemented: check if we go below the minimal number of blocks with
-* the maximum size
-*
-* RETURNS: pointer to allocated block, or NULL if none available
-*/
+/**
+ *
+ * get_block_recusive - recursively get a block, doing fragmentation if necessary
+ *
+ * [NEED A BETTER DESCRIPTION HERE]
+ *
+ * not implemented: check if we go below the minimal number of blocks with
+ * the maximum size
+ *
+ * RETURNS: pointer to allocated block, or NULL if none available
+ */
 
 static char *get_block_recusive(struct pool_struct *P, int index, int startindex)
 {
@@ -408,17 +408,17 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 	return NULL; /* now we have to report failure: no block available */
 }
 
-/*******************************************************************************
-*
-* _k_block_waiters_get - examine tasks that are waiting for memory pool blocks
-*
-* This routine attempts to satisfy any incomplete block allocation requests for
-* the specified memory pool. It can be invoked either by the explicit freeing
-* of a used block or as a result of defragmenting the pool  (which may create
-* one or more new, larger blocks).
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_block_waiters_get - examine tasks that are waiting for memory pool blocks
+ *
+ * This routine attempts to satisfy any incomplete block allocation requests for
+ * the specified memory pool. It can be invoked either by the explicit freeing
+ * of a used block or as a result of defragmenting the pool  (which may create
+ * one or more new, larger blocks).
+ *
+ * RETURNS: N/A
+ */
 
 void _k_block_waiters_get(struct k_args *A)
 {
@@ -478,12 +478,12 @@ void _k_block_waiters_get(struct k_args *A)
 	FREEARGS(A);
 }
 
-/*******************************************************************************
-*
-* _k_mem_pool_block_get_timeout_handle - finish handling an allocate block request that timed out
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mem_pool_block_get_timeout_handle - finish handling an allocate block request that timed out
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 {
@@ -493,12 +493,12 @@ void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 	_k_state_bit_reset(A->Ctxt.proc, TF_GTBL);
 }
 
-/*******************************************************************************
-*
-* _k_mem_pool_block_get - perform allocate memory pool block request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mem_pool_block_get - perform allocate memory pool block request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mem_pool_block_get(struct k_args *A)
 {
@@ -555,15 +555,15 @@ void _k_mem_pool_block_get(struct k_args *A)
 	}
 }
 
-/*******************************************************************************
-*
-* _task_mem_pool_alloc - allocate memory pool block request
-*
-* This routine allocates a free block from the specified memory pool, ensuring
-* that its size is at least as big as the size requested (in bytes).
-*
-* RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
-*/
+/**
+ *
+ * _task_mem_pool_alloc - allocate memory pool block request
+ *
+ * This routine allocates a free block from the specified memory pool, ensuring
+ * that its size is at least as big as the size requested (in bytes).
+ *
+ * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ */
 
 int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 		     kmemory_pool_t poolid,     /* pool from which to get block */
@@ -589,15 +589,15 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _k_mem_pool_block_release - perform return memory pool block request
-*
-* Marks a block belonging to a pool as free; if there are waiters that can use
-* the the block it is passed to a waiting task.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mem_pool_block_release - perform return memory pool block request
+ *
+ * Marks a block belonging to a pool as free; if there are waiters that can use
+ * the the block it is passed to a waiting task.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mem_pool_block_release(struct k_args *A)
 {
@@ -659,17 +659,17 @@ void _k_mem_pool_block_release(struct k_args *A)
 	}
 }
 
-/*******************************************************************************
-*
-* task_mem_pool_free - return memory pool block request
-*
-* This routine returns a block to a memory pool.
-*
-* The struct k_block structure contains the block details, including the pool to
-* which it should be returned.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_mem_pool_free - return memory pool block request
+ *
+ * This routine returns a block to a memory pool.
+ *
+ * The struct k_block structure contains the block details, including the pool to
+ * which it should be returned.
+ *
+ * RETURNS: N/A
+ */
 
 void task_mem_pool_free(struct k_block *blockptr /* pointer to block to free */
 		      )

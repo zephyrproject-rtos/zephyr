@@ -37,7 +37,7 @@ is to hard hang, sleeping.
 
 This might be preferable than rebooting to help debugging, or because
 rebooting might trigger the exact same problem over and over.
-*/
+ */
 
 #define _ASMLANGUAGE
 

@@ -113,7 +113,7 @@ where to start a loop on these classes. Thus, a subsequent pci scan looking
 for class y will directly start at the relevant bus and device instead of
 restarting from 0.
 
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -167,12 +167,12 @@ struct lookup_data {
 static struct bus_dev class_bd[PCI_CLASS_MAX] = {};
 static struct lookup_data __noinit lookup;
 
-/******************************************************************************
-*
-* pci_get_bar_config - return the configuration for the specified BAR
-*
-* RETURNS: 0 if BAR is implemented, -1 if not.
-*/
+/**
+ *
+ * pci_get_bar_config - return the configuration for the specified BAR
+ *
+ * RETURNS: 0 if BAR is implemented, -1 if not.
+ */
 
 static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
 							uint32_t *config)
@@ -212,7 +212,7 @@ static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
 	return -1;
 }
 
-/******************************************************************************
+/**
  *
  * pci_bar_params_get - retrieve the I/O address and IRQ of the specified BAR
  *
@@ -263,7 +263,7 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 	return 0;
 }
 
-/******************************************************************************
+/**
  *
  * pci_dev_scan - scan the specified PCI device for all sub functions
  *
@@ -374,7 +374,7 @@ void pci_bus_scan_init(void)
 	lookup.bar = 0;
 }
 
-/******************************************************************************
+/**
  *
  * pci_bus_scan - scans PCI bus for devices
  *
@@ -428,7 +428,7 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 }
 
 #ifdef CONFIG_PCI_DEBUG
-/******************************************************************************
+/**
  *
  * pci_show - Show PCI device
  *

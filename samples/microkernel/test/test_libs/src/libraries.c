@@ -38,7 +38,7 @@ IMPORTANT: The module only ensures that each supported library is present,
 and that a bare minimum of its functionality is operating correctly. It does
 NOT guarantee that ALL standards-defined functionality is present, nor does
 it guarantee that ALL functionality provided is working correctly.
-*/
+ */
 
 #include <microkernel.h>
 #include <tc_util.h>
@@ -57,7 +57,7 @@ it guarantee that ALL functionality provided is working correctly.
 volatile long longMax = LONG_MAX;
 volatile long longOne = 1L;
 
-/*******************************************************************************
+/**
  *
  * limitsTest - test implementation-defined constants library
  *
@@ -75,7 +75,7 @@ int limitsTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
+/**
  *
  * stdboolTest - test boolean types and values library
  *
@@ -101,7 +101,7 @@ int stdboolTest(void)
 volatile long longVariable;
 volatile size_t sizeOfLongVariable = sizeof(longVariable);
 
-/*******************************************************************************
+/**
  *
  * stddefTest - test standard type definitions library
  *
@@ -127,7 +127,7 @@ int stddefTest(void)
 volatile uint8_t unsignedByte = 0xff;
 volatile uint32_t unsignedInt = 0xffffff00;
 
-/*******************************************************************************
+/**
  *
  * stdintTest - test integer types library
  *
@@ -153,7 +153,7 @@ int stdintTest(void)
 
 char buffer[BUFSIZE];
 
-/*******************************************************************************
+/**
  *
  * memset_test - test string memset
  *
@@ -174,7 +174,7 @@ int memset_test(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
+/**
  *
  * strlen_test - test string length function
  *
@@ -196,7 +196,7 @@ int strlen_test(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
+/**
  *
  * strcmp_test - test string compare function
  *
@@ -234,7 +234,7 @@ int strcmp_test(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
+/**
  *
  * strncmp_test - test string N compare function
  *
@@ -273,7 +273,7 @@ int strncmp_test(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * strcpy_test - test string copy function
  *
@@ -296,7 +296,7 @@ int strcpy_test(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
+/**
  *
  * strncpy_test - test string N copy function
  *
@@ -320,7 +320,7 @@ int strncpy_test(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
+/**
  *
  * strchr_test - test string scanning function
  *
@@ -351,7 +351,7 @@ int strchr_test(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
+/**
  *
  * memcmp_test - test memory comparison function
  *
@@ -379,8 +379,8 @@ int memcmp_test(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
+/**
+ *
  * stringTest - test string operations library
  * * RETURNS: TC_PASS or TC_FAIL
  */
@@ -398,7 +398,7 @@ int stringTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
+/**
  *
  * RegressionTask - main task in the test suite
  *

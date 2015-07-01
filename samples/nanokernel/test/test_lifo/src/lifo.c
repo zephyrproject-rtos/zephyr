@@ -54,7 +54,7 @@ Scenario #4:
    Timeout scenarios with multiple LIFOs and fibers.
 
 These scenarios will be tested using a combinations of tasks, fibers and ISRs.
-*/
+ */
 
 #include <tc_util.h>
 #include <nanokernel.h>
@@ -105,17 +105,17 @@ static void (*_trigger_nano_isr_lifo_get)(void) = (vvfn)sw_isr_trigger_1;
 static struct nano_lifo multi_waiters;
 static struct nano_sem reply_multi_waiters;
 
-/*******************************************************************************
-*
-* isr_lifo_put - add an item to a LIFO
-*
-* This routine is the ISR handler for _trigger_nano_isr_lifo_put().  It adds
-* an item to the LIFO in the context of an ISR.
-*
-* \param data    pointer to ISR handler parameter
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_lifo_put - add an item to a LIFO
+ *
+ * This routine is the ISR handler for _trigger_nano_isr_lifo_put().  It adds
+ * an item to the LIFO in the context of an ISR.
+ *
+ * \param data    pointer to ISR handler parameter
+ *
+ * RETURNS: N/A
+ */
 
 void isr_lifo_put(void *data)
 {
@@ -124,17 +124,17 @@ void isr_lifo_put(void *data)
 	nano_isr_lifo_put(pInfo->channel, pInfo->data);
 }
 
-/*******************************************************************************
-*
-* isr_lifo_get - get an item from a LIFO
-*
-* This routine is the ISR handler for _trigger_nano_isr_lifo_get().  It gets
-* an item from the LIFO in the context of an ISR.
-*
-* \param data    pointer to ISR handler parameter
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_lifo_get - get an item from a LIFO
+ *
+ * This routine is the ISR handler for _trigger_nano_isr_lifo_get().  It gets
+ * an item from the LIFO in the context of an ISR.
+ *
+ * \param data    pointer to ISR handler parameter
+ *
+ * RETURNS: N/A
+ */
 
 void isr_lifo_get(void *data)
 {
@@ -143,16 +143,16 @@ void isr_lifo_get(void *data)
 	pInfo->data = nano_isr_lifo_get(pInfo->channel);
 }
 
-/*******************************************************************************
-*
-* fiberLifoWaitTest - fiber portion of test that waits on a LIFO
-*
-* This routine works with taskLifoWaitTest() to test the addition and removal
-* of items to/from a LIFO.  The cases covered will have a fiber or task waiting
-* on an empty LIFO.
-*
-* RETURNS: 0 on success, -1 on failure
-*/
+/**
+ *
+ * fiberLifoWaitTest - fiber portion of test that waits on a LIFO
+ *
+ * This routine works with taskLifoWaitTest() to test the addition and removal
+ * of items to/from a LIFO.  The cases covered will have a fiber or task waiting
+ * on an empty LIFO.
+ *
+ * RETURNS: 0 on success, -1 on failure
+ */
 
 int fiberLifoWaitTest(void)
 {
@@ -204,15 +204,15 @@ int fiberLifoWaitTest(void)
 	return 0;
 }
 
-/*******************************************************************************
-*
-* fiberLifoNonWaitTest - fiber portion of test that does not wait on a LIFO
-*
-* This routine works with fiberLifoNonWaitTest() to test the addition and
-* removal of items from a LIFO without having to wait.
-*
-* RETURNS: 0 on success, -1 on failure
-*/
+/**
+ *
+ * fiberLifoNonWaitTest - fiber portion of test that does not wait on a LIFO
+ *
+ * This routine works with fiberLifoNonWaitTest() to test the addition and
+ * removal of items from a LIFO without having to wait.
+ *
+ * RETURNS: 0 on success, -1 on failure
+ */
 
 int fiberLifoNonWaitTest(void)
 {
@@ -282,18 +282,18 @@ errorReturn:
 	return -1;
 }
 
-/*******************************************************************************
-*
-* fiberEntry - entry point for the fiber portion of the LIFO tests
-*
-* NOTE: The fiber portion of the tests have higher priority than the task
-* portion of the tests.
-*
-* \param arg1    unused
-* \param arg2    unused
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiberEntry - entry point for the fiber portion of the LIFO tests
+ *
+ * NOTE: The fiber portion of the tests have higher priority than the task
+ * portion of the tests.
+ *
+ * \param arg1    unused
+ * \param arg2    unused
+ *
+ * RETURNS: N/A
+ */
 
 static void fiberEntry(int arg1, int arg2)
 {
@@ -310,16 +310,16 @@ static void fiberEntry(int arg1, int arg2)
 
 }
 
-/*******************************************************************************
-*
-* taskLifoWaitTest - task portion of test that waits on a LIFO
-*
-* This routine works with fiberLifoWaitTest() to test the addition and removal
-* of items to/from a LIFO.  The cases covered will have a fiber or task waiting
-* on an empty LIFO.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * taskLifoWaitTest - task portion of test that waits on a LIFO
+ *
+ * This routine works with fiberLifoWaitTest() to test the addition and removal
+ * of items to/from a LIFO.  The cases covered will have a fiber or task waiting
+ * on an empty LIFO.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int taskLifoWaitTest(void)
 {
@@ -368,15 +368,15 @@ int taskLifoWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* taskLifoNonWaitTest - task portion of test that does not wait on a LIFO
-*
-* This routine works with fiberLifoNonWaitTest() to test the addition and
-* removal of items from a LIFO without having to wait.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * taskLifoNonWaitTest - task portion of test that does not wait on a LIFO
+ *
+ * This routine works with fiberLifoNonWaitTest() to test the addition and
+ * removal of items from a LIFO without having to wait.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int taskLifoNonWaitTest(void)
 {
@@ -446,14 +446,14 @@ int taskLifoNonWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* initNanoObjects - initialize nanokernel objects
-*
-* This routine initializes the nanokernel objects used in the LIFO tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * initNanoObjects - initialize nanokernel objects
+ *
+ * This routine initializes the nanokernel objects used in the LIFO tests.
+ *
+ * RETURNS: N/A
+ */
 
 void initNanoObjects(void)
 {
@@ -492,12 +492,12 @@ static LIFO_ITEM multi_waiters_items[NUM_WAITERS] = {
 	[0 ...(NUM_WAITERS-1)].data = 0xabad1dea,
 };
 
-/*******************************************************************************
-*
-* fiber_multi_waiters - fiber entry point for multiple-waiters test
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber_multi_waiters - fiber entry point for multiple-waiters test
+ *
+ * RETURNS: N/A
+ */
 
 static void fiber_multi_waiters(int arg1, int arg2)
 {
@@ -518,12 +518,12 @@ static void fiber_multi_waiters(int arg1, int arg2)
 	nano_fiber_sem_give(&reply_multi_waiters);
 }
 
-/*******************************************************************************
-*
-* do_test_multiple_waiters - task part of multiple-waiter test, repeatable
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * do_test_multiple_waiters - task part of multiple-waiter test, repeatable
+ *
+ * RETURNS: N/A
+ */
 
 static int do_test_multiple_waiters(void)
 {
@@ -559,12 +559,12 @@ static int do_test_multiple_waiters(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* test_multiple_waiters - entry point for multiple-waiters test
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * test_multiple_waiters - entry point for multiple-waiters test
+ *
+ * RETURNS: N/A
+ */
 
 static int test_multiple_waiters(void)
 {
@@ -1049,14 +1049,14 @@ static int test_timeout(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* main - entry point to LIFO tests
-*
-* This is the entry point to the LIFO tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - entry point to LIFO tests
+ *
+ * This is the entry point to the LIFO tests.
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 {

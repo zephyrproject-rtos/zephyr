@@ -36,7 +36,7 @@ This module implements the routines necessary for thread context switching
 on ARCv2 CPUs.
 
 See isr_wrapper.S for details.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -51,37 +51,37 @@ GTEXT(_Swap)
 
 GDATA(_nanokernel)
 
-/*******************************************************************************
-*
-* _Swap - initiate a cooperative context switch
-*
-* The _Swap() routine is invoked by various nanokernel services to effect
-* a cooperative context context switch.  Prior to invoking _Swap(), the caller
-* disables interrupts via nanoCpuIntLock() and the return 'key' is passed as a
-* parameter to _Swap(). The key is in fact the value stored in the register
-* operand of a CLRI instruction.
-*
-* It stores the intlock key parameter into current->intlock_key.
+/**
+ *
+ * _Swap - initiate a cooperative context switch
+ *
+ * The _Swap() routine is invoked by various nanokernel services to effect
+ * a cooperative context context switch.  Prior to invoking _Swap(), the caller
+ * disables interrupts via nanoCpuIntLock() and the return 'key' is passed as a
+ * parameter to _Swap(). The key is in fact the value stored in the register
+ * operand of a CLRI instruction.
+ *
+ * It stores the intlock key parameter into current->intlock_key.
 
-* Given that _Swap() is called to effect a cooperative context context switch,
-* the caller-saved integer registers are saved on the stack by the function
-* call preamble to _Swap(). This creates a custom stack frame that will be
-* popped when returning from _Swap(), but is not suitable for handling a return
-* from an exception. Thus, the fact that the thread is pending because of a
-* cooperative call to _Swap() has to be recorded via the _CAUSE_COOP code in
-* the relinquish_cause of the context's tCCS. The _IrqExit()/_FirqExit() code
-* will take care of doing the right thing to restore the thread status.
-*
-* When _Swap() is invoked, we know the decision to perform a context switch or
-* not has already been taken and a context switch must happen.
-*
-* RETURNS: may contain a return value setup by a call to fiberRtnValueSet()
-*
-* C function prototype:
-*
-* unsigned int _Swap (unsigned int key);
-*
-*/
+ * Given that _Swap() is called to effect a cooperative context context switch,
+ * the caller-saved integer registers are saved on the stack by the function
+ * call preamble to _Swap(). This creates a custom stack frame that will be
+ * popped when returning from _Swap(), but is not suitable for handling a return
+ * from an exception. Thus, the fact that the thread is pending because of a
+ * cooperative call to _Swap() has to be recorded via the _CAUSE_COOP code in
+ * the relinquish_cause of the context's tCCS. The _IrqExit()/_FirqExit() code
+ * will take care of doing the right thing to restore the thread status.
+ *
+ * When _Swap() is invoked, we know the decision to perform a context switch or
+ * not has already been taken and a context switch must happen.
+ *
+ * RETURNS: may contain a return value setup by a call to fiberRtnValueSet()
+ *
+ * C function prototype:
+ *
+ * unsigned int _Swap (unsigned int key);
+ *
+ */
 
 SECTION_FUNC(TEXT, _Swap)
 

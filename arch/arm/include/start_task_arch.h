@@ -35,7 +35,7 @@ DESCRIPTION
 ARM-specific parts of start_task().
 
 Currently empty, only here for abstraction.
-*/
+ */
 
 #ifndef _START_TASK_ARCH__H_
 #define _START_TASK_ARCH__H_

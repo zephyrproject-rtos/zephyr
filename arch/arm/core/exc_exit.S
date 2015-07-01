@@ -36,7 +36,7 @@ DESCRIPTION
 Provides functions for performing kernel handling when exiting exceptions or
 interrupts that are installed directly in the vector table (i.e. that are not
 wrapped around by _isr_wrapper()).
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -61,46 +61,46 @@ GDATA(_nanokernel)
 #endif
 #define _EXIT_EXC_IF_FIBER_NOT_READY _EXIT_EXC_IF_FIBER_PREEMPTED
 
-/*******************************************************************************
-*
-* _IntExit - kernel housekeeping when exiting interrupt handler installed
-*            directly in vector table
-*
-* Kernel allows installing interrupt handlers (ISRs) directly into the vector
-* table to get the lowest interrupt latency possible. This allows the ISR to be
-* invoked directly without going through a software interrupt table. However,
-* upon exiting the ISR, some kernel work must still be performed, namely
-* possible context switching. While ISRs connected in the software interrupt
-* table do this automatically via a wrapper, ISRs connected directly in the
-* vector table must invoke _IntExit() as the *very last* action before
-* returning.
-*
-* e.g.
-*
-* void myISR(void)
-*     {
-*     printk("in %s\n", __FUNCTION__);
-*     doStuff();
-*     _IntExit();
-*     }
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _IntExit - kernel housekeeping when exiting interrupt handler installed
+ *            directly in vector table
+ *
+ * Kernel allows installing interrupt handlers (ISRs) directly into the vector
+ * table to get the lowest interrupt latency possible. This allows the ISR to be
+ * invoked directly without going through a software interrupt table. However,
+ * upon exiting the ISR, some kernel work must still be performed, namely
+ * possible context switching. While ISRs connected in the software interrupt
+ * table do this automatically via a wrapper, ISRs connected directly in the
+ * vector table must invoke _IntExit() as the *very last* action before
+ * returning.
+ *
+ * e.g.
+ *
+ * void myISR(void)
+ *     {
+ *     printk("in %s\n", __FUNCTION__);
+ *     doStuff();
+ *     _IntExit();
+ *     }
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 
 /* _IntExit falls through to _ExcExit (they are aliases of each other) */
 
 
-/*******************************************************************************
-*
-* _ExcExit - kernel housekeeping when exiting exception handler installed
-*            directly in vector table
-*
-* See _IntExit().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ExcExit - kernel housekeeping when exiting exception handler installed
+ *            directly in vector table
+ *
+ * See _IntExit().
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 

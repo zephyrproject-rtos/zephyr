@@ -34,7 +34,7 @@
 
 #ifdef MEMPOOL_BENCH
 
-/*******************************************************************************
+/**
  *
  * mempool_test - memory pool get/free test
  *

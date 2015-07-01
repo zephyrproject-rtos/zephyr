@@ -33,14 +33,14 @@
 #include <micro_private.h>
 #include <sections.h>
 
-/*******************************************************************************
-*
-* _k_mem_map_init - initialize kernel memory map subsystem
-*
-* Perform any initialization of memory maps that wasn't done at build time.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mem_map_init - initialize kernel memory map subsystem
+ *
+ * Perform any initialization of memory maps that wasn't done at build time.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mem_map_init(void)
 {
@@ -70,12 +70,12 @@ void _k_mem_map_init(void)
 	}
 }
 
-/*******************************************************************************
-*
-* _k_mem_map_alloc_timeout - finish handling a memory map block request that timed out
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mem_map_alloc_timeout - finish handling a memory map block request that timed out
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mem_map_alloc_timeout(struct k_args *A)
 {
@@ -85,12 +85,12 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
 	_k_state_bit_reset(A->Ctxt.proc, TF_ALLO);
 }
 
-/*******************************************************************************
-*
-* _k_mem_map_alloc - perform allocate memory map block request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mem_map_alloc - perform allocate memory map block request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mem_map_alloc(struct k_args *A)
 {
@@ -130,14 +130,14 @@ void _k_mem_map_alloc(struct k_args *A)
 		A->Time.rcode = RC_FAIL;
 }
 
-/*******************************************************************************
-*
-* _task_mem_map_alloc - allocate memory map block request
-*
-* This routine is used to request a block of memory from the memory map.
-*
-* RETURNS: RC_OK, RC_FAIL, RC_TIME on success, error, timeout respectively
-*/
+/**
+ *
+ * _task_mem_map_alloc - allocate memory map block request
+ *
+ * This routine is used to request a block of memory from the memory map.
+ *
+ * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, error, timeout respectively
+ */
 
 int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request block */
 		    void **mptr, /* pointer to requested block of memory */
@@ -154,12 +154,12 @@ int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _k_mem_map_dealloc - perform return memory map block request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_mem_map_dealloc - perform return memory map block request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_mem_map_dealloc(struct k_args *A)
 {
@@ -194,16 +194,16 @@ void _k_mem_map_dealloc(struct k_args *A)
 	M->Nused--;
 }
 
-/*******************************************************************************
-*
-* _task_mem_map_free - return memory map block request
-*
-* This routine returns a block to the specified memory map. If a higher
-* priority task is waiting for a block from the same map a task switch
-* takes place.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _task_mem_map_free - return memory map block request
+ *
+ * This routine returns a block to the specified memory map. If a higher
+ * priority task is waiting for a block from the same map a task switch
+ * takes place.
+ *
+ * RETURNS: N/A
+ */
 
 void _task_mem_map_free(kmemory_map_t mmap, /* memory map */
 		      void **mptr /* block of memory to return */
@@ -217,14 +217,14 @@ void _task_mem_map_free(kmemory_map_t mmap, /* memory map */
 	KERNEL_ENTRY(&A);
 }
 
-/*******************************************************************************
-*
-* task_mem_map_used_get - read the number of used blocks in a memory map
-*
-* This routine returns the number of blocks in use for the memory map.
-*
-* RETURNS: number of used blocks
-*/
+/**
+ *
+ * task_mem_map_used_get - read the number of used blocks in a memory map
+ *
+ * This routine returns the number of blocks in use for the memory map.
+ *
+ * RETURNS: number of used blocks
+ */
 
 int task_mem_map_used_get(kmemory_map_t mmap /* memory map */
 		 )

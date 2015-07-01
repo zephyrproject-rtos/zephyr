@@ -41,7 +41,7 @@
  *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /**
  *    \addtogroup net
@@ -59,7 +59,7 @@
  *  This file converts to and from a structure to a packed 802.15.4
  *  frame.
  *
-*/
+ */
 
 
 /* Includes */
@@ -125,7 +125,7 @@
  *            3. Addressing fields    - 4 - 20 bytes  - Variable
  *            4. Aux security header  - 0 - 14 bytes  - Variable
  *            5. CRC                  - 2 bytes       - Fixed
-*/
+ */
 
 /**
  * \brief Defines the bitfields of the frame control field (FCF).

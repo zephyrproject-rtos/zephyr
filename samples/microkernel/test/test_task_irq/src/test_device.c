@@ -38,7 +38,7 @@ Each function allocates 2 IRQ objects and then tests for an event
 associated with the IRQ. The taskA() function also attempts to allocate an IRQ
 that has already been allocated by another task. The taskB() function also
 exercises the task_irq_free() API.
-*/
+ */
 
 #include <microkernel.h>
 #include <misc/printk.h>
@@ -68,16 +68,16 @@ exercises the task_irq_free() API.
 #define NUM_OBJECTS 4
 uint32_t irq_vectors[NUM_OBJECTS] = {[0 ... (NUM_OBJECTS - 1)] = INVALID_VECTOR};
 
-/*******************************************************************************
-*
-* taskA - first of 2 tasks to allocate IRQ objects and check for events
-*
-* This task allocates 2 IRQ objects with unique IRQs and then tests for an
-* interrupt associated with those IRQs. The function then attempts to allocate
-* a device that has already been allocate from taskB.
-*
-* RETURNS: TC_PASS, TC_FAIL
-*/
+/**
+ *
+ * taskA - first of 2 tasks to allocate IRQ objects and check for events
+ *
+ * This task allocates 2 IRQ objects with unique IRQs and then tests for an
+ * interrupt associated with those IRQs. The function then attempts to allocate
+ * a device that has already been allocate from taskB.
+ *
+ * RETURNS: TC_PASS, TC_FAIL
+ */
 
 int taskA(ksem_t semRdy)
 {
@@ -140,16 +140,16 @@ int taskA(ksem_t semRdy)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* taskB - second of 2 tasks to allocate IRQ objects and check for events
-*
-* This task allocates 2 IRQ objects with unique IRQs and then tests for an
-* interrupt associated with those IRQs. The function then frees an IRQ object
-* using task_irq_free().
-*
-* RETURNS: TC_PASS, TC_FAIL
-*/
+/**
+ *
+ * taskB - second of 2 tasks to allocate IRQ objects and check for events
+ *
+ * This task allocates 2 IRQ objects with unique IRQs and then tests for an
+ * interrupt associated with those IRQs. The function then frees an IRQ object
+ * using task_irq_free().
+ *
+ * RETURNS: TC_PASS, TC_FAIL
+ */
 
 int taskB(ksem_t semRdy)
 {

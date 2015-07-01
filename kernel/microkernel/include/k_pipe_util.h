@@ -37,9 +37,9 @@
 
 #define CANCEL_TIMERS
 
-/***********************************/
+/**/
 /*	TARGET channels functionality: */
-/***********************************/
+/**/
 
 typedef uint32_t REQ_TYPE;
 #define _ALLREQ ((REQ_TYPE)0x0000FF00)

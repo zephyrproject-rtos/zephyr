@@ -39,7 +39,7 @@ This file is also included by assembly language files which must #define
 _ASMLANGUAGE before including this header file.  Note that nanokernel assembly
 source files obtains structure offset values via "absolute symbols" in the
 offsets.o module.
-*/
+ */
 
 #ifndef _NANO_PRIVATE_H
 #define _NANO_PRIVATE_H
@@ -184,18 +184,18 @@ static ALWAYS_INLINE void nanoArchInit(void)
 	_CpuIdleInit();
 }
 
-/*******************************************************************************
-*
-* fiberRtnValueSet - set the return value for the specified fiber (inline)
-*
-* The register used to store the return value from a function call invocation
-* to <value>.  It is assumed that the specified <fiber> is pending, and thus
-* the fiber's context is stored in its tCCS structure.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * fiberRtnValueSet - set the return value for the specified fiber (inline)
+ *
+ * The register used to store the return value from a function call invocation
+ * to <value>.  It is assumed that the specified <fiber> is pending, and thus
+ * the fiber's context is stored in its tCCS structure.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE void fiberRtnValueSet(
 	tCCS *fiber,       /* pointer to fiber */

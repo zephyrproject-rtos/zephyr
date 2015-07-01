@@ -40,7 +40,7 @@ a) When software-managed ISRs (SW_ISR_TABLE) is enabled, and in that case it
 
 b) When the BSP is written so that device ISRs are installed directly in the
    vector table, they are enumerated here.
-*/
+ */
 
 #include <toolchain.h>
 #include <sections.h>

@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Unit test for tickless idle feature.
-*/
+ */
 
 #include <zephyr.h>
 

@@ -52,17 +52,17 @@
 #include <stdint.h>
 #include <arch/arm/CortexM/nvic.h>
 
-/*******************************************************************************
-*
-* find_last_set_inline - find first set bit (searching from most significant bit)
-*
-* This routine finds the first bit set in the argument passed it and returns
-* the index of that bit.  Bits are numbered starting at 1 from the least
-* significant bit.  A return value of zero indicates that the value passed
-* is zero.
-*
-* RETURNS: most significant bit set
-*/
+/**
+ *
+ * find_last_set_inline - find first set bit (searching from most significant bit)
+ *
+ * This routine finds the first bit set in the argument passed it and returns
+ * the index of that bit.  Bits are numbered starting at 1 from the least
+ * significant bit.  A return value of zero indicates that the value passed
+ * is zero.
+ *
+ * RETURNS: most significant bit set
+ */
 
 static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
 {
@@ -80,17 +80,17 @@ static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
 }
 
 
-/*******************************************************************************
-*
-* find_first_set_inline - find first set bit (from the least significant bit)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit.  A return value of zero indicates that
-* the value passed is zero.
-*
-* RETURNS: least significant bit set
-*/
+/**
+ *
+ * find_first_set_inline - find first set bit (from the least significant bit)
+ *
+ * This routine finds the first bit set in the argument passed it and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit.  A return value of zero indicates that
+ * the value passed is zero.
+ *
+ * RETURNS: least significant bit set
+ */
 
 static ALWAYS_INLINE unsigned int find_first_set_inline(unsigned int op)
 {
@@ -109,36 +109,36 @@ static ALWAYS_INLINE unsigned int find_first_set_inline(unsigned int op)
 }
 
 
-/*******************************************************************************
-*
-* irq_lock_inline - disable all interrupts on the CPU (inline)
-*
-* This routine disables interrupts.  It can be called from either interrupt,
-* task or fiber level.  This routine returns an architecture-dependent
-* lock-out key representing the "interrupt disable state" prior to the call;
-* this key can be passed to irq_unlock_inline() to re-enable interrupts.
-*
-* The lock-out key should only be used as the argument to the
-* irq_unlock_inline() API.  It should never be used to manually re-enable
-* interrupts or to inspect or manipulate the contents of the source register.
-*
-* WARNINGS
-* Invoking a kernel routine with interrupts locked may result in
-* interrupts being re-enabled for an unspecified period of time.  If the
-* called routine blocks, interrupts will be re-enabled while another
-* context executes, or while the system is idle.
-*
-* The "interrupt disable state" is an attribute of a context.  Thus, if a
-* fiber or task disables interrupts and subsequently invokes a kernel
-* routine that causes the calling context to block, the interrupt
-* disable state will be restored when the context is later rescheduled
-* for execution.
-*
-* RETURNS: An architecture-dependent lock-out key representing the
-* "interrupt disable state" prior to the call.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * irq_lock_inline - disable all interrupts on the CPU (inline)
+ *
+ * This routine disables interrupts.  It can be called from either interrupt,
+ * task or fiber level.  This routine returns an architecture-dependent
+ * lock-out key representing the "interrupt disable state" prior to the call;
+ * this key can be passed to irq_unlock_inline() to re-enable interrupts.
+ *
+ * The lock-out key should only be used as the argument to the
+ * irq_unlock_inline() API.  It should never be used to manually re-enable
+ * interrupts or to inspect or manipulate the contents of the source register.
+ *
+ * WARNINGS
+ * Invoking a kernel routine with interrupts locked may result in
+ * interrupts being re-enabled for an unspecified period of time.  If the
+ * called routine blocks, interrupts will be re-enabled while another
+ * context executes, or while the system is idle.
+ *
+ * The "interrupt disable state" is an attribute of a context.  Thus, if a
+ * fiber or task disables interrupts and subsequently invokes a kernel
+ * routine that causes the calling context to block, the interrupt
+ * disable state will be restored when the context is later rescheduled
+ * for execution.
+ *
+ * RETURNS: An architecture-dependent lock-out key representing the
+ * "interrupt disable state" prior to the call.
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE unsigned int irq_lock_inline(void)
 {
@@ -156,20 +156,20 @@ static ALWAYS_INLINE unsigned int irq_lock_inline(void)
 }
 
 
-/*******************************************************************************
-*
-* irq_unlock_inline - enable all interrupts on the CPU (inline)
-*
-* This routine re-enables interrupts on the CPU.  The <key> parameter
-* is an architecture-dependent lock-out key that is returned by a previous
-* invocation of irq_lock_inline().
-*
-* This routine can be called from either interrupt, task or fiber level.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * irq_unlock_inline - enable all interrupts on the CPU (inline)
+ *
+ * This routine re-enables interrupts on the CPU.  The <key> parameter
+ * is an architecture-dependent lock-out key that is returned by a previous
+ * invocation of irq_lock_inline().
+ *
+ * This routine can be called from either interrupt, task or fiber level.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE void irq_unlock_inline(unsigned int key)
 {

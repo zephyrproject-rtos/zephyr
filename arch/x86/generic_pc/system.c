@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
 for the generic_pc BSP.
-*/
+ */
 
 #include <nanokernel.h>
 #include "board.h"
@@ -86,13 +86,13 @@ static inline void ioapicInit(void)
 
 #ifdef DO_CONSOLE_INIT
 
-/*******************************************************************************
-*
-* uart_generic_info_init - initialize initialization information for one UART
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * uart_generic_info_init - initialize initialization information for one UART
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void uart_generic_info_init(struct uart_init_info *p_info)
 {
@@ -106,15 +106,15 @@ void uart_generic_info_init(struct uart_init_info *p_info)
 
 #if defined(DO_CONSOLE_INIT)
 
-/*******************************************************************************
-*
-* consoleInit - initialize target-only console
-*
-* Only used for debugging.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * consoleInit - initialize target-only console
+ *
+ * Only used for debugging.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 #include <console/uart_console.h>
 
@@ -149,16 +149,16 @@ static void bluetooth_init(void)
 	} while ((0))
 #endif /* CONFIG_BLUETOOTH */
 
-/*******************************************************************************
-*
-* _InitHardware - perform basic hardware initialization
-*
-* Initialize the Intel 8259A interrupt controller device driver and the
-* Intel 8250 UART device driver.
-* Also initialize the timer device driver, if required.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _InitHardware - perform basic hardware initialization
+ *
+ * Initialize the Intel 8259A interrupt controller device driver and the
+ * Intel 8250 UART device driver.
+ * Also initialize the timer device driver, if required.
+ *
+ * RETURNS: N/A
+ */
 
 void _InitHardware(void)
 {

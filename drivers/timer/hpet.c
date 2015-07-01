@@ -62,7 +62,7 @@ and announces the number of elapsed ticks (if any) to the microkernel.
 
 In a nanokernel-only system this device driver omits more complex capabilities
 (such as tickless idle support) that are only used with a microkernel.
-*/
+ */
 
 #include <nanokernel.h>
 #include <toolchain.h>
@@ -219,19 +219,19 @@ static int32_t programmed_ticks =
 static int stale_irq_check =
 	0; /* is stale interrupt possible? */
 
-/*******************************************************************************
-*
-* _hpetMainCounterAtomic - safely read the main HPET up counter
-*
-* This routine simulates an atomic read of the 64-bit system clock on CPUs
-* that only support 32-bit memory accesses. The most significant word
-* of the counter is read twice to ensure it doesn't change while the least
-* significant word is being retrieved (as per HPET documentation).
-*
-* RETURNS: current 64-bit counter value
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _hpetMainCounterAtomic - safely read the main HPET up counter
+ *
+ * This routine simulates an atomic read of the 64-bit system clock on CPUs
+ * that only support 32-bit memory accesses. The most significant word
+ * of the counter is read twice to ensure it doesn't change while the least
+ * significant word is being retrieved (as per HPET documentation).
+ *
+ * RETURNS: current 64-bit counter value
+ *
+ * \NOMANUAL
+ */
 
 static uint64_t _hpetMainCounterAtomic(void)
 {
@@ -248,17 +248,17 @@ static uint64_t _hpetMainCounterAtomic(void)
 
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-/*******************************************************************************
-*
-* _timer_int_handler - system clock tick handler
-*
-* This routine handles the system clock tick interrupt. A TICK_EVENT event
-* is pushed onto the microkernel stack.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _timer_int_handler - system clock tick handler
+ *
+ * This routine handles the system clock tick interrupt. A TICK_EVENT event
+ * is pushed onto the microkernel stack.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _timer_int_handler(void *unused)
 {
@@ -349,18 +349,18 @@ void _timer_int_handler(void *unused)
 #error Tickless idle threshold is too small (must be at least 2)
 #endif
 
-/*******************************************************************************
-*
-* _timer_idle_enter - Place system timer into idle state
-*
-* Re-program the timer to enter into the idle state for the given number of
-* ticks (-1 means infinite number of ticks).
-*
-* RETURNS: N/A
-*
-* \INTERNAL IMPLEMENTATION DETAILS
-* Called while interrupts are locked.
-*/
+/**
+ *
+ * _timer_idle_enter - Place system timer into idle state
+ *
+ * Re-program the timer to enter into the idle state for the given number of
+ * ticks (-1 means infinite number of ticks).
+ *
+ * RETURNS: N/A
+ *
+ * \INTERNAL IMPLEMENTATION DETAILS
+ * Called while interrupts are locked.
+ */
 
 void _timer_idle_enter(int32_t ticks /* system ticks */
 				)
@@ -378,22 +378,22 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	programmed_ticks = ticks;
 }
 
-/*******************************************************************************
-*
-* _timer_idle_exit - Take system timer out of idle state
-*
-* Determine how long timer has been idling and reprogram it to interrupt at the
-* next tick.
-*
-* Note that in this routine, _SysTimerElapsedTicks must be zero because the
-* ticker has done its work and consumed all the ticks. This has to be true
-* otherwise idle mode wouldn't have been entered in the first place.
-*
-* RETURNS: N/A
-*
-* \INTERNAL IMPLEMENTATION DETAILS
-* Called by _IntEnt() while interrupts are locked.
-*/
+/**
+ *
+ * _timer_idle_exit - Take system timer out of idle state
+ *
+ * Determine how long timer has been idling and reprogram it to interrupt at the
+ * next tick.
+ *
+ * Note that in this routine, _SysTimerElapsedTicks must be zero because the
+ * ticker has done its work and consumed all the ticks. This has to be true
+ * otherwise idle mode wouldn't have been entered in the first place.
+ *
+ * RETURNS: N/A
+ *
+ * \INTERNAL IMPLEMENTATION DETAILS
+ * Called by _IntEnt() while interrupts are locked.
+ */
 
 void _timer_idle_exit(void)
 {
@@ -487,15 +487,15 @@ void _timer_idle_exit(void)
 
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-/*******************************************************************************
-*
-* timer_driver - initialize and enable the system clock
-*
-* This routine is used to program the HPET to deliver interrupts at the
-* rate specified via the 'sys_clock_us_per_tick' global variable.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * timer_driver - initialize and enable the system clock
+ *
+ * This routine is used to program the HPET to deliver interrupts at the
+ * rate specified via the 'sys_clock_us_per_tick' global variable.
+ *
+ * RETURNS: N/A
+ */
 
 void timer_driver(int priority /* priority parameter is ignored by this driver
 				  */
@@ -620,18 +620,18 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_INT_ENB_CNF;
 }
 
-/*******************************************************************************
-*
-* timer_read - read the BSP timer hardware
-*
-* This routine returns the current time in terms of timer hardware clock cycles.
-*
-* RETURNS: up counter of elapsed clock cycles
-*
-* \INTERNAL WARNING
-* If this routine is ever enhanced to return all 64 bits of the counter
-* it will need to call _hpetMainCounterAtomic().
-*/
+/**
+ *
+ * timer_read - read the BSP timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock cycles.
+ *
+ * RETURNS: up counter of elapsed clock cycles
+ *
+ * \INTERNAL WARNING
+ * If this routine is ever enhanced to return all 64 bits of the counter
+ * it will need to call _hpetMainCounterAtomic().
+ */
 
 uint32_t timer_read(void)
 {
@@ -640,15 +640,15 @@ uint32_t timer_read(void)
 
 #ifdef CONFIG_SYSTEM_TIMER_DISABLE
 
-/*******************************************************************************
-*
-* timer_disable - stop announcing ticks into the kernel
-*
-* This routine disables the HPET so that timer interrupts are no
-* longer delivered.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * timer_disable - stop announcing ticks into the kernel
+ *
+ * This routine disables the HPET so that timer interrupts are no
+ * longer delivered.
+ *
+ * RETURNS: N/A
+ */
 
 void timer_disable(void)
 {

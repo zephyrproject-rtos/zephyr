@@ -31,15 +31,15 @@
  */
 
 /*
-* DESCRIPTION
-* This module contains the irq_handler_set() API. This routine is closely
-* associated with irq_connect(), and any changes to the layout of the
-* constructed interrupt stub must be reflected in both places.
-*
-* INTERNAL
-* This routine is defined here, rather than in intconnect.c, so that it can be
-* omitted from a system image if it isn't required.
-*/
+ * DESCRIPTION
+ * This module contains the irq_handler_set() API. This routine is closely
+ * associated with irq_connect(), and any changes to the layout of the
+ * constructed interrupt stub must be reflected in both places.
+ *
+ * INTERNAL
+ * This routine is defined here, rather than in intconnect.c, so that it can be
+ * omitted from a system image if it isn't required.
+ */
 
 
 #include <nano_private.h>
@@ -57,28 +57,28 @@ extern unsigned char _idt_base_address[];
 
 #define FIRST_OPT_OPCODE_OFF 5
 
-/*******************************************************************************
-*
-* irq_handler_set - set the handler in an already connected stub
-*
-* This routine is used to modify an already fully constructed interrupt stub
-* to specify a new <routine> and/or <parameter>.
-*
-* WARNINGS:
-*
-* A fully constructed interrupt stub is generated via irq_connect(), i.e.
-* the irq_handler_set() function must only be called after invoking
-* irq_connect().
-*
-* The caller must ensure that the associated interrupt does not occur while
-* this routine is executing, otherwise race conditions may arise that could
-* cause the interrupt stub to invoke the handler using an incorrect routine
-* and/or parameter. If possible, silence the source of the associated interrupt
-* only, rather than locking out all interrupts.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * irq_handler_set - set the handler in an already connected stub
+ *
+ * This routine is used to modify an already fully constructed interrupt stub
+ * to specify a new <routine> and/or <parameter>.
+ *
+ * WARNINGS:
+ *
+ * A fully constructed interrupt stub is generated via irq_connect(), i.e.
+ * the irq_handler_set() function must only be called after invoking
+ * irq_connect().
+ *
+ * The caller must ensure that the associated interrupt does not occur while
+ * this routine is executing, otherwise race conditions may arise that could
+ * cause the interrupt stub to invoke the handler using an incorrect routine
+ * and/or parameter. If possible, silence the source of the associated interrupt
+ * only, rather than locking out all interrupts.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void irq_handler_set(unsigned int vector,
 					 void (*oldRoutine)(void *parameter),

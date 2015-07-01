@@ -45,7 +45,7 @@ to work around an issue with the assembler where:
 
 statements would end up with the two half-words of the functions' addresses
 swapped.
-*/
+ */
 
 #include <stdint.h>
 #include <toolchain.h>

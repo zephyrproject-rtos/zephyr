@@ -35,7 +35,7 @@ DESCRIPTION
 This header contains the ARC specific nanokernel interface.  It is
 included by the nanokernel interface architecture-abstraction header
 (nanokernel/cpu.h)
-*/
+ */
 
 #ifndef _ARC_ARCH__H_
 #define _ARC_ARCH__H_

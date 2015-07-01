@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides the implementation of the _MsrWrite() and _MsrRead()
 utilities.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -45,28 +45,28 @@ utilities.
 	GTEXT(_MsrWrite)
 	GTEXT(_MsrRead)
 
-/*******************************************************************************
-*
-* _MsrWrite - write to a model specific register (MSR)
-*
-* This function is used to write to an MSR.
-*
-* C function prototype:
-*
-*   void _MsrWrite (unsigned int msr, uint64_t msrData);
-*
-* The definitions of the so-called  "Architectural MSRs" are contained
-* in nano_private.h and have the format: IA32_XXX_MSR
-*
-* INTERNAL
-* 1) The 'wrmsr' instruction was introduced in the Pentium processor; executing
-*    this instruction on an earlier IA-32 processor will result in an invalid
-*    opcode exception.
-* 2) The 'wrmsr' uses the ECX, EDX, and EAX registers which matches the set of
-*    volatile registers!  
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _MsrWrite - write to a model specific register (MSR)
+ *
+ * This function is used to write to an MSR.
+ *
+ * C function prototype:
+ *
+ *   void _MsrWrite (unsigned int msr, uint64_t msrData);
+ *
+ * The definitions of the so-called  "Architectural MSRs" are contained
+ * in nano_private.h and have the format: IA32_XXX_MSR
+ *
+ * INTERNAL
+ * 1) The 'wrmsr' instruction was introduced in the Pentium processor; executing
+ *    this instruction on an earlier IA-32 processor will result in an invalid
+ *    opcode exception.
+ * 2) The 'wrmsr' uses the ECX, EDX, and EAX registers which matches the set of
+ *    volatile registers!  
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _MsrWrite)
 	movl	SP_ARG1(%esp), %ecx	/* load ECX with <msr> */
@@ -76,28 +76,28 @@ SECTION_FUNC(TEXT, _MsrWrite)
 	ret
 
 
-/*******************************************************************************
-*
-* _MsrRead - read from a model specific register (MSR)
-*
-* This function is used to read from an MSR.
-*
-* C function prototype:
-*
-*   uint64_t _MsrRead (unsigned int msr);
-*
-* The definitions of the so-called  "Architectural MSRs" are contained
-* in nano_private.h and have the format: IA32_XXX_MSR
-*
-* INTERNAL
-* 1) The 'rdmsr' instruction was introduced in the Pentium processor; executing
-*    this instruction on an earlier IA-32 processor will result in an invalid
-*    opcode exception.
-* 2) The 'rdmsr' uses the ECX, EDX, and EAX registers which matches the set of
-*    volatile registers!  
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _MsrRead - read from a model specific register (MSR)
+ *
+ * This function is used to read from an MSR.
+ *
+ * C function prototype:
+ *
+ *   uint64_t _MsrRead (unsigned int msr);
+ *
+ * The definitions of the so-called  "Architectural MSRs" are contained
+ * in nano_private.h and have the format: IA32_XXX_MSR
+ *
+ * INTERNAL
+ * 1) The 'rdmsr' instruction was introduced in the Pentium processor; executing
+ *    this instruction on an earlier IA-32 processor will result in an invalid
+ *    opcode exception.
+ * 2) The 'rdmsr' uses the ECX, EDX, and EAX registers which matches the set of
+ *    volatile registers!  
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _MsrRead)
 	movl	SP_ARG1(%esp), %ecx	/* load ECX with <msr> */

@@ -53,23 +53,23 @@ to follow this nested model may result in tasks running at unexpected priority
 levels (too high, or too low).
 
 NOMANUAL
-*/
+ */
 
 #include <microkernel.h>
 #include <micro_private.h>
 #include <nano_private.h>
 
-/*******************************************************************************
-*
-* _k_mutex_lock_reply - reply to a mutex lock request (LOCK_TMO, LOCK_RPL)
-*
-* This routine replies to a mutex lock request.  This will occur if either
-* the waiting task times out or acquires the mutex lock.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _k_mutex_lock_reply - reply to a mutex lock request (LOCK_TMO, LOCK_RPL)
+ *
+ * This routine replies to a mutex lock request.  This will occur if either
+ * the waiting task times out or acquires the mutex lock.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _k_mutex_lock_reply(
 	struct k_args *A /* pointer to mutex lock reply request arguments */
@@ -144,18 +144,18 @@ void _k_mutex_lock_reply(
 	_k_state_bit_reset(A->Ctxt.proc, TF_LOCK);
 }
 
-/*******************************************************************************
-*
-* _k_mutex_lock_request - process a mutex lock request
-*
-* This routine processes a mutex lock request (LOCK_REQ).  If the mutex
-* is already locked, and the timeout is non-zero then the priority inheritance
-* algorithm may be applied to prevent priority inversion scenarios.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _k_mutex_lock_request - process a mutex lock request
+ *
+ * This routine processes a mutex lock request (LOCK_REQ).  If the mutex
+ * is already locked, and the timeout is non-zero then the priority inheritance
+ * algorithm may be applied to prevent priority inversion scenarios.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 						  request arguments */
@@ -267,14 +267,14 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 	}
 }
 
-/*******************************************************************************
-*
-* _task_mutex_lock - mutex lock kernel service
-*
-* This routine is the entry to the mutex lock kernel service.
-*
-* RETURNS: RC_OK on success, RC_FAIL on error, RC_TIME on timeout
-*/
+/**
+ *
+ * _task_mutex_lock - mutex lock kernel service
+ *
+ * This routine is the entry to the mutex lock kernel service.
+ *
+ * RETURNS: RC_OK on success, RC_FAIL on error, RC_TIME on timeout
+ */
 
 int _task_mutex_lock(
 	kmutex_t mutex,   /* mutex to lock */
@@ -291,19 +291,19 @@ int _task_mutex_lock(
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _k_mutex_unlock - process a mutex unlock request
-*
-* This routine processes a mutex unlock request (UNLOCK).  If the mutex
-* was involved in priority inheritance, then it will change the priority level
-* of the current owner to the priority level it had when it acquired the
-* mutex.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _k_mutex_unlock - process a mutex unlock request
+ *
+ * This routine processes a mutex unlock request (UNLOCK).  If the mutex
+ * was involved in priority inheritance, then it will change the priority level
+ * of the current owner to the priority level it had when it acquired the
+ * mutex.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 						 request arguments */
@@ -385,14 +385,14 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 	}
 }
 
-/*******************************************************************************
-*
-* _task_mutex_unlock - mutex unlock kernel service
-*
-* This routine is the entry to the mutex unlock kernel service.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _task_mutex_unlock - mutex unlock kernel service
+ *
+ * This routine is the entry to the mutex unlock kernel service.
+ *
+ * RETURNS: N/A
+ */
 
 void _task_mutex_unlock(kmutex_t mutex /* mutex to unlock */
 					 )

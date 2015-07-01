@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module initializes the watchdog for the fsl_frdm_k64f BSP.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -53,7 +53,7 @@ GTEXT(_WdogInit)
 #define WDOG_UNLOCK_1_CMD  0xC520
 #define WDOG_UNLOCK_2_CMD  0xD928
 
-/*******************************************************************************
+/**
  *
  * _WdogInit - Watchdog timer disable routine
  *

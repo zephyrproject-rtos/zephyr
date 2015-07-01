@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides routines to set the idle field in the nanokernel
 data structure.
-*/
+ */
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 
@@ -43,16 +43,16 @@ data structure.
 #include <toolchain.h>
 #include <sections.h>
 
-/*******************************************************************************
-*
-* nano_cpu_set_idle - indicate that nanokernel is idling in tickless mode
-*
-* Sets the nanokernel data structure idle field to a non-zero value.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * nano_cpu_set_idle - indicate that nanokernel is idling in tickless mode
+ *
+ * Sets the nanokernel data structure idle field to a non-zero value.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void nano_cpu_set_idle(int32_t ticks)
 {

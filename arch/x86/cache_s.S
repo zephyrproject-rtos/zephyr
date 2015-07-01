@@ -32,7 +32,7 @@
 /*
 DESCRIPTION
 This module contains functions for manipulating caches.
-*/
+ */
 
 #ifndef CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED
 
@@ -42,20 +42,20 @@ This module contains functions for manipulating caches.
 	/* externs (internal APIs) */
 	GTEXT(_SysCacheFlush)
 
-/*******************************************************************************
-*
-* _SysCacheFlush - flush a page to main memory
-*
-* This implementation flushes the whole cache.
-*
-* C signature:
-*
-*   void _SysCacheFlush (VIRT_ADDR virt, size_t size)
-*
-* Both parameters are ignored in this implementation.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _SysCacheFlush - flush a page to main memory
+ *
+ * This implementation flushes the whole cache.
+ *
+ * C signature:
+ *
+ *   void _SysCacheFlush (VIRT_ADDR virt, size_t size)
+ *
+ * Both parameters are ignored in this implementation.
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _SysCacheFlush)
 	wbinvd

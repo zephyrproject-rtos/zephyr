@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module defines Watch Dog Registers for the K20 Family of microprocessors
-*/
+ */
 
 #ifndef _K20WDOG_H_
 #define _K20WDOG_H_
@@ -83,15 +83,15 @@ typedef volatile struct {
 	uint16_t presc;		/* 0x16 */
 } K20_WDOG_t;
 
-/***********************************************************************/
+/**/
 /**< Macro to enable all interrupts. */
 #define EnableInterrupts __asm__(" CPSIE i");
 
 /**< Macro to disable all interrupts. */
 #define DisableInterrupts __asm__(" CPSID i");
-/***********************************************************************/
+/**/
 
-/*******************************************************************************
+/**
  *
  * wdog_unlock - Watchdog timer unlock routine.
  *
@@ -124,7 +124,7 @@ static ALWAYS_INLINE void wdog_unlock(K20_WDOG_t *wdog_p)
 	EnableInterrupts;
 }
 
-/*******************************************************************************
+/**
  *
  * wdog_disable - Watchdog timer disable routine
  *

@@ -38,7 +38,7 @@ struct nano_fifo nanoFifo2;
 static struct nano_fifo nanoFifo_sync; /* for synchronization */
 
 
-/*******************************************************************************
+/**
  *
  * fifo_test_init - initialize FIFOs for the test
  *
@@ -54,7 +54,7 @@ void fifo_test_init(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * fifo_fiber1 - fifo test context
  *
@@ -86,7 +86,7 @@ void fifo_fiber1(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * fifo_fiber2 - fifo test context
  *
@@ -119,7 +119,7 @@ void fifo_fiber2(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * fifo_fiber3 - fifo test context
  *
@@ -154,7 +154,7 @@ void fifo_fiber3(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * fifo_test - the main test entry
  *

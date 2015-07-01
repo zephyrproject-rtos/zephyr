@@ -44,7 +44,7 @@
 uint32_t tm_off; /* time necessary to read the time */
 int errorCount = 0; /* track number of errors */
 
-/*******************************************************************************
+/**
  *
  * nanoTest - test latency of nanokernel
  *
@@ -75,7 +75,7 @@ void nanoTest(void)
 }
 
 #ifdef CONFIG_NANOKERNEL
-/*******************************************************************************
+/**
  *
  * main - nanokernel-only testing entry point
  *
@@ -102,7 +102,7 @@ int microSemaLockUnlock(void);
 int microMutexLockUnlock(void);
 void microTaskSwitchYield(void);
 
-/*******************************************************************************
+/**
  *
  * microTest - test latency of microkernel
  *
@@ -132,7 +132,7 @@ void microTest(void)
 	printDashLine();
 }
 
-/*******************************************************************************
+/**
  *
  * main - microkernel testing entry point
  *

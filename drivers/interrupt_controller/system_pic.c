@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
 for the pentium4 and minuteia variants of the generic_pc BSP.
-*/
+ */
 
 #include "board.h"
 #include <nanokernel.h>
@@ -45,34 +45,34 @@ for the pentium4 and minuteia variants of the generic_pc BSP.
 IRQ_CONNECT_STATIC(pic_master, PIC_MASTER_STRAY_INT_LVL, 0, _i8259_boi_master, 0);
 IRQ_CONNECT_STATIC(pic_slave, PIC_SLAVE_STRAY_INT_LVL, 0, _i8259_boi_slave, 0);
 
-/*******************************************************************************
-*
-* _SysIntVecAlloc - allocate interrupt vector
-*
-* This BSP provided routine supports the irq_connect() API.  This
-* routine performs the following functions:
-*
-*  a) Allocates a vector satisfying the requested priority, where possible.
-*     When the <irq> argument is not equal to NANO_SOFT_IRQ, the vector assigned
-*     to the <irq> during interrupt controller initialization is returned,
-*     which may or may not have the desired prioritization. (Prioritization of
-*     such vectors is fixed by the 8259 interrupt controllers, and cannot be
-*     programmed on an IRQ basis; for example, IRQ0 is always the highest
-*     priority interrupt no matter which interrupt vector was assigned to IRQ0.)
-*  b) Provides End of Interrupt (EOI) and Beginning of Interrupt (BOI) related
-*     information to be used when generating the interrupt stub code.
-*
-* The pcPentium4 board virtualizes IRQs as follows:
-*
-*   - IRQ0 to IRQ7  are provided by the master i8259 PIC
-*   - IRQ8 to IRQ15 are provided by the slave i8259 PIC
-*
-* RETURNS: the allocated interrupt vector
-*
-* INTERNAL
-* For debug kernels, this routine will return -1 for invalid <priority> or
-* <irq> parameter values.
-*/
+/**
+ *
+ * _SysIntVecAlloc - allocate interrupt vector
+ *
+ * This BSP provided routine supports the irq_connect() API.  This
+ * routine performs the following functions:
+ *
+ *  a) Allocates a vector satisfying the requested priority, where possible.
+ *     When the <irq> argument is not equal to NANO_SOFT_IRQ, the vector assigned
+ *     to the <irq> during interrupt controller initialization is returned,
+ *     which may or may not have the desired prioritization. (Prioritization of
+ *     such vectors is fixed by the 8259 interrupt controllers, and cannot be
+ *     programmed on an IRQ basis; for example, IRQ0 is always the highest
+ *     priority interrupt no matter which interrupt vector was assigned to IRQ0.)
+ *  b) Provides End of Interrupt (EOI) and Beginning of Interrupt (BOI) related
+ *     information to be used when generating the interrupt stub code.
+ *
+ * The pcPentium4 board virtualizes IRQs as follows:
+ *
+ *   - IRQ0 to IRQ7  are provided by the master i8259 PIC
+ *   - IRQ8 to IRQ15 are provided by the slave i8259 PIC
+ *
+ * RETURNS: the allocated interrupt vector
+ *
+ * INTERNAL
+ * For debug kernels, this routine will return -1 for invalid <priority> or
+ * <irq> parameter values.
+ */
 
 int _SysIntVecAlloc(
 	unsigned int irq,		 /* virtualized IRQ */
@@ -147,20 +147,20 @@ int _SysIntVecAlloc(
 	return vector;
 }
 
-/*******************************************************************************
-*
-* _SysIntVecProgram - program interrupt controller
-*
-* This BSP provided routine programs the appropriate interrupt controller
-* with the given vector based on the given IRQ parameter.
-*
-* Drivers call this routine instead of irq_connect() when interrupts are
-* configured statically.
-*
-* For PIC-equipped boards this routine does nothing, as PIC does not need
-* any additional setup
-*
-*/
+/**
+ *
+ * _SysIntVecProgram - program interrupt controller
+ *
+ * This BSP provided routine programs the appropriate interrupt controller
+ * with the given vector based on the given IRQ parameter.
+ *
+ * Drivers call this routine instead of irq_connect() when interrupts are
+ * configured statically.
+ *
+ * For PIC-equipped boards this routine does nothing, as PIC does not need
+ * any additional setup
+ *
+ */
 
 void _SysIntVecProgram(unsigned int vector, /* vector number */
 		       unsigned int irq     /* virtualized IRQ */

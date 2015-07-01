@@ -41,7 +41,7 @@
 
 #define N_VALUES 10
 
-/*******************************************************************************
+/**
  *
  * RegressionTaskEntry - regression test's entry point
  *

@@ -37,7 +37,7 @@
 		_B : Is a file that contains a benchmark function
 		_R : Is a file that contains the receiver task
 			 of a benchmark function
-*/
+ */
 
 #include "master.h"
 
@@ -61,7 +61,7 @@ FILE * output_file;
  */
 uint32_t tm_off;
 
-/*******************************************************************************
+/**
  *
  * kbhit - check for keypress
  *
@@ -76,7 +76,7 @@ int kbhit(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * init_output - prepares the test output
  *
@@ -99,7 +99,7 @@ void init_output(int *continuously, int *autorun)
 	output_file = stdout;
 }
 
-/*******************************************************************************
+/**
  *
  * output_close - close output for the test
  *
@@ -116,7 +116,7 @@ void output_close(void)
 #define WAIT_FOR_USER() {}
 
 
-/*******************************************************************************
+/**
  *
  * BenchTask - perform all selected benchmarks
  *
@@ -171,7 +171,7 @@ void BenchTask(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * dummy_test - dummy test
  *

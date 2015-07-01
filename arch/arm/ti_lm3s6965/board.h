@@ -34,7 +34,7 @@
 DESCRIPTION
 This header file is used to specify and describe board-level aspects for
 the 'ti_lm3s6965' BSP.
-*/
+ */
 
 #ifndef _BOARD__H_
 #define _BOARD__H_

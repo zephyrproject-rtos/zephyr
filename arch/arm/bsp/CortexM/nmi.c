@@ -35,7 +35,7 @@ DESCRIPTION
 Provides a boot time handler that simply hangs in a sleep loop, and a run time
 handler that resets the CPU. Also provides a mechanism for hooking a custom
 run time handler.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -52,15 +52,15 @@ extern void _SysNmiOnReset(void);
 typedef void (*_NmiHandler_t)(void);
 static _NmiHandler_t handler = _SysNmiOnReset;
 
-/*******************************************************************************
-*
-* _DefaultHandler - default NMI handler installed when kernel is up
-*
-* The default handler outputs a error message and reboots the target. It is
-* installed by calling _NmiInit();
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _DefaultHandler - default NMI handler installed when kernel is up
+ *
+ * The default handler outputs a error message and reboots the target. It is
+ * installed by calling _NmiInit();
+ *
+ * RETURNS: N/A
+ */
 
 static void _DefaultHandler(void)
 {
@@ -68,32 +68,32 @@ static void _DefaultHandler(void)
 	_ScbSystemReset();
 }
 
-/*******************************************************************************
-*
-* _NmiInit - install default runtime NMI handler
-*
-* Meant to be called by BSP code if they want to install a simple NMI handler
-* that reboots the target. It should be installed after the console is
-* initialized.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _NmiInit - install default runtime NMI handler
+ *
+ * Meant to be called by BSP code if they want to install a simple NMI handler
+ * that reboots the target. It should be installed after the console is
+ * initialized.
+ *
+ * RETURNS: N/A
+ */
 
 void _NmiInit(void)
 {
 	handler = _DefaultHandler;
 }
 
-/*******************************************************************************
-*
-* _NmiHandlerSet - install a custom runtime NMI handler
-*
-* Meant to be called by BSP code if they want to install a custom NMI handler
-* that reboots. It should be installed after the console is initialized if it is
-* meant to output to the console.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _NmiHandlerSet - install a custom runtime NMI handler
+ *
+ * Meant to be called by BSP code if they want to install a custom NMI handler
+ * that reboots. It should be installed after the console is initialized if it is
+ * meant to output to the console.
+ *
+ * RETURNS: N/A
+ */
 
 void _NmiHandlerSet(void (*pHandler)(void))
 {
@@ -101,14 +101,14 @@ void _NmiHandlerSet(void (*pHandler)(void))
 }
 #endif /* CONFIG_RUNTIME_NMI */
 
-/*******************************************************************************
-*
-* __nmi - handler installed in the vector table
-*
-* Simply call what is installed in 'static void(*handler)(void)'.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * __nmi - handler installed in the vector table
+ *
+ * Simply call what is installed in 'static void(*handler)(void)'.
+ *
+ * RETURNS: N/A
+ */
 
 void __nmi(void)
 {

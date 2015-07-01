@@ -245,7 +245,7 @@ struct sicslowpan_addr_context {
  * multicast address is mappable to a 9-bit group-id
  * It is true if the group is the all nodes or all
  * routers group.
-*/
+ */
 #define sicslowpan_is_mcast_addr_compressable(a) \
   ((((a)->u16[1]) == 0) &&                       \
    (((a)->u16[2]) == 0) &&                       \

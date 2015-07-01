@@ -48,16 +48,16 @@ static char __stack fiberStack[STACKSIZE];
 
 static uint32_t timestamp;
 
-/*******************************************************************************
-*
-* latencyTestIsr - test ISR used to measure best case interrupt latency
-*
-* The interrupt handler gets the second timestamp.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * latencyTestIsr - test ISR used to measure best case interrupt latency
+ *
+ * The interrupt handler gets the second timestamp.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void latencyTestIsr(void *unused)
 {
@@ -66,17 +66,17 @@ static void latencyTestIsr(void *unused)
 	timestamp = TIME_STAMP_DELTA_GET(timestamp);
 }
 
-/*******************************************************************************
-*
-* fiberInt - interrupt preparation fiber
-*
-* Fiber makes all the test preparations: registers the interrupt handler,
-* gets the first timestamp and invokes the software interrupt.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * fiberInt - interrupt preparation fiber
+ *
+ * Fiber makes all the test preparations: registers the interrupt handler,
+ * gets the first timestamp and invokes the software interrupt.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void fiberInt(void)
 {
@@ -85,7 +85,7 @@ static void fiberInt(void)
 	raiseIntFunc();
 }
 
-/*******************************************************************************
+/**
  *
  * nanoIntLatency - the test main function
  *

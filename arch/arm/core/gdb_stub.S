@@ -39,7 +39,7 @@ that we are running in an exception.
 
 Upon exception exit, it must be recorded that the task is not in an exception
 anymore.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -51,27 +51,27 @@ anymore.
 
 _ASM_FILE_PROLOGUE
 
-/*******************************************************************************
-*
-* _GdbStubExcEntry - exception entry extra work when GDB_INFO is enabled
-*
-* During normal system operation, the callee-saved registers are saved lazily
-* only when a context switch is required. To allow looking at the current
-* threads registers while debugging an exception/interrupt, they must be saved
-* upon entry since the handler could be using them: thus, looking at the CPU
-* registers would show the current system state and not the current *thread*'s
-* state.
-*
-* Also, record the fact that the thread is currently interrupted so that VQEMU
-* looks into the CCS and not the CPU registers to obtain the current thread's
-* register values.
-*
-* NOTE:
-* - must be called with interrupts locked
-* - cannot use r0 without saving it first
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _GdbStubExcEntry - exception entry extra work when GDB_INFO is enabled
+ *
+ * During normal system operation, the callee-saved registers are saved lazily
+ * only when a context switch is required. To allow looking at the current
+ * threads registers while debugging an exception/interrupt, they must be saved
+ * upon entry since the handler could be using them: thus, looking at the CPU
+ * registers would show the current system state and not the current *thread*'s
+ * state.
+ *
+ * Also, record the fact that the thread is currently interrupted so that VQEMU
+ * looks into the CCS and not the CPU registers to obtain the current thread's
+ * register values.
+ *
+ * NOTE:
+ * - must be called with interrupts locked
+ * - cannot use r0 without saving it first
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _GdbStubExcEntry)
 
@@ -95,20 +95,20 @@ SECTION_FUNC(TEXT, _GdbStubExcEntry)
 
     bx lr
 
-/*******************************************************************************
-*
-* _GdbStubExcExit - exception exit extra clean up when GDB_INFO is enabled
-*
-* Record the fact that the thread is not interrupted anymore so that VQEMU
-* looks at the CPU registers and not into the CCS to obtain the current
-* thread's register values. Only do this if this is not a nested exception.
-*
-* NOTE:
-* - must be called with interrupts locked
-* - cannot use r0 without saving it first
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _GdbStubExcExit - exception exit extra clean up when GDB_INFO is enabled
+ *
+ * Record the fact that the thread is not interrupted anymore so that VQEMU
+ * looks at the CPU registers and not into the CCS to obtain the current
+ * thread's register values. Only do this if this is not a nested exception.
+ *
+ * NOTE:
+ * - must be called with interrupts locked
+ * - cannot use r0 without saving it first
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _GdbStubExcExit)
 
@@ -129,24 +129,24 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
 
     bx lr
 
-/*******************************************************************************
-*
-* _irq_vector_table_entry_with_gdb_stub - stub for ISRs installed directly in
-*                               vector table
-*
-* The kernel on Cortex-M3/4 can be configured so that ISRs
-* are installed directly in the vector table for maximum efficiency.
-*
-* When OS-awareness is enabled, a stub must be inserted to invoke
-* _GdbStubExcEntry() before the user ISR runs, to save the current task's
-* registers. This stub thus gets inserted in the vector table instead of the
-* user's ISR. The user's IRQ vector table gets pushed after the vector table
-* automatically by the linker script: this is all transparent to the user.
-* This stub must also act as a demuxer that find the running exception and
-* invoke the user's real ISR.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _irq_vector_table_entry_with_gdb_stub - stub for ISRs installed directly in
+ *                               vector table
+ *
+ * The kernel on Cortex-M3/4 can be configured so that ISRs
+ * are installed directly in the vector table for maximum efficiency.
+ *
+ * When OS-awareness is enabled, a stub must be inserted to invoke
+ * _GdbStubExcEntry() before the user ISR runs, to save the current task's
+ * registers. This stub thus gets inserted in the vector table instead of the
+ * user's ISR. The user's IRQ vector table gets pushed after the vector table
+ * automatically by the linker script: this is all transparent to the user.
+ * This stub must also act as a demuxer that find the running exception and
+ * invoke the user's real ISR.
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _irq_vector_table_entry_with_gdb_stub)
 

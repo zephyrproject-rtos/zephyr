@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This file contains private nanokernel APIs that are not architecture-specific.
-*/
+ */
 
 #ifndef _NANO_INTERNAL__H_
 #define _NANO_INTERNAL__H_

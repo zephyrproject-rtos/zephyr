@@ -35,7 +35,7 @@
 struct nano_sem nanoSem1;
 struct nano_sem nanoSem2;
 
-/*******************************************************************************
+/**
  *
  * sema_test_init - initialize semaphores for the test
  *
@@ -51,7 +51,7 @@ void sema_test_init(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * sema_fiber1 - semaphore test context
  *
@@ -76,7 +76,7 @@ void sema_fiber1(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * sema_fiber2 - semaphore test context
  *
@@ -100,7 +100,7 @@ void sema_fiber2(int par1, int par2)
 	}
 }
 
-/*******************************************************************************
+/**
  *
  * sema_fiber3 - semaphore test context
  *
@@ -127,7 +127,7 @@ void sema_fiber3(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * sema_test - the main test entry
  *

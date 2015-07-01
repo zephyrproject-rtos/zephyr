@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Stack helper functions.
-*/
+ */
 
 #ifndef _ARM_CORTEXM_STACK__H_
 #define _ARM_CORTEXM_STACK__H_
@@ -68,17 +68,17 @@ Stack helper functions.
 
 extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
-/*******************************************************************************
-*
-* _InterruptStackSetup - setup interrupt stack
-*
-* On Cortex-M, the interrupt stack is registered in the MSP (main stack
-* pointer) register, and switched to automatically when taking an exception.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _InterruptStackSetup - setup interrupt stack
+ *
+ * On Cortex-M, the interrupt stack is registered in the MSP (main stack
+ * pointer) register, and switched to automatically when taking an exception.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE void _InterruptStackSetup(void)
 {

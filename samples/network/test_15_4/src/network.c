@@ -168,12 +168,12 @@ static struct net_context *get_context(const struct net_addr *remote,
 #define TASK_IPADDR { { { 0xaa,0xaa,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
 
 /*
-*
-* \param taskname    task identification string
-* \param mySem       task's own semaphore
-* \param otherSem    other task's semaphore
-*
-*/
+ *
+ * \param taskname    task identification string
+ * \param mySem       task's own semaphore
+ * \param otherSem    other task's semaphore
+ *
+ */
 static void listen(const char *taskname, ksem_t mySem, ksem_t otherSem,
 		   struct net_context *ctx)
 {

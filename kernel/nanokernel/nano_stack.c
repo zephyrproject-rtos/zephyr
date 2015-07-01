@@ -44,27 +44,27 @@ the following APIs:
 INTERNAL
 In some cases the compiler "alias" attribute is used to map two or more
 APIs to the same function, since they have identical implementations.
-*/
+ */
 
 #include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
 
-/*******************************************************************************
-*
-* nano_stack_init - initialize a nanokernel stack object
-*
-* This function initializes a nanokernel stack object structure.
-*
-* It may be called from either a fiber or a task context.
-*
-* RETURNS: N/A
-*
-* INTERNAL
-* Although the existing implementation will support invocation from an ISR
-* context, for future flexibility, this API will be restricted from ISR
-* level invocation.
-*/
+/**
+ *
+ * nano_stack_init - initialize a nanokernel stack object
+ *
+ * This function initializes a nanokernel stack object structure.
+ *
+ * It may be called from either a fiber or a task context.
+ *
+ * RETURNS: N/A
+ *
+ * INTERNAL
+ * Although the existing implementation will support invocation from an ISR
+ * context, for future flexibility, this API will be restricted from ISR
+ * level invocation.
+ */
 
 void nano_stack_init(
 	struct nano_stack *stack,	/* stack to initialize */
@@ -78,22 +78,22 @@ void nano_stack_init(
 FUNC_ALIAS(_stack_push_non_preemptible, nano_isr_stack_push, void);
 FUNC_ALIAS(_stack_push_non_preemptible, nano_fiber_stack_push, void);
 
-/*******************************************************************************
-*
-* _stack_push_non_preemptible - push data onto a stack (no context switch)
-*
-* This routine pushes a data item onto a stack object; it may be called from
-* either a fiber or ISR context.  A fiber pending on the stack object will be
-* made ready, but will NOT be scheduled to execute.
-*
-* RETURNS: N/A
-*
-* INTERNAL
-* This function is capable of supporting invocations from both a fiber and an
-* ISR context.  However, the nano_isr_stack_push and nano_fiber_stack_push
-* aliases are created to support any required implementation differences in
-* the future without introducing a source code migration issue.
-*/
+/**
+ *
+ * _stack_push_non_preemptible - push data onto a stack (no context switch)
+ *
+ * This routine pushes a data item onto a stack object; it may be called from
+ * either a fiber or ISR context.  A fiber pending on the stack object will be
+ * made ready, but will NOT be scheduled to execute.
+ *
+ * RETURNS: N/A
+ *
+ * INTERNAL
+ * This function is capable of supporting invocations from both a fiber and an
+ * ISR context.  However, the nano_isr_stack_push and nano_fiber_stack_push
+ * aliases are created to support any required implementation differences in
+ * the future without introducing a source code migration issue.
+ */
 
 void _stack_push_non_preemptible(
 	struct nano_stack *stack, /* stack on which to interact */
@@ -118,16 +118,16 @@ void _stack_push_non_preemptible(
 	irq_unlock_inline(imask);
 }
 
-/*******************************************************************************
-*
-* nano_task_stack_push - push data onto a nanokernel stack
-*
-* This routine pushes a data item onto a stack object; it may be called only
-* from a task context.  A fiber pending on the stack object will be
-* made ready, and will preempt the running task immediately.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * nano_task_stack_push - push data onto a nanokernel stack
+ *
+ * This routine pushes a data item onto a stack object; it may be called only
+ * from a task context.  A fiber pending on the stack object will be
+ * made ready, and will preempt the running task immediately.
+ *
+ * RETURNS: N/A
+ */
 
 void nano_task_stack_push(
 	struct nano_stack *stack, /* stack on which to interact */
@@ -158,26 +158,26 @@ FUNC_ALIAS(_stack_pop, nano_isr_stack_pop, int);
 FUNC_ALIAS(_stack_pop, nano_fiber_stack_pop, int);
 FUNC_ALIAS(_stack_pop, nano_task_stack_pop, int);
 
-/*******************************************************************************
-*
-* _stack_pop - pop data from a nanokernel stack
-*
-* Pop the first data word from a nanokernel stack object; it may be called
-* from a fiber, task, or ISR context.
-*
-* If the stack is not empty, a data word is popped and copied to the provided
-* address <pData> and a non-zero value is returned. If the stack is empty,
-* zero is returned.
-*
-* RETURNS: 1 if stack is not empty, 0 otherwise
-*
-* INTERNAL
-* This function is capable of supporting invocations from fiber, task, and
-* ISR contexts.  However, the nano_isr_stack_pop, nano_task_stack_pop, and
-* nano_fiber_stack_pop aliases are created to support any required
-* implementation differences in the future without intoducing a source code
-* migration issue.
-*/
+/**
+ *
+ * _stack_pop - pop data from a nanokernel stack
+ *
+ * Pop the first data word from a nanokernel stack object; it may be called
+ * from a fiber, task, or ISR context.
+ *
+ * If the stack is not empty, a data word is popped and copied to the provided
+ * address <pData> and a non-zero value is returned. If the stack is empty,
+ * zero is returned.
+ *
+ * RETURNS: 1 if stack is not empty, 0 otherwise
+ *
+ * INTERNAL
+ * This function is capable of supporting invocations from fiber, task, and
+ * ISR contexts.  However, the nano_isr_stack_pop, nano_task_stack_pop, and
+ * nano_fiber_stack_pop aliases are created to support any required
+ * implementation differences in the future without intoducing a source code
+ * migration issue.
+ */
 
 int _stack_pop(
 	struct nano_stack *stack,	/* stack on which to interact */
@@ -199,23 +199,23 @@ int _stack_pop(
 	return rv;
 }
 
-/*******************************************************************************
-*
-* nano_fiber_stack_pop_wait - pop data from a nanokernel stack, wait if empty
-*
-* Pop the first data word from a nanokernel stack object; it can only be
-* called from a fiber context
-*
-* If data is not available the calling fiber will pend until data is pushed
-* onto the stack.
-*
-* RETURNS: the data popped from the stack
-*
-* INTERNAL
-* There exists a separate nano_task_stack_pop_wait() implementation since a
-* task context cannot pend on a nanokernel object. Instead tasks will poll the
-* the stack object.
-*/
+/**
+ *
+ * nano_fiber_stack_pop_wait - pop data from a nanokernel stack, wait if empty
+ *
+ * Pop the first data word from a nanokernel stack object; it can only be
+ * called from a fiber context
+ *
+ * If data is not available the calling fiber will pend until data is pushed
+ * onto the stack.
+ *
+ * RETURNS: the data popped from the stack
+ *
+ * INTERNAL
+ * There exists a separate nano_task_stack_pop_wait() implementation since a
+ * task context cannot pend on a nanokernel object. Instead tasks will poll the
+ * the stack object.
+ */
 
 uint32_t nano_fiber_stack_pop_wait(
 	struct nano_stack *stack /* stack on which to interact */
@@ -238,18 +238,18 @@ uint32_t nano_fiber_stack_pop_wait(
 	return data;
 }
 
-/*******************************************************************************
-*
-* nano_task_stack_pop_wait - pop data from a nanokernel stack, poll if empty
-*
-* Pop the first data word from a nanokernel stack; it can only be called
-* from a task context.
-*
-* If data is not available the calling task will poll until data is pushed
-* onto the stack.
-*
-* RETURNS: the data popped from the stack
-*/
+/**
+ *
+ * nano_task_stack_pop_wait - pop data from a nanokernel stack, poll if empty
+ *
+ * Pop the first data word from a nanokernel stack; it can only be called
+ * from a task context.
+ *
+ * If data is not available the calling task will poll until data is pushed
+ * onto the stack.
+ *
+ * RETURNS: the data popped from the stack
+ */
 
 uint32_t nano_task_stack_pop_wait(
 	struct nano_stack *stack /* stack on which to interact */

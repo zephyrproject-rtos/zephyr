@@ -36,7 +36,7 @@ This module tests that XIP performs as expected. If the first
 task is even activated that is a good indication that XIP is
 working. However, the test does do some some testing on
 global variables for completeness sake.
-*/
+ */
 
 #include <tc_util.h>
 #include <nanokernel.h>
@@ -44,23 +44,23 @@ global variables for completeness sake.
 
 
 #if defined(CONFIG_NANOKERNEL)
-/*******************************************************************************
-*
-* main - main task entry point
-*
-* Entry point for nanokernel only builds.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - main task entry point
+ *
+ * Entry point for nanokernel only builds.
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 #else
-/*******************************************************************************
-*
-* RegressionTaskEntry - regression test's entry point
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * RegressionTaskEntry - regression test's entry point
+ *
+ * RETURNS: N/A
+ */
 
 void RegressionTaskEntry(void)
 #endif

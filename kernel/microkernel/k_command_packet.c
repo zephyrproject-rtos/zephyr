@@ -50,7 +50,7 @@ is implicitly released once the command packet has been processed.  Thus, it is
 important that each command packet be processed in a near-FIFO order to prevent
 corruption of command packets that are already in use.  To this end, drivers
 that have an ISR component should use their own command packet set.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -67,7 +67,7 @@ that have an ISR component should use their own command packet set.
 uint32_t _k_test_cmd_pkt_size
 	[0 - ((CMD_PKT_SIZE_IN_WORDS * sizeof(uint32_t)) != sizeof(struct k_args))];
 
-/*******************************************************************************
+/**
  *
  * _cmd_pkt_get - get the next command packet
  *
@@ -93,12 +93,12 @@ cmdPkt_t *_cmd_pkt_get(
 	return &pSet->cmdPkt[index];
 }
 
-/*******************************************************************************
-*
-* _k_task_call - send command packet to be processed by K_swapper
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_task_call - send command packet to be processed by K_swapper
+ *
+ * RETURNS: N/A
+ */
 
 void _k_task_call(struct k_args *cmd_packet)
 {

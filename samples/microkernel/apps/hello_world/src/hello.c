@@ -54,12 +54,12 @@
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
 /*
-*
-* \param taskname    task identification string
-* \param mySem       task's own semaphore
-* \param otherSem    other task's semaphore
-*
-*/
+ *
+ * \param taskname    task identification string
+ * \param mySem       task's own semaphore
+ * \param otherSem    other task's semaphore
+ *
+ */
 void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 {
 	while (1) {

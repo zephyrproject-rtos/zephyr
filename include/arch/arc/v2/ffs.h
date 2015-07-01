@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
-*/
+ */
 
 #ifndef _ARCH_ARC_V2_FFS_H_
 #define _ARCH_ARC_V2_FFS_H_
@@ -45,17 +45,17 @@ GTEXT(nanoFfsMsb);
 extern unsigned nanoFfsLsb(unsigned int);
 extern unsigned nanoFfsMsb(unsigned int);
 
-/*******************************************************************************
-*
-* nanoFfsMsb_inline - Find First Set bit (searching from most significant bit)
-*
-* This routine finds the first bit set in the argument passed it and returns
-* the index of that bit.  Bits are numbered starting at 1 from the least
-* significant bit.  A return value of zero indicates that the value passed
-* is zero.
-*
-* RETURNS: most significant bit set
-*/
+/**
+ *
+ * nanoFfsMsb_inline - Find First Set bit (searching from most significant bit)
+ *
+ * This routine finds the first bit set in the argument passed it and returns
+ * the index of that bit.  Bits are numbered starting at 1 from the least
+ * significant bit.  A return value of zero indicates that the value passed
+ * is zero.
+ *
+ * RETURNS: most significant bit set
+ */
 
 #if defined(__GNUC__)
 static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
@@ -74,17 +74,17 @@ static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
 }
 #endif
 
-/*******************************************************************************
-*
-* nanoFfsLsb - find first set bit (searching from the least significant bit)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit.  A return value of zero indicates that
-* the value passed is zero.
-*
-* RETURNS: least significant bit set
-*/
+/**
+ *
+ * nanoFfsLsb - find first set bit (searching from the least significant bit)
+ *
+ * This routine finds the first bit set in the argument passed it and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit.  A return value of zero indicates that
+ * the value passed is zero.
+ *
+ * RETURNS: least significant bit set
+ */
 
 #if defined(__GNUC__)
 static ALWAYS_INLINE unsigned int nanoFfsLsb_inline(unsigned int op)

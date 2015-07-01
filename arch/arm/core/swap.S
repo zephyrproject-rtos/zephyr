@@ -34,7 +34,7 @@
 DESCRIPTION
 This module implements the routines necessary for thread context switching
 on ARM Cortex-M3/M4 CPUs.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -51,23 +51,23 @@ GTEXT(__pendsv)
 
 GDATA(_nanokernel)
 
-/*******************************************************************************
-*
-* __pendsv - PendSV exception handler, handling context switches
-*
-* The PendSV exception is the only context in the system that can perform
-* context switching. When an execution context finds out it has to switch
-* contexts, it pends the PendSV exception.
-*
-* When PendSV is pended, the decision that a context switch must happen has
-* already been taken. In other words, when __pendsv() runs, we *know* we have
-* to swap *something*.
-*
-* The scheduling algorithm is simple: schedule the head of the runnable FIBER
-* context list, which is represented by _nanokernel.fiber. If there are no
-* runnable FIBER contexts, then schedule the TASK context represented by
-* _nanokernel.task. The _nanokernel.task field will never be NULL.
-*/
+/**
+ *
+ * __pendsv - PendSV exception handler, handling context switches
+ *
+ * The PendSV exception is the only context in the system that can perform
+ * context switching. When an execution context finds out it has to switch
+ * contexts, it pends the PendSV exception.
+ *
+ * When PendSV is pended, the decision that a context switch must happen has
+ * already been taken. In other words, when __pendsv() runs, we *know* we have
+ * to swap *something*.
+ *
+ * The scheduling algorithm is simple: schedule the head of the runnable FIBER
+ * context list, which is represented by _nanokernel.fiber. If there are no
+ * runnable FIBER contexts, then schedule the TASK context represented by
+ * _nanokernel.task. The _nanokernel.task field will never be NULL.
+ */
 
 SECTION_FUNC(TEXT, __pendsv)
 
@@ -146,15 +146,15 @@ SECTION_FUNC(TEXT, __pendsv)
     /* exc return */
     bx lr
 
-/*******************************************************************************
-*
-* __svc - service call handler
-*
-* The service call (svc) is only used in _Swap() to enter handler mode so we
-* can go through the PendSV exception to perform a context switch.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * __svc - service call handler
+ *
+ * The service call (svc) is only used in _Swap() to enter handler mode so we
+ * can go through the PendSV exception to perform a context switch.
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, __svc)
 
@@ -178,38 +178,38 @@ SECTION_FUNC(TEXT, __svc)
     /* handler mode exit, to PendSV */
     bx lr
 
-/*******************************************************************************
-*
-* _Swap - initiate a cooperative context switch
-*
-* The _Swap() routine is invoked by various nanokernel services to effect
-* a cooperative context context switch.  Prior to invoking _Swap(), the caller
-* disables interrupts via irq_lock() and the return 'key' is passed as a
-* parameter to _Swap().  The 'key' actually represents the BASEPRI register
-* prior to disabling interrupts via the BASEPRI mechanism.
-*
-* _Swap() itself does not do much.
-*
-* It simply stores the intlock key (the BASEPRI value) parameter into
-* current->basepri, and then triggers a service call exception (svc) to setup
-* the PendSV exception, which does the heavy lifting of context switching.
+/**
+ *
+ * _Swap - initiate a cooperative context switch
+ *
+ * The _Swap() routine is invoked by various nanokernel services to effect
+ * a cooperative context context switch.  Prior to invoking _Swap(), the caller
+ * disables interrupts via irq_lock() and the return 'key' is passed as a
+ * parameter to _Swap().  The 'key' actually represents the BASEPRI register
+ * prior to disabling interrupts via the BASEPRI mechanism.
+ *
+ * _Swap() itself does not do much.
+ *
+ * It simply stores the intlock key (the BASEPRI value) parameter into
+ * current->basepri, and then triggers a service call exception (svc) to setup
+ * the PendSV exception, which does the heavy lifting of context switching.
 
-* This is the only place we have to save BASEPRI since the other paths to
-* __pendsv all come from handling an interrupt, which means we know the
-* interrupts were not locked: in that case the BASEPRI value is 0.
-*
-* Given that _Swap() is called to effect a cooperative context context switch,
-* only the caller-saved integer registers need to be saved in the tCCS of the
-* outgoing context. This is all performed by the hardware, which stores it in
-* its exception stack frame, created when handling the svc exception.
-*
-* RETURNS: may contain a return value setup by a call to fiberRtnValueSet()
-*
-* C function prototype:
-*
-* unsigned int _Swap (unsigned int basepri);
-*
-*/
+ * This is the only place we have to save BASEPRI since the other paths to
+ * __pendsv all come from handling an interrupt, which means we know the
+ * interrupts were not locked: in that case the BASEPRI value is 0.
+ *
+ * Given that _Swap() is called to effect a cooperative context context switch,
+ * only the caller-saved integer registers need to be saved in the tCCS of the
+ * outgoing context. This is all performed by the hardware, which stores it in
+ * its exception stack frame, created when handling the svc exception.
+ *
+ * RETURNS: may contain a return value setup by a call to fiberRtnValueSet()
+ *
+ * C function prototype:
+ *
+ * unsigned int _Swap (unsigned int basepri);
+ *
+ */
 
 SECTION_FUNC(TEXT, _Swap)
 

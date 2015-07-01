@@ -54,7 +54,7 @@ a nanoCpuFpDisable() from main(), and then indicate that only x87 FPU
 registers will be utilized (nanoCpuFpEnable).  The fiber context should continue
 to load ALL non-integer registers, but main() should validate that only the
 x87 FPU registers are being saved/restored.
-*/
+ */
 
 #if defined(CONFIG_ISA_IA32)
 #ifndef CONFIG_FLOAT
@@ -137,13 +137,13 @@ int fpu_sharing_error;
 static volatile unsigned int load_store_low_count = 0;
 static volatile unsigned int load_store_high_count = 0;
 
-/*******************************************************************************
-*
-* main -
-* load_store_low - low priority FPU load/store context
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main -
+ * load_store_low - low priority FPU load/store context
+ *
+ * RETURNS: N/A
+ */
 
 #ifdef CONFIG_NANOKERNEL
 void main(void)
@@ -306,12 +306,12 @@ void load_store_low(void)
 	}
 }
 
-/*******************************************************************************
-*
-* load_store_high - high priority FPU load/store context
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * load_store_high - high priority FPU load/store context
+ *
+ * RETURNS: N/A
+ */
 
 #ifdef CONFIG_NANOKERNEL
 void load_store_high(int unused1, int unused2)

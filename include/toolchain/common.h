@@ -35,7 +35,7 @@ DESCRIPTION
 Macros to abstract compiler capabilities (common to all toolchains).
 
 \NOMANUAL
-*/
+ */
 
 /*
  * Generate a reference to an external symbol.

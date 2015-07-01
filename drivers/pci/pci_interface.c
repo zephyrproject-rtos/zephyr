@@ -35,7 +35,7 @@ DESCRIPTION
 
 This module implements the PCI H/W access functions.
 
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -52,16 +52,16 @@ This module implements the PCI H/W access functions.
 #error "PCI_CTRL_DATA_REG cannot be zero"
 #endif
 
-/******************************************************************************
-*
-* pci_ctrl_read - read a PCI controller register
-*
-* This routine reads the specified register from the PCI controller and
-* places the data into the provided buffer.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * pci_ctrl_read - read a PCI controller register
+ *
+ * This routine reads the specified register from the PCI controller and
+ * places the data into the provided buffer.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 static void pci_ctrl_read(uint32_t reg,   /* PCI register to read */
 		    uint32_t *data, /* where to put the data */
@@ -86,16 +86,16 @@ static void pci_ctrl_read(uint32_t reg,   /* PCI register to read */
 	}
 }
 
-/******************************************************************************
-*
-* pci_ctrl_write - write a PCI controller register
-*
-* This routine writes the provided data to the specified register in the PCI
-* controller.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * pci_ctrl_write - write a PCI controller register
+ *
+ * This routine writes the provided data to the specified register in the PCI
+ * controller.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 static void pci_ctrl_write(uint32_t reg,  /* PCI register to write */
 		     uint32_t data, /* data to write */
@@ -121,15 +121,15 @@ static void pci_ctrl_write(uint32_t reg,  /* PCI register to write */
 	}
 }
 
-/******************************************************************************
-*
-* pci_ctrl_data_read - read the PCI controller data register
-*
-* This routine reads the data register of the specified PCI controller.
-*
-* RETURNS: 0 or -1
-*
-*/
+/**
+ *
+ * pci_ctrl_data_read - read the PCI controller data register
+ *
+ * This routine reads the data register of the specified PCI controller.
+ *
+ * RETURNS: 0 or -1
+ *
+ */
 
 static int pci_ctrl_data_read(uint32_t controller, /* controller number */
 		       uint32_t offset,     /* offset within data region */
@@ -147,16 +147,16 @@ static int pci_ctrl_data_read(uint32_t controller, /* controller number */
 	return 0;
 }
 
-/******************************************************************************
-*
-* pci_ctrl_data_write - write the PCI controller data register
-*
-* This routine writes the provided data to the data register of the
-* specified PCI controller.
-*
-* RETURNS: 0 or -1
-*
-*/
+/**
+ *
+ * pci_ctrl_data_write - write the PCI controller data register
+ *
+ * This routine writes the provided data to the data register of the
+ * specified PCI controller.
+ *
+ * RETURNS: 0 or -1
+ *
+ */
 
 static int pci_ctrl_data_write(uint32_t controller, /* controller number */
 			uint32_t offset, /* offset within address register */
@@ -174,16 +174,16 @@ static int pci_ctrl_data_write(uint32_t controller, /* controller number */
 	return 0;
 }
 
-/******************************************************************************
-*
-* pci_ctrl_addr_write - write the PCI controller address register
-*
-* This routine writes the provided data to the address register of the
-* specified PCI controller.
-*
-* RETURNS: 0 or -1
-*
-*/
+/**
+ *
+ * pci_ctrl_addr_write - write the PCI controller address register
+ *
+ * This routine writes the provided data to the address register of the
+ * specified PCI controller.
+ *
+ * RETURNS: 0 or -1
+ *
+ */
 
 static int pci_ctrl_addr_write(uint32_t controller, /* controller number */
 			uint32_t offset, /* offset within address register */
@@ -200,52 +200,52 @@ static int pci_ctrl_addr_write(uint32_t controller, /* controller number */
 	return 0;
 }
 
-/*******************************************************************************
-*
-* pci_read - read a PCI register from a device
-*
-* This routine reads data from a PCI device's configuration space.  The
-* device and register to read is specified by the address parameter ("addr")
-* and must be set appropriately by the caller.  The address is defined by
-* the structure type pci_addr_t and contains the following members:
-*
-*     bus:     PCI bus number (0-255)
-*     device:  PCI device number (0-31)
-*     func:    device function number (0-7)
-*     reg:     device 32-bit register number to read (0-63)
-*     offset:  offset within 32-bit register to read (0-3)
-*
-* The size parameter specifies the number of bytes to read from the PCI
-* configuration space, valid values are 1, 2, and 4 bytes.  A 32-bit value
-* is always returned but it will contain only the number of bytes specified
-* by the size parameter.
-*
-* If multiple PCI controllers are present in the system, the controller id
-* can be specified in the "controller" parameter.  If only one controller
-* is present, the id DEFAULT_PCI_CONTROLLER can be used to denote this
-* controller.
-*
-* Example:
-*
-*  union pci_addr_reg addr;
-*  uint32_t status;
-*
-*  addr.field.bus    = 0;    /@ PCI bus zero        @/
-*  addr.field.device = 1;    /@ PCI device one      @/
-*  addr.field.func   = 0;    /@ PCI function zero   @/
-*  addr.field.reg    = 4;    /@ PCI register 4      @/
-*  addr.field.offset = 0;    /@ PCI register offset @/
-*
-*  pci_read (DEFAULT_PCI_CONTROLLER, addr, sizeof(uint16_t), &status);
-*
-*
-* NOTE:
-*   Reading of PCI data must be performed as an atomic operation. It is up to
-*   the caller to enforce this.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * pci_read - read a PCI register from a device
+ *
+ * This routine reads data from a PCI device's configuration space.  The
+ * device and register to read is specified by the address parameter ("addr")
+ * and must be set appropriately by the caller.  The address is defined by
+ * the structure type pci_addr_t and contains the following members:
+ *
+ *     bus:     PCI bus number (0-255)
+ *     device:  PCI device number (0-31)
+ *     func:    device function number (0-7)
+ *     reg:     device 32-bit register number to read (0-63)
+ *     offset:  offset within 32-bit register to read (0-3)
+ *
+ * The size parameter specifies the number of bytes to read from the PCI
+ * configuration space, valid values are 1, 2, and 4 bytes.  A 32-bit value
+ * is always returned but it will contain only the number of bytes specified
+ * by the size parameter.
+ *
+ * If multiple PCI controllers are present in the system, the controller id
+ * can be specified in the "controller" parameter.  If only one controller
+ * is present, the id DEFAULT_PCI_CONTROLLER can be used to denote this
+ * controller.
+ *
+ * Example:
+ *
+ *  union pci_addr_reg addr;
+ *  uint32_t status;
+ *
+ *  addr.field.bus    = 0;    /@ PCI bus zero        @/
+ *  addr.field.device = 1;    /@ PCI device one      @/
+ *  addr.field.func   = 0;    /@ PCI function zero   @/
+ *  addr.field.reg    = 4;    /@ PCI register 4      @/
+ *  addr.field.offset = 0;    /@ PCI register offset @/
+ *
+ *  pci_read (DEFAULT_PCI_CONTROLLER, addr, sizeof(uint16_t), &status);
+ *
+ *
+ * NOTE:
+ *   Reading of PCI data must be performed as an atomic operation. It is up to
+ *   the caller to enforce this.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void pci_read(uint32_t controller, /* PCI controller to use */
 	     union pci_addr_reg addr,       /* PCI address to read   */
@@ -290,52 +290,52 @@ void pci_read(uint32_t controller, /* PCI controller to use */
 	pci_ctrl_data_read(controller, access_offset, data, access_size);
 }
 
-/*******************************************************************************
-*
-* pci_write - write a to a PCI register
-*
-* This routine writes data to a PCI device's configuration space.  The
-* device and register to write is specified by the address parameter ("addr")
-* and must be set appropriately by the caller.  The address is defined by
-* the structure type pci_addr_t and contains the following members:
-*
-*     bus:     PCI bus number (0-255)
-*     device:  PCI device number (0-31)
-*     func:    device function number (0-7)
-*     reg:     device register number to read (0-63)
-*     offset:  offset within 32-bit register to write (0-3)
-*
-* The size parameter specifies the number of bytes to write to the PCI
-* configuration space, valid values are 1, 2, and 4 bytes.  A 32-bit value
-* is always provided but only the number of bytes specified by the size
-* parameter will be written to the device.
-*
-* If multiple PCI controllers are present in the system, the controller id
-* can be specified in the "controller" parameter.  If only one controller
-* is present, the id DEFAULT_PCI_CONTROLLER can be used to denote this
-* controller.
-*
-* Example:
-*
-*  pci_addr_t addr;
-*  uint32_t bar0 = 0xE0000000;
-*
-*  addr.field.bus    = 0;    /@ PCI bus zero        @/
-*  addr.field.device = 1;    /@ PCI device one      @/
-*  addr.field.func   = 0;    /@ PCI function zero   @/
-*  addr.field.reg    = 16;   /@ PCI register 16     @/
-*  addr.field.offset = 0;    /@ PCI register offset @/
-*
-*  pci_write (DEFAULT_PCI_CONTROLLER, addr, sizeof(uint32_t), bar0);
-*
-* NOTE:
-*   Writing of PCI data must be performed as an atomic operation. It is up to
-*   the caller to enforce this.
-*
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * pci_write - write a to a PCI register
+ *
+ * This routine writes data to a PCI device's configuration space.  The
+ * device and register to write is specified by the address parameter ("addr")
+ * and must be set appropriately by the caller.  The address is defined by
+ * the structure type pci_addr_t and contains the following members:
+ *
+ *     bus:     PCI bus number (0-255)
+ *     device:  PCI device number (0-31)
+ *     func:    device function number (0-7)
+ *     reg:     device register number to read (0-63)
+ *     offset:  offset within 32-bit register to write (0-3)
+ *
+ * The size parameter specifies the number of bytes to write to the PCI
+ * configuration space, valid values are 1, 2, and 4 bytes.  A 32-bit value
+ * is always provided but only the number of bytes specified by the size
+ * parameter will be written to the device.
+ *
+ * If multiple PCI controllers are present in the system, the controller id
+ * can be specified in the "controller" parameter.  If only one controller
+ * is present, the id DEFAULT_PCI_CONTROLLER can be used to denote this
+ * controller.
+ *
+ * Example:
+ *
+ *  pci_addr_t addr;
+ *  uint32_t bar0 = 0xE0000000;
+ *
+ *  addr.field.bus    = 0;    /@ PCI bus zero        @/
+ *  addr.field.device = 1;    /@ PCI device one      @/
+ *  addr.field.func   = 0;    /@ PCI function zero   @/
+ *  addr.field.reg    = 16;   /@ PCI register 16     @/
+ *  addr.field.offset = 0;    /@ PCI register offset @/
+ *
+ *  pci_write (DEFAULT_PCI_CONTROLLER, addr, sizeof(uint32_t), bar0);
+ *
+ * NOTE:
+ *   Writing of PCI data must be performed as an atomic operation. It is up to
+ *   the caller to enforce this.
+ *
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void pci_write(uint32_t controller, /* controller to use   */
 	      union pci_addr_reg addr,       /* PCI address to read */
@@ -379,15 +379,15 @@ void pci_write(uint32_t controller, /* controller to use   */
 	pci_ctrl_data_write(controller, access_offset, data, access_size);
 }
 
-/*******************************************************************************
-*
-* pci_header_get - get the PCI header for a device
-*
-* This routine reads the PCI header for the specified device and puts the
-* result in the supplied header structure.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * pci_header_get - get the PCI header for a device
+ *
+ * This routine reads the PCI header for the specified device and puts the
+ * result in the supplied header structure.
+ *
+ * RETURNS: N/A
+ */
 
 void pci_header_get(uint32_t controller,
 			union pci_addr_reg pci_ctrl_addr,

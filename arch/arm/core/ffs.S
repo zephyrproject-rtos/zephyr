@@ -34,7 +34,7 @@
 DESCRIPTION
 This library implements find_last_set() and find_first_set() which returns the
 most and least significant bit set respectively.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -48,17 +48,17 @@ _ASM_FILE_PROLOGUE
 GTEXT(find_last_set)
 GTEXT(find_first_set)
 
-/*******************************************************************************
-*
-* find_last_set - find first set bit (searching from the most significant bit)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit.  A return value of zero indicates that
-* the value passed is zero.
-*
-* RETURNS: most significant bit set
-*/
+/**
+ *
+ * find_last_set - find first set bit (searching from the most significant bit)
+ *
+ * This routine finds the first bit set in the argument passed it and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit.  A return value of zero indicates that
+ * the value passed is zero.
+ *
+ * RETURNS: most significant bit set
+ */
 
 SECTION_FUNC(TEXT, find_last_set)
 
@@ -69,17 +69,17 @@ SECTION_FUNC(TEXT, find_last_set)
 
     mov pc, lr
 
-/*******************************************************************************
-*
-* find_first_set - find first set bit (searching from the least significant bit)
-*
-* This routine finds the first bit set in the argument passed it and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit.  A return value of zero indicates that
-* the value passed is zero.
-*
-* RETURNS: least significant bit set
-*/
+/**
+ *
+ * find_first_set - find first set bit (searching from the least significant bit)
+ *
+ * This routine finds the first bit set in the argument passed it and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit.  A return value of zero indicates that
+ * the value passed is zero.
+ *
+ * RETURNS: least significant bit set
+ */
 
 SECTION_FUNC(TEXT, find_first_set)
 

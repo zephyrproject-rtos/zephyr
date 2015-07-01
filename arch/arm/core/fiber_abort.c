@@ -38,7 +38,7 @@ point returns or when it aborts itself, the CPU is in thread mode and must
 call _Swap() (which triggers a service call), but when in handler mode, the
 CPU must exit handler mode to cause the context switch, and thus must queue
 the PendSV exception.
-*/
+ */
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
@@ -51,18 +51,18 @@ the PendSV exception.
 #include <nanokernel.h>
 #include <arch/cpu.h>
 
-/*******************************************************************************
-*
-* fiber_abort - abort the currently executing fiber
-*
-* Possible reasons for a fiber aborting:
-*
-* - the fiber explicitly aborts itself by calling this routine
-* - the fiber implicitly aborts by returning from its entry point
-* - the fiber encounters a fatal exception
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber_abort - abort the currently executing fiber
+ *
+ * Possible reasons for a fiber aborting:
+ *
+ * - the fiber explicitly aborts itself by calling this routine
+ * - the fiber implicitly aborts by returning from its entry point
+ * - the fiber encounters a fatal exception
+ *
+ * RETURNS: N/A
+ */
 
 void fiber_abort(void)
 {

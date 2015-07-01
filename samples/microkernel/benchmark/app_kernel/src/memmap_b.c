@@ -36,7 +36,7 @@
 #ifdef MEMMAP_BENCH
 
 
-/*******************************************************************************
+/**
  *
  * memorymap_test - memory map get/free test
  *

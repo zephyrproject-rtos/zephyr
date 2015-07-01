@@ -415,7 +415,7 @@ void uip_nd6_init(void);
 void
 uip_appserver_addr_get(uip_ipaddr_t *ipaddr);
 /*--------------------------------------*/
-/******* ANNEX - message formats ********/
+/** ANNEX - message formats ********/
 /*--------------------------------------*/
 
 /*

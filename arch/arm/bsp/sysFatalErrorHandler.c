@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides the _SysFatalErrorHandler() routine for Cortex-M BSPs.
-*/
+ */
 
 #include <nanokernel.h>
 #include <toolchain.h>
@@ -61,25 +61,25 @@ static inline void nonEssentialTaskAbort(void)
 	} while ((0))
 #endif
 
-/*******************************************************************************
-*
-* _SysFatalErrorHandler - fatal error handler
-*
-* This routine implements the corrective action to be taken when the system
-* detects a fatal error.
-*
-* This sample implementation attempts to abort the current context and allow
-* the system to continue executing, which may permit the system to continue
-* functioning with degraded capabilities.
-*
-* System designers may wish to enhance or substitute this sample
-* implementation to take other actions, such as logging error (or debug)
-* information to a persistent repository and/or rebooting the system.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _SysFatalErrorHandler - fatal error handler
+ *
+ * This routine implements the corrective action to be taken when the system
+ * detects a fatal error.
+ *
+ * This sample implementation attempts to abort the current context and allow
+ * the system to continue executing, which may permit the system to continue
+ * functioning with degraded capabilities.
+ *
+ * System designers may wish to enhance or substitute this sample
+ * implementation to take other actions, such as logging error (or debug)
+ * information to a persistent repository and/or rebooting the system.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _SysFatalErrorHandler(
 	unsigned int reason, /* fatal error reason */

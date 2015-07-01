@@ -99,7 +99,7 @@ $ nm offsets.o
 
 
 \NOMANUAL
-*/
+ */
 
 #ifndef _GEN_OFFSET_H
 #define _GEN_OFFSET_H

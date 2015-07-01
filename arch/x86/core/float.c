@@ -93,7 +93,7 @@ FP operations.  All other tasks and fibers have CR0[TS] = 1 so that an attempt
 to perform an FP operation will cause an exception, allowing the system to
 enable FP resource sharing on its behalf.
 
-*/
+ */
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
@@ -112,74 +112,74 @@ enable FP resource sharing on its behalf.
 extern uint32_t _sse_mxcsr_default_value; /* SSE control/status register default value */
 #endif			/* CONFIG_SSE */
 
-/*******************************************************************************
-*
-* _FpCtxSave - save non-integer context information
-*
-* This routine saves the system's "live" non-integer context into the
-* specified CCS.  If the specified task or fiber supports SSE then
-* x87/MMX/SSEx context info is saved, otherwise only x87/MMX context is saved.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _FpCtxSave - save non-integer context information
+ *
+ * This routine saves the system's "live" non-integer context into the
+ * specified CCS.  If the specified task or fiber supports SSE then
+ * x87/MMX/SSEx context info is saved, otherwise only x87/MMX context is saved.
+ *
+ * RETURNS: N/A
+ */
 
 static void _FpCtxSave(tCCS *ccs)
 {
 	_do_fp_ctx_save(ccs->flags & USE_SSE, &ccs->preempFloatReg);
 }
 
-/*******************************************************************************
-*
-* _FpCtxInit - initialize non-integer context information
-*
-* This routine initializes the system's "live" non-integer context.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _FpCtxInit - initialize non-integer context information
+ *
+ * This routine initializes the system's "live" non-integer context.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _FpCtxInit(tCCS *ccs)
 {
 	_do_fp_ctx_init(ccs->flags & USE_SSE);
 }
 
-/*******************************************************************************
-*
-* _FpEnable - enable preservation of non-integer context information
-*
-* This routine allows the specified task/fiber (which may be the active
-* task/fiber) to safely share the system's floating point registers with
-* other tasks/fibers.  The <options> parameter indicates which floating point
-* register sets will be used by the specified task/fiber:
-*
-*  a) USE_FP  indicates x87 FPU and MMX registers only
-*  b) USE_SSE indicates x87 FPU and MMX and SSEx registers
-*
-* Invoking this routine creates a floating point context for the task/fiber
-* that corresponds to an FPU that has been reset.  The system will thereafter
-* protect the task/fiber's FP context so that it is not altered during
-* a pre-emptive context switch.
-*
-* WARNING
-* This routine should only be used to enable floating point support for a
-* task/fiber that does not currently have such support enabled already.
-*
-* RETURNS: N/A
-*
-* INTERNAL
-* Since the transition from "non-FP supporting" to "FP supporting" must be done
-* atomically to avoid confusing the floating point logic used by _Swap(),
-* this routine locks interrupts to ensure that a context switch does not occur,
-* The locking isn't really needed when the routine is called by a fiber
-* (since context switching can't occur), but it is harmless and allows a single
-* routine to be called by both tasks and fibers (thus saving code space).
-*
-* If necessary, the interrupt latency impact of calling this routine from a
-* fiber could be lessened by re-designing things so that only task-type callers
-* locked interrupts (i.e. move the locking to task_float_enable()). However,
-* all calls to fiber_float_enable() would need to be reviewed to ensure they
-* are only used from a fiber, rather than from "generic" code used by both
-* tasks and fibers.
-*/
+/**
+ *
+ * _FpEnable - enable preservation of non-integer context information
+ *
+ * This routine allows the specified task/fiber (which may be the active
+ * task/fiber) to safely share the system's floating point registers with
+ * other tasks/fibers.  The <options> parameter indicates which floating point
+ * register sets will be used by the specified task/fiber:
+ *
+ *  a) USE_FP  indicates x87 FPU and MMX registers only
+ *  b) USE_SSE indicates x87 FPU and MMX and SSEx registers
+ *
+ * Invoking this routine creates a floating point context for the task/fiber
+ * that corresponds to an FPU that has been reset.  The system will thereafter
+ * protect the task/fiber's FP context so that it is not altered during
+ * a pre-emptive context switch.
+ *
+ * WARNING
+ * This routine should only be used to enable floating point support for a
+ * task/fiber that does not currently have such support enabled already.
+ *
+ * RETURNS: N/A
+ *
+ * INTERNAL
+ * Since the transition from "non-FP supporting" to "FP supporting" must be done
+ * atomically to avoid confusing the floating point logic used by _Swap(),
+ * this routine locks interrupts to ensure that a context switch does not occur,
+ * The locking isn't really needed when the routine is called by a fiber
+ * (since context switching can't occur), but it is harmless and allows a single
+ * routine to be called by both tasks and fibers (thus saving code space).
+ *
+ * If necessary, the interrupt latency impact of calling this routine from a
+ * fiber could be lessened by re-designing things so that only task-type callers
+ * locked interrupts (i.e. move the locking to task_float_enable()). However,
+ * all calls to fiber_float_enable() would need to be reviewed to ensure they
+ * are only used from a fiber, rather than from "generic" code used by both
+ * tasks and fibers.
+ */
 
 void _FpEnable(tCCS *ccs,
 			     unsigned int options /* USE_FP or USE_SSE */
@@ -287,63 +287,63 @@ void _FpEnable(tCCS *ccs,
 	irq_unlock_inline(imask);
 }
 
-/*******************************************************************************
-*
-* fiber_float_enable - enable preservation of non-integer context information
-*
-* This routine allows a fiber to permit a task/fiber (including itself) to
-* safely share the system's floating point registers with other tasks/fibers.
-*
-* See the description of _FpEnable() for further details.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber_float_enable - enable preservation of non-integer context information
+ *
+ * This routine allows a fiber to permit a task/fiber (including itself) to
+ * safely share the system's floating point registers with other tasks/fibers.
+ *
+ * See the description of _FpEnable() for further details.
+ *
+ * RETURNS: N/A
+ */
 
 FUNC_ALIAS(_FpEnable, fiber_float_enable, void);
 
-/*******************************************************************************
-*
-* task_float_enable - enable preservation of non-integer context information
-*
-* This routine allows a task to permit a task/fiber (including itself) to
-* safely share the system's floating point registers with other tasks/fibers.
-*
-* See the description of _FpEnable() for further details.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_float_enable - enable preservation of non-integer context information
+ *
+ * This routine allows a task to permit a task/fiber (including itself) to
+ * safely share the system's floating point registers with other tasks/fibers.
+ *
+ * See the description of _FpEnable() for further details.
+ *
+ * RETURNS: N/A
+ */
 
 FUNC_ALIAS(_FpEnable, task_float_enable, void);
 
-/*******************************************************************************
-*
-* _FpDisable - disable preservation of non-integer context information
-*
-* This routine prevents the specified task/fiber (which may be the active
-* task/fiber) from safely sharing any of the system's floating point registers
-* with other tasks/fibers.
-*
-* WARNING
-* This routine should only be used to disable floating point support for
-* a task/fiber that currently has such support enabled.
-*
-* RETURNS: N/A
-*
-* INTERNAL
-* Since the transition from "FP supporting" to "non-FP supporting" must be done
-* atomically to avoid confusing the floating point logic used by _Swap(),
-* this routine locks interrupts to ensure that a context switch does not occur,
-* The locking isn't really needed when the routine is called by a fiber
-* (since context switching can't occur), but it is harmless and allows a single
-* routine to be called by both tasks and fibers (thus saving code space).
-*
-* If necessary, the interrupt latency impact of calling this routine from a
-* fiber could be lessened by re-designing things so that only task-type callers
-* locked interrupts (i.e. move the locking to task_float_disable()). However,
-* all calls to fiber_float_disable() would need to be reviewed to ensure they
-* are only used from a fiber, rather than from "generic" code used by both
-* tasks and fibers.
-*/
+/**
+ *
+ * _FpDisable - disable preservation of non-integer context information
+ *
+ * This routine prevents the specified task/fiber (which may be the active
+ * task/fiber) from safely sharing any of the system's floating point registers
+ * with other tasks/fibers.
+ *
+ * WARNING
+ * This routine should only be used to disable floating point support for
+ * a task/fiber that currently has such support enabled.
+ *
+ * RETURNS: N/A
+ *
+ * INTERNAL
+ * Since the transition from "FP supporting" to "non-FP supporting" must be done
+ * atomically to avoid confusing the floating point logic used by _Swap(),
+ * this routine locks interrupts to ensure that a context switch does not occur,
+ * The locking isn't really needed when the routine is called by a fiber
+ * (since context switching can't occur), but it is harmless and allows a single
+ * routine to be called by both tasks and fibers (thus saving code space).
+ *
+ * If necessary, the interrupt latency impact of calling this routine from a
+ * fiber could be lessened by re-designing things so that only task-type callers
+ * locked interrupts (i.e. move the locking to task_float_disable()). However,
+ * all calls to fiber_float_disable() would need to be reviewed to ensure they
+ * are only used from a fiber, rather than from "generic" code used by both
+ * tasks and fibers.
+ */
 
 void _FpDisable(tCCS *ccs)
 {
@@ -376,58 +376,58 @@ void _FpDisable(tCCS *ccs)
 	irq_unlock_inline(imask);
 }
 
-/*******************************************************************************
-*
-* fiber_float_disable - disable preservation of non-integer context
-*information
-*
-* This routine allows a fiber to disallow a task/fiber (including itself) from
-* safely sharing any of the system's floating point registers with other
-* tasks/fibers.
-*
-* WARNING
-* This routine should only be used to disable floating point support for
-* a task/fiber that currently has such support enabled.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber_float_disable - disable preservation of non-integer context
+ *information
+ *
+ * This routine allows a fiber to disallow a task/fiber (including itself) from
+ * safely sharing any of the system's floating point registers with other
+ * tasks/fibers.
+ *
+ * WARNING
+ * This routine should only be used to disable floating point support for
+ * a task/fiber that currently has such support enabled.
+ *
+ * RETURNS: N/A
+ */
 
 FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
 
-/*******************************************************************************
-*
-* task_float_disable - disable preservation of non-integer context information
-*
-* This routine allows a task to disallow a task/fiber (including itself) from
-* safely sharing any of the system's floating point registers with other
-* tasks/fibers.
-*
-* WARNING
-* This routine should only be used to disable floating point support for
-* a task/fiber that currently has such support enabled.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_float_disable - disable preservation of non-integer context information
+ *
+ * This routine allows a task to disallow a task/fiber (including itself) from
+ * safely sharing any of the system's floating point registers with other
+ * tasks/fibers.
+ *
+ * WARNING
+ * This routine should only be used to disable floating point support for
+ * a task/fiber that currently has such support enabled.
+ *
+ * RETURNS: N/A
+ */
 
 FUNC_ALIAS(_FpDisable, task_float_disable, void);
 
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
 
-/*******************************************************************************
-*
-* _FpNotAvailableExcHandler - handler for "device not available" exception
-*
-* This routine is registered to handle the "device not available" exception
-* (vector = 7) when the AUTOMATIC_FP_ENABLING configuration option has been
-* been selected.
-*
-* The processor will generate this exception if any x87 FPU, MMX, or SSEx
-* instruction is executed while CR0[TS]=1.  The handler then enables the
-* current task or fiber with the USE_FP option (or the USE_SSE option if the
-* SSE configuration option has been enabled).
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _FpNotAvailableExcHandler - handler for "device not available" exception
+ *
+ * This routine is registered to handle the "device not available" exception
+ * (vector = 7) when the AUTOMATIC_FP_ENABLING configuration option has been
+ * been selected.
+ *
+ * The processor will generate this exception if any x87 FPU, MMX, or SSEx
+ * instruction is executed while CR0[TS]=1.  The handler then enables the
+ * current task or fiber with the USE_FP option (or the USE_SSE option if the
+ * SSE configuration option has been enabled).
+ *
+ * RETURNS: N/A
+ */
 
 void _FpNotAvailableExcHandler(NANO_ESF * pEsf /* not used */
 			       )

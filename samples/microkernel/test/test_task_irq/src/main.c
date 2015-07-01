@@ -54,15 +54,15 @@ static ksem_t rdySem = SEM_RDY;
 #define NUM_OBJECTS 4
 extern uint32_t irq_vectors[NUM_OBJECTS];
 
-/*******************************************************************************
-*
-* taskAMain - entry point for taskA
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* taskA.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * taskAMain - entry point for taskA
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * taskA.
+ *
+ * RETURNS: N/A
+ */
 
 void taskAMain(void)
 {
@@ -70,15 +70,15 @@ void taskAMain(void)
 	task_sem_give(resultSems[taskA(rdySem)]);
 }
 
-/*******************************************************************************
-*
-* taskBMain - entry point for taskB
-*
-* This routine signals "task done" or "task fail", based on the return code of
-* taskB.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * taskBMain - entry point for taskB
+ *
+ * This routine signals "task done" or "task fail", based on the return code of
+ * taskB.
+ *
+ * RETURNS: N/A
+ */
 
 void taskBMain(void)
 {
@@ -86,16 +86,16 @@ void taskBMain(void)
 	task_sem_give(resultSems[taskB(rdySem)]);
 }
 
-/*******************************************************************************
-*
-* registerWait - wait for devices to be registered and generate SW ints
-*
-* This routine waits for the tasks to indicate the IRQ objects are allocated and
-* then generates SW interrupts for all IRQs. Signals "task done" if all task
-* indicated the IRQs are allocated or signals "task fail"if not.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * registerWait - wait for devices to be registered and generate SW ints
+ *
+ * This routine waits for the tasks to indicate the IRQ objects are allocated and
+ * then generates SW interrupts for all IRQs. Signals "task done" if all task
+ * indicated the IRQs are allocated or signals "task fail"if not.
+ *
+ * RETURNS: N/A
+ */
 void registerWait(void)
 {
 	extern void raiseInt(uint8_t id);
@@ -122,15 +122,15 @@ void registerWait(void)
 	task_sem_give(resultSems[TC_PASS]);
 }
 
-/*******************************************************************************
-*
-* MonitorTaskEntry - entry point for MonitorTask
-*
-* This routine keeps tabs on the progress of the tasks doing the actual testing
-* and generates the final test case summary message.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * MonitorTaskEntry - entry point for MonitorTask
+ *
+ * This routine keeps tabs on the progress of the tasks doing the actual testing
+ * and generates the final test case summary message.
+ *
+ * RETURNS: N/A
+ */
 
 void MonitorTaskEntry(void)
 {

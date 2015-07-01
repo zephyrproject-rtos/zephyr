@@ -52,7 +52,7 @@ Scenario #3:
 
 Scenario #4:
    Timeout scenarios with multiple semaphores and fibers.
-*/
+ */
 
 #include <tc_util.h>
 #include <arch/cpu.h>
@@ -95,17 +95,17 @@ static void (*_trigger_nano_isr_sem_take)(void) = (vvfn)sw_isr_trigger_1;
 static struct nano_sem multi_waiters;
 static struct nano_sem reply_multi_waiters;
 
-/*******************************************************************************
-*
-* isr_sem_take - take a semaphore
-*
-* This routine is the ISR handler for _trigger_nano_isr_sem_take().  It takes a
-* semaphore within the context of an ISR.
-*
-* \param data    pointer to ISR handler parameter
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_sem_take - take a semaphore
+ *
+ * This routine is the ISR handler for _trigger_nano_isr_sem_take().  It takes a
+ * semaphore within the context of an ISR.
+ *
+ * \param data    pointer to ISR handler parameter
+ *
+ * RETURNS: N/A
+ */
 
 void isr_sem_take(void *data)
 {
@@ -114,17 +114,17 @@ void isr_sem_take(void *data)
 	pInfo->data = nano_isr_sem_take(pInfo->sem);
 }
 
-/*******************************************************************************
-*
-* isr_sem_give - give a semaphore
-*
-* This routine is the ISR handler for _trigger_nano_isr_sem_take().  It gives a
-* semaphore within the context of an ISR.
-*
-* \param data    pointer to ISR handler parameter
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_sem_give - give a semaphore
+ *
+ * This routine is the ISR handler for _trigger_nano_isr_sem_take().  It gives a
+ * semaphore within the context of an ISR.
+ *
+ * \param data    pointer to ISR handler parameter
+ *
+ * RETURNS: N/A
+ */
 
 void isr_sem_give(void *data)
 {
@@ -134,15 +134,15 @@ void isr_sem_give(void *data)
 	pInfo->data = 1;     /* Indicate semaphore has been given */
 }
 
-/*******************************************************************************
-*
-* testSemFiberNoWait - give and take the semaphore in a fiber without blocking
-*
-* This test gives and takes the test semaphore in the context of a fiber
-* without blocking on the semaphore.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * testSemFiberNoWait - give and take the semaphore in a fiber without blocking
+ *
+ * This test gives and takes the test semaphore in the context of a fiber
+ * without blocking on the semaphore.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int testSemFiberNoWait(void)
 {
@@ -178,18 +178,18 @@ errorReturn:
 	return TC_FAIL;
 }
 
-/*******************************************************************************
-*
-* fiberEntry - entry point for the fiber portion of the semaphore tests
-*
-* NOTE: The fiber portion of the tests have higher priority than the task
-* portion of the tests.
-*
-* \param arg1    unused
-* \param arg2    unused
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiberEntry - entry point for the fiber portion of the semaphore tests
+ *
+ * NOTE: The fiber portion of the tests have higher priority than the task
+ * portion of the tests.
+ *
+ * \param arg1    unused
+ * \param arg2    unused
+ *
+ * RETURNS: N/A
+ */
 
 static void fiberEntry(int arg1, int arg2)
 {
@@ -254,14 +254,14 @@ static void fiberEntry(int arg1, int arg2)
 	}
 }
 
-/*******************************************************************************
-*
-* initNanoObjects - initialize nanokernel objects
-*
-* This routine initializes the nanokernel objects used in the semaphore tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * initNanoObjects - initialize nanokernel objects
+ *
+ * This routine initializes the nanokernel objects used in the semaphore tests.
+ *
+ * RETURNS: N/A
+ */
 
 void initNanoObjects(void)
 {
@@ -280,15 +280,15 @@ void initNanoObjects(void)
 	TC_PRINT("Nano objects initialized\n");
 }
 
-/*******************************************************************************
-*
-* testSemIsrNoWait - give and take the semaphore in an ISR without blocking
-*
-* This test gives and takes the test semaphore in the context of an ISR without
-* blocking on the semaphore.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * testSemIsrNoWait - give and take the semaphore in an ISR without blocking
+ *
+ * This test gives and takes the test semaphore in the context of an ISR without
+ * blocking on the semaphore.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int testSemIsrNoWait(void)
 {
@@ -327,15 +327,15 @@ errorReturn:
 	return TC_FAIL;
 }
 
-/*******************************************************************************
-*
-* testSemTaskNoWait - give and take the semaphore in a task without blocking
-*
-* This test gives and takes the test semaphore in the context of a task without
-* blocking on the semaphore.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * testSemTaskNoWait - give and take the semaphore in a task without blocking
+ *
+ * This test gives and takes the test semaphore in the context of a task without
+ * blocking on the semaphore.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int testSemTaskNoWait(void)
 {
@@ -370,15 +370,15 @@ errorReturn:
 	return TC_FAIL;
 }
 
-/*******************************************************************************
-*
-* testSemWait - perform tests that wait on a semaphore
-*
-* This routine works with fiberEntry() to perform the tests that wait on
-* a semaphore.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * testSemWait - perform tests that wait on a semaphore
+ *
+ * This routine works with fiberEntry() to perform the tests that wait on
+ * a semaphore.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int testSemWait(void)
 {
@@ -428,12 +428,12 @@ int testSemWait(void)
 #define NUM_WAITERS 3
 static char __stack fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
 
-/*******************************************************************************
-*
-* fiber_multi_waiters - fiber entry point for multiple-waiters test
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber_multi_waiters - fiber entry point for multiple-waiters test
+ *
+ * RETURNS: N/A
+ */
 
 static void fiber_multi_waiters(int arg1, int arg2)
 {
@@ -444,12 +444,12 @@ static void fiber_multi_waiters(int arg1, int arg2)
 	nano_fiber_sem_give(&reply_multi_waiters);
 }
 
-/*******************************************************************************
-*
-* do_test_multiple_waiters - task part of multiple-waiter test, repeatable
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * do_test_multiple_waiters - task part of multiple-waiter test, repeatable
+ *
+ * RETURNS: N/A
+ */
 
 static int do_test_multiple_waiters(void)
 {
@@ -490,12 +490,12 @@ static int do_test_multiple_waiters(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* test_multiple_waiters - entry point for multiple-waiters test
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * test_multiple_waiters - entry point for multiple-waiters test
+ *
+ * RETURNS: N/A
+ */
 
 static int test_multiple_waiters(void)
 {
@@ -934,14 +934,14 @@ static int test_timeout(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* main - entry point to semaphore tests
-*
-* This is the entry point to the semaphore tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - entry point to semaphore tests
+ *
+ * This is the entry point to the semaphore tests.
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 {

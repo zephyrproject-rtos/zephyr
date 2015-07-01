@@ -38,7 +38,7 @@ CONFIG_STACK_CANARIES=y.
 
 When this feature is enabled, the compiler generated code refers to
 function __stack_chk_fail and global variable __stack_chk_guard.
-*/
+ */
 
 #include <toolchain.h> /* compiler specific configurations */
 
@@ -48,14 +48,14 @@ function __stack_chk_fail and global variable __stack_chk_guard.
 #include <toolchain.h>
 #include <sections.h>
 
-/*******************************************************************************
-*
-* _StackCheckHandler - stack canary error handler
-*
-* This function is invoked when a stack canary error is detected.
-*
-* RETURNS: Does not return
-*/
+/**
+ *
+ * _StackCheckHandler - stack canary error handler
+ *
+ * This function is invoked when a stack canary error is detected.
+ *
+ * RETURNS: Does not return
+ */
 
 void FUNC_NORETURN _StackCheckHandler(void)
 {
@@ -78,13 +78,13 @@ void FUNC_NORETURN _StackCheckHandler(void)
 
 void __noinit *__stack_chk_guard;
 
-/*******************************************************************************
-*
-* __stack_chk_fail - Referenced by GCC compiler generated code
-*
-* This routine is invoked when a stack canary error is detected, indicating
-* a buffer overflow or stack corruption problem.
-*/
+/**
+ *
+ * __stack_chk_fail - Referenced by GCC compiler generated code
+ *
+ * This routine is invoked when a stack canary error is detected, indicating
+ * a buffer overflow or stack corruption problem.
+ */
 
 FUNC_ALIAS(_StackCheckHandler, __stack_chk_fail, void);
 #endif

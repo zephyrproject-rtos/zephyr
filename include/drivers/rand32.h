@@ -41,7 +41,7 @@ sys_rand32_get().
 However, if it does not do so a project requiring random numbers must implement
 these routines, or (for testing purposes only) enable the TEST_RANDOM_GENERATOR
 configuration option.
-*/
+ */
 
 #ifndef __INCrand32h
 #define __INCrand32h

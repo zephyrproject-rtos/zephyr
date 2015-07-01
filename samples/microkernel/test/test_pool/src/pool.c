@@ -36,7 +36,7 @@ This modules tests the following memory pool routines:
 
   task_mem_pool_alloc(), task_mem_pool_alloc_wait(), task_mem_pool_alloc_wait_timeout(),
   task_mem_pool_free()
-*/
+ */
 
 #include <tc_util.h>
 #include <nanokernel.h>
@@ -109,12 +109,12 @@ static TEST_CASE defrag[] = {
 	{&blockList[9], POOL_ID, 1024, 0, RC_OK}
 };
 
-/*******************************************************************************
-*
-* blockCompare - compare the two blocks
-*
-* RETURNS: 0 if the same, non-zero if not the same
-*/
+/**
+ *
+ * blockCompare - compare the two blocks
+ *
+ * RETURNS: 0 if the same, non-zero if not the same
+ */
 
 int blockCompare(struct k_block *b1, struct k_block *b2)
 {
@@ -133,12 +133,12 @@ int blockCompare(struct k_block *b1, struct k_block *b2)
 	return diff;
 }
 
-/*******************************************************************************
-*
-* poolBlockGetFunc - wrapper for task_mem_pool_alloc()
-*
-* RETURNS: task_mem_pool_alloc() return value
-*/
+/**
+ *
+ * poolBlockGetFunc - wrapper for task_mem_pool_alloc()
+ *
+ * RETURNS: task_mem_pool_alloc() return value
+ */
 
 int poolBlockGetFunc(struct k_block *block, kmemory_pool_t pool, int size,
 					 int32_t unused)
@@ -148,12 +148,12 @@ int poolBlockGetFunc(struct k_block *block, kmemory_pool_t pool, int size,
 	return task_mem_pool_alloc(block, pool, size);
 }
 
-/*******************************************************************************
-*
-* poolBlockGetWFunc - wrapper for task_mem_pool_alloc_wait()
-*
-* RETURNS: task_mem_pool_alloc_wait() return value
-*/
+/**
+ *
+ * poolBlockGetWFunc - wrapper for task_mem_pool_alloc_wait()
+ *
+ * RETURNS: task_mem_pool_alloc_wait() return value
+ */
 
 int poolBlockGetWFunc(struct k_block *block, kmemory_pool_t pool, int size,
 					  int32_t unused)
@@ -163,12 +163,12 @@ int poolBlockGetWFunc(struct k_block *block, kmemory_pool_t pool, int size,
 	return task_mem_pool_alloc_wait(block, pool, size);
 }
 
-/*******************************************************************************
-*
-* poolBlockGetWTFunc - wrapper for task_mem_pool_alloc_wait_timeout()
-*
-* RETURNS: task_mem_pool_alloc_wait_timeout() return value
-*/
+/**
+ *
+ * poolBlockGetWTFunc - wrapper for task_mem_pool_alloc_wait_timeout()
+ *
+ * RETURNS: task_mem_pool_alloc_wait_timeout() return value
+ */
 
 int poolBlockGetWTFunc(struct k_block *block, kmemory_pool_t pool,
 					   int size, int32_t timeout)
@@ -176,12 +176,12 @@ int poolBlockGetWTFunc(struct k_block *block, kmemory_pool_t pool,
 	return task_mem_pool_alloc_wait_timeout(block, pool, size, timeout);
 }
 
-/*******************************************************************************
-*
-* freeBlocks - free any blocks allocated in the test set
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * freeBlocks - free any blocks allocated in the test set
+ *
+ * RETURNS: N/A
+ */
 
 void freeBlocks(TEST_CASE *tests, int nTests)
 {
@@ -194,12 +194,12 @@ void freeBlocks(TEST_CASE *tests, int nTests)
 	}
 }
 
-/*******************************************************************************
-*
-* poolBlockGetWork - perform the work of getting blocks
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * poolBlockGetWork - perform the work of getting blocks
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int poolBlockGetWork(char *string, poolBlockGetFunc_t func,
 					 TEST_CASE *tests, int nTests)
@@ -221,14 +221,14 @@ int poolBlockGetWork(char *string, poolBlockGetFunc_t func,
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* poolBlockGetTest - test the task_mem_pool_alloc() API
-*
-* The pool is 4 kB in size.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * poolBlockGetTest - test the task_mem_pool_alloc() API
+ *
+ * The pool is 4 kB in size.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int poolBlockGetTest(void)
 {
@@ -256,12 +256,12 @@ int poolBlockGetTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* HelperTask - helper task to poolBlockGetTimeoutTest()
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * HelperTask - helper task to poolBlockGetTimeoutTest()
+ *
+ * RETURNS: N/A
+ */
 
 void HelperTask(void)
 {
@@ -271,12 +271,12 @@ void HelperTask(void)
 	task_mem_pool_free(&helperBlock);
 }
 
-/*******************************************************************************
-*
-* poolBlockGetTimeoutTest - test task_mem_pool_alloc_wait_timeout()
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * poolBlockGetTimeoutTest - test task_mem_pool_alloc_wait_timeout()
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int poolBlockGetTimeoutTest(void)
 {
@@ -324,12 +324,12 @@ int poolBlockGetTimeoutTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* poolBlockGetWaitTest -
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * poolBlockGetWaitTest -
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int poolBlockGetWaitTest(void)
 {
@@ -366,12 +366,12 @@ int poolBlockGetWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* DefragTask - task responsible for defragmenting the pool POOL_ID
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * DefragTask - task responsible for defragmenting the pool POOL_ID
+ *
+ * RETURNS: N/A
+ */
 
 void DefragTask(void)
 {
@@ -382,12 +382,12 @@ void DefragTask(void)
 	task_sem_give(REGRESS_SEM);   /* DefragTask is finished */
 }
 
-/*******************************************************************************
-*
-* poolDefragTest -
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * poolDefragTest -
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int poolDefragTest(void)
 {
@@ -431,14 +431,14 @@ int poolDefragTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* AlternateTask - alternate task in the test suite
-*
-* This routine runs at a lower priority than RegressionTask().
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * AlternateTask - alternate task in the test suite
+ *
+ * This routine runs at a lower priority than RegressionTask().
+ *
+ * RETURNS: N/A
+ */
 
 void AlternateTask(void)
 {
@@ -451,14 +451,14 @@ void AlternateTask(void)
 	evidence = 2;
 }
 
-/*******************************************************************************
-*
-* RegressionTask - main task in the test suite
-*
-* This is the entry point to the memory pool test suite.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * RegressionTask - main task in the test suite
+ *
+ * This is the entry point to the memory pool test suite.
+ *
+ * RETURNS: N/A
+ */
 
 void RegressionTask(void)
 {

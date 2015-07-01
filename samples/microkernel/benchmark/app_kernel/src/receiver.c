@@ -37,7 +37,7 @@
 		_B : Is a file that contains a benchmark function
 		_R : Is a file that contains the receiver task
 			 of a benchmark function
-*/
+ */
 
 #include "receiver.h"
 
@@ -48,7 +48,7 @@ void waittask(void);
 void mailrecvtask(void);
 void piperecvtask(void);
 
-/*******************************************************************************
+/**
  *
  * recvtask - main function of the task that receives data in the test
  *

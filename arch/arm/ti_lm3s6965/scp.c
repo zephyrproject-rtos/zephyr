@@ -37,7 +37,7 @@ Library for controlling target-specific devices present in the 0x400fe000
 peripherals memory region.
 
 Currently, only enabling the main OSC with default value is implemented.
-*/
+ */
 
 #include <stdint.h>
 #include <toolchain.h>
@@ -49,12 +49,12 @@ Currently, only enabling the main OSC with default value is implemented.
 
 volatile struct __scp __scp_section __scp;
 
-/*******************************************************************************
-*
-* _ScpMainOscEnable - enable main oscillator with default frequency of 6MHz
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScpMainOscEnable - enable main oscillator with default frequency of 6MHz
+ *
+ * RETURNS: N/A
+ */
 void _ScpMainOscEnable(void)
 {
 	union __rcc reg;

@@ -35,12 +35,12 @@
 #include <toolchain.h>
 #include <sections.h>
 
-/*******************************************************************************
-*
-* _k_fifo_enque_reply - finish performing an incomplete FIFO enqueue request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_fifo_enque_reply - finish performing an incomplete FIFO enqueue request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_fifo_enque_reply(struct k_args *A)
 {
@@ -60,12 +60,12 @@ void _k_fifo_enque_reply(struct k_args *A)
 	_k_state_bit_reset(A->Ctxt.proc, TF_ENQU);
 }
 
-/*******************************************************************************
-*
-* _k_fifo_enque_request - perform a FIFO enqueue request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_fifo_enque_request - perform a FIFO enqueue request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_fifo_enque_request(struct k_args *A)
 {
@@ -136,14 +136,14 @@ void _k_fifo_enque_request(struct k_args *A)
 		}
 	}
 }
-/*******************************************************************************
-*
-* _task_fifo_put - FIFO enqueue request
-*
-* This routine puts an entry at the end of the FIFO queue.
-*
-* RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
-*/
+/**
+ *
+ * _task_fifo_put - FIFO enqueue request
+ *
+ * This routine puts an entry at the end of the FIFO queue.
+ *
+ * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ */
 
 int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 		void *data,   /* ptr to data to add to queue */
@@ -162,12 +162,12 @@ int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _k_fifo_deque_reply - finish performing an incomplete FIFO dequeue request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_fifo_deque_reply - finish performing an incomplete FIFO dequeue request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_fifo_deque_reply(struct k_args *A)
 {
@@ -187,12 +187,12 @@ void _k_fifo_deque_reply(struct k_args *A)
 	_k_state_bit_reset(A->Ctxt.proc, TF_DEQU);
 }
 
-/*******************************************************************************
-*
-* _k_fifo_deque_request - perform FIFO dequeue request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_fifo_deque_request - perform FIFO dequeue request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_fifo_deque_request(struct k_args *A)
 {
@@ -266,17 +266,17 @@ void _k_fifo_deque_request(struct k_args *A)
 	}
 }
 
-/*******************************************************************************
-*
-* _task_fifo_get - FIFO dequeue request
-*
-* This routine tries to read a data element from the FIFO.
-*
-* If the FIFO is not empty, the oldest entry is removed and copied to the
-* address provided by the caller.
-*
-* RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
-*/
+/**
+ *
+ * _task_fifo_get - FIFO dequeue request
+ *
+ * This routine tries to read a data element from the FIFO.
+ *
+ * If the FIFO is not empty, the oldest entry is removed and copied to the
+ * address provided by the caller.
+ *
+ * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ */
 
 int _task_fifo_get(kfifo_t queue, /* FIFO queue */
 		void *data,   /* where to store FIFO entry */
@@ -295,12 +295,12 @@ int _task_fifo_get(kfifo_t queue, /* FIFO queue */
 	return A.Time.rcode;
 }
 
-/*******************************************************************************
-*
-* _k_fifo_ioctl - perform miscellaneous FIFO request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_fifo_ioctl - perform miscellaneous FIFO request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_fifo_ioctl(struct k_args *A)
 {
@@ -335,16 +335,16 @@ void _k_fifo_ioctl(struct k_args *A)
 		A->Time.rcode = Q->Nused;
 }
 
-/*******************************************************************************
-*
-* _task_fifo_ioctl - miscellaneous FIFO request
-*
-* Depending upon the chosen operation, this routine will ...
-*   1. <op> = 0 : query the number of FIFO entries
-*   2. <op> = 1 : purge the FIFO of its entries
-*
-* RETURNS: # of FIFO entries on query; RC_OK on purge
-*/
+/**
+ *
+ * _task_fifo_ioctl - miscellaneous FIFO request
+ *
+ * Depending upon the chosen operation, this routine will ...
+ *   1. <op> = 0 : query the number of FIFO entries
+ *   2. <op> = 1 : purge the FIFO of its entries
+ *
+ * RETURNS: # of FIFO entries on query; RC_OK on purge
+ */
 
 int _task_fifo_ioctl(kfifo_t queue, /* FIFO queue */
 	     int op	/* 0: status query; 1: purge */

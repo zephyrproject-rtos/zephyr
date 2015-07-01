@@ -40,7 +40,7 @@ booting scenarios (e.g. via GRUB or any other multiboot compliant bootloader)
 now assume that the system is already in 32-bit protected mode and address line
 A20 is enabled. However, the code associated with CONFIG_PROT_MODE_SWITCH has
 been left in place should future booting scenarios arise which require its use.
-*/
+ */
 
 #define _ASMLANGUAGE
 

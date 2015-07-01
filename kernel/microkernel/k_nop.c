@@ -38,32 +38,32 @@ This service is primarily used by other kernel services that need a way to
 resume the execution of a kernel request that could not be completed in a
 single invocation of the K_swapper fiber. However, it can also be used by
 a task to measure the overhead involved in issuing a kernel service request.
-*/
+ */
 
 #include <micro_private.h>
 #include <toolchain.h>
 #include <sections.h>
 
-/*******************************************************************************
-*
-* _k_nop - perform "do nothing" kernel request
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_nop - perform "do nothing" kernel request
+ *
+ * RETURNS: N/A
+ */
 
 void _k_nop(struct k_args *A)
 {
 	ARG_UNUSED(A);
 }
 
-/*******************************************************************************
-*
-* _task_nop - "do nothing" kernel request
-*
-* This routine is a request for the K_swapper to run a "do nothing" routine.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _task_nop - "do nothing" kernel request
+ *
+ * This routine is a request for the K_swapper to run a "do nothing" routine.
+ *
+ * RETURNS: N/A
+ */
 
 void _task_nop(void)
 {

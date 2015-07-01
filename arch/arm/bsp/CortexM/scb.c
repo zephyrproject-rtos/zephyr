@@ -36,7 +36,7 @@ DESCRIPTION
 Most of the SCB interface consists of simple bit-flipping methods, and is
 implemented as inline functions in scb.h. This module thus contains only data
 definitions and more complex routines, if needed.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -44,14 +44,14 @@ definitions and more complex routines, if needed.
 
 #define SCB_AIRCR_VECTKEY_EN_W 0x05FA
 
-/*******************************************************************************
-*
-* _ScbSystemReset - reset the system
-*
-* This routine resets the processor.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScbSystemReset - reset the system
+ *
+ * This routine resets the processor.
+ *
+ * RETURNS: N/A
+ */
 
 void _ScbSystemReset(void)
 {
@@ -63,19 +63,19 @@ void _ScbSystemReset(void)
 	__scs.scb.aircr.val = reg.val;
 }
 
-/*******************************************************************************
-*
-* _ScbNumPriGroupSet - set the number of priority groups based on the number
-*                      of exception priorities desired
-*
-* Exception priorities can be divided in priority groups, inside which there is
-* no preemption. The priorities inside a group are only used to decide which
-* exception will run when more than one is ready to be handled.
-*
-* The number of priorities has to be a power of two, from 1 to 128.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _ScbNumPriGroupSet - set the number of priority groups based on the number
+ *                      of exception priorities desired
+ *
+ * Exception priorities can be divided in priority groups, inside which there is
+ * no preemption. The priorities inside a group are only used to decide which
+ * exception will run when more than one is ready to be handled.
+ *
+ * The number of priorities has to be a power of two, from 1 to 128.
+ *
+ * RETURNS: N/A
+ */
 
 void _ScbNumPriGroupSet(unsigned int n /* number of priorities */
 			)

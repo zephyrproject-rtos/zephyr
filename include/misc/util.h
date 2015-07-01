@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Misc utilities usable by nanokernel, microkernel, and application code.
-*/
+ */
 
 #ifndef _UTIL__H_
 #define _UTIL__H_

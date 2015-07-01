@@ -34,7 +34,7 @@
 DESCRIPTION
 GDB stub needed before the real systick handler runs to be able to display the
 correct state of the thread that was interrupted.
-*/
+ */
 
 #define _ASMLANGUAGE
 

@@ -47,7 +47,7 @@ int pipeget(kpipe_t pipe, K_PIPE_OPTION option,
 
 /* pipes transfer speed test */
 
-/*******************************************************************************
+/**
  *
  * piperecvtask - receive task
  *
@@ -98,7 +98,7 @@ void piperecvtask(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * pipeget - read a data portion from the pipe and measure time
  *

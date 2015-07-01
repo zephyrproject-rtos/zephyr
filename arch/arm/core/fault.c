@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Common fault handler for ARM Cortex-M processors.
-*/
+ */
 
 #include <toolchain.h>
 #include <sections.h>
@@ -59,24 +59,24 @@ Common fault handler for ARM Cortex-M processors.
 #endif
 
 #if (CONFIG_FAULT_DUMP == 1)
-/*******************************************************************************
-*
-* _FaultDump - dump information regarding fault (FAULT_DUMP == 1)
-*
-* Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 1
-* (short form).
-*
-* eg. (precise bus error escalated to hard fault):
-*
-* Fault! EXC #3, Thread: 0x200000dc, instr: 0x000011d3
-* HARD FAULT: Escalation (see below)!
-* MMFSR: 0x00000000, BFSR: 0x00000082, UFSR: 0x00000000
-* BFAR: 0xff001234
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _FaultDump - dump information regarding fault (FAULT_DUMP == 1)
+ *
+ * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 1
+ * (short form).
+ *
+ * eg. (precise bus error escalated to hard fault):
+ *
+ * Fault! EXC #3, Thread: 0x200000dc, instr: 0x000011d3
+ * HARD FAULT: Escalation (see below)!
+ * MMFSR: 0x00000000, BFSR: 0x00000082, UFSR: 0x00000000
+ * BFAR: 0xff001234
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _FaultDump(const NANO_ESF *esf, int fault)
 {
@@ -118,16 +118,16 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 #endif
 
 #if (CONFIG_FAULT_DUMP == 2)
-/*******************************************************************************
-*
-* _FaultContextShow - dump context information
-*
-* See _FaultDump() for example.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _FaultContextShow - dump context information
+ *
+ * See _FaultDump() for example.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _FaultContextShow(const NANO_ESF *esf)
 {
@@ -137,16 +137,16 @@ static void _FaultContextShow(const NANO_ESF *esf)
 	       esf->pc);
 }
 
-/*******************************************************************************
-*
-* _MpuFault - dump MPU fault information
-*
-* See _FaultDump() for example.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _MpuFault - dump MPU fault information
+ *
+ * See _FaultDump() for example.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _MpuFault(const NANO_ESF *esf,
 					    int fromHardFault)
@@ -172,16 +172,16 @@ static void _MpuFault(const NANO_ESF *esf,
 	}
 }
 
-/*******************************************************************************
-*
-* _BusFault - dump bus fault information
-*
-* See _FaultDump() for example.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _BusFault - dump bus fault information
+ *
+ * See _FaultDump() for example.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _BusFault(const NANO_ESF *esf,
 					    int fromHardFault)
@@ -213,16 +213,16 @@ static void _BusFault(const NANO_ESF *esf,
 	}
 }
 
-/*******************************************************************************
-*
-* _UsageFault - dump usage fault information
-*
-* See _FaultDump() for example.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _UsageFault - dump usage fault information
+ *
+ * See _FaultDump() for example.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _UsageFault(const NANO_ESF *esf)
 {
@@ -253,16 +253,16 @@ static void _UsageFault(const NANO_ESF *esf)
 	_ScbUsageFaultAllFaultsReset();
 }
 
-/*******************************************************************************
-*
-* _HardFault - dump hard fault information
-*
-* See _FaultDump() for example.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _HardFault - dump hard fault information
+ *
+ * See _FaultDump() for example.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _HardFault(const NANO_ESF *esf)
 {
@@ -281,32 +281,32 @@ static void _HardFault(const NANO_ESF *esf)
 	}
 }
 
-/*******************************************************************************
-*
-* _DebugMonitor - dump debug monitor exception information
-*
-* See _FaultDump() for example.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _DebugMonitor - dump debug monitor exception information
+ *
+ * See _FaultDump() for example.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _DebugMonitor(const NANO_ESF *esf)
 {
 	PR_EXC("***** Debug monitor exception (not implemented) *****\n");
 }
 
-/*******************************************************************************
-*
-* _ReservedException - dump reserved exception information
-*
-* See _FaultDump() for example.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _ReservedException - dump reserved exception information
+ *
+ * See _FaultDump() for example.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _ReservedException(const NANO_ESF *esf,
 						     int fault)
@@ -316,27 +316,27 @@ static void _ReservedException(const NANO_ESF *esf,
 	       fault - 16);
 }
 
-/*******************************************************************************
-*
-* _FaultDump - dump information regarding fault (FAULT_DUMP == 2)
-*
-* Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 2
-* (long form).
-*
-* eg. (precise bus error escalated to hard fault):
-*
-* Executing context ID (thread): 0x200000dc
-* Faulting instruction address:  0x000011d3
-* ***** HARD FAULT *****
-*    Fault escalation (see below)
-* ***** BUS FAULT *****
-*   Precise data bus error
-*   Address: 0xff001234
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _FaultDump - dump information regarding fault (FAULT_DUMP == 2)
+ *
+ * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 2
+ * (long form).
+ *
+ * eg. (precise bus error escalated to hard fault):
+ *
+ * Executing context ID (thread): 0x200000dc
+ * Faulting instruction address:  0x000011d3
+ * ***** HARD FAULT *****
+ *    Fault escalation (see below)
+ * ***** BUS FAULT *****
+ *   Precise data bus error
+ *   Address: 0xff001234
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _FaultDump(const NANO_ESF *esf, int fault)
 {
@@ -363,23 +363,23 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 }
 #endif /* FAULT_DUMP == 2 */
 
-/*******************************************************************************
-*
-* _Fault - fault handler
-*
-* This routine is called when fatal error conditions are detected by hardware
-* and is responsible only for reporting the error. Once reported, it then
-* invokes the user provided routine _SysFatalErrorHandler() which is
-* responsible for implementing the error handling policy.
-*
-* Since the ESF can be either on the MSP or PSP depending if an exception or
-* interrupt was already being handled, it is passed a pointer to both and has
-* to find out on which the ESP is present.
-*
-* RETURNS: This function does not return.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _Fault - fault handler
+ *
+ * This routine is called when fatal error conditions are detected by hardware
+ * and is responsible only for reporting the error. Once reported, it then
+ * invokes the user provided routine _SysFatalErrorHandler() which is
+ * responsible for implementing the error handling policy.
+ *
+ * Since the ESF can be either on the MSP or PSP depending if an exception or
+ * interrupt was already being handled, it is passed a pointer to both and has
+ * to find out on which the ESP is present.
+ *
+ * RETURNS: This function does not return.
+ *
+ * \NOMANUAL
+ */
 
 void _Fault(
 	const NANO_ESF *msp, /* pointer to potential ESF on MSP */
@@ -394,16 +394,16 @@ void _Fault(
 	_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
 }
 
-/*******************************************************************************
-*
-* _FaultInit - initialization of fault handling
-*
-* Turns on the desired hardware faults.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _FaultInit - initialization of fault handling
+ *
+ * Turns on the desired hardware faults.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _FaultInit(void)
 {

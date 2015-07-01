@@ -61,29 +61,29 @@ extern struct nano_sem forks[N_PHILOSOPHERS];
 kmutex_t forks[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4, forkMutex5};
 #endif /*  CONFIG_NANOKERNEL */
 
-/*******************************************************************************
-*
-* myPrint - print a philosophers state
-*
-* @param id    Philosopher ID.
-* @param str   EATING or THINKING.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * myPrint - print a philosophers state
+ *
+ * @param id    Philosopher ID.
+ * @param str   EATING or THINKING.
+ *
+ * RETURNS: N/A
+ */
 
 static void myPrint(int id, char *str)
 {
 	PRINTF("\x1b[%d;%dHPhilosopher %d %s\n", id + 1, 1, id, str);
 }
 
-/*******************************************************************************
-*
-* myDelay - wait for a number of ticks to elapse
-*
-* @param ticks   Number of ticks to delay.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * myDelay - wait for a number of ticks to elapse
+ *
+ * @param ticks   Number of ticks to delay.
+ *
+ * RETURNS: N/A
+ */
 
 static void myDelay(int ticks)
 {
@@ -98,15 +98,15 @@ static void myDelay(int ticks)
 #endif
 }
 
-/*******************************************************************************
-*
-* philEntry - entry point to a philosopher's thread
-*
-* This routine runs as a task in the microkernel environment
-* and as a fiber in the nanokernel environment.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * philEntry - entry point to a philosopher's thread
+ *
+ * This routine runs as a task in the microkernel environment
+ * and as a fiber in the nanokernel environment.
+ *
+ * RETURNS: N/A
+ */
 
 void philEntry(void)
 {

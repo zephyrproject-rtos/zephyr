@@ -34,7 +34,7 @@
 DESCRIPTION
 This module implements assembler exception and interrupt stubs for regression
 testing.
-*/
+ */
 
 #define _ASMLANGUAGE
 

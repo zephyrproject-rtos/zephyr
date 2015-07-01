@@ -58,7 +58,7 @@
  * - the number of elements requested by the user in contiki configuration (name suffixed by _NBU)
  * - the number of elements assigned by the system (name suffixed by _NBS)
  * - the total number of elements is the sum (name suffixed by _NB)
-*/
+ */
 
 /* Default router list */
 #define UIP_DS6_DEFRT_NBS 0

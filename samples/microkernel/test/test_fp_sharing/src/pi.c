@@ -50,7 +50,7 @@ iterations results in an accuracy of 3 decimal places.
 A reference value of pi is computed once at the start of the test. All
 subsequent computations must produce the same value, otherwise an error
 has occurred.
-*/
+ */
 
 #ifdef CONFIG_MICROKERNEL
 #include <microkernel.h>
@@ -73,12 +73,12 @@ static double reference_pi = 0.0f;
 static volatile unsigned int calc_pi_low_count = 0;
 static volatile unsigned int calc_pi_high_count = 0;
 
-/*******************************************************************************
-*
-* calculate_pi_low - entry point for the low priority pi compute task
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * calculate_pi_low - entry point for the low priority pi compute task
+ *
+ * RETURNS: N/A
+ */
 
 void calculate_pi_low(void)
 {
@@ -116,12 +116,12 @@ void calculate_pi_low(void)
 	}
 }
 
-/*******************************************************************************
-*
-* calculate_pi_high - entry point for the high priority pi compute task
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * calculate_pi_high - entry point for the high priority pi compute task
+ *
+ * RETURNS: N/A
+ */
 
 void calculate_pi_high(void)
 {

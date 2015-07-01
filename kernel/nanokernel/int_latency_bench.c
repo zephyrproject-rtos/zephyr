@@ -66,16 +66,16 @@ static uint32_t int_latency_bench_ready = 0;
 /* min amount of time it takes from HW interrupt generation to 'C' handler */
 uint32_t _hw_irq_to_c_handler_latency = ULONG_MAX;
 
-/*******************************************************************************
-*
-* intLatencyStart - start tracking time spent with interrupts locked
-*
-* calls to lock interrupt can nest, so this routine can be called numerous
-* times before interrupt are unlocked
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * intLatencyStart - start tracking time spent with interrupts locked
+ *
+ * calls to lock interrupt can nest, so this routine can be called numerous
+ * times before interrupt are unlocked
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void _int_latency_start(void)
 {
@@ -87,15 +87,15 @@ void _int_latency_start(void)
 	int_lock_unlock_nest++;
 }
 
-/*******************************************************************************
-*
-* intLatencyStop - stop accumulating time spent for when interrupts are locked
-*
-* This is only call once when the interrupt are being reenabled
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * intLatencyStop - stop accumulating time spent for when interrupts are locked
+ *
+ * This is only call once when the interrupt are being reenabled
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void _int_latency_stop(void)
 {
@@ -140,13 +140,13 @@ void _int_latency_stop(void)
 	}
 }
 
-/*******************************************************************************
-*
-* int_latency_init - initialize interrupt latency benchmark
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * int_latency_init - initialize interrupt latency benchmark
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void int_latency_init(void)
 {
@@ -191,15 +191,15 @@ void int_latency_init(void)
 	}
 }
 
-/*******************************************************************************
-*
-* int_latency_show - dumps interrupt latency values
-*
-* The interrupt latency value measures
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * int_latency_show - dumps interrupt latency values
+ *
+ * The interrupt latency value measures
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void int_latency_show(void)
 {

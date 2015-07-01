@@ -58,7 +58,7 @@ is returned back to function testTaskStackPopW which also finished it's executio
 and returned to main.  Finally function testIsrStackFromTask is run and
 it popped all data from queue1, push and pop one last item to the queue.  All
 these are run in ISR context.
-*/
+ */
 
 #include <tc_util.h>
 #include <arch/cpu.h>
@@ -126,14 +126,14 @@ void testIsrStackFromFiber(void);
 void testIsrStackFromTask(void);
 
 
-/*******************************************************************************
-*
-* initData
-*
-* Initialize myData and myIsrData arrays.
-*
-* RETURNS: none
-*/
+/**
+ *
+ * initData
+ *
+ * Initialize myData and myIsrData arrays.
+ *
+ * RETURNS: none
+ */
 
 void initData(void)
 {
@@ -143,17 +143,17 @@ void initData(void)
 	}
 } /* initData */
 
-/*******************************************************************************
-*
-* isr_stack_push - add an item to a STACK
-*
-* This routine is the ISR handler for _trigger_nano_isr_stack_push().  It adds
-* an item to the STACK in the context of an ISR.
-*
-* \param parameter    pointer to ISR handler parameter
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_stack_push - add an item to a STACK
+ *
+ * This routine is the ISR handler for _trigger_nano_isr_stack_push().  It adds
+ * an item to the STACK in the context of an ISR.
+ *
+ * \param parameter    pointer to ISR handler parameter
+ *
+ * RETURNS: N/A
+ */
 
 void isr_stack_push(void *parameter)
 {
@@ -163,18 +163,18 @@ void isr_stack_push(void *parameter)
 
 }  /* isr_stack_push */
 
-/*******************************************************************************
-*
-* isr_stack_pop - get an item from a STACK
-*
-* This routine is the ISR handler for _trigger_nano_isr_stack_pop().  It gets
-* an item from the STACK in the context of an ISR.  If the queue is empty,
-* it sets data to INVALID_DATA.
-*
-* \param parameter    pointer to ISR handler parameter
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_stack_pop - get an item from a STACK
+ *
+ * This routine is the ISR handler for _trigger_nano_isr_stack_pop().  It gets
+ * an item from the STACK in the context of an ISR.  If the queue is empty,
+ * it sets data to INVALID_DATA.
+ *
+ * \param parameter    pointer to ISR handler parameter
+ *
+ * RETURNS: N/A
+ */
 
 void isr_stack_pop(void *parameter)
 {
@@ -188,16 +188,16 @@ void isr_stack_pop(void *parameter)
 }  /* isr_stack_pop */
 
 
-/*******************************************************************************
-*
-* fiber1
-*
-* This is the fiber started from the main task.  Gets all items from
-* the STACK queue and puts four items back to the STACK queue.  Control is
-* transferred back to the main task.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber1
+ *
+ * This is the fiber started from the main task.  Gets all items from
+ * the STACK queue and puts four items back to the STACK queue.  Control is
+ * transferred back to the main task.
+ *
+ * RETURNS: N/A
+ */
 
 void fiber1(void)
 {
@@ -236,15 +236,15 @@ void fiber1(void)
 
 
 
-/*******************************************************************************
-*
-* testFiberStackPopW
-*
-* This function tests the stack push and pop wait interfaces in the fiber context.
-* It gets data from nanoStackObj2 queue and puts data to nanoStackObj queue.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testFiberStackPopW
+ *
+ * This function tests the stack push and pop wait interfaces in the fiber context.
+ * It gets data from nanoStackObj2 queue and puts data to nanoStackObj queue.
+ *
+ * RETURNS: N/A
+ */
 
 void testFiberStackPopW(void)
 {
@@ -281,17 +281,17 @@ void testFiberStackPopW(void)
 
 }  /* testFiberStackPopW */
 
-/*******************************************************************************
-*
-* testIsrStackFromFiber
-*
-* This function tests the stack push and pop interfaces in the isr context.
-* It is invoked from a fiber.
-*
-* We use nanoStackObj queue to push and pop data.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testIsrStackFromFiber
+ *
+ * This function tests the stack push and pop interfaces in the isr context.
+ * It is invoked from a fiber.
+ *
+ * We use nanoStackObj queue to push and pop data.
+ *
+ * RETURNS: N/A
+ */
 
 void testIsrStackFromFiber(void)
 {
@@ -337,17 +337,17 @@ void testIsrStackFromFiber(void)
 
 }  /* testIsrStackFromFiber */
 
-/*******************************************************************************
-*
-* testIsrStackFromTask
-*
-* This function tests the stack push and pop interfaces in the isr context.
-* It is invoked from a task.
-*
-* We use nanoStackObj queue to push and pop data.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testIsrStackFromTask
+ *
+ * This function tests the stack push and pop interfaces in the isr context.
+ * It is invoked from a task.
+ *
+ * We use nanoStackObj queue to push and pop data.
+ *
+ * RETURNS: N/A
+ */
 
 void testIsrStackFromTask(void)
 {
@@ -395,14 +395,14 @@ void testIsrStackFromTask(void)
 	TC_END_RESULT(retCode);
 }
 
-/*******************************************************************************
-*
-* fiber2
-*
-* This is the fiber started from the testTaskStackPopW function.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber2
+ *
+ * This is the fiber started from the testTaskStackPopW function.
+ *
+ * RETURNS: N/A
+ */
 
 void fiber2(void)
 {
@@ -414,15 +414,15 @@ void fiber2(void)
 }
 
 
-/*******************************************************************************
-*
-* testTaskStackPopW
-*
-* This is in the task context.  It puts data to nanoStackObj2 queue and gets
-* data from nanoStackObj queue.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testTaskStackPopW
+ *
+ * This is in the task context.  It puts data to nanoStackObj2 queue and gets
+ * data from nanoStackObj queue.
+ *
+ * RETURNS: N/A
+ */
 
 void testTaskStackPopW(void)
 {
@@ -454,15 +454,15 @@ void testTaskStackPopW(void)
 	TC_END_RESULT(retCode);
 }  /* testTaskStackPopW */
 
-/*******************************************************************************
-*
-* fiber3 - a fiber to help test nano_task_stack_pop_wait()
-*
-* This fiber blocks for one second before pushing an item onto the stack.
-* The main task, which was waiting for item from the stack then unblocks.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber3 - a fiber to help test nano_task_stack_pop_wait()
+ *
+ * This fiber blocks for one second before pushing an item onto the stack.
+ * The main task, which was waiting for item from the stack then unblocks.
+ *
+ * RETURNS: N/A
+ */
 
 void fiber3(void)
 {
@@ -471,14 +471,14 @@ void fiber3(void)
 	nano_fiber_stack_push(&nanoStackObj, myData[0]);
 }
 
-/*******************************************************************************
-*
-* initNanoObjects - initialize nanokernel objects
-*
-* This routine initializes the nanokernel objects used in the STACK tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * initNanoObjects - initialize nanokernel objects
+ *
+ * This routine initializes the nanokernel objects used in the STACK tests.
+ *
+ * RETURNS: N/A
+ */
 
 void initNanoObjects(void)
 {
@@ -495,14 +495,14 @@ void initNanoObjects(void)
 	nano_timer_init(&timer, timerData);
 } /* initNanoObjects */
 
-/*******************************************************************************
-*
-* main - entry point to STACK tests
-*
-* This is the entry point to the STACK tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - entry point to STACK tests
+ *
+ * This is the entry point to the STACK tests.
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 {

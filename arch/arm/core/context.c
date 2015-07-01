@@ -34,7 +34,7 @@
 DESCRIPTION
 Core nanokernel fiber related primitives for the ARM Cortex-M processor
 architecture.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -53,14 +53,14 @@ tNANO _nanokernel = {0};
 #endif
 
 #if defined(CONFIG_CONTEXT_MONITOR)
-/*******************************************************************************
-*
-* _context_monitor_init - initialize context monitoring support
-*
-* Currently only inserts the new context in the list of active contexts.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _context_monitor_init - initialize context monitoring support
+ *
+ * Currently only inserts the new context in the list of active contexts.
+ *
+ * RETURNS: N/A
+ */
 
 static ALWAYS_INLINE void _context_monitor_init(struct ccs *pCcs /* context */
 					   )
@@ -81,26 +81,26 @@ static ALWAYS_INLINE void _context_monitor_init(struct ccs *pCcs /* context */
 }
 #endif /* CONFIG_CONTEXT_MONITOR */
 
-/*******************************************************************************
-*
-* _NewContext - intialize a new context (thread) from its stack space
-*
-* The control structure (CCS) is put at the lower address of the stack. An
-* initial context, to be "restored" by __pendsv(), is put at the other end of
-* the stack, and thus reusable by the stack when not needed anymore.
-*
-* The initial context is an exception stack frame (ESF) since exiting the
-* PendSV exception will want to pop an ESF. Interestingly, even if the lsb of
-* an instruction address to jump to must always be set since the CPU always
-* runs in thumb mode, the ESF expects the real address of the instruction,
-* with the lsb *not* set (instructions are always aligned on 16 bit halfwords).
-* Since the compiler automatically sets the lsb of function addresses, we have
-* to unset it manually before storing it in the 'pc' field of the ESF.
-*
-* <options> is currently unused.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _NewContext - intialize a new context (thread) from its stack space
+ *
+ * The control structure (CCS) is put at the lower address of the stack. An
+ * initial context, to be "restored" by __pendsv(), is put at the other end of
+ * the stack, and thus reusable by the stack when not needed anymore.
+ *
+ * The initial context is an exception stack frame (ESF) since exiting the
+ * PendSV exception will want to pop an ESF. Interestingly, even if the lsb of
+ * an instruction address to jump to must always be set since the CPU always
+ * runs in thumb mode, the ESF expects the real address of the instruction,
+ * with the lsb *not* set (instructions are always aligned on 16 bit halfwords).
+ * Since the compiler automatically sets the lsb of function addresses, we have
+ * to unset it manually before storing it in the 'pc' field of the ESF.
+ *
+ * <options> is currently unused.
+ *
+ * RETURNS: N/A
+ */
 
 void _NewContext(
 	char *pStackMem,      /* aligned stack memory */

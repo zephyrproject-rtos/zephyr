@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Commonly used macros and defines for linker script.
-*/
+ */
 #ifndef _LINKERDEFSARCH_H
 #define _LINKERDEFSARCH_H
 

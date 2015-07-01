@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Intel-specific parts of start_task(). Only FP functionality currently.
-*/
+ */
 
 #ifdef CONFIG_MICROKERNEL
 
@@ -51,12 +51,12 @@ Intel-specific parts of start_task(). Only FP functionality currently.
 
 #define SSE_GROUP 0x10
 
-/*******************************************************************************
-*
-* _StartTaskArch - Intel-specifc parts of task initialization
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _StartTaskArch - Intel-specifc parts of task initialization
+ *
+ * RETURNS: N/A
+ */
 
 void _StartTaskArch(
 	struct k_proc *X,	 /* ptr to task control block */

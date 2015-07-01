@@ -34,7 +34,7 @@
 DESCRIPTION
 This module provides general purpose context support, with applies to both
 tasks or fibers.
-*/
+ */
 
 #include <toolchain.h>
 #include <sections.h>
@@ -42,29 +42,29 @@ tasks or fibers.
 #include <nano_private.h>
 #include <misc/printk.h>
 
-/*******************************************************************************
-*
-* context_self_get - return the currently executing context
-*
-* This routine returns a pointer to the context control block of the currently
-* executing context.  It is cast to a nano_context_id_t for use publically.
-*
-* RETURNS: nano_context_id_t of the currently executing context.
-*/
+/**
+ *
+ * context_self_get - return the currently executing context
+ *
+ * This routine returns a pointer to the context control block of the currently
+ * executing context.  It is cast to a nano_context_id_t for use publically.
+ *
+ * RETURNS: nano_context_id_t of the currently executing context.
+ */
 
 nano_context_id_t context_self_get(void)
 {
 	return _nanokernel.current;
 }
 
-/*******************************************************************************
-*
-* context_type_get - return the type of the currently executing context
-*
-* This routine returns the type of context currently executing.
-*
-* RETURNS: nano_context_type_t of the currently executing context.
-*/
+/**
+ *
+ * context_type_get - return the type of the currently executing context
+ *
+ * This routine returns the type of context currently executing.
+ *
+ * RETURNS: nano_context_type_t of the currently executing context.
+ */
 
 nano_context_type_t context_type_get(void)
 {
@@ -77,48 +77,48 @@ nano_context_type_t context_type_get(void)
 	return NANO_CTX_FIBER;
 }
 
-/*******************************************************************************
-*
-* _context_essential_set - mark context as essential to system
-*
-* This function tags the running fiber or task as essential to system
-* option; exceptions raised by this context will be treated as a fatal
-* system error.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _context_essential_set - mark context as essential to system
+ *
+ * This function tags the running fiber or task as essential to system
+ * option; exceptions raised by this context will be treated as a fatal
+ * system error.
+ *
+ * RETURNS: N/A
+ */
 
 void _context_essential_set(void)
 {
 	_nanokernel.current->flags |= ESSENTIAL;
 }
 
-/*******************************************************************************
-*
-* _context_essential_clear - mark context as not essential to system
-*
-* This function tags the running fiber or task as not essential to system
-* option; exceptions raised by this context may be recoverable.
-* (This is the default tag for a context.)
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _context_essential_clear - mark context as not essential to system
+ *
+ * This function tags the running fiber or task as not essential to system
+ * option; exceptions raised by this context may be recoverable.
+ * (This is the default tag for a context.)
+ *
+ * RETURNS: N/A
+ */
 
 void _context_essential_clear(void)
 {
 	_nanokernel.current->flags &= ~ESSENTIAL;
 }
 
-/*******************************************************************************
-*
-* _context_essential_check - is the specified context essential?
-*
-* This routine indicates if the specified context is an essential system
-* context.  A NULL context pointer indicates that the current context is
-* to be queried.
-*
-* RETURNS: Non-zero if specified context is essential, zero if it is not
-*/
+/**
+ *
+ * _context_essential_check - is the specified context essential?
+ *
+ * This routine indicates if the specified context is an essential system
+ * context.  A NULL context pointer indicates that the current context is
+ * to be queried.
+ *
+ * RETURNS: Non-zero if specified context is essential, zero if it is not
+ */
 
 int _context_essential_check(tCCS *pCtx /* pointer to context */
 					   )
@@ -128,16 +128,16 @@ int _context_essential_check(tCCS *pCtx /* pointer to context */
 
 #ifdef CONFIG_CONTEXT_CUSTOM_DATA
 
-/*******************************************************************************
-*
-* context_custom_data_set - set context's custom data
-*
-* This routine sets the custom data value for the current task or fiber.
-* Custom data is not used by the kernel itself, and is freely available
-* for the context to use as it sees fit.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * context_custom_data_set - set context's custom data
+ *
+ * This routine sets the custom data value for the current task or fiber.
+ * Custom data is not used by the kernel itself, and is freely available
+ * for the context to use as it sees fit.
+ *
+ * RETURNS: N/A
+ */
 
 void context_custom_data_set(void *value /* new value */
 		      )
@@ -145,14 +145,14 @@ void context_custom_data_set(void *value /* new value */
 	_nanokernel.current->custom_data = value;
 }
 
-/*******************************************************************************
-*
-* context_custom_data_get - get context's custom data
-*
-* This function returns the custom data value for the current task or fiber.
-*
-* RETURNS: current handle value
-*/
+/**
+ *
+ * context_custom_data_get - get context's custom data
+ *
+ * This function returns the custom data value for the current task or fiber.
+ *
+ * RETURNS: current handle value
+ */
 
 void *context_custom_data_get(void)
 {
@@ -162,21 +162,21 @@ void *context_custom_data_get(void)
 #endif /* CONFIG_CONTEXT_CUSTOM_DATA */
 
 #if defined(CONFIG_CONTEXT_MONITOR)
-/*******************************************************************************
-*
-* _context_exit - context exit routine
-*
-* This function is invoked when the specified context is aborted, either
-* normally or abnormally. It is called for the termination of any context,
-* (fibers and tasks).
-*
-* This routine must be invoked from a fiber to guarantee that the list
-* of contexts does not change in mid-operation.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _context_exit - context exit routine
+ *
+ * This function is invoked when the specified context is aborted, either
+ * normally or abnormally. It is called for the termination of any context,
+ * (fibers and tasks).
+ *
+ * This routine must be invoked from a fiber to guarantee that the list
+ * of contexts does not change in mid-operation.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _context_exit(tCCS *pContext)
 {
@@ -200,30 +200,30 @@ void _context_exit(tCCS *pContext)
 }
 #endif /* CONFIG_CONTEXT_MONITOR */
 
-/*******************************************************************************
-*
-* _context_entry - common context entry point function for kernel contexts
-*
-* This function serves as the entry point for _all_ kernel contexts, i.e. both
-* task and fiber contexts are instantiated such that initial execution starts
-* here.
-*
-* This routine invokes the actual task or fiber entry point function and
-* passes it three arguments.  It also handles graceful termination of the
-* task or fiber if the entry point function ever returns.
-*
-* INTERNAL
-* The 'noreturn' attribute is applied to this function so that the compiler
-* can dispense with generating the usual preamble that is only required for
-* functions that actually return.
-*
-* The analogous entry point function for user-mode task contexts is called
-* _ContextUsrEntryRtn().
-*
-* RETURNS: Does not return
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _context_entry - common context entry point function for kernel contexts
+ *
+ * This function serves as the entry point for _all_ kernel contexts, i.e. both
+ * task and fiber contexts are instantiated such that initial execution starts
+ * here.
+ *
+ * This routine invokes the actual task or fiber entry point function and
+ * passes it three arguments.  It also handles graceful termination of the
+ * task or fiber if the entry point function ever returns.
+ *
+ * INTERNAL
+ * The 'noreturn' attribute is applied to this function so that the compiler
+ * can dispense with generating the usual preamble that is only required for
+ * functions that actually return.
+ *
+ * The analogous entry point function for user-mode task contexts is called
+ * _ContextUsrEntryRtn().
+ *
+ * RETURNS: Does not return
+ *
+ * \NOMANUAL
+ */
 
 FUNC_NORETURN void _context_entry(
 	_ContextEntry pEntry,   /* address of app entry point function */

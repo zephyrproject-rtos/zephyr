@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -56,19 +56,19 @@ GTEXT(nano_cpu_atomic_idle)
 
 #define _SCR_INIT_BITS _SCB_SCR_SEVONPEND
 
-/*******************************************************************************
-*
-* _CpuIdleInit - initialization of CPU idle
-*
-* Only called by nanoArchInit(). Sets SEVONPEND bit once for the system's
-* duration.
-*
-* RETURNS: N/A
-*
-* C function prototype:
-*
-* void _CpuIdleInit (void);
-*/
+/**
+ *
+ * _CpuIdleInit - initialization of CPU idle
+ *
+ * Only called by nanoArchInit(). Sets SEVONPEND bit once for the system's
+ * duration.
+ *
+ * RETURNS: N/A
+ *
+ * C function prototype:
+ *
+ * void _CpuIdleInit (void);
+ */
 
 SECTION_FUNC(TEXT, _CpuIdleInit)
     ldr r1, =_SCB_SCR
@@ -78,36 +78,36 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 
-/*******************************************************************************
-*
-* _NanoIdleValGet - get the kernel idle setting
-*
-* Returns the nanokernel idle setting, in ticks. Only called by __systick().
-*
-* RETURNS: the requested number of ticks for the kernel to be idle
-*
-* C function prototype:
-*
-* int32_t _NanoIdleValGet (void);
-*/
+/**
+ *
+ * _NanoIdleValGet - get the kernel idle setting
+ *
+ * Returns the nanokernel idle setting, in ticks. Only called by __systick().
+ *
+ * RETURNS: the requested number of ticks for the kernel to be idle
+ *
+ * C function prototype:
+ *
+ * int32_t _NanoIdleValGet (void);
+ */
 
 SECTION_FUNC(TEXT, _NanoIdleValGet)
     ldr r0, =_nanokernel
     ldr r0, [r0, #__tNANO_idle_OFFSET]
     bx lr
 
-/*******************************************************************************
-*
-* _NanoIdleValClear - clear the kernel idle setting
-*
-* Sets the nanokernel idle setting to 0. Only called by __systick().
-*
-* RETURNS: N/A
-*
-* C function prototype:
-*
-* void _NanoIdleValClear (void);
-*/
+/**
+ *
+ * _NanoIdleValClear - clear the kernel idle setting
+ *
+ * Sets the nanokernel idle setting to 0. Only called by __systick().
+ *
+ * RETURNS: N/A
+ *
+ * C function prototype:
+ *
+ * void _NanoIdleValClear (void);
+ */
 
 SECTION_FUNC(TEXT, _NanoIdleValClear)
     ldr r0, =_nanokernel
@@ -117,21 +117,21 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
 
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
-/*******************************************************************************
-*
-* nano_cpu_idle - power save idle routine for ARM Cortex-M
-*
-* This function will be called by the nanokernel idle loop or possibly within
-* an implementation of _sys_power_save_idle in the microkernel when the
-* '_sys_power_save_flag' variable is non-zero.  The ARM 'wfi' instruction
-* will be issued, causing a low-power consumption sleep mode.
-*
-* RETURNS: N/A
-*
-* C function prototype:
-*
-* void nano_cpu_idle (void);
-*/
+/**
+ *
+ * nano_cpu_idle - power save idle routine for ARM Cortex-M
+ *
+ * This function will be called by the nanokernel idle loop or possibly within
+ * an implementation of _sys_power_save_idle in the microkernel when the
+ * '_sys_power_save_flag' variable is non-zero.  The ARM 'wfi' instruction
+ * will be issued, causing a low-power consumption sleep mode.
+ *
+ * RETURNS: N/A
+ *
+ * C function prototype:
+ *
+ * void nano_cpu_idle (void);
+ */
 
 SECTION_FUNC(TEXT, nano_cpu_idle)
     /* clear BASEPRI so wfi is awakened by incoming interrupts */
@@ -142,31 +142,31 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 
     bx lr
 
-/*******************************************************************************
-*
-* nano_cpu_atomic_idle - atomically re-enable interrupts and enter low power mode
-*
-* This function is utilized by the nanokernel object "wait" APIs for task
-* contexts, e.g. nano_task_lifo_get_wait(), nano_task_sem_take_wait(), nano_task_stack_pop_wait(),
-* and nano_task_fifo_get_wait().
-*
-* INTERNAL
-* The requirements for nano_cpu_atomic_idle() are as follows:
-* 1) The enablement of interrupts and entering a low-power mode needs to be
-*    atomic, i.e. there should be no period of time where interrupts are
-*    enabled before the processor enters a low-power mode.  See the comments
-*    in nano_task_lifo_get_wait(), for example, of the race condition that occurs
-*    if this requirement is not met.
-*
-* 2) After waking up from the low-power mode, the interrupt lockout state
-*    must be restored as indicated in the 'imask' input parameter.
-*
-* RETURNS: N/A
-*
-* C function prototype:
-*
-* void nano_cpu_atomic_idle (unsigned int imask);
-*/
+/**
+ *
+ * nano_cpu_atomic_idle - atomically re-enable interrupts and enter low power mode
+ *
+ * This function is utilized by the nanokernel object "wait" APIs for task
+ * contexts, e.g. nano_task_lifo_get_wait(), nano_task_sem_take_wait(), nano_task_stack_pop_wait(),
+ * and nano_task_fifo_get_wait().
+ *
+ * INTERNAL
+ * The requirements for nano_cpu_atomic_idle() are as follows:
+ * 1) The enablement of interrupts and entering a low-power mode needs to be
+ *    atomic, i.e. there should be no period of time where interrupts are
+ *    enabled before the processor enters a low-power mode.  See the comments
+ *    in nano_task_lifo_get_wait(), for example, of the race condition that occurs
+ *    if this requirement is not met.
+ *
+ * 2) After waking up from the low-power mode, the interrupt lockout state
+ *    must be restored as indicated in the 'imask' input parameter.
+ *
+ * RETURNS: N/A
+ *
+ * C function prototype:
+ *
+ * void nano_cpu_atomic_idle (unsigned int imask);
+ */
 
 SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 

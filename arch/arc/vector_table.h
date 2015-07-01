@@ -40,7 +40,7 @@ System exception handler names all have the same format:
   __<exception name with underscores>
 
 Refer to the ARCv2 manual for an explanation of the exceptions.
-*/
+ */
 
 #ifndef _VECTOR_TABLE__H_
 #define _VECTOR_TABLE__H_

@@ -34,7 +34,7 @@
 DESCRIPTION
 This module contains routines for updating the global descriptor table (GDT)
 for the IA-32 architecture.
-*/
+ */
 
 #include <linker-defs.h>
 #include <toolchain.h>

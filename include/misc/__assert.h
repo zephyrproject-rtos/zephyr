@@ -77,7 +77,7 @@ The third and fourth parameters are the parameters it passes to __ASSERT().
 The __ASSERT_NO_MSG() macro can be used to perform an assertion that reports
 the failed test and its location, but lacks additional debugging information
 provided to assist the user in diagnosing the problem; its use is discouraged.
-*/
+ */
 
 #ifndef ___ASSERT__H_
 #define ___ASSERT__H_

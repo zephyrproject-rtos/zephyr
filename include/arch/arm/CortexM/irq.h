@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
-*/
+ */
 
 #ifndef _ARCH_ARM_CORTEXM_IRQ_H_
 #define _ARCH_ARM_CORTEXM_IRQ_H_
@@ -80,7 +80,7 @@ extern void _IntExit(void);
 #define DO_CONCAT(x, y) x ## y
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
-/*******************************************************************************
+/**
  *
  * IRQ_CONNECT_STATIC - connect a routine to interrupt number
  *
@@ -97,7 +97,7 @@ extern void _IntExit(void);
 	__attribute__ ((section (TOSTR(CONCAT(.gnu.linkonce.isr_irq, irq))))) = \
 	{parameter, isr}
 
-/*******************************************************************************
+/**
  *
  * IRQ_CONFIG - configure interrupt for the device
  *

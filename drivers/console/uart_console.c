@@ -35,7 +35,7 @@
 
   Serial console driver.
   Hooks into the printk and fputc (for printf) modules. Poll driven.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -56,7 +56,7 @@
 #endif
 
 #if 0 /* NOTUSED */
-/******************************************************************************
+/**
  *
  * consoleIn - get a character from UART
  *
@@ -74,7 +74,7 @@ static int consoleIn(void)
 #endif
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-/******************************************************************************
+/**
  *
  * consoleOut - output one character to UART
  *
@@ -209,7 +209,7 @@ void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)
 	} while ((0))
 #endif
 
-/******************************************************************************
+/**
  *
  * uart_console_init - initialize one UART as the console/debug port
  *

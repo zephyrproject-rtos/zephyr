@@ -38,20 +38,20 @@ call _Cstart().
 
 Stack is available in this module, but not the global data/bss until their
 initialization is performed.
-*/
+ */
 
 #include <stdint.h>
 #include <toolchain.h>
 #include <linker-defs.h>
 
-/*******************************************************************************
-*
-* bssZero - clear BSS
-*
-* This routine clears the BSS region, so all bytes are 0.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * bssZero - clear BSS
+ *
+ * This routine clears the BSS region, so all bytes are 0.
+ *
+ * RETURNS: N/A
+ */
 
 static void bssZero(void)
 {
@@ -63,14 +63,14 @@ static void bssZero(void)
 	}
 }
 
-/*******************************************************************************
-*
-* dataCopy - copy the data section from ROM to RAM
-*
-* This routine copies the data section from ROM to RAM.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * dataCopy - copy the data section from ROM to RAM
+ *
+ * This routine copies the data section from ROM to RAM.
+ *
+ * RETURNS: N/A
+ */
 
 #ifdef CONFIG_XIP
 static void dataCopy(void)
@@ -90,14 +90,14 @@ static void dataCopy(void)
 #endif
 
 extern FUNC_NORETURN void _Cstart(void);
-/*******************************************************************************
-*
-* _PrepC - prepare to and run C code
-*
-* This routine prepares for the execution of and runs C code.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _PrepC - prepare to and run C code
+ *
+ * This routine prepares for the execution of and runs C code.
+ *
+ * RETURNS: N/A
+ */
 
 void _PrepC(void)
 {

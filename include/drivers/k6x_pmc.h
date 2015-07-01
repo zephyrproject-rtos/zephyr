@@ -36,7 +36,7 @@ This module defines the Power Management Controller (PMC) registers for the
 K6x Family of microprocessors.
 NOTE: Not all the registers are currently defined here - only those that are
 currently used.
-*/
+ */
 
 #ifndef _K6xPMC_H_
 #define _K6xPMC_H_

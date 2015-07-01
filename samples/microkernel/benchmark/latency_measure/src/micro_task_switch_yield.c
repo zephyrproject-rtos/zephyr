@@ -50,7 +50,7 @@ static int abs(int i) { return (i >= 0) ? i : -i; }
 
 static uint32_t helper_task_iterations = 0;
 
-/*******************************************************************************
+/**
  *
  * yieldingTask - helper task for measuring task switch latency using yield
  *
@@ -69,7 +69,7 @@ void yieldingTask(void)
 	}
 }
 
-/*******************************************************************************
+/**
  *
  * microTaskSwitchYield - entry point for task context switch using yield test
  *

@@ -76,7 +76,7 @@ const char sz_case_timing_fmt[] = "%ld nSec";
 /* time necessary to read the time */
 uint32_t tm_off;
 
-/*******************************************************************************
+/**
  *
  * begin_test - get the time ticks before test starts
  *
@@ -95,7 +95,7 @@ void begin_test(void)
 	bench_test_start();
 }
 
-/*******************************************************************************
+/**
  *
  * check_result - checks number of tests and calculate average time
  *
@@ -138,7 +138,7 @@ int check_result(int i, uint32_t t)
 }
 
 
-/*******************************************************************************
+/**
  *
  * kbhit - check for a key press
  *
@@ -153,7 +153,7 @@ int kbhit(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * init_output - prepares the test output
  *
@@ -175,7 +175,7 @@ void init_output(int *continuously)
 }
 
 
-/*******************************************************************************
+/**
  *
  * output_close - close output for the test
  *
@@ -188,7 +188,7 @@ void output_close(void)
 {
 }
 
-/*******************************************************************************
+/**
  *
  * SysKernelBench - perform all selected benchmarks
  *

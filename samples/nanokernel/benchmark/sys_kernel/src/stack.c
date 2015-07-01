@@ -38,7 +38,7 @@ struct nano_stack nanoChannel2;
 uint32_t stack1[2];
 uint32_t stack2[2];
 
-/*******************************************************************************
+/**
  *
  * stack_test_init - initialize stacks for the test
  *
@@ -54,7 +54,7 @@ void stack_test_init(void)
 }
 
 
-/*******************************************************************************
+/**
  *
  * stack_fiber1 - stack test context
  *
@@ -90,7 +90,7 @@ void stack_fiber1(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * stack_fiber2 - stack test context
  *
@@ -120,7 +120,7 @@ void stack_fiber2(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * stack_fiber2 - stack test context
  *
@@ -153,7 +153,7 @@ void stack_fiber3(int par1, int par2)
 }
 
 
-/*******************************************************************************
+/**
  *
  * stack_test - the main test entry
  *

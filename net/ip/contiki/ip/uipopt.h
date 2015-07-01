@@ -652,7 +652,7 @@ void uip_log(char *msg);
  };
  typedef struct httpd_state uip_tcp_appstate_t
  \endcode
-*/
+ */
 
 /**
  * \var #define UIP_APPCALL

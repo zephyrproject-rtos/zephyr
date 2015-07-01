@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module tests the task_offload_to_fiber() API.
-*/
+ */
 
 #include <zephyr.h>
 #include <tc_util.h>
@@ -45,14 +45,14 @@ This module tests the task_offload_to_fiber() API.
 static uint32_t  criticalVar = 0;
 static uint32_t altTaskIterations = 0;
 
-/*******************************************************************************
-*
-* criticalRtn - routine to be called from K_swapper()
-*
-* This routine increments the global variable <criticalVar>.
-*
-* RETURNS: 0
-*/
+/**
+ *
+ * criticalRtn - routine to be called from K_swapper()
+ *
+ * This routine increments the global variable <criticalVar>.
+ *
+ * RETURNS: 0
+ */
 
 int criticalRtn(void)
 {
@@ -64,14 +64,14 @@ int criticalRtn(void)
 	return 0;
 }
 
-/*******************************************************************************
-*
-* criticalLoop - common code for invoking task_offload_to_fiber()
-*
-* \param count    number of critical section calls made thus far
-*
-* RETURNS: number of critical section calls made by task
-*/
+/**
+ *
+ * criticalLoop - common code for invoking task_offload_to_fiber()
+ *
+ * \param count    number of critical section calls made thus far
+ *
+ * RETURNS: number of critical section calls made by task
+ */
 
 uint32_t criticalLoop(uint32_t count)
 {
@@ -86,14 +86,14 @@ uint32_t criticalLoop(uint32_t count)
 	return count;
 }
 
-/*******************************************************************************
-*
-* AlternateTask - alternate task
-*
-* This routine calls task_offload_to_fiber() many times.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * AlternateTask - alternate task
+ *
+ * This routine calls task_offload_to_fiber() many times.
+ *
+ * RETURNS: N/A
+ */
 
 void AlternateTask(void)
 {
@@ -110,16 +110,16 @@ void AlternateTask(void)
 	task_sem_give(REGRESS_SEM);
 }
 
-/*******************************************************************************
-*
-* RegressionTask - regression task
-*
-* This routine calls task_offload_to_fiber() many times.  It also checks to
-* ensure that the number of times it is called matches the global variable
-* <criticalVar>.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * RegressionTask - regression task
+ *
+ * This routine calls task_offload_to_fiber() many times.  It also checks to
+ * ensure that the number of times it is called matches the global variable
+ * <criticalVar>.
+ *
+ * RETURNS: N/A
+ */
 
 void RegressionTask(void)
 {

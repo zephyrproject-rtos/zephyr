@@ -41,7 +41,7 @@ The local APIC contains a 32-bit programmable timer for use by the local
 processor.  The time base is derived from the processor's bus clock,
 divided by a value specified in the divide configuration register.
 After reset, the timer is initialized to zero.
-*/
+ */
 
 #include <nanokernel.h>
 #include <toolchain.h>
@@ -132,16 +132,16 @@ static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 extern struct nano_stack _k_command_stack;
 #endif /* CONFIG_MICROKERNEL */
 
-/*******************************************************************************
-*
-* _loApicTimerPeriodic - set the timer for periodic mode
-*
-* This routine sets the timer for periodic mode.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerPeriodic - set the timer for periodic mode
+ *
+ * This routine sets the timer for periodic mode.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _loApicTimerPeriodic(void)
 {
@@ -151,16 +151,16 @@ static inline void _loApicTimerPeriodic(void)
 #if defined(TIMER_SUPPORTS_TICKLESS) ||              \
 	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND) || \
 	defined(CONFIG_SYSTEM_TIMER_DISABLE)
-/*******************************************************************************
-*
-* _loApicTimerStop - stop the timer
-*
-* This routine stops the timer.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerStop - stop the timer
+ *
+ * This routine stops the timer.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _loApicTimerStop(void)
 {
@@ -170,16 +170,16 @@ static inline void _loApicTimerStop(void)
 
 #if defined(TIMER_SUPPORTS_TICKLESS) || \
 	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND)
-/*******************************************************************************
-*
-* _loApicTimerStart - start the timer
-*
-* This routine starts the timer.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerStart - start the timer
+ *
+ * This routine starts the timer.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _loApicTimerStart(void)
 {
@@ -187,16 +187,16 @@ static inline void _loApicTimerStart(void)
 }
 #endif
 
-/*******************************************************************************
-*
-* _loApicTimerSetCount - set countdown value
-*
-* This routine sets value from which the timer will count down.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerSetCount - set countdown value
+ *
+ * This routine sets value from which the timer will count down.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _loApicTimerSetCount(
 	uint32_t count /* count from which timer is to count down */
@@ -206,16 +206,16 @@ static inline void _loApicTimerSetCount(
 }
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-/*******************************************************************************
-*
-* _loApicTimerOneShot - set the timer for one shot mode
-*
-* This routine sets the timer for one shot mode.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerOneShot - set the timer for one shot mode
+ *
+ * This routine sets the timer for one shot mode.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _loApicTimerOneShot(void)
 {
@@ -223,66 +223,66 @@ static inline void _loApicTimerOneShot(void)
 }
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-/*******************************************************************************
-*
-* _loApicTimerSetDivider - set the rate at which the timer is decremented
-*
-* This routine sets rate at which the timer is decremented to match the
-* external bus frequency.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerSetDivider - set the rate at which the timer is decremented
+ *
+ * This routine sets rate at which the timer is decremented to match the
+ * external bus frequency.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static inline void _loApicTimerSetDivider(void)
 {
 	*_REG_TIMER_CFG = (*_REG_TIMER_CFG & ~0xf) | LOAPIC_TIMER_DIVBY_1;
 }
 
-/*******************************************************************************
-*
-* _loApicTimerGetRemaining - get the value from the current count register
-*
-* This routine gets the value from the timer's current count register.  This
-* value is the 'time' remaining to decrement before the timer triggers an
-* interrupt.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerGetRemaining - get the value from the current count register
+ *
+ * This routine gets the value from the timer's current count register.  This
+ * value is the 'time' remaining to decrement before the timer triggers an
+ * interrupt.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 static inline uint32_t _loApicTimerGetRemaining(void)
 {
 	return *_REG_TIMER_CCR;
 }
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-/*******************************************************************************
-*
-* _loApicTimerGetCount - get the value from the initial count register
-*
-* This routine gets the value from the initial count register.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerGetCount - get the value from the initial count register
+ *
+ * This routine gets the value from the initial count register.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 static inline uint32_t _loApicTimerGetCount(void)
 {
 	return *_REG_TIMER_ICR;
 }
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-/*******************************************************************************
-*
-* _timer_int_handler - system clock tick handler
-*
-* This routine handles the system clock tick interrupt.  A TICK_EVENT event
-* is pushed onto the microkernel stack.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _timer_int_handler - system clock tick handler
+ *
+ * This routine handles the system clock tick interrupt.  A TICK_EVENT event
+ * is pushed onto the microkernel stack.
+ *
+ * RETURNS: N/A
+ */
 
 void _timer_int_handler(void *unused /* parameter is not used */
 				 )
@@ -350,21 +350,21 @@ void _timer_int_handler(void *unused /* parameter is not used */
 }
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-/*******************************************************************************
-*
-* _loApicTimerTicklessIdleInit - initialize the tickless idle feature
-*
-* This routine initializes the tickless idle feature.  Note that the maximum
-* number of ticks that can elapse during a "tickless idle" is limited by
-* <counterLoadVal>.  The larger the value (the lower the tick frequency), the
-* fewer elapsed ticks during a "tickless idle".  Conversely, the smaller the
-* value (the higher the tick frequency), the more elapsed ticks during a
-* "tickless idle".
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _loApicTimerTicklessIdleInit - initialize the tickless idle feature
+ *
+ * This routine initializes the tickless idle feature.  Note that the maximum
+ * number of ticks that can elapse during a "tickless idle" is limited by
+ * <counterLoadVal>.  The larger the value (the lower the tick frequency), the
+ * fewer elapsed ticks during a "tickless idle".  Conversely, the smaller the
+ * value (the higher the tick frequency), the more elapsed ticks during a
+ * "tickless idle".
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _loApicTimerTicklessIdleInit(void)
 {
@@ -373,21 +373,21 @@ static void _loApicTimerTicklessIdleInit(void)
 	max_load_value = max_system_ticks * counterLoadVal;
 }
 
-/*******************************************************************************
-*
-* _i8253TicklessIdleSkew - calculate the skew from idle mode switching
-*
-* This routine calculates the skew from switching the timer in and out of idle
-* mode.  The typical sequence is:
-*    1. Stop timer.
-*    2. Load new counter value.
-*    3. Set timer mode to periodic/one-shot
-*    4. Start timer.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _i8253TicklessIdleSkew - calculate the skew from idle mode switching
+ *
+ * This routine calculates the skew from switching the timer in and out of idle
+ * mode.  The typical sequence is:
+ *    1. Stop timer.
+ *    2. Load new counter value.
+ *    3. Set timer mode to periodic/one-shot
+ *    4. Start timer.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static void _loApicTimerTicklessIdleSkew(void)
 {
@@ -407,17 +407,17 @@ static void _loApicTimerTicklessIdleSkew(void)
 	timer_idle_skew -= _loApicTimerGetRemaining();
 }
 
-/*******************************************************************************
-*
-* _timer_idle_enter - Place system timer into idle state
-*
-* Re-program the timer to enter into the idle state for the given number of
-* ticks. It is placed into one shot mode where it will fire in the number of
-* ticks supplied or the maximum number of ticks that can be programmed into
-* hardware. A value of -1 means inifinite number of ticks.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _timer_idle_enter - Place system timer into idle state
+ *
+ * Re-program the timer to enter into the idle state for the given number of
+ * ticks. It is placed into one shot mode where it will fire in the number of
+ * ticks supplied or the maximum number of ticks that can be programmed into
+ * hardware. A value of -1 means inifinite number of ticks.
+ *
+ * RETURNS: N/A
+ */
 
 void _timer_idle_enter(int32_t ticks /* system ticks */
 				)
@@ -460,21 +460,21 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	_loApicTimerStart();
 }
 
-/*******************************************************************************
-*
-* _timer_idle_exit - handling of tickless idle when interrupted
-*
-* The routine is responsible for taking the timer out of idle mode and
-* generating an interrupt at the next tick interval.
-*
-* Note that in this routine, _SysTimerElapsedTicks must be zero because the
-* ticker has done its work and consumed all the ticks. This has to be true
-* otherwise idle mode wouldn't have been entered in the first place.
-*
-* Called in _IntEnt()
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _timer_idle_exit - handling of tickless idle when interrupted
+ *
+ * The routine is responsible for taking the timer out of idle mode and
+ * generating an interrupt at the next tick interval.
+ *
+ * Note that in this routine, _SysTimerElapsedTicks must be zero because the
+ * ticker has done its work and consumed all the ticks. This has to be true
+ * otherwise idle mode wouldn't have been entered in the first place.
+ *
+ * Called in _IntEnt()
+ *
+ * RETURNS: N/A
+ */
 
 void _timer_idle_exit(void)
 {
@@ -530,15 +530,15 @@ void _timer_idle_exit(void)
 }
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-/*******************************************************************************
-*
-* timer_driver - initialize and enable the system clock
-*
-* This routine is used to program the PIT to deliver interrupts at the
-* rate specified via the 'sys_clock_us_per_tick' global variable.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * timer_driver - initialize and enable the system clock
+ *
+ * This routine is used to program the PIT to deliver interrupts at the
+ * rate specified via the 'sys_clock_us_per_tick' global variable.
+ *
+ * RETURNS: N/A
+ */
 
 void timer_driver(int priority /* priority parameter ignored by this driver */
 		  )
@@ -570,14 +570,14 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 	irq_enable(LOAPIC_TIMER_IRQ);
 }
 
-/*******************************************************************************
-*
-* timer_read - read the BSP timer hardware
-*
-* This routine returns the current time in terms of timer hardware clock cycles.
-*
-* RETURNS: up counter of elapsed clock cycles
-*/
+/**
+ *
+ * timer_read - read the BSP timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock cycles.
+ *
+ * RETURNS: up counter of elapsed clock cycles
+ */
 
 uint32_t timer_read(void)
 {
@@ -599,15 +599,15 @@ uint32_t timer_read(void)
 }
 
 #if defined(CONFIG_SYSTEM_TIMER_DISABLE)
-/*******************************************************************************
-*
-* timer_disable - stop announcing ticks into the kernel
-*
-* This routine simply disables the LOAPIC counter such that interrupts are no
-* longer delivered.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * timer_disable - stop announcing ticks into the kernel
+ *
+ * This routine simply disables the LOAPIC counter such that interrupts are no
+ * longer delivered.
+ *
+ * RETURNS: N/A
+ */
 
 void timer_disable(void)
 {

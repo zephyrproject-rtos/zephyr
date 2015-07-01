@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 ARC-specific nanokernel miscellaneous interface. Included by arc/arch.h.
-*/
+ */
 
 #ifndef _ARCH_ARC_V2_MISC_H_
 #define _ARCH_ARC_V2_MISC_H_

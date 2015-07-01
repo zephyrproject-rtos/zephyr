@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module defines the UART Registers for the K20 Family of microprocessors
-*/
+ */
 
 #ifndef _K20UART_H_
 #define _K20UART_H_

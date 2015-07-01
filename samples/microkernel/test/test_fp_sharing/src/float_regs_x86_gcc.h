@@ -40,25 +40,25 @@
 #include <toolchain.h>
 #include "float_context.h"
 
-/*******************************************************************************
-*
-* _LoadAllFloatRegisters - load all floating point registers
-*
-* This function loads ALL floating point registers from the memory buffer
-* specified by <pFromBuffer>. It is expected that a subsequent call to
-* _StoreAllFloatRegisters() will be issued to dump the floating point registers
-* to memory.
-*
-* The format/organization of the FP_REG_SET structure is not important; the
-* generic C test code (main.c and fiber.c) merely treat the FP_REG_SET
-* (and FP_NONVOLATILE_REG_SET) as an array of bytes.
-*
-* The only requirement is that the arch specific implementations of
-* _LoadAllFloatRegisters(), _StoreAllFloatRegisters(), and
-* _LoadThenStoreAllFloatRegisters agree on the format.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _LoadAllFloatRegisters - load all floating point registers
+ *
+ * This function loads ALL floating point registers from the memory buffer
+ * specified by <pFromBuffer>. It is expected that a subsequent call to
+ * _StoreAllFloatRegisters() will be issued to dump the floating point registers
+ * to memory.
+ *
+ * The format/organization of the FP_REG_SET structure is not important; the
+ * generic C test code (main.c and fiber.c) merely treat the FP_REG_SET
+ * (and FP_NONVOLATILE_REG_SET) as an array of bytes.
+ *
+ * The only requirement is that the arch specific implementations of
+ * _LoadAllFloatRegisters(), _StoreAllFloatRegisters(), and
+ * _LoadThenStoreAllFloatRegisters agree on the format.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
 {
@@ -109,23 +109,23 @@ static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
 }
 
 
-/*******************************************************************************
-*
-* _LoadThenStoreAllFloatRegisters - load then dump all float registers to memory
-*
-* This function loads ALL floating point registers from the memory buffer
-* specified by <pFromToBuffer>, and then stores them back to that buffer.
-*
-* This routine is called by a high priority context prior to calling a primitive
-* that pends and triggers a co-operative context switch to a low priority
-* context. Because the kernel doesn't save floating point context for
-* co-operative context switches, the x87 FPU register stack must be put back
-* in an empty state before the switch occurs in case the next task to perform
-* floating point operations was also co-operatively switched out and simply
-* inherits the existing x87 FPU state (expecting the stack to be empty).
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _LoadThenStoreAllFloatRegisters - load then dump all float registers to memory
+ *
+ * This function loads ALL floating point registers from the memory buffer
+ * specified by <pFromToBuffer>, and then stores them back to that buffer.
+ *
+ * This routine is called by a high priority context prior to calling a primitive
+ * that pends and triggers a co-operative context switch to a low priority
+ * context. Because the kernel doesn't save floating point context for
+ * co-operative context switches, the x87 FPU register stack must be put back
+ * in an empty state before the switch occurs in case the next task to perform
+ * floating point operations was also co-operatively switched out and simply
+ * inherits the existing x87 FPU state (expecting the stack to be empty).
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
 {
@@ -164,17 +164,17 @@ static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
 }
 
 
-/*******************************************************************************
-*
-* _StoreAllFloatRegisters - dump all floating point registers to memory
-*
-* This function stores ALL floating point registers to the memory buffer
-* specified by <pToBuffer>. It is expected that a previous invocation of
-* _LoadAllFloatRegisters() occured to load all the floating point registers
-* from a memory buffer.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _StoreAllFloatRegisters - dump all floating point registers to memory
+ *
+ * This function stores ALL floating point registers to the memory buffer
+ * specified by <pToBuffer>. It is expected that a previous invocation of
+ * _LoadAllFloatRegisters() occured to load all the floating point registers
+ * from a memory buffer.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
 {
@@ -201,20 +201,20 @@ static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
 		);
 }
 
-/*******************************************************************************
-*
-* _StoreNonVolatileFloatRegisters - dump non-volatile FP registers to memory
-*
-* This routine is called by a high priority context after resuming execution
-* from calling a primitive that will pend and thus result in a co-operative
-* context switch to a low priority context.
-*
-* Only the non-volatile floating point registers are expected to survive across
-* a function call, regardless of whether the call results in the context being
-* pended.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _StoreNonVolatileFloatRegisters - dump non-volatile FP registers to memory
+ *
+ * This routine is called by a high priority context after resuming execution
+ * from calling a primitive that will pend and thus result in a co-operative
+ * context switch to a low priority context.
+ *
+ * Only the non-volatile floating point registers are expected to survive across
+ * a function call, regardless of whether the call results in the context being
+ * pended.
+ *
+ * RETURNS: N/A
+ */
 
 void _StoreNonVolatileFloatRegisters(FP_NONVOLATILE_REG_SET *pToBuffer)
 {

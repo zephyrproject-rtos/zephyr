@@ -74,7 +74,7 @@ an error code is present on the stack or not.
 NOTE: Be sure to update the arch specific definition of the _EXC_STUB_SIZE
 macro to reflect the size of the full exception stub (as shown above).
 The _EXC_STUB_SIZE macro is defined in arch/x86/include/nano_private.h.
-*/
+ */
 
 
 #include <nanokernel.h>
@@ -86,37 +86,37 @@ void _NanoCpuExcConnectAtDpl(unsigned int vector,
 			     NANO_EXC_STUB pExcStubMem,
 			     unsigned int dpl);
 
-/*******************************************************************************
-*
-* nanoCpuExcConnect - connect a C routine to an exception
-*
-* This routine connects an exception handler coded in C to the specified
-* interrupt vector.  An exception is defined as a synchronous interrupt, i.e.
-* an interrupt asserted as a direct result of program execution as opposed
-* to a hardware device asserting an interrupt.
-*
-* When the exception specified by <vector> is asserted, the current context
-* is saved on the current stack, i.e. a switch to some other stack is not
-* performed, followed by executing <routine> which has the following signature:
-*
-*    void (*routine) (NANO_ESF *pEsf)
-*
-* The <pExcStubMem> argument points to memory that the system can use to
-* synthesize the exception stub that calls <routine>.  The memory need not be
-* initialized, but must be persistent (i.e. it cannot be on the caller's stack).
-* Declaring a global or static variable of type NANO_EXC_STUB will provide a
-* suitable area of the proper size.
-*
-* The handler is connected via an interrupt-gate descriptor having a
-* descriptor privilege level (DPL) equal to zero.
-*
-* RETURNS: N/A
-*
-* INTERNAL
-* The function prototype for nanoCpuExcConnect() only exists in nano_private.h,
-* in other words, it's still considered private since the definitions for
-* the NANO_ESF structures have not been completed.
-*/
+/**
+ *
+ * nanoCpuExcConnect - connect a C routine to an exception
+ *
+ * This routine connects an exception handler coded in C to the specified
+ * interrupt vector.  An exception is defined as a synchronous interrupt, i.e.
+ * an interrupt asserted as a direct result of program execution as opposed
+ * to a hardware device asserting an interrupt.
+ *
+ * When the exception specified by <vector> is asserted, the current context
+ * is saved on the current stack, i.e. a switch to some other stack is not
+ * performed, followed by executing <routine> which has the following signature:
+ *
+ *    void (*routine) (NANO_ESF *pEsf)
+ *
+ * The <pExcStubMem> argument points to memory that the system can use to
+ * synthesize the exception stub that calls <routine>.  The memory need not be
+ * initialized, but must be persistent (i.e. it cannot be on the caller's stack).
+ * Declaring a global or static variable of type NANO_EXC_STUB will provide a
+ * suitable area of the proper size.
+ *
+ * The handler is connected via an interrupt-gate descriptor having a
+ * descriptor privilege level (DPL) equal to zero.
+ *
+ * RETURNS: N/A
+ *
+ * INTERNAL
+ * The function prototype for nanoCpuExcConnect() only exists in nano_private.h,
+ * in other words, it's still considered private since the definitions for
+ * the NANO_ESF structures have not been completed.
+ */
 
 void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
 					       IA-32 */
@@ -126,37 +126,37 @@ void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
 	_NanoCpuExcConnectAtDpl(vector, routine, pExcStubMem, 0);
 }
 
-/*******************************************************************************
-*
-* _NanoCpuExcConnectAtDpl - connect a C routine to an exception
-*
-* This routine connects an exception handler coded in C to the specified
-* interrupt vector.  An exception is defined as a synchronous interrupt, i.e.
-* an interrupt asserted as a direct result of program execution as opposed
-* to a hardware device asserting an interrupt.
-*
-* When the exception specified by <vector> is asserted, the current context
-* is saved on the current stack, i.e. a switch to some other stack is not
-* performed, followed by executing <routine> which has the following signature:
-*
-*    void (*routine) (NANO_ESF *pEsf)
-*
-* The <pExcStubMem> argument points to memory that the system can use to
-* synthesize the exception stub that calls <routine>.  The memory need not be
-* initialized, but must be persistent (i.e. it cannot be on the caller's stack).
-* Declaring a global or static variable of type NANO_EXC_STUB will provide a
-* suitable area of the proper size.
-*
-* The handler is connected via an interrupt-gate descriptor having the supplied
-* descriptor privilege level (DPL).
-*
-* RETURNS: N/A
-*
-* INTERNAL
-* The function prototype for nanoCpuExcConnect() only exists in nano_private.h,
-* in other words, it's still considered private since the definitions for
-* the NANO_ESF structures have not been completed.
-*/
+/**
+ *
+ * _NanoCpuExcConnectAtDpl - connect a C routine to an exception
+ *
+ * This routine connects an exception handler coded in C to the specified
+ * interrupt vector.  An exception is defined as a synchronous interrupt, i.e.
+ * an interrupt asserted as a direct result of program execution as opposed
+ * to a hardware device asserting an interrupt.
+ *
+ * When the exception specified by <vector> is asserted, the current context
+ * is saved on the current stack, i.e. a switch to some other stack is not
+ * performed, followed by executing <routine> which has the following signature:
+ *
+ *    void (*routine) (NANO_ESF *pEsf)
+ *
+ * The <pExcStubMem> argument points to memory that the system can use to
+ * synthesize the exception stub that calls <routine>.  The memory need not be
+ * initialized, but must be persistent (i.e. it cannot be on the caller's stack).
+ * Declaring a global or static variable of type NANO_EXC_STUB will provide a
+ * suitable area of the proper size.
+ *
+ * The handler is connected via an interrupt-gate descriptor having the supplied
+ * descriptor privilege level (DPL).
+ *
+ * RETURNS: N/A
+ *
+ * INTERNAL
+ * The function prototype for nanoCpuExcConnect() only exists in nano_private.h,
+ * in other words, it's still considered private since the definitions for
+ * the NANO_ESF structures have not been completed.
+ */
 
 void _NanoCpuExcConnectAtDpl(
 	unsigned int vector, /* interrupt vector: 0 to 255 on IA-32 */

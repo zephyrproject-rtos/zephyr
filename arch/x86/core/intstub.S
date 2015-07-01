@@ -36,7 +36,7 @@ This module implements assembly routines to manage interrupts on
 the Intel IA-32 architecture.  More specifically, the interrupt (asynchronous
 exception) stubs are implemented in this module.  The stubs are invoked when
 entering and exiting a C interrupt handler.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -74,41 +74,41 @@ entering and exiting a C interrupt handler.
 	GTEXT(_int_latency_start)
 	GTEXT(_int_latency_stop)
 #endif
-/*******************************************************************************
-*
-* _IntEnt - inform the kernel of an interrupt
-*
-* This function is called from the interrupt stub created by irq_connect()
-* to inform the kernel of an interrupt.  This routine increments
-* _nanokernel.nested (to support interrupt nesting), switches to the
-* base of the interrupt stack, if not already on the interrupt stack, and then
-* saves the volatile integer registers onto the stack.  Finally, control is
-* returned back to the interrupt stub code (which will then invoke the
-* "application" interrupt service routine).
-*
-* Only the volatile integer registers are saved since ISRs are assumed not to
-* utilize floating point (or SSE) instructions.  If an ISR requires the usage
-* of floating point (or SSE) instructions, it must first invoke nanoCpuFpSave()
-* (or nanoCpuSseSave()) at the beginning of the ISR.  A subsequent
-* nanoCpuFpRestore() (or nanoCpuSseRestore()) is needed just prior to returning
-* from the ISR.  Note that the nanoCpuFpSave(), nanoCpuSseSave(),
-* nanoCpuFpRestore(), and nanoCpuSseRestore() APIs have not been
-* implemented yet.
-*
-* WARNINGS
-*
-* Host-based tools and the target-based GDB agent depend on the stack frame
-* created by this routine to determine the locations of volatile registers.
-* These tools must be updated to reflect any changes to the stack frame.
-*
-* RETURNS: N/A
-*
-* C function prototype:
-*
-* void _IntEnt (void);
-*
-* NOMANUAL
-*/
+/**
+ *
+ * _IntEnt - inform the kernel of an interrupt
+ *
+ * This function is called from the interrupt stub created by irq_connect()
+ * to inform the kernel of an interrupt.  This routine increments
+ * _nanokernel.nested (to support interrupt nesting), switches to the
+ * base of the interrupt stack, if not already on the interrupt stack, and then
+ * saves the volatile integer registers onto the stack.  Finally, control is
+ * returned back to the interrupt stub code (which will then invoke the
+ * "application" interrupt service routine).
+ *
+ * Only the volatile integer registers are saved since ISRs are assumed not to
+ * utilize floating point (or SSE) instructions.  If an ISR requires the usage
+ * of floating point (or SSE) instructions, it must first invoke nanoCpuFpSave()
+ * (or nanoCpuSseSave()) at the beginning of the ISR.  A subsequent
+ * nanoCpuFpRestore() (or nanoCpuSseRestore()) is needed just prior to returning
+ * from the ISR.  Note that the nanoCpuFpSave(), nanoCpuSseSave(),
+ * nanoCpuFpRestore(), and nanoCpuSseRestore() APIs have not been
+ * implemented yet.
+ *
+ * WARNINGS
+ *
+ * Host-based tools and the target-based GDB agent depend on the stack frame
+ * created by this routine to determine the locations of volatile registers.
+ * These tools must be updated to reflect any changes to the stack frame.
+ *
+ * RETURNS: N/A
+ *
+ * C function prototype:
+ *
+ * void _IntEnt (void);
+ *
+ * NOMANUAL
+ */
 
 SECTION_FUNC(TEXT, _IntEnt)
 
@@ -240,29 +240,29 @@ BRANCH_LABEL(_HandleIdle)
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
 
-/*******************************************************************************
-*
-* _IntExit - inform the kernel of an interrupt exit
-*
-* This function is called from the interrupt stub created by irq_connect()
-* to inform the kernel that the processing of an interrupt has
-* completed.  This routine decrements _nanokernel.nested (to support interrupt
-* nesting), restores the volatile integer registers, and then switches
-* back to the interrupted context's stack, if this isn't a nested interrupt.
-*
-* Finally, control is returned back to the interrupted fiber context or ISR.
-* A context switch _may_ occur if the interrupted context was a task context,
-* in which case one or more other fiber and task contexts will execute before
-* this routine resumes and control gets returned to the interrupted task.
-*
-* RETURNS: N/A
-*
-* C function prototype:
-*
-* void _IntExit (void);
-*
-* NOMANUAL
-*/
+/**
+ *
+ * _IntExit - inform the kernel of an interrupt exit
+ *
+ * This function is called from the interrupt stub created by irq_connect()
+ * to inform the kernel that the processing of an interrupt has
+ * completed.  This routine decrements _nanokernel.nested (to support interrupt
+ * nesting), restores the volatile integer registers, and then switches
+ * back to the interrupted context's stack, if this isn't a nested interrupt.
+ *
+ * Finally, control is returned back to the interrupted fiber context or ISR.
+ * A context switch _may_ occur if the interrupted context was a task context,
+ * in which case one or more other fiber and task contexts will execute before
+ * this routine resumes and control gets returned to the interrupted task.
+ *
+ * RETURNS: N/A
+ *
+ * C function prototype:
+ *
+ * void _IntExit (void);
+ *
+ * NOMANUAL
+ */
 
 SECTION_FUNC(TEXT, _IntExit)
 
@@ -388,38 +388,38 @@ BRANCH_LABEL(nestedInterrupt)
 	iret
 
 
-/*******************************************************************************
-*
-* _SpuriousIntHandler -
-* _SpuriousIntNoErrCodeHandler - spurious interrupt handler stubs
-*
-* Interrupt-gate descriptors are statically created for all slots in the IDT
-* that point to _SpuriousIntHandler() or _SpuriousIntNoErrCodeHandler().  The
-* former stub is connected to exception vectors where the processor pushes an
-* error code onto the stack (or kernel stack) in addition to the EFLAGS/CS/EIP
-* records.
-*
-* A spurious interrupt is considered a fatal condition, thus this routine
-* merely sets up the 'reason' and 'pEsf' parameters to the BSP provided
-* routine: _SysFatalHwErrorHandler().  In other words, there is no provision
-* to return to the interrupted context and thus the volatile registers
-* are not saved.
-*
-* RETURNS: Never returns
-*
-* C function prototype:
-*
-* void _SpuriousIntHandler (void);
-*
-* INTERNAL
-* The _IntVecSet() routine creates an interrupt-gate descriptor for all
-* connections.  The processor will automatically clear the IF bit
-* in the EFLAGS register upon execution of the handler,
-* thus _SpuriousIntNoErrCodeHandler()/_SpuriousIntHandler() shall be
-* invoked with interrupts disabled.
-*
-* NOMANUAL
-*/
+/**
+ *
+ * _SpuriousIntHandler -
+ * _SpuriousIntNoErrCodeHandler - spurious interrupt handler stubs
+ *
+ * Interrupt-gate descriptors are statically created for all slots in the IDT
+ * that point to _SpuriousIntHandler() or _SpuriousIntNoErrCodeHandler().  The
+ * former stub is connected to exception vectors where the processor pushes an
+ * error code onto the stack (or kernel stack) in addition to the EFLAGS/CS/EIP
+ * records.
+ *
+ * A spurious interrupt is considered a fatal condition, thus this routine
+ * merely sets up the 'reason' and 'pEsf' parameters to the BSP provided
+ * routine: _SysFatalHwErrorHandler().  In other words, there is no provision
+ * to return to the interrupted context and thus the volatile registers
+ * are not saved.
+ *
+ * RETURNS: Never returns
+ *
+ * C function prototype:
+ *
+ * void _SpuriousIntHandler (void);
+ *
+ * INTERNAL
+ * The _IntVecSet() routine creates an interrupt-gate descriptor for all
+ * connections.  The processor will automatically clear the IF bit
+ * in the EFLAGS register upon execution of the handler,
+ * thus _SpuriousIntNoErrCodeHandler()/_SpuriousIntHandler() shall be
+ * invoked with interrupts disabled.
+ *
+ * NOMANUAL
+ */
 
 SECTION_FUNC(TEXT, _SpuriousIntNoErrCodeHandler)
 
@@ -462,34 +462,34 @@ BRANCH_LABEL(callFatalHandler)
 	jmp	callFatalHandler
 
 
-/*******************************************************************************
-*
-* irq_lock - disable interrupts on the local CPU 
-*
-* This routine disables interrupts.  It can be called from either interrupt
-* or context level.  This routine returns an architecture-dependent
-* lock-out key representing the "interrupt disable state" prior to the call;
-* this key can be passed to fiber_enable_ints() to re-enable interrupts.
-* 
-* The lock-out key should only be used as the argument to the
-* fiber_enable_ints() API.  It should never be used to manually re-enable
-* interrupts or to inspect or manipulate the contents of the source register.
-*
-* WARNINGS
-* Invoking a kernel routine with interrupts locked may result in
-* interrupts being re-enabled for an unspecified period of time.  If the
-* called routine blocks, interrupts will be re-enabled while another
-* context executes, or while the system is idle.
-*
-* The "interrupt disable state" is an attribute of a context, i.e. it's part
-* of the context context.  Thus, if a context disables interrupts and
-* subsequently invokes a kernel routine that causes the calling context
-* to block, the interrupt disable state will be restored when the context is
-* later rescheduled for execution.
-*
-* RETURNS: An architecture-dependent lock-out key representing the
-* "interrupt disable state" prior to the call.
-*/
+/**
+ *
+ * irq_lock - disable interrupts on the local CPU 
+ *
+ * This routine disables interrupts.  It can be called from either interrupt
+ * or context level.  This routine returns an architecture-dependent
+ * lock-out key representing the "interrupt disable state" prior to the call;
+ * this key can be passed to fiber_enable_ints() to re-enable interrupts.
+ * 
+ * The lock-out key should only be used as the argument to the
+ * fiber_enable_ints() API.  It should never be used to manually re-enable
+ * interrupts or to inspect or manipulate the contents of the source register.
+ *
+ * WARNINGS
+ * Invoking a kernel routine with interrupts locked may result in
+ * interrupts being re-enabled for an unspecified period of time.  If the
+ * called routine blocks, interrupts will be re-enabled while another
+ * context executes, or while the system is idle.
+ *
+ * The "interrupt disable state" is an attribute of a context, i.e. it's part
+ * of the context context.  Thus, if a context disables interrupts and
+ * subsequently invokes a kernel routine that causes the calling context
+ * to block, the interrupt disable state will be restored when the context is
+ * later rescheduled for execution.
+ *
+ * RETURNS: An architecture-dependent lock-out key representing the
+ * "interrupt disable state" prior to the call.
+ */
 
 SECTION_FUNC(TEXT, irq_lock)
 	pushfl
@@ -501,16 +501,16 @@ SECTION_FUNC(TEXT, irq_lock)
 	ret
 
 
-/*******************************************************************************
-*
-* irq_unlock - enable interrupts on the local CPU 
-*
-* This routine re-enables interrupts on the local CPU.  The <key> parameter
-* is an architecture-dependent lock-out key that is returned by a previous
-* invocation of irq_lock().
-*
-* This routine can be called from either a context or ISR context.
-*/
+/**
+ *
+ * irq_unlock - enable interrupts on the local CPU 
+ *
+ * This routine re-enables interrupts on the local CPU.  The <key> parameter
+ * is an architecture-dependent lock-out key that is returned by a previous
+ * invocation of irq_lock().
+ *
+ * This routine can be called from either a context or ISR context.
+ */
 
 SECTION_FUNC(TEXT, irq_unlock)
 	testl $0x200, SP_ARG1(%esp)

@@ -63,7 +63,7 @@ in ISR context.
 
 Scenario #4:
    Timeout scenarios with multiple FIFOs and fibers.
-*/
+ */
 
 #include <tc_util.h>
 #include <nanokernel.h>
@@ -144,17 +144,17 @@ void testTaskFifoGetW(void);
 
 extern int test_fifo_timeout(void);
 
-/*******************************************************************************
-*
-* isr_fifo_put - add an item to a FIFO
-*
-* This routine is the ISR handler for _trigger_nano_isr_fifo_put().  It adds
-* an item to the FIFO in the context of an ISR.
-*
-* \param parameter    pointer to ISR handler parameter
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_fifo_put - add an item to a FIFO
+ *
+ * This routine is the ISR handler for _trigger_nano_isr_fifo_put().  It adds
+ * an item to the FIFO in the context of an ISR.
+ *
+ * \param parameter    pointer to ISR handler parameter
+ *
+ * RETURNS: N/A
+ */
 
 void isr_fifo_put(void *parameter)
 {
@@ -163,17 +163,17 @@ void isr_fifo_put(void *parameter)
 	nano_isr_fifo_put(pInfo->channel, pInfo->data);
 }
 
-/*******************************************************************************
-*
-* isr_fifo_get - get an item from a FIFO
-*
-* This routine is the ISR handler for _trigger_nano_isr_fifo_get().  It gets
-* an item from the FIFO in the context of an ISR.
-*
-* \param parameter    pointer to ISR handler parameter
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * isr_fifo_get - get an item from a FIFO
+ *
+ * This routine is the ISR handler for _trigger_nano_isr_fifo_get().  It gets
+ * an item from the FIFO in the context of an ISR.
+ *
+ * \param parameter    pointer to ISR handler parameter
+ *
+ * RETURNS: N/A
+ */
 
 void isr_fifo_get(void *parameter)
 {
@@ -183,12 +183,12 @@ void isr_fifo_get(void *parameter)
 }
 
 
-/*******************************************************************************
-*
-* fiber1 - entry point for the first fiber
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber1 - entry point for the first fiber
+ *
+ * RETURNS: N/A
+ */
 
 void fiber1(void)
 {
@@ -252,15 +252,15 @@ void fiber1(void)
 } /* fiber1 */
 
 
-/*******************************************************************************
-*
-* testFiberFifoGetW - test the nano_fiber_fifo_get_wait() interface
-*
-* This function tests the fifo put and get wait interfaces in the fiber context.
-* It gets data from nanoFifoObj2 queue and puts data to nanoFifoObj queue.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testFiberFifoGetW - test the nano_fiber_fifo_get_wait() interface
+ *
+ * This function tests the fifo put and get wait interfaces in the fiber context.
+ * It gets data from nanoFifoObj2 queue and puts data to nanoFifoObj queue.
+ *
+ * RETURNS: N/A
+ */
 
 void testFiberFifoGetW(void)
 {
@@ -299,17 +299,17 @@ void testFiberFifoGetW(void)
 }  /* testFiberFifoGetW */
 
 
-/*******************************************************************************
-*
-* testIsrFifoFromFiber - test ISR FIFO routines (triggered from fiber)
-*
-* This function tests the fifo put and get interfaces in the isr context.
-* It is invoked from a fiber.
-*
-* We use nanoFifoObj queue to put and get data.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testIsrFifoFromFiber - test ISR FIFO routines (triggered from fiber)
+ *
+ * This function tests the fifo put and get interfaces in the isr context.
+ * It is invoked from a fiber.
+ *
+ * We use nanoFifoObj queue to put and get data.
+ *
+ * RETURNS: N/A
+ */
 
 void testIsrFifoFromFiber(void)
 {
@@ -353,17 +353,17 @@ void testIsrFifoFromFiber(void)
 }  /* testIsrFifoFromFiber */
 
 
-/*******************************************************************************
-*
-* testIsrFifoFromTask - test ISR FIFO routines (triggered from task)
-*
-* This function tests the fifo put and get interfaces in the isr context.
-* It is invoked from a task.
-*
-* We use nanoFifoObj queue to put and get data.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testIsrFifoFromTask - test ISR FIFO routines (triggered from task)
+ *
+ * This function tests the fifo put and get interfaces in the isr context.
+ * It is invoked from a task.
+ *
+ * We use nanoFifoObj queue to put and get data.
+ *
+ * RETURNS: N/A
+ */
 
 void testIsrFifoFromTask(void)
 {
@@ -416,12 +416,12 @@ void testIsrFifoFromTask(void)
 	TC_END_RESULT(retCode);
 }  /* testIsrFifoFromTask */
 
-/*******************************************************************************
-*
-* fiber2 - entry point for the second fiber
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber2 - entry point for the second fiber
+ *
+ * RETURNS: N/A
+ */
 
 void fiber2(void)
 {
@@ -472,12 +472,12 @@ void fiber2(void)
 	TC_END_RESULT(retCode);
 }  /* fiber2 */
 
-/*******************************************************************************
-*
-* fiber3 - entry point for the third fiber
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * fiber3 - entry point for the third fiber
+ *
+ * RETURNS: N/A
+ */
 
 void fiber3(void)
 {
@@ -518,15 +518,15 @@ void fiber3(void)
 }
 
 
-/*******************************************************************************
-*
-* testTaskFifoGetW - test the nano_task_fifo_get_wait() interface
-*
-* This is in the task context.  It puts data to nanoFifoObj2 queue and gets
-* data from nanoFifoObj queue.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * testTaskFifoGetW - test the nano_task_fifo_get_wait() interface
+ *
+ * This is in the task context.  It puts data to nanoFifoObj2 queue and gets
+ * data from nanoFifoObj queue.
+ *
+ * RETURNS: N/A
+ */
 
 void testTaskFifoGetW(void)
 {
@@ -558,14 +558,14 @@ void testTaskFifoGetW(void)
 	TC_END_RESULT(retCode);
 } /* testTaskFifoGetW */
 
-/*******************************************************************************
-*
-* initNanoObjects - initialize nanokernel objects
-*
-* This routine initializes the nanokernel objects used in the FIFO tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * initNanoObjects - initialize nanokernel objects
+ *
+ * This routine initializes the nanokernel objects used in the FIFO tests.
+ *
+ * RETURNS: N/A
+ */
 
 void initNanoObjects(void)
 {
@@ -588,14 +588,14 @@ void initNanoObjects(void)
 
 } /* initNanoObjects */
 
-/*******************************************************************************
-*
-* main - entry point to FIFO tests
-*
-* This is the entry point to the FIFO tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * main - entry point to FIFO tests
+ *
+ * This is the entry point to the FIFO tests.
+ *
+ * RETURNS: N/A
+ */
 
 void main(void)
 {

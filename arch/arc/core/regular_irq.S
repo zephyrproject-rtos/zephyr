@@ -36,7 +36,7 @@ This module implements the code for handling entry to and exit from regular
 IRQs.
 
 See isr_wrapper.S for details.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -49,18 +49,18 @@ See isr_wrapper.S for details.
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
 
-/*******************************************************************************
-*
-* _rirq_enter - work to be done before handing control to an IRQ ISR
-*
-* The processor pushes automatically all registers that need to be saved.
-* However, since the processor always runs at kernel privilege there is no
-* automatic switch to the IRQ stack: this must be done in software.
-*
-* Assumption by _isr_demux: r3 is untouched by _rirq_enter.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _rirq_enter - work to be done before handing control to an IRQ ISR
+ *
+ * The processor pushes automatically all registers that need to be saved.
+ * However, since the processor always runs at kernel privilege there is no
+ * automatic switch to the IRQ stack: this must be done in software.
+ *
+ * Assumption by _isr_demux: r3 is untouched by _rirq_enter.
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _rirq_enter)
 
@@ -75,12 +75,12 @@ SECTION_FUNC(TEXT, _rirq_enter)
 	j _isr_demux
 
 
-/*******************************************************************************
-*
-* _rirq_exit - work to be done exiting an IRQ
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _rirq_exit - work to be done exiting an IRQ
+ *
+ * RETURNS: N/A
+ */
 
 SECTION_FUNC(TEXT, _rirq_exit)
 

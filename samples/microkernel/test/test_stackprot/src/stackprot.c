@@ -44,7 +44,7 @@ DESCRIPTION
   thus will not set tcRC to TC_FAIL.  When this alternate task (fiber)
   terminates, control is returned back to the regression (main) task which
   prints out a short string couple times.
-*/
+ */
 
 #include <tc_util.h>
 
@@ -64,17 +64,17 @@ static int tcRC = TC_PASS;
 
 void check_input(const char *name, const char *input);
 
-/*******************************************************************************
-*
-* printLoop
-*
-* This function calls check_input 6 times with the input name and a short
-* string, which is printed properly by check_input.
-*
-* \param name    task or fiber identification string
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * printLoop
+ *
+ * This function calls check_input 6 times with the input name and a short
+ * string, which is printed properly by check_input.
+ *
+ * \param name    task or fiber identification string
+ *
+ * RETURNS: N/A
+ */
 
 void printLoop(const char *name)
 {
@@ -85,21 +85,21 @@ void printLoop(const char *name)
 	}
 }
 
-/*******************************************************************************
-*
-* check_input
-*
-* This function copies the input string to a buffer of 16 characters and
-* prints the name and buffer as a string.  If the input string is longer
-* than the buffer, an error condition is detected.
-*
-* When stack protection feature is enabled (see prj.conf file), the
-* system error handler is invoked and reports a "Stack Check Fail" error.
-* When stack protection feature is not enabled, the system crashes with
-* error like: Trying to execute code outside RAM or ROM.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * check_input
+ *
+ * This function copies the input string to a buffer of 16 characters and
+ * prints the name and buffer as a string.  If the input string is longer
+ * than the buffer, an error condition is detected.
+ *
+ * When stack protection feature is enabled (see prj.conf file), the
+ * system error handler is invoked and reports a "Stack Check Fail" error.
+ * When stack protection feature is not enabled, the system crashes with
+ * error like: Trying to execute code outside RAM or ROM.
+ *
+ * RETURNS: N/A
+ */
 
 void check_input(const char *name, const char *input)
 {
@@ -110,18 +110,18 @@ void check_input(const char *name, const char *input)
 	TC_PRINT("%s: %s\n", name, buf);
 }
 
-/*******************************************************************************
-*
-* Microkernel: AlternateTask
-* Nanokernel:  fiber1
-*
-* This task/fiber passes a long string to check_input function.  It terminates due
-* to stack overflow and reports "Stack Check Fail" when stack protection
-* feature is enabled.  Hence it will not execute the printLoop function and will
-* not set tcRC to TC_FAIL.  Control is transferred back to the other task.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * Microkernel: AlternateTask
+ * Nanokernel:  fiber1
+ *
+ * This task/fiber passes a long string to check_input function.  It terminates due
+ * to stack overflow and reports "Stack Check Fail" when stack protection
+ * feature is enabled.  Hence it will not execute the printLoop function and will
+ * not set tcRC to TC_FAIL.  Control is transferred back to the other task.
+ *
+ * RETURNS: N/A
+ */
 #ifdef CONFIG_MICROKERNEL
 void AlternateTask(void)
 #else
@@ -139,17 +139,17 @@ void fiber1(void)
 	tcRC = TC_FAIL;
 }
 
-/*******************************************************************************
-*
-* Microkernel: RegressionTask
-* Nanokernel:  main
-*
-* This is the entry point to the test stack protection feature.  It calls
-* printLoop to print a string and alternates execution with AlternateTask
-* when the task goes to sleep in printLoop.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * Microkernel: RegressionTask
+ * Nanokernel:  main
+ *
+ * This is the entry point to the test stack protection feature.  It calls
+ * printLoop to print a string and alternates execution with AlternateTask
+ * when the task goes to sleep in printLoop.
+ *
+ * RETURNS: N/A
+ */
 
 #ifdef CONFIG_MICROKERNEL
 void RegressionTask(void)

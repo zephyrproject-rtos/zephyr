@@ -37,7 +37,7 @@ an 16550 in functionality, but is not register-compatible.
 
 There is only support for poll-mode, so it can only be used with the printk
 and STDOUT_CONSOLE APIs.
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -153,14 +153,14 @@ struct _StellarisUartPort {
 
 UART_PORTS_CONFIGURE(struct _StellarisUartPort, ports);
 
-/*******************************************************************************
-*
-* baudrateSet - set the baud rate
-*
-* This routine set the given baud rate for the UART.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * baudrateSet - set the baud rate
+ *
+ * This routine set the given baud rate for the UART.
+ *
+ * RETURNS: N/A
+ */
 
 static void baudrateSet(int port, uint32_t baudrate, uint32_t sysClkFreqInHz)
 {
@@ -184,14 +184,14 @@ static void baudrateSet(int port, uint32_t baudrate, uint32_t sysClkFreqInHz)
 	pUart->fbrd = (uint8_t)(brdf & 0x3f);    /* 6 bits */
 }
 
-/*******************************************************************************
-*
-* enable - enable the UART
-*
-* This routine enables the given UART.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * enable - enable the UART
+ *
+ * This routine enables the given UART.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void enable(int port)
 {
@@ -200,14 +200,14 @@ static inline void enable(int port)
 	pUart->ctl |= UARTCTL_UARTEN;
 }
 
-/*******************************************************************************
-*
-* disable - disable the UART
-*
-* This routine disables the given UART.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * disable - disable the UART
+ *
+ * This routine disables the given UART.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void disable(int port)
 {
@@ -233,14 +233,14 @@ static inline void disable(int port)
  */
 #define LINE_CONTROL_DEFAULTS UARTLCRH_WLEN
 
-/*******************************************************************************
-*
-* lineControlDefaultsSet - set the default UART line controls
-*
-* This routine sets the given UART's line controls to their default settings.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * lineControlDefaultsSet - set the default UART line controls
+ *
+ * This routine sets the given UART's line controls to their default settings.
+ *
+ * RETURNS: N/A
+ */
 
 static inline void lineControlDefaultsSet(int port)
 {
@@ -249,15 +249,15 @@ static inline void lineControlDefaultsSet(int port)
 	pUart->lcrh = LINE_CONTROL_DEFAULTS;
 }
 
-/*******************************************************************************
-*
-* uart_init - initialize UART channel
-*
-* This routine is called to reset the chip in a quiescent state.
-* It is assumed that this function is called only once per UART.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * uart_init - initialize UART channel
+ *
+ * This routine is called to reset the chip in a quiescent state.
+ * It is assumed that this function is called only once per UART.
+ *
+ * RETURNS: N/A
+ */
 void uart_init(int port, /* UART channel to initialize */
 	       const struct uart_init_info * const init_info
 	       )
@@ -270,14 +270,14 @@ void uart_init(int port, /* UART channel to initialize */
 	enable(port);
 }
 
-/*******************************************************************************
-*
-* pollTxReady - get the UART transmit ready status
-*
-* This routine returns the given UART's transmit ready status.
-*
-* RETURNS: 0 if ready to transmit, 1 otherwise
-*/
+/**
+ *
+ * pollTxReady - get the UART transmit ready status
+ *
+ * This routine returns the given UART's transmit ready status.
+ *
+ * RETURNS: 0 if ready to transmit, 1 otherwise
+ */
 
 static int pollTxReady(int port)
 {
@@ -286,12 +286,12 @@ static int pollTxReady(int port)
 	return (pUart->fr & UARTFR_TXFE);
 }
 
-/*******************************************************************************
-*
-* uart_poll_in - poll the device for input.
-*
-* RETURNS: 0 if a character arrived, -1 if the input buffer if empty.
-*/
+/**
+ *
+ * uart_poll_in - poll the device for input.
+ *
+ * RETURNS: 0 if a character arrived, -1 if the input buffer if empty.
+ */
 
 int uart_poll_in(int port, /* UART channel to select for input */
 		 unsigned char *pChar /* pointer to char */
@@ -308,15 +308,15 @@ int uart_poll_in(int port, /* UART channel to select for input */
 	return 0;
 }
 
-/*******************************************************************************
-*
-* uart_poll_out - output a character in polled mode.
-*
-* Checks if the transmitter is empty. If empty, a character is written to
-* the data register.
-*
-* RETURNS: sent character
-*/
+/**
+ *
+ * uart_poll_out - output a character in polled mode.
+ *
+ * Checks if the transmitter is empty. If empty, a character is written to
+ * the data register.
+ *
+ * RETURNS: sent character
+ */
 unsigned char uart_poll_out(int port, unsigned char c)
 {
 	volatile struct _Uart *pUart = ports[port].base;
@@ -331,12 +331,12 @@ unsigned char uart_poll_out(int port, unsigned char c)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
 
-/*******************************************************************************
-*
-* uart_fifo_fill - fill FIFO with data
-*
-* RETURNS: number of bytes sent
-*/
+/**
+ *
+ * uart_fifo_fill - fill FIFO with data
+ *
+ * RETURNS: number of bytes sent
+ */
 
 int uart_fifo_fill(int port, /* UART on which to send */
 			    const uint8_t *txData, /* data to transmit */
@@ -353,12 +353,12 @@ int uart_fifo_fill(int port, /* UART on which to send */
 	return (int)numTx;
 }
 
-/*******************************************************************************
-*
-* uart_fifo_read - read data from FIFO
-*
-* RETURNS: number of bytes read
-*/
+/**
+ *
+ * uart_fifo_read - read data from FIFO
+ *
+ * RETURNS: number of bytes read
+ */
 
 int uart_fifo_read(int port, /* UART to receive from */
 			    uint8_t *rxData, /* data container */
@@ -375,12 +375,12 @@ int uart_fifo_read(int port, /* UART to receive from */
 	return numRx;
 }
 
-/*******************************************************************************
-*
-* uart_irq_tx_enable - enable TX interrupt
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * uart_irq_tx_enable - enable TX interrupt
+ *
+ * RETURNS: N/A
+ */
 
 void uart_irq_tx_enable(int port /* UART to enable Tx interrupt */
 				 )
@@ -430,12 +430,12 @@ void uart_irq_tx_enable(int port /* UART to enable Tx interrupt */
 	pUart->im |= UARTTIM_TXIM;
 }
 
-/*******************************************************************************
-*
-* uart_irq_tx_disable - disable TX interrupt in IER
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * uart_irq_tx_disable - disable TX interrupt in IER
+ *
+ * RETURNS: N/A
+ */
 
 void uart_irq_tx_disable(int port /* UART to disable Tx interrupt */
 				  )
@@ -445,12 +445,12 @@ void uart_irq_tx_disable(int port /* UART to disable Tx interrupt */
 	pUart->im &= ~UARTTIM_TXIM;
 }
 
-/*******************************************************************************
-*
-* uart_irq_tx_ready - check if Tx IRQ has been raised
-*
-* RETURNS: 1 if a Tx IRQ is pending, 0 otherwise
-*/
+/**
+ *
+ * uart_irq_tx_ready - check if Tx IRQ has been raised
+ *
+ * RETURNS: 1 if a Tx IRQ is pending, 0 otherwise
+ */
 
 int uart_irq_tx_ready(int port /* UART to check */
 			       )
@@ -460,12 +460,12 @@ int uart_irq_tx_ready(int port /* UART to check */
 	return ((pUart->mis & UARTMIS_TXMIS) == UARTMIS_TXMIS);
 }
 
-/*******************************************************************************
-*
-* uart_irq_rx_enable - enable RX interrupt in IER
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * uart_irq_rx_enable - enable RX interrupt in IER
+ *
+ * RETURNS: N/A
+ */
 
 void uart_irq_rx_enable(int port /* UART to enable Rx interrupt */
 				 )
@@ -475,12 +475,12 @@ void uart_irq_rx_enable(int port /* UART to enable Rx interrupt */
 	pUart->im |= UARTTIM_RXIM;
 }
 
-/*******************************************************************************
-*
-* uart_irq_rx_disable - disable RX interrupt in IER
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * uart_irq_rx_disable - disable RX interrupt in IER
+ *
+ * RETURNS: N/A
+ */
 
 void uart_irq_rx_disable(int port /* UART to disable Rx interrupt */
 				  )
@@ -490,12 +490,12 @@ void uart_irq_rx_disable(int port /* UART to disable Rx interrupt */
 	pUart->im &= ~UARTTIM_RXIM;
 }
 
-/*******************************************************************************
-*
-* uart_irq_rx_ready - check if Rx IRQ has been raised
-*
-* RETURNS: 1 if an IRQ is ready, 0 otherwise
-*/
+/**
+ *
+ * uart_irq_rx_ready - check if Rx IRQ has been raised
+ *
+ * RETURNS: 1 if an IRQ is ready, 0 otherwise
+ */
 
 int uart_irq_rx_ready(int port /* UART to check */
 			       )
@@ -505,12 +505,12 @@ int uart_irq_rx_ready(int port /* UART to check */
 	return ((pUart->mis & UARTMIS_RXMIS) == UARTMIS_RXMIS);
 }
 
-/*******************************************************************************
-*
-* uart_irq_err_enable - enable error interrupts
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * uart_irq_err_enable - enable error interrupts
+ *
+ * RETURNS: N/A
+ */
 
 void uart_irq_err_enable(int port /* UART to enable interrupts for */
 			 )
@@ -521,12 +521,12 @@ void uart_irq_err_enable(int port /* UART to enable interrupts for */
 		      UARTTIM_BEIM | UARTTIM_OEIM);
 }
 
-/*******************************************************************************
-*
-* uart_irq_err_disable - disable error interrupts
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * uart_irq_err_disable - disable error interrupts
+ *
+ * RETURNS: N/A
+ */
 
 void uart_irq_err_disable(int port /* UART to disable interrupts for */
 			  )
@@ -537,12 +537,12 @@ void uart_irq_err_disable(int port /* UART to disable interrupts for */
 		       UARTTIM_BEIM | UARTTIM_OEIM);
 }
 
-/*******************************************************************************
-*
-* uart_irq_is_pending - check if Tx or Rx IRQ is pending
-*
-* RETURNS: 1 if a Tx or Rx IRQ is pending, 0 otherwise
-*/
+/**
+ *
+ * uart_irq_is_pending - check if Tx or Rx IRQ is pending
+ *
+ * RETURNS: 1 if a Tx or Rx IRQ is pending, 0 otherwise
+ */
 
 int uart_irq_is_pending(int port /* UART to check */
 				 )
@@ -553,26 +553,26 @@ int uart_irq_is_pending(int port /* UART to check */
 	return ((pUart->mis & (UARTMIS_RXMIS | UARTMIS_TXMIS)) ? 1 : 0);
 }
 
-/*******************************************************************************
-*
-* uart_irq_update - update IRQ status
-*
-* RETURNS: always 1
-*/
+/**
+ *
+ * uart_irq_update - update IRQ status
+ *
+ * RETURNS: always 1
+ */
 
 int uart_irq_update(int port)
 {
 	return 1;
 }
 
-/*******************************************************************************
-*
-* uart_irq_get - returns UART interrupt number
-*
-* Returns the IRQ number used by the specified UART port
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * uart_irq_get - returns UART interrupt number
+ *
+ * Returns the IRQ number used by the specified UART port
+ *
+ * RETURNS: N/A
+ */
 
 unsigned int uart_irq_get(int port /* UART port */
 			  )

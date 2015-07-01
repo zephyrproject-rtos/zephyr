@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Exception/interrupt context helpers.
-*/
+ */
 
 #ifndef _ARM_CORTEXM_ISR__H_
 #define _ARM_CORTEXM_ISR__H_
@@ -47,19 +47,19 @@ Exception/interrupt context helpers.
 
 #else
 
-/*******************************************************************************
-*
-* _IsInIsr - find out if running in an ISR context
-*
-* The current executing vector is found in the IPSR register. We consider the
-* IRQs (exception 16 and up), and the PendSV and SYSTICK exceptions, to be
-* interrupts. Taking a fault within an exception is also considered in
-* interrupt context.
-*
-* RETURNS: 1 if in ISR, 0 if not.
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _IsInIsr - find out if running in an ISR context
+ *
+ * The current executing vector is found in the IPSR register. We consider the
+ * IRQs (exception 16 and up), and the PendSV and SYSTICK exceptions, to be
+ * interrupts. Taking a fault within an exception is also considered in
+ * interrupt context.
+ *
+ * RETURNS: 1 if in ISR, 0 if not.
+ *
+ * \NOMANUAL
+ */
 static ALWAYS_INLINE int _IsInIsr(void)
 {
 	uint32_t vector = _IpsrGet();
@@ -68,18 +68,18 @@ static ALWAYS_INLINE int _IsInIsr(void)
 	return (vector > 13) || (vector && _ScbIsNestedExc());
 }
 
-/*******************************************************************************
-* _ExcSetup - setup system exceptions
-*
-* Set exception priorities to conform with the BASEPRI locking mechanism.
-* Set PendSV priority to lowest possible.
-*
-* Enable fault exceptions.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ * _ExcSetup - setup system exceptions
+ *
+ * Set exception priorities to conform with the BASEPRI locking mechanism.
+ * Set PendSV priority to lowest possible.
+ *
+ * Enable fault exceptions.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE void _ExcSetup(void)
 {

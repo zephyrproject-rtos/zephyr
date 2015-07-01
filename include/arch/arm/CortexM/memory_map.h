@@ -35,7 +35,7 @@ DESCRIPTION
 This module contains definitions for the memory map of the CORTEX-M series of
 processors.
 
-*/
+ */
 
 #ifndef _CORTEXM_MEMORY_MAP__H_
 #define _CORTEXM_MEMORY_MAP__H_

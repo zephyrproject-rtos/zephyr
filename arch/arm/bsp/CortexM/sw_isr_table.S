@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Software ISR table for ARM
-*/
+ */
 
 #define _ASMLANGUAGE
 

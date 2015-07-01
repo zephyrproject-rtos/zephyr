@@ -42,7 +42,7 @@ NOTE
 One should ensure that the block is released to the same map from which it was
 allocated, and is only released once.  Using an invalid pointer will have
 unpredictable side effects.
-*/
+ */
 
 #include <tc_util.h>
 #include <stdbool.h>
@@ -60,18 +60,18 @@ static int tcRC = TC_PASS;     /* test case return code */
 int testMapGetAllBlocks(void **P);
 int testMapFreeAllBlocks(void **P);
 
-/*******************************************************************************
-*
-* verifyRetValue - verify return value
-*
-* This routine verifies current value against expected value
-* and returns true if they are the same.
-*
-* \param expectRetValue     expect value
-* \param currentRetValue    current value
-*
-* RETURNS:  true, false
-*/
+/**
+ *
+ * verifyRetValue - verify return value
+ *
+ * This routine verifies current value against expected value
+ * and returns true if they are the same.
+ *
+ * \param expectRetValue     expect value
+ * \param currentRetValue    current value
+ *
+ * RETURNS:  true, false
+ */
 
 bool verifyRetValue(int expectRetValue, int currentRetValue)
 {
@@ -79,16 +79,16 @@ bool verifyRetValue(int expectRetValue, int currentRetValue)
 
 } /* verifyRetValue */
 
-/*******************************************************************************
-*
-* HelperTask - helper task
-*
-* This routine gets all blocks from the memory map.  It uses semaphores
-* SEM_REGRESDONE and SEM_HELPERDONE to synchronize between different parts
-* of the test.
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * HelperTask - helper task
+ *
+ * This routine gets all blocks from the memory map.  It uses semaphores
+ * SEM_REGRESDONE and SEM_HELPERDONE to synchronize between different parts
+ * of the test.
+ *
+ * RETURNS:  N/A
+ */
 
 void HelperTask(void)
 {
@@ -141,21 +141,21 @@ exitTest1:
 }  /* HelperTask */
 
 
-/*******************************************************************************
-*
-* testMapGetAllBlocks - get all blocks from the memory map
-*
-* Get all blocks from the memory map.  It also tries to get one more block
-* from the map after the map is empty to verify the error return code.
-*
-* This routine tests the following:
-*
-*   task_mem_map_alloc(), task_mem_map_used_get()
-*
-* \param p    pointer to pointer of allocated blocks
-*
-* RETURNS:  TC_PASS, TC_FAIL
-*/
+/**
+ *
+ * testMapGetAllBlocks - get all blocks from the memory map
+ *
+ * Get all blocks from the memory map.  It also tries to get one more block
+ * from the map after the map is empty to verify the error return code.
+ *
+ * This routine tests the following:
+ *
+ *   task_mem_map_alloc(), task_mem_map_used_get()
+ *
+ * \param p    pointer to pointer of allocated blocks
+ *
+ * RETURNS:  TC_PASS, TC_FAIL
+ */
 
 int testMapGetAllBlocks(void **p)
 {
@@ -213,21 +213,21 @@ int testMapGetAllBlocks(void **p)
 	return TC_PASS;
 }  /* testMapGetAllBlocks */
 
-/*******************************************************************************
-*
-* testMapFreeAllBlocks - free all memeory blocks
-*
-* This routine frees all memory blocks and also verifies that the number of
-* blocks used are correct.
-*
-* This routine tests the following:
-*
-*   task_mem_map_free(), task_mem_map_used_get()
-*
-* \param p    pointer to pointer of allocated blocks
-*
-* RETURNS:  TC_PASS, TC_FAIL
-*/
+/**
+ *
+ * testMapFreeAllBlocks - free all memeory blocks
+ *
+ * This routine frees all memory blocks and also verifies that the number of
+ * blocks used are correct.
+ *
+ * This routine tests the following:
+ *
+ *   task_mem_map_free(), task_mem_map_used_get()
+ *
+ * \param p    pointer to pointer of allocated blocks
+ *
+ * RETURNS:  TC_PASS, TC_FAIL
+ */
 
 int testMapFreeAllBlocks(void **p)
 {
@@ -273,16 +273,16 @@ int testMapFreeAllBlocks(void **p)
 	return TC_PASS;
 }   /* testMapFreeAllBlocks */
 
-/*******************************************************************************
-*
-* printPointers - print the pointers
-*
-* This routine prints out the pointers.
-*
-* \param pointer    pointer to pointer of allocated blocks
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * printPointers - print the pointers
+ *
+ * This routine prints out the pointers.
+ *
+ * \param pointer    pointer to pointer of allocated blocks
+ *
+ * RETURNS:  N/A
+ */
 void printPointers(void **pointer)
 {
 	TC_PRINT("%s: ", __func__);
@@ -295,20 +295,20 @@ void printPointers(void **pointer)
 
 }  /* printPointers */
 
-/*******************************************************************************
-*
-* RegressionTask - main task to test task_mem_map_xxx interfaces
-*
-* This routine calls testMapGetAllBlocks() to get all memory blocks from the
-* map and calls testMapFreeAllBlocks() to free all memory blocks.  It also
-* tries to wait (with and without timeout) for a memory block.
-*
-* This routine tests the following:
-*
-*   task_mem_map_alloc_wait, task_mem_map_alloc_wait_timeout
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * RegressionTask - main task to test task_mem_map_xxx interfaces
+ *
+ * This routine calls testMapGetAllBlocks() to get all memory blocks from the
+ * map and calls testMapFreeAllBlocks() to free all memory blocks.  It also
+ * tries to wait (with and without timeout) for a memory block.
+ *
+ * This routine tests the following:
+ *
+ *   task_mem_map_alloc_wait, task_mem_map_alloc_wait_timeout
+ *
+ * RETURNS:  N/A
+ */
 
 void RegressionTask(void)
 {

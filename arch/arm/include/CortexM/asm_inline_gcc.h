@@ -40,16 +40,16 @@
 
 #ifndef _ASMLANGUAGE
 
-/*******************************************************************************
-*
-* _IpsrGet - obtain value of IPSR register
-*
-* Obtain and return current value of IPSR register.
-*
-* RETURNS: the contents of the IPSR register
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _IpsrGet - obtain value of IPSR register
+ *
+ * Obtain and return current value of IPSR register.
+ *
+ * RETURNS: the contents of the IPSR register
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE uint32_t _IpsrGet(void)
 {
@@ -59,16 +59,16 @@ static ALWAYS_INLINE uint32_t _IpsrGet(void)
 	return vector;
 }
 
-/*******************************************************************************
-*
-* _MspSet - set the value of the Main Stack Pointer register
-*
-* Store the value of <msp> in MSP register.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _MspSet - set the value of the Main Stack Pointer register
+ *
+ * Store the value of <msp> in MSP register.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 static ALWAYS_INLINE void _MspSet(uint32_t msp /* value to store in MSP */
 				  )

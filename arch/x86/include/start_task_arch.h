@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 Intel-specific parts of start_task(). Only FP functionality currently.
-*/
+ */
 
 #ifndef _START_TASK_ARCH__H_
 #define _START_TASK_ARCH__H_

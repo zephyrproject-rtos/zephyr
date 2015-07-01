@@ -34,7 +34,7 @@
 DESCRIPTION
 This header contains the IA-32 segment selector defintions. These are extracted
 into their own file so they can be shared with the host tools.
-*/
+ */
 
 #ifndef _SEGSELECT_H
 #define _SEGSELECT_H

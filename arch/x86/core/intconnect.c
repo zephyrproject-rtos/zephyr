@@ -85,7 +85,7 @@ NOTE: Be sure to update the arch specific definition of the _INT_STUB_SIZE macro
 to reflect the maximum potential size of the interrupt stub (as shown above).
 The _INT_STUB_SIZE macro is defined in include/nanokernel/x86/arch.h.
 
-*/
+ */
 
 #ifndef CONFIG_NO_ISRS
 
@@ -159,7 +159,7 @@ static NANO_INT_STUB dynamic_stubs[ALL_DYNAMIC_STUBS] = {
 	[0 ... (ALL_DYNAMIC_STUBS - 1)] = { _STUB_AVAIL, }
 };
 
-/*******************************************************************************
+/**
  * _int_stub_alloc - allocate dynamic interrupt stub
  *
  * RETURNS: index of the first available element of the STUB array or -1
@@ -179,28 +179,28 @@ static int _int_stub_alloc(void)
 }
 #endif /* ALL_DYNAMIC_STUBS > 0 */
 
-/*******************************************************************************
-*
-* _IntVecSet - connect a routine to an interrupt vector
-*
-* This routine "connects" the specified <routine> to the specified interrupt
-* <vector>.  On the IA-32 architecture, an interrupt vector is a value from
-* 0 to 255.  This routine merely fills in the appropriate interrupt
-* descriptor table (IDT) with an interrupt-gate descriptor such that <routine>
-* is invoked when interrupt <vector> is asserted.  The <dpl> argument specifies
-* the privilege level for the interrupt-gate descriptor; (hardware) interrupts
-* and exceptions should specify a level of 0, whereas handlers for user-mode
-* software generated interrupts should specify 3.
-*
-* RETURNS: N/A
-*
-* INTERNAL
-* Unlike nanoCpuExcConnect() and irq_connect(), the _IntVecSet() routine
-* is a very basic API that simply updates the appropriate entry in Interrupt
-* Descriptor Table (IDT) such that the specified routine is invoked when the
-* specified interrupt vector is asserted.
-*
-*/
+/**
+ *
+ * _IntVecSet - connect a routine to an interrupt vector
+ *
+ * This routine "connects" the specified <routine> to the specified interrupt
+ * <vector>.  On the IA-32 architecture, an interrupt vector is a value from
+ * 0 to 255.  This routine merely fills in the appropriate interrupt
+ * descriptor table (IDT) with an interrupt-gate descriptor such that <routine>
+ * is invoked when interrupt <vector> is asserted.  The <dpl> argument specifies
+ * the privilege level for the interrupt-gate descriptor; (hardware) interrupts
+ * and exceptions should specify a level of 0, whereas handlers for user-mode
+ * software generated interrupts should specify 3.
+ *
+ * RETURNS: N/A
+ *
+ * INTERNAL
+ * Unlike nanoCpuExcConnect() and irq_connect(), the _IntVecSet() routine
+ * is a very basic API that simply updates the appropriate entry in Interrupt
+ * Descriptor Table (IDT) such that the specified routine is invoked when the
+ * specified interrupt vector is asserted.
+ *
+ */
 
 void _IntVecSet(
 	unsigned int vector, /* interrupt vector: 0 to 255 on IA-32 */
@@ -233,53 +233,53 @@ void _IntVecSet(
  * generates an error
  */
 #if ALL_DYNAMIC_STUBS > 0
-/*******************************************************************************
-*
-* irq_connect - connect a C routine to a hardware interrupt
-*
-* This routine connects an interrupt service routine (ISR) coded in C to
-* the specified hardware <irq>.  An interrupt vector will be allocated to
-* satisfy the specified <priority>.  If the interrupt service routine is being
-* connected to a software generated interrupt, then <irq> must be set to
-* NANO_SOFT_IRQ.
-*
-* The specified <irq> represents a virtualized IRQ, i.e. it does not
-* necessarily represent a specific IRQ line on a given interrupt controller
-* device.  The BSP presents a virtualized set of IRQs from 0 to N, where N
-* is the total number of IRQs supported by all the interrupt controller devices
-* on the board.  See the BSP's documentation for the mapping of virtualized
-* IRQ to physical IRQ.
-*
-* When the device asserts an interrupt on the specified <irq>, a switch to
-* the interrupt stack is performed (if not already executing on the interrupt
-* stack), followed by saving the integer (i.e. non-floating point) context of
-* the currently executing task, fiber, or ISR.  The ISR specified by <routine>
-* will then be invoked with the single <parameter>.  When the ISR returns, a
-* context switch may occur.
-*
-* The routine searches for the first available element in the synamic_stubs
-* array and uses it for the stub.
-*
-* RETURNS: the allocated interrupt vector
-*
-* WARNINGS
-* Some boards utilize interrupt controllers where the interrupt vector
-* cannot be programmed on an IRQ basis; as a result, the vector assigned
-* to the <irq> during interrupt controller initialization will be returned.
-* In these cases, the requested <priority> is not honoured since the interrupt
-* prioritization is fixed by the interrupt controller (e.g. IRQ0 will always
-* be the highest priority interrupt regardless of what interrupt vector
-* was assigned to IRQ0).
-*
-* This routine does not perform range checking on the requested <priority>
-* and thus, depending on the underlying interrupt controller, may result
-* in the assignment of an interrupt vector located in the reserved range of
-* the processor.
-*
-* INTERNAL
-* For debug kernels, this routine shall return -1 when there are no
-* vectors remaining in the specified <priority> level.
-*/
+/**
+ *
+ * irq_connect - connect a C routine to a hardware interrupt
+ *
+ * This routine connects an interrupt service routine (ISR) coded in C to
+ * the specified hardware <irq>.  An interrupt vector will be allocated to
+ * satisfy the specified <priority>.  If the interrupt service routine is being
+ * connected to a software generated interrupt, then <irq> must be set to
+ * NANO_SOFT_IRQ.
+ *
+ * The specified <irq> represents a virtualized IRQ, i.e. it does not
+ * necessarily represent a specific IRQ line on a given interrupt controller
+ * device.  The BSP presents a virtualized set of IRQs from 0 to N, where N
+ * is the total number of IRQs supported by all the interrupt controller devices
+ * on the board.  See the BSP's documentation for the mapping of virtualized
+ * IRQ to physical IRQ.
+ *
+ * When the device asserts an interrupt on the specified <irq>, a switch to
+ * the interrupt stack is performed (if not already executing on the interrupt
+ * stack), followed by saving the integer (i.e. non-floating point) context of
+ * the currently executing task, fiber, or ISR.  The ISR specified by <routine>
+ * will then be invoked with the single <parameter>.  When the ISR returns, a
+ * context switch may occur.
+ *
+ * The routine searches for the first available element in the synamic_stubs
+ * array and uses it for the stub.
+ *
+ * RETURNS: the allocated interrupt vector
+ *
+ * WARNINGS
+ * Some boards utilize interrupt controllers where the interrupt vector
+ * cannot be programmed on an IRQ basis; as a result, the vector assigned
+ * to the <irq> during interrupt controller initialization will be returned.
+ * In these cases, the requested <priority> is not honoured since the interrupt
+ * prioritization is fixed by the interrupt controller (e.g. IRQ0 will always
+ * be the highest priority interrupt regardless of what interrupt vector
+ * was assigned to IRQ0).
+ *
+ * This routine does not perform range checking on the requested <priority>
+ * and thus, depending on the underlying interrupt controller, may result
+ * in the assignment of an interrupt vector located in the reserved range of
+ * the processor.
+ *
+ * INTERNAL
+ * For debug kernels, this routine shall return -1 when there are no
+ * vectors remaining in the specified <priority> level.
+ */
 
 int irq_connect(
 	unsigned int irq,		  /* virtualized IRQ to connect to */
@@ -478,36 +478,36 @@ int irq_connect(
 }
 #endif /* ALL_DYNAMIC_STUBS > 0 */
 
-/*******************************************************************************
-*
-* _IntVecAlloc - allocate a free interrupt vector given <priority>
-*
-* This routine scans the interrupt_vectors_allocated[] array for a free vector that
-* satisfies the specified <priority>.  It is a utility function for use only
-* by a BSP's _SysIntVecAlloc() routine.
-*
-* This routine assumes that the relationship between interrupt priority and
-* interrupt vector is :
-*
-*      priority = vector / 16;
-*
-* Since vectors 0 to 31 are reserved by the IA-32 architecture, the priorities
-* of user defined interrupts range from 2 to 15.  Each interrupt priority level
-* contains 16 vectors, and the prioritization of interrupts within a priority
-* level is determined by the vector number; the higher the vector number, the
-* higher the priority within that priority level.
-*
-* It is also assumed that the interrupt controllers are capable of managing
-* interrupt requests on a per-vector level as opposed to a per-priority level.
-* For example, the local APIC on Pentium4 and later processors, the in-service
-* register (ISR) and the interrupt request register (IRR) are 256 bits wide.
-*
-* RETURNS: allocated interrupt vector
-*
-* INTERNAL
-* For debug kernels, this routine shall return -1 when there are no
-* vectors remaining in the specified <priority> level.
-*/
+/**
+ *
+ * _IntVecAlloc - allocate a free interrupt vector given <priority>
+ *
+ * This routine scans the interrupt_vectors_allocated[] array for a free vector that
+ * satisfies the specified <priority>.  It is a utility function for use only
+ * by a BSP's _SysIntVecAlloc() routine.
+ *
+ * This routine assumes that the relationship between interrupt priority and
+ * interrupt vector is :
+ *
+ *      priority = vector / 16;
+ *
+ * Since vectors 0 to 31 are reserved by the IA-32 architecture, the priorities
+ * of user defined interrupts range from 2 to 15.  Each interrupt priority level
+ * contains 16 vectors, and the prioritization of interrupts within a priority
+ * level is determined by the vector number; the higher the vector number, the
+ * higher the priority within that priority level.
+ *
+ * It is also assumed that the interrupt controllers are capable of managing
+ * interrupt requests on a per-vector level as opposed to a per-priority level.
+ * For example, the local APIC on Pentium4 and later processors, the in-service
+ * register (ISR) and the interrupt request register (IRR) are 256 bits wide.
+ *
+ * RETURNS: allocated interrupt vector
+ *
+ * INTERNAL
+ * For debug kernels, this routine shall return -1 when there are no
+ * vectors remaining in the specified <priority> level.
+ */
 
 int _IntVecAlloc(unsigned int priority)
 {
@@ -601,18 +601,18 @@ int _IntVecAlloc(unsigned int priority)
 	return vector;
 }
 
-/*******************************************************************************
-*
-* _IntVecMarkAllocated - mark interrupt vector as allocated
-*
-* This routine is used to "reserve" an interrupt vector that is allocated
-* or assigned by any means other than _IntVecAllocate().  This marks the vector
-* as allocated so that any future invocations of _IntVecAllocate() will not
-* return that vector.
-*
-* RETURNS: N/A
-*
-*/
+/**
+ *
+ * _IntVecMarkAllocated - mark interrupt vector as allocated
+ *
+ * This routine is used to "reserve" an interrupt vector that is allocated
+ * or assigned by any means other than _IntVecAllocate().  This marks the vector
+ * as allocated so that any future invocations of _IntVecAllocate() will not
+ * return that vector.
+ *
+ * RETURNS: N/A
+ *
+ */
 
 void _IntVecMarkAllocated(unsigned int vector)
 {
@@ -625,15 +625,15 @@ void _IntVecMarkAllocated(unsigned int vector)
 	irq_unlock(imask);
 }
 
-/*******************************************************************************
-*
-* _IntVecMarkFree - mark interrupt vector as free
-*
-* This routine is used to "free" an interrupt vector that is allocated
-* or assigned using _IntVecAllocate() or _IntVecMarkAllocated(). This marks the
-* vector as available so that any future allocations can return that vector.
-*
-*/
+/**
+ *
+ * _IntVecMarkFree - mark interrupt vector as free
+ *
+ * This routine is used to "free" an interrupt vector that is allocated
+ * or assigned using _IntVecAllocate() or _IntVecMarkAllocated(). This marks the
+ * vector as available so that any future allocations can return that vector.
+ *
+ */
 
 void _IntVecMarkFree(unsigned int vector)
 {

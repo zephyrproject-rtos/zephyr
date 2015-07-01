@@ -33,33 +33,33 @@
 #include <micro_private.h>
 #include <sections.h>
 
-/*******************************************************************************
-*
-* _k_offload_to_fiber - process an "offload to fiber" request
-*
-* This routine simply invokes the requested function from within the context
-* of the K_swapper() fiber and saves the result.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_offload_to_fiber - process an "offload to fiber" request
+ *
+ * This routine simply invokes the requested function from within the context
+ * of the K_swapper() fiber and saves the result.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_offload_to_fiber(struct k_args *A)
 {
 	A->Args.u1.rval = (*A->Args.u1.func)(A->Args.u1.argp);
 }
 
-/*******************************************************************************
-*
-* task_offload_to_fiber - issue a custom call from within K_swapper()
-*
-* @func: function to call from within K_swapper()
-* @argp: argument to pass to custom function
-*
-* This routine issues a request to execute a function from within the context
-* of the K_swapper() fiber.
-*
-* RETURNS: return value from custom <func> call
-*/
+/**
+ *
+ * task_offload_to_fiber - issue a custom call from within K_swapper()
+ *
+ * @func: function to call from within K_swapper()
+ * @argp: argument to pass to custom function
+ *
+ * This routine issues a request to execute a function from within the context
+ * of the K_swapper() fiber.
+ *
+ * RETURNS: return value from custom <func> call
+ */
 
 int task_offload_to_fiber(int (*func)(), void *argp)
 {

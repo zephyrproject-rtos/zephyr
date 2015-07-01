@@ -39,7 +39,7 @@ This modules tests the following target pipe routines:
 
 The following target pipe routine does not yet have a test case:
   task_pipe_put_async()
-*/
+ */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -156,12 +156,12 @@ extern ksem_t counterSem;
 
 extern kpipe_t pipeId;
 
-/*******************************************************************************
-*
-* microObjectsInit - initialize objects used in this microkernel test suite
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * microObjectsInit - initialize objects used in this microkernel test suite
+ *
+ * RETURNS: N/A
+ */
 
 void microObjectsInit(void)
 {
@@ -172,15 +172,15 @@ void microObjectsInit(void)
 	}
 }
 
-/*******************************************************************************
-*
-* receiveBufferCheck - check the contents of the receive buffer
-*
-* \param buffer    pointer to buffer to check
-* \param size      number of bytes to check
-*
-* RETURNS: <size> on success, index of wrong character on failure
-*/
+/**
+ *
+ * receiveBufferCheck - check the contents of the receive buffer
+ *
+ * \param buffer    pointer to buffer to check
+ * \param size      number of bytes to check
+ *
+ * RETURNS: <size> on success, index of wrong character on failure
+ */
 
 int receiveBufferCheck(char *buffer, int size)
 {
@@ -195,17 +195,17 @@ int receiveBufferCheck(char *buffer, int size)
 	return size;
 }
 
-/*******************************************************************************
-*
-* pipePutHelperWork - helper routine to pipePutTest()
-*
-* \param singleItems    testcase list (one item in the pipe)
-* \param nSingles       number of items in testcase
-* \param manyItems      testcase list (many items in the pipe)
-* \param nMany          number of items in testcase
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipePutHelperWork - helper routine to pipePutTest()
+ *
+ * \param singleItems    testcase list (one item in the pipe)
+ * \param nSingles       number of items in testcase
+ * \param manyItems      testcase list (many items in the pipe)
+ * \param nMany          number of items in testcase
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
 					  SIZE_EXPECT *manyItems, int nMany)
@@ -295,12 +295,12 @@ int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipePutHelper - helper routine to pipePutTest()
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipePutHelper - helper routine to pipePutTest()
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipePutHelper(void)
 {
@@ -330,19 +330,19 @@ int pipePutHelper(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipePutTestWork - test task_pipe_put()
-*
-* This routine tests the task_pipe_put() API.
-*
-* \param singleItems    testcase list (one item in the pipe)
-* \param nSingles       number of items in testcase
-* \param manyItems      testcase list (many items in the pipe)
-* \param nMany          number of items in testcase
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipePutTestWork - test task_pipe_put()
+ *
+ * This routine tests the task_pipe_put() API.
+ *
+ * \param singleItems    testcase list (one item in the pipe)
+ * \param nSingles       number of items in testcase
+ * \param manyItems      testcase list (many items in the pipe)
+ * \param nMany          number of items in testcase
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipePutTestWork(SIZE_EXPECT *singleItems, int nSingles,
 					SIZE_EXPECT *manyItems, int nMany)
@@ -419,14 +419,14 @@ int pipePutTestWork(SIZE_EXPECT *singleItems, int nSingles,
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipePutTest - test task_pipe_put()
-*
-* This routine tests the task_pipe_put() API.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipePutTest - test task_pipe_put()
+ *
+ * This routine tests the task_pipe_put() API.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipePutTest(void)
 {
@@ -456,12 +456,12 @@ int pipePutTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipePutWaitHelper - help test task_pipe_put_wait()
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipePutWaitHelper - help test task_pipe_put_wait()
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipePutWaitHelper(void)
 {
@@ -520,12 +520,12 @@ int pipePutWaitHelper(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipePutWaitTest - test task_pipe_put_wait()
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipePutWaitTest - test task_pipe_put_wait()
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipePutWaitTest(void)
 {
@@ -580,12 +580,12 @@ int pipePutWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipePutTimeoutHelper - test task_pipe_get_wait_timeout()
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipePutTimeoutHelper - test task_pipe_get_wait_timeout()
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipePutTimeoutHelper(void)
 {
@@ -644,12 +644,12 @@ int pipePutTimeoutHelper(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipePutTimeoutTest - test task_pipe_put_wait_timeout()
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipePutTimeoutTest - test task_pipe_put_wait_timeout()
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipePutTimeoutTest(void)
 {
@@ -724,17 +724,17 @@ int pipePutTimeoutTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipeGetTest - routine to test task_pipe_get()
-*
-* This routine tests the task_pipe_get() API.  Some of this functionality
-* has already been tested while testing task_pipe_put().  As a result, the
-* only remaining functionality that needs to be checked are attempts to get
-* data from an empty pipe.
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipeGetTest - routine to test task_pipe_get()
+ *
+ * This routine tests the task_pipe_get() API.  Some of this functionality
+ * has already been tested while testing task_pipe_put().  As a result, the
+ * only remaining functionality that needs to be checked are attempts to get
+ * data from an empty pipe.
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipeGetTest(void)
 {
@@ -773,15 +773,15 @@ int pipeGetTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipeGetWaitHelperWork - test task_pipe_get_wait()
-*
-* \param items     testcase list for task_pipe_get_wait()
-* \param nItems    number of items in list
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipeGetWaitHelperWork - test task_pipe_get_wait()
+ *
+ * \param items     testcase list for task_pipe_get_wait()
+ * \param nItems    number of items in list
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipeGetWaitHelperWork(SIZE_EXPECT *items, int nItems)
 {
@@ -810,12 +810,12 @@ int pipeGetWaitHelperWork(SIZE_EXPECT *items, int nItems)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipeGetWaitHelper - test task_pipe_get_wait()
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipeGetWaitHelper - test task_pipe_get_wait()
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipeGetWaitHelper(void)
 {
@@ -838,15 +838,15 @@ int pipeGetWaitHelper(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipeGetWaitTestWork - test task_pipe_get_wait()
-*
-* \param items     testcase list for task_pipe_get_wait()
-* \param nItems    number of items in list
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipeGetWaitTestWork - test task_pipe_get_wait()
+ *
+ * \param items     testcase list for task_pipe_get_wait()
+ * \param nItems    number of items in list
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipeGetWaitTestWork(SIZE_EXPECT *items, int nItems)
 {
@@ -874,12 +874,12 @@ int pipeGetWaitTestWork(SIZE_EXPECT *items, int nItems)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipeGetWaitTest - test task_pipe_get_wait()
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipeGetWaitTest - test task_pipe_get_wait()
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipeGetWaitTest(void)
 {
@@ -910,12 +910,12 @@ int pipeGetWaitTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* pipeGetTimeoutTest - test remaining task_pipe_get_wait_timeout() functionality
-*
-* RETURNS: TC_PASS on success, TC_FAIL on failure
-*/
+/**
+ *
+ * pipeGetTimeoutTest - test remaining task_pipe_get_wait_timeout() functionality
+ *
+ * RETURNS: TC_PASS on success, TC_FAIL on failure
+ */
 
 int pipeGetTimeoutTest(void)
 {
@@ -940,14 +940,14 @@ int pipeGetTimeoutTest(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* AlternateTask - alternate task in the test suite
-*
-* This routine runs at a lower priority than RegressionTask().
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+/**
+ *
+ * AlternateTask - alternate task in the test suite
+ *
+ * This routine runs at a lower priority than RegressionTask().
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int AlternateTask(void)
 {
@@ -987,14 +987,14 @@ int AlternateTask(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* RegressionTask - main task in the test suite
-*
-* This is the entry point to the pipe test suite.
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+/**
+ *
+ * RegressionTask - main task in the test suite
+ *
+ * This is the entry point to the pipe test suite.
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int RegressionTask(void)
 {

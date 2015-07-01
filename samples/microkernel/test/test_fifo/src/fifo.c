@@ -43,7 +43,7 @@ Scenarios tested include:
   while it is being dequeued
 - Verify the data being dequeued are in correct order
 - Verify the return codes are correct for the APIs
-*/
+ */
 
 #include <tc_util.h>
 #include <stdbool.h>
@@ -62,14 +62,14 @@ Scenarios tested include:
 static int myData[NUM_OF_ELEMENT];
 static int tcRC = TC_PASS;              /* test case return code */
 
-/*******************************************************************************
-*
-* initMyData - initialize data array
-*
-* This routine initializes the myData array used in the FIFO tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * initMyData - initialize data array
+ *
+ * This routine initializes the myData array used in the FIFO tests.
+ *
+ * RETURNS: N/A
+ */
 
 void initMyData(void)
 {
@@ -78,14 +78,14 @@ void initMyData(void)
 	}  /* for */
 }  /* initMyData */
 
-/*******************************************************************************
-*
-* printMyData - print data array
-*
-* This routine prints myData array.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * printMyData - print data array
+ *
+ * This routine prints myData array.
+ *
+ * RETURNS: N/A
+ */
 
 void printMyData(void)
 {
@@ -95,32 +95,32 @@ void printMyData(void)
 
 } /* printMyData */
 
-/*******************************************************************************
-*
-* verifyRetValue - verify return value
-*
-* This routine verifies current value against expected value
-* and returns true if they are the same.
-*
-* \param expectRetValue     expect value
-* \param currentRetValue    current value
-*
-* RETURNS:  true, false
-*/
+/**
+ *
+ * verifyRetValue - verify return value
+ *
+ * This routine verifies current value against expected value
+ * and returns true if they are the same.
+ *
+ * \param expectRetValue     expect value
+ * \param currentRetValue    current value
+ *
+ * RETURNS:  true, false
+ */
 
 bool verifyRetValue(int expectRetValue, int currentRetValue)
 {
 	return (expectRetValue == currentRetValue);
 } /* verifyRetValue */
 
-/*******************************************************************************
-*
-* initMicroObjects - initialize microkernel objects
-*
-* This routine initializes the microkernel objects used in the FIFO tests.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * initMicroObjects - initialize microkernel objects
+ *
+ * This routine initializes the microkernel objects used in the FIFO tests.
+ *
+ * RETURNS: N/A
+ */
 
 void initMicroObjects(void)
 {
@@ -128,20 +128,20 @@ void initMicroObjects(void)
 	printMyData();
 } /* initMicroObjects */
 
-/*******************************************************************************
-*
-* fillFIFO - fills up the FIFO queue
-*
-* This routine fills the FIFO queue with myData array.  This assumes the
-* queue is empty before we put in elements.
-*
-* \param queue          FIFO queue
-* \param numElements    Number of elements used to inserted into the queue
-*
-* RETURNS: TC_PASS, TC_FAIL
-*
-* Also updates tcRC when result is TC_FAIL.
-*/
+/**
+ *
+ * fillFIFO - fills up the FIFO queue
+ *
+ * This routine fills the FIFO queue with myData array.  This assumes the
+ * queue is empty before we put in elements.
+ *
+ * \param queue          FIFO queue
+ * \param numElements    Number of elements used to inserted into the queue
+ *
+ * RETURNS: TC_PASS, TC_FAIL
+ *
+ * Also updates tcRC when result is TC_FAIL.
+ */
 
 int fillFIFO(kfifo_t queue, int numElements)
 {
@@ -185,17 +185,17 @@ exitTest3:
 
 } /* fillFIFO */
 
-/*******************************************************************************
-*
-* MicroTestFifoTask - task to test FIFO queue
-*
-* This routine is run in three context switches:
-* - it puts an element to the FIFO queue
-* - it purges the FIFO queue
-* - it dequeues an element from the FIFO queue
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * MicroTestFifoTask - task to test FIFO queue
+ *
+ * This routine is run in three context switches:
+ * - it puts an element to the FIFO queue
+ * - it purges the FIFO queue
+ * - it dequeues an element from the FIFO queue
+ *
+ * RETURNS:  N/A
+ */
 void MicroTestFifoTask(void)
 {
 	int retValue;                 /* return value of task_fifo_xxx interface */
@@ -270,21 +270,21 @@ exitTest4:
 	task_sem_give(SEM_TestDone);
 }
 
-/*******************************************************************************
-*
-* verifyQueueData - Verifies data in queue is correct
-*
-* This routine assumes that the queue is full when this function is called.
-* It counts the number of elements in the queue, dequeues elements and verifies
-* that they are in the right order. Expect the dequeue order as: myData[0],
-* myData[1].
-*
-* \param loopCnt    number of elements passed to the for loop
-*
-* RETURNS:  TC_PASS, TC_FAIL
-*
-* Also updates tcRC when result is TC_FAIL.
-*/
+/**
+ *
+ * verifyQueueData - Verifies data in queue is correct
+ *
+ * This routine assumes that the queue is full when this function is called.
+ * It counts the number of elements in the queue, dequeues elements and verifies
+ * that they are in the right order. Expect the dequeue order as: myData[0],
+ * myData[1].
+ *
+ * \param loopCnt    number of elements passed to the for loop
+ *
+ * RETURNS:  TC_PASS, TC_FAIL
+ *
+ * Also updates tcRC when result is TC_FAIL.
+ */
 int verifyQueueData(int loopCnt)
 {
 	int result = TC_PASS;       /* TC_PASS or TC_FAIL for this function */
@@ -348,20 +348,20 @@ exitTest2:
 } /* verifyQueueData */
 
 
-/*******************************************************************************
-*
-* RegressionTask - main task to test FIFO queue
-*
-* This routine initializes data, fills the FIFO queue and verifies the
-* data in the queue is in correct order when items are being dequeued.
-* It also tests the wait (with and without timeouts) to put data into
-* queue when the queue is full.  The queue is purged at some point
-* and checked to see if the number of elements is correct.
-* The get wait interfaces (with and without timeouts) are also tested
-* and data verified.
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * RegressionTask - main task to test FIFO queue
+ *
+ * This routine initializes data, fills the FIFO queue and verifies the
+ * data in the queue is in correct order when items are being dequeued.
+ * It also tests the wait (with and without timeouts) to put data into
+ * queue when the queue is full.  The queue is purged at some point
+ * and checked to see if the number of elements is correct.
+ * The get wait interfaces (with and without timeouts) are also tested
+ * and data verified.
+ *
+ * RETURNS:  N/A
+ */
 
 void RegressionTask(void)
 {

@@ -56,7 +56,7 @@ are not (yet) tested include:
   to ensure higher priority messages get preference.
 - Having receiving tasks of differing priorities waiting on a mailbox.
   to ensure higher priority tasks get preference.
-*/
+ */
 
 #include <microkernel.h>
 
@@ -84,23 +84,23 @@ extern kmbox_t noRcvrMbox;
 extern kmemory_pool_t testPool;
 extern kmemory_pool_t smallBlkszPool;
 
-/*******************************************************************************
-*
-* setMsg_Sender - sets various fields in the message for the sender
-*
-* Sets the following fields in the message:
-*   rx_task to receiverTask - destination for the message
-*   mailbox to inMbox
-*
-* @param inMsg          The message being received.
-* @param inMbox         Mail box to receive the message.
-* @param receiverTask   Destination for the message.
-* @param dataArea       Pointer to (optional) buffer to send.
-* @param dataSize       Size of (optional) buffer to send.
-* @param info           Additional (optional) info to send.
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * setMsg_Sender - sets various fields in the message for the sender
+ *
+ * Sets the following fields in the message:
+ *   rx_task to receiverTask - destination for the message
+ *   mailbox to inMbox
+ *
+ * @param inMsg          The message being received.
+ * @param inMbox         Mail box to receive the message.
+ * @param receiverTask   Destination for the message.
+ * @param dataArea       Pointer to (optional) buffer to send.
+ * @param dataSize       Size of (optional) buffer to send.
+ * @param info           Additional (optional) info to send.
+ *
+ * RETURNS:  N/A
+ */
 
 static void setMsg_Sender(struct k_msg *inMsg, kmbox_t inMbox, ktask_t receiverTask,
 						  void *dataArea, uint32_t dataSize, uint32_t info)
@@ -112,24 +112,24 @@ static void setMsg_Sender(struct k_msg *inMsg, kmbox_t inMbox, ktask_t receiverT
 	inMsg->info = info;
 }
 
-/*******************************************************************************
-*
-* setMsg_Receiver - sets various fields in the message for the receiver
-*
-* Sets the following fields in the message:
-*   rx_data to NULL       - to allow message transfer to occur
-*   size    to MSGSIZE
-*   tx_task to senderTask - receiver tries to get message from this source
-*   mailbox to inMbox
-*
-* @param inMsg          Message descriptor.
-* @param inMbox         Mail box to receive from.
-* @param senderTask     Sending task to receive from.
-* @param inBuffer       Incoming data area
-* @param inBufferSize   Size of incoming data area.
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * setMsg_Receiver - sets various fields in the message for the receiver
+ *
+ * Sets the following fields in the message:
+ *   rx_data to NULL       - to allow message transfer to occur
+ *   size    to MSGSIZE
+ *   tx_task to senderTask - receiver tries to get message from this source
+ *   mailbox to inMbox
+ *
+ * @param inMsg          Message descriptor.
+ * @param inMbox         Mail box to receive from.
+ * @param senderTask     Sending task to receive from.
+ * @param inBuffer       Incoming data area
+ * @param inBufferSize   Size of incoming data area.
+ *
+ * RETURNS:  N/A
+ */
 
 static void setMsg_Receiver(struct k_msg *inMsg, kmbox_t inMbox, ktask_t senderTask,
 							void *inBuffer, uint32_t inBufferSize)
@@ -143,16 +143,16 @@ static void setMsg_Receiver(struct k_msg *inMsg, kmbox_t inMbox, ktask_t senderT
 	}
 }
 
-/*******************************************************************************
-*
-* setMsg_RecvBuf - sets rx_data field in msg and clears buffer
-*
-* @param inMsg          The message being received.
-* @param inBuffer       Incoming data area.
-* @param inBufferSize   Size of incoming data area.
-*
-* RETURNS:  N/A
-*/
+/**
+ *
+ * setMsg_RecvBuf - sets rx_data field in msg and clears buffer
+ *
+ * @param inMsg          The message being received.
+ * @param inBuffer       Incoming data area.
+ * @param inBufferSize   Size of incoming data area.
+ *
+ * RETURNS:  N/A
+ */
 
 static void setMsg_RecvBuf(struct k_msg *inMsg, char *inBuffer, uint32_t inBufferSize)
 {
@@ -163,14 +163,14 @@ static void setMsg_RecvBuf(struct k_msg *inMsg, char *inBuffer, uint32_t inBuffe
 	}
 }
 
-/*******************************************************************************
-*
-* MsgSenderTask - task that tests sending of mailbox messages
-*
-* This routine exercises the task_mbox_put[_wait[_timeout]] APIs.
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+/**
+ *
+ * MsgSenderTask - task that tests sending of mailbox messages
+ *
+ * This routine exercises the task_mbox_put[_wait[_timeout]] APIs.
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int MsgSenderTask(void)
 {
@@ -358,14 +358,14 @@ int MsgSenderTask(void)
 	return TC_PASS;
 }
 
-/*******************************************************************************
-*
-* MsgRcvrTask - task that tests receiving of mailbox messages
-*
-* This routine exercises the task_mbox_get[_wait[_timeout]] and task_mbox_data_get[xxx] APIs.
-*
-* RETURNS: TC_PASS or TC_FAIL
-*/
+/**
+ *
+ * MsgRcvrTask - task that tests receiving of mailbox messages
+ *
+ * This routine exercises the task_mbox_get[_wait[_timeout]] and task_mbox_data_get[xxx] APIs.
+ *
+ * RETURNS: TC_PASS or TC_FAIL
+ */
 
 int MsgRcvrTask(void)
 {

@@ -37,7 +37,7 @@ from tasks (and, less commonly, fibers and ISRs). The requests are service by
 a high priority fiber, thereby ensuring that requests are processed in a timely
 manner and in a single threaded manner that prevents simultaneous requests from
 interfering with each other.
-*/
+ */
 
 #include <toolchain.h>
 #include <sections.h>
@@ -50,16 +50,16 @@ interfering with each other.
 
 extern const kernelfunc _k_server_dispatch_table[];
 
-/*******************************************************************************
-*
-* next_task_select - select task to be executed by microkernel
-*
-* Locates that highest priority task queue that is non-empty and chooses the
-* task at the head of that queue. It's guaranteed that there will always be
-* a non-empty queue, since the idle task is always executable.
-*
-* RETURNS: pointer to selected task
-*/
+/**
+ *
+ * next_task_select - select task to be executed by microkernel
+ *
+ * Locates that highest priority task queue that is non-empty and chooses the
+ * task at the head of that queue. It's guaranteed that there will always be
+ * a non-empty queue, since the idle task is always executable.
+ *
+ * RETURNS: pointer to selected task
+ */
 
 static struct k_proc *next_task_select(void)
 {
@@ -85,17 +85,17 @@ static struct k_proc *next_task_select(void)
 	return _k_task_priority_list[K_PrioListIdx].Head;
 }
 
-/*******************************************************************************
-*
-* K_swapper - the microkernel thread entry point
-*
-* This function implements the microkernel fiber.  It waits for command
-* packets to arrive on its stack channel. It executes all commands on the
-* stack and then sets up the next task that is ready to run. Next it
-* goes to wait on further inputs on its stack channel.
-*
-* RETURNS: Does not return.
-*/
+/**
+ *
+ * K_swapper - the microkernel thread entry point
+ *
+ * This function implements the microkernel fiber.  It waits for command
+ * packets to arrive on its stack channel. It executes all commands on the
+ * stack and then sets up the next task that is ready to run. Next it
+ * goes to wait on further inputs on its stack channel.
+ *
+ * RETURNS: Does not return.
+ */
 
 FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 					   int parameter2  /* not used */

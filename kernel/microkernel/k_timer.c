@@ -43,47 +43,47 @@ extern struct k_timer _k_timer_blocks[];
 struct k_timer  *_k_timer_list_head = NULL;
 struct k_timer  *_k_timer_list_tail = NULL;
 
-/*******************************************************************************
-*
-* _timer_id_to_ptr - convert timer pointer to timer object identifier
-*
-* This routine converts a timer pointer into a timer object identifier.
-*
-* This algorithm relies on the fact that subtracting two pointers that point
-* to elements of an array returns the difference between the array subscripts
-* of those elements. (That is, "&a[j]-&a[i]" returns "j-i".)
-*
-* This algorithm also set the upper 16 bits of the object identifier
-* to the same value utilized by the microkernel system generator.
-*
-* RETURNS: timer object identifier
-*/
+/**
+ *
+ * _timer_id_to_ptr - convert timer pointer to timer object identifier
+ *
+ * This routine converts a timer pointer into a timer object identifier.
+ *
+ * This algorithm relies on the fact that subtracting two pointers that point
+ * to elements of an array returns the difference between the array subscripts
+ * of those elements. (That is, "&a[j]-&a[i]" returns "j-i".)
+ *
+ * This algorithm also set the upper 16 bits of the object identifier
+ * to the same value utilized by the microkernel system generator.
+ *
+ * RETURNS: timer object identifier
+ */
 
 static inline ktimer_t _timer_ptr_to_id(struct k_timer *timer)
 {
 	return (ktimer_t)(0x00010000u + (uint32_t)(timer - &_k_timer_blocks[0]));
 }
 
-/*******************************************************************************
-*
-* _timer_id_to_ptr - convert timer object identifier to timer pointer
-*
-* This routine converts a timer object identifier into a timer pointer.
-*
-* RETURNS: timer pointer
-*/
+/**
+ *
+ * _timer_id_to_ptr - convert timer object identifier to timer pointer
+ *
+ * This routine converts a timer object identifier into a timer pointer.
+ *
+ * RETURNS: timer pointer
+ */
 
 static inline struct k_timer *_timer_id_to_ptr(ktimer_t timer)
 {
 	return &_k_timer_blocks[OBJ_INDEX(timer)];
 }
 
-/*******************************************************************************
-*
-* _k_timer_enlist - insert a timer into the timer queue
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timer_enlist - insert a timer into the timer queue
+ *
+ * RETURNS: N/A
+ */
 
 void _k_timer_enlist(struct k_timer *T)
 {
@@ -110,12 +110,12 @@ void _k_timer_enlist(struct k_timer *T)
 	T->Back = Q;
 }
 
-/*******************************************************************************
-*
-* _k_timer_delist - remove a timer from the timer queue
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timer_delist - remove a timer from the timer queue
+ *
+ * RETURNS: N/A
+ */
 
 void _k_timer_delist(struct k_timer *T)
 {
@@ -134,14 +134,14 @@ void _k_timer_delist(struct k_timer *T)
 	T->duration = -1;
 }
 
-/*******************************************************************************
-*
-* _k_timeout_alloc - allocate timer used for command packet timeout
-*
-* Allocates timer for command packet and inserts it into the timer queue.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timeout_alloc - allocate timer used for command packet timeout
+ *
+ * Allocates timer for command packet and inserts it into the timer queue.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_timeout_alloc(struct k_args *P)
 {
@@ -155,18 +155,18 @@ void _k_timeout_alloc(struct k_args *P)
 	P->Time.timer = T;
 }
 
-/*******************************************************************************
-*
-* _k_timeout_cancel - cancel timer used for command packet timeout
-*
-* Cancels timer (if not already expired), then reschedules the command packet
-* for further processing.
-*
-* The command that is processed following cancellation is typically NOT the
-* command that would have occurred had the timeout expired on its own.
-* 
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timeout_cancel - cancel timer used for command packet timeout
+ *
+ * Cancels timer (if not already expired), then reschedules the command packet
+ * for further processing.
+ *
+ * The command that is processed following cancellation is typically NOT the
+ * command that would have occurred had the timeout expired on its own.
+ * 
+ * RETURNS: N/A
+ */
 
 void _k_timeout_cancel(struct k_args *A)
 {
@@ -178,14 +178,14 @@ void _k_timeout_cancel(struct k_args *A)
 	}
 }
 
-/*******************************************************************************
-*
-* _k_timeout_free - free timer used for command packet timeout
-*
-* Cancels timer (if not already expired), then frees it.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timeout_free - free timer used for command packet timeout
+ *
+ * Cancels timer (if not already expired), then frees it.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_timeout_free(struct k_timer *T)
 {
@@ -194,25 +194,25 @@ void _k_timeout_free(struct k_timer *T)
 	FREETIMER(T);
 }
 
-/*******************************************************************************
-*
-* _k_timer_list_update - handle expired timers
-*
-* Process the sorted list of timers associated with waiting tasks and
-* activate each task whose timer has now expired.
-*
-* With tickless idle, a tick announcement may encompass multiple ticks.
-* Due to limitations of the underlying timer driver, the number of elapsed
-* ticks may -- under very rare circumstances -- exceed the first timer's
-* remaining tick count, although never by more a single tick. This means that
-* a task timer may occasionally expire one tick later than it was scheduled to,
-* and that a periodic timer may exhibit a slow, ever-increasing degree of drift
-* from the main system timer over long intervals.
-*
-* RETURNS: N/A
-*
-* \NOMANUAL
-*/
+/**
+ *
+ * _k_timer_list_update - handle expired timers
+ *
+ * Process the sorted list of timers associated with waiting tasks and
+ * activate each task whose timer has now expired.
+ *
+ * With tickless idle, a tick announcement may encompass multiple ticks.
+ * Due to limitations of the underlying timer driver, the number of elapsed
+ * ticks may -- under very rare circumstances -- exceed the first timer's
+ * remaining tick count, although never by more a single tick. This means that
+ * a task timer may occasionally expire one tick later than it was scheduled to,
+ * and that a periodic timer may exhibit a slow, ever-increasing degree of drift
+ * from the main system timer over long intervals.
+ *
+ * RETURNS: N/A
+ *
+ * \NOMANUAL
+ */
 
 void _k_timer_list_update(int ticks)
 {
@@ -244,17 +244,17 @@ void _k_timer_list_update(int ticks)
 	}
 }
 
-/*******************************************************************************
-*
-* _k_timer_alloc - handle timer allocation request
-*
-* This routine, called by K_swapper(), handles the request for allocating a
-* timer.
-*
-* @param P   Pointer to timer allocation request arguments.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timer_alloc - handle timer allocation request
+ *
+ * This routine, called by K_swapper(), handles the request for allocating a
+ * timer.
+ *
+ * @param P   Pointer to timer allocation request arguments.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_timer_alloc(struct k_args *P)
 {
@@ -269,12 +269,12 @@ void _k_timer_alloc(struct k_args *P)
 	T->duration = -1; /* -1 indicates that timer is disabled */
 }
 
-/*******************************************************************************
-*
-* task_timer_alloc - allocate a timer and return its object identifier
-*
-* RETURNS: timer identifier
-*/
+/**
+ *
+ * task_timer_alloc - allocate a timer and return its object identifier
+ *
+ * RETURNS: timer identifier
+ */
 
 ktimer_t task_timer_alloc(void)
 {
@@ -286,15 +286,15 @@ ktimer_t task_timer_alloc(void)
 	return _timer_ptr_to_id(A.Args.c1.timer);
 }
 
-/*******************************************************************************
-*
-* _k_timer_dealloc - handle timer deallocation request
-*
-* This routine, called by K_swapper(), handles the request for deallocating a
-* timer.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timer_dealloc - handle timer deallocation request
+ *
+ * This routine, called by K_swapper(), handles the request for deallocating a
+ * timer.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_timer_dealloc(struct k_args *P)
 {
@@ -308,17 +308,17 @@ void _k_timer_dealloc(struct k_args *P)
 	FREEARGS(A);
 }
 
-/*******************************************************************************
-*
-* task_timer_free - deallocate a timer
-*
-* This routine frees the resources associated with the timer.  If a timer was
-* started, it has to be stopped using task_timer_stop() before it can be freed.
-*
-* @param timer   Timer to deallocate.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_timer_free - deallocate a timer
+ *
+ * This routine frees the resources associated with the timer.  If a timer was
+ * started, it has to be stopped using task_timer_stop() before it can be freed.
+ *
+ * @param timer   Timer to deallocate.
+ *
+ * RETURNS: N/A
+ */
 
 void task_timer_free(ktimer_t timer)
 {
@@ -329,17 +329,17 @@ void task_timer_free(ktimer_t timer)
 	KERNEL_ENTRY(&A);
 }
 
-/*******************************************************************************
-*
-* _k_timer_start - handle start timer request
-*
-* This routine, called by K_swapper(), handles the start timer request from
-* both task_timer_start() and task_timer_restart().
-*
-* @param P   Pointer to timer start request arguments.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timer_start - handle start timer request
+ *
+ * This routine, called by K_swapper(), handles the start timer request from
+ * both task_timer_start() and task_timer_restart().
+ *
+ * @param P   Pointer to timer start request arguments.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_timer_start(struct k_args *P)
 {
@@ -378,30 +378,30 @@ void _k_timer_start(struct k_args *P)
 	_k_timer_enlist(T);
 }
 
-/*******************************************************************************
-*
-* task_timer_start - start or restart the specified low resolution timer
-*
-* This routine starts or restarts the specified low resolution timer.
-*
-* When the specified number of ticks, set by <duration>, expires, the semaphore
-* is signalled.  The timer repeats the expiration/signal cycle each time
-* <period> ticks has elapsed.
-*
-* Setting <period> to 0 stops the timer at the end of the initial delay.
-* Setting <duration> to 0 will cause an initial delay equal to the repetition
-* interval.  If both <duration> and <period> are set to 0, or if one or both of
-* the values is invalid (negative), then this kernel API acts like a
-* task_timer_stop(): if the allocated timer was still running (from a
-* previous call), it will be cancelled; if not, nothing will happen.
-*
-* @param timer      Timer to start.
-* @param duration   Initial delay in ticks.
-* @param period     Repetition interval in ticks.
-* @param sema       Semaphore to signal.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_timer_start - start or restart the specified low resolution timer
+ *
+ * This routine starts or restarts the specified low resolution timer.
+ *
+ * When the specified number of ticks, set by <duration>, expires, the semaphore
+ * is signalled.  The timer repeats the expiration/signal cycle each time
+ * <period> ticks has elapsed.
+ *
+ * Setting <period> to 0 stops the timer at the end of the initial delay.
+ * Setting <duration> to 0 will cause an initial delay equal to the repetition
+ * interval.  If both <duration> and <period> are set to 0, or if one or both of
+ * the values is invalid (negative), then this kernel API acts like a
+ * task_timer_stop(): if the allocated timer was still running (from a
+ * previous call), it will be cancelled; if not, nothing will happen.
+ *
+ * @param timer      Timer to start.
+ * @param duration   Initial delay in ticks.
+ * @param period     Repetition interval in ticks.
+ * @param sema       Semaphore to signal.
+ *
+ * RETURNS: N/A
+ */
 
 void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 					  ksem_t sema)
@@ -416,18 +416,18 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 	KERNEL_ENTRY(&A);
 }
 
-/*******************************************************************************
-*
-* task_timer_restart - restart a timer
-*
-* This routine restarts the timer specified by <timer>.
-*
-* @param timer      Timer to restart.
-* @param duration   Initial delay.
-* @param period     Repetition interval.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_timer_restart - restart a timer
+ *
+ * This routine restarts the timer specified by <timer>.
+ *
+ * @param timer      Timer to restart.
+ * @param duration   Initial delay.
+ * @param period     Repetition interval.
+ *
+ * RETURNS: N/A
+ */
 
 void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
 {
@@ -441,15 +441,15 @@ void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
 	KERNEL_ENTRY(&A);
 }
 
-/*******************************************************************************
-*
-* _k_timer_stop - handle stop timer request
-*
-* This routine, called by K_swapper(), handles the request for stopping a
-* timer.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_timer_stop - handle stop timer request
+ *
+ * This routine, called by K_swapper(), handles the request for stopping a
+ * timer.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_timer_stop(struct k_args *P)
 {
@@ -459,17 +459,17 @@ void _k_timer_stop(struct k_args *P)
 		_k_timer_delist(T);
 }
 
-/*******************************************************************************
-*
-* task_timer_stop - stop a timer
-*
-* This routine stops the specified timer. If the timer period has already
-* elapsed, the call has no effect.
-*
-* @param timer   Timer to stop.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_timer_stop - stop a timer
+ *
+ * This routine stops the specified timer. If the timer period has already
+ * elapsed, the call has no effect.
+ *
+ * @param timer   Timer to stop.
+ *
+ * RETURNS: N/A
+ */
 
 void task_timer_stop(ktimer_t timer)
 {
@@ -480,15 +480,15 @@ void task_timer_stop(ktimer_t timer)
 	KERNEL_ENTRY(&A);
 }
 
-/*******************************************************************************
-*
-* _k_task_wakeup - handle internally issued task wakeup request
-*
-* This routine, called by K_swapper(), handles the request for waking a task
-* at the end of its sleep period.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_task_wakeup - handle internally issued task wakeup request
+ *
+ * This routine, called by K_swapper(), handles the request for waking a task
+ * at the end of its sleep period.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_task_wakeup(struct k_args *P)
 {
@@ -502,15 +502,15 @@ void _k_task_wakeup(struct k_args *P)
 	_k_state_bit_reset(X, TF_TIME);
 }
 
-/*******************************************************************************
-*
-* _k_task_sleep - handle task sleep request
-*
-* This routine, called by K_swapper(), handles the request for putting a task
-* to sleep.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * _k_task_sleep - handle task sleep request
+ *
+ * This routine, called by K_swapper(), handles the request for putting a task
+ * to sleep.
+ *
+ * RETURNS: N/A
+ */
 
 void _k_task_sleep(struct k_args *P)
 {
@@ -533,18 +533,18 @@ void _k_task_sleep(struct k_args *P)
 	_k_state_bit_set(_k_current_task, TF_TIME);
 }
 
-/*******************************************************************************
-*
-* task_sleep - sleep for a number of ticks
-*
-* This routine suspends the calling task for the specified number of timer
-* ticks.  When the task is awakened, it is rescheduled according to its
-* priority.
-*
-* @param ticks   Number of ticks for which to sleep.
-*
-* RETURNS: N/A
-*/
+/**
+ *
+ * task_sleep - sleep for a number of ticks
+ *
+ * This routine suspends the calling task for the specified number of timer
+ * ticks.  When the task is awakened, it is rescheduled according to its
+ * priority.
+ *
+ * @param ticks   Number of ticks for which to sleep.
+ *
+ * RETURNS: N/A
+ */
 
 void task_sleep(int32_t ticks)
 {

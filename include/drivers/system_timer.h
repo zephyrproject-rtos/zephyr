@@ -34,7 +34,7 @@
 DESCRIPTION
 
 Declare API implemented by system timer driver and used by kernel components.
-*/
+ */
 
 #ifndef _TIMER__H_
 #define _TIMER__H_

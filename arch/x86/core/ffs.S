@@ -38,7 +38,7 @@ architecture.
 INTERNAL
 Inline versions of these APIs, find_last_set_inline() and find_first_set_inline(),
 are defined in arch.h.
-*/
+ */
 
 #define _ASMLANGUAGE
 
@@ -51,24 +51,24 @@ are defined in arch.h.
 	GTEXT(find_last_set)
 	GTEXT(find_first_set)
 
-/*******************************************************************************
-*
-* find_first_set - find first set bit searching from the LSB 
-*
-* This routine finds the first bit set in the passed argument and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit to 32 for the most significant bit.
-* A return value of zero indicates that the value passed is zero.
-*
-* RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
-*
-* INTERNAL
-* For Intel64 (x86_64) architectures, the 'cmovz' can be removed
-* and leverage the fact that the 'bsrl' doesn't modify the destination operand
-* when the source operand is zero.  The "bitpos" variable can be preloaded
-* into the destination register, and given the unconditional ++bitpos that
-* is performed after the 'cmovz', the correct results are yielded.
-*/
+/**
+ *
+ * find_first_set - find first set bit searching from the LSB 
+ *
+ * This routine finds the first bit set in the passed argument and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit to 32 for the most significant bit.
+ * A return value of zero indicates that the value passed is zero.
+ *
+ * RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
+ *
+ * INTERNAL
+ * For Intel64 (x86_64) architectures, the 'cmovz' can be removed
+ * and leverage the fact that the 'bsrl' doesn't modify the destination operand
+ * when the source operand is zero.  The "bitpos" variable can be preloaded
+ * into the destination register, and given the unconditional ++bitpos that
+ * is performed after the 'cmovz', the correct results are yielded.
+ */
 
 SECTION_FUNC(TEXT, find_first_set)
 
@@ -94,24 +94,24 @@ BRANCH_LABEL(ffsLsb_argNotZero)	/* this label serves find_first_set() & find_las
 #endif /* !CONFIG_CMOV_UNSUPPORTED */
 
  	
-/*******************************************************************************
-*
-* find_last_set - find first set bit searching from the MSB 
-*
-* This routine finds the first bit set in the passed argument and
-* returns the index of that bit.  Bits are numbered starting
-* at 1 from the least significant bit to 32 for the most significant bit.
-* A return value of zero indicates that the value passed is zero.
-*
-* RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
-*
-* INTERNAL
-* For Intel64 (x86_64) architectures, the 'cmovz' can be removed
-* and leverage the fact that the 'bsfl' doesn't modify the destination operand
-* when the source operand is zero.  The "bitpos" variable can be preloaded
-* into the destination register, and given the unconditional ++bitpos that
-* is performed after the 'cmovz', the correct results are yielded.
-*/
+/**
+ *
+ * find_last_set - find first set bit searching from the MSB 
+ *
+ * This routine finds the first bit set in the passed argument and
+ * returns the index of that bit.  Bits are numbered starting
+ * at 1 from the least significant bit to 32 for the most significant bit.
+ * A return value of zero indicates that the value passed is zero.
+ *
+ * RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
+ *
+ * INTERNAL
+ * For Intel64 (x86_64) architectures, the 'cmovz' can be removed
+ * and leverage the fact that the 'bsfl' doesn't modify the destination operand
+ * when the source operand is zero.  The "bitpos" variable can be preloaded
+ * into the destination register, and given the unconditional ++bitpos that
+ * is performed after the 'cmovz', the correct results are yielded.
+ */
 
 SECTION_FUNC(TEXT, find_last_set)
 

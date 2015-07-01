@@ -39,7 +39,7 @@ NOTE: _Swap() does not use this file as it uses the push instruction to save a
 context. Changes to the file will not automatically be picked up by _Swap().
 Conversely, changes to _Swap() should be mirrored here if the stack frame is
 modified.
-*/
+ */
 
 #ifndef _SWAPSTK_H
 #define _SWAPSTK_H

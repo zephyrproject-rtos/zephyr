@@ -1388,7 +1388,7 @@ static void (*intFPtr[256])(void) = {
 							genInt248, genInt249, genInt250,genInt251,
 							genInt252, genInt253, genInt254,genInt255};
 
-/*******************************************************************************
+/**
  *
  * raiseInt - generate a software interrupt
  *
@@ -1407,7 +1407,7 @@ void raiseInt(uint8_t id)
 
 #if defined(CONFIG_CPU_CORTEX_M3_M4)
 #include <arch/cpu.h>
-/*******************************************************************************
+/**
  *
  * raiseInt - generate a software interrupt
  *
