@@ -172,6 +172,58 @@ static uint8_t att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
 	return 0;
 }
 
+static uint8_t att_handle_rsp(struct bt_conn *conn, void *pdu, uint16_t len,
+		       uint8_t err)
+{
+	struct bt_att *att = conn->att;
+	struct bt_att_req req;
+
+	if (!att->req.func) {
+		return 0;
+	}
+
+	/* Reset request before callback so another request can be queued */
+	memcpy(&req, &att->req, sizeof(req));
+	att->req.func = NULL;
+
+	req.func(conn, err, pdu, len, req.user_data);
+
+	att_req_destroy(&req);
+
+	return 0;
+}
+
+static uint8_t att_mtu_rsp(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_att *att = conn->att;
+	struct bt_att_exchange_mtu_rsp *rsp;
+	uint16_t mtu;
+
+	if (!att) {
+		return 0;
+	}
+
+	rsp = (void *)buf->data;
+
+	mtu = sys_le16_to_cpu(rsp->mtu);
+
+	BT_DBG("Server MTU %u\n", mtu);
+
+	/* Check if MTU is within allowed range */
+	if (mtu > BT_ATT_MAX_LE_MTU || mtu < BT_ATT_DEFAULT_LE_MTU) {
+		return att_handle_rsp(conn, NULL, 0, BT_ATT_ERR_INVALID_PDU);
+	}
+
+	/* Clip MTU based on the maximum amount of data bt_buf can hold
+	 * excluding L2CAP, ACL and driver headers.
+	 */
+	att->mtu = min(mtu, BT_BUF_MAX_DATA - (sizeof(struct bt_l2cap_hdr) +
+		       sizeof(struct bt_hci_acl_hdr) +
+		       conn->dev->drv->head_reserve));
+
+	return att_handle_rsp(conn, rsp, buf->len, 0);
+}
+
 static bool range_is_valid(uint16_t start, uint16_t end, uint16_t *err)
 {
 	/* Handle 0 is invalid */
@@ -1127,10 +1179,9 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att *att = conn->att;
 	struct bt_att_error_rsp *rsp;
-	struct bt_att_req req;
 	uint8_t err;
 
-	if (!att || !att->req.func) {
+	if (!att) {
 		return 0;
 	}
 
@@ -1142,15 +1193,7 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *data)
 	/* Match request with response */
 	err = rsp->request == att->req.op ? rsp->error : BT_ATT_ERR_UNLIKELY;
 
-	/* Reset request before callback so another request can be queued */
-	memcpy(&req, &att->req, sizeof(req));
-	att->req.func = NULL;
-
-	req.func(conn, err, NULL, 0, req.user_data);
-
-	att_req_destroy(&req);
-
-	return 0;
+	return att_handle_rsp(conn, NULL, 0, err);
 }
 
 static const struct {
@@ -1162,6 +1205,8 @@ static const struct {
 	  sizeof(struct bt_att_error_rsp) },
 	{ BT_ATT_OP_MTU_REQ, att_mtu_req,
 	  sizeof(struct bt_att_exchange_mtu_req) },
+	{ BT_ATT_OP_MTU_RSP, att_mtu_rsp,
+	  sizeof(struct bt_att_exchange_mtu_rsp) },
 	{ BT_ATT_OP_FIND_INFO_REQ, att_find_info_req,
 	  sizeof(struct bt_att_find_info_req) },
 	{ BT_ATT_OP_FIND_TYPE_REQ, att_find_type_req,
