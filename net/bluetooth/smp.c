@@ -81,6 +81,9 @@ struct bt_smp {
 
 	/* Local key distribution */
 	uint8_t			local_dist;
+
+	/* Remote key distribution */
+	uint8_t			remote_dist;
 };
 
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
@@ -365,6 +368,7 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	rsp->resp_key_dist = (req->resp_key_dist & SEND_KEYS);
 
 	smp->local_dist = rsp->resp_key_dist;
+	smp->remote_dist = rsp->init_key_dist;
 
 	memset(smp->tk, 0, sizeof(smp->tk));
 
@@ -409,6 +413,7 @@ int smp_send_pairing_req(struct bt_conn *conn)
 	req->resp_key_dist = RECV_KEYS;
 
 	smp->local_dist = SEND_KEYS;
+	smp->remote_dist = RECV_KEYS;
 
 	memset(smp->tk, 0, sizeof(smp->tk));
 
@@ -470,6 +475,7 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	smp->local_dist &= rsp->init_key_dist;
+	smp->remote_dist &= rsp->resp_key_dist;
 
 	/* Store rsp for later use */
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
@@ -666,6 +672,7 @@ static uint8_t smp_pairing_encrypt(struct bt_conn *conn, struct bt_buf *buf)
 static uint8_t smp_pairing_master(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_master_ident *req = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
 	struct bt_keys *keys;
 
 	BT_DBG("\n");
@@ -679,6 +686,13 @@ static uint8_t smp_pairing_master(struct bt_conn *conn, struct bt_buf *buf)
 
 	keys->ltk.ediv = req->ediv;
 	keys->ltk.rand = req->rand;
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
+		if (!smp->remote_dist) {
+			bt_smp_distribute_keys(conn);
+		}
+	}
 
 	return 0;
 }
@@ -705,6 +719,7 @@ static uint8_t smp_ident_info(struct bt_conn *conn, struct bt_buf *buf)
 static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
 	struct bt_keys *keys;
 
 	BT_DBG("\n");
@@ -728,6 +743,13 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 		bt_addr_copy(&keys->irk.rpa, (bt_addr_t *)&conn->dst.val);
 		bt_addr_le_copy(&keys->addr, &req->addr);
 		bt_addr_le_copy(&conn->dst, &req->addr);
+	}
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
+		if (!smp->remote_dist) {
+			bt_smp_distribute_keys(conn);
+		}
 	}
 
 	return 0;
@@ -868,6 +890,11 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 	}
 
 	smp->pending_encrypt = false;
+
+	/* Slave distributes it's keys first */
+	if (conn->role == BT_HCI_ROLE_MASTER && smp->remote_dist) {
+		return;
+	}
 
 	bt_smp_distribute_keys(conn);
 }
