@@ -43,6 +43,7 @@
 
 #include <console/uart_console.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/gatt.h>
 
 #include "btshell.h"
 
@@ -288,6 +289,49 @@ static void cmd_security(int argc, char *argv[])
 	bt_conn_put(conn);
 }
 
+static void exchange_rsp(struct bt_conn *conn, uint8_t err)
+{
+	printk("Exchange %s\n", err == 0 ? "successful" : "failed");
+}
+
+static void cmd_gatt_exchange_mtu(int argc, char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return;
+	}
+
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	conn = bt_conn_lookup_addr_le(&addr);
+	if (!conn) {
+		printk("Peer not connected\n");
+		return;
+	}
+
+	err = bt_gatt_exchange_mtu(conn, exchange_rsp);
+	if (err) {
+		printk("Exchange failed (err %d)\n", err);
+	} else {
+		printk("Exchange pending\n");
+	}
+
+	bt_conn_put(conn);
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -302,4 +346,5 @@ void main(void)
 	shell_cmd_register("disconnect", cmd_disconnect);
 	shell_cmd_register("scan", cmd_scan);
 	shell_cmd_register("security", cmd_security);
+	shell_cmd_register("gatt-exchange-mtu", cmd_gatt_exchange_mtu);
 }
