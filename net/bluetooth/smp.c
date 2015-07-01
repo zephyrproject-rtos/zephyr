@@ -469,7 +469,7 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_ENC_KEY_SIZE;
 	}
 
-	smp->local_dist &= rsp->resp_key_dist;
+	smp->local_dist &= rsp->init_key_dist;
 
 	/* Store rsp for later use */
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
