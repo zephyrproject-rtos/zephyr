@@ -1293,7 +1293,7 @@ send_set_param:
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
 
-int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
+static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 {
 	struct bt_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_params *set_param;
@@ -1316,7 +1316,7 @@ int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 
 	set_param = bt_buf_add(buf, sizeof(*set_param));
 	memset(set_param, 0, sizeof(*set_param));
-	set_param->scan_type = BT_LE_SCAN_ACTIVE;
+	set_param->scan_type = scan_type;
 
 	/* for the rest parameters apply default values according to
 	 *  spec 4.2, vol2, part E, 7.8.10
@@ -1346,7 +1346,6 @@ int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 	/* Update scan state in case of success (0) status */
 	if (!rsp->data[0]) {
 		dev.scan_enable = BT_LE_SCAN_ENABLE;
-		scan_dev_found_cb = cb;
 	}
 
 	bt_buf_put(rsp);
@@ -1354,7 +1353,26 @@ int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 	return 0;
 }
 
-int bt_stop_scanning(void)
+int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
+{
+	int err;
+
+	/* Return if active scan is already enabled */
+	if (scan_dev_found_cb) {
+		return -EALREADY;
+	}
+
+	err = bt_hci_start_scanning(BT_LE_SCAN_ACTIVE, scan_filter);
+	if (err) {
+		return err;
+	}
+
+	scan_dev_found_cb = cb;
+
+	return 0;
+}
+
+static int bt_hci_stop_scanning(void)
 {
 	struct bt_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_enable *scan_enable;
@@ -1383,10 +1401,28 @@ int bt_stop_scanning(void)
 	/* Update scan state in case of success (0) status */
 	if (!rsp->data[0]) {
 		dev.scan_enable = BT_LE_SCAN_DISABLE;
-		scan_dev_found_cb = NULL;
 	}
 
 	bt_buf_put(rsp);
+
+	return 0;
+}
+
+int bt_stop_scanning(void)
+{
+	int err;
+
+	/* Return if active scanning is already disabled */
+	if (!scan_dev_found_cb) {
+		return -EALREADY;
+	}
+
+	err = bt_hci_stop_scanning();
+	if (err) {
+		return err;
+	}
+
+	scan_dev_found_cb = NULL;
 
 	return 0;
 }
