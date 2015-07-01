@@ -176,8 +176,8 @@ void microObjectsInit(void)
  *
  * receiveBufferCheck - check the contents of the receive buffer
  *
- * \param buffer    pointer to buffer to check
- * \param size      number of bytes to check
+ * @param buffer    pointer to buffer to check
+ * @param size      number of bytes to check
  *
  * RETURNS: <size> on success, index of wrong character on failure
  */
@@ -199,10 +199,10 @@ int receiveBufferCheck(char *buffer, int size)
  *
  * pipePutHelperWork - helper routine to pipePutTest()
  *
- * \param singleItems    testcase list (one item in the pipe)
- * \param nSingles       number of items in testcase
- * \param manyItems      testcase list (many items in the pipe)
- * \param nMany          number of items in testcase
+ * @param singleItems    testcase list (one item in the pipe)
+ * @param nSingles       number of items in testcase
+ * @param manyItems      testcase list (many items in the pipe)
+ * @param nMany          number of items in testcase
  *
  * RETURNS: TC_PASS on success, TC_FAIL on failure
  */
@@ -336,10 +336,10 @@ int pipePutHelper(void)
  *
  * This routine tests the task_pipe_put() API.
  *
- * \param singleItems    testcase list (one item in the pipe)
- * \param nSingles       number of items in testcase
- * \param manyItems      testcase list (many items in the pipe)
- * \param nMany          number of items in testcase
+ * @param singleItems    testcase list (one item in the pipe)
+ * @param nSingles       number of items in testcase
+ * @param manyItems      testcase list (many items in the pipe)
+ * @param nMany          number of items in testcase
  *
  * RETURNS: TC_PASS on success, TC_FAIL on failure
  */
@@ -777,8 +777,8 @@ int pipeGetTest(void)
  *
  * pipeGetWaitHelperWork - test task_pipe_get_wait()
  *
- * \param items     testcase list for task_pipe_get_wait()
- * \param nItems    number of items in list
+ * @param items     testcase list for task_pipe_get_wait()
+ * @param nItems    number of items in list
  *
  * RETURNS: TC_PASS on success, TC_FAIL on failure
  */
@@ -842,8 +842,8 @@ int pipeGetWaitHelper(void)
  *
  * pipeGetWaitTestWork - test task_pipe_get_wait()
  *
- * \param items     testcase list for task_pipe_get_wait()
- * \param nItems    number of items in list
+ * @param items     testcase list for task_pipe_get_wait()
+ * @param nItems    number of items in list
  *
  * RETURNS: TC_PASS on success, TC_FAIL on failure
  */

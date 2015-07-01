@@ -110,12 +110,12 @@ void initNanoObjects(void)
  * This routine can be considered as testing nano_tick_get_32(),
  * nanoTimeElapsed() and nanoXXXTimerGetW() successful expiration cases.
  *
- * \param startRtn      routine to start the timer
- * \param waitRtn       routine to get and wait for the timer
- * \param getRtn        routine to get the timer (no waiting)
- * \param pTimer        pointer to the timer
- * \param pTimerData    pointer to the expected timer data
- * \param ticks         number of ticks to wait
+ * @param startRtn      routine to start the timer
+ * @param waitRtn       routine to get and wait for the timer
+ * @param getRtn        routine to get the timer (no waiting)
+ * @param pTimer        pointer to the timer
+ * @param pTimerData    pointer to the expected timer data
+ * @param ticks         number of ticks to wait
  *
  * RETURNS: TC_PASS on success, TC_FAIL on failure
  */
@@ -193,7 +193,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
  *
  * Four timers are used so that the various paths can be tested.
  *
- * \param startRtn    routine to start the timers
+ * @param startRtn    routine to start the timers
  *
  * RETURNS: N/A
  */
@@ -222,7 +222,7 @@ void startTimers(timer_start_func startRtn)
  * expire.  The timers are expected to expire in the following order:
  *     <shortTimer>, <timer>, <midTimer>, <longTimer>
  *
- * \param getRtn    timer get routine (fiber or task)
+ * @param getRtn    timer get routine (fiber or task)
  *
  * RETURNS: TC_PASS on success, TC_FAIL on failure
  */
@@ -291,8 +291,8 @@ int busyWaitTimers(timer_get_func getRtn)
  * exercise the code that removes timers from important locations in the list;
  * these include the middle, the head, the tail, and the last item.
  *
- * \param stopRtn    routine to stop timer (fiber or task)
- * \param getRtn     timer get routine (fiber or task)
+ * @param stopRtn    routine to stop timer (fiber or task)
+ * @param getRtn     timer get routine (fiber or task)
  *
  * RETURNS: TC_PASS on success, TC_FAIL on failure
  */
@@ -332,8 +332,8 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
  * The second fiber has a lower priority than the first, but is still given
  * precedence over the task.
  *
- * \param arg1    unused
- * \param arg2    unused
+ * @param arg1    unused
+ * @param arg2    unused
  *
  * RETURNS: N/A
  */
@@ -353,8 +353,8 @@ static void fiber2Entry(int arg1, int arg2)
  * NOTE: The fiber portion of the tests have higher priority than the task
  * portion of the tests.
  *
- * \param arg1    unused
- * \param arg2    unused
+ * @param arg1    unused
+ * @param arg2    unused
  *
  * RETURNS: N/A
  */

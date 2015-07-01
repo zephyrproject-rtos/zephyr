@@ -71,7 +71,7 @@ void check_input(const char *name, const char *input);
  * This function calls check_input 6 times with the input name and a short
  * string, which is printed properly by check_input.
  *
- * \param name    task or fiber identification string
+ * @param name    task or fiber identification string
  *
  * RETURNS: N/A
  */

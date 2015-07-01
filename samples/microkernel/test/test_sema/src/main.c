@@ -163,7 +163,7 @@ void LowPriTaskEntry(void)
  *
  * testIsrHandler - ISR that gives specified semaphore
  *
- * \param isrData    pointer to semaphore to be given
+ * @param isrData    pointer to semaphore to be given
  *
  * RETURNS: N/A
  */
@@ -177,7 +177,7 @@ static void testIsrHandler(void *isrData)
  *
  * trigger_isrSemaSignal - generate interrupt that gives specified semaphore
  *
- * \param semaphore    semaphore to be given
+ * @param semaphore    semaphore to be given
  *
  * RETURNS: N/A
  */

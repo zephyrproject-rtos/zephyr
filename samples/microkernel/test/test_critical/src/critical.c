@@ -68,7 +68,7 @@ int criticalRtn(void)
  *
  * criticalLoop - common code for invoking task_offload_to_fiber()
  *
- * \param count    number of critical section calls made thus far
+ * @param count    number of critical section calls made thus far
  *
  * RETURNS: number of critical section calls made by task
  */

@@ -102,7 +102,7 @@ static struct nano_sem reply_multi_waiters;
  * This routine is the ISR handler for _trigger_nano_isr_sem_take().  It takes a
  * semaphore within the context of an ISR.
  *
- * \param data    pointer to ISR handler parameter
+ * @param data    pointer to ISR handler parameter
  *
  * RETURNS: N/A
  */
@@ -121,7 +121,7 @@ void isr_sem_take(void *data)
  * This routine is the ISR handler for _trigger_nano_isr_sem_take().  It gives a
  * semaphore within the context of an ISR.
  *
- * \param data    pointer to ISR handler parameter
+ * @param data    pointer to ISR handler parameter
  *
  * RETURNS: N/A
  */
@@ -185,8 +185,8 @@ errorReturn:
  * NOTE: The fiber portion of the tests have higher priority than the task
  * portion of the tests.
  *
- * \param arg1    unused
- * \param arg2    unused
+ * @param arg1    unused
+ * @param arg2    unused
  *
  * RETURNS: N/A
  */

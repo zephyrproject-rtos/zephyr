@@ -67,8 +67,8 @@ int testMapFreeAllBlocks(void **P);
  * This routine verifies current value against expected value
  * and returns true if they are the same.
  *
- * \param expectRetValue     expect value
- * \param currentRetValue    current value
+ * @param expectRetValue     expect value
+ * @param currentRetValue    current value
  *
  * RETURNS:  true, false
  */
@@ -152,7 +152,7 @@ exitTest1:
  *
  *   task_mem_map_alloc(), task_mem_map_used_get()
  *
- * \param p    pointer to pointer of allocated blocks
+ * @param p    pointer to pointer of allocated blocks
  *
  * RETURNS:  TC_PASS, TC_FAIL
  */
@@ -224,7 +224,7 @@ int testMapGetAllBlocks(void **p)
  *
  *   task_mem_map_free(), task_mem_map_used_get()
  *
- * \param p    pointer to pointer of allocated blocks
+ * @param p    pointer to pointer of allocated blocks
  *
  * RETURNS:  TC_PASS, TC_FAIL
  */
@@ -279,7 +279,7 @@ int testMapFreeAllBlocks(void **p)
  *
  * This routine prints out the pointers.
  *
- * \param pointer    pointer to pointer of allocated blocks
+ * @param pointer    pointer to pointer of allocated blocks
  *
  * RETURNS:  N/A
  */

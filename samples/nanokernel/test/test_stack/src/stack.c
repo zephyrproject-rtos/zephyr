@@ -150,7 +150,7 @@ void initData(void)
  * This routine is the ISR handler for _trigger_nano_isr_stack_push().  It adds
  * an item to the STACK in the context of an ISR.
  *
- * \param parameter    pointer to ISR handler parameter
+ * @param parameter    pointer to ISR handler parameter
  *
  * RETURNS: N/A
  */
@@ -171,7 +171,7 @@ void isr_stack_push(void *parameter)
  * an item from the STACK in the context of an ISR.  If the queue is empty,
  * it sets data to INVALID_DATA.
  *
- * \param parameter    pointer to ISR handler parameter
+ * @param parameter    pointer to ISR handler parameter
  *
  * RETURNS: N/A
  */

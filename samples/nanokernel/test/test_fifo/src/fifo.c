@@ -151,7 +151,7 @@ extern int test_fifo_timeout(void);
  * This routine is the ISR handler for _trigger_nano_isr_fifo_put().  It adds
  * an item to the FIFO in the context of an ISR.
  *
- * \param parameter    pointer to ISR handler parameter
+ * @param parameter    pointer to ISR handler parameter
  *
  * RETURNS: N/A
  */
@@ -170,7 +170,7 @@ void isr_fifo_put(void *parameter)
  * This routine is the ISR handler for _trigger_nano_isr_fifo_get().  It gets
  * an item from the FIFO in the context of an ISR.
  *
- * \param parameter    pointer to ISR handler parameter
+ * @param parameter    pointer to ISR handler parameter
  *
  * RETURNS: N/A
  */

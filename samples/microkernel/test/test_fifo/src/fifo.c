@@ -102,8 +102,8 @@ void printMyData(void)
  * This routine verifies current value against expected value
  * and returns true if they are the same.
  *
- * \param expectRetValue     expect value
- * \param currentRetValue    current value
+ * @param expectRetValue     expect value
+ * @param currentRetValue    current value
  *
  * RETURNS:  true, false
  */
@@ -135,8 +135,8 @@ void initMicroObjects(void)
  * This routine fills the FIFO queue with myData array.  This assumes the
  * queue is empty before we put in elements.
  *
- * \param queue          FIFO queue
- * \param numElements    Number of elements used to inserted into the queue
+ * @param queue          FIFO queue
+ * @param numElements    Number of elements used to inserted into the queue
  *
  * RETURNS: TC_PASS, TC_FAIL
  *
@@ -279,7 +279,7 @@ exitTest4:
  * that they are in the right order. Expect the dequeue order as: myData[0],
  * myData[1].
  *
- * \param loopCnt    number of elements passed to the for loop
+ * @param loopCnt    number of elements passed to the for loop
  *
  * RETURNS:  TC_PASS, TC_FAIL
  *

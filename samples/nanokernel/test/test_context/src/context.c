@@ -480,8 +480,8 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
  * This routine is the entry point to the fiber's helper fiber.  It is used to
  * help test the behaviour of the fiber_yield() routine.
  *
- * \param arg1    unused
- * \param arg2    unused
+ * @param arg1    unused
+ * @param arg2    unused
  *
  * RETURNS: N/A
  */
@@ -598,8 +598,8 @@ int fiber_yieldTest(void)
  *
  * This routine is the entry point to the fiber started by the task.
  *
- * \param taskCtxId    context ID of the spawning task
- * \param arg1         unused
+ * @param taskCtxId    context ID of the spawning task
+ * @param arg1         unused
  *
  * RETURNS: N/A
  */

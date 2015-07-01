@@ -363,7 +363,7 @@ int fiberEventSignalTest(void)
  *
  * eventHandler - handler to run on EVENT_ID event
  *
- * \param event    signalled event
+ * @param event    signalled event
  *
  * RETURNS: <handlerRetVal>
  */
@@ -381,7 +381,7 @@ int eventHandler(int event)
  *
  * altEventHandler - handler to run on ALT_EVENT event
  *
- * \param event    signalled event
+ * @param event    signalled event
  *
  * RETURNS: 1
  */
