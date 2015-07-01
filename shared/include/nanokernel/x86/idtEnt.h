@@ -81,7 +81,7 @@ typedef struct idtEntry {
 
 /**
  *
- * _IdtEntCreate - Create an IDT entry
+ * @brief Create an IDT entry
  *
  * This routine creates an interrupt-gate descriptor at the location defined by
  * <pIdtEntry>. The entry is created such that <routine> is invoked when an

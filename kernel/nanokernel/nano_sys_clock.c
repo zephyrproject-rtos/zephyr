@@ -55,7 +55,7 @@ uint32_t _sys_idle_elapsed_ticks = 1;
 
 /**
  *
- * nano_time_init - constructor that initializes nanokernel time tracking system
+ * @brief Constructor that initializes nanokernel time tracking system
  *
  * @return N/A
  *
@@ -74,7 +74,7 @@ int64_t _nano_ticks = 0;
 
 /**
  *
- * nano_tick_get_32 - return the lower part of the current system tick count
+ * @brief Return the lower part of the current system tick count
  *
  * @return the current system tick count
  *
@@ -87,7 +87,7 @@ uint32_t nano_tick_get_32(void)
 
 /**
  *
- * nano_tick_get - return the current system tick count
+ * @brief Return the current system tick count
  *
  * @return the current system tick count
  *
@@ -110,7 +110,7 @@ int64_t nano_tick_get(void)
 
 /**
  *
- * nano_cycle_get_32 - return a high resolution timestamp
+ * @brief Return a high resolution timestamp
  *
  * @return the current timer hardware count
  *
@@ -123,7 +123,7 @@ uint32_t nano_cycle_get_32(void)
 
 /**
  *
- * nano_tick_delta - return number of ticks since a reference time
+ * @brief Return number of ticks since a reference time
  *
  * This function is meant to be used in contained fragments of code. The first
  * call to it in a particular code fragment fills in a reference time variable
@@ -172,7 +172,7 @@ static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
 
 /**
  *
- * nano_tick_delta - return number of ticks since a reference time
+ * @brief Return number of ticks since a reference time
  *
  * @return tick count since reference time; undefined for first invocation
  */
@@ -184,7 +184,7 @@ int64_t nano_tick_delta(int64_t *reftime)
 
 /**
  *
- * nano_tick_delta_32 - return 32-bit number of ticks since a reference time
+ * @brief Return 32-bit number of ticks since a reference time
  *
  * @return 32-bit tick count since reference time; undefined for first invocation
  */
@@ -236,7 +236,7 @@ static inline void handle_expired_nano_timers(int ticks)
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)
 /**
  *
- * _nano_sys_clock_tick_announce - announce a tick to the nanokernel
+ * @brief Announce a tick to the nanokernel
  *
  * This function is only to be called by the system clock timer driver when a
  * tick is to be announced to the nanokernel. It takes care of dequeuing the

@@ -88,7 +88,7 @@ static inline void ioapicInit(void)
 
 /**
  *
- * uart_generic_info_init - initialize initialization information for one UART
+ * @brief Initialize initialization information for one UART
  *
  * @return N/A
  *
@@ -108,7 +108,7 @@ void uart_generic_info_init(struct uart_init_info *p_info)
 
 /**
  *
- * consoleInit - initialize target-only console
+ * @brief Initialize target-only console
  *
  * Only used for debugging.
  *
@@ -151,7 +151,7 @@ static void bluetooth_init(void)
 
 /**
  *
- * _InitHardware - perform basic hardware initialization
+ * @brief Perform basic hardware initialization
  *
  * Initialize the Intel 8259A interrupt controller device driver and the
  * Intel 8250 UART device driver.

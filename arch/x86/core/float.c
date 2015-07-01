@@ -114,7 +114,7 @@ extern uint32_t _sse_mxcsr_default_value; /* SSE control/status register default
 
 /**
  *
- * _FpCtxSave - save non-integer context information
+ * @brief Save non-integer context information
  *
  * This routine saves the system's "live" non-integer context into the
  * specified CCS.  If the specified task or fiber supports SSE then
@@ -130,7 +130,7 @@ static void _FpCtxSave(tCCS *ccs)
 
 /**
  *
- * _FpCtxInit - initialize non-integer context information
+ * @brief Initialize non-integer context information
  *
  * This routine initializes the system's "live" non-integer context.
  *
@@ -144,7 +144,7 @@ static inline void _FpCtxInit(tCCS *ccs)
 
 /**
  *
- * _FpEnable - enable preservation of non-integer context information
+ * @brief Enable preservation of non-integer context information
  *
  * This routine allows the specified task/fiber (which may be the active
  * task/fiber) to safely share the system's floating point registers with
@@ -289,7 +289,7 @@ void _FpEnable(tCCS *ccs,
 
 /**
  *
- * fiber_float_enable - enable preservation of non-integer context information
+ * @brief Enable preservation of non-integer context information
  *
  * This routine allows a fiber to permit a task/fiber (including itself) to
  * safely share the system's floating point registers with other tasks/fibers.
@@ -303,7 +303,7 @@ FUNC_ALIAS(_FpEnable, fiber_float_enable, void);
 
 /**
  *
- * task_float_enable - enable preservation of non-integer context information
+ * @brief Enable preservation of non-integer context information
  *
  * This routine allows a task to permit a task/fiber (including itself) to
  * safely share the system's floating point registers with other tasks/fibers.
@@ -317,7 +317,7 @@ FUNC_ALIAS(_FpEnable, task_float_enable, void);
 
 /**
  *
- * _FpDisable - disable preservation of non-integer context information
+ * @brief Disable preservation of non-integer context information
  *
  * This routine prevents the specified task/fiber (which may be the active
  * task/fiber) from safely sharing any of the system's floating point registers
@@ -378,7 +378,7 @@ void _FpDisable(tCCS *ccs)
 
 /**
  *
- * fiber_float_disable - disable preservation of non-integer context
+ * @brief Disable preservation of non-integer context
  *information
  *
  * This routine allows a fiber to disallow a task/fiber (including itself) from
@@ -396,7 +396,7 @@ FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
 
 /**
  *
- * task_float_disable - disable preservation of non-integer context information
+ * @brief Disable preservation of non-integer context information
  *
  * This routine allows a task to disallow a task/fiber (including itself) from
  * safely sharing any of the system's floating point registers with other
@@ -415,7 +415,7 @@ FUNC_ALIAS(_FpDisable, task_float_disable, void);
 
 /**
  *
- * _FpNotAvailableExcHandler - handler for "device not available" exception
+ * @brief Handler for "device not available" exception
  *
  * This routine is registered to handle the "device not available" exception
  * (vector = 7) when the AUTOMATIC_FP_ENABLING configuration option has been

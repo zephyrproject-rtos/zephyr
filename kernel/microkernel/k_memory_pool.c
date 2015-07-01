@@ -45,7 +45,7 @@
 
 /**
  *
- * _k_mem_pool_init - initialize kernel memory pool subsystem
+ * @brief Initialize kernel memory pool subsystem
  *
  * Perform any initialization of memory pool that wasn't done at build time.
  *
@@ -101,7 +101,7 @@ void _k_mem_pool_init(void)
 
 /**
  *
- * search_bp - ???
+ * @brief ???
  *
  * marks ptr as free block in the given list [MYSTERIOUS LEGACY COMMENT]
  *
@@ -136,7 +136,7 @@ static void search_bp(char *ptr, struct pool_struct *P, int index)
 
 /**
  *
- * defrag - defragmentation algorithm for memory pool
+ * @brief Defragmentation algorithm for memory pool
  *
  * @return N/A
  */
@@ -192,7 +192,7 @@ static void defrag(struct pool_struct *P,
 
 /**
  *
- * _k_defrag - perform defragment memory pool request
+ * @brief Perform defragment memory pool request
  *
  * @return N/A
  */
@@ -225,7 +225,7 @@ void _k_defrag(struct k_args *A)
 
 /**
  *
- * task_mem_pool_defragment - defragment memory pool request
+ * @brief Defragment memory pool request
  *
  * This routine concatenates unused memory in a memory pool.
  *
@@ -244,7 +244,7 @@ void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
 
 /**
  *
- * search_block_on_frag_level - allocate block using specified fragmentation level
+ * @brief Allocate block using specified fragmentation level
  *
  * This routine attempts to allocate a free block. [NEED TO EXPAND THIS]
  *
@@ -326,7 +326,7 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 
 /**
  *
- * get_block_recusive - recursively get a block, doing fragmentation if necessary
+ * @brief Recursively get a block, doing fragmentation if necessary
  *
  * [NEED A BETTER DESCRIPTION HERE]
  *
@@ -410,7 +410,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 
 /**
  *
- * _k_block_waiters_get - examine tasks that are waiting for memory pool blocks
+ * @brief Examine tasks that are waiting for memory pool blocks
  *
  * This routine attempts to satisfy any incomplete block allocation requests for
  * the specified memory pool. It can be invoked either by the explicit freeing
@@ -480,7 +480,7 @@ void _k_block_waiters_get(struct k_args *A)
 
 /**
  *
- * _k_mem_pool_block_get_timeout_handle - finish handling an allocate block request that timed out
+ * @brief Finish handling an allocate block request that timed out
  *
  * @return N/A
  */
@@ -495,7 +495,7 @@ void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 
 /**
  *
- * _k_mem_pool_block_get - perform allocate memory pool block request
+ * @brief Perform allocate memory pool block request
  *
  * @return N/A
  */
@@ -557,7 +557,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 
 /**
  *
- * _task_mem_pool_alloc - allocate memory pool block request
+ * @brief Allocate memory pool block request
  *
  * This routine allocates a free block from the specified memory pool, ensuring
  * that its size is at least as big as the size requested (in bytes).
@@ -591,7 +591,7 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 
 /**
  *
- * _k_mem_pool_block_release - perform return memory pool block request
+ * @brief Perform return memory pool block request
  *
  * Marks a block belonging to a pool as free; if there are waiters that can use
  * the the block it is passed to a waiting task.
@@ -661,7 +661,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 
 /**
  *
- * task_mem_pool_free - return memory pool block request
+ * @brief Return memory pool block request
  *
  * This routine returns a block to a memory pool.
  *

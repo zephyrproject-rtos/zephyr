@@ -237,7 +237,7 @@ void Task45(void)
 
 /**
  *
- * RegressionTask - main task to test task_mutex_xxx interfaces
+ * @brief Main task to test task_mutex_xxx interfaces
  *
  * This task will lock on Mutex1, Mutex2, Mutex3 and Mutex4.
  *

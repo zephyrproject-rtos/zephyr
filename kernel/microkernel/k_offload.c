@@ -35,7 +35,7 @@
 
 /**
  *
- * _k_offload_to_fiber - process an "offload to fiber" request
+ * @brief Process an "offload to fiber" request
  *
  * This routine simply invokes the requested function from within the context
  * of the K_swapper() fiber and saves the result.
@@ -50,7 +50,7 @@ void _k_offload_to_fiber(struct k_args *A)
 
 /**
  *
- * task_offload_to_fiber - issue a custom call from within K_swapper()
+ * @brief Issue a custom call from within K_swapper()
  *
  * @func: function to call from within K_swapper()
  * @argp: argument to pass to custom function

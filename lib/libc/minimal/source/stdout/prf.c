@@ -502,7 +502,7 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
 
 /**
  *
- * _isdigit - is the input value an ASCII digit character?
+ * @brief Is the input value an ASCII digit character?
  *
  * This function provides a traditional implementation of the isdigit()
  * primitive that is footprint conversative, i.e. it does not utilize a

@@ -38,7 +38,7 @@
 
 /**
  *
- * memorymap_test - memory map get/free test
+ * @brief Memory map get/free test
  *
  * @return N/A
  *

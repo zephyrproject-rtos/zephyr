@@ -53,7 +53,7 @@ GDATA(_nanokernel)
 
 /**
  *
- * __pendsv - PendSV exception handler, handling context switches
+ * @brief PendSV exception handler, handling context switches
  *
  * The PendSV exception is the only context in the system that can perform
  * context switching. When an execution context finds out it has to switch
@@ -148,7 +148,7 @@ SECTION_FUNC(TEXT, __pendsv)
 
 /**
  *
- * __svc - service call handler
+ * @brief Service call handler
  *
  * The service call (svc) is only used in _Swap() to enter handler mode so we
  * can go through the PendSV exception to perform a context switch.
@@ -180,7 +180,7 @@ SECTION_FUNC(TEXT, __svc)
 
 /**
  *
- * _Swap - initiate a cooperative context switch
+ * @brief Initiate a cooperative context switch
  *
  * The _Swap() routine is invoked by various nanokernel services to effect
  * a cooperative context context switch.  Prior to invoking _Swap(), the caller

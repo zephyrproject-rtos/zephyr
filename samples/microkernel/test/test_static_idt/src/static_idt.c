@@ -118,7 +118,7 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
 
 /**
  *
- * nanoIdtStubTest - check the IDT.
+ * @brief Check the IDT.
  *
  * This test examines the IDT and verifies that the static interrupt and
  * exception stubs are installed at the correct place.
@@ -174,7 +174,7 @@ int nanoIdtStubTest(void)
 
 /**
  *
- * idtSpurTask/Fiber - task/fiber to test spurious handlers
+ * @brief Task/fiber to test spurious handlers
  *
  * @return 0
  */
@@ -201,7 +201,7 @@ static void idtSpurFiber(int a1, int a2)
 
 /**
  *
- * idtTestTask/main - entry point to static IDT tests
+ * @brief Entry point to static IDT tests
  *
  * This is the entry point to the static IDT tests.
  *

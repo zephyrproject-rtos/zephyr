@@ -71,7 +71,7 @@ kmemory_pool_t smallBlkszPool	= SMALLBLKSZPOOL;
 
 /**
  *
- * MsgSenderTaskEntry - entry point for MsgSenderTask
+ * @brief Entry point for MsgSenderTask
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * MsgSenderTask.
@@ -88,7 +88,7 @@ void MsgSenderTaskEntry(void)
 
 /**
  *
- * MsgRcvrTaskEntry - entry point for MsgRcvrTask
+ * @brief Entry point for MsgRcvrTask
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * MsgRcvrTask.
@@ -105,7 +105,7 @@ void MsgRcvrTaskEntry(void)
 
 /**
  *
- * MonitorTaskEntry - entry point for MonitorTask
+ * @brief Entry point for MonitorTask
  *
  * This routine keeps tabs on the progress of the tasks doing the actual testing
  * and generates the final test case summary message.

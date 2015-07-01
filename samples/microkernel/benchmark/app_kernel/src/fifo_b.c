@@ -36,7 +36,7 @@
 
 /**
  *
- * queue_test - queue transfer speed test
+ * @brief Queue transfer speed test
  *
  * @return N/A
  *

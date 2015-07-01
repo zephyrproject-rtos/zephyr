@@ -43,7 +43,7 @@
 
 /**
  *
- * RegressionTaskEntry - regression test's entry point
+ * @brief Regression test's entry point
  *
  *
  * @return N/A

@@ -207,7 +207,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 /**
  *
- * move_priority_compute - determines priority for data move operation
+ * @brief Determines priority for data move operation
  *
  * Uses priority level of most important participant.
  *
@@ -410,7 +410,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 
 /**
  *
- * pipe_read - read from the channel
+ * @brief Read from the channel
  *
  * This routine reads from the channel.  If <pPipe> is NULL, then it uses
  * <pNewReader> as the reader.  Otherwise it takes the reader from the channel
@@ -479,7 +479,7 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 
 /**
  *
- * pipe_write - write to the channel
+ * @brief Write to the channel
  *
  * This routine writes to the channel.  If <pPipe> is NULL, then it uses
  * <pNewWriter> as the writer.  Otherwise it takes the writer from the channel
@@ -550,7 +550,7 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 
 /**
  *
- * pipe_xfer_status_update - update the channel transfer status
+ * @brief Update the channel transfer status
  *
  * @return N/A
  */
@@ -577,7 +577,7 @@ static void pipe_xfer_status_update(
 
 /**
  *
- * pipe_read_write - read and/or write from/to the channel
+ * @brief Read and/or write from/to the channel
  *
  * @return N/A
  */

@@ -51,7 +51,7 @@ GTEXT(_rirq_exit)
 
 /**
  *
- * _rirq_enter - work to be done before handing control to an IRQ ISR
+ * @brief Work to be done before handing control to an IRQ ISR
  *
  * The processor pushes automatically all registers that need to be saved.
  * However, since the processor always runs at kernel privilege there is no
@@ -77,7 +77,7 @@ SECTION_FUNC(TEXT, _rirq_enter)
 
 /**
  *
- * _rirq_exit - work to be done exiting an IRQ
+ * @brief Work to be done exiting an IRQ
  *
  * @return N/A
  */

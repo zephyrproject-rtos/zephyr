@@ -54,7 +54,7 @@ static struct k_args cmd_packet;
 
 /**
  *
- * _TaskAbort - abort the current task
+ * @brief Abort the current task
  *
  * Possible reasons for a task aborting:
  *

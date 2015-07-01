@@ -93,7 +93,7 @@ typedef volatile struct {
 
 /**
  *
- * wdog_unlock - Watchdog timer unlock routine.
+ * @brief Watchdog timer unlock routine.
  *
  * This routine will unlock the watchdog timer registers for write access.
  * Writing 0xC520 followed by 0xD928 will unlock the write-once registers
@@ -126,7 +126,7 @@ static ALWAYS_INLINE void wdog_unlock(K20_WDOG_t *wdog_p)
 
 /**
  *
- * wdog_disable - Watchdog timer disable routine
+ * @brief Watchdog timer disable routine
  *
  * This routine will disable the watchdog timer.
  *

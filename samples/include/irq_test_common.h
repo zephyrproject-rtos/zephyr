@@ -107,7 +107,7 @@ struct isrInitInfo {
 
 /**
  *
- * initIRQ - init interrupts
+ * @brief Init interrupts
  *
  */
 

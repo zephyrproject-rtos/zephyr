@@ -49,7 +49,7 @@ Exception/interrupt context helpers.
 
 /**
  *
- * _IsInIsr - find out if running in an ISR context
+ * @brief Find out if running in an ISR context
  *
  * The current executing vector is found in the IPSR register. We consider the
  * IRQs (exception 16 and up), and the PendSV and SYSTICK exceptions, to be
@@ -69,7 +69,7 @@ static ALWAYS_INLINE int _IsInIsr(void)
 }
 
 /**
- * _ExcSetup - setup system exceptions
+ * @brief Setup system exceptions
  *
  * Set exception priorities to conform with the BASEPRI locking mechanism.
  * Set PendSV priority to lowest possible.

@@ -62,7 +62,7 @@ GTEXT(atomic_cas)
 
 /**
  *
- * atomic_clear - atomically clear a memory location
+ * @brief Atomically clear a memory location
  *
  * This routine atomically clears the contents of <target> and returns the old
  * value that was in <target>.
@@ -85,7 +85,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_clear_set, atomic_clear)
 
 /**
  *
- * atomic_set - atomically set a memory location
+ * @brief Atomically set a memory location
  *
  * This routine atomically sets the contents of <target> to <value> and returns
  * the old value that was in <target>.
@@ -113,7 +113,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_clear_set, atomic_set)
 
 /**
  *
- * atomic_get - Get the value of a shared memory atomically
+ * @brief Get the value of a shared memory atomically
  *
  * This routine atomically retrieves the value in *target
  *
@@ -132,7 +132,7 @@ SECTION_FUNC(TEXT, atomic_get)
 
 /**
  *
- * atomic_inc - atomically increment a memory location
+ * @brief Atomically increment a memory location
  *
  * This routine atomically increments the value in <target>.  The operation is
  * done using unsigned integer arithmetic.  Various CPU architectures may impose
@@ -158,7 +158,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_inc_add, atomic_inc)
 
 /**
  *
- * atomic_add - atomically add a value to a memory location
+ * @brief Atomically add a value to a memory location
  *
  * This routine atomically adds the contents of <target> and <value>, placing
  * the result in <target>. The operation is done using signed integer arithmetic.
@@ -193,7 +193,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_inc_add, atomic_add)
 
 /**
  *
- * atomic_dec - atomically decrement a memory location
+ * @brief Atomically decrement a memory location
  *
  * This routine atomically decrements the value in <target>.  The operation is
  * done using unsigned integer arithmetic.  Various CPU architectures may impose
@@ -219,7 +219,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_dec_sub, atomic_dec)
 
 /**
  *
- * atomic_sub - atomically subtract a value from a memory location
+ * @brief Atomically subtract a value from a memory location
  *
  * This routine atomically subtracts <value> from the contents of <target>,
  * placing the result in <target>.  The operation is done using signed integer
@@ -255,7 +255,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_dec_sub, atomic_sub)
 
 /**
  *
- * atomic_nand - atomically perform a bitwise NAND on a memory location
+ * @brief Atomically perform a bitwise NAND on a memory location
  *
  * This routine atomically performs a bitwise NAND operation of the contents of
  * <target> and <value>, placing the result in <target>.
@@ -292,7 +292,7 @@ SECTION_FUNC(TEXT, atomic_nand)
 
 /**
  *
- * atomic_and - atomically perform a bitwise AND on a memory location
+ * @brief Atomically perform a bitwise AND on a memory location
  *
  * This routine atomically performs a bitwise AND operation of the contents of
  * <target> and <value>, placing the result in <target>.
@@ -328,7 +328,7 @@ SECTION_FUNC(TEXT, atomic_and)
 
 /**
  *
- * atomic_or - atomically perform a bitwise OR on memory location
+ * @brief Atomically perform a bitwise OR on memory location
  *
  * This routine atomically performs a bitwise OR operation of the contents of
  * <target> and <value>, placing the result in <target>.
@@ -364,7 +364,7 @@ SECTION_FUNC(TEXT, atomic_or)
 
 /**
  *
- * atomic_xor - atomically perform a bitwise XOR on a memory location
+ * @brief Atomically perform a bitwise XOR on a memory location
  *
  * This routine atomically performs a bitwise XOR operation of the contents of
  * <target> and <value>, placing the result in <target>.
@@ -400,7 +400,7 @@ SECTION_FUNC(TEXT, atomic_xor)
 
 /**
  *
- * atomic_cas - atomically compare-and-swap the contents of a memory location
+ * @brief Atomically compare-and-swap the contents of a memory location
  *
  * This routine performs an atomic compare-and-swap. testing that the contents of
  * <target> contains <oldValue>, and if it does, setting the value of <target>

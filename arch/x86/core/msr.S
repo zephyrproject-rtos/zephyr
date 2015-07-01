@@ -47,7 +47,7 @@ utilities.
 
 /**
  *
- * _MsrWrite - write to a model specific register (MSR)
+ * @brief Write to a model specific register (MSR)
  *
  * This function is used to write to an MSR.
  *
@@ -78,7 +78,7 @@ SECTION_FUNC(TEXT, _MsrWrite)
 
 /**
  *
- * _MsrRead - read from a model specific register (MSR)
+ * @brief Read from a model specific register (MSR)
  *
  * This function is used to read from an MSR.
  *

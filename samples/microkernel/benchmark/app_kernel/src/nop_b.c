@@ -40,7 +40,7 @@ extern void _task_nop(void);
 
 /**
  *
- * call_test - Kernel entry timing test
+ * @brief Kernel entry timing test
  *
  * @return N/A
  *

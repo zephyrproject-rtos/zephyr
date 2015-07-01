@@ -45,7 +45,7 @@ extern "C" {
 
 /**
  *
- * CMD_PKT_SET_INSTANCE - define an instance of a command packet set
+ * @brief Define an instance of a command packet set
  *
  * This macro is used to create an instance of a command packet set in the
  * global namespace.  Each instance of the set may have its own unique number
@@ -62,7 +62,7 @@ extern "C" {
 
 /**
  *
- * CMD_PKT_SET - wrapper for accessing a command packet set
+ * @brief Wrapper for accessing a command packet set
  *
  * As a command packet set is instantiated as an array of uint32_t, it is
  * necessary to typecast a command packet set before accessing it.

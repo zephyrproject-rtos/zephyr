@@ -61,7 +61,7 @@ a real IRQ has been inserted.
 
 /**
  *
- * _i8259_boi_master - detect whether it is spurious interrupt or not
+ * @brief Detect whether it is spurious interrupt or not
  *
  * This routine is called before the user's interrupt handler to detect the
  * spurious interrupt on the master PIC.  If a spurious interrupt condition is
@@ -95,7 +95,7 @@ SECTION_FUNC(TEXT, _i8259_boi_master)
 
 /**
  *
- * _i8259_boi_slave - detect whether it is spurious interrupt or not
+ * @brief Detect whether it is spurious interrupt or not
  *
  * This routine is called before the user's interrupt handler to detect the
  * spurious interrupt on the slave PIC.  If a spurious interrupt condition is

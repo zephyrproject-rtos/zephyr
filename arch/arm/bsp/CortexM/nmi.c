@@ -54,7 +54,7 @@ static _NmiHandler_t handler = _SysNmiOnReset;
 
 /**
  *
- * _DefaultHandler - default NMI handler installed when kernel is up
+ * @brief Default NMI handler installed when kernel is up
  *
  * The default handler outputs a error message and reboots the target. It is
  * installed by calling _NmiInit();
@@ -70,7 +70,7 @@ static void _DefaultHandler(void)
 
 /**
  *
- * _NmiInit - install default runtime NMI handler
+ * @brief Install default runtime NMI handler
  *
  * Meant to be called by BSP code if they want to install a simple NMI handler
  * that reboots the target. It should be installed after the console is
@@ -86,7 +86,7 @@ void _NmiInit(void)
 
 /**
  *
- * _NmiHandlerSet - install a custom runtime NMI handler
+ * @brief Install a custom runtime NMI handler
  *
  * Meant to be called by BSP code if they want to install a custom NMI handler
  * that reboots. It should be installed after the console is initialized if it is
@@ -103,7 +103,7 @@ void _NmiHandlerSet(void (*pHandler)(void))
 
 /**
  *
- * __nmi - handler installed in the vector table
+ * @brief Handler installed in the vector table
  *
  * Simply call what is installed in 'static void(*handler)(void)'.
  *

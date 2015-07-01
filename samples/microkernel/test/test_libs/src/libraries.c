@@ -59,7 +59,7 @@ volatile long longOne = 1L;
 
 /**
  *
- * limitsTest - test implementation-defined constants library
+ * @brief Test implementation-defined constants library
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -77,7 +77,7 @@ int limitsTest(void)
 
 /**
  *
- * stdboolTest - test boolean types and values library
+ * @brief Test boolean types and values library
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -103,7 +103,7 @@ volatile size_t sizeOfLongVariable = sizeof(longVariable);
 
 /**
  *
- * stddefTest - test standard type definitions library
+ * @brief Test standard type definitions library
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -129,7 +129,7 @@ volatile uint32_t unsignedInt = 0xffffff00;
 
 /**
  *
- * stdintTest - test integer types library
+ * @brief Test integer types library
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -155,7 +155,7 @@ char buffer[BUFSIZE];
 
 /**
  *
- * memset_test - test string memset
+ * @brief Test string memset
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -176,7 +176,7 @@ int memset_test(void)
 
 /**
  *
- * strlen_test - test string length function
+ * @brief Test string length function
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -198,7 +198,7 @@ int strlen_test(void)
 
 /**
  *
- * strcmp_test - test string compare function
+ * @brief Test string compare function
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -236,7 +236,7 @@ int strcmp_test(void)
 
 /**
  *
- * strncmp_test - test string N compare function
+ * @brief Test string N compare function
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -275,7 +275,7 @@ int strncmp_test(void)
 
 /**
  *
- * strcpy_test - test string copy function
+ * @brief Test string copy function
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -298,7 +298,7 @@ int strcpy_test(void)
 
 /**
  *
- * strncpy_test - test string N copy function
+ * @brief Test string N copy function
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -322,7 +322,7 @@ int strncpy_test(void)
 
 /**
  *
- * strchr_test - test string scanning function
+ * @brief Test string scanning function
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -353,7 +353,7 @@ int strchr_test(void)
 
 /**
  *
- * memcmp_test - test memory comparison function
+ * @brief Test memory comparison function
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -381,7 +381,7 @@ int memcmp_test(void)
 
 /**
  *
- * stringTest - test string operations library
+ * @brief Test string operations library
  * * @return TC_PASS or TC_FAIL
  */
 
@@ -400,7 +400,7 @@ int stringTest(void)
 
 /**
  *
- * RegressionTask - main task in the test suite
+ * @brief Main task in the test suite
  *
  * This is the entry point to the main task used by the standard libraries test
  * suite. It tests each library in turn until a failure is detected or all

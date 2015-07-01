@@ -71,7 +71,7 @@ int sys_clock_hw_cycles_per_tick;
 
 /**
  *
- * task_cycle_get_32 - read the processor's high precision timer
+ * @brief Read the processor's high precision timer
  *
  * This routine reads the processor's high precision timer.  It reads the
  * counter register on the timer device. This counter register increments
@@ -89,7 +89,7 @@ uint32_t task_cycle_get_32(void)
 
 /**
  *
- * task_tick_get_32 - read the current system clock value
+ * @brief Read the current system clock value
  *
  * This routine returns the lower 32-bits of the current system clock value
  * as measured in ticks.
@@ -104,7 +104,7 @@ int32_t task_tick_get_32(void)
 
 /**
  *
- * task_tick_get - read the current system clock value
+ * @brief Read the current system clock value
  *
  * This routine returns the current system clock value as measured in ticks.
  *
@@ -126,7 +126,7 @@ int64_t task_tick_get(void)
 
 /**
  *
- * sys_clock_increment - increment system clock by "N" ticks
+ * @brief Increment system clock by "N" ticks
  *
  * Interrupts are locked while updating clock since some CPUs do not support
  * native atomic operations on 64 bit values.
@@ -144,7 +144,7 @@ static void sys_clock_increment(int inc)
 
 /**
  *
- * _TlDebugUpdate - task level debugging tick handler
+ * @brief Task level debugging tick handler
  *
  * If task level debugging is configured this routine updates the low resolution
  * debugging timer and determines if task level processing should be suspended.
@@ -168,7 +168,7 @@ static inline int _TlDebugUpdate(int32_t ticks)
 
 /**
  *
- * _TimeSliceUpdate - tick handler time slice logic
+ * @brief Tick handler time slice logic
  *
  * This routine checks to see if it is time for the current task
  * to relinquish control, and yields CPU if so.
@@ -194,7 +194,7 @@ static inline void _TimeSliceUpdate(void)
 
 /**
  *
- * _SysIdleElapsedTicksGet - get elapsed ticks
+ * @brief Get elapsed ticks
  *
  * If tickless idle support is configured this routine returns the number
  * of ticks since going idle and then resets the global elapsed tick counter back
@@ -227,7 +227,7 @@ static inline int32_t _SysIdleElapsedTicksGet(void)
 
 /**
  *
- * _k_ticker - microkernel tick handler
+ * @brief Microkernel tick handler
  *
  * This routine informs other microkernel subsystems that a tick event has
  * occurred.
@@ -258,7 +258,7 @@ int _k_ticker(int event)
 
 /**
  *
- * sys_scheduler_time_slice_set - set time slicing period and scope
+ * @brief Set time slicing period and scope
  *
  * This routine controls how task time slicing is performed by the task
  * scheduler, by specifying the maximum time slice length (in ticks) and
@@ -295,7 +295,7 @@ void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
 
 /**
  *
- * _k_time_elapse - handle elapsed ticks calculation request
+ * @brief Handle elapsed ticks calculation request
  *
  * This routine, called by K_swapper(), handles the request for calculating the
  * time elapsed since the specified reference time.
@@ -313,7 +313,7 @@ void _k_time_elapse(struct k_args *P)
 
 /**
  *
- * task_tick_delta - return ticks between calls
+ * @brief Return ticks between calls
  *
  * This function is meant to be used in contained fragments of code. The first
  * call to it in a particular code fragment fills in a reference time variable

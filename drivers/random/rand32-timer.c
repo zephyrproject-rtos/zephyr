@@ -55,7 +55,7 @@ static atomic_val_t _rand32_counter = 0;
 
 /**
  *
- * sys_rand32_init - initialize the random number generator
+ * @brief Initialize the random number generator
  *
  * The non-random number generator does not require any initialization.
  * This routine is automatically invoked by the kernel during system
@@ -71,7 +71,7 @@ void sys_rand32_init(void)
 
 /**
  *
- * sys_rand32_get - get a 32 bit random number
+ * @brief Get a 32 bit random number
  *
  * The non-random number generator returns values that are based off the
  * target's clock counter, which means that successive calls will return

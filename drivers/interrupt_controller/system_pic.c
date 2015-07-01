@@ -47,7 +47,7 @@ IRQ_CONNECT_STATIC(pic_slave, PIC_SLAVE_STRAY_INT_LVL, 0, _i8259_boi_slave, 0);
 
 /**
  *
- * _SysIntVecAlloc - allocate interrupt vector
+ * @brief Allocate interrupt vector
  *
  * This BSP provided routine supports the irq_connect() API.  This
  * routine performs the following functions:
@@ -64,8 +64,8 @@ IRQ_CONNECT_STATIC(pic_slave, PIC_SLAVE_STRAY_INT_LVL, 0, _i8259_boi_slave, 0);
  *
  * The pcPentium4 board virtualizes IRQs as follows:
  *
- *   - IRQ0 to IRQ7  are provided by the master i8259 PIC
- *   - IRQ8 to IRQ15 are provided by the slave i8259 PIC
+ *  - IRQ0 to IRQ7  are provided by the master i8259 PIC
+ *  - IRQ8 to IRQ15 are provided by the slave i8259 PIC
  *
  * @return the allocated interrupt vector
  *
@@ -149,7 +149,7 @@ int _SysIntVecAlloc(
 
 /**
  *
- * _SysIntVecProgram - program interrupt controller
+ * @brief Program interrupt controller
  *
  * This BSP provided routine programs the appropriate interrupt controller
  * with the given vector based on the given IRQ parameter.

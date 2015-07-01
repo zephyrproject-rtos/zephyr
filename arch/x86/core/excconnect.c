@@ -88,7 +88,7 @@ void _NanoCpuExcConnectAtDpl(unsigned int vector,
 
 /**
  *
- * nanoCpuExcConnect - connect a C routine to an exception
+ * @brief Connect a C routine to an exception
  *
  * This routine connects an exception handler coded in C to the specified
  * interrupt vector.  An exception is defined as a synchronous interrupt, i.e.
@@ -128,7 +128,7 @@ void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
 
 /**
  *
- * _NanoCpuExcConnectAtDpl - connect a C routine to an exception
+ * @brief Connect a C routine to an exception
  *
  * This routine connects an exception handler coded in C to the specified
  * interrupt vector.  An exception is defined as a synchronous interrupt, i.e.

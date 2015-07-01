@@ -78,7 +78,7 @@ uint32_t tm_off;
 
 /**
  *
- * begin_test - get the time ticks before test starts
+ * @brief Get the time ticks before test starts
  *
  * Routine does necessary preparations for the test to start
  *
@@ -97,7 +97,7 @@ void begin_test(void)
 
 /**
  *
- * check_result - checks number of tests and calculate average time
+ * @brief Checks number of tests and calculate average time
  *
  * @return 1 if success and 0 on failure
  *
@@ -140,7 +140,7 @@ int check_result(int i, uint32_t t)
 
 /**
  *
- * kbhit - check for a key press
+ * @brief Check for a key press
  *
  * @return 1 when a keyboard key is pressed, or 0 if no keyboard support
  *
@@ -155,7 +155,7 @@ int kbhit(void)
 
 /**
  *
- * init_output - prepares the test output
+ * @brief Prepares the test output
  *
  * @return N/A
  *
@@ -177,7 +177,7 @@ void init_output(int *continuously)
 
 /**
  *
- * output_close - close output for the test
+ * @brief Close output for the test
  *
  * @return N/A
  *
@@ -190,7 +190,7 @@ void output_close(void)
 
 /**
  *
- * SysKernelBench - perform all selected benchmarks
+ * @brief Perform all selected benchmarks
  *
  * @return N/A
  *

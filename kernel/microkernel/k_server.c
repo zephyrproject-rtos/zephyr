@@ -52,7 +52,7 @@ extern const kernelfunc _k_server_dispatch_table[];
 
 /**
  *
- * next_task_select - select task to be executed by microkernel
+ * @brief Select task to be executed by microkernel
  *
  * Locates that highest priority task queue that is non-empty and chooses the
  * task at the head of that queue. It's guaranteed that there will always be
@@ -87,7 +87,7 @@ static struct k_proc *next_task_select(void)
 
 /**
  *
- * K_swapper - the microkernel thread entry point
+ * @brief The microkernel thread entry point
  *
  * This function implements the microkernel fiber.  It waits for command
  * packets to arrive on its stack channel. It executes all commands on the

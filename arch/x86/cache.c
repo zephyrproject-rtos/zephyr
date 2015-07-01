@@ -46,7 +46,7 @@ This module contains functions for manipulation caches.
 
 /**
  *
- * _SysCacheFlush - flush a page to main memory
+ * @brief Flush a page to main memory
  *
  * No alignment is required for either <virt> or <size>, but since
  * _SysCacheFlush() iterates on the cache lines, a cache line alignment for both

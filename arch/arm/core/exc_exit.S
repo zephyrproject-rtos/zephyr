@@ -63,7 +63,7 @@ GDATA(_nanokernel)
 
 /**
  *
- * _IntExit - kernel housekeeping when exiting interrupt handler installed
+ * @brief Kernel housekeeping when exiting interrupt handler installed
  *            directly in vector table
  *
  * Kernel allows installing interrupt handlers (ISRs) directly into the vector
@@ -94,7 +94,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 
 /**
  *
- * _ExcExit - kernel housekeeping when exiting exception handler installed
+ * @brief Kernel housekeeping when exiting exception handler installed
  *            directly in vector table
  *
  * See _IntExit().

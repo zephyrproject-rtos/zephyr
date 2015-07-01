@@ -145,7 +145,7 @@ void initData(void)
 
 /**
  *
- * isr_stack_push - add an item to a STACK
+ * @brief Add an item to a STACK
  *
  * This routine is the ISR handler for _trigger_nano_isr_stack_push().  It adds
  * an item to the STACK in the context of an ISR.
@@ -165,7 +165,7 @@ void isr_stack_push(void *parameter)
 
 /**
  *
- * isr_stack_pop - get an item from a STACK
+ * @brief Get an item from a STACK
  *
  * This routine is the ISR handler for _trigger_nano_isr_stack_pop().  It gets
  * an item from the STACK in the context of an ISR.  If the queue is empty,
@@ -456,7 +456,7 @@ void testTaskStackPopW(void)
 
 /**
  *
- * fiber3 - a fiber to help test nano_task_stack_pop_wait()
+ * @brief A fiber to help test nano_task_stack_pop_wait()
  *
  * This fiber blocks for one second before pushing an item onto the stack.
  * The main task, which was waiting for item from the stack then unblocks.
@@ -473,7 +473,7 @@ void fiber3(void)
 
 /**
  *
- * initNanoObjects - initialize nanokernel objects
+ * @brief Initialize nanokernel objects
  *
  * This routine initializes the nanokernel objects used in the STACK tests.
  *
@@ -497,7 +497,7 @@ void initNanoObjects(void)
 
 /**
  *
- * main - entry point to STACK tests
+ * @brief Entry point to STACK tests
  *
  * This is the entry point to the STACK tests.
  *

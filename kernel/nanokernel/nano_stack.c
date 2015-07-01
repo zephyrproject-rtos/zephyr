@@ -52,7 +52,7 @@ APIs to the same function, since they have identical implementations.
 
 /**
  *
- * nano_stack_init - initialize a nanokernel stack object
+ * @brief Initialize a nanokernel stack object
  *
  * This function initializes a nanokernel stack object structure.
  *
@@ -80,7 +80,7 @@ FUNC_ALIAS(_stack_push_non_preemptible, nano_fiber_stack_push, void);
 
 /**
  *
- * _stack_push_non_preemptible - push data onto a stack (no context switch)
+ * @brief Push data onto a stack (no context switch)
  *
  * This routine pushes a data item onto a stack object; it may be called from
  * either a fiber or ISR context.  A fiber pending on the stack object will be
@@ -120,7 +120,7 @@ void _stack_push_non_preemptible(
 
 /**
  *
- * nano_task_stack_push - push data onto a nanokernel stack
+ * @brief Push data onto a nanokernel stack
  *
  * This routine pushes a data item onto a stack object; it may be called only
  * from a task context.  A fiber pending on the stack object will be
@@ -160,7 +160,7 @@ FUNC_ALIAS(_stack_pop, nano_task_stack_pop, int);
 
 /**
  *
- * _stack_pop - pop data from a nanokernel stack
+ * @brief Pop data from a nanokernel stack
  *
  * Pop the first data word from a nanokernel stack object; it may be called
  * from a fiber, task, or ISR context.
@@ -201,7 +201,7 @@ int _stack_pop(
 
 /**
  *
- * nano_fiber_stack_pop_wait - pop data from a nanokernel stack, wait if empty
+ * @brief Pop data from a nanokernel stack, wait if empty
  *
  * Pop the first data word from a nanokernel stack object; it can only be
  * called from a fiber context
@@ -240,7 +240,7 @@ uint32_t nano_fiber_stack_pop_wait(
 
 /**
  *
- * nano_task_stack_pop_wait - pop data from a nanokernel stack, poll if empty
+ * @brief Pop data from a nanokernel stack, poll if empty
  *
  * Pop the first data word from a nanokernel stack; it can only be called
  * from a task context.

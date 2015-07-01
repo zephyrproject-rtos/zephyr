@@ -53,7 +53,7 @@ _ASM_FILE_PROLOGUE
 
 /**
  *
- * _GdbStubExcEntry - exception entry extra work when GDB_INFO is enabled
+ * @brief Exception entry extra work when GDB_INFO is enabled
  *
  * During normal system operation, the callee-saved registers are saved lazily
  * only when a context switch is required. To allow looking at the current
@@ -97,7 +97,7 @@ SECTION_FUNC(TEXT, _GdbStubExcEntry)
 
 /**
  *
- * _GdbStubExcExit - exception exit extra clean up when GDB_INFO is enabled
+ * @brief Exception exit extra clean up when GDB_INFO is enabled
  *
  * Record the fact that the thread is not interrupted anymore so that VQEMU
  * looks at the CPU registers and not into the CCS to obtain the current
@@ -131,8 +131,7 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
 
 /**
  *
- * _irq_vector_table_entry_with_gdb_stub - stub for ISRs installed directly in
- *                               vector table
+ * @brief Stub for ISRs installed directly in vector table
  *
  * The kernel on Cortex-M3/4 can be configured so that ISRs
  * are installed directly in the vector table for maximum efficiency.

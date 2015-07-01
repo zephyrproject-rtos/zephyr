@@ -154,7 +154,7 @@ the 'Quark' BSP.
 
 /**
  *
- * outByte - output byte to memory location
+ * @brief Output byte to memory location
  *
  * @return N/A
  *
@@ -168,7 +168,7 @@ static inline void outByte(uint8_t data, uint32_t addr)
 
 /**
  *
- * inByte - obtain byte value from memory location
+ * @brief Obtain byte value from memory location
  *
  * This function issues the 'move' instruction to read a byte from the specified
  * memory address.
@@ -196,7 +196,7 @@ static inline uint8_t inByte(uint32_t addr)
 
 /**
  *
- * outWord - output word to memory location
+ * @brief Output word to memory location
  *
  * @return N/A
  *
@@ -210,7 +210,7 @@ static inline void outWord(uint16_t data, uint32_t addr)
 
 /**
  *
- * inWord - obtain word value from memory location
+ * @brief Obtain word value from memory location
  *
  * This function issues the 'move' instruction to read a word from the specified
  * memory address.
@@ -238,7 +238,7 @@ static inline uint16_t inWord(uint32_t addr)
 
 /**
  *
- * outLong - output long word to memory location
+ * @brief Output long word to memory location
  *
  * @return N/A
  *
@@ -252,7 +252,7 @@ static inline void outLong(uint32_t data, uint32_t addr)
 
 /**
  *
- * inLong - obtain long word value from memory location
+ * @brief Obtain long word value from memory location
  *
  * This function issues the 'move' instruction to read a word from the specified
  * memory address.
@@ -270,7 +270,7 @@ static inline uint32_t inLong(uint32_t addr)
 
 /**
  *
- * pci_pin2irq - convert PCI interrupt PIN to IRQ
+ * @brief Convert PCI interrupt PIN to IRQ
  *
  * The routine uses "standard design consideration" and implies that
  * INTA (pin 1) -> IRQ 16
@@ -291,7 +291,7 @@ static inline int pci_pin2irq(int pin)
 
 /**
  *
- * pci_irq2pin - convert IRQ to PCI interrupt pin
+ * @brief Convert IRQ to PCI interrupt pin
  *
  * @return pin number, -1 if the result is incorrect
  *

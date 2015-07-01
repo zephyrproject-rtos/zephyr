@@ -56,7 +56,7 @@ extern uint32_t irq_vectors[NUM_OBJECTS];
 
 /**
  *
- * taskAMain - entry point for taskA
+ * @brief Entry point for taskA
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * taskA.
@@ -72,7 +72,7 @@ void taskAMain(void)
 
 /**
  *
- * taskBMain - entry point for taskB
+ * @brief Entry point for taskB
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * taskB.
@@ -88,7 +88,7 @@ void taskBMain(void)
 
 /**
  *
- * registerWait - wait for devices to be registered and generate SW ints
+ * @brief Wait for devices to be registered and generate SW ints
  *
  * This routine waits for the tasks to indicate the IRQ objects are allocated and
  * then generates SW interrupts for all IRQs. Signals "task done" if all task
@@ -124,7 +124,7 @@ void registerWait(void)
 
 /**
  *
- * MonitorTaskEntry - entry point for MonitorTask
+ * @brief Entry point for MonitorTask
  *
  * This routine keeps tabs on the progress of the tasks doing the actual testing
  * and generates the final test case summary message.

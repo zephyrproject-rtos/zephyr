@@ -55,7 +55,7 @@ GTEXT(_IntExit)
 
 /**
  *
- * _isr_wrapper - wrapper around ISRs when inserted in software ISR table
+ * @brief Wrapper around ISRs when inserted in software ISR table
  *
  * When inserted in the vector table, _isr_wrapper() demuxes the ISR table using
  * the running interrupt number as the index, and invokes the registered ISR

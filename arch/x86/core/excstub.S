@@ -59,7 +59,7 @@ and exiting a C exception handler.
 
 /**
  *
- * _ExcEnt - inform the kernel of an exception
+ * @brief Inform the kernel of an exception
  *
  * This function is called from the exception stub created by nanoCpuExcConnect()
  * to inform the kernel of an exception.  This routine currently does
@@ -217,7 +217,7 @@ BRANCH_LABEL(allDone)
 
 /**
  *
- * _ExcExit - inform the kernel of an exception exit
+ * @brief Inform the kernel of an exception exit
  *
  * This function is called from the exception stub created by nanoCpuExcConnect()
  * to inform the kernel that the processing of an exception has

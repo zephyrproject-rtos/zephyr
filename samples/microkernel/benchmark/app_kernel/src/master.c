@@ -63,7 +63,7 @@ uint32_t tm_off;
 
 /**
  *
- * kbhit - check for keypress
+ * @brief Check for keypress
  *
  * @return 1 when a keyboard key is pressed, or 0 if no keyboard support
  *
@@ -78,7 +78,7 @@ int kbhit(void)
 
 /**
  *
- * init_output - prepares the test output
+ * @brief Prepares the test output
  *
  * @return N/A
  *
@@ -101,7 +101,7 @@ void init_output(int *continuously, int *autorun)
 
 /**
  *
- * output_close - close output for the test
+ * @brief Close output for the test
  *
  * @return N/A
  *
@@ -118,7 +118,7 @@ void output_close(void)
 
 /**
  *
- * BenchTask - perform all selected benchmarks
+ * @brief Perform all selected benchmarks
  *
  * @return N/A
  *
@@ -173,7 +173,7 @@ void BenchTask(void)
 
 /**
  *
- * dummy_test - dummy test
+ * @brief Dummy test
  *
  * @return N/A
  *

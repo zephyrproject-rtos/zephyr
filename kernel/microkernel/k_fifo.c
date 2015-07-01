@@ -37,7 +37,7 @@
 
 /**
  *
- * _k_fifo_enque_reply - finish performing an incomplete FIFO enqueue request
+ * @brief Finish performing an incomplete FIFO enqueue request
  *
  * @return N/A
  */
@@ -62,7 +62,7 @@ void _k_fifo_enque_reply(struct k_args *A)
 
 /**
  *
- * _k_fifo_enque_request - perform a FIFO enqueue request
+ * @brief Perform a FIFO enqueue request
  *
  * @return N/A
  */
@@ -138,7 +138,7 @@ void _k_fifo_enque_request(struct k_args *A)
 }
 /**
  *
- * _task_fifo_put - FIFO enqueue request
+ * @brief FIFO enqueue request
  *
  * This routine puts an entry at the end of the FIFO queue.
  *
@@ -164,7 +164,7 @@ int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 
 /**
  *
- * _k_fifo_deque_reply - finish performing an incomplete FIFO dequeue request
+ * @brief Finish performing an incomplete FIFO dequeue request
  *
  * @return N/A
  */
@@ -189,7 +189,7 @@ void _k_fifo_deque_reply(struct k_args *A)
 
 /**
  *
- * _k_fifo_deque_request - perform FIFO dequeue request
+ * @brief Perform FIFO dequeue request
  *
  * @return N/A
  */
@@ -268,7 +268,7 @@ void _k_fifo_deque_request(struct k_args *A)
 
 /**
  *
- * _task_fifo_get - FIFO dequeue request
+ * @brief FIFO dequeue request
  *
  * This routine tries to read a data element from the FIFO.
  *
@@ -297,7 +297,7 @@ int _task_fifo_get(kfifo_t queue, /* FIFO queue */
 
 /**
  *
- * _k_fifo_ioctl - perform miscellaneous FIFO request
+ * @brief Perform miscellaneous FIFO request
  *
  * @return N/A
  */
@@ -337,7 +337,7 @@ void _k_fifo_ioctl(struct k_args *A)
 
 /**
  *
- * _task_fifo_ioctl - miscellaneous FIFO request
+ * @brief Miscellaneous FIFO request
  *
  * Depending upon the chosen operation, this routine will ...
  *   1. <op> = 0 : query the number of FIFO entries

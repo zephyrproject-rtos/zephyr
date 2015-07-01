@@ -39,7 +39,7 @@
 
 /**
  *
- * waittask - receive task (Wait task)
+ * @brief Receive task (Wait task)
  *
  * @return N/A
  *

@@ -67,7 +67,7 @@ extern const int _k_num_events; /* non-public microkernel global variable */
 
 /**
  *
- * isr_event_signal_handler - ISR handler to signal an event
+ * @brief ISR handler to signal an event
  *
  * @return N/A
  */
@@ -81,7 +81,7 @@ void isr_event_signal_handler(void *data)
 
 /**
  *
- * releaseTestFiber - release the test fiber
+ * @brief Release the test fiber
  *
  * @return N/A
  */
@@ -93,7 +93,7 @@ void releaseTestFiber(void)
 
 /**
  *
- * microObjectsInit - initialize objects used in this microkernel test suite
+ * @brief Initialize objects used in this microkernel test suite
  *
  * @return N/A
  */
@@ -113,7 +113,7 @@ void microObjectsInit(void)
 
 /**
  *
- * eventNoWaitTest - test the task_event_recv() API
+ * @brief Test the task_event_recv() API
  *
  * There are three cases to be tested here.  The first is for testing an invalid
  * event.  The second is for testing for an event when there is one.  The third
@@ -159,7 +159,7 @@ int eventNoWaitTest(void)
 
 /**
  *
- * eventWaitTest - test the task_event_recv_wait() API
+ * @brief Test the task_event_recv_wait() API
  *
  * This test checks task_event_recv_wait() against the following cases:
  *  1. There is already an event waiting (signalled from a task and ISR).
@@ -231,7 +231,7 @@ int eventWaitTest(void)
 
 /**
  *
- * eventTimeoutTest - test the task_event_recv_wait_timeout() API
+ * @brief Test the task_event_recv_wait_timeout() API
  *
  * This test checks task_event_recv_wait_timeout() against the following cases:
  *  1. The current task times out while waiting for the event.
@@ -282,7 +282,7 @@ int eventTimeoutTest(void)
 
 /**
  *
- * isrEventSignalTest - test the isr_event_send() API
+ * @brief Test the isr_event_send() API
  *
  * Although other tests have done some testing using isr_event_send(), none
  * of them have demonstrated that signalling an event more than once does not
@@ -324,7 +324,7 @@ int isrEventSignalTest(void)
 
 /**
  *
- * fiberEventSignalTest - test the fiber_event_send() API
+ * @brief Test the fiber_event_send() API
  *
  * Signalling an event by fiber_event_send() more than once does not "queue"
  * events.  That is, should two or more signals of the same event occur before
@@ -361,7 +361,7 @@ int fiberEventSignalTest(void)
 
 /**
  *
- * eventHandler - handler to run on EVENT_ID event
+ * @brief Handler to run on EVENT_ID event
  *
  * @param event    signalled event
  *
@@ -379,7 +379,7 @@ int eventHandler(int event)
 
 /**
  *
- * altEventHandler - handler to run on ALT_EVENT event
+ * @brief Handler to run on ALT_EVENT event
  *
  * @param event    signalled event
  *
@@ -397,7 +397,7 @@ int altEventHandler(int event)
 
 /**
  *
- * eventSignalHandlerTest - test the task_event_set_handler() API
+ * @brief Test the task_event_set_handler() API
  *
  * This test checks that the event handler is set up properly when
  * task_event_set_handler() is called.  It shows that event handlers are tied
@@ -520,7 +520,7 @@ int eventSignalHandlerTest(void)
 
 /**
  *
- * AlternateTask - alternate task to signal various events to a waiting task
+ * @brief Alternate task to signal various events to a waiting task
  *
  * @return N/A
  */
@@ -558,7 +558,7 @@ void AlternateTask(void)
 
 /**
  *
- * RegressionTask - main entry point to the test suite
+ * @brief Main entry point to the test suite
  *
  * @return N/A
  */

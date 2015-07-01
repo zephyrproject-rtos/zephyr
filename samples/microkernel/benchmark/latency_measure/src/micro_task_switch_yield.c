@@ -52,7 +52,7 @@ static uint32_t helper_task_iterations = 0;
 
 /**
  *
- * yieldingTask - helper task for measuring task switch latency using yield
+ * @brief Helper task for measuring task switch latency using yield
  *
  * This task is define in .mdef as SEMYIELDTSK
  *
@@ -71,7 +71,7 @@ void yieldingTask(void)
 
 /**
  *
- * microTaskSwitchYield - entry point for task context switch using yield test
+ * @brief Entry point for task context switch using yield test
  *
  * @return N/A
  *

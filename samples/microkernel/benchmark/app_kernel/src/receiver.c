@@ -50,7 +50,7 @@ void piperecvtask(void);
 
 /**
  *
- * recvtask - main function of the task that receives data in the test
+ * @brief Main function of the task that receives data in the test
  *
  * @return N/A
  *

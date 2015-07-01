@@ -66,7 +66,7 @@ by nano_cpu_atomic_idle().
 
 /**
  *
- * nano_cpu_idle - power save idle routine for IA-32
+ * @brief Power save idle routine for IA-32
  *
  * This function will be called by the nanokernel idle loop or possibly within
  * an implementation of _sys_power_save_idle in the microkernel when the
@@ -96,7 +96,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 
 /**
  *
- * nano_cpu_atomic_idle - atomically re-enable interrupts and enter low power mode
+ * @brief Atomically re-enable interrupts and enter low power mode
  *
  * This function is utilized by the nanokernel object "wait" APIs for task
  * contexts, e.g. nano_task_lifo_get_wait(), nano_task_sem_take_wait(), nano_task_stack_pop_wait(),

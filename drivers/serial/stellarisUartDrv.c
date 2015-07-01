@@ -155,7 +155,7 @@ UART_PORTS_CONFIGURE(struct _StellarisUartPort, ports);
 
 /**
  *
- * baudrateSet - set the baud rate
+ * @brief Set the baud rate
  *
  * This routine set the given baud rate for the UART.
  *
@@ -186,7 +186,7 @@ static void baudrateSet(int port, uint32_t baudrate, uint32_t sysClkFreqInHz)
 
 /**
  *
- * enable - enable the UART
+ * @brief Enable the UART
  *
  * This routine enables the given UART.
  *
@@ -202,7 +202,7 @@ static inline void enable(int port)
 
 /**
  *
- * disable - disable the UART
+ * @brief Disable the UART
  *
  * This routine disables the given UART.
  *
@@ -235,7 +235,7 @@ static inline void disable(int port)
 
 /**
  *
- * lineControlDefaultsSet - set the default UART line controls
+ * @brief Set the default UART line controls
  *
  * This routine sets the given UART's line controls to their default settings.
  *
@@ -251,7 +251,7 @@ static inline void lineControlDefaultsSet(int port)
 
 /**
  *
- * uart_init - initialize UART channel
+ * @brief Initialize UART channel
  *
  * This routine is called to reset the chip in a quiescent state.
  * It is assumed that this function is called only once per UART.
@@ -272,7 +272,7 @@ void uart_init(int port, /* UART channel to initialize */
 
 /**
  *
- * pollTxReady - get the UART transmit ready status
+ * @brief Get the UART transmit ready status
  *
  * This routine returns the given UART's transmit ready status.
  *
@@ -288,7 +288,7 @@ static int pollTxReady(int port)
 
 /**
  *
- * uart_poll_in - poll the device for input.
+ * @brief Poll the device for input.
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
@@ -310,7 +310,7 @@ int uart_poll_in(int port, /* UART channel to select for input */
 
 /**
  *
- * uart_poll_out - output a character in polled mode.
+ * @brief Output a character in polled mode.
  *
  * Checks if the transmitter is empty. If empty, a character is written to
  * the data register.
@@ -333,7 +333,7 @@ unsigned char uart_poll_out(int port, unsigned char c)
 
 /**
  *
- * uart_fifo_fill - fill FIFO with data
+ * @brief Fill FIFO with data
  *
  * @return number of bytes sent
  */
@@ -355,7 +355,7 @@ int uart_fifo_fill(int port, /* UART on which to send */
 
 /**
  *
- * uart_fifo_read - read data from FIFO
+ * @brief Read data from FIFO
  *
  * @return number of bytes read
  */
@@ -377,7 +377,7 @@ int uart_fifo_read(int port, /* UART to receive from */
 
 /**
  *
- * uart_irq_tx_enable - enable TX interrupt
+ * @brief Enable TX interrupt
  *
  * @return N/A
  */
@@ -432,7 +432,7 @@ void uart_irq_tx_enable(int port /* UART to enable Tx interrupt */
 
 /**
  *
- * uart_irq_tx_disable - disable TX interrupt in IER
+ * @brief Disable TX interrupt in IER
  *
  * @return N/A
  */
@@ -447,7 +447,7 @@ void uart_irq_tx_disable(int port /* UART to disable Tx interrupt */
 
 /**
  *
- * uart_irq_tx_ready - check if Tx IRQ has been raised
+ * @brief Check if Tx IRQ has been raised
  *
  * @return 1 if a Tx IRQ is pending, 0 otherwise
  */
@@ -462,7 +462,7 @@ int uart_irq_tx_ready(int port /* UART to check */
 
 /**
  *
- * uart_irq_rx_enable - enable RX interrupt in IER
+ * @brief Enable RX interrupt in IER
  *
  * @return N/A
  */
@@ -477,7 +477,7 @@ void uart_irq_rx_enable(int port /* UART to enable Rx interrupt */
 
 /**
  *
- * uart_irq_rx_disable - disable RX interrupt in IER
+ * @brief Disable RX interrupt in IER
  *
  * @return N/A
  */
@@ -492,7 +492,7 @@ void uart_irq_rx_disable(int port /* UART to disable Rx interrupt */
 
 /**
  *
- * uart_irq_rx_ready - check if Rx IRQ has been raised
+ * @brief Check if Rx IRQ has been raised
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -507,7 +507,7 @@ int uart_irq_rx_ready(int port /* UART to check */
 
 /**
  *
- * uart_irq_err_enable - enable error interrupts
+ * @brief Enable error interrupts
  *
  * @return N/A
  */
@@ -523,7 +523,7 @@ void uart_irq_err_enable(int port /* UART to enable interrupts for */
 
 /**
  *
- * uart_irq_err_disable - disable error interrupts
+ * @brief Disable error interrupts
  *
  * @return N/A
  */
@@ -539,7 +539,7 @@ void uart_irq_err_disable(int port /* UART to disable interrupts for */
 
 /**
  *
- * uart_irq_is_pending - check if Tx or Rx IRQ is pending
+ * @brief Check if Tx or Rx IRQ is pending
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
@@ -555,7 +555,7 @@ int uart_irq_is_pending(int port /* UART to check */
 
 /**
  *
- * uart_irq_update - update IRQ status
+ * @brief Update IRQ status
  *
  * @return always 1
  */
@@ -567,7 +567,7 @@ int uart_irq_update(int port)
 
 /**
  *
- * uart_irq_get - returns UART interrupt number
+ * @brief Returns UART interrupt number
  *
  * Returns the IRQ number used by the specified UART port
  *

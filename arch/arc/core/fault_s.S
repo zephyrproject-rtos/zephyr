@@ -64,7 +64,7 @@ SECTION_VAR(BSS, saved_stack_pointer)
 	.word 0
 
 /*
- * __fault - fault handler installed in the fault and reserved vectors
+ * @brief Fault handler installed in the fault and reserved vectors
  */
 
 SECTION_SUBSEC_FUNC(TEXT,__fault,__memory_error)

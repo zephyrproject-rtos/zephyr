@@ -150,7 +150,7 @@ static void _main(void)
 
 /**
  *
- * nano_init - initializes nanokernel data structures
+ * @brief Initializes nanokernel data structures
  *
  * This routine initializes various nanokernel data structures, including
  * the background (or idle) task and any architecture-specific initialization.
@@ -221,7 +221,7 @@ static void nano_init(tCCS *dummyOutContext)
 #ifdef CONFIG_STACK_CANARIES
 /**
  *
- * STACK_CANARY_INIT - initialize the kernel's stack canary
+ * @brief Initialize the kernel's stack canary
  *
  * This macro initializes the kernel's stack canary global variable,
  * __stack_chk_guard, with a random value.
@@ -256,7 +256,7 @@ extern void *__stack_chk_guard;
 
 /**
  *
- * _Cstart - initialize nanokernel
+ * @brief Initialize nanokernel
  *
  * This routine is invoked by the BSP when the system is ready to run C code.
  * The processor must be running in 32-bit mode, and the BSS must have been

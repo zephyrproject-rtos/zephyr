@@ -50,7 +50,7 @@ GTEXT(find_first_set)
 
 /**
  *
- * find_last_set - find first set bit (searching from the most significant bit)
+ * @brief Find first set bit (searching from the most significant bit)
  *
  * This routine finds the first bit set in the argument passed it and
  * returns the index of that bit.  Bits are numbered starting
@@ -71,7 +71,7 @@ SECTION_FUNC(TEXT, find_last_set)
 
 /**
  *
- * find_first_set - find first set bit (searching from the least significant bit)
+ * @brief Find first set bit (searching from the least significant bit)
  *
  * This routine finds the first bit set in the argument passed it and
  * returns the index of that bit.  Bits are numbered starting

@@ -60,7 +60,7 @@
 
 #if (CONFIG_FAULT_DUMP > 0)
 /*
- * _FaultDump - dump information regarding fault (FAULT_DUMP > 0)
+ * @brief Dump information regarding fault (FAULT_DUMP > 0)
  *
  * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 1
  * (short form).
@@ -85,7 +85,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 #endif /* CONFIG_FAULT_DUMP */
 
 /*
- * _Fault - fault handler
+ * @brief Fault handler
  *
  * This routine is called when fatal error conditions are detected by hardware
  * and is responsible only for reporting the error. Once reported, it then

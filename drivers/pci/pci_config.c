@@ -54,7 +54,7 @@ This module implements the PCI config space access functions
 
 /**
  *
- * pci_config_out_long - write a 32bit data to pci reg in offset
+ * @brief Write a 32bit data to pci reg in offset
  *
  * @param bus_no      Bus number.
  * @param device_no   Device number
@@ -84,7 +84,7 @@ void pci_config_out_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 /**
  *
- * pci_config_out_word - write a 16bit data to pci reg in offset
+ * @brief Write a 16bit data to pci reg in offset
  *
  * @param bus_no      Bus number.
  * @param device_no   Device number.
@@ -114,7 +114,7 @@ void pci_config_out_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 /**
  *
- * pci_config_out_byte - write a 8bit data to pci reg in offset
+ * @brief Write a 8bit data to pci reg in offset
  *
  * @param bus_no      Bus number.
  * @param device_no   Device number.
@@ -144,7 +144,7 @@ void pci_config_out_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 /**
  *
- * pci_config_in_long - read a 32bit data from pci reg in offset
+ * @brief Read a 32bit data from pci reg in offset
  *
  * @param bus_no      Bus number.
  * @param device_no   Device number.
@@ -175,7 +175,7 @@ void pci_config_in_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 /**
  *
- * pci_config_in_word - read in a 16bit data from a pci reg in offset
+ * @brief Read in a 16bit data from a pci reg in offset
  *
  * @param bus_no      Bus number.
  * @param device_no   Device number.
@@ -212,7 +212,7 @@ void pci_config_in_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 /**
  *
- * pci_config_in_byte - read in a 8bit data from a pci reg in offset
+ * @brief Read in a 8bit data from a pci reg in offset
  *
  * @param bus_no      Bus number.
  * @param device_no   Device number.
@@ -249,7 +249,7 @@ void pci_config_in_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 
 /**
  *
- * pci_config_ext_cap_ptr_find - find extended capability in ECP linked list
+ * @brief Find extended capability in ECP linked list
  *
  * This routine searches for an extended capability in the linked list of
  * capabilities in config space. If found, the offset of the first byte

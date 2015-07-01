@@ -55,7 +55,7 @@ static uint32_t timestamp;
 
 /**
  *
- * microSemaLockUnlock - the function tests semaphore lock/unlock time
+ * @brief The function tests semaphore lock/unlock time
  *
  * The routine performs unlock the quite amount of semaphores and then
  * acquires them in order to measure the necessary time.
@@ -105,7 +105,7 @@ int microSemaLockUnlock(void)
 
 /**
  *
- * microMutexLockUnlock - test for the multiple mutex lock/unlock time
+ * @brief Test for the multiple mutex lock/unlock time
  *
  * The routine performs multiple mutex locks and then multiple mutex
  * unlocks to measure the necessary time.

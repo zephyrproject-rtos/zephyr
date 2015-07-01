@@ -97,7 +97,7 @@ static struct nano_sem reply_multi_waiters;
 
 /**
  *
- * isr_sem_take - take a semaphore
+ * @brief Take a semaphore
  *
  * This routine is the ISR handler for _trigger_nano_isr_sem_take().  It takes a
  * semaphore within the context of an ISR.
@@ -116,7 +116,7 @@ void isr_sem_take(void *data)
 
 /**
  *
- * isr_sem_give - give a semaphore
+ * @brief Give a semaphore
  *
  * This routine is the ISR handler for _trigger_nano_isr_sem_take().  It gives a
  * semaphore within the context of an ISR.
@@ -136,7 +136,7 @@ void isr_sem_give(void *data)
 
 /**
  *
- * testSemFiberNoWait - give and take the semaphore in a fiber without blocking
+ * @brief Give and take the semaphore in a fiber without blocking
  *
  * This test gives and takes the test semaphore in the context of a fiber
  * without blocking on the semaphore.
@@ -180,7 +180,7 @@ errorReturn:
 
 /**
  *
- * fiberEntry - entry point for the fiber portion of the semaphore tests
+ * @brief Entry point for the fiber portion of the semaphore tests
  *
  * NOTE: The fiber portion of the tests have higher priority than the task
  * portion of the tests.
@@ -256,7 +256,7 @@ static void fiberEntry(int arg1, int arg2)
 
 /**
  *
- * initNanoObjects - initialize nanokernel objects
+ * @brief Initialize nanokernel objects
  *
  * This routine initializes the nanokernel objects used in the semaphore tests.
  *
@@ -282,7 +282,7 @@ void initNanoObjects(void)
 
 /**
  *
- * testSemIsrNoWait - give and take the semaphore in an ISR without blocking
+ * @brief Give and take the semaphore in an ISR without blocking
  *
  * This test gives and takes the test semaphore in the context of an ISR without
  * blocking on the semaphore.
@@ -329,7 +329,7 @@ errorReturn:
 
 /**
  *
- * testSemTaskNoWait - give and take the semaphore in a task without blocking
+ * @brief Give and take the semaphore in a task without blocking
  *
  * This test gives and takes the test semaphore in the context of a task without
  * blocking on the semaphore.
@@ -372,7 +372,7 @@ errorReturn:
 
 /**
  *
- * testSemWait - perform tests that wait on a semaphore
+ * @brief Perform tests that wait on a semaphore
  *
  * This routine works with fiberEntry() to perform the tests that wait on
  * a semaphore.
@@ -430,7 +430,7 @@ static char __stack fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
 
 /**
  *
- * fiber_multi_waiters - fiber entry point for multiple-waiters test
+ * @brief Fiber entry point for multiple-waiters test
  *
  * @return N/A
  */
@@ -446,7 +446,7 @@ static void fiber_multi_waiters(int arg1, int arg2)
 
 /**
  *
- * do_test_multiple_waiters - task part of multiple-waiter test, repeatable
+ * @brief Task part of multiple-waiter test, repeatable
  *
  * @return N/A
  */
@@ -492,7 +492,7 @@ static int do_test_multiple_waiters(void)
 
 /**
  *
- * test_multiple_waiters - entry point for multiple-waiters test
+ * @brief Entry point for multiple-waiters test
  *
  * @return N/A
  */
@@ -936,7 +936,7 @@ static int test_timeout(void)
 
 /**
  *
- * main - entry point to semaphore tests
+ * @brief Entry point to semaphore tests
  *
  * This is the entry point to the semaphore tests.
  *

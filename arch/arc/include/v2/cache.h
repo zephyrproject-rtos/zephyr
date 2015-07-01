@@ -49,7 +49,7 @@
 #define CACHE_CACHE_CONTROLLED 0x20
 
 /*
- * _icache_enable - sets the I-cache
+ * @brief Sets the I-cache
  *
  * Enables cache and sets the direct access.
  */

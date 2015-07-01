@@ -38,7 +38,7 @@
 
 /**
  *
- * signal_semaphore - common code for signaling a semaphore
+ * @brief Common code for signaling a semaphore
  *
  * @return N/A
  */
@@ -96,7 +96,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 
 /**
  *
- * _k_sem_group_wait - finish handling incomplete waits on semaphores
+ * @brief Finish handling incomplete waits on semaphores
  *
  * @return N/A
  */
@@ -113,7 +113,7 @@ void _k_sem_group_wait(struct k_args *R)
 
 /**
  *
- * _k_sem_group_wait_cancel - handle cancellation of a semaphore involved in a
+ * @brief Handle cancellation of a semaphore involved in a
  *              semaphore group wait request
  *
  * This routine only applies to semaphore group wait requests.  It is invoked
@@ -179,7 +179,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 
 /**
  *
- * _k_sem_group_wait_accept - handle acceptance of the ready semaphore request
+ * @brief Handle acceptance of the ready semaphore request
  *
  * This routine only applies to semaphore group wait requests.  It handles
  * the request for the one semaphore in the group that "wins" the semaphore
@@ -218,7 +218,7 @@ void _k_sem_group_wait_accept(struct k_args *A)
 
 /**
  *
- * _k_sem_group_wait_timeout - handle semaphore group timeout request
+ * @brief Handle semaphore group timeout request
  *
  * @return N/A
  */
@@ -249,7 +249,7 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 
 /**
  *
- * _k_sem_group_ready - handle semaphore ready request
+ * @brief Handle semaphore ready request
  *
  * This routine only applies to semaphore group wait requests.  It identifies
  * the one semaphore in the group that "won" the semaphore group wait request
@@ -277,7 +277,7 @@ void _k_sem_group_ready(struct k_args *R)
 
 /**
  *
- * _k_sem_wait_reply - reply to a semaphore wait request
+ * @brief Reply to a semaphore wait request
  *
  * @return N/A
  */
@@ -299,7 +299,7 @@ void _k_sem_wait_reply(struct k_args *A)
 
 /**
  *
- * _k_sem_group_wait_request - handle internal wait request on a semaphore involved in a
+ * @brief Handle internal wait request on a semaphore involved in a
  *              semaphore group wait request
  *
  * @return N/A
@@ -341,7 +341,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 
 /**
  *
- * _k_sem_group_wait_any - handle semaphore group wait request
+ * @brief Handle semaphore group wait request
  *
  * This routine splits the single semaphore group wait request into several
  * internal wait requests--one for each semaphore in the group.
@@ -390,7 +390,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 
 /**
  *
- * _k_sem_wait_request - handle semaphore test and wait request
+ * @brief Handle semaphore test and wait request
  *
  * @return N/A
  */
@@ -427,7 +427,7 @@ void _k_sem_wait_request(struct k_args *A)
 
 /**
  *
- * _task_sem_take - test a semaphore
+ * @brief Test a semaphore
  *
  * This routine tests a semaphore to see if it has been signaled.  If the signal
  * count is greater than zero, it is decremented.
@@ -451,7 +451,7 @@ int _task_sem_take(ksem_t sema, int32_t time)
 
 /**
  *
- * _task_sem_group_take - test multiple semaphores
+ * @brief Test multiple semaphores
  *
  * This routine tests a group of semaphores. A semaphore group is an array of
  * semaphore names terminated by the predefined constant ENDLIST.
@@ -479,7 +479,7 @@ ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
 
 /**
  *
- * _k_sem_signal - handle semaphore signal request
+ * @brief Handle semaphore signal request
  *
  * @return N/A
  */
@@ -493,7 +493,7 @@ void _k_sem_signal(struct k_args *A)
 
 /**
  *
- * _k_sem_group_signal - handle signal semaphore group request
+ * @brief Handle signal semaphore group request
  *
  * @return N/A
  */
@@ -509,7 +509,7 @@ void _k_sem_group_signal(struct k_args *A)
 
 /**
  *
- * task_sem_give - signal a semaphore
+ * @brief Signal a semaphore
  *
  * This routine signals the specified semaphore.
  *
@@ -529,7 +529,7 @@ void task_sem_give(ksem_t sema)
 
 /**
  *
- * task_sem_group_give - signal a group of semaphores
+ * @brief Signal a group of semaphores
  *
  * This routine signals a group of semaphores. A semaphore group is an array of
  * semaphore names terminated by the predefined constant ENDLIST.
@@ -556,7 +556,7 @@ void task_sem_group_give(ksemg_t group)
 
 /**
  *
- * fiber_sem_give - signal a semaphore from a fiber
+ * @brief Signal a semaphore from a fiber
  *
  * This routine (to only be called from a fiber) signals a semaphore.  It
  * requires a statically allocated command packet (from a command packet set)
@@ -570,7 +570,7 @@ FUNC_ALIAS(isr_sem_give, fiber_sem_give, void);
 
 /**
  *
- * isr_sem_give - signal a semaphore from an ISR
+ * @brief Signal a semaphore from an ISR
  *
  * This routine (to only be called from an ISR) signals a semaphore.  It
  * requires a statically allocated command packet (from a command packet set)
@@ -602,7 +602,7 @@ void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
 
 /**
  *
- * _k_sem_reset - handle semaphore reset request
+ * @brief Handle semaphore reset request
  *
  * @return N/A
  */
@@ -616,7 +616,7 @@ void _k_sem_reset(struct k_args *A)
 
 /**
  *
- * _k_sem_group_reset - handle semaphore group reset request
+ * @brief Handle semaphore group reset request
  *
  * @return N/A
  */
@@ -632,7 +632,7 @@ void _k_sem_group_reset(struct k_args *A)
 
 /**
  *
- * task_sem_reset - reset semaphore count to zero
+ * @brief Reset semaphore count to zero
  *
  * This routine resets the signal count of the specified semaphore to zero.
  *
@@ -652,7 +652,7 @@ void task_sem_reset(ksem_t sema)
 
 /**
  *
- * task_sem_group_reset - reset a group of semaphores
+ * @brief Reset a group of semaphores
  *
  * This routine resets the signal count for a group of semaphores. A semaphore
  * group is an array of semaphore names terminated by the predefined constant
@@ -674,7 +674,7 @@ void task_sem_group_reset(ksemg_t group)
 
 /**
  *
- * _k_sem_inquiry - handle semaphore inquiry request
+ * @brief Handle semaphore inquiry request
  *
  * @return N/A
  */
@@ -691,7 +691,7 @@ void _k_sem_inquiry(struct k_args *A)
 
 /**
  *
- * task_sem_count_get - read the semaphore signal count
+ * @brief Read the semaphore signal count
  *
  * This routine reads the signal count of the specified semaphore.
  *

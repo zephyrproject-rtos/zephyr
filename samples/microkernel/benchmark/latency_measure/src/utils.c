@@ -58,7 +58,7 @@ char tmpString[TMP_STRING_SIZE];
 
 /**
  *
- * initSwInterrupt - initialize the interrupt handler
+ * @brief Initialize the interrupt handler
  *
  * Function initializes the interrupt handler with the pointer to the function
  * provided as an argument. It sets up allocated interrupt vector, pointer to
@@ -80,7 +80,7 @@ int initSwInterrupt(ptestIsr pIsrHdlr)
 
 /**
  *
- * setSwInterrupt - set the new ISR for software interrupt
+ * @brief Set the new ISR for software interrupt
  *
  * The routine shange the ISR for the fully connected interrupt to the routine
  * provided. This routine can be invoked only after the interrupt has been
@@ -99,7 +99,7 @@ void setSwInterrupt(ptestIsr pIsrHdlr)
 
 /**
  *
- * raiseIntFunc - generate a software interrupt
+ * @brief Generate a software interrupt
  *
  * This routine will call one of the generate SW interrupt functions based upon
  * the current vector assigned by the initSwInterrupt() function.

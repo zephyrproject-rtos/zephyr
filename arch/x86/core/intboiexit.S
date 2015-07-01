@@ -66,7 +66,7 @@ _IntBoiExit() is present.
 
 /**
  *
- * _IntBoiExit - exit interrupt handler stub without invoking ISR
+ * @brief Exit interrupt handler stub without invoking ISR
  *
  * This routine exits an interrupt handler stub without invoking the associated
  * ISR handler (or the EOI handler, if present).  It should only be jumped to

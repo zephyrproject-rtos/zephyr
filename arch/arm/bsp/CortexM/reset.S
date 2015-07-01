@@ -49,7 +49,7 @@ GTEXT(__reset)
 
 /**
  *
- * __reset - reset vector
+ * @brief Reset vector
  *
  * Ran when the system comes out of reset. The processor is in thread mode with
  * privileged level. At this point, the main stack pointer (MSP) is already

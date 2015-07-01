@@ -118,7 +118,7 @@ FUNC_ALIAS(_i8259_irq_disable, irq_disable, void);
 
 /**
  *
- * _i8259_init - initialize the Intel 8259A PIC device driver
+ * @brief Initialize the Intel 8259A PIC device driver
  *
  * This routine initializes the Intel 8259A PIC device driver and the device
  * itself.
@@ -187,7 +187,7 @@ void _i8259_init(void)
 #ifndef CONFIG_SHUTOFF_PIC
 /**
  *
- * _i8259_eoi_master - send EOI(end of interrupt) signal to the master PIC.
+ * @brief Send EOI(end of interrupt) signal to the master PIC.
  *
  * This routine is called at the end of the interrupt handler.
  *
@@ -209,7 +209,7 @@ void _i8259_eoi_master(unsigned int irq /* IRQ number to
 
 /**
  *
- * _i8259_eoi_slave - send EOI(end of interrupt) signal to the slave PIC.
+ * @brief Send EOI(end of interrupt) signal to the slave PIC.
  *
  * This routine is called at the end of the interrupt handler in the Normal
  * Fully Nested Mode.
@@ -241,7 +241,7 @@ void _i8259_eoi_slave(unsigned int irq /* IRQ number to
 
 /**
  *
- * __I8259IntEnable - enable/disable a specified PIC interrupt input line
+ * @brief Enable/disable a specified PIC interrupt input line
  *
  * This routine enables or disables a specified PIC interrupt input line. To
  * enable an interrupt input line, the parameter <enable> must be non-zero.
@@ -292,7 +292,7 @@ static void __I8259IntEnable(
 
 /**
  *
- * _i8259_irq_disable - disable a specified PIC interrupt input line
+ * @brief Disable a specified PIC interrupt input line
  *
  * This routine disables a specified PIC interrupt input line.
  *
@@ -309,7 +309,7 @@ void _i8259_irq_disable(unsigned int irq /* IRQ number to disable */
 
 /**
  *
- * _i8259_irq_enable - enable a specified PIC interrupt input line
+ * @brief Enable a specified PIC interrupt input line
  *
  * This routine enables a specified PIC interrupt input line.
  *

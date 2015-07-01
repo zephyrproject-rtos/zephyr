@@ -38,7 +38,7 @@
 
 /**
  *
- * _k_pipe_get_request - process request command for a pipe get operation
+ * @brief Process request command for a pipe get operation
  *
  * @return N/A
  */
@@ -190,7 +190,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 /**
  *
- * _k_pipe_get_timeout - process timeout command for a pipe get operation
+ * @brief Process timeout command for a pipe get operation
  *
  * @return N/A
  */
@@ -210,7 +210,7 @@ void _k_pipe_get_timeout(struct k_args *ReqProc)
 
 /**
  *
- * _k_pipe_get_reply - process reply command for a pipe get operation
+ * @brief Process reply command for a pipe get operation
  *
  * @return N/A
  */
@@ -261,7 +261,7 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 
 /**
  *
- * _k_pipe_get_ack - process acknowledgment command for a pipe get operation
+ * @brief Process acknowledgment command for a pipe get operation
  *
  * @return N/A
  */

@@ -48,7 +48,7 @@ int mailbox_get(kmbox_t mailbox,int size,int count,unsigned int* time);
 
 /**
  *
- * mailrecvtask - receive task
+ * @brief Receive task
  *
  * @return N/A
  *
@@ -83,7 +83,7 @@ void mailrecvtask(void)
 
 /**
  *
- * mailbox_get - receive data portions from the specified mailbox
+ * @brief Receive data portions from the specified mailbox
  *
  * @return 0
  *

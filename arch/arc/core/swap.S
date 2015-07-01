@@ -53,7 +53,7 @@ GDATA(_nanokernel)
 
 /**
  *
- * _Swap - initiate a cooperative context switch
+ * @brief Initiate a cooperative context switch
  *
  * The _Swap() routine is invoked by various nanokernel services to effect
  * a cooperative context context switch.  Prior to invoking _Swap(), the caller

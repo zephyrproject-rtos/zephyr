@@ -82,7 +82,7 @@ extern void _IntExit(void);
 
 /**
  *
- * IRQ_CONNECT_STATIC - connect a routine to interrupt number
+ * @brief Connect a routine to interrupt number
  *
  * For the device <device> associates IRQ number <irq> with priority
  * <priority> with the interrupt routine <isr>, that receives parameter
@@ -99,7 +99,7 @@ extern void _IntExit(void);
 
 /**
  *
- * IRQ_CONFIG - configure interrupt for the device
+ * @brief Configure interrupt for the device
  *
  * For the given device do the neccessary configuration steps.
  * Fpr ARM platform, set the interrupt priority

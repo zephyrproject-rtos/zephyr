@@ -48,7 +48,7 @@ GTEXT(__reset)
 
 /**
  *
- * __reset - reset vector
+ * @brief Reset vector
  *
  * Ran when the system comes out of reset. The processor is at supervisor level.
  *

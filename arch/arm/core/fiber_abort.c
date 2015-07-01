@@ -53,7 +53,7 @@ the PendSV exception.
 
 /**
  *
- * fiber_abort - abort the currently executing fiber
+ * @brief Abort the currently executing fiber
  *
  * Possible reasons for a fiber aborting:
  *

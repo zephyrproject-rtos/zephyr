@@ -42,7 +42,7 @@
 
 /**
  *
- * irq_lock - disable all interrupts on the local CPU
+ * @brief Disable all interrupts on the local CPU
  *
  * This routine disables interrupts.  It can be called from either interrupt,
  * task or fiber level.  This routine returns an architecture-dependent
@@ -77,7 +77,7 @@ SECTION_FUNC(TEXT, irq_lock)
 
 /**
  *
- * irq_unlock - enable all interrupts on the local CPU
+ * @brief Enable all interrupts on the local CPU
  *
  * This routine re-enables interrupts on the local CPU.  The <key> parameter
  * is an architecture-dependent lock-out key that is returned by a previous

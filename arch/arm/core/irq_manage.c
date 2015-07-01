@@ -48,7 +48,7 @@ extern void __reserved(void);
 
 /**
  *
- * irq_handler_set - replace an interrupt handler by another
+ * @brief Replace an interrupt handler by another
  *
  * An interrupt's ISR can be replaced at runtime. Care must be taken that the
  * interrupt is disabled before doing this.
@@ -78,7 +78,7 @@ void irq_handler_set(unsigned int irq,
 
 /**
  *
- * irq_enable - enable an interrupt line
+ * @brief Enable an interrupt line
  *
  * Clear possible pending interrupts on the line, and enable the interrupt
  * line. After this call, the CPU will receive interrupts for the specified
@@ -96,7 +96,7 @@ void irq_enable(unsigned int irq)
 
 /**
  *
- * irq_disable - disable an interrupt line
+ * @brief Disable an interrupt line
  *
  * Disable an interrupt line. After this call, the CPU will stop receiving
  * interrupts for the specified <irq>.
@@ -111,7 +111,7 @@ void irq_disable(unsigned int irq)
 
 /**
  *
- * irq_priority_set - set an interrupt's priority
+ * @brief Set an interrupt's priority
  *
  * Valid values are from 1 to 255. Interrupts of priority 1 are not masked when
  * interrupts are locked system-wide, so care must be taken when using them. ISR
@@ -133,7 +133,7 @@ void irq_priority_set(unsigned int irq,
 
 /**
  *
- * _irq_spurious - spurious interrupt handler
+ * @brief Spurious interrupt handler
  *
  * Installed in all dynamic interrupt slots at boot time. Throws an error if
  * called.
@@ -151,7 +151,7 @@ void _irq_spurious(void *unused)
 
 /**
  *
- * irq_connect - connect an ISR to an interrupt line
+ * @brief Connect an ISR to an interrupt line
  *
  * <isr> is connected to interrupt line <irq> (exception #<irq>+16). No prior
  * ISR can have been connected on <irq> interrupt line since the system booted.
@@ -174,7 +174,7 @@ int irq_connect(unsigned int irq,
 
 /**
  *
- * irq_disconnect - disconnect an ISR from an interrupt line
+ * @brief Disconnect an ISR from an interrupt line
  *
  * Interrupt line <irq> (exception #<irq>+16) is disconnected from its ISR and
  * the latter is replaced by _irq_spurious(). irq_disable() should have

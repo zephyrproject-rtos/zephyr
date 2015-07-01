@@ -67,7 +67,7 @@ const NANO_ESF _default_esf = {
 
 /**
  *
- * _NanoFatalErrorHandler - nanokernel fatal error handler
+ * @brief Nanokernel fatal error handler
  *
  * This routine is called when a fatal error condition is detected by either
  * hardware or software.

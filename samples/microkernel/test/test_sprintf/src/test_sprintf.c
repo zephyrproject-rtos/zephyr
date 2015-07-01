@@ -75,7 +75,7 @@ typedef union {
 #ifdef CONFIG_FLOAT
 /**
  *
- * sprintfDoubleTest - test sprintf with doubles
+ * @brief Test sprintf with doubles
  *
  * @return TC_PASS on success, TC_FAIL otherwise
  */
@@ -231,7 +231,7 @@ int sprintfDoubleTest(void)
 
 /**
  *
- * tvsnprintf - a test wrapper for vsnprintf()
+ * @brief A test wrapper for vsnprintf()
  */
 
 int tvsnprintf(char *s, size_t len, const char *format, ...)
@@ -248,7 +248,7 @@ int tvsnprintf(char *s, size_t len, const char *format, ...)
 
 /**
  *
- * vsnprintfTest - test the vsprintf() routine
+ * @brief Test the vsprintf() routine
  *
  * This routine does not aim to test the same underlying functionality as
  * sprintfTest().  Instead it tries to limit it to functionality specific to
@@ -319,7 +319,7 @@ int vsnprintfTest(void)
 
 /**
  *
- * tvsprintf - a test wrapper for vsprintf()
+ * @brief A test wrapper for vsprintf()
  */
 
 int tvsprintf(char *s, const char *format, ...)
@@ -336,7 +336,7 @@ int tvsprintf(char *s, const char *format, ...)
 
 /**
  *
- * vsprintfTest - test the vsprintf() routine
+ * @brief Test the vsprintf() routine
  *
  * This routine does not aim to test the same underlying functionality as
  * sprintfTest().  Instead it tries to limit it to functionality specific to
@@ -370,7 +370,7 @@ int vsprintfTest(void)
 
 /**
  *
- * snprintfTest - test the snprintf() routine
+ * @brief Test the snprintf() routine
  *
  * This routine does not aim to test the same underlying functionality as
  * sprintfTest().  Instead it tries to limit it to functionality specific to
@@ -440,7 +440,7 @@ int snprintfTest(void)
 
 /**
  *
- * sprintfMiscTest - test the sprintf() routine with miscellaneous specifiers
+ * @brief Test the sprintf() routine with miscellaneous specifiers
  *
  * @return TC_PASS on success, TC_FAIL otherwise
  */
@@ -516,7 +516,7 @@ int sprintfMiscTest(void)
 
 /**
  *
- * sprintfIntegerTest - test the sprintf() routine with integers
+ * @brief Test the sprintf() routine with integers
  *
  * @return TC_PASS on success, TC_FAIL otherwise
  */
@@ -669,7 +669,7 @@ int sprintfIntegerTest(void)
 
 /**
  *
- * sprintfStringTest - test sprintf with strings
+ * @brief Test sprintf with strings
  *
  * @return TC_PASS on success, TC_FAIL otherwise
  */
@@ -715,7 +715,7 @@ int sprintfStringTest(void)
 
 /**
  *
- * RegressionTask - test entry point
+ * @brief Test entry point
  *
  * @return N/A
  */

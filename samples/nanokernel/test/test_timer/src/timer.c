@@ -79,7 +79,7 @@ static char __stack fiber2Stack[FIBER2_STACKSIZE];
 
 /**
  *
- * initNanoObjects - initialize nanokernel objects
+ * @brief Initialize nanokernel objects
  *
  * This routine initializes the nanokernel objects used in the LIFO tests.
  *
@@ -98,7 +98,7 @@ void initNanoObjects(void)
 
 /**
  *
- * basicTimerWait - basic checking of time spent waiting upon a timer
+ * @brief Basic checking of time spent waiting upon a timer
  *
  * This routine can be called from a task or a fiber to wait upon a timer.
  * It will busy wait until the current tick ends, at which point it will
@@ -183,7 +183,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
 
 /**
  *
- * startTimers - start four timers
+ * @brief Start four timers
  *
  * This routine starts four timers.
  * The first (<timer>) is added to an empty list of timers.
@@ -215,7 +215,7 @@ void startTimers(timer_start_func startRtn)
 
 /**
  *
- * busyWaitTimers - busy wait while checking timers expire in the correct order
+ * @brief Busy wait while checking timers expire in the correct order
  *
  * This routine checks that the four timers created using startTimers() finish
  * in the correct order.  It busy waits on all four timers waiting until they
@@ -283,7 +283,7 @@ int busyWaitTimers(timer_get_func getRtn)
 
 /**
  *
- * stopTimers - stop the four timers and make sure they did not expire
+ * @brief Stop the four timers and make sure they did not expire
  *
  * This routine stops the four started timers and then checks the timers for
  * six seconds to make sure that they did not fire.  The four timers will be
@@ -327,7 +327,7 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
 
 /**
  *
- * fiber2Entry - entry point for the second fiber
+ * @brief Entry point for the second fiber
  *
  * The second fiber has a lower priority than the first, but is still given
  * precedence over the task.
@@ -348,7 +348,7 @@ static void fiber2Entry(int arg1, int arg2)
 
 /**
  *
- * fiberEntry - entry point for the fiber portion of the timer tests
+ * @brief Entry point for the fiber portion of the timer tests
  *
  * NOTE: The fiber portion of the tests have higher priority than the task
  * portion of the tests.
@@ -429,7 +429,7 @@ static void fiberEntry(int arg1, int arg2)
 
 /**
  *
- * nano_cycle_get_32Test - test the nano_cycle_get_32() API
+ * @brief Test the nano_cycle_get_32() API
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -456,7 +456,7 @@ int nano_cycle_get_32Test(void)
 
 /**
  *
- * main - entry point to timer tests
+ * @brief Entry point to timer tests
  *
  * This is the entry point to the timer tests.
  *

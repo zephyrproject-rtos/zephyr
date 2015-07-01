@@ -49,7 +49,7 @@ supported BSPs.
 
 /**
  *
- * _SysFatalErrorHandler - fatal error handler
+ * @brief Fatal error handler
  *
  * This routine implements the corrective action to be taken when the system
  * detects a fatal error.

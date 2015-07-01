@@ -45,7 +45,7 @@ for the atom_n28xx variant of generic_pc BSP.
 
 /**
  *
- * _SysIntVecAlloc - allocate interrupt vector
+ * @brief Allocate interrupt vector
  *
  * This BSP provided routine supports the irq_connect() API.  This
  * routine is required to perform the following 3 functions:
@@ -63,13 +63,13 @@ for the atom_n28xx variant of generic_pc BSP.
  *
  * The board virtualizes IRQs as follows:
  *
- *   - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
- *   - The remaining IRQs are provided by the LOAPIC.
+ * - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
+ * - The remaining IRQs are provided by the LOAPIC.
  *
  * Thus, for example, if the IOAPIC supports 24 IRQs:
  *
- *   - IRQ0 to IRQ23   map to IOAPIC IRQ0 to IRQ23
- *   - IRQ24 to IRQ29  map to LOAPIC LVT entries as follows:
+ * - IRQ0 to IRQ23   map to IOAPIC IRQ0 to IRQ23
+ * - IRQ24 to IRQ29  map to LOAPIC LVT entries as follows:
  *
  *       IRQ24 -> LOAPIC_TIMER
  *       IRQ25 -> LOAPIC_THERMAL
@@ -172,7 +172,7 @@ int _SysIntVecAlloc(
 
 /**
  *
- * _SysIntVecProgram - program interrupt controller
+ * @brief Program interrupt controller
  *
  * This BSP provided routine programs the appropriate interrupt controller
  * with the given vector based on the given IRQ parameter.
@@ -182,9 +182,9 @@ int _SysIntVecAlloc(
  *
  * The Clanton board virtualizes IRQs as follows:
  *
- *   - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC so the IOAPIC
+ * - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC so the IOAPIC
  *     is programmed for these IRQs
- *   - The remaining IRQs are provided by the LOAPIC and hence the LOAPIC is
+ * - The remaining IRQs are provided by the LOAPIC and hence the LOAPIC is
  *     programmed.
  *
  * The IOAPIC_NUM_RTES macro is provided by board.h, and it specifies the number
@@ -207,7 +207,7 @@ void _SysIntVecProgram(unsigned int vector, /* vector number */
 
 /**
  *
- * irq_enable - enable an individual interrupt (IRQ)
+ * @brief Enable an individual interrupt (IRQ)
  *
  * The public interface for enabling/disabling a specific IRQ for the IA-32
  * architecture is defined as follows in include/nanokernel/x86/arch.h
@@ -233,7 +233,7 @@ void irq_enable(unsigned int irq)
 
 /**
  *
- * irq_disable - disable an individual interrupt (IRQ)
+ * @brief Disable an individual interrupt (IRQ)
  *
  * The irq_disable() routine is provided by the BSP due to the
  * IRQ virtualization that is performed by this BSP.  See the comments

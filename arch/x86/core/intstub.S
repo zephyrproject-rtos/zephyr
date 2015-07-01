@@ -76,7 +76,7 @@ entering and exiting a C interrupt handler.
 #endif
 /**
  *
- * _IntEnt - inform the kernel of an interrupt
+ * @brief Inform the kernel of an interrupt
  *
  * This function is called from the interrupt stub created by irq_connect()
  * to inform the kernel of an interrupt.  This routine increments
@@ -242,7 +242,7 @@ BRANCH_LABEL(_HandleIdle)
 
 /**
  *
- * _IntExit - inform the kernel of an interrupt exit
+ * @brief Inform the kernel of an interrupt exit
  *
  * This function is called from the interrupt stub created by irq_connect()
  * to inform the kernel that the processing of an interrupt has
@@ -391,7 +391,7 @@ BRANCH_LABEL(nestedInterrupt)
 /**
  *
  * _SpuriousIntHandler -
- * _SpuriousIntNoErrCodeHandler - spurious interrupt handler stubs
+ * @brief Spurious interrupt handler stubs
  *
  * Interrupt-gate descriptors are statically created for all slots in the IDT
  * that point to _SpuriousIntHandler() or _SpuriousIntNoErrCodeHandler().  The
@@ -464,7 +464,7 @@ BRANCH_LABEL(callFatalHandler)
 
 /**
  *
- * irq_lock - disable interrupts on the local CPU 
+ * @brief Disable interrupts on the local CPU 
  *
  * This routine disables interrupts.  It can be called from either interrupt
  * or context level.  This routine returns an architecture-dependent
@@ -503,7 +503,7 @@ SECTION_FUNC(TEXT, irq_lock)
 
 /**
  *
- * irq_unlock - enable interrupts on the local CPU 
+ * @brief Enable interrupts on the local CPU 
  *
  * This routine re-enables interrupts on the local CPU.  The <key> parameter
  * is an architecture-dependent lock-out key that is returned by a previous

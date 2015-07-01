@@ -68,7 +68,7 @@ uint32_t _hw_irq_to_c_handler_latency = ULONG_MAX;
 
 /**
  *
- * intLatencyStart - start tracking time spent with interrupts locked
+ * @brief Start tracking time spent with interrupts locked
  *
  * calls to lock interrupt can nest, so this routine can be called numerous
  * times before interrupt are unlocked
@@ -89,7 +89,7 @@ void _int_latency_start(void)
 
 /**
  *
- * intLatencyStop - stop accumulating time spent for when interrupts are locked
+ * @brief Stop accumulating time spent for when interrupts are locked
  *
  * This is only call once when the interrupt are being reenabled
  *
@@ -142,7 +142,7 @@ void _int_latency_stop(void)
 
 /**
  *
- * int_latency_init - initialize interrupt latency benchmark
+ * @brief Initialize interrupt latency benchmark
  *
  * @return N/A
  *
@@ -193,7 +193,7 @@ void int_latency_init(void)
 
 /**
  *
- * int_latency_show - dumps interrupt latency values
+ * @brief Dumps interrupt latency values
  *
  * The interrupt latency value measures
  *

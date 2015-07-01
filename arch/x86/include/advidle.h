@@ -43,7 +43,7 @@ and _AdvIdleStart() functions.
 #ifdef CONFIG_ADVANCED_IDLE
 
 /*
- * _AdvIdleCheckSleep - determine if advanced sleep has occurred
+ * @brief Determine if advanced sleep has occurred
  *
  * This routine checks if the system is recovering from advanced
  * sleep or cold booting.
@@ -55,7 +55,7 @@ and _AdvIdleStart() functions.
 extern int _AdvIdleCheckSleep(void);
 
 /*
- * _AdvIdleStart - continue kernel start-up or awaken kernel from sleep
+ * @brief Continue kernel start-up or awaken kernel from sleep
  *
  * This routine checks if the system is recovering from advanced sleep and
  * either continues the kernel's cold boot sequence at _Cstart or resumes
@@ -73,7 +73,7 @@ extern void _AdvIdleStart(
 	);
 
 /*
- * _AdvIdleFunc - perform advanced sleep
+ * @brief Perform advanced sleep
  *
  * This routine checks if the upcoming kernel idle interval is sufficient to
  * justify entering advanced sleep mode. If it is, the routine puts the system

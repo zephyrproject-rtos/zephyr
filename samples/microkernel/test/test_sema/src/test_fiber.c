@@ -57,7 +57,7 @@ static CMD_PKT_SET_INSTANCE(cmdPktSet, N_TESTS + 1)
 
 /**
  *
- * testFiberEntry - the test fiber entry function
+ * @brief The test fiber entry function
  *
  * Fiber waits on the semaphore controlled by the test task
  * It signals the semaphore, the testing task waits for,
@@ -90,7 +90,7 @@ static void testFiberEntry(void)
 
 /**
  *
- * testFiberInit - initializes variables and starts the test fiber
+ * @brief Initializes variables and starts the test fiber
  *
  * @return N/A
  */

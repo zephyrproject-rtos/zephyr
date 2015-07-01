@@ -53,7 +53,7 @@ struct uart {
 static struct uart __noinit uart[CONFIG_UART_NUM_SYSTEM_PORTS];
 
 /*
- * uart_init - initialize fake serial port
+ * @brief Initialize fake serial port
  * @which: port number
  * @init_info: pointer to initialization information
  */
@@ -66,7 +66,7 @@ void uart_init(int which, const struct uart_init_info * const init_info)
 }
 
 /*
- * uart_poll_out - output a character to serial port
+ * @brief Output a character to serial port
  * @port: port number
  * @c: character to output
  */

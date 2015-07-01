@@ -47,7 +47,7 @@ NANO_CPU_EXC_CONNECT_NO_ERR(handler,vector,0)
 
 /**
  *
- * EflagsGet - return the current value of the EFLAGS register
+ * @brief Return the current value of the EFLAGS register
  *
  * @return the EFLAGS register.
  *
@@ -72,7 +72,7 @@ static inline unsigned int EflagsGet(void)
 
 /**
  *
- * _FpAccessDisable - disallow use of floating point capabilities
+ * @brief Disallow use of floating point capabilities
  *
  * This routine sets CR0[TS] to 1, which disallows the use of FP instructions
  * by the currently executing context.
@@ -96,7 +96,7 @@ static inline void _FpAccessDisable(void)
 
 /**
  *
- * _do_fp_ctx_save - save non-integer context information
+ * @brief Save non-integer context information
  *
  * This routine saves the system's "live" non-integer context into the
  * specified area.  If the specified task or fiber supports SSE then
@@ -128,7 +128,7 @@ static inline void _do_fp_ctx_save(int flags, void *preemp_float_reg)
 
 /**
  *
- * _do_fp_ctx_init - initialize non-integer context information
+ * @brief Initialize non-integer context information
  *
  * This routine initializes the system's "live" non-integer context.
  * Function is invoked by _FpCtxInit(tCCS *ccs)

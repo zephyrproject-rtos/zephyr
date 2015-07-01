@@ -68,7 +68,7 @@ as there is no requirement for this capability.
 
 /**
  *
- * atomic_cas - atomic compare-and-set primitive
+ * @brief Atomic compare-and-set primitive
  *
  * This routine provides the compare-and-set operator. If the original value at
  * <target> equals <oldValue>, then <newValue> is stored at <target> and the
@@ -115,7 +115,7 @@ BRANCH_LABEL(atomic_cas1)
 
 /**
  *
- * atomic_add - atomic add primitive
+ * @brief Atomic add primitive
  *
  * This routine provides the atomic addition operator. The <value> is
  * atomically added to the value at <target>, placing the result at <target>,
@@ -147,7 +147,7 @@ SECTION_FUNC(TEXT, atomic_add)
 
 /**
  *
- * atomic_sub - atomic subtraction primitive
+ * @brief Atomic subtraction primitive
  *
  * This routine provides the atomic subtraction operator. The <value> is
  * atomically subtracted from the value at <target>, placing the result at
@@ -180,7 +180,7 @@ SECTION_FUNC(TEXT, atomic_sub)
 
 /**
  *
- * atomic_inc - atomic increment primitive
+ * @brief Atomic increment primitive
  *
  * This routine provides the atomic increment operator. The value at <target>
  * is atomically incremented by 1, and the old value from <target> is returned.
@@ -212,7 +212,7 @@ SECTION_FUNC(TEXT, atomic_inc)
 
 /**
  *
- * atomic_dec - atomic decrement primitive
+ * @brief Atomic decrement primitive
  *
  * This routine provides the atomic decrement operator. The value at <target>
  * is atomically decremented by 1, and the old value from <target> is returned.
@@ -242,7 +242,7 @@ SECTION_FUNC(TEXT, atomic_dec)
 
 /**
  *
- * atomic_get - atomic get primitive
+ * @brief Atomic get primitive
  *
  * This routine provides the atomic get primitive to atomically read
  * a value from <target>. It simply does an ordinary load.  Note that <target>
@@ -266,7 +266,7 @@ SECTION_FUNC(TEXT, atomic_get)
 
 /**
  *
- * atomic_set - atomic get-and-set primitive
+ * @brief Atomic get-and-set primitive
  *
  * This routine provides the atomic set operator. The <value> is atomically
  * written at <target> and the previous value at <target> is returned.
@@ -306,7 +306,7 @@ SECTION_FUNC(TEXT, atomic_set)
 
 /**
  *
- * atomic_clear - atomic clear primitive
+ * @brief Atomic clear primitive
  *
  * This routine provides the atomic clear operator. The value of 0 is atomically
  * written at <target> and the previous value at <target> is returned. (Hence,
@@ -343,7 +343,7 @@ SECTION_FUNC(TEXT, atomic_clear)
 
 /**
  *
- * atomic_or - atomic bitwise inclusive OR primitive
+ * @brief Atomic bitwise inclusive OR primitive
  *
  * This routine provides the atomic bitwise inclusive OR operator. The <value>
  * is atomically bitwise OR'ed with the value at <target>, placing the result
@@ -381,7 +381,7 @@ BRANCH_LABEL(atomic_or_retry)
 
 /**
  *
- * atomic_xor - atomic bitwise exclusive OR (XOR) primitive
+ * @brief Atomic bitwise exclusive OR (XOR) primitive
  *
  * This routine provides the atomic bitwise exclusive OR operator. The <value>
  * is atomically bitwise XOR'ed with the value at <target>, placing the result
@@ -419,7 +419,7 @@ BRANCH_LABEL(atomic_xor_retry)
 
 /**
  *
- * atomic_and  - atomic bitwise AND primitive
+ * @brief Atomic bitwise AND primitive
  *
  * This routine provides the atomic bitwise AND operator. The <value> is
  * atomically bitwise AND'ed with the value at <target>, placing the result
@@ -457,7 +457,7 @@ BRANCH_LABEL(atomic_and_retry)
 
 /**
  *
- * atomic_nand  - atomic bitwise NAND primitive
+ * @brief Atomic bitwise NAND primitive
  *
  * This routine provides the atomic bitwise NAND operator. The <value> is
  * atomically bitwise NAND'ed with the value at <target>, placing the result

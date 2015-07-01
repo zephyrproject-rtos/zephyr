@@ -200,7 +200,7 @@ INCLUDE FILES: loapic.h
 
 /**
  *
- * _loapic_init - initialize the Local APIC or xAPIC
+ * @brief Initialize the Local APIC or xAPIC
  *
  * This routine initializes Local APIC or xAPIC.
  *
@@ -262,7 +262,7 @@ void _loapic_init(void)
 
 /**
  *
- * _loapic_enable - enable the Local xAPIC
+ * @brief Enable the Local xAPIC
  *
  * This routine enables the Local xAPIC.
  *
@@ -280,7 +280,7 @@ void _loapic_enable(void)
 
 /**
  *
- * _loapic_disable - disable the Local xAPIC
+ * @brief Disable the Local xAPIC
  *
  * This routine disables the Local xAPIC.
  *
@@ -298,7 +298,7 @@ void _loapic_disable(void)
 
 /**
  *
- * _loapic_eoi -  send EOI (End Of Interrupt) signal to Local APIC
+ * @brief  send EOI (End Of Interrupt) signal to Local APIC
  *
  * This routine sends an EOI signal to the Local APIC's interrupting source.
  *
@@ -313,7 +313,7 @@ void _loapic_eoi(unsigned int irq)
 
 /**
  *
- * _loapic_int_vec_set - set the vector field in the specified RTE
+ * @brief Set the vector field in the specified RTE
  *
  * This routine is utilized by the BSP provided routined _SysIntVecAllocate()
  * which in turn is provided to support the irq_connect() API.  Once
@@ -356,7 +356,7 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the
 
 /**
  *
- * _loapic_irq_enable - enable an individual LOAPIC interrupt (IRQ)
+ * @brief Enable an individual LOAPIC interrupt (IRQ)
  *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
  *
@@ -386,7 +386,7 @@ void _loapic_irq_enable(unsigned int irq /* IRQ number of
 
 /**
  *
- * _loapic_irq_disable - disable an individual LOAPIC interrupt (IRQ)
+ * @brief Disable an individual LOAPIC interrupt (IRQ)
  *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
  *

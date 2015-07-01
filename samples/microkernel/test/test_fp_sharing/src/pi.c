@@ -75,7 +75,7 @@ static volatile unsigned int calc_pi_high_count = 0;
 
 /**
  *
- * calculate_pi_low - entry point for the low priority pi compute task
+ * @brief Entry point for the low priority pi compute task
  *
  * @return N/A
  */
@@ -118,7 +118,7 @@ void calculate_pi_low(void)
 
 /**
  *
- * calculate_pi_high - entry point for the high priority pi compute task
+ * @brief Entry point for the high priority pi compute task
  *
  * @return N/A
  */

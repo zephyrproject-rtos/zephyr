@@ -158,7 +158,7 @@ extern kpipe_t pipeId;
 
 /**
  *
- * microObjectsInit - initialize objects used in this microkernel test suite
+ * @brief Initialize objects used in this microkernel test suite
  *
  * @return N/A
  */
@@ -174,7 +174,7 @@ void microObjectsInit(void)
 
 /**
  *
- * receiveBufferCheck - check the contents of the receive buffer
+ * @brief Check the contents of the receive buffer
  *
  * @param buffer    pointer to buffer to check
  * @param size      number of bytes to check
@@ -197,7 +197,7 @@ int receiveBufferCheck(char *buffer, int size)
 
 /**
  *
- * pipePutHelperWork - helper routine to pipePutTest()
+ * @brief Helper routine to pipePutTest()
  *
  * @param singleItems    testcase list (one item in the pipe)
  * @param nSingles       number of items in testcase
@@ -297,7 +297,7 @@ int pipePutHelperWork(SIZE_EXPECT *singleItems, int nSingles,
 
 /**
  *
- * pipePutHelper - helper routine to pipePutTest()
+ * @brief Helper routine to pipePutTest()
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -332,7 +332,7 @@ int pipePutHelper(void)
 
 /**
  *
- * pipePutTestWork - test task_pipe_put()
+ * @brief Test task_pipe_put()
  *
  * This routine tests the task_pipe_put() API.
  *
@@ -421,7 +421,7 @@ int pipePutTestWork(SIZE_EXPECT *singleItems, int nSingles,
 
 /**
  *
- * pipePutTest - test task_pipe_put()
+ * @brief Test task_pipe_put()
  *
  * This routine tests the task_pipe_put() API.
  *
@@ -458,7 +458,7 @@ int pipePutTest(void)
 
 /**
  *
- * pipePutWaitHelper - help test task_pipe_put_wait()
+ * @brief Help test task_pipe_put_wait()
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -522,7 +522,7 @@ int pipePutWaitHelper(void)
 
 /**
  *
- * pipePutWaitTest - test task_pipe_put_wait()
+ * @brief Test task_pipe_put_wait()
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -582,7 +582,7 @@ int pipePutWaitTest(void)
 
 /**
  *
- * pipePutTimeoutHelper - test task_pipe_get_wait_timeout()
+ * @brief Test task_pipe_get_wait_timeout()
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -646,7 +646,7 @@ int pipePutTimeoutHelper(void)
 
 /**
  *
- * pipePutTimeoutTest - test task_pipe_put_wait_timeout()
+ * @brief Test task_pipe_put_wait_timeout()
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -726,7 +726,7 @@ int pipePutTimeoutTest(void)
 
 /**
  *
- * pipeGetTest - routine to test task_pipe_get()
+ * @brief Routine to test task_pipe_get()
  *
  * This routine tests the task_pipe_get() API.  Some of this functionality
  * has already been tested while testing task_pipe_put().  As a result, the
@@ -775,7 +775,7 @@ int pipeGetTest(void)
 
 /**
  *
- * pipeGetWaitHelperWork - test task_pipe_get_wait()
+ * @brief Test task_pipe_get_wait()
  *
  * @param items     testcase list for task_pipe_get_wait()
  * @param nItems    number of items in list
@@ -812,7 +812,7 @@ int pipeGetWaitHelperWork(SIZE_EXPECT *items, int nItems)
 
 /**
  *
- * pipeGetWaitHelper - test task_pipe_get_wait()
+ * @brief Test task_pipe_get_wait()
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -840,7 +840,7 @@ int pipeGetWaitHelper(void)
 
 /**
  *
- * pipeGetWaitTestWork - test task_pipe_get_wait()
+ * @brief Test task_pipe_get_wait()
  *
  * @param items     testcase list for task_pipe_get_wait()
  * @param nItems    number of items in list
@@ -876,7 +876,7 @@ int pipeGetWaitTestWork(SIZE_EXPECT *items, int nItems)
 
 /**
  *
- * pipeGetWaitTest - test task_pipe_get_wait()
+ * @brief Test task_pipe_get_wait()
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -912,7 +912,7 @@ int pipeGetWaitTest(void)
 
 /**
  *
- * pipeGetTimeoutTest - test remaining task_pipe_get_wait_timeout() functionality
+ * @brief Test remaining task_pipe_get_wait_timeout() functionality
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -942,7 +942,7 @@ int pipeGetTimeoutTest(void)
 
 /**
  *
- * AlternateTask - alternate task in the test suite
+ * @brief Alternate task in the test suite
  *
  * This routine runs at a lower priority than RegressionTask().
  *
@@ -989,7 +989,7 @@ int AlternateTask(void)
 
 /**
  *
- * RegressionTask - main task in the test suite
+ * @brief Main task in the test suite
  *
  * This is the entry point to the pipe test suite.
  *

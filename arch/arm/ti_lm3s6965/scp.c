@@ -51,7 +51,7 @@ volatile struct __scp __scp_section __scp;
 
 /**
  *
- * _ScpMainOscEnable - enable main oscillator with default frequency of 6MHz
+ * @brief Enable main oscillator with default frequency of 6MHz
  *
  * @return N/A
  */

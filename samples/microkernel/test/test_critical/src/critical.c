@@ -47,7 +47,7 @@ static uint32_t altTaskIterations = 0;
 
 /**
  *
- * criticalRtn - routine to be called from K_swapper()
+ * @brief Routine to be called from K_swapper()
  *
  * This routine increments the global variable <criticalVar>.
  *
@@ -66,7 +66,7 @@ int criticalRtn(void)
 
 /**
  *
- * criticalLoop - common code for invoking task_offload_to_fiber()
+ * @brief Common code for invoking task_offload_to_fiber()
  *
  * @param count    number of critical section calls made thus far
  *
@@ -88,7 +88,7 @@ uint32_t criticalLoop(uint32_t count)
 
 /**
  *
- * AlternateTask - alternate task
+ * @brief Alternate task
  *
  * This routine calls task_offload_to_fiber() many times.
  *
@@ -112,7 +112,7 @@ void AlternateTask(void)
 
 /**
  *
- * RegressionTask - regression task
+ * @brief Regression task
  *
  * This routine calls task_offload_to_fiber() many times.  It also checks to
  * ensure that the number of times it is called matches the global variable

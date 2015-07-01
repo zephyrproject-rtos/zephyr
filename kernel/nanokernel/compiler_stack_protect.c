@@ -50,7 +50,7 @@ function __stack_chk_fail and global variable __stack_chk_guard.
 
 /**
  *
- * _StackCheckHandler - stack canary error handler
+ * @brief Stack canary error handler
  *
  * This function is invoked when a stack canary error is detected.
  *
@@ -80,7 +80,7 @@ void __noinit *__stack_chk_guard;
 
 /**
  *
- * __stack_chk_fail - Referenced by GCC compiler generated code
+ * @brief Referenced by GCC compiler generated code
  *
  * This routine is invoked when a stack canary error is detected, indicating
  * a buffer overflow or stack corruption problem.

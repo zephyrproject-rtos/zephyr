@@ -36,7 +36,7 @@ struct nano_timer *_nano_timer_list = NULL;
 
 /**
  *
- * nano_timer_init - initialize a nanokernel timer object
+ * @brief Initialize a nanokernel timer object
  *
  * This function initializes a nanokernel timer object structure.
  *
@@ -58,7 +58,7 @@ void nano_timer_init(struct nano_timer *timer, void *userData)
 
 /**
  *
- * nano_fiber_timer_start - start a nanokernel timer from a fiber
+ * @brief Start a nanokernel timer from a fiber
  *
  * This function starts a previously initialized nanokernel timer object.
  * The timer will expire in <ticks> system clock ticks.
@@ -71,7 +71,7 @@ FUNC_ALIAS(_timer_start, nano_fiber_timer_start, void);
 
 /**
  *
- * nano_task_timer_start - start a nanokernel timer from a task
+ * @brief Start a nanokernel timer from a task
  *
  * This function starts a previously initialized nanokernel timer object.
  * The timer will expire in <ticks> system clock ticks.
@@ -84,7 +84,7 @@ FUNC_ALIAS(_timer_start, nano_task_timer_start, void);
 
 /**
  *
- * _timer_start - start a nanokernel timer (generic implementation)
+ * @brief Start a nanokernel timer (generic implementation)
  *
  * This function starts a previously initialized nanokernel timer object.
  * The timer will expire in <ticks> system clock ticks.
@@ -129,7 +129,7 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
 
 /**
  *
- * _timer_stop - stop a nanokernel timer (generic implementation)
+ * @brief Stop a nanokernel timer (generic implementation)
  *
  * This function stops a previously started nanokernel timer object.
  *
@@ -178,7 +178,7 @@ static void _timer_stop(struct nano_timer *timer /* timer to stop */
 
 /**
  *
- * nano_fiber_timer_stop - stop a nanokernel timer from a fiber
+ * @brief Stop a nanokernel timer from a fiber
  *
  * This function stops a previously started nanokernel timer object.
  *
@@ -200,7 +200,7 @@ void nano_fiber_timer_stop(struct nano_timer *timer /* timer to stop */
 
 /**
  *
- * nano_task_timer_stop - stop a nanokernel timer from a task
+ * @brief Stop a nanokernel timer from a task
  *
  * This function stops a previously started nanokernel timer object.
  *
@@ -222,7 +222,7 @@ void nano_task_timer_stop(struct nano_timer *timer /* timer to stop */
 
 /**
  *
- * nano_fiber_timer_test - make the current fiber check for a timer expiry
+ * @brief Make the current fiber check for a timer expiry
  *
  * This function will check if a timer has expired. The timer must
  * have been initialized by nano_timer_init() and started via either
@@ -240,7 +240,7 @@ void *nano_fiber_timer_test(struct nano_timer *timer /* timer to check */
 
 /**
  *
- * nano_fiber_timer_wait - make the current fiber wait for a timer to expire
+ * @brief Make the current fiber wait for a timer to expire
  *
  * This function will pend on a timer if it hasn't expired yet. The timer must
  * have been initialized by nano_timer_init() and started via either
@@ -259,7 +259,7 @@ void *nano_fiber_timer_wait(struct nano_timer *timer /* timer to pend on */
 
 /**
  *
- * nano_task_timer_test - make the current task check for a timer expiry
+ * @brief Make the current task check for a timer expiry
  *
  * This function will check if a timer has expired. The timer must
  * have been initialized by nano_timer_init() and started via either
@@ -277,7 +277,7 @@ void *nano_task_timer_test(struct nano_timer *timer /* timer to check */
 
 /**
  *
- * nano_task_timer_wait - make the current task wait for a timer to expire
+ * @brief Make the current task wait for a timer to expire
  *
  * This function will pend on a timer if it hasn't expired yet. The timer must
  * have been initialized by nano_timer_init() and started via either

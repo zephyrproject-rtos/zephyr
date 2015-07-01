@@ -39,7 +39,7 @@ extern struct evstr _k_event_list[];
 
 /**
  *
- * _k_event_handler_set - perform set event handler request
+ * @brief Perform set event handler request
  *
  * @return N/A
  */
@@ -73,7 +73,7 @@ void _k_event_handler_set(struct k_args *A)
 
 /**
  *
- * task_event_set_handler - set event handler request
+ * @brief Set event handler request
  *
  * This routine specifies the event handler that runs (in the context of the
  * K_swapper fiber) when the associated event is signaled. Specifying a non-NULL
@@ -103,7 +103,7 @@ int task_event_set_handler(kevent_t event,     /* event upon which to reigster *
 
 /**
  *
- * _k_event_test_timeout - finish handling a test for event request that timed out
+ * @brief Finish handling a test for event request that timed out
  *
  * @return N/A
  */
@@ -121,7 +121,7 @@ void _k_event_test_timeout(struct k_args *A)
 
 /**
  *
- * _k_event_test - perform test for event request
+ * @brief Perform test for event request
  *
  * @return N/A
  */
@@ -168,7 +168,7 @@ void _k_event_test(struct k_args *A)
 
 /**
  *
- * _task_event_recv - test for event request
+ * @brief Test for event request
  *
  * This routine tests an event to see if it has been signaled.
  *
@@ -191,7 +191,7 @@ int _task_event_recv(
 
 /**
  *
- * _k_do_event_signal - signal an event
+ * @brief Signal an event
  *
  * Lowest level event signalling routine, which is invoked directly when the
  * signal is issued by a task and indirectly when the signal is issued by a
@@ -235,7 +235,7 @@ void _k_do_event_signal(kevent_t event)
 
 /**
  *
- * _k_event_signal - perform signal an event request
+ * @brief Perform signal an event request
  *
  * @return N/A
  */
@@ -254,7 +254,7 @@ void _k_event_signal(struct k_args *A)
 
 /**
  *
- * task_event_send - signal an event request
+ * @brief Signal an event request
  *
  * This routine signals the specified event from a task. If an event handler
  * is installed for that event, it will run; if no event handler is installed,
@@ -276,7 +276,7 @@ int task_event_send(kevent_t event /* event to signal */
 
 /**
  *
- * fiber_event_send - signal an event from a fiber
+ * @brief Signal an event from a fiber
  *
  * This routine does NOT validate the specified event number.
  *
@@ -287,7 +287,7 @@ FUNC_ALIAS(isr_event_send, fiber_event_send, void);
 
 /**
  *
- * isr_event_send - signal an event from an ISR
+ * @brief Signal an event from an ISR
  *
  * This routine does NOT validate the specified event number.
  *

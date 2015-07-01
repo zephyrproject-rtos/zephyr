@@ -90,7 +90,7 @@ static void fiberOne(void)
 
 /**
  *
- * fiberWaiter - check the time when it gets executed after the semaphore
+ * @brief Check the time when it gets executed after the semaphore
  *
  * Fiber starts, waits on semaphore. When the interrupt handler releases
  * the semaphore, fiber measures the time.
@@ -112,7 +112,7 @@ static void fiberTwo(void)
 
 /**
  *
- * nanoCtxSwitch - the test main function
+ * @brief The test main function
  *
  * @return 0 on success
  *

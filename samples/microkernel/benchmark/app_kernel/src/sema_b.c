@@ -37,7 +37,7 @@
 
 /**
  *
- * sema_test - semaphore signal speed test
+ * @brief Semaphore signal speed test
  *
  * @return N/A
  *

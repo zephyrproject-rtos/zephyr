@@ -70,7 +70,7 @@ static uint32_t clock_accumulated_count = 0;
 
 /**
  *
- * enable - enable the timer with the given limit/countup value
+ * @brief Enable the timer with the given limit/countup value
  *
  * This routine sets up the timer for operation by:
  * - setting value to which the timer will count up to;
@@ -97,7 +97,7 @@ static ALWAYS_INLINE void enable(
 
 /**
  *
- * count_get - get the current counter value
+ * @brief Get the current counter value
  *
  * This routine gets the value from the timer's count register.  This
  * value is the 'time' elapsed from the starting count (assumed to be 0).
@@ -113,7 +113,7 @@ static ALWAYS_INLINE uint32_t count_get(void)
 
 /**
  *
- * limit_get - get the limit/countup value
+ * @brief Get the limit/countup value
  *
  * This routine gets the value from the timer's limit register, which is the
  * value to which the timer will count up to.
@@ -129,7 +129,7 @@ static ALWAYS_INLINE uint32_t limit_get(void)
 
 /**
  *
- * _timer_int_handler - system clock periodic tick handler
+ * @brief System clock periodic tick handler
  *
  * This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
  * event is pushed onto the microkernel stack.
@@ -155,7 +155,7 @@ void _timer_int_handler(void *unused)
 
 /**
  *
- * timer_driver - initialize and enable the system clock
+ * @brief Initialize and enable the system clock
  *
  * This routine is used to program the ARCv2 timer to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
@@ -191,7 +191,7 @@ void timer_driver(
 
 /**
  *
- * timer_read - read the BSP timer hardware
+ * @brief Read the BSP timer hardware
  *
  * This routine returns the current time in terms of timer hardware clock cycles.
  *
@@ -206,7 +206,7 @@ uint32_t timer_read(void)
 #if defined(CONFIG_SYSTEM_TIMER_DISABLE)
 /**
  *
- * timer_disable - stop announcing ticks into the kernel
+ * @brief Stop announcing ticks into the kernel
  *
  * This routine disables timer interrupt generation and delivery.
  * Note that the timer's counting cannot be stopped by software.

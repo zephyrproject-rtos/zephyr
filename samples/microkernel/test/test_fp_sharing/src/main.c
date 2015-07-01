@@ -140,7 +140,7 @@ static volatile unsigned int load_store_high_count = 0;
 /**
  *
  * main -
- * load_store_low - low priority FPU load/store context
+ * @brief Low priority FPU load/store context
  *
  * @return N/A
  */
@@ -308,7 +308,7 @@ void load_store_low(void)
 
 /**
  *
- * load_store_high - high priority FPU load/store context
+ * @brief High priority FPU load/store context
  *
  * @return N/A
  */

@@ -63,7 +63,7 @@ extern CtorFuncPtr __CTOR_END__[];
 
 /**
  *
- * _Ctors - invoke all C++ style global object constructors
+ * @brief Invoke all C++ style global object constructors
  *
  * This function is invoked by _Cstart(), which is implemented in the BSP. It
  * invokes all routines that have been tagged using NANO_INIT_xxx, in order

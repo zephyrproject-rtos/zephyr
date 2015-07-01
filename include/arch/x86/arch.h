@@ -107,7 +107,7 @@ typedef struct s_isrList {
 
 /**
  *
- * NANO_CPU_INT_REGISTER - connect a routine to an interrupt vector
+ * @brief Connect a routine to an interrupt vector
  *
  * This macro "connects" the specified routine, <r>, to the specified interrupt
  * vector, <v> using the descriptor privilege level <d>. On the IA-32
@@ -140,7 +140,7 @@ typedef struct s_isrList {
 
 /**
  *
- * IRQ_CONNECT_STATIC - connect a routine to interrupt number
+ * @brief Connect a routine to interrupt number
  *
  * For the device <device> associates IRQ number <irq> with priority
  * <priority> with the interrupt routine <isr>, that receives parameter
@@ -157,7 +157,7 @@ typedef struct s_isrList {
 
 /**
  *
- * IRQ_CONFIG - configure interrupt for the device
+ * @brief Configure interrupt for the device
  *
  * For the given device do the neccessary configuration steps.
  * For x86 platform configure APIC and mark interrupt vector allocated
@@ -276,7 +276,7 @@ void _int_latency_stop(void);
 
 /**
  *
- * irq_lock_inline - disable all interrupts on the CPU (inline)
+ * @brief Disable all interrupts on the CPU (inline)
  *
  * This routine disables interrupts.  It can be called from either interrupt,
  * task or fiber level.  This routine returns an architecture-dependent
@@ -320,7 +320,7 @@ static inline __attribute__((always_inline))
 
 /**
  *
- * irq_unlock_inline - enable all interrupts on the CPU (inline)
+ * @brief Enable all interrupts on the CPU (inline)
  *
  * This routine re-enables interrupts on the CPU.  The <key> parameter
  * is an architecture-dependent lock-out key that is returned by a previous

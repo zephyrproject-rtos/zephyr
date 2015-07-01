@@ -45,7 +45,7 @@
 
 /**
  *
- * task_id_get - get task identifer
+ * @brief Get task identifer
  *
  * @return identifier for current task
  */
@@ -57,7 +57,7 @@ ktask_t task_id_get(void)
 
 /**
  *
- * _k_state_bit_reset - reset the specified task state bits
+ * @brief Reset the specified task state bits
  *
  * This routine resets the specified task state bits.  When a task's state bits
  * are zero, the task may be scheduled to run.  The tasks's state bits are a
@@ -109,7 +109,7 @@ void _k_state_bit_reset(struct k_proc *X,    /* ptr to task */
 
 /**
  *
- * _k_state_bit_set - set specified task state bits
+ * @brief Set specified task state bits
  *
  * This routine sets the specified task state bits.  When a task's state bits
  * are non-zero, the task will not be scheduled to run.  The task's state bits
@@ -195,7 +195,7 @@ void _k_state_bit_set(
 
 /**
  *
- * start_task - initialize and start a task
+ * @brief Initialize and start a task
  *
  * @return N/A
  */
@@ -237,7 +237,7 @@ static void start_task(struct k_proc *X,  /* ptr to task control block */
 
 /**
  *
- * abort_task - abort a task
+ * @brief Abort a task
  *
  * This routine aborts the specified task.
  *
@@ -265,7 +265,7 @@ static void abort_task(struct k_proc *X)
 #ifndef CONFIG_ARCH_HAS_TASK_ABORT
 /**
  *
- * _TaskAbort - microkernel handler for fatal task errors
+ * @brief Microkernel handler for fatal task errors
  *
  * To be invoked when a task aborts implicitly, either by returning from its
  * entry point or due to a software or hardware fault.
@@ -291,7 +291,7 @@ FUNC_NORETURN void _TaskAbort(void)
 
 /**
  *
- * task_abort_handler_set - install an abort handler
+ * @brief Install an abort handler
  *
  * This routine installs an abort handler for the calling task.
  *
@@ -315,7 +315,7 @@ void task_abort_handler_set(void (*func)(void) /* abort handler */
 
 /**
  *
- * _k_task_op - handle a task operation request
+ * @brief Handle a task operation request
  *
  * This routine handles any one of the following task operation requests:
  *   starting either a kernel or user task, aborting a task, suspending a task,
@@ -353,7 +353,7 @@ void _k_task_op(struct k_args *A)
 
 /**
  *
- * _task_ioctl - task operations
+ * @brief Task operations
  *
  * @return N/A
  */
@@ -372,7 +372,7 @@ void _task_ioctl(ktask_t task, /* task on which to operate */
 
 /**
  *
- * _k_task_group_op - handle task group operation request
+ * @brief Handle task group operation request
  *
  * This routine handles any one of the following task group operations requests:
  *   starting either kernel or user tasks, aborting tasks, suspending tasks,
@@ -424,7 +424,7 @@ void _k_task_group_op(struct k_args *A)
 
 /**
  *
- * _task_group_ioctl - task group operations
+ * @brief Task group operations
  *
  * @return N/A
  */
@@ -443,7 +443,7 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
 
 /**
  *
- * task_group_mask_get - get task groups for task
+ * @brief Get task groups for task
  *
  * @return task groups associated with current task
  */
@@ -455,7 +455,7 @@ kpriority_t task_group_mask_get(void)
 
 /**
  *
- * task_group_join - add task to task group(s)
+ * @brief Add task to task group(s)
  *
  * @return N/A
  */
@@ -467,7 +467,7 @@ void task_group_join(uint32_t groups)
 
 /**
  *
- * task_group_leave - remove task from task group(s)
+ * @brief Remove task from task group(s)
  *
  * @return N/A
  */
@@ -479,7 +479,7 @@ void task_group_leave(uint32_t groups)
 
 /**
  *
- * task_priority_get - get task priority
+ * @brief Get task priority
  *
  * @return priority of current task
  */
@@ -491,7 +491,7 @@ kpriority_t task_priority_get(void)
 
 /**
  *
- * _k_task_priority_set - handle task set priority request
+ * @brief Handle task set priority request
  *
  * @return N/A
  */
@@ -511,7 +511,7 @@ void _k_task_priority_set(struct k_args *A)
 
 /**
  *
- * task_priority_set - set the priority of a task
+ * @brief Set the priority of a task
  *
  * This routine changes the priority of the specified task.
  *
@@ -538,7 +538,7 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 
 /**
  *
- * _k_task_yield - handle task yield request
+ * @brief Handle task yield request
  *
  * @return N/A
  */
@@ -559,7 +559,7 @@ void _k_task_yield(struct k_args *A)
 
 /**
  *
- * task_yield - yield the CPU to another task
+ * @brief Yield the CPU to another task
  *
  * This routine yields the processor to the next equal priority task that is
  * runnable. Using task_yield(), it is possible to achieve the effect of round
@@ -579,7 +579,7 @@ void task_yield(void)
 
 /**
  *
- * task_entry_set - set the entry point of a task
+ * @brief Set the entry point of a task
  *
  * This routine sets the entry point of a task to a given routine. It is only
  * needed if the entry point is different from that specified in the project

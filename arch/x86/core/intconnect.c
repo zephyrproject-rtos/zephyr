@@ -160,7 +160,7 @@ static NANO_INT_STUB dynamic_stubs[ALL_DYNAMIC_STUBS] = {
 };
 
 /**
- * _int_stub_alloc - allocate dynamic interrupt stub
+ * @brief Allocate dynamic interrupt stub
  *
  * @return index of the first available element of the STUB array or -1
  *          if all elements are used
@@ -181,7 +181,7 @@ static int _int_stub_alloc(void)
 
 /**
  *
- * _IntVecSet - connect a routine to an interrupt vector
+ * @brief Connect a routine to an interrupt vector
  *
  * This routine "connects" the specified <routine> to the specified interrupt
  * <vector>.  On the IA-32 architecture, an interrupt vector is a value from
@@ -235,7 +235,7 @@ void _IntVecSet(
 #if ALL_DYNAMIC_STUBS > 0
 /**
  *
- * irq_connect - connect a C routine to a hardware interrupt
+ * @brief Connect a C routine to a hardware interrupt
  *
  * This routine connects an interrupt service routine (ISR) coded in C to
  * the specified hardware <irq>.  An interrupt vector will be allocated to
@@ -480,7 +480,7 @@ int irq_connect(
 
 /**
  *
- * _IntVecAlloc - allocate a free interrupt vector given <priority>
+ * @brief Allocate a free interrupt vector given <priority>
  *
  * This routine scans the interrupt_vectors_allocated[] array for a free vector that
  * satisfies the specified <priority>.  It is a utility function for use only
@@ -603,7 +603,7 @@ int _IntVecAlloc(unsigned int priority)
 
 /**
  *
- * _IntVecMarkAllocated - mark interrupt vector as allocated
+ * @brief Mark interrupt vector as allocated
  *
  * This routine is used to "reserve" an interrupt vector that is allocated
  * or assigned by any means other than _IntVecAllocate().  This marks the vector
@@ -627,7 +627,7 @@ void _IntVecMarkAllocated(unsigned int vector)
 
 /**
  *
- * _IntVecMarkFree - mark interrupt vector as free
+ * @brief Mark interrupt vector as free
  *
  * This routine is used to "free" an interrupt vector that is allocated
  * or assigned using _IntVecAllocate() or _IntVecMarkAllocated(). This marks the

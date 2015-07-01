@@ -52,7 +52,7 @@ APIs to the same function, since they have identical implementations.
 
 /**
  *
- * nano_lifo_init - initialize a nanokernel linked list lifo object
+ * @brief Initialize a nanokernel linked list lifo object
  *
  * This function initializes a nanokernel system-level linked list lifo
  * object structure.
@@ -80,7 +80,7 @@ FUNC_ALIAS(_lifo_put_non_preemptible, nano_fiber_lifo_put, void);
 
 /**
  *
- * _lifo_put_non_preemptible - prepend an element to a lifo (no context switch)
+ * @brief Prepend an element to a lifo (no context switch)
  *
  * This routine adds an element to the head of a lifo object; it may be
  * called from either a fiber or an ISR context.  A fiber pending on the lifo
@@ -118,7 +118,7 @@ void _lifo_put_non_preemptible(
 
 /**
  *
- * nano_task_lifo_put - add an element to the head of a linked list lifo
+ * @brief Add an element to the head of a linked list lifo
  *
  * This routine adds an element to the head of a lifo object; it can be
  * called only from a task context.  A fiber pending on the lifo
@@ -158,7 +158,7 @@ FUNC_ALIAS(_lifo_get, nano_task_lifo_get, void *);
 
 /**
  *
- * _lifo_get - remove the first element from a linked list lifo
+ * @brief Remove the first element from a linked list lifo
  *
  * Remove the first element from the specified nanokernel linked list lifo;
  * it may be called from a fiber, task, or ISR context.
@@ -198,7 +198,7 @@ void *_lifo_get(
 
 /**
  *
- * nano_fiber_lifo_get_wait - get the first element from a LIFO, wait if empty
+ * @brief Get the first element from a LIFO, wait if empty
  *
  * Remove the first element from the specified system-level linked list lifo;
  * it can only be called from a fiber context.
@@ -240,7 +240,7 @@ void *nano_fiber_lifo_get_wait(
 
 /**
  *
- * nano_task_lifo_get_wait - get the first element from a lifo, poll if empty
+ * @brief Get the first element from a lifo, poll if empty
  *
  * Remove the first element from the specified nanokernel linked list lifo; it
  * can only be called from a task context.
@@ -289,7 +289,7 @@ void *nano_task_lifo_get_wait(
 
 /**
  *
- * _nano_fiber_lifo_get_panic - get first element from lifo and panic if NULL
+ * @brief Get first element from lifo and panic if NULL
  *
  * Get the first element from the specified lifo but generate a fatal error
  * if the element is NULL.

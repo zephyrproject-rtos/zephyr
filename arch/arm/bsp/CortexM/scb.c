@@ -46,7 +46,7 @@ definitions and more complex routines, if needed.
 
 /**
  *
- * _ScbSystemReset - reset the system
+ * @brief Reset the system
  *
  * This routine resets the processor.
  *
@@ -65,7 +65,7 @@ void _ScbSystemReset(void)
 
 /**
  *
- * _ScbNumPriGroupSet - set the number of priority groups based on the number
+ * @brief Set the number of priority groups based on the number
  *                      of exception priorities desired
  *
  * Exception priorities can be divided in priority groups, inside which there is

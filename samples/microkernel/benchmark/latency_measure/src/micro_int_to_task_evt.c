@@ -50,7 +50,7 @@ static uint32_t timestamp = 0;
 
 /**
  *
- * latencyTestIsr - test ISR used to measure best case interrupt latency
+ * @brief Test ISR used to measure best case interrupt latency
  *
  * The interrupt handler gets the second timestamp.
  *
@@ -69,7 +69,7 @@ static void latencyTestIsr(void *unused)
 
 /**
  *
- * microInt - software interrupt generating task
+ * @brief Software interrupt generating task
  *
  * Lower priority task that, when starts, wats for the semaphore. When gets
  * released by the main task, sets up the interrupt handler and generates the
@@ -90,7 +90,7 @@ void microInt(void)
 
 /**
  *
- * microIntToTaskEvt - the test main function
+ * @brief The test main function
  *
  * @return 0 on success
  *

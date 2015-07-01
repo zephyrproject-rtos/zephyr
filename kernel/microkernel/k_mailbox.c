@@ -42,7 +42,7 @@
 
 /**
  *
- * ISASYNCMSG - determines if mailbox message is synchronous or asynchronous
+ * @brief Determines if mailbox message is synchronous or asynchronous
  *
  * Returns a non-zero value if the specified message contains a valid pool ID,
  * indicating that it is an asynchronous message.
@@ -52,7 +52,7 @@
 
 /**
  *
- * copy_packet - copy a packet
+ * @brief Copy a packet
  *
  * @return N/A
  */
@@ -72,7 +72,7 @@ static void copy_packet(struct k_args **out, struct k_args *in)
 
 /**
  *
- * match - determine if there is a match between the mailbox sender and receiver
+ * @brief Determine if there is a match between the mailbox sender and receiver
  *
  * @return matched message size, or -1 if no match
  */
@@ -228,7 +228,7 @@ static void transfer(struct k_args *pMvdReq)
 
 /**
  *
- * _k_mbox_send_ack - process the acknowledgment to a mailbox send request
+ * @brief Process the acknowledgment to a mailbox send request
  *
  * @return N/A
  */
@@ -300,7 +300,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 
 /**
  *
- * _k_mbox_send_reply - process the timeout for a mailbox send request
+ * @brief Process the timeout for a mailbox send request
  *
  * @return N/A
  */
@@ -316,7 +316,7 @@ void _k_mbox_send_reply(struct k_args *pCopyWriter)
 
 /**
  *
- * _k_mbox_send_request - process a mailbox send request
+ * @brief Process a mailbox send request
  *
  * @return N/A
  */
@@ -476,7 +476,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 
 /**
  *
- * _task_mbox_put - send a message to a mailbox
+ * @brief Send a message to a mailbox
  *
  * This routine sends a message to a mailbox and looks for a matching receiver.
  *
@@ -517,7 +517,7 @@ int _task_mbox_put(kmbox_t mbox, /* mailbox */
 
 /**
  *
- * _k_mbox_receive_ack - process a mailbox receive acknowledgment
+ * @brief Process a mailbox receive acknowledgment
  *
  * This routine processes a mailbox receive acknowledgment.
  *
@@ -547,7 +547,7 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 
 /**
  *
- * _k_mbox_receive_reply - process the timeout for a mailbox receive request
+ * @brief Process the timeout for a mailbox receive request
  *
  * @return N/A
  */
@@ -565,7 +565,7 @@ void _k_mbox_receive_reply(struct k_args *pCopyReader)
 
 /**
  *
- * _k_mbox_receive_request - process a mailbox receive request
+ * @brief Process a mailbox receive request
  *
  * @return N/A
  */
@@ -692,7 +692,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 
 /**
  *
- * _task_mbox_get - gets struct k_msg message header structure information
+ * @brief Gets struct k_msg message header structure information
  *                  from a mailbox
  *
  * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
@@ -726,7 +726,7 @@ int _task_mbox_get(kmbox_t mbox, /* mailbox */
 
 /**
  *
- * _task_mbox_put_async - send a message asynchronously to a mailbox
+ * @brief Send a message asynchronously to a mailbox
  *
  * This routine sends a message to a mailbox and does not wait for a matching
  * receiver. There is no exchange header returned to the sender. When the data
@@ -769,7 +769,7 @@ void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
 
 /**
  *
- * _k_mbox_receive_data - process a mailbox receive data request
+ * @brief Process a mailbox receive data request
  *
  * @return N/A
  */
@@ -814,7 +814,7 @@ void _k_mbox_receive_data(struct k_args *Starter)
 
 /**
  *
- * _task_mbox_data_get - get message data
+ * @brief Get message data
  *
  * This routine is called for either of the two following purposes:
  * 1. To transfer data if the call to task_mbox_get() resulted in a non-zero size
@@ -847,7 +847,7 @@ void _task_mbox_data_get(struct k_msg *M /* message from which to get data */
 
 /**
  *
- * _task_mbox_data_get_async_block - get the mailbox data and place
+ * @brief Get the mailbox data and place
  *                                   in a memory pool block
  *
  * @return RC_OK upon success, RC_FAIL upon failure, or RC_TIME upon timeout
@@ -946,7 +946,7 @@ int _task_mbox_data_get_async_block(struct k_msg *message,
 
 /**
  *
- * _k_mbox_send_data - process a mailbox send data request
+ * @brief Process a mailbox send data request
  *
  * @return N/A
  */

@@ -59,7 +59,7 @@ extern unsigned char _idt_base_address[];
 
 /**
  *
- * irq_handler_set - set the handler in an already connected stub
+ * @brief Set the handler in an already connected stub
  *
  * This routine is used to modify an already fully constructed interrupt stub
  * to specify a new <routine> and/or <parameter>.

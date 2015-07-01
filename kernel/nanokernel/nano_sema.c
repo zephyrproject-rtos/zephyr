@@ -58,7 +58,7 @@ APIs to the same function, since they have identical implementations.
 
 /**
  *
- * nano_sem_init - initialize a nanokernel semaphore object
+ * @brief Initialize a nanokernel semaphore object
  *
  * This function initializes a nanokernel semaphore object structure. After
  * initialization, the semaphore count will be 0.
@@ -92,7 +92,7 @@ FUNC_ALIAS(_sem_give_non_preemptible, nano_fiber_sem_give, void);
 
 /**
  *
- * _sem_give_non_preemptible - give a nanokernel semaphore (no context switch)
+ * @brief Give a nanokernel semaphore (no context switch)
  *
  * This routine performs a "give" operation on a nanokernel sempahore object;
  * it may be call from either a fiber or an ISR context.  A fiber pending on
@@ -129,7 +129,7 @@ void _sem_give_non_preemptible(
 
 /**
  *
- * nano_task_sem_give - give a nanokernel semaphore
+ * @brief Give a nanokernel semaphore
  *
  * This routine performs a "give" operation on a nanokernel sempahore object;
  * it can only be called from a task context.  A fiber pending on the
@@ -162,7 +162,7 @@ void nano_task_sem_give(
 
 /**
  *
- * nano_sem_give - give a nanokernel semaphore
+ * @brief Give a nanokernel semaphore
  *
  * This is a convenience wrapper for the context-specific APIs. This is
  * helpful whenever the exact scheduling context is not known, but should
@@ -184,7 +184,7 @@ FUNC_ALIAS(_sem_take, nano_task_sem_take, int);
 
 /**
  *
- * _sem_take - take a nanokernel semaphore, fail if unavailable
+ * @brief Take a nanokernel semaphore, fail if unavailable
  *
  * Attempt to take a nanokernel sempahore; it may be called from a fiber, task,
  * or ISR context.
@@ -212,7 +212,7 @@ int _sem_take(
 
 /**
  *
- * nano_fiber_sem_take_wait - test a nanokernel semaphore, wait if unavailable
+ * @brief Test a nanokernel semaphore, wait if unavailable
  *
  * Take a nanokernel sempahore; it can only be called from a fiber context.
  *
@@ -246,7 +246,7 @@ void nano_fiber_sem_take_wait(
 
 /**
  *
- * nano_task_sem_take_wait - take a nanokernel semaphore, poll if unavailable
+ * @brief Take a nanokernel semaphore, poll if unavailable
  *
  * Take a nanokernel sempahore; it can only be called from a task context.
  *
@@ -287,7 +287,7 @@ void nano_task_sem_take_wait(
 
 /**
  *
- * nano_sem_take_wait - take a nanokernel semaphore, poll/pend if not available
+ * @brief Take a nanokernel semaphore, poll/pend if not available
  *
  * This is a convenience wrapper for the context-specific APIs. This is
  * helpful whenever the exact scheduling context is not known, but should

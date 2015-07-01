@@ -72,7 +72,7 @@ extern ksem_t semList[];
 
 /**
  *
- * simpleSemaTest - signal semaphore that has no waiting tasks from ISR
+ * @brief Signal semaphore that has no waiting tasks from ISR
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -165,7 +165,7 @@ int simpleSemaTest(void)
 
 /**
  *
- * simpleSemaWaitTest - test the waiting of a semaphore
+ * @brief Test the waiting of a semaphore
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -223,7 +223,7 @@ int simpleSemaWaitTest(void)
 
 /**
  *
- * simpleGroupTest - test for a group of semaphores
+ * @brief Test for a group of semaphores
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -303,7 +303,7 @@ int simpleGroupTest(void)
 
 /**
  *
- * simpleGroupWaitTest - test a group of semaphores with waiting
+ * @brief Test a group of semaphores with waiting
  *
  * This routine tests the waiting feature on a group of semaphores.  Note that
  * timing out on a wait has already been tested so it need not be done again.
@@ -366,7 +366,7 @@ int simpleGroupWaitTest(void)
 
 /**
  *
- * simpleFiberSemTest - test semaphore signaling from fiber
+ * @brief Test semaphore signaling from fiber
  *
  * Routine starts a fiber and does the following tests:
  * - fiber signals the semaphore N times, task checks that task_sem_count_get is N
@@ -421,7 +421,7 @@ static int simpleFiberSemTest(void)
 
 /**
  *
- * HighPriTask - a high priority task
+ * @brief A high priority task
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -455,7 +455,7 @@ int HighPriTask(void)
 
 /**
  *
- * LowPriTask - a low priority task
+ * @brief A low priority task
  *
  * @return TC_PASS or TC_FAIL
  */
@@ -480,7 +480,7 @@ int LowPriTask(void)
 
 /**
  *
- * AlternateTask - alternate task in the test suite
+ * @brief Alternate task in the test suite
  *
  * This routine runs at a lower priority than RegressionTask().
  *
@@ -559,7 +559,7 @@ int AlternateTask(void)
 
 /**
  *
- * RegressionTask - entry point to semaphore test suite
+ * @brief Entry point to semaphore test suite
  *
  * This is the entry point to the semaphore test suite.
  *

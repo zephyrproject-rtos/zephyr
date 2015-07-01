@@ -42,7 +42,7 @@
 
 /**
  *
- * _LoadAllFloatRegisters - load all floating point registers
+ * @brief Load all floating point registers
  *
  * This function loads ALL floating point registers from the memory buffer
  * specified by <pFromBuffer>. It is expected that a subsequent call to
@@ -111,7 +111,7 @@ static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
 
 /**
  *
- * _LoadThenStoreAllFloatRegisters - load then dump all float registers to memory
+ * @brief Load then dump all float registers to memory
  *
  * This function loads ALL floating point registers from the memory buffer
  * specified by <pFromToBuffer>, and then stores them back to that buffer.
@@ -166,7 +166,7 @@ static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
 
 /**
  *
- * _StoreAllFloatRegisters - dump all floating point registers to memory
+ * @brief Dump all floating point registers to memory
  *
  * This function stores ALL floating point registers to the memory buffer
  * specified by <pToBuffer>. It is expected that a previous invocation of
@@ -203,7 +203,7 @@ static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
 
 /**
  *
- * _StoreNonVolatileFloatRegisters - dump non-volatile FP registers to memory
+ * @brief Dump non-volatile FP registers to memory
  *
  * This routine is called by a high priority context after resuming execution
  * from calling a primitive that will pend and thus result in a co-operative

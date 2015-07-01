@@ -109,7 +109,7 @@ int pipeput(kpipe_t pipe, K_PIPE_OPTION
 
 /**
  *
- * pipe_test - test the pipes transfer speed
+ * @brief Test the pipes transfer speed
  *
  * @return N/A
  *
@@ -204,7 +204,7 @@ void pipe_test(void)
 
 /**
  *
- * pipeput - write a data portion to the pipe and measure time
+ * @brief Write a data portion to the pipe and measure time
  *
  * @return 0 on success, 1 on error
  *

@@ -54,7 +54,7 @@
 
 /**
  *
- * find_last_set_inline - find first set bit (searching from most significant bit)
+ * @brief Find first set bit (searching from most significant bit)
  *
  * This routine finds the first bit set in the argument passed it and returns
  * the index of that bit.  Bits are numbered starting at 1 from the least
@@ -82,7 +82,7 @@ static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
 
 /**
  *
- * find_first_set_inline - find first set bit (from the least significant bit)
+ * @brief Find first set bit (from the least significant bit)
  *
  * This routine finds the first bit set in the argument passed it and
  * returns the index of that bit.  Bits are numbered starting
@@ -111,7 +111,7 @@ static ALWAYS_INLINE unsigned int find_first_set_inline(unsigned int op)
 
 /**
  *
- * irq_lock_inline - disable all interrupts on the CPU (inline)
+ * @brief Disable all interrupts on the CPU (inline)
  *
  * This routine disables interrupts.  It can be called from either interrupt,
  * task or fiber level.  This routine returns an architecture-dependent
@@ -158,7 +158,7 @@ static ALWAYS_INLINE unsigned int irq_lock_inline(void)
 
 /**
  *
- * irq_unlock_inline - enable all interrupts on the CPU (inline)
+ * @brief Enable all interrupts on the CPU (inline)
  *
  * This routine re-enables interrupts on the CPU.  The <key> parameter
  * is an architecture-dependent lock-out key that is returned by a previous

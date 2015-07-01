@@ -61,7 +61,7 @@ UART_PORTS_CONFIGURE(_k20Uart_t, uart);
 
 /**
  *
- * uart_init - initialize UART channel
+ * @brief Initialize UART channel
  *
  * This routine is called to reset the chip in a quiescent state.
  * It is assumed that this function is called only once per UART.
@@ -109,7 +109,7 @@ void uart_init(int port, /* UART channel to initialize */
 
 /**
  *
- * uart_poll_in - poll the device for input.
+ * @brief Poll the device for input.
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
@@ -131,7 +131,7 @@ int uart_poll_in(int port,		/* UART channel to select for input */
 
 /**
  *
- * uart_poll_out - output a character in polled mode.
+ * @brief Output a character in polled mode.
  *
  * Checks if the transmitter is empty. If empty, a character is written to
  * the data register.
@@ -161,7 +161,7 @@ unsigned char uart_poll_out(
 
 /**
  *
- * uart_fifo_fill - fill FIFO with data
+ * @brief Fill FIFO with data
 
  * @return number of bytes sent
  */
@@ -183,7 +183,7 @@ int uart_fifo_fill(int port, /* UART on port to send */
 
 /**
  *
- * uart_fifo_read - read data from FIFO
+ * @brief Read data from FIFO
  *
  * @return number of bytes read
  */
@@ -205,7 +205,7 @@ int uart_fifo_read(int port, /* UART to receive from */
 
 /**
  *
- * uart_irq_tx_enable - enable TX interrupt
+ * @brief Enable TX interrupt
  *
  * @return N/A
  */
@@ -221,7 +221,7 @@ void uart_irq_tx_enable(int port /* UART to enable Tx
 
 /**
  *
- * uart_irq_tx_disable - disable TX interrupt in IER
+ * @brief Disable TX interrupt in IER
  *
  * @return N/A
  */
@@ -237,7 +237,7 @@ void uart_irq_tx_disable(
 
 /**
  *
- * uart_irq_tx_ready - check if Tx IRQ has been raised
+ * @brief Check if Tx IRQ has been raised
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -252,7 +252,7 @@ int uart_irq_tx_ready(int port /* UART to check */
 
 /**
  *
- * uart_irq_rx_enable - enable RX interrupt in IER
+ * @brief Enable RX interrupt in IER
  *
  * @return N/A
  */
@@ -268,7 +268,7 @@ void uart_irq_rx_enable(int port /* UART to enable Rx
 
 /**
  *
- * uart_irq_rx_disable - disable RX interrupt in IER
+ * @brief Disable RX interrupt in IER
  *
  * @return N/A
  */
@@ -284,7 +284,7 @@ void uart_irq_rx_disable(
 
 /**
  *
- * uart_irq_rx_ready - check if Rx IRQ has been raised
+ * @brief Check if Rx IRQ has been raised
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
@@ -299,7 +299,7 @@ int uart_irq_rx_ready(int port /* UART to check */
 
 /**
  *
- * uart_irq_err_enable - enable error interrupt
+ * @brief Enable error interrupt
  *
  * @return N/A
  */
@@ -318,7 +318,7 @@ void uart_irq_err_enable(int port)
 
 /**
  *
- * uart_irq_err_disable - disable error interrupt
+ * @brief Disable error interrupt
  *
  * @return N/A
  */
@@ -338,7 +338,7 @@ void uart_irq_err_disable(int port /* UART to disable Rx interrupt */
 
 /**
  *
- * uart_irq_is_pending - check if Tx or Rx IRQ is pending
+ * @brief Check if Tx or Rx IRQ is pending
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
@@ -357,7 +357,7 @@ int uart_irq_is_pending(int port /* UART to check */
 
 /**
  *
- * uart_irq_update - update IRQ status
+ * @brief Update IRQ status
  *
  * @return always 1
  */
@@ -369,7 +369,7 @@ int uart_irq_update(int port)
 
 /**
  *
- * uart_irq_get - returns UART interrupt number
+ * @brief Returns UART interrupt number
  *
  * Returns the IRQ number used by the specified UART port
  *

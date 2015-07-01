@@ -42,7 +42,7 @@
 
 /**
  *
- * _IpsrGet - obtain value of IPSR register
+ * @brief Obtain value of IPSR register
  *
  * Obtain and return current value of IPSR register.
  *
@@ -61,7 +61,7 @@ static ALWAYS_INLINE uint32_t _IpsrGet(void)
 
 /**
  *
- * _MspSet - set the value of the Main Stack Pointer register
+ * @brief Set the value of the Main Stack Pointer register
  *
  * Store the value of <msp> in MSP register.
  *

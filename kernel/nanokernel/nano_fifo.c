@@ -53,7 +53,7 @@ APIs to the same function, since they have identical implementations.
 
 /**
  *
- * nano_fifo_init - initialize a nanokernel multiple-waiter fifo (fifo) object
+ * @brief Initialize a nanokernel multiple-waiter fifo (fifo) object
  *
  * This function initializes a nanokernel multiple-waiter fifo (fifo) object
  * structure.
@@ -96,7 +96,7 @@ FUNC_ALIAS(_fifo_put_non_preemptible, nano_fiber_fifo_put, void);
 
 /**
  *
- * enqueue_data - internal routine to append data to a fifo
+ * @brief Internal routine to append data to a fifo
  *
  * @return N/A
  */
@@ -110,7 +110,7 @@ static inline void enqueue_data(struct nano_fifo *fifo, void *data)
 
 /**
  *
- * _fifo_put_non_preemptible - append an element to a fifo (no context switch)
+ * @brief Append an element to a fifo (no context switch)
  *
  * This routine adds an element to the end of a fifo object; it may be called
  * from either either a fiber or an ISR context.   A fiber pending on the fifo
@@ -151,7 +151,7 @@ void _fifo_put_non_preemptible(
 
 /**
  *
- * nano_task_fifo_put - add an element to the end of a fifo
+ * @brief Add an element to the end of a fifo
  *
  * This routine adds an element to the end of a fifo object; it can be called
  * from only a task context.  A fiber pending on the fifo object will be made
@@ -188,7 +188,7 @@ void nano_task_fifo_put(
 
 /**
  *
- * nano_fifo_put - add an element to the end of a fifo
+ * @brief Add an element to the end of a fifo
  *
  * This is a convenience wrapper for the context-specific APIs. This is
  * helpful whenever the exact scheduling context is not known, but should
@@ -210,7 +210,7 @@ FUNC_ALIAS(_fifo_get, nano_fifo_get, void *);
 
 /**
  *
- * dequeue_data - internal routine to remove data from a fifo
+ * @brief Internal routine to remove data from a fifo
  *
  * @return the data item removed
  */
@@ -235,7 +235,7 @@ static inline void *dequeue_data(struct nano_fifo *fifo)
 
 /**
  *
- * _fifo_get - get an element from the head a fifo
+ * @brief Get an element from the head a fifo
  *
  * Remove the head element from the specified nanokernel multiple-waiter fifo
  * linked list fifo; it may be called from a fiber, task, or ISR context.
@@ -273,7 +273,7 @@ void *_fifo_get(
 
 /**
  *
- * nano_fiber_fifo_get_wait - get the head element of a fifo, wait if emtpy
+ * @brief Get the head element of a fifo, wait if emtpy
  *
  * Remove the head element from the specified system-level multiple-waiter
  * fifo; it can only be called from a fiber context.
@@ -314,7 +314,7 @@ void *nano_fiber_fifo_get_wait(
 
 /**
  *
- * nano_task_fifo_get_wait - get the head element of a fifo, poll if empty
+ * @brief Get the head element of a fifo, poll if empty
  *
  * Remove the head element from the specified system-level multiple-waiter
  * fifo; it can only be called from a task context.
@@ -362,7 +362,7 @@ void *nano_task_fifo_get_wait(
 
 /**
  *
- * nano_fifo_get_wait - get the head element of a fifo, poll/pend if empty
+ * @brief Get the head element of a fifo, poll/pend if empty
  *
  * This is a convenience wrapper for the context-specific APIs. This is
  * helpful whenever the exact scheduling context is not known, but should

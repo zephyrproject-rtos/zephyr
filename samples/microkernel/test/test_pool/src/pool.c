@@ -111,7 +111,7 @@ static TEST_CASE defrag[] = {
 
 /**
  *
- * blockCompare - compare the two blocks
+ * @brief Compare the two blocks
  *
  * @return 0 if the same, non-zero if not the same
  */
@@ -135,7 +135,7 @@ int blockCompare(struct k_block *b1, struct k_block *b2)
 
 /**
  *
- * poolBlockGetFunc - wrapper for task_mem_pool_alloc()
+ * @brief Wrapper for task_mem_pool_alloc()
  *
  * @return task_mem_pool_alloc() return value
  */
@@ -150,7 +150,7 @@ int poolBlockGetFunc(struct k_block *block, kmemory_pool_t pool, int size,
 
 /**
  *
- * poolBlockGetWFunc - wrapper for task_mem_pool_alloc_wait()
+ * @brief Wrapper for task_mem_pool_alloc_wait()
  *
  * @return task_mem_pool_alloc_wait() return value
  */
@@ -165,7 +165,7 @@ int poolBlockGetWFunc(struct k_block *block, kmemory_pool_t pool, int size,
 
 /**
  *
- * poolBlockGetWTFunc - wrapper for task_mem_pool_alloc_wait_timeout()
+ * @brief Wrapper for task_mem_pool_alloc_wait_timeout()
  *
  * @return task_mem_pool_alloc_wait_timeout() return value
  */
@@ -178,7 +178,7 @@ int poolBlockGetWTFunc(struct k_block *block, kmemory_pool_t pool,
 
 /**
  *
- * freeBlocks - free any blocks allocated in the test set
+ * @brief Free any blocks allocated in the test set
  *
  * @return N/A
  */
@@ -196,7 +196,7 @@ void freeBlocks(TEST_CASE *tests, int nTests)
 
 /**
  *
- * poolBlockGetWork - perform the work of getting blocks
+ * @brief Perform the work of getting blocks
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -223,7 +223,7 @@ int poolBlockGetWork(char *string, poolBlockGetFunc_t func,
 
 /**
  *
- * poolBlockGetTest - test the task_mem_pool_alloc() API
+ * @brief Test the task_mem_pool_alloc() API
  *
  * The pool is 4 kB in size.
  *
@@ -258,7 +258,7 @@ int poolBlockGetTest(void)
 
 /**
  *
- * HelperTask - helper task to poolBlockGetTimeoutTest()
+ * @brief Helper task to poolBlockGetTimeoutTest()
  *
  * @return N/A
  */
@@ -273,7 +273,7 @@ void HelperTask(void)
 
 /**
  *
- * poolBlockGetTimeoutTest - test task_mem_pool_alloc_wait_timeout()
+ * @brief Test task_mem_pool_alloc_wait_timeout()
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -368,7 +368,7 @@ int poolBlockGetWaitTest(void)
 
 /**
  *
- * DefragTask - task responsible for defragmenting the pool POOL_ID
+ * @brief Task responsible for defragmenting the pool POOL_ID
  *
  * @return N/A
  */
@@ -433,7 +433,7 @@ int poolDefragTest(void)
 
 /**
  *
- * AlternateTask - alternate task in the test suite
+ * @brief Alternate task in the test suite
  *
  * This routine runs at a lower priority than RegressionTask().
  *
@@ -453,7 +453,7 @@ void AlternateTask(void)
 
 /**
  *
- * RegressionTask - main task in the test suite
+ * @brief Main task in the test suite
  *
  * This is the entry point to the memory pool test suite.
  *

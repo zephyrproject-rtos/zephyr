@@ -62,7 +62,7 @@ int testMapFreeAllBlocks(void **P);
 
 /**
  *
- * verifyRetValue - verify return value
+ * @brief Verify return value
  *
  * This routine verifies current value against expected value
  * and returns true if they are the same.
@@ -81,7 +81,7 @@ bool verifyRetValue(int expectRetValue, int currentRetValue)
 
 /**
  *
- * HelperTask - helper task
+ * @brief Helper task
  *
  * This routine gets all blocks from the memory map.  It uses semaphores
  * SEM_REGRESDONE and SEM_HELPERDONE to synchronize between different parts
@@ -143,7 +143,7 @@ exitTest1:
 
 /**
  *
- * testMapGetAllBlocks - get all blocks from the memory map
+ * @brief Get all blocks from the memory map
  *
  * Get all blocks from the memory map.  It also tries to get one more block
  * from the map after the map is empty to verify the error return code.
@@ -215,7 +215,7 @@ int testMapGetAllBlocks(void **p)
 
 /**
  *
- * testMapFreeAllBlocks - free all memeory blocks
+ * @brief Free all memeory blocks
  *
  * This routine frees all memory blocks and also verifies that the number of
  * blocks used are correct.
@@ -275,7 +275,7 @@ int testMapFreeAllBlocks(void **p)
 
 /**
  *
- * printPointers - print the pointers
+ * @brief Print the pointers
  *
  * This routine prints out the pointers.
  *
@@ -297,7 +297,7 @@ void printPointers(void **pointer)
 
 /**
  *
- * RegressionTask - main task to test task_mem_map_xxx interfaces
+ * @brief Main task to test task_mem_map_xxx interfaces
  *
  * This routine calls testMapGetAllBlocks() to get all memory blocks from the
  * map and calls testMapFreeAllBlocks() to free all memory blocks.  It also

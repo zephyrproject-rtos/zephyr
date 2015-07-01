@@ -43,7 +43,7 @@ either in the form of an actual function or an alias to a function.
 
 /**
  *
- * _nano_fiber_schedule - add a fiber to the list of runnable fibers
+ * @brief Add a fiber to the list of runnable fibers
  *
  * The list of runnable fibers is maintained via a single linked list
  * in priority order. Numerically lower priorities represent higher priority
@@ -83,7 +83,7 @@ FUNC_ALIAS(_fiber_start, fiber_start, void);
 
 /**
  *
- * _fiber_start - initialize and start a fiber context
+ * @brief Initialize and start a fiber context
  *
  * This routine initilizes and starts a fiber context; it can be called from
  * either a fiber or a task context.  When this routine is called from a
@@ -147,7 +147,7 @@ void _fiber_start(char *pStack,
 
 /**
  *
- * fiber_yield - yield the current context
+ * @brief Yield the current context
  *
  * Invocation of this routine results in the current context yielding to
  * another context of the same or higher priority.  If there doesn't exist
@@ -179,7 +179,7 @@ void fiber_yield(void)
 
 /**
  *
- * _nano_fiber_swap - pass control from the currently executing fiber
+ * @brief Pass control from the currently executing fiber
  *
  * This routine is used when a fiber voluntarily gives up control of the CPU.
  *
@@ -214,7 +214,7 @@ FUNC_NORETURN void _nano_fiber_swap(void)
 #ifndef CONFIG_ARCH_HAS_NANO_FIBER_ABORT
 /**
  *
- * fiber_abort - abort the currently executing fiber
+ * @brief Abort the currently executing fiber
  *
  * This routine is used to abort the currrently executing fiber. This can occur
  * because:

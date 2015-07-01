@@ -54,7 +54,7 @@ static ktimer_t pTimer[NTIMERS + 1];
 
 /**
  *
- * testLowTimerStop - test that task_timer_stop() does stop a timer
+ * @brief Test that task_timer_stop() does stop a timer
  *
  * @return TC_PASS on success, TC_FAIL otherwise
  */
@@ -81,7 +81,7 @@ int testLowTimerStop(void)
 
 /**
  *
- * testLowTimerPeriodicity - test the periodic feature of a timer
+ * @brief Test the periodic feature of a timer
  *
  * @return TC_PASS on success, TC_FAIL otherwise
  */
@@ -151,7 +151,7 @@ int testLowTimerPeriodicity(void)
 
 /**
  *
- * testLowTimerDoesNotStart - test that the timer does not start
+ * @brief Test that the timer does not start
  *
  * This test checks that the timer does not start under a variety of
  * circumstances.
@@ -190,7 +190,7 @@ int testLowTimerDoesNotStart(void)
 
 /**
  *
- * testLowTimerOneShot - test the one shot feature of a timer
+ * @brief Test the one shot feature of a timer
  *
  * @return TC_PASS on success, TC_FAIL otherwise
  */
@@ -238,7 +238,7 @@ int testLowTimerOneShot(void)
 
 /**
  *
- * testLowTimerGet - test the task_timer_alloc() API
+ * @brief Test the task_timer_alloc() API
  *
  * This routine allocates all the timers in the system using task_timer_alloc().
  * It verifies that all the allocated timers have unique IDs before freeing
@@ -319,7 +319,7 @@ static void test_nano_timers(int unused1, int unused2)
 
 /**
  *
- * RegressionTaskEntry - regression test's entry point
+ * @brief Regression test's entry point
  *
  * @return N/A
  */

@@ -46,7 +46,7 @@ global variables for completeness sake.
 #if defined(CONFIG_NANOKERNEL)
 /**
  *
- * main - main task entry point
+ * @brief Main task entry point
  *
  * Entry point for nanokernel only builds.
  *
@@ -57,7 +57,7 @@ void main(void)
 #else
 /**
  *
- * RegressionTaskEntry - regression test's entry point
+ * @brief Regression test's entry point
  *
  * @return N/A
  */

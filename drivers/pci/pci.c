@@ -169,7 +169,7 @@ static struct lookup_data __noinit lookup;
 
 /**
  *
- * pci_get_bar_config - return the configuration for the specified BAR
+ * @brief Return the configuration for the specified BAR
  *
  * @return 0 if BAR is implemented, -1 if not.
  */
@@ -214,7 +214,7 @@ static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
 
 /**
  *
- * pci_bar_params_get - retrieve the I/O address and IRQ of the specified BAR
+ * @brief Retrieve the I/O address and IRQ of the specified BAR
  *
  * @return -1 on error, 0 if 32 bit BAR retrieved or 1 if 64 bit BAR retrieved
  *
@@ -265,7 +265,7 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 
 /**
  *
- * pci_dev_scan - scan the specified PCI device for all sub functions
+ * @brief Scan the specified PCI device for all sub functions
  *
  * @return 1 if a device has been found, 0 otherwise.
  *
@@ -376,7 +376,7 @@ void pci_bus_scan_init(void)
 
 /**
  *
- * pci_bus_scan - scans PCI bus for devices
+ * @brief Scans PCI bus for devices
  *
  * The routine scans the PCI bus for the devices on criterias provided in the
  * given dev_info at first call. Which criterias can be class and/or
@@ -430,7 +430,7 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 #ifdef CONFIG_PCI_DEBUG
 /**
  *
- * pci_show - Show PCI device
+ * @brief Show PCI device
  *
  * Shows the PCI device found provided as parameter.
  *

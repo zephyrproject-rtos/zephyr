@@ -36,7 +36,7 @@
 
 /**
  *
- * mutex_test - mutex lock/unlock test
+ * @brief Mutex lock/unlock test
  *
  * @return N/A
  *

@@ -96,7 +96,7 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
 
 /**
  *
- * clkInit - initialize the system clock
+ * @brief Initialize the system clock
  *
  * This routine will configure the multipurpose clock generator (MCG) to
  * set up the system clock.
@@ -249,7 +249,7 @@ static void clkInit(void)
 
 /**
  *
- * consoleInit - initialize target-only console
+ * @brief Initialize target-only console
  *
  * Only used for debugging.
  *
@@ -300,7 +300,7 @@ static void consoleInit(void)
 
 /**
  *
- * _InitHardware - perform basic hardware initialization
+ * @brief Perform basic hardware initialization
  *
  * Initialize the interrupt controller device drivers and the
  * Kinetis UART device driver.

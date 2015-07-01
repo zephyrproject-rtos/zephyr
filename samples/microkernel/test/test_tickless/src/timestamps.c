@@ -40,7 +40,7 @@ BSP-specific timestamp support for the tickless idle test.
 
 #if defined(CONFIG_BSP_TI_LM3S6965_QEMU)
 /*
- * TI LM3S6965EVM QEMU target - use a General Purpose Timer in
+ * @brief Use a General Purpose Timer in
  * 32-bit periodic timer mode (down-counter)
  * (RTC mode's resolution of 1 second is insufficient.)
  */
@@ -73,7 +73,7 @@ BSP-specific timestamp support for the tickless idle test.
 
 /**
  *
- * _TimestampOpen - timestamp initialization
+ * @brief Timestamp initialization
  *
  * This routine initializes the timestamp timer.
  *
@@ -105,7 +105,7 @@ void _TimestampOpen(void)
 
 /**
  *
- * _TimestampRead - timestamp timer read
+ * @brief Timestamp timer read
  *
  * This routine returns the timestamp value.
  *
@@ -141,7 +141,7 @@ uint32_t _TimestampRead(void)
 
 /**
  *
- * _TimestampClose - timestamp release
+ * @brief Timestamp release
  *
  * This routine releases the timestamp timer.
  *
@@ -188,7 +188,7 @@ void _TimestampClose(void)
 
 /**
  *
- * _TimestampOpen - timestamp initialization
+ * @brief Timestamp initialization
  *
  * This routine initializes the timestamp timer.
  *
@@ -225,7 +225,7 @@ void _TimestampOpen(void)
 
 /**
  *
- * _TimestampRead - timestamp timer read
+ * @brief Timestamp timer read
  *
  * This routine returns the timestamp value.
  *
@@ -262,7 +262,7 @@ uint32_t _TimestampRead(void)
 
 /**
  *
- * _TimestampClose - timestamp release
+ * @brief Timestamp release
  *
  * This routine releases the timestamp timer.
  *

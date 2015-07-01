@@ -61,7 +61,7 @@ extern void _NmiInit(void);
 
 /**
  *
- * uart_generic_info_init - initialize generic information for one UART
+ * @brief Initialize generic information for one UART
  *
  * @return N/A
  *
@@ -81,7 +81,7 @@ inline void uart_generic_info_init(struct uart_init_info *pInfo)
 
 /**
  *
- * consoleInit - initialize target-only console
+ * @brief Initialize target-only console
  *
  * Only used for debugging.
  *
@@ -134,7 +134,7 @@ static void bluetooth_init(void)
 
 /**
  *
- * _InitHardware - perform basic hardware initialization
+ * @brief Perform basic hardware initialization
  *
  * Initialize the interrupt controller device drivers and the
  * integrated 16550-compatible UART device driver.

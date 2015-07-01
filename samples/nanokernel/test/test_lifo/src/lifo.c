@@ -107,7 +107,7 @@ static struct nano_sem reply_multi_waiters;
 
 /**
  *
- * isr_lifo_put - add an item to a LIFO
+ * @brief Add an item to a LIFO
  *
  * This routine is the ISR handler for _trigger_nano_isr_lifo_put().  It adds
  * an item to the LIFO in the context of an ISR.
@@ -126,7 +126,7 @@ void isr_lifo_put(void *data)
 
 /**
  *
- * isr_lifo_get - get an item from a LIFO
+ * @brief Get an item from a LIFO
  *
  * This routine is the ISR handler for _trigger_nano_isr_lifo_get().  It gets
  * an item from the LIFO in the context of an ISR.
@@ -145,7 +145,7 @@ void isr_lifo_get(void *data)
 
 /**
  *
- * fiberLifoWaitTest - fiber portion of test that waits on a LIFO
+ * @brief Fiber portion of test that waits on a LIFO
  *
  * This routine works with taskLifoWaitTest() to test the addition and removal
  * of items to/from a LIFO.  The cases covered will have a fiber or task waiting
@@ -206,7 +206,7 @@ int fiberLifoWaitTest(void)
 
 /**
  *
- * fiberLifoNonWaitTest - fiber portion of test that does not wait on a LIFO
+ * @brief Fiber portion of test that does not wait on a LIFO
  *
  * This routine works with fiberLifoNonWaitTest() to test the addition and
  * removal of items from a LIFO without having to wait.
@@ -284,7 +284,7 @@ errorReturn:
 
 /**
  *
- * fiberEntry - entry point for the fiber portion of the LIFO tests
+ * @brief Entry point for the fiber portion of the LIFO tests
  *
  * NOTE: The fiber portion of the tests have higher priority than the task
  * portion of the tests.
@@ -312,7 +312,7 @@ static void fiberEntry(int arg1, int arg2)
 
 /**
  *
- * taskLifoWaitTest - task portion of test that waits on a LIFO
+ * @brief Task portion of test that waits on a LIFO
  *
  * This routine works with fiberLifoWaitTest() to test the addition and removal
  * of items to/from a LIFO.  The cases covered will have a fiber or task waiting
@@ -370,7 +370,7 @@ int taskLifoWaitTest(void)
 
 /**
  *
- * taskLifoNonWaitTest - task portion of test that does not wait on a LIFO
+ * @brief Task portion of test that does not wait on a LIFO
  *
  * This routine works with fiberLifoNonWaitTest() to test the addition and
  * removal of items from a LIFO without having to wait.
@@ -448,7 +448,7 @@ int taskLifoNonWaitTest(void)
 
 /**
  *
- * initNanoObjects - initialize nanokernel objects
+ * @brief Initialize nanokernel objects
  *
  * This routine initializes the nanokernel objects used in the LIFO tests.
  *
@@ -494,7 +494,7 @@ static LIFO_ITEM multi_waiters_items[NUM_WAITERS] = {
 
 /**
  *
- * fiber_multi_waiters - fiber entry point for multiple-waiters test
+ * @brief Fiber entry point for multiple-waiters test
  *
  * @return N/A
  */
@@ -520,7 +520,7 @@ static void fiber_multi_waiters(int arg1, int arg2)
 
 /**
  *
- * do_test_multiple_waiters - task part of multiple-waiter test, repeatable
+ * @brief Task part of multiple-waiter test, repeatable
  *
  * @return N/A
  */
@@ -561,7 +561,7 @@ static int do_test_multiple_waiters(void)
 
 /**
  *
- * test_multiple_waiters - entry point for multiple-waiters test
+ * @brief Entry point for multiple-waiters test
  *
  * @return N/A
  */
@@ -1051,7 +1051,7 @@ static int test_timeout(void)
 
 /**
  *
- * main - entry point to LIFO tests
+ * @brief Entry point to LIFO tests
  *
  * This is the entry point to the LIFO tests.
  *

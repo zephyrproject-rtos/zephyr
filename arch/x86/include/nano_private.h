@@ -762,7 +762,7 @@ extern tNANO _nanokernel;
 
 /**
  *
- * nanoArchInit - performs architecture-specific initialization
+ * @brief Performs architecture-specific initialization
  *
  * This routine performs architecture-specific initialization of the nanokernel.
  * Trivial stuff is done inline; more complex initialization is done via
@@ -811,7 +811,7 @@ static inline void nanoArchInit(void)
 
 /**
  *
- * fiberRtnValueSet - set the return value for the specified fiber (inline)
+ * @brief Set the return value for the specified fiber (inline)
  *
  * The register used to store the return value from a function call invocation is
  * set to <value>.  It is assumed that the specified <fiber> is pending, and

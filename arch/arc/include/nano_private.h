@@ -240,7 +240,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
 
 /**
  *
- * fiberRtnValueSet - set the return value for the specified fiber (inline)
+ * @brief Set the return value for the specified fiber (inline)
  *
  * The register used to store the return value from a function call invocation
  * to <value>.  It is assumed that the specified <fiber> is pending, and thus
@@ -258,7 +258,7 @@ static ALWAYS_INLINE void fiberRtnValueSet(tCCS *fiber, unsigned int value)
 
 /**
  *
- * _IS_IN_ISR - indicates if kernel is handling interrupt
+ * @brief Indicates if kernel is handling interrupt
  *
  * @return 1 if interrupt handler is executed, 0 otherwise
  *

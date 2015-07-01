@@ -55,7 +55,7 @@ SECTION_VAR(NOINIT, _firq_stack)
 
 /**
  *
- * _firq_enter - work to be done before handing control to a FIRQ ISR
+ * @brief Work to be done before handing control to a FIRQ ISR
  *
  * The processor switches to a second register bank so registers from the
  * current bank do not have to be preserved yet. The only issue is the LP_START/
@@ -99,7 +99,7 @@ SECTION_FUNC(TEXT, _firq_enter)
 
 /**
  *
- * _firq_exit - work to be done exiting a FIRQ
+ * @brief Work to be done exiting a FIRQ
  *
  * @return N/A
  */
@@ -258,7 +258,7 @@ _firq_no_reschedule:
 
 /**
  *
- * _firq_stack_setup - install the FIRQ stack in register bank 1
+ * @brief Install the FIRQ stack in register bank 1
  *
  * @return N/A
  */

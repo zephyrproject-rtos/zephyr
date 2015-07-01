@@ -146,7 +146,7 @@ extern int test_fifo_timeout(void);
 
 /**
  *
- * isr_fifo_put - add an item to a FIFO
+ * @brief Add an item to a FIFO
  *
  * This routine is the ISR handler for _trigger_nano_isr_fifo_put().  It adds
  * an item to the FIFO in the context of an ISR.
@@ -165,7 +165,7 @@ void isr_fifo_put(void *parameter)
 
 /**
  *
- * isr_fifo_get - get an item from a FIFO
+ * @brief Get an item from a FIFO
  *
  * This routine is the ISR handler for _trigger_nano_isr_fifo_get().  It gets
  * an item from the FIFO in the context of an ISR.
@@ -185,7 +185,7 @@ void isr_fifo_get(void *parameter)
 
 /**
  *
- * fiber1 - entry point for the first fiber
+ * @brief Entry point for the first fiber
  *
  * @return N/A
  */
@@ -254,7 +254,7 @@ void fiber1(void)
 
 /**
  *
- * testFiberFifoGetW - test the nano_fiber_fifo_get_wait() interface
+ * @brief Test the nano_fiber_fifo_get_wait() interface
  *
  * This function tests the fifo put and get wait interfaces in the fiber context.
  * It gets data from nanoFifoObj2 queue and puts data to nanoFifoObj queue.
@@ -301,7 +301,7 @@ void testFiberFifoGetW(void)
 
 /**
  *
- * testIsrFifoFromFiber - test ISR FIFO routines (triggered from fiber)
+ * @brief Test ISR FIFO routines (triggered from fiber)
  *
  * This function tests the fifo put and get interfaces in the isr context.
  * It is invoked from a fiber.
@@ -355,7 +355,7 @@ void testIsrFifoFromFiber(void)
 
 /**
  *
- * testIsrFifoFromTask - test ISR FIFO routines (triggered from task)
+ * @brief Test ISR FIFO routines (triggered from task)
  *
  * This function tests the fifo put and get interfaces in the isr context.
  * It is invoked from a task.
@@ -418,7 +418,7 @@ void testIsrFifoFromTask(void)
 
 /**
  *
- * fiber2 - entry point for the second fiber
+ * @brief Entry point for the second fiber
  *
  * @return N/A
  */
@@ -474,7 +474,7 @@ void fiber2(void)
 
 /**
  *
- * fiber3 - entry point for the third fiber
+ * @brief Entry point for the third fiber
  *
  * @return N/A
  */
@@ -520,7 +520,7 @@ void fiber3(void)
 
 /**
  *
- * testTaskFifoGetW - test the nano_task_fifo_get_wait() interface
+ * @brief Test the nano_task_fifo_get_wait() interface
  *
  * This is in the task context.  It puts data to nanoFifoObj2 queue and gets
  * data from nanoFifoObj queue.
@@ -560,7 +560,7 @@ void testTaskFifoGetW(void)
 
 /**
  *
- * initNanoObjects - initialize nanokernel objects
+ * @brief Initialize nanokernel objects
  *
  * This routine initializes the nanokernel objects used in the FIFO tests.
  *
@@ -590,7 +590,7 @@ void initNanoObjects(void)
 
 /**
  *
- * main - entry point to FIFO tests
+ * @brief Entry point to FIFO tests
  *
  * This is the entry point to the FIFO tests.
  *

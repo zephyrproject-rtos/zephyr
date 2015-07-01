@@ -44,7 +44,7 @@ number generator.
 
 /**
  *
- * sys_rand32_init - initialize the random number generator
+ * @brief Initialize the random number generator
  *
  * The non-random number generator does not require any initialization.
  * Routine is automatically invoked by the kernel during system startup.
@@ -58,7 +58,7 @@ void sys_rand32_init(void)
 
 /**
  *
- * sys_rand32_get - get a 32 bit random number
+ * @brief Get a 32 bit random number
  *
  * The non-random number generator returns values that are based off the
  * CPU's timestamp counter, which means that successive calls will normally

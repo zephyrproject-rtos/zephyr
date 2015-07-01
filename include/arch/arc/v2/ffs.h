@@ -47,7 +47,7 @@ extern unsigned nanoFfsMsb(unsigned int);
 
 /**
  *
- * nanoFfsMsb_inline - Find First Set bit (searching from most significant bit)
+ * @brief Find First Set bit (searching from most significant bit)
  *
  * This routine finds the first bit set in the argument passed it and returns
  * the index of that bit.  Bits are numbered starting at 1 from the least
@@ -76,7 +76,7 @@ static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
 
 /**
  *
- * nanoFfsLsb - find first set bit (searching from the least significant bit)
+ * @brief Find first set bit (searching from the least significant bit)
  *
  * This routine finds the first bit set in the argument passed it and
  * returns the index of that bit.  Bits are numbered starting

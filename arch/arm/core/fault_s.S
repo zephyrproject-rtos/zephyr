@@ -54,7 +54,7 @@ GTEXT(__reserved)
 
 /**
  *
- * __fault - fault handler installed in the fault and reserved vectors
+ * @brief Fault handler installed in the fault and reserved vectors
  *
  * Entry point for the hard fault, MPU fault, bus fault, usage fault, debug
  * monitor and reserved exceptions.

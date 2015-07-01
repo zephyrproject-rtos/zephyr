@@ -51,7 +51,7 @@ performed byte-by-byte.
 
 /**
  *
- * _Unaligned32Write - perform an unaligned 32-bit write operation
+ * @brief Perform an unaligned 32-bit write operation
  *
  * This function is used during the interrupt and exception stub code 
  * synthesis step when writing out the 32-bit relative jmp/branch
@@ -88,7 +88,7 @@ SECTION_FUNC(TEXT, _Unaligned32Write)
 
 /**
  *
- * _Unaligned32Read - perform an unaligned 32-bit read operation
+ * @brief Perform an unaligned 32-bit read operation
  *
  * This function is used during the interrupt and exception stub code
  * synthesis step when reading the 32-bit relative jmp/branch

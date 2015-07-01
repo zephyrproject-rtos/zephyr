@@ -123,7 +123,7 @@ char __stack fiberStack[512];
 
 /**
  *
- * main - nanokernel entry point
+ * @brief Nanokernel entry point
  *
  * @return N/A
  */

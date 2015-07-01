@@ -46,7 +46,7 @@ GTEXT(_context_entry)
 
 
 /*
- * _ContextEntryWrapper - wrapper for _context_entry
+ * @brief Wrapper for _context_entry
  *
  * The routine pops parameters for the _context_entry from
  * stack frame, prepared by the _NewContext() routine

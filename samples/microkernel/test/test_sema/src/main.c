@@ -93,7 +93,7 @@ static vvfn _trigger_isrSemaSignal = (vvfn) sw_isr_trigger_0;
 
 /**
  *
- * RegressionTaskEntry - entry point for RegressionTask
+ * @brief Entry point for RegressionTask
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * RegressionTask.
@@ -110,7 +110,7 @@ void RegressionTaskEntry(void)
 
 /**
  *
- * AlternateTaskEntry - entry point for AlternateTask
+ * @brief Entry point for AlternateTask
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * MsgRcvrTask.
@@ -127,7 +127,7 @@ void AlternateTaskEntry(void)
 
 /**
  *
- * HighPriTaskEntry - entry point for HighPriTask
+ * @brief Entry point for HighPriTask
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * HighPriTask.
@@ -144,7 +144,7 @@ void HighPriTaskEntry(void)
 
 /**
  *
- * LowPriTaskEntry - entry point for LowPriTask
+ * @brief Entry point for LowPriTask
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * LowPriTask.
@@ -161,7 +161,7 @@ void LowPriTaskEntry(void)
 
 /**
  *
- * testIsrHandler - ISR that gives specified semaphore
+ * @brief ISR that gives specified semaphore
  *
  * @param isrData    pointer to semaphore to be given
  *
@@ -175,7 +175,7 @@ static void testIsrHandler(void *isrData)
 
 /**
  *
- * trigger_isrSemaSignal - generate interrupt that gives specified semaphore
+ * @brief Generate interrupt that gives specified semaphore
  *
  * @param semaphore    semaphore to be given
  *
@@ -190,7 +190,7 @@ void trigger_isrSemaSignal(ksem_t semaphore)
 
 /**
  *
- * releaseTestFiber - release the test fiber
+ * @brief Release the test fiber
  *
  * @return N/A
  */
@@ -202,7 +202,7 @@ void releaseTestFiber(void)
 
 /**
  *
- * testInterruptsInit - initialize interrupt-related code
+ * @brief Initialize interrupt-related code
  *
  * Binds an ISR to the interrupt vector used to give semaphores from interrupt
  * level.
@@ -222,7 +222,7 @@ static void testInterruptsInit(void)
 
 /**
  *
- * MonitorTaskEntry - entry point for MonitorTask
+ * @brief Entry point for MonitorTask
  *
  * This routine keeps tabs on the progress of the tasks doing the actual testing
  * and generates the final test case summary message.

@@ -129,7 +129,7 @@ static unsigned char idle_mode = IDLE_NOT_TICKLESS;
 
 /**
  *
- * sysTickStop - stop the timer
+ * @brief Stop the timer
  *
  * This routine disables the systick counter.
  *
@@ -158,7 +158,7 @@ static ALWAYS_INLINE void sysTickStop(void)
 
 /**
  *
- * sysTickStart - start the timer
+ * @brief Start the timer
  *
  * This routine enables the systick counter.
  *
@@ -185,7 +185,7 @@ static ALWAYS_INLINE void sysTickStart(void)
 
 /**
  *
- * sysTickCurrentGet - get the current counter value
+ * @brief Get the current counter value
  *
  * This routine gets the value from the timer's current value register.  This
  * value is the 'time' remaining to decrement before the timer triggers an
@@ -202,7 +202,7 @@ static ALWAYS_INLINE uint32_t sysTickCurrentGet(void)
 
 /**
  *
- * sysTickReloadGet - get the reload/countdown value
+ * @brief Get the reload/countdown value
  *
  * This routine returns the value from the reload value register.
  *
@@ -219,7 +219,7 @@ static ALWAYS_INLINE uint32_t sysTickReloadGet(void)
 
 /**
  *
- * sysTickReloadSet - set the reload/countdown value
+ * @brief Set the reload/countdown value
  *
  * This routine sets value from which the timer will count down and also
  * sets the timer's current value register to zero.
@@ -246,7 +246,7 @@ static ALWAYS_INLINE void sysTickReloadSet(
 
 /**
  *
- * _TIMER_INT_HANDLER - system clock tick handler
+ * @brief System clock tick handler
  *
  * This routine handles the system clock tick interrupt. A TICK_EVENT event
  * is pushed onto the microkernel stack.
@@ -379,7 +379,7 @@ void _TIMER_INT_HANDLER(void *unused)
 
 /**
  *
- * sysTickTicklessIdleInit - initialize the tickless idle feature
+ * @brief Initialize the tickless idle feature
  *
  * This routine initializes the tickless idle feature by calculating the
  * necessary hardware-specific parameters.
@@ -460,7 +460,7 @@ static void sysTickTicklessIdleInit(void)
 
 /**
  *
- * _timer_idle_enter - Place the system timer into idle state
+ * @brief Place the system timer into idle state
  *
  * Re-program the timer to enter into the idle state for the given number of
  * ticks. It is set to a "one shot" mode where it will fire in the number of
@@ -516,7 +516,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 
 /**
  *
- * _timer_idle_exit - handling of tickless idle when interrupted
+ * @brief Handling of tickless idle when interrupted
  *
  * The routine, called by _sys_power_save_idle_exit, is responsible for taking
  * the timer out of idle mode and generating an interrupt at the next
@@ -608,7 +608,7 @@ void _timer_idle_exit(void)
 
 /**
  *
- * timer_driver - initialize and enable the system clock
+ * @brief Initialize and enable the system clock
  *
  * This routine is used to program the systick to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
@@ -648,7 +648,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 
 /**
  *
- * timer_read - read the BSP timer hardware
+ * @brief Read the BSP timer hardware
  *
  * This routine returns the current time in terms of timer hardware clock cycles.
  * Some kernel facilities (e.g. benchmarking code) directly call timer_read()
@@ -670,7 +670,7 @@ uint32_t timer_read(void)
 
 /**
  *
- * timer_disable - stop announcing ticks into the kernel
+ * @brief Stop announcing ticks into the kernel
  *
  * This routine disables the systick so that timer interrupts are no
  * longer delivered.

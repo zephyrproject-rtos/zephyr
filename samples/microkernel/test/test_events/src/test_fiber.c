@@ -51,7 +51,7 @@ static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 
 /**
  *
- * testFiberEntry - the test fiber entry function
+ * @brief The test fiber entry function
  *
  * Fiber waits on the semaphore controlled by the test task
  * It signals the event for the eventWaitTest() function
@@ -84,7 +84,7 @@ static void testFiberEntry(void)
 
 /**
  *
- * testFiberInit - initializes variables and starts the test fiber
+ * @brief Initializes variables and starts the test fiber
  *
  * @return N/A
  */

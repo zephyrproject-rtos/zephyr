@@ -44,7 +44,7 @@
 #include <board.h>
 
 /*
- * _arc_v2_irq_unit_init - initialize the interrupt unit device driver
+ * @brief Initialize the interrupt unit device driver
  *
  * Initializes the interrupt unit device driver and the device
  * itself.
@@ -69,7 +69,7 @@ void _arc_v2_irq_unit_init(void)
 }
 
 /*
- * _arc_v2_irq_unit_int_eoi - send EOI signal to interrupt unit
+ * @brief Send EOI signal to interrupt unit
  *
  * This routine sends an EOI (End Of Interrupt) signal to the interrupt unit
  * to clear a pulse-triggered interrupt.
@@ -87,7 +87,7 @@ void _arc_v2_irq_unit_int_eoi(int irq)
 }
 
 /*
- * _arc_v2_irq_unit_int_trigger_set - sets an IRQ line to level/pulse trigger
+ * @brief Sets an IRQ line to level/pulse trigger
  *
  * Sets the IRQ line <irq> to trigger an interrupt based on the level or the
  * edge of the signal. Valid values for <trigger> are _ARC_V2_INT_LEVEL and

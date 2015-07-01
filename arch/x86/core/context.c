@@ -59,7 +59,7 @@ void _ContextEntryWrapper(_ContextEntry, _ContextArg, _ContextArg, _ContextArg);
 
 /**
  *
- * _NewContextInternal - initialize a new execution context
+ * @brief Initialize a new execution context
  *
  * This function is utilized to initialize all execution contexts (both fiber
  * and task).  The 'priority' parameter will be set to -1 for the creation of
@@ -208,7 +208,7 @@ static void _NewContextInternal(
 #ifdef CONFIG_GDB_INFO
 /**
  *
- * _ContextEntryWrapper - adjust stack before invoking _context_entry
+ * @brief Adjust stack before invoking _context_entry
  *
  * This function adjusts the initial stack frame created by _NewContext()
  * such that the GDB stack frame unwinders recognize it as the outermost frame
@@ -275,7 +275,7 @@ __asm__("\t.globl _context_entry\n"
 
 /**
  *
- * _NewContext - create a new kernel execution context
+ * @brief Create a new kernel execution context
  *
  * This function is utilized to create execution contexts for both fiber
  * contexts and kernel task contexts.

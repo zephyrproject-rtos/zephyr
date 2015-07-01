@@ -46,7 +46,7 @@ int errorCount = 0; /* track number of errors */
 
 /**
  *
- * nanoTest - test latency of nanokernel
+ * @brief Test latency of nanokernel
  *
  * @return N/A
  *
@@ -77,7 +77,7 @@ void nanoTest(void)
 #ifdef CONFIG_NANOKERNEL
 /**
  *
- * main - nanokernel-only testing entry point
+ * @brief Nanokernel-only testing entry point
  *
  * @return N/A
  *
@@ -104,7 +104,7 @@ void microTaskSwitchYield(void);
 
 /**
  *
- * microTest - test latency of microkernel
+ * @brief Test latency of microkernel
  *
  * @return N/A
  *
@@ -134,7 +134,7 @@ void microTest(void)
 
 /**
  *
- * main - microkernel testing entry point
+ * @brief Microkernel testing entry point
  *
  * @return N/A
  *

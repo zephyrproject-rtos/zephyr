@@ -58,7 +58,7 @@ GTEXT(nano_cpu_atomic_idle)
 
 /**
  *
- * _CpuIdleInit - initialization of CPU idle
+ * @brief Initialization of CPU idle
  *
  * Only called by nanoArchInit(). Sets SEVONPEND bit once for the system's
  * duration.
@@ -80,7 +80,7 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
 
 /**
  *
- * _NanoIdleValGet - get the kernel idle setting
+ * @brief Get the kernel idle setting
  *
  * Returns the nanokernel idle setting, in ticks. Only called by __systick().
  *
@@ -98,7 +98,7 @@ SECTION_FUNC(TEXT, _NanoIdleValGet)
 
 /**
  *
- * _NanoIdleValClear - clear the kernel idle setting
+ * @brief Clear the kernel idle setting
  *
  * Sets the nanokernel idle setting to 0. Only called by __systick().
  *
@@ -119,7 +119,7 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
 
 /**
  *
- * nano_cpu_idle - power save idle routine for ARM Cortex-M
+ * @brief Power save idle routine for ARM Cortex-M
  *
  * This function will be called by the nanokernel idle loop or possibly within
  * an implementation of _sys_power_save_idle in the microkernel when the
@@ -144,7 +144,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 
 /**
  *
- * nano_cpu_atomic_idle - atomically re-enable interrupts and enter low power mode
+ * @brief Atomically re-enable interrupts and enter low power mode
  *
  * This function is utilized by the nanokernel object "wait" APIs for task
  * contexts, e.g. nano_task_lifo_get_wait(), nano_task_sem_take_wait(), nano_task_stack_pop_wait(),

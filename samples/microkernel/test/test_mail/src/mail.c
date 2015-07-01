@@ -86,7 +86,7 @@ extern kmemory_pool_t smallBlkszPool;
 
 /**
  *
- * setMsg_Sender - sets various fields in the message for the sender
+ * @brief Sets various fields in the message for the sender
  *
  * Sets the following fields in the message:
  *   rx_task to receiverTask - destination for the message
@@ -114,7 +114,7 @@ static void setMsg_Sender(struct k_msg *inMsg, kmbox_t inMbox, ktask_t receiverT
 
 /**
  *
- * setMsg_Receiver - sets various fields in the message for the receiver
+ * @brief Sets various fields in the message for the receiver
  *
  * Sets the following fields in the message:
  *   rx_data to NULL       - to allow message transfer to occur
@@ -145,7 +145,7 @@ static void setMsg_Receiver(struct k_msg *inMsg, kmbox_t inMbox, ktask_t senderT
 
 /**
  *
- * setMsg_RecvBuf - sets rx_data field in msg and clears buffer
+ * @brief Sets rx_data field in msg and clears buffer
  *
  * @param inMsg          The message being received.
  * @param inBuffer       Incoming data area.
@@ -165,7 +165,7 @@ static void setMsg_RecvBuf(struct k_msg *inMsg, char *inBuffer, uint32_t inBuffe
 
 /**
  *
- * MsgSenderTask - task that tests sending of mailbox messages
+ * @brief Task that tests sending of mailbox messages
  *
  * This routine exercises the task_mbox_put[_wait[_timeout]] APIs.
  *
@@ -360,7 +360,7 @@ int MsgSenderTask(void)
 
 /**
  *
- * MsgRcvrTask - task that tests receiving of mailbox messages
+ * @brief Task that tests receiving of mailbox messages
  *
  * This routine exercises the task_mbox_get[_wait[_timeout]] and task_mbox_data_get[xxx] APIs.
  *

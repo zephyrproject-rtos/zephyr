@@ -58,7 +58,7 @@ int example_handler (int event);
 
 /**
  *
- * event_test - event signal speed test
+ * @brief Event signal speed test
  *
  * @return N/A
  *
@@ -179,7 +179,7 @@ void event_test(void)
 
 /**
  *
- * example_handler - event handler for the tests
+ * @brief Event handler for the tests
  *
  * The event handler for the test. Sets up nEventValue global variable.
  * This variable is used in the main test.

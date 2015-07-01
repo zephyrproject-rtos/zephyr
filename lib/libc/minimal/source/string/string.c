@@ -34,7 +34,7 @@
 
 /**
  *
- * strcpy - copy a string
+ * @brief Copy a string
  *
  * @return pointer to destination buffer <d>
  */
@@ -56,7 +56,7 @@ char *strcpy(char *restrict d, const char *restrict s)
 
 /**
  *
- * strncpy - copy part of a string
+ * @brief Copy part of a string
  *
  * @return pointer to destination buffer <d>
  */
@@ -83,7 +83,7 @@ char *strncpy(char *restrict d, const char *restrict s, size_t n)
 
 /**
  *
- * strchr - string scanning operation
+ * @brief String scanning operation
  *
  * @return pointer to 1st instance of found byte, or NULL if not found
  */
@@ -100,7 +100,7 @@ char *strchr(const char *s, int c)
 
 /**
  *
- * strlen - get string length
+ * @brief Get string length
  *
  * @return number of bytes in string <s>
  */
@@ -119,7 +119,7 @@ size_t strlen(const char *s)
 
 /**
  *
- * strcmp - compare two strings
+ * @brief Compare two strings
  *
  * @return negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
  */
@@ -136,7 +136,7 @@ int strcmp(const char *s1, const char *s2)
 
 /**
  *
- * strncmp - compare part of two strings
+ * @brief Compare part of two strings
  *
  * @return negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
  */
@@ -154,7 +154,7 @@ int strncmp(const char *s1, const char *s2, size_t n)
 
 /**
  *
- * memcmp - compare two memory areas
+ * @brief Compare two memory areas
  *
  * @return negative # if <m1> < <m2>, 0 if <m1> == <m2>, else positive #
  */
@@ -177,7 +177,7 @@ int memcmp(const void *m1, const void *m2, size_t n)
 
 /**
  *
- * memmove - copy bytes in memory with overlapping areas
+ * @brief Copy bytes in memory with overlapping areas
  *
  * @return pointer to destination buffer <d>
  */
@@ -212,7 +212,7 @@ void *memmove(void *d, const void *s, size_t n)
 
 /**
  *
- * memcpy - copy bytes in memory
+ * @brief Copy bytes in memory
  *
  * @return pointer to start of destination buffer
  */
@@ -262,7 +262,7 @@ void *memcpy(void *restrict d, const void *restrict s, size_t n)
 
 /**
  *
- * memset - set bytes in memory
+ * @brief Set bytes in memory
  *
  * @return pointer to start of buffer
  */

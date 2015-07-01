@@ -44,7 +44,7 @@ This module contains functions for manipulating caches.
 
 /**
  *
- * _SysCacheFlush - flush a page to main memory
+ * @brief Flush a page to main memory
  *
  * This implementation flushes the whole cache.
  *

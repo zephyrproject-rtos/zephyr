@@ -63,7 +63,7 @@ static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
 
 /**
  *
- * RegressionTaskEntry - entry point for RegressionTask
+ * @brief Entry point for RegressionTask
  *
  * This routine signals "task done" or "task fail", based on the return code of
  * RegressionTask.
@@ -80,7 +80,7 @@ void RegressionTaskEntry(void)
 
 /**
  *
- * MonitorTaskEntry - entry point for MonitorTask
+ * @brief Entry point for MonitorTask
  *
  * This routine keeps tabs on the progress of the tasks doing the actual testing
  * and generates the final test case summary message.

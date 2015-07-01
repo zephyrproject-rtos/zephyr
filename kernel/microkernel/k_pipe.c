@@ -37,7 +37,7 @@
 
 /**
  *
- * _k_pipe_init - initialize kernel pipe subsystem
+ * @brief Initialize kernel pipe subsystem
  *
  * Performs any initialization of statically-defined pipes that wasn't done
  * at build time. (Note: most pipe structure fields are set to zero by sysgen.)
@@ -59,7 +59,7 @@ void _k_pipe_init(void)
 
 /**
  *
- * _task_pipe_get - pipe read request
+ * @brief Pipe read request
  *
  * This routine attempts to read data into a memory buffer area from the
  * specified pipe.
@@ -114,7 +114,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 
 /**
  *
- * _task_pipe_put - pipe write request
+ * @brief Pipe write request
  *
  * This routine attempts to write data from a memory buffer area to the
  * specified pipe.
@@ -169,7 +169,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 
 /**
  *
- * _task_pipe_put_async - asynchronous pipe write request
+ * @brief Asynchronous pipe write request
  *
  * This routine attempts to write data from a memory pool block to the
  * specified pipe. (Note that partial transfers and timeouts are not

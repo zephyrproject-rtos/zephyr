@@ -55,7 +55,7 @@ tNANO _nanokernel = {0};
 #if defined(CONFIG_CONTEXT_MONITOR)
 /**
  *
- * _context_monitor_init - initialize context monitoring support
+ * @brief Initialize context monitoring support
  *
  * Currently only inserts the new context in the list of active contexts.
  *
@@ -83,7 +83,7 @@ static ALWAYS_INLINE void _context_monitor_init(struct ccs *pCcs /* context */
 
 /**
  *
- * _NewContext - intialize a new context (thread) from its stack space
+ * @brief Intialize a new context (thread) from its stack space
  *
  * The control structure (CCS) is put at the lower address of the stack. An
  * initial context, to be "restored" by __pendsv(), is put at the other end of

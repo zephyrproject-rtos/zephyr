@@ -221,7 +221,7 @@ static int stale_irq_check =
 
 /**
  *
- * _hpetMainCounterAtomic - safely read the main HPET up counter
+ * @brief Safely read the main HPET up counter
  *
  * This routine simulates an atomic read of the 64-bit system clock on CPUs
  * that only support 32-bit memory accesses. The most significant word
@@ -250,7 +250,7 @@ static uint64_t _hpetMainCounterAtomic(void)
 
 /**
  *
- * _timer_int_handler - system clock tick handler
+ * @brief System clock tick handler
  *
  * This routine handles the system clock tick interrupt. A TICK_EVENT event
  * is pushed onto the microkernel stack.
@@ -351,7 +351,7 @@ void _timer_int_handler(void *unused)
 
 /**
  *
- * _timer_idle_enter - Place system timer into idle state
+ * @brief Place system timer into idle state
  *
  * Re-program the timer to enter into the idle state for the given number of
  * ticks (-1 means infinite number of ticks).
@@ -380,7 +380,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 
 /**
  *
- * _timer_idle_exit - Take system timer out of idle state
+ * @brief Take system timer out of idle state
  *
  * Determine how long timer has been idling and reprogram it to interrupt at the
  * next tick.
@@ -489,7 +489,7 @@ void _timer_idle_exit(void)
 
 /**
  *
- * timer_driver - initialize and enable the system clock
+ * @brief Initialize and enable the system clock
  *
  * This routine is used to program the HPET to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
@@ -622,7 +622,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
 
 /**
  *
- * timer_read - read the BSP timer hardware
+ * @brief Read the BSP timer hardware
  *
  * This routine returns the current time in terms of timer hardware clock cycles.
  *
@@ -642,7 +642,7 @@ uint32_t timer_read(void)
 
 /**
  *
- * timer_disable - stop announcing ticks into the kernel
+ * @brief Stop announcing ticks into the kernel
  *
  * This routine disables the HPET so that timer interrupts are no
  * longer delivered.

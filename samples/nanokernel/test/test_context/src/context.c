@@ -119,7 +119,7 @@ static void (*_trigger_isrHandler)(void) = (vvfn)sw_isr_trigger_0;
 
 /**
  *
- * isr_handler - handler to perform various actions from within an ISR context
+ * @brief Handler to perform various actions from within an ISR context
  *
  * This routine is the ISR handler for _trigger_isrHandler().  It performs
  * the command requested in <isrInfo.command>.
@@ -150,7 +150,7 @@ void isr_handler(void *data)
 #if !defined(CONFIG_CPU_CORTEX_M3_M4)
 /**
  *
- * exc_divide_error_handler - divide by zero exception handler
+ * @brief Divide by zero exception handler
  *
  * This handler is part of a test that is only interested in detecting the
  * error so that we know the exception connect code is working. It simply
@@ -171,7 +171,7 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
 
 /**
  *
- * initNanoObjects - initialize nanokernel objects
+ * @brief Initialize nanokernel objects
  *
  * This routine initializes the nanokernel objects used in this module's tests.
  *
@@ -199,7 +199,7 @@ int initNanoObjects(void)
 
 /**
  *
- * nano_cpu_idleTest - test the nano_cpu_idle() routine
+ * @brief Test the nano_cpu_idle() routine
  *
  * This tests the nano_cpu_idle() routine.  The first thing it does is align to
  * a tick boundary.  The only source of interrupts while the test is running is
@@ -233,7 +233,7 @@ int nano_cpu_idleTest(void)
 
 /**
  *
- * irq_lockWrapper - a wrapper for irq_lock()
+ * @brief A wrapper for irq_lock()
  *
  * @return irq_lock() return value
  */
@@ -247,7 +247,7 @@ int irq_lockWrapper(int unused)
 
 /**
  *
- * irq_unlockWrapper - a wrapper for irq_unlock()
+ * @brief A wrapper for irq_unlock()
  *
  * @return N/A
  */
@@ -259,7 +259,7 @@ void irq_unlockWrapper(int imask)
 
 /**
  *
- * irq_lock_inlineWrapper - a wrapper for irq_lock_inline()
+ * @brief A wrapper for irq_lock_inline()
  *
  * @return irq_lock_inline() return value
  */
@@ -273,7 +273,7 @@ int irq_lock_inlineWrapper(int unused)
 
 /**
  *
- * irq_unlock_inlineWrapper - a wrapper for irq_unlock_inline()
+ * @brief A wrapper for irq_unlock_inline()
  *
  * @return N/A
  */
@@ -285,7 +285,7 @@ void irq_unlock_inlineWrapper(int imask)
 
 /**
  *
- * irq_disableWrapper - a wrapper for irq_disable()
+ * @brief A wrapper for irq_disable()
  *
  * @return <irq>
  */
@@ -298,7 +298,7 @@ int irq_disableWrapper(int irq)
 
 /**
  *
- * irq_enableWrapper - a wrapper for irq_enable()
+ * @brief A wrapper for irq_enable()
  *
  * @return N/A
  */
@@ -310,7 +310,7 @@ void irq_enableWrapper(int irq)
 
 /**
  *
- * nanoCpuDisableInterruptsTest - test routines for disabling and enabling ints
+ * @brief Test routines for disabling and enabling ints
  *
  * This routine tests the routines for disabling and enabling interrupts.  These
  * include irq_lock() and irq_unlock(), irq_lock_inline() and
@@ -376,7 +376,7 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
 
 /**
  *
- * nanoCtxTaskTest - test the various nanoCtxXXX() routines from a task
+ * @brief Test the various nanoCtxXXX() routines from a task
  *
  * This routines tests the context_self_get() and context_type_get() routines from both
  * a task and an ISR (that interrupted a task).  Checking those routines with
@@ -420,7 +420,7 @@ int nanoCtxTaskTest(void)
 
 /**
  *
- * nanoCtxFiberTest - test the various nanoCtxXXX() routines from a fiber
+ * @brief Test the various nanoCtxXXX() routines from a fiber
  *
  * This routines tests the context_self_get() and context_type_get() routines from both
  * a fiber and an ISR (that interrupted a fiber).  Checking those routines with
@@ -475,7 +475,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 
 /**
  *
- * fiberHelper - entry point to the fiber's helper
+ * @brief Entry point to the fiber's helper
  *
  * This routine is the entry point to the fiber's helper fiber.  It is used to
  * help test the behaviour of the fiber_yield() routine.
@@ -512,7 +512,7 @@ static void fiberHelper(int arg1, int arg2)
 
 /**
  *
- * fiber_yieldTest - test the fiber_yield() routine
+ * @brief Test the fiber_yield() routine
  *
  * This routine tests the fiber_yield() routine.  It starts another fiber
  * (thus also testing fiber_fiber_start()) and checks that behaviour of
@@ -594,7 +594,7 @@ int fiber_yieldTest(void)
 
 /**
  *
- * fiberEntry - entry point to fiber started by the task
+ * @brief Entry point to fiber started by the task
  *
  * This routine is the entry point to the fiber started by the task.
  *
@@ -817,7 +817,7 @@ static int test_timeout(void)
 
 /**
  *
- * main - entry point to timer tests
+ * @brief Entry point to timer tests
  *
  * This is the entry point to the CPU and context tests.
  *

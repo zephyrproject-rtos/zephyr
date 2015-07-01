@@ -61,7 +61,7 @@ GTEXT(irq_unlock)
 
 /**
  *
- * irq_lock - lock interrupts
+ * @brief Lock interrupts
  *
  * Prevent exceptions of priority lower than to the two highest priorities from
  * interrupting the CPU.
@@ -80,7 +80,7 @@ SECTION_FUNC(TEXT,irq_lock)
 
 /**
  *
- * irq_unlock - unlock interrupts
+ * @brief Unlock interrupts
  *
  * Return the state of interrupt locking to a previous level, passed in via the
  * <key> parameter, obtained from a previous call to irq_lock().

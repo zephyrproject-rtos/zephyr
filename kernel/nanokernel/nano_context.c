@@ -44,7 +44,7 @@ tasks or fibers.
 
 /**
  *
- * context_self_get - return the currently executing context
+ * @brief Return the currently executing context
  *
  * This routine returns a pointer to the context control block of the currently
  * executing context.  It is cast to a nano_context_id_t for use publically.
@@ -59,7 +59,7 @@ nano_context_id_t context_self_get(void)
 
 /**
  *
- * context_type_get - return the type of the currently executing context
+ * @brief Return the type of the currently executing context
  *
  * This routine returns the type of context currently executing.
  *
@@ -79,7 +79,7 @@ nano_context_type_t context_type_get(void)
 
 /**
  *
- * _context_essential_set - mark context as essential to system
+ * @brief Mark context as essential to system
  *
  * This function tags the running fiber or task as essential to system
  * option; exceptions raised by this context will be treated as a fatal
@@ -95,7 +95,7 @@ void _context_essential_set(void)
 
 /**
  *
- * _context_essential_clear - mark context as not essential to system
+ * @brief Mark context as not essential to system
  *
  * This function tags the running fiber or task as not essential to system
  * option; exceptions raised by this context may be recoverable.
@@ -111,7 +111,7 @@ void _context_essential_clear(void)
 
 /**
  *
- * _context_essential_check - is the specified context essential?
+ * @brief Is the specified context essential?
  *
  * This routine indicates if the specified context is an essential system
  * context.  A NULL context pointer indicates that the current context is
@@ -130,7 +130,7 @@ int _context_essential_check(tCCS *pCtx /* pointer to context */
 
 /**
  *
- * context_custom_data_set - set context's custom data
+ * @brief Set context's custom data
  *
  * This routine sets the custom data value for the current task or fiber.
  * Custom data is not used by the kernel itself, and is freely available
@@ -147,7 +147,7 @@ void context_custom_data_set(void *value /* new value */
 
 /**
  *
- * context_custom_data_get - get context's custom data
+ * @brief Get context's custom data
  *
  * This function returns the custom data value for the current task or fiber.
  *
@@ -164,7 +164,7 @@ void *context_custom_data_get(void)
 #if defined(CONFIG_CONTEXT_MONITOR)
 /**
  *
- * _context_exit - context exit routine
+ * @brief Context exit routine
  *
  * This function is invoked when the specified context is aborted, either
  * normally or abnormally. It is called for the termination of any context,
@@ -202,7 +202,7 @@ void _context_exit(tCCS *pContext)
 
 /**
  *
- * _context_entry - common context entry point function for kernel contexts
+ * @brief Common context entry point function for kernel contexts
  *
  * This function serves as the entry point for _all_ kernel contexts, i.e. both
  * task and fiber contexts are instantiated such that initial execution starts

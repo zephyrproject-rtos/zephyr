@@ -58,7 +58,7 @@
 #if 0 /* NOTUSED */
 /**
  *
- * consoleIn - get a character from UART
+ * @brief Get a character from UART
  *
  * @return the character or EOF if nothing present
  */
@@ -76,7 +76,7 @@ static int consoleIn(void)
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 /**
  *
- * consoleOut - output one character to UART
+ * @brief Output one character to UART
  *
  * Outputs both line feed and carriage return in the case of a '\n'.
  *
@@ -211,7 +211,7 @@ void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)
 
 /**
  *
- * uart_console_init - initialize one UART as the console/debug port
+ * @brief Initialize one UART as the console/debug port
  *
  * @return N/A
  */

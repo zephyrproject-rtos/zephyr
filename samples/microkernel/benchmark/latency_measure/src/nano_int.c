@@ -50,7 +50,7 @@ static uint32_t timestamp;
 
 /**
  *
- * latencyTestIsr - test ISR used to measure best case interrupt latency
+ * @brief Test ISR used to measure best case interrupt latency
  *
  * The interrupt handler gets the second timestamp.
  *
@@ -68,7 +68,7 @@ static void latencyTestIsr(void *unused)
 
 /**
  *
- * fiberInt - interrupt preparation fiber
+ * @brief Interrupt preparation fiber
  *
  * Fiber makes all the test preparations: registers the interrupt handler,
  * gets the first timestamp and invokes the software interrupt.
@@ -87,7 +87,7 @@ static void fiberInt(void)
 
 /**
  *
- * nanoIntLatency - the test main function
+ * @brief The test main function
  *
  * @return 0 on success
  *

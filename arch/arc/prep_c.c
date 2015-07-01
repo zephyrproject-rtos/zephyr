@@ -46,7 +46,7 @@ initialization is performed.
 
 /**
  *
- * bssZero - clear BSS
+ * @brief Clear BSS
  *
  * This routine clears the BSS region, so all bytes are 0.
  *
@@ -65,7 +65,7 @@ static void bssZero(void)
 
 /**
  *
- * dataCopy - copy the data section from ROM to RAM
+ * @brief Copy the data section from ROM to RAM
  *
  * This routine copies the data section from ROM to RAM.
  *
@@ -92,7 +92,7 @@ static void dataCopy(void)
 extern FUNC_NORETURN void _Cstart(void);
 /**
  *
- * _PrepC - prepare to and run C code
+ * @brief Prepare to and run C code
  *
  * This routine prepares for the execution of and runs C code.
  *

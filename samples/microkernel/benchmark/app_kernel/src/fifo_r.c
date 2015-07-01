@@ -38,7 +38,7 @@
 /* queue transfer speed test */
 /**
  *
- * dequtask - data receive task
+ * @brief Data receive task
  *
  * @return N/A
  *

@@ -55,7 +55,7 @@ GTEXT(_WdogInit)
 
 /**
  *
- * _WdogInit - Watchdog timer disable routine
+ * @brief Watchdog timer disable routine
  *
  * This routine will disable the watchdog timer.
  *

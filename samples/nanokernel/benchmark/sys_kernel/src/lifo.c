@@ -39,7 +39,7 @@ static struct nano_fifo nanoFifo_sync; /* for synchronization */
 
 /**
  *
- * lifo_test_init - initialize LIFOs for the test
+ * @brief Initialize LIFOs for the test
  *
  * @return N/A
  *
@@ -55,7 +55,7 @@ void lifo_test_init(void)
 
 /**
  *
- * lifo_fiber1 - lifo test context
+ * @brief Lifo test context
  *
  * @param par1   Ignored parameter.
  * @param par2   Number of test loops.
@@ -95,7 +95,7 @@ void lifo_fiber1(int par1, int par2)
 
 /**
  *
- * lifo_fiber2 - lifo test context
+ * @brief Lifo test context
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
@@ -127,7 +127,7 @@ void lifo_fiber2(int par1, int par2)
 
 /**
  *
- * lifo_fiber3 - lifo test context
+ * @brief Lifo test context
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test loops.
@@ -161,7 +161,7 @@ void lifo_fiber3(int par1, int par2)
 
 /**
  *
- * lifo_test - the main test entry
+ * @brief The main test entry
  *
  * @return 1 if success and 0 on failure
  *

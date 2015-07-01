@@ -211,7 +211,7 @@ static void _IoApicRedUpdateLo(unsigned int irq, uint32_t value,
 
 /**
  *
- * _ioapic_init - initialize the IO APIC or xAPIC
+ * @brief Initialize the IO APIC or xAPIC
  *
  * This routine initializes the IO APIC or xAPIC.
  *
@@ -263,7 +263,7 @@ void _ioapic_init(void)
 
 /**
  *
- * _ioapic_eoi - send EOI (End Of Interrupt) signal to IO APIC
+ * @brief Send EOI (End Of Interrupt) signal to IO APIC
  *
  * This routine sends an EOI signal to the IO APIC's interrupting source.
  *
@@ -279,7 +279,7 @@ void _ioapic_eoi(unsigned int irq /* INT number to send EOI */
 
 /**
  *
- * _ioapic_eoi_get - get EOI (End Of Interrupt) information
+ * @brief Get EOI (End Of Interrupt) information
  *
  * This routine returns EOI signalling information for a specific IRQ.
  *
@@ -319,7 +319,7 @@ void *_ioapic_eoi_get(unsigned int irq,  /* INTIN number of interest */
 
 /**
  *
- * _ioapic_irq_enable - enable a specified APIC interrupt input line
+ * @brief Enable a specified APIC interrupt input line
  *
  * This routine enables a specified APIC interrupt input line.
  *
@@ -334,7 +334,7 @@ void _ioapic_irq_enable(unsigned int irq /* INTIN number to enable */
 
 /**
  *
- * _ioapic_irq_disable - disable a specified APIC interrupt input line
+ * @brief Disable a specified APIC interrupt input line
  *
  * This routine disables a specified APIC interrupt input line.
  *
@@ -349,7 +349,7 @@ void _ioapic_irq_disable(unsigned int irq /* INTIN number to disable */
 
 /**
  *
- * _ioapic_irq_set - programs the interrupt redirection table
+ * @brief Programs the interrupt redirection table
  *
  * This routine sets up the redirection table entry for the specified IRQ
  *
@@ -370,7 +370,7 @@ void _ioapic_irq_set(unsigned int irq, /* virtualized IRQ */
 
 /**
  *
- * _ioapic_int_vec_set - program interrupt vector for specified irq
+ * @brief Program interrupt vector for specified irq
  *
  * The routine writes the interrupt vector in the Interrupt Redirection
  * Table for specified irq number
@@ -388,7 +388,7 @@ void _ioapic_int_vec_set(unsigned int irq, /* INT number */
 
 /**
  *
- * __IoApicGet - read a 32 bit IO APIC register
+ * @brief Read a 32 bit IO APIC register
  *
  * This routine reads the specified IO APIC register using indirect addressing.
  *
@@ -416,7 +416,7 @@ static uint32_t __IoApicGet(
 
 /**
  *
- * __IoApicSet - write a 32 bit IO APIC register
+ * @brief Write a 32 bit IO APIC register
  *
  * This routine writes the specified IO APIC register using indirect addressing.
  *
@@ -444,7 +444,7 @@ static void __IoApicSet(
 
 /**
  *
- * ioApicRedGetLo - get low 32 bits of Redirection Table entry
+ * @brief Get low 32 bits of Redirection Table entry
  *
  * This routine reads the low-order 32 bits of a Redirection Table entry.
  *
@@ -470,7 +470,7 @@ static uint32_t ioApicRedGetLo(unsigned int irq /* INTIN number */
 
 /**
  *
- * ioApicRedSetLo - set low 32 bits of Redirection Table entry
+ * @brief Set low 32 bits of Redirection Table entry
  *
  * This routine writes the low-order 32 bits of a Redirection Table entry.
  *
@@ -497,7 +497,7 @@ static void ioApicRedSetLo(unsigned int irq, /* INTIN number */
 
 /**
  *
- * ioApicRedSetHi - set high 32 bits of Redirection Table entry
+ * @brief Set high 32 bits of Redirection Table entry
  *
  * This routine writes the high-order 32 bits of a Redirection Table entry.
  *
@@ -524,7 +524,7 @@ static void ioApicRedSetHi(unsigned int irq, /* INTIN number */
 
 /**
  *
- * _IoApicRedUpdateLo - modify low 32 bits of Redirection Table entry
+ * @brief Modify low 32 bits of Redirection Table entry
  *
  * This routine modifies selected portions of the low-order 32 bits of a
  * Redirection Table entry, as indicated by the associate bit mask.
@@ -550,7 +550,7 @@ static void _IoApicRedUpdateLo(
 
 /**
  *
- * _IoApicRteConfigSet - write to the RTE config register for specified IRQ
+ * @brief Write to the RTE config register for specified IRQ
  *
  * This routine writes the specified 32-bit <value> into the RTE configuration
  * register for the specified <irq> (0 to (IOAPIC_NUM_RTES - 1))
@@ -578,7 +578,7 @@ static void _IoApicRteConfigSet(unsigned int irq, /* INTIN number */
 
 /**
  *
- * _IoApicRedirRegSet - write to the specified MSI redirection register
+ * @brief Write to the specified MSI redirection register
  *
  * This routine writes the 32-bit <value> into the redirection register
  * specified by <reg>.

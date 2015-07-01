@@ -64,7 +64,7 @@ static int tcRC = TC_PASS;              /* test case return code */
 
 /**
  *
- * initMyData - initialize data array
+ * @brief Initialize data array
  *
  * This routine initializes the myData array used in the FIFO tests.
  *
@@ -80,7 +80,7 @@ void initMyData(void)
 
 /**
  *
- * printMyData - print data array
+ * @brief Print data array
  *
  * This routine prints myData array.
  *
@@ -97,7 +97,7 @@ void printMyData(void)
 
 /**
  *
- * verifyRetValue - verify return value
+ * @brief Verify return value
  *
  * This routine verifies current value against expected value
  * and returns true if they are the same.
@@ -115,7 +115,7 @@ bool verifyRetValue(int expectRetValue, int currentRetValue)
 
 /**
  *
- * initMicroObjects - initialize microkernel objects
+ * @brief Initialize microkernel objects
  *
  * This routine initializes the microkernel objects used in the FIFO tests.
  *
@@ -130,7 +130,7 @@ void initMicroObjects(void)
 
 /**
  *
- * fillFIFO - fills up the FIFO queue
+ * @brief Fills up the FIFO queue
  *
  * This routine fills the FIFO queue with myData array.  This assumes the
  * queue is empty before we put in elements.
@@ -187,7 +187,7 @@ exitTest3:
 
 /**
  *
- * MicroTestFifoTask - task to test FIFO queue
+ * @brief Task to test FIFO queue
  *
  * This routine is run in three context switches:
  * - it puts an element to the FIFO queue
@@ -272,7 +272,7 @@ exitTest4:
 
 /**
  *
- * verifyQueueData - Verifies data in queue is correct
+ * @brief Verifies data in queue is correct
  *
  * This routine assumes that the queue is full when this function is called.
  * It counts the number of elements in the queue, dequeues elements and verifies
@@ -350,7 +350,7 @@ exitTest2:
 
 /**
  *
- * RegressionTask - main task to test FIFO queue
+ * @brief Main task to test FIFO queue
  *
  * This routine initializes data, fills the FIFO queue and verifies the
  * data in the queue is in correct order when items are being dequeued.

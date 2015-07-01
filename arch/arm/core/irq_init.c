@@ -47,7 +47,7 @@ the PendSV exception.
 
 /**
  *
- * _IntLibInit - initialize interrupts
+ * @brief Initialize interrupts
  *
  * Ensures all interrupts have their priority set to _EXC_IRQ_DEFAULT_PRIO and
  * not 0, which they have it set to when coming out of reset. This ensures that

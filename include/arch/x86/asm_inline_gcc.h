@@ -46,7 +46,7 @@
 
 /**
  *
- * _do_irq_lock_inline - disable all interrupts on the CPU (inline)
+ * @brief Disable all interrupts on the CPU (inline)
  *
  * This routine disables interrupts.  It can be called from either interrupt,
  * task or fiber level.  This routine returns an architecture-dependent
@@ -95,7 +95,7 @@ static inline __attribute__((always_inline))
 
 /**
  *
- * _do_irq_unlock_inline - enable all interrupts on the CPU (inline)
+ * @brief Enable all interrupts on the CPU (inline)
  *
  * This routine can be called from either interrupt, task or fiber level.
  * Invoked by kernel or by irq_unlock_inline()
@@ -117,7 +117,7 @@ static inline __attribute__((always_inline))
 
 /**
  *
- * find_first_set_inline - find first set bit searching from the LSB (inline)
+ * @brief Find first set bit searching from the LSB (inline)
  *
  * This routine finds the first bit set in the argument passed it and
  * returns the index of that bit.  Bits are numbered starting
@@ -168,7 +168,7 @@ static inline __attribute__((always_inline))
 
 /**
  *
- * find_last_set_inline - find first set bit searching from the MSB (inline)
+ * @brief Find first set bit searching from the MSB (inline)
  *
  * This routine finds the first bit set in the argument passed it and
  * returns the index of that bit.  Bits are numbered starting
@@ -252,7 +252,7 @@ static inline uint64_t _NanoTscRead(void)
 
 /**
  *
- * _do_read_cpu_timestamp - get a 32 bit CPU timestamp counter
+ * @brief Get a 32 bit CPU timestamp counter
  *
  * @return a 32-bit number
  */
@@ -270,7 +270,7 @@ static inline inline __attribute__((always_inline))
 
 /**
  *
- * sys_out8 - output a byte to an IA-32 I/O port
+ * @brief Output a byte to an IA-32 I/O port
  *
  * This function issues the 'out' instruction to write a byte to the specified
  * I/O port.
@@ -289,7 +289,7 @@ static inline inline __attribute__((always_inline))
 
 /**
  *
- * sys_in8 - input a byte from an IA-32 I/O port
+ * @brief Input a byte from an IA-32 I/O port
  *
  * This function issues the 'in' instruction to read a byte from the specified
  * I/O port.
@@ -311,7 +311,7 @@ static inline inline __attribute__((always_inline))
 
 /**
  *
- * sys_out16 - output a word to an IA-32 I/O port
+ * @brief Output a word to an IA-32 I/O port
  *
  * This function issues the 'out' instruction to write a word to the
  * specified I/O port.
@@ -330,7 +330,7 @@ static inline inline __attribute__((always_inline))
 
 /**
  *
- * sys_in16 - input a word from an IA-32 I/O port
+ * @brief Input a word from an IA-32 I/O port
  *
  * This function issues the 'in' instruction to read a word from the
  * specified I/O port.
@@ -352,7 +352,7 @@ static inline inline __attribute__((always_inline))
 
 /**
  *
- * sys_out32 - output a long word to an IA-32 I/O port
+ * @brief Output a long word to an IA-32 I/O port
  *
  * This function issues the 'out' instruction to write a long word to the
  * specified I/O port.
@@ -371,7 +371,7 @@ static inline inline __attribute__((always_inline))
 
 /**
  *
- * sys_in32 - input a long word from an IA-32 I/O port
+ * @brief Input a long word from an IA-32 I/O port
  *
  * This function issues the 'in' instruction to read a long word from the
  * specified I/O port.

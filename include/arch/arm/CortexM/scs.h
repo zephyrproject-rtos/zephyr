@@ -433,7 +433,7 @@ extern volatile struct __scs __scs;
 
 /**
  *
- * _ScsNumIrqGet - obtain the number of interrupt lines on the target
+ * @brief Obtain the number of interrupt lines on the target
  *
  * @return the number of interrupts
  */
@@ -445,7 +445,7 @@ static inline int _ScsNumIrqGet(void)
 
 /**
  *
- * _ScsIntMultiCycleInstDisable - disable load/store multiple instructions
+ * @brief Disable load/store multiple instructions
  *
  * From the ARM manuals:
  *
@@ -463,7 +463,7 @@ static inline void _ScsIntMultiCycleInstDisable(void)
 
 /**
  *
- * _ScsIntMultiCycleInstEnable - enable load/store multiple instructions
+ * @brief Enable load/store multiple instructions
  *
  * See _ScsIntMultiCycleInstDisable().
  *
@@ -477,7 +477,7 @@ static inline void _ScsIntMultiCycleInstEnable(void)
 
 /**
  *
- * _ScsWriteBufDisable - disable write buffer
+ * @brief Disable write buffer
  *
  * From the ARM manuals:
  *
@@ -495,7 +495,7 @@ static inline void _ScsWriteBufDisable(void)
 
 /**
  *
- * _ScsWriteBufEnable - enable write buffer
+ * @brief Enable write buffer
  *
  * See _ScsWriteBufDisable().
  *
@@ -509,7 +509,7 @@ static inline void _ScsWriteBufEnable(void)
 
 /**
  *
- * _ScsFoldItDisable - disable IT folding
+ * @brief Disable IT folding
  *
  * From the ARM manuals:
  *
@@ -529,7 +529,7 @@ static inline void _ScsFoldItDisable(void)
 
 /**
  *
- * _ScsFoldItEnable - enable IT folding
+ * @brief Enable IT folding
  *
  * See _ScsFoldItDisable().
  *

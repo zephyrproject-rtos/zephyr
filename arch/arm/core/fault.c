@@ -61,7 +61,7 @@ Common fault handler for ARM Cortex-M processors.
 #if (CONFIG_FAULT_DUMP == 1)
 /**
  *
- * _FaultDump - dump information regarding fault (FAULT_DUMP == 1)
+ * @brief Dump information regarding fault (FAULT_DUMP == 1)
  *
  * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 1
  * (short form).
@@ -120,7 +120,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 #if (CONFIG_FAULT_DUMP == 2)
 /**
  *
- * _FaultContextShow - dump context information
+ * @brief Dump context information
  *
  * See _FaultDump() for example.
  *
@@ -139,7 +139,7 @@ static void _FaultContextShow(const NANO_ESF *esf)
 
 /**
  *
- * _MpuFault - dump MPU fault information
+ * @brief Dump MPU fault information
  *
  * See _FaultDump() for example.
  *
@@ -174,7 +174,7 @@ static void _MpuFault(const NANO_ESF *esf,
 
 /**
  *
- * _BusFault - dump bus fault information
+ * @brief Dump bus fault information
  *
  * See _FaultDump() for example.
  *
@@ -215,7 +215,7 @@ static void _BusFault(const NANO_ESF *esf,
 
 /**
  *
- * _UsageFault - dump usage fault information
+ * @brief Dump usage fault information
  *
  * See _FaultDump() for example.
  *
@@ -255,7 +255,7 @@ static void _UsageFault(const NANO_ESF *esf)
 
 /**
  *
- * _HardFault - dump hard fault information
+ * @brief Dump hard fault information
  *
  * See _FaultDump() for example.
  *
@@ -283,7 +283,7 @@ static void _HardFault(const NANO_ESF *esf)
 
 /**
  *
- * _DebugMonitor - dump debug monitor exception information
+ * @brief Dump debug monitor exception information
  *
  * See _FaultDump() for example.
  *
@@ -299,7 +299,7 @@ static void _DebugMonitor(const NANO_ESF *esf)
 
 /**
  *
- * _ReservedException - dump reserved exception information
+ * @brief Dump reserved exception information
  *
  * See _FaultDump() for example.
  *
@@ -318,7 +318,7 @@ static void _ReservedException(const NANO_ESF *esf,
 
 /**
  *
- * _FaultDump - dump information regarding fault (FAULT_DUMP == 2)
+ * @brief Dump information regarding fault (FAULT_DUMP == 2)
  *
  * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 2
  * (long form).
@@ -365,7 +365,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 
 /**
  *
- * _Fault - fault handler
+ * @brief Fault handler
  *
  * This routine is called when fatal error conditions are detected by hardware
  * and is responsible only for reporting the error. Once reported, it then
@@ -396,7 +396,7 @@ void _Fault(
 
 /**
  *
- * _FaultInit - initialization of fault handling
+ * @brief Initialization of fault handling
  *
  * Turns on the desired hardware faults.
  *

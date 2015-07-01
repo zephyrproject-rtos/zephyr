@@ -54,7 +54,7 @@ This module implements the PCI H/W access functions.
 
 /**
  *
- * pci_ctrl_read - read a PCI controller register
+ * @brief Read a PCI controller register
  *
  * This routine reads the specified register from the PCI controller and
  * places the data into the provided buffer.
@@ -88,7 +88,7 @@ static void pci_ctrl_read(uint32_t reg,   /* PCI register to read */
 
 /**
  *
- * pci_ctrl_write - write a PCI controller register
+ * @brief Write a PCI controller register
  *
  * This routine writes the provided data to the specified register in the PCI
  * controller.
@@ -123,7 +123,7 @@ static void pci_ctrl_write(uint32_t reg,  /* PCI register to write */
 
 /**
  *
- * pci_ctrl_data_read - read the PCI controller data register
+ * @brief Read the PCI controller data register
  *
  * This routine reads the data register of the specified PCI controller.
  *
@@ -149,7 +149,7 @@ static int pci_ctrl_data_read(uint32_t controller, /* controller number */
 
 /**
  *
- * pci_ctrl_data_write - write the PCI controller data register
+ * @brief Write the PCI controller data register
  *
  * This routine writes the provided data to the data register of the
  * specified PCI controller.
@@ -176,7 +176,7 @@ static int pci_ctrl_data_write(uint32_t controller, /* controller number */
 
 /**
  *
- * pci_ctrl_addr_write - write the PCI controller address register
+ * @brief Write the PCI controller address register
  *
  * This routine writes the provided data to the address register of the
  * specified PCI controller.
@@ -202,7 +202,7 @@ static int pci_ctrl_addr_write(uint32_t controller, /* controller number */
 
 /**
  *
- * pci_read - read a PCI register from a device
+ * @brief Read a PCI register from a device
  *
  * This routine reads data from a PCI device's configuration space.  The
  * device and register to read is specified by the address parameter ("addr")
@@ -292,7 +292,7 @@ void pci_read(uint32_t controller, /* PCI controller to use */
 
 /**
  *
- * pci_write - write a to a PCI register
+ * @brief Write a to a PCI register
  *
  * This routine writes data to a PCI device's configuration space.  The
  * device and register to write is specified by the address parameter ("addr")
@@ -381,7 +381,7 @@ void pci_write(uint32_t controller, /* controller to use   */
 
 /**
  *
- * pci_header_get - get the PCI header for a device
+ * @brief Get the PCI header for a device
  *
  * This routine reads the PCI header for the specified device and puts the
  * result in the supplied header structure.

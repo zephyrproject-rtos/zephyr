@@ -51,7 +51,7 @@ SECTION_VAR(BSS, nano_cpu_sleep_mode)
 	.word 0
 
 /*
- * nano_cpu_idle - put the CPU in low-power mode
+ * @brief Put the CPU in low-power mode
  *
  * This function always exits with interrupts unlocked.
  *
@@ -65,7 +65,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 	nop
 
 /*
- * nano_cpu_atomic_idle - put the CPU in low-power mode, entered with IRQs locked
+ * @brief Put the CPU in low-power mode, entered with IRQs locked
  *
  * This function exits with interrupts restored to <key>.
  *

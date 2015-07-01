@@ -65,7 +65,7 @@ extern "C" {
 
 /**
  *
- * NANO_CPU_EXC_CONNECT - to generate and register an exception stub
+ * @brief To generate and register an exception stub
  *
  * Generates an exception stub for the handler, <h>. It is registered
  * on the vector given by <v> with the privilege level <d>; <d> should always
@@ -81,7 +81,7 @@ extern "C" {
 
 /**
  *
- * NANO_CPU_EXC_CONNECT_NO_ERR - to generate and register an exception stub
+ * @brief To generate and register an exception stub
  *
  * Generates an exception stub for the handler, <h>. It is registered
  * on the vector given by <v> with the privilege level <d>; <d> should always

@@ -130,7 +130,7 @@ static pfunc func_array[] = {
 
 /**
  *
- * dummyIsr - dummy ISR
+ * @brief Dummy ISR
  *
  * @return N/A
  */
@@ -143,7 +143,7 @@ void dummyIsr(void *unused)
 #ifdef TEST_reg
 /**
  *
- * isrDummyIntStub - static interrupt stub that invokes dummy ISR
+ * @brief Static interrupt stub that invokes dummy ISR
  *
  * NOTE: This is typically coded in assembly language, rather than C,
  * to avoid the preamble code the compiler automatically generates. However,
@@ -164,7 +164,7 @@ static void isrDummyIntStub(void *unused)
 
 /**
  *
- * fgTaskEntry - entry function for foreground task
+ * @brief Entry function for foreground task
  *
  * This routine prints a message, then simply increments a global counter.
  * (Gdb can be used to observe the counter as it increases.)

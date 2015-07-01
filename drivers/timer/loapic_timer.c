@@ -134,7 +134,7 @@ extern struct nano_stack _k_command_stack;
 
 /**
  *
- * _loApicTimerPeriodic - set the timer for periodic mode
+ * @brief Set the timer for periodic mode
  *
  * This routine sets the timer for periodic mode.
  *
@@ -153,7 +153,7 @@ static inline void _loApicTimerPeriodic(void)
 	defined(CONFIG_SYSTEM_TIMER_DISABLE)
 /**
  *
- * _loApicTimerStop - stop the timer
+ * @brief Stop the timer
  *
  * This routine stops the timer.
  *
@@ -172,7 +172,7 @@ static inline void _loApicTimerStop(void)
 	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND)
 /**
  *
- * _loApicTimerStart - start the timer
+ * @brief Start the timer
  *
  * This routine starts the timer.
  *
@@ -189,7 +189,7 @@ static inline void _loApicTimerStart(void)
 
 /**
  *
- * _loApicTimerSetCount - set countdown value
+ * @brief Set countdown value
  *
  * This routine sets value from which the timer will count down.
  *
@@ -208,7 +208,7 @@ static inline void _loApicTimerSetCount(
 #if defined(TIMER_SUPPORTS_TICKLESS)
 /**
  *
- * _loApicTimerOneShot - set the timer for one shot mode
+ * @brief Set the timer for one shot mode
  *
  * This routine sets the timer for one shot mode.
  *
@@ -225,7 +225,7 @@ static inline void _loApicTimerOneShot(void)
 
 /**
  *
- * _loApicTimerSetDivider - set the rate at which the timer is decremented
+ * @brief Set the rate at which the timer is decremented
  *
  * This routine sets rate at which the timer is decremented to match the
  * external bus frequency.
@@ -242,7 +242,7 @@ static inline void _loApicTimerSetDivider(void)
 
 /**
  *
- * _loApicTimerGetRemaining - get the value from the current count register
+ * @brief Get the value from the current count register
  *
  * This routine gets the value from the timer's current count register.  This
  * value is the 'time' remaining to decrement before the timer triggers an
@@ -260,7 +260,7 @@ static inline uint32_t _loApicTimerGetRemaining(void)
 #if defined(TIMER_SUPPORTS_TICKLESS)
 /**
  *
- * _loApicTimerGetCount - get the value from the initial count register
+ * @brief Get the value from the initial count register
  *
  * This routine gets the value from the initial count register.
  *
@@ -276,7 +276,7 @@ static inline uint32_t _loApicTimerGetCount(void)
 
 /**
  *
- * _timer_int_handler - system clock tick handler
+ * @brief System clock tick handler
  *
  * This routine handles the system clock tick interrupt.  A TICK_EVENT event
  * is pushed onto the microkernel stack.
@@ -352,7 +352,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 #if defined(TIMER_SUPPORTS_TICKLESS)
 /**
  *
- * _loApicTimerTicklessIdleInit - initialize the tickless idle feature
+ * @brief Initialize the tickless idle feature
  *
  * This routine initializes the tickless idle feature.  Note that the maximum
  * number of ticks that can elapse during a "tickless idle" is limited by
@@ -375,7 +375,7 @@ static void _loApicTimerTicklessIdleInit(void)
 
 /**
  *
- * _i8253TicklessIdleSkew - calculate the skew from idle mode switching
+ * @brief Calculate the skew from idle mode switching
  *
  * This routine calculates the skew from switching the timer in and out of idle
  * mode.  The typical sequence is:
@@ -409,7 +409,7 @@ static void _loApicTimerTicklessIdleSkew(void)
 
 /**
  *
- * _timer_idle_enter - Place system timer into idle state
+ * @brief Place system timer into idle state
  *
  * Re-program the timer to enter into the idle state for the given number of
  * ticks. It is placed into one shot mode where it will fire in the number of
@@ -462,7 +462,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 
 /**
  *
- * _timer_idle_exit - handling of tickless idle when interrupted
+ * @brief Handling of tickless idle when interrupted
  *
  * The routine is responsible for taking the timer out of idle mode and
  * generating an interrupt at the next tick interval.
@@ -532,7 +532,7 @@ void _timer_idle_exit(void)
 
 /**
  *
- * timer_driver - initialize and enable the system clock
+ * @brief Initialize and enable the system clock
  *
  * This routine is used to program the PIT to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
@@ -572,7 +572,7 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
 
 /**
  *
- * timer_read - read the BSP timer hardware
+ * @brief Read the BSP timer hardware
  *
  * This routine returns the current time in terms of timer hardware clock cycles.
  *
@@ -601,7 +601,7 @@ uint32_t timer_read(void)
 #if defined(CONFIG_SYSTEM_TIMER_DISABLE)
 /**
  *
- * timer_disable - stop announcing ticks into the kernel
+ * @brief Stop announcing ticks into the kernel
  *
  * This routine simply disables the LOAPIC counter such that interrupts are no
  * longer delivered.

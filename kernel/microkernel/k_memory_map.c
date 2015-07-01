@@ -35,7 +35,7 @@
 
 /**
  *
- * _k_mem_map_init - initialize kernel memory map subsystem
+ * @brief Initialize kernel memory map subsystem
  *
  * Perform any initialization of memory maps that wasn't done at build time.
  *
@@ -72,7 +72,7 @@ void _k_mem_map_init(void)
 
 /**
  *
- * _k_mem_map_alloc_timeout - finish handling a memory map block request that timed out
+ * @brief Finish handling a memory map block request that timed out
  *
  * @return N/A
  */
@@ -87,7 +87,7 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
 
 /**
  *
- * _k_mem_map_alloc - perform allocate memory map block request
+ * @brief Perform allocate memory map block request
  *
  * @return N/A
  */
@@ -132,7 +132,7 @@ void _k_mem_map_alloc(struct k_args *A)
 
 /**
  *
- * _task_mem_map_alloc - allocate memory map block request
+ * @brief Allocate memory map block request
  *
  * This routine is used to request a block of memory from the memory map.
  *
@@ -156,7 +156,7 @@ int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request
 
 /**
  *
- * _k_mem_map_dealloc - perform return memory map block request
+ * @brief Perform return memory map block request
  *
  * @return N/A
  */
@@ -196,7 +196,7 @@ void _k_mem_map_dealloc(struct k_args *A)
 
 /**
  *
- * _task_mem_map_free - return memory map block request
+ * @brief Return memory map block request
  *
  * This routine returns a block to the specified memory map. If a higher
  * priority task is waiting for a block from the same map a task switch
@@ -219,7 +219,7 @@ void _task_mem_map_free(kmemory_map_t mmap, /* memory map */
 
 /**
  *
- * task_mem_map_used_get - read the number of used blocks in a memory map
+ * @brief Read the number of used blocks in a memory map
  *
  * This routine returns the number of blocks in use for the memory map.
  *

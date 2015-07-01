@@ -36,7 +36,7 @@
 
 /**
  *
- * mempool_test - memory pool get/free test
+ * @brief Memory pool get/free test
  *
  * @return N/A
  *

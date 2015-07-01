@@ -53,7 +53,7 @@ are defined in arch.h.
 
 /**
  *
- * find_first_set - find first set bit searching from the LSB 
+ * @brief Find first set bit searching from the LSB 
  *
  * This routine finds the first bit set in the passed argument and
  * returns the index of that bit.  Bits are numbered starting
@@ -96,7 +96,7 @@ BRANCH_LABEL(ffsLsb_argNotZero)	/* this label serves find_first_set() & find_las
  	
 /**
  *
- * find_last_set - find first set bit searching from the MSB 
+ * @brief Find first set bit searching from the MSB 
  *
  * This routine finds the first bit set in the passed argument and
  * returns the index of that bit.  Bits are numbered starting

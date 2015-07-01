@@ -45,7 +45,7 @@ data structure.
 
 /**
  *
- * nano_cpu_set_idle - indicate that nanokernel is idling in tickless mode
+ * @brief Indicate that nanokernel is idling in tickless mode
  *
  * Sets the nanokernel data structure idle field to a non-zero value.
  *

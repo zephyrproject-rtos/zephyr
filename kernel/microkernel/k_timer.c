@@ -45,7 +45,7 @@ struct k_timer  *_k_timer_list_tail = NULL;
 
 /**
  *
- * _timer_id_to_ptr - convert timer pointer to timer object identifier
+ * @brief Convert timer pointer to timer object identifier
  *
  * This routine converts a timer pointer into a timer object identifier.
  *
@@ -66,7 +66,7 @@ static inline ktimer_t _timer_ptr_to_id(struct k_timer *timer)
 
 /**
  *
- * _timer_id_to_ptr - convert timer object identifier to timer pointer
+ * @brief Convert timer object identifier to timer pointer
  *
  * This routine converts a timer object identifier into a timer pointer.
  *
@@ -80,7 +80,7 @@ static inline struct k_timer *_timer_id_to_ptr(ktimer_t timer)
 
 /**
  *
- * _k_timer_enlist - insert a timer into the timer queue
+ * @brief Insert a timer into the timer queue
  *
  * @return N/A
  */
@@ -112,7 +112,7 @@ void _k_timer_enlist(struct k_timer *T)
 
 /**
  *
- * _k_timer_delist - remove a timer from the timer queue
+ * @brief Remove a timer from the timer queue
  *
  * @return N/A
  */
@@ -136,7 +136,7 @@ void _k_timer_delist(struct k_timer *T)
 
 /**
  *
- * _k_timeout_alloc - allocate timer used for command packet timeout
+ * @brief Allocate timer used for command packet timeout
  *
  * Allocates timer for command packet and inserts it into the timer queue.
  *
@@ -157,7 +157,7 @@ void _k_timeout_alloc(struct k_args *P)
 
 /**
  *
- * _k_timeout_cancel - cancel timer used for command packet timeout
+ * @brief Cancel timer used for command packet timeout
  *
  * Cancels timer (if not already expired), then reschedules the command packet
  * for further processing.
@@ -180,7 +180,7 @@ void _k_timeout_cancel(struct k_args *A)
 
 /**
  *
- * _k_timeout_free - free timer used for command packet timeout
+ * @brief Free timer used for command packet timeout
  *
  * Cancels timer (if not already expired), then frees it.
  *
@@ -196,7 +196,7 @@ void _k_timeout_free(struct k_timer *T)
 
 /**
  *
- * _k_timer_list_update - handle expired timers
+ * @brief Handle expired timers
  *
  * Process the sorted list of timers associated with waiting tasks and
  * activate each task whose timer has now expired.
@@ -246,7 +246,7 @@ void _k_timer_list_update(int ticks)
 
 /**
  *
- * _k_timer_alloc - handle timer allocation request
+ * @brief Handle timer allocation request
  *
  * This routine, called by K_swapper(), handles the request for allocating a
  * timer.
@@ -271,7 +271,7 @@ void _k_timer_alloc(struct k_args *P)
 
 /**
  *
- * task_timer_alloc - allocate a timer and return its object identifier
+ * @brief Allocate a timer and return its object identifier
  *
  * @return timer identifier
  */
@@ -288,7 +288,7 @@ ktimer_t task_timer_alloc(void)
 
 /**
  *
- * _k_timer_dealloc - handle timer deallocation request
+ * @brief Handle timer deallocation request
  *
  * This routine, called by K_swapper(), handles the request for deallocating a
  * timer.
@@ -310,7 +310,7 @@ void _k_timer_dealloc(struct k_args *P)
 
 /**
  *
- * task_timer_free - deallocate a timer
+ * @brief Deallocate a timer
  *
  * This routine frees the resources associated with the timer.  If a timer was
  * started, it has to be stopped using task_timer_stop() before it can be freed.
@@ -331,7 +331,7 @@ void task_timer_free(ktimer_t timer)
 
 /**
  *
- * _k_timer_start - handle start timer request
+ * @brief Handle start timer request
  *
  * This routine, called by K_swapper(), handles the start timer request from
  * both task_timer_start() and task_timer_restart().
@@ -380,7 +380,7 @@ void _k_timer_start(struct k_args *P)
 
 /**
  *
- * task_timer_start - start or restart the specified low resolution timer
+ * @brief Start or restart the specified low resolution timer
  *
  * This routine starts or restarts the specified low resolution timer.
  *
@@ -418,7 +418,7 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 
 /**
  *
- * task_timer_restart - restart a timer
+ * @brief Restart a timer
  *
  * This routine restarts the timer specified by <timer>.
  *
@@ -443,7 +443,7 @@ void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
 
 /**
  *
- * _k_timer_stop - handle stop timer request
+ * @brief Handle stop timer request
  *
  * This routine, called by K_swapper(), handles the request for stopping a
  * timer.
@@ -461,7 +461,7 @@ void _k_timer_stop(struct k_args *P)
 
 /**
  *
- * task_timer_stop - stop a timer
+ * @brief Stop a timer
  *
  * This routine stops the specified timer. If the timer period has already
  * elapsed, the call has no effect.
@@ -482,7 +482,7 @@ void task_timer_stop(ktimer_t timer)
 
 /**
  *
- * _k_task_wakeup - handle internally issued task wakeup request
+ * @brief Handle internally issued task wakeup request
  *
  * This routine, called by K_swapper(), handles the request for waking a task
  * at the end of its sleep period.
@@ -504,7 +504,7 @@ void _k_task_wakeup(struct k_args *P)
 
 /**
  *
- * _k_task_sleep - handle task sleep request
+ * @brief Handle task sleep request
  *
  * This routine, called by K_swapper(), handles the request for putting a task
  * to sleep.
@@ -535,7 +535,7 @@ void _k_task_sleep(struct k_args *P)
 
 /**
  *
- * task_sleep - sleep for a number of ticks
+ * @brief Sleep for a number of ticks
  *
  * This routine suspends the calling task for the specified number of timer
  * ticks.  When the task is awakened, it is rescheduled according to its

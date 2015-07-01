@@ -1390,7 +1390,7 @@ static void (*intFPtr[256])(void) = {
 
 /**
  *
- * raiseInt - generate a software interrupt
+ * @brief Generate a software interrupt
  *
  * This routine will call one of the genInt functions based upon the
  * value passed to it (which is essentially the interrupt vector number).
@@ -1409,7 +1409,7 @@ void raiseInt(uint8_t id)
 #include <arch/cpu.h>
 /**
  *
- * raiseInt - generate a software interrupt
+ * @brief Generate a software interrupt
  *
  * Trigger via NVIC. <id> is the IRQ number.
  *

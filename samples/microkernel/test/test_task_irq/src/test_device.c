@@ -70,7 +70,7 @@ uint32_t irq_vectors[NUM_OBJECTS] = {[0 ... (NUM_OBJECTS - 1)] = INVALID_VECTOR}
 
 /**
  *
- * taskA - first of 2 tasks to allocate IRQ objects and check for events
+ * @brief First of 2 tasks to allocate IRQ objects and check for events
  *
  * This task allocates 2 IRQ objects with unique IRQs and then tests for an
  * interrupt associated with those IRQs. The function then attempts to allocate
@@ -142,7 +142,7 @@ int taskA(ksem_t semRdy)
 
 /**
  *
- * taskB - second of 2 tasks to allocate IRQ objects and check for events
+ * @brief Second of 2 tasks to allocate IRQ objects and check for events
  *
  * This task allocates 2 IRQ objects with unique IRQs and then tests for an
  * interrupt associated with those IRQs. The function then frees an IRQ object
