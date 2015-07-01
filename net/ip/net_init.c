@@ -417,10 +417,8 @@ static int check_and_send_packet(struct net_buf *buf)
 		udp = net_context_get_udp_connection(buf->context);
 		if (!net_context_get_receiver_registered(buf->context)) {
 			ret = simple_udp_register(udp, tuple->local_port,
-					  (uip_ip6addr_t *)tuple->remote_addr,
-					  tuple->remote_port,
-					  udp_packet_reply,
-					  buf);
+				(uip_ip6addr_t *)&tuple->remote_addr->in6_addr,
+				tuple->remote_port, udp_packet_reply, buf);
 			if (!ret) {
 				NET_DBG("UDP connection creation failed\n");
 				ret = -ENOENT;
