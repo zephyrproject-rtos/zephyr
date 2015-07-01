@@ -98,7 +98,8 @@ int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
  *  @param filter_dups Enable duplicate filtering (or not).
  *  @param cb Callback to notify scan results.
  *
- *  @return Zero on success or (negative) error code otherwise.
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
 
@@ -106,7 +107,8 @@ int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
  *
  *  Stops ongoing LE scanning.
  *
- *  @return Zero on success or (negative) error code otherwise.
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_stop_scanning(void);
 

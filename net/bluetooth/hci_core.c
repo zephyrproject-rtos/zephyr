@@ -1344,13 +1344,14 @@ static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	}
 
 	/* Update scan state in case of success (0) status */
-	if (!rsp->data[0]) {
+	err = rsp->data[0];
+	if (!err) {
 		dev.scan_enable = BT_LE_SCAN_ENABLE;
 	}
 
 	bt_buf_put(rsp);
 
-	return 0;
+	return err;
 }
 
 int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
@@ -1399,13 +1400,14 @@ static int bt_hci_stop_scanning(void)
 	}
 
 	/* Update scan state in case of success (0) status */
-	if (!rsp->data[0]) {
+	err = rsp->data[0];
+	if (!err) {
 		dev.scan_enable = BT_LE_SCAN_DISABLE;
 	}
 
 	bt_buf_put(rsp);
 
-	return 0;
+	return err;
 }
 
 int bt_stop_scanning(void)
