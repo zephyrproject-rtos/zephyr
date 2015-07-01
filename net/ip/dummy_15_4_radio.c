@@ -103,6 +103,8 @@ static void route_buf(struct net_mbuf *buf)
 							"packet discarded\n");
 			net_mbuf_put(mbuf);
 		}
+
+		NET_BUF_CHECK_IF_NOT_IN_USE(mbuf);
 	}
 }
 

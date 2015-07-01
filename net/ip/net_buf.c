@@ -193,14 +193,22 @@ struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head)
 		return NULL;
 	}
 
-	NET_DBG("buf %p reserve %u\n", buf, reserve_head);
+	NET_BUF_CHECK_IF_IN_USE(buf);
+
+	NET_DBG("buf %p reserve %u inuse %d\n", buf, reserve_head, buf->in_use);
+
+	buf->in_use = true;
 
 	return buf;
 }
 
 void net_mbuf_put(struct net_mbuf *buf)
 {
-	NET_DBG("buf %p\n", buf);
+	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
+
+	NET_DBG("buf %p inuse %d\n", buf, buf->in_use);
+
+	buf->in_use = false;
 
 	nano_fifo_put(&free_mbufs, buf);
 }

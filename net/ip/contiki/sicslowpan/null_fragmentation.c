@@ -70,6 +70,8 @@ static int fragment(struct net_buf *buf, void *ptr)
 		return 0;
 	}
 
+	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
+
 	packetbuf_copyfrom(mbuf, &uip_buf(buf)[UIP_LLH_LEN], uip_len(buf));
 	packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER, &buf->dest);
 	net_buf_put(buf);

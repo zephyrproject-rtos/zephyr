@@ -283,6 +283,7 @@ struct net_mbuf {
 	/** @cond ignore */
 	/* FIFO uses first 4 bytes itself, reserve space */
 	int __unused;
+	bool in_use;
 	/* @endcond */
 
 	/** @cond ignore */
