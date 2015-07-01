@@ -461,3 +461,39 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 	BT_DBG("conn %p\n", conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
 }
+
+static void gatt_mtu_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
+			 uint16_t length, void *user_data)
+{
+	bt_gatt_rsp_func_t func = user_data;
+
+	func(conn, err);
+}
+
+int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
+{
+	struct bt_att_exchange_mtu_req *req;
+	struct bt_buf *buf;
+	uint16_t mtu;
+
+	if (!conn || !func) {
+		return -EINVAL;
+	}
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_MTU_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	/* Select MTU based on the amount of room we have in bt_buf including
+	 * one extra byte for ATT header.
+	 */
+	mtu = bt_buf_tailroom(buf) + 1;
+
+	BT_DBG("Client MTU %u\n", mtu);
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->mtu = sys_cpu_to_le16(mtu);
+
+	return bt_att_send(conn, buf, gatt_mtu_rsp, func, NULL);
+}

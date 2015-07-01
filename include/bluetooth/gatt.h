@@ -624,4 +624,23 @@ void bt_gatt_connected(struct bt_conn *conn);
  */
 void bt_gatt_disconnected(struct bt_conn *conn);
 
+/* Client API */
+
+/*! @brief Response callback function
+ *
+ *  @param conn Connection object.
+ *  @param err Error code.
+ */
+typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
+
+/*! @brief Exchange MTU
+ *
+ * This client procedure can be used to set the MTU to the maximum possible
+ * size the buffers can hold.
+ * NOTE: Shall only be used once per connection.
+ *
+ *  @param conn Connection object.
+ */
+int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
+
 #endif /* __BT_GATT_H */
