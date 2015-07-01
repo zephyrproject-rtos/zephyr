@@ -120,7 +120,7 @@ extern uint32_t _sse_mxcsr_default_value; /* SSE control/status register default
  * specified CCS.  If the specified task or fiber supports SSE then
  * x87/MMX/SSEx context info is saved, otherwise only x87/MMX context is saved.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void _FpCtxSave(tCCS *ccs)
@@ -134,7 +134,7 @@ static void _FpCtxSave(tCCS *ccs)
  *
  * This routine initializes the system's "live" non-integer context.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _FpCtxInit(tCCS *ccs)
@@ -163,7 +163,7 @@ static inline void _FpCtxInit(tCCS *ccs)
  * This routine should only be used to enable floating point support for a
  * task/fiber that does not currently have such support enabled already.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * Since the transition from "non-FP supporting" to "FP supporting" must be done
@@ -296,7 +296,7 @@ void _FpEnable(tCCS *ccs,
  *
  * See the description of _FpEnable() for further details.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 FUNC_ALIAS(_FpEnable, fiber_float_enable, void);
@@ -310,7 +310,7 @@ FUNC_ALIAS(_FpEnable, fiber_float_enable, void);
  *
  * See the description of _FpEnable() for further details.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 FUNC_ALIAS(_FpEnable, task_float_enable, void);
@@ -327,7 +327,7 @@ FUNC_ALIAS(_FpEnable, task_float_enable, void);
  * This routine should only be used to disable floating point support for
  * a task/fiber that currently has such support enabled.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * Since the transition from "FP supporting" to "non-FP supporting" must be done
@@ -389,7 +389,7 @@ void _FpDisable(tCCS *ccs)
  * This routine should only be used to disable floating point support for
  * a task/fiber that currently has such support enabled.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
@@ -406,7 +406,7 @@ FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
  * This routine should only be used to disable floating point support for
  * a task/fiber that currently has such support enabled.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 FUNC_ALIAS(_FpDisable, task_float_disable, void);
@@ -426,7 +426,7 @@ FUNC_ALIAS(_FpDisable, task_float_disable, void);
  * current task or fiber with the USE_FP option (or the USE_SSE option if the
  * SSE configuration option has been enabled).
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _FpNotAvailableExcHandler(NANO_ESF * pEsf /* not used */

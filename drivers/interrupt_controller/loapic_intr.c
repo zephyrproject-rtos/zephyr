@@ -204,7 +204,7 @@ INCLUDE FILES: loapic.h
  *
  * This routine initializes Local APIC or xAPIC.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -266,7 +266,7 @@ void _loapic_init(void)
  *
  * This routine enables the Local xAPIC.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _loapic_enable(void)
@@ -284,7 +284,7 @@ void _loapic_enable(void)
  *
  * This routine disables the Local xAPIC.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _loapic_disable(void)
@@ -302,7 +302,7 @@ void _loapic_disable(void)
  *
  * This routine sends an EOI signal to the Local APIC's interrupting source.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _loapic_eoi(unsigned int irq)
@@ -320,7 +320,7 @@ void _loapic_eoi(unsigned int irq)
  * a vector has been allocated, this routine is invoked to update the LVT
  * entry associated with <irq> with the vector.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the
@@ -360,7 +360,7 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the
  *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _loapic_irq_enable(unsigned int irq /* IRQ number of
@@ -390,7 +390,7 @@ void _loapic_irq_enable(unsigned int irq /* IRQ number of
  *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _loapic_irq_disable(unsigned int irq /* IRQ number of the

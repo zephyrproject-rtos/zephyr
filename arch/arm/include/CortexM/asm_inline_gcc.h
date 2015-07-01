@@ -46,7 +46,7 @@
  *
  * Obtain and return current value of IPSR register.
  *
- * RETURNS: the contents of the IPSR register
+ * @return the contents of the IPSR register
  *
  * \NOMANUAL
  */
@@ -65,7 +65,7 @@ static ALWAYS_INLINE uint32_t _IpsrGet(void)
  *
  * Store the value of <msp> in MSP register.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

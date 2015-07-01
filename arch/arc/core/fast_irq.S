@@ -70,7 +70,7 @@ SECTION_VAR(NOINIT, _firq_stack)
  *
  * Assumption by _isr_demux: r3 is untouched by _firq_enter.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _firq_enter)
@@ -101,7 +101,7 @@ SECTION_FUNC(TEXT, _firq_enter)
  *
  * _firq_exit - work to be done exiting a FIRQ
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _firq_exit)
@@ -260,7 +260,7 @@ _firq_no_reschedule:
  *
  * _firq_stack_setup - install the FIRQ stack in register bank 1
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _firq_stack_setup)

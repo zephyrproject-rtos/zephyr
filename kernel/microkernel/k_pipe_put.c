@@ -41,7 +41,7 @@
  *
  * _k_pipe_put_request - process request command for a pipe put operation
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_pipe_put_request(struct k_args *RequestOrig)
@@ -211,7 +211,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
  *
  * _k_pipe_put_timeout - perform timeout command for a pipe put operation
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_pipe_put_timeout(struct k_args *ReqProc)
@@ -231,7 +231,7 @@ void _k_pipe_put_timeout(struct k_args *ReqProc)
  *
  * _k_pipe_put_reply - process reply command for a pipe put operation
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_pipe_put_reply(struct k_args *ReqProc)
@@ -284,7 +284,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
  *
  * _k_pipe_put_ack - process acknowledgment command for a pipe put operation
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_pipe_put_ack(struct k_args *Request)

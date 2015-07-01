@@ -42,7 +42,7 @@
  * Performs any initialization of statically-defined pipes that wasn't done
  * at build time. (Note: most pipe structure fields are set to zero by sysgen.)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_pipe_init(void)
@@ -64,7 +64,7 @@ void _k_pipe_init(void)
  * This routine attempts to read data into a memory buffer area from the
  * specified pipe.
  *
- * RETURNS: RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
+ * @return RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
  */
 
 int _task_pipe_get(kpipe_t Id, void *pBuffer,
@@ -119,7 +119,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
  * This routine attempts to write data from a memory buffer area to the
  * specified pipe.
  *
- * RETURNS: RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
+ * @return RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
  */
 
 int _task_pipe_put(kpipe_t Id, void *pBuffer,
@@ -175,7 +175,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
  * specified pipe. (Note that partial transfers and timeouts are not
  * supported, unlike the case for synchronous write requests.)
  *
- * RETURNS: RC_OK, RC_FAIL, or RC_ALIGNMENT
+ * @return RC_OK, RC_FAIL, or RC_ALIGNMENT
  */
 
 int _task_pipe_put_async(kpipe_t Id, struct k_block Block,

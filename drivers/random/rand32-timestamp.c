@@ -49,7 +49,7 @@ number generator.
  * The non-random number generator does not require any initialization.
  * Routine is automatically invoked by the kernel during system startup.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void sys_rand32_init(void)
@@ -64,7 +64,7 @@ void sys_rand32_init(void)
  * CPU's timestamp counter, which means that successive calls will normally
  * display ever-increasing values.
  *
- * RETURNS: a 32-bit number
+ * @return a 32-bit number
  */
 
 uint32_t sys_rand32_get(void)

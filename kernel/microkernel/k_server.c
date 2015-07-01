@@ -58,7 +58,7 @@ extern const kernelfunc _k_server_dispatch_table[];
  * task at the head of that queue. It's guaranteed that there will always be
  * a non-empty queue, since the idle task is always executable.
  *
- * RETURNS: pointer to selected task
+ * @return pointer to selected task
  */
 
 static struct k_proc *next_task_select(void)
@@ -94,7 +94,7 @@ static struct k_proc *next_task_select(void)
  * stack and then sets up the next task that is ready to run. Next it
  * goes to wait on further inputs on its stack channel.
  *
- * RETURNS: Does not return.
+ * @return Does not return.
  */
 
 FUNC_NORETURN void K_swapper(int parameter1, /* not used */

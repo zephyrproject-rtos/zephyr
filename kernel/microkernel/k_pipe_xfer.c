@@ -58,7 +58,7 @@ possibly copy the remaining data
  *
  * _k_pipe_movedata_ack -
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_pipe_movedata_ack(struct k_args *pEOXfer)
@@ -213,7 +213,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
  *
  * Note: It's OK to have one or two participants, but there can't be none!
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static kpriority_t move_priority_compute(struct k_args *pWriter,
@@ -237,7 +237,7 @@ static kpriority_t move_priority_compute(struct k_args *pWriter,
  *
  * setup_movedata -
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void setup_movedata(struct k_args *A,
@@ -416,7 +416,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
  * <pNewReader> as the reader.  Otherwise it takes the reader from the channel
  * structure.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
@@ -485,7 +485,7 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
  * <pNewWriter> as the writer.  Otherwise it takes the writer from the channel
  * structure.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
@@ -552,7 +552,7 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
  *
  * pipe_xfer_status_update - update the channel transfer status
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void pipe_xfer_status_update(
@@ -579,7 +579,7 @@ static void pipe_xfer_status_update(
  *
  * pipe_read_write - read and/or write from/to the channel
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void pipe_read_write(

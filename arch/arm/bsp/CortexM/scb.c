@@ -50,7 +50,7 @@ definitions and more complex routines, if needed.
  *
  * This routine resets the processor.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _ScbSystemReset(void)
@@ -74,7 +74,7 @@ void _ScbSystemReset(void)
  *
  * The number of priorities has to be a power of two, from 1 to 128.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _ScbNumPriGroupSet(unsigned int n /* number of priorities */

@@ -70,7 +70,7 @@ kpipe_t pipeId	= PIPE_ID;
  * This routine signals "task done" or "task fail", based on the return code of
  * RegressionTask.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void RegressionTaskEntry(void)
@@ -87,7 +87,7 @@ void RegressionTaskEntry(void)
  * This routine signals "task done" or "task fail", based on the return code of
  * AlternateTask.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void AlternateTaskEntry(void)
@@ -104,7 +104,7 @@ void AlternateTaskEntry(void)
  * This routine keeps tabs on the progress of the tasks doing the actual testing
  * and generates the final test case summary message.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void MonitorTaskEntry(void)

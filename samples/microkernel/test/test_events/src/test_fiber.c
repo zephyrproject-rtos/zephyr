@@ -57,7 +57,7 @@ static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
  * It signals the event for the eventWaitTest() function
  * in single and cycle test, for eventTimeoutTest()
  *
- * RETURNS: N/A
+ * @return N/A
  */
 static void testFiberEntry(void)
 {
@@ -86,7 +86,7 @@ static void testFiberEntry(void)
  *
  * testFiberInit - initializes variables and starts the test fiber
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testFiberInit(void)

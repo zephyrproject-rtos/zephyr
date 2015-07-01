@@ -51,7 +51,7 @@ int pipeget(kpipe_t pipe, K_PIPE_OPTION option,
  *
  * piperecvtask - receive task
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -102,7 +102,7 @@ void piperecvtask(void)
  *
  * pipeget - read a data portion from the pipe and measure time
  *
- * RETURNS: 0 on success, 1 on error
+ * @return 0 on success, 1 on error
  *
  * @param pipe     Pipe to read data from.
  * @param option   _ALL_TO_N or _1_TO_N.

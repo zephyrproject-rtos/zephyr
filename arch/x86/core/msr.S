@@ -65,7 +65,7 @@ utilities.
  * 2) The 'wrmsr' uses the ECX, EDX, and EAX registers which matches the set of
  *    volatile registers!  
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _MsrWrite)
@@ -96,7 +96,7 @@ SECTION_FUNC(TEXT, _MsrWrite)
  * 2) The 'rdmsr' uses the ECX, EDX, and EAX registers which matches the set of
  *    volatile registers!  
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _MsrRead)

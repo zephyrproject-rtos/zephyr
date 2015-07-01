@@ -54,7 +54,7 @@ extern unsigned nanoFfsMsb(unsigned int);
  * significant bit.  A return value of zero indicates that the value passed
  * is zero.
  *
- * RETURNS: most significant bit set
+ * @return most significant bit set
  */
 
 #if defined(__GNUC__)
@@ -83,7 +83,7 @@ static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
  * at 1 from the least significant bit.  A return value of zero indicates that
  * the value passed is zero.
  *
- * RETURNS: least significant bit set
+ * @return least significant bit set
  */
 
 #if defined(__GNUC__)

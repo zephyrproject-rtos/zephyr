@@ -142,7 +142,7 @@ static volatile unsigned int load_store_high_count = 0;
  * main -
  * load_store_low - low priority FPU load/store context
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 #ifdef CONFIG_NANOKERNEL
@@ -310,7 +310,7 @@ void load_store_low(void)
  *
  * load_store_high - high priority FPU load/store context
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 #ifdef CONFIG_NANOKERNEL

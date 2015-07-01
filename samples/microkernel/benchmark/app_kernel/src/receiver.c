@@ -52,7 +52,7 @@ void piperecvtask(void);
  *
  * recvtask - main function of the task that receives data in the test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

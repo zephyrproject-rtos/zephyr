@@ -71,7 +71,7 @@ a real IRQ has been inserted.
  *
  * void _i8259_boi_master (void)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _i8259_boi_master)
@@ -105,7 +105,7 @@ SECTION_FUNC(TEXT, _i8259_boi_master)
  *
  * void _i8259_boi_slave (void)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _i8259_boi_slave)

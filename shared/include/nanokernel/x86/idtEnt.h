@@ -90,7 +90,7 @@ typedef struct idtEntry {
  * should specify a level of 0, whereas handlers for user-mode software generated
  * interrupts should specify 3.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * This is a shared routine between the IA-32 nanokernel runtime code and the

@@ -51,7 +51,7 @@ static uint32_t altTaskIterations = 0;
  *
  * This routine increments the global variable <criticalVar>.
  *
- * RETURNS: 0
+ * @return 0
  */
 
 int criticalRtn(void)
@@ -70,7 +70,7 @@ int criticalRtn(void)
  *
  * @param count    number of critical section calls made thus far
  *
- * RETURNS: number of critical section calls made by task
+ * @return number of critical section calls made by task
  */
 
 uint32_t criticalLoop(uint32_t count)
@@ -92,7 +92,7 @@ uint32_t criticalLoop(uint32_t count)
  *
  * This routine calls task_offload_to_fiber() many times.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void AlternateTask(void)
@@ -118,7 +118,7 @@ void AlternateTask(void)
  * ensure that the number of times it is called matches the global variable
  * <criticalVar>.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void RegressionTask(void)

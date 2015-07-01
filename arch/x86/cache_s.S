@@ -54,7 +54,7 @@ This module contains functions for manipulating caches.
  *
  * Both parameters are ignored in this implementation.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _SysCacheFlush)

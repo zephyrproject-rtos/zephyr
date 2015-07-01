@@ -67,7 +67,7 @@ static uint32_t timestamp = 0;
  *
  * The interrupt handler gets the second timestamp.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -87,7 +87,7 @@ static void latencyTestIsr(void *unused)
  * Fiber makes all the test preparations: registers the interrupt handler,
  * gets the first timestamp and invokes the software interrupt.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -106,7 +106,7 @@ static void fiberInt(void)
  * Fiber starts, waits on semaphore. When the interrupt handler releases
  * the semaphore, fiber measures the time.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -121,7 +121,7 @@ static void fiberWaiter(void)
  *
  * nanoIntToFiberSem - the test main function
  *
- * RETURNS: 0 on success
+ * @return 0 on success
  *
  * \NOMANUAL
  */

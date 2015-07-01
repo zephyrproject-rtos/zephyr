@@ -55,7 +55,7 @@ Intel-specific parts of start_task(). Only FP functionality currently.
  *
  * _StartTaskArch - Intel-specifc parts of task initialization
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _StartTaskArch(

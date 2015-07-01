@@ -52,7 +52,7 @@ either in the form of an actual function or an alias to a function.
  * Interrupts must already be locked to ensure list cannot change
  * while this routine is executing!
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _nano_fiber_schedule(tCCS *ccs)
@@ -99,7 +99,7 @@ FUNC_ALIAS(_fiber_start, fiber_start, void);
  * performance critical, a runtime check to differentiate between a calling
  * task or fiber is performed in order to conserve footprint.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _fiber_start(char *pStack,
@@ -156,7 +156,7 @@ void _fiber_start(char *pStack,
  *
  * This routine can only be called from a fiber context.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void fiber_yield(void)
@@ -185,7 +185,7 @@ void fiber_yield(void)
  *
  * This routine can only be called from a fiber context.
  *
- * RETURNS: This function never returns
+ * @return This function never returns
  */
 
 FUNC_NORETURN void _nano_fiber_swap(void)
@@ -224,7 +224,7 @@ FUNC_NORETURN void _nano_fiber_swap(void)
  *
  * This routine can only be called from a fiber context.
  *
- * RETURNS: This function never returns
+ * @return This function never returns
  */
 
 FUNC_NORETURN void fiber_abort(void)

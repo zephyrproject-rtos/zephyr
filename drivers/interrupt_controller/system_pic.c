@@ -67,7 +67,7 @@ IRQ_CONNECT_STATIC(pic_slave, PIC_SLAVE_STRAY_INT_LVL, 0, _i8259_boi_slave, 0);
  *   - IRQ0 to IRQ7  are provided by the master i8259 PIC
  *   - IRQ8 to IRQ15 are provided by the slave i8259 PIC
  *
- * RETURNS: the allocated interrupt vector
+ * @return the allocated interrupt vector
  *
  * INTERNAL
  * For debug kernels, this routine will return -1 for invalid <priority> or

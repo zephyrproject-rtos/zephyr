@@ -70,7 +70,7 @@ _ASM_FILE_PROLOGUE
  * - must be called with interrupts locked
  * - cannot use r0 without saving it first
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _GdbStubExcEntry)
@@ -107,7 +107,7 @@ SECTION_FUNC(TEXT, _GdbStubExcEntry)
  * - must be called with interrupts locked
  * - cannot use r0 without saving it first
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _GdbStubExcExit)
@@ -145,7 +145,7 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
  * This stub must also act as a demuxer that find the running exception and
  * invoke the user's real ISR.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _irq_vector_table_entry_with_gdb_stub)

@@ -50,7 +50,7 @@ initialization is performed.
  *
  * This routine clears the BSS region, so all bytes are 0.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void bssZero(void)
@@ -69,7 +69,7 @@ static void bssZero(void)
  *
  * This routine copies the data section from ROM to RAM.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 #ifdef CONFIG_XIP
@@ -96,7 +96,7 @@ extern FUNC_NORETURN void _Cstart(void);
  *
  * This routine prepares for the execution of and runs C code.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _PrepC(void)

@@ -75,7 +75,7 @@ and exiting a C exception handler.
  * created by this routine to determine the locations of volatile registers.
  * These tools must be updated to reflect any changes to the stack frame.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *
@@ -224,7 +224,7 @@ BRANCH_LABEL(allDone)
  * completed.  This routine restores the volatile integer registers and
  * then control is returned back to the interrupted context or ISR.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *

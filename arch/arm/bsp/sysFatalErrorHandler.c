@@ -76,7 +76,7 @@ static inline void nonEssentialTaskAbort(void)
  * implementation to take other actions, such as logging error (or debug)
  * information to a persistent repository and/or rebooting the system.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

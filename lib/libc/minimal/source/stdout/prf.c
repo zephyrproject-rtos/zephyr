@@ -508,7 +508,7 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
  * primitive that is footprint conversative, i.e. it does not utilize a
  * lookup table.
  *
- * RETURNS: non-zero if input integer in an ASCII digit character
+ * @return non-zero if input integer in an ASCII digit character
  *
  * INTERNAL
  */

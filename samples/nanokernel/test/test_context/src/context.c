@@ -124,7 +124,7 @@ static void (*_trigger_isrHandler)(void) = (vvfn)sw_isr_trigger_0;
  * This routine is the ISR handler for _trigger_isrHandler().  It performs
  * the command requested in <isrInfo.command>.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_handler(void *data)
@@ -159,7 +159,7 @@ void isr_handler(void *data)
  * thereby preventing the infinite loop of divide-by-zero errors which would
  * arise if control simply returns to that instruction.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void exc_divide_error_handler(NANO_ESF *pEsf)
@@ -175,7 +175,7 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
  *
  * This routine initializes the nanokernel objects used in this module's tests.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int initNanoObjects(void)
@@ -206,7 +206,7 @@ int initNanoObjects(void)
  * expected to be the tick clock timer which should wake the CPU.  Thus after
  * each call to nano_cpu_idle(), the tick count should be one higher.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int nano_cpu_idleTest(void)
@@ -235,7 +235,7 @@ int nano_cpu_idleTest(void)
  *
  * irq_lockWrapper - a wrapper for irq_lock()
  *
- * RETURNS: irq_lock() return value
+ * @return irq_lock() return value
  */
 
 int irq_lockWrapper(int unused)
@@ -249,7 +249,7 @@ int irq_lockWrapper(int unused)
  *
  * irq_unlockWrapper - a wrapper for irq_unlock()
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_unlockWrapper(int imask)
@@ -261,7 +261,7 @@ void irq_unlockWrapper(int imask)
  *
  * irq_lock_inlineWrapper - a wrapper for irq_lock_inline()
  *
- * RETURNS: irq_lock_inline() return value
+ * @return irq_lock_inline() return value
  */
 
 int irq_lock_inlineWrapper(int unused)
@@ -275,7 +275,7 @@ int irq_lock_inlineWrapper(int unused)
  *
  * irq_unlock_inlineWrapper - a wrapper for irq_unlock_inline()
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_unlock_inlineWrapper(int imask)
@@ -287,7 +287,7 @@ void irq_unlock_inlineWrapper(int imask)
  *
  * irq_disableWrapper - a wrapper for irq_disable()
  *
- * RETURNS: <irq>
+ * @return <irq>
  */
 
 int irq_disableWrapper(int irq)
@@ -300,7 +300,7 @@ int irq_disableWrapper(int irq)
  *
  * irq_enableWrapper - a wrapper for irq_enable()
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_enableWrapper(int irq)
@@ -316,7 +316,7 @@ void irq_enableWrapper(int irq)
  * include irq_lock() and irq_unlock(), irq_lock_inline() and
  * irq_unlock_inline(), irq_disable() and irq_enable().
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
@@ -382,7 +382,7 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
  * a task and an ISR (that interrupted a task).  Checking those routines with
  * fibers are done elsewhere.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int nanoCtxTaskTest(void)
@@ -432,7 +432,7 @@ int nanoCtxTaskTest(void)
  *   3 - context_type_get() when called from an ISR is not NANO_TYPE_ISR
  *   3 - context_type_get() when called from a fiber is not NANO_TYPE_FIBER
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int nanoCtxFiberTest(nano_context_id_t taskCtxId)
@@ -483,7 +483,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
  * @param arg1    unused
  * @param arg2    unused
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiberHelper(int arg1, int arg2)
@@ -525,7 +525,7 @@ static void fiberHelper(int arg1, int arg2)
  *   12 - fiber_yield() did not yield to an equal prioirty fiber
  *   13 - fiber_yield() yielded to a lower priority fiber
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int fiber_yieldTest(void)
@@ -601,7 +601,7 @@ int fiber_yieldTest(void)
  * @param taskCtxId    context ID of the spawning task
  * @param arg1         unused
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiberEntry(int taskCtxId, int arg1)
@@ -821,7 +821,7 @@ static int test_timeout(void)
  *
  * This is the entry point to the CPU and context tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

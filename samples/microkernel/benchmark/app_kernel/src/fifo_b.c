@@ -38,7 +38,7 @@
  *
  * queue_test - queue transfer speed test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

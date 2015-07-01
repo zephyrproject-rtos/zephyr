@@ -55,7 +55,7 @@ This module contains functions for manipulation caches.
  * The cache line size is specified via the CONFIG_CACHE_LINE_SIZE kconfig
  * option.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _SysCacheFlush(VIRT_ADDR virt, size_t size)

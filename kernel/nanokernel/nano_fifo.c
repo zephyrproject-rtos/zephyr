@@ -60,7 +60,7 @@ APIs to the same function, since they have identical implementations.
  *
  * It may be called from either a fiber or task context.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * Although the existing implementation will support invocation from an ISR
@@ -98,7 +98,7 @@ FUNC_ALIAS(_fifo_put_non_preemptible, nano_fiber_fifo_put, void);
  *
  * enqueue_data - internal routine to append data to a fifo
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void enqueue_data(struct nano_fifo *fifo, void *data)
@@ -119,7 +119,7 @@ static inline void enqueue_data(struct nano_fifo *fifo, void *data)
  * If a fiber is waiting on the fifo, the address of the element is returned to
  * the waiting fiber.  Otherwise, the element is linked to the end of the list.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * This function is capable of supporting invocations from both a fiber and an
@@ -160,7 +160,7 @@ void _fifo_put_non_preemptible(
  * If a fiber is waiting on the fifo, the address of the element is returned to
  * the waiting fiber.  Otherwise, the element is linked to the end of the list.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void nano_task_fifo_put(
@@ -212,7 +212,7 @@ FUNC_ALIAS(_fifo_get, nano_fifo_get, void *);
  *
  * dequeue_data - internal routine to remove data from a fifo
  *
- * RETURNS: the data item removed
+ * @return the data item removed
  */
 
 static inline void *dequeue_data(struct nano_fifo *fifo)
@@ -244,7 +244,7 @@ static inline void *dequeue_data(struct nano_fifo *fifo)
  * element contains invalid data because that memory location was used to store
  * a pointer to the next element in the linked list.
  *
- * RETURNS: Pointer to head element in the list if available, otherwise NULL
+ * @return Pointer to head element in the list if available, otherwise NULL
  *
  * INTERNAL
  * This function is capable of supporting invocations from fiber, task, and ISR
@@ -284,7 +284,7 @@ void *_fifo_get(
  * The first word in the element contains invalid data because that memory
  * location was used to store a pointer to the next element in the linked list.
  *
- * RETURNS: Pointer to head element in the list
+ * @return Pointer to head element in the list
  *
  * INTERNAL There exists a separate nano_task_fifo_get_wait() implementation
  * since a task context cannot pend on a nanokernel object.  Instead tasks will
@@ -325,7 +325,7 @@ void *nano_fiber_fifo_get_wait(
  * The first word in the element contains invalid data because that memory
  * location was used to store a pointer to the next element in the linked list.
  *
- * RETURNS: Pointer to head element in the list
+ * @return Pointer to head element in the list
  */
 
 void *nano_task_fifo_get_wait(

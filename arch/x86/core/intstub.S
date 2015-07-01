@@ -101,7 +101,7 @@ entering and exiting a C interrupt handler.
  * created by this routine to determine the locations of volatile registers.
  * These tools must be updated to reflect any changes to the stack frame.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *
@@ -255,7 +255,7 @@ BRANCH_LABEL(_HandleIdle)
  * in which case one or more other fiber and task contexts will execute before
  * this routine resumes and control gets returned to the interrupted task.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *
@@ -405,7 +405,7 @@ BRANCH_LABEL(nestedInterrupt)
  * to return to the interrupted context and thus the volatile registers
  * are not saved.
  *
- * RETURNS: Never returns
+ * @return Never returns
  *
  * C function prototype:
  *
@@ -487,7 +487,7 @@ BRANCH_LABEL(callFatalHandler)
  * to block, the interrupt disable state will be restored when the context is
  * later rescheduled for execution.
  *
- * RETURNS: An architecture-dependent lock-out key representing the
+ * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
  */
 

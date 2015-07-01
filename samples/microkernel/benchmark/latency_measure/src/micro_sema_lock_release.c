@@ -60,7 +60,7 @@ static uint32_t timestamp;
  * The routine performs unlock the quite amount of semaphores and then
  * acquires them in order to measure the necessary time.
  *
- * RETURNS: 0 on success
+ * @return 0 on success
  *
  * \NOMANUAL
  */
@@ -110,7 +110,7 @@ int microSemaLockUnlock(void)
  * The routine performs multiple mutex locks and then multiple mutex
  * unlocks to measure the necessary time.
  *
- * RETURNS: 0 on success
+ * @return 0 on success
  *
  * \NOMANUAL
  */

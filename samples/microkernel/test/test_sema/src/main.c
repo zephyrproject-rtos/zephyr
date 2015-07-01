@@ -98,7 +98,7 @@ static vvfn _trigger_isrSemaSignal = (vvfn) sw_isr_trigger_0;
  * This routine signals "task done" or "task fail", based on the return code of
  * RegressionTask.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void RegressionTaskEntry(void)
@@ -115,7 +115,7 @@ void RegressionTaskEntry(void)
  * This routine signals "task done" or "task fail", based on the return code of
  * MsgRcvrTask.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void AlternateTaskEntry(void)
@@ -132,7 +132,7 @@ void AlternateTaskEntry(void)
  * This routine signals "task done" or "task fail", based on the return code of
  * HighPriTask.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void HighPriTaskEntry(void)
@@ -149,7 +149,7 @@ void HighPriTaskEntry(void)
  * This routine signals "task done" or "task fail", based on the return code of
  * LowPriTask.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void LowPriTaskEntry(void)
@@ -165,7 +165,7 @@ void LowPriTaskEntry(void)
  *
  * @param isrData    pointer to semaphore to be given
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void testIsrHandler(void *isrData)
@@ -179,7 +179,7 @@ static void testIsrHandler(void *isrData)
  *
  * @param semaphore    semaphore to be given
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void trigger_isrSemaSignal(ksem_t semaphore)
@@ -192,7 +192,7 @@ void trigger_isrSemaSignal(ksem_t semaphore)
  *
  * releaseTestFiber - release the test fiber
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void releaseTestFiber(void)
@@ -207,7 +207,7 @@ void releaseTestFiber(void)
  * Binds an ISR to the interrupt vector used to give semaphores from interrupt
  * level.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void testInterruptsInit(void)
@@ -227,7 +227,7 @@ static void testInterruptsInit(void)
  * This routine keeps tabs on the progress of the tasks doing the actual testing
  * and generates the final test case summary message.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void MonitorTaskEntry(void)

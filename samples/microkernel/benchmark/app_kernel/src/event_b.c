@@ -60,7 +60,7 @@ int example_handler (int event);
  *
  * event_test - event signal speed test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -184,7 +184,7 @@ void event_test(void)
  * The event handler for the test. Sets up nEventValue global variable.
  * This variable is used in the main test.
  *
- * RETURNS: 1
+ * @return 1
  *
  * \NOMANUAL
  */

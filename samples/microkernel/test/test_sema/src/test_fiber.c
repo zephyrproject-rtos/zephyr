@@ -66,7 +66,7 @@ static CMD_PKT_SET_INSTANCE(cmdPktSet, N_TESTS + 1)
  * Then fiber signals each of the semaphores in the group. Test
  * task checks this.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 static void testFiberEntry(void)
 {
@@ -92,7 +92,7 @@ static void testFiberEntry(void)
  *
  * testFiberInit - initializes variables and starts the test fiber
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testFiberInit(void)

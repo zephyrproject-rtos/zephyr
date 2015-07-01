@@ -123,7 +123,7 @@ FUNC_ALIAS(_i8259_irq_disable, irq_disable, void);
  * This routine initializes the Intel 8259A PIC device driver and the device
  * itself.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _i8259_init(void)
@@ -191,7 +191,7 @@ void _i8259_init(void)
  *
  * This routine is called at the end of the interrupt handler.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * ERRNO
  */
@@ -214,7 +214,7 @@ void _i8259_eoi_master(unsigned int irq /* IRQ number to
  * This routine is called at the end of the interrupt handler in the Normal
  * Fully Nested Mode.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * ERRNO
  */
@@ -251,7 +251,7 @@ void _i8259_eoi_slave(unsigned int irq /* IRQ number to
  * This function is called by _i8259_irq_enable() and _i8259_irq_disable() to
  * perform the actual enabling/disabling of an IRQ to minimize footprint.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * see also: _i8259_irq_disable()/_i8259_irq_enable
  */
@@ -296,7 +296,7 @@ static void __I8259IntEnable(
  *
  * This routine disables a specified PIC interrupt input line.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * SEE ALSO: _i8259_irq_enable()
  */
@@ -313,7 +313,7 @@ void _i8259_irq_disable(unsigned int irq /* IRQ number to disable */
  *
  * This routine enables a specified PIC interrupt input line.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * SEE ALSO: _i8259_irq_disable()
  */

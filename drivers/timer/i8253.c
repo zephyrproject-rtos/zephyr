@@ -148,7 +148,7 @@ extern struct nano_stack _k_command_stack;
  *
  * This routine reads the 16 bit value from the i8253 counter register.
  *
- * RETURNS: counter register's 16 bit value
+ * @return counter register's 16 bit value
  *
  * \NOMANUAL
  */
@@ -176,7 +176,7 @@ static inline uint16_t _i8253CounterRead(void)
  * This routine sets the 16 bit value from which the i8253 timer will
  * decrement and sets that counter register to its value.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -198,7 +198,7 @@ static inline void _i8253CounterSet(
  *
  * This routine sets the i8253 to fire on a periodic basis.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -218,7 +218,7 @@ static inline void _i8253CounterPeriodic(
  *
  * This routine sets the i8253 to fire once only.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -239,7 +239,7 @@ static inline void _i8253CounterOneShot(
  * This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
  * event is pushed onto the microkernel stack.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -316,7 +316,7 @@ void _timer_int_handler(void *unusedArg /* not used */
  * value (the higher the tick frequency), the more elapsed ticks during a
  * "tickless idle".
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -332,7 +332,7 @@ static void _i8253TicklessIdleInit(void)
  *
  * _i8253TicklessIdleSkew -
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -413,7 +413,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  *
  * Called in _IntEnt()
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _timer_idle_exit(void)
@@ -473,7 +473,7 @@ void _timer_idle_exit(void)
  * This routine is used to program the PIT to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_driver(int priority /* priority parameter ignored by this driver */
@@ -507,7 +507,7 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
  *
  * This routine returns the current time in terms of timer hardware clock cycles.
  *
- * RETURNS: up counter of elapsed clock cycles
+ * @return up counter of elapsed clock cycles
  */
 
 uint32_t timer_read(void)
@@ -563,7 +563,7 @@ uint32_t timer_read(void)
  * This routine simply disables the PIT counter such that interrupts are no
  * longer delivered.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_disable(void)

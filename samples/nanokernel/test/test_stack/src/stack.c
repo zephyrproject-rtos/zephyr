@@ -132,7 +132,7 @@ void testIsrStackFromTask(void);
  *
  * Initialize myData and myIsrData arrays.
  *
- * RETURNS: none
+ * @return none
  */
 
 void initData(void)
@@ -152,7 +152,7 @@ void initData(void)
  *
  * @param parameter    pointer to ISR handler parameter
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_stack_push(void *parameter)
@@ -173,7 +173,7 @@ void isr_stack_push(void *parameter)
  *
  * @param parameter    pointer to ISR handler parameter
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_stack_pop(void *parameter)
@@ -196,7 +196,7 @@ void isr_stack_pop(void *parameter)
  * the STACK queue and puts four items back to the STACK queue.  Control is
  * transferred back to the main task.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void fiber1(void)
@@ -243,7 +243,7 @@ void fiber1(void)
  * This function tests the stack push and pop wait interfaces in the fiber context.
  * It gets data from nanoStackObj2 queue and puts data to nanoStackObj queue.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testFiberStackPopW(void)
@@ -290,7 +290,7 @@ void testFiberStackPopW(void)
  *
  * We use nanoStackObj queue to push and pop data.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testIsrStackFromFiber(void)
@@ -346,7 +346,7 @@ void testIsrStackFromFiber(void)
  *
  * We use nanoStackObj queue to push and pop data.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testIsrStackFromTask(void)
@@ -401,7 +401,7 @@ void testIsrStackFromTask(void)
  *
  * This is the fiber started from the testTaskStackPopW function.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void fiber2(void)
@@ -421,7 +421,7 @@ void fiber2(void)
  * This is in the task context.  It puts data to nanoStackObj2 queue and gets
  * data from nanoStackObj queue.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testTaskStackPopW(void)
@@ -461,7 +461,7 @@ void testTaskStackPopW(void)
  * This fiber blocks for one second before pushing an item onto the stack.
  * The main task, which was waiting for item from the stack then unblocks.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void fiber3(void)
@@ -477,7 +477,7 @@ void fiber3(void)
  *
  * This routine initializes the nanokernel objects used in the STACK tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void initNanoObjects(void)
@@ -501,7 +501,7 @@ void initNanoObjects(void)
  *
  * This is the entry point to the STACK tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

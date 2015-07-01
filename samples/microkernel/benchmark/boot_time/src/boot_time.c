@@ -125,7 +125,7 @@ char __stack fiberStack[512];
  *
  * main - nanokernel entry point
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

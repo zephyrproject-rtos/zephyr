@@ -76,7 +76,7 @@ uint32_t irq_vectors[NUM_OBJECTS] = {[0 ... (NUM_OBJECTS - 1)] = INVALID_VECTOR}
  * interrupt associated with those IRQs. The function then attempts to allocate
  * a device that has already been allocate from taskB.
  *
- * RETURNS: TC_PASS, TC_FAIL
+ * @return TC_PASS, TC_FAIL
  */
 
 int taskA(ksem_t semRdy)
@@ -148,7 +148,7 @@ int taskA(ksem_t semRdy)
  * interrupt associated with those IRQs. The function then frees an IRQ object
  * using task_irq_free().
  *
- * RETURNS: TC_PASS, TC_FAIL
+ * @return TC_PASS, TC_FAIL
  */
 
 int taskB(ksem_t semRdy)

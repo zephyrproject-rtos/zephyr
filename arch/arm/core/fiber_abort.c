@@ -61,7 +61,7 @@ the PendSV exception.
  * - the fiber implicitly aborts by returning from its entry point
  * - the fiber encounters a fatal exception
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void fiber_abort(void)

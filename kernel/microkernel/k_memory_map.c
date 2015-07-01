@@ -39,7 +39,7 @@
  *
  * Perform any initialization of memory maps that wasn't done at build time.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_mem_map_init(void)
@@ -74,7 +74,7 @@ void _k_mem_map_init(void)
  *
  * _k_mem_map_alloc_timeout - finish handling a memory map block request that timed out
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_mem_map_alloc_timeout(struct k_args *A)
@@ -89,7 +89,7 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
  *
  * _k_mem_map_alloc - perform allocate memory map block request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_mem_map_alloc(struct k_args *A)
@@ -136,7 +136,7 @@ void _k_mem_map_alloc(struct k_args *A)
  *
  * This routine is used to request a block of memory from the memory map.
  *
- * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, error, timeout respectively
+ * @return RC_OK, RC_FAIL, RC_TIME on success, error, timeout respectively
  */
 
 int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request block */
@@ -158,7 +158,7 @@ int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request
  *
  * _k_mem_map_dealloc - perform return memory map block request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_mem_map_dealloc(struct k_args *A)
@@ -202,7 +202,7 @@ void _k_mem_map_dealloc(struct k_args *A)
  * priority task is waiting for a block from the same map a task switch
  * takes place.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _task_mem_map_free(kmemory_map_t mmap, /* memory map */
@@ -223,7 +223,7 @@ void _task_mem_map_free(kmemory_map_t mmap, /* memory map */
  *
  * This routine returns the number of blocks in use for the memory map.
  *
- * RETURNS: number of used blocks
+ * @return number of used blocks
  */
 
 int task_mem_map_used_get(kmemory_map_t mmap /* memory map */

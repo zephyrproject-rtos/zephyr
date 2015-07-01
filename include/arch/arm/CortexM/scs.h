@@ -435,7 +435,7 @@ extern volatile struct __scs __scs;
  *
  * _ScsNumIrqGet - obtain the number of interrupt lines on the target
  *
- * RETURNS: the number of interrupts
+ * @return the number of interrupts
  */
 
 static inline int _ScsNumIrqGet(void)
@@ -453,7 +453,7 @@ static inline int _ScsNumIrqGet(void)
  * they must complete before the processor can stack the current state and invoke
  * the interrupt handler.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _ScsIntMultiCycleInstDisable(void)
@@ -467,7 +467,7 @@ static inline void _ScsIntMultiCycleInstDisable(void)
  *
  * See _ScsIntMultiCycleInstDisable().
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _ScsIntMultiCycleInstEnable(void)
@@ -485,7 +485,7 @@ static inline void _ScsIntMultiCycleInstEnable(void)
  * BusFaults to be precise BusFaults but decreases performance because any store
  * to memory must complete before the processor can execute the next instruction.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _ScsWriteBufDisable(void)
@@ -499,7 +499,7 @@ static inline void _ScsWriteBufDisable(void)
  *
  * See _ScsWriteBufDisable().
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _ScsWriteBufEnable(void)
@@ -519,7 +519,7 @@ static inline void _ScsWriteBufEnable(void)
  * jitter in looping. If a task must avoid jitter, set the DISFOLD bit to 1
  * before executing the task, to disable IT folding.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _ScsFoldItDisable(void)
@@ -533,7 +533,7 @@ static inline void _ScsFoldItDisable(void)
  *
  * See _ScsFoldItDisable().
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _ScsFoldItEnable(void)

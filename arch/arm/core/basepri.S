@@ -69,7 +69,7 @@ GTEXT(irq_unlock)
  * This function can be called recursively: it will return a key to return the
  * state of interrupt locking to the previous level.
  *
- * RETURNS: a key to return to the previous interrupt locking level
+ * @return a key to return to the previous interrupt locking level
  */
 
 SECTION_FUNC(TEXT,irq_lock)
@@ -85,7 +85,7 @@ SECTION_FUNC(TEXT,irq_lock)
  * Return the state of interrupt locking to a previous level, passed in via the
  * <key> parameter, obtained from a previous call to irq_lock().
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT,irq_unlock)

@@ -49,7 +49,7 @@ data structure.
  *
  * Sets the nanokernel data structure idle field to a non-zero value.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

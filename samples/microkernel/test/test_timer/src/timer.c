@@ -56,7 +56,7 @@ static ktimer_t pTimer[NTIMERS + 1];
  *
  * testLowTimerStop - test that task_timer_stop() does stop a timer
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int testLowTimerStop(void)
@@ -83,7 +83,7 @@ int testLowTimerStop(void)
  *
  * testLowTimerPeriodicity - test the periodic feature of a timer
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int testLowTimerPeriodicity(void)
@@ -156,7 +156,7 @@ int testLowTimerPeriodicity(void)
  * This test checks that the timer does not start under a variety of
  * circumstances.
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int testLowTimerDoesNotStart(void)
@@ -192,7 +192,7 @@ int testLowTimerDoesNotStart(void)
  *
  * testLowTimerOneShot - test the one shot feature of a timer
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int testLowTimerOneShot(void)
@@ -248,7 +248,7 @@ int testLowTimerOneShot(void)
  * it checks that timers that have been freed are available to be allocated
  * again at a later time.
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int testLowTimerGet(void)
@@ -321,7 +321,7 @@ static void test_nano_timers(int unused1, int unused2)
  *
  * RegressionTaskEntry - regression test's entry point
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void RegressionTaskEntry(void)

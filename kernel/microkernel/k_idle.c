@@ -76,7 +76,7 @@ static extern uint32_t _k_workload_scale;
  * _k_workload_n1 is updated by the system tick handler, and both are kept
  * in close synchronization.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -107,7 +107,7 @@ static void workload_loop(void)
  * Measures the time required to do a fixed amount of "dummy work", and
  * sets default values for the workload measuring period.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -140,7 +140,7 @@ void _k_workload_monitor_calibrate(void)
  * If workload monitor is configured this routine updates the global variables
  * it uses to record the passage of time.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -162,7 +162,7 @@ void _k_workload_monitor_update(void)
  *
  * Records time when idle task was selected for execution by the microkernel.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_workload_monitor_idle_start(void)
@@ -177,7 +177,7 @@ void _k_workload_monitor_idle_start(void)
  * Records time when idle task was no longer selected for execution by the
  * microkernel, and updates amount of time spent idling.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_workload_monitor_idle_end(void)
@@ -193,7 +193,7 @@ void _k_workload_monitor_idle_end(void)
  *
  * Computes workload, or uses 0 if workload monitoring is not configured.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_workload_get(struct k_args *P)
@@ -243,7 +243,7 @@ void _k_workload_get(struct k_args *P)
  * up to 100% of its time servicing ISRs and fibers, yet report a workload of 0%
  * because the idle task is always the task selected by the microkernel.
  *
- * RETURNS: workload
+ * @return workload
  */
 
 int task_workload_get(void)
@@ -261,7 +261,7 @@ int task_workload_get(void)
  *
  * This routine specifies the workload measuring period for task_workload_get().
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void sys_workload_time_slice_set(int32_t t)
@@ -311,7 +311,7 @@ int32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
  * until the timer expires, in system ticks.
  * Routine is invoked from the idle task with interrupts disabled
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -356,7 +356,7 @@ void _sys_power_save_idle(int32_t ticks)
  * Routine can be modified to wake up other devices.
  * The routine is invoked from interrupt context, with interrupts disabled.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -381,7 +381,7 @@ void _sys_power_save_idle_exit(int32_t ticks)
  * Must be called with interrupts locked to prevent the timer queues from
  * changing.
  *
- * RETURNS: Number of ticks until next timer expires.
+ * @return Number of ticks until next timer expires.
  *
  */
 
@@ -406,7 +406,7 @@ static inline int32_t _get_next_timer_expiry(void)
  * this routine will fall through and _k_kernel_idle() will try the next idling
  * mechanism.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -453,7 +453,7 @@ static void _power_save(void)
  *
  * If power save is on, we sleep; if power save is off, we "busy wait".
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 

@@ -68,7 +68,7 @@ static int tcRC = TC_PASS;              /* test case return code */
  *
  * This routine initializes the myData array used in the FIFO tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void initMyData(void)
@@ -84,7 +84,7 @@ void initMyData(void)
  *
  * This routine prints myData array.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void printMyData(void)
@@ -105,7 +105,7 @@ void printMyData(void)
  * @param expectRetValue     expect value
  * @param currentRetValue    current value
  *
- * RETURNS:  true, false
+ * @return  true, false
  */
 
 bool verifyRetValue(int expectRetValue, int currentRetValue)
@@ -119,7 +119,7 @@ bool verifyRetValue(int expectRetValue, int currentRetValue)
  *
  * This routine initializes the microkernel objects used in the FIFO tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void initMicroObjects(void)
@@ -138,7 +138,7 @@ void initMicroObjects(void)
  * @param queue          FIFO queue
  * @param numElements    Number of elements used to inserted into the queue
  *
- * RETURNS: TC_PASS, TC_FAIL
+ * @return TC_PASS, TC_FAIL
  *
  * Also updates tcRC when result is TC_FAIL.
  */
@@ -194,7 +194,7 @@ exitTest3:
  * - it purges the FIFO queue
  * - it dequeues an element from the FIFO queue
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 void MicroTestFifoTask(void)
 {
@@ -281,7 +281,7 @@ exitTest4:
  *
  * @param loopCnt    number of elements passed to the for loop
  *
- * RETURNS:  TC_PASS, TC_FAIL
+ * @return  TC_PASS, TC_FAIL
  *
  * Also updates tcRC when result is TC_FAIL.
  */
@@ -360,7 +360,7 @@ exitTest2:
  * The get wait interfaces (with and without timeouts) are also tested
  * and data verified.
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void RegressionTask(void)

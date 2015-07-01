@@ -51,7 +51,7 @@ GTEXT(_context_entry)
  * The routine pops parameters for the _context_entry from
  * stack frame, prepared by the _NewContext() routine
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _ContextEntryWrapper)

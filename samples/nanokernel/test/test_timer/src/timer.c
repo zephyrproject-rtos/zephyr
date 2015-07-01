@@ -83,7 +83,7 @@ static char __stack fiber2Stack[FIBER2_STACKSIZE];
  *
  * This routine initializes the nanokernel objects used in the LIFO tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void initNanoObjects(void)
@@ -117,7 +117,7 @@ void initNanoObjects(void)
  * @param pTimerData    pointer to the expected timer data
  * @param ticks         number of ticks to wait
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
@@ -195,7 +195,7 @@ int basicTimerWait(timer_start_func startRtn, timer_getw_func waitRtn,
  *
  * @param startRtn    routine to start the timers
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void startTimers(timer_start_func startRtn)
@@ -224,7 +224,7 @@ void startTimers(timer_start_func startRtn)
  *
  * @param getRtn    timer get routine (fiber or task)
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int busyWaitTimers(timer_get_func getRtn)
@@ -294,7 +294,7 @@ int busyWaitTimers(timer_get_func getRtn)
  * @param stopRtn    routine to stop timer (fiber or task)
  * @param getRtn     timer get routine (fiber or task)
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
@@ -335,7 +335,7 @@ int stopTimers(timer_stop_func stopRtn, timer_get_func getRtn)
  * @param arg1    unused
  * @param arg2    unused
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiber2Entry(int arg1, int arg2)
@@ -356,7 +356,7 @@ static void fiber2Entry(int arg1, int arg2)
  * @param arg1    unused
  * @param arg2    unused
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiberEntry(int arg1, int arg2)
@@ -431,7 +431,7 @@ static void fiberEntry(int arg1, int arg2)
  *
  * nano_cycle_get_32Test - test the nano_cycle_get_32() API
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int nano_cycle_get_32Test(void)
@@ -460,7 +460,7 @@ int nano_cycle_get_32Test(void)
  *
  * This is the entry point to the timer tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

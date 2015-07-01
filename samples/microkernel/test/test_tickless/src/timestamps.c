@@ -77,7 +77,7 @@ BSP-specific timestamp support for the tickless idle test.
  *
  * This routine initializes the timestamp timer.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -109,7 +109,7 @@ void _TimestampOpen(void)
  *
  * This routine returns the timestamp value.
  *
- * RETURNS: timestamp value
+ * @return timestamp value
  *
  * \NOMANUAL
  */
@@ -145,7 +145,7 @@ uint32_t _TimestampRead(void)
  *
  * This routine releases the timestamp timer.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -192,7 +192,7 @@ void _TimestampClose(void)
  *
  * This routine initializes the timestamp timer.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -229,7 +229,7 @@ void _TimestampOpen(void)
  *
  * This routine returns the timestamp value.
  *
- * RETURNS: timestamp value
+ * @return timestamp value
  *
  * \NOMANUAL
  */
@@ -266,7 +266,7 @@ uint32_t _TimestampRead(void)
  *
  * This routine releases the timestamp timer.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

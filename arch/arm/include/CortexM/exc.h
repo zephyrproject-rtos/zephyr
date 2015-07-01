@@ -56,7 +56,7 @@ Exception/interrupt context helpers.
  * interrupts. Taking a fault within an exception is also considered in
  * interrupt context.
  *
- * RETURNS: 1 if in ISR, 0 if not.
+ * @return 1 if in ISR, 0 if not.
  *
  * \NOMANUAL
  */
@@ -76,7 +76,7 @@ static ALWAYS_INLINE int _IsInIsr(void)
  *
  * Enable fault exceptions.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

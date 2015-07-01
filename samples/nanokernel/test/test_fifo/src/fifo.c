@@ -153,7 +153,7 @@ extern int test_fifo_timeout(void);
  *
  * @param parameter    pointer to ISR handler parameter
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_fifo_put(void *parameter)
@@ -172,7 +172,7 @@ void isr_fifo_put(void *parameter)
  *
  * @param parameter    pointer to ISR handler parameter
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_fifo_get(void *parameter)
@@ -187,7 +187,7 @@ void isr_fifo_get(void *parameter)
  *
  * fiber1 - entry point for the first fiber
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void fiber1(void)
@@ -259,7 +259,7 @@ void fiber1(void)
  * This function tests the fifo put and get wait interfaces in the fiber context.
  * It gets data from nanoFifoObj2 queue and puts data to nanoFifoObj queue.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testFiberFifoGetW(void)
@@ -308,7 +308,7 @@ void testFiberFifoGetW(void)
  *
  * We use nanoFifoObj queue to put and get data.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testIsrFifoFromFiber(void)
@@ -362,7 +362,7 @@ void testIsrFifoFromFiber(void)
  *
  * We use nanoFifoObj queue to put and get data.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testIsrFifoFromTask(void)
@@ -420,7 +420,7 @@ void testIsrFifoFromTask(void)
  *
  * fiber2 - entry point for the second fiber
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void fiber2(void)
@@ -476,7 +476,7 @@ void fiber2(void)
  *
  * fiber3 - entry point for the third fiber
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void fiber3(void)
@@ -525,7 +525,7 @@ void fiber3(void)
  * This is in the task context.  It puts data to nanoFifoObj2 queue and gets
  * data from nanoFifoObj queue.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void testTaskFifoGetW(void)
@@ -564,7 +564,7 @@ void testTaskFifoGetW(void)
  *
  * This routine initializes the nanokernel objects used in the FIFO tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void initNanoObjects(void)
@@ -594,7 +594,7 @@ void initNanoObjects(void)
  *
  * This is the entry point to the FIFO tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

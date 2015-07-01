@@ -54,7 +54,7 @@ function __stack_chk_fail and global variable __stack_chk_guard.
  *
  * This function is invoked when a stack canary error is detected.
  *
- * RETURNS: Does not return
+ * @return Does not return
  */
 
 void FUNC_NORETURN _StackCheckHandler(void)

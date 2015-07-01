@@ -75,7 +75,7 @@ GDATA(_nanokernel)
  * When _Swap() is invoked, we know the decision to perform a context switch or
  * not has already been taken and a context switch must happen.
  *
- * RETURNS: may contain a return value setup by a call to fiberRtnValueSet()
+ * @return may contain a return value setup by a call to fiberRtnValueSet()
  *
  * C function prototype:
  *

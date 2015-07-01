@@ -41,7 +41,7 @@
  *
  * waittask - receive task (Wait task)
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

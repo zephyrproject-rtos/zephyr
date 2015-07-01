@@ -50,7 +50,7 @@ static void _printk_hex_ulong(const unsigned long num);
  *
  * _nop_char_out - default character output routine that does nothing
  *
- * RETURNS: 0
+ * @return 0
  */
 
 static int _nop_char_out(int c /* character to swallow */
@@ -72,7 +72,7 @@ static int (*_char_out)(int) = _nop_char_out;
  * To be called by the BSP's console driver at init time. Installs a routine
  * that outputs one ASCII character at a time.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void __printk_hook_install(int (*fn)(int) /* putc routine to install */
@@ -87,7 +87,7 @@ void __printk_hook_install(int (*fn)(int) /* putc routine to install */
  *
  * See printk() for description.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _vprintk(const char *fmt, /* format string */
@@ -169,7 +169,7 @@ static inline void _vprintk(const char *fmt, /* format string */
  * - %p:     pointer, same as %x
  * - %d/%i/%u: outputs a 32-bit number in unsigned decimal format.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void printk(const char *fmt, /* formatted string to output */
@@ -189,7 +189,7 @@ void printk(const char *fmt, /* formatted string to output */
  * Output an unsigned long on output installed by BSP at init time. Should be
  * able to handle an unsigned long of any size, 32 or 64 bit.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void _printk_hex_ulong(
@@ -212,7 +212,7 @@ static void _printk_hex_ulong(
  * Output an unsigned long on output installed by BSP at init time. Only works
  * with 32-bit values.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void _printk_dec_ulong(
@@ -242,7 +242,7 @@ static void _printk_dec_ulong(
  *
  * Debugging output is dropped if it is not to be sent to the console.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void printk(const char *fmt, ...)

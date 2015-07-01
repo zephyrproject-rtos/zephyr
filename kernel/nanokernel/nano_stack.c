@@ -58,7 +58,7 @@ APIs to the same function, since they have identical implementations.
  *
  * It may be called from either a fiber or a task context.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * Although the existing implementation will support invocation from an ISR
@@ -86,7 +86,7 @@ FUNC_ALIAS(_stack_push_non_preemptible, nano_fiber_stack_push, void);
  * either a fiber or ISR context.  A fiber pending on the stack object will be
  * made ready, but will NOT be scheduled to execute.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * This function is capable of supporting invocations from both a fiber and an
@@ -126,7 +126,7 @@ void _stack_push_non_preemptible(
  * from a task context.  A fiber pending on the stack object will be
  * made ready, and will preempt the running task immediately.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void nano_task_stack_push(
@@ -169,7 +169,7 @@ FUNC_ALIAS(_stack_pop, nano_task_stack_pop, int);
  * address <pData> and a non-zero value is returned. If the stack is empty,
  * zero is returned.
  *
- * RETURNS: 1 if stack is not empty, 0 otherwise
+ * @return 1 if stack is not empty, 0 otherwise
  *
  * INTERNAL
  * This function is capable of supporting invocations from fiber, task, and
@@ -209,7 +209,7 @@ int _stack_pop(
  * If data is not available the calling fiber will pend until data is pushed
  * onto the stack.
  *
- * RETURNS: the data popped from the stack
+ * @return the data popped from the stack
  *
  * INTERNAL
  * There exists a separate nano_task_stack_pop_wait() implementation since a
@@ -248,7 +248,7 @@ uint32_t nano_fiber_stack_pop_wait(
  * If data is not available the calling task will poll until data is pushed
  * onto the stack.
  *
- * RETURNS: the data popped from the stack
+ * @return the data popped from the stack
  */
 
 uint32_t nano_task_stack_pop_wait(

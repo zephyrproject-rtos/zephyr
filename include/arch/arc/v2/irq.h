@@ -77,7 +77,7 @@ extern void _irq_exit(void);
  *
  * See irq_lock() for full description
  *
- * RETURNS: An architecture-dependent lock-out key representing the
+ * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
  *
  * \NOMANUAL
@@ -97,7 +97,7 @@ static ALWAYS_INLINE unsigned int irq_lock_inline(void)
  *
  * See irq_unlock() for full description
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

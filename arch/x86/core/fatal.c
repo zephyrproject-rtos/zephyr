@@ -76,7 +76,7 @@ const NANO_ESF _default_esf = {
  * fatal error does not have a hardware generated ESF, the caller should either
  * create its own or use a pointer to the global default ESF <_default_esf>.
  *
- * RETURNS: This function does not return.
+ * @return This function does not return.
  *
  * \NOMANUAL
  */

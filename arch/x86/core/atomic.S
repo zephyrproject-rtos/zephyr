@@ -81,7 +81,7 @@ as there is no requirement for this capability.
  * and the write of the new value (if it occurs) all happen atomically with
  * respect to both interrupts and accesses of other processors to <target>.
  *
- * RETURNS: Returns 1 if <newValue> is written, 0 otherwise.
+ * @return Returns 1 if <newValue> is written, 0 otherwise.
  *
  * int atomic_cas
  *     (
@@ -121,7 +121,7 @@ BRANCH_LABEL(atomic_cas1)
  * atomically added to the value at <target>, placing the result at <target>,
  * and the old value from <target> is returned.
  * 
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  * 
  * atomic_val_t atomic_add 
  *	(
@@ -153,7 +153,7 @@ SECTION_FUNC(TEXT, atomic_add)
  * atomically subtracted from the value at <target>, placing the result at
  * <target>, and the old value from <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  * 
  * atomic_val_t atomic_sub
  *     (
@@ -185,7 +185,7 @@ SECTION_FUNC(TEXT, atomic_sub)
  * This routine provides the atomic increment operator. The value at <target>
  * is atomically incremented by 1, and the old value from <target> is returned.
  *
- * RETURNS: The value from <target> before the increment
+ * @return The value from <target> before the increment
  * 
  * atomic_val_t atomic_inc
  *     (
@@ -217,7 +217,7 @@ SECTION_FUNC(TEXT, atomic_inc)
  * This routine provides the atomic decrement operator. The value at <target>
  * is atomically decremented by 1, and the old value from <target> is returned.
  *
- * RETURNS: The value from <target> prior to the decrement
+ * @return The value from <target> prior to the decrement
  * 
  * atomic_val_t atomic_dec
  *     (
@@ -248,7 +248,7 @@ SECTION_FUNC(TEXT, atomic_dec)
  * a value from <target>. It simply does an ordinary load.  Note that <target>
  * is expected to be aligned to a 4-byte boundary.
  *
- * RETURNS: The value read from <target>
+ * @return The value read from <target>
  * 
  * atomic_t atomic_get
  *     (
@@ -271,7 +271,7 @@ SECTION_FUNC(TEXT, atomic_get)
  * This routine provides the atomic set operator. The <value> is atomically
  * written at <target> and the previous value at <target> is returned.
  * 
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  * 
  * atomic_val_t atomic_set
  *     (
@@ -312,7 +312,7 @@ SECTION_FUNC(TEXT, atomic_set)
  * written at <target> and the previous value at <target> is returned. (Hence,
  * atomic_clear(pAtomicVar) is equivalent to atomic_set(pAtomicVar, 0).)
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  * 
  * atomic_val_t atomic_clear
  *     (
@@ -349,7 +349,7 @@ SECTION_FUNC(TEXT, atomic_clear)
  * is atomically bitwise OR'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  * 
  * atomic_val_t atomic_or
  *     (
@@ -387,7 +387,7 @@ BRANCH_LABEL(atomic_or_retry)
  * is atomically bitwise XOR'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  * 
  * atomic_val_t atomic_xor
  *     (
@@ -425,7 +425,7 @@ BRANCH_LABEL(atomic_xor_retry)
  * atomically bitwise AND'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  * 
  * atomic_val_t atomic_and
  *     (
@@ -463,7 +463,7 @@ BRANCH_LABEL(atomic_and_retry)
  * atomically bitwise NAND'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  *
  * atomic_val_t atomic_nand
  *     (

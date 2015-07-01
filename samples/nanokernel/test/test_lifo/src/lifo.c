@@ -114,7 +114,7 @@ static struct nano_sem reply_multi_waiters;
  *
  * @param data    pointer to ISR handler parameter
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_lifo_put(void *data)
@@ -133,7 +133,7 @@ void isr_lifo_put(void *data)
  *
  * @param data    pointer to ISR handler parameter
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_lifo_get(void *data)
@@ -151,7 +151,7 @@ void isr_lifo_get(void *data)
  * of items to/from a LIFO.  The cases covered will have a fiber or task waiting
  * on an empty LIFO.
  *
- * RETURNS: 0 on success, -1 on failure
+ * @return 0 on success, -1 on failure
  */
 
 int fiberLifoWaitTest(void)
@@ -211,7 +211,7 @@ int fiberLifoWaitTest(void)
  * This routine works with fiberLifoNonWaitTest() to test the addition and
  * removal of items from a LIFO without having to wait.
  *
- * RETURNS: 0 on success, -1 on failure
+ * @return 0 on success, -1 on failure
  */
 
 int fiberLifoNonWaitTest(void)
@@ -292,7 +292,7 @@ errorReturn:
  * @param arg1    unused
  * @param arg2    unused
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiberEntry(int arg1, int arg2)
@@ -318,7 +318,7 @@ static void fiberEntry(int arg1, int arg2)
  * of items to/from a LIFO.  The cases covered will have a fiber or task waiting
  * on an empty LIFO.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int taskLifoWaitTest(void)
@@ -375,7 +375,7 @@ int taskLifoWaitTest(void)
  * This routine works with fiberLifoNonWaitTest() to test the addition and
  * removal of items from a LIFO without having to wait.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int taskLifoNonWaitTest(void)
@@ -452,7 +452,7 @@ int taskLifoNonWaitTest(void)
  *
  * This routine initializes the nanokernel objects used in the LIFO tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void initNanoObjects(void)
@@ -496,7 +496,7 @@ static LIFO_ITEM multi_waiters_items[NUM_WAITERS] = {
  *
  * fiber_multi_waiters - fiber entry point for multiple-waiters test
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiber_multi_waiters(int arg1, int arg2)
@@ -522,7 +522,7 @@ static void fiber_multi_waiters(int arg1, int arg2)
  *
  * do_test_multiple_waiters - task part of multiple-waiter test, repeatable
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static int do_test_multiple_waiters(void)
@@ -563,7 +563,7 @@ static int do_test_multiple_waiters(void)
  *
  * test_multiple_waiters - entry point for multiple-waiters test
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static int test_multiple_waiters(void)
@@ -1055,7 +1055,7 @@ static int test_timeout(void)
  *
  * This is the entry point to the LIFO tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

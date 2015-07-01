@@ -76,7 +76,7 @@ kmemory_pool_t smallBlkszPool	= SMALLBLKSZPOOL;
  * This routine signals "task done" or "task fail", based on the return code of
  * MsgSenderTask.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void MsgSenderTaskEntry(void)
@@ -93,7 +93,7 @@ void MsgSenderTaskEntry(void)
  * This routine signals "task done" or "task fail", based on the return code of
  * MsgRcvrTask.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void MsgRcvrTaskEntry(void)
@@ -110,7 +110,7 @@ void MsgRcvrTaskEntry(void)
  * This routine keeps tabs on the progress of the tasks doing the actual testing
  * and generates the final test case summary message.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void MonitorTaskEntry(void)

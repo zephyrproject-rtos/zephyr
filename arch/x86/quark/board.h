@@ -156,7 +156,7 @@ the 'Quark' BSP.
  *
  * outByte - output byte to memory location
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * NOMANUAL
  */
@@ -173,7 +173,7 @@ static inline void outByte(uint8_t data, uint32_t addr)
  * This function issues the 'move' instruction to read a byte from the specified
  * memory address.
  *
- * RETURNS: the byte read from the specified memory address
+ * @return the byte read from the specified memory address
  *
  * NOMANUAL
  */
@@ -198,7 +198,7 @@ static inline uint8_t inByte(uint32_t addr)
  *
  * outWord - output word to memory location
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * NOMANUAL
  */
@@ -215,7 +215,7 @@ static inline void outWord(uint16_t data, uint32_t addr)
  * This function issues the 'move' instruction to read a word from the specified
  * memory address.
  *
- * RETURNS: the word read from the specified memory address
+ * @return the word read from the specified memory address
  *
  * NOMANUAL
  */
@@ -240,7 +240,7 @@ static inline uint16_t inWord(uint32_t addr)
  *
  * outLong - output long word to memory location
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * NOMANUAL
  */
@@ -257,7 +257,7 @@ static inline void outLong(uint32_t data, uint32_t addr)
  * This function issues the 'move' instruction to read a word from the specified
  * memory address.
  *
- * RETURNS: the long word read from the specified memory address
+ * @return the long word read from the specified memory address
  *
  * NOMANUAL
  */
@@ -278,7 +278,7 @@ static inline uint32_t inLong(uint32_t addr)
  * INTC (pin 3) -> IRQ 18
  * INTD (pin 4) -> IRQ 19
  *
- * RETURNS: IRQ number, -1 if the result is incorrect
+ * @return IRQ number, -1 if the result is incorrect
  *
  */
 
@@ -293,7 +293,7 @@ static inline int pci_pin2irq(int pin)
  *
  * pci_irq2pin - convert IRQ to PCI interrupt pin
  *
- * RETURNS: pin number, -1 if the result is incorrect
+ * @return pin number, -1 if the result is incorrect
  *
  */
 

@@ -65,7 +65,7 @@ as there is no requirement for this capability.
  * and the write of the new value (if it occurs) all happen atomically with
  * respect to both interrupts and accesses of other processors to <target>.
  *
- * RETURNS: Returns 1 if <newValue> is written, 0 otherwise.
+ * @return Returns 1 if <newValue> is written, 0 otherwise.
  */
 
 int atomic_cas(
@@ -96,7 +96,7 @@ int atomic_cas(
  * atomically added to the value at <target>, placing the result at <target>,
  * and the old value from <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  */
 
 atomic_val_t atomic_add(
@@ -122,7 +122,7 @@ atomic_val_t atomic_add(
  * atomically subtracted from the value at <target>, placing the result at
  * <target>, and the old value from <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  */
 
 atomic_val_t atomic_sub(
@@ -147,7 +147,7 @@ atomic_val_t atomic_sub(
  * This routine provides the atomic increment operator. The value at <target>
  * is atomically incremented by 1, and the old value from <target> is returned.
  *
- * RETURNS: The value from <target> before the increment
+ * @return The value from <target> before the increment
  */
 
 atomic_val_t atomic_inc(
@@ -171,7 +171,7 @@ atomic_val_t atomic_inc(
  * This routine provides the atomic decrement operator. The value at <target>
  * is atomically decremented by 1, and the old value from <target> is returned.
  *
- * RETURNS: The value from <target> prior to the decrement
+ * @return The value from <target> prior to the decrement
  */
 
 atomic_val_t atomic_dec(
@@ -196,7 +196,7 @@ atomic_val_t atomic_dec(
  * a value from <target>. It simply does an ordinary load.  Note that <target>
  * is expected to be aligned to a 4-byte boundary.
  *
- * RETURNS: The value read from <target>
+ * @return The value read from <target>
  */
 
 atomic_val_t atomic_get(const atomic_t *target /* memory location to read from */
@@ -212,7 +212,7 @@ atomic_val_t atomic_get(const atomic_t *target /* memory location to read from *
  * This routine provides the atomic set operator. The <value> is atomically
  * written at <target> and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  */
 
 atomic_val_t atomic_set(
@@ -238,7 +238,7 @@ atomic_val_t atomic_set(
  * written at <target> and the previous value at <target> is returned. (Hence,
  * atomic_clear(pAtomicVar) is equivalent to atomic_set(pAtomicVar, 0).)
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  */
 
 atomic_val_t atomic_clear(
@@ -263,7 +263,7 @@ atomic_val_t atomic_clear(
  * is atomically bitwise OR'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  */
 
 atomic_val_t atomic_or(
@@ -289,7 +289,7 @@ atomic_val_t atomic_or(
  * is atomically bitwise XOR'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  */
 
 atomic_val_t atomic_xor(
@@ -315,7 +315,7 @@ atomic_val_t atomic_xor(
  * atomically bitwise AND'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  */
 
 atomic_val_t atomic_and(
@@ -341,7 +341,7 @@ atomic_val_t atomic_and(
  * atomically bitwise NAND'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
- * RETURNS: The previous value from <target>
+ * @return The previous value from <target>
  */
 
 atomic_val_t atomic_nand(

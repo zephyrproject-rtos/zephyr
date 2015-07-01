@@ -74,7 +74,7 @@ extern ksem_t semList[];
  *
  * simpleSemaTest - signal semaphore that has no waiting tasks from ISR
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int simpleSemaTest(void)
@@ -167,7 +167,7 @@ int simpleSemaTest(void)
  *
  * simpleSemaWaitTest - test the waiting of a semaphore
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int simpleSemaWaitTest(void)
@@ -225,7 +225,7 @@ int simpleSemaWaitTest(void)
  *
  * simpleGroupTest - test for a group of semaphores
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int simpleGroupTest(void)
@@ -308,7 +308,7 @@ int simpleGroupTest(void)
  * This routine tests the waiting feature on a group of semaphores.  Note that
  * timing out on a wait has already been tested so it need not be done again.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int simpleGroupWaitTest(void)
@@ -376,7 +376,7 @@ int simpleGroupWaitTest(void)
  *
  * See also: testFiber.c
  *
- * RETURNS: TC_PASS on success or TC_FAIL on failure
+ * @return TC_PASS on success or TC_FAIL on failure
  */
 static int simpleFiberSemTest(void)
 {
@@ -423,7 +423,7 @@ static int simpleFiberSemTest(void)
  *
  * HighPriTask - a high priority task
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int HighPriTask(void)
@@ -457,7 +457,7 @@ int HighPriTask(void)
  *
  * LowPriTask - a low priority task
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int LowPriTask(void)
@@ -484,7 +484,7 @@ int LowPriTask(void)
  *
  * This routine runs at a lower priority than RegressionTask().
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int AlternateTask(void)
@@ -563,7 +563,7 @@ int AlternateTask(void)
  *
  * This is the entry point to the semaphore test suite.
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int RegressionTask(void)

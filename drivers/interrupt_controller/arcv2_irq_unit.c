@@ -53,7 +53,7 @@
  * the window between a write to IRQ_SELECT and subsequent writes to the
  * selected IRQ's registers.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _arc_v2_irq_unit_init(void)
@@ -77,7 +77,7 @@ void _arc_v2_irq_unit_init(void)
  * Interrupts must be locked or the ISR operating at P0 when invoking this
  * function.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _arc_v2_irq_unit_int_eoi(int irq)
@@ -93,7 +93,7 @@ void _arc_v2_irq_unit_int_eoi(int irq)
  * edge of the signal. Valid values for <trigger> are _ARC_V2_INT_LEVEL and
  * _ARC_V2_INT_PULSE.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)

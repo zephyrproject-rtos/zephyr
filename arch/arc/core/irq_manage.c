@@ -60,7 +60,7 @@
  * This routine will hang if <old> is not found in the table and ASSERT_ON is
  * enabled.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_handler_set(
@@ -91,7 +91,7 @@ void irq_handler_set(
  * line. After this call, the CPU will receive interrupts for the specified
  * <irq>.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_enable(unsigned int irq)
@@ -108,7 +108,7 @@ void irq_enable(unsigned int irq)
  * Disable an interrupt line. After this call, the CPU will stop receiving
  * interrupts for the specified <irq>.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_disable(unsigned int irq)
@@ -128,7 +128,7 @@ void irq_disable(unsigned int irq)
  *
  * The priority is verified if ASSERT_ON is enabled.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_priority_set(
@@ -150,7 +150,7 @@ void irq_priority_set(
  * Installed in all dynamic interrupt slots at boot time. Throws an error if
  * called.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 #include <misc/printk.h>
@@ -172,7 +172,7 @@ void _irq_spurious(void *unused)
  * This routine will hang if another ISR was connected for interrupt line <irq>
  * and ASSERT_ON is enabled; if ASSERT_ON is disabled, it will fail silently.
  *
- * RETURNS: the interrupt line number
+ * @return the interrupt line number
  */
 
 int irq_connect(
@@ -194,7 +194,7 @@ int irq_connect(
  * replaced by _irq_spurious(). irq_disable() should have been called before
  * invoking this routine.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_disconnect(unsigned int irq)

@@ -138,7 +138,7 @@ extern struct nano_stack _k_command_stack;
  *
  * This routine sets the timer for periodic mode.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -157,7 +157,7 @@ static inline void _loApicTimerPeriodic(void)
  *
  * This routine stops the timer.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -176,7 +176,7 @@ static inline void _loApicTimerStop(void)
  *
  * This routine starts the timer.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -193,7 +193,7 @@ static inline void _loApicTimerStart(void)
  *
  * This routine sets value from which the timer will count down.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -212,7 +212,7 @@ static inline void _loApicTimerSetCount(
  *
  * This routine sets the timer for one shot mode.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -230,7 +230,7 @@ static inline void _loApicTimerOneShot(void)
  * This routine sets rate at which the timer is decremented to match the
  * external bus frequency.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -248,7 +248,7 @@ static inline void _loApicTimerSetDivider(void)
  * value is the 'time' remaining to decrement before the timer triggers an
  * interrupt.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -264,7 +264,7 @@ static inline uint32_t _loApicTimerGetRemaining(void)
  *
  * This routine gets the value from the initial count register.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -281,7 +281,7 @@ static inline uint32_t _loApicTimerGetCount(void)
  * This routine handles the system clock tick interrupt.  A TICK_EVENT event
  * is pushed onto the microkernel stack.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _timer_int_handler(void *unused /* parameter is not used */
@@ -361,7 +361,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
  * value (the higher the tick frequency), the more elapsed ticks during a
  * "tickless idle".
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -384,7 +384,7 @@ static void _loApicTimerTicklessIdleInit(void)
  *    3. Set timer mode to periodic/one-shot
  *    4. Start timer.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -416,7 +416,7 @@ static void _loApicTimerTicklessIdleSkew(void)
  * ticks supplied or the maximum number of ticks that can be programmed into
  * hardware. A value of -1 means inifinite number of ticks.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _timer_idle_enter(int32_t ticks /* system ticks */
@@ -473,7 +473,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  *
  * Called in _IntEnt()
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _timer_idle_exit(void)
@@ -537,7 +537,7 @@ void _timer_idle_exit(void)
  * This routine is used to program the PIT to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_driver(int priority /* priority parameter ignored by this driver */
@@ -576,7 +576,7 @@ void timer_driver(int priority /* priority parameter ignored by this driver */
  *
  * This routine returns the current time in terms of timer hardware clock cycles.
  *
- * RETURNS: up counter of elapsed clock cycles
+ * @return up counter of elapsed clock cycles
  */
 
 uint32_t timer_read(void)
@@ -606,7 +606,7 @@ uint32_t timer_read(void)
  * This routine simply disables the LOAPIC counter such that interrupts are no
  * longer delivered.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_disable(void)

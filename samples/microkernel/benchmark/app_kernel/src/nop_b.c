@@ -42,7 +42,7 @@ extern void _task_nop(void);
  *
  * call_test - Kernel entry timing test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

@@ -50,7 +50,7 @@ int mailbox_get(kmbox_t mailbox,int size,int count,unsigned int* time);
  *
  * mailrecvtask - receive task
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -85,7 +85,7 @@ void mailrecvtask(void)
  *
  * mailbox_get - receive data portions from the specified mailbox
  *
- * RETURNS: 0
+ * @return 0
  *
  * @param mailbox   The mailbox to read data from.
  * @param size      Size of each data portion.

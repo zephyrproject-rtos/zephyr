@@ -41,7 +41,7 @@ extern struct evstr _k_event_list[];
  *
  * _k_event_handler_set - perform set event handler request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_event_handler_set(struct k_args *A)
@@ -84,7 +84,7 @@ void _k_event_handler_set(struct k_args *A)
  * the old handler must be removed first. However, it is permitted to replace
  * the NULL event handler with itself.
  *
- * RETURNS: RC_FAIL if an event handler exists or the event number is invalid,
+ * @return RC_FAIL if an event handler exists or the event number is invalid,
  *          else RC_OK
  */
 
@@ -105,7 +105,7 @@ int task_event_set_handler(kevent_t event,     /* event upon which to reigster *
  *
  * _k_event_test_timeout - finish handling a test for event request that timed out
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_event_test_timeout(struct k_args *A)
@@ -123,7 +123,7 @@ void _k_event_test_timeout(struct k_args *A)
  *
  * _k_event_test - perform test for event request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_event_test(struct k_args *A)
@@ -172,7 +172,7 @@ void _k_event_test(struct k_args *A)
  *
  * This routine tests an event to see if it has been signaled.
  *
- * RETURNS: RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
  */
 
 int _task_event_recv(
@@ -197,7 +197,7 @@ int _task_event_recv(
  * signal is issued by a task and indirectly when the signal is issued by a
  * fiber or ISR. The specified event number must be valid.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_do_event_signal(kevent_t event)
@@ -237,7 +237,7 @@ void _k_do_event_signal(kevent_t event)
  *
  * _k_event_signal - perform signal an event request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_event_signal(struct k_args *A)
@@ -260,7 +260,7 @@ void _k_event_signal(struct k_args *A)
  * is installed for that event, it will run; if no event handler is installed,
  * any task waiting on the event is released.
  *
- * RETURNS: RC_FAIL if event number is invalid, else RC_OK
+ * @return RC_FAIL if event number is invalid, else RC_OK
  */
 
 int task_event_send(kevent_t event /* event to signal */
@@ -280,7 +280,7 @@ int task_event_send(kevent_t event /* event to signal */
  *
  * This routine does NOT validate the specified event number.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 FUNC_ALIAS(isr_event_send, fiber_event_send, void);
@@ -291,7 +291,7 @@ FUNC_ALIAS(isr_event_send, fiber_event_send, void);
  *
  * This routine does NOT validate the specified event number.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_event_send(kevent_t event /* event to signal */

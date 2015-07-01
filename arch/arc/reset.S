@@ -57,7 +57,7 @@ GTEXT(__reset)
  * When these steps are completed, jump to _PrepC(), which will finish setting
  * up the system for running C code.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT,__reset)

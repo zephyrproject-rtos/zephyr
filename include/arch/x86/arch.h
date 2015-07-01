@@ -122,7 +122,7 @@ typedef struct s_isrList {
  * descriptor; (hardware) interrupts and exceptions should specify a level of 0,
  * whereas handlers for user-mode software generated interrupts should specify 3.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -146,7 +146,7 @@ typedef struct s_isrList {
  * <priority> with the interrupt routine <isr>, that receives parameter
  * <parameter>
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 #define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	\
@@ -162,7 +162,7 @@ typedef struct s_isrList {
  * For the given device do the neccessary configuration steps.
  * For x86 platform configure APIC and mark interrupt vector allocated
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 #define IRQ_CONFIG(device, irq)					\
@@ -299,7 +299,7 @@ void _int_latency_stop(void);
  * disable state will be restored when the context is later rescheduled
  * for execution.
  *
- * RETURNS: An architecture-dependent lock-out key representing the
+ * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
  *
  * \NOMANUAL
@@ -328,7 +328,7 @@ static inline __attribute__((always_inline))
  *
  * This routine can be called from either interrupt, task or fiber level.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

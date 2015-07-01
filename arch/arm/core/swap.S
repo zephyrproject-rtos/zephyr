@@ -153,7 +153,7 @@ SECTION_FUNC(TEXT, __pendsv)
  * The service call (svc) is only used in _Swap() to enter handler mode so we
  * can go through the PendSV exception to perform a context switch.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, __svc)
@@ -203,7 +203,7 @@ SECTION_FUNC(TEXT, __svc)
  * outgoing context. This is all performed by the hardware, which stores it in
  * its exception stack frame, created when handling the svc exception.
  *
- * RETURNS: may contain a return value setup by a call to fiberRtnValueSet()
+ * @return may contain a return value setup by a call to fiberRtnValueSet()
  *
  * C function prototype:
  *

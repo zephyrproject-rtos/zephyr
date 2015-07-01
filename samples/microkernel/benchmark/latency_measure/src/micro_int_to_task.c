@@ -52,7 +52,7 @@ static uint32_t timestamp;
  *
  * The interrupt handler gets the second timestamp.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -72,7 +72,7 @@ static void latencyTestIsr(void *unused)
  * Function makes all the test preparations: registers the interrupt handler,
  * gets the first timestamp and invokes the software interrupt.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -93,7 +93,7 @@ static void makeInt(void)
  *
  * microIntToTask - the test main function
  *
- * RETURNS: 0 on success
+ * @return 0 on success
  *
  * \NOMANUAL
  */

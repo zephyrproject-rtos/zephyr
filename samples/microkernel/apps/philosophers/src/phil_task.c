@@ -65,7 +65,7 @@ struct nano_sem forks[N_PHILOSOPHERS];
  *
  * main - nanokernel entry point
  *
- * RETURNS: does not return
+ * @return does not return
  */
 
 int main(void)
@@ -97,7 +97,7 @@ int main(void)
  *
  * philDemo - routine to start dining philosopher demo
  *
- * RETURNS: does not return
+ * @return does not return
  */
 
 void philDemo(void)

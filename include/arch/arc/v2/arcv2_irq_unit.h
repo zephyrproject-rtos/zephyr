@@ -65,7 +65,7 @@
  *
  * Enables or disables the specified interrupt
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _arc_v2_irq_unit_irq_enable_set(
@@ -82,7 +82,7 @@ static inline void _arc_v2_irq_unit_irq_enable_set(
  *
  * Enables the specified interrupt
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _arc_v2_irq_unit_int_enable(int irq)
@@ -95,7 +95,7 @@ static inline void _arc_v2_irq_unit_int_enable(int irq)
  *
  * Disables the specified interrupt
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _arc_v2_irq_unit_int_disable(int irq)
@@ -108,7 +108,7 @@ static inline void _arc_v2_irq_unit_int_disable(int irq)
  *
  * Set the priority of the specified interrupt
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)

@@ -53,7 +53,7 @@ static uint32_t timestamp = 0;
  *
  * nanoIntLockUnlock - the test main function
  *
- * RETURNS: 0 on success
+ * @return 0 on success
  *
  * \NOMANUAL
  */

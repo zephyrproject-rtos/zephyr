@@ -99,7 +99,7 @@ typedef volatile struct {
  * Writing 0xC520 followed by 0xD928 will unlock the write-once registers
  * in the WDOG so they are writable within the WCT period.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 static ALWAYS_INLINE void wdog_unlock(K20_WDOG_t *wdog_p)
 {
@@ -130,7 +130,7 @@ static ALWAYS_INLINE void wdog_unlock(K20_WDOG_t *wdog_p)
  *
  * This routine will disable the watchdog timer.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 static ALWAYS_INLINE void wdog_disable(K20_WDOG_t *wdog_p)
 {

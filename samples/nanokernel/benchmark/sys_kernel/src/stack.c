@@ -42,7 +42,7 @@ uint32_t stack2[2];
  *
  * stack_test_init - initialize stacks for the test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -61,7 +61,7 @@ void stack_test_init(void)
  * @param par1   Ignored parameter.
  * @param par2   Number of test loops.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -97,7 +97,7 @@ void stack_fiber1(int par1, int par2)
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -127,7 +127,7 @@ void stack_fiber2(int par1, int par2)
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -157,7 +157,7 @@ void stack_fiber3(int par1, int par2)
  *
  * stack_test - the main test entry
  *
- * RETURNS: 1 if success and 0 on failure
+ * @return 1 if success and 0 on failure
  *
  * \NOMANUAL
  */

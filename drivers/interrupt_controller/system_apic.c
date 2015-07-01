@@ -81,7 +81,7 @@ for the atom_n28xx variant of generic_pc BSP.
  * The IOAPIC_NUM_RTES macro is provided by board.h, and it specifies the number
  * of IRQs supported by the on-board I/O APIC device.
  *
- * RETURNS: the allocated interrupt vector
+ * @return the allocated interrupt vector
  *
  * INTERNAL
  * For debug kernels, this routine will return -1 if there are no vectors
@@ -219,7 +219,7 @@ void _SysIntVecProgram(unsigned int vector, /* vector number */
  * IRQ virtualization that is performed by this BSP.  See the comments
  * in _SysIntVecAlloc() for more information regarding IRQ virtualization.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_enable(unsigned int irq)
@@ -239,7 +239,7 @@ void irq_enable(unsigned int irq)
  * IRQ virtualization that is performed by this BSP.  See the comments
  * in _SysIntVecAlloc() for more information regarding IRQ virtualization.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_disable(unsigned int irq)

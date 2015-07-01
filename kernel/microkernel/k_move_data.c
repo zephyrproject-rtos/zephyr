@@ -40,7 +40,7 @@
  *
  * mvdreq_docont -
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void mvdreq_docont(struct k_args *Cont)
@@ -58,7 +58,7 @@ static void mvdreq_docont(struct k_args *Cont)
  *
  * mvdreq_copy - perform movedata request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void mvdreq_copy(struct moved_req *ReqArgs)
@@ -76,7 +76,7 @@ static void mvdreq_copy(struct moved_req *ReqArgs)
  *
  * _k_movedata_request - process a movedata request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_movedata_request(struct k_args *Req)

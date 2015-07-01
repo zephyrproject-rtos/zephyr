@@ -46,7 +46,7 @@
  * RegressionTaskEntry - regression test's entry point
  *
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void RegressionTaskEntry(void)

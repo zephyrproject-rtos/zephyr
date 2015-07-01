@@ -73,7 +73,7 @@ void check_input(const char *name, const char *input);
  *
  * @param name    task or fiber identification string
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void printLoop(const char *name)
@@ -98,7 +98,7 @@ void printLoop(const char *name)
  * When stack protection feature is not enabled, the system crashes with
  * error like: Trying to execute code outside RAM or ROM.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void check_input(const char *name, const char *input)
@@ -120,7 +120,7 @@ void check_input(const char *name, const char *input)
  * feature is enabled.  Hence it will not execute the printLoop function and will
  * not set tcRC to TC_FAIL.  Control is transferred back to the other task.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 #ifdef CONFIG_MICROKERNEL
 void AlternateTask(void)
@@ -148,7 +148,7 @@ void fiber1(void)
  * printLoop to print a string and alternates execution with AlternateTask
  * when the task goes to sleep in printLoop.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 #ifdef CONFIG_MICROKERNEL

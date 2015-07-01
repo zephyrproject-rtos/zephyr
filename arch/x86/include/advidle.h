@@ -48,7 +48,7 @@ and _AdvIdleStart() functions.
  * This routine checks if the system is recovering from advanced
  * sleep or cold booting.
  *
- * RETURNS: 0 if the system is cold booting on a non-zero
+ * @return 0 if the system is cold booting on a non-zero
  * value if the system is recovering from advanced sleep.
  */
 
@@ -63,7 +63,7 @@ extern int _AdvIdleCheckSleep(void);
  * passes to the _AdvIdleFunc() that put the system to sleep, which then
  * finishes executing.
  *
- * RETURNS: does not return to caller
+ * @return does not return to caller
  */
 
 extern void _AdvIdleStart(
@@ -80,7 +80,7 @@ extern void _AdvIdleStart(
  * to sleep and then later allows it to resume processing; if not, the routine
  * returns immediately without sleeping.
  *
- * RETURNS:  non-zero if advanced sleep occurred; otherwise zero
+ * @return  non-zero if advanced sleep occurred; otherwise zero
  */
 
 extern int _AdvIdleFunc(int32_t ticks /* upcoming kernel idle time */

@@ -55,7 +55,7 @@ GTEXT(nanoFfsLsb)
  * at 1 from the least significant bit.  A return value of zero indicates that
  * the value passed is zero.
  *
- * RETURNS: most significant bit set
+ * @return most significant bit set
  */
 
 SECTION_FUNC(TEXT, nanoFfsMsb)
@@ -78,7 +78,7 @@ SECTION_FUNC(TEXT, nanoFfsMsb)
  * at 1 from the least significant bit.  A return value of zero indicates that
  * the value passed is zero.
  *
- * RETURNS: least significant bit set
+ * @return least significant bit set
  */
 
 SECTION_FUNC(TEXT, nanoFfsLsb)

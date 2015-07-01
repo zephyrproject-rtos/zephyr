@@ -62,7 +62,7 @@ supported BSPs.
  * implementation to take other actions, such as logging error (or debug)
  * information to a persistent repository and/or rebooting the system.
  *
- * RETURNS: This function does not return.
+ * @return This function does not return.
  *
  * \NOMANUAL
  */

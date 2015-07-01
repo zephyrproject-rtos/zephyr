@@ -77,7 +77,7 @@ typedef union {
  *
  * sprintfDoubleTest - test sprintf with doubles
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int sprintfDoubleTest(void)
@@ -255,7 +255,7 @@ int tvsnprintf(char *s, size_t len, const char *format, ...)
  * vsnprintf().  Instead of calling vsnprintf() directly, it invokes the wrapper
  * routine tvsnprintf().
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int vsnprintfTest(void)
@@ -342,7 +342,7 @@ int tvsprintf(char *s, const char *format, ...)
  * sprintfTest().  Instead it tries to limit it to functionality specific to
  * vsprintf().
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int vsprintfTest(void)
@@ -376,7 +376,7 @@ int vsprintfTest(void)
  * sprintfTest().  Instead it tries to limit it to functionality specific to
  * snprintf().
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int snprintfTest(void)
@@ -442,7 +442,7 @@ int snprintfTest(void)
  *
  * sprintfMiscTest - test the sprintf() routine with miscellaneous specifiers
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int sprintfMiscTest(void)
@@ -518,7 +518,7 @@ int sprintfMiscTest(void)
  *
  * sprintfIntegerTest - test the sprintf() routine with integers
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int sprintfIntegerTest(void)
@@ -671,7 +671,7 @@ int sprintfIntegerTest(void)
  *
  * sprintfStringTest - test sprintf with strings
  *
- * RETURNS: TC_PASS on success, TC_FAIL otherwise
+ * @return TC_PASS on success, TC_FAIL otherwise
  */
 
 int sprintfStringTest(void)
@@ -717,7 +717,7 @@ int sprintfStringTest(void)
  *
  * RegressionTask - test entry point
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void RegressionTask(void)

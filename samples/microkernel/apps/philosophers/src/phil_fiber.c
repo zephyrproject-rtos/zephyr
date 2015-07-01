@@ -68,7 +68,7 @@ kmutex_t forks[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3, forkMutex4, 
  * @param id    Philosopher ID.
  * @param str   EATING or THINKING.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void myPrint(int id, char *str)
@@ -82,7 +82,7 @@ static void myPrint(int id, char *str)
  *
  * @param ticks   Number of ticks to delay.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void myDelay(int ticks)
@@ -105,7 +105,7 @@ static void myDelay(int ticks)
  * This routine runs as a task in the microkernel environment
  * and as a fiber in the nanokernel environment.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void philEntry(void)

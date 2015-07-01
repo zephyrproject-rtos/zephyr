@@ -59,7 +59,7 @@ This module implements the PCI H/W access functions.
  * This routine reads the specified register from the PCI controller and
  * places the data into the provided buffer.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -93,7 +93,7 @@ static void pci_ctrl_read(uint32_t reg,   /* PCI register to read */
  * This routine writes the provided data to the specified register in the PCI
  * controller.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -127,7 +127,7 @@ static void pci_ctrl_write(uint32_t reg,  /* PCI register to write */
  *
  * This routine reads the data register of the specified PCI controller.
  *
- * RETURNS: 0 or -1
+ * @return 0 or -1
  *
  */
 
@@ -154,7 +154,7 @@ static int pci_ctrl_data_read(uint32_t controller, /* controller number */
  * This routine writes the provided data to the data register of the
  * specified PCI controller.
  *
- * RETURNS: 0 or -1
+ * @return 0 or -1
  *
  */
 
@@ -181,7 +181,7 @@ static int pci_ctrl_data_write(uint32_t controller, /* controller number */
  * This routine writes the provided data to the address register of the
  * specified PCI controller.
  *
- * RETURNS: 0 or -1
+ * @return 0 or -1
  *
  */
 
@@ -243,7 +243,7 @@ static int pci_ctrl_addr_write(uint32_t controller, /* controller number */
  *   Reading of PCI data must be performed as an atomic operation. It is up to
  *   the caller to enforce this.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -333,7 +333,7 @@ void pci_read(uint32_t controller, /* PCI controller to use */
  *   the caller to enforce this.
  *
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -386,7 +386,7 @@ void pci_write(uint32_t controller, /* controller to use   */
  * This routine reads the PCI header for the specified device and puts the
  * result in the supplied header structure.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void pci_header_get(uint32_t controller,

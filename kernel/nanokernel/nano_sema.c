@@ -65,7 +65,7 @@ APIs to the same function, since they have identical implementations.
  *
  * It may be called from either a fiber or task context.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * Although the existing implementation will support invocation from an ISR
@@ -99,7 +99,7 @@ FUNC_ALIAS(_sem_give_non_preemptible, nano_fiber_sem_give, void);
  * the semaphore object will be made ready, but will NOT be scheduled to
  * execute.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * This function is capable of supporting invocations from both a fiber and an
@@ -136,7 +136,7 @@ void _sem_give_non_preemptible(
  * semaphore object will be made ready, and will preempt the running task
  * immediately.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void nano_task_sem_give(
@@ -192,7 +192,7 @@ FUNC_ALIAS(_sem_take, nano_task_sem_take, int);
  * If the semaphore is not available, this function returns immediately, i.e.
  * a wait (pend) operation will NOT be performed.
  *
- * RETURNS: 1 if semaphore is available, 0 otherwise
+ * @return 1 if semaphore is available, 0 otherwise
  */
 
 int _sem_take(
@@ -220,7 +220,7 @@ int _sem_take(
  * is 0, the calling fiber context will wait (pend) until the semaphore is
  * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give).
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * There exists a separate nano_task_sem_take_wait() implementation since a task
@@ -254,7 +254,7 @@ void nano_fiber_sem_take_wait(
  * is 0, the calling task will poll until the semaphore is given
  * (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give).
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void nano_task_sem_take_wait(

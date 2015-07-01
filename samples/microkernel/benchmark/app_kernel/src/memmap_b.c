@@ -40,7 +40,7 @@
  *
  * memorymap_test - memory map get/free test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

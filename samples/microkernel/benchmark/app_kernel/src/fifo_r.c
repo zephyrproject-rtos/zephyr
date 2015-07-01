@@ -40,7 +40,7 @@
  *
  * dequtask - data receive task
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

@@ -110,7 +110,7 @@ void _NanoCpuExcConnectAtDpl(unsigned int vector,
  * The handler is connected via an interrupt-gate descriptor having a
  * descriptor privilege level (DPL) equal to zero.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * The function prototype for nanoCpuExcConnect() only exists in nano_private.h,
@@ -150,7 +150,7 @@ void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
  * The handler is connected via an interrupt-gate descriptor having the supplied
  * descriptor privilege level (DPL).
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * The function prototype for nanoCpuExcConnect() only exists in nano_private.h,

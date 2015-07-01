@@ -76,7 +76,7 @@ extern unsigned char _idt_base_address[];
  * and/or parameter. If possible, silence the source of the associated interrupt
  * only, rather than locking out all interrupts.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 

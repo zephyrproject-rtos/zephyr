@@ -59,7 +59,7 @@ static _NmiHandler_t handler = _SysNmiOnReset;
  * The default handler outputs a error message and reboots the target. It is
  * installed by calling _NmiInit();
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void _DefaultHandler(void)
@@ -76,7 +76,7 @@ static void _DefaultHandler(void)
  * that reboots the target. It should be installed after the console is
  * initialized.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _NmiInit(void)
@@ -92,7 +92,7 @@ void _NmiInit(void)
  * that reboots. It should be installed after the console is initialized if it is
  * meant to output to the console.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _NmiHandlerSet(void (*pHandler)(void))
@@ -107,7 +107,7 @@ void _NmiHandlerSet(void (*pHandler)(void))
  *
  * Simply call what is installed in 'static void(*handler)(void)'.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void __nmi(void)

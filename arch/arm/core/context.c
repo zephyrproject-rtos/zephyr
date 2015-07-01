@@ -59,7 +59,7 @@ tNANO _nanokernel = {0};
  *
  * Currently only inserts the new context in the list of active contexts.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static ALWAYS_INLINE void _context_monitor_init(struct ccs *pCcs /* context */
@@ -99,7 +99,7 @@ static ALWAYS_INLINE void _context_monitor_init(struct ccs *pCcs /* context */
  *
  * <options> is currently unused.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _NewContext(

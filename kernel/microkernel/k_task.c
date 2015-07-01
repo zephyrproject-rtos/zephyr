@@ -47,7 +47,7 @@
  *
  * task_id_get - get task identifer
  *
- * RETURNS: identifier for current task
+ * @return identifier for current task
  */
 
 ktask_t task_id_get(void)
@@ -64,7 +64,7 @@ ktask_t task_id_get(void)
  * bitmask of the TF_xxx bits.  Each TF_xxx bit indicates a reason why the task
  * must not be scheduled to run.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_state_bit_reset(struct k_proc *X,    /* ptr to task */
@@ -116,7 +116,7 @@ void _k_state_bit_reset(struct k_proc *X,    /* ptr to task */
  * are a bitmask of the TF_xxx bits.  Each TF_xxx bit indicates a reason why
  * the task must not be scheduled to run.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_state_bit_set(
@@ -197,7 +197,7 @@ void _k_state_bit_set(
  *
  * start_task - initialize and start a task
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void start_task(struct k_proc *X,  /* ptr to task control block */
@@ -241,7 +241,7 @@ static void start_task(struct k_proc *X,  /* ptr to task control block */
  *
  * This routine aborts the specified task.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void abort_task(struct k_proc *X)
@@ -270,7 +270,7 @@ static void abort_task(struct k_proc *X)
  * To be invoked when a task aborts implicitly, either by returning from its
  * entry point or due to a software or hardware fault.
  *
- * RETURNS: does not return
+ * @return does not return
  *
  * \NOMANUAL
  */
@@ -304,7 +304,7 @@ FUNC_NORETURN void _TaskAbort(void)
  * To remove an abort handler, set the parameter to NULL as below:
  *      task_abort_handler_set (NULL)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_abort_handler_set(void (*func)(void) /* abort handler */
@@ -321,7 +321,7 @@ void task_abort_handler_set(void (*func)(void) /* abort handler */
  *   starting either a kernel or user task, aborting a task, suspending a task,
  *   resuming a task, blocking a task or unblocking a task
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_task_op(struct k_args *A)
@@ -355,7 +355,7 @@ void _k_task_op(struct k_args *A)
  *
  * _task_ioctl - task operations
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _task_ioctl(ktask_t task, /* task on which to operate */
@@ -378,7 +378,7 @@ void _task_ioctl(ktask_t task, /* task on which to operate */
  *   starting either kernel or user tasks, aborting tasks, suspending tasks,
  *   resuming tasks, blocking tasks or unblocking tasks
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_task_group_op(struct k_args *A)
@@ -426,7 +426,7 @@ void _k_task_group_op(struct k_args *A)
  *
  * _task_group_ioctl - task group operations
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _task_group_ioctl(ktask_group_t group, /* task group */
@@ -445,7 +445,7 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
  *
  * task_group_mask_get - get task groups for task
  *
- * RETURNS: task groups associated with current task
+ * @return task groups associated with current task
  */
 
 kpriority_t task_group_mask_get(void)
@@ -457,7 +457,7 @@ kpriority_t task_group_mask_get(void)
  *
  * task_group_join - add task to task group(s)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_group_join(uint32_t groups)
@@ -469,7 +469,7 @@ void task_group_join(uint32_t groups)
  *
  * task_group_leave - remove task from task group(s)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_group_leave(uint32_t groups)
@@ -481,7 +481,7 @@ void task_group_leave(uint32_t groups)
  *
  * task_priority_get - get task priority
  *
- * RETURNS: priority of current task
+ * @return priority of current task
  */
 
 kpriority_t task_priority_get(void)
@@ -493,7 +493,7 @@ kpriority_t task_priority_get(void)
  *
  * _k_task_priority_set - handle task set priority request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_task_priority_set(struct k_args *A)
@@ -521,7 +521,7 @@ void _k_task_priority_set(struct k_args *A)
  * The priority should be specified in the range 0 to 62. 0 is the highest
  * priority.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_priority_set(ktask_t task, /* task whose priority is to be set */
@@ -540,7 +540,7 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
  *
  * _k_task_yield - handle task yield request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_task_yield(struct k_args *A)
@@ -566,7 +566,7 @@ void _k_task_yield(struct k_args *A)
  * robin scheduling. If no task with the same priority is runnable then no task
  * switch occurs and the calling task resumes execution.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_yield(void)
@@ -589,7 +589,7 @@ void task_yield(void)
  *
  * The routine is executed when the task is started
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_entry_set(ktask_t task,       /* task */

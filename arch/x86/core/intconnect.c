@@ -162,7 +162,7 @@ static NANO_INT_STUB dynamic_stubs[ALL_DYNAMIC_STUBS] = {
 /**
  * _int_stub_alloc - allocate dynamic interrupt stub
  *
- * RETURNS: index of the first available element of the STUB array or -1
+ * @return index of the first available element of the STUB array or -1
  *          if all elements are used
  */
 static int _int_stub_alloc(void)
@@ -192,7 +192,7 @@ static int _int_stub_alloc(void)
  * and exceptions should specify a level of 0, whereas handlers for user-mode
  * software generated interrupts should specify 3.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * Unlike nanoCpuExcConnect() and irq_connect(), the _IntVecSet() routine
@@ -260,7 +260,7 @@ void _IntVecSet(
  * The routine searches for the first available element in the synamic_stubs
  * array and uses it for the stub.
  *
- * RETURNS: the allocated interrupt vector
+ * @return the allocated interrupt vector
  *
  * WARNINGS
  * Some boards utilize interrupt controllers where the interrupt vector
@@ -502,7 +502,7 @@ int irq_connect(
  * For example, the local APIC on Pentium4 and later processors, the in-service
  * register (ISR) and the interrupt request register (IRR) are 256 bits wide.
  *
- * RETURNS: allocated interrupt vector
+ * @return allocated interrupt vector
  *
  * INTERNAL
  * For debug kernels, this routine shall return -1 when there are no
@@ -610,7 +610,7 @@ int _IntVecAlloc(unsigned int priority)
  * as allocated so that any future invocations of _IntVecAllocate() will not
  * return that vector.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 

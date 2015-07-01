@@ -61,7 +61,7 @@ extern uint32_t irq_vectors[NUM_OBJECTS];
  * This routine signals "task done" or "task fail", based on the return code of
  * taskA.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void taskAMain(void)
@@ -77,7 +77,7 @@ void taskAMain(void)
  * This routine signals "task done" or "task fail", based on the return code of
  * taskB.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void taskBMain(void)
@@ -94,7 +94,7 @@ void taskBMain(void)
  * then generates SW interrupts for all IRQs. Signals "task done" if all task
  * indicated the IRQs are allocated or signals "task fail"if not.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 void registerWait(void)
 {
@@ -129,7 +129,7 @@ void registerWait(void)
  * This routine keeps tabs on the progress of the tasks doing the actual testing
  * and generates the final test case summary message.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void MonitorTaskEntry(void)

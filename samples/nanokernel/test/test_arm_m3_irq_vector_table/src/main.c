@@ -53,7 +53,7 @@ struct nano_sem sem[3];
  *
  * isr0 - ISR for IRQ0
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr0(void)
@@ -67,7 +67,7 @@ void isr0(void)
  *
  * isr1 - ISR for IRQ1
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr1(void)
@@ -81,7 +81,7 @@ void isr1(void)
  *
  * isr2 - ISR for IRQ2
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr2(void)
@@ -95,7 +95,7 @@ void isr2(void)
  *
  * main - task entry point
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

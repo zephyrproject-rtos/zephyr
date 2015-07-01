@@ -61,7 +61,7 @@
  * significant bit.  A return value of zero indicates that the value passed
  * is zero.
  *
- * RETURNS: most significant bit set
+ * @return most significant bit set
  */
 
 static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
@@ -89,7 +89,7 @@ static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
  * at 1 from the least significant bit.  A return value of zero indicates that
  * the value passed is zero.
  *
- * RETURNS: least significant bit set
+ * @return least significant bit set
  */
 
 static ALWAYS_INLINE unsigned int find_first_set_inline(unsigned int op)
@@ -134,7 +134,7 @@ static ALWAYS_INLINE unsigned int find_first_set_inline(unsigned int op)
  * disable state will be restored when the context is later rescheduled
  * for execution.
  *
- * RETURNS: An architecture-dependent lock-out key representing the
+ * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
  *
  * \NOMANUAL
@@ -166,7 +166,7 @@ static ALWAYS_INLINE unsigned int irq_lock_inline(void)
  *
  * This routine can be called from either interrupt, task or fiber level.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

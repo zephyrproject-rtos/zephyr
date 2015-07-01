@@ -107,7 +107,7 @@ volatile pfunc func_array[] = {
  *
  * dummyIsr - dummy ISR
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void dummyIsr(void *unused)
@@ -124,7 +124,7 @@ void dummyIsr(void *unused)
  * to avoid the preamble code the compiler automatically generates. However,
  * the unwanted preamble has an insignificant impact on total footprint.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void isrDummyIntStub(void *unused)
@@ -144,7 +144,7 @@ static void isrDummyIntStub(void *unused)
  * @param message   Message to be printed.
  * @param arg1		Unused.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiberEntry(int message,	int arg1)
@@ -167,7 +167,7 @@ static void fiberEntry(int message,	int arg1)
  * This routine simply increments a global counter.
  * (Gdb can be used to observe the counter as it increases.)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

@@ -63,7 +63,7 @@ extern void _NmiInit(void);
  *
  * uart_generic_info_init - initialize generic information for one UART
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -85,7 +85,7 @@ inline void uart_generic_info_init(struct uart_init_info *pInfo)
  *
  * Only used for debugging.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -140,7 +140,7 @@ static void bluetooth_init(void)
  * integrated 16550-compatible UART device driver.
  * Also initialize the timer device driver, if required.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _InitHardware(void)

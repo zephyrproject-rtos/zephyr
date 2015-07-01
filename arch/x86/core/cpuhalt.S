@@ -73,7 +73,7 @@ by nano_cpu_atomic_idle().
  * '_sys_power_save_flag' variable is non-zero.  The IA-32 'hlt' instruction
  * will be issued causing a low-power consumption sleep mode.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *
@@ -113,7 +113,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  * 2) After waking up from the low-power mode, the interrupt lockout state
  *    must be restored as indicated in the 'imask' input parameter.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *

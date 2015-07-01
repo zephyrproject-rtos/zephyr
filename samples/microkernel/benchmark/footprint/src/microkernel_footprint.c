@@ -132,7 +132,7 @@ static pfunc func_array[] = {
  *
  * dummyIsr - dummy ISR
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void dummyIsr(void *unused)
@@ -149,7 +149,7 @@ void dummyIsr(void *unused)
  * to avoid the preamble code the compiler automatically generates. However,
  * the unwanted preamble has an insignificant impact on total footprint.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void isrDummyIntStub(void *unused)
@@ -169,7 +169,7 @@ static void isrDummyIntStub(void *unused)
  * This routine prints a message, then simply increments a global counter.
  * (Gdb can be used to observe the counter as it increases.)
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

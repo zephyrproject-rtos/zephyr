@@ -64,7 +64,7 @@ GTEXT(_IntExit)
  * pends the PendSV exception if so: the latter will perform the context switch
  * itself.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 SECTION_FUNC(TEXT, _isr_wrapper)
 

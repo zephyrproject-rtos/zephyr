@@ -69,7 +69,7 @@
  * disable state will be restored when the context is later rescheduled
  * for execution.
  *
- * RETURNS: An architecture-dependent lock-out key representing the
+ * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
  *
  * \NOMANUAL
@@ -100,7 +100,7 @@ static inline __attribute__((always_inline))
  * This routine can be called from either interrupt, task or fiber level.
  * Invoked by kernel or by irq_unlock_inline()
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -124,7 +124,7 @@ static inline __attribute__((always_inline))
  * at 1 from the least significant bit to 32 for the most significant bit.
  * A return value of zero indicates that the value passed is zero.
  *
- * RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
+ * @return bit position from 1 to 32, or 0 if the argument is zero.
  *
  * INTERNAL
  * For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
@@ -175,7 +175,7 @@ static inline __attribute__((always_inline))
  * at 1 from the least significant bit to 32 for the most significant bit.
  * A return value of zero indicates that the value passed is zero.
  *
- * RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
+ * @return bit position from 1 to 32, or 0 if the argument is zero.
  *
  * INTERNAL
  * For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
@@ -254,7 +254,7 @@ static inline uint64_t _NanoTscRead(void)
  *
  * _do_read_cpu_timestamp - get a 32 bit CPU timestamp counter
  *
- * RETURNS: a 32-bit number
+ * @return a 32-bit number
  */
 
 static inline inline __attribute__((always_inline))
@@ -275,7 +275,7 @@ static inline inline __attribute__((always_inline))
  * This function issues the 'out' instruction to write a byte to the specified
  * I/O port.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * NOMANUAL
  */
@@ -294,7 +294,7 @@ static inline inline __attribute__((always_inline))
  * This function issues the 'in' instruction to read a byte from the specified
  * I/O port.
  *
- * RETURNS: the byte read from the specified I/O port
+ * @return the byte read from the specified I/O port
  *
  * NOMANUAL
  */
@@ -316,7 +316,7 @@ static inline inline __attribute__((always_inline))
  * This function issues the 'out' instruction to write a word to the
  * specified I/O port.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * NOMANUAL
  */
@@ -335,7 +335,7 @@ static inline inline __attribute__((always_inline))
  * This function issues the 'in' instruction to read a word from the
  * specified I/O port.
  *
- * RETURNS: the word read from the specified I/O port
+ * @return the word read from the specified I/O port
  *
  * NOMANUAL
  */
@@ -357,7 +357,7 @@ static inline inline __attribute__((always_inline))
  * This function issues the 'out' instruction to write a long word to the
  * specified I/O port.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * NOMANUAL
  */
@@ -376,7 +376,7 @@ static inline inline __attribute__((always_inline))
  * This function issues the 'in' instruction to read a long word from the
  * specified I/O port.
  *
- * RETURNS: the long read from the specified I/O port
+ * @return the long read from the specified I/O port
  *
  * NOMANUAL
  */

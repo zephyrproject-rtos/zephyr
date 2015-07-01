@@ -74,7 +74,7 @@ static volatile int mainTaskNotReady = 0;
  *
  * isr_task_command_handler - ISR handler to call isr_task_id_get() and isr_task_priority_get()
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_task_command_handler(void *data)
@@ -99,7 +99,7 @@ void isr_task_command_handler(void *data)
  *
  * isrAPIsTest - test isr_task_id_get() and isr_task_priority_get
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int isrAPIsTest(int taskId, int taskPrio)
@@ -127,7 +127,7 @@ int isrAPIsTest(int taskId, int taskPrio)
  *
  * taskMacrosTest - test task_id_get() and task_priority_get() macros
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int taskMacrosTest(int taskId, int taskPrio)
@@ -155,7 +155,7 @@ int taskMacrosTest(int taskId, int taskPrio)
  *
  * microObjectsInit - initialize objects used in this microkernel test suite
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void microObjectsInit(void)
@@ -174,7 +174,7 @@ void microObjectsInit(void)
  *
  * helperTaskSetPrioTest - helper task portion to test setting the priority
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void helperTaskSetPrioTest(void)
@@ -196,7 +196,7 @@ void helperTaskSetPrioTest(void)
  *
  * taskSetPrioTest - test the task_priority_set() API
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 int taskSetPrioTest(void)
@@ -270,7 +270,7 @@ int taskSetPrioTest(void)
  *
  * helperTaskSleepTest - helper task portion to test task_sleep()
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void helperTaskSleepTest(void)
@@ -291,7 +291,7 @@ void helperTaskSleepTest(void)
  *
  * taskSleepTest - test task_sleep()
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int taskSleepTest(void)
@@ -322,7 +322,7 @@ int taskSleepTest(void)
  *
  * helperTaskYieldTest - helper task portion of task_yield() test
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void helperTaskYieldTest(void)
@@ -342,7 +342,7 @@ void helperTaskYieldTest(void)
  *
  * taskYieldTest - test task_yield()
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int taskYieldTest(void)
@@ -381,7 +381,7 @@ int taskYieldTest(void)
  * helperTaskSuspendTest - helper task portion of task_suspend() and
  *                         task_resume() tests
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void helperTaskSuspendTest(void)
@@ -401,7 +401,7 @@ void helperTaskSuspendTest(void)
  * the helper task is resumed, and the main task sleeps once more.  If the
  * helper task has truly resumed, it will modify <helperData>.
  *
- * RETURNS: TC_PASS on success or TC_FAIL on failure
+ * @return TC_PASS on success or TC_FAIL on failure
  */
 
 int taskSuspendTest(void)
@@ -434,7 +434,7 @@ int taskSuspendTest(void)
  *
  * HelperTask - helper task to test the task APIs
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void HelperTask(void)
@@ -470,7 +470,7 @@ void HelperTask(void)
  *
  * RegressionTask - main task to test the task APIs
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void RegressionTask(void)

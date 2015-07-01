@@ -63,7 +63,7 @@ GTEXT(nano_cpu_atomic_idle)
  * Only called by nanoArchInit(). Sets SEVONPEND bit once for the system's
  * duration.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *
@@ -84,7 +84,7 @@ SECTION_FUNC(TEXT, _CpuIdleInit)
  *
  * Returns the nanokernel idle setting, in ticks. Only called by __systick().
  *
- * RETURNS: the requested number of ticks for the kernel to be idle
+ * @return the requested number of ticks for the kernel to be idle
  *
  * C function prototype:
  *
@@ -102,7 +102,7 @@ SECTION_FUNC(TEXT, _NanoIdleValGet)
  *
  * Sets the nanokernel idle setting to 0. Only called by __systick().
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *
@@ -126,7 +126,7 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
  * '_sys_power_save_flag' variable is non-zero.  The ARM 'wfi' instruction
  * will be issued, causing a low-power consumption sleep mode.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *
@@ -161,7 +161,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  * 2) After waking up from the low-power mode, the interrupt lockout state
  *    must be restored as indicated in the 'imask' input parameter.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * C function prototype:
  *

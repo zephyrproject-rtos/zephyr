@@ -56,7 +56,7 @@ static uint32_t helper_task_iterations = 0;
  *
  * This task is define in .mdef as SEMYIELDTSK
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -73,7 +73,7 @@ void yieldingTask(void)
  *
  * microTaskSwitchYield - entry point for task context switch using yield test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

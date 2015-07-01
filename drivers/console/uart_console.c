@@ -60,7 +60,7 @@
  *
  * consoleIn - get a character from UART
  *
- * RETURNS: the character or EOF if nothing present
+ * @return the character or EOF if nothing present
  */
 
 static int consoleIn(void)
@@ -80,7 +80,7 @@ static int consoleIn(void)
  *
  * Outputs both line feed and carriage return in the case of a '\n'.
  *
- * RETURNS: The character passed as input.
+ * @return The character passed as input.
  */
 
 static int consoleOut(int c /* character to output */
@@ -213,7 +213,7 @@ void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)
  *
  * uart_console_init - initialize one UART as the console/debug port
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void uart_console_init(void)

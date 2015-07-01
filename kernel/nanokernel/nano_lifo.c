@@ -59,7 +59,7 @@ APIs to the same function, since they have identical implementations.
  *
  * It may be called from either a fiber or task context.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * Although the existing implementation will support invocation from an ISR
@@ -86,7 +86,7 @@ FUNC_ALIAS(_lifo_put_non_preemptible, nano_fiber_lifo_put, void);
  * called from either a fiber or an ISR context.  A fiber pending on the lifo
  * object will be made ready, but will NOT be scheduled to execute.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * INTERNAL
  * This function is capable of supporting invocations from both a fiber and an
@@ -126,7 +126,7 @@ void _lifo_put_non_preemptible(
  *
  * This routine is only callable by a task.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void nano_task_lifo_put(
@@ -167,7 +167,7 @@ FUNC_ALIAS(_lifo_get, nano_task_lifo_get, void *);
  * element contains invalid data because that memory location was used to store
  * a pointer to the next element in the linked list.
  *
- * RETURNS: Pointer to first element in the list if available, otherwise NULL
+ * @return Pointer to first element in the list if available, otherwise NULL
  *
  * INTERNAL
  * This function is capable of supporting invocations from fiber, task, and ISR
@@ -209,7 +209,7 @@ void *_lifo_get(
  * The first word in the element contains invalid data because that memory
  * location was used to store a pointer to the next element in the linked list.
  *
- * RETURNS: Pointer to first element in the list
+ * @return Pointer to first element in the list
  *
  * INTERNAL
  * There exists a separate nano_task_lifo_get_wait() implementation since a
@@ -251,7 +251,7 @@ void *nano_fiber_lifo_get_wait(
  * The first word in the element contains invalid data because that memory
  * location was used to store a pointer to the next element in the linked list.
  *
- * RETURNS: Pointer to first element in the list
+ * @return Pointer to first element in the list
  */
 
 void *nano_task_lifo_get_wait(
@@ -294,7 +294,7 @@ void *nano_task_lifo_get_wait(
  * Get the first element from the specified lifo but generate a fatal error
  * if the element is NULL.
  *
- * RETURNS: Pointer to first element in the list
+ * @return Pointer to first element in the list
  *
  * \NOMANUAL
  */

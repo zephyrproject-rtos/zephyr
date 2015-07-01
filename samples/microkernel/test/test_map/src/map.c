@@ -70,7 +70,7 @@ int testMapFreeAllBlocks(void **P);
  * @param expectRetValue     expect value
  * @param currentRetValue    current value
  *
- * RETURNS:  true, false
+ * @return  true, false
  */
 
 bool verifyRetValue(int expectRetValue, int currentRetValue)
@@ -87,7 +87,7 @@ bool verifyRetValue(int expectRetValue, int currentRetValue)
  * SEM_REGRESDONE and SEM_HELPERDONE to synchronize between different parts
  * of the test.
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void HelperTask(void)
@@ -154,7 +154,7 @@ exitTest1:
  *
  * @param p    pointer to pointer of allocated blocks
  *
- * RETURNS:  TC_PASS, TC_FAIL
+ * @return  TC_PASS, TC_FAIL
  */
 
 int testMapGetAllBlocks(void **p)
@@ -226,7 +226,7 @@ int testMapGetAllBlocks(void **p)
  *
  * @param p    pointer to pointer of allocated blocks
  *
- * RETURNS:  TC_PASS, TC_FAIL
+ * @return  TC_PASS, TC_FAIL
  */
 
 int testMapFreeAllBlocks(void **p)
@@ -281,7 +281,7 @@ int testMapFreeAllBlocks(void **p)
  *
  * @param pointer    pointer to pointer of allocated blocks
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 void printPointers(void **pointer)
 {
@@ -307,7 +307,7 @@ void printPointers(void **pointer)
  *
  *   task_mem_map_alloc_wait, task_mem_map_alloc_wait_timeout
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void RegressionTask(void)

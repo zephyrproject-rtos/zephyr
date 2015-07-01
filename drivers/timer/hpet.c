@@ -228,7 +228,7 @@ static int stale_irq_check =
  * of the counter is read twice to ensure it doesn't change while the least
  * significant word is being retrieved (as per HPET documentation).
  *
- * RETURNS: current 64-bit counter value
+ * @return current 64-bit counter value
  *
  * \NOMANUAL
  */
@@ -255,7 +255,7 @@ static uint64_t _hpetMainCounterAtomic(void)
  * This routine handles the system clock tick interrupt. A TICK_EVENT event
  * is pushed onto the microkernel stack.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -356,7 +356,7 @@ void _timer_int_handler(void *unused)
  * Re-program the timer to enter into the idle state for the given number of
  * ticks (-1 means infinite number of ticks).
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \INTERNAL IMPLEMENTATION DETAILS
  * Called while interrupts are locked.
@@ -389,7 +389,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  * ticker has done its work and consumed all the ticks. This has to be true
  * otherwise idle mode wouldn't have been entered in the first place.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \INTERNAL IMPLEMENTATION DETAILS
  * Called by _IntEnt() while interrupts are locked.
@@ -494,7 +494,7 @@ void _timer_idle_exit(void)
  * This routine is used to program the HPET to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_driver(int priority /* priority parameter is ignored by this driver
@@ -626,7 +626,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
  *
  * This routine returns the current time in terms of timer hardware clock cycles.
  *
- * RETURNS: up counter of elapsed clock cycles
+ * @return up counter of elapsed clock cycles
  *
  * \INTERNAL WARNING
  * If this routine is ever enhanced to return all 64 bits of the counter
@@ -647,7 +647,7 @@ uint32_t timer_read(void)
  * This routine disables the HPET so that timer interrupts are no
  * longer delivered.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_disable(void)

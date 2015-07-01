@@ -57,7 +57,7 @@
  * _LoadAllFloatRegisters(), _StoreAllFloatRegisters(), and
  * _LoadThenStoreAllFloatRegisters agree on the format.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
@@ -124,7 +124,7 @@ static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
  * floating point operations was also co-operatively switched out and simply
  * inherits the existing x87 FPU state (expecting the stack to be empty).
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
@@ -173,7 +173,7 @@ static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
  * _LoadAllFloatRegisters() occured to load all the floating point registers
  * from a memory buffer.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
@@ -213,7 +213,7 @@ static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
  * a function call, regardless of whether the call results in the context being
  * pended.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _StoreNonVolatileFloatRegisters(FP_NONVOLATILE_REG_SET *pToBuffer)

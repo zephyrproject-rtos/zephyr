@@ -39,7 +39,7 @@
  *
  * sema_test - semaphore signal speed test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

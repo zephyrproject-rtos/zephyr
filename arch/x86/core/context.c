@@ -67,7 +67,7 @@ void _ContextEntryWrapper(_ContextEntry, _ContextArg, _ContextArg, _ContextArg);
  *
  * This function is called by _NewContext() to initialize task contexts.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -260,7 +260,7 @@ static void _NewContextInternal(
  * first time that the new context is swapped in, and it jumps to
  * _context_entry after it has done its work.
  *
- * RETURNS: this routine does NOT return.
+ * @return this routine does NOT return.
  *
  * \NOMANUAL
  */
@@ -283,7 +283,7 @@ __asm__("\t.globl _context_entry\n"
  * The "context control block" (CCS) is carved from the "end" of the specified
  * context stack memory.
  *
- * RETURNS: opaque pointer to initialized CCS structure
+ * @return opaque pointer to initialized CCS structure
  *
  * \NOMANUAL
  */

@@ -1395,7 +1395,7 @@ static void (*intFPtr[256])(void) = {
  * This routine will call one of the genInt functions based upon the
  * value passed to it (which is essentially the interrupt vector number).
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -1413,7 +1413,7 @@ void raiseInt(uint8_t id)
  *
  * Trigger via NVIC. <id> is the IRQ number.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

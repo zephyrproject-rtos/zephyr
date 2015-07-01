@@ -60,7 +60,7 @@ are defined in arch.h.
  * at 1 from the least significant bit to 32 for the most significant bit.
  * A return value of zero indicates that the value passed is zero.
  *
- * RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
+ * @return bit position from 1 to 32, or 0 if the argument is zero.
  *
  * INTERNAL
  * For Intel64 (x86_64) architectures, the 'cmovz' can be removed
@@ -103,7 +103,7 @@ BRANCH_LABEL(ffsLsb_argNotZero)	/* this label serves find_first_set() & find_las
  * at 1 from the least significant bit to 32 for the most significant bit.
  * A return value of zero indicates that the value passed is zero.
  *
- * RETURNS: bit position from 1 to 32, or 0 if the argument is zero.
+ * @return bit position from 1 to 32, or 0 if the argument is zero.
  *
  * INTERNAL
  * For Intel64 (x86_64) architectures, the 'cmovz' can be removed

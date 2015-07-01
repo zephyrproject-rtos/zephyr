@@ -66,7 +66,7 @@ NOMANUAL
  * This routine replies to a mutex lock request.  This will occur if either
  * the waiting task times out or acquires the mutex lock.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -152,7 +152,7 @@ void _k_mutex_lock_reply(
  * is already locked, and the timeout is non-zero then the priority inheritance
  * algorithm may be applied to prevent priority inversion scenarios.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -273,7 +273,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
  *
  * This routine is the entry to the mutex lock kernel service.
  *
- * RETURNS: RC_OK on success, RC_FAIL on error, RC_TIME on timeout
+ * @return RC_OK on success, RC_FAIL on error, RC_TIME on timeout
  */
 
 int _task_mutex_lock(
@@ -300,7 +300,7 @@ int _task_mutex_lock(
  * of the current owner to the priority level it had when it acquired the
  * mutex.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -391,7 +391,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
  *
  * This routine is the entry to the mutex unlock kernel service.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _task_mutex_unlock(kmutex_t mutex /* mutex to unlock */

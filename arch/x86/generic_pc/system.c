@@ -90,7 +90,7 @@ static inline void ioapicInit(void)
  *
  * uart_generic_info_init - initialize initialization information for one UART
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -112,7 +112,7 @@ void uart_generic_info_init(struct uart_init_info *p_info)
  *
  * Only used for debugging.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -157,7 +157,7 @@ static void bluetooth_init(void)
  * Intel 8250 UART device driver.
  * Also initialize the timer device driver, if required.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _InitHardware(void)

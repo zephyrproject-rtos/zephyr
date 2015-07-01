@@ -56,7 +56,7 @@ struct k_timer  *_k_timer_list_tail = NULL;
  * This algorithm also set the upper 16 bits of the object identifier
  * to the same value utilized by the microkernel system generator.
  *
- * RETURNS: timer object identifier
+ * @return timer object identifier
  */
 
 static inline ktimer_t _timer_ptr_to_id(struct k_timer *timer)
@@ -70,7 +70,7 @@ static inline ktimer_t _timer_ptr_to_id(struct k_timer *timer)
  *
  * This routine converts a timer object identifier into a timer pointer.
  *
- * RETURNS: timer pointer
+ * @return timer pointer
  */
 
 static inline struct k_timer *_timer_id_to_ptr(ktimer_t timer)
@@ -82,7 +82,7 @@ static inline struct k_timer *_timer_id_to_ptr(ktimer_t timer)
  *
  * _k_timer_enlist - insert a timer into the timer queue
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timer_enlist(struct k_timer *T)
@@ -114,7 +114,7 @@ void _k_timer_enlist(struct k_timer *T)
  *
  * _k_timer_delist - remove a timer from the timer queue
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timer_delist(struct k_timer *T)
@@ -140,7 +140,7 @@ void _k_timer_delist(struct k_timer *T)
  *
  * Allocates timer for command packet and inserts it into the timer queue.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timeout_alloc(struct k_args *P)
@@ -165,7 +165,7 @@ void _k_timeout_alloc(struct k_args *P)
  * The command that is processed following cancellation is typically NOT the
  * command that would have occurred had the timeout expired on its own.
  * 
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timeout_cancel(struct k_args *A)
@@ -184,7 +184,7 @@ void _k_timeout_cancel(struct k_args *A)
  *
  * Cancels timer (if not already expired), then frees it.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timeout_free(struct k_timer *T)
@@ -209,7 +209,7 @@ void _k_timeout_free(struct k_timer *T)
  * and that a periodic timer may exhibit a slow, ever-increasing degree of drift
  * from the main system timer over long intervals.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -253,7 +253,7 @@ void _k_timer_list_update(int ticks)
  *
  * @param P   Pointer to timer allocation request arguments.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timer_alloc(struct k_args *P)
@@ -273,7 +273,7 @@ void _k_timer_alloc(struct k_args *P)
  *
  * task_timer_alloc - allocate a timer and return its object identifier
  *
- * RETURNS: timer identifier
+ * @return timer identifier
  */
 
 ktimer_t task_timer_alloc(void)
@@ -293,7 +293,7 @@ ktimer_t task_timer_alloc(void)
  * This routine, called by K_swapper(), handles the request for deallocating a
  * timer.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timer_dealloc(struct k_args *P)
@@ -317,7 +317,7 @@ void _k_timer_dealloc(struct k_args *P)
  *
  * @param timer   Timer to deallocate.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_timer_free(ktimer_t timer)
@@ -338,7 +338,7 @@ void task_timer_free(ktimer_t timer)
  *
  * @param P   Pointer to timer start request arguments.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timer_start(struct k_args *P)
@@ -400,7 +400,7 @@ void _k_timer_start(struct k_args *P)
  * @param period     Repetition interval in ticks.
  * @param sema       Semaphore to signal.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
@@ -426,7 +426,7 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
  * @param duration   Initial delay.
  * @param period     Repetition interval.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
@@ -448,7 +448,7 @@ void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
  * This routine, called by K_swapper(), handles the request for stopping a
  * timer.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_timer_stop(struct k_args *P)
@@ -468,7 +468,7 @@ void _k_timer_stop(struct k_args *P)
  *
  * @param timer   Timer to stop.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_timer_stop(ktimer_t timer)
@@ -487,7 +487,7 @@ void task_timer_stop(ktimer_t timer)
  * This routine, called by K_swapper(), handles the request for waking a task
  * at the end of its sleep period.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_task_wakeup(struct k_args *P)
@@ -509,7 +509,7 @@ void _k_task_wakeup(struct k_args *P)
  * This routine, called by K_swapper(), handles the request for putting a task
  * to sleep.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_task_sleep(struct k_args *P)
@@ -543,7 +543,7 @@ void _k_task_sleep(struct k_args *P)
  *
  * @param ticks   Number of ticks for which to sleep.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_sleep(int32_t ticks)

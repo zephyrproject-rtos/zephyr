@@ -36,7 +36,7 @@
  *
  * strcpy - copy a string
  *
- * RETURNS: pointer to destination buffer <d>
+ * @return pointer to destination buffer <d>
  */
 
 char *strcpy(char *restrict d, const char *restrict s)
@@ -58,7 +58,7 @@ char *strcpy(char *restrict d, const char *restrict s)
  *
  * strncpy - copy part of a string
  *
- * RETURNS: pointer to destination buffer <d>
+ * @return pointer to destination buffer <d>
  */
 
 char *strncpy(char *restrict d, const char *restrict s, size_t n)
@@ -85,7 +85,7 @@ char *strncpy(char *restrict d, const char *restrict s, size_t n)
  *
  * strchr - string scanning operation
  *
- * RETURNS: pointer to 1st instance of found byte, or NULL if not found
+ * @return pointer to 1st instance of found byte, or NULL if not found
  */
 
 char *strchr(const char *s, int c)
@@ -102,7 +102,7 @@ char *strchr(const char *s, int c)
  *
  * strlen - get string length
  *
- * RETURNS: number of bytes in string <s>
+ * @return number of bytes in string <s>
  */
 
 size_t strlen(const char *s)
@@ -121,7 +121,7 @@ size_t strlen(const char *s)
  *
  * strcmp - compare two strings
  *
- * RETURNS: negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
+ * @return negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
  */
 
 int strcmp(const char *s1, const char *s2)
@@ -138,7 +138,7 @@ int strcmp(const char *s1, const char *s2)
  *
  * strncmp - compare part of two strings
  *
- * RETURNS: negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
+ * @return negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
  */
 
 int strncmp(const char *s1, const char *s2, size_t n)
@@ -156,7 +156,7 @@ int strncmp(const char *s1, const char *s2, size_t n)
  *
  * memcmp - compare two memory areas
  *
- * RETURNS: negative # if <m1> < <m2>, 0 if <m1> == <m2>, else positive #
+ * @return negative # if <m1> < <m2>, 0 if <m1> == <m2>, else positive #
  */
 
 int memcmp(const void *m1, const void *m2, size_t n)
@@ -179,7 +179,7 @@ int memcmp(const void *m1, const void *m2, size_t n)
  *
  * memmove - copy bytes in memory with overlapping areas
  *
- * RETURNS: pointer to destination buffer <d>
+ * @return pointer to destination buffer <d>
  */
 
 void *memmove(void *d, const void *s, size_t n)
@@ -214,7 +214,7 @@ void *memmove(void *d, const void *s, size_t n)
  *
  * memcpy - copy bytes in memory
  *
- * RETURNS: pointer to start of destination buffer
+ * @return pointer to start of destination buffer
  */
 
 void *memcpy(void *restrict d, const void *restrict s, size_t n)
@@ -264,7 +264,7 @@ void *memcpy(void *restrict d, const void *restrict s, size_t n)
  *
  * memset - set bytes in memory
  *
- * RETURNS: pointer to start of buffer
+ * @return pointer to start of buffer
  */
 
 void *memset(void *buf, int c, size_t n)

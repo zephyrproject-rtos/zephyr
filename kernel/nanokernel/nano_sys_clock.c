@@ -57,7 +57,7 @@ uint32_t _sys_idle_elapsed_ticks = 1;
  *
  * nano_time_init - constructor that initializes nanokernel time tracking system
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -76,7 +76,7 @@ int64_t _nano_ticks = 0;
  *
  * nano_tick_get_32 - return the lower part of the current system tick count
  *
- * RETURNS: the current system tick count
+ * @return the current system tick count
  *
  */
 
@@ -89,7 +89,7 @@ uint32_t nano_tick_get_32(void)
  *
  * nano_tick_get - return the current system tick count
  *
- * RETURNS: the current system tick count
+ * @return the current system tick count
  *
  */
 
@@ -112,7 +112,7 @@ int64_t nano_tick_get(void)
  *
  * nano_cycle_get_32 - return a high resolution timestamp
  *
- * RETURNS: the current timer hardware count
+ * @return the current timer hardware count
  *
  */
 
@@ -144,7 +144,7 @@ uint32_t nano_cycle_get_32(void)
  * [do more stuff]
  * y = nano_tick_delta(&reftime);     /# how long since [do stuff] #/
  *
- * RETURNS: tick count since reference time; undefined for first invocation
+ * @return tick count since reference time; undefined for first invocation
  *
  * NOTE: We use inline function for both 64-bit and 32-bit functions.
  * Compiler optimizes out 64-bit result handling in 32-bit version.
@@ -174,7 +174,7 @@ static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
  *
  * nano_tick_delta - return number of ticks since a reference time
  *
- * RETURNS: tick count since reference time; undefined for first invocation
+ * @return tick count since reference time; undefined for first invocation
  */
 
 int64_t nano_tick_delta(int64_t *reftime)
@@ -186,7 +186,7 @@ int64_t nano_tick_delta(int64_t *reftime)
  *
  * nano_tick_delta_32 - return 32-bit number of ticks since a reference time
  *
- * RETURNS: 32-bit tick count since reference time; undefined for first invocation
+ * @return 32-bit tick count since reference time; undefined for first invocation
  */
 
 uint32_t nano_tick_delta_32(int64_t *reftime)
@@ -242,7 +242,7 @@ static inline void handle_expired_nano_timers(int ticks)
  * tick is to be announced to the nanokernel. It takes care of dequeuing the
  * timers that have expired and wake up the fibers pending on them.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _nano_sys_clock_tick_announce(uint32_t ticks)

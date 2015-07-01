@@ -192,7 +192,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
  * to <value>.  It is assumed that the specified <fiber> is pending, and thus
  * the fiber's context is stored in its tCCS structure.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

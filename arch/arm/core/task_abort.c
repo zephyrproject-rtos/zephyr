@@ -62,7 +62,7 @@ static struct k_args cmd_packet;
  * - the task implicitly aborts by returning from its entry point
  * - the task encounters a fatal exception
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

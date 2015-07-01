@@ -99,7 +99,7 @@ save frame on the stack.
  * no runnable FIBER contexts, then schedule the TASK context represented
  * by _nanokernel.task.  The _nanokernel.task field will never be NULL.
  *
- * RETURNS: may contain a return value setup by a call to fiberRtnValueSet()
+ * @return may contain a return value setup by a call to fiberRtnValueSet()
  *
  * C function prototype:
  *

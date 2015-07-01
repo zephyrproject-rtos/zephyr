@@ -104,7 +104,7 @@ static struct nano_sem reply_multi_waiters;
  *
  * @param data    pointer to ISR handler parameter
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_sem_take(void *data)
@@ -123,7 +123,7 @@ void isr_sem_take(void *data)
  *
  * @param data    pointer to ISR handler parameter
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_sem_give(void *data)
@@ -141,7 +141,7 @@ void isr_sem_give(void *data)
  * This test gives and takes the test semaphore in the context of a fiber
  * without blocking on the semaphore.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int testSemFiberNoWait(void)
@@ -188,7 +188,7 @@ errorReturn:
  * @param arg1    unused
  * @param arg2    unused
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiberEntry(int arg1, int arg2)
@@ -260,7 +260,7 @@ static void fiberEntry(int arg1, int arg2)
  *
  * This routine initializes the nanokernel objects used in the semaphore tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void initNanoObjects(void)
@@ -287,7 +287,7 @@ void initNanoObjects(void)
  * This test gives and takes the test semaphore in the context of an ISR without
  * blocking on the semaphore.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int testSemIsrNoWait(void)
@@ -334,7 +334,7 @@ errorReturn:
  * This test gives and takes the test semaphore in the context of a task without
  * blocking on the semaphore.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int testSemTaskNoWait(void)
@@ -377,7 +377,7 @@ errorReturn:
  * This routine works with fiberEntry() to perform the tests that wait on
  * a semaphore.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int testSemWait(void)
@@ -432,7 +432,7 @@ static char __stack fiber_multi_waiters_stacks[NUM_WAITERS][FIBER_STACKSIZE];
  *
  * fiber_multi_waiters - fiber entry point for multiple-waiters test
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void fiber_multi_waiters(int arg1, int arg2)
@@ -448,7 +448,7 @@ static void fiber_multi_waiters(int arg1, int arg2)
  *
  * do_test_multiple_waiters - task part of multiple-waiter test, repeatable
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static int do_test_multiple_waiters(void)
@@ -494,7 +494,7 @@ static int do_test_multiple_waiters(void)
  *
  * test_multiple_waiters - entry point for multiple-waiters test
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static int test_multiple_waiters(void)
@@ -940,7 +940,7 @@ static int test_timeout(void)
  *
  * This is the entry point to the semaphore tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)

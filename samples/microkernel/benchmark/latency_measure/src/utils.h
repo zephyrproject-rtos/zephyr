@@ -61,7 +61,7 @@ extern int errorCount;
  *
  * printDashLine - print dash line
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -122,7 +122,7 @@ typedef void (*ptestIsr) (void *unused);
  * provided as an argument. It sets up allocated interrupt vector, pointer to
  * the current interrupt service routine and stub code memory block.
  *
- * RETURNS: the allocated interrupt vector
+ * @return the allocated interrupt vector
  *
  * \NOMANUAL
  */
@@ -137,7 +137,7 @@ int initSwInterrupt(ptestIsr pIsrHdlr);
  * provided. This routine can be invoked only after the interrupt has been
  * initialized and connected by initSwInterrupt.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

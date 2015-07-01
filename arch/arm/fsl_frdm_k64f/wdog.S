@@ -59,7 +59,7 @@ GTEXT(_WdogInit)
  *
  * This routine will disable the watchdog timer.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT,_WdogInit)

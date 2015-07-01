@@ -62,7 +62,7 @@ This module implements the PCI config space access functions
  * @param offset      Offset into the configuration space.
  * @param data        Data written to the offset.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 void pci_config_out_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						 uint32_t offset, uint32_t data)
@@ -92,7 +92,7 @@ void pci_config_out_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  * @param offset      Offset into the configuration space.
  * @param data        Data written to the offset.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 void pci_config_out_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						 uint32_t offset, uint16_t data)
@@ -122,7 +122,7 @@ void pci_config_out_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  * @param offset      Offset into the configuration space.
  * @param data        Data written to the offset.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 void pci_config_out_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
 						 uint32_t offset, uint8_t data)
@@ -152,7 +152,7 @@ void pci_config_out_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  * @param offset      Offset into the configuration space.
  * @param data        Data read from the offset.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 void pci_config_in_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
@@ -183,7 +183,7 @@ void pci_config_in_long(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  * @param offset      Offset into the configuration space.
  * @param data        Data read from the offset.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -220,7 +220,7 @@ void pci_config_in_word(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  * @param offset      Offset into the configuration space.
  * @param data        Data read from the offset.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -261,7 +261,7 @@ void pci_config_in_byte(uint32_t bus_no, uint32_t device_no, uint32_t func_no,
  * @param function          PCI function number.
  * @param p_offset          Returned config space offset.
  *
- * RETURNS: 0 if Extended Capability found, -1 otherwise
+ * @return 0 if Extended Capability found, -1 otherwise
  *
  */
 

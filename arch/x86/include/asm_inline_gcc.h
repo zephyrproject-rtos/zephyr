@@ -49,7 +49,7 @@ NANO_CPU_EXC_CONNECT_NO_ERR(handler,vector,0)
  *
  * EflagsGet - return the current value of the EFLAGS register
  *
- * RETURNS: the EFLAGS register.
+ * @return the EFLAGS register.
  *
  * \NOMANUAL
  */
@@ -77,7 +77,7 @@ static inline unsigned int EflagsGet(void)
  * This routine sets CR0[TS] to 1, which disallows the use of FP instructions
  * by the currently executing context.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _FpAccessDisable(void)
@@ -103,7 +103,7 @@ static inline void _FpAccessDisable(void)
  * x87/MMX/SSEx context info is saved, otherwise only x87/MMX context is saved.
  * Function is invoked by _FpCtxSave(tCCS *ccs)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _do_fp_ctx_save(int flags, void *preemp_float_reg)
@@ -133,7 +133,7 @@ static inline void _do_fp_ctx_save(int flags, void *preemp_float_reg)
  * This routine initializes the system's "live" non-integer context.
  * Function is invoked by _FpCtxInit(tCCS *ccs)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _do_fp_ctx_init(int flags)

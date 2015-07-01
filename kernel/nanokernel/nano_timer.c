@@ -46,7 +46,7 @@ struct nano_timer *_nano_timer_list = NULL;
  * in its first field, that may be overwritten when the timer expires, plus
  * whatever data the user wishes to store and recover when the timer expires.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -63,7 +63,7 @@ void nano_timer_init(struct nano_timer *timer, void *userData)
  * This function starts a previously initialized nanokernel timer object.
  * The timer will expire in <ticks> system clock ticks.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -76,7 +76,7 @@ FUNC_ALIAS(_timer_start, nano_fiber_timer_start, void);
  * This function starts a previously initialized nanokernel timer object.
  * The timer will expire in <ticks> system clock ticks.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -89,7 +89,7 @@ FUNC_ALIAS(_timer_start, nano_task_timer_start, void);
  * This function starts a previously initialized nanokernel timer object.
  * The timer will expire in <ticks> system clock ticks.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * NOMANUAL
  */
@@ -133,7 +133,7 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
  *
  * This function stops a previously started nanokernel timer object.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * NOMANUAL
  */
@@ -182,7 +182,7 @@ static void _timer_stop(struct nano_timer *timer /* timer to stop */
  *
  * This function stops a previously started nanokernel timer object.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -204,7 +204,7 @@ void nano_fiber_timer_stop(struct nano_timer *timer /* timer to stop */
  *
  * This function stops a previously started nanokernel timer object.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -228,7 +228,7 @@ void nano_task_timer_stop(struct nano_timer *timer /* timer to stop */
  * have been initialized by nano_timer_init() and started via either
  * nano_fiber_timer_start() or nano_task_timer_start() first.
  *
- * RETURNS: pointer to timer initialization data, or NULL if timer not expired
+ * @return pointer to timer initialization data, or NULL if timer not expired
  *
  */
 
@@ -247,7 +247,7 @@ void *nano_fiber_timer_test(struct nano_timer *timer /* timer to check */
  * nano_fiber_timer_start() or nano_task_timer_start() first and must not
  * have been stopped via nano_task_timer_stop() or nano_fiber_timer_stop().
  *
- * RETURNS: pointer to timer initialization data
+ * @return pointer to timer initialization data
  *
  */
 
@@ -265,7 +265,7 @@ void *nano_fiber_timer_wait(struct nano_timer *timer /* timer to pend on */
  * have been initialized by nano_timer_init() and started via either
  * nano_fiber_timer_start() or nano_task_timer_start() first.
  *
- * RETURNS: pointer to timer initialization data, or NULL if timer not expired
+ * @return pointer to timer initialization data, or NULL if timer not expired
  *
  */
 
@@ -284,7 +284,7 @@ void *nano_task_timer_test(struct nano_timer *timer /* timer to check */
  * nano_fiber_timer_start() or nano_task_timer_start() first and must not
  * have been stopped via nano_task_timer_stop() or nano_fiber_timer_stop().
  *
- * RETURNS: pointer to timer initialization data
+ * @return pointer to timer initialization data
  *
  */
 

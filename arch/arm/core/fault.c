@@ -73,7 +73,7 @@ Common fault handler for ARM Cortex-M processors.
  * MMFSR: 0x00000000, BFSR: 0x00000082, UFSR: 0x00000000
  * BFAR: 0xff001234
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -124,7 +124,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
  *
  * See _FaultDump() for example.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -143,7 +143,7 @@ static void _FaultContextShow(const NANO_ESF *esf)
  *
  * See _FaultDump() for example.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -178,7 +178,7 @@ static void _MpuFault(const NANO_ESF *esf,
  *
  * See _FaultDump() for example.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -219,7 +219,7 @@ static void _BusFault(const NANO_ESF *esf,
  *
  * See _FaultDump() for example.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -259,7 +259,7 @@ static void _UsageFault(const NANO_ESF *esf)
  *
  * See _FaultDump() for example.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -287,7 +287,7 @@ static void _HardFault(const NANO_ESF *esf)
  *
  * See _FaultDump() for example.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -303,7 +303,7 @@ static void _DebugMonitor(const NANO_ESF *esf)
  *
  * See _FaultDump() for example.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -333,7 +333,7 @@ static void _ReservedException(const NANO_ESF *esf,
  *   Precise data bus error
  *   Address: 0xff001234
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -376,7 +376,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  * interrupt was already being handled, it is passed a pointer to both and has
  * to find out on which the ESP is present.
  *
- * RETURNS: This function does not return.
+ * @return This function does not return.
  *
  * \NOMANUAL
  */
@@ -400,7 +400,7 @@ void _Fault(
  *
  * Turns on the desired hardware faults.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

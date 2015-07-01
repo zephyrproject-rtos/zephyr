@@ -133,7 +133,7 @@ static unsigned char idle_mode = IDLE_NOT_TICKLESS;
  *
  * This routine disables the systick counter.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -162,7 +162,7 @@ static ALWAYS_INLINE void sysTickStop(void)
  *
  * This routine enables the systick counter.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -191,7 +191,7 @@ static ALWAYS_INLINE void sysTickStart(void)
  * value is the 'time' remaining to decrement before the timer triggers an
  * interrupt.
  *
- * RETURNS: the current counter value
+ * @return the current counter value
  *
  * \NOMANUAL
  */
@@ -206,7 +206,7 @@ static ALWAYS_INLINE uint32_t sysTickCurrentGet(void)
  *
  * This routine returns the value from the reload value register.
  *
- * RETURNS: the counter's initial count/wraparound value
+ * @return the counter's initial count/wraparound value
  *
  * \NOMANUAL
  */
@@ -225,7 +225,7 @@ static ALWAYS_INLINE uint32_t sysTickReloadGet(void)
  * sets the timer's current value register to zero.
  * Note that the value given is assumed to be valid (i.e., count < (1<<24)).
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -254,7 +254,7 @@ static ALWAYS_INLINE void sysTickReloadSet(
  * The symbol for this routine is either _timer_int_handler (for normal
  * system operation) or _real_timer_int_handler (when GDB_INFO is enabled).
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -390,7 +390,7 @@ void _TIMER_INT_HANDLER(void *unused)
  * Conversely, the smaller the value (the higher the tick frequency), the
  * more elapsed ticks during a "tickless idle".
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -467,7 +467,7 @@ static void sysTickTicklessIdleInit(void)
  * ticks supplied or the maximum number of ticks that can be programmed into
  * hardware. A value of -1 will result in the maximum number of ticks.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _timer_idle_enter(int32_t ticks /* system ticks */
@@ -526,7 +526,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  * ticker has done its work and consumed all the ticks. This has to be true
  * otherwise idle mode wouldn't have been entered in the first place.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _timer_idle_exit(void)
@@ -613,7 +613,7 @@ void _timer_idle_exit(void)
  * This routine is used to program the systick to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 void timer_driver(int priority /* priority parameter is ignored by this driver
 				  */
@@ -654,7 +654,7 @@ void timer_driver(int priority /* priority parameter is ignored by this driver
  * Some kernel facilities (e.g. benchmarking code) directly call timer_read()
  * instead of utilizing the 'timer_read_fptr' function pointer.
  *
- * RETURNS: up counter of elapsed clock cycles
+ * @return up counter of elapsed clock cycles
  *
  * \INTERNAL WARNING
  * systick counter is a 24-bit down counter which is reset to "reload" value
@@ -675,7 +675,7 @@ uint32_t timer_read(void)
  * This routine disables the systick so that timer interrupts are no
  * longer delivered.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_disable(void)

@@ -49,7 +49,7 @@ tasks or fibers.
  * This routine returns a pointer to the context control block of the currently
  * executing context.  It is cast to a nano_context_id_t for use publically.
  *
- * RETURNS: nano_context_id_t of the currently executing context.
+ * @return nano_context_id_t of the currently executing context.
  */
 
 nano_context_id_t context_self_get(void)
@@ -63,7 +63,7 @@ nano_context_id_t context_self_get(void)
  *
  * This routine returns the type of context currently executing.
  *
- * RETURNS: nano_context_type_t of the currently executing context.
+ * @return nano_context_type_t of the currently executing context.
  */
 
 nano_context_type_t context_type_get(void)
@@ -85,7 +85,7 @@ nano_context_type_t context_type_get(void)
  * option; exceptions raised by this context will be treated as a fatal
  * system error.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _context_essential_set(void)
@@ -101,7 +101,7 @@ void _context_essential_set(void)
  * option; exceptions raised by this context may be recoverable.
  * (This is the default tag for a context.)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _context_essential_clear(void)
@@ -117,7 +117,7 @@ void _context_essential_clear(void)
  * context.  A NULL context pointer indicates that the current context is
  * to be queried.
  *
- * RETURNS: Non-zero if specified context is essential, zero if it is not
+ * @return Non-zero if specified context is essential, zero if it is not
  */
 
 int _context_essential_check(tCCS *pCtx /* pointer to context */
@@ -136,7 +136,7 @@ int _context_essential_check(tCCS *pCtx /* pointer to context */
  * Custom data is not used by the kernel itself, and is freely available
  * for the context to use as it sees fit.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void context_custom_data_set(void *value /* new value */
@@ -151,7 +151,7 @@ void context_custom_data_set(void *value /* new value */
  *
  * This function returns the custom data value for the current task or fiber.
  *
- * RETURNS: current handle value
+ * @return current handle value
  */
 
 void *context_custom_data_get(void)
@@ -173,7 +173,7 @@ void *context_custom_data_get(void)
  * This routine must be invoked from a fiber to guarantee that the list
  * of contexts does not change in mid-operation.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -220,7 +220,7 @@ void _context_exit(tCCS *pContext)
  * The analogous entry point function for user-mode task contexts is called
  * _ContextUsrEntryRtn().
  *
- * RETURNS: Does not return
+ * @return Does not return
  *
  * \NOMANUAL
  */

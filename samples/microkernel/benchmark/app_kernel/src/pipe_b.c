@@ -111,7 +111,7 @@ int pipeput(kpipe_t pipe, K_PIPE_OPTION
  *
  * pipe_test - test the pipes transfer speed
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -206,7 +206,7 @@ void pipe_test(void)
  *
  * pipeput - write a data portion to the pipe and measure time
  *
- * RETURNS: 0 on success, 1 on error
+ * @return 0 on success, 1 on error
  *
  * @param pipe     The pipe to be tested.
  * @param option   _ALL_TO_N or _1_TO_N.

@@ -48,7 +48,7 @@ a task to measure the overhead involved in issuing a kernel service request.
  *
  * _k_nop - perform "do nothing" kernel request
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_nop(struct k_args *A)
@@ -62,7 +62,7 @@ void _k_nop(struct k_args *A)
  *
  * This routine is a request for the K_swapper to run a "do nothing" routine.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _task_nop(void)

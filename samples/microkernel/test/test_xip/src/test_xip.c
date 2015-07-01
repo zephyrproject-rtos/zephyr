@@ -50,7 +50,7 @@ global variables for completeness sake.
  *
  * Entry point for nanokernel only builds.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void main(void)
@@ -59,7 +59,7 @@ void main(void)
  *
  * RegressionTaskEntry - regression test's entry point
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void RegressionTaskEntry(void)

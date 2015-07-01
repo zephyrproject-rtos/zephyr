@@ -88,7 +88,7 @@ extern void _IntExit(void);
  * <priority> with the interrupt routine <isr>, that receives parameter
  * <parameter>
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 #define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	\
@@ -104,7 +104,7 @@ extern void _IntExit(void);
  * For the given device do the neccessary configuration steps.
  * Fpr ARM platform, set the interrupt priority
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 #define IRQ_CONFIG(device, irq) irq_priority_set(irq, _##device##_int_priority)

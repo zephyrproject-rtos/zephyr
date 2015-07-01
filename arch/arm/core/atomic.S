@@ -68,7 +68,7 @@ GTEXT(atomic_cas)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -91,7 +91,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_clear_set, atomic_clear)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -144,7 +144,7 @@ SECTION_FUNC(TEXT, atomic_get)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -170,7 +170,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_inc_add, atomic_inc)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -204,7 +204,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_inc_add, atomic_add)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -230,7 +230,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_decSub, atomic_dec)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -264,7 +264,7 @@ SECTION_SUBSEC_FUNC(TEXT, atomic_decSub, atomic_sub)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -299,7 +299,7 @@ SECTION_FUNC(TEXT, atomic_nand)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -333,7 +333,7 @@ SECTION_FUNC(TEXT, atomic_and)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -367,7 +367,7 @@ SECTION_FUNC(TEXT, atomic_or)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: Contents of <target> before the atomic operation
+ * @return Contents of <target> before the atomic operation
  *
  * ERRNO: N/A
  *
@@ -401,7 +401,7 @@ SECTION_FUNC(TEXT, atomic_xor)
  *
  * This routine can be used from both task and interrupt level.
  *
- * RETURNS: 1 if the swap is actually executed, 0 otherwise.
+ * @return 1 if the swap is actually executed, 0 otherwise.
  *
  * ERRNO: N/A
  *

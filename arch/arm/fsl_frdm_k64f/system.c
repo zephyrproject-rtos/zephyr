@@ -106,7 +106,7 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
  * PLL Bypassed External (PBE) modes to get to the desired
  * PLL Engaged External (PEE) mode and generate the maximum 120 MHz system clock.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -253,7 +253,7 @@ static void clkInit(void)
  *
  * Only used for debugging.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  */
 
@@ -306,7 +306,7 @@ static void consoleInit(void)
  * Kinetis UART device driver.
  * Also initialize the timer device driver, if required.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _InitHardware(void)

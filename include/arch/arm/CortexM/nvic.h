@@ -91,7 +91,7 @@ Supports up to 240 IRQs and 256 priority levels.
  *
  * Enable IRQ #<irq>, which is equivalent to exception #<irq>+16
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _NvicIrqEnable(unsigned int irq /* IRQ number */
@@ -106,7 +106,7 @@ static inline void _NvicIrqEnable(unsigned int irq /* IRQ number */
  *
  * Find out if IRQ #<irq> is enabled.
  *
- * RETURNS: 1 if IRQ is enabled, 0 otherwise
+ * @return 1 if IRQ is enabled, 0 otherwise
  */
 
 static inline int _NvicIsIrqEnabled(unsigned int irq /* IRQ number */
@@ -121,7 +121,7 @@ static inline int _NvicIsIrqEnabled(unsigned int irq /* IRQ number */
  *
  * Disable IRQ #<irq>, which is equivalent to exception #<irq>+16
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _NvicIrqDisable(unsigned int irq /* IRQ number */
@@ -138,7 +138,7 @@ static inline void _NvicIrqDisable(unsigned int irq /* IRQ number */
  * the IRQ when interrupts are enabled and/or returning from a higher priority
  * interrupt.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _NvicIrqPend(unsigned int irq /* IRQ number */
@@ -153,7 +153,7 @@ static inline void _NvicIrqPend(unsigned int irq /* IRQ number */
  *
  * Find out if IRQ #<irq> is pending
  *
- * RETURNS: 1 if IRQ is pending, 0 otherwise
+ * @return 1 if IRQ is pending, 0 otherwise
  */
 
 static inline int _NvicIsIrqPending(unsigned int irq /* IRQ number */
@@ -170,7 +170,7 @@ static inline int _NvicIsIrqPending(unsigned int irq /* IRQ number */
  * pending interrupt will be ignored when either unlocking interrupts or
  * returning from a higher priority exception.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _NvicIrqUnpend(unsigned int irq /* IRQ number */
@@ -185,7 +185,7 @@ static inline void _NvicIrqUnpend(unsigned int irq /* IRQ number */
  *
  * Set priority of IRQ #<irq> to <prio>. There are 256 priority levels.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _NvicIrqPrioSet(unsigned int irq, /* IRQ number */
@@ -202,7 +202,7 @@ static inline void _NvicIrqPrioSet(unsigned int irq, /* IRQ number */
  *
  * Get priority of IRQ #<irq>.
  *
- * RETURNS: the priority level of the IRQ
+ * @return the priority level of the IRQ
  */
 
 static inline uint32_t _NvicIrqPrioGet(unsigned int irq /* IRQ number */
@@ -218,7 +218,7 @@ static inline uint32_t _NvicIrqPrioGet(unsigned int irq /* IRQ number */
  * Trigger interrupt #<irq>. The CPU will handle the IRQ when interrupts are
  * enabled and/or returning from a higher priority interrupt.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static inline void _NvicSwInterruptTrigger(unsigned int irq /* IRQ number */

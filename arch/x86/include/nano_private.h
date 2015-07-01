@@ -768,7 +768,7 @@ extern tNANO _nanokernel;
  * Trivial stuff is done inline; more complex initialization is done via
  * function calls.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -817,7 +817,7 @@ static inline void nanoArchInit(void)
  * set to <value>.  It is assumed that the specified <fiber> is pending, and
  * thus the fibers context is stored in its tCCS structure.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

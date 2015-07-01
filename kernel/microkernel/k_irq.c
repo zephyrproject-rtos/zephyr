@@ -116,7 +116,7 @@ extern const kevent_t _TaskIrqEvt0_objId;
  * This ISR does not facilitate an int acknowledgment as it presumes that an
  * End of Interrupt (EOI) routine is provided by the PIC that is being used.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void task_irq_int_handler(
@@ -137,7 +137,7 @@ static void task_irq_int_handler(
  * is flushed; the object's interrupt vector is then freed, and the object's
  * global array entry is marked as unused.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_irq_free(kirq_t irq_obj /* IRQ object identifier */
@@ -159,7 +159,7 @@ void task_irq_free(kirq_t irq_obj /* IRQ object identifier */
  *
  * This re-enables the interrupt for a task IRQ object.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void task_irq_ack(kirq_t irq_obj /* IRQ object identifier */
@@ -178,7 +178,7 @@ void task_irq_ack(kirq_t irq_obj /* IRQ object identifier */
  *
  * This tests a task IRQ object to see if it has signalled an interrupt.
  *
- * RETURNS: RC_OK, RC_FAIL, or RC_TIME
+ * @return RC_OK, RC_FAIL, or RC_TIME
  */
 
 int _task_irq_test(kirq_t irq_obj, /* IRQ object identifier */
@@ -198,7 +198,7 @@ int _task_irq_test(kirq_t irq_obj, /* IRQ object identifier */
  *
  * This routine allocates a task IRQ object to a task.
  *
- * RETURNS: ptr to allocated task IRQ object if successful, NULL if not
+ * @return ptr to allocated task IRQ object if successful, NULL if not
  */
 
 static int _k_task_irq_alloc(
@@ -245,7 +245,7 @@ static int _k_task_irq_alloc(
  * IRQ allocation is done via K_swapper so that simultaneous allocation
  * requests are single-threaded.
  *
- * RETURNS: assigned interrupt vector if successful, INVALID_VECTOR if not
+ * @return assigned interrupt vector if successful, INVALID_VECTOR if not
  */
 
 uint32_t task_irq_alloc(

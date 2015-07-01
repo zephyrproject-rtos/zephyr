@@ -40,7 +40,7 @@
  * This routine simply invokes the requested function from within the context
  * of the K_swapper() fiber and saves the result.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_offload_to_fiber(struct k_args *A)
@@ -58,7 +58,7 @@ void _k_offload_to_fiber(struct k_args *A)
  * This routine issues a request to execute a function from within the context
  * of the K_swapper() fiber.
  *
- * RETURNS: return value from custom <func> call
+ * @return return value from custom <func> call
  */
 
 int task_offload_to_fiber(int (*func)(), void *argp)

@@ -73,7 +73,7 @@ uint32_t _k_test_cmd_pkt_size
  *
  * This routine gets the next command packet from the specified set.
  *
- * RETURNS: pointer to the command packet
+ * @return pointer to the command packet
  */
 
 cmdPkt_t *_cmd_pkt_get(
@@ -97,7 +97,7 @@ cmdPkt_t *_cmd_pkt_get(
  *
  * _k_task_call - send command packet to be processed by K_swapper
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_task_call(struct k_args *cmd_packet)

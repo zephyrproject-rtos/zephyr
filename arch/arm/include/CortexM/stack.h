@@ -75,7 +75,7 @@ extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
  * On Cortex-M, the interrupt stack is registered in the MSP (main stack
  * pointer) register, and switched to automatically when taking an exception.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

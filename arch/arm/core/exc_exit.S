@@ -84,7 +84,7 @@ GDATA(_nanokernel)
  *     _IntExit();
  *     }
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
@@ -99,7 +99,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
  *
  * See _IntExit().
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)

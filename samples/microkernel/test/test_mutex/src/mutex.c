@@ -79,7 +79,7 @@ static int tcRC = TC_PASS;         /* test case return code */
  *
  * Task10 -
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void Task10(void)
@@ -102,7 +102,7 @@ void Task10(void)
  *
  * Task15 -
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void Task15(void)
@@ -134,7 +134,7 @@ void Task15(void)
  *
  * Task20 -
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void Task20(void)
@@ -164,7 +164,7 @@ void Task20(void)
  *
  * Task25 -
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void Task25(void)
@@ -187,7 +187,7 @@ void Task25(void)
  *
  * Task30 -
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void Task30(void)
@@ -218,7 +218,7 @@ void Task30(void)
  *
  * Task45 -
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void Task45(void)
@@ -241,7 +241,7 @@ void Task45(void)
  *
  * This task will lock on Mutex1, Mutex2, Mutex3 and Mutex4.
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 void RegressionTask(void)

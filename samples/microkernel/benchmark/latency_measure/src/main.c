@@ -48,7 +48,7 @@ int errorCount = 0; /* track number of errors */
  *
  * nanoTest - test latency of nanokernel
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -79,7 +79,7 @@ void nanoTest(void)
  *
  * main - nanokernel-only testing entry point
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -106,7 +106,7 @@ void microTaskSwitchYield(void);
  *
  * microTest - test latency of microkernel
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -136,7 +136,7 @@ void microTest(void)
  *
  * main - microkernel testing entry point
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

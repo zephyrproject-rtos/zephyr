@@ -246,7 +246,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
  * to <value>.  It is assumed that the specified <fiber> is pending, and thus
  * the fiber's context is stored in its tCCS structure.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -260,7 +260,7 @@ static ALWAYS_INLINE void fiberRtnValueSet(tCCS *fiber, unsigned int value)
  *
  * _IS_IN_ISR - indicates if kernel is handling interrupt
  *
- * RETURNS: 1 if interrupt handler is executed, 0 otherwise
+ * @return 1 if interrupt handler is executed, 0 otherwise
  *
  * \NOMANUAL
  */

@@ -69,7 +69,7 @@ extern const int _k_num_events; /* non-public microkernel global variable */
  *
  * isr_event_signal_handler - ISR handler to signal an event
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_event_signal_handler(void *data)
@@ -83,7 +83,7 @@ void isr_event_signal_handler(void *data)
  *
  * releaseTestFiber - release the test fiber
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void releaseTestFiber(void)
@@ -95,7 +95,7 @@ void releaseTestFiber(void)
  *
  * microObjectsInit - initialize objects used in this microkernel test suite
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void microObjectsInit(void)
@@ -121,7 +121,7 @@ void microObjectsInit(void)
  * of the event gets confirmed by the order in which the latter two checks are
  * done.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int eventNoWaitTest(void)
@@ -166,7 +166,7 @@ int eventNoWaitTest(void)
  *  2. The current task must wait on the event until it is signalled
  *     from either another task, an ISR or a fiber.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int eventWaitTest(void)
@@ -239,7 +239,7 @@ int eventWaitTest(void)
  *  3. The current task must wait on the event until it is signalled
  *     from either another task, an ISR or a fiber.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int eventTimeoutTest(void)
@@ -289,7 +289,7 @@ int eventTimeoutTest(void)
  * "queue" events.  That is, should two or more signals of the same event occur
  * before it is tested, it can only be tested for successfully once.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int isrEventSignalTest(void)
@@ -330,7 +330,7 @@ int isrEventSignalTest(void)
  * events.  That is, should two or more signals of the same event occur before
  * it is tested, it can only be tested for successfully once.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int fiberEventSignalTest(void)
@@ -365,7 +365,7 @@ int fiberEventSignalTest(void)
  *
  * @param event    signalled event
  *
- * RETURNS: <handlerRetVal>
+ * @return <handlerRetVal>
  */
 
 int eventHandler(int event)
@@ -383,7 +383,7 @@ int eventHandler(int event)
  *
  * @param event    signalled event
  *
- * RETURNS: 1
+ * @return 1
  */
 
 int altEventHandler(int event)
@@ -404,7 +404,7 @@ int altEventHandler(int event)
  * to the specified event and that the return value from the handler affects
  * whether the event wakes a task waiting upon that event.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int eventSignalHandlerTest(void)
@@ -522,7 +522,7 @@ int eventSignalHandlerTest(void)
  *
  * AlternateTask - alternate task to signal various events to a waiting task
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void AlternateTask(void)
@@ -560,7 +560,7 @@ void AlternateTask(void)
  *
  * RegressionTask - main entry point to the test suite
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void RegressionTask(void)

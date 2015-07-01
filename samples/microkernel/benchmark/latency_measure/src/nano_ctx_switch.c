@@ -71,7 +71,7 @@ static volatile int ctxSwitchBalancer = 0;
  * Fiber makes all the test preparations: registers the interrupt handler,
  * gets the first timestamp and invokes the software interrupt.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -95,7 +95,7 @@ static void fiberOne(void)
  * Fiber starts, waits on semaphore. When the interrupt handler releases
  * the semaphore, fiber measures the time.
  *
- * RETURNS: 0 on success
+ * @return 0 on success
  *
  * \NOMANUAL
  */
@@ -114,7 +114,7 @@ static void fiberTwo(void)
  *
  * nanoCtxSwitch - the test main function
  *
- * RETURNS: 0 on success
+ * @return 0 on success
  *
  * \NOMANUAL
  */

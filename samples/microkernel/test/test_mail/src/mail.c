@@ -99,7 +99,7 @@ extern kmemory_pool_t smallBlkszPool;
  * @param dataSize       Size of (optional) buffer to send.
  * @param info           Additional (optional) info to send.
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 static void setMsg_Sender(struct k_msg *inMsg, kmbox_t inMbox, ktask_t receiverTask,
@@ -128,7 +128,7 @@ static void setMsg_Sender(struct k_msg *inMsg, kmbox_t inMbox, ktask_t receiverT
  * @param inBuffer       Incoming data area
  * @param inBufferSize   Size of incoming data area.
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 static void setMsg_Receiver(struct k_msg *inMsg, kmbox_t inMbox, ktask_t senderTask,
@@ -151,7 +151,7 @@ static void setMsg_Receiver(struct k_msg *inMsg, kmbox_t inMbox, ktask_t senderT
  * @param inBuffer       Incoming data area.
  * @param inBufferSize   Size of incoming data area.
  *
- * RETURNS:  N/A
+ * @return  N/A
  */
 
 static void setMsg_RecvBuf(struct k_msg *inMsg, char *inBuffer, uint32_t inBufferSize)
@@ -169,7 +169,7 @@ static void setMsg_RecvBuf(struct k_msg *inMsg, char *inBuffer, uint32_t inBuffe
  *
  * This routine exercises the task_mbox_put[_wait[_timeout]] APIs.
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int MsgSenderTask(void)
@@ -364,7 +364,7 @@ int MsgSenderTask(void)
  *
  * This routine exercises the task_mbox_get[_wait[_timeout]] and task_mbox_data_get[xxx] APIs.
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int MsgRcvrTask(void)

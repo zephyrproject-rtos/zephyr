@@ -81,7 +81,7 @@ static char __stack fiberStack[512];
  *
  * This routine is the ISR handler for _trigger_isrHandler().
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void isr_handler(void)
@@ -106,7 +106,7 @@ void isr_handler(void)
  * done, then control goes back to the offending instruction and an infinite
  * loop of divide-by-zero errors would be created.)
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void exc_divide_error_handler(NANO_ESF *pEsf)
@@ -123,7 +123,7 @@ void exc_divide_error_handler(NANO_ESF *pEsf)
  * This test examines the IDT and verifies that the static interrupt and
  * exception stubs are installed at the correct place.
  *
- * RETURNS: TC_PASS on success, TC_FAIL on failure
+ * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int nanoIdtStubTest(void)
@@ -176,7 +176,7 @@ int nanoIdtStubTest(void)
  *
  * idtSpurTask/Fiber - task/fiber to test spurious handlers
  *
- * RETURNS: 0
+ * @return 0
  */
 
 #ifdef CONFIG_MICROKERNEL
@@ -205,7 +205,7 @@ static void idtSpurFiber(int a1, int a2)
  *
  * This is the entry point to the static IDT tests.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 #ifdef CONFIG_MICROKERNEL

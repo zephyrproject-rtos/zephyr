@@ -65,7 +65,7 @@
  * disable state will be restored when the context is later rescheduled
  * for execution.
  *
- * RETURNS: An architecture-dependent lock-out key representing the
+ * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
  *
  * \NOMANUAL
@@ -85,7 +85,7 @@ SECTION_FUNC(TEXT, irq_lock)
  *
  * This routine can be called from either interrupt, task or fiber level.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

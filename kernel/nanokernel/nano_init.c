@@ -158,7 +158,7 @@ static void _main(void)
  * Note that all fields of "_nanokernel" are set to zero on entry, which may
  * be all the initialization many of them require.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void nano_init(tCCS *dummyOutContext)
@@ -262,7 +262,7 @@ extern void *__stack_chk_guard;
  * The processor must be running in 32-bit mode, and the BSS must have been
  * cleared/zeroed.
  *
- * RETURNS: Does not return
+ * @return Does not return
  */
 
 FUNC_NORETURN void _Cstart(void)

@@ -61,7 +61,7 @@ volatile long longOne = 1L;
  *
  * limitsTest - test implementation-defined constants library
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int limitsTest(void)
@@ -79,7 +79,7 @@ int limitsTest(void)
  *
  * stdboolTest - test boolean types and values library
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int stdboolTest(void)
@@ -105,7 +105,7 @@ volatile size_t sizeOfLongVariable = sizeof(longVariable);
  *
  * stddefTest - test standard type definitions library
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int stddefTest(void)
@@ -131,7 +131,7 @@ volatile uint32_t unsignedInt = 0xffffff00;
  *
  * stdintTest - test integer types library
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int stdintTest(void)
@@ -157,7 +157,7 @@ char buffer[BUFSIZE];
  *
  * memset_test - test string memset
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int memset_test(void)
@@ -178,7 +178,7 @@ int memset_test(void)
  *
  * strlen_test - test string length function
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int strlen_test(void)
@@ -200,7 +200,7 @@ int strlen_test(void)
  *
  * strcmp_test - test string compare function
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int strcmp_test(void)
@@ -238,7 +238,7 @@ int strcmp_test(void)
  *
  * strncmp_test - test string N compare function
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int strncmp_test(void)
@@ -277,7 +277,7 @@ int strncmp_test(void)
  *
  * strcpy_test - test string copy function
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int strcpy_test(void)
@@ -300,7 +300,7 @@ int strcpy_test(void)
  *
  * strncpy_test - test string N copy function
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int strncpy_test(void)
@@ -324,7 +324,7 @@ int strncpy_test(void)
  *
  * strchr_test - test string scanning function
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int strchr_test(void)
@@ -355,7 +355,7 @@ int strchr_test(void)
  *
  * memcmp_test - test memory comparison function
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int memcmp_test(void)
@@ -382,7 +382,7 @@ int memcmp_test(void)
 /**
  *
  * stringTest - test string operations library
- * * RETURNS: TC_PASS or TC_FAIL
+ * * @return TC_PASS or TC_FAIL
  */
 
 int stringTest(void)
@@ -406,7 +406,7 @@ int stringTest(void)
  * suite. It tests each library in turn until a failure is detected or all
  * libraries have been tested successfully.
  *
- * RETURNS: TC_PASS or TC_FAIL
+ * @return TC_PASS or TC_FAIL
  */
 
 int RegressionTask(void)

@@ -61,7 +61,7 @@ static atomic_val_t _rand32_counter = 0;
  * This routine is automatically invoked by the kernel during system
  * initialization.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 
@@ -77,7 +77,7 @@ void sys_rand32_init(void)
  * target's clock counter, which means that successive calls will return
  * different values.
  *
- * RETURNS: a 32-bit number
+ * @return a 32-bit number
  */
 
 uint32_t sys_rand32_get(void)

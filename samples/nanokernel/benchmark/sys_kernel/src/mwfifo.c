@@ -42,7 +42,7 @@ static struct nano_fifo nanoFifo_sync; /* for synchronization */
  *
  * fifo_test_init - initialize FIFOs for the test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -58,7 +58,7 @@ void fifo_test_init(void)
  *
  * fifo_fiber1 - fifo test context
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * @param par1   Ignored parameter.
  * @param par2   Number of test loops.
@@ -90,7 +90,7 @@ void fifo_fiber1(int par1, int par2)
  *
  * fifo_fiber2 - fifo test context
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
@@ -123,7 +123,7 @@ void fifo_fiber2(int par1, int par2)
  *
  * fifo_fiber3 - fifo test context
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
@@ -158,7 +158,7 @@ void fifo_fiber3(int par1, int par2)
  *
  * fifo_test - the main test entry
  *
- * RETURNS: 1 if success and 0 on failure
+ * @return 1 if success and 0 on failure
  *
  * \NOMANUAL
  */

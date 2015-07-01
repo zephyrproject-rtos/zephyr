@@ -38,7 +38,7 @@
  *
  * mutex_test - mutex lock/unlock test
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */

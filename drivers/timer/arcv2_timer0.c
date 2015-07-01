@@ -77,7 +77,7 @@ static uint32_t clock_accumulated_count = 0;
  * - setting the timer's start value to zero; and
  * - enabling interrupt generation.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -102,7 +102,7 @@ static ALWAYS_INLINE void enable(
  * This routine gets the value from the timer's count register.  This
  * value is the 'time' elapsed from the starting count (assumed to be 0).
  *
- * RETURNS: the current counter value
+ * @return the current counter value
  *
  * \NOMANUAL
  */
@@ -118,7 +118,7 @@ static ALWAYS_INLINE uint32_t count_get(void)
  * This routine gets the value from the timer's limit register, which is the
  * value to which the timer will count up to.
  *
- * RETURNS: the limit value
+ * @return the limit value
  *
  * \NOMANUAL
  */
@@ -134,7 +134,7 @@ static ALWAYS_INLINE uint32_t limit_get(void)
  * This routine handles the system clock periodic tick interrupt.  A TICK_EVENT
  * event is pushed onto the microkernel stack.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -160,7 +160,7 @@ void _timer_int_handler(void *unused)
  * This routine is used to program the ARCv2 timer to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_driver(
@@ -195,7 +195,7 @@ void timer_driver(
  *
  * This routine returns the current time in terms of timer hardware clock cycles.
  *
- * RETURNS: up counter of elapsed clock cycles
+ * @return up counter of elapsed clock cycles
  */
 
 uint32_t timer_read(void)
@@ -211,7 +211,7 @@ uint32_t timer_read(void)
  * This routine disables timer interrupt generation and delivery.
  * Note that the timer's counting cannot be stopped by software.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void timer_disable(void)

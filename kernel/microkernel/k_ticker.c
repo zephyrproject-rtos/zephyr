@@ -79,7 +79,7 @@ int sys_clock_hw_cycles_per_tick;
  * "high resolution" timer.  This is in contrast to nano_tick_get_32() and
  * task_tick_get_32() which return the value of the kernel ticks variable.
  *
- * RETURNS: current high precision clock value
+ * @return current high precision clock value
  */
 
 uint32_t task_cycle_get_32(void)
@@ -94,7 +94,7 @@ uint32_t task_cycle_get_32(void)
  * This routine returns the lower 32-bits of the current system clock value
  * as measured in ticks.
  *
- * RETURNS: lower 32-bit of the current system clock value
+ * @return lower 32-bit of the current system clock value
  */
 
 int32_t task_tick_get_32(void)
@@ -111,7 +111,7 @@ int32_t task_tick_get_32(void)
  * Interrupts are locked while updating clock since some CPUs do not support
  * native atomic operations on 64 bit values.
  *
- * RETURNS: current system clock value
+ * @return current system clock value
  */
 
 int64_t task_tick_get(void)
@@ -131,7 +131,7 @@ int64_t task_tick_get(void)
  * Interrupts are locked while updating clock since some CPUs do not support
  * native atomic operations on 64 bit values.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 static void sys_clock_increment(int inc)
@@ -149,7 +149,7 @@ static void sys_clock_increment(int inc)
  * If task level debugging is configured this routine updates the low resolution
  * debugging timer and determines if task level processing should be suspended.
  *
- * RETURNS: 0 if task level processing should be halted or 1 if not
+ * @return 0 if task level processing should be halted or 1 if not
  *
  * \NOMANUAL
  */
@@ -173,7 +173,7 @@ static inline int _TlDebugUpdate(int32_t ticks)
  * This routine checks to see if it is time for the current task
  * to relinquish control, and yields CPU if so.
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -203,7 +203,7 @@ static inline void _TimeSliceUpdate(void)
  * tick counter.
  * If tickless idle support is not configured in it simply returns 1.
  *
- * RETURNS: number of ticks to process
+ * @return number of ticks to process
  *
  * \NOMANUAL
  */
@@ -232,7 +232,7 @@ static inline int32_t _SysIdleElapsedTicksGet(void)
  * This routine informs other microkernel subsystems that a tick event has
  * occurred.
  *
- * RETURNS: 1
+ * @return 1
  */
 
 int _k_ticker(int event)
@@ -282,7 +282,7 @@ int _k_ticker(int event)
  *
  * To disable timeslicing, call the API with both parameters set to zero.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
@@ -300,7 +300,7 @@ void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
  * This routine, called by K_swapper(), handles the request for calculating the
  * time elapsed since the specified reference time.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _k_time_elapse(struct k_args *P)
@@ -328,7 +328,7 @@ void _k_time_elapse(struct k_args *P)
  *
  * Note that it is not necessary to allocate a timer to use this call.
  *
- * RETURNS: elapsed time in system ticks
+ * @return elapsed time in system ticks
  */
 
 int64_t task_tick_delta(int64_t *reftime /* pointer to reference time */

@@ -56,7 +56,7 @@ extern void __reserved(void);
  * This routine will hang if <old> is not found in the table and ASSERT_ON is
  * enabled.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_handler_set(unsigned int irq,
@@ -84,7 +84,7 @@ void irq_handler_set(unsigned int irq,
  * line. After this call, the CPU will receive interrupts for the specified
  * <irq>.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_enable(unsigned int irq)
@@ -101,7 +101,7 @@ void irq_enable(unsigned int irq)
  * Disable an interrupt line. After this call, the CPU will stop receiving
  * interrupts for the specified <irq>.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_disable(unsigned int irq)
@@ -121,7 +121,7 @@ void irq_disable(unsigned int irq)
  *
  * The priority is verified if ASSERT_ON is enabled.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_priority_set(unsigned int irq,
@@ -140,7 +140,7 @@ void irq_priority_set(unsigned int irq,
  *
  * See __reserved().
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void _irq_spurious(void *unused)
@@ -159,7 +159,7 @@ void _irq_spurious(void *unused)
  * This routine will hang if another ISR was connected for interrupt line <irq>
  * and ASSERT_ON is enabled; if ASSERT_ON is disabled, it will fail silently.
  *
- * RETURNS: the interrupt line number
+ * @return the interrupt line number
  */
 
 int irq_connect(unsigned int irq,
@@ -180,7 +180,7 @@ int irq_connect(unsigned int irq,
  * the latter is replaced by _irq_spurious(). irq_disable() should have
  * been called before invoking this routine.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 void irq_disconnect(unsigned int irq)

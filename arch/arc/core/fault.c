@@ -65,7 +65,7 @@
  * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 1
  * (short form).
  *
- * RETURNS: N/A
+ * @return N/A
  *
  * \NOMANUAL
  */
@@ -92,7 +92,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
  * invokes the user provided routine _SysFatalErrorHandler() which is
  * responsible for implementing the error handling policy.
  *
- * RETURNS: This function does not return.
+ * @return This function does not return.
  *
  * \NOMANUAL
  */

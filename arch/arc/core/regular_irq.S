@@ -59,7 +59,7 @@ GTEXT(_rirq_exit)
  *
  * Assumption by _isr_demux: r3 is untouched by _rirq_enter.
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _rirq_enter)
@@ -79,7 +79,7 @@ SECTION_FUNC(TEXT, _rirq_enter)
  *
  * _rirq_exit - work to be done exiting an IRQ
  *
- * RETURNS: N/A
+ * @return N/A
  */
 
 SECTION_FUNC(TEXT, _rirq_exit)
