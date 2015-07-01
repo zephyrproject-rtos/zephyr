@@ -608,6 +608,32 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static uint8_t smp_pairing_failed(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_pairing_fail *req = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
+
+	BT_ERR("reason 0x%x\n", req->reason);
+
+	/* TODO report error
+	 * for now this to avoid warning about unused variable when debugs are
+	 * disabled
+	 */
+	ARG_UNUSED(req);
+
+	atomic_set(&smp->allowed_cmds, 0);
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+	} else {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+	}
+
+	/* return no error to avoid sending Pairing Failed in response */
+	return 0;
+}
+
 static void bt_smp_distribute_keys(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
@@ -820,7 +846,7 @@ static const struct {
 	{ smp_pairing_rsp,         sizeof(struct bt_smp_pairing) },
 	{ smp_pairing_confirm,     sizeof(struct bt_smp_pairing_confirm) },
 	{ smp_pairing_random,      sizeof(struct bt_smp_pairing_random) },
-	{ }, /* Pairing Failed - Not yet implemented */
+	{ smp_pairing_failed,      sizeof(struct bt_smp_pairing_fail) },
 	{ smp_pairing_encrypt,     sizeof(struct bt_smp_encrypt_info) },
 	{ smp_pairing_master,      sizeof(struct bt_smp_master_ident) },
 	{ smp_ident_info,          sizeof(struct bt_smp_ident_info) },
@@ -895,6 +921,8 @@ static void bt_smp_connected(struct bt_conn *conn)
 
 		smp->conn = conn;
 		conn->smp = smp;
+
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
 		if (conn->role == BT_HCI_ROLE_MASTER) {
 			atomic_set_bit(&smp->allowed_cmds,
