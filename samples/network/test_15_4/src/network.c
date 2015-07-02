@@ -48,8 +48,33 @@
 #include "contiki/ipv6/uip-ds6-route.h"  /* to set the route */
 #include "contiki/ipv6/uip-ds6-nbr.h"    /* to set the neighbor cache */
 
-const static struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT; /* ::1 */
-const static struct in6_addr in6addr_any = IN6ADDR_ANY_INIT; /* ::  */
+#if 0
+#define SRC_IPADDR  { { { 0xfe,0x80,0,0,0,0,0,0,0x08,0xbe,0xef,0x2d,0xbc,0x15,0xf0,0x0d } } }
+#define DEST_IPADDR { { { 0xfe,0x80,0,0,0,0,0,0,0x08,0xbe,0xef,0x2d,0xbc,0x15,0xf0,0x0d } } }
+#define SRC_PORT       0xF0B1
+#define DEST_PORT      0xF0B0
+
+const struct in6_addr in6addr_src = SRC_IPADDR;
+const struct in6_addr in6addr_dest = DEST_IPADDR;
+
+/* source mac address */
+uint8_t src_mac[] = { 0x0a, 0xbe, 0xef, 0x2d, 0xbc, 0x15, 0xf0, 0x0d };
+/* destincation mac address */
+const uip_lladdr_t dest_mac = { { 0x0a, 0xbe, 0xef, 0x2d, 0xbc, 0x15, 0xf0, 0x0d } };
+
+#else
+
+#define SRC_PORT       0
+#define DEST_PORT      4242
+
+const struct in6_addr in6addr_src = IN6ADDR_ANY_INIT; /* ::  */
+const struct in6_addr in6addr_dest = IN6ADDR_LOOPBACK_INIT;  /* ::1 */
+/* source mac address */
+uint8_t src_mac[] = { 0x0a, 0xbe, 0xef, 0x2d, 0xbc, 0x15, 0xf0, 0x0d };
+/* destincation mac address */
+const uip_lladdr_t dest_mac = { };
+
+#endif
 
 static struct net_addr loopback_addr;
 static struct net_addr any_addr;
@@ -70,28 +95,24 @@ static const char *lorem_ipsum =
 	"Donec vehicula magna ut varius aliquam. Ut vitae commodo nulla, quis ornare dolor. Nulla tortor sem, venenatis eu iaculis id, commodo ut massa. Sed est lorem, euismod vitae enim sed, hendrerit gravida felis. Donec eros lacus, auctor ut ultricies eget, lobortis quis nisl. Aliquam sit amet blandit eros. Interdum et malesuada fames ac ante ipsum primis in faucibus. Quisque egestas nisl leo, sed consectetur leo ornare eu. Suspendisse vitae urna vel purus maximus finibus. Proin sed sollicitudin turpis. Mauris interdum neque eu tellus pellentesque, id fringilla nisi fermentum. Suspendisse gravida pharetra sodales orci aliquam";
 #endif
 
-static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
-
 static inline void init_test()
 {
 	PRINT("%s: run 802.15.4 loopback tester\n", __FUNCTION__);
 
-	net_set_mac(my_mac, sizeof(my_mac));
+	net_set_mac(src_mac, sizeof(src_mac));
 }
 
 static void set_routes()
 {
-	const uip_lladdr_t null_addr = { };
-
 	/* Workaround to get packets from this task to listening fiber.
 	 * Do not attempt to do anything like this in live environment.
 	 */
-	if (!uip_ds6_nbr_add((uip_ipaddr_t *)&in6addr_loopback,
-					&null_addr, 0, NBR_REACHABLE))
+	if (!uip_ds6_nbr_add((uip_ipaddr_t *)&in6addr_dest,
+					&dest_mac, 0, NBR_REACHABLE))
 		PRINT("Cannot add neighbor cache\n");
 
-	if (!uip_ds6_route_add((uip_ipaddr_t *)&in6addr_loopback, 128,
-					(uip_ipaddr_t *)&in6addr_loopback))
+	if (!uip_ds6_route_add((uip_ipaddr_t *)&in6addr_dest, 128,
+					(uip_ipaddr_t *)&in6addr_dest))
 		PRINT("Cannot add localhost route\n");
 }
 
@@ -174,8 +195,6 @@ static struct net_context *get_context(const struct net_addr *remote,
 #define SLEEPTIME  500
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
-#define TASK_IPADDR { { { 0xaa,0xaa,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
-
 /*
  *
  * @param taskname    task identification string
@@ -204,13 +223,13 @@ void taskA(void)
 	net_init();
 	init_test();
 
-	any_addr.in6_addr = in6addr_any;
+	any_addr.in6_addr = in6addr_src;
 	any_addr.family = AF_INET6;
 
-	loopback_addr.in6_addr = in6addr_loopback;
+	loopback_addr.in6_addr = in6addr_dest;
 	loopback_addr.family = AF_INET6;
 
-	ctx = get_context(&any_addr, 0, &loopback_addr, 4242);
+	ctx = get_context(&any_addr, SRC_PORT, &loopback_addr, DEST_PORT);
 	if (!ctx) {
 		PRINT("%s: Cannot get network context\n", __FUNCTION__);
 		return;
@@ -240,7 +259,8 @@ void taskB(void)
 {
 	struct net_context *ctx;
 
-	ctx = get_context(&loopback_addr, 4242, &any_addr, 0);
+	set_mac();
+	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
 		PRINT("%s: Cannot get network context\n", __FUNCTION__);
 		return;
@@ -279,7 +299,7 @@ void fiberEntry(void)
 	uint32_t data[2] = {0, 0};
 	struct net_context *ctx;
 
-	ctx = get_context(&any_addr, 0, &loopback_addr, 4242);
+	ctx = get_context(&any_addr, SRC_PORT, &loopback_addr, DEST_PORT);
 	if (!ctx) {
 		PRINT("%s: Cannot get network context\n", __FUNCTION__);
 		return;
@@ -312,13 +332,14 @@ void main(void)
 	net_init();
 	init_test();
 
-	any_addr.in6_addr = in6addr_any;
+	any_addr.in6_addr = in6addr_src;
 	any_addr.family = AF_INET6;
 
-	loopback_addr.in6_addr = in6addr_loopback;
+	loopback_addr.in6_addr = in6addr_dest;
 	loopback_addr.family = AF_INET6;
 
-	ctx = get_context(&loopback_addr, 4242, &any_addr, 0);
+	set_mac();
+	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
 		PRINT("Cannot get network context\n");
 		return;
