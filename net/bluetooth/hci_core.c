@@ -1482,6 +1482,7 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 	conn = bt_conn_lookup_addr_le(peer);
 	if (conn) {
 		switch (conn->state) {
+		case BT_CONN_CONNECT_SCAN:
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return conn;
@@ -1548,6 +1549,12 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 int bt_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	switch (conn->state) {
+	case BT_CONN_CONNECT_SCAN:
+		/* TODO
+		 * 1. set bt_conn state to BT_CONN_DISCONNECTED
+		 * 2. stop passive scanning if there is no more conns
+		 *    in BT_CONN_CONNECT_SCAN state
+		 */
 	case BT_CONN_CONNECT:
 		return bt_hci_connect_le_cancel(conn);
 	case BT_CONN_CONNECTED:

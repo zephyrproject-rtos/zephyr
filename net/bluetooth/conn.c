@@ -62,6 +62,8 @@ static const char *state2str(bt_conn_state_t state)
 	switch (state) {
 	case BT_CONN_DISCONNECTED:
 		return "disconnected";
+	case BT_CONN_CONNECT_SCAN:
+		return "connect-scan";
 	case BT_CONN_CONNECT:
 		return "connect";
 	case BT_CONN_CONNECTED:
@@ -327,6 +329,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		bt_conn_put(conn);
 
 		break;
+	case BT_CONN_CONNECT_SCAN:
 	case BT_CONN_CONNECT:
 	case BT_CONN_DISCONNECT:
 
