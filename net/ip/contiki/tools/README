@@ -33,6 +33,41 @@ foobar
 EOF
 
 
+tunslip
+=======
+
+tunslip if for IPv4 networks and it can be used in host side
+to create a tun device that is connected to a unix socket that
+qemu is providing. This way it is possible to pass packets
+between host and target system via slip protocol.
+
+You need to connect tunslip to the second qemu serial line
+through a UNIX socket (qemu option -serial unix:/tmp/slip-socket).
+
+1) Start socat
+
+$ socat PTY,link=/tmp/slip.dev UNIX-LISTEN:/tmp/slip.sock
+
+2) Start qemu, use the listener demo app. Note that you need to
+   set CONFIG_NETWORKING_UART=y in your configuration.
+
+   You might need to set the BSP and ARCH like this if simple_uart
+   driver is not found in your default BSP.
+
+$ make BSP=ti_lm3s6965 ARCH=arm \
+     QEMU_EXTRA_FLAGS="-serial none -serial unix:/tmp/slip.sock" qemu
+
+3) Start tunslip
+
+$ sudo ./tunslip -s `readlink /tmp/slip.dev` 192.0.2.1 255.255.255.0
+
+4) Send data to listener
+
+$ nc -u 192.0.2.2 4242 <<EOF
+foobar
+EOF
+
+
 echo-client
 ===========
 
