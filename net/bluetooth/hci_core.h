@@ -71,6 +71,7 @@ struct bt_dev {
 
 	/* Scanning state */
 	uint8_t			scan_enable;
+	uint8_t			scan_filter;
 
 	/* Controller buffer information */
 	uint8_t			le_pkts;

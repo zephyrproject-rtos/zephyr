@@ -687,6 +687,27 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
 
+/* Used to determine whether to start scan and which scan type should be used */
+static void trigger_scan(void)
+{
+	struct bt_conn *conn;
+
+	if (scan_dev_found_cb) {
+		bt_hci_start_scanning(BT_LE_SCAN_ACTIVE, dev.scan_filter);
+		return;
+	}
+
+	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
+	if (!conn) {
+		return;
+	}
+
+	bt_conn_put(conn);
+
+	bt_hci_start_scanning(BT_LE_SCAN_PASSIVE,
+			      BT_LE_SCAN_FILTER_DUP_DISABLE);
+}
+
 static void le_conn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
@@ -740,6 +761,31 @@ static void le_conn_complete(struct bt_buf *buf)
 	}
 
 	bt_connected(conn);
+	trigger_scan();
+}
+
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
+			 const uint8_t *ad, uint8_t len)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_state(addr, BT_CONN_CONNECT_SCAN);
+	if (!conn) {
+		return;
+	}
+
+	if (bt_hci_stop_scanning()) {
+		goto done;
+	}
+
+	if (hci_le_create_conn(addr)) {
+		goto done;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+
+done:
+	bt_conn_put(conn);
 }
 
 static void le_adv_report(struct bt_buf *buf)
@@ -774,6 +820,9 @@ static void le_adv_report(struct bt_buf *buf)
 			scan_dev_found_cb(&addr, rssi, info->evt_type,
 					  info->data, info->length);
 		}
+
+		device_found(&addr, rssi, info->evt_type, info->data,
+			     info->length);
 
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
@@ -1422,12 +1471,21 @@ int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 		return -EALREADY;
 	}
 
+	/* Stop passive scan if enabled*/
+	if (dev.scan_enable) {
+		err = bt_hci_stop_scanning();
+		if (err) {
+			return err;
+		}
+	}
+
 	err = bt_hci_start_scanning(BT_LE_SCAN_ACTIVE, scan_filter);
 	if (err) {
 		return err;
 	}
 
 	scan_dev_found_cb = cb;
+	dev.scan_filter = scan_filter;
 
 	return 0;
 }
@@ -1447,6 +1505,7 @@ int bt_stop_scanning(void)
 	}
 
 	scan_dev_found_cb = NULL;
+	trigger_scan();
 
 	return 0;
 }
@@ -1477,7 +1536,6 @@ int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
 struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn;
-	int err;
 
 	conn = bt_conn_lookup_addr_le(peer);
 	if (conn) {
@@ -1497,13 +1555,8 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 		return NULL;
 	}
 
-	err = hci_le_create_conn(peer);
-	if (err) {
-		bt_conn_put(conn);
-		return NULL;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+	trigger_scan();
 
 	return bt_conn_get(conn);
 
@@ -1548,13 +1601,23 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 
 int bt_disconnect(struct bt_conn *conn, uint8_t reason)
 {
+	struct bt_conn *conn_scan;
+
 	switch (conn->state) {
 	case BT_CONN_CONNECT_SCAN:
-		/* TODO
-		 * 1. set bt_conn state to BT_CONN_DISCONNECTED
-		 * 2. stop passive scanning if there is no more conns
-		 *    in BT_CONN_CONNECT_SCAN state
-		 */
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+
+		conn_scan = bt_conn_lookup_state(BT_ADDR_LE_ANY,
+						 BT_CONN_CONNECT_SCAN);
+		if (!conn_scan && dev.scan_enable && !scan_dev_found_cb) {
+			return bt_hci_stop_scanning();
+		}
+
+		if (conn_scan) {
+			bt_conn_put(conn_scan);
+		}
+
+		return 0;
 	case BT_CONN_CONNECT:
 		return bt_hci_connect_le_cancel(conn);
 	case BT_CONN_CONNECTED:
