@@ -48,6 +48,50 @@ static void set_mac(void)
 	net_set_mac(mac, sizeof(mac));
 }
 
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+#define MYADDR { { { 0xaa,0xaa,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
+#else
+/* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
+#define MYADDR { { { 192,0,2,2 } } }
+#endif
+
+static struct net_context *get_context(void)
+{
+	struct net_context *ctx;
+	static struct net_addr any_addr;
+	static struct net_addr my_addr;
+
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+	static struct in6_addr in6addr_my = MYADDR;
+
+	any_addr.in6_addr = in6addr_any;
+	any_addr.family = AF_INET6;
+
+	my_addr.in6_addr = in6addr_my;
+	my_addr.family = AF_INET6;
+#else
+	static const struct in_addr in4addr_any = { { { 0 } } };
+	static struct in_addr in4addr_my = MYADDR;
+
+	any_addr.in_addr = in4addr_any;
+	any_addr.family = AF_INET;
+
+	my_addr.in_addr = in4addr_my;
+	my_addr.family = AF_INET;
+#endif
+
+	ctx = net_context_get(IPPROTO_UDP,
+			      &any_addr, 0,
+			      &my_addr, 4242);
+	if (!ctx) {
+		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		return NULL;
+	}
+
+	return ctx;
+}
+
 #ifdef CONFIG_MICROKERNEL
 
 /*
@@ -68,28 +112,6 @@ static void set_mac(void)
 #define SLEEPTIME  500
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
-#define TASK_IPADDR { { { 0xaa,0xaa,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
-
-static struct net_context *get_context(const struct net_addr *addr)
-{
-	struct net_context *ctx;
-	static struct net_addr any_addr;
-	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
-
-	any_addr.in6_addr = in6addr_any;
-	any_addr.family = AF_INET6;
-
-	ctx = net_context_get(IPPROTO_UDP,
-			      &any_addr, 0,
-			      addr, 4242);
-	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
-		return NULL;
-	}
-
-	return ctx;
-}
-
 /*
  *
  * @param taskname    task identification string
@@ -99,18 +121,13 @@ static struct net_context *get_context(const struct net_addr *addr)
  */
 void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 {
-	static struct in6_addr in6addr_my = TASK_IPADDR;  /* aaaa::2 */
-	static struct net_addr my_addr;
 	static struct net_context *ctx;
 	struct net_buf *buf;
 
 	net_init();
 
 	if (!ctx) {
-		my_addr.in6_addr = in6addr_my;
-		my_addr.family = AF_INET6;
-
-		ctx = get_context(&my_addr);
+		ctx = get_context();
 	}
 
 	while (1) {
@@ -168,9 +185,6 @@ char fiberStack[STACKSIZE];
 struct nano_sem nanoSemTask;
 struct nano_sem nanoSemFiber;
 
-static struct net_addr any_addr;
-static struct net_addr my_addr;
-
 void fiberEntry(void)
 {
 	struct nano_timer timer;
@@ -178,19 +192,7 @@ void fiberEntry(void)
 	struct net_context *ctx;
 	struct net_buf *buf;
 
-#define MYADDR { { { 0xaa,0xaa,0,0,0,0,0,0,0,0,0,0,0,0,0,2 } } }
-	static struct in6_addr in6addr_my = MYADDR;  /* aaaa::2 */
-	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
-
-	any_addr.in6_addr = in6addr_any;
-	any_addr.family = AF_INET6;
-
-	my_addr.in6_addr = in6addr_my;
-	my_addr.family = AF_INET6;
-
-	ctx = net_context_get(IPPROTO_UDP,
-			      &any_addr, 0,
-			      &my_addr, 4242);
+	ctx = get_context();
 	if (!ctx) {
 		PRINT("%s: Cannot get network context\n", __FUNCTION__);
 		return;
