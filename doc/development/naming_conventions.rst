@@ -1,3 +1,5 @@
+.. _code_naming_conventions:
+
 Code_Naming_Conventions
 #######################
 
