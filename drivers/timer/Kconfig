@@ -114,6 +114,16 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 	help
 	This options specifies the IRQ priority used by the LOAPIC timer.
 
+config LOAPIC_TIMER_DIVIDER_UNSUPPORTED
+	bool "LOAPIC timer divider unsupported"
+	depends on LOAPIC_TIMER  && MVIC && X86_32
+	default n
+	help
+	This option selects if Local Apic Timer divider register is supported.
+
+	The MVIC interrupt controller does not provide the Timer Divide
+	Configuration Register (TDC).
+
 config ARCV2_TIMER
 	bool "ARC Timer"
 	default y
