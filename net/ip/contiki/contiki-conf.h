@@ -46,6 +46,9 @@ typedef unsigned int uip_stats_t;
 #define NETSTACK_CONF_RDC	sicslowmac_driver
 #define NETSTACK_CONF_MAC	csma_driver
 #define LINKADDR_CONF_SIZE      8
+#define UIP_CONF_LL_802154	1
+#define SICSLOWPAN_CONF_MAX_ADDR_CONTEXTS 1
+#define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPV6
 #else
 #define NETSTACK_CONF_FRAMER	framer_nullmac
 #define NETSTACK_CONF_RDC	nullrdc_driver
