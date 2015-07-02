@@ -145,6 +145,9 @@ void uip_ds6_set_lladdr(uip_lladdr_t *lladdr)
 #else /* UIP_CONF_ROUTER */
   uip_ds6_prefix_add(&loc_fipaddr, UIP_DEFAULT_PREFIX_LEN, 0);
 #endif /* UIP_CONF_ROUTER */
+
+  memcpy(&uip_lladdr, lladdr, sizeof(uip_lladdr));
+
   uip_ds6_set_addr_iid(&loc_fipaddr, &uip_lladdr);
   uip_ds6_addr_add(&loc_fipaddr, 0, ADDR_AUTOCONF);
 
