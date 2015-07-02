@@ -9,9 +9,9 @@ The |codename| is composed of a microkernel operating on top of a nanokernel.
  on top of a nanokernel, a microkernel or both.
 
 The |codename| provides three scheduling or execution contexts. The
-:abbr:`ISRs (Interrupt Service Routines)` are the execution context closest to the
-hardware. They are followed by the fibers execution context. Finally, the
-tasks comprise the third and last execution context.
+:abbr:`ISRs (Interrupt Service Routines)` are the execution context closest
+to the hardware. They are followed by the fibers execution context. Finally,
+the tasks comprise the third and last execution context.
 
 ISRs can interrupt fibers and tasks. By default, it is possible to nest ISRs
 but that option can be disabled. The main purpose of ISRs is to mark fibers
@@ -20,8 +20,8 @@ and tasks as runnable.
 Fibers are typically used for device drivers and performance critical work.
 They are cooperatively scheduled and each fiber possesses a priority. Fibers
 run until they yield or call a blocking
-:abbr:`API (Application Program Interface)`. Once a fiber is marked as not runnable, the next highest
-priority fiber runs.
+:abbr:`API (Application Program Interface)`. Once a fiber is marked as not
+runnable, the next highest priority fiber runs.
 
 Tasks are used, primarily for data processing. A task is scheduled only when
 no fibers are marked as runnable. Tasks can be preempted and the highest
