@@ -567,6 +567,126 @@ static void copy_id_addr(struct bt_conn *conn, const bt_addr_le_t *addr)
 	}
 }
 
+static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
+{
+	struct bt_buf *buf, *rsp;
+	struct bt_hci_cp_le_set_scan_params *set_param;
+	struct bt_hci_cp_le_set_scan_enable *scan_enable;
+	int err;
+
+	if (dev.scan_enable == BT_LE_SCAN_ENABLE) {
+		return -EALREADY;
+	}
+
+	if (scan_dev_found_cb != NULL) {
+		return -EALREADY;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS,
+				sizeof(*set_param));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	set_param = bt_buf_add(buf, sizeof(*set_param));
+	memset(set_param, 0, sizeof(*set_param));
+	set_param->scan_type = scan_type;
+
+	/* for the rest parameters apply default values according to
+	 *  spec 4.2, vol2, part E, 7.8.10
+	 */
+	set_param->interval = sys_cpu_to_le16(0x0010);
+	set_param->window = sys_cpu_to_le16(0x0010);
+	set_param->filter_policy = 0x00;
+	set_param->addr_type = 0x00;
+
+	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
+				sizeof(*scan_enable));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	scan_enable = bt_buf_add(buf, sizeof(*scan_enable));
+	memset(scan_enable, 0, sizeof(*scan_enable));
+	scan_enable->filter_dup = scan_filter;
+	scan_enable->enable = BT_LE_SCAN_ENABLE;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	/* Update scan state in case of success (0) status */
+	err = rsp->data[0];
+	if (!err) {
+		dev.scan_enable = BT_LE_SCAN_ENABLE;
+	}
+
+	bt_buf_put(rsp);
+
+	return err;
+}
+
+static int bt_hci_stop_scanning(void)
+{
+	struct bt_buf *buf, *rsp;
+	struct bt_hci_cp_le_set_scan_enable *scan_enable;
+	int err;
+
+	if (dev.scan_enable == BT_LE_SCAN_DISABLE) {
+		return -EALREADY;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
+				sizeof(*scan_enable));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	scan_enable = bt_buf_add(buf, sizeof(*scan_enable));
+	memset(scan_enable, 0x0, sizeof(*scan_enable));
+	scan_enable->filter_dup = 0x00;
+	scan_enable->enable = BT_LE_SCAN_DISABLE;
+
+	err =  bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	/* Update scan state in case of success (0) status */
+	err = rsp->data[0];
+	if (!err) {
+		dev.scan_enable = BT_LE_SCAN_DISABLE;
+	}
+
+	bt_buf_put(rsp);
+
+	return err;
+}
+
+static int hci_le_create_conn(const bt_addr_le_t *addr)
+{
+	struct bt_buf *buf;
+	struct bt_hci_cp_le_create_conn *cp;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_add(buf, sizeof(*cp));
+	memset(cp, 0x0, sizeof(*cp));
+	bt_addr_le_copy(&cp->peer_addr, addr);
+	cp->conn_interval_max = sys_cpu_to_le16(0x0028);
+	cp->conn_interval_min = sys_cpu_to_le16(0x0018);
+	cp->scan_interval = sys_cpu_to_le16(0x0060);
+	cp->scan_window = sys_cpu_to_le16(0x0030);
+	cp->supervision_timeout = sys_cpu_to_le16(0x07D0);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
+}
+
 static void le_conn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
@@ -1293,67 +1413,6 @@ send_set_param:
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
 
-static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
-{
-	struct bt_buf *buf, *rsp;
-	struct bt_hci_cp_le_set_scan_params *set_param;
-	struct bt_hci_cp_le_set_scan_enable *scan_enable;
-	int err;
-
-	if (dev.scan_enable == BT_LE_SCAN_ENABLE) {
-		return -EALREADY;
-	}
-
-	if (scan_dev_found_cb != NULL) {
-		return -EALREADY;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS,
-				sizeof(*set_param));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	set_param = bt_buf_add(buf, sizeof(*set_param));
-	memset(set_param, 0, sizeof(*set_param));
-	set_param->scan_type = scan_type;
-
-	/* for the rest parameters apply default values according to
-	 *  spec 4.2, vol2, part E, 7.8.10
-	 */
-	set_param->interval = sys_cpu_to_le16(0x0010);
-	set_param->window = sys_cpu_to_le16(0x0010);
-	set_param->filter_policy = 0x00;
-	set_param->addr_type = 0x00;
-
-	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAMS, buf);
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
-				sizeof(*scan_enable));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	scan_enable = bt_buf_add(buf, sizeof(*scan_enable));
-	memset(scan_enable, 0, sizeof(*scan_enable));
-	scan_enable->filter_dup = scan_filter;
-	scan_enable->enable = BT_LE_SCAN_ENABLE;
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	/* Update scan state in case of success (0) status */
-	err = rsp->data[0];
-	if (!err) {
-		dev.scan_enable = BT_LE_SCAN_ENABLE;
-	}
-
-	bt_buf_put(rsp);
-
-	return err;
-}
-
 int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 {
 	int err;
@@ -1371,43 +1430,6 @@ int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 	scan_dev_found_cb = cb;
 
 	return 0;
-}
-
-static int bt_hci_stop_scanning(void)
-{
-	struct bt_buf *buf, *rsp;
-	struct bt_hci_cp_le_set_scan_enable *scan_enable;
-	int err;
-
-	if (dev.scan_enable == BT_LE_SCAN_DISABLE) {
-		return -EALREADY;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
-				sizeof(*scan_enable));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	scan_enable = bt_buf_add(buf, sizeof(*scan_enable));
-	memset(scan_enable, 0x0, sizeof(*scan_enable));
-	scan_enable->filter_dup = 0x00;
-	scan_enable->enable = BT_LE_SCAN_DISABLE;
-
-	err =  bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	/* Update scan state in case of success (0) status */
-	err = rsp->data[0];
-	if (!err) {
-		dev.scan_enable = BT_LE_SCAN_DISABLE;
-	}
-
-	bt_buf_put(rsp);
-
-	return err;
 }
 
 int bt_stop_scanning(void)
@@ -1450,28 +1472,6 @@ int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
 	conn_update->supervision_timeout = sys_cpu_to_le16(timeout);
 
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
-}
-
-static int hci_le_create_conn(const bt_addr_le_t *addr)
-{
-	struct bt_buf *buf;
-	struct bt_hci_cp_le_create_conn *cp;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = bt_buf_add(buf, sizeof(*cp));
-	memset(cp, 0x0, sizeof(*cp));
-	bt_addr_le_copy(&cp->peer_addr, addr);
-	cp->conn_interval_max = sys_cpu_to_le16(0x0028);
-	cp->conn_interval_min = sys_cpu_to_le16(0x0018);
-	cp->scan_interval = sys_cpu_to_le16(0x0060);
-	cp->scan_window = sys_cpu_to_le16(0x0030);
-	cp->supervision_timeout = sys_cpu_to_le16(0x07D0);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
 
 struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
