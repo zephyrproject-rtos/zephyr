@@ -352,6 +352,34 @@ static void cmd_gatt_exchange_mtu(int argc, char *argv[])
 	bt_conn_put(conn);
 }
 
+static const struct bt_eir ad[] = {
+	{
+		.len = 2,
+		.type = BT_EIR_FLAGS,
+		.data = { BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR },
+	},
+	{ }
+};
+
+static const struct bt_eir sd[] = {
+	{
+		.len = sizeof("test shell"),
+		.type = BT_EIR_NAME_COMPLETE,
+		.data = "test shell",
+	},
+	{ }
+};
+
+static void cmd_advertise(int argc, char *argv[])
+{
+	if (bt_start_advertising(BT_LE_ADV_IND, ad, sd) < 0) {
+		printk("Failed to start advertising\n");
+		return;
+	}
+
+	printk("Advertising started\n");
+}
+
 static struct bt_gatt_discover_params discover_params;
 static struct bt_uuid uuid;
 
@@ -441,6 +469,7 @@ void main(void)
 	shell_cmd_register("connect", cmd_connect_le);
 	shell_cmd_register("disconnect", cmd_disconnect);
 	shell_cmd_register("scan", cmd_scan);
+	shell_cmd_register("advertise", cmd_advertise);
 	shell_cmd_register("security", cmd_security);
 	shell_cmd_register("gatt-exchange-mtu", cmd_gatt_exchange_mtu);
 	shell_cmd_register("gatt-discover", cmd_gatt_discover);
