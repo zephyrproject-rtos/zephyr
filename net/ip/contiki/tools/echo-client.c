@@ -299,7 +299,10 @@ int main(int argc, char**argv)
 {
 	int c, ret, fd, fd_recv, i = 0, timeout = 0;
 	bool flood = false;
-	struct sockaddr_in6 addr_send, addr_recv;
+	struct sockaddr_in6 addr6_send = { 0 }, addr6_recv = { 0 };
+	struct sockaddr_in addr4_send = { 0 }, addr4_recv = { 0 };
+	struct sockaddr *addr_send, *addr_recv;
+	int family, addr_len;
 	unsigned char buf[MAX_BUF_SIZE];
 	const struct in6_addr any = IN6ADDR_ANY_INIT;
 	const char *target = NULL;
@@ -320,7 +323,7 @@ int main(int argc, char**argv)
 		target = argv[optind];
 
 	if (!target) {
-		printf("usage: %s [-F] <IPv6 address of the echo-server>\n",
+		printf("usage: %s [-F] <IPv{6|4} address of the echo-server>\n",
 		       argv[0]);
 		printf("\nThe -F (flood) option will prevent the client from "
 		       "waiting the data.\n"
@@ -328,33 +331,47 @@ int main(int argc, char**argv)
 		exit(-EINVAL);
 	}
 
-	fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	if (inet_pton(AF_INET6, target, &addr6_send.sin6_addr) != 1) {
+		if (inet_pton(AF_INET, target, &addr4_send.sin_addr) != 1) {
+			printf("Invalid address family\n");
+			exit(-EINVAL);
+		} else {
+			addr_send = (struct sockaddr *)&addr4_send;
+			addr_recv = (struct sockaddr *)&addr4_recv;
+			addr4_send.sin_port = htons(SERVER_PORT);
+			addr4_recv.sin_family = AF_INET;
+			addr4_recv.sin_addr.s_addr = INADDR_ANY;
+			addr4_recv.sin_port = htons(CLIENT_PORT);
+			family = AF_INET;
+			addr_len = sizeof(addr4_send);
+		}
+	} else {
+		addr_send = (struct sockaddr *)&addr6_send;
+		addr_recv = (struct sockaddr *)&addr6_recv;
+		addr6_send.sin6_port = htons(SERVER_PORT);
+		addr6_recv.sin6_family = AF_INET6;
+		addr6_recv.sin6_addr = any;
+		addr6_recv.sin6_port = htons(CLIENT_PORT);
+		family = AF_INET6;
+		addr_len = sizeof(addr6_send);
+	}
+
+	addr_send->sa_family = family;
+	addr_recv->sa_family = family;
+
+	fd = socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	if (fd < 0) {
 		perror("socket");
 		exit(-errno);
 	}
 
-	memset(&addr_send, 0, sizeof(addr_send));
-	addr_send.sin6_family = AF_INET6;
-	addr_send.sin6_port = htons(SERVER_PORT);
-
-	if (inet_pton(AF_INET6, target, &addr_send.sin6_addr) != 1) {
-		perror("inet_pton");
-		exit(-errno);
-	}
-
-	memset(&addr_recv, 0, sizeof(addr_recv));
-	addr_recv.sin6_family = AF_INET6;
-	addr_recv.sin6_addr = any;
-	addr_recv.sin6_port = htons(CLIENT_PORT);
-
-	ret = bind(fd, (struct sockaddr *)&addr_recv, sizeof(addr_recv));
+	ret = bind(fd, addr_recv, addr_len);
 	if (ret < 0) {
 		perror("bind");
 		exit(-errno);
 	}
 
-	ret = connect(fd, (struct sockaddr *)&addr_send, sizeof(addr_send));
+	ret = connect(fd, addr_send, addr_len);
 	if (ret < 0) {
 		perror("connect");
 		exit(-errno);
