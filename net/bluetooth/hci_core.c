@@ -574,10 +574,6 @@ static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	struct bt_hci_cp_le_set_scan_enable *scan_enable;
 	int err;
 
-	if (scan_dev_found_cb != NULL) {
-		return -EALREADY;
-	}
-
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAMS,
 				sizeof(*set_param));
 	if (!buf) {
