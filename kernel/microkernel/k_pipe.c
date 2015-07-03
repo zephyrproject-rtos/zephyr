@@ -96,15 +96,12 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	A.Comm = PIPE_GET_REQUEST;
 	A.Time.ticks = TimeOut;
 
-	struct k_chreq ChReq;
-	ChReq.ReqInfo.ChRef.Id = Id;
-	_k_pipe_option_set((K_ARGS_ARGS *)&ChReq, Option);
+	A.Args.ChReq.ReqInfo.ChRef.Id = Id;
+	A.Args.ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
+	A.Args.ChReq.ReqType.Sync.pData = pBuffer;
 
-	_k_pipe_request_type_set((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
-	ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
-	ChReq.ReqType.Sync.pData = pBuffer;
-
-	A.Args.ChReq = ChReq;
+	_k_pipe_option_set(&A.Args, Option);
+	_k_pipe_request_type_set(&A.Args, _SYNCREQ);
 
 	KERNEL_ENTRY(&A);
 
@@ -151,15 +148,12 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	A.Comm = PIPE_PUT_REQUEST;
 	A.Time.ticks = TimeOut;
 
-	struct k_chreq ChReq;
-	ChReq.ReqInfo.ChRef.Id = Id;
-	_k_pipe_option_set((K_ARGS_ARGS *)&ChReq, Option);
+	A.Args.ChReq.ReqInfo.ChRef.Id = Id;
+	A.Args.ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
+	A.Args.ChReq.ReqType.Sync.pData = pBuffer;
 
-	_k_pipe_request_type_set((K_ARGS_ARGS *)&ChReq, _SYNCREQ);
-	ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
-	ChReq.ReqType.Sync.pData = pBuffer;
-
-	A.Args.ChReq = ChReq;
+	_k_pipe_option_set(&A.Args, Option);
+	_k_pipe_request_type_set(&A.Args, _SYNCREQ);
 
 	KERNEL_ENTRY(&A);
 
@@ -200,16 +194,13 @@ int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
 	A.Time.ticks = TICKS_UNLIMITED;
 		/* same behavior in flow as a blocking call w/o a timeout */
 
-	struct k_chreq ChReq;
-	ChReq.ReqInfo.ChRef.Id = Id;
+	A.Args.ChReq.ReqInfo.ChRef.Id = Id;
+	A.Args.ChReq.ReqType.Async.block = Block;
+	A.Args.ChReq.ReqType.Async.iSizeTotal = iSize2Xfer;
+	A.Args.ChReq.ReqType.Async.sema = Sema;
 
-	_k_pipe_request_type_set((K_ARGS_ARGS *)&ChReq, _ASYNCREQ);
-	_k_pipe_option_set((K_ARGS_ARGS *)&ChReq, _ALL_N); /* force ALL_N */
-	ChReq.ReqType.Async.block = Block;
-	ChReq.ReqType.Async.iSizeTotal = iSize2Xfer;
-	ChReq.ReqType.Async.sema = Sema;
-
-	A.Args.ChReq = ChReq;
+	_k_pipe_request_type_set(&A.Args, _ASYNCREQ);
+	_k_pipe_option_set(&A.Args, _ALL_N); /* force ALL_N */
 
 	KERNEL_ENTRY(&A);
 	return RC_OK;
