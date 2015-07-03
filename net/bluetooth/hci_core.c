@@ -574,10 +574,6 @@ static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	struct bt_hci_cp_le_set_scan_enable *scan_enable;
 	int err;
 
-	if (dev.scan_enable == BT_LE_SCAN_ENABLE) {
-		return -EALREADY;
-	}
-
 	if (scan_dev_found_cb != NULL) {
 		return -EALREADY;
 	}
@@ -691,6 +687,10 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 static void trigger_scan(void)
 {
 	struct bt_conn *conn;
+
+	if (dev.scan_enable) {
+		return;
+	}
 
 	if (scan_dev_found_cb) {
 		bt_hci_start_scanning(BT_LE_SCAN_ACTIVE, dev.scan_filter);
