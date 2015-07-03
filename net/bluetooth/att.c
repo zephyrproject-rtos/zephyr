@@ -1187,7 +1187,7 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *data)
 
 	rsp = (void *)data->data;
 
-	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x", rsp->request,
+	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x\n", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
 	/* Match request with response */
