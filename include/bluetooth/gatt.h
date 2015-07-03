@@ -36,6 +36,7 @@
 
 #include <misc/util.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/uuid.h>
 
 /* GATT attribute permission bitfield values */
 
