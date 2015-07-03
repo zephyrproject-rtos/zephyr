@@ -455,8 +455,7 @@ int bt_security(struct bt_conn *conn, bt_security_t sec)
 	}
 
 	if (conn->role == BT_HCI_ROLE_SLAVE) {
-		/* TODO Add Security Request support */
-		return -ENOTSUP;
+		return bt_smp_send_security_req(conn);
 	}
 
 	keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
