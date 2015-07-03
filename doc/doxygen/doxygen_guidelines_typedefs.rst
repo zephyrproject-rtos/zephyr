@@ -1,4 +1,4 @@
-.. _Type Definition Documentation:
+.. _type_definition_documentation:
 
 Type Definition Documentation
 #############################

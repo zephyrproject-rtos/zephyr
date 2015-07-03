@@ -110,8 +110,7 @@ reference to a documented code element.
 
 .. caution::
    References to in-code documentation only work if the element has been
-   documented in the code following the :ref:`In-Code Documentation
-   Guidelines`.
+   documented in the code following the :ref:`code_documentation_guidelines`.
 
 External References
 ===================

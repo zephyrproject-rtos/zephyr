@@ -1,4 +1,4 @@
-.. _File Header Documentation:
+.. _file_header_documentation:
 
 File Header Documentation
 #########################
@@ -16,13 +16,14 @@ beginning of the file. The file header must contain:
    purpose of the file, how it works and any other pertinent
    information such as copyrights, authors, etc.
 
-.. note:: 
+.. note::
 
    Doxygen has special commands for copyrights (@copyright), authors
    (@author), and other important information. Please refer to the
    `Doxygen documentation`_ for further details.
-   
-.. _Doxygen documentation: http://www.stack.nl/~dimitri/doxygen/manual/index.html
+
+.. _Doxygen documentation:
+   http://www.stack.nl/~dimitri/doxygen/manual/index.html
 
 Examples
 ********
@@ -30,8 +31,6 @@ Examples
 Correct:
 
 * A file header with a single line description.
-
-
 
 .. literalinclude:: hello_commented.c
    :language: c

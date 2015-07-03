@@ -1,4 +1,4 @@
-.. _Structure Documentation:
+.. _structure_documentation:
 
 Structure Documentation
 #######################
@@ -8,6 +8,11 @@ Structs must be documented wherever they are defined. Basically,
 structs only require a brief description detailing why they are needed.
 Each variable that composes a struct must be commented. A fully
 simplified syntax is therefore appropriate.
+
+.. note::
+
+   Follow the same rules as struct when documenting an enum. Use the
+   simplified syntax to add the brief description.
 
 Structure Comments Template
 ***************************

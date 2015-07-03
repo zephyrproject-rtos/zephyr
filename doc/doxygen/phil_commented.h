@@ -44,11 +44,11 @@
 #endif
 
 /**
- @def N_PHILOSOPHERS
- @brief Defines the number of philosophers.
-
-@details Multiple tasks do printfs and they may conflict.
-Uses puts() instead of printf() to avoid conflicts.
+ * @def N_PHILOSOPHERS
+ * @brief Defines the number of philosophers.
+ *
+ * @details Multiple tasks do printfs and they may conflict.
+ * Uses puts() instead of printf() to avoid conflicts.
  */
 
 #define N_PHILOSOPHERS	6

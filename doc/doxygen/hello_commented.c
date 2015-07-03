@@ -46,12 +46,12 @@
  */
 
 /**
- @def SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
- @brief Compute equivalence in ticks.
+ * @def SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
+ * @brief Compute equivalence in ticks.
  */
 /**
- @def SLEEPTIME
- @brief Specify delay between greetings (in ms).
+ * @def SLEEPTIME
+ * @brief Specify delay between greetings (in ms).
  */
 
 #if defined(CONFIG_STDOUT_CONSOLE)
@@ -70,12 +70,12 @@
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
 /**
- @brief A loop saying hello.
-
- @details
- Actions:
- 	 -# Ouputs "Hello World!".
- 	 -# Waits, then lets another task run.
+ * @brief A loop saying hello.
+ *
+ * @details
+ * Actions:
+ * 	 -# Ouputs "Hello World!".
+ * 	 -# Waits, then lets another task run.
 
  @param taskname The task's identification string.
  @param mySem    The task's semaphore.
@@ -95,12 +95,12 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 }
 
 /**
- @brief Exchanges Hello messages with taskB.
-
- @details
- Actions:
- 	 -# taskA gives its own semaphore, thus it says hello right away.
- 	 -# Calls function helloLoop, thus taskA exchanges hello messages with taskB.
+ * @brief Exchanges Hello messages with taskB.
+ *
+ * @details
+ * Actions:
+ *  -# taskA gives its own semaphore, thus it says hello right away.
+ *  -# Calls function helloLoop, thus taskA exchanges hello messages with taskB.
  */
 void taskA(void)
 {
@@ -110,10 +110,10 @@ void taskA(void)
 }
 
 /**
- @brief Exchanges Hello messages with taskA.
-
- Actions:
- 	 -# Calls function helloLoop, thus taskB exchanges hello messages with taskA.
+ * @brief Exchanges Hello messages with taskA.
+ *
+ * Actions:
+ *  -# Calls function helloLoop, thus taskB exchanges hello messages with taskA.
  */
 void taskB(void)
 {
@@ -140,14 +140,14 @@ struct nano_sem nanoSemTask;
 struct nano_sem nanoSemFiber;
 
 /**
- @brief Defines the turns taken by the tasks in the fiber.
-
- Actions:
- -# Initializes semaphore.
- -# Initializes timer.
- -# Waits for task, then runs.
- -# Outputs "Hello World!".
- -# Waits, then yields to another task.
+ * @brief Defines the turns taken by the tasks in the fiber.
+ *
+ * Actions:
+ * -# Initializes semaphore.
+ * -# Initializes timer.
+ * -# Waits for task, then runs.
+ * -# Outputs "Hello World!".
+ * -# Waits, then yields to another task.
  */
 void fiberEntry(void) {
 	struct nano_timer timer;
@@ -170,12 +170,12 @@ void fiberEntry(void) {
 }
 
 /**
- @brief Implements the Hello demo.
-
- Actions:
- -# Outputs "hello".
- -# Waits, then signals fiber's semaphore.
- -# Waits on fiber to yield.
+ * @brief Implements the Hello demo.
+ *
+ * Actions:
+ * -# Outputs "hello".
+ * -# Waits, then signals fiber's semaphore.
+ * -# Waits on fiber to yield.
  */
 void main(void) {
 	struct nano_timer timer;

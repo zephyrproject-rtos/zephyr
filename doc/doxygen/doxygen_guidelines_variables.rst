@@ -1,4 +1,4 @@
-.. _Variable Documentation:
+.. _variable_documentation:
 
 Variable Documentation
 ######################

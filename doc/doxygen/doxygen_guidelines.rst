@@ -1,22 +1,23 @@
-.. _In-Code Documentation Guidelines:
+.. _code_documentation_guidelines:
 
 In-Code Documentation Guidelines
 ################################
 
-Follow these guidelines to document your code using comments. We
-provide examples on how to comment different parts of the code. Files,
-functions, defines, structures, variables and type definitions must be
-documented.
+Follow these guidelines to document your code using comments. The |project|
+follows the Javadoc Doxygen comments style. We provide examples on how to
+comment different parts of the code. Files, functions, defines, structures,
+variables and type definitions must be documented.
 
 We have grouped the guidelines according to the object that is being
-documented. Read the information regarding all elements carefully since
-each type of object provides further details as to how to document the
-code as a whole.
+documented. Read sections carefully since each object provides further
+details as to how to document the code as a whole.
 
 These simple rules apply to all the code that you wish to include in
 the documentation:
 
 #. Start and end a comment block with :literal:`/**` and :literal:`*/`
+
+#. Start each line of the comment with :literal:` * `
 
 #. Use \@ for all Doxygen special commands.
 
@@ -26,7 +27,7 @@ the documentation:
 #. All comments must start with a capital letter and end in a period.
    Even if the comment is a sentence fragment.
 
-.. important::
+.. note::
 
    Always use :literal:`/**` This is a comment. :literal:`*/` if that
    comment should become part of the documentation.

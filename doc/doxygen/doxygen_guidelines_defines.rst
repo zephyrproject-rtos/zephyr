@@ -1,4 +1,4 @@
-.. _Define Documentation:
+.. _define_documentation:
 
 Define Documentation
 ####################
@@ -23,11 +23,11 @@ Full template:
 .. code-block:: c
 
    /** @def name_of_define
-
-       @brief Brief description of the define.
-
-       @details Multiple lines describing in detail what is the
-       purpose of the define and what it does.
+     *
+     * @brief Brief description of the define.
+     *
+     * @details Multiple lines describing in detail what is the
+     * purpose of the define and what it does.
    */
 
    #define name_of_define
@@ -37,10 +37,10 @@ Simplified template:
 .. code-block:: c
 
    /**
-       Brief description of the define.
-
-       Multiple lines describing in detail what is the
-       purpose of the define and what it does.
+     * Brief description of the define.
+     *
+     * Multiple lines describing in detail what is the
+     * purpose of the define and what it does.
    */
    #define name_of_define
 

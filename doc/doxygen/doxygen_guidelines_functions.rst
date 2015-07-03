@@ -1,4 +1,4 @@
-.. _Function Documentation:
+.. _function_documentation:
 
 Function Documentation
 ######################
@@ -61,7 +61,7 @@ Simplified template:
    my_function(int a, int b){}
 
 .. important::
-   Ensure that there is **no** blank line between the comment block 
+   Ensure that there is **no** blank line between the comment block
    and the function's signature. That way Doxygen can link the comment
    to the function.
 
@@ -83,7 +83,7 @@ The highlighted lines show comments that would not be added to the
 documentation. That is unacceptable. The appropriate way to document
 :c:func:`taskA()` is:
 
-.. literalinclude:: hello_commented.c 
+.. literalinclude:: hello_commented.c
    :language: c
    :lines: 97-110
    :emphasize-lines: 5-7, 11, 13
