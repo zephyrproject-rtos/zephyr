@@ -97,6 +97,8 @@ struct net_addr {
 
 #define INET6_ADDRSTRLEN 46
 
+#define INADDR_ANY 0
+
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
 	/** IPv6/IPv4 remote address */
