@@ -92,6 +92,26 @@ static void cmd_init(int argc, char *argv[])
 	}
 }
 
+static int xtoi(const char *str)
+{
+	int val = 0;
+
+	for (; *str != '\0'; str++) {
+		val = val << 4;
+		if (*str >= '0' && *str <= '9') {
+			val |= *str - '0';
+		} else if (*str >= 'a' && *str <= 'f') {
+			val |= *str - 'a' + 10;
+		} else if (*str >= 'A' && *str <= 'F') {
+			val |= *str - 'A' + 10;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	return val;
+}
+
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int i, j;
@@ -332,6 +352,82 @@ static void cmd_gatt_exchange_mtu(int argc, char *argv[])
 	bt_conn_put(conn);
 }
 
+static struct bt_gatt_discover_params discover_params;
+static struct bt_uuid uuid;
+
+static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
+{
+	printk("Discover found handle %u\n", attr->handle);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void discover_destroy(void *user_data)
+{
+	struct bt_gatt_discover_params *params = user_data;
+
+	printk("Discover destroy\n");
+
+	memset(params, 0, sizeof(*params));
+}
+
+static void cmd_gatt_discover(int argc, char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return;
+	}
+
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	conn = bt_conn_lookup_addr_le(&addr);
+	if (!conn) {
+		printk("Peer not connected\n");
+		return;
+	}
+
+	if (argc < 4) {
+		printk("UUID type required\n");
+		return;
+	}
+
+	uuid.u16 = xtoi(argv[3]);
+	discover_params.uuid = &uuid;
+	discover_params.func = discover_func;
+	discover_params.destroy = discover_destroy;
+	discover_params.start_handle = 0x0001;
+	discover_params.end_handle = 0xffff;
+
+	if (argc > 4) {
+		discover_params.start_handle = xtoi(argv[4]);
+		if (argc > 5) {
+			discover_params.end_handle = xtoi(argv[5]);
+		}
+	}
+
+	err = bt_gatt_discover(conn, &discover_params);
+	if (err) {
+		printk("Discover failed (err %d)\n", err);
+	} else {
+		printk("Discover pending\n");
+	}
+
+	bt_conn_put(conn);
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -347,4 +443,5 @@ void main(void)
 	shell_cmd_register("scan", cmd_scan);
 	shell_cmd_register("security", cmd_security);
 	shell_cmd_register("gatt-exchange-mtu", cmd_gatt_exchange_mtu);
+	shell_cmd_register("gatt-discover", cmd_gatt_discover);
 }
