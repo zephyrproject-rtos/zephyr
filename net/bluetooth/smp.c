@@ -388,6 +388,28 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+int bt_smp_send_security_req(struct bt_conn *conn)
+{
+	struct bt_smp_security_request *req;
+	struct bt_buf *req_buf;
+
+	BT_DBG("\n");
+
+	req_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SECURITY_REQUEST,
+				    sizeof(*req));
+	if (!req_buf) {
+		return -ENOBUFS;
+	}
+
+	req = bt_buf_add(req_buf, sizeof(*req));
+
+	req->auth_req = BT_SMP_AUTH_BONDING;
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+
+	return 0;
+}
+
 int bt_smp_send_pairing_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
