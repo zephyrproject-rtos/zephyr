@@ -1,14 +1,15 @@
-Using Linux as the Host System
-**************************************
+.. _linux_development_system:
 
+Using a Linux Development System
+**************************************
 
 Installing the Operating System
 =================================
 
-The steps needed for installing the operating system of the host system
-are beyond the scope of this document. Please refer to the
-documentation of your operating system of choice.  We recommend the use of
-Ubuntu or Fedora.
+The steps needed for installing the operating system of the development
+system are beyond the scope of this document. Please refer to the
+documentation of your operating system of choice. The project supports both
+Ubuntu and Fedora.
 
 Configuring Network and Proxies
 =================================
@@ -39,6 +40,8 @@ In Fedora enter:
 
    $ sudo yum update
 
+.. _required_software:
+
 Installing Required Software
 =================================
 
@@ -66,12 +69,14 @@ Install the required packages in a Fedora host system, type:
      glib2-devel.i686 g++ libc6-dev-i386 g++-multilib \
      glibc-static libstdc++-static
 
+.. _yocto_sdk:
+
 Installing the Yocto Software Development Kit
 =============================================
 
-The |project| :abbr:`Software Development Kit (SDK)` provided by
-Yocto contains all necessary tools and cross compilers needed to build
-Zephyr kernels on all supported architectures. In addition it includes
+The |project|'s :abbr:`Software Development Kit (SDK)` provided by
+Yocto contains all necessary tools and cross compilers needed to build the
+|codename| on all supported architectures. In addition it includes
 host tools such as a custom QEMU and a host compiler for building host
 tools if necessary. With this SDK, there is no need to build any cross
 compilers or emulation environments. The SDK supports the following
@@ -137,7 +142,3 @@ Follow these steps to install the SDK on your host system.
        $ export ZEPHYR_GCC_VARIANT=yocto
 
        $ export YOCTO_SDK_INSTALL_DIR=/opt/poky-tm/1.8
-
-
-
-

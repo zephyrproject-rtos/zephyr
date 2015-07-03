@@ -1,3 +1,5 @@
+.. _optional_installation:
+
 Optional Installation Steps
 **************************************
 
@@ -46,14 +48,14 @@ In Fedora, type:
 
     $ cd grub
 
-    $ ./autogen.sh CFLAGS=”-march=i586 -m32” ./configure --with-platform=efi \
+    $ ./autogen.sh CFLAGS=”-march=i586 -m32” ./configure --with-platform=efi\
     --target=i386 --program-prefix=""
 
     $ make
 
     $ cd grub-core
 
-    $ ../grub-mkimage -O i386-efi -d . -o grub.efi -p "" part_gpt part_msdos \
+    $ ../grub-mkimage -O i386-efi -d . -o grub.efi -p "" part_gpt part_msdos\
      fat ext2 normal chain boot configfile linux multiboot help serial \
      terminal elf efi_gop efi_uga terminfo
 
@@ -108,7 +110,7 @@ and list the options you’ve set.
 Installing a Custom QEMU for ARM Platforms
 ============================================
 
-The Yocto SDK comes with a Qemu binary suitable for running sample Zephyr Kernel
+The Yocto SDK comes with a Qemu binary suitable for running sample |codename|
 applications. The steps below are only needed if you choose not to use the
 provided binary and use a custom built binary instead.
 
@@ -137,7 +139,8 @@ Follow these steps to enable a customized build of QEMU:
 
 .. code-block:: bash
 
-   $ git am $ZEPHYR_BASE/scripts/0001-armv7m-support-basepri-primask-interrupt-locking.patch
+   $ git am $ZEPHYR_BASE/scripts/0001-armv7m-support-basepri-primask-
+   interrupt-locking.patch
 
 #. Update the submodules as needed, type:
 
@@ -164,5 +167,3 @@ Follow these steps to enable a customized build of QEMU:
 .. code-block:: bash
 
    $ sudo make install
-
-

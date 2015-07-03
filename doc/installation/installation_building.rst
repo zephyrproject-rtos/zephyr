@@ -1,14 +1,17 @@
-Setup A Local Development Environment
+.. _setup_development_environment:
+
+Setup a Local Development Environment
 **************************************
 
-The |project| source code is maintained using GIT and is served using Gerrit.
+The |project|'s source code is maintained using GIT and is served using
+Gerrit.
 
 Gerrit access requires some basic user setup. The following process has
 been defined as a simple walk-through to enable quick access to the
 Gerrit services.
 
 
-.. _Getting Access:
+.. _access_source:
 
 Getting Access
 ================
@@ -81,13 +84,14 @@ type:
 
    :command:`$ cat ~/.ssh/id_rsa.pub`
 
-   The output is the contents of :file:`~/.id/id_rsa.pub`. Paste it into the Add SSH key window in Gerrit.
+   The output is the contents of :file:`~/.id/id_rsa.pub`. Paste it into the
+  Add SSH key window in Gerrit.
 
 .. warning:: Potential Security Risk
    Do not copy your private key :file:`~/.ssh/id_rsa` Use only the public
    :file:`~/.id/id_rsa.pub`.
 
-
+.. _checking_source_out:
 
 Checking the Source Code Out
 =============================
@@ -97,7 +101,9 @@ Checking the Source Code Out
 
 #. Clone the repository, type:
 
-   :command:`$ git clone ssh://01ORGUSERNAME@oic-review.01.org:29418/forto-collab`
+   .. code-block:: bash
+
+      $ git clone ssh://01ORGUSERNAME@oic-review.01.org:29418/forto-collab
 
 #. You have checked out a local copy of the source code. Develop
    freely, issuing as many commits and rebases as needed.
@@ -114,6 +120,8 @@ Checking the Source Code Out
     .. code-block:: bash
 
        $ source zephyr-env.bash
+
+.. _build_sample_app:
 
 Building a Sample Application
 ==============================
@@ -153,14 +161,19 @@ To build an example application follow these steps:
    :file:`$ZEPHYR_BASE`, for example  :file:`$ZEPHYR_BASE/arch/x86`.
 
 The sample projects for the microkernel are found
-at :file:`$ZEPHYR_BASE/samples/microkernel/apps`. After building the application successfully, the results can be found in the :file:`outdir`directory in the application root directory.
+at :file:`$ZEPHYR_BASE/samples/microkernel/apps`. After building the
+application successfully, the results can be found in the :file:`outdir`
+directory in the application root directory.
 :file:`$SAMPLE_PROJECT/outdir/microkernel.elf`.
 
 For sample projects in the :file:`$ZEPHYR_BASE/samples/nanokernel/apps`
-directory, the results can be found at :file:`$SAMPLE_PROJECT/outdir/nanokernel.elf`.
+directory, the results can be found at :file:`
+$SAMPLE_PROJECT/outdir/nanokernel.elf`.
+
+.. _testing_apps:
 
 Testing Applications
-**************************************
+********************
 
 Running Applications in QEMU
 ==============================
@@ -248,7 +261,8 @@ Running an Application on Galileo Gen2
 
 :file:`kernel`
 
-#. Assuming you have built a micro kernel, copy the kernel file :file:`microkernel.elf` to the :file:`$SDCARD/kernel` folder
+#. Assuming you have built a micro kernel, copy the kernel file :file:`
+microkernel.elf` to the :file:`$SDCARD/kernel` folder
 
 #. Copy your built version of GRUB to :file:`$SDCARD/efi/boot`
 
@@ -289,4 +303,4 @@ Running an Application on Galileo Gen2
 
 #. On the menu select the :guilabel:`UEFI Internal Shell` option.
 
-#. If you’ve added a custom GRUB, please run it from here.
+#. If you've added a custom GRUB, please run it from here.

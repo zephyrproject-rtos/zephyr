@@ -27,7 +27,7 @@ Make sure to subscribe to the `mailing list`_ by filling out the
    :depth: 2
 
 
-Follow the steps available at :ref:`Getting Access` for information about how to access the source
+Follow the steps available at :ref:`access_code` for information about how to access the source
 code using GIT and Gerrit.
 
 Working with Gerrit
@@ -64,7 +64,7 @@ Currently, there is only one method to submit a change for review:
 Before you submit, please ensure each of your commits conform with the
 coding and contribution guidelines of the project. Directions for
 building the source code are out of the scope of this document. Please
-refer to the :ref:`Install`.
+refer to the :ref:`quick_start`.
 
 When a change set is ready for submission, Gerrit requires that the
 changes be pushed to a special branch.  The name of this special branch
@@ -298,5 +298,5 @@ the post button is clicked.
    :scale: 75 %
    :alt: Submitting the Final Comment and Review
 
-   Shows the dialog box for submitting the final comment and the review 
+   Shows the dialog box for submitting the final comment and the review
    score of a change.
