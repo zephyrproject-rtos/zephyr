@@ -643,4 +643,40 @@ typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
 
+/*! @brief GATT Discover Primary parameters */
+struct bt_gatt_discover_params {
+	/*! Discover UUID type */
+	struct bt_uuid *uuid;
+	/*! Discover attribute callback */
+	bt_gatt_attr_func_t func;
+	/*! Discover destroy callback */
+	void (*destroy)(void *user_data);
+	/*! Discover start handle */
+	uint16_t start_handle;
+	/*! Discover end handle */
+	uint16_t end_handle;
+};
+
+/*! @brief Discover Primary Service by Service UUID
+ *
+ *  This procedure is used by a client to discover a specific primary service on
+ *  a server when only the Service UUID is known.
+ *
+ *  For each attribute found the callback is called which can then decide
+ *  whether to continue discovering or stop.
+ *
+ *  @param conn Connection object.
+ *  @param params Discover parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_discover(struct bt_conn *conn,
+		     struct bt_gatt_discover_params *params);
+
+/*! @brief Cancel GATT pending request
+ *
+ *  @param conn Connection object.
+ */
+void bt_gatt_cancel(struct bt_conn *conn);
+
 #endif /* __BT_GATT_H */

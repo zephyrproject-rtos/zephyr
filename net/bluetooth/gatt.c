@@ -497,3 +497,110 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 
 	return bt_att_send(conn, buf, gatt_mtu_rsp, func, NULL);
 }
+
+static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
+			      const void *pdu, uint16_t length,
+			      void *user_data)
+{
+	const struct bt_att_find_type_rsp *rsp = pdu;
+	struct bt_gatt_discover_params *params = user_data;
+	uint8_t i;
+	uint16_t end_handle = 0, start_handle;
+
+	BT_DBG("err 0x%02x\n", err);
+
+	if (err) {
+		goto done;
+	}
+
+	/* Parse attributes found */
+	for (i = 0; length >= sizeof(rsp->list[i]);
+	     i++, length -=  sizeof(rsp->list[i])) {
+		const struct bt_gatt_attr *attr;
+
+		start_handle = sys_le16_to_cpu(rsp->list[i].start_handle);
+		end_handle = sys_le16_to_cpu(rsp->list[i].end_handle);
+
+		BT_DBG("start_handle 0x%04x end_handle 0x%04x\n", start_handle,
+		       end_handle);
+
+		attr = (&(struct bt_gatt_attr)
+			BT_GATT_PRIMARY_SERVICE(start_handle, params->uuid));
+
+		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+			return;
+		}
+	}
+
+	/* Stop if could not parse the whole PDU */
+	if (length > 0) {
+		goto done;
+	}
+
+	/* Stop if over the range or the requests */
+	if (end_handle >= params->end_handle) {
+		goto done;
+	}
+
+	/* Continue for the last found handle */
+	params->start_handle = end_handle;
+	if (!bt_gatt_discover(conn, params)) {
+		return;
+	}
+
+done:
+	if (params->destroy) {
+		params->destroy(params);
+	}
+}
+
+int bt_gatt_discover(struct bt_conn *conn,
+		     struct bt_gatt_discover_params *params)
+{
+	struct bt_buf *buf;
+	struct bt_att_find_type_req *req;
+	uint16_t *value;
+
+	if (!conn || !params->uuid || !params->func || !params->start_handle ||
+	    !params->end_handle) {
+		return -EINVAL;
+	}
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_TYPE_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->start_handle = sys_cpu_to_le16(params->start_handle);
+	req->end_handle = sys_cpu_to_le16(params->end_handle);
+	req->type = sys_cpu_to_le16(BT_UUID_GATT_PRIMARY);
+
+	BT_DBG("uuid 0x%04x start_handle 0x%04x end_handle 0x%04x\n",
+	       params->uuid->u16, params->start_handle, params->end_handle);
+
+	switch (params->uuid->type) {
+	case BT_UUID_16:
+		value = bt_buf_add(buf, sizeof(*value));
+		*value = sys_cpu_to_le16(params->uuid->u16);
+		break;
+	case BT_UUID_128:
+		bt_buf_add(buf, sizeof(params->uuid->u128));
+		memcpy(req->value, params->uuid->u128,
+		       sizeof(params->uuid->u128));
+		break;
+	default:
+		BT_ERR("Unkown UUID type %u\n", params->uuid->type);
+		bt_buf_put(buf);
+		return -EINVAL;
+	}
+
+	bt_att_send(conn, buf, att_find_type_rsp, params, NULL);
+
+	return 0;
+}
+
+void bt_gatt_cancel(struct bt_conn *conn)
+{
+	bt_att_cancel(conn);
+}
