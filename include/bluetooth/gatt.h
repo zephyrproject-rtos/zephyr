@@ -627,14 +627,14 @@ void bt_gatt_disconnected(struct bt_conn *conn);
 
 /* Client API */
 
-/*! @brief Response callback function
+/** @brief Response callback function
  *
  *  @param conn Connection object.
  *  @param err Error code.
  */
 typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
 
-/*! @brief Exchange MTU
+/** @brief Exchange MTU
  *
  * This client procedure can be used to set the MTU to the maximum possible
  * size the buffers can hold.
@@ -644,21 +644,21 @@ typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
 
-/*! @brief GATT Discover Primary parameters */
+/** @brief GATT Discover Primary parameters */
 struct bt_gatt_discover_params {
-	/*! Discover UUID type */
+	/** Discover UUID type */
 	struct bt_uuid *uuid;
-	/*! Discover attribute callback */
+	/** Discover attribute callback */
 	bt_gatt_attr_func_t func;
-	/*! Discover destroy callback */
+	/** Discover destroy callback */
 	void (*destroy)(void *user_data);
-	/*! Discover start handle */
+	/** Discover start handle */
 	uint16_t start_handle;
-	/*! Discover end handle */
+	/** Discover end handle */
 	uint16_t end_handle;
 };
 
-/*! @brief Discover Primary Service by Service UUID
+/** @brief Discover Primary Service by Service UUID
  *
  *  This procedure is used by a client to discover a specific primary service on
  *  a server when only the Service UUID is known.
@@ -674,7 +674,7 @@ struct bt_gatt_discover_params {
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params);
 
-/*! @brief Cancel GATT pending request
+/** @brief Cancel GATT pending request
  *
  *  @param conn Connection object.
  */

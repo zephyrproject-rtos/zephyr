@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Internal APIs for Bluetooth connection handling.
  */
 

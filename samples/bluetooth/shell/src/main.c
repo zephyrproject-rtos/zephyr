@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  *  @brief Interactive Bluetooth LE shell application
  *
  *  Application allows implement Bluetooth LE functional commands performing
