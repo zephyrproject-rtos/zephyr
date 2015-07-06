@@ -19,7 +19,7 @@ exceptions:
   instead of tabs to align them.
 * Use C89-style single line comments, :literal:`/* */`. The C99-style
   single line comment, //, is not allowed.
-* Use :literal:`/*! */` for any comments that need to appear in the
+* Use :literal:`/**  */` for any comments that need to appear in the
   documentation.
 
 Checking for Conformity Using Checkpatch
