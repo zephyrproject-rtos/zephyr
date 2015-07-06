@@ -1183,10 +1183,6 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *data)
 	struct bt_att_error_rsp *rsp;
 	uint8_t err;
 
-	if (!att) {
-		return 0;
-	}
-
 	rsp = (void *)data->data;
 
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x\n", rsp->request,
@@ -1201,12 +1197,6 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *data)
 static uint8_t att_handle_find_type_rsp(struct bt_conn *conn,
 					struct bt_buf *buf)
 {
-	struct bt_att *att = conn->att;
-
-	if (!att) {
-		return 0;
-	}
-
 	BT_DBG("\n");
 
 	return att_handle_rsp(conn, buf->data, buf->len, 0);
@@ -1215,12 +1205,6 @@ static uint8_t att_handle_find_type_rsp(struct bt_conn *conn,
 static uint8_t att_handle_read_type_rsp(struct bt_conn *conn,
 					struct bt_buf *buf)
 {
-	struct bt_att *att = conn->att;
-
-	if (!att) {
-		return 0;
-	}
-
 	BT_DBG("\n");
 
 	return att_handle_rsp(conn, buf->data, buf->len, 0);
@@ -1272,6 +1256,8 @@ static void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 	struct bt_att_hdr *hdr = (void *)buf->data;
 	uint8_t err = BT_ATT_ERR_NOT_SUPPORTED;
 	size_t i;
+
+	BT_ASSERT(conn->att);
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small ATT PDU received\n");
