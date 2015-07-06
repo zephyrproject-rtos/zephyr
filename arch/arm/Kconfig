@@ -71,18 +71,18 @@ config ISA_THUMB2
 	architecture-based processors.
 endmenu
 
-menu "BSP General Configuration"
+menu "Platform General Configuration"
 
 choice
-prompt "Minimum BSP Configuation Selection"
-default BSP_FSL_FRDM_K64F
+prompt "Minimum Platform Configuation Selection"
+default PLATFORM_FSL_FRDM_K64F
 
-config  BSP_FSL_FRDM_K64F
+config  PLATFORM_FSL_FRDM_K64F
 	bool "Minimum Configuration for FSL FRDM K64F"
 	select CPU_CORTEX_M4
 	select K20_UART
 
-config  BSP_TI_LM3S6965
+config  PLATFORM_TI_LM3S6965
 	bool "Minimum Configuration for a TI LM3S6965"
 	select CPU_CORTEX_M3
 	select STELLARIS_UART
@@ -93,11 +93,11 @@ endmenu
 
 source "arch/arm/bsp/CortexM/Kconfig"
 
-if BSP_TI_LM3S6965
+if PLATFORM_TI_LM3S6965
 source "arch/arm/ti_lm3s6965/Kconfig"
 endif
 
-if BSP_FSL_FRDM_K64F
+if PLATFORM_FSL_FRDM_K64F
 source "arch/arm/fsl_frdm_k64f/Kconfig"
 endif
 

@@ -1,4 +1,4 @@
-# Kconfig - generic PC BSP configuration options
+# Kconfig - generic PC platform configuration options
 
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
@@ -42,10 +42,10 @@ config PHYS_LOAD_ADDR
 
 config LOAPIC_TIMER_FREQ
 	default 150000000
-	depends on BSP_ATOM_N28XX
+	depends on PLATFORM_ATOM_N28XX
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 1193180   if BSP_PCPENTIUM4
-	default 150000000 if BSP_ATOM_N28XX
-	default 1193180   if BSP_PCMINUTEIA
+	default 1193180   if PLATFORM_PCPENTIUM4
+	default 150000000 if PLATFORM_ATOM_N28XX
+	default 1193180   if PLATFORM_PCMINUTEIA
 

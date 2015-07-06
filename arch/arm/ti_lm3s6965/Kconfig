@@ -1,4 +1,4 @@
-# Kconfig - TI LM3S6965 BSP configuration options
+# Kconfig - TI LM3S6965 platform configuration options
 
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
@@ -47,9 +47,9 @@ config NUM_IRQS
 	# - include the UART interrupts
 	default 34
 
-config BSP_TI_LM3S6965_QEMU
+config PLATFORM_TI_LM3S6965_QEMU
 	def_bool y
-	# BSP has only been tested on QEMU, not on real hardware, so always
+	# Platform has only been tested on QEMU, not on real hardware, so always
 	# assume it is used for a QEMU target.
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC

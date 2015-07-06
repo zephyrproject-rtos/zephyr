@@ -43,14 +43,14 @@ source "misc/Kconfig"
 
 source "arch/x86/core/Kconfig"
 
-menu "BSP General Configuration"
+menu "Platform General Configuration"
 
 choice
-prompt "BSP Configuration"
-default BSP_PCPENTIUM4
+prompt "Platform Configuration"
+default PLATFORM_PCPENTIUM4
 
-config BSP_ATOM_N28XX
-	bool "Minimum configuration for ATOM N28XX BSP"
+config PLATFORM_ATOM_N28XX
+	bool "Minimum configuration for ATOM N28XX platform"
 	select CPU_ATOM
 	select IOAPIC
 	select LOAPIC
@@ -60,10 +60,10 @@ config BSP_ATOM_N28XX
 	select EXTRA_SERIAL_PORT
 	select SERIAL_INTERRUPT_LEVEL
 	select CUSTOM_RANDOM_GENERATOR
-	select BSP_GENERIC_PC
+	select PLATFORM_GENERIC_PC
 
-config BSP_PCMINUTEIA
-	bool "Minimum configuration for MINUTE IA BSP"
+config PLATFORM_PCMINUTEIA
+	bool "Minimum configuration for MINUTE IA platform"
 	select CPU_MINUTEIA
 	select PIC
 	select PIT
@@ -71,10 +71,10 @@ config BSP_PCMINUTEIA
 	select EOI_HANDLER_SUPPORTED
 	select BOOTLOADER_UNKNOWN
 	select EXTRA_SERIAL_PORT
-	select BSP_GENERIC_PC
+	select PLATFORM_GENERIC_PC
 
-config BSP_PCPENTIUM4
-	bool "Minimum configuration for PENTIUM 4 BSP"
+config PLATFORM_PCPENTIUM4
+	bool "Minimum configuration for PENTIUM 4 platform"
 	select CPU_PENTIUM4
 	select PIC
 	select PIT
@@ -82,10 +82,10 @@ config BSP_PCPENTIUM4
 	select EOI_HANDLER_SUPPORTED
 	select BOOTLOADER_UNKNOWN
 	select EXTRA_SERIAL_PORT
-	select BSP_GENERIC_PC
+	select PLATFORM_GENERIC_PC
 
-config BSP_QUARK
-	bool "Minimum configuration for QUARK BSP"
+config PLATFORM_QUARK
+	bool "Minimum configuration for QUARK platform"
 	select CPU_MINUTEIA
 	select IOAPIC
 	select HPET_TIMER
@@ -98,7 +98,7 @@ config BSP_QUARK
 
 endchoice
 
-config BSP_GENERIC_PC
+config PLATFORM_GENERIC_PC
 	bool
 	default n
 	select NS16550
@@ -152,8 +152,8 @@ config CPU_MIGHT_SUPPORT_CLFLUSH
 	bool
 	default n
 	help
-	If a BSP uses a processor that possibly implements CLFLUSH, change
-	the default in that BSP's config file.
+	If a platform uses a processor that possibly implements CLFLUSH, change
+	the default in that platform's config file.
 
 #FIXME This options is not being used in the current code base.
 config CLFLUSH_INSTRUCTION_SUPPORTED
@@ -222,7 +222,7 @@ config CACHE_LINE_SIZE
 
 endmenu
 
-menu "Specific BSP Capability Support"
+menu "Specific Platform Capability Support"
 
 config NUM_DYNAMIC_STUBS
 	int "Number of dynamic int stubs"
@@ -367,11 +367,11 @@ config PCI_DEBUG
 
 endmenu
 
-if BSP_GENERIC_PC
+if PLATFORM_GENERIC_PC
 source "arch/x86/generic_pc/Kconfig"
 endif
 
-if BSP_QUARK
+if PLATFORM_QUARK
 source "arch/x86/quark/Kconfig"
 endif
 

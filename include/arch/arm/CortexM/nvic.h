@@ -224,7 +224,7 @@ static inline uint32_t _NvicIrqPrioGet(unsigned int irq /* IRQ number */
 static inline void _NvicSwInterruptTrigger(unsigned int irq /* IRQ number */
 					   )
 {
-#if defined(CONFIG_BSP_TI_LM3S6965_QEMU)
+#if defined(CONFIG_PLATFORM_TI_LM3S6965_QEMU)
 	/* the QEMU does not simulate the STIR register: this is a workaround */
 	_NvicIrqPend(irq);
 #else

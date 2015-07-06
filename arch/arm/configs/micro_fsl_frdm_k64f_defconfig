@@ -77,10 +77,10 @@ CONFIG_ARM=y
 CONFIG_ISA_THUMB2=y
 
 #
-# BSP General Configuration
+# Platform General Configuration
 #
-CONFIG_BSP_FSL_FRDM_K64F=y
-# CONFIG_BSP_TI_LM3S6965 is not set
+CONFIG_PLATFORM_FSL_FRDM_K64F=y
+# CONFIG_PLATFORM_TI_LM3S6965 is not set
 
 #
 # ARM Cortex CPU options
