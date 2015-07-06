@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  @brief timeout queue for fibers on nanokernel objects
 
  This file is meant to be included by nanokernel/include/wait_q.h only

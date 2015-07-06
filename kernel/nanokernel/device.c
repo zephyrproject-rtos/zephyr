@@ -25,7 +25,7 @@ static struct device *config_levels[] = {
 	__initconfig_end,
 };
 
-/*!
+/**
  * @brief Execute all the driver init functions at a given level
  *
  * @details Driver init objects are created with the
@@ -45,7 +45,7 @@ void _sys_device_do_config_level(int level)
 	}
 }
 
-/*!
+/**
  * @brief Retrieve the device structure for a driver by name
  *
  * @details Driver config object are created via the

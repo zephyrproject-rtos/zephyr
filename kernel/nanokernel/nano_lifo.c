@@ -313,7 +313,7 @@ void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo)
 }
 
 #ifdef CONFIG_NANO_TIMEOUTS
-/*!
+/**
  * @brief get the first element from a LIFO, wait with a timeout if empty
  *
  * Remove the first element from the specified system-level linked list lifo;
@@ -357,7 +357,7 @@ void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
 	return data;
 }
 
-/*!
+/**
  * @brief get the first element from a lifo, poll if empty
  *
  * Remove the first element from the specified nanokernel linked list lifo; it

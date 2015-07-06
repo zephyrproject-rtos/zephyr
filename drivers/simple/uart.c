@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  * @brief Simple UART driver
  *
  * A simple UART driver allowing application to handle all aspects of received

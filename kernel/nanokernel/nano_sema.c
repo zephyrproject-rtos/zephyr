@@ -305,7 +305,7 @@ void nano_sem_take_wait(struct nano_sem *sem)
 }
 
 #ifdef CONFIG_NANO_TIMEOUTS
-/*!
+/**
  * @brief test a nanokernel semaphore, wait with a timeout if unavailable
  *
  * Take a nanokernel sempahore; it can only be called from a fiber context.
@@ -346,7 +346,7 @@ int nano_fiber_sem_take_wait_timeout(struct nano_sem *sem,
 	return 1;
 }
 
-/*!
+/**
  * @brief test a nanokernel semaphore, poll with a timeout if unavailable
  *
  * Take a nanokernel sempahore; it can only be called from a task context.

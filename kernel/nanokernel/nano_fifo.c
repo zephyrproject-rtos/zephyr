@@ -381,7 +381,7 @@ void *nano_fifo_get_wait(struct nano_fifo *fifo)
 
 
 #ifdef CONFIG_NANO_TIMEOUTS
-/*!
+/**
  * @brief get the head element of a fifo, pend with a timeout if empty
  *
  * Remove the head element from the specified nanokernel fifo; it can only be
@@ -429,7 +429,7 @@ void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
 	return data;
 }
 
-/*!
+/**
  * @brief get the head element of a fifo, poll with a timeout if empty
  *
  * Remove the head element from the specified nanokernel fifo; it can only be

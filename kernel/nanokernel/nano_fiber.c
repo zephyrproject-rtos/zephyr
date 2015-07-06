@@ -240,7 +240,7 @@ FUNC_NORETURN void fiber_abort(void)
 
 #include <wait_q.h>
 
-/*!
+/**
  * @brief put the current fiber to sleep
  *
  * Put the currently running fiber to sleep for an amount of system ticks
@@ -265,7 +265,7 @@ void fiber_sleep(int32_t timeout_in_ticks)
 	_Swap(key);
 }
 
-/*!
+/**
  * @brief start a fiber, but delay its execution
  *
  * @param stack pointer to the stack space
@@ -303,7 +303,7 @@ void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 	return ccs;
 }
 
-/*!
+/**
  * @brief cancel a delayed fiber start
  *
  * @param handle a handle returned when asking to start the fiber
