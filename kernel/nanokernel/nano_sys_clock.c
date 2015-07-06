@@ -52,22 +52,6 @@ int sys_clock_hw_cycles_per_tick;
 
 /* updated by timer driver for tickless, stays at 1 for non-tickless */
 uint32_t _sys_idle_elapsed_ticks = 1;
-
-/**
- *
- * @brief Constructor that initializes nanokernel time tracking system
- *
- * @return N/A
- *
- */
-
-void nano_time_init(void)
-{
-	_sys_clock_driver_init(NULL);
-}
-
-SYS_PREKERNEL_INIT(nano_time_init, 250);
-
 #endif /*  CONFIG_NANOKERNEL */
 
 int64_t _nano_ticks = 0;

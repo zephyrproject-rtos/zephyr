@@ -9,3 +9,5 @@ obj-$(CONFIG_ARCV2_TIMER) += arcv2_timer0.o
 _CORTEX_M_TIMER_AND_GDB_INFO_yy = y
 obj-$(CONFIG_CORTEX_M_TIMER) += cortex_m_timer.o
 obj-$(_CORTEX_M_TIMER_AND_GDB_INFO_$(CONFIG_CORTEX_M_TIMER)$(CONFIG_GDB_INFO)) += cortex_m_timer_gdb.o
+
+obj-$(CONFIG_SYS_CLOCK_EXISTS) += sys_clock_init.o
