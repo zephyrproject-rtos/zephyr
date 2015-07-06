@@ -427,17 +427,25 @@ static void cmd_gatt_discover(int argc, char *argv[])
 		return;
 	}
 
-	if (argc < 4) {
-		printk("UUID type required\n");
-		return;
-	}
-
-	uuid.u16 = xtoi(argv[3]);
-	discover_params.uuid = &uuid;
 	discover_params.func = discover_func;
 	discover_params.destroy = discover_destroy;
 	discover_params.start_handle = 0x0001;
 	discover_params.end_handle = 0xffff;
+
+	if (argc < 4) {
+		if (!strcmp(argv[0], "gatt-discover")) {
+			printk("UUID type required\n");
+			return;
+		}
+		goto done;
+	}
+
+	/* Only set the UUID if the value is valid (non zero) */
+	uuid.u16 = xtoi(argv[3]);
+	if (uuid.u16) {
+		uuid.type = BT_UUID_16;
+		discover_params.uuid = &uuid;
+	}
 
 	if (argc > 4) {
 		discover_params.start_handle = xtoi(argv[4]);
@@ -446,7 +454,13 @@ static void cmd_gatt_discover(int argc, char *argv[])
 		}
 	}
 
-	err = bt_gatt_discover(conn, &discover_params);
+done:
+	if (!strcmp(argv[0], "gatt-discover-characteristic")) {
+		err = bt_gatt_discover_characteristic(conn, &discover_params);
+	} else {
+		err = bt_gatt_discover(conn, &discover_params);
+	}
+
 	if (err) {
 		printk("Discover failed (err %d)\n", err);
 	} else {
@@ -473,4 +487,5 @@ void main(void)
 	shell_cmd_register("security", cmd_security);
 	shell_cmd_register("gatt-exchange-mtu", cmd_gatt_exchange_mtu);
 	shell_cmd_register("gatt-discover", cmd_gatt_discover);
+	shell_cmd_register("gatt-discover-characteristic", cmd_gatt_discover);
 }
