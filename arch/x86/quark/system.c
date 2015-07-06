@@ -50,11 +50,6 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/pci/pci_mgr.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-#define DO_CONSOLE_INIT
-#endif
-
-#if defined(DO_CONSOLE_INIT)
-
 /**
  *
  * @brief Initialize initialization information for one UART
@@ -69,10 +64,6 @@ void uart_generic_info_init(struct uart_init_info *p_info)
 	p_info->sys_clk_freq = UART_XTAL_FREQ;
 	p_info->baud_rate = CONFIG_UART_BAUDRATE;
 }
-
-#endif /* DO_CONSOLE_INIT */
-
-#if defined(DO_CONSOLE_INIT)
 
 /**
  *
@@ -99,7 +90,7 @@ static void consoleInit(void)
 #define consoleInit()     \
 	do {/* nothing */ \
 	} while ((0))
-#endif /* DO_CONSOLE_INIT */
+#endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
 
 /**
  *

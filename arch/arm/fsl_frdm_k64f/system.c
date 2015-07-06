@@ -46,9 +46,6 @@ for the fsl_frdm_k64f BSP.
 #include <drivers/k6x_pmc.h>
 #include <sections.h>
 
-#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-#define DO_CONSOLE_INIT
-#endif
 
 /* board's setting for PLL multipler (PRDIV0) */
 #define FRDM_K64F_PLL_DIV_20 (20 - 1)
@@ -245,8 +242,7 @@ static void clkInit(void)
 	;
 }
 
-#if defined(DO_CONSOLE_INIT)
-
+#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 /**
  *
  * @brief Initialize target-only console
@@ -296,7 +292,7 @@ static void consoleInit(void)
 #define consoleInit()     \
 	do {/* nothing */ \
 	} while ((0))
-#endif /* DO_CONSOLE_INIT */
+#endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
 
 /**
  *

@@ -80,11 +80,6 @@ static inline void ioapicInit(void)
 #endif /* CONFIG_IOAPIC */
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-#define DO_CONSOLE_INIT
-#endif
-
-
-#ifdef DO_CONSOLE_INIT
 
 /**
  *
@@ -102,9 +97,6 @@ void uart_generic_info_init(struct uart_init_info *p_info)
 	p_info->int_pri = CONFIG_UART_CONSOLE_INT_PRI;
 }
 
-#endif /* DO_CONSOLE_INIT  */
-
-#if defined(DO_CONSOLE_INIT)
 
 /**
  *
@@ -131,7 +123,7 @@ static void consoleInit(void)
 #define consoleInit()     \
 	do {/* nothing */ \
 	} while ((0))
-#endif /* DO_CONSOLE_INIT */
+#endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
 
 #if defined(CONFIG_BLUETOOTH)
 #if defined(CONFIG_BLUETOOTH_UART)
