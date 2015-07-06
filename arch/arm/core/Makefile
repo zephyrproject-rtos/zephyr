@@ -8,6 +8,6 @@ obj-y = atomic.o exc_exit.o ffs.o irq_init.o \
 	fault.o gdb_stub_irq_vector_table.o \
 	irq_manage.o context.o cpu_idle.o \
 	fault_s.o gdb_stub.o isr_wrapper.o \
-	fatal.o
+	fatal.o sys_fatal_error_handler.o
 
 obj-$(CONFIG_MICROKERNEL) += task_abort.o
