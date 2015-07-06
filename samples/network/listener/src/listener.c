@@ -49,7 +49,8 @@ static void set_mac(void)
 }
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
-#define MYADDR { { { 0xaa,0xaa,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
+/* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
+#define MYADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
 #else
 /* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
 #define MYADDR { { { 192,0,2,2 } } }

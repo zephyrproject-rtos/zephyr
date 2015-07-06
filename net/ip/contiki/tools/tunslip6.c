@@ -765,7 +765,7 @@ main(int argc, char **argv)
     case 'h':
     default:
 fprintf(stderr,"usage:  %s [options] ipaddress\n", prog);
-fprintf(stderr,"example: tunslip6 -L -v2 -s ttyUSB1 aaaa::1/64\n");
+fprintf(stderr,"example: tunslip6 -L -v2 -s ttyUSB1 2001:db8::1/64\n");
 fprintf(stderr,"Options are:\n");
 #ifndef __APPLE__
 fprintf(stderr," -B baudrate    9600,19200,38400,57600,115200 (default),230400,460800,921600\n");

@@ -24,11 +24,11 @@ $ make BSP=ti_lm3s6965 ARCH=arm \
 
 3) Start tunslip6
 
-$ sudo ./tunslip6 -s `readlink /tmp/slip.dev` aaaa::1/64
+$ sudo ./tunslip6 -s `readlink /tmp/slip.dev` 2001:db8::1/64
 
 4) Send data to listener
 
-$ nc -u -6 aaaa::2 4242 <<EOF
+$ nc -u -6 2001:db8::2 4242 <<EOF
 foobar
 EOF
 
@@ -83,4 +83,4 @@ in tunslip6 section of this document.
 
 Example:
 
-$ ./echo-client aaaa::2
+$ ./echo-client 2001:db8::2
