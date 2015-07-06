@@ -528,7 +528,7 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 			BT_GATT_PRIMARY_SERVICE(start_handle, params->uuid));
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
-			return;
+			goto done;
 		}
 	}
 
