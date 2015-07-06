@@ -132,6 +132,6 @@ struct bt_smp_security_request {
 } __packed;
 
 bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr);
-int smp_send_pairing_req(struct bt_conn *conn);
+int bt_smp_send_pairing_req(struct bt_conn *conn);
 
 void bt_smp_init(void);

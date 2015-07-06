@@ -388,7 +388,7 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-int smp_send_pairing_req(struct bt_conn *conn)
+int bt_smp_send_pairing_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
 	struct bt_smp_pairing *req;
@@ -830,7 +830,7 @@ static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 
 	return 0;
 pair:
-	if (smp_send_pairing_req(conn) < 0) {
+	if (bt_smp_send_pairing_req(conn) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 

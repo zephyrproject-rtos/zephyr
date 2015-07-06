@@ -466,5 +466,5 @@ int bt_security(struct bt_conn *conn, bt_security_t sec)
 						  keys->ltk.val);
 	}
 
-	return smp_send_pairing_req(conn);
+	return bt_smp_send_pairing_req(conn);
 }
