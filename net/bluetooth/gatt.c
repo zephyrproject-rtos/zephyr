@@ -600,6 +600,140 @@ int bt_gatt_discover(struct bt_conn *conn,
 	return 0;
 }
 
+static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
+			      const void *pdu, uint16_t length,
+			      void *user_data)
+{
+	const struct bt_att_read_type_rsp *rsp = pdu;
+	struct bt_gatt_discover_params *params = user_data;
+	struct bt_uuid uuid;
+	uint16_t handle = 0;
+	struct bt_gatt_chrc value;
+
+	BT_DBG("err 0x%02x\n", err);
+
+	if (err) {
+		goto done;
+	}
+
+	/* Data can be either in UUID16 or UUID128 */
+	switch (rsp->len) {
+	case 7: /* UUID16 */
+		uuid.type = BT_UUID_16;
+		break;
+	case 21: /* UUID128 */
+		uuid.type = BT_UUID_128;
+		break;
+	default:
+		BT_ERR("Invalid data len %u\n", rsp->len);
+		goto done;
+	}
+
+	/* Parse characteristics found */
+	for (length--, pdu = rsp->data; length >= rsp->len;
+	     length -= rsp->len, pdu += rsp->len) {
+		const struct bt_gatt_attr *attr;
+		const struct bt_att_data *data = pdu;
+		struct gatt_chrc *chrc = (void *)data->value;
+
+		handle = sys_le16_to_cpu(data->handle);
+		/* Handle 0 is invalid */
+		if (!handle) {
+			goto done;
+		}
+
+		/* Convert characteristic data, bt_gatt_chrc and gatt_chrc
+		 * have different formats so the convertion have to be done
+		 * field by field.
+		 */
+		value.properties = chrc->properties;
+		value.value_handle = sys_le16_to_cpu(chrc->value_handle);
+		value.uuid = &uuid;
+
+		switch(uuid.type) {
+		case BT_UUID_16:
+			uuid.u16 = sys_le16_to_cpu(chrc->uuid16);
+			break;
+		case BT_UUID_128:
+			memcpy(uuid.u128, chrc->uuid, sizeof(chrc->uuid));
+			break;
+		}
+
+		BT_DBG("handle 0x%04x properties 0x%02x value_handle 0x%04x\n",
+		       handle, value.properties, value.value_handle);
+
+		/* Skip if UUID is set but doesn't match */
+		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
+			continue;
+		}
+
+		attr = (&(struct bt_gatt_attr)
+			BT_GATT_CHARACTERISTIC(handle, &value));
+
+		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+			goto done;
+		}
+	}
+
+	/* Stop if could not parse the whole PDU */
+	if (length > 0) {
+		goto done;
+	}
+
+	/* Next characteristic shall be after current value handle */
+	params->start_handle = handle;
+	if (params->start_handle < UINT16_MAX) {
+		params->start_handle++;
+	}
+
+	/* Stop if over the requested range */
+	if (params->start_handle >= params->end_handle) {
+		goto done;
+	}
+
+	/* Continue to the next range */
+	if (!bt_gatt_discover_characteristic(conn, params)) {
+		return;
+	}
+
+done:
+	if (params->destroy) {
+		params->destroy(params);
+	}
+}
+
+int bt_gatt_discover_characteristic(struct bt_conn *conn,
+				    struct bt_gatt_discover_params *params)
+{
+	struct bt_buf *buf;
+	struct bt_att_read_type_req *req;
+	uint16_t *value;
+
+	if (!conn || !params->func || !params->start_handle ||
+	    !params->end_handle) {
+		return -EINVAL;
+	}
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_TYPE_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->start_handle = sys_cpu_to_le16(params->start_handle);
+	req->end_handle = sys_cpu_to_le16(params->end_handle);
+
+	value = bt_buf_add(buf, sizeof(*value));
+	*value = sys_cpu_to_le16(BT_UUID_GATT_CHRC);
+
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x\n", params->start_handle,
+	       params->end_handle);
+
+	bt_att_send(conn, buf, att_read_type_rsp, params, NULL);
+
+	return 0;
+}
+
 void bt_gatt_cancel(struct bt_conn *conn)
 {
 	bt_att_cancel(conn);
