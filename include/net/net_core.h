@@ -111,7 +111,7 @@ void net_unregister_driver(struct net_driver *drv);
  */
 int net_set_mac(uint8_t *mac, uint8_t len);
 
-/*!
+/**
  * @brief Send a reply packet to the message originator.
  *
  * @details Application can call this function if it has received

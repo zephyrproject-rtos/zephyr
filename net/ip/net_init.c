@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  @brief Network initialization
 
  Initialize the network IP stack. Create two fibers, one for reading data

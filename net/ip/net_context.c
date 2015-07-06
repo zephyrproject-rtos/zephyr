@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  @brief Network context API
 
  An API for applications to define a network connection.

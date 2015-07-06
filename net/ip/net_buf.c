@@ -1,4 +1,4 @@
-/*! @file
+/** @file
  @brief Network buffers
 
  Network data is passed between application and IP stack via
