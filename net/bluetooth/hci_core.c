@@ -1566,7 +1566,6 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 	}
 
 	return bt_conn_get(conn);
-
 }
 
 static int bt_hci_connect_le_cancel(struct bt_conn *conn)
