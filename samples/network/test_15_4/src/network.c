@@ -259,7 +259,6 @@ void taskB(void)
 {
 	struct net_context *ctx;
 
-	set_mac();
 	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
 		PRINT("%s: Cannot get network context\n", __FUNCTION__);
@@ -338,7 +337,6 @@ void main(void)
 	loopback_addr.in6_addr = in6addr_dest;
 	loopback_addr.family = AF_INET6;
 
-	set_mac();
 	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
 		PRINT("Cannot get network context\n");
