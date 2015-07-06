@@ -100,6 +100,12 @@ static inline void init_test()
 	PRINT("%s: run 802.15.4 loopback tester\n", __FUNCTION__);
 
 	net_set_mac(src_mac, sizeof(src_mac));
+
+	any_addr.in6_addr = in6addr_src;
+	any_addr.family = AF_INET6;
+
+	loopback_addr.in6_addr = in6addr_dest;
+	loopback_addr.family = AF_INET6;
 }
 
 static void set_routes()
@@ -223,12 +229,6 @@ void taskA(void)
 	net_init();
 	init_test();
 
-	any_addr.in6_addr = in6addr_src;
-	any_addr.family = AF_INET6;
-
-	loopback_addr.in6_addr = in6addr_dest;
-	loopback_addr.family = AF_INET6;
-
 	ctx = get_context(&any_addr, SRC_PORT, &loopback_addr, DEST_PORT);
 	if (!ctx) {
 		PRINT("%s: Cannot get network context\n", __FUNCTION__);
@@ -304,19 +304,19 @@ void fiberEntry(void)
 		return;
 	}
 
-	nano_sem_init (&nanoSemFiber);
-	nano_timer_init (&timer, data);
+	nano_sem_init(&nanoSemFiber);
+	nano_timer_init(&timer, data);
 
 	while (1) {
 		/* wait for task to let us have a turn */
-		nano_fiber_sem_take_wait (&nanoSemFiber);
+		nano_fiber_sem_take_wait(&nanoSemFiber);
 
 		receive_data("listenFiber", ctx);
 
 		/* wait a while, then let task have a turn */
-		nano_fiber_timer_start (&timer, SLEEPTICKS);
-		nano_fiber_timer_wait (&timer);
-		nano_fiber_sem_give (&nanoSemTask);
+		nano_fiber_timer_start(&timer, SLEEPTICKS);
+		nano_fiber_timer_wait(&timer);
+		nano_fiber_sem_give(&nanoSemTask);
 	}
 }
 
@@ -331,19 +331,13 @@ void main(void)
 	net_init();
 	init_test();
 
-	any_addr.in6_addr = in6addr_src;
-	any_addr.family = AF_INET6;
-
-	loopback_addr.in6_addr = in6addr_dest;
-	loopback_addr.family = AF_INET6;
-
 	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
 		PRINT("Cannot get network context\n");
 		return;
 	}
 
-	task_fiber_start (&fiberStack[0], STACKSIZE,
+	task_fiber_start(&fiberStack[0], STACKSIZE,
 			(nano_fiber_entry_t) fiberEntry, 0, 0, 7, 0);
 
 	nano_sem_init(&nanoSemTask);
@@ -352,13 +346,12 @@ void main(void)
 	set_routes();
 
 	while (1) {
-
-		send_data("sendFiber", ctx);
-
 		/* wait a while, then let fiber have a turn */
 		nano_task_timer_start(&timer, SLEEPTICKS);
 		nano_task_timer_wait(&timer);
 		nano_task_sem_give(&nanoSemFiber);
+
+		send_data("sendFiber", ctx);
 
 		/* now wait for fiber to let us have a turn */
 		nano_task_sem_take_wait(&nanoSemTask);
