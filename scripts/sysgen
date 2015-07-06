@@ -256,14 +256,6 @@ def mdef_parse():
                               int(words[4])))
             continue
 
-        if (words[0] == "USERDRIVER"):
-            if (len(words) == 1):
-                error_arg_count(line)
-            start_quote = line.find("'")
-            end_quote = line.rfind("'")
-            driver_list.append(line[start_quote + 1:end_quote])
-            continue
-
         sysgen_error("unrecognized keyword %s on following line\n%s" %
                      (words[0], line))
 
