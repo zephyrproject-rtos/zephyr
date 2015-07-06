@@ -537,11 +537,13 @@ void _timer_idle_exit(void)
  * This routine is used to program the PIT to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * @return N/A
+ * @return 0
  */
 
-void _sys_clock_driver_init(void)
+int _sys_clock_driver_init(struct device *device)
 {
+	ARG_UNUSED(device);
+
 	/* determine the PIT counter value (in timer clock cycles/system tick)
 	 */
 
@@ -565,6 +567,8 @@ void _sys_clock_driver_init(void)
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt */
 	irq_enable(LOAPIC_TIMER_IRQ);
+
+	return 0;
 }
 
 /**

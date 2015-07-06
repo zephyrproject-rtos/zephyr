@@ -613,12 +613,14 @@ void _timer_idle_exit(void)
  * This routine is used to program the systick to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * @return N/A
+ * @return 0
  */
-void _sys_clock_driver_init(void)
+int _sys_clock_driver_init(struct device *device)
 {
 	/* enable counter, interrupt and set clock src to system clock */
 	union __stcsr stcsr = {.bit = {1, 1, 1, 0, 0, 0} };
+
+	ARG_UNUSED(device);
 
 	/*
 	 * Determine the reload value to achieve the configured tick rate.
@@ -640,6 +642,8 @@ void _sys_clock_driver_init(void)
 	_ScbExcPrioSet(_EXC_SYSTICK, _EXC_IRQ_DEFAULT_PRIO);
 
 	__scs.systick.stcsr.val = stcsr.val;
+
+	return 0;
 }
 
 /**

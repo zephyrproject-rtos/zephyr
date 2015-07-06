@@ -494,16 +494,18 @@ void _timer_idle_exit(void)
  * This routine is used to program the HPET to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * @return N/A
+ * @return 0
  */
 
-void _sys_clock_driver_init(void)
+int _sys_clock_driver_init(struct device *device)
 {
 	uint64_t hpetClockPeriod;
 	uint64_t tickFempto;
 #ifndef TIMER_SUPPORTS_TICKLESS
 	uint32_t counter_load_value;
 #endif
+
+	ARG_UNUSED(device);
 
 	/*
 	 * Initial state of HPET is unknown, so put it back in a reset-like
@@ -614,6 +616,8 @@ void _sys_clock_driver_init(void)
 
 	*_HPET_GENERAL_CONFIG |= HPET_ENABLE_CNF;
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_INT_ENB_CNF;
+
+	return 0;
 }
 
 /**

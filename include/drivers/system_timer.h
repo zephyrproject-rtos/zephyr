@@ -45,8 +45,10 @@ GTEXT(_timer_int_handler)
 
 #else /* _ASMLANGUAGE */
 
+#include <device.h>
+
 extern uint32_t timer_read(void);
-extern void _sys_clock_driver_init(void);
+extern int _sys_clock_driver_init(struct device *device);
 /*
  * Timer interrupt handler is one of the routines that the driver
  * has to implement, but it is not necessarily an external function.

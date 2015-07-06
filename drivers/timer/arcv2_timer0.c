@@ -160,13 +160,15 @@ void _timer_int_handler(void *unused)
  * This routine is used to program the ARCv2 timer to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
- * @return N/A
+ * @return 0
  */
 
-void _sys_clock_driver_init(void)
+int _sys_clock_driver_init(struct device *device)
 {
 	int irq = CONFIG_ARCV2_TIMER0_INT_LVL;
 	int prio = CONFIG_ARCV2_TIMER0_INT_PRI;
+
+	ARG_UNUSED(device);
 
 	/* ensure that the timer will not generate interrupts */
 	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, 0);
@@ -183,6 +185,8 @@ void _sys_clock_driver_init(void)
 
 	/* everything has been configured: safe to enable the interrupt */
 	irq_enable(CONFIG_ARCV2_TIMER0_INT_LVL);
+
+	return 0;
 }
 
 /**

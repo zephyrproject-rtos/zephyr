@@ -63,7 +63,7 @@ uint32_t _sys_idle_elapsed_ticks = 1;
 
 void nano_time_init(void)
 {
-	_sys_clock_driver_init();
+	_sys_clock_driver_init(NULL);
 }
 
 SYS_PREKERNEL_INIT(nano_time_init, 250);
