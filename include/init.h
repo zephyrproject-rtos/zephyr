@@ -64,7 +64,7 @@
 	 static struct device (__initconfig_##cfg_name##id) __used  \
 	__attribute__((__section__(".initconfig" #id ".init"))) = { \
 		 .config = &(config_##cfg_name),\
-		 .driver_data = data};
+		 .driver_data = data}
 
 /* Run on interrupt stack; no {micro,nano} kernel objects available */
 #define pure_init(cfg, data)		__define_initconfig(cfg, 0, data)

@@ -56,7 +56,7 @@
 	__attribute__((__section__(".devconfig.init"))) = { \
 		.name = drv_name, .init = (init_fn), \
 		.config_info = (config)				   \
-	};\
+	}
 
 struct device;
 
