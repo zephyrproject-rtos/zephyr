@@ -272,7 +272,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 		__ASSERT_NO_MSG(1 == 0); /* should not come here */
 	}
 	if (_ASYNCREQ != _k_pipe_request_type_get(&ReqOrig->Args)) {
-		ReqOrig->Args.ChAck.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
+		ReqOrig->Args.pipe_ack.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
 	}
 
 	SENDARGS(ReqOrig);
@@ -290,12 +290,12 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 void _k_pipe_put_ack(struct k_args *Request)
 {
 	if (_ASYNCREQ == _k_pipe_request_type_get(&Request->Args)) {
-		struct _pipe_ack_arg *pChAck = &Request->Args.ChAck;
+		struct _pipe_ack_arg *pipe_ack = &Request->Args.pipe_ack;
 		struct k_args A;
 		struct k_block *blockptr;
 
 		/* invoke command to release block */
-		blockptr = &(pChAck->ReqType.Async.block);
+		blockptr = &pipe_ack->ReqType.Async.block;
 		A.Comm = REL_BLOCK;
 		A.Args.p1.poolid = blockptr->poolid;
 		A.Args.p1.req_size = blockptr->req_size;
@@ -303,12 +303,12 @@ void _k_pipe_put_ack(struct k_args *Request)
 		A.Args.p1.rep_dataptr = blockptr->pointer_to_data;
 		_k_mem_pool_block_release(&A); /* will return immediately */
 
-		if ((ksem_t)NULL != pChAck->ReqType.Async.sema) {
+		if ((ksem_t)NULL != pipe_ack->ReqType.Async.sema) {
 			/* invoke command to signal sema */
 			struct k_args A;
 
 			A.Comm = SIGNALS;
-			A.Args.s1.sema = pChAck->ReqType.Async.sema;
+			A.Args.s1.sema = pipe_ack->ReqType.Async.sema;
 			_k_sem_signal(&A); /* will return immediately */
 		}
 	} else {
@@ -317,7 +317,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 
 		LocalReq = Request->Ctxt.args;
 		LocalReq->Time.rcode = Request->Time.rcode;
-		LocalReq->Args.ChAck = Request->Args.ChAck;
+		LocalReq->Args.pipe_ack = Request->Args.pipe_ack;
 
 		_k_state_bit_reset(LocalReq->Ctxt.proc, TF_SEND | TF_SENDDATA);
 	}

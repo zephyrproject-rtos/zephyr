@@ -253,7 +253,7 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 		__ASSERT_NO_MSG(1 == 0); /* should not come here */
 	}
 
-	ReqOrig->Args.ChAck.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
+	ReqOrig->Args.pipe_ack.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
 	SENDARGS(ReqOrig);
 
 	FREEARGS(ReqProc);
@@ -272,7 +272,7 @@ void _k_pipe_get_ack(struct k_args *Request)
 
 	LocalReq = Request->Ctxt.args;
 	LocalReq->Time.rcode = Request->Time.rcode;
-	LocalReq->Args.ChAck = Request->Args.ChAck;
+	LocalReq->Args.pipe_ack = Request->Args.pipe_ack;
 
 	/* Reschedule the sender task */
 

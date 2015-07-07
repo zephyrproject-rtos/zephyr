@@ -442,7 +442,7 @@ union k_args_args {
 	struct _pipe_xfer_req_arg ChProc;
 	struct _pipe_xfer_ack_arg ChMovedAck;
 	struct _pipe_req_arg pipe_req;
-	struct _pipe_ack_arg ChAck;
+	struct _pipe_ack_arg pipe_ack;
 };
 
 /*

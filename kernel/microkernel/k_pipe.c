@@ -104,7 +104,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 
 	KERNEL_ENTRY(&A);
 
-	*piNbrBytesRead = A.Args.ChAck.iSizeXferred;
+	*piNbrBytesRead = A.Args.pipe_ack.iSizeXferred;
 	return A.Time.rcode;
 }
 
@@ -156,7 +156,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 
 	KERNEL_ENTRY(&A);
 
-	*piNbrBytesWritten = A.Args.ChAck.iSizeXferred;
+	*piNbrBytesWritten = A.Args.pipe_ack.iSizeXferred;
 	return A.Time.rcode;
 }
 
