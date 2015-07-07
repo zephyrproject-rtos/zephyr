@@ -154,12 +154,8 @@ void *bt_buf_add(struct bt_buf *buf, size_t len)
 
 	BT_DBG("buf %p len %u\n", buf, len);
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-	if (bt_buf_tailroom(buf) < len) {
-		BT_ERR("buf %p overflow! len %u tailroom %u\n", buf, len,
-		       bt_buf_tailroom(buf));
-	}
-#endif
+	BT_ASSERT(bt_buf_tailroom(buf) < len);
+
 	buf->len += len;
 	return tail;
 }
@@ -168,12 +164,8 @@ void *bt_buf_push(struct bt_buf *buf, size_t len)
 {
 	BT_DBG("buf %p len %u\n", buf, len);
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-	if (bt_buf_headroom(buf) < len) {
-		BT_ERR("buf %p underflow! len %u headroom %u\n", buf, len,
-		       bt_buf_headroom(buf));
-	}
-#endif
+	BT_ASSERT(bt_buf_headroom(buf) < len);
+
 	buf->data -= len;
 	buf->len += len;
 	return buf->data;
@@ -183,12 +175,8 @@ void *bt_buf_pull(struct bt_buf *buf, size_t len)
 {
 	BT_DBG("buf %p len %u\n", buf, len);
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
-	if (buf->len < len) {
-		BT_ERR("buf %p overflow! len %u buf->len %u\n", buf, len,
-		       buf->len);
-	}
-#endif
+	BT_ASSERT(buf->len < len);
+
 	buf->len -= len;
 	return buf->data += len;
 }
