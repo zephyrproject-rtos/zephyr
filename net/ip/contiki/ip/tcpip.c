@@ -425,7 +425,7 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
               /* Only restart the timer if there are active
                  connections. */
               etimer_restart(&periodic);
-              uip_periodic(i);
+              uip_periodic(buf, i);
 #if NETSTACK_CONF_WITH_IPV6
 	      tcpip_ipv6_output(buf);
 #else
@@ -488,7 +488,7 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
 #if UIP_TCP
     case TCP_POLL:
       if(data != NULL) {
-        uip_poll_conn(data);
+        uip_poll_conn(buf, data);
 #if NETSTACK_CONF_WITH_IPV6
         tcpip_ipv6_output(buf);
 #else /* NETSTACK_CONF_WITH_IPV6 */
@@ -829,10 +829,10 @@ tcpip_uipcall(struct net_buf *buf)
    
    /* If this is a connection request for a listening port, we must
       mark the connection with the right process ID. */
-   if(uip_connected()) {
+   if(uip_connected(buf)) {
      l = &s.listenports[0];
      for(i = 0; i < UIP_LISTENPORTS; ++i) {
-       if(l->port == uip_conn->lport &&
+       if(l->port == uip_conn(buf)->lport &&
 	  l->p != PROCESS_NONE) {
 	 ts->p = l->p;
 	 ts->state = NULL;

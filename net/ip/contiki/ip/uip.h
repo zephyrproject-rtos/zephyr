@@ -330,8 +330,8 @@ void uip_setipid(uint16_t id);
  * \hideinitializer
  */
 #if UIP_TCP
-#define uip_periodic(conn) do { uip_conn = &uip_conns[conn];    \
-    uip_process(UIP_TIMER); } while (0)
+#define uip_periodic(buf, conn) do { uip_set_conn(buf) = &uip_conns[conn]; \
+    uip_process(buf, UIP_TIMER); } while (0)
 
 /**
  * Macro to determine whether a specific uIP connection is active
@@ -354,8 +354,8 @@ void uip_setipid(uint16_t id);
  *
  * \hideinitializer
  */
-#define uip_periodic_conn(conn) do { uip_conn = conn;   \
-    uip_process(UIP_TIMER); } while (0)
+#define uip_periodic_conn(buf, conn) do { uip_set_conn(buf) = conn;	\
+    uip_process(buf, UIP_TIMER); } while (0)
 
 /**
  * Request that a particular connection should be polled.
@@ -368,8 +368,8 @@ void uip_setipid(uint16_t id);
  *
  * \hideinitializer
  */
-#define uip_poll_conn(conn) do { uip_conn = conn;       \
-    uip_process(UIP_POLL_REQUEST); } while (0)
+#define uip_poll_conn(buf, conn) do { uip_set_conn(buf) = conn;	\
+    uip_process(buf, UIP_POLL_REQUEST); } while (0)
 
 #endif /* UIP_TCP */
 
@@ -584,7 +584,7 @@ struct uip_conn *uip_connect(const uip_ipaddr_t *ripaddr, uint16_t port);
  * \hideinitializer
  */
 #if UIP_TCP
-CCIF void uip_send(const void *data, int len);
+CCIF void uip_send(struct net_buf *buf, const void *data, int len);
 #endif
 
 /**
@@ -694,7 +694,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_acked()   (uip_flags & UIP_ACKDATA)
+#define uip_acked(buf)   (uip_flags(buf) & UIP_ACKDATA)
 
 /**
  * Has the connection just been connected?
@@ -706,7 +706,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_connected() (uip_flags & UIP_CONNECTED)
+#define uip_connected(buf) (uip_flags(buf) & UIP_CONNECTED)
 
 /**
  * Has the connection been closed by the other end?
@@ -716,7 +716,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_closed()    (uip_flags & UIP_CLOSE)
+#define uip_closed(buf)    (uip_flags(buf) & UIP_CLOSE)
 
 /**
  * Has the connection been aborted by the other end?
@@ -726,7 +726,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_aborted()    (uip_flags & UIP_ABORT)
+#define uip_aborted(buf)    (uip_flags(buf) & UIP_ABORT)
 
 /**
  * Has the connection timed out?
@@ -736,7 +736,7 @@ CCIF void uip_send(const void *data, int len);
  *
  * \hideinitializer
  */
-#define uip_timedout()    (uip_flags & UIP_TIMEDOUT)
+#define uip_timedout(buf)    (uip_flags(buf) & UIP_TIMEDOUT)
 
 /**
  * Do we need to retransmit previously data?

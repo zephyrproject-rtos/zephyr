@@ -77,7 +77,7 @@ struct tcpip_uipstate {
   void *state;
 };
 
-#define UIP_APPCALL tcpip_uipcall
+#define UIP_APPCALL(buf) tcpip_uipcall(buf)
 #define UIP_UDP_APPCALL(buf) tcpip_uipcall(buf)
 #define UIP_ICMP6_APPCALL tcpip_icmp6_call
 
