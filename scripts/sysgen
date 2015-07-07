@@ -62,8 +62,6 @@ mbx_list = []
 map_list = []
 pool_list = []
 
-driver_list = []
-
 group_dictionary = {}
 group_key_list = []
 
@@ -287,7 +285,6 @@ def kernel_main_c_header():
         do_not_edit_warning +
         "\n" +
         "#include <zephyr.h>\n" +
-        "#include <drivers/system_timer.h>\n" +
         "#include <micro_private_types.h>\n" +
         "#include <kernel_main.h>\n" +
         "#include <toolchain.h>\n" +
@@ -959,20 +956,6 @@ def kernel_main_c_kernel_services():
     kernel_main_c_out("};\n")
 
 
-def kernel_main_c_driver_init():
-    """ Generate driver initialization routine """
-
-    kernel_main_c_out("\n" +
-        "void _k_init_drivers(void)\n" +
-        "{\n" +
-		"#ifdef CONFIG_SYS_CLOCK_EXISTS\n" +
-		"    _sys_clock_driver_init(NULL);\n" +
-		"#endif\n")
-    for driver_call in driver_list:
-        kernel_main_c_out("    " + driver_call + ";\n")
-    kernel_main_c_out("}\n")
-
-
 def kernel_main_c_node_init():
     """ Generate node initialization routine """
 
@@ -1018,7 +1001,6 @@ def kernel_main_c_generate():
     kernel_main_c_maps()
     kernel_main_c_pools()
     kernel_main_c_kernel_services()
-    kernel_main_c_driver_init()
     kernel_main_c_node_init()
     kernel_main_c_main()
 

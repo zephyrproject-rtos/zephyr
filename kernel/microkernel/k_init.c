@@ -44,7 +44,6 @@
 #endif
 
 extern void _k_init_node(void);     /* defined by sysgen */
-extern void _k_init_drivers(void);  /* defined by sysgen */
 
 char __noinit __stack _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];
 
@@ -52,8 +51,14 @@ char __noinit __stack _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];
 int _k_debug_halt = 0;
 #endif
 
+#ifdef CONFIG_INIT_STACKS
+static uint32_t _k_server_command_stack_storage
+						[CONFIG_COMMAND_STACK_SIZE] =
+	{ [0 ... CONFIG_COMMAND_STACK_SIZE - 1] = 0xAAAAAAAA };
+#else
 static uint32_t __noinit _k_server_command_stack_storage
 						[CONFIG_COMMAND_STACK_SIZE];
+#endif
 
 struct nano_stack _k_command_stack = {NULL,
 									  _k_server_command_stack_storage,
@@ -81,11 +86,6 @@ void _k_kernel_init(void)
 	 */
 	_k_init_node();
 
-#ifdef CONFIG_INIT_STACKS
-	memset((char *)_k_server_command_stack_storage, 0xaa,
-		   sizeof(_k_server_command_stack_storage));
-#endif
-
 	task_fiber_start(_k_server_stack,
 			   CONFIG_MICROKERNEL_SERVER_STACK_SIZE,
 			   K_swapper,
@@ -94,7 +94,6 @@ void _k_kernel_init(void)
 			   CONFIG_MICROKERNEL_SERVER_PRIORITY,
 			   0);
 
-	_k_init_drivers();
 	_sys_device_do_config_level(MICRO_EARLY);
 	_sys_device_do_config_level(MICRO_LATE);
 	_sys_device_do_config_level(APP_EARLY);
