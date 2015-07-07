@@ -42,11 +42,15 @@
 #define BT_ERR(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) printf("bt: " fmt,  ##__VA_ARGS__)
+#define BT_ASSERT(cond) if (!(cond)) { \
+				BT_ERR("bt: assert: '" #cond "' failed\n"); \
+			}
 #else
 #define BT_DBG(fmt, ...)
 #define BT_ERR(fmt, ...)
 #define BT_WARN(fmt, ...)
 #define BT_INFO(fmt, ...)
+#define BT_ASSERT(cond)
 #endif /* CONFIG_BLUETOOTH_DEBUG */
 
 #endif /* __BT_LOG_H */
