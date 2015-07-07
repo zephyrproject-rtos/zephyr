@@ -228,7 +228,7 @@ struct pipe_struct {
 	char *Buffer;    /* pointer to statically allocated buffer  */
 	struct k_args *Writers;
 	struct k_args *Readers;
-	struct pipe_desc Buff;
+	struct pipe_desc desc;
 	int Count;
 };
 

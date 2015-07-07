@@ -39,29 +39,29 @@ extern "C" {
 
 #include <micro_private_types.h>
 
-void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct pipe_desc *pChBuff);
+void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct pipe_desc *desc);
 
-void BuffGetFreeSpaceTotal(struct pipe_desc *pBuff, int *piTotalFreeSpace);
-void BuffGetFreeSpace(struct pipe_desc *pBuff, int *piTotalFreeSpace,
+void BuffGetFreeSpaceTotal(struct pipe_desc *desc, int *piTotalFreeSpace);
+void BuffGetFreeSpace(struct pipe_desc *desc, int *piTotalFreeSpace,
 					  int *piFreeSpaceCont, int *piFreeSpaceAWA);
 
-void BuffGetAvailDataTotal(struct pipe_desc *pBuff, int *piAvailDataTotal);
-void BuffGetAvailData(struct pipe_desc *pBuff, int *piAvailDataTotal,
+void BuffGetAvailDataTotal(struct pipe_desc *desc, int *piAvailDataTotal);
+void BuffGetAvailData(struct pipe_desc *desc, int *piAvailDataTotal,
 					  int *piAvailDataCont, int *piAvailDataAWA);
 
-int BuffEmpty(struct pipe_desc *pBuff);
-int BuffFull(struct pipe_desc *pBuff);
+int BuffEmpty(struct pipe_desc *desc);
+int BuffFull(struct pipe_desc *desc);
 
-int BuffEnQ(struct pipe_desc *pBuff, int iSize, unsigned char **ppWrite);
-int BuffEnQA(struct pipe_desc *pBuff, int iSize, unsigned char **ppWrite,
+int BuffEnQ(struct pipe_desc *desc, int iSize, unsigned char **ppWrite);
+int BuffEnQA(struct pipe_desc *desc, int iSize, unsigned char **ppWrite,
 			 int *piTransferID);
-void BuffEnQA_End(struct pipe_desc *pBuff, int iTransferID,
+void BuffEnQA_End(struct pipe_desc *desc, int iTransferID,
 				  int iSize /* optional */);
 
-int BuffDeQ(struct pipe_desc *pBuff, int iSize, unsigned char **ppRead);
-int BuffDeQA(struct pipe_desc *pBuff, int iSize, unsigned char **ppRead,
+int BuffDeQ(struct pipe_desc *desc, int iSize, unsigned char **ppRead);
+int BuffDeQA(struct pipe_desc *desc, int iSize, unsigned char **ppRead,
 			 int *piTransferID);
-void BuffDeQA_End(struct pipe_desc *pBuff, int iTransferID,
+void BuffDeQA_End(struct pipe_desc *desc, int iTransferID,
 				  int iSize /* optional */);
 
 #ifdef __cplusplus

@@ -96,7 +96,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 			int XferId = pEOXferArgs->ID;
 
-			BuffEnQA_End(&(pEOXferArgs->pPipe->Buff), XferId,
+			BuffEnQA_End(&pEOXferArgs->pPipe->desc, XferId,
 						 pEOXferArgs->iSize);
 		}
 
@@ -135,7 +135,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 			int XferId = pEOXferArgs->ID;
 
-			BuffDeQA_End(&(pEOXferArgs->pPipe->Buff), XferId,
+			BuffDeQA_End(&pEOXferArgs->pPipe->desc, XferId,
 						 pEOXferArgs->iSize);
 		}
 
@@ -346,8 +346,8 @@ static int ReaderInProgressIsBlocked(struct pipe_struct *pPipe,
 
 	/* second condition: buffer activity is null */
 
-	if (0 != pPipe->Buff.iNbrPendingWrites ||
-	    0 != pPipe->Buff.iNbrPendingReads) {
+	if (0 != pPipe->desc.iNbrPendingWrites ||
+	    0 != pPipe->desc.iNbrPendingReads) {
 		/* buffer activity detected, can't say now that processing is blocked */
 		return 0;
 	}
@@ -356,7 +356,7 @@ static int ReaderInProgressIsBlocked(struct pipe_struct *pPipe,
 
 	iSizeSpaceInReader =
 		pReader->Args.ChProc.iSizeTotal - pReader->Args.ChProc.iSizeXferred;
-	BuffGetAvailDataTotal(&(pPipe->Buff), &iAvailBufferData);
+	BuffGetAvailDataTotal(&pPipe->desc, &iAvailBufferData);
 	if (iAvailBufferData >= iSizeSpaceInReader) {
 		return 0;
 	} else {
@@ -391,8 +391,8 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 
 	/* second condition: buffer activity is null */
 
-	if (0 != pPipe->Buff.iNbrPendingWrites ||
-	    0 != pPipe->Buff.iNbrPendingReads) {
+	if (0 != pPipe->desc.iNbrPendingWrites ||
+	    0 != pPipe->desc.iNbrPendingReads) {
 		/* buffer activity detected, can't say now that processing is blocked */
 		return 0; 
 	}
@@ -401,7 +401,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 
 	iSizeDataInWriter =
 		pWriter->Args.ChProc.iSizeTotal - pWriter->Args.ChProc.iSizeXferred;
-	BuffGetFreeSpaceTotal(&(pPipe->Buff), &iFreeBufferSpace);
+	BuffGetFreeSpaceTotal(&pPipe->desc, &iFreeBufferSpace);
 	if (iFreeBufferSpace >= iSizeDataInWriter) {
 		return 0;
 	} else {
@@ -439,7 +439,7 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 	pReaderArgs = &pReader->Args.ChProc;
 
 	do {
-		iSize = min(pPipe->Buff.iAvailDataCont,
+		iSize = min(pPipe->desc.iAvailDataCont,
 					pReaderArgs->iSizeTotal - pReaderArgs->iSizeXferred);
 
 		if (iSize == 0) {
@@ -448,7 +448,7 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 
 		struct k_args *Moved_req;
 
-		ret = BuffDeQA(&pPipe->Buff, iSize, &pRead, &id);
+		ret = BuffDeQA(&pPipe->desc, iSize, &pRead, &id);
 		if (0 == ret) {
 			return;
 		}
@@ -508,8 +508,8 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 	pWriterArgs = &pWriter->Args.ChProc;
 
 	do {
-		iSize = min((numIterations == 2) ? pPipe->Buff.iFreeSpaceCont
-					: pPipe->Buff.iFreeSpaceAWA,
+		iSize = min((numIterations == 2) ? pPipe->desc.iFreeSpaceCont
+					: pPipe->desc.iFreeSpaceAWA,
 					pWriterArgs->iSizeTotal - pWriterArgs->iSizeXferred);
 
 		if (iSize == 0) {
@@ -518,7 +518,7 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 
 		struct k_args *Moved_req;
 
-		ret = BuffEnQA(&pPipe->Buff, iSize, &pWrite, &id);
+		ret = BuffEnQA(&pPipe->desc, iSize, &pWrite, &id);
 		if (0 == ret) {
 			return;
 		}
@@ -618,15 +618,15 @@ static void pipe_read_write(
 	int iAvailDataWriter =
 		(pWriterArgs->iSizeTotal - pWriterArgs->iSizeXferred);
 	int iFreeSpaceBuffer =
-		(pPipe->Buff.iFreeSpaceCont + pPipe->Buff.iFreeSpaceAWA);
+		(pPipe->desc.iFreeSpaceCont + pPipe->desc.iFreeSpaceAWA);
 	int iAvailDataBuffer =
-		(pPipe->Buff.iAvailDataCont + pPipe->Buff.iAvailDataAWA);
+		(pPipe->desc.iAvailDataCont + pPipe->desc.iAvailDataAWA);
 
 	iT1 = min(iFreeSpaceReader, iAvailDataBuffer);
 
 	iFreeSpaceReader -= iT1;
 
-	if (0 == pPipe->Buff.iNbrPendingWrites) {
+	if (0 == pPipe->desc.iNbrPendingWrites) {
 		/* no incoming data anymore */
 
 		iT2 = min(iFreeSpaceReader, iAvailDataWriter);
@@ -772,7 +772,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 					iSpace2WriteinReaders +=
 						(pNLReader->Args.ChProc.iSizeTotal -
 						 pNLReader->Args.ChProc.iSizeXferred);
-				BuffGetFreeSpaceTotal(&(pPipe->Buff), &iFreeBufferSpace);
+				BuffGetFreeSpaceTotal(&pPipe->desc, &iFreeBufferSpace);
 				iTotalSpace2Write =
 					iFreeBufferSpace + iSpace2WriteinReaders;
 				iSizeDataInWriter =
@@ -801,7 +801,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 					iData2ReadFromWriters +=
 						(pNLWriter->Args.ChProc.iSizeTotal -
 						 pNLWriter->Args.ChProc.iSizeXferred);
-				BuffGetAvailDataTotal(&(pPipe->Buff), &iAvailBufferData);
+				BuffGetAvailDataTotal(&pPipe->desc, &iAvailBufferData);
 				iTotalData2Read = iAvailBufferData + iData2ReadFromWriters;
 				iSizeFreeSpaceInReader =
 					pReader->Args.ChProc.iSizeTotal -
@@ -821,7 +821,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 
 		if (bALLNWriterNoGo) {
 			/* investigate if we must force a transfer to avoid a stall */
-			if (!BuffEmpty(&(pPipe->Buff))) {
+			if (!BuffEmpty(&pPipe->desc)) {
 				if (pReader) {
 					pipe_read(pPipe, pReader);
 					continue;
@@ -846,7 +846,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			}
 		} else if (bALLNReaderNoGo) {
 			/* investigate if we must force a transfer to avoid a stall */
-			if (!BuffFull(&(pPipe->Buff))) {
+			if (!BuffFull(&pPipe->desc)) {
 				if (pWriter) {
 					pipe_write(pPipe, pWriter);
 					continue;

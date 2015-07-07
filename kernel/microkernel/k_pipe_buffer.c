@@ -32,8 +32,8 @@
 
 
 /* Implementation remarks:
-- when using a floating end pointer: do not use pChBuff->iBuffsize for
-  (Buff->pEnd - pChBuff->pBegin)
+- when using a floating end pointer: do not use pipe_desc->iBuffsize for
+  (pipe_desc->pEnd - pipe_desc->pBegin)
  */
 
 #include <microkernel/base_api.h>
@@ -63,9 +63,9 @@
  */
 
 #define CHECK_CHBUFF_POINTER(pData) \
-	__ASSERT_NO_MSG(pChBuff->pBegin <= pData && pData < pChBuff->pEnd)
+	__ASSERT_NO_MSG(desc->pBegin <= pData && pData < desc->pEnd)
 
-static void pipe_intrusion_check(struct pipe_desc *pChBuff, unsigned char *pBegin, int iSize);
+static void pipe_intrusion_check(struct pipe_desc *desc, unsigned char *pBegin, int iSize);
 
 /**
  * Markers
@@ -305,54 +305,54 @@ static int ScanMarkers(struct marker_list *pMarkerList,
  * General
  */
 
-void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct pipe_desc *pChBuff)
+void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct pipe_desc *desc)
 {
-	pChBuff->pBegin = pBuffer;
+	desc->pBegin = pBuffer;
 
-	pChBuff->iBuffSize = *piBuffSize;
+	desc->iBuffSize = *piBuffSize;
 
 	/* reset all pointers */
 
-	pChBuff->pEnd = pChBuff->pBegin + OCTET_TO_SIZEOFUNIT(pChBuff->iBuffSize);
-	pChBuff->pEndOrig = pChBuff->pEnd;
+	desc->pEnd = desc->pBegin + OCTET_TO_SIZEOFUNIT(desc->iBuffSize);
+	desc->pEndOrig = desc->pEnd;
 
 	/* assumed it is allowed */
-	pChBuff->BuffState = BUFF_EMPTY;
-	pChBuff->pEnd = pChBuff->pEndOrig;
-	pChBuff->pWrite = pChBuff->pBegin;
-	pChBuff->pWriteGuard = NULL;
-	pChBuff->bWriteWA = false;
-	pChBuff->pRead = pChBuff->pBegin;
-	pChBuff->pReadGuard = NULL;
-	pChBuff->bReadWA = true; /* YES!! */
-	pChBuff->iFreeSpaceCont = pChBuff->iBuffSize;
-	pChBuff->iFreeSpaceAWA = 0;
-	pChBuff->iNbrPendingReads = 0;
-	pChBuff->iAvailDataCont = 0;
-	pChBuff->iAvailDataAWA = 0;
-	pChBuff->iNbrPendingWrites = 0;
-	MarkersClear(&(pChBuff->WriteMarkers));
-	MarkersClear(&(pChBuff->ReadMarkers));
+	desc->BuffState = BUFF_EMPTY;
+	desc->pEnd = desc->pEndOrig;
+	desc->pWrite = desc->pBegin;
+	desc->pWriteGuard = NULL;
+	desc->bWriteWA = false;
+	desc->pRead = desc->pBegin;
+	desc->pReadGuard = NULL;
+	desc->bReadWA = true; /* YES!! */
+	desc->iFreeSpaceCont = desc->iBuffSize;
+	desc->iFreeSpaceAWA = 0;
+	desc->iNbrPendingReads = 0;
+	desc->iAvailDataCont = 0;
+	desc->iAvailDataAWA = 0;
+	desc->iNbrPendingWrites = 0;
+	MarkersClear(&desc->WriteMarkers);
+	MarkersClear(&desc->ReadMarkers);
 
 }
 
-int CalcFreeSpace(struct pipe_desc *pChBuff, int *piFreeSpaceCont,
+int CalcFreeSpace(struct pipe_desc *desc, int *piFreeSpaceCont,
 				  int *piFreeSpaceAWA)
 {
-	unsigned char *pStart = pChBuff->pWrite;
-	unsigned char *pStop = pChBuff->pRead;
+	unsigned char *pStart = desc->pWrite;
+	unsigned char *pStop = desc->pRead;
 
-	if (NULL != pChBuff->pWriteGuard) {
-		pStop = pChBuff->pWriteGuard;
+	if (NULL != desc->pWriteGuard) {
+		pStop = desc->pWriteGuard;
 	} else {
 		/*
 		 * if BuffState==BUFF_EMPTY but we have a WriteGuard,
 		 * we still need to calculate it as a normal [Start,Stop] interval
 		 */
 
-		if (BUFF_EMPTY == pChBuff->BuffState) {
-			*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
-			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
+		if (BUFF_EMPTY == desc->BuffState) {
+			*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
+			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->pBegin);
 			return (*piFreeSpaceCont + *piFreeSpaceAWA);
 			/* this sum equals pEnd-pBegin */
 		}
@@ -367,13 +367,13 @@ int CalcFreeSpace(struct pipe_desc *pChBuff, int *piFreeSpaceCont,
 		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
 		*piFreeSpaceAWA = 0;
 	} else {
-		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
-		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
+		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
+		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->pBegin);
 	}
 	return (*piFreeSpaceCont + *piFreeSpaceAWA);
 }
 
-void BuffGetFreeSpace(struct pipe_desc *pChBuff, int *piFreeSpaceTotal,
+void BuffGetFreeSpace(struct pipe_desc *desc, int *piFreeSpaceTotal,
 					  int *piFreeSpaceCont, int *piFreeSpaceAWA)
 {
 	int iFreeSpaceCont;
@@ -381,49 +381,49 @@ void BuffGetFreeSpace(struct pipe_desc *pChBuff, int *piFreeSpaceTotal,
 	int iFreeSpaceTotal;
 
 	iFreeSpaceTotal =
-		CalcFreeSpace(pChBuff, &iFreeSpaceCont, &iFreeSpaceAWA);
-	__ASSERT_NO_MSG(iFreeSpaceCont == pChBuff->iFreeSpaceCont);
-	__ASSERT_NO_MSG(iFreeSpaceAWA == pChBuff->iFreeSpaceAWA);
+		CalcFreeSpace(desc, &iFreeSpaceCont, &iFreeSpaceAWA);
+	__ASSERT_NO_MSG(iFreeSpaceCont == desc->iFreeSpaceCont);
+	__ASSERT_NO_MSG(iFreeSpaceAWA == desc->iFreeSpaceAWA);
 	*piFreeSpaceTotal = iFreeSpaceTotal;
-	*piFreeSpaceCont = pChBuff->iFreeSpaceCont;
-	*piFreeSpaceAWA = pChBuff->iFreeSpaceAWA;
+	*piFreeSpaceCont = desc->iFreeSpaceCont;
+	*piFreeSpaceAWA = desc->iFreeSpaceAWA;
 }
 
-void BuffGetFreeSpaceTotal(struct pipe_desc *pChBuff, int *piFreeSpaceTotal)
+void BuffGetFreeSpaceTotal(struct pipe_desc *desc, int *piFreeSpaceTotal)
 {
 	int dummy1, dummy2;
-	*piFreeSpaceTotal = CalcFreeSpace(pChBuff, &dummy1, &dummy2);
-	__ASSERT_NO_MSG(dummy1 == pChBuff->iFreeSpaceCont);
-	__ASSERT_NO_MSG(dummy2 == pChBuff->iFreeSpaceAWA);
+	*piFreeSpaceTotal = CalcFreeSpace(desc, &dummy1, &dummy2);
+	__ASSERT_NO_MSG(dummy1 == desc->iFreeSpaceCont);
+	__ASSERT_NO_MSG(dummy2 == desc->iFreeSpaceAWA);
 }
 
-int BuffEmpty(struct pipe_desc *pChBuff)
+int BuffEmpty(struct pipe_desc *desc)
 {
 	/* 0==iAvailDataTotal is an INcorrect condition b/c of async behavior */
 
 	int iTotalFreeSpace;
 
-	BuffGetFreeSpaceTotal(pChBuff, &iTotalFreeSpace);
-	return (pChBuff->iBuffSize == iTotalFreeSpace);
+	BuffGetFreeSpaceTotal(desc, &iTotalFreeSpace);
+	return (desc->iBuffSize == iTotalFreeSpace);
 }
 
-int CalcAvailData(struct pipe_desc *pChBuff, int *piAvailDataCont,
+int CalcAvailData(struct pipe_desc *desc, int *piAvailDataCont,
 				  int *piAvailDataAWA)
 {
-	unsigned char *pStart = pChBuff->pRead;
-	unsigned char *pStop = pChBuff->pWrite;
+	unsigned char *pStart = desc->pRead;
+	unsigned char *pStop = desc->pWrite;
 
-	if (NULL != pChBuff->pReadGuard) {
-		pStop = pChBuff->pReadGuard;
+	if (NULL != desc->pReadGuard) {
+		pStop = desc->pReadGuard;
 	} else {
 		/*
 		 * if BuffState==BUFF_FULL but we have a ReadGuard,
 		 * we still need to calculate it as a normal [Start,Stop] interval
 		 */
 
-		if (BUFF_FULL == pChBuff->BuffState) {
-			*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
-			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
+		if (BUFF_FULL == desc->BuffState) {
+			*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
+			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->pBegin);
 			return (*piAvailDataCont + *piAvailDataAWA);
 			/* this sum equals pEnd-pBegin */
 		}
@@ -438,13 +438,13 @@ int CalcAvailData(struct pipe_desc *pChBuff, int *piAvailDataCont,
 		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
 		*piAvailDataAWA = 0;
 	} else {
-		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pChBuff->pEnd - pStart);
-		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - pChBuff->pBegin);
+		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
+		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->pBegin);
 	}
 	return (*piAvailDataCont + *piAvailDataAWA);
 }
 
-void BuffGetAvailData(struct pipe_desc *pChBuff, int *piAvailDataTotal,
+void BuffGetAvailData(struct pipe_desc *desc, int *piAvailDataTotal,
 					  int *piAvailDataCont, int *piAvailDataAWA)
 {
 	int iAvailDataCont;
@@ -452,251 +452,251 @@ void BuffGetAvailData(struct pipe_desc *pChBuff, int *piAvailDataTotal,
 	int iAvailDataTotal;
 
 	iAvailDataTotal =
-		CalcAvailData(pChBuff, &iAvailDataCont, &iAvailDataAWA);
-	__ASSERT_NO_MSG(iAvailDataCont == pChBuff->iAvailDataCont);
-	__ASSERT_NO_MSG(iAvailDataAWA == pChBuff->iAvailDataAWA);
+		CalcAvailData(desc, &iAvailDataCont, &iAvailDataAWA);
+	__ASSERT_NO_MSG(iAvailDataCont == desc->iAvailDataCont);
+	__ASSERT_NO_MSG(iAvailDataAWA == desc->iAvailDataAWA);
 	*piAvailDataTotal = iAvailDataTotal;
-	*piAvailDataCont = pChBuff->iAvailDataCont;
-	*piAvailDataAWA = pChBuff->iAvailDataAWA;
+	*piAvailDataCont = desc->iAvailDataCont;
+	*piAvailDataAWA = desc->iAvailDataAWA;
 }
 
-void BuffGetAvailDataTotal(struct pipe_desc *pChBuff, int *piAvailDataTotal)
+void BuffGetAvailDataTotal(struct pipe_desc *desc, int *piAvailDataTotal)
 {
 	int dummy1, dummy2;
 
-	*piAvailDataTotal = CalcAvailData(pChBuff, &dummy1, &dummy2);
-	__ASSERT_NO_MSG(dummy1 == pChBuff->iAvailDataCont);
-	__ASSERT_NO_MSG(dummy2 == pChBuff->iAvailDataAWA);
+	*piAvailDataTotal = CalcAvailData(desc, &dummy1, &dummy2);
+	__ASSERT_NO_MSG(dummy1 == desc->iAvailDataCont);
+	__ASSERT_NO_MSG(dummy2 == desc->iAvailDataAWA);
 }
 
-int BuffFull(struct pipe_desc *pChBuff)
+int BuffFull(struct pipe_desc *desc)
 {
 	/* 0==iTotalFreeSpace is an INcorrect condition b/c of async behavior */
 
 	int iAvailDataTotal;
 
-	BuffGetAvailDataTotal(pChBuff, &iAvailDataTotal);
-	return (pChBuff->iBuffSize == iAvailDataTotal);
+	BuffGetAvailDataTotal(desc, &iAvailDataTotal);
+	return (desc->iBuffSize == iAvailDataTotal);
 }
 
 /**
  * Buffer en-queuing:
  */
 
-static int AsyncEnQRegstr(struct pipe_desc *pChBuff, int iSize)
+static int AsyncEnQRegstr(struct pipe_desc *desc, int iSize)
 {
 	int i;
 
-	pipe_intrusion_check(pChBuff, pChBuff->pWrite, iSize);
+	pipe_intrusion_check(desc, desc->pWrite, iSize);
 
-	i = MarkerAddLast(&(pChBuff->WriteMarkers), pChBuff->pWrite, iSize, true);
+	i = MarkerAddLast(&desc->WriteMarkers, desc->pWrite, iSize, true);
 	if (i != -1) {
 		/* adjust iNbrPendingWrites */
-		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingWrites);
-		(pChBuff->iNbrPendingWrites)++;
+		__ASSERT_NO_MSG(0 <= desc->iNbrPendingWrites);
+		desc->iNbrPendingWrites++;
 		/* pReadGuard changes? */
-		if (NULL == pChBuff->pReadGuard) {
-			pChBuff->pReadGuard = pChBuff->pWrite;
+		if (NULL == desc->pReadGuard) {
+			desc->pReadGuard = desc->pWrite;
 		}
-		__ASSERT_NO_MSG(pChBuff->WriteMarkers.aMarkers
-						[pChBuff->WriteMarkers.iFirstMarker].pointer ==
-						pChBuff->pReadGuard);
+		__ASSERT_NO_MSG(desc->WriteMarkers.aMarkers
+						[desc->WriteMarkers.iFirstMarker].pointer ==
+						desc->pReadGuard);
 		/* iAWAMarker changes? */
-		if (-1 == pChBuff->WriteMarkers.iAWAMarker && pChBuff->bWriteWA) {
-			pChBuff->WriteMarkers.iAWAMarker = i;
+		if (-1 == desc->WriteMarkers.iAWAMarker && desc->bWriteWA) {
+			desc->WriteMarkers.iAWAMarker = i;
 		}
 	}
 	return i;
 }
 
-static void AsyncEnQFinished(struct pipe_desc *pChBuff, int iTransferID)
+static void AsyncEnQFinished(struct pipe_desc *desc, int iTransferID)
 {
-	pChBuff->WriteMarkers.aMarkers[iTransferID].bXferBusy = false;
+	desc->WriteMarkers.aMarkers[iTransferID].bXferBusy = false;
 
-	if (pChBuff->WriteMarkers.iFirstMarker == iTransferID) {
-		int iNewFirstMarker = ScanMarkers(&(pChBuff->WriteMarkers),
-										  &(pChBuff->iAvailDataCont),
-										  &(pChBuff->iAvailDataAWA),
-										  &(pChBuff->iNbrPendingWrites));
+	if (desc->WriteMarkers.iFirstMarker == iTransferID) {
+		int iNewFirstMarker = ScanMarkers(&desc->WriteMarkers,
+										  &desc->iAvailDataCont,
+										  &desc->iAvailDataAWA,
+										  &desc->iNbrPendingWrites);
 		if (-1 != iNewFirstMarker) {
-			pChBuff->pReadGuard =
-				pChBuff->WriteMarkers.aMarkers[iNewFirstMarker].pointer;
+			desc->pReadGuard =
+				desc->WriteMarkers.aMarkers[iNewFirstMarker].pointer;
 		} else {
-			pChBuff->pReadGuard = NULL;
+			desc->pReadGuard = NULL;
 		}
 	}
 }
 
-int BuffEnQ(struct pipe_desc *pChBuff, int iSize, unsigned char **ppWrite)
+int BuffEnQ(struct pipe_desc *desc, int iSize, unsigned char **ppWrite)
 {
 	int iTransferID;
 
-	if (0 == BuffEnQA(pChBuff, iSize, ppWrite, &iTransferID)) {
+	if (0 == BuffEnQA(desc, iSize, ppWrite, &iTransferID)) {
 		return 0;
 	}
 
 	/* check ret value */
 
-	BuffEnQA_End(pChBuff, iTransferID, iSize /* optional */);
+	BuffEnQA_End(desc, iTransferID, iSize /* optional */);
 	return iSize;
 }
 
-int BuffEnQA(struct pipe_desc *pChBuff, int iSize, unsigned char **ppWrite,
+int BuffEnQA(struct pipe_desc *desc, int iSize, unsigned char **ppWrite,
 			 int *piTransferID)
 {
-	if (iSize > pChBuff->iFreeSpaceCont) {
+	if (iSize > desc->iFreeSpaceCont) {
 		return 0;
 	}
-	*piTransferID = AsyncEnQRegstr(pChBuff, iSize);
+	*piTransferID = AsyncEnQRegstr(desc, iSize);
 	if (-1 == *piTransferID) {
 		return 0;
 	}
 
-	*ppWrite = pChBuff->pWrite;
+	*ppWrite = desc->pWrite;
 
 	/* adjust write pointer and free space*/
 
-	pChBuff->pWrite += OCTET_TO_SIZEOFUNIT(iSize);
-	if (pChBuff->pEnd == pChBuff->pWrite) {
-		pChBuff->pWrite = pChBuff->pBegin;
-		pChBuff->iFreeSpaceCont = pChBuff->iFreeSpaceAWA;
-		pChBuff->iFreeSpaceAWA = 0;
-		pChBuff->bWriteWA = true;
-		pChBuff->bReadWA = false;
-		pChBuff->ReadMarkers.iAWAMarker = -1;
+	desc->pWrite += OCTET_TO_SIZEOFUNIT(iSize);
+	if (desc->pEnd == desc->pWrite) {
+		desc->pWrite = desc->pBegin;
+		desc->iFreeSpaceCont = desc->iFreeSpaceAWA;
+		desc->iFreeSpaceAWA = 0;
+		desc->bWriteWA = true;
+		desc->bReadWA = false;
+		desc->ReadMarkers.iAWAMarker = -1;
 	} else {
-		pChBuff->iFreeSpaceCont -= iSize;
+		desc->iFreeSpaceCont -= iSize;
 	}
 
-	if (pChBuff->pWrite == pChBuff->pRead) {
-		pChBuff->BuffState = BUFF_FULL;
+	if (desc->pWrite == desc->pRead) {
+		desc->BuffState = BUFF_FULL;
 	} else {
-		pChBuff->BuffState = BUFF_OTHER;
+		desc->BuffState = BUFF_OTHER;
 	}
 
-	CHECK_CHBUFF_POINTER(pChBuff->pWrite);
+	CHECK_CHBUFF_POINTER(desc->pWrite);
 
 	return iSize;
 }
 
-void BuffEnQA_End(struct pipe_desc *pChBuff, int iTransferID,
+void BuffEnQA_End(struct pipe_desc *desc, int iTransferID,
 				  int iSize /* optional */)
 {
 	ARG_UNUSED(iSize);
 
 	/* An asynchronous data transfer to the buffer has finished */
 
-	AsyncEnQFinished(pChBuff, iTransferID);
+	AsyncEnQFinished(desc, iTransferID);
 }
 
 /**
  * Buffer de-queuing:
  */
 
-static int AsyncDeQRegstr(struct pipe_desc *pChBuff, int iSize)
+static int AsyncDeQRegstr(struct pipe_desc *desc, int iSize)
 {
 	int i;
 
-	pipe_intrusion_check(pChBuff, pChBuff->pRead, iSize);
+	pipe_intrusion_check(desc, desc->pRead, iSize);
 
-	i = MarkerAddLast(&(pChBuff->ReadMarkers), pChBuff->pRead, iSize, true);
+	i = MarkerAddLast(&desc->ReadMarkers, desc->pRead, iSize, true);
 	if (i != -1) {
 		/* adjust iNbrPendingReads */
-		__ASSERT_NO_MSG(0 <= pChBuff->iNbrPendingReads);
-		(pChBuff->iNbrPendingReads)++;
+		__ASSERT_NO_MSG(0 <= desc->iNbrPendingReads);
+		desc->iNbrPendingReads++;
 		/* pWriteGuard changes? */
-		if (NULL == pChBuff->pWriteGuard) {
-			pChBuff->pWriteGuard = pChBuff->pRead;
+		if (NULL == desc->pWriteGuard) {
+			desc->pWriteGuard = desc->pRead;
 		}
-		__ASSERT_NO_MSG(pChBuff->ReadMarkers.aMarkers
-						[pChBuff->ReadMarkers.iFirstMarker].pointer ==
-						pChBuff->pWriteGuard);
+		__ASSERT_NO_MSG(desc->ReadMarkers.aMarkers
+						[desc->ReadMarkers.iFirstMarker].pointer ==
+						desc->pWriteGuard);
 		/* iAWAMarker changes? */
-		if (-1 == pChBuff->ReadMarkers.iAWAMarker && pChBuff->bReadWA) {
-			pChBuff->ReadMarkers.iAWAMarker = i;
+		if (-1 == desc->ReadMarkers.iAWAMarker && desc->bReadWA) {
+			desc->ReadMarkers.iAWAMarker = i;
 		}
 	}
 	return i;
 }
 
-static void AsyncDeQFinished(struct pipe_desc *pChBuff, int iTransferID)
+static void AsyncDeQFinished(struct pipe_desc *desc, int iTransferID)
 {
-	pChBuff->ReadMarkers.aMarkers[iTransferID].bXferBusy = false;
+	desc->ReadMarkers.aMarkers[iTransferID].bXferBusy = false;
 
-	if (pChBuff->ReadMarkers.iFirstMarker == iTransferID) {
-		int iNewFirstMarker = ScanMarkers(&(pChBuff->ReadMarkers),
-										  &(pChBuff->iFreeSpaceCont),
-										  &(pChBuff->iFreeSpaceAWA),
-										  &(pChBuff->iNbrPendingReads));
+	if (desc->ReadMarkers.iFirstMarker == iTransferID) {
+		int iNewFirstMarker = ScanMarkers(&desc->ReadMarkers,
+										  &desc->iFreeSpaceCont,
+										  &desc->iFreeSpaceAWA,
+										  &desc->iNbrPendingReads);
 		if (-1 != iNewFirstMarker) {
-			pChBuff->pWriteGuard =
-				pChBuff->ReadMarkers.aMarkers[iNewFirstMarker].pointer;
+			desc->pWriteGuard =
+				desc->ReadMarkers.aMarkers[iNewFirstMarker].pointer;
 		} else {
-			pChBuff->pWriteGuard = NULL;
+			desc->pWriteGuard = NULL;
 		}
 	}
 }
 
-int BuffDeQ(struct pipe_desc *pChBuff, int iSize, unsigned char **ppRead)
+int BuffDeQ(struct pipe_desc *desc, int iSize, unsigned char **ppRead)
 {
 	int iTransferID;
 
-	if (0 == BuffDeQA(pChBuff, iSize, ppRead, &iTransferID)) {
+	if (0 == BuffDeQA(desc, iSize, ppRead, &iTransferID)) {
 		return 0;
 	}
-	BuffDeQA_End(pChBuff, iTransferID, iSize /* optional */);
+	BuffDeQA_End(desc, iTransferID, iSize /* optional */);
 	return iSize;
 }
 
-int BuffDeQA(struct pipe_desc *pChBuff, int iSize, unsigned char **ppRead,
+int BuffDeQA(struct pipe_desc *desc, int iSize, unsigned char **ppRead,
 			 int *piTransferID)
 {
 	/* asynchronous data transfer; read guard pointers must be set */
 
-	if (iSize > pChBuff->iAvailDataCont) {
+	if (iSize > desc->iAvailDataCont) {
 		/* free space is from read to guard pointer/end pointer */
 		return 0;
 	}
-	*piTransferID = AsyncDeQRegstr(pChBuff, iSize);
+	*piTransferID = AsyncDeQRegstr(desc, iSize);
 	if (-1 == *piTransferID) {
 		return 0;
 	}
 
-	*ppRead = pChBuff->pRead;
+	*ppRead = desc->pRead;
 
 	/* adjust read pointer and avail data */
 
-	pChBuff->pRead += OCTET_TO_SIZEOFUNIT(iSize);
-	if (pChBuff->pEnd == pChBuff->pRead) {
-		pChBuff->pRead = pChBuff->pBegin;
-		pChBuff->iAvailDataCont = pChBuff->iAvailDataAWA;
-		pChBuff->iAvailDataAWA = 0;
-		pChBuff->bWriteWA = false;
-		pChBuff->bReadWA = true;
-		pChBuff->WriteMarkers.iAWAMarker = -1;
+	desc->pRead += OCTET_TO_SIZEOFUNIT(iSize);
+	if (desc->pEnd == desc->pRead) {
+		desc->pRead = desc->pBegin;
+		desc->iAvailDataCont = desc->iAvailDataAWA;
+		desc->iAvailDataAWA = 0;
+		desc->bWriteWA = false;
+		desc->bReadWA = true;
+		desc->WriteMarkers.iAWAMarker = -1;
 	} else {
-		pChBuff->iAvailDataCont -= iSize;
+		desc->iAvailDataCont -= iSize;
 	}
 
-	if (pChBuff->pWrite == pChBuff->pRead) {
-		pChBuff->BuffState = BUFF_EMPTY;
+	if (desc->pWrite == desc->pRead) {
+		desc->BuffState = BUFF_EMPTY;
 	} else {
-		pChBuff->BuffState = BUFF_OTHER;
+		desc->BuffState = BUFF_OTHER;
 	}
 
-	CHECK_CHBUFF_POINTER(pChBuff->pRead);
+	CHECK_CHBUFF_POINTER(desc->pRead);
 
 	return iSize;
 }
 
-void BuffDeQA_End(struct pipe_desc *pChBuff, int iTransferID,
+void BuffDeQA_End(struct pipe_desc *desc, int iTransferID,
 				  int iSize /* optional */)
 {
 	ARG_UNUSED(iSize);
 
 	/* An asynchronous data transfer from the buffer has finished */
 
-	AsyncDeQFinished(pChBuff, iTransferID);
+	AsyncDeQFinished(desc, iTransferID);
 }
 
 /**
@@ -741,7 +741,7 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 	}
 }
 
-static void pipe_intrusion_check(struct pipe_desc *pChBuff, unsigned char *pBegin, int iSize)
+static void pipe_intrusion_check(struct pipe_desc *desc, unsigned char *pBegin, int iSize)
 {
 	/*
 	 * check possible collision with all existing data areas,
@@ -756,14 +756,14 @@ static void pipe_intrusion_check(struct pipe_desc *pChBuff, unsigned char *pBegi
 #ifdef STORE_NBR_MARKERS
 	/* first a small consistency check */
 
-	if (0 == pChBuff->WriteMarkers.iNbrMarkers) {
-		__ASSERT_NO_MSG(-1 == pChBuff->WriteMarkers.iFirstMarker);
-		__ASSERT_NO_MSG(-1 == pChBuff->WriteMarkers.iLastMarker);
-		__ASSERT_NO_MSG(-1 == pChBuff->WriteMarkers.iAWAMarker);
+	if (0 == desc->WriteMarkers.iNbrMarkers) {
+		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.iFirstMarker);
+		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.iLastMarker);
+		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.iAWAMarker);
 	}
 #endif
 
-	pMarkerList = &(pChBuff->WriteMarkers);
+	pMarkerList = &desc->WriteMarkers;
 	index = pMarkerList->iFirstMarker;
 
 	while (-1 != index) {
@@ -782,14 +782,14 @@ static void pipe_intrusion_check(struct pipe_desc *pChBuff, unsigned char *pBegi
 #ifdef STORE_NBR_MARKERS
 	/* first a small consistency check */
 
-	if (0 == pChBuff->ReadMarkers.iNbrMarkers) {
-		__ASSERT_NO_MSG(-1 == pChBuff->ReadMarkers.iFirstMarker);
-		__ASSERT_NO_MSG(-1 == pChBuff->ReadMarkers.iLastMarker);
-		__ASSERT_NO_MSG(-1 == pChBuff->ReadMarkers.iAWAMarker);
+	if (0 == desc->ReadMarkers.iNbrMarkers) {
+		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.iFirstMarker);
+		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.iLastMarker);
+		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.iAWAMarker);
 	}
 #endif
 
-	pMarkerList = &(pChBuff->ReadMarkers);
+	pMarkerList = &desc->ReadMarkers;
 	index = pMarkerList->iFirstMarker;
 
 	while (-1 != index) {

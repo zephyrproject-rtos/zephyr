@@ -52,8 +52,7 @@ void _k_pipe_init(void)
 
 	for (i = 0, pPipe = _k_pipe_list; i < _k_pipe_count; i++, pPipe++) {
 		BuffInit((unsigned char *)pPipe->Buffer,
-				 &(pPipe->iBufferSize),
-				 &(pPipe->Buff));
+				 &(pPipe->iBufferSize), &pPipe->desc);
 	}
 }
 

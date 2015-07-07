@@ -116,7 +116,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 		iData2ReadFromWriters = CalcAvailWriterData(pPipe->Writers);
 		iAvailBufferData =
-			pPipe->Buff.iAvailDataCont + pPipe->Buff.iAvailDataAWA;
+			pPipe->desc.iAvailDataCont + pPipe->desc.iAvailDataAWA;
 		iTotalData2Read =
 			iAvailBufferData + iData2ReadFromWriters;
 
