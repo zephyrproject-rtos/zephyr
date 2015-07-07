@@ -246,7 +246,7 @@ typedef enum {
 	TERM_SATISFIED = 0x0020,
 	TERM_TMO = 0x0040,
 	TERM_XXX = TERM_FORCED | TERM_SATISFIED | TERM_TMO
-} CHREQ_STATUS;
+} PIPE_REQUEST_STATUS;
 
 struct req_info {
 	union {
@@ -282,7 +282,7 @@ struct _pipe_xfer_req_arg {
 			     cmd packet		    */
 	int iSizeTotal;      /* total size of data/free space    */
 	int iSizeXferred;    /* size of data ALREADY Xferred	    */
-	CHREQ_STATUS Status; /* status of processing of request  */
+	PIPE_REQUEST_STATUS Status; /* status of processing of request  */
 	int iNbrPendXfers;   /* # data Xfers (still) in progress */
 };
 

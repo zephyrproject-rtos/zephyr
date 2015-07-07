@@ -225,7 +225,7 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 	/* orig packet must be sent back, not ReqProc */
 
 	struct k_args *ReqOrig = ReqProc->Ctxt.args;
-	CHREQ_STATUS ChReqStatus;
+	PIPE_REQUEST_STATUS ChReqStatus;
 	ReqOrig->Comm = PIPE_GET_ACK;
 
 	/* determine return value */

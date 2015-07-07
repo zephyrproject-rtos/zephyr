@@ -130,7 +130,7 @@ void _k_pipe_time_type_set(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType)
 	pChxxx->ChProc.ReqInfo.Params |= (TimeType & _ALLTIME);
 }
 
-void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pChProc, CHREQ_STATUS Status)
+void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pChProc, PIPE_REQUEST_STATUS Status)
 {
 #ifdef CONFIG_OBJECT_MONITOR
 	/*
