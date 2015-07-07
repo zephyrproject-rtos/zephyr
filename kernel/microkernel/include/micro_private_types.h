@@ -286,7 +286,7 @@ struct k_chproc {
 	int iNbrPendXfers;   /* # data Xfers (still) in progress */
 };
 
-struct k_chack {
+struct _pipe_ack_arg {
 	struct req_info ReqInfo;
 	union {
 		struct sync_req Dummy;
@@ -442,7 +442,7 @@ union k_args_args {
 	struct k_chproc ChProc;
 	struct k_chmovedack ChMovedAck;
 	struct _pipe_req_arg ChReq;
-	struct k_chack ChAck;
+	struct _pipe_ack_arg ChAck;
 };
 
 /*

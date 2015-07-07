@@ -290,7 +290,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 void _k_pipe_put_ack(struct k_args *Request)
 {
 	if (_ASYNCREQ == _k_pipe_request_type_get(&Request->Args)) {
-		struct k_chack *pChAck = (struct k_chack *)&(Request->Args.ChAck);
+		struct _pipe_ack_arg *pChAck = &Request->Args.ChAck;
 		struct k_args A;
 		struct k_block *blockptr;
 
