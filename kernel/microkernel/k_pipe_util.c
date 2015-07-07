@@ -131,7 +131,7 @@ void _k_pipe_time_type_set(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType)
 }
 
 void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
-					PIPE_REQUEST_STATUS Status)
+					PIPE_REQUEST_STATUS status)
 {
 #ifdef CONFIG_OBJECT_MONITOR
 	/*
@@ -139,10 +139,10 @@ void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
 	 * increment channel counter
 	 */
 
-	if (XFER_IDLE == pipe_xfer_req->Status /* current (old) status */
-	    && (XFER_BUSY | TERM_XXX) & Status /* new status */) {
+	if (XFER_IDLE == pipe_xfer_req->status /* current (old) status */
+	    && (XFER_BUSY | TERM_XXX) & status /* new status */) {
 		(pipe_xfer_req->ReqInfo.ChRef.pPipe->Count)++;
 	}
 #endif
-	pipe_xfer_req->Status = Status;
+	pipe_xfer_req->status = status;
 }

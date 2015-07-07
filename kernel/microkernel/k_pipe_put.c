@@ -98,7 +98,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	default:
 		break;
 	}
-	RequestProc->Args.pipe_xfer_req.Status = XFER_IDLE;
+	RequestProc->Args.pipe_xfer_req.status = XFER_IDLE;
 	RequestProc->Args.pipe_xfer_req.iNbrPendXfers = 0;
 	RequestProc->Args.pipe_xfer_req.iSizeXferred = 0;
 
@@ -147,7 +147,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 		/* check if request was processed */
 
-		if (TERM_XXX & RequestProc->Args.pipe_xfer_req.Status) {
+		if (TERM_XXX & RequestProc->Args.pipe_xfer_req.status) {
 			RequestProc->Time.timer = NULL; /* not really required */
 			return; /* not listed anymore --> completely processed */
 		}
@@ -193,11 +193,11 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		 */
 		RequestProc->Time.timer = NULL;
 
-		if (XFER_BUSY == RequestProc->Args.pipe_xfer_req.Status) {
+		if (XFER_BUSY == RequestProc->Args.pipe_xfer_req.status) {
 			INSERT_ELM(pPipe->Writers, RequestProc);
 		} else {
 			__ASSERT_NO_MSG(XFER_IDLE ==
-				RequestProc->Args.pipe_xfer_req.Status);
+				RequestProc->Args.pipe_xfer_req.status);
 			__ASSERT_NO_MSG(0 == RequestProc->Args.pipe_xfer_req.iSizeXferred);
 			RequestProc->Comm = PIPE_PUT_REPLY;
 			_k_pipe_put_reply(RequestProc);
@@ -243,16 +243,16 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 	/* orig packet must be sent back, not ReqProc */
 
 	struct k_args *ReqOrig = ReqProc->Ctxt.args;
-	PIPE_REQUEST_STATUS ChReqStatus;
+	PIPE_REQUEST_STATUS status;
 
 	ReqOrig->Comm = PIPE_PUT_ACK;
 
 	/* determine return value:
 	 */
-	ChReqStatus = ReqProc->Args.pipe_xfer_req.Status;
-	if (unlikely(TERM_TMO == ChReqStatus)) {
+	status = ReqProc->Args.pipe_xfer_req.status;
+	if (unlikely(TERM_TMO == status)) {
 		ReqOrig->Time.rcode = RC_TIME;
-	} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {
+	} else if ((TERM_XXX | XFER_IDLE) & status) {
 		K_PIPE_OPTION Option = _k_pipe_option_get(&ReqProc->Args);
 
 		if (likely(ReqProc->Args.pipe_xfer_req.iSizeXferred ==

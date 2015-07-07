@@ -76,7 +76,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 			--pipe_write_req->iNbrPendXfers;
 			if (0 == pipe_write_req->iNbrPendXfers) {
-				if (TERM_XXX & pipe_write_req->Status) {
+				if (TERM_XXX & pipe_write_req->status) {
 					/* request is terminated, send reply */
 					_k_pipe_put_reply(pipe_xfer_ack->pWriter);
 					/* invoke continuation mechanism (fall through) */
@@ -84,7 +84,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
-				if (TERM_XXX & pipe_write_req->Status) {
+				if (TERM_XXX & pipe_write_req->status) {
 					/* do nothing */
 					/* invoke continuation mechanism (fall through) */
 				} else {
@@ -116,14 +116,14 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 			--pipe_read_req->iNbrPendXfers;
 			if (0 == pipe_read_req->iNbrPendXfers) {
-				if (TERM_XXX & pipe_read_req->Status) {
+				if (TERM_XXX & pipe_read_req->status) {
 					/* request is terminated, send reply */
 					_k_pipe_get_reply(pipe_xfer_ack->pReader);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
-				if (TERM_XXX & pipe_read_req->Status) {
+				if (TERM_XXX & pipe_read_req->status) {
 					/* do nothing */
 					/* invoke continuation mechanism (fall through) */
 				} else {
@@ -156,14 +156,14 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 			--pipe_write_req->iNbrPendXfers;
 			if (0 == pipe_write_req->iNbrPendXfers) {
-				if (TERM_XXX & pipe_write_req->Status) {
+				if (TERM_XXX & pipe_write_req->status) {
 					/* request is terminated, send reply */
 					_k_pipe_put_reply(pipe_xfer_ack->pWriter);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
-				if (TERM_XXX & pipe_write_req->Status) {
+				if (TERM_XXX & pipe_write_req->status) {
 					/* do nothing */
 					/* invoke continuation mechanism (fall through) */
 				} else {
@@ -178,14 +178,14 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 			--pipe_read_req->iNbrPendXfers;
 			if (0 == pipe_read_req->iNbrPendXfers) {
-				if (TERM_XXX & pipe_read_req->Status) {
+				if (TERM_XXX & pipe_read_req->status) {
 					/* request is terminated, send reply */
 					_k_pipe_get_reply(pipe_xfer_ack->pReader);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
-				if (TERM_XXX & pipe_read_req->Status) {
+				if (TERM_XXX & pipe_read_req->status) {
 					/* do nothing */
 					/* invoke continuation mechanism (fall through) */
 				} else {
@@ -660,7 +660,7 @@ static void pipe_read_write(
 	if (iT2 != 0) {
 		struct k_args *Moved_req;
 
-		__ASSERT_NO_MSG(TERM_SATISFIED != pReader->Args.pipe_xfer_req.Status);
+		__ASSERT_NO_MSG(TERM_SATISFIED != pReader->Args.pipe_xfer_req.status);
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_W2R, pWriter, pReader,
@@ -679,7 +679,7 @@ static void pipe_read_write(
 
 	/* T3 transfer */
 	if (iT3 != 0) {
-		__ASSERT_NO_MSG(TERM_SATISFIED != pWriter->Args.pipe_xfer_req.Status);
+		__ASSERT_NO_MSG(TERM_SATISFIED != pWriter->Args.pipe_xfer_req.status);
 		pipe_write(pPipe, pWriter);
 	}
 }
@@ -709,12 +709,12 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			if (pReader != pNLReader) {
 				pNextReader = pPipe->Readers;
 				if (NULL == pNextReader) {
-					if (!(TERM_XXX & pNLReader->Args.pipe_xfer_req.Status))
+					if (!(TERM_XXX & pNLReader->Args.pipe_xfer_req.status))
 						pNextReader = pNLReader;
 				}
 			} else {
 				/* we already used the extra non-listed Reader */
-				if (TERM_XXX & pReader->Args.pipe_xfer_req.Status) {
+				if (TERM_XXX & pReader->Args.pipe_xfer_req.status) {
 					pNextReader = NULL;
 				} else {
 					pNextReader = pReader; /* == pNLReader */
@@ -730,12 +730,12 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			if (pWriter != pNLWriter) {
 				pNextWriter = pPipe->Writers;
 				if (NULL == pNextWriter) {
-					if (!(TERM_XXX & pNLWriter->Args.pipe_xfer_req.Status))
+					if (!(TERM_XXX & pNLWriter->Args.pipe_xfer_req.status))
 						pNextWriter = pNLWriter;
 				}
 			} else {
 				/* we already used the extra non-listed Writer */
-				if (TERM_XXX & pWriter->Args.pipe_xfer_req.Status) {
+				if (TERM_XXX & pWriter->Args.pipe_xfer_req.status) {
 					pNextWriter = NULL;
 				} else {
 					pNextWriter = pWriter;
@@ -927,8 +927,8 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 	   processing is really blocked (for some reason)
 	 */
 	if (pReader && pWriter) {
-		__ASSERT_NO_MSG(!(TERM_XXX & pReader->Args.pipe_xfer_req.Status) &&
-						!(TERM_XXX & pWriter->Args.pipe_xfer_req.Status));
+		__ASSERT_NO_MSG(!(TERM_XXX & pReader->Args.pipe_xfer_req.status) &&
+						!(TERM_XXX & pWriter->Args.pipe_xfer_req.status));
 		/* this could be possible when data Xfer operations are jammed
 		   (out of data Xfer resources e.g.) */
 
@@ -949,7 +949,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 		 */
 		;
 	} else if (pReader) {
-		__ASSERT_NO_MSG(!(TERM_XXX & pReader->Args.pipe_xfer_req.Status));
+		__ASSERT_NO_MSG(!(TERM_XXX & pReader->Args.pipe_xfer_req.status));
 
 		/* check if this lonely reader is really blocked, then we will
 		   delist him
@@ -980,7 +980,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 			 * later on) */
 		}
 	} else if (pWriter) {
-		__ASSERT_NO_MSG(!(TERM_SATISFIED & pWriter->Args.pipe_xfer_req.Status));
+		__ASSERT_NO_MSG(!(TERM_SATISFIED & pWriter->Args.pipe_xfer_req.status));
 
 		/* check if this lonely Writer is really blocked, then we will
 		   delist him (if he was listed uberhaupt) == EMERGENCY BREAK */

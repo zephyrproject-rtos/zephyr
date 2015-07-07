@@ -282,7 +282,7 @@ struct _pipe_xfer_req_arg {
 			     cmd packet		    */
 	int iSizeTotal;      /* total size of data/free space    */
 	int iSizeXferred;    /* size of data ALREADY Xferred	    */
-	PIPE_REQUEST_STATUS Status; /* status of processing of request  */
+	PIPE_REQUEST_STATUS status; /* status of processing of request  */
 	int iNbrPendXfers;   /* # data Xfers (still) in progress */
 };
 
