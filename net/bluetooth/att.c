@@ -244,6 +244,7 @@ static bool range_is_valid(uint16_t start, uint16_t end, uint16_t *err)
 
 	return true;
 }
+
 struct find_info_data {
 	struct bt_conn *conn;
 	struct bt_buf *buf;
@@ -725,6 +726,7 @@ static uint8_t att_read_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+
 	return 0;
 }
 
@@ -1297,8 +1299,9 @@ static void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	/* Commands don't have response */
-	if ((hdr->code & BT_ATT_OP_CMD_MASK))
+	if ((hdr->code & BT_ATT_OP_CMD_MASK)) {
 		goto done;
+	}
 
 	if (err) {
 		BT_DBG("ATT error 0x%02x", err);
