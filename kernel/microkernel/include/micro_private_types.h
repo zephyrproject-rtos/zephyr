@@ -441,7 +441,7 @@ union k_args_args {
 	struct _z4arg z4;
 	struct _pipe_xfer_req_arg ChProc;
 	struct _pipe_xfer_ack_arg ChMovedAck;
-	struct _pipe_req_arg ChReq;
+	struct _pipe_req_arg pipe_req;
 	struct _pipe_ack_arg ChAck;
 };
 

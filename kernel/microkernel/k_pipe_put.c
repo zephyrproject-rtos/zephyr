@@ -49,7 +49,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	struct k_args *Request;
 	struct k_args *RequestProc;
 
-	kpipe_t pipeId = RequestOrig->Args.ChReq.ReqInfo.ChRef.Id;
+	kpipe_t pipeId = RequestOrig->Args.pipe_req.ReqInfo.ChRef.Id;
 
 	bool bAsync;
 
@@ -85,15 +85,15 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	switch (_k_pipe_request_type_get(&RequestProc->Args)) {
 	case _SYNCREQ:
 		RequestProc->Args.ChProc.pData =
-			Request->Args.ChReq.ReqType.Sync.pData;
+			Request->Args.pipe_req.ReqType.Sync.pData;
 		RequestProc->Args.ChProc.iSizeTotal =
-			Request->Args.ChReq.ReqType.Sync.iSizeTotal;
+			Request->Args.pipe_req.ReqType.Sync.iSizeTotal;
 		break;
 	case _ASYNCREQ:
 		RequestProc->Args.ChProc.pData =
-			Request->Args.ChReq.ReqType.Async.block.pointer_to_data;
+			Request->Args.pipe_req.ReqType.Async.block.pointer_to_data;
 		RequestProc->Args.ChProc.iSizeTotal =
-			Request->Args.ChReq.ReqType.Async.iSizeTotal;
+			Request->Args.pipe_req.ReqType.Async.iSizeTotal;
 		break;
 	default:
 		break;

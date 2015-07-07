@@ -95,9 +95,9 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	A.Comm = PIPE_GET_REQUEST;
 	A.Time.ticks = TimeOut;
 
-	A.Args.ChReq.ReqInfo.ChRef.Id = Id;
-	A.Args.ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
-	A.Args.ChReq.ReqType.Sync.pData = pBuffer;
+	A.Args.pipe_req.ReqInfo.ChRef.Id = Id;
+	A.Args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
+	A.Args.pipe_req.ReqType.Sync.pData = pBuffer;
 
 	_k_pipe_option_set(&A.Args, Option);
 	_k_pipe_request_type_set(&A.Args, _SYNCREQ);
@@ -147,9 +147,9 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	A.Comm = PIPE_PUT_REQUEST;
 	A.Time.ticks = TimeOut;
 
-	A.Args.ChReq.ReqInfo.ChRef.Id = Id;
-	A.Args.ChReq.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
-	A.Args.ChReq.ReqType.Sync.pData = pBuffer;
+	A.Args.pipe_req.ReqInfo.ChRef.Id = Id;
+	A.Args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
+	A.Args.pipe_req.ReqType.Sync.pData = pBuffer;
 
 	_k_pipe_option_set(&A.Args, Option);
 	_k_pipe_request_type_set(&A.Args, _SYNCREQ);
@@ -193,10 +193,10 @@ int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
 	A.Time.ticks = TICKS_UNLIMITED;
 		/* same behavior in flow as a blocking call w/o a timeout */
 
-	A.Args.ChReq.ReqInfo.ChRef.Id = Id;
-	A.Args.ChReq.ReqType.Async.block = Block;
-	A.Args.ChReq.ReqType.Async.iSizeTotal = iSize2Xfer;
-	A.Args.ChReq.ReqType.Async.sema = Sema;
+	A.Args.pipe_req.ReqInfo.ChRef.Id = Id;
+	A.Args.pipe_req.ReqType.Async.block = Block;
+	A.Args.pipe_req.ReqType.Async.iSizeTotal = iSize2Xfer;
+	A.Args.pipe_req.ReqType.Async.sema = Sema;
 
 	_k_pipe_request_type_set(&A.Args, _ASYNCREQ);
 	_k_pipe_option_set(&A.Args, _ALL_N); /* force ALL_N */

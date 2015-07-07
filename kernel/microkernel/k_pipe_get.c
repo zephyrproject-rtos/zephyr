@@ -48,7 +48,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	struct k_args *Request;
 	struct k_args *RequestProc;
 
-	kpipe_t pipeId = RequestOrig->Args.ChReq.ReqInfo.ChRef.Id;
+	kpipe_t pipeId = RequestOrig->Args.pipe_req.ReqInfo.ChRef.Id;
 
 	/* If it's a poster, then don't deschedule the task */
 
@@ -73,9 +73,9 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	switch (_k_pipe_request_type_get(&RequestProc->Args)) {
 	case _SYNCREQ:
 		RequestProc->Args.ChProc.pData =
-			Request->Args.ChReq.ReqType.Sync.pData;
+			Request->Args.pipe_req.ReqType.Sync.pData;
 		RequestProc->Args.ChProc.iSizeTotal =
-			Request->Args.ChReq.ReqType.Sync.iSizeTotal;
+			Request->Args.pipe_req.ReqType.Sync.iSizeTotal;
 		break;
 	default:
 		break;
