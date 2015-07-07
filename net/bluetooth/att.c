@@ -688,10 +688,13 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 static uint8_t att_read_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
-			    uint16_t *handles, size_t len, uint16_t offset)
+			    uint16_t handle, uint16_t offset)
 {
 	struct read_data data;
-	size_t i;
+
+	if (!handle) {
+		return BT_ATT_ERR_INVALID_HANDLE;
+	}
 
 	memset(&data, 0, sizeof(data));
 
@@ -703,25 +706,13 @@ static uint8_t att_read_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 	data.conn = conn;
 	data.offset = offset;
 
-	for (i = 0; i < len; i++) {
-		if (!handles[i]) {
-			data.err = BT_ATT_ERR_INVALID_HANDLE;
-			break;
-		}
-
-		bt_gatt_foreach_attr(handles[i], handles[i], read_cb, &data);
-
-		/* Stop reading in case of error */
-		if (data.err) {
-			break;
-		}
-	}
+	bt_gatt_foreach_attr(handle, handle, read_cb, &data);
 
 	/* In case of error discard data and respond with an error */
 	if (data.err) {
 		bt_buf_put(data.buf);
 		/* Respond here since handle is set */
-		send_err_rsp(conn, op, handles[i], data.err);
+		send_err_rsp(conn, op, handle, data.err);
 		return 0;
 	}
 
@@ -742,7 +733,7 @@ static uint8_t att_read_req(struct bt_conn *conn, struct bt_buf *data)
 	BT_DBG("handle 0x%04x\n", handle);
 
 	return att_read_rsp(conn, BT_ATT_OP_READ_REQ, BT_ATT_OP_READ_RSP,
-			    &handle, 1, 0);
+			    handle, 0);
 }
 
 static uint8_t att_read_blob_req(struct bt_conn *conn, struct bt_buf *data)
@@ -758,35 +749,43 @@ static uint8_t att_read_blob_req(struct bt_conn *conn, struct bt_buf *data)
 	BT_DBG("handle 0x%04x offset %u\n", handle, offset);
 
 	return att_read_rsp(conn, BT_ATT_OP_READ_BLOB_REQ,
-			    BT_ATT_OP_READ_BLOB_RSP, &handle, 1, offset);
+			    BT_ATT_OP_READ_BLOB_RSP, handle, offset);
 }
 
-static uint8_t att_read_mult_req(struct bt_conn *conn, struct bt_buf *data)
+static uint8_t att_read_mult_req(struct bt_conn *conn, struct bt_buf *buf)
 {
-	struct bt_att_read_mult_req *req;
-	uint16_t handles[BT_BUF_MAX_DATA / sizeof(uint16_t)];
-	size_t i;
+	struct read_data data;
+	uint16_t handle;
 
-	req = (void *)data->data;
+	memset(&data, 0, sizeof(data));
 
-	if (data->len % sizeof(uint16_t)) {
-		return BT_ATT_ERR_INVALID_PDU;
+	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_MULT_RSP, 0);
+	if (!data.buf) {
+		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	handles[0] = sys_le16_to_cpu(req->handle1);
-	handles[1] = sys_le16_to_cpu(req->handle2);
+	data.conn = conn;
 
-	BT_DBG("handle1 0x%04x handle2 0x%04x\n", handles[0], handles[1]);
+	while (buf->len >= sizeof(uint16_t)) {
+		handle = bt_buf_pull_le16(buf);
 
-	bt_buf_pull(data, sizeof(*req));
+		BT_DBG("handle 0x%04x \n", handle);
 
-	for (i = 0; data->len; i++) {
-		handles[2 + i] = bt_buf_pull_le16(data);
-		BT_DBG("handle%d 0x%04x\n", 2 + i, handles[2 + i]);
+		bt_gatt_foreach_attr(handle, handle, read_cb, &data);
+
+		/* Stop reading in case of error */
+		if (data.err) {
+			bt_buf_put(data.buf);
+			/* Respond here since handle is set */
+			send_err_rsp(conn, BT_ATT_OP_READ_MULT_REQ, handle,
+				     data.err);
+			return 0;
+		}
 	}
 
-	return att_read_rsp(conn, BT_ATT_OP_READ_MULT_REQ,
-			    BT_ATT_OP_READ_MULT_RSP, handles, 2 + i, 0);
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, data.buf);
+
+	return 0;
 }
 
 struct read_group_data {
