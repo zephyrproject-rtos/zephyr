@@ -10,6 +10,7 @@ submitting any work for review.
    :maxdepth: 2
 
    collaboration_rule1
+   collaboration_licenses
    collaboration_mailing
    collaboration_patches
    collaboration_gerrit
