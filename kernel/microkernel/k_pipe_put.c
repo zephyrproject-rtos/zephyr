@@ -120,10 +120,8 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	/* start processing */
 
 	struct pipe_struct *pPipe;
-	struct _pipe_xfer_req_arg *pReqProcArgs;
 
-	pReqProcArgs = &RequestProc->Args.pipe_xfer_req;
-	pPipe = pReqProcArgs->ReqInfo.ChRef.pPipe;
+	pPipe = RequestProc->Args.pipe_xfer_req.ReqInfo.ChRef.pPipe;
 
 	do {
 		int iSpace2WriteinReaders;

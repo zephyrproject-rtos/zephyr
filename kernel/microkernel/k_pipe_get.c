@@ -103,10 +103,8 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	/* start processing */
 
 	struct pipe_struct *pPipe;
-	struct _pipe_xfer_req_arg *pChProcArgs;
 
-	pChProcArgs = &RequestProc->Args.pipe_xfer_req;
-	pPipe = pChProcArgs->ReqInfo.ChRef.pPipe;
+	pPipe = RequestProc->Args.pipe_xfer_req.ReqInfo.ChRef.pPipe;
 
 	do {
 		int iData2ReadFromWriters;
