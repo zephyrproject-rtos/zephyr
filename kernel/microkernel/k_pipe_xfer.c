@@ -71,12 +71,12 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		struct k_args *pWriter = pipe_xfer_ack->pWriter;
 
 		if (pWriter) { /* Xfer from Writer finished */
-			struct _pipe_xfer_req_arg *pWriterArg =
+			struct _pipe_xfer_req_arg *pipe_write_req =
 				&pipe_xfer_ack->pWriter->Args.pipe_xfer_req;
 
-			--(pWriterArg->iNbrPendXfers);
-			if (0 == pWriterArg->iNbrPendXfers) {
-				if (TERM_XXX & pWriterArg->Status) {
+			--pipe_write_req->iNbrPendXfers;
+			if (0 == pipe_write_req->iNbrPendXfers) {
+				if (TERM_XXX & pipe_write_req->Status) {
 					/* request is terminated, send reply */
 					_k_pipe_put_reply(pipe_xfer_ack->pWriter);
 					/* invoke continuation mechanism (fall through) */
@@ -84,7 +84,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
-				if (TERM_XXX & pWriterArg->Status) {
+				if (TERM_XXX & pipe_write_req->Status) {
 					/* do nothing */
 					/* invoke continuation mechanism (fall through) */
 				} else {
@@ -111,19 +111,19 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		struct k_args *pReader = pipe_xfer_ack->pReader;
 
 		if (pReader) { /* Xfer to Reader finished */
-			struct _pipe_xfer_req_arg *pReaderArg =
+			struct _pipe_xfer_req_arg *pipe_read_req =
 				&pipe_xfer_ack->pReader->Args.pipe_xfer_req;
 
-			--(pReaderArg->iNbrPendXfers);
-			if (0 == pReaderArg->iNbrPendXfers) {
-				if (TERM_XXX & pReaderArg->Status) {
+			--pipe_read_req->iNbrPendXfers;
+			if (0 == pipe_read_req->iNbrPendXfers) {
+				if (TERM_XXX & pipe_read_req->Status) {
 					/* request is terminated, send reply */
 					_k_pipe_get_reply(pipe_xfer_ack->pReader);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
-				if (TERM_XXX & pReaderArg->Status) {
+				if (TERM_XXX & pipe_read_req->Status) {
 					/* do nothing */
 					/* invoke continuation mechanism (fall through) */
 				} else {
@@ -151,19 +151,19 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		struct k_args *pWriter = pipe_xfer_ack->pWriter;
 
 		if (pWriter) { /* Transfer from writer finished */
-			struct _pipe_xfer_req_arg *pWriterArg =
+			struct _pipe_xfer_req_arg *pipe_write_req =
 				&pipe_xfer_ack->pWriter->Args.pipe_xfer_req;
 
-			--(pWriterArg->iNbrPendXfers);
-			if (0 == pWriterArg->iNbrPendXfers) {
-				if (TERM_XXX & pWriterArg->Status) {
+			--pipe_write_req->iNbrPendXfers;
+			if (0 == pipe_write_req->iNbrPendXfers) {
+				if (TERM_XXX & pipe_write_req->Status) {
 					/* request is terminated, send reply */
 					_k_pipe_put_reply(pipe_xfer_ack->pWriter);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
-				if (TERM_XXX & pWriterArg->Status) {
+				if (TERM_XXX & pipe_write_req->Status) {
 					/* do nothing */
 					/* invoke continuation mechanism (fall through) */
 				} else {
@@ -173,19 +173,19 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		} else {
 			/* Transfer to Reader finished */
 
-			struct _pipe_xfer_req_arg *pReaderArg =
+			struct _pipe_xfer_req_arg *pipe_read_req =
 				&pipe_xfer_ack->pReader->Args.pipe_xfer_req;
 
-			--(pReaderArg->iNbrPendXfers);
-			if (0 == pReaderArg->iNbrPendXfers) {
-				if (TERM_XXX & pReaderArg->Status) {
+			--pipe_read_req->iNbrPendXfers;
+			if (0 == pipe_read_req->iNbrPendXfers) {
+				if (TERM_XXX & pipe_read_req->Status) {
 					/* request is terminated, send reply */
 					_k_pipe_get_reply(pipe_xfer_ack->pReader);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
 			} else {
-				if (TERM_XXX & pReaderArg->Status) {
+				if (TERM_XXX & pipe_read_req->Status) {
 					/* do nothing */
 					/* invoke continuation mechanism (fall through) */
 				} else {
@@ -425,7 +425,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 {
 	struct k_args *pReader;
-	struct _pipe_xfer_req_arg *pReaderArgs;
+	struct _pipe_xfer_req_arg *pipe_read_req;
 
 	unsigned char *pRead;
 	int iSize;
@@ -438,11 +438,11 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 	__ASSERT_NO_MSG((pPipe->Readers == pNewReader) ||
 					(NULL == pPipe->Readers) || (NULL == pNewReader));
 
-	pReaderArgs = &pReader->Args.pipe_xfer_req;
+	pipe_read_req = &pReader->Args.pipe_xfer_req;
 
 	do {
 		iSize = min(pPipe->desc.iAvailDataCont,
-					pReaderArgs->iSizeTotal - pReaderArgs->iSizeXferred);
+					pipe_read_req->iSizeTotal - pipe_read_req->iSizeXferred);
 
 		if (iSize == 0) {
 			return;
@@ -457,24 +457,24 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_B2R, NULL, pReader,
-			(char *)(pReaderArgs->pData) +
-			OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
+			(char *)(pipe_read_req->pData) +
+			OCTET_TO_SIZEOFUNIT(pipe_read_req->iSizeXferred),
 			pRead, ret, id);
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
-		pReaderArgs->iNbrPendXfers++;
-		pReaderArgs->iSizeXferred += ret;
+		pipe_read_req->iNbrPendXfers++;
+		pipe_read_req->iSizeXferred += ret;
 
-		if (pReaderArgs->iSizeXferred == pReaderArgs->iSizeTotal) {
-			_k_pipe_request_status_set(pReaderArgs, TERM_SATISFIED);
+		if (pipe_read_req->iSizeXferred == pipe_read_req->iSizeTotal) {
+			_k_pipe_request_status_set(pipe_read_req, TERM_SATISFIED);
 			if (pReader->Head != NULL) {
 				DeListWaiter(pReader);
 				myfreetimer(&pReader->Time.timer);
 			}
 			return;
 		} else {
-			_k_pipe_request_status_set(pReaderArgs, XFER_BUSY);
+			_k_pipe_request_status_set(pipe_read_req, XFER_BUSY);
 		}
 
 	} while (--numIterations != 0);
@@ -494,7 +494,7 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 {
 	struct k_args *pWriter;
-	struct _pipe_xfer_req_arg *pWriterArgs;
+	struct _pipe_xfer_req_arg *pipe_write_req;
 
 	int iSize;
 	unsigned char *pWrite;
@@ -507,12 +507,12 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 	__ASSERT_NO_MSG(!((pPipe->Writers != pNewWriter) &&
 					  (NULL != pPipe->Writers) && (NULL != pNewWriter)));
 
-	pWriterArgs = &pWriter->Args.pipe_xfer_req;
+	pipe_write_req = &pWriter->Args.pipe_xfer_req;
 
 	do {
 		iSize = min((numIterations == 2) ? pPipe->desc.iFreeSpaceCont
 					: pPipe->desc.iFreeSpaceAWA,
-					pWriterArgs->iSizeTotal - pWriterArgs->iSizeXferred);
+					pipe_write_req->iSizeTotal - pipe_write_req->iSizeXferred);
 
 		if (iSize == 0) {
 			continue;
@@ -527,17 +527,17 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_W2B, pWriter, NULL, pWrite,
-			(char *)(pWriterArgs->pData) +
-			OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
+			(char *)(pipe_write_req->pData) +
+			OCTET_TO_SIZEOFUNIT(pipe_write_req->iSizeXferred),
 			ret, (numIterations == 2) ? id : -1);
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
-		pWriterArgs->iNbrPendXfers++;
-		pWriterArgs->iSizeXferred += ret;
+		pipe_write_req->iNbrPendXfers++;
+		pipe_write_req->iSizeXferred += ret;
 
-		if (pWriterArgs->iSizeXferred == pWriterArgs->iSizeTotal) {
-			_k_pipe_request_status_set(pWriterArgs, TERM_SATISFIED);
+		if (pipe_write_req->iSizeXferred == pipe_write_req->iSizeTotal) {
+			_k_pipe_request_status_set(pipe_write_req, TERM_SATISFIED);
 			if (pWriter->Head != NULL) {
 				/* only listed requests have a timer */
 				DeListWaiter(pWriter);
@@ -545,7 +545,7 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 			}
 			return;
 		} else {
-			_k_pipe_request_status_set(pWriterArgs, XFER_BUSY);
+			_k_pipe_request_status_set(pipe_write_req, XFER_BUSY);
 		}
 
 	} while (--numIterations != 0);
@@ -560,21 +560,21 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 
 static void pipe_xfer_status_update(
 	struct k_args *pActor,       /* ptr to struct k_args to be used by actor */
-	struct _pipe_xfer_req_arg *pActorArgs, /* ptr to actor's channel process structure */
+	struct _pipe_xfer_req_arg *pipe_xfer_req, /* ptr to actor's channel process structure */
 	int bytesXferred      /* # of bytes transferred */
 	)
 {
-	pActorArgs->iNbrPendXfers++;
-	pActorArgs->iSizeXferred += bytesXferred;
+	pipe_xfer_req->iNbrPendXfers++;
+	pipe_xfer_req->iSizeXferred += bytesXferred;
 
-	if (pActorArgs->iSizeXferred == pActorArgs->iSizeTotal) {
-		_k_pipe_request_status_set(pActorArgs, TERM_SATISFIED);
+	if (pipe_xfer_req->iSizeXferred == pipe_xfer_req->iSizeTotal) {
+		_k_pipe_request_status_set(pipe_xfer_req, TERM_SATISFIED);
 		if (pActor->Head != NULL) {
 			DeListWaiter(pActor);
 			myfreetimer(&pActor->Time.timer);
 		}
 	} else {
-		_k_pipe_request_status_set(pActorArgs, XFER_BUSY);
+		_k_pipe_request_status_set(pipe_xfer_req, XFER_BUSY);
 	}
 }
 
@@ -593,8 +593,8 @@ static void pipe_read_write(
 {
 	struct k_args *pReader;       /* ptr to struct k_args to be used by reader */
 	struct k_args *pWriter;       /* ptr to struct k_args to be used by writer */
-	struct _pipe_xfer_req_arg *pWriterArgs; /* ptr to writer's channel process structure */
-	struct _pipe_xfer_req_arg *pReaderArgs; /* ptr to reader's channel process structure */
+	struct _pipe_xfer_req_arg *pipe_write_req; /* ptr to writer's channel process structure */
+	struct _pipe_xfer_req_arg *pipe_read_req; /* ptr to reader's channel process structure */
 
 	int iT1;
 	int iT2;
@@ -611,14 +611,14 @@ static void pipe_read_write(
 					(NULL == pPipe->Readers) || (NULL == pNewReader));
 
 	/* Preparation */
-	pWriterArgs = &pWriter->Args.pipe_xfer_req;
-	pReaderArgs = &pReader->Args.pipe_xfer_req;
+	pipe_write_req = &pWriter->Args.pipe_xfer_req;
+	pipe_read_req = &pReader->Args.pipe_xfer_req;
 
 	/* Calculate iT1, iT2 and iT3 */
 	int iFreeSpaceReader =
-		(pReaderArgs->iSizeTotal - pReaderArgs->iSizeXferred);
+		(pipe_read_req->iSizeTotal - pipe_read_req->iSizeXferred);
 	int iAvailDataWriter =
-		(pWriterArgs->iSizeTotal - pWriterArgs->iSizeXferred);
+		(pipe_write_req->iSizeTotal - pipe_write_req->iSizeXferred);
 	int iFreeSpaceBuffer =
 		(pPipe->desc.iFreeSpaceCont + pPipe->desc.iFreeSpaceAWA);
 	int iAvailDataBuffer =
@@ -664,17 +664,17 @@ static void pipe_read_write(
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_W2R, pWriter, pReader,
-			(char *)(pReaderArgs->pData) +
-			OCTET_TO_SIZEOFUNIT(pReaderArgs->iSizeXferred),
-			(char *)(pWriterArgs->pData) +
-			OCTET_TO_SIZEOFUNIT(pWriterArgs->iSizeXferred),
+			(char *)(pipe_read_req->pData) +
+			OCTET_TO_SIZEOFUNIT(pipe_read_req->iSizeXferred),
+			(char *)(pipe_write_req->pData) +
+			OCTET_TO_SIZEOFUNIT(pipe_write_req->iSizeXferred),
 			iT2, -1);
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
-		pipe_xfer_status_update(pWriter, pWriterArgs, iT2);
+		pipe_xfer_status_update(pWriter, pipe_write_req, iT2);
 
-		pipe_xfer_status_update(pReader, pReaderArgs, iT2);
+		pipe_xfer_status_update(pReader, pipe_read_req, iT2);
 	}
 
 	/* T3 transfer */
