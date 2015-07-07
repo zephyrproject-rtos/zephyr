@@ -1022,7 +1022,280 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 	return !memcmp(addr->val, hash, 3);
 }
 
-void bt_smp_init(void)
+#if defined(CONFIG_BLUETOOTH_SMP_SELFTEST)
+/* spaw octets for LE encrypt */
+static void swap_buf(const uint8_t *src, uint8_t *dst, uint16_t len)
+{
+	int i;
+
+	for (i = 0; i < len; i++)
+		dst[len - 1 - i] = src[i];
+}
+
+/* 1 bit left shift */
+static void array_shift(const uint8_t *in, uint8_t *out)
+{
+	uint8_t overflow = 0;
+
+	for (int i = 15; i >= 0; i--) {
+		out[i] = in[i] << 1;
+		/* previous byte */
+		out[i] |= overflow;
+		overflow = in[i] & 0x80 ? 1 : 0;
+	}
+}
+
+/* CMAC subkey generation algorithm */
+static int cmac_subkey(const uint8_t *key, uint8_t *k1, uint8_t *k2)
+{
+	const uint8_t rb[16] = {
+		[0 ... 14]	= 0x00,
+		[15]		= 0x87,
+	};
+	uint8_t zero[16] = { 0 }, *tmp = zero;
+	uint8_t l[16];
+	int err;
+
+	/* L := AES-128(K, const_Zero) */
+	err = le_encrypt(key, zero, tmp);
+	if (err) {
+		return err;
+	}
+
+	swap_buf(tmp, l, 16);
+
+	BT_DBG("l %s\n", h(l, 16));
+
+	/* if MSB(L) == 0 K1 = L << 1 */
+	if (!(l[0] & 0x80)) {
+		array_shift(l, k1);
+	/* else K1 = (L << 1) XOR rb */
+	} else {
+		array_shift(l, k1);
+		xor_128((uint128_t *)k1, (uint128_t *)rb, (uint128_t *)k1);
+	}
+
+	/* if MSB(K1) == 0 K2 = K1 << 1 */
+	if (!(k1[0] & 0x80)) {
+		array_shift(k1, k2);
+	/* else K2 = (K1 << 1) XOR rb */
+	} else {
+		array_shift(k1, k2);
+		xor_128((uint128_t *)k2, (uint128_t *)rb, (uint128_t *)k2);
+	}
+
+	return 0;
+}
+
+/* padding(x) = x || 10^i      where i is 128 - 8 * r - 1 */
+static void add_pad(const uint8_t *in, unsigned char *out, int len)
+{
+	memset(out, 0, 16);
+	memcpy(out, in, len);
+	out[len] = 0x80;
+}
+
+/* Cypher based Message Authentication Code (CMAC) with AES 128 bit
+ *
+ * Input    : key    ( 128-bit key )
+ *          : in     ( message to be authenticated )
+ *          : len    ( length of the message in octets )
+ * Output   : out    ( message authentication code )
+ */
+static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
+			   uint8_t *out)
+{
+	uint8_t k1[16], k2[16], last_block[16], *pad_block = last_block;
+	uint8_t tmp[16], key_s[16];
+	uint8_t *x, *y;
+	uint8_t n, flag;
+	int err;
+
+	swap_buf(key, key_s, 16);
+
+	/* (K1,K2) = Generate_Subkey(K) */
+	err = cmac_subkey(key_s, k1, k2);
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("key %s subkeys k1 %s k2 %s\n", h(key, 16), h(k1, 16),
+	       h(k2, 16));
+
+	/* the number of blocks, n, is calculated, the block length is 16 bytes
+	 * n = ceil(len/const_Bsize)
+	 */
+	n = (len + 15) / 16;
+
+	/* check input length, flag indicate completed blocks */
+	if (n == 0) {
+		/* if length is 0, the number of blocks to be processed shall
+		 * be 1,and the flag shall be marked as not-complete-block
+		 * false
+		 */
+		n = 1;
+		flag = 0;
+	} else {
+		if ((len % 16) == 0) {
+			/* complete blocks */
+			flag = 1;
+		} else {
+			/* last block is not complete */
+			flag = 0;
+		}
+	}
+
+	BT_DBG("len %u n %u flag %u\n", len, n, flag);
+
+	/* if flag is true then M_last = M_n XOR K1 */
+	if (flag) {
+		xor_128((uint128_t *)&in[16 * (n - 1)], (uint128_t *)k1,
+			(uint128_t *)last_block);
+	/* else M_last = padding(M_n) XOR K2 */
+	} else {
+		add_pad(&in[16 * (n - 1)], pad_block, len % 16);
+		xor_128((uint128_t *)pad_block, (uint128_t *)k2,
+			(uint128_t *)last_block);
+	}
+
+	/* Reuse k1 and k2 buffers */
+	x = k1;
+	y = k2;
+
+	/* Zeroing x */
+	memset(x, 0, 16);
+
+	/* the basic CBC-MAC is applied to M_1,...,M_{n-1},M_last */
+	for (int i = 0; i < n - 1; i++) {
+		/* Y = X XOR M_i */
+		xor_128((uint128_t *)x, (uint128_t *)&in[i * 16],
+			(uint128_t *)tmp);
+
+		swap_buf(tmp, y, 16);
+
+		/* X = AES-128(K,Y) */
+		err = le_encrypt(key_s, y, tmp);
+		if (err) {
+			return err;
+		}
+
+		swap_buf(tmp, x, 16);
+	}
+
+	/* Y = M_last XOR X */
+	xor_128((uint128_t *)x, (uint128_t *)last_block, (uint128_t *)tmp);
+
+	swap_buf(tmp, y, 16);
+
+	/* T = AES-128(K,Y) */
+	err = le_encrypt(key_s, y, tmp);
+
+	swap_buf(tmp, out, 16);
+
+	return err;
+}
+
+/* Test vectors are taken from RFC 4493
+ * https://tools.ietf.org/html/rfc4493
+ * Same mentioned in the Bluetooth Spec.
+ */
+static const uint8_t key[] = {
+	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+	0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
+};
+
+static const uint8_t M[] = {
+	0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96,
+	0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
+	0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c,
+	0x9e, 0xb7, 0x6f, 0xac, 0x45, 0xaf, 0x8e, 0x51,
+	0x30, 0xc8, 0x1c, 0x46, 0xa3, 0x5c, 0xe4, 0x11,
+	0xe5, 0xfb, 0xc1, 0x19, 0x1a, 0x0a, 0x52, 0xef,
+	0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17,
+	0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10
+};
+
+static int aes_test(const char *prefix, const uint8_t *key, const uint8_t *m,
+		    uint16_t len, const uint8_t *mac)
+{
+	uint8_t out[16];
+
+	BT_DBG("%s: AES CMAC of message with len %u\n", prefix, len);
+
+	bt_smp_aes_cmac(key, m, len, out);
+	if (!memcmp(out, mac, 16)) {
+		BT_DBG("%s: Success\n", prefix);
+	} else {
+		BT_ERR("%s: Failed\n", prefix);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int smp_aes_cmac_test(void)
+{
+	uint8_t mac1[] = {
+		0xbb, 0x1d, 0x69, 0x29, 0xe9, 0x59, 0x37, 0x28,
+		0x7f, 0xa3, 0x7d, 0x12, 0x9b, 0x75, 0x67, 0x46
+	};
+	uint8_t mac2[] = {
+		0x07, 0x0a, 0x16, 0xb4, 0x6b, 0x4d, 0x41, 0x44,
+		0xf7, 0x9b, 0xdd, 0x9d, 0xd0, 0x4a, 0x28, 0x7c
+	};
+	uint8_t mac3[] = {
+		0xdf, 0xa6, 0x67, 0x47, 0xde, 0x9a, 0xe6, 0x30,
+		0x30, 0xca, 0x32, 0x61, 0x14, 0x97, 0xc8, 0x27
+	};
+	uint8_t mac4[] = {
+		0x51, 0xf0, 0xbe, 0xbf, 0x7e, 0x3b, 0x9d, 0x92,
+		0xfc, 0x49, 0x74, 0x17, 0x79, 0x36, 0x3c, 0xfe
+	};
+	int err;
+
+	err = aes_test("Test aes-cmac0", key, M, 0, mac1);
+	if (err) {
+		return err;
+	}
+
+	err = aes_test("Test aes-cmac16", key, M, 16, mac2);
+	if (err) {
+		return err;
+	}
+
+	err = aes_test("Test aes-cmac40", key, M, 40, mac3);
+	if (err) {
+		return err;
+	}
+
+	err = aes_test("Test aes-cmac64", key, M, 64, mac4);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+static int smp_self_test(void)
+{
+	int err;
+
+	err = smp_aes_cmac_test();
+	if (err) {
+		BT_ERR("SMP AES-CMAC self tests failed\n");
+		return err;
+	}
+
+	return 0;
+}
+#else
+static inline int smp_self_test(void)
+{
+	return 0;
+}
+#endif
+
+int bt_smp_init(void)
 {
 	static struct bt_l2cap_chan chan = {
 		.cid		= BT_L2CAP_CID_SMP,
@@ -1033,4 +1306,6 @@ void bt_smp_init(void)
 	};
 
 	bt_l2cap_chan_register(&chan);
+
+	return smp_self_test();
 }

@@ -137,3 +137,12 @@ config	BLUETOOTH_DEBUG_GATT
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
+
+config BLUETOOTH_SMP_SELFTEST
+	bool
+	prompt "Bluetooth SMP self tests executed on init"
+	depends on BLUETOOTH_DEBUG_SMP
+	default n
+	help
+	  This option enables SMP self-tests executed on startup
+	  to verify security and crypto functions.
