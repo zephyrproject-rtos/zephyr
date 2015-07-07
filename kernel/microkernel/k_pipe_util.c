@@ -71,8 +71,8 @@ int CalcFreeReaderSpace(struct k_args *pReaderList)
 	if (pReaderList) {
 		struct k_args *pReader = pReaderList;
 		while (pReader != NULL) {
-			iSize += (pReader->Args.ChProc.iSizeTotal -
-				  pReader->Args.ChProc.iSizeXferred);
+			iSize += (pReader->Args.pipe_xfer_req.iSizeTotal -
+				  pReader->Args.pipe_xfer_req.iSizeXferred);
 			pReader = pReader->Forw;
 		}
 	}
@@ -86,8 +86,8 @@ int CalcAvailWriterData(struct k_args *pWriterList)
 	if (pWriterList) {
 		struct k_args *pWriter = pWriterList;
 		while (pWriter != NULL) {
-			iSize += (pWriter->Args.ChProc.iSizeTotal -
-				  pWriter->Args.ChProc.iSizeXferred);
+			iSize += (pWriter->Args.pipe_xfer_req.iSizeTotal -
+				  pWriter->Args.pipe_xfer_req.iSizeXferred);
 			pWriter = pWriter->Forw;
 		}
 	}
@@ -96,38 +96,38 @@ int CalcAvailWriterData(struct k_args *pWriterList)
 
 K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *pChxxx)
 {
-	return (K_PIPE_OPTION)(pChxxx->ChProc.ReqInfo.Params & _ALL_OPT);
+	return (K_PIPE_OPTION)(pChxxx->pipe_xfer_req.ReqInfo.Params & _ALL_OPT);
 }
 
 void _k_pipe_option_set(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option)
 {
 	/* Ensure that only the pipe option bits are modified */
-	pChxxx->ChProc.ReqInfo.Params &= (~_ALL_OPT);
-	pChxxx->ChProc.ReqInfo.Params |= (option & _ALL_OPT);
+	pChxxx->pipe_xfer_req.ReqInfo.Params &= (~_ALL_OPT);
+	pChxxx->pipe_xfer_req.ReqInfo.Params |= (option & _ALL_OPT);
 }
 
 REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *pChxxx)
 {
-	return (REQ_TYPE)(pChxxx->ChProc.ReqInfo.Params & _ALLREQ);
+	return (REQ_TYPE)(pChxxx->pipe_xfer_req.ReqInfo.Params & _ALLREQ);
 }
 
 void _k_pipe_request_type_set(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType)
 {
 	/* Ensure that only the request type bits are modified */
-	pChxxx->ChProc.ReqInfo.Params &= (~_ALLREQ);
-	pChxxx->ChProc.ReqInfo.Params |= (ReqType & _ALLREQ);
+	pChxxx->pipe_xfer_req.ReqInfo.Params &= (~_ALLREQ);
+	pChxxx->pipe_xfer_req.ReqInfo.Params |= (ReqType & _ALLREQ);
 }
 
 TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *pChxxx)
 {
-	return (TIME_TYPE)(pChxxx->ChProc.ReqInfo.Params & _ALLTIME);
+	return (TIME_TYPE)(pChxxx->pipe_xfer_req.ReqInfo.Params & _ALLTIME);
 }
 
 void _k_pipe_time_type_set(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType)
 {
 	/* Ensure that only the time type bits are modified */
-	pChxxx->ChProc.ReqInfo.Params &= (~_ALLTIME);
-	pChxxx->ChProc.ReqInfo.Params |= (TimeType & _ALLTIME);
+	pChxxx->pipe_xfer_req.ReqInfo.Params &= (~_ALLTIME);
+	pChxxx->pipe_xfer_req.ReqInfo.Params |= (TimeType & _ALLTIME);
 }
 
 void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pChProc, PIPE_REQUEST_STATUS Status)

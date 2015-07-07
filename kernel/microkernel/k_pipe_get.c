@@ -67,23 +67,23 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	 */
 
 	mycopypacket(&RequestProc, Request);
-	RequestProc->Args.ChProc.ReqInfo.ChRef.pPipe =
+	RequestProc->Args.pipe_xfer_req.ReqInfo.ChRef.pPipe =
 		&(_k_pipe_list[OBJ_INDEX(pipeId)]);
 
 	switch (_k_pipe_request_type_get(&RequestProc->Args)) {
 	case _SYNCREQ:
-		RequestProc->Args.ChProc.pData =
+		RequestProc->Args.pipe_xfer_req.pData =
 			Request->Args.pipe_req.ReqType.Sync.pData;
-		RequestProc->Args.ChProc.iSizeTotal =
+		RequestProc->Args.pipe_xfer_req.iSizeTotal =
 			Request->Args.pipe_req.ReqType.Sync.iSizeTotal;
 		break;
 	default:
 		break;
 	}
 
-	RequestProc->Args.ChProc.Status = XFER_IDLE;
-	RequestProc->Args.ChProc.iNbrPendXfers = 0;
-	RequestProc->Args.ChProc.iSizeXferred = 0;
+	RequestProc->Args.pipe_xfer_req.Status = XFER_IDLE;
+	RequestProc->Args.pipe_xfer_req.iNbrPendXfers = 0;
+	RequestProc->Args.pipe_xfer_req.iSizeXferred = 0;
 
 	RequestProc->Forw = NULL;
 	RequestProc->Head = NULL;
@@ -105,7 +105,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	struct pipe_struct *pPipe;
 	struct _pipe_xfer_req_arg *pChProcArgs;
 
-	pChProcArgs = &(RequestProc->Args.ChProc);
+	pChProcArgs = &RequestProc->Args.pipe_xfer_req;
 	pPipe = pChProcArgs->ReqInfo.ChRef.pPipe;
 
 	do {
@@ -130,7 +130,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		RequestProc->Time.ticks = ticks;
 
 		/* check if request was processed */
-		if (TERM_XXX & RequestProc->Args.ChProc.Status) {
+		if (TERM_XXX & RequestProc->Args.pipe_xfer_req.Status) {
 			RequestProc->Time.timer = NULL; /* not really required */
 			return; /* not listed anymore --> completely processed */
 		}
@@ -160,7 +160,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		} else {
 			/* { TIME_BT } */
 #ifdef CANCEL_TIMERS
-			if (RequestProc->Args.ChProc.iSizeXferred != 0) {
+			if (RequestProc->Args.pipe_xfer_req.iSizeXferred != 0) {
 				RequestProc->Time.timer = NULL;
 			} else
 #endif
@@ -176,11 +176,12 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		 */
 		RequestProc->Time.timer = NULL;
 
-		if (XFER_BUSY == RequestProc->Args.ChProc.Status) {
+		if (XFER_BUSY == RequestProc->Args.pipe_xfer_req.Status) {
 			INSERT_ELM(pPipe->Readers, RequestProc);
 		} else {
-			__ASSERT_NO_MSG(XFER_IDLE == RequestProc->Args.ChProc.Status);
-			__ASSERT_NO_MSG(0 == RequestProc->Args.ChProc.iSizeXferred);
+			__ASSERT_NO_MSG(XFER_IDLE ==
+				RequestProc->Args.pipe_xfer_req.Status);
+			__ASSERT_NO_MSG(0 == RequestProc->Args.pipe_xfer_req.iSizeXferred);
 			RequestProc->Comm = PIPE_GET_REPLY;
 			_k_pipe_get_reply(RequestProc);
 		}
@@ -200,10 +201,10 @@ void _k_pipe_get_timeout(struct k_args *ReqProc)
 	__ASSERT_NO_MSG(NULL != ReqProc->Time.timer);
 
 	myfreetimer(&(ReqProc->Time.timer));
-	_k_pipe_request_status_set(&ReqProc->Args.ChProc, TERM_TMO);
+	_k_pipe_request_status_set(&ReqProc->Args.pipe_xfer_req, TERM_TMO);
 
 	DeListWaiter(ReqProc);
-	if (0 == ReqProc->Args.ChProc.iNbrPendXfers) {
+	if (0 == ReqProc->Args.pipe_xfer_req.iNbrPendXfers) {
 		_k_pipe_get_reply(ReqProc);
 	}
 }
@@ -218,7 +219,7 @@ void _k_pipe_get_timeout(struct k_args *ReqProc)
 void _k_pipe_get_reply(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(
-		(0 == ReqProc->Args.ChProc.iNbrPendXfers) /*  no pending Xfers */
+		(0 == ReqProc->Args.pipe_xfer_req.iNbrPendXfers) /*  no pending Xfers */
 	    && (NULL == ReqProc->Time.timer) /*  no pending timer */
 	    && (NULL == ReqProc->Head)); /*  not in list */
 
@@ -230,17 +231,17 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 
 	/* determine return value */
 
-	ChReqStatus = ReqProc->Args.ChProc.Status;
+	ChReqStatus = ReqProc->Args.pipe_xfer_req.Status;
 	if (TERM_TMO == ChReqStatus) {
 		ReqOrig->Time.rcode = RC_TIME;
 	} else if ((TERM_XXX | XFER_IDLE) & ChReqStatus) {
 		K_PIPE_OPTION Option = _k_pipe_option_get(&ReqProc->Args);
 
-		if (likely(ReqProc->Args.ChProc.iSizeXferred ==
-				   ReqProc->Args.ChProc.iSizeTotal)) {
+		if (likely(ReqProc->Args.pipe_xfer_req.iSizeXferred ==
+				   ReqProc->Args.pipe_xfer_req.iSizeTotal)) {
 			/* All data has been transferred */
 			ReqOrig->Time.rcode = RC_OK;
-		} else if (ReqProc->Args.ChProc.iSizeXferred != 0) {
+		} else if (ReqProc->Args.pipe_xfer_req.iSizeXferred != 0) {
 			/* Some but not all data has been transferred */
 			ReqOrig->Time.rcode = (Option == _ALL_N) ?
 								  RC_INCOMPLETE : RC_OK;
@@ -253,7 +254,8 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 		__ASSERT_NO_MSG(1 == 0); /* should not come here */
 	}
 
-	ReqOrig->Args.pipe_ack.iSizeXferred = ReqProc->Args.ChProc.iSizeXferred;
+	ReqOrig->Args.pipe_ack.iSizeXferred =
+		ReqProc->Args.pipe_xfer_req.iSizeXferred;
 	SENDARGS(ReqOrig);
 
 	FREEARGS(ReqProc);
