@@ -267,7 +267,7 @@ struct async_req {
 	ksem_t sema;
 };
 
-struct k_chreq {
+struct _pipe_req_arg {
 	struct req_info ReqInfo;
 	union {
 		struct sync_req Sync;
@@ -441,7 +441,7 @@ union k_args_args {
 	struct _z4arg z4;
 	struct k_chproc ChProc;
 	struct k_chmovedack ChMovedAck;
-	struct k_chreq ChReq;
+	struct _pipe_req_arg ChReq;
 	struct k_chack ChAck;
 };
 
