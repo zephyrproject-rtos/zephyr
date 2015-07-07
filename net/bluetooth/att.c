@@ -1193,6 +1193,14 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *data)
 	return att_handle_rsp(conn, NULL, 0, err);
 }
 
+static uint8_t att_handle_find_info_rsp(struct bt_conn *conn,
+					struct bt_buf *buf)
+{
+	BT_DBG("\n");
+
+	return att_handle_rsp(conn, buf->data, buf->len, 0);
+}
+
 static uint8_t att_handle_find_type_rsp(struct bt_conn *conn,
 					struct bt_buf *buf)
 {
@@ -1222,6 +1230,8 @@ static const struct {
 	  sizeof(struct bt_att_exchange_mtu_rsp) },
 	{ BT_ATT_OP_FIND_INFO_REQ, att_find_info_req,
 	  sizeof(struct bt_att_find_info_req) },
+	{ BT_ATT_OP_FIND_INFO_RSP, att_handle_find_info_rsp,
+	  sizeof(struct bt_att_find_info_rsp) },
 	{ BT_ATT_OP_FIND_TYPE_REQ, att_find_type_req,
 	  sizeof(struct bt_att_find_type_req) },
 	{ BT_ATT_OP_FIND_TYPE_RSP, att_handle_find_type_rsp,
