@@ -44,9 +44,6 @@
 
 #define _ALIAS_OF(of) __attribute__((alias(#of)))
 
-#define __prekernel_init_level(level) __attribute__((section(".ctors." \
-				_STRINGIFY(level))))
-
 #define CODE_UNREACHABLE __builtin_unreachable()
 #define FUNC_NORETURN    __attribute__((__noreturn__))
 

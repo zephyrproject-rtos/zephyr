@@ -303,35 +303,9 @@ extern uint32_t nano_cycle_get_32(void);
 extern int64_t nano_tick_delta(int64_t *reftime);
 extern uint32_t nano_tick_delta_32(int64_t *reftime);
 
-/*
- * Auto-initialization
- *
- * The SYS_PREKERNEL_INIT() macro is used to indicate that the specified
- * routine be executed before the kernel initializes.  All such routines
- * are issued in order of highest priority level to lowest priority level.
- * Values are 000 (highest priority) to 999 (lowest priority).  If all
- * three (3) digits are not supplied, unexpected results may occur, as
- * the linker would interpret priority 19 as a lower priority than 2.  To
- * prevent that scenario, the proper priorities to specify would be 019
- * and 002 respectively.
- *
- * Example:
- *    void my_library_init(void)
- *    {
- *        ...
- *    }
- *
- * SYS_PREKERNEL_INIT(my_library_init, 500);
- *
- */
-
-#define SYS_PREKERNEL_INIT(name, level) \
-			void (*__ctor_##name)(void) __prekernel_init_level(level) = name
-
 #ifdef __cplusplus
 }
 #endif
-
 
 /* architecture-specific nanokernel public APIs */
 
