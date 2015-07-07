@@ -66,15 +66,15 @@ int CalcAvailWriterData(struct k_args *pWriterList);
 void DeListWaiter(struct k_args *pReqProc);
 void myfreetimer(struct k_timer **ppTimer);
 
-K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *pChxxx);
-void _k_pipe_option_set(K_ARGS_ARGS *pChxxx, K_PIPE_OPTION option);
-REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *pChxxx);
-void _k_pipe_request_type_set(K_ARGS_ARGS *pChxxx, REQ_TYPE ReqType);
+K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *args);
+void _k_pipe_option_set(K_ARGS_ARGS *args, K_PIPE_OPTION option);
+REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *args);
+void _k_pipe_request_type_set(K_ARGS_ARGS *args, REQ_TYPE ReqType);
 
 void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
 					PIPE_REQUEST_STATUS status);
 
-TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *pChxxx);
-void _k_pipe_time_type_set(K_ARGS_ARGS *pChxxx, TIME_TYPE TimeType);
+TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *args);
+void _k_pipe_time_type_set(K_ARGS_ARGS *args, TIME_TYPE TimeType);
 
 #endif /* _K_PIPE_UTIL_H */
