@@ -63,22 +63,22 @@ possibly copy the remaining data
 
 void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 {
-	struct _pipe_xfer_ack_arg *pEOXferArgs = &pEOXfer->Args.ChMovedAck;
+	struct _pipe_xfer_ack_arg *pipe_xfer_ack = &pEOXfer->Args.pipe_xfer_ack;
 
-	switch (pEOXferArgs->XferType) {
+	switch (pipe_xfer_ack->XferType) {
 	case XFER_W2B: /* Writer to Buffer */
 	{
-		struct k_args *pWriter = pEOXferArgs->pWriter;
+		struct k_args *pWriter = pipe_xfer_ack->pWriter;
 
 		if (pWriter) { /* Xfer from Writer finished */
 			struct _pipe_xfer_req_arg *pWriterArg =
-				&(pEOXferArgs->pWriter->Args.ChProc);
+				&pipe_xfer_ack->pWriter->Args.ChProc;
 
 			--(pWriterArg->iNbrPendXfers);
 			if (0 == pWriterArg->iNbrPendXfers) {
 				if (TERM_XXX & pWriterArg->Status) {
 					/* request is terminated, send reply */
-					_k_pipe_put_reply(pEOXferArgs->pWriter);
+					_k_pipe_put_reply(pipe_xfer_ack->pWriter);
 					/* invoke continuation mechanism (fall through) */
 				} else {
 					/* invoke continuation mechanism (fall through) */
@@ -94,31 +94,31 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		} else {
 			/* Xfer to Buffer finished */
 
-			int XferId = pEOXferArgs->ID;
+			int XferId = pipe_xfer_ack->ID;
 
-			BuffEnQA_End(&pEOXferArgs->pPipe->desc, XferId,
-						 pEOXferArgs->iSize);
+			BuffEnQA_End(&pipe_xfer_ack->pPipe->desc, XferId,
+						 pipe_xfer_ack->iSize);
 		}
 
 		/* invoke continuation mechanism */
 
-		_k_pipe_process(pEOXferArgs->pPipe, NULL, NULL);
+		_k_pipe_process(pipe_xfer_ack->pPipe, NULL, NULL);
 		FREEARGS(pEOXfer);
 		return;
 	} /* XFER_W2B */
 
 	case XFER_B2R: {
-		struct k_args *pReader = pEOXferArgs->pReader;
+		struct k_args *pReader = pipe_xfer_ack->pReader;
 
 		if (pReader) { /* Xfer to Reader finished */
 			struct _pipe_xfer_req_arg *pReaderArg =
-				&(pEOXferArgs->pReader->Args.ChProc);
+				&pipe_xfer_ack->pReader->Args.ChProc;
 
 			--(pReaderArg->iNbrPendXfers);
 			if (0 == pReaderArg->iNbrPendXfers) {
 				if (TERM_XXX & pReaderArg->Status) {
 					/* request is terminated, send reply */
-					_k_pipe_get_reply(pEOXferArgs->pReader);
+					_k_pipe_get_reply(pipe_xfer_ack->pReader);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
@@ -133,32 +133,32 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		} else {
 			/* Xfer from Buffer finished */
 
-			int XferId = pEOXferArgs->ID;
+			int XferId = pipe_xfer_ack->ID;
 
-			BuffDeQA_End(&pEOXferArgs->pPipe->desc, XferId,
-						 pEOXferArgs->iSize);
+			BuffDeQA_End(&pipe_xfer_ack->pPipe->desc, XferId,
+						 pipe_xfer_ack->iSize);
 		}
 
 		/* continuation mechanism */
 
-		_k_pipe_process(pEOXferArgs->pPipe, NULL, NULL);
+		_k_pipe_process(pipe_xfer_ack->pPipe, NULL, NULL);
 		FREEARGS(pEOXfer);
 		return;
 
 	} /* XFER_B2R */
 
 	case XFER_W2R: {
-		struct k_args *pWriter = pEOXferArgs->pWriter;
+		struct k_args *pWriter = pipe_xfer_ack->pWriter;
 
 		if (pWriter) { /* Transfer from writer finished */
 			struct _pipe_xfer_req_arg *pWriterArg =
-				&(pEOXferArgs->pWriter->Args.ChProc);
+				&pipe_xfer_ack->pWriter->Args.ChProc;
 
 			--(pWriterArg->iNbrPendXfers);
 			if (0 == pWriterArg->iNbrPendXfers) {
 				if (TERM_XXX & pWriterArg->Status) {
 					/* request is terminated, send reply */
-					_k_pipe_put_reply(pEOXferArgs->pWriter);
+					_k_pipe_put_reply(pipe_xfer_ack->pWriter);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
@@ -174,13 +174,13 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			/* Transfer to Reader finished */
 
 			struct _pipe_xfer_req_arg *pReaderArg =
-				&(pEOXferArgs->pReader->Args.ChProc);
+				&pipe_xfer_ack->pReader->Args.ChProc;
 
 			--(pReaderArg->iNbrPendXfers);
 			if (0 == pReaderArg->iNbrPendXfers) {
 				if (TERM_XXX & pReaderArg->Status) {
 					/* request is terminated, send reply */
-					_k_pipe_get_reply(pEOXferArgs->pReader);
+					_k_pipe_get_reply(pipe_xfer_ack->pReader);
 				} else {
 					/* invoke continuation mechanism (fall through) */
 				}
@@ -196,7 +196,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 		/* invoke continuation mechanism */
 
-		_k_pipe_process(pEOXferArgs->pPipe, NULL, NULL);
+		_k_pipe_process(pipe_xfer_ack->pPipe, NULL, NULL);
 		FREEARGS(pEOXfer);
 		return;
 	} /* XFER_W2B */
@@ -267,17 +267,17 @@ static void setup_movedata(struct k_args *A,
 
 	pContSend->Forw = NULL;
 	pContSend->Comm = PIPE_MOVEDATA_ACK;
-	pContSend->Args.ChMovedAck.pPipe = pPipe;
-	pContSend->Args.ChMovedAck.XferType = XferType;
-	pContSend->Args.ChMovedAck.ID = XferID;
-	pContSend->Args.ChMovedAck.iSize = size;
+	pContSend->Args.pipe_xfer_ack.pPipe = pPipe;
+	pContSend->Args.pipe_xfer_ack.XferType = XferType;
+	pContSend->Args.pipe_xfer_ack.ID = XferID;
+	pContSend->Args.pipe_xfer_ack.iSize = size;
 
 	pContRecv->Forw = NULL;
 	pContRecv->Comm = PIPE_MOVEDATA_ACK;
-	pContRecv->Args.ChMovedAck.pPipe = pPipe;
-	pContRecv->Args.ChMovedAck.XferType = XferType;
-	pContRecv->Args.ChMovedAck.ID = XferID;
-	pContRecv->Args.ChMovedAck.iSize = size;
+	pContRecv->Args.pipe_xfer_ack.pPipe = pPipe;
+	pContRecv->Args.pipe_xfer_ack.XferType = XferType;
+	pContRecv->Args.pipe_xfer_ack.ID = XferID;
+	pContRecv->Args.pipe_xfer_ack.iSize = size;
 
 	A->Prio = move_priority_compute(pWriter, pReader);
 	pContSend->Prio = A->Prio;
@@ -287,22 +287,22 @@ static void setup_movedata(struct k_args *A,
 	case XFER_W2B: /* Writer to Buffer */
 	{
 		__ASSERT_NO_MSG(NULL == pReader);
-		pContSend->Args.ChMovedAck.pWriter = pWriter;
-		pContRecv->Args.ChMovedAck.pWriter = NULL;
+		pContSend->Args.pipe_xfer_ack.pWriter = pWriter;
+		pContRecv->Args.pipe_xfer_ack.pWriter = NULL;
 		break;
 	}
 	case XFER_B2R: {
 		__ASSERT_NO_MSG(NULL == pWriter);
-		pContSend->Args.ChMovedAck.pReader = NULL;
-		pContRecv->Args.ChMovedAck.pReader = pReader;
+		pContSend->Args.pipe_xfer_ack.pReader = NULL;
+		pContRecv->Args.pipe_xfer_ack.pReader = pReader;
 		break;
 	}
 	case XFER_W2R: {
 		__ASSERT_NO_MSG(NULL != pWriter && NULL != pReader);
-		pContSend->Args.ChMovedAck.pWriter = pWriter;
-		pContSend->Args.ChMovedAck.pReader = NULL;
-		pContRecv->Args.ChMovedAck.pWriter = NULL;
-		pContRecv->Args.ChMovedAck.pReader = pReader;
+		pContSend->Args.pipe_xfer_ack.pWriter = pWriter;
+		pContSend->Args.pipe_xfer_ack.pReader = NULL;
+		pContRecv->Args.pipe_xfer_ack.pWriter = NULL;
+		pContRecv->Args.pipe_xfer_ack.pReader = pReader;
 		break;
 	}
 	default:
