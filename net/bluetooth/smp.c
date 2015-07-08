@@ -678,6 +678,8 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		struct bt_smp_encrypt_info *info;
 		struct bt_smp_master_ident *ident;
 
+		bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
+
 		le_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
 		le_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
 		le_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
