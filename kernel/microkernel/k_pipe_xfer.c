@@ -95,6 +95,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			/* Xfer to Buffer finished */
 
 			int XferId = pEOXferArgs->ID;
+
 			BuffEnQA_End(&(pEOXferArgs->pPipe->Buff), XferId,
 						 pEOXferArgs->iSize);
 		}
@@ -800,7 +801,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 					iData2ReadFromWriters +=
 						(pNLWriter->Args.ChProc.iSizeTotal -
 						 pNLWriter->Args.ChProc.iSizeXferred);
-				BuffGetAvailDataTotal( &(pPipe->Buff), &iAvailBufferData);
+				BuffGetAvailDataTotal(&(pPipe->Buff), &iAvailBufferData);
 				iTotalData2Read = iAvailBufferData + iData2ReadFromWriters;
 				iSizeFreeSpaceInReader =
 					pReader->Args.ChProc.iSizeTotal -
