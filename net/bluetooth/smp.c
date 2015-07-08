@@ -709,7 +709,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 	}
 }
 
-static uint8_t smp_pairing_encrypt(struct bt_conn *conn, struct bt_buf *buf)
+static uint8_t smp_encrypt_info(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_encrypt_info *req = (void *)buf->data;
 	struct bt_smp *smp = conn->smp;
@@ -731,7 +731,7 @@ static uint8_t smp_pairing_encrypt(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-static uint8_t smp_pairing_master(struct bt_conn *conn, struct bt_buf *buf)
+static uint8_t smp_master_ident(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_master_ident *req = (void *)buf->data;
 	struct bt_smp *smp = conn->smp;
@@ -869,8 +869,8 @@ static const struct {
 	{ smp_pairing_confirm,     sizeof(struct bt_smp_pairing_confirm) },
 	{ smp_pairing_random,      sizeof(struct bt_smp_pairing_random) },
 	{ smp_pairing_failed,      sizeof(struct bt_smp_pairing_fail) },
-	{ smp_pairing_encrypt,     sizeof(struct bt_smp_encrypt_info) },
-	{ smp_pairing_master,      sizeof(struct bt_smp_master_ident) },
+	{ smp_encrypt_info,        sizeof(struct bt_smp_encrypt_info) },
+	{ smp_master_ident,        sizeof(struct bt_smp_master_ident) },
 	{ smp_ident_info,          sizeof(struct bt_smp_ident_info) },
 	{ smp_ident_addr_info,     sizeof(struct bt_smp_ident_addr_info) },
 	{ }, /* Signing Information - Not yet implemented */
