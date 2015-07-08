@@ -157,20 +157,10 @@ struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
 	}
 }
 
-struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr)
+void bt_keys_add_type(struct bt_keys *keys, int type)
 {
-	struct bt_keys *keys;
-
-	BT_DBG("type %d %s\n", type, bt_addr_le_str(addr));
-
-	keys = bt_keys_find(type, addr);
-	if (keys) {
-		return keys;
-	}
-
-	keys = bt_keys_get_addr(addr);
-	if (!keys) {
-		return NULL;
+	if (keys->keys & type) {
+		return;
 	}
 
 	switch (type) {
@@ -187,10 +177,30 @@ struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr)
 		irks = keys;
 		break;
 	default:
-		return NULL;
+		BT_ERR("Unknown key type %d\n", type);
+		return;
 	}
 
 	keys->keys |= type;
+}
+
+struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr)
+{
+	struct bt_keys *keys;
+
+	BT_DBG("type %d %s\n", type, bt_addr_le_str(addr));
+
+	keys = bt_keys_find(type, addr);
+	if (keys) {
+		return keys;
+	}
+
+	keys = bt_keys_get_addr(addr);
+	if (!keys) {
+		return NULL;
+	}
+
+	bt_keys_add_type(keys, type);
 
 	return keys;
 }
