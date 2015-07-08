@@ -141,7 +141,7 @@ void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
 
 	if (XFER_IDLE == pipe_xfer_req->status /* current (old) status */
 	    && (XFER_BUSY | TERM_XXX) & status /* new status */) {
-		(pipe_xfer_req->ReqInfo.ChRef.pPipe->Count)++;
+		(pipe_xfer_req->ReqInfo.pipe.ptr->Count)++;
 	}
 #endif
 	pipe_xfer_req->status = status;

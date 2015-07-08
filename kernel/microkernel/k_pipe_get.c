@@ -48,7 +48,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	struct k_args *Request;
 	struct k_args *RequestProc;
 
-	kpipe_t pipeId = RequestOrig->Args.pipe_req.ReqInfo.ChRef.Id;
+	kpipe_t pipeId = RequestOrig->Args.pipe_req.ReqInfo.pipe.id;
 
 	/* If it's a poster, then don't deschedule the task */
 
@@ -67,7 +67,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	 */
 
 	mycopypacket(&RequestProc, Request);
-	RequestProc->Args.pipe_xfer_req.ReqInfo.ChRef.pPipe =
+	RequestProc->Args.pipe_xfer_req.ReqInfo.pipe.ptr =
 		&(_k_pipe_list[OBJ_INDEX(pipeId)]);
 
 	switch (_k_pipe_request_type_get(&RequestProc->Args)) {
@@ -104,7 +104,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 	struct pipe_struct *pPipe;
 
-	pPipe = RequestProc->Args.pipe_xfer_req.ReqInfo.ChRef.pPipe;
+	pPipe = RequestProc->Args.pipe_xfer_req.ReqInfo.pipe.ptr;
 
 	do {
 		int iData2ReadFromWriters;

@@ -95,7 +95,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	A.Comm = PIPE_GET_REQUEST;
 	A.Time.ticks = TimeOut;
 
-	A.Args.pipe_req.ReqInfo.ChRef.Id = Id;
+	A.Args.pipe_req.ReqInfo.pipe.id = Id;
 	A.Args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
 	A.Args.pipe_req.ReqType.Sync.pData = pBuffer;
 
@@ -147,7 +147,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	A.Comm = PIPE_PUT_REQUEST;
 	A.Time.ticks = TimeOut;
 
-	A.Args.pipe_req.ReqInfo.ChRef.Id = Id;
+	A.Args.pipe_req.ReqInfo.pipe.id = Id;
 	A.Args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
 	A.Args.pipe_req.ReqType.Sync.pData = pBuffer;
 
@@ -193,7 +193,7 @@ int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
 	A.Time.ticks = TICKS_UNLIMITED;
 		/* same behavior in flow as a blocking call w/o a timeout */
 
-	A.Args.pipe_req.ReqInfo.ChRef.Id = Id;
+	A.Args.pipe_req.ReqInfo.pipe.id = Id;
 	A.Args.pipe_req.ReqType.Async.block = Block;
 	A.Args.pipe_req.ReqType.Async.iSizeTotal = iSize2Xfer;
 	A.Args.pipe_req.ReqType.Async.sema = Sema;

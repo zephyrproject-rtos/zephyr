@@ -250,9 +250,9 @@ typedef enum {
 
 struct req_info {
 	union {
-		kpipe_t Id;
-		struct pipe_struct *pPipe;
-	} ChRef;
+		kpipe_t id;
+		struct pipe_struct *ptr;
+	} pipe;
 	int Params;
 };
 
