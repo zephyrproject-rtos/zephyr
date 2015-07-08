@@ -37,8 +37,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_IOAPIC
-
 /*
  * Redirection table entry bits: lower 32 bit
  * Used as flags argument in ioapic_irq_set
@@ -83,8 +81,6 @@ void _ioapic_irq_disable(unsigned int irq);
 void _ioapic_int_vec_set(unsigned int irq, unsigned int vector);
 void _ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags);
 #endif /* _ASMLANGUAGE */
-
-#endif /* CONFIG_IOAPIC */
 
 #ifdef __cplusplus
 }
