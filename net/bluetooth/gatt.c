@@ -680,12 +680,6 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 		goto done;
 	}
 
-	/* Next characteristic shall be after current value handle */
-	params->start_handle = handle;
-	if (params->start_handle < UINT16_MAX) {
-		params->start_handle++;
-	}
-
 	/* Stop if over the requested range */
 	if (params->start_handle >= params->end_handle) {
 		goto done;
@@ -730,6 +724,128 @@ int bt_gatt_discover_characteristic(struct bt_conn *conn,
 	       params->end_handle);
 
 	bt_att_send(conn, buf, att_read_type_rsp, params, NULL);
+
+	return 0;
+}
+
+static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
+			      const void *pdu, uint16_t length,
+			      void *user_data)
+{
+	const struct bt_att_find_info_rsp *rsp = pdu;
+	struct bt_gatt_discover_params *params = user_data;
+	struct bt_uuid uuid;
+	uint16_t handle = 0;
+	uint8_t len;
+	union {
+		const struct bt_att_info_16 *i16;
+		const struct bt_att_info_128 *i128;
+	} info;
+
+	BT_DBG("err 0x%02x\n", err);
+
+	if (err) {
+		goto done;
+	}
+
+	/* Data can be either in UUID16 or UUID128 */
+	switch (rsp->format) {
+	case BT_ATT_INFO_16:
+		uuid.type = BT_UUID_16;
+		len = sizeof(info.i16);
+		break;
+	case BT_ATT_INFO_128:
+		uuid.type = BT_UUID_128;
+		len = sizeof(info.i128);
+		break;
+	default:
+		BT_ERR("Invalid format %u\n", rsp->format);
+		goto done;
+	}
+
+	/* Parse descriptors found */
+	for (length--, pdu = rsp->info; length >= len;
+	     length -= len, pdu += len) {
+		const struct bt_gatt_attr *attr;
+
+		info.i16 = pdu;
+		handle = sys_le16_to_cpu(info.i16->handle);
+
+		switch (uuid.type) {
+		case BT_UUID_16:
+			uuid.u16 = sys_le16_to_cpu(info.i16->uuid);
+			break;
+		case BT_UUID_128:
+			memcpy(uuid.u128, info.i128->uuid, sizeof(uuid.u128));
+			break;
+		}
+
+		BT_DBG("handle 0x%04x\n", handle);
+
+		/* Skip if UUID is set but doesn't match */
+		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
+			continue;
+		}
+
+		attr = (&(struct bt_gatt_attr)
+			BT_GATT_DESCRIPTOR(handle, &uuid, 0, NULL, NULL, NULL));
+
+		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+			goto done;
+		}
+	}
+
+	/* Stop if could not parse the whole PDU */
+	if (length > 0) {
+		goto done;
+	}
+
+	/* Next characteristic shall be after current value handle */
+	params->start_handle = handle;
+	if (params->start_handle < UINT16_MAX) {
+		params->start_handle++;
+	}
+
+	/* Stop if over the requested range */
+	if (params->start_handle >= params->end_handle) {
+		goto done;
+	}
+
+	/* Continue to the next range */
+	if (!bt_gatt_discover_descriptor(conn, params)) {
+		return;
+	}
+
+done:
+	if (params->destroy) {
+		params->destroy(params);
+	}
+}
+
+int bt_gatt_discover_descriptor(struct bt_conn *conn,
+				struct bt_gatt_discover_params *params)
+{
+	struct bt_buf *buf;
+	struct bt_att_find_info_req *req;
+
+	if (!conn || !params->func || !params->start_handle ||
+	    !params->end_handle) {
+		return -EINVAL;
+	}
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_INFO_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->start_handle = sys_cpu_to_le16(params->start_handle);
+	req->end_handle = sys_cpu_to_le16(params->end_handle);
+
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x\n", params->start_handle,
+	       params->end_handle);
+
+	bt_att_send(conn, buf, att_find_info_rsp, params, NULL);
 
 	return 0;
 }

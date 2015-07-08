@@ -692,6 +692,23 @@ int bt_gatt_discover(struct bt_conn *conn,
 int bt_gatt_discover_characteristic(struct bt_conn *conn,
 				    struct bt_gatt_discover_params *params);
 
+/** @brief Discover Descriptor
+ *
+ *  This procedure is used by a client to discover descriptors on a server.
+ *  Note: In case the UUID is set in the parameter it will be matched against
+ *  the attributes found before calling the function callback.
+ *
+ *  For each attribute found the callback is called which can then decide
+ *  whether to continue discovering or stop.
+ *
+ *  @param conn Connection object.
+ *  @param params Discover parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_discover_descriptor(struct bt_conn *conn,
+				struct bt_gatt_discover_params *params);
+
 /** @brief Cancel GATT pending request
  *
  *  @param conn Connection object.
