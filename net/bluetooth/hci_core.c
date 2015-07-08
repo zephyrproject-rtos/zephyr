@@ -1536,7 +1536,6 @@ int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
 struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn;
-	int err = 0;
 
 	conn = bt_conn_lookup_addr_le(peer);
 	if (conn) {
@@ -1560,12 +1559,10 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 
 	/* Restart scanning if duplicate filtering feature is used */
 	if (dev.scan_enable && dev.scan_filter) {
-		err = bt_hci_stop_scanning();
+		bt_hci_stop_scanning();
 	}
 
-	if (!err) {
-		trigger_scan();
-	}
+	trigger_scan();
 
 	return conn;
 }
