@@ -1460,6 +1460,25 @@ send_set_param:
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
 
+int bt_stop_advertising(void)
+{
+	struct bt_buf *buf;
+
+	if (!dev.adv_enable) {
+		return -EALREADY;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	dev.adv_enable = 0x00;
+	memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
+}
+
 int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 {
 	int err;

@@ -90,6 +90,14 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
 			 const struct bt_eir *sd);
 
+/** @brief Stop advertising
+ *
+ *  Stops ongoing advertising.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_stop_advertising(void);
+
 /** @brief Start (LE) scanning
  *
  *  Start LE scanning with and provide results through the specified
