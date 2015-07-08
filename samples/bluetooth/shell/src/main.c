@@ -474,6 +474,8 @@ static void cmd_gatt_discover(int argc, char *argv[])
 done:
 	if (!strcmp(argv[0], "gatt-discover-characteristic")) {
 		err = bt_gatt_discover_characteristic(conn, &discover_params);
+	} else if (!strcmp(argv[0], "gatt-discover-descriptor")) {
+		err = bt_gatt_discover_descriptor(conn, &discover_params);
 	} else {
 		err = bt_gatt_discover(conn, &discover_params);
 	}
@@ -505,4 +507,5 @@ void main(void)
 	shell_cmd_register("gatt-exchange-mtu", cmd_gatt_exchange_mtu);
 	shell_cmd_register("gatt-discover", cmd_gatt_discover);
 	shell_cmd_register("gatt-discover-characteristic", cmd_gatt_discover);
+	shell_cmd_register("gatt-discover-descriptor", cmd_gatt_discover);
 }
