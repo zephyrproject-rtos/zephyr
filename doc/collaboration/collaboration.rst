@@ -1,3 +1,5 @@
+.. _collaboration_guidelines:
+
 Collaboration Guidelines
 ########################
 

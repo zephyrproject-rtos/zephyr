@@ -1,4 +1,6 @@
-Development with Zephyr
+.. _developing_zephyr:
+
+Developing with Zephyr
 ########################
 
 .. toctree::
@@ -7,3 +9,4 @@ Development with Zephyr
       kbuild
       naming_conventions
       ../doxygen/doxygen_guidelines
+      microkernel_apps
