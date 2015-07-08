@@ -307,20 +307,18 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	old_state = conn->state;
 	conn->state = state;
 
+	/* Take a reference for the first state transition after
+	 * bt_conn_add() and keep it until reaching DISCONNECTED again.
+	 */
+	if (old_state == BT_CONN_DISCONNECTED) {
+		bt_conn_get(conn);
+	}
+
 	switch (conn->state){
 	case BT_CONN_CONNECTED:
 		nano_fifo_init(&conn->tx_queue);
 		fiber_start(conn->tx_stack, sizeof(conn->tx_stack),
 			    conn_tx_fiber, (int)bt_conn_get(conn), 0, 7, 0);
-
-		/* Connection creation process, as initiator, has already owned
-		 * the reference. Drop such reference before transforms
-		 * the ownership to CONNECTED state.
-		 */
-		if (old_state == BT_CONN_CONNECT) {
-			bt_conn_put(conn);
-		}
-
 		break;
 	case BT_CONN_DISCONNECTED:
 		/* Send dummy buffer to wake up and stop the tx fiber
@@ -331,6 +329,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
 		}
 
+		/* Release the reference we took for the very first
+		 * state transition.
+		 */
 		bt_conn_put(conn);
 
 		break;

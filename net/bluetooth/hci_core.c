@@ -757,6 +757,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	}
 
 	bt_connected(conn);
+	bt_conn_put(conn);
 	trigger_scan();
 }
 
@@ -1565,7 +1566,7 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 		trigger_scan();
 	}
 
-	return bt_conn_get(conn);
+	return conn;
 }
 
 static int bt_hci_connect_le_cancel(struct bt_conn *conn)
