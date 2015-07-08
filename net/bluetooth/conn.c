@@ -338,7 +338,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_CONNECT_SCAN:
 	case BT_CONN_CONNECT:
 	case BT_CONN_DISCONNECT:
-
 		break;
 	default:
 		BT_WARN("no valid (%u) state was set\n", state);
@@ -352,11 +351,9 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		switch (conns[i].state) {
-		case BT_CONN_CONNECTED:
-		case BT_CONN_DISCONNECT:
-			break;
-		default:
+		/* We only care about connections with a valid handle */
+		if (conns[i].state != BT_CONN_CONNECTED &&
+		    conns[i].state != BT_CONN_DISCONNECT) {
 			continue;
 		}
 

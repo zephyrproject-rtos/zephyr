@@ -642,7 +642,7 @@ static int bt_hci_stop_scanning(void)
 	scan_enable->filter_dup = 0x00;
 	scan_enable->enable = BT_LE_SCAN_DISABLE;
 
-	err =  bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
 	if (err) {
 		return err;
 	}
@@ -722,6 +722,7 @@ static void le_conn_complete(struct bt_buf *buf)
 		if (!conn) {
 			return;
 		}
+
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
 		/* Drop the reference got by lookup call in CONNECT state.
