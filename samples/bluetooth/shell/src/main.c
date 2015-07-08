@@ -372,12 +372,29 @@ static const struct bt_eir sd[] = {
 
 static void cmd_advertise(int argc, char *argv[])
 {
-	if (bt_start_advertising(BT_LE_ADV_IND, ad, sd) < 0) {
-		printk("Failed to start advertising\n");
+	const char *action;
+
+	if (argc < 2) {
+		printk("Advertise [on/off] parameter required\n");
 		return;
 	}
 
-	printk("Advertising started\n");
+	action = (char*)argv[1];
+	if (!strncmp(action, "on", strlen("on"))) {
+		if (bt_start_advertising(BT_LE_ADV_IND, ad, sd) < 0) {
+			printk("Failed to start advertising\n");
+		} else {
+			printk("Advertising started\n");
+		}
+	} else if (!strncmp(action, "off", strlen("off"))) {
+		if (bt_stop_advertising() < 0) {
+			printk("Failed to stop advertising\n");
+		} else {
+			printk("Advertising stopped\n");
+		}
+	} else {
+		printk("Advertise [on/off] parameter required\n");
+	}
 }
 
 static struct bt_gatt_discover_params discover_params;
