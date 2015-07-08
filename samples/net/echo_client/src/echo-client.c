@@ -219,6 +219,7 @@ static inline bool get_context(struct net_context **unicast,
 	static struct net_addr any_addr;
 	static struct net_addr peer_addr;
 	static struct net_addr my_addr;
+	int proto = IPPROTO_UDP;
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
 	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
@@ -254,7 +255,11 @@ static inline bool get_context(struct net_context **unicast,
 	my_addr.family = AF_INET;
 #endif
 
-	*unicast = net_context_get(IPPROTO_UDP,
+#ifdef CONFIG_NETWORKING_WITH_TCP
+	proto = IPPROTO_TCP;
+#endif /* CONFIG_NETWORKING_WITH_TCP */
+
+	*unicast = net_context_get(proto,
 				   &peer_addr, PEER_PORT,
 				   &my_addr, MY_PORT);
 	if (!*unicast) {

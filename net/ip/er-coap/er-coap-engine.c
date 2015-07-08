@@ -311,7 +311,7 @@ void
 coap_init_engine(void)
 {
   coap_context_init();
-  process_start(&coap_engine, NULL);
+  process_start(&coap_engine, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -347,7 +347,7 @@ coap_context_t *coap_init_server(uip_ipaddr_t *server_addr,
 }
 
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(coap_engine, ev, data, buf)
+PROCESS_THREAD(coap_engine, ev, data, buf, user_data)
 {
   PROCESS_BEGIN();
 #if 0

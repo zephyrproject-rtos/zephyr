@@ -72,6 +72,8 @@
  */
 
 #include <net/ip_buf.h>
+#include <net/net_ip.h>
+#include <errno.h>
 
 #include "contiki/ip/uip.h"
 #include "contiki/ip/uipopt.h"
@@ -454,6 +456,16 @@ uip_init(void)
   }
   for(c = 0; c < UIP_CONNS; ++c) {
     uip_conns[c].tcpstateflags = UIP_CLOSED;
+    uip_conns[c].len = 0;
+  }
+
+  {
+    /* Randomise initial seq number */
+    uint32_t c = clock_get_cycle();
+    iss[0] = c & 0xff;
+    iss[1] = (c & 0xff00) >> 8;
+    iss[2] = (c & 0xff0000) >> 16;
+    iss[3] = (c & 0xff000000) >> 24;
   }
 #endif /* UIP_TCP */
 
@@ -973,15 +985,22 @@ uip_process(struct net_buf *buf, uint8_t flag)
     goto udp_send;
   }
 #endif /* UIP_UDP */
-  uip_sappdata(buf) = uip_appdata(buf) = &uip_buf(buf)[UIP_IPTCPH_LEN + UIP_LLH_LEN];
-   
+#if UIP_TCP
+  if(flag != UIP_TCP_SEND_CONN) {
+#endif
+    uip_sappdata(buf) = uip_appdata(buf) = &uip_buf(buf)[UIP_IPTCPH_LEN + UIP_LLH_LEN];
+#if UIP_TCP
+  }
+#endif
   /* Check if we were invoked because of a poll request for a
      particular connection. */
-  if(flag == UIP_POLL_REQUEST) {
 #if UIP_TCP
+  if(flag == UIP_POLL_REQUEST || flag == UIP_TCP_SEND_CONN) {
     if((uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_ESTABLISHED &&
        !uip_outstanding(uip_connr)) {
-      uip_flags(buf) = UIP_POLL;
+      if (flag == UIP_POLL) {
+        uip_flags(buf) = UIP_POLL;
+      }
       UIP_APPCALL(buf);
       goto appsend;
 #if UIP_ACTIVE_OPEN
@@ -991,10 +1010,32 @@ uip_process(struct net_buf *buf, uint8_t flag)
       goto tcp_send_syn;
 #endif /* UIP_ACTIVE_OPEN */
     }
+    if (flag == UIP_TCP_SEND_CONN) {
+      switch (uip_connr->tcpstateflags & UIP_TS_MASK) {
+      case UIP_CLOSED:
+      case UIP_FIN_WAIT_1:
+      case UIP_FIN_WAIT_2:
+      case UIP_CLOSING:
+      case UIP_TIME_WAIT:
+        ip_buf_sent_status(buf) = -ECONNABORTED;
+	goto drop;
+      }
+      if (uip_outstanding(uip_connr)) {
+        ip_buf_sent_status(buf) = -EAGAIN;
+        PRINTF("Retry to send packet len %d, outstanding data len %d\n",
+	       uip_len(buf), uip_outstanding(uip_connr));
+        return 0;
+      }
+    }
     goto drop;
+  }
+#else /* TCP */
+  if(flag == UIP_POLL_REQUEST) {
+    goto drop;
+  }
 #endif /* UIP_TCP */
     /* Check if we were invoked because of the perodic timer fireing. */
-  } else if(flag == UIP_TIMER) {
+  if(flag == UIP_TIMER) {
     /* Reset the length variables. */
 #if UIP_TCP
     uip_len(buf) = 0;
@@ -1843,8 +1884,8 @@ uip_process(struct net_buf *buf, uint8_t flag)
 #if UIP_ACTIVE_OPEN
  tcp_send_synack:
   UIP_TCP_BUF(buf)->flags = TCP_ACK;
-  
- tcp_send_syn:
+
+tcp_send_syn:
   UIP_TCP_BUF(buf)->flags |= TCP_SYN;
 #else /* UIP_ACTIVE_OPEN */
  tcp_send_synack:
@@ -1877,13 +1918,21 @@ uip_process(struct net_buf *buf, uint8_t flag)
     UIP_APPCALL(buf);
     goto drop;
   }
-  /* Calculate the length of the data, if the application has sent
-     any data to us. */
-  c = (UIP_TCP_BUF(buf)->tcpoffset >> 4) << 2;
-  /* uip_len will contain the length of the actual TCP data. This is
-     calculated by subtracing the length of the TCP header (in
-     c) and the length of the IP header (20 bytes). */
-  uip_len(buf) = uip_len(buf) - c - UIP_IPH_LEN;
+
+  if (flag != UIP_TCP_SEND_CONN) {
+    /* If flag is set to UIP_TCP_SEND_CONN, then it means that we are
+     * trying to send the actual packet coming from user. In this case
+     * do not mess with the packet length.
+     */
+
+    /* Calculate the length of the data, if the application has sent
+       any data to us. */
+    c = (UIP_TCP_BUF(buf)->tcpoffset >> 4) << 2;
+    /* uip_len will contain the length of the actual TCP data. This is
+       calculated by subtracing the length of the TCP header (in
+       c) and the length of the IP header (20 bytes). */
+    uip_len(buf) = uip_len(buf) - c - UIP_IPH_LEN;
+  }
 
   /* First, check if the sequence number of the incoming packet is
      what we're expecting next. If not, we send out an ACK with the
@@ -1903,8 +1952,10 @@ uip_process(struct net_buf *buf, uint8_t flag)
       if((UIP_TCP_BUF(buf)->flags & TCP_SYN)) {
         if((uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_SYN_RCVD) {
           goto tcp_send_synack;
+#if UIP_ACTIVE_OPEN
         } else if((uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_SYN_SENT) {
           goto tcp_send_syn;
+#endif
         }
       }
       goto tcp_send_ack;
@@ -2141,11 +2192,16 @@ uip_process(struct net_buf *buf, uint8_t flag)
          put into uip_len. If the application don't have any data to
          send, uip_len must be set to 0. */
       if(uip_flags(buf) & (UIP_NEWDATA | UIP_ACKDATA)) {
-        uip_slen(buf) = 0;
+        if(flag != UIP_TCP_SEND_CONN) {
+          /* Do not reset the slen because we are being called
+           * directly by the application.
+           */
+          uip_slen(buf) = 0;
+        }
         UIP_APPCALL(buf);
 
       appsend:
-      
+
         if(uip_flags(buf) & UIP_ABORT) {
           uip_slen(buf) = 0;
           uip_connr->tcpstateflags = UIP_CLOSED;
@@ -2287,10 +2343,14 @@ uip_process(struct net_buf *buf, uint8_t flag)
   /* We jump here when we are ready to send the packet, and just want
      to set the appropriate TCP sequence numbers in the TCP header. */
  tcp_send_ack:
+  PRINTF("In tcp_send_ack\n");
   UIP_TCP_BUF(buf)->flags = TCP_ACK;
 
  tcp_send_nodata:
-  uip_len(buf) = UIP_IPTCPH_LEN;
+  if (flag != UIP_TCP_SEND_CONN) {
+    PRINTF("In tcp_send_nodata\n");
+    uip_len(buf) = UIP_IPTCPH_LEN;
+  }
 
  tcp_send_noopts:
   UIP_TCP_BUF(buf)->tcpoffset = (UIP_TCPH_LEN / 4) << 4;
@@ -2318,9 +2378,9 @@ uip_process(struct net_buf *buf, uint8_t flag)
   uip_ipaddr_copy(&UIP_IP_BUF(buf)->destipaddr, &uip_connr->ripaddr);
   uip_ds6_select_src(&UIP_IP_BUF(buf)->srcipaddr, &UIP_IP_BUF(buf)->destipaddr);
   PRINTF("Sending TCP packet to ");
-  PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+  PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF(" from ");
-  PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
+  PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
 
   if(uip_connr->tcpstateflags & UIP_STOPPED) {
@@ -2360,6 +2420,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
   UIP_STAT(++uip_stat.ip.sent);
   /* Return and let the caller do the actual transmission. */
   uip_flags(buf) = 0;
+  buf->len = uip_len(buf);
   return 1;
 
  drop:
@@ -2389,6 +2450,8 @@ uip_send(struct net_buf *buf, const void *data, int len)
   int copylen;
 #define MIN(a,b) ((a) < (b)? (a): (b))
 
+  uip_sappdata(buf) = ip_buf_appdata(buf);
+
   if(uip_sappdata(buf) != NULL) {
     copylen = MIN(len, UIP_BUFSIZE - UIP_LLH_LEN - UIP_TCPIP_HLEN -
                   (int)((char *)uip_sappdata(buf) -
@@ -2400,11 +2463,20 @@ uip_send(struct net_buf *buf, const void *data, int len)
     uip_slen(buf) = copylen;
     if(data != uip_sappdata(buf)) {
       if(uip_sappdata(buf) == NULL) {
-        memcpy((char *)&uip_buf(buf)[UIP_LLH_LEN + UIP_TCPIP_HLEN],
+        memmove((char *)&uip_buf(buf)[UIP_LLH_LEN + UIP_TCPIP_HLEN],
                (data), uip_slen(buf));
       } else {
-        memcpy(uip_sappdata(buf), (data), uip_slen(buf));
+        memmove(uip_sappdata(buf), (data), uip_slen(buf));
       }
+    }
+    if (uip_process(buf, UIP_TCP_SEND_CONN)) {
+       int ret = tcpip_ipv6_output(buf);
+       if (!ret) {
+         PRINTF("Packet %p sending failed.\n", buf);
+         ip_buf_unref(buf);
+       } else {
+         ip_buf_sent_status(buf) = 0;
+       }
     }
   }
 }

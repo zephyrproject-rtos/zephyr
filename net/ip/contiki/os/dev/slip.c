@@ -261,7 +261,7 @@ slip_poll_handler(uint8_t *outbuf, uint16_t blen)
   return 0;
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(slip_process, ev, data, not_used)
+PROCESS_THREAD(slip_process, ev, data, not_used, user_data)
 {
   struct net_buf *buf;
 
@@ -468,7 +468,7 @@ void slip_start(void)
 
   uart_pipe_register(buf, sizeof(buf), recv_cb);
 
-  process_start(&slip_process, NULL);
+  process_start(&slip_process, NULL, NULL);
 }
 
 #endif /* defined(CONFIG_NETWORKING_UART) */

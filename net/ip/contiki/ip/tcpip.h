@@ -127,7 +127,7 @@ CCIF void tcp_attach(struct uip_conn *conn,
  * \param port The port number in network byte order.
  *
  */
-CCIF void tcp_listen(uint16_t port);
+CCIF void tcp_listen(uint16_t port, struct process *handler);
 
 /**
  * Close a listening TCP port.
@@ -141,7 +141,7 @@ CCIF void tcp_listen(uint16_t port);
  * \param port The port number in network byte order.
  *
  */
-CCIF void tcp_unlisten(uint16_t port);
+CCIF void tcp_unlisten(uint16_t port, struct process *handler);
 
 /**
  * Open a TCP connection to the specified IP address and port.
@@ -167,7 +167,7 @@ CCIF void tcp_unlisten(uint16_t port);
  *
  */
 CCIF struct uip_conn *tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port,
-				  void *appstate);
+				  void *appstate, struct process *process);
 
 /**
  * Cause a specified TCP connection to be polled.

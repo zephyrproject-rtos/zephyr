@@ -106,6 +106,9 @@ struct ip_buf {
 	void *uip_udp_conn;
 	linkaddr_t dest;
 	linkaddr_t src;
+#if defined(CONFIG_NETWORKING_WITH_TCP)
+	int8_t sent_status; /* tells if the TCP packet was sent ok or not */
+#endif
 
 	/* Neighbor discovery vars. Note that we are using void pointers here
 	 * so that we do not need to include Contiki headers in this file.
@@ -203,6 +206,7 @@ struct ip_buf {
 #define ip_buf_ll_dest(buf) (((struct ip_buf *)net_buf_user_data((buf)))->dest)
 #define ip_buf_context(buf) (((struct ip_buf *)net_buf_user_data((buf)))->context)
 #define ip_buf_type(ptr) (((struct ip_buf *)net_buf_user_data((ptr)))->type)
+#define ip_buf_sent_status(ptr) (((struct ip_buf *)net_buf_user_data((ptr)))->sent_status)
 /* @endcond */
 
 /** NET_BUF_IP

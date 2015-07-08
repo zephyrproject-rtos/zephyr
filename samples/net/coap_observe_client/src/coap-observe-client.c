@@ -273,7 +273,7 @@ void toggle_observation(coap_context_t *coap_ctx)
 #endif
 
 PROCESS(coap_observe_client_process, "CoAP observe client process");
-PROCESS_THREAD(coap_observe_client_process, ev, data, buf)
+PROCESS_THREAD(coap_observe_client_process, ev, data, buf, user_data)
 {
   PROCESS_BEGIN();
 

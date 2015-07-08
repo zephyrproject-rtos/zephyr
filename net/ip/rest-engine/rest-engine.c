@@ -79,7 +79,7 @@ rest_init_engine(void)
   REST.init();
 
   /*Start REST engine process */
-  process_start(&rest_engine_process, NULL);
+  process_start(&rest_engine_process, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -175,7 +175,7 @@ rest_invoke_restful_service(void *request, void *response, uint8_t *buffer,
   return found & allowed;
 }
 /*-----------------------------------------------------------------------------------*/
-PROCESS_THREAD(rest_engine_process, ev, data, buf)
+PROCESS_THREAD(rest_engine_process, ev, data, buf, user_data)
 {
   PROCESS_BEGIN();
 

@@ -273,11 +273,12 @@ typedef unsigned char process_num_events_t;
  *
  * \hideinitializer
  */
-#define PROCESS_THREAD(name, ev, data, buf)			\
+#define PROCESS_THREAD(name, ev, data, buf, user_data)		\
 static PT_THREAD(process_thread_##name(struct pt *process_pt,	\
 				       process_event_t ev,	\
 				       process_data_t data,	\
-				       struct net_buf *buf))
+				       struct net_buf *buf,	\
+				       void *user_data))
 
 /**
  * Declare the name of a process.
@@ -305,11 +306,11 @@ static PT_THREAD(process_thread_##name(struct pt *process_pt,	\
 #if PROCESS_CONF_NO_PROCESS_NAMES
 #define PROCESS(name, strname)				\
   PROCESS_THREAD(name, ev, data);			\
-  struct process name = { NULL,		        \
+  struct process name = { NULL,				\
                           process_thread_##name }
 #else
 #define PROCESS(name, strname)				\
-  PROCESS_THREAD(name, ev, data, buf);			\
+  PROCESS_THREAD(name, ev, data, buf, user_data);	\
   struct process name = { NULL, strname,		\
                           process_thread_##name }
 #endif
@@ -325,9 +326,10 @@ struct process {
 #define PROCESS_NAME_STRING(process) (process)->name
 #endif
   PT_THREAD((* thread)(struct pt *, process_event_t, process_data_t,
-                       struct net_buf *));
+                       struct net_buf *, void *user_data));
   struct pt pt;
   unsigned char state, needspoll;
+  void *user_data;
 };
 
 /**
@@ -344,7 +346,7 @@ struct process {
  * process
  *
  */
-CCIF void process_start(struct process *p, process_data_t data);
+CCIF void process_start(struct process *p, process_data_t data, void *user_data);
 
 /**
  * Post an asynchronous event.

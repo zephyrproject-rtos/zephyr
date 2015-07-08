@@ -115,6 +115,24 @@ config	NETWORKING_IPV6_NO_ND
 	  slip and tun device.
 endif
 
+config	NETWORKING_WITH_TCP
+	bool
+	prompt "Enable TCP protocol"
+	depends on NETWORKING
+	default n
+	help
+	  Enable Transmission and Control Protocol (TCP) support.
+
+config	TCP_MSS
+	int
+	prompt "TCP maximum segment size"
+	depends on NETWORKING_WITH_TCP
+	default 0
+	help
+	  Tweak the TCP maximum segment size. Normally one should
+	  not change this but let the IP stack to calculate a best
+	  size for it.
+
 config	NETWORKING_WITH_RPL
 	bool
 	prompt "Enable RPL (ripple) IPv6 mesh routing protocol"

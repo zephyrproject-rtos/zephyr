@@ -39,6 +39,12 @@ config NETWORK_IP_STACK_DEBUG_FULL
 	bool "Print both messages and annotations"
 endchoice
 
+config NETWORK_IP_STACK_DEBUG_CONTEXT
+	bool "Debug network context allocation"
+	default n
+	help
+	  Enables printing of network context allocations and frees.
+
 config NETWORK_IP_STACK_DEBUG_NET_BUF
 	bool "Debug network buffer allocation"
 	default n
@@ -50,6 +56,13 @@ config NETWORK_IP_STACK_DEBUG_RECV_SEND
 	default n
 	help
 	  Enables generic debug printing when receiving and sending data.
+
+config NETWORK_IP_STACK_DEBUG_TCP_PSOCK
+	bool "Debug network TCP protosockets"
+	depends on NETWORKING_WITH_TCP
+	default n
+	help
+	  Enables debugging the protosockets used in TCP engine.
 
 config NETWORK_IP_STACK_DEBUG_IPV6
 	bool "Debug core IPv6"

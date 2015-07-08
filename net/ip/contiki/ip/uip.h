@@ -1588,6 +1588,12 @@ uint8_t uip_process(struct net_buf *buf, uint8_t flag);
 #define UIP_UDP_TIMER     5
 #endif /* UIP_UDP */
 
+#if UIP_TCP
+#define UIP_TCP_SEND_CONN 6     /* Tells uIP that a TCP segment
+				   should be constructed in the
+				   uip_buf buffer. */
+#endif
+
 /* The TCP states used in the uip_conn->tcpstateflags. */
 #define UIP_CLOSED      0
 #define UIP_SYN_RCVD    1

@@ -683,7 +683,7 @@ static dtls_handler_t cb = {
 PROCESS(server_process, "DTLS server process");
 AUTOSTART_PROCESSES(&server_process);
 
-PROCESS_THREAD(server_process, ev, data)
+PROCESS_THREAD(server_process, ev, data, user_data)
 {
   PROCESS_BEGIN();
 

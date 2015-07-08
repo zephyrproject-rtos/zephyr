@@ -42,6 +42,12 @@ extern "C" {
 #define NET_PRINT(...)
 #endif /* CONFIG_NETWORKING_WITH_LOGGING */
 
+enum net_tcp_type {
+	NET_TCP_TYPE_UNKNOWN = 0,
+	NET_TCP_TYPE_SERVER,
+	NET_TCP_TYPE_CLIENT,
+};
+
 struct net_buf;
 struct net_context;
 

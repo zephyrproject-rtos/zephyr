@@ -53,7 +53,7 @@ init(void)
   static uint8_t inited = 0;
   if(!inited) {
     inited = 1;
-    process_start(&udp_socket_process, NULL);
+    process_start(&udp_socket_process, NULL, NULL);
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -152,7 +152,7 @@ udp_socket_sendto(struct net_buf *buf, struct udp_socket *c,
   return -1;
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(udp_socket_process, ev, data, buf)
+PROCESS_THREAD(udp_socket_process, ev, data, buf, user_data)
 {
   struct udp_socket *c;
   PROCESS_BEGIN();

@@ -150,6 +150,7 @@ static inline bool get_context(struct net_context **recv,
 	static struct net_addr mcast_addr;
 	static struct net_addr any_addr;
 	static struct net_addr my_addr;
+	int proto = IPPROTO_UDP;
 
 #if defined(CONFIG_NETWORKING_WITH_IPV6)
 	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
@@ -178,7 +179,11 @@ static inline bool get_context(struct net_context **recv,
 	my_addr.family = AF_INET;
 #endif
 
-	*recv = net_context_get(IPPROTO_UDP,
+#ifdef CONFIG_NETWORKING_WITH_TCP
+	proto = IPPROTO_TCP;
+#endif /* CONFIG_NETWORKING_WITH_TCP */
+
+	*recv = net_context_get(proto,
 				&any_addr, 0,
 				&my_addr, MY_PORT);
 	if (!*recv) {

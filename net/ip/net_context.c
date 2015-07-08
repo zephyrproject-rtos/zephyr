@@ -20,6 +20,11 @@
  * limitations under the License.
  */
 
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_CONTEXT
+#define DEBUG 1
+#endif
+#include "contiki/ip/uip-debug.h"
+
 #include <nanokernel.h>
 #include <string.h>
 #include <errno.h>
@@ -28,11 +33,21 @@
 #include <net/net_ip.h>
 #include <net/net_socket.h>
 
-#include "ip/simple-udp.h"
+#include "contiki/ip/simple-udp.h"
 #include "contiki/ipv6/uip-ds6.h"
 
 #include "contiki/os/lib/random.h"
 #include "contiki/ipv6/uip-ds6.h"
+
+#ifdef CONFIG_NETWORKING_WITH_TCP
+#include "contiki/os/sys/process.h"
+#include "contiki/ip/psock.h"
+#endif
+
+#if !defined(CONFIG_NETWORK_IP_STACK_DEBUG_CONTEXT)
+#undef NET_DBG
+#define NET_DBG(...)
+#endif
 
 int net_context_get_receiver_registered(struct net_context *context);
 
@@ -46,6 +61,15 @@ struct net_context {
 	/* Application connection data */
 	union {
 		struct simple_udp_connection udp;
+
+#ifdef CONFIG_NETWORKING_WITH_TCP
+		struct {
+			/* Proto socket that handles one TCP connection. */
+			struct psock ps;
+			struct process tcp;
+			enum net_tcp_type tcp_type;
+		};
+#endif
 	};
 
 	bool receiver_registered;
@@ -188,6 +212,13 @@ void net_context_put(struct net_context *context)
 		}
 	}
 
+#ifdef CONFIG_NETWORKING_WITH_TCP
+	if (context->tcp_type == NET_TCP_TYPE_SERVER) {
+		tcp_unlisten(UIP_HTONS(context->tuple.local_port),
+			     &context->tcp);
+	}
+#endif
+
 	memset(&context->tuple, 0, sizeof(context->tuple));
 	memset(&context->udp, 0, sizeof(context->udp));
 	context->receiver_registered = false;
@@ -221,6 +252,199 @@ net_context_get_udp_connection(struct net_context *context)
 
 	return &context->udp;
 }
+
+#ifdef CONFIG_NETWORKING_WITH_TCP
+static int handle_tcp_connection(struct psock *p, enum tcp_event_type type,
+				 struct net_buf *buf)
+{
+	PSOCK_BEGIN(p);
+
+	if (type == TCP_WRITE_EVENT) {
+		NET_DBG("Trying to send %d bytes data\n", uip_appdatalen(buf));
+		PSOCK_SEND(p, buf);
+	}
+
+	PSOCK_END(p);
+}
+
+int net_context_tcp_send(struct net_buf *buf)
+{
+	/* Prepare data to be sent */
+	process_post_synch(&ip_buf_context(buf)->tcp,
+			   tcpip_event,
+			   INT_TO_POINTER(TCP_WRITE_EVENT),
+			   buf);
+
+
+	return ip_buf_sent_status(buf);
+}
+
+/* This is called by contiki/ip/tcpip.c:tcpip_uipcall() when packet
+ * is processed.
+ */
+PROCESS_THREAD(tcp, ev, data, buf, user_data)
+{
+	PROCESS_BEGIN();
+
+	while(1) {
+		PROCESS_YIELD_UNTIL(ev == tcpip_event);
+
+		if (POINTER_TO_INT(data) == TCP_WRITE_EVENT) {
+			/* We want to send data to peer. */
+			struct net_context *context = user_data;
+
+			if (!context) {
+				continue;
+			}
+
+			do {
+				context = user_data;
+				if (!context || !buf) {
+					break;
+				}
+
+				if (!context->ps.net_buf ||
+				    context->ps.net_buf != buf) {
+					NET_DBG("psock init %p buf %p\n",
+						&context->ps, buf);
+					PSOCK_INIT(&context->ps, buf);
+				}
+
+				handle_tcp_connection(&context->ps,
+						      POINTER_TO_INT(data),
+						      buf);
+
+				PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
+
+				if (POINTER_TO_INT(data) != TCP_WRITE_EVENT) {
+					goto read_data;
+				}
+			} while(!(uip_closed(buf)  ||
+				  uip_aborted(buf) ||
+				  uip_timedout(buf)));
+
+			context = user_data;
+
+			if (context &&
+			    context->tcp_type == NET_TCP_TYPE_CLIENT) {
+				NET_DBG("\nConnection closed.\n");
+				ip_buf_sent_status(buf) = -ECONNRESET;
+			}
+
+			continue;
+		}
+
+	read_data:
+		/* We are receiving data from peer. */
+		if (buf && uip_newdata(buf)) {
+			struct net_buf *clone;
+
+			if (!uip_len(buf)) {
+				continue;
+			}
+
+			/* Note that uIP stack will reuse the buffer when
+			 * sending ACK to peer host. The sending will happen
+			 * right after this function returns. Because of this
+			 * we cannot use the same buffer to pass data to
+			 * application.
+			 */
+			clone = net_buf_clone(buf);
+			if (!clone) {
+				NET_ERR("No enough RX buffers, "
+					"packet %p discarded\n", buf);
+				continue;
+			}
+
+			ip_buf_appdata(clone) = uip_buf(clone) +
+				(ip_buf_appdata(buf) - (void *)uip_buf(buf));
+			ip_buf_appdatalen(clone) = uip_len(buf);
+			ip_buf_len(clone) = ip_buf_len(buf);
+			ip_buf_context(clone) = user_data;
+			uip_set_conn(clone) = uip_conn(buf);
+			uip_flags(clone) = uip_flags(buf);
+			uip_flags(clone) |= UIP_CONNECTED;
+
+			NET_DBG("packet received context %p buf %p len %d "
+				"appdata %p appdatalen %d\n",
+				ip_buf_context(clone),
+				clone,
+				ip_buf_len(clone),
+				ip_buf_appdata(clone),
+				ip_buf_appdatalen(clone));
+
+			nano_fifo_put(net_context_get_queue(user_data), clone);
+
+			/* We let the application to read the data now */
+			fiber_yield();
+		}
+	}
+
+	PROCESS_END();
+}
+
+int net_context_tcp_init(struct net_context *context,
+			 enum net_tcp_type tcp_type)
+{
+	if (!context || context->tuple.ip_proto != IPPROTO_TCP) {
+		return -EINVAL;
+	}
+
+	if (context->receiver_registered) {
+		return 0;
+	}
+
+	context->receiver_registered = true;
+
+	if (context->tcp_type == NET_TCP_TYPE_UNKNOWN) {
+		/* This is the first call to this init func.
+		 * If we are called by net_receive() first, then
+		 * we are working as a server, if net_send() called
+		 * us first, then we are the client.
+		 */
+		context->tcp_type = tcp_type;
+	}
+
+	context->tcp.thread = process_thread_tcp;
+
+	if (context->tcp_type == NET_TCP_TYPE_SERVER) {
+		context->tcp.name = "TCP server";
+
+		NET_DBG("Listen to TCP port %d\n", context->tuple.local_port);
+		tcp_listen(UIP_HTONS(context->tuple.local_port),
+			   &context->tcp);
+#if UIP_ACTIVE_OPEN
+	} else {
+		context->tcp.name = "TCP client";
+
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+		NET_DBG("Connecting to ");
+		PRINT6ADDR((const uip_ipaddr_t *)&context->tuple.remote_addr->in6_addr);
+		PRINTF(" port %d\n", context->tuple.remote_port);
+
+		tcp_connect((uip_ipaddr_t *)
+			    &context->tuple.remote_addr->in6_addr,
+			    UIP_HTONS(context->tuple.remote_port),
+			    context, &context->tcp);
+#else /* CONFIG_NETWORKING_WITH_IPV6 */
+		NET_DBG("Connecting to ");
+		PRINT6ADDR((const uip_ipaddr_t *)&context->tuple.remote_addr->in_addr);
+		PRINTF(" port %d\n", context->tuple.remote_port);
+
+		tcp_connect((uip_ipaddr_t *)
+			    &context->tuple.remote_addr->in_addr,
+			    UIP_HTONS(context->tuple.remote_port),
+			    context, &context->tcp);
+#endif /* CONFIG_NETWORKING_WITH_IPV6 */
+#endif /* UIP_ACTIVE_OPEN */
+	}
+
+	context->tcp.next = NULL;
+	process_start(&context->tcp, NULL, context);
+
+	return 0;
+}
+#endif /* TCP */
 
 void net_context_init(void)
 {

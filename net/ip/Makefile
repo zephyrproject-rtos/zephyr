@@ -52,6 +52,8 @@ obj-$(CONFIG_NETWORKING_WITH_IPV4) += \
 	contiki/ipv4/uip.o \
 	contiki/ipv4/uip-neighbor.o
 
+obj-$(CONFIG_NETWORKING_WITH_TCP) += contiki/ip/psock.o
+
 # RPL (RFC 6550) support
 ifeq ($(CONFIG_NETWORKING_WITH_RPL),y)
 	ccflags-y += -DUIP_CONF_IPV6_RPL=1

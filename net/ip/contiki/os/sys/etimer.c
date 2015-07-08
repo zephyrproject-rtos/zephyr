@@ -86,7 +86,7 @@ update_time(void)
   net_timer_check();
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(etimer_process, ev, data, buf)
+PROCESS_THREAD(etimer_process, ev, data, buf, user_data)
 {
   struct etimer *t;
 

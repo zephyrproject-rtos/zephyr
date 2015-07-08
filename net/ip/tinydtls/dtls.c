@@ -3791,7 +3791,7 @@ dtls_new_context(void *app_data) {
   LIST_STRUCT_INIT(c, peers);
   /* LIST_STRUCT_INIT(c, key_store); */
   
-  process_start(&dtls_retransmit_process, (char *)c);
+  process_start(&dtls_retransmit_process, (char *)c, NULL);
   PROCESS_CONTEXT_BEGIN(&dtls_retransmit_process);
   /* the retransmit timer must be initialized to some large value */
   etimer_set(&c->retransmit_timer, 0xFFFF, &dtls_retransmit_process);
@@ -3992,7 +3992,7 @@ dtls_check_retransmit(dtls_context_t *context, clock_time_t *next) {
 /*---------------------------------------------------------------------------*/
 /* message retransmission */
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(dtls_retransmit_process, ev, data, buf)
+PROCESS_THREAD(dtls_retransmit_process, ev, data, buf, user_data)
 {
   clock_time_t now;
   netq_t *node;

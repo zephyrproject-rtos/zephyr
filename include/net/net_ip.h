@@ -105,6 +105,13 @@ struct net_tuple {
 	enum ip_protocol ip_proto;
 };
 
+#if defined(CONFIG_NETWORKING_WITH_TCP)
+enum tcp_event_type {
+	TCP_READ_EVENT = 1,
+	TCP_WRITE_EVENT,
+};
+#endif
+
 #ifdef __cplusplus
 }
 #endif

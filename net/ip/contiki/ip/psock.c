@@ -34,7 +34,14 @@
 
 #include <string.h>
 
-#include "net/ip/psock.h"
+#include <net/ip_buf.h>
+
+#ifdef CONFIG_NETWORK_IP_STACK_DEBUG_TCP_PSOCK
+#define DEBUG 1
+#endif
+#include "contiki/ip/uip-debug.h"
+
+#include "contiki/ip/psock.h"
 
 #define STATE_NONE 0
 #define STATE_ACKED 1
@@ -80,6 +87,8 @@ buf_bufdata(struct psock_buf *buf, uint16_t len,
 	    uint8_t **dataptr, uint16_t *datalen)
 {
   if(*datalen < buf->left) {
+    PRINTF("%d: *datalen(%d) < left(%d), copy buf->ptr(%p) <- *dataptr(%p)\n",
+	   __LINE__, *datalen, buf->left, buf->ptr, *dataptr);
     memcpy(buf->ptr, *dataptr, *datalen);
     buf->ptr += *datalen;
     buf->left -= *datalen;
@@ -87,6 +96,8 @@ buf_bufdata(struct psock_buf *buf, uint16_t len,
     *datalen = 0;
     return BUF_NOT_FULL;
   } else if(*datalen == buf->left) {
+    PRINTF("%d: *datalen(%d) == left(%d), copy buf->ptr(%p) <- *dataptr(%p)\n",
+	   __LINE__, *datalen, buf->left, buf->ptr, *dataptr);
     memcpy(buf->ptr, *dataptr, *datalen);
     buf->ptr += *datalen;
     buf->left = 0;
@@ -94,6 +105,8 @@ buf_bufdata(struct psock_buf *buf, uint16_t len,
     *datalen = 0;
     return BUF_FULL;
   } else {
+    PRINTF("%d: *datalen(%d) > left(%d), copy buf->ptr(%p) <- buf->left(%p)\n",
+	   __LINE__, *datalen, buf->left, buf->ptr, buf->left);
     memcpy(buf->ptr, *dataptr, buf->left);
     buf->ptr += buf->left;
     *datalen -= buf->left;
@@ -133,18 +146,24 @@ data_is_sent_and_acked(CC_REGISTER_ARG struct psock *s)
   /* If data has previously been sent, and the data has been acked, we
      increase the send pointer and call send_data() to send more
      data. */
-  if(s->state != STATE_DATA_SENT || uip_rexmit()) {
-    if(s->sendlen > uip_mss()) {
-      uip_send(s->sendptr, uip_mss());
+  PRINTF("%s: psock %p buf %p data[%p..%p] sendptr %p sendlen %d mss %d\n",
+	 __func__, s, s->net_buf, ip_buf_appdata(s->net_buf),
+	 ip_buf_appdata(s->net_buf) + ip_buf_appdatalen(s->net_buf),
+	 s->sendptr, s->sendlen,
+	 uip_mss(s->net_buf));
+
+  if(s->state != STATE_DATA_SENT || uip_rexmit(s->net_buf)) {
+    if(s->sendlen > uip_mss(s->net_buf)) {
+      uip_send(s->net_buf, s->sendptr, uip_mss(s->net_buf));
     } else {
-      uip_send(s->sendptr, s->sendlen);
+      uip_send(s->net_buf, s->sendptr, s->sendlen);
     }
     s->state = STATE_DATA_SENT;
     return 0;
-  } else if(s->state == STATE_DATA_SENT && uip_acked()) {
-    if(s->sendlen > uip_mss()) {
-      s->sendlen -= uip_mss();
-      s->sendptr += uip_mss();
+  } else if(s->state == STATE_DATA_SENT && uip_acked(s->net_buf)) {
+    if(s->sendlen > uip_mss(s->net_buf)) {
+      s->sendlen -= uip_mss(s->net_buf);
+      s->sendptr += uip_mss(s->net_buf);
     } else {
       s->sendptr += s->sendlen;
       s->sendlen = 0;
@@ -155,20 +174,23 @@ data_is_sent_and_acked(CC_REGISTER_ARG struct psock *s)
   return 0;
 }
 /*---------------------------------------------------------------------------*/
-PT_THREAD(psock_send(CC_REGISTER_ARG struct psock *s, const uint8_t *buf,
-		     unsigned int len))
+PT_THREAD(psock_send(CC_REGISTER_ARG struct psock *s, struct net_buf *net_buf))
 {
   PT_BEGIN(&s->psockpt);
 
+  PRINTF("%s: psock %p buf %p len %d\n", __func__, s, net_buf,
+	 ip_buf_appdatalen(net_buf));
+
   /* If there is no data to send, we exit immediately. */
-  if(len == 0) {
+  if(ip_buf_appdatalen(net_buf) == 0) {
     PT_EXIT(&s->psockpt);
   }
 
   /* Save the length of and a pointer to the data that is to be
      sent. */
-  s->sendptr = buf;
-  s->sendlen = len;
+  s->sendptr = ip_buf_appdata(net_buf);
+  s->sendlen = ip_buf_appdatalen(net_buf);
+  s->net_buf = net_buf;
 
   s->state = STATE_NONE;
 
@@ -203,19 +225,20 @@ PT_THREAD(psock_generator_send(CC_REGISTER_ARG struct psock *s,
     /* Call the generator function to generate the data in the
      uip_appdata buffer. */
     s->sendlen = generate(arg);
-    s->sendptr = uip_appdata;
+    s->sendptr = uip_appdata(s->net_buf);
     
-    if(s->sendlen > uip_mss()) {
-      uip_send(s->sendptr, uip_mss());
+    if(s->sendlen > uip_mss(s->net_buf)) {
+      uip_send(s->net_buf, s->sendptr, uip_mss(s->net_buf));
     } else {
-      uip_send(s->sendptr, s->sendlen);
+      uip_send(s->net_buf, s->sendptr, s->sendlen);
     }
     s->state = STATE_DATA_SENT;
 
     /* Wait until all data is sent and acknowledged. */
  // if (!s->sendlen) break;   //useful debugging aid
-    PT_YIELD_UNTIL(&s->psockpt, uip_acked() || uip_rexmit());
-  } while(!uip_acked());
+    PT_YIELD_UNTIL(&s->psockpt, uip_acked(s->net_buf) || \
+				uip_rexmit(s->net_buf));
+  } while(!uip_acked(s->net_buf));
   
   s->state = STATE_NONE;
   
@@ -239,7 +262,7 @@ psock_newdata(struct psock *s)
     /* All data in uip_appdata buffer already consumed. */
     s->state = STATE_BLOCKED_NEWDATA;
     return 0;
-  } else if(uip_newdata()) {
+  } else if(uip_newdata(s->net_buf)) {
     /* There is new data that has not been consumed. */
     return 1;
   } else {
@@ -261,8 +284,8 @@ PT_THREAD(psock_readto(CC_REGISTER_ARG struct psock *psock, unsigned char c))
     if(psock->readlen == 0) {
       PT_WAIT_UNTIL(&psock->psockpt, psock_newdata(psock));
       psock->state = STATE_READ;
-      psock->readptr = (uint8_t *)uip_appdata;
-      psock->readlen = uip_datalen();
+      psock->readptr = (uint8_t *)uip_appdata(psock->net_buf);
+      psock->readlen = uip_datalen(psock->net_buf);
     }
   } while(buf_bufto(&psock->buf, c,
 		    &psock->readptr,
@@ -289,8 +312,8 @@ PT_THREAD(psock_readbuf_len(CC_REGISTER_ARG struct psock *psock, uint16_t len))
     if(psock->readlen == 0) {
       PT_WAIT_UNTIL(&psock->psockpt, psock_newdata(psock));
       psock->state = STATE_READ;
-      psock->readptr = (uint8_t *)uip_appdata;
-      psock->readlen = uip_datalen();
+      psock->readptr = (uint8_t *)uip_appdata(psock->net_buf);
+      psock->readlen = uip_datalen(psock->net_buf);
     }
   } while(buf_bufdata(&psock->buf, psock->bufsize,
 		      &psock->readptr, &psock->readlen) == BUF_NOT_FULL &&
@@ -305,14 +328,14 @@ PT_THREAD(psock_readbuf_len(CC_REGISTER_ARG struct psock *psock, uint16_t len))
 
 /*---------------------------------------------------------------------------*/
 void
-psock_init(CC_REGISTER_ARG struct psock *psock,
-	   uint8_t *buffer, unsigned int buffersize)
+psock_init(CC_REGISTER_ARG struct psock *psock, struct net_buf *net_buf)
 {
   psock->state = STATE_NONE;
   psock->readlen = 0;
-  psock->bufptr = buffer;
-  psock->bufsize = buffersize;
-  buf_setup(&psock->buf, buffer, buffersize);
+  psock->bufptr = ip_buf_appdata(net_buf);
+  psock->bufsize = ip_buf_appdatalen(net_buf);
+  psock->net_buf = net_buf;
+  buf_setup(&psock->buf, psock->bufptr, psock->bufsize);
   PT_INIT(&psock->pt);
   PT_INIT(&psock->psockpt);
 }

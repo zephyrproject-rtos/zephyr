@@ -52,6 +52,7 @@
 #include <string.h>
 
 #ifdef CONFIG_NETWORK_IP_STACK_DEBUG_RECV_SEND
+#define TCPIP_CONF_ANNOTATE_TRANSMISSIONS 1
 #define DEBUG 1
 #endif
 #include "contiki/ip/uip-debug.h"
@@ -218,7 +219,8 @@ packet_input(struct net_buf *buf)
 #if UIP_TCP
 #if UIP_ACTIVE_OPEN
 struct uip_conn *
-tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port, void *appstate)
+tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port, void *appstate,
+	    struct process *process)
 {
   struct uip_conn *c;
   
@@ -227,7 +229,7 @@ tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port, void *appstate)
     return NULL;
   }
 
-  c->appstate.p = PROCESS_CURRENT();
+  c->appstate.p = process;
   c->appstate.state = appstate;
   
   tcpip_poll_tcp(c);
@@ -237,7 +239,7 @@ tcp_connect(const uip_ipaddr_t *ripaddr, uint16_t port, void *appstate)
 #endif /* UIP_ACTIVE_OPEN */
 /*---------------------------------------------------------------------------*/
 void
-tcp_unlisten(uint16_t port)
+tcp_unlisten(uint16_t port, struct process *handler)
 {
   static unsigned char i;
   struct listenport *l;
@@ -245,7 +247,7 @@ tcp_unlisten(uint16_t port)
   l = s.listenports;
   for(i = 0; i < UIP_LISTENPORTS; ++i) {
     if(l->port == port &&
-       l->p == PROCESS_CURRENT()) {
+       l->p == handler) {
       l->port = 0;
       uip_unlisten(port);
       break;
@@ -255,7 +257,7 @@ tcp_unlisten(uint16_t port)
 }
 /*---------------------------------------------------------------------------*/
 void
-tcp_listen(uint16_t port)
+tcp_listen(uint16_t port, struct process *handler)
 {
   static unsigned char i;
   struct listenport *l;
@@ -264,7 +266,7 @@ tcp_listen(uint16_t port)
   for(i = 0; i < UIP_LISTENPORTS; ++i) {
     if(l->port == 0) {
       l->port = port;
-      l->p = PROCESS_CURRENT();
+      l->p = handler;
       uip_listen(port);
       break;
     }
@@ -518,7 +520,11 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
 #endif /* UIP_UDP */
 
     case PACKET_INPUT:
-      packet_input(buf);
+      if (!packet_input(buf)) {
+        PRINTF("Packet %p was not sent and must be discarded by caller\n", buf);
+      } else {
+        PRINTF("Packet %p was sent ok\n", buf);
+      }
       break;
   };
 }
@@ -700,6 +706,26 @@ tcpip_ipv6_output(struct net_buf *buf)
       uip_len(buf) = 0;
       uip_ext_len(buf) = 0;
       return 0; /* packet was discarded */
+#else /* UIP_ND6_SEND_NA */
+      int uiplen = uip_len(buf);
+      int extlen = uip_ext_len(buf);
+
+      /* Neighbor discovery is not there. Just try to send the packet. */
+      ret = tcpip_output(buf, NULL);
+      if (ret) {
+        /* We must set the length back as these were overwritten
+	 * by other part of the stack. If we do not do this then
+	 * there will be a double memory free in the caller.
+	 * FIXME properly later!
+	 */
+        uip_len(buf) = uiplen;
+	uip_ext_len(buf) = extlen;
+      } else {
+        uip_len(buf) = 0;
+        uip_ext_len(buf) = 0;
+      }
+      return ret;
+
 #endif /* UIP_ND6_SEND_NA */
     } else {
 #if UIP_ND6_SEND_NA
@@ -810,7 +836,7 @@ tcpip_poll_tcp(struct uip_conn *conn)
 void
 tcpip_uipcall(struct net_buf *buf)
 {
-  uip_udp_appstate_t *ts;
+  struct tcpip_uipstate *ts;
   
 #if UIP_UDP
   if(uip_conn(buf) != NULL) {
@@ -852,7 +878,7 @@ tcpip_uipcall(struct net_buf *buf)
   }
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(tcpip_process, ev, data, buf)
+PROCESS_THREAD(tcpip_process, ev, data, buf, user_data)
 {
   PROCESS_BEGIN();
   

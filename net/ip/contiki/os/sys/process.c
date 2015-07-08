@@ -102,7 +102,7 @@ process_alloc_event(void)
 }
 /*---------------------------------------------------------------------------*/
 void
-process_start(struct process *p, process_data_t data)
+process_start(struct process *p, process_data_t data, void *user_data)
 {
   struct process *q;
 
@@ -118,6 +118,7 @@ process_start(struct process *p, process_data_t data)
   p->next = process_list;
   process_list = p;
   p->state = PROCESS_STATE_RUNNING;
+  p->user_data = user_data;
   PT_INIT(&p->pt);
 
   PRINTF("process: starting '%s'\n", PROCESS_NAME_STRING(p));
@@ -159,7 +160,7 @@ exit_process(struct process *p, struct process *fromprocess, struct net_buf *buf
     if(p->thread != NULL && p != fromprocess) {
       /* Post the exit event to the process that is about to exit. */
       process_current = p;
-      p->thread(&p->pt, PROCESS_EVENT_EXIT, NULL, buf);
+      p->thread(&p->pt, PROCESS_EVENT_EXIT, NULL, buf, p->user_data);
     }
   }
 
@@ -195,7 +196,7 @@ call_process(struct process *p, process_event_t ev, process_data_t data,
     PRINTF("process: calling process '%s' with event %d buf %p\n", PROCESS_NAME_STRING(p), ev, buf);
     process_current = p;
     p->state = PROCESS_STATE_CALLED;
-    ret = p->thread(&p->pt, ev, data, buf);
+    ret = p->thread(&p->pt, ev, data, buf, p->user_data);
     if(ret == PT_EXITED ||
        ret == PT_ENDED ||
        ev == PROCESS_EVENT_EXIT) {

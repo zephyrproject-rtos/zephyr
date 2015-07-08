@@ -75,7 +75,7 @@ static void
 init_simple_udp(void)
 {
   if(started == 0) {
-    process_start(&simple_udp_process, NULL);
+    process_start(&simple_udp_process, NULL, NULL);
     started = 1;
   }
 }
@@ -162,7 +162,7 @@ simple_udp_unregister(struct simple_udp_connection *c)
 }
 
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(simple_udp_process, ev, data, buf)
+PROCESS_THREAD(simple_udp_process, ev, data, buf, user_data)
 {
   struct simple_udp_connection *c;
   PROCESS_BEGIN();

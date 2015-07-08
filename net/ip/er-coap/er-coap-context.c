@@ -434,10 +434,10 @@ coap_context_init(void)
 
   coap_context_event = process_alloc_event();
 
-  process_start(&coap_context_process, NULL);
+  process_start(&coap_context_process, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(coap_context_process, ev, data, buf)
+PROCESS_THREAD(coap_context_process, ev, data, buf, user_data)
 {
   PROCESS_BEGIN();
 

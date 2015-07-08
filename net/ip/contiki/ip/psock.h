@@ -127,9 +127,11 @@ struct psock {
   unsigned int bufsize;  /* The size of the input buffer. */
   
   unsigned char state;   /* The state of the protosocket. */
+
+  struct net_buf *net_buf;  /* contains conn state etc. */
 };
 
-void psock_init(struct psock *psock, uint8_t *buffer, unsigned int buffersize);
+void psock_init(struct psock *psock, struct net_buf *net_buf);
 /**
  * Initialize a protosocket.
  *
@@ -140,15 +142,12 @@ void psock_init(struct psock *psock, uint8_t *buffer, unsigned int buffersize);
  * \param psock (struct psock *) A pointer to the protosocket to be
  * initialized
  *
- * \param buffer (uint8_t *) A pointer to the input buffer for the
- * protosocket.
- *
- * \param buffersize (unsigned int) The size of the input buffer.
+ * \param buffer (struct net_buf *) A Pointer to network buffer to send.
  *
  * \hideinitializer
  */
-#define PSOCK_INIT(psock, buffer, buffersize) \
-  psock_init(psock, buffer, buffersize)
+#define PSOCK_INIT(psock, net_buf) \
+  psock_init(psock, net_buf)
 
 /**
  * Start the protosocket protothread in a function.
@@ -163,7 +162,7 @@ void psock_init(struct psock *psock, uint8_t *buffer, unsigned int buffersize);
  */
 #define PSOCK_BEGIN(psock) PT_BEGIN(&((psock)->pt))
 
-PT_THREAD(psock_send(struct psock *psock, const uint8_t *buf, unsigned int len));
+PT_THREAD(psock_send(struct psock *psock, struct net_buf *buf));
 /**
  * Send data.
  *
@@ -174,15 +173,12 @@ PT_THREAD(psock_send(struct psock *psock, const uint8_t *buf, unsigned int len))
  * \param psock (struct psock *) A pointer to the protosocket over which
  * data is to be sent.
  *
- * \param data (uint8_t *) A pointer to the data that is to be sent.
- *
- * \param datalen (unsigned int) The length of the data that is to be
- * sent.
+ * \param buf (struct net_buf *) A pointer to the buffer that is to be sent.
  *
  * \hideinitializer
  */
-#define PSOCK_SEND(psock, data, datalen)		\
-    PT_WAIT_THREAD(&((psock)->pt), psock_send(psock, data, datalen))
+#define PSOCK_SEND(psock, buf)		\
+    PT_WAIT_THREAD(&((psock)->pt), psock_send(psock, buf))
 
 /**
  * \brief      Send a null-terminated string.

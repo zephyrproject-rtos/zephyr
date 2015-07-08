@@ -45,8 +45,15 @@ typedef unsigned int uip_stats_t;
 /* The actual MTU size is defined in uipopt.h */
 #define UIP_CONF_BUFFER_SIZE UIP_LINK_MTU
 
-/* No TCP yet */
+#ifdef CONFIG_NETWORKING_WITH_TCP
+#define UIP_CONF_TCP 1
+
+#if CONFIG_TCP_MSS > 0
+#define UIP_CONF_TCP_MSS CONFIG_TCP_MSS
+#endif /* CONFIG_TCP_MSS */
+#else
 #define UIP_CONF_TCP 0
+#endif
 
 /* We do not want to be a router */
 #define UIP_CONF_ROUTER 0

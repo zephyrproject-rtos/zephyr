@@ -65,6 +65,9 @@ struct simple_udp_connection *
 	net_context_get_udp_connection(struct net_context *context);
 int net_context_get_receiver_registered(struct net_context *context);
 void net_context_set_receiver_registered(struct net_context *context);
+int net_context_tcp_init(struct net_context *context,
+			 enum net_tcp_type);
+int net_context_tcp_send(struct net_buf *buf);
 
 /* Stacks for the tx & rx fibers.
  * FIXME: stack size needs fine-tuning
@@ -101,6 +104,22 @@ int net_send(struct net_buf *buf)
 	if (ip_buf_len(buf) == 0) {
 		return -ENODATA;
 	}
+
+#ifdef CONFIG_NETWORKING_WITH_TCP
+	net_context_tcp_init(ip_buf_context(buf), NET_TCP_TYPE_CLIENT);
+	if (ip_buf_context(buf)) {
+		if (net_context_get_tuple(ip_buf_context(buf))->ip_proto ==
+							    IPPROTO_TCP) {
+			if (uip_conn(buf) && uip_conn(buf)->len > 0) {
+				/* There is already pending packet to be sent.
+				 * Application needs to try to send data
+				 * a bit later.
+				 */
+				return -EAGAIN;
+			}
+		}
+	}
+#endif
 
 	nano_fifo_put(&netdev.tx_queue, buf);
 
@@ -153,6 +172,21 @@ static void stats(void)
 			STAT(ip.fragerr),
 			STAT(ip.chkerr),
 			STAT(ip.protoerr));
+
+#ifdef CONFIG_NETWORKING_WITH_TCP
+		NET_DBG("TCP recv       %d\tsent\t%d\tdrop\t%d\n",
+			STAT(tcp.recv),
+			STAT(tcp.sent),
+			STAT(tcp.drop));
+		NET_DBG("TCP chkerr     %d\tackerr\t%d\trst\t%d\n",
+			STAT(tcp.chkerr),
+			STAT(tcp.ackerr),
+			STAT(tcp.rst));
+		NET_DBG("TCP rexmit     %d\tsyndrop\t%d\tsynrst\t%d\n",
+			STAT(tcp.rexmit),
+			STAT(tcp.syndrop),
+			STAT(tcp.synrst));
+#endif
 
 		NET_DBG("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
 			STAT(icmp.recv),
@@ -308,6 +342,87 @@ static inline int udp_prepare_and_send(struct net_context *context,
 	return !ret;
 }
 
+#ifdef CONFIG_NETWORKING_WITH_TCP
+/* Switch the ports and addresses. Returns 1 if packet was sent properly,
+ * in this case it is the caller that needs to release the net_buf.
+ * If 0 is returned, then uIP stack has released the net_buf already
+ * because there was an some net related error when sending the buffer.
+ */
+static inline int tcp_prepare_and_send(struct net_context *context,
+				       struct net_buf *buf)
+{
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+	uip_ds6_route_t *route_old, *route_new = NULL;
+	uip_ds6_nbr_t *nbr;
+#endif
+	uip_ipaddr_t tmp;
+	uint16_t port;
+	int ret;
+
+	uip_len(buf) = uip_slen(buf) = ip_buf_len(buf);
+	uip_flags(buf) |= UIP_NEWDATA;
+	port = NET_BUF_UDP(buf)->srcport;
+	NET_BUF_UDP(buf)->srcport = NET_BUF_UDP(buf)->destport;
+	NET_BUF_UDP(buf)->destport = port;
+
+	uip_ipaddr_copy(&tmp, &NET_BUF_IP(buf)->srcipaddr);
+	uip_ipaddr_copy(&NET_BUF_IP(buf)->srcipaddr,
+			&NET_BUF_IP(buf)->destipaddr);
+	uip_ipaddr_copy(&NET_BUF_IP(buf)->destipaddr, &tmp);
+
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+	/* The peer needs to be in neighbor cache before route can be added.
+	 */
+	nbr = uip_ds6_nbr_lookup((uip_ipaddr_t *)&NET_BUF_IP(buf)->destipaddr);
+	if (!nbr) {
+		const uip_lladdr_t *lladdr =
+			(const uip_lladdr_t *)&ip_buf_ll_src(buf);
+		nbr = uip_ds6_nbr_add(
+			(uip_ipaddr_t *)&NET_BUF_IP(buf)->destipaddr,
+			lladdr, 0, NBR_REACHABLE);
+		if (!nbr) {
+			NET_DBG("Cannot add peer ");
+			PRINT6ADDR(&NET_BUF_IP(buf)->destipaddr);
+			PRINT(" to neighbor cache\n");
+		}
+	}
+
+	/* Temporarily add route to peer, delete the route after
+	 * sending the packet. Check if there was already a
+	 * route and do not remove it if there was existing
+	 * route to this peer.
+	 */
+	route_old = uip_ds6_route_lookup(&NET_BUF_IP(buf)->destipaddr);
+	if (!route_old) {
+		route_new = uip_ds6_route_add(&NET_BUF_IP(buf)->destipaddr,
+					      128,
+					      &NET_BUF_IP(buf)->destipaddr);
+		if (!route_new) {
+			NET_DBG("Cannot add route to peer ");
+			PRINT6ADDR(&NET_BUF_IP(buf)->destipaddr);
+			PRINT("\n");
+		}
+	}
+#endif
+
+	NET_DBG("Packet output len %d\n", uip_len(buf));
+
+	ret = net_context_tcp_send(buf);
+	if (ret && ret != -EAGAIN) {
+		NET_DBG("Packet could not be sent properly.\n");
+	}
+
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
+	if (!route_old && route_new) {
+		/* This will also remove the neighbor cache entry */
+		uip_ds6_route_rm(route_new);
+	}
+#endif
+
+	return ret;
+}
+#endif
+
 /* Application wants to send a reply */
 int net_reply(struct net_context *context, struct net_buf *buf)
 {
@@ -335,8 +450,13 @@ int net_reply(struct net_context *context, struct net_buf *buf)
 		ret = udp_prepare_and_send(context, buf);
 		break;
 	case IPPROTO_TCP:
-		NET_DBG("TCP not yet supported\n");
+#ifdef CONFIG_NETWORKING_WITH_TCP
+		ret = tcp_prepare_and_send(context, buf);
+#else
+		NET_DBG("TCP not supported\n");
 		return -EINVAL;
+#endif
+		break;
 	case IPPROTO_ICMPV6:
 		NET_DBG("ICMPv6 not yet supported\n");
 		return -EINVAL;
@@ -446,8 +566,18 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		reserve = UIP_IPUDPH_LEN + UIP_LLH_LEN;
 		break;
 	case IPPROTO_TCP:
-		NET_DBG("TCP not yet supported\n");
+#ifdef CONFIG_NETWORKING_WITH_TCP
+		ret = net_context_tcp_init(context, NET_TCP_TYPE_SERVER);
+		if (ret) {
+			NET_DBG("TCP connection init failed\n");
+			ret = -ENOENT;
+			break;
+		}
+		ret = 0;
+#else
+		NET_DBG("TCP not supported\n");
 		ret = -EINVAL;
+#endif
 		break;
 	case IPPROTO_ICMPV6:
 		NET_DBG("ICMPv6 not yet supported\n");
@@ -479,6 +609,14 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 #endif
 		break;
 	}
+
+#ifdef CONFIG_NETWORKING_WITH_TCP
+	if (tuple->ip_proto == IPPROTO_TCP &&
+	    (ip_buf_appdata(buf) > (void *)buf->data)) {
+		/* We need to skip the TCP header + possible extensions */
+		reserve = ip_buf_appdata(buf) - (void *)buf->data;
+	}
+#endif
 
 	if (buf && reserve) {
 		ip_buf_appdatalen(buf) = ip_buf_len(buf) - reserve;
@@ -573,8 +711,26 @@ static int check_and_send_packet(struct net_buf *buf)
 				      uip_appdatalen(buf));
 		break;
 	case IPPROTO_TCP:
-		NET_DBG("TCP not yet supported\n");
+#ifdef CONFIG_NETWORKING_WITH_TCP
+		if (ip_buf_appdatalen(buf) == 0) {
+			/* User application has not set the application data
+			 * length. The buffer will be discarded if we do not
+			 * set the value correctly.
+			 */
+			uip_appdatalen(buf) = buf->len -
+					      (UIP_IPTCPH_LEN + UIP_LLH_LEN);
+		}
+		if (uip_len(buf) == 0) {
+			uip_len(buf) = buf->len;
+		}
+		ret = net_context_tcp_send(buf);
+		if (ret && ret != -EAGAIN) {
+			NET_DBG("Packet could not be sent properly.\n");
+		}
+#else
+		NET_DBG("TCP not supported\n");
 		ret = -EINVAL;
+#endif
 		break;
 	case IPPROTO_ICMPV6:
 		NET_DBG("ICMPv6 not yet supported\n");
@@ -812,10 +968,10 @@ static int network_initialization(void)
 	process_init();
 	tcpip_set_outputfunc(net_tcpip_output);
 
-	process_start(&tcpip_process, NULL);
-	process_start(&simple_udp_process, NULL);
-	process_start(&etimer_process, NULL);
-	process_start(&ctimer_process, NULL);
+	process_start(&tcpip_process, NULL, NULL);
+	process_start(&simple_udp_process, NULL, NULL);
+	process_start(&etimer_process, NULL, NULL);
+	process_start(&ctimer_process, NULL, NULL);
 
 	slip_start();
 

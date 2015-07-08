@@ -65,7 +65,7 @@ void uip_log(char *msg);
 
 /*---------------------------------------------------------------------------*/
 PROCESS(ctimer_process, "Ctimer process");
-PROCESS_THREAD(ctimer_process, ev, data, buf)
+PROCESS_THREAD(ctimer_process, ev, data, buf, user_data)
 {
   struct ctimer *c;
   PROCESS_BEGIN();
@@ -97,7 +97,7 @@ ctimer_init(void)
 {
   initialized = 0;
   list_init(ctimer_list);
-  process_start(&ctimer_process, NULL);
+  process_start(&ctimer_process, NULL, NULL);
 }
 /*---------------------------------------------------------------------------*/
 void
