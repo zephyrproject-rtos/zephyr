@@ -117,7 +117,7 @@ int bt_stop_scanning(void);
  *  Allows initiate new LE link to remote peer using its address.
  *  Returns a new reference that the the caller is responsible for managing.
  *
- *  @param Remote address.
+ *  @param peer Remote address.
  *
  *  @return Valid connection object on success or NULL otherwise.
  */
