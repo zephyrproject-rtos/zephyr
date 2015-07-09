@@ -52,6 +52,12 @@ config CROSS_COMPILE
 
 menu "Compile and Link Features"
 
+
+config  KERNEL_BIN_NAME
+	string "The kernel binary name"
+	default "microkernel" if MICROKERNEL
+	default "nanokernel" if NANOKERNEL
+
 config  COMPILER_OPT
 	string
 	prompt "Custom compiler options"

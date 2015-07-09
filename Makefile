@@ -709,11 +709,7 @@ LDFLAGS_zephyr += $(call ld-option,--build-id=none)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 
-ifeq ("$(CONFIG_MICROKERNEL)", "y")
-KERNEL_NAME=microkernel
-else
-KERNEL_NAME=nanokernel
-endif
+KERNEL_NAME=$(subst $(DQUOTE),,$(CONFIG_KERNEL_BIN_NAME))
 
 export LD_TOOLCHAIN KERNEL_NAME
 
