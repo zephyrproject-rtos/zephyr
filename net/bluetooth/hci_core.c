@@ -709,6 +709,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
+	struct bt_keys *keys;
 
 	BT_DBG("status %u handle %u role %u %s\n", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
@@ -716,7 +717,12 @@ static void le_conn_complete(struct bt_buf *buf)
 	/* Make lookup to check if there's a connection object in CONNECT state
 	 * associated with passed peer LE address.
 	 */
-	conn = bt_conn_lookup_state(&evt->peer_addr, BT_CONN_CONNECT);
+	keys = bt_keys_find_irk(&evt->peer_addr);
+	if (keys) {
+		conn = bt_conn_lookup_state(&keys->addr, BT_CONN_CONNECT);
+	} else {
+		conn = bt_conn_lookup_state(&evt->peer_addr, BT_CONN_CONNECT);
+	}
 
 	if (evt->status) {
 		if (!conn) {
@@ -767,7 +773,12 @@ static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
 {
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_state(addr, BT_CONN_CONNECT_SCAN);
+	if (keys) {
+		conn = bt_conn_lookup_state(&keys->addr, BT_CONN_CONNECT_SCAN);
+	} else {
+		conn = bt_conn_lookup_state(addr, BT_CONN_CONNECT_SCAN);
+	}
+
 	if (!conn) {
 		return;
 	}
