@@ -67,8 +67,8 @@ such as a physical device.
 Usage
 =====
 
-Defining a Mutex
-----------------
+Defining a Mutex in MDEF file
+-----------------------------
 
 Add an entry for the mutex in the project file using the
 following syntax:
@@ -84,6 +84,32 @@ For example, the file :file:`projName.mdef` defines a single mutex as follows:
    % MUTEX  NAME
    % ===============
      MUTEX  DEVICE_X
+
+
+Defining a Mutex inside Code
+----------------------------
+
+In addition to defining mutexes in MDEF file, it is also possible to define
+mutexes inside code. The macro ``DEFINE_MUTEX(mutex_name)`` can be used
+for this purpose.
+
+For example, the following code can be used to define a global mutex
+``XYZ``.
+
+.. code-block:: c
+
+   DEFINE_MUTEX(XYZ);
+
+The mutex ``XYZ`` can be used in the same style as those mutexes defined
+in MDEF file.
+
+It is possible to utilize this mutex in another source file, simply add:
+
+.. code-block:: c
+
+   extern const kmutex_t XYZ;
+
+to that file. The mutex ``XYZ`` can be then used there.
 
 
 

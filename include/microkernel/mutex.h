@@ -111,6 +111,32 @@ extern void _task_mutex_unlock(kmutex_t mutex);
  */
 #define task_mutex_unlock(m) _task_mutex_unlock(m)
 
+/**
+ * @brief Initializer for mutexes
+ */
+#define __MUTEX_DEFAULT \
+	{ \
+	  .Owner = ANYTASK, \
+	  .OwnerCurrentPrio = 64, \
+	  .OwnerOriginalPrio = 64, \
+	  .Level = 0, \
+	  .Waiters = NULL, \
+	  .Count = 0, \
+	  .Confl = 0, \
+	}
+
+/**
+ * @brief Define a private mutex
+ *
+ * This declares and initializes a private mutex. The new mutex can be
+ * passed to the microkernel mutex functions.
+ *
+ * @param name Name of the mutex
+ */
+#define DEFINE_MUTEX(name) \
+	struct _k_mutex_struct _k_mutex_obj_##name = __MUTEX_DEFAULT; \
+	const kmutex_t name = (kmutex_t)&_k_mutex_obj_##name;
+
 #ifdef __cplusplus
 }
 #endif

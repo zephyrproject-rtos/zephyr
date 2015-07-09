@@ -520,7 +520,7 @@ def kernel_main_c_mutexes():
     for mutex in mutex_list:
         name = mutex[0]
         kernel_main_c_out("struct _k_mutex_struct _k_mutex_obj_%s = " % (name) +
-		"{ANYTASK, 64, 64, 0, NULL, 0, 0};\n")
+		"__MUTEX_DEFAULT;\n")
 
     # mutex object identifiers
 
