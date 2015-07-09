@@ -15,5 +15,5 @@ microkernel/benchmark/app_kernel       <u>  generic_pc_minuteia  generic_pc_atom
 microkernel/benchmark/latency_measure  <u>  generic_pc_minuteia  generic_pc_atom_n28xx quark
 microkernel/benchmark/sys_kernel       <u>  generic_pc_minuteia  generic_pc_atom_n28xx quark
     # projects that don't require any special capabilities
-nanokernel/benchmark/boot_time         <n>  generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/benchmark/boot_time        <u>  generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/benchmark/boot_time         <n>  generic_pc_minuteia! generic_pc_atom_n28xx! quark
+microkernel/benchmark/boot_time        <u>  generic_pc_minuteia! generic_pc_atom_n28xx! quark
