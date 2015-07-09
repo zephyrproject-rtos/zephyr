@@ -38,7 +38,6 @@ This module provides the _SysFatalErrorHandler() routine for ARCv2 BSPs.
 #include <nanokernel.h>
 #include <toolchain.h>
 #include <sections.h>
-#include "board.h"
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
