@@ -1311,6 +1311,12 @@ struct bt_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 {
 	struct bt_att_hdr *hdr;
 	struct bt_buf *buf;
+	struct bt_att *att = conn->att;
+
+	if (len + sizeof(op) > att->mtu) {
+		BT_WARN("ATT MTU exceeded, max %u, wanted %u\n", att->mtu, len);
+		return NULL;
+	}
 
 	buf = bt_l2cap_create_pdu(conn);
 	if (!buf) {
