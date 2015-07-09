@@ -546,6 +546,57 @@ static void cmd_gatt_read(int argc, char *argv[])
 	bt_conn_put(conn);
 }
 
+void cmd_gatt_mread(int argc, char *argv[])
+{
+	uint16_t h[8];
+	int i, err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return;
+	}
+
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	conn = bt_conn_lookup_addr_le(&addr);
+	if (!conn) {
+		printk("Peer not connected\n");
+		return;
+	}
+
+	if (argc < 4) {
+		printk("Attribute handles in hex format to read required\n");
+		return;
+	}
+
+	if (argc - 3 >  ARRAY_SIZE(h)) {
+		printk("Enter max %u handle items to read\n", ARRAY_SIZE(h));
+		return;
+	}
+
+	for (i = 0; i < argc - 3; i++) {
+		h[i] = xtoi(argv[i+3]);
+	}
+
+	err = bt_gatt_read_multiple(conn, h, i, read_func);
+	if (err) {
+		printk("GATT multiple read request failed (err %d)\n", err);
+	}
+
+	bt_conn_put(conn);
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -566,4 +617,5 @@ void main(void)
 	shell_cmd_register("gatt-discover-characteristic", cmd_gatt_discover);
 	shell_cmd_register("gatt-discover-descriptor", cmd_gatt_discover);
 	shell_cmd_register("gatt-read", cmd_gatt_read);
+	shell_cmd_register("gatt-read-multiple", cmd_gatt_mread);
 }
