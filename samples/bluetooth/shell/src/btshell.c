@@ -42,7 +42,7 @@
 #include "btshell.h"
 
 /* maximum number of command parameters */
-#define ARGC_MAX 5
+#define ARGC_MAX 10
 
 /* Static command array, commands identified by string cmd_name,
  * which shall be allocated in the caller
