@@ -737,4 +737,19 @@ int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
  */
 void bt_gatt_cancel(struct bt_conn *conn);
 
+/** @brief Read Multiple Attribute Values by set of handles
+ *
+ *  Routine to be used to retrieve set of attributes values determined by set of
+ *  handles in one call.
+ *
+ *  @param conn Connection object.
+ *  @param handles Set of valid handles to attributes.
+ *  @param count Number of handles to be read.
+ *  @param func User callback routine to get retrieved values.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
+			  size_t count, bt_gatt_read_func_t func);
+
 #endif /* __BT_GATT_H */

@@ -925,3 +925,30 @@ void bt_gatt_cancel(struct bt_conn *conn)
 {
 	bt_att_cancel(conn);
 }
+
+int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
+			  size_t count, bt_gatt_read_func_t func)
+{
+	struct bt_buf *buf;
+	uint8_t i;
+
+	if (!conn && conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (!handles || count < 2 || !func) {
+		return -EINVAL;
+	}
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_MULT_REQ,
+				count * sizeof(*handles));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < count; i++) {
+		bt_buf_add_le16(buf, handles[i]);
+	}
+
+	return gatt_send(conn, buf, att_read_rsp, func, NULL);
+}
