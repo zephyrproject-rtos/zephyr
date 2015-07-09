@@ -367,11 +367,8 @@ The following predefined variables configure the development project:
 * :makevar:`BSP`:Selects the platform of the default
   configuration used by the project build. platform indicates the Board
   Support Package. The list of supported platform depends on the
-  architecture selected.
-
-* :makevar:`BSP_VARIANT`: Selects the platform variant of the default
-  configuration used by the project build. It applies specifically
-  for the x86 generic PC platform.
+  architecture selected. This is used along with `KERNEL_TYPE` to select
+  the appropriate defconfig for the kernel.
 
 * :makevar:`KERNEL_TYPE`: Select the kernel type of the default
   configuration used by the project build. It indicates if this is
