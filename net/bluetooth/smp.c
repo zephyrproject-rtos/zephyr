@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <string.h>
 #include <misc/util.h>
+#include <misc/byteorder.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/hci.h>
@@ -1262,6 +1263,43 @@ static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
 	return err;
 }
 
+/* Sign message using msg as a buffer, len is a size of the message,
+ * msg buffer contains message itself, 32 bit count and signature,
+ * so total buffer size is len + 4 + 8 octets.
+ * API is Little Endian to make it suitable for Bluetooth.
+ */
+static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
+{
+	uint8_t *m = msg;
+	uint32_t cnt = UNALIGNED_GET((uint32_t *)&msg[len]);
+	uint8_t *sig = msg + len;
+	uint8_t key_s[16], tmp[16];
+	int err;
+
+	BT_DBG("Signing msg %s len %u key %s\n", h(msg, len), len, h(key, 16));
+
+	swap_in_place(m, len + sizeof(cnt));
+	swap_buf(key, key_s, 16);
+
+	err = bt_smp_aes_cmac(key_s, m, len + sizeof(cnt), tmp);
+	if (err) {
+		BT_ERR("Data signing failed\n");
+		return err;
+	}
+
+	swap_in_place(tmp, sizeof(tmp));
+	memcpy(tmp + 4, &cnt, sizeof(cnt));
+
+	/* Swap original message back */
+	swap_in_place(m, len + sizeof(cnt));
+
+	memcpy(sig, tmp + 4, 12);
+
+	BT_DBG("sig %s\n", h(sig, 12));
+
+	return 0;
+}
+
 /* Test vectors are taken from RFC 4493
  * https://tools.ietf.org/html/rfc4493
  * Same mentioned in the Bluetooth Spec.
@@ -1343,6 +1381,94 @@ static int smp_aes_cmac_test(void)
 	return 0;
 }
 
+static int sign_test(const char *prefix, const uint8_t *key, const uint8_t *m,
+		       uint16_t len, const uint8_t *sig)
+{
+	uint8_t msg[len + sizeof(uint32_t) + 8];
+	uint8_t orig[len + sizeof(uint32_t) + 8];
+	uint8_t *out = msg + len;
+	int err;
+
+	BT_DBG("%s: Sign message with len %u\n", prefix, len);
+
+	memset(msg, 0, sizeof(msg));
+	memcpy(msg, m, len);
+	memset(msg + len, 0, sizeof(uint32_t));
+
+	memcpy(orig, msg, sizeof(msg));
+
+	err = smp_sign_buf(key, msg, len);
+	if (err) {
+		return err;
+	}
+
+	/* Check original message */
+	if (!memcmp(msg, orig, len + sizeof(uint32_t))) {
+		BT_DBG("%s: Original message intact\n", prefix);
+	} else {
+		BT_ERR("%s: Original message modified\n", prefix);
+		BT_DBG("%s: orig %s\n", prefix, h(orig, sizeof(orig)));
+		BT_DBG("%s: msg %s\n", prefix, h(msg, sizeof(msg)));
+		return -1;
+	}
+
+	if (!memcmp(out, sig, 12)) {
+		BT_DBG("%s: Success\n", prefix);
+	} else {
+		BT_ERR("%s: Failed\n", prefix);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int smp_sign_test(void)
+{
+	const uint8_t sig1[] = {
+		0x00, 0x00, 0x00, 0x00, 0xb3, 0xa8, 0x59, 0x41,
+		0x27, 0xeb, 0xc2, 0xc0
+	};
+	const uint8_t sig2[] = {
+		0x00, 0x00, 0x00, 0x00, 0x27, 0x39, 0x74, 0xf4,
+		0x39, 0x2a, 0x23, 0x2a
+	};
+	const uint8_t sig3[] = {
+		0x00, 0x00, 0x00, 0x00, 0xb7, 0xca, 0x94, 0xab,
+		0x87, 0xc7, 0x82, 0x18
+	};
+	const uint8_t sig4[] = {
+		0x00, 0x00, 0x00, 0x00, 0x44, 0xe1, 0xe6, 0xce,
+		0x1d, 0xf5, 0x13, 0x68
+	};
+	uint8_t key_s[16];
+	int err;
+
+	/* Use the same key as aes-cmac but swap bytes */
+	swap_buf(key, key_s, 16);
+
+	err = sign_test("Test sign0", key_s, M, 0, sig1);
+	if (err) {
+		return err;
+	}
+
+	err = sign_test("Test sign16", key_s, M, 16, sig2);
+	if (err) {
+		return err;
+	}
+
+	err = sign_test("Test sign40", key_s, M, 40, sig3);
+	if (err) {
+		return err;
+	}
+
+	err = sign_test("Test sign64", key_s, M, 64, sig4);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
 static int smp_self_test(void)
 {
 	int err;
@@ -1350,6 +1476,12 @@ static int smp_self_test(void)
 	err = smp_aes_cmac_test();
 	if (err) {
 		BT_ERR("SMP AES-CMAC self tests failed\n");
+		return err;
+	}
+
+	err = smp_sign_test();
+	if (err) {
+		BT_ERR("SMP signing self tests failed\n");
 		return err;
 	}
 
