@@ -773,6 +773,11 @@ static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
 {
 	struct bt_conn *conn;
 
+	/* Return if event is not connectable */
+	if (evtype != BT_LE_ADV_IND && evtype != BT_LE_ADV_DIRECT_IND) {
+		return;
+	}
+
 	if (keys) {
 		conn = bt_conn_lookup_state(&keys->addr, BT_CONN_CONNECT_SCAN);
 	} else {
