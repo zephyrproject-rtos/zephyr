@@ -1,29 +1,29 @@
     # projects that don't indicate completion
-nanokernel/apps/bluetooth/init               <n>  generic_pc_pentium4   generic_pc_minuteia  generic_pc_atom_n28xx
+nanokernel/apps/bluetooth/init               <n>  generic_pc_minuteia  generic_pc_atom_n28xx
 nanokernel/apps/bluetooth/init               <n>  fsl_frdm_k64f ti_lm3s6965
-nanokernel/apps/bluetooth/shell              <n>  generic_pc_pentium4   generic_pc_minuteia  generic_pc_atom_n28xx
+nanokernel/apps/bluetooth/shell              <n>  generic_pc_minuteia  generic_pc_atom_n28xx
 nanokernel/apps/bluetooth/shell              <n>  fsl_frdm_k64f ti_lm3s6965
-nanokernel/apps/hello_world                  <n>  quark generic_pc_pentium4  generic_pc_minuteia
-nanokernel/apps/philosophers                 <n>  generic_pc_pentium4   generic_pc_minuteia  generic_pc_atom_n28xx quark
+nanokernel/apps/hello_world                  <n>  quark generic_pc_minuteia
+nanokernel/apps/philosophers                 <n>  generic_pc_minuteia  generic_pc_atom_n28xx quark
 nanokernel/apps/hello_world                  <n>  fsl_frdm_k64f ti_lm3s6965
 nanokernel/apps/philosophers                 <n>  fsl_frdm_k64f ti_lm3s6965
-microkernel/apps/hello_world                 <u>  generic_pc_atom_n28xx generic_pc_pentium4  generic_pc_minuteia   quark
-microkernel/apps/philosophers                <u>  generic_pc_pentium4   generic_pc_minuteia  generic_pc_atom_n28xx quark
+microkernel/apps/hello_world                 <u>  generic_pc_atom_n28xx generic_pc_minuteia   quark
+microkernel/apps/philosophers                <u>  generic_pc_minuteia  generic_pc_atom_n28xx quark
 microkernel/apps/hello_world                 <u>  fsl_frdm_k64f ti_lm3s6965
 microkernel/apps/philosophers                <u>  fsl_frdm_k64f ti_lm3s6965
     # projects that have been temporarily disabled
     # projects that don't require any special capabilities
-nanokernel/test/test_bluetooth          <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx
-nanokernel/test/test_context            <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-nanokernel/test/test_fifo               <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-nanokernel/test/test_fp_sharing         <n>  generic_pc_pentium4!                      generic_pc_atom_n28xx
-nanokernel/test/test_lifo               <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-nanokernel/test/test_sema               <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-nanokernel/test/test_stack              <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-nanokernel/test/test_stackprot          <n>  generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-nanokernel/test/test_static_idt         <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-nanokernel/test/test_timer              <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-nanokernel/test/test_xip                <nq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_bluetooth          <nq> generic_pc_minuteia! generic_pc_atom_n28xx
+nanokernel/test/test_context            <nq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_fifo               <nq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_fp_sharing         <n>                       generic_pc_atom_n28xx!
+nanokernel/test/test_lifo               <nq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_sema               <nq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_stack              <nq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_stackprot          <n>  generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_static_idt         <nq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_timer              <nq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/test/test_xip                <nq> generic_pc_minuteia! generic_pc_atom_n28xx quark
 nanokernel/test/test_arm_m3_irq_vector_table <nq> ti_lm3s6965! fsl_frdm_k64f
 nanokernel/test/test_bluetooth          <nq> ti_lm3s6965! fsl_frdm_k64f
 nanokernel/test/test_context            <nq> ti_lm3s6965! fsl_frdm_k64f
@@ -51,24 +51,24 @@ microkernel/test/test_task              <uq> ti_lm3s6965! fsl_frdm_k64f
 microkernel/test/test_task_irq          <u>  ti_lm3s6965! fsl_frdm_k64f
 microkernel/test/test_timer             <uq> ti_lm3s6965! fsl_frdm_k64f
 microkernel/test/test_xip               <uq> ti_lm3s6965! fsl_frdm_k64f
-microkernel/test/test_bluetooth         <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx
-microkernel/test/test_critical          <u>  generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_events            <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_fifo              <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_fp_sharing        <u>  generic_pc_pentium4!                      generic_pc_atom_n28xx
-microkernel/test/test_libs              <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_mail              <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_map               <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_pipe              <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_pool              <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_mutex             <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_rand32            <uq> generic_pc_minuteia! generic_pc_pentium4! generic_pc_atom_n28xx quark
-microkernel/test/test_sema              <uq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/test/test_sprintf           <u>  generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/test/test_stackprot         <u>  generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/test/test_static_idt        <uq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/test/test_task              <uq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/test/test_task_irq          <u>  generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/test/test_tickless          <uq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/test/test_timer             <uq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/test/test_xip               <uq> generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_bluetooth         <uq> generic_pc_minuteia! generic_pc_atom_n28xx
+microkernel/test/test_critical          <u>  generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_events            <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_fifo              <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_fp_sharing        <u>                       generic_pc_atom_n28xx!
+microkernel/test/test_libs              <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_mail              <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_map               <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_pipe              <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_pool              <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_mutex             <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_rand32            <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_sema              <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_sprintf           <u>  generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_stackprot         <u>  generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_static_idt        <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_task              <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_task_irq          <u>  generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_tickless          <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_timer             <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/test/test_xip               <uq> generic_pc_minuteia! generic_pc_atom_n28xx quark

@@ -1,19 +1,19 @@
 nanokernel/benchmark/footprint     TEST=min         <nq> ti_lm3s6965
 nanokernel/benchmark/footprint     TEST=min         <nq> fsl_frdm_k64f
-nanokernel/benchmark/footprint     TEST=min         <n>  generic_pc_pentium4 generic_pc_minuteia
-nanokernel/benchmark/footprint     TEST=reg         <n>  generic_pc_pentium4 generic_pc_minuteia
-nanokernel/benchmark/footprint     TEST=max         <nq> generic_pc_pentium4 generic_pc_minuteia
+nanokernel/benchmark/footprint     TEST=min         <n>  generic_pc_minuteia
+nanokernel/benchmark/footprint     TEST=reg         <n>  generic_pc_minuteia
+nanokernel/benchmark/footprint     TEST=max         <nq> generic_pc_minuteia
 microkernel/benchmark/footprint    TEST=min         <uq> ti_lm3s6965
 microkernel/benchmark/footprint    TEST=min         <uq> fsl_frdm_k64f
-microkernel/benchmark/footprint    TEST=min         <u>  generic_pc_pentium4 generic_pc_minuteia
-microkernel/benchmark/footprint    TEST=reg         <u>  generic_pc_pentium4 generic_pc_minuteia
-microkernel/benchmark/footprint    TEST=max         <uq> generic_pc_pentium4 generic_pc_minuteia
+microkernel/benchmark/footprint    TEST=min         <u>  generic_pc_minuteia
+microkernel/benchmark/footprint    TEST=reg         <u>  generic_pc_minuteia
+microkernel/benchmark/footprint    TEST=max         <uq> generic_pc_minuteia
     # projects that don't indicate completion
-nanokernel/benchmark/latency_measure   <n>  generic_pc_pentium4  generic_pc_minuteia  generic_pc_atom_n28xx quark
-nanokernel/benchmark/sys_kernel        <n>  generic_pc_pentium4  generic_pc_minuteia  generic_pc_atom_n28xx quark
-microkernel/benchmark/app_kernel       <u>  generic_pc_pentium4  generic_pc_minuteia  generic_pc_atom_n28xx quark
-microkernel/benchmark/latency_measure  <u>  generic_pc_pentium4  generic_pc_minuteia  generic_pc_atom_n28xx quark
-microkernel/benchmark/sys_kernel       <u>  generic_pc_pentium4  generic_pc_minuteia  generic_pc_atom_n28xx quark
+nanokernel/benchmark/latency_measure   <n>  generic_pc_minuteia  generic_pc_atom_n28xx quark
+nanokernel/benchmark/sys_kernel        <n>  generic_pc_minuteia  generic_pc_atom_n28xx quark
+microkernel/benchmark/app_kernel       <u>  generic_pc_minuteia  generic_pc_atom_n28xx quark
+microkernel/benchmark/latency_measure  <u>  generic_pc_minuteia  generic_pc_atom_n28xx quark
+microkernel/benchmark/sys_kernel       <u>  generic_pc_minuteia  generic_pc_atom_n28xx quark
     # projects that don't require any special capabilities
-nanokernel/benchmark/boot_time         <n>  generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
-microkernel/benchmark/boot_time        <u>  generic_pc_pentium4! generic_pc_minuteia! generic_pc_atom_n28xx quark
+nanokernel/benchmark/boot_time         <n>  generic_pc_minuteia! generic_pc_atom_n28xx quark
+microkernel/benchmark/boot_time        <u>  generic_pc_minuteia! generic_pc_atom_n28xx quark

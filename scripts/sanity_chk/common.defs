@@ -80,8 +80,7 @@ RUN_FAILED="PROJECT EXECUTION FAILED"
 # architecture platform lists
 arc_PLATFORM_LIST=""
 arm_PLATFORM_LIST="fsl_frdm_k64f ti_lm3s6965"
-x86_PLATFORM_LIST="generic_pc_pentium4   \
-				   generic_pc_minuteia   \
+x86_PLATFORM_LIST="generic_pc_minuteia   \
 				   generic_pc_atom_n28xx \
 				   quark"
 _PLATFORM_LIST="${arc_PLATFORM_LIST} ${arm_PLATFORM_LIST} ${x86_PLATFORM_LIST}"
@@ -167,9 +166,7 @@ build_info_set() {
 	BUILD_INFO="EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings"
 
 	# If a BSP name was specified, translate it to a platform name
-	if [ x${BSP_NAME} = x"pentium4" ] ; then
-		PLATFORM_NAME=generic_pc_pentium4
-	elif [ x${BSP_NAME} = x"minuteia" ] ; then
+	if [ x${BSP_NAME} = x"minuteia" ] ; then
 		PLATFORM_NAME=generic_pc_minuteia
 	elif [ x${BSP_NAME} = x"atom" ] ; then
 		PLATFORM_NAME=generic_pc_atom_n28xx
