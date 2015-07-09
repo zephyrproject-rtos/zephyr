@@ -47,7 +47,6 @@
  * Returns a non-zero value if the specified message contains a valid pool ID,
  * indicating that it is an asynchronous message.
  */
-
 #define ISASYNCMSG(message) ((message)->tx_block.poolid != 0)
 
 /**
@@ -56,7 +55,6 @@
  *
  * @return N/A
  */
-
 static void copy_packet(struct k_args **out, struct k_args *in)
 {
 	GETARGS(*out);
@@ -76,7 +74,6 @@ static void copy_packet(struct k_args **out, struct k_args *in)
  *
  * @return matched message size, or -1 if no match
  */
-
 static int match(struct k_args *Reader, struct k_args *Writer)
 {
 	if ((Reader->Args.m1.mess.tx_task == ANYTASK ||
@@ -127,12 +124,10 @@ static int match(struct k_args *Reader, struct k_args *Writer)
 }
 
 /**
- *
- * prepare_transfer -
+ * @brief Prepare transfer
  *
  * @return true or false
  */
-
 static bool prepare_transfer(struct k_args *move,
 					    struct k_args *reader,
 					    struct k_args *writer)
@@ -211,12 +206,10 @@ static bool prepare_transfer(struct k_args *move,
 }
 
 /**
- *
- * transfer -
+ * @brief Do transfer
  *
  * @return N/A
  */
-
 static void transfer(struct k_args *pMvdReq)
 {
 	__ASSERT_NO_MSG(NULL != pMvdReq->Args.MovedReq.source);
@@ -227,12 +220,10 @@ static void transfer(struct k_args *pMvdReq)
 }
 
 /**
- *
  * @brief Process the acknowledgment to a mailbox send request
  *
  * @return N/A
  */
-
 void _k_mbox_send_ack(struct k_args *pCopyWriter)
 {
 	if (ISASYNCMSG(&(pCopyWriter->Args.m1.mess))) {
@@ -304,7 +295,6 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
  *
  * @return N/A
  */
-
 void _k_mbox_send_reply(struct k_args *pCopyWriter)
 {
 	FREETIMER(pCopyWriter->Time.timer);
@@ -320,7 +310,6 @@ void _k_mbox_send_reply(struct k_args *pCopyWriter)
  *
  * @return N/A
  */
-
 void _k_mbox_send_request(struct k_args *Writer)
 {
 	kmbox_t MailBoxId = Writer->Args.m1.mess.mailbox;
@@ -413,8 +402,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 				if (prepare_transfer(Moved_req,
 						     CopyReader, CopyWriter)) {
 					/*
-					 * <Moved_req> will be
-					 * cleared as well
+					 * <Moved_req> will be cleared as well
 					 */
 					transfer(Moved_req);
 				} else {
@@ -474,20 +462,23 @@ void _k_mbox_send_request(struct k_args *Writer)
 	}
 }
 
+
 /**
- *
  * @brief Send a message to a mailbox
  *
  * This routine sends a message to a mailbox and looks for a matching receiver.
  *
+ * @param mbox mailbox
+ * @param prio priority of data transfer
+ * @param M pointer to message to send
+ * @param time maximum number of ticks to wait
+ *
  * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
  */
-
-int _task_mbox_put(kmbox_t mbox, /* mailbox */
-	       kpriority_t prio, /* priority of data transfer */
-	       struct k_msg *M,    /* pointer to message to send */
-	       int32_t time /* maximum number of ticks to wait */
-	       )
+int _task_mbox_put(kmbox_t mbox,
+	       kpriority_t prio,
+	       struct k_msg *M,
+	       int32_t time)
 {
 	struct k_args A;
 
@@ -525,7 +516,6 @@ int _task_mbox_put(kmbox_t mbox, /* mailbox */
  *
  * @return N/A
  */
-
 void _k_mbox_receive_ack(struct k_args *pCopyReader)
 {
 	struct k_args *Starter;
@@ -546,12 +536,10 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 }
 
 /**
- *
  * @brief Process the timeout for a mailbox receive request
  *
  * @return N/A
  */
-
 void _k_mbox_receive_reply(struct k_args *pCopyReader)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -564,12 +552,10 @@ void _k_mbox_receive_reply(struct k_args *pCopyReader)
 }
 
 /**
- *
  * @brief Process a mailbox receive request
  *
  * @return N/A
  */
-
 void _k_mbox_receive_request(struct k_args *Reader)
 {
 	kmbox_t MailBoxId = Reader->Args.m1.mess.mailbox;
@@ -690,18 +676,10 @@ void _k_mbox_receive_request(struct k_args *Reader)
 	}
 }
 
-/**
- *
- * @brief Gets struct k_msg message header structure information
- *                  from a mailbox
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
- */
 
-int _task_mbox_get(kmbox_t mbox, /* mailbox */
-	       struct k_msg *M,    /* pointer to message */
-	       int32_t time /* maximum number of ticks to wait */
-	       )
+int _task_mbox_get(kmbox_t mbox,
+	       struct k_msg *M,
+	       int32_t time)
 {
 	struct k_args A;
 
@@ -724,22 +702,11 @@ int _task_mbox_get(kmbox_t mbox, /* mailbox */
 	return A.Time.rcode;
 }
 
-/**
- *
- * @brief Send a message asynchronously to a mailbox
- *
- * This routine sends a message to a mailbox and does not wait for a matching
- * receiver. There is no exchange header returned to the sender. When the data
- * has been transferred to the receiver, the semaphore signaling is performed.
- *
- * @return N/A
- */
 
-void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
-		 kpriority_t prio, /* priority of data transfer */
-		 struct k_msg *M,    /* pointer to message to send */
-		 ksem_t sema /* semaphore to signal when transfer is complete */
-		 )
+void _task_mbox_put_async(kmbox_t mbox,
+		 kpriority_t prio,
+		 struct k_msg *M,
+		 ksem_t sema)
 {
 	struct k_args A;
 
@@ -773,7 +740,6 @@ void _task_mbox_put_async(kmbox_t mbox, /* mailbox to which to send message */
  *
  * @return N/A
  */
-
 void _k_mbox_receive_data(struct k_args *Starter)
 {
 	struct k_args *CopyStarter;
@@ -812,21 +778,8 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	}
 }
 
-/**
- *
- * @brief Get message data
- *
- * This routine is called for either of the two following purposes:
- * 1. To transfer data if the call to task_mbox_get() resulted in a non-zero size
- *    field in the struct k_msg header structure.
- * 2. To wake up and release a transmitting task that is blocked on a call to
- *    task_mbox_put[wait|wait_timeout]().
- *
- * @return N/A
- */
 
-void _task_mbox_data_get(struct k_msg *M /* message from which to get data */
-		    )
+void _task_mbox_data_get(struct k_msg *M)
 {
 	struct k_args A;
 
@@ -845,13 +798,6 @@ void _task_mbox_data_get(struct k_msg *M /* message from which to get data */
 	KERNEL_ENTRY(&A);
 }
 
-/**
- *
- * @brief Get the mailbox data and place
- *                                   in a memory pool block
- *
- * @return RC_OK upon success, RC_FAIL upon failure, or RC_TIME upon timeout
- */
 
 int _task_mbox_data_get_async_block(struct k_msg *message,
 			  struct k_block *rxblock,
@@ -945,12 +891,10 @@ int _task_mbox_data_get_async_block(struct k_msg *message,
 }
 
 /**
- *
  * @brief Process a mailbox send data request
  *
  * @return N/A
  */
-
 void _k_mbox_send_data(struct k_args *Starter)
 {
 	struct k_args *CopyStarter;
