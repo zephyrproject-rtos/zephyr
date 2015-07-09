@@ -762,8 +762,8 @@ static void le_conn_complete(struct bt_buf *buf)
 	trigger_scan();
 }
 
-static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
-			 const uint8_t *ad, uint8_t len)
+static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
+			       struct bt_keys *keys)
 {
 	struct bt_conn *conn;
 
@@ -819,8 +819,7 @@ static void le_adv_report(struct bt_buf *buf)
 					  info->data, info->length);
 		}
 
-		device_found(&addr, rssi, info->evt_type, info->data,
-			     info->length);
+		check_pending_conn(&info->addr, info->evt_type, keys);
 
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
