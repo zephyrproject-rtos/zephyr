@@ -1,5 +1,5 @@
 
-obj-y = crt0.o sys_fatal_error_handler.o driver_static_irq_stubs.o
+obj-y = crt0.o driver_static_irq_stubs.o
 
 ifneq ($(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED),y)
 obj-y += cache_s.o
