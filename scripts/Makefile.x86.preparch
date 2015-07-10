@@ -17,10 +17,9 @@ x86_FLAGS += $(LTO_FLAG)
 x86_FLAGS += $(PERF_OPT_FLAG)
 x86_FLAGS += $(iSSE_FP_MATH)
 
-ISA_FLAG_pentium4-$(CONFIG_CPU_PENTIUM4) = -march=pentium4
 ISA_FLAG_quark-$(CONFIG_CPU_MINUTEIA) = -march=pentium
 ISA_FLAG_atom-$(CONFIG_CPU_ATOM) = -march=atom -mtune=atom
-ISA_FLAG_x86 = $(strip $(ISA_FLAG_pentium4-y) $(ISA_FLAG_quark-y) $(ISA_FLAG_atom-y))
+ISA_FLAG_x86 = $(strip $(ISA_FLAG_quark-y) $(ISA_FLAG_atom-y))
 
 QEMU_BIOS ?= /usr/share/qemu
 QEMU_CPU_TYPE_x86 = qemu32

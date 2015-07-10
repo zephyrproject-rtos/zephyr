@@ -47,7 +47,7 @@ menu "Platform General Configuration"
 
 choice
 prompt "Platform Configuration"
-default PLATFORM_PCPENTIUM4
+default PLATFORM_QUARK
 
 config PLATFORM_ATOM_N28XX
 	bool "Minimum configuration for ATOM N28XX platform"
@@ -65,17 +65,6 @@ config PLATFORM_ATOM_N28XX
 config PLATFORM_PCMINUTEIA
 	bool "Minimum configuration for MINUTE IA platform"
 	select CPU_MINUTEIA
-	select PIC
-	select PIT
-	select BOI_HANDLER_SUPPORTED
-	select EOI_HANDLER_SUPPORTED
-	select BOOTLOADER_UNKNOWN
-	select EXTRA_SERIAL_PORT
-	select PLATFORM_GENERIC_PC
-
-config PLATFORM_PCPENTIUM4
-	bool "Minimum configuration for PENTIUM 4 platform"
-	select CPU_PENTIUM4
 	select PIC
 	select PIT
 	select BOI_HANDLER_SUPPORTED
@@ -106,7 +95,7 @@ config PLATFORM_GENERIC_PC
 
 choice
 prompt "Intel Processor"
-default CPU_PENTIUM4
+default CPU_MINUTEIA
 
 config CPU_ATOM
 	bool "Atom"
@@ -117,11 +106,6 @@ config CPU_MINUTEIA
 	bool "Minute IA"
 	help
 	This option signifies the use of a CPU from the Minute IA family.
-
-config CPU_PENTIUM4
-	bool "Pentium 4"
-	help
-	This option signifies the use of a CPU from the Pentium 4 family.
 endchoice
 
 config ADVANCED_IDLE
@@ -170,7 +154,7 @@ menu "Specific CPU Capability Support"
 
 config ISA_IA32
 	bool
-	default y if CPU_ATOM || CPU_MINUTEIA || CPU_PENTIUM4
+	default y if CPU_ATOM || CPU_MINUTEIA
 	default n
 	help
 	This option signifies the use of a CPU based on the Intel IA-32
@@ -215,7 +199,7 @@ config CPU_SSE_UNSUPPORTED
 
 config CACHE_LINE_SIZE
 	int "Cache line size"
-	default 64 if CPU_ATOM || CPU_PENTIUM4
+	default 64 if CPU_ATOM
 	default 0
 	help
 	Size in bytes of a CPU cache line.
