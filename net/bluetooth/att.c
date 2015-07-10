@@ -1245,7 +1245,7 @@ static const struct {
 	{ BT_ATT_OP_READ_BLOB_REQ, att_read_blob_req,
 	  sizeof(struct bt_att_read_blob_req) },
 	{ BT_ATT_OP_READ_MULT_REQ, att_read_mult_req,
-	  sizeof(struct bt_att_read_mult_req) },
+	  BT_ATT_READ_MULT_MIN_LEN_REQ },
 	{ BT_ATT_OP_READ_GROUP_REQ, att_read_group_req,
 	  sizeof(struct bt_att_read_group_req) },
 	{ BT_ATT_OP_WRITE_REQ, att_write_req,

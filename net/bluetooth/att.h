@@ -167,10 +167,10 @@ struct bt_att_read_blob_rsp {
 } __packed;
 
 /* Read Multiple Request */
+#define BT_ATT_READ_MULT_MIN_LEN_REQ		0x04
+
 #define BT_ATT_OP_READ_MULT_REQ			0x0e
 struct bt_att_read_mult_req {
-	uint16_t handle1;
-	uint16_t handle2;
 	uint16_t handles[0];
 } __packed;
 
