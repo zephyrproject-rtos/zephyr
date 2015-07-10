@@ -33,6 +33,7 @@
 #include "contiki.h"
 
 #include <net/net_buf.h>
+#include <simple/uart.h>
 
 #include "net/packetbuf.h"
 #include "net/netstack.h"
@@ -60,12 +61,71 @@ void uip_log(char *msg);
 #define NETWORK_TEST_MAX_PACKET_LEN      PACKETBUF_SIZE
 
 static volatile uint16_t last_packet_timestamp;
+
+/* Data sending and receiving is done in TLV way. */
+#if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
+#define DUMMY_RADIO_15_4_FRAME_TYPE	0xF0
+static uint8_t input[NETWORK_TEST_MAX_PACKET_LEN];
+static uint8_t input_len, input_offset;
+#else
 static uint8_t loopback[NETWORK_TEST_MAX_PACKET_LEN];
+#endif
+
+/*---------------------------------------------------------------------------*/
+#if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
+static uint8_t *recv_cb(uint8_t *buf, size_t *off)
+{
+  if (input_len == 0 && input_offset == 0 &&
+       buf[0] == DUMMY_RADIO_15_4_FRAME_TYPE) {
+    goto done;
+  }
+
+  if (input_len == 0 && input_offset == 0 &&
+       buf[0] != DUMMY_RADIO_15_4_FRAME_TYPE) {
+    input_len = buf[0];
+    goto done;
+  }
+
+  if (input_len) {
+    input[input_offset++] = buf[0];
+  }
+
+  if (input_len && input_len == input_offset) {
+     struct net_mbuf *mbuf;
+     mbuf = net_mbuf_get_reserve(0);
+     if (mbuf) {
+       packetbuf_copyfrom(mbuf, input, input_len);
+       packetbuf_set_datalen(mbuf, input_len);
+       packetbuf_set_attr(mbuf, PACKETBUF_ATTR_TIMESTAMP, last_packet_timestamp);
+       PRINTF("dummy154radio: received %d bytes\n", input_len);
+
+       if (net_driver_15_4_recv_from_hw(mbuf) < 0) {
+         PRINTF("dummy154radio: rdc input failed, packet discarded\n");
+         net_mbuf_put(mbuf);
+       }
+     }
+
+     input_len = input_offset = 0;
+     memset(input, 0, sizeof(input));
+  }
+
+done:
+  *off = 0;
+  return buf;
+}
+#endif
 
 /*---------------------------------------------------------------------------*/
 static int
 init(void)
 {
+#if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
+  /* Use small temp buffer for receiving data */
+  static uint8_t buf[1];
+
+  uart_simple_register(buf, sizeof(buf), recv_cb);
+#endif
+
   return 0;
 }
 /*---------------------------------------------------------------------------*/
@@ -81,6 +141,7 @@ transmit(struct net_mbuf *buf, unsigned short transmit_len)
   return RADIO_TX_OK;
 }
 
+#ifndef CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
 static void route_buf(struct net_mbuf *buf)
 {
 	int len;
@@ -107,13 +168,43 @@ static void route_buf(struct net_mbuf *buf)
 		NET_BUF_CHECK_IF_NOT_IN_USE(mbuf);
 	}
 }
+#endif
+
+#if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
+static int uart_send(unsigned char c)
+{
+  uint8_t buf[1] = { c };
+
+  return uart_simple_send(&buf[0], 1);
+}
+#endif
 
 /*---------------------------------------------------------------------------*/
 static int
 send(struct net_mbuf *buf, const void *payload, unsigned short payload_len)
 {
+#if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
+  static uint8_t output[NETWORK_TEST_MAX_PACKET_LEN];
+  uint8_t len, i;
+
+  len = packetbuf_copyto(buf, output);
+  uart_send(DUMMY_RADIO_15_4_FRAME_TYPE); /* Type */
+  uart_send(len);  /* Length */
+
+  PRINTF("dummy154radio: sending %d bytes\n", len);
+
+  for (i = 0; i < len; i++) {
+    if (!uart_send(output[i])) {
+      PRINTF("uart_send failed\n");
+      return RADIO_TX_ERR;
+    }
+  }
+
+  return RADIO_TX_OK;
+#else
   route_buf(buf);
   return transmit(buf, payload_len);
+#endif
 }
 /*---------------------------------------------------------------------------*/
 static int

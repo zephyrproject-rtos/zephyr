@@ -44,6 +44,8 @@
 #ifndef NETSTACK_CONF_RADIO
 #if defined (CONFIG_NETWORKING_WITH_15_4_LOOPBACK)
 #define NETSTACK_CONF_RADIO dummy154radio_driver
+#elif defined (CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART)
+#define NETSTACK_CONF_RADIO dummy154radio_driver
 #else
 #define NETSTACK_CONF_RADIO nullradio_driver
 #endif /* CONFIG_NETWORKING_WITH_15_4_LOOPBACK */

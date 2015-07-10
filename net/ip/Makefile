@@ -90,6 +90,7 @@ obj-$(CONFIG_NETWORKING_WITH_LOGGING) += contiki/uip-log.o
 
 obj-$(CONFIG_NETWORKING_WITH_LOOPBACK) += net_driver_loopback.o
 obj-$(CONFIG_NETWORKING_WITH_15_4_LOOPBACK) += dummy_15_4_radio.o
+obj-$(CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART) += dummy_15_4_radio.o
 obj-$(CONFIG_NETWORKING_WITH_15_4) += net_driver_15_4.o \
 					contiki/mac/frame802154.o \
 					contiki/mac/framer-802154.o \
