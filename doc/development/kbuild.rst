@@ -118,7 +118,7 @@ type of kernel and the platform that is defined within the file.
 All the defconfig files must end with the suffix defconfig.
 For example, :file:`micro_quark_defconfig` contains the configuration
 information for the microkernel architecture for the quark platform and
-:file:`nano_generic_pc_pentium4` contains the configuration
+:file:`nano_generic_pc_atom_n28xx` contains the configuration
 information for the nanokernel architecture for the generic PC platform
 with the Pentium processor platform variant.
 
@@ -459,29 +459,19 @@ x86 Supported default configuration files
 
 * **micro_quark_defconfig** Builds for microkernel Quark.
 
-* **micro_generic_pc_defconfig:** Builds for microkernel generic PC.
-
 * **micro_generic_pc_atom_n28xx_defconfig:** Builds for microkernel
   generic PC atom n28xx processor.
 
 * **micro_generic_pc_minuteia_defconfig:** Builds for microkernel
   generic PC minuteia processor.
 
-* **micro_generic_pc_pentium4_defconfig:** Builds for microkernel
-  generic PC Pentium4.
-
 * **nano_quark_defconfig:** Builds for nanokernel Quark.
-
-* **nano_generic_pc_defconfig:** Builds for nanokernel generic PC.
 
 * **nano_generic_pc_atom_n28xx_defconfig:** - Builds for nanokernel
   generic PC atom n28xx.
 
 * **nano_generic_pc_minuteia_defconfig:** Builds for nanokernel
   generic PC minuteia.
-
-* **nano_generic_pc_pentium4_defconfig**: Builds for nanokernel
-  generic PC Pentium4.
 
 
 arm Supported default configuration files
