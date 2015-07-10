@@ -150,7 +150,7 @@ struct bt_buf *bt_buf_hold(struct bt_buf *buf)
 
 void *bt_buf_add(struct bt_buf *buf, size_t len)
 {
-	uint8_t *tail = buf->data + buf->len;
+	uint8_t *tail = bt_buf_tail(buf);
 
 	BT_DBG("buf %p len %u\n", buf, len);
 
