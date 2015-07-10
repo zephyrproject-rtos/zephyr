@@ -60,26 +60,28 @@
 
 struct device;
 
-/* Static device infomation (In ROM) Per driver instance */
+/**
+ * @brief Static device information (In ROM) Per driver instance
+ * @param name name of the device
+ * @param init init function for the driver
+ * @param config_info address of driver instance config information
+ */
 struct device_config {
-	/** name of the device */
 	char	*name;
-	/** init function for the driver */
 	int (*init)(struct device *device);
-	/** address of driver instance config information */
 	void *config_info;
 };
 
-/* Runtime device structure (In memory) Per driver instance */
+/**
+ * @brief Runtime device structure (In memory) Per driver instance
+ * @param device_config Build time config information
+ * @param driver_api pointer to structure containing the API unctions for
+ * the device type. This pointer is filled in by the driver at init time.
+ * @param driver_data river instance data. For driver use only
+ */
 struct device {
-	/** Build time config information */
 	struct device_config *config;
-	/** pointer to structure containing the API functions for the
-	 * device type. This pointer is filled in by the driver at
-	 * init time.
-	 */
 	void *driver_api;
-	/** Driver instance data. For driver use only*/
 	void *driver_data;
 };
 

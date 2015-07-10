@@ -41,13 +41,13 @@
 #define MICRO_LATE	4
 #define APP_EARLY	5
 #define APP_LATE	6
- 
+
 /** @def __define_initconfig
  *
  *  @brief Define an init object
  *
- *  @details This macro declares an init object to be placed a
- *  given init level section in the image. This macro not should be used
+ *  @details This macro declares an init object to be placed in a
+ *  given init level section in the image. This macro should not be used
  *  directly.
  *
  *  @param cfg_name Name of the config object created with
