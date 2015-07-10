@@ -141,6 +141,19 @@ struct bt_buf *bt_buf_hold(struct bt_buf *buf);
  */
 void *bt_buf_add(struct bt_buf *buf, size_t len);
 
+/** @brief Add 16-bit value at the end of the buffer
+ *
+ *  Adds 16-bit value in little endian format at the end of buffer.
+ *  Increments the data length of a buffer to account for more data
+ *  at the end.
+ *
+ *  @param buf Buffer to update.
+ *  @param value 16-bit value to be added.
+ *
+ *  @return void
+ */
+void bt_buf_add_le16(struct bt_buf *buf, uint16_t value);
+
 /** @brief Push data to the beginning of the buffer.
  *
  *  Modifies the data pointer and buffer length to account for more data

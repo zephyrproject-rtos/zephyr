@@ -160,6 +160,14 @@ void *bt_buf_add(struct bt_buf *buf, size_t len)
 	return tail;
 }
 
+void bt_buf_add_le16(struct bt_buf *buf, uint16_t value)
+{
+	BT_DBG("buf %p value %u\n", buf, value);
+
+	value = sys_cpu_to_le16(value);
+	memcpy(bt_buf_add(buf, sizeof(value)), &value, sizeof(value));
+}
+
 void *bt_buf_push(struct bt_buf *buf, size_t len)
 {
 	BT_DBG("buf %p len %u\n", buf, len);
