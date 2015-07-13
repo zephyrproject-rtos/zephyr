@@ -33,6 +33,10 @@
 #ifndef __SPI_H__
 #define __SPI_H__
 
+#include <stdint.h>
+#include <stddef.h>
+#include <device.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -129,7 +133,7 @@ inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
 inline int spi_suspend(struct device *dev)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
-	return api->suspend(dev, buf, len);
+	return api->suspend(dev);
 }
 
 /**
@@ -139,7 +143,7 @@ inline int spi_suspend(struct device *dev)
 inline int spi_resume(struct device *dev)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
-	return api->resume(dev, buf, len);
+	return api->resume(dev);
 }
 
 #ifdef __cplusplus
