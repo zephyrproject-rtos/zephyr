@@ -32,7 +32,7 @@
 
 # DESCRIPTION
 # Makefile for the Bluetooth LE central role sample
-BSP ?= generic_pc
+KBUILD_DEFCONFIG ?= micro_generic_pc_defconfig
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 CONF_FILE = prj_$(ARCH).conf
