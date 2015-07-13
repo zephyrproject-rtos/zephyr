@@ -1,5 +1,3 @@
-/* mutex kernel services */
-
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.
  *
@@ -30,29 +28,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module contains routines for handling mutex locking and unlocking.  It
-also includes routines that force the release of  mutex objects when a task
-is aborted or unloaded.
-
-Mutexes implement a priority inheritance algorithm that boosts the priority
-level of the owning task to match the priority level of the highest priority
-task waiting on the mutex.
-
-Each mutex that contributes to priority inheritance must be released in the
-reverse order in which is was acquired.  Furthermore each subsequent mutex
-that contributes to raising the owning task's priority level must be acquired
-at a point after the most recent "bumping" of the priority level.
-
-For example, if task A has two mutexes contributing to the raising of its
-priority level, the second mutex M2 must be acquired by task A after task
-A's priority level was bumped due to owning the first mutex M1.  When
-releasing the mutex, task A must release M2 before it releases M1.  Failure
-to follow this nested model may result in tasks running at unexpected priority
-levels (too high, or too low).
-
-NOMANUAL
+/**
+ * @file
+ * @brief mutex kernel services
+ *
+ * This module contains routines for handling mutex locking and unlocking.  It
+ * also includes routines that force the release of  mutex objects when a task
+ * is aborted or unloaded.
+ *
+ * Mutexes implement a priority inheritance algorithm that boosts the priority
+ * level of the owning task to match the priority level of the highest priority
+ * task waiting on the mutex.
+ *
+ * Each mutex that contributes to priority inheritance must be released in the
+ * reverse order in which is was acquired.  Furthermore each subsequent mutex
+ * that contributes to raising the owning task's priority level must be acquired
+ * at a point after the most recent "bumping" of the priority level.
+ *
+ * For example, if task A has two mutexes contributing to the raising of its
+ * priority level, the second mutex M2 must be acquired by task A after task
+ * A's priority level was bumped due to owning the first mutex M1.  When
+ * releasing the mutex, task A must release M2 before it releases M1.  Failure
+ * to follow this nested model may result in tasks running at unexpected priority
+ * levels (too high, or too low).
  */
 
 #include <microkernel.h>
@@ -60,17 +58,15 @@ NOMANUAL
 #include <nano_private.h>
 
 /**
- *
  * @brief Reply to a mutex lock request (LOCK_TMO, LOCK_RPL)
  *
  * This routine replies to a mutex lock request.  This will occur if either
  * the waiting task times out or acquires the mutex lock.
  *
- * @return N/A
+ * @param A k_args
  *
- * \NOMANUAL
+ * @return N/A
  */
-
 void _k_mutex_lock_reply(
 	struct k_args *A /* pointer to mutex lock reply request arguments */
 	)
@@ -145,18 +141,16 @@ void _k_mutex_lock_reply(
 }
 
 /**
- *
  * @brief Process a mutex lock request
  *
  * This routine processes a mutex lock request (LOCK_REQ).  If the mutex
  * is already locked, and the timeout is non-zero then the priority inheritance
  * algorithm may be applied to prevent priority inversion scenarios.
  *
- * @return N/A
+ * @param A k_args
  *
- * \NOMANUAL
+ * @return N/A
  */
-
 void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 						  request arguments */
 				     )
@@ -268,14 +262,15 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 }
 
 /**
- *
  * @brief Mutex lock kernel service
  *
  * This routine is the entry to the mutex lock kernel service.
  *
+ * @param mutex Mutex object
+ * @param time Timeout value (in ticks)
+ *
  * @return RC_OK on success, RC_FAIL on error, RC_TIME on timeout
  */
-
 int _task_mutex_lock(
 	kmutex_t mutex,   /* mutex to lock */
 	int32_t time /* max # of ticks to wait for mutex */
@@ -292,7 +287,6 @@ int _task_mutex_lock(
 }
 
 /**
- *
  * @brief Process a mutex unlock request
  *
  * This routine processes a mutex unlock request (UNLOCK).  If the mutex
@@ -300,11 +294,10 @@ int _task_mutex_lock(
  * of the current owner to the priority level it had when it acquired the
  * mutex.
  *
- * @return N/A
+ * @param A k_args
  *
- * \NOMANUAL
+ * @return N/A
  */
-
 void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 						 request arguments */
 				    )
@@ -386,14 +379,14 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 }
 
 /**
- *
  * @brief Mutex unlock kernel service
  *
  * This routine is the entry to the mutex unlock kernel service.
  *
+ * @param mutex Mutex
+ *
  * @return N/A
  */
-
 void _task_mutex_unlock(kmutex_t mutex /* mutex to unlock */
 					 )
 {

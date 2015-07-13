@@ -1,4 +1,7 @@
-/* microkernel/res.h - microkernel mutex header file */
+/**
+ * @file
+ * @brief microkernel mutex header file
+ */
 
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.
@@ -39,16 +42,73 @@ extern "C" {
 
 #include  <microkernel/base_api.h>
 
+/**
+ * @brief This routine is the entry to the mutex lock kernel service.
+ *
+ * @param mutex Mutex object
+ * @param time Timeout value (in ticks)
+ *
+ * @return RC_OK on success, RC_FAIL on error, RC_TIME on timeout
+ */
 extern int _task_mutex_lock(kmutex_t mutex, int32_t time);
+
+/**
+ * @brief This routine is the entry to the mutex unlock kernel service.
+ *
+ * @param mutex Mutex
+ *
+ * @return N/A
+ */
 extern void _task_mutex_unlock(kmutex_t mutex);
 
+/**
+ * @brief Try to lock mutex.
+ *
+ * This tries to lock mutex. If the mutex cannot be locked
+ * immediately, it returns RC_FAIL.
+ *
+ * @param m Mutex
+ *
+ * @return RC_OK on success, RC_FAIL on error
+ */
 #define task_mutex_lock(m) _task_mutex_lock(m, TICKS_NONE)
+
+/**
+ * @brief Wait indefinitely to lock mutex.
+ *
+ * This waits indefinitely until the mutex can be locked. This is
+ * a blocking call.
+ *
+ * @param m Mutex
+ *
+ * @return RC_OK on success, RC_FAIL on error
+ */
 #define task_mutex_lock_wait(m) _task_mutex_lock(m, TICKS_UNLIMITED)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
+
+/**
+ * @brief Try to lock mutex with timeout.
+ *
+ * If the mutex cannot be locked immediately, this will keep trying
+ * to lock mutex until certain time specified in t has passed.
+ * The timeout value is in ticks.
+ *
+ * @param m Mutex object
+ * @param t Timeout value (in ticks)
+ *
+ * @return RC_OK on success, RC_FAIL on error, RC_TIME on timeout
+ */
 #define task_mutex_lock_wait_timeout(m, t) _task_mutex_lock(m, t)
 #endif
 
+/**
+ * @brief Unlock mutex
+ *
+ * @param m Mutex
+ *
+ * @return N/A
+ */
 #define task_mutex_unlock(m) _task_mutex_unlock(m)
 
 #ifdef __cplusplus
