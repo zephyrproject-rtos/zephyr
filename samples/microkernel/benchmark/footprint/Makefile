@@ -1,6 +1,6 @@
 # default configuration
 TEST ?= min
-BSP ?= generic_pc
+KBUILD_DEFCONFIG ?= micro_generic_pc_defconfig
 
 MDEF_FILE = micro_${TEST}.mdef
 KERNEL_TYPE = micro

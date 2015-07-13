@@ -28,9 +28,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-BSP ?= generic_pc
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
 CONF_FILE = prj.conf
 
 include ${ZEPHYR_BASE}/Makefile.inc

@@ -1,9 +1,12 @@
-PC8253_BSP_VARIANTS=generic_pc pentium4 minuteia
+PC8253_DEFCONFIGS=                      \
+    micro_generic_pc_defconfig          \
+    micro_generic_pc_pentium4_defconfig \
+    micro_generic_pc_minuteia_defconfig \
 
-BSP ?= generic_pc
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
-CONF_FILE = prj_console_$(if $(filter $(BSP),$(PC8253_BSP_VARIANTS)),pc8253,generic).conf
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
+CONF_FILE = prj_console_$(if $(filter $(KBUILD_DEFCONFIG),$(PC8253_DEFCONFIGS)),pc8253,generic).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/nanokernel/benchmark/sys_kernel/src/
 
 include ${ZEPHYR_BASE}/Makefile.inc

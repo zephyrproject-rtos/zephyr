@@ -30,9 +30,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-BSP ?= generic_pc
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
 CONF_FILE = prj_$(ARCH).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/test_15_4/src/
 
