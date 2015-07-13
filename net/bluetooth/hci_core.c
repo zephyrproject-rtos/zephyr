@@ -691,6 +691,12 @@ static void hci_disconn_complete(struct bt_buf *buf)
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0;
+
+	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		trigger_scan();
+	}
+
 	bt_conn_put(conn);
 
 	if (dev.adv_enable) {
@@ -1660,6 +1666,13 @@ int bt_disconnect(struct bt_conn *conn, uint8_t reason)
 	case BT_CONN_CONNECT:
 		return bt_hci_connect_le_cancel(conn);
 	case BT_CONN_CONNECTED:
+		/* Disconnection is initiated by us, so auto connection shall
+		 * be disabled. Otherwise the passive scan would be enabled
+		 * and we could send LE Create Connection as soon as the remote
+		 * starts advertising.
+		 */
+		bt_conn_set_auto_conn(conn, false);
+
 		return bt_hci_disconnect(conn, reason);
 	case BT_CONN_DISCONNECT:
 		return 0;

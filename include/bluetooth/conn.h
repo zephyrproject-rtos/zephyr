@@ -34,6 +34,8 @@
 #ifndef __BT_CONN_H
 #define __BT_CONN_H
 
+#include <stdbool.h>
+
 #include <bluetooth/hci.h>
 
 /** Opaque type representing a connection to a remote device */
@@ -92,5 +94,19 @@ struct bt_conn_cb {
  *  @param cb Callback struct.
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
+
+/** @brief Automatically connect to remote device if it's in range.
+ *
+ *  This function enables/disables automatic connection initiation.
+ *  Everytime the device looses the connection with peer, this connection
+ *  will be re-established if connectable advertisement from peer is received.
+ *
+ *  @param conn Existing connection object.
+ *  @param auto_conn boolean value. If true, auto connect is enabled,
+ *  if false, auto connect is disabled.
+ *
+ *  @return none
+ */
+void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn);
 
 #endif /* __BT_CONN_H */

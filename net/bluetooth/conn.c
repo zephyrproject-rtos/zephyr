@@ -465,3 +465,12 @@ int bt_security(struct bt_conn *conn, bt_security_t sec)
 
 	return bt_smp_send_pairing_req(conn);
 }
+
+void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)
+{
+	if (auto_conn) {
+		atomic_set_bit(conn->flags, BT_CONN_AUTO_CONNECT);
+	} else {
+		atomic_clear_bit(conn->flags, BT_CONN_AUTO_CONNECT);
+	}
+}

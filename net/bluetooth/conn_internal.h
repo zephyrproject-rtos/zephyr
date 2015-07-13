@@ -48,10 +48,16 @@ struct bt_conn_l2cap {
 	uint8_t			ident;
 };
 
+/* bt_conn flags: the flags defined here represent connection parameters */
+enum {
+	BT_CONN_AUTO_CONNECT,
+};
+
 struct bt_conn {
 	struct bt_dev		*dev;
 	uint16_t		handle;
 	uint8_t			role;
+	atomic_t		flags[1];
 
 	bt_addr_le_t		src;
 	bt_addr_le_t		dst;
