@@ -709,6 +709,28 @@ int bt_gatt_discover_characteristic(struct bt_conn *conn,
 int bt_gatt_discover_descriptor(struct bt_conn *conn,
 				struct bt_gatt_discover_params *params);
 
+/** @brief Read callback function
+ *
+ *  @param conn Connection object.
+ *  @param err Error code.
+ *  @param data Attribute value data.
+ *  @param length Attribute value length.
+ */
+typedef void (*bt_gatt_read_func_t)(struct bt_conn *conn, int err,
+				    const void *data, uint16_t length);
+
+/** @brief Read Attribute Value by handle
+ *
+ * This procedure read the attribute value and return it to the callback.
+ *
+ * @param conn Connection object.
+ * @param handle Attribute handle.
+ * @param offset Attribute data offset.
+ * @param func Callback function.
+ */
+int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
+		 bt_gatt_read_func_t func);
+
 /** @brief Cancel GATT pending request
  *
  *  @param conn Connection object.

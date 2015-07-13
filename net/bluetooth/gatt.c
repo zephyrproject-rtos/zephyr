@@ -850,6 +850,72 @@ int bt_gatt_discover_descriptor(struct bt_conn *conn,
 	return 0;
 }
 
+static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
+			 uint16_t length, void *user_data)
+{
+	bt_gatt_read_func_t func = user_data;
+
+	BT_DBG("err 0x%02x\n", err);
+
+	if (err) {
+		func(conn, err, NULL, 0);
+		return;
+	}
+
+	func(conn, 0, pdu, length);
+}
+
+static int gatt_read_blob(struct bt_conn *conn, uint16_t handle,
+			  uint16_t offset, bt_gatt_read_func_t func)
+{
+	struct bt_buf *buf;
+	struct bt_att_read_blob_req *req;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_BLOB_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->handle = sys_cpu_to_le16(handle);
+	req->offset = sys_cpu_to_le16(offset);
+
+	BT_DBG("handle 0x%04x offset 0x%04x\n", handle, offset);
+
+	bt_att_send(conn, buf, att_read_rsp, func, NULL);
+
+	return 0;
+}
+
+int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
+		 bt_gatt_read_func_t func)
+{
+	struct bt_buf *buf;
+	struct bt_att_read_req *req;
+
+	if (!conn || !handle || !func) {
+		return -EINVAL;
+	}
+
+	if (offset) {
+		return gatt_read_blob(conn, handle, offset, func);
+	}
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->handle = sys_cpu_to_le16(handle);
+
+	BT_DBG("handle 0x%04x\n", handle);
+
+	bt_att_send(conn, buf, att_read_rsp, func, NULL);
+
+	return 0;
+}
+
 void bt_gatt_cancel(struct bt_conn *conn)
 {
 	bt_att_cancel(conn);
