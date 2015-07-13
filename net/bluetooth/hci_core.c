@@ -338,46 +338,6 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 
 /* HCI event processing */
 
-static void hci_disconn_complete(struct bt_buf *buf)
-{
-	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
-	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	struct bt_conn *conn;
-
-	BT_DBG("status %u handle %u reason %u\n", evt->status, handle,
-	       evt->reason);
-
-	if (evt->status) {
-		return;
-	}
-
-	conn = bt_conn_lookup_handle(handle);
-	if (!conn) {
-		BT_ERR("Unable to look up conn with handle %u\n", handle);
-		return;
-	}
-
-	bt_l2cap_disconnected(conn);
-	bt_disconnected(conn);
-
-	/* Check stack usage (no-op if not enabled) */
-	analyze_stacks(conn, &conn);
-
-	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-	bt_conn_put(conn);
-	conn->handle = 0;
-
-	if (dev.adv_enable) {
-		struct bt_buf *buf;
-
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
-		if (buf) {
-			memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
-			bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_ENABLE, buf);
-		}
-	}
-}
-
 static void hci_encrypt_change(struct bt_buf *buf)
 {
 	struct bt_hci_evt_encrypt_change *evt = (void *)buf->data;
@@ -702,6 +662,46 @@ static void trigger_scan(void)
 	bt_conn_put(conn);
 
 	bt_hci_start_scanning(BT_LE_SCAN_PASSIVE, dev.scan_filter);
+}
+
+static void hci_disconn_complete(struct bt_buf *buf)
+{
+	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
+
+	BT_DBG("status %u handle %u reason %u\n", evt->status, handle,
+	       evt->reason);
+
+	if (evt->status) {
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Unable to look up conn with handle %u\n", handle);
+		return;
+	}
+
+	bt_l2cap_disconnected(conn);
+	bt_disconnected(conn);
+
+	/* Check stack usage (no-op if not enabled) */
+	analyze_stacks(conn, &conn);
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	conn->handle = 0;
+	bt_conn_put(conn);
+
+	if (dev.adv_enable) {
+		struct bt_buf *buf;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+		if (buf) {
+			memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
+			bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_ENABLE, buf);
+		}
+	}
 }
 
 static void le_conn_complete(struct bt_buf *buf)
