@@ -1,7 +1,5 @@
-PC8253_BSP_VARIANTS=generic_pc pentium4 minuteia
-
-BSP ?= generic_pc
 KERNEL_TYPE = nano
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
 CONF_FILE = prj.conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/microkernel/benchmark/latency_measure/src/
 

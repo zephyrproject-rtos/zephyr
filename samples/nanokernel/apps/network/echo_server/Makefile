@@ -30,9 +30,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-BSP ?= generic_pc
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
 CONF_FILE = prj_$(ARCH).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/echo_server/src/
 QEMU_EXTRA_FLAGS = -serial unix:/tmp/slip.sock

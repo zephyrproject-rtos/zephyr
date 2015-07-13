@@ -1,14 +1,14 @@
-BSP ?= generic_pc
 # default, best, worst
 BOOTTIME_QUALIFIER ?= default
-CONF_generic_pc = generic_pc/prj_pentium4_$(BOOTTIME_QUALIFIER).conf
-CONF_pentium4   = generic_pc/prj_pentium4_$(BOOTTIME_QUALIFIER).conf
-CONF_minuteia   = generic_pc/prj.conf
-CONF_atom_n28xx = generic_pc/prj_expert_test.conf
-CONF_quark = quark/prj.conf
+CONF_nano_generic_pc_defconfig            = generic_pc/prj_pentium4_$(BOOTTIME_QUALIFIER).conf
+CONF_nano_generic_pc_pentium4_defconfig   = generic_pc/prj_pentium4_$(BOOTTIME_QUALIFIER).conf
+CONF_nano_generic_pc_minuteia_defconfig   = generic_pc/prj.conf
+CONF_nano_generic_pc_atom_n28xx_defconfig = generic_pc/prj_expert_test.conf
+CONF_nano_quark_defconfig                 = quark/prj.conf
 
 KERNEL_TYPE = nano
-CONF_FILE = $(CONF_$(BSP))
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
+CONF_FILE = $(CONF_$(KBUILD_DEFCONFIG))
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/microkernel/benchmark/boot_time/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc
@@ -17,8 +17,8 @@ $(if $(CONF_FILE),,$(error no prj.conf file available))
 $(if $(wildcard $(CONF_FILE)),,$(error no $(CONF_FILE) file available))
 
 NO_QUALIFIED_PRJ_CONF_WARNING = $(strip \
-  no prj.conf for $(BOOTTIME_QUALIFIER) and $(BSP), using default prj.conf \
+  no prj.conf for $(BOOTTIME_QUALIFIER) and $(KBUILD_DEFCONFIG), using default prj.conf \
 )
-$(if $(filter $(BSP)/prj.conf,$(CONF_FILE)),$(warning *** $(NO_QUALIFIED_PRJ_CONF_WARNING) ***),)
+$(if $(filter $(KBUILD_DEFCONFIG)/prj.conf,$(CONF_FILE)),$(warning *** $(NO_QUALIFIED_PRJ_CONF_WARNING) ***),)
 
 $(info using CONF_FILE = $(CONF_FILE))

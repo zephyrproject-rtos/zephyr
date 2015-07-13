@@ -1,8 +1,8 @@
 # default configuration
 TEST ?= min
-BSP ?= generic_pc
 
 KERNEL_TYPE = nano
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
 CONF_FILE = prj_$(TEST)_$(ARCH).conf
 CFLAGS += -DTEST_$(TEST)
 
