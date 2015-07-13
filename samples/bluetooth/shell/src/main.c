@@ -489,6 +489,62 @@ done:
 	bt_conn_put(conn);
 }
 
+static void read_func(struct bt_conn *conn, int err, const void *data,
+		      uint16_t length)
+{
+	printk("Read complete: err %u length %u\n", err, length);
+}
+
+static void cmd_gatt_read(int argc, char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+	uint16_t handle, offset = 0;
+
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return;
+	}
+
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	conn = bt_conn_lookup_addr_le(&addr);
+	if (!conn) {
+		printk("Peer not connected\n");
+		return;
+	}
+
+	if (argc < 4) {
+		printk("handle required\n");
+		return;
+	}
+
+	handle = xtoi(argv[3]);
+
+	if (argc > 4) {
+		offset = xtoi(argv[4]);
+	}
+
+	err = bt_gatt_read(conn, handle, offset, read_func);
+	if (err) {
+		printk("Read failed (err %d)\n", err);
+	} else {
+		printk("Read pending\n");
+	}
+
+	bt_conn_put(conn);
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -508,4 +564,5 @@ void main(void)
 	shell_cmd_register("gatt-discover", cmd_gatt_discover);
 	shell_cmd_register("gatt-discover-characteristic", cmd_gatt_discover);
 	shell_cmd_register("gatt-discover-descriptor", cmd_gatt_discover);
+	shell_cmd_register("gatt-read", cmd_gatt_read);
 }
