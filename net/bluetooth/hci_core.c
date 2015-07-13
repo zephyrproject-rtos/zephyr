@@ -1396,9 +1396,12 @@ int bt_init(void)
 		return err;
 	}
 
-	bt_l2cap_init();
+	err = hci_init();
+	if (err) {
+		return err;
+	}
 
-	return hci_init();
+	return bt_l2cap_init();
 }
 
 int bt_start_advertising(uint8_t type, const struct bt_eir *ad,

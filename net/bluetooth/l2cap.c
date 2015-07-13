@@ -346,15 +346,23 @@ void bt_l2cap_update_conn_param(struct bt_conn *conn)
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
 
-void bt_l2cap_init(void)
+int bt_l2cap_init(void)
 {
+	int err;
+
 	static struct bt_l2cap_chan chan = {
 		.cid	= BT_L2CAP_CID_LE_SIG,
 		.recv	= le_sig,
 	};
 
 	bt_att_init();
-	bt_smp_init();
+
+	err = bt_smp_init();
+	if (err) {
+		return err;
+	}
 
 	bt_l2cap_chan_register(&chan);
+
+	return 0;
 }

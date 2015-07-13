@@ -106,4 +106,4 @@ void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf);
 void bt_l2cap_update_conn_param(struct bt_conn *conn);
 
 /* Initialize L2CAP and supported channels */
-void bt_l2cap_init(void);
+int bt_l2cap_init(void);
