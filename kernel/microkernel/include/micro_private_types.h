@@ -507,12 +507,6 @@ struct mbx_struct {
 	int Count;
 };
 
-struct sem_struct {
-	struct k_args *Waiters;
-	int Level;
-	int Count;
-};
-
 struct block_stat {
 	char *mem_blocks;
 	uint32_t mem_status;

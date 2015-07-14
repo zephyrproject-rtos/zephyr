@@ -536,7 +536,7 @@ def kernel_main_c_semas():
     kernel_main_c_out("\n")
     for semaphore in sema_list:
         name = semaphore[0]
-        kernel_main_c_out("struct sem_struct _k_sem_obj_%s = " % (name) +
+        kernel_main_c_out("struct _k_sem_struct _k_sem_obj_%s = " % (name) +
             "{NULL, 0, 0};\n")
 
 
@@ -926,7 +926,7 @@ def generate_zephyr_h_obj_ids():
     for semaphore in sema_list:
         name = semaphore[0]
         zephyr_h_data += \
-            "extern struct sem_struct _k_sem_obj_%s;\n" % (name)
+            "extern struct _k_sem_struct _k_sem_obj_%s;\n" % (name)
         zephyr_h_data += \
             "#define %s ((ksem_t)&_k_sem_obj_%s)\n\n" % (name, name)
 

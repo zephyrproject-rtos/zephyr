@@ -112,6 +112,12 @@ struct _k_mutex_struct {
 	int Confl;
 };
 
+struct _k_sem_struct {
+	struct k_args *Waiters;
+	int Level;
+	int Count;
+};
+
 typedef enum {
 	_0_TO_N = 0x00000001,
 	_1_TO_N = 0x00000002,
