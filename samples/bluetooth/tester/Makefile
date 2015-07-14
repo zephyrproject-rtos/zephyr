@@ -33,7 +33,7 @@
 # DESCRIPTION
 # Makefile for the Bluetooth tester application
 # currently only ti_lm3s6965 target is supported
-KBUILD_DEFCONFIG ?= micro_ti_lm3s6965_defconfig
+PLATFORM_CONFIG ?= ti_lm3s6965
 ARCH ?= arm
 
 MDEF_FILE = prj.mdef

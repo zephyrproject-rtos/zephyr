@@ -277,7 +277,7 @@ proj_info_set() {
 
 		PLATFORM[${NUM_PROJ}]=${platform}
 
-		PLATFORM_BUILD[${NUM_PROJ}]="KBUILD_DEFCONFIG=${PRJ_TYPE[${NUM_PROJ}]}_${PLATFORM[${NUM_PROJ}]}_defconfig"
+		PLATFORM_BUILD[${NUM_PROJ}]="PLATFORM_CONFIG=${PLATFORM[${NUM_PROJ}]}"
 
 		PLATFORM_FLAG[${NUM_PROJ}]=`${AWK} '/!/ {print "!"}' <<< ${line}`
 	done < ${TEMP_PRJ_LIST}

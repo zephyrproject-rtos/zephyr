@@ -5,6 +5,14 @@ O ?= $(PROJECT_BASE)/outdir
 
 export ARCH MDEF_FILE QEMU_EXTRA_FLAGS PROJECT_BASE
 
+ifdef PLATFORM_CONFIG
+ifndef KERNEL_TYPE
+$(error KERNEL_TYPE is not defined!  Set it to either micro or nano)
+endif
+KBUILD_DEFCONFIG=$(KERNEL_TYPE)_$(PLATFORM_CONFIG)_defconfig
+export KBUILD_DEFCONFIG
+endif
+
 ifdef KBUILD_DEFCONFIG
 CONFIG_DEPS=$(O)/.initconfig
 else

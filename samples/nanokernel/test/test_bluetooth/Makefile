@@ -1,5 +1,5 @@
 KERNEL_TYPE = nano
-KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_atom_n28xx_defconfig
+PLATFORM_CONFIG ?= generic_pc_atom_n28xx
 CONF_FILE = prj_$(ARCH).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/bluetooth/test_bluetooth/
 
