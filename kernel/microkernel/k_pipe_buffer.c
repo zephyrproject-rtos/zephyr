@@ -46,7 +46,7 @@
 #define STORE_NBR_MARKERS
 /* NOTE: the number of pending write and read Xfers is always stored,
    as it is required for the pipes to function properly. It is stored in the
-   field ChBuff.iNbrPendingWrites and iNbrPendingReads.
+   pipe descriptor fields iNbrPendingWrites and iNbrPendingReads.
 
    In the Writer and Reader MarkersList, the number of markers (==nbr. of
    unreleased Xfers)
