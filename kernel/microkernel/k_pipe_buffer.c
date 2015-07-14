@@ -62,7 +62,7 @@
    acceptable I think)
  */
 
-#define CHECK_CHBUFF_POINTER(pData) \
+#define CHECK_BUFFER_POINTER(pData) \
 	__ASSERT_NO_MSG(desc->pBegin <= pData && pData < desc->pEnd)
 
 static void pipe_intrusion_check(struct pipe_desc *desc, unsigned char *pBegin, int iSize);
@@ -574,7 +574,7 @@ int BuffEnQA(struct pipe_desc *desc, int iSize, unsigned char **ppWrite,
 		desc->BuffState = BUFF_OTHER;
 	}
 
-	CHECK_CHBUFF_POINTER(desc->pWrite);
+	CHECK_BUFFER_POINTER(desc->pWrite);
 
 	return iSize;
 }
@@ -684,7 +684,7 @@ int BuffDeQA(struct pipe_desc *desc, int iSize, unsigned char **ppRead,
 		desc->BuffState = BUFF_OTHER;
 	}
 
-	CHECK_CHBUFF_POINTER(desc->pRead);
+	CHECK_BUFFER_POINTER(desc->pRead);
 
 	return iSize;
 }
