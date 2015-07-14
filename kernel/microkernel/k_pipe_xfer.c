@@ -46,8 +46,8 @@
  * - artefacts: ???
  * - non-optimal:
 	  * from single requester to multiple requesters : basic function is
-K_ProcWR()
-		K_ProcWR() copies remaining data into buffer; better would be to
+pipe_read_write()
+		pipe_read_write() copies remaining data into buffer; better would be to
 possibly copy the remaining data
 		to the next requester (if there is one)
 	  * ...
