@@ -644,8 +644,19 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 static void bt_le_scan_update(void)
 {
 	struct bt_conn *conn;
+	bool conn_scan;
+
+	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
+	if (conn) {
+		conn_scan = true;
+		bt_conn_put(conn);
+	} else {
+		conn_scan = false;
+	}
 
 	if (dev.scan_enable) {
+		if (!conn_scan && !scan_dev_found_cb)
+			bt_hci_stop_scanning();
 		return;
 	}
 
@@ -654,14 +665,9 @@ static void bt_le_scan_update(void)
 		return;
 	}
 
-	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
-	if (!conn) {
-		return;
+	if (conn_scan) {
+		bt_hci_start_scanning(BT_LE_SCAN_PASSIVE, dev.scan_filter);
 	}
-
-	bt_conn_put(conn);
-
-	bt_hci_start_scanning(BT_LE_SCAN_PASSIVE, dev.scan_filter);
 }
 
 static void hci_disconn_complete(struct bt_buf *buf)
@@ -1646,8 +1652,6 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 
 int bt_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_conn *conn_scan;
-
 	/* Disconnection is initiated by us, so auto connection shall
 	 * be disabled. Otherwise the passive scan would be enabled
 	 * and we could send LE Create Connection as soon as the remote
@@ -1658,17 +1662,7 @@ int bt_disconnect(struct bt_conn *conn, uint8_t reason)
 	switch (conn->state) {
 	case BT_CONN_CONNECT_SCAN:
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-
-		conn_scan = bt_conn_lookup_state(BT_ADDR_LE_ANY,
-						 BT_CONN_CONNECT_SCAN);
-		if (!conn_scan && dev.scan_enable && !scan_dev_found_cb) {
-			return bt_hci_stop_scanning();
-		}
-
-		if (conn_scan) {
-			bt_conn_put(conn_scan);
-		}
-
+		bt_le_scan_update();
 		return 0;
 	case BT_CONN_CONNECT:
 		return bt_hci_connect_le_cancel(conn);
