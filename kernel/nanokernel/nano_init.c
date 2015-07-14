@@ -282,7 +282,8 @@ FUNC_NORETURN void _Cstart(void)
 	/* perform basic hardware initialization */
 
 	_InitHardware();
-	_sys_device_do_config_level(PURE);
+	_sys_device_do_config_level(PURE_EARLY);
+	_sys_device_do_config_level(PURE_LATE);
 
 	/*
 	 * Initialize random number generator
