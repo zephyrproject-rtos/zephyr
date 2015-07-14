@@ -641,7 +641,7 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 }
 
 /* Used to determine whether to start scan and which scan type should be used */
-static void trigger_scan(void)
+static void bt_le_scan_update(void)
 {
 	struct bt_conn *conn;
 
@@ -694,7 +694,7 @@ static void hci_disconn_complete(struct bt_buf *buf)
 
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
-		trigger_scan();
+		bt_le_scan_update();
 	}
 
 	bt_conn_put(conn);
@@ -771,7 +771,7 @@ static void le_conn_complete(struct bt_buf *buf)
 
 	bt_connected(conn);
 	bt_conn_put(conn);
-	trigger_scan();
+	bt_le_scan_update();
 }
 
 static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
@@ -1545,7 +1545,7 @@ int bt_stop_scanning(void)
 	scan_dev_found_cb = NULL;
 	dev.scan_filter = BT_LE_SCAN_FILTER_DUP_ENABLE;
 
-	trigger_scan();
+	bt_le_scan_update();
 
 	return 0;
 }
@@ -1602,7 +1602,7 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 		bt_hci_stop_scanning();
 	}
 
-	trigger_scan();
+	bt_le_scan_update();
 
 	return conn;
 }
