@@ -3,7 +3,7 @@ Title: Nanokernel footprint measurement
 Description:
 
 This project is designed to characterize the memory requirements of a
-nanokernel-only image running on a Pentium4 target.
+nanokernel-only image running on an Atom target.
 
 
 The project can be built using several configurations:

@@ -3,7 +3,7 @@ Title: Microkernel footprint project
 Description:
 
 This project is designed to characterize the memory requirements of a
-standard microkernel image running on a Pentium4 target.
+standard microkernel image running on an Atom target.
 
 
 The project can be built using several configurations:

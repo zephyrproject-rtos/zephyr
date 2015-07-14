@@ -1,7 +1,4 @@
-PC8253_DEFCONFIGS =                     \
-    micro_generic_pc_defconfig          \
-    micro_generic_pc_pentium4_defconfig \
-    micro_generic_pc_minuteia_defconfig
+PC8253_DEFCONFIGS = micro_generic_pc_minuteia_defconfig
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
