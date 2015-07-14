@@ -16,5 +16,5 @@
 
 % POOL NAME            MIN  MAX     NMAX
 % =======================================
-  POOL POOL_ID         32   4096      1
-  POOL SECOND_POOL_ID  32   1024      5
+  POOL POOL_ID         64   4096      1
+  POOL SECOND_POOL_ID  16   1024      5
