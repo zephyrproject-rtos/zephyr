@@ -110,7 +110,7 @@ void _k_sem_group_wait(struct k_args *R)
 
 void _k_sem_group_wait_cancel(struct k_args *A)
 {
-	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
+	struct sem_struct *S = (struct sem_struct *)A->Args.s1.sema;
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -166,7 +166,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 
 void _k_sem_group_wait_accept(struct k_args *A)
 {
-	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
+	struct sem_struct *S = (struct sem_struct *)A->Args.s1.sema;
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -256,7 +256,7 @@ void _k_sem_wait_reply_timeout(struct k_args *A)
 
 void _k_sem_group_wait_request(struct k_args *A)
 {
-	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
+	struct sem_struct *S = (struct sem_struct *)A->Args.s1.sema;
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -333,7 +333,7 @@ void _k_sem_wait_request(struct k_args *A)
 	uint32_t Sid;
 
 	Sid = A->Args.s1.sema;
-	S = _k_sem_list + OBJ_INDEX(Sid);
+	S = (struct sem_struct *)Sid;
 
 	if (S->Level) {
 		S->Level--;
@@ -383,8 +383,9 @@ ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
 void _k_sem_signal(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
+	struct sem_struct *S = (struct sem_struct *)Sid;
 
-	signal_semaphore(1, _k_sem_list + OBJ_INDEX(Sid));
+	signal_semaphore(1, S);
 }
 
 void _k_sem_group_signal(struct k_args *A)
@@ -436,8 +437,9 @@ void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
 void _k_sem_reset(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
+	struct sem_struct *S = (struct sem_struct *)Sid;
 
-	_k_sem_list[OBJ_INDEX(Sid)].Level = 0;
+	S->Level = 0;
 }
 
 void _k_sem_group_reset(struct k_args *A)
@@ -473,7 +475,7 @@ void _k_sem_inquiry(struct k_args *A)
 	uint32_t Sid;
 
 	Sid = A->Args.s1.sema;
-	S = _k_sem_list + OBJ_INDEX(Sid);
+	S = (struct sem_struct *)Sid;
 	A->Time.rcode = S->Level;
 }
 

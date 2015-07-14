@@ -529,17 +529,15 @@ def kernel_main_c_semas():
     total_semas = len(sema_list)
 
     if (total_semas == 0):
-        kernel_main_c_out("\nstruct sem_struct * _k_sem_list = NULL;\n")
         return
 
     # semaphore descriptors
 
-    kernel_main_c_out("\n" +
-        "struct sem_struct _k_sem_list[%s] =\n" % (total_semas) +
-        "{\n")
+    kernel_main_c_out("\n")
     for semaphore in sema_list:
-        kernel_main_c_out("    {NULL, 0, 0},\n")
-    kernel_main_c_out("};\n")
+        name = semaphore[0]
+        kernel_main_c_out("struct sem_struct _k_sem_obj_%s = " % (name) +
+            "{NULL, 0, 0};\n")
 
 
 def kernel_main_c_fifos():
@@ -923,11 +921,19 @@ def generate_zephyr_h_obj_ids():
         zephyr_h_data += \
             "#define %s ((kmutex_t)&_k_mutex_obj_%s)\n\n" % (name, name)
 
+    # semaphore object ids
+
+    for semaphore in sema_list:
+        name = semaphore[0]
+        zephyr_h_data += \
+            "extern struct sem_struct _k_sem_obj_%s;\n" % (name)
+        zephyr_h_data += \
+            "#define %s ((ksem_t)&_k_sem_obj_%s)\n\n" % (name, name)
+
     # all other object ids
 
     obj_types = [
         [task_list, 0],
-        [sema_list, 0],
         [fifo_list, 0],
         [pipe_list, 0],
         [mbx_list, 0],
