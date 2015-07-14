@@ -32,7 +32,7 @@
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
-KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_atom_n28xx_defconfig
 CONF_FILE = prj_$(ARCH).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/loopback_test/src/
 

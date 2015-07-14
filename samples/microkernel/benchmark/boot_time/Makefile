@@ -8,7 +8,7 @@ CONF_micro_quark_defconfig                 = quark/prj.conf
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
-KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_atom_n28xx_defconfig
 CONF_FILE = ${CONF_${KBUILD_DEFCONFIG}}
 
 

@@ -7,7 +7,7 @@ CONF_nano_generic_pc_atom_n28xx_defconfig = generic_pc/prj_expert_test.conf
 CONF_nano_quark_defconfig                 = quark/prj.conf
 
 KERNEL_TYPE = nano
-KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_atom_n28xx_defconfig
 CONF_FILE = $(CONF_$(KBUILD_DEFCONFIG))
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/microkernel/benchmark/boot_time/src/
 

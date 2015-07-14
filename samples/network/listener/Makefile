@@ -32,7 +32,7 @@
 
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = nano
-KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_defconfig
+KBUILD_DEFCONFIG ?= $(KERNEL_TYPE)_generic_pc_atom_n28xx_defconfig
 CONF_FILE = prj_$(ARCH).conf
 
 QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
