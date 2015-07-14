@@ -5,13 +5,6 @@ O ?= $(PROJECT_BASE)/outdir
 
 export ARCH MDEF_FILE QEMU_EXTRA_FLAGS PROJECT_BASE
 
-ifdef BSP
-ifdef KERNEL_TYPE
-KBUILD_DEFCONFIG=$(KERNEL_TYPE)_$(BSP)_defconfig
-export KBUILD_DEFCONFIG
-endif
-endif
-
 ifdef KBUILD_DEFCONFIG
 CONFIG_DEPS=$(O)/.initconfig
 else
