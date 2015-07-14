@@ -21,6 +21,6 @@ meant to replace the detailed in-code documentation.
    :maxdepth: 2
 
 
-   object_basic_fibers.rst
-   object_basic_interrupts.rst
-   object_basic_tasks.rst
+   fibers.rst
+   interrupts.rst
+   tasks.rst

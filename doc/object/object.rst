@@ -32,6 +32,6 @@ moving on to the :ref:`nanokernelObjects` or the
 .. toctree::
    :maxdepth: 2
 
-   object_basic.rst
-   object_microkernel.rst
-   object_nanokernel.rst
+   contexts.rst
+   microkernel.rst
+   nanokernel.rst
