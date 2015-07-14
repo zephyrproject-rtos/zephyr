@@ -38,7 +38,7 @@ It uses the SCCs in asynchronous mode only.
 
 USAGE
 An ns16550 structure is used to describe the chip.
-The BSP's _InitHardware() routine initializes all the
+The platform init routine initializes all the
 values in the uart_init_info structure before calling uart_init().
 
 A board support package's board.h header must provide definitions for:

@@ -37,6 +37,8 @@ for the ti_lm3s6965 BSP.
  */
 
 #include <nanokernel.h>
+#include <device.h>
+#include <init.h>
 #include <board.h>
 #include <drivers/uart.h>
 
@@ -133,11 +135,12 @@ static void bluetooth_init(void)
  * integrated 16550-compatible UART device driver.
  * Also initialize the timer device driver, if required.
  *
- * @return N/A
+ * @return 0
  */
 
-void _InitHardware(void)
+static int ti_lm3s6965_init(struct device *arg)
 {
+	ARG_UNUSED(arg);
 	consoleInit(); /* NOP if not needed */
 	bluetooth_init(); /* NOP if not needed */
 
@@ -145,4 +148,8 @@ void _InitHardware(void)
 	 * if configured in the kernel, NOP otherwise
 	 */
 	NMI_INIT();
+	return 0;
 }
+
+DECLARE_DEVICE_INIT_CONFIG(ti_lm3_0, "", ti_lm3s6965_init, NULL);
+pure_early_init(ti_lm3_0, NULL);

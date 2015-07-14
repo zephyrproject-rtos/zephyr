@@ -40,6 +40,8 @@ for the generic_pc BSP.
 #include "board.h"
 #include <drivers/uart.h>
 #include <drivers/pic.h>
+#include <device.h>
+#include <init.h>
 
 #if defined(CONFIG_PIC) || defined(CONFIG_SHUTOFF_PIC)
 #define picInit() _i8259_init()
@@ -145,15 +147,15 @@ static void bluetooth_init(void)
  *
  * @brief Perform basic hardware initialization
  *
- * Initialize the Intel 8259A interrupt controller device driver and the
- * Intel 8250 UART device driver.
- * Also initialize the timer device driver, if required.
+ * Initialize the interrupt controller and UARTs present in the
+ * platform.
  *
- * @return N/A
+ * @return 0
  */
-
-void _InitHardware(void)
+static int pc_init(struct device *arg)
 {
+	ARG_UNUSED(arg);
+
 	picInit();    /* NOP if not needed */
 	loapicInit(); /* NOP if not needed */
 
@@ -165,4 +167,8 @@ void _InitHardware(void)
 	ioapicInit();   /* NOP if not needed */
 	consoleInit(); /* NOP if not needed */
 	bluetooth_init(); /* NOP if not needed */
+	return 0;
 }
+
+DECLARE_DEVICE_INIT_CONFIG(pc_0, "", pc_init, NULL);
+pure_early_init(pc_0, NULL);

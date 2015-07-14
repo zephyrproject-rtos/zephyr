@@ -40,6 +40,8 @@ Handlers for the secondary serial port have not been added.
  */
 
 #include <nanokernel.h>
+#include <init.h>
+#include <device.h>
 #include <misc/printk.h>
 #include <misc/__assert.h>
 #include "board.h"
@@ -100,11 +102,12 @@ static void consoleInit(void)
  * Intel 8250 UART device driver.
  * Also initialize the timer device driver, if required.
  *
- * @return N/A
+ * @return 0
  */
 
-void _InitHardware(void)
+static int quark_init(struct device *arg)
 {
+	ARG_UNUSED(arg);
 	_loapic_init();
 	_ioapic_init();
 
@@ -129,4 +132,8 @@ void _InitHardware(void)
 		info.bar = PCI_BAR_ANY;
 	}
 #endif /* CONFIG_PCI_DEBUG */
+	return 0;
 }
+
+DECLARE_DEVICE_INIT_CONFIG(quark_0, "", quark_init, NULL);
+pure_early_init(quark_0, NULL);

@@ -26,7 +26,7 @@ done.
 APIs tested in this test set
 ============================
 
-nano_timer_init   (implicitly done--called as part of _InitHardware)
+nano_timer_init   (implicitly done--called as part of platform init)
 nano_fiber_timer_start
 nano_task_timer_start
 nano_fiber_timer_stop

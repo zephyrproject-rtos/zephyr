@@ -37,6 +37,8 @@ for the fsl_frdm_k64f BSP.
  */
 
 #include <nanokernel.h>
+#include <device.h>
+#include <init.h>
 #include <board.h>
 #include <drivers/k20_mcg.h>
 #include <drivers/uart.h>
@@ -302,11 +304,12 @@ static void consoleInit(void)
  * Kinetis UART device driver.
  * Also initialize the timer device driver, if required.
  *
- * @return N/A
+ * @return 0
  */
 
-void _InitHardware(void)
+static int fsl_frdm_k64f_init(struct device *arg)
 {
+	ARG_UNUSED(arg);
 	/* System Integration module */
 	K20_SIM_t *sim_p = (K20_SIM_t *)PERIPH_ADDR_BASE_SIM;
 
@@ -370,4 +373,8 @@ void _InitHardware(void)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
+	return 0;
 }
+
+DECLARE_DEVICE_INIT_CONFIG(fsl_frdm_0, "", fsl_frdm_k64f_init, NULL);
+pure_early_init(fsl_frdm_0, NULL);

@@ -34,7 +34,7 @@ This is the UART driver for the Freescale K20 Family of microprocessors.
 
 USAGE
 An _K20_UART_t structure is used to describe the UART.
-The BSP's _InitHardware() routine initializes all the
+The platform init routine initializes all the
 values in the uart_init_info structure before calling uart_init().
 
 INCLUDE FILES: drivers/serial/k20_uart.h

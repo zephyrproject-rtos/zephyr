@@ -105,10 +105,6 @@ char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
 extern void main(void);
 
-/* hardware initialization routine provided by BSP */
-
-extern void _InitHardware(void);
-
 /* constructor initialization */
 
 extern void _Ctors(void);
@@ -184,7 +180,7 @@ static void nano_init(tCCS *dummyOutContext)
 	 * handlers are installed into the interrupt table to catch spurious
 	 * interrupts. This must be performed before other nanokernel subsystems
 	 * install bonafide handlers, or before hardware device drivers are
-	 * initialized (in the BSPs' _InitHardware).
+	 * initialized.
 	 */
 
 	_IntLibInit();
@@ -281,7 +277,6 @@ FUNC_NORETURN void _Cstart(void)
 
 	/* perform basic hardware initialization */
 
-	_InitHardware();
 	_sys_device_do_config_level(PURE_EARLY);
 	_sys_device_do_config_level(PURE_LATE);
 
