@@ -81,7 +81,7 @@ these are run in ISR context.
 #define TCERR3         TC_ERROR("The stack should be empty!\n")
 
 typedef struct {
-	struct nano_stack *channel;      /* STACK channel */
+	struct nano_stack *stack_ptr;    /* STACK */
 	uint32_t           data;         /* data to add */
 } ISR_STACK_INFO;
 
@@ -159,7 +159,7 @@ void isr_stack_push(void *parameter)
 {
 	ISR_STACK_INFO *pInfo = (ISR_STACK_INFO *) parameter;
 
-	nano_isr_stack_push(pInfo->channel, pInfo->data);
+	nano_isr_stack_push(pInfo->stack_ptr, pInfo->data);
 
 }  /* isr_stack_push */
 
@@ -180,7 +180,7 @@ void isr_stack_pop(void *parameter)
 {
 	ISR_STACK_INFO *pInfo = (ISR_STACK_INFO *) parameter;
 
-	if (nano_isr_stack_pop(pInfo->channel, &(pInfo->data)) == 0) {
+	if (nano_isr_stack_pop(pInfo->stack_ptr, &(pInfo->data)) == 0) {
 		/* the stack is empty, set data to INVALID_DATA */
 		pInfo->data = INVALID_DATA;
 	}

@@ -32,8 +32,8 @@
 
 #include "syskernel.h"
 
-struct nano_stack nanoChannel1;
-struct nano_stack nanoChannel2;
+struct nano_stack nano_stack_1;
+struct nano_stack nano_stack_2;
 
 uint32_t stack1[2];
 uint32_t stack2[2];
@@ -49,8 +49,8 @@ uint32_t stack2[2];
 
 void stack_test_init(void)
 {
-	nano_stack_init(&nanoChannel1, stack1);
-	nano_stack_init(&nanoChannel2, stack2);
+	nano_stack_init(&nano_stack_1, stack1);
+	nano_stack_init(&nano_stack_2, stack2);
 }
 
 
@@ -74,18 +74,18 @@ void stack_fiber1(int par1, int par2)
 	ARG_UNUSED(par1);
 
 	for (i = 0; i < par2 / 2; i++) {
-		data = nano_fiber_stack_pop_wait(&nanoChannel1);
+		data = nano_fiber_stack_pop_wait(&nano_stack_1);
 		if (data != 2 * i) {
 			break;
 		}
 		data = 2 * i;
-		nano_fiber_stack_push(&nanoChannel2, data);
-		data = nano_fiber_stack_pop_wait(&nanoChannel1);
+		nano_fiber_stack_push(&nano_stack_2, data);
+		data = nano_fiber_stack_pop_wait(&nano_stack_1);
 		if (data != 2 * i + 1) {
 			break;
 		}
 		data = 2 * i + 1;
-		nano_fiber_stack_push(&nanoChannel2, data);
+		nano_fiber_stack_push(&nano_stack_2, data);
 	}
 }
 
@@ -110,8 +110,8 @@ void stack_fiber2(int par1, int par2)
 
 	for (i = 0; i < par2; i++) {
 		data = i;
-		nano_fiber_stack_push(&nanoChannel1, data);
-		data = nano_fiber_stack_pop_wait(&nanoChannel2);
+		nano_fiber_stack_push(&nano_stack_1, data);
+		data = nano_fiber_stack_pop_wait(&nano_stack_2);
 		if (data != i) {
 			break;
 		}
@@ -140,9 +140,9 @@ void stack_fiber3(int par1, int par2)
 
 	for (i = 0; i < par2; i++) {
 		data = i;
-		nano_fiber_stack_push(&nanoChannel1, data);
+		nano_fiber_stack_push(&nano_stack_1, data);
 		data = 0xffffffff;
-		while (!nano_fiber_stack_pop(&nanoChannel2, &data)) {
+		while (!nano_fiber_stack_pop(&nano_stack_2, &data)) {
 			fiber_yield();
 		}
 		if (data != i) {
@@ -235,15 +235,15 @@ int stack_test(void)
 	for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
 		uint32_t data;
 		data = 2 * i;
-		nano_task_stack_push(&nanoChannel1, data);
+		nano_task_stack_push(&nano_stack_1, data);
 		data = 2 * i + 1;
-		nano_task_stack_push(&nanoChannel1, data);
+		nano_task_stack_push(&nano_stack_1, data);
 
-		data = nano_task_stack_pop_wait(&nanoChannel2);
+		data = nano_task_stack_pop_wait(&nano_stack_2);
 		if (data != 2 * i + 1) {
 			break;
 		}
-		data = nano_task_stack_pop_wait(&nanoChannel2);
+		data = nano_task_stack_pop_wait(&nano_stack_2);
 		if (data != 2 * i) {
 			break;
 		}

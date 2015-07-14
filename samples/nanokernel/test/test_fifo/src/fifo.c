@@ -85,7 +85,7 @@ Scenario #4:
 #define TCERR3         TC_ERROR("The queue should be empty!\n")
 
 typedef struct {
-	struct nano_fifo *channel;  /* FIFO channel */
+	struct nano_fifo *fifo_ptr;  /* FIFO */
 	void *data;     /* pointer to data to add */
 } ISR_FIFO_INFO;
 
@@ -160,7 +160,7 @@ void isr_fifo_put(void *parameter)
 {
 	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
 
-	nano_isr_fifo_put(pInfo->channel, pInfo->data);
+	nano_isr_fifo_put(pInfo->fifo_ptr, pInfo->data);
 }
 
 /**
@@ -179,7 +179,7 @@ void isr_fifo_get(void *parameter)
 {
 	ISR_FIFO_INFO *pInfo = (ISR_FIFO_INFO *) parameter;
 
-	pInfo->data = nano_isr_fifo_get(pInfo->channel);
+	pInfo->data = nano_isr_fifo_get(pInfo->fifo_ptr);
 }
 
 
