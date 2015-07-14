@@ -413,10 +413,10 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
 
 /**
  *
- * @brief Read from the channel
+ * @brief Read from the pipe
  *
- * This routine reads from the channel.  If <pPipe> is NULL, then it uses
- * <pNewReader> as the reader.  Otherwise it takes the reader from the channel
+ * This routine reads from the pipe.  If <pPipe> is NULL, then it uses
+ * <pNewReader> as the reader.  Otherwise it takes the reader from the pipe
  * structure.
  *
  * @return N/A
@@ -482,10 +482,10 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
 
 /**
  *
- * @brief Write to the channel
+ * @brief Write to the pipe
  *
- * This routine writes to the channel.  If <pPipe> is NULL, then it uses
- * <pNewWriter> as the writer.  Otherwise it takes the writer from the channel
+ * This routine writes to the pipe.  If <pPipe> is NULL, then it uses
+ * <pNewWriter> as the writer.  Otherwise it takes the writer from the pipe
  * structure.
  *
  * @return N/A
@@ -553,14 +553,14 @@ static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
 
 /**
  *
- * @brief Update the channel transfer status
+ * @brief Update the pipe transfer status
  *
  * @return N/A
  */
 
 static void pipe_xfer_status_update(
 	struct k_args *pActor,       /* ptr to struct k_args to be used by actor */
-	struct _pipe_xfer_req_arg *pipe_xfer_req, /* ptr to actor's channel process structure */
+	struct _pipe_xfer_req_arg *pipe_xfer_req, /* ptr to actor's pipe process structure */
 	int bytesXferred      /* # of bytes transferred */
 	)
 {
@@ -580,21 +580,21 @@ static void pipe_xfer_status_update(
 
 /**
  *
- * @brief Read and/or write from/to the channel
+ * @brief Read and/or write from/to the pipe
  *
  * @return N/A
  */
 
 static void pipe_read_write(
-	struct pipe_struct *pPipe, /* ptr to channel structure */
+	struct pipe_struct *pPipe, /* ptr to pipe structure */
 	struct k_args *pNewWriter,  /* ptr to new writer struct k_args */
 	struct k_args *pNewReader   /* ptr to new reader struct k_args */
 	)
 {
 	struct k_args *pReader;       /* ptr to struct k_args to be used by reader */
 	struct k_args *pWriter;       /* ptr to struct k_args to be used by writer */
-	struct _pipe_xfer_req_arg *pipe_write_req; /* ptr to writer's channel process structure */
-	struct _pipe_xfer_req_arg *pipe_read_req; /* ptr to reader's channel process structure */
+	struct _pipe_xfer_req_arg *pipe_write_req; /* ptr to writer's pipe process structure */
+	struct _pipe_xfer_req_arg *pipe_read_req; /* ptr to reader's pipe process structure */
 
 	int iT1;
 	int iT2;

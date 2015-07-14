@@ -136,7 +136,7 @@ void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
 #ifdef CONFIG_OBJECT_MONITOR
 	/*
 	 * if transition XFER_IDLE --> XFER_BUSY, TERM_XXX
-	 * increment channel counter
+	 * increment pipe counter
 	 */
 
 	if (XFER_IDLE == pipe_xfer_req->status /* current (old) status */

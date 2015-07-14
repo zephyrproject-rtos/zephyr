@@ -33,13 +33,9 @@
 #ifndef _K_PIPE_UTIL_H
 #define _K_PIPE_UTIL_H
 
-/* high-level behavior of the channel service */
+/* high-level behavior of the pipe service */
 
 #define CANCEL_TIMERS
-
-/**/
-/*	TARGET channels functionality: */
-/**/
 
 typedef uint32_t REQ_TYPE;
 #define _ALLREQ ((REQ_TYPE)0x0000FF00)
@@ -53,7 +49,6 @@ typedef uint32_t TIME_TYPE;
 #define _TIME_B  ((TIME_TYPE)0x00020000)
 #define _TIME_BT ((TIME_TYPE)0x00040000)
 
-/* internal functions: */
 
 extern void _k_pipe_process(struct pipe_struct *pPipe,
 					 struct k_args *pWriter, struct k_args *pReader);
