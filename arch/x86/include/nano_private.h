@@ -868,11 +868,6 @@ extern void nanoCpuExcConnect(unsigned int vector,
 			      void (*routine)(NANO_ESF * pEsf),
 			      NANO_EXC_STUB pExcStubMem);
 
-extern void _ContextUsrEntryRtn(_ContextEntry,
-				_ContextArg,
-				_ContextArg,
-				_ContextArg);
-
 extern void _IntVecSet(unsigned int vector,
 		       void (*routine)(void *),
 		       unsigned int dpl);

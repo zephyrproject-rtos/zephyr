@@ -217,9 +217,6 @@ void _context_exit(tCCS *pContext)
  * can dispense with generating the usual preamble that is only required for
  * functions that actually return.
  *
- * The analogous entry point function for user-mode task contexts is called
- * _ContextUsrEntryRtn().
- *
  * @return Does not return
  *
  * \NOMANUAL
