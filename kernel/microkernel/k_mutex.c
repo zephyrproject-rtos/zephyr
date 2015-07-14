@@ -72,7 +72,7 @@ void _k_mutex_lock_reply(
 	)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	struct mutex_struct *Mutex; /* pointer to internal mutex structure */
+	struct _k_mutex_struct *Mutex; /* pointer to internal mutex structure */
 	struct k_args *PrioChanger; /* used to change a task's priority level */
 	struct k_args *FirstWaiter; /* pointer to first task in wait queue */
 	kpriority_t newPriority;    /* priority level to which to drop */
@@ -88,7 +88,7 @@ void _k_mutex_lock_reply(
 		A->Time.rcode = RC_TIME;
 
 		MutexId = A->Args.l1.mutex;
-		Mutex = (struct mutex_struct *)MutexId;
+		Mutex = (struct _k_mutex_struct *)MutexId;
 
 		FirstWaiter = Mutex->Waiters;
 
@@ -170,7 +170,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 						  request arguments */
 				     )
 {
-	struct mutex_struct *Mutex; /* pointer to internal mutex structure */
+	struct _k_mutex_struct *Mutex; /* pointer to internal mutex structure */
 	int MutexId;                /* mutex ID obtained from lock request */
 	struct k_args *PrioBooster; /* used to change a task's priority level */
 	kpriority_t BoostedPrio;    /* new "boosted" priority level */
@@ -178,7 +178,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 	MutexId = A->Args.l1.mutex;
 
 
-	Mutex = (struct mutex_struct *)MutexId;
+	Mutex = (struct _k_mutex_struct *)MutexId;
 	if (Mutex->Level == 0 || Mutex->Owner == A->Args.l1.task) {
 		/* The mutex is either unowned or this is a nested lock. */
 #ifdef CONFIG_OBJECT_MONITOR
@@ -317,12 +317,12 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 						 request arguments */
 				    )
 {
-	struct mutex_struct *Mutex; /* pointer internal mutex structure */
+	struct _k_mutex_struct *Mutex; /* pointer internal mutex structure */
 	int MutexId;                /* mutex ID obtained from unlock request */
 	struct k_args *PrioDowner;  /* used to change a task's priority level */
 
 	MutexId = A->Args.l1.mutex;
-	Mutex = (struct mutex_struct *)MutexId;
+	Mutex = (struct _k_mutex_struct *)MutexId;
 	if (Mutex->Owner == A->Args.l1.task && --(Mutex->Level) == 0) {
 		/*
 		 * The requesting task owns the mutex and all locks

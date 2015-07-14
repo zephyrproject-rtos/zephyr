@@ -519,7 +519,7 @@ def kernel_main_c_mutexes():
     kernel_main_c_out("\n")
     for mutex in mutex_list:
         name = mutex[0]
-        kernel_main_c_out("struct mutex_struct _k_mutex_obj_%s = " % (name) +
+        kernel_main_c_out("struct _k_mutex_struct _k_mutex_obj_%s = " % (name) +
 		"{ANYTASK, 64, 64, 0, NULL, 0, 0};\n")
 
     # mutex object identifiers
@@ -926,7 +926,7 @@ def generate_zephyr_h_obj_ids():
     for mutex in mutex_list:
         name = mutex[0]
         zephyr_h_data += \
-            "extern struct mutex_struct _k_mutex_obj_%s;\n" % (name)
+            "extern struct _k_mutex_struct _k_mutex_obj_%s;\n" % (name)
         zephyr_h_data += \
             "#define %s ((kmutex_t)&_k_mutex_obj_%s)\n\n" % (name, name)
 

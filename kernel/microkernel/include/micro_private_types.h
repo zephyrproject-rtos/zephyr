@@ -507,16 +507,6 @@ struct mbx_struct {
 	int Count;
 };
 
-struct mutex_struct {
-	ktask_t Owner;
-	kpriority_t OwnerCurrentPrio;
-	kpriority_t OwnerOriginalPrio;
-	int Level;
-	struct k_args *Waiters;
-	int Count;
-	int Confl;
-};
-
 struct sem_struct {
 	struct k_args *Waiters;
 	int Level;

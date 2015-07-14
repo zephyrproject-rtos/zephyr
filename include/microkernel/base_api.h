@@ -102,6 +102,16 @@ struct k_msg {
 	} extra;
 };
 
+struct _k_mutex_struct {
+	ktask_t Owner;
+	kpriority_t OwnerCurrentPrio;
+	kpriority_t OwnerOriginalPrio;
+	int Level;
+	struct k_args *Waiters;
+	int Count;
+	int Confl;
+};
+
 typedef enum {
 	_0_TO_N = 0x00000001,
 	_1_TO_N = 0x00000002,
