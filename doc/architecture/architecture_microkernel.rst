@@ -37,19 +37,20 @@ Microkernel Objects
 *******************
 
 Microkernel tasks can interact with nanokernel objects and, additionally use
-microkernel specific objects. The most important microkernel objects are:
+microkernel specific objects. The microkernel objects are:
 
-* Pipes
-
-* Mailboxes
-
+* Tasks
+* Task Groups
 * Events
+* Mutexes
+* Semaphores
+* FIFOs
+* Mailboxes
+* Pipes
+* Memory Maps
+* Memory Pools
+* Task IRQs
 
-* Resource locking objects
-
-   - Memory Maps
-
-   - Memory Pools
 
 The following subsections contain general information about the microkernel
 objects. For detailed information see: :ref:`microkernelObjects`.
