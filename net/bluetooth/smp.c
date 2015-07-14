@@ -1032,6 +1032,18 @@ static void swap_buf(const uint8_t *src, uint8_t *dst, uint16_t len)
 		dst[len - 1 - i] = src[i];
 }
 
+static void swap_in_place(uint8_t *buf, uint16_t len)
+{
+	int i, j;
+
+	for (i = 0, j = len - 1; i < j; i++, j--) {
+		uint8_t tmp = buf[i];
+
+		buf[i] = buf[j];
+		buf[j] = tmp;
+	}
+}
+
 /* 1 bit left shift */
 static void array_shift(const uint8_t *in, uint8_t *out)
 {
@@ -1106,7 +1118,7 @@ static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
 			   uint8_t *out)
 {
 	uint8_t k1[16], k2[16], last_block[16], *pad_block = last_block;
-	uint8_t tmp[16], key_s[16];
+	uint8_t key_s[16];
 	uint8_t *x, *y;
 	uint8_t n, flag;
 	int err;
@@ -1169,28 +1181,28 @@ static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
 	for (int i = 0; i < n - 1; i++) {
 		/* Y = X XOR M_i */
 		xor_128((uint128_t *)x, (uint128_t *)&in[i * 16],
-			(uint128_t *)tmp);
+			(uint128_t *)y);
 
-		swap_buf(tmp, y, 16);
+		swap_in_place(y, 16);
 
 		/* X = AES-128(K,Y) */
-		err = le_encrypt(key_s, y, tmp);
+		err = le_encrypt(key_s, y, x);
 		if (err) {
 			return err;
 		}
 
-		swap_buf(tmp, x, 16);
+		swap_in_place(x, 16);
 	}
 
 	/* Y = M_last XOR X */
-	xor_128((uint128_t *)x, (uint128_t *)last_block, (uint128_t *)tmp);
+	xor_128((uint128_t *)x, (uint128_t *)last_block, (uint128_t *)y);
 
-	swap_buf(tmp, y, 16);
+	swap_in_place(y, 16);
 
 	/* T = AES-128(K,Y) */
-	err = le_encrypt(key_s, y, tmp);
+	err = le_encrypt(key_s, y, out);
 
-	swap_buf(tmp, out, 16);
+	swap_in_place(out, 16);
 
 	return err;
 }
