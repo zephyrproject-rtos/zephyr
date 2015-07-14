@@ -90,9 +90,9 @@ static struct k_proc *next_task_select(void)
  * @brief The microkernel thread entry point
  *
  * This function implements the microkernel fiber.  It waits for command
- * packets to arrive on its stack channel. It executes all commands on the
+ * packets to arrive on its command stack. It executes all commands on the
  * stack and then sets up the next task that is ready to run. Next it
- * goes to wait on further inputs on its stack channel.
+ * goes to wait on further inputs on the command stack.
  *
  * @return Does not return.
  */
