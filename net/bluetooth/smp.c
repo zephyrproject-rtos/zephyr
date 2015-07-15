@@ -595,7 +595,7 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		}
 
 		/* Rand and EDiv are 0 for the STK */
-		if (bt_hci_le_start_encryption(conn->handle, 0, 0, stk)) {
+		if (bt_conn_le_start_encryption(conn, 0, 0, stk)) {
 			BT_ERR("Failed to start encryption\n");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -847,8 +847,8 @@ static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 		goto pair;
 	}
 
-	if (bt_hci_le_start_encryption(conn->handle, keys->ltk.rand,
-				       keys->ltk.ediv, keys->ltk.val) < 0) {
+	if (bt_conn_le_start_encryption(conn, keys->ltk.rand, keys->ltk.ediv,
+					keys->ltk.val) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 

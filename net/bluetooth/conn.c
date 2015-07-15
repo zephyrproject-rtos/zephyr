@@ -459,9 +459,9 @@ int bt_security(struct bt_conn *conn, bt_security_t sec)
 
 	keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
 	if (keys) {
-		return bt_hci_le_start_encryption(conn->handle, keys->ltk.rand,
-						  keys->ltk.ediv,
-						  keys->ltk.val);
+		return bt_conn_le_start_encryption(conn, keys->ltk.rand,
+						   keys->ltk.ediv,
+						   keys->ltk.val);
 	}
 
 	return bt_smp_send_pairing_req(conn);
@@ -566,4 +566,24 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 	bt_le_scan_update();
 
 	return conn;
+}
+
+int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
+				uint16_t ediv, const uint8_t *ltk)
+{
+	struct bt_hci_cp_le_start_encryption *cp;
+	struct bt_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->rand = rand;
+	cp->ediv = ediv;
+	memcpy(cp->ltk, ltk, sizeof(cp->ltk));
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
 }

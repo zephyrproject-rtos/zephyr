@@ -1557,23 +1557,3 @@ int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
 
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
-
-int bt_hci_le_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv,
-			       const uint8_t *ltk)
-{
-	struct bt_hci_cp_le_start_encryption *cp;
-	struct bt_buf *buf;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = bt_buf_add(buf, sizeof(*cp));
-	cp->handle = sys_cpu_to_le16(handle);
-	cp->rand = rand;
-	cp->ediv = ediv;
-	memcpy(cp->ltk, ltk, sizeof(cp->ltk));
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
-}

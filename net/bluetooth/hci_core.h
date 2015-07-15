@@ -162,8 +162,4 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr);
 int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
 			  uint16_t latency, uint16_t timeout);
 
-/* rand and ediv should be in BT order */
-int bt_hci_le_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv,
-			       const uint8_t *ltk);
-
 int bt_le_scan_update(void);
