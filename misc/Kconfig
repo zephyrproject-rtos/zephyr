@@ -149,15 +149,6 @@ config BOOTLOADER_KEXEC
 	This option signifies that Linux boots the kernel using kexec system call
 	and utility. This method is used to boot the kernel over the network.
 
-config BOOTLOADER_GRUB
-	bool
-	prompt "Boot using GRUB 2.0"
-	default n
-	depends on !BOOTLOADER_KEXEC && X86_32
-	help
-	This option signifies that GRUB 2.0 is used to boot the kernel. GRUB 2.0
-	is used to boot the kernel from SD card.
-
 config BOOTLOADER_UNKNOWN
 	bool
 	default n
