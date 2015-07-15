@@ -55,6 +55,8 @@ static struct bt_keys key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
 static struct bt_keys *ltks;
 static struct bt_keys *slave_ltks;
 static struct bt_keys *irks;
+static struct bt_keys *local_csrks;
+static struct bt_keys *remote_csrks;
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 {
@@ -119,6 +121,26 @@ void bt_keys_clear(struct bt_keys *keys, int type)
 		keys->keys &= ~BT_KEYS_IRK;
 	}
 
+	if (((type & keys->keys) & BT_KEYS_LOCAL_CSRK)) {
+		bt_keys_foreach(&local_csrks, cur, local_csrk.next) {
+			if (*cur == keys) {
+				*cur = (*cur)->local_csrk.next;
+				break;
+			}
+		}
+		keys->keys &= ~BT_KEYS_LOCAL_CSRK;
+	}
+
+	if (((type & keys->keys) & BT_KEYS_REMOTE_CSRK)) {
+		bt_keys_foreach(&remote_csrks, cur, remote_csrk.next) {
+			if (*cur == keys) {
+				*cur = (*cur)->remote_csrk.next;
+				break;
+			}
+		}
+		keys->keys &= ~BT_KEYS_REMOTE_CSRK;
+	}
+
 	if (!keys->keys) {
 		memset(keys, 0, sizeof(*keys));
 	}
@@ -152,6 +174,20 @@ struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
 			}
 		}
 		return *cur;
+	case BT_KEYS_LOCAL_CSRK:
+		bt_keys_foreach(&local_csrks, cur, local_csrk.next) {
+			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
+				break;
+			}
+		}
+		return *cur;
+	case BT_KEYS_REMOTE_CSRK:
+		bt_keys_foreach(&remote_csrks, cur, remote_csrk.next) {
+			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
+				break;
+			}
+		}
+		return *cur;
 	default:
 		return NULL;
 	}
@@ -175,6 +211,14 @@ void bt_keys_add_type(struct bt_keys *keys, int type)
 	case BT_KEYS_IRK:
 		keys->irk.next = irks;
 		irks = keys;
+		break;
+	case BT_KEYS_LOCAL_CSRK:
+		keys->local_csrk.next = local_csrks;
+		local_csrks = keys;
+		break;
+	case BT_KEYS_REMOTE_CSRK:
+		keys->remote_csrk.next = remote_csrks;
+		remote_csrks = keys;
 		break;
 	default:
 		BT_ERR("Unknown key type %d\n", type);

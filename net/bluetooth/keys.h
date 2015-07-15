@@ -34,9 +34,12 @@ enum {
 	BT_KEYS_SLAVE_LTK      = (1 << 0),
 	BT_KEYS_IRK            = (1 << 1),
 	BT_KEYS_LTK            = (1 << 2),
+	BT_KEYS_LOCAL_CSRK     = (1 << 3),
+	BT_KEYS_REMOTE_CSRK    = (1 << 4),
 
 	BT_KEYS_ALL            = (BT_KEYS_SLAVE_LTK | BT_KEYS_IRK | \
-				  BT_KEYS_LTK),
+				  BT_KEYS_LTK | BT_KEYS_LOCAL_CSRK | \
+				  BT_KEYS_REMOTE_CSRK),
 };
 
 struct bt_ltk {
@@ -52,6 +55,12 @@ struct bt_irk {
 	struct bt_keys		*next;
 };
 
+struct bt_csrk {
+	uint8_t			val[16];
+	uint32_t		cnt;
+	struct bt_keys		*next;
+};
+
 struct bt_keys {
 	bt_addr_le_t		addr;
 	int			keys;
@@ -59,6 +68,8 @@ struct bt_keys {
 	struct bt_ltk		slave_ltk;
 	struct bt_ltk		ltk;
 	struct bt_irk		irk;
+	struct bt_csrk		local_csrk;
+	struct bt_csrk		remote_csrk;
 };
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
