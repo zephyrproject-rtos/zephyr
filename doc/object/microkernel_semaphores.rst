@@ -28,8 +28,8 @@ timeout, until signaled or return immediately with a failed status.
 Usage
 =====
 
-Defining a Semaphore
---------------------
+Defining a Semaphore in MDEF file
+---------------------------------
 
 The following parameters must be defined:
 
@@ -53,6 +53,33 @@ as follows:
     % ================
       SEMA INPUT_DATA
       SEMA WORK_DONE
+
+
+Defining Semaphore inside Code
+------------------------------
+
+In addition to defining semaphores in MDEF file, it is also possible to
+define semaphores inside code. The macro ``DEFINE_SEMAPHORE(sem_name)``
+can be used for this purpose.
+
+For example, the following code can be used to define a global semaphore
+``PRIV_SEM``.
+
+.. code-block:: c
+
+   DEFINE_SEMAPHORE(PRIV_SEM);
+
+The semaphore ``PRIV_SEM`` can be used in the same style as those
+semaphores defined in MDEF file.
+
+It is possible to utilize this semaphore in another source file, simply
+add:
+
+.. code-block:: c
+
+   extern const ksem_t PRIV_SEM;
+
+to that file. The semaphore ``PRIV_SEM`` can be then used there.
 
 
 Example: Giving a Semaphore from a Task

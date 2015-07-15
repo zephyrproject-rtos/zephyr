@@ -537,7 +537,7 @@ def kernel_main_c_semas():
     for semaphore in sema_list:
         name = semaphore[0]
         kernel_main_c_out("struct _k_sem_struct _k_sem_obj_%s = " % (name) +
-            "{NULL, 0, 0};\n")
+            "__K_SEMAPHORE_DEFAULT;\n")
 
 
 def kernel_main_c_fifos():

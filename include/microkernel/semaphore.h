@@ -252,6 +252,28 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 #define task_sem_group_take_wait_timeout(g, t) _task_sem_group_take(g, t)
 #endif
 
+/**
+ * @brief Initializer for microkernel semaphores
+ */
+#define __K_SEMAPHORE_DEFAULT \
+	{ \
+	  .Waiters = NULL, \
+	  .Level = 0, \
+	  .Count = 0, \
+	}
+
+/**
+ * @brief Define a private microkernel semaphore
+ *
+ * This declares and initializes a private semaphore. The new semaphore
+ * can be passed to the microkernel semaphore functions.
+ *
+ * @param name Name of the semaphore
+ */
+#define DEFINE_SEMAPHORE(name) \
+       struct _k_sem_struct _k_sem_obj_##name = __K_SEMAPHORE_DEFAULT; \
+       const ksem_t name = (ksem_t)&_k_sem_obj_##name;
+
 #ifdef __cplusplus
 }
 #endif
