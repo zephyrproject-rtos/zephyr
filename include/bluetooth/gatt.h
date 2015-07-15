@@ -731,6 +731,22 @@ typedef void (*bt_gatt_read_func_t)(struct bt_conn *conn, int err,
 int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 		 bt_gatt_read_func_t func);
 
+/** @brief Write Attribute Value by handle
+ *
+ * This procedure write the attribute value and return the result in the
+ * callback in case it is set.
+ *
+ * @param conn Connection object.
+ * @param handle Attribute handle.
+ * @param data Data to be written.
+ * @param length Data length.
+ * @param func Callback function.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_write(struct bt_conn *conn, uint16_t handle, const void *data,
+		  uint16_t length, bt_gatt_rsp_func_t func);
+
 /** @brief Cancel GATT pending request
  *
  *  @param conn Connection object.
