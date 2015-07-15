@@ -143,3 +143,12 @@ int bt_smp_send_pairing_req(struct bt_conn *conn);
 int bt_smp_send_security_req(struct bt_conn *conn);
 
 int bt_smp_init(void);
+
+/** brief Verify signed message
+ *
+ *  @param conn Bluetooth connection
+ *  @param buf received packet buffer with message and signature
+ *
+ *  @return 0 in success, error code otherwise
+ */
+int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf);

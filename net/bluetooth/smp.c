@@ -1077,7 +1077,6 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 	return !memcmp(addr->val, hash, 3);
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP_SELFTEST)
 /* spaw octets for LE encrypt */
 static void swap_buf(const uint8_t *src, uint8_t *dst, uint16_t len)
 {
@@ -1300,6 +1299,48 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 	return 0;
 }
 
+int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_keys *keys;
+	uint8_t sig[12];
+	uint32_t cnt;
+	int err;
+
+	/* Store signature incl. count */
+	memcpy(sig, bt_buf_tail(buf) - sizeof(sig), sizeof(sig));
+
+	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &conn->dst);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s\n",
+		       bt_addr_le_str(&conn->dst));
+		return -ENOENT;
+	}
+
+	/* Copy signing count */
+	cnt = sys_cpu_to_le32(keys->remote_csrk.cnt);
+	memcpy(bt_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
+
+	BT_DBG("Sign data len %u key %s count %u\n", buf->len - sizeof(sig),
+	       h(keys->remote_csrk.val, 16), cnt);
+
+	err = smp_sign_buf(keys->remote_csrk.val, buf->data,
+			      buf->len - sizeof(sig));
+	if (err) {
+		BT_ERR("Unable to create signature for %s\n",
+		       bt_addr_le_str(&conn->dst));
+		return -EIO;
+	};
+
+	if (memcmp(sig, bt_buf_tail(buf) - sizeof(sig), sizeof(sig))) {
+		BT_ERR("Unable to verify signature for %s\n",
+		       bt_addr_le_str(&conn->dst));
+		return -EBADMSG;
+	};
+
+	return 0;
+}
+
+#if defined(CONFIG_BLUETOOTH_SMP_SELFTEST)
 /* Test vectors are taken from RFC 4493
  * https://tools.ietf.org/html/rfc4493
  * Same mentioned in the Bluetooth Spec.
