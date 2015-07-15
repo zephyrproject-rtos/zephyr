@@ -62,8 +62,10 @@ typedef int (*kevent_handler_t)(int event);
 #define RC_ALIGNMENT 3
 #define RC_INCOMPLETE 4
 
-#define ANYTASK (-1)  /* for mail sender or receiver parameter  */
-#define ENDLIST (-1)  /* this value terminates a semaphore list */
+/** for mail sender or receiver parameter  */
+#define ANYTASK (-1)
+/** this value terminates a semaphore list */
+#define ENDLIST (-1)
 
 struct k_args;
 
@@ -75,18 +77,28 @@ struct k_block {
 };
 
 struct k_msg {
-	kmbox_t mailbox;   /* Mailbox ID				  */
-	uint32_t size;    /* size of message (bytes)		  */
-	uint32_t info;    /* information field, free for user	  */
-	void *tx_data;    /* pointer to message data at sender side */
-	void *rx_data;    /* pointer to message data at receiver    */
-	struct k_block tx_block; /* for async message posting		  */
-	ktask_t tx_task;   /* sending task				  */
-	ktask_t rx_task;   /* receiving task			  */
-	union {			  /* internal use only			  */
-		struct k_args *transfer; /* for 2-steps data transfer operation
-				     */
-		ksem_t sema; /* semaphore to signal when asynchr. call */
+	/** Mailbox ID */
+	kmbox_t mailbox;
+	/** size of message (bytes) */
+	uint32_t size;
+	/** information field, free for user   */
+	uint32_t info;
+	/** pointer to message data at sender side */
+	void *tx_data;
+	/** pointer to message data at receiver    */
+	void *rx_data;
+	/** for async message posting   */
+	struct k_block tx_block;
+	/** sending task */
+	ktask_t tx_task;
+	/** receiving task */
+	ktask_t rx_task;
+	/** internal use only */
+	union {
+		/** for 2-steps data transfer operation */
+		struct k_args *transfer;
+		/** semaphore to signal when asynchr. call */
+		ksem_t sema;
 	} extra;
 };
 
