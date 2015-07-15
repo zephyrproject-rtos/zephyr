@@ -120,17 +120,6 @@ int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
  */
 int bt_stop_scanning(void);
 
-/** @brief Initiate an LE connection to a remote device.
- *
- *  Allows initiate new LE link to remote peer using its address.
- *  Returns a new reference that the the caller is responsible for managing.
- *
- *  @param peer Remote address.
- *
- *  @return Valid connection object on success or NULL otherwise.
- */
-struct bt_conn *bt_connect_le(const bt_addr_le_t *peer);
-
 /** Security level. */
 typedef enum {
 	BT_SECURITY_LOW,    /** No encryption and no authentication. */

@@ -174,7 +174,7 @@ static void cmd_connect_le(int argc, char *argv[])
 		return;
 	}
 
-	conn = bt_connect_le(&addr);
+	conn = bt_conn_create_le(&addr);
 
 	if (!conn) {
 		printk("Connection failed\n");

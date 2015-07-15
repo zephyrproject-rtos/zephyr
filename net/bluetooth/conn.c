@@ -538,3 +538,32 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 		return -ENOTCONN;
 	}
 }
+
+struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(peer);
+	if (conn) {
+		switch (conn->state) {
+		case BT_CONN_CONNECT_SCAN:
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return conn;
+		default:
+			bt_conn_put(conn);
+			return NULL;
+		}
+	}
+
+	conn = bt_conn_add(peer, BT_HCI_ROLE_MASTER);
+	if (!conn) {
+		return NULL;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+
+	bt_le_scan_update();
+
+	return conn;
+}

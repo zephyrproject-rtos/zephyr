@@ -1558,35 +1558,6 @@ int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
 	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
 
-struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
-{
-	struct bt_conn *conn;
-
-	conn = bt_conn_lookup_addr_le(peer);
-	if (conn) {
-		switch (conn->state) {
-		case BT_CONN_CONNECT_SCAN:
-		case BT_CONN_CONNECT:
-		case BT_CONN_CONNECTED:
-			return conn;
-		default:
-			bt_conn_put(conn);
-			return NULL;
-		}
-	}
-
-	conn = bt_conn_add(peer, BT_HCI_ROLE_MASTER);
-	if (!conn) {
-		return NULL;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
-
-	bt_le_scan_update();
-
-	return conn;
-}
-
 int bt_hci_le_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv,
 			       const uint8_t *ltk)
 {

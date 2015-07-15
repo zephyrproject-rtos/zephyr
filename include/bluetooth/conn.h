@@ -91,6 +91,17 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
  */
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
 
+/** @brief Initiate an LE connection to a remote device.
+ *
+ *  Allows initiate new LE link to remote peer using its address.
+ *  Returns a new reference that the the caller is responsible for managing.
+ *
+ *  @param peer Remote address.
+ *
+ *  @return Valid connection object on success or NULL otherwise.
+ */
+struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer);
+
 /** Connection callback structure */
 struct bt_conn_cb {
 	void (*connected)(struct bt_conn *conn);
