@@ -63,6 +63,7 @@ CONFIG_CROSS_COMPILE=""
 #
 # Compile and Link Features
 #
+CONFIG_KERNEL_BIN_NAME="microkernel"
 CONFIG_COMPILER_OPT=""
 CONFIG_MINIMAL_LIBC=y
 
