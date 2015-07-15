@@ -474,3 +474,66 @@ void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)
 		atomic_clear_bit(conn->flags, BT_CONN_AUTO_CONNECT);
 	}
 }
+
+static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_buf *buf;
+	struct bt_hci_cp_disconnect *disconn;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	disconn = bt_buf_add(buf, sizeof(*disconn));
+	disconn->handle = sys_cpu_to_le16(conn->handle);
+	disconn->reason = reason;
+
+	err = bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
+	if (err) {
+		return err;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECT);
+
+	return 0;
+}
+
+static int bt_hci_connect_le_cancel(struct bt_conn *conn)
+{
+	int err;
+
+	err = bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
+{
+	/* Disconnection is initiated by us, so auto connection shall
+	 * be disabled. Otherwise the passive scan would be enabled
+	 * and we could send LE Create Connection as soon as the remote
+	 * starts advertising.
+	 */
+	bt_conn_set_auto_conn(conn, false);
+
+	switch (conn->state) {
+	case BT_CONN_CONNECT_SCAN:
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_le_scan_update();
+		return 0;
+	case BT_CONN_CONNECT:
+		return bt_hci_connect_le_cancel(conn);
+	case BT_CONN_CONNECTED:
+		return bt_hci_disconnect(conn, reason);
+	case BT_CONN_DISCONNECT:
+		return 0;
+	case BT_CONN_DISCONNECTED:
+	default:
+		return -ENOTCONN;
+	}
+}

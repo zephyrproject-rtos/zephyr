@@ -215,7 +215,7 @@ static void cmd_disconnect(int argc, char *argv[])
 		return;
 	}
 
-	err = bt_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Disconnection failed (err %d)\n", err);
 	}

@@ -79,6 +79,18 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
  */
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
 
+/** @brief Disconnect from a remote device or cancel pending connection.
+ *
+ *  Disconnect an active connection with the specified reason code or cancel
+ *  pending outgoing connection.
+ *
+ *  @param conn Connection to disconnect.
+ *  @param reason Reason code for the disconnection.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
+
 /** Connection callback structure */
 struct bt_conn_cb {
 	void (*connected)(struct bt_conn *conn);

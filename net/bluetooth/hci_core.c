@@ -641,7 +641,7 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 }
 
 /* Used to determine whether to start scan and which scan type should be used */
-static void bt_le_scan_update(void)
+void bt_le_scan_update(void)
 {
 	struct bt_conn *conn;
 	bool conn_scan;
@@ -1611,69 +1611,6 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 	bt_le_scan_update();
 
 	return conn;
-}
-
-static int bt_hci_connect_le_cancel(struct bt_conn *conn)
-{
-	int err;
-
-	err = bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
-	if (err) {
-		return err;
-	}
-
-	return 0;
-}
-
-static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
-{
-	struct bt_buf *buf;
-	struct bt_hci_cp_disconnect *disconn;
-	int err;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	disconn = bt_buf_add(buf, sizeof(*disconn));
-	disconn->handle = sys_cpu_to_le16(conn->handle);
-	disconn->reason = reason;
-
-	err = bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
-	if (err) {
-		return err;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_DISCONNECT);
-
-	return 0;
-}
-
-int bt_disconnect(struct bt_conn *conn, uint8_t reason)
-{
-	/* Disconnection is initiated by us, so auto connection shall
-	 * be disabled. Otherwise the passive scan would be enabled
-	 * and we could send LE Create Connection as soon as the remote
-	 * starts advertising.
-	 */
-	bt_conn_set_auto_conn(conn, false);
-
-	switch (conn->state) {
-	case BT_CONN_CONNECT_SCAN:
-		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		bt_le_scan_update();
-		return 0;
-	case BT_CONN_CONNECT:
-		return bt_hci_connect_le_cancel(conn);
-	case BT_CONN_CONNECTED:
-		return bt_hci_disconnect(conn, reason);
-	case BT_CONN_DISCONNECT:
-		return 0;
-	case BT_CONN_DISCONNECTED:
-	default:
-		return -ENOTCONN;
-	}
 }
 
 int bt_hci_le_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv,
