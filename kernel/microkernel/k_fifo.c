@@ -1,5 +1,3 @@
-/* FIFO kernel services */
-
 /*
  * Copyright (c) 1997-2010, 2013-2014 Wind River Systems, Inc.
  *
@@ -30,6 +28,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * @brief FIFO kernel services
+ *
+ * This file contains all the services needed for the implementation of a FIFO
+ * for the microkernel.
+ *
+ *
+*/
+
+
 #include <micro_private.h>
 #include <string.h>
 #include <toolchain.h>
@@ -41,7 +50,6 @@
  *
  * @return N/A
  */
-
 void _k_fifo_enque_reply(struct k_args *A)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -66,7 +74,6 @@ void _k_fifo_enque_reply(struct k_args *A)
  *
  * @return N/A
  */
-
 void _k_fifo_enque_request(struct k_args *A)
 {
 	struct k_args *W;
@@ -136,14 +143,6 @@ void _k_fifo_enque_request(struct k_args *A)
 		}
 	}
 }
-/**
- *
- * @brief FIFO enqueue request
- *
- * This routine puts an entry at the end of the FIFO queue.
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
- */
 
 int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 		void *data,   /* ptr to data to add to queue */
@@ -168,7 +167,6 @@ int _task_fifo_put(kfifo_t queue, /* FIFO queue */
  *
  * @return N/A
  */
-
 void _k_fifo_deque_reply(struct k_args *A)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -193,7 +191,6 @@ void _k_fifo_deque_reply(struct k_args *A)
  *
  * @return N/A
  */
-
 void _k_fifo_deque_request(struct k_args *A)
 {
 	struct k_args *W;
@@ -274,14 +271,13 @@ void _k_fifo_deque_request(struct k_args *A)
  *
  * If the FIFO is not empty, the oldest entry is removed and copied to the
  * address provided by the caller.
+ * @param queue FIFO queue
+ * @param data Where to store FIFO entry
+ * @param time Maximum number of ticks to wait
  *
  * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
  */
-
-int _task_fifo_get(kfifo_t queue, /* FIFO queue */
-		void *data,   /* where to store FIFO entry */
-		int32_t time  /* maximum number of ticks to wait */
-		)
+int _task_fifo_get(kfifo_t queue, void *data, int32_t time)
 {
 	struct k_args A;
 
@@ -298,10 +294,10 @@ int _task_fifo_get(kfifo_t queue, /* FIFO queue */
 /**
  *
  * @brief Perform miscellaneous FIFO request
+ * @param A Kernel Argument
  *
  * @return N/A
  */
-
 void _k_fifo_ioctl(struct k_args *A)
 {
 	struct que_struct *Q;
@@ -343,12 +339,11 @@ void _k_fifo_ioctl(struct k_args *A)
  *   1. <op> = 0 : query the number of FIFO entries
  *   2. <op> = 1 : purge the FIFO of its entries
  *
+ * @param queue FIFO queue
+ * @param op 0 for status query and 1 for purge
  * @return # of FIFO entries on query; RC_OK on purge
  */
-
-int _task_fifo_ioctl(kfifo_t queue, /* FIFO queue */
-	     int op	/* 0: status query; 1: purge */
-	     )
+int _task_fifo_ioctl(kfifo_t queue, int op)
 {
 	struct k_args A;
 

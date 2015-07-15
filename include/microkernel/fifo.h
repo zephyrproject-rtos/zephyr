@@ -1,5 +1,3 @@
-/* microkernel/fifo.h - microkernel FIFO header file */
-
 /*
  * Copyright (c) 1997-2014 Wind River Systems, Inc.
  *
@@ -30,6 +28,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ *
+ * @brief Microkernel FIFO header file.
+ *
+ */
+
 #ifndef FIFO_H
 #define FIFO_H
 
@@ -43,21 +48,110 @@ extern int _task_fifo_put(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_get(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_ioctl(kfifo_t queue, int op);
 
+/**
+ * @brief FIFO enqueue request
+ *
+ * This routine puts an entry at the end of the FIFO queue.
+ *
+ * @param q FIFO queue.
+ * @param p Pointer to data to add to queue.
+ *
+ * @return RC_OK  on success, RC_FAIL on failure.
+ */
 #define task_fifo_put(q, p) _task_fifo_put(q, p, TICKS_NONE)
+
+/**
+ * @brief FIFO enqueue request with waiting.
+ *
+ * This routine tries to put an entry at the end of the FIFO queue.
+ *
+ * @param q FIFO queue.
+ * @param p Pointer to data to add to queue.
+ *
+ * @return RC_OK  on success, RC_FAIL on failure.
+ */
 #define task_fifo_put_wait(q, p) _task_fifo_put(q, p, TICKS_UNLIMITED)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
+
+/**
+ * @brief FIFO enqueue request with a time out.
+ *
+ * This routine puts an entry at the end of the FIFO queue with a time out.
+ *
+ * @param q FIFO queue.
+ * @param p Pointer to data to add to queue.
+ * @param t Maximum number of ticks to wait.
+ *
+ * @return RC_OK on success, RC_FAIL on failure, RC_TIME on timeout.
+ */
 #define task_fifo_put_wait_timeout(q, p, t) _task_fifo_put(q, p, t)
 #endif
 
+/**
+ * @brief FIFO dequeue request
+ *
+ * This routine tries to read a data element from the FIFO.
+ *
+ * If the FIFO is not empty, the oldest entry is removed and copied to the
+ * address provided by the caller.
+ *
+ * @param q FIFO queue.
+ * @param p Pointer to storage location of the FIFO entry.
+ *
+ * @return RC_OK on success, RC_FAIL on failure.
+ */
 #define task_fifo_get(q, p) _task_fifo_get(q, p, TICKS_NONE)
+
+/**
+ * @brief FIFO dequeue request
+ *
+ * This routine tries to read a data element from the FIFO with wait.
+ *
+ * If the FIFO is not empty, the oldest entry is removed and copied to the
+ * address provided by the caller.
+ *
+ * @param q FIFO queue.
+ * @param p Pointer to storage location of the FIFO entry.
+ *
+ * @return RC_OK on success, RC_FAIL on failure.
+ */
 #define task_fifo_get_wait(q, p) _task_fifo_get(q, p, TICKS_UNLIMITED)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
+
+/**
+ *
+ * @brief FIFO dequeue request
+ *
+ * This routine tries to read a data element from the FIFO.
+ *
+ * If the FIFO is not empty, the oldest entry is removed and copied to the
+ * address provided by the caller.
+ *
+ * @param q FIFO queue.
+ * @param p Pointer to storage location of the FIFO entry.
+ * @param t Maximum number of ticks to wait.
+ *
+ * @return RC_OK on success, RC_FAIL on failure, RC_TIME on timeout.
+ */
 #define task_fifo_get_wait_timeout(q, p, t) _task_fifo_get(q, p, t)
 #endif
 
+/**
+ * @brief Queries the number of FIFO entries.
+ *
+ * @param q FIFO queue.
+ *
+ * @return # of FIFO entries on query.
+ */
 #define task_fifo_size_get(q) _task_fifo_ioctl(q, 0)
+
+/**
+ * @brief Purge the FIFO of all its entries.
+ *
+ * @return RC_OK on purge.
+ */
 #define task_fifo_purge(q) _task_fifo_ioctl(q, 1)
 
 #ifdef __cplusplus
