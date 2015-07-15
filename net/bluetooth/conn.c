@@ -178,16 +178,20 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags)
 void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 {
 	uint16_t len, remaining = buf->len;
-	struct bt_dev *dev = conn->dev;
 	struct bt_hci_acl_hdr *hdr;
 	struct nano_fifo frags;
 	uint8_t *ptr;
 
 	BT_DBG("conn handle %u buf len %u\n", conn->handle, buf->len);
 
+	if (conn->state != BT_CONN_CONNECTED) {
+		BT_ERR("not connected!\n");
+		return;
+	}
+
 	nano_fifo_init(&frags);
 
-	len = min(remaining, dev->le_mtu);
+	len = min(remaining, bt_dev.le_mtu);
 
 	hdr = bt_buf_push(buf, sizeof(*hdr));
 	hdr->handle = sys_cpu_to_le16(conn->handle);
@@ -202,7 +206,7 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 	while (remaining) {
 		buf = bt_l2cap_create_pdu(conn);
 
-		len = min(remaining, dev->le_mtu);
+		len = min(remaining, bt_dev.le_mtu);
 
 		/* Copy from original buffer */
 		memcpy(bt_buf_add(buf, len), ptr, len);
@@ -224,7 +228,6 @@ void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf)
 static void conn_tx_fiber(int arg1, int arg2)
 {
 	struct bt_conn *conn = (struct bt_conn *)arg1;
-	struct bt_dev *dev = conn->dev;
 	struct bt_buf *buf;
 
 	BT_DBG("Started for handle %u\n", conn->handle);
@@ -232,24 +235,24 @@ static void conn_tx_fiber(int arg1, int arg2)
 	while (conn->state == BT_CONN_CONNECTED) {
 		/* Wait until the controller can accept ACL packets */
 		BT_DBG("calling sem_take_wait\n");
-		nano_fiber_sem_take_wait(&dev->le_pkts_sem);
+		nano_fiber_sem_take_wait(&bt_dev.le_pkts_sem);
 
 		/* check for disconnection */
 		if (conn->state != BT_CONN_CONNECTED) {
-			nano_fiber_sem_give(&dev->le_pkts_sem);
+			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
 			break;
 		}
 
 		/* Get next ACL packet for connection */
 		buf = nano_fifo_get_wait(&conn->tx_queue);
 		if (conn->state != BT_CONN_CONNECTED) {
-			nano_fiber_sem_give(&dev->le_pkts_sem);
+			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
 			bt_buf_put(buf);
 			break;
 		}
 
 		BT_DBG("passing buf %p len %u to driver\n", buf, buf->len);
-		dev->drv->send(buf);
+		bt_dev.drv->send(buf);
 		bt_buf_put(buf);
 	}
 
@@ -266,8 +269,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	bt_conn_put(conn);
 }
 
-struct bt_conn *bt_conn_add(struct bt_dev *dev, const bt_addr_le_t *peer,
-			    uint8_t role)
+struct bt_conn *bt_conn_add(const bt_addr_le_t *peer, uint8_t role)
 {
 	struct bt_conn *conn = NULL;
 	int i;
@@ -286,7 +288,6 @@ struct bt_conn *bt_conn_add(struct bt_dev *dev, const bt_addr_le_t *peer,
 	memset(conn, 0, sizeof(*conn));
 
 	atomic_set(&conn->ref, 1);
-	conn->dev	= dev;
 	conn->role	= role;
 	bt_addr_le_copy(&conn->dst, peer);
 

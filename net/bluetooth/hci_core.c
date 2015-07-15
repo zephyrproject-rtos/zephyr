@@ -67,7 +67,7 @@ static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 static nano_context_id_t rx_prio_fiber_id;
 #endif
 
-static struct bt_dev dev;
+struct bt_dev bt_dev;
 
 static struct bt_conn_cb *callback_list;
 static bt_le_scan_cb_t *scan_dev_found_cb;
@@ -135,7 +135,7 @@ struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	BT_DBG("opcode %x param_len %u\n", opcode, param_len);
 
-	buf = bt_buf_get(BT_CMD, dev.drv->head_reserve);
+	buf = bt_buf_get(BT_CMD, bt_dev.drv->head_reserve);
 	if (!buf) {
 		BT_ERR("Cannot get free buffer\n");
 		return NULL;
@@ -168,12 +168,12 @@ int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf)
 	 * and does not generate any cmd complete/status events.
 	 */
 	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
-		dev.drv->send(buf);
+		bt_dev.drv->send(buf);
 		bt_buf_put(buf);
 		return 0;
 	}
 
-	nano_fifo_put(&dev.cmd_tx_queue, buf);
+	nano_fifo_put(&bt_dev.cmd_tx_queue, buf);
 
 	return 0;
 }
@@ -207,7 +207,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 	nano_sem_init(&sync_sem);
 	buf->hci.sync = &sync_sem;
 
-	nano_fifo_put(&dev.cmd_tx_queue, buf);
+	nano_fifo_put(&bt_dev.cmd_tx_queue, buf);
 
 	nano_sem_take_wait(&sync_sem);
 
@@ -374,24 +374,24 @@ static void hci_reset_complete(struct bt_buf *buf)
 	}
 
 	scan_dev_found_cb = NULL;
-	dev.scan_enable = BT_LE_SCAN_DISABLE;
-	dev.scan_filter = BT_LE_SCAN_FILTER_DUP_ENABLE;
+	bt_dev.scan_enable = BT_LE_SCAN_DISABLE;
+	bt_dev.scan_filter = BT_LE_SCAN_FILTER_DUP_ENABLE;
 }
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct bt_buf *buf)
 {
-	struct bt_buf *sent = dev.sent_cmd;
+	struct bt_buf *sent = bt_dev.sent_cmd;
 
 	if (!sent) {
 		return;
 	}
 
-	if (dev.sent_cmd->hci.opcode != opcode) {
+	if (bt_dev.sent_cmd->hci.opcode != opcode) {
 		BT_ERR("Unexpected completion of opcode 0x%04x\n", opcode);
 		return;
 	}
 
-	dev.sent_cmd = NULL;
+	bt_dev.sent_cmd = NULL;
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */
 	if (sent->hci.sync) {
@@ -435,10 +435,10 @@ static void hci_cmd_complete(struct bt_buf *buf)
 
 	hci_cmd_done(opcode, *status, buf);
 
-	if (evt->ncmd && !dev.ncmd) {
+	if (evt->ncmd && !bt_dev.ncmd) {
 		/* Allow next command to be sent */
-		dev.ncmd = 1;
-		nano_fiber_sem_give(&dev.ncmd_sem);
+		bt_dev.ncmd = 1;
+		nano_fiber_sem_give(&bt_dev.ncmd_sem);
 	}
 }
 
@@ -459,10 +459,10 @@ static void hci_cmd_status(struct bt_buf *buf)
 
 	hci_cmd_done(opcode, evt->status, buf);
 
-	if (evt->ncmd && !dev.ncmd) {
+	if (evt->ncmd && !bt_dev.ncmd) {
 		/* Allow next command to be sent */
-		dev.ncmd = 1;
-		nano_fiber_sem_give(&dev.ncmd_sem);
+		bt_dev.ncmd = 1;
+		nano_fiber_sem_give(&bt_dev.ncmd_sem);
 	}
 }
 
@@ -482,7 +482,7 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 		BT_DBG("handle %u count %u\n", handle, count);
 
 		while (count--)
-			nano_fiber_sem_give(&dev.le_pkts_sem);
+			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
 	}
 }
 
@@ -573,7 +573,7 @@ static int bt_hci_start_scanning(uint8_t scan_type, uint8_t scan_filter)
 	/* Update scan state in case of success (0) status */
 	err = rsp->data[0];
 	if (!err) {
-		dev.scan_enable = BT_LE_SCAN_ENABLE;
+		bt_dev.scan_enable = BT_LE_SCAN_ENABLE;
 	}
 
 	bt_buf_put(rsp);
@@ -587,7 +587,7 @@ static int bt_hci_stop_scanning(void)
 	struct bt_hci_cp_le_set_scan_enable *scan_enable;
 	int err;
 
-	if (dev.scan_enable == BT_LE_SCAN_DISABLE) {
+	if (bt_dev.scan_enable == BT_LE_SCAN_DISABLE) {
 		return -EALREADY;
 	}
 
@@ -610,7 +610,7 @@ static int bt_hci_stop_scanning(void)
 	/* Update scan state in case of success (0) status */
 	err = rsp->data[0];
 	if (!err) {
-		dev.scan_enable = BT_LE_SCAN_DISABLE;
+		bt_dev.scan_enable = BT_LE_SCAN_DISABLE;
 	}
 
 	bt_buf_put(rsp);
@@ -645,7 +645,7 @@ int bt_le_scan_update(void)
 {
 	struct bt_conn *conn;
 
-	if (dev.scan_enable) {
+	if (bt_dev.scan_enable) {
 		int err;
 
 		if (scan_dev_found_cb) {
@@ -660,7 +660,7 @@ int bt_le_scan_update(void)
 
 	if (scan_dev_found_cb) {
 		return bt_hci_start_scanning(BT_LE_SCAN_ACTIVE,
-					     dev.scan_filter);
+					     bt_dev.scan_filter);
 	}
 
 	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
@@ -670,7 +670,7 @@ int bt_le_scan_update(void)
 
 	bt_conn_put(conn);
 
-	return bt_hci_start_scanning(BT_LE_SCAN_PASSIVE, dev.scan_filter);
+	return bt_hci_start_scanning(BT_LE_SCAN_PASSIVE, bt_dev.scan_filter);
 }
 
 static void hci_disconn_complete(struct bt_buf *buf)
@@ -708,12 +708,12 @@ static void hci_disconn_complete(struct bt_buf *buf)
 
 	bt_conn_put(conn);
 
-	if (dev.adv_enable) {
+	if (bt_dev.adv_enable) {
 		struct bt_buf *buf;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 		if (buf) {
-			memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
+			memcpy(bt_buf_add(buf, 1), &bt_dev.adv_enable, 1);
 			bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_ENABLE, buf);
 		}
 	}
@@ -756,7 +756,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	}
 
 	if (!conn) {
-		conn = bt_conn_add(&dev, &evt->peer_addr, evt->role);
+		conn = bt_conn_add(&evt->peer_addr, evt->role);
 	}
 
 	if (!conn) {
@@ -766,7 +766,7 @@ static void le_conn_complete(struct bt_buf *buf)
 
 	conn->handle   = handle;
 	conn->src.type = BT_ADDR_LE_PUBLIC;
-	memcpy(conn->src.val, dev.bdaddr.val, sizeof(dev.bdaddr.val));
+	memcpy(conn->src.val, bt_dev.bdaddr.val, sizeof(bt_dev.bdaddr.val));
 	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 
@@ -971,7 +971,7 @@ static void hci_event(struct bt_buf *buf)
 
 static void hci_cmd_tx_fiber(void)
 {
-	struct bt_driver *drv = dev.drv;
+	struct bt_driver *drv = bt_dev.drv;
 
 	BT_DBG("started\n");
 
@@ -980,12 +980,12 @@ static void hci_cmd_tx_fiber(void)
 
 		/* Wait until ncmd > 0 */
 		BT_DBG("calling sem_take_wait\n");
-		nano_fiber_sem_take_wait(&dev.ncmd_sem);
+		nano_fiber_sem_take_wait(&bt_dev.ncmd_sem);
 
 		/* Get next command - wait if necessary */
 		BT_DBG("calling fifo_get_wait\n");
-		buf = nano_fifo_get_wait(&dev.cmd_tx_queue);
-		dev.ncmd = 0;
+		buf = nano_fifo_get_wait(&bt_dev.cmd_tx_queue);
+		bt_dev.ncmd = 0;
 
 		BT_DBG("Sending command %x (buf %p) to driver\n",
 		       buf->hci.opcode, buf);
@@ -993,13 +993,13 @@ static void hci_cmd_tx_fiber(void)
 		drv->send(buf);
 
 		/* Clear out any existing sent command */
-		if (dev.sent_cmd) {
+		if (bt_dev.sent_cmd) {
 			BT_ERR("Uncleared pending sent_cmd\n");
-			bt_buf_put(dev.sent_cmd);
-			dev.sent_cmd = NULL;
+			bt_buf_put(bt_dev.sent_cmd);
+			bt_dev.sent_cmd = NULL;
 		}
 
-		dev.sent_cmd = buf;
+		bt_dev.sent_cmd = buf;
 	}
 }
 
@@ -1011,7 +1011,7 @@ static void hci_rx_fiber(void)
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait\n");
-		buf = nano_fifo_get_wait(&dev.rx_queue);
+		buf = nano_fifo_get_wait(&bt_dev.rx_queue);
 
 		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
 
@@ -1046,7 +1046,7 @@ static void rx_prio_fiber(void)
 		struct bt_hci_evt_hdr *hdr;
 
 		BT_DBG("calling fifo_get_wait\n");
-		buf = nano_fifo_get_wait(&dev.rx_prio_queue);
+		buf = nano_fifo_get_wait(&bt_dev.rx_prio_queue);
 
 		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
 
@@ -1084,7 +1084,7 @@ static void read_local_features_complete(struct bt_buf *buf)
 
 	BT_DBG("status %u\n", rp->status);
 
-	memcpy(dev.features, rp->features, sizeof(dev.features));
+	memcpy(bt_dev.features, rp->features, sizeof(bt_dev.features));
 }
 
 static void read_local_ver_complete(struct bt_buf *buf)
@@ -1093,9 +1093,9 @@ static void read_local_ver_complete(struct bt_buf *buf)
 
 	BT_DBG("status %u\n", rp->status);
 
-	dev.hci_version = rp->hci_version;
-	dev.hci_revision = sys_le16_to_cpu(rp->hci_revision);
-	dev.manufacturer = sys_le16_to_cpu(rp->manufacturer);
+	bt_dev.hci_version = rp->hci_version;
+	bt_dev.hci_revision = sys_le16_to_cpu(rp->hci_revision);
+	bt_dev.manufacturer = sys_le16_to_cpu(rp->manufacturer);
 }
 
 static void read_bdaddr_complete(struct bt_buf *buf)
@@ -1104,7 +1104,7 @@ static void read_bdaddr_complete(struct bt_buf *buf)
 
 	BT_DBG("status %u\n", rp->status);
 
-	bt_addr_copy(&dev.bdaddr, &rp->bdaddr);
+	bt_addr_copy(&bt_dev.bdaddr, &rp->bdaddr);
 }
 
 static void read_le_features_complete(struct bt_buf *buf)
@@ -1113,7 +1113,7 @@ static void read_le_features_complete(struct bt_buf *buf)
 
 	BT_DBG("status %u\n", rp->status);
 
-	memcpy(dev.le_features, rp->features, sizeof(dev.le_features));
+	memcpy(bt_dev.le_features, rp->features, sizeof(bt_dev.le_features));
 }
 
 static void read_buffer_size_complete(struct bt_buf *buf)
@@ -1123,12 +1123,12 @@ static void read_buffer_size_complete(struct bt_buf *buf)
 	BT_DBG("status %u\n", rp->status);
 
 	/* If LE-side has buffers we can ignore the BR/EDR values */
-	if (dev.le_mtu) {
+	if (bt_dev.le_mtu) {
 		return;
 	}
 
-	dev.le_mtu = sys_le16_to_cpu(rp->acl_max_len);
-	dev.le_pkts = sys_le16_to_cpu(rp->acl_max_num);
+	bt_dev.le_mtu = sys_le16_to_cpu(rp->acl_max_len);
+	bt_dev.le_pkts = sys_le16_to_cpu(rp->acl_max_num);
 }
 
 static void le_read_buffer_size_complete(struct bt_buf *buf)
@@ -1137,8 +1137,8 @@ static void le_read_buffer_size_complete(struct bt_buf *buf)
 
 	BT_DBG("status %u\n", rp->status);
 
-	dev.le_mtu = sys_le16_to_cpu(rp->le_max_len);
-	dev.le_pkts = rp->le_max_num;
+	bt_dev.le_mtu = sys_le16_to_cpu(rp->le_max_len);
+	bt_dev.le_pkts = rp->le_max_num;
 }
 
 static int hci_init(void)
@@ -1178,7 +1178,7 @@ static int hci_init(void)
 	bt_buf_put(rsp);
 
 	/* For now we only support LE capable controllers */
-	if (!lmp_le_capable(dev)) {
+	if (!lmp_le_capable(bt_dev)) {
 		BT_ERR("Non-LE capable controller detected!\n");
 		return -ENODEV;
 	}
@@ -1216,7 +1216,7 @@ static int hci_init(void)
 	ev->events[3] |= 0x02; /* Data Buffer Overflow */
 	ev->events[7] |= 0x20; /* LE Meta-Event */
 
-	if (dev.le_features[0] & BT_HCI_LE_ENCRYPTION) {
+	if (bt_dev.le_features[0] & BT_HCI_LE_ENCRYPTION) {
 		ev->events[0] |= 0x80; /* Encryption Change */
 		ev->events[5] |= 0x80; /* Encryption Key Refresh Complete */
 	}
@@ -1232,7 +1232,7 @@ static int hci_init(void)
 	memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(BT_BUF_MAX_DATA -
 				       sizeof(struct bt_hci_acl_hdr) -
-				       dev.drv->head_reserve);
+				       bt_dev.drv->head_reserve);
 	hbs->acl_pkts = sys_cpu_to_le16(ACL_IN_MAX);
 
 	err = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
@@ -1252,11 +1252,11 @@ static int hci_init(void)
 		return err;
 	}
 
-	if (lmp_bredr_capable(dev)) {
+	if (lmp_bredr_capable(bt_dev)) {
 		struct bt_hci_cp_write_le_host_supp *cp;
 
 		/* Use BR/EDR buffer size if LE reports zero buffers */
-		if (!dev.le_mtu) {
+		if (!bt_dev.le_mtu) {
 			err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BUFFER_SIZE,
 						   NULL, &rsp);
 			if (err) {
@@ -1281,16 +1281,16 @@ static int hci_init(void)
 				     NULL);
 	}
 
-	BT_DBG("HCI ver %u rev %u, manufacturer %u\n", dev.hci_version,
-	       dev.hci_revision, dev.manufacturer);
-	BT_DBG("ACL buffers: pkts %u mtu %u\n", dev.le_pkts, dev.le_mtu);
+	BT_DBG("HCI ver %u rev %u, manufacturer %u\n", bt_dev.hci_version,
+	       bt_dev.hci_revision, bt_dev.manufacturer);
+	BT_DBG("ACL buffers: pkts %u mtu %u\n", bt_dev.le_pkts, bt_dev.le_mtu);
 
 	/* Initialize & prime the semaphore for counting controller-side
 	 * available ACL packet buffers.
 	 */
-	nano_sem_init(&dev.le_pkts_sem);
-	for (i = 0; i < dev.le_pkts; i++) {
-		nano_sem_give(&dev.le_pkts_sem);
+	nano_sem_init(&bt_dev.le_pkts_sem);
+	for (i = 0; i < bt_dev.le_pkts; i++) {
+		nano_sem_give(&bt_dev.le_pkts_sem);
 	}
 
 	return 0;
@@ -1305,7 +1305,7 @@ void bt_recv(struct bt_buf *buf)
 	BT_DBG("buf %p len %u\n", buf, buf->len);
 
 	if (buf->type == BT_ACL_IN) {
-		nano_fifo_put(&dev.rx_queue, buf);
+		nano_fifo_put(&bt_dev.rx_queue, buf);
 		return;
 	}
 
@@ -1322,16 +1322,16 @@ void bt_recv(struct bt_buf *buf)
 	if (hdr->evt == BT_HCI_EVT_CMD_COMPLETE ||
 	    hdr->evt == BT_HCI_EVT_CMD_STATUS ||
 	    hdr->evt == BT_HCI_EVT_NUM_COMPLETED_PACKETS) {
-		nano_fifo_put(&dev.rx_prio_queue, buf);
+		nano_fifo_put(&bt_dev.rx_prio_queue, buf);
 		return;
 	}
 
-	nano_fifo_put(&dev.rx_queue, buf);
+	nano_fifo_put(&bt_dev.rx_queue, buf);
 }
 
 int bt_driver_register(struct bt_driver *drv)
 {
-	if (dev.drv) {
+	if (bt_dev.drv) {
 		return -EALREADY;
 	}
 
@@ -1339,26 +1339,26 @@ int bt_driver_register(struct bt_driver *drv)
 		return -EINVAL;
 	}
 
-	dev.drv = drv;
+	bt_dev.drv = drv;
 
 	return 0;
 }
 
 void bt_driver_unregister(struct bt_driver *drv)
 {
-	dev.drv = NULL;
+	bt_dev.drv = NULL;
 }
 
 /* fibers, fifos and semaphores initialization */
 
 static void cmd_queue_init(void)
 {
-	nano_fifo_init(&dev.cmd_tx_queue);
-	nano_sem_init(&dev.ncmd_sem);
+	nano_fifo_init(&bt_dev.cmd_tx_queue);
+	nano_sem_init(&bt_dev.ncmd_sem);
 
 	/* Give cmd_sem allowing to send first HCI_Reset cmd */
-	dev.ncmd = 1;
-	nano_task_sem_give(&dev.ncmd_sem);
+	bt_dev.ncmd = 1;
+	nano_task_sem_give(&bt_dev.ncmd_sem);
 
 	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
 		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
@@ -1366,18 +1366,18 @@ static void cmd_queue_init(void)
 
 static void rx_queue_init(void)
 {
-	nano_fifo_init(&dev.rx_queue);
+	nano_fifo_init(&bt_dev.rx_queue);
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
 		    (nano_fiber_entry_t)hci_rx_fiber, 0, 0, 7, 0);
 
-	nano_fifo_init(&dev.rx_prio_queue);
+	nano_fifo_init(&bt_dev.rx_prio_queue);
 	fiber_start(rx_prio_fiber_stack, sizeof(rx_prio_fiber_stack),
 		    (nano_fiber_entry_t)rx_prio_fiber, 0, 0, 7, 0);
 }
 
 int bt_init(void)
 {
-	struct bt_driver *drv = dev.drv;
+	struct bt_driver *drv = bt_dev.drv;
 	int err;
 
 	if (!drv) {
@@ -1484,8 +1484,8 @@ send_set_param:
 		return -ENOBUFS;
 	}
 
-	dev.adv_enable = 0x01;
-	memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
+	bt_dev.adv_enable = 0x01;
+	memcpy(bt_buf_add(buf, 1), &bt_dev.adv_enable, 1);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
@@ -1494,7 +1494,7 @@ int bt_stop_advertising(void)
 {
 	struct bt_buf *buf;
 
-	if (!dev.adv_enable) {
+	if (!bt_dev.adv_enable) {
 		return -EALREADY;
 	}
 
@@ -1503,8 +1503,8 @@ int bt_stop_advertising(void)
 		return -ENOBUFS;
 	}
 
-	dev.adv_enable = 0x00;
-	memcpy(bt_buf_add(buf, 1), &dev.adv_enable, 1);
+	bt_dev.adv_enable = 0x00;
+	memcpy(bt_buf_add(buf, 1), &bt_dev.adv_enable, 1);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_ENABLE, buf, NULL);
 }
@@ -1517,7 +1517,7 @@ int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 	}
 
 	scan_dev_found_cb = cb;
-	dev.scan_filter = scan_filter;
+	bt_dev.scan_filter = scan_filter;
 
 	return bt_le_scan_update();
 }
@@ -1530,7 +1530,7 @@ int bt_stop_scanning(void)
 	}
 
 	scan_dev_found_cb = NULL;
-	dev.scan_filter = BT_LE_SCAN_FILTER_DUP_ENABLE;
+	bt_dev.scan_filter = BT_LE_SCAN_FILTER_DUP_ENABLE;
 
 	return bt_le_scan_update();
 }
@@ -1575,7 +1575,7 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 		}
 	}
 
-	conn = bt_conn_add(&dev, peer, BT_HCI_ROLE_MASTER);
+	conn = bt_conn_add(peer, BT_HCI_ROLE_MASTER);
 	if (!conn) {
 		return NULL;
 	}

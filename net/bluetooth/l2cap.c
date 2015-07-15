@@ -119,7 +119,7 @@ struct bt_buf *bt_l2cap_create_pdu(struct bt_conn *conn)
 {
 	size_t head_reserve = sizeof(struct bt_l2cap_hdr) +
 				sizeof(struct bt_hci_acl_hdr) +
-				conn->dev->drv->head_reserve;
+				bt_dev.drv->head_reserve;
 
 	return bt_buf_get(BT_ACL_OUT, head_reserve);
 }

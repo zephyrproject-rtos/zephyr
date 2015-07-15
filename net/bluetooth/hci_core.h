@@ -101,6 +101,8 @@ struct bt_dev {
 	struct bt_driver	*drv;
 };
 
+extern struct bt_dev bt_dev;
+
 static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
 {
 	return memcmp(a, b, sizeof(*a));
