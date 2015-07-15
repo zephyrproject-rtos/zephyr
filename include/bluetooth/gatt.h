@@ -727,6 +727,8 @@ typedef void (*bt_gatt_read_func_t)(struct bt_conn *conn, int err,
  * @param handle Attribute handle.
  * @param offset Attribute data offset.
  * @param func Callback function.
+ *
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 		 bt_gatt_read_func_t func);
