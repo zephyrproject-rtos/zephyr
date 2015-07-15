@@ -1241,6 +1241,14 @@ static uint8_t att_handle_read_mult_rsp(struct bt_conn *conn,
 	return att_handle_rsp(conn, buf->data, buf->len, 0);
 }
 
+static uint8_t att_handle_write_rsp(struct bt_conn *conn,
+					struct bt_buf *buf)
+{
+	BT_DBG("\n");
+
+	return att_handle_rsp(conn, buf->data, buf->len, 0);
+}
+
 static const struct {
 	uint8_t  op;
 	uint8_t  (*func)(struct bt_conn *conn, struct bt_buf *buf);
@@ -1280,6 +1288,7 @@ static const struct {
 	  sizeof(struct bt_att_read_group_req) },
 	{ BT_ATT_OP_WRITE_REQ, att_write_req,
 	  sizeof(struct bt_att_write_req) },
+	{ BT_ATT_OP_WRITE_RSP, att_handle_write_rsp, 0 },
 	{ BT_ATT_OP_PREPARE_WRITE_REQ, att_prepare_write_req,
 	  sizeof(struct bt_att_prepare_write_req) },
 	{ BT_ATT_OP_EXEC_WRITE_REQ, att_exec_write_req,
