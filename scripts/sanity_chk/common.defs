@@ -79,10 +79,10 @@ RUN_FAILED="PROJECT EXECUTION FAILED"
 
 # architecture platform lists
 arc_PLATFORM_LIST=""
-arm_PLATFORM_LIST="fsl_frdm_k64f ti_lm3s6965"
-x86_PLATFORM_LIST="generic_pc_minuteia   \
-				   generic_pc_atom_n28xx \
-				   quark"
+arm_PLATFORM_LIST="fsl_frdm_k64f basic_cortex_m3"
+x86_PLATFORM_LIST="basic_minuteia \
+				   basic_atom     \
+				   galileo"
 _PLATFORM_LIST="${arc_PLATFORM_LIST} ${arm_PLATFORM_LIST} ${x86_PLATFORM_LIST}"
 
 # header used to identify script output during execution
@@ -179,6 +179,18 @@ build_info_set() {
 	elif [ x${BSP_NAME} != x"" ] ; then
 		# Temporary until Jenkins no longer specifies "-B generic_pc"
 		PLATFORM_NAME=unrecognized
+	fi
+
+	# The platform names are undergoing a rename.  Translate the old names
+	# to the new names to act as a migration path.
+	if [ x${PLATFORM_NAME} = x"generic_pc_atom_n28xx" ] ; then
+		PLATFORM_NAME=basic_atom
+	elif [ x${PLATFORM_NAME} = x"generic_pc_minuteia" ] ; then
+		PLATFORM_NAME=basic_minuteia
+	elif [ x${PLATFORM_NAME} = x"quark" ] ; then
+		PLATFORM_NAME=galileo
+	elif [ x${PLATFORM_NAME} = x"ti_lm3s6965" ] ; then
+		PLATFORM_NAME=basic_cortex_m3
 	fi
 }
 

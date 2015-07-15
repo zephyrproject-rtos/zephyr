@@ -1,16 +1,16 @@
 	# Nanokernel projects
-nanokernel/test/test_fifo        <n>  ti_lm3s6965! fsl_frdm_k64f
-nanokernel/test/test_lifo        <n>  ti_lm3s6965! fsl_frdm_k64f
-nanokernel/test/test_sema        <n>  ti_lm3s6965! fsl_frdm_k64f
+nanokernel/test/test_fifo        <n>  basic_cortex_m3! fsl_frdm_k64f
+nanokernel/test/test_lifo        <n>  basic_cortex_m3! fsl_frdm_k64f
+nanokernel/test/test_sema        <n>  basic_cortex_m3! fsl_frdm_k64f
 	# Microkernel projects
-microkernel/test/test_fifo       <u>  ti_lm3s6965! fsl_frdm_k64f
-microkernel/test/test_events     <u>  ti_lm3s6965! fsl_frdm_k64f
-microkernel/test/test_sema       <u>  ti_lm3s6965! fsl_frdm_k64f
+microkernel/test/test_fifo       <u>  basic_cortex_m3! fsl_frdm_k64f
+microkernel/test/test_events     <u>  basic_cortex_m3! fsl_frdm_k64f
+microkernel/test/test_sema       <u>  basic_cortex_m3! fsl_frdm_k64f
 	# Nanokernel projects
-nanokernel/test/test_fifo        <n>  generic_pc_atom_n28xx!  quark
-nanokernel/test/test_lifo        <n>  generic_pc_atom_n28xx!  quark
-nanokernel/test/test_sema        <n>  generic_pc_atom_n28xx!  quark
+nanokernel/test/test_fifo        <n>  basic_atom!  galileo
+nanokernel/test/test_lifo        <n>  basic_atom!  galileo
+nanokernel/test/test_sema        <n>  basic_atom!  galileo
 	# Microkernel projects
-microkernel/test/test_fifo       <u>  generic_pc_atom_n28xx!  quark
-microkernel/test/test_events     <u>  generic_pc_atom_n28xx!  quark
-microkernel/test/test_sema       <u>  generic_pc_atom_n28xx!  quark
+microkernel/test/test_fifo       <u>  basic_atom!  galileo
+microkernel/test/test_events     <u>  basic_atom!  galileo
+microkernel/test/test_sema       <u>  basic_atom!  galileo

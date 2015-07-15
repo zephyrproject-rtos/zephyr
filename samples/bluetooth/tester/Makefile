@@ -32,8 +32,8 @@
 
 # DESCRIPTION
 # Makefile for the Bluetooth tester application
-# currently only ti_lm3s6965 target is supported
-PLATFORM_CONFIG ?= ti_lm3s6965
+# currently only basic_cortex_m3 platform is supported
+PLATFORM_CONFIG ?= basic_cortex_m3
 ARCH ?= arm
 
 MDEF_FILE = prj.mdef

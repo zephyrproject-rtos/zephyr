@@ -32,7 +32,7 @@
 
 # DESCRIPTION
 # Makefile for the console shell with Bluetooth commands
-PLATFORM_CONFIG ?= generic_pc_atom_n28xx
+PLATFORM_CONFIG ?= basic_atom
 MDEF_FILE = prj.mdef
 KERNEL_TYPE = micro
 CONF_FILE = prj_$(ARCH).conf

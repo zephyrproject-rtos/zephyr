@@ -1,6 +1,6 @@
 # default configuration
 TEST ?= min
-PLATFORM_CONFIG ?= generic_pc_atom_n28xx
+PLATFORM_CONFIG ?= basic_atom
 
 MDEF_FILE = micro_${TEST}.mdef
 KERNEL_TYPE = micro
