@@ -597,6 +597,66 @@ void cmd_gatt_mread(int argc, char *argv[])
 	bt_conn_put(conn);
 }
 
+static void write_func(struct bt_conn *conn, uint8_t err)
+{
+	printk("Write complete: err %u\n", err);
+}
+
+static void cmd_gatt_write(int argc, char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+	uint16_t handle;
+	uint8_t data;
+
+	if (argc < 2) {
+		printk("Peer address required\n");
+		return;
+	}
+
+	if (argc < 3) {
+		printk("Peer address type required\n");
+		return;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return;
+	}
+
+	conn = bt_conn_lookup_addr_le(&addr);
+	if (!conn) {
+		printk("Peer not connected\n");
+		return;
+	}
+
+	if (argc < 4) {
+		printk("handle required\n");
+		return;
+	}
+
+	handle = xtoi(argv[3]);
+
+	if (argc < 5) {
+		printk("data required\n");
+		return;
+	}
+
+	/* TODO: Add support for longer data */
+	data = xtoi(argv[4]);
+
+	err = bt_gatt_write(conn, handle, &data, sizeof(data), write_func);
+	if (err) {
+		printk("Write failed (err %d)\n", err);
+	} else {
+		printk("Write pending\n");
+	}
+
+	bt_conn_put(conn);
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -618,4 +678,5 @@ void main(void)
 	shell_cmd_register("gatt-discover-descriptor", cmd_gatt_discover);
 	shell_cmd_register("gatt-read", cmd_gatt_read);
 	shell_cmd_register("gatt-read-multiple", cmd_gatt_mread);
+	shell_cmd_register("gatt-write", cmd_gatt_write);
 }
