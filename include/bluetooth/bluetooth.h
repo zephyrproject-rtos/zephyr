@@ -38,7 +38,6 @@
 #include <string.h>
 
 #include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 
 /** @brief Initialize the Bluetooth Subsystem.
@@ -129,28 +128,6 @@ typedef enum {
 			     *  encryption.
 			     */
 } bt_security_t;
-
-/** @brief Set security level for a connection.
- *
- *  This function enable security (encryption) for a connection. If device is
- *  already paired with sufficiently strong key encryption will be enabled. If
- *  link is already encrypted with sufficiently strong key this function does
- *  nothing.
- *
- *  If device is not paired pairing will be initiated. If device is paired and
- *  keys are too weak but input output capabilities allow for strong enough keys
- *  pairing will be initiated.
- *
- *  This function may return error if required level of security is not possible
- *  to achieve due to local or remote device limitation (eg input output
- *  capabilities).
- *
- *  @param conn Connection object.
- *  @param sec Requested security level.
- *
- *  @return 0 on success or negative error
- */
-int bt_security(struct bt_conn *conn, bt_security_t sec);
 
 /** @def BT_ADDR_STR_LEN
  *

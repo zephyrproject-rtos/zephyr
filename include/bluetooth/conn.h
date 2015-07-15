@@ -36,6 +36,7 @@
 
 #include <stdbool.h>
 
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
 /** Opaque type representing a connection to a remote device */
@@ -101,6 +102,28 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
  *  @return Valid connection object on success or NULL otherwise.
  */
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer);
+
+/** @brief Set security level for a connection.
+ *
+ *  This function enable security (encryption) for a connection. If device is
+ *  already paired with sufficiently strong key encryption will be enabled. If
+ *  link is already encrypted with sufficiently strong key this function does
+ *  nothing.
+ *
+ *  If device is not paired pairing will be initiated. If device is paired and
+ *  keys are too weak but input output capabilities allow for strong enough keys
+ *  pairing will be initiated.
+ *
+ *  This function may return error if required level of security is not possible
+ *  to achieve due to local or remote device limitation (eg input output
+ *  capabilities).
+ *
+ *  @param conn Connection object.
+ *  @param sec Requested security level.
+ *
+ *  @return 0 on success or negative error
+ */
+int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
 
 /** Connection callback structure */
 struct bt_conn_cb {

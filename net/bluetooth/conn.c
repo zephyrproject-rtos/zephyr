@@ -431,7 +431,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->dst;
 }
 
-int bt_security(struct bt_conn *conn, bt_security_t sec)
+int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 {
 	struct bt_keys *keys;
 

@@ -35,6 +35,7 @@
 
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 
 #include "bttester.h"
 

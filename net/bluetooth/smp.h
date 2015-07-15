@@ -33,6 +33,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <bluetooth/conn.h>
+
 struct bt_smp_hdr {
 	uint8_t  code;
 } __packed;
