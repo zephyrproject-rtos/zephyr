@@ -110,3 +110,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 				uint16_t ediv, const uint8_t *ltk);
+
+int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
+			   uint16_t latency, uint16_t timeout);

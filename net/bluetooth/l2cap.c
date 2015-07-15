@@ -236,7 +236,7 @@ static void le_conn_param_update_req(struct bt_conn *conn, uint8_t ident,
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 
 	if (result == BT_L2CAP_CONN_PARAM_ACCEPTED) {
-		bt_hci_le_conn_update(conn->handle, min, max, latency, timeout);
+		bt_conn_le_conn_update(conn, min, max, latency, timeout);
 	}
 }
 
