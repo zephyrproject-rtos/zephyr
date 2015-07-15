@@ -470,6 +470,21 @@ static void gatt_mtu_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 	func(conn, err);
 }
 
+static int gatt_send(struct bt_conn *conn, struct bt_buf *buf,
+		     bt_att_func_t func, void *user_data,
+		     bt_att_destroy_t destroy)
+{
+	int err;
+
+	err = bt_att_send(conn, buf, func, user_data, destroy);
+	if (err) {
+		BT_ERR("Error sending ATT PDU: %d\n", err);
+		bt_buf_put(buf);
+	}
+
+	return err;
+}
+
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 {
 	struct bt_att_exchange_mtu_req *req;
@@ -495,7 +510,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 	req = bt_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
 
-	return bt_att_send(conn, buf, gatt_mtu_rsp, func, NULL);
+	return gatt_send(conn, buf, gatt_mtu_rsp, func, NULL);
 }
 
 static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
@@ -595,9 +610,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	bt_att_send(conn, buf, att_find_type_rsp, params, NULL);
-
-	return 0;
+	return gatt_send(conn, buf, att_find_type_rsp, params, NULL);
 }
 
 static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
@@ -723,9 +736,7 @@ int bt_gatt_discover_characteristic(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x\n", params->start_handle,
 	       params->end_handle);
 
-	bt_att_send(conn, buf, att_read_type_rsp, params, NULL);
-
-	return 0;
+	return gatt_send(conn, buf, att_read_type_rsp, params, NULL);
 }
 
 static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
@@ -845,9 +856,7 @@ int bt_gatt_discover_descriptor(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x\n", params->start_handle,
 	       params->end_handle);
 
-	bt_att_send(conn, buf, att_find_info_rsp, params, NULL);
-
-	return 0;
+	return gatt_send(conn, buf, att_find_info_rsp, params, NULL);
 }
 
 static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
@@ -882,9 +891,7 @@ static int gatt_read_blob(struct bt_conn *conn, uint16_t handle,
 
 	BT_DBG("handle 0x%04x offset 0x%04x\n", handle, offset);
 
-	bt_att_send(conn, buf, att_read_rsp, func, NULL);
-
-	return 0;
+	return gatt_send(conn, buf, att_read_rsp, func, NULL);
 }
 
 int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
@@ -911,9 +918,7 @@ int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 
 	BT_DBG("handle 0x%04x\n", handle);
 
-	bt_att_send(conn, buf, att_read_rsp, func, NULL);
-
-	return 0;
+	return gatt_send(conn, buf, att_read_rsp, func, NULL);
 }
 
 void bt_gatt_cancel(struct bt_conn *conn)
