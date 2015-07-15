@@ -1,5 +1,3 @@
-/* nanokernel dynamic-size FIFO queue object */
-
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
@@ -30,20 +28,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ *
+ * @brief Nanokernel dynamic-size FIFO queue object.
+ *
+ * This module provides the nanokernel FIFO object implementation, including
+ * the following APIs:
+ *
+ * nano_fifo_init
+ * nano_fiber_fifo_put, nano_task_fifo_put, nano_isr_fifo_put
+ * nano_fiber_fifo_get, nano_task_fifo_get, nano_isr_fifo_get
+ * nano_fiber_fifo_get_wait, nano_task_fifo_get_wait
+ */
+
 /*
-DESCRIPTION
-This module provides the nanokernel FIFO object implementation, including
-the following APIs:
-
-   nano_fifo_init
-   nano_fiber_fifo_put, nano_task_fifo_put, nano_isr_fifo_put
-   nano_fiber_fifo_get, nano_task_fifo_get, nano_isr_fifo_get
-   nano_fiber_fifo_get_wait, nano_task_fifo_get_wait
-
-
-INTERNAL
-In some cases the compiler "alias" attribute is used to map two or more
-APIs to the same function, since they have identical implementations.
+ * INTERNAL
+ * In some cases the compiler "alias" attribute is used to map two or more
+ * APIs to the same function, since they have identical implementations.
  */
 
 #include <nano_private.h>
@@ -51,26 +53,13 @@ APIs to the same function, since they have identical implementations.
 #include <sections.h>
 #include <wait_q.h>
 
-/**
- *
- * @brief Initialize a nanokernel multiple-waiter fifo (fifo) object
- *
- * This function initializes a nanokernel multiple-waiter fifo (fifo) object
- * structure.
- *
- * It may be called from either a fiber or task context.
- *
- * @return N/A
- *
+/*
  * INTERNAL
  * Although the existing implementation will support invocation from an ISR
  * context, for future flexibility, this API will be restricted from ISR
  * level invocation.
  */
-
-void nano_fifo_init(
-	struct nano_fifo *fifo /* fifo to initialize */
-	)
+void nano_fifo_init(struct nano_fifo *fifo)
 {
 	/*
 	 * The wait queue and data queue occupy the same space since there cannot
@@ -100,7 +89,6 @@ FUNC_ALIAS(_fifo_put_non_preemptible, nano_fiber_fifo_put, void);
  *
  * @return N/A
  */
-
 static inline void enqueue_data(struct nano_fifo *fifo, void *data)
 {
 	*(void **)fifo->data_q.tail = data;
@@ -119,6 +107,9 @@ static inline void enqueue_data(struct nano_fifo *fifo, void *data)
  * If a fiber is waiting on the fifo, the address of the element is returned to
  * the waiting fiber.  Otherwise, the element is linked to the end of the list.
  *
+ * @param fifo FIFO on which to interact.
+ * @param data Data to send.
+ *
  * @return N/A
  *
  * INTERNAL
@@ -127,11 +118,7 @@ static inline void enqueue_data(struct nano_fifo *fifo, void *data)
  * are created to support any required implementation differences in the future
  * without introducing a source code migration issue.
  */
-
-void _fifo_put_non_preemptible(
-	struct nano_fifo *fifo,	/* fifo on which to interact */
-	void *data				/* data to send */
-	)
+void _fifo_put_non_preemptible(struct nano_fifo *fifo, void *data)
 {
 	unsigned int imask;
 
@@ -149,24 +136,7 @@ void _fifo_put_non_preemptible(
 	irq_unlock_inline(imask);
 }
 
-/**
- *
- * @brief Add an element to the end of a fifo
- *
- * This routine adds an element to the end of a fifo object; it can be called
- * from only a task context.  A fiber pending on the fifo object will be made
- * ready, and will preempt the running task immediately.
- *
- * If a fiber is waiting on the fifo, the address of the element is returned to
- * the waiting fiber.  Otherwise, the element is linked to the end of the list.
- *
- * @return N/A
- */
-
-void nano_task_fifo_put(
-	struct nano_fifo *fifo,	/* fifo on which to interact */
-	void *data				/* data to send */
-	)
+void nano_task_fifo_put( struct nano_fifo *fifo, void *data)
 {
 	unsigned int imask;
 
@@ -186,15 +156,7 @@ void nano_task_fifo_put(
 	irq_unlock_inline(imask);
 }
 
-/**
- *
- * @brief Add an element to the end of a fifo
- *
- * This is a convenience wrapper for the context-specific APIs. This is
- * helpful whenever the exact scheduling context is not known, but should
- * be avoided when the context is known up-front (to avoid unnecessary
- * overhead).
- */
+
 void nano_fifo_put(struct nano_fifo *fifo, void *data)
 {
 	static void (*func[3])(struct nano_fifo *fifo, void *data) = {
@@ -212,9 +174,8 @@ FUNC_ALIAS(_fifo_get, nano_fifo_get, void *);
  *
  * @brief Internal routine to remove data from a fifo
  *
- * @return the data item removed
+ * @return The data item removed
  */
-
 static inline void *dequeue_data(struct nano_fifo *fifo)
 {
 	void *data = fifo->data_q.head;
@@ -234,18 +195,6 @@ static inline void *dequeue_data(struct nano_fifo *fifo)
 }
 
 /**
- *
- * @brief Get an element from the head a fifo
- *
- * Remove the head element from the specified nanokernel multiple-waiter fifo
- * linked list fifo; it may be called from a fiber, task, or ISR context.
- *
- * If no elements are available, NULL is returned.  The first word in the
- * element contains invalid data because that memory location was used to store
- * a pointer to the next element in the linked list.
- *
- * @return Pointer to head element in the list if available, otherwise NULL
- *
  * INTERNAL
  * This function is capable of supporting invocations from fiber, task, and ISR
  * contexts.  However, the nano_isr_fifo_get, nano_task_fifo_get, and
@@ -253,10 +202,7 @@ static inline void *dequeue_data(struct nano_fifo *fifo)
  * implementation differences in the future without introducing a source code
  * migration issue.
  */
-
-void *_fifo_get(
-	struct nano_fifo *fifo /* fifo on which to interact */
-	)
+void *_fifo_get(struct nano_fifo *fifo)
 {
 	void *data = NULL;
 	unsigned int imask;
@@ -271,29 +217,7 @@ void *_fifo_get(
 	return data;
 }
 
-/**
- *
- * @brief Get the head element of a fifo, wait if emtpy
- *
- * Remove the head element from the specified system-level multiple-waiter
- * fifo; it can only be called from a fiber context.
- *
- * If no elements are available, the calling fiber will pend until an element
- * is put onto the fifo.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @return Pointer to head element in the list
- *
- * INTERNAL There exists a separate nano_task_fifo_get_wait() implementation
- * since a task context cannot pend on a nanokernel object.  Instead tasks will
- * poll the fifo object.
- */
-
-void *nano_fiber_fifo_get_wait(
-	struct nano_fifo *fifo /* fifo on which to interact */
-	)
+void *nano_fiber_fifo_get_wait( struct nano_fifo *fifo)
 {
 	void *data;
 	unsigned int imask;
@@ -312,25 +236,7 @@ void *nano_fiber_fifo_get_wait(
 	return data;
 }
 
-/**
- *
- * @brief Get the head element of a fifo, poll if empty
- *
- * Remove the head element from the specified system-level multiple-waiter
- * fifo; it can only be called from a task context.
- *
- * If no elements are available, the calling task will poll until an
- * until an element is put onto the fifo.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @return Pointer to head element in the list
- */
-
-void *nano_task_fifo_get_wait(
-	struct nano_fifo *fifo /* fifo on which to interact */
-	)
+void *nano_task_fifo_get_wait( struct nano_fifo *fifo)
 {
 	void *data;
 	unsigned int imask;
@@ -360,17 +266,6 @@ void *nano_task_fifo_get_wait(
 	return data;
 }
 
-/**
- *
- * @brief Get the head element of a fifo, poll/pend if empty
- *
- * This is a convenience wrapper for the context-specific APIs. This is
- * helpful whenever the exact scheduling context is not known, but should
- * be avoided when the context is known up-front (to avoid unnecessary
- * overhead).
- *
- * It's only valid to call this API from a fiber or a task.
- */
 void *nano_fifo_get_wait(struct nano_fifo *fifo)
 {
 	static void *(*func[3])(struct nano_fifo *fifo) = {
@@ -381,27 +276,9 @@ void *nano_fifo_get_wait(struct nano_fifo *fifo)
 
 
 #ifdef CONFIG_NANO_TIMEOUTS
-/**
- * @brief get the head element of a fifo, pend with a timeout if empty
- *
- * Remove the head element from the specified nanokernel fifo; it can only be
- * called from a task context.
- *
- * If no elements are available, the calling task will pend until an element
- * is put onto the fifo, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked
- * list.
- *
- * @param fifo the FIFO on which to operate
- * @param timeout_in_ticks time to wait in ticks
- *
- * return Pointer to head element in the list, NULL if timed out
- */
 
 void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
-										int32_t timeout_in_ticks)
+		int32_t timeout_in_ticks)
 {
 	unsigned int key;
 	void *data;
@@ -429,27 +306,8 @@ void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
 	return data;
 }
 
-/**
- * @brief get the head element of a fifo, poll with a timeout if empty
- *
- * Remove the head element from the specified nanokernel fifo; it can only be
- * called from a task context.
- *
- * If no elements are available, the calling task will poll until an element
- * is put onto the fifo, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked
- * list.
- *
- * @param fifo the FIFO on which to operate
- * @param timeout_in_ticks time to wait in ticks
- *
- * return Pointer to head element in the list, NULL if timed out
- */
-
 void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
-										int32_t timeout_in_ticks)
+			int32_t timeout_in_ticks)
 {
 	int64_t cur_ticks, limit;
 	unsigned int key;
