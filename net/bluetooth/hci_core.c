@@ -641,33 +641,36 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 }
 
 /* Used to determine whether to start scan and which scan type should be used */
-void bt_le_scan_update(void)
+int bt_le_scan_update(void)
 {
 	struct bt_conn *conn;
-	bool conn_scan;
-
-	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
-	if (conn) {
-		conn_scan = true;
-		bt_conn_put(conn);
-	} else {
-		conn_scan = false;
-	}
 
 	if (dev.scan_enable) {
-		if (!conn_scan && !scan_dev_found_cb)
-			bt_hci_stop_scanning();
-		return;
+		int err;
+
+		if (scan_dev_found_cb) {
+			return 0;
+		}
+
+		err = bt_hci_stop_scanning();
+		if (err) {
+			return err;
+		}
 	}
 
 	if (scan_dev_found_cb) {
-		bt_hci_start_scanning(BT_LE_SCAN_ACTIVE, dev.scan_filter);
-		return;
+		return bt_hci_start_scanning(BT_LE_SCAN_ACTIVE,
+					     dev.scan_filter);
 	}
 
-	if (conn_scan) {
-		bt_hci_start_scanning(BT_LE_SCAN_PASSIVE, dev.scan_filter);
+	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
+	if (!conn) {
+		return 0;
 	}
+
+	bt_conn_put(conn);
+
+	return bt_hci_start_scanning(BT_LE_SCAN_PASSIVE, dev.scan_filter);
 }
 
 static void hci_disconn_complete(struct bt_buf *buf)
@@ -1508,52 +1511,28 @@ int bt_stop_advertising(void)
 
 int bt_start_scanning(uint8_t scan_filter, bt_le_scan_cb_t cb)
 {
-	int err;
-
 	/* Return if active scan is already enabled */
 	if (scan_dev_found_cb) {
 		return -EALREADY;
 	}
 
-	/* Stop passive scan if enabled*/
-	if (dev.scan_enable) {
-		err = bt_hci_stop_scanning();
-		if (err) {
-			return err;
-		}
-	}
-
-	err = bt_hci_start_scanning(BT_LE_SCAN_ACTIVE, scan_filter);
-	if (err) {
-		return err;
-	}
-
 	scan_dev_found_cb = cb;
 	dev.scan_filter = scan_filter;
 
-	return 0;
+	return bt_le_scan_update();
 }
 
 int bt_stop_scanning(void)
 {
-	int err;
-
 	/* Return if active scanning is already disabled */
 	if (!scan_dev_found_cb) {
 		return -EALREADY;
 	}
 
-	err = bt_hci_stop_scanning();
-	if (err) {
-		return err;
-	}
-
 	scan_dev_found_cb = NULL;
 	dev.scan_filter = BT_LE_SCAN_FILTER_DUP_ENABLE;
 
-	bt_le_scan_update();
-
-	return 0;
+	return bt_le_scan_update();
 }
 
 int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
@@ -1602,11 +1581,6 @@ struct bt_conn *bt_connect_le(const bt_addr_le_t *peer)
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
-
-	/* Restart scanning if duplicate filtering feature is used */
-	if (dev.scan_enable && dev.scan_filter) {
-		bt_hci_stop_scanning();
-	}
 
 	bt_le_scan_update();
 

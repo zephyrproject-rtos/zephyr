@@ -164,4 +164,4 @@ int bt_hci_le_conn_update(uint16_t handle, uint16_t min, uint16_t max,
 int bt_hci_le_start_encryption(uint16_t handle, uint64_t rand, uint16_t ediv,
 			       const uint8_t *ltk);
 
-void bt_le_scan_update(void);
+int bt_le_scan_update(void);
