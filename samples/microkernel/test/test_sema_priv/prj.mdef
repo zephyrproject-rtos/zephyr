@@ -1,0 +1,32 @@
+% Please keep this in-sync with ../test_sem/prj.mdef
+% except those specified below
+
+% Application       : test microkernel semaphore APIs
+
+% TASK NAME       PRIO ENTRY               STACK GROUPS
+% =====================================================
+  TASK MONITORTASK   5 MonitorTaskEntry     2048 [EXE]
+  TASK tHigh         4 HighPriTaskEntry     2048 [EXE]
+  TASK tStartTask    5 RegressionTaskEntry  2048 [EXE]
+  TASK tAlternate    6 AlternateTaskEntry   2048 [EXE]
+  TASK tLow          7 LowPriTaskEntry      2048 [EXE]
+
+% SEMA NAME
+% ======================
+  SEMA SEM_TASKDONE
+  SEMA SEM_TASKFAIL
+  SEMA GROUP_SEM1
+  SEMA GROUP_SEM2
+  SEMA GROUP_SEM3
+  SEMA GROUP_SEM4
+
+% These semaphores are defined inside source code.
+% So these need to be commented out.
+%
+%  SEMA SIMPLE_SEM
+%  SEMA ALTTASK_SEM
+%  SEMA HIGH_PRI_SEM
+%  SEMA MANY_BLOCKED_SEM
+%  SEMA BLOCK_HP_SEM
+%  SEMA BLOCK_LP_SEM
+%  SEMA BLOCK_MP_SEM

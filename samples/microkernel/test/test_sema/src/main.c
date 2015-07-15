@@ -69,17 +69,28 @@ static CMD_PKT_SET_INSTANCE(cmdPktSet, 2);
 
 static ksem_t resultSems[] = { SEM_TASKDONE, SEM_TASKFAIL, ENDLIST };
 
-ksem_t simpleSem	= SIMPLE_SEM;
-ksem_t altSem		= ALTTASK_SEM;
-ksem_t hpSem		= HIGH_PRI_SEM;
-ksem_t manyBlockSem	= MANY_BLOCKED_SEM;
 ksem_t group1Sem	= GROUP_SEM1;
 ksem_t group2Sem	= GROUP_SEM2;
 ksem_t group3Sem	= GROUP_SEM3;
 ksem_t group4Sem	= GROUP_SEM4;
-ksem_t blockHpSem	= BLOCK_HP_SEM;
-ksem_t blockMpSem	= BLOCK_MP_SEM;
-ksem_t blockLpSem	= BLOCK_LP_SEM;
+
+#ifdef TEST_PRIV_KSEM
+	DEFINE_SEMAPHORE(simpleSem);
+	DEFINE_SEMAPHORE(altSem);
+	DEFINE_SEMAPHORE(hpSem);
+	DEFINE_SEMAPHORE(manyBlockSem);
+	DEFINE_SEMAPHORE(blockHpSem);
+	DEFINE_SEMAPHORE(blockMpSem);
+	DEFINE_SEMAPHORE(blockLpSem);
+#else
+	ksem_t simpleSem	= SIMPLE_SEM;
+	ksem_t altSem		= ALTTASK_SEM;
+	ksem_t hpSem		= HIGH_PRI_SEM;
+	ksem_t manyBlockSem	= MANY_BLOCKED_SEM;
+	ksem_t blockHpSem	= BLOCK_HP_SEM;
+	ksem_t blockMpSem	= BLOCK_MP_SEM;
+	ksem_t blockLpSem	= BLOCK_LP_SEM;
+#endif
 
 ksem_t semList[] = {
 	GROUP_SEM1,

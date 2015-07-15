@@ -1,0 +1,24 @@
+The semaphore test suite checks the following ...
+
+1. Signal a semaphore from an ISR 5 times.
+2. Check the semaphore status from the task.
+3. Take the semaphore 8 times.  First 5 should succeed; next three should fail.
+4. Wait for up to XX ticks for the semaphore.  This should timeout.
+5. Wait for up to XX ticks for the semaphore.  Have an ISR give the semaphore.
+6. Wait for up to XX ticks for the semaphore.  Have a task give the semaphore.
+7. Multiple tasks wait for the semaphore.  Highest priority task gets it.
+8. Wait on a group of semaphores--timeout.
+9. Wait on a group of semaphores
+    - Wake on receipt of each semaphore (test done for each sem in group)
+        - Semaphore signalled from ISR
+        - Semaphore signalled from task
+    - Wake on receipt of many semaphores (test done for various combos)
+        - Can only be done from a task
+    - task_sem_count_get() performed on semaphores in group before and signalling
+10. Give semaphore a number of times, then call task_sem_reset()
+11. Give many semaphores a number of times, then call task_sem_group_take()
+12. Tests signaling semaphore from a fiber:
+    - task waits on a semaphore and fiber signals it
+    - fiber signals the semaphore N times, task checks that task_sem_count_get is N
+    - task waits on a semaphore group and fiber signals each of them once. Task
+      checks which of the semaphores has been signaled
