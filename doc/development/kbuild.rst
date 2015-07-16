@@ -497,6 +497,10 @@ Make Modifiers
 * **make O=dir [targets]** Locates all output files in **dir**,
 including :file:`.config.`.
 
+* **make QEMU_PIPE=pipe qemu** When running QEMU, direct all its console
+output to the specified UNIX pipe instead of stdout. The interactive monitor
+is disabled in this mode.
+
 Setting Up a Toolchain
 **********************
 

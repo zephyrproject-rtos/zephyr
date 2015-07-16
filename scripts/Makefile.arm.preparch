@@ -12,7 +12,7 @@ arm_FLAGS += $(LTO_FLAG-$(CONFIG_LTO))
 
 QEMU_CPU_TYPE_arm = cortex-m3
 QEMU_FLAGS_arm = -cpu  $(QEMU_CPU_TYPE_arm) \
-		-machine lm3s6965evb -nographic -serial mon:stdio
+		-machine lm3s6965evb -nographic
 QEMU_arm = qemu-system-arm
 
 export QEMU_FLAGS_arm QEMU_arm

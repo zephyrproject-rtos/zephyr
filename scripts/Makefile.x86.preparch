@@ -27,7 +27,7 @@ QEMU_FLAGS_x86 = -m 32 -cpu $(QEMU_CPU_TYPE_x86) \
 		-no-reboot -nographic -display none -net none \
 		-clock dynticks -no-acpi -balloon none -no-hpet \
 		-L $(QEMU_BIOS) -bios bios.bin \
-		-serial mon:stdio -machine type=pc-0.14
+		-machine type=pc-0.14
 QEMU_x86 = qemu-system-i386
 
 export ISA_FLAG_x86 QEMU_FLAGS_x86 QEMU_x86 QEMU_CPU_TYPE_x86
