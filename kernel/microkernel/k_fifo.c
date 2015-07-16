@@ -97,7 +97,7 @@ void _k_fifo_enque_request(struct k_args *A)
 	char *p, *q; /* Ski char->uint32_t ??? */
 
 	Qid = A->Args.q1.queue;
-	Q = _k_fifo_list + OBJ_INDEX(Qid);
+	Q = (struct que_struct *)Qid;
 	w = OCTET_TO_SIZEOFUNIT(Q->Esize);
 	q = A->Args.q1.data;
 	n = Q->Nused;
@@ -229,7 +229,7 @@ void _k_fifo_deque_request(struct k_args *A)
 	char *p, *q; /* idem */
 
 	Qid = A->Args.q1.queue;
-	Q = _k_fifo_list + OBJ_INDEX(Qid);
+	Q = (struct que_struct *)Qid;
 	w = OCTET_TO_SIZEOFUNIT(Q->Esize);
 	p = A->Args.q1.data;
 	n = Q->Nused;
@@ -334,7 +334,7 @@ void _k_fifo_ioctl(struct k_args *A)
 	int Qid;
 
 	Qid = A->Args.q1.queue;
-	Q = _k_fifo_list + OBJ_INDEX(Qid);
+	Q = (struct que_struct *)Qid;
 	if (A->Args.q1.size) {
 		if (Q->Nused) {
 			struct k_args *X;

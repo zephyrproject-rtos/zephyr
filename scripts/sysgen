@@ -546,7 +546,6 @@ def kernel_main_c_fifos():
     total_fifos = len(fifo_list)
 
     if (total_fifos == 0):
-        kernel_main_c_out("\nstruct que_struct * _k_fifo_list = NULL;\n")
         return
 
     # FIFO buffers
@@ -559,20 +558,19 @@ def kernel_main_c_fifos():
 
     # FIFO descriptors
 
-    kernel_main_c_out("\n" +
-        "struct que_struct _k_fifo_list[%s] =\n" % (total_fifos) +
-        "{\n"
-    )
+    kernel_main_c_out("\n")
     for fifo in fifo_list:
+        name = fifo[0]
         depth = fifo[1]
         width = fifo[2]
         buffer = "__" + fifo[0] + "_buffer"
+        kernel_main_c_out("struct que_struct _k_fifo_obj_%s =\n" % (name))
         kernel_main_c_out(
             "    {%d, %d, %s, %s + (%d * %d),\n" %
             (depth, width, buffer, buffer, depth, width) +
-            "%s, %s, NULL, 0, 0, 0},\n" %
+            "     %s, %s, NULL, 0, 0, 0};\n" %
             (buffer, buffer))
-    kernel_main_c_out("};\n")
+    kernel_main_c_out("\n")
 
 
 def kernel_main_c_pipes():
@@ -930,11 +928,19 @@ def generate_zephyr_h_obj_ids():
         zephyr_h_data += \
             "#define %s ((ksem_t)&_k_sem_obj_%s)\n\n" % (name, name)
 
+    # fifo object ids
+
+    for fifo in fifo_list:
+        name = fifo[0]
+        zephyr_h_data += \
+            "extern struct que_struct _k_fifo_obj_%s;\n" % (name)
+        zephyr_h_data += \
+            "#define %s ((kfifo_t)&_k_fifo_obj_%s)\n\n" % (name, name)
+
     # all other object ids
 
     obj_types = [
         [task_list, 0],
-        [fifo_list, 0],
         [pipe_list, 0],
         [mbx_list, 0],
         [map_list, 0],
