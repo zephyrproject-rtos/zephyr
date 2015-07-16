@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
-for the atom_n28xx variant of generic_pc BSP.
+for the atom_n28xx configuration of ia32 platform.
  */
 
 #include <misc/__assert.h>

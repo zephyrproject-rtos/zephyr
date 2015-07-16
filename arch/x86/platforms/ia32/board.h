@@ -1,4 +1,4 @@
-/* board.h - board configuration macros for the 'generic_pc' BSP */
+/* board.h - board configuration macros for the ia32 platform */
 
 /*
  * Copyright (c) 2010-2015, Wind River Systems, Inc.
@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This header file is used to specify and describe board-level aspects for
-the 'generic_pc' BSP.
+the 'ia32' platform.
  */
 
 #ifndef __INCboardh

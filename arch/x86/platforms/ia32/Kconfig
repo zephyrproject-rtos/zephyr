@@ -1,4 +1,4 @@
-# Kconfig - quark BSP configuration options
+# Kconfig - generic PC platform configuration options
 
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
@@ -30,10 +30,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-
 config PLATFORM
 	string
-	default quark
+	default ia32
 	help
 	This option holds the directory name used by the build system to locate
 	the correct linker file.
@@ -41,8 +40,11 @@ config PLATFORM
 config PHYS_LOAD_ADDR
 	default 0x00100000
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 25000000
+config LOAPIC_TIMER_FREQ
+	default 150000000
+	depends on PLATFORM_ATOM_N28XX
 
-config UART_CONSOLE_INDEX
-	default 1
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 150000000 if PLATFORM_ATOM_N28XX
+	default 1193180   if PLATFORM_PCMINUTEIA
+

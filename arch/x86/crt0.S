@@ -274,7 +274,7 @@ SECTION_FUNC(TEXT_START, __start)
 	 * bootloader is unknown, do not make the assumption that the segment
 	 * registers are set correctly.
 	 *
-	 * This is a special case for the generic_pc BSP, which must work for
+	 * This is a special case for the ia32 platform, which must work for
 	 * multiple platforms (QEMU, generic PC board, etc.). With other
 	 * BSPs the bootloader is well known so assumptions can be made.
 	 */

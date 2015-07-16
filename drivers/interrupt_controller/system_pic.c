@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
-for the pentium4 and minuteia variants of the generic_pc BSP.
+for select configurations of the ia32 platform.
  */
 
 #include "board.h"

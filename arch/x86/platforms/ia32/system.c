@@ -1,4 +1,4 @@
-/* system.c - system/hardware module for the generic_pc BSP */
+/* system.c - system/hardware module for the ia32 platform */
 
 /*
  * Copyright (c) 2011-2015, Wind River Systems, Inc.
@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
-for the generic_pc BSP.
+for the ia32 platform.
  */
 
 #include <nanokernel.h>
