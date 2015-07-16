@@ -1,5 +1,3 @@
-/* memory map kernel services */
-
 /*
  * Copyright (c) 1997-2010, 2013-2014 Wind River Systems, Inc.
  *
@@ -30,18 +28,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* @file
+ * @brief Memory map kernel services.
+ */
+
 #include <micro_private.h>
 #include <sections.h>
 
 /**
- *
  * @brief Initialize kernel memory map subsystem
  *
  * Perform any initialization of memory maps that wasn't done at build time.
  *
  * @return N/A
  */
-
 void _k_mem_map_init(void)
 {
 	int i, j, w;
@@ -71,12 +71,12 @@ void _k_mem_map_init(void)
 }
 
 /**
- *
  * @brief Finish handling a memory map block request that timed out
+ *
+ * @param A Command package with the memory map block request that timed out.
  *
  * @return N/A
  */
-
 void _k_mem_map_alloc_timeout(struct k_args *A)
 {
 	_k_timeout_free(A->Time.timer);
@@ -86,12 +86,12 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
 }
 
 /**
- *
  * @brief Perform allocate memory map block request
+ *
+ * @param A Command package with the allocate memory map block request.
  *
  * @return N/A
  */
-
 void _k_mem_map_alloc(struct k_args *A)
 {
 	struct map_struct *M = _k_mem_map_list + OBJ_INDEX(A->Args.a1.mmap);
@@ -131,18 +131,17 @@ void _k_mem_map_alloc(struct k_args *A)
 }
 
 /**
- *
  * @brief Allocate memory map block request
  *
  * This routine is used to request a block of memory from the memory map.
  *
+ * @param mmap Memory map from which to request block.
+ * @param mptr Pointer to requested block of memory.
+ * @param time Maximum number of ticks for which to wait.
+ *
  * @return RC_OK, RC_FAIL, RC_TIME on success, error, timeout respectively
  */
-
-int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request block */
-		    void **mptr, /* pointer to requested block of memory */
-		    int32_t time /* maximum # of ticks for which to wait */
-		    )
+int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time)
 {
 	struct k_args A;
 
@@ -155,12 +154,12 @@ int _task_mem_map_alloc(kmemory_map_t mmap,  /* memory map from which to request
 }
 
 /**
- *
  * @brief Perform return memory map block request
+ *
+ * @param A Command package with the return memory map block request.
  *
  * @return N/A
  */
-
 void _k_mem_map_dealloc(struct k_args *A)
 {
 	struct map_struct *M = _k_mem_map_list + OBJ_INDEX(A->Args.a1.mmap);
@@ -195,19 +194,18 @@ void _k_mem_map_dealloc(struct k_args *A)
 }
 
 /**
- *
  * @brief Return memory map block request
  *
  * This routine returns a block to the specified memory map. If a higher
  * priority task is waiting for a block from the same map a task switch
  * takes place.
  *
+ * @param mmap Memory map.
+ * @param mptr Block of memory to return.
+ *
  * @return N/A
  */
-
-void _task_mem_map_free(kmemory_map_t mmap, /* memory map */
-		      void **mptr /* block of memory to return */
-		      )
+void _task_mem_map_free(kmemory_map_t mmap, void **mptr)
 {
 	struct k_args A;
 
@@ -217,17 +215,7 @@ void _task_mem_map_free(kmemory_map_t mmap, /* memory map */
 	KERNEL_ENTRY(&A);
 }
 
-/**
- *
- * @brief Read the number of used blocks in a memory map
- *
- * This routine returns the number of blocks in use for the memory map.
- *
- * @return number of used blocks
- */
-
-int task_mem_map_used_get(kmemory_map_t mmap /* memory map */
-		 )
+int task_mem_map_used_get(kmemory_map_t mmap)
 {
 	return _k_mem_map_list[OBJ_INDEX(mmap)].Nused;
 }

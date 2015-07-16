@@ -1,5 +1,3 @@
-/* microkernel/memory_map.h */
-
 /*
  * Copyright (c) 1997-2012, 2014 Wind River Systems, Inc.
  *
@@ -30,6 +28,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* @file
+ * @brief Memory map kernel services.
+ */
+
 #ifndef _MEMORY_MAP_H
 #define _MEMORY_MAP_H
 
@@ -37,15 +39,74 @@
 extern "C" {
 #endif
 
-extern int task_mem_map_used_get(kmemory_map_t map);
 extern int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time);
 extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
 
-#define task_mem_map_alloc(m, p) _task_mem_map_alloc(m, p, TICKS_NONE)
-#define task_mem_map_alloc_wait(m, p) _task_mem_map_alloc(m, p, TICKS_UNLIMITED)
+/**
+ * @brief Read the number of used blocks in a memory map
+ *
+ * This routine returns the number of blocks in use for the memory map.
+ *
+ * @param map Memory map.
+ *
+ * @return number of used blocks
+ */
+extern int task_mem_map_used_get(kmemory_map_t map);
+
+/**
+ * @brief Return memory map block request
+ *
+ * This routine returns a block to the specified memory map. If a higher
+ * priority task is waiting for a block from the same map a task switch
+ * takes place.
+ *
+ * @param m Memory map.
+ * @param p Block of memory to return.
+ *
+ * @return N/A
+ */
 #define task_mem_map_free(m, p) _task_mem_map_free(m, p)
 
+/**
+ * @brief Allocate memory map block request
+ *
+ * This routine is used to request a block of memory from the memory map.
+ *
+ * @param m Memory map from which to request block.
+ * @param p Pointer to requested block of memory.
+ *
+ * @return RC_OK on success or RC_FAIL on error.
+ */
+#define task_mem_map_alloc(m, p) _task_mem_map_alloc(m, p, TICKS_NONE)
+
+/**
+ * @brief Allocate memory map block request
+ *
+ * This routine is used to request a block of memory from the memory map.
+ * The task will wait if the memory block is not available.
+ *
+ * @param m Memory map from which to request block.
+ * @param p Pointer to requested block of memory.
+ *
+ * @return RC_OK on success or RC_FAIL on error.
+ */
+#define task_mem_map_alloc_wait(m, p) _task_mem_map_alloc(m, p, TICKS_UNLIMITED)
+
 #ifdef CONFIG_SYS_CLOCK_EXISTS
+
+/**
+ * @brief Allocate memory map block request with timeout
+ *
+ * This routine is used to request a block of memory from the memory map.
+ * The task will wait if the memory block is not available until the timeout
+ * expire or the memory is available.
+ *
+ * @param m Memory map from which to request block.
+ * @param p Pointer to requested block of memory.
+ * @param t Maximum number of ticks for which to wait.
+ *
+ * @return RC_OK, RC_FAIL, RC_TIME on success, error, timeout respectively
+ */
 #define task_mem_map_alloc_wait_timeout(m, p, t) _task_mem_map_alloc(m, p, t)
 #endif
 
