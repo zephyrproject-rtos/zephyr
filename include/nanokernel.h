@@ -618,27 +618,224 @@ struct nano_sem {
 	int nsig;
 };
 
+/**
+ *
+ * @brief Initialize a nanokernel semaphore object
+ *
+ * This function initializes a nanokernel semaphore object structure. After
+ * initialization, the semaphore count will be 0.
+ *
+ * It may be called from either a fiber or task context.
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
 extern void nano_sem_init(struct nano_sem *chan);
+
 /* scheduling context independent methods (when context is not known) */
+
+/**
+ *
+ * @brief Give a nanokernel semaphore
+ *
+ * This is a convenience wrapper for the context-specific APIs. This is
+ * helpful whenever the exact scheduling context is not known, but should
+ * be avoided when the context is known up-front (to avoid unnecessary
+ * overhead).
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
 extern void nano_sem_give(struct nano_sem *chan);
+
+/**
+ *
+ * @brief Take a nanokernel semaphore, poll/pend if not available
+ *
+ * This is a convenience wrapper for the context-specific APIs. This is
+ * helpful whenever the exact scheduling context is not known, but should
+ * be avoided when the context is known up-front (to avoid unnecessary
+ * overhead).
+ *
+ * It's only valid to call this API from a fiber or a task.
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
 extern void nano_sem_take_wait(struct nano_sem *chan);
+
 /* methods for ISRs */
+
+/**
+ *
+ * @brief Give a nanokernel semaphore (no context switch)
+ *
+ * This routine performs a "give" operation on a nanokernel sempahore object;
+ * it may be call from an ISR context.  A fiber pending on
+ * the semaphore object will be made ready, but will NOT be scheduled to
+ * execute.
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
 extern void nano_isr_sem_give(struct nano_sem *chan);
+
+/**
+ *
+ * @brief Take a nanokernel semaphore, fail if unavailable
+ *
+ * Attempt to take a nanokernel sempahore; it may be called from a
+ * ISR context.
+ *
+ * If the semaphore is not available, this function returns immediately, i.e.
+ * a wait (pend) operation will NOT be performed.
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return 1 if semaphore is available, 0 otherwise
+ */
 extern int nano_isr_sem_take(struct nano_sem *chan);
+
 /* methods for fibers */
+
+/**
+ *
+ * @brief Give a nanokernel semaphore (no context switch)
+ *
+ * This routine performs a "give" operation on a nanokernel sempahore object;
+ * it may be call from a fiber context.  A fiber pending on
+ * the semaphore object will be made ready, but will NOT be scheduled to
+ * execute.
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
 extern void nano_fiber_sem_give(struct nano_sem *chan);
+
+/**
+ *
+ * @brief Take a nanokernel semaphore, fail if unavailable
+ *
+ * Attempt to take a nanokernel sempahore; it may be called from a fiber
+ * context.
+ *
+ * If the semaphore is not available, this function returns immediately, i.e.
+ * a wait (pend) operation will NOT be performed.
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return 1 if semaphore is available, 0 otherwise
+ */
 extern int nano_fiber_sem_take(struct nano_sem *chan);
+
+/**
+ *
+ * @brief Test a nanokernel semaphore, wait if unavailable
+ *
+ * Take a nanokernel sempahore; it can only be called from a fiber context.
+ *
+ * If the nanokernel semaphore is not available, i.e. the event counter
+ * is 0, the calling fiber context will wait (pend) until the semaphore is
+ * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give).
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
 extern void nano_fiber_sem_take_wait(struct nano_sem *chan);
 #ifdef CONFIG_NANO_TIMEOUTS
+
+/**
+ * @brief test a nanokernel semaphore, wait with a timeout if unavailable
+ *
+ * Take a nanokernel sempahore; it can only be called from a fiber context.
+ *
+ * If the nanokernel semaphore is not available, i.e. the event counter
+ * is 0, the calling fiber context will wait (pend) until the semaphore is
+ * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give). A
+ * timeout can be specified.
+ *
+ * @param sem the semaphore to take
+ * @param timeout_in_ticks time to wait in ticks
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return 1 if semaphore is available, 0 if timed out
+ */
 extern int nano_fiber_sem_take_wait_timeout(struct nano_sem *chan,
 		int32_t timeout);
 #endif
 
 /* methods for tasks */
+
+/**
+ *
+ * @brief Give a nanokernel semaphore
+ *
+ * This routine performs a "give" operation on a nanokernel sempahore object;
+ * it can only be called from a task context.  A fiber pending on the
+ * semaphore object will be made ready, and will preempt the running task
+ * immediately.
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
 extern void nano_task_sem_give(struct nano_sem *chan);
+
+/**
+ *
+ * @brief Take a nanokernel semaphore, fail if unavailable
+ *
+ * Attempt to take a nanokernel sempahore; it may be called from a task
+ * context.
+ *
+ * If the semaphore is not available, this function returns immediately, i.e.
+ * a wait (pend) operation will NOT be performed.
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return 1 if semaphore is available, 0 otherwise
+ */
 extern int nano_task_sem_take(struct nano_sem *chan);
+
+/**
+ *
+ * @brief Take a nanokernel semaphore, poll if unavailable
+ *
+ * Take a nanokernel sempahore; it can only be called from a task context.
+ *
+ * If the nanokernel semaphore is not available, i.e. the event counter
+ * is 0, the calling task will poll until the semaphore is given
+ * (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give).
+ *
+ * @param chan Pointer to a nano_sem structure.
+ *
+ * @return N/A
+ */
 extern void nano_task_sem_take_wait(struct nano_sem *chan);
 #ifdef CONFIG_NANO_TIMEOUTS
+
+/**
+ * @brief test a nanokernel semaphore, poll with a timeout if unavailable
+ *
+ * Take a nanokernel sempahore; it can only be called from a task context.
+ *
+ * If the nanokernel semaphore is not available, i.e. the event counter is 0,
+ * the calling task will poll until the semaphore is given (via
+ * nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give). A timeout can be
+ * specified.
+ *
+ * @param chan the semaphore to take
+ * @param timeout time to wait in ticks
+ *
+ * @return 1 if semaphore is available, 0 if timed out
+ */
 extern int nano_task_sem_take_wait_timeout(struct nano_sem *chan,
 		int32_t timeout);
 #endif
