@@ -352,11 +352,11 @@ config PCI_DEBUG
 endmenu
 
 if PLATFORM_GENERIC_PC
-source "arch/x86/generic_pc/Kconfig"
+source "arch/x86/platforms/generic_pc/Kconfig"
 endif
 
 if PLATFORM_QUARK
-source "arch/x86/quark/Kconfig"
+source "arch/x86/platforms/quark/Kconfig"
 endif
 
 source "drivers/Kconfig"

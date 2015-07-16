@@ -9,5 +9,5 @@ obj-$(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED) += cache.o
 
 obj-y += core/
 obj-$(CONFIG_MICROKERNEL) += task/
-obj-$(CONFIG_PLATFORM_QUARK) += quark/
-obj-$(CONFIG_PLATFORM_GENERIC_PC) += generic_pc/
+obj-$(CONFIG_PLATFORM_QUARK) += platforms/quark/
+obj-$(CONFIG_PLATFORM_GENERIC_PC) += platforms/generic_pc/

@@ -754,7 +754,7 @@ DQUOTE = "
 #This comment line is to fix the highlighting of some editors due the quote effect."
 export KBUILD_ZEPHYR_INIT := $(head-y) $(init-y)
 export KBUILD_ZEPHYR_MAIN := $(bsp-y) $(drivers-y) $(core-y) $(libs-y)
-export KBUILD_LDS          := $(srctree)/arch/$(SRCARCH)/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/linker.cmd
+export KBUILD_LDS          := $(srctree)/arch/$(SRCARCH)/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/linker.cmd
 export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
 export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(zephyr-alldirs)) arch Documentation include samples scripts tools virt)

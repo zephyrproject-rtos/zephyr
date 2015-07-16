@@ -94,11 +94,11 @@ endmenu
 source "arch/arm/bsp/CortexM/Kconfig"
 
 if PLATFORM_TI_LM3S6965
-source "arch/arm/ti_lm3s6965/Kconfig"
+source "arch/arm/platforms/ti_lm3s6965/Kconfig"
 endif
 
 if PLATFORM_FSL_FRDM_K64F
-source "arch/arm/fsl_frdm_k64f/Kconfig"
+source "arch/arm/platforms/fsl_frdm_k64f/Kconfig"
 endif
 
 source "drivers/Kconfig"
