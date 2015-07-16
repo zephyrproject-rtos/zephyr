@@ -55,24 +55,24 @@ Application Program Interfaces
 Semaphore APIs allow signaling a semaphore. They also provide means to
 reset the signal count.
 
-+---------------------------------------+-----------------------------------+
-| Call                                  | Description                       |
-+=======================================+===================================+
-| :c:func:`isr_sem_give()`              | Signal a semaphore from an ISR.   |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_sem_give()`             | Signal a semaphore from a task.   |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_sem_take()`             | Test a semaphore from a task.     |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_sem_take_wait()`        | Wait on a semaphore from a task.  |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_sem_take_wait_timeout()` | Wait on a semaphore, with a      |
-|                                        | timeout, from a task.            |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_sem_group_reset()`     | Sets a list of semaphores to zero. |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_sem_group_give()`       | Signals a list of semaphores from |
-|                                       | a task.                           |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_sem_reset()`            | Sets a semaphore to zero.         |
-+---------------------------------------+-----------------------------------+
++----------------------------------------+------------------------------------+
+| Call                                   | Description                        |
++========================================+====================================+
+| :c:func:`isr_sem_give()`               | Signal a semaphore from an ISR.    |
++----------------------------------------+------------------------------------+
+| :c:func:`task_sem_give()`              | Signal a semaphore from a task.    |
++----------------------------------------+------------------------------------+
+| :c:func:`task_sem_take()`              | Test a semaphore from a task.      |
++----------------------------------------+------------------------------------+
+| :c:func:`task_sem_take_wait()`         | Wait on a semaphore from a task.   |
++----------------------------------------+------------------------------------+
+| :c:func:`task_sem_take_wait_timeout()` | Wait on a semaphore, with a        |
+|                                        | timeout, from a task.              |
++----------------------------------------+------------------------------------+
+| :c:func:`task_sem_group_reset()`       | Sets a list of semaphores to zero. |
++----------------------------------------+------------------------------------+
+| :c:func:`task_sem_group_give()`        | Signals a list of semaphores from  |
+|                                        | a task.                            |
++----------------------------------------+------------------------------------+
+| :c:func:`task_sem_reset()`             | Sets a semaphore to zero.          |
++----------------------------------------+------------------------------------+

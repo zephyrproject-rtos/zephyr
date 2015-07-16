@@ -8,11 +8,10 @@ Definition
 
 The FIFO is defined in :file:`include/microkernel/fifo.h` as a simple
 first-in, first-out queue that handle small amounts of fixed size data.
-FIFO objects have a buffer that stores a number of data transmits, and are the
-most
-efficient way to pass small amounts of data between tasks. FIFO objects
-are suitable for asynchronously transferring small amounts of data,
-such as parameters, between tasks.
+FIFO objects have a buffer that stores a number of data transmits, and
+are the most efficient way to pass small amounts of data between tasks.
+FIFO objects are suitable for asynchronously transferring small amounts
+of data, such as parameters, between tasks.
 
 Function
 ========
@@ -68,34 +67,34 @@ The FIFO object APIs allow to putting data on the queue, receiving data
 from the queue, finding the number of messages in the queue, and
 emptying the queue.
 
-+---------------------------------------+-----------------------------------+
-| Call                                  | Description                       |
-+=======================================+===================================+
-| :c:func:`task_fifo_put()`             | Put data on a FIFO, and fail      |
-|                                       | if the FIFO is full.              |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_put_wait()`        | Put data on a FIFO, waiting       |
-|                                       | for room in the FIFO.             |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_put_wait_timeout()` | Put data on a FIFO, waiting      |
-|                                        | for room in the FIFO, or a time  |
-|                                        | out.                             |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_get()`             | Get data off a FIFO,              |
-|                                       | returning immediately if no data  |
-|                                       | is available.                     |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_get_wait()`        | Get data off a FIFO,              |
-|                                       | waiting until data is available.  |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_get_wait_timeout()` | Get data off a FIFO, waiting     |
-|                                        | until data is available, or a    |
-|                                        | time out.                        |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_purge()`           | Empty the FIFO buffer, and signal |
-|                                       | any waiting receivers with an     |
-|                                       | error.                            |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_size_get()`        | Read the number of filled entries |
-|                                       | in a FIFO.                        |
-+---------------------------------------+-----------------------------------+
++----------------------------------------+-----------------------------------+
+| Call                                   | Description                       |
++========================================+===================================+
+| :c:func:`task_fifo_put()`              | Put data on a FIFO, and fail      |
+|                                        | if the FIFO is full.              |
++----------------------------------------+-----------------------------------+
+| :c:func:`task_fifo_put_wait()`         | Put data on a FIFO, waiting       |
+|                                        | for room in the FIFO.             |
++----------------------------------------+-----------------------------------+
+| :c:func:`task_fifo_put_wait_timeout()` | Put data on a FIFO, waiting       |
+|                                        | for room in the FIFO, or a time   |
+|                                        | out.                              |
++----------------------------------------+-----------------------------------+
+| :c:func:`task_fifo_get()`              | Get data off a FIFO,              |
+|                                        | returning immediately if no data  |
+|                                        | is available.                     |
++----------------------------------------+-----------------------------------+
+| :c:func:`task_fifo_get_wait()`         | Get data off a FIFO,              |
+|                                        | waiting until data is available.  |
++----------------------------------------+-----------------------------------+
+| :c:func:`task_fifo_get_wait_timeout()` | Get data off a FIFO, waiting      |
+|                                        | until data is available, or a     |
+|                                        | time out.                         |
++----------------------------------------+-----------------------------------+
+| :c:func:`task_fifo_purge()`            | Empty the FIFO buffer, and signal |
+|                                        | any waiting receivers with an     |
+|                                        | error.                            |
++----------------------------------------+-----------------------------------+
+| :c:func:`task_fifo_size_get()`         | Read the number of filled entries |
+|                                        | in a FIFO.                        |
++----------------------------------------+-----------------------------------+

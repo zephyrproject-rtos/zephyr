@@ -130,22 +130,22 @@ APIs
 
 The following Memory Map APIs are provided by :file:`microkernel.h`.
 
-+---------------------------------------+-----------------------------------+
-| Call                                  | Description                       |
-+=======================================+===================================+
-| :c:func:`task_mem_map_alloc()`        | Requests a block from a memory    |
-|                                       | map.                              |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mem_map_alloc_wait()`   | Waits on a block of memory until  |
-|                                       | it is available.                  |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mem_map_alloc_wait_timeout()` | Waits on a block of memory  |
-|                                             | for the period of time      |
-|                                             | defined by the time-out     |
-|                                             | parameter.                  |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mem_map_free()`         | Returns a block to a memory map.  |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mem_map_used_get()`     | Returns the number of used blocks |
-|                                       | in a memory map.                  |
-+---------------------------------------+-----------------------------------+
++---------------------------------------------+-----------------------------------+
+| Call                                        | Description                       |
++=============================================+===================================+
+| :c:func:`task_mem_map_alloc()`              | Requests a block from a memory    |
+|                                             | map.                              |
++---------------------------------------------+-----------------------------------+
+| :c:func:`task_mem_map_alloc_wait()`         | Waits on a block of memory until  |
+|                                             | it is available.                  |
++---------------------------------------------+-----------------------------------+
+| :c:func:`task_mem_map_alloc_wait_timeout()` | Waits on a block of memory        |
+|                                             | for the period of time            |
+|                                             | defined by the time-out           |
+|                                             | parameter.                        |
++---------------------------------------------+-----------------------------------+
+| :c:func:`task_mem_map_free()`               | Returns a block to a memory map.  |
++---------------------------------------------+-----------------------------------+
+| :c:func:`task_mem_map_used_get()`           | Returns the number of used blocks |
+|                                             | in a memory map.                  |
++---------------------------------------------+-----------------------------------+

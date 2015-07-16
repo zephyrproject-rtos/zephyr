@@ -60,45 +60,45 @@ Application Program Interfaces
 Mailbox APIs provide flexibility and control for transferring data
 between tasks.
 
-+---------------------------------------+-----------------------------------+
-| Call                                  | Description                       |
-+=======================================+===================================+
-| :c:func:`task_mbox_put()`             | Attempt to put data in a          |
-|                                       | mailbox, and fail if the receiver |
-|                                       | isn’t waiting.                    |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_put_wait()`        | Puts data in a mailbox,           |
-|                                       | and waits for it to be received.  |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_put_wait_timeout()` | Puts data in a mailbox,          |
-|                                        | and waits for it to be received, |
-|                                        | with a timeout.                  |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_put_async()`       | Puts data in a mailbox            |
-|                                       | asynchronously.                   |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_get()`             | Gets k_msg message                |
-|                                       | header information from a mailbox |
-|                                       | and gets mailbox data, or returns |
-|                                       | immediately if the sender isn’t   |
-|                                       | ready.                            |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_get_wait()`        | Gets k_msg                        |
-|                                       | header information from a mailbox |
-|                                       | and gets mailbox data, and waits  |
-|                                       | until the sender is ready with    |
-|                                       | data.                             |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_get_wait_timeout()` | Gets k_msg message               |
-|                                        | header information from a        |
-|                                        | mailbox and gets mailbox data,   |
-|                                        | and waits until the sender is    |
-|                                        | ready with a timeout.            |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_data_get()`        | Gets mailbox data and             |
-|                                       | puts it in a buffer specified by  |
-|                                       | a pointer.                        |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_data_get_async_block()` | Gets the mailbox data and    |
-|                                       | puts it in a memory pool block.   |
-+---------------------------------------+-----------------------------------+
++--------------------------------------------+-----------------------------------+
+| Call                                       | Description                       |
++============================================+===================================+
+| :c:func:`task_mbox_put()`                  | Attempt to put data in a          |
+|                                            | mailbox, and fail if the receiver |
+|                                            | isn't waiting.                    |
++--------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_put_wait()`             | Puts data in a mailbox,           |
+|                                            | and waits for it to be received.  |
++--------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_put_wait_timeout()`     | Puts data in a mailbox,           |
+|                                            | and waits for it to be received,  |
+|                                            | with a timeout.                   |
++--------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_put_async()`            | Puts data in a mailbox            |
+|                                            | asynchronously.                   |
++--------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_get()`                  | Gets k_msg message                |
+|                                            | header information from a mailbox |
+|                                            | and gets mailbox data, or returns |
+|                                            | immediately if the sender isn’t   |
+|                                            | ready.                            |
++--------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_get_wait()`             | Gets k_msg                        |
+|                                            | header information from a mailbox |
+|                                            | and gets mailbox data, and waits  |
+|                                            | until the sender is ready with    |
+|                                            | data.                             |
++--------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_get_wait_timeout()`     | Gets k_msg message                |
+|                                            | header information from a         |
+|                                            | mailbox and gets mailbox data,    |
+|                                            | and waits until the sender is     |
+|                                            | ready with a timeout.             |
++--------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_data_get()`             | Gets mailbox data and             |
+|                                            | puts it in a buffer specified by  |
+|                                            | a pointer.                        |
++--------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_data_get_async_block()` | Gets the mailbox data and         |
+|                                            | puts it in a memory pool block.   |
++--------------------------------------------+-----------------------------------+

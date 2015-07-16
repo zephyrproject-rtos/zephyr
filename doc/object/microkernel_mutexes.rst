@@ -155,27 +155,27 @@ APIs
 
 The following Mutex APIs are provided by :file:`microkernel.h`.
 
-+---------------------------------------+-----------------------------------+
-| Call                                  | Description                       |
-+=======================================+===================================+
-| :c:func:`task_mutex_lock()`           | Locks a mutex, and increments     |
-|                                       | the lock count.                   |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mutex_lock_wait()`      | Waits on a locked mutex until it  |
-|                                       | is unlocked, then locks the mutex |
-|                                       | and increments the lock count.    |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mutex_lock_wait_timeout()` | Waits on a locked mutex for    |
-|                                          | the period of time defined by  |
-|                                          | the timeout parameter. If the  |
-|                                          | mutex becomes available during |
-|                                          | that period, the function      |
-|                                          | locks the mutex, and           |
-|                                          | increments the lock count.     |
-|                                          | If the timeout expires, it     |
-|                                          | returns RC_TIME.               |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_mutex_unlock()`         | Decrements a mutex lock count,    |
-|                                       | and unlocks the mutex when the    |
-|                                       | count reaches zero.               |
-+---------------------------------------+-----------------------------------+
++------------------------------------------+-----------------------------------+
+| Call                                     | Description                       |
++==========================================+===================================+
+| :c:func:`task_mutex_lock()`              | Locks a mutex, and increments     |
+|                                          | the lock count.                   |
++------------------------------------------+-----------------------------------+
+| :c:func:`task_mutex_lock_wait()`         | Waits on a locked mutex until it  |
+|                                          | is unlocked, then locks the mutex |
+|                                          | and increments the lock count.    |
++------------------------------------------+-----------------------------------+
+| :c:func:`task_mutex_lock_wait_timeout()` | Waits on a locked mutex for       |
+|                                          | the period of time defined by     |
+|                                          | the timeout parameter. If the     |
+|                                          | mutex becomes available during    |
+|                                          | that period, the function         |
+|                                          | locks the mutex, and              |
+|                                          | increments the lock count.        |
+|                                          | If the timeout expires, it        |
+|                                          | returns RC_TIME.                  |
++------------------------------------------+-----------------------------------+
+| :c:func:`task_mutex_unlock()`            | Decrements a mutex lock count,    |
+|                                          | and unlocks the mutex when the    |
+|                                          | count reaches zero.               |
++------------------------------------------+-----------------------------------+

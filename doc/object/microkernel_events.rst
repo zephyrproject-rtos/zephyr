@@ -65,23 +65,23 @@ event is not signaled at the time of the call, the test either reports
 failure immediately in case of a non-blocking call, or blocks the
 calling task into a until the event signal becomes available.
 
-+---------------------------------------+-----------------------------------+
-| Call                                  | Description                       |
-+=======================================+===================================+
-| :c:func:`fiber_event_send()`          | Signal an event from a fiber.     |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_event_set_handler()`    | Installs or removes an event      |
-|                                       | handler function from a task.     |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_event_send()`           | Signal an event from a task.      |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_event_recv()`           | Waits for an event signal.        |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_event_recv_wait()`      | Waits for an event signal with a  |
-|                                       | delay.                            |
-+---------------------------------------+-----------------------------------+
-| :c:func:`task_event_recv_wait_timeout()` | Waits for an event signal with |
-|                                          | a delay and a timeout.         |
-+---------------------------------------+-----------------------------------+
-| :c:func:`isr_event_send()`            | Signal an event from an ISR       |
-+---------------------------------------+-----------------------------------+
++------------------------------------------+-----------------------------------+
+| Call                                     | Description                       |
++==========================================+===================================+
+| :c:func:`fiber_event_send()`             | Signal an event from a fiber.     |
++------------------------------------------+-----------------------------------+
+| :c:func:`task_event_set_handler()`       | Installs or removes an event      |
+|                                          | handler function from a task.     |
++------------------------------------------+-----------------------------------+
+| :c:func:`task_event_send()`              | Signal an event from a task.      |
++------------------------------------------+-----------------------------------+
+| :c:func:`task_event_recv()`              | Waits for an event signal.        |
++------------------------------------------+-----------------------------------+
+| :c:func:`task_event_recv_wait()`         | Waits for an event signal with a  |
+|                                          | delay.                            |
++------------------------------------------+-----------------------------------+
+| :c:func:`task_event_recv_wait_timeout()` | Waits for an event signal with    |
+|                                          | a delay and a timeout.            |
++------------------------------------------+-----------------------------------+
+| :c:func:`isr_event_send()`               | Signal an event from an ISR       |
++------------------------------------------+-----------------------------------+
