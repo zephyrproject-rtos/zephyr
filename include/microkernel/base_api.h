@@ -118,6 +118,19 @@ struct _k_sem_struct {
 	int Count;
 };
 
+struct _k_fifo_struct {
+	int Nelms;
+	int Esize;
+	char *Base;
+	char *Endp;
+	char *Enqp;
+	char *Deqp;
+	struct k_args *Waiters;
+	int Nused;
+	int Hmark;
+	int Count;
+};
+
 typedef enum {
 	_0_TO_N = 0x00000001,
 	_1_TO_N = 0x00000002,

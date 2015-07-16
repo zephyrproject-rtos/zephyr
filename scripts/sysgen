@@ -564,7 +564,7 @@ def kernel_main_c_fifos():
         depth = fifo[1]
         width = fifo[2]
         buffer = "__" + fifo[0] + "_buffer"
-        kernel_main_c_out("struct que_struct _k_fifo_obj_%s =\n" % (name))
+        kernel_main_c_out("struct _k_fifo_struct _k_fifo_obj_%s =\n" % (name))
         kernel_main_c_out(
             "    {%d, %d, %s, %s + (%d * %d),\n" %
             (depth, width, buffer, buffer, depth, width) +
@@ -933,7 +933,7 @@ def generate_zephyr_h_obj_ids():
     for fifo in fifo_list:
         name = fifo[0]
         zephyr_h_data += \
-            "extern struct que_struct _k_fifo_obj_%s;\n" % (name)
+            "extern struct _k_fifo_struct _k_fifo_obj_%s;\n" % (name)
         zephyr_h_data += \
             "#define %s ((kfifo_t)&_k_fifo_obj_%s)\n\n" % (name, name)
 

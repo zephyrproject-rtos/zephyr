@@ -92,12 +92,12 @@ void _k_fifo_enque_reply_timeout(struct k_args *A)
 void _k_fifo_enque_request(struct k_args *A)
 {
 	struct k_args *W;
-	struct que_struct *Q;
+	struct _k_fifo_struct *Q;
 	int Qid, n, w;
 	char *p, *q; /* Ski char->uint32_t ??? */
 
 	Qid = A->Args.q1.queue;
-	Q = (struct que_struct *)Qid;
+	Q = (struct _k_fifo_struct *)Qid;
 	w = OCTET_TO_SIZEOFUNIT(Q->Esize);
 	q = A->Args.q1.data;
 	n = Q->Nused;
@@ -224,12 +224,12 @@ void _k_fifo_deque_reply_timeout(struct k_args *A)
 void _k_fifo_deque_request(struct k_args *A)
 {
 	struct k_args *W;
-	struct que_struct *Q;
+	struct _k_fifo_struct *Q;
 	int Qid, n, w;
 	char *p, *q; /* idem */
 
 	Qid = A->Args.q1.queue;
-	Q = (struct que_struct *)Qid;
+	Q = (struct _k_fifo_struct *)Qid;
 	w = OCTET_TO_SIZEOFUNIT(Q->Esize);
 	p = A->Args.q1.data;
 	n = Q->Nused;
@@ -330,11 +330,11 @@ int _task_fifo_get(kfifo_t queue, void *data, int32_t time)
  */
 void _k_fifo_ioctl(struct k_args *A)
 {
-	struct que_struct *Q;
+	struct _k_fifo_struct *Q;
 	int Qid;
 
 	Qid = A->Args.q1.queue;
-	Q = (struct que_struct *)Qid;
+	Q = (struct _k_fifo_struct *)Qid;
 	if (A->Args.q1.size) {
 		if (Q->Nused) {
 			struct k_args *X;

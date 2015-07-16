@@ -488,19 +488,6 @@ struct map_struct {
 	int Count;
 };
 
-struct que_struct {
-	int Nelms;
-	int Esize;
-	char *Base;
-	char *Endp;
-	char *Enqp;
-	char *Deqp;
-	struct k_args *Waiters;
-	int Nused;
-	int Hmark;
-	int Count;
-};
-
 struct mbx_struct {
 	struct k_args *Writers;
 	struct k_args *Readers;
