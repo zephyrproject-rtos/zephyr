@@ -1,5 +1,3 @@
-/* semaphore kernel services */
-
 /*
  * Copyright (c) 1997-2010, 2012-2015 Wind River Systems, Inc.
  *
@@ -30,6 +28,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ *
+ * @brief Semaphore kernel services.
+ */
+
 #include <microkernel.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -42,7 +46,6 @@
  *
  * @return N/A
  */
-
 static void signal_semaphore(int n, struct sem_struct *S)
 {
 	struct k_args *A, *X, *Y;
@@ -94,13 +97,6 @@ static void signal_semaphore(int n, struct sem_struct *S)
 	}
 }
 
-/**
- *
- * @brief Finish handling incomplete waits on semaphores
- *
- * @return N/A
- */
-
 void _k_sem_group_wait(struct k_args *R)
 {
 	struct k_args *A = R->Ctxt.args;
@@ -110,18 +106,6 @@ void _k_sem_group_wait(struct k_args *R)
 		_k_state_bit_reset(A->Ctxt.proc, TF_LIST);
 	}
 }
-
-/**
- *
- * @brief Handle cancellation of a semaphore involved in a
- *              semaphore group wait request
- *
- * This routine only applies to semaphore group wait requests.  It is invoked
- * for each semaphore in the semaphore group that "lost" the semaphore group
- * wait request.
- *
- * @return N/A
- */
 
 void _k_sem_group_wait_cancel(struct k_args *A)
 {
@@ -177,17 +161,6 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Handle acceptance of the ready semaphore request
- *
- * This routine only applies to semaphore group wait requests.  It handles
- * the request for the one semaphore in the group that "wins" the semaphore
- * group wait request.
- *
- * @return N/A
- */
-
 void _k_sem_group_wait_accept(struct k_args *A)
 {
 	struct sem_struct *S = _k_sem_list + OBJ_INDEX(A->Args.s1.sema);
@@ -216,13 +189,6 @@ void _k_sem_group_wait_accept(struct k_args *A)
 	/* ERROR */
 }
 
-/**
- *
- * @brief Handle semaphore group timeout request
- *
- * @return N/A
- */
-
 void _k_sem_group_wait_timeout(struct k_args *A)
 {
 	ksem_t *L;
@@ -247,17 +213,6 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Handle semaphore ready request
- *
- * This routine only applies to semaphore group wait requests.  It identifies
- * the one semaphore in the group that "won" the semaphore group wait request
- * before triggering the semaphore group timeout handler.
- *
- * @return N/A
- */
-
 void _k_sem_group_ready(struct k_args *R)
 {
 	struct k_args *A = R->Ctxt.args;
@@ -275,13 +230,6 @@ void _k_sem_group_ready(struct k_args *R)
 	FREEARGS(R);
 }
 
-/**
- *
- * @brief Reply to a semaphore wait request
- *
- * @return N/A
- */
-
 void _k_sem_wait_reply(struct k_args *A)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -296,14 +244,6 @@ void _k_sem_wait_reply(struct k_args *A)
 		A->Time.rcode = RC_OK;
 	_k_state_bit_reset(A->Ctxt.proc, TF_SEMA);
 }
-
-/**
- *
- * @brief Handle internal wait request on a semaphore involved in a
- *              semaphore group wait request
- *
- * @return N/A
- */
 
 void _k_sem_group_wait_request(struct k_args *A)
 {
@@ -338,16 +278,6 @@ void _k_sem_group_wait_request(struct k_args *A)
 	}
 	signal_semaphore(0, S);
 }
-
-/**
- *
- * @brief Handle semaphore group wait request
- *
- * This routine splits the single semaphore group wait request into several
- * internal wait requests--one for each semaphore in the group.
- *
- * @return N/A
- */
 
 void _k_sem_group_wait_any(struct k_args *A)
 {
@@ -388,13 +318,6 @@ void _k_sem_group_wait_any(struct k_args *A)
 #endif
 }
 
-/**
- *
- * @brief Handle semaphore test and wait request
- *
- * @return N/A
- */
-
 void _k_sem_wait_request(struct k_args *A)
 {
 	struct sem_struct *S;
@@ -425,19 +348,6 @@ void _k_sem_wait_request(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Test a semaphore
- *
- * This routine tests a semaphore to see if it has been signaled.  If the signal
- * count is greater than zero, it is decremented.
- *
- * @param sema   Semaphore to test.
- * @param time   Maximum number of ticks to wait.
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
- */
-
 int _task_sem_take(ksem_t sema, int32_t time)
 {
 	struct k_args A;
@@ -448,22 +358,6 @@ int _task_sem_take(ksem_t sema, int32_t time)
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }
-
-/**
- *
- * @brief Test multiple semaphores
- *
- * This routine tests a group of semaphores. A semaphore group is an array of
- * semaphore names terminated by the predefined constant ENDLIST.
- *
- * It returns the ID of the first semaphore in the group whose signal count is
- * greater than zero, and decrements the signal count.
- *
- * @param group   Group of semaphores to test.
- * @param time    Maximum number of ticks to wait.
- *
- * @return N/A
- */
 
 ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
 {
@@ -477,26 +371,12 @@ ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
 	return A.Args.s1.sema;
 }
 
-/**
- *
- * @brief Handle semaphore signal request
- *
- * @return N/A
- */
-
 void _k_sem_signal(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
 
 	signal_semaphore(1, _k_sem_list + OBJ_INDEX(Sid));
 }
-
-/**
- *
- * @brief Handle signal semaphore group request
- *
- * @return N/A
- */
 
 void _k_sem_group_signal(struct k_args *A)
 {
@@ -507,17 +387,6 @@ void _k_sem_group_signal(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Signal a semaphore
- *
- * This routine signals the specified semaphore.
- *
- * @param sema   Semaphore to signal.
- *
- * @return N/A
- */
-
 void task_sem_give(ksem_t sema)
 {
 	struct k_args A;
@@ -526,24 +395,6 @@ void task_sem_give(ksem_t sema)
 	A.Args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 }
-
-/**
- *
- * @brief Signal a group of semaphores
- *
- * This routine signals a group of semaphores. A semaphore group is an array of
- * semaphore names terminated by the predefined constant ENDLIST.
- *
- * If the semaphore list of waiting tasks is empty, the signal count is
- * incremented, otherwise the highest priority waiting task is released.
- *
- * Using task_sem_group_give() is faster than using multiple single signals,
- * and ensures all signals take place before other tasks run.
- *
- * @param group   Group of semaphores to signal.
- *
- * @return N/A
- */
 
 void task_sem_group_give(ksemg_t group)
 {
@@ -554,34 +405,7 @@ void task_sem_group_give(ksemg_t group)
 	KERNEL_ENTRY(&A);
 }
 
-/**
- *
- * @brief Signal a semaphore from a fiber
- *
- * This routine (to only be called from a fiber) signals a semaphore.  It
- * requires a statically allocated command packet (from a command packet set)
- * that is implicitly released once the command packet has been processed.
- * To signal a semaphore from a task, task_sem_give() should be used instead.
- *
- * @return N/A
- */
-
 FUNC_ALIAS(isr_sem_give, fiber_sem_give, void);
-
-/**
- *
- * @brief Signal a semaphore from an ISR
- *
- * This routine (to only be called from an ISR) signals a semaphore.  It
- * requires a statically allocated command packet (from a command packet set)
- * that is implicitly released once the command packet has been processed.
- * To signal a semaphore from a task, task_sem_give() should be used instead.
- *
- * @param sema   Semaphore to signal.
- * @param pSet   Pointer to command packet set.
- *
- * @return N/A
- */
 
 void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
 {
@@ -600,26 +424,12 @@ void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
 	nano_isr_stack_push(&_k_command_stack, (uint32_t)pCommand);
 }
 
-/**
- *
- * @brief Handle semaphore reset request
- *
- * @return N/A
- */
-
 void _k_sem_reset(struct k_args *A)
 {
 	uint32_t Sid = A->Args.s1.sema;
 
 	_k_sem_list[OBJ_INDEX(Sid)].Level = 0;
 }
-
-/**
- *
- * @brief Handle semaphore group reset request
- *
- * @return N/A
- */
 
 void _k_sem_group_reset(struct k_args *A)
 {
@@ -630,17 +440,6 @@ void _k_sem_group_reset(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Reset semaphore count to zero
- *
- * This routine resets the signal count of the specified semaphore to zero.
- *
- * @param sema   Semaphore to reset.
- *
- * @return N/A
- */
-
 void task_sem_reset(ksem_t sema)
 {
 	struct k_args A;
@@ -649,19 +448,6 @@ void task_sem_reset(ksem_t sema)
 	A.Args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 }
-
-/**
- *
- * @brief Reset a group of semaphores
- *
- * This routine resets the signal count for a group of semaphores. A semaphore
- * group is an array of semaphore names terminated by the predefined constant
- * ENDLIST.
- *
- * @param group   Group of semaphores to reset.
- *
- * @return N/A
- */
 
 void task_sem_group_reset(ksemg_t group)
 {
@@ -672,13 +458,6 @@ void task_sem_group_reset(ksemg_t group)
 	KERNEL_ENTRY(&A);
 }
 
-/**
- *
- * @brief Handle semaphore inquiry request
- *
- * @return N/A
- */
-
 void _k_sem_inquiry(struct k_args *A)
 {
 	struct sem_struct *S;
@@ -688,17 +467,6 @@ void _k_sem_inquiry(struct k_args *A)
 	S = _k_sem_list + OBJ_INDEX(Sid);
 	A->Time.rcode = S->Level;
 }
-
-/**
- *
- * @brief Read the semaphore signal count
- *
- * This routine reads the signal count of the specified semaphore.
- *
- * @param sema   Semaphore to query.
- *
- * @return signal count
- */
 
 int task_sem_count_get(ksem_t sema)
 {

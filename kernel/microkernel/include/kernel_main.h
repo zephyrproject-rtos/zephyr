@@ -1,5 +1,3 @@
-/* non-public microkernel APIs referenced by kernel_main.c */
-
 /*
  * Copyright (c) 1997-2012, 2014 Wind River Systems, Inc.
  *
@@ -28,6 +26,11 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * @file
+ * @brief Non-public microkernel APIs referenced by kernel_main.c.
  */
 
 #ifndef _ENTRIES_H
@@ -63,20 +66,165 @@ typedef void (*kernelfunc)(struct k_args *);
 extern void _k_nop(struct k_args *);
 extern void _k_offload_to_fiber(struct k_args *);
 extern void _k_workload_get(struct k_args *);
+
+/**
+ *
+ * @brief Handle semaphore signal request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_signal(struct k_args *);
+
+/**
+ *
+ * @brief Handle signal semaphore group request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_group_signal(struct k_args *);
+
+/**
+ *
+ * @brief Handle semaphore reset request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_reset(struct k_args *);
+
+/**
+ *
+ * @brief Handle semaphore group reset request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_group_reset(struct k_args *);
+
+/**
+ *
+ * @brief Handle internal wait request on a semaphore involved in a
+ *              semaphore group wait request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_wait_request(struct k_args *);
+
+/**
+ *
+ * @brief Reply to a semaphore wait request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_wait_reply(struct k_args *);
+
+/**
+ *
+ * @brief Handle semaphore group wait request
+ *
+ * This routine splits the single semaphore group wait request into several
+ * internal wait requests--one for each semaphore in the group.
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_group_wait_any(struct k_args *);
+
+/**
+ *
+ * @brief Handle semaphore test and wait request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_group_wait_request(struct k_args *);
+
+/**
+ *
+ * @brief Handle semaphore ready request
+ *
+ * This routine only applies to semaphore group wait requests.  It identifies
+ * the one semaphore in the group that "won" the semaphore group wait request
+ * before triggering the semaphore group timeout handler.
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_group_ready(struct k_args *);
+
+/**
+ *
+ * @brief Handle cancellation of a semaphore involved in a
+ *              semaphore group wait request
+ *
+ * This routine only applies to semaphore group wait requests.  It is invoked
+ * for each semaphore in the semaphore group that "lost" the semaphore group
+ * wait request.
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_group_wait_cancel(struct k_args *);
+
+/**
+ *
+ * @brief Handle acceptance of the ready semaphore request
+ *
+ * This routine only applies to semaphore group wait requests.  It handles
+ * the request for the one semaphore in the group that "wins" the semaphore
+ * group wait request.
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
+
 extern void _k_sem_group_wait_accept(struct k_args *);
+
+/**
+ *
+ * @brief Finish handling incomplete waits on semaphores
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_group_wait(struct k_args *);
+
+/**
+ *
+ * @brief Handle semaphore group timeout request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_group_wait_timeout(struct k_args *);
+
+/**
+ *
+ * @brief Handle semaphore inquiry request
+ *
+ * @param k_args Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
 extern void _k_sem_inquiry(struct k_args *);
+
 extern void _k_mutex_lock_request(struct k_args *);
 extern void _k_mutex_lock_reply(struct k_args *);
 extern void _k_mutex_unlock(struct k_args *);
