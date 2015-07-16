@@ -42,8 +42,8 @@ addresses of the destination pointer.
 Usage
 =====
 
-Defining a FIFO
----------------
+Defining a FIFO in MDEF file
+----------------------------
 
 The following parameters must be defined:
 
@@ -72,6 +72,33 @@ that holds up to 10 items that are each 12 bytes long as follows:
    % FIFO NAME         DEPTH WIDTH
    % =============================
      FIFO SIGNAL_FIFO   10    12
+
+
+Defining FIFO inside Code
+-------------------------
+
+In addition to defining FIFOs in MDEF file, it is also possible to
+define FIFOs inside code. The macro ``DEFINE_FIFO(fifo_name)``
+can be used for this purpose.
+
+For example, the following code can be used to define a global FIFO
+``PRIV_FIFO``.
+
+.. code-block:: c
+
+   DEFINE_FIFO(PRIV_FIFO, depth, width);
+
+The FIFO ``PRIV_FIFO`` can be used in the same style as those FIFOs
+defined in MDEF file.
+
+It is possible to utilize this FIFO in another source file, simply
+add:
+
+.. code-block:: c
+
+   extern const kfifo_t PRIV_FIFO;
+
+to that file. The FIFO ``PRIV_FIFO`` can be then used there.
 
 
 Example: Writing to a FIFO

@@ -38,6 +38,8 @@
 #ifndef FIFO_H
 #define FIFO_H
 
+#include <sections.h>
+
 /* externs */
 
 #ifdef __cplusplus
@@ -153,6 +155,37 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
  * @return RC_OK on purge.
  */
 #define task_fifo_purge(q) _task_fifo_ioctl(q, 1)
+
+/**
+ * @brief Initializer for microkernel FIFO
+ */
+#define __K_FIFO_DEFAULT(depth, width, buffer) \
+	{ \
+	  .Nelms = depth,\
+	  .Esize = width,\
+	  .Base = buffer,\
+	  .Endp = (buffer + (depth * width)),\
+	  .Enqp = buffer,\
+	  .Deqp = buffer,\
+	  .Waiters = NULL,\
+	  .Nused = 0,\
+	  .Hmark = 0,\
+	  .Count = 0,\
+	}
+
+/**
+ * @brief Define a private microkernel FIFO
+ *
+ * This declares and initializes a private FIFO. The new FIFO
+ * can be passed to the microkernel FIFO functions.
+ *
+ * @param name Name of the FIFO
+ */
+#define DEFINE_FIFO(name, depth, width) \
+	static char __noinit __##name_buffer[(depth * width)]; \
+	struct _k_fifo_struct _k_fifo_obj_##name = \
+	       __K_FIFO_DEFAULT(depth, width, __##name_buffer); \
+	const kfifo_t name = (kfifo_t)&_k_fifo_obj_##name;
 
 #ifdef __cplusplus
 }

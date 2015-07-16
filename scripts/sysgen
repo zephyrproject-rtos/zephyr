@@ -564,12 +564,8 @@ def kernel_main_c_fifos():
         depth = fifo[1]
         width = fifo[2]
         buffer = "__" + fifo[0] + "_buffer"
-        kernel_main_c_out("struct _k_fifo_struct _k_fifo_obj_%s =\n" % (name))
-        kernel_main_c_out(
-            "    {%d, %d, %s, %s + (%d * %d),\n" %
-            (depth, width, buffer, buffer, depth, width) +
-            "     %s, %s, NULL, 0, 0, 0};\n" %
-            (buffer, buffer))
+        kernel_main_c_out("struct _k_fifo_struct _k_fifo_obj_%s = " % (name) +
+            "__K_FIFO_DEFAULT(%d, %d, %s);\n" % (depth, width, buffer))
     kernel_main_c_out("\n")
 
 
