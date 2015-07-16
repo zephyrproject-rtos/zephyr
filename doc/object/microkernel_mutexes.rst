@@ -3,18 +3,6 @@
 MUTEXES
 *******
 
-
-This microkernel object is organized with the following sections:
-
-* Concepts: what the object is and its characteristics
-
-* Purpose:  why you would use the object
-
-* Usage:    how (when and where) you use the object and examples
-
-* APIs:     list of object-related APIs
-
-
 Concepts
 ========
 
