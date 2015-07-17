@@ -63,8 +63,13 @@ ktask_t msgRcvrTask		= MSGRCVRTASK;
 ksem_t semSync1			= SEM_SYNC1;
 ksem_t semSync2			= SEM_SYNC2;
 
+#ifndef TEST_PRIV_MBX
 kmbox_t myMbox			= MYMBOX;
 kmbox_t noRcvrMbox		= NORCVRMBOX;
+#else
+extern const kmbox_t myMbox;
+extern const kmbox_t noRcvrMbox;
+#endif
 
 kmemory_pool_t testPool			= TESTPOOL;
 kmemory_pool_t smallBlkszPool	= SMALLBLKSZPOOL;

@@ -40,6 +40,7 @@ microkernel/test/test_events            <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_fifo              <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_fifo_priv         <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_mail              <uq> basic_cortex_m3! fsl_frdm_k64f
+microkernel/test/test_mail_priv         <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_map               <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_pipe              <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_pool              <uq> basic_cortex_m3! fsl_frdm_k64f
@@ -61,6 +62,7 @@ microkernel/test/test_fifo_priv         <uq> basic_minuteia! basic_atom! galileo
 microkernel/test/test_fp_sharing        <u>                  basic_atom!
 microkernel/test/test_libs              <uq> basic_minuteia! basic_atom! galileo
 microkernel/test/test_mail              <uq> basic_minuteia! basic_atom! galileo
+microkernel/test/test_mail_priv         <uq> basic_minuteia! basic_atom! galileo
 microkernel/test/test_map               <uq> basic_minuteia! basic_atom! galileo
 microkernel/test/test_pipe              <uq> basic_minuteia! basic_atom! galileo
 microkernel/test/test_pool              <uq> basic_minuteia! basic_atom! galileo

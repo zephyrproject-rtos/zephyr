@@ -1,0 +1,30 @@
+% Please keep this in-sync with ../test_mail/prj.mdef
+% except those specified below
+
+% Application       : test microkernel Msg APIs for mail
+
+% TASK NAME          PRIO ENTRY               STACK GROUPS
+% ========================================================
+  TASK MONITORTASK      5 MonitorTaskEntry     2048 [EXE]
+  TASK MSGSENDERTASK    7 MsgSenderTaskEntry   2048 [EXE]
+  TASK MSGRCVRTASK      7 MsgRcvrTaskEntry     2048 [EXE]
+
+% MYMBOX and NORCVRMBOX are defined withint source code.
+% So keep them commented out.
+%
+% MAILBOX NAME
+% ==================
+%  MAILBOX MYMBOX
+%  MAILBOX NORCVRMBOX
+
+% SEMA NAME
+% =================
+  SEMA SEM_TASKDONE
+  SEMA SEM_TASKFAIL
+  SEMA SEM_SYNC1
+  SEMA SEM_SYNC2
+
+% POOL NAME           SIZE_SMALL SIZE_LARGE BLOCK_NUMBER
+% ======================================================
+  POOL SMALLBLKSZPOOL      8         8            1
+  POOL TESTPOOL           16        16            1

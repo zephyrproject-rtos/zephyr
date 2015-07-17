@@ -78,8 +78,13 @@ extern ktask_t msgRcvrTask;
 extern ksem_t semSync1;
 extern ksem_t semSync2;
 
+#ifndef TEST_PRIV_MBX
 extern kmbox_t myMbox;
 extern kmbox_t noRcvrMbox;
+#else
+DEFINE_MAILBOX(myMbox);
+DEFINE_MAILBOX(noRcvrMbox);
+#endif
 
 extern kmemory_pool_t testPool;
 extern kmemory_pool_t smallBlkszPool;
