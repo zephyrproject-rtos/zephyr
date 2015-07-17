@@ -1,0 +1,1509 @@
+#!/usr/bin/env python
+"""Zephyr Sanity Tests
+
+This script scans for the set of unit test applications in the git
+repository and attempts to execute them. By default, it tries to
+build each test case on one platform per architecture, using a precedence
+list defined in an archtecture configuration file, and if possible
+run the tests in the QEMU emulator.
+
+Test cases are detected by the presence of a 'testcase.ini' file in
+the application's project directory. This file may contain one or
+more blocks, each identifying a test scenario. The title of the block
+is a name for the test case, which only needs to be unique for the
+test cases specified in that testcase.ini file. The full canonical
+name for each test case is <path to test case under samples/>/<block>.
+
+Each testcase.ini block can define the following key/value pairs:
+
+ tags = <list of tags> (required)
+    A set of string tags for the testcase. Usually pertains to
+    functional domains but can be anything. Command line invocations
+    of this script can filter the set of tests to run based on tag.
+
+  extra_args = <list of extra arguments>
+    Extra arguments to pass to Make when building or running the
+    test case.
+
+  build_only = <True|False>
+    If true, don't try to run the test under QEMU even if the
+    selected platform supports it.
+
+  timeout = <number of seconds>
+    Length of time to run test in QEMU before automatically killing it.
+    Default to 60 seconds.
+
+  arch_whitelist = <list of arches, such as x86, arm, arc>
+    Set of architectures that this test case should only be run for.
+
+  platform_whitelist = <list of platforms>
+    Set of platforms that this test case should only be run for for.
+
+  config_whitelist = <list of config options>
+    Config options can either be config names like CONFIG_FOO which
+    match if the configuration is defined to any value, or key/value
+    pairs like CONFIG_FOO=bar which match if it is set to a specific
+    value. May prepend a '!' to invert the match.
+
+Architectures and platforms are defined in an archtecture configuration
+file which are stored by default in scripts/sanity_chk/arches/. These
+each define an [arch] block with the following key/value pairs:
+
+  name = <arch name>
+    The name of the arch. Example: x86
+
+  platforms = <list of supported platforms in order of precedence>
+    List of supported platforms for this arch. The ordering here
+    is used to select a default platform to build for that arch.
+
+For every platform defined, there must be a corresponding block for it
+in the arch configuration file. This block can be empty if there are
+no special definitions for that arch. Options are:
+
+  qemu_support = <True|False> (default False)
+    Indicates whether binaries for this platform can run under QEMU
+
+  microkernel_support = <True|False> (default True)
+    Indicates whether this platform supports microkernel or just nanokernel
+
+The set of test cases that actually run depends on directives in the
+testcase and archtecture .ini file and options passed in on the command
+line. If there is every any confusion, running with -v or --discard-report
+can help show why particular test cases were skipped.
+
+Metrics (such as pass/fail state and binary size) for the last code
+release are stored in scripts/sanity_chk/sanity_last_release.csv.
+To update this, pass the --all --release options.
+
+Most everyday users will run with no arguments.
+"""
+
+import argparse
+import os
+import sys
+import ConfigParser
+import re
+import tempfile
+import subprocess
+import multiprocessing
+import select
+import shutil
+import signal
+import threading
+import time
+import csv
+
+if "ZEPHYR_BASE" not in os.environ:
+    sys.stderr.write("$ZEPHYR_BASE environment variable undefined")
+    exit(1)
+ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
+VERBOSE = 0
+LAST_SANITY = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
+                           "last_sanity.csv")
+RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
+                            "sanity_last_release.csv")
+PARALLEL = multiprocessing.cpu_count() * 2
+
+if os.isatty(sys.stdout.fileno()):
+    TERMINAL = True
+    COLOR_NORMAL = '\033[0m'
+    COLOR_RED = '\033[91m'
+    COLOR_GREEN = '\033[92m'
+    COLOR_YELLOW = '\033[93m'
+else:
+    TERMINAL = False
+    COLOR_NORMAL = ""
+    COLOR_RED = ""
+    COLOR_GREEN = ""
+    COLOR_YELLOW = ""
+
+class SanityCheckException(Exception):
+    pass
+
+class SanityRuntimeError(SanityCheckException):
+    pass
+
+class ConfigurationError(SanityCheckException):
+    def __init__(self, cfile, message):
+        self.cfile = cfile
+        self.message = message
+
+    def __str__(self):
+        return repr(self.cfile + ": " + self.message)
+
+class MakeError(SanityCheckException):
+    pass
+
+class BuildError(MakeError):
+    pass
+
+class ExecutionError(MakeError):
+    pass
+
+# Debug Functions
+
+def debug(what):
+    if VERBOSE >= 1:
+        print what
+
+def error(what):
+    sys.stderr.write(COLOR_RED + what + COLOR_NORMAL + "\n")
+
+def verbose(what):
+    if VERBOSE >= 2:
+        print what
+
+def info(what):
+    sys.stdout.write(what + "\n")
+
+# Utility functions
+class QEMUHandler:
+    """Spawns a thread to monitor QEMU output from pipes
+
+    We pass QEMU_PIPE to 'make qemu' and monitor the pipes for output.
+    We need to do this as once qemu starts, it runs forever until killed.
+    Test cases emit special messages to the console as they run, we check
+    for these to collect whether the test passed or failed.
+    """
+    RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
+    RUN_FAILED = "PROJECT EXECUTION FAILED"
+
+    @staticmethod
+    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results):
+        fifo_in = fifo_fn + ".in"
+        fifo_out = fifo_fn + ".out"
+
+        # These in/out nodes are named from QEMU's perspective, not ours
+        if os.path.exists(fifo_in):
+            os.unlink(fifo_in)
+        os.mkfifo(fifo_in)
+        if os.path.exists(fifo_out):
+            os.unlink(fifo_out)
+        os.mkfifo(fifo_out)
+
+        # We don't do anything with out_fp but we need to open it for
+        # writing so that QEMU doesn't block, due to the way pipes work
+        out_fp = open(fifo_in, "wb")
+        # Disable internal buffering, we don't
+        # want read() or poll() to ever block if there is data in there
+        in_fp = open(fifo_out, "rb", buffering=0)
+        log_out_fp = open(logfile, "w")
+
+        start_time = time.time()
+        timeout_time = start_time + timeout
+        p = select.poll()
+        p.register(in_fp, select.POLLIN)
+
+        metrics = {}
+        line = ""
+        while True:
+            this_timeout = int((timeout_time - time.time()) * 1000)
+            if this_timeout < 0 or not p.poll(this_timeout):
+                out_state = "timeout"
+                break
+
+            c = in_fp.read(1)
+            if c == "":
+                # EOF, this shouldn't happen unless QEMU crashes
+                out_state = "unexpected eof"
+                break
+            line = line + c
+            if c != "\n":
+                continue
+
+            # If we get here, line contains a full line of data output from QEMU
+            log_out_fp.write(line)
+            log_out_fp.flush()
+            line = line.strip()
+            verbose("QEMU: %s" % line)
+
+            if line == QEMUHandler.RUN_PASSED:
+                out_state = "passed"
+                break
+
+            if line == QEMUHandler.RUN_FAILED:
+                out_state = "failed"
+                break
+
+            # TODO: Add support for getting numerical performance data
+            # from test cases. Will involve extending test case reporting
+            # APIs. Add whatever gets reported to the metrics dictionary
+            line = ""
+
+        metrics["qemu_time"] = time.time() - start_time
+        verbose("QEMU complete (%s) after %f seconds" %
+                (out_state, metrics["qemu_time"]))
+        handler.set_state(out_state, metrics)
+
+        log_out_fp.close()
+        out_fp.close()
+        in_fp.close()
+
+        pid = int(open(pid_fn).read())
+        os.unlink(pid_fn)
+        os.kill(pid, signal.SIGTERM)
+        os.unlink(fifo_in)
+        os.unlink(fifo_out)
+
+
+    def __init__(self, name, outdir, log_fn, timeout):
+        """Constructor
+
+        @param name Arbitrary name of the created thread
+        @param outdir Working directory, shoudl be where qemu.pid gets created
+            by kbuild
+        @param log_fn Absolute path to write out QEMU's log data
+        @param timeout Kill the QEMU process if it doesn't finish up within
+            the given number of seconds
+        """
+        # Create pipe to get QEMU's serial output
+        self.results = {}
+        self.state = "waiting"
+        self.lock = threading.Lock()
+
+        # We pass this to QEMU which looks for fifos with .in and .out
+        # suffixes.
+        self.fifo_fn = os.path.join(outdir, "qemu-fifo")
+
+        self.pid_fn = os.path.join(outdir, "qemu.pid")
+        if os.path.exists(self.pid_fn):
+            os.unlink(self.pid_fn)
+
+        self.log_fn = log_fn
+        self.thread = threading.Thread(name=name, target=QEMUHandler._thread,
+                                       args=(self, timeout, outdir, self.log_fn,
+                                             self.fifo_fn, self.pid_fn,
+                                             self.results))
+        self.thread.daemon = True
+        verbose("Spawning QEMU process for %s" % name)
+        self.thread.start()
+
+    def set_state(self, state, metrics):
+        self.lock.acquire()
+        self.state = state
+        self.metrics = metrics
+        self.lock.release()
+
+    def get_state(self):
+        self.lock.acquire()
+        ret = (self.state, self.metrics)
+        self.lock.release()
+        return ret
+
+    def get_fifo(self):
+        return self.fifo_fn
+
+
+class SizeCalculator:
+    def __init__(self, filename_stem):
+        """Constructor
+
+        @param filename_stem Path to the output binary, minus file extension.
+            The <filename_stem>.elf is parsed by objdump. Either .elf or .bin
+            is sized for the ROM size depending on whether XIP is supported
+        """
+        elf_filename = filename_stem + ".elf"
+
+        # Make sure this is an ELF binary
+        with open(elf_filename, "rb") as f:
+            magic = f.read(4)
+
+        if (magic != "\x7fELF"):
+            raise SanityRuntimeError("%s is not an ELF binary" % elf_filename)
+
+        # Search for CONFIG_XIP in the ELF's list of symbols using NM and AWK.
+        # GREP can not be used as it returns an error if the symbol is not found.
+        is_xip_command = "nm " + elf_filename + " | awk '/CONFIG_XIP/ { print $3 }'"
+        is_xip_output = subprocess.check_output(is_xip_command, shell=True)
+        self.is_xip = (len(is_xip_output) != 0)
+
+        self.elf_filename = elf_filename
+        self.sections = {}
+        self.xip_rom_size = 0
+        self.xip_ram_size = 0
+        self.ram_size = 0
+
+        self._calculate_sizes()
+
+    def get_ram_size(self):
+        """Get the amount of RAM the application will use up on the device
+
+        @return amount of RAM, in bytes
+        """
+        if self.is_xip:
+            return self.xip_ram_size
+        else:
+            return self.ram_size
+
+    def get_rom_size(self):
+        """Get the size of the data that this application uses on device's flash
+
+        @return amount of ROM, in bytes
+        """
+        return self.xip_rom_size
+
+    def unrecognized_sections(self):
+        """Get a list of sections inside the binary that weren't recognized
+
+        @return list of unrecogized section names
+        """
+        slist = []
+        for k, v in self.sections.iteritems():
+            if not v["recognized"]:
+                slist.append(k)
+        return slist
+
+    def _calculate_sizes(self):
+        """ Calculate RAM and ROM usage by section """
+        objdump_command = "objdump -h " + self.elf_filename
+        objdump_output = subprocess.check_output(objdump_command,
+                                                 shell=True).splitlines()
+
+        for line in objdump_output:
+            words = line.split()
+
+            if (len(words) == 0):               # Skip lines that are too short
+                continue
+
+            index = words[0]
+            if (not index[0].isdigit()):        # Skip lines that do not start
+                continue                        # with a digit
+
+            name = words[1]                     # Skip lines with section names
+            if (name[0] == '.'):                # starting with '.'
+                continue
+
+            size = int(words[2], 16)
+            phys_addr = int(words[4], 16)
+
+            # Add section to memory use totals (for both non-XIP and XIP scenarios)
+            #
+            # In an XIP image, the following sections are placed into ROM:
+            #     text, ctors, rodata and datas
+            # In an XIP image, the following sections are placed into RAM:
+            #     datas, bss and noinit
+            # In a non-XIP image, the following sections are placed into RAM
+            #     text, ctors, rodata, datas, bss and noinit
+            # Unrecognized section names are not included in the calculations.
+
+            self.ram_size += size
+            recognized = True
+
+            if ((name == "text") or (name == "ctors") or (name == "rodata")):
+                self.xip_rom_size += size
+            elif (name == "datas"):
+                self.xip_rom_size += size
+                self.xip_ram_size += size
+            elif ((name == "bss") or (name == "noinit")):
+                self.xip_ram_size += size
+            else:
+                recognized = False
+                self.ram_size -= size   # Undo the calculation
+
+            self.sections[name] = {"phys_addr" : phys_addr, "size" : size,
+                                   "recognized" : recognized}
+
+
+class MakeGoal:
+    """Metadata class representing one of the sub-makes called by MakeGenerator
+
+    MakeGenerator returns a dictionary of these which can then be associdated
+    with TestInstances to get a complete picture of what happened during a test.
+    MakeGenerator is used for tasks outside of building tests (such as
+    defconfigs) which is why MakeGoal is a separate class from TestInstance.
+    """
+    def __init__(self, name, text, qemu, make_log, build_log, run_log,
+                 qemu_log):
+        self.name = name
+        self.text = text
+        self.qemu = qemu
+        self.make_log = make_log
+        self.build_log = build_log
+        self.run_log = run_log
+        self.qemu_log = qemu_log
+        self.make_state = "waiting"
+        self.failed = False
+        self.finished = False
+        self.reason = None
+        self.metrics = {}
+
+    def get_error_log(self):
+        if self.make_state == "waiting":
+            # Shouldn't ever see this; breakage in the main Makefile itself.
+            return self.make_log
+        elif self.make_state == "building":
+            # Failure when calling the sub-make to build the code
+            return self.build_log
+        elif self.make_state == "running":
+            # Failure in sub-make for "make qemu", qemu probably failed to start
+            return self.run_log
+        elif self.make_state == "finished":
+            # QEMU finished, but timed out or otherwise wasn't successful
+            return self.qemu_log
+
+    def fail(self, reason):
+        self.failed = True
+        self.finished = True
+        self.reason = reason
+
+    def success(self):
+        self.finished = True
+
+    def __str__(self):
+        if self.finished:
+            if self.failed:
+                return "[%s] failed (%s: see %s)" % (self.name, self.reason,
+                                                     self.get_error_log())
+            else:
+                return "[%s] passed" % self.name
+        else:
+            return "[%s] in progress (%s)" % (self.name, self.make_state)
+
+
+class MakeGenerator:
+    """Generates a Makefile which just calls a bunch of sub-make sessions
+
+    In any given test suite we may need to build dozens if not hundreds of
+    test cases. The cleanest way to parallelize this is to just let Make
+    do the parallelization, sharing the jobserver among all the different
+    sub-make targets.
+    """
+
+    GOAL_HEADER_TMPL = """.PHONY: {goal}
+{goal}:
+"""
+
+    MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
+\t$(MAKE) -C {directory} O={outdir} V={verb} {args} >{logfile} 2>&1
+"""
+
+    GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
+
+    re_make = re.compile("sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* [[](.+)[]] Error.+$")
+
+    def __init__(self, base_outdir):
+        """MakeGenerator constructor
+
+        @param base_outdir Intended to be the base out directory. A make.log
+            file will be created here which contains the output of the
+            top-level Make session, as well as the dynamic control Makefile
+        @param verbose If true, pass V=1 to all the sub-makes which greatly
+            increases their verbosity
+        """
+        self.goals = {}
+        if not os.path.exists(base_outdir):
+            os.makedirs(base_outdir)
+        self.logfile = os.path.join(base_outdir, "make.log")
+        self.makefile = os.path.join(base_outdir, "Makefile")
+
+    def _get_rule_header(self, name):
+        return MakeGenerator.GOAL_HEADER_TMPL.format(goal=name)
+
+    def _get_sub_make(self, name, phase, workdir, outdir, logfile, args):
+        verb = "1" if VERBOSE else "0"
+        args = " ".join(args)
+        return MakeGenerator.MAKE_RULE_TMPL.format(phase=phase, goal=name,
+                                                   outdir=outdir,
+                                                   directory=workdir, verb=verb,
+                                                   args=args, logfile=logfile)
+
+    def _get_rule_footer(self, name):
+        return MakeGenerator.GOAL_FOOTER_TMPL.format(goal=name)
+
+    def _add_goal(self, outdir):
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+
+    def add_build_goal(self, name, directory, outdir, args):
+        """Add a goal to invoke a Kbuild session
+
+        @param name A unique string name for this build goal. The results
+            dictionary returned by execute() will be keyed by this name.
+        @param directory Absolute path to working directory, will be passed
+            to make -C
+        @param outdir Absolute path to output directory, will be passed to
+            Kbuild via -O=<path>
+        @param args Extra command line arguments to pass to 'make', typically
+            environment variables or specific Make goals
+        """
+        self._add_goal(outdir)
+        build_logfile = os.path.join(outdir, "build.log")
+        text = (self._get_rule_header(name) +
+                self._get_sub_make(name, "building", directory,
+                                   outdir, build_logfile, args) +
+                self._get_rule_footer(name))
+        self.goals[name] = MakeGoal(name, text, None, self.logfile, build_logfile,
+                                    None, None)
+
+    def add_qemu_goal(self, name, directory, outdir, args, timeout=30):
+        """Add a goal to build a Zephyr project and then run it under QEMU
+
+        The generated make goal invokes Make twice, the first time it will
+        build the default goal, and the second will invoke the 'qemu' goal.
+        The output of the QEMU session will be monitored, and terminated
+        either upon pass/fail result of the test program, or the timeout
+        is reached.
+
+        @param name A unique string name for this build goal. The results
+            dictionary returned by execute() will be keyed by this name.
+        @param directory Absolute path to working directory, will be passed
+            to make -C
+        @param outdir Absolute path to output directory, will be passed to
+            Kbuild via -O=<path>
+        @param args Extra command line arguments to pass to 'make', typically
+            environment variables. Do not pass specific Make goals here.
+        @param timeout Maximum length of time QEMU session should be allowed
+            to run before automatically killing it. Default is 30 seconds.
+        """
+
+        self._add_goal(outdir)
+        build_logfile = os.path.join(outdir, "build.log")
+        run_logfile = os.path.join(outdir, "run.log")
+        qemu_logfile = os.path.join(outdir, "qemu.log")
+
+        q = QEMUHandler(name, outdir, qemu_logfile, timeout)
+        args.append("QEMU_PIPE=%s" % q.get_fifo())
+        text = (self._get_rule_header(name) +
+                self._get_sub_make(name, "building", directory,
+                                   outdir, build_logfile, args) +
+                self._get_sub_make(name, "running", directory,
+                                   outdir, run_logfile,
+                                   args + ["qemu"]) +
+                self._get_rule_footer(name))
+        self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
+                                    run_logfile, qemu_logfile)
+
+
+    def add_test_instance(self, ti, build_only=False):
+        """Add a goal to build/test a TestInstance object
+
+        @param ti TestInstance object to build. The status dictionary returned
+            by execute() will be keyed by its .name field.
+        """
+        args = ti.test.extra_args[:]
+        args.extend(["ARCH=%s" % ti.platform.arch.name,
+                     "PLATFORM_CONFIG=%s" % ti.platform.name])
+        if ti.platform.qemu_support and not ti.build_only and not build_only:
+            self.add_qemu_goal(ti.name, ti.test.code_location, ti.outdir,
+                               args, ti.test.timeout)
+        else:
+            self.add_build_goal(ti.name, ti.test.code_location, ti.outdir, args)
+
+    def execute(self, callback_fn=None, context=None):
+        """Execute all the registered build goals
+
+        @param callback_fn If not None, a callback function will be called
+            as individual goals transition between states. This function
+            should accept two parameters: a string state and an arbitrary
+            context object, supplied here
+        @param context Context object to pass to the callback function.
+            Type and semantics are specific to that callback function.
+        @return A dictionary mapping goal names to final status.
+        """
+
+        with open(self.makefile, "w") as tf, \
+                open(os.devnull, "wb") as devnull, \
+                open(self.logfile, "w") as make_log:
+            # Create our dynamic Makefile and execute it.
+            # Watch stderr output which is where we will keep
+            # track of build state
+            for name, goal in self.goals.iteritems():
+                tf.write(goal.text)
+            tf.write("all: %s\n" % (" ".join(self.goals.keys())))
+            tf.flush()
+
+            # os.environ["CC"] = "ccache gcc" FIXME doesn't work
+
+            cmd = ["make", "-k", "-j", str(PARALLEL), "-f", tf.name, "all"]
+            p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
+                                 stdout=devnull)
+
+            for line in iter(p.stderr.readline, b''):
+                make_log.write(line)
+                verbose("MAKE: " + repr(line.strip()))
+                m = MakeGenerator.re_make.match(line)
+                if not m:
+                    continue
+
+                state, name, error = m.groups()
+                if error:
+                    goal = self.goals[error]
+                else:
+                    goal = self.goals[name]
+                    goal.make_state = state
+
+
+                if error:
+                    goal.fail("build_error")
+                else:
+                    if state == "finished":
+                        if goal.qemu:
+                            thread_status, metrics = goal.qemu.get_state()
+                            goal.metrics.update(metrics)
+                            if thread_status == "passed":
+                                goal.success()
+                            else:
+                                goal.fail(thread_status)
+                        else:
+                            goal.success()
+
+                if callback_fn:
+                    callback_fn(context, self.goals, goal)
+
+            p.wait()
+        return self.goals
+
+
+# "list" - List of strings
+# "list:<type>" - List of <type>
+# "set" - Set of unordered, unique strings
+# "set:<type>" - Set of <type>
+# "float" - Floating point
+# "int" - Integer
+# "bool" - Boolean
+# "str" - String
+
+# XXX Be sure to update __doc__ if you change any of this!!
+
+arch_valid_keys = {"name" : {"type" : "str", "required" : True},
+                   "platforms" : {"type" : "list", "required" : True}}
+
+platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
+                       "microkernel_support" : {"type" : "bool",
+                                                "default" : True}}
+
+testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
+                       "extra_args" : {"type" : "list"},
+                       "build_only" : {"type" : "bool", "default" : False},
+                       "timeout" : {"type" : "int", "default" : 60},
+                       "arch_whitelist" : {"type" : "set"},
+                       "platform_whitelist" : {"type" : "set"},
+                       "config_whitelist" : {"type" : "set"}}
+
+
+class SanityConfigParser:
+    """Class to read architecture and test case .ini files with semantic checking
+    """
+    def __init__(self, filename):
+        """Instantiate a new SanityConfigParser object
+
+        @param filename Source .ini file to read
+        """
+        cp = ConfigParser.SafeConfigParser()
+        cp.readfp(open(filename))
+        self.filename = filename
+        self.cp = cp
+
+    def _cast_value(self, value, typestr):
+        v = value.strip()
+        if typestr == "str":
+            return v
+
+        elif typestr == "float":
+            return float(v)
+
+        elif typestr == "int":
+            return int(v)
+
+        elif typestr == "bool":
+            v = v.lower()
+            if v == "true" or v == "1":
+                return True
+            elif v == "" or v == "false" or v == "0":
+                return False
+            raise ConfigurationError(self.filename,
+                                     "bad value for boolean: '%s'" % value)
+
+        elif typestr.startswith("list"):
+            vs = v.split()
+            if len(typestr) > 4 and typestr[4] == ":":
+                return [self._cast_value(vsi, typestr[5:]) for vsi in vs]
+            else:
+                return vs
+
+        elif typestr.startswith("set"):
+            vs = v.split()
+            if len(typestr) > 3 and typestr[3] == ":":
+                return set([self._cast_value(vsi, typestr[4:]) for vsi in vs])
+            else:
+                return set(vs)
+
+        else:
+            raise ConfigurationError(self.filename, "unknown type '%s'" % value)
+
+
+    def sections(self):
+        """Get the set of sections within the .ini file
+
+        @return a list of string section names"""
+        return self.cp.sections()
+
+    def get_section(self, section, valid_keys):
+        """Get a dictionary representing the keys/values within a section
+
+        @param section The section in the .ini file to retrieve data from
+        @param valid_keys A dictionary representing the intended semantics
+            for this section. Each key in this dictionary is a key that could
+            be specified, if a key is given in the .ini file which isn't in
+            here, it will generate an error. Each value in this dictionary
+            is another dictionary containing metadata:
+
+                "default" - Default value if not given
+                "type" - Data type to convert the text value to. Simple types
+                    supported are "str", "float", "int", "bool" which will get
+                    converted to respective Python data types. "set" and "list"
+                    may also be specified which will split the value by
+                    whitespace (but keep the elements as strings). finally,
+                    "list:<type>" and "set:<type>" may be given which will
+                    perform a type conversion after splitting the value up.
+                "required" - If true, raise an error if not defined. If false
+                    and "default" isn't specified, a type conversion will be
+                    done on an empty string
+        @return A dictionary containing the section key-value pairs with
+            type conversion and default values filled in per valid_keys
+        """
+
+        d = {}
+        cp = self.cp
+
+        if not cp.has_section(section):
+            raise ConfigurationError(self.filename, "Missing section '%s'" % section)
+
+        for k, v in cp.items(section):
+            if k not in valid_keys:
+                raise ConfigurationError(self.filename,
+                                         "Unknown config key '%s' in defintiion for '%s'"
+                                         % (k, section))
+            d[k] = v
+
+        for k, kinfo in valid_keys.iteritems():
+            if k not in d:
+                if "required" in kinfo:
+                    required = kinfo["required"]
+                else:
+                    required = False
+
+                if required:
+                    raise ConfigurationError(self.filename,
+                                             "missing required value for '%s' in section '%s'"
+                                             % (k, section))
+                else:
+                    if "default" in kinfo:
+                        default = kinfo["default"]
+                    else:
+                        default = self._cast_value("", kinfo["type"])
+                    d[k] = default
+            else:
+                try:
+                    d[k] = self._cast_value(d[k], kinfo["type"])
+                except ValueError, ve:
+                    raise ConfigurationError(self.filename,
+                                             "bad %s value '%s' for key '%s' in section '%s'"
+                                             % (kinfo["type"], d[k], k, section))
+
+        return d
+
+
+class Platform:
+    """Class representing metadata for a particular platform
+
+    Maps directly to PLATFORM_CONFIG when building"""
+    def __init__(self, arch, name, plat_dict):
+        """Constructor.
+
+        @param arch Architecture object for this platform
+        @param name String name for this platform, same as PLATFORM_CONFIG
+        @param plat_dict SanityConfigParser output on the relevant section
+            in the architecture configuration file which has lots of metadata.
+            See the Architecture class.
+        """
+        self.name = name
+        self.qemu_support = plat_dict["qemu_support"]
+        self.microkernel_support = plat_dict["microkernel_support"]
+        self.arch = arch
+        # Gets populated in a separate step
+        self.defconfig = {"micro" : None, "nano" : None}
+        pass
+
+    def set_defconfig(self, ktype, defconfig):
+        """Set defconfig information for a particular kernel type.
+
+        We do this in another step because all the defconfigs are generated
+        at once from a sub-make, see TestSuite constructor
+
+        @param ktype Kernel type, either "micro" or "nano"
+        @param defconfig Dictionary containing defconfig information
+        """
+        self.defconfig[ktype] = defconfig
+
+    def get_defconfig(self, ktype):
+        """Return a dictionary representing the key/value pairs expressed
+        in the kernel defconfig used for this arch/platform. Used to identify
+        platform features.
+
+        @param ktype Kernel type, either "micro" or "nano"
+        @return dictionary corresponding to the defconfig contents. unset
+            values will not be defined
+        """
+
+        if ktype == "micro" and not self.microkernel_support:
+            raise SanityRuntimeError("Invalid kernel type queried")
+
+        return self.defconfig[ktype]
+
+    def __repr__(self):
+        return "<%s on %s>" % (self.name, self.arch.name)
+
+
+class Architecture:
+    """Class representing metadata for a particular architecture
+    """
+    def __init__(self, cfile):
+        """Architecture constructor
+
+        @param cfile Path to Architecture configuration file, which gives
+            info about the arch and all the platforms for it
+        """
+        cp = SanityConfigParser(cfile)
+        self.platforms = []
+
+        arch = cp.get_section("arch", arch_valid_keys)
+
+        self.name = arch["name"]
+
+        for plat_name in arch["platforms"]:
+            verbose("Platform: %s" % plat_name)
+            plat_dict = cp.get_section(plat_name, platform_valid_keys)
+            self.platforms.append(Platform(self, plat_name, plat_dict))
+
+    def __repr__(self):
+        return "<arch %s>" % self.name
+
+
+class TestCase:
+    """Class representing a test application
+    """
+    makefile_re = re.compile("\s*KERNEL_TYPE\s*[?=]+\s*(micro|nano)\s*")
+
+    def __init__(self, testcase_root, workdir, name, tc_dict):
+        """TestCase constructor.
+
+        This gets called by TestSuite as it finds and reads testcase.ini files.
+        Multiple TestCase instances may be generated from a single testcase.ini,
+        each one corresponds to a section within that file.
+
+        Reads the Makefile inside the testcase directory to figure out the
+        kernel type for purposes of configuration filtering
+
+        We need to have a unique name for every single test case. Since
+        a testcase.ini can define multiple tests, the canonical name for
+        the test case is <workdir>/<name>.
+
+        @param testcase_root Absolute path to the root directory where
+            all the test cases live
+        @param workdir Relative path to the project directory for this
+            test application from the test_case root.
+        @param name Name of this test case, corresponding to the section name
+            in the test case configuration file. For many test cases that just
+            define one test, can be anything and is usually "test". This is
+            really only used to distinguish between different cases when
+            the testcase.ini defines multiple tests
+        @param tc_dict Dictionary with section values for this test case
+            from the testcase.ini file
+        """
+        self.code_location = os.path.join(testcase_root, workdir)
+        self.tags = tc_dict["tags"]
+        self.extra_args = tc_dict["extra_args"]
+        self.arch_whitelist = tc_dict["arch_whitelist"]
+        self.platform_whitelist = tc_dict["platform_whitelist"]
+        self.config_whitelist = tc_dict["config_whitelist"]
+        self.timeout = tc_dict["timeout"]
+        self.build_only = tc_dict["build_only"]
+        self.path = os.path.join(workdir, name)
+        self.name = self.path # for now
+        self.ktype = None
+
+        with open(os.path.join(testcase_root, workdir, "Makefile")) as makefile:
+            for line in makefile.readlines():
+                m = TestCase.makefile_re.match(line)
+                if m:
+                    self.ktype = m.group(1)
+                    break
+        if not self.ktype:
+            raise ConfigurationError(os.path.join(workdir, "Makefile"),
+                                     "KERNEL_TYPE not found")
+
+    def __repr__(self):
+        return self.name
+
+
+
+class TestInstance:
+    """Class representing the execution of a particular TestCase on a platform
+
+    @param test The TestCase object we want to build/execute
+    @param platform Platform object that we want to build and run against
+    @param base_outdir Base directory for all test results. The actual
+        out directory used is <outdir>/<platform>/<test case name>
+    """
+    def __init__(self, test, platform, base_outdir, build_only=False):
+        self.test = test
+        self.platform = platform
+        self.name = os.path.join(platform.name, test.path)
+        self.outdir = os.path.join(base_outdir, platform.name, test.path)
+        self.build_only = build_only or test.build_only
+
+    def calculate_sizes(self):
+        """Get the RAM/ROM sizes of a test case.
+
+        This can only be run after the instance has been executed by
+        MakeGenerator, otherwise there won't be any binaries to measure.
+
+        @return A SizeCalculator object
+        """
+        if self.test.ktype == "micro":
+            binary_stem = os.path.join(self.outdir, "microkernel")
+        else:
+            binary_stem = os.path.join(self.outdir, "nanokernel")
+
+        return SizeCalculator(binary_stem)
+
+    def __repr__(self):
+        return "<TestCase %s on %s>" % (self.test.name, self.platform.name)
+
+
+
+class TestSuite:
+    config_re = re.compile('(CONFIG_[A-Z0-9_]+)[=](.+)$')
+
+    def __init__(self, arch_root, testcase_root, outdir):
+        # Keep track of which test cases we've filtered out and why
+        discards = {}
+        self.arches = {}
+        self.testcases = {}
+        self.platforms = []
+        self.outdir = outdir
+        self.instances = {}
+        self.goals = None
+        self.discards = None
+
+        arch_root = os.path.abspath(arch_root)
+        testcase_root = os.path.abspath(testcase_root)
+        outdir = os.path.abspath(outdir)
+
+        debug("Reading test case configuration files under %s..." % testcase_root)
+        for dirpath, dirnames, filenames in os.walk(testcase_root,
+                                                    topdown=True):
+            if "testcase.ini" in filenames:
+                verbose("Found test case in " + dirpath)
+                dirnames[:] = []
+                cp = SanityConfigParser(os.path.join(dirpath, "testcase.ini"))
+                workdir = os.path.relpath(dirpath, testcase_root)
+
+                for section in cp.sections():
+                    tc_dict = cp.get_section(section, testcase_valid_keys)
+                    tc = TestCase(testcase_root, workdir, section, tc_dict)
+                    self.testcases[tc.name] = tc
+
+        debug("Reading architecture configuration files under %s..." % arch_root)
+        for dirpath, dirnames, filenames in os.walk(arch_root):
+            for filename in filenames:
+                if filename.endswith(".ini"):
+                    fn = os.path.join(dirpath, filename)
+                    verbose("Found arch configuration " + fn)
+                    arch = Architecture(fn)
+                    self.arches[arch.name] = arch
+                    self.platforms.extend(arch.platforms)
+
+
+        # Now that we know the full set of arches/platforms, get the defconfig
+        # information from them by calling Make
+        info("Building platform defconfigs...")
+        dlist = {}
+        config_outdir = os.path.join(outdir, "configs")
+        mg = MakeGenerator(config_outdir)
+
+        for plat in self.platforms:
+            ktypes = ["nano"]
+            if plat.microkernel_support:
+                ktypes.append("micro")
+
+            for ktype in ktypes:
+                stem = ktype + "_" + plat.name
+
+                in_defconfig = stem + "_defconfig"
+                out_config = os.path.join(config_outdir, stem + "_config")
+                dlist[plat, ktype] = out_config
+
+                args = ["ARCH=" + plat.arch.name,
+                        "KBUILD_DEFCONFIG=" + in_defconfig,
+                        "KCONFIG_CONFIG=" + out_config, "defconfig"]
+                # FIXME would be nice to use a common outdir for this so that
+                # conf, gen_idt, etc aren't rebuilt for every plat/ktype combo,
+                # need a way to avoid different Make processe from clobbering
+                # each other since they all try to build them simultaneously
+                mg.add_build_goal(stem, ZEPHYR_BASE, os.path.join(config_outdir,
+                                                                  plat.name,
+                                                                  ktype), args)
+
+        results = mg.execute(None)
+
+        for k, out_config in dlist.iteritems():
+            plat, ktype = k
+            defconfig = {}
+            with open(out_config, "r") as fp:
+                for line in fp.readlines():
+                    m = TestSuite.config_re.match(line)
+                    if not m:
+                        continue
+                    defconfig[m.group(1)] = m.group(2).strip()
+            plat.set_defconfig(ktype, defconfig)
+
+        self.instances = {}
+
+    def get_last_failed(self):
+        if not os.path.exists(LAST_SANITY):
+            return []
+        result = []
+        with open(LAST_SANITY, "r") as fp:
+            cr = csv.DictReader(fp)
+            for row in cr:
+                if row["passed"] == "True":
+                    continue
+                test = row["test"]
+                platform = row["platform"]
+                result.append((test, platform))
+        return result
+
+    def apply_filters(self, platform_filter, arch_filter, tag_filter,
+                      config_filter, testcase_filter, last_failed):
+        instances = []
+        discards = {}
+        verbose("platform filter: " + str(platform_filter))
+        verbose("    arch_filter: " + str(arch_filter))
+        verbose("     tag_filter: " + str(tag_filter))
+        verbose("  config_filter: " + str(config_filter))
+
+        if last_failed:
+            failed_tests = self.get_last_failed()
+
+        if not platform_filter or "default" in platform_filter:
+            info("Selecting default platforms per test case")
+            default_platforms = True
+            platform_filter = []
+        else:
+            default_platforms = False
+
+        if "all" in platform_filter:
+            info("Selecting all possible platforms per test case")
+            platform_filter = []
+
+        for tc_name, tc in self.testcases.iteritems():
+            for arch_name, arch in self.arches.iteritems():
+                instance_list = []
+                for plat in arch.platforms:
+                    instance = TestInstance(tc, plat, self.outdir)
+
+                    if tag_filter and not tc.tags.intersection(tag_filter):
+                        discards[instance] = "Command line testcase tag filter"
+                        continue
+
+                    if testcase_filter and tc_name not in testcase_filter:
+                        discards[instance] = "Testcase name filter"
+                        continue
+
+                    if last_failed and (tc.name, plat.name) not in failed_tests:
+                        discards[instance] = "Passed or skipped during last run"
+                        continue
+
+                    if arch_filter and arch_name not in arch_filter:
+                        discards[instance] = "Command line testcase arch filter"
+                        continue
+
+                    if tc.arch_whitelist and arch.name not in tc.arch_whitelist:
+                        discards[instance] = "Not in test case arch whitelist"
+                        continue
+
+                    if platform_filter and plat.name not in platform_filter:
+                        discards[instance] = "Command line platform filter"
+                        continue
+
+                    if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
+                        discards[instance] = "Not in testcase platform whitelist"
+                        continue
+
+                    if not plat.microkernel_support and tc.ktype == "micro":
+                        discards[instance] = "No microkernel support for platform"
+                        continue
+
+                    defconfig = plat.get_defconfig(tc.ktype)
+                    config_pass = True
+                    # FIXME this is kind of gross clean it up
+                    for cw in tc.config_whitelist:
+                        invert = (cw[0] == "!")
+                        if invert:
+                            cw = cw[1:]
+
+                        if "=" in cw:
+                            k, v = cw.split("=")
+                            testval = k not in defconfig or defconfig[k] != v
+                            if invert:
+                                testval = not testval
+                            if testval:
+                                discards[instance] = "%s%s in platform defconfig" % (
+                                        cw, " not" if not invert else "")
+                                config_pass = False
+                                break
+                        else:
+                            testval = cw not in defconfig
+                            if invert:
+                                testval = not testval
+                            if testval:
+                                discards[instance] = "%s%s set in platform defconfig" % (
+                                        cw, " not" if not invert else "")
+                                config_pass = False
+                                break
+
+                    if not config_pass:
+                        continue
+
+                    instance_list.append(instance)
+
+                if not instance_list:
+                    # Every platform in this arch was rejected already
+                    continue
+
+                if default_platforms:
+                    self.add_instance(instance_list[0])
+                    for instance in instance_list[1:]:
+                        discards[instance] = "Not in default set for arch"
+                else:
+                    for instance in instance_list:
+                        self.add_instance(instance)
+        self.discards = discards
+        return discards
+
+    def add_instance(self, ti):
+        self.instances[ti.name] = ti
+
+    def execute(self, cb, cb_context, build_only):
+        mg = MakeGenerator(self.outdir)
+        for i in self.instances.values():
+            mg.add_test_instance(i, build_only)
+        self.goals = mg.execute(cb, cb_context)
+        for name, goal in self.goals.iteritems():
+            i = self.instances[name]
+            if goal.failed:
+                continue
+            sc = i.calculate_sizes()
+            goal.metrics["ram_size"] = sc.get_ram_size()
+            goal.metrics["rom_size"] = sc.get_rom_size()
+        return self.goals
+
+    def discard_report(self, filename):
+        if self.discards == None:
+            raise SanityRuntimeException("apply_filters() hasn't been run!")
+
+        with open(filename, "wb") as csvfile:
+            fieldnames = ["test", "arch", "platform", "reason"]
+            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
+            cw.writeheader()
+            for instance, reason in self.discards.iteritems():
+                rowdict = {"test" : i.test.name,
+                           "arch" : i.platform.arch.name,
+                           "platform" : i.platform.name,
+                           "reason" : reason}
+                cw.writerow(rowdict)
+
+    def compare_metrics(self, filename):
+        # name, datatype, lower results better
+        interesting_metrics = [("ram_size", int, True),
+                               ("rom_size", int, True)]
+
+        if self.goals == None:
+            raise SanityRuntimeException("execute() hasn't been run!")
+
+        if not os.path.exists(filename):
+            info("Cannot compare metrics, %s not found" % filename)
+            return []
+
+        results = []
+        saved_metrics = {}
+        with open(filename) as fp:
+            cr = csv.DictReader(fp)
+            for row in cr:
+                d = {}
+                for m, _, _ in interesting_metrics:
+                    d[m] = row[m]
+                saved_metrics[(row["test"], row["platform"])] = d
+
+        for name, goal in self.goals.iteritems():
+            i = self.instances[name]
+            mkey = (i.test.name, i.platform.name)
+            if mkey not in saved_metrics:
+                continue
+            sm = saved_metrics[mkey]
+            for metric, mtype, lower_better in interesting_metrics:
+                if metric not in goal.metrics:
+                    continue
+                if sm[metric] == "":
+                    continue
+                delta = goal.metrics[metric] - mtype(sm[metric])
+                if ((lower_better and delta > 0) or
+                        (not lower_better and delta < 0)):
+                    results.append((i, metric, goal.metrics[metric], delta))
+        return results
+
+    def testcase_report(self, filename):
+        if self.goals == None:
+            raise SanityRuntimeException("execute() hasn't been run!")
+
+        with open(filename, "wb") as csvfile:
+            fieldnames = ["test", "arch", "platform", "passed", "status",
+                          "extra_args", "qemu", "qemu_time", "ram_size",
+                          "rom_size"]
+            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
+            cw.writeheader()
+            for name, goal in self.goals.iteritems():
+                i = self.instances[name]
+                rowdict = {"test" : i.test.name,
+                           "arch" : i.platform.arch.name,
+                           "platform" : i.platform.name,
+                           "extra_args" : " ".join(i.test.extra_args),
+                           "qemu" : i.platform.qemu_support}
+                if goal.failed:
+                    rowdict["passed"] = False
+                    rowdict["status"] = goal.reason
+                else:
+                    rowdict["passed"] = True
+                    if goal.qemu:
+                        rowdict["qemu_time"] = goal.metrics["qemu_time"]
+                    rowdict["ram_size"] = goal.metrics["ram_size"]
+                    rowdict["rom_size"] = goal.metrics["rom_size"]
+                cw.writerow(rowdict)
+
+
+def parse_arguments():
+
+    parser = argparse.ArgumentParser(description = __doc__,
+                                     formatter_class = argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument("-p", "--platform", action="append",
+            help="Platform filter for testing. If unspecified, default to the "
+                 "set of default platforms in the arch configuration files for "
+                 "the selected arches. May also specify 'all' to match all "
+                 "platforms for the selected arches.  Multiple invocations "
+                 "are treated as a logical 'or' relationship")
+    parser.add_argument("-a", "--arch", action="append",
+            help="Arch filter for testing. Takes precedence over --platform. "
+                 "If unspecified, test all arches. Multiple invocations "
+                 "are treated as a logical 'or' relationship")
+    parser.add_argument("-t", "--tag", action="append",
+            help="Specify tags to restrict which tests to run by tag value. "
+                 "Default is to not do any tag filtering. Multiple invocations "
+                 "are treated as a logical 'or' relationship")
+    parser.add_argument("-f", "--only-failed", action="store_true",
+            help="Run only those tests that failed the previous sanity check "
+                 "invocation.")
+    parser.add_argument("-c", "--config", action="append",
+            help="Specify platform configuration values filtering. This can be "
+                 "specified two ways: <config>=<value> or just <config>. The "
+                 "defconfig for all platforms, for all kernel types will be "
+                 "checked. For the <config>=<value> case, only match defconfig "
+                 "that have that value defined. For the <config> case, match "
+                 "defconfig that have that value assigned to any value. "
+                 "Prepend a '!' to invert the match.")
+    parser.add_argument("-s", "--test", action="append",
+            help="Run only the specified test cases. These are named by "
+                 "<path to test project relative to "
+                 "--testcase-root>/<testcase.ini section name>")
+    parser.add_argument("-l", "--all", action="store_true",
+            help="Same as --platform all")
+
+    parser.add_argument("-o", "--testcase-report",
+            help="Output a CSV spreadsheet containing results of the test run")
+    parser.add_argument("-d", "--discard-report",
+            help="Output a CSV spreadhseet showing tests that were skipped "
+                 "and why")
+    parser.add_argument("-y", "--dry-run", action="store_true",
+            help="Create the filtered list of test cases, but don't actually "
+                 "run them. Useful if you're just interested in "
+                 "--discard-report")
+
+    parser.add_argument("-r", "--release", action="store_true",
+            help="Update the benchmark database with the results of this test "
+                 "run. Intended to be run by CI when tagging an official "
+                 "release. This database is used as a basis for comparison "
+                 "when looking for deltas in metrics such as footprint")
+    parser.add_argument("-w", "--warnings-as-errors", action="store_true",
+            help="Treat warning conditions as errors")
+    parser.add_argument("-v", "--verbose", action="count", default=0,
+            help="Emit debugging information, call multiple times to increase "
+                 "verbosity")
+    parser.add_argument("-i", "--inline-logs", action="store_true",
+            help="Upon test failure, print relevant log data to stdout "
+                 "instead of just a path to it")
+    parser.add_argument("-m", "--last-metrics", action="store_true",
+            help="Instead of comparing metrics from the last --release, "
+                 "compare with the results of the previous sanity check "
+                 "invocation")
+    parser.add_argument("-u", "--no-update", action="store_true",
+            help="do not update the results of the last run of the sanity "
+                 "checks")
+    parser.add_argument("-b", "--build-only", action="store_true",
+            help="Only build the code, do not execute any of it in QEMU")
+    parser.add_argument("-j", "--jobs", type=int,
+            help="Number of cores to use when building, defaults to "
+                 "number of CPUs * 2")
+    parser.add_argument("-H", "--footprint-threshold", type=float, default=5,
+            help="When checking test case footprint sizes, warn the user if "
+                 "the new app size is greater then the specified percentage "
+                 "from the last release. Default is 5. 0 to warn on any "
+                 "increase on app size")
+
+    parser.add_argument("-O", "--outdir",
+            default="%s/sanity-out" % ZEPHYR_BASE,
+            help="Output directory for logs and binaries.")
+    parser.add_argument("-C", "--clean", action="store_true",
+            help="Delete the outdir before building")
+    parser.add_argument("-T", "--testcase-root",
+            default="%s/samples" % ZEPHYR_BASE,
+            help="Base directory to recursively search for test cases. All "
+                 "testcase.ini files under here will be processed")
+    parser.add_argument("-A", "--arch-root",
+            default="%s/scripts/sanity_chk/arches" % ZEPHYR_BASE,
+            help="Directory to search for arch configuration files. All .ini "
+                 "files in the directory will be processed.")
+
+    return parser.parse_args()
+
+def log_info(filename):
+    filename = os.path.relpath(filename)
+    if INLINE_LOGS:
+        print "{:-^100}".format(filename)
+        with open(filename) as fp:
+            sys.stdout.write(fp.read())
+        print "{:-^100}".format(filename)
+    else:
+        print "\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL
+
+def terse_test_cb(instances, goals, goal):
+    total_tests = len(goals)
+    total_done = 0
+    total_failed = 0
+
+    for k, g in goals.iteritems():
+        if g.finished:
+            total_done += 1
+        if g.failed:
+            total_failed += 1
+
+    if goal.failed:
+        i = instances[goal.name]
+        info("\n\n{:<25} {:<50} {}FAILED{}: {}".format(i.platform.name,
+             i.test.name, COLOR_RED, COLOR_NORMAL, goal.reason))
+        log_info(goal.get_error_log())
+        info("")
+
+    sys.stdout.write("\rtotal complete: %s%3d/%3d%s  failed: %s%3d%s" % (
+                     COLOR_GREEN, total_done, total_tests, COLOR_NORMAL,
+                     COLOR_RED if total_failed > 0 else COLOR_NORMAL,
+                     total_failed, COLOR_NORMAL))
+    sys.stdout.flush()
+
+def chatty_test_cb(instances, goals, goal):
+    i = instances[goal.name]
+
+    if VERBOSE < 2 and not goal.finished:
+        return
+
+    if goal.failed:
+        status = COLOR_RED + "FAILED" + COLOR_NORMAL + ": " + goal.reason
+    elif goal.finished:
+        status = COLOR_GREEN + "PASSED" + COLOR_NORMAL
+    else:
+        status = goal.make_state
+
+    info("{:<25} {:<50} {}".format(i.platform.name, i.test.name, status))
+    if goal.failed:
+        log_info(goal.get_error_log())
+
+def main():
+    global VERBOSE, INLINE_LOGS, PARALLEL
+    args = parse_arguments()
+    VERBOSE += args.verbose
+    INLINE_LOGS = args.inline_logs
+    if args.jobs:
+        PARALLEL = args.jobs
+    if args.all:
+        args.platform = ["all"]
+
+    if os.path.exists(args.outdir) and args.clean:
+        info("Cleaning output directory " + args.outdir)
+        shutil.rmtree(args.outdir)
+
+    ts = TestSuite(args.arch_root, args.testcase_root, args.outdir)
+    discards = ts.apply_filters(args.platform, args.arch, args.tag, args.config,
+                                args.test, args.only_failed)
+
+    if args.discard_report:
+        ts.discard_report(args.discard_report)
+
+    if VERBOSE:
+        for i, reason in discards.iteritems():
+            debug("{:<25} {:<50} {}SKIPPED{}: {}".format(i.platform.name,
+                  i.test.name, COLOR_YELLOW, COLOR_NORMAL, reason))
+
+    info("%d tests selected, %d tests discarded due to filters" %
+         (len(ts.instances), len(discards)))
+
+    if args.dry_run:
+        return
+
+    if VERBOSE or not TERMINAL:
+        goals = ts.execute(chatty_test_cb, ts.instances, args.build_only)
+    else:
+        goals = ts.execute(terse_test_cb, ts.instances, args.build_only)
+        print
+
+    deltas = ts.compare_metrics(LAST_SANITY if args.last_metrics
+                                  else RELEASE_DATA)
+    warnings = 0
+    if deltas:
+        for i, metric, value, delta in deltas:
+            percentage = (float(delta) / float(value - delta))
+            if percentage < (args.footprint_threshold / 100.0):
+                continue
+
+            info("{:<25} {:<50} {}WARNING{}: {} is now {} {:+.2%}".format(
+                 i.platform.name, i.test.name, COLOR_YELLOW, COLOR_NORMAL,
+                 metric, value, percentage))
+            warnings += 1
+
+    if warnings:
+        info("Deltas based on metrics from last %s" %
+             ("release" if not args.last_metrics else "run"))
+
+    failed = 0
+    for name, goal in goals.iteritems():
+        if goal.failed:
+            failed += 1
+
+    info("%s%d of %d%s tests passed with %s%d%s warnings" %
+          (COLOR_RED if failed else COLOR_GREEN, len(goals) - failed,
+           len(goals), COLOR_NORMAL, COLOR_YELLOW if warnings else COLOR_NORMAL,
+           warnings, COLOR_NORMAL))
+
+    if args.testcase_report:
+        ts.testcase_report(args.testcase_report)
+    if not args.no_update:
+        ts.testcase_report(LAST_SANITY)
+    if args.release:
+        ts.testcase_report(RELEASE_DATA)
+
+    if failed or (warnings and args.warnings_as_errors):
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+

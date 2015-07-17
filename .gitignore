@@ -18,3 +18,4 @@ doc/_build
 xml
 html/
 doc/latex/
+sanity-out/
