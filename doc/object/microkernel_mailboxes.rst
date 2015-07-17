@@ -32,8 +32,8 @@ receiver tasks before passing the data.
 Usage
 =====
 
-Defining a mailbox
-------------------
+Defining a mailbox in MDEF file
+-------------------------------
 
 The following parameters must be defined:
 
@@ -54,6 +54,33 @@ For example, the file :file:`projName.mdef` defines a mailbox as follows:
    % MAILBOX   NAME
    % =================
      MAILBOX   REQUEST_BOX
+
+
+Defining mailbox inside code
+----------------------------
+
+In addition to defining mailboxes in MDEF file, it is also possible to
+define mailboxes inside code. The macro ``DEFINE_MAILBOX(mailbox_name)``
+can be used for this purpose.
+
+For example, the following code can be used to define a global mailbox
+``PRIV_MBX``.
+
+.. code-block:: c
+
+   DEFINE_MAILBOX(PRIV_MBX);
+
+The mailbox ``PRIV_MBX`` can be used in the same style as those
+defined in MDEF file.
+
+It is possible to utilize this mailbox in another source file, simply
+add:
+
+.. code-block:: c
+
+   extern const kmbox_t PRIV_MBX;
+
+to that file. The mailbox ``PRIV_MBX`` can be then used there.
 
 
 Example: Sending Variable-Sized Mailbox Messages

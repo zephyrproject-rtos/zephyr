@@ -616,7 +616,7 @@ def kernel_main_c_mailboxes():
     for mbx in mbx_list:
         name = mbx[0]
         kernel_main_c_out("struct _k_mbox_struct _k_mbox_obj_%s = " % (name) +
-            "{NULL, NULL, 0};\n")
+            "__K_MAILBOX_DEFAULT;\n")
     kernel_main_c_out("\n")
 
 

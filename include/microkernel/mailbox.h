@@ -214,6 +214,28 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
 		_task_mbox_data_get_async_block(m, b, p, t)
 #endif
 
+/**
+ * @brief Initializer for microkernel mailbox
+ */
+#define __K_MAILBOX_DEFAULT \
+	{ \
+	  .Writers = NULL, \
+	  .Readers = NULL, \
+	  .Count = 0, \
+	}
+
+/**
+ * @brief Define a private microkernel mailbox
+ *
+ * This declares and initializes a private mailbox. The new mailbox
+ * can be passed to the microkernel mailbox functions.
+ *
+ * @param name Name of the mailbox
+ */
+#define DEFINE_MAILBOX(name) \
+       struct _k_mbox_struct _k_mbox_obj_##name = __K_MAILBOX_DEFAULT; \
+       const kmbox_t name = (kmbox_t)&_k_mbox_obj_##name;
+
 #ifdef __cplusplus
 }
 #endif
