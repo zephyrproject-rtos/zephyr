@@ -24,11 +24,10 @@ else
 CONFIG_DEPS=FORCE
 endif
 
-ifndef SOURCE_DIR
-SOURCE_DIR=$(PROJECT_BASE)/src/
+SOURCE_DIR ?= $(PROJECT_BASE)/src/
+# Kbuild doesn't work correctly if this is an absolute path
+override SOURCE_DIR := $(shell python -c "import os.path; print os.path.relpath('$(SOURCE_DIR)', '$(ZEPHYR_BASE)')")/
 export SOURCE_DIR
-endif
-
 
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
