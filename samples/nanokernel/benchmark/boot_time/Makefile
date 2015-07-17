@@ -1,6 +1,6 @@
-CONF_basic_minuteia = generic_pc/prj.conf
-CONF_basic_atom     = generic_pc/prj_expert_test.conf
-CONF_galileo        = quark/prj.conf
+CONF_basic_minuteia = ia32/prj.conf
+CONF_basic_atom     = ia32/prj_expert_test.conf
+CONF_galileo        = ia32_pci/prj.conf
 
 KERNEL_TYPE = nano
 PLATFORM_CONFIG ?= basic_atom
