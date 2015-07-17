@@ -34,6 +34,7 @@ config	BLUETOOTH
 	bool
 	prompt "Bluetooth LE support [EXPERIMENTAL]"
 	default n
+	select NANO_TIMEOUTS
 	help
 	  This option enables Bluetooth Low Energy support.
 

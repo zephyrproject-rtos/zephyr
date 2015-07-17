@@ -82,8 +82,14 @@ struct bt_conn {
 
 	bt_conn_state_t		state;
 
-	/* TX fiber stack */
-	BT_STACK(tx_stack, 256);
+	/* Handle allowing to cancel timeout fiber */
+	void			*timeout;
+
+	/* Stack for Tx fiber and timeout fiber.
+	 * Since this fibers don't overlap, one stack can be used by both of
+	 * them.
+	 */
+	BT_STACK(stack, 256);
 };
 
 /* Process incoming data for a connection */

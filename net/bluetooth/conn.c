@@ -318,8 +318,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	switch (conn->state){
 	case BT_CONN_CONNECTED:
 		nano_fifo_init(&conn->tx_queue);
-		fiber_start(conn->tx_stack, sizeof(conn->tx_stack),
-			    conn_tx_fiber, (int)bt_conn_get(conn), 0, 7, 0);
+		fiber_start(conn->stack, sizeof(conn->stack), conn_tx_fiber,
+			    (int)bt_conn_get(conn), 0, 7, 0);
 		break;
 	case BT_CONN_DISCONNECTED:
 		/* Send dummy buffer to wake up and stop the tx fiber
@@ -504,6 +504,15 @@ static int bt_hci_disconnect(struct bt_conn *conn, uint8_t reason)
 static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 {
 	int err;
+
+	if (conn->timeout) {
+		fiber_fiber_delayed_start_cancel(conn->timeout);
+
+		conn->timeout = NULL;
+
+		/* Drop the reference took by timeout fiber */
+		bt_conn_put(conn);
+	}
 
 	err = bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
 	if (err) {
