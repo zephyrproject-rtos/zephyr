@@ -313,7 +313,7 @@ void _k_mbox_send_reply(struct k_args *pCopyWriter)
 void _k_mbox_send_request(struct k_args *Writer)
 {
 	kmbox_t MailBoxId = Writer->Args.m1.mess.mailbox;
-	struct mbx_struct *MailBox;
+	struct _k_mbox_struct *MailBox;
 	struct k_args *CopyReader;
 	struct k_args *CopyWriter;
 	struct k_args *temp;
@@ -335,7 +335,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 
 	Writer->Ctxt.proc = sender;
 
-	MailBox = (struct mbx_struct *)MailBoxId;
+	MailBox = (struct _k_mbox_struct *)MailBoxId;
 
 	copy_packet(&CopyWriter, Writer);
 
@@ -559,7 +559,7 @@ void _k_mbox_receive_reply(struct k_args *pCopyReader)
 void _k_mbox_receive_request(struct k_args *Reader)
 {
 	kmbox_t MailBoxId = Reader->Args.m1.mess.mailbox;
-	struct mbx_struct *MailBox;
+	struct _k_mbox_struct *MailBox;
 	struct k_args *CopyWriter;
 	struct k_args *temp;
 	struct k_args *CopyReader;
@@ -576,7 +576,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 
 	CopyReader->Forw = NULL;
 
-	MailBox = (struct mbx_struct *)MailBoxId;
+	MailBox = (struct _k_mbox_struct *)MailBoxId;
 
 	for (CopyWriter = MailBox->Writers, temp = NULL; CopyWriter != NULL;
 	     temp = CopyWriter, CopyWriter = CopyWriter->Forw) {

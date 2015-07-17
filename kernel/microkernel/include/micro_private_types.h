@@ -488,12 +488,6 @@ struct map_struct {
 	int Count;
 };
 
-struct mbx_struct {
-	struct k_args *Writers;
-	struct k_args *Readers;
-	int Count;
-};
-
 struct block_stat {
 	char *mem_blocks;
 	uint32_t mem_status;

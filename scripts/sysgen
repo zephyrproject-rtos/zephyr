@@ -615,7 +615,7 @@ def kernel_main_c_mailboxes():
     kernel_main_c_out("\n")
     for mbx in mbx_list:
         name = mbx[0]
-        kernel_main_c_out("struct mbx_struct _k_mbx_obj_%s = " % (name) +
+        kernel_main_c_out("struct _k_mbox_struct _k_mbox_obj_%s = " % (name) +
             "{NULL, NULL, 0};\n")
     kernel_main_c_out("\n")
 
@@ -937,9 +937,9 @@ def generate_zephyr_h_obj_ids():
     for mbx in mbx_list:
         name = mbx[0]
         zephyr_h_data += \
-            "extern struct mbx_struct _k_mbx_obj_%s;\n" % (name)
+            "extern struct _k_mbox_struct _k_mbox_obj_%s;\n" % (name)
         zephyr_h_data += \
-            "#define %s ((kmbox_t)&_k_mbx_obj_%s)\n\n" % (name, name)
+            "#define %s ((kmbox_t)&_k_mbox_obj_%s)\n\n" % (name, name)
 
     # all other object ids
 

@@ -102,6 +102,12 @@ struct k_msg {
 	} extra;
 };
 
+struct _k_mbox_struct {
+	struct k_args *Writers;
+	struct k_args *Readers;
+	int Count;
+};
+
 struct _k_mutex_struct {
 	ktask_t Owner;
 	kpriority_t OwnerCurrentPrio;
