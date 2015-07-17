@@ -54,7 +54,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
-	#The value is set by each BSP Kconfig file.
+	#The value is set by each platform's Kconfig file.
 	help
 	Frequency of the hardware timer used for the system clock
 	(in Hz).
@@ -83,7 +83,7 @@ config  XIP
 	prompt "Execute in place"
 	help
 	  This option allows the kernel to operate with its text and read-only
-	  sections residing in ROM (or similar read-only memory). Not all BSPs
+	  sections residing in ROM (or similar read-only memory). Not all platforms
 	  support this option so it must be used with care; you must also
 	  supply a linker command file when building your image. Enabling this
 	  option increases both the code and data footprint of the image.

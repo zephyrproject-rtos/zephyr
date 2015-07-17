@@ -401,10 +401,9 @@ static inline int32_t _get_next_timer_expiry(void)
  *
  * @brief Power saving when idle
  *
- * If the BSP sets the _sys_power_save_flag flag, this routine will call the
- * _sys_power_save_idle() routine in an infinite loop. If the flag is not set,
- * this routine will fall through and _k_kernel_idle() will try the next idling
- * mechanism.
+ * If _sys_power_save_flag is non-zero, this routine keeps the system in a low
+ * power state whenever the kernel is idle. If it is zero, this routine will
+ * fall through and _k_kernel_idle() will try the next idling mechanism.
  *
  * @return N/A
  *
@@ -421,9 +420,9 @@ static void _power_save(void)
 			_sys_power_save_idle(_get_next_timer_expiry());
 #else
 			/*
-			 * nano_cpu_idle () is invoked here directly only if APM is
-			 * disabled. Otherwise BSP decides either to invoke it or
-			 * to implement advanced idle functionality
+			 * nano_cpu_idle() is invoked here directly only if APM is
+			 * disabled. Otherwise the microkernel decides either to invoke
+			 * it or to implement advanced idle functionality
 			 */
 
 			nano_cpu_idle();

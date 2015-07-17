@@ -254,8 +254,8 @@ extern void *__stack_chk_guard;
  *
  * @brief Initialize nanokernel
  *
- * This routine is invoked by the BSP when the system is ready to run C code.
- * The processor must be running in 32-bit mode, and the BSS must have been
+ * This routine is invoked when the system is ready to run C code. The
+ * processor must be running in 32-bit mode, and the BSS must have been
  * cleared/zeroed.
  *
  * @return Does not return

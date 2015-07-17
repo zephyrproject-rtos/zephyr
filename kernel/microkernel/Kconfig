@@ -197,10 +197,10 @@ config ADVANCED_POWER_MANAGEMENT
 	default n
 	depends on MICROKERNEL
 	help
-	This option enables the BSP to implement extra power management
-	policies whenever the kernel becomes idle. The kernel informs the
-	BSP of the number of ticks until the next kernel timer expires by
-	calling the BSP function _SysPowerSaveIdle().
+	This option enables the platform to implement extra power management
+	policies whenever the kernel becomes idle. The kernel invokes
+	_sys_power_save_idle() to inform the power management subsystem of the
+	number of ticks until the next kernel timer is due to expire.
 
 menu "Advanced Power Management Features"
 	depends on MICROKERNEL && ADVANCED_POWER_MANAGEMENT && ADVANCED_IDLE_SUPPORTED

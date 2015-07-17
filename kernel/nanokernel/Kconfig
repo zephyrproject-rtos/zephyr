@@ -48,7 +48,7 @@ config INT_LATENCY_BENCHMARK
 	depends on ARCH="x86" && EXPERIMENTAL
 	help
 	This option enables the tracking of interrupt latency metrics;
-	the exact set of metrics being tracked is BSP-dependent.
+	the exact set of metrics being tracked is platform-dependent.
 	Tracking begins when intLatencyInit() is invoked by an application.
 	The metrics are displayed (and a new sampling interval is started)
 	each time intLatencyShow() is called thereafter.
