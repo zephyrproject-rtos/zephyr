@@ -62,6 +62,10 @@ Scenarios tested include:
 static int myData[NUM_OF_ELEMENT];
 static int tcRC = TC_PASS;              /* test case return code */
 
+#ifdef TEST_PRIV_FIFO
+	DEFINE_FIFO(FIFOQ, 2, 4);
+#endif
+
 /**
  *
  * @brief Initialize data array

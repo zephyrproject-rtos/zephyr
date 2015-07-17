@@ -1,0 +1,21 @@
+% Please keep this in-sync with ../test_fifo/prj.mdef
+% except those specified below
+
+% Application       : test microkernel FIFO APIs
+
+% TASK NAME          PRIO ENTRY           STACK GROUPS
+% ====================================================
+  TASK tStartTask       5 RegressionTask    2048 [EXE]
+  TASK helperTask       7 MicroTestFifoTask 2048 [EXE]
+
+% FIFOQ is defined in source code. So keep this
+% commented out.
+%
+% FIFO NAME    DEPTH WIDTH
+% ========================
+%  FIFO FIFOQ       2    4
+
+% SEMA NAME
+% =============================
+  SEMA SEMSIG_MicroTestFifoTask
+  SEMA SEM_TestDone

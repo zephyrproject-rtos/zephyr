@@ -4,6 +4,7 @@ nanokernel/test/test_lifo        <n>  basic_cortex_m3! fsl_frdm_k64f
 nanokernel/test/test_sema        <n>  basic_cortex_m3! fsl_frdm_k64f
 	# Microkernel projects
 microkernel/test/test_fifo       <u>  basic_cortex_m3! fsl_frdm_k64f
+microkernel/test/test_fifo_priv  <u>  basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_events     <u>  basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_sema       <u>  basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_sema_priv  <u>  basic_cortex_m3! fsl_frdm_k64f
@@ -13,6 +14,7 @@ nanokernel/test/test_lifo        <n>  basic_atom!  galileo
 nanokernel/test/test_sema        <n>  basic_atom!  galileo
 	# Microkernel projects
 microkernel/test/test_fifo       <u>  basic_atom!  galileo
+microkernel/test/test_fifo_priv  <u>  basic_atom!  galileo
 microkernel/test/test_events     <u>  basic_atom!  galileo
 microkernel/test/test_sema       <u>  basic_atom!  galileo
 microkernel/test/test_sema_priv  <u>  basic_atom!  galileo
