@@ -335,7 +335,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 
 	Writer->Ctxt.proc = sender;
 
-	MailBox = _k_mbox_list + OBJ_INDEX(MailBoxId);
+	MailBox = (struct mbx_struct *)MailBoxId;
 
 	copy_packet(&CopyWriter, Writer);
 
@@ -576,7 +576,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 
 	CopyReader->Forw = NULL;
 
-	MailBox = _k_mbox_list + OBJ_INDEX(MailBoxId);
+	MailBox = (struct mbx_struct *)MailBoxId;
 
 	for (CopyWriter = MailBox->Writers, temp = NULL; CopyWriter != NULL;
 	     temp = CopyWriter, CopyWriter = CopyWriter->Forw) {

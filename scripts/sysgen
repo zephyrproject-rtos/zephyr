@@ -608,17 +608,16 @@ def kernel_main_c_mailboxes():
     total_mbxs = len(mbx_list)
 
     if (total_mbxs == 0):
-        kernel_main_c_out("\nstruct mbx_struct * _k_mbox_list = NULL;\n")
         return
 
     # mailbox descriptors
 
-    kernel_main_c_out("\n" +
-        "struct mbx_struct _k_mbox_list[%d] =\n" % (total_mbxs) +
-        "{\n")
+    kernel_main_c_out("\n")
     for mbx in mbx_list:
-        kernel_main_c_out("    {NULL, NULL, 0},\n")
-    kernel_main_c_out("};\n")
+        name = mbx[0]
+        kernel_main_c_out("struct mbx_struct _k_mbx_obj_%s = " % (name) +
+            "{NULL, NULL, 0};\n")
+    kernel_main_c_out("\n")
 
 
 def kernel_main_c_maps():
@@ -933,12 +932,20 @@ def generate_zephyr_h_obj_ids():
         zephyr_h_data += \
             "#define %s ((kfifo_t)&_k_fifo_obj_%s)\n\n" % (name, name)
 
+    # mailbox object ids
+
+    for mbx in mbx_list:
+        name = mbx[0]
+        zephyr_h_data += \
+            "extern struct mbx_struct _k_mbx_obj_%s;\n" % (name)
+        zephyr_h_data += \
+            "#define %s ((kmbox_t)&_k_mbx_obj_%s)\n\n" % (name, name)
+
     # all other object ids
 
     obj_types = [
         [task_list, 0],
         [pipe_list, 0],
-        [mbx_list, 0],
         [map_list, 0],
         [pool_list, 0],
     ]
