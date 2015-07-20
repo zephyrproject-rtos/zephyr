@@ -45,41 +45,6 @@ struct k_timer  *_k_timer_list_tail = NULL;
 
 /**
  *
- * @brief Convert timer pointer to timer object identifier
- *
- * This routine converts a timer pointer into a timer object identifier.
- *
- * This algorithm relies on the fact that subtracting two pointers that point
- * to elements of an array returns the difference between the array subscripts
- * of those elements. (That is, "&a[j]-&a[i]" returns "j-i".)
- *
- * This algorithm also set the upper 16 bits of the object identifier
- * to the same value utilized by the microkernel system generator.
- *
- * @return timer object identifier
- */
-
-static inline ktimer_t _timer_ptr_to_id(struct k_timer *timer)
-{
-	return (ktimer_t)(0x00010000u + (uint32_t)(timer - &_k_timer_blocks[0]));
-}
-
-/**
- *
- * @brief Convert timer object identifier to timer pointer
- *
- * This routine converts a timer object identifier into a timer pointer.
- *
- * @return timer pointer
- */
-
-static inline struct k_timer *_timer_id_to_ptr(ktimer_t timer)
-{
-	return &_k_timer_blocks[OBJ_INDEX(timer)];
-}
-
-/**
- *
  * @brief Insert a timer into the timer queue
  *
  * @return N/A
@@ -283,7 +248,7 @@ ktimer_t task_timer_alloc(void)
 	A.Comm = _K_SVC_TIMER_ALLOC;
 	KERNEL_ENTRY(&A);
 
-	return _timer_ptr_to_id(A.Args.c1.timer);
+	return (ktimer_t)A.Args.c1.timer;
 }
 
 /**
@@ -325,7 +290,7 @@ void task_timer_free(ktimer_t timer)
 	struct k_args A;
 
 	A.Comm = _K_SVC_TIMER_DEALLOC;
-	A.Args.c1.timer = _timer_id_to_ptr(timer);
+	A.Args.c1.timer = (struct k_timer *)timer;
 	KERNEL_ENTRY(&A);
 }
 
@@ -409,7 +374,7 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 	struct k_args A;
 
 	A.Comm = _K_SVC_TIMER_START;
-	A.Args.c1.timer = _timer_id_to_ptr(timer);
+	A.Args.c1.timer = (struct k_timer *)timer;
 	A.Args.c1.time1 = (int64_t)duration;
 	A.Args.c1.time2 = period;
 	A.Args.c1.sema = sema;
@@ -434,7 +399,7 @@ void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
 	struct k_args A;
 
 	A.Comm = _K_SVC_TIMER_START;
-	A.Args.c1.timer = _timer_id_to_ptr(timer);
+	A.Args.c1.timer = (struct k_timer *)timer;
 	A.Args.c1.time1 = (int64_t)duration;
 	A.Args.c1.time2 = period;
 	A.Args.c1.sema = ENDLIST;
@@ -476,7 +441,7 @@ void task_timer_stop(ktimer_t timer)
 	struct k_args A;
 
 	A.Comm = _K_SVC_TIMER_STOP;
-	A.Args.c1.timer = _timer_id_to_ptr(timer);
+	A.Args.c1.timer = (struct k_timer *)timer;
 	KERNEL_ENTRY(&A);
 }
 
