@@ -48,6 +48,8 @@
 
 #include "btshell.h"
 
+static struct bt_conn *default_conn = NULL;
+
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 			 const uint8_t *ad, uint8_t len)
 {
@@ -65,6 +67,10 @@ static void connected(struct bt_conn *conn)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Connected: %s\n", addr);
+
+	if (!default_conn) {
+		default_conn = bt_conn_get(conn);
+	}
 }
 
 static void disconnected(struct bt_conn *conn)
@@ -74,6 +80,11 @@ static void disconnected(struct bt_conn *conn)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Disconnected: %s\n", addr);
+
+	if (default_conn == conn) {
+		bt_conn_put(default_conn);
+		default_conn = NULL;
+	}
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -191,37 +202,17 @@ static void cmd_connect_le(int argc, char *argv[])
 static void cmd_disconnect(int argc, char *argv[])
 {
 	int err;
-	bt_addr_le_t addr;
-	struct bt_conn *conn;
 
-	if (argc < 2) {
-		printk("Peer address required\n");
+	if (!default_conn) {
+		printk("Not connected\n");
 		return;
 	}
 
-	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
-	}
-
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		printk("Invalid peer address (err %d)\n", err);
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(&addr);
-	if (!conn) {
-		printk("Peer not connected\n");
-		return;
-	}
-
-	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(default_conn,
+				 BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Disconnection failed (err %d)\n", err);
 	}
-
-	bt_conn_put(conn);
 }
 
 static void cmd_active_scan_on(void)
@@ -270,44 +261,23 @@ static void cmd_scan(int argc, char *argv[])
 static void cmd_security(int argc, char *argv[])
 {
 	int err, sec;
-	bt_addr_le_t addr;
-	struct bt_conn *conn;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
 
 	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
-	}
-
-	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
-	}
-
-	if (argc < 4) {
 		printk("Security level required\n");
 		return;
 	}
 
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		printk("Invalid peer address (err %d)\n", err);
-		return;
-	}
+	sec = *argv[1] - '0';
 
-	conn = bt_conn_lookup_addr_le(&addr);
-	if (!conn) {
-		printk("Peer not connected\n");
-		return;
-	}
-
-	sec = *argv[3] - '0';
-
-	err = bt_conn_security(conn, sec);
+	err = bt_conn_security(default_conn, sec);
 	if (err) {
 		printk("Setting security failed (err %d)\n", err);
 	}
-
-	bt_conn_put(conn);
 }
 
 static void exchange_rsp(struct bt_conn *conn, uint8_t err)
@@ -318,39 +288,18 @@ static void exchange_rsp(struct bt_conn *conn, uint8_t err)
 static void cmd_gatt_exchange_mtu(int argc, char *argv[])
 {
 	int err;
-	bt_addr_le_t addr;
-	struct bt_conn *conn;
 
-	if (argc < 2) {
-		printk("Peer address required\n");
+	if (!default_conn) {
+		printk("Not connected\n");
 		return;
 	}
 
-	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
-	}
-
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		printk("Invalid peer address (err %d)\n", err);
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(&addr);
-	if (!conn) {
-		printk("Peer not connected\n");
-		return;
-	}
-
-	err = bt_gatt_exchange_mtu(conn, exchange_rsp);
+	err = bt_gatt_exchange_mtu(default_conn, exchange_rsp);
 	if (err) {
 		printk("Exchange failed (err %d)\n", err);
 	} else {
 		printk("Exchange pending\n");
 	}
-
-	bt_conn_put(conn);
 }
 
 static const struct bt_eir ad[] = {
@@ -420,28 +369,9 @@ static void discover_destroy(void *user_data)
 static void cmd_gatt_discover(int argc, char *argv[])
 {
 	int err;
-	bt_addr_le_t addr;
-	struct bt_conn *conn;
 
-	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
-	}
-
-	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
-	}
-
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		printk("Invalid peer address (err %d)\n", err);
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(&addr);
-	if (!conn) {
-		printk("Peer not connected\n");
+	if (!default_conn) {
+		printk("Not connected\n");
 		return;
 	}
 
@@ -450,7 +380,7 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	discover_params.start_handle = 0x0001;
 	discover_params.end_handle = 0xffff;
 
-	if (argc < 4) {
+	if (argc < 2) {
 		if (!strcmp(argv[0], "gatt-discover")) {
 			printk("UUID type required\n");
 			return;
@@ -459,26 +389,28 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	}
 
 	/* Only set the UUID if the value is valid (non zero) */
-	uuid.u16 = xtoi(argv[3]);
+	uuid.u16 = xtoi(argv[1]);
 	if (uuid.u16) {
 		uuid.type = BT_UUID_16;
 		discover_params.uuid = &uuid;
 	}
 
-	if (argc > 4) {
-		discover_params.start_handle = xtoi(argv[4]);
-		if (argc > 5) {
-			discover_params.end_handle = xtoi(argv[5]);
+	if (argc > 2) {
+		discover_params.start_handle = xtoi(argv[2]);
+		if (argc > 3) {
+			discover_params.end_handle = xtoi(argv[3]);
 		}
 	}
 
 done:
 	if (!strcmp(argv[0], "gatt-discover-characteristic")) {
-		err = bt_gatt_discover_characteristic(conn, &discover_params);
+		err = bt_gatt_discover_characteristic(default_conn,
+						      &discover_params);
 	} else if (!strcmp(argv[0], "gatt-discover-descriptor")) {
-		err = bt_gatt_discover_descriptor(conn, &discover_params);
+		err = bt_gatt_discover_descriptor(default_conn,
+						  &discover_params);
 	} else {
-		err = bt_gatt_discover(conn, &discover_params);
+		err = bt_gatt_discover(default_conn, &discover_params);
 	}
 
 	if (err) {
@@ -486,8 +418,6 @@ done:
 	} else {
 		printk("Discover pending\n");
 	}
-
-	bt_conn_put(conn);
 }
 
 static void read_func(struct bt_conn *conn, int err, const void *data,
@@ -499,102 +429,60 @@ static void read_func(struct bt_conn *conn, int err, const void *data,
 static void cmd_gatt_read(int argc, char *argv[])
 {
 	int err;
-	bt_addr_le_t addr;
-	struct bt_conn *conn;
 	uint16_t handle, offset = 0;
 
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
 	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
-	}
-
-	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
-	}
-
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		printk("Invalid peer address (err %d)\n", err);
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(&addr);
-	if (!conn) {
-		printk("Peer not connected\n");
-		return;
-	}
-
-	if (argc < 4) {
 		printk("handle required\n");
 		return;
 	}
 
-	handle = xtoi(argv[3]);
+	handle = xtoi(argv[1]);
 
-	if (argc > 4) {
-		offset = xtoi(argv[4]);
+	if (argc > 2) {
+		offset = xtoi(argv[2]);
 	}
 
-	err = bt_gatt_read(conn, handle, offset, read_func);
+	err = bt_gatt_read(default_conn, handle, offset, read_func);
 	if (err) {
 		printk("Read failed (err %d)\n", err);
 	} else {
 		printk("Read pending\n");
 	}
-
-	bt_conn_put(conn);
 }
 
 void cmd_gatt_mread(int argc, char *argv[])
 {
 	uint16_t h[8];
 	int i, err;
-	bt_addr_le_t addr;
-	struct bt_conn *conn;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
 
 	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
-	}
-
-	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
-	}
-
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		printk("Invalid peer address (err %d)\n", err);
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(&addr);
-	if (!conn) {
-		printk("Peer not connected\n");
-		return;
-	}
-
-	if (argc < 4) {
 		printk("Attribute handles in hex format to read required\n");
 		return;
 	}
 
-	if (argc - 3 >  ARRAY_SIZE(h)) {
+	if (argc - 1 >  ARRAY_SIZE(h)) {
 		printk("Enter max %u handle items to read\n", ARRAY_SIZE(h));
 		return;
 	}
 
-	for (i = 0; i < argc - 3; i++) {
-		h[i] = xtoi(argv[i+3]);
+	for (i = 0; i < argc - 1; i++) {
+		h[i] = xtoi(argv[i + 1]);
 	}
 
-	err = bt_gatt_read_multiple(conn, h, i, read_func);
+	err = bt_gatt_read_multiple(default_conn, h, i, read_func);
 	if (err) {
 		printk("GATT multiple read request failed (err %d)\n", err);
 	}
-
-	bt_conn_put(conn);
 }
 
 static void write_func(struct bt_conn *conn, uint8_t err)
@@ -605,56 +493,36 @@ static void write_func(struct bt_conn *conn, uint8_t err)
 static void cmd_gatt_write(int argc, char *argv[])
 {
 	int err;
-	bt_addr_le_t addr;
-	struct bt_conn *conn;
 	uint16_t handle;
 	uint8_t data;
 
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
 	if (argc < 2) {
-		printk("Peer address required\n");
-		return;
-	}
-
-	if (argc < 3) {
-		printk("Peer address type required\n");
-		return;
-	}
-
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		printk("Invalid peer address (err %d)\n", err);
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(&addr);
-	if (!conn) {
-		printk("Peer not connected\n");
-		return;
-	}
-
-	if (argc < 4) {
 		printk("handle required\n");
 		return;
 	}
 
-	handle = xtoi(argv[3]);
+	handle = xtoi(argv[1]);
 
-	if (argc < 5) {
+	if (argc < 3) {
 		printk("data required\n");
 		return;
 	}
 
 	/* TODO: Add support for longer data */
-	data = xtoi(argv[4]);
+	data = xtoi(argv[2]);
 
-	err = bt_gatt_write(conn, handle, &data, sizeof(data), write_func);
+	err = bt_gatt_write(default_conn, handle, &data, sizeof(data),
+			    write_func);
 	if (err) {
 		printk("Write failed (err %d)\n", err);
 	} else {
 		printk("Write pending\n");
 	}
-
-	bt_conn_put(conn);
 }
 
 #ifdef CONFIG_MICROKERNEL
