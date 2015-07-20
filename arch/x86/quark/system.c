@@ -123,8 +123,7 @@ static int quark_init(struct device *arg)
 
 	pci_bus_scan_init();
 
-	while (pci_bus_scan(&info))
-	{
+	while (pci_bus_scan(&info)) {
 		pci_show(&info);
 		info.class = 0;
 		info.vendor_id = 0;

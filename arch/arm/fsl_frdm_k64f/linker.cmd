@@ -41,7 +41,7 @@ This is the linker script for both standard images and XIP images.
 
 /*
  * K64F Flash configuration fields
- * These are 16 bytes, which must be loaded to address 0x400, and include 
+ * These are 16 bytes, which must be loaded to address 0x400, and include
  * default protection and security settings.
  * They are loaded at reset to various Flash Memory module (FTFE) registers.
  */
