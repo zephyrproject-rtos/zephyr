@@ -1028,8 +1028,9 @@ static void swap_buf(const uint8_t *src, uint8_t *dst, uint16_t len)
 {
 	int i;
 
-	for (i = 0; i < len; i++)
+	for (i = 0; i < len; i++) {
 		dst[len - 1 - i] = src[i];
+	}
 }
 
 static void swap_in_place(uint8_t *buf, uint16_t len)
