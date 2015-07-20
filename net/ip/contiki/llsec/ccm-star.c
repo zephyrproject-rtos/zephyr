@@ -105,10 +105,10 @@ mic(struct net_mbuf *buf, const uint8_t *extended_source_address,
   
   shall_encrypt = packetbuf_attr(buf, PACKETBUF_ATTR_SECURITY_LEVEL) & (1 << 2);
   if(shall_encrypt) {
-    a_len = packetbuf_hdrlen();
-    m_len = packetbuf_datalen();
+    a_len = packetbuf_hdrlen(buf);
+    m_len = packetbuf_datalen(buf);
   } else {
-    a_len = packetbuf_totlen();
+    a_len = packetbuf_totlen(buf);
     m_len = 0;
   }
   set_nonce(x,
