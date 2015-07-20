@@ -1,5 +1,3 @@
-/* event kernel services */
-
 /*
  * Copyright (c) 1997-2010, 2013-2014 Wind River Systems, Inc.
  *
@@ -30,6 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * @brief Event kernel services.
+*/
+
 #include <micro_private.h>
 #include "microkernel/event.h"
 #include <toolchain.h>
@@ -43,7 +46,6 @@ extern struct evstr _k_event_list[];
  *
  * @return N/A
  */
-
 void _k_event_handler_set(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
@@ -71,26 +73,7 @@ void _k_event_handler_set(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Set event handler request
- *
- * This routine specifies the event handler that runs (in the context of the
- * K_swapper fiber) when the associated event is signaled. Specifying a non-NULL
- * handler installs a new handler, while specifying a NULL event handler removes
- * the existing event handler.
- *
- * A new event handler cannot be installed if one already exists for that event;
- * the old handler must be removed first. However, it is permitted to replace
- * the NULL event handler with itself.
- *
- * @return RC_FAIL if an event handler exists or the event number is invalid,
- *          else RC_OK
- */
-
-int task_event_set_handler(kevent_t event,     /* event upon which to reigster */
-		       kevent_handler_t handler /* function pointer to handler */
-		       )
+int task_event_set_handler(kevent_t event, kevent_handler_t handler)
 {
 	struct k_args A;
 
@@ -107,7 +90,6 @@ int task_event_set_handler(kevent_t event,     /* event upon which to reigster *
  *
  * @return N/A
  */
-
 void _k_event_test_timeout(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
@@ -125,7 +107,6 @@ void _k_event_test_timeout(struct k_args *A)
  *
  * @return N/A
  */
-
 void _k_event_test(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
@@ -166,19 +147,7 @@ void _k_event_test(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Test for event request
- *
- * This routine tests an event to see if it has been signaled.
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
- */
-
-int _task_event_recv(
-	kevent_t event, /* event for which to test */
-	int32_t time   /* maximum number of ticks to wait for event */
-	)
+int _task_event_recv(kevent_t event, int32_t time)
 {
 	struct k_args A;
 
@@ -199,7 +168,6 @@ int _task_event_recv(
  *
  * @return N/A
  */
-
 void _k_do_event_signal(kevent_t event)
 {
 	struct evstr *E = _k_event_list + event;
@@ -239,7 +207,6 @@ void _k_do_event_signal(kevent_t event)
  *
  * @return N/A
  */
-
 void _k_event_signal(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
@@ -252,19 +219,7 @@ void _k_event_signal(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Signal an event request
- *
- * This routine signals the specified event from a task. If an event handler
- * is installed for that event, it will run; if no event handler is installed,
- * any task waiting on the event is released.
- *
- * @return RC_FAIL if event number is invalid, else RC_OK
- */
-
-int task_event_send(kevent_t event /* event to signal */
-					 )
+int task_event_send(kevent_t event)
 {
 	struct k_args A;
 
@@ -274,28 +229,9 @@ int task_event_send(kevent_t event /* event to signal */
 	return A.Time.rcode;
 }
 
-/**
- *
- * @brief Signal an event from a fiber
- *
- * This routine does NOT validate the specified event number.
- *
- * @return N/A
- */
-
 FUNC_ALIAS(isr_event_send, fiber_event_send, void);
 
-/**
- *
- * @brief Signal an event from an ISR
- *
- * This routine does NOT validate the specified event number.
- *
- * @return N/A
- */
-
-void isr_event_send(kevent_t event /* event to signal */
-					   )
+void isr_event_send(kevent_t event)
 {
 	nano_isr_stack_push(&_k_command_stack, (uint32_t)event);
 }
