@@ -12,15 +12,8 @@
 .. toctree::
    :maxdepth: 2
 
-   architecture/architecture.rst
-   installation/installation.rst
-   collaboration/collaboration.rst
-   development/index.rst
-   object/object.rst
-   net/network.rst
-   platform/platform.rst
-   doxygen/doxygen.rst
-   documentation/documentation.rst
+   zephyr_kernel
+   zephyr_project
 
 
 

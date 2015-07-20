@@ -20,9 +20,9 @@ to have more stuff, visit it's documentation.
 This would be an example of referencing function :c:func:`__k_memcpy_s()`.
 
 The guidelines for in-code documentation can be found in the collaboration
-guidelines available here: :ref:`In-Code Documentation Guidelines`.
+guidelines available here:
 
 .. toctree::
    :maxdepth: 2
 
-   doxygen_output.rst
+   doxygen_guidelines.rst

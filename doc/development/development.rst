@@ -1,7 +1,7 @@
 .. _developing_zephyr:
 
-Developing with Zephyr
-########################
+Developing Using the Zephyr Kernel
+##################################
 
 .. toctree::
       :maxdepth: 2

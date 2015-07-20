@@ -1,8 +1,7 @@
 .. _code:
 
-
-In-code Documentation
-#####################
+Auto-generated API Documentation
+################################
 
 .. doxygenindex::
    :project: Zephyr
