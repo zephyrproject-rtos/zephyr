@@ -48,7 +48,7 @@ main() {
 		let build_proj++
 
 		# skip non-executable projects (or when doing "build only")
-		if [ ${build_only} = 1 -o x${BSP_FLAG[${cur_proj}]} = x ] ; then
+		if [ ${build_only} = 1 -o x${PLATFORM_FLAG[${cur_proj}]} = x ] ; then
 			continue
 		fi
 
