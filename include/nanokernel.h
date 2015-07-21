@@ -413,26 +413,202 @@ struct nano_lifo {
 	void *list;
 };
 
+/**
+ * @brief Initialize a nanokernel linked list lifo object
+ *
+ * This function initializes a nanokernel system-level linked list lifo
+ * object structure.
+ *
+ * It may be called from either a fiber or task context.
+ *
+ * @param chan LIFO to initialize.
+ *
+ * @return N/A
+ */
 extern void nano_lifo_init(struct nano_lifo *chan);
+
 /* methods for ISRs */
+
+/**
+ * @brief Prepend an element to a LIFO without a context switch.
+ *
+ * This routine adds an element to the head of a LIFO object; it may be
+ * called from an ISR context. A fiber pending on the LIFO
+ * object will be made ready, but will NOT be scheduled to execute.
+ *
+ * @param chan LIFO on which to put.
+ * @param data Data to insert.
+ *
+ * @return N/A
+ */
 extern void nano_isr_lifo_put(struct nano_lifo *chan, void *data);
+
+/**
+ * @brief Remove the first element from a linked list LIFO
+ *
+ * Remove the first element from the specified nanokernel linked list LIFO;
+ * it may be called from an ISR context.
+ *
+ * If no elements are available, NULL is returned. The first word in the
+ * element contains invalid data because that memory location was used to store
+ * a pointer to the next element in the linked list.
+ *
+ * @param chan LIFO from which to receive.
+ *
+ * @return Pointer to first element in the list if available, otherwise NULL
+ */
 extern void *nano_isr_lifo_get(struct nano_lifo *chan);
+
 /* methods for fibers */
+
+/**
+ * @brief Prepend an element to a LIFO without a context switch.
+ *
+ * This routine adds an element to the head of a LIFO object; it may be
+ * called from a fibercontext. A fiber pending on the LIFO
+ * object will be made ready, but will NOT be scheduled to execute.
+ *
+ * @param chan LIFO from which to put.
+ * @param data Data to insert.
+ *
+ * @return N/A
+ */
 extern void nano_fiber_lifo_put(struct nano_lifo *chan, void *data);
+
+/**
+ * @brief Remove the first element from a linked list LIFO
+ *
+ * Remove the first element from the specified nanokernel linked list LIFO;
+ * it may be called from a fiber context.
+ *
+ * If no elements are available, NULL is returned. The first word in the
+ * element contains invalid data because that memory location was used to store
+ * a pointer to the next element in the linked list.
+ *
+ * @param chan LIFO from which to receive
+ *
+ * @return Pointer to first element in the list if available, otherwise NULL
+ */
 extern void *nano_fiber_lifo_get(struct nano_lifo *chan);
+
+/**
+ * @brief Get the first element from a LIFO, wait if empty.
+ *
+ * Remove the first element from the specified system-level linked list LIFO;
+ * it can only be called from a fiber context.
+ *
+ * If no elements are available, the calling fiber will pend until an element
+ * is put onto the list.
+ *
+ * The first word in the element contains invalid data because that memory
+ * location was used to store a pointer to the next element in the linked list.
+ *
+ * @param chan LIFO from which to receive.
+ *
+ * @return Pointer to first element in the list
+ */
 extern void *nano_fiber_lifo_get_wait(struct nano_lifo *chan);
+
 #ifdef CONFIG_NANO_TIMEOUTS
+
+/**
+ * @brief get the first element from a LIFO, wait with a timeout if empty
+ *
+ * Remove the first element from the specified system-level linked list lifo;
+ * it can only be called from a fiber context.
+ *
+ * If no elements are available, the calling fiber will pend until an element
+ * is put onto the list, or the timeout expires, whichever comes first.
+ *
+ * The first word in the element contains invalid data because that memory
+ * location was used to store a pointer to the next element in the linked list.
+ *
+ * @param chan LIFO on which to operate.
+ * @param timeout_in_ticks Time to wait in ticks.
+ *
+ * @return Pointer to first element in the list, NULL if timed out.
+ */
 extern void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *chan,
 		int32_t timeout_in_ticks);
+
 #endif
 
 /* methods for tasks */
+
+/**
+ * @brief Add an element to the head of a linked list LIFO
+ *
+ * This routine adds an element to the head of a LIFO object; it can be
+ * called only from a task context. A fiber pending on the LIFO
+ * object will be made ready and will preempt the running task immediately.
+ *
+ * This API can only be called by a task.
+ *
+ * @param chan LIFO from which to put.
+ * @param data Data to insert.
+ *
+ * @return N/A
+ */
 extern void nano_task_lifo_put(struct nano_lifo *chan, void *data);
+
+/**
+ * @brief Remove the first element from a linked list LIFO
+ *
+ * Remove the first element from the specified nanokernel linked list LIFO;
+ * it may be called from a task context.
+ *
+ * If no elements are available, NULL is returned. The first word in the
+ * element contains invalid data because that memory location was used to store
+ * a pointer to the next element in the linked list.
+ *
+ * @param chan LIFO from which to receive.
+ *
+ * @return Pointer to first element in the list if available, otherwise NULL.
+ */
 extern void *nano_task_lifo_get(struct nano_lifo *chan);
+
+/**
+ * @brief Get the first element from a LIFO, poll if empty.
+ *
+ * Remove the first element from the specified nanokernel linked list LIFO; it
+ * can only be called from a task context.
+ *
+ * If no elements are available, the calling task will poll until an element is
+ * put onto the list.
+ *
+ * The first word in the element contains invalid data because that memory
+ * location was used to store a pointer to the next element in the linked list.
+ *
+ * @param chan LIFO from which to receive.
+ *
+ * @sa nano_task_stack_pop_wait()
+ *
+ * @return Pointer to first element in the list
+ */
 extern void *nano_task_lifo_get_wait(struct nano_lifo *chan);
+
 #ifdef CONFIG_NANO_TIMEOUTS
+
+/**
+ * @brief get the first element from a lifo, poll if empty.
+ *
+ * Remove the first element from the specified nanokernel linked list lifo; it
+ * can only be called from a task context.
+ *
+ * If no elements are available, the calling task will poll until an element is
+ * put onto the list, or the timeout expires, whichever comes first.
+ *
+ * The first word in the element contains invalid data because that memory
+ * location was used to store a pointer to the next element in the linked list.
+ *
+ * @param chan LIFO on which to operate
+ * @param timeout_in_ticks time to wait in ticks
+ *
+ * @return Pointer to first element in the list, NULL if timed out.
+ */
 extern void *nano_task_lifo_get_wait_timeout(struct nano_lifo *chan,
 		int32_t timeout_in_ticks);
+
 #endif
 
 /* semaphore APIs */

@@ -1,5 +1,3 @@
-/* nanokernel dynamic-size LIFO queue object */
-
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
@@ -30,19 +28,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module provides the nanokernel LIFO object implementation, including
-the following APIs:
+/** @file
+ *
+ * @brief Nanokernel dynamic-size LIFO queue object
+ *
+ * This module provides the nanokernel LIFO object implementation, including
+ * the following APIs:
+ *
+ *    nano_lifo_init
+ *    nano_fiber_lifo_put, nano_task_lifo_put, nano_isr_lifo_put
+ *    nano_fiber_lifo_get, nano_task_lifo_get, nano_isr_lifo_get
+ *    nano_fiber_lifo_get_wait, nano_task_lifo_get_wait
+ */
 
-   nano_lifo_init
-   nano_fiber_lifo_put, nano_task_lifo_put, nano_isr_lifo_put
-   nano_fiber_lifo_get, nano_task_lifo_get, nano_isr_lifo_get
-   nano_fiber_lifo_get_wait, nano_task_lifo_get_wait
-
-INTERNAL
-In some cases the compiler "alias" attribute is used to map two or more
-APIs to the same function, since they have identical implementations.
+/** INTERNAL
+ *
+ * In some cases the compiler "alias" attribute is used to map two or more
+ * APIs to the same function, since they have identical implementations.
  */
 
 #include <nano_private.h>
@@ -50,55 +52,29 @@ APIs to the same function, since they have identical implementations.
 #include <sections.h>
 #include <wait_q.h>
 
-/**
+/** INTERNAL
  *
- * @brief Initialize a nanokernel linked list lifo object
- *
- * This function initializes a nanokernel system-level linked list lifo
- * object structure.
- *
- * It may be called from either a fiber or task context.
- *
- * @return N/A
- *
- * INTERNAL
  * Although the existing implementation will support invocation from an ISR
  * context, for future flexibility, this API will be restricted from ISR
  * level invocation.
  */
-
-void nano_lifo_init(
-	struct nano_lifo *lifo /* lifo to initialize */
-	)
+void nano_lifo_init(struct nano_lifo *lifo)
 {
-	lifo->list = (void *)0;
+	lifo->list = (void *) 0;
 	_nano_wait_q_init(&lifo->wait_q);
 }
 
 FUNC_ALIAS(_lifo_put_non_preemptible, nano_isr_lifo_put, void);
 FUNC_ALIAS(_lifo_put_non_preemptible, nano_fiber_lifo_put, void);
 
-/**
+/** INTERNAL
  *
- * @brief Prepend an element to a lifo (no context switch)
- *
- * This routine adds an element to the head of a lifo object; it may be
- * called from either a fiber or an ISR context.  A fiber pending on the lifo
- * object will be made ready, but will NOT be scheduled to execute.
- *
- * @return N/A
- *
- * INTERNAL
  * This function is capable of supporting invocations from both a fiber and an
  * ISR context.  However, the nano_isr_lifo_put and nano_fiber_lifo_put aliases
  * are created to support any required implementation differences in the future
  * without introducing a source code migration issue.
  */
-
-void _lifo_put_non_preemptible(
-	struct nano_lifo *lifo, /* lifo on which to put */
-	void *data				/* data to insert */
-	)
+void _lifo_put_non_preemptible(struct nano_lifo *lifo, void *data)
 {
 	tCCS *ccs;
 	unsigned int imask;
@@ -107,32 +83,16 @@ void _lifo_put_non_preemptible(
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs) {
 		_nano_timeout_abort(ccs);
-		fiberRtnValueSet(ccs, (unsigned int)data);
+		fiberRtnValueSet(ccs, (unsigned int) data);
 	} else {
-		*(void **)data = lifo->list;
+		*(void **) data = lifo->list;
 		lifo->list = data;
 	}
 
 	irq_unlock_inline(imask);
 }
 
-/**
- *
- * @brief Add an element to the head of a linked list lifo
- *
- * This routine adds an element to the head of a lifo object; it can be
- * called only from a task context.  A fiber pending on the lifo
- * object will be made ready, and will preempt the running task immediately.
- *
- * This routine is only callable by a task.
- *
- * @return N/A
- */
-
-void nano_task_lifo_put(
-	struct nano_lifo *lifo, /* lifo on which to put */
-	void *data				/* data to insert */
-	)
+void nano_task_lifo_put(struct nano_lifo *lifo, void *data)
 {
 	tCCS *ccs;
 	unsigned int imask;
@@ -141,11 +101,11 @@ void nano_task_lifo_put(
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs) {
 		_nano_timeout_abort(ccs);
-		fiberRtnValueSet(ccs, (unsigned int)data);
+		fiberRtnValueSet(ccs, (unsigned int) data);
 		_Swap(imask);
 		return;
 	} else {
-		*(void **)data = lifo->list;
+		*(void **) data = lifo->list;
 		lifo->list = data;
 	}
 
@@ -156,30 +116,15 @@ FUNC_ALIAS(_lifo_get, nano_isr_lifo_get, void *);
 FUNC_ALIAS(_lifo_get, nano_fiber_lifo_get, void *);
 FUNC_ALIAS(_lifo_get, nano_task_lifo_get, void *);
 
-/**
+/** INTERNAL
  *
- * @brief Remove the first element from a linked list lifo
- *
- * Remove the first element from the specified nanokernel linked list lifo;
- * it may be called from a fiber, task, or ISR context.
- *
- * If no elements are available, NULL is returned.  The first word in the
- * element contains invalid data because that memory location was used to store
- * a pointer to the next element in the linked list.
- *
- * @return Pointer to first element in the list if available, otherwise NULL
- *
- * INTERNAL
  * This function is capable of supporting invocations from fiber, task, and ISR
  * contexts.  However, the nano_isr_lifo_get, nano_task_lifo_get, and
  * nano_fiber_lifo_get aliases are created to support any required
  * implementation differences in the future without introducing a source code
  * migration issue.
  */
-
-void *_lifo_get(
-	struct nano_lifo *lifo /* lifo on which to receive */
-	)
+void *_lifo_get(struct nano_lifo *lifo)
 {
 	void *data;
 	unsigned int imask;
@@ -188,7 +133,7 @@ void *_lifo_get(
 
 	data = lifo->list;
 	if (data) {
-		lifo->list = *(void **)data;
+		lifo->list = *(void **) data;
 	}
 
 	irq_unlock_inline(imask);
@@ -196,30 +141,13 @@ void *_lifo_get(
 	return data;
 }
 
-/**
+/** INTERNAL
  *
- * @brief Get the first element from a LIFO, wait if empty
- *
- * Remove the first element from the specified system-level linked list lifo;
- * it can only be called from a fiber context.
- *
- * If no elements are available, the calling fiber will pend until an element
- * is put onto the list.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @return Pointer to first element in the list
- *
- * INTERNAL
  * There exists a separate nano_task_lifo_get_wait() implementation since a
  * task context cannot pend on a nanokernel object.  Instead, tasks will poll
  * the lifo object.
  */
-
-void *nano_fiber_lifo_get_wait(
-	struct nano_lifo *lifo /* lifo on which to receive */
-	)
+void *nano_fiber_lifo_get_wait(struct nano_lifo *lifo )
 {
 	void *data;
 	unsigned int imask;
@@ -228,35 +156,17 @@ void *nano_fiber_lifo_get_wait(
 
 	if (!lifo->list) {
 		_nano_wait_q_put(&lifo->wait_q);
-		data = (void *)_Swap(imask);
+		data = (void *) _Swap(imask);
 	} else {
 		data = lifo->list;
-		lifo->list = *(void **)data;
+		lifo->list = *(void **) data;
 		irq_unlock_inline(imask);
 	}
 
 	return data;
 }
 
-/**
- *
- * @brief Get the first element from a lifo, poll if empty
- *
- * Remove the first element from the specified nanokernel linked list lifo; it
- * can only be called from a task context.
- *
- * If no elements are available, the calling task will poll until an element is
- * put onto the list.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @return Pointer to first element in the list
- */
-
-void *nano_task_lifo_get_wait(
-	struct nano_lifo *lifo /* lifo on which to interact */
-	)
+void *nano_task_lifo_get_wait(struct nano_lifo *lifo)
 {
 	void *data;
 	unsigned int imask;
@@ -280,25 +190,25 @@ void *nano_task_lifo_get_wait(
 	}
 
 	data = lifo->list;
-	lifo->list = *(void **)data;
+	lifo->list = *(void **) data;
 
 	irq_unlock_inline(imask);
 
 	return data;
 }
 
-/**
- *
+/*
  * @brief Get first element from lifo and panic if NULL
  *
  * Get the first element from the specified lifo but generate a fatal error
  * if the element is NULL.
  *
+ * @param lifo LIFO from which to receive.
+ *
  * @return Pointer to first element in the list
  *
  * \NOMANUAL
  */
-
 void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo)
 {
 	void *element;
@@ -313,26 +223,9 @@ void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo)
 }
 
 #ifdef CONFIG_NANO_TIMEOUTS
-/**
- * @brief get the first element from a LIFO, wait with a timeout if empty
- *
- * Remove the first element from the specified system-level linked list lifo;
- * it can only be called from a fiber context.
- *
- * If no elements are available, the calling fiber will pend until an element
- * is put onto the list, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @param lifo LIFO on which to operate
- * @timeout_in_ticks time to wait in ticks
- *
- * @return Pointer to first element in the list, NULL if timed out.
- */
 
 void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
-										int32_t timeout_in_ticks)
+		int32_t timeout_in_ticks)
 {
 	unsigned int key = irq_lock_inline();
 	void *data;
@@ -344,7 +237,7 @@ void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
 		}
 		if (likely(timeout_in_ticks != TICKS_UNLIMITED)) {
 			_nano_timeout_add(_nanokernel.current, &lifo->wait_q,
-								timeout_in_ticks);
+					timeout_in_ticks);
 		}
 		_nano_wait_q_put(&lifo->wait_q);
 		data = (void *)_Swap(key);
@@ -357,26 +250,8 @@ void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
 	return data;
 }
 
-/**
- * @brief get the first element from a lifo, poll if empty
- *
- * Remove the first element from the specified nanokernel linked list lifo; it
- * can only be called from a task context.
- *
- * If no elements are available, the calling task will poll until an element is
- * put onto the list, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked list.
- *
- * @param lifo LIFO on which to operate
- * @timeout_in_ticks time to wait in ticks
- *
- * @return Pointer to first element in the list, NULL if timed out.
- */
-
 void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
-										int32_t timeout_in_ticks)
+		int32_t timeout_in_ticks)
 {
 	int64_t cur_ticks, limit;
 	unsigned int key;
