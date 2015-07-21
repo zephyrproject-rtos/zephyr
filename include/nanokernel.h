@@ -402,27 +402,6 @@ extern void *nano_task_fifo_get_wait(struct nano_fifo *chan);
  *
  * @return Pointer to head element in the list, NULL if timed out
  */
-
-/**
- * @brief get the head element of a fifo, poll with a timeout if empty
- *
- * Remove the head element from the specified nanokernel fifo; it can only be
- * called from a task context.
- *
- * If no elements are available, the calling task will poll until an element
- * is put onto the fifo, or the timeout expires, whichever comes first.
- *
- * The first word in the element contains invalid data because that memory
- * location was used to store a pointer to the next element in the linked
- * list.
- *
- * @sa nano_task_stack_pop_wait()
- *
- * @param fifo the FIFO on which to operate
- * @param timeout_in_ticks time to wait in ticks
- *
- * @return Pointer to head element in the list, NULL if timed out
- */
 extern void *nano_task_fifo_get_wait_timeout(struct nano_fifo *chan,
 		int32_t timeout_in_ticks);
 #endif
