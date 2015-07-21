@@ -1,0 +1,87 @@
+config GPIO_DW
+       bool
+
+menuconfig GPIO
+        bool
+	prompt "GPIO Drivers"
+        default n
+        help
+          Include GPIO drivers in system config
+
+config GPIO_DW_0
+       bool "Designware GPIO block 0"
+       depends on GPIO
+       default n
+       select GPIO_DW
+       help
+       Include Designware GPIO driver
+
+config GPIO_DW_0_NAME
+       string "Driver name"
+       depends on GPIO_DW_0
+       default "GPIO_0"
+
+config GPIO_DW_0_BASE_ADDR
+       hex "Controller base address"
+       depends on GPIO_DW_0
+       default 0x00000000
+
+config GPIO_DW_0_BITS
+       int "number of pins controlled"
+       depends on GPIO_DW_0
+       default 32
+       help
+       Number of pins controlled by controller
+
+config GPIO_DW_0_IRQ
+       int "Controller interrupt number"
+       depends on GPIO_DW_0
+       default 0
+       help
+       IRQ number for the controller
+
+config GPIO_DW_0_PRI
+       int "Controller interrupt priority"
+       depends on GPIO_DW_0
+       default 0
+       help
+       IRQ priority
+
+config GPIO_DW_1
+       bool "Designware GPIO block 1"
+       depends on GPIO
+       select GPIO_DW
+       default n
+       help
+       Include Designware GPIO driver
+
+config GPIO_DW_1_NAME
+       string "Driver name"
+       depends on GPIO_DW_1
+       default "GPIO_1"
+
+config GPIO_DW_1_BASE_ADDR
+       hex "Controller base address"
+       depends on GPIO_DW_1
+       default 0x00000000
+
+config GPIO_DW_1_BITS
+       int "number of pins controlled"
+       depends on GPIO_DW_1
+       default 32
+       help
+       Number of pins controlled by controller
+
+config GPIO_DW_1_IRQ
+       int "Controller interrupt number"
+       depends on GPIO_DW_1
+       default 0
+       help
+       IRQ number for the controller
+
+config GPIO_DW_1_PRI
+       int "Controller interrupt priority"
+       depends on GPIO_DW_1
+       default 0
+       help
+       IRQ priority
