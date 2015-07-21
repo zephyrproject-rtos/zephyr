@@ -102,6 +102,22 @@ struct k_msg {
 	} extra;
 };
 
+/* Task control block */
+
+struct k_proc {
+	struct k_proc *Forw;
+	struct k_proc *Back;
+	kpriority_t Prio;
+	ktask_t Ident;
+	uint32_t State;
+	uint32_t Group;
+	void (*fstart)(void);
+	char *workspace;
+	int worksize;
+	void (*fabort)(void);
+	struct k_args *Args;
+};
+
 struct _k_mbox_struct {
 	struct k_args *Writers;
 	struct k_args *Readers;

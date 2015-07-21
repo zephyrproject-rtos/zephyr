@@ -327,7 +327,7 @@ void task_abort_handler_set(void (*func)(void) /* abort handler */
 void _k_task_op(struct k_args *A)
 {
 	ktask_t Tid = A->Args.g1.task;
-		struct k_proc *X = _k_task_list + OBJ_INDEX(Tid);
+		struct k_proc *X = (struct k_proc *)Tid;
 
 		switch (A->Args.g1.opt) {
 		case TASK_START:
@@ -499,7 +499,7 @@ kpriority_t task_priority_get(void)
 void _k_task_priority_set(struct k_args *A)
 {
 	ktask_t Tid = A->Args.g1.task;
-		struct k_proc *X = _k_task_list + OBJ_INDEX(Tid);
+		struct k_proc *X = (struct k_proc *)Tid;
 
 		_k_state_bit_set(X, TF_PRIO);
 		X->Prio = A->Args.g1.prio;
@@ -596,6 +596,8 @@ void task_entry_set(ktask_t task,       /* task */
 		     void (*func)(void) /* entry point */
 		     )
 {
-	_k_task_list[OBJ_INDEX(task)].fstart = func;
+	struct k_proc *X = (struct k_proc *)task;
+
+	X->fstart = func;
 }
 

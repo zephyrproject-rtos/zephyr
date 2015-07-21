@@ -49,6 +49,7 @@ extern "C" {
 #define USR_GROUP 2 /* TASKGROUP SYS */
 #define FPU_GROUP 4 /* TASKGROUP FPU */
 
+extern struct k_proc _k_task_list[];
 
 extern void _task_ioctl(ktask_t, int);
 extern void _task_group_ioctl(ktask_group_t, int);

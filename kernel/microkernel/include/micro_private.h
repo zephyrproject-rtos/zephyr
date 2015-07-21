@@ -42,7 +42,6 @@
 
 #define OBJ_INDEX(objId) ((uint16_t)objId)
 
-extern struct k_proc _k_task_list[];
 extern struct k_tqhd _k_task_priority_list[];
 
 extern int _k_task_count;

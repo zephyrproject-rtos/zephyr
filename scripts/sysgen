@@ -377,7 +377,7 @@ def kernel_main_c_tasks():
     kernel_main_c_out("\n" +
         "struct k_proc _k_task_list[%d] =\n" % (total_tasks) +
         "{\n")
-    ident = 0x00010000
+    idx = 0
     for task in task_list:
         prio = task[1]
         entry = task[2]
@@ -403,10 +403,10 @@ def kernel_main_c_tasks():
         group_bitmask ^= group_dictionary['SYS']
 
         kernel_main_c_out(
-            "    {NULL, NULL, %d, %#010x, " % (prio, ident) +
+            "    {NULL, NULL, %d, (ktask_t)&_k_task_list[%d], " % (prio, idx) +
             "0x00000001, %#010x,\n" % (group_bitmask) +
             "%s, %s, %d, (taskabortfunction)NULL},\n" % (entry, stack, size))
-        ident += 1
+        idx += 1
 
     kernel_main_c_out("    {NULL, NULL, %d, 0x00000000, " % (num_prios - 1) +
         "0x00000000, 0x00000000,\n" +
@@ -941,10 +941,20 @@ def generate_zephyr_h_obj_ids():
         zephyr_h_data += \
             "#define %s ((kmbox_t)&_k_mbox_obj_%s)\n\n" % (name, name)
 
+    # task object id
+
+    idx = 0
+    kernel_main_c_out("\n")
+    for task in task_list:
+        name = task[0];
+        zephyr_h_data += \
+            "#define %s ((ktask_t)&_k_task_list[%d])\n" % (name, idx)
+        idx += 1
+
+
     # all other object ids
 
     obj_types = [
-        [task_list, 0],
         [pipe_list, 0],
         [map_list, 0],
         [pool_list, 0],
