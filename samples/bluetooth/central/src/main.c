@@ -41,7 +41,6 @@
 #define SLEEPTIME  5000
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
-
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
