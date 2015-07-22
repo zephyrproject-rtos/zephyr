@@ -43,6 +43,11 @@ that use timer functionality.
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
+	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
+#error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
+#endif
+
 #define sys_clock_ticks_per_sec CONFIG_SYS_CLOCK_TICKS_PER_SEC
 #define sys_clock_hw_cycles_per_sec CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 

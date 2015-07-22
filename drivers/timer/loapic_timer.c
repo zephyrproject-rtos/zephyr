@@ -62,8 +62,8 @@ After reset, the timer is initialized to zero.
  *    LOAPIC_TIMER_IRQ
  *    LOAPIC_TIMER_INT_PRI
  *
- * A board support package's kconf file must provide the following constants:
- *    CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+ * NOTE: CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC must be provided by either the
+ * platform configuration file or the project configuration file.
  */
 
 #include <board.h>

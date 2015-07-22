@@ -42,7 +42,10 @@ config PHYS_LOAD_ADDR
 	default 0x00100000
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 25000000
+    default 150000000 if LOAPIC_TIMER
+    default 25000000  if HPET_TIMER
+    default 1193180   if PIT
+
 
 config UART_CONSOLE_INDEX
 	default 1
