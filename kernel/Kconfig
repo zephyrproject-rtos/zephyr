@@ -141,7 +141,7 @@ config TICKLESS_IDLE
 	bool
 	prompt "Tickless idle"
 	default y
-	depends on ADVANCED_POWER_MANAGEMENT && !TICKLESS_IDLE_UNSUPPORTED
+	depends on ADVANCED_POWER_MANAGEMENT
 	help
 	This option suppresses periodic system clock interrupts whenever the
 	kernel becomes idle. This permits the system to remain in a power

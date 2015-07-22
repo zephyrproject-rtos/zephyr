@@ -168,14 +168,6 @@ config HARDWARE_BP_SUPPORTED
 	This option signifies that the target supports hardware-based
 	instruction breakpoints and/or data watchpoints.
 
-config TICKLESS_IDLE_UNSUPPORTED
-	prompt "Tickless Idle Unsupported"
-	bool
-	default n
-	help
-	This option signifies the use of an Intel CPU that lacks
-	support for tickless idle.
-
 config CMOV
 	def_bool n
 	help
