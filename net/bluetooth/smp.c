@@ -317,6 +317,8 @@ static void send_err_rsp(struct bt_conn *conn, uint8_t reason)
 
 static int smp_init(struct bt_smp *smp)
 {
+	struct bt_conn *conn = smp->conn;
+
 	/* Initialize SMP context */
 	memset(smp, 0, sizeof(*smp));
 
@@ -326,6 +328,10 @@ static int smp_init(struct bt_smp *smp)
 	}
 
 	BT_DBG("prnd %s\n", h(smp->prnd, 16));
+
+	smp->conn = conn;
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
 	return 0;
 }
@@ -390,6 +396,7 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 
 int bt_smp_send_security_req(struct bt_conn *conn)
 {
+	struct bt_smp *smp = conn->smp;
 	struct bt_smp_security_request *req;
 	struct bt_buf *req_buf;
 
@@ -406,6 +413,8 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	req->auth_req = BT_SMP_AUTH_BONDING;
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
 	return 0;
 }
@@ -945,8 +954,6 @@ static void bt_smp_connected(struct bt_conn *conn)
 
 		smp->conn = conn;
 		conn->smp = smp;
-
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
 		if (conn->role == BT_HCI_ROLE_MASTER) {
 			atomic_set_bit(&smp->allowed_cmds,
