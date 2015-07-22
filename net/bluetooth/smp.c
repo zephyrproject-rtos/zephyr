@@ -639,10 +639,24 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static void smp_reset(struct bt_conn *conn)
+{
+	struct bt_smp *smp = conn->smp;
+
+	atomic_set(&smp->allowed_cmds, 0);
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		atomic_set_bit(&smp->allowed_cmds,
+			       BT_SMP_CMD_SECURITY_REQUEST);
+	} else {
+		atomic_set_bit(&smp->allowed_cmds,
+			       BT_SMP_CMD_PAIRING_REQ);
+	}
+}
+
 static uint8_t smp_pairing_failed(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_fail *req = (void *)buf->data;
-	struct bt_smp *smp = conn->smp;
 
 	BT_ERR("reason 0x%x\n", req->reason);
 
@@ -652,14 +666,7 @@ static uint8_t smp_pairing_failed(struct bt_conn *conn, struct bt_buf *buf)
 	 */
 	ARG_UNUSED(req);
 
-	atomic_set(&smp->allowed_cmds, 0);
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
-
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
-	} else {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
-	}
+	smp_reset(conn);
 
 	/* return no error to avoid sending Pairing Failed in response */
 	return 0;
@@ -924,15 +931,7 @@ static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 	if (err) {
 		send_err_rsp(conn, err);
 
-		atomic_set(&smp->allowed_cmds, 0);
-
-		if (conn->role == BT_HCI_ROLE_MASTER) {
-			atomic_set_bit(&smp->allowed_cmds,
-				       BT_SMP_CMD_SECURITY_REQUEST);
-		} else {
-			atomic_set_bit(&smp->allowed_cmds,
-				       BT_SMP_CMD_PAIRING_REQ);
-		}
+		smp_reset(conn);
 	}
 
 done:
@@ -955,13 +954,7 @@ static void bt_smp_connected(struct bt_conn *conn)
 		smp->conn = conn;
 		conn->smp = smp;
 
-		if (conn->role == BT_HCI_ROLE_MASTER) {
-			atomic_set_bit(&smp->allowed_cmds,
-				       BT_SMP_CMD_SECURITY_REQUEST);
-		} else {
-			atomic_set_bit(&smp->allowed_cmds,
-				       BT_SMP_CMD_PAIRING_REQ);
-		}
+		smp_reset(conn);
 
 		return;
 	}
