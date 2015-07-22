@@ -525,6 +525,63 @@ static void cmd_gatt_write(int argc, char *argv[])
 	}
 }
 
+static struct bt_gatt_subscribe_params subscribe_params;
+
+static void subscribe_destroy(void *user_data)
+{
+	printk("Subscribe destroy\n");
+}
+
+static void subscribe_func(struct bt_conn *conn, int err,
+			   const void *data, uint16_t length)
+{
+	if (!length) {
+		printk("Subscribe complete: err %u\n", err);
+	} else {
+		printk("Notification: data %p length %u\n", data, length);
+	}
+}
+
+static void cmd_gatt_subscribe(int argc, char *argv[])
+{
+	int err;
+	uint16_t handle;
+
+	if (subscribe_params.value_handle) {
+		printk("Cannot subscribe: subscription to %u already exists\n",
+		       subscribe_params.value_handle);
+		return;
+	}
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	if (argc < 2) {
+		printk("handle required\n");
+		return;
+	}
+
+	handle = xtoi(argv[1]);
+
+	if (argc < 3) {
+		printk("value handle required\n");
+		return;
+	}
+
+	subscribe_params.value_handle = xtoi(argv[2]);
+	subscribe_params.func = subscribe_func;
+	subscribe_params.destroy = subscribe_destroy;
+
+	err = bt_gatt_subscribe(default_conn, handle, &subscribe_params);
+	if (err) {
+		printk("Subscribe failed (err %d)\n", err);
+	} else {
+		printk("Subscribe pending\n");
+	}
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -547,4 +604,5 @@ void main(void)
 	shell_cmd_register("gatt-read", cmd_gatt_read);
 	shell_cmd_register("gatt-read-multiple", cmd_gatt_mread);
 	shell_cmd_register("gatt-write", cmd_gatt_write);
+	shell_cmd_register("gatt-subscribe", cmd_gatt_subscribe);
 }
