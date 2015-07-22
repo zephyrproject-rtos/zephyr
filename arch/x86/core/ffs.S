@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module implements the ffsMsb() and ffsLsb() functions for the IA-32 
+This module implements the ffsMsb() and ffsLsb() functions for the IA-32
 architecture.
 
 INTERNAL
@@ -53,7 +53,7 @@ are defined in arch.h.
 
 /**
  *
- * @brief Find first set bit searching from the LSB 
+ * @brief Find first set bit searching from the LSB
  *
  * This routine finds the first bit set in the passed argument and
  * returns the index of that bit.  Bits are numbered starting
@@ -76,7 +76,7 @@ SECTION_FUNC(TEXT, find_first_set)
 
 	movl	$0xffffffff, %ecx	/* preload for 0 return value */
 	bsfl	0x4(%esp), %eax		/* bit scan "forward" */
-	cmovz 	%ecx, %eax		/* if operand == 0 then %ecx -> eax */ 
+	cmovz 	%ecx, %eax		/* if operand == 0 then %ecx -> eax */
 	addl	$1, %eax
 	ret
 
@@ -86,17 +86,17 @@ SECTION_FUNC(TEXT, find_first_set)
 	jnz	ffsLsb_argNotZero
 	xorl	%eax, %eax		/* return 0 when arg=0 */
 	ret
-	
+
 BRANCH_LABEL(ffsLsb_argNotZero)	/* this label serves find_first_set() & find_last_set() */
 	addl	$1, %eax
 	ret
 
 #endif /* CONFIG_CMOV */
 
- 	
+
 /**
  *
- * @brief Find first set bit searching from the MSB 
+ * @brief Find first set bit searching from the MSB
  *
  * This routine finds the first bit set in the passed argument and
  * returns the index of that bit.  Bits are numbered starting
@@ -119,7 +119,7 @@ SECTION_FUNC(TEXT, find_last_set)
 
 	movl	$0xffffffff, %ecx	/* preload for 0 return value */
 	bsrl	0x4(%esp), %eax		/* bit scan "reverse" */
-	cmovz 	%ecx, %eax		/* if operand == 0 then %ecx -> eax */ 
+	cmovz 	%ecx, %eax		/* if operand == 0 then %ecx -> eax */
 	addl	$1, %eax
 	ret
 
@@ -129,6 +129,6 @@ SECTION_FUNC(TEXT, find_last_set)
 	jnz	ffsLsb_argNotZero
 	xorl	%eax, %eax		/* return 0 when arg=0 */
 	ret
-	
+
 #endif /* CONFIG_CMOV */
 
