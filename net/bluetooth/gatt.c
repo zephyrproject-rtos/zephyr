@@ -1093,6 +1093,56 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
 			      att_write_ccc_rsp, params);
 }
 
+int bt_gatt_unsubscribe(struct bt_conn *conn, uint16_t handle,
+			struct bt_gatt_subscribe_params *params)
+{
+	struct bt_gatt_subscribe_params *tmp;
+	bool has_subscription = false, found = false;
+
+	if (!conn && conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (!handle || !params) {
+		return -EINVAL;
+	}
+
+	/* Check head */
+	if (subscriptions == params) {
+		subscriptions = params->_next;
+		found = true;
+	}
+
+	/* Lookup existing subscriptions */
+	for (tmp = subscriptions; tmp; tmp = tmp->_next) {
+		/* Remove subscription */
+		if (tmp->_next == params) {
+			tmp->_next = params->_next;
+			found = true;
+		}
+
+		/* Check if there still remains any other subscription */
+		if (!bt_addr_le_cmp(&tmp->_peer, &conn->dst) &&
+		    tmp->value_handle == params->value_handle) {
+			has_subscription = true;
+		}
+	}
+
+	if (!found) {
+		return -EINVAL;
+	}
+
+	if (params->destroy) {
+		params->destroy(params);
+	}
+
+	if (has_subscription) {
+		return 0;
+	}
+
+	return gatt_write_ccc(conn, handle, 0x0000, NULL, NULL);
+}
+
 void bt_gatt_cancel(struct bt_conn *conn)
 {
 	bt_att_cancel(conn);
