@@ -1249,6 +1249,17 @@ static uint8_t att_handle_write_rsp(struct bt_conn *conn,
 	return att_handle_rsp(conn, buf->data, buf->len, 0);
 }
 
+static uint8_t att_notify(struct bt_conn *conn, struct bt_buf *buf)
+{
+	uint16_t handle;
+
+	handle = bt_buf_pull_le16(buf);
+
+	BT_DBG("handle 0x%04x\n", handle);
+
+	return 0;
+}
+
 static const struct {
 	uint8_t  op;
 	uint8_t  (*func)(struct bt_conn *conn, struct bt_buf *buf);
@@ -1293,6 +1304,8 @@ static const struct {
 	  sizeof(struct bt_att_prepare_write_req) },
 	{ BT_ATT_OP_EXEC_WRITE_REQ, att_exec_write_req,
 	  sizeof(struct bt_att_exec_write_req) },
+	{ BT_ATT_OP_NOTIFY, att_notify,
+	  sizeof(struct bt_att_notify) },
 	{ BT_ATT_OP_WRITE_CMD, att_write_cmd,
 	  sizeof(struct bt_att_write_cmd) },
 	{ BT_ATT_OP_SIGNED_WRITE_CMD, att_signed_write_cmd,
