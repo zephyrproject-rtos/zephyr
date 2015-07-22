@@ -70,7 +70,7 @@ typedef int (*gpio_write_t)(struct device *port, int access_op,
 typedef int (*gpio_read_t)(struct device *port, int access_op,
 			   uint32_t pin, uint32_t *value);
 typedef int (*gpio_set_callback_t)(struct device *port,
-				   gpio_callback_t *callback);
+				   gpio_callback_t callback);
 typedef int (*gpio_enable_callback_t)(struct device *port,
 				      int access_op,
 				      uint32_t pin);
@@ -142,7 +142,7 @@ inline int gpio_pin_read(struct device *port, uint32_t pin, uint32_t *value)
  *  @param callback Application callback function.
  */
 inline int gpio_set_callback(struct device *port,
-			     gpio_callback_t *callback)
+			     gpio_callback_t callback)
 {
 	struct gpio_driver_api *api;
 
