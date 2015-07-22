@@ -25,54 +25,159 @@ semaphore wakes up. Other tasks can test the semaphore to see if it is
 signaled. If not signaled, tasks can either wait, with or without a
 timeout, until signaled or return immediately with a failed status.
 
-Initialization
-==============
+Usage
+=====
 
-A semaphore has to be defined in the project file, for example
-:file:`projName.mdef`, which will specify the object type, and the name
-of the semaphore. Use the following syntax in the MDEF file to define a
-semaphore::
+Defining a Semaphore
+--------------------
+
+The following parameters must be defined:
+
+   *name*
+          This specifies a unique name for the semaphore.
+
+
+Add an entry for a semaphore in the project .MDEF file using the
+following syntax:
 
 .. code-block:: console
 
-   SEMA %name %node
+   SEMA %name
 
-An example of a semaphore entry for use in the MDEF file:
+For example, the file :file:`projName.mdef` defines two semaphores
+as follows:
 
 .. code-block:: console
 
-   % SEMA   NAME
-
-   % =================
-
-     SEMA   SEM_TASKDONE
-
+    % SEMA NAME
+    % ================
+      SEMA INPUT_DATA
+      SEMA WORK_DONE
 
 
-Application Program Interfaces
-==============================
+Example: Giving a Semaphore from a Task
+---------------------------------------
 
-Semaphore APIs allow signaling a semaphore. They also provide means to
-reset the signal count.
+This code uses a semaphore to indicate that a unit of data
+is available for processing.
+
+.. code-block:: c
+
+   void producer_task(void)
+   {
+       ...
+       task_sem_give(INPUT_DATA);
+       ...
+   }
+
+Example: Taking a Semaphore with a Conditional Time-out
+-------------------------------------------------------
+
+This code waits up to 500 ticks for a semaphore to be given,
+and gives a warning if it is not obtained in that time.
+
+.. code-block:: c
+
+   void consumer_task(void)
+   {
+       ...
+
+       if (task_sem_take_wait_timeout(INPUT_DATA, 500) == RC_TIME) {
+           printf("Input data not available!");
+       } else {
+           /* process input data */
+           ...
+       }
+       ...
+   }
+
+Example: Monitoring Multiple Semaphores at Once
+-----------------------------------------------
+
+This code waits on two semaphores simultaneously, and then takes
+action depending on which one was given.
+
+.. code-block:: c
+
+   ksem_t my_sem_group[3] = { INPUT_DATA, WORK_DONE, ENDLIST };
+
+   void consumer_task(void)
+   {
+       ksem_t sem_id;
+       ...
+
+       sem_id = task_sem_group_take_wait(my_sem_group);
+       if (sem_id == WORK_DONE) {
+           printf("Shutting down!");
+           return;
+       } else {
+           /* process input data */
+           ...
+       }
+       ...
+   }
+
+Example: Giving Multiple Semaphores at Once
+-------------------------------------------
+
+This code uses a semaphore group to allow a controlling task to signal
+the semaphores used by four other tasks in a single operation.
+
+.. code-block:: c
+
+   ksem_t my_sem_group[5] = { SEM1, SEM2, SEM3, SEM4, ENDLIST };
+
+   void control_task(void)
+   {
+       ...
+       task_semaphore_group_give(my_sem_group);
+       ...
+   }
+
+
+APIs
+====
+
+The following APIs for an individual semaphore are provided by microkernel.h.
 
 +----------------------------------------+------------------------------------+
 | Call                                   | Description                        |
 +========================================+====================================+
 | :c:func:`isr_sem_give()`               | Signal a semaphore from an ISR.    |
 +----------------------------------------+------------------------------------+
+| :c:func:`fiber_sem_give()`             | Signal a semaphore from a fiber.   |
++----------------------------------------+------------------------------------+
 | :c:func:`task_sem_give()`              | Signal a semaphore from a task.    |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_take()`              | Test a semaphore from a task.      |
+| :c:func:`task_sem_take()`              | Test a semaphore without waiting.  |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_take_wait()`         | Wait on a semaphore from a task.   |
+| :c:func:`task_sem_take_wait()`         | Wait on a semaphore.               |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_take_wait_timeout()` | Wait on a semaphore, with a        |
-|                                        | timeout, from a task.              |
+| :c:func:`task_sem_take_wait_timeout()` | Wait on a semaphore for a          |
+|                                        | specified time period.             |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_group_reset()`       | Sets a list of semaphores to zero. |
+| :c:func:`task_sem_reset()`             | Sets the semaphore count to zero.  |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_group_give()`        | Signals a list of semaphores from  |
-|                                        | a task.                            |
+| :c:func:`task_sem_count_get()`         | Read signal count for a semaphore. |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_reset()`             | Sets a semaphore to zero.          |
-+----------------------------------------+------------------------------------+
+
+
+The following APIs for semaphore groups are provided by microkernel.h.
+
++----------------------------------------------+------------------------------+
+| Call                                         | Description                  |
++==============================================+==============================+
+| :c:func:`task_sem_group_give()`              | Signal a set of semaphores.  |
++----------------------------------------------+------------------------------+
+| :c:func:`task_sem_group_take()`              | Test a set of semaphores     |
+|                                              | without waiting.             |
++----------------------------------------------+------------------------------+
+| :c:func:`task_sem_group_take_wait()`         | Wait on a set of semaphores. |
++----------------------------------------------+------------------------------+
+| :c:func:`task_sem_group_take_wait_timeout()` | Wait on a set of semaphores  |
+|                                              | for a specified time period. |
++----------------------------------------------+------------------------------+
+| :c:func:`task_sem_group_reset()`             | Sets the semaphore count to  |
+|                                              | to zero for a set of         |
+|                                              | semaphores.                  |
++----------------------------------------------+------------------------------+
