@@ -72,7 +72,7 @@ are defined in arch.h.
 
 SECTION_FUNC(TEXT, find_first_set)
 
-#if !defined(CONFIG_CMOV_UNSUPPORTED)
+#if defined(CONFIG_CMOV)
 
 	movl	$0xffffffff, %ecx	/* preload for 0 return value */
 	bsfl	0x4(%esp), %eax		/* bit scan "forward" */
@@ -91,7 +91,7 @@ BRANCH_LABEL(ffsLsb_argNotZero)	/* this label serves find_first_set() & find_las
 	addl	$1, %eax
 	ret
 
-#endif /* !CONFIG_CMOV_UNSUPPORTED */
+#endif /* CONFIG_CMOV */
 
  	
 /**
@@ -115,7 +115,7 @@ BRANCH_LABEL(ffsLsb_argNotZero)	/* this label serves find_first_set() & find_las
 
 SECTION_FUNC(TEXT, find_last_set)
 
-#if !defined(CONFIG_CMOV_UNSUPPORTED)
+#if defined(CONFIG_CMOV)
 
 	movl	$0xffffffff, %ecx	/* preload for 0 return value */
 	bsrl	0x4(%esp), %eax		/* bit scan "reverse" */
@@ -130,5 +130,5 @@ SECTION_FUNC(TEXT, find_last_set)
 	xorl	%eax, %eax		/* return 0 when arg=0 */
 	ret
 	
-#endif /* !CONFIG_CMOV_UNSUPPORTED */
+#endif /* CONFIG_CMOV */
 

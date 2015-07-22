@@ -141,7 +141,7 @@ static inline __attribute__((always_inline))
 
 	__asm__ volatile (
 
-#if !defined(CONFIG_CMOV_UNSUPPORTED)
+#if defined(CONFIG_CMOV)
 
 		"bsfl %1, %0;\n\t"
 		"cmovzl %2, %0;\n\t"
@@ -159,7 +159,7 @@ static inline __attribute__((always_inline))
 		: "rm" (op)
 		: "cc"
 
-#endif /* !CONFIG_CMOV_UNSUPPORTED */
+#endif /* CONFIG_CMOV */
 		);
 
 	return (bitpos + 1);
@@ -192,7 +192,7 @@ static inline inline __attribute__((always_inline))
 
 	__asm__ volatile (
 
-#if !defined(CONFIG_CMOV_UNSUPPORTED)
+#if defined(CONFIG_CMOV)
 
 		"bsrl %1, %0;\n\t"
 		"cmovzl %2, %0;\n\t"
@@ -209,7 +209,7 @@ static inline inline __attribute__((always_inline))
 		: "rm" (op)
 		: "cc"
 
-#endif /* CONFIG_CMOV_UNSUPPORTED */
+#endif /* CONFIG_CMOV */
 		);
 
 	return (bitpos + 1);

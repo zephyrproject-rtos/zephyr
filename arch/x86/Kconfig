@@ -99,6 +99,7 @@ default CPU_MINUTEIA
 
 config CPU_ATOM
 	bool "Atom"
+	select CMOV
 	help
 	This option signifies the use of a CPU from the Atom family.
 
@@ -175,12 +176,11 @@ config TICKLESS_IDLE_UNSUPPORTED
 	This option signifies the use of an Intel CPU that lacks
 	support for tickless idle.
 
-config CMOV_UNSUPPORTED
-	def_bool y
-	depends on CPU_MINUTEIA
+config CMOV
+	def_bool n
 	help
-	This option signifies the use of an Intel CPU that lacks support
-	for the CMOV instruction.
+	This option signifies the use of an Intel CPU that supports
+	the CMOV instruction.
 
 config CPU_FLOAT_UNSUPPORTED
 	def_bool y
