@@ -102,6 +102,7 @@ struct bt_hci_cmd_hdr {
 
 /* LE features */
 #define BT_HCI_LE_ENCRYPTION			0x01
+#define BT_HCI_LE_CONN_PARAM_REQ_PROC		0x02
 
 /* OpCode Group Fields */
 #define BT_OGF_LINK_CTRL			0x01

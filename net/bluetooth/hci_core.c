@@ -775,7 +775,8 @@ static void le_conn_complete(struct bt_buf *buf)
 
 	bt_l2cap_connected(conn);
 
-	if (evt->role == BT_HCI_ROLE_SLAVE) {
+	if ((evt->role == BT_HCI_ROLE_SLAVE) &&
+	    !(bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
 		bt_l2cap_update_conn_param(conn);
 	}
 
