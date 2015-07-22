@@ -625,6 +625,16 @@ void bt_gatt_connected(struct bt_conn *conn);
  */
 void bt_gatt_disconnected(struct bt_conn *conn);
 
+/** @brief notification callback.
+ *
+ *  @param conn Connection object.
+ *  @param handle Attribute handle.
+ *  @param data Attribute data.
+ *  @param length Attribute data length.
+ */
+void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
+			  const void *data, uint16_t length);
+
 /* Client API */
 
 /** @brief Response callback function
@@ -748,6 +758,32 @@ int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
  */
 int bt_gatt_write(struct bt_conn *conn, uint16_t handle, const void *data,
 		  uint16_t length, bt_gatt_rsp_func_t func);
+
+/** @brief GATT Subscribe parameters */
+struct bt_gatt_subscribe_params {
+	bt_addr_le_t _peer;
+	/** Subscribe value callback */
+	bt_gatt_read_func_t func;
+	/** Subscribe destroy callback */
+	void (*destroy)(void *user_data);
+	/** Subscribe value handle */
+	uint16_t value_handle;
+	struct bt_gatt_subscribe_params *_next;
+};
+
+/** @brief Subscribe Attribute Value Notification
+ *
+ * This procedure subscribe to value notification using the Client
+ * Characteristic Configuration handle.
+ *
+ * @param conn Connection object.
+ * @param handle CCC handle.
+ * @param params Subscribe parameters.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
+		      struct bt_gatt_subscribe_params *params);
 
 /** @brief Cancel GATT pending request
  *

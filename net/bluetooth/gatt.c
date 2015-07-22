@@ -59,6 +59,8 @@
 static const struct bt_gatt_attr *db = NULL;
 static size_t attr_count = 0;
 
+static struct bt_gatt_subscribe_params *subscriptions;
+
 void bt_gatt_register(const struct bt_gatt_attr *attrs, size_t count)
 {
 	db = attrs;
@@ -409,6 +411,20 @@ void bt_gatt_connected(struct bt_conn *conn)
 {
 	BT_DBG("conn %p\n", conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, connected_cb, conn);
+}
+
+void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
+			  const void *data, uint16_t length)
+{
+	struct bt_gatt_subscribe_params *params;
+
+	BT_DBG("handle 0x%04x length %u\n", handle, length);
+
+	for (params = subscriptions; params; params = params->_next) {
+		if (handle == params->value_handle) {
+			params->func(conn, 0, data, length);
+		}
+	}
 }
 
 static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
@@ -987,6 +1003,94 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, const void *data,
 	BT_DBG("handle 0x%04x length %u\n", handle, length);
 
 	return gatt_send(conn, buf, att_write_rsp, func, NULL);
+}
+
+static void gatt_subscription_add(struct bt_conn *conn,
+				  struct bt_gatt_subscribe_params *params)
+{
+	bt_addr_le_copy(&params->_peer, &conn->dst);
+
+	/* Prepend subscription */
+	params->_next = subscriptions;
+	subscriptions = params;
+}
+
+static void att_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
+			      const void *pdu, uint16_t length, void *user_data)
+{
+	struct bt_gatt_subscribe_params *params = user_data;
+
+	BT_DBG("err 0x%02x\n", err);
+
+	params->func(conn, err, NULL, 0);
+
+	if (err) {
+		if (params->destroy)
+			params->destroy(params);
+		return;
+	}
+
+	gatt_subscription_add(conn, params);
+}
+
+static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
+			  bt_att_func_t func,
+			  struct bt_gatt_subscribe_params *params)
+{
+	struct bt_buf *buf;
+	struct bt_att_write_req *req;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_REQ,
+				sizeof(*req) + sizeof(uint16_t));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->handle = sys_cpu_to_le16(handle);
+	bt_buf_add_le16(buf, value);
+
+	BT_DBG("handle 0x%04x value 0x%04x\n", handle, value);
+
+	return gatt_send(conn, buf, func, params, NULL);
+}
+
+int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
+		      struct bt_gatt_subscribe_params *params)
+{
+	struct bt_gatt_subscribe_params *tmp;
+	bool has_subscription = false;
+
+	if (!conn && conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (!handle || !params || !params->func) {
+		return -EINVAL;
+	}
+
+	/* Lookup existing subscriptions */
+	for (tmp = subscriptions; tmp; tmp = tmp->_next) {
+		/* Fail if entry already exists */
+		if (tmp == params) {
+			return -EALREADY;
+		}
+
+		/* Check if another subscription exists */
+		if (!bt_addr_le_cmp(&tmp->_peer, &conn->dst) &&
+		    tmp->value_handle == params->value_handle) {
+			has_subscription = true;
+		}
+	}
+
+	/* Skip write if already subcribed */
+	if (has_subscription) {
+		gatt_subscription_add(conn, params);
+		return 0;
+	}
+
+	return gatt_write_ccc(conn, handle, BT_GATT_CCC_NOTIFY,
+			      att_write_ccc_rsp, params);
 }
 
 void bt_gatt_cancel(struct bt_conn *conn)

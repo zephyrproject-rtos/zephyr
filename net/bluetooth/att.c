@@ -1257,6 +1257,8 @@ static uint8_t att_notify(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("handle 0x%04x\n", handle);
 
+	bt_gatt_notification(conn, handle, buf->data, buf->len);
+
 	return 0;
 }
 
