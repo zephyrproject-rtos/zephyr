@@ -529,7 +529,10 @@ static struct bt_gatt_subscribe_params subscribe_params;
 
 static void subscribe_destroy(void *user_data)
 {
+	struct bt_gatt_subscribe_params *params = user_data;
+
 	printk("Subscribe destroy\n");
+	params->value_handle = 0;
 }
 
 static void subscribe_func(struct bt_conn *conn, int err,
@@ -582,6 +585,36 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 	}
 }
 
+static void cmd_gatt_unsubscribe(int argc, char *argv[])
+{
+	int err;
+	uint16_t handle;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	if (argc < 2) {
+		printk("handle required\n");
+		return;
+	}
+
+	handle = xtoi(argv[1]);
+
+	if (!subscribe_params.value_handle) {
+		printk("No subscription found\n");
+		return;
+	}
+
+	err = bt_gatt_unsubscribe(default_conn, handle, &subscribe_params);
+	if (err) {
+		printk("Unsubscribe failed (err %d)\n", err);
+	} else {
+		printk("Unsubscribe success\n");
+	}
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -605,4 +638,5 @@ void main(void)
 	shell_cmd_register("gatt-read-multiple", cmd_gatt_mread);
 	shell_cmd_register("gatt-write", cmd_gatt_write);
 	shell_cmd_register("gatt-subscribe", cmd_gatt_subscribe);
+	shell_cmd_register("gatt-unsubscribe", cmd_gatt_unsubscribe);
 }
