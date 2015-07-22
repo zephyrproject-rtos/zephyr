@@ -33,55 +33,143 @@ Only one task may wait for an event. If a second task tests the same
 event the call returns a fail. Use semaphores for multiple tasks to
 wait on a signal from them.
 
-Initialization
-==============
+Usage
+=====
+
+Defining an Event
+-----------------
+
+The following parameters must be defined:
+
+   *name*
+          This specifies a unique name for the event.
+
+   *handler*
+          This specifies the name of the event handler function to be executed
+          each time the event is signalled. If no event handler is required
+          specify NULL.
 
 
-An event has to be defined in the project file, :file:`projName.mdef`.
-Specify the name of the event, the name of the processor node that
-manages it, and its event-handler function. Use the following syntax:
+Add an entry for the event in the project .MDEF file using the
+following syntax:
 
 .. code-block:: console
 
    EVENT %name %handler
 
-.. note::
+For example, the file :file:`projName.mdef` defines two events
+as follows:
 
-   In the project file, you can specify the name of the event and the
-   event handler, but not the event's number.
+.. code-block:: console
 
-Define application events in the project’s MDEF file. Define the driver’s
-events in either the project’s MDEF file or a BSP-specific MDEF file.
+    % EVENT NAME            ENTRY
+    % =======================================
+      EVENT KEYPRESS        validate_keypress
+      EVENT BUTTONPRESS     NULL
 
-Application Program Interfaces
-==============================
 
-Event APIs allow signaling or testing an event (blocking or
-non-blocking), and setting the event handler.
+Example: Signalling an Event from an ISR
+----------------------------------------
 
-If the event is in a signaled state, the test function returns
-successfully and resets the event to the non-signaled state. If the
-event is not signaled at the time of the call, the test either reports
-failure immediately in case of a non-blocking call, or blocks the
-calling task into a until the event signal becomes available.
+This code signals an event during the processing of an interrupt.
 
-+------------------------------------------+-----------------------------------+
-| Call                                     | Description                       |
-+==========================================+===================================+
-| :c:func:`fiber_event_send()`             | Signal an event from a fiber.     |
-+------------------------------------------+-----------------------------------+
-| :c:func:`task_event_set_handler()`       | Installs or removes an event      |
-|                                          | handler function from a task.     |
-+------------------------------------------+-----------------------------------+
-| :c:func:`task_event_send()`              | Signal an event from a task.      |
-+------------------------------------------+-----------------------------------+
-| :c:func:`task_event_recv()`              | Waits for an event signal.        |
-+------------------------------------------+-----------------------------------+
-| :c:func:`task_event_recv_wait()`         | Waits for an event signal with a  |
-|                                          | delay.                            |
-+------------------------------------------+-----------------------------------+
-| :c:func:`task_event_recv_wait_timeout()` | Waits for an event signal with    |
-|                                          | a delay and a timeout.            |
-+------------------------------------------+-----------------------------------+
-| :c:func:`isr_event_send()`               | Signal an event from an ISR       |
-+------------------------------------------+-----------------------------------+
+.. code-block:: c
+
+   void keypress_interrupt_handler(void *arg)
+   {
+       ...
+       isr_event_signal(KEYPRESS);
+       ...
+   }
+
+Example: Consuming an Event using a Task
+----------------------------------------
+
+This code processes events of a single type using a task.
+
+.. code-block:: c
+
+   void keypress_task(void)
+   {
+       /* consume key presses */
+       while (1) {
+
+           /* wait for a key press to be signalled */
+           task_event_recv(KEYPRESS);
+
+           /* determine what key was pressed */
+           char c = get_keypress();
+
+           /* process key press */
+           ...
+       }
+   }
+
+Example: Filtering Event Signals using an Event Handler
+-------------------------------------------------------
+
+This code registers an event handler that filters out unwanted events
+so that the consuming task only wakes up when needed.
+
+.. code-block:: c
+
+   int validate_keypress(int event_id_is_unused)
+   {
+       /* determine what key was pressed */
+       char c = get_keypress();
+
+       /* signal task only if key pressed was a digit */
+       if ((c >= '0') && (c <= '9')) {
+          /* save key press information */
+          ...
+          /* event is signalled to task */
+          return 1;
+       } else {
+          /* event is not signalled to task */
+          return 0;
+       }
+   }
+
+
+   void keypress_task(void)
+   {
+       /* register the filtering routine */
+       task_event_set_handler(KEYPRESS, validate_keypress);
+
+       /* consume key presses */
+       while (1) {
+
+           /* wait for a key press to be signalled */
+           task_event_recv(KEYPRESS);
+
+           /* process saved key press, which must be a digit */
+           ...
+       }
+   }
+
+
+APIs
+====
+
+The following Event APIs are provided by microkernel.h.
+
++------------------------------------------+----------------------------------+
+| Call                                     | Description                      |
++==========================================+==================================+
+| :c:func:`isr_event_send()`               | Signal an event from an ISR      |
++------------------------------------------+----------------------------------+
+| :c:func:`fiber_event_send()`             | Signal an event from a fiber.    |
++------------------------------------------+----------------------------------+
+| :c:func:`task_event_send()`              | Signal an event from a task.     |
++------------------------------------------+----------------------------------+
+| :c:func:`task_event_recv()`              | Tests for an event signal        |
+|                                          | without waiting.                 |
++------------------------------------------+----------------------------------+
+| :c:func:`task_event_recv_wait()`         | Waits for an event signal.       |
++------------------------------------------+----------------------------------+
+| :c:func:`task_event_recv_wait_timeout()` | Waits for an event signal        |
+|                                          | for a specified time period.     |
++------------------------------------------+----------------------------------+
+| :c:func:`task_event_set_handler()`       | Registers an event handler       |
+|                                          | function for an event.           |
++------------------------------------------+----------------------------------+
