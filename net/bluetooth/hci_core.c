@@ -58,8 +58,6 @@
 #define ACL_IN_MAX	7
 #define ACL_OUT_MAX	7
 
-#define BT_CREATE_CONN_TIMEOUT			(3 * sys_clock_ticks_per_sec)
-
 /* Stacks for the fibers */
 static BT_STACK_NOINIT(rx_fiber_stack, 1024);
 static BT_STACK_NOINIT(rx_prio_fiber_stack, 256);
@@ -741,15 +739,6 @@ static void le_conn_complete(struct bt_buf *buf)
 		conn = bt_conn_lookup_state(&evt->peer_addr, BT_CONN_CONNECT);
 	}
 
-	if (conn && conn->timeout) {
-		fiber_fiber_delayed_start_cancel(conn->timeout);
-
-		conn->timeout = NULL;
-
-		/* Drop the reference took by timeout fiber */
-		bt_conn_put(conn);
-	}
-
 	if (evt->status) {
 		if (!conn) {
 			return;
@@ -794,17 +783,6 @@ static void le_conn_complete(struct bt_buf *buf)
 	bt_le_scan_update();
 }
 
-static void timeout_fiber(int arg1, int arg2)
-{
-	struct bt_conn *conn = (struct bt_conn *)arg1;
-	ARG_UNUSED(arg2);
-
-	conn->timeout = NULL;
-
-	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	bt_conn_put(conn);
-}
-
 static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
 			       struct bt_keys *keys)
 {
@@ -834,13 +812,6 @@ static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECT);
-
-	/* Add LE Create Connection timeout */
-	conn->timeout = fiber_fiber_delayed_start(conn->stack,
-						  sizeof(conn->stack),
-						  timeout_fiber,
-						  (int)bt_conn_get(conn), 0, 7,
-						  0, BT_CREATE_CONN_TIMEOUT);
 
 done:
 	bt_conn_put(conn);

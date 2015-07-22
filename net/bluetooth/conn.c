@@ -54,6 +54,9 @@
 #define BT_DBG(fmt, ...)
 #endif
 
+/* How long until we cancel HCI_LE_Create_Connection */
+#define CONN_TIMEOUT	(3 * sys_clock_ticks_per_sec)
+
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
 
 #if defined(CONFIG_BLUETOOTH_DEBUG_CONN)
@@ -294,6 +297,17 @@ struct bt_conn *bt_conn_add(const bt_addr_le_t *peer, uint8_t role)
 	return conn;
 }
 
+static void timeout_fiber(int arg1, int arg2)
+{
+	struct bt_conn *conn = (struct bt_conn *)arg1;
+	ARG_UNUSED(arg2);
+
+	conn->timeout = NULL;
+
+	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	bt_conn_put(conn);
+}
+
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
 	bt_conn_state_t old_state;
@@ -308,13 +322,29 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	old_state = conn->state;
 	conn->state = state;
 
-	/* Take a reference for the first state transition after
-	 * bt_conn_add() and keep it until reaching DISCONNECTED again.
-	 */
-	if (old_state == BT_CONN_DISCONNECTED) {
+	/* Actions needed for exiting the old state */
+	switch (old_state) {
+	case BT_CONN_DISCONNECTED:
+		/* Take a reference for the first state transition after
+		 * bt_conn_add() and keep it until reaching DISCONNECTED
+		 * again.
+		 */
 		bt_conn_get(conn);
+		break;
+	case BT_CONN_CONNECT:
+		if (conn->timeout) {
+			fiber_fiber_delayed_start_cancel(conn->timeout);
+			conn->timeout = NULL;
+
+			/* Drop the reference taken by timeout fiber */
+			bt_conn_put(conn);
+		}
+		break;
+	default:
+		break;
 	}
 
+	/* Actions needed for entering the new state */
 	switch (conn->state){
 	case BT_CONN_CONNECTED:
 		nano_fifo_init(&conn->tx_queue);
@@ -337,7 +367,15 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		break;
 	case BT_CONN_CONNECT_SCAN:
+		break;
 	case BT_CONN_CONNECT:
+		/* Add LE Create Connection timeout */
+		conn->timeout = fiber_delayed_start(conn->stack,
+						    sizeof(conn->stack),
+						    timeout_fiber,
+						    (int)bt_conn_get(conn),
+						    0, 7, 0, CONN_TIMEOUT);
+		break;
 	case BT_CONN_DISCONNECT:
 		break;
 	default:
@@ -507,7 +545,6 @@ static int bt_hci_connect_le_cancel(struct bt_conn *conn)
 
 	if (conn->timeout) {
 		fiber_fiber_delayed_start_cancel(conn->timeout);
-
 		conn->timeout = NULL;
 
 		/* Drop the reference took by timeout fiber */
