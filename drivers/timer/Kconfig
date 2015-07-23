@@ -36,7 +36,7 @@ menu "Timer Drivers"
 config HPET_TIMER
 	bool "HPET timer"
 	default n
-        depends on X86_32
+	depends on X86_32
 	help
 	This option selects High Precision Event Timer (HPET) as a
 	system timer.
@@ -58,7 +58,7 @@ config LOAPIC_TIMER_FREQ
 config PIT
 	bool "PIT (i8253)"
 	default n
-        depends on X86_32
+	depends on X86_32
 	help
 	This option selects legacy i8253 timer as system timer.
 
