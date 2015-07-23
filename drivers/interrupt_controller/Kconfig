@@ -36,19 +36,19 @@ menu "Interrupt Controllers"
 config PIC
 	bool "PIC (i8259)"
 	default n
-        depends on X86_32
+	depends on X86_32
 
 config LOAPIC
 	bool "LOAPIC"
 	default n
-        depends on X86_32
+	depends on X86_32
 	help
 	This option selects local APIC as the interrupt controller.
 
-config  IOAPIC
+config IOAPIC
 	bool "IOAPIC"
 	default n
-        depends on X86_32
+	depends on X86_32
 	help
 	This option signifies that the target has an IO-APIC device. This
 	capability allows IO-APIC-dependent code to be included.
