@@ -207,6 +207,7 @@ static void le_conn_param_update_req(struct bt_conn *conn, uint8_t ident,
 	}
 
 	if (conn->role != BT_HCI_ROLE_MASTER) {
+		rej_not_understood(conn, ident);
 		return;
 	}
 
