@@ -34,6 +34,7 @@
 #ifndef __BT_BLUETOOTH_H
 #define __BT_BLUETOOTH_H
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -97,6 +98,12 @@ int bt_start_advertising(uint8_t type, const struct bt_eir *ad,
  */
 int bt_stop_advertising(void);
 
+/** Filter out duplicate scanning results. **/
+typedef enum {
+	BT_SCAN_FILTER_DUP_DISABLE,
+	BT_SCAN_FILTER_DUP_ENABLE,
+} bt_scan_filter_dup_t;
+
 /** @brief Start (LE) scanning
  *
  *  Start LE scanning with and provide results through the specified
@@ -108,7 +115,7 @@ int bt_stop_advertising(void);
  *  @return Zero on success or error code otherwise, positive in case
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
-int bt_start_scanning(uint8_t filter_dups, bt_le_scan_cb_t cb);
+int bt_start_scanning(bt_scan_filter_dup_t filter, bt_le_scan_cb_t cb);
 
 /** @brief Stop (LE) scanning.
  *

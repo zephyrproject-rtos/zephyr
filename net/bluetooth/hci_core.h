@@ -30,6 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <atomic.h>
 #include <stdbool.h>
 #include <arch/cpu.h>
 #include <bluetooth/driver.h>
@@ -50,6 +51,14 @@
 #define lmp_bredr_capable(dev)	(!((dev).features[4] & BT_LMP_NO_BREDR))
 #define lmp_le_capable(dev)	((dev).features[4] & BT_LMP_LE)
 
+/* bt_dev flags: the flags defined here represent BT controller state */
+enum {
+	BT_DEV_ADVERTISING,
+
+	BT_DEV_SCANNING,
+	BT_DEV_SCAN_FILTER_DUP,
+};
+
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Bluetooth Device Address */
@@ -66,12 +75,7 @@ struct bt_dev {
 	/* LE features */
 	uint8_t			le_features[8];
 
-	/* Advertising state */
-	uint8_t                 adv_enable;
-
-	/* Scanning state */
-	uint8_t			scan_enable;
-	uint8_t			scan_filter;
+	atomic_t		flags[1];
 
 	/* Controller buffer information */
 	uint8_t			le_pkts;

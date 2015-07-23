@@ -246,10 +246,6 @@ struct bt_hci_cp_le_set_scan_params {
 } __packed;
 
 #define BT_HCI_OP_LE_SET_SCAN_ENABLE		BT_OP(BT_OGF_LE, 0x000c)
-#define BT_LE_SCAN_DISABLE			0x00
-#define BT_LE_SCAN_ENABLE			0x01
-#define BT_LE_SCAN_FILTER_DUP_DISABLE		0x00
-#define BT_LE_SCAN_FILTER_DUP_ENABLE		0x01
 
 struct bt_hci_cp_le_set_scan_enable {
 	uint8_t  enable;
