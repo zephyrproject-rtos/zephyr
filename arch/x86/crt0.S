@@ -585,7 +585,7 @@ _GdtRom:
 	 * address.
 	 *
 	 * The 'A' (accessed) bit in the type field is _not_ set for all the
-	 * data/code segment descriptors to accomodate placing these entries
+	 * data/code segment descriptors to accommodate placing these entries
 	 * in ROM, since such use is not planned for this platform.
 	 */
 

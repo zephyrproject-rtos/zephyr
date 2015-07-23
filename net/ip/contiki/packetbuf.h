@@ -264,7 +264,7 @@ int packetbuf_copyfrom(struct net_mbuf *buf, const void *from, uint16_t len);
  *             external data is copied.
  *
  *             The external buffer to which the packetbuf is to be
- *             copied must be able to accomodate at least
+ *             copied must be able to accommodate at least
  *             (PACKETBUF_SIZE + PACKETBUF_HDR_SIZE) bytes. The number of
  *             bytes that was copied to the external buffer is
  *             returned.
@@ -281,7 +281,7 @@ int packetbuf_copyto(struct net_mbuf *buf, void *to);
  *             to an external buffer.
  *
  *             The external buffer to which the packetbuf is to be
- *             copied must be able to accomodate at least
+ *             copied must be able to accommodate at least
  *             PACKETBUF_HDR_SIZE bytes. The number of bytes that was
  *             copied to the external buffer is returned.
  *
