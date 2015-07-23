@@ -48,7 +48,7 @@ config LOAPIC
 config IOAPIC
 	bool "IOAPIC"
 	default n
-	depends on X86_32
+	depends on X86_32 && LOAPIC
 	help
 	This option signifies that the target has an IO-APIC device. This
 	capability allows IO-APIC-dependent code to be included.

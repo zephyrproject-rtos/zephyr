@@ -138,7 +138,6 @@ CONFIG_NS16550=y
 #
 CONFIG_PIC=y
 # CONFIG_LOAPIC is not set
-# CONFIG_IOAPIC is not set
 
 #
 # Timer Drivers
