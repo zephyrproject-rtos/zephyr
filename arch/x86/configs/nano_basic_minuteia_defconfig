@@ -142,7 +142,6 @@ CONFIG_PIC=y
 #
 # Timer Drivers
 #
-# CONFIG_HPET_TIMER is not set
 CONFIG_PIT=y
 
 #

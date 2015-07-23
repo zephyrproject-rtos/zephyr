@@ -149,7 +149,6 @@ CONFIG_IOAPIC=y
 #
 CONFIG_HPET_TIMER=y
 # CONFIG_LOAPIC_TIMER is not set
-# CONFIG_PIT is not set
 
 #
 # Random Generation Configuration
