@@ -16,10 +16,10 @@ $ socat PTY,link=/tmp/slip.dev UNIX-LISTEN:/tmp/slip.sock
 2) Start qemu, use the listener demo app. Note that you need to
    set CONFIG_NETWORKING_UART=y in your configuration.
 
-   You might need to set the BSP and ARCH like this if simple_uart
-   driver is not found in your default BSP.
+   You might need to set the platform and ARCH like this if simple_uart
+   driver is not found in your default platform.
 
-$ make BSP=ti_lm3s6965 ARCH=arm \
+$ make PLATFORM_CONFIG=basic_cortex_m3 ARCH=arm \
      QEMU_EXTRA_FLAGS="-serial none -serial unix:/tmp/slip.sock" qemu
 
 3) Start tunslip6
@@ -51,10 +51,10 @@ $ socat PTY,link=/tmp/slip.dev UNIX-LISTEN:/tmp/slip.sock
 2) Start qemu, use the listener demo app. Note that you need to
    set CONFIG_NETWORKING_UART=y in your configuration.
 
-   You might need to set the BSP and ARCH like this if simple_uart
-   driver is not found in your default BSP.
+   You might need to set the platform and ARCH like this if simple_uart
+   driver is not found in your default platform.
 
-$ make BSP=ti_lm3s6965 ARCH=arm \
+$ make PLATFORM_CONFIG=basic_cortex_m3 ARCH=arm \
      QEMU_EXTRA_FLAGS="-serial none -serial unix:/tmp/slip.sock" qemu
 
 3) Start tunslip
