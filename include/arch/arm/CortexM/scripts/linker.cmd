@@ -192,6 +192,16 @@ SECTIONS
 		__initconfig_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+	SECTION_PROLOGUE (_k_task_list, (OPTIONAL),)
+	{
+		_k_task_list_start = .;
+			*(._k_task_list.public.*)
+		_k_task_list_idle_start = .;
+			*(._k_task_list.idle.*)
+		KEEP(*(SORT_BY_NAME("._k_task_list*")))
+		_k_task_list_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
     __data_ram_end = .;
 
     SECTION_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)

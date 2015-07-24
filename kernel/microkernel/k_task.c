@@ -42,6 +42,8 @@
 #include <nano_private.h>
 #include <start_task_arch.h>
 
+extern struct k_proc _k_task_list_start[];
+extern struct k_proc _k_task_list_end[];
 
 /**
  *
@@ -385,7 +387,6 @@ void _k_task_group_op(struct k_args *A)
 {
 	ktask_group_t grp = A->Args.g1.group;
 	int opt = A->Args.g1.opt;
-	int i;
 	struct k_proc *X;
 
 #ifdef CONFIG_TASK_DEBUG
@@ -395,7 +396,7 @@ void _k_task_group_op(struct k_args *A)
 		_k_debug_halt = 0;
 #endif
 
-	for (i = 0, X = _k_task_list; i < _k_task_count; i++, X++) {
+	for (X = _k_task_list_start; X < _k_task_list_end; X++) {
 		if (X->Group & grp) {
 			switch (opt) {
 			case TASK_GROUP_START:

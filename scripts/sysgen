@@ -351,12 +351,6 @@ def kernel_main_c_tasks():
 
     global num_prios
 
-    total_tasks = len(task_list) + 1
-
-    # task global variables
-
-    kernel_main_c_out("\nint _k_task_count = %d;\n" % (total_tasks - 1))
-
     # task stack areas
 
     kernel_main_c_out("\n")
@@ -373,15 +367,18 @@ def kernel_main_c_tasks():
         kernel_main_c_out("extern void %s(void);\n" % task[2])
 
     # task descriptors (including one for idle task)
+    #
+    # compiler puts these objects into the section as if
+    # it is a stack. hence the need to reverse the list.
+    # this is to preseve the order defined in MDEF file.
 
-    kernel_main_c_out("\n" +
-        "struct k_proc _k_task_list[%d] =\n" % (total_tasks) +
-        "{\n")
-    idx = 0
-    for task in task_list:
+    kernel_main_c_out("\n")
+    for task in reversed(task_list):
+        name = task[0]
         prio = task[1]
         entry = task[2]
         size = task[3]
+        obj_name = "_k_task_obj_%s" % (name)
 
         stack = "__" + task[0] + "_stack"
 
@@ -403,22 +400,26 @@ def kernel_main_c_tasks():
         group_bitmask ^= group_dictionary['SYS']
 
         kernel_main_c_out(
-            "    {NULL, NULL, %d, (ktask_t)&_k_task_list[%d], " % (prio, idx) +
-            "0x00000001, %#010x,\n" % (group_bitmask) +
-            "%s, %s, %d, (taskabortfunction)NULL},\n" % (entry, stack, size))
-        idx += 1
+            "struct k_proc %s " % (obj_name)+
+            "__section(_k_task_list, public, task) =\n" +
+            "    {NULL, NULL, %d, (ktask_t)&%s,\n" % (prio, obj_name) +
+            "     0x00000001, %#010x,\n" % (group_bitmask) +
+            "     %s, %s, %d,\n" % (entry, stack, size) +
+            "     (taskabortfunction)NULL, NULL};\n")
 
-    kernel_main_c_out("    {NULL, NULL, %d, 0x00000000, " % (num_prios - 1) +
-        "0x00000000, 0x00000000,\n" +
-        "(taskstartfunction)NULL, main_task_stack, CONFIG_MAIN_STACK_SIZE, " +
-        "(taskabortfunction)NULL}\n")
-    kernel_main_c_out("};\n")
+    kernel_main_c_out(
+        "struct k_proc _k_task_idle " +
+        "__section(_k_task_list, idle, task) =\n" +
+        "    {NULL, NULL, %d, 0x00000000,\n" % (num_prios - 1) +
+        "     0x00000000, 0x00000000,\n" +
+        "     (taskstartfunction)NULL, main_task_stack,\n"
+        "     CONFIG_MAIN_STACK_SIZE,\n" +
+        "     (taskabortfunction)NULL, NULL};\n")
 
     # currently scheduled task (idle task)
 
     kernel_main_c_out("\n" +
-        "struct k_proc * _k_current_task = &_k_task_list[%d];\n" %
-        (total_tasks - 1))
+        "struct k_proc * _k_current_task = &_k_task_idle;\n")
 
 
 def kernel_main_c_priorities():
@@ -438,8 +439,7 @@ def kernel_main_c_priorities():
             "    {NULL, (struct k_proc *)&_k_task_priority_list[%d]},\n" %
             (i - 1))
     kernel_main_c_out(
-        "    {&_k_task_list[%d], &_k_task_list[%d]}\n" %
-        (total_tasks - 1, total_tasks - 1) +
+        "    {&_k_task_idle, &_k_task_idle}\n" +
         "};\n")
 
     # active priority queue (idle task's queue)
@@ -943,13 +943,12 @@ def generate_zephyr_h_obj_ids():
 
     # task object id
 
-    idx = 0
     kernel_main_c_out("\n")
     for task in task_list:
         name = task[0];
         zephyr_h_data += \
-            "#define %s ((ktask_t)&_k_task_list[%d])\n" % (name, idx)
-        idx += 1
+            "extern struct k_proc _k_task_obj_%s;\n" % (name) + \
+            "#define %s ((ktask_t)&_k_task_obj_%s)\n" % (name, name)
 
 
     # all other object ids
