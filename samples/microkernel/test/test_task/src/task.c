@@ -70,6 +70,16 @@ static int helperData;
 
 static volatile int mainTaskNotReady = 0;
 
+#ifdef TEST_PRIV_TASKS
+/* Note this is in reverse order of what is defined under
+ * test_task/prj.mdef. This is due to compiler filling linker
+ * section like a stack. This is to preserve the same order
+ * in memory as test_task.
+ */
+DEFINE_TASK(RT_TASKID, 10, RegressionTask, 2048, EXE);
+DEFINE_TASK(HT_TASKID, 20, HelperTask, 2048, EXE);
+#endif
+
 /**
  *
  * @brief ISR handler to call isr_task_id_get() and isr_task_priority_get()

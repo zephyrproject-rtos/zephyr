@@ -51,6 +51,7 @@ microkernel/test/test_sema_priv         <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_sprintf           <u>  basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_stackprot         <u>  basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_task              <uq> basic_cortex_m3! fsl_frdm_k64f
+microkernel/test/test_task_priv         <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_task_irq          <u>  basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_timer             <uq> basic_cortex_m3! fsl_frdm_k64f
 microkernel/test/test_xip               <uq> basic_cortex_m3! fsl_frdm_k64f
@@ -74,6 +75,7 @@ microkernel/test/test_sprintf           <u>  basic_minuteia! basic_atom! galileo
 microkernel/test/test_stackprot         <u>  basic_minuteia! basic_atom! galileo
 microkernel/test/test_static_idt        <uq> basic_minuteia! basic_atom! galileo
 microkernel/test/test_task              <uq> basic_minuteia! basic_atom! galileo
+microkernel/test/test_task_priv         <uq> basic_minuteia! basic_atom! galileo
 microkernel/test/test_task_irq          <u>  basic_minuteia! basic_atom! galileo
 microkernel/test/test_tickless          <uq> basic_minuteia! basic_atom! galileo
 microkernel/test/test_timer             <uq> basic_minuteia! basic_atom! galileo

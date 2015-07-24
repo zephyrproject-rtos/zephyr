@@ -1,0 +1,17 @@
+% Application       : test microkernel task APIs
+
+% Please keep this in-sync with ../test_task/prj.mdef
+% except those specified below
+
+% TASK HT_TASKID and RT_TASKID are defined within
+% the source file, so keep them commented out.
+%
+% TASK NAME        PRIO ENTRY           STACK GROUPS
+% ==================================================
+%  TASK HT_TASKID    20 HelperTask        2048 [EXE]
+%  TASK RT_TASKID    10 RegressionTask    2048 [EXE]
+
+% SEMA NAME
+% ===========
+  SEMA HT_SEM
+  SEMA RT_SEM
