@@ -171,8 +171,10 @@ CONFIG_IOAPIC=y
 #
 # Timer Drivers
 #
-# CONFIG_HPET_TIMER is not set
-CONFIG_LOAPIC_TIMER=y
+CONFIG_HPET_TIMER=y
+CONFIG_HPET_TIMER_LEGACY_EMULATION=y
+# CONFIG_HPET_TIMER_DEBUG is not set
+# CONFIG_LOAPIC_TIMER is not set
 
 #
 # Random Generation Configuration

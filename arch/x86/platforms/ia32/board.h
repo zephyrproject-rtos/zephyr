@@ -99,6 +99,18 @@ the 'ia32' platform.
 #define LOAPIC_VEC_BASE(x) (x + 32 + IOAPIC_NUM_RTES)
 #define LOAPIC_TIMER_VEC LOAPIC_VEC_BASE(0)
 
+/*
+ * HPET device information
+ */
+#define HPET_BASE_ADRS_PHYS 0xFED00000
+#define HPET_SIZE KB(4)
+
+#define HPET_BASE_ADRS HPET_BASE_ADRS_PHYS
+
+#define HPET_TIMER0_VEC (HPET_TIMER0_IRQ + INT_VEC_IRQ0)
+#define HPET_TIMER0_INT_PRI (4)
+#define HPET_TIMER0_IRQ (2)
+
 /* serial port (aka COM port) information */
 
 #define COM1_BASE_ADRS 0x3f8
