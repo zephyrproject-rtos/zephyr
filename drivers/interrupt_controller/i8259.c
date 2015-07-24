@@ -95,6 +95,7 @@ the last level acknowledged and serviced.
 #define OCW3_PCB 0x04 /* Polling Control Bit */
 #define OCW3_ISR 0x03 /* Read in-service reg */
 #define OCW3_IRR 0x02 /* Read inter request reg */
+#define PIC_DISABLE 0xff /* Disable PIC command */
 
 #ifndef CONFIG_SHUTOFF_PIC
 unsigned int _i8259_spurious_interrupt_count =
@@ -114,7 +115,6 @@ unsigned int _i8259_spurious_interrupt_count =
 
 FUNC_ALIAS(_i8259_irq_enable, irq_enable, void);
 FUNC_ALIAS(_i8259_irq_disable, irq_disable, void);
-#endif /* CONFIG_SHUTOFF_PIC */
 
 /**
  *
@@ -184,7 +184,6 @@ void _i8259_init(void)
 	PLB_BYTE_REG_WRITE(0xff, PIC_IMASK(PIC_SLAVE_BASE_ADRS));
 }
 
-#ifndef CONFIG_SHUTOFF_PIC
 /**
  *
  * @brief Send EOI(end of interrupt) signal to the master PIC.
@@ -322,6 +321,23 @@ void _i8259_irq_enable(unsigned int irq /* IRQ number to enable */
 				)
 {
 	return __I8259IntEnable(irq, 1);
+}
+#else
+
+/**
+ *
+ * @brief Initialize the Intel 8259A PIC device driver
+ *
+ * This routine disables the 8259A PIC device to prevent it from
+ * generating spurious interrupts.
+ *
+ * @return N/A
+ */
+
+void _i8259_init(void)
+{
+	PLB_BYTE_REG_WRITE(PIC_DISABLE, PIC_PORT2(PIC_SLAVE_BASE_ADRS));
+	PLB_BYTE_REG_WRITE(PIC_DISABLE, PIC_PORT2(PIC_MASTER_BASE_ADRS));
 }
 
 #endif /* CONFIG_SHUTOFF_PIC */
