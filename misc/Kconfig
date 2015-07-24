@@ -156,7 +156,7 @@ config BOOTLOADER_UNKNOWN
 	This option signifies that the target has an unknown bootloader
 	or that it supports multiple ways of booting and it isn't clear
 	at build time which method is to be used. When this option is enabled
-	the BSP may have to do extra work to ensure a proper startup.
+	the platform may have to do extra work to ensure a proper startup.
 
 menu "Boot Sequence Options"
 depends on PROT_MODE_SWITCH_PROMPT
