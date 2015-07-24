@@ -39,6 +39,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
+#include <bluetooth/gatt.h>
 #include <misc/byteorder.h>
 
 #define SLEEPTIME  5000
@@ -46,13 +47,93 @@
 
 static struct bt_conn *default_conn;
 
+static struct bt_uuid hrs = {
+		.type = BT_UUID_16,
+		.u16 = BT_UUID_HRS,
+};
+
+static struct bt_uuid hrm = {
+		.type = BT_UUID_16,
+		.u16 = BT_UUID_HRS_MEASUREMENT,
+};
+
+static struct bt_uuid ccc = {
+		.type = BT_UUID_16,
+		.u16 = BT_UUID_GATT_CCC,
+};
+
+static struct bt_gatt_discover_params discover_params;
+static struct bt_gatt_subscribe_params subscribe_params;
+
+static void subscribe_func(struct bt_conn *conn, int err,
+			   const void *data, uint16_t length)
+{
+	if (length) {
+		printk("[NOTIFICATION] data %p length %u\n", data, length);
+	}
+}
+
+static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
+{
+	int err;
+
+	printk("[ATTRIBUTE] handle %u\n", attr->handle);
+
+	if (discover_params.uuid == &hrs) {
+		discover_params.uuid = &hrm;
+		discover_params.start_handle = attr->handle + 1;
+
+		err = bt_gatt_discover_characteristic(default_conn,
+						      &discover_params);
+		if (err) {
+			printk("Discover failed (err %d)\n", err);
+		}
+	} else if (discover_params.uuid == &hrm) {
+		discover_params.uuid = &ccc;
+		discover_params.start_handle = attr->handle + 2;
+		subscribe_params.value_handle = attr->handle + 1;
+
+		err = bt_gatt_discover_descriptor(default_conn,
+						  &discover_params);
+		if (err) {
+			printk("Discover failed (err %d)\n", err);
+		}
+
+	} else {
+		subscribe_params.func = subscribe_func;
+
+		err = bt_gatt_subscribe(default_conn, attr->handle,
+					&subscribe_params);
+		if (err) {
+			printk("Subscribe failed (err %d)\n", err);
+		}
+		return BT_GATT_ITER_STOP;
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
 static void connected(struct bt_conn *conn)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Connected: %s\n", addr);
+
+	if (conn == default_conn) {
+		discover_params.uuid = &hrs;
+		discover_params.func = discover_func;
+		discover_params.start_handle = 0x0001;
+		discover_params.end_handle = 0xffff;
+
+		err = bt_gatt_discover(default_conn, &discover_params);
+		if (err) {
+			printk("Discover failed(err %d)\n", err);
+			return;
+		}
+	}
 }
 
 static bool eir_found(const struct bt_eir *eir, void *user_data)
