@@ -204,6 +204,13 @@ static uint32_t main_count_expected_value = 0;
 extern uint32_t _hw_irq_to_c_handler_latency;
 #endif
 
+#ifdef CONFIG_HPET_TIMER_DEBUG
+#include <misc/printk.h>
+#define PRINTK(...) printk(__VA_ARGS__)
+#else
+#define PRINTK(...)
+#endif
+
 #ifdef TIMER_SUPPORTS_TICKLESS
 
 /* additional globals, locals, and forward declarations */
@@ -546,32 +553,58 @@ int _sys_clock_driver_init(struct device *device)
 
 	counter_load_value = (uint32_t)(tickFempto / hpetClockPeriod);
 
+	PRINTK("\n\nHPET: configuration: 0x%x, clock period: 0x%x (%d pico-s)\n",
+	       (uint32_t)(*_HPET_GENERAL_CAPS),
+	       (uint32_t)hpetClockPeriod, (uint32_t)hpetClockPeriod / 1000);
+
+	PRINTK("HPET: timer0: available interrupts mask 0x%x\n",
+	       (uint32_t)(*_HPET_TIMER0_CONFIG_CAPS >> 32));
+
 	/* Initialize "sys_clock_hw_cycles_per_tick" */
 
 	sys_clock_hw_cycles_per_tick = counter_load_value;
 
-	/*
-	 * Set the comparator register for timer0.  The write to the comparator
-	 * register is allowed due to setting the HPET_Tn_VAL_SET_CNF bit.
-	 */
-
-	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
-	*_HPET_TIMER0_COMPARATOR = counter_load_value;
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	main_count_first_irq_value = counter_load_value;
 	main_count_expected_value = main_count_first_irq_value;
 #endif
 
-#ifndef TIMER_SUPPORTS_TICKLESS
-	/* set timer0 to periodic mode, ready to expire every tick */
+#ifdef CONFIG_HPET_TIMER_LEGACY_EMULATION
+	/*
+	 * Configure HPET replace legacy 8254 timer.
+	 * In this case the timer0 interrupt is routed to IRQ2
+	 * and legacy timer generates no interrupts
+	 */
+	*_HPET_GENERAL_CONFIG |= HPET_LEGACY_RT_CNF;
+#endif /* CONFIG_HPET_TIMER_LEGACY_EMULATION */
 
-	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_TYPE_CNF;
+#ifndef TIMER_SUPPORTS_TICKLESS
+	/*
+	 * Set timer0 to periodic mode, ready to expire every tick
+	 * Setting 32-bit mode during the first load of the comparator
+	 * value is required to work around some hardware that otherwise
+	 * does not work properly.
+	 */
+
+	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_TYPE_CNF | HPET_Tn_32MODE_CNF;
 #else
 	/* set timer0 to one-shot mode, ready to expire on the first tick */
 
 	*_HPET_TIMER0_CONFIG_CAPS &= ~HPET_Tn_TYPE_CNF;
 #endif /* !TIMER_SUPPORTS_TICKLESS */
+
+	/*
+	 * Set the comparator register for timer0.  The write to the comparator
+	 * register is allowed due to setting the HPET_Tn_VAL_SET_CNF bit.
+	 */
+	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
+	*_HPET_TIMER0_COMPARATOR = counter_load_value;
+        /*
+	 * After the comparator is loaded, 32-bit mode can be safely
+	 * switched off
+	 */
+	*_HPET_TIMER0_CONFIG_CAPS &= ~HPET_Tn_32MODE_CNF;
 
 	/*
 	 * Route interrupts to the I/O APIC. If HPET_Tn_INT_TYPE_CNF is set this

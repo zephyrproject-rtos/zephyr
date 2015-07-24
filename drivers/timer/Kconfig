@@ -41,6 +41,22 @@ config HPET_TIMER
 	This option selects High Precision Event Timer (HPET) as a
 	system timer.
 
+config HPET_TIMER_LEGACY_EMULATION
+	bool "HPET timer legacy emulation mode"
+	default n
+	depends on HPET_TIMER
+	help
+	This option switches HPET to legacy emulation mode.
+	In this mode 8254 PIT is disabled, HPET timer0 is connected
+	to IOAPIC IRQ2, timer1 -- to IOAPIC IRQ8.
+
+config HPET_TIMER_DEBUG
+	bool "Enable HPET debug output"
+	default n
+	depends on HPET_TIMER && PRINTK
+	help
+	This option enables HPET debugging output.
+
 config LOAPIC_TIMER
 	bool "LOAPIC timer"
 	depends on LOAPIC && X86_32

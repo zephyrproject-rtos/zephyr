@@ -25,7 +25,7 @@ QEMU_BIOS ?= /usr/share/qemu
 QEMU_CPU_TYPE_x86 = qemu32
 QEMU_FLAGS_x86 = -m 32 -cpu $(QEMU_CPU_TYPE_x86) \
 		-no-reboot -nographic -display none -net none \
-		-clock dynticks -no-acpi -balloon none -no-hpet \
+		-clock dynticks -no-acpi -balloon none \
 		-L $(QEMU_BIOS) -bios bios.bin \
 		-machine type=pc-0.14
 QEMU_x86 = qemu-system-i386
