@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-BSP-specific timestamp support for the tickless idle test.
+Platform-specific timestamp support for the tickless idle test.
  */
 
 #include <tc_util.h>
@@ -278,5 +278,5 @@ void _TimestampClose(void)
 }
 
 #else
-#error "Unknown BSP"
-#endif /* BSP */
+#error "Unknown platform"
+#endif /* CONFIG_PLATFORM_xxx */

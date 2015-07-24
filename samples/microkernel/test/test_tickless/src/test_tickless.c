@@ -47,8 +47,9 @@ Unit test for tickless idle feature.
 extern int32_t _sys_idle_threshold_ticks;
 #endif
 
-/* Clock speed - will change from BSP to BSP */
-#define CAL_REPS 16
+/* NOTE: Clock speed may change between platforms */
+
+#define CAL_REPS 16    /* # of loops in timestamp calibration */
 
 /*
  * Arch-specific timer resolution/size types, definitions and

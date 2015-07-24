@@ -52,7 +52,7 @@ This module tests the following CPU and context related routines:
 #include <util_test_common.h>
 
 /*
- * Include board.h from BSP to get IRQ number.
+ * Include board.h from platform to get IRQ number.
  * NOTE: Cortex-M3/M4 does not need IRQ numbers
  */
 #if !defined(CONFIG_CPU_CORTEX_M3_M4)
@@ -68,8 +68,8 @@ This module tests the following CPU and context related routines:
 #define UNKNOWN_COMMAND    -1
 
 /*
- * Get the timer type dependent IRQ number if timer type
- * is not defined in BSP, generate an error
+ * Get the timer type dependent IRQ number. If timer type
+ * is not defined in platform, generate an error
  */
 #if defined(CONFIG_HPET_TIMER)
   #define TICK_IRQ HPET_TIMER0_IRQ
@@ -78,10 +78,10 @@ This module tests the following CPU and context related routines:
 #elif defined(CONFIG_PIT)
   #define TICK_IRQ PIT_INT_LVL
 #elif defined(CONFIG_CPU_CORTEX_M3_M4)
-  /* no need for TICK_IRQ definition, see note where it is used */
+  /* Cortex-M3/M4 does not need a tick IRQ number. */
 #else
   /* generate an error */
-  #error Timer type is not defined for this BSP
+  #error Timer type is not defined for this platform
 #endif
 
 typedef struct {
@@ -862,13 +862,7 @@ void main(void)
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
 #if !defined(CONFIG_CPU_CORTEX_M3_M4)
-	/*
-	 * !!! TAKE NOTE !!!
-	 * Disable interrupts coming from the timer.  In the pcPentium case, this
-	 * is IRQ0 (see board.h for definition of PIT_INT_LVL).  Other BSPs may
-	 * not be using the i8253 timer on IRQ0 and so a different IRQ value may
-	 * be necessary when porting to another BSP.
-	 */
+	/* Disable interrupts coming from the timer. */
 
 	TC_PRINT("Testing irq_disable() and irq_enable()\n");
 	rv = nanoCpuDisableInterruptsTest(irq_disableWrapper,
