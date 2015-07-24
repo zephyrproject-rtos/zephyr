@@ -91,7 +91,7 @@ endchoice
 
 endmenu
 
-source "arch/arm/bsp/CortexM/Kconfig"
+source "arch/arm/core/cortex_m/Kconfig"
 
 if PLATFORM_TI_LM3S6965
 source "arch/arm/platforms/ti_lm3s6965/Kconfig"

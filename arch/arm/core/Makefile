@@ -11,3 +11,5 @@ obj-y = atomic.o exc_exit.o ffs.o irq_init.o \
 	fatal.o sys_fatal_error_handler.o
 
 obj-$(CONFIG_MICROKERNEL) += task_abort.o
+
+obj-$(CONFIG_CPU_CORTEX_M) += cortex_m/
