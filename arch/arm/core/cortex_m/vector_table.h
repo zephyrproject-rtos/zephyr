@@ -50,9 +50,10 @@ No other symbol has the same format, so they are easy to spot.
 #include <board.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <misc/util.h>
 
 /* location of MSP and PSP upon boot: at the end of SRAM */
-.equ __CORTEXM_BOOT_MSP, (0x20000000 + SRAM_SIZE - 8)
+.equ __CORTEXM_BOOT_MSP, (CONFIG_SRAM_BASE_ADDRESS + KB(CONFIG_SRAM_SIZE) - 8)
 .equ __CORTEXM_BOOT_PSP, (__CORTEXM_BOOT_MSP - 0x100)
 
 GTEXT(__start)

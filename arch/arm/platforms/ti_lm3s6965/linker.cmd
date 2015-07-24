@@ -30,9 +30,4 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define FLASH_START 0x00000000
-#define SRAM_START  0x20000000
-#define FLASH_SIZE  256K
-#define SRAM_SIZE   64K
-
 #include <arch/arm/CortexM/scripts/linker.cmd>

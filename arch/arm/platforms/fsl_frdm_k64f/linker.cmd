@@ -35,10 +35,6 @@ DESCRIPTION
 This is the linker script for both standard images and XIP images.
  */
 
-/* Flash base address and size */
-#define FLASH_START 0x00000000
-#define FLASH_SIZE  1M
-
 /*
  * K64F Flash configuration fields
  * These are 16 bytes, which must be loaded to address 0x400, and include
@@ -46,15 +42,5 @@ This is the linker script for both standard images and XIP images.
  * They are loaded at reset to various Flash Memory module (FTFE) registers.
  */
 #define SKIP_TO_SECURITY_FRDM_K64F . = 0x400;
-
-/*
- * SRAM base address and size
- *
- * Although the K64F CPU has a 64 KB region of SRAM at 0x1FFF0000, it is not
- * used by this BSP.  Only the 192 KB region based at the standard ARMv7-M
- * SRAM base address of 0x20000000 is supported.
- */
-#define SRAM_START  0x20000000  /* 192K in SRAM space */
-#define SRAM_SIZE   192K
 
 #include <arch/arm/CortexM/scripts/linker.cmd>

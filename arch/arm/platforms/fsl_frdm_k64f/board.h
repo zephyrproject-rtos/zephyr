@@ -41,9 +41,6 @@ This header file is used to specify and describe board-level aspects for the
 
 #include <misc/util.h>
 
-#define SRAM_SIZE KB(192) /* 64K in code space (ignored) + 192K in SRAM space \
-			     */
-
 /* default system clock */
 
 #define SYSCLK_DEFAULT_IOSC_HZ MHZ(120)

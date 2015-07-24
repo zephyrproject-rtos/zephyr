@@ -41,8 +41,6 @@ the 'ti_lm3s6965' BSP.
 
 #include <misc/util.h>
 
-#define SRAM_SIZE KB(64)
-
 /* default system clock */
 
 #define SYSCLK_DEFAULT_IOSC_HZ MHZ(12)

@@ -72,8 +72,8 @@ Linker script for the Cortex-M3 BSPs.
 
 MEMORY
     {
-    FLASH                 (rx) : ORIGIN = FLASH_START, LENGTH = FLASH_SIZE
-    SRAM                  (wx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE
+    FLASH                 (rx) : ORIGIN = CONFIG_FLASH_BASE_ADDRESS, LENGTH = CONFIG_FLASH_SIZE*1K
+    SRAM                  (wx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS,  LENGTH = CONFIG_SRAM_SIZE*1K
     SYSTEM_CONTROL_SPACE  (wx) : ORIGIN = 0xE000E000,  LENGTH = 4K
     SYSTEM_CONTROL_PERIPH (wx) : ORIGIN = 0x400FE000,  LENGTH = 4K
     }
