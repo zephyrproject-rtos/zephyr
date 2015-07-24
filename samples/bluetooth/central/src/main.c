@@ -37,9 +37,33 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/conn.h>
 
 #define SLEEPTIME  5000
 #define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
+
+static void connected(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Connected: %s\n", addr);
+}
+
+static void disconnected(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Disconnected: %s\n", addr);
+}
+
+static struct bt_conn_cb conn_callbacks = {
+		.connected = connected,
+		.disconnected = disconnected,
+};
 
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
@@ -56,6 +80,8 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_start_scanning(BT_SCAN_FILTER_DUP_ENABLE, NULL);
 
