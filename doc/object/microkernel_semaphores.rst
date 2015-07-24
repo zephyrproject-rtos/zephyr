@@ -59,14 +59,47 @@ Example: Giving a Semaphore from a Task
 ---------------------------------------
 
 This code uses a semaphore to indicate that a unit of data
-is available for processing.
+is available for processing by a consumer task.
 
 .. code-block:: c
 
    void producer_task(void)
    {
+       /* save data item in a buffer */
        ...
+
+        /* notify task that an additional data item is available */
        task_sem_give(INPUT_DATA);
+
+       ...
+   }
+
+Example: Giving a Semaphore from an ISR
+---------------------------------------
+
+This code uses a semaphore to indicate that a unit of data
+is available for processing by a consumer task.
+
+.. code-block:: c
+
+   /*
+    * reserve 2 command packets for semaphore updates
+    *
+    * note: this assumes that input data arrives at a rate that allows
+    * the microkernel server fiber to finish the semaphore give operation
+    * for data item "N" before the ISR begins working on data item "N+2"
+    * (i.e. data arrives in bursts of at most one unit)
+    */
+   static CMD_PKT_SET_INSTANCE(cmd_packets, 2);
+
+   void input_data_interrupt_handler(void *arg)
+   {
+       /* save data item in a buffer */
+       ...
+
+        /* notify task that an additional data item is available */
+       isr_sem_give(INPUT_DATA, &CMD_PKT_SET(cmd_packets));
+
        ...
    }
 
@@ -85,7 +118,7 @@ and gives a warning if it is not obtained in that time.
        if (task_sem_take_wait_timeout(INPUT_DATA, 500) == RC_TIME) {
            printf("Input data not available!");
        } else {
-           /* process input data */
+           /* extract saved data item from buffer and process it */
            ...
        }
        ...
