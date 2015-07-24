@@ -33,7 +33,7 @@ $ make qemu
 There is smoke test application in nanokernel and microkernel test
 directories which gets run in sanity check script:
 
-$ scripts/sanity_chk/sanity_chk -T gcc [-B <BSP>]
+$ scripts/sanity_chk/sanity_chk [-P <platform>]
 
 For quick regression test use bt_regression, it only check Bluetooth test
 
