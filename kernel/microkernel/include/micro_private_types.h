@@ -462,7 +462,13 @@ struct k_args {
 	bool   alloc __aligned(4);
 	K_COMM Comm __aligned(4);
 
-	K_CREF Ctxt;
+	/*
+	 * Ctxt needs to be aligned to avoid "unaligned write" exception on ARM
+	 * platform if Comm is 1 byte long, which can happen since K_COMM is an
+	 * enum and the compiler is free to adjust its size depending on how many
+	 * items are in it.
+	 */
+	K_CREF Ctxt __aligned(4);
 	union {
 		int32_t ticks;
 		struct k_timer *timer;
