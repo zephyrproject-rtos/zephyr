@@ -196,6 +196,7 @@ SECTIONS
 	{
 		_k_task_list_start = .;
 			*(._k_task_list.public.*)
+			*(._k_task_list.private.*)
 		_k_task_list_idle_start = .;
 			*(._k_task_list.idle.*)
 		KEEP(*(SORT_BY_NAME("._k_task_list*")))

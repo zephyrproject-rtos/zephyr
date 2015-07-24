@@ -37,6 +37,8 @@
 extern "C" {
 #endif
 
+#include <sections.h>
+
 /*
  * The following task groups are reserved for system use.
  * SysGen automatically generates corresponding TASKGROUPs with reserved
@@ -100,6 +102,48 @@ extern void task_group_leave(uint32_t groups);
 #define isr_task_id_get() task_id_get()
 #define isr_task_priority_get() task_priority_get()
 #define isr_task_group_mask_get() task_group_mask_get()
+
+/**
+ * @brief Initialize a struct k_proc given parameters.
+ *
+ * @param ident Numeric identifier of this task object.
+ * @param priority Priority of task.
+ * @param state State of task.
+ * @param groups Groups this task belong to.
+ * @param fstart Entry function.
+ * @param workspace Pointer to workspace (aka, stack).
+ * @param worksize Size of workspace.
+ * @param fabort Abort function.
+ */
+#define __K_TASK_INITIALIZER(ident, priority, state, groups, \
+			     fstart, workspace, worksize, fabort) \
+	{ \
+	  NULL, NULL, priority, ident, state, ((groups) ^ SYS), \
+	  fstart, workspace, worksize, fabort, NULL, \
+	}
+
+/**
+ * @brief Define a private microkernel task.
+ *
+ * This declares and initializes a private task. The new task
+ * can be passed to the microkernel task functions.
+ *
+ * @param name Name of the task.
+ * @param priority Priority of task.
+ * @param entry Entry function.
+ * @param stack_size size of stack (in bytes)
+ * @param groups Groups this task belong to.
+ */
+#define DEFINE_TASK(name, priority, entry, stack_size, groups) \
+	extern void entry(void); \
+	char __noinit __stack __stack_##name[stack_size]; \
+	struct k_proc _k_task_obj_##name \
+		__section(_k_task_list, private, task) = \
+		__K_TASK_INITIALIZER( \
+			(ktask_t)&_k_task_obj_##name, \
+			priority, 0x00000001, groups, \
+			entry, &__stack_##name[0], stack_size, NULL); \
+	const ktask_t name = (ktask_t)&_k_task_obj_##name;
 
 #ifdef __cplusplus
 }

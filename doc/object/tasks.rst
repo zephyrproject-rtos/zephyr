@@ -200,6 +200,9 @@ Usage
 Defining a task
 ---------------
 
+Inside MDEF files
+^^^^^^^^^^^^^^^^^
+
 The following parameters must be defined:
 
    *name*
@@ -254,6 +257,33 @@ of six tasks as follows:
      TASK SPEAKER1_TASK   10   speaker_1_main  1024   [AUDIO_TASKS]
      TASK SPEAKER2_TASK   10   speaker_2_main  1024   [AUDIO_TASKS]
 
+
+Inside Source Code
+^^^^^^^^^^^^^^^^^^
+
+In addition to defining tasks in MDEF file, it is also possible to
+define tasks inside code. The macro ``DEFINE_TASK(...)`` can be
+used for this purpose.
+
+For example, the following code can be used to define a global task
+``PRIV_TASK``.
+
+.. code-block:: c
+
+   DEFINE_TASK(PRIV_TASK, priority, entry, stack_size, groups);
+
+where the parameters are the same as tasks defined in MDEF file.
+The task ``PRIV_TASK`` can be used in the same style as those
+defined in MDEF file.
+
+It is possible to utilize this task in another source file, simply
+add:
+
+.. code-block:: c
+
+   extern const ktask_t PRIV_TASK;
+
+to that file. The task ``PRIV_TASK`` can be then used there.
 
 Defining a new task group
 -------------------------
