@@ -522,8 +522,8 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
 
-core-y := arch/ kernel/ misc/ net/
-bsp-y  := drivers/
+core-y     := arch/ kernel/ misc/ net/
+platform-y := drivers/
 
 ifneq ($(strip $(PROJECT)),)
 core-y += $(SOURCE_DIR)
@@ -739,15 +739,15 @@ core-y		+=
 
 zephyr-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
-		     $(bsp-y) $(bsp-m) $(libs-y) $(libs-m)))
+		     $(platform-y) $(platform-m) $(libs-y) $(libs-m)))
 
 zephyr-alldirs	:= $(sort $(zephyr-dirs) $(patsubst %/,%,$(filter %/, \
-		     $(init-) $(core-) $(drivers-) $(bsp-) $(libs-))))
+		     $(init-) $(core-) $(drivers-) $(platform-) $(libs-))))
 
 init-y		:= $(patsubst %/, %/built-in.o, $(init-y))
 core-y		:= $(patsubst %/, %/built-in.o, $(core-y))
 drivers-y	:= $(patsubst %/, %/built-in.o, $(drivers-y))
-bsp-y		:= $(patsubst %/, %/built-in.o, $(bsp-y))
+platform-y	:= $(patsubst %/, %/built-in.o, $(platform-y))
 libs-y1		:= $(patsubst %/, %/lib.a, $(libs-y))
 libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
@@ -756,7 +756,7 @@ libs-y		:= $(libs-y1) $(libs-y2)
 DQUOTE = "
 #This comment line is to fix the highlighting of some editors due the quote effect."
 export KBUILD_ZEPHYR_INIT := $(head-y) $(init-y)
-export KBUILD_ZEPHYR_MAIN := $(bsp-y) $(drivers-y) $(core-y) $(libs-y)
+export KBUILD_ZEPHYR_MAIN := $(platform-y) $(drivers-y) $(core-y) $(libs-y)
 export KBUILD_LDS          := $(srctree)/arch/$(SRCARCH)/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/linker.cmd
 export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
