@@ -52,7 +52,7 @@ config CPU_CORTEX_M4
 	help
 	This option signifies the use of a Cortex-M4 CPU
 
-menu "ARM Cortex-M family options"
+menu "ARM Cortex-M options"
 	depends on CPU_CORTEX_M
 
 config LDREX_STREX_AVAILABLE
@@ -119,6 +119,37 @@ config FAULT_DUMP
 config XIP
 	default y
 
+config SRAM_SIZE
+	int "SRAM Size in kB"
+	default 192
+	help
+	This option specifies the size of the SRAM in kB.  It is normally set by
+	the platform's defconfig file and the user should generally avoid modifying
+	it via the menu configuration.
+
+config SRAM_BASE_ADDRESS
+	hex "SRAM Base Address"
+	default 0x20000000
+	help
+	This option specifies the base address of the SRAM on the platform.  It is
+	normally set by the platform's defconfig file and the user should generally
+	avoid modifying it via the menu configuration.
+
+config FLASH_SIZE
+	int "Flash Size in kB"
+	default 1024
+	help
+	This option specifies the size of the flash in kB.  It is normally set by
+	the platform's defconfig file and the user should generally avoid modifying
+	it via the menu configuration.
+
+config FLASH_BASE_ADDRESS
+	hex "Flash Base Address"
+	default 0x00000000
+	help
+	This option specifies the base address of the flash on the platform.  It is
+	normally set by the platform's defconfig file and the user should generally
+	avoid modifying it via the menu configuration.
 endmenu
 
 menu "ARM Cortex-M3/M4 options"
