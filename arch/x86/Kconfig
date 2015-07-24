@@ -43,34 +43,11 @@ source "misc/Kconfig"
 
 source "arch/x86/core/Kconfig"
 
-menu "Platform General Configuration"
+menu "General Platform Configuration"
 
 choice
-prompt "Platform Configuration"
+prompt "Platform Selection"
 default PLATFORM_IA32_PCI
-
-config PLATFORM_ATOM_N28XX
-	bool "Minimum configuration for ATOM N28XX platform"
-	select CPU_ATOM
-	select IOAPIC
-	select LOAPIC
-	select EOI_HANDLER_SUPPORTED
-	select BOOTLOADER_UNKNOWN
-	select EXTRA_SERIAL_PORT
-	select SERIAL_INTERRUPT_LEVEL
-	select CUSTOM_RANDOM_GENERATOR
-	select PLATFORM_GENERIC_PC
-
-config PLATFORM_PCMINUTEIA
-	bool "Minimum configuration for MINUTE IA platform"
-	select CPU_MINUTEIA
-	select PIC
-	select PIT
-	select BOI_HANDLER_SUPPORTED
-	select EOI_HANDLER_SUPPORTED
-	select BOOTLOADER_UNKNOWN
-	select EXTRA_SERIAL_PORT
-	select PLATFORM_GENERIC_PC
 
 config PLATFORM_IA32_PCI
 	bool "IA32 with PCI"
@@ -81,13 +58,14 @@ config PLATFORM_IA32_PCI
 	select NS16550
 	select PCI
 
-endchoice
-
-config PLATFORM_GENERIC_PC
-	bool
-	default n
+config PLATFORM_IA32
+	bool "IA32"
+	select EOI_HANDLER_SUPPORTED
+	select BOOTLOADER_UNKNOWN
+	select EXTRA_SERIAL_PORT
 	select NS16550
 
+endchoice
 
 choice
 prompt "Intel Processor"
@@ -315,7 +293,7 @@ config PCI_DEBUG
 
 endmenu
 
-if PLATFORM_GENERIC_PC
+if PLATFORM_IA32
 source "arch/x86/platforms/ia32/Kconfig"
 endif
 
