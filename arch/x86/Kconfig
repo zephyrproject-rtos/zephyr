@@ -47,7 +47,7 @@ menu "Platform General Configuration"
 
 choice
 prompt "Platform Configuration"
-default PLATFORM_QUARK
+default PLATFORM_IA32_PCI
 
 config PLATFORM_ATOM_N28XX
 	bool "Minimum configuration for ATOM N28XX platform"
@@ -72,15 +72,12 @@ config PLATFORM_PCMINUTEIA
 	select EXTRA_SERIAL_PORT
 	select PLATFORM_GENERIC_PC
 
-config PLATFORM_QUARK
-	bool "Minimum configuration for QUARK platform"
-	select CPU_MINUTEIA
-	select IOAPIC
+config PLATFORM_IA32_PCI
+	bool "IA32 with PCI"
 	select HPET_TIMER
 	select EOI_HANDLER_SUPPORTED
 	select BOOTLOADER_UNKNOWN
 	select EXTRA_SERIAL_PORT
-	select LINK_AUX_COMPILER_LIBS
 	select NS16550
 	select PCI
 
@@ -322,7 +319,7 @@ if PLATFORM_GENERIC_PC
 source "arch/x86/platforms/ia32/Kconfig"
 endif
 
-if PLATFORM_QUARK
+if PLATFORM_IA32_PCI
 source "arch/x86/platforms/ia32_pci/Kconfig"
 endif
 
