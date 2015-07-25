@@ -167,7 +167,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		 * PIPE_PUT_TIMEOUT microkernel command to the packet even though it
 		 * is only useful to the finite timeout case.
 		 */
-		RequestProc->Comm = PIPE_PUT_TIMEOUT;
+		RequestProc->Comm = _K_SVC_PIPE_PUT_TIMEOUT;
 		if (_TIME_B == _k_pipe_time_type_get(&RequestProc->Args)) {
 			/*
 			 * The writer specified TICKS_UNLIMITED; NULL the timer.
@@ -199,7 +199,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 			__ASSERT_NO_MSG(XFER_IDLE ==
 				RequestProc->Args.pipe_xfer_req.status);
 			__ASSERT_NO_MSG(0 == RequestProc->Args.pipe_xfer_req.iSizeXferred);
-			RequestProc->Comm = PIPE_PUT_REPLY;
+			RequestProc->Comm = _K_SVC_PIPE_PUT_REPLY;
 			_k_pipe_put_reply(RequestProc);
 		}
 		return;
@@ -245,7 +245,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 	struct k_args *ReqOrig = ReqProc->Ctxt.args;
 	PIPE_REQUEST_STATUS status;
 
-	ReqOrig->Comm = PIPE_PUT_ACK;
+	ReqOrig->Comm = _K_SVC_PIPE_PUT_ACK;
 
 	/* determine return value:
 	 */
@@ -296,7 +296,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 
 		/* invoke command to release block */
 		blockptr = &pipe_ack->ReqType.Async.block;
-		A.Comm = REL_BLOCK;
+		A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
 		A.Args.p1.poolid = blockptr->poolid;
 		A.Args.p1.req_size = blockptr->req_size;
 		A.Args.p1.rep_poolptr = blockptr->address_in_pool;
@@ -307,7 +307,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 			/* invoke command to signal sema */
 			struct k_args A;
 
-			A.Comm = SIGNALS;
+			A.Comm = _K_SVC_SEM_SIGNAL;
 			A.Args.s1.sema = pipe_ack->ReqType.Async.sema;
 			_k_sem_signal(&A); /* will return immediately */
 		}

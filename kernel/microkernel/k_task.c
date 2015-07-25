@@ -364,7 +364,7 @@ void _task_ioctl(ktask_t task, /* task on which to operate */
 {
 	struct k_args A;
 
-	A.Comm = TSKOP;
+	A.Comm = _K_SVC_TASK_OP;
 	A.Args.g1.task = task;
 	A.Args.g1.opt = opt;
 	KERNEL_ENTRY(&A);
@@ -435,7 +435,7 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
 {
 	struct k_args A;
 
-	A.Comm = GRPOP;
+	A.Comm = _K_SVC_TASK_GROUP_OP;
 	A.Args.g1.group = group;
 	A.Args.g1.opt = opt;
 	KERNEL_ENTRY(&A);
@@ -530,7 +530,7 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 {
 	struct k_args A;
 
-	A.Comm = SPRIO;
+	A.Comm = _K_SVC_TASK_PRIORITY_SET;
 	A.Args.g1.task = task;
 	A.Args.g1.prio = prio;
 	KERNEL_ENTRY(&A);
@@ -573,7 +573,7 @@ void task_yield(void)
 {
 	struct k_args A;
 
-	A.Comm = YIELD;
+	A.Comm = _K_SVC_TASK_YIELD;
 	KERNEL_ENTRY(&A);
 }
 

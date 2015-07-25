@@ -122,7 +122,7 @@ void _k_mem_map_alloc(struct k_args *A)
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;
 		else {
-			A->Comm = ALLOCTMO;
+			A->Comm = _K_SVC_MEM_MAP_ALLOC_TIMEOUT;
 			_k_timeout_alloc(A);
 		}
 #endif
@@ -145,7 +145,7 @@ int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time)
 {
 	struct k_args A;
 
-	A.Comm = ALLOC;
+	A.Comm = _K_SVC_MEM_MAP_ALLOC;
 	A.Time.ticks = time;
 	A.Args.a1.mmap = mmap;
 	A.Args.a1.mptr = mptr;
@@ -178,7 +178,7 @@ void _k_mem_map_dealloc(struct k_args *A)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (X->Time.timer) {
 			_k_timeout_free(X->Time.timer);
-			X->Comm = NOP;
+			X->Comm = _K_SVC_NOP;
 		}
 #endif
 		X->Time.rcode = RC_OK;
@@ -209,7 +209,7 @@ void _task_mem_map_free(kmemory_map_t mmap, void **mptr)
 {
 	struct k_args A;
 
-	A.Comm = DEALLOC;
+	A.Comm = _K_SVC_MEM_MAP_DEALLOC;
 	A.Args.a1.mmap = mmap;
 	A.Args.a1.mptr = mptr;
 	KERNEL_ENTRY(&A);

@@ -139,20 +139,20 @@ static bool prepare_transfer(struct k_args *move,
 	 * (this is shared code, irrespective of the value of 'move')
 	 */
 	__ASSERT_NO_MSG(NULL == reader->Forw);
-	reader->Comm = RECV_ACK;
+	reader->Comm = _K_SVC_MBOX_RECEIVE_ACK;
 	reader->Time.rcode = RC_OK;
 
 	__ASSERT_NO_MSG(NULL == writer->Forw);
 	writer->alloc = true;
 
-	writer->Comm = SEND_ACK;
+	writer->Comm = _K_SVC_MBOX_SEND_ACK;
 	writer->Time.rcode = RC_OK;
 
 	if (move) {
 		/* { move != NULL, which means full data exchange } */
 
 		bool all_data_present = true;
-		move->Comm = MVD_REQ;
+		move->Comm = _K_SVC_MOVEDATA_REQ;
 		/*
 		 * transfer the data with the highest
 		 * priority of reader and writer
@@ -237,7 +237,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 #ifndef NO_KARG_CLEAR
 			memset(&A, 0xfd, sizeof(struct k_args));
 #endif
-			A.Comm = SIGNALS;
+			A.Comm = _K_SVC_SEM_SIGNAL;
 			A.Args.s1.sema = pCopyWriter->Args.m1.mess.extra.sema;
 			_k_sem_signal(&A);
 		}
@@ -253,7 +253,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 			 * special value to tell if block should be
 			 * freed or not
 			 */
-			pCopyWriter->Comm = REL_BLOCK;
+			pCopyWriter->Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
 			pCopyWriter->Args.p1.poolid =
 				pCopyWriter->Args.m1.mess.tx_block.poolid;
 			pCopyWriter->Args.p1.rep_poolptr =
@@ -300,7 +300,7 @@ void _k_mbox_send_reply(struct k_args *pCopyWriter)
 	FREETIMER(pCopyWriter->Time.timer);
 	REMOVE_ELM(pCopyWriter);
 	pCopyWriter->Time.rcode = RC_TIME;
-	pCopyWriter->Comm = SEND_ACK;
+	pCopyWriter->Comm = _K_SVC_MBOX_SEND_ACK;
 	SENDARGS(pCopyWriter);
 }
 
@@ -434,7 +434,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 		 * to blindly set it rather than waste time on a comparison.
 		 */
 
-		CopyWriter->Comm = SEND_TMO;
+		CopyWriter->Comm = _K_SVC_MBOX_SEND_REPLY;
 
 		/* Put the letter into the mailbox */
 		INSERT_ELM(MailBox->Writers, CopyWriter);
@@ -456,7 +456,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 		 * This is a no-wait operation.
 		 * Notify the sender of failure.
 		 */
-		CopyWriter->Comm = SEND_ACK;
+		CopyWriter->Comm = _K_SVC_MBOX_SEND_ACK;
 		CopyWriter->Time.rcode = RC_FAIL;
 		SENDARGS(CopyWriter);
 	}
@@ -496,7 +496,7 @@ int _task_mbox_put(kmbox_t mbox,
 	M->mailbox = mbox;
 
 	A.Prio = prio;
-	A.Comm = SEND_REQ;
+	A.Comm = _K_SVC_MBOX_SEND_REQUEST;
 	A.Time.ticks = time;
 	A.Args.m1.mess = *M;
 
@@ -546,7 +546,7 @@ void _k_mbox_receive_reply(struct k_args *pCopyReader)
 	FREETIMER(pCopyReader->Time.timer);
 	REMOVE_ELM(pCopyReader);
 	pCopyReader->Time.rcode = RC_TIME;
-	pCopyReader->Comm = RECV_ACK;
+	pCopyReader->Comm = _K_SVC_MBOX_RECEIVE_ACK;
 	SENDARGS(pCopyReader);
 #endif
 }
@@ -648,7 +648,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 		 * to blindly set it rather than waste time on a comparison.
 		 */
 
-		CopyReader->Comm = RECV_TMO;
+		CopyReader->Comm = _K_SVC_MBOX_RECEIVE_REPLY;
 
 		/* Put the letter into the mailbox */
 		INSERT_ELM(MailBox->Readers, CopyReader);
@@ -670,7 +670,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 		 * This is a no-wait operation.
 		 * Notify the receiver of failure.
 		 */
-		CopyReader->Comm = RECV_ACK;
+		CopyReader->Comm = _K_SVC_MBOX_RECEIVE_ACK;
 		CopyReader->Time.rcode = RC_FAIL;
 		SENDARGS(CopyReader);
 	}
@@ -693,7 +693,7 @@ int _task_mbox_get(kmbox_t mbox,
 	 */
 
 	A.Prio = _k_current_task->Prio;
-	A.Comm = RECV_REQ;
+	A.Comm = _K_SVC_MBOX_RECEIVE_REQUEST;
 	A.Time.ticks = time;
 	A.Args.m1.mess = *M;
 
@@ -729,7 +729,7 @@ void _task_mbox_put_async(kmbox_t mbox,
 	A.Time.timer = NULL;
 #endif
 	A.Prio = prio;
-	A.Comm = SEND_REQ;
+	A.Comm = _K_SVC_MBOX_SEND_REQUEST;
 	A.Args.m1.mess = *M;
 	KERNEL_ENTRY(&A);
 }
@@ -754,7 +754,7 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	CopyStarter->Ctxt.args = Starter;
 
 	MoveD = CopyStarter->Args.m1.mess.extra.transfer;
-	CopyStarter->Comm = RECV_ACK;
+	CopyStarter->Comm = _K_SVC_MBOX_RECEIVE_ACK;
 	CopyStarter->Time.rcode = RC_OK;
 
 	MoveD->Args.MovedReq.Extra.Setup.ContRcv = CopyStarter;
@@ -793,7 +793,7 @@ void _task_mbox_data_get(struct k_msg *M)
 	}
 
 	A.Args.m1.mess = *M;
-	A.Comm = RECV_DATA;
+	A.Comm = _K_SVC_MBOX_RECEIVE_DATA;
 
 	KERNEL_ENTRY(&A);
 }
@@ -884,7 +884,7 @@ int _task_mbox_data_get_async_block(struct k_msg *message,
 
 	struct k_args A;
 	A.Args.m1.mess = *message;
-	A.Comm = RECV_DATA;
+	A.Comm = _K_SVC_MBOX_RECEIVE_DATA;
 	KERNEL_ENTRY(&A);
 
 	return RC_OK; /* task_mbox_data_get() doesn't return anything */
@@ -911,7 +911,7 @@ void _k_mbox_send_data(struct k_args *Starter)
 	MoveD = CopyStarter->Args.m1.mess.extra.transfer;
 
 	CopyStarter->Time.rcode = RC_OK;
-	CopyStarter->Comm = SEND_ACK;
+	CopyStarter->Comm = _K_SVC_MBOX_SEND_ACK;
 
 	MoveD->Args.MovedReq.Extra.Setup.ContSnd = CopyStarter;
 	CopyStarter->Forw = NULL;

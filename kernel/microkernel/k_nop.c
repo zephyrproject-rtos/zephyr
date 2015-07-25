@@ -69,6 +69,6 @@ void _task_nop(void)
 {
 	struct k_args A;
 
-	A.Comm = NOP;
+	A.Comm = _K_SVC_NOP;
 	KERNEL_ENTRY(&A);
 }

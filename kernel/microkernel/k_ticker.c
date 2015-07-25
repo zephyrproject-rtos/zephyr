@@ -336,7 +336,7 @@ int64_t task_tick_delta(int64_t *reftime /* pointer to reference time */
 {
 	struct k_args A;
 
-	A.Comm = ELAPSE;
+	A.Comm = _K_SVC_TIME_ELAPSE;
 	A.Args.c1.time1 = *reftime;
 	KERNEL_ENTRY(&A);
 	*reftime = A.Args.c1.time1;

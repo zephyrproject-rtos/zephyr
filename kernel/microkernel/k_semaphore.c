@@ -61,9 +61,10 @@ static void signal_semaphore(int n, struct sem_struct *S)
 		X = A->Forw;
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-		if (A->Comm == WAITSREQ || A->Comm == WAITSTMO)
+		if (A->Comm == _K_SVC_SEM_WAIT_REQUEST
+		    || A->Comm == _K_SVC_SEM_WAIT_REPLY_TIMEOUT)
 #else
-		if (A->Comm == WAITSREQ)
+		if (A->Comm == _K_SVC_SEM_WAIT_REQUEST)
 #endif
 		{
 			S->Level--;
@@ -75,7 +76,7 @@ static void signal_semaphore(int n, struct sem_struct *S)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.timer) {
 				_k_timeout_cancel(A);
-				A->Comm = WAITSRPL;
+				A->Comm = _K_SVC_SEM_WAIT_REPLY;
 			} else {
 #endif
 				A->Time.rcode = RC_OK;
@@ -83,9 +84,9 @@ static void signal_semaphore(int n, struct sem_struct *S)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			}
 #endif
-		} else if (A->Comm == WAITMREQ) {
+		} else if (A->Comm == _K_SVC_SEM_GROUP_WAIT_REQUEST) {
 			S->Level--;
-			A->Comm = WAITMRDY;
+			A->Comm = _K_SVC_SEM_GROUP_WAIT_READY;
 			GETARGS(Y);
 			*Y = *A;
 			SENDARGS(Y);
@@ -120,8 +121,9 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 			} else {
 				S->Waiters = X->Forw;
 			}
-			if (X->Comm == WAITMREQ || X->Comm == WAITMRDY) {
-				if (X->Comm == WAITMRDY) {
+			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_REQUEST
+			    || X->Comm == _K_SVC_SEM_GROUP_WAIT_READY) {
+				if (X->Comm == _K_SVC_SEM_GROUP_WAIT_READY) {
 					/* obtain struct k_args of waiting task */
 
 					struct k_args *waitTaskArgs = X->Ctxt.args;
@@ -129,8 +131,9 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 /*
  * Determine if the wait cancellation request is being
  * processed after the state of the 'Waiters' packet state
- * has been updated to WAITMRDY, but before the WAITMRDY
- * packet has been processed. This will occur if a WAITMTMO
+ * has been updated to _K_SVC_SEM_GROUP_WAIT_READY, but before
+ * the _K_SVC_SEM_GROUP_WAIT_READY packet has been processed.
+ * This will occur if a _K_SVC_SEM_GROUP_WAIT_TIMEOUT
  * timer expiry occurs between the update of the packet state
  * and the processing of the WAITMRDY packet.
  */
@@ -174,7 +177,7 @@ void _k_sem_group_wait_accept(struct k_args *A)
 			} else {
 				S->Waiters = X->Forw;
 			}
-			if (X->Comm == WAITMRDY) {
+			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_READY) {
 				_k_sem_group_wait(X);
 			} else {
 				FREEARGS(X); /* ERROR */
@@ -206,7 +209,8 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 		GETARGS(R);
 		R->Prio = A->Prio;
 		R->Comm =
-			(K_COMM)((*L == A->Args.s1.sema) ? WAITMACC : WAITMCAN);
+			((*L == A->Args.s1.sema) ?
+			    _K_SVC_SEM_GROUP_WAIT_ACCEPT : _K_SVC_SEM_GROUP_WAIT_CANCEL);
 		R->Ctxt.args = A;
 		R->Args.s1.sema = *L++;
 		SENDARGS(R);
@@ -219,7 +223,7 @@ void _k_sem_group_ready(struct k_args *R)
 
 	if (A->Args.s1.sema == ENDLIST) {
 		A->Args.s1.sema = R->Args.s1.sema;
-		A->Comm = WAITMTMO;
+		A->Comm = _K_SVC_SEM_GROUP_WAIT_TIMEOUT;
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer) {
 			_k_timeout_cancel(A);
@@ -236,13 +240,18 @@ void _k_sem_wait_reply(struct k_args *A)
 	if (A->Time.timer) {
 		FREETIMER(A->Time.timer);
 	}
-	if (A->Comm == WAITSTMO) {
+	if (A->Comm == _K_SVC_SEM_WAIT_REPLY_TIMEOUT) {
 		REMOVE_ELM(A);
 		A->Time.rcode = RC_TIME;
 	} else
 #endif
 		A->Time.rcode = RC_OK;
 	_k_state_bit_reset(A->Ctxt.proc, TF_SEMA);
+}
+
+void _k_sem_wait_reply_timeout(struct k_args *A)
+{
+	_k_sem_wait_reply(A);
 }
 
 void _k_sem_group_wait_request(struct k_args *A)
@@ -258,7 +267,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 			} else {
 				S->Waiters = X->Forw;
 			}
-			if (X->Comm == WAITMCAN) {
+			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_CANCEL) {
 				_k_sem_group_wait(X);
 			} else {
 				FREEARGS(X); /* ERROR */
@@ -296,7 +305,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 
 		GETARGS(R);
 		R->Prio = _k_current_task->Prio;
-		R->Comm = WAITMREQ;
+		R->Comm = _K_SVC_SEM_GROUP_WAIT_REQUEST;
 		R->Ctxt.args = A;
 		R->Args.s1.sema = *L++;
 		SENDARGS(R);
@@ -311,7 +320,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;
 		} else {
-			A->Comm = WAITMTMO;
+			A->Comm = _K_SVC_SEM_GROUP_WAIT_TIMEOUT;
 			_k_timeout_alloc(A);
 		}
 	}
@@ -338,7 +347,7 @@ void _k_sem_wait_request(struct k_args *A)
 		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;
 		} else {
-			A->Comm = WAITSTMO;
+			A->Comm = _K_SVC_SEM_WAIT_REPLY_TIMEOUT;
 			_k_timeout_alloc(A);
 		}
 #endif
@@ -352,7 +361,7 @@ int _task_sem_take(ksem_t sema, int32_t time)
 {
 	struct k_args A;
 
-	A.Comm = WAITSREQ;
+	A.Comm = _K_SVC_SEM_WAIT_REQUEST;
 	A.Time.ticks = time;
 	A.Args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
@@ -363,7 +372,7 @@ ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
 {
 	struct k_args A;
 
-	A.Comm = WAITMANY;
+	A.Comm = _K_SVC_SEM_GROUP_WAIT_ANY;
 	A.Prio = _k_current_task->Prio;
 	A.Time.ticks = time;
 	A.Args.s1.list = group;
@@ -391,7 +400,7 @@ void task_sem_give(ksem_t sema)
 {
 	struct k_args A;
 
-	A.Comm = SIGNALS;
+	A.Comm = _K_SVC_SEM_SIGNAL;
 	A.Args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 }
@@ -400,7 +409,7 @@ void task_sem_group_give(ksemg_t group)
 {
 	struct k_args A;
 
-	A.Comm = SIGNALM;
+	A.Comm = _K_SVC_SEM_GROUP_SIGNAL;
 	A.Args.s1.list = group;
 	KERNEL_ENTRY(&A);
 }
@@ -418,7 +427,7 @@ void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
 	 */
 
 	pCommand = (struct k_args *)_cmd_pkt_get(pSet);
-	pCommand->Comm = SIGNALS;
+	pCommand->Comm = _K_SVC_SEM_SIGNAL;
 	pCommand->Args.s1.sema = sema;
 
 	nano_isr_stack_push(&_k_command_stack, (uint32_t)pCommand);
@@ -444,7 +453,7 @@ void task_sem_reset(ksem_t sema)
 {
 	struct k_args A;
 
-	A.Comm = RESETS;
+	A.Comm = _K_SVC_SEM_RESET;
 	A.Args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 }
@@ -453,7 +462,7 @@ void task_sem_group_reset(ksemg_t group)
 {
 	struct k_args A;
 
-	A.Comm = RESETM;
+	A.Comm = _K_SVC_SEM_GROUP_RESET;
 	A.Args.s1.list = group;
 	KERNEL_ENTRY(&A);
 }
@@ -472,7 +481,7 @@ int task_sem_count_get(ksem_t sema)
 {
 	struct k_args A;
 
-	A.Comm = INQSEMA;
+	A.Comm = _K_SVC_SEM_INQUIRY;
 	A.Args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;

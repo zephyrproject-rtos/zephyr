@@ -130,6 +130,18 @@ extern void _k_sem_wait_reply(struct k_args *);
 
 /**
  *
+ * @brief Reply to a semaphore wait request with timeout.
+ *
+ * @param A Pointer to a k_args structure.
+ *
+ * @return N/A
+ *
+ * @sa _k_sem_wait_reply
+ */
+extern void _k_sem_wait_reply_timeout(struct k_args *A);
+
+/**
+ *
  * @brief Handle semaphore group wait request
  *
  * This routine splits the single semaphore group wait request into several
@@ -227,11 +239,14 @@ extern void _k_sem_inquiry(struct k_args *);
 
 extern void _k_mutex_lock_request(struct k_args *);
 extern void _k_mutex_lock_reply(struct k_args *);
+extern void _k_mutex_lock_reply_timeout(struct k_args *);
 extern void _k_mutex_unlock(struct k_args *);
 extern void _k_fifo_enque_request(struct k_args *);
 extern void _k_fifo_enque_reply(struct k_args *);
+extern void _k_fifo_enque_reply_timeout(struct k_args *);
 extern void _k_fifo_deque_request(struct k_args *);
 extern void _k_fifo_deque_reply(struct k_args *);
+extern void _k_fifo_deque_reply_timeout(struct k_args *);
 extern void _k_fifo_ioctl(struct k_args *);
 extern void _k_mbox_send_request(struct k_args *);
 extern void _k_mbox_send_reply(struct k_args *);

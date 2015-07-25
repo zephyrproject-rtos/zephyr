@@ -132,7 +132,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 					_k_task_monitor_args(pArgs);
 				}
 #endif
-				_k_server_dispatch_table[pArgs->Comm](pArgs);
+				(*pArgs->Comm)(pArgs);
 			}
 
 			/* check if another fiber (of equal or greater priority)

@@ -55,91 +55,88 @@ struct k_timer {
 
 /* Kernel server command codes */
 
-typedef enum {
-	NOP,
-	MVD_REQ,
-	MVD_VOID, /* obsolete now */
-	RAWDATA,
-	OFFLOAD,
-	READWL,
-	SIGNALS,
-	SIGNALM,
-	RESETS,
-	RESETM,
-	WAITSREQ,
-	WAITSRPL,
-	WAITSTMO,
-	WAITMANY,
-	WAITMREQ,
-	WAITMRDY,
-	WAITMCAN,
-	WAITMACC,
-	WAITMEND,
-	WAITMTMO,
-	INQSEMA,
-	LOCK_REQ,
-	LOCK_RPL,
-	LOCK_TMO,
-	UNLOCK,
-	ENQ_REQ,
-	ENQ_RPL,
-	ENQ_TMO,
-	DEQ_REQ,
-	DEQ_RPL,
-	DEQ_TMO,
-	QUEUE,
-	SEND_REQ,
-	SEND_TMO,
-	SEND_ACK,
-	SEND_DATA,
-	RECV_REQ,
-	RECV_TMO,
-	RECV_ACK,
-	RECV_DATA,
-	ELAPSE,
-	SLEEP,
-	WAKEUP,
-	TSKOP,
-	GRPOP,
-	SPRIO,
-	YIELD,
-	ALLOC,
-	DEALLOC,
-	TALLOC,
-	TDEALLOC,
-	TSTART,
-	TSTOP,
-	ALLOCTMO,
-	REMREPLY,
-	DEBUG_REQ,
-	DEBUG_ACK,
-	EVENTENABLE, /* obsolete now */
-	EVENTTEST,
-	EVENTHANDLER,
-	EVENTSIGNAL,
-	GET_BLOCK,
-	REL_BLOCK,
-	GET_BLOCK_WAIT,
-	GTBLTMO,
-	POOL_DEFRAG,
-	MVDSND_REQ,
-	MVDRCV_REQ,
-	MVDSND_ACK,
-	MVDRCV_ACK,
-	MEMCPY_REQ,
-	MEMCPY_RPL,
-	PIPE_PUT_REQUEST,
-	PIPE_PUT_TIMEOUT,
-	PIPE_PUT_REPLY,
-	PIPE_PUT_ACK,
-	PIPE_GET_REQUEST,
-	PIPE_GET_TIMEOUT,
-	PIPE_GET_REPLY,
-	PIPE_GET_ACK,
-	PIPE_MOVEDATA_ACK,
-	EVENT_TMO,
-	UNDEFINED = -1
-} K_COMM;
+#define _K_SVC_UNDEFINED				(NULL)
+
+#define _K_SVC_BLOCK_WAITERS_GET			_k_block_waiters_get
+#define _K_SVC_DEFRAG					_k_defrag
+#define _K_SVC_MOVEDATA_REQ				_k_movedata_request
+#define _K_SVC_NOP					_k_nop
+#define _K_SVC_OFFLOAD_TO_FIBER				_k_offload_to_fiber
+#define _K_SVC_TIME_ELAPSE				_k_time_elapse
+#define _K_SVC_WORKLOAD_GET				_k_workload_get
+
+#define _K_SVC_EVENT_HANDLER_SET			_k_event_handler_set
+#define _K_SVC_EVENT_SIGNAL				_k_event_signal
+#define _K_SVC_EVENT_TEST				_k_event_test
+#define _K_SVC_EVENT_TEST_TIMEOUT			_k_event_test_timeout
+
+#define _K_SVC_SEM_INQUIRY				_k_sem_inquiry
+#define _K_SVC_SEM_SIGNAL				_k_sem_signal
+#define _K_SVC_SEM_RESET				_k_sem_reset
+#define _K_SVC_SEM_WAIT_REQUEST				_k_sem_wait_request
+#define _K_SVC_SEM_WAIT_REPLY				_k_sem_wait_reply
+#define _K_SVC_SEM_WAIT_REPLY_TIMEOUT			_k_sem_wait_reply_timeout
+#define _K_SVC_SEM_GROUP_SIGNAL				_k_sem_group_signal
+#define _K_SVC_SEM_GROUP_RESET				_k_sem_group_reset
+#define _K_SVC_SEM_GROUP_WAIT				_k_sem_group_wait
+#define _K_SVC_SEM_GROUP_WAIT_ANY			_k_sem_group_wait_any
+#define _K_SVC_SEM_GROUP_WAIT_ACCEPT			_k_sem_group_wait_accept
+#define _K_SVC_SEM_GROUP_WAIT_CANCEL			_k_sem_group_wait_cancel
+#define _K_SVC_SEM_GROUP_WAIT_READY			_k_sem_group_ready
+#define _K_SVC_SEM_GROUP_WAIT_REQUEST			_k_sem_group_wait_request
+#define _K_SVC_SEM_GROUP_WAIT_TIMEOUT			_k_sem_group_wait_timeout
+
+#define _K_SVC_MUTEX_LOCK_REQUEST			_k_mutex_lock_request
+#define _K_SVC_MUTEX_LOCK_REPLY				_k_mutex_lock_reply
+#define _K_SVC_MUTEX_LOCK_REPLY_TIMEOUT			_k_mutex_lock_reply_timeout
+#define _K_SVC_MUTEX_UNLOCK				_k_mutex_unlock
+
+#define _K_SVC_FIFO_ENQUE_REQUEST			_k_fifo_enque_request
+#define _K_SVC_FIFO_ENQUE_REPLY				_k_fifo_enque_reply
+#define _K_SVC_FIFO_ENQUE_REPLY_TIMEOUT			_k_fifo_enque_reply_timeout
+#define _K_SVC_FIFO_DEQUE_REQUEST			_k_fifo_deque_request
+#define _K_SVC_FIFO_DEQUE_REPLY				_k_fifo_deque_reply
+#define _K_SVC_FIFO_DEQUE_REPLY_TIMEOUT			_k_fifo_deque_reply_timeout
+#define _K_SVC_FIFO_IOCTL				_k_fifo_ioctl
+
+#define _K_SVC_MBOX_SEND_REQUEST			_k_mbox_send_request
+#define _K_SVC_MBOX_SEND_REPLY				_k_mbox_send_reply
+#define _K_SVC_MBOX_SEND_ACK				_k_mbox_send_ack
+#define _K_SVC_MBOX_SEND_DATA				_k_mbox_send_data
+#define _K_SVC_MBOX_RECEIVE_REQUEST			_k_mbox_receive_request
+#define _K_SVC_MBOX_RECEIVE_REPLY			_k_mbox_receive_reply
+#define _K_SVC_MBOX_RECEIVE_ACK				_k_mbox_receive_ack
+#define _K_SVC_MBOX_RECEIVE_DATA			_k_mbox_receive_data
+
+#define _K_SVC_TASK_SLEEP				_k_task_sleep
+#define _K_SVC_TASK_WAKEUP				_k_task_wakeup
+#define _K_SVC_TASK_OP					_k_task_op
+#define _K_SVC_TASK_GROUP_OP				_k_task_group_op
+#define _K_SVC_TASK_PRIORITY_SET			_k_task_priority_set
+#define _K_SVC_TASK_YIELD				_k_task_yield
+
+#define _K_SVC_MEM_MAP_ALLOC				_k_mem_map_alloc
+#define _K_SVC_MEM_MAP_ALLOC_TIMEOUT			_k_mem_map_alloc_timeout
+#define _K_SVC_MEM_MAP_DEALLOC				_k_mem_map_dealloc
+
+#define _K_SVC_TIMER_ALLOC				_k_timer_alloc
+#define _K_SVC_TIMER_DEALLOC				_k_timer_dealloc
+#define _K_SVC_TIMER_START				_k_timer_start
+#define _K_SVC_TIMER_STOP				_k_timer_stop
+
+#define _K_SVC_MEM_POOL_BLOCK_GET			_k_mem_pool_block_get
+#define _K_SVC_MEM_POOL_BLOCK_GET_TIMEOUT_HANDLE	_k_mem_pool_block_get_timeout_handle
+#define _K_SVC_MEM_POOL_BLOCK_RELEASE			_k_mem_pool_block_release
+
+#define _K_SVC_PIPE_PUT_REQUEST				_k_pipe_put_request
+#define _K_SVC_PIPE_PUT_TIMEOUT				_k_pipe_put_timeout
+#define _K_SVC_PIPE_PUT_REPLY				_k_pipe_put_reply
+#define _K_SVC_PIPE_PUT_ACK				_k_pipe_put_ack
+#define _K_SVC_PIPE_GET_REQUEST				_k_pipe_get_request
+#define _K_SVC_PIPE_GET_TIMEOUT				_k_pipe_get_timeout
+#define _K_SVC_PIPE_GET_REPLY				_k_pipe_get_reply
+#define _K_SVC_PIPE_GET_ACK				_k_pipe_get_ack
+#define _K_SVC_PIPE_MOVEDATA_ACK			_k_pipe_movedata_ack
 
 /* Task queue header */
 
@@ -460,7 +457,7 @@ struct k_args {
 
 	/* 'alloc' is true if k_args is allocated via GETARGS() */
 	bool   alloc __aligned(4);
-	K_COMM Comm __aligned(4);
+	void   (*Comm)(struct k_args *);
 
 	/*
 	 * Ctxt needs to be aligned to avoid "unaligned write" exception on ARM

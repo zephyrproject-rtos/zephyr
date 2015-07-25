@@ -58,7 +58,7 @@
 #include <nano_private.h>
 
 /**
- * @brief Reply to a mutex lock request (LOCK_TMO, LOCK_RPL)
+ * @brief Reply to a mutex lock request.
  *
  * This routine replies to a mutex lock request.  This will occur if either
  * the waiting task times out or acquires the mutex lock.
@@ -82,7 +82,7 @@ void _k_mutex_lock_reply(
 		FREETIMER(A->Time.timer);
 	}
 
-	if (A->Comm == LOCK_TMO) {/* Timeout case */
+	if (A->Comm == _K_SVC_MUTEX_LOCK_REPLY_TIMEOUT) {/* Timeout case */
 
 		REMOVE_ELM(A);
 		A->Time.rcode = RC_TIME;
@@ -122,7 +122,7 @@ void _k_mutex_lock_reply(
 		if (Mutex->OwnerCurrentPrio != newPriority) {
 			GETARGS(PrioChanger);
 			PrioChanger->alloc = true;
-			PrioChanger->Comm = SPRIO;
+			PrioChanger->Comm = _K_SVC_TASK_PRIORITY_SET;
 			PrioChanger->Prio = newPriority;
 			PrioChanger->Args.g1.task = Mutex->Owner;
 			PrioChanger->Args.g1.prio = newPriority;
@@ -138,6 +138,21 @@ void _k_mutex_lock_reply(
 #endif
 
 	_k_state_bit_reset(A->Ctxt.proc, TF_LOCK);
+}
+
+/**
+ * @brief Reply to a mutex lock request with timeout.
+ *
+ * This routine replies to a mutex lock request.  This will occur if either
+ * the waiting task times out or acquires the mutex lock.
+ *
+ * @param A Pointer to a k_args structure.
+ *
+ * @return N/A
+ */
+void _k_mutex_lock_reply_timeout(struct k_args *A)
+{
+	_k_mutex_lock_reply(A);
 }
 
 /**
@@ -222,7 +237,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 				 * Prepare to call _k_mutex_lock_reply() should
 				 * the request time out.
 				 */
-				A->Comm = LOCK_TMO;
+				A->Comm = _K_SVC_MUTEX_LOCK_REPLY_TIMEOUT;
 				_k_timeout_alloc(A);
 			}
 #endif
@@ -243,7 +258,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 					GETARGS(PrioBooster);
 
 					PrioBooster->alloc = true;
-					PrioBooster->Comm = SPRIO;
+					PrioBooster->Comm = _K_SVC_TASK_PRIORITY_SET;
 					PrioBooster->Prio = BoostedPrio;
 					PrioBooster->Args.g1.task = Mutex->Owner;
 					PrioBooster->Args.g1.prio = BoostedPrio;
@@ -278,7 +293,7 @@ int _task_mutex_lock(
 {
 	struct k_args A; /* argument packet */
 
-	A.Comm = LOCK_REQ;
+	A.Comm = _K_SVC_MUTEX_LOCK_REQUEST;
 	A.Time.ticks = time;
 	A.Args.l1.mutex = mutex;
 	A.Args.l1.task = _k_current_task->Ident;
@@ -330,7 +345,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 			GETARGS(PrioDowner);
 
 			PrioDowner->alloc = true;
-			PrioDowner->Comm = SPRIO;
+			PrioDowner->Comm = _K_SVC_TASK_PRIORITY_SET;
 			PrioDowner->Prio = Mutex->OwnerOriginalPrio;
 			PrioDowner->Args.g1.task = Mutex->Owner;
 			PrioDowner->Args.g1.prio = Mutex->OwnerOriginalPrio;
@@ -358,7 +373,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 				 * send a reply with a return code of RC_OK.
 				 */
 				_k_timeout_cancel(X);
-				X->Comm = LOCK_RPL;
+				X->Comm = _K_SVC_MUTEX_LOCK_REPLY;
 			} else {
 #endif
 				/*
@@ -392,7 +407,7 @@ void _task_mutex_unlock(kmutex_t mutex /* mutex to unlock */
 {
 	struct k_args A; /* argument packet */
 
-	A.Comm = UNLOCK;
+	A.Comm = _K_SVC_MUTEX_UNLOCK;
 	A.Args.l1.mutex = mutex;
 	A.Args.l1.task = _k_current_task->Ident;
 	KERNEL_ENTRY(&A);

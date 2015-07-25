@@ -77,7 +77,7 @@ int task_event_set_handler(kevent_t event, kevent_handler_t handler)
 {
 	struct k_args A;
 
-	A.Comm = EVENTHANDLER;
+	A.Comm = _K_SVC_EVENT_HANDLER_SET;
 	A.Args.e1.event = event;
 	A.Args.e1.func = handler;
 	KERNEL_ENTRY(&A);
@@ -128,7 +128,7 @@ void _k_event_test(struct k_args *A)
 					if (A->Time.ticks == TICKS_UNLIMITED) {
 						A->Time.timer = NULL;
 					} else {
-						A->Comm = EVENT_TMO;
+						A->Comm = _K_SVC_EVENT_TEST_TIMEOUT;
 						_k_timeout_alloc(A);
 					}
 #endif
@@ -151,7 +151,7 @@ int _task_event_recv(kevent_t event, int32_t time)
 {
 	struct k_args A;
 
-	A.Comm = EVENTTEST;
+	A.Comm = _K_SVC_EVENT_TEST;
 	A.Args.e1.event = event;
 	A.Time.ticks = time;
 	KERNEL_ENTRY(&A);
@@ -186,7 +186,7 @@ void _k_do_event_signal(kevent_t event)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer != NULL) {
 			_k_timeout_free(A->Time.timer);
-			A->Comm = NOP;
+			A->Comm = _K_SVC_NOP;
 		}
 #endif
 		A->Time.rcode = RC_OK;
@@ -223,7 +223,7 @@ int task_event_send(kevent_t event)
 {
 	struct k_args A;
 
-	A.Comm = EVENTSIGNAL;
+	A.Comm = _K_SVC_EVENT_SIGNAL;
 	A.Args.e1.event = event;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;

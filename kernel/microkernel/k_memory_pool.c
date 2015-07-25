@@ -218,7 +218,7 @@ void _k_defrag(struct k_args *A)
 		 */
 		GETARGS(NewGet);
 		*NewGet = *A;
-		NewGet->Comm = GET_BLOCK_WAIT;
+		NewGet->Comm = _K_SVC_BLOCK_WAITERS_GET;
 		TO_ALIST(&_k_command_stack, NewGet); /*push on command stack */
 	}
 }
@@ -237,7 +237,7 @@ void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
 {
 	struct k_args A;
 
-	A.Comm = POOL_DEFRAG;
+	A.Comm = _K_SVC_DEFRAG;
 	A.Args.p1.poolid = Pid;
 	KERNEL_ENTRY(&A);
 }
@@ -545,7 +545,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;
 		} else {
-			A->Comm = GTBLTMO;
+			A->Comm = _K_SVC_MEM_POOL_BLOCK_GET_TIMEOUT_HANDLE;
 			_k_timeout_alloc(A);
 		}
 #endif
@@ -574,7 +574,7 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 	struct k_args A;
 
 
-	A.Comm = GET_BLOCK;
+	A.Comm = _K_SVC_MEM_POOL_BLOCK_GET;
 	A.Time.ticks = time;
 	A.Args.p1.poolid = poolid;
 	A.Args.p1.req_size = reqsize;
@@ -646,7 +646,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 					 */
 					GETARGS(NewGet);
 					*NewGet = *A;
-					NewGet->Comm = GET_BLOCK_WAIT;
+					NewGet->Comm = _K_SVC_BLOCK_WAITERS_GET;
 					TO_ALIST(&_k_command_stack, NewGet); /* push on command stack */
 				}
 				if (A->alloc) {
@@ -676,7 +676,7 @@ void task_mem_pool_free(struct k_block *blockptr /* pointer to block to free */
 {
 	struct k_args A;
 
-	A.Comm = REL_BLOCK;
+	A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
 	A.Args.p1.poolid = blockptr->poolid;
 	A.Args.p1.req_size = blockptr->req_size;
 	A.Args.p1.rep_poolptr = blockptr->address_in_pool;

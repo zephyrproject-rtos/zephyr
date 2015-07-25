@@ -250,7 +250,7 @@ static void setup_movedata(struct k_args *A,
 	struct k_args *pContSend;
 	struct k_args *pContRecv;
 
-	A->Comm = MVD_REQ;
+	A->Comm = _K_SVC_MOVEDATA_REQ;
 
 	A->Ctxt.proc = NULL;
 	/* this caused problems when != NULL related to set/reset of state bits */
@@ -266,14 +266,14 @@ static void setup_movedata(struct k_args *A,
 	GETARGS(pContRecv);
 
 	pContSend->Forw = NULL;
-	pContSend->Comm = PIPE_MOVEDATA_ACK;
+	pContSend->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContSend->Args.pipe_xfer_ack.pPipe = pPipe;
 	pContSend->Args.pipe_xfer_ack.XferType = XferType;
 	pContSend->Args.pipe_xfer_ack.ID = XferID;
 	pContSend->Args.pipe_xfer_ack.iSize = size;
 
 	pContRecv->Forw = NULL;
-	pContRecv->Comm = PIPE_MOVEDATA_ACK;
+	pContRecv->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContRecv->Args.pipe_xfer_ack.pPipe = pPipe;
 	pContRecv->Args.pipe_xfer_ack.XferType = XferType;
 	pContRecv->Args.pipe_xfer_ack.ID = XferID;
@@ -970,7 +970,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 				myfreetimer(&(pReader->Time.timer));
 			}
 			if (0 == pReader->Args.pipe_xfer_req.iNbrPendXfers) {
-				pReader->Comm = PIPE_GET_REPLY;
+				pReader->Comm = _K_SVC_PIPE_GET_REPLY;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
 				_k_pipe_get_reply(pReader);
@@ -1000,7 +1000,7 @@ void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
 				myfreetimer(&(pWriter->Time.timer));
 			}
 			if (0 == pWriter->Args.pipe_xfer_req.iNbrPendXfers) {
-				pWriter->Comm = PIPE_PUT_REPLY;
+				pWriter->Comm = _K_SVC_PIPE_PUT_REPLY;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
 				_k_pipe_put_reply(pWriter);

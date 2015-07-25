@@ -250,7 +250,7 @@ int task_workload_get(void)
 {
 	struct k_args A;
 
-	A.Comm = READWL;
+	A.Comm = _K_SVC_WORKLOAD_GET;
 	KERNEL_ENTRY(&A);
 	return A.Args.u1.rval;
 }

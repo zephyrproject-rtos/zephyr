@@ -280,7 +280,7 @@ ktimer_t task_timer_alloc(void)
 {
 	struct k_args A;
 
-	A.Comm = TALLOC;
+	A.Comm = _K_SVC_TIMER_ALLOC;
 	KERNEL_ENTRY(&A);
 
 	return _timer_ptr_to_id(A.Args.c1.timer);
@@ -324,7 +324,7 @@ void task_timer_free(ktimer_t timer)
 {
 	struct k_args A;
 
-	A.Comm = TDEALLOC;
+	A.Comm = _K_SVC_TIMER_DEALLOC;
 	A.Args.c1.timer = _timer_id_to_ptr(timer);
 	KERNEL_ENTRY(&A);
 }
@@ -372,7 +372,7 @@ void _k_timer_start(struct k_args *P)
 
 	/* Track the semaphore to signal for when the timer expires. */
 	if (P->Args.c1.sema != ENDLIST) {
-		T->Args->Comm = SIGNALS;
+		T->Args->Comm = _K_SVC_SEM_SIGNAL;
 		T->Args->Args.s1.sema = P->Args.c1.sema;
 	}
 	_k_timer_enlist(T);
@@ -408,7 +408,7 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 {
 	struct k_args A;
 
-	A.Comm = TSTART;
+	A.Comm = _K_SVC_TIMER_START;
 	A.Args.c1.timer = _timer_id_to_ptr(timer);
 	A.Args.c1.time1 = (int64_t)duration;
 	A.Args.c1.time2 = period;
@@ -433,7 +433,7 @@ void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
 {
 	struct k_args A;
 
-	A.Comm = TSTART;
+	A.Comm = _K_SVC_TIMER_START;
 	A.Args.c1.timer = _timer_id_to_ptr(timer);
 	A.Args.c1.time1 = (int64_t)duration;
 	A.Args.c1.time2 = period;
@@ -475,7 +475,7 @@ void task_timer_stop(ktimer_t timer)
 {
 	struct k_args A;
 
-	A.Comm = TSTOP;
+	A.Comm = _K_SVC_TIMER_STOP;
 	A.Args.c1.timer = _timer_id_to_ptr(timer);
 	KERNEL_ENTRY(&A);
 }
@@ -525,7 +525,7 @@ void _k_task_sleep(struct k_args *P)
 	T->period = 0;
 	T->Args = P;
 
-	P->Comm = WAKEUP;
+	P->Comm = _K_SVC_TASK_WAKEUP;
 	P->Ctxt.proc = _k_current_task;
 	P->Time.timer = T;
 
@@ -550,7 +550,7 @@ void task_sleep(int32_t ticks)
 {
 	struct k_args A;
 
-	A.Comm = SLEEP;
+	A.Comm = _K_SVC_TASK_SLEEP;
 	A.Time.ticks = ticks;
 	KERNEL_ENTRY(&A);
 }

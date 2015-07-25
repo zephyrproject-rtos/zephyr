@@ -55,7 +55,7 @@ void _k_fifo_enque_reply(struct k_args *A)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
-	if (unlikely(A->Comm == ENQ_TMO)) {
+	if (unlikely(A->Comm == _K_SVC_FIFO_ENQUE_REPLY_TIMEOUT)) {
 		REMOVE_ELM(A);
 		A->Time.rcode = RC_TIME;
 	} else {
@@ -66,6 +66,21 @@ void _k_fifo_enque_reply(struct k_args *A)
 #endif
 
 	_k_state_bit_reset(A->Ctxt.proc, TF_ENQU);
+}
+
+/**
+ *
+ * @brief Finish performing an incomplete FIFO enqueue request with timeout.
+ *
+ * @param A Pointer to a k_args structure
+ *
+ * @return N/A
+ *
+ * @sa _k_fifo_enque_reply
+ */
+void _k_fifo_enque_reply_timeout(struct k_args *A)
+{
+	_k_fifo_enque_reply(A);
 }
 
 /**
@@ -96,7 +111,7 @@ void _k_fifo_enque_request(struct k_args *A)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (W->Time.timer) {
 				_k_timeout_cancel(W);
-				W->Comm = DEQ_RPL;
+				W->Comm = _K_SVC_FIFO_DEQUE_REPLY;
 			} else {
 #endif
 				W->Time.rcode = RC_OK;
@@ -134,7 +149,7 @@ void _k_fifo_enque_request(struct k_args *A)
 			if (A->Time.ticks == TICKS_UNLIMITED)
 				A->Time.timer = NULL;
 			else {
-				A->Comm = ENQ_TMO;
+				A->Comm = _K_SVC_FIFO_ENQUE_REPLY_TIMEOUT;
 				_k_timeout_alloc(A);
 			}
 #endif
@@ -151,7 +166,7 @@ int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 {
 	struct k_args A;
 
-	A.Comm = ENQ_REQ;
+	A.Comm = _K_SVC_FIFO_ENQUE_REQUEST;
 	A.Time.ticks = time;
 	A.Args.q1.data = (char *)data;
 	A.Args.q1.queue = queue;
@@ -172,7 +187,7 @@ void _k_fifo_deque_reply(struct k_args *A)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	if (A->Time.timer)
 		FREETIMER(A->Time.timer);
-	if (unlikely(A->Comm == DEQ_TMO)) {
+	if (unlikely(A->Comm == _K_SVC_FIFO_DEQUE_REPLY_TIMEOUT)) {
 		REMOVE_ELM(A);
 		A->Time.rcode = RC_TIME;
 	} else {
@@ -183,6 +198,21 @@ void _k_fifo_deque_reply(struct k_args *A)
 #endif
 
 	_k_state_bit_reset(A->Ctxt.proc, TF_DEQU);
+}
+
+/**
+ *
+ * @brief Finish performing an incomplete FIFO dequeue request with timeout.
+ *
+ * @param A Pointer to a k_args structure.
+ *
+ * @return N/A
+ *
+ * @sa _k_fifo_deque_reply
+ */
+void _k_fifo_deque_reply_timeout(struct k_args *A)
+{
+	_k_fifo_deque_reply(A);
 }
 
 /**
@@ -229,7 +259,7 @@ void _k_fifo_deque_request(struct k_args *A)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (W->Time.timer) {
 				_k_timeout_cancel(W);
-				W->Comm = ENQ_RPL;
+				W->Comm = _K_SVC_FIFO_ENQUE_REPLY;
 			} else {
 #endif
 				W->Time.rcode = RC_OK;
@@ -253,7 +283,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			if (A->Time.ticks == TICKS_UNLIMITED)
 				A->Time.timer = NULL;
 			else {
-				A->Comm = DEQ_TMO;
+				A->Comm = _K_SVC_FIFO_DEQUE_REPLY_TIMEOUT;
 				_k_timeout_alloc(A);
 			}
 #endif
@@ -281,7 +311,7 @@ int _task_fifo_get(kfifo_t queue, void *data, int32_t time)
 {
 	struct k_args A;
 
-	A.Comm = DEQ_REQ;
+	A.Comm = _K_SVC_FIFO_DEQUE_REQUEST;
 	A.Time.ticks = time;
 	A.Args.q1.data = (char *)data;
 	A.Args.q1.queue = queue;
@@ -314,7 +344,7 @@ void _k_fifo_ioctl(struct k_args *A)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 				if (likely(X->Time.timer)) {
 					_k_timeout_cancel(X);
-					X->Comm = ENQ_RPL;
+					X->Comm = _K_SVC_FIFO_ENQUE_REPLY;
 				} else {
 #endif
 					X->Time.rcode = RC_FAIL;
@@ -347,7 +377,7 @@ int _task_fifo_ioctl(kfifo_t queue, int op)
 {
 	struct k_args A;
 
-	A.Comm = QUEUE;
+	A.Comm = _K_SVC_FIFO_IOCTL;
 	A.Args.q1.queue = queue;
 	A.Args.q1.size = op;
 	KERNEL_ENTRY(&A);

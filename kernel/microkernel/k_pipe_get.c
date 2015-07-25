@@ -148,7 +148,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		 * PIPE_GET_TIMEOUT microkernel command to the packet even though it
 		 * is only useful to the finite timeout case.
 		 */
-		RequestProc->Comm = PIPE_GET_TIMEOUT;
+		RequestProc->Comm = _K_SVC_PIPE_GET_TIMEOUT;
 		if (_TIME_B == _k_pipe_time_type_get(&RequestProc->Args)) {
 			/*
 			 * The writer specified TICKS_UNLIMITED, so NULL the timer.
@@ -180,7 +180,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 			__ASSERT_NO_MSG(XFER_IDLE ==
 				RequestProc->Args.pipe_xfer_req.status);
 			__ASSERT_NO_MSG(0 == RequestProc->Args.pipe_xfer_req.iSizeXferred);
-			RequestProc->Comm = PIPE_GET_REPLY;
+			RequestProc->Comm = _K_SVC_PIPE_GET_REPLY;
 			_k_pipe_get_reply(RequestProc);
 		}
 		return;
@@ -225,7 +225,7 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 
 	struct k_args *ReqOrig = ReqProc->Ctxt.args;
 	PIPE_REQUEST_STATUS status;
-	ReqOrig->Comm = PIPE_GET_ACK;
+	ReqOrig->Comm = _K_SVC_PIPE_GET_ACK;
 
 	/* determine return value */
 

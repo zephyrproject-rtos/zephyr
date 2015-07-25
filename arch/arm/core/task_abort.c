@@ -74,7 +74,7 @@ void _TaskAbort(void)
 	if (_ScbIsInThreadMode()) {
 		_task_ioctl(_k_current_task->Ident, taskAbortCode);
 	} else {
-		cmd_packet.Comm = TSKOP;
+		cmd_packet.Comm = _K_SVC_TASK_OP;
 		cmd_packet.Args.g1.task = _k_current_task->Ident;
 		cmd_packet.Args.g1.opt = taskAbortCode;
 		cmd_packet.alloc = false;
