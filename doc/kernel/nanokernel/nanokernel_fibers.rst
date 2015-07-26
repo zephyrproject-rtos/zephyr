@@ -35,15 +35,15 @@ Starting a Fiber
 ****************
 
 A nanokernel fiber must be explicitly started by calling
-:c:func:`fiber_fiber_start()` or :c:func:`task_fiber_start()` to create
-and start a fiber. The function :c:func:`fiber_fiber_start()` creates
+:cpp:func:`fiber_fiber_start()` or :cpp:func:`task_fiber_start()` to create
+and start a fiber. The function :cpp:func:`fiber_fiber_start()` creates
 and starts a fiber from another fiber, while
-:c:func:`task_fiber_start()` does so from a task. Both APIs use the
+:cpp:func:`task_fiber_start()` does so from a task. Both APIs use the
 parameters *parameter1* and *parameter2* as *arg1* and *arg2* given to
 the fiber . The full documentation on these APIs can be found in the
 :ref:`in-code_apis`.
 
-When :c:func:`task_fiber_start()`is called from a task, the new fiber
+When :cpp:func:`task_fiber_start()` is called from a task, the new fiber
 will be immediately ready to run. The background task immediately stops
 execution, yielding to the new fiber until the fiber calls a blocking
 service that de-schedules it. If the fiber performs a return from the
@@ -57,7 +57,7 @@ Fiber Stack Definition
 The fiber stack is used for local variables and for calling functions or
 subroutines. Additionally, the first locations on the stack are used by
 the kernel for the context control structure. Allocate or declare the
-fiber stack prior to calling :c:func:`fiber_fiber_start()`. A fiber
+fiber stack prior to calling :cpp:func:`fiber_fiber_start()`. A fiber
 stack can be any sort of buffer. In this example the fiber stack is
 defined as an array of 32-bit integers:
 
@@ -77,19 +77,19 @@ Stopping a Fiber
 ****************
 
 There are no APIs to stop or suspend a fiber. Only one API can influence
-the scheduling of a fiber, :c:func:`fiber_yield()`. When a fiber yields
+the scheduling of a fiber, :cpp:func:`fiber_yield()`. When a fiber yields
 itself, the nanokernel checks for another runnable fiber of the same or
 higher priority. If a fiber of the same priority or higher is found, a
 context switch occurs. If no other fibers are ready to execute, or if
 all the runnable fibers have a lower priority than the currently
 running fiber, the nanokernel does not perform any scheduling allowing
 the running fiber to continue. A task or an ISR cannot call
-:c:func:`fiber_yield()`.
+:cpp:func:`fiber_yield()`.
 
 If a fiber executes lengthy computations that will introduce an
 unacceptable delay in the scheduling of other fibers, it should yield
-by placing a :c:func:`fiber_yield()` call within the loop of a
-computational cannot call :c:func:`fiber_yield()`.
+by placing a :cpp:func:`fiber_yield()` call within the loop of a
+computational cannot call :cpp:func:`fiber_yield()`.
 
 Fiber Scheduling Model
 ######################
@@ -133,10 +133,10 @@ the other fibers in the queue to be unscheduled.
 Adding Yielding Points to Fibers
 ********************************
 
-Add yielding points to fibers with :c:func:`fiber_yield()`. This service
+Add yielding points to fibers with :cpp:func:`fiber_yield()`. This service
 un-schedules a fiber and places it at the end of the ready fiber list
 of fibers with that priority. It allows other fibers at the same
 priority to get to the head of the queue faster. If a fiber executes
 code that will take some time, periodically call
-:c:func:`fiber_yield()`. Multi-threading using blocking fibers is
+:cpp:func:`fiber_yield()`. Multi-threading using blocking fibers is
 effective in coding hard real-time applications.

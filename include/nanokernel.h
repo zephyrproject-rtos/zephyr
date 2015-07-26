@@ -105,37 +105,145 @@ void fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
 		int arg1, int arg2, unsigned prio, unsigned options);
 
 /* methods for fibers */
+
+/**
+ * @brief Initialize and start a fiber context
+ *
+ * This routine initilizes and starts a fiber context; it can be called from
+ * either a fiber or a task context.  When this routine is called from a
+ * task, the newly created fiber will start executing immediately.
+ *
+ * INTERNAL
+ * Given that this routine is _not_ ISR-callable, the following code is used
+ * to differentiate between a task and fiber context:
+ *
+ *    if ((_nanokernel.current->flags & TASK) == TASK)
+ *
+ * Given that the _fiber_start() primitive is not considered real-time
+ * performance critical, a runtime check to differentiate between a calling
+ * task or fiber is performed in order to conserve footprint.
+ *
+ * @param pStack Pointer to the stack space
+ * @param stackSize Stack size in bytes
+ * @param entry Fiber entry
+ * @param arg1 1st parameter to entry point
+ * @param arg2 2nd parameter to entry point
+ * @param prio Fiber priority
+ * @param options unused
+ * @return N/A
+ */
 extern void fiber_fiber_start(char *pStack, unsigned int stackSize,
 		nano_fiber_entry_t entry, int arg1, int arg2, unsigned prio,
 		unsigned options);
+
+/**
+ * @brief Yield the current context
+ *
+ * Invocation of this routine results in the current context yielding to
+ * another context of the same or higher priority.  If there doesn't exist
+ * any other contexts of the same or higher priority that are runnable, this
+ * routine will return immediately.
+ *
+ * This routine can only be called from a fiber context.
+ *
+ * @return N/A
+ */
 extern void fiber_yield(void);
+
+
+/**
+ * @brief Abort the currently executing fiber
+ *
+ * This routine is used to abort the currrently executing fiber. This can occur
+ * because:
+ * - the fiber has explicitly aborted itself (by calling this routine),
+ * - the fiber has implicitly aborted itself (by returning from its entry point),
+ * - the fiber has encountered a fatal exception.
+ *
+ * This routine can only be called from a fiber context.
+ *
+ * @return This function never returns
+ */
 extern void fiber_abort(void);
 
 #ifdef CONFIG_NANO_TIMEOUTS
+
+/**
+ * @brief Put the current fiber to sleep
+ *
+ * Put the currently running fiber to sleep for an amount of system ticks
+ * passed in the timeout_in_ticks parameter.
+ *
+ * @param timeout number of system ticks to sleep
+ *
+ * @return None
+ */
 extern void fiber_sleep(int32_t timeout);
+
+
+/**
+ * @brief start a fiber, but delay its execution
+ *
+ * @param stack pointer to the stack space
+ * @param stack_size_in_bytes stack size in bytes
+ * @param entry_point fiber entry point
+ * @param param1 1st parameter to entry point
+ * @param param2 2nd parameter to entry point
+ * @param priority fiber priority
+ * @param options unused
+ * @param timeout_in_ticks timeout in ticks
+ *
+ * @return a handle to allow cancelling the delayed start
+ */
 extern void *fiber_fiber_delayed_start(char *stack,
 		unsigned int stack_size_in_bytes,
 		nano_fiber_entry_t entry_point, int param1,
 		int param2, unsigned int priority,
 		unsigned int options, int32_t timeout_in_ticks);
+
 extern void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 		nano_fiber_entry_t entry_point, int param1,
 		int param2, unsigned int priority,
 		unsigned int options, int32_t timeout_in_ticks);
 extern void fiber_delayed_start_cancel(void *handle);
+
+/**
+ * @brief Cancel a delayed fiber start
+ *
+ * @param handle A handle returned when asking to start the fiber
+ *
+ * @return None
+ */
 extern void fiber_fiber_delayed_start_cancel(void *handle);
 #endif
 
 /* methods for tasks */
+
+/**
+ * @brief Initialize and start a fiber in a task context
+ *
+ * @sa fiber_fiber_start
+ */
 extern void task_fiber_start(char *pStack, unsigned int stackSize,
 		nano_fiber_entry_t entry, int arg1, int arg2, unsigned prio,
 		unsigned options);
 #ifdef CONFIG_NANO_TIMEOUTS
+
+/**
+ * @brief Start a fiber in a task context, but delay its execution
+ *
+ * @sa fiber_fiber_delayed_start
+ */
 extern void *task_fiber_delayed_start(char *stack,
 		unsigned int stack_size_in_bytes,
 		nano_fiber_entry_t entry_point, int param1,
 		int param2, unsigned int priority,
 		unsigned int options, int32_t timeout_in_ticks);
+/**
+ * @brief Cancel a delayed fiber start in task context
+ *
+ * @sa fiber_fiber_delayed_start
+ */
 extern void task_fiber_delayed_start_cancel(void *handle);
 #endif
 
