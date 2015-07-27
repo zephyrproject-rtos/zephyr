@@ -33,6 +33,7 @@
 #include <micro_private.h>
 #include <k_pipe_buffer.h>
 #include <k_pipe_util.h>
+#include <microkernel/pipe.h>
 #include <misc/util.h>
 
 /**
@@ -48,7 +49,7 @@
 void _k_pipe_init(void)
 {
 	int i;
-	struct pipe_struct *pPipe;
+	struct _k_pipe_struct *pPipe;
 
 	for (i = 0, pPipe = _k_pipe_list; i < _k_pipe_count; i++, pPipe++) {
 		BuffInit((unsigned char *)pPipe->Buffer,

@@ -153,66 +153,6 @@ struct k_mrec {
 	uint32_t data2;
 };
 
-/* Pipe-related structures */
-
-#define MAXNBR_MARKERS 10 /* 1==disable parallel transfers */
-
-
-struct marker {
-	unsigned char *pointer; /* NULL == non valid marker == free */
-	int size;
-	bool bXferBusy;
-	int Prev; /* -1 == no predecessor */
-	int Next; /* -1 == no successor */
-};
-
-struct marker_list {
-	int iNbrMarkers;   /* Only used if STORE_NBR_MARKERS is defined */
-	int iFirstMarker;
-	int iLastMarker;
-	int iAWAMarker; /* -1 means no AWAMarkers */
-	struct marker aMarkers[MAXNBR_MARKERS];
-};
-
-typedef enum {
-	BUFF_EMPTY, /* buffer is empty, disregarding the pending data Xfers
-		       (reads) still finishing up */
-	BUFF_FULL, /* buffer is full, disregarding the pending data Xfers
-		      (writes) still finishing up */
-	BUFF_OTHER
-} BUFF_STATE;
-
-struct pipe_desc {
-	int iBuffSize;
-	unsigned char *pBegin;
-	unsigned char *pWrite;
-	unsigned char *pRead;
-	unsigned char *pWriteGuard; /* can be NULL --> invalid */
-	unsigned char *pReadGuard;  /* can be NULL --> invalid */
-	int iFreeSpaceCont;
-	int iFreeSpaceAWA;
-	int iNbrPendingReads;
-	int iAvailDataCont;
-	int iAvailDataAWA; /* AWA == After Wrap Around */
-	int iNbrPendingWrites;
-	bool bWriteWA;
-	bool bReadWA;
-	BUFF_STATE BuffState;
-	struct marker_list WriteMarkers;
-	struct marker_list ReadMarkers;
-	unsigned char *pEnd;
-	unsigned char *pEndOrig;
-};
-
-struct pipe_struct {
-	int iBufferSize; /* size in bytes, must be first for sysgen */
-	char *Buffer;    /* pointer to statically allocated buffer  */
-	struct k_args *Writers;
-	struct k_args *Readers;
-	struct pipe_desc desc;
-	int Count;
-};
-
 typedef enum {
 	XFER_UNDEFINED,
 	XFER_W2B,
@@ -232,7 +172,7 @@ typedef enum {
 struct req_info {
 	union {
 		kpipe_t id;
-		struct pipe_struct *ptr;
+		struct _k_pipe_struct *ptr;
 	} pipe;
 	int Params;
 };
@@ -277,7 +217,7 @@ struct _pipe_ack_arg {
 };
 
 struct _pipe_xfer_ack_arg {
-	struct pipe_struct *pPipe;
+	struct _k_pipe_struct *pPipe;
 	XFER_TYPE XferType; /* W2B, B2R or W2R		    */
 	struct k_args *pWriter;    /* if there's a writer involved,
 				 this is the link to it      */

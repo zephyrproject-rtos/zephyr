@@ -33,6 +33,7 @@
 #ifndef _BASE_API_H
 #define _BASE_API_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -150,6 +151,65 @@ struct _k_fifo_struct {
 	struct k_args *Waiters;
 	int Nused;
 	int Hmark;
+	int Count;
+};
+
+/* Pipe-related structures */
+
+#define MAXNBR_PIPE_MARKERS 10 /* 1==disable parallel transfers */
+
+struct _k_pipe_marker {
+	unsigned char *pointer; /* NULL == non valid marker == free */
+	int size;
+	bool bXferBusy;
+	int Prev; /* -1 == no predecessor */
+	int Next; /* -1 == no successor */
+};
+
+struct _k_pipe_marker_list {
+	int iNbrMarkers;   /* Only used if STORE_NBR_MARKERS is defined */
+	int iFirstMarker;
+	int iLastMarker;
+	int iAWAMarker; /* -1 means no AWAMarkers */
+	struct _k_pipe_marker aMarkers[MAXNBR_PIPE_MARKERS];
+};
+
+typedef enum {
+	BUFF_EMPTY, /* buffer is empty, disregarding the pending data Xfers
+		       (reads) still finishing up */
+	BUFF_FULL, /* buffer is full, disregarding the pending data Xfers
+		      (writes) still finishing up */
+	BUFF_OTHER
+} _K_PIPE_BUFF_STATE;
+
+struct _k_pipe_desc {
+	int iBuffSize;
+	unsigned char *pBegin;
+	unsigned char *pWrite;
+	unsigned char *pRead;
+	unsigned char *pWriteGuard; /* can be NULL --> invalid */
+	unsigned char *pReadGuard;  /* can be NULL --> invalid */
+	int iFreeSpaceCont;
+	int iFreeSpaceAWA;
+	int iNbrPendingReads;
+	int iAvailDataCont;
+	int iAvailDataAWA; /* AWA == After Wrap Around */
+	int iNbrPendingWrites;
+	bool bWriteWA;
+	bool bReadWA;
+	_K_PIPE_BUFF_STATE BuffState;
+	struct _k_pipe_marker_list WriteMarkers;
+	struct _k_pipe_marker_list ReadMarkers;
+	unsigned char *pEnd;
+	unsigned char *pEndOrig;
+};
+
+struct _k_pipe_struct {
+	int iBufferSize; /* size in bytes, must be first for sysgen */
+	char *Buffer;    /* pointer to statically allocated buffer  */
+	struct k_args *Writers;
+	struct k_args *Readers;
+	struct _k_pipe_desc desc;
 	int Count;
 };
 

@@ -65,30 +65,30 @@
 #define CHECK_BUFFER_POINTER(pData) \
 	__ASSERT_NO_MSG(desc->pBegin <= pData && pData < desc->pEnd)
 
-static void pipe_intrusion_check(struct pipe_desc *desc, unsigned char *pBegin, int iSize);
+static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegin, int iSize);
 
 /**
  * Markers
  */
 
-static int MarkerFindFree(struct marker aMarkers[])
+static int MarkerFindFree(struct _k_pipe_marker aMarkers[])
 {
-	struct marker *pM = aMarkers;
+	struct _k_pipe_marker *pM = aMarkers;
 	int i;
 
-	for (i = 0; i < MAXNBR_MARKERS; i++, pM++) {
+	for (i = 0; i < MAXNBR_PIPE_MARKERS; i++, pM++) {
 		if (NULL == pM->pointer) {
 			break;
 		}
 	}
-	if (MAXNBR_MARKERS == i) {
+	if (MAXNBR_PIPE_MARKERS == i) {
 		i = -1;
 	}
 
 	return i;
 }
 
-static void MarkerLinkToListAfter(struct marker aMarkers[],
+static void MarkerLinkToListAfter(struct _k_pipe_marker aMarkers[],
 								  int iMarker, int iNewMarker)
 {
 	int iNextMarker; /* index of next marker in original list */
@@ -111,7 +111,7 @@ static void MarkerLinkToListAfter(struct marker aMarkers[],
 	aMarkers[iNewMarker].Next = iNextMarker;
 }
 
-static int MarkerAddLast(struct marker_list *pMarkerList,
+static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
 						 unsigned char *pointer, int iSize, bool bXferBusy)
 {
 	int i = MarkerFindFree(pMarkerList->aMarkers);
@@ -146,7 +146,7 @@ static int MarkerAddLast(struct marker_list *pMarkerList,
 	return i;
 }
 
-static void MarkerUnlinkFromList(struct marker aMarkers[], int iMarker,
+static void MarkerUnlinkFromList(struct _k_pipe_marker aMarkers[], int iMarker,
 								 int *piPredecessor, int *piSuccessor)
 {
 	int iNextMarker = aMarkers[iMarker].Next;
@@ -167,7 +167,7 @@ static void MarkerUnlinkFromList(struct marker aMarkers[], int iMarker,
 	*piSuccessor = iNextMarker;
 }
 
-static void MarkerDelete(struct marker_list *pMarkerList, int index)
+static void MarkerDelete(struct _k_pipe_marker_list *pMarkerList, int index)
 {
 	int i;
 	int iPredecessor;
@@ -199,13 +199,13 @@ static void MarkerDelete(struct marker_list *pMarkerList, int index)
 #endif
 }
 
-static void MarkersClear(struct marker_list *pMarkerList)
+static void MarkersClear(struct _k_pipe_marker_list *pMarkerList)
 {
-	struct marker *pM = pMarkerList->aMarkers;
+	struct _k_pipe_marker *pM = pMarkerList->aMarkers;
 	int i;
 
-	for (i = 0; i < MAXNBR_MARKERS; i++, pM++) {
-		memset(pM, 0, sizeof(struct marker));
+	for (i = 0; i < MAXNBR_PIPE_MARKERS; i++, pM++) {
+		memset(pM, 0, sizeof(struct _k_pipe_marker));
 		pM->Next = -1;
 		pM->Prev = -1;
 	}
@@ -240,10 +240,10 @@ static void MarkersClear(struct marker_list *pMarkerList)
    can be made available (either for writing xor reading).
    Note: such a series of areas starts from the beginning.
  */
-static int ScanMarkers(struct marker_list *pMarkerList,
+static int ScanMarkers(struct _k_pipe_marker_list *pMarkerList,
 					   int *piSizeBWA, int *piSizeAWA, int *piNbrPendingXfers)
 {
-	struct marker *pM;
+	struct _k_pipe_marker *pM;
 	bool bMarkersAreNowAWA;
 	int index;
 
@@ -305,7 +305,7 @@ static int ScanMarkers(struct marker_list *pMarkerList,
  * General
  */
 
-void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct pipe_desc *desc)
+void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc)
 {
 	desc->pBegin = pBuffer;
 
@@ -336,7 +336,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct pipe_desc *desc)
 
 }
 
-int CalcFreeSpace(struct pipe_desc *desc, int *piFreeSpaceCont,
+int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 				  int *piFreeSpaceAWA)
 {
 	unsigned char *pStart = desc->pWrite;
@@ -373,7 +373,7 @@ int CalcFreeSpace(struct pipe_desc *desc, int *piFreeSpaceCont,
 	return (*piFreeSpaceCont + *piFreeSpaceAWA);
 }
 
-void BuffGetFreeSpace(struct pipe_desc *desc, int *piFreeSpaceTotal,
+void BuffGetFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceTotal,
 					  int *piFreeSpaceCont, int *piFreeSpaceAWA)
 {
 	int iFreeSpaceCont;
@@ -389,7 +389,7 @@ void BuffGetFreeSpace(struct pipe_desc *desc, int *piFreeSpaceTotal,
 	*piFreeSpaceAWA = desc->iFreeSpaceAWA;
 }
 
-void BuffGetFreeSpaceTotal(struct pipe_desc *desc, int *piFreeSpaceTotal)
+void BuffGetFreeSpaceTotal(struct _k_pipe_desc *desc, int *piFreeSpaceTotal)
 {
 	int dummy1, dummy2;
 	*piFreeSpaceTotal = CalcFreeSpace(desc, &dummy1, &dummy2);
@@ -397,7 +397,7 @@ void BuffGetFreeSpaceTotal(struct pipe_desc *desc, int *piFreeSpaceTotal)
 	__ASSERT_NO_MSG(dummy2 == desc->iFreeSpaceAWA);
 }
 
-int BuffEmpty(struct pipe_desc *desc)
+int BuffEmpty(struct _k_pipe_desc *desc)
 {
 	/* 0==iAvailDataTotal is an INcorrect condition b/c of async behavior */
 
@@ -407,7 +407,7 @@ int BuffEmpty(struct pipe_desc *desc)
 	return (desc->iBuffSize == iTotalFreeSpace);
 }
 
-int CalcAvailData(struct pipe_desc *desc, int *piAvailDataCont,
+int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 				  int *piAvailDataAWA)
 {
 	unsigned char *pStart = desc->pRead;
@@ -444,7 +444,7 @@ int CalcAvailData(struct pipe_desc *desc, int *piAvailDataCont,
 	return (*piAvailDataCont + *piAvailDataAWA);
 }
 
-void BuffGetAvailData(struct pipe_desc *desc, int *piAvailDataTotal,
+void BuffGetAvailData(struct _k_pipe_desc *desc, int *piAvailDataTotal,
 					  int *piAvailDataCont, int *piAvailDataAWA)
 {
 	int iAvailDataCont;
@@ -460,7 +460,7 @@ void BuffGetAvailData(struct pipe_desc *desc, int *piAvailDataTotal,
 	*piAvailDataAWA = desc->iAvailDataAWA;
 }
 
-void BuffGetAvailDataTotal(struct pipe_desc *desc, int *piAvailDataTotal)
+void BuffGetAvailDataTotal(struct _k_pipe_desc *desc, int *piAvailDataTotal)
 {
 	int dummy1, dummy2;
 
@@ -469,7 +469,7 @@ void BuffGetAvailDataTotal(struct pipe_desc *desc, int *piAvailDataTotal)
 	__ASSERT_NO_MSG(dummy2 == desc->iAvailDataAWA);
 }
 
-int BuffFull(struct pipe_desc *desc)
+int BuffFull(struct _k_pipe_desc *desc)
 {
 	/* 0==iTotalFreeSpace is an INcorrect condition b/c of async behavior */
 
@@ -483,7 +483,7 @@ int BuffFull(struct pipe_desc *desc)
  * Buffer en-queuing:
  */
 
-static int AsyncEnQRegstr(struct pipe_desc *desc, int iSize)
+static int AsyncEnQRegstr(struct _k_pipe_desc *desc, int iSize)
 {
 	int i;
 
@@ -509,7 +509,7 @@ static int AsyncEnQRegstr(struct pipe_desc *desc, int iSize)
 	return i;
 }
 
-static void AsyncEnQFinished(struct pipe_desc *desc, int iTransferID)
+static void AsyncEnQFinished(struct _k_pipe_desc *desc, int iTransferID)
 {
 	desc->WriteMarkers.aMarkers[iTransferID].bXferBusy = false;
 
@@ -527,7 +527,7 @@ static void AsyncEnQFinished(struct pipe_desc *desc, int iTransferID)
 	}
 }
 
-int BuffEnQ(struct pipe_desc *desc, int iSize, unsigned char **ppWrite)
+int BuffEnQ(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite)
 {
 	int iTransferID;
 
@@ -541,7 +541,7 @@ int BuffEnQ(struct pipe_desc *desc, int iSize, unsigned char **ppWrite)
 	return iSize;
 }
 
-int BuffEnQA(struct pipe_desc *desc, int iSize, unsigned char **ppWrite,
+int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 			 int *piTransferID)
 {
 	if (iSize > desc->iFreeSpaceCont) {
@@ -579,7 +579,7 @@ int BuffEnQA(struct pipe_desc *desc, int iSize, unsigned char **ppWrite,
 	return iSize;
 }
 
-void BuffEnQA_End(struct pipe_desc *desc, int iTransferID,
+void BuffEnQA_End(struct _k_pipe_desc *desc, int iTransferID,
 				  int iSize /* optional */)
 {
 	ARG_UNUSED(iSize);
@@ -593,7 +593,7 @@ void BuffEnQA_End(struct pipe_desc *desc, int iTransferID,
  * Buffer de-queuing:
  */
 
-static int AsyncDeQRegstr(struct pipe_desc *desc, int iSize)
+static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int iSize)
 {
 	int i;
 
@@ -619,7 +619,7 @@ static int AsyncDeQRegstr(struct pipe_desc *desc, int iSize)
 	return i;
 }
 
-static void AsyncDeQFinished(struct pipe_desc *desc, int iTransferID)
+static void AsyncDeQFinished(struct _k_pipe_desc *desc, int iTransferID)
 {
 	desc->ReadMarkers.aMarkers[iTransferID].bXferBusy = false;
 
@@ -637,7 +637,7 @@ static void AsyncDeQFinished(struct pipe_desc *desc, int iTransferID)
 	}
 }
 
-int BuffDeQ(struct pipe_desc *desc, int iSize, unsigned char **ppRead)
+int BuffDeQ(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead)
 {
 	int iTransferID;
 
@@ -648,7 +648,7 @@ int BuffDeQ(struct pipe_desc *desc, int iSize, unsigned char **ppRead)
 	return iSize;
 }
 
-int BuffDeQA(struct pipe_desc *desc, int iSize, unsigned char **ppRead,
+int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 			 int *piTransferID)
 {
 	/* asynchronous data transfer; read guard pointers must be set */
@@ -689,7 +689,7 @@ int BuffDeQA(struct pipe_desc *desc, int iSize, unsigned char **ppRead,
 	return iSize;
 }
 
-void BuffDeQA_End(struct pipe_desc *desc, int iTransferID,
+void BuffDeQA_End(struct _k_pipe_desc *desc, int iTransferID,
 				  int iSize /* optional */)
 {
 	ARG_UNUSED(iSize);
@@ -741,7 +741,7 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 	}
 }
 
-static void pipe_intrusion_check(struct pipe_desc *desc, unsigned char *pBegin, int iSize)
+static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegin, int iSize)
 {
 	/*
 	 * check possible collision with all existing data areas,
@@ -749,7 +749,7 @@ static void pipe_intrusion_check(struct pipe_desc *desc, unsigned char *pBegin, 
 	 */
 
 	int index;
-	struct marker_list *pMarkerList;
+	struct _k_pipe_marker_list *pMarkerList;
 
 	/* write markers */
 
@@ -767,7 +767,7 @@ static void pipe_intrusion_check(struct pipe_desc *desc, unsigned char *pBegin, 
 	index = pMarkerList->iFirstMarker;
 
 	while (-1 != index) {
-		struct marker *pM;
+		struct _k_pipe_marker *pM;
 
 		pM = &(pMarkerList->aMarkers[index]);
 
@@ -793,7 +793,7 @@ static void pipe_intrusion_check(struct pipe_desc *desc, unsigned char *pBegin, 
 	index = pMarkerList->iFirstMarker;
 
 	while (-1 != index) {
-		struct marker *pM;
+		struct _k_pipe_marker *pM;
 
 		pM = &(pMarkerList->aMarkers[index]);
 

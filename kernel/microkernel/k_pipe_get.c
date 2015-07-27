@@ -68,7 +68,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 	mycopypacket(&RequestProc, Request);
 	RequestProc->Args.pipe_xfer_req.ReqInfo.pipe.ptr =
-		&(_k_pipe_list[OBJ_INDEX(pipeId)]);
+		(struct _k_pipe_struct *)pipeId;
 
 	switch (_k_pipe_request_type_get(&RequestProc->Args)) {
 	case _SYNCREQ:
@@ -102,7 +102,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 	/* start processing */
 
-	struct pipe_struct *pPipe;
+	struct _k_pipe_struct *pPipe;
 
 	pPipe = RequestProc->Args.pipe_xfer_req.ReqInfo.pipe.ptr;
 

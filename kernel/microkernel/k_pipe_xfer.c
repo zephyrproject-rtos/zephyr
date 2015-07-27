@@ -242,7 +242,7 @@ static kpriority_t move_priority_compute(struct k_args *pWriter,
  */
 
 static void setup_movedata(struct k_args *A,
-						   struct pipe_struct *pPipe, XFER_TYPE XferType,
+						   struct _k_pipe_struct *pPipe, XFER_TYPE XferType,
 						   struct k_args *pWriter, struct k_args *pReader,
 						   void *destination, void *source,
 						   uint32_t size, int XferID)
@@ -319,7 +319,7 @@ static void setup_movedata(struct k_args *A,
 	 */
 }
 
-static int ReaderInProgressIsBlocked(struct pipe_struct *pPipe,
+static int ReaderInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 									 struct k_args *pReader)
 {
 	int iSizeSpaceInReader;
@@ -365,7 +365,7 @@ static int ReaderInProgressIsBlocked(struct pipe_struct *pPipe,
 	}
 }
 
-static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
+static int WriterInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 									 struct k_args *pWriter)
 {
 	int iSizeDataInWriter;
@@ -422,7 +422,7 @@ static int WriterInProgressIsBlocked(struct pipe_struct *pPipe,
  * @return N/A
  */
 
-static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
+static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 {
 	struct k_args *pReader;
 	struct _pipe_xfer_req_arg *pipe_read_req;
@@ -491,7 +491,7 @@ static void pipe_read(struct pipe_struct *pPipe, struct k_args *pNewReader)
  * @return N/A
  */
 
-static void pipe_write(struct pipe_struct *pPipe, struct k_args *pNewWriter)
+static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 {
 	struct k_args *pWriter;
 	struct _pipe_xfer_req_arg *pipe_write_req;
@@ -586,7 +586,7 @@ static void pipe_xfer_status_update(
  */
 
 static void pipe_read_write(
-	struct pipe_struct *pPipe, /* ptr to pipe structure */
+	struct _k_pipe_struct *pPipe, /* ptr to pipe structure */
 	struct k_args *pNewWriter,  /* ptr to new writer struct k_args */
 	struct k_args *pNewReader   /* ptr to new reader struct k_args */
 	)
@@ -684,7 +684,7 @@ static void pipe_read_write(
 	}
 }
 
-void _k_pipe_process(struct pipe_struct *pPipe, struct k_args *pNLWriter,
+void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 			  struct k_args *pNLReader)
 {
 
