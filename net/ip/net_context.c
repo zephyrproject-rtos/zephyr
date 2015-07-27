@@ -87,13 +87,17 @@ static void context_sem_give(struct nano_sem *chan)
 	}
 }
 
-static int context_port_used(enum ip_protocol ip_proto, uint16_t local_port)
+static int context_port_used(enum ip_protocol ip_proto, uint16_t local_port,
+			     const struct net_addr *local_addr)
+
 {
 	int i;
 
 	for (i = 0; i < NET_MAX_CONTEXT; i++) {
 		if (contexts[i].tuple.ip_proto == ip_proto &&
-		    contexts[i].tuple.local_port == local_port) {
+		    contexts[i].tuple.local_port == local_port &&
+		    !memcmp(&contexts[i].tuple.local_addr, local_addr,
+			   sizeof(struct net_addr))) {
 			return -EEXIST;
 		}
 	}
@@ -142,13 +146,14 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	nano_sem_take_wait(&contexts_lock);
 
 	if (local_port) {
-		if (context_port_used(ip_proto, local_port) < 0) {
+		if (context_port_used(ip_proto, local_port, local_addr) < 0) {
 			return NULL;
 		}
 	} else {
 		do {
 			local_port = random_rand() | 0x8000;
-		} while (context_port_used(ip_proto, local_port) == -EEXIST);
+		} while (context_port_used(ip_proto, local_port,
+					   local_addr) == -EEXIST);
 	}
 
 	for (i = 0; i < NET_MAX_CONTEXT; i++) {
@@ -168,7 +173,11 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 	/* Set our local address */
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 	memcpy(&ipaddr.u8, local_addr->in6_addr.s6_addr, sizeof(ipaddr.u8));
-	uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
+	if (uip_is_addr_mcast(&ipaddr)) {
+		uip_ds6_maddr_add(&ipaddr);
+	} else {
+		uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
+	}
 #endif
 
 	return context;
