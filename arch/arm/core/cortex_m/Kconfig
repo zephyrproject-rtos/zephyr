@@ -188,14 +188,6 @@ config SW_ISR_TABLE_STATIC_CUSTOM
 	parameters. The table is static, and thus ISRs cannot be connected
 	at runtime.
 
-config SW_ISR_TABLE_BSP
-	bool
-	# omit prompt to signify a "hidden" option
-	depends on SW_ISR_TABLE_DYNAMIC || (SW_ISR_TABLE && !SW_ISR_TABLE_STATIC_CUSTOM)
-	default y
-	help
-	Not user-selectable, helps build system logic.
-
 config IRQ_VECTOR_TABLE_CUSTOM
 	bool
 	prompt "Projects provide a custom static IRQ part of vector table"
