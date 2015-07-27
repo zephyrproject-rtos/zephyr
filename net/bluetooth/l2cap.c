@@ -167,6 +167,8 @@ static void le_conn_param_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	BT_DBG("LE conn param rsp result %u\n", sys_le16_to_cpu(rsp->result));
+
+	bt_conn_connected(conn);
 }
 
 static uint16_t le_validate_conn_params(uint16_t min, uint16_t max,

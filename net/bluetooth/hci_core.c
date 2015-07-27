@@ -728,12 +728,31 @@ static void hci_disconn_complete(struct bt_buf *buf)
 	}
 }
 
+static int hci_le_read_remote_features(struct bt_conn *conn)
+{
+	struct bt_hci_cp_le_read_remote_features *cp;
+	struct bt_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_REMOTE_FEATURES,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	bt_hci_cmd_send(BT_HCI_OP_LE_READ_REMOTE_FEATURES, buf);
+
+	return 0;
+}
+
 static void le_conn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 	struct bt_keys *keys;
+	int err;
 
 	BT_DBG("status %u handle %u role %u %s\n", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
@@ -781,12 +800,22 @@ static void le_conn_complete(struct bt_buf *buf)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
-	if ((evt->role == BT_HCI_ROLE_SLAVE) &&
-	    !(bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
-		bt_l2cap_update_conn_param(conn);
+	if ((evt->role == BT_HCI_ROLE_MASTER) ||
+	    (bt_dev.le_features[0] & BT_HCI_LE_SLAVE_FEATURES)) {
+		err = hci_le_read_remote_features(conn);
+		if (!err) {
+			goto done;
+		}
+	} else if (!(bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+		err = bt_l2cap_update_conn_param(conn);
+		if (!err) {
+			goto done;
+		}
 	}
 
 	bt_conn_connected(conn);
+
+done:
 	bt_conn_put(conn);
 	bt_le_scan_update();
 }
@@ -807,6 +836,8 @@ static void le_remote_feat_complete(struct bt_buf *buf)
 		memcpy(conn->le_features, evt->features,
 		       sizeof(conn->le_features));
 	}
+
+	/* TODO Update connection parameters or notify about connection */
 
 	bt_conn_put(conn);
 }
