@@ -438,7 +438,9 @@ uip_udpchksum(struct net_buf *buf)
 void
 uip_init(void)
 {
+#if UIP_TCP
   uint8_t c;
+#endif
 
   uip_ds6_init();
   uip_icmp6_init();
@@ -458,9 +460,7 @@ uip_init(void)
 #endif /* UIP_ACTIVE_OPEN || UIP_UDP */
 
 #if UIP_UDP
-  for(c = 0; c < UIP_UDP_CONNS; ++c) {
-    uip_udp_conns[c].lport = 0;
-  }
+  memset(&uip_udp_conns, 0, sizeof(uip_udp_conns));
 #endif /* UIP_UDP */
 
 #if UIP_CONF_IPV6_MULTICAST
