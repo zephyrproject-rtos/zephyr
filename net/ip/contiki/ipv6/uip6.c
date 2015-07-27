@@ -1522,9 +1522,7 @@ uip_process(struct net_buf *buf, uint8_t flag)
   }
 
   /* Demultiplex this UDP packet between the UDP "connections". */
-  for(i = 0, uip_set_udp_conn(buf) = &uip_udp_conns[0];
-      i < UIP_UDP_CONNS && uip_udp_conn(buf) < &uip_udp_conns[UIP_UDP_CONNS];
-      i++, ++uip_set_udp_conn(buf)) {
+  for(i = 0; i < UIP_UDP_CONNS; i++) {
     /* If the local UDP port is non-zero, the connection is considered
        to be used. If so, the local port number is checked against the
        destination port number in the received packet. If the two port
@@ -1532,15 +1530,17 @@ uip_process(struct net_buf *buf, uint8_t flag)
        connection is bound to a remote port. Finally, if the
        connection is bound to a remote IP address, the source IP
        address of the packet is checked. */
-    if(uip_udp_conn(buf)->lport != 0 &&
-       UIP_UDP_BUF(buf)->destport == uip_udp_conn(buf)->lport &&
-       (uip_udp_conn(buf)->rport == 0 ||
-        UIP_UDP_BUF(buf)->srcport == uip_udp_conn(buf)->rport) &&
-       (uip_is_addr_unspecified(&uip_udp_conn(buf)->ripaddr) ||
-        uip_ipaddr_cmp(&UIP_IP_BUF(buf)->srcipaddr, &uip_udp_conn(buf)->ripaddr))) {
+    if(uip_udp_conns[i].lport != 0 &&
+       UIP_UDP_BUF(buf)->destport == uip_udp_conns[i].lport &&
+       (uip_udp_conns[i].rport == 0 ||
+        UIP_UDP_BUF(buf)->srcport == uip_udp_conns[i].rport) &&
+       (uip_is_addr_unspecified(&uip_udp_conns[i].ripaddr) ||
+        uip_ipaddr_cmp(&UIP_IP_BUF(buf)->srcipaddr, &uip_udp_conns[i].ripaddr))) {
+      uip_set_udp_conn(buf) = &uip_udp_conns[i];
       goto udp_found;
     }
   }
+  uip_set_udp_conn(buf) = NULL;
   PRINTF("udp: no matching connection found\n");
   UIP_STAT(++uip_stat.udp.drop);
 
