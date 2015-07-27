@@ -85,6 +85,8 @@ struct bt_conn {
 	/* Handle allowing to cancel timeout fiber */
 	void			*timeout;
 
+	uint8_t			le_features[8];
+
 	/* Stack for TX fiber and timeout fiber.
 	 * Since these fibers don't overlap, one stack can be used by
 	 * both of them.
