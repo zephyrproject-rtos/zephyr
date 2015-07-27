@@ -60,9 +60,15 @@ static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
 #define MY_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
+
+/* admin-local, dynamically allocated multicast address */
+#define MCAST_IPADDR { { { 0xff,0x84,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
 #else
 /* The 192.0.2.0/24 is the private address space for documentation RFC 5737 */
 #define MY_IPADDR { { { 192,0,2,2 } } }
+
+/* Organization-local 239.192.0.0/14 */
+#define MCAST_IPADDR { { { 239,192,0,2 } } }
 #endif
 #define MY_PORT 4242
 
@@ -92,42 +98,68 @@ static inline void reverse(unsigned char *buf, int len)
 	}
 }
 
-static inline void receive_and_reply(const char *name, struct net_context *ctx)
+static inline struct net_buf *prepare_reply(const char *name,
+					    const char *type,
+					    struct net_buf *buf)
+{
+	PRINT("%s: %sreceived %d bytes\n", name, type, uip_appdatalen(buf));
+
+	/* In this test we reverse the received bytes.
+	 * We could just pass the data back as is but
+	 * this way it is possible to see how the app
+	 * can manipulate the received data.
+	 */
+	reverse(uip_appdata(buf), uip_appdatalen(buf));
+
+	/* Set the mac address of the peer in net_buf because
+	 * there is no radio layer involved in this test app.
+	 * Normally there is no need to do this.
+	 */
+	memcpy(&buf->src, &peer_mac, sizeof(buf->src));
+
+	return buf;
+}
+
+static inline void receive_and_reply(const char *name, struct net_context *recv,
+				     struct net_context *mcast_recv)
 {
 	struct net_buf *buf;
 
-	buf = net_receive(ctx);
+	buf = net_receive(recv);
 	if (buf) {
-		PRINT("%s: received %d bytes\n", name, uip_appdatalen(buf));
+		prepare_reply(name, "", buf);
 
-		/* In this test we reverse the received bytes.
-		 * We could just pass the data back as is but
-		 * this way it is possible to see how the app
-		 * can manipulate the received data.
-		 */
-		reverse(uip_appdata(buf), uip_appdatalen(buf));
-
-		/* Set the mac address of the peer in net_buf because
-		 * there is no radio layer involved in this test app.
-		 * Normally there is no need to do this.
-		 */
-		memcpy(&buf->src, &peer_mac, sizeof(buf->src));
-
-		if (net_reply(ctx, buf)) {
+		if (net_reply(recv, buf)) {
 			net_buf_put(buf);
 		}
+		return;
+	}
+
+	buf = net_receive(mcast_recv);
+	if (buf) {
+		prepare_reply(name, "multicast ", buf);
+
+		if (net_reply(mcast_recv, buf)) {
+			net_buf_put(buf);
+		}
+		return;
 	}
 }
 
-static inline struct net_context *get_context(void)
+static inline bool get_context(struct net_context **recv,
+			       struct net_context **mcast_recv)
 {
-	struct net_context *ctx;
+	static struct net_addr mcast_addr;
 	static struct net_addr any_addr;
 	static struct net_addr my_addr;
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 	static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+	static const struct in6_addr in6addr_mcast = MCAST_IPADDR;
 	static struct in6_addr in6addr_my = MY_IPADDR;
+
+	mcast_addr.in6_addr = in6addr_mcast;
+	mcast_addr.family = AF_INET6;
 
 	any_addr.in6_addr = in6addr_any;
 	any_addr.family = AF_INET6;
@@ -137,6 +169,10 @@ static inline struct net_context *get_context(void)
 #else
 	static const struct in_addr in4addr_any = { { { 0 } } };
 	static struct in_addr in4addr_my = MY_IPADDR;
+	static struct in_addr in4addr_mcast = MCAST_IPADDR;
+
+	mcast_addr.in_addr = in4addr_mcast;
+	mcast_addr.family = AF_INET;
 
 	any_addr.in_addr = in4addr_any;
 	any_addr.family = AF_INET;
@@ -145,15 +181,24 @@ static inline struct net_context *get_context(void)
 	my_addr.family = AF_INET;
 #endif
 
-	ctx = net_context_get(IPPROTO_UDP,
-			      &any_addr, 0,
-			      &my_addr, MY_PORT);
-	if (!ctx) {
+	*recv = net_context_get(IPPROTO_UDP,
+				&any_addr, 0,
+				&my_addr, MY_PORT);
+	if (!*recv) {
 		PRINT("%s: Cannot get network context\n", __FUNCTION__);
 		return NULL;
 	}
 
-	return ctx;
+	*mcast_recv = net_context_get(IPPROTO_UDP,
+				      &any_addr, 0,
+				      &mcast_addr, MY_PORT);
+	if (!*mcast_recv) {
+		PRINT("%s: Cannot get receiving mcast network context\n",
+		      __FUNCTION__);
+		return false;
+	}
+
+	return true;
 }
 
 #ifdef CONFIG_MICROKERNEL
@@ -179,18 +224,19 @@ static inline struct net_context *get_context(void)
 */
 void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 {
-	static struct net_context *ctx;
+	static struct net_context *recv;
+	static struct net_context *mcast_recv;
 
 	net_init();
 
-	if (!ctx) {
-		ctx = get_context();
+	if (!recv || !mcast_recv) {
+		get_context(&recv, &mcast_recv);
 	}
 
 	while (1) {
 		task_sem_take_wait(mySem);
 
-		receive_and_reply(taskname, ctx);
+		receive_and_reply(taskname, recv, mcast_recv);
 
 		/* wait a while, then let other task have a turn */
 		task_sleep(SLEEPTICKS);
@@ -239,15 +285,18 @@ struct nano_sem nanoSemFiber;
 
 void fiberEntry(void)
 {
-	struct net_context *ctx;
+	static struct net_context *recv;
+	static struct net_context *mcast_recv;
 
 	struct nano_timer timer;
 	uint32_t data[2] = {0, 0};
 
-	ctx = get_context();
-	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
-		return;
+	if (!recv || !mcast_recv) {
+		if (!get_context(&recv, &mcast_recv)) {
+			PRINT("%s: Cannot get network contexts\n",
+			      __FUNCTION__);
+			return;
+		}
 	}
 
 	nano_sem_init (&nanoSemFiber);
@@ -257,7 +306,7 @@ void fiberEntry(void)
 		/* wait for task to let us have a turn */
 		nano_fiber_sem_take_wait (&nanoSemFiber);
 
-		receive_and_reply(__FUNCTION__, ctx);
+		receive_and_reply(__FUNCTION__, recv, mcast_recv);
 
 		/* wait a while, then let task have a turn */
 		nano_fiber_timer_start (&timer, SLEEPTICKS);
