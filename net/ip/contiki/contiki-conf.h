@@ -33,6 +33,11 @@ typedef unsigned int uip_stats_t;
 /* No Rime */
 #define NETSTACK_CONF_WITH_RIME 0
 
+/* How many IPv6 addresses will be allocated for the user (default is 2).
+ * Increased this setting so that user can specify multicast addresses.
+ */
+#define UIP_CONF_DS6_ADDR_NBU 4
+
 /* The queuebuf count defines how many fragments we are able to
  * receive. Value 13 means that we can receive full IPv6 data
  * (1280 bytes), we need also some extra buffers for temp use.
