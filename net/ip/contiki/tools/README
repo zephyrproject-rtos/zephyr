@@ -84,3 +84,8 @@ in tunslip6 section of this document.
 Example:
 
 $ ./echo-client 2001:db8::2
+
+In order to send multicast IPv6 packets, one needs to
+give the network interface as a parameter.
+
+$ ./echo-client -i tun0 ff84::2

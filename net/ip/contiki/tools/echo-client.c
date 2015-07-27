@@ -37,6 +37,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <net/if.h>
+#include <linux/sockios.h>
+#include <ifaddrs.h>
 
 #define SERVER_PORT  4242
 #define CLIENT_PORT  8484
@@ -288,7 +291,91 @@ static inline void reverse(unsigned char *buf, int len)
 	}
 }
 
+static int get_ifindex(const char *name)
+{
+	struct ifreq ifr;
+	int sk, err;
+
+	if (!name)
+		return -1;
+
+	sk = socket(PF_INET6, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+	if (sk < 0)
+		return -1;
+
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name) - 1);
+
+	err = ioctl(sk, SIOCGIFINDEX, &ifr);
+
+	close(sk);
+
+	if (err < 0)
+		return -1;
+
+	return ifr.ifr_ifindex;
+}
+
+static int get_address(int ifindex, int family, void *address)
+{
+	struct ifaddrs *ifaddr, *ifa;
+	int err = -ENOENT;
+	char name[IF_NAMESIZE];
+
+	if (!if_indextoname(ifindex, name))
+		return -EINVAL;
+
+	if (getifaddrs(&ifaddr) < 0) {
+		err = -errno;
+		fprintf(stderr, "Cannot get addresses err %d/%s",
+			err, strerror(-err));
+		return err;
+	}
+
+	for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
+		if (!ifa->ifa_addr)
+			continue;
+
+		if (strncmp(ifa->ifa_name, name, IF_NAMESIZE) == 0 &&
+					ifa->ifa_addr->sa_family == family) {
+			if (family == AF_INET) {
+				struct sockaddr_in *in4 = (struct sockaddr_in *)
+					ifa->ifa_addr;
+				if (in4->sin_addr.s_addr == INADDR_ANY)
+					continue;
+				if ((in4->sin_addr.s_addr & IN_CLASSB_NET) ==
+						((in_addr_t) 0xa9fe0000))
+					continue;
+				memcpy(address, &in4->sin_addr,
+							sizeof(struct in_addr));
+			} else if (family == AF_INET6) {
+				struct sockaddr_in6 *in6 =
+					(struct sockaddr_in6 *)ifa->ifa_addr;
+				if (memcmp(&in6->sin6_addr, &in6addr_any,
+						sizeof(struct in6_addr)) == 0)
+					continue;
+				if (IN6_IS_ADDR_LINKLOCAL(&in6->sin6_addr))
+					continue;
+
+				memcpy(address, &in6->sin6_addr,
+						sizeof(struct in6_addr));
+			} else {
+				err = -EINVAL;
+				goto out;
+			}
+
+			err = 0;
+			break;
+		}
+	}
+
+out:
+	freeifaddrs(ifaddr);
+	return err;
+}
+
 extern int optind, opterr, optopt;
+extern char *optarg;
 
 /* The application returns:
  *    < 0 : connection or similar error
@@ -297,24 +384,29 @@ extern int optind, opterr, optopt;
  */
 int main(int argc, char**argv)
 {
-	int c, ret, fd, fd_recv, i = 0, timeout = 0;
-	bool flood = false;
+	int c, ret, fd, i = 0, timeout = 0;
+	bool flood = false, multicast = false;
 	struct sockaddr_in6 addr6_send = { 0 }, addr6_recv = { 0 };
 	struct sockaddr_in addr4_send = { 0 }, addr4_recv = { 0 };
 	struct sockaddr *addr_send, *addr_recv;
 	int family, addr_len;
 	unsigned char buf[MAX_BUF_SIZE];
 	const struct in6_addr any = IN6ADDR_ANY_INIT;
-	const char *target = NULL;
+	const char *target = NULL, *interface = NULL;
 	fd_set rfds;
 	struct timeval tv = {};
+	int ifindex = -1;
+	void *address = NULL;
 
 	opterr = 0;
 
-	while ((c = getopt (argc, argv, "F")) != -1) {
+	while ((c = getopt(argc, argv, "Fi:")) != -1) {
 		switch (c) {
 		case 'F':
 			flood = true;
+			break;
+		case 'i':
+			interface = optarg;
 			break;
 		}
 	}
@@ -325,9 +417,11 @@ int main(int argc, char**argv)
 	if (!target) {
 		printf("usage: %s [-F] <IPv{6|4} address of the echo-server>\n",
 		       argv[0]);
-		printf("\nThe -F (flood) option will prevent the client from "
+		printf("\n-i Use this network interface, needed if using "
+		       "multicast server address.\n");
+		printf("-F (flood) option will prevent the client from "
 		       "waiting the data.\n"
-		       "The -F option will stress test the server.\n");
+		       "   The -F option will stress test the server.\n");
 		exit(-EINVAL);
 	}
 
@@ -336,6 +430,9 @@ int main(int argc, char**argv)
 			printf("Invalid address family\n");
 			exit(-EINVAL);
 		} else {
+			if (IN_MULTICAST(addr4_recv.sin_addr.s_addr))
+				multicast = true;
+
 			addr_send = (struct sockaddr *)&addr4_send;
 			addr_recv = (struct sockaddr *)&addr4_recv;
 			addr4_send.sin_port = htons(SERVER_PORT);
@@ -344,8 +441,12 @@ int main(int argc, char**argv)
 			addr4_recv.sin_port = htons(CLIENT_PORT);
 			family = AF_INET;
 			addr_len = sizeof(addr4_send);
+			address = &addr4_recv.sin_addr;
 		}
 	} else {
+		if (IN6_IS_ADDR_MULTICAST(&addr6_send.sin6_addr))
+			multicast = true;
+
 		addr_send = (struct sockaddr *)&addr6_send;
 		addr_recv = (struct sockaddr *)&addr6_recv;
 		addr6_send.sin6_port = htons(SERVER_PORT);
@@ -354,6 +455,7 @@ int main(int argc, char**argv)
 		addr6_recv.sin6_port = htons(CLIENT_PORT);
 		family = AF_INET6;
 		addr_len = sizeof(addr6_send);
+		address = &addr6_recv.sin6_addr;
 	}
 
 	addr_send->sa_family = family;
@@ -365,21 +467,49 @@ int main(int argc, char**argv)
 		exit(-errno);
 	}
 
+	if (interface) {
+		struct ifreq ifr;
+		char addr_buf[INET6_ADDRSTRLEN];
+
+		memset(&ifr, 0, sizeof(ifr));
+		snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), interface);
+
+		if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,
+			       (void *)&ifr, sizeof(ifr)) < 0) {
+			perror("SO_BINDTODEVICE");
+			exit(-errno);
+		}
+
+		ifindex = get_ifindex(interface);
+		if (ifindex < 0) {
+			printf("Invalid interface %s\n", interface);
+			exit(-EINVAL);
+		}
+
+		get_address(ifindex, family, address);
+
+		printf("Binding to %s\n", inet_ntop(family, address,
+					    addr_buf, sizeof(addr_buf)));
+	}
+
+	if (multicast) {
+		if (!interface) {
+			printf("Need to use -i option for multicast "
+			       "addresses.\n");
+			exit(-EINVAL);
+		}
+	}
+
 	ret = bind(fd, addr_recv, addr_len);
 	if (ret < 0) {
 		perror("bind");
 		exit(-errno);
 	}
 
-	ret = connect(fd, addr_send, addr_len);
-	if (ret < 0) {
-		perror("connect");
-		exit(-errno);
-	}
-
 	do {
 		while (data[i].buf) {
-			ret = send(fd, data[i].buf, data[i].len, 0);
+			ret = sendto(fd, data[i].buf, data[i].len, 0,
+				     addr_send, addr_len);
 			if (ret < 0) {
 				perror("send");
 				goto out;
