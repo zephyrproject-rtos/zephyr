@@ -1,4 +1,4 @@
-/* board.h - board configuration macros for the ti_lm3s6965 BSP */
+/* board.h - board configuration macros for the ti_lm3s6965 platform */
 
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This header file is used to specify and describe board-level aspects for
-the 'ti_lm3s6965' BSP.
+the 'ti_lm3s6965' platform.
  */
 
 #ifndef _BOARD__H_

@@ -1,4 +1,4 @@
-/* wdog.S - watchdog initialization for fsl_frdm_k64f BSP */
+/* wdog.S - watchdog initialization for fsl_frdm_k64f platform */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module initializes the watchdog for the fsl_frdm_k64f BSP.
+This module initializes the watchdog for the fsl_frdm_k64f platform.
  */
 
 #define _ASMLANGUAGE

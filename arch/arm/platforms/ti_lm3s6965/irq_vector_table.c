@@ -38,8 +38,8 @@ for one of two cases:
 a) When software-managed ISRs (SW_ISR_TABLE) is enabled, and in that case it
    binds _isr_wrapper() to all the IRQ entries in the vector table.
 
-b) When the BSP is written so that device ISRs are installed directly in the
-   vector table, they are enumerated here.
+b) When the platform is written so that device ISRs are installed directly in
+   the vector table, they are enumerated here.
  */
 
 #include <toolchain.h>

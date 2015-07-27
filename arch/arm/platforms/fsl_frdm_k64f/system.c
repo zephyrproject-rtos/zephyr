@@ -1,4 +1,4 @@
-/* system.c - system/hardware module for fsl_frdm_k64f BSP */
+/* system.c - system/hardware module for fsl_frdm_k64f platform */
 
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
-for the fsl_frdm_k64f BSP.
+for the fsl_frdm_k64f platform.
  */
 
 #include <nanokernel.h>

@@ -72,8 +72,8 @@ static void _DefaultHandler(void)
  *
  * @brief Install default runtime NMI handler
  *
- * Meant to be called by BSP code if they want to install a simple NMI handler
- * that reboots the target. It should be installed after the console is
+ * Meant to be called by platform code if they want to install a simple NMI
+ * handler that reboots the target. It should be installed after the console is
  * initialized.
  *
  * @return N/A
@@ -88,9 +88,9 @@ void _NmiInit(void)
  *
  * @brief Install a custom runtime NMI handler
  *
- * Meant to be called by BSP code if they want to install a custom NMI handler
- * that reboots. It should be installed after the console is initialized if it is
- * meant to output to the console.
+ * Meant to be called by platform code if they want to install a custom NMI
+ * handler that reboots. It should be installed after the console is
+ * initialized if it is meant to output to the console.
  *
  * @return N/A
  */

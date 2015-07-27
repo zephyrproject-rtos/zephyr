@@ -1,4 +1,4 @@
-# Kconfig - FSL FRDM K64F BSP configuration options
+# Kconfig - FSL FRDM K64F platform configuration options
 
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-/* board.h - board configuration macros for the fsl_frdm_k64f BSP */
+/* board.h - board configuration macros for the fsl_frdm_k64f platform */
 
 /*
  * Copyright (c) 2014-2015 Wind River Systems, Inc.
@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This header file is used to specify and describe board-level aspects for the
-'fsl_frdm_k64f' BSP.
+'fsl_frdm_k64f' platform.
  */
 
 #ifndef _BOARD__H_

@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module provides the _SysFatalErrorHandler() routine for Cortex-M BSPs.
+This module provides the _SysFatalErrorHandler() routine for Cortex-M platforms.
  */
 
 #include <nanokernel.h>

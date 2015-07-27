@@ -1,4 +1,4 @@
-# Kconfig - ARM BSP CortexM configuration options
+# Kconfig - ARM CortexM platform configuration options
 
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
@@ -64,7 +64,7 @@ config DATA_ENDIANNESS_LITTLE
 	default y
 	help
 	This is driven by the processor implementation, since it is fixed in
-	hardware. The BSP should set this value to 'n' if the data is
+	hardware. The platform should set this value to 'n' if the data is
 	implemented as big endian.
 
 config STACK_ALIGN_DOUBLE_WORD
@@ -86,12 +86,12 @@ config STACK_GROWS_DOWN
 
 config NUM_IRQ_PRIO_BITS
 	int
-	#hidden option, implemented by BSP
+	#hidden option, implemented by platform
 	help
 	Cortex-M chips can implement up to 8 bits of interrupt priorities,
 	for a maximum of 256 priorities. Most chips implement fewer than 8.
 
-	The BSP must define the correct value.
+	The platform must define the correct value.
 
 config RUNTIME_NMI
 	bool
@@ -184,7 +184,7 @@ config SW_ISR_TABLE_STATIC_CUSTOM
 	depends on SW_ISR_TABLE && !SW_ISR_TABLE_DYNAMIC
 	default n
 	help
-	Projects, not the BSP, provide a software table of ISR and their
+	Projects, not the platform, provide a software table of ISR and their
 	parameters. The table is static, and thus ISRs cannot be connected
 	at runtime.
 
@@ -194,7 +194,7 @@ config IRQ_VECTOR_TABLE_CUSTOM
 	depends on !SW_ISR_TABLE
 	default n
 	help
-	Projects, not the BSP, provide the IRQ part of the vector table.
+	Projects, not the platform, provide the IRQ part of the vector table.
 
 	This is the table of interrupt handlers with the best potential
 	performance, but is the less flexible.
