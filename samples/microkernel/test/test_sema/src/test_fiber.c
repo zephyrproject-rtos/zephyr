@@ -53,7 +53,7 @@ extern ksem_t semList[];
 static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 
 /* array of command packets used by test fiber to signal semaphores */
-static CMD_PKT_SET_INSTANCE(cmdPktSet, N_TESTS + 1)
+static CMD_PKT_SET_INSTANCE(cmdPktSet, N_TESTS + 1);
 
 /**
  *

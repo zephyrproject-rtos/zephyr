@@ -58,7 +58,7 @@ extern "C" {
  */
 
 #define CMD_PKT_SET_INSTANCE(name, num) \
-	uint32_t name[2 + CMD_PKT_SIZE_IN_WORDS * (num)] = {num, 0};
+	uint32_t name[2 + CMD_PKT_SIZE_IN_WORDS * (num)] = {num, 0}
 
 /**
  *
