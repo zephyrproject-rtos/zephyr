@@ -126,8 +126,8 @@ FUNC_NORETURN void _NanoFatalErrorHandler(
 
 
 	/*
-	 * Error was fatal to a kernel task or a fiber,
-	 * so invoke the system fatal error handling policy defined for the BSP
+	 * Error was fatal to a kernel task or a fiber; invoke the system
+	 * fatal error handling policy defined for the platform.
 	 */
 
 	_SysFatalErrorHandler(reason, pEsf);

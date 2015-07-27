@@ -400,10 +400,9 @@ BRANCH_LABEL(nestedInterrupt)
  * records.
  *
  * A spurious interrupt is considered a fatal condition, thus this routine
- * merely sets up the 'reason' and 'pEsf' parameters to the BSP provided
- * routine: _SysFatalHwErrorHandler().  In other words, there is no provision
- * to return to the interrupted context and thus the volatile registers
- * are not saved.
+ * merely sets up the 'reason' and 'pEsf' parameters to the routine
+ *  _SysFatalHwErrorHandler().  In other words, there is no provision to return
+ * to the interrupted context and thus the volatile registers are not saved.
  *
  * @return Never returns
  *

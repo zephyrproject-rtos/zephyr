@@ -1,4 +1,4 @@
-/* board.h - board configuration macros for the 'Quark' BSP */
+/* board.h - board configuration macros for the ia32_pci platform */
 
 /*
  * Copyright (c) 2013-2015, Wind River Systems, Inc.

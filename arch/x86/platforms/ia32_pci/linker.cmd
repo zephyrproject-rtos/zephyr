@@ -67,7 +67,7 @@ MEMORY
 
 #include <arch/x86/linker-common-sections.h>
 
-/* start adding bsp specific linker sections here */
+/* start adding platform specific linker sections here */
 
 /* no sections should appear after linker-epilog.h */
 #include <arch/x86/linker-epilog.h>

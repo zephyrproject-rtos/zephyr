@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module provides the atomic operators for IA-32 architectures on BSPs
+This module provides the atomic operators for IA-32 architectures on platforms
 that support the LOCK prefix instruction.
 
 The atomic operations are guaranteed to be atomic with respect to interrupt

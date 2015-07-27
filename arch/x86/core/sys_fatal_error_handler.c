@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides the _SysFatalErrorHandler() routine which is common to
-supported BSPs.
+supported platforms.
  */
 
 #include <nanokernel.h>

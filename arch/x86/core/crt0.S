@@ -109,7 +109,7 @@ __start:
 
 
 /*
- * BSPs that need to enable the A20 line to boot properly wil enable this
+ * Platforms that need to enable the A20 line to boot properly wil enable this
  * option.
  */
 #ifdef CONFIG_BOOT_A20_ENABLE
@@ -276,7 +276,7 @@ SECTION_FUNC(TEXT_START, __start)
 	 *
 	 * This is a special case for the ia32 platform, which must work for
 	 * multiple platforms (QEMU, generic PC board, etc.). With other
-	 * BSPs the bootloader is well known so assumptions can be made.
+	 * platforms the bootloader is well known so assumptions can be made.
 	 */
 	movw	$0x10, %ax	/* data segment selector (entry = 3) */
 	movw	%ax, %ds	/* set DS */

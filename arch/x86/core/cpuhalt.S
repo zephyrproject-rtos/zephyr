@@ -35,7 +35,7 @@ DESCRIPTION
 This module provides an implementation of the architecture-specific
 nano_cpu_idle() primitive required by the nanokernel idle loop component.
 It can be called within an implementation of _sys_power_save_idle(),
-which is provided for the microkernel by the BSP.
+which is provided for the microkernel by the platform.
 
 The module also provides an implementation of nano_cpu_atomic_idle(), which
 atomically re-enables interrupts and enters low power mode.

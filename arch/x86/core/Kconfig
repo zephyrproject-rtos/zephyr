@@ -61,7 +61,7 @@ config NUM_GDT_SPARE_ENTRIES
 
 config PHYS_LOAD_ADDR
 	hex "Physical load address"
-	# Default value must be supplied by BSP
+	# Default value must be supplied by platform
 	help
 	This option specifies the physical address where the kernel is loaded.
 

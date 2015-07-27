@@ -1,4 +1,4 @@
-/* system.c - system/hardware module for the Quark BSP */
+/* system.c - system/hardware module for the ia32_pci platform */
 
 /*
  * Copyright (c) 2013-2015, Wind River Systems, Inc.
@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
-for the Quark BSP.
+for the ia32_pci platform.
 
 Implementation Remarks:
 Handlers for the secondary serial port have not been added.

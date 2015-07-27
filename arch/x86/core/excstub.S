@@ -246,7 +246,7 @@ SECTION_FUNC(TEXT, _ExcExit)
 	/*
 	 * Must lock interrupts to prevent outside interference.
 	 * (Using "lock" prefix would be nicer, but this won't work
-	 * on BSPs that don't respect the CPU's bus lock signal.)
+	 * on platforms that don't respect the CPU's bus lock signal.)
 	 */
 
 	cli

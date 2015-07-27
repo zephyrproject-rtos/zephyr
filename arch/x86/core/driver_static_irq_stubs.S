@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module contains the static interrupt stubs for the various drivers employed
-by x86 BSPs.
+by x86 platforms.
  */
 
 #define _ASMLANGUAGE
@@ -94,7 +94,7 @@ by x86 BSPs.
 SECTION_FUNC(TEXT, _pic_master__i8259_boi_master_stub)
 	/*
 	 * Handle possible spurious (stray) interrupts on IRQ 7. Since on this
-	 * particular BSP, no device is hooked up to IRQ 7, a C level ISR is
+	 * particular platform, no device is hooked up to IRQ 7, a C level ISR is
 	 * not called as the call to the BOI routine will not return.
 	 */
 	call	_IntEnt		   /* Inform kernel interrupt has begun */
@@ -114,7 +114,7 @@ SECTION_FUNC(TEXT, _pic_master__i8259_boi_master_stub)
 SECTION_FUNC(TEXT, _pic_slave__i8259_boi_slave_stub)
 	/*
 	 * Handle possible spurious (stray) interrupts on IRQ 15 (slave PIC
-	 * IRQ 7). Since on this particular BSP, no device is hooked up to
+	 * IRQ 7). Since on this particular platform, no device is hooked up to
 	 * IRQ 15, a C level ISR is not called as the call the BOI routine
 	 * will not return.
 	 */

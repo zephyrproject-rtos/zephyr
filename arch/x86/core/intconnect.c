@@ -36,7 +36,7 @@ This module provides routines to manage asynchronous interrupts
 on the IA-32 architecture.
 
 This module provides the public routine irq_connect(), the private
-routine _IntVecSet(), and the BSP support routines _IntVecAlloc(),
+routine _IntVecSet(), and the support routines _IntVecAlloc(),
 _IntVecMarkAllocated() and _IntVecMarkFree().
 
 INTERNAL
@@ -245,10 +245,10 @@ void _IntVecSet(
  *
  * The specified <irq> represents a virtualized IRQ, i.e. it does not
  * necessarily represent a specific IRQ line on a given interrupt controller
- * device.  The BSP presents a virtualized set of IRQs from 0 to N, where N
- * is the total number of IRQs supported by all the interrupt controller devices
- * on the board.  See the BSP's documentation for the mapping of virtualized
- * IRQ to physical IRQ.
+ * device.  The platform presents a virtualized set of IRQs from 0 to N, where
+ * N is the total number of IRQs supported by all the interrupt controller
+ * devices on the board.  See the platform's documentation for the mapping of
+ * virtualized IRQ to physical IRQ.
  *
  * When the device asserts an interrupt on the specified <irq>, a switch to
  * the interrupt stack is performed (if not already executing on the interrupt
@@ -304,7 +304,7 @@ int irq_connect(
 	int stub_idx;
 
 	/*
-	 * Invoke the BSP provided routine _SysIntVecAlloc() which will:
+	 * Invoke the interrupt controller routine _SysIntVecAlloc() which will:
 	 *  a) allocate a vector satisfying the requested priority,
 	 *  b) return EOI and BOI related information for stub code synthesis,
 	 *and
@@ -482,9 +482,9 @@ int irq_connect(
  *
  * @brief Allocate a free interrupt vector given <priority>
  *
- * This routine scans the interrupt_vectors_allocated[] array for a free vector that
- * satisfies the specified <priority>.  It is a utility function for use only
- * by a BSP's _SysIntVecAlloc() routine.
+ * This routine scans the interrupt_vectors_allocated[] array for a free vector
+ * that satisfies the specified <priority>.  It is a utility function for use
+ * only by the interrupt controller's _SysIntVecAlloc() routine.
  *
  * This routine assumes that the relationship between interrupt priority and
  * interrupt vector is :

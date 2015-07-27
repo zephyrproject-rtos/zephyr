@@ -62,7 +62,7 @@ performed byte-by-byte.
  * lines from the IA-32 processor, this function shall be utilized to write out
  * the data byte-by-byte.
  *
- * The BSP specific configuration option CONFIG_UNALIGNED_WRITE_UNSUPPORTED 
+ * The platform specific configuration option CONFIG_UNALIGNED_WRITE_UNSUPPORTED
  * shall be defined when the kernel is built for target hardware that cannot
  * support unaligned double word (32-bit) write operations.
  *
@@ -99,7 +99,7 @@ SECTION_FUNC(TEXT, _Unaligned32Write)
  * lines from the IA-32 processor, this function shall be utilized to read
  * the data byte-by-byte.
  *
- * The BSP specific configuration option CONFIG_UNALIGNED_WRITE_UNSUPPORTED 
+ * The platform specific configuration option CONFIG_UNALIGNED_WRITE_UNSUPPORTED
  * shall be defined when the kernel is built for target hardware that cannot
  * support unaligned double word (32-bit) write operations.
  *
