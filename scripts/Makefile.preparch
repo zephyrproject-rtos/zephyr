@@ -35,7 +35,7 @@ misc/generated/sysgen/prj.mdef:	$(PROJECT_BASE)/$(MDEF_FILE) \
 				include/config/auto.conf FORCE
 	$(call filechk,prj.mdef)
 
-misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.mdef FORCE
+misc/generated/sysgen/kernel_main.c: misc/generated/sysgen/prj.mdef
 	$(Q)$(srctree)/scripts/sysgen $(CURDIR)/misc/generated/sysgen/prj.mdef $(CURDIR)/misc/generated/sysgen/
 
 define filechk_configs.c
