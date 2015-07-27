@@ -93,12 +93,6 @@ the 'ia32' platform.
 
 #define LOAPIC_BASE_ADRS LOAPIC_BASE_ADRS_PHYS
 
-/* local APIC timer definitions */
-#define LOAPIC_TIMER_IRQ IOAPIC_NUM_RTES
-#define LOAPIC_TIMER_INT_PRI 2
-#define LOAPIC_VEC_BASE(x) (x + 32 + IOAPIC_NUM_RTES)
-#define LOAPIC_TIMER_VEC LOAPIC_VEC_BASE(0)
-
 /* serial port (aka COM port) information */
 
 #define COM1_BASE_ADRS 0x3f8

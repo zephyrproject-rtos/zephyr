@@ -59,8 +59,6 @@ After reset, the timer is initialized to zero.
  * following constants:
  *
  *    LOAPIC_BASE_ADRS
- *    LOAPIC_TIMER_IRQ
- *    LOAPIC_TIMER_INT_PRI
  *
  * NOTE: CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC must be provided by either the
  * platform configuration file or the project configuration file.
@@ -110,8 +108,9 @@ After reset, the timer is initialized to zero.
 extern int32_t _sys_idle_elapsed_ticks;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
-IRQ_CONNECT_STATIC(loapic, LOAPIC_TIMER_IRQ, LOAPIC_TIMER_INT_PRI,
-		   _timer_int_handler, 0);
+IRQ_CONNECT_STATIC(loapic, CONFIG_LOAPIC_TIMER_IRQ,
+			CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
+			_timer_int_handler, 0);
 
 static uint32_t __noinit counterLoadVal; /* computed counter 0
 							  initial count value */
@@ -560,13 +559,13 @@ int _sys_clock_driver_init(struct device *device)
 	 * still
 	 * has to be programmed into the interrupt controller.
 	 */
-	IRQ_CONFIG(loapic, LOAPIC_TIMER_IRQ);
+	IRQ_CONFIG(loapic, CONFIG_LOAPIC_TIMER_IRQ);
 
 	_loApicTimerTicklessIdleSkew();
 
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt */
-	irq_enable(LOAPIC_TIMER_IRQ);
+	irq_enable(CONFIG_LOAPIC_TIMER_IRQ);
 
 	return 0;
 }
@@ -624,7 +623,7 @@ void timer_disable(void)
 
 	/* disable interrupt in the interrupt controller */
 
-	irq_disable(LOAPIC_TIMER_IRQ);
+	irq_disable(CONFIG_LOAPIC_TIMER_IRQ);
 }
 
 #endif /* CONFIG_SYSTEM_TIMER_DISABLE */

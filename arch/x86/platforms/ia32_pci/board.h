@@ -113,7 +113,6 @@ the 'ia32_pci' platform.
  *       IRQ28 -> LOAPIC_LINT1
  *       IRQ29 -> LOAPIC_ERROR
  */
-#define LOAPIC_VEC_BASE(x) (x + INT_VEC_IRQ0 + IOAPIC_NUM_RTES)
 
 /* PCI definitions */
 #define PCI_BUS_NUMBERS 2
