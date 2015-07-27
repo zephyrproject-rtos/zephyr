@@ -281,6 +281,11 @@ struct hci_cp_le_conn_update {
 	uint16_t max_ce_len;
 } __packed;
 
+#define BT_HCI_OP_LE_READ_REMOTE_FEATURES	BT_OP(BT_OGF_LE, 0x0016)
+struct bt_hci_cp_le_read_remote_features {
+	uint16_t  handle;
+} __packed;
+
 #define BT_HCI_OP_LE_ENCRYPT			BT_OP(BT_OGF_LE, 0x0017)
 struct bt_hci_cp_le_encrypt {
 	uint8_t  key[16];
@@ -383,6 +388,13 @@ struct bt_hci_ev_le_advertising_info {
 	bt_addr_le_t addr;
 	uint8_t      length;
 	uint8_t      data[0];
+} __packed;
+
+#define BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE	0x04
+struct bt_hci_ev_le_remote_feat_complete {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  features[8];
 } __packed;
 
 #define BT_HCI_EVT_LE_LTK_REQUEST		0x05
