@@ -49,7 +49,7 @@
 
 /**
  * Macro used internally by NANO_CPU_INT_REGISTER and NANO_CPU_INT_REGISTER_ASM.
- * Not meant to be used explicitly by BSP, driver or application code.
+ * Not meant to be used explicitly by platform, driver or application code.
  */
 #define MK_ISR_NAME(x) __isr__##x
 
@@ -456,11 +456,11 @@ extern const NANO_ESF _default_esf;
 /*
  * @brief Configure an interrupt vector of the specified priority
  *
- * BSP provided routine which kernel invokes to configure an interrupt vector
- * of the specified priority; the BSP allocates an interrupt vector, programs
- * hardware to route interrupt requests on the specified irq to that vector,
- * and returns the vector number along with its associated BOI/EOI information
- *
+ * This routine is invoked by the kernel to configure an interrupt vector of
+ * the specified priority.  To this end, it allocates an interrupt vector,
+ * programs hardware to route interrupt requests on the specified irq to that
+ * vector, and returns the vector number along with its associated BOI/EOI
+ * information.
  */
 extern int _SysIntVecAlloc(unsigned int irq,
 			 unsigned int priority,
@@ -472,7 +472,7 @@ extern int _SysIntVecAlloc(unsigned int irq,
 			 unsigned char *eoiParamRequired
 			 );
 
-/* functions provided by the kernel for usage by the BSP's _SysIntVecAlloc() */
+/* functions provided by the kernel for usage by _SysIntVecAlloc() */
 
 extern int	_IntVecAlloc(unsigned int priority);
 

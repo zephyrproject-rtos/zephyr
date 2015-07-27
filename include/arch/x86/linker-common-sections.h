@@ -33,8 +33,7 @@
 /*
 DESCRIPTION
 This script defines the memory location of the various sections that make up
-a Zephyr Kernel image. It is usable by most supported BSPs. This file is used
-by the linker.
+a Zephyr Kernel image. This file is used by the linker.
 
 This script places the various sections of the image according to what features
 are enabled by the kernel's configuration options.
@@ -180,11 +179,8 @@ SECTIONS
 	*(".bss.*")
 	COMMON_SYMBOLS
 	/*
-	 * Ensure the true BSS section ends on a 4 byte boundary. When the BSP
-	 * clears this memory it is done in words only and doesn't clear any
-	 * potential left over bytes. Rather than adding code to do this it is
-	 * simpler to pad out the end of the section. We only waste a maximum
-	 * of 3 bytes.
+	 * As memory is cleared in words only, it is simpler to ensure the BSS
+	 * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
 	 */
 	. = ALIGN(4);
 	__bss_end = .;

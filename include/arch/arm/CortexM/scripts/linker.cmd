@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-Linker script for the Cortex-M3 BSPs.
+Linker script for the Cortex-M3 platform.
  */
 
 #define _LINKER
@@ -206,9 +206,9 @@ SECTIONS
 	*(".bss.*")
 	COMMON_SYMBOLS
         /*
-         * BSP clears this memory in words only and doesn't clear any
-         * potential left over bytes.
-	 */
+         * As memory is cleared in words only, it is simpler to ensure the BSS
+         * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+		 */
 	__bss_end = ALIGN(4);
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
