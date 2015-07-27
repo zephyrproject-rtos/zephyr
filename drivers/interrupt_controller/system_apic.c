@@ -47,15 +47,15 @@ for the atom_n28xx configuration of ia32 platform.
  *
  * @brief Allocate interrupt vector
  *
- * This BSP provided routine supports the irq_connect() API.  This
- * routine is required to perform the following 3 functions:
+ * This routine is used by the x86's irq_connect().  It performs the following
+ * functions:
  *
- *  a) Allocate a vector satisfying the requested priority.  The utility routine
- *     _IntVecAlloc() provided by the nanokernel will be used to perform the
- *     the allocation since the local APIC prioritizes interrupts as assumed
- *     by _IntVecAlloc().
- *  b) Return End of Interrupt (EOI) and Beginning of Interrupt (BOI) related
- *     information to be used when generating the interrupt stub code, and
+ *  a) Allocates a vector satisfying the requested priority.  The utility
+ *     routine _IntVecAlloc() provided by the nanokernel will be used to
+ *     perform the the allocation since the local APIC prioritizes interrupts
+ *     as assumed by _IntVecAlloc().
+ *  b) Provides End of Interrupt (EOI) and Beginning of Interrupt (BOI) related
+ *     information to be used when generating the interrupt stub code.
  *  c) If an interrupt vector can be allocated, and the <irq> argument is not
  *     equal to NANO_SOFT_IRQ, the IOAPIC redirection table (RED) or the
  *     LOAPIC local vector table (LVT) will be updated with the allocated
@@ -174,8 +174,8 @@ int _SysIntVecAlloc(
  *
  * @brief Program interrupt controller
  *
- * This BSP provided routine programs the appropriate interrupt controller
- * with the given vector based on the given IRQ parameter.
+ * This routine programs the interrupt controller with the given vector
+ * based on the given IRQ parameter.
  *
  * Drivers call this routine instead of irq_connect() when interrupts are
  * configured statically.
@@ -210,14 +210,15 @@ void _SysIntVecProgram(unsigned int vector, /* vector number */
  * @brief Enable an individual interrupt (IRQ)
  *
  * The public interface for enabling/disabling a specific IRQ for the IA-32
- * architecture is defined as follows in include/nanokernel/x86/arch.h
+ * architecture is defined as follows in include/arch/x86/arch.h
  *
  *   extern void  irq_enable  (unsigned int irq);
  *   extern void  irq_disable (unsigned int irq);
  *
- * The irq_enable() routine is provided by the BSP due to the
- * IRQ virtualization that is performed by this BSP.  See the comments
- * in _SysIntVecAlloc() for more information regarding IRQ virtualization.
+ * The irq_enable() routine is provided by the interrupt controller driver due
+ * to the IRQ virtualization that is performed by this platform.  See the
+ * comments in _SysIntVecAlloc() for more information regarding IRQ
+ * virtualization.
  *
  * @return N/A
  */
@@ -235,9 +236,10 @@ void irq_enable(unsigned int irq)
  *
  * @brief Disable an individual interrupt (IRQ)
  *
- * The irq_disable() routine is provided by the BSP due to the
- * IRQ virtualization that is performed by this BSP.  See the comments
- * in _SysIntVecAlloc() for more information regarding IRQ virtualization.
+ * The irq_disable() routine is provided by the interrupt controller driver due
+ * to the IRQ virtualization that is performed by this platform.  See the
+ * comments in _SysIntVecAlloc() for more information regarding IRQ
+ * virtualization.
  *
  * @return N/A
  */

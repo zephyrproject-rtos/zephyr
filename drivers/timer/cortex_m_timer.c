@@ -648,11 +648,10 @@ int _sys_clock_driver_init(struct device *device)
 
 /**
  *
- * @brief Read the BSP timer hardware
+ * @brief Read the platform's timer hardware
  *
- * This routine returns the current time in terms of timer hardware clock cycles.
- * Some kernel facilities (e.g. benchmarking code) directly call timer_read()
- * instead of utilizing the 'timer_read_fptr' function pointer.
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles.
  *
  * @return up counter of elapsed clock cycles
  *

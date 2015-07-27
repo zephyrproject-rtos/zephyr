@@ -49,16 +49,17 @@ IRQ_CONNECT_STATIC(pic_slave, PIC_SLAVE_STRAY_INT_LVL, 0, _i8259_boi_slave, 0);
  *
  * @brief Allocate interrupt vector
  *
- * This BSP provided routine supports the irq_connect() API.  This
- * routine performs the following functions:
+ * This routine is used by the x86's irq_connect(). It performs the following
+ * functions:
  *
  *  a) Allocates a vector satisfying the requested priority, where possible.
- *     When the <irq> argument is not equal to NANO_SOFT_IRQ, the vector assigned
- *     to the <irq> during interrupt controller initialization is returned,
- *     which may or may not have the desired prioritization. (Prioritization of
- *     such vectors is fixed by the 8259 interrupt controllers, and cannot be
- *     programmed on an IRQ basis; for example, IRQ0 is always the highest
- *     priority interrupt no matter which interrupt vector was assigned to IRQ0.)
+ *     When the <irq> argument is not equal to NANO_SOFT_IRQ, the vector
+ *     assigned to the <irq> during interrupt controller initialization is
+ *     returned, which may or may not have the desired prioritization.
+ *     (Prioritization of such vectors is fixed by the 8259 interrupt
+ *     controllers, and cannot be programmed on an IRQ basis; for example, IRQ0
+ *     is always the highest priority interrupt no matter which interrupt
+ *     vector was assigned to IRQ0.)
  *  b) Provides End of Interrupt (EOI) and Beginning of Interrupt (BOI) related
  *     information to be used when generating the interrupt stub code.
  *
@@ -151,8 +152,8 @@ int _SysIntVecAlloc(
  *
  * @brief Program interrupt controller
  *
- * This BSP provided routine programs the appropriate interrupt controller
- * with the given vector based on the given IRQ parameter.
+ * This routine programs the interrupt controller with the given vector
+ * based on the given IRQ parameter.
  *
  * Drivers call this routine instead of irq_connect() when interrupts are
  * configured statically.

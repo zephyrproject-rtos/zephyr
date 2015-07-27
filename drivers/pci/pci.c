@@ -35,7 +35,7 @@ DESCRIPTION
 Module implements routines for PCI bus initialization and query.
 
 USAGE
-In order to use the driver, BSP has to define:
+To use the driver, the platform must define:
 - Numbers of BUSes:
     - PCI_BUS_NUMBERS;
 - Register addresses:

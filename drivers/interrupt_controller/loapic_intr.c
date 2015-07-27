@@ -70,7 +70,7 @@ between the local APICs and the IO APIC is handled through a dedicated 3-wire
 APIC bus.  Also, some of the architectural features of the local APIC have been
 extended and/or modified in the local xAPIC.
 
-The base address of the local APIC and IO APIC is taken from the BSP board.h.
+The base address of the local APIC and IO APIC is taken from the platform.
 It uses LOAPIC_BASE_ADRS and IOAPIC_BASE_ADRS.
 This driver contains three routines for use.  They are:
 _loapic_init() initializes the Local APIC for the interrupt mode chosen.
@@ -116,7 +116,6 @@ INCLUDE FILES: loapic.h
 
 #define LOAPIC_BASE_MASK 0xfffff000     /* LO APIC Base Addr mask */
 #define LOAPIC_GLOBAL_ENABLE 0x00000800 /* LO APIC Global Enable */
-#define LOAPIC_BSP 0x00000100		/* LO APIC BSP */
 
 /* Local APIC ID Register Bits */
 
@@ -315,18 +314,16 @@ void _loapic_eoi(unsigned int irq)
  *
  * @brief Set the vector field in the specified RTE
  *
- * This routine is utilized by the BSP provided routined _SysIntVecAllocate()
- * which in turn is provided to support the irq_connect() API.  Once
+ * This routine is utilized by the interrupt controller's _SysIntVecAlloc()
+ * routine (which exists to support the irq_connect() API).  Once
  * a vector has been allocated, this routine is invoked to update the LVT
  * entry associated with <irq> with the vector.
  *
  * @return N/A
  */
 
-void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the
-						       interrupt */
-				  unsigned int vector /* vector to copy
-							 into the LVT */
+void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
+				  unsigned int vector /* vector to copy into the LVT */
 				  )
 {
 	volatile int *pLvt; /* pointer to local vector table */

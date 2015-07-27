@@ -43,7 +43,7 @@ The HPET device driver makes no assumption about the initial state of the HPET,
 and explicitly puts the device into a reset-like state. It also assumes that
 the main up counter never wraps around to 0 during the lifetime of the system.
 
-The BSP can configure the HPET to use level rather than the default edge
+The platform can configure the HPET to use level rather than the default edge
 sensitive interrupts by adding the following to board.h
     #define HPET_USE_LEVEL_INTS
 
@@ -613,10 +613,9 @@ int _sys_clock_driver_init(struct device *device)
 	 */
 
 	/*
-	 * HPET timers IRQ field is 5 bits wide, and hence, can support only
-	 * IRQ's
-	 * up to 31. Some BSPs, however, use IRQs greater than 31. In this case
-	 * program leaves the IRQ fields blank.
+	 * HPET timers IRQ field is 5 bits wide, and hence, can support only IRQ's
+	 * up to 31. Some platforms, however, use IRQs greater than 31. In this
+	 * case program leaves the IRQ fields blank.
 	 */
 
 	*_HPET_TIMER0_CONFIG_CAPS =
@@ -655,9 +654,10 @@ int _sys_clock_driver_init(struct device *device)
 
 /**
  *
- * @brief Read the BSP timer hardware
+ * @brief Read the platform's timer hardware
  *
- * This routine returns the current time in terms of timer hardware clock cycles.
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles.
  *
  * @return up counter of elapsed clock cycles
  *

@@ -75,7 +75,7 @@ config K20_UART
 	help
 	This option enables the K20 serial driver.
 	This specific driver can be used for the serial hardware
-	available at the Freescale FRDM K64F BSP.
+	available at the Freescale FRDM K64F platform.
 
 config STELLARIS_UART
 	bool "Stellaris serial driver"
@@ -83,7 +83,7 @@ config STELLARIS_UART
 	help
 	This option enables the Stellaris serial driver.
 	This specific driver can be used for the serial hardware
-	available at the Texas Instrument LM3S6965 BSP.
+	available at the Texas Instrument LM3S6965 platform.
 
 config  UART_INTERRUPT_DRIVEN
 	bool

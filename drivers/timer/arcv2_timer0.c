@@ -191,9 +191,10 @@ int _sys_clock_driver_init(struct device *device)
 
 /**
  *
- * @brief Read the BSP timer hardware
+ * @brief Read the platform's timer hardware
  *
- * This routine returns the current time in terms of timer hardware clock cycles.
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles.
  *
  * @return up counter of elapsed clock cycles
  */

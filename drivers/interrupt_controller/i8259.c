@@ -103,7 +103,7 @@ unsigned int _i8259_spurious_interrupt_count =
 
 /*
  * The public interface for enabling/disabling a specific IRQ for the IA-32
- * architecture is defined as follows in arch/nanokernel/Intel/arch.h
+ * architecture is defined as follows in include/arch/x86/arch.h
  *
  *   extern void  irq_enable  (unsigned int irq);
  *   extern void  irq_disable (unsigned int irq);
@@ -269,7 +269,7 @@ static void __I8259IntEnable(
 		picBaseAdrs = (unsigned char *)PIC_SLAVE_BASE_ADRS;
 
 	/*
-	 * BSPs that utilize this interrupt controller driver virtualize IRQs
+	 * Platforms that utilize this interrupt controller driver virtualize IRQs
 	 * as follows:
 	 *
 	 *   - IRQ0 to IRQ7  are provided by the master i8259 PIC

@@ -204,9 +204,9 @@ static void _IoApicRedUpdateLo(unsigned int irq, uint32_t value,
 					uint32_t mask);
 
 /*
- * The functions irq_enable() and irq_disable() are implemented
- * in the BSPs that incorporate this interrupt controller driver due to the
- * IRQ virtualization imposed by the BSP.
+ * The functions irq_enable() and irq_disable() are implemented in the
+ * interrupt controller driver due to the IRQ virtualization imposed by
+ * the x86 architecture.
  */
 
 /**
@@ -228,20 +228,18 @@ void _ioapic_init(void)
 #endif
 
 	/*
-	 * The BSP must define the IOAPIC_NUM_RTES macro to indicate the number
-	 * of redirection table entries supported by the IOAPIC on the board.
+	 * The platform must define the IOAPIC_NUM_RTES macro to indicate the
+	 * number of redirection table entries supported by the IOAPIC.
 	 *
 	 * Note: The number of actual IRQs supported by the IOAPIC can be
-	 *determined
-	 * at runtime by computing:
+	 * determined at runtime by computing:
 	 *
 	 * ((__IoApicGet(IOAPIC_VERS) & IOAPIC_MRE_MASK) >> 16) + 1
 	 *
-	 * however, storing the number of IRQs supported in a nanokernel global
+	 * However, storing the number of IRQs supported in a nanokernel global
 	 * variable is not feasible since any references to this global variable
 	 * from a microkernel-split image would not be able to directly access
-	 *the
-	 * variable; access via an indirection would be needed.
+	 * the variable; access via an indirection would be needed.
 	 */
 
 	/*
@@ -249,7 +247,7 @@ void _ioapic_init(void)
 	 * actual interrupt vectors are specified during irq_connect().
 	 *
 	 * A future enhancement should make this initialization "table driven":
-	 * use data provided by a BSP to specify the initial state
+	 * use data provided by the platform to specify the initial state
 	 */
 
 	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
@@ -307,9 +305,10 @@ void *_ioapic_eoi_get(unsigned int irq,  /* INTIN number of interest */
 
 	/*
 	 * The parameter to the ioApicIntEoi() routine is the vector programmed
-	 * into the redirection table.  The BSPs _SysIntVecAlloc() routine
-	 * must invoke _IoApicIntEoiGet() after _IoApicRedVecSet() to ensure the
-	 * redirection table contains the desired interrupt vector.
+	 * into the redirection table.  The interrupt controller's
+	 * _SysIntVecAlloc() routine must invoke _IoApicIntEoiGet() after
+	 * _IoApicRedVecSet() to ensure the redirection table contains the desired
+	 * interrupt vector.
 	 */
 
 	*arg = (void *)(ioApicRedGetLo(irq) & IOAPIC_VEC_MASK);
@@ -544,7 +543,7 @@ static void _IoApicRedUpdateLo(
 #ifdef IOAPIC_MSI_REDIRECT
 
 /*
- * A BSP's board.h file is responsible for setting the IOAPIC_MSI_REDIRECT
+ * The platform is responsible for defining the IOAPIC_MSI_REDIRECT
  * macro if the I/O APIC supports the MSI redirect capability.
  */
 
