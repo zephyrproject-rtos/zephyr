@@ -49,7 +49,6 @@ extern struct pool_struct _k_mem_pool_list[];
 
 extern int _k_mem_map_count;
 extern int _k_mem_pool_count;
-extern int _k_pipe_count;
 
 extern const int _k_num_events;
 

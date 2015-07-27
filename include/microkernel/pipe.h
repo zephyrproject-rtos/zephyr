@@ -37,8 +37,6 @@
 extern "C" {
 #endif
 
-extern struct _k_pipe_struct _k_pipe_list[];
-
 extern int _task_pipe_put(kpipe_t id,
 						  void *pBuffer,
 						  int iNbrBytesToWrite,

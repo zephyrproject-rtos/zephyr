@@ -203,6 +203,14 @@ SECTIONS
 		_k_task_list_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+	SECTION_PROLOGUE (_k_pipe_ptr, (OPTIONAL),)
+	{
+		_k_pipe_ptr_start = .;
+			*(._k_pipe_ptr.public.*)
+		KEEP(*(SORT_BY_NAME("._k_pipe_ptr*")))
+		_k_pipe_ptr_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
     __data_ram_end = .;
 
     SECTION_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)

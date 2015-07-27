@@ -574,12 +574,7 @@ def kernel_main_c_pipes():
 
     total_pipes = len(pipe_list)
 
-    # pipe global variables
-
-    kernel_main_c_out("\nint _k_pipe_count = %d;\n" % (total_pipes))
-
     if (total_pipes == 0):
-        kernel_main_c_out("\nstruct _k_pipe_struct _k_pipe_list[] = {{0}};\n")
         return
 
     # pipe buffers
@@ -592,14 +587,15 @@ def kernel_main_c_pipes():
 
     # pipe descriptors
 
-    kernel_main_c_out("\n" +
-        "struct _k_pipe_struct _k_pipe_list[%d] =\n" % (total_pipes) +
-        "{\n")
     for pipe in pipe_list:
+        name = pipe[0]
         size = pipe[1]
         buffer = "__" + pipe[0] + "_buffer"
-        kernel_main_c_out("    {%d, %s},\n" % (size, buffer))
-    kernel_main_c_out("};\n")
+        kernel_main_c_out("struct _k_pipe_struct _k_pipe_obj_%s = " % (name) +
+            "    {%d, %s};\n" % (size, buffer) +
+            "kpipe_t _k_pipe_ptr_%s " % (name) +
+            "    __section(_k_pipe_ptr, public, pipe) =\n" +
+            "    (kpipe_t)&_k_pipe_obj_%s;\n" % (name))
 
 
 def kernel_main_c_mailboxes():
@@ -943,13 +939,12 @@ def generate_zephyr_h_obj_ids():
 
     # pipe object id
 
-    idx = 0
     kernel_main_c_out("\n")
     for pipe in pipe_list:
         name = pipe[0];
         zephyr_h_data += \
-            "#define %s ((kpipe_t)&_k_pipe_list[%d])\n" % (name, idx)
-        idx += 1
+            "extern struct _k_pipe_struct _k_pipe_obj_%s;\n" % (name) + \
+            "#define %s ((kpipe_t)&_k_pipe_obj_%s)\n\n" % (name, name)
 
     # task object id
 

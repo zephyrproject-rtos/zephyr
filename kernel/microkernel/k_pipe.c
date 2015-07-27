@@ -36,6 +36,9 @@
 #include <microkernel/pipe.h>
 #include <misc/util.h>
 
+extern kpipe_t _k_pipe_ptr_start[];
+extern kpipe_t _k_pipe_ptr_end[];
+
 /**
  *
  * @brief Initialize kernel pipe subsystem
@@ -48,10 +51,11 @@
 
 void _k_pipe_init(void)
 {
-	int i;
+	kpipe_t *pipeId;
 	struct _k_pipe_struct *pPipe;
 
-	for (i = 0, pPipe = _k_pipe_list; i < _k_pipe_count; i++, pPipe++) {
+	for (pipeId = _k_pipe_ptr_start; pipeId < _k_pipe_ptr_end; pipeId++) {
+		pPipe = (struct _k_pipe_struct *)(*pipeId);
 		BuffInit((unsigned char *)pPipe->Buffer,
 				 &(pPipe->iBufferSize), &pPipe->desc);
 	}
