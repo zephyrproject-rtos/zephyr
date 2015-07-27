@@ -112,6 +112,20 @@ config LOAPIC_TIMER
 	help
 	This option selects LOAPIC timer as a system timer.
 
+config LOAPIC_TIMER_IRQ
+	int "Local APIC Timer IRQ"
+	default 24
+	depends on LOAPIC_TIMER
+	help
+	This option specifies the IRQ used by the LOAPIC timer.
+
+config LOAPIC_TIMER_IRQ_PRIORITY
+	int "Local APIC Timer IRQ Priority"
+	default 2
+	depends on LOAPIC_TIMER
+	help
+	This options specifies the IRQ priority used by the LOAPIC timer.
+
 config PIT
 	bool "PIT (i8253)"
 	default n
