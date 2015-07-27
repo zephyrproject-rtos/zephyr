@@ -449,6 +449,9 @@ uip_ds6_maddr_add(const uip_ipaddr_t *ipaddr)
       (uip_ds6_element_t **)&locmaddr) == FREESPACE) {
     locmaddr->isused = 1;
     uip_ipaddr_copy(&locmaddr->ipaddr, ipaddr);
+    PRINTF("Adding maddr ");
+    PRINT6ADDR(&locmaddr->ipaddr);
+    PRINTF("\n");
     return locmaddr;
   }
   return NULL;
