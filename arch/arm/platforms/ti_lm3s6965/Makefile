@@ -9,4 +9,4 @@ obj-y += system.o
 obj-y += nmi_on_reset.o
 obj-y += scp.o
 
-obj-$(CONFIG_IRQ_VECTOR_TABLE_BSP) += irq_vector_table.o
+obj-$(CONFIG_IRQ_VECTOR_TABLE_PLATFORM) += irq_vector_table.o

@@ -209,7 +209,7 @@ config IRQ_VECTOR_TABLE_CUSTOM
 	- ISRs must notify the kernel manually by invoking _IntExit() when
 		then are about to return.
 
-config IRQ_VECTOR_TABLE_BSP
+config IRQ_VECTOR_TABLE_PLATFORM
 	bool
 	# omit prompt to signify a "hidden" option
 	depends on SW_ISR_TABLE || !IRQ_VECTOR_TABLE_CUSTOM
