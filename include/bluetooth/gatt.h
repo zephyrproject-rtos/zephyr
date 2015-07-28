@@ -611,7 +611,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  *  @param value Attribute value.
  *  @param len Attribute value length.
  */
-void bt_gatt_notify(uint16_t handle, const void *data, size_t len);
+void bt_gatt_notify(uint16_t handle, const void *data, uint16_t len);
 
 /** @brief connected callback.
  *

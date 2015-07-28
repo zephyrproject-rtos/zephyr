@@ -363,7 +363,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void bt_gatt_notify(uint16_t handle, const void *data, size_t len)
+void bt_gatt_notify(uint16_t handle, const void *data, uint16_t len)
 {
 	struct notify_data nfy;
 
