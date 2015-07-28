@@ -72,6 +72,7 @@ that each task can handle.
        int buffer_bytes_used;
 
        struct k_msg send_msg;
+       k_priority_t send_priority = task_priority_get();
 
        while (1) {
 
@@ -87,7 +88,7 @@ that each task can handle.
            send_msg.rx_task = ANYTASK;
 
            /* send message and wait until a consumer receives it */
-           task_mbox_put_wait(REQUEST_BOX, &send_msg);
+           task_mbox_put_wait(REQUEST_BOX, send_priority, &send_msg);
 
            /* info, size, and rx_task fields have been updated */
 
@@ -155,6 +156,7 @@ portion of the message isn't used.
    void producer_task(void)
    {
        struct k_msg send_msg;
+       k_priority_t send_priority = task_priority_get();
 
        while (1) {
 
@@ -168,7 +170,7 @@ portion of the message isn't used.
            send_msg.rx_task = ANYTASK;
 
            /* send message and wait until a consumer receives it */
-           task_mbox_put_wait(REQUEST_BOX, &send_msg);
+           task_mbox_put_wait(REQUEST_BOX, send_priority, &send_msg);
 
            /* no need to examine the receiver's "info" value */
        }
@@ -213,6 +215,95 @@ The message "info" field supplied by the sender is used to classify the message.
        }
    }
 
+Example: Sending an Asynchronous Mailbox Message
+------------------------------------------------
+
+This code uses a mailbox to send asynchronous messages using memory blocks
+obtained from TXPOOL, thereby eliminating unneeded data copying when exchanging
+large messages. The optional semaphore capability is used to hold off
+the sending of a new message until the previous message has been consumed,
+so that a backlog of messages doesn't build up if the consuming task is unable
+to keep up.
+
+.. code-block:: c
+
+   void producer_task(void)
+   {
+       struct k_msg send_msg;
+       kpriority_t send_priority = task_priority_get();
+
+       volatile char *hw_buffer;
+
+       /* indicate that all previous messages have been processed */
+       task_sem_give(MY_SEMA);
+
+       while (1) {
+           /* allocate memory block that will hold message data */
+           task_mem_pool_alloc_wait(&send_msg.tx_block, TXPOOL, 4096);
+
+           /* keep saving hardware-generated data in the memory block      */
+           /* until the previous message has been received by the consumer */
+           do {
+               memcpy(send_msg.tx_block.pointer_to_data, hw_buffer, 4096);
+           } while (task_sem_take(MY_SEMA) != RC_OK);
+
+           /* finish preparing to send message */
+           send_msg.size = 4096;
+           send_msg.rx_task = ANYTASK;
+
+           /* send message containing most current data and loop around */
+           task_mbox_put_async(REQUEST_BOX, send_priority, &send_msg, MY_SEMA);
+       }
+   }
+
+Example: Receiving an Asynchronous Mailbox Message
+--------------------------------------------------
+
+This code uses a mailbox to receive messages sent asynchronously using a
+memory block, thereby eliminating unneeded data copying when processing
+a large message.
+
+.. code-block:: c
+
+   void consumer_task(void)
+   {
+       struct k_msg recv_msg;
+       struct k_block recv_block;
+
+       int total;
+       char *data_ptr;
+       int i;
+
+       while (1) {
+           /* prepare to receive message */
+           recv_msg.size = 10000;
+           recv_msg.rx_data = NULL;
+           recv_msg.rx_task = ANYTASK;
+
+           /* get message, but not its data */
+           task_mbox_get_wait(REQUEST_BOX, &recv_msg);
+
+           /* get message data as a memory block and discard message */
+           task_mbox_data_get_async_block_wait(&recv_msg, &recv_block, RXPOOL);
+
+           /* compute sum of all message bytes in memory block */
+           total = 0;
+           data_ptr = (char *)(recv_block.pointer_to_data);
+           for (i = 0; i < recv_msg.size; i++) {
+               total += data_ptr++;
+           }
+
+           /* release memory block containing data */
+           task_mem_pool_free(&recv_block);
+       }
+   }
+
+.. note::
+   An incoming message that was sent synchronously is also processed correctly
+   by this algorithm, since the mailbox automatically creates a memory block
+   containing the message data using RXPOOL. However, the performance benefit
+   of using the asynchronous approach is lost.
+
 
 APIs
 ====
@@ -241,14 +332,14 @@ by microkernel.h.
 +-----------------------------------------+-----------------------------------+
 | :c:func:`task_mbox_get_wait_timeout()`  | Gets message from a mailbox, or   |
 |                                         | waits for a specified time period |
-|                                         | until one is available.           |
+|                                         | for one to become available.      |
 +-----------------------------------------+-----------------------------------+
 | :c:func:`task_mbox_data_get()`          | Finishes receiving message that   |
 |                                         | was received without its data.    |
 +-----------------------------------------+-----------------------------------+
 
-The following APIs for asynchronous mailbox operations using a memory pool
-block are provided by microkernel.h.
+The following APIs for asynchronous mailbox operations using memory pool blocks
+are provided by microkernel.h.
 
 +---------------------------------------------------------+-----------------------------------+
 | Call                                                    | Description                       |
@@ -267,5 +358,5 @@ block are provided by microkernel.h.
 | :c:func:`task_mbox_data_get_async_block_wait_timeout()` | Finishes receiving message that   |
 |                                                         | was received without its data, or |
 |                                                         | waits for a specified time period |
-|                                                         | until a block is available.       |
+|                                                         | for a block to become available.  |
 +---------------------------------------------------------+-----------------------------------+
