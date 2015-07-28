@@ -72,7 +72,7 @@ void main(void)
 	int err;
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_init();
+	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;

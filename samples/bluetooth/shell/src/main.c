@@ -96,7 +96,7 @@ static void cmd_init(int argc, char *argv[])
 {
 	int err;
 
-	err = bt_init();
+	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	} else {

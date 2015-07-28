@@ -41,14 +41,23 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/hci.h>
 
-/** @brief Initialize the Bluetooth Subsystem.
+/** @brief Callback for notifying that Bluetooth has been enabled.
  *
- *  Initialize Bluetooth. Must be the called before anything else.
- *  Caller shall be either task or a fiber.
+ *  @param err zero on success or (negative) error code otherwise.
+ */
+typedef void (*bt_ready_cb_t)(int err);
+
+/** @brief Enable Bluetooth
+ *
+ *  Enable Bluetooth. Must be the called before any calls that
+ *  require communication with the local Bluetooth hardware.
+ *
+ *  @param cb Callback to notify completion or NULL to perform the
+ *  enabling synchronously.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_init(void);
+int bt_enable(bt_ready_cb_t cb);
 
 /* Advertising API */
 

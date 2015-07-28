@@ -75,7 +75,7 @@ void main(void)
 
 	driver_init();
 
-	ret = bt_init();
+	ret = bt_enable(NULL);
 	if (ret == EXPECTED_ERROR) {
 		ret_code = TC_PASS;
 	} else {

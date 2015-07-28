@@ -1323,11 +1323,34 @@ void bt_driver_unregister(struct bt_driver *drv)
 	bt_dev.drv = NULL;
 }
 
-static void hci_rx_fiber(void)
+static int bt_init(void)
+{
+	struct bt_driver *drv = bt_dev.drv;
+	int err;
+
+	err = drv->open();
+	if (err) {
+		BT_ERR("HCI driver open failed (%d)\n", err);
+		return err;
+	}
+
+	err = hci_init();
+	if (err) {
+		return err;
+	}
+
+	return bt_l2cap_init();
+}
+
+static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 {
 	struct bt_buf *buf;
 
 	BT_DBG("started\n");
+
+	if (ready_cb) {
+		ready_cb(bt_init());
+	}
 
 	while (1) {
 		BT_DBG("calling fifo_get_wait\n");
@@ -1366,23 +1389,20 @@ static void cmd_queue_init(void)
 		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
 }
 
-static void rx_queue_init(void)
+static void rx_queue_init(bt_ready_cb_t cb)
 {
 	nano_fifo_init(&bt_dev.rx_queue);
 	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-		    (nano_fiber_entry_t)hci_rx_fiber, 0, 0, 7, 0);
+		    (nano_fiber_entry_t)hci_rx_fiber, (int)cb, 0, 7, 0);
 
 	nano_fifo_init(&bt_dev.rx_prio_queue);
 	fiber_start(rx_prio_fiber_stack, sizeof(rx_prio_fiber_stack),
 		    (nano_fiber_entry_t)rx_prio_fiber, 0, 0, 7, 0);
 }
 
-int bt_init(void)
+int bt_enable(bt_ready_cb_t cb)
 {
-	struct bt_driver *drv = bt_dev.drv;
-	int err;
-
-	if (!drv) {
+	if (!bt_dev.drv) {
 		BT_ERR("No HCI driver registered\n");
 		return -ENODEV;
 	}
@@ -1390,20 +1410,13 @@ int bt_init(void)
 	bt_buf_init(ACL_IN_MAX, ACL_OUT_MAX);
 
 	cmd_queue_init();
-	rx_queue_init();
+	rx_queue_init(cb);
 
-	err = drv->open();
-	if (err) {
-		BT_ERR("HCI driver open failed (%d)\n", err);
-		return err;
+	if (!cb) {
+		return bt_init();
 	}
 
-	err = hci_init();
-	if (err) {
-		return err;
-	}
-
-	return bt_l2cap_init();
+	return 0;
 }
 
 int bt_start_advertising(uint8_t type, const struct bt_eir *ad,

@@ -122,7 +122,7 @@ void tester_handle_gap(uint8_t opcode, uint8_t *data, uint16_t len)
 
 uint8_t tester_init_gap(void)
 {
-	if (bt_init() < 0) {
+	if (bt_enable(NULL) < 0) {
 		return STATUS_FAILED;
 	}
 
