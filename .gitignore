@@ -2,6 +2,7 @@
 *.a
 *.d
 *.cmd
+!arch/*/*/*/*.cmd
 *~
 cscope.*
 .dir
