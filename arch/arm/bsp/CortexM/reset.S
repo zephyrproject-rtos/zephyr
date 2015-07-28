@@ -59,7 +59,7 @@ GTEXT(__reset)
  * interrupting the CPU. A default NMI handler is already in place in the
  * vector table, and the boot code should not generate hard fault, or we're in
  * deep trouble.
- * 
+ *
  * We want to use the process stack pointer (PSP) instead of the MSP, since the
  * MSP is to be set up to point to the one-and-only interrupt stack during later
  * boot. That would not be possible if in use for running C code.
@@ -76,7 +76,7 @@ SECTION_FUNC(TEXT,__reset)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
 
-    /* 
+    /*
      * Set PSP and use it to boot without using MSP, so that it
      * gets set to _interrupt_stack during nanoInit().
      */
