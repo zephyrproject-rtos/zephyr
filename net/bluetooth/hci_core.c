@@ -789,6 +789,26 @@ static void le_conn_complete(struct bt_buf *buf)
 	bt_le_scan_update();
 }
 
+static void le_remote_feat_complete(struct bt_buf *buf)
+{
+	struct bt_hci_ev_le_remote_feat_complete *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Unable to lookup conn for handle %u\n", handle);
+		return;
+	}
+
+	if (!evt->status) {
+		memcpy(conn->le_features, evt->features,
+		       sizeof(conn->le_features));
+	}
+
+	bt_conn_put(conn);
+}
+
 static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
 			       struct bt_keys *keys)
 {
@@ -938,6 +958,9 @@ static void hci_le_meta_event(struct bt_buf *buf)
 		break;
 	case BT_HCI_EVT_LE_LTK_REQUEST:
 		le_ltk_request(buf);
+		break;
+	case BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE:
+		le_remote_feat_complete(buf);
 		break;
 	default:
 		BT_DBG("Unhandled LE event %x\n", evt->subevent);
