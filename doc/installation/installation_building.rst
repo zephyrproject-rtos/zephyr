@@ -126,6 +126,12 @@ Checking the Source Code Out
 Building a Sample Application
 ==============================
 
+You can speed up builds by optionally using the :program:`ccache` utility.
+
+.. code-block:: bash
+
+    $ export USE_CCACHE=1
+
 To build an example application follow these steps:
 
 #. Go to the root directory of the |project|.

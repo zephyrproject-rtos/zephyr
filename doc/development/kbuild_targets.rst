@@ -124,3 +124,13 @@ Make Modifiers
 
 * **make O=dir [targets]** Locates all output files in **dir**,
 including :file:`.config.`.
+
+Other Environment Variables
+===========================
+
+* :envvar:`USE_CCACHE=1` If set, use the :program:`ccache` utility to speed up builds.
+  `ccache` must be installed on your development workstation. For more
+  information see the `ccache documentation`_.
+
+.. _CCACHE documentation: https://ccache.samba.org/
+
