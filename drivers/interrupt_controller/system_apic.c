@@ -63,7 +63,7 @@ for the atom_n28xx configuration of ia32 platform.
  *
  * The board virtualizes IRQs as follows:
  *
- * - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
+ * - The first CONFIG_IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
  * - The remaining IRQs are provided by the LOAPIC.
  *
  * Thus, for example, if the IOAPIC supports 24 IRQs:
@@ -77,9 +77,6 @@ for the atom_n28xx configuration of ia32 platform.
  *       IRQ27 -> LOAPIC_LINT0
  *       IRQ28 -> LOAPIC_LINT1
  *       IRQ29 -> LOAPIC_ERROR
- *
- * The IOAPIC_NUM_RTES macro is provided by board.h, and it specifies the number
- * of IRQs supported by the on-board I/O APIC device.
  *
  * @return the allocated interrupt vector
  *
@@ -107,7 +104,7 @@ int _SysIntVecAlloc(
 
 #if defined(DEBUG)
 	if ((priority > 15) ||
-	    ((irq > (IOAPIC_NUM_RTES + 5)) && (irq != NANO_SOFT_IRQ)))
+	    ((irq > (CONFIG_IOAPIC_NUM_RTES + 5)) && (irq != NANO_SOFT_IRQ)))
 		return -1;
 #endif
 
@@ -144,7 +141,7 @@ int _SysIntVecAlloc(
 	if (irq != NANO_SOFT_IRQ)
 #endif
 	{
-		if (irq < IOAPIC_NUM_RTES) {
+		if (irq < CONFIG_IOAPIC_NUM_RTES) {
 			_ioapic_int_vec_set(irq, vector);
 
 			/*
@@ -157,7 +154,7 @@ int _SysIntVecAlloc(
 			*eoiRtn = (NANO_EOI_GET_FUNC)_ioapic_eoi_get(
 				irq, (char *)eoiParamRequired, eoiRtnParm);
 		} else {
-			_loapic_int_vec_set(irq - IOAPIC_NUM_RTES, vector);
+			_loapic_int_vec_set(irq - CONFIG_IOAPIC_NUM_RTES, vector);
 
 			/* specify that the EOI handler in loApicIntr.c driver
 			 * be invoked */
@@ -182,14 +179,10 @@ int _SysIntVecAlloc(
  *
  * The Clanton board virtualizes IRQs as follows:
  *
- * - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC so the IOAPIC
- *     is programmed for these IRQs
+ * - The first CONFIG_IOAPIC_NUM_RTES IRQs are provided by the IOAPIC so the
+ *     IOAPIC is programmed for these IRQs
  * - The remaining IRQs are provided by the LOAPIC and hence the LOAPIC is
  *     programmed.
- *
- * The IOAPIC_NUM_RTES macro is provided by board.h, and it specifies the number
- * of IRQs supported by the on-board I/O APIC device.
- *
  */
 
 void _SysIntVecProgram(unsigned int vector, /* vector number */
@@ -197,10 +190,10 @@ void _SysIntVecProgram(unsigned int vector, /* vector number */
 		       )
 {
 
-	if (irq < IOAPIC_NUM_RTES) {
+	if (irq < CONFIG_IOAPIC_NUM_RTES) {
 		_ioapic_int_vec_set(irq, vector);
 	} else {
-		_loapic_int_vec_set(irq - IOAPIC_NUM_RTES, vector);
+		_loapic_int_vec_set(irq - CONFIG_IOAPIC_NUM_RTES, vector);
 	}
 }
 
@@ -225,10 +218,10 @@ void _SysIntVecProgram(unsigned int vector, /* vector number */
 
 void irq_enable(unsigned int irq)
 {
-	if (irq < IOAPIC_NUM_RTES) {
+	if (irq < CONFIG_IOAPIC_NUM_RTES) {
 		_ioapic_irq_enable(irq);
 	} else {
-		_loapic_irq_enable(irq - IOAPIC_NUM_RTES);
+		_loapic_irq_enable(irq - CONFIG_IOAPIC_NUM_RTES);
 	}
 }
 
@@ -246,9 +239,9 @@ void irq_enable(unsigned int irq)
 
 void irq_disable(unsigned int irq)
 {
-	if (irq < IOAPIC_NUM_RTES) {
+	if (irq < CONFIG_IOAPIC_NUM_RTES) {
 		_ioapic_irq_disable(irq);
 	} else {
-		_loapic_irq_disable(irq - IOAPIC_NUM_RTES);
+		_loapic_irq_disable(irq - CONFIG_IOAPIC_NUM_RTES);
 	}
 }

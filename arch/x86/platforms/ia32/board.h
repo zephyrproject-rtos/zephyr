@@ -75,24 +75,6 @@ the 'ia32' platform.
 #define INT_VEC_IRQ0 0x20 /* vector number for PIC IRQ0 */
 #define N_PIC_IRQS 16     /* number of PIC IRQs */
 
-/*
- * IO APIC (IOAPIC) device information (Intel ioapic)
- */
-#define IOAPIC_NUM_RTES 24 /* Number of IRQs = 24 */
-
-#define IOAPIC_BASE_ADRS_PHYS 0xFEC00000 /* base physical address */
-#define IOAPIC_SIZE KB(4)
-
-#define IOAPIC_BASE_ADRS IOAPIC_BASE_ADRS_PHYS
-
-/*
- * Local APIC (LOAPIC) device information (Intel loapic)
- */
-#define LOAPIC_BASE_ADRS_PHYS 0xFEE00000 /* base physical address */
-#define LOAPIC_SIZE KB(4)
-
-#define LOAPIC_BASE_ADRS LOAPIC_BASE_ADRS_PHYS
-
 /* serial port (aka COM port) information */
 
 #define COM1_BASE_ADRS 0x3f8

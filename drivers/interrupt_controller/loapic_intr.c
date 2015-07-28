@@ -70,8 +70,6 @@ between the local APICs and the IO APIC is handled through a dedicated 3-wire
 APIC bus.  Also, some of the architectural features of the local APIC have been
 extended and/or modified in the local xAPIC.
 
-The base address of the local APIC and IO APIC is taken from the platform.
-It uses LOAPIC_BASE_ADRS and IOAPIC_BASE_ADRS.
 This driver contains three routines for use.  They are:
 _loapic_init() initializes the Local APIC for the interrupt mode chosen.
 _loapic_enable()/disable() enables / disables the Local APIC.
@@ -215,48 +213,52 @@ void _loapic_init(void)
 
 	_loapic_enable();
 
-	loApicMaxLvt = (*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_VER) &
-			LOAPIC_MAXLVT_MASK) >>
-		       16;
+	loApicMaxLvt = (*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_VER) &
+			LOAPIC_MAXLVT_MASK) >> 16;
 
 	/* reset the DFR, TPR, TIMER_CONFIG, and TIMER_ICR */
 
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_DFR) = (int)0xffffffff;
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TPR) = (int)0x0;
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER_CONFIG) = (int)0x0;
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER_ICR) = (int)0x0;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_DFR) =
+		(int)0xffffffff;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TPR) = (int)0x0;
+	*(volatile int *) (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG) =
+		(int)0x0;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR) = (int)0x0;
 
 	/* program Local Vector Table for the Virtual Wire Mode */
 
 	/* set LINT0: extInt, high-polarity, edge-trigger, not-masked */
 
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_LINT0) =
-		(*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_LINT0) &
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT0) =
+		(*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT0) &
 		 ~(LOAPIC_MODE | LOAPIC_LOW | LOAPIC_LEVEL | LOAPIC_LVT_MASKED)) |
 		(LOAPIC_EXT | LOAPIC_HIGH | LOAPIC_EDGE);
 
 	/* set LINT1: NMI, high-polarity, edge-trigger, not-masked */
 
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_LINT1) =
-		(*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_LINT1) &
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT1) =
+		(*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT1) &
 		 ~(LOAPIC_MODE | LOAPIC_LOW | LOAPIC_LEVEL | LOAPIC_LVT_MASKED)) |
 		(LOAPIC_NMI | LOAPIC_HIGH | LOAPIC_EDGE);
 
 	/* lock the Local APIC interrupts */
 
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER) = LOAPIC_LVT_MASKED;
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_ERROR) = LOAPIC_LVT_MASKED;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER) =
+		LOAPIC_LVT_MASKED;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ERROR) =
+		LOAPIC_LVT_MASKED;
 
 	if (loApicMaxLvt >= LOAPIC_LVT_P6)
-		*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_PMC) = LOAPIC_LVT_MASKED;
+		*(volatile int *) (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_PMC) =
+			LOAPIC_LVT_MASKED;
 
 	if (loApicMaxLvt >= LOAPIC_LVT_PENTIUM4)
-		*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_THERMAL) =
+		*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_THERMAL) =
 			LOAPIC_LVT_MASKED;
 
 	/* discard a pending interrupt if any */
 
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_EOI) = 0;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
 }
 
 /**
@@ -272,7 +274,7 @@ void _loapic_enable(void)
 {
 	int32_t oldLevel = irq_lock(); /* LOCK INTERRUPTS */
 
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_SVR) |= LOAPIC_ENABLE;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR) |= LOAPIC_ENABLE;
 
 	irq_unlock(oldLevel); /* UNLOCK INTERRUPTS */
 }
@@ -290,7 +292,8 @@ void _loapic_disable(void)
 {
 	int32_t oldLevel = irq_lock(); /* LOCK INTERRUPTS */
 
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_SVR) &= ~LOAPIC_ENABLE;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR) &=
+		~LOAPIC_ENABLE;
 
 	irq_unlock(oldLevel); /* UNLOCK INTERRUPTS */
 }
@@ -307,7 +310,7 @@ void _loapic_disable(void)
 void _loapic_eoi(unsigned int irq)
 {
 	ARG_UNUSED(irq);
-	*(volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_EOI) = 0;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
 }
 
 /**
@@ -342,7 +345,8 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 	 * It's assumed that LVTs are spaced by 0x10 bytes
 	 */
 
-	pLvt = (volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER + (irq * 0x10));
+	pLvt = (volatile int *)
+			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER + (irq * 0x10));
 
 	/* update the 'vector' bits in the LVT */
 
@@ -372,7 +376,8 @@ void _loapic_irq_enable(unsigned int irq /* IRQ number of
 	 * and ths assumption concerning LVT spacing.
 	 */
 
-	pLvt = (volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER + (irq * 0x10));
+	pLvt = (volatile int *)
+		(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER + (irq * 0x10));
 
 	/* clear the mask bit in the LVT */
 
@@ -402,7 +407,8 @@ void _loapic_irq_disable(unsigned int irq /* IRQ number of the
 	 * and ths assumption concerning LVT spacing.
 	 */
 
-	pLvt = (volatile int *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER + (irq * 0x10));
+	pLvt = (volatile int *)
+		(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER + (irq * 0x10));
 
 	/* set the mask bit in the LVT */
 

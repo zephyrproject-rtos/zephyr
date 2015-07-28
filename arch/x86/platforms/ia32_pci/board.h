@@ -48,25 +48,6 @@ the 'ia32_pci' platform.
 #define N_PIC_IRQS 16     /* number of PIC IRQs */
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 
-/*
- * IO APIC (IOAPIC) device information (Intel ioapic)
- */
-#define IOAPIC_NUM_RTES 24 /* Number of IRQs = 24 */
-
-#define IOAPIC_BASE_ADRS_PHYS 0xFEC00000 /* base physical address */
-#define IOAPIC_SIZE KB(4)
-
-#define IOAPIC_BASE_ADRS IOAPIC_BASE_ADRS_PHYS
-
-/*
- * Local APIC (LOAPIC) device information (Intel loapic)
- */
-
-#define LOAPIC_BASE_ADRS_PHYS 0xFEE00000 /* base physical address */
-#define LOAPIC_SIZE KB(4)
-
-#define LOAPIC_BASE_ADRS LOAPIC_BASE_ADRS_PHYS
-
 /* serial port (aka COM port) information */
 #define COM1_BAUD_RATE 115200
 
@@ -98,7 +79,7 @@ the 'ia32_pci' platform.
  * associated interrupt controller is programmed with the allocated vector.
  * The Quark board virtualizes IRQs as follows:
  *
- *   - The first IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
+ *   - The first CONFIG_IOAPIC_NUM_RTES IRQs are provided by the IOAPIC
  *   - The remaining IRQs are provided by the LOAPIC.
  *
  * Thus, for example, if the IOAPIC supports 24 IRQs:

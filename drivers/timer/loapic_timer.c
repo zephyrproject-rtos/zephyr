@@ -54,16 +54,6 @@ After reset, the timer is initialized to zero.
 #include <microkernel.h>
 #endif /* CONFIG_MICROKERNEL */
 
-/*
- * A board support package's board.h header must provide definitions for the
- * following constants:
- *
- *    LOAPIC_BASE_ADRS
- *
- * NOTE: CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC must be provided by either the
- * platform configuration file or the project configuration file.
- */
-
 #include <board.h>
 
 /* Local APIC Timer Bits */
@@ -85,13 +75,14 @@ After reset, the timer is initialized to zero.
 #endif /* CONFIG_MICROKERNEL && CONFIG_TICKLESS_IDLE */
 
 /* Helpful macros and inlines for programming timer */
-#define _REG_TIMER ((volatile uint32_t *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER))
-#define _REG_TIMER_ICR \
-	((volatile uint32_t *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER_ICR))
-#define _REG_TIMER_CCR \
-	((volatile uint32_t *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER_CCR))
-#define _REG_TIMER_CFG \
-	((volatile uint32_t *)(LOAPIC_BASE_ADRS + LOAPIC_TIMER_CONFIG))
+#define _REG_TIMER ((volatile uint32_t *) \
+					(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER))
+#define _REG_TIMER_ICR ((volatile uint32_t *) \
+						(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR))
+#define _REG_TIMER_CCR ((volatile uint32_t *) \
+						(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CCR))
+#define _REG_TIMER_CFG ((volatile uint32_t *) \
+						(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG))
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
 #define TIMER_MODE_PERIODIC 0

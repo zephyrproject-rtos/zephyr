@@ -228,8 +228,8 @@ void _ioapic_init(void)
 #endif
 
 	/*
-	 * The platform must define the IOAPIC_NUM_RTES macro to indicate the
-	 * number of redirection table entries supported by the IOAPIC.
+	 * The platform must set the Kconfig option IOAPIC_NUM_RTES to indicate
+	 * the number of redirection table entries supported by the IOAPIC.
 	 *
 	 * Note: The number of actual IRQs supported by the IOAPIC can be
 	 * determined at runtime by computing:
@@ -248,7 +248,7 @@ void _ioapic_init(void)
 	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
 		   IOAPIC_PHYSICAL | 0 /* dummy vector */;
 
-	for (ix = 0; ix < IOAPIC_NUM_RTES; ix++) {
+	for (ix = 0; ix < CONFIG_IOAPIC_NUM_RTES; ix++) {
 		ioApicRedSetHi(ix, 0);
 		ioApicRedSetLo(ix, rteValue);
 	}
@@ -266,8 +266,8 @@ void _ioapic_init(void)
 void _ioapic_eoi(unsigned int irq /* INT number to send EOI */
 			  )
 {
-	*(volatile unsigned int *)(IOAPIC_BASE_ADRS + IOAPIC_EOI) = irq;
-	*(volatile unsigned int *)(LOAPIC_BASE_ADRS + LOAPIC_EOI) = 0;
+	*(volatile unsigned int *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_EOI) = irq;
+	*(volatile unsigned int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
 }
 
 /**
@@ -400,8 +400,9 @@ static uint32_t __IoApicGet(
 
 	key = irq_lock();
 
-	*((volatile char *)(IOAPIC_BASE_ADRS + IOAPIC_IND)) = (char)offset;
-	value = *((volatile uint32_t *)(IOAPIC_BASE_ADRS + IOAPIC_DATA));
+	*((volatile char *)
+		(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND)) = (char)offset;
+	value = *((volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_DATA));
 
 	irq_unlock(key);
 
@@ -428,8 +429,8 @@ static void __IoApicSet(
 
 	key = irq_lock();
 
-	*(volatile char *)(IOAPIC_BASE_ADRS + IOAPIC_IND) = (char)offset;
-	*((volatile uint32_t *)(IOAPIC_BASE_ADRS + IOAPIC_DATA)) = value;
+	*(volatile char *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND) = (char)offset;
+	*((volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_DATA)) = value;
 
 	irq_unlock(key);
 }
@@ -451,7 +452,7 @@ static uint32_t ioApicRedGetLo(unsigned int irq /* INTIN number */
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
 
-	pEntry = (volatile uint32_t *)(IOAPIC_BASE_ADRS + (irq * 0x10) +
+	pEntry = (volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + (irq * 0x10) +
 				       IOAPIC_RTE0_LOW);
 
 	return *pEntry;
@@ -478,7 +479,7 @@ static void ioApicRedSetLo(unsigned int irq, /* INTIN number */
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
 
-	pEntry = (volatile uint32_t *)(IOAPIC_BASE_ADRS + (irq * 0x10) +
+	pEntry = (volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + (irq * 0x10) +
 				       IOAPIC_RTE0_LOW);
 
 	*pEntry = lower32;
@@ -505,7 +506,7 @@ static void ioApicRedSetHi(unsigned int irq, /* INTIN number */
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
 
-	pEntry = (volatile uint32_t *)(IOAPIC_BASE_ADRS + (irq * 0x10) +
+	pEntry = (volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + (irq * 0x10) +
 				       IOAPIC_RTE0_HIGH);
 
 	*pEntry = upper32;
@@ -547,7 +548,7 @@ static void _IoApicRedUpdateLo(
  * @brief Write to the RTE config register for specified IRQ
  *
  * This routine writes the specified 32-bit <value> into the RTE configuration
- * register for the specified <irq> (0 to (IOAPIC_NUM_RTES - 1))
+ * register for the specified <irq> (0 to (CONFIG_IOAPIC_NUM_RTES - 1))
  *
  * @return void
  */
@@ -559,7 +560,7 @@ static void _IoApicRteConfigSet(unsigned int irq, /* INTIN number */
 	unsigned int offset; /* register offset */
 
 #ifdef DEBUG
-	if (irq >= IOAPIC_NUM_RTES)
+	if (irq >= CONFIG_IOAPIC_NUM_RTES)
 		return; /* do nothing if <irq> is invalid */
 #endif
 
@@ -567,7 +568,7 @@ static void _IoApicRteConfigSet(unsigned int irq, /* INTIN number */
 
 	/* use direct addressing when writing to RTE config register */
 
-	*((volatile uint32_t *)(IOAPIC_BASE_ADRS + offset)) = value;
+	*((volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + offset)) = value;
 }
 
 /**
@@ -593,7 +594,7 @@ static void _IoApicRedirRegSet(unsigned int reg, uint32_t value)
 
 	/* use direct addressing when writing to RTE config register */
 
-	*((volatile uint32_t *)(IOAPIC_BASE_ADRS + offset)) = value;
+	*((volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + offset)) = value;
 }
 
 #endif /* IOAPIC_MSI_REDIRECT */
