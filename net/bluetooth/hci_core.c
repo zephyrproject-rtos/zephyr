@@ -1005,34 +1005,6 @@ static void hci_cmd_tx_fiber(void)
 	}
 }
 
-static void hci_rx_fiber(void)
-{
-	struct bt_buf *buf;
-
-	BT_DBG("started\n");
-
-	while (1) {
-		BT_DBG("calling fifo_get_wait\n");
-		buf = nano_fifo_get_wait(&bt_dev.rx_queue);
-
-		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
-
-		switch (buf->type) {
-		case BT_ACL_IN:
-			hci_acl(buf);
-			break;
-		case BT_EVT:
-			hci_event(buf);
-			break;
-		default:
-			BT_ERR("Unknown buf type %u\n", buf->type);
-			bt_buf_put(buf);
-			break;
-		}
-
-	}
-}
-
 static void rx_prio_fiber(void)
 {
 	struct bt_buf *buf;
@@ -1349,6 +1321,34 @@ int bt_driver_register(struct bt_driver *drv)
 void bt_driver_unregister(struct bt_driver *drv)
 {
 	bt_dev.drv = NULL;
+}
+
+static void hci_rx_fiber(void)
+{
+	struct bt_buf *buf;
+
+	BT_DBG("started\n");
+
+	while (1) {
+		BT_DBG("calling fifo_get_wait\n");
+		buf = nano_fifo_get_wait(&bt_dev.rx_queue);
+
+		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
+
+		switch (buf->type) {
+		case BT_ACL_IN:
+			hci_acl(buf);
+			break;
+		case BT_EVT:
+			hci_event(buf);
+			break;
+		default:
+			BT_ERR("Unknown buf type %u\n", buf->type);
+			bt_buf_put(buf);
+			break;
+		}
+
+	}
 }
 
 /* fibers, fifos and semaphores initialization */
