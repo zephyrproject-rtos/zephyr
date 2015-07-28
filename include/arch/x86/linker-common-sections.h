@@ -178,6 +178,7 @@ SECTIONS
 	{
 		_k_pipe_ptr_start = .;
 			*(._k_pipe_ptr.public.*)
+			*(._k_pipe_ptr.private.*)
 		KEEP(*(SORT_BY_NAME("._k_pipe_ptr*")))
 		_k_pipe_ptr_end = .;
 	} GROUP_LINK_IN(RAM)

@@ -37,6 +37,8 @@
 extern "C" {
 #endif
 
+#include <sections.h>
+
 extern int _task_pipe_put(kpipe_t id,
 						  void *pBuffer,
 						  int iNbrBytesToWrite,
@@ -75,6 +77,31 @@ extern int _task_pipe_put_async(kpipe_t id,
 #define task_pipe_put_async(id, block, size, sema) \
 			_task_pipe_put_async(id, block, size, sema)
 
+/**
+ * @brief Initialize a pipe struct.
+ *
+ * @param size Size of pipe buffer.
+ * @param buffer Pointer to the buffer.
+ */
+#define __K_PIPE_INITIALIZER(size, buffer) \
+	{ \
+	  .iBufferSize = size, \
+	  .Buffer = buffer, \
+	}
+
+/**
+ * @brief Define a private microkernel pipe.
+ *
+ * @param name Name of the pipe.
+ * @param size Size of the pipe buffer, in bytes.
+ */
+#define DEFINE_PIPE(name, size) \
+	char __noinit __pipe_buffer_##name[size]; \
+	struct _k_pipe_struct _k_pipe_obj_##name = \
+		__K_PIPE_INITIALIZER(size, __pipe_buffer_##name); \
+	const kpipe_t name \
+		__section(_k_pipe_ptr, private, pipe) = \
+		(kpipe_t)&_k_pipe_obj_##name;
 
 #ifdef __cplusplus
 }

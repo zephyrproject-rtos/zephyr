@@ -40,8 +40,8 @@ and receiver identities.
 Usage
 =====
 
-Defining a pipe
----------------
+Defining a pipe in MDEF file
+----------------------------
 
 The following parameters must be defined:
 
@@ -66,6 +66,35 @@ For example, the file :file:`projName.mdef` defines a pipe as follows:
    % PIPE   NAME          BUFFERSIZE
    % ===============================
      PIPE   DATA_PIPE        1024
+
+
+Defining pipes in source code
+-----------------------------
+
+In addition to defining pipes in MDEF file, it is also possible to
+define pipes inside code. The macro ``DEFINE_PIPE(...)`` can be
+used for this purpose.
+
+For example, the following code can be used to define a global pipe
+``PRIV_PIPE``.
+
+.. code-block:: c
+
+   DEFINE_PIPE(PRIV_PIPE, size);
+
+where the parameters are the same as pipes defined in MDEF file.
+The task ``PRIV_PIPE`` can be used in the same style as those
+defined in MDEF file.
+
+It is possible to utilize this pipe in another source file, simply
+add:
+
+.. code-block:: c
+
+   extern const kpipe_t PRIV_PIPE;
+
+to that file. The pipe ``PRIV_PIPE`` can be then used there.
+
 
 Example: Writing Fixed-Size Data Items to a Pipe
 ------------------------------------------------

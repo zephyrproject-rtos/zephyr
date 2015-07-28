@@ -592,7 +592,7 @@ def kernel_main_c_pipes():
         size = pipe[1]
         buffer = "__" + pipe[0] + "_buffer"
         kernel_main_c_out("struct _k_pipe_struct _k_pipe_obj_%s = " % (name) +
-            "    {%d, %s};\n" % (size, buffer) +
+            "    __K_PIPE_INITIALIZER(%d, %s);\n" % (size, buffer) +
             "kpipe_t _k_pipe_ptr_%s " % (name) +
             "    __section(_k_pipe_ptr, public, pipe) =\n" +
             "    (kpipe_t)&_k_pipe_obj_%s;\n" % (name))
@@ -744,8 +744,7 @@ def kernel_main_c_node_init():
 
     kernel_main_c_out("\n" +
         "void _k_init_node(void)\n{\n")
-    if (len(pipe_list) > 0):
-        kernel_main_c_out("    _k_pipe_init();\n")
+    kernel_main_c_out("    _k_pipe_init();\n")
     if (len(map_list) > 0):
         kernel_main_c_out("    _k_mem_map_init();\n")
     if (len(pool_list) > 0):
