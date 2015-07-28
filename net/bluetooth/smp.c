@@ -721,6 +721,27 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 	}
+
+	if (smp->local_dist & BT_SMP_DIST_SIGN) {
+		struct bt_smp_signing_info *info;
+
+		bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
+
+		le_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
+		keys->local_csrk.cnt = 0;
+
+		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
+					sizeof(*info));
+		if (!buf) {
+			BT_ERR("Unable to allocate Signing Info buffer\n");
+			return;
+		}
+
+		info = bt_buf_add(buf, sizeof(*info));
+		memcpy(info->csrk, keys->local_csrk.val, sizeof(info->csrk));
+
+		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+	}
 }
 
 static uint8_t smp_encrypt_info(struct bt_conn *conn, struct bt_buf *buf)

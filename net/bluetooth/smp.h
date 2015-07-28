@@ -128,6 +128,11 @@ struct bt_smp_ident_addr_info {
 	bt_addr_le_t addr;
 } __packed;
 
+#define BT_SMP_CMD_SIGNING_INFO			0x0a
+struct bt_smp_signing_info {
+	uint8_t csrk[16];
+} __packed;
+
 #define BT_SMP_CMD_SECURITY_REQUEST		0x0b
 struct bt_smp_security_request {
 	uint8_t  auth_req;
