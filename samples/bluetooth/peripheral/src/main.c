@@ -541,6 +541,24 @@ static struct bt_conn_cb conn_callbacks = {
 		.disconnected = disconnected,
 };
 
+static void bt_ready(int err)
+{
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Bluetooth initialized\n");
+
+	err = bt_start_advertising(BT_LE_ADV_IND, ad, sd);
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising successfully started\n");
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -549,28 +567,18 @@ void main(void)
 {
 	int err;
 
-	err = bt_enable(NULL);
+	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
-
-	printk("Bluetooth initialized\n");
 
 	/* Simulate current time for Current Time Service */
 	generate_current_time(ct);
 
 	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
-	err = bt_start_advertising(BT_LE_ADV_IND, ad, sd);
-	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
 	bt_conn_cb_register(&conn_callbacks);
-
-	printk("Advertising successfully started\n");
 
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
