@@ -83,7 +83,7 @@ For example, the following code can be used to define a global pipe
    DEFINE_PIPE(PRIV_PIPE, size);
 
 where the parameters are the same as pipes defined in MDEF file.
-The task ``PRIV_PIPE`` can be used in the same style as those
+The pipe ``PRIV_PIPE`` can be used in the same style as those
 defined in MDEF file.
 
 It is possible to utilize this pipe in another source file, simply

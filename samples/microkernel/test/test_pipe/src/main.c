@@ -61,7 +61,11 @@ ksem_t regSem		= REGRESSION_SEM;
 ksem_t altSem		= ALTERNATE_SEM;
 ksem_t counterSem	= COUNTER_SEM;
 
+#ifndef TEST_PRIV_PIPES
 kpipe_t pipeId	= PIPE_ID;
+#else
+DEFINE_PIPE(pipeId, 256);
+#endif
 
 /**
  *
