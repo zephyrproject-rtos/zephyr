@@ -94,12 +94,12 @@ struct bt_gatt_attr {
 	/** Attribute read callback */
 	int			(*read)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
-					void *buf, uint8_t len,
+					void *buf, uint16_t len,
 					uint16_t offset);
 	/** Attribute write callback */
 	int			(*write)(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
-					 const void *buf, uint8_t len,
+					 const void *buf, uint16_t len,
 					 uint16_t offset);
 	/** Attribute flush callback */
 	int			(*flush)(struct bt_conn *conn,
@@ -287,8 +287,8 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
  *  case of error.
  */
 int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      void *buf, uint8_t buf_len, uint16_t offset,
-		      const void *value, uint8_t value_len);
+		      void *buf, uint16_t buf_len, uint16_t offset,
+		      const void *value, uint16_t value_len);
 
 /** @brief Read Service Attribute helper.
  *
@@ -307,7 +307,7 @@ int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
  */
 int bt_gatt_attr_read_service(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
-			      void *buf, uint8_t len, uint16_t offset);
+			      void *buf, uint16_t len, uint16_t offset);
 
 /** @def BT_GATT_SERVICE
  *  @brief Generic Service Declaration Macro.
@@ -380,7 +380,7 @@ int bt_gatt_attr_read_service(struct bt_conn *conn,
  */
 int bt_gatt_attr_read_included(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
-			       void *buf, uint8_t len, uint16_t offset);
+			       void *buf, uint16_t len, uint16_t offset);
 
 /** @def BT_GATT_INCLUDE_SERVICE
  *  @brief Include Service Declaration Macro.
@@ -417,7 +417,7 @@ int bt_gatt_attr_read_included(struct bt_conn *conn,
  */
 int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
-			   uint8_t len, uint16_t offset);
+			   uint16_t len, uint16_t offset);
 
 /** @def BT_GATT_CHARACTERISTIC
  *  @brief Characteristic Declaration Macro.
@@ -473,7 +473,7 @@ struct _bt_gatt_ccc {
  */
 int bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
-			  uint8_t len, uint16_t offset);
+			  uint16_t len, uint16_t offset);
 
 /** @brief Write Client Characteristic Configuration Attribute helper.
  *
@@ -491,7 +491,7 @@ int bt_gatt_attr_read_ccc(struct bt_conn *conn,
  */
 int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
-			   uint8_t len, uint16_t offset);
+			   uint16_t len, uint16_t offset);
 
 /** @def BT_GATT_CCC
  *  @brief Client Characteristic Configuration Declaration Macro.
@@ -534,7 +534,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
  */
 int bt_gatt_attr_read_cep(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
-			  uint8_t len, uint16_t offset);
+			  uint16_t len, uint16_t offset);
 
 /** @def BT_GATT_CEP
  *  @brief Characteristic Extended Properties Declaration Macro.

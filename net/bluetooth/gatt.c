@@ -68,10 +68,10 @@ void bt_gatt_register(const struct bt_gatt_attr *attrs, size_t count)
 }
 
 int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      void *buf, uint8_t buf_len, uint16_t offset,
-		      const void *value, uint8_t value_len)
+		      void *buf, uint16_t buf_len, uint16_t offset,
+		      const void *value, uint16_t value_len)
 {
-	uint8_t len;
+	uint16_t len;
 
 	if (offset > value_len) {
 		return -EINVAL;
@@ -89,7 +89,7 @@ int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 int bt_gatt_attr_read_service(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
-			      void *buf, uint8_t len, uint16_t offset)
+			      void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_uuid *uuid = attr->user_data;
 
@@ -115,7 +115,7 @@ struct gatt_incl {
 
 int bt_gatt_attr_read_include(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
-			      void *buf, uint8_t len, uint16_t offset)
+			      void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_include *incl = attr->user_data;
 	struct gatt_incl pdu;
@@ -147,7 +147,7 @@ struct gatt_chrc {
 
 int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, void *buf,
-			   uint8_t len, uint16_t offset)
+			   uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
 	struct gatt_chrc pdu;
@@ -187,7 +187,7 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 
 int bt_gatt_attr_read_ccc(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
-			  uint8_t len, uint16_t offset)
+			  uint16_t len, uint16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	uint16_t value;
@@ -232,7 +232,7 @@ static void gatt_ccc_changed(struct _bt_gatt_ccc *ccc)
 
 int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
-			   uint8_t len, uint16_t offset)
+			   uint16_t len, uint16_t offset)
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	const uint16_t *data = buf;
@@ -286,7 +286,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
 int bt_gatt_attr_read_cep(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
-			  uint8_t len, uint16_t offset)
+			  uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_cep *value = attr->user_data;
 	uint16_t props = sys_cpu_to_le16(value->properties);
