@@ -30,48 +30,27 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-menu "ARM Cortex CPU options"
-
-config CPU_CORTEX
-	bool "ARM CORTEX"
-	default n
-	select ARM
-	help
-	This option signifies the use of a CPU of the Cortex family.
-
-config CPU_CORTEX_M
-	bool "ARM Cortex-M"
-	default n
-	select CPU_CORTEX
-	select ISA_THUMB2
-	help
-	This option signifies the use of a CPU of the Cortex-M family.
-
 config CPU_CORTEX_M3_M4
-	bool "ARM Cortex-M3 or ARM Cortex-M4"
+	bool
+	# Omit prompt to signify "hidden" option
 	default n
-	select CPU_CORTEX_M
+	select ISA_THUMB2
 	help
 	This option signifies the use of either a Cortex-M3 or Cortex-M4 CPU.
 
-choice
-prompt "ARM Cortex M3 or M4 Processor"
-default CPU_CORTEX_M4
-
 config CPU_CORTEX_M3
-	bool "ARM Cortex-M3"
+	bool
+	# Omit prompt to signify "hidden" option
 	select CPU_CORTEX_M3_M4
 	help
 	This option signifies the use of a Cortex-M3 CPU
 
 config CPU_CORTEX_M4
-	bool "ARM Cortex-M4"
+	bool
+	# Omit prompt to signify "hidden" option
 	select CPU_CORTEX_M3_M4
 	help
 	This option signifies the use of a Cortex-M4 CPU
-endchoice
-
-endmenu
 
 menu "ARM Cortex-M family options"
 	depends on CPU_CORTEX_M

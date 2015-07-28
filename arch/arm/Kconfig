@@ -34,17 +34,37 @@ source "kernel/Kconfig"
 
 source "misc/Kconfig"
 
-menu "ARM family options"
+menu "General Platform Configuration"
+
+choice
+prompt "Platform Selection"
+default PLATFORM_FSL_FRDM_K64F
+
+config  PLATFORM_FSL_FRDM_K64F
+	bool "FSL FRDM K64F"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M4
+	select K20_UART
+
+config  PLATFORM_TI_LM3S6965
+	bool "TI LM3S6965"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M3
+	select STELLARIS_UART
+
+endchoice
 
 config ARM
 	bool
+	# Omit prompt to signify "hidden" option
 	default y
 	help
 	This option signifies the use of an ARM system.
 
 config ISA_THUMB2
-	bool "Thumb-2 Technology"
-	default y
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
 	help
 	From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
 
@@ -69,29 +89,10 @@ config ISA_THUMB2
 	to prolong battery-life or to enrich the product feature set. Thumb-2
 	technology is featured in the  processor, and in all ARMv7
 	architecture-based processors.
-endmenu
 
-menu "Platform General Configuration"
-
-choice
-prompt "Minimum Platform Configuation Selection"
-default PLATFORM_FSL_FRDM_K64F
-
-config  PLATFORM_FSL_FRDM_K64F
-	bool "Minimum Configuration for FSL FRDM K64F"
-	select CPU_CORTEX_M4
-	select K20_UART
-
-config  PLATFORM_TI_LM3S6965
-	bool "Minimum Configuration for a TI LM3S6965"
-	select CPU_CORTEX_M3
-	select STELLARIS_UART
-
-endchoice
+source "arch/arm/core/Kconfig"
 
 endmenu
-
-source "arch/arm/core/cortex_m/Kconfig"
 
 if PLATFORM_TI_LM3S6965
 source "arch/arm/platforms/ti_lm3s6965/Kconfig"

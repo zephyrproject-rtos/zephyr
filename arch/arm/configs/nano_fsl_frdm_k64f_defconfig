@@ -51,24 +51,15 @@ CONFIG_PRINTK=y
 # CONFIG_BOOTLOADER_UNKNOWN is not set
 
 #
-# ARM family options
-#
-CONFIG_ARM=y
-CONFIG_ISA_THUMB2=y
-
-#
-# Platform General Configuration
+# General Platform Configuration
 #
 CONFIG_PLATFORM_FSL_FRDM_K64F=y
 # CONFIG_PLATFORM_TI_LM3S6965 is not set
-
-#
-# ARM Cortex CPU options
-#
+CONFIG_ARM=y
+CONFIG_ISA_THUMB2=y
 CONFIG_CPU_CORTEX=y
 CONFIG_CPU_CORTEX_M=y
 CONFIG_CPU_CORTEX_M3_M4=y
-# CONFIG_CPU_CORTEX_M3 is not set
 CONFIG_CPU_CORTEX_M4=y
 
 #
