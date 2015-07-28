@@ -379,8 +379,6 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	smp->local_dist = rsp->resp_key_dist;
 	smp->remote_dist = rsp->init_key_dist;
 
-	memset(smp->tk, 0, sizeof(smp->tk));
-
 	/* Store req/rsp for later use */
 	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
 	memcpy(smp->preq + 1, req, sizeof(*req));
@@ -450,8 +448,6 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	smp->local_dist = SEND_KEYS;
 	smp->remote_dist = RECV_KEYS;
-
-	memset(smp->tk, 0, sizeof(smp->tk));
 
 	/* Store req for later use */
 	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
