@@ -26,7 +26,7 @@ endif
 
 SOURCE_DIR ?= $(PROJECT_BASE)/src/
 # Kbuild doesn't work correctly if this is an absolute path
-override SOURCE_DIR := $(shell python -c "import os.path; print os.path.relpath('$(SOURCE_DIR)', '$(ZEPHYR_BASE)')")/
+override SOURCE_DIR := $(shell python -c "import os.path; print(\"%s\" % os.path.relpath('$(SOURCE_DIR)', '$(ZEPHYR_BASE)'))")/
 export SOURCE_DIR
 
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
