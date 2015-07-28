@@ -50,8 +50,8 @@
 #include "l2cap.h"
 #include "smp.h"
 
-#define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY)
-#define SEND_KEYS (BT_SMP_DIST_ENC_KEY)
+#define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
+#define SEND_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
 
 /* SMP channel specific context */
 struct bt_smp {
