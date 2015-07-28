@@ -298,7 +298,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 struct notify_data {
 	const void *data;
 	size_t len;
-	uint8_t handle;
+	uint16_t handle;
 };
 
 static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
