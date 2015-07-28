@@ -1374,32 +1374,6 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 	}
 }
 
-/* fibers, fifos and semaphores initialization */
-
-static void cmd_queue_init(void)
-{
-	nano_fifo_init(&bt_dev.cmd_tx_queue);
-	nano_sem_init(&bt_dev.ncmd_sem);
-
-	/* Give cmd_sem allowing to send first HCI_Reset cmd */
-	bt_dev.ncmd = 1;
-	nano_task_sem_give(&bt_dev.ncmd_sem);
-
-	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
-		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
-}
-
-static void rx_queue_init(bt_ready_cb_t cb)
-{
-	nano_fifo_init(&bt_dev.rx_queue);
-	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-		    (nano_fiber_entry_t)hci_rx_fiber, (int)cb, 0, 7, 0);
-
-	nano_fifo_init(&bt_dev.rx_prio_queue);
-	fiber_start(rx_prio_fiber_stack, sizeof(rx_prio_fiber_stack),
-		    (nano_fiber_entry_t)rx_prio_fiber, 0, 0, 7, 0);
-}
-
 int bt_enable(bt_ready_cb_t cb)
 {
 	if (!bt_dev.drv) {
@@ -1409,8 +1383,25 @@ int bt_enable(bt_ready_cb_t cb)
 
 	bt_buf_init(ACL_IN_MAX, ACL_OUT_MAX);
 
-	cmd_queue_init();
-	rx_queue_init(cb);
+	/* Give cmd_sem allowing to send first HCI_Reset cmd */
+	bt_dev.ncmd = 1;
+	nano_sem_init(&bt_dev.ncmd_sem);
+	nano_task_sem_give(&bt_dev.ncmd_sem);
+
+	/* TX fiber */
+	nano_fifo_init(&bt_dev.cmd_tx_queue);
+	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
+		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
+
+	/* RX fiber */
+	nano_fifo_init(&bt_dev.rx_queue);
+	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
+		    (nano_fiber_entry_t)hci_rx_fiber, (int)cb, 0, 7, 0);
+
+	/* RX prio fiber */
+	nano_fifo_init(&bt_dev.rx_prio_queue);
+	fiber_start(rx_prio_fiber_stack, sizeof(rx_prio_fiber_stack),
+		    (nano_fiber_entry_t)rx_prio_fiber, 0, 0, 7, 0);
 
 	if (!cb) {
 		return bt_init();
