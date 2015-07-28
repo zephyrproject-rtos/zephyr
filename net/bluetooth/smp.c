@@ -861,6 +861,33 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_signing_info *req = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
+	struct bt_keys *keys;
+
+	BT_DBG("\n");
+
+	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &conn->dst);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s\n",
+		       bt_addr_le_str(&conn->dst));
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	memcpy(keys->remote_csrk.val, req->csrk, sizeof(keys->remote_csrk.val));
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		smp->remote_dist &= ~BT_SMP_DIST_SIGN;
+		if (!smp->remote_dist) {
+			bt_smp_distribute_keys(conn);
+		}
+	}
+
+	return 0;
+}
+
 static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_security_request *req = (void *)buf->data;
@@ -908,7 +935,7 @@ static const struct {
 	{ smp_master_ident,        sizeof(struct bt_smp_master_ident) },
 	{ smp_ident_info,          sizeof(struct bt_smp_ident_info) },
 	{ smp_ident_addr_info,     sizeof(struct bt_smp_ident_addr_info) },
-	{ }, /* Signing Information - Not yet implemented */
+	{ smp_signing_info,        sizeof(struct bt_smp_signing_info) },
 	{ smp_security_request,    sizeof(struct bt_smp_security_request) },
 };
 
