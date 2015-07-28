@@ -41,14 +41,15 @@ config PIC
 config LOAPIC
 	bool "LOAPIC"
 	default n
+	select IOAPIC
 	depends on X86_32
 	help
 	This option selects local APIC as the interrupt controller.
 
 config IOAPIC
 	bool "IOAPIC"
-	default n
-	depends on X86_32 && LOAPIC
+	default y
+	depends on LOAPIC
 	help
 	This option signifies that the target has an IO-APIC device. This
 	capability allows IO-APIC-dependent code to be included.
