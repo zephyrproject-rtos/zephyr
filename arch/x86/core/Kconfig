@@ -31,7 +31,6 @@
 #
 
 menu "x86 Core Options"
-	depends on ARCH="x86"
 
 config NO_ISRS
 	bool

@@ -35,7 +35,7 @@ config X86_32
 
 config ARCH_DEFCONFIG
 	string
-	default "arch/x86/defconfig" if X86_32
+	default "arch/x86/defconfig"
 
 source "kernel/Kconfig"
 
@@ -88,7 +88,7 @@ config CPU_MIGHT_SUPPORT_CLFLUSH
 	If a platform uses a processor that possibly implements CLFLUSH, change
 	the default in that platform's config file.
 
-#FIXME This options is not being used in the current code base.
+#FIXME This option is not being used in the current code base.
 config CLFLUSH_INSTRUCTION_SUPPORTED
 	bool
 	prompt "CLFLUSH instruction supported" if CPU_MIGHT_SUPPORT_CLFLUSH
@@ -144,8 +144,7 @@ menu "Specific CPU Capability Support"
 
 config ISA_IA32
 	bool
-	default y if CPU_ATOM || CPU_MINUTEIA
-	default n
+	default y
 	help
 	This option signifies the use of a CPU based on the Intel IA-32
 	instruction set architecture.
@@ -243,7 +242,7 @@ config  SSE
 config SSE_FP_MATH
 	bool
 	prompt "Compiler-generated SSEx instructions" if FP_SHARING
-	depends on SSE && ISA_IA32
+	depends on SSE
 	default n if FP_SHARING
 	default y if !FP_SHARING
 	help
