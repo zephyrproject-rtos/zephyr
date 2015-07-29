@@ -312,6 +312,7 @@ static uint8_t att_find_info_rsp(struct bt_conn *conn, uint16_t start_handle,
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
+	data.conn = conn;
 	bt_gatt_foreach_attr(start_handle, end_handle, find_info_cb, &data);
 
 	if (!data.rsp) {
