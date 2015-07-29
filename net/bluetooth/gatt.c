@@ -472,10 +472,42 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
+static void gatt_subscription_remove(struct bt_gatt_subscribe_params *prev,
+				     struct bt_gatt_subscribe_params *params)
+{
+	/* Remove subscription from the list*/
+	if (!prev) {
+		subscriptions = params->_next;
+	} else {
+		prev->_next = params->_next;
+	}
+
+	if (params->destroy)
+		params->destroy(params);
+}
+
 void bt_gatt_disconnected(struct bt_conn *conn)
 {
+	struct bt_gatt_subscribe_params *params, *prev;
+
 	BT_DBG("conn %p\n", conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
+
+	/* If paired don't remove subscriptions */
+	if (bt_keys_find_addr(&conn->dst)) {
+		return;
+	}
+
+	/* Lookup existing subscriptions */
+	for (params = subscriptions, prev = NULL; params;
+	     prev = params, params = params->_next) {
+		if (bt_addr_le_cmp(&params->_peer, &conn->dst)) {
+			continue;
+		}
+
+		/* Remove subscription */
+		gatt_subscription_remove(prev, params);
+	}
 }
 
 static void gatt_mtu_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
