@@ -32,6 +32,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <errno.h>
 #include <zephyr.h>
 #include <misc/printk.h>
 
@@ -104,7 +105,7 @@ static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
 
 		err = bt_gatt_subscribe(default_conn, attr->handle,
 					&subscribe_params);
-		if (err) {
+		if (err && err != -EALREADY) {
 			printk("Subscribe failed (err %d)\n", err);
 		}
 		return BT_GATT_ITER_STOP;
