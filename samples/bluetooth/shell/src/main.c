@@ -48,6 +48,8 @@
 
 #include "btshell.h"
 
+#define DEVICE_NAME "test shell"
+
 static struct bt_conn *default_conn = NULL;
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
@@ -313,9 +315,9 @@ static const struct bt_eir ad[] = {
 
 static const struct bt_eir sd[] = {
 	{
-		.len = sizeof("test shell"),
+		.len = sizeof(DEVICE_NAME),
 		.type = BT_EIR_NAME_COMPLETE,
-		.data = "test shell",
+		.data = DEVICE_NAME,
 	},
 	{ }
 };
@@ -615,6 +617,38 @@ static void cmd_gatt_unsubscribe(int argc, char *argv[])
 	}
 }
 
+static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		     void *buf, uint16_t len, uint16_t offset)
+{
+	const char *name = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
+				 strlen(name));
+}
+
+static struct bt_uuid gap_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GAP,
+};
+
+static struct bt_uuid device_name_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GAP_DEVICE_NAME,
+};
+
+static struct bt_gatt_chrc name_chrc = {
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x0003,
+	.uuid = &device_name_uuid,
+};
+
+static struct bt_gatt_attr attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
+	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
+	BT_GATT_DESCRIPTOR(0x0003, &device_name_uuid, BT_GATT_PERM_READ,
+			   read_name, NULL, DEVICE_NAME),
+};
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -623,6 +657,8 @@ void main(void)
 {
 	shell_init("btshell> ");
 	bt_conn_cb_register(&conn_callbacks);
+
+	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
 	shell_cmd_register("init", cmd_init);
 	shell_cmd_register("connect", cmd_connect_le);
