@@ -795,6 +795,8 @@ static uint8_t smp_master_ident(struct bt_conn *conn, struct bt_buf *buf)
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	return 0;
@@ -856,6 +858,12 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 		if (!smp->remote_dist) {
 			bt_smp_distribute_keys(conn);
 		}
+
+		return 0;
+	}
+
+	if (smp->remote_dist & BT_SMP_DIST_SIGN) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	return 0;
@@ -1041,6 +1049,8 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_ENCRYPT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
+	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
 	/* Slave distributes it's keys first */
