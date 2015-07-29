@@ -243,7 +243,7 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (bt_keys_get_addr(&conn->dst))
+	if (bt_keys_find_addr(&conn->dst))
 		bonded = true;
 	else
 		bonded = false;
