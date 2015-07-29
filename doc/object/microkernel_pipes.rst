@@ -37,53 +37,150 @@ Pipes are anonymous. The pipe transfer does not identify the sender or
 receiver. Alternatively, mailboxes can be used to specify the sender
 and receiver identities.
 
-Initialization
-==============
+Usage
+=====
 
+Defining a pipe
+---------------
 
-A target pipe has to be defined in the project file, for example
-:file:`projName.mdef`. Specify the name of the pipe, the size of the
-buffer in bytes, and the memory location for the pipe buffer as defined
-in the linker script. The buffer’s memory is allocated on the processor
-that manages the pipe. Use the following syntax in the MDEF file to
-define a pipe:
+The following parameters must be defined:
+
+   *name*
+          This specifies a unique name for the pipe.
+
+   *buffer_size*
+          This specifies the size (in bytes) of the pipe's internal buffer.
+          If no internal buffer is to be used specify zero.
+
+Add an entry for a pipe in the project .MDEF file using the
+following syntax:
 
 .. code-block:: console
 
-   PIPE %name %buffersize [%bufferSegment]
+   PIPE %name %buffer_size
 
-An example of a pipe entry for use in the MDEF file:
+For example, the file :file:`projName.mdef` defines a pipe as follows:
 
 .. code-block:: console
 
-   % PIPE    NAME           BUFFERSIZE [BUFFER_SEGMENT]
+   % PIPE   NAME          BUFFERSIZE
+   % ===============================
+     PIPE   DATA_PIPE        1024
 
-   % ===================================================
+Example: Writing Fixed-Size Data Items to a Pipe
+------------------------------------------------
 
-     PIPE    PIPE_ID           256
+This code uses a pipe to send a series of fixed-size data items
+to a consuming task.
+
+.. code-block:: c
+
+   void producer_task(void)
+   {
+       struct item_type data_item;
+       int amount_written;
+
+       while (1) {
+           /* generate a data item to send */
+           data_item = ... ;
+
+           /* write the entire data item to the pipe */
+           task_pipe_put_wait(DATA_PIPE, &data_item, sizeof(data_item),
+                              &amount_written, _ALL_N);
+
+       }
+   }
+
+Example: Reading Fixed-Size Data Items from a Pipe
+--------------------------------------------------
+
+This code uses a pipe to receive a series of fixed-size data items
+from a producing task. To improve performance, the consuming task
+waits until 20 data items are available then reads them as a group,
+rather than reading them individually.
+
+.. code-block:: c
+
+   void consumer_task(void)
+   {
+       struct item_type data_items[20];
+       int amount_read;
+       int i;
+
+       while (1) {
+           /* read 20 complete data items at once */
+           task_pipe_get_wait(DATA_PIPE, &data_items, sizeof(data_items),
+                              &amount_read, _ALL_N);
+
+           /* process the data items one at a time */
+           for (i = 0; i < 20; i++) {
+               ... = data_items[i];
+               ...
+           }
+       }
+   }
+
+Example: Reading a Stream of Data Bytes from a Pipe
+---------------------------------------------------
+
+This code uses a pipe to process a stream of data bytes from a
+producing task. The pipe is read in a non-blocking manner to allow
+the consuming task to perform other work when there are no
+unprocessed data bytes in the pipe.
+
+.. code-block:: c
+
+   void consumer_task(void)
+   {
+       char data_area[20];
+       int amount_read;
+       int i;
+
+       while (1) {
+           /* consume any data bytes currently in the pipe */
+           while (task_pipe_get(DATA_PIPE, &data_area, sizeof(data_area),
+                                &amount_read, _1_TO_N) == RC_OK) {
+               /* now have from 1 to 20 data bytes */
+               for (i = 0; i < amount_read; i++) {
+                   ... = data_area[i];
+                   ...
+               }
+           }
+
+           /* do other processing */
+           ...
+       }
+   }
 
 
-Application Program Interfaces
-==============================
+APIs
+====
 
-The pipes APIs allow to sending and receiving data to and from a pipe.
+The following Pipe APIs are provided by :file:`microkernel.h`.
 
 +----------------------------------------+------------------------------------+
 | Call                                   | Description                        |
 +========================================+====================================+
-| :c:func:`task_pipe_put()`              | Put data on a pipe                 |
+| :c:func:`task_pipe_put()`              | Writes data to a pipe, or fails &  |
+|                                        | continues if unable to write data. |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_pipe_put_wait()`         | Put data on a pipe with a delay.   |
+| :c:func:`task_pipe_put_wait()`         | Writes data to a pipe, or waits    |
+|                                        | if unable to write data.           |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_pipe_put_wait_timeout()` | Put data on a pipe with a timed    |
-|                                        | delay.                             |
+| :c:func:`task_pipe_put_wait_timeout()` | Writes data to a pipe, or waits    |
+|                                        | for a specified time period if     |
+|                                        | unable to write data.              |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_pipe_get()`              | Get data off a pipe.               |
+| :c:func:`task_pipe_put_async()`        | Writes data to a pipe from a       |
+|                                        | memory pool block.                 |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_pipe_get_wait()`         | Get data off a pipe with a delay.  |
+| :c:func:`task_pipe_get()`              | Reads data from a pipe, or fails   |
+|                                        | and continues if data isn't there. |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_pipe_get_wait_timeout()` | Get data off a pipe with a timed   |
-|                                        | delay.                             |
+| :c:func:`task_pipe_get_wait()`         | Reads data from a pipe, or waits   |
+|                                        | for data if data isn't there.      |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_pipe_put_async()`        | Put data on a pipe asynchronously. |
+| :c:func:`task_pipe_get_wait_timeout()` | Reads data from a pipe, or waits   |
+|                                        | for data for a specified time      |
+|                                        | period if data isn't there.        |
 +----------------------------------------+------------------------------------+
