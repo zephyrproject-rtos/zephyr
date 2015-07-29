@@ -31,11 +31,11 @@
 #
 
 config X86_32
-        def_bool y
+	def_bool y
 
 config ARCH_DEFCONFIG
-        string
-        default "arch/x86/defconfig" if X86_32
+	string
+	default "arch/x86/defconfig" if X86_32
 
 source "kernel/Kconfig"
 
@@ -207,11 +207,11 @@ endmenu
 
 
 config SHUTOFF_PIC
-        bool "Shutoff PIC"
-        depends on !PIC
-        default n
-        help
-        This option disables all interrupts on the PIC
+	bool "Shutoff PIC"
+	depends on !PIC
+	default n
+	help
+	This option disables all interrupts on the PIC
 
 
 menu "Floating Point Options"
@@ -306,12 +306,12 @@ endmenu
 
 menu "Bus options (PCI etc.)"
 config PCI
-        bool
-        # omit prompt to signify a "hidden" option
-        default n
-        help
-          This options enables support of PCI bus enumeration for device
-          drivers.
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+	help
+	This options enables support of PCI bus enumeration for device
+	drivers.
 
 config PCI_DEBUG
 	bool
@@ -319,7 +319,7 @@ config PCI_DEBUG
 	depends on PCI
 	default n
 	help
-	  This options enables PCI debigging functions
+	This options enables PCI debigging functions
 
 endmenu
 
