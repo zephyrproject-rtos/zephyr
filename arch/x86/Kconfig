@@ -41,8 +41,6 @@ source "kernel/Kconfig"
 
 source "misc/Kconfig"
 
-source "arch/x86/core/Kconfig"
-
 menu "General Platform Configuration"
 
 choice
@@ -100,6 +98,47 @@ config CLFLUSH_INSTRUCTION_SUPPORTED
 	Only enable this if the CLFLUSH instruction is supported, so that
 	an implementation of _SysCacheFlush() that uses CLFLUSH is made
 	available, instead of the one using WBINVD.
+
+menu "Platform Capabilities"
+	config BOI_HANDLER_SUPPORTED
+	bool "BOI Handler Supported"
+	default n
+	help
+	This option signifies that the target has one or more devices whose
+	driver utilizes a "beginning of interrupt" handler that gets called
+	before the standard interrupt handling code. This capability
+	can be used by the driver to suppress spurious interrupts generated
+	by the device (or for other purposes).
+
+config EOI_HANDLER_SUPPORTED
+	bool "EOI Handler Supported"
+	default n
+	help
+	This option signifies that the target has one or more devices whose
+	driver utilizes an "end of interrupt" handler that gets called
+	after the standard interrupt handling code. This capability
+	can be used by the driver to tell the device that an interrupt
+	has been handled (or for other purposes).
+
+config UNALIGNED_WRITE_UNSUPPORTED
+	bool "Unaligned Write Unsupported"
+	default n
+	help
+	This option signifies that the target may not properly decode the
+	IA-32 processor's byte enable (BE) lines, resulting in the inability
+	to read/write unaligned quantities.
+
+config LOCK_INSTRUCTION_UNSUPPORTED
+	bool "Lock Instruction Unsupported"
+	default n
+	help
+	This option signifies that the target lacks support for the IA-32
+	LOCK prefix instruction. Code running on such targets cannot
+	use the LOCK prefix to perform read-modify-write operations in an
+	atomic manner; such targets must utilize other techniques to perform
+	atomic operations (such as locking interrupts).
+
+endmenu
 
 menu "Specific CPU Capability Support"
 
@@ -180,8 +219,6 @@ config SHUTOFF_PIC
         default n
         help
         This option disables all interrupts on the PIC
-
-endmenu
 
 
 menu "Floating Point Options"
@@ -290,6 +327,10 @@ config PCI_DEBUG
 	default n
 	help
 	  This options enables PCI debigging functions
+
+endmenu
+
+source "arch/x86/core/Kconfig"
 
 endmenu
 
