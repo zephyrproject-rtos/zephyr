@@ -296,3 +296,21 @@ struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr)
 
 	return NULL;
 }
+
+struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr)
+{
+	struct bt_keys *keys;
+	int i;
+
+	BT_DBG("%s\n", bt_addr_le_str(addr));
+
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		keys = &key_pool[i];
+
+		if (!bt_addr_le_cmp(&keys->addr, addr)) {
+			return keys;
+		}
+	}
+
+	return NULL;
+}
