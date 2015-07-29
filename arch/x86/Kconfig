@@ -77,6 +77,7 @@ config CPU_ATOM
 
 config CPU_MINUTEIA
 	bool "Minute IA"
+	select CPU_FLOAT_UNSUPPORTED
 	help
 	This option signifies the use of a CPU from the Minute IA family.
 endchoice
@@ -156,16 +157,14 @@ config CMOV
 	the CMOV instruction.
 
 config CPU_FLOAT_UNSUPPORTED
-	def_bool y
-	depends on CPU_MINUTEIA
+	def_bool n
 	select CPU_SSE_UNSUPPORTED
 	help
 	This option signifies the use of an Intel CPU that lacks support
 	for floating point operations.
 
 config CPU_SSE_UNSUPPORTED
-	bool "CPU SSE unsupported"
-	default n
+	def_bool n
 	help
 	This option signifies the use of an Intel CPU that lacks support
 	for SSEx instructions (i.e. those which pre-date Pentium III).
