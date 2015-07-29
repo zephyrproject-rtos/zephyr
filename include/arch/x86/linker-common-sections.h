@@ -160,6 +160,7 @@ SECTIONS
 		INIT_LEVEL(7)
 		KEEP(*(SORT_BY_NAME(".initconfig*")))
 		__initconfig_end = .;
+		KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(RAM)
 
 	__data_ram_end = .;
