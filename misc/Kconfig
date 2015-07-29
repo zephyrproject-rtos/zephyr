@@ -58,6 +58,14 @@ config  KERNEL_BIN_NAME
 	default "microkernel" if MICROKERNEL
 	default "nanokernel" if NANOKERNEL
 
+config  DEBUG
+	bool "Build kernel with debugging"
+	default n
+	help
+	Build a kernel suitable for debugging.  Right now, this option
+	only disables optimization, more debugging variants can be selected
+	from here to allow more debugging.
+
 config  COMPILER_OPT
 	string
 	prompt "Custom compiler options"

@@ -364,10 +364,7 @@ ZEPHYRINCLUDE    := \
 
 KBUILD_CPPFLAGS := -DKERNEL
 
-DEFAULTFLAGS ?= -Os
-
 KBUILD_CFLAGS   := -c -g -std=c99 \
-		$(DEFAULTFLAGS) \
 		$(CONFIG_COMPILER_OPT) \
 		-fno-reorder-functions \
 		-fno-asynchronous-unwind-tables \
@@ -633,6 +630,12 @@ ifdef CONFIG_CC_STACKPROTECTOR_STRONG
 endif
 endif
 KBUILD_CFLAGS += $(stackp-flag)
+
+ifeq ($(CONFIG_DEBUG),y)
+KBUILD_CFLAGS  += -O0
+else
+KBUILD_CFLAGS  += -Os
+endif
 
 export x86_FLAGS arm_FLAGS arc_FLAGS LDFLAG_LINKERCMD OUTPUT_FORMAT OUTPUT_ARCH
 
