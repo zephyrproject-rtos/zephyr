@@ -150,13 +150,6 @@ config ISA_IA32
 	This option signifies the use of a CPU based on the Intel IA-32
 	instruction set architecture.
 
-config HARDWARE_BP_SUPPORTED
-	def_bool y
-	depends on ISA_IA32
-	help
-	This option signifies that the target supports hardware-based
-	instruction breakpoints and/or data watchpoints.
-
 config CMOV
 	def_bool n
 	help
