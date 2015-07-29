@@ -63,6 +63,9 @@ struct bt_l2cap_conn_param_req {
 	uint16_t timeout;
 } __packed;
 
+#define BT_L2CAP_CONN_PARAM_ACCEPTED	0x0000
+#define BT_L2CAP_CONN_PARAM_REJECTED	0x0001
+
 #define BT_L2CAP_CONN_PARAM_RSP		0x13
 struct bt_l2cap_conn_param_rsp {
 	uint16_t result;

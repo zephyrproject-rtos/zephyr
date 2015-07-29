@@ -52,9 +52,6 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define BT_L2CAP_CONN_PARAM_ACCEPTED 0
-#define BT_L2CAP_CONN_PARAM_REJECTED 1
-
 static struct bt_l2cap_chan *channels;
 
 static uint8_t get_ident(struct bt_conn *conn)
@@ -166,34 +163,11 @@ static void le_conn_param_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	bt_conn_connected(conn);
 }
 
-static uint16_t le_validate_conn_params(uint16_t min, uint16_t max,
-					uint16_t latency, uint16_t timeout)
-{
-	uint16_t max_latency;
-
-	if (min > max || min < 6 || max > 3200) {
-		return BT_L2CAP_CONN_PARAM_REJECTED;
-	}
-
-	if (timeout < 10 || timeout > 3200) {
-		return BT_L2CAP_CONN_PARAM_REJECTED;
-	}
-
-	/* calculation based on BT spec 4.2 [Vol3, PartA, 4.20]
-	 * max_latency = ((timeout * 10)/(max * 1.25 * 2)) - 1;
-	 */
-	max_latency = (timeout * 4 / max) - 1;
-	if (latency > 499 || latency > max_latency) {
-		return BT_L2CAP_CONN_PARAM_REJECTED;
-	}
-
-	return BT_L2CAP_CONN_PARAM_ACCEPTED;
-}
-
 static void le_conn_param_update_req(struct bt_conn *conn, uint8_t ident,
 				     struct bt_buf *buf)
 {
-	uint16_t min, max, latency, timeout, result;
+	uint16_t min, max, latency, timeout;
+	bool params_valid;
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conn_param_rsp *rsp;
 	struct bt_l2cap_conn_param_req *req = (void *)buf->data;
@@ -221,7 +195,7 @@ static void le_conn_param_update_req(struct bt_conn *conn, uint8_t ident,
 		return;
 	}
 
-	result = le_validate_conn_params(min, max, latency, timeout);
+	params_valid = bt_le_conn_params_valid(min, max, latency, timeout);
 
 	hdr = bt_buf_add(buf, sizeof(*hdr));
 	hdr->code = BT_L2CAP_CONN_PARAM_RSP;
@@ -229,11 +203,15 @@ static void le_conn_param_update_req(struct bt_conn *conn, uint8_t ident,
 	hdr->len = sys_cpu_to_le16(sizeof(*rsp));
 
 	rsp = bt_buf_add(buf, sizeof(*rsp));
-	memset(rsp, 0, sizeof(*rsp));
-	rsp->result = sys_cpu_to_le16(result);
+	if (params_valid) {
+		rsp->result = sys_cpu_to_le16(BT_L2CAP_CONN_PARAM_ACCEPTED);
+	} else {
+		rsp->result = sys_cpu_to_le16(BT_L2CAP_CONN_PARAM_REJECTED);
+	}
+
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 
-	if (result == BT_L2CAP_CONN_PARAM_ACCEPTED) {
+	if (params_valid) {
 		bt_conn_le_conn_update(conn, min, max, latency, timeout);
 	}
 }

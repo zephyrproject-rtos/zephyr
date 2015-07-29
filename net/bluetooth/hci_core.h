@@ -156,6 +156,30 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 	return false;
 }
 
+static inline bool bt_le_conn_params_valid(uint16_t min, uint16_t max,
+					uint16_t latency, uint16_t timeout)
+{
+	uint16_t max_latency;
+
+	if (min > max || min < 6 || max > 3200) {
+		return false;
+	}
+
+	if (timeout < 10 || timeout > 3200) {
+		return false;
+	}
+
+	/* calculation based on BT spec 4.2 [Vol3, PartA, 4.20]
+	 * max_latency = ((timeout * 10)/(max * 1.25 * 2)) - 1;
+	 */
+	max_latency = (timeout * 4 / max) - 1;
+	if (latency > 499 || latency > max_latency) {
+		return false;
+	}
+
+	return true;
+}
+
 struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
