@@ -46,7 +46,7 @@ CONFIG_PRINTK=y
 # CONFIG_ASSERT is not set
 
 #
-# Bootloader Options
+# Boot Options
 #
 # CONFIG_BOOTLOADER_UNKNOWN is not set
 

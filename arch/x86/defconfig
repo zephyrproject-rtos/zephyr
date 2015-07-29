@@ -76,10 +76,11 @@ CONFIG_PRINTK=y
 # CONFIG_ASSERT is not set
 
 #
-# Bootloader Options
+# Boot Options
 #
 # CONFIG_BOOTLOADER_KEXEC is not set
 CONFIG_BOOTLOADER_UNKNOWN=y
+# CONFIG_PROT_MODE_SWITCH is not set
 
 #
 # General Platform Configuration
@@ -111,7 +112,6 @@ CONFIG_CACHE_LINE_SIZE=0
 # Specific Platform Capability Support
 #
 CONFIG_NUM_DYNAMIC_STUBS=0
-# CONFIG_PROT_MODE_SWITCH_PROMPT is not set
 # CONFIG_ADVANCED_IDLE_SUPPORTED is not set
 # CONFIG_SHUTOFF_PIC is not set
 

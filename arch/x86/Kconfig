@@ -187,13 +187,6 @@ config NUM_DYNAMIC_STUBS
 	This option specifies the number of interrupt handlers that can be
 	installed dynamically using irq_connect().
 
-config PROT_MODE_SWITCH_PROMPT
-	bool "Prot Mode switch prompt"
-	default n
-	help
-	This option allows users to select the value of the PROT_MODE_SWITCH
-	configuration option.
-
 config ADVANCED_IDLE_SUPPORTED
 	bool "Advanced idle supported"
 	default n
