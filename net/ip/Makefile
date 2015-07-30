@@ -5,6 +5,10 @@ EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os
 EXTRA_CFLAGS += -I${srctree}/net/ip
 EXTRA_CFLAGS += -I${srctree}/include/drivers
 
+ifneq ($(CONFIG_NET_BUF_SIZE),)
+EXTRA_CFLAGS += -DNET_NUM_BUFS=$(CONFIG_NET_BUF_SIZE)
+endif
+
 # Zypher specific files
 obj-y = net_init.o \
 	 net_buf.o \

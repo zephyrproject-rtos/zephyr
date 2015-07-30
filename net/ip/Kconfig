@@ -41,6 +41,14 @@ config	NETWORKING
 	help
 	  This option enabled generic networking support.
 
+config NET_BUF_SIZE
+	int "Number of network buffers to use"
+	default 2
+	help
+	Each network buffer will contain one received or sent
+	IPv6 or IPv4 packet. Each buffer will occupy 1280 bytes
+	of memory.
+
 choice
 prompt "Internet Protocol version"
 depends on NETWORKING
