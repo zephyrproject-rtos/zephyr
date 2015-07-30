@@ -173,7 +173,7 @@ static uint8_t att_mtu_req(struct bt_conn *conn, struct bt_buf *data)
 }
 
 static uint8_t att_handle_rsp(struct bt_conn *conn, void *pdu, uint16_t len,
-		       uint8_t err)
+			      uint8_t err)
 {
 	struct bt_att *att = conn->att;
 	struct bt_att_req req;
