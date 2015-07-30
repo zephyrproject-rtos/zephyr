@@ -11,7 +11,7 @@ each approach and displays the result.  The tick timing is correct if the
 'diff ticks' with tickless enabled matches the SLEEP_TICKS (10) setting in
 the source.
 
-The demonstration utilizes microkernel resource APIs, timers and tickless
+The demonstration utilizes microkernel mutex APIs, timers and tickless
 idle mode.
 
 --------------------------------------------------------------------------------

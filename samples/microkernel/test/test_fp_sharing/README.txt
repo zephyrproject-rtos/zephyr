@@ -8,7 +8,7 @@ the ability of tasks to safely share floating point hardware resources, even
 when switching occurs preemptively. (Note that both sets of tests run
 concurrently even though they report their progress at different times.)
 
-The demonstration utilizes microkernel resource APIs, timers, semaphores,
+The demonstration utilizes microkernel mutex APIs, timers, semaphores,
 round robin scheduling, and floating point support.
 
 --------------------------------------------------------------------------------
