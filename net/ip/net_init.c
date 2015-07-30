@@ -517,9 +517,14 @@ static void net_rx_fiber(void)
 		/* Check stack usage (no-op if not enabled) */
 		analyze_stacks(buf, &buf);
 
+		NET_DBG("Received buf %p\n", buf);
+
 		if (!tcpip_input(buf)) {
 			net_buf_put(buf);
 		} else {
+			/* The buffer is on to its way to receiver at this
+			 * point. We must not remove it here.
+			 */
 			NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 		}
 	}
