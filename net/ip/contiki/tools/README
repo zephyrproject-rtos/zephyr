@@ -89,3 +89,18 @@ In order to send multicast IPv6 packets, one needs to
 give the network interface as a parameter.
 
 $ ./echo-client -i tun0 ff84::2
+
+
+echo-server
+===========
+
+echo-server is a tool that is run in Linux host side and
+which waits UDP data sent by echo-client application that
+is running in qemu side.
+
+You needs to setup the slip connection (see the steps 1 to 3)
+in tunslip6 section of this document.
+
+Example:
+
+$ ./echo-server -i tun0
