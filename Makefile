@@ -1084,9 +1084,8 @@ $(help-board-dirs): help-%:
 
 # Documentation targets
 # ---------------------------------------------------------------------------
-%docs: scripts_basic FORCE
-	$(Q)$(MAKE) $(build)=scripts build_docproc
-	$(Q)$(MAKE) $(build)=Documentation/DocBook $@
+%docs: FORCE
+	$(Q)$(MAKE) -C doc htmldocs
 
 clean: $(clean-dirs)
 	$(call cmd,rmdirs)

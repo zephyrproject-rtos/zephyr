@@ -57,6 +57,7 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
+htmldocs: doxy html
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
