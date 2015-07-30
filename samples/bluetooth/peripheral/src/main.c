@@ -435,6 +435,44 @@ static struct bt_gatt_cep vnd_long_cep = {
 	.properties = BT_GATT_CEP_RELIABLE_WRITE,
 };
 
+int signed_value;
+
+static int read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		       void *buf, uint16_t len, uint16_t offset)
+{
+	const char *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 sizeof(signed_value));
+}
+
+static int write_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			const void *buf, uint16_t len, uint16_t offset)
+{
+	uint8_t *value = attr->user_data;
+
+	if (offset + len > sizeof(signed_value)) {
+		return -EINVAL;
+	}
+
+	memcpy(value + offset, buf, len);
+
+	return len;
+}
+
+static const struct bt_uuid vnd_signed_uuid = {
+	.type = BT_UUID_128,
+	.u128 = { 0xf3, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x13,
+		  0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x13 },
+};
+
+static struct bt_gatt_chrc vnd_signed_chrc = {
+	.properties = BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
+		      BT_GATT_CHRC_AUTH,
+	.value_handle = 0x0024,
+	.uuid = &vnd_signed_uuid,
+};
+
 static const struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
@@ -495,6 +533,10 @@ static const struct bt_gatt_attr attrs[] = {
 			   read_long_vnd, write_long_vnd, flush_long_vnd,
 			   &vnd_long_value),
 	BT_GATT_CEP(0x0022, &vnd_long_cep),
+	BT_GATT_CHARACTERISTIC(0x0023, &vnd_signed_chrc),
+	BT_GATT_DESCRIPTOR(0x0024, &vnd_signed_uuid,
+			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			   read_signed, write_signed, &signed_value),
 };
 
 static const struct bt_eir ad[] = {
