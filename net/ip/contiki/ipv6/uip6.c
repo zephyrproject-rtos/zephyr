@@ -1531,11 +1531,14 @@ uip_process(struct net_buf *buf, uint8_t flag)
        connection is bound to a remote IP address, the source IP
        address of the packet is checked. */
 #if 0
-    PRINTF("%d: conn %p lport %d rport %d destport %d srcport %d\n",
-	   i, &uip_udp_conns[i], uip_ntohs(uip_udp_conns[i].lport),
-	   uip_ntohs(uip_udp_conns[i].rport),
-	   uip_ntohs(UIP_UDP_BUF(buf)->destport),
-	   uip_ntohs(UIP_UDP_BUF(buf)->srcport));
+    PRINTF("%d: %p lport %d <- %d rport %d <- %d addr ",
+	   i, &uip_udp_conns[i],
+	   uip_ntohs(uip_udp_conns[i].lport), uip_ntohs(UIP_UDP_BUF(buf)->destport),
+	   uip_ntohs(uip_udp_conns[i].rport), uip_ntohs(UIP_UDP_BUF(buf)->srcport));
+    PRINT6ADDR(&uip_udp_conns[i].ripaddr);
+    PRINTF(" <- ");
+    PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
+    PRINTF("\n");
 #endif /* 0 */
     if(uip_udp_conns[i].lport != 0 &&
        UIP_UDP_BUF(buf)->destport == uip_udp_conns[i].lport &&
