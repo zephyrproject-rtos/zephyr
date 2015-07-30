@@ -322,6 +322,10 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 	struct net_context *context = user_data;
 
 	if (!context) {
+		/* If the context is not there, then we must discard
+		 * the buffer here, otherwise we have a buffer leak.
+		 */
+		net_buf_put(buf);
 		return;
 	}
 
@@ -389,19 +393,23 @@ static void udp_packet_reply(struct simple_udp_connection *c,
 			     uint16_t dest_port,
 			     const uint8_t *data, uint16_t datalen,
 			     void *user_data,
-			     struct net_buf *not_used)
+			     struct net_buf *buf)
 {
-	struct net_buf *buf = user_data;
+	struct net_context *context = user_data;
 	struct nano_fifo *queue;
 
-	if (!buf->context) {
+	if (!context) {
+		/* If the context is not there, then we must discard
+		 * the buffer here, otherwise we have a buffer leak.
+		 */
+		net_buf_put(buf);
 		return;
 	}
 
-	NET_DBG("packet reply buf %p context %p len %d\n", buf, buf->context,
-		buf->len);
+	queue = net_context_get_queue(context);
 
-	queue = net_context_get_queue(buf->context);
+	NET_DBG("packet reply buf %p context %p len %d queue %p\n",
+		buf, context, buf->len, queue);
 
 	nano_fifo_put(queue, buf);
 }
@@ -432,7 +440,8 @@ static int check_and_send_packet(struct net_buf *buf)
 #else
 				(uip_ip4addr_t *)&tuple->remote_addr->in_addr,
 #endif
-				tuple->remote_port, udp_packet_reply, buf);
+				tuple->remote_port, udp_packet_reply,
+				buf->context);
 			if (!ret) {
 				NET_DBG("UDP connection creation failed\n");
 				ret = -ENOENT;
