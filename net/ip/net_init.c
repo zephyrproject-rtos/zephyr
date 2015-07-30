@@ -256,7 +256,7 @@ static inline int udp_prepare_and_send(struct net_context *context,
 	}
 #endif
 
-	return ret;
+	return !ret;
 }
 
 /* Application wants to send a reply */
@@ -440,8 +440,7 @@ static int check_and_send_packet(struct net_buf *buf)
 			}
 			net_context_set_receiver_registered(buf->context);
 		}
-		simple_udp_send(buf, udp, buf->data, buf->len);
-		ret = 0;
+		ret = simple_udp_send(buf, udp, buf->data, buf->len);
 		break;
 	case IPPROTO_TCP:
 		NET_DBG("TCP not yet supported\n");
@@ -462,7 +461,7 @@ static void net_tx_fiber(void)
 
 	while (1) {
 		struct net_buf *buf;
-		uint8_t run;
+		uint8_t ret;
 
 		/* Get next packet from application - wait if necessary */
 		buf = nano_fifo_get_wait(&netdev.tx_queue);
@@ -470,9 +469,16 @@ static void net_tx_fiber(void)
 		NET_DBG("Sending (buf %p, len %u) to IP stack\n",
 			buf, buf->len);
 
-		if (check_and_send_packet(buf) < 0) {
-			/* Release buffer on error */
+		/* What to do with the buffer:
+		 *  <0: error, release the buffer
+		 *   0: message was discarded by uIP, release the buffer here
+		 *  >0: message was sent ok, buffer released already
+		 */
+		ret = check_and_send_packet(buf);
+		if (ret < 0) {
 			net_buf_put(buf);
+			continue;
+		} else if (ret > 0) {
 			continue;
 		}
 
@@ -480,11 +486,13 @@ static void net_tx_fiber(void)
 
 		/* Check for any events that we might need to process */
 		do {
-			run = process_run(buf);
-		} while (run > 0);
+			ret = process_run(buf);
+		} while (ret > 0);
 
 		/* Check stack usage (no-op if not enabled) */
 		analyze_stacks(buf, &buf);
+
+		net_buf_put(buf);
 	}
 }
 
@@ -564,11 +572,7 @@ static uint8_t net_tcpip_output(struct net_buf *buf, const uip_lladdr_t *lladdr)
 		linkaddr_copy(&buf->dest, (const linkaddr_t *)lladdr);
 	}
 
-	if (netdev.drv->send(buf) < 0) {
-		return 0;
-	}
-
-	return 1;
+	return netdev.drv->send(buf);
 }
 
 static int network_initialization(void)

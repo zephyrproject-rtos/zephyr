@@ -59,7 +59,15 @@ static int net_driver_slip_send(struct net_buf *buf)
 {
 	NET_DBG("Sending %d bytes\n", buf->len);
 
-	return slip_send(buf);
+	if (!slip_send(buf)) {
+		/* Release the buffer because we sent all the data
+		 * successfully.
+		 */
+		net_buf_put(buf);
+		return 1;
+	}
+
+	return 0;
 }
 
 static struct net_driver net_driver_slip = {

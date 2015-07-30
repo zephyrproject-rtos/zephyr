@@ -149,7 +149,7 @@ static int net_driver_15_4_send(struct net_buf *buf)
 	}
 
 	nano_fifo_put(&tx_queue, buf);
-	return 0;
+	return 1;
 }
 
 static void net_tx_15_4_fiber(void)

@@ -422,9 +422,7 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
               etimer_restart(&periodic);
               uip_periodic(i);
 #if NETSTACK_CONF_WITH_IPV6
-	      if (!tcpip_ipv6_output(buf)) {
-                net_buf_put(buf);
-	      }
+	      tcpip_ipv6_output(buf);
 #else
               if(uip_len(buf) > 0) {
 		PRINTF("tcpip_output from periodic len %d\n", uip_len(buf));
@@ -464,17 +462,13 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
         if(data == &uip_ds6_timer_rs &&
            etimer_expired(&uip_ds6_timer_rs)) {
           uip_ds6_send_rs(buf);
-	  if (!tcpip_ipv6_output(buf)) {
-            net_buf_put(buf);
-	  }
+	  tcpip_ipv6_output(buf);
         }
 #endif /* !UIP_CONF_ROUTER */
         if(data == &uip_ds6_timer_periodic &&
            etimer_expired(&uip_ds6_timer_periodic)) {
           uip_ds6_periodic(buf);
-	  if (!tcpip_ipv6_output(buf)) {
-            net_buf_put(buf);
-	  }
+	  tcpip_ipv6_output(buf);
         }
 #endif /* NETSTACK_CONF_WITH_IPV6 */
       }
@@ -502,9 +496,7 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
       if(data != NULL) {
         uip_udp_periodic_conn(buf, data);
 #if NETSTACK_CONF_WITH_IPV6
-        if (!tcpip_ipv6_output(buf)) {
-          net_buf_put(buf);
-	}
+        tcpip_ipv6_output(buf);
 #else
         if(uip_len(buf) > 0) {
           tcpip_output(buf, NULL);

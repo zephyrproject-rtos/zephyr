@@ -69,7 +69,15 @@ struct net_driver {
 	/** Open the net transport */
 	int (*open) (void);
 
-	/** Send data to net */
+	/** Send data to net. The send() function should return:
+	 * 0 : If packet could not be sent. In this case buf should
+	 *     not be released.
+	 * 1 : If the packet was sent successfully. In this case the buf
+	 *     should be released by either the send() or some other
+	 *     lower layer function.
+	 * <0: If there is an error, the buf should not be released by
+	 *     send() function.
+	 */
 	int (*send) (struct net_buf *buf);
 };
 

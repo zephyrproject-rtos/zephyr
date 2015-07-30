@@ -57,7 +57,10 @@ uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *dat
     memcpy(&uip_buf(buf)[UIP_LLH_LEN + UIP_IPUDPH_LEN], data,
            len > UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN?
            UIP_BUFSIZE - UIP_LLH_LEN - UIP_IPUDPH_LEN: len);
-    uip_process(buf, UIP_UDP_SEND_CONN);
+    if (uip_process(buf, UIP_UDP_SEND_CONN) == 0) {
+      /* The packet was dropped, we can return now */
+      return 0;
+    }
 
 #if UIP_CONF_IPV6_MULTICAST
   /* Let the multicast engine process the datagram before we send it */
@@ -66,9 +69,13 @@ uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *dat
   }
 #endif /* UIP_IPV6_MULTICAST */
 
+ if (!uip_len(buf)) {
+   /* Message was successfully sent, just bail out now. */
+   goto out;
+ }
+
 #if NETSTACK_CONF_WITH_IPV6
  if (!tcpip_ipv6_output(buf)) {
-   net_buf_put(buf);
    return 0;
  }
 #else
@@ -77,6 +84,7 @@ uip_udp_packet_send(struct net_buf *buf, struct uip_udp_conn *c, const void *dat
     }
 #endif
   }
+out:
   uip_slen(buf) = 0;
 #endif /* UIP_UDP */
   return 1;

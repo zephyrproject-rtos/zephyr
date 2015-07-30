@@ -90,7 +90,7 @@ static int net_driver_loopback_send(struct net_buf *buf)
 
 	net_recv(buf);
 
-	return 0;
+	return 1;
 }
 
 static struct net_driver net_driver_loopback = {
