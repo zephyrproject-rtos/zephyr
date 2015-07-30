@@ -152,3 +152,12 @@ int bt_smp_init(void);
  *  @return 0 in success, error code otherwise
  */
 int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf);
+
+/** brief Sign message
+ *
+ *  @param conn Bluetooth connection
+ *  @param buf message buffer
+ *
+ *  @return 0 in success, error code otherwise
+ */
+int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf);

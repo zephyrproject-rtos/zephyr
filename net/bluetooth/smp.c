@@ -1394,6 +1394,41 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_keys *keys;
+	uint32_t cnt;
+	int err;
+
+	keys = bt_keys_get_type(BT_KEYS_LOCAL_CSRK, &conn->dst);
+	if (!keys) {
+		BT_ERR("Unable to get keys for %s\n",
+		       bt_addr_le_str(&conn->dst));
+		return -ENOENT;
+	}
+
+	/* Reserve space for data signature */
+	bt_buf_add(buf, 12);
+
+	/* Copy signing count */
+	cnt = sys_cpu_to_le32(keys->local_csrk.cnt);
+	memcpy(bt_buf_tail(buf) - 12, &cnt, sizeof(cnt));
+
+	BT_DBG("Sign data len %u key %s count %u\n", buf->len,
+	       h(keys->local_csrk.val, 16), keys->local_csrk.cnt);
+
+	err = smp_sign_buf(keys->local_csrk.val, buf->data, buf->len - 12);
+	if (err) {
+		BT_ERR("Unable to create signature for %s\n",
+		       bt_addr_le_str(&conn->dst));
+		return -EIO;
+	};
+
+	keys->local_csrk.cnt++;
+
+	return 0;
+}
+
 #if defined(CONFIG_BLUETOOTH_SMP_SELFTEST)
 /* Test vectors are taken from RFC 4493
  * https://tools.ietf.org/html/rfc4493
