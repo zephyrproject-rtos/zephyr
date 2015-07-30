@@ -58,6 +58,16 @@
 		.config_info = (config)				   \
 	}
 
+/* Common Error Codes devices can provide */
+#define DEV_OK			0  /* No error */
+#define DEV_FAIL		1 /* General operation failure */
+#define DEV_INVALID_OP		2 /* Invalid operation */
+#define DEV_INVALID_CONF	3 /* Invalid configuration */
+#define DEV_USED		4 /* Device controller in use */
+#define DEV_NO_ACCESS		5 /* Controller not accessible */
+#define DEV_NO_SUPPORT		6 /* Device type not supported */
+#define DEV_NOT_CONFIG		7 /* Device not configured */
+
 struct device;
 
 /**
