@@ -50,6 +50,7 @@
 #include "keys.h"
 #include "l2cap.h"
 #include "att.h"
+#include "smp.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_GATT)
 #undef BT_DBG
@@ -986,7 +987,7 @@ static void att_write_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 }
 
 int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
-				   const void *data, uint16_t length)
+				   const void *data, uint16_t length, bool sign)
 {
 	struct bt_buf *buf;
 	struct bt_att_write_cmd *cmd;
@@ -995,8 +996,13 @@ int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
 		return -EINVAL;
 	}
 
-	buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_CMD,
-				sizeof(*cmd) + length);
+	if (!sign || conn->encrypt) {
+		buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_CMD,
+					sizeof(*cmd) + length);
+	} else {
+		buf = bt_att_create_pdu(conn, BT_ATT_OP_SIGNED_WRITE_CMD,
+					sizeof(*cmd) + length + 12);
+	}
 	if (!buf) {
 		return -ENOMEM;
 	}

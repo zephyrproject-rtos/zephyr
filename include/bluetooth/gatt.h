@@ -769,11 +769,13 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
  * @param handle Attribute handle.
  * @param data Data to be written.
  * @param length Data length.
+ * @param sign Whether to sign data
  *
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
-				   const void *data, uint16_t length);
+				   const void *data, uint16_t length,
+				   bool sign);
 
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {

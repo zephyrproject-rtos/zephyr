@@ -1462,6 +1462,7 @@ int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
 		void *user_data, bt_att_destroy_t destroy)
 {
 	struct bt_att *att;
+	struct bt_att_hdr *hdr = (void *)buf->data;
 
 	if (!conn) {
 		return -EINVAL;
@@ -1473,19 +1474,26 @@ int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
 	}
 
 	if (func) {
-		struct bt_att_hdr *hdr;
-
 		/* Check if there is a request pending */
 		if (att->req.func) {
 			 /* TODO: Allow more than one pending request */
 			return -EBUSY;
 		}
 
-		hdr = (void *)buf->data;
 		att->req.op = hdr->code;
 		att->req.func = func;
 		att->req.user_data = user_data;
 		att->req.destroy = destroy;
+	}
+
+	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
+		int err;
+
+		err = bt_smp_sign(conn, buf);
+		if (err) {
+			BT_ERR("Error signing data\n");
+			return err;
+		}
 	}
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);

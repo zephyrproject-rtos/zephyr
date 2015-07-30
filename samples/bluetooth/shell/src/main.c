@@ -561,7 +561,7 @@ static void cmd_gatt_write_without_rsp(int argc, char *argv[])
 	data = xtoi(argv[2]);
 
 	err = bt_gatt_write_without_response(default_conn, handle, &data,
-					     sizeof(data));
+					     sizeof(data), false);
 	printk("Write Complete (err %d)\n", err);
 }
 
