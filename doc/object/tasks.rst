@@ -10,55 +10,11 @@ Nanokernel Objects and Microkernel Objects sections. Tasks are cooperatively
 scheduled, and will run until they explicitly yield, call a blocking interface
 or are preempted by a higher priority task.
 
-Defining Tasks
-**************
+Task Groups
+***********
 
-Microkernel tasks are statically defined in the Microkernel definition
-file (which has a file extension of .mdef). The number of tasks in a
-project file is limited only by the available memory on the platform. A
-task definition in the project file must specify its name, priority,
-entry point, task group, and stack size. As shown below:
+TBD (how they are used; maximum of 32 groups; mention pre-defined task groups)
 
-.. code-block:: console
-
-   % TASK NAME     PRIO    ENTRY    STACK   GROUPS
-
-   % ===============================================
-
-     TASK philTask    5   philDemo   1024   [EXE]
-
-     TASK phi1Task0   6   philEntry  1024   [PHI]
-
-Task groups must be specified. If a task does not belong to any groups
-an empty list can be specified; i.e. :literal:`[]`. A task can change
-groups at runtime, but the project file defines the group the task
-belongs to when it begins running. Task groups are statically
-allocated, and need to be defined in the project file. For example, the
-PHI group from the example above would be defined as:
-
-.. code-block:: console
-
-   % TASKGROUP NAME
-
-   % ==============
-
-     TASKGROUP PHI
-
-To write scalable and portable task code, observe the following
-guidelines:
-
-#. Define the task entry point prototype in the project file.
-
-#. Use the C calling convention.
-
-#. Use C linkage style.
-
-
-.. note::
-
-   To maximize portability, use kernel-defined objects, such
-   as memory maps or memory pools, instead of user-defined array
-   buffers.
 
 Task Behavior
 *************
@@ -68,66 +24,6 @@ an abstract object identifier called objectID. A task shall always
 manipulate kernel data structures through the APIs and shall not
 directly access the internals of any object, for example, the internals
 of a semaphore or a FIFO.
-
-Task Application Program Interfaces
-***********************************
-
-The task APIs allow starting, stopping, suspending, resuming, aborting,
-changing its priority, changing its entry point, and changing
-groups.This table lists all task- and task-group-related application
-program interfaces. For more information on each of those application
-program interfaces see the application program interfaces documentation.
-
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| **Call**                                                             | **Description**                                                                                                                     |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`sys_scheduler_time_slice_set()`                             | Specifies the time slice period for round\-robin task scheduling.                                                                   |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_abort()`                                               | Aborts a task.                                                                                                                      |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_abort_handler_set()`                                   | Installs or removes an abort handler.                                                                                               |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_resume()`                                              | Marks a task as runnable.                                                                                                           |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_entry_set()`                                           | Sets a task’s entry point.                                                                                                          |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_priority_set()`                                        | Sets a task’s priority.                                                                                                             |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_sleep()`                                               | Marks a task as not runnable until a timeout expires.                                                                               |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_start()`                                               | Starts processing a task.                                                                                                           |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_suspend()`                                             | Marks all tasks in a group as not runnable.                                                                                         |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_yield()`                                               | Yields the CPU to an equal\-priority task.                                                                                          |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_node_id_get()`, isr_node_id_get()`                     | Get the task’s node ID.From an ISR call :c:func:`isr_node_id_get()`, from a task, call :c:func:`task_node_id_get()`.                |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_group_abort()`                                         | Aborts a group of tasks.                                                                                                            |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_group_join()`                                          | Adds a task to a group.                                                                                                             |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_group_leave()`                                         | Removes a task from a group.                                                                                                        |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_group_resume()`                                        | Resumes processing of a group.                                                                                                      |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_group_start()`                                         | Starts processing of a group.                                                                                                       |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_group_suspend()`                                       | Marks all tasks in a group as not runnable.                                                                                         |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_group_mask_get()`, :c:func:`isr_task_group_mask_get()` | Gets the task’s group type.From an ISR call :c:func:`isr_task_group_mask_get()`, from a task, call :c:func:`task_group_mask_get()`. |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_id_get()`, :c:func:`isr_task_id_get()`                 | Gets the task’s ID.From an ISR call :c:func:`isr_task_id_get()`, from a task, call :c:func:`task_id_get()`.                         |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-| :c:func:`task_priority_get()`, :c:func:`isr_task_priority_get()`     | Gets the task’s priority.From an ISR call :c:func:`isr_task_priority_get()`, from a task, call :c:func:`task_priority_get()`        |
-+----------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
-
-A task can find its own ID using :c:func:`task_id_get()`. The task's own
-name can be used interchangeably as the ID, however since the task's
-name is chosen by the user it can be changed. Using
-:c:func:`task_id_get()` is the safest way to reference a task’s name.
-
-.. todo:: Add high level information about other APIs.
 
 Task Implementation
 *******************
@@ -295,3 +191,224 @@ Task Context Switches
 When a task swap occurs, the kernel saves the context of the task
 that is swapped out and restores the context of the task that is
 swapped in.
+
+
+
+Usage
+=====
+
+Defining a task
+---------------
+
+The following parameters must be defined:
+
+   *name*
+          This specifies a unique name for the task.
+
+   *priority*
+          This specifies the scheduling priority of the task. A smaller
+          integer value indicates higher priority, with zero indicating
+          highest priority.
+
+   *entry_point*
+          This specifies the name of the task's entry point function,
+          which should have the following form:
+
+          .. code-block:: c
+
+             void <entry_point>(void)".
+             {
+                 /* task mainline processing */
+                 ...
+                 /* (optional) normal task termination */
+                 return;
+             }
+
+   *stack_size*
+          This specifies the size of the task's stack, in bytes.
+
+   *groups*
+          This specifies the task groups the task belongs to. It consists
+          of a comma-separated list of task group names enclosed in square
+          brackets, with no embedded spaces. If a task does not belong
+          to any groups an empty list must be specified; i.e. :literal:`[]`.
+
+Add an entry for a task in the project .MDEF file using the
+following syntax:
+
+.. code-block:: console
+
+   TASK %name %priority %entry_point %stack_size %groups
+
+For example, the file :file:`projName.mdef` defines a system comprised
+of six tasks as follows:
+
+.. code-block:: console
+
+   % TASK NAME           PRIO  ENTRY          STACK   GROUPS
+   % ===================================================================
+     TASK MAIN_TASK        6   keypad_main     1024   [KEYPAD_TASKS,EXE]
+     TASK PROBE_TASK       2   probe_main       400   []
+     TASK SCREEN1_TASK     8   screen_1_main   4096   [VIDEO_TASKS]
+     TASK SCREEN2_TASK     8   screen_2_main   4096   [VIDEO_TASKS]
+     TASK SPEAKER1_TASK   10   speaker_1_main  1024   [AUDIO_TASKS]
+     TASK SPEAKER2_TASK   10   speaker_2_main  1024   [AUDIO_TASKS]
+
+
+Defining a new task group
+-------------------------
+
+The following parameters must be defined:
+
+   *name*
+          This specifies a unique name for the task group.
+
+Add an entry for a task in the project .MDEF file using the
+following syntax:
+
+.. code-block:: console
+
+   TASKGROUP %name
+
+For example, the file :file:`projName.mdef` defines three new
+task groups as follows:
+
+.. code-block:: console
+
+   % TASKGROUP   NAME
+   % ========================
+     TASKGROUP   VIDEO_TASKS
+     TASKGROUP   AUDIO_TASKS
+     TASKGROUP   KEYPAD_TASKS
+
+
+Example: Starting a Task from a Different Task
+----------------------------------------------
+
+This code shows how the currently executing task can start another task.
+
+.. code-block:: c
+
+   void keypad_main(void)
+   {
+       /* begin system initialization */
+       ...
+
+       /* start task to monitor temperature */
+       task_start(PROBE_TASK);
+
+       /* continue to bring up and operate system */
+       ...
+   }
+
+
+Example: Suspending and Resuming a Set of Tasks
+-----------------------------------------------
+
+This code shows how the currently executing task can temporarily suspend
+the execution of all tasks belonging to the designated task groups.
+
+.. code-block:: c
+
+   void probe_main(void)
+   {
+       int was_overheated = 0;
+
+       /* continuously monitor temperature */
+       while (1) {
+           now_overheated = overheating_update();
+
+           /* suspend non-essential tasks when overheating is detected */
+           if (now_overheated && !was_overheated) {
+              task_group_suspend(VIDEO_TASKS | AUDIO_TASKS);
+              was_overheated = 1;
+           }
+
+           /* resume non-essential tasks when overheating abates */
+           if (!now_overheated && was_overheated) {
+              task_group_resume(VIDEO_TASKS | AUDIO_TASKS);
+              was_overheated = 0;
+           }
+
+           /* wait 10 ticks of system clock before checking again */
+           task_sleep(10);
+       }
+   }
+
+
+
+APIs
+====
+
+The following APIs affecting the currently executing task
+are provided by :file:`microkernel.h`.
+
++-------------------------------------+----------------------------------------+
+| Call                                | Description                            |
++-------------------------------------+----------------------------------------+
+| :c:func:`task_id_get()`             | Gets the task's ID.                    |
++-------------------------------------+----------------------------------------+
+| :c:func:`isr_task_id_get()`         | Gets the task's ID from an ISR.        |
++-------------------------------------+----------------------------------------+
+| :c:func:`task_priority_get()`       | Gets the task's priority.              |
++-------------------------------------+----------------------------------------+
+| :c:func:`isr_task_priority_get()`   | Gets the task's priority from an ISR.  |
++-------------------------------------+----------------------------------------+
+| :c:func:`task_group_mask_get()`     | Gets the task's group memberships.     |
++-------------------------------------+----------------------------------------+
+| :c:func:`isr_task_group_mask_get()` | Gets the task's group memberships from |
+|                                     | an ISR.                                |
++-------------------------------------+----------------------------------------+
+| :c:func:`task_yield()`              | Yields CPU to equal-priority tasks.    |
++-------------------------------------+----------------------------------------+
+| :c:func:`task_sleep()`              | Yields CPU for a specified time period.|
++-------------------------------------+----------------------------------------+
+| :c:func:`task_abort_handler_set()`  | Installs the task's abort handler.     |
++-------------------------------------+----------------------------------------+
+
+The following APIs affecting a specified task
+are provided by :file:`microkernel.h`.
+
++-------------------------------------------+----------------------------------+
+| Call                                      | Description                      |
++-------------------------------------------+----------------------------------+
+| :c:func:`task_priority_set()`             | Sets a task's priority.          |
++-------------------------------------------+----------------------------------+
+| :c:func:`task_entry_set()`                | Sets a task's entry point.       |
++-------------------------------------------+----------------------------------+
+| :c:func:`task_start()`                    | Starts execution of a task.      |
++-------------------------------------------+----------------------------------+
+| :c:func:`task_suspend()`                  | Suspends execution of a task.    |
++-------------------------------------------+----------------------------------+
+| :c:func:`task_resume()`                   | Resumes execution of a task.     |
++-------------------------------------------+----------------------------------+
+| :c:func:`task_abort()`                    | Aborts execution of a task.      |
++-------------------------------------------+----------------------------------+
+| :c:func:`task_group_join()`               | Adds a task to the specified     |
+|                                           | task group(s).                   |
++-------------------------------------------+----------------------------------+
+| :c:func:`task_group_leave()`              | Removes a task from the          |
+|                                           | specified task group(s).         |
++-------------------------------------------+----------------------------------+
+
+The following APIs affecting multiple tasks
+are provided by :file:`microkernel.h`.
+
++-------------------------------------------+---------------------------------+
+| Call                                      | Description                     |
++-------------------------------------------+---------------------------------+
+| :c:func:`sys_scheduler_time_slice_set()`  | Sets the time slice period used |
+|                                           | in round-robin task scheduling. |
++-------------------------------------------+---------------------------------+
+| :c:func:`task_group_start()`              | Starts execution of all tasks   |
+|                                           | in the specified task groups.   |
++-------------------------------------------+---------------------------------+
+| :c:func:`task_group_suspend()`            | Suspends execution of all tasks |
+|                                           | in the specified task groups.   |
++-------------------------------------------+---------------------------------+
+| :c:func:`task_group_resume()`             | Resumes execution of all tasks  |
+|                                           | in the specified task groups.   |
++-------------------------------------------+---------------------------------+
+| :c:func:`task_group_abort()`              | Aborts execution of all tasks   |
+|                                           | in the specified task groups.   |
++-------------------------------------------+---------------------------------+
