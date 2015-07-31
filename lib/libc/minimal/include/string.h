@@ -48,6 +48,7 @@ extern char  *strchr(const char *s, int c);
 extern size_t strlen(const char *s);
 extern int    strcmp(const char *s1, const char *s2);
 extern int    strncmp(const char *s1, const char *s2, size_t n);
+extern char *strcat(char *restrict dest, const char *restrict src);
 
 extern int    memcmp(const void *m1, const void *m2, size_t n);
 extern void  *memmove(void *d, const void *s, size_t n);
