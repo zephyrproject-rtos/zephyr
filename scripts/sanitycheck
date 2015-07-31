@@ -1364,8 +1364,9 @@ def parse_arguments():
     parser.add_argument("-O", "--outdir",
             default="%s/sanity-out" % ZEPHYR_BASE,
             help="Output directory for logs and binaries.")
-    parser.add_argument("-C", "--clean", action="store_true",
-            help="Delete the outdir before building")
+    parser.add_argument("-n", "--no-clean", action="store_true",
+            help="Do not delete the outdir before building. Will result in "
+                 "faster compilation since builds will be incremental")
     parser.add_argument("-T", "--testcase-root",
             default="%s/samples" % ZEPHYR_BASE,
             help="Base directory to recursively search for test cases. All "
@@ -1439,7 +1440,7 @@ def main():
     if args.all:
         args.platform = ["all"]
 
-    if os.path.exists(args.outdir) and args.clean:
+    if os.path.exists(args.outdir) and not args.no_clean:
         info("Cleaning output directory " + args.outdir)
         shutil.rmtree(args.outdir)
 
