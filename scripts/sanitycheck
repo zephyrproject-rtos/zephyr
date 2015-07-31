@@ -1429,6 +1429,7 @@ def chatty_test_cb(instances, goals, goal):
         log_info(goal.get_error_log())
 
 def main():
+    start_time = time.time()
     global VERBOSE, INLINE_LOGS, PARALLEL
     args = parse_arguments()
     VERBOSE += args.verbose
@@ -1489,10 +1490,10 @@ def main():
         if goal.failed:
             failed += 1
 
-    info("%s%d of %d%s tests passed with %s%d%s warnings" %
+    info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
           (COLOR_RED if failed else COLOR_GREEN, len(goals) - failed,
            len(goals), COLOR_NORMAL, COLOR_YELLOW if warnings else COLOR_NORMAL,
-           warnings, COLOR_NORMAL))
+           warnings, COLOR_NORMAL, time.time() - start_time))
 
     if args.testcase_report:
         ts.testcase_report(args.testcase_report)
