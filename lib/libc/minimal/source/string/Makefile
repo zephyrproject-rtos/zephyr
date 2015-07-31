@@ -1,1 +1,1 @@
-obj-y := string.o errno.o
+obj-y := string.o errno.o strncasecmp.o
