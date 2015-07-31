@@ -111,6 +111,25 @@ config EVENT_LOGGER
 	Enable event logging feature. Allow the usage of a ring buffer to
 	transmit event messages with a single interface to collect them.
 
+config KERNEL_PROFILER
+	bool
+	prompt "Enable profiler features"
+	default n
+	select EVENT_LOGGER
+	help
+	This feature enables the usage of the profiling logger. Provides the
+	logging of sleep events (either entering or leaving low power conditions),
+	context switch events, interrupt events, boot events and a method to
+	collect these profile messages.
+
+config PROFILER_BUFFER_SIZE
+	int
+	prompt "Profiler buffer size"
+	default 128
+	depends on KERNEL_PROFILER
+	help
+	Buffer size in 32-bit words.
+
 menu "Security Options"
 	depends on ENHANCED_SECURITY
 
