@@ -163,6 +163,7 @@
 #define MCR_OUT1 0x04 /* output #1 */
 #define MCR_OUT2 0x08 /* output #2 */
 #define MCR_LOOP 0x10 /* loop back */
+#define MCR_AFCE 0x20 /* auto flow control enable */
 
 /* constants for line status register */
 
@@ -257,6 +258,7 @@ void ns16550_uart_port_init(struct device *dev,
 
 	int old_level;     /* old interrupt lock level */
 	uint32_t divisor; /* baud rate divisor */
+	uint8_t mdc = 0;
 
 	if (!ns16550_pci_uart_scan(dev)) {
 		return;
@@ -278,7 +280,11 @@ void ns16550_uart_port_init(struct device *dev,
 	/* 8 data bits, 1 stop bit, no parity, clear DLAB */
 	OUTBYTE(LCR(dev), LCR_CS8 | LCR_1_STB | LCR_PDIS);
 
-	OUTBYTE(MDC(dev), MCR_OUT2 | MCR_RTS | MCR_DTR);
+	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
+	if ((init_info->options & UART_OPTION_AFCE) == UART_OPTION_AFCE)
+		mdc |= MCR_AFCE;
+
+	OUTBYTE(MDC(dev), mdc);
 
 	/*
 	 * Program FIFO: enabled, mode 0 (set for compatibility with quark),

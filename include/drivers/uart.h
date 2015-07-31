@@ -43,6 +43,8 @@ extern "C" {
 #include <pci/pci.h>
 #include <pci/pci_mgr.h>
 #endif
+/* options for uart init */
+#define UART_OPTION_AFCE 0x01
 
 struct uart_init_info;
 
@@ -77,6 +79,8 @@ struct uart_device_config_t {
 };
 
 /** UART configuration structure */
+
+
 struct uart_init_info {
 	int baud_rate;		/* Baud rate */
 	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
