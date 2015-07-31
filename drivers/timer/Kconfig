@@ -95,7 +95,7 @@ endchoice
 
 config LOAPIC_TIMER
 	bool "LOAPIC timer"
-	depends on LOAPIC && X86_32
+	depends on (LOAPIC || MVIC) && X86_32
 	default n
 	help
 	This option selects LOAPIC timer as a system timer.
