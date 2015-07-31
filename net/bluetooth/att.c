@@ -48,6 +48,7 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap.h"
+#include "smp.h"
 #include "att.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_ATT)
@@ -1163,6 +1164,7 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 {
 	struct bt_att_signed_write_cmd *req;
 	uint16_t handle;
+	int err;
 
 	req = (void *)data->data;
 
@@ -1171,7 +1173,12 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 
 	BT_DBG("handle 0x%04x\n", handle);
 
-	/* TODO: Validate signature */
+	err = bt_smp_sign_verify(conn, data);
+	if (err) {
+		BT_ERR("Error verifying data\n");
+		/* No response for this command */
+		return 0;
+	}
 
 	return att_write_rsp(conn, 0, 0, handle, 0, data->data,
 			     data->len - sizeof(struct bt_att_signature));
