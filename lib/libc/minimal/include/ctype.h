@@ -33,6 +33,24 @@
 #ifndef __INC_ctype_h__
 #define __INC_ctype_h__
 
+static inline int isupper(int a)
+{
+	return ((unsigned)(a)-'A') < 26;
+}
+
+static inline int isalpha(int c)
+{
+        return (((unsigned)c|32)-'a') < 26;
+}
+
+static inline int isspace(int c) {
+        return c == ' ' || ((unsigned)c-'\t') < 5;
+}
+
+static inline int isdigit(int a) {
+        return (((unsigned)(a)-'0') < 10);
+}
+
 static inline int tolower(int chr)
 {
 	return (chr >= 'A' && chr <= 'Z') ? (chr + 32) : (chr);
