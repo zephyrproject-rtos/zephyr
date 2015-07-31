@@ -185,17 +185,11 @@ struct net_context *net_context_get(enum ip_protocol ip_proto,
 
 void net_context_put(struct net_context *context)
 {
-	int i;
-
 	nano_sem_take_wait(&contexts_lock);
 
-	for (i = 0; i < NET_MAX_CONTEXT; i++) {
-		if (contexts[i].tuple.remote_port) {
-			memset(&contexts[i].tuple, 0,
-						sizeof(contexts[i].tuple));
-			break;
-		}
-	}
+	memset(&context->tuple, 0, sizeof(context->tuple));
+	memset(&context->udp, 0, sizeof(context->udp));
+	context->receiver_registered = false;
 
 	context_sem_give(&contexts_lock);
 }
