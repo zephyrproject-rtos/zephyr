@@ -38,6 +38,12 @@
 #define PRINT           printk
 #endif
 
+#ifdef CONFIG_MICROKERNEL
+#include <zephyr.h>
+#else
+#include <nanokernel.h>
+#endif
+
 #include <net/net_core.h>
 #include <net/net_socket.h>
 #include <net_driver_15_4.h>
@@ -154,7 +160,7 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 {
 	struct net_buf *buf;
 
-	buf = net_receive(ctx);
+	buf = net_receive(ctx, TICKS_NONE);
 	if (buf) {
 		PRINT("%s: %s(): received %d bytes\n%s\n", taskname,
 		      __FUNCTION__, uip_appdatalen(buf),
@@ -188,8 +194,6 @@ static struct net_context *get_context(const struct net_addr *remote,
  * semaphores and sleeps to take turns printing a greeting message at
  * a controlled rate.
  */
-
-#include <zephyr.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 

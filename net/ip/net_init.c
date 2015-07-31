@@ -338,11 +338,13 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 }
 
 /* Called by application when it wants to receive network data */
-struct net_buf *net_receive(struct net_context *context)
+struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 {
 	struct nano_fifo *rx_queue = net_context_get_queue(context);
 	struct net_tuple *tuple;
 	int ret = 0;
+
+	NET_DBG("context %p rx_queue %p\n", context, rx_queue);
 
 	tuple = net_context_get_tuple(context);
 	if (!tuple) {
@@ -383,7 +385,18 @@ struct net_buf *net_receive(struct net_context *context)
 		break;
 	}
 
-	return nano_fifo_get(rx_queue);
+	switch (timeout) {
+	case TICKS_UNLIMITED:
+		return nano_fifo_get_wait(rx_queue);
+	case TICKS_NONE:
+		return nano_fifo_get(rx_queue);
+	default:
+#ifdef CONFIG_NANO_TIMEOUTS
+		return nano_fiber_fifo_get_wait_timeout(rx_queue, timeout);
+#else
+		return nano_fifo_get(rx_queue);
+#endif
+	}
 }
 
 static void udp_packet_reply(struct simple_udp_connection *c,

@@ -134,7 +134,7 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 	while (1) {
 		task_sem_take_wait(mySem);
 
-		buf = net_receive(ctx);
+		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
 			PRINT("%s: received %d bytes\n", taskname,
 			      uip_appdatalen(buf));
@@ -206,7 +206,7 @@ void fiberEntry(void)
 		/* wait for task to let us have a turn */
 		nano_fiber_sem_take_wait (&nanoSemFiber);
 
-		buf = net_receive(ctx);
+		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
 			PRINT("%s: received %d bytes\n", __FUNCTION__,
 				uip_appdatalen(buf));

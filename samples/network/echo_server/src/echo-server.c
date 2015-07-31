@@ -44,6 +44,12 @@
 #define PRINT           printk
 #endif
 
+#ifdef CONFIG_MICROKERNEL
+#include <zephyr.h>
+#else
+#include <nanokernel.h>
+#endif
+
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
@@ -125,7 +131,7 @@ static inline void receive_and_reply(const char *name, struct net_context *recv,
 {
 	struct net_buf *buf;
 
-	buf = net_receive(recv);
+	buf = net_receive(recv, TICKS_NONE);
 	if (buf) {
 		prepare_reply(name, "", buf);
 
@@ -135,7 +141,7 @@ static inline void receive_and_reply(const char *name, struct net_context *recv,
 		return;
 	}
 
-	buf = net_receive(mcast_recv);
+	buf = net_receive(mcast_recv, TICKS_NONE);
 	if (buf) {
 		prepare_reply(name, "multicast ", buf);
 
@@ -202,8 +208,6 @@ static inline bool get_context(struct net_context **recv,
 }
 
 #ifdef CONFIG_MICROKERNEL
-
-#include <zephyr.h>
 
 /* specify delay between turns (in ms); compute equivalent in ticks */
 

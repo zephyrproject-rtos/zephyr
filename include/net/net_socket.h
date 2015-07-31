@@ -110,9 +110,17 @@ int net_send(struct net_buf *buf);
  * responsible to release the returned net_buf.
  *
  * @param context Network context.
+ * @param timeout Timeout to wait. The value is in ticks.
+ * If TICKS_UNLIMITED (-1), wait forever.
+ * If TICKS_NONE (0), do not wait.
+ * If > 0, wait amount of ticks.
+ * The timeout is only available if kernel is compiled
+ * with CONFIG_NANO_TIMEOUTS. If CONFIG_NANO_TIMEOUT is not
+ * defined, then value > 0 means to not wait.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
-struct net_buf *net_receive(struct net_context *context);
+struct net_buf *net_receive(struct net_context *context,
+			    int32_t timeout);
 
 #endif /* __NET_SOCKET_H */
