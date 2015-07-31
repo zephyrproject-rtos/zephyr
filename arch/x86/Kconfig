@@ -227,34 +227,6 @@ config  FLOAT
 	Disabling this option means that any task or fiber that uses a
 	floating point instruction will get a fatal exception.
 
-config  SSE
-	bool
-	prompt "SSEx instructions"
-	depends on FLOAT && !CPU_SSE_UNSUPPORTED
-	default n
-	help
-	This option enables the use of SSEx instructions by a task or fiber.
-
-	Disabling this option means that no task or fiber may use SSEx
-	instructions; any such use will result in undefined behavior.
-
-config SSE_FP_MATH
-	bool
-	prompt "Compiler-generated SSEx instructions" if FP_SHARING
-	depends on SSE
-	default n if FP_SHARING
-	default y if !FP_SHARING
-	help
-	This option allows the compiler to generate SSEx instructions for
-	performing floating point math. This can greatly improve performance
-	when exactly the same operations are to be performed on multiple
-	data objects; however, it can also significantly reduce performance
-	when pre-emptive task switches occur because of the larger register
-	set that must be saved and restored.
-
-	Disabling this option means that the compiler utilizes only the
-	x87 instruction set for floating point operations.
-
 config  FP_SHARING
 	bool
 	prompt "Floating point resource sharing" if !ENHANCED_SECURITY
@@ -296,6 +268,34 @@ config  AUTOMATIC_FP_ENABLING
 	task or fiber is enabled for using x87 FPU, MMX, or SSEx instructions
 	if SSE is configured, otherwise it is enabled for using x87 FPU or
 	MMX instructions only.
+
+config  SSE
+	bool
+	prompt "SSEx instructions"
+	depends on FLOAT && !CPU_SSE_UNSUPPORTED
+	default n
+	help
+	This option enables the use of SSEx instructions by a task or fiber.
+
+	Disabling this option means that no task or fiber may use SSEx
+	instructions; any such use will result in undefined behavior.
+
+config SSE_FP_MATH
+	bool
+	prompt "Compiler-generated SSEx instructions" if FP_SHARING
+	depends on SSE
+	default n if FP_SHARING
+	default y if !FP_SHARING
+	help
+	This option allows the compiler to generate SSEx instructions for
+	performing floating point math. This can greatly improve performance
+	when exactly the same operations are to be performed on multiple
+	data objects; however, it can also significantly reduce performance
+	when pre-emptive task switches occur because of the larger register
+	set that must be saved and restored.
+
+	Disabling this option means that the compiler utilizes only the
+	x87 instruction set for floating point operations.
 
 config XIP
 	default n
