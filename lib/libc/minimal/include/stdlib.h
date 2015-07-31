@@ -33,6 +33,8 @@
 #ifndef __INC_stdlib_h__
 #define __INC_stdlib_h__
 
+#include <ctype.h>
+
 #if !defined(NULL)
 #define NULL (void *) 0
 #endif
@@ -41,5 +43,9 @@
 #define __size_t_defined
 typedef unsigned int  size_t;
 #endif
+
+unsigned long int strtoul(const char* str, char** endptr, int base);
+long int strtol (const char* str, char** endptr, int base);
+
 
 #endif  /* __INC_stdlib_h__ */
