@@ -48,6 +48,7 @@ Definitions for auxiliary registers.
 #define _ARC_V2_TMR0_COUNT 0x021
 #define _ARC_V2_TMR0_CONTROL 0x022
 #define _ARC_V2_TMR0_LIMIT 0x023
+#define _ARC_V2_IRQ_VECT_BASE    0x025
 #define _ARC_V2_AUX_IRQ_ACT 0x043
 #define _ARC_V2_TMR1_COUNT 0x100
 #define _ARC_V2_TMR1_CONTROL 0x101
