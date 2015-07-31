@@ -1007,14 +1007,113 @@ static int gatt_write_cmd(struct bt_conn *conn, uint16_t handle,
 	return gatt_send(conn, buf, NULL, NULL, NULL);
 }
 
-int bt_gatt_write(struct bt_conn *conn, uint16_t handle, const void *data,
-		  uint16_t length, bt_gatt_rsp_func_t func)
+static int gatt_exec_write(struct bt_conn *conn, bt_gatt_rsp_func_t func)
+{
+	struct bt_buf *buf;
+	struct bt_att_exec_write_req *req;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_EXEC_WRITE_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->flags = BT_ATT_FLAG_EXEC;
+
+	BT_DBG("\n");
+
+	return gatt_send(conn, buf, att_write_rsp, func, NULL);
+}
+
+struct prepare_write_data {
+	bt_gatt_rsp_func_t func;
+	const void *data;
+	uint16_t length;
+	uint16_t handle;
+	uint16_t offset;
+};
+
+static void att_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
+				  const void *pdu, uint16_t length,
+				  void *user_data)
+{
+	struct prepare_write_data *data = user_data;
+	bt_gatt_rsp_func_t func = data->func;
+
+	BT_DBG("err 0x%02x\n", err);
+
+	/* Reset func so next prepare don't fail */
+	data->func = NULL;
+
+	/* Don't continue in case of error */
+	if (err) {
+		func(conn, err);
+		return;
+	}
+
+	/* If there is no more data execute */
+	if (!data->length) {
+		gatt_exec_write(conn, func);
+		return;
+	}
+
+	/* Write next chunk */
+	bt_gatt_write(conn, data->handle, data->offset, data->data,
+		      data->length, func);
+}
+
+static int gatt_prepare_write(struct bt_conn *conn, uint16_t handle,
+			      uint16_t offset, const void *data,
+			      uint16_t length, bt_gatt_rsp_func_t func)
+{
+	struct bt_buf *buf;
+	struct bt_att_prepare_write_req *req;
+	static struct prepare_write_data prep_data;
+	uint16_t len;
+
+	if (prep_data.func) {
+		return -EBUSY;
+	}
+
+	len = min(length, bt_att_get_mtu(conn) - 1);
+
+	prep_data.func = func;
+	prep_data.handle = handle;
+	prep_data.offset = offset + len;
+	prep_data.data = data + len;
+	prep_data.length = length - len;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_REQ,
+				sizeof(*req) + len);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = bt_buf_add(buf, sizeof(*req));
+	req->handle = sys_cpu_to_le16(handle);
+	req->offset = sys_cpu_to_le16(offset);
+	memcpy(req->value, data, len);
+	bt_buf_add(buf, len);
+
+	BT_DBG("handle 0x%04x offset %u len %u\n", handle, offset, len);
+
+	return gatt_send(conn, buf, att_prepare_write_rsp, &prep_data, NULL);
+}
+
+int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
+		  const void *data, uint16_t length, bt_gatt_rsp_func_t func)
 {
 	struct bt_buf *buf;
 	struct bt_att_write_req *req;
 
 	if (!conn || !handle) {
 		return -EINVAL;
+	}
+
+	/* Use Prepare Write if offset is set or Long Write is required */
+	if (offset || length > bt_att_get_mtu(conn) - 1) {
+		return gatt_prepare_write(conn, handle, offset, data, length,
+					  func);
 	}
 
 	if (!func) {

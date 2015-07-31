@@ -518,7 +518,7 @@ static void cmd_gatt_write(int argc, char *argv[])
 	/* TODO: Add support for longer data */
 	data = xtoi(argv[2]);
 
-	err = bt_gatt_write(default_conn, handle, &data, sizeof(data),
+	err = bt_gatt_write(default_conn, handle, 0, &data, sizeof(data),
 			    write_func);
 	if (err) {
 		printk("Write failed (err %d)\n", err);
