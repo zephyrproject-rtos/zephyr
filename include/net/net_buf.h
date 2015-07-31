@@ -97,6 +97,7 @@ struct net_buf {
 
 	/** @cond ignore */
 	/* uIP stack specific data */
+	uint16_t len;
 	uint8_t uip_ext_len;
 	uint8_t uip_ext_bitmap;
 	uint8_t uip_ext_opt_offset;
@@ -123,12 +124,15 @@ struct net_buf {
 	/* @endcond */
 
 	/** Buffer data length */
-	uint16_t len;
+	uint16_t datalen;
 	/** Buffer head pointer */
 	uint8_t *data;
 	/** Actual network buffer storage */
 	uint8_t buf[NET_BUF_MAX_DATA];
 };
+
+#define net_buf_data(buf) ((buf)->data)
+#define net_buf_datalen(buf) ((buf)->datalen)
 
 /** @cond ignore */
 /* Macros to access net_buf when inside Contiki stack */

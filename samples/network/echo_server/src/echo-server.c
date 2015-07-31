@@ -108,14 +108,14 @@ static inline struct net_buf *prepare_reply(const char *name,
 					    const char *type,
 					    struct net_buf *buf)
 {
-	PRINT("%s: %sreceived %d bytes\n", name, type, uip_appdatalen(buf));
+	PRINT("%s: %sreceived %d bytes\n", name, type, net_buf_datalen(buf));
 
 	/* In this test we reverse the received bytes.
 	 * We could just pass the data back as is but
 	 * this way it is possible to see how the app
 	 * can manipulate the received data.
 	 */
-	reverse(uip_appdata(buf), uip_appdatalen(buf));
+	reverse(net_buf_data(buf), net_buf_datalen(buf));
 
 	/* Set the mac address of the peer in net_buf because
 	 * there is no radio layer involved in this test app.

@@ -330,9 +330,10 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 	}
 
 	uip_appdatalen(buf) = datalen;
+	buf->datalen = datalen;
 
-	NET_DBG("packet received buf %p context %p len %d\n",
-		buf, context, datalen);
+	NET_DBG("packet received buf %p context %p len %d appdatalen %d\n",
+		buf, context, buf->len, datalen);
 
 	nano_fifo_put(net_context_get_queue(context), buf);
 }
@@ -423,6 +424,13 @@ static void udp_packet_reply(struct simple_udp_connection *c,
 
 	NET_DBG("packet reply buf %p context %p len %d queue %p\n",
 		buf, context, buf->len, queue);
+
+	/* Contiki stack will overwrite the uip_len(buf) and
+	 * uip_appdatalen(buf) values, so in order to allow
+	 * the application to use them, copy the values here.
+	 */
+	buf->datalen = uip_len(buf);
+	buf->data = uip_appdata(buf);
 
 	nano_fifo_put(queue, buf);
 }

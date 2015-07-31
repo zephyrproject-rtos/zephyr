@@ -137,7 +137,7 @@ void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
 			PRINT("%s: received %d bytes\n", taskname,
-			      uip_appdatalen(buf));
+			      net_buf_datalen(buf));
 			net_buf_put(buf);
 		}
 
@@ -209,7 +209,7 @@ void fiberEntry(void)
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
 			PRINT("%s: received %d bytes\n", __FUNCTION__,
-				uip_appdatalen(buf));
+				net_buf_datalen(buf));
 			net_buf_put(buf);
 		}
 
