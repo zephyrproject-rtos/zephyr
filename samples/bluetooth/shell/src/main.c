@@ -495,7 +495,7 @@ static void write_func(struct bt_conn *conn, uint8_t err)
 static void cmd_gatt_write(int argc, char *argv[])
 {
 	int err;
-	uint16_t handle;
+	uint16_t handle, offset;
 	uint8_t data;
 
 	if (!default_conn) {
@@ -511,14 +511,22 @@ static void cmd_gatt_write(int argc, char *argv[])
 	handle = xtoi(argv[1]);
 
 	if (argc < 3) {
+		printk("offset required\n");
+		return;
+	}
+
+	/* TODO: Add support for longer data */
+	offset = xtoi(argv[2]);
+
+	if (argc < 4) {
 		printk("data required\n");
 		return;
 	}
 
 	/* TODO: Add support for longer data */
-	data = xtoi(argv[2]);
+	data = xtoi(argv[3]);
 
-	err = bt_gatt_write(default_conn, handle, 0, &data, sizeof(data),
+	err = bt_gatt_write(default_conn, handle, offset, &data, sizeof(data),
 			    write_func);
 	if (err) {
 		printk("Write failed (err %d)\n", err);
