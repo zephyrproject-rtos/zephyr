@@ -46,6 +46,7 @@ typedef unsigned int  size_t;
 
 unsigned long int strtoul(const char* str, char** endptr, int base);
 long int strtol (const char* str, char** endptr, int base);
+int atoi(const char *s);
 
 
 #endif  /* __INC_stdlib_h__ */
