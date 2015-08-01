@@ -1,4 +1,6 @@
 CONF_basic_minuteia = ia32/prj.conf
+CONF_quark_d2000    = quark_d2000/quark_d2000_prj.conf
+CONF_quark_se-x86   = quark_se/quark_se_prj.conf
 CONF_basic_atom     = ia32/prj_expert_test.conf
 CONF_galileo        = ia32_pci/prj.conf
 
