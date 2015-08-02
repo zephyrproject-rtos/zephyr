@@ -1,1 +1,1 @@
-lib-y := libc-hooks.o
+obj-y := libc-hooks.o

@@ -1,2 +1,2 @@
-libs-$(CONFIG_MINIMAL_LIBC) += minimal/
-libs-$(CONFIG_NEWLIB) += newlib/
+obj-$(CONFIG_MINIMAL_LIBC) += minimal/
+obj-$(CONFIG_NEWLIB) += newlib/

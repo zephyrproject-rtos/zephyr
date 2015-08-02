@@ -519,8 +519,8 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
 
-core-y     := arch/ kernel/ misc/ net/
-platform-y := drivers/
+core-y := lib/ arch/ kernel/ misc/ net/
+platform-y  := drivers/
 
 ifneq ($(strip $(PROJECT)),)
 core-y += $(SOURCE_DIR)
@@ -551,14 +551,10 @@ include/config/auto.conf: ;
 endif # $(dot-config)
 
 ifdef CONFIG_MINIMAL_LIBC
-# Objects we will link into the kernel / subdirs we need to visit
-KLIBC_DIR := lib/libc/minimal
-libs-y := $(KLIBC_DIR)/
 ZEPHYRINCLUDE += -I$(srctree)/lib/libc/minimal/include
 endif
 
 ifdef CONFIG_TOOLCHAIN_NEWLIB
-libs-y += lib/libc/newlib/
 ALL_LIBS += c m
 endif
 
