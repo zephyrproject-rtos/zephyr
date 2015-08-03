@@ -119,7 +119,7 @@ Checking the Source Code Out
 
     .. code-block:: bash
 
-       $ source zephyr-env.bash
+       $ source zephyr-env.sh
 
 .. _build_sample_app:
 
@@ -141,7 +141,7 @@ To build an example application follow these steps:
 
     .. code-block:: bash
 
-       $ source zephyr-env.bash
+       $ source zephyr-env.sh
 
 #. Build the example project, type:
 
