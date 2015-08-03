@@ -1,3 +1,5 @@
+# vim: filetype=make
+
 PROJECT_BASE ?= $(shell pwd)
 ARCH?=x86
 
@@ -14,7 +16,12 @@ ifdef PLATFORM_CONFIG
 ifndef KERNEL_TYPE
 $(error KERNEL_TYPE is not defined!  Set it to either micro or nano)
 endif
+ifndef KBUILD_DEFCONFIG
 KBUILD_DEFCONFIG=$(KERNEL_TYPE)_$(PLATFORM_CONFIG)_defconfig
+KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/arch/$(ARCH)/configs/$(KBUILD_DEFCONFIG)
+else
+KBUILD_DEFCONFIG_PATH=$(KBUILD_DEFCONFIG)
+endif
 export KBUILD_DEFCONFIG
 endif
 
@@ -87,8 +94,7 @@ qemu: $(CONFIG_DEPS) $(O)/.dir
 
 
 $(O)/.config: $(O)/.dir
-	$(Q)cp $(ZEPHYR_BASE)/arch/$(ARCH)/configs/$(KBUILD_DEFCONFIG) \
-		$(O)/.config
+	$(Q)cp $(KBUILD_DEFCONFIG_PATH) $(O)/.config
 
 $(O)/.initconfig: mergeconfig
 	$(Q)yes "" | $(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) \
