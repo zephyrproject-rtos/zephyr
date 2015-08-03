@@ -79,23 +79,22 @@ The following predefined variables configure the development project:
   is set to :file:`$(PROJECT_BASE/)src/` by default. This directory
   name should end with backslash **'/'**.
 
-* :makevar:`BSP`:Selects the platform of the default
-  configuration used by the project build. platform indicates the Board
-  Support Package. The list of supported platform depends on the
-  architecture selected.
-
-* :makevar:`BSP_VARIANT`: Selects the platform variant of the default
-  configuration used by the project build. It applies specifically
-  for the x86 generic PC platform.
+* :makevar:`PLATFORM_CONFIG`:Selects the platform of the default
+  configuration used by the project build.
 
 * :makevar:`KERNEL_TYPE`: Select the kernel type of the default
   configuration used by the project build. It indicates if this is
-  a nanokernel or microkernel architecture. The supported values for
+  a nanokernel or microkernel architecture. The supported values
   are **nano** and **micro**.
 
-* :makevar:`MDEF_FILE`: Indicates the name of the MDEF file. It i
+* :makevar:`MDEF_FILE`: Indicates the name of the MDEF file. It is
   required for microkernel architectures only.
 
 * :makevar:`CONF_FILE`: Indicates the name of a configuration
   snippet file. This file includes the kconfig values that are
   overridden from the default configuration.
+
+* :makevar:`O`: Optional. Indicates the output directory used by Kconfig.
+  The output directory stores all the Kconfig generated files.
+  The default output directory is set to the
+  :file:`$(PROJECT_BASE)/output` directory.
