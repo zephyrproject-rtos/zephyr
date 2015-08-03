@@ -194,7 +194,6 @@ static inline int udp_prepare_and_send(struct net_context *context,
 		 * part is added also here.
 		 */
 		uip_len(buf) = uip_slen(buf) = uip_appdatalen(buf);
-		buf->data = buf->buf + UIP_IPUDPH_LEN;
 	}
 
 	port = UIP_UDP_BUF(buf)->srcport;
@@ -331,6 +330,7 @@ static void udp_packet_receive(struct simple_udp_connection *c,
 
 	uip_appdatalen(buf) = datalen;
 	buf->datalen = datalen;
+	buf->data = uip_appdata(buf);
 
 	NET_DBG("packet received buf %p context %p len %d appdatalen %d\n",
 		buf, context, buf->len, datalen);
