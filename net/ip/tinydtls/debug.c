@@ -43,8 +43,11 @@
 
 #include "global.h"
 #include "debug.h"
+#include "session.h"
 
+#ifndef NDEBUG
 static int maxlog = DTLS_LOG_WARN;	/* default maximum log level */
+#endif
 
 const char *dtls_package_name() {
   return PACKAGE_NAME;
@@ -54,6 +57,7 @@ const char *dtls_package_version() {
   return PACKAGE_VERSION;
 }
 
+#ifndef NDEBUG
 log_t 
 dtls_get_log_level() {
   return maxlog;
@@ -63,11 +67,14 @@ void
 dtls_set_log_level(log_t level) {
   maxlog = level;
 }
+#endif
 
+#ifndef NDEBUG
 /* this array has the same order as the type log_t */
 static char *loglevels[] = {
   "EMRG", "ALRT", "CRIT", "WARN", "NOTE", "INFO", "DEBG" 
 };
+#endif
 
 #ifdef HAVE_TIME_H
 

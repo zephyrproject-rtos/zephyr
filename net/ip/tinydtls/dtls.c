@@ -3935,7 +3935,7 @@ dtls_check_retransmit(dtls_context_t *context, clock_time_t *next) {
 /*---------------------------------------------------------------------------*/
 /* message retransmission */
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(dtls_retransmit_process, ev, data)
+PROCESS_THREAD(dtls_retransmit_process, ev, data, buf)
 {
   clock_time_t now;
   netq_t *node;

@@ -66,6 +66,10 @@
 #  include "platform-specific/config-native.h"
 #endif /* CONTIKI_TARGET_NATIVE */
 
+#ifdef CONTIKI_TARGET_ZEPHYR
+#  include "platform-specific/config-zephyr.h"
+#endif /* CONTIKI_TARGET_ZEPHYR */
+
 #endif /* CONTIKI */
 
 #endif /* _PLATFORM_H_ */

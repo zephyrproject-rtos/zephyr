@@ -133,7 +133,7 @@
 
 typedef uint8_t  sha2_byte;	/* Exactly 1 byte */
 typedef uint32_t sha2_word32;	/* Exactly 4 bytes */
-typedef uint64_t sha2_word64;	/* Exactly 8 bytes */
+typedef uint64_t sha2_word64 MAY_ALIAS;	/* Exactly 8 bytes */
 
 #else /* SHA2_USE_INTTYPES_H */
 

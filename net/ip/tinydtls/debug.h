@@ -124,7 +124,7 @@ dtls_dsrv_hexdump_log(log_t level, const char *name, const unsigned char *buf, s
 {}
 
 static inline void
-dtls_dsrv_log_addr(log_t level, const char *name, const struct __session_t *addr)
+dtls_dsrv_log_addr(log_t level, const char *name, const session_t *addr)
 {}
 
 #endif /* NDEBUG */
