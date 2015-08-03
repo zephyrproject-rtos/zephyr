@@ -101,7 +101,7 @@ $(O)/.initconfig: mergeconfig
 		PROJECT=$(PROJECT_BASE) oldconfig
 	touch $@
 
-ifneq (($strip $(CONF_FILE)),)
+ifneq ($(strip $(CONF_FILE)),)
 mergeconfig: $(O)/.config $(CONF_FILE)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
 		-q -m -O $(O) $(O)/.config $(CONF_FILE)
