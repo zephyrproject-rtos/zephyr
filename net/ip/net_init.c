@@ -391,7 +391,11 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		return nano_fifo_get(rx_queue);
 	default:
 #ifdef CONFIG_NANO_TIMEOUTS
+#ifdef CONFIG_MICROKERNEL
+		return nano_task_fifo_get_wait_timeout(rx_queue, timeout);
+#else
 		return nano_fiber_fifo_get_wait_timeout(rx_queue, timeout);
+#endif
 #else
 		return nano_fifo_get(rx_queue);
 #endif
