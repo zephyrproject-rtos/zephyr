@@ -116,5 +116,30 @@ obj-$(CONFIG_NETWORKING_UART) += contiki/os/dev/slip.o \
 				contiki/os/dev/slip-arch.o \
 				net_driver_slip.o
 
+ifeq ($(CONFIG_TINYDTLS),y)
+	EXTRA_CFLAGS += -DCONTIKI_TARGET_ZEPHYR=1
+	EXTRA_CFLAGS += -DWITH_SHA256=1
+	EXTRA_CFLAGS += -DDTLS_TICKS_PER_SECOND=sys_clock_ticks_per_sec
+	EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os/sys
+	EXTRA_CFLAGS += -I${srctree}/net/ip/tinydtls
+endif
+obj-$(CONFIG_TINYDTLS) += tinydtls/dtls.o \
+			tinydtls/crypto.o \
+			tinydtls/hmac.o \
+			tinydtls/aes/rijndael.o \
+			tinydtls/sha2/sha2.o \
+			tinydtls/ccm.o \
+			tinydtls/netq.o \
+			tinydtls/dtls_time.o \
+			tinydtls/peer.o \
+			tinydtls/session.o \
+			tinydtls/ecc/ecc.o
+
+
+ifeq ($(CONFIG_TINYDTLS_DEBUG),)
+	EXTRA_CFLAGS += -DNDEBUG
+endif
+obj-$(CONFIG_TINYDTLS_DEBUG) += tinydtls/debug.o
+
 # workaround for include file location
 CREATE_INCLUDE_LINK_net := $(shell ln -s ${ZEPHYR_BASE}/net/ip/contiki ${ZEPHYR_BASE}/net/ip/contiki/net > /dev/null 2>&1)

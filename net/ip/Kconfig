@@ -162,3 +162,20 @@ config	NETWORKING_WITH_6LOWPAN
 	default n
 	help
 	  Enable 6LoWPAN in uIP stack
+
+config	TINYDTLS
+	bool
+	prompt "Enable tinyDTLS support."
+	depends on NETWORKING
+	default n
+	help
+	  Enable tinyDTLS support so that applications can use it.
+	  This is needed at least in CoAP.
+
+config	TINYDTLS_DEBUG
+	bool
+	prompt "Enable tinyDTLS debugging support."
+	depends on TINYDTLS
+	default n
+	help
+	  Enable tinyDTLS debugging support.
