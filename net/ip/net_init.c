@@ -345,8 +345,6 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 	struct net_tuple *tuple;
 	int ret = 0;
 
-	NET_DBG("context %p rx_queue %p\n", context, rx_queue);
-
 	tuple = net_context_get_tuple(context);
 	if (!tuple) {
 		return NULL;
