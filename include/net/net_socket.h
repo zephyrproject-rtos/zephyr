@@ -105,9 +105,9 @@ int net_send(struct net_buf *buf);
  * @brief Receive data from network.
  *
  * @details Application uses this to get data from network
- * connection. This function will not wait so if there is
- * no data to return, then NULL is returned. Caller is
- * responsible to release the returned net_buf.
+ * connection. Caller can specify a timeout, if there is no
+ * data to return after a timeout, a NULL will be returned.
+ * Caller is responsible to release the returned net_buf.
  *
  * @param context Network context.
  * @param timeout Timeout to wait. The value is in ticks.
@@ -116,7 +116,7 @@ int net_send(struct net_buf *buf);
  * If > 0, wait amount of ticks.
  * The timeout is only available if kernel is compiled
  * with CONFIG_NANO_TIMEOUTS. If CONFIG_NANO_TIMEOUT is not
- * defined, then value > 0 means to not wait.
+ * defined, then value > 0 means not to wait.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
