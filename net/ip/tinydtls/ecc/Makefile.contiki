@@ -1,0 +1,7 @@
+CONTIKI=../../..
+
+APPS += ecc
+
+CFLAGS += -DTEST_INCLUDE
+
+include $(CONTIKI)/Makefile.include

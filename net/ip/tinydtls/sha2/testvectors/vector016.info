@@ -1,0 +1,23 @@
+DESCRIPTION:
+    This test vector came from Brian LaMacchia in his e-mail
+    message containing several samples of output from his SHA-256
+    and SHA-512 implementations.  My own implementations match
+    his output exactly.  The input data data set is the string
+    "Rijndael is AES" repeated 1024 times.
+    
+    (Total length of test vector data: 15360)
+
+FILE:
+    vector016.dat
+
+SHA256:
+    80fced5a97176a5009207cd119551b42c5b51ceb445230d02ecc2663bbfb483a
+
+SHA384:
+    aa1e77c094e5ce6db81a1add4c095201d020b7f8885a4333218da3b799b9fc42
+    f00d60cd438a1724ae03bd7b515b739b
+
+SHA512:
+    fae25ec70bcb3bbdef9698b9d579da49db68318dbdf18c021d1f76aaceff9628
+    38873235597e7cce0c68aabc610e0deb79b13a01c302abc108e459ddfbe9bee8
+

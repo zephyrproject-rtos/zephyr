@@ -1,0 +1,27 @@
+# the library's version
+VERSION:=@PACKAGE_VERSION@
+
+# tools
+@SET_MAKE@
+SHELL = /bin/sh
+MKDIR = mkdir
+
+top_builddir = @top_builddir@
+
+THIS=platform-specific
+DISTDIR?=$(top_builddir)/@PACKAGE_TARNAME@-@PACKAGE_VERSION@
+FILES:=Makefile.in $(wildcard *.h)
+
+clean:
+
+distclean:	clean
+	@rm -rf $(DISTDIR)
+	@rm -f *~ 
+
+dist:	
+	test -d $(DISTDIR)/$(THIS) || mkdir $(DISTDIR)/$(THIS)
+	cp -r $(FILES) $(DISTDIR)/$(THIS)
+
+# this directory contains no installation candidates
+install:
+	:

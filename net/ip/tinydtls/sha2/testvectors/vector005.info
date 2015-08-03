@@ -1,0 +1,23 @@
+DESCRIPTION:
+    The output samples for this test vector come exclusively from my
+    own implementation and so may be completely incorrect.  Use with
+    a very large grain of salt.  The input sample is EMPTY (no bits).
+    Mr. David A. Ireland's SHA-256 implementation agrees with my own
+    implementation on the output of this test vector (SHA-256 only).
+    
+    (Total length of test vector data: 0)
+
+FILE:
+    vector005.dat
+
+SHA256:
+    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+SHA384:
+    38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da
+    274edebfe76f65fbd51ad2f14898b95b
+
+SHA512:
+    cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce
+    47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e
+

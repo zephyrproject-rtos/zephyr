@@ -1,0 +1,90 @@
+# Makefile for tinydtls
+#
+# Copyright (C) 2011 Olaf Bergmann <bergmann@tzi.org>
+# Copyright (C) 2013 Hauke Mehrtens <hauke@hauke-m.de>
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use, copy,
+# modify, merge, publish, distribute, sublicense, and/or sell copies
+# of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# the library's version
+VERSION:=@PACKAGE_VERSION@
+
+# tools
+@SET_MAKE@
+SHELL = /bin/sh
+MKDIR = mkdir
+
+abs_builddir = @abs_builddir@
+top_builddir = @top_builddir@
+top_srcdir:= @top_srcdir@
+
+ECC_SOURCES:= ecc.c testecc.c testfield.c test_helper.c
+ECC_HEADERS:= ecc.h test_helper.h
+FILES:=Makefile.in Makefile.contiki $(ECC_SOURCES) $(ECC_HEADERS) 
+DISTDIR=$(top_builddir)/@PACKAGE_TARNAME@-@PACKAGE_VERSION@
+
+ifeq ("@WITH_CONTIKI@", "1")
+include Makefile.contiki
+else
+ECC_OBJECTS:= $(patsubst %.c, %.o, $(ECC_SOURCES)) ecc_test.o
+PROGRAMS:= testecc testfield
+CPPFLAGS=@CPPFLAGS@
+CFLAGS=-Wall -std=c99 -pedantic @CFLAGS@ -DTEST_INCLUDE
+LDLIBS=@LIBS@
+
+.PHONY: all dirs clean install distclean .gitignore doc
+
+.SUFFIXES:
+.SUFFIXES:      .c .o
+
+all: $(PROGRAMS)
+
+ecc_test.o:	ecc.c ecc.h
+	$(CC) $(CFLAGS) $(CPPFLAGS)  -c -o $@ $<
+
+testecc: ecc_test.o test_helper.o
+
+testfield: ecc_test.o test_helper.o
+
+check:	
+	echo DISTDIR: $(DISTDIR)
+	echo top_builddir: $(top_builddir)
+
+clean:
+	@rm -f $(PROGRAMS) main.o $(LIB) $(OBJECTS)
+	for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir clean ; \
+	done
+
+distclean:	clean
+	@rm -rf $(DISTDIR)
+	@rm -f *~ $(DISTDIR).tar.gz
+endif # WITH_CONTIKI
+
+dist:	$(FILES)
+	test -d $(DISTDIR)/ecc || mkdir $(DISTDIR)/ecc
+	cp -p $(FILES) $(DISTDIR)/ecc
+
+install:	$(HEADERS)
+	test -d $(includedir)/ecc || mkdir -p $(includedir)/ecc
+	$(install) $(HEADERS) $(includedir)/ecc
+
+.gitignore:
+	echo "core\n*~\n*.[oa]\n*.gz\n*.cap\n$(PROGRAM)\n$(DISTDIR)\n.gitignore" >$@

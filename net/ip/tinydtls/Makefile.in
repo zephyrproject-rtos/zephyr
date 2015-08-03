@@ -1,0 +1,141 @@
+# Makefile for tinydtls
+#
+# Copyright (C) 2011--2014 Olaf Bergmann <bergmann@tzi.org>
+#
+# Permission is hereby granted, free of charge, to any person
+# obtaining a copy of this software and associated documentation
+# files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use, copy,
+# modify, merge, publish, distribute, sublicense, and/or sell copies
+# of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# the library's version
+VERSION:=@PACKAGE_VERSION@
+
+# tools
+@SET_MAKE@
+SHELL = /bin/sh
+MKDIR = mkdir
+ETAGS = @ETAGS@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+abs_builddir = @abs_builddir@
+top_builddir = @top_builddir@
+libdir = @libdir@
+includedir = @includedir@/@PACKAGE_NAME@
+package = @PACKAGE_TARNAME@-@PACKAGE_VERSION@
+
+install := cp
+
+# files and flags
+SOURCES:= dtls.c crypto.c ccm.c hmac.c netq.c peer.c dtls_time.c session.c
+ifneq ("@NDEBUG@", "1")
+SOURCES += debug.c
+endif
+SUB_OBJECTS:=aes/rijndael.o @OPT_OBJS@
+OBJECTS:= $(patsubst %.c, %.o, $(SOURCES)) $(SUB_OBJECTS)
+HEADERS:=dtls.h hmac.h debug.h dtls_config.h numeric.h crypto.h global.h ccm.h \
+ netq.h t_list.h alert.h prng.h peer.h state.h dtls_time.h session.h \
+ tinydtls.h
+CFLAGS:=-Wall -pedantic -std=c99 @CFLAGS@
+CPPFLAGS:=@CPPFLAGS@ -DDTLS_CHECK_CONTENTTYPE
+SUBDIRS:=tests doc platform-specific sha2 aes ecc
+DISTSUBDIRS:=$(SUBDIRS) examples/contiki
+DISTDIR=$(top_builddir)/$(package)
+FILES:=Makefile.in configure configure.in dtls_config.h.in tinydtls.h.in \
+  Makefile.tinydtls $(SOURCES) $(HEADERS)
+LIB:=libtinydtls.a
+LDFLAGS:=@LIBS@
+ARFLAGS:=cru
+doc:=doc
+
+.PHONY: all dirs clean install dist distclean .gitignore doc TAGS
+
+ifneq ("@WITH_CONTIKI@", "1")
+.SUFFIXES:
+.SUFFIXES:      .c .o
+
+all:	$(LIB) dirs
+
+check:	
+	echo DISTDIR: $(DISTDIR)
+	echo top_builddir: $(top_builddir)
+	$(MAKE) -C tests check
+
+dirs:	$(SUBDIRS)
+	for dir in $^; do \
+		$(MAKE) -C $$dir ; \
+	done
+
+$(SUB_OBJECTS)::
+	$(MAKE) -C $(@D) $(@F)
+
+$(LIB):	$(OBJECTS)
+	$(AR) $(ARFLAGS) $@ $^ 
+	ranlib $@
+
+clean:
+	@rm -f $(PROGRAM) main.o $(LIB) $(OBJECTS)
+	for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir clean ; \
+	done
+else  # WITH_CONTIKI
+all:
+	$(MAKE) -C examples/contiki $@
+endif # WITH_CONTIKI
+
+doc:	
+	$(MAKE) -C doc
+
+distclean:	clean
+	@rm -rf $(DISTDIR)
+	@rm -f *~ $(DISTDIR).tar.gz
+
+dist:	$(FILES) $(DISTSUBDIRS)
+	test -d $(DISTDIR) || mkdir $(DISTDIR)
+	cp $(FILES) $(DISTDIR)
+	for dir in $(DISTSUBDIRS); do \
+		$(MAKE) -C $$dir dist; \
+	done
+	tar czf $(package).tar.gz $(DISTDIR)
+
+install:	$(LIB) $(HEADERS) $(SUBDIRS)
+	test -d $(libdir) || mkdir -p $(libdir)
+	test -d $(includedir) || mkdir -p $(includedir)
+	$(install) $(LIB) $(libdir)/
+	$(install) $(HEADERS) $(includedir)/
+	for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir install="$(install)" includedir=$(includedir) install; \
+	done
+
+TAGS:	
+	$(ETAGS) -o $@.new $(SOURCES) 
+	$(ETAGS) -a -o $@.new $(HEADERS) 
+	mv $@.new $@
+
+# files that should be ignored by git
+GITIGNOREDS:= core \*~ \*.[oa] \*.gz \*.cap \*.pcap Makefile \
+ autom4te.cache/ config.h config.log config.status configure \
+ doc/Doxyfile doc/doxygen.out doc/html/ $(LIB) tests/ccm-test \
+ tests/dtls-client tests/dtls-server tests/prf-test $(package) \
+ $(DISTDIR)/ TAGS \*.patch .gitignore ecc/testecc ecc/testfield \
+ \*.d \*.hex \*.elf \*.map obj_\* tinydtls.h dtls_config.h \
+ $(addprefix \*., $(notdir $(wildcard ../../platform/*))) \
+ .project
+
+.gitignore:
+	echo $(GITIGNOREDS) | sed 's/ /\n/g' > $@

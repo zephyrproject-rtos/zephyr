@@ -1,0 +1,26 @@
+CONTENTS 
+
+This library contains functions and structures that can help
+constructing a single-threaded UDP server with DTLS support in
+C99. The following components are available:
+
+* dtls
+  Basic support for DTLS with pre-shared key mode.
+
+* tests
+  The subdirectory tests contains test programs that show how each
+  component is used. 
+
+BUILDING
+
+When using the code from the git repository at sourceforge, invoke
+'autoreconf' to re-create the configure script. To build for Contiki,
+place tinydtls into Contiki's apps directory and call 
+  ./configure --with-contiki.
+
+After configuration, invoke make to build the library and associated
+test programs. To add tinydtls as Contiki application, drop it into
+the apps directory and add the following line to your Makefile:
+
+  APPS += tinydtls/aes tinydtls/sha2 tinydtls/ecc tinydtls
+

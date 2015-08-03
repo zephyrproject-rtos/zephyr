@@ -1,0 +1,272 @@
+VERSION:
+
+This is version 1.0 RELEASE
+
+While this is my "release" version, due to lack of additional
+official test vectors against which to verify this implementation's
+correctness, beware that there may be implementation bugs.  Also,
+it has not yet been tested on very many other architectures,
+big-endian machines in particular.
+
+
+LICENSE:
+
+This implementation is released freely under an open-source BSD
+license which appears at the top of each source code file.
+
+
+WHAT IT IS:
+
+The files sha2.h and sha2.c implement the SHA-256, SHA-384, and SHA-512
+hash algorithms as described in the PDF document found at the following
+web address:
+
+  http://csrc.nist.gov/cryptval/shs/sha256-384-512.pdf
+
+The interface is similar to the interface to SHA-1 found in the OpenSSL
+library.
+
+The file sha2prog.c is a simple program that accepts input from either
+STDIN or reads one or more files specified on the command line, and then
+generates the specified hash (either SHA-256, SHA-384, SHA-512, or any
+combination thereof, including all three at once).
+
+
+LIMITATIONS:
+
+This implementation has several limitations:
+
+ * Input data is only accepted in octet-length increments.  No sub-byte
+   data is handled.  The NIST document describes how to handle sub-byte
+   input data, but for ease of implementation this version will only
+   accept message data in multiples of bytes.
+ * This implementation utilizes 64-bit integer data types.  If your
+   system and compiler does not have a 64-bit integer data type, this
+   implementation will not work.
+ * Because of the use of 64-bit operations, many 32-bit architectures
+   that do have 64-bit data types but do operations most efficiently
+   on 32-bit words, this implementation may be slower than an
+   implementation designed to use only 32-bit words (emulating the
+   64-bit operations).
+ * On platforms with 128-bit integer data types, the SHA-384 and SHA-512
+   bit counters used by this implementation might be better off using
+   the 128-bit type instead of simulating it with two 64-bit integers.
+ * This implementation was written in C in hopes of portability and for
+   the fun of it during my spare time.  It is probably not the most
+   efficient or fastest C implementation.  I welcome suggestions,
+   however, that suggest ways to speed things up without breaking
+   portability.  I also welcome suggestions to improve portability.
+ * As mentioned above, this code has NOT been thoroughly tested.
+   This is perhaps the most severe limitation.
+
+
+BEFORE YOU COMPILE (OPTIONS):
+
+Each of the options described below may either be defined in the sha2.h
+header file (or in the sha2.c file in some cases), or on the command
+line at compile time if your compiler supports such things.  For
+example:
+
+  #define SHA2_USE_INTTYPES_H
+  #define SHA2_UNROLL_TRANSFORM
+
+Or:
+
+  cc -c -DSHA2_UNROLL_TRANSFORM sha2.c
+  cc -c -DBYTE_ORDER=4321 -DBIG_ENDIAN=4321 sha2.c
+
+Here are the available options.  Read on below for a description of
+each one:
+
+  SHA2_USE_INTTYPES_H
+  SHA2_USE_MEMSET_MEMCPY/SHA2_USE_BZERO_BCOPY
+  SHA2_UNROLL_TRANSFORM
+  BYTE_ORDER (LITTLE_ENDIAN/BIG_ENDIAN)
+
+* SHA2_USE_INTTYPES_H option:
+By default, this code uses u_intXX_t data types for 8 bit, 32 bit, and
+64 bit unsigned integer type definitions.  Most BSD systems define these,
+as does Linux.  However, some (like Compaq's Tru64 Unix) may instead
+use uintXX_t data types as defined by recent ANSI C standards and as
+included in the inttypes.h header file.  Those wanting to use inttypes.h
+need to define this either in sha.h or at compile time.
+
+On those systems where NEITHER definitions are available, you will need
+to edit both sha2.h and sha2.c and define things by hand in the appropriate
+sections.
+
+* BYTE_ORDER definitions:
+This code assumes that BYTE_ORDER will be defined by the system during
+compile to either equal LITTLE_ENDIAN or BIG_ENDIAN.  If your system
+does not define these, you may need to define them by hand in the sha.c
+file according to the byte ordering conventions of your system.
+
+* SHA2_USE_MEMSET_MEMCPY or SHA2_USE_BZERO_BCOPY
+The code in sha2.c can use either memset()/memcpy() for memory block
+operations, or bzero()/mcopy().  If you define neither of these, the
+code will default to memset()/memcpy().  You can define either at the
+command line or in sha2.h or in sha2.c.
+
+* SHA2_UNROLL_TRANSFORM
+By defining this either on the command line or in sha2.h or sha2.c,
+the code will use macros to partially "unroll" the SHA transform
+function.  This usually generates bigger executables.  It CAN (but
+not necessarily WILL) generate faster code when you tell your compiler
+to optimize things.  For example, on the FreeBSD and Linux x86 systems
+I tested things on (using gcc), when I optimized with just -O2 and
+unrolled the transform, the hash transform was faster by 15-30%.  On
+these same systems, if I did NO optimization, the unrolled transform
+was SLOWER, much slower (I'm guessing because the code was breaking
+the cache, but I'm not sure).  Your mileage may vary.
+
+
+PORTABILITY:
+
+The code in sha2.c and sha2.h is intended to be portable.  It may
+require that you do a few #definitions in the .h file.  I've successfully
+compiled and tested the sha2.c and sha2.h code on Apple's OS X (on
+a PPC), FreeBSD 4.1.1 on Intel, Linux on Intel, FreeBSD on the Alpha,
+and even under Windows98SE using Metrowerks C.  The utility/example
+programs (sha2prog.c, sha2test.c, and sha2speed.c) will very likely
+have more trouble in portability since they do I/O.
+
+To get sha2.c/sha2.h working under Windows, I had to define
+SHA2_USE_INTTYPES_H, BYTE_ORDER, LITTLE_ENDIAN, and had to comment
+out the include of <sys/types.h> in sha2.h.  With a bit more work
+I got the test program to run and verified that all the test
+cases passed.
+
+
+SUGGESTIONS/BUG FIXES:
+
+If you make changes to get it working on other architectures, if you fix
+any bugs, or if you make changes that improve this implementation's
+efficiency that would be relatively portable and you're willing to release
+your changes under the same license, please send them to me for possible
+inclusion in future versions.
+
+If you know where I can find some additional test vectors, please let me
+know.
+
+
+CHANGE HISTORY:
+
+0.8 to 0.9 	- Fixed spelling errors, changed to u_intXX_t type usage,
+		  removed names from prototypes, added prototypes to sha2.c,
+		  and a few things I can't recall.
+
+0.9 to 0.9.5	- Add a new define in sha2.c that permits one to compile
+		  it to either use memcpy()/memset() or bcopy()/bzero()
+		  for memory block copying and zeroing.  Added support
+		  for unrolled SHA-256/384/512 transform loops.  Just
+		  compile with SHA2_UNROLL_TRANSFORM to enable.  It takes
+		  longer to compile, but I hope it is a bit faster.  I
+		  need to do some test to see whether or not it is. Oh,
+		  in sha2.c, you either need to define SHA2_USE_BZERO_BCOPY
+		  or SHA2_USE_MEMSET_MEMCPY to choose which way you want
+		  to compile.  *Whew*  It's amazing how quickly something
+		  simple starts to grow more complex even in the span of
+		  just a few hours.  I didn't really intend to do this much.
+0.9.5 to 0.9.6  - Added a test program (sha2test) which tests against several
+                  known test vectors.  WARNING: Some of the test output
+                  hashes are NOT from NIST's documentation and are the
+                  output of this implementation and so may be incorrect.
+0.9.6 to 0.9.7  - Fixed a bug that could cause invalid output in certain
+		  cases and added an assumed scenario where zero-length
+		  data is hashed.  Also changed the rotation macros to use
+		  a temporary variable as this reduces the number of operations.
+		  When data is fed in blocks of the right length, copying of
+		  data is reduced in this version.  Added SHAYXZ_Data()
+		  functions for ease of hashing a set of data.  Added another
+		  file sha2speed.c for doing speed testing.  Added another test
+		  vector with a larger data size (16KB).  Fixed u_intXX_t and
+		  uintXX_t handling by adding a define for SHA2_USE_INTTYPES_H
+		  as well as made a few other minor changes to get rid of
+		  warnings when compiling on Compaq's Tru64 Unix.
+0.9.7 to 0.9.8  - The bug fix in 0.9.7 was incomplete and in some cases made
+                  things worse.  I believe that 0.9.8 fixes the bug completely
+                  so that output is correct.  I cannot verify this, however,
+                  because of the lack of test vectors against which to do such
+                  verification.  All versions correctly matched the very few
+                  NIST-provided vectors, but unfortunately the bug only
+                  appeared in longer message data sets.
+0.9.8 to 0.9.9  - Fixed some really bad typos and mistakes on my part that
+                  only affected big-endian systems.  I didn't have direct
+                  access for testing before this version.  Thanks to
+                  Lucas Marshall for giving me access to his OS X system.
+0.9.9 to 1.0.0b1  Added a few more test samples and made a few changes to
+                  make things easier compiling on several other platforms.
+                  Also I experimented with alternate macro definitions
+                  in the SHA2_UNROLL_TRANSFORM version (see sha2.slower.c)
+                  and eliminated the T1 temporary variable (the compiler
+                  would of course still use internal temporary storage
+                  during expression evaluation, but I'd hoped the compiler
+                  would be more efficient), but unfortunately under FreeBSD
+                  4.1.1-STABLE on an x86 platform, the change slowed things
+                  down.
+1.0.0b1 to 1.0 RELEASE  Fixed an off-by-one implementation bug that affected
+                  SHA-256 when hashed data length L = 55 + 64 * X where X is
+                  either zero or a positive integer, and another (basically
+                  the same bug) bug in SHA-384 and SHA-512 that showed up when
+                  hashed data lengths L = 111 + 128 * X.  Thanks to Rogier
+		  van de Pol for sending me test data that revealed the bug.
+                  The fix was very simple (just two tiny changes).  Also,
+                  I finally put the files into RCS so future changes will be
+                  easier to manage.  The sha2prog.c file was rewritten to
+                  be more useful to me, and I got rid of the old C testing
+                  program and now use a perl script with a subdirectory full
+                  of test data.  It's a more flexible test system.
+
+
+LATEST VERSION:
+
+The latest version and documentation (if any ;) should always be available
+on the web at:
+
+  http://www.aarongifford.com/computers/sha.html
+
+
+CONTACT ME:
+
+I can be reached via email at:
+
+  Aaron Gifford   <m e @ a a r o n g i f f o r d . c o m>
+
+Please don't send support questions.  I don't have the time to answer and
+they'll probably be ignored.  Bug fixes, or patches that add something useful
+will be gratefully accepted, however.
+
+If you use this implementation, I would enjoy getting a brief email message
+letting me know who you are and what use to which it is being put.  There
+is no requirement to do so.  I just think it would be fun.
+
+
+EXAMPLES:
+
+Here's an example of compiling and using the sha2 program (in this example
+I build it using the unrolled transform version with -O2 optimizations),
+and then running the perl testing script:
+
+  cc -O2 -DSHA2_UNROLL_TRANSFORM -Wall -o sha2 sha2prog.c sha2.c
+  % ./sha2test.pl
+
+  [most of the perl script output deleted for brevity]
+
+  ===== RESULTS (18 VECTOR DATA FILES HASHED) =====
+
+  HASH TYPE       NO. OF TESTS    PASSED  FAILED
+  ---------       ------------    ------  ------
+  SHA-256                   18        18       0
+  SHA-384                   18        18       0
+  SHA-512                   18        18       0
+  ----------------------------------------------
+  TOTAL:                    54        54       0
+
+  NO ERRORS!  ALL TESTS WERE SUCCESSFUL!
+
+  ALL TEST VECTORS PASSED!
+
+That's all folks!  Have fun!
+
+Aaron out.
+

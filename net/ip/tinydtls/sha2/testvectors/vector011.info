@@ -1,0 +1,22 @@
+DESCRIPTION:
+    The output samples for thi test vector come exclusively from my
+    own implementation and so may be completely incorrect.  Use with
+    a very large grain of salt.  The input sample is one byte less
+    than 7 times the size of the SHA-256 block length.
+    
+    (Total length of test vector data: 447)
+
+FILE:
+    vector011.dat
+
+SHA256:
+    6dcd63a07b0922cc3a9b3315b158478681cc32543b0a4180abe58a73c5e14cc2
+
+SHA384:
+    548e4e9a1ff57f469ed47b023bf5279dfb4d4ca08c65051e3a5c41fab84479a2
+    05496276906008b4b3c5b0970b2f5446
+
+SHA512:
+    ee5d07460183b130687c977e9f8d43110989b0864b18fe6ee00a53dec5eda111
+    f3aaa3bac7ab8dae26ed545a4de33ed45190f18fa0c327c44642ab9424265330
+

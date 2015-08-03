@@ -1,0 +1,59 @@
+########################################################################
+# platform-specific options
+
+ifeq ($(TARGET), econotag)
+CFLAGS += -DUIP_CONF_TCP=0
+endif
+
+ifeq ($(TARGET), minimal-net)
+CONTIKI_WITH_RPL=0
+endif
+
+# usually, you should not need changing anything beyond this line
+########################################################################
+
+# the library's version
+VERSION:=@PACKAGE_VERSION@
+
+# tools
+@SET_MAKE@
+SHELL = /bin/sh
+MKDIR = mkdir
+
+abs_builddir = @abs_builddir@
+top_builddir = @top_builddir@
+top_srcdir:= @top_srcdir@
+DISTDIR=$(top_builddir)/@PACKAGE_TARNAME@-@PACKAGE_VERSION@
+DTLS_SOURCES:=dtls-server.c dtls-client.c
+FILES:=Makefile.in $(DTLS_SOURCES)
+
+all: dtls-server dtls-client
+	$(MAKE) $(MAKEFLAGS) ROLE=server dtls-server
+	$(MAKE) $(MAKEFLAGS) clean
+	$(MAKE) $(MAKEFLAGS) ROLE=client dtls-client
+
+CONTIKI=$(top_srcdir)/../..
+
+CONTIKI_WITH_IPV6 = 1
+
+ifneq ($(ROLE),client)
+	CFLAGS+= -DHARD_CODED_ADDRESS=\"aaaa::02:232\"
+else
+	CFLAGS+= -DUDP_CONNECTION_ADDR="fe80::ff:fe02:232" \
+		 -DHARD_CODED_ADDRESS=\"aaaa::02:230\"
+endif
+
+CFLAGS += -ffunction-sections
+LDFLAGS += -Wl,--gc-sections,--undefined=_reset_vector__,--undefined=InterruptVectors,--undefined=_copy_data_init__,--undefined=_clear_bss_init__,--undefined=_end_of_init__
+
+APPS += tinydtls/aes tinydtls/sha2 tinydtls/ecc tinydtls
+
+ccm-test: tests/ccm-test
+
+dist:	$(FILES)
+	test -d $(DISTDIR)/examples/contiki || $(MKDIR) -p $(DISTDIR)/examples/contiki
+	cp $(FILES) $(DISTDIR)/examples/contiki
+
+ifeq ("@WITH_CONTIKI@", "1")
+include $(CONTIKI)/Makefile.include
+endif
