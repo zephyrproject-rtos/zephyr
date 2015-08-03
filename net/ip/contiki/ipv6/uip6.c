@@ -1575,7 +1575,9 @@ uip_process(struct net_buf *buf, uint8_t flag)
     /* If the application does not want to send anything, then uip_slen(buf)
      * will be 0. In this case we MUST NOT set uip_len(buf) to 0 as that would
      * cause the net_buf to be released by rx fiber. In this case it is
-     * application responsibility to release the buffer.
+     * application responsibility to release the buffer. Returning 0 here
+     * will mean that tcpip.c:packet_input() will not try to call
+     * tcpip_ipv6_output().
      */
     return 0;
   }
