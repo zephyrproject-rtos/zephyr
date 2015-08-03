@@ -126,14 +126,18 @@ static inline struct net_buf *prepare_reply(const char *name,
 	return buf;
 }
 
+/* How many tics to wait for a network packet */
+#define WAIT_TIME 1
+#define WAIT_TICKS (WAIT_TIME * sys_clock_ticks_per_sec)
+
 static inline void receive_and_reply(const char *name, struct net_context *recv,
 				     struct net_context *mcast_recv)
 {
 	struct net_buf *buf;
 
-	buf = net_receive(recv, TICKS_NONE);
+	buf = net_receive(recv, WAIT_TICKS);
 	if (buf) {
-		prepare_reply(name, "", buf);
+		prepare_reply(name, "unicast ", buf);
 
 		if (net_reply(recv, buf)) {
 			net_buf_put(buf);
@@ -141,7 +145,7 @@ static inline void receive_and_reply(const char *name, struct net_context *recv,
 		return;
 	}
 
-	buf = net_receive(mcast_recv, TICKS_NONE);
+	buf = net_receive(mcast_recv, WAIT_TICKS);
 	if (buf) {
 		prepare_reply(name, "multicast ", buf);
 
@@ -209,140 +213,54 @@ static inline bool get_context(struct net_context **recv,
 
 #ifdef CONFIG_MICROKERNEL
 
-/* specify delay between turns (in ms); compute equivalent in ticks */
-
-#define SLEEPTIME  500
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
-
-/* specify delay between greetings (in ms); compute equivalent in ticks */
-
-#define SLEEPTIME  500
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
-
-/*
-*
-* \param taskname    task identification string
-* \param mySem       task's own semaphore
-* \param otherSem    other task's semaphore
-*
-*/
-void helloLoop(const char *taskname, ksem_t mySem, ksem_t otherSem)
+void task_receive(void)
 {
 	static struct net_context *recv;
 	static struct net_context *mcast_recv;
 
 	net_init();
 
-	if (!recv || !mcast_recv) {
-		get_context(&recv, &mcast_recv);
+	init_server();
+
+	if (!get_context(&recv, &mcast_recv)) {
+		PRINT("%s: Cannot get network contexts\n", __FUNCTION__);
+		return;
 	}
 
 	while (1) {
-		task_sem_take_wait(mySem);
-
-		receive_and_reply(taskname, recv, mcast_recv);
-
-		/* wait a while, then let other task have a turn */
-		task_sleep(SLEEPTICKS);
-		task_sem_give(otherSem);
+		receive_and_reply(__FUNCTION__, recv, mcast_recv);
 	}
 }
 
-void taskA(void)
-{
-	init_server();
-
-	/* taskA gives its own semaphore, allowing it to say hello right away */
-	task_sem_give(TASKASEM);
-
-	/* invoke routine that allows task to ping-pong hello messages with taskB */
-	helloLoop(__FUNCTION__, TASKASEM, TASKBSEM);
-}
-
-void taskB(void)
-{
-	/* invoke routine that allows task to ping-pong hello messages with taskA */
-	helloLoop(__FUNCTION__, TASKBSEM, TASKASEM);
-}
-
 #else /*  CONFIG_NANOKERNEL */
-
-/*
- * Nanokernel version of hello world demo has a task and a fiber that utilize
- * semaphores and timers to take turns printing a greeting message at
- * a controlled rate.
- */
-
-#include <nanokernel.h>
-
-/* specify delay between greetings (in ms); compute equivalent in ticks */
-
-#define SLEEPTIME  500
-#define SLEEPTICKS (SLEEPTIME * sys_clock_ticks_per_sec / 1000)
 
 #define STACKSIZE 2000
 
 char fiberStack[STACKSIZE];
 
-struct nano_sem nanoSemTask;
-struct nano_sem nanoSemFiber;
-
-void fiberEntry(void)
+void fiber_receive(void)
 {
 	static struct net_context *recv;
 	static struct net_context *mcast_recv;
 
-	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
-
-	if (!recv || !mcast_recv) {
-		if (!get_context(&recv, &mcast_recv)) {
-			PRINT("%s: Cannot get network contexts\n",
-			      __FUNCTION__);
-			return;
-		}
+	if (!get_context(&recv, &mcast_recv)) {
+		PRINT("%s: Cannot get network contexts\n", __FUNCTION__);
+		return;
 	}
 
-	nano_sem_init (&nanoSemFiber);
-	nano_timer_init (&timer, data);
-
 	while (1) {
-		/* wait for task to let us have a turn */
-		nano_fiber_sem_take_wait (&nanoSemFiber);
-
 		receive_and_reply(__FUNCTION__, recv, mcast_recv);
-
-		/* wait a while, then let task have a turn */
-		nano_fiber_timer_start (&timer, SLEEPTICKS);
-		nano_fiber_timer_wait (&timer);
-		nano_fiber_sem_give (&nanoSemTask);
 	}
 }
 
 void main(void)
 {
-	struct nano_timer timer;
-	uint32_t data[2] = {0, 0};
-
 	net_init();
 
 	init_server();
 
 	task_fiber_start (&fiberStack[0], STACKSIZE,
-			(nano_fiber_entry_t) fiberEntry, 0, 0, 7, 0);
-
-	nano_sem_init(&nanoSemTask);
-	nano_timer_init(&timer, data);
-
-	while (1) {
-		/* wait a while, then let fiber have a turn */
-		nano_task_timer_start(&timer, SLEEPTICKS);
-		nano_task_timer_wait(&timer);
-		nano_task_sem_give(&nanoSemFiber);
-
-		/* now wait for fiber to let us have a turn */
-		nano_task_sem_take_wait(&nanoSemTask);
-	}
+			(nano_fiber_entry_t)fiber_receive, 0, 0, 7, 0);
 }
 
 #endif /* CONFIG_MICROKERNEL ||  CONFIG_NANOKERNEL */

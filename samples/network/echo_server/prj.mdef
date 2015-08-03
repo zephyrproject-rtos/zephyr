@@ -1,5 +1,5 @@
-% Application       : Network listener
+% Application       : Network echo server
 
-% TASK NAME         PRIO ENTRY           STACK GROUPS
-% ===================================================
-  TASK MAIN            7 mainloop        2048 [EXE]
+% TASK NAME  PRIO ENTRY STACK GROUPS
+% ==================================
+  TASK TASKA    7 task_receive  2048 [EXE]
