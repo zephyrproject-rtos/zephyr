@@ -99,6 +99,7 @@ __extension__ ({							\
 #define __packed        __attribute__((__packed__))
 #define __aligned(x)    __attribute__((aligned(x)))
 #define __may_alias     __attribute__((__may_alias__))
+#define __printf_like(f, a)   __attribute__((format (printf, f, a)))
 
 #define ARG_UNUSED(x) (void)(x)
 
