@@ -474,7 +474,7 @@ class MakeGenerator:
 """
 
     MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
-\t$(MAKE) -C {directory} O={outdir} V={verb} {args} >{logfile} 2>&1
+\t$(MAKE) -C {directory} O={outdir} V={verb} EXTRA_CFLAGS=-Werror EXTRA_ASMFLAGS=-Wa,--fatal-warnings EXTRA_LFLAGS=--fatal-warnings {args} >{logfile} 2>&1
 """
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
