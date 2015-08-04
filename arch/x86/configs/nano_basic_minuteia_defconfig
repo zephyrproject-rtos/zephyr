@@ -81,7 +81,7 @@ CONFIG_EOI_HANDLER_SUPPORTED=y
 CONFIG_NUM_DYNAMIC_STUBS=0
 
 #
-# Specific CPU Capability Support
+# Processor Capabilities
 #
 CONFIG_ISA_IA32=y
 # CONFIG_CMOV is not set

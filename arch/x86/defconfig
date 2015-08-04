@@ -103,7 +103,7 @@ CONFIG_NUM_DYNAMIC_STUBS=0
 # CONFIG_SHUTOFF_PIC is not set
 
 #
-# Specific CPU Capability Support
+# Processor Capabilities
 #
 CONFIG_ISA_IA32=y
 # CONFIG_CMOV is not set

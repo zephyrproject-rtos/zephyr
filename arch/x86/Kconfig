@@ -162,7 +162,7 @@ config SHUTOFF_PIC
 
 endmenu
 
-menu "Specific CPU Capability Support"
+menu "Processor Capabilities"
 
 config ISA_IA32
 	bool
