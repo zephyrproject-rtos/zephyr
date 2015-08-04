@@ -60,6 +60,10 @@ static int tcRC = TC_PASS;     /* test case return code */
 int testMapGetAllBlocks(void **P);
 int testMapFreeAllBlocks(void **P);
 
+#ifdef TEST_PRIV_MEM_MAPS
+DEFINE_MEM_MAP(MAP_LgBlks, 2, 1024);
+#endif
+
 /**
  *
  * @brief Verify return value

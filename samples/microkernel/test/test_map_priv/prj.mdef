@@ -1,0 +1,21 @@
+% Application       : test microkernel map APIs
+
+% Please keep this in-sync with ../test_map/prj.mdef
+% except those specified below
+
+% TASK NAME         PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK REGRESSTASK    5 RegressionTask    2048 [EXE]
+  TASK HELPERTASK     7 HelperTask        2048 [EXE]
+
+% MAP MAP_LgBlks is defined within the source file,
+% so keep it commented out here.
+%
+% MAP  NAME        BLOCKS BLOCKSIZE
+% ================================
+%  MAP  MAP_LgBlks      2      1024
+
+% SEMA NAME
+% ====================
+  SEMA SEM_HELPERDONE
+  SEMA SEM_REGRESSDONE
