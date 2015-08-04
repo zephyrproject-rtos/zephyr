@@ -97,10 +97,10 @@ Not loading _nanokernel into r0 allows loading _nanokernel without stomping on
 the parameter in r0 in _Swap().
 
 
-ARCv2 processor have two kinds of interrupts: fast (FIRQ) and regular. The
-official documentation calls them regular interrupts IRQ, but the internals of
-the kernel calls them RIRQ to differentiate with the 'irq' subsystem, which is
-the interrupt API/layer of abstraction.
+ARCv2 processors have two kinds of interrupts: fast (FIRQ) and regular. The
+official documentation calls the regular interrupts 'IRQs', but the internals
+of the kernel call them 'RIRQs' to differentiate from the 'irq' subsystem,
+which is the interrupt API/layer of abstraction.
 
 FIRQs can be used to allow ISRs to run without having to save any context,
 since they work with a second register bank. However, they can be somewhat more
@@ -129,11 +129,11 @@ o RIRQ
 o FIRQ
 
   First, a FIRQ can be interrupting a lower-priority RIRQ: if this is the case,
-  the first does not take a scheduling decision and leaves it the RIRQ to
-  handle. The limits the amount of code that has to run at interrupt-level.
+  the FIRQ does not take a scheduling decision and leaves it the RIRQ to
+  handle. This limits the amount of code that has to run at interrupt-level.
 
   GPRs are banked, loop registers are saved in a global structure upon
-  interrupt entry. If returning to a fiber, loop are poppped and the
+  interrupt entry. If returning to a fiber, loop registers are poppped and the
   CPU switches back to bank 0 for the GPRs. If a context switch is
   needed, at this point only are all the registers saved. First, a
   stack frame with the same layout as the automatic RIRQ one is created
@@ -141,14 +141,14 @@ o FIRQ
   ilink are saved in this case, not status32 and pc.
 
   To create the stack frame, the FIRQ handling code must first go back to using
-  bank0 of registers, since that is where the register containing the exiting
+  bank0 of registers, since that is where the registers containing the exiting
   thread are saved. Care must be taken not to touch any register before saving
   them: the only one usable at that point is the stack pointer.
 
 o coop
 
   When a coop context switch is done, the callee-saved registers are
-  saved in the CCS. The other GPRs do not have to be saved, since the
+  saved in the CCS. The other GPRs do not need to be saved, since the
   compiler has already placed them on the stack.
 
 For restoring the contexts, there are six cases. In all cases, the
@@ -159,7 +159,7 @@ From coop:
 
   o to coop
 
-    Restore interrupt lock level and normal function call return.
+    Restore interrupt lock level and do a normal function call return.
 
   o to any irq
 
@@ -170,7 +170,7 @@ From coop:
 From FIRQ:
 
   The processor is back to using bank0, not bank1 anymore, because it had to
-  save the outgoing context from bank0, and not has to load the incoming one
+  save the outgoing context from bank0, and now has to load the incoming one
   into bank0.
 
   o to coop
@@ -198,7 +198,7 @@ From RIRQ:
     caller-saved. This means that the processor pushes it in the stack frame
     along with r12, but the compiler does not save it before entering a
     function. So, it is saved as part of the callee-saved registers, and
-    restored there, but the processor restores it *a second time* when popping
+    restored there, but the processor restores it _a second time_ when popping
     the IRQ stack frame. Thus, the correct value must also be put in the fake
     stack frame when returning to a thread that context switched out
     cooperatively.
