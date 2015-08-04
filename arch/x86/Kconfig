@@ -101,7 +101,14 @@ config CLFLUSH_INSTRUCTION_SUPPORTED
 	available, instead of the one using WBINVD.
 
 menu "Platform Capabilities"
-	config BOI_HANDLER_SUPPORTED
+config ADVANCED_IDLE_SUPPORTED
+	bool "Advanced Idle Supported"
+	default n
+	help
+	This option signifies that the target supports the ADVANCED_IDLE
+	configuration option.
+
+config BOI_HANDLER_SUPPORTED
 	bool "BOI Handler Supported"
 	default n
 	help
@@ -138,6 +145,20 @@ config LOCK_INSTRUCTION_UNSUPPORTED
 	use the LOCK prefix to perform read-modify-write operations in an
 	atomic manner; such targets must utilize other techniques to perform
 	atomic operations (such as locking interrupts).
+
+config NUM_DYNAMIC_STUBS
+	int "Number of dynamic int stubs"
+	default 0
+	help
+	This option specifies the number of interrupt handlers that can be
+	installed dynamically using irq_connect().
+
+config SHUTOFF_PIC
+	bool "Shutoff PIC"
+	depends on !PIC
+	default n
+	help
+	This option disables all interrupts on the PIC
 
 endmenu
 
@@ -177,33 +198,6 @@ config CACHE_LINE_SIZE
 	Size in bytes of a CPU cache line.
 
 endmenu
-
-menu "Specific Platform Capability Support"
-
-config NUM_DYNAMIC_STUBS
-	int "Number of dynamic int stubs"
-	default 0
-	help
-	This option specifies the number of interrupt handlers that can be
-	installed dynamically using irq_connect().
-
-config ADVANCED_IDLE_SUPPORTED
-	bool "Advanced idle supported"
-	default n
-	help
-	This option signifies that the target supports the ADVANCED_IDLE
-	configuration option.
-
-endmenu
-
-
-config SHUTOFF_PIC
-	bool "Shutoff PIC"
-	depends on !PIC
-	default n
-	help
-	This option disables all interrupts on the PIC
-
 
 menu "Floating Point Options"
 	depends on !CPU_FLOAT_UNSUPPORTED
