@@ -37,6 +37,9 @@
 
 #include <microkernel/memory_map.h>
 
+extern kmemory_map_t _k_mem_map_ptr_start[];
+extern kmemory_map_t _k_mem_map_ptr_end[];
+
 /**
  * @brief Initialize kernel memory map subsystem
  *
@@ -46,12 +49,15 @@
  */
 void _k_mem_map_init(void)
 {
-	int i, j, w;
+	int j, w;
+	kmemory_map_t *id;
 	struct _k_mem_map_struct *M;
 
-	for (i = 0, M = _k_mem_map_list; i < _k_mem_map_count; i++, M++) {
+	for (id = _k_mem_map_ptr_start; id < _k_mem_map_ptr_end; id++) {
 		char *p;
 		char *q;
+
+		M = (struct _k_mem_map_struct *)(*id);
 
 		M->Waiters = NULL;
 

@@ -183,6 +183,14 @@ SECTIONS
 		_k_pipe_ptr_end = .;
 	} GROUP_LINK_IN(RAM)
 
+	SECTION_PROLOGUE (_k_mem_map_ptr, (OPTIONAL),)
+	{
+		_k_mem_map_ptr_start = .;
+			*(._k_mem_map_ptr.public.*)
+		KEEP(*(SORT_BY_NAME("._k_mem_map_ptr*")))
+		_k_mem_map_ptr_end = .;
+	} GROUP_LINK_IN(RAM)
+
 	__data_ram_end = .;
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
