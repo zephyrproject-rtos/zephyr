@@ -71,7 +71,7 @@ endmenu
 menu "Board Capabilities"
 
 config BOI_HANDLER_SUPPORTED
-	bool "BOI handler supported"
+	bool "BOI Handler Supported"
 	default n
 	help
 	This option signifies that the target has one or more devices whose
@@ -81,7 +81,7 @@ config BOI_HANDLER_SUPPORTED
 	by the device (or for other purposes).
 
 config EOI_HANDLER_SUPPORTED
-	bool "EOI handler supported"
+	bool "EOI Handler Supported"
 	default n
 	help
 	This option signifies that the target has one or more devices whose
@@ -92,7 +92,7 @@ config EOI_HANDLER_SUPPORTED
 
 
 config UNALIGNED_WRITE_UNSUPPORTED
-	bool "Unaligned write Supported"
+	bool "Unaligned Write Unsupported"
 	default n
 	help
 	This option signifies that the target may not properly decode the
