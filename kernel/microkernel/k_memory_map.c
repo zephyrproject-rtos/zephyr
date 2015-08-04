@@ -35,6 +35,8 @@
 #include <micro_private.h>
 #include <sections.h>
 
+#include <microkernel/memory_map.h>
+
 /**
  * @brief Initialize kernel memory map subsystem
  *
@@ -45,7 +47,7 @@
 void _k_mem_map_init(void)
 {
 	int i, j, w;
-	struct map_struct *M;
+	struct _k_mem_map_struct *M;
 
 	for (i = 0, M = _k_mem_map_list; i < _k_mem_map_count; i++, M++) {
 		char *p;
@@ -94,7 +96,8 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
  */
 void _k_mem_map_alloc(struct k_args *A)
 {
-	struct map_struct *M = _k_mem_map_list + OBJ_INDEX(A->Args.a1.mmap);
+	struct _k_mem_map_struct *M =
+	    (struct _k_mem_map_struct *)(A->Args.a1.mmap);
 
 	if (M->Free != NULL) {
 		*(A->Args.a1.mptr) = M->Free;
@@ -162,7 +165,8 @@ int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time)
  */
 void _k_mem_map_dealloc(struct k_args *A)
 {
-	struct map_struct *M = _k_mem_map_list + OBJ_INDEX(A->Args.a1.mmap);
+	struct _k_mem_map_struct *M =
+	    (struct _k_mem_map_struct *)(A->Args.a1.mmap);
 	struct k_args *X;
 
 	**(char ***)(A->Args.a1.mptr) = M->Free;
@@ -217,5 +221,7 @@ void _task_mem_map_free(kmemory_map_t mmap, void **mptr)
 
 int task_mem_map_used_get(kmemory_map_t mmap)
 {
-	return _k_mem_map_list[OBJ_INDEX(mmap)].Nused;
+	struct _k_mem_map_struct *M = (struct _k_mem_map_struct *)mmap;
+
+	return M->Nused;
 }

@@ -39,6 +39,8 @@
 extern "C" {
 #endif
 
+extern struct _k_mem_map_struct _k_mem_map_list[];
+
 extern int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time);
 extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
 

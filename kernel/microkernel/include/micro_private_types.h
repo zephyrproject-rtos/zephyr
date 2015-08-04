@@ -401,17 +401,6 @@ struct k_args {
 /* ---------------------------------------------------------------------- */
 /* KERNEL OBJECT STRUCTURES */
 
-struct map_struct {
-	int Nelms;
-	int Esize;
-	char *Base;
-	char *Free;
-	struct k_args *Waiters;
-	int Nused;
-	int Hmark;
-	int Count;
-};
-
 struct block_stat {
 	char *mem_blocks;
 	uint32_t mem_status;

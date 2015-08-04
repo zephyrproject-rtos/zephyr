@@ -626,7 +626,8 @@ def kernel_main_c_maps():
     kernel_main_c_out("\nint _k_mem_map_count = %d;\n" % (total_maps))
 
     if (total_maps == 0):
-        kernel_main_c_out("\nstruct map_struct * _k_mem_map_list = NULL;\n")
+        kernel_main_c_out(
+            "\nstruct _k_mem_map_struct _k_mem_map_list[] = {{0}};\n")
         return
 
     # memory map buffers
@@ -642,7 +643,7 @@ def kernel_main_c_maps():
     # memory map descriptors
 
     kernel_main_c_out(
-        "\nstruct map_struct _k_mem_map_list[%d] =\n{\n" % (total_maps))
+        "\nstruct _k_mem_map_struct _k_mem_map_list[%d] =\n{\n" % (total_maps))
     for map in map_list:
         blocks = map[1]
         block_size = map[2]
@@ -945,6 +946,16 @@ def generate_zephyr_h_obj_ids():
             "extern struct _k_pipe_struct _k_pipe_obj_%s;\n" % (name) + \
             "#define %s ((kpipe_t)&_k_pipe_obj_%s)\n\n" % (name, name)
 
+    # memory map object id
+
+    idx = 0
+    kernel_main_c_out("\n")
+    for map in map_list:
+        name = map[0];
+        zephyr_h_data += \
+            "#define %s ((kmemory_map_t)&_k_mem_map_list[%d])\n" % (name, idx)
+        idx += 1
+
     # task object id
 
     kernel_main_c_out("\n")
@@ -958,7 +969,6 @@ def generate_zephyr_h_obj_ids():
     # all other object ids
 
     obj_types = [
-        [map_list, 0],
         [pool_list, 0],
     ]
     zephyr_h_data += generate_obj_id_lines(obj_types)

@@ -44,7 +44,6 @@
 
 extern struct k_tqhd _k_task_priority_list[];
 
-extern struct map_struct _k_mem_map_list[];
 extern struct pool_struct _k_mem_pool_list[];
 
 extern int _k_mem_map_count;

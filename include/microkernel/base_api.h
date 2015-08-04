@@ -219,6 +219,19 @@ typedef enum {
 	_ALL_N = 0x00000004
 } K_PIPE_OPTION;
 
+/* Memory map related structure */
+
+struct _k_mem_map_struct {
+	int Nelms;
+	int Esize;
+	char *Base;
+	char *Free;
+	struct k_args *Waiters;
+	int Nused;
+	int Hmark;
+	int Count;
+};
+
 #ifdef __cplusplus
 }
 #endif
