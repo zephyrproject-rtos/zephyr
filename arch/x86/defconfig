@@ -64,6 +64,7 @@ CONFIG_CROSS_COMPILE=""
 # Compile and Link Features
 #
 CONFIG_KERNEL_BIN_NAME="microkernel"
+# CONFIG_DEBUG is not set
 CONFIG_COMPILER_OPT=""
 CONFIG_MINIMAL_LIBC=y
 
@@ -169,6 +170,8 @@ CONFIG_IOAPIC=y
 # Timer Drivers
 #
 CONFIG_HPET_TIMER=y
+# CONFIG_HPET_TIMER_LEGACY_EMULATION is not set
+# CONFIG_HPET_TIMER_DEBUG is not set
 # CONFIG_LOAPIC_TIMER is not set
 
 #
