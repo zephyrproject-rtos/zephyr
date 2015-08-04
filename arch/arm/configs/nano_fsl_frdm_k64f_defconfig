@@ -112,7 +112,7 @@ CONFIG_K20_UART=y
 #
 # Timer Drivers
 #
-CONFIG_CORTEX_M_TIMER=y
+CONFIG_CORTEX_M_SYSTICK=y
 
 #
 # Random Generation Configuration
