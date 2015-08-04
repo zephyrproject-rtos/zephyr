@@ -44,8 +44,8 @@ Use a memory map to allocate and free memory in fixed-size blocks.
 Usage
 =====
 
-Defining a Memory Map
----------------------
+Defining a Memory Map in MDEF file
+----------------------------------
 
 Add an entry for one or more memory maps in the project file using the
 following syntax:
@@ -63,6 +63,34 @@ as follows:
    % ======================================
      MAP  MYMAP     4             1024
      MAP  YOURMAP   6             200
+
+
+Defining Memory Map in source code
+----------------------------------
+
+In addition to defining memory maps in MDEF file, it is also possible
+to define memory maps inside code. The macro ``DEFINE_MEMORY_MAP(...)``
+can be used for this purpose.
+
+For example, the following code can be used to define a global memory
+map ``PRIV_MEM_MAP``.
+
+.. code-block:: c
+
+   DEFINE_MEMORY_MAP(PRIV_MEM_MAP, num_blocks, block_size);
+
+where the parameters are the same as memory maps defined in MDEF file.
+The memory map ``PRIV_MEM_MAP`` can be used in the same style as those
+defined in MDEF file.
+
+It is possible to utilize this memory map in another source file, simply
+add:
+
+.. code-block:: c
+
+   extern const kmemory_map_t PRIV_MEM_MAP;
+
+to that file. The memory map ``PRIV_MEM_MAP`` can be then used there.
 
 
 Example: Requesting a Memory Block from a Map with No Conditions

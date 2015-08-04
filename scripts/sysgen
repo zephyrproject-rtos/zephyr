@@ -642,7 +642,8 @@ def kernel_main_c_maps():
         block_size = map[2]
         kernel_main_c_out(
             "struct _k_mem_map_struct _k_mem_map_obj_%s = " % (name) +
-            "    { %d, %d, __MAP_%s_buffer };\n" % (blocks, block_size, map[0]) +
+            "    __K_MEM_MAP_INITIALIZER(%d, %d, __MAP_%s_buffer);\n" %
+                    (blocks, block_size, map[0]) +
             "kmemory_map_t _k_mem_map_ptr_%s " % (name) +
             "    __section(_k_mem_map_ptr, public, mem_map) =\n" +
             "    (kmemory_map_t)&_k_mem_map_obj_%s;\n" % (name))
@@ -742,8 +743,7 @@ def kernel_main_c_node_init():
     kernel_main_c_out("\n" +
         "void _k_init_node(void)\n{\n")
     kernel_main_c_out("    _k_pipe_init();\n")
-    if (len(map_list) > 0):
-        kernel_main_c_out("    _k_mem_map_init();\n")
+    kernel_main_c_out("    _k_mem_map_init();\n")
     if (len(pool_list) > 0):
         kernel_main_c_out("    _k_mem_pool_init();\n")
     kernel_main_c_out("}\n")

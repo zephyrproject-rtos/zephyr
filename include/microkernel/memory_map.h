@@ -39,6 +39,8 @@
 extern "C" {
 #endif
 
+#include <sections.h>
+
 extern int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time);
 extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
 
@@ -109,6 +111,35 @@ extern int task_mem_map_used_get(kmemory_map_t map);
  */
 #define task_mem_map_alloc_wait_timeout(m, p, t) _task_mem_map_alloc(m, p, t)
 #endif
+
+/**
+ * @brief Initialize a memory map struct.
+ *
+ * @param blocks Number of blocks.
+ * @param block_size Block Size (in bytes).
+ */
+#define __K_MEM_MAP_INITIALIZER(blocks, block_size, buffer) \
+	{ \
+	  .Nelms = blocks, \
+	  .Esize = block_size, \
+	  .Base = buffer, \
+	}
+
+/**
+ * @brief Define a private microkernel memory map.
+ *
+ * @param name Name of the memory map.
+ * @param blocks Number of blocks.
+ * @param block_size Size of each blocks (in bytes).
+ */
+#define DEFINE_MEM_MAP(name, blocks, block_size) \
+       char __noinit __mem_map_buffer_##name[(blocks * block_size)]; \
+       struct _k_mem_map_struct _k_mem_map_obj_##name = \
+               __K_MEM_MAP_INITIALIZER(blocks, block_size, \
+				       __mem_map_buffer_##name); \
+       const kmemory_map_t name \
+               __section(_k_mem_map_ptr, private, mem_map) = \
+               (kmemory_map_t)&_k_mem_map_obj_##name;
 
 #ifdef __cplusplus
 }

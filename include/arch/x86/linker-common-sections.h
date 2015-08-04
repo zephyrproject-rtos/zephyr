@@ -187,6 +187,7 @@ SECTIONS
 	{
 		_k_mem_map_ptr_start = .;
 			*(._k_mem_map_ptr.public.*)
+			*(._k_mem_map_ptr.private.*)
 		KEEP(*(SORT_BY_NAME("._k_mem_map_ptr*")))
 		_k_mem_map_ptr_end = .;
 	} GROUP_LINK_IN(RAM)
