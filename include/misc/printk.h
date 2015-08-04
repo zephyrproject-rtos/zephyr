@@ -29,5 +29,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _PRINTK_H_
+#define _PRINTK_H_
 
+#include <toolchain.h>
+
+#ifdef CONFIG_PRINTK
 extern void printk(const char *fmt, ...);
+#else
+static inline void printk(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+}
+#endif
+
+#endif
