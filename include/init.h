@@ -32,7 +32,7 @@
 #define _INIT_H_
 
 #include <device.h>
-#define __used			__attribute__((__used__))
+#include <toolchain.h>
 
 #define PURE		1
 #define PURE_EARLY	0
