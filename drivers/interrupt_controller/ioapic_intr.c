@@ -235,11 +235,6 @@ void _ioapic_init(void)
 	 * determined at runtime by computing:
 	 *
 	 * ((__IoApicGet(IOAPIC_VERS) & IOAPIC_MRE_MASK) >> 16) + 1
-	 *
-	 * However, storing the number of IRQs supported in a nanokernel global
-	 * variable is not feasible since any references to this global variable
-	 * from a microkernel-split image would not be able to directly access
-	 * the variable; access via an indirection would be needed.
 	 */
 
 	/*
