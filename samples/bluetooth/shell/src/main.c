@@ -687,6 +687,45 @@ static struct bt_gatt_attr attrs[] = {
 			   read_name, NULL, DEVICE_NAME),
 };
 
+static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Passkey for %s: %u\n", addr, passkey);
+}
+
+static void auth_cancel(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Pairing cancelled: %s\n", addr);
+}
+
+static struct bt_auth_cb auth_cb = {
+	.passkey_display = auth_passkey_display,
+	.cancel = auth_cancel,
+};
+
+static void cmd_authentication(int argc, char *argv[])
+{
+	if (argc < 2) {
+		printk("authentication [on/off] parameter required\n");
+		return;
+	}
+
+	if (!strncmp(argv[1], "on", strlen("on"))) {
+		bt_auth_cb_register(&auth_cb);
+	} else if (!strncmp(argv[1], "off", strlen("off"))) {
+		bt_auth_cb_register(NULL);
+	} else {
+		printk("authentication [on/off] parameter required\n");
+	}
+}
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -704,6 +743,7 @@ void main(void)
 	shell_cmd_register("scan", cmd_scan);
 	shell_cmd_register("advertise", cmd_advertise);
 	shell_cmd_register("security", cmd_security);
+	shell_cmd_register("authentication", cmd_authentication);
 	shell_cmd_register("gatt-exchange-mtu", cmd_gatt_exchange_mtu);
 	shell_cmd_register("gatt-discover", cmd_gatt_discover);
 	shell_cmd_register("gatt-discover-characteristic", cmd_gatt_discover);
