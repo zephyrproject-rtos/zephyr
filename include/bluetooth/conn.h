@@ -36,7 +36,6 @@
 
 #include <stdbool.h>
 
-#include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
 /** Opaque type representing a connection to a remote device */
@@ -102,6 +101,16 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
  *  @return Valid connection object on success or NULL otherwise.
  */
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer);
+
+/** Security level. */
+typedef enum {
+	BT_SECURITY_LOW,    /** No encryption and no authentication. */
+	BT_SECURITY_MEDIUM, /** encryption and no authentication (no MITM). */
+	BT_SECURITY_HIGH,   /** encryption and authentication (MITM). */
+	BT_SECURITY_FIPS,   /** Authenticated LE Secure Connections and
+			     *  encryption.
+			     */
+} bt_security_t;
 
 /** @brief Set security level for a connection.
  *

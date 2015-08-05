@@ -135,16 +135,6 @@ int bt_start_scanning(bt_scan_filter_dup_t filter, bt_le_scan_cb_t cb);
  */
 int bt_stop_scanning(void);
 
-/** Security level. */
-typedef enum {
-	BT_SECURITY_LOW,    /** No encryption and no authentication. */
-	BT_SECURITY_MEDIUM, /** encryption and no authentication (no MITM). */
-	BT_SECURITY_HIGH,   /** encryption and authentication (MITM). */
-	BT_SECURITY_FIPS,   /** Authenticated LE Secure Connections and
-			     *  encryption.
-			     */
-} bt_security_t;
-
 /** @def BT_ADDR_STR_LEN
  *
  *  @brief Recommended length of user string buffer for Bluetooth address
