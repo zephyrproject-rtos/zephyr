@@ -41,8 +41,6 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#ifdef CONFIG_PRINTK
-
 static void _printk_dec_ulong(const unsigned long num);
 static void _printk_hex_ulong(const unsigned long num);
 
@@ -221,19 +219,3 @@ static void _printk_dec_ulong(const unsigned long num)
 	_char_out((int)(remainder + 48));
 }
 
-#else /* CONFIG_PRINTK */
-
-/**
- * @brief Output a string
- *
- * Debugging output is dropped if it is not to be sent to the console.
- * @param fmt Format
- *
- * @return N/A
- */
-void printk(const char *fmt, ...)
-{
-	ARG_UNUSED(fmt);
-}
-
-#endif /* CONFIG_PRINTK */
