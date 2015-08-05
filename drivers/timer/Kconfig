@@ -126,13 +126,6 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 	help
 	This options specifies the IRQ priority used by the LOAPIC timer.
 
-config PIT
-	bool "PIT (i8253)"
-	default n
-	depends on PIC && X86_32
-	help
-	This option selects legacy i8253 timer as system timer.
-
 config ARCV2_TIMER
 	bool "ARC Timer"
 	default y

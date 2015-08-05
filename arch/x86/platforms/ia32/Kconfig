@@ -43,5 +43,3 @@ config PHYS_LOAD_ADDR
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 150000000 if LOAPIC_TIMER
 	default 25000000  if HPET_TIMER
-	default 1193180   if PIT
-

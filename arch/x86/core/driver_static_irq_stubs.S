@@ -49,10 +49,6 @@ by x86 platforms.
 	GTEXT(_pic_slave__i8259_boi_slave_stub)
 #endif
 
-#if defined (CONFIG_PIT)
-	pic_master_mkstub i8253 _timer_int_handler
-#endif
-
 #if defined(CONFIG_LOAPIC_TIMER)
 	loapic_mkstub loapic _timer_int_handler
 #endif

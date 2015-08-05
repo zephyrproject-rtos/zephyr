@@ -128,18 +128,6 @@ the 'ia32' platform.
 #define CONFIG_BLUETOOTH_UART_FREQ UART_XTAL_FREQ
 #define CONFIG_BLUETOOTH_UART_BAUDRATE CONFIG_UART_BAUDRATE
 
-/*
- * Programmable interval timer (PIT) device information (Intel i8253)
- *
- * The PIT_INT_VEC macro is also used when using the Wind River
- * Hypervisor "timerTick" service, whereas the PIT_INT_LVL is not.
- */
-#define PIT_INT_VEC INT_VEC_IRQ0 /* PIT interrupt vector */
-#define PIT_INT_LVL 0x00	 /* PIT connected to IRQ0 */
-#define PIT_INT_PRI 2		 /* not honoured with 8259 PIC */
-#define PIT_BASE_ADRS 0x40
-#define PIT_REG_ADDR_INTERVAL 1
-
 #ifndef _ASMLANGUAGE
 /*
  * Device drivers utilize the macros PLB_BYTE_REG_WRITE() and

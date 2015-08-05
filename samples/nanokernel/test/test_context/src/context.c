@@ -75,8 +75,6 @@ This module tests the following CPU and context related routines:
   #define TICK_IRQ CONFIG_HPET_TIMER_IRQ
 #elif defined(CONFIG_LOAPIC_TIMER)
   #define TICK_IRQ CONFIG_LOAPIC_TIMER_IRQ
-#elif defined(CONFIG_PIT)
-  #define TICK_IRQ PIT_INT_LVL
 #elif defined(CONFIG_CPU_CORTEX_M3_M4)
   /* Cortex-M3/M4 does not need a tick IRQ number. */
 #else
