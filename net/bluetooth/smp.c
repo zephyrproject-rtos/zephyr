@@ -91,6 +91,8 @@ struct bt_smp {
 };
 
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static const struct bt_auth_cb *auth_cb;
+static uint8_t bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
 
 #if defined(CONFIG_BLUETOOTH_DEBUG_SMP)
 /* Helper for printk parameters to convert from binary to hex.
@@ -337,13 +339,59 @@ static int smp_init(struct bt_smp *smp)
 	return 0;
 }
 
+static uint8_t get_auth(uint8_t auth)
+{
+	auth &= BT_SMP_AUTH_MASK;
+	auth &= ~(BT_SMP_AUTH_SC | BT_SMP_AUTH_KEYPRESS);
+
+	if (bt_smp_io_capa == BT_SMP_IO_NO_INPUT_OUTPUT) {
+		auth &= ~(BT_SMP_AUTH_MITM);
+	} else {
+		auth |= BT_SMP_AUTH_MITM;
+	}
+
+	return auth;
+}
+
+static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
+{
+	struct bt_smp *smp = conn->smp;
+
+	/* TODO for now keep it simple, should be refactored (eg with lookup
+	 * table) when more capabilities options will be supported
+	 */
+
+	switch (bt_smp_io_capa) {
+	case BT_SMP_IO_DISPLAY_ONLY:
+		if (remote_io == BT_SMP_IO_KEYBOARD_DISPLAY ||
+		    remote_io == BT_SMP_IO_KEYBOARD_ONLY) {
+			uint32_t passkey;
+
+			if (le_rand(&passkey, sizeof(passkey))) {
+				return BT_SMP_ERR_UNSPECIFIED;
+			}
+
+			passkey %= 1000000;
+
+			auth_cb->passkey_display(conn, passkey);
+
+			passkey = sys_cpu_to_le32(passkey);
+			memcpy(smp->tk, &passkey, sizeof(passkey));
+		}
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_smp_pairing *rsp;
 	struct bt_buf *rsp_buf;
 	struct bt_smp *smp = conn->smp;
-	uint8_t auth;
 	int ret;
 
 	BT_DBG("\n");
@@ -365,13 +413,8 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 
 	rsp = bt_buf_add(rsp_buf, sizeof(*rsp));
 
-	/* For JustWorks pairing simplify rsp parameters.
-	 * TODO: needs to be reworked later on
-	 */
-	auth = (req->auth_req & BT_SMP_AUTH_MASK);
-	auth &= ~(BT_SMP_AUTH_MITM | BT_SMP_AUTH_SC | BT_SMP_AUTH_KEYPRESS);
-	rsp->auth_req = auth;
-	rsp->io_capability = BT_SMP_IO_NO_INPUT_OUTPUT;
+	rsp->auth_req = get_auth(req->auth_req);
+	rsp->io_capability = bt_smp_io_capa;
 	rsp->oob_flag = BT_SMP_OOB_NOT_PRESENT;
 	rsp->max_key_size = req->max_key_size;
 	rsp->init_key_dist = (req->init_key_dist & RECV_KEYS);
@@ -390,7 +433,7 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 
-	return 0;
+	return smp_request_tk(conn, req->io_capability);
 }
 
 int bt_smp_send_security_req(struct bt_conn *conn)
@@ -437,11 +480,8 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	req = bt_buf_add(req_buf, sizeof(*req));
 
-	/* For JustWorks pairing simplify req parameters.
-	 * TODO: needs to be reworked later on
-	 */
-	req->auth_req = BT_SMP_AUTH_BONDING;
-	req->io_capability = BT_SMP_IO_NO_INPUT_OUTPUT;
+	req->auth_req = get_auth(BT_SMP_AUTH_BONDING);
+	req->io_capability = bt_smp_io_capa;
 	req->oob_flag = BT_SMP_OOB_NOT_PRESENT;
 	req->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
 	req->init_key_dist = SEND_KEYS;
@@ -501,6 +541,7 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	struct bt_smp *smp = conn->smp;
+	uint8_t ret;
 
 	BT_DBG("\n");
 
@@ -517,6 +558,11 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+
+	ret = smp_request_tk(conn, rsp->io_capability);
+	if (ret) {
+		return ret;
+	}
 
 	return smp_send_pairing_confirm(conn);
 }
@@ -664,6 +710,14 @@ static uint8_t smp_pairing_failed(struct bt_conn *conn, struct bt_buf *buf)
 	ARG_UNUSED(req);
 
 	smp_reset(conn);
+
+	switch (bt_smp_io_capa) {
+	case BT_SMP_IO_DISPLAY_ONLY:
+		auth_cb->cancel(conn);
+		break;
+	default:
+		break;
+	}
 
 	/* return no error to avoid sending Pairing Failed in response */
 	return 0;
@@ -1534,6 +1588,29 @@ static inline int smp_self_test(void)
 	return 0;
 }
 #endif
+
+void bt_auth_cb_register(const struct bt_auth_cb *cb)
+{
+	auth_cb = cb;
+
+	if (!auth_cb) {
+		bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
+		return;
+	}
+
+	if (auth_cb->passkey_display) {
+		bt_smp_io_capa = BT_SMP_IO_DISPLAY_ONLY;
+		return;
+	}
+
+	bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
+}
+
+void bt_auth_cancel(struct bt_conn *conn)
+{
+	send_err_rsp(conn, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
+	smp_reset(conn);
+}
 
 int bt_smp_init(void)
 {

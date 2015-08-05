@@ -40,6 +40,7 @@
 
 #include <bluetooth/buf.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/conn.h>
 
 /** @brief Callback for notifying that Bluetooth has been enabled.
  *
@@ -134,6 +135,28 @@ int bt_start_scanning(bt_scan_filter_dup_t filter, bt_le_scan_cb_t cb);
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_stop_scanning(void);
+
+/** Authenticated pairing callback structure */
+struct bt_auth_cb {
+	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
+	void (*cancel)(struct bt_conn *conn);
+};
+
+/** @brief Register authentication callbacks.
+ *
+ *  Register callbacks to handle authenticated pairing.
+ *
+ *  @param cb Callback struct.
+ */
+void bt_auth_cb_register(const struct bt_auth_cb *cb);
+
+/** @brief Cancel ongoing authenticated pairing.
+ *
+ *  This function allows to cancel ongoing authenticated pairing.
+ *
+ *  @param conn Connection object.
+ */
+void bt_auth_cancel(struct bt_conn *conn);
 
 /** @def BT_ADDR_STR_LEN
  *
