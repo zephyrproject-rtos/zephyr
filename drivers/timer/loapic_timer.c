@@ -534,7 +534,7 @@ void _timer_idle_exit(void)
  *
  * @brief Initialize and enable the system clock
  *
- * This routine is used to program the PIT to deliver interrupts at the
+ * This routine is used to program the timer to deliver interrupts at the
  * rate specified via the 'sys_clock_us_per_tick' global variable.
  *
  * @return 0
@@ -544,7 +544,7 @@ int _sys_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 
-	/* determine the PIT counter value (in timer clock cycles/system tick)
+	/* determine the timer counter value (in timer clock cycles/system tick)
 	 */
 
 	counterLoadVal = sys_clock_hw_cycles_per_tick - 1;
