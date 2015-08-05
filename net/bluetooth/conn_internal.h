@@ -62,6 +62,8 @@ struct bt_conn {
 	bt_addr_le_t		dst;
 
 	uint8_t			encrypt;
+	bt_security_t		sec_level;
+	bt_security_t		required_sec_level;
 
 	uint16_t		rx_len;
 	struct bt_buf		*rx;

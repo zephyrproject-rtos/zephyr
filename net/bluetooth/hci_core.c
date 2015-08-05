@@ -359,6 +359,10 @@ static void hci_encrypt_change(struct bt_buf *buf)
 
 	conn->encrypt = evt->encrypt;
 
+	if (conn->encrypt) {
+		conn->sec_level = BT_SECURITY_MEDIUM;
+	}
+
 	bt_l2cap_encrypt_change(conn);
 	bt_conn_put(conn);
 }

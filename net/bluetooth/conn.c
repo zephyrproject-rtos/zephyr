@@ -293,6 +293,8 @@ struct bt_conn *bt_conn_add(const bt_addr_le_t *peer, uint8_t role)
 	atomic_set(&conn->ref, 1);
 	conn->role	= role;
 	bt_addr_le_copy(&conn->dst, peer);
+	conn->sec_level = BT_SECURITY_LOW;
+	conn->required_sec_level = BT_SECURITY_LOW;
 
 	return conn;
 }
@@ -478,18 +480,16 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 	}
 
 	/* nothing to do */
-	if (sec == BT_SECURITY_LOW) {
+	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
 		return 0;
 	}
 
-	/* for now we only support JustWorks */
-	if (sec > BT_SECURITY_MEDIUM) {
+	/* for now we only support legacy pairing */
+	if (sec > BT_SECURITY_HIGH) {
 		return -EINVAL;
 	}
 
-	if (conn->encrypt) {
-		return 0;
-	}
+	conn->required_sec_level = sec;
 
 	if (conn->role == BT_HCI_ROLE_SLAVE) {
 		return bt_smp_send_security_req(conn);
