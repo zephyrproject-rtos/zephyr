@@ -58,9 +58,10 @@
 #define H4_SCO		0x03
 #define H4_EVT		0x04
 
-#define UART CONFIG_BLUETOOTH_UART_INDEX
+#define UART (&uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
 
-static int bt_uart_read(int uart, uint8_t *buf, size_t len, size_t min)
+static int bt_uart_read(struct device *uart, uint8_t *buf,
+			size_t len, size_t min)
 {
 	int total = 0;
 
@@ -85,7 +86,7 @@ static int bt_uart_read(int uart, uint8_t *buf, size_t len, size_t min)
 	return total;
 }
 
-static size_t bt_uart_discard(int uart, size_t len)
+static size_t bt_uart_discard(struct device *uart, size_t len)
 {
 	uint8_t buf[33];
 
@@ -253,7 +254,7 @@ static int bt_uart_send(struct bt_buf *buf)
 IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
 		   CONFIG_BLUETOOTH_UART_INT_PRI, bt_uart_isr, 0);
 
-static void bt_uart_setup(int uart, struct uart_init_info *info)
+static void bt_uart_setup(struct device *uart, struct uart_init_info *info)
 {
 	BT_DBG("\n");
 
@@ -282,7 +283,7 @@ static int bt_uart_open()
 		.int_pri = CONFIG_BLUETOOTH_UART_INT_PRI,
 	};
 
-	bt_uart_setup(CONFIG_BLUETOOTH_UART_INDEX, &info);
+	bt_uart_setup(UART, &info);
 
 	return 0;
 }

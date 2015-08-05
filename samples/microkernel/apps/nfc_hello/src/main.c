@@ -37,7 +37,7 @@
 #include <board.h>
 #include <drivers/uart.h>
 
-#define UART1 1
+#define UART1 (&uart_devs[1])
 #define UART1_IRQ COM2_INT_LVL
 #define UART1_INT_PRI COM2_INT_PRI
 #define BUF_MAXSIZE 256

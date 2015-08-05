@@ -42,6 +42,7 @@ the 'ia32' platform.
 #include <misc/util.h>
 
 #ifndef _ASMLANGUAGE
+#include <device.h>
 #include <drivers/rand32.h>
 #endif
 
@@ -68,6 +69,8 @@ the 'ia32' platform.
 
 /* serial port (aka COM port) information */
 
+#ifdef CONFIG_NS16550
+
 #define COM1_BASE_ADRS 0x3f8
 #define COM1_INT_LVL 0x04 /* COM1 connected to IRQ4 */
 #define COM1_INT_VEC (INT_VEC_IRQ0 + COM1_INT_LVL)
@@ -86,31 +89,25 @@ the 'ia32' platform.
 /* uart configuration settings */
 
 /* Generic definitions */
-#define CONFIG_UART_NUM_SYSTEM_PORTS 2
-#define CONFIG_UART_NUM_EXTRA_PORTS 0
-#define CONFIG_UART_BAUDRATE COM1_BAUD_RATE
-#define CONFIG_UART_NUM_PORTS \
-	(CONFIG_UART_NUM_SYSTEM_PORTS + CONFIG_UART_NUM_EXTRA_PORTS)
-#define CONFIG_UART_PORT_0_REGS COM1_BASE_ADRS
-#define CONFIG_UART_PORT_0_IRQ COM1_INT_LVL
-#define CONFIG_UART_PORT_1_REGS COM2_BASE_ADRS
-#define CONFIG_UART_PORT_1_IRQ COM2_INT_LVL
-
-#define UART_PORTS_CONFIGURE(__type, __name)			\
-	static __type __name[CONFIG_UART_NUM_PORTS] = {		\
-		{						\
-			.port = CONFIG_UART_PORT_0_REGS,	\
-			.irq = CONFIG_UART_PORT_0_IRQ		\
-		},						\
-		{						\
-			.port = CONFIG_UART_PORT_1_REGS,	\
-			.irq = CONFIG_UART_PORT_1_IRQ		\
-		}						\
-	}
+#define CONFIG_UART_BAUDRATE		COM1_BAUD_RATE
+#define CONFIG_UART_PORT_0_REGS		COM1_BASE_ADRS
+#define CONFIG_UART_PORT_0_IRQ		COM1_INT_LVL
+#define CONFIG_UART_PORT_0_IRQ_PRIORITY	COM1_INT_PRI
+#define CONFIG_UART_PORT_1_REGS		COM2_BASE_ADRS
+#define CONFIG_UART_PORT_1_IRQ		COM2_INT_LVL
+#define CONFIG_UART_PORT_1_IRQ_PRIORITY	COM2_INT_PRI
 
 /* Console definitions */
-#define CONFIG_UART_CONSOLE_IRQ COM1_INT_LVL
-#define CONFIG_UART_CONSOLE_INT_PRI COM1_INT_PRI
+#define CONFIG_UART_CONSOLE_IRQ		COM1_INT_LVL
+#define CONFIG_UART_CONSOLE_INT_PRI	COM1_INT_PRI
+
+#ifndef _ASMLANGUAGE
+
+extern struct device uart_devs[];
+extern struct device * const uart_console_dev;
+#define UART_CONSOLE_DEV uart_console_dev
+
+#endif
 
 /* Bluetooth UART definitions */
 #define CONFIG_BLUETOOTH_UART_INDEX 1
@@ -118,6 +115,8 @@ the 'ia32' platform.
 #define CONFIG_BLUETOOTH_UART_INT_PRI COM2_INT_PRI
 #define CONFIG_BLUETOOTH_UART_FREQ UART_XTAL_FREQ
 #define CONFIG_BLUETOOTH_UART_BAUDRATE CONFIG_UART_BAUDRATE
+
+#endif /* CONFIG_NS16550 */
 
 #ifndef _ASMLANGUAGE
 /*

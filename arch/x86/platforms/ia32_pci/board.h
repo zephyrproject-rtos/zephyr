@@ -42,6 +42,7 @@ the 'ia32_pci' platform.
 #include <misc/util.h>
 
 #ifndef _ASMLANGUAGE
+#include <device.h>
 #include <drivers/rand32.h>
 #endif
 
@@ -65,14 +66,15 @@ the 'ia32_pci' platform.
 #define CONFIG_UART_PCI_VENDOR_ID 0x8086
 #define CONFIG_UART_PCI_DEVICE_ID 0x0936
 #define CONFIG_UART_PCI_BAR       0
-#define CONFIG_UART_NUM_SYSTEM_PORTS 2
-#define CONFIG_UART_NUM_EXTRA_PORTS 0
 #define CONFIG_UART_BAUDRATE COM1_BAUD_RATE
-#define CONFIG_UART_NUM_PORTS \
-	(CONFIG_UART_NUM_SYSTEM_PORTS + CONFIG_UART_NUM_EXTRA_PORTS)
 
-/* Console definitions */
-#define CONFIG_UART_CONSOLE_PCI_IDX COM1_PCI_IDX
+#ifndef _ASMLANGUAGE
+
+extern struct device uart_devs[];
+extern struct device * const uart_console_dev;
+#define UART_CONSOLE_DEV uart_console_dev
+
+#endif
 
 /*
  * The irq_connect() API connects to a (virtualized) IRQ and the

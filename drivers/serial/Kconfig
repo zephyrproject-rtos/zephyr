@@ -69,6 +69,23 @@ config NS16550
 	This specific driver can be used for the serial hardware
 	available at the Generic PC and Quark.
 
+config NS16550_PCI
+	bool "NS16550 PCI serial driver"
+	default n
+	depends on PCI && NS16550
+	help
+	This enables NS16550 to probe for PCI-based serial devices.
+
+	This option enables the driver to auto-detect the device
+	configuration required to access those ports.
+
+config NS16550_PCI_NUM_PORTS
+	int "Number of PCI serial ports"
+	default 2
+	depends on NS16550_PCI
+	help
+	This indicates the number of PCI-based serial ports to probe.
+
 config K20_UART
 	bool "K20 serial driver"
 	default n
@@ -92,5 +109,61 @@ config  UART_INTERRUPT_DRIVEN
 	help
 	This option enables interrupt support for UART allowing console
 	input and UART based drivers.
+
+config UART_PORT_0_NAME
+	string
+	default "UART_0"
+	help
+	This is the device name for UART, and is included in the device
+	struct.
+
+config UART_PORT_1_NAME
+	string
+	default "UART_1"
+	help
+	This is the device name for UART, and is included in the device
+	struct.
+
+config UART_PORT_2_NAME
+	string
+	default "UART_2"
+	help
+	This is the device name for UART, and is included in the device
+	struct.
+
+config UART_PORT_3_NAME
+	string
+	default "UART_3"
+	help
+	This is the device name for UART, and is included in the device
+	struct.
+
+config UART_PORT_4_NAME
+	string
+	default "UART_4"
+	help
+	This is the device name for UART, and is included in the device
+	struct.
+
+config UART_PORT_5_NAME
+	string
+	default "UART_5"
+	help
+	This is the device name for UART, and is included in the device
+	struct.
+
+config UART_PORT_6_NAME
+	string
+	default "UART_6"
+	help
+	This is the device name for UART, and is included in the device
+	struct.
+
+config UART_PORT_7_NAME
+	string
+	default "UART_7"
+	help
+	This is the device name for UART, and is included in the device
+	struct.
 
 endmenu

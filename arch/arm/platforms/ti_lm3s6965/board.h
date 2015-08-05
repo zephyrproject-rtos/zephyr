@@ -100,15 +100,12 @@ the 'ti_lm3s6965' platform.
 
 #ifndef _ASMLANGUAGE
 
+#include <device.h>
 #include <misc/util.h>
 #include <drivers/rand32.h>
 
 /* uart configuration settings */
 
-#define CONFIG_UART_NUM_SYSTEM_PORTS 2
-#define CONFIG_UART_NUM_EXTRA_PORTS 1
-#define CONFIG_UART_NUM_PORTS \
-	(CONFIG_UART_NUM_SYSTEM_PORTS + CONFIG_UART_NUM_EXTRA_PORTS)
 #define CONFIG_UART_PORT_0_REGS PERIPH_ADDR_BASE_UART0
 #define CONFIG_UART_PORT_0_IRQ IRQ_UART0
 #define CONFIG_UART_PORT_1_REGS PERIPH_ADDR_BASE_UART1
@@ -116,27 +113,16 @@ the 'ti_lm3s6965' platform.
 #define CONFIG_UART_PORT_2_REGS PERIPH_ADDR_BASE_UART2
 #define CONFIG_UART_PORT_2_IRQ IRQ_UART2
 
-#define UART_PORTS_CONFIGURE(__type, __name)				\
-	static __type __name[CONFIG_UART_NUM_PORTS] = {			\
-		{							\
-			.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,	\
-			.irq = CONFIG_UART_PORT_0_IRQ			\
-		},							\
-		{							\
-			.base = (uint8_t *)CONFIG_UART_PORT_1_REGS,	\
-			.irq = CONFIG_UART_PORT_1_IRQ			\
-		},							\
-		{							\
-			.base = (uint8_t *)CONFIG_UART_PORT_2_REGS,	\
-			.irq = CONFIG_UART_PORT_2_IRQ			\
-		}							\
-	}
+extern struct device uart_devs[];
 
 /* Uart console configuration */
 
 #define CONFIG_UART_CONSOLE_BAUDRATE 115200
 #define CONFIG_UART_CONSOLE_IRQ IRQ_UART0
 #define CONFIG_UART_CONSOLE_INT_PRI 3
+
+extern struct device * const uart_console_dev;
+#define UART_CONSOLE_DEV uart_console_dev
 
 /* Bluetooth UART definitions */
 #define CONFIG_BLUETOOTH_UART_INDEX 1

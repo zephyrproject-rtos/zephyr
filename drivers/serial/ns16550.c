@@ -69,6 +69,8 @@ INCLUDE FILES: drivers/uart.h
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
+#include "ns16550.h"
+
 /* register definitions */
 
 #define REG_THR 0x00  /* Transmitter holding reg. */
@@ -189,40 +191,31 @@ INCLUDE FILES: drivers/uart.h
 
 /* convenience defines */
 
-#define THR(n) (uart[n].port + REG_THR * UART_REG_ADDR_INTERVAL)
-#define RDR(n) (uart[n].port + REG_RDR * UART_REG_ADDR_INTERVAL)
-#define BRDL(n) (uart[n].port + REG_BRDL * UART_REG_ADDR_INTERVAL)
-#define BRDH(n) (uart[n].port + REG_BRDH * UART_REG_ADDR_INTERVAL)
-#define IER(n) (uart[n].port + REG_IER * UART_REG_ADDR_INTERVAL)
-#define IIR(n) (uart[n].port + REG_IIR * UART_REG_ADDR_INTERVAL)
-#define FCR(n) (uart[n].port + REG_FCR * UART_REG_ADDR_INTERVAL)
-#define LCR(n) (uart[n].port + REG_LCR * UART_REG_ADDR_INTERVAL)
-#define MDC(n) (uart[n].port + REG_MDC * UART_REG_ADDR_INTERVAL)
-#define LSR(n) (uart[n].port + REG_LSR * UART_REG_ADDR_INTERVAL)
-#define MSR(n) (uart[n].port + REG_MSR * UART_REG_ADDR_INTERVAL)
+#define DEV_CFG(dev) \
+	((struct uart_device_config_t * const)(dev)->config->config_info)
+#define DEV_DATA(dev) \
+	((struct uart_ns16550_dev_data_t *)(dev)->driver_data)
 
-#define IIRC(n) uart[n].iirCache
+#define THR(dev)	(DEV_CFG(dev)->port + REG_THR * UART_REG_ADDR_INTERVAL)
+#define RDR(dev)	(DEV_CFG(dev)->port + REG_RDR * UART_REG_ADDR_INTERVAL)
+#define BRDL(dev)	(DEV_CFG(dev)->port + REG_BRDL * UART_REG_ADDR_INTERVAL)
+#define BRDH(dev)	(DEV_CFG(dev)->port + REG_BRDH * UART_REG_ADDR_INTERVAL)
+#define IER(dev)	(DEV_CFG(dev)->port + REG_IER * UART_REG_ADDR_INTERVAL)
+#define IIR(dev)	(DEV_CFG(dev)->port + REG_IIR * UART_REG_ADDR_INTERVAL)
+#define FCR(dev)	(DEV_CFG(dev)->port + REG_FCR * UART_REG_ADDR_INTERVAL)
+#define LCR(dev)	(DEV_CFG(dev)->port + REG_LCR * UART_REG_ADDR_INTERVAL)
+#define MDC(dev)	(DEV_CFG(dev)->port + REG_MDC * UART_REG_ADDR_INTERVAL)
+#define LSR(dev)	(DEV_CFG(dev)->port + REG_LSR * UART_REG_ADDR_INTERVAL)
+#define MSR(dev)	(DEV_CFG(dev)->port + REG_MSR * UART_REG_ADDR_INTERVAL)
+
+#define IIRC(dev)	(DEV_DATA(dev)->iir_cache)
 
 #define INBYTE(x) inByte(x)
 #define OUTBYTE(x, d) outByte(d, x)
 
+#if defined(CONFIG_NS16550_PCI)
 
-struct ns16550 {
-	uint32_t port;    /* base port number or MM base address */
-	uint8_t irq;      /* interrupt request level */
-	uint8_t intPri;   /* interrupt priority */
-	uint8_t iirCache; /* cache of IIR since it clears when read */
-};
-
-#if !(defined(UART_PORTS_CONFIGURE)) && !(defined(CONFIG_PCI))
-
-  #error "CONFIG_PCI or UART_PORTS_CONFIGURE is needed"
-
-#elif !(defined(UART_PORTS_CONFIGURE)) && defined(CONFIG_PCI)
-
-static struct ns16550 uart[CONFIG_UART_NUM_SYSTEM_PORTS] = {};
-
-static inline void ns16550_uart_init()
+static inline void ns16550_pci_uart_scan(void)
 {
 	/*
 	 * This device information is specific to Quark UART
@@ -236,26 +229,28 @@ static inline void ns16550_uart_init()
 	};
 	int i;
 
-	if (uart[0].port && uart[0].irq)
+	/*
+	 * No need to probe if ports have been probed.
+	 */
+	if ((DEV_CFG(&uart_devs[0]))->port && (DEV_CFG(&uart_devs[0]))->irq) {
 		return;
+	}
 
 	pci_bus_scan_init();
 
 	for (i = 0; pci_bus_scan(&dev_info) &&
-				i < CONFIG_UART_NUM_SYSTEM_PORTS; i++) {
-		uart[i].port = dev_info.addr;
-		uart[i].irq = dev_info.irq;
+				i < CONFIG_NS16550_PCI_NUM_PORTS; i++) {
+		DEV_CFG(&uart_devs[i])->port = dev_info.addr;
+		DEV_CFG(&uart_devs[i])->irq = dev_info.irq;
 	}
 }
 
 #else
 
-#define ns16550_uart_init() \
+#define ns16550_pci_uart_scan() \
 	do {} while ((0))
 
-UART_PORTS_CONFIGURE(struct ns16550, uart);
-
-#endif /* UART_PORTS_CONFIGURE */
+#endif /* CONFIG_NS16550_PCI */
 
 /**
  *
@@ -263,20 +258,26 @@ UART_PORTS_CONFIGURE(struct ns16550, uart);
  *
  * This routine is called to reset the chip in a quiescent state.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param init_info Initial configuration for UART
+ *
  * @return N/A
  */
 
-void uart_init(int port, /* UART channel to initialize */
+void uart_init(struct device *dev,
 	       const struct uart_init_info * const init_info
 	       )
 {
+	struct uart_device_config_t * const dev_cfg = DEV_CFG(dev);
+	struct uart_ns16550_dev_data_t *const dev_data = DEV_DATA(dev);
+
 	int oldLevel;     /* old interrupt lock level */
 	uint32_t divisor; /* baud rate divisor */
 
-	ns16550_uart_init();
+	ns16550_pci_uart_scan();
 
-	uart[port].intPri = init_info->int_pri;
-	uart[port].iirCache = 0;
+	dev_cfg->int_pri = init_info->int_pri;
+	dev_data->iir_cache = 0;
 
 	oldLevel = irq_lock();
 
@@ -284,28 +285,28 @@ void uart_init(int port, /* UART channel to initialize */
 	divisor = (init_info->sys_clk_freq / init_info->baud_rate) >> 4;
 
 	/* set the DLAB to access the baud rate divisor registers */
-	OUTBYTE(LCR(port), LCR_DLAB);
-	OUTBYTE(BRDL(port), (unsigned char)(divisor & 0xff));
-	OUTBYTE(BRDH(port), (unsigned char)((divisor >> 8) & 0xff));
+	OUTBYTE(LCR(dev), LCR_DLAB);
+	OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
+	OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
 
 	/* 8 data bits, 1 stop bit, no parity, clear DLAB */
-	OUTBYTE(LCR(port), LCR_CS8 | LCR_1_STB | LCR_PDIS);
+	OUTBYTE(LCR(dev), LCR_CS8 | LCR_1_STB | LCR_PDIS);
 
-	OUTBYTE(MDC(port), MCR_OUT2 | MCR_RTS | MCR_DTR);
+	OUTBYTE(MDC(dev), MCR_OUT2 | MCR_RTS | MCR_DTR);
 
 	/*
 	 * Program FIFO: enabled, mode 0 (set for compatibility with quark),
 	 * generate the interrupt at 8th byte
 	 * Clear TX and RX FIFO
 	 */
-	OUTBYTE(FCR(port),
+	OUTBYTE(FCR(dev),
 		FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR);
 
 	/* clear the port */
-	INBYTE(RDR(port));
+	INBYTE(RDR(dev));
 
 	/* disable interrupts  */
-	OUTBYTE(IER(port), 0x00);
+	OUTBYTE(IER(dev), 0x00);
 
 	irq_unlock(oldLevel);
 }
@@ -314,18 +315,21 @@ void uart_init(int port, /* UART channel to initialize */
  *
  * @brief Poll the device for input.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param pChar Pointer to character
+ *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 
-int uart_poll_in(int port,		/* UART channel to select for input */
+int uart_poll_in(struct device *dev,
 		 unsigned char *pChar /* pointer to char */
 		 )
 {
-	if ((INBYTE(LSR(port)) & LSR_RXRDY) == 0x00)
+	if ((INBYTE(LSR(dev)) & LSR_RXRDY) == 0x00)
 		return (-1);
 
 	/* got a character */
-	*pChar = INBYTE(RDR(port));
+	*pChar = INBYTE(RDR(dev));
 
 	return 0;
 }
@@ -340,18 +344,20 @@ int uart_poll_in(int port,		/* UART channel to select for input */
  * If the hardware flow control is enabled then the handshake signal CTS has to
  * be asserted in order to send a character.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param outChar Character to send
+ *
  * @return sent character
  */
-unsigned char uart_poll_out(
-	int port,	    /* UART channel to select for output */
+unsigned char uart_poll_out(struct device *dev,
 	unsigned char outChar /* char to send */
 	)
 {
 	/* wait for transmitter to ready to accept a character */
-	while ((INBYTE(LSR(port)) & LSR_TEMT) == 0)
+	while ((INBYTE(LSR(dev)) & LSR_TEMT) == 0)
 		;
 
-	OUTBYTE(THR(port), outChar);
+	OUTBYTE(THR(dev), outChar);
 
 	return outChar;
 }
@@ -361,18 +367,22 @@ unsigned char uart_poll_out(
  *
  * @brief Fill FIFO with data
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param txData Data to transmit
+ * @param size Number of bytes to send
+ *
  * @return number of bytes sent
  */
 
-int uart_fifo_fill(int port, /* UART on port to send */
+int uart_fifo_fill(struct device *dev,
 			    const uint8_t *txData, /* data to transmit */
 			    int size /* number of bytes to send */
 			    )
 {
 	int i;
 
-	for (i = 0; i < size && (INBYTE(LSR(port)) & LSR_THRE) != 0; i++) {
-		OUTBYTE(THR(port), txData[i]);
+	for (i = 0; i < size && (INBYTE(LSR(dev)) & LSR_THRE) != 0; i++) {
+		OUTBYTE(THR(dev), txData[i]);
 	}
 	return i;
 }
@@ -381,18 +391,22 @@ int uart_fifo_fill(int port, /* UART on port to send */
  *
  * @brief Read data from FIFO
  *
- * @return number of bytes read
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param rxData Data container
+ * @param size Container size
+ *
+ * @return Number of bytes read
  */
 
-int uart_fifo_read(int port, /* UART to receive from */
+int uart_fifo_read(struct device *dev,
 			    uint8_t *rxData, /* data container */
 			    const int size   /* container size */
 			    )
 {
 	int i;
 
-	for (i = 0; i < size && (INBYTE(LSR(port)) & LSR_RXRDY) != 0; i++) {
-		rxData[i] = INBYTE(RDR(port));
+	for (i = 0; i < size && (INBYTE(LSR(dev)) & LSR_RXRDY) != 0; i++) {
+		rxData[i] = INBYTE(RDR(dev));
 	}
 
 	return i;
@@ -402,148 +416,157 @@ int uart_fifo_read(int port, /* UART to receive from */
  *
  * @brief Enable TX interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_tx_enable(int port /* UART to enable Tx
-					      interrupt */
-				 )
+void uart_irq_tx_enable(struct device *dev)
 {
-	OUTBYTE(IER(port), INBYTE(IER(port)) | IER_TBE);
+	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_TBE);
 }
 
 /**
  *
  * @brief Disable TX interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_tx_disable(int port /* UART to disable Tx interrupt */
-				  )
+void uart_irq_tx_disable(struct device *dev)
 {
-	OUTBYTE(IER(port), INBYTE(IER(port)) & (~IER_TBE));
+	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_TBE));
 }
 
 /**
  *
  * @brief Check if Tx IRQ has been raised
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-int uart_irq_tx_ready(int port /* UART to check */
-			       )
+int uart_irq_tx_ready(struct device *dev)
 {
-	return ((IIRC(port) & IIR_ID) == IIR_THRE);
+	return ((IIRC(dev) & IIR_ID) == IIR_THRE);
 }
 
 /**
  *
  * @brief Enable RX interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_rx_enable(int port /* UART to enable Rx
-					      interrupt */
-				 )
+void uart_irq_rx_enable(struct device *dev)
 {
-	OUTBYTE(IER(port), INBYTE(IER(port)) | IER_RXRDY);
+	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_RXRDY);
 }
 
 /**
  *
  * @brief Disable RX interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_rx_disable(int port /* UART to disable Rx interrupt */
-				  )
+void uart_irq_rx_disable(struct device *dev)
 {
-	OUTBYTE(IER(port), INBYTE(IER(port)) & (~IER_RXRDY));
+	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_RXRDY));
 }
 
 /**
  *
  * @brief Check if Rx IRQ has been raised
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
 
-int uart_irq_rx_ready(int port /* UART to check */
-			       )
+int uart_irq_rx_ready(struct device *dev)
 {
-	return ((IIRC(port) & IIR_ID) == IIR_RBRF);
+	return ((IIRC(dev) & IIR_ID) == IIR_RBRF);
 }
 
 /**
  *
  * @brief Enable error interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_err_enable(int port /* UART to enable Rx interrupt */
-			 )
+void uart_irq_err_enable(struct device *dev)
 {
-	OUTBYTE(IER(port), INBYTE(IER(port)) | IER_LSR);
+	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_LSR);
 }
 
 /**
  *
  * @brief Disable error interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
 
-void uart_irq_err_disable(int port /* UART to disable Rx interrupt */
-			  )
+void uart_irq_err_disable(struct device *dev)
 {
-	OUTBYTE(IER(port), INBYTE(IER(port)) & (~IER_LSR));
+	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_LSR));
 }
 
 /**
  *
  * @brief Check if any IRQ is pending
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return 1 if an IRQ is pending, 0 otherwise
  */
 
-int uart_irq_is_pending(int port /* UART to check */
-				 )
+int uart_irq_is_pending(struct device *dev)
 {
-	return (!(IIRC(port) & IIR_IP));
+	return (!(IIRC(dev) & IIR_IP));
 }
 
 /**
  *
  * @brief Update cached contents of IIR
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return always 1
  */
 
-int uart_irq_update(int port /* UART to update */
-			     )
+int uart_irq_update(struct device *dev)
 {
-	IIRC(port) = INBYTE(IIR(port));
+	IIRC(dev) = INBYTE(IIR(dev));
 
 	return 1;
 }
 
 /**
- *
  * @brief Returns UART interrupt number
  *
  * Returns the IRQ number used by the specified UART port
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-unsigned int uart_irq_get(int port /* UART port */
-			  )
+unsigned int uart_irq_get(struct device *dev)
 {
-	return (unsigned int)uart[port].irq;
+	return (unsigned int)DEV_CFG(dev)->irq;
 }
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

@@ -121,7 +121,7 @@ static void console_init(void)
 	struct uart_init_info info;
 
 	uart_generic_info_init(&info);
-	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
+	uart_init(UART_CONSOLE_DEV, &info);
 	uart_console_init();
 }
 

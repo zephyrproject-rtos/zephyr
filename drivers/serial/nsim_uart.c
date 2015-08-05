@@ -41,41 +41,41 @@
 #define NSIM_UART_DATA 0
 #define NSIM_UART_STATUS 1
 
-#define DATA_REG(n) (uart[n].regs + NSIM_UART_DATA)
-#define STATUS_REG(n) (uart[n].regs + NSIM_UART_STATUS)
+#define DEV_CFG(dev) \
+	((struct uart_device_config_t * const)(dev)->config->config_info)
+
+#define DATA_REG(dev) (DEV_CFG(dev)->regs + NSIM_UART_DATA)
+#define STATUS_REG(dev) (DEV_CFG(dev)->regs + NSIM_UART_STATUS)
 
 #define TXEMPTY 0x80 /* Transmit FIFO empty and next character can be sent */
 
-struct uart {
-	uint32_t regs; /* MM base address */
-};
-
-static struct uart __noinit uart[CONFIG_UART_NUM_SYSTEM_PORTS];
-
 /*
  * @brief Initialize fake serial port
- * @which: port number
- * @init_info: pointer to initialization information
+ *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param init_info Pointer to initialization information
  */
-void uart_init(int which, const struct uart_init_info * const init_info)
+void uart_init(struct device *dev,
+	       const struct uart_init_info * const init_info)
 {
 	int key = irq_lock();
 
-	uart[which].regs = init_info->regs;
+	DEV_CFG(dev)->regs = init_info->regs;
 	irq_unlock(key);
 }
 
 /*
  * @brief Output a character to serial port
- * @port: port number
- * @c: character to output
+ *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param c character to output
  */
-unsigned char uart_poll_out(int port, unsigned char c)
+unsigned char uart_poll_out(struct device *dev, unsigned char c)
 {
 
 	/* wait for transmitter to ready to accept a character */
-	while ((_arc_v2_aux_reg_read(STATUS_REG(port)) & TXEMPTY) == 0)
+	while ((_arc_v2_aux_reg_read(STATUS_REG(dev)) & TXEMPTY) == 0)
 		;
-	_arc_v2_aux_reg_write(DATA_REG(port), c);
+	_arc_v2_aux_reg_write(DATA_REG(dev), c);
 	return c;
 }

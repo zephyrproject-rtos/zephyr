@@ -44,7 +44,7 @@
 #include <simple/uart.h>
 #include <misc/printk.h>
 
-#define UART CONFIG_UART_SIMPLE_INDEX
+#define UART (&uart_devs[CONFIG_UART_SIMPLE_INDEX])
 
 static uint8_t *recv_buf;
 static size_t recv_buf_len;
@@ -84,7 +84,7 @@ int uart_simple_send(const uint8_t *data, int len)
 IRQ_CONNECT_STATIC(uart_simple, CONFIG_UART_SIMPLE_IRQ,
                    CONFIG_UART_SIMPLE_INT_PRI, uart_simple_isr, 0);
 
-static void uart_simple_setup(int uart, struct uart_init_info *info)
+static void uart_simple_setup(struct device *uart, struct uart_init_info *info)
 {
 	uart_init(uart, info);
 

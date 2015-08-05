@@ -50,11 +50,6 @@
 #include <toolchain.h>
 #include <sections.h>
 
-#define UART CONFIG_UART_CONSOLE_INDEX
-#if (UART < 0) || !(UART < CONFIG_UART_NUM_SYSTEM_PORTS)
-#error UART number not within ranges (0 to CONFIG_UART_NUM_SYSTEM_PORTS-1)
-#endif
-
 #if 0 /* NOTUSED */
 /**
  *
@@ -65,11 +60,15 @@
 
 static int consoleIn(void)
 {
+#ifdef UART_CONSOLE_DEV
 	unsigned char c;
-	if (uart_poll_in(UART, &c) < 0)
+	if (uart_poll_in(UART_CONSOLE_DEV, &c) < 0)
 		return EOF;
 	else
 		return (int)c;
+#else
+	return 0;
+#endif
 }
 #endif
 
@@ -86,11 +85,15 @@ static int consoleIn(void)
 static int consoleOut(int c /* character to output */
 	)
 {
-	uart_poll_out(UART, (unsigned char)c);
+#ifdef UART_CONSOLE_DEV
+	uart_poll_out(UART_CONSOLE_DEV, (unsigned char)c);
 	if ('\n' == c) {
-		uart_poll_out(UART, (unsigned char)'\r');
+		uart_poll_out(UART_CONSOLE_DEV, (unsigned char)'\r');
 	}
 	return c;
+#else
+	return 0;
+#endif
 }
 #endif
 
@@ -116,7 +119,7 @@ static size_t pos = 0;
 static struct nano_fifo *avail_queue;
 static struct nano_fifo *lines_queue;
 
-static int read_uart(int uart, uint8_t *buf, unsigned int size)
+static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
 {
 	int rx;
 
@@ -135,9 +138,10 @@ void uart_console_isr(void *unused)
 {
 	ARG_UNUSED(unused);
 
-	while (uart_irq_update(UART) && uart_irq_is_pending(UART)) {
+	while (uart_irq_update(UART_CONSOLE_DEV)
+	       && uart_irq_is_pending(UART_CONSOLE_DEV)) {
 		/* Character(s) have been received */
-		if (uart_irq_rx_ready(UART)) {
+		if (uart_irq_rx_ready(UART_CONSOLE_DEV)) {
 			static struct uart_console_input *cmd;
 			uint8_t byte;
 			int rx;
@@ -149,19 +153,19 @@ void uart_console_isr(void *unused)
 					return;
 			}
 
-			rx = read_uart(UART, &byte, 1);
+			rx = read_uart(UART_CONSOLE_DEV, &byte, 1);
 			if (rx < 0) {
 				nano_isr_fifo_put(avail_queue, cmd);
 				return;
 			}
 
 			/* Echo back to console */
-			uart_poll_out(UART, byte);
+			uart_poll_out(UART_CONSOLE_DEV, byte);
 
 			if (byte == '\r' || byte == '\n' ||
 			    pos == sizeof(cmd->line) - 1) {
 				cmd->line[pos] = '\0';
-				uart_poll_out(UART, '\n');
+				uart_poll_out(UART_CONSOLE_DEV, '\n');
 				pos = 0;
 
 				nano_isr_fifo_put(lines_queue, cmd);
@@ -181,16 +185,17 @@ static void console_input_init(void)
 {
 	uint8_t c;
 
-	uart_irq_rx_disable(UART);
-	uart_irq_tx_disable(UART);
-	IRQ_CONFIG(console, uart_irq_get(UART));
-	irq_enable(uart_irq_get(UART));
+	uart_irq_rx_disable(UART_CONSOLE_DEV);
+	uart_irq_tx_disable(UART_CONSOLE_DEV);
+	IRQ_CONFIG(console, uart_irq_get(UART_CONSOLE_DEV));
+	irq_enable(uart_irq_get(UART_CONSOLE_DEV));
 
 	/* Drain the fifo */
-	while (uart_irq_rx_ready(UART))
-		uart_fifo_read(UART, &c, 1);
+	while (uart_irq_rx_ready(UART_CONSOLE_DEV)) {
+		uart_fifo_read(UART_CONSOLE_DEV, &c, 1);
+	}
 
-	uart_irq_rx_enable(UART);
+	uart_irq_rx_enable(UART_CONSOLE_DEV);
 }
 
 void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)

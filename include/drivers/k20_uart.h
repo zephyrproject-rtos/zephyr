@@ -205,6 +205,11 @@ typedef volatile struct {
 							  */
 } K20_UART_t; /* K20 Microntroller UART module */
 
+/** Device data structure */
+struct uart_k20_dev_data_t {
+	uint8_t seq_port_num;	/**< Sequential port number */
+};
+
 static ALWAYS_INLINE void _k20UartBaudRateSet(K20_UART_t *uart_p,
 					      uint32_t clkFreq,
 					      uint32_t baudRate)

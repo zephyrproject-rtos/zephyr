@@ -85,35 +85,42 @@ struct _Uart {
 	uint32_t PCellID3;
 };
 
+/* convenience defines */
+
+#define DEV_CFG(dev) \
+	((struct uart_device_config_t * const)(dev)->config->config_info)
+#define UART_STRUCT(dev) \
+	((volatile struct _Uart *)(DEV_CFG(dev))->base)
+
 /* registers */
-#define UARTDR(n) *((volatile uint32_t *)(ports[n].base + 0x000))
-#define UARTSR(n) *((volatile uint32_t *)(ports[n].base + 0x004))
-#define UARTCR(n) *((volatile uint32_t *)(ports[n].base + 0x004))
-#define UARTFR(n) *((volatile uint32_t *)(ports[n].base + 0x018))
-#define UARTILPR(n) *((volatile uint32_t *)(ports[n].base + 0x020))
-#define UARTIBRD(n) *((volatile uint32_t *)(ports[n].base + 0x024))
-#define UARTFBRD(n) *((volatile uint32_t *)(ports[n].base + 0x028))
-#define UARTLCRH(n) *((volatile uint32_t *)(ports[n].base + 0x02C))
-#define UARTCTL(n) *((volatile uint32_t *)(ports[n].base + 0x030))
-#define UARTIFLS(n) *((volatile uint32_t *)(ports[n].base + 0x034))
-#define UARTIM(n) *((volatile uint32_t *)(ports[n].base + 0x038))
-#define UARTRIS(n) *((volatile uint32_t *)(ports[n].base + 0x03C))
-#define UARTMIS(n) *((volatile uint32_t *)(ports[n].base + 0x040))
-#define UARTICR(n) *((volatile uint32_t *)(ports[n].base + 0x044))
+#define UARTDR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x000)))
+#define UARTSR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x004)))
+#define UARTCR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x004)))
+#define UARTFR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x018)))
+#define UARTILPR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x020)))
+#define UARTIBRD(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x024)))
+#define UARTFBRD(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x028)))
+#define UARTLCRH(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x02C)))
+#define UARTCTL(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x030)))
+#define UARTIFLS(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x034)))
+#define UARTIM(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x038)))
+#define UARTRIS(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x03C)))
+#define UARTMIS(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x040)))
+#define UARTICR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x044)))
 
 /* ID registers: UARTPID = UARTPeriphID, UARTPCID = UARTPCellId */
-#define UARTPID4(n) *((volatile uint32_t *)(ports[n].base + 0xFD0))
-#define UARTPID5(n) *((volatile uint32_t *)(ports[n].base + 0xFD4))
-#define UARTPID6(n) *((volatile uint32_t *)(ports[n].base + 0xFD8))
-#define UARTPID7(n) *((volatile uint32_t *)(ports[n].base + 0xFDC))
-#define UARTPID0(n) *((volatile uint32_t *)(ports[n].base + 0xFE0))
-#define UARTPID1(n) *((volatile uint32_t *)(ports[n].base + 0xFE4))
-#define UARTPID2(n) *((volatile uint32_t *)(ports[n].base + 0xFE8))
-#define UARTPID3(n) *((volatile uint32_t *)(ports[n].base + 0xFEC))
-#define UARTPCID0(n) *((volatile uint32_t *)(ports[n].base + 0xFF0))
-#define UARTPCID1(n) *((volatile uint32_t *)(ports[n].base + 0xFF4))
-#define UARTPCID2(n) *((volatile uint32_t *)(ports[n].base + 0xFF8))
-#define UARTPCID3(n) *((volatile uint32_t *)(ports[n].base + 0xFFC))
+#define UARTPID4(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFD0)))
+#define UARTPID5(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFD4)))
+#define UARTPID6(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFD8)))
+#define UARTPID7(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFDC)))
+#define UARTPID0(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFE0)))
+#define UARTPID1(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFE4)))
+#define UARTPID2(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFE8)))
+#define UARTPID3(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFEC)))
+#define UARTPCID0(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFF0)))
+#define UARTPCID1(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFF4)))
+#define UARTPCID2(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFF8)))
+#define UARTPCID3(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0xFFC)))
 
 /* muxed UART registers */
 #define sr u1._sr /* Read: receive status */
@@ -145,27 +152,25 @@ struct _Uart {
 #define UARTMIS_RXMIS 0x00000010
 #define UARTMIS_TXMIS 0x00000020
 
-struct _StellarisUartPort {
-	void *base;     /* base address of registers */
-	uint8_t irq;    /* interrupt request number */
-	uint8_t intPri; /* interrupt priority level */
-};
-
-UART_PORTS_CONFIGURE(struct _StellarisUartPort, ports);
-
 /**
  *
  * @brief Set the baud rate
  *
  * This routine set the given baud rate for the UART.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param baudrate Baud rate
+ * @param sysClkFreqInHz System clock frequency in Hz
+ *
  * @return N/A
  */
 
-static void baudrateSet(int port, uint32_t baudrate, uint32_t sysClkFreqInHz)
+static void baudrateSet(struct device *dev,
+			uint32_t baudrate, uint32_t sysClkFreqInHz)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 	uint32_t brdi, brdf, div, rem;
+
 	/* upon reset, the system clock uses the intenal OSC @ 12MHz */
 
 	div = (16 * baudrate);
@@ -190,12 +195,14 @@ static void baudrateSet(int port, uint32_t baudrate, uint32_t sysClkFreqInHz)
  *
  * This routine enables the given UART.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-static inline void enable(int port)
+static inline void enable(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	pUart->ctl |= UARTCTL_UARTEN;
 }
@@ -206,12 +213,14 @@ static inline void enable(int port)
  *
  * This routine disables the given UART.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-static inline void disable(int port)
+static inline void disable(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	pUart->ctl &= ~UARTCTL_UARTEN;
 
@@ -239,12 +248,14 @@ static inline void disable(int port)
  *
  * This routine sets the given UART's line controls to their default settings.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-static inline void lineControlDefaultsSet(int port)
+static inline void lineControlDefaultsSet(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	pUart->lcrh = LINE_CONTROL_DEFAULTS;
 }
@@ -256,18 +267,22 @@ static inline void lineControlDefaultsSet(int port)
  * This routine is called to reset the chip in a quiescent state.
  * It is assumed that this function is called only once per UART.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
-void uart_init(int port, /* UART channel to initialize */
+void uart_init(struct device *dev,
 	       const struct uart_init_info * const init_info
 	       )
 {
-	ports[port].intPri = init_info->int_pri;
+	struct uart_device_config_t * const dev_cfg = DEV_CFG(dev);
 
-	disable(port);
-	baudrateSet(port, init_info->baud_rate, init_info->sys_clk_freq);
-	lineControlDefaultsSet(port);
-	enable(port);
+	dev_cfg->int_pri = init_info->int_pri;
+
+	disable(dev);
+	baudrateSet(dev, init_info->baud_rate, init_info->sys_clk_freq);
+	lineControlDefaultsSet(dev);
+	enable(dev);
 }
 
 /**
@@ -276,12 +291,13 @@ void uart_init(int port, /* UART channel to initialize */
  *
  * This routine returns the given UART's transmit ready status.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return 0 if ready to transmit, 1 otherwise
  */
-
-static int pollTxReady(int port)
+static int pollTxReady(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	return (pUart->fr & UARTFR_TXFE);
 }
@@ -290,14 +306,17 @@ static int pollTxReady(int port)
  *
  * @brief Poll the device for input.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param pChar Pointer to character
+ *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 
-int uart_poll_in(int port, /* UART channel to select for input */
+int uart_poll_in(struct device *dev,
 		 unsigned char *pChar /* pointer to char */
 		 )
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	if (pUart->fr & UARTFR_RXFE)
 		return (-1);
@@ -315,13 +334,16 @@ int uart_poll_in(int port, /* UART channel to select for input */
  * Checks if the transmitter is empty. If empty, a character is written to
  * the data register.
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param c Character to send
+ *
  * @return sent character
  */
-unsigned char uart_poll_out(int port, unsigned char c)
+unsigned char uart_poll_out(struct device *dev, unsigned char c)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
-	while (!pollTxReady(port))
+	while (!pollTxReady(dev))
 		;
 
 	/* send a character */
@@ -335,15 +357,19 @@ unsigned char uart_poll_out(int port, unsigned char c)
  *
  * @brief Fill FIFO with data
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param txData Data to transmit
+ * @param len Number of bytes to send
+ *
  * @return number of bytes sent
  */
 
-int uart_fifo_fill(int port, /* UART on which to send */
+int uart_fifo_fill(struct device *dev,
 			    const uint8_t *txData, /* data to transmit */
 			    int len /* number of bytes to send */
 			    )
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 	uint8_t numTx = 0;
 
 	while ((len - numTx > 0) && ((pUart->fr & UARTFR_TXFF) == 0)) {
@@ -357,15 +383,19 @@ int uart_fifo_fill(int port, /* UART on which to send */
  *
  * @brief Read data from FIFO
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param rxData Pointer to data container
+ * @param size Container size
+ *
  * @return number of bytes read
  */
 
-int uart_fifo_read(int port, /* UART to receive from */
+int uart_fifo_read(struct device *dev,
 			    uint8_t *rxData, /* data container */
 			    const int size   /* container size */
 			    )
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 	uint8_t numRx = 0;
 
 	while ((size - numRx > 0) && ((pUart->fr & UARTFR_RXFE) == 0)) {
@@ -379,11 +409,12 @@ int uart_fifo_read(int port, /* UART to receive from */
  *
  * @brief Enable TX interrupt
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_tx_enable(int port /* UART to enable Tx interrupt */
-				 )
+void uart_irq_tx_enable(struct device *dev)
 {
 	static uint8_t first_time =
 		1;	   /* used to allow the first transmission */
@@ -391,7 +422,7 @@ void uart_irq_tx_enable(int port /* UART to enable Tx interrupt */
 	uint32_t saved_ibrd; /* saved UARTIBRD (integer baud rate) register */
 	uint32_t saved_fbrd; /* saved UARTFBRD (fractional baud rate) register
 				*/
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	if (first_time) {
 		/*
@@ -409,7 +440,7 @@ void uart_irq_tx_enable(int port /* UART to enable Tx interrupt */
 		saved_fbrd = pUart->fbrd;
 
 		/* send a character with default settings via loopback */
-		disable(port);
+		disable(dev);
 		pUart->fbrd = 0;
 		pUart->ibrd = 1;
 		pUart->lcrh = 0;
@@ -420,10 +451,10 @@ void uart_irq_tx_enable(int port /* UART to enable Tx interrupt */
 			;
 
 		/* restore control and baud rate settings */
-		disable(port);
+		disable(dev);
 		pUart->ibrd = saved_ibrd;
 		pUart->fbrd = saved_fbrd;
-		lineControlDefaultsSet(port);
+		lineControlDefaultsSet(dev);
 		pUart->ctl = saved_ctl;
 	}
 
@@ -434,13 +465,14 @@ void uart_irq_tx_enable(int port /* UART to enable Tx interrupt */
  *
  * @brief Disable TX interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_tx_disable(int port /* UART to disable Tx interrupt */
-				  )
+void uart_irq_tx_disable(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	pUart->im &= ~UARTTIM_TXIM;
 }
@@ -449,13 +481,14 @@ void uart_irq_tx_disable(int port /* UART to disable Tx interrupt */
  *
  * @brief Check if Tx IRQ has been raised
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return 1 if a Tx IRQ is pending, 0 otherwise
  */
 
-int uart_irq_tx_ready(int port /* UART to check */
-			       )
+int uart_irq_tx_ready(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	return ((pUart->mis & UARTMIS_TXMIS) == UARTMIS_TXMIS);
 }
@@ -464,13 +497,14 @@ int uart_irq_tx_ready(int port /* UART to check */
  *
  * @brief Enable RX interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_rx_enable(int port /* UART to enable Rx interrupt */
-				 )
+void uart_irq_rx_enable(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	pUart->im |= UARTTIM_RXIM;
 }
@@ -479,13 +513,14 @@ void uart_irq_rx_enable(int port /* UART to enable Rx interrupt */
  *
  * @brief Disable RX interrupt in IER
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_rx_disable(int port /* UART to disable Rx interrupt */
-				  )
+void uart_irq_rx_disable(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	pUart->im &= ~UARTTIM_RXIM;
 }
@@ -494,13 +529,14 @@ void uart_irq_rx_disable(int port /* UART to disable Rx interrupt */
  *
  * @brief Check if Rx IRQ has been raised
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
 
-int uart_irq_rx_ready(int port /* UART to check */
-			       )
+int uart_irq_rx_ready(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	return ((pUart->mis & UARTMIS_RXMIS) == UARTMIS_RXMIS);
 }
@@ -509,13 +545,14 @@ int uart_irq_rx_ready(int port /* UART to check */
  *
  * @brief Enable error interrupts
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_err_enable(int port /* UART to enable interrupts for */
-			 )
+void uart_irq_err_enable(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	pUart->im |= (UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
 		      UARTTIM_BEIM | UARTTIM_OEIM);
@@ -525,13 +562,14 @@ void uart_irq_err_enable(int port /* UART to enable interrupts for */
  *
  * @brief Disable error interrupts
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-void uart_irq_err_disable(int port /* UART to disable interrupts for */
-			  )
+void uart_irq_err_disable(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	pUart->im &= ~(UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
 		       UARTTIM_BEIM | UARTTIM_OEIM);
@@ -541,13 +579,14 @@ void uart_irq_err_disable(int port /* UART to disable interrupts for */
  *
  * @brief Check if Tx or Rx IRQ is pending
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
 
-int uart_irq_is_pending(int port /* UART to check */
-				 )
+int uart_irq_is_pending(struct device *dev)
 {
-	volatile struct _Uart *pUart = ports[port].base;
+	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
 	/* Look only at Tx and Rx data interrupt flags */
 	return ((pUart->mis & (UARTMIS_RXMIS | UARTMIS_TXMIS)) ? 1 : 0);
@@ -557,10 +596,12 @@ int uart_irq_is_pending(int port /* UART to check */
  *
  * @brief Update IRQ status
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return always 1
  */
 
-int uart_irq_update(int port)
+int uart_irq_update(struct device *dev)
 {
 	return 1;
 }
@@ -571,12 +612,13 @@ int uart_irq_update(int port)
  *
  * Returns the IRQ number used by the specified UART port
  *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ *
  * @return N/A
  */
 
-unsigned int uart_irq_get(int port /* UART port */
-			  )
+unsigned int uart_irq_get(struct device *dev)
 {
-	return (unsigned int)ports[port].irq;
+	return (unsigned int)DEV_CFG(dev)->irq;
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

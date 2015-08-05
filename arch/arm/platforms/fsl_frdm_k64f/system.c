@@ -285,7 +285,7 @@ static void consoleInit(void)
 	port_pcr_p->port[port].pcr[rxPin] = pcr;
 	port_pcr_p->port[port].pcr[txPin] = pcr;
 
-	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
+	uart_init(UART_CONSOLE_DEV, &info);
 
 	uart_console_init();
 }
