@@ -1589,21 +1589,36 @@ static inline int smp_self_test(void)
 }
 #endif
 
-void bt_auth_cb_register(const struct bt_auth_cb *cb)
+static uint8_t get_io_capa(const struct bt_auth_cb *cb)
 {
+	if (auth_cb->passkey_display) {
+		return BT_SMP_IO_DISPLAY_ONLY;
+	}
+
+	return BT_SMP_IO_NO_INPUT_OUTPUT;
+}
+
+int bt_auth_cb_register(const struct bt_auth_cb *cb)
+{
+	if (!cb) {
+		bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
+		auth_cb = NULL;
+		return 0;
+	}
+
+	/* cancel callback should always be provided */
+	if (!cb->cancel) {
+		return -EINVAL;
+	}
+
+	if (auth_cb) {
+		return -EALREADY;
+	}
+
+	bt_smp_io_capa = get_io_capa(cb);
 	auth_cb = cb;
 
-	if (!auth_cb) {
-		bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
-		return;
-	}
-
-	if (auth_cb->passkey_display) {
-		bt_smp_io_capa = BT_SMP_IO_DISPLAY_ONLY;
-		return;
-	}
-
-	bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
+	return 0;
 }
 
 void bt_auth_cancel(struct bt_conn *conn)

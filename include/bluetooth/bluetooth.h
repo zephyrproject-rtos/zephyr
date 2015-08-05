@@ -144,11 +144,14 @@ struct bt_auth_cb {
 
 /** @brief Register authentication callbacks.
  *
- *  Register callbacks to handle authenticated pairing.
+ *  Register callbacks to handle authenticated pairing. Passing NULL unregisters
+ *  previous callbacks structure.
  *
  *  @param cb Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
  */
-void bt_auth_cb_register(const struct bt_auth_cb *cb);
+int bt_auth_cb_register(const struct bt_auth_cb *cb);
 
 /** @brief Cancel ongoing authenticated pairing.
  *
