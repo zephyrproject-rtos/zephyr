@@ -33,11 +33,6 @@
 
 menu "Interrupt Controllers"
 
-config PIC
-	bool "PIC (i8259)"
-	default n
-	depends on X86_32
-
 config LOAPIC
 	bool "LOAPIC"
 	default n

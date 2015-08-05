@@ -64,29 +64,20 @@ the 'ia32' platform.
 #endif
 #endif
 
-/* programmable interrupt controller info (pair of cascaded 8259A devices) */
-
-#define PIC_MASTER_BASE_ADRS 0x20
-#define PIC_SLAVE_BASE_ADRS 0xa0
-#define PIC_MASTER_STRAY_INT_LVL 0x07 /* master PIC stray IRQ */
-#define PIC_SLAVE_STRAY_INT_LVL 0x0f  /* slave PIC stray IRQ */
-#define PIC_MAX_INT_LVL 0x0f	  /* max interrupt level in PIC */
-#define PIC_REG_ADDR_INTERVAL 1
-#define INT_VEC_IRQ0 0x20 /* vector number for PIC IRQ0 */
-#define N_PIC_IRQS 16     /* number of PIC IRQs */
+#define INT_VEC_IRQ0 0x20 /* vector number for IRQ0 */
 
 /* serial port (aka COM port) information */
 
 #define COM1_BASE_ADRS 0x3f8
 #define COM1_INT_LVL 0x04 /* COM1 connected to IRQ4 */
 #define COM1_INT_VEC (INT_VEC_IRQ0 + COM1_INT_LVL)
-#define COM1_INT_PRI 3 /* not honoured with 8259 PIC */
+#define COM1_INT_PRI 3
 #define COM1_BAUD_RATE 115200
 
 #define COM2_BASE_ADRS 0x2f8
 #define COM2_INT_LVL 0x03 /* COM2 connected to IRQ3 */
 #define COM2_INT_VEC (INT_VEC_IRQ0 + COM2_INT_LVL)
-#define COM2_INT_PRI 3 /* not honoured with 8259 PIC */
+#define COM2_INT_PRI 3
 #define COM2_BAUD_RATE 115200
 
 #define UART_REG_ADDR_INTERVAL 1 /* address diff of adjacent regs. */

@@ -114,7 +114,8 @@ extern const kevent_t _TaskIrqEvt0_objId;
  * contains information about the objects's vector, IRQ, and event number.
  *
  * This ISR does not facilitate an int acknowledgment as it presumes that an
- * End of Interrupt (EOI) routine is provided by the PIC that is being used.
+ * End of Interrupt (EOI) routine is provided by the interrupt controller that
+ * is being used.
  *
  * @return N/A
  */

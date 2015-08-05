@@ -41,13 +41,7 @@ by x86 platforms.
 #include <arch/x86/asm.h>
 #include <drivers/ioapic.h>
 #include <drivers/loapic.h>
-#include <drivers/pic.h>
 #include <drivers/system_timer.h>
-
-#if defined (CONFIG_PIC)
-	GTEXT(_pic_master__i8259_boi_master_stub)
-	GTEXT(_pic_slave__i8259_boi_slave_stub)
-#endif
 
 #if defined(CONFIG_LOAPIC_TIMER)
 	loapic_mkstub loapic _timer_int_handler
@@ -58,73 +52,24 @@ by x86 platforms.
 #endif
 
 #if defined(CONFIG_BLUETOOTH_UART)
-#if defined(CONFIG_PIC)
-	pic_master_mkstub bluetooth bt_uart_isr
-#elif defined(CONFIG_IOAPIC)
+#if defined(CONFIG_IOAPIC)
 	ioapic_mkstub bluetooth bt_uart_isr
-#endif /* CONFIG_PIC */
+#endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_BLUETOOTH_UART */
 
 #if defined(CONFIG_CONSOLE_HANDLER)
-#if defined(CONFIG_PIC)
-	pic_master_mkstub console uart_console_isr
-#elif defined(CONFIG_IOAPIC)
+#if defined(CONFIG_IOAPIC)
 	ioapic_mkstub console uart_console_isr
-#endif /* CONFIG_PIC */
+#endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_CONSOLE_HANDLER */
 
 #if defined(CONFIG_UART_SIMPLE)
-#if defined(CONFIG_PIC)
-	pic_master_mkstub uart_simple uart_simple_isr
-#elif defined(CONFIG_IOAPIC)
+#if defined(CONFIG_IOAPIC)
 	ioapic_mkstub uart_simple uart_simple_isr
-#endif /* CONFIG_PIC */
+#endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_UART_SIMPLE */
 
 	/* externs (internal APIs) */
 
 	GTEXT(_IntEnt)
 	GTEXT(_IntExit)
-
-#if defined(CONFIG_PIC)
-SECTION_FUNC(TEXT, _pic_master__i8259_boi_master_stub)
-	/*
-	 * Handle possible spurious (stray) interrupts on IRQ 7. Since on this
-	 * particular platform, no device is hooked up to IRQ 7, a C level ISR is
-	 * not called as the call to the BOI routine will not return.
-	 */
-	call	_IntEnt		   /* Inform kernel interrupt has begun */
-	call	_i8259_boi_master  /* Call the BOI routine (won't return) */
-
-	/*
-	 * If an actual device was installed on IRQ 7, then the BOI may return,
-	 * indicating a real interrupt was asserted on IRQ 7.
-	 * The following code should be invoked in this case to invoke the ISR:
-	 *
-	 * pushl $param		/+ Push argument to ISR +/
-	 * call	ISR		/+ Call 'C' level ISR +/
-	 * addl	$4, %esp	/+ pop arg to ISR +/
-	 * jmp	_IntExit	/+ Inform kernel interrupt is done +/
-	 */
-
-SECTION_FUNC(TEXT, _pic_slave__i8259_boi_slave_stub)
-	/*
-	 * Handle possible spurious (stray) interrupts on IRQ 15 (slave PIC
-	 * IRQ 7). Since on this particular platform, no device is hooked up to
-	 * IRQ 15, a C level ISR is not called as the call the BOI routine
-	 * will not return.
-	 */
-	call	_IntEnt		   /* Inform kernel interrupt has begun */
-	call	_i8259_boi_slave   /* Call the BOI routine (won't return) */
-
-	/*
-	 * If an actual device was installed on IRQ 15, then the BOI may return,
-	 * indicating a real interrupt was asserted on IRQ 15.
-	 * The following code should be invoked in this case to invoke the ISR:
-	 *
-	 * pushl $param		/+ Push argument to ISR +/
-	 * call	ISR		/+ Call 'C' level ISR +/
-	 * addl	$4, %esp	/+ pop arg to ISR +/
-	 * jmp	_IntExit	/+ Inform kernel interrupt is done +/
-	 */
-#endif /* CONFIG_PIC */

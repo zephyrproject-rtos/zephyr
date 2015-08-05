@@ -155,7 +155,6 @@ config NUM_DYNAMIC_STUBS
 
 config SHUTOFF_PIC
 	bool "Shutoff PIC"
-	depends on !PIC
 	default n
 	help
 	This option disables all interrupts on the PIC
