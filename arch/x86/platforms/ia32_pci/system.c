@@ -79,7 +79,7 @@ void uart_generic_info_init(struct uart_init_info *p_info)
 
 #include <console/uart_console.h>
 
-static void consoleInit(void)
+static void console_init(void)
 {
 	struct uart_init_info info;
 
@@ -89,7 +89,7 @@ static void consoleInit(void)
 }
 
 #else
-#define consoleInit()     \
+#define console_init()     \
 	do {/* nothing */ \
 	} while ((0))
 #endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
@@ -113,7 +113,7 @@ static int ia32_pci_init(struct device *arg)
 
 	_ioapic_irq_set(HPET_TIMER0_IRQ, HPET_TIMER0_VEC, HPET_IOAPIC_FLAGS);
 
-	consoleInit(); /* NOP if not needed */
+	console_init();      /* NOP if not needed */
 
 #ifdef CONFIG_PCI_DEBUG
 	/* Rescan PCI and display the list of PCI attached devices */

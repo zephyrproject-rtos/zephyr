@@ -44,28 +44,28 @@ for the ia32 platform.
 #include <init.h>
 
 #if defined(CONFIG_PIC) || defined(CONFIG_SHUTOFF_PIC)
-#define picInit() _i8259_init()
+#define pic_init() _i8259_init()
 #else
-#define picInit()         \
+#define pic_init()         \
 	do {/* nothing */ \
 	} while ((0))
 #endif /* CONFIG_PIC */
 
 #ifdef CONFIG_LOAPIC
 #include <drivers/loapic.h>
-static inline void loapicInit(void)
+static inline void loapic_init(void)
 {
 	_loapic_init();
 }
 #else
-#define loapicInit()      \
+#define loapic_init()      \
 	do {/* nothing */ \
 	} while ((0))
 #endif /* CONFIG_LOAPIC */
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
-static inline void ioapicInit(void)
+static inline void ioapic_init(void)
 {
 	_ioapic_init();
 }
@@ -73,7 +73,7 @@ static inline void ioapicInit(void)
 #define uartIrqProg(irq) \
 	_ioapic_irq_set((irq), (irq) + INT_VEC_IRQ0, UART_IOAPIC_FLAGS)
 #else
-#define ioapicInit(mask)  \
+#define ioapic_init(mask)  \
 	do {/* nothing */ \
 	} while ((0))
 #define uartIrqProg(irq)  \
@@ -112,7 +112,7 @@ void uart_generic_info_init(struct uart_init_info *p_info)
 
 #include <console/uart_console.h>
 
-static void consoleInit(void)
+static void console_init(void)
 {
 	struct uart_init_info info;
 
@@ -122,7 +122,7 @@ static void consoleInit(void)
 }
 
 #else
-#define consoleInit()     \
+#define console_init()     \
 	do {/* nothing */ \
 	} while ((0))
 #endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
@@ -156,11 +156,11 @@ static int ia32_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	picInit();    /* NOP if not needed */
-	loapicInit(); /* NOP if not needed */
+	pic_init();       /* NOP if not needed */
+	loapic_init();    /* NOP if not needed */
 
-	ioapicInit();   /* NOP if not needed */
-	consoleInit(); /* NOP if not needed */
+	ioapic_init();    /* NOP if not needed */
+	console_init();   /* NOP if not needed */
 	bluetooth_init(); /* NOP if not needed */
 	return 0;
 }
