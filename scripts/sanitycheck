@@ -94,7 +94,7 @@ import time
 import csv
 
 if "ZEPHYR_BASE" not in os.environ:
-    sys.stderr.write("$ZEPHYR_BASE environment variable undefined")
+    sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
 VERBOSE = 0
