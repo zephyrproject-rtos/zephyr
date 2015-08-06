@@ -47,9 +47,43 @@ Handlers for the secondary serial port have not been added.
 #include "board.h"
 #include <drivers/uart.h>
 #include <drivers/ioapic.h>
-#include <drivers/loapic.h>
 #include <drivers/pci/pci.h>
 #include <drivers/pci/pci_mgr.h>
+
+#ifdef CONFIG_LOAPIC
+#include <drivers/loapic.h>
+static inline void loapic_init(void)
+{
+	_loapic_init();
+}
+#else
+#define loapic_init()    \
+	do { /* nothing */   \
+	} while ((0))
+#endif
+
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+static inline void ioapic_init(void)
+{
+	_ioapic_init();
+}
+#else
+#define ioapic_init()   \
+	do { /* nothing */  \
+	} while ((0))
+#endif
+
+#ifdef CONFIG_HPET_TIMER
+static inline void hpet_irq_set(void)
+{
+	_ioapic_irq_set(HPET_TIMER0_IRQ, HPET_TIMER0_VEC, HPET_IOAPIC_FLAGS);
+}
+#else
+#define hpet_irq_set()   \
+	do { /* nothing */       \
+	} while ((0))
+#endif
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 /**
@@ -108,10 +142,10 @@ static void console_init(void)
 static int ia32_pci_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
-	_loapic_init();
-	_ioapic_init();
 
-	_ioapic_irq_set(HPET_TIMER0_IRQ, HPET_TIMER0_VEC, HPET_IOAPIC_FLAGS);
+	loapic_init();       /* NOP if not needed */
+	ioapic_init();       /* NOP if not needed */
+	hpet_irq_set();      /* NOP if not needed */
 
 	console_init();      /* NOP if not needed */
 
