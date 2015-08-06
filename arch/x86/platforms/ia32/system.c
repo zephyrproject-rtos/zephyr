@@ -159,11 +159,6 @@ static int pc_init(struct device *arg)
 	picInit();    /* NOP if not needed */
 	loapicInit(); /* NOP if not needed */
 
-	/*
-	 * IOAPIC is initialized with empty interrupt list
-	 * If there is a device connected to IOAPIC, the initialization
-	 * has to be changed to _IoApicInit (1 << DEV1_IRQ | 1 << DEV2_IRQ)
-	 */
 	ioapicInit();   /* NOP if not needed */
 	consoleInit(); /* NOP if not needed */
 	bluetooth_init(); /* NOP if not needed */
