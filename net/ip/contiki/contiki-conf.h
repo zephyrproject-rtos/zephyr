@@ -1,6 +1,7 @@
 /* contiki-conf.h - These settings override the default configuration */
 
 #include <stdint.h>
+#include <sys_clock.h>
 
 #ifndef __CONTIKI_CONF_H__
 #define __CONTIKI_CONF_H__
@@ -13,7 +14,7 @@
 typedef uint32_t clock_time_t;
 typedef unsigned int uip_stats_t;
 
-#define CLOCK_CONF_SECOND 100
+#define CLOCK_CONF_SECOND sys_clock_ticks_per_sec
 
 /* It is either IPv6 or IPv4 but not both at the same time. */
 #ifdef CONFIG_NETWORKING_WITH_IPV6
