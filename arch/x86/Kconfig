@@ -289,24 +289,6 @@ config XIP
 
 endmenu
 
-menu "Bus options (PCI etc.)"
-config PCI
-	bool
-	# omit prompt to signify a "hidden" option
-	default n
-	help
-	This options enables support of PCI bus enumeration for device
-	drivers.
-
-config PCI_DEBUG
-	bool
-	prompt "Enable PCI debugging"
-	depends on PCI
-	default n
-	help
-	This options enables PCI debigging functions
-
-endmenu
 
 source "arch/x86/core/Kconfig"
 

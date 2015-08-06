@@ -1,0 +1,20 @@
+
+menu "PCI Settings"
+	depends on X86_32
+config PCI
+	bool
+	default n
+	depends on X86_32
+	help
+	This options enables support of PCI bus enumeration for device
+	drivers.
+
+config PCI_DEBUG
+	bool
+	prompt "Enable PCI debugging"
+	depends on PCI
+	default n
+	help
+	This options enables PCI debigging functions
+
+endmenu

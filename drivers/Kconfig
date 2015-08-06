@@ -47,4 +47,6 @@ source "drivers/timer/Kconfig"
 
 source "drivers/random/Kconfig"
 
+source "drivers/pci/Kconfig"
+
 endmenu
