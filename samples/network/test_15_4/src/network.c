@@ -163,7 +163,7 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 	buf = net_receive(ctx, TICKS_NONE);
 	if (buf) {
 		PRINT("%s: %s(): received %d bytes\n%s\n", taskname,
-		      __FUNCTION__, net_buf_data(buf), net_buf_datalen(buf));
+		      __FUNCTION__, net_buf_datalen(buf), net_buf_data(buf));
 		net_buf_put(buf);
 	}
 }
