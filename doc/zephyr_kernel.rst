@@ -8,7 +8,6 @@ This section contains the information about the kernel's code.
 .. toctree::
    :maxdepth: 2
 
-   installation/installation.rst
    architecture/architecture.rst
    object/object.rst
    net/network.rst

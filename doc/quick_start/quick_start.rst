@@ -1,7 +1,7 @@
 .. _quick_start:
 
-|project| Quick Start
-######################
+Quick Start Guide
+#################
 
 Follow this guide to install the Zephyr development environment on your
 development system and to build the |codename| on the supported platforms.
@@ -14,7 +14,7 @@ the following Linux distributions:
 * Ubuntu 14.04 LTS 64 bit
 * Fedora 22 64 bit
 
-Use these procedures only to create a new |project| development
+Use these procedures only to create a new development
 environment. Do not use them to update an existing environment. They do
 not account for file hierarchy changes that may occur from release to
 release.
@@ -23,8 +23,8 @@ Perform the steps in the installation procedures in the order they
 appear.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   installation_linux.rst
-   installation_building.rst
-   installation_custom_builds.rst
+   installing.rst
+   building.rst
+   running.rst

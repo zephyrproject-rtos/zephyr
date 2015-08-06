@@ -10,8 +10,9 @@
 #########
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   quick_start/quick_start.rst
    zephyr_kernel
    zephyr_project
 
