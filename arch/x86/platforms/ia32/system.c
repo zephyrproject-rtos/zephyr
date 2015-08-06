@@ -81,6 +81,17 @@ static inline void ioapic_init(void)
 	} while ((0))
 #endif /* CONFIG_IOAPIC */
 
+#ifdef CONFIG_HPET_TIMER
+static inline void hpet_irq_set(void)
+{
+	_ioapic_irq_set(HPET_TIMER0_IRQ, HPET_TIMER0_VEC, HPET_IOAPIC_FLAGS);
+}
+#else
+#define hpet_irq_set()   \
+	do { /* nothing */   \
+	} while ((0))
+#endif
+
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 
 /**
@@ -160,6 +171,7 @@ static int ia32_init(struct device *arg)
 	loapic_init();    /* NOP if not needed */
 
 	ioapic_init();    /* NOP if not needed */
+	hpet_irq_set();   /* NOP if not needed */
 	console_init();   /* NOP if not needed */
 	bluetooth_init(); /* NOP if not needed */
 	return 0;

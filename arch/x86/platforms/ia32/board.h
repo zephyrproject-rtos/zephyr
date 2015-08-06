@@ -110,6 +110,7 @@ the 'ia32' platform.
 #define HPET_TIMER0_VEC (HPET_TIMER0_IRQ + INT_VEC_IRQ0)
 #define HPET_TIMER0_INT_PRI (4)
 #define HPET_TIMER0_IRQ (2)
+#define HPET_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
 
 /* serial port (aka COM port) information */
 
