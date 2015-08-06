@@ -152,7 +152,7 @@ static void bluetooth_init(void)
  *
  * @return 0
  */
-static int pc_init(struct device *arg)
+static int ia32_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -165,5 +165,5 @@ static int pc_init(struct device *arg)
 	return 0;
 }
 
-DECLARE_DEVICE_INIT_CONFIG(pc_0, "", pc_init, NULL);
-pure_early_init(pc_0, NULL);
+DECLARE_DEVICE_INIT_CONFIG(ia32_0, "", ia32_init, NULL);
+pure_early_init(ia32_0, NULL);
