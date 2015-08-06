@@ -105,7 +105,7 @@ static void consoleInit(void)
  * @return 0
  */
 
-static int quark_init(struct device *arg)
+static int ia32_pci_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 	_loapic_init();
@@ -134,5 +134,5 @@ static int quark_init(struct device *arg)
 	return 0;
 }
 
-DECLARE_DEVICE_INIT_CONFIG(quark_0, "", quark_init, NULL);
-pure_early_init(quark_0, NULL);
+DECLARE_DEVICE_INIT_CONFIG(ia32_pci_0, "", ia32_pci_init, NULL);
+pure_early_init(ia32_pci_0, NULL);
