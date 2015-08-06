@@ -72,7 +72,7 @@ This module tests the following CPU and context related routines:
  * is not defined in platform, generate an error
  */
 #if defined(CONFIG_HPET_TIMER)
-  #define TICK_IRQ HPET_TIMER0_IRQ
+  #define TICK_IRQ CONFIG_HPET_TIMER_IRQ
 #elif defined(CONFIG_LOAPIC_TIMER)
   #define TICK_IRQ LOAPIC_TIMER_IRQ
 #elif defined(CONFIG_PIT)

@@ -82,9 +82,12 @@ static inline void ioapic_init(void)
 #endif /* CONFIG_IOAPIC */
 
 #ifdef CONFIG_HPET_TIMER
+#include <drivers/hpet.h>
 static inline void hpet_irq_set(void)
 {
-	_ioapic_irq_set(HPET_TIMER0_IRQ, HPET_TIMER0_VEC, HPET_IOAPIC_FLAGS);
+	_ioapic_irq_set(CONFIG_HPET_TIMER_IRQ,
+			CONFIG_HPET_TIMER_IRQ + INT_VEC_IRQ0,
+			HPET_IOAPIC_FLAGS);
 }
 #else
 #define hpet_irq_set()   \

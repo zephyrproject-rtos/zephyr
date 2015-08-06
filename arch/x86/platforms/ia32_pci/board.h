@@ -66,20 +66,6 @@ the 'ia32_pci' platform.
 #define LOAPIC_SIZE KB(4)
 
 #define LOAPIC_BASE_ADRS LOAPIC_BASE_ADRS_PHYS
-/*
- * HPET device information
- */
-
-#define HPET_BASE_ADRS_PHYS 0xFED00000
-#define HPET_SIZE KB(4)
-
-#define HPET_BASE_ADRS HPET_BASE_ADRS_PHYS
-
-#define HPET_TIMER0_IRQ (20)
-#define HPET_TIMER0_VEC (HPET_TIMER0_IRQ + INT_VEC_IRQ0)
-#define HPET_TIMER0_INT_PRI (4)
-/* HPET uses falling edge triggered interrupt */
-#define HPET_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
 
 /* serial port (aka COM port) information */
 #define COM1_BAUD_RATE 115200

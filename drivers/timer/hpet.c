@@ -82,16 +82,6 @@ extern struct nano_stack _k_command_stack;
 
 #endif /*  CONFIG_MICROKERNEL */
 
-/*
- * A board support package's board.h header must provide definitions for the
- * following constants:
- *
- *    HPET_BASE_ADRS
- *    HPET_CLOCK_FREQ
- *    HPET_TIMER0_IRQ
- *    HPET_TIMER0_INT_PRI
- */
-
 #include <board.h>
 
 /* HPET register offsets */
@@ -117,16 +107,16 @@ extern struct nano_stack _k_command_stack;
 
 /* convenience macros for accessing specific HPET registers */
 
-#define _HPET_GENERAL_CAPS \
-	((volatile uint64_t *)(HPET_BASE_ADRS + GENERAL_CAPS_REG))
+#define _HPET_GENERAL_CAPS ((volatile uint64_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + GENERAL_CAPS_REG))
 
 /*
  * Although the general configuration register is 64-bits, only a 32-bit access
  * is performed since the most significant bits contain no useful information.
  */
 
-#define _HPET_GENERAL_CONFIG \
-	((volatile uint32_t *)(HPET_BASE_ADRS + GENERAL_CONFIG_REG))
+#define _HPET_GENERAL_CONFIG ((volatile uint32_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + GENERAL_CONFIG_REG))
 
 /*
  * Although the general interrupt status is 64-bits, only a 32-bit access
@@ -134,22 +124,22 @@ extern struct nano_stack _k_command_stack;
  * (i.e. there is no need to determine the interrupt status of other timers).
  */
 
-#define _HPET_GENERAL_INT_STATUS \
-	((volatile uint32_t *)(HPET_BASE_ADRS + GENERAL_INT_STATUS_REG))
+#define _HPET_GENERAL_INT_STATUS ((volatile uint32_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + GENERAL_INT_STATUS_REG))
 
-#define _HPET_MAIN_COUNTER_VALUE \
-	((volatile uint64_t *)(HPET_BASE_ADRS + MAIN_COUNTER_VALUE_REG))
-#define _HPET_MAIN_COUNTER_LSW \
-	((volatile uint32_t *)(HPET_BASE_ADRS + MAIN_COUNTER_VALUE_REG))
-#define _HPET_MAIN_COUNTER_MSW \
-	((volatile uint32_t *)(HPET_BASE_ADRS + MAIN_COUNTER_VALUE_REG + 0x4))
+#define _HPET_MAIN_COUNTER_VALUE ((volatile uint64_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + MAIN_COUNTER_VALUE_REG))
+#define _HPET_MAIN_COUNTER_LSW ((volatile uint32_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + MAIN_COUNTER_VALUE_REG))
+#define _HPET_MAIN_COUNTER_MSW ((volatile uint32_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + MAIN_COUNTER_VALUE_REG + 0x4))
 
-#define _HPET_TIMER0_CONFIG_CAPS \
-	((volatile uint64_t *)(HPET_BASE_ADRS + TIMER0_CONFIG_CAPS_REG))
-#define _HPET_TIMER0_COMPARATOR \
-	((volatile uint64_t *)(HPET_BASE_ADRS + TIMER0_COMPARATOR_REG))
-#define _HPET_TIMER0_FSB_INT_ROUTE \
-	((volatile uint64_t *)(HPET_BASE_ADRS + TIMER0_FSB_INT_ROUTE_REG))
+#define _HPET_TIMER0_CONFIG_CAPS ((volatile uint64_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + TIMER0_CONFIG_CAPS_REG))
+#define _HPET_TIMER0_COMPARATOR ((volatile uint64_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + TIMER0_COMPARATOR_REG))
+#define _HPET_TIMER0_FSB_INT_ROUTE ((volatile uint64_t *) \
+			(CONFIG_HPET_TIMER_BASE_ADDRESS + TIMER0_FSB_INT_ROUTE_REG))
 
 /* general capabilities register macros */
 
@@ -192,7 +182,7 @@ extern struct nano_stack _k_command_stack;
 
 #define HPET_COMP_DELAY 192
 
-IRQ_CONNECT_STATIC(hpet, HPET_TIMER0_IRQ, HPET_TIMER0_INT_PRI,
+IRQ_CONNECT_STATIC(hpet, CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
 		   _timer_int_handler, 0);
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
@@ -619,9 +609,9 @@ int _sys_clock_driver_init(struct device *device)
 	 */
 
 	*_HPET_TIMER0_CONFIG_CAPS =
-#if HPET_TIMER0_IRQ < 32
+#if CONFIG_HPET_TIMER_IRQ < 32
 		(*_HPET_TIMER0_CONFIG_CAPS & ~HPET_Tn_INT_ROUTE_CNF_MASK) |
-		(HPET_TIMER0_IRQ << HPET_Tn_INT_ROUTE_CNF_SHIFT)
+		(CONFIG_HPET_TIMER_IRQ << HPET_Tn_INT_ROUTE_CNF_SHIFT)
 #else
 		(*_HPET_TIMER0_CONFIG_CAPS & ~HPET_Tn_INT_ROUTE_CNF_MASK)
 #endif
@@ -638,11 +628,11 @@ int _sys_clock_driver_init(struct device *device)
 	 * has to be programmed into the interrupt controller.
 	 */
 
-	IRQ_CONFIG(hpet, HPET_TIMER0_IRQ);
+	IRQ_CONFIG(hpet, CONFIG_HPET_TIMER_IRQ);
 
 	/* enable the IRQ in the interrupt controller */
 
-	irq_enable(HPET_TIMER0_IRQ);
+	irq_enable(CONFIG_HPET_TIMER_IRQ);
 
 	/* enable the HPET generally, and timer0 specifically */
 
