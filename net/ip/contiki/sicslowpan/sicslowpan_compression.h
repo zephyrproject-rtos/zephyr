@@ -41,7 +41,7 @@ extern const struct compression sicslowpan_compression;
  * \name General sicslowpan defines
  * @{
  */
-/* Min and Max compressible UDP ports - HC06 */
+/* Min and Max compressible UDP ports - IPHC */
 #define SICSLOWPAN_UDP_4_BIT_PORT_MIN                     0xF0B0
 #define SICSLOWPAN_UDP_4_BIT_PORT_MAX                     0xF0BF   /* F0B0 + 15 */
 #define SICSLOWPAN_UDP_8_BIT_PORT_MIN                     0xF000
@@ -55,7 +55,7 @@ extern const struct compression sicslowpan_compression;
  */
 #define SICSLOWPAN_COMPRESSION_IPV6        0
 #define SICSLOWPAN_COMPRESSION_HC1         1
-#define SICSLOWPAN_COMPRESSION_HC06        2
+#define SICSLOWPAN_COMPRESSION_IPHC        2
 /** @} */
 
 /**
@@ -67,20 +67,6 @@ extern const struct compression sicslowpan_compression;
 #define SICSLOWPAN_DISPATCH_IPHC                    0x60 /* 011xxxxx = ... */
 #define SICSLOWPAN_DISPATCH_FRAG1                   0xc0 /* 11000xxx */
 #define SICSLOWPAN_DISPATCH_FRAGN                   0xe0 /* 11100xxx */
-/** @} */
-
-/** \name HC1 encoding
- * @{
- */
-#define SICSLOWPAN_HC1_NH_UDP                       0x02
-#define SICSLOWPAN_HC1_NH_TCP                       0x06
-#define SICSLOWPAN_HC1_NH_ICMP6                     0x04
-/** @} */
-
-/** \name HC_UDP encoding (works together with HC1)
- * @{
- */
-#define SICSLOWPAN_HC_UDP_ALL_C                     0xE0
 /** @} */
 
 /**
@@ -161,44 +147,6 @@ extern const struct compression sicslowpan_compression;
 #define SICSLOWPAN_FRAG1_HDR_LEN                    4
 #define SICSLOWPAN_FRAGN_HDR_LEN                    5
 /** @} */
-
-/**
- * \brief The header for fragments
- * \note We do not define different structures for FRAG1
- * and FRAGN headers, which are different. For FRAG1, the
- * offset field is just not used
- */
-/* struct sicslowpan_frag_hdr { */
-/*   uint16_t dispatch_size; */
-/*   uint16_t tag; */
-/*   uint8_t offset; */
-/* }; */
-
-/**
- * \brief The HC1 header when HC_UDP is not used
- *
- * When all fields are compressed and HC_UDP is not used,
- * we use this structure. If HC_UDP is used, the ttl is
- * in another spot, and we use the sicslowpan_hc1_hc_udp
- * structure
- */
-/* struct sicslowpan_hc1_hdr { */
-/*   uint8_t dispatch; */
-/*   uint8_t encoding; */
-/*   uint8_t ttl; */
-/* }; */
-
-/**
- * \brief HC1 followed by HC_UDP
- */
-/* struct sicslowpan_hc1_hc_udp_hdr { */
-/*   uint8_t dispatch; */
-/*   uint8_t hc1_encoding; */
-/*   uint8_t hc_udp_encoding; */
-/*   uint8_t ttl; */
-/*   uint8_t ports; */
-/*   uint16_t udpchksum; */
-/* }; */
 
 /**
  * \brief An address context for IPHC address compression
