@@ -1,3 +1,5 @@
+.. _networking:
+
 Networking
 ###########
 
@@ -8,6 +10,6 @@ The following network stacks have been implemented:
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   network_bluetooth.rst
+   bluetooth
