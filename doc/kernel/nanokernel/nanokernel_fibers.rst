@@ -1,7 +1,7 @@
-.. _fibers:
+.. _fiber_services:
 
-Fibers
-######
+Fiber Services
+##############
 
 A fiber is an execution thread and a lightweight alternative to a task. It can
 use nanokernel objects but not microkernel objects. A runnable fiber will
@@ -41,7 +41,7 @@ and starts a fiber from another fiber, while
 :c:func:`task_fiber_start()` does so from a task. Both APIs use the
 parameters *parameter1* and *parameter2* as *arg1* and *arg2* given to
 the fiber . The full documentation on these APIs can be found in the
-:ref:`code`.
+:ref:`in-code_apis`.
 
 When :c:func:`task_fiber_start()`is called from a task, the new fiber
 will be immediately ready to run. The background task immediately stops
@@ -91,8 +91,8 @@ unacceptable delay in the scheduling of other fibers, it should yield
 by placing a :c:func:`fiber_yield()` call within the loop of a
 computational cannot call :c:func:`fiber_yield()`.
 
-Scheduling Fibers
-*****************
+Fiber Scheduling Model
+######################
 
 The fibers in the Zephyr Kernel are priority-scheduled. When several fibers
 are ready to run, they run in the order of their priority. When more
@@ -115,7 +115,7 @@ for responding to an external event:
 
 
 Moving Computation Processing to a Task
-=======================================
+***************************************
 
 Move the processing to a task to minimize the amount of computation that
 is performed at the fiber level. This reduces the scheduling delay for
@@ -124,14 +124,14 @@ handles the external event runnable.
 
 
 Moving Code to Handle External Event to ISR
-===========================================
+*******************************************
 
 Move the code to handle the external event into an ISR. The ISR is
 executed immediately after the event is recognized, without waiting for
 the other fibers in the queue to be unscheduled.
 
 Adding Yielding Points to Fibers
-================================
+********************************
 
 Add yielding points to fibers with :c:func:`fiber_yield()`. This service
 un-schedules a fiber and places it at the end of the ready fiber list

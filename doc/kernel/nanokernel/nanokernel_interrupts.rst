@@ -1,11 +1,10 @@
-Interrupt Service Routines
-##########################
+Interrupt Services
+##################
 
-========
 Concepts
-========
+********
 
-Interrupt Service Routines (ISRs) are execution threads
+:abbr:`ISRs (Interrupt Service Routines)` are execution threads
 that run in response to a hardware or software interrupt.
 They are used to preempt the execution of the
 task or fiber running at the time of the interrupt,
@@ -21,7 +20,7 @@ Each ISR has the following properties:
 * The address of the function that is invoked to handle the interrupt.
 * The argument value that is passed to that function.
 
-An Interrupt Descriptor Table (IDT) is used to associate a given interrupt
+An :abbr:`IDT (Interrupt Descriptor Table)` is used to associate a given interrupt
 source with a given ISR.
 Only a single ISR can be associated with a specific IRQ at any given time.
 An ISR can be incorporated into the IDT when the Zephyr project is built
@@ -33,13 +32,13 @@ allowing a single function to service a device that generates
 multiple types of interrupts or to service multiple devices
 (usually of the same type). The argument value passed to an ISR's function
 can be used to allow the function to determine which interrupt has been
-signalled.
+signaled.
 
 The Zephyr kernel provides a default ISR for all unused IDT entries. This ISR
-generates a fatal system error if an unexpected interrupt is signalled.
+generates a fatal system error if an unexpected interrupt is signaled.
 
 The kernel supports interrupt nesting. This allows an ISR to be preempted
-in mid-execution if a higher priority interrupt is signalled. The lower
+in mid-execution if a higher priority interrupt is signaled. The lower
 priority ISR resumes execution once the higher priority ISR has completed
 its processing.
 
@@ -50,10 +49,8 @@ be applied when it is already in effect. The collective lock must be
 unlocked an equal number of times before interrupts are again processed
 by the kernel.
 
-
-=======
 Purpose
-=======
+*******
 
 Use an ISR to perform interrupt processing that requires a very rapid
 response, and which can be done quickly and without blocking.
@@ -64,13 +61,8 @@ response, and which can be done quickly and without blocking.
    should be handed off to a fiber or task. See `Offloading ISR Work`_ for
    a description of various techniques that can be used in a Zephyr project.
 
-
-=====
-Usage
-=====
-
 Installing an ISR
-=================
+*****************
 
 Use one of the following procedures to install an ISR:
 
@@ -79,7 +71,7 @@ Use one of the following procedures to install an ISR:
 
 
 Installing a Static ISR
-***********************
+=======================
 
 Use a static ISR to register an interrupt handler when the interrupt
 parameters are known during the build time and the device is always
@@ -127,7 +119,7 @@ For x86 platforms only, you must also create an interrupt stub as follows:
 
 
 Installing a Dynamic ISR
-************************
+========================
 
 Use a dynamic ISR to register an interrupt handler when the interrupt
 parameters can be found out only at runtime, or when a device is not always
@@ -174,7 +166,7 @@ This is an example of a dynamic interrupt for x86:
 
 
 Working with Interrupts
-=======================
+***********************
 
 Use the following:
 
@@ -183,7 +175,7 @@ Use the following:
 
 
 Offloading ISR Work
-*******************
+===================
 
 Interrupt service routines should generally be kept short
 to ensure predictable system operation.
@@ -200,17 +192,17 @@ to a fiber or task.
    The :c:func:`nano_isr_XXX()` APIs should be used to notify the helper fiber
    (or task) that work is available for it.
 
-   See :ref:`fibers`.
+   See :ref:`fiber_services`.
 
 2. An ISR can signal the microkernel server fiber to do interrupt-related
    work by sending an event that has an associated event handler.
 
-   See :ref:`events`.
+   See :ref:`microkernel_events`.
 
 3. An ISR can signal a helper task to do interrupt-related work
    by sending an event that the helper task detects.
 
-   See :ref:`events`.
+   See :ref:`microkernel_events`.
 
 4. An ISR can signal a helper task to do interrupt-related work.
    by giving a semaphore that the helper task takes.
@@ -220,7 +212,7 @@ to a fiber or task.
 5. A kernel-supplied ISR can signal a helper task to do interrupt-related work
    using a task IRQ that the helper task allocates.
 
-   See :ref:`task_IRQs`.
+   See :ref:`microkernel_task_irqs`.
 
 When an ISR offloads work to a fiber there is typically a single
 context switch to that fiber when the ISR completes.
@@ -239,7 +231,7 @@ that are scheduled to run.
 
 
 IDT Security
-************
+============
 
 Ideally, the IDT memory area should be protected against accidental
 modification, in the same way that text and read-only data areas
@@ -251,9 +243,9 @@ therefore *not* protected. This is true even for systems using
 reside in read-only memory (such as flash memory or ROM).
 
 
-========
-ISR APIs
-========
+
+APIs
+****
 
 This table lists interrupt-related Application Program Interfaces.
 
@@ -272,9 +264,9 @@ This table lists interrupt-related Application Program Interfaces.
 | :c:func:`irq_unlock()`  | Removes lock on interrupts from all sources.    |
 +-------------------------+-------------------------------------------------+
 
-==========
-ISR Macros
-==========
+
+Macros
+******
 
 This table lists the macros used to install a static ISR.
 
@@ -286,4 +278,3 @@ This table lists the macros used to install a static ISR.
 | :c:macro:`IRQ_CONFIG( )`         | Registers a static ISR with the         |
 |                                  | interrupt controller.                   |
 +----------------------------------+-----------------------------------------+
-
