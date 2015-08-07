@@ -1,3 +1,5 @@
+.. _fsl_frdm_k64f:
+
 ====================================
 fsl_frdm_k64f Platform Configuration
 ====================================
@@ -156,15 +158,15 @@ Zephyr Project uses the FRDM-K64F default switch and jumper settings.
 
 The default switch settings for the Freescale FRDM-K64F are:
 
-+---------------+------------+--------------+
-| Switch Number | Switch     | ON Switch OFF|
-+===============+============+==============+
-|  J14          |            |      x       |
-+---------------+------------+--------------+
-|  J21          |     x      |              |
-+---------------+------------+--------------+
-|  J25          |SDA + SW1   |      MCU     |
-+---------------+------------+--------------+
++---------------+------------+---------------+
+| Switch Number | Switch     | ON Switch OFF |
++===============+============+===============+
+|  J14          |            |      x        |
++---------------+------------+---------------+
+|  J21          |     x      |               |
++---------------+------------+---------------+
+|  J25          |SDA + SW1   |      MCU      |
++---------------+------------+---------------+
 
 
 
@@ -288,38 +290,38 @@ Handlers are provided for exceptions 1-6, 11-12, and 14-15.
 The table here identifies the handlers used for each exception.
 
 +-------+-----------+---------------+--------------------------+
-|Exc#	| Name	    |Remarks	    |Used by Zephyr Project    |
+| Exc#  | Name      | Remarks       | Used by Zephyr Project   |
 +=======+===========+===============+==========================+
-|1	| Reset	    |               |system initialization     |
+| 1     | Reset     |               | system initialization    |
 +-------+-----------+---------------+--------------------------+
-|2	| NMI	    |               |system fatal error        |
+| 2     | NMI       |               | system fatal error       |
 +-------+-----------+---------------+--------------------------+
-|3	| Hard fault|               |system fatal error        |
+| 3     | Hard fault|               | system fatal error       |
 +-------+-----------+---------------+--------------------------+
-|4	| MemManage |MPU fault	    |system fatal error        |
+| 4     | MemManage |MPU fault      | system fatal error       |
 +-------+-----------+---------------+--------------------------+
-|5	| Bus       |		    |system fatal error        |
+| 5     | Bus       |               | system fatal error       |
 +-------+-----------+---------------+--------------------------+
-|6	| Usage     |undefined in-  |system fatal error        |
+| 6     | Usage     |undefined in-  | system fatal error       |
 |       | fault     |struction, or  |                          |
 |       |           |switch attempt |                          |
 |       |           |to ARM mode    |                          |
 +-------+-----------+---------------+--------------------------+
-|11	| SVC	    |		    |context switch            |
+| 11    | SVC       |               | context switch           |
 +-------+-----------+---------------+--------------------------+
-|12	| Debug     |	            |system fatal error        |
+| 12    | Debug     |               | system fatal error       |
 |       | monitor   |               |                          |
 +-------+-----------+---------------+--------------------------+
-|14	| PendSV    |               |context switch            |
+| 14    | PendSV    |               | context switch           |
 +-------+-----------+---------------+--------------------------+
-|15	| SYSTICK   |               |system clock              |
+| 15    | SYSTICK   |               | system clock             |
 +-------+-----------+---------------+--------------------------+
 
 .. note::
 
-After a reset, all exceptions have a priority of 0.
-Interrupts cannot run at priority 0 for the interrupt
-locking mechanism and exception handling to function properly.
+   After a reset, all exceptions have a priority of 0.
+   Interrupts cannot run at priority 0 for the interrupt
+   locking mechanism and exception handling to function properly.
 
 
 Interrupts
@@ -579,21 +581,21 @@ Steps
 3. Update the mbed firmware using the following `online
    instructions <http://developer.mbed.org/handbook/Firmware-FRDM-K64F>`_:
 
-	a) *Enter Bootloader mode*.
-	b) *Update Using Windows and Linux*.
-	c) *Power Down, Power Up*.
+    a) *Enter Bootloader mode*.
+    b) *Update Using Windows and Linux*.
+    c) *Power Down, Power Up*.
 
 3. Follow the online instructions to `Connect the microcontroller to a PC
    <https://developer.mbed.org/platforms/frdm-k64f/#pc-configuration>`_.
 
-	a) *Connect your microcontroller to a PC*.
-	b) *Click the MBED.HTM link to log in*.
+    a) *Connect your microcontroller to a PC*.
+    b) *Click the MBED.HTM link to log in*.
 
 4. Follow the online instructions to `Configure a terminal application
    <http://mbed.org/handbook/Terminals>`_.
 
-	a) *Install a Terminal Application*.
-	b) *Setup the Connection Use COMx at 8-N-1 with 115200 baud*.
+    a) *Install a Terminal Application*.
+    b) *Setup the Connection Use COMx at 8-N-1 with 115200 baud*.
 
    The Status light on the mbed Microcontroller flickers
    when you type in the terminal application.
@@ -602,9 +604,9 @@ Steps
    `Downloading a Program
    <http://mbed.org/platforms/frdm-k64f/#pc-configuration>`_.
 
-	a) *Save a program binary (.bin) to the FRDM Platform*.
-	b) *Press the Reset button*.
-	c) *Download a program binary*.
+    a) *Save a program binary (.bin) to the FRDM Platform*.
+    b) *Press the Reset button*.
+    c) *Download a program binary*.
 
 6. Disconnect and re-connect the terminal serial port
    connection after copying each :file:`.bin` file.
@@ -628,12 +630,12 @@ Prerequisites
 
 * You comply with all OpenSDA V2 firmware conditions of use, but particularly:
 
-	- Use with Freescale target devices only. Use with other devices
+    - Use with Freescale target devices only. Use with other devices
           is prohibited and illegal.
 
-	- Use with evaluation boards only; not with custom hardware.
+    - Use with evaluation boards only; not with custom hardware.
 
-	- Use for development and/or evaluation purposes only.
+    - Use for development and/or evaluation purposes only.
 
 * You have licensed J-Link firmware.
 

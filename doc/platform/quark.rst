@@ -1,3 +1,5 @@
+.. _quark:
+
 ============================
 quark Platform Configuration
 ============================
@@ -20,7 +22,7 @@ quark Platform Configuration
 .. SUPPORTED FEATURES
 ..    High Precision Event Timer (HPET)
 ..    Peripheral Component Interconnect (PCI) bus query
-..    Serial ports 
+..    Serial ports
 ..      Polling driven modes
 ..      Interrupt driven modes
 ..    Unsupported Features
@@ -51,7 +53,7 @@ that run on the Galileo Development Board.
   Galileo Gen 2 Development Board but has not yet been verified.
   The quark platform configuration may also work with other
   similar boards, but they are not officially supported.
- 
+
 It provides support for a Quark CPU and the following devices:
 
 * :abbr:`High Precision Event Timer (HPET)`
@@ -195,7 +197,7 @@ PCI
 ===
 
 The PCI driver initiates a PCI library scan of the PCI bus for any attached devices.
-If devices are detected, they are initialized. 
+If devices are detected, they are initialized.
 
 .. note::
 
@@ -230,15 +232,15 @@ Interrupts
 The quark platform configuration uses the Zephyr project static
 :abbr:`Interrupt Descriptor Table (IDT)` to program the
 :abbr: Advanced Programmable Interrupt Controller (APIC)`
-interrupt redirection table. 
+interrupt redirection table.
 
 
 +-------+-----------+------------------+-------------------------------+
-|IRQ	| Name	    | Used by Zephyr   | Remarks                       |
+|IRQ    | Name      | Used by Zephyr   | Remarks                       |
 +=======+===========+==================+===============================+
-|17	| INTB	    |   UART           | serial port in interrupt mode |
+|17     | INTB      |   UART           | serial port in interrupt mode |
 +-------+-----------+------------------+-------------------------------+
-|20	| timer     |   HPET           | timer driver                  |
+|20     | timer     |   HPET           | timer driver                  |
 +-------+-----------+------------------+-------------------------------+
 
 
@@ -259,7 +261,7 @@ Configuration Options
 HPET System Clock Support
 =========================
 
-Quark uses HPET timing with legacy-free timer support. The quark platform 
+Quark uses HPET timing with legacy-free timer support. The quark platform
 configuration uses HPET as a system clock timer.
 
 
@@ -355,7 +357,7 @@ Steps
           --target=i386 --program-prefix=""
 
    b. Enter the following commands to build the :file:`grub.efi` image:
-   
+
       .. code-block:: console
 
         $ make
@@ -454,7 +456,7 @@ with the boot loader present in the on-board flash.
 
 A stripped project image file is automatically created when the
 project is built. The stripped image has removed debug
-information from the :file:`ELF` file. 
+information from the :file:`ELF` file.
 
 
 Prerequisites

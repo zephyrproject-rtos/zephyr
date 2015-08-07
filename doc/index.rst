@@ -15,6 +15,7 @@
    quick_start/quick_start.rst
    kernel/kernel.rst
    application/application.rst
+   platform/platform.rst
    zephyr_project
 
 

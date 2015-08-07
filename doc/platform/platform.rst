@@ -1,6 +1,7 @@
-======================
-Platform Documentation
-======================
+.. _platform:
+
+Platform Development Primer
+###########################
 
 Zephyr supports the following hardware platforms configurations:
 
@@ -17,7 +18,7 @@ and platform configuration.
 +--------------------------+----------------------------------------+--------------+
 | Platform Configuration   | Hardware Platform                      | Architecture |
 +==========================+========================================+==============+
-|fsl_frdm_k64f             | Freescale Freedom Development Platform | ARM v7E-M    |
+| fsl_frdm_k64f            | Freescale Freedom Development Platform | ARM v7E-M    |
 +--------------------------+----------------------------------------+--------------+
 | quark                    | Galileo                                | X86          |
 +--------------------------+----------------------------------------+--------------+
