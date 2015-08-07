@@ -58,6 +58,10 @@ static uint16_t mac_dst_pan_id = IEEE802154_PANID;
  */
 static uint16_t mac_src_pan_id = IEEE802154_PANID;
 
+#ifdef FRAMER_802154_HANDLER
+int FRAMER_802154_HANDLER(frame802154_t *frame);
+#endif
+
 /**  \brief The sequence number (0x00 - 0xff) added to the transmitted
  *   data or MAC command frame. The default is a random value within
  *   the range.
@@ -269,6 +273,12 @@ parse(struct net_mbuf *buf)
     PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
     PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
     PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
+
+#ifdef FRAMER_802154_HANDLER
+    if(FRAMER_802154_HANDLER(&frame)) {
+      return FRAMER_FRAME_HANDLED;
+    }
+#endif
     
     return hdr_len;
   }

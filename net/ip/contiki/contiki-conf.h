@@ -63,6 +63,8 @@ typedef unsigned int uip_stats_t;
 #define UIP_CONF_LL_802154	1
 #define SICSLOWPAN_CONF_MAX_ADDR_CONTEXTS 1
 #define SICSLOWPAN_CONF_COMPRESSION SICSLOWPAN_COMPRESSION_IPV6
+//#define FRAMER_802154_HANDLER handler_802154_frame_received
+//#define HANDLER_802154_CONF_STATS 1
 #else
 #define NETSTACK_CONF_FRAMER	framer_nullmac
 #define NETSTACK_CONF_RDC	nullrdc_driver

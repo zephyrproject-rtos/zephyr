@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Swedish Institute of Computer Science.
+ * Copyright (c) 2013-2015, Yanzi Networks AB.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,33 +30,57 @@
 
 /**
  * \file
- *         A MAC framer is responsible for constructing and parsing
- *         the header in MAC frames. At least the sender and receiver
- *         are required to be encoded in the MAC frame headers.
+ *         A MAC handler for IEEE 802.15.4
  * \author
- *         Niclas Finne <nfi@sics.se>
  *         Joakim Eriksson <joakime@sics.se>
+ *         Niclas Finne <nfi@sics.se>
  */
 
-#include <net/net_buf.h>
+#ifndef HANDLER_802154_H_
+#define HANDLER_802154_H_
 
-#ifndef FRAMER_H_
-#define FRAMER_H_
+#include "net/mac/frame802154.h"
 
-#define FRAMER_FAILED -1
-#define FRAMER_FRAME_HANDLED -2
+#define BEACON_PAYLOAD_BUFFER_SIZE 128
 
-struct framer {
+typedef enum {
+  CALLBACK_ACTION_RX,
+  CALLBACK_ACTION_CHANNEL_DONE,
+  CALLBACK_ACTION_SCAN_END,
+} callback_action;
 
-  int (* length)(struct net_mbuf *buf);
-  int (* create)(struct net_mbuf *buf);
-  
-  /** Creates the frame and calls LLSEC.on_frame_created() */
-  int (* create_and_secure)(struct net_mbuf *buf);
-  int (* parse)(struct net_mbuf *buf);
+#define CALLBACK_STATUS_CONTINUE       0
+#define CALLBACK_STATUS_NEED_MORE_TIME 1
+#define CALLBACK_STATUS_FINISHED       2
 
-};
+typedef int (* scan_callback_t)(uint8_t channel, frame802154_t *frame, callback_action cba);
 
-int framer_canonical_create_and_secure(struct net_mbuf *buf);
+void handler_802154_join(uint16_t panid, int answer_beacons);
 
-#endif /* FRAMER_H_ */
+int handler_802154_active_scan(scan_callback_t callback);
+int handler_802154_calculate_beacon_payload_length(uint8_t *beacon, int maxlen);
+void handler_802154_set_beacon_payload(uint8_t *payload, uint8_t len);
+uint8_t *handler_802154_get_beacon_payload(uint8_t *len);
+void handler_802154_send_beacon_request(void);
+void handler_802154_set_answer_beacons(int answer);
+
+#ifndef HANDLER_802154_CONF_STATS
+#define HANDLER_802154_CONF_STATS 0
+#endif
+
+#if HANDLER_802154_CONF_STATS
+/* Statistics for fault management. */
+typedef struct handler_802154_stats {
+  uint16_t beacons_reqs_sent;
+  uint16_t beacons_sent;
+  uint16_t beacons_received;
+} handler_802154_stats_t;
+
+extern handler_802154_stats_t handler_802154_stats;
+
+#define HANDLER_802154_STAT(code) (code)
+#else /* HANDLER_802154_CONF_STATS */
+#define HANDLER_802154_STAT(code)
+#endif /* HANDLER_802154_CONF_STATS */
+
+#endif /* HANDLER_802154_H_ */
