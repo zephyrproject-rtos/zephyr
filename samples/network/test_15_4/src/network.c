@@ -164,6 +164,9 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 	if (buf) {
 		PRINT("%s: %s(): received %d bytes\n%s\n", taskname,
 		      __FUNCTION__, net_buf_datalen(buf), net_buf_data(buf));
+		if (memcmp(net_buf_data(buf), lorem_ipsum, sizeof(lorem_ipsum))) {
+			PRINT("Error: data does not match\n");
+		}
 		net_buf_put(buf);
 	}
 }
