@@ -1,4 +1,4 @@
-.. _architecture_drivers:
+.. _driver_model:
 
 The Driver Model
 ################
