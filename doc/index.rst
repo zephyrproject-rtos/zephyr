@@ -16,6 +16,7 @@
    kernel/kernel.rst
    application/application.rst
    platform/platform.rst
+   reference/reference.rst
    zephyr_project
 
 

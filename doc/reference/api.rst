@@ -1,4 +1,4 @@
-.. _code:
+.. _api:
 
 Auto-generated API Documentation
 ################################
