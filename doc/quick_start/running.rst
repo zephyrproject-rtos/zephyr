@@ -25,55 +25,58 @@ Another option is to add it to the make command, for example:
 Running a Microkernel Application
 =================================
 
-Run a microkernel application using the default BSP (generic_pc), type:
+Run a microkernel application using the default platform configuration, type:
 
 .. code-block:: bash
 
    $ make pristine && make qemu
 
-Run an application using the quark BSP, type:
+Run an application using the x86 basic_atom platform configuration, type:
 
 .. code-block:: bash
 
-   $ make pristine && make BSP=quark ARCH=x86 qemu
+   $ make pristine && make PLATFORM_CONFIG=basic_atom ARCH=x86 qemu
 
-Run an application using the ARM BSP, type:
+Run an application using the ARM basic_cortex_m3 platform configuration, type:
 
 .. code-block:: bash
 
-   $ make pristine && make BSP=ti_lm3s6965 ARCH=arm qemu
+   $ make pristine && make PLATFORM_CONFIG=basic_cortex_m3 ARCH=arm qemu
 
 Running a Nanokernel Application
 ================================
 
-Run a nanokernel application using the default BSP (generic_pc) use the
+Run a nanokernel application using the default platform configuration use the
 following commands:
 
 .. code-block:: bash
 
    $ make pristine && make qemu
 
-Run an application using the quark BSP use the following commands:
+Run an application using the x86 basic_atom platform configuration, use the
+following commands:
 
 .. code-block:: bash
 
-   $ make pristine && make BSP=quark ARCH=x86 qemu
+   $ make pristine && make PLATFORM_CONFIG=basic_atom ARCH=x86 qemu
 
-Run an application using the ARM BSP use the following commands:
+Run an application using the ARM basic_cortex_m3 platform configuration use the
+following commands:
 
 .. code-block:: bash
 
-   $ make pristine && make BSP=ti_lm3s6965 ARCH=arm qemu
+   $ make pristine && make PLATFORM_CONFIG=basic_cortex_m3 ARCH=arm qemu
 
 
 Running an Application on Galileo Gen2
 **************************************
 
-#. Set the BSP to Quark by changing the :command:`make` command to:
+#. Set the platform configuration to Galileo by changing the :command:`make`
+command to:
 
 .. code-block:: bash
 
-   make BSP=quark ARCH=x86**
+   make PLATFORM_CONFIG=galileo ARCH=x86**
 
 #. Use one of these cables for serial output:
 

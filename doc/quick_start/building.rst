@@ -37,18 +37,21 @@ To build an example application follow these steps:
 
 .. note::
 
-   You can override the default BSP with the one you want by adding
-   :makevar:`BSP=`. The complete options available for the BSP flag
-   can be found at :file:`$ZEPHYR_BASE/arch` under the respective
-   architecture, for example :file:`$ZEPHYR_BASE/arch/x86/generic_pc`.
-   You need to override the ARCH flag with the architecture that
-   corresponds to your BSP by adding :makevar:`ARCH=` and the options
-   you need to the make command, for example:
+   You can override the default PLATFORM_CONFIG with the one you want
+   by adding :makevar:`PLATFORM_CONFIG=`. The complete options
+   available for the PLATFORM_CONFIG flag can be derived from the
+   names of the platform configuration files located under
+   :file:`$ZEPHYR_BASE/arch/$ARCH/configs`.  For example, the following
+   command will use
+   :file:`$ZEPHYR_BASE/arch/x86/configs/micro_basic_atom_defconfig` if
+   building a microkernel, and
+   :file:`$ZEPHYR_BASE/arch/x86/configs/nano_basic_atom_defconfig` if
+   building a nanokernel.
 
-   :command:`make BSP=generic_pc ARCH=x86`
+   :command:`make PLATFORM_CONFIG=basic_atom ARCH=x86`
 
-   The complete options available for the ARCH flag can be found at
-   :file:`$ZEPHYR_BASE`, for example  :file:`$ZEPHYR_BASE/arch/x86`.
+   The complete options available for the ARCH flag can be found under
+   :file:`$ZEPHYR_BASE/arch`, for example  :file:`$ZEPHYR_BASE/arch/x86`.
 
 The sample projects for the microkernel are found
 at :file:`$ZEPHYR_BASE/samples/microkernel/apps`. After building the

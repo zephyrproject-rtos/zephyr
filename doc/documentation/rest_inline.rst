@@ -81,8 +81,8 @@ are required, it can be combined with a 'guilabel' or with another
 . The markup can include only the name of the variable or the variable
 plus its value.
 
-   :makevar:`BSP`
-   :makevar:`BSP=generic_pc`
+   :makevar:`PLATFORM_CONFIG`
+   :makevar:`PLATFORM_CONFIG=basic_atom`
 
    ``:makevar:`VARIABLE```
 
