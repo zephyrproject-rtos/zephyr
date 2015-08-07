@@ -43,37 +43,53 @@
 #include "lib/random.h"
 #include <string.h>
 
-#define DEBUG 0
-
-#if DEBUG
-#include <stdio.h>
-#define PRINTF(...) printf(__VA_ARGS__)
-#define PRINTADDR(addr) PRINTF(" %02x%02x:%02x%02x:%02x%02x:%02x%02x ", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7])
-#else
-#define PRINTF(...)
-#define PRINTADDR(addr)
-#endif
-
-/**  \brief The sequence number (0x00 - 0xff) added to the transmitted
- *   data or MAC command frame. The default is a random value within
- *   the range.
- */
-static uint8_t mac_dsn;
-
-static uint8_t initialized = 0;
+#define DEBUG DEBUG_NONE
+#include "net/ip/uip-debug.h"
 
 /**  \brief The 16-bit identifier of the PAN on which the device is
  *   sending to.  If this value is 0xffff, the device is not
  *   associated.
  */
-static const uint16_t mac_dst_pan_id = IEEE802154_PANID;
+static uint16_t mac_dst_pan_id = IEEE802154_PANID;
 
 /**  \brief The 16-bit identifier of the PAN on which the device is
  *   operating.  If this value is 0xffff, the device is not
  *   associated.
  */
-static const uint16_t mac_src_pan_id = IEEE802154_PANID;
+static uint16_t mac_src_pan_id = IEEE802154_PANID;
 
+/**  \brief The sequence number (0x00 - 0xff) added to the transmitted
+ *   data or MAC command frame. The default is a random value within
+ *   the range.
+ */
+uint8_t
+framer_802154_next_seqno(void)
+{
+  static uint8_t mac_dsn;
+  static uint8_t initialized = 0;
+  if(!initialized) {
+    initialized = 1;
+    mac_dsn = random_rand() & 0xff;
+  }
+  /* Ensure that the sequence number 0 is not used as it would bypass the PACKETBUF_PARAM_MAC_SEQNO check. */
+  if(mac_dsn == 0) {
+    mac_dsn++;
+  }
+  return mac_dsn++;
+}
+/*---------------------------------------------------------------------------*/
+uint16_t
+framer_802154_get_pan_id(void)
+{
+  return mac_src_pan_id;
+}
+/*---------------------------------------------------------------------------*/
+void
+framer_802154_set_pan_id(uint16_t pan)
+{
+  mac_dst_pan_id = pan;
+  mac_src_pan_id = pan;
+}
 /*---------------------------------------------------------------------------*/
 static int
 is_broadcast_addr(uint8_t mode, uint8_t *addr)
@@ -95,11 +111,6 @@ create_frame(struct net_mbuf *buf, int do_create)
 
   /* init to zeros */
   memset(&params, 0, sizeof(params));
-
-  if(!initialized) {
-    initialized = 1;
-    mac_dsn = random_rand() & 0xff;
-  }
 
   /* Build the FCF. */
   params.fcf.frame_type = packetbuf_attr(buf, PACKETBUF_ATTR_FRAME_TYPE);
@@ -138,11 +149,7 @@ create_frame(struct net_mbuf *buf, int do_create)
     params.seq = packetbuf_attr(buf, PACKETBUF_ATTR_MAC_SEQNO);
 
   } else {
-    /* Ensure that the sequence number 0 is not used as it would bypass the above check. */
-    if(mac_dsn == 0) {
-      mac_dsn++;
-    }
-    params.seq = mac_dsn++;
+    params.seq = framer_802154_next_seqno();
     packetbuf_set_attr(buf, PACKETBUF_ATTR_MAC_SEQNO, params.seq);
   }
 
@@ -196,7 +203,7 @@ create_frame(struct net_mbuf *buf, int do_create)
     frame802154_create(&params, packetbuf_hdrptr(buf), hdr_len);
 
     PRINTF("15.4-OUT: %2X", params.fcf.frame_type);
-    PRINTADDR(params.dest_addr);
+    PRINTLLADDR(params.dest_addr);
     PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
 
     return hdr_len;
@@ -259,8 +266,8 @@ parse(struct net_mbuf *buf)
 #endif /* LLSEC802154_SECURITY_LEVEL */
 
     PRINTF("15.4-IN: %2X", frame.fcf.frame_type);
-    PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
-    PRINTADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
+    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_SENDER));
+    PRINTLLADDR(packetbuf_addr(buf, PACKETBUF_ADDR_RECEIVER));
     PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(buf), packetbuf_totlen(buf));
     
     return hdr_len;

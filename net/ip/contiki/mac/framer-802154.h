@@ -43,4 +43,8 @@
 
 extern const struct framer framer_802154;
 
+uint8_t framer_802154_next_seqno(void);
+uint16_t framer_802154_get_pan_id(void);
+void framer_802154_set_pan_id(uint16_t panid);
+
 #endif /* FRAMER_802154_H_ */
