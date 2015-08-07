@@ -1,7 +1,7 @@
-.. _technical_overview:
+.. _overview:
 
-The Zephyr Kernel
-#################
+Overview
+########
 
 The |codename| is composed of a microkernel operating on top of a nanokernel.
  Device drivers must operate on top of either a microkernel or a nanokernel
@@ -33,9 +33,8 @@ characteristics of the nanokernel and the microkernel as well as the
 principles behind the development of drivers and applications.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
 
-   architecture_nanokernel
-   architecture_microkernel
-   architecture_drivers
-   architecture_apps
+   overview_nanokernel
+   overview_microkernel
+   overview_apps

@@ -1,9 +1,14 @@
-.. _architecture_nanokernel:
+.. _overview_nanokernel:
 
 The Nanokernel
 ##############
 
-The Zephyr nanokernel is a minimal execution environment that offers a multi-context programming model without the overhead associated with other operating system kernels. It is ideal for single-core dedicated systems requiring a single background task. The nanokernel provides simple prioritized fibers and :abbr:`ISRs (Interrupt Service Routines)`. The nanokernel’s fast context switching gives it an advantage for systems where multiple asynchronous streams of data must be manipulated.
+The Zephyr nanokernel is a minimal execution environment that offers a multi-context programming
+model without the overhead associated with other operating system kernels. It is ideal for single-
+core dedicated systems requiring a single background task. The nanokernel provides simple
+prioritized fibers and :abbr:`ISRs (Interrupt Service Routines)`. The nanokernel’s fast context
+switching gives it an advantage for systems where multiple asynchronous streams of data must be
+manipulated.
 
 The nanokernel is intended for systems with a small amount of RAM, 1-50 KB;
 simple buses, UART, I2C, SPI; and a single data processing task.
@@ -14,13 +19,22 @@ Nanokernel Function
 *******************
 
 The nanokernel interfaces with the hardware providing support for multiple
-ISRs, multiple execution fibers and a single processing task. The ISRs, fibers and task interact by means of the nanokernel objects.
+ISRs, multiple execution fibers and a single processing task. The ISRs, fibers and task interact
+by means of the nanokernel objects.
 
-The nanokernel manages the scheduling of fibers according to the activity of these objects, and provides the entry points necessary to integrate interrupt handles with the rest of the system. All communication inside the nanokernel is performed using the four channel objects: semaphores, FIFOs, LIFOs and stacks. 
+The nanokernel manages the scheduling of fibers according to the activity of these objects, and
+provides the entry points necessary to integrate interrupt handles with the rest of the system.
+All communication inside the nanokernel is performed using the four channel objects: semaphores,
+FIFOs, LIFOs and stacks.
 
-The nanokernel is optimized for basic multitasking, synchronization, and data passing. Therefore, the APIs are streamlined for performance and the nanokernel provides significantly fewer APIs than the microkernel. 
+The nanokernel is optimized for basic multitasking, synchronization, and data passing. Therefore,
+the APIs are streamlined for performance and the nanokernel provides significantly fewer APIs than
+the microkernel.
 
-The nanokernel has a low context switch latency. This is achieved by reducing the context switching overheads. A fiber runs until blocked because it is waiting for communication from another fiber or because it voluntarily yields. This cooperative context switch means that fibers are not preempted reducing the overhead.
+The nanokernel has a low context switch latency. This is achieved by reducing the context
+switching overheads. A fiber runs until blocked because it is waiting for communication from
+another fiber or because it voluntarily yields. This cooperative context switch means that fibers
+are not preempted reducing the overhead.
 
 Nanokernel Objects
 ******************
@@ -32,7 +46,8 @@ The most important objects of the nanokernel are:
    * :abbr:`FIFO (First In First Out)`s
 * Timers
 
-The following subsections contain general information about the nanokernel objects. For detailed information see: :ref:`nanokernelObjects`.
+The following subsections contain general information about the nanokernel services. For detailed
+information see: :ref:`nanokernel`.
 
 Nanokernel Semaphores
 =====================
@@ -170,7 +185,7 @@ contexts at work:
 
 .. _architecture_nanokernel_1.svg:
 
-.. figure:: /figures/architecture_nanokernel_1.svg
+.. figure:: figures/overview_nanokernel_1.svg
    :scale: 75 %
    :alt: Hello World! Example
 

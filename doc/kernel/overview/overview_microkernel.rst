@@ -1,4 +1,4 @@
-.. _architecture_microkernel:
+.. _overview_microkernel:
 
 The Microkernel
 ###############
@@ -33,8 +33,8 @@ other parts can make use of the microkernel tasks, scheduling and APIs.
 Thus, ISRs or fibers implemented in standalone nanokernel applications can
 easily be rebuilt or re-used in microkernel applications.
 
-Microkernel Objects
-*******************
+Microkernel Services
+********************
 
 Microkernel tasks can interact with nanokernel objects and, additionally use
 microkernel specific objects. The microkernel objects are:
@@ -52,5 +52,4 @@ microkernel specific objects. The microkernel objects are:
 * Task IRQs
 
 
-The following subsections contain general information about the microkernel
-objects. For detailed information see: :ref:`microkernelObjects`.
+For detailed information see: :ref:`microkernel`.

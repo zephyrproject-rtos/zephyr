@@ -1,4 +1,4 @@
-.. _architecture_apps:
+.. _overview_apps:
 
 The Application Model
 #####################
@@ -61,11 +61,11 @@ that the application will use.
 #. Build your application with the |codename|.
 
 How to perform each of these steps can be found in
-:ref:`microkernel_app`.
+:ref:`application_primer`.
 
 Keep in mind that the application will be built with the kernel. You can
 expand the functionality of the kernel as needed. For information regarding
-the creation of drivers refer to :ref:`architecture_drivers`.
+the creation of drivers refer to :ref:`driver_model`.
 
 Nanokernel Only Applications
 ****************************
