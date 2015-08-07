@@ -1,17 +1,26 @@
-Zephyr Kernel Objects
-######################
+.. _zephyr_kernel:
 
-Use this information to understand how the different kernel objects of
-the Zephyr Kernel function. The purpose of this section is to help you
-understand the most important object of the operating system. In order
-to help you navigate through the content, we have divided the objects
-in :ref:`basicObjects`, :ref:`nanokernelObjects` and
-:ref:`microkernelObjects` objects.
+The Zephyr Kernel
+#################
 
-We strongly recommend that you start with the :ref:`basicObjects` before
-moving on to the :ref:`nanokernelObjects` or the
-:ref:`microkernelObjects`. Additionally, we have included some
-:ref:`driverExamples` for better comprehension of the objects' function.
+The purpose of this section is to help you understand the operation of the kernel and its features.
+This section also provides detailed information regarding the microkernel and the nanokernel
+services. Finally, you can find the information regarding the kernel's drivers and networking
+capabilities.
+
+This section does not replace the Application Program Interface
+documentation, rather, it offers additional information. The examples should provide
+you with enough insight to understand the functionality of the services but are not
+meant to replace the detailed in-code documentation.
+
+.. toctree::
+   :maxdepth: 2
+
+   overview/overview.rst
+   microkernel/microkernel.rst
+   nanokernel/nanokernel.rst
+   drivers/drivers.rst
+   networking/networking.rst
 
 .. rubric:: Abbreviations
 
@@ -28,10 +37,3 @@ moving on to the :ref:`nanokernelObjects` or the
 +---------------+-------------------------------------------------------------------+
 | XIP           | eXecute In Place                                                  |
 +---------------+-------------------------------------------------------------------+
-
-.. toctree::
-   :maxdepth: 2
-
-   contexts.rst
-   microkernel.rst
-   nanokernel.rst

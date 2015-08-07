@@ -13,7 +13,7 @@
    :maxdepth: 1
 
    quick_start/quick_start.rst
-   zephyr_kernel
+   kernel/kernel.rst
    zephyr_project
 
 
