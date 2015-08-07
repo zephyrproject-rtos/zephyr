@@ -269,7 +269,7 @@ void gpio_dw_isr(struct device *port)
 
 }
 
-struct gpio_driver_api api_funcs = {
+static struct gpio_driver_api api_funcs = {
 	.config = gpio_config_dw,
 	.write = gpio_write_dw,
 	.read = gpio_read_dw,
