@@ -1,10 +1,10 @@
 .. _memory_pools:
 
-MEMORY POOLS
-************
+Memory Pools
+############
 
 Concepts
-========
+********
 
 The microkernel's memory pool objects provide dynamic allocation and
 release of variable-size memory blocks.
@@ -59,7 +59,7 @@ allocate all of the available blocks.
 
 
 Purpose
-=======
+*******
 Use memory pools to allocate memory in variable-size blocks.
 
 Use memory pool blocks when sending data to a mailbox
@@ -67,10 +67,10 @@ asynchronously.
 
 
 Usage
-=====
+*****
 
 Defining a Memory Pool
-----------------------
+======================
 
 The following parameters must be defined:
 
@@ -110,7 +110,7 @@ as follows:
 
 
 Example: Requesting a Memory Block from a Pool with No Conditions
------------------------------------------------------------------
+=================================================================
 
 This code waits indefinitely for an 80 byte memory block to become
 available, then fills it with zeroes.
@@ -125,7 +125,8 @@ available, then fills it with zeroes.
 
 
 Example: Requesting a Memory Block from a Pool with a Conditional Time-out
---------------------------------------------------------------------------
+==========================================================================
+
 This code waits up to 5 ticks for an 80 byte memory block to become
 available and gives a warning if a suitable memory block is not obtained
 in that time.
@@ -142,7 +143,8 @@ in that time.
 
 
 Example: Requesting a Memory Block from a Pool with a No Blocking Condition
----------------------------------------------------------------------------
+===========================================================================
+
 This code gives an immediate warning when it can not satisfy the request for
 a memory block of 80 bytes.
 
@@ -158,7 +160,8 @@ a memory block of 80 bytes.
 
 
 Example: Freeing a Memory Block Back to a Pool
-----------------------------------------------
+==============================================
+
 This code releases a memory block back to a pool when it is no longer needed.
 
 .. code-block:: c
@@ -171,7 +174,8 @@ This code releases a memory block back to a pool when it is no longer needed.
 
 
 Example: Manually Defragmenting a Memory Pool
----------------------------------------------
+=============================================
+
 This code instructs the memory pool to concatenate any unused memory blocks
 that can be merged. Doing a full defragmentation of the entire memory pool
 before allocating a number of memory blocks may be more efficient
@@ -183,7 +187,7 @@ each time a memory block allocation occurs.
   task_mem_pool_defragment(MYPOOL);
 
 APIs
-====
+****
 
 The following Memory Pools APIs are provided by microkernel.h.
 

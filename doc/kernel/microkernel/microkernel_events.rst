@@ -1,10 +1,10 @@
-.. _events:
+.. _microkernel_events:
 
 Events
-******
+######
 
 Definition
-==========
+**********
 
 Event objects are microkernel synchronization objects that tasks can
 signal and test. Fibers and interrupt service routines may signal
@@ -16,7 +16,7 @@ available and only needs to be tested once to become clear and
 unavailable.
 
 Function
-========
+********
 
 Events were designed for interrupt service routines and nanokernel
 fibers that need to wake up a waiting task. The event signal can be
@@ -34,10 +34,10 @@ event the call returns a fail. Use semaphores for multiple tasks to
 wait on a signal from them.
 
 Usage
-=====
+*****
 
 Defining an Event
------------------
+=================
 
 The following parameters must be defined:
 
@@ -63,13 +63,13 @@ as follows:
 .. code-block:: console
 
     % EVENT NAME            ENTRY
-    % =======================================
+    % ==========================================
       EVENT KEYPRESS        validate_keypress
       EVENT BUTTONPRESS     NULL
 
 
-Example: Signalling an Event from an ISR
-----------------------------------------
+Example: Signaling an Event from an ISR
+========================================
 
 This code signals an event during the processing of an interrupt.
 
@@ -83,7 +83,7 @@ This code signals an event during the processing of an interrupt.
    }
 
 Example: Consuming an Event using a Task
-----------------------------------------
+========================================
 
 This code processes events of a single type using a task.
 
@@ -106,7 +106,7 @@ This code processes events of a single type using a task.
    }
 
 Example: Filtering Event Signals using an Event Handler
--------------------------------------------------------
+=======================================================
 
 This code registers an event handler that filters out unwanted events
 so that the consuming task only wakes up when needed.
@@ -149,7 +149,7 @@ so that the consuming task only wakes up when needed.
 
 
 APIs
-====
+****
 
 The following Event APIs are provided by microkernel.h.
 

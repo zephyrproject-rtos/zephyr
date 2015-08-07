@@ -1,10 +1,10 @@
-.. _mutexes:
+.. _microkernel_mutexes:
 
-MUTEXES
-*******
+Mutexes
+#######
 
 Concepts
-========
+********
 
 The microkernel's mutex objects provide reentrant mutex
 capabilities with priority inheritance.
@@ -59,16 +59,16 @@ completely.
 
 
 Purpose
-=======
+*******
 Use mutexes to provide exclusive access to a resource,
 such as a physical device.
 
 
 Usage
-=====
+*****
 
 Defining a Mutex in MDEF file
------------------------------
+=============================
 
 Add an entry for the mutex in the project file using the
 following syntax:
@@ -87,7 +87,7 @@ For example, the file :file:`projName.mdef` defines a single mutex as follows:
 
 
 Defining a Mutex inside Code
-----------------------------
+============================
 
 In addition to defining mutexes in MDEF file, it is also possible to define
 mutexes inside code. The macro ``DEFINE_MUTEX(mutex_name)`` can be used
@@ -114,58 +114,61 @@ to that file. The mutex ``XYZ`` can be then used there.
 
 
 Example: Locking a Mutex with No Conditions
--------------------------------------------
+===========================================
+
 This code waits indefinitely for the mutex to become available if the
 mutex is in use.
 
 .. code-block:: c
 
-  task_mutex_lock_wait(XYZ);
-  moveto(100,100);
-  lineto(200,100);
-  task_mutex_unlock(XYZ);
+   task_mutex_lock_wait(XYZ);
+   moveto(100,100);
+   lineto(200,100);
+   task_mutex_unlock(XYZ);
 
 
 Example: Locking a Mutex with a Conditional Timeout
----------------------------------------------------
+===================================================
+
 This code waits for a mutex to become available for a specified
 time, and gives a warning if the mutex does not become available
 in the specified amount of time.
 
 .. code-block:: c
 
-  if (task_mutex_lock_wait_timeout(XYZ, 100) == RC_OK)
+   if (task_mutex_lock_wait_timeout(XYZ, 100) == RC_OK)
     {
-    moveto(100,100);
-    lineto(200,100);
-    task_mutex_unlock(XYZ);
+     moveto(100,100);
+     lineto(200,100);
+     task_mutex_unlock(XYZ);
     }
-  else
+   else
     {
-    printf("Cannot lock XYZ display\n");
+     printf("Cannot lock XYZ display\n");
     }
 
 
 
 Example: Locking a Mutex with a No Blocking Condition
------------------------------------------------------
+=====================================================
+
 This code gives an immediate warning when a mutex is in use.
 
 .. code-block:: c
 
-  if (task_mutex_lock(XYZ) == RC_OK);
+   if (task_mutex_lock(XYZ) == RC_OK);
     {
-    do_something();
-    task_mutex_unlock(XYZ); /* and unlock mutex*/
+     do_something();
+     task_mutex_unlock(XYZ); /* and unlock mutex*/
     }
-  else
+   else
     {
-    display_warning(); /* and do not unlock mutex*/
+     display_warning(); /* and do not unlock mutex*/
     }
 
 
 APIs
-====
+****
 
 The following Mutex APIs are provided by :file:`microkernel.h`.
 

@@ -1,10 +1,10 @@
-.. _pipes:
+.. _microkernel_pipes:
 
 Pipes
-*****
+#####
 
 Definition
-==========
+**********
 
 Microkernel pipes are defined in :file:`kernel/microkernel/k_pipe.c`.
 Pipes allow any task to put any amount of data in or out. Pipes are
@@ -15,7 +15,7 @@ un-buffered operation is also possible. The main difference between
 FIFO objects and pipes is that pipes handle variable-sized data.
 
 Function
-========
+********
 
 Pipes accept and send variable-sized data, and can be configured to work
 with or without a buffer. Buffered pipes are time-ordered. The incoming
@@ -38,10 +38,10 @@ receiver. Alternatively, mailboxes can be used to specify the sender
 and receiver identities.
 
 Usage
-=====
+*****
 
-Defining a pipe in MDEF file
-----------------------------
+Defining a Pipes in MDEF file
+=============================
 
 The following parameters must be defined:
 
@@ -68,8 +68,8 @@ For example, the file :file:`projName.mdef` defines a pipe as follows:
      PIPE   DATA_PIPE        1024
 
 
-Defining pipes in source code
------------------------------
+Defining Pipes within the Code
+========================================
 
 In addition to defining pipes in MDEF file, it is also possible to
 define pipes inside code. The macro ``DEFINE_PIPE(...)`` can be
@@ -97,7 +97,7 @@ to that file. The pipe ``PRIV_PIPE`` can be then used there.
 
 
 Example: Writing Fixed-Size Data Items to a Pipe
-------------------------------------------------
+================================================
 
 This code uses a pipe to send a series of fixed-size data items
 to a consuming task.
@@ -121,7 +121,7 @@ to a consuming task.
    }
 
 Example: Reading Fixed-Size Data Items from a Pipe
---------------------------------------------------
+==================================================
 
 This code uses a pipe to receive a series of fixed-size data items
 from a producing task. To improve performance, the consuming task
@@ -150,7 +150,7 @@ rather than reading them individually.
    }
 
 Example: Reading a Stream of Data Bytes from a Pipe
----------------------------------------------------
+===================================================
 
 This code uses a pipe to process a stream of data bytes from a
 producing task. The pipe is read in a non-blocking manner to allow
@@ -183,7 +183,7 @@ unprocessed data bytes in the pipe.
 
 
 APIs
-====
+****
 
 The following Pipe APIs are provided by :file:`microkernel.h`.
 

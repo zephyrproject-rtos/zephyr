@@ -1,10 +1,10 @@
 .. _microkernel_semaphores:
 
 Semaphores
-**********
+##########
 
 Definition
-==========
+**********
 
 The microkernel semaphore is defined in
 :file:`kernel/microkernel/k_semaphore.c` and are an implementation of
@@ -12,7 +12,7 @@ traditional counting semaphores. Semaphores are used to synchronize
 application task activities.
 
 Function
-========
+********
 
 Semaphores are initialized by the system. At start the semaphore is
 un-signaled and no task is waiting for it. Any task in the system can
@@ -26,10 +26,10 @@ signaled. If not signaled, tasks can either wait, with or without a
 timeout, until signaled or return immediately with a failed status.
 
 Usage
-=====
+*****
 
 Defining a Semaphore in MDEF file
----------------------------------
+=================================
 
 The following parameters must be defined:
 
@@ -55,8 +55,8 @@ as follows:
       SEMA WORK_DONE
 
 
-Defining Semaphore inside Code
-------------------------------
+Defining Semaphore Inside Code
+==============================
 
 In addition to defining semaphores in MDEF file, it is also possible to
 define semaphores inside code. The macro ``DEFINE_SEMAPHORE(sem_name)``
@@ -83,7 +83,7 @@ to that file. The semaphore ``PRIV_SEM`` can be then used there.
 
 
 Example: Giving a Semaphore from a Task
----------------------------------------
+=======================================
 
 This code uses a semaphore to indicate that a unit of data
 is available for processing by a consumer task.
@@ -102,7 +102,7 @@ is available for processing by a consumer task.
    }
 
 Example: Giving a Semaphore from an ISR
----------------------------------------
+=======================================
 
 This code uses a semaphore to indicate that a unit of data
 is available for processing by a consumer task.
@@ -131,7 +131,7 @@ is available for processing by a consumer task.
    }
 
 Example: Taking a Semaphore with a Conditional Time-out
--------------------------------------------------------
+=======================================================
 
 This code waits up to 500 ticks for a semaphore to be given,
 and gives a warning if it is not obtained in that time.
@@ -152,7 +152,7 @@ and gives a warning if it is not obtained in that time.
    }
 
 Example: Monitoring Multiple Semaphores at Once
------------------------------------------------
+===============================================
 
 This code waits on two semaphores simultaneously, and then takes
 action depending on which one was given.
@@ -178,7 +178,7 @@ action depending on which one was given.
    }
 
 Example: Giving Multiple Semaphores at Once
--------------------------------------------
+===========================================
 
 This code uses a semaphore group to allow a controlling task to signal
 the semaphores used by four other tasks in a single operation.
@@ -196,7 +196,7 @@ the semaphores used by four other tasks in a single operation.
 
 
 APIs
-====
+****
 
 The following APIs for an individual semaphore are provided by microkernel.h.
 

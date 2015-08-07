@@ -1,10 +1,10 @@
 .. _memory_maps:
 
-MEMORY MAPS
-***********
+Memory Maps
+###########
 
 Concepts
-========
+********
 
 The microkernel's memory map objects provide dynamic allocation and
 release of fixed-size memory blocks.
@@ -36,16 +36,16 @@ blocks. (Alternatively, a memory pool object may be used.)
 
 
 Purpose
-=======
+*******
 
 Use a memory map to allocate and free memory in fixed-size blocks.
 
 
 Usage
-=====
+*****
 
-Defining a Memory Map in MDEF file
-----------------------------------
+Defining a Memory Map in MDEF File
+==================================
 
 Add an entry for one or more memory maps in the project file using the
 following syntax:
@@ -65,8 +65,8 @@ as follows:
      MAP  YOURMAP   6             200
 
 
-Defining Memory Map in source code
-----------------------------------
+Defining Memory Map in the Source Code
+======================================
 
 In addition to defining memory maps in MDEF file, it is also possible
 to define memory maps inside code. The macro ``DEFINE_MEMORY_MAP(...)``
@@ -94,7 +94,8 @@ to that file. The memory map ``PRIV_MEM_MAP`` can be then used there.
 
 
 Example: Requesting a Memory Block from a Map with No Conditions
-----------------------------------------------------------------
+================================================================
+
 This code waits indefinitely for a memory block to become
 available if all the memory blocks are in use.
 
@@ -107,7 +108,8 @@ available if all the memory blocks are in use.
 
 
 Example: Requesting a Memory Block from a Map with a Conditional Time-out
--------------------------------------------------------------------------
+=========================================================================
+
 This code waits a specified amount of time for a memory block to become
 available and gives a warning if the memory block does not become available
 in the specified time.
@@ -125,7 +127,8 @@ in the specified time.
 
 
 Example: Requesting a Memory Block from a Map with a No Blocking Condition
---------------------------------------------------------------------------
+==========================================================================
+
 This code gives an immediate warning when all memory blocks are in use.
 
 .. code-block:: c
@@ -140,7 +143,8 @@ This code gives an immediate warning when all memory blocks are in use.
 
 
 Example: Freeing a Memory Block back to a Map
----------------------------------------------
+=============================================
+
 This code releases a memory block back when it is no longer needed.
 
 .. code-block:: c
@@ -154,7 +158,7 @@ This code releases a memory block back when it is no longer needed.
 
 
 APIs
-====
+****
 
 The following Memory Map APIs are provided by :file:`microkernel.h`.
 

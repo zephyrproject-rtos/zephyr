@@ -1,5 +1,7 @@
-Tasks
-#####
+.. _tasks:
+
+Task Services
+#############
 
 Properties of Tasks
 *******************
@@ -14,7 +16,6 @@ Task Groups
 ***********
 
 TBD (how they are used; maximum of 32 groups; mention pre-defined task groups)
-
 
 Task Behavior
 *************
@@ -52,7 +53,7 @@ possible transitions. The most usual transitions are green,
 bidirectional transitions are blue and uncommon transitions are marked
 orange.
 
-.. figure:: figures/task_states.svg
+.. figure:: figures/microkernel_tasks_states.svg
    :scale: 75 %
    :alt: Possible Task States
 
@@ -84,12 +85,12 @@ a runnable state immediately after the kernel boots up.
 
 
 Tasks Starting Other Tasks
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------
 
 .. todo:: Add details on how to start a task from within another task.
 
-Task Scheduling
----------------
+Tasks Scheduling Model
+**********************
 
 Once started, a task is scheduled for execution by the microkernel until
 one of the following occurs:
@@ -104,12 +105,12 @@ one of the following occurs:
 * The task becomes non-runnable.
 
 Task Completion
-^^^^^^^^^^^^^^^
+===============
 
 .. todo:: Add details on how tasks complete.
 
 Task Priorities
-^^^^^^^^^^^^^^^
+===============
 
 The kernel offers a configurable number of task priority levels. The
 number ranges from 0 to :literal:`NUM_TASK_PRIORITIES-1`. The lowest
@@ -136,7 +137,7 @@ principle of preemption.
 
 
 Suspended Tasks
-^^^^^^^^^^^^^^^
+===============
 
 Tasks can suspend other tasks, or themselves, using
 :c:func:`task_suspend()`. The task stays suspended until
@@ -161,8 +162,8 @@ execution when :c:func:`task_abort()` is called, and run the abort
 handler function immediately.
 
 
-Time-Slicing
-------------
+Task Time-Slicing
+=================
 
 Time-slicing, enabled through the :c:func:`sys_scheduler_time_slice_set()`
 function, can share a processor between multiple tasks with the same
@@ -183,25 +184,18 @@ If no other task of the same priority is runnable, the task that called
 
    :c:func:`task_yield()` sorts the tasks in FIFO order.
 
-
-
 Task Context Switches
-^^^^^^^^^^^^^^^^^^^^^
+=====================
 
 When a task swap occurs, the kernel saves the context of the task
 that is swapped out and restores the context of the task that is
 swapped in.
 
-
-
-Usage
-=====
-
-Defining a task
----------------
+Defining a Task
+***************
 
 Inside MDEF files
-^^^^^^^^^^^^^^^^^
+=================
 
 The following parameters must be defined:
 
@@ -259,7 +253,7 @@ of six tasks as follows:
 
 
 Inside Source Code
-^^^^^^^^^^^^^^^^^^
+==================
 
 In addition to defining tasks in MDEF file, it is also possible to
 define tasks inside code. The macro ``DEFINE_TASK(...)`` can be
@@ -285,8 +279,8 @@ add:
 
 to that file. The task ``PRIV_TASK`` can be then used there.
 
-Defining a new task group
--------------------------
+Defining a Task Group
+*************************
 
 The following parameters must be defined:
 
@@ -313,7 +307,7 @@ task groups as follows:
 
 
 Example: Starting a Task from a Different Task
-----------------------------------------------
+==============================================
 
 This code shows how the currently executing task can start another task.
 
@@ -333,7 +327,7 @@ This code shows how the currently executing task can start another task.
 
 
 Example: Suspending and Resuming a Set of Tasks
------------------------------------------------
+===============================================
 
 This code shows how the currently executing task can temporarily suspend
 the execution of all tasks belonging to the designated task groups.
@@ -365,43 +359,41 @@ the execution of all tasks belonging to the designated task groups.
        }
    }
 
-
-
 APIs
-====
+****
 
 The following APIs affecting the currently executing task
 are provided by :file:`microkernel.h`.
 
-+-------------------------------------+----------------------------------------+
-| Call                                | Description                            |
-+-------------------------------------+----------------------------------------+
-| :c:func:`task_id_get()`             | Gets the task's ID.                    |
-+-------------------------------------+----------------------------------------+
-| :c:func:`isr_task_id_get()`         | Gets the task's ID from an ISR.        |
-+-------------------------------------+----------------------------------------+
-| :c:func:`task_priority_get()`       | Gets the task's priority.              |
-+-------------------------------------+----------------------------------------+
-| :c:func:`isr_task_priority_get()`   | Gets the task's priority from an ISR.  |
-+-------------------------------------+----------------------------------------+
-| :c:func:`task_group_mask_get()`     | Gets the task's group memberships.     |
-+-------------------------------------+----------------------------------------+
-| :c:func:`isr_task_group_mask_get()` | Gets the task's group memberships from |
-|                                     | an ISR.                                |
-+-------------------------------------+----------------------------------------+
-| :c:func:`task_yield()`              | Yields CPU to equal-priority tasks.    |
-+-------------------------------------+----------------------------------------+
-| :c:func:`task_sleep()`              | Yields CPU for a specified time period.|
-+-------------------------------------+----------------------------------------+
-| :c:func:`task_abort_handler_set()`  | Installs the task's abort handler.     |
-+-------------------------------------+----------------------------------------+
++-------------------------------------+-----------------------------------------+
+| Call                                | Description                             |
++=====================================+=========================================+
+| :c:func:`task_id_get()`             | Gets the task's ID.                     |
++-------------------------------------+-----------------------------------------+
+| :c:func:`isr_task_id_get()`         | Gets the task's ID from an ISR.         |
++-------------------------------------+-----------------------------------------+
+| :c:func:`task_priority_get()`       | Gets the task's priority.               |
++-------------------------------------+-----------------------------------------+
+| :c:func:`isr_task_priority_get()`   | Gets the task's priority from an ISR.   |
++-------------------------------------+-----------------------------------------+
+| :c:func:`task_group_mask_get()`     | Gets the task's group memberships.      |
++-------------------------------------+-----------------------------------------+
+| :c:func:`isr_task_group_mask_get()` | Gets the task's group memberships from  |
+|                                     | an ISR.                                 |
++-------------------------------------+-----------------------------------------+
+| :c:func:`task_yield()`              | Yields CPU to equal-priority tasks.     |
++-------------------------------------+-----------------------------------------+
+| :c:func:`task_sleep()`              | Yields CPU for a specified time period. |
++-------------------------------------+-----------------------------------------+
+| :c:func:`task_abort_handler_set()`  | Installs the task's abort handler.      |
++-------------------------------------+-----------------------------------------+
 
 The following APIs affecting a specified task
 are provided by :file:`microkernel.h`.
 
 +-------------------------------------------+----------------------------------+
 | Call                                      | Description                      |
-+-------------------------------------------+----------------------------------+
++===========================================+==================================+
 | :c:func:`task_priority_set()`             | Sets a task's priority.          |
 +-------------------------------------------+----------------------------------+
 | :c:func:`task_entry_set()`                | Sets a task's entry point.       |
@@ -426,7 +418,7 @@ are provided by :file:`microkernel.h`.
 
 +-------------------------------------------+---------------------------------+
 | Call                                      | Description                     |
-+-------------------------------------------+---------------------------------+
++===========================================+=================================+
 | :c:func:`sys_scheduler_time_slice_set()`  | Sets the time slice period used |
 |                                           | in round-robin task scheduling. |
 +-------------------------------------------+---------------------------------+
