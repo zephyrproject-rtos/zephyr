@@ -8,15 +8,25 @@ CROSS_COMPILE_TARGET_arm = arm-poky-eabi
 CROSS_COMPILE_arm_version = 4.9.2
 CROSS_COMPILE_arm=${YOCTO_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_arm)/$(CROSS_COMPILE_TARGET_arm)-
 
-LIB_INCLUDE_DIR_arm = -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/armv5e-poky-eabi/usr/lib/arm-poky-eabi/4.9.2
+LIB_INCLUDE_DIR_arm = -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/armv5e-poky-eabi/usr/lib/arm-poky-eabi/$(CROSS_COMPILE_arm_version)
 
+# iamcu
+CROSS_COMPILE_TARGET_iamcu = i586-poky-elfiamcu
+CROSS_COMPILE_iamcu_version = 4.9.3
+CROSS_COMPILE_iamcu=${YOCTO_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/iamcu-poky-elfiamcu/$(CROSS_COMPILE_TARGET_iamcu)-
+
+LIB_INCLUDE_DIR_iamcu = -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/lib/i586-poky-elfiamcu/$(CROSS_COMPILE_iamcu_version)
+LIB_INCLUDE_DIR_iamcu += -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/i586-default-elfiamcu/lib/
+TOOLCHAIN_CFLAGS_iamcu = -I${YOCTO_SDK_INSTALL_DIR}/sysroots/iamcu-poky-elfiamcu/usr/i586-default-elfiamcu/include
 
 # x86
 CROSS_COMPILE_TARGET_x86 = i586-poky-elf
 CROSS_COMPILE_x86_version = 4.9.2
 CROSS_COMPILE_x86=${YOCTO_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$(CROSS_COMPILE_TARGET_x86)/$(CROSS_COMPILE_TARGET_x86)-
 
-LIB_INCLUDE_DIR_x86 = -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/lib/i586-poky-elf/4.9.2
+LIB_INCLUDE_DIR_x86 = -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/lib/i586-poky-elf/$(CROSS_COMPILE_x86_version)
+LIB_INCLUDE_DIR_x86 += -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/i586-default-elf/lib/
+TOOLCHAIN_CFLAGS_x86 = -I${YOCTO_SDK_INSTALL_DIR}/sysroots/i586-poky-elf/usr/i586-default-elf/include
 
 # arc
 CROSS_COMPILE_TARGET_arc = arc-poky-elf
@@ -25,13 +35,26 @@ CROSS_COMPILE_arc=${YOCTO_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin/$
 
 LIB_INCLUDE_DIR_arc = -L ${YOCTO_SDK_INSTALL_DIR}/sysroots/arc-poky-elf/usr/lib/arc-poky-elf/$(CROSS_COMPILE_arc_version)
 
-
+ifneq ($(CONFIG_TOOLCHAIN_VARIANT),"")
+CROSS_COMPILE = $(CROSS_COMPILE_$(subst $\",,$(CONFIG_TOOLCHAIN_VARIANT)))
+LIB_INCLUDE_DIR = $(LIB_INCLUDE_DIR_$(subst $\",,$(CONFIG_TOOLCHAIN_VARIANT)))
+TOOLCHAIN_CFLAGS = $(TOOLCHAIN_CFLAGS_$(subst $\",,$(CONFIG_TOOLCHAIN_VARIANT)))
+else
 CROSS_COMPILE = $(CROSS_COMPILE_$(ARCH))
 LIB_INCLUDE_DIR = $(LIB_INCLUDE_DIR_$(ARCH))
+TOOLCHAIN_CFLAGS = $(TOOLCHAIN_CFLAGS_$(ARCH))
+endif
+
+ifeq ($(CONFIG_TOOLCHAIN_VARIANT),"iamcu")
+LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__ -D__IAMCU
+OUTPUT_FORMAT = elf32-iamcu
+OUTPUT_ARCH = iamcu:intel
+endif
+
 
 QEMU_BIN_PATH ?= ${YOCTO_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-linux/usr/bin
 QEMU           = $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
 
 TOOLCHAIN_LIBS = gcc
 
-export LIB_INCLUDE_DIR CROSS_COMPILE TOOLCHAIN_LIBS QEMU_BIN_PATH QEMU
+export LIB_INCLUDE_DIR CROSS_COMPILE TOOLCHAIN_LIBS QEMU_BIN_PATH QEMU TOOLCHAIN_CFLAGS

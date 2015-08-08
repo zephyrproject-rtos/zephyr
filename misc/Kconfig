@@ -50,6 +50,7 @@ config CROSS_COMPILE
 	need to set this unless you want the configured kernel build
 	directory to select the cross-compiler automatically.
 
+
 menu "Compile and Link Features"
 
 
@@ -80,6 +81,12 @@ config  COMPILER_OPT
 
 	A given LKM or USAP can override this setting by means of the
 	OVERRIDE_COMPILER_OPT make variable in its Makefile.
+
+config TOOLCHAIN_VARIANT
+	string "Cross-compiler variant name"
+	help
+	For optimized compilers with reduced features, specify the name
+	of the variant.
 
 config MINIMAL_LIBC
 	bool
