@@ -51,9 +51,11 @@ typedef struct {
 #define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0}})
 
 /* HCI Error Codes */
+#define BT_HCI_ERR_UNKNOWN_CONN_ID		0x02
 #define BT_HCI_ERR_AUTHENTICATION_FAIL		0x05
 #define BT_HCI_ERR_REMOTE_USER_TERM_CONN	0x13
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE	0x1a
+#define BT_HCI_ERR_INVALID_LL_PARAMS		0x1e
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED	0x29
 #define BT_HCI_ERR_UNACCEPT_CONN_PARAMS		0x3b
 
