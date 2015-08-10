@@ -45,7 +45,7 @@ the 'ia32_pci' platform.
 #include <drivers/rand32.h>
 #endif
 
-#define N_PIC_IRQS 16     /* number of PIC IRQs */
+#define NUM_STD_IRQS 16   /* number of "standard" IRQs on an x86 platform */
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 
 /* serial port (aka COM port) information */
@@ -252,7 +252,7 @@ static inline int pci_pin2irq(int pin)
 {
 	if ((pin < PCI_INTA) || (pin > PCI_INTD))
 		return -1;
-	return N_PIC_IRQS + pin - 1;
+	return NUM_STD_IRQS + pin - 1;
 }
 
 /**
@@ -265,9 +265,9 @@ static inline int pci_pin2irq(int pin)
 
 static inline int pci_irq2pin(int irq)
 {
-	if ((irq < N_PIC_IRQS) || (irq > N_PIC_IRQS + PCI_INTD - 1))
+	if ((irq < NUM_STD_IRQS) || (irq > NUM_STD_IRQS + PCI_INTD - 1))
 		return -1;
-	return irq - N_PIC_IRQS + 1;
+	return irq - NUM_STD_IRQS + 1;
 }
 
 extern void _SysIntVecProgram(unsigned int vector, unsigned int);
