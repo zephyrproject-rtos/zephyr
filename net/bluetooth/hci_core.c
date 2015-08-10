@@ -746,6 +746,32 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 	return 0;
 }
 
+static int update_conn_params(struct bt_conn *conn)
+{
+	BT_DBG("status %u, handle %u,features 0x%x\n", evt->status, handle,
+		conn->le_features[0]);
+
+	/* Check if there's a need to update conn params */
+	if (conn->le_conn_interval >= LE_CONN_MIN_INTERVAL &&
+	    conn->le_conn_interval <= LE_CONN_MAX_INTERVAL) {
+		return -EALREADY;
+	}
+
+	if ((conn->role == BT_HCI_ROLE_SLAVE) &&
+	    !(bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+		return bt_l2cap_update_conn_param(conn);
+	}
+
+	if ((conn->le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC) &&
+	    (bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
+		return bt_conn_le_conn_update(conn, LE_CONN_MIN_INTERVAL,
+					     LE_CONN_MAX_INTERVAL,
+					     LE_CONN_LATENCY, LE_CONN_TIMEOUT);
+	}
+
+	return -EBUSY;
+}
+
 static void le_conn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
@@ -806,14 +832,11 @@ static void le_conn_complete(struct bt_buf *buf)
 		if (!err) {
 			goto done;
 		}
-	} else if (!(bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
-		err = bt_l2cap_update_conn_param(conn);
-		if (!err) {
-			goto done;
-		}
 	}
 
-	bt_conn_connected(conn);
+	if (update_conn_params(conn)) {
+		bt_conn_connected(conn);
+	}
 
 done:
 	bt_conn_put(conn);
@@ -837,7 +860,9 @@ static void le_remote_feat_complete(struct bt_buf *buf)
 		       sizeof(conn->le_features));
 	}
 
-	/* TODO Update connection parameters or notify about connection */
+	if (update_conn_params(conn)) {
+		bt_conn_connected(conn);
+	}
 
 	bt_conn_put(conn);
 }

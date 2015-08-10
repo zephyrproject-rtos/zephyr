@@ -51,6 +51,12 @@
 #define lmp_bredr_capable(dev)	(!((dev).features[4] & BT_LMP_NO_BREDR))
 #define lmp_le_capable(dev)	((dev).features[4] & BT_LMP_LE)
 
+/* LL connection parameters */
+#define LE_CONN_MIN_INTERVAL	0x0028
+#define LE_CONN_MAX_INTERVAL	0x0038
+#define LE_CONN_LATENCY		0x0000
+#define LE_CONN_TIMEOUT		0x002a
+
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ADVERTISING,

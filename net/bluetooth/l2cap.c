@@ -52,11 +52,6 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define LE_CONN_MIN_INTERVAL	0x0028
-#define LE_CONN_MAX_INTERVAL	0x0038
-#define LE_CONN_LATENCY		0x0000
-#define LE_CONN_TIMEOUT		0x002a
-
 #define BT_L2CAP_CONN_PARAM_ACCEPTED 0
 #define BT_L2CAP_CONN_PARAM_REJECTED 1
 
@@ -323,12 +318,6 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn)
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conn_param_req *req;
 	struct bt_buf *buf;
-
-	/* Check if we need to update anything */
-	if (conn->le_conn_interval >= LE_CONN_MIN_INTERVAL &&
-	    conn->le_conn_interval <= LE_CONN_MAX_INTERVAL) {
-		return -EALREADY;
-	}
 
 	buf = bt_l2cap_create_pdu(conn);
 	if (!buf) {
