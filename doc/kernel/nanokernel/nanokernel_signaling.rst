@@ -3,9 +3,11 @@
 Signaling Services
 ##################
 
-Nanokernel Semaphore
-********************
+This section describes the signalling services provided by the nanokernel.
+Currently, only a single service is provided.
 
+Nanokernel Semaphores
+*********************
 
 Definition
 ==========
@@ -30,22 +32,30 @@ Thus after n 'give' operations a semaphore can 'take' n times without
 pending. If a second context waits for the same semaphore object, the
 first context is lost and never wakes up.
 
-Application Program Interfaces
-==============================
+APIs
+====
 
-+--------------------------------+----------------------------------------------------------------+
-| Context                        | Interfaces                                                     |
-+================================+================================================================+
-| **Initialization**             | :c:func:`nano_sem_init()`                                      |
-+--------------------------------+----------------------------------------------------------------+
-| **Interrupt Service Routines** | :c:func:`nano_isr_sem_give()`,                                 |
-|                                | :c:func:`nano_isr_sem_take()`                                  |
-+--------------------------------+----------------------------------------------------------------+
-| **Fibers**                     | :c:func:`nano_fiber_sem_give()`,                               |
-|                                | :c:func:`nano_fiber_sem_take()`,                               |
-|                                | :c:func:`nano_fiber_sem_take_wait()`                           |
-+--------------------------------+----------------------------------------------------------------+
-| **Tasks**                      | :c:func:`nano_task_sem_give()`,                                |
-|                                | :c:func:`nano_task_sem_take()`,                                |
-|                                | :c:func:`nano_task_sem_take_wait()`                            |
-+--------------------------------+----------------------------------------------------------------+
+The following APIs for a nanokernel semaphore are provided
+by :file:`nanokernel.h.`
+
++------------------------------------------------+----------------------------+
+| Call                                           | Description                |
++================================================+============================+
+| :c:func:`nano_sem_init()`                      | Initializes a semaphore.   |
++------------------------------------------------+----------------------------+
+| | :c:func:`nano_task_sem_give()`               | Signals a sempahore.       |
+| | :c:func:`nano_fiber_sem_give()`              |                            |
+| | :c:func:`nano_isr_sem_give()`                |                            |
+| | :c:func:`nano_sem_give()`                    |                            |
++------------------------------------------------+----------------------------+
+| | :c:func:`nano_task_sem_take()`               | Tests a semaphore.         |
+| | :c:func:`nano_fiber_sem_take()`              |                            |
+| | :c:func:`nano_isr_sem_take()`                |                            |
++------------------------------------------------+----------------------------+
+| | :c:func:`nano_task_sem_take_wait()`          | Waits on a semaphore.      |
+| | :c:func:`nano_fiber_sem_take_wait()`         |                            |
+| | :c:func:`nano_sem_task_wait()`               |                            |
++------------------------------------------------+----------------------------+
+| | :c:func:`nano_task_sem_take_wait_timeout()`  | Waits on a semaphore for a |
+| | :c:func:`nano_fiber_sem_take_wait_timeout()` | specified time period.     |
++------------------------------------------------+----------------------------+
