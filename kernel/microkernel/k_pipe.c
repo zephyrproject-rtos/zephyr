@@ -176,7 +176,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
  * @return RC_OK, RC_FAIL, or RC_ALIGNMENT
  */
 
-int _task_pipe_put_async(kpipe_t Id, struct k_block Block,
+int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 						 int iReqSize2Xfer, ksem_t Sema)
 {
 	unsigned int iSize2Xfer;

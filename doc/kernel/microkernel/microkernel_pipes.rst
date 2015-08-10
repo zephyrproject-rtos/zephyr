@@ -200,7 +200,7 @@ The following Pipe APIs are provided by :file:`microkernel.h`.
 |                                        | for a specified time period if     |
 |                                        | unable to write data.              |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_pipe_put_async()`        | Writes data to a pipe from a       |
+| :c:func:`task_pipe_block_put()`        | Writes data to a pipe from a       |
 |                                        | memory pool block.                 |
 +----------------------------------------+------------------------------------+
 | :c:func:`task_pipe_get()`              | Reads data from a pipe, or fails   |

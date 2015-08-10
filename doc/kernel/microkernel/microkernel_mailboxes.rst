@@ -279,7 +279,7 @@ to keep up.
            send_msg.rx_task = ANYTASK;
 
            /* send message containing most current data and loop around */
-           task_mbox_put_async(REQUEST_BOX, send_priority, &send_msg, MY_SEMA);
+           task_mbox_block_put(REQUEST_BOX, send_priority, &send_msg, MY_SEMA);
        }
    }
 
@@ -311,7 +311,7 @@ a large message.
            task_mbox_get_wait(REQUEST_BOX, &recv_msg);
 
            /* get message data as a memory block and discard message */
-           task_mbox_data_get_async_block_wait(&recv_msg, &recv_block, RXPOOL);
+           task_mbox_data_block_get_wait(&recv_msg, &recv_block, RXPOOL);
 
            /* compute sum of all message bytes in memory block */
            total = 0;
@@ -368,22 +368,22 @@ by microkernel.h.
 The following APIs for asynchronous mailbox operations using memory pool blocks
 are provided by microkernel.h.
 
-+---------------------------------------------------------+-----------------------------------+
-| Call                                                    | Description                       |
-+=========================================================+===================================+
-| :c:func:`task_mbox_put_async()`                         | Puts message in a mailbox, even   |
-|                                                         | if a receiver isn't waiting.      |
-+---------------------------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_data_get_async_block()`              | Finishes receiving message that   |
-|                                                         | was received without its data, or |
-|                                                         | fails if no block is available.   |
-+---------------------------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_data_get_async_block_wait()`         | Finishes receiving message that   |
-|                                                         | was received without its data, or |
-|                                                         | waits until a block is available. |
-+---------------------------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_data_get_async_block_wait_timeout()` | Finishes receiving message that   |
-|                                                         | was received without its data, or |
-|                                                         | waits for a specified time period |
-|                                                         | for a block to become available.  |
-+---------------------------------------------------------+-----------------------------------+
++---------------------------------------------------+-----------------------------------+
+| Call                                              | Description                       |
++===================================================+===================================+
+| :c:func:`task_mbox_block_put()`                   | Puts message in a mailbox, even   |
+|                                                   | if a receiver isn't waiting.      |
++---------------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_data_block_get()`              | Finishes receiving message that   |
+|                                                   | was received without its data, or |
+|                                                   | fails if no block is available.   |
++---------------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_data_block_get_wait()`         | Finishes receiving message that   |
+|                                                   | was received without its data, or |
+|                                                   | waits until a block is available. |
++---------------------------------------------------+-----------------------------------+
+| :c:func:`task_mbox_data_block_get_wait_timeout()` | Finishes receiving message that   |
+|                                                   | was received without its data, or |
+|                                                   | waits for a specified time period |
+|                                                   | for a block to become available.  |
++---------------------------------------------------+-----------------------------------+

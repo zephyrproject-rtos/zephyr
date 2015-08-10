@@ -49,10 +49,10 @@ MsgRcvrTask: task_mbox_get_wait_timeout of message header #4 is OK
 MsgRcvrTask: task_mbox_data_get cancellation of message #4 is OK
 MsgSenderTask: task_mbox_put_wait for cancelled receive test is OK
 MsgRcvrTask: task_mbox_get_wait of message header #1 is OK
-MsgRcvrTask: task_mbox_data_get_async_block of message data #1 is OK
+MsgRcvrTask: task_mbox_data_block_get of message data #1 is OK
 MsgSenderTask: task_mbox_put_wait for block-based receive test is OK
 MsgRcvrTask: task_mbox_get_wait of message header #2 is OK
-MsgRcvrTask: task_mbox_data_get_async_block of message data #2 is OK
+MsgRcvrTask: task_mbox_data_block_get of message data #2 is OK
 MsgSenderTask: task_mbox_put_wait for block-exhaustion receive test is OK
 MsgRcvrTask: task_mbox_get_wait of message header #3 is OK
 MsgRcvrTask: task_mbox_data_get of message data #3 is OK

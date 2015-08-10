@@ -57,14 +57,14 @@ extern int _task_mbox_put(kmbox_t mbox,
 
 extern int _task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t time);
 
-extern void _task_mbox_put_async(kmbox_t mbox,
+extern void _task_mbox_block_put(kmbox_t mbox,
 		                         kpriority_t prio,
 		                         struct k_msg *M,
 		                         ksem_t sem);
 
 extern void _task_mbox_data_get(struct k_msg *M);
 
-extern int _task_mbox_data_get_async_block(struct k_msg *M,
+extern int _task_mbox_data_block_get(struct k_msg *M,
 				 struct k_block *rxblock,
 				 kmemory_pool_t pid,
 				 int32_t time);
@@ -161,7 +161,7 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
  *
  * @return N/A
  */
-#define task_mbox_put_async(b, p, m, s) _task_mbox_put_async(b, p, m, s)
+#define task_mbox_block_put(b, p, m, s) _task_mbox_block_put(b, p, m, s)
 
 
 /**
@@ -186,8 +186,8 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
  * @param p pool
  * @return RC_OK upon success, RC_FAIL upon failure
  */
-#define task_mbox_data_get_async_block(m, b, p) \
-		_task_mbox_data_get_async_block(m, b, p, TICKS_NONE)
+#define task_mbox_data_block_get(m, b, p) \
+		_task_mbox_data_block_get(m, b, p, TICKS_NONE)
 
 /**
  * @brief Get the mailbox data and place in a memory pool block and wait
@@ -197,8 +197,8 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
  * @param p pool
  * @return RC_OK upon success, RC_FAIL upon failure
  */
-#define task_mbox_data_get_async_block_wait(m, b, p) \
-	_task_mbox_data_get_async_block(m, b, p, TICKS_UNLIMITED)
+#define task_mbox_data_block_get_wait(m, b, p) \
+	_task_mbox_data_block_get(m, b, p, TICKS_UNLIMITED)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 /**
@@ -210,8 +210,8 @@ extern int _task_mbox_data_get_async_block(struct k_msg *M,
  * @param t timeout
  * @return RC_OK upon success, RC_FAIL upon failure
  */
-#define task_mbox_data_get_async_block_wait_timeout(m, b, p, t) \
-		_task_mbox_data_get_async_block(m, b, p, t)
+#define task_mbox_data_block_get_wait_timeout(m, b, p, t) \
+		_task_mbox_data_block_get(m, b, p, t)
 #endif
 
 /**

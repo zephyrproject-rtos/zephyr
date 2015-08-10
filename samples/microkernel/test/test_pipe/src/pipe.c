@@ -38,7 +38,7 @@ This modules tests the following target pipe routines:
   task_pipe_get(), task_pipe_get_wait(), task_pipe_get_wait_timeout()
 
 The following target pipe routine does not yet have a test case:
-  task_pipe_put_async()
+  task_pipe_block_put()
  */
 
 #include <nanokernel.h>

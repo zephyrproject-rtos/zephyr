@@ -69,13 +69,13 @@ extern int _task_pipe_get(kpipe_t id,
 			_task_pipe_get(i, b, n, pn, o, t)
 
 
-extern int _task_pipe_put_async(kpipe_t id,
+extern int _task_pipe_block_put(kpipe_t id,
 								struct k_block block,
 								int size,
 								ksem_t sema);
 
-#define task_pipe_put_async(id, block, size, sema) \
-			_task_pipe_put_async(id, block, size, sema)
+#define task_pipe_block_put(id, block, size, sema) \
+			_task_pipe_block_put(id, block, size, sema)
 
 /**
  * @brief Initialize a pipe struct.

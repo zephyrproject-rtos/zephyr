@@ -703,7 +703,7 @@ int _task_mbox_get(kmbox_t mbox,
 }
 
 
-void _task_mbox_put_async(kmbox_t mbox,
+void _task_mbox_block_put(kmbox_t mbox,
 		 kpriority_t prio,
 		 struct k_msg *M,
 		 ksem_t sema)
@@ -799,7 +799,7 @@ void _task_mbox_data_get(struct k_msg *M)
 }
 
 
-int _task_mbox_data_get_async_block(struct k_msg *message,
+int _task_mbox_data_block_get(struct k_msg *message,
 			  struct k_block *rxblock,
 			  kmemory_pool_t poolid,
 			  int32_t time)
@@ -864,7 +864,7 @@ int _task_mbox_data_get_async_block(struct k_msg *message,
 		return RC_OK;
 	}
 
-	/* 'normal' flow of task_mbox_data_get_async_block(): */
+	/* 'normal' flow of task_mbox_data_block_get(): */
 
 	if (0 != message->size) {
 		retval = _task_mem_pool_alloc(rxblock, poolid,

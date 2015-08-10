@@ -38,12 +38,12 @@ This module tests the following mailbox APIs:
    task_mbox_get, task_mbox_get_wait, task_mbox_get_wait_timeout
 
    task_mbox_data_get
-   task_mbox_data_get_async_block,  task_mbox_data_get_async_block_wait,
-   task_mbox_data_get_async_block_wait_timeout
+   task_mbox_data_block_get,  task_mbox_data_block_get_wait,
+   task_mbox_data_block_get_wait_timeout
 
 The module does NOT test the following mailbox APIs:
 
-   task_mbox_put_async
+   task_mbox_block_put
 
 Also, not all capabilities of all of the tested APIs are exercised. Things that
 are not (yet) tested include:
@@ -567,28 +567,28 @@ int MsgRcvrTask(void)
 
 	/* Try to grab message data using a block that's too small */
 
-	retValue = task_mbox_data_get_async_block(&MRTmsg, &MRTblock, smallBlkszPool);
+	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblock, smallBlkszPool);
 	if (RC_FAIL != retValue) {
-		TC_ERROR("task_mbox_data_get_async_block that should have failed returned %d\n",
+		TC_ERROR("task_mbox_data_block_get that should have failed returned %d\n",
 			retValue);
 		return TC_FAIL;
 	}
 
 	/* Now grab message data using a block that's big enough */
 
-	retValue = task_mbox_data_get_async_block(&MRTmsg, &MRTblock, testPool);
+	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblock, testPool);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_data_get_async_block returned %d\n", retValue);
+		TC_ERROR("task_mbox_data_block_get returned %d\n", retValue);
 		return TC_FAIL;
 	}
 	if (strcmp((char *)(MRTblock.pointer_to_data), myData1) != 0) {
-		TC_ERROR("task_mbox_data_get_async_block got wrong data #1 (%s)\n",
+		TC_ERROR("task_mbox_data_block_get got wrong data #1 (%s)\n",
 			MRTblock.pointer_to_data);
 		return TC_FAIL;
 	}
 
 	TC_PRINT("%s: task_mbox_get_wait of message header #1 is OK\n", __func__);
-	TC_PRINT("%s: task_mbox_data_get_async_block of message data #1 is OK\n",  __func__);
+	TC_PRINT("%s: task_mbox_data_block_get of message data #1 is OK\n",  __func__);
 
 	/* Don't free block yet ... */
 
@@ -608,9 +608,9 @@ int MsgRcvrTask(void)
 
 	/* Try to grab message data using block from an empty pool */
 
-	retValue = task_mbox_data_get_async_block_wait_timeout(&MRTmsg, &MRTblockAlt, testPool, 2);
+	retValue = task_mbox_data_block_get_wait_timeout(&MRTmsg, &MRTblockAlt, testPool, 2);
 	if (RC_TIME != retValue) {
-		TC_ERROR("task_mbox_data_get_async_block_wait_timeout that should have timed out "
+		TC_ERROR("task_mbox_data_block_get_wait_timeout that should have timed out "
 			"returned %d\n", retValue);
 		return TC_FAIL;
 	}
@@ -621,19 +621,19 @@ int MsgRcvrTask(void)
 
 	/* Now grab message data using the newly released block */
 
-	retValue = task_mbox_data_get_async_block(&MRTmsg, &MRTblockAlt, testPool);
+	retValue = task_mbox_data_block_get(&MRTmsg, &MRTblockAlt, testPool);
 	if (RC_OK != retValue) {
-		TC_ERROR("task_mbox_data_get_async_block returned %d\n", retValue);
+		TC_ERROR("task_mbox_data_block_get returned %d\n", retValue);
 		return TC_FAIL;
 	}
 	if (strcmp((char *)(MRTblockAlt.pointer_to_data), myData2) != 0) {
-		TC_ERROR("task_mbox_data_get_async_block got wrong data #2 (%s)\n",
+		TC_ERROR("task_mbox_data_block_get got wrong data #2 (%s)\n",
 			MRTblockAlt.pointer_to_data);
 		return TC_FAIL;
 	}
 
 	TC_PRINT("%s: task_mbox_get_wait of message header #2 is OK\n", __func__);
-	TC_PRINT("%s: task_mbox_data_get_async_block of message data #2 is OK\n",  __func__);
+	TC_PRINT("%s: task_mbox_data_block_get of message data #2 is OK\n",  __func__);
 
 	/* Free block used with most recent message */
 
