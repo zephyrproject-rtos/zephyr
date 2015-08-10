@@ -3753,7 +3753,7 @@ dtls_new_context(void *app_data) {
   PROCESS_CONTEXT_BEGIN(&dtls_retransmit_process);
   /* the retransmit timer must be initialized to some large value */
   etimer_set(&c->retransmit_timer, 0xFFFF);
-  PROCESS_CONTEXT_END(&coap_retransmit_process);
+  PROCESS_CONTEXT_END(&dtls_retransmit_process);
 #endif /* WITH_CONTIKI */
 
   if (dtls_prng(c->cookie_secret, DTLS_COOKIE_SECRET_LENGTH))
