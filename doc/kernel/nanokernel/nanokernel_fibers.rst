@@ -140,3 +140,39 @@ priority to get to the head of the queue faster. If a fiber executes
 code that will take some time, periodically call
 :cpp:func:`fiber_yield()`. Multi-threading using blocking fibers is
 effective in coding hard real-time applications.
+
+APIs
+****
+
+The following APIs affecting the currently executing fiber are provided
+by :file:`microkernel.h` and by :file:`nanokernel.h`:
+
++-----------------------------------+-----------------------------------------+
+| Call                              | Description                             |
++-----------------------------------+-----------------------------------------+
+| :c:func:`fiber_yield()`           | Yields CPU to higher priority and       |
+|                                   | equal priority fibers.                  |
++-----------------------------------+-----------------------------------------+
+| :c:func:`fiber_sleep()`           | Yields CPU for a specified time period. |
++-----------------------------------+-----------------------------------------+
+| :c:func:`fiber_abort()`           | Terminates fiber execution.             |
++-----------------------------------+-----------------------------------------+
+
+The following APIs affecting a specified fiber are provided
+by :file:`microkernel.h` and by :file:`nanokernel.h`:
+
++------------------------------------------------+----------------------------+
+| Call                                           | Description                |
++------------------------------------------------+----------------------------+
+| | :c:func:`task_fiber_start()`                 | Spawns a new fiber.        |
+| | :c:func:`fiber_fiber_start()`                |                            |
+| | :c:func:`fiber_start()`                      |                            |
++------------------------------------------------+----------------------------+
+| | :c:func:`task_fiber_delayed_start()`         | Spawns a new fiber after   |
+| | :c:func:`fiber_fiber_delayed_start()`        | a specified time period.   |
+| | :c:func:`fiber_delayed_start()`              |                            |
++------------------------------------------------+----------------------------+
+| | :c:func:`task_fiber_delayed_start_cancel()`  | Cancels spawning of a      |
+| | :c:func:`fiber_fiber_delayed_start_cancel()` | new fiber, if not already  |
+| | :c:func:`fiber_delayed_start_cancel()`       | started.                   |
++------------------------------------------------+----------------------------+
