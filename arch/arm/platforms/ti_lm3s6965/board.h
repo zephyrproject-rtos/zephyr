@@ -125,11 +125,18 @@ extern struct device * const uart_console_dev;
 #define UART_CONSOLE_DEV uart_console_dev
 
 /* Bluetooth UART definitions */
+#if defined(CONFIG_BLUETOOTH_UART)
+
 #define CONFIG_BLUETOOTH_UART_INDEX 1
 #define CONFIG_BLUETOOTH_UART_BAUDRATE 115200
 #define CONFIG_BLUETOOTH_UART_IRQ IRQ_UART1
 #define CONFIG_BLUETOOTH_UART_INT_PRI 3
 #define CONFIG_BLUETOOTH_UART_FREQ SYSCLK_DEFAULT_IOSC_HZ
+
+extern struct device * const bt_uart_dev;
+#define BT_UART_DEV bt_uart_dev
+
+#endif /* CONFIG_BLUETOOTH_UART */
 
 /* Simple UART definitions */
 #define CONFIG_UART_SIMPLE_INDEX 2

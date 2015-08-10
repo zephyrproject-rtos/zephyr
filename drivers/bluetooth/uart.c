@@ -58,8 +58,6 @@
 #define H4_SCO		0x03
 #define H4_EVT		0x04
 
-#define UART (&uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
-
 static int bt_uart_read(struct device *uart, uint8_t *buf,
 			size_t len, size_t min)
 {
@@ -103,7 +101,7 @@ static struct bt_buf *bt_uart_evt_recv(int *remaining)
 	struct bt_buf *buf;
 
 	/* We can ignore the return value since we pass len == min */
-	bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
+	bt_uart_read(BT_UART_DEV, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	*remaining = hdr.len;
 
@@ -125,7 +123,7 @@ static struct bt_buf *bt_uart_acl_recv(int *remaining)
 	struct bt_buf *buf;
 
 	/* We can ignore the return value since we pass len == min */
-	bt_uart_read(UART, (void *)&hdr, sizeof(hdr), sizeof(hdr));
+	bt_uart_read(BT_UART_DEV, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	buf = bt_buf_get(BT_ACL_IN, 0);
 	if (buf) {
@@ -148,11 +146,12 @@ void bt_uart_isr(void *unused)
 
 	ARG_UNUSED(unused);
 
-	while (uart_irq_update(UART) && uart_irq_is_pending(UART)) {
+	while (uart_irq_update(BT_UART_DEV)
+	       && uart_irq_is_pending(BT_UART_DEV)) {
 		int read;
 
-		if (!uart_irq_rx_ready(UART)) {
-			if (uart_irq_tx_ready(UART)) {
+		if (!uart_irq_rx_ready(BT_UART_DEV)) {
+			if (uart_irq_tx_ready(BT_UART_DEV)) {
 				BT_DBG("transmit ready\n");
 			} else {
 				BT_DBG("spurious interrupt\n");
@@ -165,7 +164,8 @@ void bt_uart_isr(void *unused)
 			uint8_t type;
 
 			/* Get packet type */
-			read = bt_uart_read(UART, &type, sizeof(type), 0);
+			read = bt_uart_read(BT_UART_DEV, &type,
+					    sizeof(type), 0);
 			if (read != sizeof(type)) {
 				BT_WARN("Unable to read H4 packet type\n");
 				continue;
@@ -192,13 +192,14 @@ void bt_uart_isr(void *unused)
 		}
 
 		if (!buf) {
-			read = bt_uart_discard(UART, remaining);
+			read = bt_uart_discard(BT_UART_DEV, remaining);
 			BT_WARN("Discarded %d bytes\n", read);
 			remaining -= read;
 			continue;
 		}
 
-		read = bt_uart_read(UART, bt_buf_tail(buf), remaining, 0);
+		read = bt_uart_read(BT_UART_DEV, bt_buf_tail(buf),
+				    remaining, 0);
 
 		buf->len += read;
 		remaining -= read;
@@ -248,7 +249,7 @@ static int bt_uart_send(struct bt_buf *buf)
 		return -EINVAL;
 	}
 
-	return uart_fifo_fill(UART, buf->data, buf->len);
+	return uart_fifo_fill(BT_UART_DEV, buf->data, buf->len);
 }
 
 IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
@@ -283,7 +284,7 @@ static int bt_uart_open()
 		.int_pri = CONFIG_BLUETOOTH_UART_INT_PRI,
 	};
 
-	bt_uart_setup(UART, &info);
+	bt_uart_setup(BT_UART_DEV, &info);
 
 	return 0;
 }

@@ -110,11 +110,22 @@ extern struct device * const uart_console_dev;
 #endif
 
 /* Bluetooth UART definitions */
+#if defined(CONFIG_BLUETOOTH_UART)
+
 #define CONFIG_BLUETOOTH_UART_INDEX 1
 #define CONFIG_BLUETOOTH_UART_IRQ COM2_INT_LVL
 #define CONFIG_BLUETOOTH_UART_INT_PRI COM2_INT_PRI
 #define CONFIG_BLUETOOTH_UART_FREQ UART_XTAL_FREQ
 #define CONFIG_BLUETOOTH_UART_BAUDRATE CONFIG_UART_BAUDRATE
+
+#ifndef _ASMLANGUAGE
+
+extern struct device * const bt_uart_dev;
+#define BT_UART_DEV bt_uart_dev
+
+#endif
+
+#endif /* CONFIG_BLUETOOTH_UART */
 
 #endif /* CONFIG_NS16550 */
 

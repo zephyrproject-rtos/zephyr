@@ -98,4 +98,8 @@ struct device uart_devs[] = {
 struct device * const uart_console_dev = &uart_devs[CONFIG_UART_CONSOLE_INDEX];
 #endif
 
+#ifdef CONFIG_BLUETOOTH_UART
+struct device * const bt_uart_dev = &uart_devs[CONFIG_BLUETOOTH_UART_INDEX];
+#endif
+
 #endif /* CONFIG_STELLARIS_UART */
