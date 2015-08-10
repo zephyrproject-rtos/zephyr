@@ -39,11 +39,11 @@ ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
 #define _ARCH_ARC_V2_FFS_H_
 
 #ifdef _ASMLANGUAGE
-GTEXT(nanoFfsLsb);
-GTEXT(nanoFfsMsb);
+GTEXT(find_first_set);
+GTEXT(find_last_set);
 #else
-extern unsigned nanoFfsLsb(unsigned int);
-extern unsigned nanoFfsMsb(unsigned int);
+extern unsigned find_first_set(unsigned int);
+extern unsigned find_last_set(unsigned int);
 
 /**
  *
@@ -58,7 +58,7 @@ extern unsigned nanoFfsMsb(unsigned int);
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
+static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
 {
 	unsigned int bit;
 
@@ -87,7 +87,7 @@ static ALWAYS_INLINE unsigned int nanoFfsMsb_inline(unsigned int op)
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int nanoFfsLsb_inline(unsigned int op)
+static ALWAYS_INLINE unsigned int find_first_set_inline(unsigned int op)
 {
 	unsigned int bit;
 

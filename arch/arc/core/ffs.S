@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This library implements nanoFfsMsb() and nanoFfsLsb() which returns the
+This library implements find_last_set() and find_first_set() which returns the
 most and least significant bit set respectively.
  */
 
@@ -43,8 +43,8 @@ most and least significant bit set respectively.
 
 /* Exports */
 
-GTEXT(nanoFfsMsb)
-GTEXT(nanoFfsLsb)
+GTEXT(find_last_set)
+GTEXT(find_first_set)
 
 /**
  *
@@ -58,7 +58,7 @@ GTEXT(nanoFfsLsb)
  * @return most significant bit set
  */
 
-SECTION_FUNC(TEXT, nanoFfsMsb)
+SECTION_FUNC(TEXT, find_last_set)
 
 	/*
 	 * The FLS instruction returns the bit number (0-31), and 0 if the operand
@@ -81,7 +81,7 @@ SECTION_FUNC(TEXT, nanoFfsMsb)
  * @return least significant bit set
  */
 
-SECTION_FUNC(TEXT, nanoFfsLsb)
+SECTION_FUNC(TEXT, find_first_set)
 
 	/*
 	 * The FFS instruction returns the bit number (0-31), and 31 if the operand
