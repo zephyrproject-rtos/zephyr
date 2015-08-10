@@ -324,6 +324,23 @@ struct bt_hci_cp_le_ltk_req_neg_reply {
 	uint16_t handle;
 } __packed;
 
+#define BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY	BT_OP(BT_OGF_LE, 0x0020)
+struct bt_hci_cp_le_conn_param_req_reply {
+	uint16_t handle;
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
+	uint16_t min_ce_len;
+	uint16_t max_ce_len;
+} __packed;
+
+#define BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY	BT_OP(BT_OGF_LE, 0x0021)
+struct bt_hci_cp_le_conn_param_req_neg_reply {
+	uint16_t handle;
+	uint8_t  reason;
+} __packed;
+
 /* Event definitions */
 
 #define BT_HCI_EVT_DISCONN_COMPLETE		0x05
@@ -405,6 +422,15 @@ struct bt_hci_evt_le_ltk_request {
 	uint16_t handle;
 	uint64_t rand;
 	uint16_t ediv;
+} __packed;
+
+#define BT_HCI_EVT_LE_REMOTE_CONN_PARAM_REQ	0x06
+struct bt_hci_evt_le_remote_conn_param_req {
+	uint16_t handle;
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint16_t latency;
+	uint16_t timeout;
 } __packed;
 
 #endif /* __BT_HCI_H */
