@@ -9,4 +9,5 @@ microkernel applications and nanokernel applications.
 .. toctree::
    :maxdepth: 1
 
+   common_contexts.rst
    common_kernel_clocks.rst
