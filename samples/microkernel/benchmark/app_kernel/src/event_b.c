@@ -138,7 +138,7 @@ void event_test(void)
 
 	PRINT_STRING("| Signal event with installed handler"
 				 "                                         |\n", output_file);
-	nReturn = task_event_set_handler (TEST_EVENT, example_handler);
+	nReturn = task_event_handler_set (TEST_EVENT, example_handler);
 	if (nReturn != RC_OK) {
 		PRINT_F(output_file, "-------- Error installing event handler.\n");
 		task_sleep(SLEEP_TIME);
@@ -162,7 +162,7 @@ void event_test(void)
 		nEventValue = 0;
 	}
 
-	nReturn = task_event_set_handler (TEST_EVENT, NULL);
+	nReturn = task_event_handler_set (TEST_EVENT, NULL);
 	if (nReturn != RC_OK) {
 		PRINT_F(output_file, "Error removing event handler.\n");
 		task_sleep(SLEEP_TIME);

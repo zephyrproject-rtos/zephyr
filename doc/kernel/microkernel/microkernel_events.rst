@@ -134,7 +134,7 @@ so that the consuming task only wakes up when needed.
    void keypress_task(void)
    {
        /* register the filtering routine */
-       task_event_set_handler(KEYPRESS, validate_keypress);
+       task_event_handler_set(KEYPRESS, validate_keypress);
 
        /* consume key presses */
        while (1) {
@@ -170,6 +170,6 @@ The following Event APIs are provided by microkernel.h.
 | :c:func:`task_event_recv_wait_timeout()` | Waits for an event signal        |
 |                                          | for a specified time period.     |
 +------------------------------------------+----------------------------------+
-| :c:func:`task_event_set_handler()`       | Registers an event handler       |
+| :c:func:`task_event_handler_set()`       | Registers an event handler       |
 |                                          | function for an event.           |
 +------------------------------------------+----------------------------------+

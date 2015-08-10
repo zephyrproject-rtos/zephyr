@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This modules tests the following event APIs:
-  task_event_set_handler(), task_event_send(), isr_event_send(),
+  task_event_handler_set(), task_event_send(), isr_event_send(),
   task_event_recv(), task_event_recv_wait(), task_event_recv_wait_timeout()
 
  */
@@ -397,10 +397,10 @@ int altEventHandler(int event)
 
 /**
  *
- * @brief Test the task_event_set_handler() API
+ * @brief Test the task_event_handler_set() API
  *
  * This test checks that the event handler is set up properly when
- * task_event_set_handler() is called.  It shows that event handlers are tied
+ * task_event_handler_set() is called.  It shows that event handlers are tied
  * to the specified event and that the return value from the handler affects
  * whether the event wakes a task waiting upon that event.
  *
@@ -411,26 +411,26 @@ int eventSignalHandlerTest(void)
 {
 	int  rv;     /* return value from task_event_xxx() calls */
 
-	/* Expect this call to task_event_set_handler() to fail */
-	rv = task_event_set_handler(EVENT_ID + 10, eventHandler);
+	/* Expect this call to task_event_handler_set() to fail */
+	rv = task_event_handler_set(EVENT_ID + 10, eventHandler);
 	if (rv != RC_FAIL) {
-		TC_ERROR("task_event_set_handler() returned %d not %d\n",
+		TC_ERROR("task_event_handler_set() returned %d not %d\n",
 			rv, RC_FAIL);
 		return TC_FAIL;
 	}
 
-	/* Expect this call to task_event_set_handler() to succeed */
-	rv = task_event_set_handler(EVENT_ID, eventHandler);
+	/* Expect this call to task_event_handler_set() to succeed */
+	rv = task_event_handler_set(EVENT_ID, eventHandler);
 	if (rv != RC_OK) {
-		TC_ERROR("task_event_set_handler() returned %d not %d\n",
+		TC_ERROR("task_event_handler_set() returned %d not %d\n",
 			rv, RC_OK);
 		return TC_FAIL;
 	}
 
 	/* Enable another handler to show that two handlers can be installed */
-	rv = task_event_set_handler(ALT_EVENT, altEventHandler);
+	rv = task_event_handler_set(ALT_EVENT, altEventHandler);
 	if (rv != RC_OK) {
-		TC_ERROR("task_event_set_handler() returned %d not %d\n",
+		TC_ERROR("task_event_handler_set() returned %d not %d\n",
 			rv, RC_OK);
 		return TC_FAIL;
 	}
@@ -479,16 +479,16 @@ int eventSignalHandlerTest(void)
 	}
 
 	/* Uninstall the event handlers */
-	rv = task_event_set_handler(EVENT_ID, NULL);
+	rv = task_event_handler_set(EVENT_ID, NULL);
 	if (rv != RC_OK) {
-		TC_ERROR("task_event_set_handler() returned %d not %d\n",
+		TC_ERROR("task_event_handler_set() returned %d not %d\n",
 			rv, RC_OK);
 		return TC_FAIL;
 	}
 
-	rv = task_event_set_handler(ALT_EVENT, NULL);
+	rv = task_event_handler_set(ALT_EVENT, NULL);
 	if (rv != RC_OK) {
-		TC_ERROR("task_event_set_handler() returned %d not %d\n",
+		TC_ERROR("task_event_handler_set() returned %d not %d\n",
 			rv, RC_OK);
 		return TC_FAIL;
 	}
@@ -601,7 +601,7 @@ void RegressionTask(void)
 		goto doneTests;
 	}
 
-	TC_PRINT("Testing task_event_set_handler() ...\n");
+	TC_PRINT("Testing task_event_handler_set() ...\n");
 	tcRC = eventSignalHandlerTest();
 	if (tcRC != TC_PASS) {
 		goto doneTests;

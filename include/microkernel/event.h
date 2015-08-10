@@ -89,7 +89,7 @@ extern void fiber_event_send(kevent_t event);
  * @return RC_FAIL if an event handler exists or the event number is invalid,
  *          else RC_OK
  */
-extern int task_event_set_handler(kevent_t event, kevent_handler_t handler);
+extern int task_event_handler_set(kevent_t event, kevent_handler_t handler);
 
 /**
  *

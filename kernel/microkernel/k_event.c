@@ -73,7 +73,7 @@ void _k_event_handler_set(struct k_args *A)
 	}
 }
 
-int task_event_set_handler(kevent_t event, kevent_handler_t handler)
+int task_event_handler_set(kevent_t event, kevent_handler_t handler)
 {
 	struct k_args A;
 
