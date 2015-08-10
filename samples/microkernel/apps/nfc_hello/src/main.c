@@ -37,7 +37,7 @@
 #include <board.h>
 #include <drivers/uart.h>
 
-#define UART1 (&uart_devs[1])
+#define UART1 (uart_devs[1])
 #define UART1_IRQ COM2_INT_LVL
 #define UART1_INT_PRI COM2_INT_PRI
 #define BUF_MAXSIZE 256
@@ -77,13 +77,11 @@ static void uart1_isr(void *x)
 
 static void uart1_init(void)
 {
-	struct uart_init_info uart1;
-
-	memset(&uart1, 0, sizeof(uart1));
-
-	uart_generic_info_init(&uart1);
-
-	uart1.int_pri = UART1_INT_PRI;
+	struct uart_init_info uart1 = {
+		.baud_rate = CONFIG_UART_BAUDRATE,
+		.sys_clk_freq = UART_XTAL_FREQ,
+		.int_pri = UART1_INT_PRI,
+	};
 
 	uart_init(UART1, &uart1);
 

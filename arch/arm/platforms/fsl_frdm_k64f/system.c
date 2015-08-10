@@ -244,58 +244,6 @@ static void clkInit(void)
 	;
 }
 
-#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-/**
- *
- * @brief Initialize target-only console
- *
- * Only used for debugging.
- *
- * @return N/A
- *
- */
-
-#include <console/uart_console.h>
-
-static void consoleInit(void)
-{
-	uint32_t port;
-	uint32_t rxPin;
-	uint32_t txPin;
-	K20_PCR_t pcr = {0}; /* Pin Control Register */
-
-	/* Port/pin ctrl module */
-	K20_PORT_PCR_t *port_pcr_p = (K20_PORT_PCR_t *)PERIPH_ADDR_BASE_PCR;
-
-	struct uart_init_info info = {
-		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
-		.sys_clk_freq = CONFIG_UART_CONSOLE_CLK_FREQ,
-		/* Only supported in polling mode, but init all info fields */
-		.int_pri = CONFIG_UART_CONSOLE_INT_PRI
-	};
-
-	/* UART0 Rx and Tx pin assignments */
-	port = CONFIG_UART_CONSOLE_PORT;
-	rxPin = CONFIG_UART_CONSOLE_PORT_RX_PIN;
-	txPin = CONFIG_UART_CONSOLE_PORT_TX_PIN;
-
-	/* Enable the UART Rx and Tx Pins */
-	pcr.field.mux = CONFIG_UART_CONSOLE_PORT_MUX_FUNC;
-
-	port_pcr_p->port[port].pcr[rxPin] = pcr;
-	port_pcr_p->port[port].pcr[txPin] = pcr;
-
-	uart_init(UART_CONSOLE_DEV, &info);
-
-	uart_console_init();
-}
-
-#else
-#define consoleInit()     \
-	do {/* nothing */ \
-	} while ((0))
-#endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
-
 /**
  *
  * @brief Perform basic hardware initialization
@@ -365,8 +313,6 @@ static int fsl_frdm_k64f_init(struct device *arg)
 				(SIM_CLKDIV(5) << SIM_CLKDIV1_OUTDIV4_SHIFT));
 
 	clkInit(); /* Initialize PLL/system clock to 120 MHz */
-
-	consoleInit(); /* NOP if not needed */
 
 	NMI_INIT(); /* install default handler that simply resets the CPU
 		     * if configured in the kernel, NOP otherwise */

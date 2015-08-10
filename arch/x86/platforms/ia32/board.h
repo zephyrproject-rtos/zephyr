@@ -97,17 +97,15 @@ the 'ia32' platform.
 #define CONFIG_UART_PORT_1_IRQ		COM2_INT_LVL
 #define CONFIG_UART_PORT_1_IRQ_PRIORITY	COM2_INT_PRI
 
+#ifndef _ASMLANGUAGE
+extern struct device * const uart_devs[];
+#endif
+
 /* Console definitions */
 #define CONFIG_UART_CONSOLE_IRQ		COM1_INT_LVL
 #define CONFIG_UART_CONSOLE_INT_PRI	COM1_INT_PRI
 
-#ifndef _ASMLANGUAGE
-
-extern struct device uart_devs[];
-extern struct device * const uart_console_dev;
-#define UART_CONSOLE_DEV uart_console_dev
-
-#endif
+#define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
 
 /* Bluetooth UART definitions */
 #if defined(CONFIG_BLUETOOTH_UART)
@@ -118,12 +116,7 @@ extern struct device * const uart_console_dev;
 #define CONFIG_BLUETOOTH_UART_FREQ UART_XTAL_FREQ
 #define CONFIG_BLUETOOTH_UART_BAUDRATE CONFIG_UART_BAUDRATE
 
-#ifndef _ASMLANGUAGE
-
-extern struct device * const bt_uart_dev;
-#define BT_UART_DEV bt_uart_dev
-
-#endif
+#define BT_UART_DEV (uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
 
 #endif /* CONFIG_BLUETOOTH_UART */
 

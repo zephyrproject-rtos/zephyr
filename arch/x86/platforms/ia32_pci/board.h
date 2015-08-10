@@ -69,12 +69,11 @@ the 'ia32_pci' platform.
 #define CONFIG_UART_BAUDRATE COM1_BAUD_RATE
 
 #ifndef _ASMLANGUAGE
-
-extern struct device uart_devs[];
-extern struct device * const uart_console_dev;
-#define UART_CONSOLE_DEV uart_console_dev
-
+extern struct device * const uart_devs[];
 #endif
+
+#define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
+
 
 /*
  * The irq_connect() API connects to a (virtualized) IRQ and the

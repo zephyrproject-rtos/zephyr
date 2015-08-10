@@ -179,7 +179,7 @@ This header file is used to specify and describe board-level aspects for the
 #define CONFIG_UART_PORT_4_REGS PERIPH_ADDR_BASE_UART4
 #define CONFIG_UART_PORT_4_IRQ IRQ_UART4_STATUS
 
-extern struct device uart_devs[];
+extern struct device * const uart_devs[];
 
 /* Uart console settings */
 
@@ -192,8 +192,7 @@ extern struct device uart_devs[];
 #define CONFIG_UART_CONSOLE_IRQ IRQ_UART0_STATUS
 #define CONFIG_UART_CONSOLE_INT_PRI 3
 
-extern struct device * const uart_console_dev;
-#define UART_CONSOLE_DEV uart_console_dev
+#define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
 
 /* Bluetooth UART definitions */
 #if defined(CONFIG_BLUETOOTH_UART)
@@ -204,8 +203,7 @@ extern struct device * const uart_console_dev;
 #define CONFIG_BLUETOOTH_UART_INT_PRI 3
 #define CONFIG_BLUETOOTH_UART_FREQ SYSCLK_DEFAULT_IOSC_HZ
 
-extern struct device * const bt_uart_dev;
-#define BT_UART_DEV bt_uart_dev
+#define BT_UART_DEV (uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
 
 #endif /* CONFIG_BLUETOOTH_UART */
 

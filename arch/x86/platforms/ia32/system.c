@@ -95,68 +95,6 @@ static inline void hpet_irq_set(void)
 	} while ((0))
 #endif
 
-#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-
-/**
- *
- * @brief Initialize initialization information for one UART
- *
- * @return N/A
- *
- */
-
-void uart_generic_info_init(struct uart_init_info *p_info)
-{
-	p_info->options = 0;
-	p_info->sys_clk_freq = UART_XTAL_FREQ;
-	p_info->baud_rate = CONFIG_UART_BAUDRATE;
-	p_info->int_pri = CONFIG_UART_CONSOLE_INT_PRI;
-}
-
-
-/**
- *
- * @brief Initialize target-only console
- *
- * Only used for debugging.
- *
- * @return N/A
- *
- */
-
-#include <console/uart_console.h>
-
-static void console_init(void)
-{
-	struct uart_init_info info;
-
-	uart_generic_info_init(&info);
-	uart_init(UART_CONSOLE_DEV, &info);
-	uart_console_init();
-}
-
-#else
-#define console_init()     \
-	do {/* nothing */ \
-	} while ((0))
-#endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
-
-#if defined(CONFIG_BLUETOOTH)
-#if defined(CONFIG_BLUETOOTH_UART)
-#include <bluetooth/uart.h>
-#endif /* CONFIG_BLUETOOTH_UART */
-static void bluetooth_init(void)
-{
-#if defined(CONFIG_BLUETOOTH_UART)
-	bt_uart_init();
-#endif
-}
-#else
-#define bluetooth_init()	\
-	do {/* nothing */	\
-	} while ((0))
-#endif /* CONFIG_BLUETOOTH */
-
 /**
  *
  * @brief Perform basic hardware initialization
@@ -175,8 +113,6 @@ static int ia32_init(struct device *arg)
 
 	ioapic_init();    /* NOP if not needed */
 	hpet_irq_set();   /* NOP if not needed */
-	console_init();   /* NOP if not needed */
-	bluetooth_init(); /* NOP if not needed */
 	return 0;
 }
 

@@ -53,6 +53,9 @@ struct uart_device_config_t {
 	};
 	uint8_t irq;		/**< interrupt request level */
 	uint8_t int_pri;	/**< interrupt priority */
+
+	/**< Configuration function */
+	int (*config_func)(struct device *dev);
 };
 
 /** UART configuration structure */
@@ -65,6 +68,8 @@ struct uart_init_info {
 
 	uint32_t regs;		/* Register address */
 };
+
+int uart_platform_init(struct device *dev);
 
 /* UART driver has to configure the device to 8n1 */
 void uart_init(struct device *dev,

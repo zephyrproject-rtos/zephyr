@@ -1,7 +1,5 @@
-/* system.c - system/hardware module for ti_lm3s6965 platform */
-
 /*
- * Copyright (c) 2013-2015 Wind River Systems, Inc.
+ * Copyright (c) 2015 Intel Corporation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -13,7 +11,7 @@
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
  *
- * 3) Neither the name of Wind River Systems nor the names of its contributors
+ * 3) Neither the name of Intel Corporation nor the names of its contributors
  * may be used to endorse or promote products derived from this software without
  * specific prior written permission.
  *
@@ -30,45 +28,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module provides routines to initialize and support board-level hardware
-for the ti_lm3s6965 platform.
- */
-
 #include <nanokernel.h>
 #include <device.h>
-#include <init.h>
-#include <board.h>
 
-#ifdef CONFIG_RUNTIME_NMI
-extern void _NmiInit(void);
-#define NMI_INIT() _NmiInit()
-#else
-#define NMI_INIT()
-#endif
+#include <drivers/uart.h>
 
 /**
+ * @brief UART initialization routine for platform drivers.
  *
- * @brief Perform basic hardware initialization
+ * This calls the config_func specified in the UART device config,
+ * if it is specified.
  *
- * Initialize the interrupt controller device drivers and the
- * integrated 16550-compatible UART device driver.
- * Also initialize the timer device driver, if required.
+ * @param dev UART device struct
  *
- * @return 0
+ * @return DEV_OK if successful, failed otherwise.
  */
-
-static int ti_lm3s6965_init(struct device *arg)
+int uart_platform_init(struct device *dev)
 {
-	ARG_UNUSED(arg);
+	struct uart_device_config_t *dev_cfg =
+	    (struct uart_device_config_t *)dev->config->config_info;
 
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
-	return 0;
+	if (dev_cfg->config_func) {
+		return dev_cfg->config_func(dev);
+	}
+
+	return DEV_OK;
 }
-
-DECLARE_DEVICE_INIT_CONFIG(ti_lm3_0, "", ti_lm3s6965_init, NULL);
-pure_early_init(ti_lm3_0, NULL);

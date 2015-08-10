@@ -113,7 +113,7 @@ the 'ti_lm3s6965' platform.
 #define CONFIG_UART_PORT_2_REGS PERIPH_ADDR_BASE_UART2
 #define CONFIG_UART_PORT_2_IRQ IRQ_UART2
 
-extern struct device uart_devs[];
+extern struct device * const uart_devs[];
 
 /* Uart console configuration */
 
@@ -121,8 +121,7 @@ extern struct device uart_devs[];
 #define CONFIG_UART_CONSOLE_IRQ IRQ_UART0
 #define CONFIG_UART_CONSOLE_INT_PRI 3
 
-extern struct device * const uart_console_dev;
-#define UART_CONSOLE_DEV uart_console_dev
+#define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
 
 /* Bluetooth UART definitions */
 #if defined(CONFIG_BLUETOOTH_UART)
@@ -133,8 +132,7 @@ extern struct device * const uart_console_dev;
 #define CONFIG_BLUETOOTH_UART_INT_PRI 3
 #define CONFIG_BLUETOOTH_UART_FREQ SYSCLK_DEFAULT_IOSC_HZ
 
-extern struct device * const bt_uart_dev;
-#define BT_UART_DEV bt_uart_dev
+#define BT_UART_DEV (uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
 
 #endif /* CONFIG_BLUETOOTH_UART */
 
