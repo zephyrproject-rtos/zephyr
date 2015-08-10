@@ -862,6 +862,76 @@ static void le_remote_feat_complete(struct bt_buf *buf)
 	bt_conn_put(conn);
 }
 
+static int le_conn_param_neg_reply(uint16_t handle, uint8_t reason)
+{
+	struct bt_hci_cp_le_conn_param_req_neg_reply *cp;
+	struct bt_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(handle);
+	cp->reason = sys_cpu_to_le16(reason);
+
+	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY, buf);
+}
+
+static int le_conn_param_req_reply(uint16_t handle, uint16_t min, uint16_t max,
+				   uint16_t latency, uint16_t timeout)
+{
+	struct bt_hci_cp_le_conn_param_req_reply *cp;
+	struct bt_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_add(buf, sizeof(*cp));
+	memset(cp, 0x0, sizeof(*cp));
+
+	cp->handle = sys_cpu_to_le16(handle);
+	cp->interval_min = sys_cpu_to_le16(min);
+	cp->interval_max = sys_cpu_to_le16(max);
+	cp->latency = sys_cpu_to_le16(latency);
+	cp->timeout = sys_cpu_to_le16(timeout);
+
+	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY, buf);
+}
+
+static int le_conn_param_req(struct bt_buf *buf)
+{
+	struct bt_hci_evt_le_conn_param_req *evt = (void *)buf->data;
+	struct bt_conn *conn;
+	uint16_t handle, min, max, latency, timeout;
+
+	handle = sys_le16_to_cpu(evt->handle);
+	min = sys_le16_to_cpu(evt->interval_min);
+	max = sys_le16_to_cpu(evt->interval_max);
+	latency = sys_le16_to_cpu(evt->latency);
+	timeout = sys_le16_to_cpu(evt->timeout);
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Unable to lookup conn for handle %u\n", handle);
+		return le_conn_param_neg_reply(handle,
+					       BT_HCI_ERR_UNKNOWN_CONN_ID);
+	}
+
+	bt_conn_put(conn);
+
+	if (!bt_le_conn_params_valid(min, max, latency, timeout)) {
+		return le_conn_param_neg_reply(handle,
+					       BT_HCI_ERR_INVALID_LL_PARAMS);
+	}
+
+	return le_conn_param_req_reply(handle, min, max, latency, timeout);
+}
+
 static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
 			       struct bt_keys *keys)
 {
@@ -1014,6 +1084,9 @@ static void hci_le_meta_event(struct bt_buf *buf)
 		break;
 	case BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE:
 		le_remote_feat_complete(buf);
+		break;
+	case BT_HCI_EVT_LE_CONN_PARAM_REQ:
+		le_conn_param_req(buf);
 		break;
 	default:
 		BT_DBG("Unhandled LE event %x\n", evt->subevent);
