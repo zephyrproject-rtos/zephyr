@@ -359,6 +359,55 @@ the execution of all tasks belonging to the designated task groups.
        }
    }
 
+Example: Offloading Work to the Microkernel Server Fiber
+========================================================
+
+This code shows how the currently executing task can perform critical section
+processing by offloading it to the microkernel server. Since the critical
+section function is being executed by a fiber, once the function begins
+executing it cannot be interrupted by any other fiber or task that wants
+to log an alarm.
+
+.. code-block:: c
+
+   /* alarm logging subsystem */
+
+   #define MAX_ALARMS 100
+
+   struct alarm_info alarm_log[MAX_ALARMS];
+   int num_alarms = 0;
+
+   int log_an_alarm(struct alarm_info *new_alarm)
+   {
+       /* ensure alarm log isn't full */
+       if (num_alarms == MAX_ALARMS) {
+           return 0;
+       }
+
+       /* add new alarm to alarm log */
+       alarm_info[num_alarms] = *new_alarm;
+       num_alarms++;
+
+       /* pass back alarm identifier to indicate successful logging */
+       return num_alarms;
+   }
+
+   /* task that generates an alarm */
+
+   void XXX_main(void)
+   {
+       struct alarm_info my_alarm = { ... };
+
+       ...
+
+       /* record alarm in system's database */
+       if (task_offload_to_fiber(log_an_alarm, &my_alarm) == 0) {
+           printf("Unable to log alarm!");
+       }
+
+       ...
+   }
+
 APIs
 ****
 
@@ -381,11 +430,14 @@ are provided by :file:`microkernel.h`.
 | :c:func:`isr_task_group_mask_get()` | Gets the task's group memberships from  |
 |                                     | an ISR.                                 |
 +-------------------------------------+-----------------------------------------+
+| :c:func:`task_abort_handler_set()`  | Installs the task's abort handler.      |
++-------------------------------------+-----------------------------------------+
 | :c:func:`task_yield()`              | Yields CPU to equal-priority tasks.     |
 +-------------------------------------+-----------------------------------------+
 | :c:func:`task_sleep()`              | Yields CPU for a specified time period. |
 +-------------------------------------+-----------------------------------------+
-| :c:func:`task_abort_handler_set()`  | Installs the task's abort handler.      |
+| :c:func:`task_offload_to_fiber()`   | Instructs the microkernel server fiber  |
+|                                     | to execute a function.                  |
 +-------------------------------------+-----------------------------------------+
 
 The following APIs affecting a specified task
