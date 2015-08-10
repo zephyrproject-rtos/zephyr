@@ -11,3 +11,4 @@ provided by the nanokernel.
 
    nanokernel_fifos
    nanokernel_lifos
+   nanokernel_stacks
