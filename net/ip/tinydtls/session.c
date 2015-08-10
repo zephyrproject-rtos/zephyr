@@ -38,8 +38,8 @@
 #ifdef WITH_CONTIKI
 #define _dtls_address_equals_impl(A,B)				\
   ((A)->size == (B)->size					\
-   && (A)->port == (B)->port					\
-   && uip_ipaddr_cmp(&((A)->addr),&((B)->addr))			\
+   && (A)->addr.port == (B)->addr.port				\
+   && uip_ipaddr_cmp(&((A)->addr.ipaddr),&((B)->addr.ipaddr))	\
    && (A)->ifindex == (B)->ifindex)
 
 #else /* WITH_CONTIKI */

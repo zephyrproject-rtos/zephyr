@@ -184,10 +184,10 @@ dsrv_print_addr(const session_t *addr, char *buf, size_t len) {
     if (i) {
       *p++ = ':';
     }
-    *p++ = hex[(addr->addr.u8[i] & 0xf0) >> 4];
-    *p++ = hex[(addr->addr.u8[i] & 0x0f)];
-    *p++ = hex[(addr->addr.u8[i+1] & 0xf0) >> 4];
-    *p++ = hex[(addr->addr.u8[i+1] & 0x0f)];
+    *p++ = hex[(addr->addr.ipaddr.u8[i] & 0xf0) >> 4];
+    *p++ = hex[(addr->addr.ipaddr.u8[i] & 0x0f)];
+    *p++ = hex[(addr->addr.ipaddr.u8[i+1] & 0xf0) >> 4];
+    *p++ = hex[(addr->addr.ipaddr.u8[i+1] & 0x0f)];
   }
   *p++ = ']';
 #  else /* NETSTACK_CONF_WITH_IPV6 */
@@ -199,7 +199,7 @@ dsrv_print_addr(const session_t *addr, char *buf, size_t len) {
   if (buf + len - p < 6)
     return 0;
 
-  p += sprintf(p, ":%d", uip_htons(addr->port));
+  p += sprintf(p, ":%d", uip_htons(addr->addr.port));
 
   return p - buf;
 # else /* WITH_CONTIKI */

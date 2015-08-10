@@ -3495,8 +3495,8 @@ handle_alert(dtls_context_t *ctx, dtls_peer_t *peer,
 #ifdef WITH_CONTIKI
 #ifndef NDEBUG
     PRINTF("removed peer [");
-    PRINT6ADDR(&peer->session.addr);
-    PRINTF("]:%d\n", uip_ntohs(peer->session.port));
+    PRINT6ADDR(&peer->session.addr.ipaddr);
+    PRINTF("]:%d\n", uip_ntohs(peer->session.addr.port));
 #endif
 #endif /* WITH_CONTIKI */
 

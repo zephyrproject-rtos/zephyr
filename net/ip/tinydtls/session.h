@@ -35,8 +35,10 @@
 #include "ip/uip.h"
 typedef struct {
   unsigned char size;
-  uip_ipaddr_t addr;
-  unsigned short port;
+  struct {
+    uip_ipaddr_t ipaddr;
+    unsigned short port;
+  } addr;
   int ifindex;
 } session_t;
 
