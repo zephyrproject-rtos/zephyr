@@ -524,6 +524,10 @@ core-y := lib/ arch/ kernel/ misc/ net/
 drivers-y := drivers/
 
 ifneq ($(strip $(PROJECT)),)
+-include $(PROJECT)/Makefile.app
+ifneq ($(strip $(KBUILD_ZEPHYR_APP)),)
+export KBUILD_ZEPHYR_APP
+endif
 core-y += $(SOURCE_DIR)
 endif
 
@@ -772,7 +776,7 @@ quiet_cmd_link-zephyr = LINK    $@
 
 # Include targets which we want to
 # execute if the rest of the kernel build went well.
-zephyr: scripts/link-zephyr.sh $(zephyr-deps) FORCE
+zephyr: scripts/link-zephyr.sh $(zephyr-deps) $(KBUILD_ZEPHYR_APP) FORCE
 	@touch zephyr
 ifdef CONFIG_HEADERS_CHECK
 	$(Q)$(MAKE) -f $(srctree)/Makefile headers_check
