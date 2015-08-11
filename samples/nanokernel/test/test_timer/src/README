@@ -17,7 +17,7 @@ Timer Expiry
  Case 2: Timer has not expired
  Case 3: Wait for a timer to expire
 
-Expired timers can use the nano_node_tick_get_32() and nano_node_tick_delta() routines
+Expired timers can use the nano_tick_get_32() and nano_node_tick_delta() routines
 to check the results against the timer routines.
 
 This test set does not yet test/verify nano_node_cycle_get_32()--that must still be
@@ -38,5 +38,5 @@ nano_task_timer_wait
 
 --------------------------------
 nanoTimeInit (implicitly done)
-nano_node_tick_get_32
+nano_tick_get_32
 nano_node_tick_delta
