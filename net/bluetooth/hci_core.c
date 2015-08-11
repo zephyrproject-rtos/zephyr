@@ -932,6 +932,32 @@ static int le_conn_param_req(struct bt_buf *buf)
 	return le_conn_param_req_reply(handle, min, max, latency, timeout);
 }
 
+static void le_conn_update_complete(struct bt_buf *buf)
+{
+	struct bt_hci_evt_le_conn_update_complete *evt = (void *)buf->data;
+	struct bt_conn *conn;
+	uint16_t handle, interval;
+
+	handle = sys_le16_to_cpu(evt->handle);
+	interval = sys_le16_to_cpu(evt->interval);
+
+	BT_DBG("status %u, handle %u", evt->status, handle);
+
+	conn = bt_conn_lookup_handle(handle);
+	if (!conn) {
+		BT_ERR("Unable to lookup conn for handle %u\n", handle);
+		return;
+	}
+
+	if (!evt->status) {
+		conn->le_conn_interval = interval;
+	}
+
+	/* TODO Notify about connection */
+
+	bt_conn_put(conn);
+}
+
 static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
 			       struct bt_keys *keys)
 {
@@ -1075,6 +1101,9 @@ static void hci_le_meta_event(struct bt_buf *buf)
 	switch (evt->subevent) {
 	case BT_HCI_EVT_LE_CONN_COMPLETE:
 		le_conn_complete(buf);
+		break;
+	case BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE:
+		le_conn_update_complete(buf);
 		break;
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 		le_adv_report(buf);
