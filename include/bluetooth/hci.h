@@ -410,6 +410,15 @@ struct bt_hci_ev_le_advertising_info {
 	uint8_t      data[0];
 } __packed;
 
+#define BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE	0x03
+struct bt_hci_evt_le_conn_update_complete {
+	uint8_t  status;
+	uint16_t handle;
+	uint16_t interval;
+	uint16_t latency;
+	uint16_t supv_timeout;
+} __packed;
+
 #define BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE	0x04
 struct bt_hci_ev_le_remote_feat_complete {
 	uint8_t  status;
