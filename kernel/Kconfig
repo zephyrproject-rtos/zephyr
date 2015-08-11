@@ -103,6 +103,14 @@ config ENHANCED_SECURITY
 	Users can customize these settings using the CUSTOM_SECURITY option
 	in the "Security Options" menu.
 
+config EVENT_LOGGER
+	bool
+	prompt "Enable event logger"
+	default n
+	help
+	Enable event logging feature. Allow the usage of a ring buffer to
+	transmit event messages with a single interface to collect them.
+
 menu "Security Options"
 	depends on ENHANCED_SECURITY
 
