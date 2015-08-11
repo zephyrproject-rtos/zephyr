@@ -136,6 +136,14 @@ SECTION_FUNC(TEXT, _Swap)
 	movl	__tNANO_current_OFFSET (%eax), %ecx
 	movl	%esp, __tCCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%ecx)
 
+#ifdef CONFIG_PROFILER_CONTEXT_SWITCH
+	/* save %eax since it used as the return value for _Swap */
+	pushl	%eax
+	/* Register the context switch */
+	call	_sys_profiler_context_switch
+	/* restore _Swap's %eax */
+	popl	%eax
+#endif
 
 	/*
 	 * Determine what FIBER or TASK context needs to be swapped in. 

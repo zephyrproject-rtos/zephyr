@@ -130,6 +130,18 @@ config PROFILER_BUFFER_SIZE
 	help
 	Buffer size in 32-bit words.
 
+menu "Profiler points"
+depends on KERNEL_PROFILER
+
+config PROFILER_CONTEXT_SWITCH
+	bool
+	prompt "Context switch profiler point"
+	default n
+	depends on KERNEL_PROFILER
+	help
+	Enable the context switch event messages.
+endmenu
+
 menu "Security Options"
 	depends on ENHANCED_SECURITY
 

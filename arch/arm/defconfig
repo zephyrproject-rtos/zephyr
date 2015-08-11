@@ -17,6 +17,7 @@ CONFIG_XIP=y
 # CONFIG_EVENT_LOGGER is not set
 # CONFIG_KERNEL_PROFILER is not set
 # CONFIG_PROFILER_BUFFER_SIZE is not set
+# CONFIG_PROFILER_CONTEXT_SWITCH is not set
 
 #
 # Nanokernel Options

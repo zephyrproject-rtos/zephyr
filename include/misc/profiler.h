@@ -41,6 +41,10 @@
 
 #ifdef CONFIG_KERNEL_PROFILER
 
+#ifdef CONFIG_PROFILER_CONTEXT_SWITCH
+#define PROFILER_CONTEXT_SWITCH_EVENT_ID             0x0001
+#endif /* CONFIG_PROFILER_CONTEXT_SWITCH */
+
 /**
  * Global variable of the ring buffer that allows user to implement
  * their own reading routine.
@@ -141,6 +145,23 @@ void sys_profiler_put_timed(uint16_t event_id);
 	sys_event_logger_get_wait_timeout(&sys_profiler_logger, buffer, \
 	buffer_size, timeout)
 #endif /* CONFIG_NANO_TIMEOUTS */
+
+
+#ifdef CONFIG_PROFILER_CONTEXT_SWITCH
+
+/**
+ * @brief Register the fiber that calls the function as collector
+ *
+ * @details Initialize internal profiling data. This avoid registering the
+ * context switch of the collector fiber when CONFIG_PROFILE_CONTEXT_SWITCH
+ * is enable.
+ *
+ * @return No return value.
+ */
+void sys_profiler_register_as_collector(void);
+#else /* !CONFIG_PROFILER_CONTEXT_SWITCH */
+static inline void sys_profiler_register_as_collector(void) {};
+#endif /* CONFIG_PROFILER_CONTEXT_SWITCH */
 
 #else /* !CONFIG_KERNEL_PROFILER */
 
