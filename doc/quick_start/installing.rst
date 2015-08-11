@@ -78,8 +78,8 @@ Install the required packages in a Fedora host system, type:
 
 .. _yocto_sdk:
 
-Installing the Yocto Software Development Kit
-=============================================
+Installing the Zephyr Software Development Kit
+==============================================
 
 The |project|'s :abbr:`SDK (Software Development Kit)` provided by
 Yocto contains all necessary tools and cross compilers needed to build the
@@ -99,35 +99,40 @@ Follow these steps to install the SDK on your host system.
 
 #. Download the Yocto self-extractable binary from:
 
-   http://yct-rtos02.ostc.intel.com/tm-toolchains-i686-setup.run
+   https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.5-i686-setup.run
+
+    .. code-block:: bash
+
+       $ wget --user=USERNAME --ask-password \
+       https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.5-i686-setup.run
 
 #. Run the installation binary, type:
 
     .. code-block:: bash
 
-       $ chmod +x tm-toolchains-i686-setup.run
+       $ chmod +x zephyr-sdk-0.5-i686-setup.run
 
-       $ sudo ./tm-toolchains-i686-setup.run
+       $ sudo ./zephyr-sdk-0.5-i686-setup.run
 
 
 #. Follow the installation instructions on the screen. The
-   toolchain's default installation location is :file:`/opt/poky-tm`.
+   toolchain's default installation location is :file:`/opt/zephyr-sdk/0.5`.
 
     .. code-block:: bash
 
        Verifying archive integrity... All good.
 
-       Uncompressing SDK for TM 100%
+       Uncompressing SDK for Zephyr  100%
 
-       Enter target directory for SDK (default: /opt/poky-tm/1.8):
+       Enter target directory for SDK (default: /opt/zephyr-sdk/0.5):
 
 #. Enter a new location or hit :kbd:`Return` to accept default.
 
     .. code-block:: bash
 
-       Installing SDK to /opt/poky-tm/1.8
+       Installing SDK to /opt/zephyr-sdk/0.5
 
-       Creating directory /opt/poky-tm/1.8
+       Creating directory /opt/zephyr-sdk/0.5
 
        Success
 
@@ -137,18 +142,20 @@ Follow these steps to install the SDK on your host system.
 
        [*] Installing arc tools...
 
+       ...
+
        [*] Installing additional host tools...
 
        Success installing SDK. SDK is ready to be used.
 
-#. To use the Yocto SDK, export the following environment variables,
-   type:
+#. To use the Yocto SDK, export the following environment variables and
+   use the target location where SDK was installed, type:
 
     .. code-block:: bash
 
        $ export ZEPHYR_GCC_VARIANT=yocto
 
-       $ export YOCTO_SDK_INSTALL_DIR=/opt/poky-tm/1.8
+       $ export YOCTO_SDK_INSTALL_DIR=/opt/zephyr-sdk/0.5
 
 Installing a Custom QEMU for ARM Platforms
 ============================================
