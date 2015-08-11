@@ -49,27 +49,22 @@ extern struct evstr _k_event_list[];
 void _k_event_handler_set(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
+	struct evstr *E = _k_event_list + event;
 
-	if (likely(event < _k_num_events)) {
-		struct evstr *E = _k_event_list + A->Args.e1.event;
-
-		if (E->func != NULL) {
-			if (likely(A->Args.e1.func == NULL)) {
-				/* uninstall handler */
-				E->func = NULL;
-				A->Time.rcode = RC_OK;
-			} else {
-				/* can't overwrite an existing handler */
-				A->Time.rcode = RC_FAIL;
-			}
-		} else {
-			/* install handler */
-			E->func = A->Args.e1.func;
-			E->status = 0;
+	if (E->func != NULL) {
+		if (likely(A->Args.e1.func == NULL)) {
+			/* uninstall handler */
+			E->func = NULL;
 			A->Time.rcode = RC_OK;
+		} else {
+			/* can't overwrite an existing handler */
+			A->Time.rcode = RC_FAIL;
 		}
 	} else {
-		A->Time.rcode = RC_FAIL; /* invalid eventnr */
+		/* install handler */
+		E->func = A->Args.e1.func;
+		E->status = 0;
+		A->Time.rcode = RC_OK;
 	}
 }
 
@@ -110,40 +105,35 @@ void _k_event_test_timeout(struct k_args *A)
 void _k_event_test(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
+	struct evstr *E = _k_event_list + event;
 
-	if (likely(event < _k_num_events)) {
-		struct evstr *E = _k_event_list + event;
-
-		if (E->status) { /* the next event can be received */
-			E->status = 0;
-			A->Time.rcode = RC_OK;
-		} else {
-			if (likely(A->Time.ticks != TICKS_NONE)) {
-				/* Caller will wait for the event */
-				if (likely(E->waiter == NULL)) {
-					A->Ctxt.proc = _k_current_task;
-					E->waiter = A;
-					_k_state_bit_set(_k_current_task, TF_EVNT);
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-					if (A->Time.ticks == TICKS_UNLIMITED) {
-						A->Time.timer = NULL;
-					} else {
-						A->Comm = _K_SVC_EVENT_TEST_TIMEOUT;
-						_k_timeout_alloc(A);
-					}
-#endif
-				} else {
-					A->Time.rcode = RC_FAIL; /* already a
-								    waiter
-								    present */
-				}
-			} else {
-				/* Caller will not wait for the event */
-				A->Time.rcode = RC_FAIL;
-			}
-		}
+	if (E->status) { /* the next event can be received */
+		E->status = 0;
+		A->Time.rcode = RC_OK;
 	} else {
-		A->Time.rcode = RC_FAIL; /* illegal eventnr  */
+		if (likely(A->Time.ticks != TICKS_NONE)) {
+			/* Caller will wait for the event */
+			if (likely(E->waiter == NULL)) {
+				A->Ctxt.proc = _k_current_task;
+				E->waiter = A;
+				_k_state_bit_set(_k_current_task, TF_EVNT);
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+				if (A->Time.ticks == TICKS_UNLIMITED) {
+					A->Time.timer = NULL;
+				} else {
+					A->Comm = _K_SVC_EVENT_TEST_TIMEOUT;
+					_k_timeout_alloc(A);
+				}
+#endif
+			} else {
+				A->Time.rcode = RC_FAIL; /* already a
+								waiter
+								present */
+			}
+		} else {
+			/* Caller will not wait for the event */
+			A->Time.rcode = RC_FAIL;
+		}
 	}
 }
 
@@ -210,13 +200,8 @@ void _k_do_event_signal(kevent_t event)
 void _k_event_signal(struct k_args *A)
 {
 	kevent_t event = A->Args.e1.event;
-
-	if (likely(event < _k_num_events)) {
-		_k_do_event_signal(event);
-		A->Time.rcode = RC_OK;
-	} else {
-		A->Time.rcode = RC_FAIL;
-	}
+	_k_do_event_signal(event);
+	A->Time.rcode = RC_OK;
 }
 
 int task_event_send(kevent_t event)

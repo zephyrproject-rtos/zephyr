@@ -115,11 +115,10 @@ void microObjectsInit(void)
  *
  * @brief Test the task_event_recv() API
  *
- * There are three cases to be tested here.  The first is for testing an invalid
- * event.  The second is for testing for an event when there is one.  The third
- * is for testing for an event when there are none.  Note that the "consumption"
- * of the event gets confirmed by the order in which the latter two checks are
- * done.
+ * There are two cases to be tested here.  The first is for testing for an
+ * event when there is one.  The second is for testing for an event when there
+ * are none.  Note that the "consumption" of the event gets confirmed by the
+ * order in which the latter two checks are done.
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -127,12 +126,6 @@ void microObjectsInit(void)
 int eventNoWaitTest(void)
 {
 	int  rv;    /* return value from task_event_xxx() calls */
-
-	rv = task_event_send(_k_num_events);   /* An invalid event # */
-	if (rv != RC_FAIL) {
-		TC_ERROR("task_event_send() returned %d, not %d\n", rv, RC_FAIL);
-		return TC_FAIL;
-	}
 
 	/* Signal an event */
 	rv = task_event_send(EVENT_ID);
