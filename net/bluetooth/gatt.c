@@ -985,11 +985,15 @@ static void att_write_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 	func(conn, err);
 }
 
-static int gatt_write_cmd(struct bt_conn *conn, uint16_t handle,
-			  const void *data, uint16_t length)
+int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
+				   const void *data, uint16_t length)
 {
 	struct bt_buf *buf;
 	struct bt_att_write_cmd *cmd;
+
+	if (!conn || !handle) {
+		return -EINVAL;
+	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_CMD,
 				sizeof(*cmd) + length);
@@ -1106,7 +1110,7 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 	struct bt_buf *buf;
 	struct bt_att_write_req *req;
 
-	if (!conn || !handle) {
+	if (!conn || !handle || !func) {
 		return -EINVAL;
 	}
 
@@ -1114,10 +1118,6 @@ int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 	if (offset || length > bt_att_get_mtu(conn) - 1) {
 		return gatt_prepare_write(conn, handle, offset, data, length,
 					  func);
-	}
-
-	if (!func) {
-		return gatt_write_cmd(conn, handle, data, length);
 	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_REQ,

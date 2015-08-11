@@ -746,7 +746,7 @@ int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 /** @brief Write Attribute Value by handle
  *
  * This procedure write the attribute value and return the result in the
- * callback in case it is set.
+ * callback.
  *
  * @param conn Connection object.
  * @param handle Attribute handle.
@@ -759,6 +759,21 @@ int bt_gatt_read(struct bt_conn *conn, uint16_t handle, uint16_t offset,
  */
 int bt_gatt_write(struct bt_conn *conn, uint16_t handle, uint16_t offset,
 		  const void *data, uint16_t length, bt_gatt_rsp_func_t func);
+
+/** @brief Write Attribute Value by handle without reponse
+ *
+ * This procedure write the attribute value without requiring an
+ * acknowledgement that the write was successfully performed
+ *
+ * @param conn Connection object.
+ * @param handle Attribute handle.
+ * @param data Data to be written.
+ * @param length Data length.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_write_without_response(struct bt_conn *conn, uint16_t handle,
+				   const void *data, uint16_t length);
 
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {
