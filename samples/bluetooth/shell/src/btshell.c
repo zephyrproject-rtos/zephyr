@@ -64,7 +64,7 @@ static const char *prompt;
 static char *argv[ARGC_MAX + 1];
 static size_t argc;
 
-#define STACKSIZE 512
+#define STACKSIZE 2000
 static char __stack stack[STACKSIZE];
 
 #define MAX_CMD_QUEUED 3
