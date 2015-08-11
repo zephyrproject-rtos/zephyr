@@ -1,5 +1,3 @@
-/* ioApicIntr.c - Intel IO APIC/xAPIC driver */
-
 /*
  * Copyright (c) 1997-1998, 2000-2002, 2004, 2006-2008, 2011-2015 Wind River
  *Systems, Inc.
@@ -31,48 +29,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module is a driver for the IO APIC/xAPIC (Advanced Programmable
-Interrupt Controller) for P6 (PentiumPro, II, III) family processors
-and P7 (Pentium4) family processors.  The IO APIC/xAPIC is included
-in the Intel's system chip set, such as ICH2.  Software intervention
-may be required to enable the IO APIC/xAPIC in some chip sets.
-The 8259A interrupt controller is intended for use in a uni-processor
-system, IO APIC can be used in either a uni-processor or multi-processor
-system.  The IO APIC handles interrupts very differently than the 8259A.
-Briefly, these differences are:
- - Method of Interrupt Transmission. The IO APIC transmits interrupts
-   through a 3-wire bus and interrupts are handled without the need for
-   the processor to run an interrupt acknowledge cycle.
- - Interrupt Priority. The priority of interrupts in the IO APIC is
-   independent of the interrupt number.  For example, interrupt 10 can
-   be given a higher priority than interrupt 3.
- - More Interrupts. The IO APIC supports a total of 24 interrupts.
-
-The IO APIC unit consists of a set of interrupt input signals, a 24-entry
-by 64-bit Interrupt Redirection Table, programmable registers, and a message
-unit for sending and receiving APIC messages over the APIC bus or the
-Front-Side (system) bus.  IO devices inject interrupts into the system by
-asserting one of the interrupt lines to the IO APIC.  The IO APIC selects the
-corresponding entry in the Redirection Table and uses the information in that
-entry to format an interrupt request message.  Each entry in the Redirection
-Table can be individually programmed to indicate edge/level sensitive interrupt
-signals, the interrupt vector and priority, the destination processor, and how
-the processor is selected (statically and dynamically).  The information in
-the table is used to transmit a message to other APIC units (via the APIC bus
-or the Front-Side (system) bus).  IO APIC is used in the Symmetric IO Mode.
-The base address of IO APIC is determined in loapic_init() and stored in the
-global variable ioApicBase and ioApicData.
-The lower 32 bit value of the redirection table entries for IRQ 0
-to 15 are edge triggered positive high, and for IRQ 16 to 23 are level
-triggered positive low.
-
-This implementation doesn't support multiple IO APICs.
-
-INCLUDE FILES: ioapic.h loapic.h
-
-SEE ALSO: loApicIntr.c
+/**
+ * @file
+ * @brief Intel IO APIC/xAPIC driver
+ *
+ * This module is a driver for the IO APIC/xAPIC (Advanced Programmable
+ * Interrupt Controller) for P6 (PentiumPro, II, III) family processors
+ * and P7 (Pentium4) family processors.  The IO APIC/xAPIC is included
+ * in the Intel's system chip set, such as ICH2.  Software intervention
+ * may be required to enable the IO APIC/xAPIC in some chip sets.
+ * The 8259A interrupt controller is intended for use in a uni-processor
+ * system, IO APIC can be used in either a uni-processor or multi-processor
+ * system.  The IO APIC handles interrupts very differently than the 8259A.
+ * Briefly, these differences are:
+ *  - Method of Interrupt Transmission. The IO APIC transmits interrupts
+ *    through a 3-wire bus and interrupts are handled without the need for
+ *    the processor to run an interrupt acknowledge cycle.
+ *  - Interrupt Priority. The priority of interrupts in the IO APIC is
+ *    independent of the interrupt number.  For example, interrupt 10 can
+ *    be given a higher priority than interrupt 3.
+ *  - More Interrupts. The IO APIC supports a total of 24 interrupts.
+ *
+ * The IO APIC unit consists of a set of interrupt input signals, a 24-entry
+ * by 64-bit Interrupt Redirection Table, programmable registers, and a message
+ * unit for sending and receiving APIC messages over the APIC bus or the
+ * Front-Side (system) bus.  IO devices inject interrupts into the system by
+ * asserting one of the interrupt lines to the IO APIC.  The IO APIC selects the
+ * corresponding entry in the Redirection Table and uses the information in that
+ * entry to format an interrupt request message.  Each entry in the Redirection
+ * Table can be individually programmed to indicate edge/level sensitive interrupt
+ * signals, the interrupt vector and priority, the destination processor, and how
+ * the processor is selected (statically and dynamically).  The information in
+ * the table is used to transmit a message to other APIC units (via the APIC bus
+ * or the Front-Side (system) bus).  IO APIC is used in the Symmetric IO Mode.
+ * The base address of IO APIC is determined in loapic_init() and stored in the
+ * global variable ioApicBase and ioApicData.
+ * The lower 32 bit value of the redirection table entries for IRQ 0
+ * to 15 are edge triggered positive high, and for IRQ 16 to 23 are level
+ * triggered positive low.
+ *
+ * This implementation doesn't support multiple IO APICs.
+ *
+ * INCLUDE FILES: ioapic.h loapic.h
+ *
  */
 
 #include <nanokernel.h>
@@ -217,7 +216,6 @@ static void _IoApicRedUpdateLo(unsigned int irq, uint32_t value,
  *
  * @return N/A
  */
-
 void _ioapic_init(void)
 {
 	int32_t ix;	/* redirection table index */
@@ -259,12 +257,11 @@ void _ioapic_init(void)
  * @brief Send EOI (End Of Interrupt) signal to IO APIC
  *
  * This routine sends an EOI signal to the IO APIC's interrupting source.
+ * @param irq Interrupt number to send EOI
  *
  * @return N/A
  */
-
-void _ioapic_eoi(unsigned int irq /* INT number to send EOI */
-			  )
+void _ioapic_eoi(unsigned int irq)
 {
 	*(volatile unsigned int *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_EOI) = irq;
 	*(volatile unsigned int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
@@ -276,16 +273,14 @@ void _ioapic_eoi(unsigned int irq /* INT number to send EOI */
  *
  * This routine returns EOI signalling information for a specific IRQ.
  *
+ * @param irq IRQ number of interest
+ * @param argRequired Pointer to "argument required" result area
+ * @param arg Pointer to "argument value" result area
  * @return address of routine to be called to signal EOI;
  *          as a side effect, also passes back indication if routine requires
  *          an interrupt vector argument and what the argument value should be
  */
-
-void *_ioapic_eoi_get(unsigned int irq,  /* INTIN number of interest */
-		      char *argRequired, /* ptr to "argument required" result
-					    area */
-		      void **arg /* ptr to "argument value" result area */
-		      )
+void *_ioapic_eoi_get(unsigned int irq, char *argRequired, void **arg)
 {
 #ifndef XIOAPIC_DIRECT_ADDRESSING
 	if (!(__IoApicGet(IOAPIC_VERS) & IOAPIC_PRQ)) {
@@ -316,12 +311,11 @@ void *_ioapic_eoi_get(unsigned int irq,  /* INTIN number of interest */
  * @brief Enable a specified APIC interrupt input line
  *
  * This routine enables a specified APIC interrupt input line.
+ * @param irq IRQ number to enable
  *
  * @return N/A
  */
-
-void _ioapic_irq_enable(unsigned int irq /* INTIN number to enable */
-				 )
+void _ioapic_irq_enable(unsigned int irq)
 {
 	_IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
 }
@@ -331,12 +325,11 @@ void _ioapic_irq_enable(unsigned int irq /* INTIN number to enable */
  * @brief Disable a specified APIC interrupt input line
  *
  * This routine disables a specified APIC interrupt input line.
+ * @param irq IRQ number to disable
  *
  * @return N/A
  */
-
-void _ioapic_irq_disable(unsigned int irq /* INTIN number to disable */
-				  )
+void _ioapic_irq_disable(unsigned int irq)
 {
 	_IoApicRedUpdateLo(irq, IOAPIC_INT_MASK, IOAPIC_INT_MASK);
 }
@@ -346,13 +339,13 @@ void _ioapic_irq_disable(unsigned int irq /* INTIN number to disable */
  * @brief Programs the interrupt redirection table
  *
  * This routine sets up the redirection table entry for the specified IRQ
+ * @param irq Virtualized IRQ
+ * @param vector Vector number
+ * @param flags Interrupt flags
  *
  * @return N/A
  */
-void _ioapic_irq_set(unsigned int irq, /* virtualized IRQ */
-		     unsigned int vector, /* vector number */
-		     uint32_t flags    /* interrupt flags */
-		     )
+void _ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags)
 {
 	uint32_t rteValue;   /* value to copy into redirection table entry */
 
@@ -369,11 +362,11 @@ void _ioapic_irq_set(unsigned int irq, /* virtualized IRQ */
  * The routine writes the interrupt vector in the Interrupt Redirection
  * Table for specified irq number
  *
+ * @param irq Interrupt number
+ * @param vector Vector number
  * @return N/A
  */
-void _ioapic_int_vec_set(unsigned int irq, /* INT number */
-				  unsigned int vector /* vector number */
-				  )
+void _ioapic_int_vec_set(unsigned int irq, unsigned int vector)
 {
 	_IoApicRedUpdateLo(irq, vector, IOAPIC_VEC_MASK);
 }
@@ -385,13 +378,11 @@ void _ioapic_int_vec_set(unsigned int irq, /* INT number */
  * @brief Read a 32 bit IO APIC register
  *
  * This routine reads the specified IO APIC register using indirect addressing.
+ * @param offset Register offset (8 bits)
  *
  * @return register value
  */
-
-static uint32_t __IoApicGet(
-	int32_t offset /* register offset (8 bits) */
-	)
+static uint32_t __IoApicGet(int32_t offset)
 {
 	uint32_t value; /* value */
 	int key;	/* interrupt lock level */
@@ -415,13 +406,11 @@ static uint32_t __IoApicGet(
  *
  * This routine writes the specified IO APIC register using indirect addressing.
  *
+ * @param offset Register offset (8 bits)
+ * @param value Value to set the register
  * @return N/A
  */
-
-static void __IoApicSet(
-	int32_t offset, /* register offset (8 bits) */
-	uint32_t value  /* value to set the register */
-	)
+static void __IoApicSet(int32_t offset, uint32_t value)
 {
 	int key; /* interrupt lock level */
 
@@ -443,11 +432,10 @@ static void __IoApicSet(
  *
  * This routine reads the low-order 32 bits of a Redirection Table entry.
  *
+ * @param irq INTIN number
  * @return 32 low-order bits
  */
-
-static uint32_t ioApicRedGetLo(unsigned int irq /* INTIN number */
-			       )
+static uint32_t ioApicRedGetLo(unsigned int irq)
 {
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
@@ -469,12 +457,11 @@ static uint32_t ioApicRedGetLo(unsigned int irq /* INTIN number */
  *
  * This routine writes the low-order 32 bits of a Redirection Table entry.
  *
+ * @param irq INTIN number
+ * @param lower32 Value to be written
  * @return N/A
  */
-
-static void ioApicRedSetLo(unsigned int irq, /* INTIN number */
-				    uint32_t lower32  /* value to be written */
-				    )
+static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
 {
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
@@ -496,12 +483,11 @@ static void ioApicRedSetLo(unsigned int irq, /* INTIN number */
  *
  * This routine writes the high-order 32 bits of a Redirection Table entry.
  *
+ * @param irq INTIN number
+ * @param upper32 Value to be written
  * @return N/A
  */
-
-static void ioApicRedSetHi(unsigned int irq, /* INTIN number */
-			   uint32_t upper32  /* value to be written */
-			   )
+static void ioApicRedSetHi(unsigned int irq, uint32_t upper32)
 {
 #ifdef XIOAPIC_DIRECT_ADDRESSING
 	volatile uint32_t *pEntry; /* pointer to redirection table entry */
@@ -524,14 +510,14 @@ static void ioApicRedSetHi(unsigned int irq, /* INTIN number */
  * This routine modifies selected portions of the low-order 32 bits of a
  * Redirection Table entry, as indicated by the associate bit mask.
  *
+ * @param irq INTIN number
+ * @param value Value to be written
+ * @param mask  Mask of bits to be modified
  * @return N/A
  */
-
-static void _IoApicRedUpdateLo(
-	unsigned int irq, /* INTIN number */
-	uint32_t value,   /* value to be written */
-	uint32_t mask     /* mask of bits to be modified */
-	)
+static void _IoApicRedUpdateLo(unsigned int irq,
+				uint32_t value,
+				uint32_t mask)
 {
 	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
 }
@@ -550,12 +536,11 @@ static void _IoApicRedUpdateLo(
  * This routine writes the specified 32-bit <value> into the RTE configuration
  * register for the specified <irq> (0 to (CONFIG_IOAPIC_NUM_RTES - 1))
  *
- * @return void
+ * @param irq INTIN number
+ * @param value Value to be written
+ * @return N/A
  */
-
-static void _IoApicRteConfigSet(unsigned int irq, /* INTIN number */
-			 uint32_t value    /* value to be written */
-			 )
+static void _IoApicRteConfigSet(unsigned int irq, uint32_t value)
 {
 	unsigned int offset; /* register offset */
 
@@ -577,10 +562,11 @@ static void _IoApicRteConfigSet(unsigned int irq, /* INTIN number */
  *
  * This routine writes the 32-bit <value> into the redirection register
  * specified by <reg>.
+ * @param reg Register
+ * @param value Value to be written
  *
- * @return void
+ * @return N/A
  */
-
 static void _IoApicRedirRegSet(unsigned int reg, uint32_t value)
 {
 	unsigned int offset; /* register offset */
