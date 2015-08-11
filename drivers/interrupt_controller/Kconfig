@@ -49,12 +49,19 @@ config LOAPIC_BASE_ADDRESS
 	This option specifies the base address of the Local APIC device.
 
 config IOAPIC
-	bool "IOAPIC"
+	bool "IO-APIC"
 	default y
 	depends on LOAPIC
 	help
 	This option signifies that the target has an IO-APIC device. This
 	capability allows IO-APIC-dependent code to be included.
+
+config IOAPIC_DEBUG
+	bool "IO-APIC Debugging"
+	default n
+	depends on IOAPIC
+	help
+	Enable debugging for IO-APIC driver.
 
 config IOAPIC_BASE_ADDRESS
 	hex "IO-APIC Base Address"

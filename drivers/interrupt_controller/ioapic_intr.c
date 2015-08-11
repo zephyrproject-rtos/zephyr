@@ -559,7 +559,7 @@ static void _IoApicRteConfigSet(unsigned int irq, /* INTIN number */
 {
 	unsigned int offset; /* register offset */
 
-#ifdef DEBUG
+#ifdef CONFIG_IOAPIC_DEBUG
 	if (irq >= CONFIG_IOAPIC_NUM_RTES)
 		return; /* do nothing if <irq> is invalid */
 #endif
@@ -585,7 +585,7 @@ static void _IoApicRedirRegSet(unsigned int reg, uint32_t value)
 {
 	unsigned int offset; /* register offset */
 
-#ifdef DEBUG
+#ifdef CONFIG_IOAPIC_DEBUG
 	if ((reg > 7) || (reg == 0))
 		return; /* do nothing if <reg> is invalid */
 #endif
