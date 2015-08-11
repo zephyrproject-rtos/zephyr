@@ -371,6 +371,7 @@ KBUILD_CFLAGS   := -c -g -std=c99 \
 		-fno-omit-frame-pointer \
 		-fno-defer-pop -Wall \
 		-Wno-unused-but-set-variable \
+		-Wno-format-zero-length \
 		-Wno-main -ffreestanding
 
 KBUILD_AFLAGS_KERNEL :=
