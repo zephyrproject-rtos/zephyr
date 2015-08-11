@@ -28,4 +28,4 @@ Services Documentation
    microkernel_memory
    microkernel_signaling
    microkernel_data
-   microkernel_interrupts
+   microkernel_task_irqs.rst

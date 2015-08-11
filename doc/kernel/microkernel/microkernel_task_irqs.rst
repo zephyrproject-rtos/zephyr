@@ -1,7 +1,7 @@
 .. _microkernel_task_irqs:
 
-Task IRQs
-#########
+Interrupt Services
+##################
 
 Concepts
 ********
