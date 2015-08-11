@@ -1237,6 +1237,7 @@ static int bt_smp_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
 	/* (K1,K2) = Generate_Subkey(K) */
 	err = cmac_subkey(key_s, k1, k2);
 	if (err) {
+		BT_ERR("SMAC subkey generation failed\n");
 		return err;
 	}
 
