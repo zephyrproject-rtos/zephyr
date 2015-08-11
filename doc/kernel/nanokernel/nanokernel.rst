@@ -3,20 +3,9 @@
 Nanokernel Services
 ###################
 
-Section Scope
-*************
-
-This section provides an overview of the most important nanokernel
-services. The information contained here is an aid to better understand
-how the kernel operates at the nanokernel level.
-
-Document Format
-***************
-
-Each service is broken off to its own section, containing a definition, a
-functional description, the service initialization syntax, and a table
-of APIs with the context which may call them. Please refer to the API documentation for further
-details regarding the functionality of each service.
+This section describes the various services provided by the nanokernel.
+These services are available in both microkernel applications and
+nanokernel applications.
 
 .. toctree::
    :maxdepth: 1
