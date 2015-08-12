@@ -55,11 +55,13 @@ help:
 	@echo "  coverage   to run coverage check of the documentation (if enabled)"
 
 clean:
-	rm -rf $(BUILDDIR)/*
+	@rm -rf $(BUILDDIR)/*
+	@rm -rf html
 
 htmldocs: doxy html
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@cp -a html $(BUILDDIR)/html/api
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
