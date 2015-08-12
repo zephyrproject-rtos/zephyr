@@ -193,7 +193,8 @@ static inline int udp_prepare_and_send(struct net_context *context,
 		 * to fix the length here. The protocol specific
 		 * part is added also here.
 		 */
-		uip_len(buf) = uip_slen(buf) = uip_appdatalen(buf);
+		uip_len(buf) = uip_slen(buf) = uip_appdatalen(buf) =
+			net_buf_datalen(buf);
 	}
 
 	port = UIP_UDP_BUF(buf)->srcport;
