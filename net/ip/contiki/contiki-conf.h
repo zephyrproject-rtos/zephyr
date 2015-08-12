@@ -25,6 +25,9 @@ typedef unsigned int uip_stats_t;
 #error "Either IPv6 or IPv4 needs to be supported."
 #endif
 
+/* The actual MTU size is defined in uipopt.h */
+#define UIP_CONF_BUFFER_SIZE UIP_LINK_MTU
+
 /* No TCP yet */
 #define UIP_CONF_TCP 0
 
