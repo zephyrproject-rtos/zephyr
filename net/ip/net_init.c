@@ -383,6 +383,11 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		NET_DBG("ICMPv6 not yet supported\n");
 		ret = -EINVAL;
 		break;
+	default:
+		NET_ERR("Invalid IP protocol. "
+			"Internal data structure corrupted!\n");
+		ret = -EINVAL;
+		break;
 	}
 
 	switch (timeout) {
