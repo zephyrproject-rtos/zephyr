@@ -32,7 +32,7 @@
 
 /*
  * DESCRIPTION
- * This module contains the irq_handler_set() API. This routine is closely
+ * This module contains the _irq_handler_set() API. This routine is closely
  * associated with irq_connect(), and any changes to the layout of the
  * constructed interrupt stub must be reflected in both places.
  *
@@ -58,6 +58,7 @@ extern unsigned char _idt_base_address[];
 #define FIRST_OPT_OPCODE_OFF 5
 
 /**
+ * @internal
  *
  * @brief Set the handler in an already connected stub
  *
@@ -67,7 +68,7 @@ extern unsigned char _idt_base_address[];
  * WARNINGS:
  *
  * A fully constructed interrupt stub is generated via irq_connect(), i.e.
- * the irq_handler_set() function must only be called after invoking
+ * the _irq_handler_set() function must only be called after invoking
  * irq_connect().
  *
  * The caller must ensure that the associated interrupt does not occur while
@@ -80,7 +81,7 @@ extern unsigned char _idt_base_address[];
  *
  */
 
-void irq_handler_set(unsigned int vector,
+void _irq_handler_set(unsigned int vector,
 					 void (*oldRoutine)(void *parameter),
 					 void (*newRoutine)(void *parameter),
 					 void *parameter)

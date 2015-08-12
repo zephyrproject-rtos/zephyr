@@ -345,10 +345,8 @@ an ISR or to set the priority of an interrupt, use low numbers.
 For example, if 3 bits are implemented, use 1, 2, and 3,
 not 0x20h, 0x40h, and 0x60h.
 
-Interrupt priority is set using the *prio*
-parameter of :c:func:`irq_connect()`, or the
-:c:func:`irq_priority_set()` API when not connecting
-interrupt handlers dynamically.
+Interrupt priority is set using the *prio* parameter of
+:c:func:`irq_connect()`.
 
 The number of available priorities are:
 
@@ -361,9 +359,7 @@ The number of available priorities are:
 Interrupt locking is done by setting :envvar:`BASEPRI` to 1, setting
 exceptions 4, 5, 6, and 11 to priority 0, and setting all
 other exceptions, including interrupts, to a lower priority
-(1+). The result is that the :c:func:`irq_priority_set()` API can set
-the interrupt priority to 1+ (if it has not already been
-installed through :c:func:`irq_connect()`).
+(1+).
 
 
 

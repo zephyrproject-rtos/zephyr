@@ -104,7 +104,7 @@ void main(void)
 
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(ii);
-		irq_priority_set(ii, _EXC_IRQ_DEFAULT_PRIO);
+		_irq_priority_set(ii, _EXC_IRQ_DEFAULT_PRIO);
 		nano_sem_init(&sem[ii]);
 	}
 

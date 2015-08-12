@@ -47,6 +47,7 @@ SW_ISR_TABLE_DYNAMIC has to be enabled for connecting ISRs at runtime.
 extern void __reserved(void);
 
 /**
+ * @internal
  *
  * @brief Replace an interrupt handler by another
  *
@@ -59,7 +60,7 @@ extern void __reserved(void);
  * @return N/A
  */
 
-void irq_handler_set(unsigned int irq,
+void _irq_handler_set(unsigned int irq,
 						void (*old)(void *arg),
 						void (*new)(void *arg),
 						void *arg)
@@ -110,6 +111,7 @@ void irq_disable(unsigned int irq)
 }
 
 /**
+ * @internal
  *
  * @brief Set an interrupt's priority
  *
@@ -124,7 +126,7 @@ void irq_disable(unsigned int irq)
  * @return N/A
  */
 
-void irq_priority_set(unsigned int irq,
+void _irq_priority_set(unsigned int irq,
 					     unsigned int prio)
 {
 	__ASSERT(prio > 0 && prio < 256, "invalid priority!");
@@ -167,12 +169,14 @@ int irq_connect(unsigned int irq,
 					    void (*isr)(void *arg),
 					    void *arg)
 {
-	irq_handler_set(irq, _irq_spurious, isr, arg);
-	irq_priority_set(irq, prio);
+	_irq_handler_set(irq, _irq_spurious, isr, arg);
+	_irq_priority_set(irq, prio);
 	return irq;
 }
 
 /**
+ *
+ * @internal
  *
  * @brief Disconnect an ISR from an interrupt line
  *
@@ -183,7 +187,7 @@ int irq_connect(unsigned int irq,
  * @return N/A
  */
 
-void irq_disconnect(unsigned int irq)
+void _irq_disconnect(unsigned int irq)
 {
-	irq_handler_set(irq, _sw_isr_table[irq].isr, _irq_spurious, NULL);
+	_irq_handler_set(irq, _sw_isr_table[irq].isr, _irq_spurious, NULL);
 }

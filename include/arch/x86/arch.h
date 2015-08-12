@@ -392,11 +392,6 @@ extern unsigned int find_first_set(unsigned int op);
 
 extern unsigned int find_last_set(unsigned int op);
 
-extern void	irq_handler_set(unsigned int vector,
-					 void (*oldRoutine)(void *parameter),
-					 void (*newRoutine)(void *parameter),
-					 void *parameter);
-
 extern int	irq_connect(unsigned int irq,
 					 unsigned int priority,
 					 void (*routine)(void *parameter),

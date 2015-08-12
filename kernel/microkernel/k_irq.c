@@ -93,7 +93,8 @@ static struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
 
 #elif defined(CONFIG_CPU_CORTEX_M3_M4)
 #include <arch/cpu.h>
-#define RELEASE_VECTOR(v) irq_disconnect(v)
+extern void _irq_disconnect(unsigned int irq);
+#define RELEASE_VECTOR(v) _irq_disconnect(v)
 #else
 #error "Unknown target"
 #endif

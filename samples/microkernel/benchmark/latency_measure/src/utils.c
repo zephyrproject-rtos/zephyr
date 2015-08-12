@@ -93,7 +93,9 @@ int initSwInterrupt(ptestIsr pIsrHdlr)
 
 void setSwInterrupt(ptestIsr pIsrHdlr)
 {
-	irq_handler_set(vector, pcurrIsrFunc, pIsrHdlr, (void *)0);
+	extern void _irq_handler_set(unsigned int irq, void (*old)(void *arg),
+									void (*new)(void *arg), void *arg);
+	_irq_handler_set(vector, pcurrIsrFunc, pIsrHdlr, (void *)0);
 	pcurrIsrFunc = pIsrHdlr;
 }
 

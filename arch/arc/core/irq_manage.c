@@ -52,6 +52,8 @@
 #include <sw_isr_table.h>
 
 /*
+ * @internal
+ *
  * @brief Replace an interrupt handler by another
  *
  * An interrupt's ISR can be replaced at runtime. Care must be taken that the
@@ -63,7 +65,7 @@
  * @return N/A
  */
 
-void irq_handler_set(
+void _irq_handler_set(
 	unsigned int irq,
 	void (*old)(void *arg),
 	void (*new)(void *arg),
@@ -120,6 +122,8 @@ void irq_disable(unsigned int irq)
 }
 
 /*
+ * @internal
+ *
  * @brief Set an interrupt's priority
  *
  * Valid values are from 0 to 15. Interrupts of priority 1 are not masked when
@@ -131,7 +135,7 @@ void irq_disable(unsigned int irq)
  * @return N/A
  */
 
-void irq_priority_set(
+void _irq_priority_set(
 	unsigned int irq,
 	unsigned int prio
 )
@@ -182,12 +186,14 @@ int irq_connect(
 	void *arg
 )
 {
-	irq_handler_set(irq, _irq_spurious, isr, arg);
-	irq_priority_set(irq, prio);
+	_irq_handler_set(irq, _irq_spurious, isr, arg);
+	_irq_priority_set(irq, prio);
 	return irq;
 }
 
 /*
+ * @internal
+ *
  * @brief Disconnect an ISR from an interrupt line
  *
  * Interrupt line <irq> is disconnected from its ISR and the latter is
@@ -197,9 +203,9 @@ int irq_connect(
  * @return N/A
  */
 
-void irq_disconnect(unsigned int irq)
+void _irq_disconnect(unsigned int irq)
 {
 	int index = irq - 16;
 
-	irq_handler_set(irq, _sw_isr_table[index].isr, _irq_spurious, NULL);
+	_irq_handler_set(irq, _sw_isr_table[index].isr, _irq_spurious, NULL);
 }

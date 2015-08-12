@@ -44,30 +44,20 @@
 GTEXT(_irq_exit);
 GTEXT(irq_lock)
 GTEXT(irq_unlock)
-GTEXT(irq_handler_set)
 GTEXT(irq_connect)
-GTEXT(irq_disconnect)
 GTEXT(irq_enable)
 GTEXT(irq_disable)
-GTEXT(irq_priority_set)
 #else
 extern int irq_lock(void);
 extern void irq_unlock(int key);
 
-extern void irq_handler_set(unsigned int irq,
-				 void (*old)(void *arg),
-				 void (*new)(void *arg),
-				 void *arg);
 extern int irq_connect(unsigned int irq,
 			     unsigned int prio,
 			     void (*isr)(void *arg),
 			     void *arg);
-extern void irq_disconnect(unsigned int irq);
 
 extern void irq_enable(unsigned int irq);
 extern void irq_disable(unsigned int irq);
-
-extern void irq_priority_set(unsigned int irq, unsigned int prio);
 
 extern void _irq_exit(void);
 
