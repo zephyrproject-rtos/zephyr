@@ -88,22 +88,29 @@ config TOOLCHAIN_VARIANT
 	For optimized compilers with reduced features, specify the name
 	of the variant.
 
+choice
+prompt "C Library"
+default MINIMAL_LIBC
+
 config MINIMAL_LIBC
 	bool
 	prompt "Build minimal c library"
-	default y
-	depends on !NEWLIB
 	help
-	Build integrated minimal c library.
+	Build integrated minimal c library. This integrated library is available
+	to support kernel functionality and test cases. It is not designed to be
+	used with applications. For applications, please use an external C
+	library such as newlib.
 
-config TOOLCHAIN_NEWLIB
+config NEWLIB_LIBC
 	bool
 	prompt "Build with newlib c library"
-	depends on !MINIMAL_LIBC
-	default n
 	help
 	Build with newlib library. The newlib library is expected to be
 	part of the SDK in this case.
+
+endchoice
+
+
 endmenu
 endmenu
 

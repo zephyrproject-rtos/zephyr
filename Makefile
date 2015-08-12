@@ -555,13 +555,6 @@ else
 include/config/auto.conf: ;
 endif # $(dot-config)
 
-ifdef CONFIG_MINIMAL_LIBC
-ZEPHYRINCLUDE += -I$(srctree)/lib/libc/minimal/include
-endif
-
-ifdef CONFIG_TOOLCHAIN_NEWLIB
-ALL_LIBS += c m
-endif
 
 #File that includes all prepare special embedded architecture targets.
 include $(srctree)/scripts/Makefile.preparch
@@ -571,6 +564,15 @@ include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 else
 $(if $(CROSS_COMPILE),, \
      $(error ZEPHYR_GCC_VARIANT is not set. ))
+endif
+
+ifdef CONFIG_MINIMAL_LIBC
+ZEPHYRINCLUDE += -I$(srctree)/lib/libc/minimal/include
+endif
+
+ifdef CONFIG_NEWLIB_LIBC
+ZEPHYRINCLUDE += $(TOOLCHAIN_CFLAGS)
+ALL_LIBS += c m
 endif
 
 QEMU_BIN_PATH	?= /usr/bin
