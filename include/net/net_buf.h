@@ -167,6 +167,32 @@ struct net_buf {
 #define uip_nd6_ipaddr(buf) ((buf)->ipaddr)
 /* @endcond */
 
+/** NET_BUF_IP
+ *
+ * @brief This macro returns IP header information struct stored in net_buf.
+ *
+ * @details The macro returns pointer to uip_ip_hdr struct which
+ * contains IP header information.
+ *
+ * @param buf Network buffer.
+ *
+ * @return Pointer to uip_ip_hdr.
+ */
+#define NET_BUF_IP(buf)   ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
+
+/** NET_BUF_UDP
+ *
+ * @brief This macro returns UDP header information struct stored in net_buf.
+ *
+ * @details The macro returns pointer to uip_udp_hdr struct which
+ * contains UDP header information.
+ *
+ * @param buf Network buffer.
+ *
+ * @return Pointer to uip_ip_hdr.
+ */
+#define NET_BUF_UDP(buf)  ((struct uip_udp_hdr *)&uip_buf(buf)[UIP_LLIPH_LEN])
+
 /**
  * @brief Get buffer from the available buffers pool.
  *
