@@ -72,7 +72,7 @@ void _irq_handler_set(
 	void *arg
 )
 {
-	int key = irq_lock_inline();
+	int key = irq_lock();
 	int index = irq - 16;
 
 	__ASSERT(old == _sw_isr_table[index].isr,
@@ -83,7 +83,7 @@ void _irq_handler_set(
 		_sw_isr_table[index].arg = arg;
 	}
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 
 /*
@@ -98,10 +98,10 @@ void _irq_handler_set(
 
 void irq_enable(unsigned int irq)
 {
-	int key = irq_lock_inline();
+	int key = irq_lock();
 
 	_arc_v2_irq_unit_int_enable(irq);
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 
 /*
@@ -115,10 +115,10 @@ void irq_enable(unsigned int irq)
 
 void irq_disable(unsigned int irq)
 {
-	int key = irq_lock_inline();
+	int key = irq_lock();
 
 	_arc_v2_irq_unit_int_disable(irq);
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 
 /*
@@ -140,12 +140,12 @@ void _irq_priority_set(
 	unsigned int prio
 )
 {
-	int key = irq_lock_inline();
+	int key = irq_lock();
 
 	__ASSERT(prio >= 0 && prio < CONFIG_NUM_IRQ_PRIORITIES,
 			 "invalid priority!");
 	_arc_v2_irq_unit_prio_set(irq, prio);
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 
 /*

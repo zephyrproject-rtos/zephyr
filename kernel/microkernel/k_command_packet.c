@@ -83,12 +83,12 @@ cmdPkt_t *_cmd_pkt_get(
 	uint32_t index; /* index into command packet array */
 	int key;	/* interrupt lock level */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	index = pSet->index;
 	pSet->index++;
 	if (pSet->index >= pSet->nPkts)
 		pSet->index = 0;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 
 	return &pSet->cmdPkt[index];
 }

@@ -122,7 +122,7 @@ void _fifo_put_non_preemptible(struct nano_fifo *fifo, void *data)
 {
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	fifo->stat++;
 	if (fifo->stat <= 0) {
@@ -133,14 +133,14 @@ void _fifo_put_non_preemptible(struct nano_fifo *fifo, void *data)
 		enqueue_data(fifo, data);
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 void nano_task_fifo_put( struct nano_fifo *fifo, void *data)
 {
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	fifo->stat++;
 	if (fifo->stat <= 0) {
@@ -153,7 +153,7 @@ void nano_task_fifo_put( struct nano_fifo *fifo, void *data)
 		enqueue_data(fifo, data);
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 
@@ -207,13 +207,13 @@ void *_fifo_get(struct nano_fifo *fifo)
 	void *data = NULL;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	if (fifo->stat > 0) {
 		fifo->stat--;
 		data = dequeue_data(fifo);
 	}
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 	return data;
 }
 
@@ -222,7 +222,7 @@ void *nano_fiber_fifo_get_wait( struct nano_fifo *fifo)
 	void *data;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	fifo->stat--;
 	if (fifo->stat < 0) {
@@ -230,7 +230,7 @@ void *nano_fiber_fifo_get_wait( struct nano_fifo *fifo)
 		data = (void *)_Swap(imask);
 	} else {
 		data = dequeue_data(fifo);
-		irq_unlock_inline(imask);
+		irq_unlock(imask);
 	}
 
 	return data;
@@ -244,7 +244,7 @@ void *nano_task_fifo_get_wait( struct nano_fifo *fifo)
 	/* spin until data is put onto the FIFO */
 
 	while (1) {
-		imask = irq_lock_inline();
+		imask = irq_lock();
 
 		/*
 		 * Predict that the branch will be taken to break out of the loop.
@@ -261,7 +261,7 @@ void *nano_task_fifo_get_wait( struct nano_fifo *fifo)
 
 	fifo->stat--;
 	data = dequeue_data(fifo);
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 
 	return data;
 }
@@ -291,7 +291,7 @@ void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
 		return nano_fiber_fifo_get(fifo);
 	}
 
-	key = irq_lock_inline();
+	key = irq_lock();
 
 	fifo->stat--;
 	if (fifo->stat < 0) {
@@ -300,7 +300,7 @@ void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *fifo,
 		data = (void *)_Swap(key);
 	} else {
 		data = dequeue_data(fifo);
-		irq_unlock_inline(key);
+		irq_unlock(key);
 	}
 
 	return data;
@@ -321,7 +321,7 @@ void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
 		return nano_task_fifo_get(fifo);
 	}
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	cur_ticks = nano_tick_get();
 	limit = cur_ticks + timeout_in_ticks;
 
@@ -335,7 +335,7 @@ void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
 		if (likely(fifo->stat > 0)) {
 			fifo->stat--;
 			data = dequeue_data(fifo);
-			irq_unlock_inline(key);
+			irq_unlock(key);
 			return data;
 		}
 
@@ -343,11 +343,11 @@ void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
 
 		nano_cpu_atomic_idle(key);
 
-		key = irq_lock_inline();
+		key = irq_lock();
 		cur_ticks = nano_tick_get();
 	}
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return NULL;
 }
 #endif /* CONFIG_NANO_TIMEOUTS */

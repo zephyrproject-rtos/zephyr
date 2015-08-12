@@ -65,7 +65,7 @@ void _irq_handler_set(unsigned int irq,
 						void (*new)(void *arg),
 						void *arg)
 {
-	int key = irq_lock_inline();
+	int key = irq_lock();
 
 	__ASSERT(old == _sw_isr_table[irq].isr, "expected ISR not found in table");
 
@@ -74,7 +74,7 @@ void _irq_handler_set(unsigned int irq,
 		_sw_isr_table[irq].arg = arg;
 	}
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 
 /**

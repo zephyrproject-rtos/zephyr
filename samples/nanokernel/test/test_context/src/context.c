@@ -36,7 +36,6 @@ This module tests the following CPU and context related routines:
   fiber_fiber_start(), task_fiber_start(), fiber_yield(),
   context_self_get(), context_type_get(), nano_cpu_idle(),
   irq_lock(), irq_unlock(),
-  irq_lock_inline(), irq_unlock_inline(),
   irq_connect(), nanoCpuExcConnect(),
   irq_enable(), irq_disable(),
  */
@@ -257,32 +256,6 @@ void irq_unlockWrapper(int imask)
 
 /**
  *
- * @brief A wrapper for irq_lock_inline()
- *
- * @return irq_lock_inline() return value
- */
-
-int irq_lock_inlineWrapper(int unused)
-{
-	ARG_UNUSED(unused);
-
-	return irq_lock_inline();
-}
-
-/**
- *
- * @brief A wrapper for irq_unlock_inline()
- *
- * @return N/A
- */
-
-void irq_unlock_inlineWrapper(int imask)
-{
-	irq_unlock_inline(imask);
-}
-
-/**
- *
  * @brief A wrapper for irq_disable()
  *
  * @return <irq>
@@ -311,8 +284,7 @@ void irq_enableWrapper(int irq)
  * @brief Test routines for disabling and enabling ints
  *
  * This routine tests the routines for disabling and enabling interrupts.  These
- * include irq_lock() and irq_unlock(), irq_lock_inline() and
- * irq_unlock_inline(), irq_disable() and irq_enable().
+ * include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
@@ -847,13 +819,6 @@ void main(void)
 		goto doneTests;
 	}
 
-
-	TC_PRINT("Testing inline interrupt locking and unlocking\n");
-	rv = nanoCpuDisableInterruptsTest(irq_lock_inlineWrapper,
-									  irq_unlock_inlineWrapper, -1);
-	if (rv != TC_PASS) {
-		goto doneTests;
-	}
 
 /*
  * The Cortex-M3/M4 use the SYSTICK exception for the system timer, which is

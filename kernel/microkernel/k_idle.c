@@ -415,7 +415,7 @@ static void _power_save(void)
 
 	if (_sys_power_save_flag) {
 		for (;;) {
-			irq_lock_inline();
+			irq_lock();
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 			_sys_power_save_idle(_get_next_timer_expiry());
 #else

@@ -105,7 +105,7 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
 
 	timer->ticks = ticks;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	cur = _nano_timer_list;
 
@@ -124,7 +124,7 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
 	else
 		_nano_timer_list = timer;
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 /**
@@ -145,7 +145,7 @@ static void _timer_stop(struct nano_timer *timer /* timer to stop */
 	struct nano_timer *cur;
 	struct nano_timer *prev = NULL;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	cur = _nano_timer_list;
 
@@ -173,7 +173,7 @@ static void _timer_stop(struct nano_timer *timer /* timer to stop */
 
 	/* now the timer can't expire since it is removed from the list */
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 /**

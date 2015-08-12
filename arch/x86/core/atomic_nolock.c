@@ -77,14 +77,14 @@ int atomic_cas(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* temporary storage */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	if (ovalue != oldValue) {
-		irq_unlock_inline(key);
+		irq_unlock(key);
 		return 0;
 	}
 	*target = newValue;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return 1;
 }
 
@@ -107,10 +107,10 @@ atomic_val_t atomic_add(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = ovalue + value;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -133,10 +133,10 @@ atomic_val_t atomic_sub(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = ovalue - value;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -157,10 +157,10 @@ atomic_val_t atomic_inc(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* value from <target> before the increment */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = ovalue + 1;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -181,10 +181,10 @@ atomic_val_t atomic_dec(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* value from <target> prior to the decrement */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = ovalue - 1;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -223,10 +223,10 @@ atomic_val_t atomic_set(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = value;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -248,10 +248,10 @@ atomic_val_t atomic_clear(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = 0;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -274,10 +274,10 @@ atomic_val_t atomic_or(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = ovalue | value;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -300,10 +300,10 @@ atomic_val_t atomic_xor(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = ovalue ^ value;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -326,10 +326,10 @@ atomic_val_t atomic_and(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = ovalue & value;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 
@@ -352,10 +352,10 @@ atomic_val_t atomic_nand(
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	ovalue = *target;
 	*target = ~(ovalue & value);
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ovalue;
 }
 

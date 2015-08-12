@@ -84,10 +84,10 @@ static ALWAYS_INLINE void context_monitor_init(struct ccs *pCcs /* context */
 	 * runnable.
 	 */
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	pCcs->next_context = _nanokernel.contexts;
 	_nanokernel.contexts = pCcs;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 #endif /* CONFIG_CONTEXT_MONITOR */
 

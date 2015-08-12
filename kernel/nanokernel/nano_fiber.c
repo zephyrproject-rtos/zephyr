@@ -125,7 +125,7 @@ void _fiber_start(char *pStack,
 
 void fiber_yield(void)
 {
-	unsigned int imask = irq_lock_inline();
+	unsigned int imask = irq_lock();
 
 	if ((_nanokernel.fiber != (tCCS *)NULL) &&
 	    (_nanokernel.current->prio >= _nanokernel.fiber->prio)) {
@@ -138,7 +138,7 @@ void fiber_yield(void)
 		_nano_fiber_schedule(_nanokernel.current);
 		_Swap(imask);
 	} else
-		irq_unlock_inline(imask);
+		irq_unlock(imask);
 }
 
 /**
@@ -197,7 +197,7 @@ void fiber_sleep(int32_t timeout_in_ticks)
 		return;
 	}
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	_nano_timeout_add(_nanokernel.current, NULL, timeout_in_ticks);
 	_Swap(key);
 }
@@ -217,11 +217,11 @@ void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 	_NewContext(stack, stack_size_in_bytes, (_ContextEntry)entry_point,
 				(void *)param1, (void *)param2, (void *)0, priority, options);
 
-	key = irq_lock_inline();
+	key = irq_lock();
 
 	_nano_timeout_add(ccs, NULL, timeout_in_ticks);
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ccs;
 }
 
@@ -230,11 +230,11 @@ FUNC_ALIAS(fiber_delayed_start_cancel, task_fiber_delayed_start_cancel, void);
 
 void fiber_delayed_start_cancel(void *handle)
 {
-	int key = irq_lock_inline();
+	int key = irq_lock();
 
 	_nano_timeout_abort((struct ccs *)handle);
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 
 #endif /* CONFIG_NANO_TIMEOUTS */

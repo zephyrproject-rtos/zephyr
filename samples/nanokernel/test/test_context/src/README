@@ -37,11 +37,6 @@ irq_unlock
   - Continuation irq_lock: unlock interrupts, loop and verify the tick
     count changes.
 
-irq_lock_inline
-irq_unlock_inline
-  - These two tests are tested in the same way as irq_lock()
-    and irq_unlock().
-
 irq_connect
   - Used during nanokernel object initialization.  Verified when triggering
     an ISR to perform ISR context work.

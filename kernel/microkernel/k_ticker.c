@@ -117,10 +117,10 @@ int32_t task_tick_get_32(void)
 int64_t task_tick_get(void)
 {
 	int64_t ticks;
-	int key = irq_lock_inline();
+	int key = irq_lock();
 
 	ticks = _k_sys_clock_tick_count;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return ticks;
 }
 
@@ -136,10 +136,10 @@ int64_t task_tick_get(void)
 
 static void sys_clock_increment(int inc)
 {
-	int key = irq_lock_inline();
+	int key = irq_lock();
 
 	_k_sys_clock_tick_count += inc;
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 
 /**

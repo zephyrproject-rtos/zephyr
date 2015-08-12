@@ -57,7 +57,7 @@ static void event_logger_put(struct event_logger *logger, uint16_t event_id,
 	int i;
 
 	/* Lock interrupt to be sure this function will be atomic */
-	key = irq_lock_inline();
+	key = irq_lock();
 
 	buffer_capacity_used = (logger->head - logger->tail +
 		logger->buffer_size) % logger->buffer_size;
@@ -90,7 +90,7 @@ static void event_logger_put(struct event_logger *logger, uint16_t event_id,
 		sem_give_fn(&(logger->sync_sema));
 	}
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 }
 
 

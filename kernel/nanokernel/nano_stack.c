@@ -103,7 +103,7 @@ void _stack_push_non_preemptible(
 	tCCS *ccs;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	ccs = stack->fiber;
 	if (ccs) {
@@ -115,7 +115,7 @@ void _stack_push_non_preemptible(
 		stack->next++;
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 /**
@@ -137,7 +137,7 @@ void nano_task_stack_push(
 	tCCS *ccs;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	ccs = stack->fiber;
 	if (ccs) {
@@ -151,7 +151,7 @@ void nano_task_stack_push(
 		stack->next++;
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 FUNC_ALIAS(_stack_pop, nano_isr_stack_pop, int);
@@ -187,7 +187,7 @@ int _stack_pop(
 	unsigned int imask;
 	int rv = 0;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	if (stack->next > stack->base) {
 		stack->next--;
@@ -195,7 +195,7 @@ int _stack_pop(
 		rv = 1;
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 	return rv;
 }
 
@@ -224,7 +224,7 @@ uint32_t nano_fiber_stack_pop_wait(
 	uint32_t data;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	if (stack->next == stack->base) {
 		stack->fiber = _nanokernel.current;
@@ -232,7 +232,7 @@ uint32_t nano_fiber_stack_pop_wait(
 	} else {
 		stack->next--;
 		data = *(stack->next);
-		irq_unlock_inline(imask);
+		irq_unlock(imask);
 	}
 
 	return data;
@@ -261,7 +261,7 @@ uint32_t nano_task_stack_pop_wait(
 	/* spin until data is pushed onto the stack */
 
 	while (1) {
-		imask = irq_lock_inline();
+		imask = irq_lock();
 
 		/*
 		 * Predict that the branch will be taken to break out of the loop.
@@ -294,7 +294,7 @@ uint32_t nano_task_stack_pop_wait(
 	stack->next--;
 	data = *(stack->next);
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 
 	return data;
 }

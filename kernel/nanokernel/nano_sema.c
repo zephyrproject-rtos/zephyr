@@ -92,7 +92,7 @@ void _sem_give_non_preemptible(struct nano_sem *sem)
 	tCCS *ccs;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 	ccs = _nano_wait_q_remove(&sem->wait_q);
 	if (!ccs) {
 		sem->nsig++;
@@ -101,7 +101,7 @@ void _sem_give_non_preemptible(struct nano_sem *sem)
 		set_sem_available(ccs);
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 void nano_task_sem_give(struct nano_sem *sem)
@@ -109,7 +109,7 @@ void nano_task_sem_give(struct nano_sem *sem)
 	tCCS *ccs;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 	ccs = _nano_wait_q_remove(&sem->wait_q);
 	if (ccs) {
 		_nano_timeout_abort(ccs);
@@ -120,7 +120,7 @@ void nano_task_sem_give(struct nano_sem *sem)
 		sem->nsig++;
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 void nano_sem_give(struct nano_sem *sem)
@@ -142,10 +142,10 @@ int _sem_take(
 	unsigned int imask;
 	int avail;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 	avail = (sem->nsig > 0);
 	sem->nsig -= avail;
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 
 	return avail;
 }
@@ -160,13 +160,13 @@ void nano_fiber_sem_take_wait(struct nano_sem *sem)
 {
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 	if (sem->nsig == 0) {
 		_nano_wait_q_put(&sem->wait_q);
 		_Swap(imask);
 	} else {
 		sem->nsig--;
-		irq_unlock_inline(imask);
+		irq_unlock(imask);
 	}
 }
 
@@ -177,7 +177,7 @@ void nano_task_sem_take_wait(struct nano_sem *sem)
 	/* spin until the sempahore is signaled */
 
 	while (1) {
-		imask = irq_lock_inline();
+		imask = irq_lock();
 
 		/*
 		 * Predict that the branch will be taken to break out of the loop.
@@ -193,7 +193,7 @@ void nano_task_sem_take_wait(struct nano_sem *sem)
 	}
 
 	sem->nsig--;
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 void nano_sem_take_wait(struct nano_sem *sem)
@@ -208,11 +208,11 @@ void nano_sem_take_wait(struct nano_sem *sem)
 
 int nano_fiber_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout_in_ticks)
 {
-	unsigned int key = irq_lock_inline();
+	unsigned int key = irq_lock();
 
 	if (sem->nsig == 0) {
 		if (unlikely(TICKS_NONE == timeout_in_ticks)) {
-			irq_unlock_inline(key);
+			irq_unlock(key);
 			return 0;
 		}
 		if (likely(timeout_in_ticks != TICKS_UNLIMITED)) {
@@ -225,7 +225,7 @@ int nano_fiber_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout_in_ti
 
 	sem->nsig--;
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 
 	return 1;
 }
@@ -244,7 +244,7 @@ int nano_task_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout_in_tic
 		return nano_task_sem_take(sem);
 	}
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	cur_ticks = nano_tick_get();
 	limit = cur_ticks + timeout_in_ticks;
 
@@ -257,7 +257,7 @@ int nano_task_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout_in_tic
 
 		if (likely(sem->nsig > 0)) {
 			sem->nsig--;
-			irq_unlock_inline(key);
+			irq_unlock(key);
 			return 1;
 		}
 
@@ -265,11 +265,11 @@ int nano_task_sem_take_wait_timeout(struct nano_sem *sem, int32_t timeout_in_tic
 
 		nano_cpu_atomic_idle(key);
 
-		key = irq_lock_inline();
+		key = irq_lock();
 		cur_ticks = nano_tick_get();
 	}
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return 0;
 }
 

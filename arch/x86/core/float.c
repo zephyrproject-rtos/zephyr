@@ -191,7 +191,7 @@ void _FpEnable(tCCS *ccs,
 	/* Lock interrupts to prevent a pre-emptive context switch from occuring
 	 */
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	/* Indicate task/fiber requires non-integer context saving */
 
@@ -284,7 +284,7 @@ void _FpEnable(tCCS *ccs,
 		}
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 /**
@@ -352,7 +352,7 @@ void _FpDisable(tCCS *ccs)
 	/* Lock interrupts to prevent a pre-emptive context switch from occuring
 	 */
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	/*
 	 * Disable _all_ floating point capabilities for the task/fiber,
@@ -373,7 +373,7 @@ void _FpDisable(tCCS *ccs)
 			_nanokernel.current_fp = (tCCS *)0;
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 /**

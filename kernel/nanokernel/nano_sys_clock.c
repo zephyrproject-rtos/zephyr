@@ -86,9 +86,9 @@ int64_t nano_tick_get(void)
 	 * we have to lock the timer interrupt that causes change of
 	 * _nano_ticks
 	 */
-	unsigned int imask = irq_lock_inline();
+	unsigned int imask = irq_lock();
 	tmp_nano_ticks = _nano_ticks;
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 	return tmp_nano_ticks;
 }
 
@@ -145,9 +145,9 @@ static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
 	 * we have to lock the timer interrupt that causes change of
 	 * _nano_ticks
 	 */
-	unsigned int imask = irq_lock_inline();
+	unsigned int imask = irq_lock();
 	saved = _nano_ticks;
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 	delta = saved - (*reftime);
 	*reftime = saved;
 

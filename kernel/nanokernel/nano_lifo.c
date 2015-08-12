@@ -79,7 +79,7 @@ void _lifo_put_non_preemptible(struct nano_lifo *lifo, void *data)
 	tCCS *ccs;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs) {
 		_nano_timeout_abort(ccs);
@@ -89,7 +89,7 @@ void _lifo_put_non_preemptible(struct nano_lifo *lifo, void *data)
 		lifo->list = data;
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 void nano_task_lifo_put(struct nano_lifo *lifo, void *data)
@@ -97,7 +97,7 @@ void nano_task_lifo_put(struct nano_lifo *lifo, void *data)
 	tCCS *ccs;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 	ccs = _nano_wait_q_remove(&lifo->wait_q);
 	if (ccs) {
 		_nano_timeout_abort(ccs);
@@ -109,7 +109,7 @@ void nano_task_lifo_put(struct nano_lifo *lifo, void *data)
 		lifo->list = data;
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 }
 
 FUNC_ALIAS(_lifo_get, nano_isr_lifo_get, void *);
@@ -129,14 +129,14 @@ void *_lifo_get(struct nano_lifo *lifo)
 	void *data;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	data = lifo->list;
 	if (data) {
 		lifo->list = *(void **) data;
 	}
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 
 	return data;
 }
@@ -152,7 +152,7 @@ void *nano_fiber_lifo_get_wait(struct nano_lifo *lifo )
 	void *data;
 	unsigned int imask;
 
-	imask = irq_lock_inline();
+	imask = irq_lock();
 
 	if (!lifo->list) {
 		_nano_wait_q_put(&lifo->wait_q);
@@ -160,7 +160,7 @@ void *nano_fiber_lifo_get_wait(struct nano_lifo *lifo )
 	} else {
 		data = lifo->list;
 		lifo->list = *(void **) data;
-		irq_unlock_inline(imask);
+		irq_unlock(imask);
 	}
 
 	return data;
@@ -174,7 +174,7 @@ void *nano_task_lifo_get_wait(struct nano_lifo *lifo)
 	/* spin until data is put onto the LIFO */
 
 	while (1) {
-		imask = irq_lock_inline();
+		imask = irq_lock();
 
 		/*
 		 * Predict that the branch will be taken to break out of the loop.
@@ -192,7 +192,7 @@ void *nano_task_lifo_get_wait(struct nano_lifo *lifo)
 	data = lifo->list;
 	lifo->list = *(void **) data;
 
-	irq_unlock_inline(imask);
+	irq_unlock(imask);
 
 	return data;
 }
@@ -227,12 +227,12 @@ void *_nano_fiber_lifo_get_panic(struct nano_lifo *lifo)
 void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
 		int32_t timeout_in_ticks)
 {
-	unsigned int key = irq_lock_inline();
+	unsigned int key = irq_lock();
 	void *data;
 
 	if (!lifo->list) {
 		if (unlikely(TICKS_NONE == timeout_in_ticks)) {
-			irq_unlock_inline(key);
+			irq_unlock(key);
 			return NULL;
 		}
 		if (likely(timeout_in_ticks != TICKS_UNLIMITED)) {
@@ -244,7 +244,7 @@ void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *lifo,
 	} else {
 		data = lifo->list;
 		lifo->list = *(void **)data;
-		irq_unlock_inline(key);
+		irq_unlock(key);
 	}
 
 	return data;
@@ -265,7 +265,7 @@ void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
 		return nano_task_lifo_get(lifo);
 	}
 
-	key = irq_lock_inline();
+	key = irq_lock();
 	cur_ticks = nano_tick_get();
 	limit = cur_ticks + timeout_in_ticks;
 
@@ -279,7 +279,7 @@ void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
 		if (likely(lifo->list)) {
 			data = lifo->list;
 			lifo->list = *(void **)data;
-			irq_unlock_inline(key);
+			irq_unlock(key);
 			return data;
 		}
 
@@ -287,11 +287,11 @@ void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
 
 		nano_cpu_atomic_idle(key);
 
-		key = irq_lock_inline();
+		key = irq_lock();
 		cur_ticks = nano_tick_get();
 	}
 
-	irq_unlock_inline(key);
+	irq_unlock(key);
 	return NULL;
 }
 #endif /* CONFIG_NANO_TIMEOUTS */
