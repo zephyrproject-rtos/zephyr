@@ -1192,7 +1192,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false;
 
-	if (!conn && conn->state != BT_CONN_CONNECTED) {
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
@@ -1230,7 +1230,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, uint16_t handle,
 	struct bt_gatt_subscribe_params *tmp;
 	bool has_subscription = false, found = false;
 
-	if (!conn && conn->state != BT_CONN_CONNECTED) {
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
@@ -1285,7 +1285,7 @@ int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
 	struct bt_buf *buf;
 	uint8_t i;
 
-	if (!conn && conn->state != BT_CONN_CONNECTED) {
+	if (!conn || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
