@@ -30,8 +30,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+menuconfig SERIAL
+	bool
+	prompt "Serial Drivers"
+	default n
+	help
+	Enable options for serial drivers.
 
-menu "Serial Drivers"
+if SERIAL
 
 menu "Serial Port Options"
 depends on X86_32
@@ -159,4 +165,4 @@ config UART_PORT_7_NAME
 	This is the device name for UART, and is included in the device
 	struct.
 
-endmenu
+endif

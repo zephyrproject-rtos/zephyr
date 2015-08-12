@@ -115,10 +115,7 @@ CONFIG_UART_CONSOLE_INDEX=1
 #
 # CONFIG_UART_SIMPLE is not set
 # CONFIG_CONSOLE_HANDLER is not set
-
-#
-# Serial Drivers
-#
+CONFIG_SERIAL=y
 
 #
 # Serial Port Options
