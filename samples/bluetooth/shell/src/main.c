@@ -535,6 +535,36 @@ static void cmd_gatt_write(int argc, char *argv[])
 	}
 }
 
+static void cmd_gatt_write_without_rsp(int argc, char *argv[])
+{
+	int err;
+	uint16_t handle;
+	uint8_t data;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	if (argc < 2) {
+		printk("handle required\n");
+		return;
+	}
+
+	handle = xtoi(argv[1]);
+
+	if (argc < 3) {
+		printk("data required\n");
+		return;
+	}
+
+	data = xtoi(argv[2]);
+
+	err = bt_gatt_write_without_response(default_conn, handle, &data,
+					     sizeof(data));
+	printk("Write Complete (err %d)\n", err);
+}
+
 static struct bt_gatt_subscribe_params subscribe_params;
 
 static void subscribe_destroy(void *user_data)
@@ -681,6 +711,8 @@ void main(void)
 	shell_cmd_register("gatt-read", cmd_gatt_read);
 	shell_cmd_register("gatt-read-multiple", cmd_gatt_mread);
 	shell_cmd_register("gatt-write", cmd_gatt_write);
+	shell_cmd_register("gatt-write-without-response",
+			   cmd_gatt_write_without_rsp);
 	shell_cmd_register("gatt-subscribe", cmd_gatt_subscribe);
 	shell_cmd_register("gatt-unsubscribe", cmd_gatt_unsubscribe);
 }
