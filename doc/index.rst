@@ -6,20 +6,35 @@
 
 .. include:: disclaimers.rst
 
-|project|
-#########
+Getting Started
+###############
 
 .. toctree::
    :maxdepth: 1
 
    about_zephyr.rst
-   quick_start/quick_start.rst
    kernel/kernel.rst
+   quick_start/quick_start.rst
+
+Developer Guides
+################
+
+.. toctree::
+   :maxdepth: 1
+
    application/application.rst
    platform/platform.rst
-   reference/reference.rst
    zephyr_project
 
+Reference Guides
+################
+
+.. toctree::
+   :maxdepth: 1
+
+   reference/api.rst
+   reference/configuration.rst
+   reference/kbuild.rst
 
 
 Indices and tables
