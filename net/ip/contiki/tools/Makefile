@@ -11,3 +11,13 @@ echo-client: echo-client.o
 
 echo-server: echo-server.o
 	$(CC) -o $@ $(CFLAGS) $(LIBS) echo-server.c
+
+TINYDTLS = $(HOME)/src/tinydtls/tinydtls-0.8.2
+TINYDTLS_CFLAGS = -I$(TINYDTLS) -DDTLSv12 -DWITH_SHA256
+TINYDTLS_LIB = $(TINYDTLS)/libtinydtls.a
+
+dtls-client.o: dtls-client.c
+	$(CC) -c -o $@ $(CFLAGS) $(TINYDTLS_CFLAGS) dtls-client.c
+
+dtls-client: dtls-client.o $(TINYDTLS_LIB)
+	$(CC) -o $@ $(LIBS) dtls-client.o $(TINYDTLS_LIB)

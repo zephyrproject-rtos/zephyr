@@ -104,3 +104,21 @@ in tunslip6 section of this document.
 Example:
 
 $ ./echo-server -i tun0
+
+
+dtls-client
+===========
+
+dtls-client is a tool that is run in Linux host side and
+which connects to dtls-server running in qemu.
+
+You needs to setup the slip connection (see the steps 1 to 3)
+in tunslip6 section of this document. You also need tinyDTLS
+sources which can be found here http://sourceforge.net/projects/tinydtls/
+Compile and install the tinyDTLS library in host.
+
+Example:
+
+$ make TINYDTLS=/home/user/tinydtls-0.8.2 dtls-client
+
+$ ./dtls-client 2001:db8::2
