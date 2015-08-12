@@ -321,18 +321,9 @@ void _k_timer_start(struct k_args *P)
 	 * Either the initial delay and/or the period is invalid.  Mark
 	 * the timer as inactive.
 	 */
-	if ((T->duration < 0) || (T->period < 0)) {
+	if ((T->duration <= 0) || (T->period < 0)) {
 		T->duration = -1;
 		return;
-	}
-
-	if (T->duration == 0) {
-		if (T->period != 0) {/* Match the initial delay to the period. */
-			T->duration = T->period;
-		} else {	    /* duration=0, period=0 is an invalid combination. */
-			T->duration = -1; /* Mark the timer as invalid. */
-			return;
-		}
 	}
 
 	/* Track the semaphore to signal for when the timer expires. */
@@ -354,11 +345,11 @@ void _k_timer_start(struct k_args *P)
  * <period> ticks has elapsed.
  *
  * Setting <period> to 0 stops the timer at the end of the initial delay.
- * Setting <duration> to 0 will cause an initial delay equal to the repetition
- * interval.  If both <duration> and <period> are set to 0, or if one or both of
- * the values is invalid (negative), then this kernel API acts like a
- * task_timer_stop(): if the allocated timer was still running (from a
- * previous call), it will be cancelled; if not, nothing will happen.
+
+ * If either <duration> or <period> is passed a invalid value (<duration <= 0,
+ * <period> < 0), then this kernel API acts like a task_timer_stop(): if the
+ * allocated timer was still running (from a previous call), it will be
+ * cancelled; if not, nothing will happen.
  *
  * @param timer      Timer to start.
  * @param duration   Initial delay in ticks.

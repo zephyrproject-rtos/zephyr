@@ -128,7 +128,7 @@ int testLowTimerPeriodicity(void)
 	(void) task_tick_delta_32(&refTime);
 
 	/* Use task_timer_restart() to change the periodicity */
-	task_timer_restart(pTimer[0], 0, 60);
+	task_timer_restart(pTimer[0], 60, 60);
 	for (i = 0; i < 6; i++) {
 		status = task_sem_take_wait_timeout(TIMER_SEM, 100);
 		ticks_32 = task_tick_delta_32(&refTime);
