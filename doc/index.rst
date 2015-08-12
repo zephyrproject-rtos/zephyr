@@ -12,6 +12,7 @@
 .. toctree::
    :maxdepth: 1
 
+   about_zephyr.rst
    quick_start/quick_start.rst
    kernel/kernel.rst
    application/application.rst
