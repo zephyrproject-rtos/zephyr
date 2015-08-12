@@ -123,4 +123,17 @@ int net_send(struct net_buf *buf);
 struct net_buf *net_receive(struct net_context *context,
 			    int32_t timeout);
 
+/**
+ * @brief Get the UDP connection pointer from net_context.
+ *
+ * @details This is only needed in special occacions when
+ * there is an existing UDP connection that application
+ * wants to attach to. Normally the connection information
+ * is not needed by application.
+ *
+ * @return UDP connection if it exists, NULL otherwise.
+ */
+struct simple_udp_connection *
+	net_context_get_udp_connection(struct net_context *context);
+
 #endif /* __NET_SOCKET_H */
