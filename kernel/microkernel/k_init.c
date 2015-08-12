@@ -65,7 +65,7 @@ struct nano_stack _k_command_stack = {NULL,
 									  _k_server_command_stack_storage};
 
 
-extern void _k_server(int i1, int i2);
+extern void _k_server(int unused1, int unused2);
 
 void _k_kernel_init(void)
 {

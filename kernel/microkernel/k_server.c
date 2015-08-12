@@ -97,15 +97,13 @@ static struct k_proc *next_task_select(void)
  * @return Does not return.
  */
 
-FUNC_NORETURN void _k_server(int parameter1, /* not used */
-					   int parameter2  /* not used */
-					   )
+FUNC_NORETURN void _k_server(int unused1, int unused2)
 {
 	struct k_args *pArgs;
 	struct k_proc *pNextTask;
 
-	ARG_UNUSED(parameter1);
-	ARG_UNUSED(parameter2);
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
 
 	/* indicate that failure of this fiber may be fatal to the entire system
 	 */
