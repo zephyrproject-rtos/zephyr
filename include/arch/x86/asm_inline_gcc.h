@@ -46,37 +46,18 @@
 
 /**
  *
- * @brief Disable all interrupts on the CPU (inline)
+ * @internal
  *
- * This routine disables interrupts.  It can be called from either interrupt,
- * task or fiber level.  This routine returns an architecture-dependent
- * lock-out key representing the "interrupt disable state" prior to the call;
- * this key can be passed to irq_unlock_inline() to re-enable interrupts.
+ * @brief Disable all interrupts on the CPU
  *
- * The lock-out key should only be used as the argument to the
- * irq_unlock_inline() API.  It should never be used to manually re-enable
- * interrupts or to inspect or manipulate the contents of the source register.
- *
- * WARNINGS
- * Invoking a kernel routine with interrupts locked may result in
- * interrupts being re-enabled for an unspecified period of time.  If the
- * called routine blocks, interrupts will be re-enabled while another
- * context executes, or while the system is idle.
- *
- * The "interrupt disable state" is an attribute of a context.  Thus, if a
- * fiber or task disables interrupts and subsequently invokes a kernel
- * routine that causes the calling context to block, the interrupt
- * disable state will be restored when the context is later rescheduled
- * for execution.
+ * GCC assembly internals of irq_lock(). See irq_lock() for a complete
+ * description.
  *
  * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
- *
- * \NOMANUAL
  */
 
-static inline __attribute__((always_inline))
-	unsigned int _do_irq_lock_inline(void)
+static inline __attribute__((always_inline)) unsigned int _do_irq_lock(void)
 {
 	unsigned int key;
 
@@ -95,18 +76,17 @@ static inline __attribute__((always_inline))
 
 /**
  *
+ * @internal
+ *
  * @brief Enable all interrupts on the CPU (inline)
  *
- * This routine can be called from either interrupt, task or fiber level.
- * Invoked by kernel or by irq_unlock_inline()
+ * GCC assembly internals of irq_lock_unlock(). See irq_lock_unlock() for a
+ * complete description.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
 
-static inline __attribute__((always_inline))
-	void _do_irq_unlock_inline(void)
+static inline __attribute__((always_inline)) void _do_irq_unlock(void)
 {
 	__asm__ volatile (
 		"sti;\n\t"

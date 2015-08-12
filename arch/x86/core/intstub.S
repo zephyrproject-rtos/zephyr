@@ -56,11 +56,6 @@ entering and exiting a C interrupt handler.
 	GTEXT(_SpuriousIntNoErrCodeHandler)
 	GTEXT(_SpuriousIntHandler)
 
-	/* exports (public APIs) */
-
-	GTEXT(irq_lock)
-	GTEXT(irq_unlock)
-
  	/* externs */
 
 	GTEXT(_Swap)
@@ -459,66 +454,5 @@ BRANCH_LABEL(callFatalHandler)
 	/* handler shouldn't return, but call it again if it does */
 
 	jmp	callFatalHandler
-
-
-/**
- *
- * @brief Disable interrupts on the local CPU 
- *
- * This routine disables interrupts.  It can be called from either interrupt
- * or context level.  This routine returns an architecture-dependent
- * lock-out key representing the "interrupt disable state" prior to the call;
- * this key can be passed to fiber_enable_ints() to re-enable interrupts.
- * 
- * The lock-out key should only be used as the argument to the
- * fiber_enable_ints() API.  It should never be used to manually re-enable
- * interrupts or to inspect or manipulate the contents of the source register.
- *
- * WARNINGS
- * Invoking a kernel routine with interrupts locked may result in
- * interrupts being re-enabled for an unspecified period of time.  If the
- * called routine blocks, interrupts will be re-enabled while another
- * context executes, or while the system is idle.
- *
- * The "interrupt disable state" is an attribute of a context, i.e. it's part
- * of the context context.  Thus, if a context disables interrupts and
- * subsequently invokes a kernel routine that causes the calling context
- * to block, the interrupt disable state will be restored when the context is
- * later rescheduled for execution.
- *
- * @return An architecture-dependent lock-out key representing the
- * "interrupt disable state" prior to the call.
- */
-
-SECTION_FUNC(TEXT, irq_lock)
-	pushfl
-	cli
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_start
-#endif
-	popl	%eax
-	ret
-
-
-/**
- *
- * @brief Enable interrupts on the local CPU 
- *
- * This routine re-enables interrupts on the local CPU.  The <key> parameter
- * is an architecture-dependent lock-out key that is returned by a previous
- * invocation of irq_lock().
- *
- * This routine can be called from either a context or ISR context.
- */
-
-SECTION_FUNC(TEXT, irq_unlock)
-	testl $0x200, SP_ARG1(%esp)
-	jz skipIntEnable
-#ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_stop
-#endif
-	sti
-BRANCH_LABEL(skipIntEnable)
-	ret
 
 #endif /* CONFIG_NO_ISRS */

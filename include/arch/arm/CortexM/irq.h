@@ -43,15 +43,10 @@ ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
 
 #ifdef _ASMLANGUAGE
 GTEXT(_IntExit);
-GTEXT(irq_lock)
-GTEXT(irq_unlock)
 GTEXT(irq_connect)
 GTEXT(irq_enable)
 GTEXT(irq_disable)
 #else
-extern int irq_lock(void);
-extern void irq_unlock(int key);
-
 extern int irq_connect(unsigned int irq,
 			     unsigned int prio,
 			     void (*isr)(void *arg),

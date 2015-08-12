@@ -42,15 +42,10 @@
 
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);
-GTEXT(irq_lock)
-GTEXT(irq_unlock)
 GTEXT(irq_connect)
 GTEXT(irq_enable)
 GTEXT(irq_disable)
 #else
-extern int irq_lock(void);
-extern void irq_unlock(int key);
-
 extern int irq_connect(unsigned int irq,
 			     unsigned int prio,
 			     void (*isr)(void *arg),
@@ -63,17 +58,37 @@ extern void _irq_exit(void);
 
 /**
  *
- * @brief Disable all interrupts on the CPU (inline)
+ * @brief Disable all interrupts on the local CPU
  *
- * See irq_lock() for full description
+ * This routine disables interrupts.  It can be called from either interrupt,
+ * task or fiber level.  This routine returns an architecture-dependent
+ * lock-out key representing the "interrupt disable state" prior to the call;
+ * this key can be passed to irq_unlock() to re-enable interrupts.
+ *
+ * The lock-out key should only be used as the argument to the
+ * irq_unlock() API.  It should never be used to manually re-enable
+ * interrupts or to inspect or manipulate the contents of the source register.
+ *
+ * This function can be called recursively: it will return a key to return the
+ * state of interrupt locking to the previous level.
+ *
+ * WARNINGS
+ * Invoking a kernel routine with interrupts locked may result in
+ * interrupts being re-enabled for an unspecified period of time.  If the
+ * called routine blocks, interrupts will be re-enabled while another
+ * context executes, or while the system is idle.
+ *
+ * The "interrupt disable state" is an attribute of a context.  Thus, if a
+ * fiber or task disables interrupts and subsequently invokes a kernel
+ * routine that causes the calling context to block, the interrupt
+ * disable state will be restored when the context is later rescheduled
+ * for execution.
  *
  * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
- *
- * \NOMANUAL
  */
 
-static ALWAYS_INLINE unsigned int irq_lock_inline(void)
+static ALWAYS_INLINE unsigned int irq_lock(void)
 {
 	unsigned int key;
 
@@ -83,16 +98,18 @@ static ALWAYS_INLINE unsigned int irq_lock_inline(void)
 
 /**
  *
- * @brief Enable all interrupts on the CPU (inline)
+ * @brief Enable all interrupts on the local CPU
  *
- * See irq_unlock() for full description
+ * This routine re-enables interrupts on the local CPU.  The <key> parameter
+ * is an architecture-dependent lock-out key that is returned by a previous
+ * invocation of irq_lock().
+ *
+ * This routine can be called from either interrupt, task or fiber level.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
 
-static ALWAYS_INLINE void irq_unlock_inline(unsigned int key)
+static ALWAYS_INLINE void irq_unlock(unsigned int key)
 {
 	__asm__ volatile("seti %0" : : "ir"(key));
 }

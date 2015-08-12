@@ -286,8 +286,6 @@ typedef struct nanoIsf {
 
 static inline unsigned int irq_lock(void) {return 1;}
 static inline void irq_unlock(unsigned int key) {}
-#define irq_lock_inline irq_lock
-#define irq_unlock_inline irq_unlock
 
 #else /* CONFIG_NO_ISRS */
 
@@ -302,11 +300,14 @@ void _int_latency_stop(void);
  * This routine disables interrupts.  It can be called from either interrupt,
  * task or fiber level.  This routine returns an architecture-dependent
  * lock-out key representing the "interrupt disable state" prior to the call;
- * this key can be passed to irq_unlock_inline() to re-enable interrupts.
+ * this key can be passed to irq_unlock() to re-enable interrupts.
  *
- * The lock-out key should only be used as the argument to the
- * irq_unlock_inline() API.  It should never be used to manually re-enable
- * interrupts or to inspect or manipulate the contents of the source register.
+ * The lock-out key should only be used as the argument to the irq_unlock()
+ * API.  It should never be used to manually re-enable interrupts or to inspect
+ * or manipulate the contents of the source register.
+ *
+ * This function can be called recursively: it will return a key to return the
+ * state of interrupt locking to the previous level.
  *
  * WARNINGS
  * Invoking a kernel routine with interrupts locked may result in
@@ -326,10 +327,9 @@ void _int_latency_stop(void);
  * \NOMANUAL
  */
 
-static inline __attribute__((always_inline))
-	unsigned int irq_lock_inline(void)
+static inline __attribute__((always_inline)) unsigned int irq_lock(void)
 {
-	unsigned int key = _do_irq_lock_inline();
+	unsigned int key = _do_irq_lock();
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	_int_latency_start();
@@ -345,7 +345,7 @@ static inline __attribute__((always_inline))
  *
  * This routine re-enables interrupts on the CPU.  The <key> parameter
  * is an architecture-dependent lock-out key that is returned by a previous
- * invocation of irq_lock_inline().
+ * invocation of irq_lock().
  *
  * This routine can be called from either interrupt, task or fiber level.
  *
@@ -354,8 +354,7 @@ static inline __attribute__((always_inline))
  * \NOMANUAL
  */
 
-static inline __attribute__((always_inline))
-	void irq_unlock_inline(unsigned int key)
+static inline __attribute__((always_inline)) void irq_unlock(unsigned int key)
 {
 	if (!(key & 0x200)) {
 		return;
@@ -363,7 +362,7 @@ static inline __attribute__((always_inline))
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	_int_latency_stop();
 #endif
-	_do_irq_unlock_inline();
+	_do_irq_unlock();
 	return;
 }
 #endif /* CONFIG_NO_ISRS */
@@ -407,18 +406,6 @@ extern void	irq_enable(unsigned int irq);
  * @param irq IRQ
  */
 extern void	irq_disable(unsigned int irq);
-
-#ifndef CONFIG_NO_ISRS
-/**
- * @brief Lock out all interrupts
- */
-extern int	irq_lock(void);
-
-/**
- * @brief Unlock all interrupts
- */
-extern void	irq_unlock(int key);
-#endif /* CONFIG_NO_ISRS */
 
 #ifdef CONFIG_FP_SHARING
 /**
