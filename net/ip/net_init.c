@@ -390,6 +390,10 @@ struct net_buf *net_receive(struct net_context *context, int32_t timeout)
 		break;
 	}
 
+	if (ret) {
+		return NULL;
+	}
+
 	switch (timeout) {
 	case TICKS_UNLIMITED:
 		return nano_fifo_get_wait(rx_queue);
