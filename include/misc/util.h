@@ -42,11 +42,11 @@ Misc utilities usable by nanokernel, microkernel, and application code.
 extern "C" {
 #endif
 
+#ifndef _ASMLANGUAGE
+
 #define ARRAY_SIZE(array) ((unsigned long)(sizeof(array) / sizeof((array)[0])))
 #define CONTAINER_OF(ptr, type, field) \
 	((type *)(((char *)(ptr)) - offsetof(type, field)))
-
-#ifndef _ASMLANGUAGE
 
 /* round "x" up/down to next multiple of "align" (which must be a power of 2) */
 #define ROUND_UP(x, align)                                   \
