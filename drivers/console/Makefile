@@ -1,1 +1,1 @@
-obj-y = uart_console.o
+obj-$(CONFIG_UART_CONSOLE) = uart_console.o

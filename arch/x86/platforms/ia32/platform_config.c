@@ -46,6 +46,7 @@
 #include <serial/ns16550.h>
 
 
+#if defined(CONFIG_UART_CONSOLE)
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 
 /**
@@ -59,7 +60,7 @@
  */
 static int ns16550_uart_console_init(struct device *dev)
 {
-#if defined(CONFIG_UART_CONSOLE_INDEX)
+#if defined(CONFIG_UART_CONSOLE)
 	struct uart_init_info info = {
 		.baud_rate = CONFIG_UART_BAUDRATE,
 		.sys_clk_freq = UART_XTAL_FREQ,
@@ -90,6 +91,7 @@ static int ns16550_uart_console_init(struct device *dev)
 }
 
 #endif
+#endif /* CONFIG_UART_CONSOLE */
 
 
 /**< UART device configuration */
@@ -99,7 +101,8 @@ static struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 		.irq = CONFIG_UART_PORT_0_IRQ,
 		.int_pri = CONFIG_UART_PORT_0_IRQ_PRIORITY,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 0) \
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 0)) \
 		    || (CONFIG_BLUETOOTH_UART_INDEX == 0)
 			.config_func = ns16550_uart_console_init,
 		#endif
@@ -109,7 +112,8 @@ static struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 		.irq = CONFIG_UART_PORT_1_IRQ,
 		.int_pri = CONFIG_UART_PORT_1_IRQ_PRIORITY,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 1) \
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 1)) \
 		    || (CONFIG_BLUETOOTH_UART_INDEX == 1)
 			.config_func = ns16550_uart_console_init,
 		#endif

@@ -30,6 +30,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+menuconfig CONSOLE
+	bool
+	prompt "Console drivers"
+
+if CONSOLE
+
 config CONSOLE_HANDLER
 	bool
 	prompt "Enable console input handler"
@@ -39,8 +45,20 @@ config CONSOLE_HANDLER
 	This option enables console input handler allowing to write simple
 	interaction between serial console and the OS.
 
+config UART_CONSOLE
+	bool
+	prompt "Use UART for console"
+	default n
+	depends on SERIAL && SERIAL_HAS_DRIVER
+	help
+	Enable this option to use one UART for console. Make sure
+	CONFIG_UART_CONSOLE_INDEX is also set correctly.
+
 config UART_CONSOLE_INDEX
 	int "UART Console Index"
 	default 0
+	depends on UART_CONSOLE
 	help
 	This option specifies index for the console uart port.
+
+endif

@@ -72,7 +72,11 @@ the 'ia32_pci' platform.
 extern struct device * const uart_devs[];
 #endif
 
+#if defined(CONFIG_UART_CONSOLE)
+
 #define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
+
+#endif /* CONFIG_UART_CONSOLE */
 
 
 /*

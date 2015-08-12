@@ -182,6 +182,7 @@ This header file is used to specify and describe board-level aspects for the
 extern struct device * const uart_devs[];
 
 /* Uart console settings */
+#if defined(CONFIG_UART_CONSOLE)
 
 #define CONFIG_UART_CONSOLE_PORT PCR_PORT_B
 #define CONFIG_UART_CONSOLE_PORT_RX_PIN 16
@@ -193,6 +194,8 @@ extern struct device * const uart_devs[];
 #define CONFIG_UART_CONSOLE_INT_PRI 3
 
 #define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
+
+#endif /* CONFIG_UART_CONSOLE */
 
 /* Bluetooth UART definitions */
 #if defined(CONFIG_BLUETOOTH_UART)

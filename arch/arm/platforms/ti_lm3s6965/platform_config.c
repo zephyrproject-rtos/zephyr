@@ -54,6 +54,7 @@
 #define RCGC1_UART2_EN 0x00000004
 
 
+#if defined(CONFIG_UART_CONSOLE)
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 
 /**
@@ -89,13 +90,15 @@ int stellaris_uart_console_init(struct device *dev)
 }
 
 #endif /* CONFIG_PRINTK || CONFIG_STDOUT_CONSOLE */
+#endif /* CONFIG_UART_CONSOLE */
 
 
-#if (CONFIG_UART_CONSOLE_INDEX == 0) || (CONFIG_BLUETOOTH_UART_INDEX == 0)
+#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 0)) \
+    || (CONFIG_BLUETOOTH_UART_INDEX == 0)
 
 static int stellaris_uart0_init(struct device *dev)
 {
-#if (CONFIG_UART_CONSOLE_INDEX == 0)
+#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 0))
 	RCGC1 |= RCGC1_UART0_EN;
 	return stellaris_uart_console_init(dev);
 #elif (CONFIG_BLUETOOTH_UART_INDEX == 0)
@@ -108,11 +111,12 @@ static int stellaris_uart0_init(struct device *dev)
 #endif /* CONFIG_UART_CONSOLE_INDEX == 0 || CONFIG_BLUETOOTH_UART_INDEX == 0 */
 
 
-#if (CONFIG_UART_CONSOLE_INDEX == 1) || (CONFIG_BLUETOOTH_UART_INDEX == 1)
+#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 1)) \
+    || (CONFIG_BLUETOOTH_UART_INDEX == 1)
 
 static int stellaris_uart1_init(struct device *dev)
 {
-#if (CONFIG_UART_CONSOLE_INDEX == 1)
+#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 1))
 	RCGC1 |= RCGC1_UART1_EN;
 	return stellaris_uart_console_init(dev);
 #elif (CONFIG_BLUETOOTH_UART_INDEX == 1)
@@ -125,11 +129,12 @@ static int stellaris_uart1_init(struct device *dev)
 #endif /* CONFIG_UART_CONSOLE_INDEX == 0 || CONFIG_BLUETOOTH_UART_INDEX == 0 */
 
 
-#if (CONFIG_UART_CONSOLE_INDEX == 2) || (CONFIG_BLUETOOTH_UART_INDEX == 2)
+#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 2)) \
+    || (CONFIG_BLUETOOTH_UART_INDEX == 2)
 
 static int stellaris_uart2_init(struct device *dev)
 {
-#if (CONFIG_UART_CONSOLE_INDEX == 2)
+#if (defined(CONFIG_UART_CONSOLE) && (CONFIG_UART_CONSOLE_INDEX == 2))
 	RCGC1 |= RCGC1_UART2_EN;
 	return stellaris_uart_console_init(dev);
 #elif (CONFIG_BLUETOOTH_UART_INDEX == 2)
@@ -148,7 +153,8 @@ static struct uart_device_config_t stellaris_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,
 		.irq = CONFIG_UART_PORT_0_IRQ,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 0) \
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 0)) \
 		    || (CONFIG_BLUETOOTH_UART_INDEX == 0)
 			.config_func = stellaris_uart0_init,
 		#endif
@@ -157,7 +163,8 @@ static struct uart_device_config_t stellaris_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_1_REGS,
 		.irq = CONFIG_UART_PORT_1_IRQ,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 1) \
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 1)) \
 		    || (CONFIG_BLUETOOTH_UART_INDEX == 1)
 			.config_func = stellaris_uart1_init,
 		#endif
@@ -166,7 +173,8 @@ static struct uart_device_config_t stellaris_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_2_REGS,
 		.irq = CONFIG_UART_PORT_2_IRQ,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 2) \
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 2)) \
 		    || (CONFIG_BLUETOOTH_UART_INDEX == 2)
 			.config_func = stellaris_uart2_init,
 		#endif

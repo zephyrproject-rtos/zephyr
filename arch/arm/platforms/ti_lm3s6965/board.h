@@ -116,12 +116,15 @@ the 'ti_lm3s6965' platform.
 extern struct device * const uart_devs[];
 
 /* Uart console configuration */
+#if defined(CONFIG_UART_CONSOLE)
 
 #define CONFIG_UART_CONSOLE_BAUDRATE 115200
 #define CONFIG_UART_CONSOLE_IRQ IRQ_UART0
 #define CONFIG_UART_CONSOLE_INT_PRI 3
 
 #define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
+
+#endif /* CONFIG_UART_CONSOLE */
 
 /* Bluetooth UART definitions */
 #if defined(CONFIG_BLUETOOTH_UART)

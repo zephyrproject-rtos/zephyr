@@ -39,6 +39,14 @@ menuconfig SERIAL
 
 if SERIAL
 
+config SERIAL_HAS_DRIVER
+	bool
+	default n
+	help
+	This is an option to be enabled by individual serial driver
+	to signal that there is a serial driver. This is being used
+	by other drivers which are dependent on serial.
+
 menu "Serial Port Options"
 depends on X86_32
 
@@ -63,6 +71,7 @@ endmenu
 config NS16550
 	bool "NS16550 serial driver"
 	default n
+	select SERIAL_HAS_DRIVER
 	help
 	This option enables the NS16550 serial driver.
 	This specific driver can be used for the serial hardware
@@ -88,6 +97,7 @@ config NS16550_PCI_NUM_PORTS
 config K20_UART
 	bool "K20 serial driver"
 	default n
+	select SERIAL_HAS_DRIVER
 	help
 	This option enables the K20 serial driver.
 	This specific driver can be used for the serial hardware
@@ -96,6 +106,7 @@ config K20_UART
 config STELLARIS_UART
 	bool "Stellaris serial driver"
 	default n
+	select SERIAL_HAS_DRIVER
 	help
 	This option enables the Stellaris serial driver.
 	This specific driver can be used for the serial hardware

@@ -45,6 +45,7 @@
 #include <serial/ns16550.h>
 
 
+#if defined(CONFIG_UART_CONSOLE)
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 
 /**
@@ -79,6 +80,7 @@ static int ns16550_uart_console_init(struct device *dev)
 }
 
 #endif
+#endif /* CONFIG_UART_CONSOLE */
 
 /**
  * @brief UART Device configuration.
@@ -92,14 +94,16 @@ struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 	{
 		.port = 0,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 0)
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 0))
 			.config_func = ns16550_uart_console_init,
 		#endif
 	},
 	{
 		.port = 0,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 1)
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 1))
 			.config_func = ns16550_uart_console_init,
 		#endif
 	},

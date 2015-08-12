@@ -102,10 +102,14 @@ extern struct device * const uart_devs[];
 #endif
 
 /* Console definitions */
+#if defined(CONFIG_UART_CONSOLE)
+
 #define CONFIG_UART_CONSOLE_IRQ		COM1_INT_LVL
 #define CONFIG_UART_CONSOLE_INT_PRI	COM1_INT_PRI
 
 #define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
+
+#endif /* CONFIG_UART_CONSOLE */
 
 /* Bluetooth UART definitions */
 #if defined(CONFIG_BLUETOOTH_UART)

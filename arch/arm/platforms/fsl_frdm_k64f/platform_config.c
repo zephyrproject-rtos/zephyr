@@ -46,6 +46,7 @@
 #include <console/uart_console.h>
 
 
+#if defined(CONFIG_UART_CONSOLE)
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 
 /**
@@ -100,6 +101,7 @@ static int k20_uart_console_init(struct device *dev)
 }
 
 #endif
+#endif /* CONFIG_UART_CONSOLE */
 
 /**< K20 UART configuration for individual ports. */
 static struct uart_device_config_t k20_uart_dev_cfg[] = {
@@ -107,7 +109,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,
 		.irq = CONFIG_UART_PORT_0_IRQ,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 0)
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 0))
 			.config_func = k20_uart_console_init,
 		#endif
 	},
@@ -115,7 +118,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_1_REGS,
 		.irq = CONFIG_UART_PORT_1_IRQ,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 1)
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 1))
 			.config_func = k20_uart_console_init,
 		#endif
 	},
@@ -123,7 +127,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_2_REGS,
 		.irq = CONFIG_UART_PORT_2_IRQ,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 2)
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 2))
 			.config_func = k20_uart_console_init,
 		#endif
 	},
@@ -131,7 +136,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_3_REGS,
 		.irq = CONFIG_UART_PORT_3_IRQ,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 3)
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 3))
 			.config_func = k20_uart_console_init,
 		#endif
 	},
@@ -139,7 +145,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_4_REGS,
 		.irq = CONFIG_UART_PORT_4_IRQ,
 
-		#if (CONFIG_UART_CONSOLE_INDEX == 4)
+		#if (defined(CONFIG_UART_CONSOLE) \
+		     && (CONFIG_UART_CONSOLE_INDEX == 4))
 			.config_func = k20_uart_console_init,
 		#endif
 	},
