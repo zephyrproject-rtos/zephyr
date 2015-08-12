@@ -1,3 +1,5 @@
+.. _nanokernel_interrupts:
+
 Interrupt Services
 ##################
 

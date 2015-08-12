@@ -1,17 +1,10 @@
-.. _zephyr_kernel:
+.. _zephyr_primer:
 
-The Zephyr Kernel
-#################
+Zephyr Kernel Primer
+####################
 
-The purpose of this section is to help you understand the operation of the kernel and its features.
-This section also provides detailed information regarding the microkernel and the nanokernel
-services. Finally, you can find the information regarding the kernel's drivers and networking
-capabilities.
-
-This section does not replace the Application Program Interface
-documentation, rather, it offers additional information. The examples should provide
-you with enough insight to understand the functionality of the services but are not
-meant to replace the detailed in-code documentation.
+This section describes the major features of the Zephyr kernel
+and how to use them.
 
 .. toctree::
    :maxdepth: 2

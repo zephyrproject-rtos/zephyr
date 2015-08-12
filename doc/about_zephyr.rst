@@ -4,15 +4,16 @@ About Zephyr
 ############
 
 The Zephyr kernel is a small footprint kernel designed for use on
-resource-constrained systems, such as embedded sensor hubs,
-environmental sensors, simple LED wearables, and store inventory tags.
+resource-constrained systems, from simple embedded environmental sensors and
+LED wearables to sophisticated smart watches and IoT wireless gateways.
 
 Key Features
 ************
 
-A Zephyr application consists of kernel code, device driver code, and
-application-specific code, which are compiled into a monolithic image
-executing in a single shared address space.
+A Zephyr application combines application-specific code with a custom
+configured kernel to create a monolithic image that is loaded and executed
+on a system's hardware. Both the application code and kernel code execute
+in a single shared address space.
 
 The Zephyr kernel provides an extensive suite of services,
 which are summarized below.
@@ -29,7 +30,7 @@ which are summarized below.
 * Inter-thread data passing services, including basic message queues,
   enhanced message queues, and byte streams.
 
-* Memory management services, including dynamic allocation and freeing of
+* Memory allocation services, including dynamic allocation and freeing of
   fixed-size or variable-size memory blocks.
 
 * Power management services, including tickless idle and an advanced idling
