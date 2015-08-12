@@ -75,7 +75,6 @@ static int stellaris_uart_console_init(struct device *dev)
 	};
 
 	uart_init(UART_CONSOLE_DEV, &info);
-	uart_console_init();
 
 	return DEV_OK;
 }

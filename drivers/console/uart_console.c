@@ -44,6 +44,9 @@
 #include <stdint.h>
 #include <errno.h>
 
+#include <device.h>
+#include <init.h>
+
 #include <board.h>
 #include <drivers/uart.h>
 #include <console/uart_console.h>
@@ -216,13 +219,30 @@ void uart_register_input(struct nano_fifo *avail, struct nano_fifo *lines)
 
 /**
  *
- * @brief Initialize one UART as the console/debug port
+ * @brief Install printk/stdout hook for UART console output
  *
  * @return N/A
  */
 
-void uart_console_init(void)
+void uart_console_hook_install(void)
 {
 	__stdout_hook_install(consoleOut);
 	__printk_hook_install(consoleOut);
 }
+
+/**
+ *
+ * @brief Initialize one UART as the console/debug port
+ *
+ * @return DEV_OK if successful, otherwise failed.
+ */
+static int uart_console_init(struct device *arg)
+{
+	ARG_UNUSED(arg);
+
+	uart_console_hook_install();
+
+	return DEV_OK;
+}
+DECLARE_DEVICE_INIT_CONFIG(uart_console, "", uart_console_init, NULL);
+pure_init(uart_console, NULL);

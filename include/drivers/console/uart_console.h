@@ -39,8 +39,6 @@ extern "C" {
 
 #include <nanokernel.h>
 
-extern void uart_console_init(void);
-
 #define MAX_LINE_LEN 1024
 struct uart_console_input {
 	int __unused;

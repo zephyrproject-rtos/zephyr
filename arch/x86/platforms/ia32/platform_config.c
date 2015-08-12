@@ -68,7 +68,6 @@ static int ns16550_uart_console_init(struct device *dev)
 
 	if (dev == UART_CONSOLE_DEV) {
 		uart_init(UART_CONSOLE_DEV, &info);
-		uart_console_init();
 	}
 #endif
 
