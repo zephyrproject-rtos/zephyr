@@ -39,6 +39,7 @@
 #define _ARCH_ARC_V2_IRQ__H_
 
 #include <arch/arc/v2/aux_regs.h>
+#include <toolchain/common.h>
 
 #ifdef _ASMLANGUAGE
 GTEXT(_irq_exit);
