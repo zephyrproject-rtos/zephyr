@@ -180,14 +180,16 @@ PROCESS_THREAD(simple_udp_process, ev, data, buf)
              client process. */
           if(c->receive_callback != NULL) {
             PROCESS_CONTEXT_BEGIN(c->client_process);
-            PRINTF("simple_udp_process(%p): calling cb %p\n", buf,
-                   c->receive_callback);
+            PRINTF("simple_udp_process(%p): calling cb %p "
+		   "appdata %p datalen %d\n", buf,
+                   c->receive_callback, uip_appdata(buf),
+		   uip_datalen(buf));
             c->receive_callback(c,
                                 &(UIP_IP_BUF(buf)->srcipaddr),
                                 UIP_HTONS(UIP_IP_BUF(buf)->srcport),
                                 &(UIP_IP_BUF(buf)->destipaddr),
                                 UIP_HTONS(UIP_IP_BUF(buf)->destport),
-                                uip_buf(buf), uip_datalen(buf),
+                                uip_appdata(buf), uip_datalen(buf),
                                 c->user_data, buf);
             PROCESS_CONTEXT_END();
           }
