@@ -97,7 +97,7 @@ static struct k_proc *next_task_select(void)
  * @return Does not return.
  */
 
-FUNC_NORETURN void K_swapper(int parameter1, /* not used */
+FUNC_NORETURN void _k_server(int parameter1, /* not used */
 					   int parameter2  /* not used */
 					   )
 {
@@ -169,7 +169,7 @@ FUNC_NORETURN void K_swapper(int parameter1, /* not used */
 	}
 
 	/*
-	 * Code analyzers may complain that K_swapper() uses an infinite loop
+	 * Code analyzers may complain that _k_server() uses an infinite loop
 	 * unless we indicate that this is intentional
 	 */
 

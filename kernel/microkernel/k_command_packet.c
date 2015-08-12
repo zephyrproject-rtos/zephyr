@@ -95,7 +95,7 @@ cmdPkt_t *_cmd_pkt_get(
 
 /**
  *
- * @brief Send command packet to be processed by K_swapper
+ * @brief Send command packet to be processed by _k_server
  *
  * @return N/A
  */

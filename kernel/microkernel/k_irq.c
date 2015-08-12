@@ -244,8 +244,8 @@ static int _k_task_irq_alloc(
  * This routine connects a task IRQ object to a system interrupt based
  * upon the specified IRQ and priority values.
  *
- * IRQ allocation is done via K_swapper so that simultaneous allocation
- * requests are single-threaded.
+ * IRQ allocation is done via the microkernel server fiber so that simultaneous
+ * allocation requests are single-threaded.
  *
  * @return assigned interrupt vector if successful, INVALID_VECTOR if not
  */

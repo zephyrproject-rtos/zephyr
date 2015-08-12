@@ -297,7 +297,7 @@ void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
  *
  * @brief Handle elapsed ticks calculation request
  *
- * This routine, called by K_swapper(), handles the request for calculating the
+ * This routine, called by _k_server(), handles the request for calculating the
  * time elapsed since the specified reference time.
  *
  * @return N/A

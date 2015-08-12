@@ -75,9 +75,9 @@ extern void fiber_event_send(kevent_t event);
  * @brief Set event handler request
  *
  * This routine specifies the event handler that runs (in the context of the
- * K_swapper fiber) when the associated event is signaled. Specifying a non-NULL
- * handler installs a new handler, while specifying a NULL event handler removes
- * the existing event handler.
+ * microkernel server fiber) when the associated event is signaled. Specifying
+ * a non-NULL handler installs a new handler, while specifying a NULL event
+ * handler removes the existing event handler.
  *
  * A new event handler cannot be installed if one already exists for that event;
  * the old handler must be removed first. However, it is permitted to replace

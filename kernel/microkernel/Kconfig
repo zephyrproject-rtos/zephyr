@@ -34,12 +34,12 @@ menu "Microkernel Options"
 
 config MICROKERNEL_SERVER_STACK_SIZE
 	int
-	prompt "Microkernel server fiber (K_swapper) stack size"
+	prompt "Microkernel server fiber (_k_server) stack size"
 	default 1024
 	depends on MICROKERNEL
 	help
 	This option specifies the size of the stack used by the microkernel
-	server fiber, whose entry point is K_swapper().  This must be able
+	server fiber, whose entry point is _k_server().  This must be able
 	to handle the deepest call stack for internal handling of microkernel
 
 config MICROKERNEL_SERVER_PRIORITY
@@ -66,12 +66,12 @@ config PRIORITY_CEILING
 
 config COMMAND_STACK_SIZE
 	int
-	prompt "K_swapper command stack size (in packets)"
+	prompt "Microkernel server command stack size (in packets)"
 	default 64
 	depends on MICROKERNEL
 	help
 	This option specifies the maximum number of command packets that
-	can be queued up for processing by the kernel's K_swapper fiber.
+	can be queued up for processing by the kernel's _k_server fiber.
 
 config NUM_COMMAND_PACKETS
 	int
@@ -82,7 +82,7 @@ config NUM_COMMAND_PACKETS
 	This option specifies the number of packets in the command packet pool.
 	This pool needs to be large enough to accommodate all in-flight
 	asynchronous command requests as well as those internally issued by
-	the microkernel server fiber (K_swapper).
+	the microkernel server fiber (_k_server).
 
 config NUM_TIMER_PACKETS
 	int

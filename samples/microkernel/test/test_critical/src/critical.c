@@ -47,7 +47,7 @@ static uint32_t altTaskIterations = 0;
 
 /**
  *
- * @brief Routine to be called from K_swapper()
+ * @brief Routine to be called from _k_server()
  *
  * This routine increments the global variable <criticalVar>.
  *

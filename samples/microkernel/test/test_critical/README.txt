@@ -6,10 +6,10 @@ This test verifies that the microkernel task_offload_to_fiber() API operates as
 expected.
 
 This test has two tasks that increment a counter.  The routine that
-increments the counter is invoked from K_swapper() due to the two tasks
+increments the counter is invoked from _k_server() due to the two tasks
 calling task_offload_to_fiber().  The final result of the counter is expected
 to be the the number of times task_offload_to_fiber() was called to increment
-the counter as the incrementing was done in the context of K_swapper().
+the counter as the incrementing was done in the context of _k_server().
 
 This is done with time slicing both disabled and enabled to ensure that the
 result always matches the number of times task_offload_to_fiber() is called.

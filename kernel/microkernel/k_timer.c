@@ -213,7 +213,7 @@ void _k_timer_list_update(int ticks)
  *
  * @brief Handle timer allocation request
  *
- * This routine, called by K_swapper(), handles the request for allocating a
+ * This routine, called by _k_server(), handles the request for allocating a
  * timer.
  *
  * @param P   Pointer to timer allocation request arguments.
@@ -255,7 +255,7 @@ ktimer_t task_timer_alloc(void)
  *
  * @brief Handle timer deallocation request
  *
- * This routine, called by K_swapper(), handles the request for deallocating a
+ * This routine, called by _k_server(), handles the request for deallocating a
  * timer.
  *
  * @return N/A
@@ -298,7 +298,7 @@ void task_timer_free(ktimer_t timer)
  *
  * @brief Handle start timer request
  *
- * This routine, called by K_swapper(), handles the start timer request from
+ * This routine, called by _k_server(), handles the start timer request from
  * both task_timer_start() and task_timer_restart().
  *
  * @param P   Pointer to timer start request arguments.
@@ -410,7 +410,7 @@ void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
  *
  * @brief Handle stop timer request
  *
- * This routine, called by K_swapper(), handles the request for stopping a
+ * This routine, called by _k_server(), handles the request for stopping a
  * timer.
  *
  * @return N/A
@@ -449,7 +449,7 @@ void task_timer_stop(ktimer_t timer)
  *
  * @brief Handle internally issued task wakeup request
  *
- * This routine, called by K_swapper(), handles the request for waking a task
+ * This routine, called by _k_server(), handles the request for waking a task
  * at the end of its sleep period.
  *
  * @return N/A
@@ -471,7 +471,7 @@ void _k_task_wakeup(struct k_args *P)
  *
  * @brief Handle task sleep request
  *
- * This routine, called by K_swapper(), handles the request for putting a task
+ * This routine, called by _k_server(), handles the request for putting a task
  * to sleep.
  *
  * @return N/A

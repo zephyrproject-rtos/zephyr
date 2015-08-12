@@ -11,7 +11,7 @@ The project can be built using several configurations:
 minimal (a "do nothing" image that has support for few kernel capabilities)
 -------
 - Idle task is only task in system.
-- K_swapper is only fiber in system.
+- _k_server is only fiber in system.
 - No system timer support.
 - ISR for the spurious interrupt handling is present.
 - IDT and stack memory sizes are very limited.
@@ -83,7 +83,7 @@ minimal
 -------
 This configuration does NOT produce any output. To observe its operation,
 invoke it using gdb and observe that:
-- the kernel's timer ISR & K_swapper increment "K_LowTime" on a regular basis
+- the kernel's timer ISR & _k_server increment "K_LowTime" on a regular basis
 - nano_cpu_idle() is invoked by the idle task each time K_LowTime is incremented
 
 regular

@@ -76,7 +76,7 @@ config  INIT_STACKS
 	This option instructs the kernel to initialize stack areas with a
 	known value (0xaa) before they are first used, so that the high
 	water mark can be easily determined. This applies to the stack areas
-	for both tasks and fibers, as well as for the K_swapper's command
+	for both tasks and fibers, as well as for the microkernel server's command
 	stack.
 
 config  XIP

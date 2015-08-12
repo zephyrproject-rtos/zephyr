@@ -65,7 +65,7 @@ struct nano_stack _k_command_stack = {NULL,
 									  _k_server_command_stack_storage};
 
 
-extern void K_swapper(int i1, int i2);
+extern void _k_server(int i1, int i2);
 
 void _k_kernel_init(void)
 {
@@ -88,7 +88,7 @@ void _k_kernel_init(void)
 
 	task_fiber_start(_k_server_stack,
 			   CONFIG_MICROKERNEL_SERVER_STACK_SIZE,
-			   K_swapper,
+			   _k_server,
 			   0,
 			   0,
 			   CONFIG_MICROKERNEL_SERVER_PRIORITY,

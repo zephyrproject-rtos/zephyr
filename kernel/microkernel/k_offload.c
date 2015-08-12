@@ -38,7 +38,7 @@
  * @brief Process an "offload to fiber" request
  *
  * This routine simply invokes the requested function from within the context
- * of the K_swapper() fiber and saves the result.
+ * of the _k_server() fiber and saves the result.
  *
  * @return N/A
  */
@@ -50,13 +50,13 @@ void _k_offload_to_fiber(struct k_args *A)
 
 /**
  *
- * @brief Issue a custom call from within K_swapper()
+ * @brief Issue a custom call from within the microkernel server fiber
  *
- * @func: function to call from within K_swapper()
+ * @func: function to call from within the microkernel server fiber
  * @argp: argument to pass to custom function
  *
  * This routine issues a request to execute a function from within the context
- * of the K_swapper() fiber.
+ * of the microkernel server fiber.
  *
  * @return return value from custom <func> call
  */
