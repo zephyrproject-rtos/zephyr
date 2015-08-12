@@ -336,7 +336,7 @@ void _k_timer_start(struct k_args *P)
 	}
 
 	/* Track the semaphore to signal for when the timer expires. */
-	if (P->Args.c1.sema != ENDLIST) {
+	if (P->Args.c1.sema != _USE_CURRENT_SEM) {
 		T->Args->Comm = _K_SVC_SEM_SIGNAL;
 		T->Args->Args.s1.sema = P->Args.c1.sema;
 	}
@@ -378,31 +378,6 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 	A.Args.c1.time1 = (int64_t)duration;
 	A.Args.c1.time2 = period;
 	A.Args.c1.sema = sema;
-	KERNEL_ENTRY(&A);
-}
-
-/**
- *
- * @brief Restart a timer
- *
- * This routine restarts the timer specified by <timer>.
- *
- * @param timer      Timer to restart.
- * @param duration   Initial delay.
- * @param period     Repetition interval.
- *
- * @return N/A
- */
-
-void task_timer_restart(ktimer_t timer, int32_t duration, int32_t period)
-{
-	struct k_args A;
-
-	A.Comm = _K_SVC_TIMER_START;
-	A.Args.c1.timer = (struct k_timer *)timer;
-	A.Args.c1.time1 = (int64_t)duration;
-	A.Args.c1.time2 = period;
-	A.Args.c1.sema = ENDLIST;
 	KERNEL_ENTRY(&A);
 }
 

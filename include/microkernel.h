@@ -37,6 +37,16 @@
 
 #include <nanokernel.h>
 
+/*
+ * microkernel private APIs that are exposed via the public API
+ *
+ * THESE ITEMS SHOULD NOT BE REFERENCED EXCEPT BY THE KERNEL ITSELF!
+ */
+
+#define _USE_CURRENT_SEM (-1)
+
+/* end of private APIs */
+
 /* microkernel public APIs */
 
 #include <microkernel/base_api.h>

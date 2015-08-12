@@ -53,9 +53,26 @@ extern void task_timer_start(ktimer_t timer,
 			     int32_t duration,
 			     int32_t period,
 			     ksem_t sema);
-extern void task_timer_restart(ktimer_t timer,
-		                       int32_t duration,
-		                       int32_t period);
+/**
+ *
+ * @brief Restart a timer
+ *
+ * This routine restarts the timer specified by <timer>. The timer must have
+ * already been started by a call to task_timer_start().
+ *
+ * @param timer      Timer to restart.
+ * @param duration   Initial delay.
+ * @param period     Repetition interval.
+ *
+ * @return N/A
+ */
+
+static inline void task_timer_restart(ktimer_t timer, int32_t duration,
+										int32_t period)
+{
+	task_timer_start(timer, duration, period, _USE_CURRENT_SEM);
+}
+
 extern void task_timer_stop(ktimer_t timer);
 extern int64_t task_tick_delta(int64_t *reftime);
 static inline int32_t task_tick_delta_32(int64_t *reftime)
