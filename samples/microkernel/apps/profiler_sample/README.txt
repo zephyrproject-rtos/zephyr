@@ -27,3 +27,29 @@ or
                         # and restore pre-defined configuration info
 
 --------------------------------------------------------------------------------
+
+Sample Output:
+
+Philosopher 1 EATING
+Philosopher 2 THINKING
+Philosopher 3 THINKING
+Philosopher 4 EATING
+Philosopher 5 THINKING
+
+
+
+
+Dropped events occurred: 0
+
+Context switch summary
+Context Id   Amount of context switches
+ 1067512     17339
+ 1068536     30067
+ 1075704     4
+ 1064184     350
+ 1074680     1986
+ 1073656     2018
+ 1072632     2623
+ 1071608     2630
+ 1070584     1983
+ 1069560     1340
