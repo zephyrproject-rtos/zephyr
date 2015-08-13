@@ -68,7 +68,7 @@ static ISR_INFO   isrInfo;
 static int tcRC = TC_PASS;         /* test case return code */
 static int helperData;
 
-static volatile int mainTaskNotReady = 0;
+static volatile int is_main_task_ready = 0;
 
 #ifdef TEST_PRIV_TASKS
 /* Note this is in reverse order of what is defined under
@@ -290,7 +290,8 @@ void helperTaskSleepTest(void)
 	task_sem_take_wait(HT_SEM);
 
 	firstTick = task_tick_get_32();
-	while (mainTaskNotReady) {
+	while (!is_main_task_ready) {
+		/* busy work */
 	}
 	helperData = task_tick_get_32() - firstTick;
 
@@ -308,20 +309,41 @@ int taskSleepTest(void)
 {
 	int32_t  tick;
 
-	tick = task_tick_get_32();           /* Busy wait to align */
-	while (tick == task_tick_get_32()) {   /* to tick boundary */
-	}
-
 	task_sem_give(HT_SEM);
 
-	mainTaskNotReady = 1;
+	/* align on tick boundary and get current tick */
+	tick = task_tick_get_32();
+	while (tick == task_tick_get_32()) {
+	}
+
+	/* compensate for the extra tick we just waited */
+	++tick;
+
 	task_sleep(SLEEP_TIME);
-	mainTaskNotReady = 0;
+
+	tick = task_tick_get_32() - tick;
+
+	is_main_task_ready = 1;
 	task_sem_take_wait(RT_SEM);
 
-	if (helperData != SLEEP_TIME) {
-		TC_ERROR("task_sleep() slept for %d ticks, not %d\n",
-				 helperData, SLEEP_TIME);
+	if (tick != SLEEP_TIME) {
+		TC_ERROR("task_sleep() slept for %d ticks, not %d\n", tick, SLEEP_TIME);
+		return TC_FAIL;
+	}
+
+	/*
+	 * Check that the helper task ran for approximately SLEEP_TIME. On QEMU,
+	 * when the host CPU is overloaded, it has been observed that the tick
+	 * count can be missed by 1 on either side. Allow for 2 ticks to be sure.
+	 * This check is only there to make sure that the helper task did run for
+	 * approximately the whole time the main task was sleeping.
+	 */
+	const int tick_error_allowed = 2;
+	if (helperData > SLEEP_TIME + tick_error_allowed ||
+		helperData < SLEEP_TIME - tick_error_allowed) {
+		TC_ERROR("helper task should have run for around %d ticks "
+				 "(+/-%d), but ran for %d ticks\n",
+					SLEEP_TIME, tick_error_allowed, helperData);
 		return TC_FAIL;
 	}
 
