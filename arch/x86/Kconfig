@@ -52,14 +52,12 @@ config PLATFORM_IA32_PCI
 	select HPET_TIMER
 	select EOI_HANDLER_SUPPORTED
 	select BOOTLOADER_UNKNOWN
-	select NS16550
 	select PCI
 
 config PLATFORM_IA32
 	bool "IA32"
 	select EOI_HANDLER_SUPPORTED
 	select BOOTLOADER_UNKNOWN
-	select NS16550
 
 endchoice
 
