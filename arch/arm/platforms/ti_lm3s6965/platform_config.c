@@ -42,6 +42,7 @@
 #ifdef CONFIG_STELLARIS_UART
 #include <drivers/uart.h>
 #include <console/uart_console.h>
+#include <serial/stellarisUartDrv.h>
 
 #ifdef CONFIG_BLUETOOTH_UART
 #include <bluetooth/uart.h>
@@ -153,6 +154,8 @@ static struct uart_device_config_t stellaris_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,
 		.irq = CONFIG_UART_PORT_0_IRQ,
 
+		.port_init = stellaris_uart_port_init,
+
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 0)) \
 		    || (CONFIG_BLUETOOTH_UART_INDEX == 0)
@@ -163,6 +166,8 @@ static struct uart_device_config_t stellaris_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_1_REGS,
 		.irq = CONFIG_UART_PORT_1_IRQ,
 
+		.port_init = stellaris_uart_port_init,
+
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 1)) \
 		    || (CONFIG_BLUETOOTH_UART_INDEX == 1)
@@ -172,6 +177,8 @@ static struct uart_device_config_t stellaris_uart_dev_cfg[] = {
 	{
 		.base = (uint8_t *)CONFIG_UART_PORT_2_REGS,
 		.irq = CONFIG_UART_PORT_2_IRQ,
+
+		.port_init = stellaris_uart_port_init,
 
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 2)) \

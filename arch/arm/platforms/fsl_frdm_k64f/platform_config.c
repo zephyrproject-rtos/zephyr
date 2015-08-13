@@ -44,6 +44,7 @@
 #include <drivers/k20_pcr.h>
 #include <drivers/k20_uart.h>
 #include <console/uart_console.h>
+#include <serial/k20UartDrv.h>
 
 
 #if defined(CONFIG_UART_CONSOLE)
@@ -109,6 +110,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_0_REGS,
 		.irq = CONFIG_UART_PORT_0_IRQ,
 
+		.port_init = k20_uart_port_init,
+
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 0))
 			.config_func = k20_uart_console_init,
@@ -117,6 +120,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 	{
 		.base = (uint8_t *)CONFIG_UART_PORT_1_REGS,
 		.irq = CONFIG_UART_PORT_1_IRQ,
+
+		.port_init = k20_uart_port_init,
 
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 1))
@@ -127,6 +132,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_2_REGS,
 		.irq = CONFIG_UART_PORT_2_IRQ,
 
+		.port_init = k20_uart_port_init,
+
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 2))
 			.config_func = k20_uart_console_init,
@@ -136,6 +143,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 		.base = (uint8_t *)CONFIG_UART_PORT_3_REGS,
 		.irq = CONFIG_UART_PORT_3_IRQ,
 
+		.port_init = k20_uart_port_init,
+
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 3))
 			.config_func = k20_uart_console_init,
@@ -144,6 +153,8 @@ static struct uart_device_config_t k20_uart_dev_cfg[] = {
 	{
 		.base = (uint8_t *)CONFIG_UART_PORT_4_REGS,
 		.irq = CONFIG_UART_PORT_4_IRQ,
+
+		.port_init = k20_uart_port_init,
 
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 4))

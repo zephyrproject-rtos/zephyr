@@ -94,6 +94,8 @@ struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 	{
 		.port = 0,
 
+		.port_init = ns16550_uart_port_init,
+
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 0))
 			.config_func = ns16550_uart_console_init,
@@ -101,6 +103,8 @@ struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 	},
 	{
 		.port = 0,
+
+		.port_init = ns16550_uart_port_init,
 
 		#if (defined(CONFIG_UART_CONSOLE) \
 		     && (CONFIG_UART_CONSOLE_INDEX == 1))

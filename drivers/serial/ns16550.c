@@ -213,6 +213,8 @@ INCLUDE FILES: drivers/uart.h
 #define INBYTE(x) inByte(x)
 #define OUTBYTE(x, d) outByte(d, x)
 
+static struct uart_driver_api ns16550_uart_driver_api;
+
 #if defined(CONFIG_NS16550_PCI)
 
 static inline void ns16550_pci_uart_scan(void)
@@ -267,7 +269,7 @@ static inline void ns16550_pci_uart_scan(void)
  * @return N/A
  */
 
-void uart_init(struct device *dev,
+void ns16550_uart_port_init(struct device *dev,
 	       const struct uart_init_info * const init_info
 	       )
 {
@@ -312,6 +314,8 @@ void uart_init(struct device *dev,
 	OUTBYTE(IER(dev), 0x00);
 
 	irq_unlock(oldLevel);
+
+	dev->driver_api = &ns16550_uart_driver_api;
 }
 
 /**
@@ -324,7 +328,7 @@ void uart_init(struct device *dev,
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 
-int uart_poll_in(struct device *dev,
+static int ns16550_uart_poll_in(struct device *dev,
 		 unsigned char *pChar /* pointer to char */
 		 )
 {
@@ -352,7 +356,7 @@ int uart_poll_in(struct device *dev,
  *
  * @return sent character
  */
-unsigned char uart_poll_out(struct device *dev,
+static unsigned char ns16550_uart_poll_out(struct device *dev,
 	unsigned char outChar /* char to send */
 	)
 {
@@ -377,7 +381,7 @@ unsigned char uart_poll_out(struct device *dev,
  * @return number of bytes sent
  */
 
-int uart_fifo_fill(struct device *dev,
+static int ns16550_uart_fifo_fill(struct device *dev,
 			    const uint8_t *txData, /* data to transmit */
 			    int size /* number of bytes to send */
 			    )
@@ -401,7 +405,7 @@ int uart_fifo_fill(struct device *dev,
  * @return Number of bytes read
  */
 
-int uart_fifo_read(struct device *dev,
+static int ns16550_uart_fifo_read(struct device *dev,
 			    uint8_t *rxData, /* data container */
 			    const int size   /* container size */
 			    )
@@ -424,7 +428,7 @@ int uart_fifo_read(struct device *dev,
  * @return N/A
  */
 
-void uart_irq_tx_enable(struct device *dev)
+static void ns16550_uart_irq_tx_enable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_TBE);
 }
@@ -438,7 +442,7 @@ void uart_irq_tx_enable(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_tx_disable(struct device *dev)
+static void ns16550_uart_irq_tx_disable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_TBE));
 }
@@ -449,10 +453,10 @@ void uart_irq_tx_disable(struct device *dev)
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
- * @return N/A
+ * @return 1 if an IRQ is ready, 0 otherwise
  */
 
-int uart_irq_tx_ready(struct device *dev)
+static int ns16550_uart_irq_tx_ready(struct device *dev)
 {
 	return ((IIRC(dev) & IIR_ID) == IIR_THRE);
 }
@@ -466,7 +470,7 @@ int uart_irq_tx_ready(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_rx_enable(struct device *dev)
+static void ns16550_uart_irq_rx_enable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_RXRDY);
 }
@@ -480,7 +484,7 @@ void uart_irq_rx_enable(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_rx_disable(struct device *dev)
+static void ns16550_uart_irq_rx_disable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_RXRDY));
 }
@@ -494,7 +498,7 @@ void uart_irq_rx_disable(struct device *dev)
  * @return 1 if an IRQ is ready, 0 otherwise
  */
 
-int uart_irq_rx_ready(struct device *dev)
+static int ns16550_uart_irq_rx_ready(struct device *dev)
 {
 	return ((IIRC(dev) & IIR_ID) == IIR_RBRF);
 }
@@ -508,7 +512,7 @@ int uart_irq_rx_ready(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_err_enable(struct device *dev)
+static void ns16550_uart_irq_err_enable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_LSR);
 }
@@ -522,7 +526,7 @@ void uart_irq_err_enable(struct device *dev)
  * @return 1 if an IRQ is ready, 0 otherwise
  */
 
-void uart_irq_err_disable(struct device *dev)
+static void ns16550_uart_irq_err_disable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_LSR));
 }
@@ -536,7 +540,7 @@ void uart_irq_err_disable(struct device *dev)
  * @return 1 if an IRQ is pending, 0 otherwise
  */
 
-int uart_irq_is_pending(struct device *dev)
+static int ns16550_uart_irq_is_pending(struct device *dev)
 {
 	return (!(IIRC(dev) & IIR_IP));
 }
@@ -550,7 +554,7 @@ int uart_irq_is_pending(struct device *dev)
  * @return always 1
  */
 
-int uart_irq_update(struct device *dev)
+static int ns16550_uart_irq_update(struct device *dev)
 {
 	IIRC(dev) = INBYTE(IIR(dev));
 
@@ -564,12 +568,36 @@ int uart_irq_update(struct device *dev)
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
- * @return N/A
+ * @return IRQ number
  */
 
-unsigned int uart_irq_get(struct device *dev)
+static unsigned int ns16550_uart_irq_get(struct device *dev)
 {
 	return (unsigned int)DEV_CFG(dev)->irq;
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+
+static struct uart_driver_api ns16550_uart_driver_api = {
+	.poll_in = ns16550_uart_poll_in,
+	.poll_out = ns16550_uart_poll_out,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+	.fifo_fill = ns16550_uart_fifo_fill,
+	.fifo_read = ns16550_uart_fifo_read,
+	.irq_tx_enable = ns16550_uart_irq_tx_enable,
+	.irq_tx_disable = ns16550_uart_irq_tx_disable,
+	.irq_tx_ready = ns16550_uart_irq_tx_ready,
+	.irq_rx_enable = ns16550_uart_irq_rx_enable,
+	.irq_rx_disable = ns16550_uart_irq_rx_disable,
+	.irq_rx_ready = ns16550_uart_irq_rx_ready,
+	.irq_err_enable = ns16550_uart_irq_err_enable,
+	.irq_err_disable = ns16550_uart_irq_err_disable,
+	.irq_is_pending = ns16550_uart_irq_is_pending,
+	.irq_update = ns16550_uart_irq_update,
+	.irq_get = ns16550_uart_irq_get,
+
+#endif
+};

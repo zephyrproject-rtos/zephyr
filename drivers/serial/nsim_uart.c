@@ -49,13 +49,15 @@
 
 #define TXEMPTY 0x80 /* Transmit FIFO empty and next character can be sent */
 
+static struct uart_driver_api nsim_uart_driver_api;
+
 /*
  * @brief Initialize fake serial port
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param init_info Pointer to initialization information
  */
-void uart_init(struct device *dev,
+void nsim_uart_port_init(struct device *dev,
 	       const struct uart_init_info * const init_info)
 {
 	int key = irq_lock();
@@ -70,7 +72,7 @@ void uart_init(struct device *dev,
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param c character to output
  */
-unsigned char uart_poll_out(struct device *dev, unsigned char c)
+unsigned char nsim_uart_poll_out(struct device *dev, unsigned char c)
 {
 
 	/* wait for transmitter to ready to accept a character */
@@ -79,3 +81,7 @@ unsigned char uart_poll_out(struct device *dev, unsigned char c)
 	_arc_v2_aux_reg_write(DATA_REG(dev), c);
 	return c;
 }
+
+static struct uart_driver_api nsim_uart_driver_api = {
+	.poll_out = nsim_uart_poll_out,
+};

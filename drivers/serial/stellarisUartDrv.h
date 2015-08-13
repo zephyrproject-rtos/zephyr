@@ -29,20 +29,15 @@
  */
 
 /**
- * @file Header file for ns16550 UART driver
+ * @file Header file for Stellaris UART driver
  */
 
-#ifndef _DRIVERS_UART_NS16550_H_
-#define _DRIVERS_UART_NS16550_H_
+#ifndef _DRIVERS_UART_STELLARIS_H_
+#define _DRIVERS_UART_STELLARIS_H_
 
 #include <drivers/uart.h>
 
-/** Device data structure */
-struct uart_ns16550_dev_data_t {
-	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
-};
+void stellaris_uart_port_init(struct device *,
+			      const struct uart_init_info * const);
 
-void ns16550_uart_port_init(struct device *,
-			    const struct uart_init_info * const);
-
-#endif /* _DRIVERS_UART_NS16550_H_ */
+#endif /* _DRIVERS_UART_STELLARIS_H_ */

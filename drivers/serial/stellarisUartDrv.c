@@ -152,6 +152,8 @@ struct _Uart {
 #define UARTMIS_RXMIS 0x00000010
 #define UARTMIS_TXMIS 0x00000020
 
+static struct uart_driver_api stellaris_uart_driver_api;
+
 /**
  *
  * @brief Set the baud rate
@@ -271,7 +273,7 @@ static inline void lineControlDefaultsSet(struct device *dev)
  *
  * @return N/A
  */
-void uart_init(struct device *dev,
+void stellaris_uart_port_init(struct device *dev,
 	       const struct uart_init_info * const init_info
 	       )
 {
@@ -283,6 +285,8 @@ void uart_init(struct device *dev,
 	baudrateSet(dev, init_info->baud_rate, init_info->sys_clk_freq);
 	lineControlDefaultsSet(dev);
 	enable(dev);
+
+	dev->driver_api = &stellaris_uart_driver_api;
 }
 
 /**
@@ -295,7 +299,7 @@ void uart_init(struct device *dev,
  *
  * @return 0 if ready to transmit, 1 otherwise
  */
-static int pollTxReady(struct device *dev)
+static int poll_tx_ready(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -312,7 +316,7 @@ static int pollTxReady(struct device *dev)
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 
-int uart_poll_in(struct device *dev,
+static int stellaris_uart_poll_in(struct device *dev,
 		 unsigned char *pChar /* pointer to char */
 		 )
 {
@@ -339,11 +343,12 @@ int uart_poll_in(struct device *dev,
  *
  * @return sent character
  */
-unsigned char uart_poll_out(struct device *dev, unsigned char c)
+static unsigned char stellaris_uart_poll_out(struct device *dev,
+					     unsigned char c)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
-	while (!pollTxReady(dev))
+	while (!poll_tx_ready(dev))
 		;
 
 	/* send a character */
@@ -364,7 +369,7 @@ unsigned char uart_poll_out(struct device *dev, unsigned char c)
  * @return number of bytes sent
  */
 
-int uart_fifo_fill(struct device *dev,
+static int stellaris_uart_fifo_fill(struct device *dev,
 			    const uint8_t *txData, /* data to transmit */
 			    int len /* number of bytes to send */
 			    )
@@ -390,7 +395,7 @@ int uart_fifo_fill(struct device *dev,
  * @return number of bytes read
  */
 
-int uart_fifo_read(struct device *dev,
+static int stellaris_uart_fifo_read(struct device *dev,
 			    uint8_t *rxData, /* data container */
 			    const int size   /* container size */
 			    )
@@ -414,7 +419,7 @@ int uart_fifo_read(struct device *dev,
  * @return N/A
  */
 
-void uart_irq_tx_enable(struct device *dev)
+static void stellaris_uart_irq_tx_enable(struct device *dev)
 {
 	static uint8_t first_time =
 		1;	   /* used to allow the first transmission */
@@ -470,7 +475,7 @@ void uart_irq_tx_enable(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_tx_disable(struct device *dev)
+static void stellaris_uart_irq_tx_disable(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -486,7 +491,7 @@ void uart_irq_tx_disable(struct device *dev)
  * @return 1 if a Tx IRQ is pending, 0 otherwise
  */
 
-int uart_irq_tx_ready(struct device *dev)
+static int stellaris_uart_irq_tx_ready(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -502,7 +507,7 @@ int uart_irq_tx_ready(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_rx_enable(struct device *dev)
+static void stellaris_uart_irq_rx_enable(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -518,7 +523,7 @@ void uart_irq_rx_enable(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_rx_disable(struct device *dev)
+static void stellaris_uart_irq_rx_disable(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -534,7 +539,7 @@ void uart_irq_rx_disable(struct device *dev)
  * @return 1 if an IRQ is ready, 0 otherwise
  */
 
-int uart_irq_rx_ready(struct device *dev)
+static int stellaris_uart_irq_rx_ready(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -550,7 +555,7 @@ int uart_irq_rx_ready(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_err_enable(struct device *dev)
+static void stellaris_uart_irq_err_enable(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -567,7 +572,7 @@ void uart_irq_err_enable(struct device *dev)
  * @return N/A
  */
 
-void uart_irq_err_disable(struct device *dev)
+static void stellaris_uart_irq_err_disable(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -584,7 +589,7 @@ void uart_irq_err_disable(struct device *dev)
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
 
-int uart_irq_is_pending(struct device *dev)
+static int stellaris_uart_irq_is_pending(struct device *dev)
 {
 	volatile struct _Uart *pUart = UART_STRUCT(dev);
 
@@ -601,7 +606,7 @@ int uart_irq_is_pending(struct device *dev)
  * @return always 1
  */
 
-int uart_irq_update(struct device *dev)
+static int stellaris_uart_irq_update(struct device *dev)
 {
 	return 1;
 }
@@ -617,8 +622,33 @@ int uart_irq_update(struct device *dev)
  * @return N/A
  */
 
-unsigned int uart_irq_get(struct device *dev)
+static unsigned int stellaris_uart_irq_get(struct device *dev)
 {
 	return (unsigned int)DEV_CFG(dev)->irq;
 }
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+
+static struct uart_driver_api stellaris_uart_driver_api = {
+	.poll_in = stellaris_uart_poll_in,
+	.poll_out = stellaris_uart_poll_out,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+	.fifo_fill = stellaris_uart_fifo_fill,
+	.fifo_read = stellaris_uart_fifo_read,
+	.irq_tx_enable = stellaris_uart_irq_tx_enable,
+	.irq_tx_disable = stellaris_uart_irq_tx_disable,
+	.irq_tx_ready = stellaris_uart_irq_tx_ready,
+	.irq_rx_enable = stellaris_uart_irq_rx_enable,
+	.irq_rx_disable = stellaris_uart_irq_rx_disable,
+	.irq_rx_ready = stellaris_uart_irq_rx_ready,
+	.irq_err_enable = stellaris_uart_irq_err_enable,
+	.irq_err_disable = stellaris_uart_irq_err_disable,
+	.irq_is_pending = stellaris_uart_irq_is_pending,
+	.irq_update = stellaris_uart_irq_update,
+	.irq_get = stellaris_uart_irq_get,
+
+#endif
+};
