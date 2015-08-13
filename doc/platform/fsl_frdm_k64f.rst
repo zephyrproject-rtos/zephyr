@@ -348,20 +348,37 @@ not 0x20h, 0x40h, and 0x60h.
 Interrupt priority is set using the *prio* parameter of
 :c:func:`irq_connect()`.
 
-The number of available priorities are:
+The range of available priorities is different if using Zero Latency Interrupts
+(ZLI) or not.
 
-* 1 to 2 (2 is the number of implemented bits – 1) when not using
-  Zero Latency Interrupts
+When not using ZLI:
 
-* 2 to n (n is the number of implemented bits – 1) when using
-  Zero Latency Interrupts (eg. 2 to 7 for 3 implemented bits)
+* 2 to 2\ :sup:`n`\ -2, where *n* is the number of implemented bits
+  (e.g. 2 to 14 for 4 implemented bits)
 
-Interrupt locking is done by setting :envvar:`BASEPRI` to 1, setting
-exceptions 4, 5, 6, and 11 to priority 0, and setting all
-other exceptions, including interrupts, to a lower priority
-(1+).
+* Interrupt locking is done by setting :envvar:`BASEPRI` to 2, setting
+  exceptions 4, 5, 6, and 11 to priority 1, and setting all other exceptions,
+  including interrupts, to a lower priority (2+).
 
+When using ZLI:
 
+* 3 to 2\ :sup:`n`\ -2, where *n* is the number of implemented bits
+  (e.g. 3 to 6 for 3 implemented bits)
+
+* Interrupt locking is done by setting :envvar:`BASEPRI` to 3, setting
+  exceptions 4, 5, 6, and 11 to priority 1, setting ZLI interupts to priority 2
+  and setting all other exceptions, including interrupts, to a lower priority
+  (3+).
+
+NOTE:
+
+The hard fault exception is always kept at priority 0 so that it is allowed to
+occur while handling another exception.
+
+NOTE:
+
+The PendSV exception is always installed at the lowest priority available, and
+that priority level is thus not avaialble to other exceptions and interrupts.
 
 Interrupt Tables
 ----------------
