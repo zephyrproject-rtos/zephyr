@@ -141,6 +141,52 @@ code that will take some time, periodically call
 :cpp:func:`fiber_yield()`. Multi-threading using blocking fibers is
 effective in coding hard real-time applications.
 
+Example: Starting a Fiber from a Task
+=====================================
+
+This code shows how the currently executing task can start multiple fibers,
+each dedicated to processing data from a different communication channel.
+
+.. code-block:: c
+
+   #define COMM_STACK_SIZE    512
+   #define NUM_COMM_CHANNELS  8
+
+   struct descriptor {
+       ...;
+   };
+
+   char __stack comm_stack[NUM_COMM_CHANNELS][COMM_STACK_SIZE];
+   struct descriptor comm_desc[NUM_COMM_CHANNELS] = { ... };
+
+   ...
+
+   void comm_fiber(int desc_arg, int unused);
+   {
+       ARG_UNUSED(unused);
+
+       struct descriptor  *desc = (struct descriptor *) desc_arg;
+
+       while (1) {
+           /* process packet of data from comm channel */
+
+           ...
+       }
+   }
+
+   void comm_main(void)
+   {
+       ...
+
+       for (int i = 0; i < NUM_COMM_CHANNELS; i++) {
+           task_fiber_start(&comm_stack[i][0], COMM_STACK_SIZE,
+                            comm_fiber, (int) &comm_desc[i], 0,
+                            10, 0);
+       }
+
+       ...
+   }
+
 APIs
 ****
 
