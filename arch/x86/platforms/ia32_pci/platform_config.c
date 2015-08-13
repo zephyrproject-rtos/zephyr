@@ -61,7 +61,7 @@
 static int ns16550_uart_console_init(struct device *dev)
 {
 	struct uart_init_info info = {
-		.baud_rate = CONFIG_UART_BAUDRATE,
+		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
 		.sys_clk_freq = UART_XTAL_FREQ,
 	};
 

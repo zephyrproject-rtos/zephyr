@@ -61,4 +61,14 @@ config UART_CONSOLE_INDEX
 	help
 	This option specifies index for the console uart port.
 
+config UART_CONSOLE_BAUDRATE
+	int "UART Console Baud Rate"
+	default 115200
+	depends on UART_CONSOLE
+	help
+	This specifies the baud rate for the UART console.
+
+	Default is 115200, which should be usable for most RS232
+	and USB adapters.
+
 endif
