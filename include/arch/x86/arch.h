@@ -192,9 +192,9 @@ typedef struct s_isrList {
  * to exception handlers registered via nanoCpuExcConnect().  When an exception
  * occurs while PL=0, then only the EIP, CS, and EFLAGS are pushed onto the stack.
  * The least significant pair of bits in the CS value should be examined to
- * determine whether the exception occured while PL=3, in which case the ESP and
- * SS values will also be present in the ESF.  If the exception occurred while
- * in PL=0, neither the SS nor ESP values will be present in the ESF.
+ * determine whether the exception occurred while PL=3, in which case the ESP
+ * and SS values will also be present in the ESF.  If the exception occurred
+ * while in PL=0, neither the SS nor ESP values will be present in the ESF.
  *
  * The exception stack frame includes the volatile registers EAX, ECX, and EDX
  * pushed on the stack by _ExcEnt().

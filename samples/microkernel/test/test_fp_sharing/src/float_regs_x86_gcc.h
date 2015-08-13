@@ -170,7 +170,7 @@ static inline void _LoadThenStoreAllFloatRegisters(FP_REG_SET *pFromToBuffer)
  *
  * This function stores ALL floating point registers to the memory buffer
  * specified by <pToBuffer>. It is expected that a previous invocation of
- * _LoadAllFloatRegisters() occured to load all the floating point registers
+ * _LoadAllFloatRegisters() occurred to load all the floating point registers
  * from a memory buffer.
  *
  * @return N/A

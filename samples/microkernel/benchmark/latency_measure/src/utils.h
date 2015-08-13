@@ -95,7 +95,7 @@ static inline void printDashLine(void)
 	printDashLine();
 
 #define PRINT_OVERFLOW_ERROR()                                                \
-	PRINT_FORMAT(" Error: tick occured")
+	PRINT_FORMAT(" Error: tick occurred")
 
 #else
 #error PRINTK configuration option needs to be enabled

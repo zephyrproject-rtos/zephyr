@@ -115,7 +115,7 @@ void summary_data_printer(void)
 
 	while(1) {
 		/* print dropped event counter */
-		PRINTF("\x1b[11;1HDropped events occured: %d   ", total_dropped_counter);
+		PRINTF("\x1b[11;1HDropped events occurred: %d   ", total_dropped_counter);
 
 		/* print context switch data */
 		PRINTF("\x1b[13;1HContext switch summary");

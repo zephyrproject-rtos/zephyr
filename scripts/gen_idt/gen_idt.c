@@ -291,7 +291,7 @@ static void genIdt(void)
 	return;
 
 readError:
-	fprintf(stderr, "Error occured while reading input file. Aborting...\n");
+	fprintf(stderr, "Error occurred while reading input file. Aborting...\n");
 	clean_exit(-1);
 }
 

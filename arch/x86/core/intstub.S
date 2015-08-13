@@ -430,7 +430,7 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 	/* 
 	 * The task's regular stack is being used, but push the value of ESP
 	 * anyway so that _ExcExit can "recover the stack pointer"
-	 * without determining whether the exception occured while CPL=3
+	 * without determining whether the exception occurred while CPL=3
 	 */
 
 	pushl	%esp			/* push cur stack pointer: pEsf arg */

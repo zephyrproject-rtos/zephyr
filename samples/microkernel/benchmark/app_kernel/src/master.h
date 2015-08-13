@@ -157,7 +157,7 @@ extern void event_test(void);
 }
 
 #define PRINT_OVERFLOW_ERROR()						\
-	PRINT_F(output_file, __FILE__":%d Error: tick occured\n", __LINE__)
+	PRINT_F(output_file, __FILE__":%d Error: tick occurred\n", __LINE__)
 
 static inline uint32_t BENCH_START(void)
 {
