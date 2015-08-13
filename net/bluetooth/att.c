@@ -1169,16 +1169,20 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *data)
 	req = (void *)data->data;
 
 	handle = sys_le16_to_cpu(req->handle);
-	bt_buf_pull(data, sizeof(*req));
 
 	BT_DBG("handle 0x%04x\n", handle);
 
+	/* Verifying data requires full buffer including attribute header */
+	bt_buf_push(data, sizeof(struct bt_att_hdr));
 	err = bt_smp_sign_verify(conn, data);
 	if (err) {
 		BT_ERR("Error verifying data\n");
 		/* No response for this command */
 		return 0;
 	}
+
+	bt_buf_pull(data, sizeof(struct bt_att_hdr));
+	bt_buf_pull(data, sizeof(*req));
 
 	return att_write_rsp(conn, 0, 0, handle, 0, data->data,
 			     data->len - sizeof(struct bt_att_signature));
