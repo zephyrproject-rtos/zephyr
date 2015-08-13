@@ -32,6 +32,54 @@ Thus after n 'give' operations a semaphore can 'take' n times without
 pending. If a second context waits for the same semaphore object, the
 first context is lost and never wakes up.
 
+Example: Initializing a Nanokernel Semaphore
+============================================
+
+This code initializes a nanokernel semaphore, setting its count to zero.
+
+.. code-block:: c
+
+   struct nano_sem input_sem;
+
+   nano_sem_init(&input_sem);
+
+Example: Giving a Nanokernel Semaphore from an ISR
+==================================================
+
+This code uses a nanokernel semaphore to indicate that a unit of data
+is available for processing by a consumer fiber.
+
+.. code-block:: c
+
+   void input_data_interrupt_handler(void *arg)
+   {
+       /* notify fiber that data is available */
+       nano_isr_sem_give(&input_sem);
+
+       ...
+   }
+
+Example: Taking a Nanokernel Semaphore with a Conditional Time-out
+==================================================================
+
+This code waits up to 500 ticks for a nanokernel semaphore to be given,
+and gives warning if it is not obtained in that time.
+
+.. code-block:: c
+
+   void consumer_fiber(void)
+   {
+       ...
+
+       if (nano_fiber_sem_take_wait_timeout(&input_sem, 500) != 1) {
+           printk("Input data not available!");
+       } else {
+           /* fetch available data */
+           ...
+       }
+       ...
+   }
+
 APIs
 ====
 
