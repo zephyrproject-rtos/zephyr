@@ -387,10 +387,6 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
 
-extern unsigned int find_first_set(unsigned int op);
-
-extern unsigned int find_last_set(unsigned int op);
-
 extern int	irq_connect(unsigned int irq,
 					 unsigned int priority,
 					 void (*routine)(void *parameter),

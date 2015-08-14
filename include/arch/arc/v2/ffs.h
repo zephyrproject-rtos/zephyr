@@ -38,18 +38,13 @@ ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
 #ifndef _ARCH_ARC_V2_FFS_H_
 #define _ARCH_ARC_V2_FFS_H_
 
-#ifdef _ASMLANGUAGE
-GTEXT(find_first_set);
-GTEXT(find_last_set);
-#else
-extern unsigned find_first_set(unsigned int);
-extern unsigned find_last_set(unsigned int);
+#ifndef _ASMLANGUAGE
 
 /**
  *
  * @brief Find First Set bit (searching from most significant bit)
  *
- * This routine finds the first bit set in the argument passed it and returns
+ * This routine finds the last bit set in the argument passed it and returns
  * the index of that bit.  Bits are numbered starting at 1 from the least
  * significant bit.  A return value of zero indicates that the value passed
  * is zero.
@@ -58,7 +53,7 @@ extern unsigned find_last_set(unsigned int);
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
+static ALWAYS_INLINE unsigned int find_last_set(unsigned int op)
 {
 	unsigned int bit;
 
@@ -87,7 +82,7 @@ static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int find_first_set_inline(unsigned int op)
+static ALWAYS_INLINE unsigned int find_first_set(unsigned int op)
 {
 	unsigned int bit;
 

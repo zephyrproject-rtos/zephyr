@@ -52,7 +52,6 @@ extern "C" {
 #ifdef CONFIG_CPU_CORTEX_M
 #include <arch/arm/CortexM/exc.h>
 #include <arch/arm/CortexM/irq.h>
-#include <arch/arm/CortexM/ffs.h>
 #include <arch/arm/CortexM/error.h>
 #include <arch/arm/CortexM/misc.h>
 #include <arch/arm/CortexM/scs.h>

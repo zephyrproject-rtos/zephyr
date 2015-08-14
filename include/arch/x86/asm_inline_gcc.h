@@ -114,8 +114,7 @@ static inline __attribute__((always_inline)) void _do_irq_unlock(void)
  * is performed after the 'cmovzl', the correct results are yielded.
  */
 
-static inline __attribute__((always_inline))
-	unsigned int find_first_set_inline (unsigned int op)
+static ALWAYS_INLINE unsigned int find_first_set(unsigned int op)
 {
 	int bitpos;
 
@@ -165,8 +164,7 @@ static inline __attribute__((always_inline))
  * is performed after the 'cmovzl', the correct results are yielded.
  */
 
-static inline inline __attribute__((always_inline))
-	unsigned int find_last_set_inline (unsigned int op)
+static ALWAYS_INLINE unsigned int find_last_set(unsigned int op)
 {
 	int bitpos;
 

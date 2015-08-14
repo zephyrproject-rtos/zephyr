@@ -56,7 +56,7 @@
  *
  * @brief Find first set bit (searching from most significant bit)
  *
- * This routine finds the first bit set in the argument passed it and returns
+ * This routine finds the last bit set in the argument passed it and returns
  * the index of that bit.  Bits are numbered starting at 1 from the least
  * significant bit.  A return value of zero indicates that the value passed
  * is zero.
@@ -64,7 +64,7 @@
  * @return most significant bit set
  */
 
-static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
+static ALWAYS_INLINE unsigned int find_last_set(unsigned int op)
 {
 	unsigned int bit;
 
@@ -92,7 +92,7 @@ static ALWAYS_INLINE unsigned int find_last_set_inline(unsigned int op)
  * @return least significant bit set
  */
 
-static ALWAYS_INLINE unsigned int find_first_set_inline(unsigned int op)
+static ALWAYS_INLINE unsigned int find_first_set(unsigned int op)
 {
 	unsigned int bit;
 
