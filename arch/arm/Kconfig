@@ -49,7 +49,6 @@ config  PLATFORM_TI_LM3S6965
 	bool "TI LM3S6965"
 	select CPU_CORTEX_M
 	select CPU_CORTEX_M3
-	select STELLARIS_UART
 
 endchoice
 
