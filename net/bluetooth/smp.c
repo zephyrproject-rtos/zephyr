@@ -1391,6 +1391,8 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
 		return -EBADMSG;
 	};
 
+	keys->remote_csrk.cnt++;
+
 	return 0;
 }
 
