@@ -43,6 +43,8 @@ This module tests the following microkernel timer routines:
 #include <util_test_common.h>
 #include <zephyr.h>
 
+#include "fifo_timeout.c"
+
 extern struct nano_lifo _k_timer_free;    /* For white box testing only */
 
 #define NTIMERS  CONFIG_NUM_TIMER_PACKETS
