@@ -64,7 +64,7 @@
  * @return most significant bit set, 0 if @a op is 0
  */
 
-static ALWAYS_INLINE unsigned int find_msb_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 {
 	unsigned int bit;
 
@@ -92,7 +92,7 @@ static ALWAYS_INLINE unsigned int find_msb_set(unsigned int op)
  * @return least significant bit set, 0 if @a op is 0
  */
 
-static ALWAYS_INLINE unsigned int find_lsb_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
 	unsigned int bit;
 

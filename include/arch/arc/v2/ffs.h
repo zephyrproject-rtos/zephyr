@@ -40,6 +40,8 @@ ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
 
 #ifndef _ASMLANGUAGE
 
+#include <stdint.h>
+
 /**
  *
  * @brief find most significant bit set in a 32-bit word
@@ -53,7 +55,7 @@ ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int find_msb_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 {
 	unsigned int bit;
 
@@ -82,7 +84,7 @@ static ALWAYS_INLINE unsigned int find_msb_set(unsigned int op)
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int find_lsb_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
 	unsigned int bit;
 

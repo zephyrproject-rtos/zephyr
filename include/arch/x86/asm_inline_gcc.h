@@ -114,7 +114,7 @@ static inline __attribute__((always_inline)) void _do_irq_unlock(void)
  * after the 'cmovzl', the correct results are yielded.
  */
 
-static ALWAYS_INLINE unsigned int find_lsb_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
 	int bitpos;
 
@@ -164,7 +164,7 @@ static ALWAYS_INLINE unsigned int find_lsb_set(unsigned int op)
  * after the 'cmovzl', the correct results are yielded.
  */
 
-static ALWAYS_INLINE unsigned int find_msb_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 {
 	int bitpos;
 
