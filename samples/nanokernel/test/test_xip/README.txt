@@ -1,4 +1,4 @@
-Title: XIP Support
+Title: Execute in Place (XIP) Support
 
 Description:
 

@@ -1,4 +1,4 @@
-Title: Microkernel random number generator test suite
+Title: Random Number Generator APIs
 
 Description:
 

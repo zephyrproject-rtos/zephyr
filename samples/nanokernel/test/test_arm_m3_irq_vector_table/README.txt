@@ -1,4 +1,4 @@
-Title: arm_m3-irq_vector_table
+Title: Installation of ISRs Directly in the Vector Table (ARM Only)
 
 Description:
 

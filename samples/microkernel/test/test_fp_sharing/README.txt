@@ -1,4 +1,4 @@
-Title: test_fp_sharing
+Title: Shared Floating Point Support
 
 Description:
 

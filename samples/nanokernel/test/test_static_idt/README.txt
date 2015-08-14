@@ -1,4 +1,4 @@
-Title: test_static_idt
+Title: Static IDT Support
 
 Description:
 

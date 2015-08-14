@@ -1,4 +1,4 @@
-Title: test_sema_priv
+Title: Private Semaphores
 
 Description:
 

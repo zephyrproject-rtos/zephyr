@@ -1,4 +1,4 @@
-Title: test_stackprot
+Title: Stack Protection Support
 
 Description:
 

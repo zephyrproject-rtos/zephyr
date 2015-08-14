@@ -1,4 +1,4 @@
-Title: Microkernel footprint project
+Title: Microkernel Footprint Measurement
 
 Description:
 

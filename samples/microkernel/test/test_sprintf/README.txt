@@ -1,4 +1,4 @@
-Title: test_sprintf
+Title: sprintf() APIs
 
 Description:
 

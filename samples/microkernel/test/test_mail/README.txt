@@ -1,4 +1,4 @@
-Title: test_mail
+Title: Mailbox APIs
 
 Description:
 

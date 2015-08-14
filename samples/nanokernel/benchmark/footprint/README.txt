@@ -1,4 +1,4 @@
-Title: Nanokernel footprint measurement
+Title: Nanokernel Footprint Measurement
 
 Description:
 

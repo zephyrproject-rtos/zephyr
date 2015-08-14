@@ -1,4 +1,4 @@
-Title: Microkernel low resolution timer test suite
+Title: Low Resolution Timer
 
 Description:
 

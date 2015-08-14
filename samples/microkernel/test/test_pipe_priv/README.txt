@@ -1,4 +1,4 @@
-Title: test_pipe_priv
+Title: Private Pipes
 
 Description:
 

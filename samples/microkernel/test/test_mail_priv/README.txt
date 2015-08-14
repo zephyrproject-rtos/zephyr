@@ -1,4 +1,4 @@
-Title: test_mail_priv
+Title: Private Mailboxes
 
 Description:
 

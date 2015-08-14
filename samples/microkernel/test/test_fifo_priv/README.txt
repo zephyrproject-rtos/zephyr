@@ -1,4 +1,4 @@
-Title: test_fifo_priv
+Title: Private FIFOs
 
 Description:
 
