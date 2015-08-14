@@ -79,7 +79,7 @@ qemu: $(CONFIG_DEPS) $(O)/.dir
 		CFLAGS=$(CFLAGS) qemu
 
 
-$(O)/.config: $(O)/.dir
+$(O)/.config: $(O)/.dir $(O)/.$(ARCH)-$(PLATFORM_CONFIG)-$(KERNEL_TYPE).env
 	$(Q)cp $(KBUILD_DEFCONFIG_PATH) $(O)/.config
 
 $(O)/.initconfig: mergeconfig
@@ -104,6 +104,10 @@ $(CONF_FILE):;
 
 help:
 	$(Q)$(MAKE) -C $(ZEPHYR_BASE) help
+
+$(O)/.$(ARCH)-$(PLATFORM_CONFIG)-$(KERNEL_TYPE).env: FORCE
+	@rm -rf $(O)/.*.env
+	$(Q)touch $(O)/.$(ARCH)-$(PLATFORM_CONFIG)-$(KERNEL_TYPE).env
 
 PHONY += FORCE clean mrproper
 FORCE:
