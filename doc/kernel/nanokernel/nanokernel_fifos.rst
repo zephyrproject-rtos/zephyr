@@ -26,6 +26,73 @@ without waiting on the data to be stored.
    block as a link pointer to the next item. The size of the WORD
    depends on the platform and can be 16 bit, 32 bit, etc.
 
+Example: Initializing a Nanokernel FIFO
+=======================================
+
+This code initializes a nanokernel FIFO, marking it as empty without any
+waiters.
+
+.. code-block:: c
+
+   struct nano_fifo  signal_fifo;
+
+   nano_fifo_init(&signal_fifo);
+
+Example: Writing to a Nanokernel FIFO from a Fiber
+==================================================
+
+This code uses a nanokernel FIFO to send data to one or more consumer fibers.
+
+.. code-block:: c
+
+   struct data_item_t {
+      void *fifo_reserved;   /* 1st word reserved for use by FIFO */
+      ...
+   };
+
+   struct data_item_t  tx_data;
+
+   void producer_fiber(int unused1, int unused2)
+   {
+       ARG_UNUSED(unused1);
+       ARG_UNUSED(unused2);
+
+       while (1) {
+           /* create data item to send (e.g. measurement, timestamp, ...) */
+           tx_data = ...
+
+           /* send data to consumers */
+           nano_fiber_fifo_put(&signal_fifo, &tx_data);
+
+           ...
+           }
+       }
+   }
+
+Example: Reading from a Nanokernel FIFO
+=======================================
+
+This code uses a nanokernel FIFO to obtain data items from a producer fiber,
+which are then processed in some manner. This design supports the distribution
+of data items to multiple consumer fibers, if desired.
+
+.. code-block:: c
+
+   void consumer_fiber(int unused1, int unused2)
+   {
+       struct data_item_t  *rx_data;
+
+       ARG_UNUSED(unused1);
+       ARG_UNUSED(unused2);
+
+       while (1) {
+           rx_data = nano_fiber_fifo_get_wait(&signal_fifo);
+
+           /* process FIFO data */
+           ...
+       }
+   }
+
 APIs
 ****
 
