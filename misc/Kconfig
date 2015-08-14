@@ -119,6 +119,7 @@ menu "Debugging Options"
 config PRINTK
 	bool
 	prompt "Send printk() to console"
+	depends on SERIAL_HAS_DRIVER
 	default y
 	help
 	This option directs printk() debugging output to the supported
@@ -129,6 +130,7 @@ config PRINTK
 config STDOUT_CONSOLE
 	bool
 	prompt "Send stdout to console"
+	depends on SERIAL_HAS_DRIVER
 	default n
 	help
 	This option directs standard output (e.g. printf) to the console
