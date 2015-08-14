@@ -65,11 +65,14 @@ a so-called user channel.
               btproxy command.
 
 
-#. To run application in the QEMU, type:
+#. To run Bluetooth application in the QEMU, go to application folder and type:
 
     .. code-block:: console
 
         $ make qemu
+
+    .. note:: Bluetooth sample applications are located in
+              :literal:`samples/bluetooth` folder.
 
 Running QEMU now results in a connection with the second serial line to
 :literal:`bt-server-bredr` UNIX socket.
