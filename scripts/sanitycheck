@@ -1249,9 +1249,10 @@ class TestSuite:
                 if sm[metric] == "":
                     continue
                 delta = goal.metrics[metric] - mtype(sm[metric])
-                if ((lower_better and delta > 0) or
-                        (not lower_better and delta < 0)):
-                    results.append((i, metric, goal.metrics[metric], delta))
+                if delta == 0:
+                    continue
+                results.append((i, metric, goal.metrics[metric], delta,
+                                lower_better))
         return results
 
     def testcase_report(self, filename):
@@ -1360,7 +1361,9 @@ def parse_arguments():
                  "the new app size is greater then the specified percentage "
                  "from the last release. Default is 5. 0 to warn on any "
                  "increase on app size")
-
+    parser.add_argument("-D", "--all-deltas", action="store_true",
+            help="Show all footprint deltas, positive or negative. Implies "
+                "--footprint-threshold=0")
     parser.add_argument("-O", "--outdir",
             default="%s/sanity-out" % ZEPHYR_BASE,
             help="Output directory for logs and binaries.")
@@ -1472,13 +1475,19 @@ def main():
                                   else RELEASE_DATA)
     warnings = 0
     if deltas:
-        for i, metric, value, delta in deltas:
-            percentage = (float(delta) / float(value - delta))
-            if percentage < (args.footprint_threshold / 100.0):
+        for i, metric, value, delta, lower_better in deltas:
+            if not args.all_deltas and ((delta < 0 and lower_better) or
+                                        (delta > 0 and not lower_better)):
                 continue
 
-            info("{:<25} {:<50} {}WARNING{}: {} is now {} {:+.2%}".format(
-                 i.platform.name, i.test.name, COLOR_YELLOW, COLOR_NORMAL,
+            percentage = (float(delta) / float(value - delta))
+            if not args.all_deltas and (percentage <
+                                        (args.footprint_threshold / 100.0)):
+                continue
+
+            info("{:<25} {:<50} {}{}{}: {} is now {} {:+.2%}".format(
+                 i.platform.name, i.test.name, COLOR_YELLOW,
+                 "INFO" if args.all_deltas else "WARNING", COLOR_NORMAL,
                  metric, value, percentage))
             warnings += 1
 
