@@ -122,3 +122,20 @@ Example:
 $ make TINYDTLS=/home/user/tinydtls-0.8.2 dtls-client
 
 $ ./dtls-client 2001:db8::2
+
+
+dtls-server
+===========
+
+dtls-server is a tool that is run in Linux host side and
+which waits DTLS data sent by dtls-client application that
+is running in qemu side.
+
+You needs to setup the slip connection (see the steps 1 to 3)
+in tunslip6 section of this document.
+
+Example:
+
+$ make TINYDTLS=/home/user/tinydtls-0.8.2 dtls-server
+
+$ ./dtls-server -i tun0

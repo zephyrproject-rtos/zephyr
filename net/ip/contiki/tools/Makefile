@@ -21,3 +21,9 @@ dtls-client.o: dtls-client.c
 
 dtls-client: dtls-client.o $(TINYDTLS_LIB)
 	$(CC) -o $@ $(LIBS) dtls-client.o $(TINYDTLS_LIB)
+
+dtls-server.o: dtls-server.c
+	$(CC) -c -o $@ $(CFLAGS) $(TINYDTLS_CFLAGS) dtls-server.c
+
+dtls-server: dtls-server.o $(TINYDTLS_LIB)
+	$(CC) -o $@ $(LIBS) dtls-server.o $(TINYDTLS_LIB)
