@@ -97,24 +97,24 @@ static inline __attribute__((always_inline)) void _do_irq_unlock(void)
 
 /**
  *
- * @brief Find first set bit searching from the LSB (inline)
+ * @brief find least significant bit set in a 32-bit word
  *
- * This routine finds the first bit set in the argument passed it and
- * returns the index of that bit.  Bits are numbered starting
- * at 1 from the least significant bit to 32 for the most significant bit.
- * A return value of zero indicates that the value passed is zero.
+ * This routine finds the first bit set starting from the least significant bit
+ * in the argument passed in and returns the index of that bit.  Bits are
+ * numbered starting at 1 from the least significant bit.  A return value of
+ * zero indicates that the value passed is zero.
  *
- * @return bit position from 1 to 32, or 0 if the argument is zero.
+ * @return least significant bit set, 0 if @a op is 0
  *
- * INTERNAL
- * For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
- * and leverage the fact that the 'bsfl' doesn't modify the destination operand
- * when the source operand is zero.  The "bitpos" variable can be preloaded
- * into the destination register, and given the unconditional ++bitpos that
- * is performed after the 'cmovzl', the correct results are yielded.
+ * @internal
+ * For Intel64 (x86_64) architectures, the 'cmovzl' can be removed and leverage
+ * the fact that the 'bsfl' doesn't modify the destination operand when the
+ * source operand is zero.  The "bitpos" variable can be preloaded into the
+ * destination register, and given the unconditional ++bitpos that is performed
+ * after the 'cmovzl', the correct results are yielded.
  */
 
-static ALWAYS_INLINE unsigned int find_first_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_lsb_set(unsigned int op)
 {
 	int bitpos;
 
@@ -147,24 +147,24 @@ static ALWAYS_INLINE unsigned int find_first_set(unsigned int op)
 
 /**
  *
- * @brief Find first set bit searching from the MSB (inline)
+ * @brief find most significant bit set in a 32-bit word
  *
- * This routine finds the first bit set in the argument passed it and
- * returns the index of that bit.  Bits are numbered starting
- * at 1 from the least significant bit to 32 for the most significant bit.
- * A return value of zero indicates that the value passed is zero.
+ * This routine finds the first bit set starting from the most significant bit
+ * in the argument passed in and returns the index of that bit.  Bits are
+ * numbered starting at 1 from the least significant bit.  A return value of
+ * zero indicates that the value passed is zero.
  *
- * @return bit position from 1 to 32, or 0 if the argument is zero.
+ * @return most significant bit set, 0 if @a op is 0
  *
- * INTERNAL
- * For Intel64 (x86_64) architectures, the 'cmovzl' can be removed
- * and leverage the fact that the 'bsfl' doesn't modify the destination operand
- * when the source operand is zero.  The "bitpos" variable can be preloaded
- * into the destination register, and given the unconditional ++bitpos that
- * is performed after the 'cmovzl', the correct results are yielded.
+ * @internal
+ * For Intel64 (x86_64) architectures, the 'cmovzl' can be removed and leverage
+ * the fact that the 'bsfl' doesn't modify the destination operand when the
+ * source operand is zero.  The "bitpos" variable can be preloaded into the
+ * destination register, and given the unconditional ++bitpos that is performed
+ * after the 'cmovzl', the correct results are yielded.
  */
 
-static ALWAYS_INLINE unsigned int find_last_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_msb_set(unsigned int op)
 {
 	int bitpos;
 

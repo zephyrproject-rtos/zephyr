@@ -538,11 +538,11 @@ int _IntVecAlloc(unsigned int priority)
 	 * The interrupt_vectors_allocated[] entry specified by 'entryToScan' is a 32-bit
 	 * quantity and thus represents the vectors for a pair of priority
 	 *levels.
-	 * Use find_last_set() to scan for the upper of the 2, and find_first_set() to
+	 * Use find_msb_set() to scan for the upper of the 2, and find_lsb_set() to
 	 *scan
 	 * for the lower of the 2 priorities.
 	 *
-	 * Note that find_first_set/find_last_set returns bit position from 1 to 32,
+	 * Note that find_lsb_set/find_msb_set returns bit position from 1 to 32,
 	 * or 0 if the argument is zero.
 	 */
 
@@ -551,7 +551,7 @@ int _IntVecAlloc(unsigned int priority)
 	if ((priority % 2) == 0) {
 		/* scan from the LSB for even priorities */
 
-		fsb = find_first_set(interrupt_vectors_allocated[entryToScan]);
+		fsb = find_lsb_set(interrupt_vectors_allocated[entryToScan]);
 
 #if defined(DEBUG)
 		if ((fsb == 0) || (fsb > 16)) {
@@ -568,7 +568,7 @@ int _IntVecAlloc(unsigned int priority)
 	} else {
 		/* scan from the MSB for odd priorities */
 
-		fsb = find_last_set(interrupt_vectors_allocated[entryToScan]);
+		fsb = find_msb_set(interrupt_vectors_allocated[entryToScan]);
 
 #if defined(DEBUG)
 		if ((fsb == 0) || (fsb < 17)) {

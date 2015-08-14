@@ -66,14 +66,14 @@ static struct k_proc *next_task_select(void)
 	int K_PrioListIdx;
 
 #if (CONFIG_NUM_TASK_PRIORITIES <= 32)
-	K_PrioListIdx = find_first_set(_k_task_priority_bitmap[0]) - 1;
+	K_PrioListIdx = find_lsb_set(_k_task_priority_bitmap[0]) - 1;
 #else
 	int bit_map;
 	int set_bit_pos;
 
 	K_PrioListIdx = -1;
 	for (bit_map = 0; ; bit_map++) {
-		set_bit_pos = find_first_set(_k_task_priority_bitmap[bit_map]);
+		set_bit_pos = find_lsb_set(_k_task_priority_bitmap[bit_map]);
 		if (set_bit_pos) {
 			K_PrioListIdx += set_bit_pos;
 			break;

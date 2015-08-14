@@ -42,18 +42,18 @@ ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
 
 /**
  *
- * @brief Find First Set bit (searching from most significant bit)
+ * @brief find most significant bit set in a 32-bit word
  *
- * This routine finds the last bit set in the argument passed it and returns
- * the index of that bit.  Bits are numbered starting at 1 from the least
- * significant bit.  A return value of zero indicates that the value passed
- * is zero.
+ * This routine finds the first bit set starting from the most significant bit
+ * in the argument passed in and returns the index of that bit.  Bits are
+ * numbered starting at 1 from the least significant bit.  A return value of
+ * zero indicates that the value passed is zero.
  *
- * @return most significant bit set
+ * @return most significant bit set, 0 if @a op is 0
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int find_last_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_msb_set(unsigned int op)
 {
 	unsigned int bit;
 
@@ -71,18 +71,18 @@ static ALWAYS_INLINE unsigned int find_last_set(unsigned int op)
 
 /**
  *
- * @brief Find first set bit (searching from the least significant bit)
+ * @brief find least significant bit set in a 32-bit word
  *
- * This routine finds the first bit set in the argument passed it and
- * returns the index of that bit.  Bits are numbered starting
- * at 1 from the least significant bit.  A return value of zero indicates that
- * the value passed is zero.
+ * This routine finds the first bit set starting from the least significant bit
+ * in the argument passed in and returns the index of that bit.  Bits are
+ * numbered starting at 1 from the least significant bit.  A return value of
+ * zero indicates that the value passed is zero.
  *
- * @return least significant bit set
+ * @return least significant bit set, 0 if @a op is 0
  */
 
 #if defined(__GNUC__)
-static ALWAYS_INLINE unsigned int find_first_set(unsigned int op)
+static ALWAYS_INLINE unsigned int find_lsb_set(unsigned int op)
 {
 	unsigned int bit;
 

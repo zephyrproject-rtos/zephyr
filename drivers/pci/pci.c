@@ -257,7 +257,7 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 	addr = bar_config & mask;
 	if (addr != 0) {
 		/* calculate the size of the BAR memory required */
-		dev_info->size = 1 << (find_first_set(addr) - 1);
+		dev_info->size = 1 << (find_lsb_set(addr) - 1);
 	}
 
 	return 0;
