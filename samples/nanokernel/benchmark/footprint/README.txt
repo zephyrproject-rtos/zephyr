@@ -69,7 +69,7 @@ or
 
 --------------------------------------------------------------------------------
 
-Sample output:
+Sample Output:
 
 The resulting image is bootable for all configurations, but produces different
 output in each case.
