@@ -295,29 +295,26 @@ class QEMUHandler:
 
 
 class SizeCalculator:
-    def __init__(self, filename_stem):
+    def __init__(self, filename):
         """Constructor
 
-        @param filename_stem Path to the output binary, minus file extension.
-            The <filename_stem>.elf is parsed by objdump. Either .elf or .bin
-            is sized for the ROM size depending on whether XIP is supported
+        @param filename Path to the output binary
+            The <filename> is parsed by objdump to determine section sizes
         """
-        elf_filename = filename_stem + ".elf"
-
         # Make sure this is an ELF binary
-        with open(elf_filename, "rb") as f:
+        with open(filename, "rb") as f:
             magic = f.read(4)
 
         if (magic != "\x7fELF"):
-            raise SanityRuntimeError("%s is not an ELF binary" % elf_filename)
+            raise SanityRuntimeError("%s is not an ELF binary" % filename)
 
         # Search for CONFIG_XIP in the ELF's list of symbols using NM and AWK.
         # GREP can not be used as it returns an error if the symbol is not found.
-        is_xip_command = "nm " + elf_filename + " | awk '/CONFIG_XIP/ { print $3 }'"
+        is_xip_command = "nm " + filename + " | awk '/CONFIG_XIP/ { print $3 }'"
         is_xip_output = subprocess.check_output(is_xip_command, shell=True)
         self.is_xip = (len(is_xip_output) != 0)
 
-        self.elf_filename = elf_filename
+        self.filename = filename
         self.sections = {}
         self.xip_rom_size = 0
         self.xip_ram_size = 0
@@ -355,7 +352,7 @@ class SizeCalculator:
 
     def _calculate_sizes(self):
         """ Calculate RAM and ROM usage by section """
-        objdump_command = "objdump -h " + self.elf_filename
+        objdump_command = "objdump -h " + self.filename
         objdump_output = subprocess.check_output(objdump_command,
                                                  shell=True).splitlines()
 
@@ -962,11 +959,11 @@ class TestInstance:
         @return A SizeCalculator object
         """
         if self.test.ktype == "micro":
-            binary_stem = os.path.join(self.outdir, "microkernel")
+            fn = os.path.join(self.outdir, "microkernel.elf")
         else:
-            binary_stem = os.path.join(self.outdir, "nanokernel")
+            fn = os.path.join(self.outdir, "nanokernel.elf")
 
-        return SizeCalculator(binary_stem)
+        return SizeCalculator(fn)
 
     def __repr__(self):
         return "<TestCase %s on %s>" % (self.test.name, self.platform.name)
@@ -1378,6 +1375,10 @@ def parse_arguments():
             default="%s/scripts/sanity_chk/arches" % ZEPHYR_BASE,
             help="Directory to search for arch configuration files. All .ini "
                  "files in the directory will be processed.")
+    parser.add_argument("-z", "--size", action="append",
+            help="Don't run sanity  checks. Instead, produce a report to "
+                 "stdout detailing RAM/ROM sizes on the specified filenames. "
+                 "All other command line arguments ignored.")
 
     return parser.parse_args()
 
@@ -1432,10 +1433,34 @@ def chatty_test_cb(instances, goals, goal):
     if goal.failed:
         log_info(goal.get_error_log())
 
+
+def size_report(sc):
+    info(sc.filename)
+    info("SECTION NAME         ADDRESS     SIZE   HEX")
+    for k, v in sc.sections.iteritems():
+        if not v["recognized"]:
+            k += "*"
+
+        info("%-17s 0x%08x %8d %5x" %
+             (k, v["phys_addr"], v["size"], v["size"]))
+    if sc.is_xip:
+        info("Total: %d bytes (ROM) + %d bytes (RAM)" %
+             (sc.xip_rom_size, sc.xip_ram_size))
+    else:
+        info("Total: %d bytes (RAM)" % sc.ram_size)
+    info("")
+
+
 def main():
     start_time = time.time()
     global VERBOSE, INLINE_LOGS, PARALLEL
     args = parse_arguments()
+
+    if args.size:
+        for fn in args.size:
+            size_report(SizeCalculator(fn))
+        sys.exit(0)
+
     VERBOSE += args.verbose
     INLINE_LOGS = args.inline_logs
     if args.jobs:
