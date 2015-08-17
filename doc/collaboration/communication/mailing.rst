@@ -1,3 +1,5 @@
+.. _mailing:
+
 Rules for Collaboration on an Open Source Mailing List
 ######################################################
 
@@ -52,8 +54,7 @@ References
 
    + http://www.arm.linux.org.uk/mailinglists/etiquette.php #e3
 
-   + http://lifehacker.com/5473859/basic-etiquette-for-emai
-     l-lists-and-forums
+   + http://lifehacker.com/5473859/basic-etiquette-for-email-lists-and-forums
 
 * Reasons why top posting considered harmful:
 

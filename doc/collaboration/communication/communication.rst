@@ -1,5 +1,7 @@
-The Most Important Rule of Open Source
-######################################
+.. _communication:
+
+Communication Tools
+###################
 
 Open source is about sharing as much information as possible about the
 development you are doing. Maintainers and contributors must
@@ -12,3 +14,10 @@ In this spirit, do not send private feedback through email. Instead,
 send feedback to the mailing list, making sure to hit 'Reply-to-all',
 and keeping the CC list intact. While the mailing list can be used to
 hold design discussions, remember to submit all patches using Gerrit.
+
+The following sections contain information about the communication tools used at the |project|.
+
+.. toctree::
+   :maxdepth: 2
+
+   mailing
