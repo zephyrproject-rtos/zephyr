@@ -497,11 +497,17 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 
 	keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
 	if (keys) {
+		if (sec > BT_SECURITY_MEDIUM &&
+		    keys->ltk.type != BT_KEYS_AUTHENTICATED) {
+			goto pair;
+		}
+
 		return bt_conn_le_start_encryption(conn, keys->ltk.rand,
 						   keys->ltk.ediv,
 						   keys->ltk.val);
 	}
 
+pair:
 	return bt_smp_send_pairing_req(conn);
 }
 
