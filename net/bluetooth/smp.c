@@ -770,6 +770,7 @@ static void smp_reset(struct bt_conn *conn)
 static uint8_t smp_pairing_failed(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_fail *req = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
 
 	BT_ERR("reason 0x%x\n", req->reason);
 
@@ -779,15 +780,16 @@ static uint8_t smp_pairing_failed(struct bt_conn *conn, struct bt_buf *buf)
 	 */
 	ARG_UNUSED(req);
 
-	smp_reset(conn);
-
-	switch (bt_smp_io_capa) {
-	case BT_SMP_IO_DISPLAY_ONLY:
+	switch (smp->method) {
+	case PASSKEY_INPUT:
+	case PASSKEY_DISPLAY:
 		auth_cb->cancel(conn);
 		break;
 	default:
 		break;
 	}
+
+	smp_reset(conn);
 
 	/* return no error to avoid sending Pairing Failed in response */
 	return 0;
