@@ -139,6 +139,7 @@ int bt_stop_scanning(void);
 /** Authenticated pairing callback structure */
 struct bt_auth_cb {
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
+	void (*passkey_entry)(struct bt_conn *conn);
 	void (*cancel)(struct bt_conn *conn);
 };
 
@@ -152,6 +153,16 @@ struct bt_auth_cb {
  *  @return Zero on success or negative error code otherwise
  */
 int bt_auth_cb_register(const struct bt_auth_cb *cb);
+
+/** @brief Reply with entered passkey.
+ *
+ *  This function should be called only after passkey_entry callback from
+ *  bt_auth_cb structure was called.
+ *
+ *  @param conn Connection object.
+ *  @param passkey Entered passkey.
+ */
+void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
 
 /** @brief Cancel ongoing authenticated pairing.
  *

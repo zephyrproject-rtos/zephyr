@@ -419,8 +419,8 @@ static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 
 		break;
 	case PASSKEY_INPUT:
-		/* TODO add support for input passkey entry*/
-		return BT_SMP_ERR_UNSPECIFIED;
+		auth_cb->passkey_entry(conn);
+		break;
 	case JUST_WORKS:
 		break;
 	default:
@@ -607,6 +607,11 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	ret = smp_request_tk(conn, rsp->io_capability);
 	if (ret) {
 		return ret;
+	}
+
+	/* waiting for passkey entry input for TK */
+	if (smp->method == PASSKEY_INPUT) {
+		return 0;
 	}
 
 	return smp_send_pairing_confirm(conn);
@@ -1675,6 +1680,14 @@ static inline int smp_self_test(void)
 
 static uint8_t get_io_capa(const struct bt_auth_cb *cb)
 {
+	if (auth_cb->passkey_display && auth_cb->passkey_entry) {
+		return BT_SMP_IO_KEYBOARD_DISPLAY;
+	}
+
+	if (auth_cb->passkey_entry) {
+		return BT_SMP_IO_KEYBOARD_ONLY;
+	}
+
 	if (auth_cb->passkey_display) {
 		return BT_SMP_IO_DISPLAY_ONLY;
 	}
@@ -1703,6 +1716,26 @@ int bt_auth_cb_register(const struct bt_auth_cb *cb)
 	auth_cb = cb;
 
 	return 0;
+}
+
+void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
+{
+	struct bt_smp *smp = conn->smp;
+
+	passkey = sys_cpu_to_le32(passkey);
+	memcpy(smp->tk, &passkey, sizeof(passkey));
+
+	/* if confirm failed ie. due to invalid passkey, cancel pairing */
+	if (smp_send_pairing_confirm(conn)) {
+		bt_auth_cancel(conn);
+		return;
+	}
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+	} else {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+	}
 }
 
 void bt_auth_cancel(struct bt_conn *conn)
