@@ -1079,7 +1079,18 @@ static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	auth = req->auth_req & BT_SMP_AUTH_MASK;
-	if (auth & (BT_SMP_AUTH_MITM | BT_SMP_AUTH_SC)) {
+	if (auth & BT_SMP_AUTH_SC) {
+		BT_WARN("Unsupported auth requirements: 0x%x, repairing", auth);
+		goto pair;
+	}
+
+	if ((auth & BT_SMP_AUTH_MITM) &&
+	     keys->ltk.type != BT_KEYS_AUTHENTICATED) {
+		if (bt_smp_io_capa != BT_SMP_IO_NO_INPUT_OUTPUT) {
+			BT_INFO("New auth requirements: 0x%x, repairing", auth);
+			goto pair;
+		}
+
 		BT_WARN("Unsupported auth requirements: 0x%x, repairing", auth);
 		goto pair;
 	}
