@@ -1,11 +1,11 @@
-.. _words:
+.. _language:
 
-Punctuation, Grammar and Spelling
-#################################
+Laguage Usage Guidelines
+########################
 
 This chapter provides usage guidelines with regard to words,
 punctuation, and grammar. The guidelines are not meant to replace a
-review or the  by a professional writer but rather
+review by a professional writer but rather help collaborators to submit consistent contributions.
 
 Capitalization
 **************

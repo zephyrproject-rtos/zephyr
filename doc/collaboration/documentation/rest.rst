@@ -1,11 +1,11 @@
-.. _rest_guideline:
+.. _restructured:
 
 Restructured Text Guidelines
 ############################
 
 The |project| uses Sphinx and Restructured Text as authoring tools for
-documentation. Here you can find the preferred methods for using :abbr
-:`ReST (Restructured Text)` markup on your documents. Please refer to
+documentation. Here you can find the preferred methods for using
+:abbr:`ReST (Restructured Text)` markup on your documents. Please refer to
 the `Sphinx documentation`_ for the complete list of available markup.
 
 Templates, examples and usage scenarios are provided to help you write
@@ -23,11 +23,11 @@ templates are supplied.
 .. toctree::
    :maxdepth: 3
 
-   rest_inline
-   rest_tables
-   rest_cross
-   rest_images
-   rest_code
+   inline
+   tables
+   cross
+   images
+   code
 
 
 .. _Sphinx documentation:

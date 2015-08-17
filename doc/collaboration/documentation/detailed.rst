@@ -21,8 +21,9 @@ where you think a significant portion of readers might benefit.
 .. toctree::
    :maxdepth: 2
 
-   detailed_parallellism.rst
-   detailed_simple.rst
-   detailed_lists.rst
-   detailed_notices.rst
-   detailed_modular.rst
+   simple
+   steps
+   parallelism
+   lists
+   notices
+   modular

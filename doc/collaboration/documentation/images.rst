@@ -43,7 +43,7 @@ graphics to ensure that they can be changed.
 * Provide the source files. Save the source artwork files with the
 documentation in a separate :file:`figures` folder. The filename must
 follow the naming conventions of the project, for example: :file:`
-fibers.svg` or :file:`nanokernel_fiber_1.png`.
+fibers.svg` or :file:`nanokernel_fiber-1.png`.
 
 Examples
 ========
@@ -64,13 +64,13 @@ containing different objects or a :ref:`symbol <fibers.svg>`.
    This symbol is used to illustrate the actions performed by the
    abstract fibers execution context.
 
-The :ref:`screenshot <nanokernel_fiber_1.png>` shows a comparison of
+The :ref:`screenshot <nanokernel_fiber-1.png>` shows a comparison of
 two file containing code. Observe how the differences are highlighted
 and linked to make identifying them easier.
 
-.. _nanokernel_fiber_1.png:
+.. _nanokernel_fiber-1.png:
 
-.. figure:: figures/nanokernel_fiber_1.png
+.. figure:: figures/nanokernel_fiber-1.png
    :scale: 75 %
    :alt: Nanokernel Code Comparison 2
 
