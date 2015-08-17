@@ -42,8 +42,8 @@
 #include <nano_private.h>
 #include <start_task_arch.h>
 
-extern struct k_proc _k_task_list_start[];
-extern struct k_proc _k_task_list_end[];
+extern struct k_task _k_task_list_start[];
+extern struct k_task _k_task_list_end[];
 
 /**
  *
@@ -69,7 +69,7 @@ ktask_t task_id_get(void)
  * @return N/A
  */
 
-void _k_state_bit_reset(struct k_proc *X,    /* ptr to task */
+void _k_state_bit_reset(struct k_task *X,    /* ptr to task */
 					   uint32_t bits /* bitmask of TF_xxx
 							    bits to reset */
 					   )
@@ -122,7 +122,7 @@ void _k_state_bit_reset(struct k_proc *X,    /* ptr to task */
  */
 
 void _k_state_bit_set(
-	struct k_proc *task_ptr,
+	struct k_task *task_ptr,
 	uint32_t bits /* bitmask of TF_xxx bits to set */
 	)
 {
@@ -155,7 +155,7 @@ void _k_state_bit_set(
 #endif
 #endif
 			struct k_tqhd *task_queue = _k_task_priority_list + task_ptr->Prio;
-		struct k_proc *cur_task = (struct k_proc *)(&task_queue->Head);
+		struct k_task *cur_task = (struct k_task *)(&task_queue->Head);
 
 		/*
 		 * Search in the list for this task priority level,
@@ -202,7 +202,7 @@ void _k_state_bit_set(
  * @return N/A
  */
 
-static void start_task(struct k_proc *X,  /* ptr to task control block */
+static void start_task(struct k_task *X,  /* ptr to task control block */
 					   void (*func)(void) /* entry point for task */
 					   )
 {
@@ -246,7 +246,7 @@ static void start_task(struct k_proc *X,  /* ptr to task control block */
  * @return N/A
  */
 
-static void abort_task(struct k_proc *X)
+static void abort_task(struct k_task *X)
 {
 
 	/* Do normal context exit cleanup */
@@ -329,7 +329,7 @@ void task_abort_handler_set(void (*func)(void) /* abort handler */
 void _k_task_op(struct k_args *A)
 {
 	ktask_t Tid = A->Args.g1.task;
-		struct k_proc *X = (struct k_proc *)Tid;
+		struct k_task *X = (struct k_task *)Tid;
 
 		switch (A->Args.g1.opt) {
 		case TASK_START:
@@ -387,7 +387,7 @@ void _k_task_group_op(struct k_args *A)
 {
 	ktask_group_t grp = A->Args.g1.group;
 	int opt = A->Args.g1.opt;
-	struct k_proc *X;
+	struct k_task *X;
 
 #ifdef CONFIG_TASK_DEBUG
 	if (opt == TASK_GROUP_BLOCK)
@@ -500,7 +500,7 @@ kpriority_t task_priority_get(void)
 void _k_task_priority_set(struct k_args *A)
 {
 	ktask_t Tid = A->Args.g1.task;
-		struct k_proc *X = (struct k_proc *)Tid;
+		struct k_task *X = (struct k_task *)Tid;
 
 		_k_state_bit_set(X, TF_PRIO);
 		X->Prio = A->Args.g1.prio;
@@ -547,7 +547,7 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 void _k_task_yield(struct k_args *A)
 {
 	struct k_tqhd *H = _k_task_priority_list + _k_current_task->Prio;
-	struct k_proc *X = _k_current_task->Forw;
+	struct k_task *X = _k_current_task->Forw;
 
 	ARG_UNUSED(A);
 	if (X && H->Head == _k_current_task) {
@@ -597,7 +597,7 @@ void task_entry_set(ktask_t task,       /* task */
 		     void (*func)(void) /* entry point */
 		     )
 {
-	struct k_proc *X = (struct k_proc *)task;
+	struct k_task *X = (struct k_task *)task;
 
 	X->fstart = func;
 }

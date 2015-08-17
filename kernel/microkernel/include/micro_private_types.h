@@ -141,8 +141,8 @@ struct k_timer {
 /* Task queue header */
 
 struct k_tqhd {
-	struct k_proc *Head;
-	struct k_proc *Tail;
+	struct k_task *Head;
+	struct k_task *Tail;
 };
 
 /* Monitor record */
@@ -232,7 +232,7 @@ struct _pipe_xfer_ack_arg {
 
 typedef union {
 	ktask_t task;
-	struct k_proc *proc;
+	struct k_task *proc;
 	struct k_args *args;
 } K_CREF;
 

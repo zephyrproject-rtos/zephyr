@@ -321,7 +321,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 
 	bAsync = ISASYNCMSG(&Writer->Args.m1.mess);
 
-	struct k_proc *sender = NULL;
+	struct k_task *sender = NULL;
 
 	/*
 	 * Only deschedule the task if it is not a poster

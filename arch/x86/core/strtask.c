@@ -59,7 +59,7 @@ Intel-specific parts of start_task(). Only FP functionality currently.
  */
 
 void _StartTaskArch(
-	struct k_proc *X,	 /* ptr to task control block */
+	struct k_task *X,	 /* ptr to task control block */
 	unsigned int *pOpt /* context options container */
 	)
 {

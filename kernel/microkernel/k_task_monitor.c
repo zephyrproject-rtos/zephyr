@@ -56,7 +56,7 @@ void task_monitor_hook_set(k_task_monitor_hook_t func)
 	_k_task_switch_callback = func;
 }
 
-void _k_task_monitor(struct k_proc *X, uint32_t D)
+void _k_task_monitor(struct k_task *X, uint32_t D)
 {
 #ifdef CONFIG_TASK_DEBUG
 	if (!_k_debug_halt)

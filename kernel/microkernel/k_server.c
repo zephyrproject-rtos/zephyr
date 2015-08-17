@@ -61,7 +61,7 @@ extern const kernelfunc _k_server_dispatch_table[];
  * @return pointer to selected task
  */
 
-static struct k_proc *next_task_select(void)
+static struct k_task *next_task_select(void)
 {
 	int K_PrioListIdx;
 
@@ -100,7 +100,7 @@ static struct k_proc *next_task_select(void)
 FUNC_NORETURN void _k_server(int unused1, int unused2)
 {
 	struct k_args *pArgs;
-	struct k_proc *pNextTask;
+	struct k_task *pNextTask;
 
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);

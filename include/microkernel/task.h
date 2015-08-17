@@ -51,7 +51,7 @@ extern "C" {
 #define USR_GROUP 2 /* TASKGROUP SYS */
 #define FPU_GROUP 4 /* TASKGROUP FPU */
 
-extern struct k_proc _k_task_list[];
+extern struct k_task _k_task_list[];
 
 extern void _task_ioctl(ktask_t, int);
 extern void _task_group_ioctl(ktask_group_t, int);
@@ -104,7 +104,7 @@ extern void task_group_leave(uint32_t groups);
 #define isr_task_group_mask_get() task_group_mask_get()
 
 /**
- * @brief Initialize a struct k_proc given parameters.
+ * @brief Initialize a struct k_task given parameters.
  *
  * @param ident Numeric identifier of this task object.
  * @param priority Priority of task.
@@ -137,7 +137,7 @@ extern void task_group_leave(uint32_t groups);
 #define DEFINE_TASK(name, priority, entry, stack_size, groups) \
 	extern void entry(void); \
 	char __noinit __stack __stack_##name[stack_size]; \
-	struct k_proc _k_task_obj_##name \
+	struct k_task _k_task_obj_##name \
 		__section(_k_task_list, private, task) = \
 		__K_TASK_INITIALIZER( \
 			(ktask_t)&_k_task_obj_##name, \

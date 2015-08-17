@@ -105,9 +105,9 @@ struct k_msg {
 
 /* Task control block */
 
-struct k_proc {
-	struct k_proc *Forw;
-	struct k_proc *Back;
+struct k_task {
+	struct k_task *Forw;
+	struct k_task *Back;
 	kpriority_t Prio;
 	ktask_t Ident;
 	uint32_t State;

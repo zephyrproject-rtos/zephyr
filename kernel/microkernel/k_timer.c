@@ -424,7 +424,7 @@ void task_timer_stop(ktimer_t timer)
 void _k_task_wakeup(struct k_args *P)
 {
 	struct k_timer *T;
-	struct k_proc *X;
+	struct k_task *X;
 
 	X = P->Ctxt.proc;
 	T = P->Time.timer;

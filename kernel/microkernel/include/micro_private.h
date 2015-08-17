@@ -50,7 +50,7 @@ extern int _k_mem_pool_count;
 
 extern const int _k_num_events;
 
-extern struct k_proc *_k_current_task;
+extern struct k_task *_k_current_task;
 extern uint32_t _k_task_priority_bitmap[];
 
 extern struct k_timer *_k_timer_list_head;
@@ -71,8 +71,8 @@ extern void _k_timer_list_update(int ticks);
 
 extern void _k_do_event_signal(kevent_t event);
 
-extern void _k_state_bit_set(struct k_proc *, uint32_t);
-extern void _k_state_bit_reset(struct k_proc *, uint32_t);
+extern void _k_state_bit_set(struct k_task *, uint32_t);
+extern void _k_state_bit_reset(struct k_task *, uint32_t);
 extern void _k_task_call(struct k_args *);
 
 /*
@@ -138,7 +138,7 @@ typedef void (*k_task_monitor_hook_t)(ktask_t taskid, uint32_t timestamp);
 
 extern void task_monitor_hook_set(k_task_monitor_hook_t func);
 
-extern void _k_task_monitor(struct k_proc *, uint32_t d2);
+extern void _k_task_monitor(struct k_task *, uint32_t d2);
 extern void _k_task_monitor_args(struct k_args *);
 extern void _k_task_monitor_read(struct k_args *);
 

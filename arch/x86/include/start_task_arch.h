@@ -45,7 +45,7 @@ Intel-specific parts of start_task(). Only FP functionality currently.
 #include <nano_private.h>
 #include <microkernel/task.h>
 
-extern void _StartTaskArch(struct k_proc *, unsigned int *);
+extern void _StartTaskArch(struct k_task *, unsigned int *);
 
 #define _START_TASK_ARCH(pKproc, pOpt) _StartTaskArch(pKproc, pOpt)
 
