@@ -338,6 +338,42 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 
 /* HCI event processing */
 
+static void update_sec_level(struct bt_conn *conn)
+{
+	uint8_t type = BT_KEYS_UNAUTHENTICATED;
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		struct bt_keys *keys;
+
+		keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
+		if (keys) {
+			type = keys->ltk.type;
+		}
+	} else {
+		struct bt_keys *keys;
+
+		keys = bt_keys_find(BT_KEYS_SLAVE_LTK, &conn->dst);
+		if (keys) {
+			type = keys->slave_ltk.type;
+		}
+	}
+
+	switch (type) {
+	case BT_KEYS_AUTHENTICATED:
+		conn->sec_level = BT_SECURITY_HIGH;
+		break;
+	case BT_KEYS_UNAUTHENTICATED:
+	default:
+		conn->sec_level = BT_SECURITY_MEDIUM;
+		break;
+	}
+
+	if (conn->required_sec_level > conn->sec_level) {
+		BT_ERR("Failed to set required security level\n");
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+	}
+}
+
 static void hci_encrypt_change(struct bt_buf *buf)
 {
 	struct bt_hci_evt_encrypt_change *evt = (void *)buf->data;
@@ -360,7 +396,7 @@ static void hci_encrypt_change(struct bt_buf *buf)
 	conn->encrypt = evt->encrypt;
 
 	if (conn->encrypt) {
-		conn->sec_level = BT_SECURITY_MEDIUM;
+		update_sec_level(conn);
 	}
 
 	bt_l2cap_encrypt_change(conn);
