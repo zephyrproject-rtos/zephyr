@@ -73,7 +73,7 @@ static int stellaris_uart_console_init(struct device *dev)
 		.sys_clk_freq = SYSCLK_DEFAULT_IOSC_HZ,
 		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
 		/* Only supported in polling mode, but init all info fields */
-		.int_pri = CONFIG_UART_CONSOLE_INT_PRI,
+		.irq_pri = CONFIG_UART_CONSOLE_INT_PRI,
 	};
 
 	uart_init(UART_CONSOLE_DEV, &info);

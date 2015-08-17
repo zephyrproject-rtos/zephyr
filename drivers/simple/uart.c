@@ -108,7 +108,7 @@ void uart_simple_register(uint8_t *buf, size_t len, uart_simple_recv_cb cb)
 		.options = 0,
 		.sys_clk_freq = CONFIG_UART_SIMPLE_FREQ,
 		.baud_rate = CONFIG_UART_SIMPLE_BAUDRATE,
-		.int_pri = CONFIG_UART_SIMPLE_INT_PRI,
+		.irq_pri = CONFIG_UART_SIMPLE_INT_PRI,
 	};
 
 	recv_buf = buf;

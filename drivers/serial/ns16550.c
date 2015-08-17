@@ -281,7 +281,7 @@ void ns16550_uart_port_init(struct device *dev,
 
 	ns16550_pci_uart_scan();
 
-	dev_cfg->int_pri = init_info->int_pri;
+	dev_cfg->irq_pri = init_info->irq_pri;
 	dev_data->iir_cache = 0;
 
 	oldLevel = irq_lock();

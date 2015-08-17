@@ -80,12 +80,12 @@ static void uart1_init(void)
 	struct uart_init_info uart1 = {
 		.baud_rate = CONFIG_UART_BAUDRATE,
 		.sys_clk_freq = UART_XTAL_FREQ,
-		.int_pri = UART1_INT_PRI,
+		.irq_pri = UART1_INT_PRI,
 	};
 
 	uart_init(UART1, &uart1);
 
-	irq_connect(UART1_IRQ, uart1.int_pri, uart1_isr, 0);
+	irq_connect(UART1_IRQ, uart1.irq_pri, uart1_isr, 0);
 
 	irq_enable(UART1_IRQ);
 

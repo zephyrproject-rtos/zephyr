@@ -281,7 +281,7 @@ static int bt_uart_open()
 		.options = 0,
 		.sys_clk_freq = CONFIG_BLUETOOTH_UART_FREQ,
 		.baud_rate = CONFIG_BLUETOOTH_UART_BAUDRATE,
-		.int_pri = CONFIG_BLUETOOTH_UART_INT_PRI,
+		.irq_pri = CONFIG_BLUETOOTH_UART_INT_PRI,
 	};
 
 	bt_uart_setup(BT_UART_DEV, &info);

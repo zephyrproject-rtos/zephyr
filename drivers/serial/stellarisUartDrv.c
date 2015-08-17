@@ -279,7 +279,7 @@ void stellaris_uart_port_init(struct device *dev,
 {
 	struct uart_device_config_t * const dev_cfg = DEV_CFG(dev);
 
-	dev_cfg->int_pri = init_info->int_pri;
+	dev_cfg->irq_pri = init_info->irq_pri;
 
 	disable(dev);
 	baudrateSet(dev, init_info->baud_rate, init_info->sys_clk_freq);

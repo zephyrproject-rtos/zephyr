@@ -73,7 +73,7 @@ static int k20_uart_console_init(struct device *dev)
 		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
 		.sys_clk_freq = CONFIG_UART_CONSOLE_CLK_FREQ,
 		/* Only supported in polling mode, but init all info fields */
-		.int_pri = CONFIG_UART_CONSOLE_INT_PRI
+		.irq_pri = CONFIG_UART_CONSOLE_INT_PRI
 	};
 
 	/* UART0 Rx and Tx pin assignments */

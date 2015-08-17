@@ -87,7 +87,7 @@ void k20_uart_port_init(struct device *dev,
 	C1_t c1;				   /* UART C1 register value */
 	C2_t c2;				   /* UART C2 register value */
 
-	DEV_CFG(dev)->int_pri = init_info->int_pri;
+	DEV_CFG(dev)->irq_pri = init_info->irq_pri;
 
 	K20_UART_t *uart_p = UART_STRUCT(dev);
 

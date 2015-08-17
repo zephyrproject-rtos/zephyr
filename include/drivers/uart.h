@@ -54,7 +54,7 @@ struct uart_device_config_t {
 		uint32_t regs;
 	};
 	uint8_t irq;		/**< interrupt request level */
-	uint8_t int_pri;	/**< interrupt priority */
+	uint8_t irq_pri;	/**< interrupt priority */
 
 	/**
 	 * Initializes the UART port.
@@ -72,7 +72,7 @@ struct uart_init_info {
 	int baud_rate;		/* Baud rate */
 	uint32_t sys_clk_freq;	/* System clock frequency in Hz */
 
-	uint8_t int_pri;	/* Interrupt priority level */
+	uint8_t irq_pri;	/* Interrupt priority level */
 	uint8_t options;	/* HW Flow Control option */
 
 	uint32_t regs;		/* Register address */
