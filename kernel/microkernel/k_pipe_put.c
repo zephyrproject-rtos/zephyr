@@ -61,11 +61,11 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 	if (!bAsync) {
 		/* First save the pointer to the task's TCB for rescheduling later */
-		RequestOrig->Ctxt.proc = _k_current_task;
+		RequestOrig->Ctxt.task = _k_current_task;
 		_k_state_bit_set(_k_current_task, TF_SEND);
 	} else {
 		/* No need to put in data about sender, since it's a poster */
-		RequestOrig->Ctxt.proc = NULL;
+		RequestOrig->Ctxt.task = NULL;
 	}
 
 	mycopypacket(&Request, RequestOrig);
@@ -319,7 +319,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 		LocalReq->Time.rcode = Request->Time.rcode;
 		LocalReq->Args.pipe_ack = Request->Args.pipe_ack;
 
-		_k_state_bit_reset(LocalReq->Ctxt.proc, TF_SEND | TF_SENDDATA);
+		_k_state_bit_reset(LocalReq->Ctxt.task, TF_SEND | TF_SENDDATA);
 	}
 
 	FREEARGS(Request);

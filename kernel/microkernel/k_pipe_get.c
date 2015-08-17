@@ -53,7 +53,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	/* If it's a poster, then don't deschedule the task */
 
 	/* First we save the pointer to the task's TCB for rescheduling later */
-	RequestOrig->Ctxt.proc = _k_current_task;
+	RequestOrig->Ctxt.task = _k_current_task;
 	_k_state_bit_set(_k_current_task, TF_RECV);
 
 	mycopypacket(&Request, RequestOrig);
@@ -276,7 +276,7 @@ void _k_pipe_get_ack(struct k_args *Request)
 
 	/* Reschedule the sender task */
 
-	_k_state_bit_reset(LocalReq->Ctxt.proc, TF_RECV | TF_RECVDATA);
+	_k_state_bit_reset(LocalReq->Ctxt.task, TF_RECV | TF_RECVDATA);
 
 	FREEARGS(Request);
 }

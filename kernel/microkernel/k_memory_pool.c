@@ -459,7 +459,7 @@ void _k_block_waiters_get(struct k_args *A)
 			}
 #endif
 			curr_task->Time.rcode = RC_OK;
-			_k_state_bit_reset(curr_task->Ctxt.proc, TF_GTBL);
+			_k_state_bit_reset(curr_task->Ctxt.task, TF_GTBL);
 
 			/* remove from list */
 			prev_task->Forw = curr_task->Forw;
@@ -490,7 +490,7 @@ void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 	_k_timeout_free(A->Time.timer);
 	REMOVE_ELM(A);
 	A->Time.rcode = RC_TIME;
-	_k_state_bit_reset(A->Ctxt.proc, TF_GTBL);
+	_k_state_bit_reset(A->Ctxt.task, TF_GTBL);
 }
 
 /**
@@ -535,7 +535,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 		    (A->Args.p1.req_size <=
 		     P->maxblock_size))) {/* timeout?  but not block to large */
 		A->Prio = _k_current_task->Prio;
-		A->Ctxt.proc = _k_current_task;
+		A->Ctxt.task = _k_current_task;
 		_k_state_bit_set(_k_current_task, TF_GTBL); /* extra new statebit */
 
 		/* INSERT_ELM (P->frag_tab[offset].Waiters, A); */

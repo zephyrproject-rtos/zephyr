@@ -93,7 +93,7 @@ void _k_event_test_timeout(struct k_args *A)
 	FREETIMER(A->Time.timer);
 	A->Time.rcode = RC_TIME;
 	E->waiter = NULL;
-	_k_state_bit_reset(A->Ctxt.proc, TF_EVNT);
+	_k_state_bit_reset(A->Ctxt.task, TF_EVNT);
 }
 
 /**
@@ -114,7 +114,7 @@ void _k_event_test(struct k_args *A)
 		if (likely(A->Time.ticks != TICKS_NONE)) {
 			/* Caller will wait for the event */
 			if (likely(E->waiter == NULL)) {
-				A->Ctxt.proc = _k_current_task;
+				A->Ctxt.task = _k_current_task;
 				E->waiter = A;
 				_k_state_bit_set(_k_current_task, TF_EVNT);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -171,7 +171,7 @@ void _k_do_event_signal(kevent_t event)
 	if (ret_val != 0) {
 		E->status = 1;
 	}
-	/* if proc waiting, will be rescheduled */
+	/* if task waiting, will be rescheduled */
 	if (((A) != NULL) && (E->status != 0)) {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer != NULL) {
@@ -181,7 +181,7 @@ void _k_do_event_signal(kevent_t event)
 #endif
 		A->Time.rcode = RC_OK;
 
-		_k_state_bit_reset(A->Ctxt.proc, TF_EVNT);
+		_k_state_bit_reset(A->Ctxt.task, TF_EVNT);
 		E->waiter = NULL;
 		E->status = 0;
 	}

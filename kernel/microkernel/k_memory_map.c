@@ -90,7 +90,7 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
 	_k_timeout_free(A->Time.timer);
 	REMOVE_ELM(A);
 	A->Time.rcode = RC_TIME;
-	_k_state_bit_reset(A->Ctxt.proc, TF_ALLO);
+	_k_state_bit_reset(A->Ctxt.task, TF_ALLO);
 }
 
 /**
@@ -124,7 +124,7 @@ void _k_mem_map_alloc(struct k_args *A)
 
 	if (likely(A->Time.ticks != TICKS_NONE)) {
 		A->Prio = _k_current_task->Prio;
-		A->Ctxt.proc = _k_current_task;
+		A->Ctxt.task = _k_current_task;
 		_k_state_bit_set(_k_current_task, TF_ALLO);
 		INSERT_ELM(M->Waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -192,7 +192,7 @@ void _k_mem_map_dealloc(struct k_args *A)
 		}
 #endif
 		X->Time.rcode = RC_OK;
-		_k_state_bit_reset(X->Ctxt.proc, TF_ALLO);
+		_k_state_bit_reset(X->Ctxt.task, TF_ALLO);
 
 #ifdef CONFIG_OBJECT_MONITOR
 		M->Count++;

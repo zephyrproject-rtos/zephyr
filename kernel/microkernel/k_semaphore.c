@@ -80,7 +80,7 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 			} else {
 #endif
 				A->Time.rcode = RC_OK;
-				_k_state_bit_reset(A->Ctxt.proc, TF_SEMA);
+				_k_state_bit_reset(A->Ctxt.task, TF_SEMA);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			}
 #endif
@@ -104,7 +104,7 @@ void _k_sem_group_wait(struct k_args *R)
 
 	FREEARGS(R);
 	if (--(A->Args.s1.nsem) == 0) {
-		_k_state_bit_reset(A->Ctxt.proc, TF_LIST);
+		_k_state_bit_reset(A->Ctxt.task, TF_LIST);
 	}
 }
 
@@ -246,7 +246,7 @@ void _k_sem_wait_reply(struct k_args *A)
 	} else
 #endif
 		A->Time.rcode = RC_OK;
-	_k_state_bit_reset(A->Ctxt.proc, TF_SEMA);
+	_k_state_bit_reset(A->Ctxt.task, TF_SEMA);
 }
 
 void _k_sem_wait_reply_timeout(struct k_args *A)
@@ -312,7 +312,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 		(A->Args.s1.nsem)++;
 	}
 
-	A->Ctxt.proc = _k_current_task;
+	A->Ctxt.task = _k_current_task;
 	_k_state_bit_set(_k_current_task, TF_LIST);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -339,7 +339,7 @@ void _k_sem_wait_request(struct k_args *A)
 		S->Level--;
 		A->Time.rcode = RC_OK;
 	} else if (A->Time.ticks != TICKS_NONE) {
-		A->Ctxt.proc = _k_current_task;
+		A->Ctxt.task = _k_current_task;
 		A->Prio = _k_current_task->Prio;
 		_k_state_bit_set(_k_current_task, TF_SEMA);
 		INSERT_ELM(S->Waiters, A);

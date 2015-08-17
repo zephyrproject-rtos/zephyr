@@ -426,7 +426,7 @@ void _k_task_wakeup(struct k_args *P)
 	struct k_timer *T;
 	struct k_task *X;
 
-	X = P->Ctxt.proc;
+	X = P->Ctxt.task;
 	T = P->Time.timer;
 
 	FREETIMER(T);
@@ -457,7 +457,7 @@ void _k_task_sleep(struct k_args *P)
 	T->Args = P;
 
 	P->Comm = _K_SVC_TASK_WAKEUP;
-	P->Ctxt.proc = _k_current_task;
+	P->Ctxt.task = _k_current_task;
 	P->Time.timer = T;
 
 	_k_timer_enlist(T);

@@ -137,7 +137,7 @@ void _k_mutex_lock_reply(
 	A->Time.rcode = RC_OK;
 #endif
 
-	_k_state_bit_reset(A->Ctxt.proc, TF_LOCK);
+	_k_state_bit_reset(A->Ctxt.task, TF_LOCK);
 }
 
 /**
@@ -223,7 +223,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 				 * the priority saved in the request is up to
 				 * date.
 				 */
-				A->Ctxt.proc = _k_current_task;
+				A->Ctxt.task = _k_current_task;
 				A->Prio = _k_current_task->Prio;
 				_k_state_bit_set(_k_current_task, TF_LOCK);
 			/* Note: Mutex->Waiters is a priority sorted list */
@@ -381,7 +381,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 				 * Set the return code.
 				 */
 				X->Time.rcode = RC_OK;
-					_k_state_bit_reset(X->Ctxt.proc, TF_LOCK);
+					_k_state_bit_reset(X->Ctxt.task, TF_LOCK);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			}
 #endif

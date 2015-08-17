@@ -158,7 +158,7 @@ static bool prepare_transfer(struct k_args *move,
 		 * priority of reader and writer
 		 */
 		move->Prio = max(writer->Prio, reader->Prio);
-		move->Ctxt.proc = NULL;
+		move->Ctxt.task = NULL;
 		move->Args.MovedReq.Action =
 			(MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
 		move->Args.MovedReq.iTotalSize = writer->Args.m1.mess.size;
@@ -283,7 +283,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 		Starter = pCopyWriter->Ctxt.args;
 		Starter->Time.rcode = pCopyWriter->Time.rcode;
 		Starter->Args.m1.mess = pCopyWriter->Args.m1.mess;
-		_k_state_bit_reset(Starter->Ctxt.proc, TF_SEND | TF_SENDDATA);
+		_k_state_bit_reset(Starter->Ctxt.task, TF_SEND | TF_SENDDATA);
 
 		FREEARGS(pCopyWriter);
 	}
@@ -333,7 +333,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 		_k_state_bit_set(sender, TF_SEND);
 	}
 
-	Writer->Ctxt.proc = sender;
+	Writer->Ctxt.task = sender;
 
 	MailBox = (struct _k_mbox_struct *)MailBoxId;
 
@@ -530,7 +530,7 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 	Starter->Args.m1.mess = pCopyReader->Args.m1.mess;
 
 	/* Reschedule the sender task */
-	_k_state_bit_reset(Starter->Ctxt.proc, TF_RECV | TF_RECVDATA);
+	_k_state_bit_reset(Starter->Ctxt.task, TF_RECV | TF_RECVDATA);
 
 	FREEARGS(pCopyReader);
 }
@@ -564,8 +564,8 @@ void _k_mbox_receive_request(struct k_args *Reader)
 	struct k_args *temp;
 	struct k_args *CopyReader;
 
-	Reader->Ctxt.proc = _k_current_task;
-	_k_state_bit_set(Reader->Ctxt.proc, TF_RECV);
+	Reader->Ctxt.task = _k_current_task;
+	_k_state_bit_set(Reader->Ctxt.task, TF_RECV);
 
 	copy_packet(&CopyReader, Reader);
 
@@ -746,7 +746,7 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	struct k_args *MoveD;
 	struct k_args *Writer;
 
-	Starter->Ctxt.proc = _k_current_task;
+	Starter->Ctxt.task = _k_current_task;
 	_k_state_bit_set(_k_current_task, TF_RECVDATA);
 
 	GETARGS(CopyStarter);
@@ -901,7 +901,7 @@ void _k_mbox_send_data(struct k_args *Starter)
 	struct k_args *MoveD;
 	struct k_args *Reader;
 
-	Starter->Ctxt.proc = _k_current_task;
+	Starter->Ctxt.task = _k_current_task;
 	_k_state_bit_set(_k_current_task, TF_SENDDATA);
 
 	GETARGS(CopyStarter);

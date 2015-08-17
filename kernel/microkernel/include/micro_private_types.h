@@ -232,7 +232,7 @@ struct _pipe_xfer_ack_arg {
 
 typedef union {
 	ktask_t task_id;
-	struct k_task *proc;
+	struct k_task *task;
 	struct k_args *args;
 } K_CREF;
 
