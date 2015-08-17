@@ -57,6 +57,8 @@ help:
 clean:
 	@rm -rf $(BUILDDIR)/*
 	@rm -rf html
+	@rm -rf xml
+	@rm -rf latex
 
 htmldocs: doxy html
 html:
