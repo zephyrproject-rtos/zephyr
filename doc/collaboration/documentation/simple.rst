@@ -183,10 +183,10 @@ Examples:
 **We released version 2.0 in June.**
 
 .. note::
-	Sometimes it is okay to use passive voice. For example, you may
-    use passive voice to avoid gender-specific pronouns, to avoid
-    blaming someone, or to address situations where the subject, who
-    did the action, is unknown or irrelevant.
+   Sometimes it is okay to use passive voice. For example, you may
+   use passive voice to avoid gender-specific pronouns, to avoid
+   blaming someone, or to address situations where the subject, who
+   did the action, is unknown or irrelevant.
 
 Noun phrases
 ************
@@ -293,8 +293,7 @@ If a user needs to update his account...
 
 In traditional English usage, it is acceptable to use the masculine
 pronoun set (he) when the gender is neutral or indeterminate.
- This is often the rule in romance languages
-and other languages.
+This is often the rule in romance languages and other languages.
 
 **Preferred**
 

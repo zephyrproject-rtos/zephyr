@@ -47,14 +47,14 @@ Do not use labels like these:
 
    .. _building:
 
-This is an internal reference to the beginning of :ref:`rest_guideline`.
+This is an internal reference to the beginning of :ref:`restructured`.
 
 Observe that the ``:ref:`` markup is replaced with the title's text.
 Similarly, it will be replaced with the figure's caption. If a different
 text is needed the ``:ref:`` markup can still be used.
 
 This is an internal reference to the beginning of
-:ref:`this module <rest_guideline>`.
+:ref:`this module <restructured>`.
 
 Use the following templates to insert internal cross references properly.
 
@@ -110,7 +110,7 @@ reference to a documented code element.
 
 .. caution::
    References to in-code documentation only work if the element has been
-   documented in the code following the :ref:`code_documentation_guidelines`.
+   documented in the code following the :ref:`contributing_code`.
 
 External References
 ===================
@@ -135,12 +135,12 @@ While both methods are accpeted, hyperlinks with a separated target
 definition are preferred. Follow these guidelines when inserting hyperlinks:
 
 * The labels for hyperlinks must be grammatically correct and unique within
-the module.
+  the module.
 
 * Do not create labels for hyperlinks using: link, here, this, there, etc.
 
 * Add all target definitions at the end of the section containing the
-hyperlinks.
+  hyperlinks.
 
 Use this template to add a hyperlink with a separated definition:
 

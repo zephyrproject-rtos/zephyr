@@ -64,7 +64,7 @@ to the @def on line 2.
 
 Incorrect:
 
-.. literalinclude:: ../../samples/microkernel/apps/philosophers/src/phil.h
+.. literalinclude:: ../../../../samples/microkernel/apps/philosophers/src/phil.h
    :language: c
    :lines: 42-47
    :emphasize-lines: 2, 5

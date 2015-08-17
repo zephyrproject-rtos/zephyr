@@ -26,10 +26,10 @@ development platform and for kernel developers looking to modify or
 expand the kernel functionality.
 
 .. toctree::
-   :maxdepth:2
+   :maxdepth: 2
 
    kbuild_kconfig
    kbuild_makefiles
-   kbuild_projects
+   kbuild_project
    kbuild_targets
    kbuild_toolchains

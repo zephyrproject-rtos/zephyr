@@ -17,7 +17,7 @@ Scope
 
 This guide includes the following:
 
-:ref:`basic`
+:ref:`basic_writing`
 
 Covers the basic issues of writing styles, including general writing
 guidelines and specific guidelines for step-by-step procedures.
@@ -25,7 +25,7 @@ guidelines and specific guidelines for step-by-step procedures.
 :ref:`detailed`
 
 Offers specific examples of all guidelines included in the
-:ref:`basic`. Additionally, it contains the guidelines for
+:ref:`basic_writing`. Additionally, it contains the guidelines for
 module-based writing.
 
 :ref:`language`
@@ -38,7 +38,7 @@ capitalization, and various rules about writing technical documents.
 Specifically addresses writing standards and syntax with regard to
 Restructuredtext.
 
-:ref:`about`
+:ref:`about_docs_style`
 
 Contains all the information regarding the guidelines above including the references used, the
 intended audience and the methodology employed.

@@ -73,7 +73,7 @@ Example 1
 
 Take the very simple function :c:func:`taskA()`:
 
-.. literalinclude:: ../../samples/microkernel/apps/hello_world/src/hello.c
+.. literalinclude:: ../../../../samples/microkernel/apps/hello_world/src/hello.c
    :language: c
    :lines: 77-85
    :emphasize-lines: 3, 6
@@ -99,7 +99,7 @@ Example 2
 =========
 Take the more complex function hello_loop():
 
-.. literalinclude:: ../../samples/microkernel/apps/hello_world/src/hello.c
+.. literalinclude:: ../../../../samples/microkernel/apps/hello_world/src/hello.c
    :language: c
    :lines: 56-76
    :emphasize-lines: 1, 3-5, 7, 8, 13, 16
@@ -122,7 +122,7 @@ Lines 13 and 16 contain two comments that won't be included by Doxygen
 in the documentation. Use the brief description or the detailed
 description inside the comment block to include that information.
 Remember that variables have to be documented separately. See
-:ref:`Variable Documentation` for more details.
+:ref:`variable_documentation` for more details.
 
 .. literalinclude:: hello_commented.c
    :language: c

@@ -41,10 +41,10 @@ refer to these groups as writers and authors.
 Methodology
 ***********
 
-The :ref:`style` contains exceptions to the other style guides. It also
+The :ref:`documentation` contains exceptions to the other style guides. It also
 contains additional material not found in those sources.
 
-To research a style question, look in the :ref:`style` first. If the
+To research a style question, look in the :ref:`documentation` first. If the
 question is not answered there, send your question to the
 `mailing list`_. For hyphenation, spelling, or terminology usage
 questions look in the Merriam-Webster's Collegiate Dictionary.
@@ -74,7 +74,7 @@ do we always agree with these sources. In areas where there is
 disagreement, the decisions made may be explained within the respective
 section.
 
-The :ref:`style` takes precedence over all other style guides in all
+The :ref:`documentation` takes precedence over all other style guides in all
 cases. In cases where the guide does not address the issue at hand the
 issue must be reported to the `mailing list`_.
 

@@ -38,7 +38,7 @@ modularization is still a work in progress and new content must be
 structured following this guidelines.
 
 .. note::
-   The guidelines presented in :ref:`generalWriting` still apply to
+   The guidelines presented in :ref:`basic_writing` still apply to
    modular writing, except where specifically noted to the contrary.
 
 Module Types
@@ -153,8 +153,7 @@ modules, including modules for page-level help and command-line options:
   with a third-person present-tense verb, as in Specifies...,
   Defines..., Creates....
 
-* Use "See :ref:`cross-references`" for cross-references to supporting
-  tasks and concepts.
+* Use "See :ref:`cross`" for cross-references to supporting tasks and concepts.
 
 Module Structure
 ****************

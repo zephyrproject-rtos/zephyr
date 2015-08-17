@@ -16,10 +16,10 @@ before you embark on creating a table. Follow these general guidelines:
 * Keep the 72-78 characters line length in mind.
 
 * Indent the contents correctly. This allows the content to be read even if
-it is not rendered.
+  it is not rendered.
 
 * Only create a table if the body of the table is larger than 6, that means
-either 2x3 or 3x2.
+  either 2x3 or 3x2.
 
 
 

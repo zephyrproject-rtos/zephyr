@@ -9,16 +9,16 @@ written directly in the documentation or included from a source file.
 Use these guidelines to insert code blocks to your documentation:
 
 * Include code examples from a source file . Only write the code
-example directly into the documentation if the example is less than 10
-lines long or not part of the code base of |codename|.
+  example directly into the documentation if the example is less than 10
+  lines long or not part of the code base of |codename|.
 
 * Use the ``:lineos:`` option of the directives to add line numbers to
-your example if it is larger than 12 lines.
+  your example if it is larger than 12 lines.
 
 * Specify the programing language of your example. Not only will it
-add syntax highlighting but it also allows the reader to identify code
-efficiently. Use bash for console commands, asm for assembly code and
-c for C code.
+  add syntax highlighting but it also allows the reader to identify code
+  efficiently. Use bash for console commands, asm for assembly code and
+  c for C code.
 
 * Treat all console commands that a user must use as code examples.
 
@@ -31,7 +31,7 @@ renumbered and the 7th, 11th and 13th lines are highlighted.
 
 .. code-block:: rst
 
-   .. literalinclude:: ../doxygen/hello_commented.c
+   .. literalinclude:: ../code/doxygen/hello_commented.c
       :language: c
       :lines: 97-110
       :emphasize-lines: 7, 11, 13
@@ -39,7 +39,7 @@ renumbered and the 7th, 11th and 13th lines are highlighted.
 
 Renders as:
 
-.. literalinclude:: ../doxygen/hello_commented.c
+.. literalinclude:: ../code/doxygen/hello_commented.c
    :language: c
    :lines: 97-110
    :emphasize-lines: 7, 11, 13

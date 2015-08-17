@@ -47,7 +47,7 @@ separates each group of variable and comment.
 
 Incorrect:
 
-.. literalinclude:: ../../samples/include/irq_test_common.h
+.. literalinclude:: ../../../../samples/include/irq_test_common.h
    :language: c
    :lines: 112-115
    :emphasize-lines: 1

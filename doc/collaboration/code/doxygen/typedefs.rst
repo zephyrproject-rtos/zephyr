@@ -43,7 +43,7 @@ appropriately.
 
 Incorrect:
 
-.. literalinclude:: ../../samples/include/irq_test_common.h
+.. literalinclude:: ../../../../samples/include/irq_test_common.h
    :language: c
    :lines: 67-72
    :emphasize-lines: 3, 4

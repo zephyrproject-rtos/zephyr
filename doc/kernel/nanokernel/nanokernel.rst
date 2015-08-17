@@ -16,3 +16,4 @@ applications and nanokernel applications.
    nanokernel_synchronization
    nanokernel_data
    nanokernel_interrupts
+   nanokernel_example

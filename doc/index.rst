@@ -6,28 +6,21 @@
 
 .. include:: disclaimers.rst
 
+The Zephyr Kernel Documentation
+###############################
+
 .. toctree::
    :maxdepth: 2
 
-   quick_start/quick_start.rst
-   kernel/kernel.rst
-   application/application.rst
-   platform/platform.rst
+   quick_start/quick_start
+   kernel/kernel
+   application/application
+   platform/platform
    collaboration/collaboration
+   reference/reference
 
-Reference Guides
-################
-
-.. toctree::
-   :maxdepth: 1
-
-   reference/api.rst
-   reference/configuration.rst
-   reference/kbuild.rst
-
-
-Indices and tables
-##################
+Indexes and Tables
+******************
 
 * :ref:`genindex`
 

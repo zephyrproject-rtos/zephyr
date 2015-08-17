@@ -8,7 +8,7 @@ applies for developers that are new to open source as well as for
 experienced open source developers.
 
 Change Requirements
-******************
+*******************
 
 Here you can find the required format and content for changes. For more
 information on how to submit a change using Gerrit please refer to
@@ -28,7 +28,7 @@ example, which tests you ran.
 Commits must build cleanly when applied in top of each other, thus
 avoiding breaking bisectability. Commits must pass the
 :file:`scripts/checkpatch.pl` requirements. For more details see the
-:ref:`style` section. Each commit must address a single identifiable
+:ref:`coding_style` section. Each commit must address a single identifiable
 issue and must be logically self contained.
 
 For example: One commit fixes whitespace issues, another renames a

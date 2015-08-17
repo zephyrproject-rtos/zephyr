@@ -70,16 +70,14 @@ It is acceptable to refer to these items generically by using
 lowercase letters if it is clear that your reference is generic and
 not a specific name of a window or field on a menu, for example:
 
-* Click :guilabel:`Edit` to display the
-  :guilabel:`Widget Configuration ` window.
+Click :guilabel:`Edit` to display the :guilabel:`Widget Configuration` window.
 
-* The widget configuration window has several advanced widget
-  configuration options.
+The widget configuration window has several advanced widget configuration options.
 
-This second bullet could have capitalized the term "Widget
+The second sentence could have capitalized the term "Widget
 Configuration window"; but there are times when you might want to
 refer to something with a generic descriptor and not its name. Observe
-the use of the |ReST| markup ``:guilabel:`` on the first bullet.
+the use of the ReST markup ``:guilabel:`` on the first sentence.
 
 A few other menu capitalization rules to keep in mind:
 
@@ -297,8 +295,8 @@ WidgetPro's an awesome product.
 
 Hyphenation
 ***********
-The hyphen is often used to join words together to form a compound noun
-. Compoundnouns often go through this progressions:
+The hyphen is often used to join words together to form a compound noun.
+Compound nouns often go through this progressions:
 
 * open compound: health care
 * hyphenated compound: health-care
@@ -357,7 +355,7 @@ In general, do not hyphenate suffixes. Here are some examples.
 The suffix -wide is usually not hyphenated:
 
 * Nationwide, worldwide, systemwide, campuswide, statewide,
-companywide, etc.
+  companywide, etc.
 
 The suffix -wise is usually not hyphenated:
 
@@ -423,7 +421,7 @@ Idaho; and Eugene, Oregon.
 Colons ":"
 ==========
 
- If the text following a colon is a sentence, capitalize the
+If the text following a colon is a sentence, capitalize the
 first word after the colon. If the subsequent text is not a sentence,
 do not capitalize the first term unless it is a title. For example:
 

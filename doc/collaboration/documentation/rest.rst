@@ -27,8 +27,8 @@ templates are supplied.
    tables
    cross
    images
-   code
+   code_blocks
 
 
 .. _Sphinx documentation:
-http://sphinx-doc.org/contents.html
+   http://sphinx-doc.org/contents.html
