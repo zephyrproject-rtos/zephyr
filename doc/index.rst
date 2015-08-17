@@ -6,25 +6,14 @@
 
 .. include:: disclaimers.rst
 
-Getting Started
-###############
-
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   about_zephyr.rst
-   kernel/kernel.rst
    quick_start/quick_start.rst
-
-Developer Guides
-################
-
-.. toctree::
-   :maxdepth: 1
-
+   kernel/kernel.rst
    application/application.rst
    platform/platform.rst
-   zephyr_project
+   collaboration/collaboration
 
 Reference Guides
 ################

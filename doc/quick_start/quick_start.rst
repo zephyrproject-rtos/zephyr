@@ -25,6 +25,7 @@ appear.
 .. toctree::
    :maxdepth: 2
 
+   about_zephyr.rst
    installing.rst
    building.rst
    running.rst
