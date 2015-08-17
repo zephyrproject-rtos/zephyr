@@ -41,6 +41,9 @@ architecture.
 #include <toolchain.h>
 #include <nano_private.h>
 #include <wait_q.h>
+#ifdef CONFIG_INIT_STACKS
+#include <string.h>
+#endif /* CONFIG_INIT_STACKS */
 
 tNANO _nanokernel = {0};
 
@@ -118,7 +121,7 @@ void _NewContext(
 	tCCS *pCcs = (tCCS *) pStackMem;
 
 #ifdef CONFIG_INIT_STACKS
-    k_memset(pStackMem, 0xaa, stackSize);
+	memset(pStackMem, 0xaa, stackSize);
 #endif
 
 	/* carve the context entry struct from the "base" of the stack */

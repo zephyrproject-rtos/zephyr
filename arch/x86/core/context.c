@@ -40,12 +40,14 @@ processor architecture.
 #include <microkernel.h>
 #include <micro_private_types.h>
 #endif /* CONFIG_MICROKERNEL */
+#ifdef CONFIG_INIT_STACKS
+#include <string.h>
+#endif /* CONFIG_INIT_STACKS */
 
 #include <toolchain.h>
 #include <sections.h>
 #include <nano_private.h>
 #include <wait_q.h>
-
 
 /* the one and only nanokernel control structure */
 
@@ -302,7 +304,7 @@ void _NewContext(
 	unsigned long *pInitialContext;
 
 #ifdef CONFIG_INIT_STACKS
-    k_memset(pStackMem, 0xaa, stackSize);
+	memset(pStackMem, 0xaa, stackSize);
 #endif
 
 	/* carve the context entry struct from the "base" of the stack */

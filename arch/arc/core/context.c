@@ -42,7 +42,9 @@
 #include <nano_private.h>
 #include <offsets.h>
 #include <wait_q.h>
-
+#ifdef CONFIG_INIT_STACKS
+#include <string.h>
+#endif /* CONFIG_INIT_STACKS */
 /*  initial stack frame */
 struct init_stack_frame {
 	uint32_t pc;
@@ -125,7 +127,7 @@ void _NewContext(
 	tCCS *pCcs = (tCCS *) pStackMem;
 
 #ifdef CONFIG_INIT_STACKS
-    k_memset(pStackMem, 0xaa, stackSize);
+	memset(pStackMem, 0xaa, stackSize);
 #endif
 
 	/* carve the context entry struct from the "base" of the stack */
