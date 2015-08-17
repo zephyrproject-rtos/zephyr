@@ -491,6 +491,20 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	return smp_request_tk(conn, req->io_capability);
 }
 
+static bool sec_level_reachable(struct bt_conn *conn)
+{
+	switch (conn->required_sec_level) {
+	case BT_SECURITY_LOW:
+	case BT_SECURITY_MEDIUM:
+		return true;
+	case BT_SECURITY_HIGH:
+		return bt_smp_io_capa != BT_SMP_IO_NO_INPUT_OUTPUT;
+	case BT_SECURITY_FIPS:
+	default:
+		return false;
+	}
+}
+
 int bt_smp_send_security_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
@@ -498,6 +512,11 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	struct bt_buf *req_buf;
 
 	BT_DBG("\n");
+
+	/* early verify if required sec level if reachable */
+	if (!sec_level_reachable(conn)) {
+		return -EINVAL;
+	}
 
 	req_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SECURITY_REQUEST,
 				    sizeof(*req));
@@ -523,6 +542,11 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	struct bt_buf *req_buf;
 
 	BT_DBG("\n");
+
+	/* early verify if required sec level if reachable */
+	if (!sec_level_reachable(conn)) {
+		return -EINVAL;
+	}
 
 	if (smp_init(smp)) {
 		return -ENOBUFS;
