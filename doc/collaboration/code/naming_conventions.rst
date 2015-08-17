@@ -1,6 +1,6 @@
-.. _code_naming_conventions:
+.. _naming_conventions:
 
-Code_Naming_Conventions
+Code Naming Conventions
 #######################
 
 

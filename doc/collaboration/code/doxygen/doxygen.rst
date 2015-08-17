@@ -1,28 +1,59 @@
-The In-Code Documentation Generation Process
-############################################
+.. _in-code:
 
-This is the documentation automatically extracted from the code. Doxygen
-generates a huge XML tree in :file:`../xml` that the :program:`Breathe`
+In-Code Documentation
+#####################
+
+The in-code documentation is automatically extracted from the code. Doxygen
+generates a huge XML tree in :file:`../../../xml` that the :program:`Breathe`
 extension imports into Sphinx.
 
-It is so huge though, that, when the full thing is put in, it can take
-ten minutes and plenty of memory to run. For now, it only includes the
-files in :file:`include/microkernel` and :file:`kernel/common`; other
-folders can be added as needed.
+The Doxygen pass is independent of the Sphinx pass. Using Breathe to link them together, we can
+reference the code in the documentation and vice-versa. For example, :cpp:type:`K_COMM` and
+:cpp:class:`k_timer` have been modified to have additional information.
 
-The Doxygen pass is independent of the Sphinx pass, but the interesting
-part of linking them toghether is that using Breathe, we can reference
-the code in the documentation and viceversa.
+.. _doxygen_guides:
 
-For example, :cpp:type:`K_COMM`. :cpp:class:`k_timer` has been modified
-to have more stuff, visit it's documentation.
+In-Code Documentation Guides
+****************************
 
-This would be an example of referencing function :c:func:`__k_memcpy_s()`.
+Follow these guides to document your code using comments. The |project|
+follows the Javadoc Doxygen comments style. We provide examples on how to
+comment different parts of the code. Files, functions, defines, structures,
+variables and type definitions must be documented.
 
-The guidelines for in-code documentation can be found in the collaboration
-guidelines available here:
+We have grouped the guides according to the object that is being
+documented. Read sections carefully since each object provides further
+details as to how to document the code as a whole.
+
+These simple rules apply to all the code that you wish to include in
+the documentation:
+
+#. Start and end a comment block with :literal:`/**` and :literal:`*/`
+
+#. Start each line of the comment with :literal:` * `
+
+#. Use \@ for all Doxygen special commands.
+
+#. Files, functions, defines, structures, variables and type
+   definitions must have a brief description.
+
+#. All comments must start with a capital letter and end in a period.
+   Even if the comment is a sentence fragment.
+
+.. note::
+
+   Always use :literal:`/**` This is a comment. :literal:`*/` if that
+   comment should become part of the documentation.
+   Use :literal:`/*` This comment won't appear in the documentation :
+   literal:`*/` for comments that you want in the code but not in the
+   documentation.
 
 .. toctree::
    :maxdepth: 2
 
-   doxygen_guidelines.rst
+   files.rst
+   functions.rst
+   variables.rst
+   defines.rst
+   structs.rst
+   typedefs.rst

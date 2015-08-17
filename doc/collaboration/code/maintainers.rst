@@ -1,3 +1,5 @@
+.. _maintainers:
+
 Information Regarding Maintainers
 #################################
 
