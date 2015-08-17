@@ -231,7 +231,7 @@ struct _pipe_xfer_ack_arg {
 /* COMMAND PACKET STRUCTURES */
 
 typedef union {
-	ktask_t task;
+	ktask_t task_id;
 	struct k_task *proc;
 	struct k_args *args;
 } K_CREF;
