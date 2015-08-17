@@ -126,6 +126,26 @@ static int xtoi(const char *str)
 	return val;
 }
 
+static int atoi(const char *str)
+{
+	int val = 0;
+
+	if (strlen(str) > 2 && str[0] == '0' && str[1] == 'x') {
+		return xtoi(str + 2);
+	}
+
+	for (; *str != '\0'; str++) {
+		val *= 10;
+		if (*str >= '0' && *str <= '9') {
+			val += *str - '0';
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	return val;
+}
+
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int i, j;
@@ -726,6 +746,15 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 	printk("Passkey for %s: %u\n", addr, passkey);
 }
 
+static void auth_passkey_entry(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Enter passkey for %s\n", addr);
+}
+
 static void auth_cancel(struct bt_conn *conn)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -735,25 +764,75 @@ static void auth_cancel(struct bt_conn *conn)
 	printk("Pairing cancelled: %s\n", addr);
 }
 
-static struct bt_auth_cb auth_cb = {
+static struct bt_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
+	.passkey_entry = NULL,
 	.cancel = auth_cancel,
 };
 
-static void cmd_authentication(int argc, char *argv[])
+static struct bt_auth_cb auth_cb_input = {
+	.passkey_display = NULL,
+	.passkey_entry = auth_passkey_entry,
+	.cancel = auth_cancel,
+};
+
+static struct bt_auth_cb auth_cb_all = {
+	.passkey_display = auth_passkey_display,
+	.passkey_entry = auth_passkey_entry,
+	.cancel = auth_cancel,
+};
+
+static void cmd_auth(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("authentication [on/off] parameter required\n");
+		printk("auth [display, input, all, none] parameter required\n");
 		return;
 	}
 
-	if (!strncmp(argv[1], "on", strlen("on"))) {
-		bt_auth_cb_register(&auth_cb);
-	} else if (!strncmp(argv[1], "off", strlen("off"))) {
+	if (!strncmp(argv[1], "all", strlen("all"))) {
+		bt_auth_cb_register(&auth_cb_all);
+	} else if (!strncmp(argv[1], "input", strlen("input"))) {
+		bt_auth_cb_register(&auth_cb_input);
+	} else if (!strncmp(argv[1], "display", strlen("display"))) {
+		bt_auth_cb_register(&auth_cb_display);
+	} else if (!strncmp(argv[1], "none", strlen("none"))) {
 		bt_auth_cb_register(NULL);
 	} else {
-		printk("authentication [on/off] parameter required\n");
+		printk("auth [display, input, all, none] parameter required\n");
 	}
+}
+
+static void cmd_auth_cancel(int argc, char *argv[])
+{
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	bt_auth_cancel(default_conn);
+}
+
+static void cmd_auth_passkey(int argc, char *argv[])
+{
+	unsigned int passkey;
+
+	if (!default_conn) {
+		printk("Not connected\n");
+		return;
+	}
+
+	if (argc < 2) {
+		printk("passkey required\n");
+		return;
+	}
+
+	passkey = atoi(argv[1]);
+	if (passkey > 999999) {
+		printk("Passkey should be between 0-999999\n");
+		return;
+	}
+
+	bt_auth_passkey_entry(default_conn, passkey);
 }
 
 #ifdef CONFIG_MICROKERNEL
@@ -773,7 +852,9 @@ void main(void)
 	shell_cmd_register("scan", cmd_scan);
 	shell_cmd_register("advertise", cmd_advertise);
 	shell_cmd_register("security", cmd_security);
-	shell_cmd_register("authentication", cmd_authentication);
+	shell_cmd_register("auth", cmd_auth);
+	shell_cmd_register("auth-cancel", cmd_auth_cancel);
+	shell_cmd_register("auth-passkey", cmd_auth_passkey);
 	shell_cmd_register("gatt-exchange-mtu", cmd_gatt_exchange_mtu);
 	shell_cmd_register("gatt-discover", cmd_gatt_discover);
 	shell_cmd_register("gatt-discover-characteristic", cmd_gatt_discover);
