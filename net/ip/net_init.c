@@ -166,10 +166,6 @@ int net_send(struct net_buf *buf)
 	return 0;
 }
 
-#define UIP_IP_BUF(buf)   ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
-#define UIP_UDP_BUF(buf)  \
-	((struct uip_udp_hdr *)&uip_buf(buf)[UIP_LLH_LEN + UIP_IPH_LEN])
-
 /* Switch the ports and addresses and set route and neighbor cache.
  * Returns 1 if packet was sent properly, in this case it is the caller
  * that needs to release the net_buf. If 0 is returned, then uIP stack
@@ -197,27 +193,27 @@ static inline int udp_prepare_and_send(struct net_context *context,
 			net_buf_datalen(buf);
 	}
 
-	port = UIP_UDP_BUF(buf)->srcport;
-	UIP_UDP_BUF(buf)->srcport = UIP_UDP_BUF(buf)->destport;
-	UIP_UDP_BUF(buf)->destport = port;
+	port = NET_BUF_UDP(buf)->srcport;
+	NET_BUF_UDP(buf)->srcport = NET_BUF_UDP(buf)->destport;
+	NET_BUF_UDP(buf)->destport = port;
 
-	uip_ipaddr_copy(&tmp, &UIP_IP_BUF(buf)->srcipaddr);
-	uip_ipaddr_copy(&UIP_IP_BUF(buf)->srcipaddr,
-			&UIP_IP_BUF(buf)->destipaddr);
-	uip_ipaddr_copy(&UIP_IP_BUF(buf)->destipaddr, &tmp);
+	uip_ipaddr_copy(&tmp, &NET_BUF_IP(buf)->srcipaddr);
+	uip_ipaddr_copy(&NET_BUF_IP(buf)->srcipaddr,
+			&NET_BUF_IP(buf)->destipaddr);
+	uip_ipaddr_copy(&NET_BUF_IP(buf)->destipaddr, &tmp);
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 	/* The peer needs to be in neighbor cache before route can be added.
 	 */
-	nbr = uip_ds6_nbr_lookup((uip_ipaddr_t *)&UIP_IP_BUF(buf)->destipaddr);
+	nbr = uip_ds6_nbr_lookup((uip_ipaddr_t *)&NET_BUF_IP(buf)->destipaddr);
 	if (!nbr) {
 		const uip_lladdr_t *lladdr = (const uip_lladdr_t *)&buf->src;
 		nbr = uip_ds6_nbr_add(
-			(uip_ipaddr_t *)&UIP_IP_BUF(buf)->destipaddr,
+			(uip_ipaddr_t *)&NET_BUF_IP(buf)->destipaddr,
 			lladdr, 0, NBR_REACHABLE);
 		if (!nbr) {
 			NET_DBG("Cannot add peer ");
-			PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
+			PRINT6ADDR(&NET_BUF_IP(buf)->destipaddr);
 			PRINT(" to neighbor cache\n");
 		}
 	}
@@ -227,14 +223,14 @@ static inline int udp_prepare_and_send(struct net_context *context,
 	 * route and do not remove it if there was existing
 	 * route to this peer.
 	 */
-	route_old = uip_ds6_route_lookup(&UIP_IP_BUF(buf)->destipaddr);
+	route_old = uip_ds6_route_lookup(&NET_BUF_IP(buf)->destipaddr);
 	if (!route_old) {
-		route_new = uip_ds6_route_add(&UIP_IP_BUF(buf)->destipaddr,
+		route_new = uip_ds6_route_add(&NET_BUF_IP(buf)->destipaddr,
 					      128,
-					      &UIP_IP_BUF(buf)->destipaddr);
+					      &NET_BUF_IP(buf)->destipaddr);
 		if (!route_new) {
 			NET_DBG("Cannot add route to peer ");
-			PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
+			PRINT6ADDR(&NET_BUF_IP(buf)->destipaddr);
 			PRINT("\n");
 		}
 	}
@@ -243,8 +239,8 @@ static inline int udp_prepare_and_send(struct net_context *context,
 	ret = simple_udp_sendto_port(buf,
 				     net_context_get_udp_connection(context),
 				     buf->data, buf->len,
-				     &UIP_IP_BUF(buf)->destipaddr,
-				     uip_ntohs(UIP_UDP_BUF(buf)->destport));
+				     &NET_BUF_IP(buf)->destipaddr,
+				     uip_ntohs(NET_BUF_UDP(buf)->destport));
 	if (!ret) {
 		NET_DBG("Packet could not be sent properly.\n");
 	}
