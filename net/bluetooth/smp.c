@@ -54,6 +54,13 @@
 #define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
 #define SEND_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
 
+enum pairing_method {
+	JUST_WORKS,		/* JustWorks pairing */
+	PASSKEY_INPUT,		/* Passkey Entry input */
+	PASSKEY_DISPLAY,	/* Passkey Entry display */
+	PASSKEY_ROLE,		/* Passkey Entry depends on role */
+} ;
+
 /* SMP channel specific context */
 struct bt_smp {
 	/* The connection this context is associated with */
@@ -64,6 +71,9 @@ struct bt_smp {
 
 	/* If we're waiting for an encryption change event */
 	bool			pending_encrypt;
+
+	/* Type of method used for pairing */
+	uint8_t			method;
 
 	/* Pairing Request PDU */
 	uint8_t			preq[7];
@@ -90,9 +100,43 @@ struct bt_smp {
 	uint8_t			remote_dist;
 };
 
+/* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
+static const uint8_t gen_method[5 /* remote */][5 /* local */] = {
+	{ JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS, PASSKEY_INPUT },
+	{ JUST_WORKS, JUST_WORKS, PASSKEY_INPUT, JUST_WORKS, PASSKEY_INPUT },
+	{ PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS,
+	  PASSKEY_INPUT },
+	{ JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS, JUST_WORKS },
+	{ PASSKEY_DISPLAY, PASSKEY_DISPLAY, PASSKEY_INPUT, JUST_WORKS,
+	  PASSKEY_ROLE },
+};
+
 static struct bt_smp bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 static const struct bt_auth_cb *auth_cb;
 static uint8_t bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
+
+static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
+{
+	uint8_t method;
+
+	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY)
+		return JUST_WORKS;
+
+	method = gen_method[remote_io][bt_smp_io_capa];
+
+	/* if both sides have KeyboardDisplay capabilities, initiator displays
+	 * and responder inputs
+	 */
+	if (method == PASSKEY_ROLE) {
+		if (smp->conn->role == BT_HCI_ROLE_MASTER) {
+			method = PASSKEY_DISPLAY;
+		} else {
+			method = PASSKEY_INPUT;
+		}
+	}
+
+	return method;
+}
 
 #if defined(CONFIG_BLUETOOTH_DEBUG_SMP)
 /* Helper for printk parameters to convert from binary to hex.
@@ -356,31 +400,32 @@ static uint8_t get_auth(uint8_t auth)
 static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 {
 	struct bt_smp *smp = conn->smp;
+	uint32_t passkey;
 
-	/* TODO for now keep it simple, should be refactored (eg with lookup
-	 * table) when more capabilities options will be supported
-	 */
+	smp->method = get_pair_method(smp, remote_io);
 
-	switch (bt_smp_io_capa) {
-	case BT_SMP_IO_DISPLAY_ONLY:
-		if (remote_io == BT_SMP_IO_KEYBOARD_DISPLAY ||
-		    remote_io == BT_SMP_IO_KEYBOARD_ONLY) {
-			uint32_t passkey;
-
-			if (le_rand(&passkey, sizeof(passkey))) {
-				return BT_SMP_ERR_UNSPECIFIED;
-			}
-
-			passkey %= 1000000;
-
-			auth_cb->passkey_display(conn, passkey);
-
-			passkey = sys_cpu_to_le32(passkey);
-			memcpy(smp->tk, &passkey, sizeof(passkey));
+	switch (smp->method) {
+	case PASSKEY_DISPLAY:
+		if (le_rand(&passkey, sizeof(passkey))) {
+			return BT_SMP_ERR_UNSPECIFIED;
 		}
+
+		passkey %= 1000000;
+
+		auth_cb->passkey_display(conn, passkey);
+
+		passkey = sys_cpu_to_le32(passkey);
+		memcpy(smp->tk, &passkey, sizeof(passkey));
+
+		break;
+	case PASSKEY_INPUT:
+		/* TODO add support for input passkey entry*/
+		return BT_SMP_ERR_UNSPECIFIED;
+	case JUST_WORKS:
 		break;
 	default:
-		break;
+		BT_ERR("Unknown pairing method (%u)\n", smp->method);
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	return 0;
@@ -686,6 +731,7 @@ static void smp_reset(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
 
+	smp->method = JUST_WORKS;
 	atomic_set(&smp->allowed_cmds, 0);
 
 	if (conn->role == BT_HCI_ROLE_MASTER) {
