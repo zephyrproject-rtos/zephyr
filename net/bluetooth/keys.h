@@ -42,7 +42,13 @@ enum {
 				  BT_KEYS_REMOTE_CSRK),
 };
 
+enum {
+	BT_KEYS_UNAUTHENTICATED,
+	BT_KEYS_AUTHENTICATED,
+};
+
 struct bt_ltk {
+	uint8_t			type;
 	uint64_t		rand;
 	uint16_t		ediv;
 	uint8_t			val[16];
@@ -56,6 +62,7 @@ struct bt_irk {
 };
 
 struct bt_csrk {
+	uint8_t			type;
 	uint8_t			val[16];
 	uint32_t		cnt;
 	struct bt_keys		*next;

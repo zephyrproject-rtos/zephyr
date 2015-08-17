@@ -673,6 +673,18 @@ static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static uint8_t get_keys_type(uint8_t method)
+{
+	switch (method) {
+	case PASSKEY_DISPLAY:
+	case PASSKEY_INPUT:
+		return BT_KEYS_AUTHENTICATED;
+	case JUST_WORKS:
+	default:
+		return BT_KEYS_UNAUTHENTICATED;
+	}
+}
+
 static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_random *req = (void *)buf->data;
@@ -736,6 +748,8 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		bt_keys_clear(keys, BT_KEYS_SLAVE_LTK);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
+
+	keys->slave_ltk.type = get_keys_type(smp->method);
 
 	/* Rand and EDiv are 0 for the STK */
 	keys->slave_ltk.rand = 0;
@@ -822,6 +836,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		le_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
 		le_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
 		le_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
+		keys->slave_ltk.type = get_keys_type(smp->method);
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
 					sizeof(*info));
@@ -856,6 +871,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 
 		le_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
 		keys->local_csrk.cnt = 0;
+		keys->local_csrk.type = get_keys_type(smp->method);
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
 					sizeof(*info));
@@ -887,6 +903,7 @@ static uint8_t smp_encrypt_info(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	memcpy(keys->ltk.val, req->ltk, 16);
+	keys->ltk.type = get_keys_type(smp->method);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
 
@@ -1012,6 +1029,7 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	memcpy(keys->remote_csrk.val, req->csrk, sizeof(keys->remote_csrk.val));
+	keys->remote_csrk.type = get_keys_type(smp->method);
 
 	if (conn->role == BT_HCI_ROLE_MASTER) {
 		smp->remote_dist &= ~BT_SMP_DIST_SIGN;
