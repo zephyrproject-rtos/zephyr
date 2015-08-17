@@ -61,6 +61,11 @@ enum pairing_method {
 	PASSKEY_ROLE,		/* Passkey Entry depends on role */
 } ;
 
+enum {
+	SMP_FLAG_TK_VALID,	/* if TK values is valid */
+	SMP_FLAG_CFM_DELAYED,	/* if confirm should be send when TK is valid */
+};
+
 /* SMP channel specific context */
 struct bt_smp {
 	/* The connection this context is associated with */
@@ -71,6 +76,9 @@ struct bt_smp {
 
 	/* If we're waiting for an encryption change event */
 	bool			pending_encrypt;
+
+	/* Flags for SMP state machine */
+	atomic_t		flags;
 
 	/* Type of method used for pairing */
 	uint8_t			method;
@@ -416,12 +424,14 @@ static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 
 		passkey = sys_cpu_to_le32(passkey);
 		memcpy(smp->tk, &passkey, sizeof(passkey));
+		atomic_set_bit(&smp->flags, SMP_FLAG_TK_VALID);
 
 		break;
 	case PASSKEY_INPUT:
 		auth_cb->passkey_entry(conn);
 		break;
 	case JUST_WORKS:
+		atomic_set_bit(&smp->flags, SMP_FLAG_TK_VALID);
 		break;
 	default:
 		BT_ERR("Unknown pairing method (%u)\n", smp->method);
@@ -579,6 +589,8 @@ static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
 
+	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+
 	return 0;
 }
 
@@ -602,19 +614,19 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
 	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-
 	ret = smp_request_tk(conn, rsp->io_capability);
 	if (ret) {
 		return ret;
 	}
 
-	/* waiting for passkey entry input for TK */
-	if (smp->method == PASSKEY_INPUT) {
-		return 0;
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_TK_VALID)) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+		return smp_send_pairing_confirm(conn);
 	}
 
-	return smp_send_pairing_confirm(conn);
+	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+
+	return 0;
 }
 
 static uint8_t smp_send_pairing_random(struct bt_conn *conn)
@@ -646,13 +658,19 @@ static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 
 	memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		return smp_send_pairing_random(conn);
+	}
 
-	if (conn->role == BT_HCI_ROLE_SLAVE) {
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_TK_VALID)) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_confirm(conn);
 	}
 
-	return smp_send_pairing_random(conn);
+	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+
+	return 0;
 }
 
 static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
@@ -738,6 +756,7 @@ static void smp_reset(struct bt_conn *conn)
 
 	smp->method = JUST_WORKS;
 	atomic_set(&smp->allowed_cmds, 0);
+	atomic_set(&smp->flags, 0);
 
 	if (conn->role == BT_HCI_ROLE_MASTER) {
 		atomic_set_bit(&smp->allowed_cmds,
@@ -1724,9 +1743,14 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 	passkey = sys_cpu_to_le32(passkey);
 	memcpy(smp->tk, &passkey, sizeof(passkey));
+	atomic_set_bit(&smp->flags, SMP_FLAG_TK_VALID);
+
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED)) {
+		return;
+	}
 
 	/* if confirm failed ie. due to invalid passkey, cancel pairing */
-	if (smp_send_pairing_confirm(conn)) {
+	if (smp_send_pairing_confirm(conn) ) {
 		bt_auth_cancel(conn);
 		return;
 	}
