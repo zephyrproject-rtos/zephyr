@@ -55,7 +55,7 @@
 #define FORK(x) forks[x]
 #define TAKE(x) task_mutex_lock_wait(x)
 #define GIVE(x) task_mutex_unlock(x)
-#define RANDDELAY(x) myDelay(((task_node_tick_get_32() * ((x) +1)) & 0x1f) + 1)
+#define RANDDELAY(x) myDelay(((task_tick_get_32() * ((x) +1)) & 0x1f) + 1)
 #endif
 
 #define PRINT(x,y)	myPrint(x,y)
