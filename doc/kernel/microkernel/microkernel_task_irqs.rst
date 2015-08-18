@@ -60,9 +60,9 @@ to specify the number of task IRQs allowed in the project.
 The default value of zero for this option disables task IRQs.
 
 .. note::
-
-Task-level IRQs are microkernel objects, but are *not* configured in a
-project MDEF file.
+   Unlike most other microkernel object types, task-level IRQs are defined
+   as a group using a configuration option, rather than as individual
+   public objects in an .MDEF file or private objects in a source file.
 
 
 Example: Allocating a Task IRQ

@@ -77,26 +77,29 @@ The following parameters must be defined:
    *name*
           This specifies a unique name for the memory pool.
 
-   *minBlockSize*
+   *min_block_size*
           This specifies the minimimum memory block size in bytes.
           It should be a multiple of the processor's word size.
 
-   *maxBlockSize*
+   *max_block_size*
           This specifies the maximum memory block size in bytes.
           It should be a power of 4 times larger than *minBlockSize*;
           therefore, maxBlockSize = minBlockSize * 4^n, where n>=0.
 
-   *numMax*
+   *num_max*
           This specifies the number of maximum size memory blocks
           available at startup.
 
 
-Add an entry for memory pools in the project .MDEF file using the
-following syntax:
+Public Memory Pool
+------------------
+
+Define the memory pool in the application's .MDEF file using the following
+syntax:
 
 .. code-block:: console
 
-   POOL %name %minBlockSize %maxBlockSize %numMax
+   POOL name min_block_size max_block_size num_max
 
 For example, the file :file:`projName.mdef` defines two memory pools
 as follows:
@@ -107,6 +110,12 @@ as follows:
     % =======================================
       POOL MY_POOL         32   8192      1
       POOL SECOND_POOL_ID  64   1024      5
+
+A public memory pool can be referenced from any source file that includes
+the file :file:`zephyr.h`.
+
+.. note::
+   Private memory pools are not supported by the Zephyr kernel.
 
 
 Example: Requesting a Memory Block from a Pool with No Conditions

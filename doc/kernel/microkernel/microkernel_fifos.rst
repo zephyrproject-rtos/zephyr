@@ -42,8 +42,8 @@ addresses of the destination pointer.
 Usage
 *****
 
-Defining a FIFO in MDEF File
-============================
+Defining a FIFO
+===============
 
 The following parameters must be defined:
 
@@ -57,12 +57,14 @@ The following parameters must be defined:
    *width*
           This specifies the size (in bytes) of each data item.
 
-Add an entry for a FIFO in the project .MDEF file using the
-following syntax:
+Public FIFO
+-----------
+
+Define the FIFO in the application's .MDEF file using the following syntax:
 
 .. code-block:: console
 
-   FIFO %name %depth %width
+   FIFO name depth width
 
 For example, the file :file:`projName.mdef` defines a FIFO
 that holds up to 10 items that are each 12 bytes long as follows:
@@ -73,32 +75,30 @@ that holds up to 10 items that are each 12 bytes long as follows:
    % =============================
      FIFO SIGNAL_FIFO   10    12
 
+A public FIFO can be referenced from any source file that includes
+the file :file:`zephyr.h`.
 
-Defining FIFO within the Code
-=============================
 
-In addition to defining FIFOs in MDEF file, it is also possible to
-define FIFOs inside code. The macro ``DEFINE_FIFO(fifo_name)``
-can be used for this purpose.
+Private FIFO
+------------
 
-For example, the following code can be used to define a global FIFO
-``PRIV_FIFO``.
+Define the FIFO in a source file using the following syntax:
 
 .. code-block:: c
 
-   DEFINE_FIFO(PRIV_FIFO, depth, width);
+   DEFINE_FIFO(fifo_name, depth, width)
 
-The FIFO ``PRIV_FIFO`` can be used in the same style as those FIFOs
-defined in MDEF file.
+For example, the following code defines a private FIFO named ``PRIV_FIFO``.
 
-It is possible to utilize this FIFO in another source file, simply
-add:
+.. code-block:: c
+
+   DEFINE_FIFO(PRIV_FIFO, 10, 12);
+
+To utilize this FIFO from a different source file use the following syntax:
 
 .. code-block:: c
 
    extern const kfifo_t PRIV_FIFO;
-
-to that file. The FIFO ``PRIV_FIFO`` can be then used there.
 
 
 Example: Writing to a FIFO

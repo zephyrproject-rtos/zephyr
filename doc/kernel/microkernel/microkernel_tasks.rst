@@ -191,11 +191,11 @@ When a task swap occurs, the kernel saves the context of the task
 that is swapped out and restores the context of the task that is
 swapped in.
 
-Defining a Task
-***************
+Usage
+*****
 
-Inside MDEF files
-=================
+Defining a Task
+===============
 
 The following parameters must be defined:
 
@@ -225,17 +225,20 @@ The following parameters must be defined:
           This specifies the size of the task's stack, in bytes.
 
    *groups*
-          This specifies the task groups the task belongs to. It consists
-          of a comma-separated list of task group names enclosed in square
-          brackets, with no embedded spaces. If a task does not belong
-          to any groups an empty list must be specified; i.e. :literal:`[]`.
+          This specifies the task groups the task belongs to.
 
-Add an entry for a task in the project .MDEF file using the
-following syntax:
+Public Task
+-----------
+
+Define the task in the application's .MDEF file using the following syntax:
 
 .. code-block:: console
 
-   TASK %name %priority %entry_point %stack_size %groups
+   TASK name priority entry_point stack_size groups
+
+The task groups are specified using a comma-separated list of task group names
+enclosed in square brackets, with no embedded spaces. If the task does not
+belong to any task group specify an empty list; i.e. :literal:`[]`.
 
 For example, the file :file:`projName.mdef` defines a system comprised
 of six tasks as follows:
@@ -251,51 +254,57 @@ of six tasks as follows:
      TASK SPEAKER1_TASK   10   speaker_1_main  1024   [AUDIO_TASKS]
      TASK SPEAKER2_TASK   10   speaker_2_main  1024   [AUDIO_TASKS]
 
+A public task can be referenced from any source file that includes
+the file :file:`zephyr.h`.
 
-Inside Source Code
-==================
 
-In addition to defining tasks in MDEF file, it is also possible to
-define tasks inside code. The macro ``DEFINE_TASK(...)`` can be
-used for this purpose.
+Private Task
+------------
 
-For example, the following code can be used to define a global task
-``PRIV_TASK``.
+Define the task in a source file using the following syntax:
 
 .. code-block:: c
 
    DEFINE_TASK(PRIV_TASK, priority, entry, stack_size, groups);
 
-where the parameters are the same as tasks defined in MDEF file.
-The task ``PRIV_TASK`` can be used in the same style as those
-defined in MDEF file.
+The task groups are specified using a list of task group names separated by
+:literal:`|`; i.e. the logical OR operator. If the task does not belong to any
+task group specify NULL.
 
-It is possible to utilize this task in another source file, simply
-add:
+For example, the following code can be used to define a private task named
+``PRIV_TASK``.
+
+.. code-block:: c
+
+   DEFINE_TASK(PRIV_TASK, 10, priv_task_main, 800, EXE);
+
+To utilize this task from a different source file use the following syntax:
 
 .. code-block:: c
 
    extern const ktask_t PRIV_TASK;
 
-to that file. The task ``PRIV_TASK`` can be then used there.
 
 Defining a Task Group
-*************************
+=====================
 
 The following parameters must be defined:
 
    *name*
           This specifies a unique name for the task group.
 
-Add an entry for a task in the project .MDEF file using the
-following syntax:
+Public Task Group
+-----------------
+
+Define the task group in the application's .MDEF file using the following
+syntax:
 
 .. code-block:: console
 
-   TASKGROUP %name
+   TASKGROUP name
 
-For example, the file :file:`projName.mdef` defines three new
-task groups as follows:
+For example, the file :file:`projName.mdef` defines three new task groups
+as follows:
 
 .. code-block:: console
 
@@ -304,6 +313,9 @@ task groups as follows:
      TASKGROUP   VIDEO_TASKS
      TASKGROUP   AUDIO_TASKS
      TASKGROUP   KEYPAD_TASKS
+
+.. note::
+   Private task groups are not supported by the Zephyr kernel.
 
 
 Example: Starting a Task from a Different Task

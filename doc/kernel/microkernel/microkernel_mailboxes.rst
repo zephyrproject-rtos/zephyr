@@ -32,20 +32,22 @@ receiver tasks before passing the data.
 Usage
 *****
 
-Defining a mailbox in MDEF file
-===============================
+Defining a Mailbox
+==================
 
 The following parameters must be defined:
 
    *name*
           This specifies a unique name for the mailbox.
 
-Add an entry for a mailbox in the project .MDEF file using the
-following syntax:
+Public Mailbox
+--------------
+
+Define the mailbox in the application's .MDEF file using the following syntax:
 
 .. code-block:: console
 
-   MAILBOX %name
+   MAILBOX name
 
 For example, the file :file:`projName.mdef` defines a mailbox as follows:
 
@@ -55,16 +57,20 @@ For example, the file :file:`projName.mdef` defines a mailbox as follows:
    % ==========================
      MAILBOX   REQUEST_BOX
 
+A public mailbox can be referenced from any source file that includes
+the file :file:`zephyr.h`.
 
-Defining Mailboxes within the Code
-==================================
 
-In addition to defining mailboxes in MDEF file, it is also possible to
-define mailboxes inside code. The macro ``DEFINE_MAILBOX(mailbox_name)``
-can be used for this purpose.
+Private Mailbox
+---------------
 
-For example, the following code can be used to define a global mailbox
-``PRIV_MBX``.
+Define the mailbox in a source file using the following syntax:
+
+.. code-block:: c
+
+   DEFINE_MAILBOX(name);
+
+For example, the following code defines a private mailbox named ``PRIV_MBX``.
 
 .. code-block:: c
 
@@ -73,14 +79,11 @@ For example, the following code can be used to define a global mailbox
 The mailbox ``PRIV_MBX`` can be used in the same style as those
 defined in MDEF file.
 
-It is possible to utilize this mailbox in another source file, simply
-add:
+To utilize this mailbox from a different source file use the following syntax:
 
 .. code-block:: c
 
    extern const kmbox_t PRIV_MBX;
-
-to that file. The mailbox ``PRIV_MBX`` can be then used there.
 
 
 Example: Sending Variable-Sized Mailbox Messages

@@ -40,8 +40,8 @@ and receiver identities.
 Usage
 *****
 
-Defining a Pipes in MDEF file
-=============================
+Defining a Pipe
+===============
 
 The following parameters must be defined:
 
@@ -52,14 +52,18 @@ The following parameters must be defined:
           This specifies the size (in bytes) of the pipe's internal buffer.
           If no internal buffer is to be used specify zero.
 
-Add an entry for a pipe in the project .MDEF file using the
-following syntax:
+
+Public Pipe
+-----------
+
+Define the pipe in the application's .MDEF file using the following syntax:
 
 .. code-block:: console
 
-   PIPE %name %buffer_size
+   PIPE name buffer_size
 
-For example, the file :file:`projName.mdef` defines a pipe as follows:
+For example, the file :file:`projName.mdef` defines a pipe with a 1 KB internal
+buffer as follows:
 
 .. code-block:: console
 
@@ -67,33 +71,30 @@ For example, the file :file:`projName.mdef` defines a pipe as follows:
    % ===============================
      PIPE   DATA_PIPE        1024
 
+A public pipe can be referenced from any source file that includes
+the file :file:`zephyr.h`.
 
-Defining Pipes within the Code
-========================================
 
-In addition to defining pipes in MDEF file, it is also possible to
-define pipes inside code. The macro ``DEFINE_PIPE(...)`` can be
-used for this purpose.
+Private Pipe
+------------
 
-For example, the following code can be used to define a global pipe
-``PRIV_PIPE``.
+Define the pipe in a source file using the following syntax:
 
 .. code-block:: c
 
-   DEFINE_PIPE(PRIV_PIPE, size);
+   DEFINE_PIPE(name, size);
 
-where the parameters are the same as pipes defined in MDEF file.
-The pipe ``PRIV_PIPE`` can be used in the same style as those
-defined in MDEF file.
+For example, the following code defines a private pipe named ``PRIV_PIPE``.
 
-It is possible to utilize this pipe in another source file, simply
-add:
+.. code-block:: c
+
+   DEFINE_PIPE(PRIV_PIPE, 1024);
+
+To utilize this pipe from a different source file use the following syntax:
 
 .. code-block:: c
 
    extern const kpipe_t PRIV_PIPE;
-
-to that file. The pipe ``PRIV_PIPE`` can be then used there.
 
 
 Example: Writing Fixed-Size Data Items to a Pipe

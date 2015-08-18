@@ -28,8 +28,8 @@ timeout, until signaled or return immediately with a failed status.
 Usage
 *****
 
-Defining a Semaphore in MDEF file
-=================================
+Defining a Semaphore
+====================
 
 The following parameters must be defined:
 
@@ -37,15 +37,16 @@ The following parameters must be defined:
           This specifies a unique name for the semaphore.
 
 
-Add an entry for a semaphore in the project .MDEF file using the
-following syntax:
+Public Semaphore
+----------------
+
+Define the semaphore in the application's .MDEF file using the following syntax:
 
 .. code-block:: console
 
-   SEMA %name
+   SEMA name
 
-For example, the file :file:`projName.mdef` defines two semaphores
-as follows:
+For example, the file :file:`projName.mdef` defines two semaphores as follows:
 
 .. code-block:: console
 
@@ -54,32 +55,30 @@ as follows:
       SEMA INPUT_DATA
       SEMA WORK_DONE
 
+A public semaphore can be referenced from any source file that includes
+the file :file:`zephyr.h`.
 
-Defining Semaphore Inside Code
-==============================
 
-In addition to defining semaphores in MDEF file, it is also possible to
-define semaphores inside code. The macro ``DEFINE_SEMAPHORE(sem_name)``
-can be used for this purpose.
+Private Semaphore
+-----------------
 
-For example, the following code can be used to define a global semaphore
-``PRIV_SEM``.
+Define the semaphore a source file using the following syntax:
+
+.. code-block:: c
+
+   DEFINE_SEMAPHORE(name);
+
+For example, the following code defines a private semaphore named ``PRIV_SEM``.
 
 .. code-block:: c
 
    DEFINE_SEMAPHORE(PRIV_SEM);
 
-The semaphore ``PRIV_SEM`` can be used in the same style as those
-semaphores defined in MDEF file.
-
-It is possible to utilize this semaphore in another source file, simply
-add:
+To utilize this semaphore from a different source file use the following syntax:
 
 .. code-block:: c
 
    extern const ksem_t PRIV_SEM;
-
-to that file. The semaphore ``PRIV_SEM`` can be then used there.
 
 
 Example: Giving a Semaphore from a Task

@@ -67,15 +67,23 @@ such as a physical device.
 Usage
 *****
 
-Defining a Mutex in MDEF file
-=============================
+Defining a Mutex
+================
 
-Add an entry for the mutex in the project file using the
-following syntax:
+The following parameters must be defined:
+
+   *name*
+          This specifies a unique name for the mutex.
+
+
+Public Mutex
+------------
+
+Define the mutex in the application's .MDEF file using the following syntax:
 
 .. code-block:: console
 
-   MUTEX %name
+   MUTEX name
 
 For example, the file :file:`projName.mdef` defines a single mutex as follows:
 
@@ -85,32 +93,30 @@ For example, the file :file:`projName.mdef` defines a single mutex as follows:
    % ===============
      MUTEX  DEVICE_X
 
+A public mutex can be referenced from any source file that includes
+the file :file:`zephyr.h`.
 
-Defining a Mutex inside Code
-============================
 
-In addition to defining mutexes in MDEF file, it is also possible to define
-mutexes inside code. The macro ``DEFINE_MUTEX(mutex_name)`` can be used
-for this purpose.
+Private Mutex
+-------------
 
-For example, the following code can be used to define a global mutex
-``XYZ``.
+Define the mutex in a source file using the following syntax:
+
+.. code-block:: c
+
+   DEFINE_MUTEX(name);
+
+For example, the following code defines a private mutex named ``XYZ``.
 
 .. code-block:: c
 
    DEFINE_MUTEX(XYZ);
 
-The mutex ``XYZ`` can be used in the same style as those mutexes defined
-in MDEF file.
-
-It is possible to utilize this mutex in another source file, simply add:
+To utilize this mutex from a different source file use the following syntax:
 
 .. code-block:: c
 
    extern const kmutex_t XYZ;
-
-to that file. The mutex ``XYZ`` can be then used there.
-
 
 
 Example: Locking a Mutex with No Conditions

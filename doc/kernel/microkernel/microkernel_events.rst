@@ -50,12 +50,14 @@ The following parameters must be defined:
           specify NULL.
 
 
-Add an entry for the event in the project .MDEF file using the
-following syntax:
+Public Event
+------------
+
+Define the event in the application's .MDEF file using the following syntax:
 
 .. code-block:: console
 
-   EVENT %name %handler
+   EVENT name handler
 
 For example, the file :file:`projName.mdef` defines two events
 as follows:
@@ -66,6 +68,12 @@ as follows:
     % ==========================================
       EVENT KEYPRESS        validate_keypress
       EVENT BUTTONPRESS     NULL
+
+A public event can be referenced from any source file that includes
+the file :file:`zephyr.h`.
+
+.. note::
+   Private events are not supported by the Zephyr kernel.
 
 
 Example: Signaling an Event from an ISR

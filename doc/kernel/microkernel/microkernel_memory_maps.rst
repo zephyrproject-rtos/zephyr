@@ -44,17 +44,32 @@ Use a memory map to allocate and free memory in fixed-size blocks.
 Usage
 *****
 
-Defining a Memory Map in MDEF File
-==================================
+Defining a Memory Map
+=====================
 
-Add an entry for one or more memory maps in the project file using the
-following syntax:
+The following parameters must be defined:
+
+   *name*
+          This specifies a unique name for the memory map.
+
+   *num_blocks*
+          This specifies the number of memory blocks in the memory map.
+
+   *block_size*
+          This specifies the size (in bytes) of each memory block.
+
+
+Public Memory Map
+-----------------
+
+Define the memory map in the application's .MDEF file using the following
+syntax:
 
 .. code-block:: console
 
-   MAP %name %numBlocks %blockSize
+   MAP name num_blocks block_size
 
-For example, the file :file:`projName.mdef` defines a single memory map
+For example, the file :file:`projName.mdef` defines a pair of memory maps
 as follows:
 
 .. code-block:: console
@@ -64,33 +79,32 @@ as follows:
      MAP  MYMAP     4             1024
      MAP  YOURMAP   6             200
 
+A public memory map can be referenced from any source file that includes
+the file :file:`zephyr.h`.
 
-Defining Memory Map in the Source Code
-======================================
 
-In addition to defining memory maps in MDEF file, it is also possible
-to define memory maps inside code. The macro ``DEFINE_MEMORY_MAP(...)``
-can be used for this purpose.
+Private Memory Map
+------------------
 
-For example, the following code can be used to define a global memory
-map ``PRIV_MEM_MAP``.
+Define the memory map in a source file using the following syntax:
 
 .. code-block:: c
 
-   DEFINE_MEMORY_MAP(PRIV_MEM_MAP, num_blocks, block_size);
+   DEFINE_MEMORY_MAP(name, num_blocks, block_size);
 
-where the parameters are the same as memory maps defined in MDEF file.
-The memory map ``PRIV_MEM_MAP`` can be used in the same style as those
-defined in MDEF file.
+For example, the following code defines a private memory map named
+``PRIV_MEM_MAP``.
 
-It is possible to utilize this memory map in another source file, simply
-add:
+.. code-block:: c
+
+   DEFINE_MEMORY_MAP(PRIV_MEM_MAP, 6, 200);
+
+To utilize this memory map from a different source file use
+the following syntax:
 
 .. code-block:: c
 
    extern const kmemory_map_t PRIV_MEM_MAP;
-
-to that file. The memory map ``PRIV_MEM_MAP`` can be then used there.
 
 
 Example: Requesting a Memory Block from a Map with No Conditions
