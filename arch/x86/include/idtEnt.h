@@ -41,7 +41,7 @@ This header file provides code for constructing an IA-32 interrupt descriptor.
 
 #ifdef __cplusplus
 extern"C"
-	{
+{
 #endif
 
 /*
@@ -90,6 +90,9 @@ typedef struct idtEntry {
  * should specify a level of 0, whereas handlers for user-mode software generated
  * interrupts should specify 3.
  *
+ * @param pIdtEntry Pointer to where the entry is be built
+ * @param routine Routine to call when interrupt occurs
+ * @param dpl priv level for interrupt descriptor
  * @return N/A
  *
  * INTERNAL
@@ -100,43 +103,39 @@ typedef struct idtEntry {
  * host side simply passes a pointer to a local variable.
  *
  */
-
-static inline void _IdtEntCreate
-	(
-	unsigned long long *pIdtEntry,      /* Pointer to where the entry is be built */
-	void (*routine)(void *),	    /* Routine to call when interrupt occurs  */
-	unsigned int dpl		    /* priv level for interrupt descriptor    */
-	)
-	{
+static inline void _IdtEntCreate (unsigned long long *pIdtEntry,
+				  void (*routine)(void *),
+				  unsigned int dpl)
+{
 	unsigned long *pIdtEntry32 = (unsigned long *)pIdtEntry;
 
 	pIdtEntry32[0] = (KERNEL_CODE_SEG_SELECTOR << 16) |
 			((unsigned short)(unsigned int)routine);
 
-    /*
-     * The constant 0x8e00 results from the following:
-     *
-     * Segment Present = 1
-     *
-     * Descriptor Privilege Level (DPL) = 0  (dpl arg will be or'ed in)
-     *
-     * Interrupt Gate Indicator = 0xE
-     *    The _IntEnt() and _ExcEnt() stubs assume that an interrupt-gate
-     *    descriptor is used, and thus they do not issue a 'cli' instruction
-     *    given that the processor automatically clears the IF flag when
-     *    accessing the interrupt/exception handler via an interrupt-gate.
-     *
-     * Size of Gate (D) = 1
-     *
-     * Reserved = 0
-     */
+	/*
+	 * The constant 0x8e00 results from the following:
+	 *
+	 * Segment Present = 1
+	 *
+	 * Descriptor Privilege Level (DPL) = 0  (dpl arg will be or'ed in)
+	 *
+	 * Interrupt Gate Indicator = 0xE
+	 *    The _IntEnt() and _ExcEnt() stubs assume that an interrupt-gate
+	 *    descriptor is used, and thus they do not issue a 'cli' instruction
+	 *    given that the processor automatically clears the IF flag when
+	 *    accessing the interrupt/exception handler via an interrupt-gate.
+	 *
+	 * Size of Gate (D) = 1
+	 *
+	 * Reserved = 0
+	 */
 
 	pIdtEntry32[1] = ((unsigned int) routine & 0xffff0000) |
 				    (0x8e00 | (dpl << 13));
-	}
+}
 
 #ifdef __cplusplus
-	}
+}
 #endif
 
 #endif /* _IDTENT_H */
