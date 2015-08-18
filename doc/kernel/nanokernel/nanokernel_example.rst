@@ -123,7 +123,7 @@ The following steps repeat endlessly:
    nanoSemFiber semaphore, which in turn marks the fiber as runnable.
 
 #. The fiber, now marked as runnable, pre-empts the background
-   process, allowing execution to jump to the fiber.
+   task, allowing execution to jump to the fiber.
    nano_fiber_sem_take_wait.
 
 #. The fiber then prints, “fiberEntry: Hello World!” It starts a time

@@ -13,7 +13,7 @@ any size. The data is stored in first-in-first-out order.
 Function
 ********
 
-Multiple processes can wait on the same FIFO object. Data is passed to
+Multiple fibers can wait on the same FIFO object. Data is passed to
 the first fiber that waited on the FIFO, and then to the background
 task if no fibers are waiting. Through this mechanism the FIFO object
 can synchronize or communicate between more than two contexts through

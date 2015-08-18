@@ -47,6 +47,6 @@ Intel-specific parts of start_task(). Only FP functionality currently.
 
 extern void _StartTaskArch(struct k_task *, unsigned int *);
 
-#define _START_TASK_ARCH(pKproc, pOpt) _StartTaskArch(pKproc, pOpt)
+#define _START_TASK_ARCH(task, opt_ptr) _StartTaskArch(task, opt_ptr)
 
 #endif /* _START_TASK_ARCH__H_ */

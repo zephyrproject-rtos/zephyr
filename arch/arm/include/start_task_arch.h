@@ -47,7 +47,7 @@ Currently empty, only here for abstraction.
 #include <nano_private.h>
 #include <microkernel/task.h>
 
-#define _START_TASK_ARCH(pKproc, pOpt) \
+#define _START_TASK_ARCH(task, opt_ptr) \
 	do {/* nothing */              \
 	} while ((0))
 

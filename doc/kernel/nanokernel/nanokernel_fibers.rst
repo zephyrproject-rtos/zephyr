@@ -58,12 +58,13 @@ The fiber stack is used for local variables and for calling functions or
 subroutines. Additionally, the first locations on the stack are used by
 the kernel for the context control structure. Allocate or declare the
 fiber stack prior to calling :cpp:func:`fiber_fiber_start()`. A fiber
-stack can be any sort of buffer. In this example the fiber stack is
-defined as an array of 32-bit integers:
+stack can be any sort of buffer, as long as it is aligned on a 4-byte
+boundary. The recommended way of setting up a stack is using a char array
+and tagging the stack variable with the __stack attribute:
 
 .. code-block::cpp
 
-   int32_t process_stack[256];
+   char __stack my_fiber_stack[256];
 
 The size of the fiber stack can be set freely. It is recommended to
 start with a stack much larger than you think you need, say 1 KB for a
