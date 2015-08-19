@@ -51,7 +51,6 @@
  *
  * @return N/A
  */
-
 void _k_mem_pool_init(void)
 {
 	int i, j, k;
@@ -107,7 +106,6 @@ void _k_mem_pool_init(void)
  *
  * @return N/A
  */
-
 static void search_bp(char *ptr, struct pool_struct *P, int index)
 {
 	int i = 0, j, block_found = 0;
@@ -140,7 +138,6 @@ static void search_bp(char *ptr, struct pool_struct *P, int index)
  *
  * @return N/A
  */
-
 static void defrag(struct pool_struct *P,
 				  int ifraglevel_start,
 				  int ifraglevel_stop)
@@ -196,7 +193,6 @@ static void defrag(struct pool_struct *P,
  *
  * @return N/A
  */
-
 void _k_defrag(struct k_args *A)
 {
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
@@ -223,17 +219,8 @@ void _k_defrag(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Defragment memory pool request
- *
- * This routine concatenates unused memory in a memory pool.
- *
- * @return N/A
- */
 
-void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
-		       )
+void task_mem_pool_defragment(kmemory_pool_t Pid)
 {
 	struct k_args A;
 
@@ -250,7 +237,6 @@ void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
  *
  * @return pointer to allocated block, or NULL if none available
  */
-
 static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 						    int *piblockindex)
 {
@@ -335,7 +321,6 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
  *
  * @return pointer to allocated block, or NULL if none available
  */
-
 static char *get_block_recusive(struct pool_struct *P, int index, int startindex)
 {
 	int i;
@@ -419,7 +404,6 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
  *
  * @return N/A
  */
-
 void _k_block_waiters_get(struct k_args *A)
 {
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
@@ -484,7 +468,6 @@ void _k_block_waiters_get(struct k_args *A)
  *
  * @return N/A
  */
-
 void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 {
 	_k_timeout_free(A->Time.timer);
@@ -499,7 +482,6 @@ void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
  *
  * @return N/A
  */
-
 void _k_mem_pool_block_get(struct k_args *A)
 {
 	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
@@ -564,7 +546,6 @@ void _k_mem_pool_block_get(struct k_args *A)
  *
  * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
  */
-
 int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 		     kmemory_pool_t pool_id,     /* pool from which to get block */
 		     int reqsize,       /* requested block size */
@@ -598,7 +579,6 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
  *
  * @return N/A
  */
-
 void _k_mem_pool_block_release(struct k_args *A)
 {
 	struct pool_struct *P;
@@ -659,20 +639,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Return memory pool block request
- *
- * This routine returns a block to a memory pool.
- *
- * The struct k_block structure contains the block details, including the pool to
- * which it should be returned.
- *
- * @return N/A
- */
-
-void task_mem_pool_free(struct k_block *blockptr /* pointer to block to free */
-		      )
+void task_mem_pool_free(struct k_block *blockptr)
 {
 	struct k_args A;
 
