@@ -66,7 +66,7 @@ static volatile uint16_t last_packet_timestamp;
 #if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
 #define DUMMY_RADIO_15_4_FRAME_TYPE	0xF0
 static uint8_t input[NETWORK_TEST_MAX_PACKET_LEN];
-static uint8_t input_len, input_offset;
+static uint8_t input_len, input_offset, input_type;
 #else
 static uint8_t loopback[NETWORK_TEST_MAX_PACKET_LEN];
 #endif
@@ -77,11 +77,12 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 {
   if (input_len == 0 && input_offset == 0 &&
        buf[0] == DUMMY_RADIO_15_4_FRAME_TYPE) {
+    input_type = buf[0];
     goto done;
   }
 
   if (input_len == 0 && input_offset == 0 &&
-       buf[0] != DUMMY_RADIO_15_4_FRAME_TYPE) {
+       input_type == DUMMY_RADIO_15_4_FRAME_TYPE) {
     input_len = buf[0];
     goto done;
   }
@@ -105,7 +106,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
        }
      }
 
-     input_len = input_offset = 0;
+     input_len = input_offset = input_type = 0;
      memset(input, 0, sizeof(input));
   }
 
@@ -188,10 +189,17 @@ send(struct net_mbuf *buf, const void *payload, unsigned short payload_len)
   uint8_t len, i;
 
   len = packetbuf_copyto(buf, output);
-  uart_send(DUMMY_RADIO_15_4_FRAME_TYPE); /* Type */
-  uart_send(len);  /* Length */
-
   PRINTF("dummy154radio: sending %d bytes\n", len);
+
+  if(!uart_send(DUMMY_RADIO_15_4_FRAME_TYPE)) { /* Type */
+      PRINTF("uart_send failed\n");
+      return RADIO_TX_ERR;
+  }
+
+  if(!uart_send(len)) {  /* Length */
+      PRINTF("uart_send failed\n");
+      return RADIO_TX_ERR;
+  }
 
   for (i = 0; i < len; i++) {
     if (!uart_send(output[i])) {
