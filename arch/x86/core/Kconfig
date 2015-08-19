@@ -39,6 +39,16 @@ config NO_ISRS
 	help
 	This option disables asynchronous interrupts support.
 
+
+config NO_NESTED_INTERRUPTS
+	bool
+	prompt "Enable nested interrupts"
+	default n
+	depends on X86_32
+	help
+	disable nest interrupts.
+
+
 menu "Memory Layout Options"
 
 config IDT_NUM_VECTORS
