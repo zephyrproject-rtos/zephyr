@@ -3,6 +3,7 @@
 Running Applications
 ####################
 
+
 Running Applications in QEMU
 ****************************
 
@@ -71,15 +72,17 @@ following commands:
 Running an Application on Galileo Gen2
 **************************************
 
+
 #. Set the platform configuration to Galileo by changing the :command:`make` command to:
 
    .. code-block:: bash
 
       make PLATFORM_CONFIG=galileo
 
+
 #. Use one of these cables for serial output:
 
-    `<http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm>`__
+   `<http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm>`_
 
 #. Format a microSD as FAT
 
@@ -91,7 +94,8 @@ Running an Application on Galileo Gen2
 
    :file:`kernel`
 
-#. Assuming you have built a micro kernel, copy the kernel file :file:`microkernel.elf` to the :file:`$SDCARD/kernel` folder
+#. Assuming you have built a micro kernel, copy the kernel file :file:`microkernel.elf`
+   to the :file:`$SDCARD/kernel` folder.
 
 #. Copy your built version of GRUB to :file:`$SDCARD/efi/boot/bootia32.efi`
 
@@ -112,10 +116,10 @@ Running an Application on Galileo Gen2
 
 #. Configure your host system to watch for serial data.
 
-    * On Linux, minicom is a popular method for reading serial
+   * On Linux, minicom is a popular method for reading serial
       data.
 
-    * On Windows, PuTTY has an option to set up configuration for
+   * On Windows, PuTTY has an option to set up configuration for
       serial data.
 
 #. Power on the Galileo board.
@@ -127,28 +131,28 @@ If you are having problems running an application using the default GRUB
 of the hardware, follow these steps to test on Galileo2 boards using a custom
 GRUB.
 
-1. Install the requirements to build GRUB on your host machine.
+#. Install the requirements to build GRUB on your host machine.
 
-In Ubuntu, type:
+   In Ubuntu, type:
 
-.. code-block:: bash
+   .. code-block:: bash
 
     $ sudo apt-get install gnu-efi:i386 bison libopts25 \
     libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
     libfont-freetype-perl automake autotools-dev libfreetype6-dev \
     texinfo \
 
-In Fedora, type:
+   In Fedora, type:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ sudo yum install gnu-efi-i386 bison libopts25 \
-   libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
-   libfont-freetype-perl automake autotools-dev libfreetype6-dev texinfo
+      $ sudo yum install gnu-efi-i386 bison libopts25 \
+      libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
+      libfont-freetype-perl automake autotools-dev libfreetype6-dev texinfo
 
 2. Clone and build the GRUB repository using the script in Zephyr tree, type:
 
-.. code-block:: bash
+   .. code-block:: bash
 
    $ cd $ZEPHYR_BASE
    $ ./scripts/build_grub.sh
@@ -166,35 +170,35 @@ If your custom built GRUB version returns the error:
 
 Follow these steps:
 
-1. Use the built-in version of GRUB with the following file:
+#. Use the built-in version of GRUB with the following file:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ grub.efi
+      $ grub.efi
 
-2. Locate your SDcard in the system
+#. Locate your SDcard in the system
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    $ ls
+      $ ls
 
-3. You see two entries similar to:
+#. You see two entries similar to:
 
-:file:`(hd0)`, :file:`(hd0,msdos1)`
+   :file:`(hd0)`, :file:`(hd0,msdos1)`
 
-4. Verify the contents, type:
+#. Verify the contents, type:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ ls (hd0,msdos1)/efi/
+      $ ls (hd0,msdos1)/efi/
 
-The command shows the contents of your SDcard.
+   The command shows the contents of your SDcard.
 
-5. If the command did not work, find the correct mount, type:
+#. If the command did not work, find the correct mount, type:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ configfile (hd0,msdos1)/efi/boot/grub.cfg
+      $ configfile (hd0,msdos1)/efi/boot/grub.cfg
 
-The command uses the Galileo’s built-in GRUB to parse your config file
-and list the options you’ve set.
+   The command uses the Galileo’s built-in GRUB to parse your config file
+   and list the options you’ve set.

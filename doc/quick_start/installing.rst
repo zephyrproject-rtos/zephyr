@@ -162,50 +162,51 @@ Follow these steps to enable a customized build of QEMU:
 
 #. Clone the QEMU repository:
 
-.. code-block:: bash
 
-   $ git clone git://git.qemu-project.org/qemu.git
+   .. code-block:: bash
+
+      $ git clone git://git.qemu-project.org/qemu.git
 
 #. Checkout the v2.1 stable branch:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ cd qemu
+      $ cd qemu
 
-   $ git checkout stable-2.1
+      $ git checkout stable-2.1
 
 #. Apply our internal patch:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ git am $ZEPHYR_BASE/scripts/0001-armv7m-support-basepri-primask-
-   interrupt-locking.patch
+      $ git am $ZEPHYR_BASE/scripts/0001-armv7m-support-basepri-primask-
+      interrupt-locking.patch
 
 #. Update the submodules as needed:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ git submodule update --init pixman
+      $ git submodule update --init pixman
 
-   $ git submodule update --init dtc
+      $ git submodule update --init dtc
 
 #. Build QEMU v2.1:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ ./configure && make
+      $ ./configure && make
 
 * You can also build QEMU to a private directory:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ ./configure --prefix=$MY_PREFERED_INSTALL_LOCATION && make
+      $ ./configure --prefix=$MY_PREFERED_INSTALL_LOCATION && make
 
 * Install QEMU:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ sudo make install
+      $ sudo make install
 
 .. _setup_development_environment:
 
@@ -223,10 +224,10 @@ a simple walk-through to enable quick access to the Gerrit services.
 Getting Access
 ==============
 
-#. `Create`_ or `update`_ a 01.org_ account.
+#. `Create`_ or `update`_ a `01.org`_ account.
 
-#. Submit your your 01.org_ account and corporate email address to
-   |PM| `<mailto:hirally.santiago.rodriguez@intel.com>`_.
+#. Submit your your `01.org`_ account and corporate email address to
+   |PM| hirally.santiago.rodriguez@intel.com.
 
 #. Once access is granted, `access Gerrit`_.
 
@@ -249,39 +250,38 @@ key on the Gerrit server.
 
 If you already have a SSH key-pair, skip this section.
 
-1. Create a key-pair in your Linux machine, type:
+#. Create a key-pair in your Linux machine, type:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ ssh-keygen -t rsa -C "John Doe john.doe@example.com"
+      $ ssh-keygen -t rsa -C "John Doe john.doe@example.com"
 
-.. note:: This will ask you for a password to protect the private key as it
-   generates a unique key. Please keep this password private, and DO
-   NOT enter a blank password.
+   .. note:: This will ask you for a password to protect the private key as it
+      generates a unique key. Please keep this password private, and DO
+      NOT enter a blank password.
 
 
-The generated key-pair is found in:
-:file:`~/.ssh/id_rsa and ~/.ssh/id_rsa.pub`.
+   The generated key-pair is found in:
+   :file:`~/.ssh/id_rsa and ~/.ssh/id_rsa.pub`.
 
-2. Add the private key in the :file:`id_rsa` file in your key ring:
+#. Add the private key in the :file:`id_rsa` file in your key ring:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   $ ssh-add ~/.ssh/id_rsa
+      $ ssh-add ~/.ssh/id_rsa
 
-3. Add your public key :file:`id_rsa.pub` to the Gerrit account:
 
-   a. Go to `access Gerrit`_.
+#. Add your public key :file:`id_rsa.pub` to the Gerrit account:
 
-   b. Click on your account name in the upper right corner.
+   a) Go to `access Gerrit`_.
 
-   c. From the pop-up menu, select :guilabel:`Settings`.
+   b) Click on your account name in the upper right corner.
 
-   d. On the left side menu select, click on
-   :guilabel:`SSH Public Keys`.
+   c) From the pop-up menu, select :guilabel:`Settings`.
 
-   e. Click Add key and paste the contents of your public key
-   :file:`~/.id/id_rsa.pub`.
+   d) On the left side menu select, click on :guilabel:`SSH Public Keys`.
+
+   e) Click Add key and paste the contents of your public key :file:`~/.id/id_rsa.pub`.
 
 .. note:: To obtain the contents of your public key on a Linux machine:
 
@@ -299,8 +299,8 @@ The generated key-pair is found in:
 Checking Out the Source Code
 ============================
 
-#. Ensure that SSH has been set up properly. See
-   `Configuring SSH to Use Gerrit`_ for details.
+
+#. Ensure that SSH has been set up properly. See `Configuring SSH to Use Gerrit`_ for details.
 
 #. Clone the repository:
 
@@ -309,7 +309,7 @@ Checking Out the Source Code
       $ git clone ssh://01ORGUSERNAME@oic-review.01.org:29418/forto-collab
 
 #. You have successfully checked out a copy of the source code to your local machine.
-Develop freely, issuing as many commits and rebases as needed.
+   Develop freely, issuing as many commits and rebases as needed.
 
 
 #. Change to the main project directory:
