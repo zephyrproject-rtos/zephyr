@@ -278,7 +278,7 @@ struct bt_conn *bt_conn_add(const bt_addr_le_t *peer, uint8_t role)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		if (!bt_addr_le_cmp(&conns[i].dst, BT_ADDR_LE_ANY)) {
+		if (!atomic_get(&conns[i].ref)) {
 			conn = &conns[i];
 			break;
 		}
@@ -392,6 +392,10 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			continue;
+		}
+
 		/* We only care about connections with a valid handle */
 		if (conns[i].state != BT_CONN_CONNECTED &&
 		    conns[i].state != BT_CONN_DISCONNECT) {
@@ -411,6 +415,10 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (!atomic_get(&conns[i].ref)) {
+			continue;
+		}
+
 		if (!bt_addr_le_cmp(peer, &conns[i].dst)) {
 			return bt_conn_get(&conns[i]);
 		}
@@ -425,7 +433,7 @@ struct bt_conn *bt_conn_lookup_state(const bt_addr_le_t *peer,
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(conns); i++) {
-		if (!bt_addr_le_cmp(&conns[i].dst, BT_ADDR_LE_ANY)) {
+		if (!atomic_get(&conns[i].ref)) {
 			continue;
 		}
 
@@ -453,17 +461,9 @@ struct bt_conn *bt_conn_get(struct bt_conn *conn)
 
 void bt_conn_put(struct bt_conn *conn)
 {
-	atomic_val_t old_ref;
-
-	old_ref = atomic_dec(&conn->ref);
+	atomic_dec(&conn->ref);
 
 	BT_DBG("handle %u ref %u\n", conn->handle, atomic_get(&conn->ref));
-
-	if (old_ref > 1) {
-		return;
-	}
-
-	bt_addr_le_copy(&conn->dst, BT_ADDR_LE_ANY);
 }
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
