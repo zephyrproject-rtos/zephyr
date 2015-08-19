@@ -139,3 +139,24 @@ Example:
 $ make TINYDTLS=/home/user/tinydtls-0.8.2 dtls-server
 
 $ ./dtls-server -i tun0
+
+monitor_15_4
+============
+
+monitor_15_4 is a tool that is run in Linux host side and
+which reads data from pipes which is written buy 15.4 test
+application from qemu. This is T juntion tool which reads
+and writes data from pipes and feed into pipes (this way
+both qemus communicate each other) and same time data
+written in PCAP format for wireshark monitoring.
+
+Please also read samples/network/test_15_4/README for
+how to configure and run two qemus.
+
+Make and run this tool
+
+$ make
+
+Usage : monitor_15_4 <sample pcap file> <pipe_1> <pipe_2>
+
+$ monitor_15_4 sample.pcap /tmp/ip-15-4-1 /tmp/ip-15-4-2

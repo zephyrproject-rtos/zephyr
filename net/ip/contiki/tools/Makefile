@@ -1,4 +1,4 @@
-all: tunslip6 tunslip echo-client echo-server
+all: tunslip6 tunslip echo-client echo-server monitor_15_4
 
 tunslip6: tunslip6.o
 	$(CC) -o $@ $(CFLAGS) $(LIBS) tunslip6.c
@@ -27,3 +27,11 @@ dtls-server.o: dtls-server.c
 
 dtls-server: dtls-server.o $(TINYDTLS_LIB)
 	$(CC) -o $@ $(LIBS) dtls-server.o $(TINYDTLS_LIB)
+
+GLIB=`pkg-config --cflags --libs glib-2.0`
+
+monitor_15_4.o: monitor_15_4.c
+	$(CC) -c -o $@ $(CFLAGS) $(GLIB) monitor_15_4.c
+
+monitor_15_4: monitor_15_4.o
+	$(CC) -o $@ $(LIBS) monitor_15_4.o $(GLIB)

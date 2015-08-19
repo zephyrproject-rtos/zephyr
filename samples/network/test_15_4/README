@@ -20,3 +20,19 @@
  Open two terminals and run two qemus with below options.
  $ make qemu QEMU_NUM=1 CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART=y
  $ make qemu QEMU_NUM=2 CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART=y
+
+ 3) Loopback between two qemus and pcap support:
+ Enable CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART config option in
+ prj_x86/arm.conf to send 802.15.4 frames out through QEMU UART and receive
+ frames through QEMU UART.
+
+ Follow below simple steps to create fifos at host.
+
+ $ mkfifo /tmp/ip-15-4-1.{in,out}
+ $ mkfifo /tmp/ip-15-4-2.{in,out}
+
+ also read net/ip/contiki/tools/README and run monitor_15.4
+ and then
+
+ $ make qemu QEMU_NUM=1 CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART=y
+ $ make qemu QEMU_NUM=2 CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART=y
