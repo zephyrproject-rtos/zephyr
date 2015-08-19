@@ -7,6 +7,9 @@ The Zephyr kernel is a small footprint kernel designed for use on
 resource-constrained systems, from simple embedded environmental sensors and
 LED wearables to sophisticated smart watches and IoT wireless gateways.
 
+The open source project associated with the Zephyr kernel makes it available
+to users and developers under a Revised BSD License.
+
 Key Features
 ************
 
