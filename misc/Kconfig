@@ -73,6 +73,12 @@ config  GDB_INFO
           during interrupts, exceptions, and context switches. This information
           is required for task-aware debugging with GDB.
 
+config LINK_WHOLE_ARCHIVE
+	bool "Allow linking with --whole-archive"
+	default n
+	help
+	This options allows linking external libraries with the
+	--whole-archive option to keep all symbols.
 
 config  COMPILER_OPT
 	string
