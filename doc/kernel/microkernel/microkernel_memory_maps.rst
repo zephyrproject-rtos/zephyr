@@ -32,7 +32,7 @@ which can arise when using variable-size blocks.
 
 Unlike a heap, more than one memory map can be defined, if needed. This
 allows for a memory map with smaller blocks and others with larger-sized
-blocks. (Alternatively, a memory pool object may be used.)
+blocks. Alternatively, a memory pool object may be used.
 
 
 Purpose
@@ -56,7 +56,7 @@ The following parameters must be defined:
           This specifies the number of memory blocks in the memory map.
 
    *block_size*
-          This specifies the size (in bytes) of each memory block.
+          This specifies the size in bytes of each memory block.
 
 
 Public Memory Map

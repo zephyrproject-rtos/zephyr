@@ -17,7 +17,7 @@ to more closely match the actual needs of the requesting task.
 Any number of memory pools can be defined in a microkernel system.
 Each memory pool has a name that uniquely identifies it.
 In addition, a memory pool defines minimum and maximum memory block sizes
-(in bytes) and the number of maximum size blocks that the memory pool
+in bytes and the number of maximum size blocks that the memory pool
 contains.
 
 A task that needs to use a memory block simply allocates it from a

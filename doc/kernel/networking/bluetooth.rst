@@ -46,10 +46,9 @@ Using Host System Bluetooth Controller in QEMU
 ==============================================
 
 The host system's Bluetooth controller is connected to the second QEMU
-serial line through a UNIX socket
-(QEMU option :literal:`-serial unix:/tmp/bt-server-bredr`).
-This option is already added to QEMU through :makevar:`QEMU_EXTRA_FLAGS`
-in the Makefile.
+serial line using a UNIX socket. This socket employs the QEMU option
+:literal:`-serial unix:/tmp/bt-server-bredr`. This option is already
+added to QEMU through :makevar:`QEMU_EXTRA_FLAGS` in the Makefile.
 
 On the Host side, BlueZ allows to "connect" Bluetooth controller through
 a so-called user channel.

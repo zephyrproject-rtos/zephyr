@@ -34,7 +34,7 @@ the pipe must accept. The following pipe option values are supported:
       Specifies that at least one data byte must be accepted by the pipe;
       otherwise the send request fails.
    :option:`_0_TO_N`
-      Specifies that any number of data bytes (including zero) may be accepted
+      Specifies that any number of data bytes, including zero, may be accepted
       by the pipe; the send request never fails.
 
 The pipe accepts data bytes from the sending task if they can be delivered
@@ -171,7 +171,7 @@ The following parameters must be defined:
           This specifies a unique name for the pipe.
 
    *buffer_size*
-          This specifies the size (in bytes) of the pipe's ring buffer.
+          This specifies the size in bytes of the pipe's ring buffer.
           If no ring buffer is to be used specify zero.
 
 
