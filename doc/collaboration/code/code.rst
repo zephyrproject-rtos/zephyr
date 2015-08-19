@@ -13,6 +13,7 @@ Ensure that you have read and understood the information before submitting any c
    coding_style
    naming_conventions
    gerrit
+   gerrit_practices
    changes
    maintainers
    doxygen/doxygen
