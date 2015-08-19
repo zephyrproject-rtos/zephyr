@@ -1,5 +1,3 @@
-/* pipe kernel services */
-
 /*
  * Copyright (c) 1997-2010, 2013-2014 Wind River Systems, Inc.
  *
@@ -30,6 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * @file
+ * @brief Pipe kernel services
+ */
+
 #include <micro_private.h>
 #include <k_pipe_buffer.h>
 #include <k_pipe_util.h>
@@ -40,7 +43,6 @@ extern kpipe_t _k_pipe_ptr_start[];
 extern kpipe_t _k_pipe_ptr_end[];
 
 /**
- *
  * @brief Initialize kernel pipe subsystem
  *
  * Performs any initialization of statically-defined pipes that wasn't done
@@ -48,7 +50,6 @@ extern kpipe_t _k_pipe_ptr_end[];
  *
  * @return N/A
  */
-
 void _k_pipe_init(void)
 {
 	kpipe_t *pipeId;
@@ -62,7 +63,6 @@ void _k_pipe_init(void)
 }
 
 /**
- *
  * @brief Pipe read request
  *
  * This routine attempts to read data into a memory buffer area from the
@@ -70,10 +70,9 @@ void _k_pipe_init(void)
  *
  * @return RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
  */
-
 int _task_pipe_get(kpipe_t Id, void *pBuffer,
-				   int iNbrBytesToRead, int *piNbrBytesRead,
-				   K_PIPE_OPTION Option, int32_t TimeOut)
+		int iNbrBytesToRead, int *piNbrBytesRead,
+		K_PIPE_OPTION Option, int32_t TimeOut)
 {
 	struct k_args A;
 
@@ -114,7 +113,6 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 }
 
 /**
- *
  * @brief Pipe write request
  *
  * This routine attempts to write data from a memory buffer area to the
@@ -122,10 +120,9 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
  *
  * @return RC_OK, RC_INCOMPLETE, RC_FAIL, RC_TIME, or RC_ALIGNMENT
  */
-
 int _task_pipe_put(kpipe_t Id, void *pBuffer,
-				   int iNbrBytesToWrite, int *piNbrBytesWritten,
-				   K_PIPE_OPTION Option, int32_t TimeOut)
+		int iNbrBytesToWrite, int *piNbrBytesWritten,
+		K_PIPE_OPTION Option, int32_t TimeOut)
 {
 	struct k_args A;
 
@@ -166,7 +163,6 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 }
 
 /**
- *
  * @brief Asynchronous pipe write request
  *
  * This routine attempts to write data from a memory pool block to the
@@ -175,9 +171,8 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
  *
  * @return RC_OK, RC_FAIL, or RC_ALIGNMENT
  */
-
 int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
-						 int iReqSize2Xfer, ksem_t sema)
+			int iReqSize2Xfer, ksem_t sema)
 {
 	unsigned int iSize2Xfer;
 	struct k_args A;
