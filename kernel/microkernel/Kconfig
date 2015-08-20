@@ -191,6 +191,24 @@ config  TASK_MONITOR_MASK
 		4 (MON_KSERV): task execution of kernel APIs
 		8 (MON_EVENT): task event signalled
 
+config  OBJECT_MONITOR
+	bool
+	prompt "Kernel object monitoring [EXPERIMENTAL]"
+	default n
+	depends on MICROKERNEL
+	help
+	  This option instructs the kernel to record statistics about
+	  microkernel object usage.
+
+config  THREAD_MONITOR
+	bool
+	prompt "Task and fiber monitoring [EXPERIMENTAL]"
+	default n
+	help
+	  This option instructs the kernel to maintain a list of all tasks
+	  and fibers (excluding those that have not yet started or have
+	  already terminated).
+
 config ADVANCED_POWER_MANAGEMENT
 	bool
 	prompt "Advanced power management"
