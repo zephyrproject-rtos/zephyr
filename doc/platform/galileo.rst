@@ -107,20 +107,18 @@ hardware features:
 * serial ports in polling and interrupt driven modes
 
 
-+------------------+-----------+-----------------------+
-| Interface        |Controller | Driver/Component      |
-+==================+===========+=======================+
-| PCI              | on-chip   | PCI library           |
-|                  |           |                       |
-+------------------+-----------+-----------------------+
-| UART             | on-chip   | serial port-polling;  |
-|                  |           | serial port-interrupt |
-+------------------+-----------+-----------------------+
-| APIC             | on-chip   | timer and serial port |
-|                  |           |                       |
-+------------------+-----------+-----------------------+
-| HPET             | on-chip   | system clock          |
-+------------------+-----------+-----------------------+
++------------------+------------+-----------------------+
+| Interface        | Controller | Driver/Component      |
++==================+============+=======================+
+| HPET             | on-chip    | system clock          |
++------------------+------------+-----------------------+
+| PCI              | on-chip    | PCI library           |
++------------------+------------+-----------------------+
+| APIC             | on-chip    | interrupt controller  |
++------------------+------------+-----------------------+
+| UART             | on-chip    | serial port-polling;  |
+|                  |            | serial port-interrupt |
++------------------+------------+-----------------------+
 
 
 Other hardware features are not currently supported by Zephyr Project.
@@ -177,11 +175,12 @@ Interrupts
 ----------
 
 +-------+-----------+------------------+-------------------------------+
-|IRQ    | Name      | Used by Zephyr   | Remarks                       |
+| IRQ   | Name      | Remarks          | Used by Zephyr Kernel         |
 +=======+===========+==================+===============================+
-|17     | INTB      |   UART           | serial port in interrupt mode |
+| 17    | INTB      |   UART           | serial port, when used in     |
+|       |           |                  | interrupt mode                |
 +-------+-----------+------------------+-------------------------------+
-|20     | timer     |   HPET           | timer driver                  |
+| 20    | timer     |   HPET           | timer driver                  |
 +-------+-----------+------------------+-------------------------------+
 
 .. note::
