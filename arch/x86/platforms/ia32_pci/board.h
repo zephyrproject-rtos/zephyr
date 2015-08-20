@@ -74,6 +74,9 @@ extern struct device * const uart_devs[];
 
 #if defined(CONFIG_UART_CONSOLE)
 
+#define CONFIG_UART_CONSOLE_IRQ		COM2_INT_LVL
+#define CONFIG_UART_CONSOLE_INT_PRI	3
+
 #define UART_CONSOLE_DEV (uart_devs[CONFIG_UART_CONSOLE_INDEX])
 
 #endif /* CONFIG_UART_CONSOLE */
