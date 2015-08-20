@@ -136,7 +136,7 @@ struct net_buf {
 
 /** @cond ignore */
 /* Macros to access net_buf when inside Contiki stack */
-#define uip_buf(buf) ((buf)->buf)
+#define uip_buf(ptr) ((ptr)->buf)
 #define uip_len(buf) ((buf)->len)
 #define uip_slen(buf) ((buf)->uip_slen)
 #define uip_ext_len(buf) ((buf)->uip_ext_len)
