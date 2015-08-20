@@ -156,7 +156,7 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 #endif
 
 			_k_current_task = pNextTask;
-			_nanokernel.task = (tCCS *)pNextTask->workspace;
+			_nanokernel.task = (struct tcs *)pNextTask->workspace;
 
 #ifdef CONFIG_TASK_MONITOR
 			if (_k_monitor_mask & MON_TSWAP) {

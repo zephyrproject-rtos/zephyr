@@ -47,30 +47,30 @@
  *
  * The list of runnable fibers is maintained via a single linked list
  * in priority order. Numerically lower priorities represent higher priority
- * contexts.
+ * fibers.
  *
  * Interrupts must already be locked to ensure list cannot change
  * while this routine is executing!
  *
  * @return N/A
  */
-void _nano_fiber_schedule(tCCS *ccs)
+void _nano_fiber_schedule(struct tcs *tcs)
 {
-	tCCS *pQ = (tCCS *)&_nanokernel.fiber;
+	struct tcs *pQ = (struct tcs *)&_nanokernel.fiber;
 
 	/*
 	 * Search until end of list or until a fiber with numerically
 	 * higher priority is located.
 	 */
 
-	while (pQ->link && (ccs->prio >= pQ->link->prio)) {
+	while (pQ->link && (tcs->prio >= pQ->link->prio)) {
 		pQ = pQ->link;
 	}
 
 	/* Insert fiber, following any equal priority fibers */
 
-	ccs->link = pQ->link;
-	pQ->link = ccs;
+	tcs->link = pQ->link;
+	pQ->link = tcs;
 }
 
 
@@ -88,33 +88,33 @@ void _fiber_start(char *pStack,
 			       unsigned priority,
 			       unsigned options)
 {
-	tCCS *ccs;
+	struct tcs *tcs;
 	unsigned int imask;
 
-	ccs = (tCCS *) pStack;
-	_NewContext(pStack,
+	tcs = (struct tcs *) pStack;
+	_new_thread(pStack,
 			  stackSize,
-			  (_ContextEntry)pEntry,
+			  (_thread_entry_t)pEntry,
 			  (void *)parameter1,
 			  (void *)parameter2,
 			  (void *)0,
 			  priority,
 			  options);
 
-	/* _NewContext() has already set the flags depending on the 'options'
+	/* _new_thread() has already set the flags depending on the 'options'
 	 * and 'priority' parameters passed to it */
 
 	/* lock interrupts to prevent corruption of the runnable fiber list */
 
 	imask = irq_lock();
 
-	/* make the newly crafted CCS a runnable fiber */
+	/* make the newly crafted TCS a runnable fiber */
 
-	_nano_fiber_schedule(ccs);
+	_nano_fiber_schedule(tcs);
 
 	/*
-	 * Simply return to the caller if the current context is FIBER,
-	 * otherwise swap into the newly created fiber context
+	 * Simply return to the caller if the current thread is FIBER,
+	 * otherwise swap into the newly created fiber
 	 */
 
 	if ((_nanokernel.current->flags & TASK) == TASK)
@@ -127,12 +127,12 @@ void fiber_yield(void)
 {
 	unsigned int imask = irq_lock();
 
-	if ((_nanokernel.fiber != (tCCS *)NULL) &&
+	if ((_nanokernel.fiber != (struct tcs *)NULL) &&
 	    (_nanokernel.current->prio >= _nanokernel.fiber->prio)) {
 		/*
-		 * Reinsert current context into the list of runnable contexts,
+		 * Reinsert current thread into the list of runnable threads,
 		 * and
-		 * then swap to the context at the head of the fiber list.
+		 * then swap to the thread at the head of the fiber list.
 		 */
 
 		_nano_fiber_schedule(_nanokernel.current);
@@ -147,7 +147,7 @@ void fiber_yield(void)
  *
  * This routine is used when a fiber voluntarily gives up control of the CPU.
  *
- * This routine can only be called from a fiber context.
+ * This routine can only be called from a fiber.
  *
  * @return This function never returns
  */
@@ -177,9 +177,9 @@ FUNC_NORETURN void _nano_fiber_swap(void)
 #ifndef CONFIG_ARCH_HAS_NANO_FIBER_ABORT
 FUNC_NORETURN void fiber_abort(void)
 {
-	/* Do normal context exit cleanup, then give up CPU control */
+	/* Do normal thread exit cleanup, then give up CPU control */
 
-	_context_exit(_nanokernel.current);
+	_thread_exit(_nanokernel.current);
 	_nano_fiber_swap();
 }
 #endif
@@ -211,18 +211,18 @@ void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
 							unsigned int options, int32_t timeout_in_ticks)
 {
 	unsigned int key;
-	struct ccs *ccs;
+	struct tcs *tcs;
 
-	ccs = (struct ccs *)stack;
-	_NewContext(stack, stack_size_in_bytes, (_ContextEntry)entry_point,
+	tcs = (struct tcs *)stack;
+	_new_thread(stack, stack_size_in_bytes, (_thread_entry_t)entry_point,
 				(void *)param1, (void *)param2, (void *)0, priority, options);
 
 	key = irq_lock();
 
-	_nano_timeout_add(ccs, NULL, timeout_in_ticks);
+	_nano_timeout_add(tcs, NULL, timeout_in_ticks);
 
 	irq_unlock(key);
-	return ccs;
+	return tcs;
 }
 
 FUNC_ALIAS(fiber_delayed_start_cancel, fiber_fiber_delayed_start_cancel, void);
@@ -232,7 +232,7 @@ void fiber_delayed_start_cancel(void *handle)
 {
 	int key = irq_lock();
 
-	_nano_timeout_abort((struct ccs *)handle);
+	_nano_timeout_abort((struct tcs *)handle);
 
 	irq_unlock(key);
 }

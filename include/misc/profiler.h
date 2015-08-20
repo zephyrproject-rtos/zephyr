@@ -153,7 +153,7 @@ void sys_profiler_put_timed(uint16_t event_id);
  * @brief Register the fiber that calls the function as collector
  *
  * @details Initialize internal profiling data. This avoid registering the
- * context switch of the collector fiber when CONFIG_PROFILE_CONTEXT_SWITCH
+ * context switch of the collector fiber when CONFIG_PROFILE_THREAD_SWITCH
  * is enable.
  *
  * @return No return value.

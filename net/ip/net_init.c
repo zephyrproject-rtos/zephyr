@@ -102,7 +102,7 @@ static unsigned calculate_unused(const char *stack, unsigned size,
 	unsigned i, unused = 0;
 
 	if (stack_growth == STACK_DIRECTION_DOWN) {
-		for (i = __tCCS_SIZEOF; i < size; i++) {
+		for (i = __tTCS_SIZEOF; i < size; i++) {
 			if ((unsigned char)stack[i] == 0xaa) {
 				unused++;
 			} else {
@@ -110,7 +110,7 @@ static unsigned calculate_unused(const char *stack, unsigned size,
 			}
 		}
 	} else {
-		for (i = size - 1; i >= __tCCS_SIZEOF; i--) {
+		for (i = size - 1; i >= __tTCS_SIZEOF; i--) {
 			if ((unsigned char)stack[i] == 0xaa) {
 				unused++;
 			} else {
@@ -141,10 +141,10 @@ static void analyze_stacks(struct net_buf *buf, struct net_buf **ref)
 	unused_tx = calculate_unused(tx_fiber_stack, sizeof(tx_fiber_stack),
 				     stack_growth);
 
-	printk("net: ip: stack grows %s, sizeof(tCCS): %u  "
+	printk("net: ip: stack grows %s, sizeof(tTCS): %u  "
 	       "rx stack(%p/%u): unused %u/%u  "
 	       "tx stack(%p/%u): unused %u/%u\n",
-	       dir, __tCCS_SIZEOF,
+	       dir, __tTCS_SIZEOF,
 	       rx_fiber_stack, sizeof(rx_fiber_stack),
 	       unused_rx, sizeof(rx_fiber_stack),
 	       tx_fiber_stack, sizeof(tx_fiber_stack),

@@ -75,7 +75,7 @@ static inline unsigned int EflagsGet(void)
  * @brief Disallow use of floating point capabilities
  *
  * This routine sets CR0[TS] to 1, which disallows the use of FP instructions
- * by the currently executing context.
+ * by the currently executing thread.
  *
  * @return N/A
  */
@@ -100,8 +100,8 @@ static inline void _FpAccessDisable(void)
  *
  * This routine saves the system's "live" non-integer context into the
  * specified area.  If the specified task or fiber supports SSE then
- * x87/MMX/SSEx context info is saved, otherwise only x87/MMX context is saved.
- * Function is invoked by _FpCtxSave(tCCS *ccs)
+ * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
+ * Function is invoked by _FpCtxSave(struct tcs *tcs)
  *
  * @return N/A
  */
@@ -131,7 +131,7 @@ static inline void _do_fp_ctx_save(int flags, void *preemp_float_reg)
  * @brief Initialize non-integer context information
  *
  * This routine initializes the system's "live" non-integer context.
- * Function is invoked by _FpCtxInit(tCCS *ccs)
+ * Function is invoked by _FpCtxInit(struct tcs *tcs)
  *
  * @return N/A
  */
@@ -144,7 +144,7 @@ static inline void _do_fp_ctx_init(int flags)
 
 #ifdef CONFIG_SSE
 	if (flags) {
-		/* initialize SSE (since context uses it) */
+		/* initialize SSE (since thread uses it) */
 		__asm__ volatile("ldmxcsr _sse_mxcsr_default_value\n\t");
 
 	}

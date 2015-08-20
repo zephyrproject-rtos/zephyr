@@ -42,7 +42,7 @@
 uint32_t _sys_profiler_buffer[CONFIG_PROFILER_BUFFER_SIZE];
 
 #ifdef CONFIG_PROFILER_CONTEXT_SWITCH
-void *_collector_context=NULL;
+void *_collector_fiber=NULL;
 #endif
 
 /**
@@ -89,22 +89,22 @@ void _sys_profiler_context_switch(void)
 		return;
 	}
 
-	if (_collector_context != _nanokernel.current) {
+	if (_collector_fiber != _nanokernel.current) {
 		data[0] = nano_tick_get_32();
 		data[1] = (uint32_t)_nanokernel.current;
 
 		/*
 		 * The mechanism we use to log the profile events uses a sync semaphore
 		 * to inform that there are available events to be collected. The
-		 * context switch event can be triggered from a task context. When we
-		 * signal a semaphore from a task context and a fiber is waiting for
+		 * context switch event can be triggered from a task. When we
+		 * signal a semaphore from a task and a fiber is waiting for
 		 * that semaphore, a context switch is generated immediately. Due to
 		 * the fact that we register the context switch event while the context
 		 * switch is being processed, a new context switch can be generated
 		 * before the kernel finishes processing the current context switch. We
 		 * need to prevent this because the kernel is not able to handle it.
 		 * The _sem_give_non_preemptible function does not trigger a context
-		 * switch when we signal the semaphore from any type of context. Using
+		 * switch when we signal the semaphore from any type of thread. Using
 		 * _sys_event_logger_put_non_preemptible function, that internally uses
 		 * _sem_give_non_preemptible function for signaling the sync semaphore,
 		 * allow us registering the context switch event without triggering any
@@ -117,6 +117,6 @@ void _sys_profiler_context_switch(void)
 
 void sys_profiler_register_as_collector(void)
 {
-	_collector_context = _nanokernel.current;
+	_collector_fiber = _nanokernel.current;
 }
 #endif /* CONFIG_PROFILER_CONTEXT_SWITCH */

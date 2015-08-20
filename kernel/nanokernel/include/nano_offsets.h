@@ -46,8 +46,8 @@ GEN_OFFSET_SYM(tNANO, fiber);
 GEN_OFFSET_SYM(tNANO, task);
 GEN_OFFSET_SYM(tNANO, current);
 
-#if defined(CONFIG_CONTEXT_MONITOR)
-GEN_OFFSET_SYM(tNANO, contexts);
+#if defined(CONFIG_THREAD_MONITOR)
+GEN_OFFSET_SYM(tNANO, threads);
 #endif
 
 #ifdef CONFIG_FP_SHARING
@@ -58,21 +58,21 @@ GEN_OFFSET_SYM(tNANO, current_fp);
 
 GEN_ABSOLUTE_SYM(__tNANO_SIZEOF, sizeof(tNANO));
 
-/* arch-agnostic tCCS structure member offsets */
+/* arch-agnostic struct tcs structure member offsets */
 
-GEN_OFFSET_SYM(tCCS, link);
-GEN_OFFSET_SYM(tCCS, prio);
-GEN_OFFSET_SYM(tCCS, flags);
-GEN_OFFSET_SYM(tCCS, coopReg);   /* start of coop register set */
-GEN_OFFSET_SYM(tCCS, preempReg); /* start of prempt register set */
+GEN_OFFSET_SYM(tTCS, link);
+GEN_OFFSET_SYM(tTCS, prio);
+GEN_OFFSET_SYM(tTCS, flags);
+GEN_OFFSET_SYM(tTCS, coopReg);   /* start of coop register set */
+GEN_OFFSET_SYM(tTCS, preempReg); /* start of prempt register set */
 
-#if defined(CONFIG_CONTEXT_MONITOR)
-GEN_OFFSET_SYM(tCCS, next_context);
+#if defined(CONFIG_THREAD_MONITOR)
+GEN_OFFSET_SYM(tTCS, next_thread);
 #endif
 
 
-/* size of the entire tCCS structure */
+/* size of the entire struct tcs structure */
 
-GEN_ABSOLUTE_SYM(__tCCS_SIZEOF, sizeof(tCCS));
+GEN_ABSOLUTE_SYM(__tTCS_SIZEOF, sizeof(tTCS));
 
 #endif /* _NANO_OFFSETS__H_ */

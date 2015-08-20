@@ -38,7 +38,7 @@ verions utilizes a task and a fiber.
 
 The load/store test validates the nanokernel's floating point unit context
 save/restore mechanism. (For the IA-32 architecture this includes the x87 FPU
-(MMX) registers and the XMM registers.) This test utilizes a pair of contexts
+(MMX) registers and the XMM registers.) This test utilizes a pair of threads
 of different priorities that each use the floating point registers. The context
 switching that occurs exercises the kernel's ability to properly preserve the
 floating point registers. The test also exercises the kernel's ability to
@@ -51,7 +51,7 @@ should be enhanced to ensure that the architectures' _Swap() routine doesn't
 context switch more registers that it needs to (which would represent a
 performance issue).  For example, on the IA-32, the test should issue
 a nanoCpuFpDisable() from main(), and then indicate that only x87 FPU
-registers will be utilized (nanoCpuFpEnable).  The fiber context should continue
+registers will be utilized (nanoCpuFpEnable).  The fiber should continue
 to load ALL non-integer registers, but main() should validate that only the
 x87 FPU registers are being saved/restored.
  */
@@ -106,18 +106,18 @@ x87 FPU registers are being saved/restored.
 #define TICK_COUNT_GET() task_tick_get_32()
 #endif
 
-/* space for float register load/store area used by low priority task context */
+/* space for float register load/store area used by low priority task */
 
 static FP_REG_SET floatRegSetLoad;
 static FP_REG_SET floatRegSetStore;
 
-/* space for float register load/store area used by high priority context */
+/* space for float register load/store area used by high priority thread */
 
 static FP_REG_SET floatRegisterSet;
 
 
 #ifdef CONFIG_NANOKERNEL
-/* stack for high priority fiber context (also use .bss for floatRegisterSet) */
+/* stack for high priority fiber (also use .bss for floatRegisterSet) */
 
 static char __stack fiberStack[1024];
 
@@ -140,7 +140,7 @@ static volatile unsigned int load_store_high_count = 0;
 /**
  *
  * main -
- * @brief Low priority FPU load/store context
+ * @brief Low priority FPU load/store thread
  *
  * @return N/A
  */
@@ -167,7 +167,7 @@ void load_store_low(void)
 	 */
 #else /* ! CONFIG_AUTOMATIC_FP_ENABLING */
 #if defined(CONFIG_FLOAT)
-	task_float_enable(context_self_get());
+	task_float_enable(sys_thread_self_get());
 #endif
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 
@@ -204,7 +204,7 @@ void load_store_low(void)
 
 	/*
 	 * Initialize floating point load buffer to known values;
-	 * these values must be different than the value used in other contexts.
+	 * these values must be different than the value used in other threads.
 	 */
 
 	floatRegInitByte = MAIN_FLOAT_REG_CHECK_BYTE;
@@ -231,8 +231,8 @@ void load_store_low(void)
 		_LoadAllFloatRegisters(&floatRegSetLoad);
 
 		/*
-		 * Waste some cycles to give the high priority load/store context
-		 * an opportunity to run when the low priority context is using the
+		 * Waste some cycles to give the high priority load/store thread
+		 * an opportunity to run when the low priority thread is using the
 		 * floating point registers.
 		 *
 		 * IMPORTANT: This logic requires that TICK_COUNT_GET() not perform
@@ -257,7 +257,7 @@ void load_store_low(void)
 		/*
 		 * Compare each byte of buffer to ensure the expected value is
 		 * present, indicating that the floating point registers weren't
-		 * impacted by the operation of the high priority context(s).
+		 * impacted by the operation of the high priority thread(s).
 		 *
 		 * Display error message and terminate if discrepancies are detected.
 		 */
@@ -299,7 +299,7 @@ void load_store_low(void)
 		 */
 		if ((load_store_low_count % 1000) == 0) {
 #if defined(CONFIG_FLOAT)
-			task_float_disable(context_self_get());
+			task_float_disable(sys_thread_self_get());
 #endif
 		}
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */
@@ -308,7 +308,7 @@ void load_store_low(void)
 
 /**
  *
- * @brief High priority FPU load/store context
+ * @brief High priority FPU load/store thread
  *
  * @return N/A
  */
@@ -348,7 +348,7 @@ void load_store_high(void)
 		 * successive location in the floatRegisterSet structure.
 		 *
 		 * The initial byte value, and thus the contents of the entire
-		 * floatRegisterSet structure, must be different for each context to
+		 * floatRegisterSet structure, must be different for each thread to
 		 * effectively test the nanokernel's ability to properly save/restore
 		 * the floating point values during a context switch.
 		 */
@@ -365,7 +365,7 @@ void load_store_high(void)
 		 * the floatRegisterSet structure.
 		 *
 		 * The goal of the loading all floating point registers with values
-		 * that differ from the values used in other contexts is to help
+		 * that differ from the values used in other threads is to help
 		 * determine whether the floating point register save/restore mechanism
 		 * in the nanokernel's context switcher is operating correctly.
 		 *
@@ -382,11 +382,11 @@ void load_store_high(void)
 
 		/*
 		 * Relinquish the processor for the remainder of the current system
-		 * clock tick, so that lower priority contexts get a chance to run.
+		 * clock tick, so that lower priority threads get a chance to run.
 		 *
 		 * This exercises the ability of the nanokernel to restore the FPU
-		 * state of a low priority context _and_ the ability of the nanokernel
-		 * to provide a "clean" FPU state to this context once the sleep ends.
+		 * state of a low priority thread _and_ the ability of the nanokernel
+		 * to provide a "clean" FPU state to this thread once the sleep ends.
 		 */
 
 #ifdef CONFIG_NANOKERNEL

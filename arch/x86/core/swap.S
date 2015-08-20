@@ -1,7 +1,7 @@
 /* swap.S - nanokernel swapper code for IA-32 */
 
 /*
- * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) 2010-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -59,17 +59,17 @@ save frame on the stack.
  * @brief Initiate a cooperative context switch
  *
  * The _Swap() routine is invoked by various nanokernel services to effect
- * a cooperative context context switch.  Prior to invoking _Swap(), the
+ * a cooperative context switch.  Prior to invoking _Swap(), the
  * caller disables interrupts (via irq_lock) and the return 'key'
  * is passed as a parameter to _Swap().  The 'key' actually represents
  * the EFLAGS register prior to disabling interrupts via a 'cli' instruction.
  *
- * Given that _Swap() is called to effect a cooperative context context switch,
- * only the non-volatile integer registers need to be saved in the tCCS of the
- * outgoing context.  The restoration of the integer registers of the incoming
- * context depends on whether that context was preemptively context switched
- * out.  The INT_ACTIVE and EXC_ACTIVE bits in the tCCS->flags field will signify
- * that the context was preemptively context switched out, and thus both the
+ * Given that _Swap() is called to effect a cooperative context switch,
+ * only the non-volatile integer registers need to be saved in the TCS of the
+ * outgoing thread.  The restoration of the integer registers of the incoming
+ * thread depends on whether that thread was preemptively context switched
+ * out.  The INT_ACTIVE and EXC_ACTIVE bits in the tTCS->flags field will signify
+ * that the thread was preemptively context switched out, and thus both the
  * volatile and non-volatile integer registers need to be restored.
  *
  * The non-volatile registers need to be scrubbed to ensure they contain no 
@@ -82,22 +82,21 @@ save frame on the stack.
  * for potential security impacts.
  *
  * Floating point registers are handled using a lazy save/restore
- * mechanism since it's expected relatively few contexts will be created
+ * mechanism since it's expected relatively few threads will be created
  * with the USE_FP or USE_SSE option bits.  The nanokernel data structure
- * maintains a 'current_fp' field to keep track of the context that "owns"
+ * maintains a 'current_fp' field to keep track of the thread that "owns"
  * the floating point registers.  Floating point registers consist of
  * ST0->ST7 (x87 FPU and MMX registers) and XMM0 -> XMM7.
  *
  * All floating point registers are considered 'volatile' thus they will
- * only be saved/restored when a preemptive context context switch occurs.
+ * only be saved/restored when a preemptive context switch occurs.
  *
  * Floating point registers are currently NOT scrubbed, and are subject to
  * potential security leaks.
  *
- * The scheduling algorithm is simple: schedule the head of the runnable
- * FIBER context list, which is represented by _nanokernel.fiber.  If there are
- * no runnable FIBER contexts, then schedule the TASK context represented
- * by _nanokernel.task.  The _nanokernel.task field will never be NULL.
+ * The scheduling algorithm is simple: schedule the head of the runnable fiber
+ * list (_nanokernel.fiber).  If there are no runnable fibers, then schedule
+ * the task (_nanokernel.task).  The _nanokernel.task field will never be NULL.
  *
  * @return may contain a return value setup by a call to fiberRtnValueSet()
  *
@@ -112,9 +111,9 @@ SECTION_FUNC(TEXT, _Swap)
 
 	/*
 	 * Push all non-volatile registers onto the stack; do not copy
-	 * any of these registers into the tCCS.  Only the 'esp' register
+	 * any of these registers into the tTCS.  Only the 'esp' register
 	 * after all the pushes have been performed) will be stored in the
-	 * tCCS.
+	 * tTCS.
 	 */
 
 	pushl	%edi
@@ -131,10 +130,10 @@ SECTION_FUNC(TEXT, _Swap)
 	pushl	%ebx
 
 
-	/* save esp into tCCS structure */
+	/* save esp into tTCS structure */
 
 	movl	__tNANO_current_OFFSET (%eax), %ecx
-	movl	%esp, __tCCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%ecx)
+	movl	%esp, __tTCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%ecx)
 
 #ifdef CONFIG_PROFILER_CONTEXT_SWITCH
 	/* save %eax since it used as the return value for _Swap */
@@ -146,7 +145,7 @@ SECTION_FUNC(TEXT, _Swap)
 #endif
 
 	/*
-	 * Determine what FIBER or TASK context needs to be swapped in. 
+	 * Determine what thread needs to be swapped in.
 	 * Note that the %eax still contains &_nanokernel.
 	 */ 
 
@@ -154,17 +153,16 @@ SECTION_FUNC(TEXT, _Swap)
 	testl	%ecx, %ecx
 	jz	swapTask	/* Jump if no ready fibers */
 
-	/* remove the head 'tCCS *' from the runnable context list */
+	/* remove the head 'TCS *' from the runnable fiber list */
 
-	movl	__tCCS_link_OFFSET (%ecx), %ebx
+	movl	__tTCS_link_OFFSET (%ecx), %ebx
 	movl	%ebx, __tNANO_fiber_OFFSET (%eax)
 	jmp 	restoreContext
 
 
  	/*
- 	 * There are no FIBER context in the run queue, thus swap in the
-	 * TASK context specified via _nanokernel.task.  The 'task' field
-	 * will _never_ be NULL.
+	 * There are no fiber in the run queue, thus swap in the task
+	 * (_nanokernel.task).  The 'task' field will _never_ be NULL.
 	 */
 
 BRANCH_LABEL(swapTask)
@@ -174,7 +172,7 @@ BRANCH_LABEL(swapTask)
 
 
 	/*
-	 * At this point, the %ecx register contains the 'tCCS *' of
+	 * At this point, the %ecx register contains the 'tTCS *' of
 	 * the TASK or FIBER to be swapped in, and %eax still
 	 * contains &_nanokernel.
 	 */
@@ -184,15 +182,15 @@ BRANCH_LABEL(restoreContext)
 #ifdef CONFIG_FP_SHARING
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
 	/*
-	 * Clear the CR0[TS] bit (in the event the current context
+	 * Clear the CR0[TS] bit (in the event the current thread
 	 * doesn't have floating point enabled) to prevent the "device not
 	 * available" exception when executing the subsequent fxsave/fnsave 
 	 * and/or fxrstor/frstor instructions.  
 	 *
 	 * Indeed, it's possible that none of the aforementioned instructions
-	 * need to be executed, for example, the incoming context doesn't
+	 * need to be executed, for example, the incoming thread doesn't
 	 * utilize floating point operations.  However, the code responsible
-	 * for setting the CR0[TS] bit appropriately for the incoming context
+	 * for setting the CR0[TS] bit appropriately for the incoming thread
 	 * (just after the 'restoreContext_NoFloatSwap' label) will leverage
 	 * the fact that the following 'clts' was performed already.
 	 */
@@ -202,18 +200,18 @@ BRANCH_LABEL(restoreContext)
 
 
 	/*
-	 * Determine whether the incoming context utilizes non-integer
-	 * capabilities _and_ whether the context was context switched
+	 * Determine whether the incoming thread utilizes non-integer
+	 * capabilities _and_ whether the thread was context switched
 	 * out preemptively.  
 	 */
 
-	testl	$USE_FP, __tCCS_flags_OFFSET (%ecx)
+	testl	$USE_FP, __tTCS_flags_OFFSET (%ecx)
 	je 	restoreContext_NoFloatSwap
 
 
 	/*
-	 * The incoming context uses non-integer capabilities (x87 FPU and/or
-	 * XMM regs): Was it the last context to use non-integer capabilities?
+	 * The incoming thread uses non-integer capabilities (x87 FPU and/or
+	 * XMM regs): Was it the last thread to use non-integer capabilities?
 	 * If so, there there is no need to restore the non-integer context.
 	 */
 
@@ -223,10 +221,10 @@ BRANCH_LABEL(restoreContext)
 
 
 	/* 
-	 * The incoming context uses non-integer capabilities (x87 FPU and/or
-	 * XMM regs) and it was _not_ the last context to use the non-integer
+	 * The incoming thread uses non-integer capabilities (x87 FPU and/or
+	 * XMM regs) and it was _not_ the last thread to use the non-integer
 	 * capabilities: Check whether the current FP context actually needs
-	 * to be saved before swapping in the context of the incoming context
+	 * to be saved before swapping in the context of the incoming thread
 	 */
 
 	testl	%ebx, %ebx
@@ -234,8 +232,8 @@ BRANCH_LABEL(restoreContext)
 
 
 	/*
-	 * The incoming context uses non-integer capabilities (x87 FPU and/or
-	 * XMM regs) and it was _not_ the last context to use the non-integer
+	 * The incoming thread uses non-integer capabilities (x87 FPU and/or
+	 * XMM regs) and it was _not_ the last thread to use the non-integer
 	 * capabilities _and_ the current FP context needs to be saved.
 	 *
 	 * Given that the ST[0] -> ST[7] and XMM0 -> XMM7 registers are all
@@ -243,21 +241,21 @@ BRANCH_LABEL(restoreContext)
 	 * was preemptively context switched.
 	 */
 
-	testl	$INT_OR_EXC_MASK, __tCCS_flags_OFFSET (%ebx)
+	testl	$INT_OR_EXC_MASK, __tTCS_flags_OFFSET (%ebx)
 	je	restoreContext_NoFloatSave
 
 
 #ifdef CONFIG_SSE
-	testl	$USE_SSE, __tCCS_flags_OFFSET (%ebx)
+	testl	$USE_SSE, __tTCS_flags_OFFSET (%ebx)
 	je	x87FloatSave
 
 	/*
 	 * 'fxsave' does NOT perform an implicit 'fninit', therefore issue an
-	 * 'fninit' to ensure a "clean" FPU state for the incoming context
+	 * 'fninit' to ensure a "clean" FPU state for the incoming thread
 	 * (for the case when the fxrstor is not executed).
 	 */
 
-	fxsave	__tCCS_preempFloatReg_OFFSET (%ebx)
+	fxsave	__tTCS_preempFloatReg_OFFSET (%ebx)
 	fninit
 	jmp	floatSaveDone
 
@@ -266,7 +264,7 @@ BRANCH_LABEL(x87FloatSave)
 
 	/* 'fnsave' performs an implicit 'fninit' after saving state! */
 
-	fnsave	 __tCCS_preempFloatReg_OFFSET (%ebx)
+	fnsave	 __tTCS_preempFloatReg_OFFSET (%ebx)
 
 	/* fall through to 'floatSaveDone' */
 
@@ -274,61 +272,61 @@ BRANCH_LABEL(floatSaveDone)
 BRANCH_LABEL(restoreContext_NoFloatSave)
 
 	/********************************************************* 
-	 * Restore floating point context of the incoming context.
+	 * Restore floating point context of the incoming thread.
 	 *********************************************************/
 
         /*
 	 * Again, given that the ST[0] -> ST[7] and XMM0 -> XMM7 registers are
 	 * all 'volatile', only restore the registers if the incoming
-	 * context was previously preemptively context switched out.
+	 * thread was previously preemptively context switched out.
 	 */
 
-	testl   $INT_OR_EXC_MASK, __tCCS_flags_OFFSET (%ecx)
+	testl   $INT_OR_EXC_MASK, __tTCS_flags_OFFSET (%ecx)
 	je 	restoreContext_NoFloatRestore
 
 #ifdef CONFIG_SSE
-	testl	$USE_SSE, __tCCS_flags_OFFSET (%ecx)
+	testl	$USE_SSE, __tTCS_flags_OFFSET (%ecx)
 	je	x87FloatRestore
 
-	fxrstor	__tCCS_preempFloatReg_OFFSET (%ecx)
+	fxrstor	__tTCS_preempFloatReg_OFFSET (%ecx)
 	jmp	floatRestoreDone
 
 BRANCH_LABEL(x87FloatRestore)
 
 #endif /* CONFIG_SSE */
 
-	frstor	__tCCS_preempFloatReg_OFFSET (%ecx)
+	frstor	__tTCS_preempFloatReg_OFFSET (%ecx)
 
 	/* fall through to 'floatRestoreDone' */
 
 BRANCH_LABEL(floatRestoreDone)
 BRANCH_LABEL(restoreContext_NoFloatRestore)
 
-	/* record that the incoming context "owns" the non-integer registers */
+	/* record that the incoming thread "owns" the non-integer registers */
 
 	movl	%ecx, __tNANO_current_fp_OFFSET (%eax)
 
 
 	/*
 	 * Branch point when none of the non-integer registers need to be
-	 * swapped either due to a) the incoming context does not
-	 * USE_FP | USE_SSE, or b) the incoming context is the same as
-	 * the last context that utilized the non-integer registers.
+	 * swapped either due to a) the incoming thread does not
+	 * USE_FP | USE_SSE, or b) the incoming thread is the same as
+	 * the last thread that utilized the non-integer registers.
 	 */
 
 BRANCH_LABEL(restoreContext_NoFloatSwap)
 
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
 	/*
-	 * Leave CR0[TS] clear if incoming context utilizes "floating point"
+	 * Leave CR0[TS] clear if incoming thread utilizes "floating point"
 	 * instructions
 	 */
 	 
-	testl	$USE_FP, __tCCS_flags_OFFSET (%ecx)
+	testl	$USE_FP, __tTCS_flags_OFFSET (%ecx)
 	jne	CROHandlingDone
 
 	/*
-	 * The incoming context does NOT currently utilize "floating point"
+	 * The incoming thread does NOT currently utilize "floating point"
 	 * instructions, so set CR0[TS] to ensure the "device not available"
 	 * exception occurs on the first attempt to access a x87 FPU, MMX,
 	 * or XMM register.
@@ -346,13 +344,13 @@ BRANCH_LABEL(CROHandlingDone)
 
 
 
-	/* update _nanokernel.current to reflect incoming context */
+	/* update _nanokernel.current to reflect incoming thread */
 
 	movl    %ecx, __tNANO_current_OFFSET (%eax) 
 
-	/* recover task/fiber stack pointer from tCCS */
+	/* recover task/fiber stack pointer from tTCS */
 
-	movl	__tCCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%ecx), %esp
+	movl	__tTCS_coopReg_OFFSET + __tCoopReg_esp_OFFSET (%ecx), %esp
 
 
 	/* load return value from a possible fiberRtnValueSet() */
@@ -370,8 +368,8 @@ BRANCH_LABEL(CROHandlingDone)
 	 * For a non-preemptive context switch, it is checked that the volatile
 	 * integer registers have the following values:
 	 *
-	 * 1. ECX - points to the task's own CCS structure. 
-	 * 2. EDX - contains the flags field of the task's own CCS structure.
+	 * 1. ECX - points to the task's own TCS structure.
+	 * 2. EDX - contains the flags field of the task's own TCS structure.
 	 * 3. EAX - may contain one of the two values:
 	 *          (a) the return value for _Swap() that was set up by a 
 	 *              call to fiberRtnValueSet()

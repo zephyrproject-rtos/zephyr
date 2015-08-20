@@ -240,7 +240,7 @@ void fiber1(void)
  *
  * testFiberStackPopW
  *
- * This function tests the stack push and pop wait interfaces in the fiber context.
+ * This function tests the stack push and pop wait interfaces in a fiber.
  * It gets data from nanoStackObj2 queue and puts data to nanoStackObj queue.
  *
  * @return N/A
@@ -285,7 +285,7 @@ void testFiberStackPopW(void)
  *
  * testIsrStackFromFiber
  *
- * This function tests the stack push and pop interfaces in the isr context.
+ * This function tests the stack push and pop interfaces in the ISR context.
  * It is invoked from a fiber.
  *
  * We use nanoStackObj queue to push and pop data.
@@ -303,7 +303,7 @@ void testIsrStackFromFiber(void)
 	_trigger_nano_isr_stack_pop();
 	result = isrStackInfo.data;
 	if (result != INVALID_DATA) {
-		TC_PRINT("ISR STACK (running in fiber context) Pop from queue1: %d\n", result);
+		TC_PRINT("ISR STACK (running in fiber) Pop from queue1: %d\n", result);
 		if (result != myData[3]) {
 			retCode = TC_FAIL;
 			TCERR2;
@@ -322,7 +322,7 @@ void testIsrStackFromFiber(void)
 	}
 
 	/* Put more data into STACK */
-	TC_PRINT("ISR STACK (running in fiber context) Push to queue1:\n");
+	TC_PRINT("ISR STACK (running in fiber) Push to queue1:\n");
 	for (int i=0; i<NUM_STACK_ELEMENT; i++) {
 		isrStackInfo.data = myIsrData[i];
 		TC_PRINT("  %d, ", myIsrData[i]);
@@ -341,7 +341,7 @@ void testIsrStackFromFiber(void)
  *
  * testIsrStackFromTask
  *
- * This function tests the stack push and pop interfaces in the isr context.
+ * This function tests the stack push and pop interfaces in the ISR context.
  * It is invoked from a task.
  *
  * We use nanoStackObj queue to push and pop data.
@@ -418,7 +418,7 @@ void fiber2(void)
  *
  * testTaskStackPopW
  *
- * This is in the task context.  It puts data to nanoStackObj2 queue and gets
+ * This is in the task.  It puts data to nanoStackObj2 queue and gets
  * data from nanoStackObj queue.
  *
  * @return N/A

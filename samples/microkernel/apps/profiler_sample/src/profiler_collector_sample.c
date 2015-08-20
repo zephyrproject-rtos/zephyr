@@ -51,7 +51,7 @@ extern void philEntry(void);
 char __stack profiler_stack[2][STSIZE];
 
 struct context_switch_data_t {
-	uint32_t context_id;
+	uint32_t thread_id;
 	uint32_t last_time_executed;
 	uint32_t count;
 };
@@ -66,14 +66,14 @@ struct context_switch_data_t
 struct event_logger sys_profiler;
 
 
-void register_context_switch_data(uint32_t timestamp, uint32_t context_id)
+void register_context_switch_data(uint32_t timestamp, uint32_t thread_id)
 {
 	int found;
 	int i;
 
 	found=0;
 	for (i=0; (i<MAX_BUFFER_CONTEXT_DATA) && (found==0); i++) {
-		if (context_switch_summary_data[i].context_id == context_id) {
+		if (context_switch_summary_data[i].thread_id == thread_id) {
 			context_switch_summary_data[i].last_time_executed = timestamp;
 			context_switch_summary_data[i].count += 1;
 			found=1;
@@ -82,8 +82,8 @@ void register_context_switch_data(uint32_t timestamp, uint32_t context_id)
 
 	if (!found) {
 		for (i=0; i<MAX_BUFFER_CONTEXT_DATA; i++) {
-			if (context_switch_summary_data[i].context_id == 0) {
-				context_switch_summary_data[i].context_id = context_id;
+			if (context_switch_summary_data[i].thread_id == 0) {
+				context_switch_summary_data[i].thread_id = thread_id;
 				context_switch_summary_data[i].last_time_executed = timestamp;
 				context_switch_summary_data[i].count = 1;
 				break;
@@ -93,10 +93,10 @@ void register_context_switch_data(uint32_t timestamp, uint32_t context_id)
 }
 
 
-void print_context_data(uint32_t context_id, uint32_t count,
+void print_context_data(uint32_t thread_id, uint32_t count,
 	uint32_t last_time_executed, int indice)
 {
-	PRINTF("\x1b[%d;2H%u    ", 15 + indice, context_id);
+	PRINTF("\x1b[%d;2H%u    ", 15 + indice, thread_id);
 	PRINTF("\x1b[%d;14H%u    ", 15 + indice, count);
 }
 
@@ -104,7 +104,7 @@ void print_context_data(uint32_t context_id, uint32_t count,
 /**
  * @brief Summary data printer fiber
  *
- * @details Print the summary data of the context swith events
+ * @details Print the summary data of the context switch events
  * and the total dropped event ocurred.
  *
  * @return No return value.
@@ -119,10 +119,10 @@ void summary_data_printer(void)
 
 		/* print context switch data */
 		PRINTF("\x1b[13;1HContext switch summary");
-		PRINTF("\x1b[14;1HContext Id   Amount of context switches");
+		PRINTF("\x1b[14;1HThread Id   Amount of context switches");
 		for (i=0; i<MAX_BUFFER_CONTEXT_DATA; i++) {
-			if (context_switch_summary_data[i].context_id != 0) {
-				print_context_data(context_switch_summary_data[i].context_id,
+			if (context_switch_summary_data[i].thread_id != 0) {
+				print_context_data(context_switch_summary_data[i].thread_id,
 					context_switch_summary_data[i].count,
 					context_switch_summary_data[i].last_time_executed, i);
 			}

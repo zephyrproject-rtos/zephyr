@@ -36,11 +36,11 @@ Testing nano_cpu_idle()
 Testing interrupt locking and unlocking
 Testing inline interrupt locking and unlocking
 Testing irq_disable() and irq_enable()
-Testing context_self_get() from an ISR and task
-Testing context_type_get() from an ISR
-Testing context_type_get() from a task
+Testing sys_thread_self_get() from an ISR and task
+Testing sys_execution_context_type_get() from an ISR
+Testing sys_execution_context_type_get() from a task
 Spawning a fiber from a task
-Fiber to test context_self_get() and context_type_get
+Fiber to test sys_thread_self_get() and sys_execution_context_type_get
 Fiber to test fiber_yield()
 Verifying exception handler installed
 excHandlerExecuted: 1

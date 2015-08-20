@@ -1,7 +1,7 @@
-/* ctx_wrapper.S - wrapper for _context_entry */
+/* thread_entry_wrapper.S - wrapper for _thread_entry */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,8 +32,7 @@
 
 /*
  * DESCRIPTION
- * Wrapper for _context_entry routine when called from
- * the initial context
+ * Wrapper for _thread_entry routine when called from the initial context.
  */
 
 #define _ASMLANGUAGE
@@ -41,24 +40,23 @@
 #include <toolchain.h>
 #include <sections.h>
 
-GTEXT(_ContextEntryWrapper)
-GTEXT(_context_entry)
-
+GTEXT(_thread_entry_wrapper)
+GTEXT(_thread_entry)
 
 /*
- * @brief Wrapper for _context_entry
+ * @brief Wrapper for _thread_entry
  *
- * The routine pops parameters for the _context_entry from
- * stack frame, prepared by the _NewContext() routine
+ * The routine pops parameters for the _thread_entry from stack frame, prepared
+ * by the _new_thread() routine.
  *
  * @return N/A
  */
 
-SECTION_FUNC(TEXT, _ContextEntryWrapper)
+SECTION_FUNC(TEXT, _thread_entry_wrapper)
 
 	pop_s r3
 	pop_s r2
 	pop_s r1
 	pop_s r0
-	j _context_entry
+	j _thread_entry
 	nop

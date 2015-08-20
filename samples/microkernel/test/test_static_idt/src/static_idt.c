@@ -68,7 +68,7 @@ NANO_CPU_INT_REGISTER(nanoIntStub, TEST_SOFT_INT, 0);
 static volatile int    excHandlerExecuted;
 static volatile int    intHandlerExecuted;
 /* Assume the spurious interrupt handler will execute and abort the task/fiber */
-static volatile int    spurHandlerAbortedContext = 1;
+static volatile int    spurHandlerAbortedThread = 1;
 
 #ifdef CONFIG_NANOKERNEL
 static char __stack fiberStack[512];
@@ -195,7 +195,7 @@ static void idtSpurFiber(int a1, int a2)
 	_trigger_spurHandler();
 
 	/* Shouldn't get here */
-	spurHandlerAbortedContext = 0;
+	spurHandlerAbortedThread = 0;
 
 }
 
@@ -270,9 +270,9 @@ void main(void)
 #endif
 	/*
 	 * The fiber/task should not run past where the spurious interrupt is
-	 * generated. Therefore spurHandlerAbortedContext should remain at 1.
+	 * generated. Therefore spurHandlerAbortedThread should remain at 1.
 	 */
-	if (spurHandlerAbortedContext == 0) {
+	if (spurHandlerAbortedThread == 0) {
 		TC_ERROR("Spurious handler did not execute as expected\n");
 		rv = TC_FAIL;
 		goto doneTests;

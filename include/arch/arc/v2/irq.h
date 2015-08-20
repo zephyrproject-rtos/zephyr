@@ -77,12 +77,12 @@ extern void _irq_exit(void);
  * Invoking a kernel routine with interrupts locked may result in
  * interrupts being re-enabled for an unspecified period of time.  If the
  * called routine blocks, interrupts will be re-enabled while another
- * context executes, or while the system is idle.
+ * thread executes, or while the system is idle.
  *
- * The "interrupt disable state" is an attribute of a context.  Thus, if a
+ * The "interrupt disable state" is an attribute of a thread.  Thus, if a
  * fiber or task disables interrupts and subsequently invokes a kernel
- * routine that causes the calling context to block, the interrupt
- * disable state will be restored when the context is later rescheduled
+ * routine that causes the calling thread to block, the interrupt
+ * disable state will be restored when the thread is later rescheduled
  * for execution.
  *
  * @return An architecture-dependent lock-out key representing the

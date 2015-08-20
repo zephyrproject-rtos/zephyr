@@ -56,7 +56,7 @@ void stack_test_init(void)
 
 /**
  *
- * @brief Stack test context
+ * @brief Stack test fiber
  *
  * @param par1   Ignored parameter.
  * @param par2   Number of test loops.
@@ -92,7 +92,7 @@ void stack_fiber1(int par1, int par2)
 
 /**
  *
- * @brief Stack test context
+ * @brief Stack test fiber
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
@@ -122,7 +122,7 @@ void stack_fiber2(int par1, int par2)
 
 /**
  *
- * @brief Stack test context
+ * @brief Stack test fiber
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.

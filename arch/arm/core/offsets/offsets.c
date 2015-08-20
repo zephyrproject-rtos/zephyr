@@ -59,11 +59,11 @@ GEN_OFFSET_SYM(tNANO, flags);
 GEN_OFFSET_SYM(tNANO, idle);
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
-/* ARM-specific tCCS structure member offsets */
+/* ARM-specific struct tcs structure member offsets */
 
-GEN_OFFSET_SYM(tCCS, basepri);
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
-GEN_OFFSET_SYM(tCCS, custom_data);
+GEN_OFFSET_SYM(tTCS, basepri);
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+GEN_OFFSET_SYM(tTCS, custom_data);
 #endif
 
 /* ARM-specific ESF structure member offsets */
@@ -97,8 +97,8 @@ GEN_OFFSET_SYM(tPreempt, psp);
 
 GEN_ABSOLUTE_SYM(__tPreempt_SIZEOF, sizeof(tPreempt));
 
-/* size of the tCCS structure sans save area for floating point regs */
+/* size of the struct tcs structure sans save area for floating point regs */
 
-GEN_ABSOLUTE_SYM(__tCCS_NOFLOAT_SIZEOF, sizeof(tCCS));
+GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF, sizeof(tTCS));
 
 GEN_ABS_SYM_END

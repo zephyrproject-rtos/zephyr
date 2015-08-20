@@ -39,23 +39,23 @@
 
 #include <misc/dlist.h>
 
-/* initialize the nano timeouts part of CCS when enabled in the kernel */
+/* initialize the nano timeouts part of TCS when enabled in the kernel */
 
-static inline void _nano_timeout_ccs_init(struct ccs *ccs)
+static inline void _nano_timeout_tcs_init(struct tcs *tcs)
 {
 	/*
 	 * Must be initialized here and when dequeueing a timeout so that code
 	 * not dealing with timeouts does not have to handle this, such as when
 	 * waiting forever on a semaphore.
 	 */
-	ccs->nano_timeout.delta_ticks_from_prev = -1;
+	tcs->nano_timeout.delta_ticks_from_prev = -1;
 
 	/*
 	 * These are initialized when enqueing on the timeout queue:
 	 *
-	 *   ccs->nano_timeout.node.next
-	 *   ccs->nano_timeout.node.prev
-	 *   ccs->nano_timeout.wait_q
+	 *   tcs->nano_timeout.node.next
+	 *   tcs->nano_timeout.node.prev
+	 *   tcs->nano_timeout.wait_q
 	 */
 }
 
@@ -70,13 +70,13 @@ static inline struct _nano_timeout *_nano_timeout_handle_one_timeout(
 	sys_dlist_t *timeout_q)
 {
 	struct _nano_timeout *t = (void *)sys_dlist_get(timeout_q);
-	struct ccs *ccs = CONTAINER_OF(t, struct ccs, nano_timeout);
+	struct tcs *tcs = CONTAINER_OF(t, struct tcs, nano_timeout);
 
-	if (ccs->nano_timeout.wait_q) {
-		_nano_timeout_remove_ccs_from_wait_q(ccs);
-		fiberRtnValueSet(ccs, (unsigned int)0);
+	if (tcs->nano_timeout.wait_q) {
+		_nano_timeout_remove_tcs_from_wait_q(tcs);
+		fiberRtnValueSet(tcs, (unsigned int)0);
 	}
-	_nano_fiber_schedule(ccs);
+	_nano_fiber_schedule(tcs);
 	t->delta_ticks_from_prev = -1;
 
 	return (struct _nano_timeout *)sys_dlist_peek_head(timeout_q);
@@ -95,10 +95,10 @@ static inline void _nano_timeout_handle_timeouts(void)
 }
 
 /* abort a timeout for a specific fiber */
-static inline void _nano_timeout_abort(struct ccs *ccs)
+static inline void _nano_timeout_abort(struct tcs *tcs)
 {
 	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
-	struct _nano_timeout *t = &ccs->nano_timeout;
+	struct _nano_timeout *t = &tcs->nano_timeout;
 
 	if (-1 == t->delta_ticks_from_prev) {
 		return;
@@ -140,12 +140,12 @@ static int _nano_timeout_insert_point_test(sys_dnode_t *test, void *timeout)
 }
 
 /* put a fiber on the timeout queue and record its wait queue */
-static inline void _nano_timeout_add(struct ccs *ccs,
+static inline void _nano_timeout_add(struct tcs *tcs,
 										struct _nano_queue *wait_q,
 										int32_t timeout)
 {
 	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
-	struct _nano_timeout *t = &ccs->nano_timeout;
+	struct _nano_timeout *t = &tcs->nano_timeout;
 
 	t->delta_ticks_from_prev = timeout;
 	t->wait_q = wait_q;

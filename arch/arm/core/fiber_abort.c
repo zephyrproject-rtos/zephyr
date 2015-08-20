@@ -66,7 +66,7 @@ the PendSV exception.
 
 void fiber_abort(void)
 {
-	_context_exit(_nanokernel.current);
+	_thread_exit(_nanokernel.current);
 	if (_ScbIsInThreadMode()) {
 		_nano_fiber_swap();
 	} else {

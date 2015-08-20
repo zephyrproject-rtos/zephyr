@@ -1,7 +1,7 @@
 /* excstub.S - exception management support for IA-32 architecture */
 
 /*
- * Copyright (c) 2011-2014 Wind River Systems, Inc.
+ * Copyright (c) 2011-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -63,7 +63,7 @@ and exiting a C exception handler.
  *
  * This function is called from the exception stub created by nanoCpuExcConnect()
  * to inform the kernel of an exception.  This routine currently does
- * _not_ increment a context/interrupt specific exception count.  Also,
+ * _not_ increment a thread/interrupt specific exception count.  Also,
  * execution of the exception handler occurs on the current stack, i.e.
  * _ExcEnt() does not switch to another stack.  The volatile integer
  * registers are saved on the stack, and control is returned back to the
@@ -126,7 +126,7 @@ SECTION_FUNC(TEXT, _ExcEnt)
 
 	/*
 	 * Push the remaining volatile registers on the existing stack.
-	 * Note that eax has already been saved on the context stack.
+	 * Note that eax has already been saved on the execution context stack.
 	 */
 
 	pushl	%ecx
@@ -161,34 +161,34 @@ SECTION_FUNC(TEXT, _ExcEnt)
 
 	movl	_nanokernel + __tNANO_current_OFFSET, %ecx
 
-	incl	__tCCS_excNestCount_OFFSET(%ecx)	/* inc exception nest count */
+	incl	__tTCS_excNestCount_OFFSET(%ecx)	/* inc exception nest count */
 
 #ifdef CONFIG_GDB_INFO
 
     /*
      * Save the pointer to the stack frame (NANO_ESF *) in
-     * the current context if this is the outermost exception.
+     * the current execution context if this is the outermost exception.
      * The ESF pointer is used by debug tools to locate the volatile
-     * registers and the stack of the preempted context.
+     * registers and the stack of the preempted thread.
      */
 
-	testl	$EXC_ACTIVE, __tCCS_flags_OFFSET (%ecx)
+	testl	$EXC_ACTIVE, __tTCS_flags_OFFSET (%ecx)
 	jne	alreadyInException
-	movl	%esp, __tCCS_esfPtr_OFFSET(%ecx)
+	movl	%esp, __tTCS_esfPtr_OFFSET(%ecx)
 
 BRANCH_LABEL(alreadyInException)
 
 #endif /* CONFIG_GDB_INFO */
 
 	/*
-	 * Set the EXC_ACTIVE bit in the tCCS of the current context.
-	 * This enables _Swap() to preserve the context's FP registers
+	 * Set the EXC_ACTIVE bit in the TCS of the current thread.
+	 * This enables _Swap() to preserve the thread's FP registers
 	 * (where needed) if the exception handler causes a context switch.
 	 * It also indicates to debug tools that an exception is being
 	 * handled in the event of a context switch.
 	 */
 
-	orl	$EXC_ACTIVE, __tCCS_flags_OFFSET(%ecx)
+	orl	$EXC_ACTIVE, __tTCS_flags_OFFSET(%ecx)
 
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
@@ -222,7 +222,7 @@ BRANCH_LABEL(allDone)
  * This function is called from the exception stub created by nanoCpuExcConnect()
  * to inform the kernel that the processing of an exception has
  * completed.  This routine restores the volatile integer registers and
- * then control is returned back to the interrupted context or ISR.
+ * then control is returned back to the interrupted thread or ISR.
  *
  * @return N/A
  *
@@ -257,18 +257,18 @@ SECTION_FUNC(TEXT, _ExcExit)
 	 * Determine whether exiting from a nested interrupt.
 	 */
 
-	decl	__tCCS_excNestCount_OFFSET(%ecx)	/* dec exception nest count */
+	decl	__tTCS_excNestCount_OFFSET(%ecx)	/* dec exception nest count */
 
-	cmpl	$0, __tCCS_excNestCount_OFFSET(%ecx)
+	cmpl	$0, __tTCS_excNestCount_OFFSET(%ecx)
 	jne	nestedException
 
 	/*
-	 * Clear the EXC_ACTIVE bit in the tCCS of the current context
+	 * Clear the EXC_ACTIVE bit in the tTCS of the current execution context
 	 * if we are not in a nested exception (ie, when we exit the outermost
 	 * exception).
 	 */
 
-	andl	$~EXC_ACTIVE, __tCCS_flags_OFFSET (%ecx)
+	andl	$~EXC_ACTIVE, __tTCS_flags_OFFSET (%ecx)
 
 BRANCH_LABEL(nestedException)
 

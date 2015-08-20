@@ -40,7 +40,7 @@ struct nano_timer *_nano_timer_list = NULL;
  *
  * This function initializes a nanokernel timer object structure.
  *
- * It may be called from either a fiber or task context.
+ * It may be called from either a fiber or task.
  *
  * The <userData> passed to this function must have enough space for a pointer
  * in its first field, that may be overwritten when the timer expires, plus

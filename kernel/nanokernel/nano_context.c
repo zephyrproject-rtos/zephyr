@@ -1,4 +1,4 @@
-/* nanokernel context support */
+/* nanokernel thread support */
 
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
@@ -32,7 +32,7 @@
 
 /*
 DESCRIPTION
-This module provides general purpose context support, with applies to both
+This module provides general purpose thread support, with applies to both
 tasks or fibers.
  */
 
@@ -44,29 +44,29 @@ tasks or fibers.
 
 /**
  *
- * @brief Return the currently executing context
+ * @brief Return the currently executing thread
  *
- * This routine returns a pointer to the context control block of the currently
- * executing context.  It is cast to a nano_context_id_t for use publically.
+ * This routine returns a pointer to the thread control block of the currently
+ * executing thread.  It is cast to a nano_thread_id_t for use publicly.
  *
- * @return nano_context_id_t of the currently executing context.
+ * @return nano_thread_id_t of the currently executing thread.
  */
 
-nano_context_id_t context_self_get(void)
+nano_thread_id_t sys_thread_self_get(void)
 {
 	return _nanokernel.current;
 }
 
 /**
  *
- * @brief Return the type of the currently executing context
+ * @brief Return the type of the currently executing thread
  *
- * This routine returns the type of context currently executing.
+ * This routine returns the type of thread currently executing.
  *
- * @return nano_context_type_t of the currently executing context.
+ * @return nano_context_type_t of the currently executing thread.
  */
 
-nano_context_type_t context_type_get(void)
+nano_context_type_t sys_execution_context_type_get(void)
 {
 	if (_IS_IN_ISR())
 		return NANO_CTX_ISR;
@@ -79,133 +79,134 @@ nano_context_type_t context_type_get(void)
 
 /**
  *
- * @brief Mark context as essential to system
+ * @brief Mark thread as essential to system
  *
  * This function tags the running fiber or task as essential to system
- * option; exceptions raised by this context will be treated as a fatal
+ * option; exceptions raised by this thread will be treated as a fatal
  * system error.
  *
  * @return N/A
  */
 
-void _context_essential_set(void)
+void _thread_essential_set(void)
 {
 	_nanokernel.current->flags |= ESSENTIAL;
 }
 
 /**
  *
- * @brief Mark context as not essential to system
+ * @brief Mark thread as not essential to system
  *
  * This function tags the running fiber or task as not essential to system
- * option; exceptions raised by this context may be recoverable.
- * (This is the default tag for a context.)
+ * option; exceptions raised by this thread may be recoverable.
+ * (This is the default tag for a thread.)
  *
  * @return N/A
  */
 
-void _context_essential_clear(void)
+void _thread_essential_clear(void)
 {
 	_nanokernel.current->flags &= ~ESSENTIAL;
 }
 
 /**
  *
- * @brief Is the specified context essential?
+ * @brief Is the specified thread essential?
  *
- * This routine indicates if the specified context is an essential system
- * context.  A NULL context pointer indicates that the current context is
+ * This routine indicates if the specified thread is an essential system
+ * thread.  A NULL thread pointer indicates that the current thread is
  * to be queried.
  *
- * @return Non-zero if specified context is essential, zero if it is not
+ * @return Non-zero if specified thread is essential, zero if it is not
  */
 
-int _context_essential_check(tCCS *pCtx /* pointer to context */
+int _is_thread_essential(struct tcs *pCtx /* pointer to thread */
 					   )
 {
 	return ((pCtx == NULL) ? _nanokernel.current : pCtx)->flags & ESSENTIAL;
 }
 
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
+#ifdef CONFIG_THREAD_CUSTOM_DATA
 
 /**
  *
- * @brief Set context's custom data
+ * @brief Set thread's custom data
  *
  * This routine sets the custom data value for the current task or fiber.
  * Custom data is not used by the kernel itself, and is freely available
- * for the context to use as it sees fit.
+ * for the thread to use as it sees fit.
+ *
+ * @param value New to set the thread's custom data to.
  *
  * @return N/A
  */
 
-void context_custom_data_set(void *value /* new value */
-		      )
+void sys_thread_custom_data_set(void *value)
 {
 	_nanokernel.current->custom_data = value;
 }
 
 /**
  *
- * @brief Get context's custom data
+ * @brief Get thread's custom data
  *
  * This function returns the custom data value for the current task or fiber.
  *
  * @return current handle value
  */
 
-void *context_custom_data_get(void)
+void *sys_thread_custom_data_get(void)
 {
 	return _nanokernel.current->custom_data;
 }
 
-#endif /* CONFIG_CONTEXT_CUSTOM_DATA */
+#endif /* CONFIG_THREAD_CUSTOM_DATA */
 
-#if defined(CONFIG_CONTEXT_MONITOR)
+#if defined(CONFIG_THREAD_MONITOR)
 /**
  *
- * @brief Context exit routine
+ * @brief Thread exit routine
  *
- * This function is invoked when the specified context is aborted, either
- * normally or abnormally. It is called for the termination of any context,
+ * This function is invoked when the specified thread is aborted, either
+ * normally or abnormally. It is called for the termination of any thread,
  * (fibers and tasks).
  *
  * This routine must be invoked from a fiber to guarantee that the list
- * of contexts does not change in mid-operation.
+ * of threads does not change in mid-operation.
  *
  * @return N/A
  *
  * \NOMANUAL
  */
 
-void _context_exit(tCCS *pContext)
+void _thread_exit(struct tcs *thread)
 {
 	/*
-	 * Remove context from the list of contexts.  This singly linked list of
-	 * contexts maintains ALL the contexts in the system: both tasks and
+	 * Remove thread from the list of threads.  This singly linked list of
+	 * threads maintains ALL the threads in the system: both tasks and
 	 * fibers regardless of whether they are runnable.
 	 */
 
-	if (pContext == _nanokernel.contexts) {
-		_nanokernel.contexts = _nanokernel.contexts->next_context;
+	if (thread == _nanokernel.threads) {
+		_nanokernel.threads = _nanokernel.threads->next_thread;
 	} else {
-		tCCS *pPrevContext;
+		struct tcs *prev_thread;
 
-		pPrevContext = _nanokernel.contexts;
-		while (pContext != pPrevContext->next_context) {
-			pPrevContext = pPrevContext->next_context;
+		prev_thread = _nanokernel.threads;
+		while (thread != prev_thread->next_thread) {
+			prev_thread = prev_thread->next_thread;
 		}
-		pPrevContext->next_context = pContext->next_context;
+		prev_thread->next_thread = thread->next_thread;
 	}
 }
-#endif /* CONFIG_CONTEXT_MONITOR */
+#endif /* CONFIG_THREAD_MONITOR */
 
 /**
  *
- * @brief Common context entry point function for kernel contexts
+ * @brief Common thread entry point function
  *
- * This function serves as the entry point for _all_ kernel contexts, i.e. both
- * task and fiber contexts are instantiated such that initial execution starts
+ * This function serves as the entry point for _all_ threads, i.e. both
+ * task and fibers are instantiated such that initial execution starts
  * here.
  *
  * This routine invokes the actual task or fiber entry point function and
@@ -222,20 +223,20 @@ void _context_exit(tCCS *pContext)
  * \NOMANUAL
  */
 
-FUNC_NORETURN void _context_entry(
-	_ContextEntry pEntry,   /* address of app entry point function */
-	_ContextArg parameter1, /* 1st arg to app entry point function */
-	_ContextArg parameter2, /* 2nd arg to app entry point function */
-	_ContextArg parameter3  /* 3rd arg to app entry point function */
+FUNC_NORETURN void _thread_entry(
+	_thread_entry_t pEntry,   /* address of app entry point function */
+	_thread_arg_t parameter1, /* 1st arg to app entry point function */
+	_thread_arg_t parameter2, /* 2nd arg to app entry point function */
+	_thread_arg_t parameter3  /* 3rd arg to app entry point function */
 	)
 {
 	/* Execute the "application" entry point function */
 
 	pEntry(parameter1, parameter2, parameter3);
 
-	/* Determine if context can legally terminate itself via "return" */
+	/* Determine if thread can legally terminate itself via "return" */
 
-	if (_context_essential_check(NULL)) {
+	if (_is_thread_essential(NULL)) {
 #ifdef CONFIG_NANOKERNEL
 		/*
 		 * Nanokernel's background task must always be present,
@@ -247,13 +248,13 @@ FUNC_NORETURN void _context_entry(
 		}
 #endif /*  CONFIG_NANOKERNEL */
 
-		/* Loss of essential context is a system fatal error */
+		/* Loss of essential thread is a system fatal error */
 
 		_NanoFatalErrorHandler(_NANO_ERR_INVALID_TASK_EXIT,
 				       &_default_esf);
 	}
 
-/* Gracefully terminate the currently executing context */
+/* Gracefully terminate the currently executing thread */
 
 #ifdef CONFIG_MICROKERNEL
 	if (((_nanokernel.current)->flags & TASK) == TASK) {

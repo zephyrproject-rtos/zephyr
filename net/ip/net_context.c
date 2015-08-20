@@ -73,7 +73,7 @@ static struct nano_sem contexts_lock;
 
 static void context_sem_give(struct nano_sem *chan)
 {
-	switch (context_type_get()) {
+	switch (sys_execution_context_type_get()) {
 	case NANO_CTX_FIBER:
 		nano_fiber_sem_give(chan);
 		break;

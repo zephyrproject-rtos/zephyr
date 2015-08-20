@@ -64,7 +64,7 @@ static BT_STACK_NOINIT(rx_prio_fiber_stack, 256);
 static BT_STACK_NOINIT(cmd_tx_fiber_stack, 256);
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-static nano_context_id_t rx_prio_fiber_id;
+static nano_thread_id_t rx_prio_fiber_id;
 #endif
 
 struct bt_dev bt_dev;
@@ -189,7 +189,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 	 * event and giving back the blocking semaphore.
 	 */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-	if (context_self_get() == rx_prio_fiber_id) {
+	if (sys_thread_self_get() == rx_prio_fiber_id) {
 		BT_ERR("called from invalid context!\n");
 		return -EDEADLK;
 	}
@@ -277,11 +277,11 @@ static void analyze_stack(const char *name, const char *stack, unsigned size,
 {
 	unsigned i, stack_offset, pcnt, unused = 0;
 
-	/* The CCS is always placed on a 4-byte aligned boundary - if
+	/* The TCS is always placed on a 4-byte aligned boundary - if
 	 * the stack beginning doesn't match that there will be some
 	 * unused bytes in the beginning.
 	 */
-	stack_offset = __tCCS_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
+	stack_offset = __tTCS_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
 
 	if (stack_growth == STACK_DIRECTION_DOWN) {
 		for (i = stack_offset; i < size; i++) {
@@ -313,7 +313,7 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 {
 	int stack_growth;
 
-	printk("sizeof(tCCS) = %u\n", __tCCS_SIZEOF);
+	printk("sizeof(tTCS) = %u\n", __tTCS_SIZEOF);
 
 	if (conn > *ref) {
 		printk("stack grows up\n");
@@ -1040,7 +1040,7 @@ static void rx_prio_fiber(void)
 
 	/* So we can avoid bt_hci_cmd_send_sync deadlocks */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
-	rx_prio_fiber_id = context_self_get();
+	rx_prio_fiber_id = sys_thread_self_get();
 #endif
 
 	while (1) {

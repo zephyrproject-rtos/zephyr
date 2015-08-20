@@ -118,9 +118,9 @@ FUNC_NORETURN void _NanoFatalErrorHandler(
 		break;
 	}
 
-	printk("Current context ID = 0x%x\n"
+	printk("Current thread ID = 0x%x\n"
 	       "Faulting instruction address = 0x%x\n",
-	       context_self_get(),
+	       sys_thread_self_get(),
 	       pEsf->eip);
 #endif /* CONFIG_PRINTK */
 

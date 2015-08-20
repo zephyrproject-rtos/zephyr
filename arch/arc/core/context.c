@@ -1,4 +1,4 @@
-/* context.c - new context creation for ARCv2 */
+/* thread.c - new thread creation for ARCv2 */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -57,52 +57,50 @@ struct init_stack_frame {
 
 tNANO _nanokernel = {0};
 
-#if defined(CONFIG_CONTEXT_MONITOR)
-#define CONTEXT_MONITOR_INIT(pCcs) context_monitor_init(pCcs)
+#if defined(CONFIG_THREAD_MONITOR)
+#define THREAD_MONITOR_INIT(tcs) thread_monitor_init(tcs)
 #else
-#define CONTEXT_MONITOR_INIT(pCcs) \
+#define THREAD_MONITOR_INIT(tcs) \
 	do {/* do nothing */     \
 	} while ((0))
 #endif
 
-#if defined(CONFIG_CONTEXT_MONITOR)
+#if defined(CONFIG_THREAD_MONITOR)
 /*
- * @brief Initialize context monitoring support
+ * @brief Initialize thread monitoring support
  *
- * Currently only inserts the new context in the list of active contexts.
+ * Currently only inserts the new thread in the list of active threads.
  *
  * @return N/A
  */
 
-static ALWAYS_INLINE void context_monitor_init(struct ccs *pCcs /* context */
-					   )
+static ALWAYS_INLINE void thread_monitor_init(struct tcs *tcs)
 {
 	unsigned int key;
 
 	/*
-	 * Add the newly initialized context to head of the list of contexts.
-	 * This singly linked list of contexts maintains ALL the contexts in the
-	 * system: both tasks and fibers regardless of whether they are
-	 * runnable.
+	 * Add the newly initialized thread to head of the list of threads.  This
+	 * singly linked list of threads maintains ALL the threads in the system:
+	 * both tasks and fibers regardless of whether they are runnable.
 	 */
 
 	key = irq_lock();
-	pCcs->next_context = _nanokernel.contexts;
-	_nanokernel.contexts = pCcs;
+	tcs->next_thread = _nanokernel.threads;
+	_nanokernel.threads = tcs;
 	irq_unlock(key);
 }
-#endif /* CONFIG_CONTEXT_MONITOR */
+#endif /* CONFIG_THREAD_MONITOR */
 
 /*
- * @brief Initialize a new context (thread) from its stack space
+ * @brief Initialize a new thread from its stack space
  *
- * The control structure (CCS) is put at the lower address of the stack. An
+ * The control structure (TCS) is put at the lower address of the stack. An
  * initial context, to be "restored" by __return_from_coop(), is put at
  * the other end of the stack, and thus reusable by the stack when not
  * needed anymore.
  *
  * The initial context is a basic stack frame that contains arguments for
- * _context_entry() return address, that points at _context_entry()
+ * _thread_entry() return address, that points at _thread_entry()
  * and status register.
  *
  * <options> is currently unused.
@@ -110,10 +108,10 @@ static ALWAYS_INLINE void context_monitor_init(struct ccs *pCcs /* context */
  * @return N/A
  */
 
-void _NewContext(
+void _new_thread(
 	char *pStackMem,       /* pointer to aligned stack memory */
 	unsigned stackSize,    /* stack size in bytes */
-	_ContextEntry pEntry,  /* context (thread) entry point routine */
+	_thread_entry_t pEntry,  /* thread entry point routine */
 	void *parameter1,      /* first param to entry point */
 	void *parameter2,      /* second param to entry point */
 	void *parameter3,      /* third param to entry point */
@@ -124,18 +122,18 @@ void _NewContext(
 	char *stackEnd = pStackMem + stackSize;
 	struct init_stack_frame *pInitCtx;
 
-	tCCS *pCcs = (tCCS *) pStackMem;
+	struct tcs *tcs = (struct tcs *) pStackMem;
 
 #ifdef CONFIG_INIT_STACKS
 	memset(pStackMem, 0xaa, stackSize);
 #endif
 
-	/* carve the context entry struct from the "base" of the stack */
+	/* carve the thread entry struct from the "base" of the stack */
 
 	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackEnd) -
 				       sizeof(struct init_stack_frame));
 
-	pInitCtx->pc = ((uint32_t)_ContextEntryWrapper);
+	pInitCtx->pc = ((uint32_t)_thread_entry_wrapper);
 	pInitCtx->r0 = (uint32_t)pEntry;
 	pInitCtx->r1 = (uint32_t)parameter1;
 	pInitCtx->r2 = (uint32_t)parameter2;
@@ -149,14 +147,14 @@ void _NewContext(
 	 */
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 
-	pCcs->link = NULL;
-	pCcs->flags = priority == -1 ? TASK | PREEMPTIBLE : FIBER;
-	pCcs->prio = priority;
+	tcs->link = NULL;
+	tcs->flags = priority == -1 ? TASK | PREEMPTIBLE : FIBER;
+	tcs->prio = priority;
 
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
+#ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
 
-	pCcs->custom_data = NULL;
+	tcs->custom_data = NULL;
 #endif
 
 	/*
@@ -165,13 +163,13 @@ void _NewContext(
 	 * dst[31:6] dst[5] dst[4]       dst[3:0]
 	 *    26'd0    1    STATUS32.IE  STATUS32.E[3:0]
 	 */
-	pCcs->intlock_key = 0x3F;
-	pCcs->relinquish_cause = _CAUSE_COOP;
-	pCcs->preempReg.sp = (uint32_t)pInitCtx - __tCalleeSaved_SIZEOF;
+	tcs->intlock_key = 0x3F;
+	tcs->relinquish_cause = _CAUSE_COOP;
+	tcs->preempReg.sp = (uint32_t)pInitCtx - __tCalleeSaved_SIZEOF;
 
-	_nano_timeout_ccs_init(pCcs);
+	_nano_timeout_tcs_init(tcs);
 
-	/* initial values in all other registers/CCS entries are irrelevant */
+	/* initial values in all other registers/TCS entries are irrelevant */
 
-	CONTEXT_MONITOR_INIT(pCcs);
+	THREAD_MONITOR_INIT(tcs);
 }

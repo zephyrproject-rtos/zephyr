@@ -55,7 +55,7 @@ void lifo_test_init(void)
 
 /**
  *
- * @brief Lifo test context
+ * @brief Lifo test fiber
  *
  * @param par1   Ignored parameter.
  * @param par2   Number of test loops.
@@ -95,7 +95,7 @@ void lifo_fiber1(int par1, int par2)
 
 /**
  *
- * @brief Lifo test context
+ * @brief Lifo test fiber
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
@@ -127,7 +127,7 @@ void lifo_fiber2(int par1, int par2)
 
 /**
  *
- * @brief Lifo test context
+ * @brief Lifo test fiber
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test loops.
@@ -200,7 +200,7 @@ int lifo_test(void)
 
 	return_value += check_result(i, t);
 
-	/* fiber contexts have done their job, they can stop now safely: */
+	/* fibers have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
 		nano_task_fifo_put(&nanoFifo_sync, (void *) element);
 	}
@@ -230,7 +230,7 @@ int lifo_test(void)
 
 	return_value += check_result(i, t);
 
-	/* fiber contexts have done their job, they can stop now safely: */
+	/* fibers have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
 		nano_task_fifo_put(&nanoFifo_sync, (void *) element);
 	}
@@ -274,7 +274,7 @@ int lifo_test(void)
 
 	return_value += check_result(i * 2, t);
 
-	/* fiber contexts have done their job, they can stop now safely: */
+	/* fibers have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
 		nano_task_fifo_put(&nanoFifo_sync, (void *) element);
 	}

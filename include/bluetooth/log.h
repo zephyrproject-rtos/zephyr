@@ -38,7 +38,7 @@
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 #define BT_DBG(fmt, ...) printf("bt: %s (%p): " fmt, __func__, \
-				context_self_get(), ##__VA_ARGS__)
+				sys_thread_self_get(), ##__VA_ARGS__)
 #define BT_ERR(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) printf("bt: %s: " fmt, __func__, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) printf("bt: " fmt,  ##__VA_ARGS__)

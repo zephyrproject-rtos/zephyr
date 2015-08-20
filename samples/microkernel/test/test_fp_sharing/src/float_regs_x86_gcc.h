@@ -116,9 +116,9 @@ static inline void _LoadAllFloatRegisters(FP_REG_SET *pFromBuffer)
  * This function loads ALL floating point registers from the memory buffer
  * specified by <pFromToBuffer>, and then stores them back to that buffer.
  *
- * This routine is called by a high priority context prior to calling a primitive
+ * This routine is called by a high priority thread prior to calling a primitive
  * that pends and triggers a co-operative context switch to a low priority
- * context. Because the kernel doesn't save floating point context for
+ * thread. Because the kernel doesn't save floating point context for
  * co-operative context switches, the x87 FPU register stack must be put back
  * in an empty state before the switch occurs in case the next task to perform
  * floating point operations was also co-operatively switched out and simply
@@ -205,12 +205,12 @@ static inline void _StoreAllFloatRegisters(FP_REG_SET *pToBuffer)
  *
  * @brief Dump non-volatile FP registers to memory
  *
- * This routine is called by a high priority context after resuming execution
+ * This routine is called by a high priority thread after resuming execution
  * from calling a primitive that will pend and thus result in a co-operative
- * context switch to a low priority context.
+ * context switch to a low priority thread.
  *
  * Only the non-volatile floating point registers are expected to survive across
- * a function call, regardless of whether the call results in the context being
+ * a function call, regardless of whether the call results in the thread being
  * pended.
  *
  * @return N/A

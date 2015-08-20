@@ -84,7 +84,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 
 	PR_EXC("Fault! EXC #%d, Thread: %x, instr @ %x\n",
 	       fault,
-	       context_self_get(),
+	       sys_thread_self_get(),
 	       esf->pc);
 
 	if (3 == fault) { /* hard fault */
@@ -120,7 +120,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 #if (CONFIG_FAULT_DUMP == 2)
 /**
  *
- * @brief Dump context information
+ * @brief Dump thread information
  *
  * See _FaultDump() for example.
  *
@@ -129,11 +129,11 @@ void _FaultDump(const NANO_ESF *esf, int fault)
  * \NOMANUAL
  */
 
-static void _FaultContextShow(const NANO_ESF *esf)
+static void _FaultThreadShow(const NANO_ESF *esf)
 {
-	PR_EXC("  Executing context ID (thread): 0x%x\n"
+	PR_EXC("  Executing thread ID (thread): 0x%x\n"
 	       "  Faulting instruction address:  0x%x\n",
-	       context_self_get(),
+	       sys_thread_self_get(),
 	       esf->pc);
 }
 
@@ -153,7 +153,7 @@ static void _MpuFault(const NANO_ESF *esf,
 {
 	PR_EXC("***** MPU FAULT *****\n");
 
-	_FaultContextShow(esf);
+	_FaultThreadShow(esf);
 
 	if (_ScbMemFaultIsStacking()) {
 		PR_EXC("  Stacking error\n");
@@ -188,7 +188,7 @@ static void _BusFault(const NANO_ESF *esf,
 {
 	PR_EXC("***** BUS FAULT *****\n");
 
-	_FaultContextShow(esf);
+	_FaultThreadShow(esf);
 
 	if (_ScbBusFaultIsStacking()) {
 		PR_EXC("  Stacking error\n");
@@ -228,7 +228,7 @@ static void _UsageFault(const NANO_ESF *esf)
 {
 	PR_EXC("***** USAGE FAULT *****\n");
 
-	_FaultContextShow(esf);
+	_FaultThreadShow(esf);
 
 	/* bits are sticky: they stack and must be reset */
 	if (_ScbUsageFaultIsDivByZero()) {
@@ -325,7 +325,7 @@ static void _ReservedException(const NANO_ESF *esf,
  *
  * eg. (precise bus error escalated to hard fault):
  *
- * Executing context ID (thread): 0x200000dc
+ * Executing thread ID (thread): 0x200000dc
  * Faulting instruction address:  0x000011d3
  * ***** HARD FAULT *****
  *    Fault escalation (see below)

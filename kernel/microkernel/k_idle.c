@@ -354,7 +354,7 @@ void _sys_power_save_idle(int32_t ticks)
  *
  * This routine is invoked when the kernel leaves the idle state.
  * Routine can be modified to wake up other devices.
- * The routine is invoked from interrupt context, with interrupts disabled.
+ * The routine is invoked from interrupt thread, with interrupts disabled.
  *
  * @return N/A
  *

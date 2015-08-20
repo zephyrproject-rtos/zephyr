@@ -56,7 +56,7 @@ APIs to the same function, since they have identical implementations.
  *
  * This function initializes a nanokernel stack object structure.
  *
- * It may be called from either a fiber or a task context.
+ * It may be called from either a fiber or a task.
  *
  * @return N/A
  *
@@ -72,7 +72,7 @@ void nano_stack_init(
 	)
 {
 	stack->next = stack->base = data;
-	stack->fiber = (tCCS *)0;
+	stack->fiber = (struct tcs *)0;
 }
 
 FUNC_ALIAS(_stack_push_non_preemptible, nano_isr_stack_push, void);
@@ -100,16 +100,16 @@ void _stack_push_non_preemptible(
 	uint32_t data /* data to push on stack */
 	)
 {
-	tCCS *ccs;
+	struct tcs *tcs;
 	unsigned int imask;
 
 	imask = irq_lock();
 
-	ccs = stack->fiber;
-	if (ccs) {
+	tcs = stack->fiber;
+	if (tcs) {
 		stack->fiber = 0;
-		fiberRtnValueSet(ccs, data);
-		_nano_fiber_schedule(ccs);
+		fiberRtnValueSet(tcs, data);
+		_nano_fiber_schedule(tcs);
 	} else {
 		*(stack->next) = data;
 		stack->next++;
@@ -123,7 +123,7 @@ void _stack_push_non_preemptible(
  * @brief Push data onto a nanokernel stack
  *
  * This routine pushes a data item onto a stack object; it may be called only
- * from a task context.  A fiber pending on the stack object will be
+ * from a task.  A fiber pending on the stack object will be
  * made ready, and will preempt the running task immediately.
  *
  * @return N/A
@@ -134,16 +134,16 @@ void nano_task_stack_push(
 	uint32_t data     /* data to push on stack */
 	)
 {
-	tCCS *ccs;
+	struct tcs *tcs;
 	unsigned int imask;
 
 	imask = irq_lock();
 
-	ccs = stack->fiber;
-	if (ccs) {
+	tcs = stack->fiber;
+	if (tcs) {
 		stack->fiber = 0;
-		fiberRtnValueSet(ccs, data);
-		_nano_fiber_schedule(ccs);
+		fiberRtnValueSet(tcs, data);
+		_nano_fiber_schedule(tcs);
 		_Swap(imask);
 		return;
 	} else {
@@ -204,7 +204,7 @@ int _stack_pop(
  * @brief Pop data from a nanokernel stack, wait if empty
  *
  * Pop the first data word from a nanokernel stack object; it can only be
- * called from a fiber context
+ * called from a fiber.
  *
  * If data is not available the calling fiber will pend until data is pushed
  * onto the stack.
@@ -213,7 +213,7 @@ int _stack_pop(
  *
  * INTERNAL
  * There exists a separate nano_task_stack_pop_wait() implementation since a
- * task context cannot pend on a nanokernel object. Instead tasks will poll the
+ * task cannot pend on a nanokernel object. Instead tasks will poll the
  * the stack object.
  */
 
@@ -243,7 +243,7 @@ uint32_t nano_fiber_stack_pop_wait(
  * @brief Pop data from a nanokernel stack, poll if empty
  *
  * Pop the first data word from a nanokernel stack; it can only be called
- * from a task context.
+ * from a task.
  *
  * If data is not available the calling task will poll until data is pushed
  * onto the stack.

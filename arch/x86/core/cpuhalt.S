@@ -1,7 +1,7 @@
 /* cpuhalt.S - CPU power management code for IA-32 */
 
 /*
- * Copyright (c) 2011-2014 Wind River Systems, Inc.
+ * Copyright (c) 2011-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -98,9 +98,9 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  *
  * @brief Atomically re-enable interrupts and enter low power mode
  *
- * This function is utilized by the nanokernel object "wait" APIs for task
- * contexts, e.g. nano_task_lifo_get_wait(), nano_task_sem_take_wait(), nano_task_stack_pop_wait(),
- * and nano_task_fifo_get_wait().
+ * This function is utilized by the nanokernel object "wait" APIs for tasks,
+ * e.g. nano_task_lifo_get_wait(), nano_task_sem_take_wait(),
+ * nano_task_stack_pop_wait(), and nano_task_fifo_get_wait().
  *
  * INTERNAL
  * The requirements for nano_cpu_atomic_idle() are as follows:

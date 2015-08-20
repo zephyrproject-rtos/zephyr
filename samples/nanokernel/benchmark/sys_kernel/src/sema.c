@@ -53,7 +53,7 @@ void sema_test_init(void)
 
 /**
  *
- * @brief Semaphore test context
+ * @brief Semaphore test fiber
  *
  * @param par1   Ignored parameter.
  * @param par2   Number of test loops.
@@ -78,7 +78,7 @@ void sema_fiber1(int par1, int par2)
 
 /**
  *
- * @brief Semaphore test context
+ * @brief Semaphore test fiber
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
@@ -102,7 +102,7 @@ void sema_fiber2(int par1, int par2)
 
 /**
  *
- * @brief Semaphore test context
+ * @brief Semaphore test fiber
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.

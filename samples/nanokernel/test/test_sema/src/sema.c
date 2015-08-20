@@ -138,7 +138,7 @@ void isr_sem_give(void *data)
  *
  * @brief Give and take the semaphore in a fiber without blocking
  *
- * This test gives and takes the test semaphore in the context of a fiber
+ * This test gives and takes the test semaphore in a fiber
  * without blocking on the semaphore.
  *
  * @return TC_PASS on success, TC_FAIL on failure
@@ -331,7 +331,7 @@ errorReturn:
  *
  * @brief Give and take the semaphore in a task without blocking
  *
- * This test gives and takes the test semaphore in the context of a task without
+ * This test gives and takes the test semaphore in a task without
  * blocking on the semaphore.
  *
  * @return TC_PASS on success, TC_FAIL on failure

@@ -28,9 +28,6 @@ the Namespace`_ for details.
 +-------------------+---------------------------------------------------------+
 | atomic\_          | Denotes an atomic operation (e.g. atomic_inc).          |
 +-------------------+---------------------------------------------------------+
-| context\          | Denotes an operation invoked by a fiber or a task (e.g  |
-|                   | context_type_get).                                      |
-+-------------------+---------------------------------------------------------+
 | fiber\_           | Denotes an operation invoked by a fiber; typically a    |
 |                   | microkernel operation (e.g. fiber_event_send).          |
 +-------------------+---------------------------------------------------------+

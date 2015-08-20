@@ -34,7 +34,7 @@
 DESCRIPTION
 This module is used for the microkernel version of the FPU sharing test,
 and supplements the basic load/store test by incorporating two additional
-contexts that utilize the floating point unit.
+threads that utilize the floating point unit.
 
 Testing utilizes a pair of tasks that independently compute pi. The lower
 priority task is regularly preempted by the higher priority task, thereby
@@ -146,11 +146,11 @@ void calculate_pi_high(void)
 
 		/*
 		 * Relinquish the processor for the remainder of the current system
-		 * clock tick, so that lower priority contexts get a chance to run.
+		 * clock tick, so that lower priority threads get a chance to run.
 		 *
 		 * This exercises the ability of the nanokernel to restore the FPU
-		 * state of a low priority context _and_ the ability of the nanokernel
-		 * to provide a "clean" FPU state to this context once the sleep ends.
+		 * state of a low priority thread _and_ the ability of the nanokernel
+		 * to provide a "clean" FPU state to this thread once the sleep ends.
 		 */
 
 		task_sleep(1);

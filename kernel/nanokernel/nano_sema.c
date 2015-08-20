@@ -42,10 +42,10 @@
  * nano_fiber_sem_take_wait, nano_task_sem_take_wait
 
  * The semaphores are of the 'counting' type, i.e. each 'give' operation will
- * increment the internal count by 1, if no context is pending on it. The 'init'
+ * increment the internal count by 1, if no fiber is pending on it. The 'init'
  * call initializes the count to 0. Following multiple 'give' operations, the
- * same number of 'take' operations can be performed without the calling context
- * having to pend on the semaphore.
+ * same number of 'take' operations can be performed without the calling fiber
+ * having to pend on the semaphore, or the calling task having to poll.
  */
 
 /**
@@ -75,9 +75,9 @@ FUNC_ALIAS(_sem_give_non_preemptible, nano_isr_sem_give, void);
 FUNC_ALIAS(_sem_give_non_preemptible, nano_fiber_sem_give, void);
 
 #ifdef CONFIG_NANO_TIMEOUTS
-	#define set_sem_available(ccs) fiberRtnValueSet(ccs, 1)
+	#define set_sem_available(tcs) fiberRtnValueSet(tcs, 1)
 #else
-	#define set_sem_available(ccs) do { } while ((0))
+	#define set_sem_available(tcs) do { } while ((0))
 #endif
 
 /**
@@ -89,16 +89,16 @@ FUNC_ALIAS(_sem_give_non_preemptible, nano_fiber_sem_give, void);
  */
 void _sem_give_non_preemptible(struct nano_sem *sem)
 {
-	tCCS *ccs;
+	struct tcs *tcs;
 	unsigned int imask;
 
 	imask = irq_lock();
-	ccs = _nano_wait_q_remove(&sem->wait_q);
-	if (!ccs) {
+	tcs = _nano_wait_q_remove(&sem->wait_q);
+	if (!tcs) {
 		sem->nsig++;
 	} else {
-		_nano_timeout_abort(ccs);
-		set_sem_available(ccs);
+		_nano_timeout_abort(tcs);
+		set_sem_available(tcs);
 	}
 
 	irq_unlock(imask);
@@ -106,14 +106,14 @@ void _sem_give_non_preemptible(struct nano_sem *sem)
 
 void nano_task_sem_give(struct nano_sem *sem)
 {
-	tCCS *ccs;
+	struct tcs *tcs;
 	unsigned int imask;
 
 	imask = irq_lock();
-	ccs = _nano_wait_q_remove(&sem->wait_q);
-	if (ccs) {
-		_nano_timeout_abort(ccs);
-		set_sem_available(ccs);
+	tcs = _nano_wait_q_remove(&sem->wait_q);
+	if (tcs) {
+		_nano_timeout_abort(tcs);
+		set_sem_available(tcs);
 		_Swap(imask);
 		return;
 	} else {
@@ -128,7 +128,7 @@ void nano_sem_give(struct nano_sem *sem)
 	static void (*func[3])(struct nano_sem *sem) = {
 		nano_isr_sem_give, nano_fiber_sem_give, nano_task_sem_give
 	};
-	func[context_type_get()](sem);
+	func[sys_execution_context_type_get()](sem);
 }
 
 FUNC_ALIAS(_sem_take, nano_isr_sem_take, int);
@@ -152,9 +152,9 @@ int _sem_take(
 
 /**
  * INTERNAL
- * There exists a separate nano_task_sem_take_wait() implementation since a task
- * context cannot pend on a nanokernel object.  Instead, tasks will poll
- * the sempahore object.
+ * There exists a separate nano_task_sem_take_wait() implementation since a
+ * task cannot pend on a nanokernel object.  Instead, tasks will poll the
+ * sempahore object.
  */
 void nano_fiber_sem_take_wait(struct nano_sem *sem)
 {
@@ -201,7 +201,7 @@ void nano_sem_take_wait(struct nano_sem *sem)
 	static void (*func[3])(struct nano_sem *sem) = {
 		NULL, nano_fiber_sem_take_wait, nano_task_sem_take_wait
 	};
-	func[context_type_get()](sem);
+	func[sys_execution_context_type_get()](sem);
 }
 
 #ifdef CONFIG_NANO_TIMEOUTS

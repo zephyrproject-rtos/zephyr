@@ -88,8 +88,8 @@
 #endif
 
 /*
- * The CCS must be aligned to the same boundary as that used by the floating
- * point register set.  This applies even for contexts that don't initially
+ * The TCS must be aligned to the same boundary as that used by the floating
+ * point register set.  This applies even for threads that don't initially
  * use floating point, since it is possible to enable floating point support
  * later on.
  */
@@ -313,12 +313,12 @@ void _int_latency_stop(void);
  * Invoking a kernel routine with interrupts locked may result in
  * interrupts being re-enabled for an unspecified period of time.  If the
  * called routine blocks, interrupts will be re-enabled while another
- * context executes, or while the system is idle.
+ * thread executes, or while the system is idle.
  *
- * The "interrupt disable state" is an attribute of a context.  Thus, if a
+ * The "interrupt disable state" is an attribute of a thread.  Thus, if a
  * fiber or task disables interrupts and subsequently invokes a kernel
- * routine that causes the calling context to block, the interrupt
- * disable state will be restored when the context is later rescheduled
+ * routine that causes the calling thread to block, the interrupt
+ * disable state will be restored when the thread is later rescheduled
  * for execution.
  *
  * @return An architecture-dependent lock-out key representing the
@@ -379,10 +379,10 @@ typedef void (*NANO_EOI_GET_FUNC) (void *);
 #ifdef CONFIG_FP_SHARING
 /* Definitions for the 'options' parameter to the fiber_fiber_start() API */
 
-/** context uses floating point unit */
+/** thread uses floating point unit */
 #define USE_FP		0x10
 #ifdef CONFIG_SSE
-/** context uses SSEx instructions */
+/** thread uses SSEx instructions */
 #define USE_SSE		0x20
 #endif /* CONFIG_SSE */
 #endif /* CONFIG_FP_SHARING */
@@ -406,14 +406,16 @@ extern void	irq_disable(unsigned int irq);
 #ifdef CONFIG_FP_SHARING
 /**
  * @brief Enable floating point hardware resources sharing
- * Dynamically enable/disable the capability of a context to share floating
+ * Dynamically enable/disable the capability of a thread to share floating
  * point hardware resources.  The same "floating point" options accepted by
  * fiber_fiber_start() are accepted by these APIs (i.e. USE_FP and USE_SSE).
  */
-extern void	fiber_float_enable(nano_context_id_t ctx, unsigned int options);
-extern void	task_float_enable(nano_context_id_t ctx, unsigned int options);
-extern void	fiber_float_disable(nano_context_id_t ctx);
-extern void	task_float_disable(nano_context_id_t ctx);
+extern void	fiber_float_enable(nano_thread_id_t thread_id,
+								unsigned int options);
+extern void	task_float_enable(nano_thread_id_t thread_id,
+								unsigned int options);
+extern void	fiber_float_disable(nano_thread_id_t thread_id);
+extern void	task_float_disable(nano_thread_id_t thread_id);
 #endif /* CONFIG_FP_SHARING */
 
 #include <stddef.h>	/* for size_t */

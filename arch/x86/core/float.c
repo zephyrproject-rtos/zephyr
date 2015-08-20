@@ -37,7 +37,7 @@ floating point resources, by allowing the system to save FPU state information
 in a task or fiber's stack region when a pre-emptive context switch occurs.
 
 The floating point resource sharing mechanism is designed for minimal
-intrusiveness.  Floating point context saving is only performed for tasks and
+intrusiveness.  Floating point thread saving is only performed for tasks and
 fibers that explicitly enable FP resource sharing, to avoid impacting the stack
 size requirements of all other tasks and fibers.  For those tasks and fibers
 that do require FP resource sharing, a "lazy save/restore" mechanism is employed
@@ -48,10 +48,10 @@ that they will be altered, or when there is no need to preserve their contents.
 The following APIs are provided to allow floating point resource sharing to be
 enabled or disabled at run-time:
 
-	void fiber_float_enable  (nano_context_id_t ctxId, unsigned int options)
-	void task_float_enable   (nano_context_id_t ctxId, unsigned int options)
-	void fiber_float_disable (nano_context_id_t ctxId)
-	void task_float_disable  (nano_context_id_t ctxId)
+	void fiber_float_enable  (nano_thread_id_t thread_id, unsigned int options)
+	void task_float_enable   (nano_thread_id_t thread_id, unsigned int options)
+	void fiber_float_disable (nano_thread_id_t thread_id)
+	void task_float_disable  (nano_thread_id_t thread_id)
 
 The 'options' parameter is used to specify what non-integer capabilities are
 being used.  The same options accepted by fiber_fiber_start() are used in the
@@ -117,15 +117,15 @@ extern uint32_t _sse_mxcsr_default_value; /* SSE control/status register default
  * @brief Save non-integer context information
  *
  * This routine saves the system's "live" non-integer context into the
- * specified CCS.  If the specified task or fiber supports SSE then
- * x87/MMX/SSEx context info is saved, otherwise only x87/MMX context is saved.
+ * specified TCS.  If the specified task or fiber supports SSE then
+ * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
  *
  * @return N/A
  */
 
-static void _FpCtxSave(tCCS *ccs)
+static void _FpCtxSave(struct tcs *tcs)
 {
-	_do_fp_ctx_save(ccs->flags & USE_SSE, &ccs->preempFloatReg);
+	_do_fp_ctx_save(tcs->flags & USE_SSE, &tcs->preempFloatReg);
 }
 
 /**
@@ -137,9 +137,9 @@ static void _FpCtxSave(tCCS *ccs)
  * @return N/A
  */
 
-static inline void _FpCtxInit(tCCS *ccs)
+static inline void _FpCtxInit(struct tcs *tcs)
 {
-	_do_fp_ctx_init(ccs->flags & USE_SSE);
+	_do_fp_ctx_init(tcs->flags & USE_SSE);
 }
 
 /**
@@ -154,7 +154,7 @@ static inline void _FpCtxInit(tCCS *ccs)
  *  a) USE_FP  indicates x87 FPU and MMX registers only
  *  b) USE_SSE indicates x87 FPU and MMX and SSEx registers
  *
- * Invoking this routine creates a floating point context for the task/fiber
+ * Invoking this routine creates a floating point thread for the task/fiber
  * that corresponds to an FPU that has been reset.  The system will thereafter
  * protect the task/fiber's FP context so that it is not altered during
  * a pre-emptive context switch.
@@ -181,12 +181,12 @@ static inline void _FpCtxInit(tCCS *ccs)
  * tasks and fibers.
  */
 
-void _FpEnable(tCCS *ccs,
+void _FpEnable(struct tcs *tcs,
 			     unsigned int options /* USE_FP or USE_SSE */
 			     )
 {
 	unsigned int imask;
-	tCCS *fp_owner;
+	struct tcs *fp_owner;
 
 	/* Lock interrupts to prevent a pre-emptive context switch from occuring
 	 */
@@ -195,7 +195,7 @@ void _FpEnable(tCCS *ccs,
 
 	/* Indicate task/fiber requires non-integer context saving */
 
-	ccs->flags |= options | USE_FP; /* USE_FP is treated as a "dirty bit" */
+	tcs->flags |= options | USE_FP; /* USE_FP is treated as a "dirty bit" */
 
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
 	/*
@@ -223,21 +223,20 @@ void _FpEnable(tCCS *ccs,
 
 	/* Now create a virgin FP context */
 
-	_FpCtxInit(ccs);
+	_FpCtxInit(tcs);
 
 	/* Associate the new FP context with the specified task/fiber */
 
-	if (ccs == _nanokernel.current) {
+	if (tcs == _nanokernel.current) {
 		/*
 		 * When enabling FP support for self, just claim ownership of
 		 *the FPU
 		 * and leave CR0[TS] unset.
 		 *
-		 * (Note: the FP context is "live" in hardware, not saved in
-		 *CCS.)
+		 * (Note: the FP context is "live" in hardware, not saved in TCS.)
 		 */
 
-		_nanokernel.current_fp = ccs;
+		_nanokernel.current_fp = tcs;
 	} else {
 		/*
 		 * When enabling FP support for someone else, assign ownership
@@ -247,13 +246,13 @@ void _FpEnable(tCCS *ccs,
 		if ((_nanokernel.current->flags & USE_FP) != USE_FP) {
 			/*
 			 * We are not FP-capable, so mark FPU as owned by the
-			 * context
+			 * thread
 			 * we've just enabled FP support for, then disable our
 			 * own
 			 * FP access by setting CR0[TS] to its original state.
 			 */
 
-			_nanokernel.current_fp = ccs;
+			_nanokernel.current_fp = tcs;
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
 			_FpAccessDisable();
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */
@@ -261,7 +260,7 @@ void _FpEnable(tCCS *ccs,
 			/*
 			 * We are FP-capable (and thus had FPU ownership on
 			 *entry), so save
-			 * the new FP context in their CCS, leave FPU ownership
+			 * the new FP context in their TCS, leave FPU ownership
 			 *with self,
 			 * and leave CR0[TS] unset.
 			 *
@@ -280,7 +279,7 @@ void _FpEnable(tCCS *ccs,
 			 *exception.)
 			 */
 
-			_FpCtxSave(ccs);
+			_FpCtxSave(tcs);
 		}
 	}
 
@@ -345,7 +344,7 @@ FUNC_ALIAS(_FpEnable, task_float_enable, void);
  * tasks and fibers.
  */
 
-void _FpDisable(tCCS *ccs)
+void _FpDisable(struct tcs *tcs)
 {
 	unsigned int imask;
 
@@ -360,17 +359,17 @@ void _FpDisable(tCCS *ccs)
 	 * of the options specified at the time support was enabled.
 	 */
 
-	ccs->flags &= ~(USE_FP | USE_SSE);
+	tcs->flags &= ~(USE_FP | USE_SSE);
 
-	if (ccs == _nanokernel.current) {
+	if (tcs == _nanokernel.current) {
 #ifdef CONFIG_AUTOMATIC_FP_ENABLING
 		_FpAccessDisable();
 #endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 
-		_nanokernel.current_fp = (tCCS *)0;
+		_nanokernel.current_fp = (struct tcs *)0;
 	} else {
-		if (_nanokernel.current_fp == ccs)
-			_nanokernel.current_fp = (tCCS *)0;
+		if (_nanokernel.current_fp == tcs)
+			_nanokernel.current_fp = (struct tcs *)0;
 	}
 
 	irq_unlock(imask);
@@ -437,7 +436,7 @@ void _FpNotAvailableExcHandler(NANO_ESF * pEsf /* not used */
 	ARG_UNUSED(pEsf);
 
 	/*
-	 * Assume the exception did not occur in the context of an ISR.
+	 * Assume the exception did not occur in the thread of an ISR.
 	 * (In other words, CPU cycles will not be consumed to perform
 	 * error checking to ensure the exception was not generated in an ISR.)
 	 */

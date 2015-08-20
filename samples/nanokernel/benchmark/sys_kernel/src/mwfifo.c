@@ -56,7 +56,7 @@ void fifo_test_init(void)
 
 /**
  *
- * @brief Fifo test context
+ * @brief Fifo test fiber
  *
  * @return N/A
  *
@@ -88,7 +88,7 @@ void fifo_fiber1(int par1, int par2)
 
 /**
  *
- * @brief Fifo test context
+ * @brief Fifo test fiber
  *
  * @return N/A
  *
@@ -121,7 +121,7 @@ void fifo_fiber2(int par1, int par2)
 
 /**
  *
- * @brief Fifo test context
+ * @brief Fifo test fiber
  *
  * @return N/A
  *
@@ -195,7 +195,7 @@ int fifo_test(void)
 
 	return_value += check_result(i, t);
 
-	/* fiber contexts have done their job, they can stop now safely: */
+	/* fibers have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
 		nano_task_fifo_put(&nanoFifo_sync, (void *) element);
 	}
@@ -225,7 +225,7 @@ int fifo_test(void)
 
 	return_value += check_result(i, t);
 
-	/* fiber contexts have done their job, they can stop now safely: */
+	/* fibers have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
 		nano_task_fifo_put(&nanoFifo_sync, (void *) element);
 	}
@@ -270,7 +270,7 @@ int fifo_test(void)
 
 	return_value += check_result(i * 2, t);
 
-	/* fiber contexts have done their job, they can stop now safely: */
+	/* fibers have done their job, they can stop now safely: */
 	for (j = 0; j < 2; j++) {
 		nano_task_fifo_put(&nanoFifo_sync, (void *) element);
 	}

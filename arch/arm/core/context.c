@@ -1,4 +1,4 @@
-/* context.c - new context creation for ARM Cortex-M */
+/* thread.c - new thread creation for ARM Cortex-M */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
@@ -47,48 +47,47 @@ architecture.
 
 tNANO _nanokernel = {0};
 
-#if defined(CONFIG_CONTEXT_MONITOR)
-#define CONTEXT_MONITOR_INIT(pCcs) _context_monitor_init(pCcs)
+#if defined(CONFIG_THREAD_MONITOR)
+#define THREAD_MONITOR_INIT(tcs) _thread_monitor_init(tcs)
 #else
-#define CONTEXT_MONITOR_INIT(pCcs) \
+#define THREAD_MONITOR_INIT(tcs) \
 	do {/* do nothing */     \
 	} while ((0))
 #endif
 
-#if defined(CONFIG_CONTEXT_MONITOR)
+#if defined(CONFIG_THREAD_MONITOR)
 /**
  *
- * @brief Initialize context monitoring support
+ * @brief Initialize thread monitoring support
  *
- * Currently only inserts the new context in the list of active contexts.
+ * Currently only inserts the new thread in the list of active threads.
  *
  * @return N/A
  */
 
-static ALWAYS_INLINE void _context_monitor_init(struct ccs *pCcs /* context */
+static ALWAYS_INLINE void _thread_monitor_init(struct tcs *tcs /* thread */
 					   )
 {
 	unsigned int key;
 
 	/*
-	 * Add the newly initialized context to head of the list of contexts.
-	 * This singly linked list of contexts maintains ALL the contexts in the
-	 * system: both tasks and fibers regardless of whether they are
-	 * runnable.
+	 * Add the newly initialized thread to head of the list of threads.  This
+	 * singly linked list of threads maintains ALL the threads in the system:
+	 * both tasks and fibers regardless of whether they are runnable.
 	 */
 
 	key = irq_lock();
-	pCcs->next_context = _nanokernel.contexts;
-	_nanokernel.contexts = pCcs;
+	tcs->next_thread = _nanokernel.threads;
+	_nanokernel.threads = tcs;
 	irq_unlock(key);
 }
-#endif /* CONFIG_CONTEXT_MONITOR */
+#endif /* CONFIG_THREAD_MONITOR */
 
 /**
  *
- * @brief Intialize a new context (thread) from its stack space
+ * @brief Intialize a new thread from its stack space
  *
- * The control structure (CCS) is put at the lower address of the stack. An
+ * The control structure (TCS) is put at the lower address of the stack. An
  * initial context, to be "restored" by __pendsv(), is put at the other end of
  * the stack, and thus reusable by the stack when not needed anymore.
  *
@@ -105,31 +104,31 @@ static ALWAYS_INLINE void _context_monitor_init(struct ccs *pCcs /* context */
  * @return N/A
  */
 
-void _NewContext(
+void _new_thread(
 	char *pStackMem,      /* aligned stack memory */
 	unsigned stackSize,   /* stack size in bytes */
-	_ContextEntry pEntry, /* entry point */
+	_thread_entry_t pEntry, /* entry point */
 	void *parameter1,     /* entry point first param */
 	void *parameter2,     /* entry point second param */
 	void *parameter3,     /* entry point third param */
-	int priority,	 /* context priority (-1 for tasks) */
+	int priority,	 /* thread priority (-1 for tasks) */
 	unsigned options      /* misc options (future) */
 	)
 {
 	char *stackEnd = pStackMem + stackSize;
 	struct __esf *pInitCtx;
-	tCCS *pCcs = (tCCS *) pStackMem;
+	struct tcs *tcs = (struct tcs *) pStackMem;
 
 #ifdef CONFIG_INIT_STACKS
 	memset(pStackMem, 0xaa, stackSize);
 #endif
 
-	/* carve the context entry struct from the "base" of the stack */
+	/* carve the thread entry struct from the "base" of the stack */
 
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd) -
 				    sizeof(struct __esf));
 
-	pInitCtx->pc = ((uint32_t)_context_entry) & 0xfffffffe;
+	pInitCtx->pc = ((uint32_t)_thread_entry) & 0xfffffffe;
 	pInitCtx->a1 = (uint32_t)pEntry;
 	pInitCtx->a2 = (uint32_t)parameter1;
 	pInitCtx->a3 = (uint32_t)parameter2;
@@ -137,22 +136,22 @@ void _NewContext(
 	pInitCtx->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 
-	pCcs->link = NULL;
-	pCcs->flags = priority == -1 ? TASK | PREEMPTIBLE : FIBER;
-	pCcs->prio = priority;
+	tcs->link = NULL;
+	tcs->flags = priority == -1 ? TASK | PREEMPTIBLE : FIBER;
+	tcs->prio = priority;
 
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
+#ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */
 
-	pCcs->custom_data = NULL;
+	tcs->custom_data = NULL;
 #endif
 
-	pCcs->preempReg.psp = (uint32_t)pInitCtx;
-	pCcs->basepri = 0;
+	tcs->preempReg.psp = (uint32_t)pInitCtx;
+	tcs->basepri = 0;
 
-	_nano_timeout_ccs_init(pCcs);
+	_nano_timeout_tcs_init(tcs);
 
-	/* initial values in all other registers/CCS entries are irrelevant */
+	/* initial values in all other registers/TCS entries are irrelevant */
 
-	CONTEXT_MONITOR_INIT(pCcs);
+	THREAD_MONITOR_INIT(tcs);
 }

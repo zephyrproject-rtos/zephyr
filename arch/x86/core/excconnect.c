@@ -68,7 +68,7 @@ an error code is present on the stack or not.
 
   /@ _ExcExit() will adjust the stack to discard the error code @/
 
-  0x0f  jmp	   _ExcExit		/@ restore context context @/
+  0x0f  jmp	   _ExcExit		/@ restore thread context @/
   Machine code: 0xe9, 0x00, 0x00, 0x00, 0x00
 
 NOTE: Be sure to update the arch specific definition of the _EXC_STUB_SIZE
@@ -95,7 +95,7 @@ void _NanoCpuExcConnectAtDpl(unsigned int vector,
  * an interrupt asserted as a direct result of program execution as opposed
  * to a hardware device asserting an interrupt.
  *
- * When the exception specified by <vector> is asserted, the current context
+ * When the exception specified by <vector> is asserted, the current thread
  * is saved on the current stack, i.e. a switch to some other stack is not
  * performed, followed by executing <routine> which has the following signature:
  *
@@ -135,7 +135,7 @@ void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
  * an interrupt asserted as a direct result of program execution as opposed
  * to a hardware device asserting an interrupt.
  *
- * When the exception specified by <vector> is asserted, the current context
+ * When the exception specified by <vector> is asserted, the current thread
  * is saved on the current stack, i.e. a switch to some other stack is not
  * performed, followed by executing <routine> which has the following signature:
  *
@@ -214,7 +214,7 @@ void _NanoCpuExcConnectAtDpl(
 	/*
 	 * generate code that invokes _ExcExit(); note that a jump is used,
 	 * since _ExcExit() takes care of popping the error code and returning
-	 * back to the context that triggered the exception
+	 * back to the execution context that triggered the exception
 	 */
 
 	STUB_PTR[offsetAdjust] = IA32_JMP_OPCODE;

@@ -143,16 +143,16 @@ typedef struct firq_regs tFirqRegs;
 
 #endif /* _ASMLANGUAGE */
 
-/* Bitmask definitions for the tCCS->flags bit field */
+/* Bitmask definitions for the struct tcs->flags bit field */
 
 #define FIBER          0x000
-#define TASK           0x001 /* 1 = task context, 0 = fiber context   */
+#define TASK           0x001 /* 1 = task, 0 = fiber   */
 
-#define INT_ACTIVE     0x002 /* 1 = context is executing interrupt handler */
-#define EXC_ACTIVE     0x004 /* 1 = context is executing exception handler */
-#define USE_FP         0x010 /* 1 = context uses floating point unit */
-#define PREEMPTIBLE    0x020 /* 1 = preemptible context */
-#define ESSENTIAL      0x200 /* 1 = system context that must not abort */
+#define INT_ACTIVE     0x002 /* 1 = execution context is interrupt handler */
+#define EXC_ACTIVE     0x004 /* 1 = executino context is exception handler */
+#define USE_FP         0x010 /* 1 = thread uses floating point unit */
+#define PREEMPTIBLE    0x020 /* 1 = preemptible thread */
+#define ESSENTIAL      0x200 /* 1 = system thread that must not abort */
 #define NO_METRICS     0x400 /* 1 = _Swap() not to update task metrics */
 
 /* stacks */
@@ -165,7 +165,7 @@ typedef struct firq_regs tFirqRegs;
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
 /*
- * Reason a context has relinquished control: fibers can only be in the NONE
+ * Reason a thread has relinquished control: fibers can only be in the NONE
  * or COOP state, tasks can be one in the four.
  */
 #define _CAUSE_NONE 0
@@ -175,21 +175,21 @@ typedef struct firq_regs tFirqRegs;
 
 #ifndef _ASMLANGUAGE
 
-struct ccs {
-	struct ccs *link;        /* node in singly-linked list
+struct tcs {
+	struct tcs *link;          /* node in singly-linked list
 								* _nanokernel.fibers */
 	uint32_t flags;            /* bitmask of flags above */
 	uint32_t intlock_key;      /* interrupt key when relinquishing control */
 	int relinquish_cause;      /* one of the _CAUSE_xxxx definitions above */
 	unsigned int return_value; /* return value from _Swap */
 	int prio;                  /* fiber priority, -1 for a task */
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
+#ifdef CONFIG_THREAD_CUSTOM_DATA
 	void *custom_data;         /* available for custom use */
 #endif
 	struct coop coopReg;
 	struct preempt preempReg;
-#ifdef CONFIG_CONTEXT_MONITOR
-	struct ccs *next_context;  /* next item in list of ALL fiber+tasks */
+#ifdef CONFIG_THREAD_MONITOR
+	struct tcs *next_thread;  /* next item in list of ALL fiber+tasks */
 #endif
 #ifdef CONFIG_NANO_TIMEOUTS
 	struct _nano_timeout nano_timeout;
@@ -197,16 +197,16 @@ struct ccs {
 };
 
 struct s_NANO {
-	tCCS *fiber;    /* singly linked list of runnable fiber contexts */
-	tCCS *task;     /* current task the nanokernel knows about */
-	tCCS *current;  /* currently scheduled context (fiber or task) */
+	struct tcs *fiber;    /* singly linked list of runnable fibers */
+	struct tcs *task;     /* current task the nanokernel knows about */
+	struct tcs *current;  /* currently scheduled thread (fiber or task) */
 
-#ifdef CONFIG_CONTEXT_MONITOR
-	tCCS *contexts; /* singly linked list of ALL fiber+tasks */
+#ifdef CONFIG_THREAD_MONITOR
+	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
 #endif
 
 #ifdef CONFIG_FP_SHARING
-	tCCS *current_fp; /* context (fiber or task) that owns the FP regs */
+	struct tcs *current_fp; /* thread (fiber or task) that owns the FP regs */
 #endif
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
@@ -246,14 +246,14 @@ static ALWAYS_INLINE void nanoArchInit(void)
  *
  * The register used to store the return value from a function call invocation
  * to <value>.  It is assumed that the specified <fiber> is pending, and thus
- * the fiber's context is stored in its tCCS structure.
+ * the fiber's thread is stored in its struct tcs structure.
  *
  * @return N/A
  *
  * \NOMANUAL
  */
 
-static ALWAYS_INLINE void fiberRtnValueSet(tCCS *fiber, unsigned int value)
+static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
 {
 	fiber->return_value = value;
 }
@@ -275,7 +275,7 @@ static ALWAYS_INLINE int _IS_IN_ISR(void)
 }
 
 extern void nanoCpuAtomicIdle(unsigned int);
-extern void _ContextEntryWrapper(void);
+extern void _thread_entry_wrapper(void);
 
 static inline void _IntLibInit(void)
 {

@@ -65,27 +65,27 @@ GEN_OFFSET_SYM(tNANO, common_isp);
 GEN_OFFSET_SYM(tNANO, idle);
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
-/* Intel-specific tCCS structure member offsets */
+/* Intel-specific struct tcs structure member offsets */
 
 #ifdef CONFIG_GDB_INFO
-GEN_OFFSET_SYM(tCCS, esfPtr);
+GEN_OFFSET_SYM(tTCS, esfPtr);
 #endif /* CONFIG_GDB_INFO */
 #if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
-GEN_OFFSET_SYM(tCCS, excNestCount);
+GEN_OFFSET_SYM(tTCS, excNestCount);
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
-GEN_OFFSET_SYM(tCCS, custom_data);     /* available for custom use */
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+GEN_OFFSET_SYM(tTCS, custom_data);     /* available for custom use */
 #endif
-GEN_OFFSET_SYM(tCCS, coopFloatReg);   /* start of coop FP register set */
-GEN_OFFSET_SYM(tCCS, preempFloatReg); /* start of prempt FP register set */
+GEN_OFFSET_SYM(tTCS, coopFloatReg);   /* start of coop FP register set */
+GEN_OFFSET_SYM(tTCS, preempFloatReg); /* start of prempt FP register set */
 
-/* size of the tCCS structure sans save area for floating point regs */
+/* size of the struct tcs structure sans save area for floating point regs */
 
-GEN_ABSOLUTE_SYM(__tCCS_NOFLOAT_SIZEOF,
-		 sizeof(tCCS) - sizeof(tCoopFloatReg) -
+GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF,
+		 sizeof(tTCS) - sizeof(tCoopFloatReg) -
 			 sizeof(tPreempFloatReg));
 
-/* tCoopReg structure member offsets: tCCS->coopReg is of type tCoopReg */
+/* tCoopReg structure member offsets: tTCS->coopReg is of type tCoopReg */
 
 GEN_OFFSET_SYM(tCoopReg, esp);
 

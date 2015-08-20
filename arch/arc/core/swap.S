@@ -1,7 +1,7 @@
 /* swap.S - thread context switching */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -56,20 +56,20 @@ GDATA(_nanokernel)
  * @brief Initiate a cooperative context switch
  *
  * The _Swap() routine is invoked by various nanokernel services to effect
- * a cooperative context context switch.  Prior to invoking _Swap(), the caller
+ * a cooperative context switch.  Prior to invoking _Swap(), the caller
  * disables interrupts via nanoCpuIntLock() and the return 'key' is passed as a
  * parameter to _Swap(). The key is in fact the value stored in the register
  * operand of a CLRI instruction.
  *
  * It stores the intlock key parameter into current->intlock_key.
 
- * Given that _Swap() is called to effect a cooperative context context switch,
+ * Given that _Swap() is called to effect a cooperative context switch,
  * the caller-saved integer registers are saved on the stack by the function
  * call preamble to _Swap(). This creates a custom stack frame that will be
  * popped when returning from _Swap(), but is not suitable for handling a return
  * from an exception. Thus, the fact that the thread is pending because of a
  * cooperative call to _Swap() has to be recorded via the _CAUSE_COOP code in
- * the relinquish_cause of the context's tCCS. The _IrqExit()/_FirqExit() code
+ * the relinquish_cause of the thread's tTCS. The _IrqExit()/_FirqExit() code
  * will take care of doing the right thing to restore the thread status.
  *
  * When _Swap() is invoked, we know the decision to perform a context switch or
@@ -91,8 +91,8 @@ SECTION_FUNC(TEXT, _Swap)
 	ld r2, [r1, __tNANO_current_OFFSET]
 
 	/* save intlock key */
-	st r0, [r2, __tCCS_intlock_key_OFFSET]
-	st _CAUSE_COOP, [r2, __tCCS_relinquish_cause_OFFSET]
+	st r0, [r2, __tTCS_intlock_key_OFFSET]
+	st _CAUSE_COOP, [r2, __tTCS_relinquish_cause_OFFSET]
 
 	/*
 	 * Save status32 and blink on the stack before the callee-saved registers.
@@ -110,8 +110,8 @@ SECTION_FUNC(TEXT, _Swap)
 .balign 4
 _swap_to_a_fiber:
 
-	ld r3, [r2, __tCCS_link_OFFSET]
-	b.d _finish_swapping_to_context    /* always execute delay slot */
+	ld r3, [r2, __tTCS_link_OFFSET]
+	b.d _finish_swapping_to_thread    /* always execute delay slot */
 	st r3, [r1, __tNANO_fiber_OFFSET] /* delay slot */
 
 .balign 4
@@ -122,14 +122,14 @@ _swap_to_the_task:
 	/* fall through */
 
 .balign 4
-_finish_swapping_to_context:
+_finish_swapping_to_thread:
 
 
-	/* entering here, r2 contains the new current context */
+	/* entering here, r2 contains the new current thread */
 #if 0
 /* don't save flags in tNANO: slower, error-prone, and might not even give
  * a speed boost where it's supposed to */
-	ld r3, [r2, __tCCS_flags_OFFSET]
+	ld r3, [r2, __tTCS_flags_OFFSET]
 	st r3, [r1, __tNANO_flags_OFFSET]
 #endif
 
@@ -138,7 +138,7 @@ _finish_swapping_to_context:
 
 	_load_callee_saved_regs
 
-	ld r3, [r2, __tCCS_relinquish_cause_OFFSET]
+	ld r3, [r2, __tTCS_relinquish_cause_OFFSET]
 
 	breq.nd r3, _CAUSE_RIRQ, _swap_return_from_rirq
 	nop
@@ -150,9 +150,9 @@ _finish_swapping_to_context:
 .balign 4
 _swap_return_from_coop:
 
-	ld r1, [r2, __tCCS_intlock_key_OFFSET]
-	st  0, [r2, __tCCS_intlock_key_OFFSET]
-	ld r0, [r2, __tCCS_return_value_OFFSET]
+	ld r1, [r2, __tTCS_intlock_key_OFFSET]
+	st  0, [r2, __tTCS_intlock_key_OFFSET]
+	ld r0, [r2, __tTCS_return_value_OFFSET]
 
 	/*
 	 * Adjust the stack here in case we go to _return_from_exc: this allows

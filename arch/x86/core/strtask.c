@@ -42,7 +42,7 @@ Intel-specific parts of start_task(). Only FP functionality currently.
 /*
  * The following IA-32-specific task group is used for tasks that use SSE
  * instructions. It is *not* formally reserved by SysGen for this purpose.
- * See comments in context.c regarding the use of SSE_GROUP, and comments
+ * See comments in thread.c regarding the use of SSE_GROUP, and comments
  * in task.h regarding task groups reserved by SysGen.
  *
  * This identifier corresponds to the first user-defined task group.
@@ -60,28 +60,28 @@ Intel-specific parts of start_task(). Only FP functionality currently.
 
 void _StartTaskArch(
 	struct k_task *X,	 /* ptr to task control block */
-	unsigned int *pOpt /* context options container */
+	unsigned int *pOpt /* thread options container */
 	)
 {
 	/*
 	 * The IA-32 nanokernel implementation uses the USE_FP bit in the
-	 * tCCS->flags structure as a "dirty bit".  The USE_FP flag bit will be
-	 * set whenever a context uses any non-integer capability, whether it's
+	 * struct tcs->flags structure as a "dirty bit".  The USE_FP flag bit will be
+	 * set whenever a thread uses any non-integer capability, whether it's
 	 * just the x87 FPU capability, SSE instructions, or a combination of
-	 * both. The USE_SSE flag bit will only be set if a context uses SSE
+	 * both. The USE_SSE flag bit will only be set if a thread uses SSE
 	 * instructions.
 	 *
 	 * However, callers of fiber_fiber_start(), task_fiber_start(), or even
-	 * _NewContext() don't need to follow the protocol used by the IA-32
-	 * nanokernel w.r.t. managing the tCCS->flags field.  If a context
+	 * _new_thread() don't need to follow the protocol used by the IA-32
+	 * nanokernel w.r.t. managing the struct tcs->flags field.  If a thread
 	 * will be utilizing just the x87 FPU capability, then the USE_FP
-	 * option bit is specified.  If a context will be utilizing SSE
+	 * option bit is specified.  If a thread will be utilizing SSE
 	 * instructions (and possibly x87 FPU capability), then only the
 	 * USE_SSE option bit needs to be specified.
 	 *
 	 * Likewise, the placement of tasks into "groups" doesn't need to follow
 	 * the protocol used by the IA-32 nanokernel w.r.t. managing the
-	 * tCCS->flags field.  If a task will utilize just the x87 FPU
+	 * struct tcs->flags field.  If a task will utilize just the x87 FPU
 	 *capability,
 	 * then the task only needs to be placed in the FPU_GROUP group.
 	 * If a task utilizes SSE instructions (and possibly x87 FPU

@@ -1,7 +1,7 @@
 /* isr_wrapper.S - wrapper around ISRs with logic for context switching */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2014-2015 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -91,7 +91,7 @@ The context switch code adopts this standard so that it is easier to follow:
   - r1 contains _nanokernel ASAP and is not overwritten over the lifespan of
     the functions.
   - r2 contains _nanokernel.current ASAP, and the incoming thread when we
-    transition from outgoing context to incoming context
+    transition from outgoing thread to incoming thread
 
 Not loading _nanokernel into r0 allows loading _nanokernel without stomping on
 the parameter in r0 in _Swap().
@@ -120,11 +120,11 @@ done upfront, and the rest is done when needed:
 o RIRQ
 
   All needed regisers to run C code in the ISR are saved automatically
-  on the outgoing context's stack: loop, status32, pc, and the caller-
+  on the outgoing thread's stack: loop, status32, pc, and the caller-
   saved GPRs. That stack frame layout is pre-determined. If returning
   to a fiber, the stack is popped and no registers have to be saved by
   the kernel. If a context switch is required, the callee-saved GPRs
-  are then saved in the context control structure (CCS).
+  are then saved in the thread control structure (TCS).
 
 o FIRQ
 
@@ -137,7 +137,7 @@ o FIRQ
   CPU switches back to bank 0 for the GPRs. If a context switch is
   needed, at this point only are all the registers saved. First, a
   stack frame with the same layout as the automatic RIRQ one is created
-  and then the callee-saved GPRs are saved in the CCS. status32_p0 and
+  and then the callee-saved GPRs are saved in the TCS. status32_p0 and
   ilink are saved in this case, not status32 and pc.
 
   To create the stack frame, the FIRQ handling code must first go back to using
@@ -148,7 +148,7 @@ o FIRQ
 o coop
 
   When a coop context switch is done, the callee-saved registers are
-  saved in the CCS. The other GPRs do not need to be saved, since the
+  saved in the TCS. The other GPRs do not need to be saved, since the
   compiler has already placed them on the stack.
 
 For restoring the contexts, there are six cases. In all cases, the

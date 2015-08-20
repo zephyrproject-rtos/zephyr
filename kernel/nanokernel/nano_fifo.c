@@ -126,9 +126,9 @@ void _fifo_put_non_preemptible(struct nano_fifo *fifo, void *data)
 
 	fifo->stat++;
 	if (fifo->stat <= 0) {
-		tCCS *ccs = _nano_wait_q_remove_no_check(&fifo->wait_q);
-		_nano_timeout_abort(ccs);
-		fiberRtnValueSet(ccs, (unsigned int)data);
+		struct tcs *tcs = _nano_wait_q_remove_no_check(&fifo->wait_q);
+		_nano_timeout_abort(tcs);
+		fiberRtnValueSet(tcs, (unsigned int)data);
 	} else {
 		enqueue_data(fifo, data);
 	}
@@ -144,9 +144,9 @@ void nano_task_fifo_put( struct nano_fifo *fifo, void *data)
 
 	fifo->stat++;
 	if (fifo->stat <= 0) {
-		tCCS *ccs = _nano_wait_q_remove_no_check(&fifo->wait_q);
-		_nano_timeout_abort(ccs);
-		fiberRtnValueSet(ccs, (unsigned int)data);
+		struct tcs *tcs = _nano_wait_q_remove_no_check(&fifo->wait_q);
+		_nano_timeout_abort(tcs);
+		fiberRtnValueSet(tcs, (unsigned int)data);
 		_Swap(imask);
 		return;
 	} else {
@@ -162,7 +162,7 @@ void nano_fifo_put(struct nano_fifo *fifo, void *data)
 	static void (*func[3])(struct nano_fifo *fifo, void *data) = {
 		nano_isr_fifo_put, nano_fiber_fifo_put, nano_task_fifo_put
 	};
-	func[context_type_get()](fifo, data);
+	func[sys_execution_context_type_get()](fifo, data);
 }
 
 FUNC_ALIAS(_fifo_get, nano_isr_fifo_get, void *);
@@ -197,7 +197,7 @@ static inline void *dequeue_data(struct nano_fifo *fifo)
 /**
  * INTERNAL
  * This function is capable of supporting invocations from fiber, task, and ISR
- * contexts.  However, the nano_isr_fifo_get, nano_task_fifo_get, and
+ * execution contexts.  However, the nano_isr_fifo_get, nano_task_fifo_get, and
  * nano_fiber_fifo_get aliases are created to support any required
  * implementation differences in the future without introducing a source code
  * migration issue.
@@ -271,7 +271,7 @@ void *nano_fifo_get_wait(struct nano_fifo *fifo)
 	static void *(*func[3])(struct nano_fifo *fifo) = {
 		NULL, nano_fiber_fifo_get_wait, nano_task_fifo_get_wait
 	};
-	return func[context_type_get()](fifo);
+	return func[sys_execution_context_type_get()](fifo);
 }
 
 

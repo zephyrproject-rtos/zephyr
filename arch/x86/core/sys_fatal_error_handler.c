@@ -54,7 +54,7 @@ supported platforms.
  * This routine implements the corrective action to be taken when the system
  * detects a fatal error.
  *
- * This sample implementation attempts to abort the current context and allow
+ * This sample implementation attempts to abort the current thread and allow
  * the system to continue executing, which may permit the system to continue
  * functioning with degraded capabilities.
  *
@@ -72,12 +72,12 @@ FUNC_NORETURN void _SysFatalErrorHandler(
 	const NANO_ESF * pEsf /* pointer to exception stack frame */
 	)
 {
-	nano_context_type_t curCtx = context_type_get();
+	nano_context_type_t curCtx = sys_execution_context_type_get();
 
 	ARG_UNUSED(reason);
 	ARG_UNUSED(pEsf);
 
-	if ((curCtx != NANO_CTX_ISR) && !_context_essential_check(NULL)) {
+	if ((curCtx != NANO_CTX_ISR) && !_is_thread_essential(NULL)) {
 #ifdef CONFIG_MICROKERNEL
 		if (curCtx == NANO_CTX_TASK) {
 			extern FUNC_NORETURN void _TaskAbort(void);

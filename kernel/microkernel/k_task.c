@@ -206,30 +206,30 @@ static void start_task(struct k_task *X,  /* ptr to task control block */
 					   void (*func)(void) /* entry point for task */
 					   )
 {
-	unsigned int contextOptions;
+	unsigned int task_options;
 
 /* Note: the field X->worksize now represents the task size in bytes */
 
-	contextOptions = 0;
-	_START_TASK_ARCH(X, &contextOptions);
+	task_options = 0;
+	_START_TASK_ARCH(X, &task_options);
 
 	/*
-	 * The 'func' argument to _NewContext() represents the entry point of
+	 * The 'func' argument to _new_thread() represents the entry point of
 	 * the
 	 * kernel task.  The 'parameter1', 'parameter2', & 'parameter3'
 	 * arguments
 	 * are not applicable to such tasks.  A 'priority' of -1 indicates that
-	 * the context is a task, rather than a fiber.
+	 * the thread is a task, rather than a fiber.
 	 */
 
-	_NewContext((char *)X->workspace, /* pStackMem */
+	_new_thread((char *)X->workspace, /* pStackMem */
 				X->worksize,		/* stackSize */
-				(_ContextEntry)func,  /* pEntry */
+				(_thread_entry_t)func,  /* pEntry */
 				(void *)0,		/* parameter1 */
 				(void *)0,		/* parameter2 */
 				(void *)0,		/* parameter3 */
 				-1,			/* priority */
-				contextOptions	/* options */
+				task_options	/* options */
 				);
 
 	X->fabort = NULL;
@@ -249,9 +249,9 @@ static void start_task(struct k_task *X,  /* ptr to task control block */
 static void abort_task(struct k_task *X)
 {
 
-	/* Do normal context exit cleanup */
+	/* Do normal thread exit cleanup */
 
-	_context_exit((tCCS *)X->workspace);
+	_thread_exit((struct tcs *)X->workspace);
 
 	/* Set TF_TERM and TF_STOP state flags */
 

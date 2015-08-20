@@ -55,18 +55,17 @@ GDATA(_nanokernel)
  *
  * @brief PendSV exception handler, handling context switches
  *
- * The PendSV exception is the only context in the system that can perform
- * context switching. When an execution context finds out it has to switch
- * contexts, it pends the PendSV exception.
+ * The PendSV exception is the only execution context in the system that can
+ * perform context switching. When an execution context finds out it has to
+ * switch contexts, it pends the PendSV exception.
  *
  * When PendSV is pended, the decision that a context switch must happen has
  * already been taken. In other words, when __pendsv() runs, we *know* we have
  * to swap *something*.
  *
- * The scheduling algorithm is simple: schedule the head of the runnable FIBER
- * context list, which is represented by _nanokernel.fiber. If there are no
- * runnable FIBER contexts, then schedule the TASK context represented by
- * _nanokernel.task. The _nanokernel.task field will never be NULL.
+ * The scheduling algorithm is simple: schedule the head of the runnable fibers
+ * list (_nanokernel.fiber). If there are no runnable fibers, then schedule the
+ * task (_nanokernel.task). The _nanokernel.task field will never be NULL.
  */
 
 SECTION_FUNC(TEXT, __pendsv)
@@ -80,14 +79,14 @@ SECTION_FUNC(TEXT, __pendsv)
 	pop {lr}
 #endif
 
-    /* load _Nanokernel into r1 and current tCCS into r2 */
+    /* load _Nanokernel into r1 and current tTCS into r2 */
     ldr r1, =_nanokernel
     ldr r2, [r1, #__tNANO_current_OFFSET]
 
-    /* addr of callee-saved regs in CCS in r0 */
-    add r0, r2, #__tCCS_preempReg_OFFSET
+    /* addr of callee-saved regs in TCS in r0 */
+    add r0, r2, #__tTCS_preempReg_OFFSET
 
-    /* save callee-saved + psp in CCS */
+    /* save callee-saved + psp in TCS */
     mrs ip, PSP
     stmia r0, {v1-v8, ip}
 
@@ -105,7 +104,7 @@ SECTION_FUNC(TEXT, __pendsv)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
 
-    /* find out incoming context (fiber or task) */
+    /* find out incoming thread (fiber or task) */
 
     /* is there a fiber ready ? */
     ldr r2, [r1, #__tNANO_fiber_OFFSET]
@@ -116,12 +115,12 @@ SECTION_FUNC(TEXT, __pendsv)
      * else, the task is the thread we're switching in
      */
     itte ne
-	ldrne.w r0, [r2, #__tCCS_link_OFFSET]   /* then */
+	ldrne.w r0, [r2, #__tTCS_link_OFFSET]   /* then */
 	strne.w r0, [r1, #__tNANO_fiber_OFFSET] /* then */
 	ldreq.w r2, [r1, #__tNANO_task_OFFSET]  /* else */
 
     /* r2 contains the new thread */
-    ldr r0, [r2, #__tCCS_flags_OFFSET]
+    ldr r0, [r2, #__tTCS_flags_OFFSET]
     str r0, [r1, #__tNANO_flags_OFFSET]
     str r2, [r1, #__tNANO_current_OFFSET]
 
@@ -138,13 +137,13 @@ SECTION_FUNC(TEXT, __pendsv)
     str r3, [ip, #0]
 
     /* restore BASEPRI for the incoming thread */
-    ldr r0, [r2, #__tCCS_basepri_OFFSET]
+    ldr r0, [r2, #__tTCS_basepri_OFFSET]
     mov ip, #0
-    str ip, [r2, #__tCCS_basepri_OFFSET]
+    str ip, [r2, #__tTCS_basepri_OFFSET]
     msr BASEPRI, r0
 
-    /* load callee-saved + psp from CCS */
-    add r0, r2, #__tCCS_preempReg_OFFSET
+    /* load callee-saved + psp from TCS */
+    add r0, r2, #__tTCS_preempReg_OFFSET
     ldmia r0, {v1-v8, ip}
     msr PSP, ip
 
@@ -205,9 +204,9 @@ SECTION_FUNC(TEXT, __svc)
  * __pendsv all come from handling an interrupt, which means we know the
  * interrupts were not locked: in that case the BASEPRI value is 0.
  *
- * Given that _Swap() is called to effect a cooperative context context switch,
- * only the caller-saved integer registers need to be saved in the tCCS of the
- * outgoing context. This is all performed by the hardware, which stores it in
+ * Given that _Swap() is called to effect a cooperative context switch,
+ * only the caller-saved integer registers need to be saved in the TCS of the
+ * outgoing thread. This is all performed by the hardware, which stores it in
  * its exception stack frame, created when handling the svc exception.
  *
  * @return may contain a return value setup by a call to fiberRtnValueSet()
@@ -222,7 +221,7 @@ SECTION_FUNC(TEXT, _Swap)
 
     ldr r1, =_nanokernel
     ldr r2, [r1, #__tNANO_current_OFFSET]
-    str r0, [r2, #__tCCS_basepri_OFFSET]
+    str r0, [r2, #__tTCS_basepri_OFFSET]
 
     svc #0
 

@@ -106,7 +106,7 @@ void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
  * size the function returns -EMSGSIZE. Otherwise return the number of 32-bit
  * words copied. The functon retrieves messages in FIFO order. If there is no
  * message in the buffer the fuction returns immediately. It can only be called
- * from a fiber context.
+ * from a fiber.
  *
  * @param logger       Pointer to the event logger used.
  * @param buffer       Pointer to the buffer where the message will be copied.
@@ -128,7 +128,7 @@ int sys_event_logger_get(struct event_logger *logger, uint32_t *buffer,
  * size the function returns -EMSGSIZE. Otherwise return the number of 32-bit
  * words copied. The functon retrieves messages in FIFO order. The caller pends
  * if there is no message available in the buffer. It can only be called from a
- * fiber context.
+ * fiber.
  *
  * @param logger       Pointer to the event logger used.
  * @param buffer       Pointer to the buffer where the message will be copied.
@@ -150,7 +150,7 @@ int sys_event_logger_get_wait(struct event_logger *logger, uint32_t *buffer,
  * size the function returns -EMSGSIZE. Otherwise return the number of dwords
  * copied. The functon retrieves messages in FIFO order. The caller pends if
  * there is no message available in the buffer until a new message is added or
- * the timeout expires. It can only be called from a fiber context.
+ * the timeout expires. It can only be called from a fiber.
  *
  * @param logger       Pointer to the event logger used.
  * @param buffer       Pointer to the buffer where the message will be copied.

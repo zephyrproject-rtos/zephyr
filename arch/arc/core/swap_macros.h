@@ -63,14 +63,14 @@
 	st fp,  [sp, __tCalleeSaved_fp_OFFSET]
 	st r30, [sp, __tCalleeSaved_r30_OFFSET]
 
-	/* save stack pointer in tCCS */
-	st sp, [r2, __tCCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+	/* save stack pointer in struct tcs */
+	st sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 .endm
 
 /* entering this macro, current is in r2 */
 .macro _load_callee_saved_regs
-	/* restore stack pointer from tCCS */
-	ld sp, [r2, __tCCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
+	/* restore stack pointer from struct tcs */
+	ld sp, [r2, __tTCS_preempReg_OFFSET + __tPreempt_sp_OFFSET]
 
 	ld r13, [sp, __tCalleeSaved_r13_OFFSET]
 	ld r14, [sp, __tCalleeSaved_r14_OFFSET]
@@ -165,8 +165,8 @@
 	 *
 	 * The pc and status32 values will still be on the stack. We cannot
 	 * pop them yet because the callers of _pop_irq_stack_frame must reload
-	 * status32 differently depending on the context they are running in
-	 * (_Swap(), firq or exception).
+	 * status32 differently depending on the execution context they are running
+	 * in (_Swap(), firq or exception).
 	 */
 	add_s sp, sp, __tISF_SIZEOF
 

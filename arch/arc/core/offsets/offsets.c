@@ -52,19 +52,19 @@ completeness.
 #include <nano_private.h>
 #include <nano_offsets.h>
 
-/* ARCv2-specific tCCS structure member offsets */
+/* ARCv2-specific tNANO structure member offsets */
 GEN_OFFSET_SYM(tNANO, rirq_sp);
 GEN_OFFSET_SYM(tNANO, firq_regs);
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 GEN_OFFSET_SYM(tNANO, idle);
 #endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
 
-/* ARCv2-specific tCCS structure member offsets */
-GEN_OFFSET_SYM(tCCS, intlock_key);
-GEN_OFFSET_SYM(tCCS, relinquish_cause);
-GEN_OFFSET_SYM(tCCS, return_value);
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
-GEN_OFFSET_SYM(tCCS, custom_data);
+/* ARCv2-specific struct tcs structure member offsets */
+GEN_OFFSET_SYM(tTCS, intlock_key);
+GEN_OFFSET_SYM(tTCS, relinquish_cause);
+GEN_OFFSET_SYM(tTCS, return_value);
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+GEN_OFFSET_SYM(tTCS, custom_data);
 #endif
 
 
@@ -120,7 +120,7 @@ GEN_OFFSET_SYM(tFirqRegs, lp_start);
 GEN_OFFSET_SYM(tFirqRegs, lp_end);
 GEN_ABSOLUTE_SYM(__tFirqRegs_SIZEOF, sizeof(tFirqRegs));
 
-/* size of the tCCS structure sans save area for floating point regs */
-GEN_ABSOLUTE_SYM(__tCCS_NOFLOAT_SIZEOF, sizeof(tCCS));
+/* size of the struct tcs structure sans save area for floating point regs */
+GEN_ABSOLUTE_SYM(__tTCS_NOFLOAT_SIZEOF, sizeof(tTCS));
 
 GEN_ABS_SYM_END

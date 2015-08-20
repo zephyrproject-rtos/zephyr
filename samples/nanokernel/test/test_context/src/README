@@ -12,13 +12,13 @@ fiber_yield
   - Called by an equal priority fiber when there is another fiber
   - Called by a lower priority fiber when there is another fiber
 
-context_self_get
+sys_thread_self_get
   - Called from an ISR (interrupted a task)
   - Called from an ISR (interrupted a fiber)
   - Called from a task
   - Called from a fiber
 
-context_type_get
+sys_execution_context_type_get
   - Called from an ISR that interrupted a task
   - Called from an ISR that interrupted a fiber
   - Called from a task

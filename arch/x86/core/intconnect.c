@@ -78,7 +78,7 @@ a "beginning of interrupt" (BOI) callout and an "end of interrupt" (EOI) callout
   0x23   addl    $(4 * numParams), %esp    /@ pop parameters @/
   Machine code: 0x83, 0xc4, (4 * numParams)
 
-  0x26  jmp      _IntExit        /@ restore context or reschedule @/
+  0x26  jmp      _IntExit        /@ restore thread or reschedule @/
   Machine code: 0xe9, 0x00, 0x00, 0x00, 0x00
 
 NOTE: Be sure to update the arch specific definition of the _INT_STUB_SIZE macro
@@ -252,7 +252,7 @@ void _IntVecSet(
  *
  * When the device asserts an interrupt on the specified <irq>, a switch to
  * the interrupt stack is performed (if not already executing on the interrupt
- * stack), followed by saving the integer (i.e. non-floating point) context of
+ * stack), followed by saving the integer (i.e. non-floating point) thread of
  * the currently executing task, fiber, or ISR.  The ISR specified by <routine>
  * will then be invoked with the single <parameter>.  When the ISR returns, a
  * context switch may occur.
@@ -447,8 +447,8 @@ int irq_connect(
 	offsetAdjust += 3;
 
 	/*
-	 * generate code that invokes _IntExit(); note that a jump is used,
-	 * since _IntExit() takes care of returning back to the context that
+	 * generate code that invokes _IntExit(); note that a jump is used, since
+	 * _IntExit() takes care of returning back to the execution context that
 	 * experienced the interrupt (i.e. branch tail optimization)
 	 */
 

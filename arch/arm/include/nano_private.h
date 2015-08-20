@@ -96,20 +96,20 @@ typedef struct preempt tPreempt;
 
 #endif /* _ASMLANGUAGE */
 
-/* Bitmask definitions for the tCCS->flags bit field */
+/* Bitmask definitions for the struct tcs.flags bit field */
 
 #define FIBER 0x000
-#define TASK 0x001	   /* 1 = task context, 0 = fiber context   */
-#define INT_ACTIVE 0x002     /* 1 = context is executing interrupt handler */
-#define EXC_ACTIVE 0x004     /* 1 = context is executing exception handler */
-#define USE_FP 0x010	 /* 1 = context uses floating point unit */
+#define TASK 0x001	   /* 1 = task, 0 = fiber   */
+#define INT_ACTIVE 0x002     /* 1 = executino context is interrupt handler */
+#define EXC_ACTIVE 0x004     /* 1 = executino context is exception handler */
+#define USE_FP 0x010	 /* 1 = thread uses floating point unit */
 #define PREEMPTIBLE                                            \
-	0x020 /* 1 = preemptible context                       \
+	0x020 /* 1 = preemptible thread                       \
 	       * NOTE: the value must be < 0x100 to be able to \
 	       *       use a small thumb instr with immediate  \
 	       *       when loading PREEMPTIBLE in a GPR       \
 	       */
-#define ESSENTIAL 0x200  /* 1 = system context that must not abort */
+#define ESSENTIAL 0x200  /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400 /* 1 = _Swap() not to update task metrics */
 
 /* stacks */
@@ -126,18 +126,18 @@ typedef struct preempt tPreempt;
 #endif
 
 #ifndef _ASMLANGUAGE
-struct ccs {
-	struct ccs *link; /* singly-linked list in _nanokernel.fibers */
+struct tcs {
+	struct tcs *link; /* singly-linked list in _nanokernel.fibers */
 	uint32_t flags;
 	uint32_t basepri;
 	int prio;
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
+#ifdef CONFIG_THREAD_CUSTOM_DATA
 	void *custom_data;     /* available for custom use */
 #endif
 	struct coop coopReg;
 	struct preempt preempReg;
-#if defined(CONFIG_CONTEXT_MONITOR)
-	struct ccs *next_context; /* next item in list of ALL fiber+tasks */
+#if defined(CONFIG_THREAD_MONITOR)
+	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
 #endif
 #ifdef CONFIG_NANO_TIMEOUTS
 	struct _nano_timeout nano_timeout;
@@ -145,17 +145,17 @@ struct ccs {
 };
 
 struct s_NANO {
-	tCCS *fiber;   /* singly linked list of runnable fiber contexts */
-	tCCS *task;    /* pointer to runnable task context */
-	tCCS *current; /* currently scheduled context (fiber or task) */
-	int flags;     /* tCCS->flags of 'current' context */
+	struct tcs *fiber;   /* singly linked list of runnable fiber */
+	struct tcs *task;    /* pointer to runnable task */
+	struct tcs *current; /* currently scheduled thread (fiber or task) */
+	int flags;     /* struct tcs->flags of 'current' thread */
 
-#if defined(CONFIG_CONTEXT_MONITOR)
-	tCCS *contexts; /* singly linked list of ALL fiber+tasks */
+#if defined(CONFIG_THREAD_MONITOR)
+	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
 #endif
 
 #ifdef CONFIG_FP_SHARING
-	tCCS *current_fp; /* context (fiber or task) that owns the FP regs */
+	struct tcs *current_fp; /* thread (fiber or task) that owns the FP regs */
 #endif			  /* CONFIG_FP_SHARING */
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
@@ -190,7 +190,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
  *
  * The register used to store the return value from a function call invocation
  * to <value>.  It is assumed that the specified <fiber> is pending, and thus
- * the fiber's context is stored in its tCCS structure.
+ * the fiber's thread is stored in its struct tcs structure.
  *
  * @return N/A
  *
@@ -198,7 +198,7 @@ static ALWAYS_INLINE void nanoArchInit(void)
  */
 
 static ALWAYS_INLINE void fiberRtnValueSet(
-	tCCS *fiber,       /* pointer to fiber */
+	struct tcs *fiber,       /* pointer to fiber */
 	unsigned int value /* value to set as return value */
 	)
 {

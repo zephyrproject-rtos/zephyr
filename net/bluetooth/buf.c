@@ -82,7 +82,7 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 
 	buf = nano_fifo_get(avail);
 	if (!buf) {
-		if (context_type_get() == NANO_CTX_ISR) {
+		if (sys_execution_context_type_get() == NANO_CTX_ISR) {
 			BT_ERR("Failed to get free buffer\n");
 			return NULL;
 		}

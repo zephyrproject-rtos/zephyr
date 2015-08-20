@@ -183,11 +183,11 @@ SECTION_FUNC(TEXT, _IntEnt)
 
 	/* switch to base of the interrupt stack */
 
-	movl	%esp, %edx		/* save current context stack pointer */
+	movl	%esp, %edx		/* save current thread's stack pointer */
 	movl	__tNANO_common_isp_OFFSET(%ecx), %esp	/* load new sp value */
 
 
-	/* save context stack pointer onto base of interrupt stack */
+	/* save thread's stack pointer onto base of interrupt stack */
 
 	pushl	%edx			/* Save stack pointer */
 
@@ -243,11 +243,12 @@ BRANCH_LABEL(_HandleIdle)
  * to inform the kernel that the processing of an interrupt has
  * completed.  This routine decrements _nanokernel.nested (to support interrupt
  * nesting), restores the volatile integer registers, and then switches
- * back to the interrupted context's stack, if this isn't a nested interrupt.
+ * back to the interrupted execution context's stack, if this isn't a nested
+ * interrupt.
  *
- * Finally, control is returned back to the interrupted fiber context or ISR.
+ * Finally, control is returned back to the interrupted fiber or ISR.
  * A context switch _may_ occur if the interrupted context was a task context,
- * in which case one or more other fiber and task contexts will execute before
+ * in which case one or more other fibers and tasks will execute before
  * this routine resumes and control gets returned to the interrupted task.
  *
  * @return N/A
@@ -275,37 +276,37 @@ SECTION_FUNC(TEXT, _IntExit)
 
 	/*
 	 * Determine whether the execution of the ISR requires a context
-	 * switch.  If the interrupted context is PREEMPTIBLE and
+	 * switch.  If the interrupted thread is PREEMPTIBLE (a task) and
 	 * _nanokernel.fiber is non-NULL, a _Swap() needs to occur.
 	 */
 
 	movl	__tNANO_current_OFFSET (%ecx), %eax
-	testl	$PREEMPTIBLE, __tCCS_flags_OFFSET(%eax)
+	testl	$PREEMPTIBLE, __tTCS_flags_OFFSET(%eax)
 	je	noReschedule
 	cmpl	$0, __tNANO_fiber_OFFSET (%ecx)
 	je	noReschedule
 
 	/*
-	 * Set the INT_ACTIVE bit in the tCCS to allow the upcoming call to
+	 * Set the INT_ACTIVE bit in the tTCS to allow the upcoming call to
 	 * _Swap() to determine whether non-floating registers need to be
 	 * preserved using the lazy save/restore algorithm, or to indicate to
 	 * debug tools that a preemptive context switch has occurred.
 	 *
-	 * Setting the NO_METRICS bit tells _Swap() that the per-context
+	 * Setting the NO_METRICS bit tells _Swap() that the per-execution context
          * [totalRunTime] calculation has already been performed and that
 	 * there is no need to do it again.
 	 */
 	 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
-	orl	$INT_ACTIVE, __tCCS_flags_OFFSET(%eax)
+	orl	$INT_ACTIVE, __tTCS_flags_OFFSET(%eax)
 #endif
 
 	/*
 	 * A context reschedule is required: keep the volatile registers of
-	 * the interrupted context on the context's stack.  Utilize
+	 * the interrupted thread on the context's stack.  Utilize
 	 * the existing _Swap() primitive to save the remaining
 	 * thread's registers (including floating point) and perform
-	 * a switch to the new context.
+	 * a switch to the new thread.
 	 */
 
 	popl	%esp		/* switch back to kernel stack */
@@ -314,10 +315,10 @@ SECTION_FUNC(TEXT, _IntExit)
  	call	_Swap
 
 	/*
-	 * The interrupted context thread has now been scheduled,
+	 * The interrupted thread has now been scheduled,
 	 * as the result of a _later_ invocation of _Swap().
 	 *
-	 * Now need to restore the interrupted context's environment before
+	 * Now need to restore the interrupted thread's environment before
 	 * returning control to it at the point where it was interrupted ...
 	 */
 	 
@@ -326,12 +327,12 @@ SECTION_FUNC(TEXT, _IntExit)
       defined(CONFIG_GDB_INFO) )
 	/*
 	 * _Swap() has restored the floating point registers, if needed.
-	 * Clear the INT_ACTIVE bit of the interrupted context's tCCS
+	 * Clear the INT_ACTIVE bit of the interrupted thread's TCS
 	 * since it has served its purpose.
 	 */
 	 
 	movl	_nanokernel + __tNANO_current_OFFSET, %eax
-	andl	$~INT_ACTIVE, __tCCS_flags_OFFSET (%eax)
+	andl	$~INT_ACTIVE, __tTCS_flags_OFFSET (%eax)
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
 
@@ -340,7 +341,7 @@ SECTION_FUNC(TEXT, _IntExit)
 
 
 
-	/* Restore volatile registers and return to the interrupted context */
+	/* Restore volatile registers and return to the interrupted thread */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif
@@ -397,7 +398,8 @@ BRANCH_LABEL(nestedInterrupt)
  * A spurious interrupt is considered a fatal condition, thus this routine
  * merely sets up the 'reason' and 'pEsf' parameters to the routine
  *  _SysFatalHwErrorHandler().  In other words, there is no provision to return
- * to the interrupted context and thus the volatile registers are not saved.
+ * to the interrupted execution context and thus the volatile registers are not
+ * saved.
  *
  * @return Never returns
  *

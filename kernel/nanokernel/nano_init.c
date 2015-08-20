@@ -81,7 +81,7 @@ uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
 #define RAND32_INIT()
 #endif
 
-/* stack space for the background (or idle) task context */
+/* stack space for the background (or idle) task */
 
 char __noinit __stack main_task_stack[CONFIG_MAIN_STACK_SIZE];
 
@@ -157,19 +157,23 @@ static void _main(void)
  * @return N/A
  */
 
-static void nano_init(tCCS *dummyOutContext)
+static void nano_init(struct tcs *dummyOutContext)
 {
 	/*
-	 * Initialize the current execution context to permit a level of debugging
+	 * Initialize the current execution thread to permit a level of debugging
 	 * output if an exception should happen during nanokernel initialization.
-	 * However, don't waste effort initializing the fields of the dummy context
-	 * beyond those needed to identify it as a dummy context.
+	 * However, don't waste effort initializing the fields of the dummy thread
+	 * beyond those needed to identify it as a dummy thread.
 	 */
 
 	_nanokernel.current = dummyOutContext;
 
-	dummyOutContext->link =
-		(tCCS *)NULL; /* context not inserted into list */
+	/*
+	 * Do not insert dummy execution context in the list of fibers, so that it
+	 * does not get scheduled back in once context-switched out.
+	 */
+	dummyOutContext->link = (struct tcs *)NULL;
+
 	dummyOutContext->flags = FIBER | ESSENTIAL;
 	dummyOutContext->prio = 0;
 
@@ -187,18 +191,18 @@ static void nano_init(tCCS *dummyOutContext)
 #endif
 
 	/*
-	 * Initialize the context control block (CCS) for the background task
-	 * (or idle task). The entry point for this context is 'main'.
+	 * Initialize the thread control block (TCS) for the background task
+	 * (or idle task). The entry point for this thread is 'main'.
 	 */
 
-	_nanokernel.task = (tCCS *) main_task_stack;
+	_nanokernel.task = (struct tcs *) main_task_stack;
 
-	_NewContext(main_task_stack,	/* pStackMem */
+	_new_thread(main_task_stack,	/* pStackMem */
 			    CONFIG_MAIN_STACK_SIZE, /* stackSize */
-			    (_ContextEntry)_main,	 /* pEntry */
-			    (_ContextArg)0,	 /* parameter1 */
-			    (_ContextArg)0,	 /* parameter2 */
-			    (_ContextArg)0,	 /* parameter3 */
+			    (_thread_entry_t)_main,	 /* pEntry */
+			    (_thread_arg_t)0,	 /* parameter1 */
+			    (_thread_arg_t)0,	 /* parameter2 */
+			    (_thread_arg_t)0,	 /* parameter3 */
 			    -1,				 /* priority */
 			    0				 /* options */
 			    );
@@ -265,7 +269,7 @@ FUNC_NORETURN void _Cstart(void)
 {
 	/* floating point operations are NOT performed during nanokernel init */
 
-	char dummyCCS[__tCCS_NOFLOAT_SIZEOF];
+	char dummyTCS[__tTCS_NOFLOAT_SIZEOF];
 
 	/*
 	 * Initialize nanokernel data structures. This step includes
@@ -273,7 +277,7 @@ FUNC_NORETURN void _Cstart(void)
 	 * before the hardware initialization phase.
 	 */
 
-	nano_init((tCCS *)&dummyCCS);
+	nano_init((struct tcs *)&dummyTCS);
 
 	/* perform basic hardware initialization */
 
@@ -301,7 +305,7 @@ FUNC_NORETURN void _Cstart(void)
 
 	PRINT_BOOT_BANNER();
 
-	/* context switch into background context (entry function is main()) */
+	/* context switch into background thread (entry function is main()) */
 
 	_nano_fiber_swap();
 

@@ -1,4 +1,4 @@
-/* context.c - test nanokernel CPU and context APIs */
+/* thread.c - test nanokernel CPU and thread APIs */
 
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
@@ -32,9 +32,9 @@
 
 /*
 DESCRIPTION
-This module tests the following CPU and context related routines:
+This module tests the following CPU and thread related routines:
   fiber_fiber_start(), task_fiber_start(), fiber_yield(),
-  context_self_get(), context_type_get(), nano_cpu_idle(),
+  sys_thread_self_get(), sys_execution_context_type_get(), nano_cpu_idle(),
   irq_lock(), irq_unlock(),
   irq_connect(), nanoCpuExcConnect(),
   irq_enable(), irq_disable(),
@@ -61,8 +61,8 @@ This module tests the following CPU and context related routines:
 #define FIBER_STACKSIZE    2000
 #define FIBER_PRIORITY     4
 
-#define CTX_SELF_CMD       0
-#define CTX_TYPE_CMD       1
+#define THREAD_SELF_CMD    0
+#define EXEC_CTX_TYPE_CMD  1
 
 #define UNKNOWN_COMMAND    -1
 
@@ -129,12 +129,12 @@ void isr_handler(void *data)
 	ARG_UNUSED(data);
 
 	switch (isrInfo.command) {
-	case CTX_SELF_CMD:
-		isrInfo.data = (void *) context_self_get();
+	case THREAD_SELF_CMD:
+		isrInfo.data = (void *) sys_thread_self_get();
 		break;
 
-	case CTX_TYPE_CMD:
-		isrInfo.value = context_type_get();
+	case EXEC_CTX_TYPE_CMD:
+		isrInfo.value = sys_execution_context_type_get();
 		break;
 
 	default:
@@ -348,40 +348,41 @@ int nanoCpuDisableInterruptsTest(disable_interrupt_func disableRtn,
  *
  * @brief Test the various nanoCtxXXX() routines from a task
  *
- * This routines tests the context_self_get() and context_type_get() routines from both
- * a task and an ISR (that interrupted a task).  Checking those routines with
- * fibers are done elsewhere.
+ * This routines tests the sys_thread_self_get() and
+ * sys_execution_context_type_get() routines from both a task and an ISR (that
+ * interrupted a task).  Checking those routines with fibers are done
+ * elsewhere.
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
 int nanoCtxTaskTest(void)
 {
-	nano_context_id_t  ctxId;
+	nano_thread_id_t  self_thread_id;
 
-	TC_PRINT("Testing context_self_get() from an ISR and task\n");
-	ctxId = context_self_get();
-	isrInfo.command = CTX_SELF_CMD;
+	TC_PRINT("Testing sys_thread_self_get() from an ISR and task\n");
+	self_thread_id = sys_thread_self_get();
+	isrInfo.command = THREAD_SELF_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler();
-	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId)) {
+	if ((isrInfo.error != 0) || (isrInfo.data != (void *) self_thread_id)) {
 		/*
 		 * Either the ISR detected an error, or the ISR context ID does not
-		 * match the interrupted task's context ID.
+		 * match the interrupted task's thread ID.
 		 */
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Testing context_type_get() from an ISR\n");
-	isrInfo.command = CTX_TYPE_CMD;
+	TC_PRINT("Testing sys_execution_context_type_get() from an ISR\n");
+	isrInfo.command = EXEC_CTX_TYPE_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Testing context_type_get() from a task\n");
-	if (context_type_get() != NANO_CTX_TASK) {
+	TC_PRINT("Testing sys_execution_context_type_get() from a task\n");
+	if (sys_execution_context_type_get() != NANO_CTX_TASK) {
 		return TC_FAIL;
 	}
 
@@ -390,44 +391,47 @@ int nanoCtxTaskTest(void)
 
 /**
  *
- * @brief Test the various nanoCtxXXX() routines from a fiber
+ * @brief Test the various context/thread routines from a fiber
  *
- * This routines tests the context_self_get() and context_type_get() routines from both
- * a fiber and an ISR (that interrupted a fiber).  Checking those routines with
- * tasks are done elsewhere.
+ * This routines tests the sys_thread_self_get() and
+ * sys_execution_context_type_get() routines from both a fiber and an ISR (that
+ * interrupted a fiber).  Checking those routines with tasks are done
+ * elsewhere.
  *
  * This routine may set <fiberDetectedError> to the following values:
- *   1 - if fiber context ID matches that of the task
- *   2 - if context ID taken during ISR does not match that of the fiber
- *   3 - context_type_get() when called from an ISR is not NANO_TYPE_ISR
- *   3 - context_type_get() when called from a fiber is not NANO_TYPE_FIBER
+ *   1 - if fiber ID matches that of the task
+ *   2 - if thread ID taken during ISR does not match that of the fiber
+ *   3 - sys_execution_context_type_get() when called from an ISR is not
+ *       NANO_TYPE_ISR
+ *   4 - sys_execution_context_type_get() when called from a fiber is not
+ *       NANO_TYPE_FIBER
  *
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int nanoCtxFiberTest(nano_context_id_t taskCtxId)
+int nanoCtxFiberTest(nano_thread_id_t task_thread_id)
 {
-	nano_context_id_t  ctxId;
+	nano_thread_id_t  self_thread_id;
 
-	ctxId = context_self_get();
-	if (ctxId == taskCtxId) {
+	self_thread_id = sys_thread_self_get();
+	if (self_thread_id == task_thread_id) {
 		fiberDetectedError = 1;
 		return TC_FAIL;
 	}
 
-	isrInfo.command = CTX_SELF_CMD;
+	isrInfo.command = THREAD_SELF_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler();
-	if ((isrInfo.error != 0) || (isrInfo.data != (void *) ctxId)) {
+	if ((isrInfo.error != 0) || (isrInfo.data != (void *) self_thread_id)) {
 		/*
 		 * Either the ISR detected an error, or the ISR context ID does not
-		 * match the interrupted fiber's context ID.
+		 * match the interrupted fiber's thread ID.
 		 */
 		fiberDetectedError = 2;
 		return TC_FAIL;
 	}
 
-	isrInfo.command = CTX_TYPE_CMD;
+	isrInfo.command = EXEC_CTX_TYPE_CMD;
 	isrInfo.error = 0;
 	_trigger_isrHandler();
 	if ((isrInfo.error != 0) || (isrInfo.value != NANO_CTX_ISR)) {
@@ -435,7 +439,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 		return TC_FAIL;
 	}
 
-	if (context_type_get() != NANO_CTX_FIBER) {
+	if (sys_execution_context_type_get() != NANO_CTX_FIBER) {
 		fiberDetectedError = 4;
 		return TC_FAIL;
 	}
@@ -458,7 +462,7 @@ int nanoCtxFiberTest(nano_context_id_t taskCtxId)
 
 static void fiberHelper(int arg1, int arg2)
 {
-	nano_context_id_t  ctxId;
+	nano_thread_id_t  self_thread_id;
 
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
@@ -471,8 +475,8 @@ static void fiberHelper(int arg1, int arg2)
 	fiberEvidence++;
 
 	/* Test that helper will yield to a fiber of equal priority */
-	ctxId = context_self_get();
-	ctxId->prio++;            /* Lower priority to that of fiberEntry() */
+	self_thread_id = sys_thread_self_get();
+	self_thread_id->prio++;  /* Lower priority to that of fiberEntry() */
 	fiber_yield();        /* Yield to fiber of equal priority */
 
 	fiberEvidence++;
@@ -500,7 +504,7 @@ static void fiberHelper(int arg1, int arg2)
 
 int fiber_yieldTest(void)
 {
-	nano_context_id_t  ctxId;
+	nano_thread_id_t  self_thread_id;
 
 	/*
 	 * Start a fiber of higher priority.  Note that since the new fiber is
@@ -508,7 +512,7 @@ int fiber_yieldTest(void)
 	 * fiber as it would if done from a task.
 	 */
 
-	ctxId = context_self_get();
+	self_thread_id = sys_thread_self_get();
 	fiberEvidence = 0;
 	fiber_fiber_start(fiberStack2, FIBER_STACKSIZE, fiberHelper,
 		0, 0, FIBER_PRIORITY - 1, 0);
@@ -543,7 +547,7 @@ int fiber_yieldTest(void)
 	 * not result in switching to the helper.
 	 */
 
-	ctxId->prio--;
+	self_thread_id->prio--;
 	fiber_yield();
 
 	if (fiberEvidence != 1) {
@@ -568,13 +572,13 @@ int fiber_yieldTest(void)
  *
  * This routine is the entry point to the fiber started by the task.
  *
- * @param taskCtxId    context ID of the spawning task
+ * @param task_thread_id    thread ID of the spawning task
  * @param arg1         unused
  *
  * @return N/A
  */
 
-static void fiberEntry(int taskCtxId, int arg1)
+static void fiberEntry(int task_thread_id, int arg1)
 {
 	int          rv;
 
@@ -583,7 +587,7 @@ static void fiberEntry(int taskCtxId, int arg1)
 	fiberEvidence++;    /* Prove to the task that the fiber has run */
 	nano_fiber_sem_take_wait(&wakeFiber);
 
-	rv = nanoCtxFiberTest((nano_context_id_t) taskCtxId);
+	rv = nanoCtxFiberTest((nano_thread_id_t) task_thread_id);
 	if (rv != TC_PASS) {
 		return;
 	}
@@ -789,7 +793,7 @@ static int test_timeout(void)
  *
  * @brief Entry point to timer tests
  *
- * This is the entry point to the CPU and context tests.
+ * This is the entry point to the CPU and thread tests.
  *
  * @return N/A
  */
@@ -798,7 +802,7 @@ void main(void)
 {
 	int           rv;       /* return value from tests */
 
-	TC_START("Test Nanokernel CPU and context routines");
+	TC_START("Test Nanokernel CPU and thread routines");
 
 	TC_PRINT("Initializing nanokernel objects\n");
 	rv = initNanoObjects();
@@ -843,7 +847,7 @@ void main(void)
 	TC_PRINT("Spawning a fiber from a task\n");
 	fiberEvidence = 0;
 	task_fiber_start(fiberStack1, FIBER_STACKSIZE, fiberEntry,
-					 (int) context_self_get(), 0, FIBER_PRIORITY, 0);
+					 (int) sys_thread_self_get(), 0, FIBER_PRIORITY, 0);
 
 	if (fiberEvidence != 1) {
 		rv = TC_FAIL;
@@ -851,8 +855,11 @@ void main(void)
 		goto doneTests;
 	}
 
-	/* The fiber ran, now wake it so it can test context_self_get and context_type_get */
-	TC_PRINT("Fiber to test context_self_get() and context_type_get\n");
+	/*
+	 * The fiber ran, now wake it so it can test sys_thread_self_get and
+	 * sys_execution_context_type_get.
+	 */
+	TC_PRINT("Fiber to test sys_thread_self_get() and sys_execution_context_type_get\n");
 	nano_task_sem_give(&wakeFiber);
 
 	if (fiberDetectedError != 0) {

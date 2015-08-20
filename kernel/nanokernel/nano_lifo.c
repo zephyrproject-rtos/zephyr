@@ -76,14 +76,14 @@ FUNC_ALIAS(_lifo_put_non_preemptible, nano_fiber_lifo_put, void);
  */
 void _lifo_put_non_preemptible(struct nano_lifo *lifo, void *data)
 {
-	tCCS *ccs;
+	struct tcs *tcs;
 	unsigned int imask;
 
 	imask = irq_lock();
-	ccs = _nano_wait_q_remove(&lifo->wait_q);
-	if (ccs) {
-		_nano_timeout_abort(ccs);
-		fiberRtnValueSet(ccs, (unsigned int) data);
+	tcs = _nano_wait_q_remove(&lifo->wait_q);
+	if (tcs) {
+		_nano_timeout_abort(tcs);
+		fiberRtnValueSet(tcs, (unsigned int) data);
 	} else {
 		*(void **) data = lifo->list;
 		lifo->list = data;
@@ -94,14 +94,14 @@ void _lifo_put_non_preemptible(struct nano_lifo *lifo, void *data)
 
 void nano_task_lifo_put(struct nano_lifo *lifo, void *data)
 {
-	tCCS *ccs;
+	struct tcs *tcs;
 	unsigned int imask;
 
 	imask = irq_lock();
-	ccs = _nano_wait_q_remove(&lifo->wait_q);
-	if (ccs) {
-		_nano_timeout_abort(ccs);
-		fiberRtnValueSet(ccs, (unsigned int) data);
+	tcs = _nano_wait_q_remove(&lifo->wait_q);
+	if (tcs) {
+		_nano_timeout_abort(tcs);
+		fiberRtnValueSet(tcs, (unsigned int) data);
 		_Swap(imask);
 		return;
 	} else {
@@ -144,7 +144,7 @@ void *_lifo_get(struct nano_lifo *lifo)
 /** INTERNAL
  *
  * There exists a separate nano_task_lifo_get_wait() implementation since a
- * task context cannot pend on a nanokernel object.  Instead, tasks will poll
+ * task cannot pend on a nanokernel object.  Instead, tasks will poll
  * the lifo object.
  */
 void *nano_fiber_lifo_get_wait(struct nano_lifo *lifo )

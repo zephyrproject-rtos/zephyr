@@ -44,48 +44,48 @@ This file contains private nanokernel APIs that are not architecture-specific.
 extern "C" {
 #endif
 
-/* helper type alias for context control structure */
+/* helper type alias for thread control structure */
 
-typedef struct ccs tCCS;
+typedef struct tcs tTCS;
 
-/* context entry point declarations */
+/* thread entry point declarations */
 
-typedef void *_ContextArg;
-typedef void (*_ContextEntry)(_ContextArg arg1,
-							  _ContextArg arg2,
-							  _ContextArg arg3);
+typedef void *_thread_arg_t;
+typedef void (*_thread_entry_t)(_thread_arg_t arg1,
+							  _thread_arg_t arg2,
+							  _thread_arg_t arg3);
 
-extern void _context_entry(_ContextEntry,
-			     _ContextArg,
-			     _ContextArg,
-			     _ContextArg);
+extern void _thread_entry(_thread_entry_t,
+			     _thread_arg_t,
+			     _thread_arg_t,
+			     _thread_arg_t);
 
-extern void _NewContext(char *pStack, unsigned stackSize,
-						_ContextEntry pEntry, _ContextArg arg1,
-						_ContextArg arg2, _ContextArg arg3,
+extern void _new_thread(char *pStack, unsigned stackSize,
+						_thread_entry_t pEntry, _thread_arg_t arg1,
+						_thread_arg_t arg2, _thread_arg_t arg3,
 						int prio, unsigned options);
 
 /* context switching and scheduling-related routines */
 
-extern void _nano_fiber_schedule(tCCS *ccs);
+extern void _nano_fiber_schedule(struct tcs *tcs);
 extern void _nano_fiber_swap(void);
 
 extern unsigned int _Swap(unsigned int);
 
 /* set and clear essential fiber/task flag */
 
-extern void _context_essential_set(void);
-extern void _context_essential_clear(void);
+extern void _thread_essential_set(void);
+extern void _thread_essential_clear(void);
 
-/* clean up when a context is aborted */
+/* clean up when a thread is aborted */
 
-#if defined(CONFIG_CONTEXT_MONITOR)
-extern void _context_exit(tCCS *ccs);
+#if defined(CONFIG_THREAD_MONITOR)
+extern void _thread_exit(struct tcs *tcs);
 #else
-#define _context_exit(ccs) \
+#define _thread_exit(tcs) \
 	do {/* nothing */    \
 	} while (0)
-#endif /* CONFIG_CONTEXT_MONITOR */
+#endif /* CONFIG_THREAD_MONITOR */
 
 /* special nanokernel object APIs */
 

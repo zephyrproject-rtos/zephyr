@@ -72,11 +72,11 @@ struct _nano_timeout {
 	int32_t delta_ticks_from_prev;
 };
 
-struct ccs;
+struct tcs;
 
 /* architecture-independent nanokernel public APIs */
 
-typedef struct ccs *nano_context_id_t;
+typedef struct tcs *nano_thread_id_t;
 
 typedef void (*nano_fiber_entry_t)(int i1, int i2);
 
@@ -91,31 +91,31 @@ typedef int nano_context_type_t;
 #define TICKS_NONE 0
 
 /*
- * context APIs
+ * execution context APIs
  */
-extern nano_context_id_t context_self_get(void);
-extern nano_context_type_t context_type_get(void);
-extern int _context_essential_check(nano_context_id_t pCtx);
+extern nano_thread_id_t sys_thread_self_get(void);
+extern nano_context_type_t sys_execution_context_type_get(void);
+extern int _is_thread_essential(nano_thread_id_t pCtx);
 
 /*
  * fiber APIs
  */
-/* scheduling context independent method (when context is not known) */
+/* execution context-independent method (when context is not known) */
 void fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
 		int arg1, int arg2, unsigned prio, unsigned options);
 
 /* methods for fibers */
 
 /**
- * @brief Initialize and start a fiber context
+ * @brief Initialize and start a fiber
  *
- * This routine initilizes and starts a fiber context; it can be called from
- * either a fiber or a task context.  When this routine is called from a
+ * This routine initilizes and starts a fiber; it can be called from
+ * either a fiber or a task.  When this routine is called from a
  * task, the newly created fiber will start executing immediately.
  *
  * INTERNAL
  * Given that this routine is _not_ ISR-callable, the following code is used
- * to differentiate between a task and fiber context:
+ * to differentiate between a task and fiber:
  *
  *    if ((_nanokernel.current->flags & TASK) == TASK)
  *
@@ -137,14 +137,14 @@ extern void fiber_fiber_start(char *pStack, unsigned int stackSize,
 		unsigned options);
 
 /**
- * @brief Yield the current context
+ * @brief Yield the current fiber
  *
- * Invocation of this routine results in the current context yielding to
- * another context of the same or higher priority.  If there doesn't exist
- * any other contexts of the same or higher priority that are runnable, this
+ * Invocation of this routine results in the current fiber yielding to
+ * another fiber of the same or higher priority.  If there doesn't exist
+ * any other fibers of the same or higher priority that are runnable, this
  * routine will return immediately.
  *
- * This routine can only be called from a fiber context.
+ * This routine can only be called from a fiber.
  *
  * @return N/A
  */
@@ -160,7 +160,7 @@ extern void fiber_yield(void);
  * - the fiber has implicitly aborted itself (by returning from its entry point),
  * - the fiber has encountered a fatal exception.
  *
- * This routine can only be called from a fiber context.
+ * This routine can only be called from a fiber.
  *
  * @return This function never returns
  */
@@ -220,7 +220,7 @@ extern void fiber_fiber_delayed_start_cancel(void *handle);
 /* methods for tasks */
 
 /**
- * @brief Initialize and start a fiber in a task context
+ * @brief Initialize and start a fiber from a task
  *
  * @sa fiber_fiber_start
  */
@@ -230,7 +230,7 @@ extern void task_fiber_start(char *pStack, unsigned int stackSize,
 #ifdef CONFIG_NANO_TIMEOUTS
 
 /**
- * @brief Start a fiber in a task context, but delay its execution
+ * @brief Start a fiber from a task, but delay its execution
  *
  * @sa fiber_fiber_delayed_start
  */
@@ -240,7 +240,7 @@ extern void *task_fiber_delayed_start(char *stack,
 		int param2, unsigned int priority,
 		unsigned int options, int32_t timeout_in_ticks);
 /**
- * @brief Cancel a delayed fiber start in task context
+ * @brief Cancel a delayed fiber start in task
  *
  * @sa fiber_fiber_delayed_start
  */
@@ -264,7 +264,7 @@ struct nano_fifo {
  * This function initializes a nanokernel multiple-waiter fifo (fifo) object
  * structure.
  *
- * It may be called from either a fiber or task context.
+ * It may be called from either a fiber or task.
  *
  * The wait queue and data queue occupy the same space since there cannot
  * be both queued data and pending fibers in the FIFO. Care must be taken
@@ -282,16 +282,15 @@ struct nano_fifo {
  * @return N/A
  */
 extern void nano_fifo_init(struct nano_fifo *chan);
-/* scheduling context independent methods (when context is not known) */
+/* execution context-independent methods (when context is not known) */
 
 /**
  *
  * @brief Add an element to the end of a fifo
  *
- * This is a convenience wrapper for the context-specific APIs. This is
- * helpful whenever the exact scheduling context is not known, but should
- * be avoided when the context is known up-front (to avoid unnecessary
- * overhead).
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
  *
  * @param nano_fifo FIFO on which to interact.
  * @param data Data to send.
@@ -321,10 +320,9 @@ extern void *nano_fifo_get(struct nano_fifo *chan);
  *
  * @brief Get the head element of a fifo, poll/pend if empty
  *
- * This is a convenience wrapper for the context-specific APIs. This is
- * helpful whenever the exact scheduling context is not known, but should
- * be avoided when the context is known up-front (to avoid unnecessary
- * overhead).
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
  *
  * @warning It's only valid to call this API from a fiber or a task.
  *
@@ -340,8 +338,8 @@ extern void *nano_fifo_get_wait(struct nano_fifo *chan);
  *
  * @brief Add an element to the end of a FIFO from an ISR context.
  *
- * This is an alias for the context-specific API. This is
- * helpful whenever the exact scheduling context is known. Its use
+ * This is an alias for the execution context-specific API. This is
+ * helpful whenever the exact execution context is known. Its use
  * avoids unnecessary overhead.
  *
  * @param nano_fifo FIFO on which to interact.
@@ -370,10 +368,10 @@ extern void *nano_isr_fifo_get(struct nano_fifo *chan);
 
 /**
  *
- * @brief Add an element to the end of a FIFO from a fiber context.
+ * @brief Add an element to the end of a FIFO from a fiber.
  *
- * This is an alias for the context-specific API. This is
- * helpful whenever the exact scheduling context is known. Its use
+ * This is an alias for the execution context-specific API. This is
+ * helpful whenever the exact execution context is known. Its use
  * avoids unnecessary overhead.
  *
  * @param nano_fifo FIFO on which to interact.
@@ -384,10 +382,10 @@ extern void *nano_isr_fifo_get(struct nano_fifo *chan);
 extern void nano_fiber_fifo_put(struct nano_fifo *chan, void *data);
 
 /**
- * @brief Get an element from the head of a FIFO from a fiber context.
+ * @brief Get an element from the head of a FIFO from a fiber.
  *
  * Remove the head element from the specified nanokernel multiple-waiter fifo
- * linked list fifo. It may be called from a fiber context.
+ * linked list fifo. It may be called from a fiber.
  *
  * The first word in the element contains invalid data because that memory
  * location was used to store a pointer to the next element in the linked list.
@@ -403,7 +401,7 @@ extern void *nano_fiber_fifo_get(struct nano_fifo *chan);
  * @brief Get the head element of a fifo, wait if emtpy
  *
  * Remove the head element from the specified system-level multiple-waiter
- * fifo; it can only be called from a fiber context.
+ * fifo; it can only be called from a fiber.
  *
  * If no elements are available, the calling fiber will pend until an element
  * is put onto the fifo.
@@ -416,7 +414,7 @@ extern void *nano_fiber_fifo_get(struct nano_fifo *chan);
  * @return Pointer to head element in the list
  *
  * @note There exists a separate nano_task_fifo_get_wait() implementation
- * since a task context cannot pend on a nanokernel object. Instead tasks will
+ * since a task cannot pend on a nanokernel object. Instead tasks will
  * poll the fifo object.
  */
 extern void *nano_fiber_fifo_get_wait(struct nano_fifo *chan);
@@ -426,7 +424,7 @@ extern void *nano_fiber_fifo_get_wait(struct nano_fifo *chan);
  * @brief get the head element of a fifo, pend with a timeout if empty
  *
  * Remove the head element from the specified nanokernel fifo; it can only be
- * called from a fiber context.
+ * called from a fiber.
  *
  * If no elements are available, the calling fiber will pend until an element
  * is put onto the fifo, or the timeout expires, whichever comes first.
@@ -453,7 +451,7 @@ extern void *nano_fiber_fifo_get_wait_timeout(struct nano_fifo *chan,
  * @brief Add an element to the end of a fifo
  *
  * This routine adds an element to the end of a fifo object; it can be called
- * from only a task context.  A fiber pending on the fifo object will be made
+ * from only a task.  A fiber pending on the fifo object will be made
  * ready, and will preempt the running task immediately.
  *
  * If a fiber is waiting on the fifo, the address of the element is returned to
@@ -473,7 +471,7 @@ extern void *nano_task_fifo_get(struct nano_fifo *chan);
  * @brief Get the head element of a fifo, poll if empty
  *
  * Remove the head element from the specified system-level multiple-waiter
- * fifo; it can only be called from a task context.
+ * fifo; it can only be called from a task.
  *
  * If no elements are available, the calling task will poll until an
  * until an element is put onto the fifo.
@@ -494,7 +492,7 @@ extern void *nano_task_fifo_get_wait(struct nano_fifo *chan);
  * @brief get the head element of a fifo, poll with a timeout if empty
  *
  * Remove the head element from the specified nanokernel fifo; it can only be
- * called from a task context.
+ * called from a task.
  *
  * If no elements are available, the calling task will poll until an element
  * is put onto the fifo, or the timeout expires, whichever comes first.
@@ -527,7 +525,7 @@ struct nano_lifo {
  * This function initializes a nanokernel system-level linked list lifo
  * object structure.
  *
- * It may be called from either a fiber or task context.
+ * It may be called from either a fiber or task.
  *
  * @param chan LIFO to initialize.
  *
@@ -573,7 +571,7 @@ extern void *nano_isr_lifo_get(struct nano_lifo *chan);
  * @brief Prepend an element to a LIFO without a context switch.
  *
  * This routine adds an element to the head of a LIFO object; it may be
- * called from a fibercontext. A fiber pending on the LIFO
+ * called from a fiber. A fiber pending on the LIFO
  * object will be made ready, but will NOT be scheduled to execute.
  *
  * @param chan LIFO from which to put.
@@ -587,7 +585,7 @@ extern void nano_fiber_lifo_put(struct nano_lifo *chan, void *data);
  * @brief Remove the first element from a linked list LIFO
  *
  * Remove the first element from the specified nanokernel linked list LIFO;
- * it may be called from a fiber context.
+ * it may be called from a fiber.
  *
  * If no elements are available, NULL is returned. The first word in the
  * element contains invalid data because that memory location was used to store
@@ -603,7 +601,7 @@ extern void *nano_fiber_lifo_get(struct nano_lifo *chan);
  * @brief Get the first element from a LIFO, wait if empty.
  *
  * Remove the first element from the specified system-level linked list LIFO;
- * it can only be called from a fiber context.
+ * it can only be called from a fiber.
  *
  * If no elements are available, the calling fiber will pend until an element
  * is put onto the list.
@@ -623,7 +621,7 @@ extern void *nano_fiber_lifo_get_wait(struct nano_lifo *chan);
  * @brief get the first element from a LIFO, wait with a timeout if empty
  *
  * Remove the first element from the specified system-level linked list lifo;
- * it can only be called from a fiber context.
+ * it can only be called from a fiber.
  *
  * If no elements are available, the calling fiber will pend until an element
  * is put onto the list, or the timeout expires, whichever comes first.
@@ -647,7 +645,7 @@ extern void *nano_fiber_lifo_get_wait_timeout(struct nano_lifo *chan,
  * @brief Add an element to the head of a linked list LIFO
  *
  * This routine adds an element to the head of a LIFO object; it can be
- * called only from a task context. A fiber pending on the LIFO
+ * called only from a task. A fiber pending on the LIFO
  * object will be made ready and will preempt the running task immediately.
  *
  * This API can only be called by a task.
@@ -663,7 +661,7 @@ extern void nano_task_lifo_put(struct nano_lifo *chan, void *data);
  * @brief Remove the first element from a linked list LIFO
  *
  * Remove the first element from the specified nanokernel linked list LIFO;
- * it may be called from a task context.
+ * it may be called from a task.
  *
  * If no elements are available, NULL is returned. The first word in the
  * element contains invalid data because that memory location was used to store
@@ -679,7 +677,7 @@ extern void *nano_task_lifo_get(struct nano_lifo *chan);
  * @brief Get the first element from a LIFO, poll if empty.
  *
  * Remove the first element from the specified nanokernel linked list LIFO; it
- * can only be called from a task context.
+ * can only be called from a task.
  *
  * If no elements are available, the calling task will poll until an element is
  * put onto the list.
@@ -701,7 +699,7 @@ extern void *nano_task_lifo_get_wait(struct nano_lifo *chan);
  * @brief get the first element from a lifo, poll if empty.
  *
  * Remove the first element from the specified nanokernel linked list lifo; it
- * can only be called from a task context.
+ * can only be called from a task.
  *
  * If no elements are available, the calling task will poll until an element is
  * put onto the list, or the timeout expires, whichever comes first.
@@ -733,7 +731,7 @@ struct nano_sem {
  * This function initializes a nanokernel semaphore object structure. After
  * initialization, the semaphore count will be 0.
  *
- * It may be called from either a fiber or task context.
+ * It may be called from either a fiber or task.
  *
  * @param chan Pointer to a nano_sem structure.
  *
@@ -741,16 +739,15 @@ struct nano_sem {
  */
 extern void nano_sem_init(struct nano_sem *chan);
 
-/* scheduling context independent methods (when context is not known) */
+/* execution context-independent methods (when context is not known) */
 
 /**
  *
  * @brief Give a nanokernel semaphore
  *
- * This is a convenience wrapper for the context-specific APIs. This is
- * helpful whenever the exact scheduling context is not known, but should
- * be avoided when the context is known up-front (to avoid unnecessary
- * overhead).
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
  *
  * @param chan Pointer to a nano_sem structure.
  *
@@ -762,10 +759,9 @@ extern void nano_sem_give(struct nano_sem *chan);
  *
  * @brief Take a nanokernel semaphore, poll/pend if not available
  *
- * This is a convenience wrapper for the context-specific APIs. This is
- * helpful whenever the exact scheduling context is not known, but should
- * be avoided when the context is known up-front (to avoid unnecessary
- * overhead).
+ * This is a convenience wrapper for the execution context-specific APIs. This
+ * is helpful whenever the exact execution context is not known, but should be
+ * avoided when the context is known up-front (to avoid unnecessary overhead).
  *
  * It's only valid to call this API from a fiber or a task.
  *
@@ -815,7 +811,7 @@ extern int nano_isr_sem_take(struct nano_sem *chan);
  * @brief Give a nanokernel semaphore (no context switch)
  *
  * This routine performs a "give" operation on a nanokernel sempahore object;
- * it may be call from a fiber context.  A fiber pending on
+ * it may be call from a fiber.  A fiber pending on
  * the semaphore object will be made ready, but will NOT be scheduled to
  * execute.
  *
@@ -829,8 +825,7 @@ extern void nano_fiber_sem_give(struct nano_sem *chan);
  *
  * @brief Take a nanokernel semaphore, fail if unavailable
  *
- * Attempt to take a nanokernel sempahore; it may be called from a fiber
- * context.
+ * Attempt to take a nanokernel sempahore; it may be called from a fiber.
  *
  * If the semaphore is not available, this function returns immediately, i.e.
  * a wait (pend) operation will NOT be performed.
@@ -845,10 +840,10 @@ extern int nano_fiber_sem_take(struct nano_sem *chan);
  *
  * @brief Test a nanokernel semaphore, wait if unavailable
  *
- * Take a nanokernel sempahore; it can only be called from a fiber context.
+ * Take a nanokernel sempahore; it can only be called from a fiber.
  *
  * If the nanokernel semaphore is not available, i.e. the event counter
- * is 0, the calling fiber context will wait (pend) until the semaphore is
+ * is 0, the calling fiber will wait (pend) until the semaphore is
  * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give).
  *
  * @param chan Pointer to a nano_sem structure.
@@ -861,10 +856,10 @@ extern void nano_fiber_sem_take_wait(struct nano_sem *chan);
 /**
  * @brief test a nanokernel semaphore, wait with a timeout if unavailable
  *
- * Take a nanokernel sempahore; it can only be called from a fiber context.
+ * Take a nanokernel sempahore; it can only be called from a fiber.
  *
  * If the nanokernel semaphore is not available, i.e. the event counter
- * is 0, the calling fiber context will wait (pend) until the semaphore is
+ * is 0, the calling fiber will wait (pend) until the semaphore is
  * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give). A
  * timeout can be specified.
  *
@@ -886,7 +881,7 @@ extern int nano_fiber_sem_take_wait_timeout(struct nano_sem *chan,
  * @brief Give a nanokernel semaphore
  *
  * This routine performs a "give" operation on a nanokernel sempahore object;
- * it can only be called from a task context.  A fiber pending on the
+ * it can only be called from a task.  A fiber pending on the
  * semaphore object will be made ready, and will preempt the running task
  * immediately.
  *
@@ -900,8 +895,7 @@ extern void nano_task_sem_give(struct nano_sem *chan);
  *
  * @brief Take a nanokernel semaphore, fail if unavailable
  *
- * Attempt to take a nanokernel sempahore; it may be called from a task
- * context.
+ * Attempt to take a nanokernel sempahore; it can only be called from a task.
  *
  * If the semaphore is not available, this function returns immediately, i.e.
  * a wait (pend) operation will NOT be performed.
@@ -916,7 +910,7 @@ extern int nano_task_sem_take(struct nano_sem *chan);
  *
  * @brief Take a nanokernel semaphore, poll if unavailable
  *
- * Take a nanokernel sempahore; it can only be called from a task context.
+ * Take a nanokernel sempahore; it can only be called from a task.
  *
  * If the nanokernel semaphore is not available, i.e. the event counter
  * is 0, the calling task will poll until the semaphore is given
@@ -932,7 +926,7 @@ extern void nano_task_sem_take_wait(struct nano_sem *chan);
 /**
  * @brief test a nanokernel semaphore, poll with a timeout if unavailable
  *
- * Take a nanokernel sempahore; it can only be called from a task context.
+ * Take a nanokernel sempahore; it can only be called from a task.
  *
  * If the nanokernel semaphore is not available, i.e. the event counter is 0,
  * the calling task will poll until the semaphore is given (via
@@ -951,7 +945,7 @@ extern int nano_task_sem_take_wait_timeout(struct nano_sem *chan,
 /* stack APIs */
 
 struct nano_stack {
-	nano_context_id_t fiber;
+	nano_thread_id_t fiber;
 	uint32_t *base;
 	uint32_t *next;
 };
@@ -969,11 +963,11 @@ extern void nano_task_stack_push(struct nano_stack *chan, uint32_t data);
 extern int nano_task_stack_pop(struct nano_stack *chan, uint32_t *data);
 extern uint32_t nano_task_stack_pop_wait(struct nano_stack *chan);
 
-/* context custom data APIs */
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
-extern void context_custom_data_set(void *value);
-extern void *context_custom_data_get(void);
-#endif /* CONFIG_CONTEXT_CUSTOM_DATA */
+/* thread custom data APIs */
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+extern void sys_thread_custom_data_set(void *value);
+extern void *sys_thread_custom_data_get(void);
+#endif /* CONFIG_THREAD_CUSTOM_DATA */
 
 /* nanokernel timers */
 

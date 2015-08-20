@@ -63,7 +63,7 @@ _ASM_FILE_PROLOGUE
  * state.
  *
  * Also, record the fact that the thread is currently interrupted so that VQEMU
- * looks into the CCS and not the CPU registers to obtain the current thread's
+ * looks into the TCS and not the CPU registers to obtain the current thread's
  * register values.
  *
  * NOTE:
@@ -86,10 +86,10 @@ SECTION_FUNC(TEXT, _GdbStubExcEntry)
     orrs r2, #EXC_ACTIVE
     str r2, [r1, #__tNANO_flags_OFFSET]
     ldr r1, [r1, #__tNANO_current_OFFSET]
-    str r2, [r1, #__tCCS_flags_OFFSET]
+    str r2, [r1, #__tTCS_flags_OFFSET]
 
-    /* save callee-saved + psp in CCS */
-    adds r1, #__tCCS_preempReg_OFFSET
+    /* save callee-saved + psp in TCS */
+    adds r1, #__tTCS_preempReg_OFFSET
     mrs ip, PSP
     stmia r1, {v1-v8, ip}
 
@@ -100,7 +100,7 @@ SECTION_FUNC(TEXT, _GdbStubExcEntry)
  * @brief Exception exit extra clean up when GDB_INFO is enabled
  *
  * Record the fact that the thread is not interrupted anymore so that VQEMU
- * looks at the CPU registers and not into the CCS to obtain the current
+ * looks at the CPU registers and not into the TCS to obtain the current
  * thread's register values. Only do this if this is not a nested exception.
  *
  * NOTE:
@@ -125,7 +125,7 @@ SECTION_FUNC(TEXT, _GdbStubExcExit)
     bic r2, #EXC_ACTIVE
     str r2, [r1, #__tNANO_flags_OFFSET]
     ldr r1, [r1, #__tNANO_current_OFFSET]
-    str r2, [r1, #__tCCS_flags_OFFSET]
+    str r2, [r1, #__tTCS_flags_OFFSET]
 
     bx lr
 

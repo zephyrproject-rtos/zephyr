@@ -68,11 +68,11 @@ offsets.o module.
 #define STACK_ALIGN_SIZE 4
 
 /*
- * Bitmask definitions for the tCCS->flags bit field
+ * Bitmask definitions for the struct tcs->flags bit field
  *
- * The USE_FP flag bit will be set whenever a context uses any non-integer
+ * The USE_FP flag bit will be set whenever a thread uses any non-integer
  * capability, whether it's just the x87 FPU capability, SSE instructions, or
- * a combination of both. The USE_SSE flag bit will only be set if a context
+ * a combination of both. The USE_SSE flag bit will only be set if a thread
  * uses SSE instructions.
  *
  * Note: Any change to the definitions USE_FP and USE_SSE must also be made to
@@ -80,13 +80,13 @@ offsets.o module.
  */
 
 #define FIBER 0
-#define TASK 0x1	   /* 1 = task context, 0 = fiber context   */
-#define INT_ACTIVE 0x2     /* 1 = context is executing interrupt handler */
-#define EXC_ACTIVE 0x4     /* 1 = context is executing exception handler */
-#define USE_FP 0x10	/* 1 = context uses floating point unit */
-#define USE_SSE 0x20       /* 1 = context uses SSEx instructions */
-#define PREEMPTIBLE 0x100  /* 1 = preemptible context */
-#define ESSENTIAL 0x200    /* 1 = system context that must not abort */
+#define TASK 0x1	       /* 1 = task, 0 = fiber   */
+#define INT_ACTIVE 0x2     /* 1 = executing context is interrupt handler */
+#define EXC_ACTIVE 0x4     /* 1 = executing context is exception handler */
+#define USE_FP 0x10	       /* 1 = thread uses floating point unit */
+#define USE_SSE 0x20       /* 1 = thread uses SSEx instructions */
+#define PREEMPTIBLE 0x100  /* 1 = preemptible thread */
+#define ESSENTIAL 0x200    /* 1 = system thread that must not abort */
 #define NO_METRICS 0x400   /* 1 = _Swap() not to update task metrics */
 #define NO_METRICS_BIT_OFFSET 0xa /* Bit position of NO_METRICS */
 
@@ -443,7 +443,7 @@ typedef struct s_coopReg {
 	 * The following registers are considered non-volatile, i.e.
 	 *callee-save,
 	 * but their values are pushed onto the stack rather than stored in the
-	 *tCCS
+	 * TCS
 	 * structure:
 	 *
 	 *  unsigned long ebp;
@@ -472,7 +472,7 @@ typedef struct s_preempReg {
 	 * restore the values of these registers in order to support interrupt
 	 * nesting.  The stubs do _not_ copy the saved values from the stack
 	 *into
-	 * the tCCS.
+	 * the TCS.
 	 *
 	 * unsigned long eax;
 	 * unsigned long ecx;
@@ -616,32 +616,32 @@ typedef struct s_coopFloatReg {
 
 typedef struct s_preempFloatReg {
 	union {
-		tFpRegSet fpRegs; /* contexts with USE_FP utilize this format */
-		tFpRegSetEx fpRegsEx; /* contexts with USE_SSE utilize this
+		tFpRegSet fpRegs; /* threads with USE_FP utilize this format */
+		tFpRegSetEx fpRegsEx; /* threads with USE_SSE utilize this
 					 format */
 	} floatRegsUnion;
 } tPreempFloatReg;
 
 /*
- * The context control stucture definition.  It contains the
- * various fields to manage a _single_ context. The CCS will be aligned
+ * The thread control stucture definition.  It contains the
+ * various fields to manage a _single_ thread. The TCS will be aligned
  * to the appropriate architecture specific boundary via the
- * _NewContext() call.
+ * _new_thread() call.
  */
 
-struct ccs {
+struct tcs {
 	/*
-	 * Link to next context in singly-linked context list (such as
+	 * Link to next thread in singly-linked thread list (such as
 	 * prioritized
 	 * list of runnable fibers, or list of fibers waiting on a nanokernel
 	 * FIFO).
 	 */
 
-	struct ccs *link;
+	struct tcs *link;
 
 	/*
 	 * See the above flag definitions above for valid bit settings.  This
-	 * field must remain near the start of the tCCS structure, specifically
+	 * field must remain near the start of struct tcs, specifically
 	 * before any #ifdef'ed fields since the host tools currently use a
 	 * fixed
 	 * offset to read the 'flags' field.
@@ -651,21 +651,21 @@ struct ccs {
 
 	/*
 	 * Storage space for integer registers.  These must also remain near
-	 * the start of the tCCS structure for the same reason mention for
+	 * the start of struct tcs for the same reason mention for
 	 * 'flags'.
 	 */
 
 	tCoopReg coopReg;     /* non-volatile integer register storage */
 	tPreempReg preempReg; /* volatile integer register storage */
 
-#if defined(CONFIG_CONTEXT_MONITOR)
-	struct ccs *next_context; /* next item in list of ALL fiber+tasks */
+#if defined(CONFIG_THREAD_MONITOR)
+	struct tcs *next_thread; /* next item in list of ALL fiber+tasks */
 #endif
 #ifdef CONFIG_GDB_INFO
 	void *esfPtr; /* pointer to exception stack frame saved by */
 		      /* outermost exception wrapper */
 #endif		      /* CONFIG_GDB_INFO */
-	int prio;     /* context priority used to sort linked list */
+	int prio;     /* thread priority used to sort linked list */
 #if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
 	/*
 	 * Nested exception count to maintain setting of EXC_ACTIVE flag across
@@ -676,7 +676,7 @@ struct ccs {
 	unsigned excNestCount; /* nested exception count */
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
-#ifdef CONFIG_CONTEXT_CUSTOM_DATA
+#ifdef CONFIG_THREAD_CUSTOM_DATA
 	void *custom_data;     /* available for custom use */
 #endif
 
@@ -686,15 +686,15 @@ struct ccs {
 
 	/*
 	 * The location of all floating point related structures/fields MUST be
-	 * located at the end of the tCCS structure.  This way only the
+	 * located at the end of struct tcs.  This way only the
 	 *fibers/tasks
 	 * that actually utilize non-integer capabilities need to account for
 	 * the increased memory required for storing FP state when sizing
 	 *stacks.
 	 *
-	 * Given that stacks "grow down" on IA-32, and the tCCS structure is
+	 * Given that stacks "grow down" on IA-32, and the TCS is
 	 *located
-	 * at the start of a context's "workspace" memory, the stacks of
+	 * at the start of a thread's "workspace" memory, the stacks of
 	 *fibers/tasks
 	 * that do not utilize floating point instruction can effectively
 	 *consume
@@ -708,15 +708,15 @@ struct ccs {
 
 /*
  * The nanokernel structure definition.  It contains various fields to
- * manage _all_ the contexts in the nanokernel (system level).
+ * manage _all_ the threads in the nanokernel (system level).
  */
 
 typedef struct s_NANO {
-	tCCS *fiber;   /* singly linked list of runnable fiber contexts */
-	tCCS *task;    /* pointer to runnable task context */
-	tCCS *current; /* currently scheduled context (fiber or task) */
-#if defined(CONFIG_CONTEXT_MONITOR)
-	tCCS *contexts; /* singly linked list of ALL fiber+tasks */
+	struct tcs *fiber;   /* singly linked list of runnable fibers */
+	struct tcs *task;    /* pointer to runnable task */
+	struct tcs *current; /* currently scheduled thread (fiber or task) */
+#if defined(CONFIG_THREAD_MONITOR)
+	struct tcs *threads; /* singly linked list of ALL fiber+tasks */
 #endif
 	unsigned nested;  /* nested interrupt count */
 	char *common_isp; /* interrupt stack pointer base */
@@ -731,13 +731,13 @@ typedef struct s_NANO {
 	 * A 'current_sse' field does not exist in addition to the 'current_fp'
 	 * field since it's not possible to divide the IA-32 non-integer
 	 * registers
-	 * into 2 distinct blocks owned by differing contexts.  In other words,
+	 * into 2 distinct blocks owned by differing threads.  In other words,
 	 * given that the 'fxnsave/fxrstor' instructions save/restore both the
-	 * X87 FPU and XMM registers, it's not possible for a context to only
+	 * X87 FPU and XMM registers, it's not possible for a thread to only
 	 * "own" the XMM registers.
 	 */
 
-	tCCS *current_fp; /* context (fiber or task) that owns the FP regs */
+	struct tcs *current_fp; /* thread (fiber or task) that owns the FP regs */
 #endif			  /* CONFIG_FP_SHARING */
 #ifdef CONFIG_NANO_TIMEOUTS
 	sys_dlist_t timeout_q;
@@ -815,7 +815,7 @@ static inline void nanoArchInit(void)
  *
  * The register used to store the return value from a function call invocation is
  * set to <value>.  It is assumed that the specified <fiber> is pending, and
- * thus the fibers context is stored in its tCCS structure.
+ * thus the fibers context is stored in its TCS.
  *
  * @return N/A
  *
@@ -823,7 +823,7 @@ static inline void nanoArchInit(void)
  */
 
 static inline void fiberRtnValueSet(
-	tCCS *fiber,       /* pointer to fiber */
+	struct tcs *fiber,       /* pointer to fiber */
 	unsigned int value /* value to set as return value */
 	)
 {

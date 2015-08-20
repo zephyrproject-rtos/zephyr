@@ -256,7 +256,7 @@ void fiber1(void)
  *
  * @brief Test the nano_fiber_fifo_get_wait() interface
  *
- * This function tests the fifo put and get wait interfaces in the fiber context.
+ * This function tests the fifo put and get wait interfaces in a fiber.
  * It gets data from nanoFifoObj2 queue and puts data to nanoFifoObj queue.
  *
  * @return N/A
@@ -303,7 +303,7 @@ void testFiberFifoGetW(void)
  *
  * @brief Test ISR FIFO routines (triggered from fiber)
  *
- * This function tests the fifo put and get interfaces in the isr context.
+ * This function tests the fifo put and get interfaces in the ISR context.
  * It is invoked from a fiber.
  *
  * We use nanoFifoObj queue to put and get data.
@@ -340,7 +340,7 @@ void testIsrFifoFromFiber(void)
 	}
 
 	/* Put more item into queue */
-	TC_PRINT("\nISR FIFO (running in fiber context) Put Order:\n");
+	TC_PRINT("\nISR FIFO (running in fiber) Put Order:\n");
 	for (int i=0; i<NUM_FIFO_ELEMENT; i++) {
 		isrFifoInfo.data = pPutList1[i];
 		TC_PRINT(" %p,", pPutList1[i]);
@@ -357,7 +357,7 @@ void testIsrFifoFromFiber(void)
  *
  * @brief Test ISR FIFO routines (triggered from task)
  *
- * This function tests the fifo put and get interfaces in the isr context.
+ * This function tests the fifo put and get interfaces in the ISR context.
  * It is invoked from a task.
  *
  * We use nanoFifoObj queue to put and get data.
@@ -522,7 +522,7 @@ void fiber3(void)
  *
  * @brief Test the nano_task_fifo_get_wait() interface
  *
- * This is in the task context.  It puts data to nanoFifoObj2 queue and gets
+ * This is in a task.  It puts data to nanoFifoObj2 queue and gets
  * data from nanoFifoObj queue.
  *
  * @return N/A

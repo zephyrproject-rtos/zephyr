@@ -147,7 +147,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 .balign 4
 _check_if_current_is_the_task:
 
-	ld r0, [r2, __tCCS_flags_OFFSET]
+	ld r0, [r2, __tTCS_flags_OFFSET]
 	and.f r0, r0, PREEMPTIBLE
 	bnz.nd _check_if_a_fiber_is_ready
 	rtie
@@ -190,12 +190,12 @@ _firq_reschedule:
 
 	_save_callee_saved_regs
 
-	st _CAUSE_FIRQ, [r2, __tCCS_relinquish_cause_OFFSET]
+	st _CAUSE_FIRQ, [r2, __tTCS_relinquish_cause_OFFSET]
 
 	ld r2, [r1, __tNANO_fiber_OFFSET]
 
 	st r2, [r1, __tNANO_current_OFFSET]
-	ld r3, [r2, __tCCS_link_OFFSET]
+	ld r3, [r2, __tTCS_link_OFFSET]
 	st r3, [r1, __tNANO_fiber_OFFSET]
 
 	/*
@@ -204,7 +204,7 @@ _firq_reschedule:
 	 */
 	_load_callee_saved_regs
 
-	ld r3, [r2, __tCCS_relinquish_cause_OFFSET]
+	ld r3, [r2, __tTCS_relinquish_cause_OFFSET]
 
 	breq.nd r3, _CAUSE_RIRQ, _firq_return_from_rirq
 	nop
@@ -216,8 +216,8 @@ _firq_reschedule:
 .balign 4
 _firq_return_from_coop:
 
-	ld r3, [r2, __tCCS_intlock_key_OFFSET]
-	st  0, [r2, __tCCS_intlock_key_OFFSET]
+	ld r3, [r2, __tTCS_intlock_key_OFFSET]
+	st  0, [r2, __tTCS_intlock_key_OFFSET]
 
 	/* pc into ilink */
 	pop_s r0
@@ -235,7 +235,7 @@ _firq_return_from_coop:
 	or.nz r0, r0, _ARC_V2_STATUS32_IE
 	sr r0, [_ARC_V2_STATUS32_P0]
 
-	ld r0, [r2, __tCCS_return_value_OFFSET]
+	ld r0, [r2, __tTCS_return_value_OFFSET]
 	rtie
 
 .balign 4

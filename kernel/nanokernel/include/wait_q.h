@@ -52,26 +52,27 @@ static inline void _nano_wait_q_init(struct _nano_queue *wait_q)
  * Remove first fiber from a wait queue and put it on the ready queue, knowing
  * that the wait queue is not empty.
  */
-static inline tCCS *_nano_wait_q_remove_no_check(struct _nano_queue *wait_q)
+static inline
+struct tcs *_nano_wait_q_remove_no_check(struct _nano_queue *wait_q)
 {
-	tCCS *ccs = wait_q->head;
+	struct tcs *tcs = wait_q->head;
 
 	if (wait_q->tail == wait_q->head) {
 		_nano_wait_q_reset(wait_q);
 	} else {
-		wait_q->head = ccs->link;
+		wait_q->head = tcs->link;
 	}
-	ccs->link = 0;
+	tcs->link = 0;
 
-	_nano_fiber_schedule(ccs);
-	return ccs;
+	_nano_fiber_schedule(tcs);
+	return tcs;
 }
 
 /*
  * Remove first fiber from a wait queue and put it on the ready queue.
  * Abort and return NULL if the wait queue is empty.
  */
-static inline tCCS *_nano_wait_q_remove(struct _nano_queue *wait_q)
+static inline struct tcs *_nano_wait_q_remove(struct _nano_queue *wait_q)
 {
 	return wait_q->head ? _nano_wait_q_remove_no_check(wait_q) : NULL;
 }
@@ -79,37 +80,37 @@ static inline tCCS *_nano_wait_q_remove(struct _nano_queue *wait_q)
 /* put current fiber on specified wait queue */
 static inline void _nano_wait_q_put(struct _nano_queue *wait_q)
 {
-	((tCCS *)wait_q->tail)->link = _nanokernel.current;
+	((struct tcs *)wait_q->tail)->link = _nanokernel.current;
 	wait_q->tail = _nanokernel.current;
 }
 
 #ifdef CONFIG_NANO_TIMEOUTS
-static inline void _nano_timeout_remove_ccs_from_wait_q(struct ccs *ccs)
+static inline void _nano_timeout_remove_tcs_from_wait_q(struct tcs *tcs)
 {
-	struct _nano_queue *wait_q = ccs->nano_timeout.wait_q;
+	struct _nano_queue *wait_q = tcs->nano_timeout.wait_q;
 
-	if (wait_q->head == ccs) {
+	if (wait_q->head == tcs) {
 		if (wait_q->tail == wait_q->head) {
 			_nano_wait_q_reset(wait_q);
 		} else {
-			wait_q->head = ccs->link;
+			wait_q->head = tcs->link;
 		}
 	} else {
-		tCCS *prev = wait_q->head;
+		struct tcs *prev = wait_q->head;
 
-		while (prev->link != ccs) {
+		while (prev->link != tcs) {
 			prev = prev->link;
 		}
-		prev->link = ccs->link;
-		if (wait_q->tail == ccs) {
+		prev->link = tcs->link;
+		if (wait_q->tail == tcs) {
 			wait_q->tail = prev;
 		}
 	}
 }
 #include <timeout_q.h>
 #else
-	#define _nano_timeout_ccs_init(ccs) do { } while ((0))
-	#define _nano_timeout_abort(ccs) do { } while ((0))
+	#define _nano_timeout_tcs_init(tcs) do { } while ((0))
+	#define _nano_timeout_abort(tcs) do { } while ((0))
 	#define _nano_get_earliest_timeouts_deadline() ((uint32_t)TICKS_UNLIMITED)
 #endif
 
