@@ -68,7 +68,7 @@ extern "C" {
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-static inline int _IsPowerOfTwo(unsigned int x)
+static inline int is_power_of_two(unsigned int x)
 {
 	return (x != 0) && !(x & (x - 1));
 }

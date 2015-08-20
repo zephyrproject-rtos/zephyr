@@ -83,7 +83,7 @@ void _ScbNumPriGroupSet(unsigned int n /* number of priorities */
 	unsigned int set;
 	union __aircr reg;
 
-	__ASSERT(_IsPowerOfTwo(n) && (n <= 128),
+	__ASSERT(is_power_of_two(n) && (n <= 128),
 		 "invalid number of priorities");
 
 	set = find_lsb_set(n);
