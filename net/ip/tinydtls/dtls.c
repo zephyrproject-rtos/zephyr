@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
 #endif
@@ -1400,9 +1401,9 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
    * one UDP datagram */
 #ifdef WITH_CONTIKI
   /* Prepare to receive max. IPv6 frame size packets. */
-  struct net_buf *buf = net_buf_get_reserve(0);
-  unsigned char *sendbuf = buf->buf;
-  size_t len = sizeof(buf->buf);
+  struct net_buf *buf;
+  unsigned char *sendbuf;
+  size_t len;
 #else
   unsigned char sendbuf[DTLS_MAX_BUF];
   size_t len = sizeof(sendbuf);
@@ -1410,6 +1411,15 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
   int res;
   unsigned int i;
   size_t overall_len = 0;
+
+#ifdef WITH_CONTIKI
+  buf = net_buf_get_reserve(0);
+  if (!buf) {
+	  return -ENOMEM;
+  }
+  sendbuf = buf->buf;
+  len = sizeof(buf->buf);
+#endif
 
   res = dtls_prepare_record(peer, security, type, buf_array, buf_len_array, buf_array_len, sendbuf, &len);
 
