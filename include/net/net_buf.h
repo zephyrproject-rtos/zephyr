@@ -372,4 +372,78 @@ void net_mbuf_put(struct net_mbuf *buf);
 #define uip_pkt_packetbuf_addrs(buf) ((buf)->pkt_packetbuf_addrs)
 /* @endcond */
 
+/** @cond ignore */
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
+#include <offsets.h>
+#include <misc/printk.h>
+
+enum {
+	STACK_DIRECTION_UP,
+	STACK_DIRECTION_DOWN,
+};
+
+static inline unsigned net_calculate_unused(const char *stack, unsigned size,
+					    int stack_growth)
+{
+	unsigned i, unused = 0;
+
+	if (stack_growth == STACK_DIRECTION_DOWN) {
+		for (i = __tTCS_SIZEOF; i < size; i++) {
+			if ((unsigned char)stack[i] == 0xaa) {
+				unused++;
+			} else {
+				break;
+			}
+		}
+	} else {
+		for (i = size - 1; i >= __tTCS_SIZEOF; i--) {
+			if ((unsigned char)stack[i] == 0xaa) {
+				unused++;
+			} else {
+				break;
+			}
+		}
+	}
+
+	return unused;
+}
+
+static inline unsigned net_get_stack_dir(struct net_buf *buf,
+					 struct net_buf **ref)
+{
+	if (buf > *ref) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static inline void net_analyze_stack(const char *name,
+				     unsigned char *stack,
+				     size_t size)
+{
+	unsigned unused;
+	int stack_growth;
+	char *dir;
+	struct net_buf *buf = NULL;
+
+	if (net_get_stack_dir(buf, &buf)) {
+		dir = "up";
+		stack_growth = STACK_DIRECTION_UP;
+	} else {
+		dir = "down";
+		stack_growth = STACK_DIRECTION_DOWN;
+	}
+
+	unused = net_calculate_unused(stack, size, stack_growth);
+
+	printk("net: ip: %s stack grows %s, "
+	       "stack(%p/%u): unused %u bytes\n",
+	       name, dir, stack, size, unused);
+}
+#else
+#define net_analyze_stack(...)
+#endif
+/* @endcond */
+
 #endif /* __NET_BUF_H */
