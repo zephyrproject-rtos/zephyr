@@ -78,6 +78,17 @@ extern struct device * const uart_devs[];
 
 #endif /* CONFIG_UART_CONSOLE */
 
+/* Bluetooth UART definitions */
+#if defined(CONFIG_BLUETOOTH_UART)
+
+#define CONFIG_BLUETOOTH_UART_INDEX	1
+#define CONFIG_BLUETOOTH_UART_IRQ	COM2_INT_LVL
+#define CONFIG_BLUETOOTH_UART_INT_PRI	3
+#define CONFIG_BLUETOOTH_UART_FREQ	UART_XTAL_FREQ
+#define CONFIG_BLUETOOTH_UART_BAUDRATE	CONFIG_UART_BAUDRATE
+#define BT_UART_DEV		(uart_devs[CONFIG_BLUETOOTH_UART_INDEX])
+
+#endif /* CONFIG_BLUETOOTH_UART */
 
 /*
  * The irq_connect() API connects to a (virtualized) IRQ and the
