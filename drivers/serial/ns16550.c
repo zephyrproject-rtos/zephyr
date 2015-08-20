@@ -30,30 +30,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This is the driver for the Intel NS16550 UART Chip used on the PC 386.
-It uses the SCCs in asynchronous mode only.
-
-
-USAGE
-An ns16550 structure is used to describe the chip.
-The platform init routine initializes all the
-values in the uart_init_info structure before calling uart_init().
-
-A board support package's board.h header must provide definitions for:
-
-- the following register access routines:
-
-  unsigned int inByte(unsigned int address);
-  void outByte(unsigned char data, unsigned int address);
-
-- and the following macro for the number of bytes between register addresses:
-
-  UART_REG_ADDR_INTERVAL
-
-
-INCLUDE FILES: drivers/uart.h
+/**
+ * @brief NS16550 Serial Driver
+ *
+ * This is the driver for the Intel NS16550 UART Chip used on the PC 386.
+ * It uses the SCCs in asynchronous mode only.
+ *
+ * Before individual UART port can be used, ns16550_uart_port_init() has to be
+ * called to setup the port.
+ *
+ *
+ * A board support package's board.h header must provide definitions for:
+ *
+ * - the following register access routines:
+ *
+ *  unsigned int inByte(unsigned int address);
+ *  void outByte(unsigned char data, unsigned int address);
+ *
+ * - and the following macro for the number of bytes between register addresses:
+ *
+ *  UART_REG_ADDR_INTERVAL
  */
 
 #include <nanokernel.h>
@@ -258,7 +254,6 @@ static inline void ns16550_pci_uart_scan(void)
 #endif /* CONFIG_NS16550_PCI */
 
 /**
- *
  * @brief Initialize the chip
  *
  * This routine is called to reset the chip in a quiescent state.
@@ -268,7 +263,6 @@ static inline void ns16550_pci_uart_scan(void)
  *
  * @return N/A
  */
-
 void ns16550_uart_port_init(struct device *dev,
 			    const struct uart_init_info * const init_info)
 {
@@ -318,7 +312,6 @@ void ns16550_uart_port_init(struct device *dev,
 }
 
 /**
- *
  * @brief Poll the device for input.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
@@ -326,7 +319,6 @@ void ns16550_uart_port_init(struct device *dev,
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
-
 static int ns16550_uart_poll_in(struct device *dev, unsigned char *c)
 {
 	if ((INBYTE(LSR(dev)) & LSR_RXRDY) == 0x00)
@@ -339,7 +331,6 @@ static int ns16550_uart_poll_in(struct device *dev, unsigned char *c)
 }
 
 /**
- *
  * @brief Output a character in polled mode.
  *
  * Checks if the transmitter is empty. If empty, a character is written to
@@ -351,7 +342,7 @@ static int ns16550_uart_poll_in(struct device *dev, unsigned char *c)
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param c Character to send
  *
- * @return sent character
+ * @return Sent character
  */
 static unsigned char ns16550_uart_poll_out(struct device *dev,
 					   unsigned char c)
@@ -366,17 +357,16 @@ static unsigned char ns16550_uart_poll_out(struct device *dev,
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
+
 /**
- *
  * @brief Fill FIFO with data
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param tx_data Data to transmit
  * @param size Number of bytes to send
  *
- * @return number of bytes sent
+ * @return Number of bytes sent
  */
-
 static int ns16550_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 				  int size)
 {
@@ -389,7 +379,6 @@ static int ns16550_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 }
 
 /**
- *
  * @brief Read data from FIFO
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
@@ -398,7 +387,6 @@ static int ns16550_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
  *
  * @return Number of bytes read
  */
-
 static int ns16550_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
@@ -412,140 +400,120 @@ static int ns16550_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 }
 
 /**
- *
  * @brief Enable TX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void ns16550_uart_irq_tx_enable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_TBE);
 }
 
 /**
- *
  * @brief Disable TX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void ns16550_uart_irq_tx_disable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_TBE));
 }
 
 /**
- *
  * @brief Check if Tx IRQ has been raised
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-
 static int ns16550_uart_irq_tx_ready(struct device *dev)
 {
 	return ((IIRC(dev) & IIR_ID) == IIR_THRE);
 }
 
 /**
- *
  * @brief Enable RX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void ns16550_uart_irq_rx_enable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_RXRDY);
 }
 
 /**
- *
  * @brief Disable RX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void ns16550_uart_irq_rx_disable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_RXRDY));
 }
 
 /**
- *
  * @brief Check if Rx IRQ has been raised
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-
 static int ns16550_uart_irq_rx_ready(struct device *dev)
 {
 	return ((IIRC(dev) & IIR_ID) == IIR_RBRF);
 }
 
 /**
- *
  * @brief Enable error interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void ns16550_uart_irq_err_enable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) | IER_LSR);
 }
 
 /**
- *
  * @brief Disable error interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-
 static void ns16550_uart_irq_err_disable(struct device *dev)
 {
 	OUTBYTE(IER(dev), INBYTE(IER(dev)) & (~IER_LSR));
 }
 
 /**
- *
  * @brief Check if any IRQ is pending
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if an IRQ is pending, 0 otherwise
  */
-
 static int ns16550_uart_irq_is_pending(struct device *dev)
 {
 	return (!(IIRC(dev) & IIR_IP));
 }
 
 /**
- *
  * @brief Update cached contents of IIR
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
- * @return always 1
+ * @return Always 1
  */
-
 static int ns16550_uart_irq_update(struct device *dev)
 {
 	IIRC(dev) = INBYTE(IIR(dev));
@@ -562,7 +530,6 @@ static int ns16550_uart_irq_update(struct device *dev)
  *
  * @return IRQ number
  */
-
 static unsigned int ns16550_uart_irq_get(struct device *dev)
 {
 	return (unsigned int)DEV_CFG(dev)->irq;
