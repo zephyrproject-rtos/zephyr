@@ -44,8 +44,8 @@ and explicitly puts the device into a reset-like state. It also assumes that
 the main up counter never wraps around to 0 during the lifetime of the system.
 
 The platform can configure the HPET to use level rather than the default edge
-sensitive interrupts by adding the following to board.h
-    #define HPET_USE_LEVEL_INTS
+sensitive interrupts by enabling the following configuration parameters:
+CONFIG_HPET_TIMER_LEVEL_HIGH or CONFIG_HPET_TIMER_LEVEL_LOW
 
 When not configured to support tickless idle timer0 is programmed in periodic
 mode so it automatically generates a single interrupt per kernel tick interval.
@@ -261,7 +261,7 @@ void _timer_int_handler(void *unused)
 {
 	ARG_UNUSED(unused);
 
-#ifdef HPET_USE_LEVEL_INTS
+#if defined (CONFIG_HPET_TIMER_LEVEL_LOW) || defined (CONFIG_HPET_TIMER_LEVEL_HIGH)
 	/* Acknowledge interrupt */
 	*_HPET_GENERAL_INT_STATUS = 1;
 #endif
@@ -616,7 +616,7 @@ int _sys_clock_driver_init(struct device *device)
 		(*_HPET_TIMER0_CONFIG_CAPS & ~HPET_Tn_INT_ROUTE_CNF_MASK)
 #endif
 
-#ifdef HPET_USE_LEVEL_INTS
+#if defined (CONFIG_HPET_TIMER_LEVEL_LOW) || defined (CONFIG_HPET_TIMER_LEVEL_HIGH)
 		| HPET_Tn_INT_TYPE_CNF;
 #else
 		;
