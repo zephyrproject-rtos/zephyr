@@ -28,16 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This is the UART driver for the Freescale K20 Family of microprocessors.
-
-USAGE
-An _K20_UART_t structure is used to describe the UART.
-The platform init routine initializes all the
-values in the uart_init_info structure before calling uart_init().
-
-INCLUDE FILES: drivers/serial/k20_uart.h
+/**
+ * @brief UART driver for the Freescale K20 Family of microprocessors.
+ *
+ * Before individual UART port can be used, k20_uart_port_init() has to be
+ * called to setup the port.
  */
 
 #include <nanokernel.h>
@@ -63,7 +58,6 @@ INCLUDE FILES: drivers/serial/k20_uart.h
 static struct uart_driver_api k20_uart_driver_api;
 
 /**
- *
  * @brief Initialize UART channel
  *
  * This routine is called to reset the chip in a quiescent state.
@@ -74,7 +68,6 @@ static struct uart_driver_api k20_uart_driver_api;
  *
  * @return N/A
  */
-
 void k20_uart_port_init(struct device *dev,
 			const struct uart_init_info * const init_info)
 {
@@ -118,7 +111,6 @@ void k20_uart_port_init(struct device *dev,
 }
 
 /**
- *
  * @brief Poll the device for input.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
@@ -126,7 +118,6 @@ void k20_uart_port_init(struct device *dev,
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
-
 static int k20_uart_poll_in(struct device *dev, unsigned char *c)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -141,7 +132,6 @@ static int k20_uart_poll_in(struct device *dev, unsigned char *c)
 }
 
 /**
- *
  * @brief Output a character in polled mode.
  *
  * Checks if the transmitter is empty. If empty, a character is written to
@@ -172,16 +162,14 @@ static unsigned char k20_uart_poll_out(struct device *dev,
 #if CONFIG_UART_INTERRUPT_DRIVEN
 
 /**
- *
  * @brief Fill FIFO with data
-
+ *
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param tx_data Data to transmit
  * @param len Number of bytes to send
  *
  * @return number of bytes sent
  */
-
 static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 			      int len)
 {
@@ -196,7 +184,6 @@ static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 }
 
 /**
- *
  * @brief Read data from FIFO
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
@@ -205,7 +192,6 @@ static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
  *
  * @return number of bytes read
  */
-
 static int k20_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 			      const int size)
 {
@@ -220,14 +206,12 @@ static int k20_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 }
 
 /**
- *
  * @brief Enable TX interrupt
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void k20_uart_irq_tx_enable(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -236,14 +220,12 @@ static void k20_uart_irq_tx_enable(struct device *dev)
 }
 
 /**
- *
  * @brief Disable TX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void k20_uart_irq_tx_disable(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -252,14 +234,12 @@ static void k20_uart_irq_tx_disable(struct device *dev)
 }
 
 /**
- *
  * @brief Check if Tx IRQ has been raised
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-
 static int k20_uart_irq_tx_ready(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -268,14 +248,12 @@ static int k20_uart_irq_tx_ready(struct device *dev)
 }
 
 /**
- *
  * @brief Enable RX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void k20_uart_irq_rx_enable(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -284,14 +262,12 @@ static void k20_uart_irq_rx_enable(struct device *dev)
 }
 
 /**
- *
  * @brief Disable RX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void k20_uart_irq_rx_disable(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -300,14 +276,12 @@ static void k20_uart_irq_rx_disable(struct device *dev)
 }
 
 /**
- *
  * @brief Check if Rx IRQ has been raised
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-
 static int k20_uart_irq_rx_ready(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -316,14 +290,12 @@ static int k20_uart_irq_rx_ready(struct device *dev)
 }
 
 /**
- *
  * @brief Enable error interrupt
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void k20_uart_irq_err_enable(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -337,14 +309,12 @@ static void k20_uart_irq_err_enable(struct device *dev)
 }
 
 /**
- *
  * @brief Disable error interrupt
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void k20_uart_irq_err_disable(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -358,14 +328,12 @@ static void k20_uart_irq_err_disable(struct device *dev)
 }
 
 /**
- *
  * @brief Check if Tx or Rx IRQ is pending
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
-
 static int k20_uart_irq_is_pending(struct device *dev)
 {
 	K20_UART_t *uart = UART_STRUCT(dev);
@@ -378,21 +346,18 @@ static int k20_uart_irq_is_pending(struct device *dev)
 }
 
 /**
- *
  * @brief Update IRQ status
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return always 1
  */
-
 static int k20_uart_irq_update(struct device *dev)
 {
 	return 1;
 }
 
 /**
- *
  * @brief Returns UART interrupt number
  *
  * Returns the IRQ number used by the specified UART port
@@ -401,7 +366,6 @@ static int k20_uart_irq_update(struct device *dev)
  *
  * @return N/A
  */
-
 static unsigned int k20_uart_irq_get(struct device *dev)
 {
 	return (unsigned int)DEV_CFG(dev)->irq;

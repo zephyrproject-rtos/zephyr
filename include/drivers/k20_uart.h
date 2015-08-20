@@ -30,9 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module defines the UART Registers for the K20 Family of microprocessors
+/**
+ * @brief Contains the UART Registers for the K20 Family of microprocessors.
  */
 
 #ifndef _K20UART_H_
@@ -210,6 +209,15 @@ struct uart_k20_dev_data_t {
 	uint8_t seq_port_num;	/**< Sequential port number */
 };
 
+/**
+ * @brief Set baud rate for K20 UART port.
+ *
+ * @param uart_p UART data
+ * @param clk_freq Clock frequency
+ * @param baud_rate Baud rate to set
+ *
+ * @return None
+ */
 static ALWAYS_INLINE void _k20_uart_baud_rate_set(K20_UART_t *uart_p,
 						  uint32_t clk_freq,
 						  uint32_t baud_rate)
@@ -235,6 +243,13 @@ static ALWAYS_INLINE void _k20_uart_baud_rate_set(K20_UART_t *uart_p,
 	uart_p->c4.field.brfa = brfa;
 }
 
+/**
+ * @brief Enable FIFO for K20 UART port
+ *
+ * @param uart_p UART data
+ *
+ * @return None
+ */
 static inline void _k20_uart_fifo_enable(K20_UART_t *uart_p)
 {
 	uint8_t tx_rx_state = uart_p->c2.value && (TX_EN_MASK | RX_EN_MASK);
