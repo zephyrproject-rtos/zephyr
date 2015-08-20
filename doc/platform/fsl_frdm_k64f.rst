@@ -173,7 +173,7 @@ For a diagram, see  `Cortex-M3 Revision r2p1 Technical Reference Manual page 3-1
 Component Layout
 ================
 
-Refer to page 2 of the FRDM-K64F Freedom Module User’s Guide,
+Refer to page 2 of the FRDM-K64F Freedom Module User's Guide,
 Rev. 0, 04/2014 (Freescale FRDMK64FUG) for a component layout
 block diagram. See
 http://infocenter.arm.com/help/topic/com.arm.doc.dui0552a/DUI0552A_cortex_m3_dgug.pdf
@@ -210,7 +210,7 @@ Interrupt Controller
 There are 15 fixed exceptions including exceptions 12 (debug
 monitor) and 15 (SYSTICK) that behave more as interrupts
 than exceptions. In addition, there can be a variable number
-of IRQs. Exceptions 7-10 and 13 are reserved. They don’t need
+of IRQs. Exceptions 7-10 and 13 are reserved. They don't need
 handlers.
 
 A Cortex-M3/4-based board uses vectored exceptions. This
@@ -376,7 +376,7 @@ The following interrupt table scenarios exist:
   the user must provide a file (C or assembly). In the platform
   configuration, the file is :file:`sw_isr_table.c`,
   but it can have any name. This file contains the :makevar:`_IsrTable[]`
-  variable filled by hand with each interrupt’s ISRs. The variable
+  variable filled by hand with each interrupt's ISRs. The variable
   is an array of type struct_IsrTableEntry. When a user
   provides their own :file:`sw_isr_table.c`, the type can be found
   by including :file:`sw_isr_table.h`.
@@ -429,13 +429,13 @@ Configuration Options
 =====================
 
 :option:`LDREX_STREX_AVAILABLE`
-      Set to ‘n’ when the ldrex/strex instructions are not available.
+      Set to 'n' when the ldrex/strex instructions are not available.
 
 :option:`DATA_ENDIANNESS_LITTLE`
-      Set to ‘n’ when the data sections are big endian.
+      Set to 'n' when the data sections are big endian.
 
 :option:`STACK_ALIGN_DOUBLE_WORD`
-      Set to ‘n’ only when there is a good reason to do it.
+      Set to 'n' only when there is a good reason to do it.
 
 :option:`NUM_IRQ_PRIO_BITS`
       The platform configuration sets this to the correct value for the board
@@ -450,14 +450,14 @@ Configuration Options
 
 :option:`NUM_IRQS`
       The platform configuration sets this value to the correct number of
-      interrupts available on the board. The default is ‘1’,
+      interrupts available on the board. The default is '1',
       which in most cases will be incorrect.
 
 :option:`SW_ISR_TABLE`
-      Set to ‘n’ when the platform configuration does not provide one.
+      Set to 'n' when the platform configuration does not provide one.
 
 :option:`SW_ISR_TABLE_DYNAMIC`
-      Set to ‘n’ to override the default.
+      Set to 'n' to override the default.
 
 System Clock
 ============
@@ -798,5 +798,5 @@ Bibliography
    (ARM DUI 0052A ID121610)
 7. K64 Sub-Family Reference Manual, Rev. 2, January 2014
    (Freescale K64P144M120SF5RM)
-8. FRDM-K64F Freedom Module User’s Guide, Rev. 0, 04/2014
+8. FRDM-K64F Freedom Module User's Guide, Rev. 0, 04/2014
    (Freescale FRDMK64FUG)
