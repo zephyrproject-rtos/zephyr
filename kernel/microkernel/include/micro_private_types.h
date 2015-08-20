@@ -380,16 +380,14 @@ struct k_args {
 	kpriority_t Prio;
 
 	/* 'alloc' is true if k_args is allocated via GETARGS() */
-	bool   alloc __aligned(4);
-	void   (*Comm)(struct k_args *);
+	bool   alloc;
 
 	/*
-	 * Ctxt needs to be aligned to avoid "unaligned write" exception on ARM
-	 * platform if Comm is 1 byte long, which can happen since K_COMM is an
-	 * enum and the compiler is free to adjust its size depending on how many
-	 * items are in it.
+	 * Align the next structure element if alloc is just one byte.
+	 * Otherwise on ARM it leads to "unaligned write" exception.
 	 */
-	K_CREF Ctxt __aligned(4);
+	void   (*Comm)(struct k_args *) __aligned(4);
+	K_CREF Ctxt;
 	union {
 		int32_t ticks;
 		struct k_timer *timer;
