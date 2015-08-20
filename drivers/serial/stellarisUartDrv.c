@@ -30,13 +30,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-Driver for Stellaris UART found namely on TI LM3S6965 board. It is similar to
-an 16550 in functionality, but is not register-compatible.
-
-There is only support for poll-mode, so it can only be used with the printk
-and STDOUT_CONSOLE APIs.
+/**
+ * @brief Driver for Stellaris UART
+ *
+ * Driver for Stellaris UART found namely on TI LM3S6965 board. It is similar to
+ * an 16550 in functionality, but is not register-compatible.
+ *
+ * There is only support for poll-mode, so it can only be used with the printk
+ * and STDOUT_CONSOLE APIs.
  */
 
 #include <nanokernel.h>
@@ -155,7 +156,6 @@ struct _uart {
 static struct uart_driver_api stellaris_uart_driver_api;
 
 /**
- *
  * @brief Set the baud rate
  *
  * This routine set the given baud rate for the UART.
@@ -166,7 +166,6 @@ static struct uart_driver_api stellaris_uart_driver_api;
  *
  * @return N/A
  */
-
 static void baudrate_set(struct device *dev,
 			 uint32_t baudrate, uint32_t sys_clk_freq_hz)
 {
@@ -192,7 +191,6 @@ static void baudrate_set(struct device *dev,
 }
 
 /**
- *
  * @brief Enable the UART
  *
  * This routine enables the given UART.
@@ -201,7 +199,6 @@ static void baudrate_set(struct device *dev,
  *
  * @return N/A
  */
-
 static inline void enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -210,7 +207,6 @@ static inline void enable(struct device *dev)
 }
 
 /**
- *
  * @brief Disable the UART
  *
  * This routine disables the given UART.
@@ -219,7 +215,6 @@ static inline void enable(struct device *dev)
  *
  * @return N/A
  */
-
 static inline void disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -245,7 +240,6 @@ static inline void disable(struct device *dev)
 #define LINE_CONTROL_DEFAULTS UARTLCRH_WLEN
 
 /**
- *
  * @brief Set the default UART line controls
  *
  * This routine sets the given UART's line controls to their default settings.
@@ -254,7 +248,6 @@ static inline void disable(struct device *dev)
  *
  * @return N/A
  */
-
 static inline void line_control_defaults_set(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -263,7 +256,6 @@ static inline void line_control_defaults_set(struct device *dev)
 }
 
 /**
- *
  * @brief Initialize UART channel
  *
  * This routine is called to reset the chip in a quiescent state.
@@ -289,7 +281,6 @@ void stellaris_uart_port_init(struct device *dev,
 }
 
 /**
- *
  * @brief Get the UART transmit ready status
  *
  * This routine returns the given UART's transmit ready status.
@@ -306,7 +297,6 @@ static int poll_tx_ready(struct device *dev)
 }
 
 /**
- *
  * @brief Poll the device for input.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
@@ -329,7 +319,6 @@ static int stellaris_uart_poll_in(struct device *dev, unsigned char *c)
 }
 
 /**
- *
  * @brief Output a character in polled mode.
  *
  * Checks if the transmitter is empty. If empty, a character is written to
@@ -338,7 +327,7 @@ static int stellaris_uart_poll_in(struct device *dev, unsigned char *c)
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param c Character to send
  *
- * @return sent character
+ * @return Sent character
  */
 static unsigned char stellaris_uart_poll_out(struct device *dev,
 					     unsigned char c)
@@ -356,16 +345,14 @@ static unsigned char stellaris_uart_poll_out(struct device *dev,
 #if CONFIG_UART_INTERRUPT_DRIVEN
 
 /**
- *
  * @brief Fill FIFO with data
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param tx_data Data to transmit
  * @param len Number of bytes to send
  *
- * @return number of bytes sent
+ * @return Number of bytes sent
  */
-
 static int stellaris_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 				    int len)
 {
@@ -380,16 +367,14 @@ static int stellaris_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 }
 
 /**
- *
  * @brief Read data from FIFO
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param rx_data Pointer to data container
  * @param size Container size
  *
- * @return number of bytes read
+ * @return Number of bytes read
  */
-
 static int stellaris_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 				    const int size)
 {
@@ -404,14 +389,12 @@ static int stellaris_uart_fifo_read(struct device *dev, uint8_t *rx_data,
 }
 
 /**
- *
  * @brief Enable TX interrupt
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void stellaris_uart_irq_tx_enable(struct device *dev)
 {
 	static uint8_t first_time =
@@ -460,14 +443,12 @@ static void stellaris_uart_irq_tx_enable(struct device *dev)
 }
 
 /**
- *
  * @brief Disable TX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void stellaris_uart_irq_tx_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -476,14 +457,12 @@ static void stellaris_uart_irq_tx_disable(struct device *dev)
 }
 
 /**
- *
  * @brief Check if Tx IRQ has been raised
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if a Tx IRQ is pending, 0 otherwise
  */
-
 static int stellaris_uart_irq_tx_ready(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -492,14 +471,12 @@ static int stellaris_uart_irq_tx_ready(struct device *dev)
 }
 
 /**
- *
  * @brief Enable RX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void stellaris_uart_irq_rx_enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -508,14 +485,12 @@ static void stellaris_uart_irq_rx_enable(struct device *dev)
 }
 
 /**
- *
  * @brief Disable RX interrupt in IER
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void stellaris_uart_irq_rx_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -524,14 +499,12 @@ static void stellaris_uart_irq_rx_disable(struct device *dev)
 }
 
 /**
- *
  * @brief Check if Rx IRQ has been raised
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-
 static int stellaris_uart_irq_rx_ready(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -540,14 +513,12 @@ static int stellaris_uart_irq_rx_ready(struct device *dev)
 }
 
 /**
- *
  * @brief Enable error interrupts
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void stellaris_uart_irq_err_enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -557,14 +528,12 @@ static void stellaris_uart_irq_err_enable(struct device *dev)
 }
 
 /**
- *
  * @brief Disable error interrupts
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return N/A
  */
-
 static void stellaris_uart_irq_err_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -574,14 +543,12 @@ static void stellaris_uart_irq_err_disable(struct device *dev)
 }
 
 /**
- *
  * @brief Check if Tx or Rx IRQ is pending
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise
  */
-
 static int stellaris_uart_irq_is_pending(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
@@ -591,21 +558,18 @@ static int stellaris_uart_irq_is_pending(struct device *dev)
 }
 
 /**
- *
  * @brief Update IRQ status
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  *
- * @return always 1
+ * @return Always 1
  */
-
 static int stellaris_uart_irq_update(struct device *dev)
 {
 	return 1;
 }
 
 /**
- *
  * @brief Returns UART interrupt number
  *
  * Returns the IRQ number used by the specified UART port
@@ -614,7 +578,6 @@ static int stellaris_uart_irq_update(struct device *dev)
  *
  * @return N/A
  */
-
 static unsigned int stellaris_uart_irq_get(struct device *dev)
 {
 	return (unsigned int)DEV_CFG(dev)->irq;
