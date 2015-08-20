@@ -49,7 +49,7 @@ and STDOUT_CONSOLE APIs.
 /* definitions */
 
 /* Stellaris UART module */
-struct _Uart {
+struct _uart {
 	uint32_t dr;
 	union {
 		uint32_t _sr;
@@ -70,19 +70,19 @@ struct _Uart {
 	uint32_t icr;
 	uint8_t _res3[0xf8c];
 
-	uint32_t PeriphID4;
-	uint32_t PeriphID5;
-	uint32_t PeriphID6;
-	uint32_t PeriphID7;
-	uint32_t PeriphID0;
-	uint32_t PeriphID1;
-	uint32_t PeriphID2;
-	uint32_t PeriphID3;
+	uint32_t peripd_id4;
+	uint32_t peripd_id5;
+	uint32_t peripd_id6;
+	uint32_t peripd_id7;
+	uint32_t peripd_id0;
+	uint32_t peripd_id1;
+	uint32_t peripd_id2;
+	uint32_t peripd_id3;
 
-	uint32_t PCellID0;
-	uint32_t PCellID1;
-	uint32_t PCellID2;
-	uint32_t PCellID3;
+	uint32_t p_cell_id0;
+	uint32_t p_cell_id1;
+	uint32_t p_cell_id2;
+	uint32_t p_cell_id3;
 };
 
 /* convenience defines */
@@ -90,7 +90,7 @@ struct _Uart {
 #define DEV_CFG(dev) \
 	((struct uart_device_config_t * const)(dev)->config->config_info)
 #define UART_STRUCT(dev) \
-	((volatile struct _Uart *)(DEV_CFG(dev))->base)
+	((volatile struct _uart *)(DEV_CFG(dev))->base)
 
 /* registers */
 #define UARTDR(dev) (*((volatile uint32_t *)(DEV_CFG(dev)->base + 0x000)))
@@ -162,33 +162,33 @@ static struct uart_driver_api stellaris_uart_driver_api;
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
  * @param baudrate Baud rate
- * @param sysClkFreqInHz System clock frequency in Hz
+ * @param sys_clk_freq_hz System clock frequency in Hz
  *
  * @return N/A
  */
 
-static void baudrateSet(struct device *dev,
-			uint32_t baudrate, uint32_t sysClkFreqInHz)
+static void baudrate_set(struct device *dev,
+			 uint32_t baudrate, uint32_t sys_clk_freq_hz)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 	uint32_t brdi, brdf, div, rem;
 
 	/* upon reset, the system clock uses the intenal OSC @ 12MHz */
 
 	div = (16 * baudrate);
-	rem = sysClkFreqInHz % div;
+	rem = sys_clk_freq_hz % div;
 
 	/* floating part of baud rate (LM3S6965 p.433), equivalent to
 	 * [float part of (SYSCLK / div)] * 64 + 0.5 */
 	brdf = ((((rem * 64) << 1) / div) + 1) >> 1;
 
 	/* integer part of baud rate (LM3S6965 p.433) */
-	brdi = sysClkFreqInHz / div;
+	brdi = sys_clk_freq_hz / div;
 
 	/* those registers are 32-bit, but the reserved bits should be
 	 * preserved */
-	pUart->ibrd = (uint16_t)(brdi & 0xffff); /* 16 bits */
-	pUart->fbrd = (uint8_t)(brdf & 0x3f);    /* 6 bits */
+	uart->ibrd = (uint16_t)(brdi & 0xffff); /* 16 bits */
+	uart->fbrd = (uint8_t)(brdf & 0x3f);    /* 6 bits */
 }
 
 /**
@@ -204,9 +204,9 @@ static void baudrateSet(struct device *dev,
 
 static inline void enable(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	pUart->ctl |= UARTCTL_UARTEN;
+	uart->ctl |= UARTCTL_UARTEN;
 }
 
 /**
@@ -222,16 +222,16 @@ static inline void enable(struct device *dev)
 
 static inline void disable(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	pUart->ctl &= ~UARTCTL_UARTEN;
+	uart->ctl &= ~UARTCTL_UARTEN;
 
 	/* ensure transmissions are complete */
-	while (pUart->fr & UARTFR_BUSY)
+	while (uart->fr & UARTFR_BUSY)
 		;
 
 	/* flush the FIFOs by disabling them */
-	pUart->lcrh &= ~UARTLCRH_FEN;
+	uart->lcrh &= ~UARTLCRH_FEN;
 }
 
 /*
@@ -255,11 +255,11 @@ static inline void disable(struct device *dev)
  * @return N/A
  */
 
-static inline void lineControlDefaultsSet(struct device *dev)
+static inline void line_control_defaults_set(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	pUart->lcrh = LINE_CONTROL_DEFAULTS;
+	uart->lcrh = LINE_CONTROL_DEFAULTS;
 }
 
 /**
@@ -274,16 +274,15 @@ static inline void lineControlDefaultsSet(struct device *dev)
  * @return N/A
  */
 void stellaris_uart_port_init(struct device *dev,
-	       const struct uart_init_info * const init_info
-	       )
+			      const struct uart_init_info * const init_info)
 {
 	struct uart_device_config_t * const dev_cfg = DEV_CFG(dev);
 
 	dev_cfg->irq_pri = init_info->irq_pri;
 
 	disable(dev);
-	baudrateSet(dev, init_info->baud_rate, init_info->sys_clk_freq);
-	lineControlDefaultsSet(dev);
+	baudrate_set(dev, init_info->baud_rate, init_info->sys_clk_freq);
+	line_control_defaults_set(dev);
 	enable(dev);
 
 	dev->driver_api = &stellaris_uart_driver_api;
@@ -301,9 +300,9 @@ void stellaris_uart_port_init(struct device *dev,
  */
 static int poll_tx_ready(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	return (pUart->fr & UARTFR_TXFE);
+	return (uart->fr & UARTFR_TXFE);
 }
 
 /**
@@ -311,22 +310,20 @@ static int poll_tx_ready(struct device *dev)
  * @brief Poll the device for input.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param pChar Pointer to character
+ * @param c Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 
-static int stellaris_uart_poll_in(struct device *dev,
-		 unsigned char *pChar /* pointer to char */
-		 )
+static int stellaris_uart_poll_in(struct device *dev, unsigned char *c)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	if (pUart->fr & UARTFR_RXFE)
+	if (uart->fr & UARTFR_RXFE)
 		return (-1);
 
 	/* got a character */
-	*pChar = (unsigned char)pUart->dr;
+	*c = (unsigned char)uart->dr;
 
 	return 0;
 }
@@ -346,13 +343,13 @@ static int stellaris_uart_poll_in(struct device *dev,
 static unsigned char stellaris_uart_poll_out(struct device *dev,
 					     unsigned char c)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
 	while (!poll_tx_ready(dev))
 		;
 
 	/* send a character */
-	pUart->dr = (uint32_t)c;
+	uart->dr = (uint32_t)c;
 	return c;
 }
 
@@ -363,25 +360,23 @@ static unsigned char stellaris_uart_poll_out(struct device *dev,
  * @brief Fill FIFO with data
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param txData Data to transmit
+ * @param tx_data Data to transmit
  * @param len Number of bytes to send
  *
  * @return number of bytes sent
  */
 
-static int stellaris_uart_fifo_fill(struct device *dev,
-			    const uint8_t *txData, /* data to transmit */
-			    int len /* number of bytes to send */
-			    )
+static int stellaris_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
+				    int len)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
-	uint8_t numTx = 0;
+	volatile struct _uart *uart = UART_STRUCT(dev);
+	uint8_t num_tx = 0;
 
-	while ((len - numTx > 0) && ((pUart->fr & UARTFR_TXFF) == 0)) {
-		pUart->dr = (uint32_t)txData[numTx++];
+	while ((len - num_tx > 0) && ((uart->fr & UARTFR_TXFF) == 0)) {
+		uart->dr = (uint32_t)tx_data[num_tx++];
 	}
 
-	return (int)numTx;
+	return (int)num_tx;
 }
 
 /**
@@ -389,25 +384,23 @@ static int stellaris_uart_fifo_fill(struct device *dev,
  * @brief Read data from FIFO
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param rxData Pointer to data container
+ * @param rx_data Pointer to data container
  * @param size Container size
  *
  * @return number of bytes read
  */
 
-static int stellaris_uart_fifo_read(struct device *dev,
-			    uint8_t *rxData, /* data container */
-			    const int size   /* container size */
-			    )
+static int stellaris_uart_fifo_read(struct device *dev, uint8_t *rx_data,
+				    const int size)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
-	uint8_t numRx = 0;
+	volatile struct _uart *uart = UART_STRUCT(dev);
+	uint8_t num_rx = 0;
 
-	while ((size - numRx > 0) && ((pUart->fr & UARTFR_RXFE) == 0)) {
-		rxData[numRx++] = (uint8_t)pUart->dr;
+	while ((size - num_rx > 0) && ((uart->fr & UARTFR_RXFE) == 0)) {
+		rx_data[num_rx++] = (uint8_t)uart->dr;
 	}
 
-	return numRx;
+	return num_rx;
 }
 
 /**
@@ -427,7 +420,7 @@ static void stellaris_uart_irq_tx_enable(struct device *dev)
 	uint32_t saved_ibrd; /* saved UARTIBRD (integer baud rate) register */
 	uint32_t saved_fbrd; /* saved UARTFBRD (fractional baud rate) register
 				*/
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
 	if (first_time) {
 		/*
@@ -440,30 +433,30 @@ static void stellaris_uart_irq_tx_enable(struct device *dev)
 		first_time = 0;
 
 		/* save current control and baud rate settings */
-		saved_ctl = pUart->ctl;
-		saved_ibrd = pUart->ibrd;
-		saved_fbrd = pUart->fbrd;
+		saved_ctl = uart->ctl;
+		saved_ibrd = uart->ibrd;
+		saved_fbrd = uart->fbrd;
 
 		/* send a character with default settings via loopback */
 		disable(dev);
-		pUart->fbrd = 0;
-		pUart->ibrd = 1;
-		pUart->lcrh = 0;
-		pUart->ctl = (UARTCTL_UARTEN | UARTCTL_TXEN | UARTCTL_LBE);
-		pUart->dr = 0;
+		uart->fbrd = 0;
+		uart->ibrd = 1;
+		uart->lcrh = 0;
+		uart->ctl = (UARTCTL_UARTEN | UARTCTL_TXEN | UARTCTL_LBE);
+		uart->dr = 0;
 
-		while (pUart->fr & UARTFR_BUSY)
+		while (uart->fr & UARTFR_BUSY)
 			;
 
 		/* restore control and baud rate settings */
 		disable(dev);
-		pUart->ibrd = saved_ibrd;
-		pUart->fbrd = saved_fbrd;
-		lineControlDefaultsSet(dev);
-		pUart->ctl = saved_ctl;
+		uart->ibrd = saved_ibrd;
+		uart->fbrd = saved_fbrd;
+		line_control_defaults_set(dev);
+		uart->ctl = saved_ctl;
 	}
 
-	pUart->im |= UARTTIM_TXIM;
+	uart->im |= UARTTIM_TXIM;
 }
 
 /**
@@ -477,9 +470,9 @@ static void stellaris_uart_irq_tx_enable(struct device *dev)
 
 static void stellaris_uart_irq_tx_disable(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	pUart->im &= ~UARTTIM_TXIM;
+	uart->im &= ~UARTTIM_TXIM;
 }
 
 /**
@@ -493,9 +486,9 @@ static void stellaris_uart_irq_tx_disable(struct device *dev)
 
 static int stellaris_uart_irq_tx_ready(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	return ((pUart->mis & UARTMIS_TXMIS) == UARTMIS_TXMIS);
+	return ((uart->mis & UARTMIS_TXMIS) == UARTMIS_TXMIS);
 }
 
 /**
@@ -509,9 +502,9 @@ static int stellaris_uart_irq_tx_ready(struct device *dev)
 
 static void stellaris_uart_irq_rx_enable(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	pUart->im |= UARTTIM_RXIM;
+	uart->im |= UARTTIM_RXIM;
 }
 
 /**
@@ -525,9 +518,9 @@ static void stellaris_uart_irq_rx_enable(struct device *dev)
 
 static void stellaris_uart_irq_rx_disable(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	pUart->im &= ~UARTTIM_RXIM;
+	uart->im &= ~UARTTIM_RXIM;
 }
 
 /**
@@ -541,9 +534,9 @@ static void stellaris_uart_irq_rx_disable(struct device *dev)
 
 static int stellaris_uart_irq_rx_ready(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	return ((pUart->mis & UARTMIS_RXMIS) == UARTMIS_RXMIS);
+	return ((uart->mis & UARTMIS_RXMIS) == UARTMIS_RXMIS);
 }
 
 /**
@@ -557,9 +550,9 @@ static int stellaris_uart_irq_rx_ready(struct device *dev)
 
 static void stellaris_uart_irq_err_enable(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	pUart->im |= (UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
+	uart->im |= (UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
 		      UARTTIM_BEIM | UARTTIM_OEIM);
 }
 
@@ -574,9 +567,9 @@ static void stellaris_uart_irq_err_enable(struct device *dev)
 
 static void stellaris_uart_irq_err_disable(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	pUart->im &= ~(UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
+	uart->im &= ~(UARTTIM_RTIM | UARTTIM_FEIM | UARTTIM_PEIM |
 		       UARTTIM_BEIM | UARTTIM_OEIM);
 }
 
@@ -591,10 +584,10 @@ static void stellaris_uart_irq_err_disable(struct device *dev)
 
 static int stellaris_uart_irq_is_pending(struct device *dev)
 {
-	volatile struct _Uart *pUart = UART_STRUCT(dev);
+	volatile struct _uart *uart = UART_STRUCT(dev);
 
 	/* Look only at Tx and Rx data interrupt flags */
-	return ((pUart->mis & (UARTMIS_RXMIS | UARTMIS_TXMIS)) ? 1 : 0);
+	return ((uart->mis & (UARTMIS_RXMIS | UARTMIS_TXMIS)) ? 1 : 0);
 }
 
 /**
