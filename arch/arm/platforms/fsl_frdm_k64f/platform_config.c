@@ -188,7 +188,7 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart0,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[0]);
 
-pure_early_init(k20_uart0, &k20_uart_dev_data[0]);
+pure_init(k20_uart0, &k20_uart_dev_data[0]);
 
 
 /* UART 1 */
@@ -197,7 +197,7 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart1,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[1]);
 
-pure_early_init(k20_uart1, &k20_uart_dev_data[1]);
+pure_init(k20_uart1, &k20_uart_dev_data[1]);
 
 
 /* UART 2 */
@@ -206,7 +206,7 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart2,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[2]);
 
-pure_early_init(k20_uart2, &k20_uart_dev_data[2]);
+pure_init(k20_uart2, &k20_uart_dev_data[2]);
 
 
 /* UART 3 */
@@ -215,7 +215,7 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart3,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[3]);
 
-pure_early_init(k20_uart3, &k20_uart_dev_data[3]);
+pure_init(k20_uart3, &k20_uart_dev_data[3]);
 
 
 /* UART 4 */
@@ -224,16 +224,16 @@ DECLARE_DEVICE_INIT_CONFIG(k20_uart4,
 			   &uart_platform_init,
 			   &k20_uart_dev_cfg[4]);
 
-pure_early_init(k20_uart4, &k20_uart_dev_data[4]);
+pure_init(k20_uart4, &k20_uart_dev_data[4]);
 
 
 /**< UART Devices */
 struct device * const uart_devs[] = {
-	&__initconfig_k20_uart00,
-	&__initconfig_k20_uart10,
-	&__initconfig_k20_uart20,
-	&__initconfig_k20_uart30,
-	&__initconfig_k20_uart40,
+	&__initconfig_k20_uart01,
+	&__initconfig_k20_uart11,
+	&__initconfig_k20_uart21,
+	&__initconfig_k20_uart31,
+	&__initconfig_k20_uart41,
 };
 
 #endif /* CONFIG_K20_UART */

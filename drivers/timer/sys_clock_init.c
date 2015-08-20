@@ -48,4 +48,4 @@ kernel server fiber starts and begins processing any queued ticks.
 DECLARE_DEVICE_INIT_CONFIG(sys_clock, "sys_clock",
 						   _sys_clock_driver_init, NULL);
 
-pure_init(sys_clock, NULL);
+nano_late_init(sys_clock, NULL);

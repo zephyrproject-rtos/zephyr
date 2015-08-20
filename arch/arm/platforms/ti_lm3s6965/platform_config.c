@@ -194,7 +194,7 @@ DECLARE_DEVICE_INIT_CONFIG(stellaris_uart0,
 			   &uart_platform_init,
 			   &stellaris_uart_dev_cfg[0]);
 
-pure_early_init(stellaris_uart0, NULL);
+pure_init(stellaris_uart0, NULL);
 
 
 /* UART 1 */
@@ -203,7 +203,7 @@ DECLARE_DEVICE_INIT_CONFIG(stellaris_uart1,
 			   &uart_platform_init,
 			   &stellaris_uart_dev_cfg[1]);
 
-pure_early_init(stellaris_uart1, NULL);
+pure_init(stellaris_uart1, NULL);
 
 
 /* UART 2 */
@@ -212,14 +212,14 @@ DECLARE_DEVICE_INIT_CONFIG(stellaris_uart2,
 			   &uart_platform_init,
 			   &stellaris_uart_dev_cfg[2]);
 
-pure_early_init(stellaris_uart2, NULL);
+pure_init(stellaris_uart2, NULL);
 
 
 /**< UART Devices */
 struct device * const uart_devs[] = {
-	&__initconfig_stellaris_uart00,
-	&__initconfig_stellaris_uart10,
-	&__initconfig_stellaris_uart20,
+	&__initconfig_stellaris_uart01,
+	&__initconfig_stellaris_uart11,
+	&__initconfig_stellaris_uart21,
 };
 
 #endif /* CONFIG_STELLARIS_UART */
