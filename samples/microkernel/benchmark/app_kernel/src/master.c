@@ -41,6 +41,8 @@
 
 #include "master.h"
 
+#define SECONDS(x) ((x) * sys_clock_ticks_per_sec)
+
 char Msg[MAX_MSG];
 char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 
@@ -159,12 +161,8 @@ void BenchTask(void)
 
 	WAIT_FOR_USER();
 
-	/*
-	 * Make a 2 second delay. sys_clock_ticks_per_sec in this context is
-	 * a number of system times ticks in a second.
-	 */
 	if (autorun) {
-		task_sleep(2 * sys_clock_ticks_per_sec);
+		task_sleep(SECONDS(2));
 	}
 
 	output_close();
