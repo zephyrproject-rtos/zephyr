@@ -21,9 +21,9 @@ and debug (in system mode with no OS awareness) a
 Zephyr-based project on the target. Debugging is
 done with :abbr:`GNU Debugger (GDB)`, using Eclipse plugins.
 
-.. Note::
-This platform configuration may work with similar boards,
-but they are not officially supported.
+.. note::
+   This platform configuration may work with similar boards,
+   but they are not officially supported.
 
 Supported Boards
 ****************
@@ -250,11 +250,9 @@ The table here identifies the handlers used for each exception.
 +------+------------+----------------+--------------------------+
 
 .. note::
-
    After a reset, all exceptions have a priority of 0.
    Interrupts cannot run at priority 0 for the interrupt
    locking mechanism and exception handling to function properly.
-
 
 Interrupts
 ----------
@@ -302,15 +300,14 @@ When using ZLI:
   and setting all other exceptions, including interrupts, to a lower priority
   (3+).
 
-NOTE:
+.. note::
+   The hard fault exception is always kept at priority 0 so that it is
+   allowed to occur while handling another exception.
 
-The hard fault exception is always kept at priority 0 so that it is allowed to
-occur while handling another exception.
-
-NOTE:
-
-The PendSV exception is always installed at the lowest priority available, and
-that priority level is thus not avaialble to other exceptions and interrupts.
+.. note::
+   The PendSV exception is always installed at the lowest priority
+   available, and that priority level is thus not avaialble to other
+   exceptions and interrupts.
 
 Interrupt Tables
 ----------------
@@ -406,7 +403,7 @@ The following interrupt table scenarios exist:
   as its very last action.
 
 .. note::
-This configuration prevents the use of tickless idle.
+   This configuration prevents the use of tickless idle.
 
 * For overriding the static ISR tables defined by the platform
   configuration:

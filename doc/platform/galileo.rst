@@ -10,11 +10,10 @@ The galileo platform configuration is used by Zephyr projects
 that run on the Galileo Development Board.
 
 .. note::
-
-  The galileo platform configuration is expected to run on the
-  Galileo Gen 2 Development Board but has not yet been verified.
-  The galileo platform configuration may also work with other
-  similar boards, but they are not officially supported.
+   The galileo platform configuration is expected to run on the
+   Galileo Gen 2 Development Board but has not yet been verified.
+   The galileo platform configuration may also work with other
+   similar boards, but they are not officially supported.
 
 It provides support for a Quark CPU and the following devices:
 
@@ -138,10 +137,8 @@ The PCI driver initiates a PCI library scan of the PCI bus for any attached devi
 If devices are detected, they are initialized.
 
 .. note::
-
-  The PCI library does not support 64 bit devices. Memory
-  address and size storage only require 32 bit integers.
-
+   The PCI library does not support 64 bit devices. Memory
+   address and size storage only require 32 bit integers.
 
 Serial Port Polling Mode Support
 ================================
@@ -184,10 +181,8 @@ Interrupts
 +-------+-----------+------------------+-------------------------------+
 
 .. note::
-
    The galileo platform configuration does not support
    interrupt sharing, for example, two PCI devices can not use same IRQ.
-
 
 Configuration Options
 =====================
@@ -388,11 +383,9 @@ Boot the Galileo board from the boot device using GRUB2
 with the boot loader present in the on-board flash.
 
 .. note::
-
-A stripped project image file is automatically created when the
-project is built. The stripped image has removed debug
-information from the :file:`ELF` file.
-
+   A stripped project image file is automatically created when the
+   project is built. The stripped image has removed debug
+   information from the :file:`ELF` file.
 
 Prerequisites
 -------------
@@ -403,10 +396,8 @@ Prerequisites
 * There is a serial port for communication.
 
   .. note::
-
-    For details on how to connect and configure the serial port,
-    see the Getting Started guide that you received with the board.
-
+     For details on how to connect and configure the serial port,
+     see the Getting Started guide that you received with the board.
 
 Steps
 -----
