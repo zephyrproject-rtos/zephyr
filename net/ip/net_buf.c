@@ -147,6 +147,15 @@ void net_buf_put_debug(struct net_buf *buf, const char *caller, int line)
 void net_buf_put(struct net_buf *buf)
 #endif
 {
+	if (!buf) {
+#ifdef DEBUG_NET_BUFS
+		NET_DBG("*** ERROR *** buf %p (%s():%d)\n", buf, caller, line);
+#else
+		NET_DBG("*** ERROR *** buf %p\n", buf);
+#endif
+		return;
+	}
+
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 
 #ifdef DEBUG_NET_BUFS
