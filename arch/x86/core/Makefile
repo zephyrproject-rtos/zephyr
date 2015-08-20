@@ -1,7 +1,7 @@
 ccflags-y += -I$(srctree)/kernel/nanokernel/include
 ccflags-y += -I$(srctree)/kernel/microkernel/include
 
-obj-y = gdt.o context.o fatal.o cpuhalt.o \
+obj-y = gdt.o thread.o fatal.o cpuhalt.o \
 	excstub.o swap.o intboiexit.o msr.o \
 	excconnect.o inthndlset.o sys_fatal_error_handler.o \
 	crt0.o driver_static_irq_stubs.o
