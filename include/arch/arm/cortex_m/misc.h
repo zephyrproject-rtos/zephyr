@@ -1,4 +1,4 @@
-/* CortexM/misc.h - Cortex-M public nanokernel miscellaneous */
+/* cortex_m/misc.h - Cortex-M public nanokernel miscellaneous */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.

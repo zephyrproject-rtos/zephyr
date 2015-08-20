@@ -50,16 +50,16 @@ extern "C" {
 #define SIZEOFUNIT_TO_OCTET(X) (X)
 
 #ifdef CONFIG_CPU_CORTEX_M
-#include <arch/arm/CortexM/exc.h>
-#include <arch/arm/CortexM/irq.h>
-#include <arch/arm/CortexM/error.h>
-#include <arch/arm/CortexM/misc.h>
-#include <arch/arm/CortexM/scs.h>
-#include <arch/arm/CortexM/scb.h>
-#include <arch/arm/CortexM/nvic.h>
-#include <arch/arm/CortexM/memory_map.h>
-#include <arch/arm/CortexM/gdb_stub.h>
-#include <arch/arm/CortexM/asm_inline.h>
+#include <arch/arm/cortex_m/exc.h>
+#include <arch/arm/cortex_m/irq.h>
+#include <arch/arm/cortex_m/error.h>
+#include <arch/arm/cortex_m/misc.h>
+#include <arch/arm/cortex_m/scs.h>
+#include <arch/arm/cortex_m/scb.h>
+#include <arch/arm/cortex_m/nvic.h>
+#include <arch/arm/cortex_m/memory_map.h>
+#include <arch/arm/cortex_m/gdb_stub.h>
+#include <arch/arm/cortex_m/asm_inline.h>
 #endif
 
 #define STACK_ALIGN  4

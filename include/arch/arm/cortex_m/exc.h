@@ -1,7 +1,7 @@
-/* ARM CortexM GCC specific inline assembler functions and macros */
+/* cortex_m/exc.h - Cortex-M public exception handling */
 
 /*
- * Copyright (c) 2015, Wind River Systems, Inc.
+ * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,51 +30,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ASM_INLINE_GCC_H
-#define _ASM_INLINE_GCC_H
-
 /*
- * The file must not be included directly
- * Include asm_inline.h instead
+DESCRIPTION
+ARM-specific nanokernel exception handling interface. Included by ARM/arch.h.
  */
 
-#ifndef _ASMLANGUAGE
+#ifndef _ARCH_ARM_CORTEXM_EXC_H_
+#define _ARCH_ARM_CORTEXM_EXC_H_
 
-/**
- *
- * @brief Obtain value of IPSR register
- *
- * Obtain and return current value of IPSR register.
- *
- * @return the contents of the IPSR register
- *
- * \NOMANUAL
- */
+#ifdef _ASMLANGUAGE
+GTEXT(_ExcExit);
+#else
+#include <stdint.h>
 
-static ALWAYS_INLINE uint32_t _IpsrGet(void)
-{
-	uint32_t vector;
+struct __esf {
+	uint32_t a1; /* r0 */
+	uint32_t a2; /* r1 */
+	uint32_t a3; /* r2 */
+	uint32_t a4; /* r3 */
+	uint32_t ip; /* r12 */
+	uint32_t lr; /* r14 */
+	uint32_t pc; /* r15 */
+	uint32_t xpsr;
+};
 
-	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(vector));
-	return vector;
-}
+typedef struct __esf NANO_ESF;
 
-/**
- *
- * @brief Set the value of the Main Stack Pointer register
- *
- * Store the value of <msp> in MSP register.
- *
- * @return N/A
- *
- * \NOMANUAL
- */
+extern const NANO_ESF _default_esf;
 
-static ALWAYS_INLINE void _MspSet(uint32_t msp /* value to store in MSP */
-				  )
-{
-	__asm__ volatile("msr MSP, %0\n\t" :  : "r"(msp));
-}
+extern void _ExcExit(void);
+#endif
 
-#endif /* _ASMLANGUAGE */
-#endif /* _ASM_INLINE_GCC_H */
+#endif /* _ARCH_ARM_CORTEXM_EXC_H_ */

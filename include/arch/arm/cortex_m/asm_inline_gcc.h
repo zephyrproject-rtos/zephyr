@@ -1,4 +1,4 @@
-/* Intel ARM GCC specific public inline assembler functions and macros */
+/* ARM Cortex-M GCC specific public inline assembler functions and macros */
 
 /*
  * Copyright (c) 2015, Wind River Systems, Inc.
@@ -50,7 +50,7 @@
 
 #else /* !_ASMLANGUAGE */
 #include <stdint.h>
-#include <arch/arm/CortexM/nvic.h>
+#include <arch/arm/cortex_m/nvic.h>
 
 /**
  *

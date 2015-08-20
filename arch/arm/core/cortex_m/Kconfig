@@ -1,4 +1,4 @@
-# Kconfig - ARM CortexM platform configuration options
+# Kconfig - ARM Cortex-M platform configuration options
 
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.

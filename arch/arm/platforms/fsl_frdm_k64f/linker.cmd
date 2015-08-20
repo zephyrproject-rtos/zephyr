@@ -43,4 +43,4 @@ This is the linker script for both standard images and XIP images.
  */
 #define SKIP_TO_SECURITY_FRDM_K64F . = 0x400;
 
-#include <arch/arm/CortexM/scripts/linker.cmd>
+#include <arch/arm/cortex_m/scripts/linker.cmd>

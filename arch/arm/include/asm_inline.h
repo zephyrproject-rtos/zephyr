@@ -34,13 +34,13 @@
 #define _ASM_INLINE_H
 
 #if !defined(CONFIG_ARM) || !defined(CONFIG_CPU_CORTEX_M)
-#error arch/arm/include/asm_inline.h is for ARM CortexM only
+#error arch/arm/include/asm_inline.h is for ARM Cortex-M only
 #endif
 
 #if defined(__GNUC__)
-#include <CortexM/asm_inline_gcc.h>
+#include <cortex_m/asm_inline_gcc.h>
 #else
-#include <CortexM/asm_inline_other.h>
+#include <cortex_m/asm_inline_other.h>
 #endif /* __GNUC__ */
 
 #endif /* _ASM_INLINE_H */

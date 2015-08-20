@@ -30,4 +30,4 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <arch/arm/CortexM/scripts/linker.cmd>
+#include <arch/arm/cortex_m/scripts/linker.cmd>

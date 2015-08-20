@@ -1,4 +1,4 @@
-/* CortexM/irq.h - Cortex-M public interrupt handling */
+/* cortex_m/irq.h - Cortex-M public interrupt handling */
 
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
@@ -38,7 +38,7 @@ ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
 #ifndef _ARCH_ARM_CORTEXM_IRQ_H_
 #define _ARCH_ARM_CORTEXM_IRQ_H_
 
-#include <arch/arm/CortexM/nvic.h>
+#include <arch/arm/cortex_m/nvic.h>
 #include <sw_isr_table.h>
 
 #ifdef _ASMLANGUAGE

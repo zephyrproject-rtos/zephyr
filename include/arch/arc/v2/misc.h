@@ -1,4 +1,4 @@
-/* CortexM/misc.h - Cortex-M public nanokernel miscellaneous */
+/* arc/v2/misc.h - ARCv2 public nanokernel miscellaneous */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.

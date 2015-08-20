@@ -73,7 +73,7 @@ still considered part of the NVIC and an API for it is provided in nvic.h.
 
 #ifdef _ASMLANGUAGE
 
-#include <arch/arm/CortexM/memory_map.h>
+#include <arch/arm/cortex_m/memory_map.h>
 
 #else /* _ASMLANGUAGE */
 
