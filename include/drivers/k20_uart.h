@@ -46,22 +46,22 @@ typedef union {
 	struct {
 		uint8_t sbr : 5 __packed; /* Hi Baud Rate Bits */
 		uint8_t res_5 : 1 __packed;
-		uint8_t rxEdgeIntEn : 1 __packed; /* RxD Active Edge */
-		uint8_t lbkdIntEn : 1 __packed; /* LIN Break Detect */
+		uint8_t rx_edge_int_en : 1 __packed; /* RxD Active Edge */
+		uint8_t lbkd_int_en : 1 __packed; /* LIN Break Detect */
 	} field;
 } BDH_t; /* 0x000 BaudRate High */
 
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t oddParity : 1 __packed;
-		uint8_t parityEnable : 1 __packed;
-		uint8_t idleLineType : 1 __packed;
-		uint8_t rxWakepMethod : 1 __packed;
-		uint8_t mode9Bit : 1 __packed;
-		uint8_t remoteLoopback : 1 __packed;
-		uint8_t uartStopWait : 1 __packed;
-		uint8_t loopbackEn : 1 __packed;
+		uint8_t odd_parity : 1 __packed;
+		uint8_t parity_enable : 1 __packed;
+		uint8_t idle_line_type : 1 __packed;
+		uint8_t rx_wakep_method : 1 __packed;
+		uint8_t mode9bit : 1 __packed;
+		uint8_t remote_loopback : 1 __packed;
+		uint8_t uart_stop_wait : 1 __packed;
+		uint8_t loopback_en : 1 __packed;
 	} field;
 } C1_t; /* 0x002 Control 1 */
 
@@ -71,28 +71,28 @@ typedef union {
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t sendBreak : 1 __packed;
-		uint8_t rxWakeupCtrl : 1 __packed;
-		uint8_t rxEnable : 1 __packed;
-		uint8_t txEnable : 1 __packed;
-		uint8_t idleLineIntEn : 1 __packed;
-		uint8_t rxFullInt_dmaTx_en : 1 __packed;
-		uint8_t txCompleteIntEn : 1 __packed;
-		uint8_t txInt_DmaTx_en : 1 __packed;
+		uint8_t send_break : 1 __packed;
+		uint8_t rx_wakeup_ctrl : 1 __packed;
+		uint8_t rx_enable : 1 __packed;
+		uint8_t tx_enable : 1 __packed;
+		uint8_t idle_line_int_en : 1 __packed;
+		uint8_t rx_full_int_dma_tx_en : 1 __packed;
+		uint8_t tx_complete_int_en : 1 __packed;
+		uint8_t tx_int_dma_tx_en : 1 __packed;
 	} field;
 } C2_t; /* 0x003 Control 2 */
 
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t parityErrIntEn : 1 __packed;
-		uint8_t frameErrIntEn : 1 __packed;
-		uint8_t noiseErrIntEn : 1 __packed;
-		uint8_t overrunErrIntEn : 1 __packed;
-		uint8_t txDataInvert : 1 __packed;
-		uint8_t txDataPinOuttDir : 1 __packed;
-		uint8_t txBit8 : 1 __packed;
-		uint8_t rxBit8 : 1 __packed;
+		uint8_t parity_err_int_en : 1 __packed;
+		uint8_t frame_err_int_en : 1 __packed;
+		uint8_t noise_err_int_en : 1 __packed;
+		uint8_t overrun_err_int_en : 1 __packed;
+		uint8_t tx_data_invert : 1 __packed;
+		uint8_t tx_data_pin_outt_dir : 1 __packed;
+		uint8_t tx_bit8 : 1 __packed;
+		uint8_t rx_bit8 : 1 __packed;
 	} field;
 } C3_t; /* 0x006 Control 3 */
 
@@ -100,9 +100,9 @@ typedef union {
 	uint8_t value;
 	struct {
 		uint8_t brfa : 5 __packed; /* BaudRateFineAdjust*/
-		uint8_t mode10Bit : 1 __packed;
-		uint8_t matechAddrMode1En : 1 __packed;
-		uint8_t matchAddrMode2En : 1 __packed;
+		uint8_t mode10bit : 1 __packed;
+		uint8_t matech_addr_mode1_en : 1 __packed;
+		uint8_t match_addr_mode2_en : 1 __packed;
 	} field;
 } C4_t; /* 0x00A Control 4 */
 
@@ -112,26 +112,26 @@ typedef union {
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t parityErr : 1 __packed;
-		uint8_t framingErr : 1 __packed;
+		uint8_t parity_err : 1 __packed;
+		uint8_t framing_err : 1 __packed;
 		uint8_t noice : 1 __packed;
-		uint8_t rxOverrun : 1 __packed;
-		uint8_t idleLine : 1 __packed;
-		uint8_t rxDataFull : 1 __packed;
-		uint8_t txComplete : 1 __packed;
-		uint8_t txDataEmpty : 1 __packed;
+		uint8_t rx_overrun : 1 __packed;
+		uint8_t idle_line : 1 __packed;
+		uint8_t rx_data_full : 1 __packed;
+		uint8_t tx_complete : 1 __packed;
+		uint8_t tx_data_empty : 1 __packed;
 	} field;
 } S1_t; /* 0x004 Status 1 */
 
 typedef union {
 	uint8_t value;
 	struct e {
-		uint8_t rxActive : 1 __packed;
-		uint8_t linBkDetectEn : 1 __packed;
-		uint8_t brkCharLen13 : 1 __packed;
-		uint8_t rxWakeupIdleDetect : 1 __packed;
-		uint8_t rxDataInverted : 1 __packed;
-		uint8_t msbFirst : 1 __packed;
+		uint8_t rx_active : 1 __packed;
+		uint8_t lin_bk_detect_en : 1 __packed;
+		uint8_t brk_char_len13 : 1 __packed;
+		uint8_t rx_wakeup_idle_detect : 1 __packed;
+		uint8_t rx_data_inverted : 1 __packed;
+		uint8_t msb_first : 1 __packed;
 		uint8_t rxedgif : 1 __packed;
 		uint8_t lbkdif : 1 __packed;
 	} field;
@@ -152,10 +152,10 @@ typedef union {
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t rxFifoSize : 3 __packed; /* read-only */
-		uint8_t rxFifoEn : 1 __packed;
-		uint8_t txFifoSize : 3 __packed; /* read-only */
-		uint8_t txFifoEn : 1 __packed;
+		uint8_t rx_fifo_size : 3 __packed; /* read-only */
+		uint8_t rx_fifo_en : 1 __packed;
+		uint8_t tx_fifo_size : 3 __packed; /* read-only */
+		uint8_t tx_fifo_en : 1 __packed;
 	} field;
 } PFIFO_t; /* 0x010 Fifo Parameter 1 */
 
@@ -165,12 +165,12 @@ typedef union {
 typedef union {
 	uint8_t value;
 	struct {
-		uint8_t rxFifoUnderflowIntEn : 1 __packed;
-		uint8_t txFifoOverflowIntEn : 1 __packed;
-		uint8_t rxFifoOverflowIntEn : 1 __packed;
+		uint8_t rx_fifo_underflow_int_en : 1 __packed;
+		uint8_t tx_fifo_overflow_int_en : 1 __packed;
+		uint8_t rx_fifo_overflow_int_en : 1 __packed;
 		uint8_t res_3 : 3 __packed;
-		uint8_t rxFifoFlush : 1 __packed; /* write-only */
-		uint8_t txFifoFlush : 1 __packed; /* write-only */
+		uint8_t rx_fifo_flush : 1 __packed; /* write-only */
+		uint8_t tx_fifo_flush : 1 __packed; /* write-only */
 	} field;
 } CFIFO_t; /* 0x011 Fifo Control */
 
@@ -190,7 +190,7 @@ typedef volatile struct {
 	uint8_t ed;			 /* 0x00C Extended Data */
 	uint8_t modem;			 /* 0x00D Modem */
 	uint8_t ir;			 /* 0x00E Infrared */
-	uint8_t zReserved00f;		 /* 0x00F */
+	uint8_t z_reserved00f;		 /* 0x00F */
 	PFIFO_t pfifo;			 /* 0x010 FIFO Param */
 	CFIFO_t cfifo;			 /* 0x011 FIFO Control */
 	uint8_t sfifo;			 /* 0x012 FIFO Status (C0)*/
@@ -201,8 +201,8 @@ typedef volatile struct {
 	uint8_t u_7816[0x20 - 0x17];     /* 0x017-0x1F UART ISO-7816 standard */
 	uint8_t u_cea709_1[0x32 - 0x20]; /* 0x020-0x31 UART CEA8709.1 standard
 					    */
-	uint8_t zReservStatused038_03c[0x1000 - 0x32]; /* 0x032-0xFFF Reserved
-							  */
+	uint8_t z_reserv_statused038_03c[0x1000 - 0x32]; /* 0x032-0xFFF
+							    Reserved */
 } K20_UART_t; /* K20 Microntroller UART module */
 
 /** Device data structure */
@@ -210,23 +210,24 @@ struct uart_k20_dev_data_t {
 	uint8_t seq_port_num;	/**< Sequential port number */
 };
 
-static ALWAYS_INLINE void _k20UartBaudRateSet(K20_UART_t *uart_p,
-					      uint32_t clkFreq,
-					      uint32_t baudRate)
+static ALWAYS_INLINE void _k20_uart_baud_rate_set(K20_UART_t *uart_p,
+						  uint32_t clk_freq,
+						  uint32_t baud_rate)
 {
 	/*
 	 * The baud rate is calculated as:
-	 * baudRate = clkFreq/(16*(SBR[12:0]+BRFA[5:0]/32)), where
+	 * baud_rate = clk_freq/(16*(SBR[12:0]+BRFA[5:0]/32)), where
 	 * - SBR is the combined UART Baud Rate Register settings and
 	 * - BRFA is the UART Baud Rate Fine Adjustment setting
 	 * This is equivalent to:
 	 * 32xSBR + BRFA = 2 * clkFreq/baudRate
 	 */
-	uint32_t clkBr = 2 * clkFreq / baudRate;
-	uint16_t sbr = clkBr >> 5;
-	uint8_t brfa = clkBr - (sbr << 5);
+	uint32_t clk_br = 2 * clk_freq / baud_rate;
+	uint16_t sbr = clk_br >> 5;
+	uint8_t brfa = clk_br - (sbr << 5);
 
-	__ASSERT((sbr && 0x1FFF), "clkFreq is too high or baudRate is too low");
+	__ASSERT((sbr && 0x1FFF),
+		 "clk_freq is too high or baud_rate is too low");
 
 	/* Note there are other fields (interrupts flag) in BDH register */
 	uart_p->bdh.field.sbr = (uint8_t)(sbr >> 8);
@@ -234,7 +235,7 @@ static ALWAYS_INLINE void _k20UartBaudRateSet(K20_UART_t *uart_p,
 	uart_p->c4.field.brfa = brfa;
 }
 
-static inline void _k20UartFifoEnable(K20_UART_t *uart_p)
+static inline void _k20_uart_fifo_enable(K20_UART_t *uart_p)
 {
 	uint8_t tx_rx_state = uart_p->c2.value && (TX_EN_MASK | RX_EN_MASK);
 

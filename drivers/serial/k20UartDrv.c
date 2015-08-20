@@ -76,43 +76,43 @@ static struct uart_driver_api k20_uart_driver_api;
  */
 
 void k20_uart_port_init(struct device *dev,
-	       const struct uart_init_info * const init_info
-	       )
+			const struct uart_init_info * const init_info)
 {
 	struct uart_k20_dev_data_t *dev_data = DEV_DATA(dev);
 
-	int oldLevel; /* old interrupt lock level */
-	K20_SIM_t *sim_p =
+	int old_level; /* old interrupt lock level */
+	K20_SIM_t *sim =
 		(K20_SIM_t *)PERIPH_ADDR_BASE_SIM; /* sys integ. ctl */
 	C1_t c1;				   /* UART C1 register value */
 	C2_t c2;				   /* UART C2 register value */
 
 	DEV_CFG(dev)->irq_pri = init_info->irq_pri;
 
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
 	/* disable interrupts */
-	oldLevel = irq_lock();
+	old_level = irq_lock();
 
 	/* enable clock to Uart - must be done prior to device access */
-	_k20SimUartClkEnable(sim_p, dev_data->seq_port_num);
+	_k20_sim_uart_clk_enable(sim, dev_data->seq_port_num);
 
-	_k20UartBaudRateSet(uart_p, init_info->sys_clk_freq, init_info->baud_rate);
+	_k20_uart_baud_rate_set(uart, init_info->sys_clk_freq,
+				init_info->baud_rate);
 
 	/* 1 start bit, 8 data bits, no parity, 1 stop bit */
 	c1.value = 0;
 
-	uart_p->c1 = c1;
+	uart->c1 = c1;
 
 	/* enable Rx and Tx with interrupts disabled */
 	c2.value = 0;
-	c2.field.rxEnable = 1;
-	c2.field.txEnable = 1;
+	c2.field.rx_enable = 1;
+	c2.field.tx_enable = 1;
 
-	uart_p->c2 = c2;
+	uart->c2 = c2;
 
 	/* restore interrupt state */
-	irq_unlock(oldLevel);
+	irq_unlock(old_level);
 
 	dev->driver_api = &k20_uart_driver_api;
 }
@@ -122,22 +122,20 @@ void k20_uart_port_init(struct device *dev,
  * @brief Poll the device for input.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param pChar Pointer to character
+ * @param c Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 
-static int k20_uart_poll_in(struct device *dev,
-		 unsigned char *pChar /* pointer to char */
-		 )
+static int k20_uart_poll_in(struct device *dev, unsigned char *c)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
-	if (uart_p->s1.field.rxDataFull == 0)
+	if (uart->s1.field.rx_data_full == 0)
 		return (-1);
 
 	/* got a character */
-	*pChar = uart_p->d;
+	*c = uart->d;
 
 	return 0;
 }
@@ -153,23 +151,22 @@ static int k20_uart_poll_in(struct device *dev,
  * be asserted in order to send a character.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param out_char Character to send
+ * @param c Character to send
  *
  * @return sent character
  */
 static unsigned char k20_uart_poll_out(struct device *dev,
-	unsigned char outChar /* char to send */
-	)
+				       unsigned char c)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
 	/* wait for transmitter to ready to accept a character */
-	while (uart_p->s1.field.txDataEmpty == 0)
+	while (uart->s1.field.tx_data_empty == 0)
 		;
 
-	uart_p->d = outChar;
+	uart->d = c;
 
-	return outChar;
+	return c;
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
@@ -185,19 +182,17 @@ static unsigned char k20_uart_poll_out(struct device *dev,
  * @return number of bytes sent
  */
 
-static int k20_uart_fifo_fill(struct device *dev,
-			    const uint8_t *txData, /* data to transmit */
-			    int len /* number of bytes to send */
-			    )
+static int k20_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
+			      int len)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
-	uint8_t numTx = 0;
+	K20_UART_t *uart = UART_STRUCT(dev);
+	uint8_t num_tx = 0;
 
-	while ((len - numTx > 0) && (uart_p->s1.field.txDataEmpty == 1)) {
-		uart_p->d = txData[numTx++];
+	while ((len - num_tx > 0) && (uart->s1.field.tx_data_empty == 1)) {
+		uart->d = tx_data[num_tx++];
 	}
 
-	return numTx;
+	return num_tx;
 }
 
 /**
@@ -205,25 +200,23 @@ static int k20_uart_fifo_fill(struct device *dev,
  * @brief Read data from FIFO
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param rxData Pointer to data container
+ * @param rx_data Pointer to data container
  * @param size Container size in bytes
  *
  * @return number of bytes read
  */
 
-static int k20_uart_fifo_read(struct device *dev,
-			    uint8_t *rxData, /* data container */
-			    const int size   /* container size */
-			    )
+static int k20_uart_fifo_read(struct device *dev, uint8_t *rx_data,
+			      const int size)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
-	uint8_t numRx = 0;
+	K20_UART_t *uart = UART_STRUCT(dev);
+	uint8_t num_rx = 0;
 
-	while ((size - numRx > 0) && (uart_p->s1.field.rxDataFull == 0)) {
-		rxData[numRx++] = uart_p->d;
+	while ((size - num_rx > 0) && (uart->s1.field.rx_data_full == 0)) {
+		rx_data[num_rx++] = uart->d;
 	}
 
-	return numRx;
+	return num_rx;
 }
 
 /**
@@ -237,9 +230,9 @@ static int k20_uart_fifo_read(struct device *dev,
 
 static void k20_uart_irq_tx_enable(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
-	uart_p->c2.field.txInt_DmaTx_en = 1;
+	uart->c2.field.tx_int_dma_tx_en = 1;
 }
 
 /**
@@ -253,9 +246,9 @@ static void k20_uart_irq_tx_enable(struct device *dev)
 
 static void k20_uart_irq_tx_disable(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
-	uart_p->c2.field.txInt_DmaTx_en = 0;
+	uart->c2.field.tx_int_dma_tx_en = 0;
 }
 
 /**
@@ -269,9 +262,9 @@ static void k20_uart_irq_tx_disable(struct device *dev)
 
 static int k20_uart_irq_tx_ready(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
-	return uart_p->s1.field.txDataEmpty;
+	return uart->s1.field.tx_data_empty;
 }
 
 /**
@@ -285,9 +278,9 @@ static int k20_uart_irq_tx_ready(struct device *dev)
 
 static void k20_uart_irq_rx_enable(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
-	uart_p->c2.field.rxFullInt_dmaTx_en = 1;
+	uart->c2.field.rx_full_int_dma_tx_en = 1;
 }
 
 /**
@@ -301,9 +294,9 @@ static void k20_uart_irq_rx_enable(struct device *dev)
 
 static void k20_uart_irq_rx_disable(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
-	uart_p->c2.field.rxFullInt_dmaTx_en = 0;
+	uart->c2.field.rx_full_int_dma_tx_en = 0;
 }
 
 /**
@@ -317,9 +310,9 @@ static void k20_uart_irq_rx_disable(struct device *dev)
 
 static int k20_uart_irq_rx_ready(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
-	return uart_p->s1.field.rxDataFull;
+	return uart->s1.field.rx_data_full;
 }
 
 /**
@@ -333,14 +326,14 @@ static int k20_uart_irq_rx_ready(struct device *dev)
 
 static void k20_uart_irq_err_enable(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
-	C3_t c3 = uart_p->c3;
+	K20_UART_t *uart = UART_STRUCT(dev);
+	C3_t c3 = uart->c3;
 
-	c3.field.parityErrIntEn = 1;
-	c3.field.frameErrIntEn = 1;
-	c3.field.noiseErrIntEn = 1;
-	c3.field.overrunErrIntEn = 1;
-	uart_p->c3 = c3;
+	c3.field.parity_err_int_en = 1;
+	c3.field.frame_err_int_en = 1;
+	c3.field.noise_err_int_en = 1;
+	c3.field.overrun_err_int_en = 1;
+	uart->c3 = c3;
 }
 
 /**
@@ -354,14 +347,14 @@ static void k20_uart_irq_err_enable(struct device *dev)
 
 static void k20_uart_irq_err_disable(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
-	C3_t c3 = uart_p->c3;
+	K20_UART_t *uart = UART_STRUCT(dev);
+	C3_t c3 = uart->c3;
 
-	c3.field.parityErrIntEn = 0;
-	c3.field.frameErrIntEn = 0;
-	c3.field.noiseErrIntEn = 0;
-	c3.field.overrunErrIntEn = 0;
-	uart_p->c3 = c3;
+	c3.field.parity_err_int_en = 0;
+	c3.field.frame_err_int_en = 0;
+	c3.field.noise_err_int_en = 0;
+	c3.field.overrun_err_int_en = 0;
+	uart->c3 = c3;
 }
 
 /**
@@ -375,11 +368,11 @@ static void k20_uart_irq_err_disable(struct device *dev)
 
 static int k20_uart_irq_is_pending(struct device *dev)
 {
-	K20_UART_t *uart_p = UART_STRUCT(dev);
+	K20_UART_t *uart = UART_STRUCT(dev);
 
 	/* Look only at Tx and Rx data interrupt flags */
 
-	return ((uart_p->s1.value & (TX_DATA_EMPTY_MASK | RX_DATA_FULL_MASK))
+	return ((uart->s1.value & (TX_DATA_EMPTY_MASK | RX_DATA_FULL_MASK))
 			? 1
 			: 0);
 }

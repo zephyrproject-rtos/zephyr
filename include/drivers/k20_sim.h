@@ -226,7 +226,8 @@ typedef volatile struct {
 	uint8_t res104c_1063[0x1063 - 0x104c]; /* Reserved */
 } K20_SIM_t;
 
-static ALWAYS_INLINE void _k20SimUartClkEnable(K20_SIM_t *sim_p, uint8_t which)
+static ALWAYS_INLINE void _k20_sim_uart_clk_enable(K20_SIM_t *sim_p,
+						   uint8_t which)
 {
 	sim_p->scgc4.value |= SIM_UART_CLK_ENABLE(which);
 }
