@@ -1,9 +1,9 @@
-.. _nanokernel_signaling:
+.. _nanokernel_synchronization:
 
-Signaling Services
-##################
+Synchronization Services
+########################
 
-This section describes the signalling services provided by the nanokernel.
+This section describes the synchronization services provided by the nanokernel.
 Currently, only a single service is provided.
 
 Nanokernel Semaphores

@@ -27,7 +27,7 @@ which are summarized below.
 * Interrupt services, including both compile-time and run-time registration
   of interrupt handlers, which can be written in C or assembly language.
 
-* Inter-thread signalling services, including binary sempahores,
+* Inter-thread synchronization services, including binary sempahores,
   counting semaphores, and mutex semaphores.
 
 * Inter-thread data passing services, including basic message queues,

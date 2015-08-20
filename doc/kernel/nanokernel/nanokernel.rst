@@ -12,6 +12,6 @@ nanokernel applications.
 
    nanokernel_fibers
    nanokernel_timers
-   nanokernel_signaling
+   nanokernel_synchronization
    nanokernel_data
    nanokernel_interrupts

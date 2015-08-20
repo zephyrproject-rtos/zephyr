@@ -90,8 +90,8 @@ be registered with the kernel at compile time, but can also be registered
 dynamically once the kernel is up and running. Zephyr supports ISRs that
 are written entirely in C, but also permits the use of assembly language.
 
-In situations where an ISR cannot complete the processing of an interrupt
-in a timely manner by itself the kernel's signalling and data passing mechanisms
+In situations where an ISR cannot complete the processing of an interrupt in a
+timely manner by itself the kernel's synchronization and data passing mechanisms
 can be used to hand off the remaining processing to a fiber or task.
 In addition, the microkernel provides a *task IRQ* object type that streamlines
 the handoff to a task in a manner that does not require the device driver
@@ -127,8 +127,8 @@ Related sections:
 * :ref:`Nanokernel Timer Services <nanokernel_timers>`
 * :ref:`Microkernel Timers Services <microkernel_timers>`
 
-Signalling
-**********
+Synchronization
+***************
 
 The Zephyr kernel provides four types of objects that allow different
 contexts to synchronize their execution.
@@ -162,8 +162,8 @@ for each specific object type.
 
 Related sections:
 
-* :ref:`Microkernel Signalling Services <microkernel_signaling>`
-* :ref:`Nanokernel Signalling Services <nanokernel_signaling>`
+* :ref:`Microkernel Synchronization Services <microkernel_synchronization>`
+* :ref:`Nanokernel Synchronization Services <nanokernel_synchronization>`
 
 Data Passing
 ************
