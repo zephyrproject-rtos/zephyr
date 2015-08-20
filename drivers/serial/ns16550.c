@@ -270,13 +270,12 @@ static inline void ns16550_pci_uart_scan(void)
  */
 
 void ns16550_uart_port_init(struct device *dev,
-	       const struct uart_init_info * const init_info
-	       )
+			    const struct uart_init_info * const init_info)
 {
 	struct uart_device_config_t * const dev_cfg = DEV_CFG(dev);
 	struct uart_ns16550_dev_data_t *const dev_data = DEV_DATA(dev);
 
-	int oldLevel;     /* old interrupt lock level */
+	int old_level;     /* old interrupt lock level */
 	uint32_t divisor; /* baud rate divisor */
 
 	ns16550_pci_uart_scan();
@@ -284,7 +283,7 @@ void ns16550_uart_port_init(struct device *dev,
 	dev_cfg->irq_pri = init_info->irq_pri;
 	dev_data->iir_cache = 0;
 
-	oldLevel = irq_lock();
+	old_level = irq_lock();
 
 	/* calculate baud rate divisor */
 	divisor = (init_info->sys_clk_freq / init_info->baud_rate) >> 4;
@@ -313,7 +312,7 @@ void ns16550_uart_port_init(struct device *dev,
 	/* disable interrupts  */
 	OUTBYTE(IER(dev), 0x00);
 
-	irq_unlock(oldLevel);
+	irq_unlock(old_level);
 
 	dev->driver_api = &ns16550_uart_driver_api;
 }
@@ -323,20 +322,18 @@ void ns16550_uart_port_init(struct device *dev,
  * @brief Poll the device for input.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param pChar Pointer to character
+ * @param c Pointer to character
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 
-static int ns16550_uart_poll_in(struct device *dev,
-		 unsigned char *pChar /* pointer to char */
-		 )
+static int ns16550_uart_poll_in(struct device *dev, unsigned char *c)
 {
 	if ((INBYTE(LSR(dev)) & LSR_RXRDY) == 0x00)
 		return (-1);
 
 	/* got a character */
-	*pChar = INBYTE(RDR(dev));
+	*c = INBYTE(RDR(dev));
 
 	return 0;
 }
@@ -352,21 +349,20 @@ static int ns16550_uart_poll_in(struct device *dev,
  * be asserted in order to send a character.
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param outChar Character to send
+ * @param c Character to send
  *
  * @return sent character
  */
 static unsigned char ns16550_uart_poll_out(struct device *dev,
-	unsigned char outChar /* char to send */
-	)
+					   unsigned char c)
 {
 	/* wait for transmitter to ready to accept a character */
 	while ((INBYTE(LSR(dev)) & LSR_TEMT) == 0)
 		;
 
-	OUTBYTE(THR(dev), outChar);
+	OUTBYTE(THR(dev), c);
 
-	return outChar;
+	return c;
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
@@ -375,21 +371,19 @@ static unsigned char ns16550_uart_poll_out(struct device *dev,
  * @brief Fill FIFO with data
  *
  * @param dev UART device struct (of type struct uart_device_config_t)
- * @param txData Data to transmit
+ * @param tx_data Data to transmit
  * @param size Number of bytes to send
  *
  * @return number of bytes sent
  */
 
-static int ns16550_uart_fifo_fill(struct device *dev,
-			    const uint8_t *txData, /* data to transmit */
-			    int size /* number of bytes to send */
-			    )
+static int ns16550_uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
+				  int size)
 {
 	int i;
 
 	for (i = 0; i < size && (INBYTE(LSR(dev)) & LSR_THRE) != 0; i++) {
-		OUTBYTE(THR(dev), txData[i]);
+		OUTBYTE(THR(dev), tx_data[i]);
 	}
 	return i;
 }
@@ -405,15 +399,13 @@ static int ns16550_uart_fifo_fill(struct device *dev,
  * @return Number of bytes read
  */
 
-static int ns16550_uart_fifo_read(struct device *dev,
-			    uint8_t *rxData, /* data container */
-			    const int size   /* container size */
-			    )
+static int ns16550_uart_fifo_read(struct device *dev, uint8_t *rx_data,
+				  const int size)
 {
 	int i;
 
 	for (i = 0; i < size && (INBYTE(LSR(dev)) & LSR_RXRDY) != 0; i++) {
-		rxData[i] = INBYTE(RDR(dev));
+		rx_data[i] = INBYTE(RDR(dev));
 	}
 
 	return i;
