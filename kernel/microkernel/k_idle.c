@@ -64,8 +64,6 @@ static volatile unsigned int _k_workload_end_time = 0x0;
 static extern uint32_t _k_workload_scale;
 #endif
 
-#define MSEC_PER_SEC 1000
-
 /**
  *
  * @brief Shared code between workload calibration and monitoring

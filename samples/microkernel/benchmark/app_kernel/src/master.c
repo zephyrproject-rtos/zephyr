@@ -41,8 +41,6 @@
 
 #include "master.h"
 
-#define SECONDS(x) ((x) * sys_clock_ticks_per_sec)
-
 char Msg[MAX_MSG];
 char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 

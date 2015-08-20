@@ -41,7 +41,6 @@
 #define UART1_IRQ COM2_INT_LVL
 #define UART1_INT_PRI COM2_INT_PRI
 #define BUF_MAXSIZE 256
-#define MSEC(_ms) ((_ms) * sys_clock_ticks_per_sec / 1000)
 
 #define D(fmt, args...)					\
 do {							\

@@ -39,7 +39,6 @@ Common utility-type macros for use in the sample projects.
 #ifndef _UTIL_TEST_COMMON__H_
 #define _UTIL_TEST_COMMON__H_
 
-#define SECONDS(x) ((x) * sys_clock_ticks_per_sec)
-#define MSEC(x)    (((x) * sys_clock_ticks_per_sec) / 1000)
+/* nothing currently */
 
 #endif /* _UTIL_TEST_COMMON__H_ */

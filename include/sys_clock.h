@@ -68,6 +68,12 @@ extern int sys_clock_hw_cycles_per_tick;
 /* number of nsec per usec */
 #define NSEC_PER_USEC 1000
 
+/* number of microseconds per millisecond */
+#define USEC_PER_MSEC 1000
+
+/* number of milliseconds per second */
+#define MSEC_PER_SEC 1000
+
 /* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
 	(((uint64_t)(X) * sys_clock_us_per_tick * NSEC_PER_USEC) / \
@@ -84,6 +90,14 @@ extern int sys_clock_hw_cycles_per_tick;
 
 extern int64_t _nano_ticks;
 extern struct nano_timer *_nano_timer_list;
+
+/*
+ * Number of ticks for x seconds. NOTE: With MSEC(), since it does an integer
+ * division, x must be greater or equal to 1000/sys_clock_ticks_per_sec to get
+ * a non-zero value.
+ */
+#define SECONDS(x) ((x) * sys_clock_ticks_per_sec)
+#define MSEC(x)    (SECONDS(x) / 1000)
 
 #endif /* !_ASMLANGUAGE */
 
