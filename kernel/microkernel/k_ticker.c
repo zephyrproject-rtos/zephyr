@@ -69,50 +69,15 @@ int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #endif
 
-/**
- *
- * @brief Read the processor's high precision timer
- *
- * This routine reads the processor's high precision timer.  It reads the
- * counter register on the timer device. This counter register increments
- * at a relatively high rate (e.g. 20 MHz), and thus is considered a
- * "high resolution" timer.  This is in contrast to nano_tick_get_32() and
- * task_tick_get_32() which return the value of the kernel ticks variable.
- *
- * @return current high precision clock value
- */
-
 uint32_t task_cycle_get_32(void)
 {
 	return timer_read();
 }
 
-/**
- *
- * @brief Read the current system clock value
- *
- * This routine returns the lower 32-bits of the current system clock value
- * as measured in ticks.
- *
- * @return lower 32-bit of the current system clock value
- */
-
 int32_t task_tick_get_32(void)
 {
 	return (int32_t)_k_sys_clock_tick_count;
 }
-
-/**
- *
- * @brief Read the current system clock value
- *
- * This routine returns the current system clock value as measured in ticks.
- *
- * Interrupts are locked while updating clock since some CPUs do not support
- * native atomic operations on 64 bit values.
- *
- * @return current system clock value
- */
 
 int64_t task_tick_get(void)
 {
@@ -256,35 +221,6 @@ int _k_ticker(int event)
 
 #ifdef CONFIG_TIMESLICING
 
-/**
- *
- * @brief Set time slicing period and scope
- *
- * This routine controls how task time slicing is performed by the task
- * scheduler, by specifying the maximum time slice length (in ticks) and
- * the highest priority task level for which time slicing is performed.
- *
- * To enable time slicing, a non-zero time slice length must be specified.
- * The task scheduler then ensures that no executing task runs for more than
- * the specified number of ticks before giving other tasks of that priority
- * a chance to execute. (However, any task whose priority is higher than the
- * specified task priority level is exempted, and may execute as long as
- * desired without being pre-empted due to time slicing.)
- *
- * Time slicing only limits that maximum amount of time a task may continuously
- * execute. Once the scheduler selects a task for execution, there is no minimum
- * guaranteed time the task will execute before tasks of greater or equal
- * priority are scheduled.
- *
- * If the currently executing task is the only one of that priority eligible
- * for execution this routine has no effect, as that task will be immediately
- * rescheduled once the slice period expires.
- *
- * To disable timeslicing, call the API with both parameters set to zero.
- *
- * @return N/A
- */
-
 void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
 {
 	slice_time = t;
@@ -310,26 +246,6 @@ void _k_time_elapse(struct k_args *P)
 	P->Args.c1.time2 = now - P->Args.c1.time1;
 	P->Args.c1.time1 = now;
 }
-
-/**
- *
- * @brief Return ticks between calls
- *
- * This function is meant to be used in contained fragments of code. The first
- * call to it in a particular code fragment fills in a reference time variable
- * which then gets passed and updated every time the function is called. From
- * the second call on, the delta between the value passed to it and the current
- * tick count is the return value. Since the first call is meant to only fill in
- * the reference time, its return value should be discarded.
- *
- * Since a code fragment that wants to use task_tick_delta() passes in its
- * own reference time variable, multiple code fragments can make use of this
- * function concurrently.
- *
- * Note that it is not necessary to allocate a timer to use this call.
- *
- * @return elapsed time in system ticks
- */
 
 int64_t task_tick_delta(int64_t *reftime /* pointer to reference time */
 			)
