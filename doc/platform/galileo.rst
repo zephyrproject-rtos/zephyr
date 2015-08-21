@@ -6,22 +6,23 @@ Platform Configuration: galileo
 Overview
 ********
 
-The galileo platform configuration is used by Zephyr projects
-that run on the Galileo Development Board.
-
-.. note::
-   The galileo platform configuration is expected to run on the
-   Galileo Gen 2 Development Board but has not yet been verified.
-   The galileo platform configuration may also work with other
-   similar boards, but they are not officially supported.
+The galileo platform configuration is used by Zephyr applications
+that run on Galileo (Gen 1 or Gen 2) Development Boards.
 
 It provides support for a Quark CPU and the following devices:
 
-* :abbr:`High Precision Event Timer (HPET)`
+* High Precision Event Timer (HPET)
 
-* :abbr:`Peripheral Component Interconnect (PCI)` bus query
+* Peripheral Component Interconnect (PCI) bus query
 
-* serial ports in polling and interrupt driven modes
+* Serial Ports in Polling and Interrupt Driven Modes
+
+See `Procedures`_ for using third-party tools to load
+a Zephyr application image on the target.
+
+.. note::
+   This platform configuration may work with similar boards,
+   but they are not officially supported.
 
 Supported Boards
 ****************
@@ -48,7 +49,7 @@ Also, refer to page 9 of the
 Jumpers & Switches
 ==================
 
-Zephyr Project uses the Galileo default jumper settings except
+The Zephyr kernel uses the Galileo default jumper settings except
 for the IOREF jumper which must be set to match the external
 operating voltage of either 3.3 V or 5 V.
 
@@ -70,9 +71,8 @@ For more information, refer to page 14 of the
 Memory Mappings
 ===============
 
-The :file:`galileo` platform configuration uses default hardware memory map
+The galileo platform configuration uses default hardware memory map
 addresses and sizes.
-
 
 For a list of memory mapped registers, see page 868 of the
 `Intel® Quark SoC X1000 Datasheet`_.
@@ -101,10 +101,9 @@ hardware features:
 
 * PCI bus
 
-* :abbr:`Advanced Programmed Interupt Controller (APIC)`
+* Advanced Programmed Interrupt Controller (APIC)
 
-* serial ports in polling and interrupt driven modes
-
+* Serial Ports in Polling and Interrupt Driven Modes
 
 +------------------+------------+-----------------------+
 | Interface        | Controller | Driver/Component      |
@@ -119,8 +118,7 @@ hardware features:
 |                  |            | serial port-interrupt |
 +------------------+------------+-----------------------+
 
-
-Other hardware features are not currently supported by Zephyr Project.
+Other hardware features are not currently supported by the Zephyr kernel.
 See the `Intel® Quark Core Hardware Reference Manual`_ for a
 complete list of Galileo board hardware features, and the
 `Intel® Quark Software Developer Manual for Linux`_
@@ -163,9 +161,9 @@ For more information, see Intel® Quark SoC X1000 Datasheet, section `21.12.1.4.
 Interrupt Controller
 ====================
 
-The galileo platform configuration uses the Zephyr project static
-:abbr:`Interrupt Descriptor Table (IDT)` to program the
-:abbr: Advanced Programmable Interrupt Controller (APIC)`
+The galileo platform configuration uses the Zephyr kernel static
+Interrupt Descriptor Table (IDT) to program the
+Advanced Programmable Interrupt Controller (APIC)
 interrupt redirection table.
 
 Interrupts
@@ -231,7 +229,7 @@ Prerequisite
      Only the specified release of the GRUB2 tarball works with the
      galileo platform configuration.
 
-* The Zephyr project image is available in the project directory.
+* The Zephyr application image is available in the project directory.
 
 Steps
 -----
@@ -305,7 +303,7 @@ Preparing the Boot Device
 =========================
 
 Prepare either an SD-micro card or USB flash drive to boot the
-Zephyr project on a Galileo board. The
+Zephyr application image on a Galileo board. The
 following instructions apply to both devices.
 
 
@@ -390,7 +388,7 @@ with the boot loader present in the on-board flash.
 Prerequisites
 -------------
 
-* The automatically created stripped Zephyr project image is
+* The automatically created stripped Zephyr application image is
   in the project directory.
 
 * There is a serial port for communication.
@@ -431,7 +429,7 @@ Steps
 5. Select the image you want to boot and press :guilabel:`Enter`.
 
    When the boot process finishes, you have finished booting the
-   Zephyr project.
+   Zephyr application image.
 
 Known Problems and Limitations
 ******************************
@@ -439,12 +437,12 @@ Known Problems and Limitations
 There is no support for the following:
 
 * Isolated Memory Regions
-* Serial port in :abbr:`Direct Memory Access (DMA)` mode
-* :abbr:`Serial Peripheral Interface (SPI)` flash
-* :abbr:`General-Purpose Input/Output (GPIO)`
-* :abbr:`Inter-Integrated Circuit (I2C)`
+* Serial port in Direct Memory Access (DMA) mode
+* Serial Peripheral Interface (SPI) flash
+* General-Purpose Input/Output (GPIO)
+* Inter-Integrated Circuit (I2C)
 * Ethernet
-* :abbr:`Supervisor Mode Execution Protection (SMEP)`
+* Supervisor Mode Execution Protection (SMEP)
 
 Bibliography
 ************
