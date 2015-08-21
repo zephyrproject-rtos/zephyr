@@ -58,8 +58,14 @@ extern "C" {
 #define SPI_WORD_SIZE_MASK	(0xFF << 3)
 #define SPI_WORD_SIZE_GET(_in_) ((_in_ & SPI_WORD_SIZE_MASK) >> 3)
 
+enum spi_cb_type {
+	SPI_CB_WRITE		= 1,
+	SPI_CB_READ		= 2,
+	SPI_CB_TRANSCEIVE	= 3
+};
+
 /* application callback function signature */
-typedef void (*spi_callback)(struct device *dev);
+typedef void (*spi_callback)(struct device *dev, enum spi_cb_type cb_type);
 
 /*
  * config is a bit field with the following parts:
@@ -75,18 +81,20 @@ typedef void (*spi_callback)(struct device *dev);
 struct spi_config {
 	uint32_t	config;
 	uint32_t	max_sys_freq;
-	spi_callback	cb_receive;
-	spi_callback	cb_transmit;
+	spi_callback	callback;
 };
 
 typedef int (*spi_api_configure)(struct device *dev, struct spi_config *config);
-typedef int (*spi_api_io)(struct device *dev, uint8_t *buf, uint32_t len);
+typedef int (*spi_api_slave_select)(struct device *dev, uint32_t slave);
+typedef int (*spi_api_io)(struct device *dev,
+			  uint8_t *tx_buf, uint32_t tx_buf_len,
+			  uint8_t *rx_buf, uint32_t rx_buf_len);
 typedef int (*spi_api_control)(struct device *dev);
 
 struct spi_driver_api {
 	spi_api_configure configure;
-	spi_api_io read;
-	spi_api_io write;
+	spi_api_slave_select slave_select;
+	spi_api_io transceive;
 	spi_api_control suspend;
 	spi_api_control resume;
 };
@@ -95,6 +103,8 @@ struct spi_driver_api {
  * @brief Configure a host controller for operating against slaves
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to the application provided configuration
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 inline int spi_configure(struct device *dev, struct spi_config *config)
 {
@@ -103,32 +113,83 @@ inline int spi_configure(struct device *dev, struct spi_config *config)
 }
 
 /**
+ * @brief Select a slave to deal with.
+ *
+ * Note: This is meaningful only if the controller supports per-slave
+ * addressing (One SS line per-slave). If not, this will not have any effect
+ * and you will have to consider daisy-chaining to deal with multiple slave
+ * on the same line.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param slave An integer identifying the slave
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
+ */
+inline int spi_slave_select(struct device *dev, uint32_t slave)
+{
+	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+
+	if (!api->slave_select) {
+		return DEV_OK;
+	}
+
+	return api->slave_select(dev, slave);
+}
+
+/**
  * @brief Read a defined amount of data from an SPI driver
  * @param dev Pointer to the device structure for the driver instance
- * @param buf Memory pool that data should be transferred to
- * @param len Size of the memory pool available for writing to
+ * @param buf Memory buffer that data should be transferred to
+ * @param len Size of the memory buffer available for writing to
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 inline int spi_read(struct device *dev, uint8_t *buf, uint32_t len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
-	return api->read(dev, buf, len);
+	return api->transceive(dev, NULL, 0, buf, len);
 }
 
 /**
  * @brief Write a defined amount of data through an SPI driver
  * @param dev Pointer to the device structure for the driver instance
- * @param buf Memory pool that data should be transferred from
- * @param len Size of the memory pool available for reading from
+ * @param buf Memory buffer that data should be transferred from
+ * @param len Size of the memory buffer available for reading from
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
-	return api->write(dev, buf, len);
+	return api->transceive(dev, buf, len, NULL, 0);
+}
+
+/**
+ * @brief Read and write defined amount of data through an SPI driver
+ *
+ * Note: This is meant for full-duplex transmission.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param tx_buf Memory buffer that data should be transferred from
+ * @param tx_len Size of the memory buffer available for reading from
+ * @param rx_buf Memory buffer that data should be transferred to
+ * @param rx_len Size of the memory buffer available for writing to
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
+ */
+inline int spi_transceive(struct device *dev,
+			  uint8_t *tx_buf, uint32_t tx_buf_len,
+			  uint8_t *rx_buf, uint32_t rx_buf_len)
+{
+	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+	return api->transceive(dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 }
 
 /**
  * @brief Suspend the SPI host controller operations
  * @param dev Pointer to the device structure for the driver instance
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 inline int spi_suspend(struct device *dev)
 {
@@ -139,6 +200,8 @@ inline int spi_suspend(struct device *dev)
 /**
  * @brief Resume the SPI host controller operations
  * @param dev Pointer to the device structure for the driver instance
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 inline int spi_resume(struct device *dev)
 {
