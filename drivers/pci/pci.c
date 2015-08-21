@@ -129,7 +129,7 @@ restarting from 0.
 /* NOTE. These parameters may need to be configurable */
 #define LSPCI_MAX_BUS PCI_BUS_NUMBERS /* maximum number of buses to scan */
 #define LSPCI_MAX_DEV 32  /* maximum number of devices to scan */
-#define LSPCI_MAX_FUNC 8  /* maximum device functions to scan */
+#define LSPCI_MAX_FUNC PCI_MAX_FUNCTIONS  /* maximum functions to scan */
 #define LSPCI_MAX_REG 64  /* maximum device registers to read */
 
 /* Base Address Register configuration fields */
@@ -279,21 +279,36 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 	uint32_t pci_data;
 	int max_bars;
 
+	/* verify first if there is a valid device at this point */
+	pci_ctrl_addr.field.func = 0;
+
+	pci_read(DEFAULT_PCI_CONTROLLER,
+			pci_ctrl_addr,
+			sizeof(pci_data),
+			&pci_data);
+
+	if (pci_data == 0xffffffff) {
+		return 0;
+	}
+
 	/* scan all the possible functions for this device */
 	for (; lookup.func < LSPCI_MAX_FUNC; lookup.bar = 0, lookup.func++) {
+		if (lookup.info.function != PCI_FUNCTION_ANY &&
+		    lookup.func != lookup.info.function) {
+			return 0;
+		}
+
 		pci_ctrl_addr.field.func = lookup.func;
 
-		pci_read(DEFAULT_PCI_CONTROLLER,
-				pci_ctrl_addr,
-				sizeof(pci_data),
-				&pci_data);
+		if (lookup.func != 0) {
+			pci_read(DEFAULT_PCI_CONTROLLER,
+					pci_ctrl_addr,
+					sizeof(pci_data),
+					&pci_data);
 
-		if (pci_data == 0xffffffff) {
-			if (lookup.func == 0) {
-				return 0;
+			if (pci_data == 0xffffffff) {
+				continue;
 			}
-
-			continue;
 		}
 
 		/* get the PCI header from the device */
@@ -367,6 +382,7 @@ void pci_bus_scan_init(void)
 	lookup.info.class = 0;
 	lookup.info.vendor_id = 0;
 	lookup.info.device_id = 0;
+	lookup.info.function = PCI_FUNCTION_ANY;
 	lookup.info.bar = PCI_BAR_ANY;
 	lookup.bus = 0;
 	lookup.dev = 0;
@@ -395,10 +411,12 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 	if (!lookup.info.class &&
 	    !lookup.info.vendor_id &&
 	    !lookup.info.device_id &&
-	    lookup.info.bar == PCI_BAR_ANY) {
+	    lookup.info.bar == PCI_BAR_ANY &&
+	    lookup.info.function == PCI_FUNCTION_ANY) {
 		lookup.info.class = dev_info->class;
 		lookup.info.vendor_id = dev_info->vendor_id;
 		lookup.info.device_id = dev_info->device_id;
+		lookup.info.function = dev_info->function;
 		lookup.info.bar = dev_info->bar;
 
 		if (class_bd[lookup.info.class].set) {
@@ -411,15 +429,24 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 	pci_ctrl_addr.value = 0;
 	pci_ctrl_addr.field.enable = 1;
 
+	if (lookup.info.function != PCI_FUNCTION_ANY) {
+		lookup.func = lookup.info.function;
+	}
+
 	/* run through the buses and devices */
 	for (; lookup.bus < LSPCI_MAX_BUS; lookup.bus++) {
-		for (; (lookup.dev < LSPCI_MAX_DEV);
-		     lookup.func = 0, lookup.dev++) {
+		for (; (lookup.dev < LSPCI_MAX_DEV); lookup.dev++) {
 			pci_ctrl_addr.field.bus = lookup.bus;
 			pci_ctrl_addr.field.device = lookup.dev;
 
 			if (pci_dev_scan(pci_ctrl_addr, dev_info)) {
 				return 1;
+			}
+
+			if (lookup.info.function != PCI_FUNCTION_ANY) {
+				lookup.func = lookup.info.function;
+			} else {
+				lookup.func = 0;
 			}
 		}
 	}

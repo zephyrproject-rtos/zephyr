@@ -110,6 +110,7 @@ static int ia32_pci_init(struct device *arg)
 #ifdef CONFIG_PCI_DEBUG
 	/* Rescan PCI and display the list of PCI attached devices */
 	struct pci_dev_info info = {
+		.function = PCI_FUNCTION_ANY,
 		.bar = PCI_BAR_ANY,
 	};
 
@@ -120,6 +121,7 @@ static int ia32_pci_init(struct device *arg)
 		info.class = 0;
 		info.vendor_id = 0;
 		info.device_id = 0;
+		info.function = PCI_FUNCTION_ANY;
 		info.bar = PCI_BAR_ANY;
 	}
 #endif /* CONFIG_PCI_DEBUG */

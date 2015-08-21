@@ -226,6 +226,7 @@ static inline void ns16550_pci_uart_scan(void)
 		.class = PCI_CLASS_COMM_CTLR,
 		.vendor_id = CONFIG_UART_PCI_VENDOR_ID,
 		.device_id = CONFIG_UART_PCI_DEVICE_ID,
+		.function = CONFIG_UART_PCI_FUNCTION,
 		.bar = CONFIG_UART_PCI_BAR,
 	};
 	int i;
