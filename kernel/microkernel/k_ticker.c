@@ -71,7 +71,7 @@ int sys_clock_hw_cycles_per_tick;
 
 uint32_t task_cycle_get_32(void)
 {
-	return timer_read();
+	return _sys_clock_cycle_get();
 }
 
 int32_t task_tick_get_32(void)

@@ -102,7 +102,7 @@ int64_t nano_tick_get(void)
 
 uint32_t nano_cycle_get_32(void)
 {
-	return timer_read();
+	return _sys_clock_cycle_get();
 }
 
 /**

@@ -114,9 +114,9 @@ void _k_workload_monitor_calibrate(void)
 	_k_workload_n0 = _k_workload_i = 0;
 	_k_workload_n1 = 1000;
 
-	_k_workload_t0 = timer_read();
+	_k_workload_t0 = _sys_clock_cycle_get();
 	workload_loop();
-	_k_workload_t1 = timer_read();
+	_k_workload_t1 = _sys_clock_cycle_get();
 
 	_k_workload_delta = _k_workload_t1 - _k_workload_t0;
 	_k_workload_i0 = _k_workload_i;
@@ -147,7 +147,7 @@ void _k_workload_monitor_update(void)
 {
 	if (--_k_workload_ticks == 0) {
 		_k_workload_t0 = _k_workload_t1;
-		_k_workload_t1 = timer_read();
+		_k_workload_t1 = _sys_clock_cycle_get();
 		_k_workload_n0 = _k_workload_n1;
 		_k_workload_n1 = _k_workload_i - 1;
 		_k_workload_ticks = _k_workload_slice;
@@ -165,7 +165,7 @@ void _k_workload_monitor_update(void)
 
 void _k_workload_monitor_idle_start(void)
 {
-	_k_workload_start_time = timer_read();
+	_k_workload_start_time = _sys_clock_cycle_get();
 }
 
 /**
@@ -180,7 +180,7 @@ void _k_workload_monitor_idle_start(void)
 
 void _k_workload_monitor_idle_end(void)
 {
-	_k_workload_end_time = timer_read();
+	_k_workload_end_time = _sys_clock_cycle_get();
 	_k_workload_i += (_k_workload_i0 *
 		(_k_workload_end_time - _k_workload_start_time)) / _k_workload_delta;
 }
@@ -201,9 +201,9 @@ void _k_workload_get(struct k_args *P)
 
 	k = (_k_workload_i - _k_workload_n0) * _k_workload_ref_time;
 #ifdef WL_SCALE
-	t = (timer_read() - _k_workload_t0) >> (_k_workload_scale);
+	t = (_sys_clock_cycle_get() - _k_workload_t0) >> (_k_workload_scale);
 #else
-	t = (timer_read() - _k_workload_t0) >> (4 + 6);
+	t = (_sys_clock_cycle_get() - _k_workload_t0) >> (4 + 6);
 #endif
 
 	iret = MSEC_PER_SEC - k / t;

@@ -660,7 +660,7 @@ int _sys_clock_driver_init(struct device *device)
  * once it reaches 0.
  */
 
-uint32_t timer_read(void)
+uint32_t _sys_clock_cycle_get(void)
 {
 	return clock_accumulated_count + (__scs.systick.strvr - __scs.systick.stcvr);
 }

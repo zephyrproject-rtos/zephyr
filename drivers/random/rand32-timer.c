@@ -82,7 +82,7 @@ void sys_rand32_init(void)
 
 uint32_t sys_rand32_get(void)
 {
-	return timer_read() + atomic_add(&_rand32_counter, _RAND32_INC);
+	return _sys_clock_cycle_get() + atomic_add(&_rand32_counter, _RAND32_INC);
 }
 
 #endif /* __GNUC__ */

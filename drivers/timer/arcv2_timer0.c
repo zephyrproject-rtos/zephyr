@@ -199,7 +199,7 @@ int _sys_clock_driver_init(struct device *device)
  * @return up counter of elapsed clock cycles
  */
 
-uint32_t timer_read(void)
+uint32_t _sys_clock_cycle_get(void)
 {
 	return (clock_accumulated_count + count_get());
 }
