@@ -11,9 +11,8 @@ Zephyr supports the following hardware platforms configurations:
    fsl_frdm_k64f.rst
    quark.rst
 
-
-The following table shows the relationships between architecture, hardware platform,
-and platform configuration.
+The following table shows the relationships between platform configuration,
+hardware platform, and architecture.
 
 +--------------------------+----------------------------------------+--------------+
 | Platform Configuration   | Hardware Platform                      | Architecture |
@@ -26,8 +25,5 @@ and platform configuration.
 +--------------------------+----------------------------------------+--------------+
 
 .. note::
-       Customers can create custom platform configurations for any Zephyr-supported hardware
-       platform.
-
-
-
+   Customers can create custom platform configurations for any
+   Zephyr-supported hardware platform.
