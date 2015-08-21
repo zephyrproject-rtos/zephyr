@@ -42,6 +42,7 @@ extern "C" {
 
 typedef uint32_t io_port_t;
 typedef uint32_t mm_reg_t;
+typedef uint32_t mem_addr_t;
 
 /* Port I/O functions */
 
@@ -174,6 +175,67 @@ typedef uint32_t mm_reg_t;
  *        the 32 bits
  *
  * @return the 32 bits read
+ */
+
+/* Memory bits manipulation functions */
+
+/**
+ * @fn static inline void sys_set_bit(mem_addr_t addr, int bit)
+ * @brief Set the designated bit from addr to 1
+ *
+ * This functions takes the designated bit starting from addr and sets it to 1.
+ *
+ * @param addr the memory address from where to look for the bit
+ * @param bit the designated bit to set (from 0 to n)
+ */
+
+/**
+ * @fn static inline void sys_clear_bit(mem_addr_t addr, int bit)
+ * @brief Clear the designated bit from addr to 0
+ *
+ * This functions takes the designated bit starting from addr and sets it to 0.
+ *
+ * @param addr the memory address from where to look for the bit
+ * @param bit the designated bit to clear (from 0 to n)
+ */
+
+/**
+ * @fn static inline int sys_test_bit(mem_addr_t addr, int bit)
+ * @brief Test the bit if it is set or not
+ *
+ * This functions takes the designated bit starting from addr and tests its
+ * current setting. If it return the current setting.
+ *
+ * @param addr the memory address from where to look for the bit
+ * @param bit the designated bit to test (from 0 to n)
+ *
+ * @return 1 if it is set, 0 otherwise
+ */
+
+/**
+ * @fn static inline int sys_test_and_set_bit(mem_addr_t addr, int bit)
+ * @brief Test the bit and set it
+ *
+ * This functions takes the designated bit starting from addr, tests its
+ * current setting and sets it. It will return the previous setting.
+ *
+ * @param addr the memory address from where to look for the bit
+ * @param bit the designated bit to test and set (from 0 to n)
+ *
+ * @return 1 if it was set, 0 otherwise
+ */
+
+/**
+ * @fn static inline int sys_test_and_clear_bit(mem_addr_t addr, int bit)
+ * @brief Test the bit and clear it
+ *
+ * This functions takes the designated bit starting from addr, test its
+ * current setting and clears it. It will return the previous setting.
+ *
+ * @param addr the memory address from where to look for the bit
+ * @param bit the designated bit to test (from 0 to n)
+ *
+ * @return 0 if it was clear, 1 otherwise
  */
 
 #ifdef __cplusplus

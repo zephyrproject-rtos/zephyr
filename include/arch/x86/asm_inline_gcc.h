@@ -274,7 +274,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	uint16_t sys_in16(io_port_t port)
 {
 	uint16_t ret;
@@ -291,7 +291,7 @@ static inline __attribute__((always_inline))
 }
 
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	uint32_t sys_in32(io_port_t port)
 {
 	uint32_t ret;
@@ -300,7 +300,7 @@ static inline inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	void sys_write8(uint8_t data, mm_reg_t addr)
 {
 	__asm__ volatile("movb	%0, %1;\n\t"
@@ -309,7 +309,7 @@ static inline inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	uint8_t sys_read8(mm_reg_t addr)
 {
 	uint8_t ret;
@@ -331,7 +331,7 @@ static inline __attribute__((always_inline))
 			 : "memory");
 }
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	uint16_t sys_read16(mm_reg_t addr)
 {
 	uint16_t ret;
@@ -344,7 +344,7 @@ static inline inline __attribute__((always_inline))
 	return ret;
 }
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	void sys_write32(uint32_t data, mm_reg_t addr)
 {
 	__asm__ volatile("movl	%0, %1;\n\t"
@@ -366,6 +366,62 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
+
+static inline __attribute__((always_inline))
+	void sys_set_bit(mem_addr_t addr, int bit)
+{
+	__asm__ volatile("btsl	%1, %0;\n\t"
+			 : "+m" (*(volatile uint32_t *) (addr))
+			 : "Ir" (bit)
+			 : "memory");
+}
+
+static inline __attribute__((always_inline))
+	void sys_clear_bit(mem_addr_t addr, int bit)
+{
+	__asm__ volatile("btrl	%1, %0;\n\t"
+			 : "+m" (*(volatile uint32_t *) (addr))
+			 : "Ir" (bit));
+}
+
+static inline __attribute__((always_inline))
+	int sys_test_bit(mem_addr_t addr, int bit)
+{
+	int ret;
+
+	__asm__ volatile("btl	%2, %1;\n\t"
+			 "sbb	%0, %0\n\t"
+			 : "=r" (ret), "+m" (*(volatile uint32_t *) (addr))
+			 : "Ir" (bit));
+
+	return ret;
+}
+
+static inline __attribute__((always_inline))
+	int sys_test_and_set_bit(mem_addr_t addr, int bit)
+{
+	int ret;
+
+	__asm__ volatile("btsl	%2, %1;\n\t"
+			 "sbb	%0, %0\n\t"
+			 : "=r" (ret), "+m" (*(volatile uint32_t *) (addr))
+			 : "Ir" (bit));
+
+	return ret;
+}
+
+static inline __attribute__((always_inline))
+	int sys_test_and_clear_bit(mem_addr_t addr, int bit)
+{
+	int ret;
+
+	__asm__ volatile("btrl	%2, %1;\n\t"
+			 "sbb	%0, %0\n\t"
+			 : "=r" (ret), "+m" (*(volatile uint32_t *) (addr))
+			 : "Ir" (bit));
+
+	return ret;
+}
 
 #endif /* _ASMLANGUAGE */
 #endif /* _ASM_INLINE_GCC_PUBLIC_GCC_H */
