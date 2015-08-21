@@ -400,33 +400,62 @@ static const struct bt_eir sd[] = {
 
 static void cmd_advertise(int argc, char *argv[])
 {
-	const char *action;
+	uint8_t adv_type;
+	int i;
 
-	if (argc < 2) {
-		goto fail;
-	}
+	static struct {
+		const char *str;
+		uint8_t type;
+	} adv_t[] = {
+		{ "on", BT_LE_ADV_IND },
+		{ "direct", BT_LE_ADV_DIRECT_IND },
+		{ "scan", BT_LE_ADV_SCAN_IND },
+		{ "nconn", BT_LE_ADV_NONCONN_IND },
+	};
 
-	action = (char*)argv[1];
-	if (!strcmp(action, "on")) {
-		if (bt_start_advertising(BT_LE_ADV_IND, ad, sd) < 0) {
-			printk("Failed to start advertising\n");
-		} else {
-			printk("Advertising started\n");
+	adv_type = adv_t[0].type;
+	if (argc >= 2) {
+		const char *adv_type_str = (char*)argv[1];
+
+		if (!strcmp(adv_type_str, "off")) {
+			if (bt_stop_advertising() < 0) {
+				printk("Failed to stop advertising\n");
+			} else {
+				printk("Advertising stopped\n");
+			}
+
+			return;
 		}
-	} else if (!strcmp(action, "off")) {
-		if (bt_stop_advertising() < 0) {
-			printk("Failed to stop advertising\n");
-		} else {
-			printk("Advertising stopped\n");
+
+		for (i = 0; i < sizeof(adv_t) / sizeof(adv_t[0]); i++) {
+			if (!strcmp(adv_type_str, adv_t[i].str)) {
+				adv_type = adv_t[i].type;
+				break;
+			}
+		}
+
+		if (strcmp(adv_type_str, adv_t[i].str)) {
+			goto fail;
 		}
 	} else {
 		goto fail;
 	}
 
+	if (bt_start_advertising(adv_type, ad, sd) < 0) {
+		printk("Failed to start advertising\n");
+	} else {
+		printk("Advertising started\n");
+	}
+
 	return;
 
 fail:
-	printk("Advertise [on/off] parameter required\n");
+	printk("Usage: advertise <type>\n");
+	printk("type: off, ");
+	for (i = 0; i < sizeof(adv_t) / sizeof(adv_t[0]); i++) {
+		printk("%s, ", adv_t[i].str);
+	}
+	printk("\n");
 }
 
 static struct bt_gatt_discover_params discover_params;
