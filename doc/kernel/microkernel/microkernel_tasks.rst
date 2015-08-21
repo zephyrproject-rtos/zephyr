@@ -213,7 +213,7 @@ The following parameters must be defined:
 
           .. code-block:: c
 
-             void <entry_point>(void)".
+             void <entry_point>(void)
              {
                  /* task mainline processing */
                  ...
