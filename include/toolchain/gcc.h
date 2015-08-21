@@ -39,8 +39,8 @@
 
 #include <toolchain/common.h>
 
-#define FUNC_ALIAS(func, aliasToFunc, retType)			\
-	retType aliasToFunc() __attribute__((alias(#func)))
+#define FUNC_ALIAS(real_func, new_alias, return_type) \
+	return_type new_alias() __attribute__((alias(#real_func)))
 
 #define _ALIAS_OF(of) __attribute__((alias(#of)))
 
