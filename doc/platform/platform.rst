@@ -12,7 +12,7 @@ Zephyr supports the following hardware platforms configurations:
    fsl_frdm_k64f.rst
    basic_atom.rst
    basic_minuteia.rst
-   quark.rst
+   galileo.rst
 
 The following table shows the relationships between platform configuration,
 hardware platform, and architecture.
@@ -28,9 +28,9 @@ hardware platform, and architecture.
 +--------------------------+----------------------------------------+--------------+
 | basic_minuteia           | QEMU 2.1                               | X86          |
 +--------------------------+----------------------------------------+--------------+
-| quark                    | Galileo                                | X86          |
+| galileo                  | Galileo                                | X86          |
 +--------------------------+----------------------------------------+--------------+
-| quark                    | Galileo (Gen 2)                        | X86          |
+| galileo                  | Galileo (Gen 2)                        | X86          |
 +--------------------------+----------------------------------------+--------------+
 
 .. note::

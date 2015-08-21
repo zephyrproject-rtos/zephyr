@@ -1,8 +1,8 @@
-.. _quark:
+.. _galileo:
 
-============================
-quark Platform Configuration
-============================
+==============================
+galileo Platform Configuration
+==============================
 
 .. -----------------
 .. Table of Contents
@@ -14,7 +14,7 @@ quark Platform Configuration
 ..        Known Problems and Limitation
 
 .. SUPPORTED HARDWARE
-..    quark Pin Names
+..    galileo Pin Names
 ..    Jumpers & Switches
 ..    Memory Maps
 ..    Component Layout
@@ -38,20 +38,20 @@ quark Platform Configuration
  INTRODUCTION
 --------------
 
-This section provides an overview of the quark platform configuration.
+This section provides an overview of the galileo platform configuration.
 
 
 Configuration Overview
 ======================
 
-The quark platform configuration is used by Zephyr projects
+The galileo platform configuration is used by Zephyr projects
 that run on the Galileo Development Board.
 
 .. note::
 
-  The quark platform configuration is expected to run on the
+  The galileo platform configuration is expected to run on the
   Galileo Gen 2 Development Board but has not yet been verified.
-  The quark platform configuration may also work with other
+  The galileo platform configuration may also work with other
   similar boards, but they are not officially supported.
 
 It provides support for a Quark CPU and the following devices:
@@ -81,7 +81,7 @@ There is no support for the following:
 --------------------
 
 This section either provides links to, or describes the physical
-characteristics of the boards that are supported by the quark
+characteristics of the boards that are supported by the galileo
 platform configuration. Subsections provide information on pin names,
 jumper settings, memory mappings and board component layout.
 
@@ -127,7 +127,7 @@ For more information, refer to page 14 of the
 Memory Maps
 ===========
 
-The :file:`quark` platform configuration uses default hardware memory map
+The :file:`galileo` platform configuration uses default hardware memory map
 addresses and sizes.
 
 
@@ -155,7 +155,7 @@ For a block diagram refer to page 38 of the `Intel® Quark SoC X1000 Datasheet`_
  SUPPORTED FEATURES
 -------------------
 
-The quark platform configuration supports the following
+The galileo platform configuration supports the following
 hardware features:
 
 * HPET
@@ -229,7 +229,7 @@ For more information, see Intel® Quark SoC X1000 Datasheet, section `21.12.1.4.
 Interrupts
 ----------
 
-The quark platform configuration uses the Zephyr project static
+The galileo platform configuration uses the Zephyr project static
 :abbr:`Interrupt Descriptor Table (IDT)` to program the
 :abbr: Advanced Programmable Interrupt Controller (APIC)`
 interrupt redirection table.
@@ -246,7 +246,7 @@ interrupt redirection table.
 
 .. note::
 
-   The quark platform configuration does not support
+   The galileo platform configuration does not support
    interrupt sharing, for example, two PCI devices can not use same IRQ.
 
 
@@ -261,7 +261,7 @@ Configuration Options
 HPET System Clock Support
 =========================
 
-Quark uses HPET timing with legacy-free timer support. The quark platform
+Galileo uses HPET timing with legacy-free timer support. The galileo platform
 configuration uses HPET as a system clock timer.
 
 
@@ -299,7 +299,7 @@ Prerequisite
 
   .. note:
      Only the specified release of the GRUB2 tarball works with the
-     quark platform configuration.
+     galileo platform configuration.
 
 * The Zephyr project image is available in the project directory.
 

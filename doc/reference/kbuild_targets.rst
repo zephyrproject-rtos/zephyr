@@ -75,7 +75,7 @@ Other generic targets
 x86 Supported default configuration files
 =========================================
 
-* **micro_quark_defconfig** Builds for microkernel Quark.
+* **micro_galileo_defconfig** Builds for galileo microkernel.
 
 * **micro_generic_pc_defconfig:** Builds for microkernel generic PC.
 
@@ -88,7 +88,7 @@ x86 Supported default configuration files
 * **micro_generic_pc_pentium4_defconfig:** Builds for microkernel
   generic PC Pentium4.
 
-* **nano_quark_defconfig:** Builds for nanokernel Quark.
+* **nano_galileo_defconfig:** Builds for galileo nanokernel.
 
 * **nano_generic_pc_defconfig:** Builds for nanokernel generic PC.
 

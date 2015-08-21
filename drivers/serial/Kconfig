@@ -74,8 +74,9 @@ config NS16550
 	select SERIAL_HAS_DRIVER
 	help
 	This option enables the NS16550 serial driver.
-	This specific driver can be used for the serial hardware
-	available at the Generic PC and Quark.
+	This driver can be used for the serial hardware
+	available on x86 platforms such as basic_atom and
+	basic_minuteia.
 
 config NS16550_PCI
 	bool "NS16550 PCI serial driver"

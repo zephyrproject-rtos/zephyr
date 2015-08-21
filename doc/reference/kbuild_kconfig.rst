@@ -91,8 +91,8 @@ and :file:`arch/arc/configs`.
 The file name of a default configuration file contains the
 type of kernel and the platform that is defined within the file.
 All the defconfig files must end with the suffix defconfig.
-For example, :file:`micro_quark_defconfig` contains the configuration
-information for the microkernel architecture for the quark platform and
+For example, :file:`micro_galileo_defconfig` contains the configuration
+information for the microkernel architecture for the galileo platform and
 :file:`nano_generic_pc_pentium4` contains the configuration
 information for the nanokernel architecture for the generic PC platform
 with the Pentium processor platform variant.
@@ -110,10 +110,10 @@ the specified defconfig file and sets it as the current
 
 .. code-block:: bash
 
-   $ make defconfig micro_quark_defconfig
+   $ make defconfig micro_galileo_defconfig
 
 The command takes the default configuration for the microkernel
-architecture and the quark platform.
+architecture and the galileo platform.
 
 .. _configuration_snippets:
 

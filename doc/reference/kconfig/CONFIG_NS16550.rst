@@ -6,8 +6,9 @@ CONFIG_NS16550
 
 
 This option enables the NS16550 serial driver.
-This specific driver can be used for the serial hardware
-available at the Generic PC and Quark.
+This driver can be used for the serial hardware
+available on x86 platforms such as basic_atom and
+basic_minuteia.
 
 
 
