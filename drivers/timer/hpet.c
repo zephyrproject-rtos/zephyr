@@ -661,6 +661,9 @@ uint32_t _sys_clock_cycle_get(void)
 	return (uint32_t) *_HPET_MAIN_COUNTER_VALUE;
 }
 
+FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
+FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
+
 #ifdef CONFIG_SYSTEM_TIMER_DISABLE
 
 /**

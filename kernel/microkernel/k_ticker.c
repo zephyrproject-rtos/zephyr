@@ -69,11 +69,6 @@ int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #endif
 
-uint32_t task_cycle_get_32(void)
-{
-	return _sys_clock_cycle_get();
-}
-
 int32_t task_tick_get_32(void)
 {
 	return (int32_t)_k_sys_clock_tick_count;

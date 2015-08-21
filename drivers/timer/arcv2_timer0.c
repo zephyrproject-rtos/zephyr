@@ -204,6 +204,9 @@ uint32_t _sys_clock_cycle_get(void)
 	return (clock_accumulated_count + count_get());
 }
 
+FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
+FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
+
 #if defined(CONFIG_SYSTEM_TIMER_DISABLE)
 /**
  *

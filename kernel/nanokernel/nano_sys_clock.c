@@ -92,11 +92,6 @@ int64_t nano_tick_get(void)
 	return tmp_nano_ticks;
 }
 
-uint32_t nano_cycle_get_32(void)
-{
-	return _sys_clock_cycle_get();
-}
-
 /**
  *
  * @brief Return number of ticks since a reference time
