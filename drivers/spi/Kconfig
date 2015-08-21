@@ -47,3 +47,89 @@ config  SPI_DEBUG
 	default n
 	help
 	  Enable debug output for SPI drivers
+
+config  SPI_INTEL
+	bool
+	prompt "Intel SPI controller driver"
+	depends on SPI && CPU_MINUTEIA
+	default n
+	help
+	  Enable support for Intel's SPI controllers. Such controller
+	  was formelly found on XScale chips. It can be found nowadays
+	  on CEXXXX Intel media controller and Quark CPU (2 of them).
+
+config	SPI_INTEL_PORT_0
+	bool
+	prompt "Intel SPI port 0"
+	depends on SPI_INTEL
+	default n
+	help
+	  Enable Intel's SPI controller port 0.
+
+config  SPI_INTEL_PORT_0_DRV_NAME
+	string
+	prompt "Intel SPI port 0 device name"
+	depends on SPI_INTEL_PORT_0
+	default "intel_spi_0"
+
+config  SPI_INTEL_PORT_0_FUNCTION
+	int
+	prompt "Port 0 PCI function"
+	depends on SPI_INTEL_PORT_0 && PCI
+	default 0
+
+config  SPI_INTEL_PORT_0_REGS
+	hex
+	prompt "Port 0 registers address"
+	depends on SPI_INTEL_PORT_0
+	default 0x00000000
+
+config  SPI_INTEL_PORT_0_IRQ
+	int
+	prompt "Port 0 interrupt"
+	depends on SPI_INTEL_PORT_0
+	default 0
+
+config  SPI_INTEL_PORT_0_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_INTEL_PORT_0
+	default 0
+
+config  SPI_INTEL_PORT_1
+	bool
+	prompt "Intel SPI port 1"
+	depends on SPI_INTEL
+	default n
+	help
+	  Enable Intel's SPI controller port 1.
+
+config  SPI_INTEL_PORT_1_DRV_NAME
+	string
+	prompt "Intel SPI port 1 device name"
+	depends on SPI_INTEL_PORT_1
+	default "intel_spi_1"
+
+config  SPI_INTEL_PORT_1_FUNCTION
+	int
+	prompt "Port 1 PCI function"
+	depends on SPI_INTEL_PORT_1 && PCI
+	default 0
+
+config  SPI_INTEL_PORT_1_REGS
+	hex
+	prompt "Port 1 registers address"
+	depends on SPI_INTEL_PORT_1
+	default 0x00000000
+
+config  SPI_INTEL_PORT_1_IRQ
+	int
+	prompt "Port 1 interrupt"
+	depends on SPI_INTEL_PORT_1
+	default 0
+
+config  SPI_INTEL_PORT_1_PRI
+	int
+	prompt "Port 0 interrupt priority"
+	depends on SPI_INTEL_PORT_1
+	default 0

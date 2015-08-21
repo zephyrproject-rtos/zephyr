@@ -184,6 +184,13 @@ CONFIG_HPET_TIMER_LEVEL_LOW=y
 # CONFIG_TEST_RANDOM_GENERATOR is not set
 
 #
+# SPI Drivers
+#
+# CONFIG_SPI is not set
+# CONFIG_SPI_DEBUG is not set
+# CONFIG_SPI_INTEL is not set
+
+#
 # Networking
 #
 # CONFIG_BLUETOOTH is not set
