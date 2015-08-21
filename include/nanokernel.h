@@ -996,7 +996,14 @@ extern void nano_task_timer_stop(struct nano_timer *timer);
 
 extern int64_t nano_tick_get(void);
 extern uint32_t nano_tick_get_32(void);
+
+/**
+ * @brief Return a high resolution timestamp
+ *
+ * @return the current timer hardware count
+ */
 extern uint32_t nano_cycle_get_32(void);
+
 extern int64_t nano_tick_delta(int64_t *reftime);
 extern uint32_t nano_tick_delta_32(int64_t *reftime);
 

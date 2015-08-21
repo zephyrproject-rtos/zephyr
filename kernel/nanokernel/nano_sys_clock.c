@@ -92,14 +92,6 @@ int64_t nano_tick_get(void)
 	return tmp_nano_ticks;
 }
 
-/**
- *
- * @brief Return a high resolution timestamp
- *
- * @return the current timer hardware count
- *
- */
-
 uint32_t nano_cycle_get_32(void)
 {
 	return _sys_clock_cycle_get();
