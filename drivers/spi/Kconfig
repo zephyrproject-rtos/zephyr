@@ -1,4 +1,4 @@
-# Kconfig - drivers configuration options
+# Kconfig - SPI driver configuration options
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -30,25 +30,20 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# SPI Drivers
+#
+menuconfig SPI
+	bool
+	prompt "SPI hardware bus support"
+	default n
+	help
+	  Enable support for the SPI hardware bus.
 
-menu "Device Drivers"
-
-source "drivers/simple/Kconfig"
-
-source "drivers/bluetooth/Kconfig"
-
-source "drivers/console/Kconfig"
-
-source "drivers/serial/Kconfig"
-
-source "drivers/interrupt_controller/Kconfig"
-
-source "drivers/timer/Kconfig"
-
-source "drivers/random/Kconfig"
-
-source "drivers/pci/Kconfig"
-
-source "drivers/spi/Kconfig"
-
-endmenu
+config  SPI_DEBUG
+	bool
+	prompt "SPI drivers debug output"
+	depends on SPI
+	default n
+	help
+	  Enable debug output for SPI drivers

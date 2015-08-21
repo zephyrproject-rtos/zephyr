@@ -10,3 +10,4 @@ obj-y += interrupt_controller/
 obj-$(CONFIG_PCI) += pci/
 obj-$(CONFIG_BLUETOOTH) += bluetooth/
 obj-$(CONFIG_UART_SIMPLE) += simple/
+obj-$(CONFIG_SPI) += spi/
