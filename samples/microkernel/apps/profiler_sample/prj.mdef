@@ -6,13 +6,15 @@
 
 % TASK NAME        PRIO ENTRY           STACK GROUPS
 % ==================================================
-  TASK profiler      5 profiler_demo    1024 [EXE]
-  TASK phi1Task0     6 philEntry        1024 [PHI]
-  TASK philTask1     6 philEntry        1024 [PHI]
-  TASK philTask2     6 philEntry        1024 [PHI]
-  TASK philTask3     6 philEntry        1024 [PHI]
-  TASK philTask4     6 philEntry        1024 [PHI]
-  TASK philTask5     6 philEntry        1024 [PHI]
+  TASK profiler      5 profiler_demo        1024 [EXE]
+  TASK phi1Task0     6 philEntry            1024 [PHI]
+  TASK philTask1     6 philEntry            1024 [PHI]
+  TASK philTask2     6 philEntry            1024 [PHI]
+  TASK philTask3     6 philEntry            1024 [PHI]
+  TASK philTask4     6 philEntry            1024 [PHI]
+  TASK philTask5     6 philEntry            1024 [PHI]
+  TASK philManager   6 fork_manager_entry   1024 [PHI]
+  TASK philBusy      7 busy_task_entry      1024 [PHI]
 
 % MUTEX NAME
 % ================

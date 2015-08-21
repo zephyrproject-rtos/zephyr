@@ -63,7 +63,19 @@ int total_dropped_counter=0;
 struct context_switch_data_t
 	context_switch_summary_data[MAX_BUFFER_CONTEXT_DATA];
 
-struct event_logger sys_profiler;
+unsigned int interrupt_counters[255];
+
+
+struct sleep_data_t {
+	uint32_t awake_cause;
+	uint32_t last_time_slept;
+	uint32_t last_duration;
+};
+
+struct sleep_data_t sleep_event_data;
+
+int is_busy_task_awake;
+int forks_available=1;
 
 
 void register_context_switch_data(uint32_t timestamp, uint32_t thread_id)
@@ -93,11 +105,85 @@ void register_context_switch_data(uint32_t timestamp, uint32_t thread_id)
 }
 
 
+void register_interrupt_event_data(uint32_t timestamp, uint32_t irq)
+{
+	if ((irq >= 0) && (irq < 255)) {
+		interrupt_counters[irq] += 1;
+	}
+}
+
+
+void register_sleep_event_data(uint32_t time_start, uint32_t duration,
+	uint32_t cause)
+{
+	sleep_event_data.awake_cause = cause;
+	sleep_event_data.last_time_slept = time_start;
+	sleep_event_data.last_duration = duration;
+}
+
+
 void print_context_data(uint32_t thread_id, uint32_t count,
 	uint32_t last_time_executed, int indice)
 {
-	PRINTF("\x1b[%d;2H%u    ", 15 + indice, thread_id);
-	PRINTF("\x1b[%d;14H%u    ", 15 + indice, count);
+	PRINTF("\x1b[%d;1H%u    ", 16 + indice, thread_id);
+	PRINTF("\x1b[%d;12H%u    ", 16 + indice, count);
+}
+
+
+void fork_manager_entry(void)
+{
+	int i;
+	kmutex_t forkMutexs[] = {forkMutex0, forkMutex1, forkMutex2, forkMutex3,
+		forkMutex4, forkMutex5};
+
+	task_sleep(2000);
+	while (1) {
+		if (forks_available) {
+			/* take all forks */
+			for (i = 0; i < N_PHILOSOPHERS; i++) {
+				task_mutex_lock_wait(forkMutexs[i]);
+			}
+
+			/* Philosophers won't be able to take any fork for 2000 ticks */
+			forks_available = 0;
+			task_sleep(2000);
+		} else {
+			/* give back all forks */
+			for (i = 0; i < N_PHILOSOPHERS; i++) {
+				task_mutex_unlock(forkMutexs[i]);
+			}
+
+			/* Philosophers will be able to take forks for 2000 ticks */
+			forks_available = 1;
+			task_sleep(2000);
+		}
+	}
+}
+
+
+void busy_task_entry(void)
+{
+	int ticks_when_awake;
+	int i;
+
+	while (1) {
+		/*
+		 * go to sleep for 1000 ticks allowing the system entering to sleep
+		 * mode if required.
+		 */
+		is_busy_task_awake=0;
+		task_sleep(1000);
+		ticks_when_awake = nano_tick_get_32();
+
+		/*
+		 * keep the cpu busy for 1000 ticks preventing the system entering
+		 * to sleep mode.
+		 */
+		is_busy_task_awake=1;
+		while(nano_tick_get_32() - ticks_when_awake < 1000) {
+			i++;
+		}
+	}
 }
 
 
@@ -114,17 +200,67 @@ void summary_data_printer(void)
 	int i;
 
 	while(1) {
-		/* print dropped event counter */
-		PRINTF("\x1b[11;1HDropped events occurred: %d   ", total_dropped_counter);
+		/* print task data */
+		PRINTF("\x1b[1;32HFork manager task");
+		if (forks_available) {
+			PRINTF("\x1b[2;32HForks : free to use");
+		} else {
+			PRINTF("\x1b[2;32HForks : all taken  ");
+		}
 
-		/* print context switch data */
-		PRINTF("\x1b[13;1HContext switch summary");
-		PRINTF("\x1b[14;1HThread Id   Amount of context switches");
+		PRINTF("\x1b[4;32HWorker task");
+		if (is_busy_task_awake) {
+			PRINTF("\x1b[5;32HState : BUSY");
+			PRINTF("\x1b[6;32H(Prevent the system going idle)");
+		} else {
+			PRINTF("\x1b[5;32HState : IDLE");
+			PRINTF("\x1b[6;32H                               ");
+		}
+
+		/* print general data */
+		PRINTF("\x1b[8;1HGENERAL DATA");
+		PRINTF("\x1b[9;1H------------");
+
+		PRINTF("\x1b[10;1HSystem tick count : %d    ", nano_tick_get_32());
+
+		/* print dropped event counter */
+		PRINTF("\x1b[11;1HDropped events #  : %d   ", total_dropped_counter);
+
+		/* Print context switch event data */
+		PRINTF("\x1b[13;1HCONTEXT SWITCH EVENT DATA");
+		PRINTF("\x1b[14;1H-------------------------");
+		PRINTF("\x1b[15;1HThread ID   Switches");
 		for (i=0; i<MAX_BUFFER_CONTEXT_DATA; i++) {
 			if (context_switch_summary_data[i].thread_id != 0) {
 				print_context_data(context_switch_summary_data[i].thread_id,
 					context_switch_summary_data[i].count,
 					context_switch_summary_data[i].last_time_executed, i);
+			}
+		}
+
+		/* Print sleep event data */
+		PRINTF("\x1b[8;32HSLEEP EVENT DATA");
+		PRINTF("\x1b[9;32H----------------");
+		PRINTF("\x1b[10;32HLast sleep event received");
+		if (sleep_event_data.last_time_slept > 0) {
+			PRINTF("\x1b[11;32HExit cause : irq #%u   ",
+				sleep_event_data.awake_cause);
+			PRINTF("\x1b[12;32HAt tick    : %u        ",
+				sleep_event_data.last_time_slept);
+			PRINTF("\x1b[13;32HDuration   : %u ticks     ",
+				sleep_event_data.last_duration);
+		}
+
+		/* Print interrupt event data */
+		PRINTF("\x1b[15;32HINTERRUPT EVENT DATA");
+		PRINTF("\x1b[16;32H--------------------");
+		PRINTF("\x1b[17;32HInterrupt counters");
+		int line=0;
+		for (i=0; i<255; i++) {
+			if (interrupt_counters[i] > 0) {
+				PRINTF("\x1b[%d;%dHirq #%d : %d times", 18 + line, 32, i,
+					interrupt_counters[i]);
+				line++;
 			}
 		}
 
@@ -175,6 +311,24 @@ void profiling_data_collector(void)
 					register_context_switch_data(data[1], data[2]);
 				}
 				break;
+			case PROFILER_INTERRUPT_EVENT_ID:
+				if (header->bits.data_length != 2) {
+					PRINTF("\x1b[13;1HError in sleep message. "
+						"event_id = %d, Expected %d, received %d\n",
+						header->bits.event_id, 2, header->bits.data_length);
+				} else {
+					register_interrupt_event_data(data[1], data[2]);
+				}
+				break;
+			case PROFILER_SLEEP_EVENT_ID:
+				if (header->bits.data_length != 3) {
+					PRINTF("\x1b[13;1HError in sleep message. "
+						"event_id = %d, Expected %d, received %d\n",
+						header->bits.event_id, 3, header->bits.data_length);
+				} else {
+					register_sleep_event_data(data[1], data[2], data[3]);
+				}
+				break;
 			}
 		} else {
 			/* This error should never happen */
@@ -218,6 +372,7 @@ struct nano_sem forks[N_PHILOSOPHERS];
 int main(void)
 {
 	int i;
+
 	profiler_fiber_start();
 
 	/* initialize philosopher semaphores */
