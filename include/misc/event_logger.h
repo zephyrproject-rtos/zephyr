@@ -33,15 +33,15 @@
  * @brief Event logger support.
  */
 
-
-#include <nanokernel.h>
-#include <errno.h>
-
 #ifndef __EVENT_LOGGER_H__
 #define __EVENT_LOGGER_H__
 
 #define EVENT_HEADER_SIZE        1
 
+#ifndef _ASMLANGUAGE
+
+#include <nanokernel.h>
+#include <errno.h>
 
 struct event_header_bits {
 	/* length in 32-bit words */
@@ -165,4 +165,5 @@ int sys_event_logger_get_wait_timeout(struct event_logger *logger,
 	uint32_t *buffer, uint8_t buffer_size, uint32_t timeout);
 #endif /* CONFIG_NANO_TIMEOUTS */
 
+#endif /* _ASMLANGUAGE */
 #endif /* __EVENT_LOGGER_H__ */

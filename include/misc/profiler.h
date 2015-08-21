@@ -43,8 +43,9 @@
 
 #ifdef CONFIG_PROFILER_CONTEXT_SWITCH
 #define PROFILER_CONTEXT_SWITCH_EVENT_ID             0x0001
-#endif /* CONFIG_PROFILER_CONTEXT_SWITCH */
+#endif
 
+#ifndef _ASMLANGUAGE
 /**
  * Global variable of the ring buffer that allows user to implement
  * their own reading routine.
@@ -163,11 +164,18 @@ void sys_profiler_register_as_collector(void);
 static inline void sys_profiler_register_as_collector(void) {};
 #endif /* CONFIG_PROFILER_CONTEXT_SWITCH */
 
+#endif /* _ASMLANGUAGE */
+
 #else /* !CONFIG_KERNEL_PROFILER */
+
+#ifndef _ASMLANGUAGE
 
 static inline void sys_profiler_put(uint16_t event_id, uint32_t *event_data,
 	uint8_t data_size) {};
 static inline void sys_profiler_put_timed(uint16_t event_id) {};
+
+#endif /* _ASMLANGUAGE */
+
 #endif /* CONFIG_KERNEL_PROFILER */
 
 #endif /* __PROFILE_H__ */
