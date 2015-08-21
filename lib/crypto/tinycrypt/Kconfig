@@ -1,0 +1,89 @@
+# Kconfig - Cryptography primitive options for TinyCrypt
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Intel Corporation nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+config  TINYCRYPT
+        bool
+        prompt "Cryptography Support"
+        default n
+        help
+          This option enables the TinyCrypt cryptography library.
+
+config  TINYCRYPT_SHA256
+        bool
+        prompt "SHA-256 Hash function support"
+        depends on TINYCRYPT
+        default n
+        help
+          This option enables support for SHA-256
+          hash function primitive.
+
+config  TINYCRYPT_SHA256_HMAC
+        bool
+        prompt "HMAC (via SHA256) message auth support"
+        depends on TINYCRYPT_SHA256
+        default n
+        help
+          This option enables support for HMAC using SHA-256
+          message authentication code.
+
+config  TINYCRYPT_SHA256_HMAC_PRNG
+        bool
+        prompt "PRNG (via HMAC-SHA256) support"
+        depends on TINYCRYPT_SHA256_HMAC
+        default n
+        help
+          This option enables support for psudeo-random number
+          generator.
+
+config  TINYCRYPT_AES
+        bool
+        prompt "AES-128 decrypt/encrypt"
+        depends on TINYCRYPT
+        default n
+        help
+          This option enables support for AES-128 decrypt and encrypt.
+
+config  TINYCRYPT_AES_CBC
+        bool
+        prompt "AES-128 block cipher"
+        depends on TINYCRYPT_AES
+        default n
+        help
+          This option enables support for AES-128 block cipher mode.
+
+config  TINYCRYPT_AES_CTR
+        bool
+        prompt "AES-128 counter mode"
+        depends on TINYCRYPT_AES
+        default n
+        help
+          This option enables support for AES-128 counter mode.

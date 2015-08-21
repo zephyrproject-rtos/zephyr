@@ -37,6 +37,10 @@ organize the Kconfig files and to add new symbols configuration menus:
   Kconfig symbols that define the configuration options for the
   communications stack code.
 
+* The Kconfig file at the crypto directory includes the different
+  Kconfig symbols that define the configuration options for the
+  cryptography algorithms supported.
+
 Dependencies
 ============
 

@@ -1,0 +1,5 @@
+% Application       : test PRNG TinyCrypt APIs
+
+% TASK NAME          PRIO ENTRY           STACK GROUPS
+% ====================================================
+  TASK tStartTask       5 mainloop        51200 [EXE]

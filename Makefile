@@ -562,6 +562,12 @@ else
 include/config/auto.conf: ;
 endif # $(dot-config)
 
+ifdef CONFIG_TINYCRYPT
+# Objects we will link into the kernel / subdirs we need to visit
+KCRYPTO_DIR := lib/crypto/tinycrypt
+libs-y += $(KCRYPTO_DIR)/
+ ZEPHYRINCLUDE += -I$(srctree)/lib/crypto/tinycrypt
+endif
 
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)

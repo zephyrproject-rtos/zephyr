@@ -43,13 +43,18 @@ config  EXPERIMENTAL
 	If it is enabled, all options marked as EXPERIMENTAL will
 	be available for selection.
 
+endmenu
+
+menu "Cryptography"
+source "lib/crypto/tinycrypt/Kconfig"
+endmenu
+
+menu "Compile and Link Features"
+
 config  KERNEL_BIN_NAME
 	string "The kernel binary name"
 	default "microkernel" if MICROKERNEL
 	default "nanokernel" if NANOKERNEL
-endmenu
-
-menu "Compile and Link Features"
 
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"

@@ -1,0 +1,10 @@
+ccflags-y +=-I$(srctree)/lib/crypto/tinycrypt/include
+lib-$(CONFIG_TINYCRYPT) := source/utils.o
+lib-$(CONFIG_TINYCRYPT_AES) += source/aes_decrypt.o
+lib-$(CONFIG_TINYCRYPT_AES) += source/aes_encrypt.o
+lib-$(CONFIG_TINYCRYPT_AES_CBC) += source/cbc_mode.o
+lib-$(CONFIG_TINYCRYPT_AES_CTR) += source/ctr_mode.o
+lib-$(CONFIG_TINYCRYPT_SHA256) += source/sha256.o
+lib-$(CONFIG_TINYCRYPT_SHA256) += source/utils.o
+lib-$(CONFIG_TINYCRYPT_SHA256_HMAC) += source/hmac.o
+lib-$(CONFIG_TINYCRYPT_SHA256_HMAC_PRNG) += source/hmac_prng.o
