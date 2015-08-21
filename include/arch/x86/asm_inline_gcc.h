@@ -40,6 +40,8 @@
  * Include nanokernel/cpu.h instead
  */
 
+#include <sys_io.h>
+
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <stddef.h>
@@ -246,127 +248,124 @@ static inline __attribute__((always_inline))
 }
 
 
-/**
- *
- * @brief Output a byte to an IA-32 I/O port
- *
- * This function issues the 'out' instruction to write a byte to the specified
- * I/O port.
- *
- * @return N/A
- *
- * NOMANUAL
- */
+/* Implementation of sys_io.h's documented functions */
 
 static inline __attribute__((always_inline))
-	void sys_out8(unsigned char data, unsigned int port)
+	void sys_out8(uint8_t data, io_port_t port)
 {
 	__asm__ volatile("outb	%%al, %%dx;\n\t" : : "a"(data), "d"(port));
 }
 
 
-/**
- *
- * @brief Input a byte from an IA-32 I/O port
- *
- * This function issues the 'in' instruction to read a byte from the specified
- * I/O port.
- *
- * @return the byte read from the specified I/O port
- *
- * NOMANUAL
- */
-
 static inline __attribute__((always_inline))
-	unsigned char sys_in8(unsigned int port)
+	uint8_t sys_in8(io_port_t port)
 {
-	char retByte;
+	uint8_t ret;
 
-	__asm__ volatile("inb	%%dx, %%al;\n\t" : "=a"(retByte) : "d"(port));
-	return retByte;
+	__asm__ volatile("inb	%%dx, %%al;\n\t" : "=a"(ret) : "d"(port));
+	return ret;
 }
 
 
-/**
- *
- * @brief Output a word to an IA-32 I/O port
- *
- * This function issues the 'out' instruction to write a word to the
- * specified I/O port.
- *
- * @return N/A
- *
- * NOMANUAL
- */
-
 static inline __attribute__((always_inline))
-	void sys_out16(unsigned short data, unsigned int port)
+	void sys_out16(uint16_t data, io_port_t port)
 {
 	__asm__ volatile("outw	%%ax, %%dx;\n\t" :  : "a"(data), "d"(port));
 }
 
 
-/**
- *
- * @brief Input a word from an IA-32 I/O port
- *
- * This function issues the 'in' instruction to read a word from the
- * specified I/O port.
- *
- * @return the word read from the specified I/O port
- *
- * NOMANUAL
- */
-
-static inline __attribute__((always_inline))
-	unsigned short sys_in16(unsigned int port)
+static inline inline __attribute__((always_inline))
+	uint16_t sys_in16(io_port_t port)
 {
-	unsigned short retWord;
+	uint16_t ret;
 
-	__asm__ volatile("inw	%%dx, %%ax;\n\t" : "=a"(retWord) : "d"(port));
-	return retWord;
+	__asm__ volatile("inw	%%dx, %%ax;\n\t" : "=a"(ret) : "d"(port));
+	return ret;
 }
 
 
-/**
- *
- * @brief Output a long word to an IA-32 I/O port
- *
- * This function issues the 'out' instruction to write a long word to the
- * specified I/O port.
- *
- * @return N/A
- *
- * NOMANUAL
- */
-
 static inline __attribute__((always_inline))
-	void sys_out32(unsigned int data, unsigned int port)
+	void sys_out32(uint32_t data, io_port_t port)
 {
 	__asm__ volatile("outl	%%eax, %%dx;\n\t" :  : "a"(data), "d"(port));
 }
 
 
-/**
- *
- * @brief Input a long word from an IA-32 I/O port
- *
- * This function issues the 'in' instruction to read a long word from the
- * specified I/O port.
- *
- * @return the long read from the specified I/O port
- *
- * NOMANUAL
- */
+static inline inline __attribute__((always_inline))
+	uint32_t sys_in32(io_port_t port)
+{
+	uint32_t ret;
+
+	__asm__ volatile("inl	%%dx, %%eax;\n\t" : "=a"(ret) : "d"(port));
+	return ret;
+}
+
+static inline inline __attribute__((always_inline))
+	void sys_write8(uint8_t data, mm_reg_t addr)
+{
+	__asm__ volatile("movb	%0, %1;\n\t"
+			 :
+			 : "q"(data), "m" (*(volatile uint8_t *) addr)
+			 : "memory");
+}
+
+static inline inline __attribute__((always_inline))
+	uint8_t sys_read8(mm_reg_t addr)
+{
+	uint8_t ret;
+
+	__asm__ volatile("movb	%1, %0;\n\t"
+			 : "=q"(ret)
+			 : "m" (*(volatile uint8_t *) addr)
+			 : "memory");
+
+	return ret;
+}
 
 static inline __attribute__((always_inline))
-	unsigned long sys_in32(unsigned int port)
+	void sys_write16(uint16_t data, mm_reg_t addr)
 {
-	unsigned long retLong;
-
-	__asm__ volatile("inl	%%dx, %%eax;\n\t" : "=a"(retLong) : "d"(port));
-	return retLong;
+	__asm__ volatile("movw	%0, %1;\n\t"
+			 :
+			 : "r"(data), "m" (*(volatile uint16_t *) addr)
+			 : "memory");
 }
+
+static inline inline __attribute__((always_inline))
+	uint16_t sys_read16(mm_reg_t addr)
+{
+	uint16_t ret;
+
+	__asm__ volatile("movw	%1, %0;\n\t"
+			 : "=r"(ret)
+			 : "m" (*(volatile uint16_t *) addr)
+			 : "memory");
+
+	return ret;
+}
+
+static inline inline __attribute__((always_inline))
+	void sys_write32(uint32_t data, mm_reg_t addr)
+{
+	__asm__ volatile("movl	%0, %1;\n\t"
+			 :
+			 : "r"(data), "m" (*(volatile uint32_t *) addr)
+			 : "memory");
+}
+
+static inline __attribute__((always_inline))
+	uint32_t sys_read32(mm_reg_t addr)
+{
+	uint32_t ret;
+
+	__asm__ volatile("movl	%1, %0;\n\t"
+			 : "=r"(ret)
+			 : "m" (*(volatile uint32_t *) addr)
+			 : "memory");
+
+	return ret;
+}
+
 
 #endif /* _ASMLANGUAGE */
 #endif /* _ASM_INLINE_GCC_PUBLIC_GCC_H */
