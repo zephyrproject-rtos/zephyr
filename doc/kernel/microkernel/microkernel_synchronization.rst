@@ -9,6 +9,6 @@ available in the microkernel.
 .. toctree::
    :maxdepth: 2
 
-   microkernel_semaphores
    microkernel_events
+   microkernel_semaphores
    microkernel_mutexes
