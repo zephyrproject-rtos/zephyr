@@ -3,27 +3,75 @@
 Semaphores
 ##########
 
-Definition
-**********
-
-The microkernel semaphore is defined in
-:file:`kernel/microkernel/k_semaphore.c` and are an implementation of
-traditional counting semaphores. Semaphores are used to synchronize
-application task activities.
-
-Function
+Concepts
 ********
 
-Semaphores are initialized by the system. At start the semaphore is
-un-signaled and no task is waiting for it. Any task in the system can
-signal a semaphore. Every signal increments the count value associated
-with the semaphore. When several tasks wait for the same semaphore at
-the same time, they are held in a prioritized list. If the semaphore is
-signaled, the task with the highest priority is released. If more tasks
-of that priority are waiting, the first one that requested the
-semaphore wakes up. Other tasks can test the semaphore to see if it is
-signaled. If not signaled, tasks can either wait, with or without a
-timeout, until signaled or return immediately with a failed status.
+The microkernel's semaphore objects are an implementation of traditional
+counting semaphores.
+
+Any number of semaphores can be defined in a microkernel system. Each semaphore
+has a name that uniquely identifies it.
+
+A semaphore starts off with a count of zero. This count is incremented each
+time the semaphore is given, and is decremented each time the semaphore
+is taken. However, a semaphore cannot be taken if it is unavailable
+(i.e. has a count of zero).
+
+Semaphores may be given by tasks, fibers, or ISRs.
+
+.. note::
+
+   When a semaphore is given by a fiber or an ISR the caller must provide
+   a statically-allocated command packet for the microkernel server fiber
+   to use, since the kernel cannot create one on the caller's stack as it
+   does when the semaphore is given by a task. In cases where the fiber
+   or ISR can give the semaphore again before the microkernel server finishes
+   processing the earlier request the caller must provide a separate command
+   packet for each concurrent give operation.
+
+   The kernel provides the :c:macro:`CMD_PKT_SET_INSTANCE()` API to allow
+   a fiber or ISR to define a *command packet set* containing one or more
+   command packets. The :c:macro:`CMD_PKT_SET()` API is then used to reference
+   the command packet set when giving a semaphore;
+   see :ref:`isr_gives_semaphore`.
+
+Semaphores may only be taken by tasks. A task that attempts to take
+an unavailable semaphore may choose to wait for the semaphore to be given.
+Any number of tasks may wait on an unavailable semaphore simultaneously;
+when the semaphore becomes available it is given to the highest priority task
+that has waited the longest.
+
+The kernel allows a task to give multiple semaphores in a single
+operation using a *semaphore group*. The task specifies the members of
+a semaphore group using an array of semaphore names, terminated by the
+symbol :c:macro:`ENDLIST`. This technique allows the task to give the semaphores
+more efficiently than giving them individually.
+
+A task can also use a semaphore group to take a single semaphore from a set
+of semaphores in a single operation. This technique allows the task to
+monitor multiple synchronization sources at the same time, similar to the way
+:c:func:`select()` can be used to read input from a set of file descriptors
+in a POSIX-compliant operating system. The kernel does *not* define the order
+in which semaphores are taken when more than one semaphore in a semaphore group
+is available; the semaphore that is taken by the task may not be the one
+that was given first.
+
+There is no limit on the number of semaphore groups used by a task, or
+on the number of semaphores belonging to any given semaphore group. Semaphore
+groups may also be shared by multiple tasks, if desired.
+
+
+Purpose
+*******
+
+Use a semaphore to control access to a set of resources by multiple tasks.
+
+Use a semaphore synchronize processing between a producing task, fiber,
+or ISR and one or more consuming tasks.
+
+Use a semaphore group to allow a task to signal or to monitor multiple
+semaphores simultaneously.
+
 
 Usage
 *****
@@ -99,6 +147,8 @@ is available for processing by a consumer task.
 
        ...
    }
+
+.. _isr_gives_semaphore:
 
 Example: Giving a Semaphore from an ISR
 =======================================
