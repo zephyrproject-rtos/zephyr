@@ -119,6 +119,8 @@ The following kernel clock APIs are provided by :file:`microkernel.h`:
 +===================================+========================================+
 | | :c:func:`task_tick_get()`       | Reads system clock.                    |
 | | :c:func:`task_tick_get_32()`    |                                        |
+| | :c:func:`fiber_tick_get()`      |                                        |
+| | :c:func:`fiber_tick_get_32()`   |                                        |
 | | :c:func:`isr_tick_get()`        |                                        |
 | | :c:func:`isr_tick_get_32()`     |                                        |
 +-----------------------------------+----------------------------------------+
@@ -126,6 +128,7 @@ The following kernel clock APIs are provided by :file:`microkernel.h`:
 | | :c:func:`task_tick_delta_32()`  | earlier system clock reading.          |
 +-----------------------------------+----------------------------------------+
 | | :c:func:`task_cycle_get_32()`   | Reads hardware clock.                  |
+| | :c:func:`fiber_cycle_get_32()`  |                                        |
 | | :c:func:`isr_cycle_get_32()`    |                                        |
 +-----------------------------------+----------------------------------------+
 
