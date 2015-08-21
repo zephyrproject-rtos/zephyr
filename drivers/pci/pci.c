@@ -390,6 +390,35 @@ void pci_bus_scan_init(void)
 	lookup.bar = 0;
 }
 
+
+void pci_enable_regs(struct pci_dev_info *dev_info)
+{
+	union pci_addr_reg pci_ctrl_addr;
+	uint32_t pci_data;
+
+	pci_ctrl_addr.value = 0;
+	pci_ctrl_addr.field.func = dev_info->function;
+	pci_ctrl_addr.field.bus = dev_info->bus;
+	pci_ctrl_addr.field.device = dev_info->dev;
+	pci_ctrl_addr.field.reg = 1;
+
+#ifdef CONFIG_PCI_DEBUG
+	printk("pci_enable_regs 0x%x\n", pci_ctrl_addr);
+#endif
+
+	pci_read(DEFAULT_PCI_CONTROLLER,
+			pci_ctrl_addr,
+			sizeof(uint16_t),
+			&pci_data);
+
+	pci_data = pci_data | PCI_CMD_MEM_ENABLE;
+
+	pci_write(DEFAULT_PCI_CONTROLLER,
+			pci_ctrl_addr,
+			sizeof(uint16_t),
+			pci_data);
+}
+
 /**
  *
  * @brief Scans PCI bus for devices
@@ -427,7 +456,6 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 
 	/* initialise the PCI controller address register value */
 	pci_ctrl_addr.value = 0;
-	pci_ctrl_addr.field.enable = 1;
 
 	if (lookup.info.function != PCI_FUNCTION_ANY) {
 		lookup.func = lookup.info.function;
@@ -440,6 +468,9 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 			pci_ctrl_addr.field.device = lookup.dev;
 
 			if (pci_dev_scan(pci_ctrl_addr, dev_info)) {
+				dev_info->bus = lookup.bus;
+				dev_info->dev = lookup.dev;
+
 				return 1;
 			}
 

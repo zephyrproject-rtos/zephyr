@@ -53,16 +53,22 @@ struct pci_dev_info {
 	uint32_t addr; /* I/O or memory region address */
 	uint32_t size; /* memory region size */
 	int irq;
-	uint16_t mem_type:1; /* memory type: BAR_SPACE_MEM/BAR_SPACE_IO */
-	uint16_t class:8;
-	uint16_t function:4;
-	uint16_t bar:3;
+
+	uint32_t bus:8;
+	uint32_t dev:5;
+	uint32_t function:4;
+	uint32_t mem_type:1; /* memory type: BAR_SPACE_MEM/BAR_SPACE_IO */
+	uint32_t class:8;
+	uint32_t bar:3;
+	uint32_t _reserved:3;
+
 	uint16_t vendor_id;
 	uint16_t device_id;
 };
 
 extern void pci_bus_scan_init(void);
 extern int pci_bus_scan(struct pci_dev_info *dev_info);
+void pci_enable_regs(struct pci_dev_info *dev_info);
 
 #ifdef CONFIG_PCI_DEBUG
 extern void pci_show(struct pci_dev_info *dev_info);
