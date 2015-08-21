@@ -87,7 +87,7 @@ Pin Names
 
 * I2C_SCL = D15
 * I2C_SDA = D14
-* DAC0_OUT = 0xFEFE /* DAC does not have a Pin Name in RM */
+* DAC0_OUT = 0xFEFE /\* DAC does not have a Pin Name in RM \*/
 
 Jumpers & Switches
 ==================
