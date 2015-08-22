@@ -26,6 +26,9 @@ export LC_COLLATE LC_NUMERIC
 # Avoid interference with shell env settings
 unexport GREP_OPTIONS
 
+DQUOTE = "
+#This comment line is to fix the highlighting of some editors due the quote effect."
+
 # We are using a recursive build, so we need to do a little thinking
 # to get the ordering right.
 #
@@ -366,7 +369,6 @@ ZEPHYRINCLUDE    := \
 KBUILD_CPPFLAGS := -DKERNEL
 
 KBUILD_CFLAGS   := -c -g -std=c99 \
-		$(CONFIG_COMPILER_OPT) \
 		-fno-reorder-functions \
 		-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \
@@ -641,6 +643,8 @@ else
 KBUILD_CFLAGS  += -Os
 endif
 
+KBUILD_CFLAGS += $(subst $(DQUOTE),,$(CONFIG_COMPILER_OPT))
+
 export x86_FLAGS arm_FLAGS arc_FLAGS LDFLAG_LINKERCMD OUTPUT_FORMAT OUTPUT_ARCH
 
 ARCHFLAGS = $($(SRCARCH)_FLAGS)
@@ -759,8 +763,6 @@ libs-y2		:= $(patsubst %/, %/built-in.o, $(libs-y))
 libs-y		:= $(libs-y1) $(libs-y2)
 
 # Externally visible symbols (used by link-zephyr.sh)
-DQUOTE = "
-#This comment line is to fix the highlighting of some editors due the quote effect."
 export KBUILD_ZEPHYR_INIT := $(head-y) $(init-y)
 export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y)
 export KBUILD_LDS         := $(srctree)/arch/$(SRCARCH)/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/linker.cmd
