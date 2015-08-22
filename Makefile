@@ -168,9 +168,6 @@ MAKEFLAGS += --no-print-directory
 # Use 'make C=2' to enable checking of *all* source files, regardless
 # of whether they are re-compiled or not.
 #
-# See the file "Documentation/sparse.txt" for more details, including
-# where to get the "sparse" utility.
-
 ifeq ("$(origin C)", "command line")
   KBUILD_CHECKSRC = $(C)
 endif
@@ -769,7 +766,7 @@ export KBUILD_ZEPHYR_MAIN := $(drivers-y) $(core-y) $(libs-y)
 export KBUILD_LDS         := $(srctree)/arch/$(SRCARCH)/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/linker.cmd
 export LDFLAGS_zephyr
 # used by scripts/pacmage/Makefile
-export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(zephyr-alldirs)) arch Documentation include samples scripts tools virt)
+export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(zephyr-alldirs)) arch include samples scripts)
 
 zephyr-deps := $(KBUILD_LDS) $(KBUILD_ZEPHYR_INIT) $(KBUILD_ZEPHYR_MAIN)
 
@@ -786,12 +783,6 @@ zephyr: scripts/link-zephyr.sh $(zephyr-deps) $(KBUILD_ZEPHYR_APP) FORCE
 	@touch zephyr
 ifdef CONFIG_HEADERS_CHECK
 	$(Q)$(MAKE) -f $(srctree)/Makefile headers_check
-endif
-ifdef CONFIG_SAMPLES
-	$(Q)$(MAKE) $(build)=samples
-endif
-ifdef CONFIG_BUILD_DOCSRC
-	$(Q)$(MAKE) $(build)=Documentation
 endif
 
 ifneq ($(strip $(PROJECT)),)
@@ -1215,8 +1206,7 @@ qemu: zephyr
 /: prepare scripts FORCE
 	$(cmd_crmodverdir)
 	$(Q)$(MAKE) $(build)=$(build-dir)
-# Make sure the latest headers are built for Documentation
-Documentation/: headers_install
+
 %/: prepare scripts FORCE
 	$(cmd_crmodverdir)
 	$(Q)$(MAKE) $(build)=$(build-dir)
