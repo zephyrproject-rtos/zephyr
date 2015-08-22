@@ -170,14 +170,14 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 
 SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 
-    /* 
+    /*
      * r0: interrupt mask from caller
      * r1: zero, for setting BASEPRI (needs a register)
      */
 
     eors.n r1, r1
 
-    /* 
+    /*
      * Lock PRIMASK while sleeping: wfe will still get interrupted by incoming
      * interrupts but the CPU will not service them right away.
      */

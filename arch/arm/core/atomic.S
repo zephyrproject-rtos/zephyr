@@ -64,7 +64,7 @@ GTEXT(atomic_cas)
  * @brief Atomically clear a memory location
  *
  * This routine atomically clears the contents of <target> and returns the old
- * value that was in <target>. 
+ * value that was in <target>.
  *
  * This routine can be used from both task and interrupt level.
  *
