@@ -84,6 +84,9 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif
+#ifdef CONFIG_PROFILER_SLEEP
+	call    _sys_profiler_enter_sleep
+#endif
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
 	rdtsc			/* record idle timestamp */
 	mov  %eax, __idle_tsc   /* ... low 32 bits  */
@@ -123,6 +126,9 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
+#endif
+#ifdef CONFIG_PROFILER_SLEEP
+	call    _sys_profiler_enter_sleep
 #endif
 	sti			/* make sure interrupts are enabled */
 

@@ -46,6 +46,11 @@ uint32_t _sys_profiler_buffer[CONFIG_PROFILER_BUFFER_SIZE];
 void *_collector_fiber=NULL;
 #endif
 
+#ifdef CONFIG_PROFILER_SLEEP
+uint32_t _sys_profiler_sleep_start_time;
+#endif
+
+
 /**
  * @brief Initialize the profiler system.
  *
@@ -134,3 +139,23 @@ void _sys_profiler_interrupt()
 	sys_profiler_put(PROFILER_INTERRUPT_EVENT_ID, data, ARRAY_SIZE(data));
 }
 #endif /* CONFIG_PROFILER_INTERRUPT */
+
+
+#ifdef CONFIG_PROFILER_SLEEP
+void _sys_profiler_enter_sleep(void)
+{
+	_sys_profiler_sleep_start_time = nano_cycle_get_32();
+}
+
+void _sys_profiler_exit_sleep(void)
+{
+	uint32_t data[3];
+
+	data[0] = nano_tick_get_32();
+	data[1] = (nano_cycle_get_32() - _sys_profiler_sleep_start_time) / sys_clock_hw_cycles_per_tick;
+	/* register the cause of exiting sleep mode */
+	data[2] = _sys_current_irq_key_get();
+
+	sys_profiler_put(PROFILER_SLEEP_EVENT_ID, data, ARRAY_SIZE(data));
+}
+#endif /* CONFIG_PROFILER_SLEEP */

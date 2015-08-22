@@ -18,6 +18,7 @@ CONFIG_XIP=y
 # CONFIG_PROFILER_BUFFER_SIZE is not set
 # CONFIG_PROFILER_CONTEXT_SWITCH is not set
 # CONFIG_PROFILER_INTERRUPT is not set
+# CONFIG_PROFILER_SLEEP is not set
 
 #
 # Nanokernel Options

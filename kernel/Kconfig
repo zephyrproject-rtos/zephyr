@@ -150,6 +150,17 @@ config PROFILER_INTERRUPT
 	Enable interrupt event messages. These messages provide the following
 	information: The time when interrupts occur.
 
+config PROFILER_SLEEP
+	bool
+	prompt "Sleep profiler point"
+	default n
+	depends on KERNEL_PROFILER && ADVANCED_POWER_MANAGEMENT
+	help
+	Enable low power condition event messages. These messages provide the
+	following information:
+		- When the CPU went to sleep mode.
+		- When the CPU woke up.
+		- The ID of the interrupt that woke the CPU up.
 endmenu
 
 menu "Security Options"

@@ -134,6 +134,12 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
  */
 
 SECTION_FUNC(TEXT, nano_cpu_idle)
+#ifdef CONFIG_PROFILER_SLEEP
+	push {lr}
+	bl    _sys_profiler_enter_sleep
+	pop {lr}
+#endif
+
     /* clear BASEPRI so wfi is awakened by incoming interrupts */
     eors.n r0, r0
     msr BASEPRI, r0
@@ -169,6 +175,11 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  */
 
 SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
+#ifdef CONFIG_PROFILER_SLEEP
+	push {lr}
+	bl    _sys_profiler_enter_sleep
+	pop {lr}
+#endif
 
     /*
      * r0: interrupt mask from caller

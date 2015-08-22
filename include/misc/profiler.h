@@ -49,6 +49,10 @@
 #define PROFILER_INTERRUPT_EVENT_ID                  0x0002
 #endif
 
+#ifdef CONFIG_PROFILER_SLEEP
+#define PROFILER_SLEEP_EVENT_ID                      0x0003
+#endif
+
 #ifndef _ASMLANGUAGE
 /**
  * Global variable of the ring buffer that allows user to implement
