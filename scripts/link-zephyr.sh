@@ -156,14 +156,14 @@ cleanup()
 	rm -f .tmp_System.map
 	rm -f .tmp_kallsyms*
 	rm -f .tmp_version
-	rm -f .tmp_${KERNEL_NAME}*
+	rm -f .tmp_*
 	rm -f System.map
-	rm -f ${KERNEL_NAME}.lnk
-	rm -f ${KERNEL_NAME}.map
-	rm -f ${KERNEL_NAME}.elf
-	rm -f ${KERNEL_NAME}.lst
-	rm -f ${KERNEL_NAME}.bin
-	rm -f ${KERNEL_NAME}.strip
+	rm -f *.lnk
+	rm -f *.map
+	rm -f *.elf
+	rm -f *.lst
+	rm -f *.bin
+	rm -f *.strip
 	rm -f staticIdt.o
 	rm -f linker.cmd
 	rm -f final-linker.cmd

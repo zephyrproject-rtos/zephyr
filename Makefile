@@ -435,7 +435,7 @@ outputmakefile:
 ifneq ($(KBUILD_SRC),)
 	$(Q)ln -fsn $(srctree) source
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile \
-	    $(srctree) $(objtree) $(VERSION_MAJOR) $(PATCHLEVEL)
+	    $(srctree) $(objtree) $(VERSION_MAJOR) $(VERSION_MINOR)
 endif
 
 # Support for using generic headers in asm-generic
@@ -456,7 +456,7 @@ asm-generic:
 
 version_h := include/generated/version.h
 
-no-dot-config-targets := clean mrproper distclean \
+no-dot-config-targets := pristine distclean clean mrproper help \
 			 cscope gtags TAGS tags help% %docs check% coccicheck \
 			 $(version_h) headers_% archheaders archscripts \
 			 kernelversion %src-pkg
