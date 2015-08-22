@@ -38,6 +38,7 @@
 #include <misc/util.h>
 #include <init.h>
 #include <nano_private.h>
+#include <profiler_arch.h>
 
 uint32_t _sys_profiler_buffer[CONFIG_PROFILER_BUFFER_SIZE];
 
@@ -120,3 +121,16 @@ void sys_profiler_register_as_collector(void)
 	_collector_fiber = _nanokernel.current;
 }
 #endif /* CONFIG_PROFILER_CONTEXT_SWITCH */
+
+
+#ifdef CONFIG_PROFILER_INTERRUPT
+void _sys_profiler_interrupt()
+{
+	uint32_t data[2];
+
+	data[0] = nano_tick_get_32();
+	data[1] = _sys_current_irq_key_get();
+
+	sys_profiler_put(PROFILER_INTERRUPT_EVENT_ID, data, ARRAY_SIZE(data));
+}
+#endif /* CONFIG_PROFILER_INTERRUPT */

@@ -72,6 +72,12 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 
 	push {lr}		/* lr is now the first item on the stack */
 
+#ifdef CONFIG_PROFILER_INTERRUPT
+	push {lr}
+	bl _sys_profiler_interrupt
+	pop {lr}
+#endif
+
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 	/*
 	 * All interrupts are disabled when handling idle wakeup.  For tickless

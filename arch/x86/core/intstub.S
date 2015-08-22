@@ -170,6 +170,15 @@ SECTION_FUNC(TEXT, _IntEnt)
 	popl	%eax
 #endif
 
+#ifdef CONFIG_PROFILER_INTERRUPT
+	/*
+	 * Preserve EAX as it contains the stub return address.
+	 */
+	pushl	%eax
+	call	_sys_profiler_interrupt
+	popl	%eax
+#endif
+
 
 	/* load %ecx with &_nanokernel */
 

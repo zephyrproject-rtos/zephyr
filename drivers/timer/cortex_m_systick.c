@@ -263,6 +263,12 @@ void _TIMER_INT_HANDLER(void *unused)
 {
 	ARG_UNUSED(unused);
 
+#ifdef CONFIG_PROFILER_INTERRUPT
+	extern void _sys_profiler_interrupt(void);
+	_sys_profiler_interrupt();
+#endif
+
+
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	uint32_t value = __scs.systick.val;
 	uint32_t delta = __scs.systick.reload - value;

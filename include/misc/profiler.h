@@ -45,6 +45,10 @@
 #define PROFILER_CONTEXT_SWITCH_EVENT_ID             0x0001
 #endif
 
+#ifdef CONFIG_PROFILER_INTERRUPT
+#define PROFILER_INTERRUPT_EVENT_ID                  0x0002
+#endif
+
 #ifndef _ASMLANGUAGE
 /**
  * Global variable of the ring buffer that allows user to implement

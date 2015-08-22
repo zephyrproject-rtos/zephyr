@@ -140,6 +140,16 @@ config PROFILER_CONTEXT_SWITCH
 	depends on KERNEL_PROFILER
 	help
 	Enable the context switch event messages.
+
+config PROFILER_INTERRUPT
+	bool
+	prompt "Interrupt profiler point"
+	default n
+	depends on KERNEL_PROFILER
+	help
+	Enable interrupt event messages. These messages provide the following
+	information: The time when interrupts occur.
+
 endmenu
 
 menu "Security Options"

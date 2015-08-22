@@ -416,3 +416,46 @@ void _loapic_irq_disable(unsigned int irq /* IRQ number of the
 	*pLvt = *pLvt | LOAPIC_LVT_MASKED;
 	irq_unlock(oldLevel);
 }
+
+
+/**
+ * @brief Find the currently executing interrupt vector, if any
+ *
+ * This routine finds the vector of the interrupt that is being processed.
+ * The ISR (In-Service Register) register contain the vectors of the interrupts
+ * in service. And the higher vector is the indentification of the interrupt
+ * being currently processed.
+ *
+ * ISR registers' offsets:
+ * --------------------
+ * | Offset | bits    |
+ * --------------------
+ * | 0100H  |   0:31  |
+ * | 0110H  |  32:63  |
+ * | 0120H  |  64:95  |
+ * | 0130H  |  96:127 |
+ * | 0140H  | 128:159 |
+ * | 0150H  | 160:191 |
+ * | 0160H  | 192:223 |
+ * | 0170H  | 224:255 |
+ * --------------------
+ *
+ * @return The vector of the interrupt that is currently being processed.
+ */
+int _loapic_isr_vector_get(void)
+{
+	/* pointer to ISR vector table */
+	volatile int *pReg;
+	int block=0;
+
+	while (block < 8) {
+		pReg = (volatile int *)
+		(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ISR + (block * 0x10));
+		if (*pReg) {
+			return (block * 32) + (find_lsb_set(*pReg) - 1);
+		}
+		block++;
+	}
+
+	return 0;
+}
