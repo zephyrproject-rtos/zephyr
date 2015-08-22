@@ -53,9 +53,9 @@ performed byte-by-byte.
  *
  * @brief Perform an unaligned 32-bit write operation
  *
- * This function is used during the interrupt and exception stub code 
+ * This function is used during the interrupt and exception stub code
  * synthesis step when writing out the 32-bit relative jmp/branch
- * offsets.  
+ * offsets.
  *
  * Generally, the 32-bit offsets are located at an odd memory address.  For
  * target hardware that don't fully (or properly) decode the byte enable
@@ -70,7 +70,7 @@ performed byte-by-byte.
  *
  *  void _Unaligned32Write
  *      (
- *      unsigned int * ptr, 
+ *      unsigned int * ptr,
  *      unsigned int val
  *      );
  */
@@ -92,7 +92,7 @@ SECTION_FUNC(TEXT, _Unaligned32Write)
  *
  * This function is used during the interrupt and exception stub code
  * synthesis step when reading the 32-bit relative jmp/branch
- * offsets.  
+ * offsets.
  *
  * Generally, the 32-bit offsets are located at an odd memory address.  For
  * target hardware that don't fully (or properly) decode the byte enable

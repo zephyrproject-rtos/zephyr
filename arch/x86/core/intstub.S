@@ -223,7 +223,7 @@ BRANCH_LABEL(_HandleIdle)
 	 * the calculation and programming of the device for the next timer
 	 * deadline is not interrupted.
 	 */
-	 
+
 	call	_sys_power_save_idle_exit
 	add	$0x4, %esp
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
@@ -296,7 +296,7 @@ SECTION_FUNC(TEXT, _IntExit)
          * [totalRunTime] calculation has already been performed and that
 	 * there is no need to do it again.
 	 */
-	 
+
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
 	orl	$INT_ACTIVE, __tTCS_flags_OFFSET(%eax)
 #endif
@@ -321,7 +321,7 @@ SECTION_FUNC(TEXT, _IntExit)
 	 * Now need to restore the interrupted thread's environment before
 	 * returning control to it at the point where it was interrupted ...
 	 */
-	 
+
 
 #if ( defined(CONFIG_FP_SHARING) ||  \
       defined(CONFIG_GDB_INFO) )
@@ -330,7 +330,7 @@ SECTION_FUNC(TEXT, _IntExit)
 	 * Clear the INT_ACTIVE bit of the interrupted thread's TCS
 	 * since it has served its purpose.
 	 */
-	 
+
 	movl	_nanokernel + __tNANO_current_OFFSET, %eax
 	andl	$~INT_ACTIVE, __tTCS_flags_OFFSET (%eax)
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
@@ -346,9 +346,9 @@ SECTION_FUNC(TEXT, _IntExit)
 	call	_int_latency_stop
 #endif
 
-	popl	%edx		
+	popl	%edx
 	popl	%ecx
-	popl	%eax	
+	popl	%eax
 
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	iret
@@ -429,7 +429,7 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 	cld				/* Clear direction flag */
 
 
-	/* 
+	/*
 	 * The task's regular stack is being used, but push the value of ESP
 	 * anyway so that _ExcExit can "recover the stack pointer"
 	 * without determining whether the exception occurred while CPL=3
@@ -441,16 +441,16 @@ BRANCH_LABEL(finishSpuriousInt)
 
 	/* re-enable interrupts */
 
-	sti			
+	sti
 
 	/* push the 'unsigned int reason' parameter */
-	
+
 	pushl	$_NANO_ERR_SPURIOUS_INT
-	
+
 BRANCH_LABEL(callFatalHandler)
 
 	/* call the fatal error handler */
-	
+
 	call	_NanoFatalErrorHandler
 
 	/* handler shouldn't return, but call it again if it does */

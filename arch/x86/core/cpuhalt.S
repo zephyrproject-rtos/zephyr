@@ -84,7 +84,7 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	call	_int_latency_stop
 #endif
-#if defined(CONFIG_BOOT_TIME_MEASUREMENT) 
+#if defined(CONFIG_BOOT_TIME_MEASUREMENT)
 	rdtsc			/* record idle timestamp */
 	mov  %eax, __idle_tsc   /* ... low 32 bits  */
 	mov  %edx, __idle_tsc+4 /* ... high 32 bits */
@@ -151,7 +151,7 @@ SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 BRANCH_LABEL(skipIntDisable)
 
 	ret
-	
+
 #else
 
 /*
@@ -159,11 +159,11 @@ BRANCH_LABEL(skipIntDisable)
  * nano_cpu_atomic_idle() are "no op" routines that simply return immediately
  * without entering low-power mode.
  */
- 
+
 SECTION_FUNC(TEXT, nano_cpu_idle)
 SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
 
 	ret
-	
+
 #endif /* !CONFIG_NO_ISRS */
 

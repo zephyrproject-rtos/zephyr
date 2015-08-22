@@ -63,7 +63,7 @@ utilities.
  *    this instruction on an earlier IA-32 processor will result in an invalid
  *    opcode exception.
  * 2) The 'wrmsr' uses the ECX, EDX, and EAX registers which matches the set of
- *    volatile registers!  
+ *    volatile registers!
  *
  * @return N/A
  */
@@ -94,7 +94,7 @@ SECTION_FUNC(TEXT, _MsrWrite)
  *    this instruction on an earlier IA-32 processor will result in an invalid
  *    opcode exception.
  * 2) The 'rdmsr' uses the ECX, EDX, and EAX registers which matches the set of
- *    volatile registers!  
+ *    volatile registers!
  *
  * @return N/A
  */

@@ -120,10 +120,10 @@ BRANCH_LABEL(atomic_cas1)
  * This routine provides the atomic addition operator. The <value> is
  * atomically added to the value at <target>, placing the result at <target>,
  * and the old value from <target> is returned.
- * 
+ *
  * @return The previous value from <target>
- * 
- * atomic_val_t atomic_add 
+ *
+ * atomic_val_t atomic_add
  *	(
  *	atomic_t * target,      /@ memory location to add to @/
  *	atomic_val_t value       /@ value to add @/
@@ -154,7 +154,7 @@ SECTION_FUNC(TEXT, atomic_add)
  * <target>, and the old value from <target> is returned.
  *
  * @return The previous value from <target>
- * 
+ *
  * atomic_val_t atomic_sub
  *     (
  *     atomic_t * target,        /@ memory location to subtract from @/
@@ -186,7 +186,7 @@ SECTION_FUNC(TEXT, atomic_sub)
  * is atomically incremented by 1, and the old value from <target> is returned.
  *
  * @return The value from <target> before the increment
- * 
+ *
  * atomic_val_t atomic_inc
  *     (
  *     atomic_t *target          /@ memory location to increment @/
@@ -218,7 +218,7 @@ SECTION_FUNC(TEXT, atomic_inc)
  * is atomically decremented by 1, and the old value from <target> is returned.
  *
  * @return The value from <target> prior to the decrement
- * 
+ *
  * atomic_val_t atomic_dec
  *     (
  *     atomic_t *target          /@ memory location to decrement @/
@@ -249,7 +249,7 @@ SECTION_FUNC(TEXT, atomic_dec)
  * is expected to be aligned to a 4-byte boundary.
  *
  * @return The value read from <target>
- * 
+ *
  * atomic_t atomic_get
  *     (
  *     atomic_t *target          /@ memory location to read from @/
@@ -270,9 +270,9 @@ SECTION_FUNC(TEXT, atomic_get)
  *
  * This routine provides the atomic set operator. The <value> is atomically
  * written at <target> and the previous value at <target> is returned.
- * 
+ *
  * @return The previous value from <target>
- * 
+ *
  * atomic_val_t atomic_set
  *     (
  *     atomic_t *target,         /@ memory location to write to @/
@@ -291,7 +291,7 @@ SECTION_FUNC(TEXT, atomic_set)
 
 	/*
 	 * The 'lock' prefix is not required with the 'xchg' instruction.
-	 * According to the IA-32 instruction reference manual: 
+	 * According to the IA-32 instruction reference manual:
 	 *
 	 *   "If a memory operand is referenced, the processor's locking
 	 *    protocol is automatically implemented for the duration of
@@ -313,7 +313,7 @@ SECTION_FUNC(TEXT, atomic_set)
  * atomic_clear(pAtomicVar) is equivalent to atomic_set(pAtomicVar, 0).)
  *
  * @return The previous value from <target>
- * 
+ *
  * atomic_val_t atomic_clear
  *     (
  *     atomic_t *target          /@ memory location to write to @/
@@ -328,7 +328,7 @@ SECTION_FUNC(TEXT, atomic_clear)
 
 	/*
 	 * The 'lock' prefix is not required with the 'xchg' instruction.
-	 * According to the IA-32 instruction reference manual: 
+	 * According to the IA-32 instruction reference manual:
 	 *
 	 *   "If a memory operand is referenced, the processor's locking
 	 *    protocol is automatically implemented for the duration of
@@ -350,7 +350,7 @@ SECTION_FUNC(TEXT, atomic_clear)
  * at <target>, and the previous value at <target> is returned.
  *
  * @return The previous value from <target>
- * 
+ *
  * atomic_val_t atomic_or
  *     (
  *     atomic_t *target,         /@ memory location to be modified @/
@@ -388,7 +388,7 @@ BRANCH_LABEL(atomic_or_retry)
  * at <target>, and the previous value at <target> is returned.
  *
  * @return The previous value from <target>
- * 
+ *
  * atomic_val_t atomic_xor
  *     (
  *     atomic_t *target,         /@ memory location to be modified @/
@@ -426,7 +426,7 @@ BRANCH_LABEL(atomic_xor_retry)
  * at <target>, and the previous value at <target> is returned.
  *
  * @return The previous value from <target>
- * 
+ *
  * atomic_val_t atomic_and
  *     (
  *     atomic_t *target,         /@ memory location to be modified @/
