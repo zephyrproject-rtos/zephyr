@@ -316,7 +316,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct bt_buf *buf)
 	chan->recv(conn, buf);
 }
 
-void bt_l2cap_update_conn_param(struct bt_conn *conn)
+int bt_l2cap_update_conn_param(struct bt_conn *conn)
 {
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conn_param_req *req;
@@ -325,12 +325,12 @@ void bt_l2cap_update_conn_param(struct bt_conn *conn)
 	/* Check if we need to update anything */
 	if (conn->le_conn_interval >= LE_CONN_MIN_INTERVAL &&
 	    conn->le_conn_interval <= LE_CONN_MAX_INTERVAL) {
-		return;
+		return -EALREADY;
 	}
 
 	buf = bt_l2cap_create_pdu(conn);
 	if (!buf) {
-		return;
+		return -ENOBUFS;
 	}
 
 	hdr = bt_buf_add(buf, sizeof(*hdr));
@@ -345,6 +345,8 @@ void bt_l2cap_update_conn_param(struct bt_conn *conn)
 	req->timeout = sys_cpu_to_le16(LE_CONN_TIMEOUT);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
+
+	return 0;
 }
 
 int bt_l2cap_init(void)
