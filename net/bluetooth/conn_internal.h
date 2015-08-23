@@ -123,3 +123,6 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 
 int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 			   uint16_t latency, uint16_t timeout);
+
+/* Notify higher layers of a new connection */
+void bt_conn_connected(struct bt_conn *conn);

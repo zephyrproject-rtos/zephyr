@@ -69,7 +69,6 @@ static nano_thread_id_t rx_prio_fiber_id;
 
 struct bt_dev bt_dev;
 
-static struct bt_conn_cb *callback_list;
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
 #if defined(CONFIG_BLUETOOTH_DEBUG)
@@ -99,34 +98,6 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr)
 	return str;
 }
 #endif /* CONFIG_BLUETOOTH_DEBUG */
-
-static void bt_connected(struct bt_conn *conn)
-{
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->connected) {
-			cb->connected(conn);
-		}
-	}
-}
-
-static void bt_disconnected(struct bt_conn *conn)
-{
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->disconnected) {
-			cb->disconnected(conn);
-		}
-	}
-}
-
-void bt_conn_cb_register(struct bt_conn_cb *cb)
-{
-	cb->_next = callback_list;
-	callback_list = cb;
-}
 
 struct bt_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 {
@@ -732,9 +703,6 @@ static void hci_disconn_complete(struct bt_buf *buf)
 		return;
 	}
 
-	bt_l2cap_disconnected(conn);
-	bt_disconnected(conn);
-
 	/* Check stack usage (no-op if not enabled) */
 	analyze_stacks(conn, &conn);
 
@@ -813,14 +781,12 @@ static void le_conn_complete(struct bt_buf *buf)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
-	bt_l2cap_connected(conn);
-
 	if ((evt->role == BT_HCI_ROLE_SLAVE) &&
 	    !(bt_dev.le_features[0] & BT_HCI_LE_CONN_PARAM_REQ_PROC)) {
 		bt_l2cap_update_conn_param(conn);
 	}
 
-	bt_connected(conn);
+	bt_conn_connected(conn);
 	bt_conn_put(conn);
 	bt_le_scan_update();
 }

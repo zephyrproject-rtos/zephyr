@@ -58,6 +58,7 @@
 #define CONN_TIMEOUT	(3 * sys_clock_ticks_per_sec)
 
 static struct bt_conn conns[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_conn_cb *callback_list;
 
 #if defined(CONFIG_BLUETOOTH_DEBUG_CONN)
 static const char *state2str(bt_conn_state_t state)
@@ -78,6 +79,34 @@ static const char *state2str(bt_conn_state_t state)
 	}
 }
 #endif
+
+void bt_conn_connected(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->connected) {
+			cb->connected(conn);
+		}
+	}
+}
+
+static void bt_conn_disconnected(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->disconnected) {
+			cb->disconnected(conn);
+		}
+	}
+}
+
+void bt_conn_cb_register(struct bt_conn_cb *cb)
+{
+	cb->_next = callback_list;
+	callback_list = cb;
+}
 
 static void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
@@ -352,6 +381,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		nano_fifo_init(&conn->tx_queue);
 		fiber_start(conn->stack, sizeof(conn->stack), conn_tx_fiber,
 			    (int)bt_conn_get(conn), 0, 7, 0);
+
+		bt_l2cap_connected(conn);
 		break;
 	case BT_CONN_DISCONNECTED:
 		/* Send dummy buffer to wake up and stop the tx fiber
@@ -359,6 +390,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		if (old_state == BT_CONN_CONNECTED ||
 		    old_state == BT_CONN_DISCONNECT) {
+			bt_l2cap_disconnected(conn);
+			bt_conn_disconnected(conn);
+
 			nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
 		}
 
