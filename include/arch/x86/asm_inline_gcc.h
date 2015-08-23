@@ -235,7 +235,7 @@ static inline uint64_t _NanoTscRead(void)
  * @return a 32-bit number
  */
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	uint32_t _do_read_cpu_timestamp32(void)
 {
 	uint32_t rv;
@@ -258,7 +258,7 @@ static inline inline __attribute__((always_inline))
  * NOMANUAL
  */
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	void sys_out8(unsigned char data, unsigned int port)
 {
 	__asm__ volatile("outb	%%al, %%dx;\n\t" : : "a"(data), "d"(port));
@@ -277,7 +277,7 @@ static inline inline __attribute__((always_inline))
  * NOMANUAL
  */
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	unsigned char sys_in8(unsigned int port)
 {
 	char retByte;
@@ -299,7 +299,7 @@ static inline inline __attribute__((always_inline))
  * NOMANUAL
  */
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	void sys_out16(unsigned short data, unsigned int port)
 {
 	__asm__ volatile("outw	%%ax, %%dx;\n\t" :  : "a"(data), "d"(port));
@@ -318,7 +318,7 @@ static inline inline __attribute__((always_inline))
  * NOMANUAL
  */
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	unsigned short sys_in16(unsigned int port)
 {
 	unsigned short retWord;
@@ -340,7 +340,7 @@ static inline inline __attribute__((always_inline))
  * NOMANUAL
  */
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	void sys_out32(unsigned int data, unsigned int port)
 {
 	__asm__ volatile("outl	%%eax, %%dx;\n\t" :  : "a"(data), "d"(port));
@@ -359,7 +359,7 @@ static inline inline __attribute__((always_inline))
  * NOMANUAL
  */
 
-static inline inline __attribute__((always_inline))
+static inline __attribute__((always_inline))
 	unsigned long sys_in32(unsigned int port)
 {
 	unsigned long retLong;
