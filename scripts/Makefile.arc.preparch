@@ -1,6 +1,0 @@
-LTO_FLAG-y = $(call cc-option,-flto,)
-SECTION_GC_FLAG = $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
-
-arc_FLAGS += -mARCv2EM -mav2em -mno-sdata
-
-export ISA_FLAG_arc

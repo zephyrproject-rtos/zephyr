@@ -1,8 +1,9 @@
-ccflags-y +=-I$(srctree)/arch/arc/platforms/$(strip $(CONFIG_PLATFORM))
-asflags-y +=-I$(srctree)/arch/arc/platforms/$(strip $(CONFIG_PLATFORM))
 
-obj-y = core/
 
-obj-y += prep_c.o \
-         reset.o \
-         vector_table.o
+KBUILD_CFLAGS += $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
+cflags-$(CONFIG_LTO) = $(call cc-option,-flto,)
+cflags-$(CPU_ARCEM4) = $(call cc-option,-mARCv2EM) \
+			 $(call cc-option,-mav2em,$(call cc-option,-mno-sdata))
+
+KBUILD_CFLAGS += $(cflags-y)
+

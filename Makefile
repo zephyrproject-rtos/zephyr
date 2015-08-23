@@ -12,10 +12,12 @@ export SOURCE_DIR PROJECT MDEF_FILE KLIBC_DIR
 # More info can be located in ./README
 # Comments in this file are targeted only to the developer, do not
 # expect to learn how to build the kernel reading this file.
+#
 
-# Do not use make's built-in rules and variables
-# (this increases performance and avoids hard-to-debug behaviour);
-MAKEFLAGS += -rR
+# o Do not use make's built-in rules and variables
+#   (this increases performance and avoids hard-to-debug behaviour);
+# o Look for make include files relative to root of kernel src
+MAKEFLAGS += -rR --include-dir=$(CURDIR)
 
 # Avoid funny character set dependencies
 unexport LC_ALL
@@ -561,9 +563,10 @@ include/config/auto.conf: ;
 endif # $(dot-config)
 
 
-#File that includes all prepare special embedded architecture targets.
+# File that includes all prepare special embedded architecture targets.
 include $(srctree)/scripts/Makefile.preparch
-sinclude $(srctree)/scripts/Makefile.$(SRCARCH).preparch
+
+
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 else
@@ -589,6 +592,8 @@ QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
 # Defaults to zephyr, but the arch makefile usually adds further targets
 all: zephyr
 
+include arch/$(SRCARCH)/Makefile
+
 ifdef CONFIG_READABLE_ASM
 # Disable optimizations that make assembler listings hard to read.
 # reorder blocks reorders the control in the function
@@ -598,8 +603,6 @@ KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
                  $(call cc-option,-fno-ipa-cp-clone,) \
                  $(call cc-option,-fno-partial-inlining)
 endif
-
-ISA_FLAG=$(ISA_FLAG_$(SRCARCH))
 
 STACK_CANARIES_FLAG_y = $(call cc-option,-fstack-protector-all,)
 STACK_CANARIES_FLAG_  = $(call cc-option,-fno-stack-protector,)
@@ -652,7 +655,6 @@ export x86_FLAGS arm_FLAGS arc_FLAGS LDFLAG_LINKERCMD OUTPUT_FORMAT OUTPUT_ARCH
 ARCHFLAGS = $($(SRCARCH)_FLAGS)
 
 KBUILD_CFLAGS   += $(SSE_FP_MATH_FLAG) \
-		$(ISA_FLAG) \
 		$(STACK_CANARIES_FLAG) \
 		$(ARCHFLAGS)
 
@@ -661,7 +663,7 @@ KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly) \
 		   $(call cc-option,-fno-var-tracking)
 endif
 KBUILD_CFLAGS += $(CFLAGS)
-KBUILD_AFLAGS += $(ARCHFLAGS) $(ISA_FLAG)
+KBUILD_AFLAGS += $(ARCHFLAGS)
 KBUILD_AFLAGS += $(CFLAGS)
 
 ifdef CONFIG_FUNCTION_TRACER
