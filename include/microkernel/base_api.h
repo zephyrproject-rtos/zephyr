@@ -168,7 +168,7 @@ struct _k_pipe_marker {
 
 struct _k_pipe_marker_list {
 	int num_markers;   /* Only used if STORE_NBR_MARKERS is defined */
-	int iFirstMarker;
+	int first_marker;
 	int iLastMarker;
 	int iAWAMarker; /* -1 means no AWAMarkers */
 	struct _k_pipe_marker aMarkers[MAXNBR_PIPE_MARKERS];
