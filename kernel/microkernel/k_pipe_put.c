@@ -49,7 +49,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	struct k_args *Request;
 	struct k_args *RequestProc;
 
-	kpipe_t pipeId = RequestOrig->args.pipe_req.ReqInfo.pipe.id;
+	kpipe_t pipeId = RequestOrig->args.pipe_req.req_info.pipe.id;
 
 	bool bAsync;
 
@@ -79,7 +79,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	 */
 
 	mycopypacket(&RequestProc, Request);
-	RequestProc->args.pipe_xfer_req.ReqInfo.pipe.ptr =
+	RequestProc->args.pipe_xfer_req.req_info.pipe.ptr =
 		(struct _k_pipe_struct *)pipeId;
 
 	switch (_k_pipe_request_type_get(&RequestProc->args)) {
@@ -121,7 +121,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 	struct _k_pipe_struct *pPipe;
 
-	pPipe = RequestProc->args.pipe_xfer_req.ReqInfo.pipe.ptr;
+	pPipe = RequestProc->args.pipe_xfer_req.req_info.pipe.ptr;
 
 	do {
 		int iSpace2WriteinReaders;

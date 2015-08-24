@@ -96,38 +96,38 @@ int CalcAvailWriterData(struct k_args *pWriterList)
 
 K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *args)
 {
-	return (K_PIPE_OPTION)(args->pipe_xfer_req.ReqInfo.params & _ALL_OPT);
+	return (K_PIPE_OPTION)(args->pipe_xfer_req.req_info.params & _ALL_OPT);
 }
 
 void _k_pipe_option_set(K_ARGS_ARGS *args, K_PIPE_OPTION option)
 {
 	/* Ensure that only the pipe option bits are modified */
-	args->pipe_xfer_req.ReqInfo.params &= (~_ALL_OPT);
-	args->pipe_xfer_req.ReqInfo.params |= (option & _ALL_OPT);
+	args->pipe_xfer_req.req_info.params &= (~_ALL_OPT);
+	args->pipe_xfer_req.req_info.params |= (option & _ALL_OPT);
 }
 
 REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *args)
 {
-	return (REQ_TYPE)(args->pipe_xfer_req.ReqInfo.params & _ALLREQ);
+	return (REQ_TYPE)(args->pipe_xfer_req.req_info.params & _ALLREQ);
 }
 
 void _k_pipe_request_type_set(K_ARGS_ARGS *args, REQ_TYPE ReqType)
 {
 	/* Ensure that only the request type bits are modified */
-	args->pipe_xfer_req.ReqInfo.params &= (~_ALLREQ);
-	args->pipe_xfer_req.ReqInfo.params |= (ReqType & _ALLREQ);
+	args->pipe_xfer_req.req_info.params &= (~_ALLREQ);
+	args->pipe_xfer_req.req_info.params |= (ReqType & _ALLREQ);
 }
 
 TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *args)
 {
-	return (TIME_TYPE)(args->pipe_xfer_req.ReqInfo.params & _ALLTIME);
+	return (TIME_TYPE)(args->pipe_xfer_req.req_info.params & _ALLTIME);
 }
 
 void _k_pipe_time_type_set(K_ARGS_ARGS *args, TIME_TYPE TimeType)
 {
 	/* Ensure that only the time type bits are modified */
-	args->pipe_xfer_req.ReqInfo.params &= (~_ALLTIME);
-	args->pipe_xfer_req.ReqInfo.params |= (TimeType & _ALLTIME);
+	args->pipe_xfer_req.req_info.params &= (~_ALLTIME);
+	args->pipe_xfer_req.req_info.params |= (TimeType & _ALLTIME);
 }
 
 void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
@@ -141,7 +141,7 @@ void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
 
 	if (XFER_IDLE == pipe_xfer_req->status /* current (old) status */
 	    && (XFER_BUSY | TERM_XXX) & status /* new status */) {
-		(pipe_xfer_req->ReqInfo.pipe.ptr->count)++;
+		(pipe_xfer_req->req_info.pipe.ptr->count)++;
 	}
 #endif
 	pipe_xfer_req->status = status;

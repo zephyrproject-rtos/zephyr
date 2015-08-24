@@ -189,7 +189,7 @@ struct async_req {
 };
 
 struct _pipe_req_arg {
-	struct req_info ReqInfo;
+	struct req_info req_info;
 	union {
 		struct sync_req Sync;
 		struct async_req Async;
@@ -198,7 +198,7 @@ struct _pipe_req_arg {
 };
 
 struct _pipe_xfer_req_arg {
-	struct req_info ReqInfo;
+	struct req_info req_info;
 	void *data_ptr; /* if NULL, data is embedded in
 			     cmd packet		    */
 	int total_size;      /* total size of data/free space    */
@@ -208,7 +208,7 @@ struct _pipe_xfer_req_arg {
 };
 
 struct _pipe_ack_arg {
-	struct req_info ReqInfo;
+	struct req_info req_info;
 	union {
 		struct sync_req Dummy;
 		struct async_req Async;
