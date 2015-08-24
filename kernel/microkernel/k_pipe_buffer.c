@@ -112,7 +112,7 @@ static void MarkerLinkToListAfter(struct _k_pipe_marker aMarkers[],
 }
 
 static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
-						 unsigned char *pointer, int iSize, bool bXferBusy)
+						 unsigned char *pointer, int iSize, bool buffer_xfer_busy)
 {
 	int i = MarkerFindFree(pMarkerList->aMarkers);
 
@@ -122,7 +122,7 @@ static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
 
 	pMarkerList->aMarkers[i].pointer = pointer;
 	pMarkerList->aMarkers[i].size = iSize;
-	pMarkerList->aMarkers[i].bXferBusy = bXferBusy;
+	pMarkerList->aMarkers[i].buffer_xfer_busy = buffer_xfer_busy;
 
 	if (-1 == pMarkerList->iFirstMarker) {
 		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
@@ -263,7 +263,7 @@ static int ScanMarkers(struct _k_pipe_marker_list *pMarkerList,
 
 		pM = &(pMarkerList->aMarkers[index]);
 
-		if (pM->bXferBusy == true) {
+		if (pM->buffer_xfer_busy == true) {
 			break;
 		}
 
@@ -511,7 +511,7 @@ static int AsyncEnQRegstr(struct _k_pipe_desc *desc, int iSize)
 
 static void AsyncEnQFinished(struct _k_pipe_desc *desc, int iTransferID)
 {
-	desc->WriteMarkers.aMarkers[iTransferID].bXferBusy = false;
+	desc->WriteMarkers.aMarkers[iTransferID].buffer_xfer_busy = false;
 
 	if (desc->WriteMarkers.iFirstMarker == iTransferID) {
 		int iNewFirstMarker = ScanMarkers(&desc->WriteMarkers,
@@ -621,7 +621,7 @@ static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int iSize)
 
 static void AsyncDeQFinished(struct _k_pipe_desc *desc, int iTransferID)
 {
-	desc->ReadMarkers.aMarkers[iTransferID].bXferBusy = false;
+	desc->ReadMarkers.aMarkers[iTransferID].buffer_xfer_busy = false;
 
 	if (desc->ReadMarkers.iFirstMarker == iTransferID) {
 		int iNewFirstMarker = ScanMarkers(&desc->ReadMarkers,
