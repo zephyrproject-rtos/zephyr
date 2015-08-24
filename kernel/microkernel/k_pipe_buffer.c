@@ -98,7 +98,7 @@ static void MarkerLinkToListAfter(struct _k_pipe_marker aMarkers[],
 		iNextMarker = aMarkers[iMarker].Next;
 		aMarkers[iMarker].Next = iNewMarker;
 		if (-1 != iNextMarker) {
-			aMarkers[iNextMarker].Prev = iNewMarker;
+			aMarkers[iNextMarker].prev = iNewMarker;
 		} else {
 			/* there was no next marker */
 		}
@@ -107,7 +107,7 @@ static void MarkerLinkToListAfter(struct _k_pipe_marker aMarkers[],
 	}
 
 	/* link the new marker with the marker and next marker */
-	aMarkers[iNewMarker].Prev = iMarker;
+	aMarkers[iNewMarker].prev = iMarker;
 	aMarkers[iNewMarker].Next = iNextMarker;
 }
 
@@ -126,7 +126,7 @@ static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
 
 	if (-1 == pMarkerList->iFirstMarker) {
 		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
-		pMarkerList->iFirstMarker = i; /* we still need to set Prev & Next */
+		pMarkerList->iFirstMarker = i; /* we still need to set prev & Next */
 	} else {
 		__ASSERT_NO_MSG(-1 != pMarkerList->iLastMarker);
 		__ASSERT_NO_MSG(-1 ==
@@ -150,18 +150,18 @@ static void MarkerUnlinkFromList(struct _k_pipe_marker aMarkers[], int iMarker,
 								 int *piPredecessor, int *piSuccessor)
 {
 	int iNextMarker = aMarkers[iMarker].Next;
-	int iPrevMarker = aMarkers[iMarker].Prev;
+	int iPrevMarker = aMarkers[iMarker].prev;
 
 	/* remove the marker from the list */
 	aMarkers[iMarker].Next = -1;
-	aMarkers[iMarker].Prev = -1;
+	aMarkers[iMarker].prev = -1;
 
 	/* repair the chain */
 	if (-1 != iPrevMarker) {
 		aMarkers[iPrevMarker].Next = iNextMarker;
 	}
 	if (-1 != iNextMarker) {
-		aMarkers[iNextMarker].Prev = iPrevMarker;
+		aMarkers[iNextMarker].prev = iPrevMarker;
 	}
 	*piPredecessor = iPrevMarker;
 	*piSuccessor = iNextMarker;
@@ -207,7 +207,7 @@ static void MarkersClear(struct _k_pipe_marker_list *pMarkerList)
 	for (i = 0; i < MAXNBR_PIPE_MARKERS; i++, pM++) {
 		memset(pM, 0, sizeof(struct _k_pipe_marker));
 		pM->Next = -1;
-		pM->Prev = -1;
+		pM->prev = -1;
 	}
 #ifdef STORE_NBR_MARKERS
 	pMarkerList->iNbrMarkers = 0;

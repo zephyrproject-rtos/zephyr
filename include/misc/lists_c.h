@@ -60,9 +60,9 @@ INLINE void RemoveElem(struct list_elem *elem)
 	struct list_elem *tmpElem;
 
 	tmpElem = elem->Next;
-	elem = elem->Prev;  /* elem is destroyed */
+	elem = elem->prev;  /* elem is destroyed */
 	elem->Next = tmpElem;
-	tmpElem->Prev = elem;
+	tmpElem->prev = elem;
 }
 
 INLINE struct list_elem *RemoveHead(struct list_head *list)
@@ -76,7 +76,7 @@ INLINE struct list_elem *RemoveHead(struct list_head *list)
 		return NULL;  /* empty list */
 	}
 	list->Head = tmpElem;
-	tmpElem->Prev = (struct list_elem *)&list->Head;
+	tmpElem->prev = (struct list_elem *)&list->Head;
 	return ret_Elem;
 }
 
@@ -85,7 +85,7 @@ INLINE struct list_elem *RemoveTail(struct list_head *list)
 	struct list_elem *tmpElem, *ret_Elem;
 
 	ret_Elem = list->TailPrev;
-	tmpElem = ret_Elem->Prev;
+	tmpElem = ret_Elem->prev;
 	if (tmpElem == NULL) {
 		return NULL;  /* empty list */
 	}
@@ -100,10 +100,10 @@ INLINE void AddHead(struct list_head *list, struct list_elem *elem)
 
 	tmpElem = list->Head;
 	list->Head = elem;
-	tmpElem->Prev = elem;
+	tmpElem->prev = elem;
 	/* set pointers for the new elem */
 	elem->Next = tmpElem;
-	elem->Prev = (struct list_elem *)&list->Head;
+	elem->prev = (struct list_elem *)&list->Head;
 }
 
 INLINE void AddTail(struct list_head *list, struct list_elem *elem)
@@ -112,12 +112,12 @@ INLINE void AddTail(struct list_head *list, struct list_elem *elem)
 	struct list_elem *tailElem;
 
 	tmpElem = (struct list_elem *)&list->Tail;
-	tailElem = tmpElem->Prev;
+	tailElem = tmpElem->prev;
 	tailElem->Next = elem;
-	tmpElem->Prev = elem;
+	tmpElem->prev = elem;
 	/* set pointers for the new elem */
 	elem->Next = tmpElem;
-	elem->Prev = tailElem;
+	elem->prev = tailElem;
 }
 
 /* Insert after predecessor elem */
@@ -128,9 +128,9 @@ INLINE void Insert_Elem(struct list_elem *elem, struct list_elem *pred)
 
 	tmpElem = pred->Next;
 	pred->Next = elem;
-	tmpElem->Prev = elem;
+	tmpElem->prev = elem;
 	elem->Next = tmpElem;
-	elem->Prev = pred;
+	elem->prev = pred;
 }
 
 /* Enqueue in list priority based, after last elem with equal or higher prior */

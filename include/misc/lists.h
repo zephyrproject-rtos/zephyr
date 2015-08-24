@@ -41,7 +41,7 @@ extern "C" {
 
 struct Elem {
 	struct Elem *Next;
-	struct Elem *Prev;
+	struct Elem *prev;
 	unsigned int priority;
 };
 

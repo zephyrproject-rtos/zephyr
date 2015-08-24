@@ -162,7 +162,7 @@ struct _k_pipe_marker {
 	unsigned char *pointer; /* NULL == non valid marker == free */
 	int size;
 	bool buffer_xfer_busy;
-	int Prev; /* -1 == no predecessor */
+	int prev; /* -1 == no predecessor */
 	int Next; /* -1 == no successor */
 };
 
