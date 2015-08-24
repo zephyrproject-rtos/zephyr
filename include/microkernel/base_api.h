@@ -225,7 +225,7 @@ struct _k_mem_map_struct {
 	int Nelms;
 	int element_size;
 	char *base;
-	char *Free;
+	char *free;
 	struct k_args *waiters;
 	int num_used;
 	int high_watermark;

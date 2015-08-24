@@ -71,7 +71,7 @@ void _k_mem_map_init(void)
 			q = p;
 			p += w;
 		}
-		M->Free = q;
+		M->free = q;
 		M->num_used = 0;
 		M->high_watermark = 0;
 		M->count = 0;
@@ -105,9 +105,9 @@ void _k_mem_map_alloc(struct k_args *A)
 	struct _k_mem_map_struct *M =
 	    (struct _k_mem_map_struct *)(A->args.a1.mmap);
 
-	if (M->Free != NULL) {
-		*(A->args.a1.mptr) = M->Free;
-		M->Free = *(char **)(M->Free);
+	if (M->free != NULL) {
+		*(A->args.a1.mptr) = M->free;
+		M->free = *(char **)(M->free);
 		M->num_used++;
 
 #ifdef CONFIG_OBJECT_MONITOR
@@ -175,15 +175,15 @@ void _k_mem_map_dealloc(struct k_args *A)
 	    (struct _k_mem_map_struct *)(A->args.a1.mmap);
 	struct k_args *X;
 
-	**(char ***)(A->args.a1.mptr) = M->Free;
-	M->Free = *(char **)(A->args.a1.mptr);
+	**(char ***)(A->args.a1.mptr) = M->free;
+	M->free = *(char **)(A->args.a1.mptr);
 	*(A->args.a1.mptr) = NULL;
 
 	X = M->waiters;
 	if (X) {
 		M->waiters = X->next;
-		*(X->args.a1.mptr) = M->Free;
-		M->Free = *(char **)(M->Free);
+		*(X->args.a1.mptr) = M->free;
+		M->free = *(char **)(M->free);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (X->Time.timer) {
