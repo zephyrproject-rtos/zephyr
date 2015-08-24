@@ -200,7 +200,7 @@ struct _k_pipe_desc {
 	_K_PIPE_BUFF_STATE BuffState;
 	struct _k_pipe_marker_list WriteMarkers;
 	struct _k_pipe_marker_list ReadMarkers;
-	unsigned char *pEnd;
+	unsigned char *end_ptr;
 	unsigned char *pEndOrig;
 };
 

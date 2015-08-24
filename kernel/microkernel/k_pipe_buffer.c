@@ -33,7 +33,7 @@
 
 /* Implementation remarks:
 - when using a floating end pointer: do not use pipe_desc->iBuffsize for
-  (pipe_desc->pEnd - pipe_desc->begin_ptr)
+  (pipe_desc->end_ptr - pipe_desc->begin_ptr)
  */
 
 #include <microkernel/base_api.h>
@@ -63,7 +63,7 @@
  */
 
 #define CHECK_BUFFER_POINTER(pData) \
-	__ASSERT_NO_MSG(desc->begin_ptr <= pData && pData < desc->pEnd)
+	__ASSERT_NO_MSG(desc->begin_ptr <= pData && pData < desc->end_ptr)
 
 static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin_ptr, int iSize);
 
@@ -313,12 +313,12 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 
 	/* reset all pointers */
 
-	desc->pEnd = desc->begin_ptr + OCTET_TO_SIZEOFUNIT(desc->buffer_size);
-	desc->pEndOrig = desc->pEnd;
+	desc->end_ptr = desc->begin_ptr + OCTET_TO_SIZEOFUNIT(desc->buffer_size);
+	desc->pEndOrig = desc->end_ptr;
 
 	/* assumed it is allowed */
 	desc->BuffState = BUFF_EMPTY;
-	desc->pEnd = desc->pEndOrig;
+	desc->end_ptr = desc->pEndOrig;
 	desc->pWrite = desc->begin_ptr;
 	desc->pWriteGuard = NULL;
 	desc->bWriteWA = false;
@@ -351,10 +351,10 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 		 */
 
 		if (BUFF_EMPTY == desc->BuffState) {
-			*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
+			*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 			return (*piFreeSpaceCont + *piFreeSpaceAWA);
-			/* this sum equals pEnd-begin_ptr */
+			/* this sum equals end_ptr-begin_ptr */
 		}
 	}
 
@@ -367,7 +367,7 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
 		*piFreeSpaceAWA = 0;
 	} else {
-		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
+		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 	}
 	return (*piFreeSpaceCont + *piFreeSpaceAWA);
@@ -422,10 +422,10 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 		 */
 
 		if (BUFF_FULL == desc->BuffState) {
-			*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
+			*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 			return (*piAvailDataCont + *piAvailDataAWA);
-			/* this sum equals pEnd-begin_ptr */
+			/* this sum equals end_ptr-begin_ptr */
 		}
 	}
 
@@ -438,7 +438,7 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
 		*piAvailDataAWA = 0;
 	} else {
-		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
+		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 	}
 	return (*piAvailDataCont + *piAvailDataAWA);
@@ -557,7 +557,7 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 	/* adjust write pointer and free space*/
 
 	desc->pWrite += OCTET_TO_SIZEOFUNIT(iSize);
-	if (desc->pEnd == desc->pWrite) {
+	if (desc->end_ptr == desc->pWrite) {
 		desc->pWrite = desc->begin_ptr;
 		desc->iFreeSpaceCont = desc->iFreeSpaceAWA;
 		desc->iFreeSpaceAWA = 0;
@@ -667,7 +667,7 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 	/* adjust read pointer and avail data */
 
 	desc->pRead += OCTET_TO_SIZEOFUNIT(iSize);
-	if (desc->pEnd == desc->pRead) {
+	if (desc->end_ptr == desc->pRead) {
 		desc->pRead = desc->begin_ptr;
 		desc->iAvailDataCont = desc->iAvailDataAWA;
 		desc->iAvailDataAWA = 0;
