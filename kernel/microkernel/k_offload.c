@@ -45,7 +45,7 @@
 
 void _k_offload_to_fiber(struct k_args *A)
 {
-	A->Args.u1.rval = (*A->Args.u1.func)(A->Args.u1.argp);
+	A->args.u1.rval = (*A->args.u1.func)(A->args.u1.argp);
 }
 
 /**
@@ -66,8 +66,8 @@ int task_offload_to_fiber(int (*func)(), void *argp)
 	struct k_args A;
 
 	A.Comm = _K_SVC_OFFLOAD_TO_FIBER;
-	A.Args.u1.func = func;
-	A.Args.u1.argp = argp;
+	A.args.u1.func = func;
+	A.args.u1.argp = argp;
 	KERNEL_ENTRY(&A);
-	return A.Args.u1.rval;
+	return A.args.u1.rval;
 }

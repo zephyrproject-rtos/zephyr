@@ -103,6 +103,6 @@ cmdPkt_t *_cmd_pkt_get(
 void _k_task_call(struct k_args *cmd_packet)
 {
 	cmd_packet->alloc = false;
-	_k_current_task->Args = cmd_packet;
+	_k_current_task->args = cmd_packet;
 	nano_task_stack_push(&_k_command_stack, (uint32_t)cmd_packet);
 }

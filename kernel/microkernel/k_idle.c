@@ -217,12 +217,12 @@ void _k_workload_get(struct k_args *P)
 		iret = 0;
 	}
 
-	P->Args.u1.rval = iret;
+	P->args.u1.rval = iret;
 }
 #else
 void _k_workload_get(struct k_args *P)
 {
-	P->Args.u1.rval = 0;
+	P->args.u1.rval = 0;
 }
 
 #endif /* CONFIG_WORKLOAD_MONITOR */
@@ -250,7 +250,7 @@ int task_workload_get(void)
 
 	A.Comm = _K_SVC_WORKLOAD_GET;
 	KERNEL_ENTRY(&A);
-	return A.Args.u1.rval;
+	return A.args.u1.rval;
 }
 
 /**

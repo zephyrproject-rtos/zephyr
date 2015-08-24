@@ -83,7 +83,7 @@ void _k_movedata_request(struct k_args *Req)
 {
 	struct moved_req *ReqArgs;
 
-	ReqArgs = &(Req->Args.MovedReq);
+	ReqArgs = &(Req->args.MovedReq);
 
 	__ASSERT_NO_MSG(0 ==
 	       (ReqArgs->iTotalSize %

@@ -103,10 +103,10 @@ void _k_mem_map_alloc_timeout(struct k_args *A)
 void _k_mem_map_alloc(struct k_args *A)
 {
 	struct _k_mem_map_struct *M =
-	    (struct _k_mem_map_struct *)(A->Args.a1.mmap);
+	    (struct _k_mem_map_struct *)(A->args.a1.mmap);
 
 	if (M->Free != NULL) {
-		*(A->Args.a1.mptr) = M->Free;
+		*(A->args.a1.mptr) = M->Free;
 		M->Free = *(char **)(M->Free);
 		M->Nused++;
 
@@ -120,7 +120,7 @@ void _k_mem_map_alloc(struct k_args *A)
 		return;
 	}
 
-	*(A->Args.a1.mptr) = NULL;
+	*(A->args.a1.mptr) = NULL;
 
 	if (likely(A->Time.ticks != TICKS_NONE)) {
 		A->priority = _k_current_task->priority;
@@ -156,8 +156,8 @@ int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time)
 
 	A.Comm = _K_SVC_MEM_MAP_ALLOC;
 	A.Time.ticks = time;
-	A.Args.a1.mmap = mmap;
-	A.Args.a1.mptr = mptr;
+	A.args.a1.mmap = mmap;
+	A.args.a1.mptr = mptr;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }
@@ -172,17 +172,17 @@ int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time)
 void _k_mem_map_dealloc(struct k_args *A)
 {
 	struct _k_mem_map_struct *M =
-	    (struct _k_mem_map_struct *)(A->Args.a1.mmap);
+	    (struct _k_mem_map_struct *)(A->args.a1.mmap);
 	struct k_args *X;
 
-	**(char ***)(A->Args.a1.mptr) = M->Free;
-	M->Free = *(char **)(A->Args.a1.mptr);
-	*(A->Args.a1.mptr) = NULL;
+	**(char ***)(A->args.a1.mptr) = M->Free;
+	M->Free = *(char **)(A->args.a1.mptr);
+	*(A->args.a1.mptr) = NULL;
 
 	X = M->Waiters;
 	if (X) {
 		M->Waiters = X->next;
-		*(X->Args.a1.mptr) = M->Free;
+		*(X->args.a1.mptr) = M->Free;
 		M->Free = *(char **)(M->Free);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -220,8 +220,8 @@ void _task_mem_map_free(kmemory_map_t mmap, void **mptr)
 	struct k_args A;
 
 	A.Comm = _K_SVC_MEM_MAP_DEALLOC;
-	A.Args.a1.mmap = mmap;
-	A.Args.a1.mptr = mptr;
+	A.args.a1.mmap = mmap;
+	A.args.a1.mptr = mptr;
 	KERNEL_ENTRY(&A);
 }
 

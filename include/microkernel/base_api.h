@@ -116,7 +116,7 @@ struct k_task {
 	char *workspace;
 	int worksize;
 	void (*fn_abort)(void);
-	struct k_args *Args;
+	struct k_args *args;
 };
 
 struct _k_mbox_struct {

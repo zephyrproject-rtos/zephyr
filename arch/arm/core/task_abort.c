@@ -75,10 +75,10 @@ void _TaskAbort(void)
 		_task_ioctl(_k_current_task->id, taskAbortCode);
 	} else {
 		cmd_packet.Comm = _K_SVC_TASK_OP;
-		cmd_packet.Args.g1.task = _k_current_task->id;
-		cmd_packet.Args.g1.opt = taskAbortCode;
+		cmd_packet.args.g1.task = _k_current_task->id;
+		cmd_packet.args.g1.opt = taskAbortCode;
 		cmd_packet.alloc = false;
-		_k_current_task->Args = &cmd_packet;
+		_k_current_task->args = &cmd_packet;
 		nano_isr_stack_push(&_k_command_stack, (uint32_t) &cmd_packet);
 		_ScbPendsvSet();
 	}

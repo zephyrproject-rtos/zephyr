@@ -100,16 +100,16 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	A.Comm = _K_SVC_PIPE_GET_REQUEST;
 	A.Time.ticks = TimeOut;
 
-	A.Args.pipe_req.ReqInfo.pipe.id = Id;
-	A.Args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
-	A.Args.pipe_req.ReqType.Sync.pData = pBuffer;
+	A.args.pipe_req.ReqInfo.pipe.id = Id;
+	A.args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
+	A.args.pipe_req.ReqType.Sync.pData = pBuffer;
 
-	_k_pipe_option_set(&A.Args, Option);
-	_k_pipe_request_type_set(&A.Args, _SYNCREQ);
+	_k_pipe_option_set(&A.args, Option);
+	_k_pipe_request_type_set(&A.args, _SYNCREQ);
 
 	KERNEL_ENTRY(&A);
 
-	*piNbrBytesRead = A.Args.pipe_ack.iSizeXferred;
+	*piNbrBytesRead = A.args.pipe_ack.iSizeXferred;
 	return A.Time.rcode;
 }
 
@@ -152,16 +152,16 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	A.Comm = _K_SVC_PIPE_PUT_REQUEST;
 	A.Time.ticks = TimeOut;
 
-	A.Args.pipe_req.ReqInfo.pipe.id = Id;
-	A.Args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
-	A.Args.pipe_req.ReqType.Sync.pData = pBuffer;
+	A.args.pipe_req.ReqInfo.pipe.id = Id;
+	A.args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
+	A.args.pipe_req.ReqType.Sync.pData = pBuffer;
 
-	_k_pipe_option_set(&A.Args, Option);
-	_k_pipe_request_type_set(&A.Args, _SYNCREQ);
+	_k_pipe_option_set(&A.args, Option);
+	_k_pipe_request_type_set(&A.args, _SYNCREQ);
 
 	KERNEL_ENTRY(&A);
 
-	*piNbrBytesWritten = A.Args.pipe_ack.iSizeXferred;
+	*piNbrBytesWritten = A.args.pipe_ack.iSizeXferred;
 	return A.Time.rcode;
 }
 
@@ -198,13 +198,13 @@ int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 	A.Time.ticks = TICKS_UNLIMITED;
 		/* same behavior in flow as a blocking call w/o a timeout */
 
-	A.Args.pipe_req.ReqInfo.pipe.id = Id;
-	A.Args.pipe_req.ReqType.Async.block = Block;
-	A.Args.pipe_req.ReqType.Async.iSizeTotal = iSize2Xfer;
-	A.Args.pipe_req.ReqType.Async.sema = Sema;
+	A.args.pipe_req.ReqInfo.pipe.id = Id;
+	A.args.pipe_req.ReqType.Async.block = Block;
+	A.args.pipe_req.ReqType.Async.iSizeTotal = iSize2Xfer;
+	A.args.pipe_req.ReqType.Async.sema = Sema;
 
-	_k_pipe_request_type_set(&A.Args, _ASYNCREQ);
-	_k_pipe_option_set(&A.Args, _ALL_N); /* force ALL_N */
+	_k_pipe_request_type_set(&A.args, _ASYNCREQ);
+	_k_pipe_option_set(&A.args, _ALL_N); /* force ALL_N */
 
 	KERNEL_ENTRY(&A);
 	return RC_OK;

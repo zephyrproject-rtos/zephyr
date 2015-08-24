@@ -49,11 +49,11 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	struct k_args *Request;
 	struct k_args *RequestProc;
 
-	kpipe_t pipeId = RequestOrig->Args.pipe_req.ReqInfo.pipe.id;
+	kpipe_t pipeId = RequestOrig->args.pipe_req.ReqInfo.pipe.id;
 
 	bool bAsync;
 
-	if (_ASYNCREQ == _k_pipe_request_type_get(&RequestOrig->Args)) {
+	if (_ASYNCREQ == _k_pipe_request_type_get(&RequestOrig->args)) {
 		bAsync = true;
 	} else {
 		bAsync = false;
@@ -79,41 +79,41 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	 */
 
 	mycopypacket(&RequestProc, Request);
-	RequestProc->Args.pipe_xfer_req.ReqInfo.pipe.ptr =
+	RequestProc->args.pipe_xfer_req.ReqInfo.pipe.ptr =
 		(struct _k_pipe_struct *)pipeId;
 
-	switch (_k_pipe_request_type_get(&RequestProc->Args)) {
+	switch (_k_pipe_request_type_get(&RequestProc->args)) {
 	case _SYNCREQ:
-		RequestProc->Args.pipe_xfer_req.pData =
-			Request->Args.pipe_req.ReqType.Sync.pData;
-		RequestProc->Args.pipe_xfer_req.iSizeTotal =
-			Request->Args.pipe_req.ReqType.Sync.iSizeTotal;
+		RequestProc->args.pipe_xfer_req.pData =
+			Request->args.pipe_req.ReqType.Sync.pData;
+		RequestProc->args.pipe_xfer_req.iSizeTotal =
+			Request->args.pipe_req.ReqType.Sync.iSizeTotal;
 		break;
 	case _ASYNCREQ:
-		RequestProc->Args.pipe_xfer_req.pData =
-			Request->Args.pipe_req.ReqType.Async.block.pointer_to_data;
-		RequestProc->Args.pipe_xfer_req.iSizeTotal =
-			Request->Args.pipe_req.ReqType.Async.iSizeTotal;
+		RequestProc->args.pipe_xfer_req.pData =
+			Request->args.pipe_req.ReqType.Async.block.pointer_to_data;
+		RequestProc->args.pipe_xfer_req.iSizeTotal =
+			Request->args.pipe_req.ReqType.Async.iSizeTotal;
 		break;
 	default:
 		break;
 	}
-	RequestProc->Args.pipe_xfer_req.status = XFER_IDLE;
-	RequestProc->Args.pipe_xfer_req.iNbrPendXfers = 0;
-	RequestProc->Args.pipe_xfer_req.iSizeXferred = 0;
+	RequestProc->args.pipe_xfer_req.status = XFER_IDLE;
+	RequestProc->args.pipe_xfer_req.iNbrPendXfers = 0;
+	RequestProc->args.pipe_xfer_req.iSizeXferred = 0;
 
 	RequestProc->next = NULL;
 	RequestProc->Head = NULL;
 
 	switch (RequestProc->Time.ticks) {
 	case TICKS_NONE:
-		_k_pipe_time_type_set(&RequestProc->Args, _TIME_NB);
+		_k_pipe_time_type_set(&RequestProc->args, _TIME_NB);
 		break;
 	case TICKS_UNLIMITED:
-		_k_pipe_time_type_set(&RequestProc->Args, _TIME_B);
+		_k_pipe_time_type_set(&RequestProc->args, _TIME_B);
 		break;
 	default:
-		_k_pipe_time_type_set(&RequestProc->Args, _TIME_BT);
+		_k_pipe_time_type_set(&RequestProc->args, _TIME_BT);
 		break;
 	}
 
@@ -121,7 +121,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 	struct _k_pipe_struct *pPipe;
 
-	pPipe = RequestProc->Args.pipe_xfer_req.ReqInfo.pipe.ptr;
+	pPipe = RequestProc->args.pipe_xfer_req.ReqInfo.pipe.ptr;
 
 	do {
 		int iSpace2WriteinReaders;
@@ -147,7 +147,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 		/* check if request was processed */
 
-		if (TERM_XXX & RequestProc->Args.pipe_xfer_req.status) {
+		if (TERM_XXX & RequestProc->args.pipe_xfer_req.status) {
 			RequestProc->Time.timer = NULL; /* not really required */
 			return; /* not listed anymore --> completely processed */
 		}
@@ -159,7 +159,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	 */
 
 	if (_TIME_NB !=
-		_k_pipe_time_type_get(&RequestProc->Args)) {
+		_k_pipe_time_type_get(&RequestProc->args)) {
 		/* call is blocking */
 		INSERT_ELM(pPipe->Writers, RequestProc);
 		/*
@@ -168,7 +168,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		 * is only useful to the finite timeout case.
 		 */
 		RequestProc->Comm = _K_SVC_PIPE_PUT_TIMEOUT;
-		if (_TIME_B == _k_pipe_time_type_get(&RequestProc->Args)) {
+		if (_TIME_B == _k_pipe_time_type_get(&RequestProc->args)) {
 			/*
 			 * The writer specified TICKS_UNLIMITED; NULL the timer.
 			 */
@@ -177,7 +177,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		} else {
 			/* { TIME_BT } */
 #ifdef CANCEL_TIMERS
-			if (RequestProc->Args.pipe_xfer_req.iSizeXferred != 0) {
+			if (RequestProc->args.pipe_xfer_req.iSizeXferred != 0) {
 				RequestProc->Time.timer = NULL;
 			} else
 #endif
@@ -193,12 +193,12 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		 */
 		RequestProc->Time.timer = NULL;
 
-		if (XFER_BUSY == RequestProc->Args.pipe_xfer_req.status) {
+		if (XFER_BUSY == RequestProc->args.pipe_xfer_req.status) {
 			INSERT_ELM(pPipe->Writers, RequestProc);
 		} else {
 			__ASSERT_NO_MSG(XFER_IDLE ==
-				RequestProc->Args.pipe_xfer_req.status);
-			__ASSERT_NO_MSG(0 == RequestProc->Args.pipe_xfer_req.iSizeXferred);
+				RequestProc->args.pipe_xfer_req.status);
+			__ASSERT_NO_MSG(0 == RequestProc->args.pipe_xfer_req.iSizeXferred);
 			RequestProc->Comm = _K_SVC_PIPE_PUT_REPLY;
 			_k_pipe_put_reply(RequestProc);
 		}
@@ -218,10 +218,10 @@ void _k_pipe_put_timeout(struct k_args *ReqProc)
 	__ASSERT_NO_MSG(NULL != ReqProc->Time.timer);
 
 	myfreetimer(&(ReqProc->Time.timer));
-	_k_pipe_request_status_set(&ReqProc->Args.pipe_xfer_req, TERM_TMO);
+	_k_pipe_request_status_set(&ReqProc->args.pipe_xfer_req, TERM_TMO);
 
 	DeListWaiter(ReqProc);
-	if (0 == ReqProc->Args.pipe_xfer_req.iNbrPendXfers) {
+	if (0 == ReqProc->args.pipe_xfer_req.iNbrPendXfers) {
 		_k_pipe_put_reply(ReqProc);
 	}
 }
@@ -236,7 +236,7 @@ void _k_pipe_put_timeout(struct k_args *ReqProc)
 void _k_pipe_put_reply(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(
-		0 == ReqProc->Args.pipe_xfer_req.iNbrPendXfers /*  no pending Xfers */
+		0 == ReqProc->args.pipe_xfer_req.iNbrPendXfers /*  no pending Xfers */
 	    && NULL == ReqProc->Time.timer /*  no pending timer */
 	    && NULL == ReqProc->Head); /*  not in list */
 
@@ -249,17 +249,17 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 
 	/* determine return value:
 	 */
-	status = ReqProc->Args.pipe_xfer_req.status;
+	status = ReqProc->args.pipe_xfer_req.status;
 	if (unlikely(TERM_TMO == status)) {
 		ReqOrig->Time.rcode = RC_TIME;
 	} else if ((TERM_XXX | XFER_IDLE) & status) {
-		K_PIPE_OPTION Option = _k_pipe_option_get(&ReqProc->Args);
+		K_PIPE_OPTION Option = _k_pipe_option_get(&ReqProc->args);
 
-		if (likely(ReqProc->Args.pipe_xfer_req.iSizeXferred ==
-				   ReqProc->Args.pipe_xfer_req.iSizeTotal)) {
+		if (likely(ReqProc->args.pipe_xfer_req.iSizeXferred ==
+				   ReqProc->args.pipe_xfer_req.iSizeTotal)) {
 			/* All data has been transferred */
 			ReqOrig->Time.rcode = RC_OK;
-		} else if (ReqProc->Args.pipe_xfer_req.iSizeXferred != 0) {
+		} else if (ReqProc->args.pipe_xfer_req.iSizeXferred != 0) {
 			/* Some but not all data has been transferred */
 			ReqOrig->Time.rcode = (Option == _ALL_N) ? RC_INCOMPLETE : RC_OK;
 		} else {
@@ -270,9 +270,9 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 		/* unknown (invalid) status */
 		__ASSERT_NO_MSG(1 == 0); /* should not come here */
 	}
-	if (_ASYNCREQ != _k_pipe_request_type_get(&ReqOrig->Args)) {
-		ReqOrig->Args.pipe_ack.iSizeXferred =
-			ReqProc->Args.pipe_xfer_req.iSizeXferred;
+	if (_ASYNCREQ != _k_pipe_request_type_get(&ReqOrig->args)) {
+		ReqOrig->args.pipe_ack.iSizeXferred =
+			ReqProc->args.pipe_xfer_req.iSizeXferred;
 	}
 
 	SENDARGS(ReqOrig);
@@ -289,18 +289,18 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 
 void _k_pipe_put_ack(struct k_args *Request)
 {
-	if (_ASYNCREQ == _k_pipe_request_type_get(&Request->Args)) {
-		struct _pipe_ack_arg *pipe_ack = &Request->Args.pipe_ack;
+	if (_ASYNCREQ == _k_pipe_request_type_get(&Request->args)) {
+		struct _pipe_ack_arg *pipe_ack = &Request->args.pipe_ack;
 		struct k_args A;
 		struct k_block *blockptr;
 
 		/* invoke command to release block */
 		blockptr = &pipe_ack->ReqType.Async.block;
 		A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
-		A.Args.p1.pool_id = blockptr->pool_id;
-		A.Args.p1.req_size = blockptr->req_size;
-		A.Args.p1.rep_poolptr = blockptr->address_in_pool;
-		A.Args.p1.rep_dataptr = blockptr->pointer_to_data;
+		A.args.p1.pool_id = blockptr->pool_id;
+		A.args.p1.req_size = blockptr->req_size;
+		A.args.p1.rep_poolptr = blockptr->address_in_pool;
+		A.args.p1.rep_dataptr = blockptr->pointer_to_data;
 		_k_mem_pool_block_release(&A); /* will return immediately */
 
 		if ((ksem_t)NULL != pipe_ack->ReqType.Async.sema) {
@@ -308,7 +308,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 			struct k_args A;
 
 			A.Comm = _K_SVC_SEM_SIGNAL;
-			A.Args.s1.sema = pipe_ack->ReqType.Async.sema;
+			A.args.s1.sema = pipe_ack->ReqType.Async.sema;
 			_k_sem_signal(&A); /* will return immediately */
 		}
 	} else {
@@ -317,7 +317,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 
 		LocalReq = Request->Ctxt.args;
 		LocalReq->Time.rcode = Request->Time.rcode;
-		LocalReq->Args.pipe_ack = Request->Args.pipe_ack;
+		LocalReq->args.pipe_ack = Request->args.pipe_ack;
 
 		_k_state_bit_reset(LocalReq->Ctxt.task, TF_SEND | TF_SENDDATA);
 	}

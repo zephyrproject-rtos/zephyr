@@ -199,7 +199,7 @@ static void defrag(struct pool_struct *P,
 
 void _k_defrag(struct k_args *A)
 {
-	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.pool_id);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
 
 	defrag(P,
 	       P->nr_of_frags - 1, /* start from smallest blocks */
@@ -238,7 +238,7 @@ void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
 	struct k_args A;
 
 	A.Comm = _K_SVC_DEFRAG;
-	A.Args.p1.pool_id = Pid;
+	A.args.p1.pool_id = Pid;
 	KERNEL_ENTRY(&A);
 }
 
@@ -422,7 +422,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 
 void _k_block_waiters_get(struct k_args *A)
 {
-	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.pool_id);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
 	char *found_block;
 	struct k_args *curr_task, *prev_task;
 	int start_size, offset;
@@ -436,7 +436,7 @@ void _k_block_waiters_get(struct k_args *A)
 		/* calculate size & offset */
 		start_size = P->minblock_size;
 		offset = P->nr_of_frags - 1;
-		while (curr_task->Args.p1.req_size > start_size) {
+		while (curr_task->args.p1.req_size > start_size) {
 			start_size = start_size << 2; /* try one larger */
 			offset--;
 		}
@@ -448,8 +448,8 @@ void _k_block_waiters_get(struct k_args *A)
 		/* if success : remove task from list and reschedule */
 		if (found_block != NULL) {
 			/* return found block */
-			curr_task->Args.p1.rep_poolptr = found_block;
-			curr_task->Args.p1.rep_dataptr = found_block;
+			curr_task->args.p1.rep_poolptr = found_block;
+			curr_task->args.p1.rep_dataptr = found_block;
 
 			/* reschedule task */
 
@@ -502,7 +502,7 @@ void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 
 void _k_mem_pool_block_get(struct k_args *A)
 {
-	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.pool_id);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->args.p1.pool_id);
 	char *found_block;
 
 	int start_size;
@@ -512,7 +512,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 	start_size = P->minblock_size;
 	offset = P->nr_of_frags - 1;
 
-	while (A->Args.p1.req_size > start_size) {
+	while (A->args.p1.req_size > start_size) {
 		start_size = start_size << 2; /*try one larger */
 		offset--;
 	}
@@ -524,15 +524,15 @@ void _k_mem_pool_block_get(struct k_args *A)
 		get_block_recusive(P, offset, offset); /* allocate and fragment blocks */
 
 	if (found_block != NULL) {
-		A->Args.p1.rep_poolptr = found_block;
-		A->Args.p1.rep_dataptr = found_block;
+		A->args.p1.rep_poolptr = found_block;
+		A->args.p1.rep_dataptr = found_block;
 		A->Time.rcode = RC_OK;
 		return; /* return found block */
 	}
 
 	if (likely(
 		    (A->Time.ticks != TICKS_NONE) &&
-		    (A->Args.p1.req_size <=
+		    (A->args.p1.req_size <=
 		     P->maxblock_size))) {/* timeout?  but not block to large */
 		A->priority = _k_current_task->priority;
 		A->Ctxt.task = _k_current_task;
@@ -576,14 +576,14 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 
 	A.Comm = _K_SVC_MEM_POOL_BLOCK_GET;
 	A.Time.ticks = time;
-	A.Args.p1.pool_id = pool_id;
-	A.Args.p1.req_size = reqsize;
+	A.args.p1.pool_id = pool_id;
+	A.args.p1.req_size = reqsize;
 
 	KERNEL_ENTRY(&A);
 
 	blockptr->pool_id = pool_id;
-	blockptr->address_in_pool = A.Args.p1.rep_poolptr;
-	blockptr->pointer_to_data = A.Args.p1.rep_dataptr;
+	blockptr->address_in_pool = A.args.p1.rep_poolptr;
+	blockptr->pointer_to_data = A.args.p1.rep_dataptr;
 	blockptr->req_size = reqsize;
 
 	return A.Time.rcode;
@@ -608,7 +608,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 	int start_size, offset;
 	int i, j;
 
-	Pid = A->Args.p1.pool_id;
+	Pid = A->args.p1.pool_id;
 
 
 	P = _k_mem_pool_list + OBJ_INDEX(Pid);
@@ -617,7 +617,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 	start_size = P->minblock_size;
 	offset = P->nr_of_frags - 1;
 
-	while (A->Args.p1.req_size > start_size) {
+	while (A->args.p1.req_size > start_size) {
 		start_size = start_size << 2; /* try one larger */
 		offset--;
 	}
@@ -631,7 +631,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 	while ((j < block->nr_of_entries) &&
 	       ((blockstat = block->blocktable + j)->mem_blocks != 0)) {
 		for (i = 0; i < 4; i++) {
-			if (A->Args.p1.rep_poolptr ==
+			if (A->args.p1.rep_poolptr ==
 			    (blockstat->mem_blocks +
 			     (OCTET_TO_SIZEOFUNIT(i * block->block_size)))) {
 				/* we've found the right pointer, so free it */
@@ -677,9 +677,9 @@ void task_mem_pool_free(struct k_block *blockptr /* pointer to block to free */
 	struct k_args A;
 
 	A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
-	A.Args.p1.pool_id = blockptr->pool_id;
-	A.Args.p1.req_size = blockptr->req_size;
-	A.Args.p1.rep_poolptr = blockptr->address_in_pool;
-	A.Args.p1.rep_dataptr = blockptr->pointer_to_data;
+	A.args.p1.pool_id = blockptr->pool_id;
+	A.args.p1.req_size = blockptr->req_size;
+	A.args.p1.rep_poolptr = blockptr->address_in_pool;
+	A.args.p1.rep_dataptr = blockptr->pointer_to_data;
 	KERNEL_ENTRY(&A);
 }

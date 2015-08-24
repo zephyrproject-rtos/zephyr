@@ -96,16 +96,16 @@ void _k_fifo_enque_request(struct k_args *A)
 	int Qid, n, w;
 	char *p, *q; /* Ski char->uint32_t ??? */
 
-	Qid = A->Args.q1.queue;
+	Qid = A->args.q1.queue;
 	Q = (struct _k_fifo_struct *)Qid;
 	w = OCTET_TO_SIZEOFUNIT(Q->Esize);
-	q = A->Args.q1.data;
+	q = A->args.q1.data;
 	n = Q->Nused;
 	if (n < Q->Nelms) {
 		W = Q->Waiters;
 		if (W) {
 			Q->Waiters = W->next;
-			p = W->Args.q1.data;
+			p = W->args.q1.data;
 			memcpy(p, q, w);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -168,8 +168,8 @@ int _task_fifo_put(kfifo_t queue, /* FIFO queue */
 
 	A.Comm = _K_SVC_FIFO_ENQUE_REQUEST;
 	A.Time.ticks = time;
-	A.Args.q1.data = (char *)data;
-	A.Args.q1.queue = queue;
+	A.args.q1.data = (char *)data;
+	A.args.q1.queue = queue;
 
 	KERNEL_ENTRY(&A);
 
@@ -228,10 +228,10 @@ void _k_fifo_deque_request(struct k_args *A)
 	int Qid, n, w;
 	char *p, *q; /* idem */
 
-	Qid = A->Args.q1.queue;
+	Qid = A->args.q1.queue;
 	Q = (struct _k_fifo_struct *)Qid;
 	w = OCTET_TO_SIZEOFUNIT(Q->Esize);
-	p = A->Args.q1.data;
+	p = A->args.q1.data;
 	n = Q->Nused;
 	if (n) {
 		q = Q->Deqp;
@@ -247,7 +247,7 @@ void _k_fifo_deque_request(struct k_args *A)
 		if (W) {
 			Q->Waiters = W->next;
 			p = Q->Enqp;
-			q = W->Args.q1.data;
+			q = W->args.q1.data;
 			w = OCTET_TO_SIZEOFUNIT(Q->Esize);
 			memcpy(p, q, w);
 			p = (char *)((int)p + w);
@@ -313,8 +313,8 @@ int _task_fifo_get(kfifo_t queue, void *data, int32_t time)
 
 	A.Comm = _K_SVC_FIFO_DEQUE_REQUEST;
 	A.Time.ticks = time;
-	A.Args.q1.data = (char *)data;
-	A.Args.q1.queue = queue;
+	A.args.q1.data = (char *)data;
+	A.args.q1.queue = queue;
 
 	KERNEL_ENTRY(&A);
 
@@ -333,9 +333,9 @@ void _k_fifo_ioctl(struct k_args *A)
 	struct _k_fifo_struct *Q;
 	int Qid;
 
-	Qid = A->Args.q1.queue;
+	Qid = A->args.q1.queue;
 	Q = (struct _k_fifo_struct *)Qid;
-	if (A->Args.q1.size) {
+	if (A->args.q1.size) {
 		if (Q->Nused) {
 			struct k_args *X;
 
@@ -378,8 +378,8 @@ int _task_fifo_ioctl(kfifo_t queue, int op)
 	struct k_args A;
 
 	A.Comm = _K_SVC_FIFO_IOCTL;
-	A.Args.q1.queue = queue;
-	A.Args.q1.size = op;
+	A.args.q1.queue = queue;
+	A.args.q1.size = op;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }

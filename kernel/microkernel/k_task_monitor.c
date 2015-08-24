@@ -110,13 +110,13 @@ void _k_task_monitor_args(struct k_args *A)
 
 void _k_task_monitor_read(struct k_args *A)
 {
-	A->Args.z4.nrec = k_monitor_nrec;
-	if (A->Args.z4.rind < k_monitor_nrec) {
-		int i = K_monitor_wind - k_monitor_nrec + A->Args.z4.rind;
+	A->args.z4.nrec = k_monitor_nrec;
+	if (A->args.z4.rind < k_monitor_nrec) {
+		int i = K_monitor_wind - k_monitor_nrec + A->args.z4.rind;
 		if (i < 0) {
 			i += k_monitor_capacity;
 		}
-		A->Args.z4.mrec = k_monitor_buff[i];
+		A->args.z4.mrec = k_monitor_buff[i];
 	}
 }
 

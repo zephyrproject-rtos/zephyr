@@ -50,7 +50,7 @@ struct k_timer {
 	struct k_timer *prev;
 	int32_t duration;
 	int32_t period;
-	struct k_args *Args;
+	struct k_args *args;
 };
 
 /* Kernel server command codes */
@@ -370,7 +370,7 @@ union k_args_args {
  * The size of the k_args structure must be equivalent to ...
  *     CMD_PKT_SIZE_IN_WORDS * sizeof(uint32_t)
  * To this end the entire structure is packed.  This ensures that the compiler
- * aligns 'Args' to a 4-byte boundary.  If left unpacked, then some compilers
+ * aligns 'args' to a 4-byte boundary.  If left unpacked, then some compilers
  * may provide an extra 4 bytes of padding to align it to an 8-byte boundary,
  * thereby violating the previously stated equivalence.
  */
@@ -393,7 +393,7 @@ struct k_args {
 		struct k_timer *timer;
 		int rcode;
 	} Time;
-	K_ARGS_ARGS Args;
+	K_ARGS_ARGS args;
 } __packed;
 
 /* ---------------------------------------------------------------------- */

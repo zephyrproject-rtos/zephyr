@@ -63,7 +63,7 @@ possibly copy the remaining data
 
 void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 {
-	struct _pipe_xfer_ack_arg *pipe_xfer_ack = &pEOXfer->Args.pipe_xfer_ack;
+	struct _pipe_xfer_ack_arg *pipe_xfer_ack = &pEOXfer->args.pipe_xfer_ack;
 
 	switch (pipe_xfer_ack->XferType) {
 	case XFER_W2B: /* Writer to Buffer */
@@ -72,7 +72,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 		if (pWriter) { /* Xfer from Writer finished */
 			struct _pipe_xfer_req_arg *pipe_write_req =
-				&pipe_xfer_ack->pWriter->Args.pipe_xfer_req;
+				&pipe_xfer_ack->pWriter->args.pipe_xfer_req;
 
 			--pipe_write_req->iNbrPendXfers;
 			if (0 == pipe_write_req->iNbrPendXfers) {
@@ -112,7 +112,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 		if (pReader) { /* Xfer to Reader finished */
 			struct _pipe_xfer_req_arg *pipe_read_req =
-				&pipe_xfer_ack->pReader->Args.pipe_xfer_req;
+				&pipe_xfer_ack->pReader->args.pipe_xfer_req;
 
 			--pipe_read_req->iNbrPendXfers;
 			if (0 == pipe_read_req->iNbrPendXfers) {
@@ -152,7 +152,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 
 		if (pWriter) { /* Transfer from writer finished */
 			struct _pipe_xfer_req_arg *pipe_write_req =
-				&pipe_xfer_ack->pWriter->Args.pipe_xfer_req;
+				&pipe_xfer_ack->pWriter->args.pipe_xfer_req;
 
 			--pipe_write_req->iNbrPendXfers;
 			if (0 == pipe_write_req->iNbrPendXfers) {
@@ -174,7 +174,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			/* Transfer to Reader finished */
 
 			struct _pipe_xfer_req_arg *pipe_read_req =
-				&pipe_xfer_ack->pReader->Args.pipe_xfer_req;
+				&pipe_xfer_ack->pReader->args.pipe_xfer_req;
 
 			--pipe_read_req->iNbrPendXfers;
 			if (0 == pipe_read_req->iNbrPendXfers) {
@@ -255,10 +255,10 @@ static void setup_movedata(struct k_args *A,
 	A->Ctxt.task = NULL;
 	/* this caused problems when != NULL related to set/reset of state bits */
 
-	A->Args.MovedReq.Action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
-	A->Args.MovedReq.source = source;
-	A->Args.MovedReq.destination = destination;
-	A->Args.MovedReq.iTotalSize = size;
+	A->args.MovedReq.Action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
+	A->args.MovedReq.source = source;
+	A->args.MovedReq.destination = destination;
+	A->args.MovedReq.iTotalSize = size;
 
 	/* continuation packet */
 
@@ -267,17 +267,17 @@ static void setup_movedata(struct k_args *A,
 
 	pContSend->next = NULL;
 	pContSend->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
-	pContSend->Args.pipe_xfer_ack.pPipe = pPipe;
-	pContSend->Args.pipe_xfer_ack.XferType = XferType;
-	pContSend->Args.pipe_xfer_ack.ID = XferID;
-	pContSend->Args.pipe_xfer_ack.iSize = size;
+	pContSend->args.pipe_xfer_ack.pPipe = pPipe;
+	pContSend->args.pipe_xfer_ack.XferType = XferType;
+	pContSend->args.pipe_xfer_ack.ID = XferID;
+	pContSend->args.pipe_xfer_ack.iSize = size;
 
 	pContRecv->next = NULL;
 	pContRecv->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
-	pContRecv->Args.pipe_xfer_ack.pPipe = pPipe;
-	pContRecv->Args.pipe_xfer_ack.XferType = XferType;
-	pContRecv->Args.pipe_xfer_ack.ID = XferID;
-	pContRecv->Args.pipe_xfer_ack.iSize = size;
+	pContRecv->args.pipe_xfer_ack.pPipe = pPipe;
+	pContRecv->args.pipe_xfer_ack.XferType = XferType;
+	pContRecv->args.pipe_xfer_ack.ID = XferID;
+	pContRecv->args.pipe_xfer_ack.iSize = size;
 
 	A->priority = move_priority_compute(pWriter, pReader);
 	pContSend->priority = A->priority;
@@ -287,30 +287,30 @@ static void setup_movedata(struct k_args *A,
 	case XFER_W2B: /* Writer to Buffer */
 	{
 		__ASSERT_NO_MSG(NULL == pReader);
-		pContSend->Args.pipe_xfer_ack.pWriter = pWriter;
-		pContRecv->Args.pipe_xfer_ack.pWriter = NULL;
+		pContSend->args.pipe_xfer_ack.pWriter = pWriter;
+		pContRecv->args.pipe_xfer_ack.pWriter = NULL;
 		break;
 	}
 	case XFER_B2R: {
 		__ASSERT_NO_MSG(NULL == pWriter);
-		pContSend->Args.pipe_xfer_ack.pReader = NULL;
-		pContRecv->Args.pipe_xfer_ack.pReader = pReader;
+		pContSend->args.pipe_xfer_ack.pReader = NULL;
+		pContRecv->args.pipe_xfer_ack.pReader = pReader;
 		break;
 	}
 	case XFER_W2R: {
 		__ASSERT_NO_MSG(NULL != pWriter && NULL != pReader);
-		pContSend->Args.pipe_xfer_ack.pWriter = pWriter;
-		pContSend->Args.pipe_xfer_ack.pReader = NULL;
-		pContRecv->Args.pipe_xfer_ack.pWriter = NULL;
-		pContRecv->Args.pipe_xfer_ack.pReader = pReader;
+		pContSend->args.pipe_xfer_ack.pWriter = pWriter;
+		pContSend->args.pipe_xfer_ack.pReader = NULL;
+		pContRecv->args.pipe_xfer_ack.pWriter = NULL;
+		pContRecv->args.pipe_xfer_ack.pReader = pReader;
 		break;
 	}
 	default:
 		__ASSERT_NO_MSG(1 == 0); /* we should not come here */
 	}
 
-	A->Args.MovedReq.Extra.Setup.ContSnd = pContSend;
-	A->Args.MovedReq.Extra.Setup.ContRcv = pContRecv;
+	A->args.MovedReq.Extra.Setup.ContSnd = pContSend;
+	A->args.MovedReq.Extra.Setup.ContRcv = pContRecv;
 
 	/*
 	 * (possible optimisation)
@@ -330,11 +330,11 @@ static int ReaderInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 	/* first condition: request cannot wait any longer: must be -
 	 * (non-blocked) or a finite timed wait with a killed timer */
 
-	TimeType = _k_pipe_time_type_get(&pReader->Args);
-	option = _k_pipe_option_get(&pReader->Args);
+	TimeType = _k_pipe_time_type_get(&pReader->args);
+	option = _k_pipe_option_get(&pReader->args);
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
 	    ((_TIME_B == TimeType) && (_X_TO_N & option) &&
-	     !(pReader->Args.pipe_xfer_req.iSizeXferred))
+	     !(pReader->args.pipe_xfer_req.iSizeXferred))
 #ifdef CANCEL_TIMERS
 	    || ((_TIME_BT == TimeType) && pReader->Time.timer)
 #endif
@@ -355,8 +355,8 @@ static int ReaderInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 	/* third condition: */
 
 	iSizeSpaceInReader =
-		pReader->Args.pipe_xfer_req.iSizeTotal -
-		pReader->Args.pipe_xfer_req.iSizeXferred;
+		pReader->args.pipe_xfer_req.iSizeTotal -
+		pReader->args.pipe_xfer_req.iSizeXferred;
 	BuffGetAvailDataTotal(&pPipe->desc, &iAvailBufferData);
 	if (iAvailBufferData >= iSizeSpaceInReader) {
 		return 0;
@@ -376,11 +376,11 @@ static int WriterInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 	/* first condition: request cannot wait any longer: must be -
 	 * (non-blocked) or a finite timed wait with a killed timer */
 
-	TimeType = _k_pipe_time_type_get(&pWriter->Args);
-	option = _k_pipe_option_get(&pWriter->Args);
+	TimeType = _k_pipe_time_type_get(&pWriter->args);
+	option = _k_pipe_option_get(&pWriter->args);
 	if (((_TIME_B == TimeType) && (_ALL_N == option)) ||
 	    ((_TIME_B == TimeType) && (_X_TO_N & option) &&
-	     !(pWriter->Args.pipe_xfer_req.iSizeXferred))
+	     !(pWriter->args.pipe_xfer_req.iSizeXferred))
 #ifdef CANCEL_TIMERS
 	    || ((_TIME_BT == TimeType) && pWriter->Time.timer)
 #endif
@@ -401,8 +401,8 @@ static int WriterInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 	/* third condition: */
 
 	iSizeDataInWriter =
-		pWriter->Args.pipe_xfer_req.iSizeTotal -
-		pWriter->Args.pipe_xfer_req.iSizeXferred;
+		pWriter->args.pipe_xfer_req.iSizeTotal -
+		pWriter->args.pipe_xfer_req.iSizeXferred;
 	BuffGetFreeSpaceTotal(&pPipe->desc, &iFreeBufferSpace);
 	if (iFreeBufferSpace >= iSizeDataInWriter) {
 		return 0;
@@ -438,7 +438,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 	__ASSERT_NO_MSG((pPipe->Readers == pNewReader) ||
 					(NULL == pPipe->Readers) || (NULL == pNewReader));
 
-	pipe_read_req = &pReader->Args.pipe_xfer_req;
+	pipe_read_req = &pReader->args.pipe_xfer_req;
 
 	do {
 		iSize = min(pPipe->desc.iAvailDataCont,
@@ -507,7 +507,7 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 	__ASSERT_NO_MSG(!((pPipe->Writers != pNewWriter) &&
 					  (NULL != pPipe->Writers) && (NULL != pNewWriter)));
 
-	pipe_write_req = &pWriter->Args.pipe_xfer_req;
+	pipe_write_req = &pWriter->args.pipe_xfer_req;
 
 	do {
 		iSize = min((numIterations == 2) ? pPipe->desc.iFreeSpaceCont
@@ -611,8 +611,8 @@ static void pipe_read_write(
 					(NULL == pPipe->Readers) || (NULL == pNewReader));
 
 	/* Preparation */
-	pipe_write_req = &pWriter->Args.pipe_xfer_req;
-	pipe_read_req = &pReader->Args.pipe_xfer_req;
+	pipe_write_req = &pWriter->args.pipe_xfer_req;
+	pipe_read_req = &pReader->args.pipe_xfer_req;
 
 	/* Calculate iT1, iT2 and iT3 */
 	int iFreeSpaceReader =
@@ -660,7 +660,7 @@ static void pipe_read_write(
 	if (iT2 != 0) {
 		struct k_args *Moved_req;
 
-		__ASSERT_NO_MSG(TERM_SATISFIED != pReader->Args.pipe_xfer_req.status);
+		__ASSERT_NO_MSG(TERM_SATISFIED != pReader->args.pipe_xfer_req.status);
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_W2R, pWriter, pReader,
@@ -679,7 +679,7 @@ static void pipe_read_write(
 
 	/* T3 transfer */
 	if (iT3 != 0) {
-		__ASSERT_NO_MSG(TERM_SATISFIED != pWriter->Args.pipe_xfer_req.status);
+		__ASSERT_NO_MSG(TERM_SATISFIED != pWriter->args.pipe_xfer_req.status);
 		pipe_write(pPipe, pWriter);
 	}
 }
@@ -709,12 +709,12 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 			if (pReader != pNLReader) {
 				pNextReader = pPipe->Readers;
 				if (NULL == pNextReader) {
-					if (!(TERM_XXX & pNLReader->Args.pipe_xfer_req.status))
+					if (!(TERM_XXX & pNLReader->args.pipe_xfer_req.status))
 						pNextReader = pNLReader;
 				}
 			} else {
 				/* we already used the extra non-listed Reader */
-				if (TERM_XXX & pReader->Args.pipe_xfer_req.status) {
+				if (TERM_XXX & pReader->args.pipe_xfer_req.status) {
 					pNextReader = NULL;
 				} else {
 					pNextReader = pReader; /* == pNLReader */
@@ -730,12 +730,12 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 			if (pWriter != pNLWriter) {
 				pNextWriter = pPipe->Writers;
 				if (NULL == pNextWriter) {
-					if (!(TERM_XXX & pNLWriter->Args.pipe_xfer_req.status))
+					if (!(TERM_XXX & pNLWriter->args.pipe_xfer_req.status))
 						pNextWriter = pNLWriter;
 				}
 			} else {
 				/* we already used the extra non-listed Writer */
-				if (TERM_XXX & pWriter->Args.pipe_xfer_req.status) {
+				if (TERM_XXX & pWriter->args.pipe_xfer_req.status) {
 					pNextWriter = NULL;
 				} else {
 					pNextWriter = pWriter;
@@ -758,9 +758,9 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 		pWriter = pNextWriter;
 
 		if (pWriter) {
-			if (_ALL_N == _k_pipe_option_get(&pWriter->Args) &&
-				(pWriter->Args.pipe_xfer_req.iSizeXferred == 0) &&
-				_TIME_B != _k_pipe_time_type_get(&pWriter->Args)) {
+			if (_ALL_N == _k_pipe_option_get(&pWriter->args) &&
+				(pWriter->args.pipe_xfer_req.iSizeXferred == 0) &&
+				_TIME_B != _k_pipe_time_type_get(&pWriter->args)) {
 				/* investigate if there is a problem for
 				 * his request to be satisfied
 				 */
@@ -772,14 +772,14 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				iSpace2WriteinReaders = CalcFreeReaderSpace(pPipe->Readers);
 				if (pNLReader)
 					iSpace2WriteinReaders +=
-						(pNLReader->Args.pipe_xfer_req.iSizeTotal -
-						 pNLReader->Args.pipe_xfer_req.iSizeXferred);
+						(pNLReader->args.pipe_xfer_req.iSizeTotal -
+						 pNLReader->args.pipe_xfer_req.iSizeXferred);
 				BuffGetFreeSpaceTotal(&pPipe->desc, &iFreeBufferSpace);
 				iTotalSpace2Write =
 					iFreeBufferSpace + iSpace2WriteinReaders;
 				iSizeDataInWriter =
-					pWriter->Args.pipe_xfer_req.iSizeTotal -
-					pWriter->Args.pipe_xfer_req.iSizeXferred;
+					pWriter->args.pipe_xfer_req.iSizeTotal -
+					pWriter->args.pipe_xfer_req.iSizeXferred;
 
 				if (iSizeDataInWriter > iTotalSpace2Write) {
 					bALLNWriterNoGo = true;
@@ -787,9 +787,9 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 			}
 		}
 		if (pReader) {
-			if (_ALL_N == _k_pipe_option_get(&pReader->Args) &&
-				(pReader->Args.pipe_xfer_req.iSizeXferred == 0) &&
-				_TIME_B != _k_pipe_time_type_get(&pReader->Args)) {
+			if (_ALL_N == _k_pipe_option_get(&pReader->args) &&
+				(pReader->args.pipe_xfer_req.iSizeXferred == 0) &&
+				_TIME_B != _k_pipe_time_type_get(&pReader->args)) {
 				/* investigate if there is a problem for
 				 * his request to be satisfied
 				 */
@@ -801,13 +801,13 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				iData2ReadFromWriters = CalcAvailWriterData(pPipe->Writers);
 				if (pNLWriter)
 					iData2ReadFromWriters +=
-						(pNLWriter->Args.pipe_xfer_req.iSizeTotal -
-						 pNLWriter->Args.pipe_xfer_req.iSizeXferred);
+						(pNLWriter->args.pipe_xfer_req.iSizeTotal -
+						 pNLWriter->args.pipe_xfer_req.iSizeXferred);
 				BuffGetAvailDataTotal(&pPipe->desc, &iAvailBufferData);
 				iTotalData2Read = iAvailBufferData + iData2ReadFromWriters;
 				iSizeFreeSpaceInReader =
-					pReader->Args.pipe_xfer_req.iSizeTotal -
-					pReader->Args.pipe_xfer_req.iSizeXferred;
+					pReader->args.pipe_xfer_req.iSizeTotal -
+					pReader->args.pipe_xfer_req.iSizeXferred;
 
 				if (iSizeFreeSpaceInReader > iTotalData2Read) {
 					bALLNReaderNoGo = true;
@@ -835,7 +835,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 			} else {
 #ifdef FORCE_XFER_ON_STALL
 				if (pReader && (_TIME_NB !=
-					_k_pipe_time_type_get(&pWriter->Args))) {
+					_k_pipe_time_type_get(&pWriter->args))) {
 					/* force transfer
 					   (we make exception for non-blocked writer) */
 					pipe_read_write(pPipe, pWriter, pReader);
@@ -858,7 +858,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 			} else {
 #ifdef FORCE_XFER_ON_STALL
 				if (pWriter && (_TIME_NB !=
-						_k_pipe_time_type_get(&pReader->Args))) {
+						_k_pipe_time_type_get(&pReader->args))) {
 					/* force transfer
 					   (we make exception for non-blocked reader) */
 					pipe_read_write(pPipe, pWriter, pReader);
@@ -927,8 +927,8 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 	   processing is really blocked (for some reason)
 	 */
 	if (pReader && pWriter) {
-		__ASSERT_NO_MSG(!(TERM_XXX & pReader->Args.pipe_xfer_req.status) &&
-						!(TERM_XXX & pWriter->Args.pipe_xfer_req.status));
+		__ASSERT_NO_MSG(!(TERM_XXX & pReader->args.pipe_xfer_req.status) &&
+						!(TERM_XXX & pWriter->args.pipe_xfer_req.status));
 		/* this could be possible when data Xfer operations are jammed
 		   (out of data Xfer resources e.g.) */
 
@@ -949,19 +949,19 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 		 */
 		;
 	} else if (pReader) {
-		__ASSERT_NO_MSG(!(TERM_XXX & pReader->Args.pipe_xfer_req.status));
+		__ASSERT_NO_MSG(!(TERM_XXX & pReader->args.pipe_xfer_req.status));
 
 		/* check if this lonely reader is really blocked, then we will
 		   delist him
 		   (if he was listed uberhaupt) == EMERGENCY BREAK */
 		if (ReaderInProgressIsBlocked(pPipe, pReader)) {
-			if (_X_TO_N & _k_pipe_option_get(&pReader->Args) &&
-			    (pReader->Args.pipe_xfer_req.iSizeXferred != 0)) {
-				_k_pipe_request_status_set(&pReader->Args.pipe_xfer_req,
+			if (_X_TO_N & _k_pipe_option_get(&pReader->args) &&
+			    (pReader->args.pipe_xfer_req.iSizeXferred != 0)) {
+				_k_pipe_request_status_set(&pReader->args.pipe_xfer_req,
 					TERM_SATISFIED);
 			} else {
 				/* in all other cases: forced termination */
-				_k_pipe_request_status_set(&pReader->Args.pipe_xfer_req,
+				_k_pipe_request_status_set(&pReader->args.pipe_xfer_req,
 					TERM_FORCED);
 			}
 
@@ -969,7 +969,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				DeListWaiter(pReader);
 				myfreetimer(&(pReader->Time.timer));
 			}
-			if (0 == pReader->Args.pipe_xfer_req.iNbrPendXfers) {
+			if (0 == pReader->args.pipe_xfer_req.iNbrPendXfers) {
 				pReader->Comm = _K_SVC_PIPE_GET_REPLY;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
@@ -980,18 +980,18 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 			 * later on) */
 		}
 	} else if (pWriter) {
-		__ASSERT_NO_MSG(!(TERM_SATISFIED & pWriter->Args.pipe_xfer_req.status));
+		__ASSERT_NO_MSG(!(TERM_SATISFIED & pWriter->args.pipe_xfer_req.status));
 
 		/* check if this lonely Writer is really blocked, then we will
 		   delist him (if he was listed uberhaupt) == EMERGENCY BREAK */
 		if (WriterInProgressIsBlocked(pPipe, pWriter)) {
-			if (_X_TO_N & _k_pipe_option_get(&pWriter->Args) &&
-			    (pWriter->Args.pipe_xfer_req.iSizeXferred != 0)) {
-				_k_pipe_request_status_set(&pWriter->Args.pipe_xfer_req,
+			if (_X_TO_N & _k_pipe_option_get(&pWriter->args) &&
+			    (pWriter->args.pipe_xfer_req.iSizeXferred != 0)) {
+				_k_pipe_request_status_set(&pWriter->args.pipe_xfer_req,
 					TERM_SATISFIED);
 			} else {
 				/* in all other cases: forced termination */
-				_k_pipe_request_status_set(&pWriter->Args.pipe_xfer_req,
+				_k_pipe_request_status_set(&pWriter->args.pipe_xfer_req,
 					TERM_FORCED);
 			}
 
@@ -999,7 +999,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				DeListWaiter(pWriter);
 				myfreetimer(&(pWriter->Time.timer));
 			}
-			if (0 == pWriter->Args.pipe_xfer_req.iNbrPendXfers) {
+			if (0 == pWriter->args.pipe_xfer_req.iNbrPendXfers) {
 				pWriter->Comm = _K_SVC_PIPE_PUT_REPLY;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
@@ -1019,7 +1019,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 #ifdef CANCEL_TIMERS
 
 	if (pReader) {
-		if (pReader->Args.pipe_xfer_req.iSizeXferred != 0) {
+		if (pReader->args.pipe_xfer_req.iSizeXferred != 0) {
 			if (pReader->Head) {
 				myfreetimer(&(pReader->Time.timer));
 				/* do not delist however */
@@ -1027,7 +1027,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 		}
 	}
 	if (pWriter) {
-		if (pWriter->Args.pipe_xfer_req.iSizeXferred != 0) {
+		if (pWriter->args.pipe_xfer_req.iSizeXferred != 0) {
 			if (pWriter->Head) {
 				myfreetimer(&(pWriter->Time.timer));
 				/* do not delist however */

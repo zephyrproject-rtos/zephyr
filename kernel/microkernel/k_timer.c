@@ -115,7 +115,7 @@ void _k_timeout_alloc(struct k_args *P)
 	GETTIMER(T);
 	T->duration = P->Time.ticks;
 	T->period = 0;
-	T->Args = P;
+	T->args = P;
 	_k_timer_enlist(T);
 	P->Time.timer = T;
 }
@@ -203,7 +203,7 @@ void _k_timer_list_update(int ticks)
 		} else {
 			T->duration = -1;
 		}
-		TO_ALIST(&_k_command_stack, T->Args);
+		TO_ALIST(&_k_command_stack, T->args);
 
 		ticks = 0; /* don't decrement duration for subsequent timer(s) */
 	}
@@ -227,10 +227,10 @@ void _k_timer_alloc(struct k_args *P)
 	struct k_args *A;
 
 	GETTIMER(T);
-	P->Args.c1.timer = T;
+	P->args.c1.timer = T;
 
 	GETARGS(A);
-	T->Args = A;
+	T->args = A;
 	T->duration = -1; /* -1 indicates that timer is disabled */
 }
 
@@ -248,7 +248,7 @@ ktimer_t task_timer_alloc(void)
 	A.Comm = _K_SVC_TIMER_ALLOC;
 	KERNEL_ENTRY(&A);
 
-	return (ktimer_t)A.Args.c1.timer;
+	return (ktimer_t)A.args.c1.timer;
 }
 
 /**
@@ -263,8 +263,8 @@ ktimer_t task_timer_alloc(void)
 
 void _k_timer_dealloc(struct k_args *P)
 {
-	struct k_timer *T = P->Args.c1.timer;
-	struct k_args *A = T->Args;
+	struct k_timer *T = P->args.c1.timer;
+	struct k_args *A = T->args;
 
 	if (T->duration != -1)
 		_k_timer_delist(T);
@@ -290,7 +290,7 @@ void task_timer_free(ktimer_t timer)
 	struct k_args A;
 
 	A.Comm = _K_SVC_TIMER_DEALLOC;
-	A.Args.c1.timer = (struct k_timer *)timer;
+	A.args.c1.timer = (struct k_timer *)timer;
 	KERNEL_ENTRY(&A);
 }
 
@@ -308,14 +308,14 @@ void task_timer_free(ktimer_t timer)
 
 void _k_timer_start(struct k_args *P)
 {
-	struct k_timer *T = P->Args.c1.timer; /* ptr to the timer to start */
+	struct k_timer *T = P->args.c1.timer; /* ptr to the timer to start */
 
 	if (T->duration != -1) { /* Stop the timer if it is active */
 		_k_timer_delist(T);
 	}
 
-	T->duration = (int32_t)P->Args.c1.time1; /* Set the initial delay */
-	T->period = P->Args.c1.time2;	  /* Set the period */
+	T->duration = (int32_t)P->args.c1.time1; /* Set the initial delay */
+	T->period = P->args.c1.time2;	  /* Set the period */
 
 	/*
 	 * Either the initial delay and/or the period is invalid.  Mark
@@ -327,9 +327,9 @@ void _k_timer_start(struct k_args *P)
 	}
 
 	/* Track the semaphore to signal for when the timer expires. */
-	if (P->Args.c1.sema != _USE_CURRENT_SEM) {
-		T->Args->Comm = _K_SVC_SEM_SIGNAL;
-		T->Args->Args.s1.sema = P->Args.c1.sema;
+	if (P->args.c1.sema != _USE_CURRENT_SEM) {
+		T->args->Comm = _K_SVC_SEM_SIGNAL;
+		T->args->args.s1.sema = P->args.c1.sema;
 	}
 	_k_timer_enlist(T);
 }
@@ -365,10 +365,10 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 	struct k_args A;
 
 	A.Comm = _K_SVC_TIMER_START;
-	A.Args.c1.timer = (struct k_timer *)timer;
-	A.Args.c1.time1 = (int64_t)duration;
-	A.Args.c1.time2 = period;
-	A.Args.c1.sema = sema;
+	A.args.c1.timer = (struct k_timer *)timer;
+	A.args.c1.time1 = (int64_t)duration;
+	A.args.c1.time2 = period;
+	A.args.c1.sema = sema;
 	KERNEL_ENTRY(&A);
 }
 
@@ -384,7 +384,7 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 
 void _k_timer_stop(struct k_args *P)
 {
-	struct k_timer *T = P->Args.c1.timer;
+	struct k_timer *T = P->args.c1.timer;
 
 	if (T->duration != -1)
 		_k_timer_delist(T);
@@ -407,7 +407,7 @@ void task_timer_stop(ktimer_t timer)
 	struct k_args A;
 
 	A.Comm = _K_SVC_TIMER_STOP;
-	A.Args.c1.timer = (struct k_timer *)timer;
+	A.args.c1.timer = (struct k_timer *)timer;
 	KERNEL_ENTRY(&A);
 }
 
@@ -454,7 +454,7 @@ void _k_task_sleep(struct k_args *P)
 	GETTIMER(T);
 	T->duration = P->Time.ticks;
 	T->period = 0;
-	T->Args = P;
+	T->args = P;
 
 	P->Comm = _K_SVC_TASK_WAKEUP;
 	P->Ctxt.task = _k_current_task;

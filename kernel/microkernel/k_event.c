@@ -48,11 +48,11 @@ extern struct evstr _k_event_list[];
  */
 void _k_event_handler_set(struct k_args *A)
 {
-	kevent_t event = A->Args.e1.event;
+	kevent_t event = A->args.e1.event;
 	struct evstr *E = _k_event_list + event;
 
 	if (E->func != NULL) {
-		if (likely(A->Args.e1.func == NULL)) {
+		if (likely(A->args.e1.func == NULL)) {
 			/* uninstall handler */
 			E->func = NULL;
 			A->Time.rcode = RC_OK;
@@ -62,7 +62,7 @@ void _k_event_handler_set(struct k_args *A)
 		}
 	} else {
 		/* install handler */
-		E->func = A->Args.e1.func;
+		E->func = A->args.e1.func;
 		E->status = 0;
 		A->Time.rcode = RC_OK;
 	}
@@ -73,8 +73,8 @@ int task_event_handler_set(kevent_t event, kevent_handler_t handler)
 	struct k_args A;
 
 	A.Comm = _K_SVC_EVENT_HANDLER_SET;
-	A.Args.e1.event = event;
-	A.Args.e1.func = handler;
+	A.args.e1.event = event;
+	A.args.e1.func = handler;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }
@@ -87,7 +87,7 @@ int task_event_handler_set(kevent_t event, kevent_handler_t handler)
  */
 void _k_event_test_timeout(struct k_args *A)
 {
-	kevent_t event = A->Args.e1.event;
+	kevent_t event = A->args.e1.event;
 	struct evstr *E = _k_event_list + event;
 
 	FREETIMER(A->Time.timer);
@@ -104,7 +104,7 @@ void _k_event_test_timeout(struct k_args *A)
  */
 void _k_event_test(struct k_args *A)
 {
-	kevent_t event = A->Args.e1.event;
+	kevent_t event = A->args.e1.event;
 	struct evstr *E = _k_event_list + event;
 
 	if (E->status) { /* the next event can be received */
@@ -142,7 +142,7 @@ int _task_event_recv(kevent_t event, int32_t time)
 	struct k_args A;
 
 	A.Comm = _K_SVC_EVENT_TEST;
-	A.Args.e1.event = event;
+	A.args.e1.event = event;
 	A.Time.ticks = time;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
@@ -199,7 +199,7 @@ void _k_do_event_signal(kevent_t event)
  */
 void _k_event_signal(struct k_args *A)
 {
-	kevent_t event = A->Args.e1.event;
+	kevent_t event = A->args.e1.event;
 	_k_do_event_signal(event);
 	A->Time.rcode = RC_OK;
 }
@@ -209,7 +209,7 @@ int task_event_send(kevent_t event)
 	struct k_args A;
 
 	A.Comm = _K_SVC_EVENT_SIGNAL;
-	A.Args.e1.event = event;
+	A.args.e1.event = event;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }

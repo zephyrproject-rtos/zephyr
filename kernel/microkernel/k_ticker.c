@@ -238,8 +238,8 @@ void _k_time_elapse(struct k_args *P)
 {
 	int64_t now = task_tick_get();
 
-	P->Args.c1.time2 = now - P->Args.c1.time1;
-	P->Args.c1.time1 = now;
+	P->args.c1.time2 = now - P->args.c1.time1;
+	P->args.c1.time1 = now;
 }
 
 int64_t task_tick_delta(int64_t *reftime /* pointer to reference time */
@@ -248,8 +248,8 @@ int64_t task_tick_delta(int64_t *reftime /* pointer to reference time */
 	struct k_args A;
 
 	A.Comm = _K_SVC_TIME_ELAPSE;
-	A.Args.c1.time1 = *reftime;
+	A.args.c1.time1 = *reftime;
 	KERNEL_ENTRY(&A);
-	*reftime = A.Args.c1.time1;
-	return A.Args.c1.time2;
+	*reftime = A.args.c1.time1;
+	return A.args.c1.time2;
 }

@@ -103,14 +103,14 @@ void _k_sem_group_wait(struct k_args *R)
 	struct k_args *A = R->Ctxt.args;
 
 	FREEARGS(R);
-	if (--(A->Args.s1.nsem) == 0) {
+	if (--(A->args.s1.nsem) == 0) {
 		_k_state_bit_reset(A->Ctxt.task, TF_LIST);
 	}
 }
 
 void _k_sem_group_wait_cancel(struct k_args *A)
 {
-	struct _k_sem_struct *S = (struct _k_sem_struct *)A->Args.s1.sema;
+	struct _k_sem_struct *S = (struct _k_sem_struct *)A->args.s1.sema;
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -137,9 +137,9 @@ void _k_sem_group_wait_cancel(struct k_args *A)
  * timer expiry occurs between the update of the packet state
  * and the processing of the WAITMRDY packet.
  */
-					if (unlikely(waitTaskArgs->Args.s1.sema ==
+					if (unlikely(waitTaskArgs->args.s1.sema ==
 						ENDLIST)) {
-						waitTaskArgs->Args.s1.sema = A->Args.s1.sema;
+						waitTaskArgs->args.s1.sema = A->args.s1.sema;
 					} else {
 						signal_semaphore(1, S);
 					}
@@ -166,7 +166,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 
 void _k_sem_group_wait_accept(struct k_args *A)
 {
-	struct _k_sem_struct *S = (struct _k_sem_struct *)A->Args.s1.sema;
+	struct _k_sem_struct *S = (struct _k_sem_struct *)A->args.s1.sema;
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -202,17 +202,17 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 	}
 #endif
 
-	L = A->Args.s1.list;
+	L = A->args.s1.list;
 	while (*L != ENDLIST) {
 		struct k_args *R;
 
 		GETARGS(R);
 		R->priority = A->priority;
 		R->Comm =
-			((*L == A->Args.s1.sema) ?
+			((*L == A->args.s1.sema) ?
 			    _K_SVC_SEM_GROUP_WAIT_ACCEPT : _K_SVC_SEM_GROUP_WAIT_CANCEL);
 		R->Ctxt.args = A;
-		R->Args.s1.sema = *L++;
+		R->args.s1.sema = *L++;
 		SENDARGS(R);
 	}
 }
@@ -221,8 +221,8 @@ void _k_sem_group_ready(struct k_args *R)
 {
 	struct k_args *A = R->Ctxt.args;
 
-	if (A->Args.s1.sema == ENDLIST) {
-		A->Args.s1.sema = R->Args.s1.sema;
+	if (A->args.s1.sema == ENDLIST) {
+		A->args.s1.sema = R->args.s1.sema;
 		A->Comm = _K_SVC_SEM_GROUP_WAIT_TIMEOUT;
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.timer) {
@@ -256,7 +256,7 @@ void _k_sem_wait_reply_timeout(struct k_args *A)
 
 void _k_sem_group_wait_request(struct k_args *A)
 {
-	struct _k_sem_struct *S = (struct _k_sem_struct *)A->Args.s1.sema;
+	struct _k_sem_struct *S = (struct _k_sem_struct *)A->args.s1.sema;
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
@@ -292,9 +292,9 @@ void _k_sem_group_wait_any(struct k_args *A)
 {
 	ksem_t *L;
 
-	L = A->Args.s1.list;
-	A->Args.s1.sema = ENDLIST;
-	A->Args.s1.nsem = 0;
+	L = A->args.s1.list;
+	A->args.s1.sema = ENDLIST;
+	A->args.s1.nsem = 0;
 
 	if (*L == ENDLIST) {
 		return;
@@ -307,9 +307,9 @@ void _k_sem_group_wait_any(struct k_args *A)
 		R->priority = _k_current_task->priority;
 		R->Comm = _K_SVC_SEM_GROUP_WAIT_REQUEST;
 		R->Ctxt.args = A;
-		R->Args.s1.sema = *L++;
+		R->args.s1.sema = *L++;
 		SENDARGS(R);
-		(A->Args.s1.nsem)++;
+		(A->args.s1.nsem)++;
 	}
 
 	A->Ctxt.task = _k_current_task;
@@ -332,7 +332,7 @@ void _k_sem_wait_request(struct k_args *A)
 	struct _k_sem_struct *S;
 	uint32_t Sid;
 
-	Sid = A->Args.s1.sema;
+	Sid = A->args.s1.sema;
 	S = (struct _k_sem_struct *)Sid;
 
 	if (S->Level) {
@@ -363,7 +363,7 @@ int _task_sem_take(ksem_t sema, int32_t time)
 
 	A.Comm = _K_SVC_SEM_WAIT_REQUEST;
 	A.Time.ticks = time;
-	A.Args.s1.sema = sema;
+	A.args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }
@@ -375,14 +375,14 @@ ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
 	A.Comm = _K_SVC_SEM_GROUP_WAIT_ANY;
 	A.priority = _k_current_task->priority;
 	A.Time.ticks = time;
-	A.Args.s1.list = group;
+	A.args.s1.list = group;
 	KERNEL_ENTRY(&A);
-	return A.Args.s1.sema;
+	return A.args.s1.sema;
 }
 
 void _k_sem_signal(struct k_args *A)
 {
-	uint32_t Sid = A->Args.s1.sema;
+	uint32_t Sid = A->args.s1.sema;
 	struct _k_sem_struct *S = (struct _k_sem_struct *)Sid;
 
 	signal_semaphore(1, S);
@@ -390,9 +390,9 @@ void _k_sem_signal(struct k_args *A)
 
 void _k_sem_group_signal(struct k_args *A)
 {
-	ksem_t *L = A->Args.s1.list;
+	ksem_t *L = A->args.s1.list;
 
-	while ((A->Args.s1.sema = *L++) != ENDLIST) {
+	while ((A->args.s1.sema = *L++) != ENDLIST) {
 		_k_sem_signal(A);
 	}
 }
@@ -402,7 +402,7 @@ void task_sem_give(ksem_t sema)
 	struct k_args A;
 
 	A.Comm = _K_SVC_SEM_SIGNAL;
-	A.Args.s1.sema = sema;
+	A.args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 }
 
@@ -411,7 +411,7 @@ void task_sem_group_give(ksemg_t group)
 	struct k_args A;
 
 	A.Comm = _K_SVC_SEM_GROUP_SIGNAL;
-	A.Args.s1.list = group;
+	A.args.s1.list = group;
 	KERNEL_ENTRY(&A);
 }
 
@@ -429,14 +429,14 @@ void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
 
 	pCommand = (struct k_args *)_cmd_pkt_get(pSet);
 	pCommand->Comm = _K_SVC_SEM_SIGNAL;
-	pCommand->Args.s1.sema = sema;
+	pCommand->args.s1.sema = sema;
 
 	nano_isr_stack_push(&_k_command_stack, (uint32_t)pCommand);
 }
 
 void _k_sem_reset(struct k_args *A)
 {
-	uint32_t Sid = A->Args.s1.sema;
+	uint32_t Sid = A->args.s1.sema;
 	struct _k_sem_struct *S = (struct _k_sem_struct *)Sid;
 
 	S->Level = 0;
@@ -444,9 +444,9 @@ void _k_sem_reset(struct k_args *A)
 
 void _k_sem_group_reset(struct k_args *A)
 {
-	ksem_t *L = A->Args.s1.list;
+	ksem_t *L = A->args.s1.list;
 
-	while ((A->Args.s1.sema = *L++) != ENDLIST) {
+	while ((A->args.s1.sema = *L++) != ENDLIST) {
 		_k_sem_reset(A);
 	}
 }
@@ -456,7 +456,7 @@ void task_sem_reset(ksem_t sema)
 	struct k_args A;
 
 	A.Comm = _K_SVC_SEM_RESET;
-	A.Args.s1.sema = sema;
+	A.args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 }
 
@@ -465,7 +465,7 @@ void task_sem_group_reset(ksemg_t group)
 	struct k_args A;
 
 	A.Comm = _K_SVC_SEM_GROUP_RESET;
-	A.Args.s1.list = group;
+	A.args.s1.list = group;
 	KERNEL_ENTRY(&A);
 }
 
@@ -474,7 +474,7 @@ void _k_sem_inquiry(struct k_args *A)
 	struct _k_sem_struct *S;
 	uint32_t Sid;
 
-	Sid = A->Args.s1.sema;
+	Sid = A->args.s1.sema;
 	S = (struct _k_sem_struct *)Sid;
 	A->Time.rcode = S->Level;
 }
@@ -484,7 +484,7 @@ int task_sem_count_get(ksem_t sema)
 	struct k_args A;
 
 	A.Comm = _K_SVC_SEM_INQUIRY;
-	A.Args.s1.sema = sema;
+	A.args.s1.sema = sema;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }

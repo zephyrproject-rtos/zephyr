@@ -76,35 +76,35 @@ static void copy_packet(struct k_args **out, struct k_args *in)
  */
 static int match(struct k_args *Reader, struct k_args *Writer)
 {
-	if ((Reader->Args.m1.mess.tx_task == ANYTASK ||
-	     Reader->Args.m1.mess.tx_task == Writer->Args.m1.mess.tx_task) &&
-	    (Writer->Args.m1.mess.rx_task == ANYTASK ||
-	     Writer->Args.m1.mess.rx_task == Reader->Args.m1.mess.rx_task)) {
-		if (!ISASYNCMSG(&(Writer->Args.m1.mess))) {
+	if ((Reader->args.m1.mess.tx_task == ANYTASK ||
+	     Reader->args.m1.mess.tx_task == Writer->args.m1.mess.tx_task) &&
+	    (Writer->args.m1.mess.rx_task == ANYTASK ||
+	     Writer->args.m1.mess.rx_task == Reader->args.m1.mess.rx_task)) {
+		if (!ISASYNCMSG(&(Writer->args.m1.mess))) {
 			int32_t info;
 
-			Reader->Args.m1.mess.tx_task =
-				Writer->Args.m1.mess.tx_task;
+			Reader->args.m1.mess.tx_task =
+				Writer->args.m1.mess.tx_task;
 
-			Writer->Args.m1.mess.rx_task =
-				Reader->Args.m1.mess.rx_task;
+			Writer->args.m1.mess.rx_task =
+				Reader->args.m1.mess.rx_task;
 
-			info = Reader->Args.m1.mess.info;
-			Reader->Args.m1.mess.info = Writer->Args.m1.mess.info;
-			Writer->Args.m1.mess.info = info;
+			info = Reader->args.m1.mess.info;
+			Reader->args.m1.mess.info = Writer->args.m1.mess.info;
+			Writer->args.m1.mess.info = info;
 		} else {
-			Reader->Args.m1.mess.tx_task =
-				Writer->Args.m1.mess.tx_task;
-			Reader->Args.m1.mess.tx_data = NULL;
-			Reader->Args.m1.mess.tx_block =
-				Writer->Args.m1.mess.tx_block;
-			Reader->Args.m1.mess.info = Writer->Args.m1.mess.info;
+			Reader->args.m1.mess.tx_task =
+				Writer->args.m1.mess.tx_task;
+			Reader->args.m1.mess.tx_data = NULL;
+			Reader->args.m1.mess.tx_block =
+				Writer->args.m1.mess.tx_block;
+			Reader->args.m1.mess.info = Writer->args.m1.mess.info;
 		}
 
-		if (Reader->Args.m1.mess.size > Writer->Args.m1.mess.size) {
-			Reader->Args.m1.mess.size = Writer->Args.m1.mess.size;
+		if (Reader->args.m1.mess.size > Writer->args.m1.mess.size) {
+			Reader->args.m1.mess.size = Writer->args.m1.mess.size;
 		} else {
-			Writer->Args.m1.mess.size = Reader->Args.m1.mess.size;
+			Writer->args.m1.mess.size = Reader->args.m1.mess.size;
 		}
 
 		/*
@@ -112,12 +112,12 @@ static int match(struct k_args *Reader, struct k_args *Writer)
 		 * the -1 will not be returned when there is a match.
 		 */
 
-		__ASSERT_NO_MSG(Writer->Args.m1.mess.size ==
-			Reader->Args.m1.mess.size);
+		__ASSERT_NO_MSG(Writer->args.m1.mess.size ==
+			Reader->args.m1.mess.size);
 
-		__ASSERT_NO_MSG((uint32_t)(-1) != Reader->Args.m1.mess.size);
+		__ASSERT_NO_MSG((uint32_t)(-1) != Reader->args.m1.mess.size);
 
-		return Reader->Args.m1.mess.size;
+		return Reader->args.m1.mess.size;
 	}
 
 	return -1; /* There was no match */
@@ -159,44 +159,44 @@ static bool prepare_transfer(struct k_args *move,
 		 */
 		move->priority = max(writer->priority, reader->priority);
 		move->Ctxt.task = NULL;
-		move->Args.MovedReq.Action =
+		move->args.MovedReq.Action =
 			(MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
-		move->Args.MovedReq.iTotalSize = writer->Args.m1.mess.size;
-		move->Args.MovedReq.Extra.Setup.ContSnd = NULL;
-		move->Args.MovedReq.Extra.Setup.ContRcv = NULL;
+		move->args.MovedReq.iTotalSize = writer->args.m1.mess.size;
+		move->args.MovedReq.Extra.Setup.ContSnd = NULL;
+		move->args.MovedReq.Extra.Setup.ContRcv = NULL;
 
 		/* reader: */
-		if (reader->Args.m1.mess.rx_data == NULL) {
+		if (reader->args.m1.mess.rx_data == NULL) {
 			all_data_present = false;
-			__ASSERT_NO_MSG(0 == reader->Args.m1.mess.extra
+			__ASSERT_NO_MSG(0 == reader->args.m1.mess.extra
 					    .transfer); /* == extra.sema */
-			reader->Args.m1.mess.extra.transfer = move;
+			reader->args.m1.mess.extra.transfer = move;
 			/*SENDARGS(reader); */
 		} else {
-			move->Args.MovedReq.destination =
-				reader->Args.m1.mess.rx_data;
-			writer->Args.m1.mess.rx_data =
-				reader->Args.m1.mess.rx_data;
+			move->args.MovedReq.destination =
+				reader->args.m1.mess.rx_data;
+			writer->args.m1.mess.rx_data =
+				reader->args.m1.mess.rx_data;
 
 			/* chain the reader */
-			move->Args.MovedReq.Extra.Setup.ContRcv = reader;
+			move->args.MovedReq.Extra.Setup.ContRcv = reader;
 		}
 
 		/* writer: */
-		if (ISASYNCMSG(&(writer->Args.m1.mess))) {
-			move->Args.MovedReq.source =
-				writer->Args.m1.mess.tx_block.pointer_to_data;
-			reader->Args.m1.mess.tx_block =
-				writer->Args.m1.mess.tx_block;
+		if (ISASYNCMSG(&(writer->args.m1.mess))) {
+			move->args.MovedReq.source =
+				writer->args.m1.mess.tx_block.pointer_to_data;
+			reader->args.m1.mess.tx_block =
+				writer->args.m1.mess.tx_block;
 		} else {
-			__ASSERT_NO_MSG(NULL != writer->Args.m1.mess.tx_data);
-			move->Args.MovedReq.source =
-				writer->Args.m1.mess.tx_data;
-			reader->Args.m1.mess.tx_data =
-				writer->Args.m1.mess.tx_data;
+			__ASSERT_NO_MSG(NULL != writer->args.m1.mess.tx_data);
+			move->args.MovedReq.source =
+				writer->args.m1.mess.tx_data;
+			reader->args.m1.mess.tx_data =
+				writer->args.m1.mess.tx_data;
 		}
 		/* chain the writer */
-		move->Args.MovedReq.Extra.Setup.ContSnd = writer;
+		move->args.MovedReq.Extra.Setup.ContSnd = writer;
 
 		return all_data_present;
 	} else {
@@ -212,8 +212,8 @@ static bool prepare_transfer(struct k_args *move,
  */
 static void transfer(struct k_args *pMvdReq)
 {
-	__ASSERT_NO_MSG(NULL != pMvdReq->Args.MovedReq.source);
-	__ASSERT_NO_MSG(NULL != pMvdReq->Args.MovedReq.destination);
+	__ASSERT_NO_MSG(NULL != pMvdReq->args.MovedReq.source);
+	__ASSERT_NO_MSG(NULL != pMvdReq->args.MovedReq.destination);
 
 	_k_movedata_request(pMvdReq);
 	FREEARGS(pMvdReq);
@@ -226,8 +226,8 @@ static void transfer(struct k_args *pMvdReq)
  */
 void _k_mbox_send_ack(struct k_args *pCopyWriter)
 {
-	if (ISASYNCMSG(&(pCopyWriter->Args.m1.mess))) {
-		if (pCopyWriter->Args.m1.mess.extra.sema) {
+	if (ISASYNCMSG(&(pCopyWriter->args.m1.mess))) {
+		if (pCopyWriter->args.m1.mess.extra.sema) {
 			/*
 			 * Signal the semaphore.  Alternatively, this could
 			 * be done using the continuation mechanism.
@@ -238,7 +238,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 			memset(&A, 0xfd, sizeof(struct k_args));
 #endif
 			A.Comm = _K_SVC_SEM_SIGNAL;
-			A.Args.s1.sema = pCopyWriter->Args.m1.mess.extra.sema;
+			A.args.s1.sema = pCopyWriter->args.m1.mess.extra.sema;
 			_k_sem_signal(&A);
 		}
 
@@ -248,22 +248,22 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 		 */
 
 		if ((uint32_t)(-1) !=
-		    pCopyWriter->Args.m1.mess.tx_block.pool_id) {
+		    pCopyWriter->args.m1.mess.tx_block.pool_id) {
 			/*
 			 * special value to tell if block should be
 			 * freed or not
 			 */
 			pCopyWriter->Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
-			pCopyWriter->Args.p1.pool_id =
-				pCopyWriter->Args.m1.mess.tx_block.pool_id;
-			pCopyWriter->Args.p1.rep_poolptr =
-				pCopyWriter->Args.m1.mess.tx_block
+			pCopyWriter->args.p1.pool_id =
+				pCopyWriter->args.m1.mess.tx_block.pool_id;
+			pCopyWriter->args.p1.rep_poolptr =
+				pCopyWriter->args.m1.mess.tx_block
 					.address_in_pool;
-			pCopyWriter->Args.p1.rep_dataptr =
-				pCopyWriter->Args.m1.mess.tx_block
+			pCopyWriter->args.p1.rep_dataptr =
+				pCopyWriter->args.m1.mess.tx_block
 					.pointer_to_data;
-			pCopyWriter->Args.p1.req_size =
-				pCopyWriter->Args.m1.mess.tx_block.req_size;
+			pCopyWriter->args.p1.req_size =
+				pCopyWriter->args.m1.mess.tx_block.req_size;
 			SENDARGS(pCopyWriter);
 			return;
 		} else {
@@ -282,7 +282,7 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 
 		Starter = pCopyWriter->Ctxt.args;
 		Starter->Time.rcode = pCopyWriter->Time.rcode;
-		Starter->Args.m1.mess = pCopyWriter->Args.m1.mess;
+		Starter->args.m1.mess = pCopyWriter->args.m1.mess;
 		_k_state_bit_reset(Starter->Ctxt.task, TF_SEND | TF_SENDDATA);
 
 		FREEARGS(pCopyWriter);
@@ -312,14 +312,14 @@ void _k_mbox_send_reply(struct k_args *pCopyWriter)
  */
 void _k_mbox_send_request(struct k_args *Writer)
 {
-	kmbox_t MailBoxId = Writer->Args.m1.mess.mailbox;
+	kmbox_t MailBoxId = Writer->args.m1.mess.mailbox;
 	struct _k_mbox_struct *MailBox;
 	struct k_args *CopyReader;
 	struct k_args *CopyWriter;
 	struct k_args *temp;
 	bool bAsync;
 
-	bAsync = ISASYNCMSG(&Writer->Args.m1.mess);
+	bAsync = ISASYNCMSG(&Writer->args.m1.mess);
 
 	struct k_task *sender = NULL;
 
@@ -498,11 +498,11 @@ int _task_mbox_put(kmbox_t mbox,
 	A.priority = prio;
 	A.Comm = _K_SVC_MBOX_SEND_REQUEST;
 	A.Time.ticks = time;
-	A.Args.m1.mess = *M;
+	A.args.m1.mess = *M;
 
 	KERNEL_ENTRY(&A);
 
-	*M = A.Args.m1.mess;
+	*M = A.args.m1.mess;
 	return A.Time.rcode;
 }
 
@@ -527,7 +527,7 @@ void _k_mbox_receive_ack(struct k_args *pCopyReader)
 	Starter->Time.rcode = pCopyReader->Time.rcode;
 
 	/* And copy the message information from the received packet. */
-	Starter->Args.m1.mess = pCopyReader->Args.m1.mess;
+	Starter->args.m1.mess = pCopyReader->args.m1.mess;
 
 	/* Reschedule the sender task */
 	_k_state_bit_reset(Starter->Ctxt.task, TF_RECV | TF_RECVDATA);
@@ -558,7 +558,7 @@ void _k_mbox_receive_reply(struct k_args *pCopyReader)
  */
 void _k_mbox_receive_request(struct k_args *Reader)
 {
-	kmbox_t MailBoxId = Reader->Args.m1.mess.mailbox;
+	kmbox_t MailBoxId = Reader->args.m1.mess.mailbox;
 	struct _k_mbox_struct *MailBox;
 	struct k_args *CopyWriter;
 	struct k_args *temp;
@@ -695,10 +695,10 @@ int _task_mbox_get(kmbox_t mbox,
 	A.priority = _k_current_task->priority;
 	A.Comm = _K_SVC_MBOX_RECEIVE_REQUEST;
 	A.Time.ticks = time;
-	A.Args.m1.mess = *M;
+	A.args.m1.mess = *M;
 
 	KERNEL_ENTRY(&A);
-	*M = A.Args.m1.mess;
+	*M = A.args.m1.mess;
 	return A.Time.rcode;
 }
 
@@ -730,7 +730,7 @@ void _task_mbox_block_put(kmbox_t mbox,
 #endif
 	A.priority = prio;
 	A.Comm = _K_SVC_MBOX_SEND_REQUEST;
-	A.Args.m1.mess = *M;
+	A.args.m1.mess = *M;
 	KERNEL_ENTRY(&A);
 }
 
@@ -753,26 +753,26 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	memcpy(CopyStarter, Starter, sizeof(struct k_args));
 	CopyStarter->Ctxt.args = Starter;
 
-	MoveD = CopyStarter->Args.m1.mess.extra.transfer;
+	MoveD = CopyStarter->args.m1.mess.extra.transfer;
 	CopyStarter->Comm = _K_SVC_MBOX_RECEIVE_ACK;
 	CopyStarter->Time.rcode = RC_OK;
 
-	MoveD->Args.MovedReq.Extra.Setup.ContRcv = CopyStarter;
+	MoveD->args.MovedReq.Extra.Setup.ContRcv = CopyStarter;
 	CopyStarter->next = NULL;
-	MoveD->Args.MovedReq.destination = CopyStarter->Args.m1.mess.rx_data;
+	MoveD->args.MovedReq.destination = CopyStarter->args.m1.mess.rx_data;
 
-	MoveD->Args.MovedReq.iTotalSize = CopyStarter->Args.m1.mess.size;
+	MoveD->args.MovedReq.iTotalSize = CopyStarter->args.m1.mess.size;
 
-	Writer = MoveD->Args.MovedReq.Extra.Setup.ContSnd;
+	Writer = MoveD->args.MovedReq.Extra.Setup.ContSnd;
 	if (Writer != NULL) {
-		if (ISASYNCMSG(&(Writer->Args.m1.mess))) {
-			CopyStarter->Args.m1.mess.tx_block =
-				Writer->Args.m1.mess.tx_block;
+		if (ISASYNCMSG(&(Writer->args.m1.mess))) {
+			CopyStarter->args.m1.mess.tx_block =
+				Writer->args.m1.mess.tx_block;
 		} else {
-			Writer->Args.m1.mess.rx_data =
-				CopyStarter->Args.m1.mess.rx_data;
-			CopyStarter->Args.m1.mess.tx_data =
-				Writer->Args.m1.mess.tx_data;
+			Writer->args.m1.mess.rx_data =
+				CopyStarter->args.m1.mess.rx_data;
+			CopyStarter->args.m1.mess.tx_data =
+				Writer->args.m1.mess.tx_data;
 		}
 		transfer(MoveD); /* and MoveD will be cleared as well */
 	}
@@ -792,7 +792,7 @@ void _task_mbox_data_get(struct k_msg *M)
 		return;
 	}
 
-	A.Args.m1.mess = *M;
+	A.args.m1.mess = *M;
 	A.Comm = _K_SVC_MBOX_RECEIVE_DATA;
 
 	KERNEL_ENTRY(&A);
@@ -840,11 +840,11 @@ int _task_mbox_data_block_get(struct k_msg *message,
 		 * SEND_ACK is processed, change its [pool_id] to -1.
 		 */
 
-		Writer = MoveD->Args.MovedReq.Extra.Setup.ContSnd;
+		Writer = MoveD->args.MovedReq.Extra.Setup.ContSnd;
 		__ASSERT_NO_MSG(NULL != Writer);
 		__ASSERT_NO_MSG(NULL == Writer->next);
 
-		Writer->Args.m1.mess.tx_block.pool_id = (uint32_t)(-1);
+		Writer->args.m1.mess.tx_block.pool_id = (uint32_t)(-1);
 		nano_task_stack_push(&_k_command_stack, (uint32_t)Writer);
 
 #ifdef ACTIV_ASSERTS
@@ -855,7 +855,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 		 * for continuation on receive.
 		 */
 
-		Dummy = MoveD->Args.MovedReq.Extra.Setup.ContRcv;
+		Dummy = MoveD->args.MovedReq.Extra.Setup.ContRcv;
 		__ASSERT_NO_MSG(NULL == Dummy);
 #endif
 
@@ -883,7 +883,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 	 */
 
 	struct k_args A;
-	A.Args.m1.mess = *message;
+	A.args.m1.mess = *message;
 	A.Comm = _K_SVC_MBOX_RECEIVE_DATA;
 	KERNEL_ENTRY(&A);
 
@@ -908,21 +908,21 @@ void _k_mbox_send_data(struct k_args *Starter)
 	memcpy(CopyStarter, Starter, sizeof(struct k_args));
 	CopyStarter->Ctxt.args = Starter;
 
-	MoveD = CopyStarter->Args.m1.mess.extra.transfer;
+	MoveD = CopyStarter->args.m1.mess.extra.transfer;
 
 	CopyStarter->Time.rcode = RC_OK;
 	CopyStarter->Comm = _K_SVC_MBOX_SEND_ACK;
 
-	MoveD->Args.MovedReq.Extra.Setup.ContSnd = CopyStarter;
+	MoveD->args.MovedReq.Extra.Setup.ContSnd = CopyStarter;
 	CopyStarter->next = NULL;
-	MoveD->Args.MovedReq.source = CopyStarter->Args.m1.mess.rx_data;
+	MoveD->args.MovedReq.source = CopyStarter->args.m1.mess.rx_data;
 
-	Reader = MoveD->Args.MovedReq.Extra.Setup.ContRcv;
+	Reader = MoveD->args.MovedReq.Extra.Setup.ContRcv;
 	if (Reader != NULL) {
-		Reader->Args.m1.mess.rx_data =
-			CopyStarter->Args.m1.mess.rx_data;
-		CopyStarter->Args.m1.mess.tx_data =
-			Reader->Args.m1.mess.tx_data;
+		Reader->args.m1.mess.rx_data =
+			CopyStarter->args.m1.mess.rx_data;
+		CopyStarter->args.m1.mess.tx_data =
+			Reader->args.m1.mess.tx_data;
 
 		transfer(MoveD); /* and MoveD will be cleared as well */
 	}

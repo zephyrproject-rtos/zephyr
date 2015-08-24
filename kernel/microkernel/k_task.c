@@ -328,10 +328,10 @@ void task_abort_handler_set(void (*func)(void) /* abort handler */
 
 void _k_task_op(struct k_args *A)
 {
-	ktask_t Tid = A->Args.g1.task;
+	ktask_t Tid = A->args.g1.task;
 		struct k_task *X = (struct k_task *)Tid;
 
-		switch (A->Args.g1.opt) {
+		switch (A->args.g1.opt) {
 		case TASK_START:
 			start_task(X, X->fn_start);
 			break;
@@ -367,8 +367,8 @@ void _task_ioctl(ktask_t task, /* task on which to operate */
 	struct k_args A;
 
 	A.Comm = _K_SVC_TASK_OP;
-	A.Args.g1.task = task;
-	A.Args.g1.opt = opt;
+	A.args.g1.task = task;
+	A.args.g1.opt = opt;
 	KERNEL_ENTRY(&A);
 }
 
@@ -385,8 +385,8 @@ void _task_ioctl(ktask_t task, /* task on which to operate */
 
 void _k_task_group_op(struct k_args *A)
 {
-	ktask_group_t grp = A->Args.g1.group;
-	int opt = A->Args.g1.opt;
+	ktask_group_t grp = A->args.g1.group;
+	int opt = A->args.g1.opt;
 	struct k_task *X;
 
 #ifdef CONFIG_TASK_DEBUG
@@ -437,8 +437,8 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
 	struct k_args A;
 
 	A.Comm = _K_SVC_TASK_GROUP_OP;
-	A.Args.g1.group = group;
-	A.Args.g1.opt = opt;
+	A.args.g1.group = group;
+	A.args.g1.opt = opt;
 	KERNEL_ENTRY(&A);
 }
 
@@ -499,11 +499,11 @@ kpriority_t task_priority_get(void)
 
 void _k_task_priority_set(struct k_args *A)
 {
-	ktask_t Tid = A->Args.g1.task;
+	ktask_t Tid = A->args.g1.task;
 		struct k_task *X = (struct k_task *)Tid;
 
 		_k_state_bit_set(X, TF_PRIO);
-		X->priority = A->Args.g1.prio;
+		X->priority = A->args.g1.prio;
 		_k_state_bit_reset(X, TF_PRIO);
 
 	if (A->alloc)
@@ -532,8 +532,8 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 	struct k_args A;
 
 	A.Comm = _K_SVC_TASK_PRIORITY_SET;
-	A.Args.g1.task = task;
-	A.Args.g1.prio = prio;
+	A.args.g1.task = task;
+	A.args.g1.prio = prio;
 	KERNEL_ENTRY(&A);
 }
 
