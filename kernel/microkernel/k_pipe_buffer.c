@@ -332,7 +332,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->available_data_post_wrap_around = 0;
 	desc->num_pending_writes = 0;
 	MarkersClear(&desc->write_markers);
-	MarkersClear(&desc->ReadMarkers);
+	MarkersClear(&desc->read_markers);
 
 }
 
@@ -563,7 +563,7 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 		desc->free_space_post_wrap_around = 0;
 		desc->wrap_around_write = true;
 		desc->wrap_around_read = false;
-		desc->ReadMarkers.post_wrap_around_marker = -1;
+		desc->read_markers.post_wrap_around_marker = -1;
 	} else {
 		desc->free_space_count -= iSize;
 	}
@@ -599,7 +599,7 @@ static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int iSize)
 
 	pipe_intrusion_check(desc, desc->read_ptr, iSize);
 
-	i = MarkerAddLast(&desc->ReadMarkers, desc->read_ptr, iSize, true);
+	i = MarkerAddLast(&desc->read_markers, desc->read_ptr, iSize, true);
 	if (i != -1) {
 		/* adjust num_pending_reads */
 		__ASSERT_NO_MSG(0 <= desc->num_pending_reads);
@@ -608,12 +608,12 @@ static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int iSize)
 		if (NULL == desc->write_guard) {
 			desc->write_guard = desc->read_ptr;
 		}
-		__ASSERT_NO_MSG(desc->ReadMarkers.markers
-						[desc->ReadMarkers.first_marker].pointer ==
+		__ASSERT_NO_MSG(desc->read_markers.markers
+						[desc->read_markers.first_marker].pointer ==
 						desc->write_guard);
 		/* post_wrap_around_marker changes? */
-		if (-1 == desc->ReadMarkers.post_wrap_around_marker && desc->wrap_around_read) {
-			desc->ReadMarkers.post_wrap_around_marker = i;
+		if (-1 == desc->read_markers.post_wrap_around_marker && desc->wrap_around_read) {
+			desc->read_markers.post_wrap_around_marker = i;
 		}
 	}
 	return i;
@@ -621,16 +621,16 @@ static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int iSize)
 
 static void AsyncDeQFinished(struct _k_pipe_desc *desc, int iTransferID)
 {
-	desc->ReadMarkers.markers[iTransferID].buffer_xfer_busy = false;
+	desc->read_markers.markers[iTransferID].buffer_xfer_busy = false;
 
-	if (desc->ReadMarkers.first_marker == iTransferID) {
-		int iNewFirstMarker = ScanMarkers(&desc->ReadMarkers,
+	if (desc->read_markers.first_marker == iTransferID) {
+		int iNewFirstMarker = ScanMarkers(&desc->read_markers,
 										  &desc->free_space_count,
 										  &desc->free_space_post_wrap_around,
 										  &desc->num_pending_reads);
 		if (-1 != iNewFirstMarker) {
 			desc->write_guard =
-				desc->ReadMarkers.markers[iNewFirstMarker].pointer;
+				desc->read_markers.markers[iNewFirstMarker].pointer;
 		} else {
 			desc->write_guard = NULL;
 		}
@@ -782,14 +782,14 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin
 #ifdef STORE_NBR_MARKERS
 	/* first a small consistency check */
 
-	if (0 == desc->ReadMarkers.num_markers) {
-		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.first_marker);
-		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.last_marker);
-		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.post_wrap_around_marker);
+	if (0 == desc->read_markers.num_markers) {
+		__ASSERT_NO_MSG(-1 == desc->read_markers.first_marker);
+		__ASSERT_NO_MSG(-1 == desc->read_markers.last_marker);
+		__ASSERT_NO_MSG(-1 == desc->read_markers.post_wrap_around_marker);
 	}
 #endif
 
-	pMarkerList = &desc->ReadMarkers;
+	pMarkerList = &desc->read_markers;
 	index = pMarkerList->first_marker;
 
 	while (-1 != index) {
