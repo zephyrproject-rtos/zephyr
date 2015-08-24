@@ -213,7 +213,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 	} else {
 		/* The mutex is owned by another task. */
 #ifdef CONFIG_OBJECT_MONITOR
-		Mutex->Confl++;
+		Mutex->num_conflicts++;
 #endif
 
 		if (likely(A->Time.ticks != TICKS_NONE)) {

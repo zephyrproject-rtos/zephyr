@@ -122,7 +122,7 @@ extern void _task_mutex_unlock(kmutex_t mutex);
 	  .level = 0, \
 	  .waiters = NULL, \
 	  .count = 0, \
-	  .Confl = 0, \
+	  .num_conflicts = 0, \
 	}
 
 /**

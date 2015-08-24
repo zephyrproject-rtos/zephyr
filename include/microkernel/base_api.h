@@ -132,7 +132,7 @@ struct _k_mutex_struct {
 	int level;
 	struct k_args *waiters;
 	int count;
-	int Confl;
+	int num_conflicts;
 };
 
 struct _k_sem_struct {
