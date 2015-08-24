@@ -232,7 +232,7 @@ static void start_task(struct k_task *X,  /* ptr to task control block */
 				task_options	/* options */
 				);
 
-	X->fabort = NULL;
+	X->fn_abort = NULL;
 
 	_k_state_bit_reset(X, TF_STOP | TF_TERM);
 }
@@ -259,8 +259,8 @@ static void abort_task(struct k_task *X)
 
 	/* Invoke abort function, if there is one */
 
-	if (X->fabort != NULL) {
-		X->fabort();
+	if (X->fn_abort != NULL) {
+		X->fn_abort();
 	}
 }
 
@@ -312,7 +312,7 @@ FUNC_NORETURN void _TaskAbort(void)
 void task_abort_handler_set(void (*func)(void) /* abort handler */
 			    )
 {
-	_k_current_task->fabort = func;
+	_k_current_task->fn_abort = func;
 }
 
 /**

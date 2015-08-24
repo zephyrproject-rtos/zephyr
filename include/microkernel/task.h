@@ -113,13 +113,13 @@ extern void task_group_leave(uint32_t groups);
  * @param fn_start Entry function.
  * @param workspace Pointer to workspace (aka, stack).
  * @param worksize Size of workspace.
- * @param fabort Abort function.
+ * @param fn_abort Abort function.
  */
 #define __K_TASK_INITIALIZER(ident, priority, state, groups, \
-			     fn_start, workspace, worksize, fabort) \
+			     fn_start, workspace, worksize, fn_abort) \
 	{ \
 	  NULL, NULL, priority, ident, state, ((groups) ^ SYS), \
-	  fn_start, workspace, worksize, fabort, NULL, \
+	  fn_start, workspace, worksize, fn_abort, NULL, \
 	}
 
 /**

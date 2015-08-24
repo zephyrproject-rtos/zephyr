@@ -115,7 +115,7 @@ struct k_task {
 	void (*fn_start)(void);
 	char *workspace;
 	int worksize;
-	void (*fabort)(void);
+	void (*fn_abort)(void);
 	struct k_args *Args;
 };
 
