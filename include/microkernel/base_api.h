@@ -112,7 +112,7 @@ struct k_task {
 	ktask_t id;
 	uint32_t state;
 	uint32_t group;
-	void (*fstart)(void);
+	void (*fn_start)(void);
 	char *workspace;
 	int worksize;
 	void (*fabort)(void);

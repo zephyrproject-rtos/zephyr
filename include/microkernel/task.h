@@ -110,16 +110,16 @@ extern void task_group_leave(uint32_t groups);
  * @param priority Priority of task.
  * @param state State of task.
  * @param groups Groups this task belong to.
- * @param fstart Entry function.
+ * @param fn_start Entry function.
  * @param workspace Pointer to workspace (aka, stack).
  * @param worksize Size of workspace.
  * @param fabort Abort function.
  */
 #define __K_TASK_INITIALIZER(ident, priority, state, groups, \
-			     fstart, workspace, worksize, fabort) \
+			     fn_start, workspace, worksize, fabort) \
 	{ \
 	  NULL, NULL, priority, ident, state, ((groups) ^ SYS), \
-	  fstart, workspace, worksize, fabort, NULL, \
+	  fn_start, workspace, worksize, fabort, NULL, \
 	}
 
 /**

@@ -333,7 +333,7 @@ void _k_task_op(struct k_args *A)
 
 		switch (A->Args.g1.opt) {
 		case TASK_START:
-			start_task(X, X->fstart);
+			start_task(X, X->fn_start);
 			break;
 		case TASK_ABORT:
 			abort_task(X);
@@ -400,7 +400,7 @@ void _k_task_group_op(struct k_args *A)
 		if (X->group & grp) {
 			switch (opt) {
 			case TASK_GROUP_START:
-				start_task(X, X->fstart);
+				start_task(X, X->fn_start);
 				break;
 			case TASK_GROUP_ABORT:
 				abort_task(X);
@@ -599,6 +599,6 @@ void task_entry_set(ktask_t task,       /* task */
 {
 	struct k_task *X = (struct k_task *)task;
 
-	X->fstart = func;
+	X->fn_start = func;
 }
 
