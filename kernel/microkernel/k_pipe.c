@@ -199,9 +199,9 @@ int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 		/* same behavior in flow as a blocking call w/o a timeout */
 
 	A.args.pipe_req.req_info.pipe.id = Id;
-	A.args.pipe_req.ReqType.Async.block = Block;
-	A.args.pipe_req.ReqType.Async.total_size = iSize2Xfer;
-	A.args.pipe_req.ReqType.Async.sema = Sema;
+	A.args.pipe_req.ReqType.async.block = Block;
+	A.args.pipe_req.ReqType.async.total_size = iSize2Xfer;
+	A.args.pipe_req.ReqType.async.sema = Sema;
 
 	_k_pipe_request_type_set(&A.args, _ASYNCREQ);
 	_k_pipe_option_set(&A.args, _ALL_N); /* force ALL_N */

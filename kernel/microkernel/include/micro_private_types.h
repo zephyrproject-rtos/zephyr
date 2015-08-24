@@ -192,7 +192,7 @@ struct _pipe_req_arg {
 	struct req_info req_info;
 	union {
 		struct sync_req sync;
-		struct async_req Async;
+		struct async_req async;
 	} ReqType;
 	int Dummy;
 };
@@ -211,7 +211,7 @@ struct _pipe_ack_arg {
 	struct req_info req_info;
 	union {
 		struct sync_req Dummy;
-		struct async_req Async;
+		struct async_req async;
 	} ReqType;
 	int iSizeXferred;
 };

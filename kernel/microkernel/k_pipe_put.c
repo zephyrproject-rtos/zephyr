@@ -91,9 +91,9 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		break;
 	case _ASYNCREQ:
 		RequestProc->args.pipe_xfer_req.data_ptr =
-			Request->args.pipe_req.ReqType.Async.block.pointer_to_data;
+			Request->args.pipe_req.ReqType.async.block.pointer_to_data;
 		RequestProc->args.pipe_xfer_req.total_size =
-			Request->args.pipe_req.ReqType.Async.total_size;
+			Request->args.pipe_req.ReqType.async.total_size;
 		break;
 	default:
 		break;
@@ -295,7 +295,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 		struct k_block *blockptr;
 
 		/* invoke command to release block */
-		blockptr = &pipe_ack->ReqType.Async.block;
+		blockptr = &pipe_ack->ReqType.async.block;
 		A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
 		A.args.p1.pool_id = blockptr->pool_id;
 		A.args.p1.req_size = blockptr->req_size;
@@ -303,12 +303,12 @@ void _k_pipe_put_ack(struct k_args *Request)
 		A.args.p1.rep_dataptr = blockptr->pointer_to_data;
 		_k_mem_pool_block_release(&A); /* will return immediately */
 
-		if ((ksem_t)NULL != pipe_ack->ReqType.Async.sema) {
+		if ((ksem_t)NULL != pipe_ack->ReqType.async.sema) {
 			/* invoke command to signal sema */
 			struct k_args A;
 
 			A.Comm = _K_SVC_SEM_SIGNAL;
-			A.args.s1.sema = pipe_ack->ReqType.Async.sema;
+			A.args.s1.sema = pipe_ack->ReqType.async.sema;
 			_k_sem_signal(&A); /* will return immediately */
 		}
 	} else {
