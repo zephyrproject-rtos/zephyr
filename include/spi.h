@@ -106,7 +106,7 @@ struct spi_driver_api {
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */
-inline int spi_configure(struct device *dev, struct spi_config *config)
+static inline int spi_configure(struct device *dev, struct spi_config *config)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 	return api->configure(dev, config);
@@ -144,7 +144,7 @@ inline int spi_slave_select(struct device *dev, uint32_t slave)
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */
-inline int spi_read(struct device *dev, uint8_t *buf, uint32_t len)
+static inline int spi_read(struct device *dev, uint8_t *buf, uint32_t len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 	return api->transceive(dev, NULL, 0, buf, len);
@@ -158,7 +158,7 @@ inline int spi_read(struct device *dev, uint8_t *buf, uint32_t len)
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */
-inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
+static inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 	return api->transceive(dev, buf, len, NULL, 0);
@@ -191,7 +191,7 @@ inline int spi_transceive(struct device *dev,
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */
-inline int spi_suspend(struct device *dev)
+static inline int spi_suspend(struct device *dev)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 	return api->suspend(dev);
@@ -203,7 +203,7 @@ inline int spi_suspend(struct device *dev)
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */
-inline int spi_resume(struct device *dev)
+static inline int spi_resume(struct device *dev)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
 	return api->resume(dev);
