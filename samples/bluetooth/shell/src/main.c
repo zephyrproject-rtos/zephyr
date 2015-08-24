@@ -380,7 +380,7 @@ static void cmd_gatt_exchange_mtu(int argc, char *argv[])
 	}
 }
 
-static const struct bt_eir ad[] = {
+static const struct bt_eir ad_discov[] = {
 	{
 		.len = 2,
 		.type = BT_EIR_FLAGS,
@@ -388,6 +388,8 @@ static const struct bt_eir ad[] = {
 	},
 	{ }
 };
+
+static const struct bt_eir ad_non_discov[] = { { 0 } };
 
 static const struct bt_eir sd[] = {
 	{
@@ -402,6 +404,7 @@ static void cmd_advertise(int argc, char *argv[])
 {
 	uint8_t adv_type;
 	int i;
+	const struct bt_eir *ad;
 
 	static struct {
 		const char *str;
@@ -441,6 +444,21 @@ static void cmd_advertise(int argc, char *argv[])
 		goto fail;
 	}
 
+	/* Parse advertisement data */
+	if (argc >= 3) {
+		const char *mode = (char*)argv[2];
+
+		if (!strcmp(mode, "discov")) {
+			ad = ad_discov;
+		} else if (!strcmp(mode, "non_discov")) {
+			ad = ad_non_discov;
+		} else {
+			goto fail;
+		}
+	} else {
+		ad = ad_discov;
+	}
+
 	if (bt_start_advertising(adv_type, ad, sd) < 0) {
 		printk("Failed to start advertising\n");
 	} else {
@@ -450,12 +468,13 @@ static void cmd_advertise(int argc, char *argv[])
 	return;
 
 fail:
-	printk("Usage: advertise <type>\n");
+	printk("Usage: advertise <type> <ad mode>\n");
 	printk("type: off, ");
 	for (i = 0; i < sizeof(adv_t) / sizeof(adv_t[0]); i++) {
 		printk("%s, ", adv_t[i].str);
 	}
 	printk("\n");
+	printk("ad mode: discov, non_discov\n");
 }
 
 static struct bt_gatt_discover_params discover_params;
