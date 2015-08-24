@@ -142,7 +142,7 @@ struct k_timer {
 
 struct k_tqhd {
 	struct k_task *head;
-	struct k_task *Tail;
+	struct k_task *tail;
 };
 
 /* Monitor record */

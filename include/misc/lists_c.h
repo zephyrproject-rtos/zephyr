@@ -45,9 +45,9 @@ Example code from list insertion etc
 
 INLINE void InitList(struct list_head *list)
 {
-	list->head = (struct list_elem *)&list->Tail;
+	list->head = (struct list_elem *)&list->tail;
 	list->TailPrev = (struct list_elem *)&list->head;
-	list->Tail = NULL;
+	list->tail = NULL;
 }
 
 INLINE unsigned int TestListEmpty(struct list_head *list)
@@ -90,7 +90,7 @@ INLINE struct list_elem *RemoveTail(struct list_head *list)
 		return NULL;  /* empty list */
 	}
 	list->TailPrev = tmpElem;
-	tmpElem->next = (struct list_elem *)&list->Tail;
+	tmpElem->next = (struct list_elem *)&list->tail;
 	return ret_Elem;
 }
 
@@ -111,7 +111,7 @@ INLINE void AddTail(struct list_head *list, struct list_elem *elem)
 	struct list_elem *tmpElem;
 	struct list_elem *tailElem;
 
-	tmpElem = (struct list_elem *)&list->Tail;
+	tmpElem = (struct list_elem *)&list->tail;
 	tailElem = tmpElem->prev;
 	tailElem->next = elem;
 	tmpElem->prev = elem;
@@ -141,7 +141,7 @@ INLINE void InsertPrio(struct list_head *list, struct list_elem *newelem)
 	struct list_elem *tmpElem;
 
 	tmpElem = (struct list_elem *)&list->head;
-	while ((tmpElem->next != (struct list_elem *)&list->Tail) && /* end of list */
+	while ((tmpElem->next != (struct list_elem *)&list->tail) && /* end of list */
 	       (tmpElem->priority <= newelem->priority)) {
 		tmpElem = tmpElem->next;
 	}

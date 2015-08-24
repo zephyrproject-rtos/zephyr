@@ -49,7 +49,7 @@ struct Elem {
 
 struct List {
 	struct list_elem *head;
-	struct list_elem *Tail;
+	struct list_elem *tail;
 	struct list_elem *TailPrev;
 };
 

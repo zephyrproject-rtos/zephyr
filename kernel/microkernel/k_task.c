@@ -89,8 +89,8 @@ void _k_state_bit_reset(struct k_task *X,    /* ptr to task */
 		struct k_tqhd *H = _k_task_priority_list + X->priority;
 
 		X->next = NULL;
-		H->Tail->next = X;
-		H->Tail = X;
+		H->tail->next = X;
+		H->tail = X;
 		_k_task_priority_bitmap[X->priority >> 5] |= (1 << (X->priority & 0x1F));
 	}
 
@@ -167,8 +167,8 @@ void _k_state_bit_set(
 
 		cur_task->next = task_ptr->next;
 
-		if (task_queue->Tail == task_ptr) {
-			task_queue->Tail = cur_task;
+		if (task_queue->tail == task_ptr) {
+			task_queue->tail = cur_task;
 		}
 
 		/*
@@ -552,8 +552,8 @@ void _k_task_yield(struct k_args *A)
 	ARG_UNUSED(A);
 	if (X && H->head == _k_current_task) {
 		_k_current_task->next = NULL;
-		H->Tail->next = _k_current_task;
-		H->Tail = _k_current_task;
+		H->tail->next = _k_current_task;
+		H->tail = _k_current_task;
 		H->head = X;
 	}
 }
