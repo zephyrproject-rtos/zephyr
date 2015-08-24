@@ -129,7 +129,7 @@ struct _k_mutex_struct {
 	ktask_t owner;
 	kpriority_t current_owner_priority;
 	kpriority_t original_owner_priority;
-	int Level;
+	int level;
 	struct k_args *Waiters;
 	int Count;
 	int Confl;
@@ -137,7 +137,7 @@ struct _k_mutex_struct {
 
 struct _k_sem_struct {
 	struct k_args *Waiters;
-	int Level;
+	int level;
 	int Count;
 };
 

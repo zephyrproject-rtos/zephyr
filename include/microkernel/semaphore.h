@@ -258,7 +258,7 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 #define __K_SEMAPHORE_DEFAULT \
 	{ \
 	  .Waiters = NULL, \
-	  .Level = 0, \
+	  .level = 0, \
 	  .Count = 0, \
 	}
 

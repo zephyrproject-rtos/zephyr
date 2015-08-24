@@ -179,7 +179,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 
 
 	Mutex = (struct _k_mutex_struct *)MutexId;
-	if (Mutex->Level == 0 || Mutex->owner == A->args.l1.task) {
+	if (Mutex->level == 0 || Mutex->owner == A->args.l1.task) {
 		/* The mutex is either unowned or this is a nested lock. */
 #ifdef CONFIG_OBJECT_MONITOR
 		Mutex->Count++;
@@ -202,11 +202,11 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 		 * task is already involved in priority inheritance, this
 		 * original priority reflects its "boosted" priority.
 		 */
-		if (Mutex->Level == 0) {
+		if (Mutex->level == 0) {
 			Mutex->original_owner_priority = Mutex->current_owner_priority;
 		}
 
-		Mutex->Level++;
+		Mutex->level++;
 
 		A->Time.rcode = RC_OK;
 
@@ -323,7 +323,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 
 	MutexId = A->args.l1.mutex;
 	Mutex = (struct _k_mutex_struct *)MutexId;
-	if (Mutex->owner == A->args.l1.task && --(Mutex->Level) == 0) {
+	if (Mutex->owner == A->args.l1.task && --(Mutex->level) == 0) {
 		/*
 		 * The requesting task owns the mutex and all locks
 		 * have been released.
@@ -362,7 +362,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 
 			Mutex->Waiters = X->next;
 			Mutex->owner = X->args.l1.task;
-			Mutex->Level = 1;
+			Mutex->level = 1;
 			Mutex->current_owner_priority = X->priority;
 			Mutex->original_owner_priority = X->priority;
 
@@ -388,7 +388,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 		} else {
 			/* No task is waiting in the queue. */
 			Mutex->owner = ANYTASK;
-			Mutex->Level = 0;
+			Mutex->level = 0;
 		}
 	}
 }

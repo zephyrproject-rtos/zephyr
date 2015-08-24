@@ -119,7 +119,7 @@ extern void _task_mutex_unlock(kmutex_t mutex);
 	  .owner = ANYTASK, \
 	  .current_owner_priority = 64, \
 	  .original_owner_priority = 64, \
-	  .Level = 0, \
+	  .level = 0, \
 	  .Waiters = NULL, \
 	  .Count = 0, \
 	  .Confl = 0, \

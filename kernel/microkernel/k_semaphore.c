@@ -54,10 +54,10 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 	S->Count += n;
 #endif
 
-	S->Level += n;
+	S->level += n;
 	A = S->Waiters;
 	Y = NULL;
-	while (A && S->Level) {
+	while (A && S->level) {
 		X = A->next;
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -67,7 +67,7 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 		if (A->Comm == _K_SVC_SEM_WAIT_REQUEST)
 #endif
 		{
-			S->Level--;
+			S->level--;
 			if (Y) {
 				Y->next = X;
 			} else {
@@ -85,7 +85,7 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 			}
 #endif
 		} else if (A->Comm == _K_SVC_SEM_GROUP_WAIT_REQUEST) {
-			S->Level--;
+			S->level--;
 			A->Comm = _K_SVC_SEM_GROUP_WAIT_READY;
 			GETARGS(Y);
 			*Y = *A;
@@ -335,8 +335,8 @@ void _k_sem_wait_request(struct k_args *A)
 	Sid = A->args.s1.sema;
 	S = (struct _k_sem_struct *)Sid;
 
-	if (S->Level) {
-		S->Level--;
+	if (S->level) {
+		S->level--;
 		A->Time.rcode = RC_OK;
 	} else if (A->Time.ticks != TICKS_NONE) {
 		A->Ctxt.task = _k_current_task;
@@ -439,7 +439,7 @@ void _k_sem_reset(struct k_args *A)
 	uint32_t Sid = A->args.s1.sema;
 	struct _k_sem_struct *S = (struct _k_sem_struct *)Sid;
 
-	S->Level = 0;
+	S->level = 0;
 }
 
 void _k_sem_group_reset(struct k_args *A)
@@ -476,7 +476,7 @@ void _k_sem_inquiry(struct k_args *A)
 
 	Sid = A->args.s1.sema;
 	S = (struct _k_sem_struct *)Sid;
-	A->Time.rcode = S->Level;
+	A->Time.rcode = S->level;
 }
 
 int task_sem_count_get(ksem_t sema)
