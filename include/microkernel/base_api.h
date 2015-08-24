@@ -128,7 +128,7 @@ struct _k_mbox_struct {
 struct _k_mutex_struct {
 	ktask_t owner;
 	kpriority_t current_owner_priority;
-	kpriority_t OwnerOriginalPrio;
+	kpriority_t original_owner_priority;
 	int Level;
 	struct k_args *Waiters;
 	int Count;
