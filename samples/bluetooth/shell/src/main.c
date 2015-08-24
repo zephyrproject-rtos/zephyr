@@ -106,21 +106,33 @@ static void cmd_init(int argc, char *argv[])
 	}
 }
 
+static int char2hex(const char *c, uint8_t *x)
+{
+	if (*c >= '0' && *c <= '9') {
+		*x = *c - '0';
+	} else if (*c >= 'a' && *c <= 'f') {
+		*x = *c - 'a' + 10;
+	} else if (*c >= 'A' && *c <= 'F') {
+		*x = *c - 'A' + 10;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int xtoi(const char *str)
 {
 	int val = 0;
+	uint8_t tmp;
 
 	for (; *str != '\0'; str++) {
 		val = val << 4;
-		if (*str >= '0' && *str <= '9') {
-			val |= *str - '0';
-		} else if (*str >= 'a' && *str <= 'f') {
-			val |= *str - 'a' + 10;
-		} else if (*str >= 'A' && *str <= 'F') {
-			val |= *str - 'A' + 10;
-		} else {
+		if (char2hex(str, &tmp) < 0) {
 			return -EINVAL;
 		}
+
+		val |= tmp;
 	}
 
 	return val;
@@ -149,6 +161,7 @@ static int atoi(const char *str)
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int i, j;
+	uint8_t tmp;
 
 	if (strlen(str) != 17) {
 		return -EINVAL;
@@ -164,15 +177,11 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 
 		addr->val[i] = addr->val[i] << 4;
 
-		if (*str >= '0' && *str <= '9') {
-			addr->val[i] |= *str - '0';
-		} else if (*str >= 'a' && *str <= 'f') {
-			addr->val[i] |= *str - 'a' + 10;
-		} else if (*str >= 'A' && *str <= 'F') {
-			addr->val[i] |= *str - 'A' + 10;
-		} else {
+		if (char2hex(str, &tmp) < 0) {
 			return -EINVAL;
 		}
+
+		addr->val[i] |= tmp;
 	}
 
 	if (!strcmp(type, "public") || !strcmp(type, "(public)")) {
