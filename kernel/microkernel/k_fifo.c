@@ -121,13 +121,13 @@ void _k_fifo_enque_request(struct k_args *A)
 		}
 #endif
 		else {
-			p = Q->Enqp;
+			p = Q->enqueue_point;
 			memcpy(p, q, w);
 			p = (char *)((int)p + w);
 			if (p == Q->end_point)
-				Q->Enqp = Q->base;
+				Q->enqueue_point = Q->base;
 			else
-				Q->Enqp = p;
+				Q->enqueue_point = p;
 			Q->Nused = ++n;
 #ifdef CONFIG_OBJECT_MONITOR
 			if (Q->Hmark < n)
@@ -246,15 +246,15 @@ void _k_fifo_deque_request(struct k_args *A)
 		W = Q->waiters;
 		if (W) {
 			Q->waiters = W->next;
-			p = Q->Enqp;
+			p = Q->enqueue_point;
 			q = W->args.q1.data;
 			w = OCTET_TO_SIZEOFUNIT(Q->element_size);
 			memcpy(p, q, w);
 			p = (char *)((int)p + w);
 			if (p == Q->end_point)
-				Q->Enqp = Q->base;
+				Q->enqueue_point = Q->base;
 			else
-				Q->Enqp = p;
+				Q->enqueue_point = p;
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (W->Time.timer) {
@@ -355,7 +355,7 @@ void _k_fifo_ioctl(struct k_args *A)
 			}
 		}
 		Q->Nused = 0;
-		Q->Enqp = Q->Deqp = Q->base;
+		Q->enqueue_point = Q->Deqp = Q->base;
 		A->Time.rcode = RC_OK;
 	} else
 		A->Time.rcode = Q->Nused;
