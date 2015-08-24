@@ -323,7 +323,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->write_guard = NULL;
 	desc->bWriteWA = false;
 	desc->read_ptr = desc->begin_ptr;
-	desc->pReadGuard = NULL;
+	desc->read_guard = NULL;
 	desc->bReadWA = true; /* YES!! */
 	desc->iFreeSpaceCont = desc->buffer_size;
 	desc->iFreeSpaceAWA = 0;
@@ -413,8 +413,8 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 	unsigned char *pStart = desc->read_ptr;
 	unsigned char *pStop = desc->write_ptr;
 
-	if (NULL != desc->pReadGuard) {
-		pStop = desc->pReadGuard;
+	if (NULL != desc->read_guard) {
+		pStop = desc->read_guard;
 	} else {
 		/*
 		 * if BuffState==BUFF_FULL but we have a ReadGuard,
@@ -494,13 +494,13 @@ static int AsyncEnQRegstr(struct _k_pipe_desc *desc, int iSize)
 		/* adjust iNbrPendingWrites */
 		__ASSERT_NO_MSG(0 <= desc->iNbrPendingWrites);
 		desc->iNbrPendingWrites++;
-		/* pReadGuard changes? */
-		if (NULL == desc->pReadGuard) {
-			desc->pReadGuard = desc->write_ptr;
+		/* read_guard changes? */
+		if (NULL == desc->read_guard) {
+			desc->read_guard = desc->write_ptr;
 		}
 		__ASSERT_NO_MSG(desc->WriteMarkers.markers
 						[desc->WriteMarkers.first_marker].pointer ==
-						desc->pReadGuard);
+						desc->read_guard);
 		/* post_wrap_around_marker changes? */
 		if (-1 == desc->WriteMarkers.post_wrap_around_marker && desc->bWriteWA) {
 			desc->WriteMarkers.post_wrap_around_marker = i;
@@ -519,10 +519,10 @@ static void AsyncEnQFinished(struct _k_pipe_desc *desc, int iTransferID)
 										  &desc->iAvailDataAWA,
 										  &desc->iNbrPendingWrites);
 		if (-1 != iNewFirstMarker) {
-			desc->pReadGuard =
+			desc->read_guard =
 				desc->WriteMarkers.markers[iNewFirstMarker].pointer;
 		} else {
-			desc->pReadGuard = NULL;
+			desc->read_guard = NULL;
 		}
 	}
 }
