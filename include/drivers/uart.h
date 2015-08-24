@@ -114,8 +114,8 @@ int uart_platform_init(struct device *dev);
  * @param dev UART device struct
  * @param pinfo UART configuration
  */
-inline void uart_init(struct device *dev,
-		      const struct uart_init_info * const pinfo)
+static inline void uart_init(struct device *dev,
+			     const struct uart_init_info * const pinfo)
 {
 	struct uart_device_config_t *dev_cfg =
 	    (struct uart_device_config_t *)dev->config->config_info;
@@ -134,7 +134,7 @@ inline void uart_init(struct device *dev,
  * @return 0 if a character arrived, -1 if the input buffer if empty,
  * 		-DEV_INVALID_OP if operation not supported.
  */
-inline int uart_poll_in(struct device *dev, unsigned char *p_char)
+static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
 {
 	struct uart_driver_api *api;
 
@@ -160,7 +160,8 @@ inline int uart_poll_in(struct device *dev, unsigned char *p_char)
  *
  * @return Sent character
  */
-inline unsigned char uart_poll_out(struct device *dev, unsigned char out_char)
+static inline unsigned char uart_poll_out(struct device *dev,
+					  unsigned char out_char)
 {
 	struct uart_driver_api *api;
 
@@ -184,7 +185,8 @@ inline unsigned char uart_poll_out(struct device *dev, unsigned char out_char)
  *
  * @return Number of bytes sent
  */
-inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data, int size)
+static inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data,
+				 int size)
 {
 	struct uart_driver_api *api;
 
@@ -205,7 +207,8 @@ inline int uart_fifo_fill(struct device *dev, const uint8_t *tx_data, int size)
  *
  * @return Number of bytes read
  */
-inline int uart_fifo_read(struct device *dev, uint8_t *rx_data, const int size)
+static inline int uart_fifo_read(struct device *dev, uint8_t *rx_data,
+				 const int size)
 {
 	struct uart_driver_api *api;
 
@@ -224,7 +227,7 @@ inline int uart_fifo_read(struct device *dev, uint8_t *rx_data, const int size)
  *
  * @return N/A
  */
-inline void uart_irq_tx_enable(struct device *dev)
+static inline void uart_irq_tx_enable(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -240,7 +243,7 @@ inline void uart_irq_tx_enable(struct device *dev)
  *
  * @return N/A
  */
-inline void uart_irq_tx_disable(struct device *dev)
+static inline void uart_irq_tx_disable(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -257,7 +260,7 @@ inline void uart_irq_tx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-inline int uart_irq_tx_ready(struct device *dev)
+static inline int uart_irq_tx_ready(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -276,7 +279,7 @@ inline int uart_irq_tx_ready(struct device *dev)
  *
  * @return N/A
  */
-inline void uart_irq_rx_enable(struct device *dev)
+static inline void uart_irq_rx_enable(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -293,7 +296,7 @@ inline void uart_irq_rx_enable(struct device *dev)
  *
  * @return N/A
  */
-inline void uart_irq_rx_disable(struct device *dev)
+static inline void uart_irq_rx_disable(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -310,7 +313,7 @@ inline void uart_irq_rx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-inline int uart_irq_rx_ready(struct device *dev)
+static inline int uart_irq_rx_ready(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -328,7 +331,7 @@ inline int uart_irq_rx_ready(struct device *dev)
  *
  * @return N/A
  */
-inline void uart_irq_err_enable(struct device *dev)
+static inline void uart_irq_err_enable(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -345,7 +348,7 @@ inline void uart_irq_err_enable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-inline void uart_irq_err_disable(struct device *dev)
+static inline void uart_irq_err_disable(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -363,7 +366,7 @@ inline void uart_irq_err_disable(struct device *dev)
  * @return 1 if an IRQ is pending, 0 otherwise
  */
 
-inline int uart_irq_is_pending(struct device *dev)
+static inline int uart_irq_is_pending(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -382,7 +385,7 @@ inline int uart_irq_is_pending(struct device *dev)
  *
  * @return always 1
  */
-inline int uart_irq_update(struct device *dev)
+static inline int uart_irq_update(struct device *dev)
 {
 	struct uart_driver_api *api;
 
@@ -403,7 +406,7 @@ inline int uart_irq_update(struct device *dev)
  *
  * @return IRQ number, or 0 if no interrupt
  */
-inline unsigned int uart_irq_get(struct device *dev)
+static inline unsigned int uart_irq_get(struct device *dev)
 {
 	struct uart_driver_api *api;
 
