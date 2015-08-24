@@ -199,7 +199,7 @@ static void defrag(struct pool_struct *P,
 
 void _k_defrag(struct k_args *A)
 {
-	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.pool_id);
 
 	defrag(P,
 	       P->nr_of_frags - 1, /* start from smallest blocks */
@@ -238,7 +238,7 @@ void task_mem_pool_defragment(kmemory_pool_t Pid /* pool to defragment */
 	struct k_args A;
 
 	A.Comm = _K_SVC_DEFRAG;
-	A.Args.p1.poolid = Pid;
+	A.Args.p1.pool_id = Pid;
 	KERNEL_ENTRY(&A);
 }
 
@@ -422,7 +422,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 
 void _k_block_waiters_get(struct k_args *A)
 {
-	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.pool_id);
 	char *found_block;
 	struct k_args *curr_task, *prev_task;
 	int start_size, offset;
@@ -502,7 +502,7 @@ void _k_mem_pool_block_get_timeout_handle(struct k_args *A)
 
 void _k_mem_pool_block_get(struct k_args *A)
 {
-	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.poolid);
+	struct pool_struct *P = _k_mem_pool_list + OBJ_INDEX(A->Args.p1.pool_id);
 	char *found_block;
 
 	int start_size;
@@ -566,7 +566,7 @@ void _k_mem_pool_block_get(struct k_args *A)
  */
 
 int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
-		     kmemory_pool_t poolid,     /* pool from which to get block */
+		     kmemory_pool_t pool_id,     /* pool from which to get block */
 		     int reqsize,       /* requested block size */
 		     int32_t time       /* maximum number of ticks to wait */
 		     )
@@ -576,12 +576,12 @@ int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
 
 	A.Comm = _K_SVC_MEM_POOL_BLOCK_GET;
 	A.Time.ticks = time;
-	A.Args.p1.poolid = poolid;
+	A.Args.p1.pool_id = pool_id;
 	A.Args.p1.req_size = reqsize;
 
 	KERNEL_ENTRY(&A);
 
-	blockptr->poolid = poolid;
+	blockptr->pool_id = pool_id;
 	blockptr->address_in_pool = A.Args.p1.rep_poolptr;
 	blockptr->pointer_to_data = A.Args.p1.rep_dataptr;
 	blockptr->req_size = reqsize;
@@ -608,7 +608,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 	int start_size, offset;
 	int i, j;
 
-	Pid = A->Args.p1.poolid;
+	Pid = A->Args.p1.pool_id;
 
 
 	P = _k_mem_pool_list + OBJ_INDEX(Pid);
@@ -677,7 +677,7 @@ void task_mem_pool_free(struct k_block *blockptr /* pointer to block to free */
 	struct k_args A;
 
 	A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
-	A.Args.p1.poolid = blockptr->poolid;
+	A.Args.p1.pool_id = blockptr->pool_id;
 	A.Args.p1.req_size = blockptr->req_size;
 	A.Args.p1.rep_poolptr = blockptr->address_in_pool;
 	A.Args.p1.rep_dataptr = blockptr->pointer_to_data;

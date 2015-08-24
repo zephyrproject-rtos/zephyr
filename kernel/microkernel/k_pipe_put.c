@@ -297,7 +297,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 		/* invoke command to release block */
 		blockptr = &pipe_ack->ReqType.Async.block;
 		A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
-		A.Args.p1.poolid = blockptr->poolid;
+		A.Args.p1.pool_id = blockptr->pool_id;
 		A.Args.p1.req_size = blockptr->req_size;
 		A.Args.p1.rep_poolptr = blockptr->address_in_pool;
 		A.Args.p1.rep_dataptr = blockptr->pointer_to_data;

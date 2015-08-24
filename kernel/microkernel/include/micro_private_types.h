@@ -309,7 +309,7 @@ struct _m1arg {
 };
 
 struct _p1arg {
-	kmemory_pool_t poolid;
+	kmemory_pool_t pool_id;
 	int req_size;
 	void *rep_poolptr;
 	void *rep_dataptr;

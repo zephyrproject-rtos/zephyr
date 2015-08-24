@@ -47,7 +47,7 @@
  * Returns a non-zero value if the specified message contains a valid pool ID,
  * indicating that it is an asynchronous message.
  */
-#define ISASYNCMSG(message) ((message)->tx_block.poolid != 0)
+#define ISASYNCMSG(message) ((message)->tx_block.pool_id != 0)
 
 /**
  *
@@ -248,14 +248,14 @@ void _k_mbox_send_ack(struct k_args *pCopyWriter)
 		 */
 
 		if ((uint32_t)(-1) !=
-		    pCopyWriter->Args.m1.mess.tx_block.poolid) {
+		    pCopyWriter->Args.m1.mess.tx_block.pool_id) {
 			/*
 			 * special value to tell if block should be
 			 * freed or not
 			 */
 			pCopyWriter->Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
-			pCopyWriter->Args.p1.poolid =
-				pCopyWriter->Args.m1.mess.tx_block.poolid;
+			pCopyWriter->Args.p1.pool_id =
+				pCopyWriter->Args.m1.mess.tx_block.pool_id;
 			pCopyWriter->Args.p1.rep_poolptr =
 				pCopyWriter->Args.m1.mess.tx_block
 					.address_in_pool;
@@ -491,7 +491,7 @@ int _task_mbox_put(kmbox_t mbox,
 	}
 
 	M->tx_task = _k_current_task->Ident;
-	M->tx_block.poolid = 0; /* NO ASYNC POST */
+	M->tx_block.pool_id = 0; /* NO ASYNC POST */
 	M->extra.sema = 0;
 	M->mailbox = mbox;
 
@@ -717,7 +717,7 @@ void _task_mbox_block_put(kmbox_t mbox,
 		 * trick: special value to indicate that tx_block
 		 * should NOT be released in the SND_ACK
 		 */
-		M->tx_block.poolid = (uint32_t)(-1);
+		M->tx_block.pool_id = (uint32_t)(-1);
 	}
 
 	M->tx_task = _k_current_task->Ident;
@@ -801,7 +801,7 @@ void _task_mbox_data_get(struct k_msg *M)
 
 int _task_mbox_data_block_get(struct k_msg *message,
 			  struct k_block *rxblock,
-			  kmemory_pool_t poolid,
+			  kmemory_pool_t pool_id,
 			  int32_t time)
 {
 	int retval;
@@ -822,7 +822,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 
 	if (ISASYNCMSG(message)) {
 		/* First transfer block */
-		__ASSERT_NO_MSG(-1 != message->tx_block.poolid);
+		__ASSERT_NO_MSG(-1 != message->tx_block.pool_id);
 		*rxblock = message->tx_block;
 
 		/* This is the MOVED packet */
@@ -837,14 +837,14 @@ int _task_mbox_data_block_get(struct k_msg *message,
 		 * continuation on send.  It should be the only one.
 		 * That is, it should not have any followers.  To
 		 * prevent [tx_block] from being released when the
-		 * SEND_ACK is processed, change its [poolid] to -1.
+		 * SEND_ACK is processed, change its [pool_id] to -1.
 		 */
 
 		Writer = MoveD->Args.MovedReq.Extra.Setup.ContSnd;
 		__ASSERT_NO_MSG(NULL != Writer);
 		__ASSERT_NO_MSG(NULL == Writer->Forw);
 
-		Writer->Args.m1.mess.tx_block.poolid = (uint32_t)(-1);
+		Writer->Args.m1.mess.tx_block.pool_id = (uint32_t)(-1);
 		nano_task_stack_push(&_k_command_stack, (uint32_t)Writer);
 
 #ifdef ACTIV_ASSERTS
@@ -867,14 +867,14 @@ int _task_mbox_data_block_get(struct k_msg *message,
 	/* 'normal' flow of task_mbox_data_block_get(): */
 
 	if (0 != message->size) {
-		retval = _task_mem_pool_alloc(rxblock, poolid,
+		retval = _task_mem_pool_alloc(rxblock, pool_id,
 					message->size, time);
 		if (retval != RC_OK) {
 			return retval;
 		}
 		message->rx_data = rxblock->pointer_to_data;
 	} else {
-		rxblock->poolid = (kmemory_pool_t) -1;
+		rxblock->pool_id = (kmemory_pool_t) -1;
 	}
 
 	/*

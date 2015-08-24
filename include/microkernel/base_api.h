@@ -71,7 +71,7 @@ typedef int (*kevent_handler_t)(int event);
 struct k_args;
 
 struct k_block {
-	kmemory_pool_t poolid;
+	kmemory_pool_t pool_id;
 	void *address_in_pool;
 	void *pointer_to_data;
 	uint32_t req_size;
