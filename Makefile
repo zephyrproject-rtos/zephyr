@@ -352,6 +352,19 @@ CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
+ifeq ($(COMPILER),clang)
+ifneq ($(CROSS_COMPILE),)
+CLANG_TARGET    := -target $(notdir $(CROSS_COMPILE:%-=%))
+GCC_TOOLCHAIN   := $(dir $(CROSS_COMPILE))
+endif
+ifneq ($(GCC_TOOLCHAIN),)
+CLANG_GCC_TC    := -gcc-toolchain $(GCC_TOOLCHAIN)
+endif
+ifneq ($(IA),1)
+CLANG_IA_FLAG   = -no-integrated-as
+endif
+CLANG_FLAGS     := $(CLANG_TARGET) $(CLANG_GCC_TC) $(CLANG_IA_FLAG)
+endif
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := -include $(CURDIR)/include/generated/autoconf.h
@@ -373,11 +386,9 @@ ZEPHYRINCLUDE    := \
 KBUILD_CPPFLAGS := -DKERNEL
 
 KBUILD_CFLAGS   := -c -g -std=c99 \
-		-fno-reorder-functions \
 		-fno-asynchronous-unwind-tables \
 		-fno-omit-frame-pointer \
-		-fno-defer-pop -Wall \
-		-Wno-unused-but-set-variable \
+		-Wall \
 		-Wno-format-zero-length \
 		-Wno-main -ffreestanding
 
@@ -655,6 +666,23 @@ KBUILD_CFLAGS += $(CFLAGS)
 KBUILD_AFLAGS += $(CFLAGS)
 
 
+ifeq ($(COMPILER),clang)
+KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
+KBUILD_CPPFLAGS += $(call cc-option,-Wno-unknown-warning-option,)
+KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
+KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
+KBUILD_CFLAGS += $(call cc-disable-warning, gnu)
+# Quiet clang warning: comparison of unsigned expression < 0 is always false
+KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
+else
+
+# This warning generated too much noise in a regular build.
+# Use make W=1 to enable this warning (see scripts/Makefile.build)
+KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
+KBUILD_CFLAGS += $(call cc-option,-fno-reorder-functions)
+KBUILD_CFLAGS += $(call cc-option,-fno-defer-pop)
+endif
+
 # We trigger additional mismatches with less inlining
 ifdef CONFIG_DEBUG_SECTION_MISMATCH
 KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
@@ -674,8 +702,6 @@ KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
 # on a per-function basis.
 KBUILD_CFLAGS	+= $(call cc-option,-fstack-usage)
 
-# conserve stack if available
-KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
 
 # disallow errors like 'EXPORT_GPL(foo);' with missing header
 KBUILD_CFLAGS   += $(call cc-option,-Werror=implicit-int)
