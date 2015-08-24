@@ -67,13 +67,13 @@ a task cannot impact the operation of an IRQ object it does not own.
 struct irq_obj_reg_arg {
 	kirq_t irq_obj;   /* IRQ object identifier */
 	uint32_t irq;  /* IRQ of device */
-	ktask_t taskId; /* requesting task */
+	ktask_t task_id; /* requesting task */
 };
 
 /* task IRQ object type */
 
 struct task_irq_info {
-	ktask_t taskId;  /* task ID of task IRQ object's owner */
+	ktask_t task_id;  /* task ID of task IRQ object's owner */
 	uint32_t irq;    /* IRQ used by task IRQ object */
 	kevent_t event;  /* event number assigned to task IRQ object */
 	uint32_t vector; /* interrupt vector assigned to task IRQ object */
@@ -82,7 +82,7 @@ struct task_irq_info {
 /* task IRQ object array */
 
 static struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
-	[0 ...(MAX_TASK_IRQS - 1)].taskId = INVALID_TASK
+	[0 ...(MAX_TASK_IRQS - 1)].task_id = INVALID_TASK
 };
 
 /* architecture-specific */
@@ -146,13 +146,13 @@ void task_irq_free(kirq_t irq_obj /* IRQ object identifier */
 			     )
 {
 	__ASSERT(irq_obj < MAX_TASK_IRQS, "Invalid IRQ object");
-	__ASSERT(task_irq_object[irq_obj].taskId == task_id_get(),
+	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
 			 "Incorrect Task ID");
 
 	irq_disable(task_irq_object[irq_obj].irq);
 	RELEASE_VECTOR(task_irq_object[irq_obj].vector);
 	(void)task_event_recv(task_irq_object[irq_obj].event);
-	task_irq_object[irq_obj].taskId = INVALID_TASK;
+	task_irq_object[irq_obj].task_id = INVALID_TASK;
 }
 
 /**
@@ -168,7 +168,7 @@ void task_irq_ack(kirq_t irq_obj /* IRQ object identifier */
 					    )
 {
 	__ASSERT(irq_obj < MAX_TASK_IRQS, "Invalid IRQ object");
-	__ASSERT(task_irq_object[irq_obj].taskId == task_id_get(),
+	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
 			 "Incorrect Task ID");
 
 	irq_enable(task_irq_object[irq_obj].irq);
@@ -188,7 +188,7 @@ int _task_irq_test(kirq_t irq_obj, /* IRQ object identifier */
 				     )
 {
 	__ASSERT(irq_obj < MAX_TASK_IRQS, "Invalid IRQ object");
-	__ASSERT(task_irq_object[irq_obj].taskId == task_id_get(),
+	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
 			 "Incorrect Task ID");
 
 	return _task_event_recv(task_irq_object[irq_obj].event, time);
@@ -213,7 +213,7 @@ static int _k_task_irq_alloc(
 
 	/* Fail if the requested IRQ object is already in use */
 
-	if (task_irq_object[argp->irq_obj].taskId != INVALID_TASK) {
+	if (task_irq_object[argp->irq_obj].task_id != INVALID_TASK) {
 		return (int)NULL;
 	}
 
@@ -221,7 +221,7 @@ static int _k_task_irq_alloc(
 
 	for (curr_irq_obj = 0; curr_irq_obj < MAX_TASK_IRQS; curr_irq_obj++) {
 		if ((task_irq_object[curr_irq_obj].irq == argp->irq) &&
-		    (task_irq_object[curr_irq_obj].taskId != INVALID_TASK)) {
+		    (task_irq_object[curr_irq_obj].task_id != INVALID_TASK)) {
 			return (int)NULL;
 		}
 	}
@@ -229,7 +229,7 @@ static int _k_task_irq_alloc(
 	/* Take ownership of specified IRQ object */
 
 	irq_obj_ptr = &task_irq_object[argp->irq_obj];
-	irq_obj_ptr->taskId = argp->taskId;
+	irq_obj_ptr->task_id = argp->task_id;
 	irq_obj_ptr->irq = argp->irq;
 	irq_obj_ptr->event = (_TaskIrqEvt0_objId + argp->irq_obj);
 	irq_obj_ptr->vector = INVALID_VECTOR;
@@ -263,7 +263,7 @@ uint32_t task_irq_alloc(
 
 	arg.irq_obj = irq_obj;
 	arg.irq = irq;
-	arg.taskId = task_id_get();
+	arg.task_id = task_id_get();
 
 	irq_obj_ptr = (struct task_irq_info *)task_offload_to_fiber(_k_task_irq_alloc,
 						     (void *)&arg);
