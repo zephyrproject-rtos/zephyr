@@ -309,11 +309,11 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 {
 	desc->pBegin = pBuffer;
 
-	desc->iBuffSize = *piBuffSize;
+	desc->buffer_size = *piBuffSize;
 
 	/* reset all pointers */
 
-	desc->pEnd = desc->pBegin + OCTET_TO_SIZEOFUNIT(desc->iBuffSize);
+	desc->pEnd = desc->pBegin + OCTET_TO_SIZEOFUNIT(desc->buffer_size);
 	desc->pEndOrig = desc->pEnd;
 
 	/* assumed it is allowed */
@@ -325,7 +325,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->pRead = desc->pBegin;
 	desc->pReadGuard = NULL;
 	desc->bReadWA = true; /* YES!! */
-	desc->iFreeSpaceCont = desc->iBuffSize;
+	desc->iFreeSpaceCont = desc->buffer_size;
 	desc->iFreeSpaceAWA = 0;
 	desc->iNbrPendingReads = 0;
 	desc->iAvailDataCont = 0;
@@ -404,7 +404,7 @@ int BuffEmpty(struct _k_pipe_desc *desc)
 	int iTotalFreeSpace;
 
 	BuffGetFreeSpaceTotal(desc, &iTotalFreeSpace);
-	return (desc->iBuffSize == iTotalFreeSpace);
+	return (desc->buffer_size == iTotalFreeSpace);
 }
 
 int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
@@ -476,7 +476,7 @@ int BuffFull(struct _k_pipe_desc *desc)
 	int iAvailDataTotal;
 
 	BuffGetAvailDataTotal(desc, &iAvailDataTotal);
-	return (desc->iBuffSize == iAvailDataTotal);
+	return (desc->buffer_size == iAvailDataTotal);
 }
 
 /**

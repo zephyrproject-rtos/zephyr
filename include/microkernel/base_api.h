@@ -183,7 +183,7 @@ typedef enum {
 } _K_PIPE_BUFF_STATE;
 
 struct _k_pipe_desc {
-	int iBuffSize;
+	int buffer_size;
 	unsigned char *pBegin;
 	unsigned char *pWrite;
 	unsigned char *pRead;
