@@ -130,8 +130,8 @@ void _k_fifo_enque_request(struct k_args *A)
 				Q->enqueue_point = p;
 			Q->num_used = ++n;
 #ifdef CONFIG_OBJECT_MONITOR
-			if (Q->Hmark < n)
-				Q->Hmark = n;
+			if (Q->high_watermark < n)
+				Q->high_watermark = n;
 #endif
 		}
 

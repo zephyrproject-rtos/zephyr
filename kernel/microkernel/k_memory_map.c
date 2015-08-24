@@ -73,7 +73,7 @@ void _k_mem_map_init(void)
 		}
 		M->Free = q;
 		M->num_used = 0;
-		M->Hmark = 0;
+		M->high_watermark = 0;
 		M->count = 0;
 	}
 }
@@ -112,8 +112,8 @@ void _k_mem_map_alloc(struct k_args *A)
 
 #ifdef CONFIG_OBJECT_MONITOR
 		M->count++;
-		if (M->Hmark < M->num_used)
-			M->Hmark = M->num_used;
+		if (M->high_watermark < M->num_used)
+			M->high_watermark = M->num_used;
 #endif
 
 		A->Time.rcode = RC_OK;

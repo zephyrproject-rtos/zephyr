@@ -150,7 +150,7 @@ struct _k_fifo_struct {
 	char *dequeue_point;
 	struct k_args *waiters;
 	int num_used;
-	int Hmark;
+	int high_watermark;
 	int count;
 };
 
@@ -228,7 +228,7 @@ struct _k_mem_map_struct {
 	char *Free;
 	struct k_args *waiters;
 	int num_used;
-	int Hmark;
+	int high_watermark;
 	int count;
 };
 
