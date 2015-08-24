@@ -101,8 +101,8 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	A.Time.ticks = TimeOut;
 
 	A.args.pipe_req.req_info.pipe.id = Id;
-	A.args.pipe_req.ReqType.Sync.total_size = iNbrBytesToRead;
-	A.args.pipe_req.ReqType.Sync.data_ptr = pBuffer;
+	A.args.pipe_req.ReqType.sync.total_size = iNbrBytesToRead;
+	A.args.pipe_req.ReqType.sync.data_ptr = pBuffer;
 
 	_k_pipe_option_set(&A.args, Option);
 	_k_pipe_request_type_set(&A.args, _SYNCREQ);
@@ -153,8 +153,8 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	A.Time.ticks = TimeOut;
 
 	A.args.pipe_req.req_info.pipe.id = Id;
-	A.args.pipe_req.ReqType.Sync.total_size = iNbrBytesToWrite;
-	A.args.pipe_req.ReqType.Sync.data_ptr = pBuffer;
+	A.args.pipe_req.ReqType.sync.total_size = iNbrBytesToWrite;
+	A.args.pipe_req.ReqType.sync.data_ptr = pBuffer;
 
 	_k_pipe_option_set(&A.args, Option);
 	_k_pipe_request_type_set(&A.args, _SYNCREQ);

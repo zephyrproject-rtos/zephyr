@@ -191,7 +191,7 @@ struct async_req {
 struct _pipe_req_arg {
 	struct req_info req_info;
 	union {
-		struct sync_req Sync;
+		struct sync_req sync;
 		struct async_req Async;
 	} ReqType;
 	int Dummy;
