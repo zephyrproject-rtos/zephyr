@@ -40,69 +40,60 @@ extern "C" {
 #include <device.h>
 
 /* I2C speeds */
-#define I2C_STANDARD			0x00000001
-#define I2C_FAST			0x00000002
-#define I2C_FAST_PLUS			0x00000003
-#define I2C_SPEED_HIGH			0x00000004
-#define I2C_SPEED_ULTRA			0x00000005
+#define I2C_SPEED_STANDARD		(0x1)
+#define I2C_SPEED_FAST			(0x2)
+#define I2C_SPEED_FAST_PLUS		(0x3)
+#define I2C_SPEED_HIGH			(0x4)
+#define I2C_SPEED_ULTRA			(0x5)
 
-/* I2C addressing modes */
-#define I2C_ADDR_7_BITS			(0 << 4)
-#define I2C_ADDR_10_BITS		(1 << 4)
+/* I2C dev_config bitfields */
+#define I2C_ADDR_10_BITS		(1 << 0)
+#define I2C_SPEED_MASK			(0x7 << 1)	/* 3 bits */
+#define I2C_MODE_MASTER			(1 << 4)
+#define I2C_MODE_SLAVE_READ		(1 << 5)
 
-/* I2C mode types */
-#define I2C_MODE_MASTER			(0 << 5)
-#define I2C_MODE_SLAVE			(1 << 5)
-#define I2C_ADDR_MASK			(0xFF1 << 6)
-#define I2C_ADDR_GET(_in_) ((I2C_ADDR_MASK & _in_) >> 6)
 
-/* application callback function signature */
-typedef void (*i2c_callback)(struct device *dev, uint32_t context);
-
-struct i2c_rom_config {
-	uint32_t        base_address;
-	uint32_t        interrupt_vector;
-	uint32_t        interrupt_mask;
+union dev_config {
+	uint32_t raw;
+	struct {
+		uint32_t        use_10_bit_addr : 1;
+		uint32_t        speed : 3;
+		uint32_t        is_master_device : 1;
+		uint32_t        is_slave_read : 1;
+		uint32_t        reserved : 26;
+	} bits;
 };
 
-/*
- * dev_config is a bit field with the following break down:
- * speed		[0 : 3 ] - from the I2C speeds
- * address_mode		[ 4 ]    - from the I2C addressing modes
- * mode_type		[ 5 ]    - from the I2C mode types
- * slave_address	[ 6 : 15 ]
- * RESERVED             [ 16: 31 ] - not yet defined for use
- */
-struct i2c_config {
-	uint32_t       dev_config;
-	i2c_callback   cb_receive;
-	i2c_callback   cb_transmit;
-};
 
-typedef int (*i2c_api_configure)(struct device *dev, struct i2c_config *config);
-typedef int (*i2c_api_io)(struct device *dev, unsigned char *buf, uint32_t len);
-typedef int (*i2c_api_suspend)(struct device *dev);
-typedef int (*i2c_api_resume)(struct device *dev);
+typedef int (*i2c_api_configure_t)(struct device *dev,
+				   uint32_t dev_config);
+typedef int (*i2c_api_io_t)(struct device *dev,
+			    uint8_t *buf,
+			    uint32_t len,
+			    uint16_t slave_addr);
+typedef int (*i2c_api_suspend_t)(struct device *dev);
+typedef int (*i2c_api_resume_t)(struct device *dev);
 
 struct i2c_driver_api {
-	i2c_api_configure configure;
-	i2c_api_io read;
-	i2c_api_io write;
-	i2c_api_suspend suspend;
-	i2c_api_resume resume;
+	i2c_api_configure_t configure;
+	i2c_api_io_t read;
+	i2c_api_io_t write;
+	i2c_api_suspend_t suspend;
+	i2c_api_resume_t resume;
 };
 
 /**
  * @brief Configure a host controllers operation
  * @param dev Pointer to the device structure for the driver instance
- * @param config Pointer to the application provided configuration
+ * @param dev_config Bit-packed 32-bit value to the device runtime configuration
+ *                   for the I2C controller.
  */
-static inline int i2c_configure(struct device *dev, struct i2c_config *config)
+static inline int i2c_configure(struct device *dev, uint32_t dev_config)
 {
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->configure(dev, config);
+	return api->configure(dev, dev_config);
 }
 
 /**
@@ -110,14 +101,15 @@ static inline int i2c_configure(struct device *dev, struct i2c_config *config)
  * @param dev Pointer to the device structure for the driver instance
  * @param buf Memory pool that data should be transferred from
  * @param len Size of the memory pool available for reading from
+ * @param addr Address of the I2C device to write to
  */
-static inline int i2c_write(struct device *dev, unsigned char *buf,
-			    uint32_t len)
+static inline int i2c_write(struct device *dev, uint8_t *buf,
+		     uint32_t len, uint16_t addr)
 {
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->write(dev, buf, len);
+	return api->write(dev, buf, len, addr);
 }
 
 /**
@@ -125,14 +117,15 @@ static inline int i2c_write(struct device *dev, unsigned char *buf,
  * @param dev Pointer to the device structure for the driver instance
  * @param buf Memory pool that data should be transferred to
  * @param len Size of the memory pool available for writing to
+ * @param addr Address of the I2C device to read from
  */
-static inline int i2c_read(struct device *dev, unsigned char *buf,
-			   uint32_t len)
+static inline int i2c_read(struct device *dev, uint8_t *buf,
+		    uint32_t len, uint16_t addr)
 {
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->read(dev, buf, len);
+	return api->read(dev, buf, len, addr);
 }
 
 /**
