@@ -397,7 +397,7 @@ void _k_task_group_op(struct k_args *A)
 #endif
 
 	for (X = _k_task_list_start; X < _k_task_list_end; X++) {
-		if (X->Group & grp) {
+		if (X->group & grp) {
 			switch (opt) {
 			case TASK_GROUP_START:
 				start_task(X, X->fstart);
@@ -451,7 +451,7 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
 
 kpriority_t task_group_mask_get(void)
 {
-	return _k_current_task->Group;
+	return _k_current_task->group;
 }
 
 /**
@@ -463,7 +463,7 @@ kpriority_t task_group_mask_get(void)
 
 void task_group_join(uint32_t groups)
 {
-	_k_current_task->Group |= groups;
+	_k_current_task->group |= groups;
 }
 
 /**
@@ -475,7 +475,7 @@ void task_group_join(uint32_t groups)
 
 void task_group_leave(uint32_t groups)
 {
-	_k_current_task->Group &= ~groups;
+	_k_current_task->group &= ~groups;
 }
 
 /**

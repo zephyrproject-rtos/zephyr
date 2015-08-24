@@ -89,8 +89,8 @@ void _StartTaskArch(
 	 * then the task only needs to be placed in the SSE_GROUP group.
 	 */
 
-	*pOpt |= (X->Group & SSE_GROUP) ? USE_SSE
-					: (X->Group & FPU_GROUP) ? USE_FP : 0;
+	*pOpt |= (X->group & SSE_GROUP) ? USE_SSE
+					: (X->group & FPU_GROUP) ? USE_FP : 0;
 }
 
 #endif /* CONFIG_MICROKERNEL */

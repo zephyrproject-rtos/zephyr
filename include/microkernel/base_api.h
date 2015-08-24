@@ -111,7 +111,7 @@ struct k_task {
 	kpriority_t priority;
 	ktask_t id;
 	uint32_t state;
-	uint32_t Group;
+	uint32_t group;
 	void (*fstart)(void);
 	char *workspace;
 	int worksize;
