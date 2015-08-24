@@ -96,7 +96,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 		return RC_FAIL;
 	}
 
-	A.Prio = _k_current_task->Prio;
+	A.priority = _k_current_task->priority;
 	A.Comm = _K_SVC_PIPE_GET_REQUEST;
 	A.Time.ticks = TimeOut;
 
@@ -148,7 +148,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 		return RC_FAIL;
 	}
 
-	A.Prio = _k_current_task->Prio;
+	A.priority = _k_current_task->priority;
 	A.Comm = _K_SVC_PIPE_PUT_REQUEST;
 	A.Time.ticks = TimeOut;
 
@@ -193,7 +193,7 @@ int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 		return RC_FAIL;
 	}
 
-	A.Prio = _k_current_task->Prio;
+	A.priority = _k_current_task->priority;
 	A.Comm = _K_SVC_PIPE_PUT_REQUEST;
 	A.Time.ticks = TICKS_UNLIMITED;
 		/* same behavior in flow as a blocking call w/o a timeout */

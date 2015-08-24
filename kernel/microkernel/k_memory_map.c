@@ -123,7 +123,7 @@ void _k_mem_map_alloc(struct k_args *A)
 	*(A->Args.a1.mptr) = NULL;
 
 	if (likely(A->Time.ticks != TICKS_NONE)) {
-		A->Prio = _k_current_task->Prio;
+		A->priority = _k_current_task->priority;
 		A->Ctxt.task = _k_current_task;
 		_k_state_bit_set(_k_current_task, TF_ALLO);
 		INSERT_ELM(M->Waiters, A);

@@ -157,7 +157,7 @@ static bool prepare_transfer(struct k_args *move,
 		 * transfer the data with the highest
 		 * priority of reader and writer
 		 */
-		move->Prio = max(writer->Prio, reader->Prio);
+		move->priority = max(writer->priority, reader->priority);
 		move->Ctxt.task = NULL;
 		move->Args.MovedReq.Action =
 			(MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
@@ -495,7 +495,7 @@ int _task_mbox_put(kmbox_t mbox,
 	M->extra.sema = 0;
 	M->mailbox = mbox;
 
-	A.Prio = prio;
+	A.priority = prio;
 	A.Comm = _K_SVC_MBOX_SEND_REQUEST;
 	A.Time.ticks = time;
 	A.Args.m1.mess = *M;
@@ -692,7 +692,7 @@ int _task_mbox_get(kmbox_t mbox,
 	 * there is an assertion check in prepare_transfer() if equal to 0
 	 */
 
-	A.Prio = _k_current_task->Prio;
+	A.priority = _k_current_task->priority;
 	A.Comm = _K_SVC_MBOX_RECEIVE_REQUEST;
 	A.Time.ticks = time;
 	A.Args.m1.mess = *M;
@@ -728,7 +728,7 @@ void _task_mbox_block_put(kmbox_t mbox,
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	A.Time.timer = NULL;
 #endif
-	A.Prio = prio;
+	A.priority = prio;
 	A.Comm = _K_SVC_MBOX_SEND_REQUEST;
 	A.Args.m1.mess = *M;
 	KERNEL_ENTRY(&A);

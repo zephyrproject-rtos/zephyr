@@ -167,7 +167,7 @@ extern void _k_workload_monitor_idle_end(void);
 	{                                             \
 		struct k_args *X = (L);                      \
 		struct k_args *Y = NULL;                     \
-		while (X && (X->Prio <= (E)->Prio)) { \
+		while (X && (X->priority <= (E)->priority)) { \
 			Y = X;                        \
 			X = X->next;                  \
 		}                                     \

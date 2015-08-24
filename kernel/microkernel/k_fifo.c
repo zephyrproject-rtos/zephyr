@@ -142,7 +142,7 @@ void _k_fifo_enque_request(struct k_args *A)
 	} else {
 		if (likely(A->Time.ticks != TICKS_NONE)) {
 				A->Ctxt.task = _k_current_task;
-				A->Prio = _k_current_task->Prio;
+				A->priority = _k_current_task->priority;
 				_k_state_bit_set(_k_current_task, TF_ENQU);
 			INSERT_ELM(Q->Waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -275,7 +275,7 @@ void _k_fifo_deque_request(struct k_args *A)
 	} else {
 		if (likely(A->Time.ticks != TICKS_NONE)) {
 			A->Ctxt.task = _k_current_task;
-			A->Prio = _k_current_task->Prio;
+			A->priority = _k_current_task->priority;
 			_k_state_bit_set(_k_current_task, TF_DEQU);
 
 			INSERT_ELM(Q->Waiters, A);

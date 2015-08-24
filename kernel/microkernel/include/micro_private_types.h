@@ -377,7 +377,7 @@ union k_args_args {
 struct k_args {
 	struct k_args *next;
 	struct k_args **Head;
-	kpriority_t Prio;
+	kpriority_t priority;
 
 	/* 'alloc' is true if k_args is allocated via GETARGS() */
 	bool   alloc;

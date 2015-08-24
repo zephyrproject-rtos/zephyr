@@ -142,7 +142,7 @@ INLINE void InsertPrio(struct list_head *list, struct list_elem *newelem)
 
 	tmpElem = (struct list_elem *)&list->Head;
 	while ((tmpElem->Next != (struct list_elem *)&list->Tail) && /* end of list */
-	       (tmpElem->Prio <= newelem->Prio)) {
+	       (tmpElem->priority <= newelem->priority)) {
 		tmpElem = tmpElem->Next;
 	}
 	Insert_Elem(newelem, tmpElem);

@@ -86,12 +86,12 @@ void _k_state_bit_reset(struct k_task *X,    /* ptr to task */
 		 * be added to the list of schedulable tasks.
 		 */
 
-		struct k_tqhd *H = _k_task_priority_list + X->Prio;
+		struct k_tqhd *H = _k_task_priority_list + X->priority;
 
 		X->next = NULL;
 		H->Tail->next = X;
 		H->Tail = X;
-		_k_task_priority_bitmap[X->Prio >> 5] |= (1 << (X->Prio & 0x1F));
+		_k_task_priority_bitmap[X->priority >> 5] |= (1 << (X->priority & 0x1F));
 	}
 
 #ifdef CONFIG_TASK_MONITOR
@@ -154,7 +154,7 @@ void _k_state_bit_set(
 		volatile
 #endif
 #endif
-			struct k_tqhd *task_queue = _k_task_priority_list + task_ptr->Prio;
+			struct k_tqhd *task_queue = _k_task_priority_list + task_ptr->priority;
 		struct k_task *cur_task = (struct k_task *)(&task_queue->Head);
 
 		/*
@@ -176,7 +176,7 @@ void _k_state_bit_set(
 		 * runnable, then clear that bit in the global priority bit map.
 		 */
 		if (task_queue->Head == NULL) {
-			_k_task_priority_bitmap[task_ptr->Prio >> 5] &= ~(1 << (task_ptr->Prio & 0x1F));
+			_k_task_priority_bitmap[task_ptr->priority >> 5] &= ~(1 << (task_ptr->priority & 0x1F));
 		}
 	}
 
@@ -487,7 +487,7 @@ void task_group_leave(uint32_t groups)
 
 kpriority_t task_priority_get(void)
 {
-	return _k_current_task->Prio;
+	return _k_current_task->priority;
 }
 
 /**
@@ -503,7 +503,7 @@ void _k_task_priority_set(struct k_args *A)
 		struct k_task *X = (struct k_task *)Tid;
 
 		_k_state_bit_set(X, TF_PRIO);
-		X->Prio = A->Args.g1.prio;
+		X->priority = A->Args.g1.prio;
 		_k_state_bit_reset(X, TF_PRIO);
 
 	if (A->alloc)
@@ -546,7 +546,7 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 
 void _k_task_yield(struct k_args *A)
 {
-	struct k_tqhd *H = _k_task_priority_list + _k_current_task->Prio;
+	struct k_tqhd *H = _k_task_priority_list + _k_current_task->priority;
 	struct k_task *X = _k_current_task->next;
 
 	ARG_UNUSED(A);

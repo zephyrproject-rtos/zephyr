@@ -114,7 +114,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
-	while (X && (X->Prio <= A->Prio)) {
+	while (X && (X->priority <= A->priority)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
 				Y->next = X->next;
@@ -170,7 +170,7 @@ void _k_sem_group_wait_accept(struct k_args *A)
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
-	while (X && (X->Prio <= A->Prio)) {
+	while (X && (X->priority <= A->priority)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
 				Y->next = X->next;
@@ -207,7 +207,7 @@ void _k_sem_group_wait_timeout(struct k_args *A)
 		struct k_args *R;
 
 		GETARGS(R);
-		R->Prio = A->Prio;
+		R->priority = A->priority;
 		R->Comm =
 			((*L == A->Args.s1.sema) ?
 			    _K_SVC_SEM_GROUP_WAIT_ACCEPT : _K_SVC_SEM_GROUP_WAIT_CANCEL);
@@ -260,7 +260,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 	struct k_args *X = S->Waiters;
 	struct k_args *Y = NULL;
 
-	while (X && (X->Prio <= A->Prio)) {
+	while (X && (X->priority <= A->priority)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
 				Y->next = X->next;
@@ -304,7 +304,7 @@ void _k_sem_group_wait_any(struct k_args *A)
 		struct k_args *R;
 
 		GETARGS(R);
-		R->Prio = _k_current_task->Prio;
+		R->priority = _k_current_task->priority;
 		R->Comm = _K_SVC_SEM_GROUP_WAIT_REQUEST;
 		R->Ctxt.args = A;
 		R->Args.s1.sema = *L++;
@@ -340,7 +340,7 @@ void _k_sem_wait_request(struct k_args *A)
 		A->Time.rcode = RC_OK;
 	} else if (A->Time.ticks != TICKS_NONE) {
 		A->Ctxt.task = _k_current_task;
-		A->Prio = _k_current_task->Prio;
+		A->priority = _k_current_task->priority;
 		_k_state_bit_set(_k_current_task, TF_SEMA);
 		INSERT_ELM(S->Waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -373,7 +373,7 @@ ksem_t _task_sem_group_take(ksemg_t group, int32_t time)
 	struct k_args A;
 
 	A.Comm = _K_SVC_SEM_GROUP_WAIT_ANY;
-	A.Prio = _k_current_task->Prio;
+	A.priority = _k_current_task->priority;
 	A.Time.ticks = time;
 	A.Args.s1.list = group;
 	KERNEL_ENTRY(&A);

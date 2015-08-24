@@ -534,7 +534,7 @@ void _k_mem_pool_block_get(struct k_args *A)
 		    (A->Time.ticks != TICKS_NONE) &&
 		    (A->Args.p1.req_size <=
 		     P->maxblock_size))) {/* timeout?  but not block to large */
-		A->Prio = _k_current_task->Prio;
+		A->priority = _k_current_task->priority;
 		A->Ctxt.task = _k_current_task;
 		_k_state_bit_set(_k_current_task, TF_GTBL); /* extra new statebit */
 

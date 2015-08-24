@@ -223,11 +223,11 @@ static kpriority_t move_priority_compute(struct k_args *pWriter,
 	kpriority_t move_priority;
 
 	if (!pWriter) {
-		move_priority = pReader->Prio;
+		move_priority = pReader->priority;
 	} else {
-		move_priority = pWriter->Prio;
-		if (pReader && (pReader->Prio < move_priority)) {
-			move_priority = pReader->Prio;
+		move_priority = pWriter->priority;
+		if (pReader && (pReader->priority < move_priority)) {
+			move_priority = pReader->priority;
 		}
 	}
 
@@ -279,9 +279,9 @@ static void setup_movedata(struct k_args *A,
 	pContRecv->Args.pipe_xfer_ack.ID = XferID;
 	pContRecv->Args.pipe_xfer_ack.iSize = size;
 
-	A->Prio = move_priority_compute(pWriter, pReader);
-	pContSend->Prio = A->Prio;
-	pContRecv->Prio = A->Prio;
+	A->priority = move_priority_compute(pWriter, pReader);
+	pContSend->priority = A->priority;
+	pContRecv->priority = A->priority;
 
 	switch (XferType) {
 	case XFER_W2B: /* Writer to Buffer */
