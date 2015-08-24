@@ -124,7 +124,7 @@ void _k_mutex_lock_reply(
 			PrioChanger->alloc = true;
 			PrioChanger->Comm = _K_SVC_TASK_PRIORITY_SET;
 			PrioChanger->priority = newPriority;
-			PrioChanger->args.g1.task = Mutex->Owner;
+			PrioChanger->args.g1.task = Mutex->owner;
 			PrioChanger->args.g1.prio = newPriority;
 			SENDARGS(PrioChanger);
 			Mutex->OwnerCurrentPrio = newPriority;
@@ -179,13 +179,13 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 
 
 	Mutex = (struct _k_mutex_struct *)MutexId;
-	if (Mutex->Level == 0 || Mutex->Owner == A->args.l1.task) {
+	if (Mutex->Level == 0 || Mutex->owner == A->args.l1.task) {
 		/* The mutex is either unowned or this is a nested lock. */
 #ifdef CONFIG_OBJECT_MONITOR
 		Mutex->Count++;
 #endif
 
-		Mutex->Owner = A->args.l1.task;
+		Mutex->owner = A->args.l1.task;
 
 		/*
 		 * Assign the task's priority directly if the requesting
@@ -260,7 +260,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 					PrioBooster->alloc = true;
 					PrioBooster->Comm = _K_SVC_TASK_PRIORITY_SET;
 					PrioBooster->priority = BoostedPrio;
-					PrioBooster->args.g1.task = Mutex->Owner;
+					PrioBooster->args.g1.task = Mutex->owner;
 					PrioBooster->args.g1.prio = BoostedPrio;
 					SENDARGS(PrioBooster);
 					Mutex->OwnerCurrentPrio = BoostedPrio;
@@ -323,7 +323,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 
 	MutexId = A->args.l1.mutex;
 	Mutex = (struct _k_mutex_struct *)MutexId;
-	if (Mutex->Owner == A->args.l1.task && --(Mutex->Level) == 0) {
+	if (Mutex->owner == A->args.l1.task && --(Mutex->Level) == 0) {
 		/*
 		 * The requesting task owns the mutex and all locks
 		 * have been released.
@@ -347,7 +347,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 			PrioDowner->alloc = true;
 			PrioDowner->Comm = _K_SVC_TASK_PRIORITY_SET;
 			PrioDowner->priority = Mutex->OwnerOriginalPrio;
-			PrioDowner->args.g1.task = Mutex->Owner;
+			PrioDowner->args.g1.task = Mutex->owner;
 			PrioDowner->args.g1.prio = Mutex->OwnerOriginalPrio;
 			SENDARGS(PrioDowner);
 		}
@@ -361,7 +361,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 			 */
 
 			Mutex->Waiters = X->next;
-			Mutex->Owner = X->args.l1.task;
+			Mutex->owner = X->args.l1.task;
 			Mutex->Level = 1;
 			Mutex->OwnerCurrentPrio = X->priority;
 			Mutex->OwnerOriginalPrio = X->priority;
@@ -387,7 +387,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 #endif
 		} else {
 			/* No task is waiting in the queue. */
-			Mutex->Owner = ANYTASK;
+			Mutex->owner = ANYTASK;
 			Mutex->Level = 0;
 		}
 	}

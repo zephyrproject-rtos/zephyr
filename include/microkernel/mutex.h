@@ -116,7 +116,7 @@ extern void _task_mutex_unlock(kmutex_t mutex);
  */
 #define __MUTEX_DEFAULT \
 	{ \
-	  .Owner = ANYTASK, \
+	  .owner = ANYTASK, \
 	  .OwnerCurrentPrio = 64, \
 	  .OwnerOriginalPrio = 64, \
 	  .Level = 0, \

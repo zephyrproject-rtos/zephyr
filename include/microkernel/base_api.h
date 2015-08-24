@@ -126,7 +126,7 @@ struct _k_mbox_struct {
 };
 
 struct _k_mutex_struct {
-	ktask_t Owner;
+	ktask_t owner;
 	kpriority_t OwnerCurrentPrio;
 	kpriority_t OwnerOriginalPrio;
 	int Level;
