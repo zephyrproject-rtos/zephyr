@@ -296,7 +296,7 @@ int _task_mutex_lock(
 	A.Comm = _K_SVC_MUTEX_LOCK_REQUEST;
 	A.Time.ticks = time;
 	A.Args.l1.mutex = mutex;
-	A.Args.l1.task = _k_current_task->Ident;
+	A.Args.l1.task = _k_current_task->id;
 	KERNEL_ENTRY(&A);
 	return A.Time.rcode;
 }
@@ -409,7 +409,7 @@ void _task_mutex_unlock(kmutex_t mutex /* mutex to unlock */
 
 	A.Comm = _K_SVC_MUTEX_UNLOCK;
 	A.Args.l1.mutex = mutex;
-	A.Args.l1.task = _k_current_task->Ident;
+	A.Args.l1.task = _k_current_task->id;
 	KERNEL_ENTRY(&A);
 }
 

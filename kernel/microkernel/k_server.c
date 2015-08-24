@@ -148,9 +148,9 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 			/* switch from currently selected task to a different one */
 
 #ifdef CONFIG_WORKLOAD_MONITOR
-			if (pNextTask->Ident == 0x00000000) {
+			if (pNextTask->id == 0x00000000) {
 				_k_workload_monitor_idle_start();
-			} else if (_k_current_task->Ident == 0x00000000) {
+			} else if (_k_current_task->id == 0x00000000) {
 				_k_workload_monitor_idle_end();
 			}
 #endif

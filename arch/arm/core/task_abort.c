@@ -72,10 +72,10 @@ void _TaskAbort(void)
 	const int taskAbortCode = 1;
 
 	if (_ScbIsInThreadMode()) {
-		_task_ioctl(_k_current_task->Ident, taskAbortCode);
+		_task_ioctl(_k_current_task->id, taskAbortCode);
 	} else {
 		cmd_packet.Comm = _K_SVC_TASK_OP;
-		cmd_packet.Args.g1.task = _k_current_task->Ident;
+		cmd_packet.Args.g1.task = _k_current_task->id;
 		cmd_packet.Args.g1.opt = taskAbortCode;
 		cmd_packet.alloc = false;
 		_k_current_task->Args = &cmd_packet;

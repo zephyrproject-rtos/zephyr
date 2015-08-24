@@ -54,7 +54,7 @@ extern struct k_task _k_task_list_end[];
 
 ktask_t task_id_get(void)
 {
-	return _k_current_task->Ident;
+	return _k_current_task->id;
 }
 
 /**
@@ -279,7 +279,7 @@ static void abort_task(struct k_task *X)
 
 FUNC_NORETURN void _TaskAbort(void)
 {
-	_task_ioctl(_k_current_task->Ident, TASK_ABORT);
+	_task_ioctl(_k_current_task->id, TASK_ABORT);
 
 	/*
 	 * Compiler can't tell that _task_ioctl() won't return and issues

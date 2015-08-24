@@ -63,7 +63,7 @@ void _k_task_monitor(struct k_task *X, uint32_t D)
 #endif
 	{
 		k_monitor_wptr->time = _sys_clock_cycle_get();
-		k_monitor_wptr->data1 = X->Ident;
+		k_monitor_wptr->data1 = X->id;
 		k_monitor_wptr->data2 = D;
 		if (++K_monitor_wind == k_monitor_capacity) {
 			K_monitor_wind = 0;
@@ -76,7 +76,7 @@ void _k_task_monitor(struct k_task *X, uint32_t D)
 		}
 	}
 	if ((_k_task_switch_callback != NULL) && (D == 0)) {
-		(_k_task_switch_callback)(X->Ident, _sys_clock_cycle_get());
+		(_k_task_switch_callback)(X->id, _sys_clock_cycle_get());
 	}
 }
 
@@ -91,7 +91,7 @@ void _k_task_monitor_args(struct k_args *A)
 		if ((uint32_t)A < _k_num_events) {
 			k_monitor_wptr->data2 = MO_EVENT | (uint32_t)A;
 		} else {
-			k_monitor_wptr->data1 = _k_current_task->Ident;
+			k_monitor_wptr->data1 = _k_current_task->id;
 			k_monitor_wptr->data2 = MO_LCOMM | A->Comm;
 		}
 

@@ -490,7 +490,7 @@ int _task_mbox_put(kmbox_t mbox,
 		return RC_FAIL;
 	}
 
-	M->tx_task = _k_current_task->Ident;
+	M->tx_task = _k_current_task->id;
 	M->tx_block.pool_id = 0; /* NO ASYNC POST */
 	M->extra.sema = 0;
 	M->mailbox = mbox;
@@ -683,7 +683,7 @@ int _task_mbox_get(kmbox_t mbox,
 {
 	struct k_args A;
 
-	M->rx_task = _k_current_task->Ident;
+	M->rx_task = _k_current_task->id;
 	M->mailbox = mbox;
 	M->extra.transfer = 0;
 
@@ -720,7 +720,7 @@ void _task_mbox_block_put(kmbox_t mbox,
 		M->tx_block.pool_id = (uint32_t)(-1);
 	}
 
-	M->tx_task = _k_current_task->Ident;
+	M->tx_task = _k_current_task->id;
 	M->tx_data = NULL;
 	M->mailbox = mbox;
 	M->extra.sema = sema;
