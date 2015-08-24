@@ -141,7 +141,7 @@ struct k_timer {
 /* Task queue header */
 
 struct k_tqhd {
-	struct k_task *Head;
+	struct k_task *head;
 	struct k_task *Tail;
 };
 
@@ -376,7 +376,7 @@ union k_args_args {
  */
 struct k_args {
 	struct k_args *next;
-	struct k_args **Head;
+	struct k_args **head;
 	kpriority_t priority;
 
 	/* 'alloc' is true if k_args is allocated via GETARGS() */

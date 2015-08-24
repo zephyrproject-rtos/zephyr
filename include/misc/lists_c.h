@@ -45,8 +45,8 @@ Example code from list insertion etc
 
 INLINE void InitList(struct list_head *list)
 {
-	list->Head = (struct list_elem *)&list->Tail;
-	list->TailPrev = (struct list_elem *)&list->Head;
+	list->head = (struct list_elem *)&list->Tail;
+	list->TailPrev = (struct list_elem *)&list->head;
 	list->Tail = NULL;
 }
 
@@ -70,13 +70,13 @@ INLINE struct list_elem *RemoveHead(struct list_head *list)
 	struct list_elem *tmpElem;
 	struct list_elem *ret_Elem;
 
-	ret_Elem = list->Head;
+	ret_Elem = list->head;
 	tmpElem = ret_Elem->next;
 	if (tmpElem == NULL) {
 		return NULL;  /* empty list */
 	}
-	list->Head = tmpElem;
-	tmpElem->prev = (struct list_elem *)&list->Head;
+	list->head = tmpElem;
+	tmpElem->prev = (struct list_elem *)&list->head;
 	return ret_Elem;
 }
 
@@ -98,12 +98,12 @@ INLINE void AddHead(struct list_head *list, struct list_elem *elem)
 {
 	struct list_elem *tmpElem;
 
-	tmpElem = list->Head;
-	list->Head = elem;
+	tmpElem = list->head;
+	list->head = elem;
 	tmpElem->prev = elem;
 	/* set pointers for the new elem */
 	elem->next = tmpElem;
-	elem->prev = (struct list_elem *)&list->Head;
+	elem->prev = (struct list_elem *)&list->head;
 }
 
 INLINE void AddTail(struct list_head *list, struct list_elem *elem)
@@ -140,7 +140,7 @@ INLINE void InsertPrio(struct list_head *list, struct list_elem *newelem)
 {
 	struct list_elem *tmpElem;
 
-	tmpElem = (struct list_elem *)&list->Head;
+	tmpElem = (struct list_elem *)&list->head;
 	while ((tmpElem->next != (struct list_elem *)&list->Tail) && /* end of list */
 	       (tmpElem->priority <= newelem->priority)) {
 		tmpElem = tmpElem->next;

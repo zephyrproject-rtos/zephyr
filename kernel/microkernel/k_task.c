@@ -155,7 +155,7 @@ void _k_state_bit_set(
 #endif
 #endif
 			struct k_tqhd *task_queue = _k_task_priority_list + task_ptr->priority;
-		struct k_task *cur_task = (struct k_task *)(&task_queue->Head);
+		struct k_task *cur_task = (struct k_task *)(&task_queue->head);
 
 		/*
 		 * Search in the list for this task priority level,
@@ -175,7 +175,7 @@ void _k_state_bit_set(
 		 * If there are no more tasks of this priority that are
 		 * runnable, then clear that bit in the global priority bit map.
 		 */
-		if (task_queue->Head == NULL) {
+		if (task_queue->head == NULL) {
 			_k_task_priority_bitmap[task_ptr->priority >> 5] &= ~(1 << (task_ptr->priority & 0x1F));
 		}
 	}
@@ -550,11 +550,11 @@ void _k_task_yield(struct k_args *A)
 	struct k_task *X = _k_current_task->next;
 
 	ARG_UNUSED(A);
-	if (X && H->Head == _k_current_task) {
+	if (X && H->head == _k_current_task) {
 		_k_current_task->next = NULL;
 		H->Tail->next = _k_current_task;
 		H->Tail = _k_current_task;
-		H->Head = X;
+		H->head = X;
 	}
 }
 

@@ -176,12 +176,12 @@ extern void _k_workload_monitor_idle_end(void);
 		else                                  \
 			(L) = (E);                    \
 		(E)->next = X;                        \
-		(E)->Head = &(L);                     \
+		(E)->head = &(L);                     \
 	}
 
 #define REMOVE_ELM(E)                                   \
 	{                                               \
-		struct k_args *X = *((E)->Head);               \
+		struct k_args *X = *((E)->head);               \
 		struct k_args *Y = NULL;                       \
 							\
 		while (X && (X != (E))) {               \
@@ -192,7 +192,7 @@ extern void _k_workload_monitor_idle_end(void);
 			if (Y)                          \
 				Y->next = X->next;      \
 			else                            \
-				*((E)->Head) = X->next; \
+				*((E)->head) = X->next; \
 		}                                       \
 	}
 

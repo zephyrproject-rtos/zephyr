@@ -82,7 +82,7 @@ static struct k_task *next_task_select(void)
 	}
 #endif
 
-	return _k_task_priority_list[K_PrioListIdx].Head;
+	return _k_task_priority_list[K_PrioListIdx].head;
 }
 
 /**

@@ -103,7 +103,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	RequestProc->args.pipe_xfer_req.iSizeXferred = 0;
 
 	RequestProc->next = NULL;
-	RequestProc->Head = NULL;
+	RequestProc->head = NULL;
 
 	switch (RequestProc->Time.ticks) {
 	case TICKS_NONE:
@@ -238,7 +238,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 	__ASSERT_NO_MSG(
 		0 == ReqProc->args.pipe_xfer_req.iNbrPendXfers /*  no pending Xfers */
 	    && NULL == ReqProc->Time.timer /*  no pending timer */
-	    && NULL == ReqProc->Head); /*  not in list */
+	    && NULL == ReqProc->head); /*  not in list */
 
 	/* orig packet must be sent back, not ReqProc */
 

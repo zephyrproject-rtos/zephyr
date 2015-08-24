@@ -468,7 +468,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 
 		if (pipe_read_req->iSizeXferred == pipe_read_req->iSizeTotal) {
 			_k_pipe_request_status_set(pipe_read_req, TERM_SATISFIED);
-			if (pReader->Head != NULL) {
+			if (pReader->head != NULL) {
 				DeListWaiter(pReader);
 				myfreetimer(&pReader->Time.timer);
 			}
@@ -538,7 +538,7 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 
 		if (pipe_write_req->iSizeXferred == pipe_write_req->iSizeTotal) {
 			_k_pipe_request_status_set(pipe_write_req, TERM_SATISFIED);
-			if (pWriter->Head != NULL) {
+			if (pWriter->head != NULL) {
 				/* only listed requests have a timer */
 				DeListWaiter(pWriter);
 				myfreetimer(&pWriter->Time.timer);
@@ -569,7 +569,7 @@ static void pipe_xfer_status_update(
 
 	if (pipe_xfer_req->iSizeXferred == pipe_xfer_req->iSizeTotal) {
 		_k_pipe_request_status_set(pipe_xfer_req, TERM_SATISFIED);
-		if (pActor->Head != NULL) {
+		if (pActor->head != NULL) {
 			DeListWaiter(pActor);
 			myfreetimer(&pActor->Time.timer);
 		}
@@ -965,7 +965,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 					TERM_FORCED);
 			}
 
-			if (pReader->Head) {
+			if (pReader->head) {
 				DeListWaiter(pReader);
 				myfreetimer(&(pReader->Time.timer));
 			}
@@ -995,7 +995,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 					TERM_FORCED);
 			}
 
-			if (pWriter->Head) {
+			if (pWriter->head) {
 				DeListWaiter(pWriter);
 				myfreetimer(&(pWriter->Time.timer));
 			}
@@ -1020,7 +1020,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 
 	if (pReader) {
 		if (pReader->args.pipe_xfer_req.iSizeXferred != 0) {
-			if (pReader->Head) {
+			if (pReader->head) {
 				myfreetimer(&(pReader->Time.timer));
 				/* do not delist however */
 			}
@@ -1028,7 +1028,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 	}
 	if (pWriter) {
 		if (pWriter->args.pipe_xfer_req.iSizeXferred != 0) {
-			if (pWriter->Head) {
+			if (pWriter->head) {
 				myfreetimer(&(pWriter->Time.timer));
 				/* do not delist however */
 			}

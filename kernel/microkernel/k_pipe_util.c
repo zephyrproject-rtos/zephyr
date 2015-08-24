@@ -42,9 +42,9 @@
 
 void DeListWaiter(struct k_args *pReqProc)
 {
-	__ASSERT_NO_MSG(NULL != pReqProc->Head);
+	__ASSERT_NO_MSG(NULL != pReqProc->head);
 	REMOVE_ELM(pReqProc);
-	pReqProc->Head = NULL;
+	pReqProc->head = NULL;
 }
 
 void myfreetimer(struct k_timer **ppTimer)
