@@ -346,7 +346,7 @@ static int ReaderInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 
 	/* second condition: buffer activity is null */
 
-	if (0 != pPipe->desc.iNbrPendingWrites ||
+	if (0 != pPipe->desc.num_pending_writes ||
 	    0 != pPipe->desc.num_pending_reads) {
 		/* buffer activity detected, can't say now that processing is blocked */
 		return 0;
@@ -392,7 +392,7 @@ static int WriterInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 
 	/* second condition: buffer activity is null */
 
-	if (0 != pPipe->desc.iNbrPendingWrites ||
+	if (0 != pPipe->desc.num_pending_writes ||
 	    0 != pPipe->desc.num_pending_reads) {
 		/* buffer activity detected, can't say now that processing is blocked */
 		return 0; 
@@ -628,7 +628,7 @@ static void pipe_read_write(
 
 	iFreeSpaceReader -= iT1;
 
-	if (0 == pPipe->desc.iNbrPendingWrites) {
+	if (0 == pPipe->desc.num_pending_writes) {
 		/* no incoming data anymore */
 
 		iT2 = min(iFreeSpaceReader, iAvailDataWriter);
