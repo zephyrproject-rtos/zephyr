@@ -72,7 +72,7 @@ void _k_mem_map_init(void)
 			p += w;
 		}
 		M->Free = q;
-		M->Nused = 0;
+		M->num_used = 0;
 		M->Hmark = 0;
 		M->count = 0;
 	}
@@ -108,12 +108,12 @@ void _k_mem_map_alloc(struct k_args *A)
 	if (M->Free != NULL) {
 		*(A->args.a1.mptr) = M->Free;
 		M->Free = *(char **)(M->Free);
-		M->Nused++;
+		M->num_used++;
 
 #ifdef CONFIG_OBJECT_MONITOR
 		M->count++;
-		if (M->Hmark < M->Nused)
-			M->Hmark = M->Nused;
+		if (M->Hmark < M->num_used)
+			M->Hmark = M->num_used;
 #endif
 
 		A->Time.rcode = RC_OK;
@@ -200,7 +200,7 @@ void _k_mem_map_dealloc(struct k_args *A)
 
 		return;
 	}
-	M->Nused--;
+	M->num_used--;
 }
 
 /**
@@ -229,5 +229,5 @@ int task_mem_map_used_get(kmemory_map_t mmap)
 {
 	struct _k_mem_map_struct *M = (struct _k_mem_map_struct *)mmap;
 
-	return M->Nused;
+	return M->num_used;
 }

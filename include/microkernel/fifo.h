@@ -168,7 +168,7 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
 	  .enqueue_point = buffer,\
 	  .dequeue_point = buffer,\
 	  .waiters = NULL,\
-	  .Nused = 0,\
+	  .num_used = 0,\
 	  .Hmark = 0,\
 	  .count = 0,\
 	}

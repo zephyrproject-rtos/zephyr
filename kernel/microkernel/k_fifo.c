@@ -100,7 +100,7 @@ void _k_fifo_enque_request(struct k_args *A)
 	Q = (struct _k_fifo_struct *)Qid;
 	w = OCTET_TO_SIZEOFUNIT(Q->element_size);
 	q = A->args.q1.data;
-	n = Q->Nused;
+	n = Q->num_used;
 	if (n < Q->Nelms) {
 		W = Q->waiters;
 		if (W) {
@@ -128,7 +128,7 @@ void _k_fifo_enque_request(struct k_args *A)
 				Q->enqueue_point = Q->base;
 			else
 				Q->enqueue_point = p;
-			Q->Nused = ++n;
+			Q->num_used = ++n;
 #ifdef CONFIG_OBJECT_MONITOR
 			if (Q->Hmark < n)
 				Q->Hmark = n;
@@ -232,7 +232,7 @@ void _k_fifo_deque_request(struct k_args *A)
 	Q = (struct _k_fifo_struct *)Qid;
 	w = OCTET_TO_SIZEOFUNIT(Q->element_size);
 	p = A->args.q1.data;
-	n = Q->Nused;
+	n = Q->num_used;
 	if (n) {
 		q = Q->dequeue_point;
 		memcpy(p, q, w);
@@ -271,7 +271,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			Q->count++;
 #endif
 		} else
-			Q->Nused = --n;
+			Q->num_used = --n;
 	} else {
 		if (likely(A->Time.ticks != TICKS_NONE)) {
 			A->Ctxt.task = _k_current_task;
@@ -336,7 +336,7 @@ void _k_fifo_ioctl(struct k_args *A)
 	Qid = A->args.q1.queue;
 	Q = (struct _k_fifo_struct *)Qid;
 	if (A->args.q1.size) {
-		if (Q->Nused) {
+		if (Q->num_used) {
 			struct k_args *X;
 
 			while ((X = Q->waiters)) {
@@ -354,11 +354,11 @@ void _k_fifo_ioctl(struct k_args *A)
 #endif
 			}
 		}
-		Q->Nused = 0;
+		Q->num_used = 0;
 		Q->enqueue_point = Q->dequeue_point = Q->base;
 		A->Time.rcode = RC_OK;
 	} else
-		A->Time.rcode = Q->Nused;
+		A->Time.rcode = Q->num_used;
 }
 
 /**
