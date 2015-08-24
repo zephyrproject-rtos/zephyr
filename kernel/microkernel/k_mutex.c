@@ -119,7 +119,7 @@ void _k_mutex_lock_reply(
 					      : CONFIG_PRIORITY_CEILING;
 		}
 
-		if (Mutex->OwnerCurrentPrio != newPriority) {
+		if (Mutex->current_owner_priority != newPriority) {
 			GETARGS(PrioChanger);
 			PrioChanger->alloc = true;
 			PrioChanger->Comm = _K_SVC_TASK_PRIORITY_SET;
@@ -127,7 +127,7 @@ void _k_mutex_lock_reply(
 			PrioChanger->args.g1.task = Mutex->owner;
 			PrioChanger->args.g1.prio = newPriority;
 			SENDARGS(PrioChanger);
-			Mutex->OwnerCurrentPrio = newPriority;
+			Mutex->current_owner_priority = newPriority;
 		}
 	} else {/* LOCK_RPL: Reply case */
 		A->Time.rcode = RC_OK;
@@ -192,7 +192,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 		 * task is on this node.  This may be more recent than
 		 * that stored in struct k_args.
 		 */
-		Mutex->OwnerCurrentPrio = _k_current_task->priority;
+		Mutex->current_owner_priority = _k_current_task->priority;
 
 		/*
 		 * Save the original priority when first acquiring the lock (but
@@ -203,7 +203,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 		 * original priority reflects its "boosted" priority.
 		 */
 		if (Mutex->Level == 0) {
-			Mutex->OwnerOriginalPrio = Mutex->OwnerCurrentPrio;
+			Mutex->OwnerOriginalPrio = Mutex->current_owner_priority;
 		}
 
 		Mutex->Level++;
@@ -241,7 +241,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 				_k_timeout_alloc(A);
 			}
 #endif
-			if (A->priority < Mutex->OwnerCurrentPrio) {
+			if (A->priority < Mutex->current_owner_priority) {
 				/*
 				 * The priority level of the owning task is less
 				 * than that of the requesting task.  Boost the
@@ -253,7 +253,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 				BoostedPrio = (A->priority > CONFIG_PRIORITY_CEILING)
 						      ? A->priority
 						      : CONFIG_PRIORITY_CEILING;
-				if (BoostedPrio < Mutex->OwnerCurrentPrio) {
+				if (BoostedPrio < Mutex->current_owner_priority) {
 					/* Boost the priority level */
 					GETARGS(PrioBooster);
 
@@ -263,7 +263,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 					PrioBooster->args.g1.task = Mutex->owner;
 					PrioBooster->args.g1.prio = BoostedPrio;
 					SENDARGS(PrioBooster);
-					Mutex->OwnerCurrentPrio = BoostedPrio;
+					Mutex->current_owner_priority = BoostedPrio;
 				}
 			}
 		} else {
@@ -335,7 +335,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 		Mutex->Count++;
 #endif
 
-		if (Mutex->OwnerCurrentPrio != Mutex->OwnerOriginalPrio) {
+		if (Mutex->current_owner_priority != Mutex->OwnerOriginalPrio) {
 			/*
 			 * This mutex is involved in priority inheritance.
 			 * Send a request to revert the priority level of
@@ -363,7 +363,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 			Mutex->Waiters = X->next;
 			Mutex->owner = X->args.l1.task;
 			Mutex->Level = 1;
-			Mutex->OwnerCurrentPrio = X->priority;
+			Mutex->current_owner_priority = X->priority;
 			Mutex->OwnerOriginalPrio = X->priority;
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
