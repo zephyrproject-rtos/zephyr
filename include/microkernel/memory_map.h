@@ -121,7 +121,7 @@ extern int task_mem_map_used_get(kmemory_map_t map);
 #define __K_MEM_MAP_INITIALIZER(blocks, block_size, buffer) \
 	{ \
 	  .Nelms = blocks, \
-	  .Esize = block_size, \
+	  .element_size = block_size, \
 	  .Base = buffer, \
 	}
 

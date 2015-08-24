@@ -98,7 +98,7 @@ void _k_fifo_enque_request(struct k_args *A)
 
 	Qid = A->args.q1.queue;
 	Q = (struct _k_fifo_struct *)Qid;
-	w = OCTET_TO_SIZEOFUNIT(Q->Esize);
+	w = OCTET_TO_SIZEOFUNIT(Q->element_size);
 	q = A->args.q1.data;
 	n = Q->Nused;
 	if (n < Q->Nelms) {
@@ -230,7 +230,7 @@ void _k_fifo_deque_request(struct k_args *A)
 
 	Qid = A->args.q1.queue;
 	Q = (struct _k_fifo_struct *)Qid;
-	w = OCTET_TO_SIZEOFUNIT(Q->Esize);
+	w = OCTET_TO_SIZEOFUNIT(Q->element_size);
 	p = A->args.q1.data;
 	n = Q->Nused;
 	if (n) {
@@ -248,7 +248,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			Q->waiters = W->next;
 			p = Q->Enqp;
 			q = W->args.q1.data;
-			w = OCTET_TO_SIZEOFUNIT(Q->Esize);
+			w = OCTET_TO_SIZEOFUNIT(Q->element_size);
 			memcpy(p, q, w);
 			p = (char *)((int)p + w);
 			if (p == Q->Endp)

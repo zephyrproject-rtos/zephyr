@@ -162,7 +162,7 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
 #define __K_FIFO_DEFAULT(depth, width, buffer) \
 	{ \
 	  .Nelms = depth,\
-	  .Esize = width,\
+	  .element_size = width,\
 	  .Base = buffer,\
 	  .Endp = (buffer + (depth * width)),\
 	  .Enqp = buffer,\

@@ -61,7 +61,7 @@ void _k_mem_map_init(void)
 
 		M->waiters = NULL;
 
-		w = OCTET_TO_SIZEOFUNIT(M->Esize);
+		w = OCTET_TO_SIZEOFUNIT(M->element_size);
 
 		p = M->Base;
 		q = NULL;
