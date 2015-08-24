@@ -139,8 +139,8 @@ static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
 	pMarkerList->iLastMarker = i;
 
 #ifdef STORE_NBR_MARKERS
-	pMarkerList->iNbrMarkers++;
-	__ASSERT_NO_MSG(0 < pMarkerList->iNbrMarkers);
+	pMarkerList->num_markers++;
+	__ASSERT_NO_MSG(0 < pMarkerList->num_markers);
 #endif
 
 	return i;
@@ -189,10 +189,10 @@ static void MarkerDelete(struct _k_pipe_marker_list *pMarkerList, int index)
 	}
 
 #ifdef STORE_NBR_MARKERS
-	pMarkerList->iNbrMarkers--;
-	__ASSERT_NO_MSG(0 <= pMarkerList->iNbrMarkers);
+	pMarkerList->num_markers--;
+	__ASSERT_NO_MSG(0 <= pMarkerList->num_markers);
 
-	if (0 == pMarkerList->iNbrMarkers) {
+	if (0 == pMarkerList->num_markers) {
 		__ASSERT_NO_MSG(-1 == pMarkerList->iFirstMarker);
 		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
 	}
@@ -210,7 +210,7 @@ static void MarkersClear(struct _k_pipe_marker_list *pMarkerList)
 		pM->prev = -1;
 	}
 #ifdef STORE_NBR_MARKERS
-	pMarkerList->iNbrMarkers = 0;
+	pMarkerList->num_markers = 0;
 #endif
 	pMarkerList->iFirstMarker = -1;
 	pMarkerList->iLastMarker = -1;
@@ -291,7 +291,7 @@ static int ScanMarkers(struct _k_pipe_marker_list *pMarkerList,
 	}
 
 #ifdef STORE_NBR_MARKERS
-	if (0 == pMarkerList->iNbrMarkers) {
+	if (0 == pMarkerList->num_markers) {
 		__ASSERT_NO_MSG(-1 == pMarkerList->iFirstMarker);
 		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
 		__ASSERT_NO_MSG(-1 == pMarkerList->iAWAMarker);
@@ -756,7 +756,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegi
 #ifdef STORE_NBR_MARKERS
 	/* first a small consistency check */
 
-	if (0 == desc->WriteMarkers.iNbrMarkers) {
+	if (0 == desc->WriteMarkers.num_markers) {
 		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.iFirstMarker);
 		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.iLastMarker);
 		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.iAWAMarker);
@@ -782,7 +782,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegi
 #ifdef STORE_NBR_MARKERS
 	/* first a small consistency check */
 
-	if (0 == desc->ReadMarkers.iNbrMarkers) {
+	if (0 == desc->ReadMarkers.num_markers) {
 		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.iFirstMarker);
 		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.iLastMarker);
 		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.iAWAMarker);
