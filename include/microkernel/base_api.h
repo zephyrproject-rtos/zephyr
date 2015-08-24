@@ -110,7 +110,7 @@ struct k_task {
 	struct k_task *prev;
 	kpriority_t priority;
 	ktask_t id;
-	uint32_t State;
+	uint32_t state;
 	uint32_t Group;
 	void (*fstart)(void);
 	char *workspace;

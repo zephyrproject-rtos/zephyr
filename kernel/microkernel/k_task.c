@@ -74,10 +74,10 @@ void _k_state_bit_reset(struct k_task *X,    /* ptr to task */
 							    bits to reset */
 					   )
 {
-	uint32_t f_old = X->State;      /* old state bits */
+	uint32_t f_old = X->state;      /* old state bits */
 	uint32_t f_new = f_old & ~bits; /* new state bits */
 
-	X->State = f_new; /* Update task's state bits */
+	X->state = f_new; /* Update task's state bits */
 
 	if ((f_old != 0) && (f_new == 0)) {
 		/*
@@ -126,14 +126,14 @@ void _k_state_bit_set(
 	uint32_t bits /* bitmask of TF_xxx bits to set */
 	)
 {
-	uint32_t old_state_bits = task_ptr->State;
+	uint32_t old_state_bits = task_ptr->state;
 	uint32_t new_state_bits = old_state_bits | bits;
 
-	task_ptr->State = new_state_bits;
+	task_ptr->state = new_state_bits;
 
 	if ((old_state_bits == 0) && (new_state_bits != 0)) {
 		/*
-		 * The task could have been scheduled to run ([State] was 0)
+		 * The task could have been scheduled to run ([state] was 0)
 		 * but can not be scheduled to run anymore at least one TF_xxx
 		 * bit has been set.  Remove it from the list of schedulable
 		 * tasks.
