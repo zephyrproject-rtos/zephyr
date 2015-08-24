@@ -125,18 +125,18 @@ static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
 	pMarkerList->aMarkers[i].buffer_xfer_busy = buffer_xfer_busy;
 
 	if (-1 == pMarkerList->first_marker) {
-		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
+		__ASSERT_NO_MSG(-1 == pMarkerList->last_marker);
 		pMarkerList->first_marker = i; /* we still need to set prev & next */
 	} else {
-		__ASSERT_NO_MSG(-1 != pMarkerList->iLastMarker);
+		__ASSERT_NO_MSG(-1 != pMarkerList->last_marker);
 		__ASSERT_NO_MSG(-1 ==
-		       pMarkerList->aMarkers[pMarkerList->iLastMarker].next);
+		       pMarkerList->aMarkers[pMarkerList->last_marker].next);
 	}
 
-	MarkerLinkToListAfter(pMarkerList->aMarkers, pMarkerList->iLastMarker, i);
+	MarkerLinkToListAfter(pMarkerList->aMarkers, pMarkerList->last_marker, i);
 
 	__ASSERT_NO_MSG(-1 == pMarkerList->aMarkers[i].next);
-	pMarkerList->iLastMarker = i;
+	pMarkerList->last_marker = i;
 
 #ifdef STORE_NBR_MARKERS
 	pMarkerList->num_markers++;
@@ -181,8 +181,8 @@ static void MarkerDelete(struct _k_pipe_marker_list *pMarkerList, int index)
 	MarkerUnlinkFromList(pMarkerList->aMarkers, i, &iPredecessor, &iSuccessor);
 
 	/* update first/last info */
-	if (i == pMarkerList->iLastMarker) {
-		pMarkerList->iLastMarker = iPredecessor;
+	if (i == pMarkerList->last_marker) {
+		pMarkerList->last_marker = iPredecessor;
 	}
 	if (i == pMarkerList->first_marker) {
 		pMarkerList->first_marker = iSuccessor;
@@ -194,7 +194,7 @@ static void MarkerDelete(struct _k_pipe_marker_list *pMarkerList, int index)
 
 	if (0 == pMarkerList->num_markers) {
 		__ASSERT_NO_MSG(-1 == pMarkerList->first_marker);
-		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
+		__ASSERT_NO_MSG(-1 == pMarkerList->last_marker);
 	}
 #endif
 }
@@ -213,7 +213,7 @@ static void MarkersClear(struct _k_pipe_marker_list *pMarkerList)
 	pMarkerList->num_markers = 0;
 #endif
 	pMarkerList->first_marker = -1;
-	pMarkerList->iLastMarker = -1;
+	pMarkerList->last_marker = -1;
 	pMarkerList->iAWAMarker = -1;
 }
 
@@ -293,7 +293,7 @@ static int ScanMarkers(struct _k_pipe_marker_list *pMarkerList,
 #ifdef STORE_NBR_MARKERS
 	if (0 == pMarkerList->num_markers) {
 		__ASSERT_NO_MSG(-1 == pMarkerList->first_marker);
-		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
+		__ASSERT_NO_MSG(-1 == pMarkerList->last_marker);
 		__ASSERT_NO_MSG(-1 == pMarkerList->iAWAMarker);
 	}
 #endif
@@ -758,7 +758,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegi
 
 	if (0 == desc->WriteMarkers.num_markers) {
 		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.first_marker);
-		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.iLastMarker);
+		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.last_marker);
 		__ASSERT_NO_MSG(-1 == desc->WriteMarkers.iAWAMarker);
 	}
 #endif
@@ -784,7 +784,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegi
 
 	if (0 == desc->ReadMarkers.num_markers) {
 		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.first_marker);
-		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.iLastMarker);
+		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.last_marker);
 		__ASSERT_NO_MSG(-1 == desc->ReadMarkers.iAWAMarker);
 	}
 #endif
