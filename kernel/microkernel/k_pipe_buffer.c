@@ -329,7 +329,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->free_space_post_wrap_around = 0;
 	desc->num_pending_reads = 0;
 	desc->available_data_count = 0;
-	desc->iAvailDataAWA = 0;
+	desc->available_data_post_wrap_around = 0;
 	desc->iNbrPendingWrites = 0;
 	MarkersClear(&desc->WriteMarkers);
 	MarkersClear(&desc->ReadMarkers);
@@ -408,7 +408,7 @@ int BuffEmpty(struct _k_pipe_desc *desc)
 }
 
 int CalcAvailData(struct _k_pipe_desc *desc, int *available_data_count_ptr,
-				  int *piAvailDataAWA)
+				  int *available_data_post_wrap_around_ptr)
 {
 	unsigned char *pStart = desc->read_ptr;
 	unsigned char *pStop = desc->write_ptr;
@@ -423,8 +423,8 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *available_data_count_ptr,
 
 		if (BUFF_FULL == desc->BuffState) {
 			*available_data_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
-			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
-			return (*available_data_count_ptr + *piAvailDataAWA);
+			*available_data_post_wrap_around_ptr = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
+			return (*available_data_count_ptr + *available_data_post_wrap_around_ptr);
 			/* this sum equals end_ptr-begin_ptr */
 		}
 	}
@@ -436,28 +436,28 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *available_data_count_ptr,
 
 	if (pStop >= pStart) {
 		*available_data_count_ptr = SIZEOFUNIT_TO_OCTET(pStop - pStart);
-		*piAvailDataAWA = 0;
+		*available_data_post_wrap_around_ptr = 0;
 	} else {
 		*available_data_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
-		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
+		*available_data_post_wrap_around_ptr = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 	}
-	return (*available_data_count_ptr + *piAvailDataAWA);
+	return (*available_data_count_ptr + *available_data_post_wrap_around_ptr);
 }
 
 void BuffGetAvailData(struct _k_pipe_desc *desc, int *piAvailDataTotal,
-					  int *available_data_count_ptr, int *piAvailDataAWA)
+					  int *available_data_count_ptr, int *available_data_post_wrap_around_ptr)
 {
 	int available_data_count;
-	int iAvailDataAWA;
+	int available_data_post_wrap_around;
 	int iAvailDataTotal;
 
 	iAvailDataTotal =
-		CalcAvailData(desc, &available_data_count, &iAvailDataAWA);
+		CalcAvailData(desc, &available_data_count, &available_data_post_wrap_around);
 	__ASSERT_NO_MSG(available_data_count == desc->available_data_count);
-	__ASSERT_NO_MSG(iAvailDataAWA == desc->iAvailDataAWA);
+	__ASSERT_NO_MSG(available_data_post_wrap_around == desc->available_data_post_wrap_around);
 	*piAvailDataTotal = iAvailDataTotal;
 	*available_data_count_ptr = desc->available_data_count;
-	*piAvailDataAWA = desc->iAvailDataAWA;
+	*available_data_post_wrap_around_ptr = desc->available_data_post_wrap_around;
 }
 
 void BuffGetAvailDataTotal(struct _k_pipe_desc *desc, int *piAvailDataTotal)
@@ -466,7 +466,7 @@ void BuffGetAvailDataTotal(struct _k_pipe_desc *desc, int *piAvailDataTotal)
 
 	*piAvailDataTotal = CalcAvailData(desc, &dummy1, &dummy2);
 	__ASSERT_NO_MSG(dummy1 == desc->available_data_count);
-	__ASSERT_NO_MSG(dummy2 == desc->iAvailDataAWA);
+	__ASSERT_NO_MSG(dummy2 == desc->available_data_post_wrap_around);
 }
 
 int BuffFull(struct _k_pipe_desc *desc)
@@ -516,7 +516,7 @@ static void AsyncEnQFinished(struct _k_pipe_desc *desc, int iTransferID)
 	if (desc->WriteMarkers.first_marker == iTransferID) {
 		int iNewFirstMarker = ScanMarkers(&desc->WriteMarkers,
 										  &desc->available_data_count,
-										  &desc->iAvailDataAWA,
+										  &desc->available_data_post_wrap_around,
 										  &desc->iNbrPendingWrites);
 		if (-1 != iNewFirstMarker) {
 			desc->read_guard =
@@ -669,8 +669,8 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 	desc->read_ptr += OCTET_TO_SIZEOFUNIT(iSize);
 	if (desc->end_ptr == desc->read_ptr) {
 		desc->read_ptr = desc->begin_ptr;
-		desc->available_data_count = desc->iAvailDataAWA;
-		desc->iAvailDataAWA = 0;
+		desc->available_data_count = desc->available_data_post_wrap_around;
+		desc->available_data_post_wrap_around = 0;
 		desc->bWriteWA = false;
 		desc->bReadWA = true;
 		desc->WriteMarkers.post_wrap_around_marker = -1;

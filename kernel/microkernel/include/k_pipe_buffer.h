@@ -47,7 +47,7 @@ void BuffGetFreeSpace(struct _k_pipe_desc *desc, int *piTotalFreeSpace,
 
 void BuffGetAvailDataTotal(struct _k_pipe_desc *desc, int *piAvailDataTotal);
 void BuffGetAvailData(struct _k_pipe_desc *desc, int *piAvailDataTotal,
-					  int *available_data_count_ptr, int *piAvailDataAWA);
+					  int *available_data_count_ptr, int *available_data_post_wrap_around_ptr);
 
 int BuffEmpty(struct _k_pipe_desc *desc);
 int BuffFull(struct _k_pipe_desc *desc);

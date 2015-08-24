@@ -622,7 +622,7 @@ static void pipe_read_write(
 	int iFreeSpaceBuffer =
 		(pPipe->desc.free_space_count + pPipe->desc.free_space_post_wrap_around);
 	int iAvailDataBuffer =
-		(pPipe->desc.available_data_count + pPipe->desc.iAvailDataAWA);
+		(pPipe->desc.available_data_count + pPipe->desc.available_data_post_wrap_around);
 
 	iT1 = min(iFreeSpaceReader, iAvailDataBuffer);
 
