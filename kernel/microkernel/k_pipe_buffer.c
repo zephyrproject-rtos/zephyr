@@ -314,11 +314,11 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	/* reset all pointers */
 
 	desc->end_ptr = desc->begin_ptr + OCTET_TO_SIZEOFUNIT(desc->buffer_size);
-	desc->pEndOrig = desc->end_ptr;
+	desc->original_end_ptr = desc->end_ptr;
 
 	/* assumed it is allowed */
 	desc->BuffState = BUFF_EMPTY;
-	desc->end_ptr = desc->pEndOrig;
+	desc->end_ptr = desc->original_end_ptr;
 	desc->pWrite = desc->begin_ptr;
 	desc->pWriteGuard = NULL;
 	desc->bWriteWA = false;

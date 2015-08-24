@@ -201,7 +201,7 @@ struct _k_pipe_desc {
 	struct _k_pipe_marker_list WriteMarkers;
 	struct _k_pipe_marker_list ReadMarkers;
 	unsigned char *end_ptr;
-	unsigned char *pEndOrig;
+	unsigned char *original_end_ptr;
 };
 
 struct _k_pipe_struct {
