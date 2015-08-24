@@ -347,7 +347,7 @@ static int ReaderInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 	/* second condition: buffer activity is null */
 
 	if (0 != pPipe->desc.iNbrPendingWrites ||
-	    0 != pPipe->desc.iNbrPendingReads) {
+	    0 != pPipe->desc.num_pending_reads) {
 		/* buffer activity detected, can't say now that processing is blocked */
 		return 0;
 	}
@@ -393,7 +393,7 @@ static int WriterInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 	/* second condition: buffer activity is null */
 
 	if (0 != pPipe->desc.iNbrPendingWrites ||
-	    0 != pPipe->desc.iNbrPendingReads) {
+	    0 != pPipe->desc.num_pending_reads) {
 		/* buffer activity detected, can't say now that processing is blocked */
 		return 0; 
 	}

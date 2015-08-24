@@ -46,12 +46,12 @@
 #define STORE_NBR_MARKERS
 /* NOTE: the number of pending write and read Xfers is always stored,
    as it is required for the pipes to function properly. It is stored in the
-   pipe descriptor fields iNbrPendingWrites and iNbrPendingReads.
+   pipe descriptor fields iNbrPendingWrites and num_pending_reads.
 
    In the Writer and Reader MarkersList, the number of markers (==nbr. of
    unreleased Xfers)
    is monitored as well. They actually equal iNbrPendingWrites and
-   iNbrPendingReads.
+   num_pending_reads.
    Their existence depends on STORE_NBR_MARKERS. A reason to have them
    additionally is that
    some extra consistency checking is performed in the markers manipulation
@@ -327,7 +327,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->bReadWA = true; /* YES!! */
 	desc->free_space_count = desc->buffer_size;
 	desc->free_space_post_wrap_around = 0;
-	desc->iNbrPendingReads = 0;
+	desc->num_pending_reads = 0;
 	desc->iAvailDataCont = 0;
 	desc->iAvailDataAWA = 0;
 	desc->iNbrPendingWrites = 0;
@@ -601,9 +601,9 @@ static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int iSize)
 
 	i = MarkerAddLast(&desc->ReadMarkers, desc->read_ptr, iSize, true);
 	if (i != -1) {
-		/* adjust iNbrPendingReads */
-		__ASSERT_NO_MSG(0 <= desc->iNbrPendingReads);
-		desc->iNbrPendingReads++;
+		/* adjust num_pending_reads */
+		__ASSERT_NO_MSG(0 <= desc->num_pending_reads);
+		desc->num_pending_reads++;
 		/* write_guard changes? */
 		if (NULL == desc->write_guard) {
 			desc->write_guard = desc->read_ptr;
@@ -627,7 +627,7 @@ static void AsyncDeQFinished(struct _k_pipe_desc *desc, int iTransferID)
 		int iNewFirstMarker = ScanMarkers(&desc->ReadMarkers,
 										  &desc->free_space_count,
 										  &desc->free_space_post_wrap_around,
-										  &desc->iNbrPendingReads);
+										  &desc->num_pending_reads);
 		if (-1 != iNewFirstMarker) {
 			desc->write_guard =
 				desc->ReadMarkers.markers[iNewFirstMarker].pointer;
