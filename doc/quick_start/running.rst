@@ -86,29 +86,26 @@ command to:
 
 #. Create the following directories
 
-:file:`efi`
+:file:`EFI`
 
-:file:`efi/boot`
+:file:`EFI/BOOT`
 
 :file:`kernel`
 
 #. Assuming you have built a micro kernel, copy the kernel file :file:`
 microkernel.elf` to the :file:`$SDCARD/kernel` folder
 
-#. Copy your built version of GRUB to :file:`$SDCARD/efi/boot`
+#. Copy your built version of GRUB to :file:`$SDCARD/EFI/BOOT/BOOTIA32.EFI`
 
-#. Create :file:`$SDCARD/efi/boot/grub.cfg` containing the following:
+#. Create :file:`$SDCARD/EFI/BOOT/grub.cfg` containing the following:
 
 .. code-block:: bash
 
-   set default=0 **
+   set default=0
+   set timeout=10
 
-   set timeout=10 **
-
-   menuentry "This is my boot message" {**
-
-      multiboot /kernel/microkernel.elf**
-
+   menuentry "Zephyr microkernel" {
+      multiboot /kernel/microkernel.elf
     }
 
 #. Insert the SDcard in the Galileo board.
