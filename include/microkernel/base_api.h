@@ -184,7 +184,7 @@ typedef enum {
 
 struct _k_pipe_desc {
 	int buffer_size;
-	unsigned char *pBegin;
+	unsigned char *begin_ptr;
 	unsigned char *pWrite;
 	unsigned char *pRead;
 	unsigned char *pWriteGuard; /* can be NULL --> invalid */

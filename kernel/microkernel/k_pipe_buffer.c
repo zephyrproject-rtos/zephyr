@@ -33,7 +33,7 @@
 
 /* Implementation remarks:
 - when using a floating end pointer: do not use pipe_desc->iBuffsize for
-  (pipe_desc->pEnd - pipe_desc->pBegin)
+  (pipe_desc->pEnd - pipe_desc->begin_ptr)
  */
 
 #include <microkernel/base_api.h>
@@ -63,9 +63,9 @@
  */
 
 #define CHECK_BUFFER_POINTER(pData) \
-	__ASSERT_NO_MSG(desc->pBegin <= pData && pData < desc->pEnd)
+	__ASSERT_NO_MSG(desc->begin_ptr <= pData && pData < desc->pEnd)
 
-static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegin, int iSize);
+static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin_ptr, int iSize);
 
 /**
  * Markers
@@ -307,22 +307,22 @@ static int ScanMarkers(struct _k_pipe_marker_list *pMarkerList,
 
 void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc)
 {
-	desc->pBegin = pBuffer;
+	desc->begin_ptr = pBuffer;
 
 	desc->buffer_size = *piBuffSize;
 
 	/* reset all pointers */
 
-	desc->pEnd = desc->pBegin + OCTET_TO_SIZEOFUNIT(desc->buffer_size);
+	desc->pEnd = desc->begin_ptr + OCTET_TO_SIZEOFUNIT(desc->buffer_size);
 	desc->pEndOrig = desc->pEnd;
 
 	/* assumed it is allowed */
 	desc->BuffState = BUFF_EMPTY;
 	desc->pEnd = desc->pEndOrig;
-	desc->pWrite = desc->pBegin;
+	desc->pWrite = desc->begin_ptr;
 	desc->pWriteGuard = NULL;
 	desc->bWriteWA = false;
-	desc->pRead = desc->pBegin;
+	desc->pRead = desc->begin_ptr;
 	desc->pReadGuard = NULL;
 	desc->bReadWA = true; /* YES!! */
 	desc->iFreeSpaceCont = desc->buffer_size;
@@ -352,9 +352,9 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 
 		if (BUFF_EMPTY == desc->BuffState) {
 			*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
-			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->pBegin);
+			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 			return (*piFreeSpaceCont + *piFreeSpaceAWA);
-			/* this sum equals pEnd-pBegin */
+			/* this sum equals pEnd-begin_ptr */
 		}
 	}
 
@@ -368,7 +368,7 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 		*piFreeSpaceAWA = 0;
 	} else {
 		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
-		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->pBegin);
+		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 	}
 	return (*piFreeSpaceCont + *piFreeSpaceAWA);
 }
@@ -423,9 +423,9 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 
 		if (BUFF_FULL == desc->BuffState) {
 			*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
-			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->pBegin);
+			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 			return (*piAvailDataCont + *piAvailDataAWA);
-			/* this sum equals pEnd-pBegin */
+			/* this sum equals pEnd-begin_ptr */
 		}
 	}
 
@@ -439,7 +439,7 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 		*piAvailDataAWA = 0;
 	} else {
 		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->pEnd - pStart);
-		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->pBegin);
+		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 	}
 	return (*piAvailDataCont + *piAvailDataAWA);
 }
@@ -558,7 +558,7 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 
 	desc->pWrite += OCTET_TO_SIZEOFUNIT(iSize);
 	if (desc->pEnd == desc->pWrite) {
-		desc->pWrite = desc->pBegin;
+		desc->pWrite = desc->begin_ptr;
 		desc->iFreeSpaceCont = desc->iFreeSpaceAWA;
 		desc->iFreeSpaceAWA = 0;
 		desc->bWriteWA = true;
@@ -668,7 +668,7 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 
 	desc->pRead += OCTET_TO_SIZEOFUNIT(iSize);
 	if (desc->pEnd == desc->pRead) {
-		desc->pRead = desc->pBegin;
+		desc->pRead = desc->begin_ptr;
 		desc->iAvailDataCont = desc->iAvailDataAWA;
 		desc->iAvailDataAWA = 0;
 		desc->bWriteWA = false;
@@ -741,7 +741,7 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 	}
 }
 
-static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegin, int iSize)
+static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin_ptr, int iSize)
 {
 	/*
 	 * check possible collision with all existing data areas,
@@ -771,7 +771,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegi
 
 		pM = &(pMarkerList->markers[index]);
 
-		if (0 != AreasCheck4Intrusion(pBegin, iSize, pM->pointer, pM->size)) {
+		if (0 != AreasCheck4Intrusion(begin_ptr, iSize, pM->pointer, pM->size)) {
 			__ASSERT_NO_MSG(1 == 0);
 		}
 		index = pM->next;
@@ -797,7 +797,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegi
 
 		pM = &(pMarkerList->markers[index]);
 
-		if (0 != AreasCheck4Intrusion(pBegin, iSize, pM->pointer, pM->size)) {
+		if (0 != AreasCheck4Intrusion(begin_ptr, iSize, pM->pointer, pM->size)) {
 			__ASSERT_NO_MSG(1 == 0);
 		}
 		index = pM->next;
