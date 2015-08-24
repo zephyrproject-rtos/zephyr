@@ -319,7 +319,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	/* assumed it is allowed */
 	desc->BuffState = BUFF_EMPTY;
 	desc->end_ptr = desc->original_end_ptr;
-	desc->pWrite = desc->begin_ptr;
+	desc->write_ptr = desc->begin_ptr;
 	desc->pWriteGuard = NULL;
 	desc->bWriteWA = false;
 	desc->pRead = desc->begin_ptr;
@@ -339,7 +339,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 				  int *piFreeSpaceAWA)
 {
-	unsigned char *pStart = desc->pWrite;
+	unsigned char *pStart = desc->write_ptr;
 	unsigned char *pStop = desc->pRead;
 
 	if (NULL != desc->pWriteGuard) {
@@ -411,7 +411,7 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 				  int *piAvailDataAWA)
 {
 	unsigned char *pStart = desc->pRead;
-	unsigned char *pStop = desc->pWrite;
+	unsigned char *pStop = desc->write_ptr;
 
 	if (NULL != desc->pReadGuard) {
 		pStop = desc->pReadGuard;
@@ -487,16 +487,16 @@ static int AsyncEnQRegstr(struct _k_pipe_desc *desc, int iSize)
 {
 	int i;
 
-	pipe_intrusion_check(desc, desc->pWrite, iSize);
+	pipe_intrusion_check(desc, desc->write_ptr, iSize);
 
-	i = MarkerAddLast(&desc->WriteMarkers, desc->pWrite, iSize, true);
+	i = MarkerAddLast(&desc->WriteMarkers, desc->write_ptr, iSize, true);
 	if (i != -1) {
 		/* adjust iNbrPendingWrites */
 		__ASSERT_NO_MSG(0 <= desc->iNbrPendingWrites);
 		desc->iNbrPendingWrites++;
 		/* pReadGuard changes? */
 		if (NULL == desc->pReadGuard) {
-			desc->pReadGuard = desc->pWrite;
+			desc->pReadGuard = desc->write_ptr;
 		}
 		__ASSERT_NO_MSG(desc->WriteMarkers.markers
 						[desc->WriteMarkers.first_marker].pointer ==
@@ -552,13 +552,13 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 		return 0;
 	}
 
-	*ppWrite = desc->pWrite;
+	*ppWrite = desc->write_ptr;
 
 	/* adjust write pointer and free space*/
 
-	desc->pWrite += OCTET_TO_SIZEOFUNIT(iSize);
-	if (desc->end_ptr == desc->pWrite) {
-		desc->pWrite = desc->begin_ptr;
+	desc->write_ptr += OCTET_TO_SIZEOFUNIT(iSize);
+	if (desc->end_ptr == desc->write_ptr) {
+		desc->write_ptr = desc->begin_ptr;
 		desc->iFreeSpaceCont = desc->iFreeSpaceAWA;
 		desc->iFreeSpaceAWA = 0;
 		desc->bWriteWA = true;
@@ -568,13 +568,13 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 		desc->iFreeSpaceCont -= iSize;
 	}
 
-	if (desc->pWrite == desc->pRead) {
+	if (desc->write_ptr == desc->pRead) {
 		desc->BuffState = BUFF_FULL;
 	} else {
 		desc->BuffState = BUFF_OTHER;
 	}
 
-	CHECK_BUFFER_POINTER(desc->pWrite);
+	CHECK_BUFFER_POINTER(desc->write_ptr);
 
 	return iSize;
 }
@@ -678,7 +678,7 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 		desc->iAvailDataCont -= iSize;
 	}
 
-	if (desc->pWrite == desc->pRead) {
+	if (desc->write_ptr == desc->pRead) {
 		desc->BuffState = BUFF_EMPTY;
 	} else {
 		desc->BuffState = BUFF_OTHER;

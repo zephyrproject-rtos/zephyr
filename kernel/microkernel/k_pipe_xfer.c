@@ -497,7 +497,7 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 	struct _pipe_xfer_req_arg *pipe_write_req;
 
 	int iSize;
-	unsigned char *pWrite;
+	unsigned char *write_ptr;
 	int id;
 	int ret;
 	int numIterations = 2;
@@ -520,13 +520,13 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 
 		struct k_args *Moved_req;
 
-		ret = BuffEnQA(&pPipe->desc, iSize, &pWrite, &id);
+		ret = BuffEnQA(&pPipe->desc, iSize, &write_ptr, &id);
 		if (0 == ret) {
 			return;
 		}
 
 		GETARGS(Moved_req);
-		setup_movedata(Moved_req, pPipe, XFER_W2B, pWriter, NULL, pWrite,
+		setup_movedata(Moved_req, pPipe, XFER_W2B, pWriter, NULL, write_ptr,
 			(char *)(pipe_write_req->pData) +
 			OCTET_TO_SIZEOFUNIT(pipe_write_req->iSizeXferred),
 			ret, (numIterations == 2) ? id : -1);
