@@ -161,7 +161,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	if (_TIME_NB !=
 		_k_pipe_time_type_get(&RequestProc->args)) {
 		/* call is blocking */
-		INSERT_ELM(pPipe->Writers, RequestProc);
+		INSERT_ELM(pPipe->writers, RequestProc);
 		/*
 		 * NOTE: It is both faster and simpler to blindly assign the
 		 * PIPE_PUT_TIMEOUT microkernel command to the packet even though it
@@ -194,7 +194,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		RequestProc->Time.timer = NULL;
 
 		if (XFER_BUSY == RequestProc->args.pipe_xfer_req.status) {
-			INSERT_ELM(pPipe->Writers, RequestProc);
+			INSERT_ELM(pPipe->writers, RequestProc);
 		} else {
 			__ASSERT_NO_MSG(XFER_IDLE ==
 				RequestProc->args.pipe_xfer_req.status);

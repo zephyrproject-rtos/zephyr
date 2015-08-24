@@ -421,7 +421,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 		 * list and continue.  No further action is required.
 		 */
 
-		INSERT_ELM(MailBox->Writers, CopyWriter);
+		INSERT_ELM(MailBox->writers, CopyWriter);
 		return;
 	}
 
@@ -437,7 +437,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 		CopyWriter->Comm = _K_SVC_MBOX_SEND_REPLY;
 
 		/* Put the letter into the mailbox */
-		INSERT_ELM(MailBox->Writers, CopyWriter);
+		INSERT_ELM(MailBox->writers, CopyWriter);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (CopyWriter->Time.ticks == TICKS_UNLIMITED) {
@@ -578,7 +578,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 
 	MailBox = (struct _k_mbox_struct *)MailBoxId;
 
-	for (CopyWriter = MailBox->Writers, temp = NULL; CopyWriter != NULL;
+	for (CopyWriter = MailBox->writers, temp = NULL; CopyWriter != NULL;
 	     temp = CopyWriter, CopyWriter = CopyWriter->next) {
 		uint32_t u32Size;
 
@@ -597,7 +597,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 			if (temp != NULL) {
 				temp->next = CopyWriter->next;
 			} else {
-				MailBox->Writers = CopyWriter->next;
+				MailBox->writers = CopyWriter->next;
 			}
 			CopyWriter->next = NULL;
 

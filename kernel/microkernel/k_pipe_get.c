@@ -112,7 +112,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		int iTotalData2Read;
 		int32_t ticks;
 
-		iData2ReadFromWriters = CalcAvailWriterData(pPipe->Writers);
+		iData2ReadFromWriters = CalcAvailWriterData(pPipe->writers);
 		iAvailBufferData =
 			pPipe->desc.iAvailDataCont + pPipe->desc.iAvailDataAWA;
 		iTotalData2Read =

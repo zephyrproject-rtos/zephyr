@@ -502,10 +502,10 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 	int ret;
 	int numIterations = 2;
 
-	pWriter = (pNewWriter != NULL) ? pNewWriter : pPipe->Writers;
+	pWriter = (pNewWriter != NULL) ? pNewWriter : pPipe->writers;
 
-	__ASSERT_NO_MSG(!((pPipe->Writers != pNewWriter) &&
-					  (NULL != pPipe->Writers) && (NULL != pNewWriter)));
+	__ASSERT_NO_MSG(!((pPipe->writers != pNewWriter) &&
+					  (NULL != pPipe->writers) && (NULL != pNewWriter)));
 
 	pipe_write_req = &pWriter->args.pipe_xfer_req;
 
@@ -600,10 +600,10 @@ static void pipe_read_write(
 	int iT2;
 	int iT3;
 
-	pWriter = (pNewWriter != NULL) ? pNewWriter : pPipe->Writers;
+	pWriter = (pNewWriter != NULL) ? pNewWriter : pPipe->writers;
 
-	__ASSERT_NO_MSG((pPipe->Writers == pNewWriter) ||
-					(NULL == pPipe->Writers) || (NULL == pNewWriter));
+	__ASSERT_NO_MSG((pPipe->writers == pNewWriter) ||
+					(NULL == pPipe->writers) || (NULL == pNewWriter));
 
 	pReader = (pNewReader != NULL) ? pNewReader : pPipe->Readers;
 
@@ -728,7 +728,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 
 		if (NULL != pNLWriter) {
 			if (pWriter != pNLWriter) {
-				pNextWriter = pPipe->Writers;
+				pNextWriter = pPipe->writers;
 				if (NULL == pNextWriter) {
 					if (!(TERM_XXX & pNLWriter->args.pipe_xfer_req.status))
 						pNextWriter = pNLWriter;
@@ -742,7 +742,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				}
 			}
 		} else {
-			pNextWriter = pPipe->Writers;
+			pNextWriter = pPipe->writers;
 		}
 
 		/* check if there is uberhaupt something to do */
@@ -798,7 +798,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				int iAvailBufferData;
 				int iTotalData2Read;
 
-				iData2ReadFromWriters = CalcAvailWriterData(pPipe->Writers);
+				iData2ReadFromWriters = CalcAvailWriterData(pPipe->writers);
 				if (pNLWriter)
 					iData2ReadFromWriters +=
 						(pNLWriter->args.pipe_xfer_req.iSizeTotal -
