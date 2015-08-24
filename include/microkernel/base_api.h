@@ -198,7 +198,7 @@ struct _k_pipe_desc {
 	bool wrap_around_write;
 	bool wrap_around_read;
 	_K_PIPE_BUFF_STATE buffer_state;
-	struct _k_pipe_marker_list WriteMarkers;
+	struct _k_pipe_marker_list write_markers;
 	struct _k_pipe_marker_list ReadMarkers;
 	unsigned char *end_ptr;
 	unsigned char *original_end_ptr;
