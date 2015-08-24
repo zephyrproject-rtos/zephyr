@@ -121,7 +121,7 @@ struct k_task {
 
 struct _k_mbox_struct {
 	struct k_args *writers;
-	struct k_args *Readers;
+	struct k_args *readers;
 	int Count;
 };
 
@@ -208,7 +208,7 @@ struct _k_pipe_struct {
 	int iBufferSize; /* size in bytes, must be first for sysgen */
 	char *Buffer;    /* pointer to statically allocated buffer  */
 	struct k_args *writers;
-	struct k_args *Readers;
+	struct k_args *readers;
 	struct _k_pipe_desc desc;
 	int Count;
 };

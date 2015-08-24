@@ -433,10 +433,10 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 	int ret;
 	int numIterations = 2;
 
-	pReader = (pNewReader != NULL) ? pNewReader : pPipe->Readers;
+	pReader = (pNewReader != NULL) ? pNewReader : pPipe->readers;
 
-	__ASSERT_NO_MSG((pPipe->Readers == pNewReader) ||
-					(NULL == pPipe->Readers) || (NULL == pNewReader));
+	__ASSERT_NO_MSG((pPipe->readers == pNewReader) ||
+					(NULL == pPipe->readers) || (NULL == pNewReader));
 
 	pipe_read_req = &pReader->args.pipe_xfer_req;
 
@@ -605,10 +605,10 @@ static void pipe_read_write(
 	__ASSERT_NO_MSG((pPipe->writers == pNewWriter) ||
 					(NULL == pPipe->writers) || (NULL == pNewWriter));
 
-	pReader = (pNewReader != NULL) ? pNewReader : pPipe->Readers;
+	pReader = (pNewReader != NULL) ? pNewReader : pPipe->readers;
 
-	__ASSERT_NO_MSG((pPipe->Readers == pNewReader) ||
-					(NULL == pPipe->Readers) || (NULL == pNewReader));
+	__ASSERT_NO_MSG((pPipe->readers == pNewReader) ||
+					(NULL == pPipe->readers) || (NULL == pNewReader));
 
 	/* Preparation */
 	pipe_write_req = &pWriter->args.pipe_xfer_req;
@@ -707,7 +707,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 
 		if (NULL != pNLReader) {
 			if (pReader != pNLReader) {
-				pNextReader = pPipe->Readers;
+				pNextReader = pPipe->readers;
 				if (NULL == pNextReader) {
 					if (!(TERM_XXX & pNLReader->args.pipe_xfer_req.status))
 						pNextReader = pNLReader;
@@ -721,7 +721,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				}
 			}
 		} else {
-			pNextReader = pPipe->Readers;
+			pNextReader = pPipe->readers;
 		}
 
 		/* Writer */
@@ -769,7 +769,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				int iFreeBufferSpace;
 				int iTotalSpace2Write;
 
-				iSpace2WriteinReaders = CalcFreeReaderSpace(pPipe->Readers);
+				iSpace2WriteinReaders = CalcFreeReaderSpace(pPipe->readers);
 				if (pNLReader)
 					iSpace2WriteinReaders +=
 						(pNLReader->args.pipe_xfer_req.iSizeTotal -

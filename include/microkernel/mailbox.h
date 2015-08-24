@@ -220,7 +220,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
 #define __K_MAILBOX_DEFAULT \
 	{ \
 	  .writers = NULL, \
-	  .Readers = NULL, \
+	  .readers = NULL, \
 	  .Count = 0, \
 	}
 

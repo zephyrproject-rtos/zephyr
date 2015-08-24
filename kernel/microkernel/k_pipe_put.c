@@ -129,7 +129,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		int iTotalSpace2Write;
 		int32_t ticks;
 
-		iSpace2WriteinReaders = CalcFreeReaderSpace(pPipe->Readers);
+		iSpace2WriteinReaders = CalcFreeReaderSpace(pPipe->readers);
 		iFreeBufferSpace =
 			pPipe->desc.iFreeSpaceCont + pPipe->desc.iFreeSpaceAWA;
 		iTotalSpace2Write =
