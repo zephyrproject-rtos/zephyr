@@ -441,7 +441,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 	pipe_read_req = &pReader->args.pipe_xfer_req;
 
 	do {
-		iSize = min(pPipe->desc.iAvailDataCont,
+		iSize = min(pPipe->desc.available_data_count,
 					pipe_read_req->iSizeTotal - pipe_read_req->iSizeXferred);
 
 		if (iSize == 0) {
@@ -622,7 +622,7 @@ static void pipe_read_write(
 	int iFreeSpaceBuffer =
 		(pPipe->desc.free_space_count + pPipe->desc.free_space_post_wrap_around);
 	int iAvailDataBuffer =
-		(pPipe->desc.iAvailDataCont + pPipe->desc.iAvailDataAWA);
+		(pPipe->desc.available_data_count + pPipe->desc.iAvailDataAWA);
 
 	iT1 = min(iFreeSpaceReader, iAvailDataBuffer);
 

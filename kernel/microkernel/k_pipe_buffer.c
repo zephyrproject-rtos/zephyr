@@ -328,7 +328,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->free_space_count = desc->buffer_size;
 	desc->free_space_post_wrap_around = 0;
 	desc->num_pending_reads = 0;
-	desc->iAvailDataCont = 0;
+	desc->available_data_count = 0;
 	desc->iAvailDataAWA = 0;
 	desc->iNbrPendingWrites = 0;
 	MarkersClear(&desc->WriteMarkers);
@@ -407,7 +407,7 @@ int BuffEmpty(struct _k_pipe_desc *desc)
 	return (desc->buffer_size == iTotalFreeSpace);
 }
 
-int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
+int CalcAvailData(struct _k_pipe_desc *desc, int *available_data_count_ptr,
 				  int *piAvailDataAWA)
 {
 	unsigned char *pStart = desc->read_ptr;
@@ -422,9 +422,9 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 		 */
 
 		if (BUFF_FULL == desc->BuffState) {
-			*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
+			*available_data_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 			*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
-			return (*piAvailDataCont + *piAvailDataAWA);
+			return (*available_data_count_ptr + *piAvailDataAWA);
 			/* this sum equals end_ptr-begin_ptr */
 		}
 	}
@@ -435,28 +435,28 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 	 */
 
 	if (pStop >= pStart) {
-		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
+		*available_data_count_ptr = SIZEOFUNIT_TO_OCTET(pStop - pStart);
 		*piAvailDataAWA = 0;
 	} else {
-		*piAvailDataCont = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
+		*available_data_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 		*piAvailDataAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 	}
-	return (*piAvailDataCont + *piAvailDataAWA);
+	return (*available_data_count_ptr + *piAvailDataAWA);
 }
 
 void BuffGetAvailData(struct _k_pipe_desc *desc, int *piAvailDataTotal,
-					  int *piAvailDataCont, int *piAvailDataAWA)
+					  int *available_data_count_ptr, int *piAvailDataAWA)
 {
-	int iAvailDataCont;
+	int available_data_count;
 	int iAvailDataAWA;
 	int iAvailDataTotal;
 
 	iAvailDataTotal =
-		CalcAvailData(desc, &iAvailDataCont, &iAvailDataAWA);
-	__ASSERT_NO_MSG(iAvailDataCont == desc->iAvailDataCont);
+		CalcAvailData(desc, &available_data_count, &iAvailDataAWA);
+	__ASSERT_NO_MSG(available_data_count == desc->available_data_count);
 	__ASSERT_NO_MSG(iAvailDataAWA == desc->iAvailDataAWA);
 	*piAvailDataTotal = iAvailDataTotal;
-	*piAvailDataCont = desc->iAvailDataCont;
+	*available_data_count_ptr = desc->available_data_count;
 	*piAvailDataAWA = desc->iAvailDataAWA;
 }
 
@@ -465,7 +465,7 @@ void BuffGetAvailDataTotal(struct _k_pipe_desc *desc, int *piAvailDataTotal)
 	int dummy1, dummy2;
 
 	*piAvailDataTotal = CalcAvailData(desc, &dummy1, &dummy2);
-	__ASSERT_NO_MSG(dummy1 == desc->iAvailDataCont);
+	__ASSERT_NO_MSG(dummy1 == desc->available_data_count);
 	__ASSERT_NO_MSG(dummy2 == desc->iAvailDataAWA);
 }
 
@@ -515,7 +515,7 @@ static void AsyncEnQFinished(struct _k_pipe_desc *desc, int iTransferID)
 
 	if (desc->WriteMarkers.first_marker == iTransferID) {
 		int iNewFirstMarker = ScanMarkers(&desc->WriteMarkers,
-										  &desc->iAvailDataCont,
+										  &desc->available_data_count,
 										  &desc->iAvailDataAWA,
 										  &desc->iNbrPendingWrites);
 		if (-1 != iNewFirstMarker) {
@@ -653,7 +653,7 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 {
 	/* asynchronous data transfer; read guard pointers must be set */
 
-	if (iSize > desc->iAvailDataCont) {
+	if (iSize > desc->available_data_count) {
 		/* free space is from read to guard pointer/end pointer */
 		return 0;
 	}
@@ -669,13 +669,13 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 	desc->read_ptr += OCTET_TO_SIZEOFUNIT(iSize);
 	if (desc->end_ptr == desc->read_ptr) {
 		desc->read_ptr = desc->begin_ptr;
-		desc->iAvailDataCont = desc->iAvailDataAWA;
+		desc->available_data_count = desc->iAvailDataAWA;
 		desc->iAvailDataAWA = 0;
 		desc->bWriteWA = false;
 		desc->bReadWA = true;
 		desc->WriteMarkers.post_wrap_around_marker = -1;
 	} else {
-		desc->iAvailDataCont -= iSize;
+		desc->available_data_count -= iSize;
 	}
 
 	if (desc->write_ptr == desc->read_ptr) {

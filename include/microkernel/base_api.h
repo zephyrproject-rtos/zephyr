@@ -192,7 +192,7 @@ struct _k_pipe_desc {
 	int free_space_count;
 	int free_space_post_wrap_around;
 	int num_pending_reads;
-	int iAvailDataCont;
+	int available_data_count;
 	int iAvailDataAWA; /* AWA == After Wrap Around */
 	int iNbrPendingWrites;
 	bool bWriteWA;
