@@ -234,13 +234,13 @@ void _k_fifo_deque_request(struct k_args *A)
 	p = A->args.q1.data;
 	n = Q->Nused;
 	if (n) {
-		q = Q->Deqp;
+		q = Q->dequeue_point;
 		memcpy(p, q, w);
 		q = (char *)((int)q + w);
 		if (q == Q->end_point)
-			Q->Deqp = Q->base;
+			Q->dequeue_point = Q->base;
 		else
-			Q->Deqp = q;
+			Q->dequeue_point = q;
 
 		A->Time.rcode = RC_OK;
 		W = Q->waiters;
@@ -355,7 +355,7 @@ void _k_fifo_ioctl(struct k_args *A)
 			}
 		}
 		Q->Nused = 0;
-		Q->enqueue_point = Q->Deqp = Q->base;
+		Q->enqueue_point = Q->dequeue_point = Q->base;
 		A->Time.rcode = RC_OK;
 	} else
 		A->Time.rcode = Q->Nused;

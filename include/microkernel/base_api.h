@@ -147,7 +147,7 @@ struct _k_fifo_struct {
 	char *base;
 	char *end_point;
 	char *enqueue_point;
-	char *Deqp;
+	char *dequeue_point;
 	struct k_args *waiters;
 	int Nused;
 	int Hmark;
