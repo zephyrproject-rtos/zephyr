@@ -325,7 +325,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->read_ptr = desc->begin_ptr;
 	desc->read_guard = NULL;
 	desc->bReadWA = true; /* YES!! */
-	desc->iFreeSpaceCont = desc->buffer_size;
+	desc->free_space_count = desc->buffer_size;
 	desc->iFreeSpaceAWA = 0;
 	desc->iNbrPendingReads = 0;
 	desc->iAvailDataCont = 0;
@@ -336,7 +336,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 
 }
 
-int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
+int CalcFreeSpace(struct _k_pipe_desc *desc, int *free_space_count_ptr,
 				  int *piFreeSpaceAWA)
 {
 	unsigned char *pStart = desc->write_ptr;
@@ -351,9 +351,9 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 		 */
 
 		if (BUFF_EMPTY == desc->BuffState) {
-			*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
+			*free_space_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
-			return (*piFreeSpaceCont + *piFreeSpaceAWA);
+			return (*free_space_count_ptr + *piFreeSpaceAWA);
 			/* this sum equals end_ptr-begin_ptr */
 		}
 	}
@@ -364,28 +364,28 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 	 */
 
 	if (pStop >= pStart) {
-		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(pStop - pStart);
+		*free_space_count_ptr = SIZEOFUNIT_TO_OCTET(pStop - pStart);
 		*piFreeSpaceAWA = 0;
 	} else {
-		*piFreeSpaceCont = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
+		*free_space_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 	}
-	return (*piFreeSpaceCont + *piFreeSpaceAWA);
+	return (*free_space_count_ptr + *piFreeSpaceAWA);
 }
 
 void BuffGetFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceTotal,
-					  int *piFreeSpaceCont, int *piFreeSpaceAWA)
+					  int *free_space_count_ptr, int *piFreeSpaceAWA)
 {
-	int iFreeSpaceCont;
+	int free_space_count;
 	int iFreeSpaceAWA;
 	int iFreeSpaceTotal;
 
 	iFreeSpaceTotal =
-		CalcFreeSpace(desc, &iFreeSpaceCont, &iFreeSpaceAWA);
-	__ASSERT_NO_MSG(iFreeSpaceCont == desc->iFreeSpaceCont);
+		CalcFreeSpace(desc, &free_space_count, &iFreeSpaceAWA);
+	__ASSERT_NO_MSG(free_space_count == desc->free_space_count);
 	__ASSERT_NO_MSG(iFreeSpaceAWA == desc->iFreeSpaceAWA);
 	*piFreeSpaceTotal = iFreeSpaceTotal;
-	*piFreeSpaceCont = desc->iFreeSpaceCont;
+	*free_space_count_ptr = desc->free_space_count;
 	*piFreeSpaceAWA = desc->iFreeSpaceAWA;
 }
 
@@ -393,7 +393,7 @@ void BuffGetFreeSpaceTotal(struct _k_pipe_desc *desc, int *piFreeSpaceTotal)
 {
 	int dummy1, dummy2;
 	*piFreeSpaceTotal = CalcFreeSpace(desc, &dummy1, &dummy2);
-	__ASSERT_NO_MSG(dummy1 == desc->iFreeSpaceCont);
+	__ASSERT_NO_MSG(dummy1 == desc->free_space_count);
 	__ASSERT_NO_MSG(dummy2 == desc->iFreeSpaceAWA);
 }
 
@@ -544,7 +544,7 @@ int BuffEnQ(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite)
 int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 			 int *piTransferID)
 {
-	if (iSize > desc->iFreeSpaceCont) {
+	if (iSize > desc->free_space_count) {
 		return 0;
 	}
 	*piTransferID = AsyncEnQRegstr(desc, iSize);
@@ -559,13 +559,13 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 	desc->write_ptr += OCTET_TO_SIZEOFUNIT(iSize);
 	if (desc->end_ptr == desc->write_ptr) {
 		desc->write_ptr = desc->begin_ptr;
-		desc->iFreeSpaceCont = desc->iFreeSpaceAWA;
+		desc->free_space_count = desc->iFreeSpaceAWA;
 		desc->iFreeSpaceAWA = 0;
 		desc->bWriteWA = true;
 		desc->bReadWA = false;
 		desc->ReadMarkers.post_wrap_around_marker = -1;
 	} else {
-		desc->iFreeSpaceCont -= iSize;
+		desc->free_space_count -= iSize;
 	}
 
 	if (desc->write_ptr == desc->read_ptr) {
@@ -625,7 +625,7 @@ static void AsyncDeQFinished(struct _k_pipe_desc *desc, int iTransferID)
 
 	if (desc->ReadMarkers.first_marker == iTransferID) {
 		int iNewFirstMarker = ScanMarkers(&desc->ReadMarkers,
-										  &desc->iFreeSpaceCont,
+										  &desc->free_space_count,
 										  &desc->iFreeSpaceAWA,
 										  &desc->iNbrPendingReads);
 		if (-1 != iNewFirstMarker) {
