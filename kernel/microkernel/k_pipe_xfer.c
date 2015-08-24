@@ -511,7 +511,7 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 
 	do {
 		iSize = min((numIterations == 2) ? pPipe->desc.free_space_count
-					: pPipe->desc.iFreeSpaceAWA,
+					: pPipe->desc.free_space_post_wrap_around,
 					pipe_write_req->iSizeTotal - pipe_write_req->iSizeXferred);
 
 		if (iSize == 0) {
@@ -620,7 +620,7 @@ static void pipe_read_write(
 	int iAvailDataWriter =
 		(pipe_write_req->iSizeTotal - pipe_write_req->iSizeXferred);
 	int iFreeSpaceBuffer =
-		(pPipe->desc.free_space_count + pPipe->desc.iFreeSpaceAWA);
+		(pPipe->desc.free_space_count + pPipe->desc.free_space_post_wrap_around);
 	int iAvailDataBuffer =
 		(pPipe->desc.iAvailDataCont + pPipe->desc.iAvailDataAWA);
 

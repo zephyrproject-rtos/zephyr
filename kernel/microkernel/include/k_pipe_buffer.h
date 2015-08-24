@@ -43,7 +43,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 
 void BuffGetFreeSpaceTotal(struct _k_pipe_desc *desc, int *piTotalFreeSpace);
 void BuffGetFreeSpace(struct _k_pipe_desc *desc, int *piTotalFreeSpace,
-					  int *free_space_count_ptr, int *piFreeSpaceAWA);
+					  int *free_space_count_ptr, int *free_space_post_wrap_around_ptr);
 
 void BuffGetAvailDataTotal(struct _k_pipe_desc *desc, int *piAvailDataTotal);
 void BuffGetAvailData(struct _k_pipe_desc *desc, int *piAvailDataTotal,

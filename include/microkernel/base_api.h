@@ -190,7 +190,7 @@ struct _k_pipe_desc {
 	unsigned char *write_guard; /* can be NULL --> invalid */
 	unsigned char *read_guard;  /* can be NULL --> invalid */
 	int free_space_count;
-	int iFreeSpaceAWA;
+	int free_space_post_wrap_around;
 	int iNbrPendingReads;
 	int iAvailDataCont;
 	int iAvailDataAWA; /* AWA == After Wrap Around */

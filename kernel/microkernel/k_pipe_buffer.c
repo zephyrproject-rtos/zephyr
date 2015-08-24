@@ -326,7 +326,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->read_guard = NULL;
 	desc->bReadWA = true; /* YES!! */
 	desc->free_space_count = desc->buffer_size;
-	desc->iFreeSpaceAWA = 0;
+	desc->free_space_post_wrap_around = 0;
 	desc->iNbrPendingReads = 0;
 	desc->iAvailDataCont = 0;
 	desc->iAvailDataAWA = 0;
@@ -337,7 +337,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 }
 
 int CalcFreeSpace(struct _k_pipe_desc *desc, int *free_space_count_ptr,
-				  int *piFreeSpaceAWA)
+				  int *free_space_post_wrap_around_ptr)
 {
 	unsigned char *pStart = desc->write_ptr;
 	unsigned char *pStop = desc->read_ptr;
@@ -352,8 +352,8 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *free_space_count_ptr,
 
 		if (BUFF_EMPTY == desc->BuffState) {
 			*free_space_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
-			*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
-			return (*free_space_count_ptr + *piFreeSpaceAWA);
+			*free_space_post_wrap_around_ptr = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
+			return (*free_space_count_ptr + *free_space_post_wrap_around_ptr);
 			/* this sum equals end_ptr-begin_ptr */
 		}
 	}
@@ -365,28 +365,28 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *free_space_count_ptr,
 
 	if (pStop >= pStart) {
 		*free_space_count_ptr = SIZEOFUNIT_TO_OCTET(pStop - pStart);
-		*piFreeSpaceAWA = 0;
+		*free_space_post_wrap_around_ptr = 0;
 	} else {
 		*free_space_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
-		*piFreeSpaceAWA = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
+		*free_space_post_wrap_around_ptr = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 	}
-	return (*free_space_count_ptr + *piFreeSpaceAWA);
+	return (*free_space_count_ptr + *free_space_post_wrap_around_ptr);
 }
 
 void BuffGetFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceTotal,
-					  int *free_space_count_ptr, int *piFreeSpaceAWA)
+					  int *free_space_count_ptr, int *free_space_post_wrap_around_ptr)
 {
 	int free_space_count;
-	int iFreeSpaceAWA;
+	int free_space_post_wrap_around;
 	int iFreeSpaceTotal;
 
 	iFreeSpaceTotal =
-		CalcFreeSpace(desc, &free_space_count, &iFreeSpaceAWA);
+		CalcFreeSpace(desc, &free_space_count, &free_space_post_wrap_around);
 	__ASSERT_NO_MSG(free_space_count == desc->free_space_count);
-	__ASSERT_NO_MSG(iFreeSpaceAWA == desc->iFreeSpaceAWA);
+	__ASSERT_NO_MSG(free_space_post_wrap_around == desc->free_space_post_wrap_around);
 	*piFreeSpaceTotal = iFreeSpaceTotal;
 	*free_space_count_ptr = desc->free_space_count;
-	*piFreeSpaceAWA = desc->iFreeSpaceAWA;
+	*free_space_post_wrap_around_ptr = desc->free_space_post_wrap_around;
 }
 
 void BuffGetFreeSpaceTotal(struct _k_pipe_desc *desc, int *piFreeSpaceTotal)
@@ -394,7 +394,7 @@ void BuffGetFreeSpaceTotal(struct _k_pipe_desc *desc, int *piFreeSpaceTotal)
 	int dummy1, dummy2;
 	*piFreeSpaceTotal = CalcFreeSpace(desc, &dummy1, &dummy2);
 	__ASSERT_NO_MSG(dummy1 == desc->free_space_count);
-	__ASSERT_NO_MSG(dummy2 == desc->iFreeSpaceAWA);
+	__ASSERT_NO_MSG(dummy2 == desc->free_space_post_wrap_around);
 }
 
 int BuffEmpty(struct _k_pipe_desc *desc)
@@ -559,8 +559,8 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 	desc->write_ptr += OCTET_TO_SIZEOFUNIT(iSize);
 	if (desc->end_ptr == desc->write_ptr) {
 		desc->write_ptr = desc->begin_ptr;
-		desc->free_space_count = desc->iFreeSpaceAWA;
-		desc->iFreeSpaceAWA = 0;
+		desc->free_space_count = desc->free_space_post_wrap_around;
+		desc->free_space_post_wrap_around = 0;
 		desc->bWriteWA = true;
 		desc->bReadWA = false;
 		desc->ReadMarkers.post_wrap_around_marker = -1;
@@ -626,7 +626,7 @@ static void AsyncDeQFinished(struct _k_pipe_desc *desc, int iTransferID)
 	if (desc->ReadMarkers.first_marker == iTransferID) {
 		int iNewFirstMarker = ScanMarkers(&desc->ReadMarkers,
 										  &desc->free_space_count,
-										  &desc->iFreeSpaceAWA,
+										  &desc->free_space_post_wrap_around,
 										  &desc->iNbrPendingReads);
 		if (-1 != iNewFirstMarker) {
 			desc->write_guard =
