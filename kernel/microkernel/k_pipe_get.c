@@ -72,8 +72,8 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 	switch (_k_pipe_request_type_get(&RequestProc->args)) {
 	case _SYNCREQ:
-		RequestProc->args.pipe_xfer_req.pData =
-			Request->args.pipe_req.ReqType.Sync.pData;
+		RequestProc->args.pipe_xfer_req.data_ptr =
+			Request->args.pipe_req.ReqType.Sync.data_ptr;
 		RequestProc->args.pipe_xfer_req.iSizeTotal =
 			Request->args.pipe_req.ReqType.Sync.iSizeTotal;
 		break;

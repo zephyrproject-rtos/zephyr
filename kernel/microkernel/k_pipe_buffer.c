@@ -62,8 +62,8 @@
    acceptable I think)
  */
 
-#define CHECK_BUFFER_POINTER(pData) \
-	__ASSERT_NO_MSG(desc->begin_ptr <= pData && pData < desc->end_ptr)
+#define CHECK_BUFFER_POINTER(data_ptr) \
+	__ASSERT_NO_MSG(desc->begin_ptr <= data_ptr && data_ptr < desc->end_ptr)
 
 static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin_ptr, int iSize);
 

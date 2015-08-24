@@ -178,7 +178,7 @@ struct req_info {
 };
 
 struct sync_req {
-	void *pData;
+	void *data_ptr;
 	int iSizeTotal;
 };
 
@@ -199,7 +199,7 @@ struct _pipe_req_arg {
 
 struct _pipe_xfer_req_arg {
 	struct req_info ReqInfo;
-	void *pData; /* if NULL, data is embedded in
+	void *data_ptr; /* if NULL, data is embedded in
 			     cmd packet		    */
 	int iSizeTotal;      /* total size of data/free space    */
 	int iSizeXferred;    /* size of data ALREADY Xferred	    */

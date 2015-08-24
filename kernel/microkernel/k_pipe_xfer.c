@@ -457,7 +457,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_B2R, NULL, pReader,
-			(char *)(pipe_read_req->pData) +
+			(char *)(pipe_read_req->data_ptr) +
 			OCTET_TO_SIZEOFUNIT(pipe_read_req->iSizeXferred),
 			read_ptr, ret, id);
 		_k_movedata_request(Moved_req);
@@ -527,7 +527,7 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_W2B, pWriter, NULL, write_ptr,
-			(char *)(pipe_write_req->pData) +
+			(char *)(pipe_write_req->data_ptr) +
 			OCTET_TO_SIZEOFUNIT(pipe_write_req->iSizeXferred),
 			ret, (numIterations == 2) ? id : -1);
 		_k_movedata_request(Moved_req);
@@ -664,9 +664,9 @@ static void pipe_read_write(
 
 		GETARGS(Moved_req);
 		setup_movedata(Moved_req, pPipe, XFER_W2R, pWriter, pReader,
-			(char *)(pipe_read_req->pData) +
+			(char *)(pipe_read_req->data_ptr) +
 			OCTET_TO_SIZEOFUNIT(pipe_read_req->iSizeXferred),
-			(char *)(pipe_write_req->pData) +
+			(char *)(pipe_write_req->data_ptr) +
 			OCTET_TO_SIZEOFUNIT(pipe_write_req->iSizeXferred),
 			iT2, -1);
 		_k_movedata_request(Moved_req);
