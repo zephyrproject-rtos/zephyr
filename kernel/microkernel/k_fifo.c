@@ -124,7 +124,7 @@ void _k_fifo_enque_request(struct k_args *A)
 			p = Q->Enqp;
 			memcpy(p, q, w);
 			p = (char *)((int)p + w);
-			if (p == Q->Endp)
+			if (p == Q->end_point)
 				Q->Enqp = Q->base;
 			else
 				Q->Enqp = p;
@@ -237,7 +237,7 @@ void _k_fifo_deque_request(struct k_args *A)
 		q = Q->Deqp;
 		memcpy(p, q, w);
 		q = (char *)((int)q + w);
-		if (q == Q->Endp)
+		if (q == Q->end_point)
 			Q->Deqp = Q->base;
 		else
 			Q->Deqp = q;
@@ -251,7 +251,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			w = OCTET_TO_SIZEOFUNIT(Q->element_size);
 			memcpy(p, q, w);
 			p = (char *)((int)p + w);
-			if (p == Q->Endp)
+			if (p == Q->end_point)
 				Q->Enqp = Q->base;
 			else
 				Q->Enqp = p;
