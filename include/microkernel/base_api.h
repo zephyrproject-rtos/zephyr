@@ -205,7 +205,7 @@ struct _k_pipe_desc {
 };
 
 struct _k_pipe_struct {
-	int iBufferSize; /* size in bytes, must be first for sysgen */
+	int buffer_size; /* size in bytes, must be first for sysgen */
 	char *Buffer;    /* pointer to statically allocated buffer  */
 	struct k_args *writers;
 	struct k_args *readers;

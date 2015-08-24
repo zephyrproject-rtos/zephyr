@@ -85,7 +85,7 @@ extern int _task_pipe_block_put(kpipe_t id,
  */
 #define __K_PIPE_INITIALIZER(size, buffer) \
 	{ \
-	  .iBufferSize = size, \
+	  .buffer_size = size, \
 	  .Buffer = buffer, \
 	}
 
