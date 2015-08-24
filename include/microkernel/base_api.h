@@ -171,7 +171,7 @@ struct _k_pipe_marker_list {
 	int first_marker;
 	int last_marker;
 	int post_wrap_around_marker; /* -1 means no post wrap around markers */
-	struct _k_pipe_marker aMarkers[MAXNBR_PIPE_MARKERS];
+	struct _k_pipe_marker markers[MAXNBR_PIPE_MARKERS];
 };
 
 typedef enum {
