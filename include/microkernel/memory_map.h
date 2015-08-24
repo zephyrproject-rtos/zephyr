@@ -122,7 +122,7 @@ extern int task_mem_map_used_get(kmemory_map_t map);
 	{ \
 	  .Nelms = blocks, \
 	  .element_size = block_size, \
-	  .Base = buffer, \
+	  .base = buffer, \
 	}
 
 /**

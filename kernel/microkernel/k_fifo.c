@@ -125,7 +125,7 @@ void _k_fifo_enque_request(struct k_args *A)
 			memcpy(p, q, w);
 			p = (char *)((int)p + w);
 			if (p == Q->Endp)
-				Q->Enqp = Q->Base;
+				Q->Enqp = Q->base;
 			else
 				Q->Enqp = p;
 			Q->Nused = ++n;
@@ -238,7 +238,7 @@ void _k_fifo_deque_request(struct k_args *A)
 		memcpy(p, q, w);
 		q = (char *)((int)q + w);
 		if (q == Q->Endp)
-			Q->Deqp = Q->Base;
+			Q->Deqp = Q->base;
 		else
 			Q->Deqp = q;
 
@@ -252,7 +252,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			memcpy(p, q, w);
 			p = (char *)((int)p + w);
 			if (p == Q->Endp)
-				Q->Enqp = Q->Base;
+				Q->Enqp = Q->base;
 			else
 				Q->Enqp = p;
 
@@ -355,7 +355,7 @@ void _k_fifo_ioctl(struct k_args *A)
 			}
 		}
 		Q->Nused = 0;
-		Q->Enqp = Q->Deqp = Q->Base;
+		Q->Enqp = Q->Deqp = Q->base;
 		A->Time.rcode = RC_OK;
 	} else
 		A->Time.rcode = Q->Nused;

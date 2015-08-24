@@ -63,7 +63,7 @@ void _k_mem_map_init(void)
 
 		w = OCTET_TO_SIZEOFUNIT(M->element_size);
 
-		p = M->Base;
+		p = M->base;
 		q = NULL;
 
 		for (j = 0; j < M->Nelms; j++) {

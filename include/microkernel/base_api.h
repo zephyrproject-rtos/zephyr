@@ -144,7 +144,7 @@ struct _k_sem_struct {
 struct _k_fifo_struct {
 	int Nelms;
 	int element_size;
-	char *Base;
+	char *base;
 	char *Endp;
 	char *Enqp;
 	char *Deqp;
@@ -224,7 +224,7 @@ typedef enum {
 struct _k_mem_map_struct {
 	int Nelms;
 	int element_size;
-	char *Base;
+	char *base;
 	char *Free;
 	struct k_args *waiters;
 	int Nused;
