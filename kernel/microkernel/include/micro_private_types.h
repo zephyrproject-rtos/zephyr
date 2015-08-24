@@ -174,7 +174,7 @@ struct req_info {
 		kpipe_t id;
 		struct _k_pipe_struct *ptr;
 	} pipe;
-	int Params;
+	int params;
 };
 
 struct sync_req {
