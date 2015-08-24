@@ -1,43 +1,66 @@
 .. _microkernel_fifos:
 
-Microkernel FIFOs
-#################
+FIFOs
+#####
 
-Definition
-**********
-
-The FIFO is defined in :file:`include/microkernel/fifo.h` as a simple
-first-in, first-out queue that handle small amounts of fixed size data.
-FIFO objects have a buffer that stores a number of data transmits, and
-are the most efficient way to pass small amounts of data between tasks.
-FIFO objects are suitable for asynchronously transferring small amounts
-of data, such as parameters, between tasks.
-
-Function
+Concepts
 ********
 
+The microkernel's FIFO object type is an implementation of a traditional
+first in, first out queue.
 
-FIFO objects store data in a statically allocated buffer defined within
-the project’s MDEF file. The depth of the FIFO object buffer is only
-limited by the available memory on the platform. Individual FIFO data
-objects can be at most 40 bytes in size, and are stored in an ordered
-first-come, first-serve basis, not by priority.
+A FIFO allows tasks to asynchronously send and receive fixed-size data items.
+Each FIFO has an associated ring buffer for holding data items that have been
+sent but not yet received.
 
-FIFO objects are asynchronous. When using a FIFO object, the sender can
-add data even if the receiver is not ready yet. This only applies if
-there is sufficient space on the buffer to store the sender's data.
+Any number of FIFOs can be defined in a microkernel system. Each FIFO has a
+name that uniquely identifies it. In addition, a FIFO defines the size of
+the data items it handles and the maximum number of data items that can be
+queued in its ring buffer, both of which must be greater than zero.
 
-FIFO objects are anonymous. The kernel object does not store the sender
-or receiver identity. If the sender identification is required, it is
-up to the caller to store that information in the data placed into the
-FIFO. The receiving task can then check it. Alternatively, mailboxes
-can be used to specify the sender and receiver identities.
+A task sends a data item by specifying a pointer to an area containing the data
+to be sent; the size of the data area must equal the FIFO's data item size.
+The data is given directly to a receiving task (if one is waiting) or copied
+to the FIFO's ring buffer (if space is available). When a FIFO is full
+the sending task may choose to wait for space to become available.
 
-FIFO objects read and write actions are always fixed-size block-based.
-The width of each FIFO object block is specified in the project file.
-If a task calls :c:func:`task_fifo_get()` and the call succeeds, then
-the fixed number of bytes is copied from the FIFO object into the
-addresses of the destination pointer.
+Any number of tasks may wait on a full FIFO simultaneously; when space for
+a data item becomes available it is given to the highest priority task that
+has waited the longest.
+
+A task receives a data item by specifying a pointer to an area to receive
+the data; the size of the receiving area must equal the FIFO's data item size.
+The data is copied from the FIFO's ring buffer (if it contains data items)
+or taken directly from a sending task (if the FIFO is empty). When a FIFO
+is empty the task may choose to wait for a data item to become available.
+
+Any number of tasks may wait on an empty FIFO simultaneously; when a data item
+becomes available it is given to the highest priority task that has waited
+the longest.
+
+
+Purpose
+*******
+
+Use a FIFO to transfer small data items between tasks in an asynchronous and
+anonymous manner.
+
+.. note::
+   A FIFO can be used to transfer large data items, if desired. However,
+   it is often preferable to send pointers to large data items to avoid
+   copying the data. The microkernel's memory map and memory pool object
+   types can be helpful for data transfers of this sort.
+
+   A synchronous transfer can be achieved using the microkernel's mailbox
+   object type.
+
+   A non-anonymous transfer can be achieved by having the sending task
+   embed its name in the data it sends, where it can be retrieved by
+   the receiving task. However, there is no straightforward way for the
+   sending task to determine the name of the task that received its data.
+   The microkernel's mailbox object type *does* support non-anonymous data
+   transfer.
+
 
 Usage
 *****
