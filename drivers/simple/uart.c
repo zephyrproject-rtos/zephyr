@@ -44,7 +44,7 @@
 #include <simple/uart.h>
 #include <misc/printk.h>
 
-#define UART (&uart_devs[CONFIG_UART_SIMPLE_INDEX])
+#define UART (uart_devs[CONFIG_UART_SIMPLE_INDEX])
 
 static uint8_t *recv_buf;
 static size_t recv_buf_len;
