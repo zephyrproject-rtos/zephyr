@@ -427,7 +427,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 	struct k_args *pReader;
 	struct _pipe_xfer_req_arg *pipe_read_req;
 
-	unsigned char *pRead;
+	unsigned char *read_ptr;
 	int iSize;
 	int id;
 	int ret;
@@ -450,7 +450,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 
 		struct k_args *Moved_req;
 
-		ret = BuffDeQA(&pPipe->desc, iSize, &pRead, &id);
+		ret = BuffDeQA(&pPipe->desc, iSize, &read_ptr, &id);
 		if (0 == ret) {
 			return;
 		}
@@ -459,7 +459,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 		setup_movedata(Moved_req, pPipe, XFER_B2R, NULL, pReader,
 			(char *)(pipe_read_req->pData) +
 			OCTET_TO_SIZEOFUNIT(pipe_read_req->iSizeXferred),
-			pRead, ret, id);
+			read_ptr, ret, id);
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 

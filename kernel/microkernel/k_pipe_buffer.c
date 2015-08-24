@@ -322,7 +322,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->write_ptr = desc->begin_ptr;
 	desc->pWriteGuard = NULL;
 	desc->bWriteWA = false;
-	desc->pRead = desc->begin_ptr;
+	desc->read_ptr = desc->begin_ptr;
 	desc->pReadGuard = NULL;
 	desc->bReadWA = true; /* YES!! */
 	desc->iFreeSpaceCont = desc->buffer_size;
@@ -340,7 +340,7 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *piFreeSpaceCont,
 				  int *piFreeSpaceAWA)
 {
 	unsigned char *pStart = desc->write_ptr;
-	unsigned char *pStop = desc->pRead;
+	unsigned char *pStop = desc->read_ptr;
 
 	if (NULL != desc->pWriteGuard) {
 		pStop = desc->pWriteGuard;
@@ -410,7 +410,7 @@ int BuffEmpty(struct _k_pipe_desc *desc)
 int CalcAvailData(struct _k_pipe_desc *desc, int *piAvailDataCont,
 				  int *piAvailDataAWA)
 {
-	unsigned char *pStart = desc->pRead;
+	unsigned char *pStart = desc->read_ptr;
 	unsigned char *pStop = desc->write_ptr;
 
 	if (NULL != desc->pReadGuard) {
@@ -568,7 +568,7 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 		desc->iFreeSpaceCont -= iSize;
 	}
 
-	if (desc->write_ptr == desc->pRead) {
+	if (desc->write_ptr == desc->read_ptr) {
 		desc->BuffState = BUFF_FULL;
 	} else {
 		desc->BuffState = BUFF_OTHER;
@@ -597,16 +597,16 @@ static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int iSize)
 {
 	int i;
 
-	pipe_intrusion_check(desc, desc->pRead, iSize);
+	pipe_intrusion_check(desc, desc->read_ptr, iSize);
 
-	i = MarkerAddLast(&desc->ReadMarkers, desc->pRead, iSize, true);
+	i = MarkerAddLast(&desc->ReadMarkers, desc->read_ptr, iSize, true);
 	if (i != -1) {
 		/* adjust iNbrPendingReads */
 		__ASSERT_NO_MSG(0 <= desc->iNbrPendingReads);
 		desc->iNbrPendingReads++;
 		/* pWriteGuard changes? */
 		if (NULL == desc->pWriteGuard) {
-			desc->pWriteGuard = desc->pRead;
+			desc->pWriteGuard = desc->read_ptr;
 		}
 		__ASSERT_NO_MSG(desc->ReadMarkers.markers
 						[desc->ReadMarkers.first_marker].pointer ==
@@ -662,13 +662,13 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 		return 0;
 	}
 
-	*ppRead = desc->pRead;
+	*ppRead = desc->read_ptr;
 
 	/* adjust read pointer and avail data */
 
-	desc->pRead += OCTET_TO_SIZEOFUNIT(iSize);
-	if (desc->end_ptr == desc->pRead) {
-		desc->pRead = desc->begin_ptr;
+	desc->read_ptr += OCTET_TO_SIZEOFUNIT(iSize);
+	if (desc->end_ptr == desc->read_ptr) {
+		desc->read_ptr = desc->begin_ptr;
 		desc->iAvailDataCont = desc->iAvailDataAWA;
 		desc->iAvailDataAWA = 0;
 		desc->bWriteWA = false;
@@ -678,13 +678,13 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 		desc->iAvailDataCont -= iSize;
 	}
 
-	if (desc->write_ptr == desc->pRead) {
+	if (desc->write_ptr == desc->read_ptr) {
 		desc->BuffState = BUFF_EMPTY;
 	} else {
 		desc->BuffState = BUFF_OTHER;
 	}
 
-	CHECK_BUFFER_POINTER(desc->pRead);
+	CHECK_BUFFER_POINTER(desc->read_ptr);
 
 	return iSize;
 }

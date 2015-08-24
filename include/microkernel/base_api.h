@@ -186,7 +186,7 @@ struct _k_pipe_desc {
 	int buffer_size;
 	unsigned char *begin_ptr;
 	unsigned char *write_ptr;
-	unsigned char *pRead;
+	unsigned char *read_ptr;
 	unsigned char *pWriteGuard; /* can be NULL --> invalid */
 	unsigned char *pReadGuard;  /* can be NULL --> invalid */
 	int iFreeSpaceCont;
