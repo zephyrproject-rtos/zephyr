@@ -137,7 +137,7 @@ void _k_fifo_enque_request(struct k_args *A)
 
 		A->Time.rcode = RC_OK;
 #ifdef CONFIG_OBJECT_MONITOR
-		Q->Count++;
+		Q->count++;
 #endif
 	} else {
 		if (likely(A->Time.ticks != TICKS_NONE)) {
@@ -268,7 +268,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			}
 #endif
 #ifdef CONFIG_OBJECT_MONITOR
-			Q->Count++;
+			Q->count++;
 #endif
 		} else
 			Q->Nused = --n;

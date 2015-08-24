@@ -363,7 +363,7 @@ void _k_mbox_send_request(struct k_args *Writer)
 
 		if ((uint32_t)(-1) != u32Size) {
 #ifdef CONFIG_OBJECT_MONITOR
-			MailBox->Count++;
+			MailBox->count++;
 #endif
 
 			/*
@@ -586,7 +586,7 @@ void _k_mbox_receive_request(struct k_args *Reader)
 
 		if ((uint32_t)(-1) != u32Size) {
 #ifdef CONFIG_OBJECT_MONITOR
-			MailBox->Count++;
+			MailBox->count++;
 #endif
 
 			/*

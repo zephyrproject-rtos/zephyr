@@ -259,7 +259,7 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 	{ \
 	  .waiters = NULL, \
 	  .level = 0, \
-	  .Count = 0, \
+	  .count = 0, \
 	}
 
 /**

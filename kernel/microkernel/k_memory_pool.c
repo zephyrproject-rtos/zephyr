@@ -65,7 +65,7 @@ void _k_mem_pool_init(void)
 
 		/* initialise block-arrays */
 		for (k = 0; k < P->nr_of_frags; k++) {
-			P->frag_tab[k].Count = 0;
+			P->frag_tab[k].count = 0;
 			for (j = 0; j < P->frag_tab[k].nr_of_entries; j++) {
 				P->frag_tab[k].blocktable[j].mem_blocks = NULL;
 				P->frag_tab[k].blocktable[j].mem_status =
@@ -273,7 +273,7 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 				pfraglevelinfo->blocktable[i].mem_status |=
 					1; /* set status used */
 #ifdef CONFIG_OBJECT_MONITOR
-				pfraglevelinfo->Count++;
+				pfraglevelinfo->count++;
 #endif
 				break;
 			} else if (!(status & 2)) {
@@ -284,7 +284,7 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 				pfraglevelinfo->blocktable[i].mem_status |=
 					2; /* set status used */
 #ifdef CONFIG_OBJECT_MONITOR
-				pfraglevelinfo->Count++;
+				pfraglevelinfo->count++;
 #endif
 				break;
 			} else if (!(status & 4)) {
@@ -296,7 +296,7 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 				pfraglevelinfo->blocktable[i].mem_status |=
 					4; /* set status used */
 #ifdef CONFIG_OBJECT_MONITOR
-				pfraglevelinfo->Count++;
+				pfraglevelinfo->count++;
 #endif
 				break;
 			} else if (!(status & 8)) {
@@ -308,7 +308,7 @@ static char *search_block_on_frag_level(struct pool_block *pfraglevelinfo,
 				pfraglevelinfo->blocktable[i].mem_status |=
 					8; /* set status used */
 #ifdef CONFIG_OBJECT_MONITOR
-				pfraglevelinfo->Count++;
+				pfraglevelinfo->count++;
 #endif
 				break;
 			}
@@ -382,7 +382,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 		fr_table[index].blocktable[i].mem_blocks = larger_block;
 		fr_table[index].blocktable[i].mem_status = 1;
 #ifdef CONFIG_OBJECT_MONITOR
-		fr_table[index].Count++;
+		fr_table[index].count++;
 #endif
 		return larger_block; /* return marked block */
 	}

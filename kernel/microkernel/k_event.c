@@ -187,7 +187,7 @@ void _k_do_event_signal(kevent_t event)
 	}
 
 #ifdef CONFIG_OBJECT_MONITOR
-	E->Count++;
+	E->count++;
 #endif
 }
 

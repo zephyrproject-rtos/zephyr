@@ -74,7 +74,7 @@ void _k_mem_map_init(void)
 		M->Free = q;
 		M->Nused = 0;
 		M->Hmark = 0;
-		M->Count = 0;
+		M->count = 0;
 	}
 }
 
@@ -111,7 +111,7 @@ void _k_mem_map_alloc(struct k_args *A)
 		M->Nused++;
 
 #ifdef CONFIG_OBJECT_MONITOR
-		M->Count++;
+		M->count++;
 		if (M->Hmark < M->Nused)
 			M->Hmark = M->Nused;
 #endif
@@ -195,7 +195,7 @@ void _k_mem_map_dealloc(struct k_args *A)
 		_k_state_bit_reset(X->Ctxt.task, TF_ALLO);
 
 #ifdef CONFIG_OBJECT_MONITOR
-		M->Count++;
+		M->count++;
 #endif
 
 		return;

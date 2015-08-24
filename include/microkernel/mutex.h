@@ -121,7 +121,7 @@ extern void _task_mutex_unlock(kmutex_t mutex);
 	  .original_owner_priority = 64, \
 	  .level = 0, \
 	  .waiters = NULL, \
-	  .Count = 0, \
+	  .count = 0, \
 	  .Confl = 0, \
 	}
 

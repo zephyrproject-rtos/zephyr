@@ -182,7 +182,7 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 	if (Mutex->level == 0 || Mutex->owner == A->args.l1.task) {
 		/* The mutex is either unowned or this is a nested lock. */
 #ifdef CONFIG_OBJECT_MONITOR
-		Mutex->Count++;
+		Mutex->count++;
 #endif
 
 		Mutex->owner = A->args.l1.task;
@@ -332,7 +332,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 		struct k_args *X;
 
 #ifdef CONFIG_OBJECT_MONITOR
-		Mutex->Count++;
+		Mutex->count++;
 #endif
 
 		if (Mutex->current_owner_priority != Mutex->original_owner_priority) {

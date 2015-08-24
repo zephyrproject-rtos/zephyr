@@ -408,7 +408,7 @@ struct pool_block {
 	int block_size;
 	int nr_of_entries;
 	struct block_stat *blocktable;
-	int Count;
+	int count;
 };
 
 struct pool_struct {
@@ -430,7 +430,7 @@ struct evstr {
 	int status;
 	kevent_handler_t func;
 	struct k_args *waiter;
-	int Count;
+	int count;
 };
 
 #ifdef __cplusplus

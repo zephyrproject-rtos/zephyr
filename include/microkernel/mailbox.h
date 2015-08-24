@@ -221,7 +221,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
 	{ \
 	  .writers = NULL, \
 	  .readers = NULL, \
-	  .Count = 0, \
+	  .count = 0, \
 	}
 
 /**

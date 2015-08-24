@@ -51,7 +51,7 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 	struct k_args *A, *X, *Y;
 
 #ifdef CONFIG_OBJECT_MONITOR
-	S->Count += n;
+	S->count += n;
 #endif
 
 	S->level += n;

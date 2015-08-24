@@ -122,7 +122,7 @@ struct k_task {
 struct _k_mbox_struct {
 	struct k_args *writers;
 	struct k_args *readers;
-	int Count;
+	int count;
 };
 
 struct _k_mutex_struct {
@@ -131,14 +131,14 @@ struct _k_mutex_struct {
 	kpriority_t original_owner_priority;
 	int level;
 	struct k_args *waiters;
-	int Count;
+	int count;
 	int Confl;
 };
 
 struct _k_sem_struct {
 	struct k_args *waiters;
 	int level;
-	int Count;
+	int count;
 };
 
 struct _k_fifo_struct {
@@ -151,7 +151,7 @@ struct _k_fifo_struct {
 	struct k_args *waiters;
 	int Nused;
 	int Hmark;
-	int Count;
+	int count;
 };
 
 /* Pipe-related structures */
@@ -210,7 +210,7 @@ struct _k_pipe_struct {
 	struct k_args *writers;
 	struct k_args *readers;
 	struct _k_pipe_desc desc;
-	int Count;
+	int count;
 };
 
 typedef enum {
@@ -229,7 +229,7 @@ struct _k_mem_map_struct {
 	struct k_args *waiters;
 	int Nused;
 	int Hmark;
-	int Count;
+	int count;
 };
 
 #ifdef __cplusplus
