@@ -195,7 +195,7 @@ struct _k_pipe_desc {
 	int available_data_count;
 	int available_data_post_wrap_around; /* AWA == After Wrap Around */
 	int num_pending_writes;
-	bool bWriteWA;
+	bool wrap_around_write;
 	bool bReadWA;
 	_K_PIPE_BUFF_STATE BuffState;
 	struct _k_pipe_marker_list WriteMarkers;

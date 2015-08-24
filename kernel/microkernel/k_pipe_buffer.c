@@ -321,7 +321,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->end_ptr = desc->original_end_ptr;
 	desc->write_ptr = desc->begin_ptr;
 	desc->write_guard = NULL;
-	desc->bWriteWA = false;
+	desc->wrap_around_write = false;
 	desc->read_ptr = desc->begin_ptr;
 	desc->read_guard = NULL;
 	desc->bReadWA = true; /* YES!! */
@@ -502,7 +502,7 @@ static int AsyncEnQRegstr(struct _k_pipe_desc *desc, int iSize)
 						[desc->WriteMarkers.first_marker].pointer ==
 						desc->read_guard);
 		/* post_wrap_around_marker changes? */
-		if (-1 == desc->WriteMarkers.post_wrap_around_marker && desc->bWriteWA) {
+		if (-1 == desc->WriteMarkers.post_wrap_around_marker && desc->wrap_around_write) {
 			desc->WriteMarkers.post_wrap_around_marker = i;
 		}
 	}
@@ -561,7 +561,7 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 		desc->write_ptr = desc->begin_ptr;
 		desc->free_space_count = desc->free_space_post_wrap_around;
 		desc->free_space_post_wrap_around = 0;
-		desc->bWriteWA = true;
+		desc->wrap_around_write = true;
 		desc->bReadWA = false;
 		desc->ReadMarkers.post_wrap_around_marker = -1;
 	} else {
@@ -671,7 +671,7 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 		desc->read_ptr = desc->begin_ptr;
 		desc->available_data_count = desc->available_data_post_wrap_around;
 		desc->available_data_post_wrap_around = 0;
-		desc->bWriteWA = false;
+		desc->wrap_around_write = false;
 		desc->bReadWA = true;
 		desc->WriteMarkers.post_wrap_around_marker = -1;
 	} else {
