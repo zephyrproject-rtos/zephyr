@@ -179,12 +179,12 @@ struct req_info {
 
 struct sync_req {
 	void *data_ptr;
-	int iSizeTotal;
+	int total_size;
 };
 
 struct async_req {
 	struct k_block block;
-	int iSizeTotal;
+	int total_size;
 	ksem_t sema;
 };
 
@@ -201,7 +201,7 @@ struct _pipe_xfer_req_arg {
 	struct req_info ReqInfo;
 	void *data_ptr; /* if NULL, data is embedded in
 			     cmd packet		    */
-	int iSizeTotal;      /* total size of data/free space    */
+	int total_size;      /* total size of data/free space    */
 	int iSizeXferred;    /* size of data ALREADY Xferred	    */
 	PIPE_REQUEST_STATUS status; /* status of processing of request  */
 	int iNbrPendXfers;   /* # data Xfers (still) in progress */

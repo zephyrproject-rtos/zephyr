@@ -86,14 +86,14 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	case _SYNCREQ:
 		RequestProc->args.pipe_xfer_req.data_ptr =
 			Request->args.pipe_req.ReqType.Sync.data_ptr;
-		RequestProc->args.pipe_xfer_req.iSizeTotal =
-			Request->args.pipe_req.ReqType.Sync.iSizeTotal;
+		RequestProc->args.pipe_xfer_req.total_size =
+			Request->args.pipe_req.ReqType.Sync.total_size;
 		break;
 	case _ASYNCREQ:
 		RequestProc->args.pipe_xfer_req.data_ptr =
 			Request->args.pipe_req.ReqType.Async.block.pointer_to_data;
-		RequestProc->args.pipe_xfer_req.iSizeTotal =
-			Request->args.pipe_req.ReqType.Async.iSizeTotal;
+		RequestProc->args.pipe_xfer_req.total_size =
+			Request->args.pipe_req.ReqType.Async.total_size;
 		break;
 	default:
 		break;
@@ -256,7 +256,7 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 		K_PIPE_OPTION Option = _k_pipe_option_get(&ReqProc->args);
 
 		if (likely(ReqProc->args.pipe_xfer_req.iSizeXferred ==
-				   ReqProc->args.pipe_xfer_req.iSizeTotal)) {
+				   ReqProc->args.pipe_xfer_req.total_size)) {
 			/* All data has been transferred */
 			ReqOrig->Time.rcode = RC_OK;
 		} else if (ReqProc->args.pipe_xfer_req.iSizeXferred != 0) {

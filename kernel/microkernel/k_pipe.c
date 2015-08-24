@@ -101,7 +101,7 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	A.Time.ticks = TimeOut;
 
 	A.args.pipe_req.ReqInfo.pipe.id = Id;
-	A.args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToRead;
+	A.args.pipe_req.ReqType.Sync.total_size = iNbrBytesToRead;
 	A.args.pipe_req.ReqType.Sync.data_ptr = pBuffer;
 
 	_k_pipe_option_set(&A.args, Option);
@@ -153,7 +153,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	A.Time.ticks = TimeOut;
 
 	A.args.pipe_req.ReqInfo.pipe.id = Id;
-	A.args.pipe_req.ReqType.Sync.iSizeTotal = iNbrBytesToWrite;
+	A.args.pipe_req.ReqType.Sync.total_size = iNbrBytesToWrite;
 	A.args.pipe_req.ReqType.Sync.data_ptr = pBuffer;
 
 	_k_pipe_option_set(&A.args, Option);
@@ -200,7 +200,7 @@ int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 
 	A.args.pipe_req.ReqInfo.pipe.id = Id;
 	A.args.pipe_req.ReqType.Async.block = Block;
-	A.args.pipe_req.ReqType.Async.iSizeTotal = iSize2Xfer;
+	A.args.pipe_req.ReqType.Async.total_size = iSize2Xfer;
 	A.args.pipe_req.ReqType.Async.sema = Sema;
 
 	_k_pipe_request_type_set(&A.args, _ASYNCREQ);

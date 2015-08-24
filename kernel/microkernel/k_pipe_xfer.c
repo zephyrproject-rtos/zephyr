@@ -355,7 +355,7 @@ static int ReaderInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 	/* third condition: */
 
 	iSizeSpaceInReader =
-		pReader->args.pipe_xfer_req.iSizeTotal -
+		pReader->args.pipe_xfer_req.total_size -
 		pReader->args.pipe_xfer_req.iSizeXferred;
 	BuffGetAvailDataTotal(&pPipe->desc, &iAvailBufferData);
 	if (iAvailBufferData >= iSizeSpaceInReader) {
@@ -401,7 +401,7 @@ static int WriterInProgressIsBlocked(struct _k_pipe_struct *pPipe,
 	/* third condition: */
 
 	iSizeDataInWriter =
-		pWriter->args.pipe_xfer_req.iSizeTotal -
+		pWriter->args.pipe_xfer_req.total_size -
 		pWriter->args.pipe_xfer_req.iSizeXferred;
 	BuffGetFreeSpaceTotal(&pPipe->desc, &iFreeBufferSpace);
 	if (iFreeBufferSpace >= iSizeDataInWriter) {
@@ -442,7 +442,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 
 	do {
 		iSize = min(pPipe->desc.available_data_count,
-					pipe_read_req->iSizeTotal - pipe_read_req->iSizeXferred);
+					pipe_read_req->total_size - pipe_read_req->iSizeXferred);
 
 		if (iSize == 0) {
 			return;
@@ -466,7 +466,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 		pipe_read_req->iNbrPendXfers++;
 		pipe_read_req->iSizeXferred += ret;
 
-		if (pipe_read_req->iSizeXferred == pipe_read_req->iSizeTotal) {
+		if (pipe_read_req->iSizeXferred == pipe_read_req->total_size) {
 			_k_pipe_request_status_set(pipe_read_req, TERM_SATISFIED);
 			if (pReader->head != NULL) {
 				DeListWaiter(pReader);
@@ -512,7 +512,7 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 	do {
 		iSize = min((numIterations == 2) ? pPipe->desc.free_space_count
 					: pPipe->desc.free_space_post_wrap_around,
-					pipe_write_req->iSizeTotal - pipe_write_req->iSizeXferred);
+					pipe_write_req->total_size - pipe_write_req->iSizeXferred);
 
 		if (iSize == 0) {
 			continue;
@@ -536,7 +536,7 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 		pipe_write_req->iNbrPendXfers++;
 		pipe_write_req->iSizeXferred += ret;
 
-		if (pipe_write_req->iSizeXferred == pipe_write_req->iSizeTotal) {
+		if (pipe_write_req->iSizeXferred == pipe_write_req->total_size) {
 			_k_pipe_request_status_set(pipe_write_req, TERM_SATISFIED);
 			if (pWriter->head != NULL) {
 				/* only listed requests have a timer */
@@ -567,7 +567,7 @@ static void pipe_xfer_status_update(
 	pipe_xfer_req->iNbrPendXfers++;
 	pipe_xfer_req->iSizeXferred += bytesXferred;
 
-	if (pipe_xfer_req->iSizeXferred == pipe_xfer_req->iSizeTotal) {
+	if (pipe_xfer_req->iSizeXferred == pipe_xfer_req->total_size) {
 		_k_pipe_request_status_set(pipe_xfer_req, TERM_SATISFIED);
 		if (pActor->head != NULL) {
 			DeListWaiter(pActor);
@@ -616,9 +616,9 @@ static void pipe_read_write(
 
 	/* Calculate iT1, iT2 and iT3 */
 	int iFreeSpaceReader =
-		(pipe_read_req->iSizeTotal - pipe_read_req->iSizeXferred);
+		(pipe_read_req->total_size - pipe_read_req->iSizeXferred);
 	int iAvailDataWriter =
-		(pipe_write_req->iSizeTotal - pipe_write_req->iSizeXferred);
+		(pipe_write_req->total_size - pipe_write_req->iSizeXferred);
 	int iFreeSpaceBuffer =
 		(pPipe->desc.free_space_count + pPipe->desc.free_space_post_wrap_around);
 	int iAvailDataBuffer =
@@ -772,13 +772,13 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				iSpace2WriteinReaders = CalcFreeReaderSpace(pPipe->readers);
 				if (pNLReader)
 					iSpace2WriteinReaders +=
-						(pNLReader->args.pipe_xfer_req.iSizeTotal -
+						(pNLReader->args.pipe_xfer_req.total_size -
 						 pNLReader->args.pipe_xfer_req.iSizeXferred);
 				BuffGetFreeSpaceTotal(&pPipe->desc, &iFreeBufferSpace);
 				iTotalSpace2Write =
 					iFreeBufferSpace + iSpace2WriteinReaders;
 				iSizeDataInWriter =
-					pWriter->args.pipe_xfer_req.iSizeTotal -
+					pWriter->args.pipe_xfer_req.total_size -
 					pWriter->args.pipe_xfer_req.iSizeXferred;
 
 				if (iSizeDataInWriter > iTotalSpace2Write) {
@@ -801,12 +801,12 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				iData2ReadFromWriters = CalcAvailWriterData(pPipe->writers);
 				if (pNLWriter)
 					iData2ReadFromWriters +=
-						(pNLWriter->args.pipe_xfer_req.iSizeTotal -
+						(pNLWriter->args.pipe_xfer_req.total_size -
 						 pNLWriter->args.pipe_xfer_req.iSizeXferred);
 				BuffGetAvailDataTotal(&pPipe->desc, &iAvailBufferData);
 				iTotalData2Read = iAvailBufferData + iData2ReadFromWriters;
 				iSizeFreeSpaceInReader =
-					pReader->args.pipe_xfer_req.iSizeTotal -
+					pReader->args.pipe_xfer_req.total_size -
 					pReader->args.pipe_xfer_req.iSizeXferred;
 
 				if (iSizeFreeSpaceInReader > iTotalData2Read) {

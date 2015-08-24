@@ -71,7 +71,7 @@ int CalcFreeReaderSpace(struct k_args *pReaderList)
 	if (pReaderList) {
 		struct k_args *pReader = pReaderList;
 		while (pReader != NULL) {
-			iSize += (pReader->args.pipe_xfer_req.iSizeTotal -
+			iSize += (pReader->args.pipe_xfer_req.total_size -
 				  pReader->args.pipe_xfer_req.iSizeXferred);
 			pReader = pReader->next;
 		}
@@ -86,7 +86,7 @@ int CalcAvailWriterData(struct k_args *pWriterList)
 	if (pWriterList) {
 		struct k_args *pWriter = pWriterList;
 		while (pWriter != NULL) {
-			iSize += (pWriter->args.pipe_xfer_req.iSizeTotal -
+			iSize += (pWriter->args.pipe_xfer_req.total_size -
 				  pWriter->args.pipe_xfer_req.iSizeXferred);
 			pWriter = pWriter->next;
 		}
