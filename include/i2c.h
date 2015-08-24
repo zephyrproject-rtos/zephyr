@@ -97,7 +97,7 @@ struct i2c_driver_api {
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to the application provided configuration
  */
-inline int i2c_configure(struct device *dev, struct i2c_config *config)
+static inline int i2c_configure(struct device *dev, struct i2c_config *config)
 {
 	struct i2c_driver_api *api;
 
@@ -111,7 +111,8 @@ inline int i2c_configure(struct device *dev, struct i2c_config *config)
  * @param buf Memory pool that data should be transferred from
  * @param len Size of the memory pool available for reading from
  */
-inline int i2c_write(struct device *dev, unsigned char *buf, uint32_t len)
+static inline int i2c_write(struct device *dev, unsigned char *buf,
+			    uint32_t len)
 {
 	struct i2c_driver_api *api;
 
@@ -125,7 +126,8 @@ inline int i2c_write(struct device *dev, unsigned char *buf, uint32_t len)
  * @param buf Memory pool that data should be transferred to
  * @param len Size of the memory pool available for writing to
  */
-inline int i2c_read(struct device *dev, unsigned char *buf, uint32_t len)
+static inline int i2c_read(struct device *dev, unsigned char *buf,
+			   uint32_t len)
 {
 	struct i2c_driver_api *api;
 
@@ -137,7 +139,7 @@ inline int i2c_read(struct device *dev, unsigned char *buf, uint32_t len)
  * @brief Suspend an I2C driver
  * @param dev Pointer to the device structure for the driver instance
  */
-inline int i2c_suspend(struct device *dev)
+static inline int i2c_suspend(struct device *dev)
 {
 	struct i2c_driver_api *api;
 
@@ -149,7 +151,7 @@ inline int i2c_suspend(struct device *dev)
  * @brief Resume an I2C driver
  * @param dev Pointer to the device structure for the driver instance
  */
-inline int i2c_resume(struct device *dev)
+static inline int i2c_resume(struct device *dev)
 {
 	struct i2c_driver_api *api;
 
