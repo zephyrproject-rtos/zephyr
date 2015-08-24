@@ -90,7 +90,7 @@ cmdPkt_t *_cmd_pkt_get(
 		pSet->index = 0;
 	irq_unlock(key);
 
-	return &pSet->cmdPkt[index];
+	return &pSet->command_packet[index];
 }
 
 /**
