@@ -55,7 +55,7 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 #endif
 
 	S->level += n;
-	A = S->Waiters;
+	A = S->waiters;
 	Y = NULL;
 	while (A && S->level) {
 		X = A->next;
@@ -71,7 +71,7 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 			if (Y) {
 				Y->next = X;
 			} else {
-				S->Waiters = X;
+				S->waiters = X;
 			}
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.timer) {
@@ -111,7 +111,7 @@ void _k_sem_group_wait(struct k_args *R)
 void _k_sem_group_wait_cancel(struct k_args *A)
 {
 	struct _k_sem_struct *S = (struct _k_sem_struct *)A->args.s1.sema;
-	struct k_args *X = S->Waiters;
+	struct k_args *X = S->waiters;
 	struct k_args *Y = NULL;
 
 	while (X && (X->priority <= A->priority)) {
@@ -119,7 +119,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 			if (Y) {
 				Y->next = X->next;
 			} else {
-				S->Waiters = X->next;
+				S->waiters = X->next;
 			}
 			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_REQUEST
 			    || X->Comm == _K_SVC_SEM_GROUP_WAIT_READY) {
@@ -130,7 +130,7 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 
 /*
  * Determine if the wait cancellation request is being
- * processed after the state of the 'Waiters' packet state
+ * processed after the state of the 'waiters' packet state
  * has been updated to _K_SVC_SEM_GROUP_WAIT_READY, but before
  * the _K_SVC_SEM_GROUP_WAIT_READY packet has been processed.
  * This will occur if a _K_SVC_SEM_GROUP_WAIT_TIMEOUT
@@ -160,14 +160,14 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 	if (Y) {
 		Y->next = A;
 	} else {
-		S->Waiters = A;
+		S->waiters = A;
 	}
 }
 
 void _k_sem_group_wait_accept(struct k_args *A)
 {
 	struct _k_sem_struct *S = (struct _k_sem_struct *)A->args.s1.sema;
-	struct k_args *X = S->Waiters;
+	struct k_args *X = S->waiters;
 	struct k_args *Y = NULL;
 
 	while (X && (X->priority <= A->priority)) {
@@ -175,7 +175,7 @@ void _k_sem_group_wait_accept(struct k_args *A)
 			if (Y) {
 				Y->next = X->next;
 			} else {
-				S->Waiters = X->next;
+				S->waiters = X->next;
 			}
 			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_READY) {
 				_k_sem_group_wait(X);
@@ -257,7 +257,7 @@ void _k_sem_wait_reply_timeout(struct k_args *A)
 void _k_sem_group_wait_request(struct k_args *A)
 {
 	struct _k_sem_struct *S = (struct _k_sem_struct *)A->args.s1.sema;
-	struct k_args *X = S->Waiters;
+	struct k_args *X = S->waiters;
 	struct k_args *Y = NULL;
 
 	while (X && (X->priority <= A->priority)) {
@@ -265,7 +265,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 			if (Y) {
 				Y->next = X->next;
 			} else {
-				S->Waiters = X->next;
+				S->waiters = X->next;
 			}
 			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_CANCEL) {
 				_k_sem_group_wait(X);
@@ -283,7 +283,7 @@ void _k_sem_group_wait_request(struct k_args *A)
 	if (Y) {
 		Y->next = A;
 	} else {
-		S->Waiters = A;
+		S->waiters = A;
 	}
 	signal_semaphore(0, S);
 }
@@ -342,7 +342,7 @@ void _k_sem_wait_request(struct k_args *A)
 		A->Ctxt.task = _k_current_task;
 		A->priority = _k_current_task->priority;
 		_k_state_bit_set(_k_current_task, TF_SEMA);
-		INSERT_ELM(S->Waiters, A);
+		INSERT_ELM(S->waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.ticks == TICKS_UNLIMITED) {
 			A->Time.timer = NULL;

@@ -102,9 +102,9 @@ void _k_fifo_enque_request(struct k_args *A)
 	q = A->args.q1.data;
 	n = Q->Nused;
 	if (n < Q->Nelms) {
-		W = Q->Waiters;
+		W = Q->waiters;
 		if (W) {
-			Q->Waiters = W->next;
+			Q->waiters = W->next;
 			p = W->args.q1.data;
 			memcpy(p, q, w);
 
@@ -144,7 +144,7 @@ void _k_fifo_enque_request(struct k_args *A)
 				A->Ctxt.task = _k_current_task;
 				A->priority = _k_current_task->priority;
 				_k_state_bit_set(_k_current_task, TF_ENQU);
-			INSERT_ELM(Q->Waiters, A);
+			INSERT_ELM(Q->waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.ticks == TICKS_UNLIMITED)
 				A->Time.timer = NULL;
@@ -243,9 +243,9 @@ void _k_fifo_deque_request(struct k_args *A)
 			Q->Deqp = q;
 
 		A->Time.rcode = RC_OK;
-		W = Q->Waiters;
+		W = Q->waiters;
 		if (W) {
-			Q->Waiters = W->next;
+			Q->waiters = W->next;
 			p = Q->Enqp;
 			q = W->args.q1.data;
 			w = OCTET_TO_SIZEOFUNIT(Q->Esize);
@@ -278,7 +278,7 @@ void _k_fifo_deque_request(struct k_args *A)
 			A->priority = _k_current_task->priority;
 			_k_state_bit_set(_k_current_task, TF_DEQU);
 
-			INSERT_ELM(Q->Waiters, A);
+			INSERT_ELM(Q->waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.ticks == TICKS_UNLIMITED)
 				A->Time.timer = NULL;
@@ -339,8 +339,8 @@ void _k_fifo_ioctl(struct k_args *A)
 		if (Q->Nused) {
 			struct k_args *X;
 
-			while ((X = Q->Waiters)) {
-				Q->Waiters = X->next;
+			while ((X = Q->waiters)) {
+				Q->waiters = X->next;
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 				if (likely(X->Time.timer)) {
 					_k_timeout_cancel(X);

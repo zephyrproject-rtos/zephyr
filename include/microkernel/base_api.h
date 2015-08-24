@@ -130,13 +130,13 @@ struct _k_mutex_struct {
 	kpriority_t current_owner_priority;
 	kpriority_t original_owner_priority;
 	int level;
-	struct k_args *Waiters;
+	struct k_args *waiters;
 	int Count;
 	int Confl;
 };
 
 struct _k_sem_struct {
-	struct k_args *Waiters;
+	struct k_args *waiters;
 	int level;
 	int Count;
 };
@@ -148,7 +148,7 @@ struct _k_fifo_struct {
 	char *Endp;
 	char *Enqp;
 	char *Deqp;
-	struct k_args *Waiters;
+	struct k_args *waiters;
 	int Nused;
 	int Hmark;
 	int Count;
@@ -226,7 +226,7 @@ struct _k_mem_map_struct {
 	int Esize;
 	char *Base;
 	char *Free;
-	struct k_args *Waiters;
+	struct k_args *waiters;
 	int Nused;
 	int Hmark;
 	int Count;

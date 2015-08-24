@@ -90,7 +90,7 @@ void _k_mutex_lock_reply(
 		MutexId = A->args.l1.mutex;
 		Mutex = (struct _k_mutex_struct *)MutexId;
 
-		FirstWaiter = Mutex->Waiters;
+		FirstWaiter = Mutex->waiters;
 
 		/*
 		 * When timing out, there are two cases to consider.
@@ -226,8 +226,8 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 				A->Ctxt.task = _k_current_task;
 				A->priority = _k_current_task->priority;
 				_k_state_bit_set(_k_current_task, TF_LOCK);
-			/* Note: Mutex->Waiters is a priority sorted list */
-			INSERT_ELM(Mutex->Waiters, A);
+			/* Note: Mutex->waiters is a priority sorted list */
+			INSERT_ELM(Mutex->waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (A->Time.ticks == TICKS_UNLIMITED) {
 				/* Request will not time out */
@@ -352,7 +352,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 			SENDARGS(PrioDowner);
 		}
 
-		X = Mutex->Waiters;
+		X = Mutex->waiters;
 		if (X != NULL) {
 			/*
 			 * At least one task was waiting for the mutex.
@@ -360,7 +360,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 			 * first in the queue.
 			 */
 
-			Mutex->Waiters = X->next;
+			Mutex->waiters = X->next;
 			Mutex->owner = X->args.l1.task;
 			Mutex->level = 1;
 			Mutex->current_owner_priority = X->priority;

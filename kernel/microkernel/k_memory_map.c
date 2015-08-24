@@ -59,7 +59,7 @@ void _k_mem_map_init(void)
 
 		M = (struct _k_mem_map_struct *)(*id);
 
-		M->Waiters = NULL;
+		M->waiters = NULL;
 
 		w = OCTET_TO_SIZEOFUNIT(M->Esize);
 
@@ -126,7 +126,7 @@ void _k_mem_map_alloc(struct k_args *A)
 		A->priority = _k_current_task->priority;
 		A->Ctxt.task = _k_current_task;
 		_k_state_bit_set(_k_current_task, TF_ALLO);
-		INSERT_ELM(M->Waiters, A);
+		INSERT_ELM(M->waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.ticks == TICKS_UNLIMITED)
 			A->Time.timer = NULL;
@@ -179,9 +179,9 @@ void _k_mem_map_dealloc(struct k_args *A)
 	M->Free = *(char **)(A->args.a1.mptr);
 	*(A->args.a1.mptr) = NULL;
 
-	X = M->Waiters;
+	X = M->waiters;
 	if (X) {
-		M->Waiters = X->next;
+		M->waiters = X->next;
 		*(X->args.a1.mptr) = M->Free;
 		M->Free = *(char **)(M->Free);
 

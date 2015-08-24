@@ -419,7 +419,7 @@ struct pool_struct {
 	int nr_of_maxblocks;
 	int nr_of_frags;
 
-	struct k_args *Waiters;
+	struct k_args *waiters;
 
 	struct pool_block *frag_tab;
 

@@ -209,7 +209,7 @@ void _k_defrag(struct k_args *A)
 	/* reschedule waiters */
 
 	if (
-		    P->Waiters) {
+		    P->waiters) {
 		struct k_args *NewGet;
 
 		/*
@@ -427,8 +427,8 @@ void _k_block_waiters_get(struct k_args *A)
 	struct k_args *curr_task, *prev_task;
 	int start_size, offset;
 
-	curr_task = P->Waiters;
-	prev_task = (struct k_args *)&(P->Waiters); /* forw is first field in struct */
+	curr_task = P->waiters;
+	prev_task = (struct k_args *)&(P->waiters); /* forw is first field in struct */
 
 	/* loop all waiters */
 	while (curr_task != NULL) {
@@ -538,8 +538,8 @@ void _k_mem_pool_block_get(struct k_args *A)
 		A->Ctxt.task = _k_current_task;
 		_k_state_bit_set(_k_current_task, TF_GTBL); /* extra new statebit */
 
-		/* INSERT_ELM (P->frag_tab[offset].Waiters, A); */
-		INSERT_ELM(P->Waiters, A);
+		/* INSERT_ELM (P->frag_tab[offset].waiters, A); */
+		INSERT_ELM(P->waiters, A);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Time.ticks == TICKS_UNLIMITED) {
@@ -638,7 +638,7 @@ void _k_mem_pool_block_release(struct k_args *A)
 				blockstat->mem_status &= ~(1 << i);
 
 				/* waiters? */
-				if (P->Waiters != NULL) {
+				if (P->waiters != NULL) {
 					struct k_args *NewGet;
 					/*
 					 * get new command packet that calls the function
