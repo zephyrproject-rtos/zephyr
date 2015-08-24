@@ -40,7 +40,7 @@ extern "C" {
 #include <microkernel.h>
 
 struct Elem {
-	struct Elem *Next;
+	struct Elem *next;
 	struct Elem *prev;
 	unsigned int priority;
 };

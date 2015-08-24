@@ -95,8 +95,8 @@ static void MarkerLinkToListAfter(struct _k_pipe_marker aMarkers[],
 
 	/* let the original list be aware of the new marker */
 	if (-1 != iMarker) {
-		iNextMarker = aMarkers[iMarker].Next;
-		aMarkers[iMarker].Next = iNewMarker;
+		iNextMarker = aMarkers[iMarker].next;
+		aMarkers[iMarker].next = iNewMarker;
 		if (-1 != iNextMarker) {
 			aMarkers[iNextMarker].prev = iNewMarker;
 		} else {
@@ -108,7 +108,7 @@ static void MarkerLinkToListAfter(struct _k_pipe_marker aMarkers[],
 
 	/* link the new marker with the marker and next marker */
 	aMarkers[iNewMarker].prev = iMarker;
-	aMarkers[iNewMarker].Next = iNextMarker;
+	aMarkers[iNewMarker].next = iNextMarker;
 }
 
 static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
@@ -126,16 +126,16 @@ static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
 
 	if (-1 == pMarkerList->iFirstMarker) {
 		__ASSERT_NO_MSG(-1 == pMarkerList->iLastMarker);
-		pMarkerList->iFirstMarker = i; /* we still need to set prev & Next */
+		pMarkerList->iFirstMarker = i; /* we still need to set prev & next */
 	} else {
 		__ASSERT_NO_MSG(-1 != pMarkerList->iLastMarker);
 		__ASSERT_NO_MSG(-1 ==
-		       pMarkerList->aMarkers[pMarkerList->iLastMarker].Next);
+		       pMarkerList->aMarkers[pMarkerList->iLastMarker].next);
 	}
 
 	MarkerLinkToListAfter(pMarkerList->aMarkers, pMarkerList->iLastMarker, i);
 
-	__ASSERT_NO_MSG(-1 == pMarkerList->aMarkers[i].Next);
+	__ASSERT_NO_MSG(-1 == pMarkerList->aMarkers[i].next);
 	pMarkerList->iLastMarker = i;
 
 #ifdef STORE_NBR_MARKERS
@@ -149,16 +149,16 @@ static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
 static void MarkerUnlinkFromList(struct _k_pipe_marker aMarkers[], int iMarker,
 								 int *piPredecessor, int *piSuccessor)
 {
-	int iNextMarker = aMarkers[iMarker].Next;
+	int iNextMarker = aMarkers[iMarker].next;
 	int iPrevMarker = aMarkers[iMarker].prev;
 
 	/* remove the marker from the list */
-	aMarkers[iMarker].Next = -1;
+	aMarkers[iMarker].next = -1;
 	aMarkers[iMarker].prev = -1;
 
 	/* repair the chain */
 	if (-1 != iPrevMarker) {
-		aMarkers[iPrevMarker].Next = iNextMarker;
+		aMarkers[iPrevMarker].next = iNextMarker;
 	}
 	if (-1 != iNextMarker) {
 		aMarkers[iNextMarker].prev = iPrevMarker;
@@ -206,7 +206,7 @@ static void MarkersClear(struct _k_pipe_marker_list *pMarkerList)
 
 	for (i = 0; i < MAXNBR_PIPE_MARKERS; i++, pM++) {
 		memset(pM, 0, sizeof(struct _k_pipe_marker));
-		pM->Next = -1;
+		pM->next = -1;
 		pM->prev = -1;
 	}
 #ifdef STORE_NBR_MARKERS
@@ -273,7 +273,7 @@ static int ScanMarkers(struct _k_pipe_marker_list *pMarkerList,
 			*piSizeAWA += pM->size;
 		}
 
-		index_next = pM->Next;
+		index_next = pM->next;
 		/* pMarkerList->iFirstMarker will be updated */
 		MarkerDelete(pMarkerList, index);
 		/* adjust *piNbrPendingXfers */
@@ -774,7 +774,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegi
 		if (0 != AreasCheck4Intrusion(pBegin, iSize, pM->pointer, pM->size)) {
 			__ASSERT_NO_MSG(1 == 0);
 		}
-		index = pM->Next;
+		index = pM->next;
 	}
 
 	/* read markers */
@@ -800,6 +800,6 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *pBegi
 		if (0 != AreasCheck4Intrusion(pBegin, iSize, pM->pointer, pM->size)) {
 			__ASSERT_NO_MSG(1 == 0);
 		}
-		index = pM->Next;
+		index = pM->next;
 	}
 }

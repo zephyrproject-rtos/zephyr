@@ -59,9 +59,9 @@ INLINE void RemoveElem(struct list_elem *elem)
 {
 	struct list_elem *tmpElem;
 
-	tmpElem = elem->Next;
+	tmpElem = elem->next;
 	elem = elem->prev;  /* elem is destroyed */
-	elem->Next = tmpElem;
+	elem->next = tmpElem;
 	tmpElem->prev = elem;
 }
 
@@ -71,7 +71,7 @@ INLINE struct list_elem *RemoveHead(struct list_head *list)
 	struct list_elem *ret_Elem;
 
 	ret_Elem = list->Head;
-	tmpElem = ret_Elem->Next;
+	tmpElem = ret_Elem->next;
 	if (tmpElem == NULL) {
 		return NULL;  /* empty list */
 	}
@@ -90,7 +90,7 @@ INLINE struct list_elem *RemoveTail(struct list_head *list)
 		return NULL;  /* empty list */
 	}
 	list->TailPrev = tmpElem;
-	tmpElem->Next = (struct list_elem *)&list->Tail;
+	tmpElem->next = (struct list_elem *)&list->Tail;
 	return ret_Elem;
 }
 
@@ -102,7 +102,7 @@ INLINE void AddHead(struct list_head *list, struct list_elem *elem)
 	list->Head = elem;
 	tmpElem->prev = elem;
 	/* set pointers for the new elem */
-	elem->Next = tmpElem;
+	elem->next = tmpElem;
 	elem->prev = (struct list_elem *)&list->Head;
 }
 
@@ -113,10 +113,10 @@ INLINE void AddTail(struct list_head *list, struct list_elem *elem)
 
 	tmpElem = (struct list_elem *)&list->Tail;
 	tailElem = tmpElem->prev;
-	tailElem->Next = elem;
+	tailElem->next = elem;
 	tmpElem->prev = elem;
 	/* set pointers for the new elem */
-	elem->Next = tmpElem;
+	elem->next = tmpElem;
 	elem->prev = tailElem;
 }
 
@@ -126,10 +126,10 @@ INLINE void Insert_Elem(struct list_elem *elem, struct list_elem *pred)
 {
 	struct list_elem *tmpElem;
 
-	tmpElem = pred->Next;
-	pred->Next = elem;
+	tmpElem = pred->next;
+	pred->next = elem;
 	tmpElem->prev = elem;
-	elem->Next = tmpElem;
+	elem->next = tmpElem;
 	elem->prev = pred;
 }
 
@@ -141,9 +141,9 @@ INLINE void InsertPrio(struct list_head *list, struct list_elem *newelem)
 	struct list_elem *tmpElem;
 
 	tmpElem = (struct list_elem *)&list->Head;
-	while ((tmpElem->Next != (struct list_elem *)&list->Tail) && /* end of list */
+	while ((tmpElem->next != (struct list_elem *)&list->Tail) && /* end of list */
 	       (tmpElem->priority <= newelem->priority)) {
-		tmpElem = tmpElem->Next;
+		tmpElem = tmpElem->next;
 	}
 	Insert_Elem(newelem, tmpElem);
 }

@@ -163,7 +163,7 @@ struct _k_pipe_marker {
 	int size;
 	bool buffer_xfer_busy;
 	int prev; /* -1 == no predecessor */
-	int Next; /* -1 == no successor */
+	int next; /* -1 == no successor */
 };
 
 struct _k_pipe_marker_list {

@@ -45,12 +45,12 @@
 
 static void mvdreq_docont(struct k_args *Cont)
 {
-	struct k_args *Next;
+	struct k_args *next;
 
 	while (Cont) {
-		Next = Cont;
+		next = Cont;
 		Cont = Cont->next;
-		SENDARGS(Next);
+		SENDARGS(next);
 	}
 }
 
