@@ -46,7 +46,7 @@ typedef union k_args_args K_ARGS_ARGS;
 /* Kernel timer structure */
 
 struct k_timer {
-	struct k_timer *Forw;
+	struct k_timer *next;
 	struct k_timer *Back;
 	int32_t duration;
 	int32_t period;
@@ -375,7 +375,7 @@ union k_args_args {
  * thereby violating the previously stated equivalence.
  */
 struct k_args {
-	struct k_args *Forw;
+	struct k_args *next;
 	struct k_args **Head;
 	kpriority_t Prio;
 

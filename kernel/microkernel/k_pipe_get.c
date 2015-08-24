@@ -85,7 +85,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	RequestProc->Args.pipe_xfer_req.iNbrPendXfers = 0;
 	RequestProc->Args.pipe_xfer_req.iSizeXferred = 0;
 
-	RequestProc->Forw = NULL;
+	RequestProc->next = NULL;
 	RequestProc->Head = NULL;
 
 	switch (RequestProc->Time.ticks) {

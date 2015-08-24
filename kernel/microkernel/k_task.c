@@ -88,8 +88,8 @@ void _k_state_bit_reset(struct k_task *X,    /* ptr to task */
 
 		struct k_tqhd *H = _k_task_priority_list + X->Prio;
 
-		X->Forw = NULL;
-		H->Tail->Forw = X;
+		X->next = NULL;
+		H->Tail->next = X;
 		H->Tail = X;
 		_k_task_priority_bitmap[X->Prio >> 5] |= (1 << (X->Prio & 0x1F));
 	}
@@ -161,11 +161,11 @@ void _k_state_bit_set(
 		 * Search in the list for this task priority level,
 		 * and remove the task.
 		 */
-		while (cur_task->Forw != task_ptr) {
-			cur_task = cur_task->Forw;
+		while (cur_task->next != task_ptr) {
+			cur_task = cur_task->next;
 		}
 
-		cur_task->Forw = task_ptr->Forw;
+		cur_task->next = task_ptr->next;
 
 		if (task_queue->Tail == task_ptr) {
 			task_queue->Tail = cur_task;
@@ -547,12 +547,12 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 void _k_task_yield(struct k_args *A)
 {
 	struct k_tqhd *H = _k_task_priority_list + _k_current_task->Prio;
-	struct k_task *X = _k_current_task->Forw;
+	struct k_task *X = _k_current_task->next;
 
 	ARG_UNUSED(A);
 	if (X && H->Head == _k_current_task) {
-		_k_current_task->Forw = NULL;
-		H->Tail->Forw = _k_current_task;
+		_k_current_task->next = NULL;
+		H->Tail->next = _k_current_task;
 		H->Tail = _k_current_task;
 		H->Head = X;
 	}

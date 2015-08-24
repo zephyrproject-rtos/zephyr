@@ -58,7 +58,7 @@ void _k_timer_enlist(struct k_timer *T)
 	while (P && (T->duration > P->duration)) {
 		T->duration -= P->duration;
 		Q = P;
-		P = P->Forw;
+		P = P->next;
 	}
 	if (P) {
 		P->duration -= T->duration;
@@ -67,11 +67,11 @@ void _k_timer_enlist(struct k_timer *T)
 		_k_timer_list_tail = T;
 	}
 	if (Q) {
-		Q->Forw = T;
+		Q->next = T;
 	} else {
 		_k_timer_list_head = T;
 	}
-	T->Forw = P;
+	T->next = P;
 	T->Back = Q;
 }
 
@@ -84,7 +84,7 @@ void _k_timer_enlist(struct k_timer *T)
 
 void _k_timer_delist(struct k_timer *T)
 {
-	struct k_timer *P = T->Forw;
+	struct k_timer *P = T->next;
 	struct k_timer *Q = T->Back;
 
 	if (P) {
@@ -93,7 +93,7 @@ void _k_timer_delist(struct k_timer *T)
 	} else
 		_k_timer_list_tail = Q;
 	if (Q)
-		Q->Forw = P;
+		Q->next = P;
 	else
 		_k_timer_list_head = P;
 	T->duration = -1;
@@ -194,7 +194,7 @@ void _k_timer_list_update(int ticks)
 		if (T == _k_timer_list_tail) {
 			_k_timer_list_head = _k_timer_list_tail = NULL;
 		} else {
-			_k_timer_list_head = T->Forw;
+			_k_timer_list_head = T->next;
 			_k_timer_list_head->Back = NULL;
 		}
 		if (T->period) {

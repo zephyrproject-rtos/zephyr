@@ -49,7 +49,7 @@ static void mvdreq_docont(struct k_args *Cont)
 
 	while (Cont) {
 		Next = Cont;
-		Cont = Cont->Forw;
+		Cont = Cont->next;
 		SENDARGS(Next);
 	}
 }

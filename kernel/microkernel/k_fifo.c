@@ -104,7 +104,7 @@ void _k_fifo_enque_request(struct k_args *A)
 	if (n < Q->Nelms) {
 		W = Q->Waiters;
 		if (W) {
-			Q->Waiters = W->Forw;
+			Q->Waiters = W->next;
 			p = W->Args.q1.data;
 			memcpy(p, q, w);
 
@@ -245,7 +245,7 @@ void _k_fifo_deque_request(struct k_args *A)
 		A->Time.rcode = RC_OK;
 		W = Q->Waiters;
 		if (W) {
-			Q->Waiters = W->Forw;
+			Q->Waiters = W->next;
 			p = Q->Enqp;
 			q = W->Args.q1.data;
 			w = OCTET_TO_SIZEOFUNIT(Q->Esize);
@@ -340,7 +340,7 @@ void _k_fifo_ioctl(struct k_args *A)
 			struct k_args *X;
 
 			while ((X = Q->Waiters)) {
-				Q->Waiters = X->Forw;
+				Q->Waiters = X->next;
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 				if (likely(X->Time.timer)) {
 					_k_timeout_cancel(X);

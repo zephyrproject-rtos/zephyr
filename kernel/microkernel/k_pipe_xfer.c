@@ -265,14 +265,14 @@ static void setup_movedata(struct k_args *A,
 	GETARGS(pContSend);
 	GETARGS(pContRecv);
 
-	pContSend->Forw = NULL;
+	pContSend->next = NULL;
 	pContSend->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContSend->Args.pipe_xfer_ack.pPipe = pPipe;
 	pContSend->Args.pipe_xfer_ack.XferType = XferType;
 	pContSend->Args.pipe_xfer_ack.ID = XferID;
 	pContSend->Args.pipe_xfer_ack.iSize = size;
 
-	pContRecv->Forw = NULL;
+	pContRecv->next = NULL;
 	pContRecv->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContRecv->Args.pipe_xfer_ack.pPipe = pPipe;
 	pContRecv->Args.pipe_xfer_ack.XferType = XferType;

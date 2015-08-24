@@ -360,7 +360,7 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
 			 * first in the queue.
 			 */
 
-			Mutex->Waiters = X->Forw;
+			Mutex->Waiters = X->next;
 			Mutex->Owner = X->Args.l1.task;
 			Mutex->Level = 1;
 			Mutex->OwnerCurrentPrio = X->Prio;

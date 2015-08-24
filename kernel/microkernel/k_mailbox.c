@@ -138,11 +138,11 @@ static bool prepare_transfer(struct k_args *move,
 	 * prepare writer and reader cmd packets for 'return':
 	 * (this is shared code, irrespective of the value of 'move')
 	 */
-	__ASSERT_NO_MSG(NULL == reader->Forw);
+	__ASSERT_NO_MSG(NULL == reader->next);
 	reader->Comm = _K_SVC_MBOX_RECEIVE_ACK;
 	reader->Time.rcode = RC_OK;
 
-	__ASSERT_NO_MSG(NULL == writer->Forw);
+	__ASSERT_NO_MSG(NULL == writer->next);
 	writer->alloc = true;
 
 	writer->Comm = _K_SVC_MBOX_SEND_ACK;
@@ -349,14 +349,14 @@ void _k_mbox_send_request(struct k_args *Writer)
 	}
 
 	/*
-	 * The [Forw] field can be changed later when added to the Writer's
-	 * list, but when not listed, [Forw] must be NULL.
+	 * The [next] field can be changed later when added to the Writer's
+	 * list, but when not listed, [next] must be NULL.
 	 */
 
-	CopyWriter->Forw = NULL;
+	CopyWriter->next = NULL;
 
 	for (CopyReader = MailBox->Readers, temp = NULL; CopyReader != NULL;
-	     temp = CopyReader, CopyReader = CopyReader->Forw) {
+	     temp = CopyReader, CopyReader = CopyReader->next) {
 		uint32_t u32Size;
 
 		u32Size = match(CopyReader, CopyWriter);
@@ -372,11 +372,11 @@ void _k_mbox_send_request(struct k_args *Writer)
 			 */
 
 			if (temp != NULL) {
-				temp->Forw = CopyReader->Forw;
+				temp->next = CopyReader->next;
 			} else {
-				MailBox->Readers = CopyReader->Forw;
+				MailBox->Readers = CopyReader->next;
 			}
-			CopyReader->Forw = NULL;
+			CopyReader->next = NULL;
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (CopyReader->Time.timer != NULL) {
@@ -570,16 +570,16 @@ void _k_mbox_receive_request(struct k_args *Reader)
 	copy_packet(&CopyReader, Reader);
 
 	/*
-	 * The [Forw] field can be changed later when added to the Reader's
-	 * list, but when not listed, [Forw] must be NULL.
+	 * The [next] field can be changed later when added to the Reader's
+	 * list, but when not listed, [next] must be NULL.
 	 */
 
-	CopyReader->Forw = NULL;
+	CopyReader->next = NULL;
 
 	MailBox = (struct _k_mbox_struct *)MailBoxId;
 
 	for (CopyWriter = MailBox->Writers, temp = NULL; CopyWriter != NULL;
-	     temp = CopyWriter, CopyWriter = CopyWriter->Forw) {
+	     temp = CopyWriter, CopyWriter = CopyWriter->next) {
 		uint32_t u32Size;
 
 		u32Size = match(CopyReader, CopyWriter);
@@ -595,11 +595,11 @@ void _k_mbox_receive_request(struct k_args *Reader)
 			 */
 
 			if (temp != NULL) {
-				temp->Forw = CopyWriter->Forw;
+				temp->next = CopyWriter->next;
 			} else {
-				MailBox->Writers = CopyWriter->Forw;
+				MailBox->Writers = CopyWriter->next;
 			}
-			CopyWriter->Forw = NULL;
+			CopyWriter->next = NULL;
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (CopyWriter->Time.timer != NULL) {
@@ -758,7 +758,7 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	CopyStarter->Time.rcode = RC_OK;
 
 	MoveD->Args.MovedReq.Extra.Setup.ContRcv = CopyStarter;
-	CopyStarter->Forw = NULL;
+	CopyStarter->next = NULL;
 	MoveD->Args.MovedReq.destination = CopyStarter->Args.m1.mess.rx_data;
 
 	MoveD->Args.MovedReq.iTotalSize = CopyStarter->Args.m1.mess.size;
@@ -842,7 +842,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 
 		Writer = MoveD->Args.MovedReq.Extra.Setup.ContSnd;
 		__ASSERT_NO_MSG(NULL != Writer);
-		__ASSERT_NO_MSG(NULL == Writer->Forw);
+		__ASSERT_NO_MSG(NULL == Writer->next);
 
 		Writer->Args.m1.mess.tx_block.pool_id = (uint32_t)(-1);
 		nano_task_stack_push(&_k_command_stack, (uint32_t)Writer);
@@ -914,7 +914,7 @@ void _k_mbox_send_data(struct k_args *Starter)
 	CopyStarter->Comm = _K_SVC_MBOX_SEND_ACK;
 
 	MoveD->Args.MovedReq.Extra.Setup.ContSnd = CopyStarter;
-	CopyStarter->Forw = NULL;
+	CopyStarter->next = NULL;
 	MoveD->Args.MovedReq.source = CopyStarter->Args.m1.mess.rx_data;
 
 	Reader = MoveD->Args.MovedReq.Extra.Setup.ContRcv;

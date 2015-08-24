@@ -106,7 +106,7 @@ struct k_msg {
 /* Task control block */
 
 struct k_task {
-	struct k_task *Forw;
+	struct k_task *next;
 	struct k_task *Back;
 	kpriority_t Prio;
 	ktask_t Ident;

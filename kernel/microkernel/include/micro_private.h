@@ -169,13 +169,13 @@ extern void _k_workload_monitor_idle_end(void);
 		struct k_args *Y = NULL;                     \
 		while (X && (X->Prio <= (E)->Prio)) { \
 			Y = X;                        \
-			X = X->Forw;                  \
+			X = X->next;                  \
 		}                                     \
 		if (Y)                                \
-			Y->Forw = (E);                \
+			Y->next = (E);                \
 		else                                  \
 			(L) = (E);                    \
-		(E)->Forw = X;                        \
+		(E)->next = X;                        \
 		(E)->Head = &(L);                     \
 	}
 
@@ -186,13 +186,13 @@ extern void _k_workload_monitor_idle_end(void);
 							\
 		while (X && (X != (E))) {               \
 			Y = X;                          \
-			X = X->Forw;                    \
+			X = X->next;                    \
 		}                                       \
 		if (X) {                                \
 			if (Y)                          \
-				Y->Forw = X->Forw;      \
+				Y->next = X->next;      \
 			else                            \
-				*((E)->Head) = X->Forw; \
+				*((E)->Head) = X->next; \
 		}                                       \
 	}
 

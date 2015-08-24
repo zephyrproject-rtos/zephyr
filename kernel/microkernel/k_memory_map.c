@@ -181,7 +181,7 @@ void _k_mem_map_dealloc(struct k_args *A)
 
 	X = M->Waiters;
 	if (X) {
-		M->Waiters = X->Forw;
+		M->Waiters = X->next;
 		*(X->Args.a1.mptr) = M->Free;
 		M->Free = *(char **)(M->Free);
 

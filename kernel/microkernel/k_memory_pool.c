@@ -462,15 +462,15 @@ void _k_block_waiters_get(struct k_args *A)
 			_k_state_bit_reset(curr_task->Ctxt.task, TF_GTBL);
 
 			/* remove from list */
-			prev_task->Forw = curr_task->Forw;
+			prev_task->next = curr_task->next;
 
 			/* and get next task */
-			curr_task = curr_task->Forw;
+			curr_task = curr_task->next;
 
 		} else {
 			/* else just get next task */
 			prev_task = curr_task;
-			curr_task = curr_task->Forw;
+			curr_task = curr_task->next;
 		}
 	}
 

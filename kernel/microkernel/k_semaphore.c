@@ -58,7 +58,7 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 	A = S->Waiters;
 	Y = NULL;
 	while (A && S->Level) {
-		X = A->Forw;
+		X = A->next;
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		if (A->Comm == _K_SVC_SEM_WAIT_REQUEST
@@ -69,7 +69,7 @@ static void signal_semaphore(int n, struct _k_sem_struct *S)
 		{
 			S->Level--;
 			if (Y) {
-				Y->Forw = X;
+				Y->next = X;
 			} else {
 				S->Waiters = X;
 			}
@@ -117,9 +117,9 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 	while (X && (X->Prio <= A->Prio)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
-				Y->Forw = X->Forw;
+				Y->next = X->next;
 			} else {
-				S->Waiters = X->Forw;
+				S->Waiters = X->next;
 			}
 			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_REQUEST
 			    || X->Comm == _K_SVC_SEM_GROUP_WAIT_READY) {
@@ -153,12 +153,12 @@ void _k_sem_group_wait_cancel(struct k_args *A)
 			return;
 		} else {
 			Y = X;
-			X = X->Forw;
+			X = X->next;
 		}
 	}
-	A->Forw = X;
+	A->next = X;
 	if (Y) {
-		Y->Forw = A;
+		Y->next = A;
 	} else {
 		S->Waiters = A;
 	}
@@ -173,9 +173,9 @@ void _k_sem_group_wait_accept(struct k_args *A)
 	while (X && (X->Prio <= A->Prio)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
-				Y->Forw = X->Forw;
+				Y->next = X->next;
 			} else {
-				S->Waiters = X->Forw;
+				S->Waiters = X->next;
 			}
 			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_READY) {
 				_k_sem_group_wait(X);
@@ -186,7 +186,7 @@ void _k_sem_group_wait_accept(struct k_args *A)
 			return;
 		} else {
 			Y = X;
-			X = X->Forw;
+			X = X->next;
 		}
 	}
 	/* ERROR */
@@ -263,9 +263,9 @@ void _k_sem_group_wait_request(struct k_args *A)
 	while (X && (X->Prio <= A->Prio)) {
 		if (X->Ctxt.args == A->Ctxt.args) {
 			if (Y) {
-				Y->Forw = X->Forw;
+				Y->next = X->next;
 			} else {
-				S->Waiters = X->Forw;
+				S->Waiters = X->next;
 			}
 			if (X->Comm == _K_SVC_SEM_GROUP_WAIT_CANCEL) {
 				_k_sem_group_wait(X);
@@ -276,12 +276,12 @@ void _k_sem_group_wait_request(struct k_args *A)
 			return;
 		} else {
 			Y = X;
-			X = X->Forw;
+			X = X->next;
 		}
 	}
-	A->Forw = X;
+	A->next = X;
 	if (Y) {
-		Y->Forw = A;
+		Y->next = A;
 	} else {
 		S->Waiters = A;
 	}
