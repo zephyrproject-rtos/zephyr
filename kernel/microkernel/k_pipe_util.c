@@ -111,11 +111,11 @@ REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *args)
 	return (REQ_TYPE)(args->pipe_xfer_req.req_info.params & _ALLREQ);
 }
 
-void _k_pipe_request_type_set(K_ARGS_ARGS *args, REQ_TYPE ReqType)
+void _k_pipe_request_type_set(K_ARGS_ARGS *args, REQ_TYPE req_type)
 {
 	/* Ensure that only the request type bits are modified */
 	args->pipe_xfer_req.req_info.params &= (~_ALLREQ);
-	args->pipe_xfer_req.req_info.params |= (ReqType & _ALLREQ);
+	args->pipe_xfer_req.req_info.params |= (req_type & _ALLREQ);
 }
 
 TIME_TYPE _k_pipe_time_type_get(K_ARGS_ARGS *args)

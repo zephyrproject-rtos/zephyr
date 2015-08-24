@@ -85,15 +85,15 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	switch (_k_pipe_request_type_get(&RequestProc->args)) {
 	case _SYNCREQ:
 		RequestProc->args.pipe_xfer_req.data_ptr =
-			Request->args.pipe_req.ReqType.sync.data_ptr;
+			Request->args.pipe_req.req_type.sync.data_ptr;
 		RequestProc->args.pipe_xfer_req.total_size =
-			Request->args.pipe_req.ReqType.sync.total_size;
+			Request->args.pipe_req.req_type.sync.total_size;
 		break;
 	case _ASYNCREQ:
 		RequestProc->args.pipe_xfer_req.data_ptr =
-			Request->args.pipe_req.ReqType.async.block.pointer_to_data;
+			Request->args.pipe_req.req_type.async.block.pointer_to_data;
 		RequestProc->args.pipe_xfer_req.total_size =
-			Request->args.pipe_req.ReqType.async.total_size;
+			Request->args.pipe_req.req_type.async.total_size;
 		break;
 	default:
 		break;
@@ -295,7 +295,7 @@ void _k_pipe_put_ack(struct k_args *Request)
 		struct k_block *blockptr;
 
 		/* invoke command to release block */
-		blockptr = &pipe_ack->ReqType.async.block;
+		blockptr = &pipe_ack->req_type.async.block;
 		A.Comm = _K_SVC_MEM_POOL_BLOCK_RELEASE;
 		A.args.p1.pool_id = blockptr->pool_id;
 		A.args.p1.req_size = blockptr->req_size;
@@ -303,12 +303,12 @@ void _k_pipe_put_ack(struct k_args *Request)
 		A.args.p1.rep_dataptr = blockptr->pointer_to_data;
 		_k_mem_pool_block_release(&A); /* will return immediately */
 
-		if ((ksem_t)NULL != pipe_ack->ReqType.async.sema) {
+		if ((ksem_t)NULL != pipe_ack->req_type.async.sema) {
 			/* invoke command to signal sema */
 			struct k_args A;
 
 			A.Comm = _K_SVC_SEM_SIGNAL;
-			A.args.s1.sema = pipe_ack->ReqType.async.sema;
+			A.args.s1.sema = pipe_ack->req_type.async.sema;
 			_k_sem_signal(&A); /* will return immediately */
 		}
 	} else {

@@ -64,7 +64,7 @@ void myfreetimer(struct k_timer **ppTimer);
 K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *args);
 void _k_pipe_option_set(K_ARGS_ARGS *args, K_PIPE_OPTION option);
 REQ_TYPE _k_pipe_request_type_get(K_ARGS_ARGS *args);
-void _k_pipe_request_type_set(K_ARGS_ARGS *args, REQ_TYPE ReqType);
+void _k_pipe_request_type_set(K_ARGS_ARGS *args, REQ_TYPE req_type);
 
 void _k_pipe_request_status_set(struct _pipe_xfer_req_arg *pipe_xfer_req,
 					PIPE_REQUEST_STATUS status);

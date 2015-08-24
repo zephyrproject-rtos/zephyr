@@ -101,8 +101,8 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 	A.Time.ticks = TimeOut;
 
 	A.args.pipe_req.req_info.pipe.id = Id;
-	A.args.pipe_req.ReqType.sync.total_size = iNbrBytesToRead;
-	A.args.pipe_req.ReqType.sync.data_ptr = pBuffer;
+	A.args.pipe_req.req_type.sync.total_size = iNbrBytesToRead;
+	A.args.pipe_req.req_type.sync.data_ptr = pBuffer;
 
 	_k_pipe_option_set(&A.args, Option);
 	_k_pipe_request_type_set(&A.args, _SYNCREQ);
@@ -153,8 +153,8 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 	A.Time.ticks = TimeOut;
 
 	A.args.pipe_req.req_info.pipe.id = Id;
-	A.args.pipe_req.ReqType.sync.total_size = iNbrBytesToWrite;
-	A.args.pipe_req.ReqType.sync.data_ptr = pBuffer;
+	A.args.pipe_req.req_type.sync.total_size = iNbrBytesToWrite;
+	A.args.pipe_req.req_type.sync.data_ptr = pBuffer;
 
 	_k_pipe_option_set(&A.args, Option);
 	_k_pipe_request_type_set(&A.args, _SYNCREQ);
@@ -199,9 +199,9 @@ int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 		/* same behavior in flow as a blocking call w/o a timeout */
 
 	A.args.pipe_req.req_info.pipe.id = Id;
-	A.args.pipe_req.ReqType.async.block = Block;
-	A.args.pipe_req.ReqType.async.total_size = iSize2Xfer;
-	A.args.pipe_req.ReqType.async.sema = Sema;
+	A.args.pipe_req.req_type.async.block = Block;
+	A.args.pipe_req.req_type.async.total_size = iSize2Xfer;
+	A.args.pipe_req.req_type.async.sema = Sema;
 
 	_k_pipe_request_type_set(&A.args, _ASYNCREQ);
 	_k_pipe_option_set(&A.args, _ALL_N); /* force ALL_N */
