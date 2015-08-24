@@ -86,7 +86,7 @@ cmdPkt_t *_cmd_pkt_get(
 	key = irq_lock();
 	index = pSet->index;
 	pSet->index++;
-	if (pSet->index >= pSet->nPkts)
+	if (pSet->index >= pSet->num_packets)
 		pSet->index = 0;
 	irq_unlock(key);
 
