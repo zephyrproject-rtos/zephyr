@@ -317,7 +317,7 @@ void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc
 	desc->original_end_ptr = desc->end_ptr;
 
 	/* assumed it is allowed */
-	desc->BuffState = BUFF_EMPTY;
+	desc->buffer_state = BUFF_EMPTY;
 	desc->end_ptr = desc->original_end_ptr;
 	desc->write_ptr = desc->begin_ptr;
 	desc->write_guard = NULL;
@@ -346,11 +346,11 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *free_space_count_ptr,
 		pStop = desc->write_guard;
 	} else {
 		/*
-		 * if BuffState==BUFF_EMPTY but we have a WriteGuard,
+		 * if buffer_state==BUFF_EMPTY but we have a WriteGuard,
 		 * we still need to calculate it as a normal [Start,Stop] interval
 		 */
 
-		if (BUFF_EMPTY == desc->BuffState) {
+		if (BUFF_EMPTY == desc->buffer_state) {
 			*free_space_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 			*free_space_post_wrap_around_ptr = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 			return (*free_space_count_ptr + *free_space_post_wrap_around_ptr);
@@ -359,7 +359,7 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *free_space_count_ptr,
 	}
 
 	/*
-	 * on the other hand, if BuffState is full, we do not need a special flow;
+	 * on the other hand, if buffer_state is full, we do not need a special flow;
 	 * it will be correct as (pStop - pStart) equals 0
 	 */
 
@@ -417,11 +417,11 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *available_data_count_ptr,
 		pStop = desc->read_guard;
 	} else {
 		/*
-		 * if BuffState==BUFF_FULL but we have a ReadGuard,
+		 * if buffer_state==BUFF_FULL but we have a ReadGuard,
 		 * we still need to calculate it as a normal [Start,Stop] interval
 		 */
 
-		if (BUFF_FULL == desc->BuffState) {
+		if (BUFF_FULL == desc->buffer_state) {
 			*available_data_count_ptr = SIZEOFUNIT_TO_OCTET(desc->end_ptr - pStart);
 			*available_data_post_wrap_around_ptr = SIZEOFUNIT_TO_OCTET(pStop - desc->begin_ptr);
 			return (*available_data_count_ptr + *available_data_post_wrap_around_ptr);
@@ -430,7 +430,7 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *available_data_count_ptr,
 	}
 
 	/*
-	 * on the other hand, if BuffState is empty, we do not need a special flow;
+	 * on the other hand, if buffer_state is empty, we do not need a special flow;
 	 * it will be correct as (pStop - pStart) equals 0
 	 */
 
@@ -569,9 +569,9 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 	}
 
 	if (desc->write_ptr == desc->read_ptr) {
-		desc->BuffState = BUFF_FULL;
+		desc->buffer_state = BUFF_FULL;
 	} else {
-		desc->BuffState = BUFF_OTHER;
+		desc->buffer_state = BUFF_OTHER;
 	}
 
 	CHECK_BUFFER_POINTER(desc->write_ptr);
@@ -679,9 +679,9 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 	}
 
 	if (desc->write_ptr == desc->read_ptr) {
-		desc->BuffState = BUFF_EMPTY;
+		desc->buffer_state = BUFF_EMPTY;
 	} else {
-		desc->BuffState = BUFF_OTHER;
+		desc->buffer_state = BUFF_OTHER;
 	}
 
 	CHECK_BUFFER_POINTER(desc->read_ptr);
