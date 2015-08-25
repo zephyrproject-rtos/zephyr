@@ -31,6 +31,11 @@
 #include <stdint.h>
 #include <gpio.h>
 
+#ifdef CONFIG_PCI
+#include <pci/pci.h>
+#include <pci/pci_mgr.h>
+#endif /* CONFIG_PCI */
+
 #define CONFIG_GPIO_DW_BITS 32
 extern int gpio_initialize_dw(struct device *port);
 typedef void (*gpio_config_irq_t)(struct device *port);
@@ -39,6 +44,9 @@ struct gpio_config_dw {
 	uint32_t base_addr;
 	uint32_t bits;
 	uint32_t irq_num;
+#ifdef CONFIG_PCI
+	struct pci_dev_info  pci_dev;
+#endif /* CONFIG_PCI */
 	gpio_config_irq_t config_func;
 };
 

@@ -282,10 +282,40 @@ static struct gpio_driver_api api_funcs = {
 	.resume = gpio_resume_port_dw
 };
 
+#ifdef CONFIG_PCI
+static inline int gpio_dw_setup(struct device *dev)
+{
+	struct gpio_config_dw *config = dev->config->config_info;
+
+	pci_bus_scan_init();
+
+	if (!pci_bus_scan(&config->pci_dev)) {
+		return 0;
+	}
+
+#ifdef CONFIG_PCI_ENUMERATION
+	config->base_addr = config->pci_dev.addr;
+	config->irq_num = config->pci_dev.irq;
+#endif
+	pci_enable_regs(&config->pci_dev);
+
+	pci_show(&config->pci_dev);
+
+	return 1;
+}
+#else
+#define gpio_dw_setup(_unused_) (1)
+#endif /* CONFIG_PCI */
+
+
 int gpio_initialize_dw(struct device *port)
 {
 	struct gpio_config_dw *config = port->config->config_info;
 	uint32_t base_addr = config->base_addr;
+
+	if (!gpio_dw_setup(port)) {
+		return DEV_NOT_CONFIG;
+	}
 
 	/* interrupts in sync with system clock */
 	dw_set_bit(base_addr, INT_CLOCK_SYNC, 0, 1);
