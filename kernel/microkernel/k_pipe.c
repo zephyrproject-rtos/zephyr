@@ -52,12 +52,12 @@ extern kpipe_t _k_pipe_ptr_end[];
 void _k_pipe_init(void)
 {
 	kpipe_t *pipeId;
-	struct _k_pipe_struct *pPipe;
+	struct _k_pipe_struct *pipe_ptr;
 
 	for (pipeId = _k_pipe_ptr_start; pipeId < _k_pipe_ptr_end; pipeId++) {
-		pPipe = (struct _k_pipe_struct *)(*pipeId);
-		BuffInit((unsigned char *)pPipe->Buffer,
-				 &(pPipe->buffer_size), &pPipe->desc);
+		pipe_ptr = (struct _k_pipe_struct *)(*pipeId);
+		BuffInit((unsigned char *)pipe_ptr->Buffer,
+				 &(pipe_ptr->buffer_size), &pipe_ptr->desc);
 	}
 }
 

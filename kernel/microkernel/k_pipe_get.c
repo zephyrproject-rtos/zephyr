@@ -102,9 +102,9 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 	/* start processing */
 
-	struct _k_pipe_struct *pPipe;
+	struct _k_pipe_struct *pipe_ptr;
 
-	pPipe = RequestProc->args.pipe_xfer_req.req_info.pipe.ptr;
+	pipe_ptr = RequestProc->args.pipe_xfer_req.req_info.pipe.ptr;
 
 	do {
 		int iData2ReadFromWriters;
@@ -112,9 +112,9 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		int iTotalData2Read;
 		int32_t ticks;
 
-		iData2ReadFromWriters = CalcAvailWriterData(pPipe->writers);
+		iData2ReadFromWriters = CalcAvailWriterData(pipe_ptr->writers);
 		iAvailBufferData =
-			pPipe->desc.available_data_count + pPipe->desc.available_data_post_wrap_around;
+			pipe_ptr->desc.available_data_count + pipe_ptr->desc.available_data_post_wrap_around;
 		iTotalData2Read =
 			iAvailBufferData + iData2ReadFromWriters;
 
@@ -124,7 +124,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		/* (possibly) do some processing */
 		ticks = RequestProc->Time.ticks;
 		RequestProc->Time.timer = NULL;
-		_k_pipe_process(pPipe, NULL /* writer */, RequestProc /* reader */);
+		_k_pipe_process(pipe_ptr, NULL /* writer */, RequestProc /* reader */);
 		RequestProc->Time.ticks = ticks;
 
 		/* check if request was processed */
@@ -142,7 +142,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 	if (_TIME_NB != _k_pipe_time_type_get(&RequestProc->args)) {
 		/* call is blocking */
-		INSERT_ELM(pPipe->readers, RequestProc);
+		INSERT_ELM(pipe_ptr->readers, RequestProc);
 		/*
 		 * NOTE: It is both faster and simpler to blindly assign the
 		 * PIPE_GET_TIMEOUT microkernel command to the packet even though it
@@ -175,7 +175,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		RequestProc->Time.timer = NULL;
 
 		if (XFER_BUSY == RequestProc->args.pipe_xfer_req.status) {
-			INSERT_ELM(pPipe->readers, RequestProc);
+			INSERT_ELM(pipe_ptr->readers, RequestProc);
 		} else {
 			__ASSERT_NO_MSG(XFER_IDLE ==
 				RequestProc->args.pipe_xfer_req.status);

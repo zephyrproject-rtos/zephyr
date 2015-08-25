@@ -119,9 +119,9 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 	/* start processing */
 
-	struct _k_pipe_struct *pPipe;
+	struct _k_pipe_struct *pipe_ptr;
 
-	pPipe = RequestProc->args.pipe_xfer_req.req_info.pipe.ptr;
+	pipe_ptr = RequestProc->args.pipe_xfer_req.req_info.pipe.ptr;
 
 	do {
 		int iSpace2WriteinReaders;
@@ -129,9 +129,9 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		int iTotalSpace2Write;
 		int32_t ticks;
 
-		iSpace2WriteinReaders = CalcFreeReaderSpace(pPipe->readers);
+		iSpace2WriteinReaders = CalcFreeReaderSpace(pipe_ptr->readers);
 		iFreeBufferSpace =
-			pPipe->desc.free_space_count + pPipe->desc.free_space_post_wrap_around;
+			pipe_ptr->desc.free_space_count + pipe_ptr->desc.free_space_post_wrap_around;
 		iTotalSpace2Write =
 			iFreeBufferSpace + iSpace2WriteinReaders;
 
@@ -142,7 +142,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 
 		ticks = RequestProc->Time.ticks;
 		RequestProc->Time.timer = NULL;
-		_k_pipe_process(pPipe, RequestProc /* writer */, NULL /* reader */);
+		_k_pipe_process(pipe_ptr, RequestProc /* writer */, NULL /* reader */);
 		RequestProc->Time.ticks = ticks;
 
 		/* check if request was processed */
@@ -161,7 +161,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	if (_TIME_NB !=
 		_k_pipe_time_type_get(&RequestProc->args)) {
 		/* call is blocking */
-		INSERT_ELM(pPipe->writers, RequestProc);
+		INSERT_ELM(pipe_ptr->writers, RequestProc);
 		/*
 		 * NOTE: It is both faster and simpler to blindly assign the
 		 * PIPE_PUT_TIMEOUT microkernel command to the packet even though it
@@ -194,7 +194,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		RequestProc->Time.timer = NULL;
 
 		if (XFER_BUSY == RequestProc->args.pipe_xfer_req.status) {
-			INSERT_ELM(pPipe->writers, RequestProc);
+			INSERT_ELM(pipe_ptr->writers, RequestProc);
 		} else {
 			__ASSERT_NO_MSG(XFER_IDLE ==
 				RequestProc->args.pipe_xfer_req.status);

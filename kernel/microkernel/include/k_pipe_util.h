@@ -50,7 +50,7 @@ typedef uint32_t TIME_TYPE;
 #define _TIME_BT ((TIME_TYPE)0x00040000)
 
 
-extern void _k_pipe_process(struct _k_pipe_struct *pPipe,
+extern void _k_pipe_process(struct _k_pipe_struct *pipe_ptr,
 					 struct k_args *pWriter, struct k_args *pReader);
 
 extern void mycopypacket(struct k_args **out, struct k_args *in);

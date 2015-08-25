@@ -217,7 +217,7 @@ struct _pipe_ack_arg {
 };
 
 struct _pipe_xfer_ack_arg {
-	struct _k_pipe_struct *pPipe;
+	struct _k_pipe_struct *pipe_ptr;
 	XFER_TYPE XferType; /* W2B, B2R or W2R		    */
 	struct k_args *pWriter;    /* if there's a writer involved,
 				 this is the link to it      */
