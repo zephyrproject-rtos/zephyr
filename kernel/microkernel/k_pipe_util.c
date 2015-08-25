@@ -69,11 +69,11 @@ int CalcFreeReaderSpace(struct k_args *pReaderList)
 	int iSize = 0;
 
 	if (pReaderList) {
-		struct k_args *pReader = pReaderList;
-		while (pReader != NULL) {
-			iSize += (pReader->args.pipe_xfer_req.total_size -
-				  pReader->args.pipe_xfer_req.xferred_size);
-			pReader = pReader->next;
+		struct k_args *reader_ptr = pReaderList;
+		while (reader_ptr != NULL) {
+			iSize += (reader_ptr->args.pipe_xfer_req.total_size -
+				  reader_ptr->args.pipe_xfer_req.xferred_size);
+			reader_ptr = reader_ptr->next;
 		}
 	}
 	return iSize;

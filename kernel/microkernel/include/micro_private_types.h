@@ -221,7 +221,7 @@ struct _pipe_xfer_ack_arg {
 	XFER_TYPE xfer_type; /* W2B, B2R or W2R		    */
 	struct k_args *writer_ptr;    /* if there's a writer involved,
 				 this is the link to it      */
-	struct k_args *pReader; /* if there's a reader involved,
+	struct k_args *reader_ptr; /* if there's a reader involved,
 				 this is the link to it      */
 	int ID; /* if it is a Xfer to/from a buffer,
 		   this is the registered Xfer's ID */
