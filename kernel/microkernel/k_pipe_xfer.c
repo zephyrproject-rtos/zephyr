@@ -65,7 +65,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 {
 	struct _pipe_xfer_ack_arg *pipe_xfer_ack = &pEOXfer->args.pipe_xfer_ack;
 
-	switch (pipe_xfer_ack->XferType) {
+	switch (pipe_xfer_ack->xfer_type) {
 	case XFER_W2B: /* Writer to Buffer */
 	{
 		struct k_args *pWriter = pipe_xfer_ack->pWriter;
@@ -242,7 +242,7 @@ static kpriority_t move_priority_compute(struct k_args *pWriter,
  */
 
 static void setup_movedata(struct k_args *A,
-						   struct _k_pipe_struct *pipe_ptr, XFER_TYPE XferType,
+						   struct _k_pipe_struct *pipe_ptr, XFER_TYPE xfer_type,
 						   struct k_args *pWriter, struct k_args *pReader,
 						   void *destination, void *source,
 						   uint32_t size, int XferID)
@@ -268,14 +268,14 @@ static void setup_movedata(struct k_args *A,
 	pContSend->next = NULL;
 	pContSend->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContSend->args.pipe_xfer_ack.pipe_ptr = pipe_ptr;
-	pContSend->args.pipe_xfer_ack.XferType = XferType;
+	pContSend->args.pipe_xfer_ack.xfer_type = xfer_type;
 	pContSend->args.pipe_xfer_ack.ID = XferID;
 	pContSend->args.pipe_xfer_ack.iSize = size;
 
 	pContRecv->next = NULL;
 	pContRecv->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContRecv->args.pipe_xfer_ack.pipe_ptr = pipe_ptr;
-	pContRecv->args.pipe_xfer_ack.XferType = XferType;
+	pContRecv->args.pipe_xfer_ack.xfer_type = xfer_type;
 	pContRecv->args.pipe_xfer_ack.ID = XferID;
 	pContRecv->args.pipe_xfer_ack.iSize = size;
 
@@ -283,7 +283,7 @@ static void setup_movedata(struct k_args *A,
 	pContSend->priority = A->priority;
 	pContRecv->priority = A->priority;
 
-	switch (XferType) {
+	switch (xfer_type) {
 	case XFER_W2B: /* Writer to Buffer */
 	{
 		__ASSERT_NO_MSG(NULL == pReader);
