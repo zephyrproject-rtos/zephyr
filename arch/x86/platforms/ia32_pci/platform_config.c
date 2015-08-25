@@ -235,3 +235,51 @@ void spi_config_1_irq(struct device *dev)
 
 #endif /* CONFIG_SPI_INTEL_PORT_1 */
 #endif /* CONFIG_SPI_INTEL */
+
+#if CONFIG_GPIO_DW
+
+#include <gpio.h>
+#include <gpio/gpio-dw.h>
+#include <pic.h>
+#include <ioapic.h>
+
+extern void gpio_dw_isr(struct device *port);
+
+#if CONFIG_GPIO_DW_0
+void gpio_config_0_irq(struct device *port);
+
+struct gpio_config_dw gpio_config_dw_0 = {
+	.base_addr = CONFIG_GPIO_DW_0_BASE_ADDR,
+	.bits = CONFIG_GPIO_DW_0_BITS,
+	.irq_num = CONFIG_GPIO_DW_0_IRQ,
+	.pci_dev.bus = CONFIG_GPIO_DW_0_BUS,
+	.pci_dev.dev = CONFIG_GPIO_DW_0_DEV,
+	.pci_dev.vendor_id = CONFIG_GPIO_DW_VENDOR_ID,
+	.pci_dev.device_id = CONFIG_GPIO_DW_DEVICE_ID,
+	.pci_dev.function = CONFIG_GPIO_DW_0_FUNCTION,
+	.pci_dev.bar = CONFIG_GPIO_DW_0_BAR,
+	.config_func = gpio_config_0_irq
+};
+
+struct gpio_runtime_dw gpio_0_runtime;
+
+DECLARE_DEVICE_INIT_CONFIG(gpio_0, CONFIG_GPIO_DW_0_NAME,
+			   gpio_initialize_dw, &gpio_config_dw_0);
+pure_init(gpio_0, &gpio_0_runtime);
+
+IRQ_CONNECT_STATIC(gpio_dw_0, CONFIG_GPIO_DW_0_IRQ,
+		   CONFIG_GPIO_DW_0_PRI, gpio_dw_isr_0, 0);
+
+void gpio_config_0_irq(struct device *port)
+{
+	struct gpio_config_dw *config = port->config->config_info;
+	IRQ_CONFIG(gpio_dw_0, config->irq_num);
+}
+
+void gpio_dw_isr_0(void *unused)
+{
+	gpio_dw_isr(&__initconfig_gpio_01);
+}
+
+#endif /* CONFIG_GPIO_DW_0 */
+#endif /* CONFIG_GPIO_DW */
