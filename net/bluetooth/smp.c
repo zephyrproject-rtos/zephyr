@@ -64,6 +64,7 @@ enum pairing_method {
 enum {
 	SMP_FLAG_TK_VALID,	/* if TK values is valid */
 	SMP_FLAG_CFM_DELAYED,	/* if confirm should be send when TK is valid */
+	SMP_FLAG_ENC_PENDING,	/* if waiting for an encryption change event */
 };
 
 /* SMP channel specific context */
@@ -73,9 +74,6 @@ struct bt_smp {
 
 	/* Commands that remote is allowed to send */
 	atomic_t		allowed_cmds;
-
-	/* If we're waiting for an encryption change event */
-	bool			pending_encrypt;
 
 	/* Flags for SMP state machine */
 	atomic_t		flags;
@@ -756,7 +754,7 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		smp->pending_encrypt = true;
+		atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
 
 		return 0;
 	}
@@ -781,7 +779,7 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("generated STK %s\n", h(keys->slave_ltk.val, 16));
 
-	smp->pending_encrypt = true;
+	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
 
 	smp_send_pairing_random(conn);
 
@@ -1219,11 +1217,9 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 		return;
 	}
 
-	if (!smp->pending_encrypt) {
+	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_ENC_PENDING)) {
 		return;
 	}
-
-	smp->pending_encrypt = false;
 
 	if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_ENCRYPT_INFO);
