@@ -66,9 +66,9 @@ static void mvdreq_copy(struct moved_req *ReqArgs)
 	memcpy(ReqArgs->destination, ReqArgs->source,
 		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize));
 
-	if (ReqArgs->Action & MVDACT_SNDACK)
+	if (ReqArgs->action & MVDACT_SNDACK)
 		mvdreq_docont(ReqArgs->Extra.Setup.continuation_send);
-	if (ReqArgs->Action & MVDACT_RCVACK)
+	if (ReqArgs->action & MVDACT_RCVACK)
 		mvdreq_docont(ReqArgs->Extra.Setup.continuation_receive);
 }
 
@@ -88,19 +88,19 @@ void _k_movedata_request(struct k_args *Req)
 	__ASSERT_NO_MSG(0 ==
 	       (ReqArgs->iTotalSize %
 		SIZEOFUNIT_TO_OCTET(1))); /* must be a multiple of size_t */
-	__ASSERT_NO_MSG(!(ReqArgs->Action & MVDACT_INVALID));
+	__ASSERT_NO_MSG(!(ReqArgs->action & MVDACT_INVALID));
 
 	/* If no data is to be transferred, just execute the continuation
 	   packet,
 	   if any, and get out:
 	 */
 	if (0 == ReqArgs->iTotalSize) {
-		if (ReqArgs->Action & MVDACT_SNDACK)
+		if (ReqArgs->action & MVDACT_SNDACK)
 			mvdreq_docont(
 				ReqArgs->Extra.Setup.continuation_send); /* Send ack
 								  continuation
 								  */
-		if (ReqArgs->Action & MVDACT_RCVACK)
+		if (ReqArgs->action & MVDACT_RCVACK)
 			mvdreq_docont(
 				ReqArgs->Extra.Setup.continuation_receive); /* Recv ack
 								  continuation

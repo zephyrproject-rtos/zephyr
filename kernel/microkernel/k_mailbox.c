@@ -159,7 +159,7 @@ static bool prepare_transfer(struct k_args *move,
 		 */
 		move->priority = max(writer->priority, reader->priority);
 		move->Ctxt.task = NULL;
-		move->args.MovedReq.Action =
+		move->args.MovedReq.action =
 			(MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
 		move->args.MovedReq.iTotalSize = writer->args.m1.mess.size;
 		move->args.MovedReq.Extra.Setup.continuation_send = NULL;

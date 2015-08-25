@@ -282,7 +282,7 @@ struct moved_req_args_setup {
 typedef uint32_t MovedAction;
 
 struct moved_req {
-	MovedAction Action;
+	MovedAction action;
 	void *source;
 	void *destination;
 	uint32_t iTotalSize;

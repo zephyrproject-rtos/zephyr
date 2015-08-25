@@ -255,7 +255,7 @@ static void setup_movedata(struct k_args *A,
 	A->Ctxt.task = NULL;
 	/* this caused problems when != NULL related to set/reset of state bits */
 
-	A->args.MovedReq.Action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
+	A->args.MovedReq.action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
 	A->args.MovedReq.source = source;
 	A->args.MovedReq.destination = destination;
 	A->args.MovedReq.iTotalSize = size;
