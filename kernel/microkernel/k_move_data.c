@@ -67,7 +67,7 @@ static void mvdreq_copy(struct moved_req *ReqArgs)
 		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize));
 
 	if (ReqArgs->Action & MVDACT_SNDACK)
-		mvdreq_docont(ReqArgs->Extra.Setup.ContSnd);
+		mvdreq_docont(ReqArgs->Extra.Setup.continuation_send);
 	if (ReqArgs->Action & MVDACT_RCVACK)
 		mvdreq_docont(ReqArgs->Extra.Setup.ContRcv);
 }
@@ -97,7 +97,7 @@ void _k_movedata_request(struct k_args *Req)
 	if (0 == ReqArgs->iTotalSize) {
 		if (ReqArgs->Action & MVDACT_SNDACK)
 			mvdreq_docont(
-				ReqArgs->Extra.Setup.ContSnd); /* Send ack
+				ReqArgs->Extra.Setup.continuation_send); /* Send ack
 								  continuation
 								  */
 		if (ReqArgs->Action & MVDACT_RCVACK)

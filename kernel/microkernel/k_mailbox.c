@@ -162,7 +162,7 @@ static bool prepare_transfer(struct k_args *move,
 		move->args.MovedReq.Action =
 			(MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
 		move->args.MovedReq.iTotalSize = writer->args.m1.mess.size;
-		move->args.MovedReq.Extra.Setup.ContSnd = NULL;
+		move->args.MovedReq.Extra.Setup.continuation_send = NULL;
 		move->args.MovedReq.Extra.Setup.ContRcv = NULL;
 
 		/* reader: */
@@ -196,7 +196,7 @@ static bool prepare_transfer(struct k_args *move,
 				writer->args.m1.mess.tx_data;
 		}
 		/* chain the writer */
-		move->args.MovedReq.Extra.Setup.ContSnd = writer;
+		move->args.MovedReq.Extra.Setup.continuation_send = writer;
 
 		return all_data_present;
 	} else {
@@ -763,7 +763,7 @@ void _k_mbox_receive_data(struct k_args *Starter)
 
 	MoveD->args.MovedReq.iTotalSize = CopyStarter->args.m1.mess.size;
 
-	Writer = MoveD->args.MovedReq.Extra.Setup.ContSnd;
+	Writer = MoveD->args.MovedReq.Extra.Setup.continuation_send;
 	if (Writer != NULL) {
 		if (ISASYNCMSG(&(Writer->args.m1.mess))) {
 			CopyStarter->args.m1.mess.tx_block =
@@ -840,7 +840,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 		 * SEND_ACK is processed, change its [pool_id] to -1.
 		 */
 
-		Writer = MoveD->args.MovedReq.Extra.Setup.ContSnd;
+		Writer = MoveD->args.MovedReq.Extra.Setup.continuation_send;
 		__ASSERT_NO_MSG(NULL != Writer);
 		__ASSERT_NO_MSG(NULL == Writer->next);
 
@@ -913,7 +913,7 @@ void _k_mbox_send_data(struct k_args *Starter)
 	CopyStarter->Time.rcode = RC_OK;
 	CopyStarter->Comm = _K_SVC_MBOX_SEND_ACK;
 
-	MoveD->args.MovedReq.Extra.Setup.ContSnd = CopyStarter;
+	MoveD->args.MovedReq.Extra.Setup.continuation_send = CopyStarter;
 	CopyStarter->next = NULL;
 	MoveD->args.MovedReq.source = CopyStarter->args.m1.mess.rx_data;
 
