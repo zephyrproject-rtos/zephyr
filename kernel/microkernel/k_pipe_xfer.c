@@ -309,8 +309,8 @@ static void setup_movedata(struct k_args *A,
 		__ASSERT_NO_MSG(1 == 0); /* we should not come here */
 	}
 
-	A->args.MovedReq.Extra.Setup.continuation_send = pContSend;
-	A->args.MovedReq.Extra.Setup.continuation_receive = pContRecv;
+	A->args.MovedReq.Extra.setup.continuation_send = pContSend;
+	A->args.MovedReq.Extra.setup.continuation_receive = pContRecv;
 
 	/*
 	 * (possible optimisation)
