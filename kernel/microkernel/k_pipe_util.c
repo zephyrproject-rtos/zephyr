@@ -84,11 +84,11 @@ int CalcAvailWriterData(struct k_args *pWriterList)
 	int iSize = 0;
 
 	if (pWriterList) {
-		struct k_args *pWriter = pWriterList;
-		while (pWriter != NULL) {
-			iSize += (pWriter->args.pipe_xfer_req.total_size -
-				  pWriter->args.pipe_xfer_req.xferred_size);
-			pWriter = pWriter->next;
+		struct k_args *writer_ptr = pWriterList;
+		while (writer_ptr != NULL) {
+			iSize += (writer_ptr->args.pipe_xfer_req.total_size -
+				  writer_ptr->args.pipe_xfer_req.xferred_size);
+			writer_ptr = writer_ptr->next;
 		}
 	}
 	return iSize;
