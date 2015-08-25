@@ -6,8 +6,19 @@ config PCI
 	default n
 	depends on X86_32
 	help
-	This options enables support of PCI bus enumeration for device
-	drivers.
+	This options enables support of PCI bus for device drivers.
+
+config PCI_ENUMERATION
+	bool
+	prompt "Enable PCI device enumeration"
+	depends on PCI
+	default y
+	help
+	This option enables the PCI enumeration for device drivers.
+	This might be useful along with PCI_DEBUG to find out which
+	are the PCI settings of the devices. Once those are known and
+	statically set in every relevant driver's configuration, it
+	might be wise to disable this option to remove useless code.
 
 config PCI_DEBUG
 	bool

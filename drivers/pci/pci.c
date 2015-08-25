@@ -126,6 +126,8 @@ restarting from 0.
 #include <pci/pci_mgr.h>
 #include <pci/pci.h>
 
+#ifdef CONFIG_PCI_ENUMERATION
+
 /* NOTE. These parameters may need to be configurable */
 #define LSPCI_MAX_BUS PCI_BUS_NUMBERS /* maximum number of buses to scan */
 #define LSPCI_MAX_DEV 32  /* maximum number of devices to scan */
@@ -391,34 +393,6 @@ void pci_bus_scan_init(void)
 }
 
 
-void pci_enable_regs(struct pci_dev_info *dev_info)
-{
-	union pci_addr_reg pci_ctrl_addr;
-	uint32_t pci_data;
-
-	pci_ctrl_addr.value = 0;
-	pci_ctrl_addr.field.func = dev_info->function;
-	pci_ctrl_addr.field.bus = dev_info->bus;
-	pci_ctrl_addr.field.device = dev_info->dev;
-	pci_ctrl_addr.field.reg = 1;
-
-#ifdef CONFIG_PCI_DEBUG
-	printk("pci_enable_regs 0x%x\n", pci_ctrl_addr);
-#endif
-
-	pci_read(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(uint16_t),
-			&pci_data);
-
-	pci_data = pci_data | PCI_CMD_MEM_ENABLE;
-
-	pci_write(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(uint16_t),
-			pci_data);
-}
-
 /**
  *
  * @brief Scans PCI bus for devices
@@ -483,6 +457,35 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 	}
 
 	return 0;
+}
+#endif /* CONFIG_PCI_ENUMERATION */
+
+void pci_enable_regs(struct pci_dev_info *dev_info)
+{
+	union pci_addr_reg pci_ctrl_addr;
+	uint32_t pci_data;
+
+	pci_ctrl_addr.value = 0;
+	pci_ctrl_addr.field.func = dev_info->function;
+	pci_ctrl_addr.field.bus = dev_info->bus;
+	pci_ctrl_addr.field.device = dev_info->dev;
+	pci_ctrl_addr.field.reg = 1;
+
+#ifdef CONFIG_PCI_DEBUG
+	printk("pci_enable_regs 0x%x\n", pci_ctrl_addr);
+#endif
+
+	pci_read(DEFAULT_PCI_CONTROLLER,
+			pci_ctrl_addr,
+			sizeof(uint16_t),
+			&pci_data);
+
+	pci_data = pci_data | PCI_CMD_MEM_ENABLE;
+
+	pci_write(DEFAULT_PCI_CONTROLLER,
+			pci_ctrl_addr,
+			sizeof(uint16_t),
+			pci_data);
 }
 
 #ifdef CONFIG_PCI_DEBUG

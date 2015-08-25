@@ -107,7 +107,7 @@ static int ia32_pci_init(struct device *arg)
 	ioapic_init();       /* NOP if not needed */
 	hpet_irq_set();      /* NOP if not needed */
 
-#ifdef CONFIG_PCI_DEBUG
+#if defined(CONFIG_PCI_DEBUG) && defined(CONFIG_PCI_ENUMERATION)
 	/* Rescan PCI and display the list of PCI attached devices */
 	struct pci_dev_info info = {
 		.function = PCI_FUNCTION_ANY,
@@ -124,7 +124,7 @@ static int ia32_pci_init(struct device *arg)
 		info.function = PCI_FUNCTION_ANY;
 		info.bar = PCI_BAR_ANY;
 	}
-#endif /* CONFIG_PCI_DEBUG */
+#endif /* CONFIG_PCI_DEBUG && CONFIG_PCI_ENUMERATION */
 	return 0;
 }
 

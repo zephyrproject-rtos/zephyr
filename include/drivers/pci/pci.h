@@ -66,8 +66,17 @@ struct pci_dev_info {
 	uint16_t device_id;
 };
 
+#ifdef CONFIG_PCI_ENUMERATION
 extern void pci_bus_scan_init(void);
 extern int pci_bus_scan(struct pci_dev_info *dev_info);
+#else
+#define pci_bus_scan_init(void) {;}
+static inline int pci_bus_scan(struct pci_dev_info *dev_info)
+{
+	return 1;
+}
+#endif /* CONFIG_PCI_ENUMERATION */
+
 void pci_enable_regs(struct pci_dev_info *dev_info);
 
 #ifdef CONFIG_PCI_DEBUG
