@@ -883,7 +883,7 @@ define filechk_version.h
        expr $(VERSION_MAJOR) \* 65536 + 0$(VERSION_MINOR) \* 256 + 0$(PATCHLEVEL)); \
        echo '#define ZEPHYR_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))';); \
        echo ;\
-       echo -n "#define KERNELVERSION "; \
+       echo "#define KERNELVERSION \\"; \
        echo "$(KERNEL_VERSION_HEX)$(VERSION_RESERVED_HEX)"; \
        echo "#define KERNEL_VERSION_NUMBER     $(KERNEL_VERSION_HEX)"; \
        echo "#define KERNEL_VERSION_MAJOR      $(VERSION_MAJOR)"; \
