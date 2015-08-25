@@ -94,7 +94,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		} else {
 			/* Xfer to Buffer finished */
 
-			int XferId = pipe_xfer_ack->ID;
+			int XferId = pipe_xfer_ack->id;
 
 			BuffEnQA_End(&pipe_xfer_ack->pipe_ptr->desc, XferId,
 						 pipe_xfer_ack->iSize);
@@ -133,7 +133,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 		} else {
 			/* Xfer from Buffer finished */
 
-			int XferId = pipe_xfer_ack->ID;
+			int XferId = pipe_xfer_ack->id;
 
 			BuffDeQA_End(&pipe_xfer_ack->pipe_ptr->desc, XferId,
 						 pipe_xfer_ack->iSize);
@@ -269,14 +269,14 @@ static void setup_movedata(struct k_args *A,
 	pContSend->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContSend->args.pipe_xfer_ack.pipe_ptr = pipe_ptr;
 	pContSend->args.pipe_xfer_ack.xfer_type = xfer_type;
-	pContSend->args.pipe_xfer_ack.ID = XferID;
+	pContSend->args.pipe_xfer_ack.id = XferID;
 	pContSend->args.pipe_xfer_ack.iSize = size;
 
 	pContRecv->next = NULL;
 	pContRecv->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContRecv->args.pipe_xfer_ack.pipe_ptr = pipe_ptr;
 	pContRecv->args.pipe_xfer_ack.xfer_type = xfer_type;
-	pContRecv->args.pipe_xfer_ack.ID = XferID;
+	pContRecv->args.pipe_xfer_ack.id = XferID;
 	pContRecv->args.pipe_xfer_ack.iSize = size;
 
 	A->priority = move_priority_compute(writer_ptr, reader_ptr);

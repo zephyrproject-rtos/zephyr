@@ -223,7 +223,7 @@ struct _pipe_xfer_ack_arg {
 				 this is the link to it      */
 	struct k_args *reader_ptr; /* if there's a reader involved,
 				 this is the link to it      */
-	int ID; /* if it is a Xfer to/from a buffer,
+	int id; /* if it is a Xfer to/from a buffer,
 		   this is the registered Xfer's ID */
 	int iSize; /* amount of data Xferred	    */
 };
