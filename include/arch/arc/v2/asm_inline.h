@@ -1,7 +1,7 @@
-/* arch.h - ARC specific nanokernel interface header */
+/* asm_inline.h - ARC inline assembler and macros for public functions */
 
 /*
- * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2015 Intel Corporation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -13,7 +13,7 @@
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
  *
- * 3) Neither the name of Wind River Systems nor the names of its contributors
+ * 3) Neither the name of Intel Corporation nor the names of its contributors
  * may be used to endorse or promote products derived from this software without
  * specific prior written permission.
  *
@@ -30,40 +30,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __ASM_INLINE_H__
+#define __ASM_INLINE_H__
+
 /*
-DESCRIPTION
-This header contains the ARC specific nanokernel interface.  It is
-included by the nanokernel interface architecture-abstraction header
-(nanokernel/cpu.h)
+ * The file must not be included directly
+ * Include nanokernel/cpu.h instead
  */
 
-#ifndef _ARC_ARCH__H_
-#define _ARC_ARCH__H_
-
-#ifdef __cplusplus
-extern "C" {
+#if defined(__GNUC__)
+#include <arch/arc/v2/asm_inline_gcc.h>
+#else
+#erro "you need to provide an asm_inline.h for your compiler"
 #endif
 
-/* APIs need to support non-byte addressible architectures */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
-#ifdef CONFIG_CPU_ARCV2
-#include <arch/arc/v2/exc.h>
-#include <arch/arc/v2/irq.h>
-#include <arch/arc/v2/ffs.h>
-#include <arch/arc/v2/error.h>
-#include <arch/arc/v2/misc.h>
-#include <arch/arc/v2/aux_regs.h>
-#include <arch/arc/v2/arcv2_irq_unit.h>
-#include <arch/arc/v2/asm_inline.h>
-#endif
-
-#define STACK_ALIGN  4
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _ARC_ARCH__H_ */
+#endif /* __ASM_INLINE_H__ */
