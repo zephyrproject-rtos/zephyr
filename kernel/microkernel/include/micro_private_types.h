@@ -204,7 +204,7 @@ struct _pipe_xfer_req_arg {
 	int total_size;      /* total size of data/free space    */
 	int xferred_size;    /* size of data ALREADY Xferred	    */
 	PIPE_REQUEST_STATUS status; /* status of processing of request  */
-	int iNbrPendXfers;   /* # data Xfers (still) in progress */
+	int num_pending_xfers;   /* # data Xfers (still) in progress */
 };
 
 struct _pipe_ack_arg {

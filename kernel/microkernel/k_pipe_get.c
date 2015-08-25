@@ -82,7 +82,7 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	}
 
 	RequestProc->args.pipe_xfer_req.status = XFER_IDLE;
-	RequestProc->args.pipe_xfer_req.iNbrPendXfers = 0;
+	RequestProc->args.pipe_xfer_req.num_pending_xfers = 0;
 	RequestProc->args.pipe_xfer_req.xferred_size = 0;
 
 	RequestProc->next = NULL;
@@ -202,7 +202,7 @@ void _k_pipe_get_timeout(struct k_args *ReqProc)
 	_k_pipe_request_status_set(&ReqProc->args.pipe_xfer_req, TERM_TMO);
 
 	DeListWaiter(ReqProc);
-	if (0 == ReqProc->args.pipe_xfer_req.iNbrPendXfers) {
+	if (0 == ReqProc->args.pipe_xfer_req.num_pending_xfers) {
 		_k_pipe_get_reply(ReqProc);
 	}
 }
@@ -217,7 +217,7 @@ void _k_pipe_get_timeout(struct k_args *ReqProc)
 void _k_pipe_get_reply(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(
-		(0 == ReqProc->args.pipe_xfer_req.iNbrPendXfers) /*  no pending Xfers */
+		(0 == ReqProc->args.pipe_xfer_req.num_pending_xfers) /*  no pending Xfers */
 	    && (NULL == ReqProc->Time.timer) /*  no pending timer */
 	    && (NULL == ReqProc->head)); /*  not in list */
 

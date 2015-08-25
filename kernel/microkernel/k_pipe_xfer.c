@@ -74,8 +74,8 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			struct _pipe_xfer_req_arg *pipe_write_req =
 				&pipe_xfer_ack->pWriter->args.pipe_xfer_req;
 
-			--pipe_write_req->iNbrPendXfers;
-			if (0 == pipe_write_req->iNbrPendXfers) {
+			--pipe_write_req->num_pending_xfers;
+			if (0 == pipe_write_req->num_pending_xfers) {
 				if (TERM_XXX & pipe_write_req->status) {
 					/* request is terminated, send reply */
 					_k_pipe_put_reply(pipe_xfer_ack->pWriter);
@@ -114,8 +114,8 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			struct _pipe_xfer_req_arg *pipe_read_req =
 				&pipe_xfer_ack->pReader->args.pipe_xfer_req;
 
-			--pipe_read_req->iNbrPendXfers;
-			if (0 == pipe_read_req->iNbrPendXfers) {
+			--pipe_read_req->num_pending_xfers;
+			if (0 == pipe_read_req->num_pending_xfers) {
 				if (TERM_XXX & pipe_read_req->status) {
 					/* request is terminated, send reply */
 					_k_pipe_get_reply(pipe_xfer_ack->pReader);
@@ -154,8 +154,8 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			struct _pipe_xfer_req_arg *pipe_write_req =
 				&pipe_xfer_ack->pWriter->args.pipe_xfer_req;
 
-			--pipe_write_req->iNbrPendXfers;
-			if (0 == pipe_write_req->iNbrPendXfers) {
+			--pipe_write_req->num_pending_xfers;
+			if (0 == pipe_write_req->num_pending_xfers) {
 				if (TERM_XXX & pipe_write_req->status) {
 					/* request is terminated, send reply */
 					_k_pipe_put_reply(pipe_xfer_ack->pWriter);
@@ -176,8 +176,8 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			struct _pipe_xfer_req_arg *pipe_read_req =
 				&pipe_xfer_ack->pReader->args.pipe_xfer_req;
 
-			--pipe_read_req->iNbrPendXfers;
-			if (0 == pipe_read_req->iNbrPendXfers) {
+			--pipe_read_req->num_pending_xfers;
+			if (0 == pipe_read_req->num_pending_xfers) {
 				if (TERM_XXX & pipe_read_req->status) {
 					/* request is terminated, send reply */
 					_k_pipe_get_reply(pipe_xfer_ack->pReader);
@@ -463,7 +463,7 @@ static void pipe_read(struct _k_pipe_struct *pPipe, struct k_args *pNewReader)
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
-		pipe_read_req->iNbrPendXfers++;
+		pipe_read_req->num_pending_xfers++;
 		pipe_read_req->xferred_size += ret;
 
 		if (pipe_read_req->xferred_size == pipe_read_req->total_size) {
@@ -533,7 +533,7 @@ static void pipe_write(struct _k_pipe_struct *pPipe, struct k_args *pNewWriter)
 		_k_movedata_request(Moved_req);
 		FREEARGS(Moved_req);
 
-		pipe_write_req->iNbrPendXfers++;
+		pipe_write_req->num_pending_xfers++;
 		pipe_write_req->xferred_size += ret;
 
 		if (pipe_write_req->xferred_size == pipe_write_req->total_size) {
@@ -564,7 +564,7 @@ static void pipe_xfer_status_update(
 	int bytesXferred      /* # of bytes transferred */
 	)
 {
-	pipe_xfer_req->iNbrPendXfers++;
+	pipe_xfer_req->num_pending_xfers++;
 	pipe_xfer_req->xferred_size += bytesXferred;
 
 	if (pipe_xfer_req->xferred_size == pipe_xfer_req->total_size) {
@@ -969,7 +969,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				DeListWaiter(pReader);
 				myfreetimer(&(pReader->Time.timer));
 			}
-			if (0 == pReader->args.pipe_xfer_req.iNbrPendXfers) {
+			if (0 == pReader->args.pipe_xfer_req.num_pending_xfers) {
 				pReader->Comm = _K_SVC_PIPE_GET_REPLY;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
@@ -999,7 +999,7 @@ void _k_pipe_process(struct _k_pipe_struct *pPipe, struct k_args *pNLWriter,
 				DeListWaiter(pWriter);
 				myfreetimer(&(pWriter->Time.timer));
 			}
-			if (0 == pWriter->args.pipe_xfer_req.iNbrPendXfers) {
+			if (0 == pWriter->args.pipe_xfer_req.num_pending_xfers) {
 				pWriter->Comm = _K_SVC_PIPE_PUT_REPLY;
 				/* if terminated and no pending Xfers anymore,
 				   we have to reply */
