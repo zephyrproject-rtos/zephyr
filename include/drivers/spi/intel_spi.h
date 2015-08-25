@@ -35,6 +35,11 @@
 
 #include <spi.h>
 
+#ifdef CONFIG_PCI
+#include <pci/pci.h>
+#include <pci/pci_mgr.h>
+#endif /* CONFIG_PCI */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,8 +53,7 @@ struct spi_intel_config {
 	uint32_t regs;
 	uint32_t irq;
 #ifdef CONFIG_PCI
-	uint32_t function:4;
-	uint32_t _unused:28;
+	struct pci_dev_info pci_dev;
 #endif /* CONFIG_PCI */
 	spi_intel_config_t config_func;
 };

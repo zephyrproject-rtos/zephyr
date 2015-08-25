@@ -156,7 +156,12 @@ struct spi_intel_data spi_intel_data_port_0;
 struct spi_intel_config spi_intel_config_0 = {
 	.regs = CONFIG_SPI_INTEL_PORT_0_REGS,
 	.irq = CONFIG_SPI_INTEL_PORT_0_IRQ,
-	.function = CONFIG_SPI_INTEL_PORT_0_FUNCTION,
+	.pci_dev.class = CONFIG_SPI_INTEL_CLASS,
+	.pci_dev.bus = CONFIG_SPI_INTEL_PORT_0_BUS,
+	.pci_dev.dev = CONFIG_SPI_INTEL_PORT_0_DEV,
+	.pci_dev.vendor_id = CONFIG_SPI_INTEL_VENDOR_ID,
+	.pci_dev.device_id = CONFIG_SPI_INTEL_DEVICE_ID,
+	.pci_dev.function = CONFIG_SPI_INTEL_PORT_0_FUNCTION,
 	.config_func = spi_config_0_irq
 };
 
@@ -189,7 +194,12 @@ struct spi_intel_data spi_intel_data_port_1;
 struct spi_intel_config spi_intel_config_1 = {
 	.regs = CONFIG_SPI_INTEL_PORT_1_REGS,
 	.irq = CONFIG_SPI_INTEL_PORT_1_IRQ,
-	.function = CONFIG_SPI_INTEL_PORT_1_FUNCTION,
+	.pci_dev.class = CONFIG_SPI_INTEL_CLASS,
+	.pci_dev.bus = CONFIG_SPI_INTEL_PORT_1_BUS,
+	.pci_dev.dev = CONFIG_SPI_INTEL_PORT_1_DEV,
+	.pci_dev.function = CONFIG_SPI_INTEL_PORT_1_FUNCTION,
+	.pci_dev.vendor_id = CONFIG_SPI_INTEL_VENDOR_ID,
+	.pci_dev.device_id = CONFIG_SPI_INTEL_DEVICE_ID,
 	.config_func = spi_config_1_irq
 };
 

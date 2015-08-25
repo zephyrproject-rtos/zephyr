@@ -58,6 +58,21 @@ config  SPI_INTEL
 	  was formelly found on XScale chips. It can be found nowadays
 	  on CEXXXX Intel media controller and Quark CPU (2 of them).
 
+config	SPI_INTEL_VENDOR_ID
+	hex "PCI Vendor ID"
+	depends on SPI_INTEL && PCI
+	default 0x8086
+
+config	SPI_INTEL_DEVICE_ID
+	hex "PCI Device ID"
+	depends on SPI_INTEL && PCI
+	default 0x935
+
+config	SPI_INTEL_CLASS
+	hex "PCI class"
+	depends on SPI_INTEL && PCI
+	default 0x0C
+
 config	SPI_INTEL_PORT_0
 	bool
 	prompt "Intel SPI port 0"
@@ -72,9 +87,18 @@ config  SPI_INTEL_PORT_0_DRV_NAME
 	depends on SPI_INTEL_PORT_0
 	default "intel_spi_0"
 
+config	SPI_INTEL_PORT_0_BUS
+	int "Port 0 PCI Bus"
+	depends on SPI_INTEL_PORT_0 && PCI
+	default 0
+
+config  SPI_INTEL_PORT_0_DEV
+	int "Port 0 PCI Dev"
+	depends on SPI_INTEL_PORT_0 && PCI
+	default 0
+
 config  SPI_INTEL_PORT_0_FUNCTION
-	int
-	prompt "Port 0 PCI function"
+	int "Port 0 PCI function"
 	depends on SPI_INTEL_PORT_0 && PCI
 	default 0
 
@@ -110,9 +134,18 @@ config  SPI_INTEL_PORT_1_DRV_NAME
 	depends on SPI_INTEL_PORT_1
 	default "intel_spi_1"
 
+config	SPI_INTEL_PORT_1_BUS
+	int "Port 1 PCI Bus"
+	depends on SPI_INTEL_PORT_1 && PCI
+	default 0
+
+config  SPI_INTEL_PORT_1_DEV
+	int "Port 1 PCI Dev"
+	depends on SPI_INTEL_PORT_1 && PCI
+	default 0
+
 config  SPI_INTEL_PORT_1_FUNCTION
-	int
-	prompt "Port 1 PCI function"
+	int "Port 1 PCI function"
 	depends on SPI_INTEL_PORT_1 && PCI
 	default 0
 

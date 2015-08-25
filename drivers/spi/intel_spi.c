@@ -38,11 +38,6 @@
 
 #include <sys_io.h>
 
-#ifdef CONFIG_PCI
-#include <pci/pci.h>
-#include <pci/pci_mgr.h>
-#endif
-
 #include <spi.h>
 #include <spi/intel_spi.h>
 #include "intel_spi_priv.h"
@@ -338,23 +333,21 @@ static struct spi_driver_api intel_spi_api = {
 static inline int spi_intel_setup(struct device *dev)
 {
 	struct spi_intel_config *info = dev->config->config_info;
-	struct pci_dev_info spi_intel_pci = {
-		.class = PCI_CLASS_SERIAL_BUS,
-		.function = info->function,
-		.vendor_id = 0x8086,
-		.device_id = 0x935,
-	};
 
 	pci_bus_scan_init();
 
-	if (!pci_bus_scan(&spi_intel_pci)) {
+	if (!pci_bus_scan(&info->pci_dev)) {
 		DBG("Could not find device\n");
 		return 0;
 	}
 
-	pci_enable_regs(&spi_intel_pci);
+#ifdef CONFIG_PCI_ENUMERATION
+	info->regs = info->pci_dev.addr;
+	info->irq = info->pci_dev.irq;
+#endif
+	pci_enable_regs(&info->pci_dev);
 
-	pci_show(&spi_intel_pci);
+	pci_show(&info->pci_dev);
 
 	return 1;
 }
