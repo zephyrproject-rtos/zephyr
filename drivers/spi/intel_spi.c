@@ -354,9 +354,8 @@ static inline int spi_intel_setup(struct device *dev)
 
 	pci_enable_regs(&spi_intel_pci);
 
-#ifdef CONFIG_PCI_DEBUG
 	pci_show(&spi_intel_pci);
-#endif
+
 	return 1;
 }
 #else

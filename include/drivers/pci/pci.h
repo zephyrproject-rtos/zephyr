@@ -81,6 +81,8 @@ void pci_enable_regs(struct pci_dev_info *dev_info);
 
 #ifdef CONFIG_PCI_DEBUG
 extern void pci_show(struct pci_dev_info *dev_info);
+#else
+#define pci_show(__unused__) {;}
 #endif
 
 #endif /* _PCI_H_ */
