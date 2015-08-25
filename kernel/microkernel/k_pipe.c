@@ -177,7 +177,7 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
  */
 
 int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
-						 int iReqSize2Xfer, ksem_t Sema)
+						 int iReqSize2Xfer, ksem_t sema)
 {
 	unsigned int iSize2Xfer;
 	struct k_args A;
@@ -201,7 +201,7 @@ int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 	A.args.pipe_req.req_info.pipe.id = Id;
 	A.args.pipe_req.req_type.async.block = Block;
 	A.args.pipe_req.req_type.async.total_size = iSize2Xfer;
-	A.args.pipe_req.req_type.async.sema = Sema;
+	A.args.pipe_req.req_type.async.sema = sema;
 
 	_k_pipe_request_type_set(&A.args, _ASYNCREQ);
 	_k_pipe_option_set(&A.args, _ALL_N); /* force ALL_N */
