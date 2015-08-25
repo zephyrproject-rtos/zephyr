@@ -34,13 +34,14 @@
 # Networking options
 #
 
-config	NETWORKING
+menuconfig NETWORKING
 	bool
 	prompt "Generic networkig support [EXPERIMENTAL]"
 	default n
 	help
 	  This option enabled generic networking support.
 
+if NETWORKING
 config NET_BUF_SIZE
 	int "Number of network buffers to use"
 	default 2
@@ -179,3 +180,4 @@ config	TINYDTLS_DEBUG
 	default n
 	help
 	  Enable tinyDTLS debugging support.
+endif
