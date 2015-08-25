@@ -1,8 +1,8 @@
 .. _fsl_frdm_k64f:
 
-====================================
-fsl_frdm_k64f Platform Configuration
-====================================
+=====================================
+Platform Configuration: fsl_frdm_k64f
+=====================================
 
 .. -----------------
 .. Table of Contents
@@ -11,24 +11,19 @@ fsl_frdm_k64f Platform Configuration
 .. INTRODUCTION
 ..
 ..    Overview
-..        Known Problems and Limitation
-..    Supported Boards
-..        Verification
 
-.. SUPPORTED HARDWARE
-..    frdm k64f Pin Names
+.. SUPPORTED BOARDS
+..    Pin Names
 ..    Jumpers & Switches
 ..    Memory Maps
 ..    Component Layout
 ..
 .. SUPPORTED FEATURES
-..    IRQ Controller and Vectored Exceptions Support
+..    IRQ Controller and Vectored Exceptions
 ..        Interrupts
 ..        Interrupt Tables
-..        Controlled Interrupt Table Options
 ..    System Clock (Frequency) Support
 ..    Serial Port Support
-..    Unsupported Features
 ..
 .. PROCEDURES
 ..    Loading a Project Image with mbed
@@ -36,6 +31,10 @@ fsl_frdm_k64f Platform Configuration
 ..    Installing the IDE and Eclipse Plug-ins
 ..    Configuring the J-Link Debugger
 ..    Programming Flash with J-link
+
+.. KNOWN PROBLEMS AND LIMITATIONS
+
+.. BIBLIOGRAPHY
 
 
 --------------
@@ -45,8 +44,8 @@ fsl_frdm_k64f Platform Configuration
 This section provides an overview of the fsl_frdm_k64f platform configuration.
 
 
-Configuration Overview
-======================
+Overview
+========
 
 The fsl_frdm_k64f platform configuration is used by Zephyr projects
 that run on the Freescale Freedom Development Platform (FRDM-K64F).
@@ -69,29 +68,14 @@ but they are not officially supported.
 
 
 
-Known Problems or Limitations
------------------------------
+-----------------
+ SUPPORTED BOARDS
+-----------------
 
-There is no support for the following:
-
-* Memory protection through optional MPU.
-  However, using a XIP kernel effectively provides
-  TEXT/RODATA write protection in ROM.
-
-* SRAM at addresses 0x1FFF0000-0x0x1FFFFFFF
-
-* Writing to the hardware's flash memory
-
-
-
---------------------
- SUPPORTED HARDWARE
---------------------
-
-This section describes the physical characteristics of
-the board that is supported by the fsl_frdm_k64f platform configuration.
-Subsections provide information on pin names, jumper
-settings, memory mappings and a link to the board's component layout.
+The fsl_frdm_k64f platform configuration has been tested to run on the
+Freescale Freedom Development Platform.  The physical characteristics of
+this board (including pin names, jumper settings, memory mappings, ...)
+can be found below.
 
 
 Pin Names
@@ -851,6 +835,21 @@ Steps
 7.  To stop the image from running, enter::
 
        h
+
+
+--------------------------------
+ KNOWN PROBLEMS AND LIMITATIONS
+--------------------------------
+
+There is no support for the following:
+
+* Memory protection through optional MPU.
+  However, using a XIP kernel effectively provides
+  TEXT/RODATA write protection in ROM.
+
+* SRAM at addresses 0x1FFF0000-0x0x1FFFFFFF
+
+* Writing to the hardware's flash memory
 
 
 

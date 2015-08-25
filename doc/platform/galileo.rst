@@ -1,8 +1,8 @@
 .. _galileo:
 
-==============================
-galileo Platform Configuration
-==============================
+===============================
+Platform Configuration: galileo
+===============================
 
 .. -----------------
 .. Table of Contents
@@ -11,28 +11,28 @@ galileo Platform Configuration
 .. INTRODUCTION
 ..
 ..    Overview
-..        Known Problems and Limitation
 
-.. SUPPORTED HARDWARE
-..    galileo Pin Names
+.. SUPPORTED BOARDS
+..    Pin Names
 ..    Jumpers & Switches
 ..    Memory Maps
 ..    Component Layout
 ..
 .. SUPPORTED FEATURES
-..    High Precision Event Timer (HPET)
-..    Peripheral Component Interconnect (PCI) bus query
-..    Serial ports
-..      Polling driven modes
-..      Interrupt driven modes
-..    Unsupported Features
+..    PCI
+..    Serial Port Polling Mode Support
+..    Serial Port Interrupt Mode Support
+..      Interrupts
+..    HPET System Clock Support
 ..
 .. PROCEDURES
 ..    Creating a GRUB2 Boot Loader Image from a Linux Host
-..    Creating a Stripped Image
 ..    Preparing the Boot Device
 ..    Booting the Galileo Board
 
+.. KNOWN PROBLEMS AND LIMITATIONS
+
+.. BIBLIOGRAPHY
 
 --------------
  INTRODUCTION
@@ -41,8 +41,8 @@ galileo Platform Configuration
 This section provides an overview of the galileo platform configuration.
 
 
-Configuration Overview
-======================
+Overview
+========
 
 The galileo platform configuration is used by Zephyr projects
 that run on the Galileo Development Board.
@@ -62,23 +62,9 @@ It provides support for a Quark CPU and the following devices:
 
 * serial ports in polling and interrupt driven modes
 
-
-Known Problems or Limitations
------------------------------
-
-There is no support for the following:
-
-* Isolated Memory Regions
-* Serial port in :abbr:`Direct Memory Access (DMA)` mode
-* :abbr:`Serial Peripheral Interface (SPI)` flash
-* :abbr:`General-Purpose Input/Output (GPIO)`
-* :abbr:`Inter-Integrated Circuit (I2C)`
-* Ethernet
-* :abbr:`Supervisor Mode Execution Protection (SMEP)`
-
---------------------
- SUPPORTED HARDWARE
---------------------
+-----------------
+ SUPPORTED BOARDS
+-----------------
 
 This section either provides links to, or describes the physical
 characteristics of the boards that are supported by the galileo
@@ -101,8 +87,8 @@ Also, refer to page 9 of the
 .. _Intel® Galileo Board User Guide: http://download.intel.com/support/galileo/sb/galileo_boarduserguide_330237_001.pdf
 
 
-Jumpers
-=======
+Jumpers & Switches
+==================
 
 Zephyr Project uses the Galileo default jumper settings except
 for the IOREF jumper which must be set to match the external
@@ -507,6 +493,21 @@ Steps
    When the boot process finishes, you have finished booting the
    Zephyr project.
 
+
+
+--------------------------------
+ KNOWN PROBLEMS AND LIMITATIONS
+--------------------------------
+
+There is no support for the following:
+
+* Isolated Memory Regions
+* Serial port in :abbr:`Direct Memory Access (DMA)` mode
+* :abbr:`Serial Peripheral Interface (SPI)` flash
+* :abbr:`General-Purpose Input/Output (GPIO)`
+* :abbr:`Inter-Integrated Circuit (I2C)`
+* Ethernet
+* :abbr:`Supervisor Mode Execution Protection (SMEP)`
 
 --------------
  BIBLIOGRAPHY
