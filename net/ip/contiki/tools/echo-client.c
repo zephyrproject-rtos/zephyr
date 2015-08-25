@@ -384,7 +384,7 @@ extern char *optarg;
  */
 int main(int argc, char**argv)
 {
-	int c, ret, fd, i = 0, timeout = 0;
+	int c, ret, fd, i = 0, timeout = -1;
 	bool flood = false, multicast = false;
 	struct sockaddr_in6 addr6_send = { 0 }, addr6_recv = { 0 };
 	struct sockaddr_in addr4_send = { 0 }, addr4_recv = { 0 };
@@ -574,7 +574,7 @@ int main(int argc, char**argv)
 
 	} while (flood);
 
-	ret = timeout;
+	ret = timeout + 1;
 
 	printf("\n");
 
