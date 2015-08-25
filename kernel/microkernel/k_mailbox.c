@@ -163,7 +163,7 @@ static bool prepare_transfer(struct k_args *move,
 			(MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
 		move->args.MovedReq.iTotalSize = writer->args.m1.mess.size;
 		move->args.MovedReq.Extra.Setup.continuation_send = NULL;
-		move->args.MovedReq.Extra.Setup.ContRcv = NULL;
+		move->args.MovedReq.Extra.Setup.continuation_receive = NULL;
 
 		/* reader: */
 		if (reader->args.m1.mess.rx_data == NULL) {
@@ -179,7 +179,7 @@ static bool prepare_transfer(struct k_args *move,
 				reader->args.m1.mess.rx_data;
 
 			/* chain the reader */
-			move->args.MovedReq.Extra.Setup.ContRcv = reader;
+			move->args.MovedReq.Extra.Setup.continuation_receive = reader;
 		}
 
 		/* writer: */
@@ -757,7 +757,7 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	CopyStarter->Comm = _K_SVC_MBOX_RECEIVE_ACK;
 	CopyStarter->Time.rcode = RC_OK;
 
-	MoveD->args.MovedReq.Extra.Setup.ContRcv = CopyStarter;
+	MoveD->args.MovedReq.Extra.Setup.continuation_receive = CopyStarter;
 	CopyStarter->next = NULL;
 	MoveD->args.MovedReq.destination = CopyStarter->args.m1.mess.rx_data;
 
@@ -855,7 +855,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 		 * for continuation on receive.
 		 */
 
-		dummy = MoveD->args.MovedReq.Extra.Setup.ContRcv;
+		dummy = MoveD->args.MovedReq.Extra.Setup.continuation_receive;
 		__ASSERT_NO_MSG(NULL == dummy);
 #endif
 
@@ -917,7 +917,7 @@ void _k_mbox_send_data(struct k_args *Starter)
 	CopyStarter->next = NULL;
 	MoveD->args.MovedReq.source = CopyStarter->args.m1.mess.rx_data;
 
-	Reader = MoveD->args.MovedReq.Extra.Setup.ContRcv;
+	Reader = MoveD->args.MovedReq.Extra.Setup.continuation_receive;
 	if (Reader != NULL) {
 		Reader->args.m1.mess.rx_data =
 			CopyStarter->args.m1.mess.rx_data;

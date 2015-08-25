@@ -69,7 +69,7 @@ static void mvdreq_copy(struct moved_req *ReqArgs)
 	if (ReqArgs->Action & MVDACT_SNDACK)
 		mvdreq_docont(ReqArgs->Extra.Setup.continuation_send);
 	if (ReqArgs->Action & MVDACT_RCVACK)
-		mvdreq_docont(ReqArgs->Extra.Setup.ContRcv);
+		mvdreq_docont(ReqArgs->Extra.Setup.continuation_receive);
 }
 
 /**
@@ -102,7 +102,7 @@ void _k_movedata_request(struct k_args *Req)
 								  */
 		if (ReqArgs->Action & MVDACT_RCVACK)
 			mvdreq_docont(
-				ReqArgs->Extra.Setup.ContRcv); /* Recv ack
+				ReqArgs->Extra.Setup.continuation_receive); /* Recv ack
 								  continuation
 								  */
 		return;

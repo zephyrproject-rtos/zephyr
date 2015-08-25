@@ -257,7 +257,7 @@ struct _e1arg {
 
 struct moved_req_args_setup {
 	struct k_args *continuation_send;
-	struct k_args *ContRcv;
+	struct k_args *continuation_receive;
 	ksem_t Sema;
 	uint32_t dummy;
 };
