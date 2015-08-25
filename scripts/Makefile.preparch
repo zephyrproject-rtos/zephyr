@@ -61,38 +61,8 @@ endef
 misc/generated/configs.c: include/config/auto.conf FORCE
 	$(call filechk,configs.c)
 
-define filechk_offsets.h
-	(echo "/* THIS FILE IS AUTO-GENERATED.  PLEASE DO NOT EDIT */"; \
-	echo; \
-	echo "/*"; \
-	echo " * This header file provides macros for the offsets of various structure"; \
-	echo " * members.  These offset macros are primarily intended to be used in"; \
-	echo " * assembly code."; \
-	echo " */"; \
-	echo; \
-	echo "/*"; \
-	echo " * Auto-generated header guard."; \
-	echo " */"; \
-	echo "#ifndef _OFFSETS_H_"; \
-	echo "#define _OFFSETS_H_"; \
-	echo; \
-	echo "#ifdef __cplusplus"; \
-	echo "extern "C" {"; \
-	echo "#endif"; \
-	echo; \
-	echo "/* defines */"; \
-	echo; \
-	nm -g $(CURDIR)/include/generated/offsets.o | sed -n 's/^\([0-9a-z]*\)\s\w\s\(\S*\)$$/#define \2  0x\1/p'; \
-	echo; \
-	echo "#ifdef __cplusplus"; \
-	echo "}"; \
-	echo "#endif"; \
-	echo; \
-	echo "#endif /* _OFFSETS_H_ */";)
-endef
-
-include/generated/offsets.h:  include/generated/offsets.o include/config/auto.conf FORCE
-	$(call filechk,offsets.h)
+include/generated/offsets.h: $(GENOFFSET_H) include/generated/offsets.o include/config/auto.conf FORCE
+	$(Q)$(GENOFFSET_H) -i $(CURDIR)/include/generated/offsets.o -o $@
 
 define rule_cc_o_c
 	$(call echo-cmd,cc_o_c) $(cmd_cc_o_c);
