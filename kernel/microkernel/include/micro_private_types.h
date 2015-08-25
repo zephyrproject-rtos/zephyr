@@ -194,7 +194,7 @@ struct _pipe_req_arg {
 		struct sync_req sync;
 		struct async_req async;
 	} req_type;
-	int Dummy;
+	int dummy;
 };
 
 struct _pipe_xfer_req_arg {
@@ -210,7 +210,7 @@ struct _pipe_xfer_req_arg {
 struct _pipe_ack_arg {
 	struct req_info req_info;
 	union {
-		struct sync_req Dummy;
+		struct sync_req dummy;
 		struct async_req async;
 	} req_type;
 	int iSizeXferred;
@@ -259,7 +259,7 @@ struct moved_req_args_setup {
 	struct k_args *ContSnd;
 	struct k_args *ContRcv;
 	ksem_t Sema;
-	uint32_t Dummy;
+	uint32_t dummy;
 };
 
 #define MVDACT_NONE 0

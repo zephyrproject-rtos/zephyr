@@ -848,15 +848,15 @@ int _task_mbox_data_block_get(struct k_msg *message,
 		nano_task_stack_push(&_k_command_stack, (uint32_t)Writer);
 
 #ifdef ACTIV_ASSERTS
-		struct k_args *Dummy;
+		struct k_args *dummy;
 
 		/*
 		 * Confirm that there are not any continuation packets
 		 * for continuation on receive.
 		 */
 
-		Dummy = MoveD->args.MovedReq.Extra.Setup.ContRcv;
-		__ASSERT_NO_MSG(NULL == Dummy);
+		dummy = MoveD->args.MovedReq.Extra.Setup.ContRcv;
+		__ASSERT_NO_MSG(NULL == dummy);
 #endif
 
 		FREEARGS(MoveD); /* Clean up MOVED */
