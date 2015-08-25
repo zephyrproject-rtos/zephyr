@@ -40,6 +40,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <misc/printk.h>
+#include <misc/byteorder.h>
 
 #include <console/uart_console.h>
 #include <bluetooth/bluetooth.h>
@@ -822,6 +823,18 @@ static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 strlen(str));
 }
 
+static uint16_t appearance_value = 0x0001;
+
+static int read_appearance(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
+{
+	uint16_t appearance = sys_cpu_to_le16(appearance_value);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
+				 sizeof(appearance));
+}
+
 /* GAP SERVICE (0x1800) */
 static struct bt_uuid gap_uuid = {
 	.type = BT_UUID_16,
@@ -839,11 +852,25 @@ static struct bt_gatt_chrc name_chrc = {
 	.uuid = &device_name_uuid,
 };
 
+static struct bt_uuid appeareance_uuid = {
+	.type = BT_UUID_16,
+	.u16 = BT_UUID_GAP_APPEARANCE,
+};
+
+static struct bt_gatt_chrc appearance_chrc = {
+	.properties = BT_GATT_CHRC_READ,
+	.value_handle = 0x0005,
+	.uuid = &appeareance_uuid,
+};
+
 static struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
 	BT_GATT_DESCRIPTOR(0x0003, &device_name_uuid, BT_GATT_PERM_READ,
 			   read_string, NULL, DEVICE_NAME),
+	BT_GATT_CHARACTERISTIC(0x0004, &appearance_chrc),
+	BT_GATT_DESCRIPTOR(0x0005, &appeareance_uuid, BT_GATT_PERM_READ,
+			   read_appearance, NULL, NULL),
 };
 
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
