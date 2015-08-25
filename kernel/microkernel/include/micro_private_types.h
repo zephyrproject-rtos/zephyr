@@ -288,7 +288,7 @@ struct moved_req {
 	uint32_t total_size;
 	union {
 		struct moved_req_args_setup setup;
-	} Extra;
+	} extra;
 };
 
 struct _g1arg {
