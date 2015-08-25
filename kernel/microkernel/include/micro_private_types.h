@@ -225,7 +225,7 @@ struct _pipe_xfer_ack_arg {
 				 this is the link to it      */
 	int id; /* if it is a Xfer to/from a buffer,
 		   this is the registered Xfer's ID */
-	int iSize; /* amount of data Xferred	    */
+	int size; /* amount of data Xferred	    */
 };
 
 /* COMMAND PACKET STRUCTURES */

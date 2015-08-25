@@ -65,7 +65,7 @@
 #define CHECK_BUFFER_POINTER(data_ptr) \
 	__ASSERT_NO_MSG(desc->begin_ptr <= data_ptr && data_ptr < desc->end_ptr)
 
-static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin_ptr, int iSize);
+static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin_ptr, int size);
 
 /**
  * Markers
@@ -112,7 +112,7 @@ static void MarkerLinkToListAfter(struct _k_pipe_marker markers[],
 }
 
 static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
-						 unsigned char *pointer, int iSize, bool buffer_xfer_busy)
+						 unsigned char *pointer, int size, bool buffer_xfer_busy)
 {
 	int i = MarkerFindFree(pMarkerList->markers);
 
@@ -121,7 +121,7 @@ static int MarkerAddLast(struct _k_pipe_marker_list *pMarkerList,
 	}
 
 	pMarkerList->markers[i].pointer = pointer;
-	pMarkerList->markers[i].size = iSize;
+	pMarkerList->markers[i].size = size;
 	pMarkerList->markers[i].buffer_xfer_busy = buffer_xfer_busy;
 
 	if (-1 == pMarkerList->first_marker) {
@@ -483,13 +483,13 @@ int BuffFull(struct _k_pipe_desc *desc)
  * Buffer en-queuing:
  */
 
-static int AsyncEnQRegstr(struct _k_pipe_desc *desc, int iSize)
+static int AsyncEnQRegstr(struct _k_pipe_desc *desc, int size)
 {
 	int i;
 
-	pipe_intrusion_check(desc, desc->write_ptr, iSize);
+	pipe_intrusion_check(desc, desc->write_ptr, size);
 
-	i = MarkerAddLast(&desc->write_markers, desc->write_ptr, iSize, true);
+	i = MarkerAddLast(&desc->write_markers, desc->write_ptr, size, true);
 	if (i != -1) {
 		/* adjust num_pending_writes */
 		__ASSERT_NO_MSG(0 <= desc->num_pending_writes);
@@ -527,27 +527,27 @@ static void AsyncEnQFinished(struct _k_pipe_desc *desc, int iTransferID)
 	}
 }
 
-int BuffEnQ(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite)
+int BuffEnQ(struct _k_pipe_desc *desc, int size, unsigned char **ppWrite)
 {
 	int iTransferID;
 
-	if (0 == BuffEnQA(desc, iSize, ppWrite, &iTransferID)) {
+	if (0 == BuffEnQA(desc, size, ppWrite, &iTransferID)) {
 		return 0;
 	}
 
 	/* check ret value */
 
-	BuffEnQA_End(desc, iTransferID, iSize /* optional */);
-	return iSize;
+	BuffEnQA_End(desc, iTransferID, size /* optional */);
+	return size;
 }
 
-int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
+int BuffEnQA(struct _k_pipe_desc *desc, int size, unsigned char **ppWrite,
 			 int *piTransferID)
 {
-	if (iSize > desc->free_space_count) {
+	if (size > desc->free_space_count) {
 		return 0;
 	}
-	*piTransferID = AsyncEnQRegstr(desc, iSize);
+	*piTransferID = AsyncEnQRegstr(desc, size);
 	if (-1 == *piTransferID) {
 		return 0;
 	}
@@ -556,7 +556,7 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 
 	/* adjust write pointer and free space*/
 
-	desc->write_ptr += OCTET_TO_SIZEOFUNIT(iSize);
+	desc->write_ptr += OCTET_TO_SIZEOFUNIT(size);
 	if (desc->end_ptr == desc->write_ptr) {
 		desc->write_ptr = desc->begin_ptr;
 		desc->free_space_count = desc->free_space_post_wrap_around;
@@ -565,7 +565,7 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 		desc->wrap_around_read = false;
 		desc->read_markers.post_wrap_around_marker = -1;
 	} else {
-		desc->free_space_count -= iSize;
+		desc->free_space_count -= size;
 	}
 
 	if (desc->write_ptr == desc->read_ptr) {
@@ -576,13 +576,13 @@ int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
 
 	CHECK_BUFFER_POINTER(desc->write_ptr);
 
-	return iSize;
+	return size;
 }
 
 void BuffEnQA_End(struct _k_pipe_desc *desc, int iTransferID,
-				  int iSize /* optional */)
+				  int size /* optional */)
 {
-	ARG_UNUSED(iSize);
+	ARG_UNUSED(size);
 
 	/* An asynchronous data transfer to the buffer has finished */
 
@@ -593,13 +593,13 @@ void BuffEnQA_End(struct _k_pipe_desc *desc, int iTransferID,
  * Buffer de-queuing:
  */
 
-static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int iSize)
+static int AsyncDeQRegstr(struct _k_pipe_desc *desc, int size)
 {
 	int i;
 
-	pipe_intrusion_check(desc, desc->read_ptr, iSize);
+	pipe_intrusion_check(desc, desc->read_ptr, size);
 
-	i = MarkerAddLast(&desc->read_markers, desc->read_ptr, iSize, true);
+	i = MarkerAddLast(&desc->read_markers, desc->read_ptr, size, true);
 	if (i != -1) {
 		/* adjust num_pending_reads */
 		__ASSERT_NO_MSG(0 <= desc->num_pending_reads);
@@ -637,27 +637,27 @@ static void AsyncDeQFinished(struct _k_pipe_desc *desc, int iTransferID)
 	}
 }
 
-int BuffDeQ(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead)
+int BuffDeQ(struct _k_pipe_desc *desc, int size, unsigned char **ppRead)
 {
 	int iTransferID;
 
-	if (0 == BuffDeQA(desc, iSize, ppRead, &iTransferID)) {
+	if (0 == BuffDeQA(desc, size, ppRead, &iTransferID)) {
 		return 0;
 	}
-	BuffDeQA_End(desc, iTransferID, iSize /* optional */);
-	return iSize;
+	BuffDeQA_End(desc, iTransferID, size /* optional */);
+	return size;
 }
 
-int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
+int BuffDeQA(struct _k_pipe_desc *desc, int size, unsigned char **ppRead,
 			 int *piTransferID)
 {
 	/* asynchronous data transfer; read guard pointers must be set */
 
-	if (iSize > desc->available_data_count) {
+	if (size > desc->available_data_count) {
 		/* free space is from read to guard pointer/end pointer */
 		return 0;
 	}
-	*piTransferID = AsyncDeQRegstr(desc, iSize);
+	*piTransferID = AsyncDeQRegstr(desc, size);
 	if (-1 == *piTransferID) {
 		return 0;
 	}
@@ -666,7 +666,7 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 
 	/* adjust read pointer and avail data */
 
-	desc->read_ptr += OCTET_TO_SIZEOFUNIT(iSize);
+	desc->read_ptr += OCTET_TO_SIZEOFUNIT(size);
 	if (desc->end_ptr == desc->read_ptr) {
 		desc->read_ptr = desc->begin_ptr;
 		desc->available_data_count = desc->available_data_post_wrap_around;
@@ -675,7 +675,7 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 		desc->wrap_around_read = true;
 		desc->write_markers.post_wrap_around_marker = -1;
 	} else {
-		desc->available_data_count -= iSize;
+		desc->available_data_count -= size;
 	}
 
 	if (desc->write_ptr == desc->read_ptr) {
@@ -686,13 +686,13 @@ int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
 
 	CHECK_BUFFER_POINTER(desc->read_ptr);
 
-	return iSize;
+	return size;
 }
 
 void BuffDeQA_End(struct _k_pipe_desc *desc, int iTransferID,
-				  int iSize /* optional */)
+				  int size /* optional */)
 {
-	ARG_UNUSED(iSize);
+	ARG_UNUSED(size);
 
 	/* An asynchronous data transfer from the buffer has finished */
 
@@ -741,7 +741,7 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 	}
 }
 
-static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin_ptr, int iSize)
+static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin_ptr, int size)
 {
 	/*
 	 * check possible collision with all existing data areas,
@@ -771,7 +771,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin
 
 		pM = &(pMarkerList->markers[index]);
 
-		if (0 != AreasCheck4Intrusion(begin_ptr, iSize, pM->pointer, pM->size)) {
+		if (0 != AreasCheck4Intrusion(begin_ptr, size, pM->pointer, pM->size)) {
 			__ASSERT_NO_MSG(1 == 0);
 		}
 		index = pM->next;
@@ -797,7 +797,7 @@ static void pipe_intrusion_check(struct _k_pipe_desc *desc, unsigned char *begin
 
 		pM = &(pMarkerList->markers[index]);
 
-		if (0 != AreasCheck4Intrusion(begin_ptr, iSize, pM->pointer, pM->size)) {
+		if (0 != AreasCheck4Intrusion(begin_ptr, size, pM->pointer, pM->size)) {
 			__ASSERT_NO_MSG(1 == 0);
 		}
 		index = pM->next;

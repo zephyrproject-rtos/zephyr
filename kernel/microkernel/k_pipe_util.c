@@ -66,32 +66,32 @@ void mycopypacket(struct k_args **out, struct k_args *in)
 
 int CalcFreeReaderSpace(struct k_args *pReaderList)
 {
-	int iSize = 0;
+	int size = 0;
 
 	if (pReaderList) {
 		struct k_args *reader_ptr = pReaderList;
 		while (reader_ptr != NULL) {
-			iSize += (reader_ptr->args.pipe_xfer_req.total_size -
+			size += (reader_ptr->args.pipe_xfer_req.total_size -
 				  reader_ptr->args.pipe_xfer_req.xferred_size);
 			reader_ptr = reader_ptr->next;
 		}
 	}
-	return iSize;
+	return size;
 }
 
 int CalcAvailWriterData(struct k_args *pWriterList)
 {
-	int iSize = 0;
+	int size = 0;
 
 	if (pWriterList) {
 		struct k_args *writer_ptr = pWriterList;
 		while (writer_ptr != NULL) {
-			iSize += (writer_ptr->args.pipe_xfer_req.total_size -
+			size += (writer_ptr->args.pipe_xfer_req.total_size -
 				  writer_ptr->args.pipe_xfer_req.xferred_size);
 			writer_ptr = writer_ptr->next;
 		}
 	}
-	return iSize;
+	return size;
 }
 
 K_PIPE_OPTION _k_pipe_option_get(K_ARGS_ARGS *args)

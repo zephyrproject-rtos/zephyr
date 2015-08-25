@@ -97,7 +97,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			int XferId = pipe_xfer_ack->id;
 
 			BuffEnQA_End(&pipe_xfer_ack->pipe_ptr->desc, XferId,
-						 pipe_xfer_ack->iSize);
+						 pipe_xfer_ack->size);
 		}
 
 		/* invoke continuation mechanism */
@@ -136,7 +136,7 @@ void _k_pipe_movedata_ack(struct k_args *pEOXfer)
 			int XferId = pipe_xfer_ack->id;
 
 			BuffDeQA_End(&pipe_xfer_ack->pipe_ptr->desc, XferId,
-						 pipe_xfer_ack->iSize);
+						 pipe_xfer_ack->size);
 		}
 
 		/* continuation mechanism */
@@ -270,14 +270,14 @@ static void setup_movedata(struct k_args *A,
 	pContSend->args.pipe_xfer_ack.pipe_ptr = pipe_ptr;
 	pContSend->args.pipe_xfer_ack.xfer_type = xfer_type;
 	pContSend->args.pipe_xfer_ack.id = XferID;
-	pContSend->args.pipe_xfer_ack.iSize = size;
+	pContSend->args.pipe_xfer_ack.size = size;
 
 	pContRecv->next = NULL;
 	pContRecv->Comm = _K_SVC_PIPE_MOVEDATA_ACK;
 	pContRecv->args.pipe_xfer_ack.pipe_ptr = pipe_ptr;
 	pContRecv->args.pipe_xfer_ack.xfer_type = xfer_type;
 	pContRecv->args.pipe_xfer_ack.id = XferID;
-	pContRecv->args.pipe_xfer_ack.iSize = size;
+	pContRecv->args.pipe_xfer_ack.size = size;
 
 	A->priority = move_priority_compute(writer_ptr, reader_ptr);
 	pContSend->priority = A->priority;
@@ -428,7 +428,7 @@ static void pipe_read(struct _k_pipe_struct *pipe_ptr, struct k_args *pNewReader
 	struct _pipe_xfer_req_arg *pipe_read_req;
 
 	unsigned char *read_ptr;
-	int iSize;
+	int size;
 	int id;
 	int ret;
 	int numIterations = 2;
@@ -441,16 +441,16 @@ static void pipe_read(struct _k_pipe_struct *pipe_ptr, struct k_args *pNewReader
 	pipe_read_req = &reader_ptr->args.pipe_xfer_req;
 
 	do {
-		iSize = min(pipe_ptr->desc.available_data_count,
+		size = min(pipe_ptr->desc.available_data_count,
 					pipe_read_req->total_size - pipe_read_req->xferred_size);
 
-		if (iSize == 0) {
+		if (size == 0) {
 			return;
 		}
 
 		struct k_args *Moved_req;
 
-		ret = BuffDeQA(&pipe_ptr->desc, iSize, &read_ptr, &id);
+		ret = BuffDeQA(&pipe_ptr->desc, size, &read_ptr, &id);
 		if (0 == ret) {
 			return;
 		}
@@ -496,7 +496,7 @@ static void pipe_write(struct _k_pipe_struct *pipe_ptr, struct k_args *pNewWrite
 	struct k_args *writer_ptr;
 	struct _pipe_xfer_req_arg *pipe_write_req;
 
-	int iSize;
+	int size;
 	unsigned char *write_ptr;
 	int id;
 	int ret;
@@ -510,17 +510,17 @@ static void pipe_write(struct _k_pipe_struct *pipe_ptr, struct k_args *pNewWrite
 	pipe_write_req = &writer_ptr->args.pipe_xfer_req;
 
 	do {
-		iSize = min((numIterations == 2) ? pipe_ptr->desc.free_space_count
+		size = min((numIterations == 2) ? pipe_ptr->desc.free_space_count
 					: pipe_ptr->desc.free_space_post_wrap_around,
 					pipe_write_req->total_size - pipe_write_req->xferred_size);
 
-		if (iSize == 0) {
+		if (size == 0) {
 			continue;
 		}
 
 		struct k_args *Moved_req;
 
-		ret = BuffEnQA(&pipe_ptr->desc, iSize, &write_ptr, &id);
+		ret = BuffEnQA(&pipe_ptr->desc, size, &write_ptr, &id);
 		if (0 == ret) {
 			return;
 		}

@@ -52,17 +52,17 @@ void BuffGetAvailData(struct _k_pipe_desc *desc, int *piAvailDataTotal,
 int BuffEmpty(struct _k_pipe_desc *desc);
 int BuffFull(struct _k_pipe_desc *desc);
 
-int BuffEnQ(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite);
-int BuffEnQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppWrite,
+int BuffEnQ(struct _k_pipe_desc *desc, int size, unsigned char **ppWrite);
+int BuffEnQA(struct _k_pipe_desc *desc, int size, unsigned char **ppWrite,
 			 int *piTransferID);
 void BuffEnQA_End(struct _k_pipe_desc *desc, int iTransferID,
-				  int iSize /* optional */);
+				  int size /* optional */);
 
-int BuffDeQ(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead);
-int BuffDeQA(struct _k_pipe_desc *desc, int iSize, unsigned char **ppRead,
+int BuffDeQ(struct _k_pipe_desc *desc, int size, unsigned char **ppRead);
+int BuffDeQA(struct _k_pipe_desc *desc, int size, unsigned char **ppRead,
 			 int *piTransferID);
 void BuffDeQA_End(struct _k_pipe_desc *desc, int iTransferID,
-				  int iSize /* optional */);
+				  int size /* optional */);
 
 #ifdef __cplusplus
 } /* extern "C" */
