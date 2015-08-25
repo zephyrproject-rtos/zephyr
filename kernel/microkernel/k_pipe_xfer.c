@@ -255,10 +255,10 @@ static void setup_movedata(struct k_args *A,
 	A->Ctxt.task = NULL;
 	/* this caused problems when != NULL related to set/reset of state bits */
 
-	A->args.MovedReq.action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
-	A->args.MovedReq.source = source;
-	A->args.MovedReq.destination = destination;
-	A->args.MovedReq.total_size = size;
+	A->args.moved_req.action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
+	A->args.moved_req.source = source;
+	A->args.moved_req.destination = destination;
+	A->args.moved_req.total_size = size;
 
 	/* continuation packet */
 
@@ -309,8 +309,8 @@ static void setup_movedata(struct k_args *A,
 		__ASSERT_NO_MSG(1 == 0); /* we should not come here */
 	}
 
-	A->args.MovedReq.extra.setup.continuation_send = pContSend;
-	A->args.MovedReq.extra.setup.continuation_receive = pContRecv;
+	A->args.moved_req.extra.setup.continuation_send = pContSend;
+	A->args.moved_req.extra.setup.continuation_receive = pContRecv;
 
 	/*
 	 * (possible optimisation)

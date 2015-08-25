@@ -349,7 +349,7 @@ struct _z4arg {
 union k_args_args {
 	struct _a1arg a1;
 	struct _c1arg c1;
-	struct moved_req MovedReq;
+	struct moved_req moved_req;
 	struct _e1arg e1;
 	struct _g1arg g1;
 	struct _l1arg l1;
