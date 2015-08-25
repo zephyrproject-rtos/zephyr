@@ -1,195 +1,219 @@
-.. _tasks:
+.. _microkernel_tasks:
 
 Task Services
 #############
 
-Properties of Tasks
-*******************
+Concepts
+********
 
-A task is an execution thread that implements part or all
-of the application functionality using the objects described in detail by the
-Nanokernel Objects and Microkernel Objects sections. Tasks are cooperatively
-scheduled, and will run until they explicitly yield, call a blocking interface
-or are preempted by a higher priority task.
+A task is a preemptible thread of execution that implements a portion of
+an application's processing. It is is normally used to perform processing that
+is too lengthy or complex to be performed by a fiber or an ISR.
 
-Task Groups
-***********
+A microkernel application can define any number of application tasks. Each
+task has a name that uniquely identifies it. Other important task properties
+that must be specified include:
 
-TBD (how they are used; maximum of 32 groups; mention pre-defined task groups)
+* a memory region that is used for its stack and for other execution context
+  information,
+* a function that is invoked when the task starts executing, and
+* a priority that is used by the microkernel scheduler.
 
-Task Behavior
-*************
-
-When a task calls an API to operate on a kernel object, it passes
-an abstract object identifier called objectID. A task shall always
-manipulate kernel data structures through the APIs and shall not
-directly access the internals of any object, for example, the internals
-of a semaphore or a FIFO.
-
-Task Implementation
-*******************
-
-Use kernel objects and routine calls to interface a task with
-other tasks running in the system. For example, achieve cooperation
-between tasks by using synchronization objects, such as resources and
-semaphores, or by passing parameters from one task to another using a
-data-passing object.
-
-Task Stack
-==========
-
-The compiler uses the task stack to store local task variables and to
-implement parameter-passing between functions. Static and global
-variables do not use memory from the stack. For more information about
-defining memory segments, and the defaults used for different variable
-types, consult the documentation for your compiler.
-
-Task States
-===========
-
-Each task has a task state that the scheduler uses to determine whether
-it is ready to run. This figure shows the possible task states and the
-possible transitions. The most usual transitions are green,
-bidirectional transitions are blue and uncommon transitions are marked
-orange.
-
-.. figure:: figures/microkernel_tasks_states.svg
-   :scale: 75 %
-   :alt: Possible Task States
-
-   Shows the possible states that a task might have and their transitions.
-
-Starting and Stopping Tasks
----------------------------
-
-Tasks are started in one of three ways:
-
-
-+ Automatically at boot time if it is assigned to the EXE task group.
-+ Another task issues a :c:func:`task_start()` for the task.
-+ Another task issues a :c:func:`task_group_start()` for any task
-  group the task belongs to..
-
-The scheduler manages the execution of a task once it is running. If the
-task performs a return from the routine that started it, the task
-terminates and its stack can be reused. This ensures that the task
-terminates safely and cleanly.
-
-
-Automatically Starting Tasks
-----------------------------
-
-Starting tasks automatically at boot utilizes the Task Grouping concept.
-The EXE group at boot time will put all tasks belonging to the group in
-a runnable state immediately after the kernel boots up.
-
-
-Tasks Starting Other Tasks
---------------------------
-
-.. todo:: Add details on how to start a task from within another task.
-
-Tasks Scheduling Model
-**********************
-
-Once started, a task is scheduled for execution by the microkernel until
-one of the following occurs:
-
-* A higher-priority task becomes ready to run.
-
-* The task completes.
-
-* The task's time slice expires and another runnable task of equal
-  priority exists.
-
-* The task becomes non-runnable.
-
-Task Completion
-===============
-
-.. todo:: Add details on how tasks complete.
-
-Task Priorities
-===============
-
-The kernel offers a configurable number of task priority levels. The
-number ranges from 0 to :literal:`NUM_TASK_PRIORITIES-1`. The lowest
-priority level ( :literal:`NUM_TASK_PRIORITIES-1` is reserved for use
-by the microkernel's idle task. The priority of tasks is assigned
-during the build process based upon the task definition in the project
-file. The priority can be changed at any time, by either the task
-itself or by another task calling :c:func:`task_priority_set()`.
-
-If a task of higher priority becomes runnable, the kernel saves the
-current tasks context and runs the higher-priority task. It is also
-possible for a tasks priority to be temporarily changed to prevent a
-condition known as priority inversion.
-
-
-Priority Preemption
--------------------
-
-The microkernel uses a priority-based preemptive scheduling algorithm
-where the highest-priority task that is ready to run, runs. When a task
-with a higher priority becomes runnable, the running task is
-unscheduled and the task of higher priority is started. This is the
-principle of preemption.
-
-
-Suspended Tasks
-===============
-
-Tasks can suspend other tasks, or themselves, using
-:c:func:`task_suspend()`. The task stays suspended until
-:c:func:`task_resume()` or :c:func:`task_abort()` is called by another
-task. Use :c:func:`task_abort()` and :c:func:`task_group_abort()` with
-care, as none of the affected tasks may own or be using kernel objects
-when they are called. The safest abort practice is for a task to abort
-only itself.
-
-
-Aborting a Task
----------------
-
-Tasks can have an abort handler, C routines that run as a critical
-section when a task is aborted. Since the routine runs as critical, it
-cannot be preempted or unscheduled allowing the task to properly clean
-up. Because of this, abort handlers cannot make kernel API calls.
-
-To install an abort handler function use
-:c:func:`task_abort_handler_set()`. This will bind the routine for
-execution when :c:func:`task_abort()` is called, and run the abort
-handler function immediately.
-
-
-Task Time-Slicing
-=================
-
-Time-slicing, enabled through the :c:func:`sys_scheduler_time_slice_set()`
-function, can share a processor between multiple tasks with the same
-priority. When enabled, the kernel preempts a task that has run for a
-certain amount of time, the time slice, and schedules another runnable
-task with the same priority. The sorting of tasks of equal priority
-order is a fundamental microkernel scheduling concept and is not
-limited to cases involving :c:func:`task_yield()`.
-
-The same effect as time-slicing can be achieved using
-:c:func:`task_yield()`. When this call is made, the current task
-relinquishes the processor if another task of the same priority is
-ready to run. The calling task returns to the queue of runnable tasks.
-If no other task of the same priority is runnable, the task that called
-:c:func:`task_yield()` continues running.
+The microkernel automatically defines a system task, known as the *idle task*,
+which has lowest priority. This task is used during system initialization,
+and subsequently executes only when there is no other work for the system to do.
+The idle task is anonymous and must not be referenced by application tasks.
 
 .. note::
+   A nanokernel application can define only a single application task, known
+   as the *background task*, which is very different from the microkernel tasks
+   described in this section. For more information see [TBD].
 
-   :c:func:`task_yield()` sorts the tasks in FIFO order.
+Task Lifecycle
+==============
 
-Task Context Switches
-=====================
+The kernel automatically starts a task during system initialization if the task
+belongs to the :c:macro:`EXE` task group; see `Task Groups`_ below.
+A task that is not started automatically must be started by another task
+using :c:func:`task_start()`.
 
-When a task swap occurs, the kernel saves the context of the task
-that is swapped out and restores the context of the task that is
-swapped in.
+Once a task is started it normally executes forever. A task may terminate
+gracefully by simply returning from its entry point function. If it does,
+it is the task's responsibility to release any system resources it may own
+(such as mutexes and dynamically allocated memory blocks) prior to returning,
+since the kernel does *not* attempt to reclaim them so they can be reused.
+
+A task may also terminate non-gracefully by *aborting*. The kernel
+automatically aborts a task when it generates a fatal error condition,
+such as dereferencing a null pointer. A task can also be explicitly aborted
+using :c:func:`task_abort()`. As with graceful task termination,
+the kernel does not attempt to reclaim system resources owned by the task.
+
+A task may optionally register an *abort handler function* that is invoked
+by the kernel when the task terminates (including during graceful termination).
+The abort handler can be used to record information about the terminating
+task or to assist in reclaiming system resources owned by the task. The abort
+handler function is invoked by the microkernel server fiber, so it cannot
+directly call kernel APIs that must be invoked by a task; instead, it must
+co-ordindate with another task to invoke such APIs indirectly.
+
+.. note::
+   The kernel does not currently make any claims regarding an application's
+   ability to restart a terminated task.
+
+
+Task Scheduling
+===============
+
+The microkernel's scheduler selects which of the system's tasks is allowed
+to execute; this task is known as the *current task*. The nanokernel's scheduler
+permits the current task to execute only when there is no fiber or ISR
+that needs to execute, since fiber and ISR execution takes precedence.
+
+The kernel automatically takes care of saving the current task's CPU register
+values when it performs a context switch to a different task, a fiber, or
+an ISR, and restores these values when the task later resumes execution.
+
+Task State
+----------
+
+A microkernel task has an associated *state* that determines whether or not
+it can be scheduled for execution. The state records all factors that can
+prevent the task from executing, such as:
+
+* the task has not been started
+* the task is waiting for it needs (e.g. a semaphore, a timeout, ...)
+* the task has been suspended
+* the task has terminated
+
+A task whose state has no factors that prevent its execution is said to be
+*executable*.
+
+Task Priorities
+---------------
+
+A microkernel application can be configured to support any number of task
+priority levels using the :option:`NUM_TASK_PRIORITIES` configuration option.
+
+An application task can have any priority from 0 (highest priority) down to
+:option:`NUM_TASK_PRIORITIES`-2. The lowest priority level,
+:option:`NUM_TASK_PRIORITIES`-1, is reserved for the microkernel's idle task.
+
+A task's original priority can be altered up or down after the task has been
+started.
+
+Scheduling Algorithm
+--------------------
+
+The microkernel's scheduler always selects the highest priority executable task
+to be the current task. If multiple executable tasks of that priority
+are available the scheduler chooses the one that has been waiting longest.
+
+Once a task becomes the current task it remains scheduled for execution
+by the microkernel until one of the following occurs:
+
+* The task is supplanted by a higher priority task that becomes ready to
+  execute.
+
+* The task is supplanted by an equal priority task that is ready to execute,
+  either because the current task explicitly calls :c:func:`task_yield()`
+  or because the kernel implicitly calls :c:func:`task_yield()` because the
+  scheduler's time slice has expired.
+
+* The task is supplanted by an equal or lower priority task that is ready
+  to execute, because the current task calls a kernel API that blocks its
+  own execution. (For example, the task attempts to take a semaphore that
+  is unavailable.)
+
+* The task terminates itself by returning from its entry point function.
+
+* The task aborts itself by performing an operation that causes a fatal error.
+
+Time Slicing
+------------
+
+The microkernel's scheduler supports an optional time slicing capability
+that prevents a task from monopolizing the CPU when other tasks of the
+same priority are ready to execute.
+
+The scheduler divides time into a series of *time slices*, whose size is
+measured in system clock ticks. The time slice size is specified by
+the :option:`TIMESLICE_SIZE` configuration option, but this size can also
+be changed dynamically while the application is running.
+
+At the end of every time slice the scheduler implicitly invokes
+:c:func:`task_yield()` on behalf of the current task, thereby giving
+all other tasks of that priority the opportunity to execute before the
+current task can once again be scheduled. If one or more equal priority
+tasks are ready to execute, the current task is preempted to allow those
+tasks to execute. If no equal priority tasks are ready to execute,
+the current task remains the current task, and continues to execute.
+
+Tasks having a priority higher than that specified by the
+:option:`TIMESLICE_PRIORITY` configuration option are exempt from time
+slicing, and are never preempted by a task of equal priority. This
+capability allows an application to use time slicing only for lower
+priority tasks that are less time-sensitive.
+
+.. note::
+   The microkernel's time slicing algorithm does *not* ensure that a set
+   of equal priority tasks will receive an equitable amount of CPU time,
+   since it does not measure the amount of time a task actually gets to
+   execute. For example, a task may become the current task just before
+   the end of a time slice and then immediately have to yield the CPU.
+   On the other hand, the microkernel's scheduler *does* ensure that a task
+   never executes for longer than a single time slice without being required
+   to yield.
+
+Task Suspension
+---------------
+
+The microkernel allows a task to be *suspended*, which prevents the task
+from executing for an indefinite period of time. The :c:func:`task_suspend()`
+API allows an application task to suspend any other task, including itself.
+Suspending a task that is already suspended has no additional effect.
+
+Once suspended, a task cannot be scheduled until another task calls
+:c:func:`task_resume()` to remove the suspension.
+
+.. note::
+   A task can prevent itself from executing for a specified period of time
+   using :c:func:`task_sleep()`. However, this is different from suspending
+   a task since a sleeping task becomes executable automatically when the
+   time limit is reached.
+
+Task Groups
+===========
+
+The kernel allows a set of related tasks, known as a *task group*, to be
+manipulated as a single unit, rather than individually. This simplifies
+the work required to start related tasks, to suspend and resume them, or
+to abort them.
+
+A task can be defined so that it initially belongs to a single task group,
+multiple task groups, or no task group. A task's group memberships can
+also be changed dynamically while the application is running.
+
+The kernel supports a maximum of 32 distinct task groups. The task groups
+listed below are pre-defined by the kernel; additional task groups can
+be defined by the application.
+
+   :c:macro:`EXE`
+      The set of tasks which are started automatically by the kernel
+      during system intialization.
+
+   :c:macro:`SYS`
+      The set of system tasks which continue executing during system debugging.
+
+   :c:macro:`FPU`
+      The set of tasks that require the kernel to save x87 FPU and MMX floating
+      point context information during context switches.
+
+   :c:macro:`SSE`
+      The set of tasks that require the kernel to save SSE floating point
+      context information during context switches. (Tasks in this group are
+      implicitly members of the :c:macro:`FPU` task group too.)
+
 
 Usage
 *****
@@ -203,9 +227,7 @@ The following parameters must be defined:
           This specifies a unique name for the task.
 
    *priority*
-          This specifies the scheduling priority of the task. A smaller
-          integer value indicates higher priority, with zero indicating
-          highest priority.
+          This specifies the scheduling priority of the task.
 
    *entry_point*
           This specifies the name of the task's entry point function,
@@ -222,7 +244,8 @@ The following parameters must be defined:
              }
 
    *stack_size*
-          This specifies the size of the task's stack, in bytes.
+          This specifies the size of the memory region used for the task's
+          stack and for other execution context information, in bytes.
 
    *groups*
           This specifies the task groups the task belongs to.
@@ -314,12 +337,15 @@ as follows:
      TASKGROUP   AUDIO_TASKS
      TASKGROUP   KEYPAD_TASKS
 
+A public task group can be referenced from any source file that includes
+the file :file:`zephyr.h`.
+
 .. note::
    Private task groups are not supported by the Zephyr kernel.
 
 
-Example: Starting a Task from a Different Task
-==============================================
+Example: Starting a Task from Another Task
+==========================================
 
 This code shows how the currently executing task can start another task.
 
