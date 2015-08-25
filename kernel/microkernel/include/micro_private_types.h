@@ -47,7 +47,7 @@ typedef union k_args_args K_ARGS_ARGS;
 
 struct k_timer {
 	struct k_timer *next;
-	struct k_timer *Back;
+	struct k_timer *prev;
 	int32_t duration;
 	int32_t period;
 	struct k_args *Args;

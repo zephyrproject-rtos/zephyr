@@ -107,7 +107,7 @@ struct k_msg {
 
 struct k_task {
 	struct k_task *next;
-	struct k_task *Back;
+	struct k_task *prev;
 	kpriority_t Prio;
 	ktask_t Ident;
 	uint32_t State;
