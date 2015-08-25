@@ -285,7 +285,7 @@ struct moved_req {
 	MovedAction action;
 	void *source;
 	void *destination;
-	uint32_t iTotalSize;
+	uint32_t total_size;
 	union {
 		struct moved_req_args_setup Setup;
 	} Extra;

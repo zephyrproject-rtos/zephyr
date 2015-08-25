@@ -161,7 +161,7 @@ static bool prepare_transfer(struct k_args *move,
 		move->Ctxt.task = NULL;
 		move->args.MovedReq.action =
 			(MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
-		move->args.MovedReq.iTotalSize = writer->args.m1.mess.size;
+		move->args.MovedReq.total_size = writer->args.m1.mess.size;
 		move->args.MovedReq.Extra.Setup.continuation_send = NULL;
 		move->args.MovedReq.Extra.Setup.continuation_receive = NULL;
 
@@ -761,7 +761,7 @@ void _k_mbox_receive_data(struct k_args *Starter)
 	CopyStarter->next = NULL;
 	MoveD->args.MovedReq.destination = CopyStarter->args.m1.mess.rx_data;
 
-	MoveD->args.MovedReq.iTotalSize = CopyStarter->args.m1.mess.size;
+	MoveD->args.MovedReq.total_size = CopyStarter->args.m1.mess.size;
 
 	Writer = MoveD->args.MovedReq.Extra.Setup.continuation_send;
 	if (Writer != NULL) {

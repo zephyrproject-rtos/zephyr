@@ -64,7 +64,7 @@ static void mvdreq_docont(struct k_args *Cont)
 static void mvdreq_copy(struct moved_req *ReqArgs)
 {
 	memcpy(ReqArgs->destination, ReqArgs->source,
-		   OCTET_TO_SIZEOFUNIT(ReqArgs->iTotalSize));
+		   OCTET_TO_SIZEOFUNIT(ReqArgs->total_size));
 
 	if (ReqArgs->action & MVDACT_SNDACK)
 		mvdreq_docont(ReqArgs->Extra.Setup.continuation_send);
@@ -86,7 +86,7 @@ void _k_movedata_request(struct k_args *Req)
 	ReqArgs = &(Req->args.MovedReq);
 
 	__ASSERT_NO_MSG(0 ==
-	       (ReqArgs->iTotalSize %
+	       (ReqArgs->total_size %
 		SIZEOFUNIT_TO_OCTET(1))); /* must be a multiple of size_t */
 	__ASSERT_NO_MSG(!(ReqArgs->action & MVDACT_INVALID));
 
@@ -94,7 +94,7 @@ void _k_movedata_request(struct k_args *Req)
 	   packet,
 	   if any, and get out:
 	 */
-	if (0 == ReqArgs->iTotalSize) {
+	if (0 == ReqArgs->total_size) {
 		if (ReqArgs->action & MVDACT_SNDACK)
 			mvdreq_docont(
 				ReqArgs->Extra.Setup.continuation_send); /* Send ack

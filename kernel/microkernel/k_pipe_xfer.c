@@ -258,7 +258,7 @@ static void setup_movedata(struct k_args *A,
 	A->args.MovedReq.action = (MovedAction)(MVDACT_SNDACK | MVDACT_RCVACK);
 	A->args.MovedReq.source = source;
 	A->args.MovedReq.destination = destination;
-	A->args.MovedReq.iTotalSize = size;
+	A->args.MovedReq.total_size = size;
 
 	/* continuation packet */
 
