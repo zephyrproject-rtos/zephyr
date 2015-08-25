@@ -755,15 +755,16 @@ static void cmd_gatt_unsubscribe(int argc, char *argv[])
 	}
 }
 
-static int read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		     void *buf, uint16_t len, uint16_t offset)
+static int read_string(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		       void *buf, uint16_t len, uint16_t offset)
 {
-	const char *name = attr->user_data;
+	const char *str = attr->user_data;
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
-				 strlen(name));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, str,
+				 strlen(str));
 }
 
+/* GAP SERVICE (0x1800) */
 static struct bt_uuid gap_uuid = {
 	.type = BT_UUID_16,
 	.u16 = BT_UUID_GAP,
@@ -784,7 +785,7 @@ static struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
 	BT_GATT_DESCRIPTOR(0x0003, &device_name_uuid, BT_GATT_PERM_READ,
-			   read_name, NULL, DEVICE_NAME),
+			   read_string, NULL, DEVICE_NAME),
 };
 
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
