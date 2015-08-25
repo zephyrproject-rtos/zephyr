@@ -9,16 +9,13 @@ CONFIG_NANOKERNEL=y
 # General Kernel Options
 #
 CONFIG_SYS_CLOCK_TICKS_PER_SEC=100
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=0
 CONFIG_SYS_CLOCK_EXISTS=y
 # CONFIG_INIT_STACKS is not set
 CONFIG_XIP=y
 # CONFIG_ENHANCED_SECURITY is not set
 # CONFIG_EVENT_LOGGER is not set
 # CONFIG_KERNEL_PROFILER is not set
-# CONFIG_PROFILER_BUFFER_SIZE is not set
-# CONFIG_PROFILER_CONTEXT_SWITCH is not set
-# CONFIG_PROFILER_INTERRUPT is not set
-# CONFIG_PROFILER_SLEEP is not set
 
 #
 # Nanokernel Options
@@ -40,14 +37,15 @@ CONFIG_CROSS_COMPILE=""
 # Compile and Link Features
 #
 CONFIG_KERNEL_BIN_NAME="nanokernel"
+# CONFIG_DEBUG is not set
 CONFIG_COMPILER_OPT=""
+CONFIG_TOOLCHAIN_VARIANT=""
 CONFIG_MINIMAL_LIBC=y
+# CONFIG_NEWLIB_LIBC is not set
 
 #
 # Debugging Options
 #
-CONFIG_PRINTK=y
-# CONFIG_STDOUT_CONSOLE is not set
 # CONFIG_ASSERT is not set
 
 #
@@ -86,16 +84,8 @@ CONFIG_IRQ_VECTOR_TABLE_BSP=y
 # Device Drivers
 #
 # CONFIG_UART_SIMPLE is not set
-# CONFIG_CONSOLE_HANDLER is not set
-CONFIG_UART_CONSOLE_INDEX=0
-
-#
-# Serial Drivers
-#
-# CONFIG_NS16550 is not set
-# CONFIG_K20_UART is not set
-# CONFIG_STELLARIS_UART is not set
-# CONFIG_UART_INTERRUPT_DRIVEN is not set
+# CONFIG_CONSOLE is not set
+# CONFIG_SERIAL is not set
 
 #
 # Interrupt Controllers
@@ -112,6 +102,7 @@ CONFIG_ARCV2_TIMER=y
 #
 # CONFIG_RANDOM_GENERATOR is not set
 # CONFIG_TEST_RANDOM_GENERATOR is not set
+# CONFIG_SPI is not set
 
 #
 # Networking
