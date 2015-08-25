@@ -32,6 +32,7 @@
 #include <gpio.h>
 #include <gpio/gpio-dw.h>
 #include <board.h>
+#include <sys_io.h>
 
 #define SWPORTA_DR	0x00
 #define SWPORTA_DDR	0x04
@@ -57,15 +58,15 @@
 
 #define BIT(n)	(1UL << (n))
 
-static inline uint32_t dw_read(uint32_t base_addr, uint32_t offest)
+static inline uint32_t dw_read(uint32_t base_addr, uint32_t offset)
 {
-	return *(uint32_t*)(base_addr+offest);
+	return sys_read32(base_addr + offset);
 }
 
-static inline void dw_write(uint32_t base_addr, uint32_t offest,
+static inline void dw_write(uint32_t base_addr, uint32_t offset,
 			   uint32_t val)
 {
-	*(uint32_t*)(base_addr+offest) = val;
+	sys_write32(val, base_addr + offset);
 }
 
 
@@ -74,10 +75,11 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 {
 	uint32_t reg;
 
-	reg = dw_read(base_addr, offset);
-	reg &= ~BIT(bit);
-	reg |= (((!!value) & 0x1) << bit);
-	dw_write(base_addr, offset, reg);
+	if (!value) {
+		sys_clear_bit(base_addr + offset, bit);
+	} else {
+		sys_set_bit(base_addr + offset, bit);
+	}
 }
 
 static inline void dw_interrupt_config(struct device *port, int access_op,
