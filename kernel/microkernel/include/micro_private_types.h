@@ -202,7 +202,7 @@ struct _pipe_xfer_req_arg {
 	void *data_ptr; /* if NULL, data is embedded in
 			     cmd packet		    */
 	int total_size;      /* total size of data/free space    */
-	int iSizeXferred;    /* size of data ALREADY Xferred	    */
+	int xferred_size;    /* size of data ALREADY Xferred	    */
 	PIPE_REQUEST_STATUS status; /* status of processing of request  */
 	int iNbrPendXfers;   /* # data Xfers (still) in progress */
 };
@@ -213,7 +213,7 @@ struct _pipe_ack_arg {
 		struct sync_req dummy;
 		struct async_req async;
 	} req_type;
-	int iSizeXferred;
+	int xferred_size;
 };
 
 struct _pipe_xfer_ack_arg {

@@ -100,7 +100,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	}
 	RequestProc->args.pipe_xfer_req.status = XFER_IDLE;
 	RequestProc->args.pipe_xfer_req.iNbrPendXfers = 0;
-	RequestProc->args.pipe_xfer_req.iSizeXferred = 0;
+	RequestProc->args.pipe_xfer_req.xferred_size = 0;
 
 	RequestProc->next = NULL;
 	RequestProc->head = NULL;
@@ -177,7 +177,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		} else {
 			/* { TIME_BT } */
 #ifdef CANCEL_TIMERS
-			if (RequestProc->args.pipe_xfer_req.iSizeXferred != 0) {
+			if (RequestProc->args.pipe_xfer_req.xferred_size != 0) {
 				RequestProc->Time.timer = NULL;
 			} else
 #endif
@@ -198,7 +198,7 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		} else {
 			__ASSERT_NO_MSG(XFER_IDLE ==
 				RequestProc->args.pipe_xfer_req.status);
-			__ASSERT_NO_MSG(0 == RequestProc->args.pipe_xfer_req.iSizeXferred);
+			__ASSERT_NO_MSG(0 == RequestProc->args.pipe_xfer_req.xferred_size);
 			RequestProc->Comm = _K_SVC_PIPE_PUT_REPLY;
 			_k_pipe_put_reply(RequestProc);
 		}
@@ -255,11 +255,11 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 	} else if ((TERM_XXX | XFER_IDLE) & status) {
 		K_PIPE_OPTION Option = _k_pipe_option_get(&ReqProc->args);
 
-		if (likely(ReqProc->args.pipe_xfer_req.iSizeXferred ==
+		if (likely(ReqProc->args.pipe_xfer_req.xferred_size ==
 				   ReqProc->args.pipe_xfer_req.total_size)) {
 			/* All data has been transferred */
 			ReqOrig->Time.rcode = RC_OK;
-		} else if (ReqProc->args.pipe_xfer_req.iSizeXferred != 0) {
+		} else if (ReqProc->args.pipe_xfer_req.xferred_size != 0) {
 			/* Some but not all data has been transferred */
 			ReqOrig->Time.rcode = (Option == _ALL_N) ? RC_INCOMPLETE : RC_OK;
 		} else {
@@ -271,8 +271,8 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
 		__ASSERT_NO_MSG(1 == 0); /* should not come here */
 	}
 	if (_ASYNCREQ != _k_pipe_request_type_get(&ReqOrig->args)) {
-		ReqOrig->args.pipe_ack.iSizeXferred =
-			ReqProc->args.pipe_xfer_req.iSizeXferred;
+		ReqOrig->args.pipe_ack.xferred_size =
+			ReqProc->args.pipe_xfer_req.xferred_size;
 	}
 
 	SENDARGS(ReqOrig);
