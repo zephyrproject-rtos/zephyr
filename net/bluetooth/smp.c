@@ -406,9 +406,21 @@ static uint8_t get_auth(uint8_t auth)
 static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 {
 	struct bt_smp *smp = conn->smp;
+	struct bt_keys *keys;
 	uint32_t passkey;
 
 	smp->method = get_pair_method(smp, remote_io);
+
+	/* Fail if we have keys that are stronger than keys that will be
+	 * distributed in new pairing. This is to avoid replacing authenticated
+	 * keys with unauthenticated ones.
+	  */
+	keys = bt_keys_find_addr(&conn->dst);
+	if (keys && keys->type == BT_KEYS_AUTHENTICATED &&
+	    smp->method == JUST_WORKS) {
+		BT_ERR("JustWorks failed, authenticated keys present\n");
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
 
 	switch (smp->method) {
 	case PASSKEY_DISPLAY:
