@@ -112,7 +112,8 @@ for MERGE_FILE in $MERGE_LIST ; do
 			elif [ "$WARNREDUN" = "true" ]; then
 			$ECHO Value of $CFG is redundant by fragment $MERGE_FILE:
 			fi
-			sed -i "/$CFG[ =]/d" $TMP_FILE
+			sed -i.bak "/$CFG[ =]/d" $TMP_FILE
+			rm $TMP_FILE.bak
 		fi
 	done
 	cat $MERGE_FILE >> $TMP_FILE
