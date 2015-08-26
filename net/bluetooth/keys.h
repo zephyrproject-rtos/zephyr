@@ -48,7 +48,6 @@ enum {
 };
 
 struct bt_ltk {
-	uint8_t			type;
 	uint64_t		rand;
 	uint16_t		ediv;
 	uint8_t			val[16];
@@ -60,7 +59,6 @@ struct bt_irk {
 };
 
 struct bt_csrk {
-	uint8_t			type;
 	uint8_t			val[16];
 	uint32_t		cnt;
 };
@@ -68,6 +66,7 @@ struct bt_csrk {
 struct bt_keys {
 	bt_addr_le_t		addr;
 	int			keys;
+	uint8_t			type;
 
 	struct bt_ltk		slave_ltk;
 	struct bt_ltk		ltk;

@@ -748,6 +748,17 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
+		keys = bt_keys_get_addr(&conn->dst);
+		if (!keys) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		/* store key type deducted from pairing method used
+		 * it is important to store it since type is used to determine
+		 * security level upon encryption
+		 */
+		keys->type = get_keys_type(smp->method);
+
 		/* Rand and EDiv are 0 for the STK */
 		if (bt_conn_le_start_encryption(conn, 0, 0, stk)) {
 			BT_ERR("Failed to start encryption\n");
@@ -771,7 +782,11 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	keys->slave_ltk.type = get_keys_type(smp->method);
+	/* store key type deducted from pairing method used
+	 * it is important to store it since type is used to determine
+	 * security level upon encryption
+	 */
+	keys->type = get_keys_type(smp->method);
 
 	/* Rand and EDiv are 0 for the STK */
 	keys->slave_ltk.rand = 0;
@@ -858,7 +873,6 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		le_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
 		le_rand(&keys->slave_ltk.rand, sizeof(keys->slave_ltk.rand));
 		le_rand(&keys->slave_ltk.ediv, sizeof(keys->slave_ltk.ediv));
-		keys->slave_ltk.type = get_keys_type(smp->method);
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_ENCRYPT_INFO,
 					sizeof(*info));
@@ -893,7 +907,6 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 
 		le_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
 		keys->local_csrk.cnt = 0;
-		keys->local_csrk.type = get_keys_type(smp->method);
 
 		buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SIGNING_INFO,
 					sizeof(*info));
@@ -925,7 +938,6 @@ static uint8_t smp_encrypt_info(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	memcpy(keys->ltk.val, req->ltk, 16);
-	keys->ltk.type = get_keys_type(smp->method);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_MASTER_IDENT);
 
@@ -1045,7 +1057,6 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	memcpy(keys->remote_csrk.val, req->csrk, sizeof(keys->remote_csrk.val));
-	keys->remote_csrk.type = get_keys_type(smp->method);
 
 	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
 
@@ -1075,8 +1086,7 @@ static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 		goto pair;
 	}
 
-	if ((auth & BT_SMP_AUTH_MITM) &&
-	     keys->ltk.type != BT_KEYS_AUTHENTICATED) {
+	if ((auth & BT_SMP_AUTH_MITM) && keys->type != BT_KEYS_AUTHENTICATED) {
 		if (bt_smp_io_capa != BT_SMP_IO_NO_INPUT_OUTPUT) {
 			BT_INFO("New auth requirements: 0x%x, repairing", auth);
 			goto pair;

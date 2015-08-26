@@ -532,7 +532,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 	keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
 	if (keys) {
 		if (sec > BT_SECURITY_MEDIUM &&
-		    keys->ltk.type != BT_KEYS_AUTHENTICATED) {
+		    keys->type != BT_KEYS_AUTHENTICATED) {
 			goto pair;
 		}
 

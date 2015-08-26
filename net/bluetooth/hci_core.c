@@ -311,32 +311,13 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 
 static void update_sec_level(struct bt_conn *conn)
 {
-	uint8_t type = BT_KEYS_UNAUTHENTICATED;
+	struct bt_keys *keys;
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		struct bt_keys *keys;
-
-		keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
-		if (keys) {
-			type = keys->ltk.type;
-		}
-	} else {
-		struct bt_keys *keys;
-
-		keys = bt_keys_find(BT_KEYS_SLAVE_LTK, &conn->dst);
-		if (keys) {
-			type = keys->slave_ltk.type;
-		}
-	}
-
-	switch (type) {
-	case BT_KEYS_AUTHENTICATED:
+	keys = bt_keys_find_addr(&conn->dst);
+	if (keys && keys->type == BT_KEYS_AUTHENTICATED) {
 		conn->sec_level = BT_SECURITY_HIGH;
-		break;
-	case BT_KEYS_UNAUTHENTICATED:
-	default:
+	} else {
 		conn->sec_level = BT_SECURITY_MEDIUM;
-		break;
 	}
 
 	if (conn->required_sec_level > conn->sec_level) {
