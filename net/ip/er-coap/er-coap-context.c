@@ -38,11 +38,10 @@
 #include "er-coap.h"
 #include "er-coap-engine.h"
 #include <string.h>
+#include <errno.h>
 
 #define DEBUG DEBUG_NONE
 #include "net/ip/uip-debug.h"
-
-#ifdef WITH_DTLS
 
 #ifndef COAP_CONTEXT_CONF_MAX_CONTEXTS
 #define MAX_CONTEXTS 1
@@ -51,6 +50,8 @@
 #endif /* COAP_CONTEXT_CONF_MAX_CONTEXTS */
 
 static coap_context_t coap_contexts[MAX_CONTEXTS];
+
+#ifdef WITH_DTLS
 
 process_event_t coap_context_event;
 
@@ -69,26 +70,140 @@ get_from_peer(struct dtls_context_t *ctx, session_t *session,
   coap_ctx = dtls_get_app_data(ctx);
 
   if(coap_ctx != COAP_CONTEXT_NONE && coap_ctx->is_used) {
-    uip_len = len;
-    memmove(uip_appdata, data, len);
+    uip_len(coap_ctx->buf) = len;
+    memmove(uip_appdata(coap_ctx->buf), data, len);
     coap_engine_receive(coap_ctx);
   }
   return 0;
+}
+/*---------------------------------------------------------------------------*/
+static int prepare_and_send_buf(coap_context_t *ctx, session_t *session,
+				uint8_t *data, size_t len)
+{
+  struct net_buf *buf;
+  int max_data_len;
+
+  /* This net_buf gets sent to network, so it is not released
+   * by this function unless there was an error and buf was
+   * not actually sent.
+   */
+  buf = net_buf_get(ctx->net_ctx);
+  if (!buf) {
+    len = -ENOBUFS;
+    goto out;
+  }
+
+  max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
+	  sizeof(struct uip_ip_hdr);
+
+  PRINTF("%s: reply to peer data %p len %d\n", __FUNCTION__, data, len);
+
+  if (len > max_data_len) {
+    PRINTF("%s: too much (%d bytes) data to send (max %d bytes)\n",
+	  __FUNCTION__, len, max_data_len);
+    net_buf_put(buf);
+    len = -EINVAL;
+    goto out;
+  }
+
+  /* Note that we have reversed the addresses here
+   * because net_reply() will reverse them again.
+   */
+#ifdef CONFIG_NETWORKING_WITH_IPV6
+  uip_ip6addr_copy(&NET_BUF_IP(buf)->destipaddr, (uip_ip6addr_t *)&ctx->my_addr.in6_addr);
+  uip_ip6addr_copy(&NET_BUF_IP(buf)->srcipaddr,
+		   (uip_ip6addr_t *)&session->addr.ipaddr);
+#else
+  uip_ip4addr_copy(&NET_BUF_IP(buf)->destipaddr,
+		   (uip_ip4addr_t *)&ctx->my_addr.in_addr);
+  uip_ip4addr_copy(&NET_BUF_IP(buf)->srcipaddr,
+		   (uip_ip4addr_t *)&session->addr.ipaddr);
+#endif
+  NET_BUF_UDP(buf)->destport = uip_ntohs(ctx->my_port);
+  NET_BUF_UDP(buf)->srcport = session->addr.port;
+
+  uip_set_udp_conn(buf) = net_context_get_udp_connection(ctx->net_ctx);
+
+  memcpy(net_buf_add(buf, 0), data, len);
+  net_buf_add(buf, len);
+  net_buf_datalen(buf) = len;
+
+  if (net_reply(ctx->net_ctx, buf)) {
+    net_buf_put(buf);
+  }
+out:
+  return len;
 }
 /*---------------------------------------------------------------------------*/
 static int
 send_to_peer(struct dtls_context_t *ctx, session_t *session,
              uint8 *data, size_t len)
 {
+  int ret = 0;
   coap_context_t *coap_ctx;
   coap_ctx = dtls_get_app_data(ctx);
 
-  if(coap_ctx != COAP_CONTEXT_NONE && coap_ctx->is_used &&
-     coap_ctx->conn && session != NULL) {
-    uip_udp_packet_sendto(coap_ctx->conn, data, len, &session->addr, session->port);
+  PRINTF("%s(): ctx %p session %p data %p len %d\n", __FUNCTION__, ctx,
+	 session, data, len);
+  if(coap_ctx != COAP_CONTEXT_NONE && coap_ctx->is_used && session != NULL) {
+    ret = prepare_and_send_buf(coap_ctx, session, data, len);
+    if (ret < 0) {
+      PRINTF("%s(): cannot send data, msg discarded\n", __FUNCTION__);
+    }
+  } else {
+      PRINTF("%s(): msg discarded ctx %p is_used %d buf %p udp %p session %p\n",
+	     __FUNCTION__, coap_ctx, coap_ctx ? coap_ctx->is_used : 0,
+	     coap_ctx->buf, coap_ctx ? (coap_ctx->buf ?
+				uip_udp_conn(coap_ctx->buf) : NULL) : NULL,
+	     session);
+      ret = -EINVAL;
   }
 
-  return len;
+  return ret;
+}
+/*---------------------------------------------------------------------------*/
+int coap_context_wait_data(coap_context_t *coap_ctx, int32_t ticks)
+{
+  struct net_buf *buf;
+
+  buf = net_receive(coap_ctx->net_ctx, ticks);
+  if (buf) {
+    session_t session;
+    int ret;
+
+    uip_ipaddr_copy(&session.addr.ipaddr, &UIP_IP_BUF(buf)->srcipaddr);
+    session.addr.port = UIP_UDP_BUF(buf)->srcport;
+    session.size = sizeof(session.addr);
+    session.ifindex = 1;
+
+    uip_datalen(buf) = buf->datalen;
+    uip_appdata(buf) = buf->data;
+
+    PRINTF("coap-context: got message from ");
+    PRINT6ADDR(&session.addr.ipaddr);
+    PRINTF(":%d %u bytes\n", uip_ntohs(session.addr.port), uip_datalen(buf));
+
+    PRINTF("Received data buf %p buflen %d data %p datalen %d\n",
+	   buf, uip_len(buf), net_buf_data(buf),
+	   net_buf_datalen(buf));
+
+    coap_ctx->buf = buf;
+
+    ret = dtls_handle_message(coap_ctx->dtls_context, &session,
+			      net_buf_data(buf), net_buf_datalen(buf));
+
+    /* We always release the buffer here as this buffer is never sent
+     * to network anyway.
+     */
+    if (coap_ctx->buf) {
+      net_buf_put(coap_ctx->buf);
+      coap_ctx->buf = NULL;
+    }
+
+    return ret;
+  }
+
+  return 0;
 }
 /*---------------------------------------------------------------------------*/
 static int
@@ -110,6 +225,10 @@ event(struct dtls_context_t *ctx, session_t *session,
     process_post(coap_ctx->process, coap_context_event, coap_ctx);
   } else if(level == DTLS_ALERT_LEVEL_FATAL && code < 256) {
     /* Fatal alert */
+    if (coap_ctx && coap_ctx->buf) {
+      net_buf_put(coap_ctx->buf);
+      coap_ctx->buf = NULL;
+    }
     coap_ctx->status = STATUS_ALERT;
     PRINTF("coap-context: DTLS CLIENT ALERT %u!\n", code);
     process_post(coap_ctx->process, coap_context_event, coap_ctx);
@@ -158,7 +277,7 @@ coap_context_has_errors(const coap_context_t *coap_ctx)
 }
 /*---------------------------------------------------------------------------*/
 coap_context_t *
-coap_context_new(uint16_t port)
+coap_context_new(uip_ipaddr_t *my_addr, uint16_t port)
 {
   coap_context_t *ctx = NULL;
   int i;
@@ -176,35 +295,51 @@ coap_context_new(uint16_t port)
 
   memset(ctx, 0, sizeof(coap_context_t));
 
-  /* new connection with remote host */
-  PROCESS_CONTEXT_BEGIN(&coap_context_process);
-  ctx->conn = udp_new(NULL, 0, ctx);
-  PROCESS_CONTEXT_END(&coap_context_process);
-
-  if(ctx->conn == NULL) {
-    PRINTF("coap-context: failed to open new UDP conn\n");
-    return NULL;
-  }
-  udp_bind(ctx->conn, port);
-
   /* initialize context */
   ctx->dtls_context = dtls_new_context(ctx);
   if(ctx->dtls_context == NULL) {
     PRINTF("coap-context: failed to get DTLS context\n");
-    uip_udp_remove(ctx->conn);
+    uip_udp_remove(uip_udp_conn(ctx->buf));
     return NULL;
   }
 
   ctx->dtls_handler.write = send_to_peer;
   ctx->dtls_handler.read = get_from_peer;
   ctx->dtls_handler.event = event;
+
   dtls_set_handler(ctx->dtls_context, &ctx->dtls_handler);
+
+#ifdef NETSTACK_CONF_WITH_IPV6
+  memcpy(&ctx->my_addr.in6_addr, my_addr, sizeof(ctx->my_addr.in6_addr));
+#else
+  memcpy(&ctx->my_addr.in_addr, my_addr, sizeof(ctx->my_addr.in_addr));
+#endif
+  ctx->my_port = port;
 
   ctx->process = PROCESS_CURRENT();
   ctx->is_used = 1;
-  PRINTF("Secure listening on port %u\n", uip_ntohs(port));
+  PRINTF("Secure listening on port %u\n", port);
 
   return ctx;
+}
+/*---------------------------------------------------------------------------*/
+void
+coap_context_set_key_handlers(coap_context_t *ctx,
+			      dtls_get_psk_info_t get_psk_info,
+			      dtls_get_ecdsa_key_t get_ecdsa_key,
+			      dtls_verify_ecdsa_key_t verify_ecdsa_key)
+{
+  if (!ctx) {
+    return;
+  }
+
+#ifdef DTLS_PSK
+  ctx->dtls_handler.get_psk_info = get_psk_info;
+#endif /* DTLS_PSK */
+#ifdef DTLS_ECC
+  ctx->dtls_handler.get_ecdsa_key = get_ecdsa_key;
+  ctx->dtls_handler.verify_ecdsa_key = verify_ecdsa_key;
+#endif /* DTLS_ECC */
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -217,8 +352,8 @@ coap_context_close(coap_context_t *coap_ctx)
   if(coap_ctx->dtls_context != NULL) {
     dtls_free_context(coap_ctx->dtls_context);
   }
-  if(coap_ctx->conn != NULL) {
-    uip_udp_remove(coap_ctx->conn);
+  if(coap_ctx->buf && uip_udp_conn(coap_ctx->buf) != NULL) {
+    uip_udp_remove(uip_udp_conn(coap_ctx->buf));
   }
   coap_ctx->is_used = 0;
 }
@@ -232,9 +367,28 @@ coap_context_connect(coap_context_t *coap_ctx, uip_ipaddr_t *addr, uint16_t port
     return 0;
   }
 
-  uip_ipaddr_copy(&session.addr, addr);
-  session.port = port;
-  session.size = sizeof(session.addr) + sizeof(session.port);
+#ifdef NETSTACK_CONF_WITH_IPV6
+  memcpy(&coap_ctx->addr.in6_addr, addr, sizeof(coap_ctx->addr.in6_addr));
+  coap_ctx->addr.family = AF_INET6;
+#else
+  memcpy(&coap_ctx->addr.in_addr, addr, sizeof(coap_ctx->addr.in_addr));
+  coap_ctx->addr.family = AF_INET;
+#endif
+  coap_ctx->port = port;
+
+  coap_ctx->net_ctx = net_context_get(IPPROTO_UDP,
+				      (const struct net_addr *)&coap_ctx->addr,
+				      coap_ctx->port,
+				      (const struct net_addr *)&coap_ctx->my_addr,
+				      coap_ctx->my_port);
+  if (!coap_ctx->net_ctx) {
+    PRINTF("%s: Cannot get network context\n", __FUNCTION__);
+    return 0;
+  }
+
+  uip_ipaddr_copy(&session.addr.ipaddr, addr);
+  session.addr.port = UIP_HTONS(port);
+  session.size = sizeof(session.addr);
   session.ifindex = 1;
   coap_ctx->status = STATUS_CONNECTING;
   PRINTF("coap-context: DTLS CONNECT TO [");
@@ -262,9 +416,9 @@ coap_context_send_message(coap_context_t *coap_ctx,
     return 0;
   }
 
-  uip_ipaddr_copy(&sn.addr, addr);
-  sn.port = port;
-  sn.size = sizeof(sn.addr) + sizeof(sn.port);
+  uip_ipaddr_copy(&sn.addr.ipaddr, addr);
+  sn.addr.port = port;
+  sn.size = sizeof(sn.addr);
   sn.ifindex = 1;
 
   res = dtls_write(coap_ctx->dtls_context, &sn, (uint8 *)data, length);
@@ -286,11 +440,8 @@ coap_context_init(void)
   process_start(&coap_context_process, NULL);
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(coap_context_process, ev, data)
+PROCESS_THREAD(coap_context_process, ev, data, buf)
 {
-  coap_context_t *coap_ctx;
-  session_t session;
-
   PROCESS_BEGIN();
 
   PROCESS_PAUSE();
@@ -299,8 +450,15 @@ PROCESS_THREAD(coap_context_process, ev, data)
     PROCESS_WAIT_EVENT();
 
     if(ev == tcpip_event) {
-      /* The CoAP context is stored as the appdata for the UDP connection */
-      coap_ctx = data;
+      /* The data reading in Zephyr is done in coap_context_wait_data() or
+       * equiv. so this code block is no-op atm.
+       */
+    }
+  } /* while (1) */
+
+  PROCESS_END();
+}
+/*---------------------------------------------------------------------------*/
 
       if(coap_ctx != COAP_CONTEXT_NONE) {
 
@@ -333,3 +491,33 @@ PROCESS_THREAD(coap_context_process, ev, data)
 }
 /*---------------------------------------------------------------------------*/
 #endif /* WITH_DTLS */
+
+/*---------------------------------------------------------------------------*/
+int coap_context_listen(coap_context_t *coap_ctx, uip_ipaddr_t *peer_addr,
+			uint16_t peer_port)
+{
+  if(coap_ctx == NULL || coap_ctx->is_used == 0) {
+    return 0;
+  }
+
+#ifdef NETSTACK_CONF_WITH_IPV6
+  memcpy(&coap_ctx->addr.in6_addr, peer_addr, sizeof(coap_ctx->addr.in6_addr));
+  coap_ctx->addr.family = AF_INET6;
+#else
+  memcpy(&coap_ctx->addr.in_addr, peer_addr, sizeof(coap_ctx->addr.in_addr));
+  coap_ctx->addr.family = AF_INET;
+#endif
+  coap_ctx->port = peer_port;
+
+  coap_ctx->net_ctx = net_context_get(IPPROTO_UDP,
+				      (const struct net_addr *)&coap_ctx->addr,
+				      coap_ctx->port,
+				      (const struct net_addr *)&coap_ctx->my_addr,
+				      coap_ctx->my_port);
+  if (!coap_ctx->net_ctx) {
+    PRINTF("%s: Cannot get network context\n", __FUNCTION__);
+    return 0;
+  }
+
+  return 1;
+}

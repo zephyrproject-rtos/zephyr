@@ -38,17 +38,30 @@
 #ifndef COAP_CONTEXT_H_
 #define COAP_CONTEXT_H_
 
+#include <net/net_buf.h>
+#include <net/net_socket.h>
+
 #include "contiki-conf.h"
 #include "sys/process.h"
 #include "net/ip/uip.h"
+
+#if ER_COAP_WITH_DTLS
+#define WITH_DTLS 1
+#else
+#undef WITH_DTLS
+#endif
 
 #ifdef WITH_DTLS
 #include "dtls.h"
 #endif /* WITH_DTLS */
 
 typedef struct coap_context {
-  struct uip_udp_conn *conn;
-  uip_ipaddr_t addr;
+  struct net_buf *buf;
+  struct net_context *net_ctx;
+  struct net_addr my_addr;
+  uint16_t my_port;
+  //struct uip_udp_conn *conn; This is found in net_buf
+  struct net_addr addr;
   uint16_t port;
 #ifdef WITH_DTLS
   struct dtls_context_t *dtls_context;
@@ -61,6 +74,15 @@ typedef struct coap_context {
 
 #define COAP_CONTEXT_NONE  NULL
 
+int coap_context_listen(coap_context_t *coap_ctx, uip_ipaddr_t *peer_addr,
+			uint16_t peer_port);
+coap_context_t *coap_context_new(uip_ipaddr_t *my_addr, uint16_t port);
+void coap_context_close(coap_context_t *coap_ctx);
+int coap_context_send_message(coap_context_t *coap_ctx,
+    uip_ipaddr_t *addr, uint16_t port,
+    const uint8_t *data, uint16_t length);
+int coap_context_wait_data(coap_context_t *coap_ctx, int32_t ticks);
+
 #if WITH_DTLS
 
 extern process_event_t coap_context_event;
@@ -71,12 +93,23 @@ int coap_context_is_connecting(const coap_context_t *coap_ctx);
 int coap_context_has_errors(const coap_context_t *coap_ctx);
 int coap_context_connect(coap_context_t *coap_ctx, uip_ipaddr_t *addr, uint16_t port);
 
-int coap_context_send_message(coap_context_t *coap_ctx,
-    uip_ipaddr_t *addr, uint16_t port,
-    const uint8_t *data, uint16_t length);
-
-coap_context_t *coap_context_new(uint16_t port);
-void coap_context_close(coap_context_t *coap_ctx);
+typedef int (*dtls_get_psk_info_t)(struct dtls_context_t *ctx,
+				   const session_t *session,
+				   dtls_credentials_type_t type,
+				   const unsigned char *id, size_t id_len,
+				  unsigned char *result, size_t result_length);
+typedef int (*dtls_get_ecdsa_key_t)(struct dtls_context_t *ctx,
+				    const session_t *session,
+				    const dtls_ecdsa_key_t **result);
+typedef int (*dtls_verify_ecdsa_key_t)(struct dtls_context_t *ctx,
+				       const session_t *session,
+				       const unsigned char *other_pub_x,
+				       const unsigned char *other_pub_y,
+				       size_t key_size);
+void coap_context_set_key_handlers(coap_context_t *ctx,
+				   dtls_get_psk_info_t get_psk_info,
+				   dtls_get_ecdsa_key_t get_ecdsa_key,
+				   dtls_verify_ecdsa_key_t verify_ecdsa_key);
 
 void coap_context_init(void);
 
