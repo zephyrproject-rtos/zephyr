@@ -94,11 +94,12 @@ x86 Supported default configuration files
 arm Supported default configuration files
 =========================================
 
-* **micro_fsl_frdm_k64f_defconfig:** Builds for microkernel
-  FSL FRDM K64F.
-* **micro_ti_lm3s6965_defconfig:** Builds for microkernel TI LM3S6965.
-* **nano_fsl_frdm_k64f_defconfig:** Builds for nanokenrel FSL FRDM K64F.
-* **nano_ti_lm3s6965_defconfig:** Builds for nanokernel TI LM3S6965.
+* **micro_fsl_frdm_k64f_defconfig:** Builds microkernel for FSL FRDM K64F.
+* **micro_basic_cortex_m3_defconfig:** Builds microkernel for Cortex-M3
+  processor on QEMU.
+* **nano_fsl_frdm_k64f_defconfig:** Builds nanokenrel FSL FRDM K64F.
+* **nano_basic_cortex_m3_defconfig:** Builds nanokernel for Cortex-M3
+  processor on QEMU.
 
 Make Modifiers
 ==============
