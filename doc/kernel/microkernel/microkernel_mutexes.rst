@@ -7,7 +7,7 @@ Concepts
 ********
 
 The microkernel's mutex objects provide reentrant mutex
-capabilities with priority inheritance.
+capabilities with basic priority inheritance.
 
 Each mutex allows multiple tasks to safely share an associated
 resource by ensuring mutual exclusivity while the resource is
@@ -38,17 +38,22 @@ of the highest priority task that is waiting on a mutex held by
 the lower priority task. This allows the lower priority
 task to complete its work and unlock the mutex as quickly as
 possible. Once the mutex has been unlocked, the lower priority task
-sets its task priority to that of the highest priority task
-that is waiting on a mutex it holds. When there is no higher
-priority task waiting, the lower priority task sets its task priority
-to the task’s original priority.
+sets its task priority to the priority it had prior to locking that
+mutex.
+
+When two or more tasks wait on a mutex held by a lower priority task, the
+kernel adjusts the owning task's priority each time a task begins waiting
+(or gives up waiting). When the mutex is eventually released the owning
+task's priority correctly reverts to its original non-elevated priority.
 
 .. note::
 
-   The priority of an executing task, locked by a mutex can
-   be elevated repeatedly as more higher priority tasks wait on the
-   mutex(es). Conversely, the priority of the task repeatedly lowers
-   as mutex(es) release.
+   The kernel does *not* fully support priority inheritance when a task
+   holds two or more mutexes simultaneously. This situation can result
+   in the task's priority not reverting to its original non-elevated
+   priority when all mutexes have been released. It is recommended that
+   a task hold only a single mutex at a time when multiple mutexes are
+   shared between tasks of different priorities.
 
 The microkernel also allows a task to repeatedly lock a mutex it
 already locked. This ensures that the task can access the resource
@@ -56,7 +61,6 @@ at a point in its execution when the resource may or may not
 already be locked. A mutex that is repeatedly locked must be unlocked
 an equal number of times before the mutex releases the resource
 completely.
-
 
 Purpose
 *******
