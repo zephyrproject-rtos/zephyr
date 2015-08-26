@@ -132,8 +132,12 @@ static inline void reverse(unsigned char *buf, int len)
 }
 
 /* How many tics to wait for a network packet */
+#if 0
 #define WAIT_TIME 1
 #define WAIT_TICKS (WAIT_TIME * sys_clock_ticks_per_sec)
+#else
+#define WAIT_TICKS TICKS_UNLIMITED
+#endif
 
 static inline void receive_message(const char *name,
 				   struct net_context *recv,
