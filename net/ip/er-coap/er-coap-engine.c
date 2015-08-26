@@ -60,24 +60,22 @@ int
 coap_engine_receive(coap_context_t *coap_ctx)
 {
   erbium_status_code = NO_ERROR;
+  coap_packet_t message[1]; /* this way the packet can be treated as pointer as usual */
+  coap_packet_t response[1];
+  coap_transaction_t *transaction = NULL;
 
-  PRINTF("handle_incoming_data(): received uip_datalen=%u \n",
-         (uint16_t)uip_datalen());
+  PRINTF("%s(): received uip_datalen %u\n", __FUNCTION__,
+         (uint16_t)uip_datalen(coap_ctx->buf));
 
-  /* static declaration reduces stack peaks and program code size */
-  static coap_packet_t message[1]; /* this way the packet can be treated as pointer as usual */
-  static coap_packet_t response[1];
-  static coap_transaction_t *transaction = NULL;
-
-  if(uip_newdata()) {
+  if(uip_newdata(coap_ctx->buf)) {
 
     PRINTF("receiving UDP datagram from: ");
-    PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
-    PRINTF(":%u\n  Length: %u\n", uip_ntohs(UIP_UDP_BUF->srcport),
-           uip_datalen());
+    PRINT6ADDR(&UIP_IP_BUF(coap_ctx->buf)->srcipaddr);
+    PRINTF(":%u\n  Length: %u\n", uip_ntohs(UIP_UDP_BUF(coap_ctx->buf)->srcport),
+           uip_datalen(coap_ctx->buf));
 
     erbium_status_code =
-      coap_parse_message(message, uip_appdata, uip_datalen());
+    coap_parse_message(message, uip_appdata(coap_ctx->buf), uip_datalen(coap_ctx->buf));
     coap_set_context(message, coap_ctx);
 
     if(erbium_status_code == NO_ERROR) {
@@ -86,16 +84,16 @@ coap_engine_receive(coap_context_t *coap_ctx)
 
       PRINTF("  Parsed: v %u, t %u, tkl %u, c %u, mid %u\n", message->version,
              message->type, message->token_len, message->code, message->mid);
-      PRINTF("  URL: %.*s\n", message->uri_path_len, message->uri_path);
-      PRINTF("  Payload: %.*s\n", message->payload_len, message->payload);
+      PRINTF("  URL[%d]: %.*s\n", message->uri_path_len, message->uri_path_len, message->uri_path);
+      PRINTF("  Payload[%d]: %.*s\n", message->payload_len, message->payload_len, message->payload);
 
       /* handle requests */
       if(message->code >= COAP_GET && message->code <= COAP_DELETE) {
 
         /* use transaction buffer for response to confirmable request */
         if((transaction = coap_new_transaction(message->mid, coap_ctx,
-                                               &UIP_IP_BUF->srcipaddr,
-                                               UIP_UDP_BUF->srcport))) {
+                                               &UIP_IP_BUF(coap_ctx->buf)->srcipaddr,
+                                               UIP_UDP_BUF(coap_ctx->buf)->srcport))) {
           uint32_t block_num = 0;
           uint16_t block_size = REST_MAX_CHUNK_SIZE;
           uint32_t block_offset = 0;
@@ -229,8 +227,8 @@ coap_engine_receive(coap_context_t *coap_ctx)
         } else if(message->type == COAP_TYPE_RST) {
           PRINTF("Received RST\n");
           /* cancel possible subscriptions */
-          coap_remove_observer_by_mid(coap_ctx, &UIP_IP_BUF->srcipaddr,
-                                      UIP_UDP_BUF->srcport, message->mid);
+          coap_remove_observer_by_mid(coap_ctx, &UIP_IP_BUF(coap_ctx->buf)->srcipaddr,
+                                      UIP_UDP_BUF(coap_ctx->buf)->srcport, message->mid);
         }
 
         if((transaction = coap_get_transaction_by_mid(message->mid))) {
@@ -253,8 +251,8 @@ coap_engine_receive(coap_context_t *coap_ctx)
         if((message->type == COAP_TYPE_CON || message->type == COAP_TYPE_NON)
               && IS_OPTION(message, COAP_OPTION_OBSERVE)) {
           PRINTF("Observe [%u]\n", message->observe);
-          coap_handle_notification(coap_ctx, &UIP_IP_BUF->srcipaddr,
-                                   UIP_UDP_BUF->srcport, message);
+          coap_handle_notification(coap_ctx, &UIP_IP_BUF(coap_ctx->buf)->srcipaddr,
+                                   UIP_UDP_BUF(coap_ctx->buf)->srcport, message);
         }
 #endif /* COAP_OBSERVE_CLIENT */
       } /* request or response */
@@ -286,9 +284,11 @@ coap_engine_receive(coap_context_t *coap_ctx)
                         message->mid);
       coap_set_payload(message, coap_error_message,
                        strlen(coap_error_message));
-      coap_send_message(coap_ctx, &UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport,
-                        uip_appdata, coap_serialize_message(message,
-                                                            uip_appdata));
+      coap_send_message(coap_ctx, &UIP_IP_BUF(coap_ctx->buf)->srcipaddr,
+			UIP_UDP_BUF(coap_ctx->buf)->srcport,
+                        uip_appdata(coap_ctx->buf),
+			coap_serialize_message(message,
+					       uip_appdata(coap_ctx->buf)));
     }
   }
 
@@ -321,10 +321,26 @@ coap_get_rest_method(void *packet)
 
 /* the discover resource is automatically included for CoAP */
 extern resource_t res_well_known_core;
+
+coap_context_t *coap_init_server(uip_ipaddr_t *server_addr,
+				 uint16_t server_port,
+				 uip_ipaddr_t *peer_addr,
+				 uint16_t peer_port)
+{
+  PRINTF("Starting %s receiver...\n", coap_rest_implementation.name);
+
+  rest_activate_resource(&res_well_known_core, ".well-known/core");
+
+  coap_register_as_transaction_handler();
+  return coap_init_connection(server_addr, server_port, peer_addr, peer_port);
+}
+
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(coap_engine, ev, data)
+PROCESS_THREAD(coap_engine, ev, data, buf)
 {
   PROCESS_BEGIN();
+#if 0
+  /* This is not used in Zephyr. */
   PRINTF("Starting %s receiver...\n", coap_rest_implementation.name);
 
   rest_activate_resource(&res_well_known_core, ".well-known/core");
@@ -343,7 +359,7 @@ PROCESS_THREAD(coap_engine, ev, data)
       coap_check_transactions();
     }
   } /* while (1) */
-
+#endif /* 0 */
   PROCESS_END();
 }
 
@@ -430,39 +446,39 @@ PT_THREAD(coap_blocking_request
 /*- REST Engine Interface ---------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 const struct rest_implementation coap_rest_implementation = {
-  "CoAP-18",
+  .name = "CoAP-18",
 
-  coap_init_engine,
-  coap_set_service_callback,
+  .init = coap_init_engine,
+  .set_service_callback = coap_set_service_callback,
 
-  coap_get_header_uri_path,
-  coap_get_rest_method,
-  coap_set_status_code,
+  .get_url = coap_get_header_uri_path,
+  .get_method_type = coap_get_rest_method,
+  .set_response_status = coap_set_status_code,
 
-  coap_get_header_content_format,
-  coap_set_header_content_format,
-  coap_get_header_accept,
-  coap_get_header_size2,
-  coap_set_header_size2,
-  coap_get_header_max_age,
-  coap_set_header_max_age,
-  coap_set_header_etag,
-  coap_get_header_if_match,
-  coap_get_header_if_none_match,
-  coap_get_header_uri_host,
-  coap_set_header_location_path,
+  .get_header_content_type = coap_get_header_content_format,
+  .set_header_content_type = coap_set_header_content_format,
+  .get_header_accept = coap_get_header_accept,
+  .get_header_length = coap_get_header_size2,
+  .set_header_length = coap_set_header_size2,
+  .get_header_max_age = coap_get_header_max_age,
+  .set_header_max_age = coap_set_header_max_age,
+  .set_header_etag = coap_set_header_etag,
+  .get_header_if_match = coap_get_header_if_match,
+  .get_header_if_none_match = coap_get_header_if_none_match,
+  .get_header_host = coap_get_header_uri_host,
+  .set_header_location = coap_set_header_location_path,
 
-  coap_get_payload,
-  coap_set_payload,
+  .get_request_payload = coap_get_payload,
+  .set_response_payload = coap_set_payload,
 
-  coap_get_header_uri_query,
-  coap_get_query_variable,
-  coap_get_post_variable,
+  .get_query = coap_get_header_uri_query,
+  .get_query_variable = coap_get_query_variable,
+  .get_post_variable = coap_get_post_variable,
 
-  coap_notify_observers,
-  coap_observe_handler,
+  .notify_subscribers = coap_notify_observers,
+  .subscription_handler = coap_observe_handler,
 
-  {
+  .status = {
     CONTENT_2_05,
     CREATED_2_01,
     CHANGED_2_04,
@@ -485,7 +501,7 @@ const struct rest_implementation coap_rest_implementation = {
     PROXYING_NOT_SUPPORTED_5_05
   },
 
-  {
+  .type = {
     TEXT_PLAIN,
     TEXT_XML,
     TEXT_CSV,

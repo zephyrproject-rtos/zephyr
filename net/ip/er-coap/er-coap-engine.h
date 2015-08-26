@@ -39,7 +39,7 @@
 #ifndef ER_COAP_ENGINE_H_
 #define ER_COAP_ENGINE_H_
 
-#include "pt.h"
+#include <sys/pt.h>
 #include "er-coap.h"
 #include "er-coap-transactions.h"
 #include "er-coap-observe.h"
@@ -54,6 +54,10 @@ typedef coap_packet_t rest_response_t;
 
 void coap_init_engine(void);
 int coap_engine_receive(coap_context_t *coap_context);
+coap_context_t *coap_init_server(uip_ipaddr_t *server_addr,
+				 uint16_t server_port,
+				 uip_ipaddr_t *peer_addr,
+				 uint16_t peer_port);
 
 /*---------------------------------------------------------------------------*/
 /*- Client Part -------------------------------------------------------------*/

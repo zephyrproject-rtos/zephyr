@@ -51,7 +51,7 @@
 /*---------------------------------------------------------------------------*/
 /*- Variables ---------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
-static struct uip_udp_conn *udp_conn = NULL;
+//static struct uip_udp_conn *udp_conn = NULL;
 static uint16_t current_mid = 0;
 
 coap_status_t erbium_status_code = NO_ERROR;
@@ -267,16 +267,21 @@ coap_get_variable(const char *buffer, size_t length, const char *name,
 /*---------------------------------------------------------------------------*/
 /*- Internal API ------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
-void
-coap_init_connection(uint16_t port)
+coap_context_t *
+coap_init_connection(uip_ipaddr_t *server_addr, uint16_t server_port,
+		     uip_ipaddr_t *peer_addr, uint16_t peer_port)
 {
-  /* new connection with remote host */
-  udp_conn = udp_new(NULL, 0, NULL);
-  udp_bind(udp_conn, port);
-  PRINTF("Listening on port %u\n", uip_ntohs(udp_conn->lport));
+  coap_context_t *coap_ctx;
+
+  coap_ctx = coap_context_new(server_addr, server_port);
+  if (!coap_context_listen(coap_ctx, peer_addr, peer_port)) {
+    return NULL;
+  }
 
   /* initialize transaction ID */
   current_mid = random_rand();
+
+  return coap_ctx;
 }
 /*---------------------------------------------------------------------------*/
 uint16_t
@@ -389,11 +394,21 @@ coap_serialize_message(void *packet, uint8_t *buffer)
       *option = 0xFF;
       ++option;
     }
-    memmove(option, coap_pkt->payload, coap_pkt->payload_len);
+    if (!coap_pkt->payload) {
+      if (coap_pkt->payload_len > 0) {
+	coap_error_message = "Cannot serialize as payload is NULL";
+	PRINTF("ERROR: %s but payload len is %d\n", coap_error_message,
+	       coap_pkt->payload_len);
+	goto error;
+      }
+    } else {
+      memmove(option, coap_pkt->payload, coap_pkt->payload_len);
+    }
   } else {
     /* an error occurred: caller must check for !=0 */
-    coap_pkt->buffer = NULL;
     coap_error_message = "Serialized header exceeds COAP_MAX_HEADER_SIZE";
+  error:
+    coap_pkt->buffer = NULL;
     return 0;
   }
 
@@ -425,16 +440,17 @@ coap_send_message(coap_context_t *coap_ctx,
   }
 
   /* configure connection to reply to client */
-  uip_ipaddr_copy(&udp_conn->ripaddr, addr);
-  udp_conn->rport = port;
+  uip_ipaddr_copy(&uip_udp_conn(coap_ctx->buf)->ripaddr, addr);
+  uip_udp_conn(coap_ctx->buf)->rport = port;
 
-  uip_udp_packet_send(udp_conn, data, length);
+  uip_udp_packet_send(coap_ctx->buf, uip_udp_conn(coap_ctx->buf), data, length);
 
   PRINTF("-sent UDP datagram (%u)-\n", length);
 
   /* restore server socket to allow data from any node */
-  memset(&udp_conn->ripaddr, 0, sizeof(udp_conn->ripaddr));
-  udp_conn->rport = 0;
+  memset(&uip_udp_conn(coap_ctx->buf)->ripaddr, 0,
+	 sizeof(uip_udp_conn(coap_ctx->buf)->ripaddr));
+  uip_udp_conn(coap_ctx->buf)->rport = 0;
 }
 /*---------------------------------------------------------------------------*/
 coap_status_t

@@ -82,9 +82,17 @@ coap_new_transaction(uint16_t mid, coap_context_t *coap_ctx,
 void
 coap_send_transaction(coap_transaction_t *t)
 {
-  PRINTF("Sending transaction %u\n", t->mid);
+  PRINTF("Sending transaction %u data %p -> %p len %d\n", t->mid,
+	 t->packet, net_buf_data(t->coap_ctx->buf), t->packet_len);
 
-  coap_send_message(t->coap_ctx, &t->addr, t->port, t->packet, t->packet_len);
+  /* Copy the data from the transaction internal buffer to net_buf which
+   * is used when actually sending the data. The payload will contain
+   * a NULL byte but that is not sent.
+   */
+  memcpy(net_buf_data(t->coap_ctx->buf), t->packet, t->packet_len + 1);
+  coap_send_message(t->coap_ctx, &t->addr, t->port,
+		    net_buf_data(t->coap_ctx->buf),
+		    t->packet_len);
 
   if(COAP_TYPE_CON ==
      ((COAP_HEADER_TYPE_MASK & t->packet[0]) >> COAP_HEADER_TYPE_POSITION)) {

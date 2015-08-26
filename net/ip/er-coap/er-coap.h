@@ -39,6 +39,8 @@
 #ifndef ER_COAP_H_
 #define ER_COAP_H_
 
+#include <net/net_buf.h>
+
 #include <stddef.h> /* for size_t */
 #include "contiki-net.h"
 #include "er-coap-constants.h"
@@ -52,7 +54,9 @@
 #endif
 
 /* use Erbium CoAP for the REST Engine. Must come before include of rest-engine.h. */
+#ifndef REST
 #define REST coap_rest_implementation
+#endif
 #include "rest-engine.h"
 
 /* REST_MAX_CHUNK_SIZE can be different from 2^x so we need to get next lower 2^x for COAP_MAX_BLOCK_SIZE */
@@ -67,11 +71,11 @@
 #endif /* COAP_MAX_BLOCK_SIZE */
 
 /* direct access into the buffer */
-#define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
+#define UIP_IP_BUF(buf)   ((struct uip_ip_hdr *)&uip_buf(buf)[UIP_LLH_LEN])
 #if NETSTACK_CONF_WITH_IPV6
-#define UIP_UDP_BUF  ((struct uip_udp_hdr *)&uip_buf[uip_l2_l3_hdr_len])
+#define UIP_UDP_BUF(buf)  ((struct uip_udp_hdr *)&uip_buf(buf)[uip_l2_l3_hdr_len(buf)])
 #else
-#define UIP_UDP_BUF  ((struct uip_udp_hdr *)&uip_buf[UIP_LLH_LEN + UIP_IPH_LEN])
+#define UIP_UDP_BUF(buf)  ((struct uip_udp_hdr *)&uip_buf(buf)[UIP_LLH_LEN + UIP_IPH_LEN])
 #endif
 
 /* bitmap for set options */
@@ -179,7 +183,10 @@ typedef struct {
 extern coap_status_t erbium_status_code;
 extern char *coap_error_message;
 
-void coap_init_connection(uint16_t port);
+coap_context_t *coap_init_connection(uip_ipaddr_t *server_addr,
+				     uint16_t server_port,
+				     uip_ipaddr_t *peer_addr,
+				     uint16_t peer_port);
 uint16_t coap_get_mid(void);
 
 void coap_init_message(void *packet, coap_message_type_t type, uint8_t code,

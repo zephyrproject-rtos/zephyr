@@ -173,7 +173,7 @@ rest_invoke_restful_service(void *request, void *response, uint8_t *buffer,
   return found & allowed;
 }
 /*-----------------------------------------------------------------------------------*/
-PROCESS_THREAD(rest_engine_process, ev, data)
+PROCESS_THREAD(rest_engine_process, ev, data, buf)
 {
   PROCESS_BEGIN();
 

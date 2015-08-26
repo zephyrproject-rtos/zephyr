@@ -41,7 +41,7 @@
 
 #include "er-coap.h"
 #include "er-coap-transactions.h"
-#include "stimer.h"
+#include <sys/stimer.h>
 
 #define COAP_OBSERVER_URL_LEN 20
 
