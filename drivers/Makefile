@@ -12,3 +12,4 @@ obj-$(CONFIG_BLUETOOTH) += bluetooth/
 obj-$(CONFIG_UART_SIMPLE) += simple/
 obj-$(CONFIG_SPI) += spi/
 obj-$(CONFIG_GPIO) += gpio/
+obj-$(CONFIG_I2C) += i2c/

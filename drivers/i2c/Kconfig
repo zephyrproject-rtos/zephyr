@@ -1,4 +1,4 @@
-# Kconfig - drivers configuration options
+# Kconfig - I2C configuration options
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -30,29 +30,30 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# I2C options
+#
+menu "I2C"
 
-menu "Device Drivers"
+config I2C
+	bool "Enable I2C drivers"
+	default n
 
-source "drivers/simple/Kconfig"
+config I2C_STATUS_DELAY
+	int "Delay for controller response"
+	depends on I2C
+	default 1000
 
-source "drivers/bluetooth/Kconfig"
+config I2C_CLOCK_SPEED
+	int "Set the clock speed for I2C"
+	default 32
+	depends on I2C
 
-source "drivers/console/Kconfig"
-
-source "drivers/serial/Kconfig"
-
-source "drivers/gpio/Kconfig"
-
-source "drivers/interrupt_controller/Kconfig"
-
-source "drivers/timer/Kconfig"
-
-source "drivers/random/Kconfig"
-
-source "drivers/pci/Kconfig"
-
-source "drivers/spi/Kconfig"
-
-source "drivers/i2c/Kconfig"
+config I2C_DEBUG
+	bool "Enable I2C debug options"
+	default n
+	depends on I2C
+	help
+	This option enables the debug features for I2C connections
 
 endmenu
