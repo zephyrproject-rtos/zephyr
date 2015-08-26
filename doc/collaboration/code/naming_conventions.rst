@@ -83,7 +83,7 @@ The current build system uses a series of :file:`defs.objs` files to define
 the common pieces for a given sub-system.  For example, there are common defines for
 all architectures under :file:`$ROOT/arch/x86`, and then more specific
 defines for each supported board underneath it, like
-:file:`$ROOT/arch/x86/generic_pc`.
+:file:`$ROOT/arch/x86/ia32`.
 
 Do not add all possible include paths in the :file:`defs.obj` files.
 Too many default paths cause problems when more than one file have the same

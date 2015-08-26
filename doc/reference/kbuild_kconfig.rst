@@ -92,10 +92,10 @@ The file name of a default configuration file contains the
 type of kernel and the platform that is defined within the file.
 All the defconfig files must end with the suffix defconfig.
 For example, :file:`micro_galileo_defconfig` contains the configuration
-information for the microkernel architecture for the galileo platform and
-:file:`nano_generic_pc_pentium4` contains the configuration
-information for the nanokernel architecture for the generic PC platform
-with the Pentium processor platform variant.
+information for the microkernel architecture for the galileo platform
+configuration and :file:`nano_basic_atom_defconfig` contains the configuration
+information for the nanokernel architecture for the basic atom platform
+configuration.
 
 The sanity checks use the default configuration files to dynamically
 define what configuration corresponds to the platform that is being tested.
@@ -113,7 +113,7 @@ the specified defconfig file and sets it as the current
    $ make defconfig micro_galileo_defconfig
 
 The command takes the default configuration for the microkernel
-architecture and the galileo platform.
+architecture and the galileo platform configuration.
 
 .. _configuration_snippets:
 

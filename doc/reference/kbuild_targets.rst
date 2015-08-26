@@ -75,32 +75,21 @@ Other generic targets
 x86 Supported default configuration files
 =========================================
 
-* **micro_galileo_defconfig** Builds for galileo microkernel.
+* **micro_galileo_defconfig** Builds microkernel for galileo.
 
-* **micro_generic_pc_defconfig:** Builds for microkernel generic PC.
+* **micro_basic_atom_defconfig:** Builds microkernel for atom
+  processor on QEMU.
 
-* **micro_generic_pc_atom_n28xx_defconfig:** Builds for microkernel
-  generic PC atom n28xx processor.
+* **micro_basic_minuteia_defconfig:** Builds microkernel for minute IA
+  processor on QEMU.
 
-* **micro_generic_pc_minuteia_defconfig:** Builds for microkernel
-  generic PC minuteia processor.
+* **nano_galileo_defconfig:** Builds nanokernel for galileo.
 
-* **micro_generic_pc_pentium4_defconfig:** Builds for microkernel
-  generic PC Pentium4.
+* **nano_basic_atom_defconfig:** Builds nanokernel for atom
+  processor on QEMU.
 
-* **nano_galileo_defconfig:** Builds for galileo nanokernel.
-
-* **nano_generic_pc_defconfig:** Builds for nanokernel generic PC.
-
-* **nano_generic_pc_atom_n28xx_defconfig:** - Builds for nanokernel
-  generic PC atom n28xx.
-
-* **nano_generic_pc_minuteia_defconfig:** Builds for nanokernel
-  generic PC minuteia.
-
-* **nano_generic_pc_pentium4_defconfig**: Builds for nanokernel
-  generic PC Pentium4.
-
+* **nano_basic_minuteia_defconfig:** Builds nanokernel for minute IA
+  processor on QEMU.
 
 arm Supported default configuration files
 =========================================
