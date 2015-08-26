@@ -65,7 +65,6 @@ This code uses a nanokernel FIFO to send data to one or more consumer fibers.
            nano_fiber_fifo_put(&signal_fifo, &tx_data);
 
            ...
-           }
        }
    }
 
