@@ -162,3 +162,29 @@ $ make
 Usage : monitor_15_4 <sample pcap file> <pipe_1> <pipe_2>
 
 $ monitor_15_4 sample.pcap /tmp/ip-15-4-1 /tmp/ip-15-4-2
+
+
+coap-client
+===========
+
+coap-client is a tool that is run in Linux host side and
+which connects to coap-server running in qemu.
+
+You needs to setup the slip connection (see the steps 1 to 3)
+in tunslip6 section of this document. You also need tinyDTLS
+sources which can be found here http://sourceforge.net/projects/tinydtls/
+Compile and install the tinyDTLS library in host.
+You will also need libcoap package which can be found here
+https://github.com/obgm/libcoap.git
+Compile and install the libcoap library in host.
+
+Example:
+
+$ make TINYDTLS=/home/user/tinydtls-0.8.2 \
+       LIBCOAP=/home/user/libcoap coap-client
+
+If you want to use DTLS then run client like this
+$ sudo ./coap-client -i tun0 2001:db8::2
+
+For non-DTLS case, run client like this
+$ sudo ./coap-client -n -i tun0 2001:db8::2
