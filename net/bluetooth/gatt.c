@@ -114,9 +114,9 @@ struct gatt_incl {
 	};
 } __packed;
 
-int bt_gatt_attr_read_include(struct bt_conn *conn,
-			      const struct bt_gatt_attr *attr,
-			      void *buf, uint16_t len, uint16_t offset)
+int bt_gatt_attr_read_included(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr,
+			       void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_include *incl = attr->user_data;
 	struct gatt_incl pdu;
