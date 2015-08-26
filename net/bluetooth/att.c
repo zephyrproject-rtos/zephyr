@@ -152,7 +152,7 @@ static uint8_t att_mtu_req(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	pdu = bt_att_create_pdu(conn, BT_ATT_OP_MTU_RSP, sizeof(*rsp));
-	if (!buf) {
+	if (!pdu) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
