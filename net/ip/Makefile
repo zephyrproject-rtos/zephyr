@@ -141,5 +141,19 @@ ifeq ($(CONFIG_TINYDTLS_DEBUG),)
 endif
 obj-$(CONFIG_TINYDTLS_DEBUG) += tinydtls/debug.o
 
+ifeq ($(CONFIG_ER_COAP),y)
+	EXTRA_CFLAGS += -I${srctree}/net/ip/rest-engine
+	EXTRA_CFLAGS += -I${srctree}/net/ip/er-coap
+endif
+obj-$(CONFIG_ER_COAP) += er-coap/er-coap.o \
+			er-coap/er-coap-engine.o \
+			er-coap/er-coap-transactions.o \
+			er-coap/er-coap-observe.o \
+			er-coap/er-coap-separate.o \
+			er-coap/er-coap-res-well-known-core.o \
+			er-coap/er-coap-block1.o \
+			er-coap/er-coap-context.o \
+			rest-engine/rest-engine.o
+
 # workaround for include file location
 CREATE_INCLUDE_LINK_net := $(shell ln -s ${ZEPHYR_BASE}/net/ip/contiki ${ZEPHYR_BASE}/net/ip/contiki/net > /dev/null 2>&1)

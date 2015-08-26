@@ -180,4 +180,24 @@ config	TINYDTLS_DEBUG
 	default n
 	help
 	  Enable tinyDTLS debugging support.
+
+config	ER_COAP
+	bool
+	prompt "Enable Erbium CoAP engine support."
+	depends on NETWORKING
+	default n
+	help
+	  Enable Erbium CoAP engine support so that applications can use it.
+
+config	ER_COAP_WITH_DTLS
+	bool
+	prompt "Use DTLS in CoAP"
+	depends on ER_COAP
+	select TINYDTLS
+	default n
+	help
+	  Make CoAP engine use DTLS. Note that if you activate DTLS, you
+	  are not able to send or receive non-DTLS CoAP messages, and
+	  vice versa.
+
 endif

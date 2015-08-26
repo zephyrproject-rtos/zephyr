@@ -92,4 +92,18 @@ typedef unsigned int uip_stats_t;
 /* #error "No radio configured, cannot continue!" */
 #endif
 
+#ifdef CONFIG_ER_COAP
+#ifndef REST
+#define REST REGISTERED_ENGINE_ERBIUM
+#endif
+#endif
+
+#ifdef CONFIG_ER_COAP_WITH_DTLS
+#define ER_COAP_WITH_DTLS 1
+#else
+#define ER_COAP_WITH_DTLS 0
+#endif
+
+#undef COAP_OBSERVE_CLIENT
+
 #endif /* __CONTIKI_CONF_H__ */
