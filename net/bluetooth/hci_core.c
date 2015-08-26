@@ -748,8 +748,7 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 
 static int update_conn_params(struct bt_conn *conn)
 {
-	BT_DBG("status %u, handle %u,features 0x%x\n", evt->status, handle,
-		conn->le_features[0]);
+	BT_DBG("conn %p features 0x%x\n", conn, conn->le_features[0]);
 
 	/* Check if there's a need to update conn params */
 	if (conn->le_conn_interval >= LE_CONN_MIN_INTERVAL &&
