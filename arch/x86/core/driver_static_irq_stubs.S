@@ -88,6 +88,14 @@ by x86 platforms.
 #endif /* CONFIG_SPI_INTEL_PORT_1 */
 #endif /* CONFIG_SPI_INTEL */
 
+#if defined(CONFIG_DW_I2C0)
+    ioapic_mkstub dw_i2c_0 dw_i2c_isr_0
+#endif /* CONFIG_DW_I2C0 */
+
+#if defined(CONFIG_DW_I2C1)
+    ioapic_mkstub dw_i2c_1 dw_i2c_isr_1
+#endif /* CONFIG_DW_I2C1 */
+
 	/* externs (internal APIs) */
 
 	GTEXT(_IntEnt)

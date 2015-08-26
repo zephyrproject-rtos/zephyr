@@ -39,6 +39,11 @@ config I2C
 	bool "Enable I2C drivers"
 	default n
 
+config DW_I2C
+        bool "Enable Design Ware I2C support"
+        default n
+        select I2C
+
 config I2C_STATUS_DELAY
 	int "Delay for controller response"
 	depends on I2C
