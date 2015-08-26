@@ -76,7 +76,7 @@ static void dw_set_bit(uint32_t base_addr, uint32_t offset,
 
 	reg = dw_read(base_addr, offset);
 	reg &= ~BIT(bit);
-	reg |= ((value & 0x1) << bit);
+	reg |= (((!!value) & 0x1) << bit);
 	dw_write(base_addr, offset, reg);
 }
 
