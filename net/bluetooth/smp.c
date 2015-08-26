@@ -871,10 +871,14 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		return;
 	}
 
-	if (!smp->local_dist) {
-		bt_keys_clear(keys, BT_KEYS_ALL);
-		return;
-	}
+	/* Store key type deducted from pairing method used. It is important
+	 * to restore it here since all key info is cleared after encryption
+	 * was enabled before key distribution.
+	 *
+	 * All keys from pairing have same type so it is enough to store it
+	 * on local distribution only.
+	 */
+	keys->type = get_keys_type(smp->method);
 
 	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
 		struct bt_smp_encrypt_info *info;
@@ -1224,6 +1228,7 @@ static void bt_smp_disconnected(struct bt_conn *conn)
 static void bt_smp_encrypt_change(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
+	struct bt_keys *keys;
 
 	BT_DBG("conn %p handle %u encrypt 0x%02x\n", conn, conn->handle,
 	        conn->encrypt);
@@ -1242,6 +1247,15 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+	}
+
+	/* If link was successfully encrypted cleanup old keys as from now on
+	 * only keys distributed in this pairing will be used. This includes
+	 * STK as it will be replaced by LTK.
+	 */
+	keys = bt_keys_find_addr(&conn->dst);
+	if (keys) {
+		bt_keys_clear(keys, BT_KEYS_ALL);
 	}
 
 	/* Slave distributes it's keys first */
