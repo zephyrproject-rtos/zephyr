@@ -460,36 +460,129 @@ PROCESS_THREAD(coap_context_process, ev, data, buf)
 }
 /*---------------------------------------------------------------------------*/
 
-      if(coap_ctx != COAP_CONTEXT_NONE) {
+#else /* WITH_DTLS */
 
-        if(uip_newdata()) {
-          uip_ipaddr_copy(&session.addr, &UIP_IP_BUF->srcipaddr);
-          session.port = UIP_UDP_BUF->srcport;
-          session.size = sizeof(session.addr) + sizeof(session.port);
-          session.ifindex = 1;
-
-          PRINTF("coap-context: got message from ");
-          PRINT6ADDR(&session.addr);
-          PRINTF(":%d %u bytes\n", uip_ntohs(session.port), uip_datalen());
-
-          dtls_handle_message(coap_ctx->dtls_context, &session,
-                              uip_appdata, uip_datalen());
-        }
-
-      } else if(uip_newdata()) {
-        PRINTF("coap-context: got message from ");
-        PRINT6ADDR(&UIP_IP_BUF->srcipaddr);
-        PRINTF(" but no context found\n");
-
-      } else {
-        PRINTF("coap-context: no context for tcpip event\n");
-      }
+/*---------------------------------------------------------------------------*/
+coap_context_t *
+coap_context_new(uip_ipaddr_t *my_addr, uint16_t port)
+{
+  coap_context_t *ctx = NULL;
+  int i;
+  for(i = 0; i < MAX_CONTEXTS; i++) {
+    if(!coap_contexts[i].is_used) {
+      ctx = &coap_contexts[i];
+      break;
     }
-  } /* while (1) */
+  }
 
-  PROCESS_END();
+  if(ctx == NULL) {
+    PRINTF("coap-context: no free contexts\n");
+    return NULL;
+  }
+
+  memset(ctx, 0, sizeof(coap_context_t));
+
+#ifdef NETSTACK_CONF_WITH_IPV6
+  memcpy(&ctx->my_addr.in6_addr, my_addr, sizeof(ctx->my_addr.in6_addr));
+#else
+  memcpy(&ctx->my_addr.in_addr, my_addr, sizeof(ctx->my_addr.in_addr));
+#endif
+  ctx->my_port = port;
+
+  ctx->is_used = 1;
+  PRINTF("Listening on port %u\n", port);
+
+  return ctx;
 }
 /*---------------------------------------------------------------------------*/
+void
+coap_context_close(coap_context_t *coap_ctx)
+{
+  if(coap_ctx == NULL || coap_ctx->is_used == 0) {
+    /* Not opened */
+    return;
+  }
+  if(coap_ctx->buf && uip_udp_conn(coap_ctx->buf) != NULL) {
+    uip_udp_remove(uip_udp_conn(coap_ctx->buf));
+  }
+  coap_ctx->is_used = 0;
+}
+/*---------------------------------------------------------------------------*/
+int coap_context_reply(coap_context_t *ctx, struct net_buf *buf)
+{
+  int max_data_len, ret;
+
+  max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
+	  sizeof(struct uip_ip_hdr);
+
+  PRINTF("%s: reply to peer data %p len %d\n", __FUNCTION__,
+	 net_buf_data(buf), net_buf_datalen(buf));
+
+  if (net_buf_datalen(buf) > max_data_len) {
+    PRINTF("%s: too much (%d bytes) data to send (max %d bytes)\n",
+	  __FUNCTION__, net_buf_datalen(buf), max_data_len);
+    net_buf_put(buf);
+    ret = -EINVAL;
+    goto out;
+  }
+
+  if (net_reply(ctx->net_ctx, buf)) {
+    net_buf_put(buf);
+  }
+out:
+  return ret;
+}
+/*---------------------------------------------------------------------------*/
+int coap_context_wait_data(coap_context_t *coap_ctx, int32_t ticks)
+{
+  struct net_buf *buf;
+
+  buf = net_receive(coap_ctx->net_ctx, ticks);
+  if (buf) {
+    uip_datalen(buf) = buf->datalen;
+    uip_appdata(buf) = buf->data;
+
+    PRINTF("coap-context: got message from ");
+    PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
+    PRINTF(":%d %u bytes\n", uip_ntohs(UIP_UDP_BUF(buf)->srcport), uip_datalen(buf));
+
+    PRINTF("Received data buf %p buflen %d data %p datalen %d\n",
+	   buf, uip_len(buf), net_buf_data(buf),
+	   net_buf_datalen(buf));
+
+    coap_ctx->buf = buf;
+
+    coap_engine_receive(coap_ctx);
+
+    return 1;
+  }
+
+  return 0;
+}
+/*---------------------------------------------------------------------------*/
+int
+coap_context_send_message(coap_context_t *coap_ctx,
+                          uip_ipaddr_t *addr, uint16_t port,
+                          const uint8_t *data, uint16_t length)
+{
+  if(coap_ctx == NULL || coap_ctx->is_used == 0) {
+    PRINTF("coap-context: can not send on non-used context\n");
+    return 0;
+  }
+
+  /* We need to set the uIP buffer lengths in net_buf properly as otherwise
+   * the final buffer length in net_init.c:udp_prepare_and_send() will be
+   * usually incorrect (uip_len() will be length of the received packet).
+   * So by setting uip_len() to 0 here, we let the sending in net_init.c to
+   * set the send buffer length correctly.
+   */
+  uip_len(coap_ctx->buf) = 0;
+  net_buf_datalen(coap_ctx->buf) = length;
+  net_buf_data(coap_ctx->buf) = (uint8_t *)data;
+
+  return coap_context_reply(coap_ctx, coap_ctx->buf);
+}
+
 #endif /* WITH_DTLS */
 
 /*---------------------------------------------------------------------------*/

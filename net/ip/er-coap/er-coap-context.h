@@ -149,29 +149,16 @@ coap_context_connect(coap_context_t *coap_ctx, uip_ipaddr_t *addr, uint16_t port
 {
   return 0;
 }
-static inline int
-coap_context_send_message(coap_context_t *coap_ctx,
-    uip_ipaddr_t *addr, uint16_t port,
-    const uint8_t *data, uint16_t length)
-{
-  return 0;
-}
-static inline coap_context_t *
-coap_context_new(uint16_t port)
-{
-  return NULL;
-}
-static inline void
-coap_context_close(coap_context_t *coap_ctx)
-{
-}
 static inline void
 coap_context_init(void)
 {
 }
+int coap_context_reply(coap_context_t *ctx, struct net_buf *buf);
 
 #define COAP_CONTEXT_CONNECT(coap_ctx, server_addr, server_port) \
   do { } while(0)
+
+#define coap_context_set_key_handlers(...)
 
 #endif /* WITH_DTLS */
 
