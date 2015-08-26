@@ -200,4 +200,12 @@ config	ER_COAP_WITH_DTLS
 	  are not able to send or receive non-DTLS CoAP messages, and
 	  vice versa.
 
+config	ER_COAP_CLIENT
+	bool
+	prompt "Enable CoAP client support"
+	depends on ER_COAP
+	default n
+	help
+	  Compile in client CoAP support.
+
 endif

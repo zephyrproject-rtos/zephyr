@@ -185,8 +185,9 @@ simple_reply(coap_message_type_t type, const coap_context_t *coap_ctx,
   size_t len;
 
   coap_init_message(response, type, NO_ERROR, notification->mid);
-  len = coap_serialize_message(response, uip_appdata);
-  coap_send_message(coap_ctx, addr, port, uip_appdata, len);
+  len = coap_serialize_message(response, uip_appdata(coap_ctx->buf));
+  coap_send_message((coap_context_t *)coap_ctx, addr, port,
+		    uip_appdata(coap_ctx->buf), len);
 }
 /*----------------------------------------------------------------------------*/
 static coap_notification_flag_t

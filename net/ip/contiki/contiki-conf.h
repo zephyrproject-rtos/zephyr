@@ -104,6 +104,10 @@ typedef unsigned int uip_stats_t;
 #define ER_COAP_WITH_DTLS 0
 #endif
 
+#ifdef CONFIG_ER_COAP_CLIENT
+#define COAP_OBSERVE_CLIENT 1
+#else
 #undef COAP_OBSERVE_CLIENT
+#endif
 
 #endif /* __CONTIKI_CONF_H__ */

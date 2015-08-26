@@ -79,7 +79,7 @@ typedef void (*notification_callback_t)(coap_observee_t *subject,
 
 struct coap_observee_s {
   coap_observee_t *next;        /* for LIST */
-  coap_context_t ctx;
+  coap_context_t *coap_ctx;
   uip_ipaddr_t addr;
   uint16_t port;
   const char *url;
