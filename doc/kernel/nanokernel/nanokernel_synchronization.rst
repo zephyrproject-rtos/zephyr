@@ -32,6 +32,9 @@ Thus after n 'give' operations a semaphore can 'take' n times without
 pending. If a second context waits for the same semaphore object, the
 first context is lost and never wakes up.
 
+Usage
+*****
+
 Example: Initializing a Nanokernel Semaphore
 ============================================
 

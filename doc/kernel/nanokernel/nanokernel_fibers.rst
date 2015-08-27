@@ -142,6 +142,9 @@ code that will take some time, periodically call
 :cpp:func:`fiber_yield()`. Multi-threading using blocking fibers is
 effective in coding hard real-time applications.
 
+Usage
+*****
+
 Example: Starting a Fiber from a Task
 =====================================
 

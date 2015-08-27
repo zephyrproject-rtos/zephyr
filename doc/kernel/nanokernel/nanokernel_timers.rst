@@ -74,6 +74,8 @@ other work.
    the system clock, as well as the higher precision hardware clock,
    without using a nanokernel timer.
 
+Usage
+*****
 
 Example: Initializing a Nanokernel Timer
 ========================================

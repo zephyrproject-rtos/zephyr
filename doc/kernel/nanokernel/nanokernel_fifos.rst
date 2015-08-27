@@ -26,6 +26,9 @@ without waiting on the data to be stored.
    block as a link pointer to the next item. The size of the WORD
    depends on the platform and can be 16 bit, 32 bit, etc.
 
+Usage
+*****
+
 Example: Initializing a Nanokernel FIFO
 =======================================
 
