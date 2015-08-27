@@ -1,48 +1,10 @@
 .. _galileo:
 
-===============================
 Platform Configuration: galileo
-===============================
-
-.. -----------------
-.. Table of Contents
-.. -----------------
-..
-.. INTRODUCTION
-..
-..    Overview
-
-.. SUPPORTED BOARDS
-..    Pin Names
-..    Jumpers & Switches
-..    Memory Maps
-..    Component Layout
-..
-.. SUPPORTED FEATURES
-..    PCI
-..    Serial Port Polling Mode Support
-..    Serial Port Interrupt Mode Support
-..      Interrupts
-..    HPET System Clock Support
-..
-.. PROCEDURES
-..    Creating a GRUB2 Boot Loader Image from a Linux Host
-..    Preparing the Boot Device
-..    Booting the Galileo Board
-
-.. KNOWN PROBLEMS AND LIMITATIONS
-
-.. BIBLIOGRAPHY
-
---------------
- INTRODUCTION
---------------
-
-This section provides an overview of the galileo platform configuration.
-
+###############################
 
 Overview
-========
+********
 
 The galileo platform configuration is used by Zephyr projects
 that run on the Galileo Development Board.
@@ -62,15 +24,13 @@ It provides support for a Quark CPU and the following devices:
 
 * serial ports in polling and interrupt driven modes
 
------------------
- SUPPORTED BOARDS
------------------
+Supported Boards
+****************
 
 This section either provides links to, or describes the physical
 characteristics of the boards that are supported by the galileo
 platform configuration. Subsections provide information on pin names,
 jumper settings, memory mappings and board component layout.
-
 
 Pin Names
 =========
@@ -85,7 +45,6 @@ Also, refer to page 9 of the
 `Intel® Galileo Board User Guide`_.
 
 .. _Intel® Galileo Board User Guide: http://download.intel.com/support/galileo/sb/galileo_boarduserguide_330237_001.pdf
-
 
 Jumpers & Switches
 ==================
@@ -109,9 +68,8 @@ For more information, refer to page 14 of the
 
 .. _Intel® Galileo Board User Guide: http://download.intel.com/support/galileo/sb/galileo_boarduserguide_330237_001.pdf
 
-
-Memory Maps
-===========
+Memory Mappings
+===============
 
 The :file:`galileo` platform configuration uses default hardware memory map
 addresses and sizes.
@@ -121,8 +79,6 @@ For a list of memory mapped registers, see page 868 of the
 `Intel® Quark SoC X1000 Datasheet`_.
 
 .. _Intel® Quark SoC X1000 Datasheet: https://communities.intel.com/servlet/JiveServlet/previewBody/21828-102-2-25120/329676_QuarkDatasheet.pdf
-
-
 
 Component Layout
 ================
@@ -136,10 +92,8 @@ For a block diagram refer to page 38 of the `Intel® Quark SoC X1000 Datasheet`_
 
 .. _Intel® Quark SoC X1000 Datasheet: https://communities.intel.com/servlet/JiveServlet/previewBody/21828-102-2-25120/329676_QuarkDatasheet.pdf
 
-
--------------------
- SUPPORTED FEATURES
--------------------
+Supported Features
+******************
 
 The galileo platform configuration supports the following
 hardware features:
@@ -211,15 +165,16 @@ For more information, see Intel® Quark SoC X1000 Datasheet, section `21.12.1.4.
 
 .. _21.12.1.4.5 Poll Mode: https://communities.intel.com/servlet/JiveServlet/previewBody/21828-102-2-25120/329676_QuarkDatasheet.pdf
 
-
-Interrupts
-----------
+Interrupt Controller
+====================
 
 The galileo platform configuration uses the Zephyr project static
 :abbr:`Interrupt Descriptor Table (IDT)` to program the
 :abbr: Advanced Programmable Interrupt Controller (APIC)`
 interrupt redirection table.
 
+Interrupts
+----------
 
 +-------+-----------+------------------+-------------------------------+
 |IRQ    | Name      | Used by Zephyr   | Remarks                       |
@@ -229,7 +184,6 @@ interrupt redirection table.
 |20     | timer     |   HPET           | timer driver                  |
 +-------+-----------+------------------+-------------------------------+
 
-
 .. note::
 
    The galileo platform configuration does not support
@@ -237,7 +191,7 @@ interrupt redirection table.
 
 
 Configuration Options
----------------------
+=====================
 
 :option:`CONFIG_PCI_DEBUG`
       Set to "y" to enable PCI debugging functions for PCI bus scanning.
@@ -250,12 +204,8 @@ HPET System Clock Support
 Galileo uses HPET timing with legacy-free timer support. The galileo platform
 configuration uses HPET as a system clock timer.
 
-
-
-------------
- PROCEDURES
-------------
-
+Procedures
+**********
 
 Use the following procedures for booting a project on
 a Galileo board.
@@ -493,11 +443,8 @@ Steps
    When the boot process finishes, you have finished booting the
    Zephyr project.
 
-
-
---------------------------------
- KNOWN PROBLEMS AND LIMITATIONS
---------------------------------
+Known Problems and Limitations
+******************************
 
 There is no support for the following:
 
@@ -509,9 +456,8 @@ There is no support for the following:
 * Ethernet
 * :abbr:`Supervisor Mode Execution Protection (SMEP)`
 
---------------
- BIBLIOGRAPHY
---------------
+Bibliography
+************
 
 1. `Intel® Galileo Datasheet`_.
 

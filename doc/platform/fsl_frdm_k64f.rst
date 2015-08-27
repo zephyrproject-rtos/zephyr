@@ -1,51 +1,10 @@
 .. _fsl_frdm_k64f:
 
-=====================================
 Platform Configuration: fsl_frdm_k64f
-=====================================
-
-.. -----------------
-.. Table of Contents
-.. -----------------
-..
-.. INTRODUCTION
-..
-..    Overview
-
-.. SUPPORTED BOARDS
-..    Pin Names
-..    Jumpers & Switches
-..    Memory Maps
-..    Component Layout
-..
-.. SUPPORTED FEATURES
-..    IRQ Controller and Vectored Exceptions
-..        Interrupts
-..        Interrupt Tables
-..    System Clock (Frequency) Support
-..    Serial Port Support
-..
-.. PROCEDURES
-..    Loading a Project Image with mbed
-..    Installing Hardware Debug Support on the Host and Target
-..    Installing the IDE and Eclipse Plug-ins
-..    Configuring the J-Link Debugger
-..    Programming Flash with J-link
-
-.. KNOWN PROBLEMS AND LIMITATIONS
-
-.. BIBLIOGRAPHY
-
-
---------------
- INTRODUCTION
---------------
-
-This section provides an overview of the fsl_frdm_k64f platform configuration.
-
+#####################################
 
 Overview
-========
+********
 
 The fsl_frdm_k64f platform configuration is used by Zephyr projects
 that run on the Freescale Freedom Development Platform (FRDM-K64F).
@@ -57,7 +16,7 @@ It provides support for an ARM Cortex-M4 CPU and the following devices:
 
 * serial port over USB (K20)
 
-See `PROCEDURES`_ for using third-party tools to load
+See `Procedures`_ for using third-party tools to load
 and debug (in system mode with no OS awareness) a
 Zephyr-based project on the target. Debugging is
 done with :abbr:`GNU Debugger (GDB)`, using Eclipse plugins.
@@ -66,17 +25,13 @@ done with :abbr:`GNU Debugger (GDB)`, using Eclipse plugins.
 This platform configuration may work with similar boards,
 but they are not officially supported.
 
-
-
------------------
- SUPPORTED BOARDS
------------------
+Supported Boards
+****************
 
 The fsl_frdm_k64f platform configuration has been tested to run on the
 Freescale Freedom Development Platform.  The physical characteristics of
 this board (including pin names, jumper settings, memory mappings, ...)
 can be found below.
-
 
 Pin Names
 =========
@@ -134,7 +89,6 @@ Pin Names
 * I2C_SDA = D14
 * DAC0_OUT = 0xFEFE /* DAC does not have a Pin Name in RM */
 
-
 Jumpers & Switches
 ==================
 
@@ -152,10 +106,8 @@ The default switch settings for the Freescale FRDM-K64F are:
 |  J25          |SDA + SW1   |      MCU      |
 +---------------+------------+---------------+
 
-
-
-Memory Maps
-===========
+Memory Mappings
+===============
 
 The :file:`fsl_frdm_k64f` platform configuration uses the
 following default hardware memory map addresses and sizes:
@@ -214,12 +166,9 @@ following default hardware memory map addresses and sizes:
 | 0x20000000 - 0x00000000  |  .5GB   | Code             |
 +--------------------------+---------+------------------+
 
-
 For a diagram, see  `Cortex-M3 Revision r2p1 Technical Reference Manual page 3-11`_.
 
 .. _Cortex-M3 Revision r2p1 Technical Reference Manual page 3-11: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0337h/index.
-
-
 
 Component Layout
 ================
@@ -229,10 +178,8 @@ Rev. 0, 04/2014 (Freescale FRDMK64FUG) for a component layout
 block diagram. See
 http://infocenter.arm.com/help/topic/com.arm.doc.dui0552a/DUI0552A_cortex_m3_dgug.pdf
 
-
--------------------
- SUPPORTED FEATURES
--------------------
+Supported Features
+******************
 
 The fsl_frdm_k64f platform configuration supports the following
 hardware features:
@@ -257,8 +204,8 @@ Freescale FRDM-K64F board hardware features.
 .. _vendor documentation: http://infocenter.arm.com/help/topic/com.arm.doc.dui0552a/DUI0552A_cortex_m3_dgug.pdf
 
 
-IRQ Controller and Vectored Exceptions
-======================================
+Interrupt Controller
+====================
 
 There are 15 fixed exceptions including exceptions 12 (debug
 monitor) and 15 (SYSTICK) that behave more as interrupts
@@ -478,7 +425,7 @@ This configuration prevents the use of tickless idle.
 
 
 Configuration Options
---------------------------------
+=====================
 
 :option:`LDREX_STREX_AVAILABLE`
       Set to ‘n’ when the ldrex/strex instructions are not available.
@@ -511,33 +458,24 @@ Configuration Options
 :option:`SW_ISR_TABLE_DYNAMIC`
       Set to ‘n’ to override the default.
 
-
-
-
-System Clock (Frequency) Support
-================================
+System Clock
+============
 FRDM-K64F uses an external oscillator/resonator.
 It can have a frequency range of 32.768 KHz to 50 MHz.
 
-
-
-
-Serial Port Support
-===================
+Serial Port
+===========
 
 The FRDM_K64F board has a single out-of-the-box available
 serial communication channel that uses the CPU's UART0.
 It is connected via a "USB Virtual Serial Port"
 over the OpenSDA USB connection.
 
-See the `PROCEDURES`_ in the next section for instruction
+See the `Procedures`_ in the next section for instruction
 on how to direct output from the board to a console.
 
-
-------------
- PROCEDURES
-------------
-
+Procedures
+**********
 
 Use the following procedures:
 
@@ -551,8 +489,6 @@ Use the following procedures:
 
 * `Programming Flash with J-link`_
 
-
-
 Loading a Project Image with mbed
 =================================
 
@@ -564,8 +500,8 @@ is available for the board (and may already be pre-installed).
 Prerequisite
 ------------
 
-* Although mbed firmware may be pre-installed on the
-  FRDM_K64F, you must replace it with the latest version.
+Although mbed firmware may be pre-installed on the
+FRDM_K64F, you must replace it with the latest version.
 
 Steps
 -----
@@ -607,8 +543,6 @@ Steps
 
 6. Disconnect and re-connect the terminal serial port
    connection after copying each :file:`.bin` file.
-
-
 
 Installing Hardware Debug Support on the Host and Target
 ========================================================
@@ -675,8 +609,6 @@ Steps
 10. Run the :program:`J-Link Commander` (JLinkExe on Linux)
     program on the PC to test if the J-Link connects
     to the target.
-
-
 
 Installing the IDE and Eclipse Plug-ins
 =======================================
@@ -787,8 +719,6 @@ Steps
 
 14. Click **Apply**.
 
-
-
 Programming Flash with J-link
 =============================
 
@@ -836,10 +766,8 @@ Steps
 
        h
 
-
---------------------------------
- KNOWN PROBLEMS AND LIMITATIONS
---------------------------------
+Known Problems and Limitations
+******************************
 
 There is no support for the following:
 
@@ -851,11 +779,8 @@ There is no support for the following:
 
 * Writing to the hardware's flash memory
 
-
-
---------------
- BIBLIOGRAPHY
---------------
+Bibliography
+************
 
 1. The Definitive Guide to the ARM Cortex-M3,
    Second Edition by Joseph Yiu (ISBN?978-0-12-382090-7)
