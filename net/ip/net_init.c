@@ -83,7 +83,7 @@ static struct net_dev {
 	/* Queue for outgoing packets from apps */
 	struct nano_fifo tx_queue;
 
-	/* Registered network driver, FIXME: how this is set? */
+	/* Registered network driver */
 	struct net_driver *drv;
 } netdev;
 
