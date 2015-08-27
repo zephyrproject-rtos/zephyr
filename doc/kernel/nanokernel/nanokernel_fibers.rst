@@ -1,4 +1,4 @@
-.. _fiber_services:
+.. _nanokernel_fibers:
 
 Fiber Services
 ##############

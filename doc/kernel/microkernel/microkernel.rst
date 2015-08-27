@@ -11,6 +11,7 @@ nanokernel applications.
    :maxdepth: 1
 
    microkernel_tasks
+   microkernel_fibers.rst
    microkernel_timers
    microkernel_memory
    microkernel_synchronization

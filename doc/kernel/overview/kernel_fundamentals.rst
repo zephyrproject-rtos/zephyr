@@ -69,8 +69,8 @@ is limited to a single task.
 
 Related sections:
 
-* :ref:`Fiber Services <fiber_services>`
-* :ref:`Task Services <tasks>`
+* :ref:`Nanokernel Fiber Services <nanokernel_fibers>`
+* :ref:`Microkernel Task Services <microkernel_tasks>`
 
 Interrupts
 **********
