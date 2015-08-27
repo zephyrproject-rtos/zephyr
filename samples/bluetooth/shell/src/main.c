@@ -280,9 +280,9 @@ static void cmd_scan(int argc, char *argv[])
 	}
 
 	action = (char*)argv[1];
-	if (!strncmp(action, "on", strlen("on"))) {
+	if (!strcmp(action, "on")) {
 		cmd_active_scan_on();
-	} else if (!strncmp(action, "off", strlen("off"))) {
+	} else if (!strcmp(action, "off")) {
 		cmd_scan_off();
 	} else {
 		printk("Scan [on/off] parameter required\n");
@@ -360,13 +360,13 @@ static void cmd_advertise(int argc, char *argv[])
 	}
 
 	action = (char*)argv[1];
-	if (!strncmp(action, "on", strlen("on"))) {
+	if (!strcmp(action, "on")) {
 		if (bt_start_advertising(BT_LE_ADV_IND, ad, sd) < 0) {
 			printk("Failed to start advertising\n");
 		} else {
 			printk("Advertising started\n");
 		}
-	} else if (!strncmp(action, "off", strlen("off"))) {
+	} else if (!strcmp(action, "off")) {
 		if (bt_stop_advertising() < 0) {
 			printk("Failed to stop advertising\n");
 		} else {
@@ -802,13 +802,13 @@ static void cmd_auth(int argc, char *argv[])
 		return;
 	}
 
-	if (!strncmp(argv[1], "all", strlen("all"))) {
+	if (!strcmp(argv[1], "all")) {
 		bt_auth_cb_register(&auth_cb_all);
-	} else if (!strncmp(argv[1], "input", strlen("input"))) {
+	} else if (!strcmp(argv[1], "input")) {
 		bt_auth_cb_register(&auth_cb_input);
-	} else if (!strncmp(argv[1], "display", strlen("display"))) {
+	} else if (!strcmp(argv[1], "display")) {
 		bt_auth_cb_register(&auth_cb_display);
-	} else if (!strncmp(argv[1], "none", strlen("none"))) {
+	} else if (!strcmp(argv[1], "none")) {
 		bt_auth_cb_register(NULL);
 	} else {
 		printk("auth [display, input, all, none] parameter required\n");
