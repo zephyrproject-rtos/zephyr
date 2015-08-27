@@ -213,44 +213,29 @@ static struct uart_driver_api ns16550_uart_driver_api;
 
 #if defined(CONFIG_NS16550_PCI)
 
-static inline void ns16550_pci_uart_scan(void)
+static inline int ns16550_pci_uart_scan(struct device *dev)
 {
-	/* defined in arch/x86/platforms/ia32_pci/board_config.c */
-	extern struct uart_device_config_t ns16550_uart_dev_cfg[];
-
-	/*
-	 * This device information is specific to Quark UART
-	 * for another device it may need to be changed
-	 */
-	struct pci_dev_info dev_info = {
-		.class = PCI_CLASS_COMM_CTLR,
-		.vendor_id = CONFIG_UART_PCI_VENDOR_ID,
-		.device_id = CONFIG_UART_PCI_DEVICE_ID,
-		.function = CONFIG_UART_PCI_FUNCTION,
-		.bar = CONFIG_UART_PCI_BAR,
-	};
-	int i;
-
-	/*
-	 * No need to probe if ports have been probed.
-	 */
-	if (ns16550_uart_dev_cfg[0].port && ns16550_uart_dev_cfg[0].irq) {
-		return;
-	}
+	struct uart_device_config_t * const dev_cfg = DEV_CFG(dev);
 
 	pci_bus_scan_init();
 
-	for (i = 0; pci_bus_scan(&dev_info) &&
-				i < CONFIG_NS16550_PCI_NUM_PORTS; i++) {
-		ns16550_uart_dev_cfg[i].port = dev_info.addr;
-		ns16550_uart_dev_cfg[i].irq = dev_info.irq;
+	if (!pci_bus_scan(&dev_cfg->pci_dev)) {
+		return 0;
 	}
+
+#ifdef CONFIG_PCI_ENUMERATION
+	dev_cfg->port = dev_cfg->pci_dev.addr;
+	dev_cfg->irq = dev_cfg->pci_dev.irq;
+#endif
+
+	pci_enable_regs(&dev_cfg->pci_dev);
+
+	return 1;
 }
 
 #else
 
-#define ns16550_pci_uart_scan() \
-	do {} while ((0))
+#define ns16550_pci_uart_scan(_unused_) (1)
 
 #endif /* CONFIG_NS16550_PCI */
 
@@ -273,7 +258,9 @@ void ns16550_uart_port_init(struct device *dev,
 	int old_level;     /* old interrupt lock level */
 	uint32_t divisor; /* baud rate divisor */
 
-	ns16550_pci_uart_scan();
+	if (!ns16550_pci_uart_scan(dev)) {
+		return;
+	}
 
 	dev_cfg->irq_pri = init_info->irq_pri;
 	dev_data->iir_cache = 0;

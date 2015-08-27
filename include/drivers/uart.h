@@ -39,6 +39,11 @@ extern "C" {
 
 #include <device.h>
 
+#ifdef CONFIG_PCI
+#include <pci/pci.h>
+#include <pci/pci_mgr.h>
+#endif
+
 struct uart_init_info;
 
 /* UART device configuration */
@@ -55,6 +60,10 @@ struct uart_device_config_t {
 	};
 	uint8_t irq;		/**< interrupt request level */
 	uint8_t irq_pri;	/**< interrupt priority */
+
+#ifdef CONFIG_PCI
+	struct pci_dev_info  pci_dev;
+#endif /* CONFIG_PCI */
 
 	/**
 	 * Initializes the UART port.

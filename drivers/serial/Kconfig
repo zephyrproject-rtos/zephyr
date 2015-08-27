@@ -87,12 +87,15 @@ config NS16550_PCI
 	This option enables the driver to auto-detect the device
 	configuration required to access those ports.
 
-config NS16550_PCI_NUM_PORTS
-	int "Number of PCI serial ports"
-	default 2
+config NS16550_PORT_0_BASE_ADDR
+	hex "NS16550 port 0 PCI base address"
+	default 0x00000000
 	depends on NS16550_PCI
-	help
-	This indicates the number of PCI-based serial ports to probe.
+
+config NS16550_PORT_1_BASE_ADDR
+	hex "NS16550 port 1 PCI base address"
+	default 0x00000000
+	depends on NS16550_PCI
 
 config K20_UART
 	bool "K20 serial driver"

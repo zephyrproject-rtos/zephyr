@@ -85,14 +85,11 @@ static int ns16550_uart_console_init(struct device *dev)
 /**
  * @brief UART Device configuration.
  *
- * This contains the device configuration for UART. Note that
- * the first CONFIG_NS16550_PCI_NUM_PORTS ports are reserved
- * for auto detection. So they need to be empty.
+ * This contains the device configuration for UART.
  */
 struct uart_device_config_t ns16550_uart_dev_cfg[] = {
-	/* The first CONFIG_NS16550_PCI_NUM_PORTS ports are reserved. */
 	{
-		.port = 0,
+		.port = CONFIG_NS16550_PORT_0_BASE_ADDR,
 
 		.port_init = ns16550_uart_port_init,
 
@@ -100,9 +97,16 @@ struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 		     && (CONFIG_UART_CONSOLE_INDEX == 0))
 			.config_func = ns16550_uart_console_init,
 		#endif
+		.pci_dev.class = PCI_CLASS_COMM_CTLR,
+		.pci_dev.bus = CONFIG_UART_PCI_BUS,
+		.pci_dev.dev = CONFIG_UART_PCI_DEV,
+		.pci_dev.vendor_id = CONFIG_UART_PCI_VENDOR_ID,
+		.pci_dev.device_id = CONFIG_UART_PCI_DEVICE_ID,
+		.pci_dev.function = CONFIG_UART_PORT_0_FUNCTION,
+		.pci_dev.bar = CONFIG_UART_PCI_BAR,
 	},
 	{
-		.port = 0,
+		.port = CONFIG_NS16550_PORT_1_BASE_ADDR,
 
 		.port_init = ns16550_uart_port_init,
 
@@ -110,6 +114,13 @@ struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 		     && (CONFIG_UART_CONSOLE_INDEX == 1))
 			.config_func = ns16550_uart_console_init,
 		#endif
+		.pci_dev.class = PCI_CLASS_COMM_CTLR,
+		.pci_dev.bus = CONFIG_UART_PCI_BUS,
+		.pci_dev.dev = CONFIG_UART_PCI_DEV,
+		.pci_dev.vendor_id = CONFIG_UART_PCI_VENDOR_ID,
+		.pci_dev.device_id = CONFIG_UART_PCI_DEVICE_ID,
+		.pci_dev.function = CONFIG_UART_PORT_1_FUNCTION,
+		.pci_dev.bar = CONFIG_UART_PCI_BAR,
 	},
 	/* Add pre-configured ports after this. */
 };
