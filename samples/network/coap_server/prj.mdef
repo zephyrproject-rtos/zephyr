@@ -1,0 +1,5 @@
+% Application       : Network listener
+
+% TASK NAME         PRIO ENTRY           STACK GROUPS
+% ===================================================
+  TASK MAIN            7 startup	2048 [EXE]
