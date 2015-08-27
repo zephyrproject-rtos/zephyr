@@ -415,7 +415,7 @@ int main(int argc, char**argv)
 		target = argv[optind];
 
 	if (!target) {
-		printf("usage: %s [-F] <IPv{6|4} address of the echo-server>\n",
+		printf("usage: %s [-i iface] [-F] <IPv{6|4} address of the echo-server>\n",
 		       argv[0]);
 		printf("\n-i Use this network interface, needed if using "
 		       "multicast server address.\n");
