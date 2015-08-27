@@ -3,29 +3,59 @@
 Nanokernel LIFOs
 ################
 
-Definition
-**********
-
-The LIFO is defined in :file:`kernel/nanokernel/nano_lifo.c`. It
-consists of a linked list of memory blocks that uses the first word in
-each block as a next pointer. The data is stored in last-in-first-out
-order.
-
-Function
+Concepts
 ********
 
-When a message is added to the LIFO, the data is stored at the head of
-the list. Messages taken off the LIFO object are taken from the head.
+The nanokernel's LIFO object type is an implementation of a traditional
+last in, first out queue. It is mainly intended for use by fibers.
 
-The LIFO object requires the first 32-bit word to be empty in order to
-maintain the linked list.
+A nanokernel LIFO allows data items of any size tasks to be sent and received
+asynchronously. The LIFO uses a linked list to hold data items that have been
+sent but not yet received.
 
-The LIFO object does not store information about the size of the
-messages.
+LIFO data items must be aligned on a 4-byte boundary, as the kernel reserves
+the first 32 bits of each item for use as a pointer to the next data item
+in the LIFO's linked list. Consequently, a data item that holds N bytes
+of application data requires N+4 bytes of memory.
 
-The LIFO object remembers one waiting context. When a second context
-starts waiting for data from the same LIFO object, the first context
-remains waiting and never reaches the runnable state.
+Any number of nanokernel LIFOs can be defined. Each LIFO is a distinct variable
+of type :c:type:`struct nano_lifo`, and is referenced using a pointer to that
+variable. A LIFO must be initialized before it can be used to send or receive
+data items.
+
+Items can be added to a nanokernel LIFO in a non-blocking manner by any
+context type (i.e. ISR, fiber, or task).
+
+Items can be removed from a nanokernel LIFO in a non-blocking manner by any
+context type; if the LIFO is empty the :c:macro:`NULL` return code indicates
+that no item was removed. Items can also be removed from a nanokernel LIFO
+in a blocking manner by a fiber or task; if the LIFO is empty the thread
+waits for an item to be added.
+
+Any number of threads may wait on an empty nanokernel LIFO simultaneously.
+When a data item becomes available it is given to the fiber that has waited
+longest, or to a waiting task if no fiber is waiting.
+
+.. note::
+   A task that waits on an empty nanokernel LIFO does a busy wait. This is
+   not an issue for a nanokernel application's background task; however, in
+   a microkernel application a task that waits on a nanokernel LIFO remains
+   the current task. In contrast, a microkernel task that waits on a
+   microkernel data passing object ceases to be the current task, allowing
+   other tasks of equal or lower priority to do useful work.
+
+   If multiple tasks in a microkernel application wait on the same nanokernel
+   LIFO, higher priority tasks are given data items in preference to lower
+   priority tasks. However, the order in which equal priority tasks are given
+   data items is unpredictible.
+
+
+Purpose
+*******
+
+Use a nanokernel LIFO to asynchronously transfer data items of arbitrary size
+in a "last in, first out" manner.
+
 
 Usage
 *****
@@ -33,8 +63,7 @@ Usage
 Example: Initializing a Nanokernel LIFO
 =======================================
 
-This code initializes a nanokernel LIFO, marking it as empty without any
-waiters.
+This code establishes an empty nanokernel LIFO.
 
 .. code-block:: c
 
