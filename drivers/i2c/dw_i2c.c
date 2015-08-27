@@ -41,6 +41,7 @@
 
 #include <board.h>
 #include <errno.h>
+#include <sys_io.h>
 
 #include "dw_i2c.h"
 #include "dw_i2c_registers.h"
@@ -58,14 +59,14 @@
 
 static inline uint32_t dw_i2c_memory_read(uint32_t base_addr, uint32_t offset)
 {
-	return *(uint32_t *)(base_addr + offset);
+	return sys_read32(base_addr + offset);
 }
 
 
 static inline void dw_i2c_memory_write(uint32_t base_addr, uint32_t offset,
 				       uint32_t val)
 {
-	*(uint32_t *)(base_addr + offset) = val;
+	sys_write32(val, base_addr + offset);
 }
 
 
