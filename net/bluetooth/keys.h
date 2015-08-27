@@ -52,20 +52,17 @@ struct bt_ltk {
 	uint64_t		rand;
 	uint16_t		ediv;
 	uint8_t			val[16];
-	struct bt_keys		*next;
 };
 
 struct bt_irk {
 	uint8_t			val[16];
 	bt_addr_t		rpa;
-	struct bt_keys		*next;
 };
 
 struct bt_csrk {
 	uint8_t			type;
 	uint8_t			val[16];
 	uint32_t		cnt;
-	struct bt_keys		*next;
 };
 
 struct bt_keys {

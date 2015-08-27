@@ -47,16 +47,7 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-#define bt_keys_foreach(list, cur, member)   \
-	for (cur = list; *cur; cur = &(*cur)->member)
-
 static struct bt_keys key_pool[CONFIG_BLUETOOTH_MAX_PAIRED];
-
-static struct bt_keys *ltks;
-static struct bt_keys *slave_ltks;
-static struct bt_keys *irks;
-static struct bt_keys *local_csrks;
-static struct bt_keys *remote_csrks;
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 {
@@ -87,59 +78,9 @@ struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 
 void bt_keys_clear(struct bt_keys *keys, int type)
 {
-	struct bt_keys **cur;
-
 	BT_DBG("keys for %s type %d\n", bt_addr_le_str(&keys->addr), type);
 
-	if (((type & keys->keys) & BT_KEYS_SLAVE_LTK)) {
-		bt_keys_foreach(&slave_ltks, cur, slave_ltk.next) {
-			if (*cur == keys) {
-				*cur = (*cur)->slave_ltk.next;
-				break;
-			}
-		}
-		keys->keys &= ~BT_KEYS_SLAVE_LTK;
-	}
-
-	if (((type & keys->keys) & BT_KEYS_LTK)) {
-		bt_keys_foreach(&ltks, cur, ltk.next) {
-			if (*cur == keys) {
-				*cur = (*cur)->ltk.next;
-				break;
-			}
-		}
-		keys->keys &= ~BT_KEYS_LTK;
-	}
-
-	if (((type & keys->keys) & BT_KEYS_IRK)) {
-		bt_keys_foreach(&irks, cur, irk.next) {
-			if (*cur == keys) {
-				*cur = (*cur)->irk.next;
-				break;
-			}
-		}
-		keys->keys &= ~BT_KEYS_IRK;
-	}
-
-	if (((type & keys->keys) & BT_KEYS_LOCAL_CSRK)) {
-		bt_keys_foreach(&local_csrks, cur, local_csrk.next) {
-			if (*cur == keys) {
-				*cur = (*cur)->local_csrk.next;
-				break;
-			}
-		}
-		keys->keys &= ~BT_KEYS_LOCAL_CSRK;
-	}
-
-	if (((type & keys->keys) & BT_KEYS_REMOTE_CSRK)) {
-		bt_keys_foreach(&remote_csrks, cur, remote_csrk.next) {
-			if (*cur == keys) {
-				*cur = (*cur)->remote_csrk.next;
-				break;
-			}
-		}
-		keys->keys &= ~BT_KEYS_REMOTE_CSRK;
-	}
+	keys->keys &= ~type;
 
 	if (!keys->keys) {
 		memset(keys, 0, sizeof(*keys));
@@ -148,83 +89,22 @@ void bt_keys_clear(struct bt_keys *keys, int type)
 
 struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
 {
-	struct bt_keys **cur;
+	int i;
 
 	BT_DBG("type %d %s\n", type, bt_addr_le_str(addr));
 
-	switch (type) {
-	case BT_KEYS_SLAVE_LTK:
-		bt_keys_foreach(&slave_ltks, cur, slave_ltk.next) {
-			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
-				break;
-			}
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		if ((key_pool[i].keys & type) &&
+		     !bt_addr_le_cmp(&key_pool[i].addr, addr)) {
+			return &key_pool[i];
 		}
-		return *cur;
-	case BT_KEYS_LTK:
-		bt_keys_foreach(&ltks, cur, ltk.next) {
-			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
-				break;
-			}
-		}
-		return *cur;
-	case BT_KEYS_IRK:
-		bt_keys_foreach(&irks, cur, irk.next) {
-			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
-				break;
-			}
-		}
-		return *cur;
-	case BT_KEYS_LOCAL_CSRK:
-		bt_keys_foreach(&local_csrks, cur, local_csrk.next) {
-			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
-				break;
-			}
-		}
-		return *cur;
-	case BT_KEYS_REMOTE_CSRK:
-		bt_keys_foreach(&remote_csrks, cur, remote_csrk.next) {
-			if (!bt_addr_le_cmp(&(*cur)->addr, addr)) {
-				break;
-			}
-		}
-		return *cur;
-	default:
-		return NULL;
 	}
+
+	return NULL;
 }
 
 void bt_keys_add_type(struct bt_keys *keys, int type)
 {
-	if (keys->keys & type) {
-		return;
-	}
-
-	switch (type) {
-	case BT_KEYS_SLAVE_LTK:
-		keys->slave_ltk.next = slave_ltks;
-		slave_ltks = keys;
-		break;
-	case BT_KEYS_LTK:
-		keys->ltk.next = ltks;
-		ltks = keys;
-		break;
-	case BT_KEYS_IRK:
-		keys->irk.next = irks;
-		irks = keys;
-		break;
-	case BT_KEYS_LOCAL_CSRK:
-		keys->local_csrk.next = local_csrks;
-		local_csrks = keys;
-		break;
-	case BT_KEYS_REMOTE_CSRK:
-		keys->remote_csrk.next = remote_csrks;
-		remote_csrks = keys;
-		break;
-	default:
-		BT_ERR("Unknown key type %d\n", type);
-		return;
-	}
-
 	keys->keys |= type;
 }
 
@@ -251,7 +131,7 @@ struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr)
 
 struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr)
 {
-	struct bt_keys **cur;
+	int i;
 
 	BT_DBG("%s\n", bt_addr_le_str(addr));
 
@@ -259,36 +139,35 @@ struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr)
 		return NULL;
 	}
 
-	bt_keys_foreach(&irks, cur, irk.next) {
-		struct bt_irk *irk = &(*cur)->irk;
-
-		if (!bt_addr_cmp((bt_addr_t *)addr->val, &irk->rpa)) {
-			BT_DBG("cached RPA %s for %s\n", bt_addr_str(&irk->rpa),
-			       bt_addr_le_str(&(*cur)->addr));
-			return *cur;
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		if (!(key_pool[i].keys & BT_KEYS_IRK)) {
+			continue;
 		}
 
-		if (bt_smp_irk_matches(irk->val, (bt_addr_t *)addr->val)) {
-			struct bt_keys *match = *cur;
+		if (!bt_addr_cmp((bt_addr_t *)addr->val,
+				 &key_pool[i].irk.rpa)) {
+			BT_DBG("cached RPA %s for %s\n",
+			       bt_addr_str(&key_pool[i].irk.rpa),
+			       bt_addr_le_str(&key_pool[i].addr));
+			return &key_pool[i];
+		}
+	}
 
-			BT_DBG("RPA %s matches %s\n", bt_addr_str(&irk->rpa),
-			       bt_addr_le_str(&(*cur)->addr));
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		if (!(key_pool[i].keys & BT_KEYS_IRK)) {
+			continue;
+		}
 
-			bt_addr_copy(&irk->rpa, (bt_addr_t *)addr->val);
+		if (bt_smp_irk_matches(key_pool[i].irk.val,
+				       (bt_addr_t *)addr->val)) {
+			BT_DBG("RPA %s matches %s\n",
+			       bt_addr_str(&key_pool[i].irk.rpa),
+			       bt_addr_le_str(&key_pool[i].addr));
 
-			/* Move to the beginning of the list for faster
-			 * future lookups.
-			 */
-			if (match != irks) {
-				/* Remove match from list */
-				*cur = irk->next;
+			bt_addr_copy(&key_pool[i].irk.rpa,
+				     (bt_addr_t *)addr->val);
 
-				/* Add match to the beginning */
-				irk->next = irks;
-				irks = match;
-			}
-
-			return match;
+			return &key_pool[i];
 		}
 	}
 
@@ -299,16 +178,13 @@ struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr)
 
 struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr)
 {
-	struct bt_keys *keys;
 	int i;
 
 	BT_DBG("%s\n", bt_addr_le_str(addr));
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
-		keys = &key_pool[i];
-
-		if (!bt_addr_le_cmp(&keys->addr, addr)) {
-			return keys;
+		if (!bt_addr_le_cmp(&key_pool[i].addr, addr)) {
+			return &key_pool[i];
 		}
 	}
 
