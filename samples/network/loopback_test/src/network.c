@@ -181,7 +181,7 @@ void main(void)
 	nano_timer_init(&timer, data);
 
 	while (1) {
-		buf = net_buf_get(ctx);
+		buf = net_buf_get_tx(ctx);
 		if (buf) {
 			uint8_t *ptr;
 			uint16_t sent_len;

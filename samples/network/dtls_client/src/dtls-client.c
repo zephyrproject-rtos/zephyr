@@ -182,7 +182,7 @@ static inline void send_message(const char *name,
 	struct data *user_data = (struct data *)dtls_get_app_data(ctx);
 	struct net_buf *buf;
 
-	buf = net_buf_get_reserve(0);
+	buf = net_buf_get_reserve_tx(0);
 	if (buf) {
 		uint8_t *ptr;
 		int pos = sys_rand32_get() % user_data->ipsum_len;

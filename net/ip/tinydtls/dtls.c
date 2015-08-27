@@ -1413,7 +1413,7 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
   size_t overall_len = 0;
 
 #ifdef WITH_CONTIKI
-  buf = net_buf_get_reserve(0);
+  buf = net_buf_get_reserve_tx(0);
   if (!buf) {
 	  return -ENOMEM;
   }
@@ -3886,7 +3886,7 @@ dtls_retransmit(dtls_context_t *context, netq_t *node) {
   if (node->retransmit_cnt < DTLS_DEFAULT_MAX_RETRANSMIT) {
 #ifdef WITH_CONTIKI
       /* Prepare to receive max. IPv6 frame size packets. */
-      struct net_buf *buf = net_buf_get_reserve(0);
+      struct net_buf *buf = net_buf_get_reserve_tx(0);
       unsigned char *sendbuf = buf->buf;
       size_t len = sizeof(buf->buf);
 #else

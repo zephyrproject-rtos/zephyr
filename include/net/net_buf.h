@@ -77,6 +77,13 @@
 
 struct net_context;
 
+/** @cond ignore */
+enum net_buf_type {
+	NET_BUF_RX = 0,
+	NET_BUF_TX = 1,
+};
+/** @endcond */
+
 /** The default MTU is 1280 (minimum IPv6 packet size) + LL header
  * In Contiki terms this is UIP_LINK_MTU + UIP_LLH_LEN = UIP_BUFSIZE
  *
@@ -90,6 +97,7 @@ struct net_buf {
 	/* FIFO uses first 4 bytes itself, reserve space */
 	int __unused;
 	bool in_use;
+	enum net_buf_type type;
 	/* @endcond */
 
 	/** Network connection context */
@@ -206,10 +214,13 @@ struct net_buf {
  */
 /* Get buffer from the available buffers pool */
 #ifdef DEBUG_NET_BUFS
-#define net_buf_get(context) net_buf_get_debug(context, __FUNCTION__, __LINE__)
-struct net_buf *net_buf_get_debug(struct net_context *context, const char *caller, int line);
+#define net_buf_get_rx(context) net_buf_get_rx_debug(context, __FUNCTION__, __LINE__)
+#define net_buf_get_tx(context) net_buf_get_tx_debug(context, __FUNCTION__, __LINE__)
+struct net_buf *net_buf_get_rx_debug(struct net_context *context, const char *caller, int line);
+struct net_buf *net_buf_get_tx_debug(struct net_context *context, const char *caller, int line);
 #else
-struct net_buf *net_buf_get(struct net_context *context);
+struct net_buf *net_buf_get_rx(struct net_context *context);
+struct net_buf *net_buf_get_tx(struct net_context *context);
 #endif
 
 /**
@@ -225,10 +236,13 @@ struct net_buf *net_buf_get(struct net_context *context);
  */
 /* Same as net_buf_get, but also reserve headroom for potential headers */
 #ifdef DEBUG_NET_BUFS
-#define net_buf_get_reserve(res) net_buf_get_reserve_debug(res,__FUNCTION__,__LINE__)
-struct net_buf *net_buf_get_reserve_debug(uint16_t reserve_head, const char *caller, int line);
+#define net_buf_get_reserve_rx(res) net_buf_get_reserve_rx_debug(res,__FUNCTION__,__LINE__)
+#define net_buf_get_reserve_tx(res) net_buf_get_reserve_tx_debug(res,__FUNCTION__,__LINE__)
+struct net_buf *net_buf_get_reserve_rx_debug(uint16_t reserve_head, const char *caller, int line);
+struct net_buf *net_buf_get_reserve_tx_debug(uint16_t reserve_head, const char *caller, int line);
 #else
-struct net_buf *net_buf_get_reserve(uint16_t reserve_head);
+struct net_buf *net_buf_get_reserve_rx(uint16_t reserve_head);
+struct net_buf *net_buf_get_reserve_tx(uint16_t reserve_head);
 #endif
 
 /**

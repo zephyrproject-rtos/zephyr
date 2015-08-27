@@ -98,7 +98,7 @@ static int reassemble(struct net_mbuf *mbuf)
 {
         struct net_buf *buf;
 
-	buf = net_buf_get_reserve(0);
+	buf = net_buf_get_reserve_rx(0);
 	if (!buf) {
 		return 0;
 	}

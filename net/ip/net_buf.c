@@ -49,11 +49,26 @@
 extern struct net_tuple *net_context_get_tuple(struct net_context *context);
 
 /* Available (free) buffers queue */
-#ifndef NET_NUM_BUFS
-#define NET_NUM_BUFS		2
+#ifndef NET_BUF_RX_SIZE
+#if CONFIG_NET_BUF_RX_SIZE > 0
+#define NET_BUF_RX_SIZE		CONFIG_NET_BUF_RX_SIZE
+#else
+#define NET_BUF_RX_SIZE		1
 #endif
-static struct net_buf		buffers[NET_NUM_BUFS];
-static struct nano_fifo		free_bufs;
+#endif
+
+#ifndef NET_BUF_TX_SIZE
+#if CONFIG_NET_BUF_TX_SIZE > 0
+#define NET_BUF_TX_SIZE		CONFIG_NET_BUF_TX_SIZE
+#else
+#define NET_BUF_TX_SIZE		1
+#endif
+#endif
+
+static struct net_buf		rx_buffers[NET_BUF_RX_SIZE];
+static struct net_buf		tx_buffers[NET_BUF_TX_SIZE];
+static struct nano_fifo		free_rx_bufs;
+static struct nano_fifo		free_tx_bufs;
 
 /* Available (free) MAC buffers queue */
 #ifndef NET_NUM_MAC_BUFS
@@ -66,34 +81,62 @@ static struct nano_fifo		free_bufs;
 static struct net_mbuf		mac_buffers[NET_NUM_MAC_BUFS];
 static struct nano_fifo		free_mbufs;
 
+static inline const char *type2str(enum net_buf_type type)
+{
+	switch (type) {
+	case NET_BUF_RX:
+		return "RX";
+	case NET_BUF_TX:
+		return "TX";
+	}
+
+	return NULL;
+}
+
 #ifdef DEBUG_NET_BUFS
-struct net_buf *net_buf_get_reserve_debug(uint16_t reserve_head, const char *caller, int line)
+static struct net_buf *net_buf_get_reserve_debug(enum net_buf_type type,
+						 uint16_t reserve_head,
+						 const char *caller,
+						 int line)
 #else
-struct net_buf *net_buf_get_reserve(uint16_t reserve_head)
+static struct net_buf *net_buf_get_reserve(enum net_buf_type type,
+					   uint16_t reserve_head)
 #endif
 {
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 
-	buf = nano_fifo_get(&free_bufs);
+	switch (type) {
+	case NET_BUF_RX:
+		buf = nano_fifo_get(&free_rx_bufs);
+		break;
+	case NET_BUF_TX:
+		buf = nano_fifo_get(&free_tx_bufs);
+		break;
+	}
+
 	if (!buf) {
 #ifdef DEBUG_NET_BUFS
-		NET_ERR("Failed to get free buffer (%s():%d)\n", caller, line);
+		NET_ERR("Failed to get free %s buffer (%s():%d)\n",
+			type2str(type), caller, line);
 #else
-		NET_ERR("Failed to get free buffer\n");
+		NET_ERR("Failed to get free %s buffer\n", type2str(type));
 #endif
 		return NULL;
 	}
 
 	buf->data = buf->buf + reserve_head;
 	buf->len = 0;
+	buf->type = type;
 
 	NET_BUF_CHECK_IF_IN_USE(buf);
 
 #ifdef DEBUG_NET_BUFS
-	NET_DBG("buf %p reserve %u inuse %d (%s():%d)\n", buf, reserve_head,
-		buf->in_use, caller, line);
+	NET_DBG("%s buf %p reserve %u inuse %d (%s():%d)\n",
+		type2str(type),	buf, reserve_head, buf->in_use,
+		caller, line);
 #else
-	NET_DBG("buf %p reserve %u inuse %d\n", buf, reserve_head, buf->in_use);
+	NET_DBG("%s buf %p reserve %u inuse %d\n", type2str(type), buf,
+		reserve_head, buf->in_use);
 #endif
 	buf->in_use = true;
 
@@ -101,9 +144,40 @@ struct net_buf *net_buf_get_reserve(uint16_t reserve_head)
 }
 
 #ifdef DEBUG_NET_BUFS
-struct net_buf *net_buf_get_debug(struct net_context *context, const char *caller, int line)
+struct net_buf *net_buf_get_reserve_rx_debug(uint16_t reserve_head, const char *caller, int line)
 #else
-struct net_buf *net_buf_get(struct net_context *context)
+struct net_buf *net_buf_get_reserve_rx(uint16_t reserve_head)
+#endif
+{
+#ifdef DEBUG_NET_BUFS
+	return net_buf_get_reserve_debug(NET_BUF_RX, reserve_head,
+					 caller, line);
+#else
+	return net_buf_get_reserve(NET_BUF_RX, reserve_head);
+#endif
+}
+
+#ifdef DEBUG_NET_BUFS
+struct net_buf *net_buf_get_reserve_tx_debug(uint16_t reserve_head, const char *caller, int line)
+#else
+struct net_buf *net_buf_get_reserve_tx(uint16_t reserve_head)
+#endif
+{
+#ifdef DEBUG_NET_BUFS
+	return net_buf_get_reserve_debug(NET_BUF_TX, reserve_head,
+					 caller, line);
+#else
+	return net_buf_get_reserve(NET_BUF_TX, reserve_head);
+#endif
+}
+
+#ifdef DEBUG_NET_BUFS
+static struct net_buf *net_buf_get_debug(enum net_buf_type type,
+					 struct net_context *context,
+					 const char *caller, int line)
+#else
+static struct net_buf *net_buf_get(enum net_buf_type type,
+				   struct net_context *context)
 #endif
 {
 	struct net_buf *buf;
@@ -128,9 +202,9 @@ struct net_buf *net_buf_get(struct net_context *context)
 	}
 
 #ifdef DEBUG_NET_BUFS
-	buf = net_buf_get_reserve_debug(reserve, caller, line);
+	buf = net_buf_get_reserve_debug(type, reserve, caller, line);
 #else
-	buf = net_buf_get_reserve(reserve);
+	buf = net_buf_get_reserve(type, reserve);
 #endif
 	if (!buf) {
 		return buf;
@@ -139,6 +213,34 @@ struct net_buf *net_buf_get(struct net_context *context)
 	buf->context = context;
 
 	return buf;
+}
+
+#ifdef DEBUG_NET_BUFS
+struct net_buf *net_buf_get_rx_debug(struct net_context *context,
+				     const char *caller, int line)
+#else
+struct net_buf *net_buf_get_rx(struct net_context *context)
+#endif
+{
+#ifdef DEBUG_NET_BUFS
+	return net_buf_get_debug(NET_BUF_RX, context, caller, line);
+#else
+	return net_buf_get(NET_BUF_RX, context);
+#endif
+}
+
+#ifdef DEBUG_NET_BUFS
+struct net_buf *net_buf_get_tx_debug(struct net_context *context,
+				     const char *caller, int line)
+#else
+struct net_buf *net_buf_get_tx(struct net_context *context)
+#endif
+{
+#ifdef DEBUG_NET_BUFS
+	return net_buf_get_debug(NET_BUF_TX, context, caller, line);
+#else
+	return net_buf_get(NET_BUF_TX, context);
+#endif
 }
 
 #ifdef DEBUG_NET_BUFS
@@ -159,14 +261,22 @@ void net_buf_put(struct net_buf *buf)
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 
 #ifdef DEBUG_NET_BUFS
-	NET_DBG("buf %p inuse %d (%s():%d)\n", buf, buf->in_use, caller, line);
+	NET_DBG("%s buf %p inuse %d (%s():%d)\n", type2str(buf->type),
+		buf, buf->in_use, caller, line);
 #else
-	NET_DBG("buf %p inuse %d\n", buf, buf->in_use);
+	NET_DBG("%s buf %p inuse %d\n", type2str(buf->type), buf, buf->in_use);
 #endif
 
 	buf->in_use = false;
 
-	nano_fifo_put(&free_bufs, buf);
+	switch (buf->type) {
+	case NET_BUF_RX:
+		nano_fifo_put(&free_rx_bufs, buf);
+		break;
+	case NET_BUF_TX:
+		nano_fifo_put(&free_tx_bufs, buf);
+		break;
+	}
 }
 
 uint8_t *net_buf_add(struct net_buf *buf, uint16_t len)
@@ -262,10 +372,20 @@ static void net_mbuf_init(void)
 
 void net_buf_init(void)
 {
-	nano_fifo_init(&free_bufs);
+	int i;
 
-	for (int i = 0; i < NET_NUM_BUFS; i++) {
-		nano_fifo_put(&free_bufs, &buffers[i]);
+	NET_DBG("Allocating %d RX and %d TX buffers\n",
+		NET_BUF_RX_SIZE, NET_BUF_TX_SIZE);
+
+	nano_fifo_init(&free_rx_bufs);
+	nano_fifo_init(&free_tx_bufs);
+
+	for (i = 0; i < NET_BUF_RX_SIZE; i++) {
+		nano_fifo_put(&free_rx_bufs, &rx_buffers[i]);
+	}
+
+	for (i = 0; i < NET_BUF_TX_SIZE; i++) {
+		nano_fifo_put(&free_tx_bufs, &tx_buffers[i]);
 	}
 
 	net_mbuf_init();

@@ -42,13 +42,20 @@ menuconfig NETWORKING
 	  This option enabled generic networking support.
 
 if NETWORKING
-config NET_BUF_SIZE
-	int "Number of network buffers to use"
+
+config NET_BUF_RX_SIZE
+	int "Number of network buffers to use when receiving data"
+	default 1
+	help
+	Each network buffer will contain one received IPv6 or IPv4 packet.
+	Each buffer will occupy 1280 bytes of memory.
+
+config NET_BUF_TX_SIZE
+	int "Number of network buffers to use when sending data"
 	default 2
 	help
-	Each network buffer will contain one received or sent
-	IPv6 or IPv4 packet. Each buffer will occupy 1280 bytes
-	of memory.
+	Each network buffer will contain one sent IPv6 or IPv4 packet.
+	Each buffer will occupy 1280 bytes of memory.
 
 choice
 prompt "Internet Protocol version"

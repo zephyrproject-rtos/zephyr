@@ -176,7 +176,7 @@ static inline bool send_packet(const char *name,
 	struct net_buf *buf;
 	bool fail = false;
 
-	buf = net_buf_get(ctx);
+	buf = net_buf_get_tx(ctx);
 	if (buf) {
 		uint8_t *ptr;
 		int sending_len = ipsum_len - pos;

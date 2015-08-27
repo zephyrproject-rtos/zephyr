@@ -297,7 +297,7 @@ static struct net_buf *copy_frags2uip(int context)
   int i;
   struct net_buf *buf = NULL;
 
-  buf = net_buf_get_reserve(0);
+  buf = net_buf_get_reserve_rx(0);
   if(!buf) {
     return NULL;
   }

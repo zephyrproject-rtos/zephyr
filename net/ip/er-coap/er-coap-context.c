@@ -87,7 +87,7 @@ static int prepare_and_send_buf(coap_context_t *ctx, session_t *session,
    * by this function unless there was an error and buf was
    * not actually sent.
    */
-  buf = net_buf_get(ctx->net_ctx);
+  buf = net_buf_get_tx(ctx->net_ctx);
   if (!buf) {
     len = -ENOBUFS;
     goto out;
