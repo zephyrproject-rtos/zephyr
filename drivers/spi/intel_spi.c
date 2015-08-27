@@ -360,7 +360,7 @@ static inline int spi_intel_setup(struct device *dev)
 	return 1;
 }
 #else
-#define spi_intel_setup(_unused_) { return 1;}
+#define spi_intel_setup(_unused_) (1)
 #endif /* CONFIG_PCI */
 
 int spi_intel_init(struct device *dev)
