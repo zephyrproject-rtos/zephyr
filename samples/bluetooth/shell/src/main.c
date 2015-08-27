@@ -356,8 +356,7 @@ static void cmd_advertise(int argc, char *argv[])
 	const char *action;
 
 	if (argc < 2) {
-		printk("Advertise [on/off] parameter required\n");
-		return;
+		goto fail;
 	}
 
 	action = (char*)argv[1];
@@ -374,8 +373,13 @@ static void cmd_advertise(int argc, char *argv[])
 			printk("Advertising stopped\n");
 		}
 	} else {
-		printk("Advertise [on/off] parameter required\n");
+		goto fail;
 	}
+
+	return;
+
+fail:
+	printk("Advertise [on/off] parameter required\n");
 }
 
 static struct bt_gatt_discover_params discover_params;
