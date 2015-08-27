@@ -103,6 +103,15 @@ config ENHANCED_SECURITY
 	Users can customize these settings using the CUSTOM_SECURITY option
 	in the "Security Options" menu.
 
+config RING_BUFFER
+	bool
+	prompt "Enable ring buffers"
+	default n
+	help
+	Enable usage of ring buffers. Similar to nanokernel FIFOs but manage
+	their own buffer memory and can store arbitrary data. For optimal
+	performance, use buffer sizes that are a power of 2.
+
 config EVENT_LOGGER
 	bool
 	prompt "Enable event logger"
