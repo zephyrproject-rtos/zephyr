@@ -42,27 +42,11 @@
 
 #include <nanokernel.h>
 #include <errno.h>
-
-struct event_header_bits {
-	/* length in 32-bit words */
-	uint32_t  data_length   :4;
-	uint32_t  dropped_count :4;
-	uint32_t  event_id      :16;
-	uint32_t  reserved      :8;
-};
-
-union event_header {
-	uint32_t block;
-	struct event_header_bits bits;
-};
+#include <misc/ring_buffer.h>
 
 struct event_logger {
-	uint32_t head;
-	uint32_t tail;
-	uint16_t dropped_event_count;
 	struct nano_sem sync_sema;
-	uint32_t *buffer;
-	uint32_t buffer_size;
+	struct ring_buf ring_buf;
 };
 
 
@@ -109,16 +93,19 @@ void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
  * from a fiber.
  *
  * @param logger       Pointer to the event logger used.
+ * @param event_id     Pointer to the id of the event fetched
+ * @param dropped_event_count Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
- * @param buffer_size  Size of the buffer in 32-bit words.
+ * @param buffer_size  Size of the buffer in 32-bit words. Updated with the
+ *		       actual message size.
  *
  * @return -EMSGSIZE if the buffer size is smaller than the message size, or
  * the amount of 32-bit words copied. 0 (zero) if there was no message already
  * available.
  */
-int sys_event_logger_get(struct event_logger *logger, uint32_t *buffer,
-	uint8_t buffer_size);
-
+int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
+			 uint8_t *dropped_event_count, uint32_t *buffer,
+			 uint8_t *buffer_size);
 
 /**
  * @brief Retrieve an event message from the logger, wait if empty.
@@ -131,14 +118,18 @@ int sys_event_logger_get(struct event_logger *logger, uint32_t *buffer,
  * fiber.
  *
  * @param logger       Pointer to the event logger used.
+ * @param event_id     Pointer to the id of the event fetched
+ * @param dropped_event_count Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
- * @param buffer_size  Size of the buffer in 32-bit words.
+ * @param buffer_size  Size of the buffer in 32-bit words. Updated with the
+ *		       actual message size.
  *
  * @return -EMSGSIZE if the buffer size is smaller than the message size. Or
  * the amount of DWORDs copied.
  */
-int sys_event_logger_get_wait(struct event_logger *logger, uint32_t *buffer,
-	uint8_t buffer_size);
+int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
+			      uint8_t *dropped_event_count, uint32_t *buffer,
+			      uint8_t *buffer_size);
 
 #ifdef CONFIG_NANO_TIMEOUTS
 /**
@@ -153,8 +144,11 @@ int sys_event_logger_get_wait(struct event_logger *logger, uint32_t *buffer,
  * the timeout expires. It can only be called from a fiber.
  *
  * @param logger       Pointer to the event logger used.
+ * @param event_id     Pointer to the id of the event fetched
+ * @param dropped_event_count Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
- * @param buffer_size  Size of the buffer.
+ * @param buffer_size  Size of the buffer in 32-bit words. Updated with the
+ *		       actual message size.
  * @param timeout      Timeout in ticks.
  *
  * @return -EMSGSIZE if the buffer size is smaller than the message size. Or
@@ -162,7 +156,10 @@ int sys_event_logger_get_wait(struct event_logger *logger, uint32_t *buffer,
  * was no message already available.
  */
 int sys_event_logger_get_wait_timeout(struct event_logger *logger,
-	uint32_t *buffer, uint8_t buffer_size, uint32_t timeout);
+				      uint16_t *event_id,
+				      uint8_t *dropped_event_count,
+				      uint32_t *buffer, uint8_t *buffer_size,
+				      uint32_t timeout);
 #endif /* CONFIG_NANO_TIMEOUTS */
 
 #endif /* _ASMLANGUAGE */

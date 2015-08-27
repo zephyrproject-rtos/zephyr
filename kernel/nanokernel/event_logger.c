@@ -34,15 +34,12 @@
  */
 
 #include <misc/event_logger.h>
-
+#include <misc/ring_buffer.h>
 
 void sys_event_logger_init(struct event_logger *logger,
 	uint32_t *logger_buffer, uint32_t buffer_size)
 {
-	logger->head = logger->tail = 0;
-	logger->dropped_event_count = 0;
-	logger->buffer = logger_buffer;
-	logger->buffer_size = buffer_size;
+	sys_ring_buf_init(&logger->ring_buf, buffer_size, logger_buffer);
 	nano_sem_init(&(logger->sync_sema));
 }
 
@@ -51,45 +48,19 @@ static void event_logger_put(struct event_logger *logger, uint16_t event_id,
 	uint32_t *event_data, uint8_t data_size,
 	void(*sem_give_fn)(struct nano_sem *))
 {
+	int ret;
 	unsigned int key;
-	unsigned int buffer_capacity_used;
-	union event_header header;
-	int i;
 
-	/* Lock interrupt to be sure this function will be atomic */
 	key = irq_lock();
 
-	buffer_capacity_used = (logger->head - logger->tail +
-		logger->buffer_size) % logger->buffer_size;
-
-	/* check if there is space to the new event */
-	if (buffer_capacity_used + EVENT_HEADER_SIZE + data_size >=
-		logger->buffer_size) {
-		(logger->dropped_event_count)++;
-	} else {
-		/* build the header */
-		header.bits.data_length = data_size;
-		header.bits.event_id = event_id;
-		header.bits.dropped_count = logger->dropped_event_count;
-		logger->dropped_event_count = 0;
-
-		/* copy the header to the buffer */
-		logger->buffer[logger->head] = header.block;
-		logger->head = (logger->head + EVENT_HEADER_SIZE) %
-			logger->buffer_size;
-
-		/* copy the extra data to the buffer */
-		for (i=0; i < header.bits.data_length; ++i) {
-			logger->buffer[(logger->head + i) %
-				logger->buffer_size] = event_data[i];
-		}
-		logger->head = (logger->head + header.bits.data_length) %
-			logger->buffer_size;
-
+	ret = sys_ring_buf_put(&logger->ring_buf, event_id,
+			       logger->ring_buf.dropped_put_count, event_data,
+			       data_size);
+	if (ret == 0) {
+		logger->ring_buf.dropped_put_count = 0;
 		/* inform that there is event data available on the buffer */
 		sem_give_fn(&(logger->sync_sema));
 	}
-
 	irq_unlock(key);
 }
 
@@ -129,57 +100,65 @@ void _sys_event_logger_put_non_preemptible(struct event_logger *logger,
 }
 
 
-static inline int event_logger_get(struct event_logger *logger,
-	uint32_t *buffer, uint8_t buffer_size)
+static int event_logger_get(struct event_logger *logger,
+			    uint16_t *event_id, uint8_t *dropped_event_count,
+			    uint32_t *buffer, uint8_t *buffer_size)
 {
-	int i;
-	union event_header *header;
+	int ret;
 
-	/* obtain the header */
-	header = (union event_header *) &(logger->buffer[logger->tail]);
-	if (buffer_size < EVENT_HEADER_SIZE + header->bits.data_length) {
-		/* if the user can not retrieve the message, we increase the semaphore
-		 * to indicate that the message remains in the buffer */
+	ret = sys_ring_buf_get(&logger->ring_buf, event_id, dropped_event_count,
+			       buffer, buffer_size);
+	if (likely(!ret)) {
+		return *buffer_size;
+	}
+	switch (ret) {
+	case -EMSGSIZE:
+		/* if the user can not retrieve the message, we increase the
+		 *  semaphore to indicate that the message remains in the buffer
+		 */
 		nano_fiber_sem_give(&(logger->sync_sema));
 		return -EMSGSIZE;
+	case -EAGAIN:
+		return 0;
+	default:
+		return ret;
 	}
-
-	for (i=0; i < header->bits.data_length + EVENT_HEADER_SIZE; i++) {
-		buffer[i] = logger->buffer[(logger->tail + i) %
-			logger->buffer_size];
-	}
-	logger->tail = (logger->tail + header->bits.data_length +
-		EVENT_HEADER_SIZE) % logger->buffer_size;
-
-	return header->bits.data_length + EVENT_HEADER_SIZE;
 }
 
 
-int sys_event_logger_get(struct event_logger *logger, uint32_t *buffer,
-	uint8_t buffer_size)
+int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
+			 uint8_t *dropped_event_count, uint32_t *buffer,
+			 uint8_t *buffer_size)
 {
 	if (nano_fiber_sem_take(&(logger->sync_sema))) {
-		return sys_event_logger_get(logger, buffer, buffer_size);
+		return event_logger_get(logger, event_id, dropped_event_count,
+					buffer, buffer_size);
 	}
 	return 0;
 }
 
 
-int sys_event_logger_get_wait(struct event_logger *logger, uint32_t *buffer,
-	uint8_t buffer_size)
+int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
+			      uint8_t *dropped_event_count, uint32_t *buffer,
+			      uint8_t *buffer_size)
 {
 	nano_fiber_sem_take_wait(&(logger->sync_sema));
 
-	return event_logger_get(logger, buffer, buffer_size);
+	return event_logger_get(logger, event_id, dropped_event_count, buffer,
+				buffer_size);
 }
 
 
 #ifdef CONFIG_NANO_TIMEOUTS
 int sys_event_logger_get_wait_timeout(struct event_logger *logger,
-	uint32_t *buffer, uint8_t buffer_size, uint32_t timeout)
+				      uint16_t *event_id,
+				      uint8_t *dropped_event_count,
+				      uint32_t *buffer, uint8_t *buffer_size,
+				      uint32_t timeout)
 {
 	if (nano_fiber_sem_take_wait_timeout(&(logger->sync_sema), timeout)) {
-		return event_logger_get(logger, buffer, buffer_size);
+		return event_logger_get(logger, event_id, dropped_event_count,
+					buffer, buffer_size);
 	}
 	return 0;
 }

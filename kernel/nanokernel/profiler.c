@@ -91,7 +91,7 @@ void _sys_profiler_context_switch(void)
 		uint8_t data_size);
 
 	/* if the profiler has not been initialized, we do nothing */
-	if (sys_profiler_logger.buffer == NULL) {
+	if (sys_profiler_logger.ring_buf.buf == NULL) {
 		return;
 	}
 

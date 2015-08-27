@@ -282,7 +282,8 @@ void profiling_data_collector(void)
 {
 	int res;
 	uint32_t data[4];
-	union event_header *header;
+	uint8_t dropped_count;
+	uint16_t event_id;
 
 	/* We register the fiber as collector to avoid this fiber generating a
 	 * context switch event every time it collects the data
@@ -291,44 +292,46 @@ void profiling_data_collector(void)
 
 	while(1) {
 		/* collect the data */
-		res = sys_profiler_get_wait(data, 10);
+		uint8_t data_length = SIZE32_OF(data);
+		res = sys_profiler_get_wait(&event_id, &dropped_count, data,
+					    &data_length);
 		if (res > 0) {
-			header = (union event_header *)&(data[0]);
-
 			/* Register the amount of droppped events occurred */
-			if (header->bits.dropped_count) {
-				total_dropped_counter += header->bits.dropped_count;
+			if (dropped_count) {
+				total_dropped_counter += dropped_count;
 			}
 
 			/* process the data */
-			switch (header->bits.event_id) {
+			switch (event_id) {
 			case PROFILER_CONTEXT_SWITCH_EVENT_ID:
-				if (header->bits.data_length != 2) {
+				if (data_length != 2) {
 					PRINTF("\x1b[13;1HError in context switch message. "
 						"event_id = %d, Expected %d, received %d\n",
-						header->bits.event_id, 2, header->bits.data_length);
+						event_id, 2, data_length);
 				} else {
-					register_context_switch_data(data[1], data[2]);
+					register_context_switch_data(data[0], data[1]);
 				}
 				break;
 			case PROFILER_INTERRUPT_EVENT_ID:
-				if (header->bits.data_length != 2) {
+				if (data_length != 2) {
 					PRINTF("\x1b[13;1HError in sleep message. "
 						"event_id = %d, Expected %d, received %d\n",
-						header->bits.event_id, 2, header->bits.data_length);
+						event_id, 2, data_length);
 				} else {
-					register_interrupt_event_data(data[1], data[2]);
+					register_interrupt_event_data(data[0], data[1]);
 				}
 				break;
 			case PROFILER_SLEEP_EVENT_ID:
-				if (header->bits.data_length != 3) {
+				if (data_length != 3) {
 					PRINTF("\x1b[13;1HError in sleep message. "
 						"event_id = %d, Expected %d, received %d\n",
-						header->bits.event_id, 3, header->bits.data_length);
+						event_id, 3, data_length);
 				} else {
-					register_sleep_event_data(data[1], data[2], data[3]);
+					register_sleep_event_data(data[0], data[1], data[2]);
 				}
 				break;
+			default:
+				PRINTF("unrecognized event id %d", event_id);
 			}
 		} else {
 			/* This error should never happen */

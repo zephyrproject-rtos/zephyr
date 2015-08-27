@@ -99,6 +99,8 @@ void sys_profiler_put_timed(uint16_t event_id);
  * buffer. If the buffer is smaller than the message size the function returns
  * an error. The function retrieves messages in FIFO order.
  *
+ * @param event_id     Pointer to the id of the event fetched
+ * @param dropped_event_count Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
  * @param buffer_size  Size of the buffer in 32-bit words.
  *
@@ -106,8 +108,9 @@ void sys_profiler_put_timed(uint16_t event_id);
  * the amount of 32-bit words copied or zero if there are no profile event
  * messages available.
  */
-#define sys_profiler_get(buffer, buffer_size) \
-	sys_event_logger_get(&sys_profiler_logger, buffer, buffer_size)
+#define sys_profiler_get(event_id, dropped, buffer, buffer_size) \
+	sys_event_logger_get(&sys_profiler_logger, event_id, dropped, buffer, \
+			     buffer_size)
 
 
 /**
@@ -120,14 +123,17 @@ void sys_profiler_put_timed(uint16_t event_id);
  * profiler event message available the caller pends until a new message is
  * logged.
  *
+ * @param event_id     Pointer to the id of the event fetched
+ * @param dropped_event_count Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
  * @param buffer_size  Size of the buffer in 32-bit words.
  *
  * @return -EMSGSIZE if the buffer size is smaller than the message size, or
  * the amount of 32-bit words copied.
  */
-#define sys_profiler_get_wait(buffer, buffer_size) \
-	sys_event_logger_get_wait(&sys_profiler_logger, buffer, buffer_size)
+#define sys_profiler_get_wait(event_id, dropped, buffer, buffer_size) \
+	sys_event_logger_get_wait(&sys_profiler_logger, event_id, dropped, \
+				  buffer, buffer_size)
 
 
 #ifdef CONFIG_NANO_TIMEOUTS
@@ -142,6 +148,8 @@ void sys_profiler_put_timed(uint16_t event_id);
  * profiler event messages available the caller pends until a new message is
  * logged or the timeout expires.
  *
+ * @param event_id     Pointer to the id of the event fetched
+ * @param dropped_event_count Pointer to how many events were dropped
  * @param buffer       Pointer to the buffer where the message will be copied.
  * @param buffer_size  Size of the buffer in 32-bit words.
  * @param timeout      Timeout in ticks.
@@ -150,9 +158,11 @@ void sys_profiler_put_timed(uint16_t event_id);
  * amount of 32-bit words copied or zero if the timeout expires and the was no
  * message available.
  */
-#define sys_profiler_get_wait_timeout(buffer, buffer_size, timeout) \
-	sys_event_logger_get_wait_timeout(&sys_profiler_logger, buffer, \
-	buffer_size, timeout)
+#define sys_profiler_get_wait_timeout(event_id, dropped, buffer, buffer_size, \
+				      timeout) \
+	sys_event_logger_get_wait_timeout(event_id, dropped, \
+					  &sys_profiler_logger, buffer, \
+					  buffer_size, timeout)
 #endif /* CONFIG_NANO_TIMEOUTS */
 
 

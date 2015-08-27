@@ -116,6 +116,7 @@ config EVENT_LOGGER
 	bool
 	prompt "Enable event logger"
 	default n
+	select RING_BUFFER
 	help
 	Enable event logging feature. Allow the usage of a ring buffer to
 	transmit event messages with a single interface to collect them.
