@@ -65,73 +65,6 @@ static struct nano_fifo rx_queue;
 /* Queue for outgoing packets to IP stack */
 static struct nano_fifo tx_queue;
 
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
-#include <offsets.h>
-#include <misc/printk.h>
-
-enum {
-	STACK_DIRECTION_UP,
-	STACK_DIRECTION_DOWN,
-};
-
-static unsigned calculate_unused(const char *stack, unsigned size,
-				 int stack_growth)
-{
-	unsigned i, unused = 0;
-
-	if (stack_growth == STACK_DIRECTION_DOWN) {
-		for (i = __tTCS_SIZEOF; i < size; i++) {
-			if ((unsigned char)stack[i] == 0xaa) {
-				unused++;
-			} else {
-				break;
-			}
-		}
-	} else {
-		for (i = size - 1; i >= __tTCS_SIZEOF; i--) {
-			if ((unsigned char)stack[i] == 0xaa) {
-				unused++;
-			} else {
-				break;
-			}
-		}
-	}
-
-	return unused;
-}
-
-void analyze_stacks(struct net_buf *buf, struct net_buf **ref)
-{
-	unsigned unused_rx, unused_tx;
-	int stack_growth;
-	char *dir;
-
-	if (buf > *ref) {
-		dir = "up";
-		stack_growth = STACK_DIRECTION_UP;
-	} else {
-		dir = "down";
-		stack_growth = STACK_DIRECTION_DOWN;
-	}
-
-	unused_rx = calculate_unused(rx_fiber_stack, sizeof(rx_fiber_stack),
-				     stack_growth);
-	unused_tx = calculate_unused(tx_fiber_stack, sizeof(tx_fiber_stack),
-				     stack_growth);
-
-	printk("net: 802.15.4: stack grows %s, sizeof(tTCS): %u  "
-	       "rx stack(%p/%u): unused %u/%u  "
-	       "tx stack(%p/%u): unused %u/%u\n",
-	       dir, __tTCS_SIZEOF,
-	       rx_fiber_stack, sizeof(rx_fiber_stack),
-	       unused_rx, sizeof(rx_fiber_stack),
-	       tx_fiber_stack, sizeof(tx_fiber_stack),
-	       unused_tx, sizeof(tx_fiber_stack));
-}
-#else
-#define analyze_stacks(...)
-#endif
-
 static int net_driver_15_4_open(void)
 {
 	return 0;
@@ -170,7 +103,8 @@ static void net_tx_15_4_fiber(void)
 			continue;
 		}
 
-		analyze_stacks(buf, &buf);
+		net_analyze_stack("802.15.4 TX", tx_fiber_stack,
+				  sizeof(tx_fiber_stack));
 	}
 }
 
@@ -184,7 +118,8 @@ static void net_rx_15_4_fiber(void)
 		/* Wait next packet from 15.4 stack */
 		buf = nano_fifo_get_wait(&rx_queue);
 
-		analyze_stacks((struct net_buf *)buf, (struct net_buf **)&buf);
+		net_analyze_stack("802.15.4 RX", rx_fiber_stack,
+				  sizeof(rx_fiber_stack));
 
 		if (!NETSTACK_RDC.input(buf)) {
 			NET_DBG("RDC input failed\n");
