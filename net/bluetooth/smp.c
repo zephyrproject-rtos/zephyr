@@ -950,19 +950,16 @@ static uint8_t smp_master_ident(struct bt_conn *conn, struct bt_buf *buf)
 	keys->ltk.ediv = req->ediv;
 	keys->ltk.rand = req->rand;
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
-		if (!smp->remote_dist) {
-			bt_smp_distribute_keys(conn);
-
-			return 0;
-		}
-	}
+	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
 	} else if (smp->remote_dist & BT_SMP_DIST_SIGN) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+	}
+
+	if (conn->role == BT_HCI_ROLE_MASTER && !smp->remote_dist) {
+		bt_smp_distribute_keys(conn);
 	}
 
 	return 0;
@@ -1019,17 +1016,14 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 		bt_addr_le_copy(&conn->dst, &req->addr);
 	}
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
-		if (!smp->remote_dist) {
-			bt_smp_distribute_keys(conn);
-		}
-
-		return 0;
-	}
+	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
 
 	if (smp->remote_dist & BT_SMP_DIST_SIGN) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
+	}
+
+	if (conn->role == BT_HCI_ROLE_MASTER && !smp->remote_dist) {
+		bt_smp_distribute_keys(conn);
 	}
 
 	return 0;
@@ -1053,11 +1047,10 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 	memcpy(keys->remote_csrk.val, req->csrk, sizeof(keys->remote_csrk.val));
 	keys->remote_csrk.type = get_keys_type(smp->method);
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		smp->remote_dist &= ~BT_SMP_DIST_SIGN;
-		if (!smp->remote_dist) {
-			bt_smp_distribute_keys(conn);
-		}
+	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
+
+	if (conn->role == BT_HCI_ROLE_MASTER && !smp->remote_dist) {
+		bt_smp_distribute_keys(conn);
 	}
 
 	return 0;
