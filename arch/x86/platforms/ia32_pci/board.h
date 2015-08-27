@@ -46,6 +46,25 @@ the 'ia32_pci' platform.
 #include <drivers/rand32.h>
 #endif
 
+#ifdef CONFIG_IOAPIC
+#include <drivers/ioapic.h>
+#ifdef CONFIG_SERIAL_INTERRUPT_LEVEL
+#ifdef CONFIG_SERIAL_INTERRUPT_LOW
+#define UART_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#else
+#define UART_IOAPIC_FLAGS (IOAPIC_LEVEL)
+#endif
+#else /* edge triggered interrupt */
+#ifdef CONFIG_SERIAL_INTERRUPT_LOW
+/* generate interrupt on falling edge */
+#define UART_IOAPIC_FLAGS (IOAPIC_LOW)
+#else
+/* generate interrupt on raising edge */
+#define UART_IOAPIC_FLAGS (0)
+#endif
+#endif
+#endif
+
 #define NUM_STD_IRQS 16   /* number of "standard" IRQs on an x86 platform */
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 
@@ -57,8 +76,6 @@ the 'ia32_pci' platform.
 
 #define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
 #define UART_XTAL_FREQ (2764800 * 16)
-/* UART uses level triggered interrupt, low level */
-#define UART_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
 
 /* uart configuration settings */
 
