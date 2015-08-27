@@ -192,30 +192,59 @@ uint8_t *net_buf_pull(struct net_buf *buf, uint16_t len)
 	return buf->data += len;
 }
 
+#ifdef DEBUG_NET_BUFS
+struct net_mbuf *net_mbuf_get_reserve_debug(uint16_t reserve_head, const char *caller, int line)
+#else
 struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head)
+#endif
 {
 	struct net_mbuf *buf;
 
 	buf = nano_fifo_get(&free_mbufs);
 	if (!buf) {
+#ifdef DEBUG_NET_BUFS
+		NET_ERR("Failed to get free mac buffer (%s():%d)\n", caller, line);
+#else
 		NET_ERR("Failed to get free mac buffer\n");
+#endif
 		return NULL;
 	}
 
 	NET_BUF_CHECK_IF_IN_USE(buf);
 
+#ifdef DEBUG_NET_BUFS
+	NET_DBG("buf %p reserve %u inuse %d (%s():%d)\n", buf, reserve_head,
+		buf->in_use, caller, line);
+#else
 	NET_DBG("buf %p reserve %u inuse %d\n", buf, reserve_head, buf->in_use);
-
+#endif
 	buf->in_use = true;
 
 	return buf;
 }
 
+#ifdef DEBUG_NET_BUFS
+void net_mbuf_put_debug(struct net_mbuf *buf, const char *caller, int line)
+#else
 void net_mbuf_put(struct net_mbuf *buf)
+#endif
 {
+	if (!buf) {
+#ifdef DEBUG_NET_BUFS
+		NET_DBG("*** ERROR *** buf %p (%s():%d)\n", buf, caller, line);
+#else
+		NET_DBG("*** ERROR *** buf %p\n", buf);
+#endif
+		return;
+	}
+
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 
+#ifdef DEBUG_NET_BUFS
+	NET_DBG("buf %p inuse %d (%s():%d)\n", buf, buf->in_use, caller, line);
+#else
 	NET_DBG("buf %p inuse %d\n", buf, buf->in_use);
+#endif
 
 	buf->in_use = false;
 

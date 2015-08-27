@@ -344,7 +344,12 @@ struct net_mbuf {
  *
  * @return Network buffer if successful, NULL otherwise.
  */
+#ifdef DEBUG_NET_BUFS
+#define net_mbuf_get_reserve(res) net_mbuf_get_reserve_debug(res,__FUNCTION__,__LINE__)
+struct net_mbuf *net_mbuf_get_reserve_debug(uint16_t reserve_head, const char *caller, int line);
+#else
 struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head);
+#endif
 
 /**
  * @brief Place buffer back into the available buffers pool.
@@ -355,7 +360,12 @@ struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head);
  *
  * @param buf Network buffer to release.
  */
+#ifdef DEBUG_NET_BUFS
+#define net_mbuf_put(buf) net_mbuf_put_debug(buf, __FUNCTION__, __LINE__)
+void net_mbuf_put_debug(struct net_mbuf *buf, const char *caller, int line);
+#else
 void net_mbuf_put(struct net_mbuf *buf);
+#endif
 
 /** @cond ignore */
 #define uip_packetbuf_ptr(buf) ((buf)->packetbuf_ptr)
