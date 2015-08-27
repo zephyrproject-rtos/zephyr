@@ -27,7 +27,8 @@ The idle task is anonymous and must not be referenced by application tasks.
 .. note::
    A nanokernel application can define only a single application task, known
    as the *background task*, which is very different from the microkernel tasks
-   described in this section. For more information see [TBD].
+   described in this section. For more information see
+   :ref:`Nanokernel Task Services <nanokernel_tasks>`.
 
 Task Lifecycle
 ==============
