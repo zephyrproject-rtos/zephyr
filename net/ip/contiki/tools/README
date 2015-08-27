@@ -99,11 +99,13 @@ which waits UDP data sent by echo-client application that
 is running in qemu side.
 
 You needs to setup the slip connection (see the steps 1 to 3)
-in tunslip6 section of this document.
+in tunslip6 section of this document. Make sure that the Linux
+host firewall is not blocking the packets that the echo-client
+running in qemu is sending via tun0 device.
 
 Example:
 
-$ ./echo-server -i tun0
+$ sudo ./echo-server -i tun0
 
 
 dtls-client
