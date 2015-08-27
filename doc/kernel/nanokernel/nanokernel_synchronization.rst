@@ -9,34 +9,63 @@ Currently, only a single service is provided.
 Nanokernel Semaphores
 *********************
 
-Definition
-==========
-
-The nanokernel semaphore is defined in
-:file:`kernel/nanokernel/nano_sema.c` and implements a counting
-semaphore that sends signals from one fiber to another.
-
-Function
+Concepts
 ========
 
-Nanokernel semaphore objects can be used from an ISR, a fiber, or the
-background task. Interrupt handlers can use the nanokernel’s semaphore
-object to reschedule a fiber waiting for the interrupt.
+The nanokernel's semaphore object type is an implementation of a traditional
+counting semaphore. It is mainly intended for use by fibers.
 
-Only one context can wait on a semaphore at a time. The semaphore starts
-with a count of 0 and remains that way if no context is pending on it.
-Each 'give' operation increments the count by 1. Following multiple
-'give' operations, the same number of 'take' operations can be
-performed without the calling context having to wait on the semaphore.
-Thus after n 'give' operations a semaphore can 'take' n times without
-pending. If a second context waits for the same semaphore object, the
-first context is lost and never wakes up.
+Any number of nanokernel semaphores can be defined. Each semaphore is a
+distinct variable of type :c:type:`struct nano_sem`, and is referenced
+using a pointer to that variable. A semaphore must be initialized before
+it can be used.
+
+A nanokernel semaphore's count is set to zero when the semaphore is initialized.
+This count is incremented each time the semaphore is given, and is decremented
+each time the semaphore is taken. However, a semaphore cannot be taken if it is
+unavailable (i.e. has a count of zero).
+
+A nanokernel semaphore may be given by any context type (i.e. ISR, fiber,
+or task).
+
+A nanokernel semaphore may be taken in a non-blocking manner by any
+context type; a special return code indicates if the semaphore is unavailable.
+A semaphore can also be taken in a blocking manner by a fiber or task;
+if the semaphore is unavailable the thread waits for it to be given.
+
+Any number of threads may wait on an unavailable nanokernel semaphore
+simultaneously. When the semaphore is signalled it is given to the fiber
+that has waited longest, or to a waiting task if no fiber is waiting.
+
+.. note::
+   A task that waits on an unavailable nanokernel FIFO semaphore a busy wait.
+   This is not an issue for a nanokernel application's background task;
+   however, in a microkernel application a task that waits on a nanokernel
+   semaphore remains the current task. In contrast, a microkernel task that
+   waits on a microkernel synchronization object ceases to be the current task,
+   allowing other tasks of equal or lower priority to do useful work.
+
+   If multiple tasks in a microkernel application wait on the same nanokernel
+   semaphore, higher priority tasks are given the semaphore in preference to
+   lower priority tasks. However, the order in which equal priority tasks
+   are given the semaphore is unpredictible.
+
+
+Purpose
+=======
+
+Use a nanokernel semaphore to control access to a set of resources by multiple
+fibers.
+
+Use a nanokernel semaphore to synchronize processing between a producing task,
+fiber, or ISR and one or more consuming fibers.
+
 
 Usage
-*****
+=====
 
 Example: Initializing a Nanokernel Semaphore
-============================================
+--------------------------------------------
 
 This code initializes a nanokernel semaphore, setting its count to zero.
 
@@ -47,7 +76,7 @@ This code initializes a nanokernel semaphore, setting its count to zero.
    nano_sem_init(&input_sem);
 
 Example: Giving a Nanokernel Semaphore from an ISR
-==================================================
+--------------------------------------------------
 
 This code uses a nanokernel semaphore to indicate that a unit of data
 is available for processing by a consumer fiber.
@@ -63,7 +92,7 @@ is available for processing by a consumer fiber.
    }
 
 Example: Taking a Nanokernel Semaphore with a Conditional Time-out
-==================================================================
+------------------------------------------------------------------
 
 This code waits up to 500 ticks for a nanokernel semaphore to be given,
 and gives warning if it is not obtained in that time.
@@ -82,6 +111,7 @@ and gives warning if it is not obtained in that time.
        }
        ...
    }
+
 
 APIs
 ====
