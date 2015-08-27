@@ -146,8 +146,8 @@ void bt_uart_isr(void *unused)
 
 	ARG_UNUSED(unused);
 
-	while (uart_irq_update(BT_UART_DEV)
-	       && uart_irq_is_pending(BT_UART_DEV)) {
+	while (uart_irq_update(BT_UART_DEV) &&
+	       uart_irq_is_pending(BT_UART_DEV)) {
 		int read;
 
 		if (!uart_irq_rx_ready(BT_UART_DEV)) {
