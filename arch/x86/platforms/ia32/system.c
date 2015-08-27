@@ -69,14 +69,8 @@ static inline void ioapic_init(void)
 {
 	_ioapic_init();
 }
-
-#define uartIrqProg(irq) \
-	_ioapic_irq_set((irq), (irq) + INT_VEC_IRQ0, UART_IOAPIC_FLAGS)
 #else
 #define ioapic_init(mask)  \
-	do {/* nothing */ \
-	} while ((0))
-#define uartIrqProg(irq)  \
 	do {/* nothing */ \
 	} while ((0))
 #endif /* CONFIG_IOAPIC */
