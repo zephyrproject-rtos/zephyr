@@ -100,7 +100,7 @@ static struct in_addr in4addr_my = MY_IPADDR;
 
 static inline void init_server()
 {
-	PRINT("%s: run echo server\n", __FUNCTION__);
+	PRINT("%s: run dtls server\n", __FUNCTION__);
 
 	net_set_mac(my_mac, sizeof(my_mac));
 
