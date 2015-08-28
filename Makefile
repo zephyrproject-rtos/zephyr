@@ -563,10 +563,6 @@ include/config/auto.conf: ;
 endif # $(dot-config)
 
 
-# File that includes all prepare special embedded architecture targets.
-include $(srctree)/scripts/Makefile.preparch
-
-
 ifdef ZEPHYR_GCC_VARIANT
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 else
@@ -838,27 +834,13 @@ prepare1: prepare2 $(version_h) \
                    include/config/auto.conf
 	$(cmd_crmodverdir)
 
-ifneq ($(strip $(PROJECT)),)
-SYSGEN_EXEC=y
-endif
-
-ifneq ($(CONFIG_MICROKERNEL),y)
-SYSGEN_EXEC=n
-endif
-
-export SYSGEN_EXEC
-
 archprepare_common = $(strip \
 		archheaders archscripts prepare1 scripts_basic \
-		misc/generated/configs.c \
-		include/generated/offsets.h \
 		)
 
-archprepare_microkernel-y = misc/generated/sysgen/kernel_main.c
 
 archprepare = $(strip \
 		$(archprepare_common) \
-		$(archprepare_microkernel-$(SYSGEN_EXEC)) \
 		)
 
 # All the preparing..
