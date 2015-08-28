@@ -92,8 +92,23 @@ cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) -c -o $@ $<
 
 arch/$(SRCARCH)/core/offsets/offsets.o: arch/$(SRCARCH)/core/offsets/offsets.c
 	$(Q)mkdir -p $(dir $@)
-	$(call if_changed_rule,cc_o_c_1)
+	$(call if_changed,cc_o_c_1)
 
-$(obj)/include/generated/offsets.h: $(GENOFFSET_H) arch/$(SRCARCH)/core/offsets/offsets.o include/config/auto.conf FORCE
-	$(Q)$(GENOFFSET_H) -i arch/$(SRCARCH)/core/offsets/offsets.o -o $@
+
+define offsetchk
+	$(Q)set -e;                             \
+	$(kecho) '  CHK     $@';                \
+	mkdir -p $(dir $@);                     \
+	$(GENOFFSET_H) -i $(1) -o $@.tmp;       \
+	if [ -r $@ ] && cmp -s $@ $@.tmp; then  \
+	rm -f $@.tmp;                           \
+	else                                    \
+	$(kecho) '  UPD     $@';                \
+	mv -f $@.tmp $@;                        \
+	fi
+endef
+
+include/generated/offsets.h: $(GENOFFSET_H) arch/$(SRCARCH)/core/offsets/offsets.o \
+					include/config/auto.conf FORCE
+	$(call offsetchk,arch/$(SRCARCH)/core/offsets/offsets.o)
 
