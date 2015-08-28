@@ -53,14 +53,19 @@ endif
 zephyrmake	= @$(MAKE) -C $(ZEPHYR_BASE)  O=$(1) CFLAGS="$(CFLAGS)" \
 			PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) $(2)
 
-all: $(O)/.config
+DOTCONFIG = $(O)/.config
+
+all: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
-qemu: $(O)/.config
+qemu: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
 
+# Catch all
+%:
+	$(Q)$(call zephyrmake,$(O),$@)
 
-$(O)/.config: $(CONF_FILE)
+$(DOTCONFIG): $(CONF_FILE)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
 		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $<
 	$(Q)yes "" | $(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) \
@@ -72,9 +77,5 @@ pristine:
 PHONY += FORCE
 FORCE:
 
-# Catch all
-%:
-	$(Q)$(call zephyrmake,$(O),$@)
 
 .PHONY: $(PHONY)
-.PRECIOUS: %/.dir
