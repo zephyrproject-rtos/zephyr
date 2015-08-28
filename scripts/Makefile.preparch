@@ -61,9 +61,6 @@ endef
 misc/generated/configs.c: include/config/auto.conf FORCE
 	$(call filechk,configs.c)
 
-include/generated/offsets.h: $(GENOFFSET_H) include/generated/offsets.o include/config/auto.conf FORCE
-	$(Q)$(GENOFFSET_H) -i $(CURDIR)/include/generated/offsets.o -o $@
-
 define rule_cc_o_c
 	$(call echo-cmd,cc_o_c) $(cmd_cc_o_c);
 endef
@@ -73,11 +70,16 @@ OFFSETS_INCLUDE = $(strip \
 		-I $(CURDIR)/include/generated \
 		-I $(srctree)/kernel/microkernel/include \
 		-I $(srctree)/kernel/nanokernel/include \
-		-I $(srctree)/target/src/kernel/arch/common/include \
 		-I $(srctree)/lib/libc/minimal/include \
 		-I $(srctree)/arch/${SRCARCH}/include )
 
 cmd_cc_o_c = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) $(USERINCLUDE) -c -o $@ $<
 
-include/generated/offsets.o: $(srctree)/arch/$(SRCARCH)/core/offsets/offsets.c FORCE
+arch/$(SRCARCH)/core/offsets/offsets.o: arch/$(SRCARCH)/core/offsets/offsets.c
+	$(Q)mkdir -p $(dir $@)
 	$(call if_changed_rule,cc_o_c)
+
+include/generated/offsets.h: $(GENOFFSET_H) arch/$(SRCARCH)/core/offsets/offsets.o include/config/auto.conf FORCE
+	$(Q)$(GENOFFSET_H) -i arch/$(SRCARCH)/core/offsets/offsets.o -o $@
+
+

@@ -44,7 +44,7 @@ linker_params()
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms" >> ${1}
 	echo "-e __start" >> ${1}
 	echo "--start-group ${KBUILD_ZEPHYR_MAIN} ${KBUILD_ZEPHYR_APP}" >> ${1}
-	echo "${objtree}/include/generated/offsets.o" >> ${1}
+	echo "${objtree}/arch/${SRCARCH}/core/offsets/offsets.o" >> ${1}
 	echo "--end-group" >> ${1}
 	echo "${LIB_INCLUDE_DIR} ${LIBS}" >> ${1}
 }
