@@ -50,17 +50,13 @@ else
   S = -s
 endif
 
-CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
-	  else if [ -x /bin/bash ]; then echo /bin/bash; \
-	  else echo sh; fi ; fi)
-
 zephyrmake	= @$(MAKE) -C $(ZEPHYR_BASE)  O=$(1) CFLAGS="$(CFLAGS)" \
 			PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) $(2)
 
-all: $(O)/.dir $(O)/.config
+all: $(O)/.config
 	$(Q)$(call zephyrmake,$(O),$@)
 
-qemu: $(O)/.dir $(O)/.config
+qemu: $(O)/.config
 	$(Q)$(call zephyrmake,$(O),$@)
 
 
@@ -73,15 +69,7 @@ $(O)/.config: $(CONF_FILE)
 pristine:
 	$(Q)rm -rf $(O)
 
-%/.dir:
-	$(Q)set -e;
-	$(Q)test -s $(abspath $(dir $@)) || mkdir $(abspath $(dir $@)) -p
-	$(Q)touch $@
-
-
-
 PHONY += FORCE
-PHONY += mergeconfig
 FORCE:
 
 # Catch all
