@@ -538,6 +538,10 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 
 	req->auth_req = BT_SMP_AUTH_BONDING;
 
+	if (conn->required_sec_level >= BT_SECURITY_HIGH) {
+		req->auth_req |= BT_SMP_AUTH_MITM;
+	}
+
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
