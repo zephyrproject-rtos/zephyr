@@ -27,12 +27,6 @@ endif
 export KBUILD_DEFCONFIG
 endif
 
-ifdef KBUILD_DEFCONFIG
-CONFIG_DEPS=$(O)/.initconfig
-else
-CONFIG_DEPS=FORCE
-endif
-
 SOURCE_DIR ?= $(PROJECT_BASE)/src/
 # Kbuild doesn't work correctly if this is an absolute path
 # FIXME Do not depend on python
@@ -56,8 +50,6 @@ else
   S = -s
 endif
 
-BEENTHERE = $(O)/.$(ARCH)-$(PLATFORM_CONFIG)-$(KERNEL_TYPE).env
-
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
@@ -65,33 +57,18 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 zephyrmake	= @$(MAKE) -C $(ZEPHYR_BASE)  O=$(1) CFLAGS="$(CFLAGS)" \
 			PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) $(2)
 
-all: $(CONFIG_DEPS) $(O)/.dir
+all: $(O)/.dir $(O)/.config
 	$(Q)$(call zephyrmake,$(O),$@)
 
-qemu: $(CONFIG_DEPS) $(O)/.dir
+qemu: $(O)/.dir $(O)/.config
 	$(Q)$(call zephyrmake,$(O),$@)
 
 
-# FIXME: Use defconfig to create directory and copy file
-$(O)/.config: $(O)/.dir $(BEENTHERE)
-	$(Q)cp $(KBUILD_DEFCONFIG_PATH) $(O)/.config
-
-$(O)/.initconfig: mergeconfig
+$(O)/.config: $(CONF_FILE)
+	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
+		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $<
 	$(Q)yes "" | $(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) \
 		PROJECT=$(PROJECT_BASE) oldconfig
-	$(Q)touch $@
-
-
-# FIXME: Use provided mergeconfig target in kconfig/Makefile
-#
-ifneq ($(strip $(CONF_FILE)),)
-mergeconfig: $(O)/.config $(CONF_FILE)
-	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
-		-q -m -O $(O) $(O)/.config $(CONF_FILE)
-else
-mergeconfig: defconfig $(CONF_FILE)
-endif
-
 
 pristine:
 	$(Q)rm -rf $(O)
@@ -102,10 +79,10 @@ pristine:
 	$(Q)touch $@
 
 
-$(BEENTHERE): FORCE
-	$(Q)rm -rf $(O)/.*.env
-	$(Q)touch $@
 
+PHONY += FORCE
+PHONY += mergeconfig
+FORCE:
 
 # Catch all
 %:
