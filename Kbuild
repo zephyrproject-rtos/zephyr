@@ -80,6 +80,7 @@ define rule_cc_o_c_1
 endef
 
 OFFSETS_INCLUDE = $(strip \
+		-include $(CURDIR)/include/generated/autoconf.h \
 		-I $(srctree)/include \
 		-I $(CURDIR)/include/generated \
 		-I $(srctree)/kernel/microkernel/include \
@@ -87,7 +88,7 @@ OFFSETS_INCLUDE = $(strip \
 		-I $(srctree)/lib/libc/minimal/include \
 		-I $(srctree)/arch/${SRCARCH}/include )
 
-cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) -include $(CURDIR)/include/generated/autoconf.h $(USERINCLUDE) -c -o $@ $<
+cmd_cc_o_c_1 = $(CC) $(KBUILD_CFLAGS) $(OFFSETS_INCLUDE) -c -o $@ $<
 
 arch/$(SRCARCH)/core/offsets/offsets.o: arch/$(SRCARCH)/core/offsets/offsets.c
 	$(Q)mkdir -p $(dir $@)
