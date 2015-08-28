@@ -969,6 +969,18 @@ class TestInstance:
         return "<TestCase %s on %s>" % (self.test.name, self.platform.name)
 
 
+def defconfig_cb(context, goals, goal):
+    if not goal.failed:
+        return
+
+    info("%sCould not build defconfig for %s%s" %
+         (COLOR_RED, goal.name, COLOR_NORMAL));
+    if INLINE_LOGS:
+        with open(goal.get_error_log()) as fp:
+            sys.stdout.write(fp.read())
+    else:
+        print "\tsee: " + COLOR_YELLOW + goal.get_error_log() + COLOR_NORMAL
+
 
 class TestSuite:
     config_re = re.compile('(CONFIG_[A-Z0-9_]+)[=](.+)$')
@@ -1043,7 +1055,10 @@ class TestSuite:
                                                                   plat.name,
                                                                   ktype), args)
 
-        results = mg.execute(None)
+        results = mg.execute(defconfig_cb)
+        for name, goal in results.iteritems():
+            if goal.failed:
+                raise SanityRuntimeError("Couldn't build some defconfigs")
 
         for k, out_config in dlist.iteritems():
             plat, ktype = k
