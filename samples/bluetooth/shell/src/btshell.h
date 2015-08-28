@@ -37,17 +37,15 @@
  */
 typedef void (*cmd_function_t)(int argc, char *argv[]);
 
+struct shell_cmd {
+	const char *cmd_name;
+	cmd_function_t cb;
+};
+
 /** @brief Initialize shell with optional prompt, NULL in case no prompt is
  *         needed.
  *
  *  @param prompt Prompt to be printed on serial console.
+ *  @param cmds Commands to register
  */
-void shell_init(const char *prompt);
-
-/** @brief Register callback which would be run when string is entered in
- *         console.
- *
- *  @param string Command name.
- *  @param cb Command handler.
- */
-void shell_cmd_register(const char *string, cmd_function_t cb);
+void shell_init(const char *prompt, struct shell_cmd *cmds);

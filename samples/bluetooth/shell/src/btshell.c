@@ -44,20 +44,7 @@
 /* maximum number of command parameters */
 #define ARGC_MAX 10
 
-/* Static command array, commands identified by string cmd_name,
- * which shall be allocated in the caller
- * TODO: Check possibility of using statically allocated array
- */
-#define MAX_CMD_NUM	20
-/* After last command there is zero entry to make it possible to
- * use statically initialized arrays with last zero entry.
- */
-static struct {
-	const char *cmd_name;
-	cmd_function_t cb;
-} commands[MAX_CMD_NUM + 1];
-
-static uint8_t last_cmd_index = 0;
+static struct shell_cmd *commands;
 
 static const char *prompt;
 
@@ -82,18 +69,6 @@ static void line_queue_init(void)
 	}
 }
 
-void shell_cmd_register(const char *string, cmd_function_t cb)
-{
-	if (last_cmd_index > MAX_CMD_NUM - 1) {
-		return;
-	}
-
-	commands[last_cmd_index].cmd_name = string;
-	commands[last_cmd_index].cb = cb;
-
-	last_cmd_index++;
-}
-
 static void line2argv(char *str)
 {
 	argc = 0;
@@ -113,6 +88,9 @@ static cmd_function_t get_cb(const char *string)
 {
 	int i;
 
+	if (!string || !strlen(string))
+		return NULL;
+
 	for (i = 0; commands[i].cmd_name; i++) {
 		if (!strncmp(string, commands[i].cmd_name, strlen(string))) {
 			return commands[i].cb;
@@ -122,7 +100,7 @@ static cmd_function_t get_cb(const char *string)
 	return NULL;
 }
 
-static void show_commands(int argc, char *argv[])
+static void show_commands(void)
 {
 	int i;
 
@@ -149,6 +127,7 @@ static void shell(int arg1, int arg2)
 		if (!cb) {
 			printk("%s Unrecognized command: %s\n",
 			       prompt, argv[0]);
+			show_commands();
 			nano_fiber_fifo_put(&avail_queue, cmd);
 			continue;
 		}
@@ -160,18 +139,16 @@ static void shell(int arg1, int arg2)
 	}
 }
 
-void shell_init(const char *str)
+void shell_init(const char *str, struct shell_cmd *cmds)
 {
 	nano_fifo_init(&cmds_queue);
 	nano_fifo_init(&avail_queue);
 
-	memset(commands, 0, sizeof(commands));
+	commands = cmds;
+
 	line_queue_init();
 
 	prompt = str ? str : "";
-
-	/* Built-in command init */
-	shell_cmd_register("help", show_commands);
 
 	task_fiber_start(stack, STACKSIZE, shell, 0, 0, 7, 0);
 

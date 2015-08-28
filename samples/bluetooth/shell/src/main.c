@@ -896,36 +896,39 @@ static void cmd_auth_passkey(int argc, char *argv[])
 	bt_auth_passkey_entry(default_conn, passkey);
 }
 
+struct shell_cmd commands[] = {
+	{ "init", cmd_init },
+	{ "connect", cmd_connect_le },
+	{ "disconnect", cmd_disconnect },
+	{ "scan", cmd_scan },
+	{ "advertise", cmd_advertise },
+	{ "security", cmd_security },
+	{ "auth", cmd_auth },
+	{ "auth-cancel", cmd_auth_cancel },
+	{ "auth-passkey", cmd_auth_passkey },
+	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu },
+	{ "gatt-discover", cmd_gatt_discover },
+	{ "gatt-discover-characteristic", cmd_gatt_discover },
+	{ "gatt-discover-descriptor", cmd_gatt_discover },
+	{ "gatt-read", cmd_gatt_read },
+	{ "gatt-read-multiple", cmd_gatt_mread },
+	{ "gatt-write", cmd_gatt_write },
+	{ "gatt-write-without-response", cmd_gatt_write_without_rsp },
+	{ "gatt-write-signed", cmd_gatt_write_signed },
+	{ "gatt-subscribe", cmd_gatt_subscribe },
+	{ "gatt-unsubscribe", cmd_gatt_unsubscribe },
+	{ NULL, NULL }
+};
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
 void main(void)
 #endif
 {
-	shell_init("btshell> ");
 	bt_conn_cb_register(&conn_callbacks);
 
 	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
-	shell_cmd_register("init", cmd_init);
-	shell_cmd_register("connect", cmd_connect_le);
-	shell_cmd_register("disconnect", cmd_disconnect);
-	shell_cmd_register("scan", cmd_scan);
-	shell_cmd_register("advertise", cmd_advertise);
-	shell_cmd_register("security", cmd_security);
-	shell_cmd_register("auth", cmd_auth);
-	shell_cmd_register("auth-cancel", cmd_auth_cancel);
-	shell_cmd_register("auth-passkey", cmd_auth_passkey);
-	shell_cmd_register("gatt-exchange-mtu", cmd_gatt_exchange_mtu);
-	shell_cmd_register("gatt-discover", cmd_gatt_discover);
-	shell_cmd_register("gatt-discover-characteristic", cmd_gatt_discover);
-	shell_cmd_register("gatt-discover-descriptor", cmd_gatt_discover);
-	shell_cmd_register("gatt-read", cmd_gatt_read);
-	shell_cmd_register("gatt-read-multiple", cmd_gatt_mread);
-	shell_cmd_register("gatt-write", cmd_gatt_write);
-	shell_cmd_register("gatt-write-without-response",
-			   cmd_gatt_write_without_rsp);
-	shell_cmd_register("gatt-write-signed", cmd_gatt_write_signed);
-	shell_cmd_register("gatt-subscribe", cmd_gatt_subscribe);
-	shell_cmd_register("gatt-unsubscribe", cmd_gatt_unsubscribe);
+	shell_init("btshell> ", commands);
 }
