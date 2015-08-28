@@ -94,6 +94,72 @@ static inline const char *type2str(enum net_buf_type type)
 }
 
 #ifdef DEBUG_NET_BUFS
+static int num_free_rx_bufs = NET_BUF_RX_SIZE;
+static int num_free_tx_bufs = NET_BUF_TX_SIZE;
+
+static inline void dec_free_rx_bufs(struct net_buf *buf)
+{
+	if (!buf) {
+		return;
+	}
+
+	num_free_rx_bufs--;
+	if (num_free_rx_bufs < 0) {
+		NET_DBG("*** ERROR *** Invalid RX buffer count.\n");
+		num_free_rx_bufs = 0;
+	}
+}
+
+static inline void inc_free_rx_bufs(struct net_buf *buf)
+{
+	if (!buf) {
+		return;
+	}
+
+	num_free_rx_bufs++;
+}
+
+static inline void dec_free_tx_bufs(struct net_buf *buf)
+{
+	if (!buf) {
+		return;
+	}
+
+	num_free_tx_bufs--;
+	if (num_free_tx_bufs < 0) {
+		NET_DBG("*** ERROR *** Invalid TX buffer count.\n");
+		num_free_tx_bufs = 0;
+	}
+}
+
+static inline void inc_free_tx_bufs(struct net_buf *buf)
+{
+	if (!buf) {
+		return;
+	}
+
+	num_free_tx_bufs++;
+}
+
+static inline int get_frees(enum net_buf_type type)
+{
+	switch (type) {
+	case NET_BUF_RX:
+		return num_free_rx_bufs;
+	case NET_BUF_TX:
+		return num_free_tx_bufs;
+	}
+
+	return 0xffffffff;
+}
+#else
+#define dec_free_rx_bufs(...)
+#define inc_free_rx_bufs(...)
+#define dec_free_tx_bufs(...)
+#define inc_free_tx_bufs(...)
+#endif
+
+#ifdef DEBUG_NET_BUFS
 static struct net_buf *net_buf_get_reserve_debug(enum net_buf_type type,
 						 uint16_t reserve_head,
 						 const char *caller,
@@ -108,9 +174,11 @@ static struct net_buf *net_buf_get_reserve(enum net_buf_type type,
 	switch (type) {
 	case NET_BUF_RX:
 		buf = nano_fifo_get(&free_rx_bufs);
+		dec_free_rx_bufs(buf);
 		break;
 	case NET_BUF_TX:
 		buf = nano_fifo_get(&free_tx_bufs);
+		dec_free_tx_bufs(buf);
 		break;
 	}
 
@@ -131,9 +199,9 @@ static struct net_buf *net_buf_get_reserve(enum net_buf_type type,
 	NET_BUF_CHECK_IF_IN_USE(buf);
 
 #ifdef DEBUG_NET_BUFS
-	NET_DBG("%s buf %p reserve %u inuse %d (%s():%d)\n",
-		type2str(type),	buf, reserve_head, buf->in_use,
-		caller, line);
+	NET_DBG("%s [%d] buf %p reserve %u inuse %d (%s():%d)\n",
+		type2str(type), get_frees(type),
+		buf, reserve_head, buf->in_use, caller, line);
 #else
 	NET_DBG("%s buf %p reserve %u inuse %d\n", type2str(type), buf,
 		reserve_head, buf->in_use);
@@ -261,8 +329,8 @@ void net_buf_put(struct net_buf *buf)
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 
 #ifdef DEBUG_NET_BUFS
-	NET_DBG("%s buf %p inuse %d (%s():%d)\n", type2str(buf->type),
-		buf, buf->in_use, caller, line);
+	NET_DBG("%s [%d] buf %p inuse %d (%s():%d)\n", type2str(buf->type),
+		get_frees(buf->type) + 1, buf, buf->in_use, caller, line);
 #else
 	NET_DBG("%s buf %p inuse %d\n", type2str(buf->type), buf, buf->in_use);
 #endif
@@ -272,9 +340,11 @@ void net_buf_put(struct net_buf *buf)
 	switch (buf->type) {
 	case NET_BUF_RX:
 		nano_fifo_put(&free_rx_bufs, buf);
+		inc_free_rx_bufs(buf);
 		break;
 	case NET_BUF_TX:
 		nano_fifo_put(&free_tx_bufs, buf);
+		inc_free_tx_bufs(buf);
 		break;
 	}
 }
