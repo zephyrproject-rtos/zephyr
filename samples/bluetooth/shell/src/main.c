@@ -232,15 +232,39 @@ static void cmd_connect_le(int argc, char *argv[])
 
 static void cmd_disconnect(int argc, char *argv[])
 {
+	struct bt_conn *conn;
 	int err;
 
-	if (!default_conn) {
+	if (default_conn) {
+		conn = default_conn;
+	} else {
+		bt_addr_le_t addr;
+
+		if (argc < 2) {
+			printk("Peer address required\n");
+			return;
+		}
+
+		if (argc < 3) {
+			printk("Peer address type required\n");
+			return;
+		}
+
+		err = str2bt_addr_le(argv[1], argv[2], &addr);
+		if (err) {
+			printk("Invalid peer address (err %d)\n", err);
+			return;
+		}
+
+		conn = bt_conn_lookup_addr_le(&addr);
+	}
+
+	if (!conn) {
 		printk("Not connected\n");
 		return;
 	}
 
-	err = bt_conn_disconnect(default_conn,
-				 BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Disconnection failed (err %d)\n", err);
 	}
