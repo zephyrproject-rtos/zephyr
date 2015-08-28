@@ -89,6 +89,19 @@ static inline void hpet_irq_set(void)
 	} while ((0))
 #endif
 
+#ifdef CONFIG_CONSOLE_HANDLER
+static inline void console_irq_set(void)
+{
+	_ioapic_irq_set(CONFIG_UART_CONSOLE_IRQ,
+			CONFIG_UART_CONSOLE_IRQ + INT_VEC_IRQ0,
+			UART_IOAPIC_FLAGS);
+}
+#else
+#define console_irq_set()	\
+	do { /* nothing */	\
+	} while ((0))
+#endif
+
 /**
  *
  * @brief Perform basic hardware initialization
@@ -107,6 +120,7 @@ static int ia32_init(struct device *arg)
 
 	ioapic_init();    /* NOP if not needed */
 	hpet_irq_set();   /* NOP if not needed */
+	console_irq_set();   /* NOP if not needed */
 	return 0;
 }
 
