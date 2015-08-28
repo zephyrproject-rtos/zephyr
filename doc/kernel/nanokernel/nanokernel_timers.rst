@@ -6,24 +6,29 @@ Timer Services
 Concepts
 ********
 
-A nanokernel timer uses the kernel's system clock to monitor the passage
-of time, as measured in ticks. A timer allows a fiber or task to determine
-if a specified time limit has been reached while the thread itself is busy
-performing other work.
+The nanokernel's timer object type uses the kernel's system clock to monitor
+the passage of time, as measured in ticks. It is mainly intended for use
+by fibers.
 
-Any number of nanokernel timers can be defined. Each timer is uniquely
-identified by the memory address of its associated timer data structure.
+A nanokernel timer allows a fiber or task to determine if a specified time
+limit has been reached while the thread itself is busy performing other work.
 A thread can use more than one timer when it needs to monitor multiple time
 intervals simultaneously.
 
-Before a timer can be used it must first be initialized with the pointer
-to a word-aligned *user data structure* of at least 4 bytes in size.
-The first 4 bytes of the user data structure are reserved for kernel use;
-any remaining bytes can be used to hold data that may be helpful
+A nanokernel timer points to a *user data structure* that is supplied by the
+thread that uses it; this pointer is returned when the timer expires.
+The user data structure must be at least 4 bytes long and aligned on a 4-byte
+boundary, as the kernel reserves the first 32 bits of this area for its own use.
+Any remaining bytes of this area can be used to hold data that is helpful
 to the thread that uses the timer.
 
-A timer is started by specifying a duration, which is the number of ticks
-the timer counts before it expires.
+Any number of nanokernel timers can be defined. Each timer is a distinct
+variable of type :c:type:`struct nano_timer`, and is referenced using a pointer
+to that variable. A timer must be initialized with its user data structure
+before it can be used.
+
+A nanokernel timer is started by specifying a duration, which is the number
+of ticks the timer counts before it expires.
 
 .. note::
    Care must be taken when specifying the duration of a nanokernel timer,
@@ -35,25 +40,32 @@ the timer counts before it expires.
    a timer doesn't expire for at least N ticks it is necessary to specify
    a duration of N+1 ticks.
 
-Once started, a timer can be tested in either a non-blocking or blocking
-manner to allow a thread to determine if the timer has expired. If the timer
-has expired the kernel returns the pointer to the user data structure.
-If the timer has not expired the kernel either returns NULL (for a
-non-blocking test) or waits for the timer to expire (for a blocking test).
+Once started, a nanokernel timer can be tested in either a non-blocking or
+blocking manner to allow a thread to determine if the timer has expired.
+If the timer has expired the kernel returns the pointer to the user data
+structure. If the timer has not expired the kernel either returns
+:c:macro:`NULL` (for a non-blocking test) or waits for the timer to expire
+(for a blocking test).
 
 .. note::
-   The nanokernel does not allow more than one thread to wait on a timer
-   at any given time. If a second thread starts waiting only the first
+   The nanokernel does not allow more than one thread to wait on a nanokernel
+   timer at any given time. If a second thread starts waiting only the first
    waiting thread wakes up when the timer expires and the second thread
    continues waiting.
 
-A timer can be cancelled after it has been started. Cancelling a timer
-while it is still running causes the timer to expire immediately,
+   A task that waits on a nanokernel timer does a busy wait. This is
+   not an issue for a nanokernel application's background task; however, in
+   a microkernel application a task that waits on a nanokernel timer remains
+   the current task, which prevents other tasks of equal or lower priority
+   from doing useful work.
+
+A nanokernel timer can be cancelled after it has been started. Cancelling
+a timer while it is still running causes the timer to expire immediately,
 thereby unblocking any thread waiting on the timer. Cancelling a timer
 that has already expired has no effect on the timer.
 
-A timer can be reused once it has expired, but must **not** be restarted
-while it is still running. If desired, a timer can be re-initialized
+A nanokernel timer can be reused once it has expired, but must **not** be
+restarted while it is still running. If desired, a timer can be re-initialized
 with a different user data structure before it is started again.
 
 
@@ -74,13 +86,14 @@ other work.
    the system clock, as well as the higher precision hardware clock,
    without using a nanokernel timer.
 
+
 Usage
 *****
 
 Example: Initializing a Nanokernel Timer
 ========================================
 
-This code initializes a timer.
+This code initializes a nanokernel timer.
 
 .. code-block:: c
 
@@ -92,7 +105,7 @@ This code initializes a timer.
 
 Example: Starting a Nanokernel Timer
 ====================================
-This code uses the above timer to limit the amount of time a fiber
+This code uses the above nanokernel timer to limit the amount of time a fiber
 spends gathering data before processing it.
 
 .. code-block:: c
@@ -111,7 +124,7 @@ spends gathering data before processing it.
 
 Example: Cancelling a Nanokernel Timer
 ======================================
-This code illustrates how an active timer can be stopped prematurely.
+This code illustrates how an active nanokernel timer can be stopped prematurely.
 
 .. code-block:: c
 
