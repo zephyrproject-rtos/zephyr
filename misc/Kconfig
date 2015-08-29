@@ -59,6 +59,16 @@ config CROSS_COMPILE
 	need to set this unless you want the configured kernel build
 	directory to select the cross-compiler automatically.
 
+config  GDB_INFO
+        bool
+        prompt "Task-aware debugging with GDB"
+        default n
+        help
+          This option enables the kernel to collect additional information
+          during interrupts, exceptions, and context switches. This information
+          is required for task-aware debugging with GDB.
+
+
 config  COMPILER_OPT
 	string
 	prompt "Custom compiler options"
