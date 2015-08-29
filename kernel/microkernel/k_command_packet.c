@@ -1,5 +1,3 @@
-/* k_command_packet.c - microkernel command packet library */
-
 /*
  * Copyright (c) 2012, 2014 Wind River Systems, Inc.
  *
@@ -30,26 +28,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-A command packet is an opaque data structure that maps to a k_args without
-exposing its innards. It allows a subsystem, like a driver, that needs its
-fibers or ISRs to communicate with tasks to define a set of such packets to
-be passed to the isr_xxx routines, such as isr_sem_give(), that, in turn,
-needs to obtain command packets to interact with the microkernel.
-
-Each command packet set is created in global memory using ...
-    CMD_PKT_SET_INSTANCE(set variable name, # of command packets in the set);
-
-Once created, the command packet set is accessed using ...
-    CMD_PKT_SET(set variable name).<member field name>
-
-A command packet set is a simple ring buffer.  No error checking is performed
-when a command packet is retrieved from the set.  Each obtained command packet
-is implicitly released once the command packet has been processed.  Thus, it is
-important that each command packet be processed in a near-FIFO order to prevent
-corruption of command packets that are already in use.  To this end, drivers
-that have an ISR component should use their own command packet set.
+/**
+ * @file
+ * @brief Microkernel command packet library
  */
 
 #include <nanokernel.h>
@@ -58,27 +39,23 @@ that have an ISR component should use their own command packet set.
 #include <micro_private.h>
 #include <sections.h>
 
-/*
- * generate build error by defining a negative-size array if the hard-coded
+/**
+ * Generate build error by defining a negative-size array if the hard-coded
  * command packet size differs from the actual size; otherwise, define
  * a zero-element array that gets thrown away by linker
  */
-
 uint32_t _k_test_cmd_pkt_size
 	[0 - ((CMD_PKT_SIZE_IN_WORDS * sizeof(uint32_t)) != sizeof(struct k_args))];
 
 /**
- *
  * @brief Get the next command packet
  *
  * This routine gets the next command packet from the specified set.
+ * @param pSet Pointer to set of command packets
  *
  * @return pointer to the command packet
  */
-
-cmdPkt_t *_cmd_pkt_get(
-	struct cmd_pkt_set *pSet /* ptr to set of command packets */
-	)
+cmdPkt_t *_cmd_pkt_get(struct cmd_pkt_set *pSet)
 {
 	uint32_t index; /* index into command packet array */
 	int key;	/* interrupt lock level */
@@ -96,10 +73,9 @@ cmdPkt_t *_cmd_pkt_get(
 /**
  *
  * @brief Send command packet to be processed by _k_server
- *
+ * @param cmd_packet Arguments
  * @return N/A
  */
-
 void _k_task_call(struct k_args *cmd_packet)
 {
 	cmd_packet->alloc = false;
