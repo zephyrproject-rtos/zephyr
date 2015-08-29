@@ -34,32 +34,18 @@
 #include <sections.h>
 
 /**
- *
  * @brief Process an "offload to fiber" request
  *
  * This routine simply invokes the requested function from within the context
  * of the _k_server() fiber and saves the result.
+ * @param A Arguments
  *
  * @return N/A
  */
-
 void _k_offload_to_fiber(struct k_args *A)
 {
 	A->args.u1.rval = (*A->args.u1.func)(A->args.u1.argp);
 }
-
-/**
- *
- * @brief Issue a custom call from within the microkernel server fiber
- *
- * @func: function to call from within the microkernel server fiber
- * @argp: argument to pass to custom function
- *
- * This routine issues a request to execute a function from within the context
- * of the microkernel server fiber.
- *
- * @return return value from custom <func> call
- */
 
 int task_offload_to_fiber(int (*func)(), void *argp)
 {

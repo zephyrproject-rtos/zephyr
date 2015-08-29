@@ -45,12 +45,6 @@
 extern struct k_task _k_task_list_start[];
 extern struct k_task _k_task_list_end[];
 
-/**
- *
- * @brief Get task identifer
- *
- * @return identifier for current task
- */
 
 ktask_t task_id_get(void)
 {
@@ -58,7 +52,6 @@ ktask_t task_id_get(void)
 }
 
 /**
- *
  * @brief Reset the specified task state bits
  *
  * This routine resets the specified task state bits.  When a task's state bits
@@ -66,13 +59,11 @@ ktask_t task_id_get(void)
  * bitmask of the TF_xxx bits.  Each TF_xxx bit indicates a reason why the task
  * must not be scheduled to run.
  *
+ * @param X Pointer to task
+ * @param bits Bitmask of TF_xxx bits to reset
  * @return N/A
  */
-
-void _k_state_bit_reset(struct k_task *X,    /* ptr to task */
-					   uint32_t bits /* bitmask of TF_xxx
-							    bits to reset */
-					   )
+void _k_state_bit_reset(struct k_task *X, uint32_t bits)
 {
 	uint32_t f_old = X->state;      /* old state bits */
 	uint32_t f_new = f_old & ~bits; /* new state bits */
@@ -110,21 +101,17 @@ void _k_state_bit_reset(struct k_task *X,    /* ptr to task */
 }
 
 /**
- *
  * @brief Set specified task state bits
  *
  * This routine sets the specified task state bits.  When a task's state bits
  * are non-zero, the task will not be scheduled to run.  The task's state bits
  * are a bitmask of the TF_xxx bits.  Each TF_xxx bit indicates a reason why
  * the task must not be scheduled to run.
- *
+ * @param task_ptr Task pointer
+ * @param bitmask of TF_xxx bits to set
  * @return N/A
  */
-
-void _k_state_bit_set(
-	struct k_task *task_ptr,
-	uint32_t bits /* bitmask of TF_xxx bits to set */
-	)
+void _k_state_bit_set(struct k_task *task_ptr, uint32_t bits)
 {
 	uint32_t old_state_bits = task_ptr->state;
 	uint32_t new_state_bits = old_state_bits | bits;
@@ -196,19 +183,17 @@ void _k_state_bit_set(
 }
 
 /**
- *
  * @brief Initialize and start a task
  *
+ * @param X Pointer to task control block
+ * @param func Entry point for task
  * @return N/A
  */
-
-static void start_task(struct k_task *X,  /* ptr to task control block */
-					   void (*func)(void) /* entry point for task */
-					   )
+static void start_task(struct k_task *X, void (*func)(void))
 {
 	unsigned int task_options;
 
-/* Note: the field X->worksize now represents the task size in bytes */
+	/* Note: the field X->worksize now represents the task size in bytes */
 
 	task_options = 0;
 	_START_TASK_ARCH(X, &task_options);
@@ -223,14 +208,14 @@ static void start_task(struct k_task *X,  /* ptr to task control block */
 	 */
 
 	_new_thread((char *)X->workspace, /* pStackMem */
-				X->worksize,		/* stackSize */
-				(_thread_entry_t)func,  /* pEntry */
-				(void *)0,		/* parameter1 */
-				(void *)0,		/* parameter2 */
-				(void *)0,		/* parameter3 */
-				-1,			/* priority */
-				task_options	/* options */
-				);
+			X->worksize,		/* stackSize */
+			(_thread_entry_t)func,  /* pEntry */
+			(void *)0,		/* parameter1 */
+			(void *)0,		/* parameter2 */
+			(void *)0,		/* parameter3 */
+			-1,			/* priority */
+			task_options	/* options */
+	);
 
 	X->fn_abort = NULL;
 
@@ -238,14 +223,12 @@ static void start_task(struct k_task *X,  /* ptr to task control block */
 }
 
 /**
- *
  * @brief Abort a task
  *
  * This routine aborts the specified task.
- *
+ * @param X Task pointer
  * @return N/A
  */
-
 static void abort_task(struct k_task *X)
 {
 
@@ -266,17 +249,13 @@ static void abort_task(struct k_task *X)
 
 #ifndef CONFIG_ARCH_HAS_TASK_ABORT
 /**
- *
  * @brief Microkernel handler for fatal task errors
  *
  * To be invoked when a task aborts implicitly, either by returning from its
  * entry point or due to a software or hardware fault.
  *
  * @return does not return
- *
- * \NOMANUAL
  */
-
 FUNC_NORETURN void _TaskAbort(void)
 {
 	_task_ioctl(_k_current_task->id, TASK_ABORT);
@@ -291,78 +270,55 @@ FUNC_NORETURN void _TaskAbort(void)
 }
 #endif
 
-/**
- *
- * @brief Install an abort handler
- *
- * This routine installs an abort handler for the calling task.
- *
- * The abort handler is run when the calling task is aborted by a _TaskAbort()
- * or task_group_abort() call.
- *
- * Each call to task_abort_handler_set() replaces the previously installed
- * handler.
- *
- * To remove an abort handler, set the parameter to NULL as below:
- *      task_abort_handler_set (NULL)
- *
- * @return N/A
- */
 
-void task_abort_handler_set(void (*func)(void) /* abort handler */
-			    )
+void task_abort_handler_set(void (*func)(void))
 {
 	_k_current_task->fn_abort = func;
 }
 
 /**
- *
  * @brief Handle a task operation request
  *
  * This routine handles any one of the following task operation requests:
  *   starting either a kernel or user task, aborting a task, suspending a task,
  *   resuming a task, blocking a task or unblocking a task
- *
+ * @param A  Arguments
  * @return N/A
  */
-
 void _k_task_op(struct k_args *A)
 {
 	ktask_t Tid = A->args.g1.task;
-		struct k_task *X = (struct k_task *)Tid;
+	struct k_task *X = (struct k_task *)Tid;
 
-		switch (A->args.g1.opt) {
-		case TASK_START:
-			start_task(X, X->fn_start);
-			break;
-		case TASK_ABORT:
-			abort_task(X);
-			break;
-		case TASK_SUSPEND:
-			_k_state_bit_set(X, TF_SUSP);
-			break;
-		case TASK_RESUME:
-			_k_state_bit_reset(X, TF_SUSP);
-			break;
-		case TASK_BLOCK:
-			_k_state_bit_set(X, TF_BLCK);
-			break;
-		case TASK_UNBLOCK:
-			_k_state_bit_reset(X, TF_BLCK);
-			break;
-		}
+	switch (A->args.g1.opt) {
+	case TASK_START:
+		start_task(X, X->fn_start);
+		break;
+	case TASK_ABORT:
+		abort_task(X);
+		break;
+	case TASK_SUSPEND:
+		_k_state_bit_set(X, TF_SUSP);
+		break;
+	case TASK_RESUME:
+		_k_state_bit_reset(X, TF_SUSP);
+		break;
+	case TASK_BLOCK:
+		_k_state_bit_set(X, TF_BLCK);
+		break;
+	case TASK_UNBLOCK:
+		_k_state_bit_reset(X, TF_BLCK);
+		break;
+	}
 }
 
 /**
- *
  * @brief Task operations
- *
+ * @param task Task on which to operate
+ * @param opt Task operation
  * @return N/A
  */
-
-void _task_ioctl(ktask_t task, /* task on which to operate */
-				    int opt      /* task operation */
-				    )
+void _task_ioctl(ktask_t task, int opt)
 {
 	struct k_args A;
 
@@ -373,16 +329,14 @@ void _task_ioctl(ktask_t task, /* task on which to operate */
 }
 
 /**
- *
  * @brief Handle task group operation request
  *
  * This routine handles any one of the following task group operations requests:
  *   starting either kernel or user tasks, aborting tasks, suspending tasks,
  *   resuming tasks, blocking tasks or unblocking tasks
- *
+ * @param A  Arguments
  * @return N/A
  */
-
 void _k_task_group_op(struct k_args *A)
 {
 	ktask_group_t grp = A->args.g1.group;
@@ -424,15 +378,12 @@ void _k_task_group_op(struct k_args *A)
 }
 
 /**
- *
  * @brief Task group operations
- *
+ * @param group Task group
+ * @param opt Operation
  * @return N/A
  */
-
-void _task_group_ioctl(ktask_group_t group, /* task group */
-		   int opt	 /* operation */
-		   )
+void _task_group_ioctl(ktask_group_t group, int opt)
 {
 	struct k_args A;
 
@@ -442,36 +393,16 @@ void _task_group_ioctl(ktask_group_t group, /* task group */
 	KERNEL_ENTRY(&A);
 }
 
-/**
- *
- * @brief Get task groups for task
- *
- * @return task groups associated with current task
- */
 
 kpriority_t task_group_mask_get(void)
 {
 	return _k_current_task->group;
 }
 
-/**
- *
- * @brief Add task to task group(s)
- *
- * @return N/A
- */
-
 void task_group_join(uint32_t groups)
 {
 	_k_current_task->group |= groups;
 }
-
-/**
- *
- * @brief Remove task from task group(s)
- *
- * @return N/A
- */
 
 void task_group_leave(uint32_t groups)
 {
@@ -479,55 +410,35 @@ void task_group_leave(uint32_t groups)
 }
 
 /**
- *
  * @brief Get task priority
  *
  * @return priority of current task
  */
-
 kpriority_t task_priority_get(void)
 {
 	return _k_current_task->priority;
 }
 
 /**
- *
  * @brief Handle task set priority request
- *
+ * @param A  Arguments
  * @return N/A
  */
-
 void _k_task_priority_set(struct k_args *A)
 {
 	ktask_t Tid = A->args.g1.task;
-		struct k_task *X = (struct k_task *)Tid;
+	struct k_task *X = (struct k_task *)Tid;
 
-		_k_state_bit_set(X, TF_PRIO);
-		X->priority = A->args.g1.prio;
-		_k_state_bit_reset(X, TF_PRIO);
+	_k_state_bit_set(X, TF_PRIO);
+	X->priority = A->args.g1.prio;
+	_k_state_bit_reset(X, TF_PRIO);
 
 	if (A->alloc)
 		FREEARGS(A);
 }
 
-/**
- *
- * @brief Set the priority of a task
- *
- * This routine changes the priority of the specified task.
- *
- * The call has immediate effect. If the calling task is no longer the highest
- * priority runnable task, a task switch occurs.
- *
- * The priority should be specified in the range 0 to 62. 0 is the highest
- * priority.
- *
- * @return N/A
- */
 
-void task_priority_set(ktask_t task, /* task whose priority is to be set */
-		    kpriority_t prio  /* new priority */
-		    )
+void task_priority_set(ktask_t task, kpriority_t prio)
 {
 	struct k_args A;
 
@@ -538,12 +449,11 @@ void task_priority_set(ktask_t task, /* task whose priority is to be set */
 }
 
 /**
- *
  * @brief Handle task yield request
  *
+ * @param A  Arguments
  * @return N/A
  */
-
 void _k_task_yield(struct k_args *A)
 {
 	struct k_tqhd *H = _k_task_priority_list + _k_current_task->priority;
@@ -558,17 +468,6 @@ void _k_task_yield(struct k_args *A)
 	}
 }
 
-/**
- *
- * @brief Yield the CPU to another task
- *
- * This routine yields the processor to the next equal priority task that is
- * runnable. Using task_yield(), it is possible to achieve the effect of round
- * robin scheduling. If no task with the same priority is runnable then no task
- * switch occurs and the calling task resumes execution.
- *
- * @return N/A
- */
 
 void task_yield(void)
 {
@@ -578,24 +477,8 @@ void task_yield(void)
 	KERNEL_ENTRY(&A);
 }
 
-/**
- *
- * @brief Set the entry point of a task
- *
- * This routine sets the entry point of a task to a given routine. It is only
- * needed if the entry point is different from that specified in the project
- * file. It must be called before task_start() to have any effect, so it
- * cannot work with members of the EXE group or of any group that automatically
- * starts when the application is loaded.
- *
- * The routine is executed when the task is started
- *
- * @return N/A
- */
 
-void task_entry_set(ktask_t task,       /* task */
-		     void (*func)(void) /* entry point */
-		     )
+void task_entry_set(ktask_t task, void (*func)(void))
 {
 	struct k_task *X = (struct k_task *)task;
 

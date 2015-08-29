@@ -41,10 +41,9 @@ extern "C" {
 
 /*
  * The following task groups are reserved for system use.
- * SysGen automatically generates corresponding TASKGROUPs with reserved
- * GROUPIDs (in the SysGen files SgObjectCount.cpp - TaskGroupIDSetter
- * constructor; and SgSystem.cpp - AddDefaultObjects method).
- * These files must be updated if any changes are made to the reserved groups.
+ * sysgen automatically generates corresponding TASKGROUPs with reserved
+ * GROUPIDs
+ * sysgen must be updated if any changes are made to the reserved groups.
  */
 
 #define EXE_GROUP 1 /* TASKGROUP EXE */
@@ -55,13 +54,81 @@ extern struct k_task _k_task_list[];
 
 extern void _task_ioctl(ktask_t, int);
 extern void _task_group_ioctl(ktask_group_t, int);
+
+/**
+ * @brief Yield the CPU to another task
+ *
+ * This routine yields the processor to the next equal priority task that is
+ * runnable. Using task_yield(), it is possible to achieve the effect of round
+ * robin scheduling. If no task with the same priority is runnable then no task
+ * switch occurs and the calling task resumes execution.
+ *
+ * @return N/A
+ */
 extern void task_yield(void);
 
+/**
+ * @brief Set the priority of a task
+ *
+ * This routine changes the priority of the specified task.
+ *
+ * The call has immediate effect. If the calling task is no longer the highest
+ * priority runnable task, a task switch occurs.
+ *
+ * The priority should be specified in the range 0 to 62. 0 is the highest
+ * priority.
+ * @param task Task whose priority is to be set
+ * @param prio New priority
+ * @return N/A
+ */
 extern void task_priority_set(ktask_t task, kpriority_t prio);
 
+/**
+ * @brief Set the entry point of a task
+ *
+ * This routine sets the entry point of a task to a given routine. It is only
+ * needed if the entry point is different from that specified in the project
+ * file. It must be called before task_start() to have any effect, so it
+ * cannot work with members of the EXE group or of any group that automatically
+ * starts when the application is loaded.
+ *
+ * The routine is executed when the task is started
+ *
+ * @param task Task to operate on.
+ * @pram func Entry point
+ * @return N/A
+ */
 extern void task_entry_set(ktask_t task, void (*func)(void));
+
+/**
+ * @brief Install an abort handler
+ *
+ * This routine installs an abort handler for the calling task.
+ *
+ * The abort handler is run when the calling task is aborted by a _TaskAbort()
+ * or task_group_abort() call.
+ *
+ * Each call to task_abort_handler_set() replaces the previously installed
+ * handler.
+ *
+ * To remove an abort handler, set the parameter to NULL as below:
+ *      task_abort_handler_set (NULL)
+ * @param func Abort handler
+ * @return N/A
+ */
 extern void task_abort_handler_set(void (*func)(void));
 
+/**
+ * @brief Issue a custom call from within the microkernel server fiber
+ *
+ * This routine issues a request to execute a function from within the context
+ * of the microkernel server fiber.
+ *
+ * @param func function to call from within the microkernel server fiber
+ * @param argp argument to pass to custom function
+ *
+ * @return return value from custom <func> call
+ */
 extern int task_offload_to_fiber(int (*)(), void *);
 
 /*
@@ -82,25 +149,117 @@ extern int task_offload_to_fiber(int (*)(), void *);
 #define TASK_GROUP_BLOCK 4
 #define TASK_GROUP_UNBLOCK 5
 
+/**
+ * @brief Get task identifier
+ *
+ * @return identifier for current task
+ */
 extern ktask_t task_id_get();
+
+/**
+ * @brief Get task priority
+ *
+ * @return priority of current task
+ */
 extern kpriority_t task_priority_get();
 
+/**
+ * @brief Start a task
+ * @param t Task to start
+ * @return N/A
+ */
 #define task_start(t) _task_ioctl(t, TASK_START)
+
+/**
+ * @brief Abort a task
+ * @param t Task to abort
+ * @return N/A
+ */
 #define task_abort(t) _task_ioctl(t, TASK_ABORT)
+
+/**
+ * @brief Suspend a task
+ * @param t Task to suspend
+ * @return N/A
+ */
 #define task_suspend(t) _task_ioctl(t, TASK_SUSPEND)
+
+/**
+ * @brief Resume a task
+ * @param t Task to resume
+ * @return N/A
+ */
 #define task_resume(t) _task_ioctl(t, TASK_RESUME)
 
+/**
+ * @brief Get task groups for task
+ *
+ * @return task groups associated with current task
+ */
 extern uint32_t task_group_mask_get();
+
+/**
+ * @brief Add task to task group(s)
+ *
+ * @param groups Task Groups
+ * @return N/A
+ */
 extern void task_group_join(uint32_t groups);
+
+/**
+ * @brief Remove task from task group(s)
+ * @param groups Task Groups
+ * @return N/A
+ */
 extern void task_group_leave(uint32_t groups);
 
+/**
+ * @brief Start a task group
+ * @param g Task group to start
+ * @return N/A
+ */
 #define task_group_start(g) _task_group_ioctl(g, TASK_GROUP_START)
+
+/**
+ * @brief Abort a task group
+ * @param g Task group to abort
+ * @return N/A
+ */
 #define task_group_abort(g) _task_group_ioctl(g, TASK_GROUP_ABORT)
+
+/**
+ * @brief Suspend a task group
+ * @param g Task group to suspend
+ * @return N/A
+ */
 #define task_group_suspend(g) _task_group_ioctl(g, TASK_GROUP_SUSPEND)
+
+/**
+ * @brief Resume a task group
+ * @param g Task group to resume
+ * @return N/A
+ */
 #define task_group_resume(g) _task_group_ioctl(g, TASK_GROUP_RESUME)
 
+/**
+ * @brief Get task identifier
+ *
+ * @return identifier for current task
+ */
 #define isr_task_id_get() task_id_get()
+
+/**
+ * @brief Get task priority
+ *
+ * @return priority of current task
+ */
 #define isr_task_priority_get() task_priority_get()
+
+/**
+ * @brief Get task groups for task
+ *
+ * @return task groups associated with current task
+ */
 #define isr_task_group_mask_get() task_group_mask_get()
 
 /**
