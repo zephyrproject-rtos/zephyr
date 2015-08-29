@@ -39,12 +39,11 @@ static uint32_t kernel_version = KERNELVERSION;
  *
  * @brief Return the kernel version of the present build
  *
- * The kernel version is a four-byte value, whose format is decribed in the
+ * The kernel version is a four-byte value, whose format is described in the
  * file "kernel_version.h".
  *
  * @return kernel version
  */
-
 uint32_t sys_kernel_version_get(void)
 {
 	return kernel_version;
