@@ -42,29 +42,11 @@ tasks or fibers.
 #include <nano_private.h>
 #include <misc/printk.h>
 
-/**
- *
- * @brief Return the currently executing thread
- *
- * This routine returns a pointer to the thread control block of the currently
- * executing thread.  It is cast to a nano_thread_id_t for use publicly.
- *
- * @return nano_thread_id_t of the currently executing thread.
- */
 
 nano_thread_id_t sys_thread_self_get(void)
 {
 	return _nanokernel.current;
 }
-
-/**
- *
- * @brief Return the type of the currently executing thread
- *
- * This routine returns the type of thread currently executing.
- *
- * @return nano_context_type_t of the currently executing thread.
- */
 
 nano_context_type_t sys_execution_context_type_get(void)
 {
@@ -87,7 +69,6 @@ nano_context_type_t sys_execution_context_type_get(void)
  *
  * @return N/A
  */
-
 void _thread_essential_set(void)
 {
 	_nanokernel.current->flags |= ESSENTIAL;
@@ -103,7 +84,6 @@ void _thread_essential_set(void)
  *
  * @return N/A
  */
-
 void _thread_essential_clear(void)
 {
 	_nanokernel.current->flags &= ~ESSENTIAL;
@@ -119,7 +99,6 @@ void _thread_essential_clear(void)
  *
  * @return Non-zero if specified thread is essential, zero if it is not
  */
-
 int _is_thread_essential(struct tcs *pCtx /* pointer to thread */
 					   )
 {
@@ -140,7 +119,6 @@ int _is_thread_essential(struct tcs *pCtx /* pointer to thread */
  *
  * @return N/A
  */
-
 void sys_thread_custom_data_set(void *value)
 {
 	_nanokernel.current->custom_data = value;
@@ -154,7 +132,6 @@ void sys_thread_custom_data_set(void *value)
  *
  * @return current handle value
  */
-
 void *sys_thread_custom_data_get(void)
 {
 	return _nanokernel.current->custom_data;
@@ -175,10 +152,7 @@ void *sys_thread_custom_data_get(void)
  * of threads does not change in mid-operation.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _thread_exit(struct tcs *thread)
 {
 	/*
@@ -213,16 +187,14 @@ void _thread_exit(struct tcs *thread)
  * passes it three arguments.  It also handles graceful termination of the
  * task or fiber if the entry point function ever returns.
  *
- * INTERNAL
+ * @internal
  * The 'noreturn' attribute is applied to this function so that the compiler
  * can dispense with generating the usual preamble that is only required for
  * functions that actually return.
  *
  * @return Does not return
  *
- * \NOMANUAL
  */
-
 FUNC_NORETURN void _thread_entry(
 	_thread_entry_t pEntry,   /* address of app entry point function */
 	_thread_arg_t parameter1, /* 1st arg to app entry point function */

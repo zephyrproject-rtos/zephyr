@@ -81,25 +81,25 @@ FUNC_ALIAS(_fiber_start, task_fiber_start, void);
 FUNC_ALIAS(_fiber_start, fiber_start, void);
 
 void _fiber_start(char *pStack,
-			       unsigned stackSize, /* stack size in bytes */
-			       nano_fiber_entry_t pEntry,
-			       int parameter1,
-			       int parameter2,
-			       unsigned priority,
-			       unsigned options)
+		unsigned stackSize, /* stack size in bytes */
+		nano_fiber_entry_t pEntry,
+		int parameter1,
+		int parameter2,
+		unsigned priority,
+		unsigned options)
 {
 	struct tcs *tcs;
 	unsigned int imask;
 
 	tcs = (struct tcs *) pStack;
 	_new_thread(pStack,
-			  stackSize,
-			  (_thread_entry_t)pEntry,
-			  (void *)parameter1,
-			  (void *)parameter2,
-			  (void *)0,
-			  priority,
-			  options);
+			stackSize,
+			(_thread_entry_t)pEntry,
+			(void *)parameter1,
+			(void *)parameter2,
+			(void *)0,
+			priority,
+			options);
 
 	/* _new_thread() has already set the flags depending on the 'options'
 	 * and 'priority' parameters passed to it */
@@ -117,10 +117,11 @@ void _fiber_start(char *pStack,
 	 * otherwise swap into the newly created fiber
 	 */
 
-	if ((_nanokernel.current->flags & TASK) == TASK)
+	if ((_nanokernel.current->flags & TASK) == TASK) {
 		_Swap(imask);
-	else
+	} else {
 		irq_unlock(imask);
+	}
 }
 
 void fiber_yield(void)
@@ -137,8 +138,9 @@ void fiber_yield(void)
 
 		_nano_fiber_schedule(_nanokernel.current);
 		_Swap(imask);
-	} else
+	} else {
 		irq_unlock(imask);
+	}
 }
 
 /**

@@ -28,7 +28,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
+/**
  * @file
  * @brief IA-32 specific nanokernel interface header
  * This header contains the IA-32 specific nanokernel interface.  It is included
@@ -229,7 +229,7 @@ typedef struct nanoEsf {
 	unsigned int ss;
 } NANO_ESF;
 
-/*
+/**
  * @brief Nanokernel "interrupt stack frame" (ISF)
  * An "interrupt stack frame" (ISF) as constructed by the processor
  * and the interrupt wrapper function _IntExit().  When an interrupt
@@ -433,7 +433,7 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 /** Dummy ESF for fatal errors that would otherwise not have an ESF */
 extern const NANO_ESF _default_esf;
 
-/*
+/**
  * @brief Configure an interrupt vector of the specified priority
  *
  * This routine is invoked by the kernel to configure an interrupt vector of

@@ -63,7 +63,6 @@ int64_t _nano_ticks = 0;
  * @return the current system tick count
  *
  */
-
 uint32_t nano_tick_get_32(void)
 {
 	return (uint32_t)_nano_ticks;
@@ -76,7 +75,6 @@ uint32_t nano_tick_get_32(void)
  * @return the current system tick count
  *
  */
-
 int64_t nano_tick_get(void)
 {
 	int64_t tmp_nano_ticks;
@@ -147,18 +145,11 @@ static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
  *
  * @return tick count since reference time; undefined for first invocation
  */
-
 int64_t nano_tick_delta(int64_t *reftime)
 {
 	return _nano_tick_delta(reftime);
 }
 
-/**
- *
- * @brief Return 32-bit number of ticks since a reference time
- *
- * @return 32-bit tick count since reference time; undefined for first invocation
- */
 
 uint32_t nano_tick_delta_32(int64_t *reftime)
 {

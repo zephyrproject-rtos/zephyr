@@ -34,52 +34,24 @@
 
 struct nano_timer *_nano_timer_list = NULL;
 
-/**
- *
- * @brief Initialize a nanokernel timer object
- *
- * This function initializes a nanokernel timer object structure.
- *
- * It may be called from either a fiber or task.
- *
- * The <userData> passed to this function must have enough space for a pointer
- * in its first field, that may be overwritten when the timer expires, plus
- * whatever data the user wishes to store and recover when the timer expires.
- *
- * @return N/A
- *
- */
 
-void nano_timer_init(struct nano_timer *timer, void *userData)
+void nano_timer_init(struct nano_timer *timer, void *data)
 {
 	nano_lifo_init(&timer->lifo);
-	timer->userData = userData;
+	timer->userData = data;
 }
 
-/**
- *
- * @brief Start a nanokernel timer from a fiber
- *
- * This function starts a previously initialized nanokernel timer object.
- * The timer will expire in <ticks> system clock ticks.
- *
- * @return N/A
- *
- */
 
 FUNC_ALIAS(_timer_start, nano_fiber_timer_start, void);
 
 /**
- *
  * @brief Start a nanokernel timer from a task
  *
  * This function starts a previously initialized nanokernel timer object.
  * The timer will expire in <ticks> system clock ticks.
  *
  * @return N/A
- *
  */
-
 FUNC_ALIAS(_timer_start, nano_task_timer_start, void);
 
 /**
@@ -90,10 +62,7 @@ FUNC_ALIAS(_timer_start, nano_task_timer_start, void);
  * The timer will expire in <ticks> system clock ticks.
  *
  * @return N/A
- *
- * NOMANUAL
  */
-
 void _timer_start(struct nano_timer *timer, /* timer to start */
 				       int ticks /* number of system ticks
 						    before expiry */
@@ -128,18 +97,13 @@ void _timer_start(struct nano_timer *timer, /* timer to start */
 }
 
 /**
- *
  * @brief Stop a nanokernel timer (generic implementation)
  *
  * This function stops a previously started nanokernel timer object.
- *
+ * @param timer Timer to stop
  * @return N/A
- *
- * NOMANUAL
  */
-
-static void _timer_stop(struct nano_timer *timer /* timer to stop */
-				     )
+static void _timer_stop(struct nano_timer *timer)
 {
 	unsigned int imask;
 	struct nano_timer *cur;
@@ -176,18 +140,8 @@ static void _timer_stop(struct nano_timer *timer /* timer to stop */
 	irq_unlock(imask);
 }
 
-/**
- *
- * @brief Stop a nanokernel timer from a fiber
- *
- * This function stops a previously started nanokernel timer object.
- *
- * @return N/A
- *
- */
 
-void nano_fiber_timer_stop(struct nano_timer *timer /* timer to stop */
-			)
+void nano_fiber_timer_stop(struct nano_timer *timer)
 {
 
 	_timer_stop(timer);
@@ -198,18 +152,7 @@ void nano_fiber_timer_stop(struct nano_timer *timer /* timer to stop */
 	}
 }
 
-/**
- *
- * @brief Stop a nanokernel timer from a task
- *
- * This function stops a previously started nanokernel timer object.
- *
- * @return N/A
- *
- */
-
-void nano_task_timer_stop(struct nano_timer *timer /* timer to stop */
-		       )
+void nano_task_timer_stop(struct nano_timer *timer)
 {
 
 	_timer_stop(timer);
@@ -220,76 +163,24 @@ void nano_task_timer_stop(struct nano_timer *timer /* timer to stop */
 	}
 }
 
-/**
- *
- * @brief Make the current fiber check for a timer expiry
- *
- * This function will check if a timer has expired. The timer must
- * have been initialized by nano_timer_init() and started via either
- * nano_fiber_timer_start() or nano_task_timer_start() first.
- *
- * @return pointer to timer initialization data, or NULL if timer not expired
- *
- */
 
-void *nano_fiber_timer_test(struct nano_timer *timer /* timer to check */
-			)
+void *nano_fiber_timer_test(struct nano_timer *timer)
 {
 	return nano_fiber_lifo_get(&timer->lifo);
 }
 
-/**
- *
- * @brief Make the current fiber wait for a timer to expire
- *
- * This function will pend on a timer if it hasn't expired yet. The timer must
- * have been initialized by nano_timer_init() and started via either
- * nano_fiber_timer_start() or nano_task_timer_start() first and must not
- * have been stopped via nano_task_timer_stop() or nano_fiber_timer_stop().
- *
- * @return pointer to timer initialization data
- *
- */
 
-void *nano_fiber_timer_wait(struct nano_timer *timer /* timer to pend on */
-			 )
+void *nano_fiber_timer_wait(struct nano_timer *timer)
 {
 	return nano_fiber_lifo_get_wait(&timer->lifo);
 }
 
-/**
- *
- * @brief Make the current task check for a timer expiry
- *
- * This function will check if a timer has expired. The timer must
- * have been initialized by nano_timer_init() and started via either
- * nano_fiber_timer_start() or nano_task_timer_start() first.
- *
- * @return pointer to timer initialization data, or NULL if timer not expired
- *
- */
-
-void *nano_task_timer_test(struct nano_timer *timer /* timer to check */
-		       )
+void *nano_task_timer_test(struct nano_timer *timer)
 {
 	return nano_task_lifo_get(&timer->lifo);
 }
 
-/**
- *
- * @brief Make the current task wait for a timer to expire
- *
- * This function will pend on a timer if it hasn't expired yet. The timer must
- * have been initialized by nano_timer_init() and started via either
- * nano_fiber_timer_start() or nano_task_timer_start() first and must not
- * have been stopped via nano_task_timer_stop() or nano_fiber_timer_stop().
- *
- * @return pointer to timer initialization data
- *
- */
-
-void *nano_task_timer_wait(struct nano_timer *timer /* timer to pend on */
-			)
+void *nano_task_timer_wait(struct nano_timer *timer)
 {
 	return nano_task_lifo_get_wait(&timer->lifo);
 }

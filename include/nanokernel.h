@@ -93,7 +93,26 @@ typedef int nano_context_type_t;
 /*
  * execution context APIs
  */
+
+
+/**
+ * @brief Return the currently executing thread
+ *
+ * This routine returns a pointer to the thread control block of the currently
+ * executing thread.  It is cast to a nano_thread_id_t for use publicly.
+ *
+ * @return nano_thread_id_t of the currently executing thread.
+ */
 extern nano_thread_id_t sys_thread_self_get(void);
+
+/**
+ *
+ * @brief Return the type of the current execution context
+ *
+ * This routine returns the type of execution context currently executing.
+ *
+ * @return nano_context_type_t of the currently executing thread.
+ */
 extern nano_context_type_t sys_execution_context_type_get(void);
 extern int _is_thread_essential(nano_thread_id_t pCtx);
 
@@ -101,19 +120,15 @@ extern int _is_thread_essential(nano_thread_id_t pCtx);
  * fiber APIs
  */
 /* execution context-independent method (when context is not known) */
-void fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
-		int arg1, int arg2, unsigned prio, unsigned options);
-
-/* methods for fibers */
 
 /**
  * @brief Initialize and start a fiber
  *
- * This routine initilizes and starts a fiber; it can be called from
+ * This routine initializes and starts a fiber; it can be called from
  * either a fiber or a task.  When this routine is called from a
  * task, the newly created fiber will start executing immediately.
  *
- * INTERNAL
+ * @internal
  * Given that this routine is _not_ ISR-callable, the following code is used
  * to differentiate between a task and fiber:
  *
@@ -122,6 +137,27 @@ void fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
  * Given that the _fiber_start() primitive is not considered real-time
  * performance critical, a runtime check to differentiate between a calling
  * task or fiber is performed in order to conserve footprint.
+ * @endinternal
+ *
+ * @param pStack Pointer to the stack space
+ * @param stackSize Stack size in bytes
+ * @param entry Fiber entry
+ * @param arg1 1st parameter to entry point
+ * @param arg2 2nd parameter to entry point
+ * @param prio Fiber priority
+ * @param options unused
+ * @return N/A
+ */
+void fiber_start(char *stack, unsigned stack_size, nano_fiber_entry_t entry,
+		int arg1, int arg2, unsigned prio, unsigned options);
+
+/* methods for fibers */
+
+/**
+ * @brief Initialize and start a fiber
+ *
+ * This routine initializes and starts a fiber; it can be called from
+ * a fiber.
  *
  * @param pStack Pointer to the stack space
  * @param stackSize Stack size in bytes
@@ -154,7 +190,7 @@ extern void fiber_yield(void);
 /**
  * @brief Abort the currently executing fiber
  *
- * This routine is used to abort the currrently executing fiber. This can occur
+ * This routine is used to abort the currently executing fiber. This can occur
  * because:
  * - the fiber has explicitly aborted itself (by calling this routine),
  * - the fiber has implicitly aborted itself (by returning from its entry point),
@@ -193,7 +229,7 @@ extern void fiber_sleep(int32_t timeout);
  * @param options unused
  * @param timeout_in_ticks timeout in ticks
  *
- * @return a handle to allow cancelling the delayed start
+ * @return a handle to allow canceling the delayed start
  */
 extern void *fiber_fiber_delayed_start(char *stack,
 		unsigned int stack_size_in_bytes,
@@ -398,7 +434,7 @@ extern void *nano_fiber_fifo_get(struct nano_fifo *fifo);
 
 /**
  *
- * @brief Get the head element of a fifo, wait if emtpy
+ * @brief Get the head element of a fifo, wait if empty
  *
  * Remove the head element from the specified system-level multiple-waiter
  * fifo; it can only be called from a fiber.
@@ -777,7 +813,7 @@ extern void nano_sem_take_wait(struct nano_sem *sem);
  *
  * @brief Give a nanokernel semaphore (no context switch)
  *
- * This routine performs a "give" operation on a nanokernel sempahore object;
+ * This routine performs a "give" operation on a nanokernel semaphore object;
  * it may be call from an ISR context.  A fiber pending on
  * the semaphore object will be made ready, but will NOT be scheduled to
  * execute.
@@ -792,7 +828,7 @@ extern void nano_isr_sem_give(struct nano_sem *sem);
  *
  * @brief Take a nanokernel semaphore, fail if unavailable
  *
- * Attempt to take a nanokernel sempahore; it may be called from a
+ * Attempt to take a nanokernel semaphore; it may be called from a
  * ISR context.
  *
  * If the semaphore is not available, this function returns immediately, i.e.
@@ -810,7 +846,7 @@ extern int nano_isr_sem_take(struct nano_sem *sem);
  *
  * @brief Give a nanokernel semaphore (no context switch)
  *
- * This routine performs a "give" operation on a nanokernel sempahore object;
+ * This routine performs a "give" operation on a nanokernel semaphore object;
  * it may be call from a fiber.  A fiber pending on
  * the semaphore object will be made ready, but will NOT be scheduled to
  * execute.
@@ -825,7 +861,7 @@ extern void nano_fiber_sem_give(struct nano_sem *sem);
  *
  * @brief Take a nanokernel semaphore, fail if unavailable
  *
- * Attempt to take a nanokernel sempahore; it may be called from a fiber.
+ * Attempt to take a nanokernel semaphore; it may be called from a fiber.
  *
  * If the semaphore is not available, this function returns immediately, i.e.
  * a wait (pend) operation will NOT be performed.
@@ -840,7 +876,7 @@ extern int nano_fiber_sem_take(struct nano_sem *sem);
  *
  * @brief Test a nanokernel semaphore, wait if unavailable
  *
- * Take a nanokernel sempahore; it can only be called from a fiber.
+ * Take a nanokernel semaphore; it can only be called from a fiber.
  *
  * If the nanokernel semaphore is not available, i.e. the event counter
  * is 0, the calling fiber will wait (pend) until the semaphore is
@@ -856,7 +892,7 @@ extern void nano_fiber_sem_take_wait(struct nano_sem *sem);
 /**
  * @brief test a nanokernel semaphore, wait with a timeout if unavailable
  *
- * Take a nanokernel sempahore; it can only be called from a fiber.
+ * Take a nanokernel semaphore; it can only be called from a fiber.
  *
  * If the nanokernel semaphore is not available, i.e. the event counter
  * is 0, the calling fiber will wait (pend) until the semaphore is
@@ -865,7 +901,6 @@ extern void nano_fiber_sem_take_wait(struct nano_sem *sem);
  *
  * @param sem the semaphore to take
  * @param timeout_in_ticks time to wait in ticks
- *
  * @param sem Pointer to a nano_sem structure.
  *
  * @return 1 if semaphore is available, 0 if timed out
@@ -880,7 +915,7 @@ extern int nano_fiber_sem_take_wait_timeout(struct nano_sem *sem,
  *
  * @brief Give a nanokernel semaphore
  *
- * This routine performs a "give" operation on a nanokernel sempahore object;
+ * This routine performs a "give" operation on a nanokernel semaphore object;
  * it can only be called from a task.  A fiber pending on the
  * semaphore object will be made ready, and will preempt the running task
  * immediately.
@@ -895,7 +930,7 @@ extern void nano_task_sem_give(struct nano_sem *sem);
  *
  * @brief Take a nanokernel semaphore, fail if unavailable
  *
- * Attempt to take a nanokernel sempahore; it can only be called from a task.
+ * Attempt to take a nanokernel semaphore; it can only be called from a task.
  *
  * If the semaphore is not available, this function returns immediately, i.e.
  * a wait (pend) operation will NOT be performed.
@@ -910,7 +945,7 @@ extern int nano_task_sem_take(struct nano_sem *sem);
  *
  * @brief Take a nanokernel semaphore, poll if unavailable
  *
- * Take a nanokernel sempahore; it can only be called from a task.
+ * Take a nanokernel semaphore; it can only be called from a task.
  *
  * If the nanokernel semaphore is not available, i.e. the event counter
  * is 0, the calling task will poll until the semaphore is given
@@ -926,7 +961,7 @@ extern void nano_task_sem_take_wait(struct nano_sem *sem);
 /**
  * @brief test a nanokernel semaphore, poll with a timeout if unavailable
  *
- * Take a nanokernel sempahore; it can only be called from a task.
+ * Take a nanokernel semaphore; it can only be called from a task.
  *
  * If the nanokernel semaphore is not available, i.e. the event counter is 0,
  * the calling task will poll until the semaphore is given (via
@@ -950,17 +985,157 @@ struct nano_stack {
 	uint32_t *next;
 };
 
+/**
+ *
+ * @brief Initialize a nanokernel stack object
+ *
+ * This function initializes a nanokernel stack object structure.
+ *
+ * It may be called from either a fiber or a task.
+ *
+ * @return N/A
+ *
+ */
 extern void nano_stack_init(struct nano_stack *stack, uint32_t *data);
 /* methods for ISRs */
+
+/**
+ *
+ * @brief Push data onto a stack (no context switch)
+ *
+ * This routine pushes a data item onto a stack object; it may be called from
+ * an ISR context.  A fiber pending on the stack object will be
+ * made ready, but will NOT be scheduled to execute.
+ *
+ * @param stack Stack on which to interact
+ * @param data Data to push on stack
+ *
+ * @return N/A
+ *
+ */
 extern void nano_isr_stack_push(struct nano_stack *stack, uint32_t data);
+
+/**
+ *
+ * @brief Pop data from a nanokernel stack
+ *
+ * Pop the first data word from a nanokernel stack object; it may be called
+ * from an ISR context.
+ *
+ * If the stack is not empty, a data word is popped and copied to the provided
+ * address <pData> and a non-zero value is returned. If the stack is empty,
+ * zero is returned.
+ *
+ * @param stack Stack on which to interact
+ * @param pData Container for data to pop
+ * @return 1 if stack is not empty, 0 otherwise
+ *
+ */
 extern int nano_isr_stack_pop(struct nano_stack *stack, uint32_t *data);
 /* methods for fibers */
+
+/**
+ *
+ * @brief Push data onto a stack (no context switch)
+ *
+ * This routine pushes a data item onto a stack object; it may be called from
+ * a fiber context.  A fiber pending on the stack object will be
+ * made ready, but will NOT be scheduled to execute.
+ *
+ * @param stack Stack on which to interact
+ * @param data Data to push on stack
+ *
+ * @return N/A
+ *
+ */
 extern void nano_fiber_stack_push(struct nano_stack *stack, uint32_t data);
+
+/**
+ *
+ * @brief Pop data from a nanokernel stack
+ *
+ * Pop the first data word from a nanokernel stack object; it may be called
+ * from a fiber context.
+ *
+ * If the stack is not empty, a data word is popped and copied to the provided
+ * address <pData> and a non-zero value is returned. If the stack is empty,
+ * zero is returned.
+ *
+ * @param stack Stack on which to interact
+ * @param pData Container for data to pop
+ *
+ * @return 1 if stack is not empty, 0 otherwise
+ *
+ */
 extern int nano_fiber_stack_pop(struct nano_stack *stack, uint32_t *data);
+
+/**
+ *
+ * @brief Pop data from a nanokernel stack, wait if empty
+ *
+ * Pop the first data word from a nanokernel stack object; it can only be
+ * called from a fiber.
+ *
+ * If data is not available the calling fiber will pend until data is pushed
+ * onto the stack.
+ *
+ * @param stack Stack on which to interact
+ *
+ * @return the data popped from the stack
+ *
+ */
 extern uint32_t nano_fiber_stack_pop_wait(struct nano_stack *stack);
+
+
 /* methods for tasks */
+
+/**
+ *
+ * @brief Push data onto a nanokernel stack
+ *
+ * This routine pushes a data item onto a stack object; it may be called only
+ * from a task.  A fiber pending on the stack object will be
+ * made ready, and will preempt the running task immediately.
+ *
+ * @param stack Stack on which to interact
+ * @param data Data to push on stack
+ *
+ * @return N/A
+ */
 extern void nano_task_stack_push(struct nano_stack *stack, uint32_t data);
+
+/**
+ *
+ * @brief Pop data from a nanokernel stack
+ *
+ * Pop the first data word from a nanokernel stack object; it may be called
+ * from a task context.
+ *
+ * If the stack is not empty, a data word is popped and copied to the provided
+ * address <pData> and a non-zero value is returned. If the stack is empty,
+ * zero is returned.
+ *
+ * @param stack Stack on which to interact
+ * @param pData Container for data to pop
+ *
+ * @return 1 if stack is not empty, 0 otherwise
+ */
 extern int nano_task_stack_pop(struct nano_stack *stack, uint32_t *data);
+
+/**
+ *
+ * @brief Pop data from a nanokernel stack, poll if empty
+ *
+ * Pop the first data word from a nanokernel stack; it can only be called
+ * from a task.
+ *
+ * If data is not available the calling task will poll until data is pushed
+ * onto the stack.
+ *
+ * @param stack Stack on which to interact
+ *
+ * @return the data popped from the stack
+ */
 extern uint32_t nano_task_stack_pop_wait(struct nano_stack *stack);
 
 /* thread custom data APIs */
@@ -978,33 +1153,179 @@ struct nano_timer {
 	void *userData;
 };
 
+/**
+ * @brief Initialize a nanokernel timer object
+ *
+ * This function initializes a nanokernel timer object structure.
+ *
+ * It may be called from either a fiber or task.
+ *
+ * The <userData> passed to this function must have enough space for a pointer
+ * in its first field, that may be overwritten when the timer expires, plus
+ * whatever data the user wishes to store and recover when the timer expires.
+ *
+ * @param timer Timer
+ * @param data User Data
+ * @return N/A
+ */
 extern void nano_timer_init(struct nano_timer *timer, void *data);
 
 /* methods for fibers */
+
+/**
+ *
+ * @brief Start a nanokernel timer from a fiber
+ *
+ * This function starts a previously initialized nanokernel timer object.
+ * The timer will expire in <ticks> system clock ticks.
+ *
+ * @param timer Timer
+ * @param ticks Number of ticks
+ *
+ * @return N/A
+ */
 extern void nano_fiber_timer_start(struct nano_timer *timer, int ticks);
+
+/**
+ * @brief Make the current fiber check for a timer expiry
+ *
+ * This function will check if a timer has expired. The timer must
+ * have been initialized by nano_timer_init() and started via either
+ * nano_fiber_timer_start() or nano_task_timer_start() first.
+ *
+ * @param timer Timer to check
+ *
+ * @return pointer to timer initialization data, or NULL if timer not expired
+ */
 extern void *nano_fiber_timer_test(struct nano_timer *timer);
+
+/**
+ *
+ * @brief Make the current fiber wait for a timer to expire
+ *
+ * This function will pend on a timer if it hasn't expired yet. The timer must
+ * have been initialized by nano_timer_init() and started via either
+ * nano_fiber_timer_start() or nano_task_timer_start() first and must not
+ * have been stopped via nano_task_timer_stop() or nano_fiber_timer_stop().
+ *
+ * @param timer Timer to pend on
+ *
+ * @return pointer to timer initialization data
+ *
+ */
 extern void *nano_fiber_timer_wait(struct nano_timer *timer);
+
+/**
+ * @brief Stop a nanokernel timer from a fiber
+ *
+ * This function stops a previously started nanokernel timer object.
+ *
+ * @param timer Timer to stop
+ *
+ * @return N/A
+ */
 extern void nano_fiber_timer_stop(struct nano_timer *timer);
 
 /* methods for tasks */
+
+/**
+ * @brief Start a nanokernel timer from a task
+ *
+ * This function starts a previously initialized nanokernel timer object.
+ * The timer will expire in <ticks> system clock ticks.
+ *
+ * @param timer Timer
+ * @param ticks Number of ticks
+ *
+ * @return N/A
+ */
 extern void nano_task_timer_start(struct nano_timer *timer, int ticks);
+
+/**
+ * @brief Make the current task check for a timer expiry
+ *
+ * This function will check if a timer has expired. The timer must
+ * have been initialized by nano_timer_init() and started via either
+ * nano_fiber_timer_start() or nano_task_timer_start() first.
+ *
+ * @param timer Timer to check
+ *
+ * @return pointer to timer initialization data, or NULL if timer not expired
+ */
 extern void *nano_task_timer_test(struct nano_timer *timer);
+
+/**
+ *
+ * @brief Make the current task wait for a timer to expire
+ *
+ * This function will pend on a timer if it hasn't expired yet. The timer must
+ * have been initialized by nano_timer_init() and started via either
+ * nano_fiber_timer_start() or nano_task_timer_start() first and must not
+ * have been stopped via nano_task_timer_stop() or nano_fiber_timer_stop().
+ *
+ * @param timer Timer to pend on
+ *
+ * @return pointer to timer initialization data
+ *
+ */
 extern void *nano_task_timer_wait(struct nano_timer *timer);
+
+/**
+ * @brief Stop a nanokernel timer from a task
+ *
+ * This function stops a previously started nanokernel timer object.
+ *
+ * @param timer Timer to stop
+ *
+ * @return N/A
+ */
 extern void nano_task_timer_stop(struct nano_timer *timer);
 
 /* methods for tasks and fibers for handling time and ticks */
 
+/**
+ *
+ * @brief Return the current system tick count
+ *
+ * @return the current system tick count
+ *
+ */
 extern int64_t nano_tick_get(void);
+
+/**
+ *
+ * @brief Return the lower part of the current system tick count
+ *
+ * @return the current system tick count
+ *
+ */
 extern uint32_t nano_tick_get_32(void);
 
 /**
- * @brief Return a high resolution timestamp
+ * @brief Return a high resolution time stamp
  *
  * @return the current timer hardware count
  */
 extern uint32_t nano_cycle_get_32(void);
 
+/**
+ *
+ * @brief Return number of ticks since a reference time
+ *
+ * @param reftime Reference time
+ *
+ * @return tick count since reference time; undefined for first invocation
+ */
 extern int64_t nano_tick_delta(int64_t *reftime);
+
+/**
+ *
+ * @brief Return 32-bit number of ticks since a reference time
+ *
+ * @param reftime Reference time
+ *
+ * @return 32-bit tick count since reference time; undefined for first invocation
+ */
 extern uint32_t nano_tick_delta_32(int64_t *reftime);
 
 #ifdef __cplusplus
