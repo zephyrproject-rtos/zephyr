@@ -130,7 +130,6 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
  *
  * @param b mailbox
  * @param m pointer to message
- * @param time maximum number of ticks to wait
  *
  * @return RC_OK, RC_FAIL on success, failure respectively
  */
@@ -140,7 +139,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
 
 /**
  * @brief Gets struct k_msg message header structure information from
- * a mailbox and wait
+ * a mailbox and wait with timeout.
  *
  * @param b mailbox
  * @param m pointer to message
