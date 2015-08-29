@@ -187,6 +187,8 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
  * can be passed to the microkernel FIFO functions.
  *
  * @param name Name of the FIFO
+ * @param depth Depth of the FIFO
+ * @param width Width of the FIFO
  */
 #define DEFINE_FIFO(name, depth, width) \
 	static char __noinit __##name_buffer[(depth * width)]; \
