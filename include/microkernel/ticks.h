@@ -106,8 +106,51 @@ extern int32_t task_tick_get_32(void);
  * @return current system clock value
  */
 extern int64_t task_tick_get(void);
+
+/**
+ * @brief Allocate a timer and return its object identifier
+ *
+ * @return timer identifier
+ */
 extern ktimer_t task_timer_alloc(void);
+
+/**
+ * @brief Deallocate a timer
+ *
+ * This routine frees the resources associated with the timer.  If a timer was
+ * started, it has to be stopped using task_timer_stop() before it can be freed.
+ *
+ * @param timer   Timer to deallocate.
+ *
+ * @return N/A
+ */
 extern void task_timer_free(ktimer_t timer);
+
+
+/**
+ *
+ * @brief Start or restart the specified low resolution timer
+ *
+ * This routine starts or restarts the specified low resolution timer.
+ *
+ * When the specified number of ticks, set by <duration>, expires, the semaphore
+ * is signalled.  The timer repeats the expiration/signal cycle each time
+ * <period> ticks has elapsed.
+ *
+ * Setting <period> to 0 stops the timer at the end of the initial delay.
+
+ * If either <duration> or <period> is passed a invalid value (<duration <= 0,
+ * <period> < 0), then this kernel API acts like a task_timer_stop(): if the
+ * allocated timer was still running (from a previous call), it will be
+ * cancelled; if not, nothing will happen.
+ *
+ * @param timer      Timer to start.
+ * @param duration   Initial delay in ticks.
+ * @param period     Repetition interval in ticks.
+ * @param sema       Semaphore to signal.
+ *
+ * @return N/A
+ */
 extern void task_timer_start(ktimer_t timer,
 			     int32_t duration,
 			     int32_t period,
@@ -125,13 +168,22 @@ extern void task_timer_start(ktimer_t timer,
  *
  * @return N/A
  */
-
 static inline void task_timer_restart(ktimer_t timer, int32_t duration,
-										int32_t period)
+					int32_t period)
 {
 	task_timer_start(timer, duration, period, _USE_CURRENT_SEM);
 }
 
+/**
+ * @brief Stop a timer
+ *
+ * This routine stops the specified timer. If the timer period has already
+ * elapsed, the call has no effect.
+ *
+ * @param timer   Timer to stop.
+ *
+ * @return N/A
+ */
 extern void task_timer_stop(ktimer_t timer);
 
 /**
@@ -154,14 +206,54 @@ extern void task_timer_stop(ktimer_t timer);
  */
 extern int64_t task_tick_delta(int64_t *reftime);
 
+
 static inline int32_t task_tick_delta_32(int64_t *reftime)
 {
 	return (int32_t)task_tick_delta(reftime);
 }
 
+/**
+ *
+ * @brief Sleep for a number of ticks
+ *
+ * This routine suspends the calling task for the specified number of timer
+ * ticks.  When the task is awakened, it is rescheduled according to its
+ * priority.
+ *
+ * @param ticks   Number of ticks for which to sleep.
+ *
+ * @return N/A
+ */
 extern void task_sleep(int32_t ticks);
+
+/**
+ *
+ * @brief Read the processor workload
+ *
+ * This routine returns the workload as a number ranging from 0 to 1000.
+ *
+ * Each unit equals 0.1% of the time the idle task was not scheduled by the
+ * microkernel during the period set by sys_workload_time_slice_set().
+ *
+ * IMPORTANT: This workload monitor ignores any time spent servicing ISRs and
+ * fibers! Thus, a system which has no meaningful task work to do may spend
+ * up to 100% of its time servicing ISRs and fibers, yet report a workload of 0%
+ * because the idle task is always the task selected by the microkernel.
+ *
+ * @return workload
+ */
 extern int task_workload_get(void);
+
+/**
+ *
+ * @brief Set workload period
+ *
+ * This routine specifies the workload measuring period for task_workload_get().
+ * @param t Time slice
+ * @return N/A
+ */
 extern void sys_workload_time_slice_set(int32_t t);
+
 
 #define isr_cycle_get_32() task_cycle_get_32()
 #define isr_tick_get_32() task_tick_get_32()

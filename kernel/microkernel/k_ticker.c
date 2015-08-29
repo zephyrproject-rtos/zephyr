@@ -90,10 +90,9 @@ int64_t task_tick_get(void)
  *
  * Interrupts are locked while updating clock since some CPUs do not support
  * native atomic operations on 64 bit values.
- *
+ * @param inc Increment
  * @return N/A
  */
-
 static void sys_clock_increment(int inc)
 {
 	int key = irq_lock();
@@ -103,7 +102,7 @@ static void sys_clock_increment(int inc)
 }
 
 /**
- *
+ * @internal
  * @brief Task level debugging tick handler
  *
  * If task level debugging is configured this routine updates the low resolution
@@ -111,9 +110,7 @@ static void sys_clock_increment(int inc)
  *
  * @return 0 if task level processing should be halted or 1 if not
  *
- * \NOMANUAL
  */
-
 #ifdef CONFIG_TASK_DEBUG
 uint32_t __noinit _k_debug_sys_clock_tick_count;
 
@@ -127,7 +124,7 @@ static inline int _TlDebugUpdate(int32_t ticks)
 #endif
 
 /**
- *
+ * @internal
  * @brief Tick handler time slice logic
  *
  * This routine checks to see if it is time for the current task
@@ -135,9 +132,7 @@ static inline int _TlDebugUpdate(int32_t ticks)
  *
  * @return N/A
  *
- * \NOMANUAL
  */
-
 static inline void _TimeSliceUpdate(void)
 {
 #ifdef CONFIG_TIMESLICING
@@ -153,7 +148,7 @@ static inline void _TimeSliceUpdate(void)
 }
 
 /**
- *
+ * @internal
  * @brief Get elapsed ticks
  *
  * If tickless idle support is configured this routine returns the number
@@ -164,8 +159,6 @@ static inline void _TimeSliceUpdate(void)
  * If tickless idle support is not configured in it simply returns 1.
  *
  * @return number of ticks to process
- *
- * \NOMANUAL
  */
 
 static inline int32_t _SysIdleElapsedTicksGet(void)
@@ -191,10 +184,9 @@ static inline int32_t _SysIdleElapsedTicksGet(void)
  *
  * This routine informs other microkernel subsystems that a tick event has
  * occurred.
- *
+ * @param even Event
  * @return 1
  */
-
 int _k_ticker(int event)
 {
 	(void)event; /* prevent "unused argument" compiler warning */
@@ -233,7 +225,6 @@ void sys_scheduler_time_slice_set(int32_t t, kpriority_t p)
  *
  * @return N/A
  */
-
 void _k_time_elapse(struct k_args *P)
 {
 	int64_t now = task_tick_get();

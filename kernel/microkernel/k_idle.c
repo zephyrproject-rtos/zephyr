@@ -77,7 +77,6 @@ static extern uint32_t _k_workload_scale;
  * @return N/A
  *
  */
-
 static void workload_loop(void)
 {
 	volatile int x = 87654321;
@@ -108,7 +107,6 @@ static void workload_loop(void)
  * @return N/A
  *
  */
-
 void _k_workload_monitor_calibrate(void)
 {
 	_k_workload_n0 = _k_workload_i = 0;
@@ -140,9 +138,7 @@ void _k_workload_monitor_calibrate(void)
  *
  * @return N/A
  *
- * \NOMANUAL
  */
-
 void _k_workload_monitor_update(void)
 {
 	if (--_k_workload_ticks == 0) {
@@ -162,7 +158,6 @@ void _k_workload_monitor_update(void)
  *
  * @return N/A
  */
-
 void _k_workload_monitor_idle_start(void)
 {
 	_k_workload_start_time = _sys_clock_cycle_get();
@@ -177,7 +172,6 @@ void _k_workload_monitor_idle_start(void)
  *
  * @return N/A
  */
-
 void _k_workload_monitor_idle_end(void)
 {
 	_k_workload_end_time = _sys_clock_cycle_get();
@@ -193,7 +187,6 @@ void _k_workload_monitor_idle_end(void)
  *
  * @return N/A
  */
-
 void _k_workload_get(struct k_args *P)
 {
 	unsigned int k, t;
@@ -227,22 +220,6 @@ void _k_workload_get(struct k_args *P)
 
 #endif /* CONFIG_WORKLOAD_MONITOR */
 
-/**
- *
- * @brief Read the processor workload
- *
- * This routine returns the workload as a number ranging from 0 to 1000.
- *
- * Each unit equals 0.1% of the time the idle task was not scheduled by the
- * microkernel during the period set by sys_workload_time_slice_set().
- *
- * IMPORTANT: This workload monitor ignores any time spent servicing ISRs and
- * fibers! Thus, a system which has no meaningful task work to do may spend
- * up to 100% of its time servicing ISRs and fibers, yet report a workload of 0%
- * because the idle task is always the task selected by the microkernel.
- *
- * @return workload
- */
 
 int task_workload_get(void)
 {
@@ -253,14 +230,6 @@ int task_workload_get(void)
 	return A.args.u1.rval;
 }
 
-/**
- *
- * @brief Set workload period
- *
- * This routine specifies the workload measuring period for task_workload_get().
- *
- * @return N/A
- */
 
 void sys_workload_time_slice_set(int32_t t)
 {
@@ -310,10 +279,7 @@ int32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
  * Routine is invoked from the idle task with interrupts disabled
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _sys_power_save_idle(int32_t ticks)
 {
 #if defined(CONFIG_TICKLESS_IDLE)
@@ -355,10 +321,7 @@ void _sys_power_save_idle(int32_t ticks)
  * The routine is invoked from interrupt thread, with interrupts disabled.
  *
  * @return N/A
- *
- * \NOMANUAL
  */
-
 void _sys_power_save_idle_exit(int32_t ticks)
 {
 #ifdef CONFIG_TICKLESS_IDLE
@@ -386,7 +349,6 @@ void _sys_power_save_idle_exit(int32_t ticks)
  * @return Number of ticks until next timer expires.
  *
  */
-
 static inline int32_t _get_next_timer_expiry(void)
 {
 	uint32_t closest_deadline = (uint32_t)TICKS_UNLIMITED;
@@ -410,7 +372,6 @@ static inline int32_t _get_next_timer_expiry(void)
  * @return N/A
  *
  */
-
 static void _power_save(void)
 {
 	extern void nano_cpu_idle(void);
@@ -457,7 +418,6 @@ static void _power_save(void)
  * @return N/A
  *
  */
-
 int _k_kernel_idle(void)
 {
 	_power_save(); /* never returns if power saving is enabled */

@@ -44,12 +44,10 @@ struct k_timer  *_k_timer_list_head = NULL;
 struct k_timer  *_k_timer_list_tail = NULL;
 
 /**
- *
  * @brief Insert a timer into the timer queue
- *
+ * @param T Timer
  * @return N/A
  */
-
 void _k_timer_enlist(struct k_timer *T)
 {
 	struct k_timer *P = _k_timer_list_head;
@@ -76,12 +74,10 @@ void _k_timer_enlist(struct k_timer *T)
 }
 
 /**
- *
  * @brief Remove a timer from the timer queue
- *
+ * @param T Timer
  * @return N/A
  */
-
 void _k_timer_delist(struct k_timer *T)
 {
 	struct k_timer *P = T->next;
@@ -100,14 +96,12 @@ void _k_timer_delist(struct k_timer *T)
 }
 
 /**
- *
  * @brief Allocate timer used for command packet timeout
  *
  * Allocates timer for command packet and inserts it into the timer queue.
- *
+ * @param P Arguments
  * @return N/A
  */
-
 void _k_timeout_alloc(struct k_args *P)
 {
 	struct k_timer *T;
@@ -121,7 +115,6 @@ void _k_timeout_alloc(struct k_args *P)
 }
 
 /**
- *
  * @brief Cancel timer used for command packet timeout
  *
  * Cancels timer (if not already expired), then reschedules the command packet
@@ -132,7 +125,6 @@ void _k_timeout_alloc(struct k_args *P)
  * 
  * @return N/A
  */
-
 void _k_timeout_cancel(struct k_args *A)
 {
 	struct k_timer *T = A->Time.timer;
@@ -144,14 +136,12 @@ void _k_timeout_cancel(struct k_args *A)
 }
 
 /**
- *
  * @brief Free timer used for command packet timeout
  *
  * Cancels timer (if not already expired), then frees it.
- *
+ * @param T Timer
  * @return N/A
  */
-
 void _k_timeout_free(struct k_timer *T)
 {
 	if (T->duration != -1)
@@ -160,7 +150,6 @@ void _k_timeout_free(struct k_timer *T)
 }
 
 /**
- *
  * @brief Handle expired timers
  *
  * Process the sorted list of timers associated with waiting tasks and
@@ -174,9 +163,8 @@ void _k_timeout_free(struct k_timer *T)
  * and that a periodic timer may exhibit a slow, ever-increasing degree of drift
  * from the main system timer over long intervals.
  *
+ * @param ticks Number of ticks
  * @return N/A
- *
- * \NOMANUAL
  */
 
 void _k_timer_list_update(int ticks)
@@ -210,7 +198,6 @@ void _k_timer_list_update(int ticks)
 }
 
 /**
- *
  * @brief Handle timer allocation request
  *
  * This routine, called by _k_server(), handles the request for allocating a
@@ -220,7 +207,6 @@ void _k_timer_list_update(int ticks)
  *
  * @return N/A
  */
-
 void _k_timer_alloc(struct k_args *P)
 {
 	struct k_timer *T;
@@ -234,12 +220,6 @@ void _k_timer_alloc(struct k_args *P)
 	T->duration = -1; /* -1 indicates that timer is disabled */
 }
 
-/**
- *
- * @brief Allocate a timer and return its object identifier
- *
- * @return timer identifier
- */
 
 ktimer_t task_timer_alloc(void)
 {
@@ -257,10 +237,9 @@ ktimer_t task_timer_alloc(void)
  *
  * This routine, called by _k_server(), handles the request for deallocating a
  * timer.
- *
+ * @param P Pointer to timer deallocation request arguments.
  * @return N/A
  */
-
 void _k_timer_dealloc(struct k_args *P)
 {
 	struct k_timer *T = P->args.c1.timer;
@@ -273,17 +252,6 @@ void _k_timer_dealloc(struct k_args *P)
 	FREEARGS(A);
 }
 
-/**
- *
- * @brief Deallocate a timer
- *
- * This routine frees the resources associated with the timer.  If a timer was
- * started, it has to be stopped using task_timer_stop() before it can be freed.
- *
- * @param timer   Timer to deallocate.
- *
- * @return N/A
- */
 
 void task_timer_free(ktimer_t timer)
 {
@@ -295,7 +263,6 @@ void task_timer_free(ktimer_t timer)
 }
 
 /**
- *
  * @brief Handle start timer request
  *
  * This routine, called by _k_server(), handles the start timer request from
@@ -305,7 +272,6 @@ void task_timer_free(ktimer_t timer)
  *
  * @return N/A
  */
-
 void _k_timer_start(struct k_args *P)
 {
 	struct k_timer *T = P->args.c1.timer; /* ptr to the timer to start */
@@ -334,30 +300,6 @@ void _k_timer_start(struct k_args *P)
 	_k_timer_enlist(T);
 }
 
-/**
- *
- * @brief Start or restart the specified low resolution timer
- *
- * This routine starts or restarts the specified low resolution timer.
- *
- * When the specified number of ticks, set by <duration>, expires, the semaphore
- * is signalled.  The timer repeats the expiration/signal cycle each time
- * <period> ticks has elapsed.
- *
- * Setting <period> to 0 stops the timer at the end of the initial delay.
-
- * If either <duration> or <period> is passed a invalid value (<duration <= 0,
- * <period> < 0), then this kernel API acts like a task_timer_stop(): if the
- * allocated timer was still running (from a previous call), it will be
- * cancelled; if not, nothing will happen.
- *
- * @param timer      Timer to start.
- * @param duration   Initial delay in ticks.
- * @param period     Repetition interval in ticks.
- * @param sema       Semaphore to signal.
- *
- * @return N/A
- */
 
 void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
 					  ksem_t sema)
@@ -381,7 +323,6 @@ void task_timer_start(ktimer_t timer, int32_t duration, int32_t period,
  *
  * @return N/A
  */
-
 void _k_timer_stop(struct k_args *P)
 {
 	struct k_timer *T = P->args.c1.timer;
@@ -390,17 +331,6 @@ void _k_timer_stop(struct k_args *P)
 		_k_timer_delist(T);
 }
 
-/**
- *
- * @brief Stop a timer
- *
- * This routine stops the specified timer. If the timer period has already
- * elapsed, the call has no effect.
- *
- * @param timer   Timer to stop.
- *
- * @return N/A
- */
 
 void task_timer_stop(ktimer_t timer)
 {
@@ -420,7 +350,6 @@ void task_timer_stop(ktimer_t timer)
  *
  * @return N/A
  */
-
 void _k_task_wakeup(struct k_args *P)
 {
 	struct k_timer *T;
@@ -440,9 +369,9 @@ void _k_task_wakeup(struct k_args *P)
  * This routine, called by _k_server(), handles the request for putting a task
  * to sleep.
  *
+ * @param P   Pointer to timer sleep request arguments.
  * @return N/A
  */
-
 void _k_task_sleep(struct k_args *P)
 {
 	struct k_timer *T;
@@ -464,18 +393,6 @@ void _k_task_sleep(struct k_args *P)
 	_k_state_bit_set(_k_current_task, TF_TIME);
 }
 
-/**
- *
- * @brief Sleep for a number of ticks
- *
- * This routine suspends the calling task for the specified number of timer
- * ticks.  When the task is awakened, it is rescheduled according to its
- * priority.
- *
- * @param ticks   Number of ticks for which to sleep.
- *
- * @return N/A
- */
 
 void task_sleep(int32_t ticks)
 {
