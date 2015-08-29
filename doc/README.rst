@@ -1,5 +1,3 @@
-.. include:: substitutions.rst
-
 Welcome to |codename|
 #####################
 
