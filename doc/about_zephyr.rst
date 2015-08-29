@@ -52,6 +52,6 @@ other small footprint kernels.
   increase performance. An optional error checking infrastructure is provided
   that can assist in debugging during application development.
 
-The Zephyr kernel is suppported on multiple architectures,
+The Zephyr kernel is supported on multiple architectures,
 including ARM Cortex-M, Intel x86, and ARC. The list of supported platforms
 can be found :ref:`here <platform>`.
