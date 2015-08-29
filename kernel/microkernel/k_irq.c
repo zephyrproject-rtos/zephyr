@@ -1,5 +1,3 @@
-/* task IRQ kernel services */
-
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  *
@@ -30,25 +28,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module manages the interrupt functionality between a task level device
-driver and the kernel.
-
-A task level device driver allocates a specific task IRQ object by providing
-an IRQ and priority level; the registration process allocates an interrupt
-vector, sets up an ISR, and enables the associated interrupt. When an
-interrupt occurs, the ISR handler signals an event specific to the IRQ object.
-The task level device driver tests/waits on this event number to determine
-if/when the interrupt has occurred. As the ISR also disables the interrupt, the
-task level device driver subsequently make a request to have the interrupt
-enabled again. If desired, the device driver can free an IRQ object that
-it is no longer interested in using.
-
-These routines perform error checking to ensure that an IRQ object can only be
-allocated by a single task, and that subsequent operations on that IRQ object
-are only performed by that task. This checking is necessary to ensure that
-a task cannot impact the operation of an IRQ object it does not own.
+/**
+ * @brief Task IRQ kernel services
+ *
+ * This module manages the interrupt functionality between a task level device
+ * driver and the kernel.
+ *
+ * A task level device driver allocates a specific task IRQ object by providing
+ * an IRQ and priority level; the registration process allocates an interrupt
+ * vector, sets up an ISR, and enables the associated interrupt. When an
+ * interrupt occurs, the ISR handler signals an event specific to the IRQ object.
+ * The task level device driver tests/waits on this event number to determine
+ * if/when the interrupt has occurred. As the ISR also disables the interrupt, the
+ * task level device driver subsequently make a request to have the interrupt
+ * enabled again. If desired, the device driver can free an IRQ object that
+ * it is no longer interested in using.
+ *
+ * These routines perform error checking to ensure that an IRQ object can only be
+ * allocated by a single task, and that subsequent operations on that IRQ object
+ * are only performed by that task. This checking is necessary to ensure that
+ * a task cannot impact the operation of an IRQ object it does not own.
+ *
  */
 
 #if (CONFIG_MAX_NUM_TASK_IRQS > 0)
@@ -118,12 +118,11 @@ extern const kevent_t _TaskIrqEvt0_objId;
  * End of Interrupt (EOI) routine is provided by the interrupt controller that
  * is being used.
  *
+ * @param parameter Pointer to task IRQ object
+ *
  * @return N/A
  */
-
-static void task_irq_int_handler(
-	void *parameter /* ptr to task IRQ object */
-	)
+static void task_irq_int_handler(void *parameter)
 {
 	struct task_irq_info *irq_obj_ptr = parameter;
 
@@ -131,19 +130,7 @@ static void task_irq_int_handler(
 	irq_disable(irq_obj_ptr->irq);
 }
 
-/**
- *
- * @brief Free a task IRQ object
- *
- * The task IRQ object's interrupt is disabled, and the associated event
- * is flushed; the object's interrupt vector is then freed, and the object's
- * global array entry is marked as unused.
- *
- * @return N/A
- */
-
-void task_irq_free(kirq_t irq_obj /* IRQ object identifier */
-			     )
+void task_irq_free(kirq_t irq_obj)
 {
 	__ASSERT(irq_obj < MAX_TASK_IRQS, "Invalid IRQ object");
 	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
@@ -160,12 +147,10 @@ void task_irq_free(kirq_t irq_obj /* IRQ object identifier */
  * @brief Re-enable a task IRQ object's interrupt
  *
  * This re-enables the interrupt for a task IRQ object.
- *
+ * @param irq_obj IRQ object identifier
  * @return N/A
  */
-
-void task_irq_ack(kirq_t irq_obj /* IRQ object identifier */
-					    )
+void task_irq_ack(kirq_t irq_obj)
 {
 	__ASSERT(irq_obj < MAX_TASK_IRQS, "Invalid IRQ object");
 	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
@@ -178,14 +163,12 @@ void task_irq_ack(kirq_t irq_obj /* IRQ object identifier */
  *
  * @brief Determine if a task IRQ object has had an interrupt
  *
- * This tests a task IRQ object to see if it has signalled an interrupt.
- *
+ * This tests a task IRQ object to see if it has signaled an interrupt.
+ * @param irq_obj IRQ object identifier
+ * @param time  Time to wait (in ticks)
  * @return RC_OK, RC_FAIL, or RC_TIME
  */
-
-int _task_irq_test(kirq_t irq_obj, /* IRQ object identifier */
-				     int32_t time /* time to wait (in ticks) */
-				     )
+int _task_irq_test(kirq_t irq_obj, int32_t time)
 {
 	__ASSERT(irq_obj < MAX_TASK_IRQS, "Invalid IRQ object");
 	__ASSERT(task_irq_object[irq_obj].task_id == task_id_get(),
@@ -199,13 +182,10 @@ int _task_irq_test(kirq_t irq_obj, /* IRQ object identifier */
  * @brief Allocate a task IRQ object
  *
  * This routine allocates a task IRQ object to a task.
- *
+ * @param arg Pointer to registration request arguments
  * @return ptr to allocated task IRQ object if successful, NULL if not
  */
-
-static int _k_task_irq_alloc(
-	void *arg /* ptr to registration request arguments */
-	)
+static int _k_task_irq_alloc(void *arg)
 {
 	struct irq_obj_reg_arg *argp = (struct irq_obj_reg_arg *)arg;
 	struct task_irq_info *irq_obj_ptr; /* ptr to task IRQ object */
@@ -237,24 +217,8 @@ static int _k_task_irq_alloc(
 	return (int)irq_obj_ptr;
 }
 
-/**
- *
- * @brief Register a task IRQ object
- *
- * This routine connects a task IRQ object to a system interrupt based
- * upon the specified IRQ and priority values.
- *
- * IRQ allocation is done via the microkernel server fiber so that simultaneous
- * allocation requests are single-threaded.
- *
- * @return assigned interrupt vector if successful, INVALID_VECTOR if not
- */
 
-uint32_t task_irq_alloc(
-	kirq_t irq_obj,   /* IRQ object identifier */
-	uint32_t irq,     /* requested IRQ */
-	uint32_t priority /* requested interrupt priority */
-	)
+uint32_t task_irq_alloc(kirq_t irq_obj,	uint32_t irq, uint32_t priority)
 {
 	struct irq_obj_reg_arg arg;  /* IRQ object registration request arguments */
 	struct task_irq_info *irq_obj_ptr; /* ptr to task IRQ object */
