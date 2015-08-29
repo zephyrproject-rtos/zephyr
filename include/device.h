@@ -85,7 +85,7 @@ struct device_config {
 /**
  * @brief Runtime device structure (In memory) Per driver instance
  * @param device_config Build time config information
- * @param driver_api pointer to structure containing the API unctions for
+ * @param driver_api pointer to structure containing the API functions for
  * the device type. This pointer is filled in by the driver at init time.
  * @param driver_data river instance data. For driver use only
  */
