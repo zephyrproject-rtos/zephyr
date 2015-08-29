@@ -61,7 +61,11 @@ clean:
 	@rm -rf latex
 
 htmldocs: doxy html
-html:
+
+kconfig: scripts/genrest/genrest.py
+	srctree=../ SRCARCH=x86 python $< ../Kconfig reference/kconfig/
+
+html: kconfig
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@cp -a html $(BUILDDIR)/html/api
 	@echo
