@@ -39,8 +39,9 @@
 
 
 /**
- * @brief Mailbox Kernel Services
- * @defgroup microkernel_mailbox Mailbox Kernel Services
+ * @brief Microkernel Mailboxes
+ * @defgroup microkernel_mailbox Microkernel Mailboxes
+ * @ingroup microkernel_services
  * @{
  */
 
@@ -115,6 +116,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
 /**
  * @brief Gets struct k_msg message header structure information from
  * a mailbox
+ *
  * @param b mailbox
  * @param m pointer to message
  *
@@ -125,6 +127,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
 /**
  * @brief Gets struct k_msg message header structure information from
  * a mailbox and wait
+ *
  * @param b mailbox
  * @param m pointer to message
  * @param time maximum number of ticks to wait
@@ -138,6 +141,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
 /**
  * @brief Gets struct k_msg message header structure information from
  * a mailbox and wait
+ *
  * @param b mailbox
  * @param m pointer to message
  * @param t maximum number of ticks to wait
@@ -172,6 +176,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
  *    field in the struct k_msg header structure.
  * 2. To wake up and release a transmitting task that is blocked on a call to
  *    task_mbox_put[wait|wait_timeout]().
+ *
  * @param m message from which to get data
  *
  * @return N/A
@@ -184,6 +189,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
  * @param m message from which to get data
  * @param b block
  * @param p pool
+ *
  * @return RC_OK upon success, RC_FAIL upon failure
  */
 #define task_mbox_data_block_get(m, b, p) \
@@ -195,6 +201,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
  * @param m message from which to get data
  * @param b block
  * @param p pool
+ *
  * @return RC_OK upon success, RC_FAIL upon failure
  */
 #define task_mbox_data_block_get_wait(m, b, p) \
@@ -208,6 +215,7 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
  * @param b block
  * @param p pool
  * @param t timeout
+ *
  * @return RC_OK upon success, RC_FAIL upon failure
  */
 #define task_mbox_data_block_get_wait_timeout(m, b, p, t) \

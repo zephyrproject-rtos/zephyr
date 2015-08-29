@@ -1,8 +1,3 @@
-/**
- * @file
- * @brief microkernel mutex header file
- */
-
 /*
  * Copyright (c) 1997-2015 Wind River Systems, Inc.
  *
@@ -33,12 +28,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * @brief Microkernel mutex header file
+ */
+
+/**
+ * @brief Microkernel Mutexes
+ * @defgroup microkernel_mutex Microkernel Mutexes
+ * @{
+ */
+
 #ifndef MUTEX_H
 #define MUTEX_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
 
 #include  <microkernel/base_api.h>
 
@@ -137,6 +145,9 @@ extern void _task_mutex_unlock(kmutex_t mutex);
 	struct _k_mutex_struct _k_mutex_obj_##name = __MUTEX_DEFAULT; \
 	const kmutex_t name = (kmutex_t)&_k_mutex_obj_##name;
 
+/**
+ * @}
+ */
 #ifdef __cplusplus
 }
 #endif

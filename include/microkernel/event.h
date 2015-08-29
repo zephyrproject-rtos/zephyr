@@ -40,6 +40,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Microkernel Events
+ * @defgroup microkernel_event Microkernel Events
+ * @ingroup microkernel_services
+ * @{
+ */
+
 #include <microkernel/command_packet.h>
 
 /* well-known events */
@@ -157,6 +164,9 @@ extern int _task_event_recv(kevent_t event, int32_t time);
  */
 #define task_event_recv_wait_timeout(event, time) _task_event_recv(event, time)
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

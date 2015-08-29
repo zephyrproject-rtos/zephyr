@@ -47,7 +47,11 @@
 
 /* end of private APIs */
 
-/* microkernel public APIs */
+/**
+ * @brief Microkernel Public APIs
+ * @defgroup microkernel_services Microkernel Services
+ * @{
+ */
 
 #include <microkernel/base_api.h>
 
@@ -62,5 +66,9 @@
 #include <microkernel/memory_pool.h>
 #include <microkernel/pipe.h>
 #include <microkernel/task_irq.h>
+
+/**
+ * @}
+ */
 
 #endif /* _MICROKERNEL_H */

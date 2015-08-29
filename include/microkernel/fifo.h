@@ -35,6 +35,13 @@
  *
  */
 
+/**
+ * @brief Microkernel FIFOs
+ * @defgroup microkernel_fifo Microkernel FIFOs
+ * @ingroup microkernel_services
+ * @{
+ */
+
 #ifndef FIFO_H
 #define FIFO_H
 
@@ -190,5 +197,9 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* FIFO_H */
