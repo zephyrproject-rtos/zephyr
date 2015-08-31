@@ -35,6 +35,10 @@
 #include <i2c.h>
 #include <stdbool.h>
 
+#ifdef CONFIG_PCI
+#include <pci/pci.h>
+#include <pci/pci_mgr.h>
+#endif /* CONFIG_PCI */
 
 #define DW_I2C_MAGIC_KEY			0x44570140
 
@@ -103,6 +107,9 @@ struct dw_i2c_rom_config {
 	uint32_t        base_address;
 	uint32_t        interrupt_vector;
 	uint32_t        interrupt_mask;
+#ifdef CONFIG_PCI
+	struct pci_dev_info pci_dev;
+#endif /* CONFIG_PCI */
 	i2c_isr_cb_t	config_func;
 };
 

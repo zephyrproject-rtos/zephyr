@@ -537,12 +537,43 @@ static struct i2c_driver_api funcs = {
 };
 
 
+#ifdef CONFIG_PCI
+static inline int dw_i2c_pci_setup(struct device *dev)
+{
+	struct dw_i2c_rom_config *rom = dev->config->config_info;
+
+	pci_bus_scan_init();
+
+	if (!pci_bus_scan(&rom->pci_dev)) {
+		DBG("Could not find device\n");
+		return 0;
+	}
+
+#ifdef CONFIG_PCI_ENUMERATION
+	rom->base_address = rom->pci_dev.addr;
+	rom->interrupt_vector = rom->pci_dev.irq;
+#endif
+	pci_enable_regs(&rom->pci_dev);
+
+	pci_show(&rom->pci_dev);
+
+	return 1;
+}
+#else
+#define dw_i2c_pci_setup(_unused_) (1)
+#endif /* CONFIG_PCI */
+
 int dw_i2c_initialize(struct device *port)
 {
 	struct dw_i2c_rom_config const * const rom = port->config->config_info;
 	struct dw_i2c_dev_config * const dev = port->driver_data;
-	volatile struct dw_i2c_registers * const regs =
-		(struct dw_i2c_registers *)rom->base_address;
+	volatile struct dw_i2c_registers *regs;
+
+	if (!dw_i2c_pci_setup(port)) {
+		return DEV_NOT_CONFIG;
+	}
+
+	regs = (struct dw_i2c_registers*) rom->base_address;
 
 	/* verify that we have a valid DesignWare register first */
 	if (regs->ic_comp_type != DW_I2C_MAGIC_KEY) {
