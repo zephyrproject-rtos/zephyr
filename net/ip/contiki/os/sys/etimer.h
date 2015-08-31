@@ -151,7 +151,7 @@ void etimer_restart(struct etimer *et);
  * \sa etimer_set()
  * \sa etimer_reset()
  */
-void etimer_adjust(struct etimer *et, int td);
+/* void etimer_adjust(struct etimer *et, int td); */
 
 /**
  * \brief      Get the expiration time for the event timer.
@@ -160,7 +160,7 @@ void etimer_adjust(struct etimer *et, int td);
  *
  *             This function returns the expiration time for an event timer.
  */
-clock_time_t etimer_expiration_time(struct etimer *et);
+/* clock_time_t etimer_expiration_time(struct etimer *et); */
 
 /**
  * \brief      Get the start time for the event timer.
@@ -219,7 +219,7 @@ void etimer_request_poll(void);
  *             This function checks if there are any active event
  *             timers that have not expired.
  */
-int etimer_pending(void);
+/* int etimer_pending(void); */
 
 /**
  * \brief      Get next event timer expiration time.

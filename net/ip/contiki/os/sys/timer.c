@@ -48,6 +48,17 @@
 #include "sys/clock.h"
 #include "sys/timer.h"
 
+#define DEBUG DEBUG_NONE
+#include "contiki/ip/uip-debug.h"
+
+static inline void do_init(struct timer *t)
+{
+  if (t && !t->init_done) {
+    nano_timer_init(&t->nano_timer, NULL);
+    t->init_done = true;
+  }
+}
+
 /*---------------------------------------------------------------------------*/
 /**
  * Set a timer.
@@ -63,6 +74,20 @@
 void
 timer_set(struct timer *t, clock_time_t interval)
 {
+  do_init(t);
+
+  switch (sys_execution_context_type_get()) {
+  case NANO_CTX_FIBER:
+	  nano_fiber_timer_start(&t->nano_timer, interval);
+	  break;
+  case NANO_CTX_TASK:
+	  nano_task_timer_start(&t->nano_timer, interval);
+	  break;
+  default:
+	  return;
+  }
+
+  t->started = true;
   t->interval = interval;
   t->start = clock_time();
 }
@@ -104,6 +129,24 @@ timer_reset(struct timer *t)
 void
 timer_restart(struct timer *t)
 {
+  do_init(t);
+
+  if (t->started) {
+    timer_stop(t);
+  }
+
+  switch (sys_execution_context_type_get()) {
+  case NANO_CTX_FIBER:
+	  nano_fiber_timer_start(&t->nano_timer, t->interval);
+	  break;
+  case NANO_CTX_TASK:
+	  nano_task_timer_start(&t->nano_timer, t->interval);
+	  break;
+  default:
+	  return;
+  }
+
+  t->started = true;
   t->start = clock_time();
 }
 /*---------------------------------------------------------------------------*/
@@ -123,9 +166,11 @@ timer_expired(struct timer *t)
 {
   /* Note: Can not return diff >= t->interval so we add 1 to diff and return
      t->interval < diff - required to avoid an internal error in mspgcc. */
-  clock_time_t diff = (clock_time() - t->start) + 1;
-  return t->interval < diff;
+  /* clock_time_t diff = (clock_time() - t->start) + 1; */
+  /* return t->interval < diff; */
+  do_init(t);
 
+  return t->nano_timer.ticks == 0;
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -144,5 +189,23 @@ timer_remaining(struct timer *t)
   return t->start + t->interval - clock_time();
 }
 /*---------------------------------------------------------------------------*/
+void timer_stop(struct timer *t)
+{
+  if (!t->started) {
+    return;
+  }
+
+  switch (sys_execution_context_type_get()) {
+  case NANO_CTX_FIBER:
+	  nano_fiber_timer_stop(&t->nano_timer);
+	  break;
+  case NANO_CTX_TASK:
+	  nano_task_timer_stop(&t->nano_timer);
+	  break;
+  }
+
+  t->started = false;
+  return;
+}
 
 /** @} */

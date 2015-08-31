@@ -73,6 +73,12 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 
+#ifdef CONFIG_MICROKERNEL
+#include <zephyr.h>
+#else
+#include <nanokernel.h>
+#endif
+
 #include "sys/clock.h"
 
 /**
@@ -86,6 +92,9 @@
 struct timer {
   clock_time_t start;
   clock_time_t interval;
+  struct nano_timer nano_timer;
+  int init_done;
+  int started;
 };
 
 CCIF void timer_set(struct timer *t, clock_time_t interval);
@@ -93,7 +102,7 @@ void timer_reset(struct timer *t);
 void timer_restart(struct timer *t);
 CCIF int timer_expired(struct timer *t);
 clock_time_t timer_remaining(struct timer *t);
-
+void timer_stop(struct timer *t);
 
 #endif /* TIMER_H_ */
 
