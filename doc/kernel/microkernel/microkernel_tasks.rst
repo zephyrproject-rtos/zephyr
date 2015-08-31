@@ -11,13 +11,17 @@ an application's processing. It is is normally used to perform processing that
 is too lengthy or complex to be performed by a fiber or an ISR.
 
 A microkernel application can define any number of application tasks. Each
-task has a name that uniquely identifies it. Other important task properties
-that must be specified include:
+task has a name that uniquely identifies it, allowing it to be directly
+referenced by other tasks. Other properties that must be specified when a task
+is defined include:
 
 * a memory region that is used for its stack and for other execution context
   information,
 * a function that is invoked when the task starts executing, and
 * a priority that is used by the microkernel scheduler.
+
+A task's entry point function takes no arguments, so there is no need to
+define any argument values for it.
 
 The microkernel automatically defines a system task, known as the *idle task*,
 which has lowest priority. This task is used during system initialization,
@@ -128,7 +132,8 @@ by the microkernel until one of the following occurs:
 
 * The task terminates itself by returning from its entry point function.
 
-* The task aborts itself by performing an operation that causes a fatal error.
+* The task aborts itself by performing an operation that causes a fatal error,
+  or by calling :c:func:`task_abort()`.
 
 Time Slicing
 ------------
