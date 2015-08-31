@@ -991,14 +991,13 @@ class TestSuite:
         self.arches = {}
         self.testcases = {}
         self.platforms = []
-        self.outdir = outdir
+        self.outdir = os.path.abspath(outdir)
         self.instances = {}
         self.goals = None
         self.discards = None
 
         arch_root = os.path.abspath(arch_root)
         testcase_root = os.path.abspath(testcase_root)
-        outdir = os.path.abspath(outdir)
 
         debug("Reading test case configuration files under %s..." % testcase_root)
         for dirpath, dirnames, filenames in os.walk(testcase_root,
@@ -1029,7 +1028,7 @@ class TestSuite:
         # information from them by calling Make
         info("Building platform defconfigs...")
         dlist = {}
-        config_outdir = os.path.join(outdir, "configs")
+        config_outdir = os.path.join(self.outdir, "configs")
         mg = MakeGenerator(config_outdir)
 
         for plat in self.platforms:
