@@ -2,6 +2,8 @@
 # Automatically generated file; DO NOT EDIT.
 # Zephyr Kernel/arc Configuration
 #
+CONFIG_ARC=y
+CONFIG_ARCH_DEFCONFIG="arch/arc/defconfig"
 CONFIG_NANOKERNEL=y
 # CONFIG_MICROKERNEL is not set
 
@@ -54,11 +56,6 @@ CONFIG_MINIMAL_LIBC=y
 # CONFIG_BOOTLOADER_UNKNOWN is not set
 
 #
-# ARC family options
-#
-CONFIG_ARC=y
-
-#
 # ARC EM4 processor options
 #
 CONFIG_CPU_ARCEM4=y
@@ -86,6 +83,7 @@ CONFIG_IRQ_VECTOR_TABLE_BSP=y
 # CONFIG_UART_SIMPLE is not set
 # CONFIG_CONSOLE is not set
 # CONFIG_SERIAL is not set
+# CONFIG_GPIO is not set
 
 #
 # Interrupt Controllers

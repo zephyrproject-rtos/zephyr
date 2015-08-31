@@ -135,6 +135,7 @@ CONFIG_UART_CONSOLE_INDEX=1
 # CONFIG_UART_SIMPLE is not set
 # CONFIG_CONSOLE is not set
 # CONFIG_SERIAL is not set
+# CONFIG_GPIO is not set
 
 #
 # Interrupt Controllers
@@ -170,6 +171,7 @@ CONFIG_HPET_TIMER_FALLING_EDGE=y
 # PCI Settings
 #
 CONFIG_PCI=y
+CONFIG_PCI_ENUMERATION=y
 # CONFIG_PCI_DEBUG is not set
 # CONFIG_SPI is not set
 

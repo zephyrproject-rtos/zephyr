@@ -2,6 +2,8 @@
 # Automatically generated file; DO NOT EDIT.
 # Zephyr Kernel/arm Configuration
 #
+CONFIG_ARM=y
+CONFIG_ARCH_DEFCONFIG="arch/arm/defconfig"
 # CONFIG_NANOKERNEL is not set
 CONFIG_MICROKERNEL=y
 
@@ -81,7 +83,6 @@ CONFIG_MINIMAL_LIBC=y
 #
 CONFIG_PLATFORM_FSL_FRDM_K64F=y
 # CONFIG_PLATFORM_TI_LM3S6965 is not set
-CONFIG_ARM=y
 CONFIG_ISA_THUMB2=y
 CONFIG_CPU_CORTEX=y
 CONFIG_CPU_CORTEX_M=y
@@ -122,6 +123,7 @@ CONFIG_WDOG_INIT=y
 # CONFIG_UART_SIMPLE is not set
 # CONFIG_CONSOLE is not set
 # CONFIG_SERIAL is not set
+# CONFIG_GPIO is not set
 
 #
 # Interrupt Controllers
