@@ -6,6 +6,8 @@ Synchronization Services
 This section describes the synchronization services provided by the nanokernel.
 Currently, only a single service is provided.
 
+.. _nanokernel_semaphores:
+
 Nanokernel Semaphores
 *********************
 
