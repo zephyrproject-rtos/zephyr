@@ -47,3 +47,54 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 config UART_CONSOLE_INDEX
 	default 1
+
+menu "I2C drivers"
+
+config DW_I2C0
+        bool "Enable I2C0"
+        default n
+        select DW_I2C
+
+config DW_I2C0_BASE
+        hex "Base addres for I2C0"
+        default 0x00000000
+        depends on DW_I2C0
+
+config DW_I2C0_NAME
+        string "Select a name for finding the device"
+        depends on DW_I2C0
+        default "I2C0"
+
+config DW_I2C0_IRQ
+	int "Controller interrupt"
+	depends on DW_I2C0
+	default 0
+
+config DW_I2C0_INT_PRIORITY
+        int "Controller interrupt priority"
+        depends on DW_I2C0
+        default 0
+        help
+        IRQ priority
+
+config DW_I2C0_BUS
+	int "PCI Bus number"
+	depends on DW_I2C0 && PCI
+	default 0
+
+config DW_I2C0_DEV
+	int "PCI device number"
+	depends on DW_I2C0 && PCI
+	default 21
+
+config DW_I2C0_FUNCTION
+	int "PCI function number"
+	depends on DW_I2C0 && PCI
+	default 2
+
+config DW_I2C0_BAR
+	int "PCI BAR number"
+	depends on DW_I2C0 && PCI
+	default 0
+
+endmenu

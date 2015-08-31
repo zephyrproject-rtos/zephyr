@@ -44,6 +44,21 @@ config DW_I2C
         default n
         select I2C
 
+config DW_I2C_VENDOR_ID
+	hex "PCI Vendor ID of the controllers"
+	depends on I2C && PCI
+	default 0x8086
+
+config DW_I2C_DEVICE_ID
+	hex "PCI Device ID of the controllers"
+	depends on I2C && PCI
+	default 0x934
+
+config DW_I2C_CLASS
+	hex "PCI device class"
+	depends on I2C && PCI
+	default 0x0C
+
 config I2C_STATUS_DELAY
 	int "Delay for controller response"
 	depends on I2C
