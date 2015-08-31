@@ -36,8 +36,6 @@
 #ifndef __PROFILE_ARM_H__
 #define __PROFILE_ARM_H__
 
-#include <CortexM/asm_inline_gcc.h>
-
 /**
  * @brief Get the identification of the current interrupt.
  *
