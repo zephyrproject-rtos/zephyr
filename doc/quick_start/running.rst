@@ -76,7 +76,7 @@ command to:
 
 .. code-block:: bash
 
-   make PLATFORM_CONFIG=galileo ARCH=x86**
+   make PLATFORM_CONFIG=galileo
 
 #. Use one of these cables for serial output:
 
@@ -165,7 +165,7 @@ In Fedora, type:
 
    $ cd ~
 
-   $ git clone http://git.savannah.gnu.org/r/grub.git/**
+   $ git clone http://git.savannah.gnu.org/r/grub.git
 
 3. Build the GRUB code, type:
 
