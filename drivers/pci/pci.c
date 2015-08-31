@@ -96,23 +96,6 @@ original search criterias. Thus, when the caller asks to scan again for
 a possible result next, the loop will restart where it stopped.
 That will work as long as there are relevant results found.
 
-Running through every buses and devices can be gready. Thus, in order to
-optimize any subsequent new search, the code holds another structure:
-struct bus_dev. Such structure exists for every possible PCI classes, in
-a table 'class_bd'.
-Every time a loop will hit a class, if such class is unknown yet from its
-relevant class_bd's bus_dev, it will fill in the information in class_bd.
-Basically, class_bd stores for every class, at which bus and which dev
-a search loop should start. This permits to accelerate a bit any
-class-specific bus scan since this is most of the time what the caller will
-be interested in.
-
-For instance, if a previous pci_bus_scan() searching for class z has hit
-various classes in between like classes x and y, class_bd will then know
-where to start a loop on these classes. Thus, a subsequent pci scan looking
-for class y will directly start at the relevant bus and device instead of
-restarting from 0.
-
  */
 
 #include <nanokernel.h>
@@ -149,13 +132,6 @@ restarting from 0.
 #define BAR_MEM_MASK(x) ((x) & ~0xf)
 
 
-struct bus_dev {
-	uint16_t set:1;
-	uint16_t bus:8;
-	uint16_t dev:5;
-	uint16_t unused:2;
-};
-
 struct lookup_data {
 	struct pci_dev_info info;
 	uint32_t bus:9;
@@ -165,8 +141,6 @@ struct lookup_data {
 	uint32_t unused:9;
 };
 
-#define PCI_CLASS_MAX PCI_CLASS_DAQ_DSP + 1
-static struct bus_dev class_bd[PCI_CLASS_MAX] = {};
 static struct lookup_data __noinit lookup;
 
 /**
@@ -318,14 +292,6 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 					pci_ctrl_addr,
 					&pci_dev_header);
 
-		if (!class_bd[pci_dev_header.field.class].set) {
-			class_bd[pci_dev_header.field.class].set = 1;
-			class_bd[pci_dev_header.field.class].bus =
-						pci_ctrl_addr.field.bus;
-			class_bd[pci_dev_header.field.class].dev =
-						pci_ctrl_addr.field.device;
-		}
-
 		/*
 		 * Skip a device if its class is specified by the
 		 * caller and does not match
@@ -421,11 +387,6 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 		lookup.info.device_id = dev_info->device_id;
 		lookup.info.function = dev_info->function;
 		lookup.info.bar = dev_info->bar;
-
-		if (class_bd[lookup.info.class].set) {
-			lookup.bus = class_bd[lookup.info.class].bus;
-			lookup.dev = class_bd[lookup.info.class].dev;
-		}
 	}
 
 	/* initialise the PCI controller address register value */
