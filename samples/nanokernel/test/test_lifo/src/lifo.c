@@ -53,7 +53,9 @@ These scenarios will be tested using a combinations of tasks, fibers and ISRs.
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
+#ifndef FIBER_STACKSIZE
 #define FIBER_STACKSIZE    2000
+#endif
 #define FIBER_PRIORITY     4
 
 typedef struct {

@@ -27,7 +27,9 @@
 
 #include <arch/cpu.h>
 
+#ifndef STACKSIZE
 #define STACKSIZE 2000
+#endif
 
 /* stack used by the fiber that generates the interrupt */
 static char __stack fiberStack[STACKSIZE];

@@ -62,7 +62,9 @@ Scenario #4:
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
-#define STACKSIZE               2048
+#ifndef FIBER_STACKSIZE
+#define FIBER_STACKSIZE               2048
+#endif
 #define NUM_FIFO_ELEMENT        4
 #define INVALID_DATA            NULL
 
@@ -75,9 +77,9 @@ typedef struct {
 	void *data;     /* pointer to data to add */
 } ISR_FIFO_INFO;
 
-char __stack fiberStack1[STACKSIZE];
-char __stack fiberStack2[STACKSIZE];
-char __stack fiberStack3[STACKSIZE];
+char __stack fiberStack1[FIBER_STACKSIZE];
+char __stack fiberStack2[FIBER_STACKSIZE];
+char __stack fiberStack3[FIBER_STACKSIZE];
 
 struct nano_fifo  nanoFifoObj;
 struct nano_fifo  nanoFifoObj2;
@@ -595,13 +597,13 @@ void main(void)
 
 	/* Create and start the three (3) fibers. */
 
-	task_fiber_start(&fiberStack1[0], STACKSIZE, (nano_fiber_entry_t) fiber1,
+	task_fiber_start(&fiberStack1[0], FIBER_STACKSIZE, (nano_fiber_entry_t) fiber1,
 					 0, 0, 7, 0);
 
-	task_fiber_start(&fiberStack2[0], STACKSIZE, (nano_fiber_entry_t) fiber2,
+	task_fiber_start(&fiberStack2[0], FIBER_STACKSIZE, (nano_fiber_entry_t) fiber2,
 					 0, 0, 7, 0);
 
-	task_fiber_start(&fiberStack3[0], STACKSIZE, (nano_fiber_entry_t) fiber3,
+	task_fiber_start(&fiberStack3[0], FIBER_STACKSIZE, (nano_fiber_entry_t) fiber3,
 					 0, 0, 7, 0);
 
 	/*

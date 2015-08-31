@@ -36,7 +36,9 @@
 
 #include <arch/cpu.h>
 
+#ifndef STACKSIZE
 #define STACKSIZE 2000
+#endif
 
 /* stack used by the fibers */
 static char __stack waiterStack[STACKSIZE];

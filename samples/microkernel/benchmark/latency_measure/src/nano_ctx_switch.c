@@ -33,7 +33,9 @@
 
 /* number of context switches */
 #define NCTXSWITCH   10000
+#ifndef STACKSIZE
 #define STACKSIZE    2000
+#endif
 
 /* stack used by the fibers */
 static char __stack fiberOneStack[STACKSIZE];

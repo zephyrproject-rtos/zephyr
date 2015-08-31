@@ -1,5 +1,6 @@
 ccflags-y += -I$(CURDIR)/misc/generated/sysgen
 ccflags-y += -I$(srctree)/samples/include
+ccflags-$(CONFIG_PLATFORM_QUARK_D2000) += -DSTACKSIZE=256
 
 obj-y = main.o \
 	micro_int_to_task_evt.o \

@@ -35,10 +35,14 @@ This module tests the following timer related routines:
 #define LONG_TIMEOUT    (5 * sys_clock_ticks_per_sec)
 #define MID_TIMEOUT     (3 * sys_clock_ticks_per_sec)
 
+#ifndef FIBER_STACKSIZE
 #define FIBER_STACKSIZE    2000
+#endif
 #define FIBER_PRIORITY     4
 
+#ifndef FIBER2_STACKSIZE
 #define FIBER2_STACKSIZE   2000
+#endif
 #define FIBER2_PRIORITY    10
 
 typedef void  (* timer_start_func)(struct nano_timer *, int);

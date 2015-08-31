@@ -50,7 +50,9 @@ Scenario #4:
 #include <irq_test_common.h>
 #include <util_test_common.h>
 
+#ifndef FIBER_STACKSIZE
 #define FIBER_STACKSIZE    2000
+#endif
 #define FIBER_PRIORITY     4
 
 typedef struct {
