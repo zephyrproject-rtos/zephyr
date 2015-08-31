@@ -134,6 +134,16 @@ config STDOUT_CONSOLE
 	This option directs standard output (e.g. printf) to the console
 	device, rather than suppressing it entirely.
 
+config EARLY_CONSOLE
+	bool
+	prompt "Send stdout at the earliest stage possible"
+	default n
+	help
+	This option will enable stdout as early as possible, for debugging
+	purpose. For instance, in case of STDOUT_CONSOLE being set it will
+	initialize its driver earlier than normal, in order to get the stdout
+	sent through the console at the earliest stage possible.
+
 config ASSERT
 	bool
 	prompt "Enable __ASSERT() macro"
