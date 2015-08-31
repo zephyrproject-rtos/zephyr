@@ -134,7 +134,13 @@ DECLARE_DEVICE_INIT_CONFIG(ns16550_uart0,
 			   &uart_platform_init,
 			   &ns16550_uart_dev_cfg[0]);
 
+#if (defined(CONFIG_EARLY_CONSOLE) && \
+		defined(CONFIG_UART_CONSOLE) && \
+		(CONFIG_UART_CONSOLE_INDEX == 0))
+pure_early_init(ns16550_uart0, &ns16550_uart_dev_data[0]);
+#else
 pure_init(ns16550_uart0, &ns16550_uart_dev_data[0]);
+#endif /* CONFIG_EARLY_CONSOLE */
 
 
 /* UART 1 */
@@ -143,13 +149,31 @@ DECLARE_DEVICE_INIT_CONFIG(ns16550_uart1,
 			   &uart_platform_init,
 			   &ns16550_uart_dev_cfg[1]);
 
+#if (defined(CONFIG_EARLY_CONSOLE) && \
+		defined(CONFIG_UART_CONSOLE) && \
+		(CONFIG_UART_CONSOLE_INDEX == 1))
+pure_early_init(ns16550_uart1, &ns16550_uart_dev_data[1]);
+#else
 pure_init(ns16550_uart1, &ns16550_uart_dev_data[1]);
+#endif /* CONFIG_EARLY_CONSOLE */
 
 
 /**< UART Devices */
 struct device * const uart_devs[] = {
+#if (defined(CONFIG_EARLY_CONSOLE) && \
+		defined(CONFIG_UART_CONSOLE) && \
+		(CONFIG_UART_CONSOLE_INDEX == 0))
+	&__initconfig_ns16550_uart00,
+#else
 	&__initconfig_ns16550_uart01,
+#endif /* CONFIG_EARLY_CONSOLE */
+#if (defined(CONFIG_EARLY_CONSOLE) && \
+		defined(CONFIG_UART_CONSOLE) && \
+		(CONFIG_UART_CONSOLE_INDEX == 1))
+	&__initconfig_ns16550_uart10,
+#else
 	&__initconfig_ns16550_uart11,
+#endif /* CONFIG_EARLY_CONSOLE */
 };
 
 #endif
