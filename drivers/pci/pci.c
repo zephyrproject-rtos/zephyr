@@ -501,7 +501,10 @@ void pci_enable_regs(struct pci_dev_info *dev_info)
 void pci_show(struct pci_dev_info *dev_info)
 {
 	printk("PCI device:\n");
-	printk("%X:%X class: 0x%X, %u, %u, %s, addrs: 0x%X-0x%X, IRQ %d\n",
+	printk("%u:%u %X:%X class: 0x%X, %u, %u, %s,"
+		"addrs: 0x%X-0x%X, IRQ %d\n",
+		dev_info->bus,
+		dev_info->dev,
 		dev_info->vendor_id,
 		dev_info->device_id,
 		dev_info->class,
