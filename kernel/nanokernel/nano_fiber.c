@@ -37,6 +37,7 @@
  */
 
 #include <nano_private.h>
+#include <nano_internal.h>
 #include <string.h>
 #include <toolchain.h>
 #include <sections.h>
@@ -232,9 +233,11 @@ FUNC_ALIAS(fiber_delayed_start_cancel, task_fiber_delayed_start_cancel, void);
 
 void fiber_delayed_start_cancel(void *handle)
 {
+	struct tcs *cancelled_tcs = (struct tcs *)handle;
 	int key = irq_lock();
 
-	_nano_timeout_abort((struct tcs *)handle);
+	_nano_timeout_abort(cancelled_tcs);
+	_thread_exit(cancelled_tcs);
 
 	irq_unlock(key);
 }
