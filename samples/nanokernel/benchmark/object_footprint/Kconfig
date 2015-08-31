@@ -1,0 +1,57 @@
+mainmenu "Zephyr Object Sizes"
+
+config ZEPHYR_BASE
+    string
+    option env="ZEPHYR_BASE"
+
+config APPLICATION_BASE
+    string
+    option env="PROJECT_BASE"
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
+
+config OBJECTS_PRINTK
+	bool "use printk"
+	default n
+
+config OBJECTS_WHILELOOP
+	bool "run whileloop"
+	default y
+
+config OBJECTS_FIBER
+	bool "enable fiber"
+	default n
+
+config OBJECTS_SEMAPHORE
+	bool "enable semphore"
+	default n
+
+config OBJECTS_LIFO
+	bool "enable lifo"
+	default n
+
+config OBJECTS_FIFO
+	bool "enable fifo"
+	default n
+
+config OBJECTS_STACK
+	bool "enable stack"
+	default n
+
+config OBJECTS_TIMER
+	bool "enable timer"
+	default n
+
+config FIBER_STACK_SIZE
+	int "set fiber stack size"
+	default 512
+	depends on OBJECTS_FIBER
+
+config STATIC_ISR
+	bool "static isr"
+	default y
+
+config DYNAMIC_ISR
+	bool "dynamic isr"
+	default n
+
