@@ -336,8 +336,8 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 		}
 
 		if (lookup.info.vendor_id && lookup.info.device_id &&
-		    lookup.info.vendor_id != pci_dev_header.field.vendor_id &&
-		    lookup.info.device_id != pci_dev_header.field.device_id) {
+		    (lookup.info.vendor_id != pci_dev_header.field.vendor_id ||
+		    lookup.info.device_id != pci_dev_header.field.device_id)) {
 			continue;
 		}
 
