@@ -45,6 +45,10 @@
 extern "C" {
 #endif
 
+
+/* Stub: this should be implemented as a thread local variable */
+extern int errno;
+
 /*
  * POSIX Error codes
  */

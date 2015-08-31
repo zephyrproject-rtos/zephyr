@@ -1,1 +1,1 @@
-obj-y := string.o
+obj-y := string.o errno.o
