@@ -268,6 +268,8 @@ clients it usually makes sense to define public objects.
    outside the file in which the object is defined if it is defined
    using a global variable.
 
+.. _microkernel_server:
+
 Microkernel Server
 ******************
 
@@ -326,6 +328,10 @@ it actually has a number of important benefits.
   since tasks using microkernel objects only have to reserve space on their
   stacks for the first step of the above sequence, rather than for all steps
   required to perform the operation.
+
+For additional information see:
+
+* :ref:`Microkernel Server Fiber <microkernel_server_fiber>`
 
 Standard C Library
 ******************
