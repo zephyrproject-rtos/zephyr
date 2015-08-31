@@ -252,6 +252,7 @@ struct gpio_config_dw gpio_config_dw_0 = {
 	.base_addr = CONFIG_GPIO_DW_0_BASE_ADDR,
 	.bits = CONFIG_GPIO_DW_0_BITS,
 	.irq_num = CONFIG_GPIO_DW_0_IRQ,
+	.pci_dev.class = CONFIG_GPIO_DW_CLASS,
 	.pci_dev.bus = CONFIG_GPIO_DW_0_BUS,
 	.pci_dev.dev = CONFIG_GPIO_DW_0_DEV,
 	.pci_dev.vendor_id = CONFIG_GPIO_DW_VENDOR_ID,

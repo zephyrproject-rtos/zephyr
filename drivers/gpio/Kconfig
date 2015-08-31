@@ -16,12 +16,12 @@ config	GPIO_DW_VENDOR_ID
 config	GPIO_DW_DEVICE_ID
 	hex "PCI Device ID"
 	depends on GPIO_DW && PCI
-	default 0x935
+	default 0x934
 
 config	GPIO_DW_CLASS
 	hex "PCI class"
 	depends on GPIO_DW && PCI
-	default 0x00
+	default 0x0C
 
 config GPIO_DW_0
        bool "Designware GPIO block 0"
