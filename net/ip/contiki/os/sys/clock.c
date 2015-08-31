@@ -72,7 +72,7 @@ clock_time_t clock_time(void)
 
 unsigned long clock_seconds(void)
 {
-	return clock_time() / sys_clock_us_per_tick;
+	return clock_time() / sys_clock_ticks_per_sec;
 }
 
 void clock_delay(unsigned int d)
