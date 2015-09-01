@@ -741,7 +741,7 @@ def kernel_main_c_node_init():
     """ Generate node initialization routine """
 
     kernel_main_c_out("\n" +
-        "void _k_init_node(void)\n{\n")
+        "void _k_init_dynamic(void)\n{\n")
     kernel_main_c_out("    _k_pipe_init();\n")
     kernel_main_c_out("    _k_mem_map_init();\n")
     if (len(pool_list) > 0):

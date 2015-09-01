@@ -43,7 +43,7 @@
 #include <arch/cpu.h>
 #endif
 
-extern void _k_init_node(void);     /* defined by sysgen */
+extern void _k_init_dynamic(void);     /* defined by sysgen */
 
 char __noinit __stack _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];
 
@@ -81,10 +81,11 @@ void _k_kernel_init(void)
 #endif
 
 	/*
-	 * Note: most variables & data structure are globally initialized in
-	 * kernel_main.c
+	 * Most variables and data structure are statically initialized in
+	 * kernel_main.c: this only initializes what must be dynamically
+	 * initialized at runtime.
 	 */
-	_k_init_node();
+	_k_init_dynamic();
 
 	task_fiber_start(_k_server_stack,
 			   CONFIG_MICROKERNEL_SERVER_STACK_SIZE,
