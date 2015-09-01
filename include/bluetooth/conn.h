@@ -138,6 +138,9 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
 struct bt_conn_cb {
 	void (*connected)(struct bt_conn *conn);
 	void (*disconnected)(struct bt_conn *conn);
+	void (*identity_resolved)(struct bt_conn *conn,
+				  const bt_addr_le_t *rpa,
+				  const bt_addr_le_t *identity);
 
 	struct bt_conn_cb *_next;
 };

@@ -1029,6 +1029,8 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 		bt_addr_copy(&keys->irk.rpa, (bt_addr_t *)&conn->dst.val);
 		bt_addr_le_copy(&keys->addr, &req->addr);
 		bt_addr_le_copy(&conn->dst, &req->addr);
+
+		bt_conn_identity_resolved(conn);
 	}
 
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;

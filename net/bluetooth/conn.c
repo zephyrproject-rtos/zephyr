@@ -102,6 +102,24 @@ static void bt_conn_disconnected(struct bt_conn *conn)
 	}
 }
 
+void bt_conn_identity_resolved(struct bt_conn *conn)
+{
+	const bt_addr_le_t *rpa;
+	struct bt_conn_cb *cb;
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		rpa = &conn->resp_addr;
+	} else {
+		rpa = &conn->init_addr;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->identity_resolved) {
+			cb->identity_resolved(conn, rpa, &conn->dst);
+		}
+	}
+}
+
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
 	cb->_next = callback_list;

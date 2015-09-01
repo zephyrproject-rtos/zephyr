@@ -128,3 +128,6 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 
 /* Notify higher layers of a new connection */
 void bt_conn_connected(struct bt_conn *conn);
+
+/* Notify higher layers that RPA was resolved */
+void bt_conn_identity_resolved(struct bt_conn *conn);
