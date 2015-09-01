@@ -89,9 +89,22 @@ static void disconnected(struct bt_conn *conn)
 	}
 }
 
+static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
+			      const bt_addr_le_t *identity)
+{
+	char addr_identity[BT_ADDR_LE_STR_LEN];
+	char addr_rpa[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
+	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
+
+	printk("Identity resolved %s -> %s\n", addr_rpa, addr_identity);
+}
+
 static struct bt_conn_cb conn_callbacks = {
 		.connected = connected,
 		.disconnected = disconnected,
+		.identity_resolved = identity_resolved,
 };
 
 static void cmd_init(int argc, char *argv[])
