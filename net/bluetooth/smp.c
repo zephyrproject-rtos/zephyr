@@ -598,7 +598,6 @@ static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
 {
 	struct bt_smp_pairing_confirm *req;
 	struct bt_smp *smp = conn->smp;
-	const bt_addr_le_t *ra, *ia;
 	struct bt_buf *rsp_buf;
 	int err;
 
@@ -610,16 +609,8 @@ static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
 
 	req = bt_buf_add(rsp_buf, sizeof(*req));
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		ra = &conn->dst;
-		ia = &conn->src;
-	} else {
-		ra = &conn->src;
-		ia = &conn->dst;
-	}
-
-	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp, ia, ra,
-		     req->val);
+	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp, &conn->init_addr,
+		     &conn->resp_addr, req->val);
 	if (err) {
 		bt_buf_put(rsp_buf);
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -726,7 +717,6 @@ static uint8_t get_keys_type(uint8_t method)
 static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_random *req = (void *)buf->data;
-	const bt_addr_le_t *ra, *ia;
 	struct bt_smp *smp = conn->smp;
 	struct bt_keys *keys;
 	uint8_t cfm[16];
@@ -736,15 +726,8 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 
 	memcpy(smp->rrnd, req->val, sizeof(smp->rrnd));
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		ra = &conn->dst;
-		ia = &conn->src;
-	} else {
-		ra = &conn->src;
-		ia = &conn->dst;
-	}
-
-	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp, ia, ra, cfm);
+	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp, &conn->init_addr,
+		     &conn->resp_addr, cfm);
 	if (err) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}

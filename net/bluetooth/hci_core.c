@@ -804,6 +804,14 @@ static void le_conn_complete(struct bt_buf *buf)
 	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		bt_addr_le_copy(&conn->init_addr, &conn->src);
+		bt_addr_le_copy(&conn->resp_addr, &evt->peer_addr);
+	} else {
+		bt_addr_le_copy(&conn->init_addr, &evt->peer_addr);
+		bt_addr_le_copy(&conn->resp_addr, &conn->src);
+	}
+
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
 	if ((evt->role == BT_HCI_ROLE_MASTER) ||
