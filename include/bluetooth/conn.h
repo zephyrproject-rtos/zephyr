@@ -141,6 +141,7 @@ struct bt_conn_cb {
 	void (*identity_resolved)(struct bt_conn *conn,
 				  const bt_addr_le_t *rpa,
 				  const bt_addr_le_t *identity);
+	void (*security_changed)(struct bt_conn *conn, bt_security_t level);
 
 	struct bt_conn_cb *_next;
 };

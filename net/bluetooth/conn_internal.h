@@ -131,3 +131,6 @@ void bt_conn_connected(struct bt_conn *conn);
 
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);
+
+/* Notify higher layers that connection security changed */
+void bt_conn_security_changed(struct bt_conn *conn);

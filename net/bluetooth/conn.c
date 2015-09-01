@@ -120,6 +120,17 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	}
 }
 
+void bt_conn_security_changed(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->security_changed) {
+			cb->security_changed(conn, conn->sec_level);
+		}
+	}
+}
+
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
 	cb->_next = callback_list;

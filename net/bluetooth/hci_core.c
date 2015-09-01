@@ -313,6 +313,11 @@ static void update_sec_level(struct bt_conn *conn)
 {
 	struct bt_keys *keys;
 
+	if (!conn->encrypt) {
+		conn->sec_level = BT_SECURITY_LOW;
+		return;
+	}
+
 	keys = bt_keys_find_addr(&conn->dst);
 	if (keys && keys->type == BT_KEYS_AUTHENTICATED) {
 		conn->sec_level = BT_SECURITY_HIGH;
@@ -347,11 +352,10 @@ static void hci_encrypt_change(struct bt_buf *buf)
 
 	conn->encrypt = evt->encrypt;
 
-	if (conn->encrypt) {
-		update_sec_level(conn);
-	}
-
+	update_sec_level(conn);
 	bt_l2cap_encrypt_change(conn);
+	bt_conn_security_changed(conn);
+
 	bt_conn_put(conn);
 }
 
