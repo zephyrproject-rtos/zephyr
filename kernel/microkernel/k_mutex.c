@@ -188,9 +188,9 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 		Mutex->owner = A->args.l1.task;
 
 		/*
-		 * Assign the task's priority directly if the requesting
-		 * task is on this node.  This may be more recent than
-		 * that stored in struct k_args.
+		 * Assign the current owner's priority from the priority found in the
+		 * current task's task object: the priority stored there may be more
+		 * recent than the one stored in struct k_args.
 		 */
 		Mutex->current_owner_priority = _k_current_task->priority;
 
@@ -218,14 +218,10 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 
 		if (likely(A->Time.ticks != TICKS_NONE)) {
 			/* A non-zero timeout was specified. */
-				/*
-				 * The requesting task is on this node. Ensure
-				 * the priority saved in the request is up to
-				 * date.
-				 */
-				A->Ctxt.task = _k_current_task;
-				A->priority = _k_current_task->priority;
-				_k_state_bit_set(_k_current_task, TF_LOCK);
+			/* ensure the priority saved in the request is up to date */
+			A->Ctxt.task = _k_current_task;
+			A->priority = _k_current_task->priority;
+			_k_state_bit_set(_k_current_task, TF_LOCK);
 			/* Note: Mutex->waiters is a priority sorted list */
 			INSERT_ELM(Mutex->waiters, A);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
