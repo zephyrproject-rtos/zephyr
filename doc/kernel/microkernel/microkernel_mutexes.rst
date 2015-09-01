@@ -103,7 +103,7 @@ For example, the file :file:`projName.mdef` defines a single mutex as follows:
    % ===============
      MUTEX  DEVICE_X
 
-A public mutex can be referenced from any source file that includes
+A public mutex can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
 
 

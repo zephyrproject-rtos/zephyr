@@ -103,8 +103,8 @@ For example, the file :file:`projName.mdef` defines two semaphores as follows:
       SEMA INPUT_DATA
       SEMA WORK_DONE
 
-A public semaphore can be referenced from any source file that includes
-the file :file:`zephyr.h`.
+A public semaphore can be referenced by name from any source file that
+includes the file :file:`zephyr.h`.
 
 
 Private Semaphore

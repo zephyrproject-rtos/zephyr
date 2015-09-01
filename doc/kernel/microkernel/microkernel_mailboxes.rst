@@ -57,8 +57,8 @@ For example, the file :file:`projName.mdef` defines a mailbox as follows:
    % ==========================
      MAILBOX   REQUEST_BOX
 
-A public mailbox can be referenced from any source file that includes
-the file :file:`zephyr.h`.
+A public mailbox can be referenced by name from any source file that
+includes the file :file:`zephyr.h`.
 
 
 Private Mailbox

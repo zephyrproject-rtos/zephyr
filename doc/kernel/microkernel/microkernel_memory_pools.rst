@@ -111,8 +111,8 @@ as follows:
       POOL MY_POOL         32   8192      1
       POOL SECOND_POOL_ID  64   1024      5
 
-A public memory pool can be referenced from any source file that includes
-the file :file:`zephyr.h`.
+A public memory pool can be referenced by name from any source file that
+includes the file :file:`zephyr.h`.
 
 .. note::
    Private memory pools are not supported by the Zephyr kernel.

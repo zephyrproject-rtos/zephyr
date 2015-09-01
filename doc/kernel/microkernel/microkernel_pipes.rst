@@ -71,7 +71,7 @@ buffer as follows:
    % ===============================
      PIPE   DATA_PIPE        1024
 
-A public pipe can be referenced from any source file that includes
+A public pipe can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
 
 

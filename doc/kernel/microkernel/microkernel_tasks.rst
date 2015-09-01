@@ -196,13 +196,17 @@ manipulated as a single unit, rather than individually. This simplifies
 the work required to start related tasks, to suspend and resume them, or
 to abort them.
 
-A task can be defined so that it initially belongs to a single task group,
-multiple task groups, or no task group. A task's group memberships can
-also be changed dynamically while the application is running.
+The kernel supports a maximum of 32 distinct task groups. Each task group
+has a name that uniquely identifies it, allowing it to be directly referenced
+by tasks.
 
-The kernel supports a maximum of 32 distinct task groups. The task groups
-listed below are pre-defined by the kernel; additional task groups can
-be defined by the application.
+The task groups a task belong to are specified when the task is defined.
+A task may belong to a single task group, to multiple task groups, or to
+no task group. A task's group memberships can also be changed dynamically
+while the application is running.
+
+The task groups listed below are pre-defined by the kernel; additional
+task groups can be defined by the application.
 
    :c:macro:`EXE`
       The set of tasks which are started automatically by the kernel
@@ -283,7 +287,7 @@ of six tasks as follows:
      TASK SPEAKER1_TASK   10   speaker_1_main  1024   [AUDIO_TASKS]
      TASK SPEAKER2_TASK   10   speaker_2_main  1024   [AUDIO_TASKS]
 
-A public task can be referenced from any source file that includes
+A public task can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
 
 
@@ -343,8 +347,8 @@ as follows:
      TASKGROUP   AUDIO_TASKS
      TASKGROUP   KEYPAD_TASKS
 
-A public task group can be referenced from any source file that includes
-the file :file:`zephyr.h`.
+A public task group can be referenced by name from any source file that
+includes the file :file:`zephyr.h`.
 
 .. note::
    Private task groups are not supported by the Zephyr kernel.

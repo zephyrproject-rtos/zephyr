@@ -104,7 +104,7 @@ as follows:
       EVENT KEYPRESS        validate_keypress
       EVENT BUTTONPRESS     NULL
 
-A public event can be referenced from any source file that includes
+A public event can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
 
 .. note::

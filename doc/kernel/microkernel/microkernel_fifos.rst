@@ -98,7 +98,7 @@ that holds up to 10 items that are each 12 bytes long as follows:
    % =============================
      FIFO SIGNAL_FIFO   10    12
 
-A public FIFO can be referenced from any source file that includes
+A public FIFO can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
 
 

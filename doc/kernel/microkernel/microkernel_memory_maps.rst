@@ -79,8 +79,8 @@ as follows:
      MAP  MYMAP     4             1024
      MAP  YOURMAP   6             200
 
-A public memory map can be referenced from any source file that includes
-the file :file:`zephyr.h`.
+A public memory map can be referenced by name from any source file that
+includes the file :file:`zephyr.h`.
 
 
 Private Memory Map
