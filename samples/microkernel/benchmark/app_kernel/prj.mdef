@@ -43,3 +43,7 @@
 % POOL NAME         SIZE_SMALL SIZE_LARGE BLOCK_NUMBER
 % ====================================================
   POOL DEMOPOOL            16        16            1
+
+% EVENT NAME        ENTRY
+% =========================
+  EVENT TEST_EVENT  NULL

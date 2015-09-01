@@ -34,9 +34,6 @@
 
 #ifdef EVENT_BENCH
 
-/* define a event */
-#define TEST_EVENT 0
-
 /* #define EVENT_CHECK */
 #ifdef EVENT_CHECK
 static char EventSignalErr[] = "------------ Error signalling event.\n";
