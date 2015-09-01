@@ -58,9 +58,6 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 
 	mycopypacket(&Request, RequestOrig);
 
-	/* if we end up here, we arrived at destination node and the packet
-	   Request is not local */
-
 	/* Now, we need a new packet for processing of the request;
 	   the Request package is too small b/c of space lost due to possible
 	   embedded local data
