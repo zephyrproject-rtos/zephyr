@@ -246,7 +246,7 @@ void gpio_dw_isr(struct device *port)
 	struct gpio_runtime_dw *context = port->driver_data;
 	struct gpio_config_dw *config = port->config->config_info;
 	uint32_t base_addr = config->base_addr;
-	uint32_t int_status, bit;
+	uint32_t enabled_int, int_status, bit;
 
 	int_status = dw_read(base_addr, INTSTATUS);
 	dw_write(base_addr, PORTA_EOI, -1);
@@ -260,8 +260,9 @@ void gpio_dw_isr(struct device *port)
 	}
 
 	if (context->enabled_callbacks) {
+		enabled_int = int_status & context->enabled_callbacks;
 		for (bit = 0; bit < 32; bit++) {
-			if (context->enabled_callbacks & (1 << bit)) {
+			if (enabled_int & (1 << bit)) {
 				context->callback(port, (1 << bit));
 			}
 		}
