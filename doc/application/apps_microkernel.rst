@@ -55,7 +55,7 @@ with a ``%`` are comments.
 The contents of an MDEF file can be, for example:
 
 .. code-block:: console
-   :lineos:
+   :linenos:
 
    % TASKGROUP    NAME
    % =======================
