@@ -41,6 +41,12 @@ possible. Once the mutex has been unlocked, the lower priority task
 sets its task priority to the priority it had prior to locking that
 mutex.
 
+.. note::
+
+   The :option:`PRIORITY_CEILING` configuration option limits how high
+   the kernel can raise a task's priority due to priority inheritance.
+   The default value of 0 permits unlimited elevation.
+
 When two or more tasks wait on a mutex held by a lower priority task, the
 kernel adjusts the owning task's priority each time a task begins waiting
 (or gives up waiting). When the mutex is eventually released the owning
