@@ -3,13 +3,8 @@
 Platform Configuration: basic_cortex_m3
 #######################################
 
-Introduction
-************
-
-This section provides an overview of the basic_cortex_m3 platform configuration.
-
 Overview
-========
+********
 
 The basic_cortex_m3 platform configuration is used by Zephyr applications
 to emulate the TI LM3S6965 platform running on QEMU. It provides support
