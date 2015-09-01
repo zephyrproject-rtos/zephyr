@@ -148,8 +148,9 @@ void *sys_thread_custom_data_get(void)
  * normally or abnormally. It is called for the termination of any thread,
  * (fibers and tasks).
  *
- * This routine must be invoked from a fiber to guarantee that the list
- * of threads does not change in mid-operation.
+ * This routine must be invoked either from a fiber or from a task with
+ * interrupts locked to guarantee that the list of threads does not change in
+ * mid-operation. It cannot be called from ISR context.
  *
  * @return N/A
  */
