@@ -1009,8 +1009,6 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 	const bt_addr_le_t *dst;
 	struct bt_keys *keys;
 
-	BT_DBG("\n");
-
 	BT_DBG("identity %s\n", bt_addr_le_str(&req->addr));
 
 	if (!bt_addr_le_is_identity(&req->addr)) {
