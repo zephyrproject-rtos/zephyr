@@ -101,10 +101,20 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	printk("Identity resolved %s -> %s\n", addr_rpa, addr_identity);
 }
 
+static void security_changed(struct bt_conn *conn, bt_security_t level)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Security changed: %s level %u\n", addr, level);
+}
+
 static struct bt_conn_cb conn_callbacks = {
 		.connected = connected,
 		.disconnected = disconnected,
 		.identity_resolved = identity_resolved,
+		.security_changed = security_changed,
 };
 
 static void cmd_init(int argc, char *argv[])
