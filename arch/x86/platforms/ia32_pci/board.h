@@ -147,6 +147,7 @@ extern struct device * const uart_devs[];
 #define PCI_INTD 4
 
 #ifndef _ASMLANGUAGE
+
 /*
  * Device drivers utilize the macros PLB_BYTE_REG_WRITE() and
  * PLB_BYTE_REG_READ() to access byte-wide registers on the processor
@@ -157,37 +158,6 @@ extern struct device * const uart_devs[];
 #define PLB_BYTE_REG_WRITE(data, address) \
 	sys_out8(data, (unsigned int)address)
 #define PLB_BYTE_REG_READ(address) sys_in8((unsigned int)address)
-
-/**
- *
- * @brief Output byte to memory location
- *
- * @return N/A
- *
- * NOMANUAL
- */
-
-static inline void outByte(uint8_t data, uint32_t addr)
-{
-	*(volatile uint8_t *)addr = data;
-}
-
-/**
- *
- * @brief Obtain byte value from memory location
- *
- * This function issues the 'move' instruction to read a byte from the specified
- * memory address.
- *
- * @return the byte read from the specified memory address
- *
- * NOMANUAL
- */
-
-static inline uint8_t inByte(uint32_t addr)
-{
-	return *((volatile uint8_t *)addr);
-}
 
 /*
  * Device drivers utilize the macros PLB_WORD_REG_WRITE() and
@@ -200,37 +170,6 @@ static inline uint8_t inByte(uint32_t addr)
 	sys_out16(data, (unsigned int)address)
 #define PLB_WORD_REG_READ(address) sys_in16((unsigned int)address)
 
-/**
- *
- * @brief Output word to memory location
- *
- * @return N/A
- *
- * NOMANUAL
- */
-
-static inline void outWord(uint16_t data, uint32_t addr)
-{
-	*(volatile uint16_t *)addr = data;
-}
-
-/**
- *
- * @brief Obtain word value from memory location
- *
- * This function issues the 'move' instruction to read a word from the specified
- * memory address.
- *
- * @return the word read from the specified memory address
- *
- * NOMANUAL
- */
-
-static inline uint16_t inWord(uint32_t addr)
-{
-	return *((volatile uint16_t *)addr);
-}
-
 /*
  * Device drivers utilize the macros PLB_LONG_REG_WRITE() and
  * PLB_LONG_REG_READ() to access longword-wide registers on the processor
@@ -242,36 +181,6 @@ static inline uint16_t inWord(uint32_t addr)
 	sys_out32(data, (unsigned int)address)
 #define PLB_LONG_REG_READ(address) sys_in32((unsigned int)address)
 
-/**
- *
- * @brief Output long word to memory location
- *
- * @return N/A
- *
- * NOMANUAL
- */
-
-static inline void outLong(uint32_t data, uint32_t addr)
-{
-	*(volatile uint32_t *)addr = data;
-}
-
-/**
- *
- * @brief Obtain long word value from memory location
- *
- * This function issues the 'move' instruction to read a word from the specified
- * memory address.
- *
- * @return the long word read from the specified memory address
- *
- * NOMANUAL
- */
-
-static inline uint32_t inLong(uint32_t addr)
-{
-	return *((volatile uint32_t *)addr);
-}
 #endif /* !_ASMLANGUAGE */
 
 /**

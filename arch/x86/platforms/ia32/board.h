@@ -137,9 +137,6 @@ extern struct device * const uart_devs[];
 #define PLB_BYTE_REG_WRITE(data, address) sys_out8(data, (unsigned int)address)
 #define PLB_BYTE_REG_READ(address) sys_in8((unsigned int)address)
 
-#define outByte(data, address) sys_out8(data, (unsigned int)address)
-#define inByte(address) sys_in8((unsigned int)address)
-
 /*
  * Device drivers utilize the macros PLB_WORD_REG_WRITE() and
  * PLB_WORD_REG_READ() to access shortword-wide registers on the processor
