@@ -3,8 +3,8 @@
 Define Documentation
 ####################
 
-Defines are documented similarly as functions. There are some note
-worthy differences:
+Defines are documented similarly as functions. Some noteworthy
+differences are:
 
 * The best practice for defines requires the use of the **@def**
   special command.
@@ -12,8 +12,8 @@ worthy differences:
 * Just as with functions we provide a full and a simplified template.
   The simplified template is also accepted. The syntax used in the
   simplified template should only be used if you are familiar with
-  Doxygen. If you are having problems getting the documentation to
-  generate properly use the full template.
+  Doxygen. Use the full template if you are having problems getting
+  the documentation to generate properly.
 
 Define Comment Templates
 ************************
@@ -48,7 +48,7 @@ Define Documentation Example
 ****************************
 
 This simple example shows how to document a define with the least amount
-of effort while still following the best practices.
+of effort while still following best practices.
 
 Correct:
 

@@ -19,7 +19,7 @@ beginning of the file. The file header must contain:
 .. note::
 
    Doxygen has special commands for copyrights (@copyright), authors
-   (@author), and other important information. Please refer to the
+   (@author), and other important information. Refer to the
    `Doxygen documentation`_ for further details.
 
 .. _Doxygen documentation:

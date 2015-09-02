@@ -3,7 +3,7 @@
 How to Develop Microkernel Applications
 #######################################
 
-Microkernel applications are comprised of .c and . h files that are
+Microkernel applications are composed of .c and . h files that are
 integrated with the |codename| using MDEF files, Makefiles and .conf files.
 
 Developing a microkernel application can be accomplished in five steps:
@@ -20,7 +20,7 @@ Developing a microkernel application can be accomplished in five steps:
 
 #. Compile and test your application.
 
-The following procedures explain how to accomplish this using examples.
+The following procedures show examples of how to accomplish this.
 
 Before Starting the Development of a Microkernel App
 ****************************************************
@@ -40,7 +40,7 @@ Once you have completed those tasks, you should be able to answer:
 
 * What rules and conventions must the development follow?
 
-If you are able to answer this questions, you can start developing your
+If you are able to answer these questions, you can start developing your
 application.
 
 Creating an MDEF File
@@ -87,9 +87,9 @@ The contents of an MDEF file can be, for example:
      MUTEX POPPARAM
      MUTEX PUSHPARAM
 
-Each object must follow a specific syntax. The name of an object must be an
+Each object must follow a specific syntax. The object name must be an
 alphanumeric, with an alphabetical first character. Upper- and lowercase
-letters are allowed, but embedded spaces are not. The convention is to give
+letters are allowed; embedded spaces are not. The convention is to give
 each object a name that is in all uppercase letters. This makes it easy to
 distinguish between object names and variable names. Finally, all names must
 be unique. A pipe cannot have the same name as a FIFO, even though they are
@@ -106,9 +106,9 @@ application. The required MDEF file can be in any folder of your
 application as long as the path is referenced in the application's Makefile.
 
 The application's root folder must contain a Makefile that links the
-application to the kernel, see :ref:`root_makefile` for details. Each folder
-in your source tree needs to have a Makefile that links the folder's
-contents with the rest of your source tree, see :ref:`source_makefile` for
+application to the kernel; see :ref:`root_makefile` for details. Each folder
+in your source tree must have a Makefile that links the folder's
+contents with the rest of your source tree; see :ref:`source_makefile` for
 details.
 
 Finally, remember that your application will be compiled into the
@@ -122,8 +122,8 @@ Creating the Makefiles for the Application
 ******************************************
 
 This section explains how the Makefiles within the folders of your
-application link it to the kernel. The build system's will assume that there
-is an application's root folder with a :file:`src` folder containing all
+application link it to the kernel. The build system's Makefile will assume that
+the application's root folder has a :file:`src` folder containing all
 source files. The name of the folder can be changed to whatever name suits
 your needs. The :file:`src` folder can have as many subfolders as needed but
 all folders must contain a Makefile.
@@ -133,7 +133,7 @@ However, some contents are required for a successful integration. The
 contents required in the application's Makefile at the main folder differ
 from those required in the Makefiles inside the source folders.
 
-For the detailed information regarding the build system's Makefiles see:
+For detailed information regarding the build system's Makefiles see:
 :ref:`kbuild_makefiles`.
 
 .. _root_makefile:
@@ -144,7 +144,7 @@ The Application's Root Folder Makefile
 The Makefile in the application's root folder must contain at least these
 entries:
 
-* :makevar:`MDEF_FILE`: The name of the the application's MDEF file.
+* :makevar:`MDEF_FILE`: The name of the application's MDEF file.
 
 * :makevar:`KERNEL_TYPE`: Either `nano` for nanokernel applications or
    `micro` for microkernel applications.
@@ -158,8 +158,7 @@ entries:
 * ``include ${ZEPHYR_BASE}/Makefile.inc`` This instruction adds the contents
    of the :file:`Makefile.inc` found in the kernel's root folder.
 
-For all the information regarding the Makefile variables see:
-:ref:`kbuild_project`.
+For more information about Makefile variables see :ref:`kbuild_project`.
 
 Examples
 --------
@@ -180,8 +179,8 @@ The following example shows a generic application's root folder Makefile:
 Line 4 shows how to conditionally add files. The build system replaces the
 variable ``$(ARCH)`` for each supported architecture.
 
-The entry in line 6 includes all the entries located in :file:`Makefile.inc`
-at the kernel's root folder. The entries let the build system know, that
+The entry in line 6 includes all entries located in :file:`Makefile.inc`
+at the kernel's root folder. The entries let the build system know that
 your application has to be included as part of the build.
 
 The next example comes from the kernel's code, specifically from
@@ -196,20 +195,19 @@ The next example comes from the kernel's code, specifically from
 The file :file:`proj.mdef` from line 1 can be found in
 :file:`microkernel/apps/hello_world/` and contains the configuration entries
 of all microkernel objects used in the application. For more information
-regarding MDEF files see, the :ref:`microkernel` documentation.
+regarding MDEF files see the :ref:`microkernel` documentation.
 
 The entry in line 4 references the files :file:`proj_arm.conf` and
 :file:`proj_x86.conf` also found at that location. Those files include the
-configuration values that differ from the default. For more information
-regarding these configuration snippets see: :ref:`configuration_snippets`.
+configuration values that differ from the default. See
+:ref:`configuration_snippets` for details.
 
 
 The Application's Source Folders Makefiles
 ==========================================
 
 The Makefiles in the source folders add the files within the folders to the
-build system. All information about adding source files and directories to
-your project can be found in :ref:`makefile_conventions`.
+build system. See :ref:`makefile_conventions` for details.
 
 Examples
 --------

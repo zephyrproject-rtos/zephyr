@@ -6,7 +6,7 @@ Atomic Services
 Concepts
 ********
 
-The kernel supports an atomic 32-bit data type, called :c:type:`atomic_t`.
+The kernel supports an atomic 32-bit data type called :c:type:`atomic_t`.
 A variable of this type can be read and modified by any task, fiber, or ISR
 in an uninterruptible manner. This guarantees that the desired operation
 will not be interfered with due to the scheduling of a higher priority context,
@@ -21,7 +21,7 @@ requires the manipulation of a single 32-bit data item.
 
 .. note::
    Using an atomic variable is typically far more efficient than using
-   other techniques to implement critical sections, such as using
+   other techniques to implement critical sections such as using
    a microkernel mutex, offloading the processing to a fiber, or
    locking interrupts.
 

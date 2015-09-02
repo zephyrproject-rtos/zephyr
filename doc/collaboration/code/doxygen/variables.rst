@@ -33,25 +33,25 @@ the best practices.
    :emphasize-lines: 15, 18, 21-23, 25, 31
    :linenos:
 
-Lines 15 and 18 show the documentation for two variables. Notice the
-blank line 17. That line is necessary not only to increase the clarity
-of the code but also to avoid Doxygen not determining properly where
+Lines 15 and 18 show the documentation for two variables.
+The blank line 17 is necessary to increase the clarity
+of the code and also so Doxygen can determine properly where
 the comment belongs.
 
 Lines 21-23 show another acceptable way to document two variables with a
-similar function. Notice that only one of the variables is documented,
-the first one. The argument can be made that **kmutex_t f2** is no
+similar function. Notice that only the first variable is documented.
+The argument can be made that **kmutex_t f2** is no
 longer a significant variable because it does not add any functionality
 that has not been described for **kmutex_t f1**.
 
 Lines 25 and 31 show us a different situation. Although both variables
 are of the same type and very similar, they have different purposes.
-Therefore both have to be documented and the difference between them
+Therefore, both must be documented and the difference between them
 must be noted.
 
 Example 2
 =========
-Variables outside of functions have to be documented as well.
+Variables outside of functions must be documented as well.
 
 .. literalinclude:: hello_commented.c
    :language: c
@@ -59,7 +59,7 @@ Variables outside of functions have to be documented as well.
    :emphasize-lines: 1, 4, 7
    :linenos:
 
-As you can see the syntax of the comment does not change. Always start
+As you can see, the syntax of the comment does not change. Always start
 the comment with :literal:`/**` and end it with :literal:`*/`. Remember
 to begin with a capital letter and end with a period, even if the
 comment is only a sentence fragment.

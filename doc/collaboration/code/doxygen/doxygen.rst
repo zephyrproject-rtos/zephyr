@@ -22,7 +22,7 @@ comment different parts of the code. Files, functions, defines, structures,
 variables and type definitions must be documented.
 
 We have grouped the guides according to the object that is being
-documented. Read sections carefully since each object provides further
+documented. Read sections carefully, as each object provides further
 details as to how to document the code as a whole.
 
 These simple rules apply to all the code that you wish to include in

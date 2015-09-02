@@ -3,7 +3,7 @@
 Rules for Collaboration on an Open Source Mailing List
 ######################################################
 
-Follow these rules to effectively use the mailing list and get as much
+Follow these rules to use the mailing list effectively and get as much
 feedback as possible on your work.
 
 * Use the mailing list as much as possible.
@@ -22,11 +22,11 @@ feedback as possible on your work.
   time implementing a solution that the community may reject.
 
 * Write briefly and to the point but give enough context for someone
-  to respond without recreating your thought process.
+  to respond without re-creating your thought process.
 
 * Be persistent if you are not getting a response but be measured.
 
-* Write a separate email each work item. If they are connected, say so
+* Write a separate email for each work item. If they are connected, say so
   in each email.
 
 * Don't rehash old issues.
@@ -56,7 +56,7 @@ References
 
    + http://lifehacker.com/5473859/basic-etiquette-for-email-lists-and-forums
 
-* Reasons why top posting considered harmful:
+* Reasons why top posting is considered harmful:
 
    + https://lkml.org/lkml/2005/1/11/111
 

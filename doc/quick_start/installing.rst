@@ -3,46 +3,38 @@
 Installing the Zephyr Kernel
 ############################
 
-This section describes all the installation procedures needed to install the
-kernel in a development system and how to get access to the kernel's source
-code.
+This section describes how to install the kernel in a development system
+and how to get access to the kernel's source code.
 
 .. _linux_development_system:
 
-Using a Linux Development System
-********************************
+Prerequisites
+*************
 
 Installing the Operating System
 ===============================
 
-The steps needed for installing the operating system of the development
-system are beyond the scope of this document. Please refer to the
-documentation of your operating system of choice. The project supports both
-Ubuntu and Fedora.
+The kernel has been tested on Ubuntu and Fedora. Instructions for
+installing these OSes are beyond the scope of this document.
 
 Configuring Network and Proxies
-=================================
+===============================
 
-The installation process requires the use of git, ssh, wget,
-curl, and apt-get. The installation and configuration of these services for
-a development system is beyond the scope of this document.  Once installed,
-verify that each service can access the Internet and is not impeded by a
-firewall.
-
-Before you continue, ensure that your development system can use the
-above commands in both User and root configurations. Please refer to
-the documentation of your operating system of choice.
+Building the kernel requires the command-line tools of git, ssh, wget,
+curl, and apt-get. Verify that each service can be run as both
+user and root and that access to the Internet and is not impeded
+by a firewall.
 
 Update Your Operating System
-=================================
+============================
 
-In Ubuntu enter:
+Before proceeding with the build, ensure your OS is up to date. On Ubuntu:
 
 .. code-block:: bash
 
    $ sudo apt-get update
 
-In Fedora enter:
+On Fedora:
 
 .. code-block:: bash
 
@@ -50,24 +42,23 @@ In Fedora enter:
 
 .. _required_software:
 
-Installing Required Software
-=================================
+Installing Requirements and Dependencies
+========================================
 
-Install the following requirements on the host system using either
-apt-get or yum.
+Install the following with either apt-get or yum.
 
 .. note::
    Minor version updates of the listed required packages might also
    work.
 
-Install the required packages in a Ubuntu host system, type:
+Install the required packages in a Ubuntu host system with:
 
 .. code-block:: bash
 
    $ sudo apt-get install git make gcc gcc-multilib g++ \
      libc6-dev-i386 g++-multilib
 
-Install the required packages in a Fedora host system, type:
+Install the required packages in a Fedora host system with:
 
 .. code-block:: bash
 
@@ -81,13 +72,11 @@ Install the required packages in a Fedora host system, type:
 Installing the Zephyr Software Development Kit
 ==============================================
 
-The |project|'s :abbr:`SDK (Software Development Kit)` provided by
-Yocto contains all necessary tools and cross compilers needed to build the
-|codename| on all supported architectures. In addition it includes
-host tools such as a custom QEMU and a host compiler for building host
-tools if necessary. With this SDK, there is no need to build any cross
-compilers or emulation environments. The SDK supports the following
-architectures:
+Zephyr's :abbr:`SDK (Software Development Kit)` provided by Yocto contains all necessary tools
+and cross-compilers needed to build the kernel on all supported architectures.
+Additionally, it includes host tools such as a custom QEMU and a host compiler for building host
+tools if necessary. With this SDK, there is no need to build any cross compilers or
+emulation environments. The SDK supports the following architectures:
 
 * :abbr:`IA-32 (Intel Architecture 32 bits)`
 
@@ -158,26 +147,26 @@ Follow these steps to install the SDK on your host system.
        $ export YOCTO_SDK_INSTALL_DIR=/opt/zephyr-sdk/0.5
 
 Installing a Custom QEMU for ARM Platforms
-============================================
+==========================================
 
-The Yocto SDK comes with a Qemu binary suitable for running sample |codename|
-applications. The steps below are only needed if you choose not to use the
+The Yocto SDK comes with a QEMU binary suitable for running sample |codename|
+applications. The steps below are needed only if you choose not to use the
 provided binary and use a custom built binary instead.
 
-If you require to test ARM builds, a localized patch to the QEMU source
+If you require testing ARM builds, a localized patch to the QEMU source
 is needed. The patch corrects the issues with the locking interfaces
-QEMU uses. If you are working only with the x86 builds of the Zephyr kernel,
+QEMU uses. If you are working with the x86 builds of the Zephyr kernel,
 install QEMU from your systems default package manager.
 
 Follow these steps to enable a customized build of QEMU:
 
-#. Clone the QEMU repository, type:
+#. Clone the QEMU repository:
 
 .. code-block:: bash
 
    $ git clone git://git.qemu-project.org/qemu.git
 
-#. Checkout the v2.1 stable branch, type:
+#. Checkout the v2.1 stable branch:
 
 .. code-block:: bash
 
@@ -185,14 +174,14 @@ Follow these steps to enable a customized build of QEMU:
 
    $ git checkout stable-2.1
 
-#. Apply our internal patch, type:
+#. Apply our internal patch:
 
 .. code-block:: bash
 
    $ git am $ZEPHYR_BASE/scripts/0001-armv7m-support-basepri-primask-
    interrupt-locking.patch
 
-#. Update the submodules as needed, type:
+#. Update the submodules as needed:
 
 .. code-block:: bash
 
@@ -200,19 +189,19 @@ Follow these steps to enable a customized build of QEMU:
 
    $ git submodule update --init dtc
 
-#. Build QEMU v2.1, type:
+#. Build QEMU v2.1:
 
 .. code-block:: bash
 
    $ ./configure && make
 
-* You can also build QEMU to a private directory, type:
+* You can also build QEMU to a private directory:
 
 .. code-block:: bash
 
    $ ./configure --prefix=$MY_PREFERED_INSTALL_LOCATION && make
 
-* Install QEMU, type:
+* Install QEMU:
 
 .. code-block:: bash
 
@@ -221,19 +210,18 @@ Follow these steps to enable a customized build of QEMU:
 .. _setup_development_environment:
 
 Setup a Local Development Environment
-**************************************
+*************************************
 
 The |project|'s source code is maintained using GIT and is served using
 Gerrit.
 
-Gerrit access requires some basic user setup. The following process has
-been defined as a simple walk-through to enable quick access to the
-Gerrit services.
+Gerrit access requires some basic user setup. The following process shows
+a simple walk-through to enable quick access to the Gerrit services.
 
 .. _access_source:
 
 Getting Access
-================
+==============
 
 #. `Create`_ or `update`_ a 01.org_ account.
 
@@ -259,10 +247,7 @@ Gerrit uses SSH to interact with your GIT client. A SSH private key
 needs to be generated on the development machine with a matching public
 key on the Gerrit server.
 
-If you already have a SSH key-pair you would like to use, please skip
-down to step.
-
-Please follow the steps below to get started.
+If you already have a SSH key-pair, skip this section.
 
 1. Create a key-pair in your Linux machine, type:
 
@@ -275,17 +260,16 @@ Please follow the steps below to get started.
    NOT enter a blank password.
 
 
-The generated key-pair is found at:
+The generated key-pair is found in:
 :file:`~/.ssh/id_rsa and ~/.ssh/id_rsa.pub`.
 
-2. Add the the private key in the :file:`id_rsa` file in your key ring,
-type:
+2. Add the private key in the :file:`id_rsa` file in your key ring:
 
 .. code-block:: bash
 
    $ ssh-add ~/.ssh/id_rsa
 
-3. Add your the public key :file:`id_rsa.pub` to the Gerrit account:
+3. Add your public key :file:`id_rsa.pub` to the Gerrit account:
 
    a. Go to `access Gerrit`_.
 
@@ -293,18 +277,18 @@ type:
 
    c. From the pop-up menu, select :guilabel:`Settings`.
 
-   d. On the left hand menu select, click on
+   d. On the left side menu select, click on
    :guilabel:`SSH Public Keys`.
 
    e. Click Add key and paste the contents of your public key
    :file:`~/.id/id_rsa.pub`.
 
-.. note:: To obtain the contents of your public key on a Linux machine type:
+.. note:: To obtain the contents of your public key on a Linux machine:
 
    :command:`$ cat ~/.ssh/id_rsa.pub`
 
    The output is the contents of :file:`~/.id/id_rsa.pub`. Paste it into the
-  Add SSH key window in Gerrit.
+  'Add SSH key' window in Gerrit.
 
 .. warning:: Potential Security Risk
    Do not copy your private key :file:`~/.ssh/id_rsa` Use only the public
@@ -315,26 +299,26 @@ type:
 Checking Out the Source Code
 ============================
 
-#. Ensure that SSH has been set up porperly. See
+#. Ensure that SSH has been set up properly. See
    `Configuring SSH to Use Gerrit`_ for details.
 
-#. Clone the repository, type:
+#. Clone the repository:
 
    .. code-block:: bash
 
       $ git clone ssh://01ORGUSERNAME@oic-review.01.org:29418/forto-collab
 
-#. You have checked out a local copy of the source code. Develop
-   freely, issuing as many commits and rebases as needed.
+#. You have successfully checked out a copy of the source code to your local machine.
+Develop freely, issuing as many commits and rebases as needed.
 
 
-#. Change to the main project directory, type:
+#. Change to the main project directory:
 
     .. code-block:: bash
 
        $ cd forto-collab
 
-#. Source the project environment file to setup project variables, type:
+#. Source the project environment file to setup project variables:
 
     .. code-block:: bash
 

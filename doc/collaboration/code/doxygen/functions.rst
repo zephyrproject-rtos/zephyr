@@ -4,10 +4,10 @@ Function Documentation
 ######################
 
 Doxygen recognizes a wide variety of syntaxes and structures for the
-function comments. The syntax described here is in not the only
-possible one nor does it exhaust all possible options. If your
-development needs the use of an option not described here use it. Use
-the following syntax:
+function comments. The syntax described here is not the only
+possible one, nor does it exhaust all possible options. If your
+development needs the use of an option not described here, use it.
+However, use the following syntax for everything else:
 
 Function Comment Templates
 **************************
@@ -93,7 +93,7 @@ The highlighted lines show how to reference the code from within a
 comment block. The direct reference is optional and the comments on
 lines 11 and 13 are not added to the documentation. This method allows
 for easy maintenance of the code blocks and easy addition of further
-details. It also helps maintain the 72 characters line length.
+details. It also helps maintain the 72 character line length.
 
 Example 2
 =========
@@ -111,8 +111,8 @@ command but notice line 1. The comment block was not started with
 
 The parameters have been documented using the \\param command. This is
 equivalent to using @param but incorrect according to these guidelines.
-Restructured Text uses the \\ as the escape for special characters. In
-order to avoid possible conflicts the \@ symbol must be used instead.
+Restructured Text uses the \\ as the escape for special characters.
+To avoid possible conflicts, the \@ symbol must be used instead.
 
 Notice that there is no blank line between the comment and the
 function's signature, lines 7 and 8. This allows Doxygen to correctly
@@ -121,7 +121,7 @@ link the comment to the function.
 Lines 13 and 16 contain two comments that won't be included by Doxygen
 in the documentation. Use the brief description or the detailed
 description inside the comment block to include that information.
-Remember that variables have to be documented separately. See
+Remember that variables must be documented separately. See
 :ref:`variable_documentation` for more details.
 
 .. literalinclude:: hello_commented.c
