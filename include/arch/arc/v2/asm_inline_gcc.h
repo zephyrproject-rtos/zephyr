@@ -68,7 +68,7 @@ static inline __attribute__((always_inline))
 static inline __attribute__((always_inline))
 	void sys_write16(uint16_t data, mm_reg_t addr)
 {
-	__asm__ volatile("stw%U1	%0, %1;\n\t"
+	__asm__ volatile("sth%U1	%0, %1;\n\t"
 			 :
 			 : "r" (data), "m" (*(volatile uint16_t *) addr)
 			 : "memory");
@@ -79,7 +79,7 @@ static inline __attribute__((always_inline))
 {
 	uint16_t ret;
 
-	__asm__ volatile("ldw%U1	%0, %1;\n\t"
+	__asm__ volatile("ldh%U1	%0, %1;\n\t"
 			 : "=r" (ret)
 			 : "m" (*(volatile uint16_t *) addr)
 			 : "memory");
@@ -112,35 +112,45 @@ static inline __attribute__((always_inline))
 static inline __attribute__((always_inline))
 	void sys_set_bit(mem_addr_t addr, int bit)
 {
-	__asm__ volatile("bset	%0, %0, %1;\n\t"
+	uint32_t reg = 0;
+
+	__asm__ volatile("ld	%1, %0\n"
+			 "bset	%1, %1, %2\n"
+			 "st	%1, %0;\n\t"
 			 : "+m" (*(volatile uint32_t *) addr)
-			 : "Mr" (bit)
+			 : "r" (reg), "Mr" (bit)
 			 : "memory", "cc");
 }
 
 static inline __attribute__((always_inline))
 	void sys_clear_bit(mem_addr_t addr, int bit)
 {
-	__asm__ volatile("bclr	%0, %0, %1;\n\t"
+	uint32_t reg = 0;
+
+	__asm__ volatile("ld	%1, %0\n"
+			 "bclr	%1, %1, %2\n"
+			 "st	%1, %0;\n\t"
 			 : "+m" (*(volatile uint32_t *) addr)
-			 : "Mr" (bit)
+			 : "r" (reg), "Mr" (bit)
 			 : "memory", "cc");
 }
 
 static inline __attribute__((always_inline))
 	int sys_test_bit(mem_addr_t addr, int bit)
 {
+	uint32_t status = _ARC_V2_STATUS32;
+	uint32_t reg = 0;
 	uint32_t ret;
-	uint32_t reg = _ARC_V2_STATUS32;
 
-	__asm__ volatile("btst	%2, %3;\n\t"
-			 "lr	%0, [%1];\n\t"
+	__asm__ volatile("ld	%2, %1\n"
+			 "btst	%2, %3\n"
+			 "lr	%0, [%4];\n\t"
 			 : "=r" (ret)
-			 : "i" (reg),
-			   "m" (*(volatile uint16_t *) addr), "Mr" (bit)
+			 : "m" (*(volatile uint32_t *) addr),
+			   "r" (reg), "Mr" (bit), "i" (status)
 			 : "memory", "cc");
 
-	return !((ret & _ARC_V2_STATUS32_Z) >> 11);
+	return !(ret & _ARC_V2_STATUS32_Z);
 }
 
 static inline __attribute__((always_inline))
