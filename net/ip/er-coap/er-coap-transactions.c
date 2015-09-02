@@ -82,8 +82,15 @@ coap_new_transaction(uint16_t mid, coap_context_t *coap_ctx,
 void
 coap_send_transaction(coap_transaction_t *t)
 {
-  PRINTF("Sending transaction %u data %p -> %p len %d\n", t->mid,
-	 t->packet, net_buf_data(t->coap_ctx->buf), t->packet_len);
+  PRINTF("Sending transaction %u buf %p data %p -> %p len %d\n", t->mid,
+	 t->coap_ctx->buf, t->packet, net_buf_data(t->coap_ctx->buf),
+	 t->packet_len);
+
+  if (!t->coap_ctx || !t->coap_ctx->buf) {
+    PRINTF("***ERROR*** ctx %p buf %p\n", t->coap_ctx, t->coap_ctx->buf);
+    coap_clear_transaction(t);
+    return;
+  }
 
   /* Copy the data from the transaction internal buffer to net_buf which
    * is used when actually sending the data. The payload will contain
@@ -164,6 +171,27 @@ coap_get_transaction_by_mid(uint16_t mid)
   return NULL;
 }
 /*---------------------------------------------------------------------------*/
+static inline struct net_buf *get_retransmit_buf(coap_transaction_t *t)
+{
+  coap_context_t *coap_ctx = t->coap_ctx;
+  uint8_t *ptr;
+
+  if (coap_ctx->buf) {
+    return coap_ctx->buf;
+  }
+
+  coap_ctx->buf = net_buf_get_tx(coap_ctx->net_ctx);
+  if (!coap_ctx->buf) {
+    return NULL;
+  }
+
+  ptr = net_buf_add(coap_ctx->buf, 0);
+  net_buf_data(coap_ctx->buf) = ptr;
+  uip_len(coap_ctx->buf) = t->packet_len;
+
+  return coap_ctx->buf;
+}
+
 void
 coap_check_transactions()
 {
@@ -173,7 +201,9 @@ coap_check_transactions()
     if(etimer_expired(&t->retrans_timer)) {
       ++(t->retrans_counter);
       PRINTF("Retransmitting %u (%u)\n", t->mid, t->retrans_counter);
-      coap_send_transaction(t);
+      if (get_retransmit_buf(t)) {
+        coap_send_transaction(t);
+      }
     }
   }
 }
