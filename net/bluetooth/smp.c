@@ -1006,6 +1006,7 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
 	struct bt_smp *smp = conn->smp;
+	const bt_addr_le_t *dst;
 	struct bt_keys *keys;
 
 	BT_DBG("\n");
@@ -1025,12 +1026,31 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	if (bt_addr_le_is_rpa(&conn->dst)) {
-		bt_addr_copy(&keys->irk.rpa, (bt_addr_t *)&conn->dst.val);
-		bt_addr_le_copy(&keys->addr, &req->addr);
-		bt_addr_le_copy(&conn->dst, &req->addr);
+	/* We can't use conn->dst here as this might already contain identity
+	 * address known from previous pairing. Since all keys are cleared on
+	 * re-pairing we wouldn't store IRK distributed in new pairing.
+	 */
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		dst = &conn->resp_addr;
+	} else {
+		dst = &conn->init_addr;
+	}
 
-		bt_conn_identity_resolved(conn);
+	if (bt_addr_le_is_rpa(dst)) {
+		/* always update last use RPA */
+		bt_addr_copy(&keys->irk.rpa, (bt_addr_t *)&dst->val);
+
+		/* Update connection address and notify about identity
+		 * resolved only if connection wasn't already reported with
+		 * identity address. This may happen if IRK was present before
+		 * ie. due to re-pairing.
+		 */
+		if (!bt_addr_le_is_identity(&conn->dst)) {
+			bt_addr_le_copy(&keys->addr, &req->addr);
+			bt_addr_le_copy(&conn->dst, &req->addr);
+
+			bt_conn_identity_resolved(conn);
+		}
 	}
 
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
