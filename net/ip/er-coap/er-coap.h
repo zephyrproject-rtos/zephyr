@@ -276,4 +276,6 @@ int coap_set_header_size1(void *packet, uint32_t size);
 int coap_get_payload(void *packet, const uint8_t **payload);
 int coap_set_payload(void *packet, const void *payload, size_t length);
 
+void coap_init_mid(void);
+
 #endif /* ER_COAP_H_ */

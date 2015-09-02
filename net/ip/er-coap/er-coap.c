@@ -267,6 +267,12 @@ coap_get_variable(const char *buffer, size_t length, const char *name,
 /*---------------------------------------------------------------------------*/
 /*- Internal API ------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
+void coap_init_mid(void)
+{
+  /* initialize transaction ID */
+  current_mid = random_rand();
+}
+
 coap_context_t *
 coap_init_connection(uip_ipaddr_t *server_addr, uint16_t server_port,
 		     uip_ipaddr_t *peer_addr, uint16_t peer_port)
@@ -278,8 +284,7 @@ coap_init_connection(uip_ipaddr_t *server_addr, uint16_t server_port,
     return NULL;
   }
 
-  /* initialize transaction ID */
-  current_mid = random_rand();
+  coap_init_mid();
 
   return coap_ctx;
 }
