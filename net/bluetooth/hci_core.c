@@ -758,6 +758,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 	struct bt_keys *keys;
+	bt_addr_le_t src;
 	int err;
 
 	BT_DBG("status %u handle %u role %u %s\n", evt->status, handle,
@@ -799,17 +800,18 @@ static void le_conn_complete(struct bt_buf *buf)
 	}
 
 	conn->handle   = handle;
-	conn->src.type = BT_ADDR_LE_PUBLIC;
-	memcpy(conn->src.val, bt_dev.bdaddr.val, sizeof(bt_dev.bdaddr.val));
 	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 
+	src.type = BT_ADDR_LE_PUBLIC;
+	memcpy(src.val, bt_dev.bdaddr.val, sizeof(bt_dev.bdaddr.val));
+
 	if (conn->role == BT_HCI_ROLE_MASTER) {
-		bt_addr_le_copy(&conn->init_addr, &conn->src);
+		bt_addr_le_copy(&conn->init_addr, &src);
 		bt_addr_le_copy(&conn->resp_addr, &evt->peer_addr);
 	} else {
 		bt_addr_le_copy(&conn->init_addr, &evt->peer_addr);
-		bt_addr_le_copy(&conn->resp_addr, &conn->src);
+		bt_addr_le_copy(&conn->resp_addr, &src);
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);

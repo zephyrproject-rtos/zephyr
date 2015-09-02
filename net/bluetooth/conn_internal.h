@@ -58,7 +58,6 @@ struct bt_conn {
 	uint8_t			role;
 	atomic_t		flags[1];
 
-	bt_addr_le_t		src;
 	bt_addr_le_t		dst;
 
 	bt_addr_le_t		init_addr;
