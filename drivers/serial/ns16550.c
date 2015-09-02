@@ -39,15 +39,7 @@
  * Before individual UART port can be used, ns16550_uart_port_init() has to be
  * called to setup the port.
  *
- *
- * A board support package's board.h header must provide definitions for:
- *
- * - the following register access routines:
- *
- *  unsigned int inByte(unsigned int address);
- *  void outByte(unsigned char data, unsigned int address);
- *
- * - and the following macro for the number of bytes between register addresses:
+ * - the following macro for the number of bytes between register addresses:
  *
  *  UART_REG_ADDR_INTERVAL
  */
@@ -60,6 +52,7 @@
 #include <toolchain.h>
 #include <sections.h>
 #include <drivers/uart.h>
+#include <sys_io.h>
 #ifdef CONFIG_PCI
 #include <pci/pci.h>
 #include <pci/pci_mgr.h>
@@ -207,8 +200,13 @@
 
 #define IIRC(dev)	(DEV_DATA(dev)->iir_cache)
 
-#define INBYTE(x) inByte(x)
-#define OUTBYTE(x, d) outByte(d, x)
+#if (!defined(CONFIG_NS16550_PCI) && defined(CONFIG_X86_32))
+#define INBYTE(x) sys_in8(x)
+#define OUTBYTE(x, d) sys_out8(d, x)
+#else
+#define INBYTE(x) sys_read8(x)
+#define OUTBYTE(x, d) sys_write8(d, x)
+#endif /* CONFIG_NS16550_PCI/CONFIG_X86_32 */
 
 static struct uart_driver_api ns16550_uart_driver_api;
 
