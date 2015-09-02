@@ -313,6 +313,21 @@ coap_obs_request_registration(coap_context_t *coap_ctx,
   set_token(request, token, token_len);
   t = coap_new_transaction(request->mid, coap_ctx, addr, port);
   if(t) {
+    uint8_t *ptr;
+
+    if (coap_ctx->buf) {
+      net_buf_put(coap_ctx->buf);
+    }
+
+    coap_ctx->buf = net_buf_get_tx(coap_ctx->net_ctx);
+    if (!coap_ctx->buf) {
+      coap_clear_transaction(t);
+      return NULL;
+    }
+
+    ptr = net_buf_add(coap_ctx->buf, 0);
+    net_buf_data(coap_ctx->buf) = ptr;
+
     obs = coap_obs_add_observee(coap_ctx, addr, port,
                                 (uint8_t *)token, token_len, uri,
                                 notification_callback, data);
@@ -320,10 +335,13 @@ coap_obs_request_registration(coap_context_t *coap_ctx,
       t->callback = handle_obs_registration_response;
       t->callback_data = obs;
       t->packet_len = coap_serialize_message(request, t->packet);
+      uip_len(coap_ctx->buf) = t->packet_len;
       coap_send_transaction(t);
     } else {
       PRINTF("Could not allocate obs_subject resource buffer");
       coap_clear_transaction(t);
+      net_buf_put(coap_ctx->buf);
+      coap_ctx->buf = NULL;
     }
   } else {
     PRINTF("%s: Could not allocate transaction buffer\n", __FUNCTION__);
