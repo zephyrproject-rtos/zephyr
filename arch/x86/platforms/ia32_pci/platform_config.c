@@ -41,46 +41,48 @@
 
 #ifdef CONFIG_NS16550
 #include <drivers/uart.h>
+#include <bluetooth/uart.h>
 #include <console/uart_console.h>
 #include <serial/ns16550.h>
 
 
-#if defined(CONFIG_UART_CONSOLE)
-#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-
+#if defined(CONFIG_UART_CONSOLE) || defined(CONFIG_BLUETOOTH_UART)
 /**
  * @brief Initialize NS16550 serial port #1
- *
- * UART #1 is being used as console. So initialize it
- * for console I/O.
  *
  * @param dev The UART device struct
  *
  * @return DEV_OK if successful, otherwise failed.
  */
-static int ns16550_uart_console_init(struct device *dev)
+static int ns16550_uart_init(struct device *dev)
 {
+#if defined(CONFIG_UART_CONSOLE)
 	struct uart_init_info info = {
 		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
 		.sys_clk_freq = UART_XTAL_FREQ,
 	};
 
-	uart_init(UART_CONSOLE_DEV, &info);
+	if (dev == UART_CONSOLE_DEV) {
+		uart_init(UART_CONSOLE_DEV, &info);
+	}
+#endif
+
+#if defined(CONFIG_BLUETOOTH_UART)
+	if (dev == BT_UART_DEV) {
+		bt_uart_init();
+	}
+#endif
 
 	return DEV_OK;
 }
-
 #else
-
-static int ns16550_uart_console_init(struct device *dev)
+static int ns16550_uart_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return DEV_OK;
 }
-
-#endif
-#endif /* CONFIG_UART_CONSOLE */
+#endif /* CONFIG_UART_CONSOLE || CONFIG_BLUETOOTH_UART */
 
 /**
  * @brief UART Device configuration.
@@ -92,11 +94,9 @@ struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 		.port = CONFIG_NS16550_PORT_0_BASE_ADDR,
 
 		.port_init = ns16550_uart_port_init,
-
-		#if (defined(CONFIG_UART_CONSOLE) \
-		     && (CONFIG_UART_CONSOLE_INDEX == 0))
-			.config_func = ns16550_uart_console_init,
-		#endif
+#if defined(CONFIG_UART_CONSOLE) || defined(CONFIG_BLUETOOTH_UART)
+		.config_func = ns16550_uart_init,
+#endif
 		.pci_dev.class = PCI_CLASS_COMM_CTLR,
 		.pci_dev.bus = CONFIG_UART_PCI_BUS,
 		.pci_dev.dev = CONFIG_UART_PCI_DEV,
@@ -109,11 +109,9 @@ struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 		.port = CONFIG_NS16550_PORT_1_BASE_ADDR,
 
 		.port_init = ns16550_uart_port_init,
-
-		#if (defined(CONFIG_UART_CONSOLE) \
-		     && (CONFIG_UART_CONSOLE_INDEX == 1))
-			.config_func = ns16550_uart_console_init,
-		#endif
+#if defined(CONFIG_UART_CONSOLE) || defined(CONFIG_BLUETOOTH_UART)
+		.config_func = ns16550_uart_init,
+#endif
 		.pci_dev.class = PCI_CLASS_COMM_CTLR,
 		.pci_dev.bus = CONFIG_UART_PCI_BUS,
 		.pci_dev.dev = CONFIG_UART_PCI_DEV,
