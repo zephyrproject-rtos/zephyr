@@ -82,6 +82,8 @@ int coap_context_send_message(coap_context_t *coap_ctx,
     uip_ipaddr_t *addr, uint16_t port,
     const uint8_t *data, uint16_t length);
 int coap_context_wait_data(coap_context_t *coap_ctx, int32_t ticks);
+int coap_context_connect(coap_context_t *coap_ctx, uip_ipaddr_t *addr,
+			 uint16_t port);
 
 #if WITH_DTLS
 
@@ -141,11 +143,6 @@ coap_context_is_connecting(const coap_context_t *coap_ctx)
 }
 static inline int
 coap_context_has_errors(const coap_context_t *coap_ctx)
-{
-  return 0;
-}
-static inline int
-coap_context_connect(coap_context_t *coap_ctx, uip_ipaddr_t *addr, uint16_t port)
 {
   return 0;
 }

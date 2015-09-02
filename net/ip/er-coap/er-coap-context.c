@@ -560,27 +560,102 @@ int coap_context_wait_data(coap_context_t *coap_ctx, int32_t ticks)
   return 0;
 }
 /*---------------------------------------------------------------------------*/
+static int coap_context_send(coap_context_t *ctx, struct net_buf *buf)
+{
+  int max_data_len, ret;
+
+  max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
+	  sizeof(struct uip_ip_hdr);
+
+  PRINTF("%s: send to peer data %p len %d\n", __FUNCTION__,
+	 net_buf_data(buf), net_buf_datalen(buf));
+
+  if (net_buf_datalen(buf) > max_data_len) {
+    PRINTF("%s: too much (%d bytes) data to send (max %d bytes)\n",
+	  __FUNCTION__, net_buf_datalen(buf), max_data_len);
+    net_buf_put(buf);
+    ret = -EINVAL;
+    goto out;
+  }
+
+  if ((ret = net_send(buf)) < 0) {
+    PRINT("%s: sending %d bytes failed\n", __FUNCTION__,
+	  net_buf_datalen(buf));
+    net_buf_put(buf);
+  }
+
+out:
+  return ret;
+}
+/*---------------------------------------------------------------------------*/
 int
 coap_context_send_message(coap_context_t *coap_ctx,
                           uip_ipaddr_t *addr, uint16_t port,
                           const uint8_t *data, uint16_t length)
 {
+  int ret;
+
   if(coap_ctx == NULL || coap_ctx->is_used == 0) {
     PRINTF("coap-context: can not send on non-used context\n");
     return 0;
   }
 
-  /* We need to set the uIP buffer lengths in net_buf properly as otherwise
-   * the final buffer length in net_init.c:udp_prepare_and_send() will be
-   * usually incorrect (uip_len() will be length of the received packet).
-   * So by setting uip_len() to 0 here, we let the sending in net_init.c to
-   * set the send buffer length correctly.
-   */
-  uip_len(coap_ctx->buf) = 0;
   net_buf_datalen(coap_ctx->buf) = length;
-  net_buf_data(coap_ctx->buf) = (uint8_t *)data;
 
-  return coap_context_reply(coap_ctx, coap_ctx->buf);
+  if (!uip_udp_conn(coap_ctx->buf)) {
+    /* Normal send, not a reply */
+    ret = coap_context_send(coap_ctx, coap_ctx->buf);
+
+  } else {
+
+    /* We need to set the uIP buffer lengths in net_buf properly as
+     * otherwise the final buffer length in
+     * net_init.c:udp_prepare_and_send() will be usually incorrect
+     * (uip_len() will be length of the received packet). So by setting
+     * uip_len() to 0 here, we let the sending in net_init.c to
+     * set the send buffer length correctly.
+     */
+    uip_len(coap_ctx->buf) = 0;
+    net_buf_data(coap_ctx->buf) = (uint8_t *)data;
+
+    ret = coap_context_reply(coap_ctx, coap_ctx->buf);
+  }
+
+  coap_ctx->buf = NULL;
+  return ret;
+}
+/*---------------------------------------------------------------------------*/
+int
+coap_context_connect(coap_context_t *coap_ctx, uip_ipaddr_t *addr, uint16_t port)
+{
+  if(coap_ctx == NULL || coap_ctx->is_used == 0) {
+    return 0;
+  }
+
+#ifdef NETSTACK_CONF_WITH_IPV6
+  memcpy(&coap_ctx->addr.in6_addr, addr, sizeof(coap_ctx->addr.in6_addr));
+  coap_ctx->addr.family = AF_INET6;
+#else
+  memcpy(&coap_ctx->addr.in_addr, addr, sizeof(coap_ctx->addr.in_addr));
+  coap_ctx->addr.family = AF_INET;
+#endif
+  coap_ctx->port = port;
+
+  coap_ctx->net_ctx = net_context_get(IPPROTO_UDP,
+				      (const struct net_addr *)&coap_ctx->addr,
+				      coap_ctx->port,
+				      (const struct net_addr *)&coap_ctx->my_addr,
+				      coap_ctx->my_port);
+  if (!coap_ctx->net_ctx) {
+    PRINTF("%s: Cannot get network context\n", __FUNCTION__);
+    return 0;
+  }
+
+  PRINTF("coap-context: normal connect to [");
+  PRINT6ADDR(addr);
+  PRINTF("]:%u\n", port);
+
+  return 1;
 }
 
 #endif /* WITH_DTLS */
