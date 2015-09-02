@@ -424,8 +424,8 @@ struct bt_hci_evt_le_ltk_request {
 	uint16_t ediv;
 } __packed;
 
-#define BT_HCI_EVT_LE_REMOTE_CONN_PARAM_REQ	0x06
-struct bt_hci_evt_le_remote_conn_param_req {
+#define BT_HCI_EVT_LE_CONN_PARAM_REQ		0x06
+struct bt_hci_evt_le_conn_param_req {
 	uint16_t handle;
 	uint16_t interval_min;
 	uint16_t interval_max;
