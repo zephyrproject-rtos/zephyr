@@ -46,7 +46,11 @@
  * retransmission time between COAP_RESPONSE_TIMEOUT and COAP_RESPONSE_TIMEOUT*COAP_RESPONSE_RANDOM_FACTOR.
  */
 #define COAP_RESPONSE_TIMEOUT_TICKS         (CLOCK_SECOND * COAP_RESPONSE_TIMEOUT)
-#define COAP_RESPONSE_TIMEOUT_BACKOFF_MASK  (long)((CLOCK_SECOND * COAP_RESPONSE_TIMEOUT * ((float)COAP_RESPONSE_RANDOM_FACTOR - 1.0)) + 0.5) + 1
+//#define COAP_RESPONSE_TIMEOUT_BACKOFF_MASK  (long)((CLOCK_SECOND * COAP_RESPONSE_TIMEOUT * ((float)COAP_RESPONSE_RANDOM_FACTOR - 1.0)) + 0.5) + 1
+/* Convert to use integer arithmetics */
+#define COAP_RESPONSE_TIMEOUT_BACKOFF_MASK				\
+	(long)((CLOCK_SECOND * COAP_RESPONSE_TIMEOUT * \
+		(COAP_RESPONSE_RANDOM_FACTOR_INT - 10)) + 5) / 10 + 1
 
 /* container for transactions with message buffer and retransmission info */
 typedef struct coap_transaction {

@@ -106,12 +106,12 @@ coap_send_transaction(coap_transaction_t *t)
                                          %
                                          (clock_time_t)
                                          COAP_RESPONSE_TIMEOUT_BACKOFF_MASK);
-        PRINTF("Initial interval %f\n",
-               (float)t->retrans_timer.timer.interval / CLOCK_SECOND);
+        PRINTF("Initial interval %d\n",
+               t->retrans_timer.timer.interval / CLOCK_SECOND);
       } else {
         t->retrans_timer.timer.interval <<= 1;  /* double */
-        PRINTF("Doubled (%u) interval %f\n", t->retrans_counter,
-               (float)t->retrans_timer.timer.interval / CLOCK_SECOND);
+        PRINTF("Doubled (%u) interval %d\n", t->retrans_counter,
+               t->retrans_timer.timer.interval / CLOCK_SECOND);
       }
 
       PROCESS_CONTEXT_BEGIN(transaction_handler_process);
