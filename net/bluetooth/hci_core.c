@@ -791,7 +791,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	}
 
 	if (!conn) {
-		conn = bt_conn_add(&evt->peer_addr, evt->role);
+		conn = bt_conn_add(&evt->peer_addr);
 	}
 
 	if (!conn) {
@@ -802,6 +802,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	conn->handle   = handle;
 	copy_id_addr(conn, &evt->peer_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
+	conn->role = evt->role;
 
 	src.type = BT_ADDR_LE_PUBLIC;
 	memcpy(src.val, bt_dev.bdaddr.val, sizeof(bt_dev.bdaddr.val));

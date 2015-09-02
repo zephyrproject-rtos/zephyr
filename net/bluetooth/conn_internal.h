@@ -105,7 +105,7 @@ void bt_conn_recv(struct bt_conn *conn, struct bt_buf *buf, uint8_t flags);
 void bt_conn_send(struct bt_conn *conn, struct bt_buf *buf);
 
 /* Add a new connection */
-struct bt_conn *bt_conn_add(const bt_addr_le_t *peer, uint8_t role);
+struct bt_conn *bt_conn_add(const bt_addr_le_t *peer);
 
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle);

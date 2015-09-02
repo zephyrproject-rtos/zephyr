@@ -319,7 +319,7 @@ static void conn_tx_fiber(int arg1, int arg2)
 	bt_conn_put(conn);
 }
 
-struct bt_conn *bt_conn_add(const bt_addr_le_t *peer, uint8_t role)
+struct bt_conn *bt_conn_add(const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = NULL;
 	int i;
@@ -338,7 +338,6 @@ struct bt_conn *bt_conn_add(const bt_addr_le_t *peer, uint8_t role)
 	memset(conn, 0, sizeof(*conn));
 
 	atomic_set(&conn->ref, 1);
-	conn->role	= role;
 	bt_addr_le_copy(&conn->dst, peer);
 	conn->sec_level = BT_SECURITY_LOW;
 	conn->required_sec_level = BT_SECURITY_LOW;
@@ -660,7 +659,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 		}
 	}
 
-	conn = bt_conn_add(peer, BT_HCI_ROLE_MASTER);
+	conn = bt_conn_add(peer);
 	if (!conn) {
 		return NULL;
 	}
