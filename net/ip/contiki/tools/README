@@ -188,3 +188,22 @@ $ sudo ./coap-client -i tun0 2001:db8::2
 
 For non-DTLS case, run client like this
 $ sudo ./coap-client -n -i tun0 2001:db8::2
+
+
+coap-observe-client
+===================
+
+You can test the coap-observe-client that is running in qemu
+using the coap-server example server that is found in libcoap.
+So get libcoap package which can be found here
+https://github.com/obgm/libcoap.git
+Compile and install the libcoap library in host.
+
+You needs to setup the slip connection (see the steps 1 to 3)
+in tunslip6 section of this document.
+
+$ /home/user/libcoap/examples/coap-server -A 2001:db8::1 -p 5683
+
+Then in the samples/network/coap_observe_client directory, say
+
+$ make qemu
