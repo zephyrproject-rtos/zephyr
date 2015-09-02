@@ -9,6 +9,7 @@ cscope.*
 outdir
 scripts/basic/fixdep
 scripts/gen_idt/gen_idt
+scripts/gen_offset_header/gen_offset_header
 scripts/kconfig/conf
 scripts/kconfig/mconf
 scripts/kconfig/zconf.hash.c
