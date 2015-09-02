@@ -435,7 +435,7 @@ PT_THREAD(coap_blocking_request
         ++block_error;
       }
     } else {
-      PRINTF("Could not allocate transaction buffer");
+      PRINTF("%s: Could not allocate transaction buffer", __FUNCTION__);
       PT_EXIT(&state->pt);
     }
   } while(more && block_error < COAP_MAX_ATTEMPTS);

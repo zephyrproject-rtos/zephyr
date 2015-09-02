@@ -326,7 +326,7 @@ coap_obs_request_registration(coap_context_t *coap_ctx,
       coap_clear_transaction(t);
     }
   } else {
-    PRINTF("Could not allocate transaction buffer");
+    PRINTF("%s: Could not allocate transaction buffer\n", __FUNCTION__);
   }
   return obs;
 }
