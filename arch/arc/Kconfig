@@ -141,6 +141,18 @@ config	XIP
 	default n if NSIM
 	default y
 
+config NSIM
+	prompt "Running on the MetaWare nSIM simulator"
+	bool
+	default n
+	help
+	For running on nSIM simulator.
+	a) Uses non-XIP to run in RAM.
+	b) Linked at address 0x4000 with 0x4000 of RAM so that it works with
+	   a pc_size of 16 (default).
+	c) Sets the entry point to __reset, since it seems nSIM ignores the
+	   reset vector when starting.
+
 config  SW_ISR_TABLE
 	bool
 	prompt "Enable software interrupt handler table"
