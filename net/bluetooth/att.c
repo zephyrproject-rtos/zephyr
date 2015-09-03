@@ -552,6 +552,7 @@ static uint8_t att_read_type_rsp(struct bt_conn *conn, struct bt_uuid *uuid,
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
+	data.conn = conn;
 	data.uuid = uuid;
 	data.rsp = bt_buf_add(data.buf, sizeof(*data.rsp));
 	data.rsp->len = 0;
