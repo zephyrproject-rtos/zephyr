@@ -593,7 +593,7 @@ static uint8_t att_read_type_req(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	BT_DBG("start_handle 0x%04x end_handle 0x%04x type %u\n",
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x type 0x%04x\n",
 	       start_handle, end_handle, uuid.u16);
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
@@ -903,7 +903,7 @@ static uint8_t att_read_group_req(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	BT_DBG("start_handle 0x%04x end_handle 0x%04x type %u\n",
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x type 0x%04x\n",
 	       start_handle, end_handle, uuid.u16);
 
 	if (!range_is_valid(start_handle, end_handle, &err_handle)) {
