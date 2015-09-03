@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-config	BLUETOOTH
+menuconfig BLUETOOTH
 	bool
 	prompt "Bluetooth LE support [EXPERIMENTAL]"
 	default n
@@ -38,6 +38,7 @@ config	BLUETOOTH
 	help
 	  This option enables Bluetooth Low Energy support.
 
+if BLUETOOTH
 config	BLUETOOTH_MAX_CONN
 	int
 	prompt "Maximum number of simultaneous connections"
@@ -147,3 +148,4 @@ config	BLUETOOTH_DEBUG_GATT
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
+endif
