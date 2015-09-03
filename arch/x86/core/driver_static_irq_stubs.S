@@ -70,41 +70,22 @@ by x86 platforms.
 #endif /* CONFIG_UART_SIMPLE */
 
 #if defined(CONFIG_GPIO_DW)
-
 #if CONFIG_GPIO_DW_0
-#if defined(CONFIG_PIC)
-	pic_master_mkstub gpio_dw_0 gpio_dw_isr_0
-#elif defined(CONFIG_IOAPIC)
 	ioapic_mkstub gpio_dw_0 gpio_dw_isr_0
-#endif /* CONFIG_PIC */
 #endif /* CONFIG_GPIO_DW_0 */
 
 #if CONFIG_GPIO_DW_1
-#if defined(CONFIG_PIC)
-	pic_master_mkstub gpio_dw_1 gpio_dw_isr_1
-#elif defined(CONFIG_IOAPIC)
 	ioapic_mkstub gpio_dw_1 gpio_dw_isr_1
-#endif /* CONFIG_PIC */
 #endif /* CONFIG_GPIO_DW_1 */
-
 #endif /* CONFIG_GPIO_DW */
 
 #if defined(CONFIG_SPI_INTEL)
-#if defined(CONFIG_PIC)
-#if defined(CONFIG_SPI_INTEL_PORT_0)
-	pic_master_mkstub spi_intel_irq_port_0 spi_intel_isr_0
-#endif /* CONFIG_SPI_INTEL_PORT_0 */
-#if defined(CONFIG_SPI_INTEL_PORT_1)
-	pic_master_mkstub spi_intel_irq_port_1 spi_intel_isr_1
-#endif /* CONFIG_SPI_INTEL_PORT_1 */
-#elif defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SPI_INTEL_PORT_0)
 	ioapic_mkstub spi_intel_irq_port_0 spi_intel_isr_0
 #endif /* CONFIG_SPI_INTEL_PORT_0 */
 #if defined(CONFIG_SPI_INTEL_PORT_1)
 	ioapic_mkstub spi_intel_irq_port_1 spi_intel_isr_1
 #endif /* CONFIG_SPI_INTEL_PORT_1 */
-#endif
 #endif /* CONFIG_SPI_INTEL */
 
 	/* externs (internal APIs) */
