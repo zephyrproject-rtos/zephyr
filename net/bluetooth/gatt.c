@@ -178,11 +178,13 @@ void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 		const struct bt_gatt_attr *attr = &db[i];
 
 		/* Check if attribute handle is within range */
-		if (attr->handle < start_handle || attr->handle > end_handle)
+		if (attr->handle < start_handle || attr->handle > end_handle) {
 			continue;
+		}
 
-		if (func(attr, user_data) == BT_GATT_ITER_STOP)
+		if (func(attr, user_data) == BT_GATT_ITER_STOP) {
 			break;
+		}
 	}
 }
 
