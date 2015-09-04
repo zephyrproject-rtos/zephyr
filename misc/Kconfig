@@ -42,6 +42,15 @@ config  EXPERIMENTAL
 	be disabled.
 	If it is enabled, all options marked as EXPERIMENTAL will
 	be available for selection.
+
+config  KERNEL_BIN_NAME
+	string "The kernel binary name"
+	default "microkernel" if MICROKERNEL
+	default "nanokernel" if NANOKERNEL
+endmenu
+
+menu "Compile and Link Features"
+
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
 	help
@@ -49,23 +58,6 @@ config CROSS_COMPILE
 	default make runs in this kernel build directory.  You don't
 	need to set this unless you want the configured kernel build
 	directory to select the cross-compiler automatically.
-
-
-menu "Compile and Link Features"
-
-
-config  KERNEL_BIN_NAME
-	string "The kernel binary name"
-	default "microkernel" if MICROKERNEL
-	default "nanokernel" if NANOKERNEL
-
-config  DEBUG
-	bool "Build kernel with debugging"
-	default n
-	help
-	Build a kernel suitable for debugging.  Right now, this option
-	only disables optimization, more debugging variants can be selected
-	from here to allow more debugging.
 
 config  COMPILER_OPT
 	string
@@ -110,11 +102,17 @@ config NEWLIB_LIBC
 
 endchoice
 
-
-endmenu
 endmenu
 
 menu "Debugging Options"
+
+config  DEBUG
+	bool "Build kernel with debugging enabled"
+	default n
+	help
+	Build a kernel suitable for debugging.  Right now, this option
+	only disables optimization, more debugging variants can be selected
+	from here to allow more debugging.
 
 config PRINTK
 	bool
@@ -134,7 +132,7 @@ config STDOUT_CONSOLE
 	default n
 	help
 	This option directs standard output (e.g. printf) to the console
-	device, rather than suppressing in entirely.
+	device, rather than suppressing it entirely.
 
 config ASSERT
 	bool
