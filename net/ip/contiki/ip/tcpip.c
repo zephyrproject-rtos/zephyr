@@ -413,7 +413,8 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
         /* Check the clock so see if we should call the periodic uIP
            processing. */
         if(data == &periodic &&
-           etimer_expired(&periodic)) {
+           etimer_expired(&periodic) && !etimer_is_triggered(&periodic)) {
+	  etimer_set_triggered(&periodic);
 #if UIP_TCP
           for(i = 0; i < UIP_CONNS; ++i) {
             if(uip_conn_active(i)) {
@@ -444,7 +445,9 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
          * check the timer for reassembly
          */
         if(data == &uip_reass_timer &&
-           etimer_expired(&uip_reass_timer)) {
+           etimer_expired(&uip_reass_timer) &&
+	   !etimer_is_triggered(&uip_reass_timer)) {
+	  etimer_set_triggered(&uip_reass_timer);
           uip_reass_over();
           tcpip_ipv6_output(buf);
         }
@@ -460,13 +463,17 @@ eventhandler(process_event_t ev, process_data_t data, struct net_buf *buf)
         }*/
 #if !UIP_CONF_ROUTER
         if(data == &uip_ds6_timer_rs &&
-           etimer_expired(&uip_ds6_timer_rs)) {
+           etimer_expired(&uip_ds6_timer_rs) &&
+	   !etimer_is_triggered(&uip_ds6_timer_rs)) {
+	  etimer_set_triggered(&uip_ds6_timer_rs);
           uip_ds6_send_rs(buf);
 	  tcpip_ipv6_output(buf);
         }
 #endif /* !UIP_CONF_ROUTER */
         if(data == &uip_ds6_timer_periodic &&
-           etimer_expired(&uip_ds6_timer_periodic)) {
+           etimer_expired(&uip_ds6_timer_periodic) &&
+	   !etimer_is_triggered(&uip_ds6_timer_periodic)) {
+	  etimer_set_triggered(&uip_ds6_timer_periodic);
           uip_ds6_periodic(buf);
 	  tcpip_ipv6_output(buf);
         }
