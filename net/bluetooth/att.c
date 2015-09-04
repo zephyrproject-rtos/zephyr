@@ -1118,7 +1118,7 @@ static uint8_t att_exec_write_rsp(struct bt_conn *conn, uint8_t flags)
 	data.flags = flags;
 
 	/* Apply to the whole database */
-	bt_gatt_foreach_attr(0x0000, 0xffff, flush_cb, &data);
+	bt_gatt_foreach_attr(0x0001, 0xffff, flush_cb, &data);
 
 	/* In case of error discard data */
 	if (data.err) {
