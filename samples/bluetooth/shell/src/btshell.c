@@ -93,31 +93,39 @@ static size_t line2argv(char *str, char *argv[], size_t size)
 	return argc;
 }
 
-static cmd_function_t get_cb(const char *string)
+static void show_help(int argc, char *argv[])
 {
 	int i;
 
-	if (!string || !strlen(string))
-		return NULL;
+	printk("Available commands:\n");
+	printk("help\n");
 
 	for (i = 0; commands[i].cmd_name; i++) {
-		if (!strncmp(string, commands[i].cmd_name, strlen(string))) {
+		printk("%s\n", commands[i].cmd_name);
+	}
+}
+
+static cmd_function_t get_cb(const char *string)
+{
+	size_t len;
+	int i;
+
+	len = strlen(string);
+	if (!len) {
+		return NULL;
+	}
+
+	if (!strncmp(string, "help", len)) {
+		return show_help;
+	}
+
+	for (i = 0; commands[i].cmd_name; i++) {
+		if (!strncmp(string, commands[i].cmd_name, len)) {
 			return commands[i].cb;
 		}
 	}
 
 	return NULL;
-}
-
-static void show_commands(void)
-{
-	int i;
-
-	printk("Available commands:\n");
-
-	for (i = 0; commands[i].cmd_name; i++) {
-		printk("%s\n", commands[i].cmd_name);
-	}
 }
 
 static void shell(int arg1, int arg2)
@@ -141,9 +149,8 @@ static void shell(int arg1, int arg2)
 
 		cb = get_cb(argv[0]);
 		if (!cb) {
-			printk("%s Unrecognized command: %s\n",
-			       prompt, argv[0]);
-			show_commands();
+			printk("Unrecognized command: %s\n", argv[0]);
+			printk("Type 'help' for list of available commands\n");
 			nano_fiber_fifo_put(&avail_queue, cmd);
 			continue;
 		}
