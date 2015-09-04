@@ -88,7 +88,7 @@ After reset, the timer is initialized to zero.
 #define TIMER_MODE_PERIODIC 0
 #define TIMER_MODE_PERIODIC_ENT 1
 #else /* !TIMER_SUPPORTS_TICKLESS */
-#define _loApicTimerTicklessIdleInit() \
+#define tickless_idle_init() \
 	do {/* nothing */              \
 	} while (0)
 #endif /* !TIMER_SUPPORTS_TICKLESS */
@@ -100,15 +100,15 @@ IRQ_CONNECT_STATIC(loapic, CONFIG_LOAPIC_TIMER_IRQ,
 			CONFIG_LOAPIC_TIMER_IRQ_PRIORITY,
 			_timer_int_handler, 0);
 
-static uint32_t __noinit counterLoadVal; /* computed counter 0
+static uint32_t __noinit cycles_per_tick; /* computed counter 0
 							  initial count value */
-static uint32_t clock_accumulated_count = 0;
+static uint32_t accumulated_cycle_count = 0;
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-static uint32_t idle_original_count = 0;
+static uint32_t programmed_cycles = 0;
+static uint32_t programmed_full_ticks = 0;
 static uint32_t __noinit max_system_ticks;
-static uint32_t idle_original_ticks = 0;
-static uint32_t __noinit max_load_value;
+static uint32_t __noinit cycles_per_max_ticks;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
@@ -129,7 +129,7 @@ extern struct nano_stack _k_command_stack;
  * \NOMANUAL
  */
 
-static inline void _loApicTimerPeriodic(void)
+static inline void periodic_mode_set(void)
 {
 	*_REG_TIMER |= LOAPIC_TIMER_PERIODIC;
 }
@@ -139,16 +139,16 @@ static inline void _loApicTimerPeriodic(void)
 	defined(CONFIG_SYSTEM_TIMER_DISABLE)
 /**
  *
- * @brief Stop the timer
+ * @brief Mask the timer interrupt
  *
- * This routine stops the timer.
+ * This routine disables the LOAPIC timer by masking it.
  *
  * @return N/A
  *
  * \NOMANUAL
  */
 
-static inline void _loApicTimerStop(void)
+static inline void timer_interrupt_mask(void)
 {
 	*_REG_TIMER |= LOAPIC_LVT_MASKED;
 }
@@ -158,16 +158,16 @@ static inline void _loApicTimerStop(void)
 	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND)
 /**
  *
- * @brief Start the timer
+ * @brief Unmask the timer interrupt
  *
- * This routine starts the timer.
+ * This routine enables the LOAPIC timer by unmasking it.
  *
  * @return N/A
  *
  * \NOMANUAL
  */
 
-static inline void _loApicTimerStart(void)
+static inline void timer_interrupt_unmask(void)
 {
 	*_REG_TIMER &= ~LOAPIC_LVT_MASKED;
 }
@@ -175,16 +175,17 @@ static inline void _loApicTimerStart(void)
 
 /**
  *
- * @brief Set countdown value
+ * @brief Set the initial count register
  *
  * This routine sets value from which the timer will count down.
+ * Note that setting the value to zero stops the timer.
  *
  * @return N/A
  *
  * \NOMANUAL
  */
 
-static inline void _loApicTimerSetCount(
+static inline void initial_count_register_set(
 	uint32_t count /* count from which timer is to count down */
 	)
 {
@@ -203,7 +204,7 @@ static inline void _loApicTimerSetCount(
  * \NOMANUAL
  */
 
-static inline void _loApicTimerOneShot(void)
+static inline void one_shot_mode_set(void)
 {
 	*_REG_TIMER &= ~LOAPIC_TIMER_PERIODIC;
 }
@@ -221,7 +222,7 @@ static inline void _loApicTimerOneShot(void)
  * \NOMANUAL
  */
 
-static inline void _loApicTimerSetDivider(void)
+static inline void divide_configuration_register_set(void)
 {
 	*_REG_TIMER_CFG = (*_REG_TIMER_CFG & ~0xf) | LOAPIC_TIMER_DIVBY_1;
 }
@@ -238,7 +239,7 @@ static inline void _loApicTimerSetDivider(void)
  *
  * \NOMANUAL
  */
-static inline uint32_t _loApicTimerGetRemaining(void)
+static inline uint32_t current_count_register_get(void)
 {
 	return *_REG_TIMER_CCR;
 }
@@ -254,7 +255,7 @@ static inline uint32_t _loApicTimerGetRemaining(void)
  *
  * \NOMANUAL
  */
-static inline uint32_t _loApicTimerGetCount(void)
+static inline uint32_t initial_count_register_get(void)
 {
 	return *_REG_TIMER_ICR;
 }
@@ -277,10 +278,10 @@ void _timer_int_handler(void *unused /* parameter is not used */
 
 #ifdef TIMER_SUPPORTS_TICKLESS
 	if (timer_mode == TIMER_MODE_PERIODIC_ENT) {
-		_loApicTimerStop();
-		_loApicTimerPeriodic();
-		_loApicTimerSetCount(counterLoadVal);
-		_loApicTimerStart();
+		timer_interrupt_mask();
+		periodic_mode_set();
+		initial_count_register_set(cycles_per_tick);
+		timer_interrupt_unmask();
 		timer_mode = TIMER_MODE_PERIODIC;
 	}
 
@@ -291,8 +292,8 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	 */
 	_sys_idle_elapsed_ticks++;
 
-	/* accumulate total counter value */
-	clock_accumulated_count += counterLoadVal * _sys_idle_elapsed_ticks;
+	/* track the accumulated cycle count */
+	accumulated_cycle_count += cycles_per_tick * _sys_idle_elapsed_ticks;
 
 	/*
 	 * If we transistion from 0 elapsed ticks to 1 we need to announce the
@@ -305,8 +306,8 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	}
 
 #else
-	/* accumulate total counter value */
-	clock_accumulated_count += counterLoadVal;
+	/* track the accumulated cycle count */
+	accumulated_cycle_count += cycles_per_tick;
 
 #if defined(CONFIG_MICROKERNEL)
 	_sys_clock_tick_announce();
@@ -327,10 +328,10 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	 * workaround.
 	 */
 
-	_loApicTimerStop();
-	_loApicTimerPeriodic();
-	_loApicTimerSetCount(counterLoadVal);
-	_loApicTimerStart();
+	timer_interrupt_mask();
+	periodic_mode_set();
+	initial_count_register_set(cycles_per_tick);
+	timer_interrupt_unmask();
 #endif /* LOAPIC_TIMER_PERIODIC_WORKAROUND */
 }
 
@@ -341,9 +342,9 @@ void _timer_int_handler(void *unused /* parameter is not used */
  *
  * This routine initializes the tickless idle feature.  Note that the maximum
  * number of ticks that can elapse during a "tickless idle" is limited by
- * <counterLoadVal>.  The larger the value (the lower the tick frequency), the
- * fewer elapsed ticks during a "tickless idle".  Conversely, the smaller the
- * value (the higher the tick frequency), the more elapsed ticks during a
+ * <cycles_per_tick>.  The larger the value (the lower the tick frequency),
+ * the fewer elapsed ticks during a "tickless idle".  Conversely, the smaller
+ * the value (the higher the tick frequency), the more elapsed ticks during a
  * "tickless idle".
  *
  * @return N/A
@@ -351,11 +352,11 @@ void _timer_int_handler(void *unused /* parameter is not used */
  * \NOMANUAL
  */
 
-static void _loApicTimerTicklessIdleInit(void)
+static void tickless_idle_init(void)
 {
-	max_system_ticks = 0xffffffff / counterLoadVal;
+	max_system_ticks = 0xffffffff / cycles_per_tick;
 	/* this gives a count that gives the max number of full ticks */
-	max_load_value = max_system_ticks * counterLoadVal;
+	cycles_per_max_ticks = max_system_ticks * cycles_per_tick;
 }
 
 /**
@@ -373,14 +374,14 @@ static void _loApicTimerTicklessIdleInit(void)
 void _timer_idle_enter(int32_t ticks /* system ticks */
 				)
 {
-	_loApicTimerStop();
+	timer_interrupt_mask();
 	/*
 	 * We're being asked to have the timer fire in "ticks" from now. To
 	 * maintain accuracy we must account for the remaining time left in the
 	 * timer. So we read the count out of it and add it to the requested
 	 * time out
 	 */
-	idle_original_count = _loApicTimerGetRemaining();
+	programmed_cycles = current_count_register_get();
 
 	if ((ticks == -1) || (ticks > max_system_ticks)) {
 		/*
@@ -394,21 +395,21 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 		 * earlier
 		 * is added.
 		 */
-		idle_original_count += max_load_value - counterLoadVal;
-		idle_original_ticks = max_system_ticks - 1;
+		programmed_cycles += cycles_per_max_ticks - cycles_per_tick;
+		programmed_full_ticks = max_system_ticks - 1;
 	} else {
 		/* leave one tick of buffer to have to time react when coming
 		 * back ? */
-		idle_original_ticks = ticks - 1;
-		idle_original_count += idle_original_ticks * counterLoadVal;
+		programmed_full_ticks = ticks - 1;
+		programmed_cycles += programmed_full_ticks * cycles_per_tick;
 	}
 
 	timer_mode = TIMER_MODE_PERIODIC_ENT;
 
 	/* Set timer to one shot mode */
-	_loApicTimerOneShot();
-	_loApicTimerSetCount(idle_original_count);
-	_loApicTimerStart();
+	one_shot_mode_set();
+	initial_count_register_set(programmed_cycles);
+	timer_interrupt_unmask();
 }
 
 /**
@@ -431,18 +432,18 @@ void _timer_idle_exit(void)
 {
 	uint32_t count; /* timer's current count register value */
 
-	_loApicTimerStop();
+	timer_interrupt_mask();
 
 	/* timer is in idle or off mode, adjust the ticks expired */
 
-	count = _loApicTimerGetRemaining();
+	count = current_count_register_get();
 
-	if ((count == 0) || (count >= idle_original_count)) {
+	if ((count == 0) || (count >= programmed_cycles)) {
 		/* Timer expired and/or wrapped around. Place back in periodic
 		 * mode */
-		_loApicTimerPeriodic();
-		_loApicTimerSetCount(counterLoadVal);
-		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
+		periodic_mode_set();
+		initial_count_register_set(cycles_per_tick);
+		_sys_idle_elapsed_ticks = programmed_full_ticks - 1;
 		timer_mode = TIMER_MODE_PERIODIC;
 		/*
 		 * Announce elapsed ticks to the microkernel. Note we are
@@ -456,28 +457,28 @@ void _timer_idle_exit(void)
 		uint32_t elapsed;   /* elapsed "counter time" */
 		uint32_t remaining; /* remaining "counter time" */
 
-		elapsed = idle_original_count - count;
+		elapsed = programmed_cycles - count;
 
-		remaining = elapsed % counterLoadVal;
+		remaining = elapsed % cycles_per_tick;
 
 		/* switch timer to periodic mode */
 		if (remaining == 0) {
-			_loApicTimerPeriodic();
-			_loApicTimerSetCount(counterLoadVal);
+			periodic_mode_set();
+			initial_count_register_set(cycles_per_tick);
 			timer_mode = TIMER_MODE_PERIODIC;
 		} else if (count > remaining) {
 			/* less time remaining to the next tick than was
 			 * programmed. Leave in one shot mode */
-			_loApicTimerSetCount(remaining);
+			initial_count_register_set(remaining);
 		}
 
-		_sys_idle_elapsed_ticks = elapsed / counterLoadVal;
+		_sys_idle_elapsed_ticks = elapsed / cycles_per_tick;
 
 		if (_sys_idle_elapsed_ticks) {
 			_sys_clock_tick_announce();
 		}
 	}
-	_loApicTimerStart();
+	timer_interrupt_unmask();
 }
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
@@ -498,13 +499,13 @@ int _sys_clock_driver_init(struct device *device)
 	/* determine the timer counter value (in timer clock cycles/system tick)
 	 */
 
-	counterLoadVal = sys_clock_hw_cycles_per_tick - 1;
+	cycles_per_tick = sys_clock_hw_cycles_per_tick - 1;
 
-	_loApicTimerTicklessIdleInit();
+	tickless_idle_init();
 
-	_loApicTimerSetDivider();
-	_loApicTimerSetCount(counterLoadVal);
-	_loApicTimerPeriodic();
+	divide_configuration_register_set();
+	initial_count_register_set(cycles_per_tick);
+	periodic_mode_set();
 
 	/*
 	 * Although the stub has already been "connected", the vector number
@@ -534,16 +535,21 @@ uint32_t _sys_clock_cycle_get(void)
 {
 	uint32_t val; /* system clock value */
 
-#if !defined(TIMER_SUPPORTS_TICKLESS)
-	/* counter is a down counter so need to subtact from counterLoadVal */
-	val = clock_accumulated_count - _loApicTimerGetRemaining() + counterLoadVal;
-#else
 	/*
-	 * counter is a down counter so need to subtact from what was programmed
-	 * in the reload register
+	 * The LOAPIC timer counter is a down counter.  Thus to get the number
+	 * of elapsed cycles since 'accumlated_cycle_count' was last updated,
+	 * subtract the value in the Current Count Register (CCR) from the value
+	 * in the Initial Count Register (ICR).
 	 */
-	val = clock_accumulated_count - _loApicTimerGetRemaining() +
-	      _loApicTimerGetCount();
+
+#if !defined(TIMER_SUPPORTS_TICKLESS)
+	/* The value in the ICR always matches cycles_per_tick. */
+	val = accumulated_cycle_count - current_count_register_get() +
+			cycles_per_tick;
+#else
+	/* The value in the ICR may vary.  Read from the register. */
+	val = accumulated_cycle_count - current_count_register_get() +
+	      initial_count_register_get();
 #endif
 
 	return val;
@@ -569,8 +575,8 @@ void timer_disable(void)
 
 	key = irq_lock();
 
-	_loApicTimerStop();
-	_loApicTimerSetCount(0);
+	timer_interrupt_mask();
+	initial_count_register_set(0);
 
 	irq_unlock(key);
 
