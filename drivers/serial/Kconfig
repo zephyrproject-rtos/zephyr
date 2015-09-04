@@ -48,7 +48,6 @@ config SERIAL_HAS_DRIVER
 	by other drivers which are dependent on serial.
 
 menu "Serial Port Options"
-depends on X86_32
 
 config SERIAL_INTERRUPT_LEVEL
 	bool "Serial interrupt level"
