@@ -209,6 +209,15 @@ failed:
 	buf = NULL;
 }
 
+static int uart_out(struct device *dev, const uint8_t *data, int size)
+{
+	for (int i = 0; i < size; i++) {
+		uart_poll_out(dev, data[i]);
+	}
+
+	return size;
+}
+
 static int bt_uart_send(struct bt_buf *buf)
 {
 	uint8_t *type;
@@ -236,7 +245,7 @@ static int bt_uart_send(struct bt_buf *buf)
 		return -EINVAL;
 	}
 
-	len = uart_fifo_fill(BT_UART_DEV, buf->data, buf->len);
+	len = uart_out(BT_UART_DEV, buf->data, buf->len);
 	if (len < buf->len) {
 		BT_ERR("Unable to transmit entire buffer (%d < %u)\n",
 		       len, buf->len);
