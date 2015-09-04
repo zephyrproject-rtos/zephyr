@@ -78,6 +78,18 @@ config NETWORKING_WITH_IPV4
 	  Legacy IP.
 endchoice
 
+if NETWORKING_WITH_IPV6
+config	NETWORKING_IPV6_NO_ND
+	bool
+	prompt "Disable IPv6 neighbor discovery"
+	depends on NETWORKING
+	depends on NETWORKING_WITH_IPV6
+	default y
+	help
+	  Normally ND should be enabled but in order to simplify
+	  the network setup, it is currently turned off.
+endif
+
 config	NETWORKING_WITH_RPL
 	bool
 	prompt "Enable RPL (ripple) IPv6 mesh routing protocol"

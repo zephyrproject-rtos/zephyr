@@ -108,7 +108,7 @@ int net_send(struct net_buf *buf)
 static inline int udp_prepare_and_send(struct net_context *context,
 				       struct net_buf *buf)
 {
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
 	uip_ds6_route_t *route_old, *route_new = NULL;
 	uip_ds6_nbr_t *nbr;
 #endif
@@ -135,7 +135,7 @@ static inline int udp_prepare_and_send(struct net_context *context,
 			&NET_BUF_IP(buf)->destipaddr);
 	uip_ipaddr_copy(&NET_BUF_IP(buf)->destipaddr, &tmp);
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
 	/* The peer needs to be in neighbor cache before route can be added.
 	 */
 	nbr = uip_ds6_nbr_lookup((uip_ipaddr_t *)&NET_BUF_IP(buf)->destipaddr);
@@ -178,7 +178,7 @@ static inline int udp_prepare_and_send(struct net_context *context,
 		NET_DBG("Packet could not be sent properly.\n");
 	}
 
-#ifdef CONFIG_NETWORKING_WITH_IPV6
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
 	if (!route_old && route_new) {
 		/* This will also remove the neighbor cache entry */
 		uip_ds6_route_rm(route_new);
