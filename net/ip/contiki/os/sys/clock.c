@@ -77,5 +77,16 @@ unsigned long clock_seconds(void)
 
 void clock_delay(unsigned int d)
 {
-	/* fixme */
+	switch (sys_execution_context_type_get()) {
+	case NANO_CTX_FIBER:
+		fiber_sleep(d);
+		break;
+#ifdef CONFIG_MICROKERNEL
+	case NANO_CTX_TASK:
+		task_sleep(d);
+		break;
+#endif
+	default:
+		return;
+	}
 }
