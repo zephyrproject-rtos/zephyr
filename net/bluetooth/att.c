@@ -76,7 +76,7 @@ struct bt_att_req {
 	bt_att_func_t		func;
 	void			*user_data;
 	bt_att_destroy_t	destroy;
-	uint8_t			op;
+	struct bt_buf		*buf;
 };
 
 /* ATT channel specific context */
@@ -102,6 +102,10 @@ static const struct bt_uuid secondary_uuid = {
 
 static void att_req_destroy(struct bt_att_req *req)
 {
+	if (req->buf) {
+		bt_buf_put(req->buf);
+	}
+
 	if (req->destroy) {
 		req->destroy(req->user_data);
 	}
@@ -1192,7 +1196,9 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *buf)
 static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_att *att = conn->att;
+	struct bt_att_req *req = &att->req;
 	struct bt_att_error_rsp *rsp;
+	struct bt_att_hdr *hdr;
 	uint8_t err;
 
 	rsp = (void *)buf->data;
@@ -1200,9 +1206,16 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	BT_DBG("request 0x%02x handle 0x%04x error 0x%02x\n", rsp->request,
 	       sys_le16_to_cpu(rsp->handle), rsp->error);
 
-	/* Match request with response */
-	err = rsp->request == att->req.op ? rsp->error : BT_ATT_ERR_UNLIKELY;
+	if (!req->buf) {
+		err = BT_ATT_ERR_UNLIKELY;
+		goto done;
+	}
 
+	hdr = (void *)req->buf->data;
+
+	err = rsp->request == hdr->code ? rsp->error : BT_ATT_ERR_UNLIKELY;
+
+done:
 	return att_handle_rsp(conn, NULL, 0, err);
 }
 
@@ -1492,7 +1505,7 @@ int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
 			return -EBUSY;
 		}
 
-		att->req.op = hdr->code;
+		att->req.buf = bt_buf_clone(buf);
 		att->req.func = func;
 		att->req.user_data = user_data;
 		att->req.destroy = destroy;
