@@ -2,6 +2,7 @@
 *.a
 *.d
 *.cmd
+*.pyc
 !arch/*/*/*/*.cmd
 *~
 cscope.*
@@ -21,3 +22,4 @@ html/
 doc/latex/
 sanity-out/
 scripts/grub
+doc/reference/kconfig/CONFIG_*
