@@ -75,6 +75,7 @@ void net_context_set_receiver_registered(struct net_context *context);
 #define STACKSIZE_UNIT 1024
 static char __noinit rx_fiber_stack[STACKSIZE_UNIT * 1];
 static char __noinit tx_fiber_stack[STACKSIZE_UNIT * 1];
+static char __noinit timer_fiber_stack[600];
 
 static struct net_dev {
 	/* Queue for incoming packets from driver */
@@ -492,6 +493,52 @@ static void net_rx_fiber(void)
 	}
 }
 
+/*
+ * Run various Contiki timers. At the moment this is done via polling.
+ * Max. timeout is set to 60sec so that we wake up at least once a minute.
+ */
+#define DEFAULT_TIMER_WAKEUP (2 * sys_clock_ticks_per_sec)
+#define MAX_TIMER_WAKEUP (60 * sys_clock_ticks_per_sec)
+
+static void net_timer_fiber(void)
+{
+	clock_time_t next_wakeup;
+
+	NET_DBG("Starting net timer fiber\n");
+
+	while (1) {
+		/* Run various timers */
+		next_wakeup = etimer_request_poll();
+
+		if (next_wakeup == 0) {
+			/* There was no timers, wait a bit */
+			next_wakeup = DEFAULT_TIMER_WAKEUP;
+		} else {
+			if (next_wakeup > MAX_TIMER_WAKEUP) {
+				NET_DBG("Too long wakeup %d\n", next_wakeup);
+				next_wakeup = MAX_TIMER_WAKEUP;
+			}
+			if (!(next_wakeup < CLOCK_SECOND * 2)) {
+				NET_DBG("Next wakeup %d\n", next_wakeup);
+			}
+
+#ifdef CONFIG_INIT_STACKS
+			{
+				static clock_time_t last_print;
+				if ((last_print + 10) < clock_seconds()) {
+					net_analyze_stack("timer fiber",
+							  timer_fiber_stack,
+						  sizeof(timer_fiber_stack));
+					last_print = clock_seconds();
+				}
+			}
+#endif
+		}
+
+		fiber_sleep(next_wakeup);
+	}
+}
+
 static void init_rx_queue(void)
 {
 	nano_fifo_init(&netdev.rx_queue);
@@ -506,6 +553,12 @@ static void init_tx_queue(void)
 
 	fiber_start(tx_fiber_stack, sizeof(tx_fiber_stack),
 		    (nano_fiber_entry_t) net_tx_fiber, 0, 0, 7, 0);
+}
+
+static void init_timer_fiber(void)
+{
+	fiber_start(timer_fiber_stack, sizeof(timer_fiber_stack),
+		    (nano_fiber_entry_t) net_timer_fiber, 0, 0, 7, 0);
 }
 
 int net_set_mac(uint8_t *mac, uint8_t len)
@@ -611,6 +664,7 @@ int net_init(void)
 	net_buf_init();
 	init_tx_queue();
 	init_rx_queue();
+	init_timer_fiber();
 
 #if defined (CONFIG_NETWORKING_WITH_15_4)
 	net_driver_15_4_init();
