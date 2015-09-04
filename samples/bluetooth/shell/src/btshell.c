@@ -121,6 +121,11 @@ static void shell(int arg1, int arg2)
 
 		cmd = nano_fiber_fifo_get_wait(&cmds_queue);
 
+		if (!strlen(cmd->line)) {
+			nano_fiber_fifo_put(&avail_queue, cmd);
+			continue;
+		}
+
 		line2argv(cmd->line);
 
 		cb = get_cb(argv[0]);
