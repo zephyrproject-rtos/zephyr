@@ -66,6 +66,13 @@ config SERIAL_INTERRUPT_LOW
 	Option signifies that the serial controller uses low level interrupts
 	instead of high
 
+config  UART_INTERRUPT_DRIVEN
+	bool
+	prompt "Interrupt driven UART support"
+	default n
+	help
+	This option enables interrupt support for UART allowing console
+	input and UART based drivers.
 endmenu
 
 config NS16550
@@ -116,13 +123,6 @@ config STELLARIS_UART
 	This specific driver can be used for the serial hardware
 	available at the Texas Instrument LM3S6965 platform.
 
-config  UART_INTERRUPT_DRIVEN
-	bool
-	prompt "Interrupt driven UART support"
-	default n
-	help
-	This option enables interrupt support for UART allowing console
-	input and UART based drivers.
 
 config UART_PORT_0_NAME
 	string
