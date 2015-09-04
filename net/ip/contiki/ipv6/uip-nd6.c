@@ -210,7 +210,8 @@ ns_input(struct net_buf *buf)
 #endif /*UIP_CONF_IPV6_CHECKS */
       break;
     default:
-      PRINTF("ND option not supported in NS");
+      PRINTF("ND option (0x%x) not supported in NS\n",
+	     UIP_ND6_OPT_HDR_BUF(buf)->type);
       break;
     }
     uip_nd6_opt_offset(buf) += (UIP_ND6_OPT_HDR_BUF(buf)->len << 3);
@@ -383,11 +384,11 @@ uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, 
   UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
   UIP_STAT(++uip_stat.nd6.sent);
-  PRINTF("Sending NS to");
+  PRINTF("Sending NS to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
-  PRINTF("from");
+  PRINTF(" from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
-  PRINTF("with target address");
+  PRINTF(" with target address ");
   PRINT6ADDR(tgt);
   PRINTF("\n");
   return;
@@ -419,11 +420,11 @@ na_input(struct net_buf *buf)
   uint8_t is_solicited;
   uint8_t is_override;
 
-  PRINTF("Received NA from");
+  PRINTF("Received NA from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
-  PRINTF("to");
+  PRINTF(" to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
-  PRINTF("with target address");
+  PRINTF(" with target address ");
   PRINT6ADDR((uip_ipaddr_t *) (&UIP_ND6_NA_BUF(buf)->tgtipaddr));
   PRINTF("\n");
   UIP_STAT(++uip_stat.nd6.recv);
@@ -464,7 +465,8 @@ na_input(struct net_buf *buf)
       uip_set_nd6_opt_llao(buf) = (uint8_t *)UIP_ND6_OPT_HDR_BUF(buf);
       break;
     default:
-      PRINTF("ND option not supported in NA\n");
+      PRINTF("ND option (0x%x) not supported in NA\n",
+	     UIP_ND6_OPT_HDR_BUF(buf)->type);
       break;
     }
     uip_nd6_opt_offset(buf) += (UIP_ND6_OPT_HDR_BUF(buf)->len << 3);
@@ -573,9 +575,9 @@ static void
 rs_input(void)
 {
 
-  PRINTF("Received RS from");
+  PRINTF("Received RS from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
-  PRINTF("to");
+  PRINTF(" to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF("\n");
   UIP_STAT(++uip_stat.nd6.recv);
@@ -610,7 +612,8 @@ rs_input(void)
       uip_set_nd6_opt_llao = (uint8_t *)UIP_ND6_OPT_HDR_BUF;
       break;
     default:
-      PRINTF("ND option not supported in RS\n");
+      PRINTF("ND option (0x%x) not supported in RS\n",
+	     UIP_ND6_OPT_HDR_BUF(buf)->type);
       break;
     }
     uip_nd6_opt_offset(buf) += (UIP_ND6_OPT_HDR_BUF->len << 3);
@@ -757,9 +760,9 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
   UIP_ICMP_BUF->icmpchksum = ~uip_icmp6chksum(buf);
 
   UIP_STAT(++uip_stat.nd6.sent);
-  PRINTF("Sending RA to");
+  PRINTF("Sending RA to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
-  PRINTF("from");
+  PRINTF(" from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
   return;
@@ -799,9 +802,9 @@ uip_nd6_rs_output(struct net_buf *buf)
   UIP_ICMP_BUF(buf)->icmpchksum = ~uip_icmp6chksum(buf);
 
   UIP_STAT(++uip_stat.nd6.sent);
-  PRINTF("Sendin RS to");
+  PRINTF("Sendin RS to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
-  PRINTF("from");
+  PRINTF(" from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
   return;
@@ -819,9 +822,9 @@ uip_nd6_rs_output(struct net_buf *buf)
 void
 ra_input(struct net_buf *buf)
 {
-  PRINTF("Received RA from");
+  PRINTF("Received RA from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
-  PRINTF("to");
+  PRINTF(" to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF("\n");
   UIP_STAT(++uip_stat.nd6.recv);
@@ -830,7 +833,7 @@ ra_input(struct net_buf *buf)
   if((UIP_IP_BUF(buf)->ttl != UIP_ND6_HOP_LIMIT) ||
      (!uip_is_addr_link_local(&UIP_IP_BUF(buf)->srcipaddr)) ||
      (UIP_ICMP_BUF(buf)->icode != 0)) {
-    PRINTF("RA received is bad");
+    PRINTF("RA received is bad\n");
     goto discard;
   }
 #endif /*UIP_CONF_IPV6_CHECKS */
@@ -855,7 +858,7 @@ ra_input(struct net_buf *buf)
   uip_nd6_opt_offset(buf) = UIP_ND6_RA_LEN;
   while(uip_l3_icmp_hdr_len(buf) + uip_nd6_opt_offset(buf) < uip_len(buf)) {
     if(UIP_ND6_OPT_HDR_BUF(buf)->len == 0) {
-      PRINTF("RA received is bad");
+      PRINTF("RA received is bad\n");
       goto discard;
     }
     switch (UIP_ND6_OPT_HDR_BUF(buf)->type) {
@@ -918,9 +921,9 @@ ra_input(struct net_buf *buf)
               uip_prefix(buf)->isinfinite = 1;
               break;
             default:
-              PRINTF("Updating timer of prefix");
+              PRINTF("Updating timer of prefix ");
               PRINT6ADDR(&uip_prefix(buf)->ipaddr);
-              PRINTF("new value %lu\n", uip_ntohl(uip_nd6_opt_prefix_info(buf)->validlt));
+              PRINTF(" new value %lu\n", uip_ntohl(uip_nd6_opt_prefix_info(buf)->validlt));
               stimer_set(&uip_prefix(buf)->vlifetime,
                          uip_ntohl(uip_nd6_opt_prefix_info(buf)->validlt));
               uip_prefix(buf)->isinfinite = 0;
@@ -943,9 +946,9 @@ ra_input(struct net_buf *buf)
               if((uip_ntohl(uip_nd6_opt_prefix_info(buf)->validlt) > 2 * 60 * 60) ||
                  (uip_ntohl(uip_nd6_opt_prefix_info(buf)->validlt) >
                   stimer_remaining(&uip_addr(buf)->vlifetime))) {
-                PRINTF("Updating timer of address");
+                PRINTF("Updating timer of address ");
                 PRINT6ADDR(&uip_addr(buf)->ipaddr);
-                PRINTF("new value %lu\n",
+                PRINTF(" new value %lu\n",
                        uip_ntohl(uip_nd6_opt_prefix_info(buf)->validlt));
                 stimer_set(&uip_addr(buf)->vlifetime,
                            uip_ntohl(uip_nd6_opt_prefix_info(buf)->validlt));
@@ -953,7 +956,7 @@ ra_input(struct net_buf *buf)
                 stimer_set(&uip_addr(buf)->vlifetime, 2 * 60 * 60);
                 PRINTF("Updating timer of address ");
                 PRINT6ADDR(&uip_addr(buf)->ipaddr);
-                PRINTF("new value %lu\n", (unsigned long)(2 * 60 * 60));
+                PRINTF(" new value %lu\n", (unsigned long)(2 * 60 * 60));
               }
               uip_addr(buf)->isinfinite = 0;
             } else {
@@ -990,7 +993,8 @@ ra_input(struct net_buf *buf)
       break;
 #endif /* UIP_ND6_RA_RDNSS */
     default:
-      PRINTF("ND option not supported in RA");
+      PRINTF("ND option (0x%x) not supported in RA\n",
+	     UIP_ND6_OPT_HDR_BUF(buf)->type);
       break;
     }
     uip_nd6_opt_offset(buf) += (UIP_ND6_OPT_HDR_BUF(buf)->len << 3);
