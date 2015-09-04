@@ -291,8 +291,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	/*
 	 * Increment the tick because _timer_idle_exit does not account
 	 * for the tick due to the timer interrupt itself. Also, if not in
-	 * tickless mode,
-	 * _SysIdleElpasedTicks will be 0.
+	 * tickless mode, _sys_idle_elapsed_ticks  will be 0.
 	 */
 	_sys_idle_elapsed_ticks++;
 
@@ -457,7 +456,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
  * The routine is responsible for taking the timer out of idle mode and
  * generating an interrupt at the next tick interval.
  *
- * Note that in this routine, _SysTimerElapsedTicks must be zero because the
+ * Note that in this routine, _sys_idle_elapsed_ticks must be zero because the
  * ticker has done its work and consumed all the ticks. This has to be true
  * otherwise idle mode wouldn't have been entered in the first place.
  *

@@ -320,8 +320,7 @@ void _TIMER_INT_HANDLER(void *unused)
 		/*
 		 * Increment the tick because _timer_idle_exit does not
 		 * account for the tick due to the timer interrupt itself.
-		 * Also, if not in tickless mode, _SysIdleElpasedTicks will be
-		 * 0.
+		 * Also, if not in tickless mode, _sys_idle_elapsed_ticks will be 0.
 		 */
 		_sys_idle_elapsed_ticks++;
 
