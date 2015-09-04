@@ -53,157 +53,114 @@
 #include "sys/process.h"
 
 static struct etimer *timerlist;
-/* static clock_time_t next_expiration; */
+static clock_time_t next_expiration;
 
 PROCESS(etimer_process, "Event timer");
 /*---------------------------------------------------------------------------*/
-#if 0
 static void
 update_time(void)
 {
-  clock_time_t tdist;
-  clock_time_t now;
   struct etimer *t;
+  clock_time_t remaining;
 
   if (timerlist == NULL) {
     next_expiration = 0;
   } else {
-    now = clock_time();
-    t = timerlist;
-    /* Must calculate distance to next time into account due to wraps */
-    tdist = t->timer.start + t->timer.interval - now;
-    for(t = t->next; t != NULL; t = t->next) {
-      if(t->timer.start + t->timer.interval - now < tdist) {
-	tdist = t->timer.start + t->timer.interval - now;
+    clock_time_t shortest = 0;
+    for(t = timerlist; t != NULL; t = t->next) {
+      remaining = timer_remaining(&t->timer);
+      PRINTF("%s():%d etimer %p left %d shortest %d triggered %d\n",
+	     __FUNCTION__, __LINE__,
+	     t, remaining, shortest, etimer_is_triggered(t));
+      if((shortest > remaining || shortest == 0) && remaining != 0) {
+        shortest = remaining;
       }
     }
-    next_expiration = now + tdist;
+    next_expiration = shortest;
+    PRINTF("%s():%d next expiration %d\n", __FUNCTION__, __LINE__,
+	   next_expiration);
   }
 }
-#endif
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(etimer_process, ev, data, buf)
 {
-  /* struct etimer *t, *u; */
-	
+  struct etimer *t;
+
   PROCESS_BEGIN();
 
-  timerlist = NULL;
-  
   while(1) {
     PROCESS_YIELD();
 
-#if 0
-    if(ev == PROCESS_EVENT_EXITED) {
-      struct process *p = data;
-
-      while(timerlist != NULL && timerlist->p == p) {
-	timerlist = timerlist->next;
-      }
-
-      if(timerlist != NULL) {
-	t = timerlist;
-	while(t->next != NULL) {
-	  if(t->next->p == p) {
-	    t->next = t->next->next;
-	  } else
-	    t = t->next;
-	}
-      }
-      continue;
-    } else if(ev != PROCESS_EVENT_POLL) {
-      continue;
-    }
-
-  again:
-    
-    u = NULL;
-    
+    PRINTF("%s():%d timerlist %p\n", __FUNCTION__, __LINE__, timerlist);
     for(t = timerlist; t != NULL; t = t->next) {
-      if(timer_expired(&t->timer)) {
-	if(process_post(t->p, PROCESS_EVENT_TIMER, t) == PROCESS_ERR_OK) {
-	  
-	  /* Reset the process ID of the event timer, to signal that the
-	     etimer has expired. This is later checked in the
-	     etimer_expired() function. */
-	  t->p = PROCESS_NONE;
-	  if(u != NULL) {
-	    u->next = t->next;
-	  } else {
-	    timerlist = t->next;
-	  }
-	  t->next = NULL;
-	  update_time();
-	  goto again;
-	} else {
-	  etimer_request_poll();
-	}
+      PRINTF("%s():%d timer %p remaining %d triggered %d\n",
+	     __FUNCTION__, __LINE__,
+	     t, timer_remaining(&t->timer), etimer_is_triggered(t));
+      if(etimer_expired(t) && !etimer_is_triggered(t)) {
+        PRINTF("%s():%d timer %p expired\n", __FUNCTION__, __LINE__, t);
+	/*
+	 * FIXME: Fix the process thingy so that etimer can be used also
+	 *        in other Contiki processes.
+	 */
+	process_post_synch(&tcpip_process, PROCESS_EVENT_TIMER, t, NULL);
       }
-      u = t;
     }
-#endif /* 0 */
-    
+    update_time();
+
   }
-  
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
-void
+clock_time_t
 etimer_request_poll(void)
 {
-  process_poll(&etimer_process);
+  process_post_synch(&etimer_process, PROCESS_EVENT_POLL,
+		     NULL, NULL);
+  return next_expiration;
 }
 /*---------------------------------------------------------------------------*/
-#if 0
 static void
 add_timer(struct etimer *timer)
 {
   struct etimer *t;
 
-  etimer_request_poll();
-
-  if(timer->p != PROCESS_NONE) {
-    for(t = timerlist; t != NULL; t = t->next) {
-      if(t == timer) {
-	/* Timer already on list, bail out. */
-        timer->p = PROCESS_CURRENT();
+  for(t = timerlist; t != NULL; t = t->next) {
+    if(t == timer) {
+      /* Timer already on list, bail out. */
 	update_time();
 	return;
-      }
     }
   }
 
   /* Timer not on list. */
-  timer->p = PROCESS_CURRENT();
   timer->next = timerlist;
   timerlist = timer;
 
   update_time();
 }
-#endif
 /*---------------------------------------------------------------------------*/
 void
 etimer_set(struct etimer *et, clock_time_t interval)
 {
   timer_set(&et->timer, interval);
-  /* add_timer(et); */
+  add_timer(et);
 }
 /*---------------------------------------------------------------------------*/
 void
 etimer_reset(struct etimer *et)
 {
   timer_reset(&et->timer);
-  /* add_timer(et); */
+  add_timer(et);
 }
 /*---------------------------------------------------------------------------*/
 void
 etimer_restart(struct etimer *et)
 {
   timer_restart(&et->timer);
-  /* add_timer(et); */
+  add_timer(et);
 }
 /*---------------------------------------------------------------------------*/
-#if 0
+#if 1
 void
 etimer_adjust(struct etimer *et, int timediff)
 {
@@ -230,26 +187,56 @@ etimer_start_time(struct etimer *et)
   return et->timer.start;
 }
 /*---------------------------------------------------------------------------*/
-#if 0
 int
 etimer_pending(void)
 {
   return timerlist != NULL;
 }
-#endif
 /*---------------------------------------------------------------------------*/
-#if 0
 clock_time_t
 etimer_next_expiration_time(void)
 {
   return etimer_pending() ? next_expiration : 0;
 }
-#endif
 /*---------------------------------------------------------------------------*/
 void
 etimer_stop(struct etimer *et)
 {
+  struct etimer *t;
+
   timer_stop(&et->timer);
+
+  /* First check if et is the first event timer on the list. */
+  if(et == timerlist) {
+    timerlist = timerlist->next;
+    update_time();
+  } else {
+    /* Else walk through the list and try to find the item before the
+       et timer. */
+    for(t = timerlist; t != NULL && t->next != et; t = t->next);
+
+    if(t != NULL) {
+      /* We've found the item before the event timer that we are about
+        to remove. We point the items next pointer to the event after
+        the removed item. */
+      t->next = et->next;
+
+      update_time();
+    }
+  }
+
+  /* Remove the next pointer from the item to be removed. */
+  et->next = NULL;
+
+  PRINTF("%s():%d timer %p removed\n", __FUNCTION__, __LINE__);
 }
 /*---------------------------------------------------------------------------*/
+bool etimer_is_triggered(struct etimer *t)
+{
+  return timer_is_triggered(&t->timer);
+}
+void etimer_set_triggered(struct etimer *t)
+{
+  timer_set_triggered(&t->timer);
+}
 /** @} */

@@ -151,7 +151,7 @@ ctimer_stop(struct ctimer *c)
     etimer_stop(&c->etimer);
   } else {
     c->etimer.next = NULL;
-    c->etimer.p = PROCESS_NONE;
+    //c->etimer.p = PROCESS_NONE;
   }
   list_remove(ctimer_list, c);
 }

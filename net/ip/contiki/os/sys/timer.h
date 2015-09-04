@@ -79,6 +79,8 @@
 #include <nanokernel.h>
 #endif
 
+#include <stdbool.h>
+
 #include "sys/clock.h"
 
 /**
@@ -95,6 +97,7 @@ struct timer {
   struct nano_timer nano_timer;
   int init_done;
   int started;
+  bool triggered;
 };
 
 CCIF void timer_set(struct timer *t, clock_time_t interval);
@@ -102,7 +105,9 @@ void timer_reset(struct timer *t);
 void timer_restart(struct timer *t);
 CCIF int timer_expired(struct timer *t);
 clock_time_t timer_remaining(struct timer *t);
-void timer_stop(struct timer *t);
+bool timer_stop(struct timer *t);
+bool timer_is_triggered(struct timer *t);
+void timer_set_triggered(struct timer *t);
 
 #endif /* TIMER_H_ */
 

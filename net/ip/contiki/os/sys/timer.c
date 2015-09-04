@@ -76,20 +76,27 @@ timer_set(struct timer *t, clock_time_t interval)
 {
   do_init(t);
 
-  switch (sys_execution_context_type_get()) {
-  case NANO_CTX_FIBER:
-	  nano_fiber_timer_start(&t->nano_timer, interval);
-	  break;
-  case NANO_CTX_TASK:
-	  nano_task_timer_start(&t->nano_timer, interval);
-	  break;
-  default:
-	  return;
+  if (t->started) {
+    timer_stop(t);
   }
 
+  switch (sys_execution_context_type_get()) {
+  case NANO_CTX_FIBER:
+    nano_fiber_timer_start(&t->nano_timer, interval);
+    break;
+  case NANO_CTX_TASK:
+    nano_task_timer_start(&t->nano_timer, interval);
+    break;
+  default:
+    return;
+  }
+
+  PRINTF("%s():%d timer %p started interval %d\n", __FUNCTION__, __LINE__,
+	 t, interval);
   t->started = true;
   t->interval = interval;
   t->start = clock_time();
+  t->triggered = false;
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -109,7 +116,8 @@ timer_set(struct timer *t, clock_time_t interval)
 void
 timer_reset(struct timer *t)
 {
-  t->start += t->interval;
+  timer_stop(t);
+  timer_set(t, t->interval);
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -137,17 +145,17 @@ timer_restart(struct timer *t)
 
   switch (sys_execution_context_type_get()) {
   case NANO_CTX_FIBER:
-	  nano_fiber_timer_start(&t->nano_timer, t->interval);
-	  break;
+    nano_fiber_timer_start(&t->nano_timer, t->interval);
+    break;
   case NANO_CTX_TASK:
-	  nano_task_timer_start(&t->nano_timer, t->interval);
-	  break;
+    nano_task_timer_start(&t->nano_timer, t->interval);
+    break;
   default:
-	  return;
+    return;
   }
-
   t->started = true;
   t->start = clock_time();
+  t->triggered = false;
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -164,13 +172,19 @@ timer_restart(struct timer *t)
 int
 timer_expired(struct timer *t)
 {
-  /* Note: Can not return diff >= t->interval so we add 1 to diff and return
-     t->interval < diff - required to avoid an internal error in mspgcc. */
-  /* clock_time_t diff = (clock_time() - t->start) + 1; */
-  /* return t->interval < diff; */
   do_init(t);
 
   return t->nano_timer.ticks == 0;
+}
+/*---------------------------------------------------------------------------*/
+bool timer_is_triggered(struct timer *t)
+{
+  return t->triggered;
+}
+
+void timer_set_triggered(struct timer *t)
+{
+  t->triggered = true;
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -186,26 +200,30 @@ timer_expired(struct timer *t)
 clock_time_t
 timer_remaining(struct timer *t)
 {
-  return t->start + t->interval - clock_time();
+  return t->nano_timer.ticks;
 }
 /*---------------------------------------------------------------------------*/
-void timer_stop(struct timer *t)
+bool timer_stop(struct timer *t)
 {
   if (!t->started) {
-    return;
+    return false;
   }
 
   switch (sys_execution_context_type_get()) {
   case NANO_CTX_FIBER:
-	  nano_fiber_timer_stop(&t->nano_timer);
-	  break;
+    nano_fiber_timer_stop(&t->nano_timer);
+    break;
   case NANO_CTX_TASK:
-	  nano_task_timer_stop(&t->nano_timer);
-	  break;
+    nano_task_timer_stop(&t->nano_timer);
+    break;
+  default:
+    return false;
   }
 
-  t->started = false;
-  return;
-}
+  PRINTF("%s():%d timer %p stopped\n", __FUNCTION__, __LINE__, t);
 
+  t->started = false;
+  t->triggered = false;
+  return true;
+}
 /** @} */
