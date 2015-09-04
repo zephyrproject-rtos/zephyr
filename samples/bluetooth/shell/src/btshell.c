@@ -38,6 +38,7 @@
 
 #include <console/uart_console.h>
 #include <misc/printk.h>
+#include <misc/util.h>
 
 #include "btshell.h"
 
@@ -47,9 +48,6 @@
 static struct shell_cmd *commands;
 
 static const char *prompt;
-
-static char *argv[ARGC_MAX + 1];
-static size_t argc;
 
 #define STACKSIZE 2000
 static char __stack stack[STACKSIZE];
@@ -69,19 +67,30 @@ static void line_queue_init(void)
 	}
 }
 
-static void line2argv(char *str)
+static size_t line2argv(char *str, char *argv[], size_t size)
 {
-	argc = 0;
+	size_t argc = 0;
+
+	if (!strlen(str)) {
+		return 0;
+	}
 
 	argv[argc++] = str;
 
 	while ((str = strchr(str, ' '))) {
 		*str++ = '\0';
 		argv[argc++] = str;
+
+		if (argc == size) {
+			printk("Too many parameters (max %u)\n", size - 1);
+			return 0;
+		}
 	}
 
 	/* keep it POSIX style where argv[argc] is required to be NULL */
 	argv[argc] = NULL;
+
+	return argc;
 }
 
 static cmd_function_t get_cb(const char *string)
@@ -113,6 +122,9 @@ static void show_commands(void)
 
 static void shell(int arg1, int arg2)
 {
+	char *argv[ARGC_MAX + 1];
+	size_t argc;
+
 	while (1) {
 		struct uart_console_input *cmd;
 		cmd_function_t cb;
@@ -121,12 +133,11 @@ static void shell(int arg1, int arg2)
 
 		cmd = nano_fiber_fifo_get_wait(&cmds_queue);
 
-		if (!strlen(cmd->line)) {
+		argc = line2argv(cmd->line, argv, ARRAY_SIZE(argv));
+		if (!argc) {
 			nano_fiber_fifo_put(&avail_queue, cmd);
 			continue;
 		}
-
-		line2argv(cmd->line);
 
 		cb = get_cb(argv[0]);
 		if (!cb) {
