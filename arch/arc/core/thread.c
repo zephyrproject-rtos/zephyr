@@ -37,7 +37,6 @@
  */
 
 #include <nanokernel.h>
-#include <arch/cpu.h>
 #include <toolchain.h>
 #include <nano_private.h>
 #include <offsets.h>
