@@ -33,6 +33,15 @@ foobar
 EOF
 
 
+radvd
+=====
+In order the IPv6 stateless address auto configuration (SLAAC)
+to work, you need to run radvd or similar tool in host side.
+There is an example radvd.conf file present in the tools directory.
+
+$ sudo radvd -d 1 -C radvd.conf -m stderr
+
+
 tunslip
 =======
 
