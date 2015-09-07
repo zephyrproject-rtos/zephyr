@@ -672,16 +672,18 @@ tcpip_ipv6_output(struct net_buf *buf)
        * solicitation.  Otherwise, any one of the addresses assigned to the
        * interface should be used."*/
        if(uip_ds6_is_my_addr(&UIP_IP_BUF(buf)->srcipaddr)){
-          uip_nd6_ns_output(buf, &UIP_IP_BUF(buf)->srcipaddr, NULL, &nbr->ipaddr);
+          uip_nd6_ns_output(NULL, &UIP_IP_BUF(buf)->srcipaddr, NULL, &nbr->ipaddr);
         } else {
-          uip_nd6_ns_output(buf, NULL, NULL, &nbr->ipaddr);
+          uip_nd6_ns_output(NULL, NULL, NULL, &nbr->ipaddr);
         }
 
         stimer_set(&nbr->sendns, uip_ds6_if.retrans_timer / 1000);
         nbr->nscount = 1;
       }
 
-      return 1; /* packet was passed to network successfully */
+      uip_len(buf) = 0;
+      uip_ext_len(buf) = 0;
+      return 0; /* packet was discarded */
 #endif /* UIP_ND6_SEND_NA */
     } else {
 #if UIP_ND6_SEND_NA
