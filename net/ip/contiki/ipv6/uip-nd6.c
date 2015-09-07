@@ -334,6 +334,16 @@ discard:
 void
 uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, uip_ipaddr_t * tgt)
 {
+  bool send_from_here = true;
+
+  if (!buf) {
+    buf = net_buf_get_reserve_tx(UIP_IPICMPH_LEN);
+    if (!buf) {
+      PRINTF("%s(): Cannot send NS, no net buffers\n", __FUNCTION__);
+      return;
+    }
+    send_from_here = true;
+  }
   uip_ext_len(buf) = 0;
   UIP_IP_BUF(buf)->vtc = 0x60;
   UIP_IP_BUF(buf)->tcflow = 0;
@@ -364,6 +374,9 @@ uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, 
     if (uip_is_addr_unspecified(&UIP_IP_BUF(buf)->srcipaddr)) {
       PRINTF("Dropping NS due to no suitable source address\n");
       uip_len(buf) = 0;
+      if (send_from_here) {
+        net_buf_put(buf);
+      }
       return;
     }
     UIP_IP_BUF(buf)->len[1] =
@@ -391,6 +404,10 @@ uip_nd6_ns_output(struct net_buf *buf, uip_ipaddr_t * src, uip_ipaddr_t * dest, 
   PRINTF(" with target address ");
   PRINT6ADDR(tgt);
   PRINTF("\n");
+
+  if (send_from_here) {
+    tcpip_ipv6_output(buf);
+  }
   return;
 }
 /*------------------------------------------------------------------*/
@@ -662,6 +679,17 @@ discard:
 void
 uip_nd6_ra_output(uip_ipaddr_t * dest)
 {
+  bool send_from_here = true;
+
+  if (!buf) {
+    buf = net_buf_get_reserve_tx(UIP_IPICMPH_LEN);
+    if (!buf) {
+      PRINTF("%s(): Cannot send RA, no net buffers\n", __FUNCTION__);
+      return;
+    }
+
+    send_from_here = true;
+  }
 
   UIP_IP_BUF(buf)->vtc = 0x60;
   UIP_IP_BUF(buf)->tcflow = 0;
@@ -765,6 +793,10 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
   PRINTF(" from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
+
+  if (send_from_here) {
+    tcpip_ipv6_output(buf);
+  }
   return;
 }
 #endif /* UIP_ND6_SEND_RA */
@@ -775,6 +807,16 @@ uip_nd6_ra_output(uip_ipaddr_t * dest)
 void
 uip_nd6_rs_output(struct net_buf *buf)
 {
+  bool send_from_here = false;
+
+  if (!buf) {
+    buf = net_buf_get_reserve_tx(UIP_IPICMPH_LEN);
+    if (!buf) {
+      PRINTF("%s(): Cannot send RS, no net buffers\n", __FUNCTION__);
+      return;
+    }
+    send_from_here = true;
+  }
   UIP_IP_BUF(buf)->vtc = 0x60;
   UIP_IP_BUF(buf)->tcflow = 0;
   UIP_IP_BUF(buf)->flow = 0;
@@ -807,6 +849,10 @@ uip_nd6_rs_output(struct net_buf *buf)
   PRINTF(" from ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->srcipaddr);
   PRINTF("\n");
+
+  if (send_from_here) {
+    tcpip_ipv6_output(buf);
+  }
   return;
 }
 /*---------------------------------------------------------------------------*/
