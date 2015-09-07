@@ -165,6 +165,7 @@ static void le_conn_param_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	bt_conn_connected(conn);
 }
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 static void le_conn_param_update_req(struct bt_conn *conn, uint8_t ident,
 				     struct bt_buf *buf)
 {
@@ -217,6 +218,7 @@ static void le_conn_param_update_req(struct bt_conn *conn, uint8_t ident,
 		bt_conn_le_conn_update(conn, min, max, latency, timeout);
 	}
 }
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 static void le_sig(struct bt_conn *conn, struct bt_buf *buf)
 {
@@ -248,9 +250,11 @@ static void le_sig(struct bt_conn *conn, struct bt_buf *buf)
 	case BT_L2CAP_CONN_PARAM_RSP:
 		le_conn_param_rsp(conn, buf);
 		break;
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	case BT_L2CAP_CONN_PARAM_REQ:
 		le_conn_param_update_req(conn, hdr->ident, buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 	default:
 		BT_WARN("Unknown L2CAP PDU code 0x%02x\n", hdr->code);
 		rej_not_understood(conn, hdr->ident);

@@ -1,9 +1,10 @@
-obj-y = att.o \
-	buf.o \
-	conn.o \
-	gatt.o \
-	hci_core.o \
-	keys.o \
-	l2cap.o \
-	smp.o \
-	uuid.o
+obj-y = buf.o \
+	hci_core.o
+
+obj-$(CONFIG_BLUETOOTH_CONN) += conn.o \
+				l2cap.o \
+				keys.o \
+				smp.o \
+				att.o \
+				gatt.o \
+				uuid.o

@@ -209,6 +209,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct bt_buf *buf,
 	return err;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static void hci_acl(struct bt_buf *buf)
 {
 	struct bt_hci_acl_hdr *hdr = (void *)buf->data;
@@ -242,6 +243,7 @@ static void hci_acl(struct bt_buf *buf)
 	bt_conn_recv(conn, buf, flags);
 	bt_conn_put(conn);
 }
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
 #include <offsets.h>
@@ -318,6 +320,7 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 
 /* HCI event processing */
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static void update_sec_level(struct bt_conn *conn)
 {
 	struct bt_keys *keys;
@@ -367,6 +370,7 @@ static void hci_encrypt_change(struct bt_buf *buf)
 
 	bt_conn_put(conn);
 }
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 static void hci_reset_complete(struct bt_buf *buf)
 {
@@ -471,6 +475,7 @@ static void hci_cmd_status(struct bt_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static void hci_num_completed_packets(struct bt_buf *buf)
 {
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
@@ -550,6 +555,7 @@ static void copy_id_addr(struct bt_conn *conn, const bt_addr_le_t *addr)
 		bt_addr_le_copy(&conn->dst, addr);
 	}
 }
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 static int bt_hci_start_scanning(uint8_t scan_type)
 {
@@ -642,6 +648,7 @@ static int bt_hci_stop_scanning(void)
 	return err;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static int hci_le_create_conn(const bt_addr_le_t *addr)
 {
 	struct bt_buf *buf;
@@ -663,6 +670,7 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 /* Used to determine whether to start scan and which scan type should be used */
 int bt_le_scan_update(void)
@@ -680,6 +688,7 @@ int bt_le_scan_update(void)
 		}
 	}
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 	if (!scan_dev_found_cb) {
 		struct bt_conn *conn;
 
@@ -693,10 +702,12 @@ int bt_le_scan_update(void)
 
 		return bt_hci_start_scanning(BT_LE_SCAN_PASSIVE);
 	}
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 	return bt_hci_start_scanning(BT_LE_SCAN_ACTIVE);
 }
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static void hci_disconn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
@@ -1019,6 +1030,7 @@ static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype)
 done:
 	bt_conn_put(conn);
 }
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 static void le_adv_report(struct bt_buf *buf)
 {
@@ -1031,13 +1043,15 @@ static void le_adv_report(struct bt_buf *buf)
 
 	while (num_reports--) {
 		int8_t rssi = info->data[info->length];
+#if defined(CONFIG_BLUETOOTH_CONN)
 		const bt_addr_le_t *addr;
 		struct bt_keys *keys;
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 		BT_DBG("%s event %u, len %u, rssi %d dBm\n",
 			bt_addr_le_str(&info->addr),
 			info->evt_type, info->length, rssi);
-
+#if defined(CONFIG_BLUETOOTH_CONN)
 		keys = bt_keys_find_irk(&info->addr);
 		if (keys) {
 			addr = &keys->addr;
@@ -1054,7 +1068,12 @@ static void le_adv_report(struct bt_buf *buf)
 		}
 
 		check_pending_conn(addr, info->evt_type);
-
+#else
+		if (scan_dev_found_cb) {
+			scan_dev_found_cb(&info->addr, rssi, info->evt_type,
+					  info->data, info->length);
+		}
+#endif /* CONFIG_BLUETOOTH_CONN */
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
 		 */
@@ -1063,6 +1082,7 @@ static void le_adv_report(struct bt_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static void le_ltk_request(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
@@ -1119,6 +1139,7 @@ static void le_ltk_request(struct bt_buf *buf)
 done:
 	bt_conn_put(conn);
 }
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 static void hci_le_meta_event(struct bt_buf *buf)
 {
@@ -1127,14 +1148,12 @@ static void hci_le_meta_event(struct bt_buf *buf)
 	bt_buf_pull(buf, sizeof(*evt));
 
 	switch (evt->subevent) {
+#if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_LE_CONN_COMPLETE:
 		le_conn_complete(buf);
 		break;
 	case BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE:
 		le_conn_update_complete(buf);
-		break;
-	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
-		le_adv_report(buf);
 		break;
 	case BT_HCI_EVT_LE_LTK_REQUEST:
 		le_ltk_request(buf);
@@ -1144,6 +1163,10 @@ static void hci_le_meta_event(struct bt_buf *buf)
 		break;
 	case BT_HCI_EVT_LE_CONN_PARAM_REQ:
 		le_conn_param_req(buf);
+		break;
+#endif /* CONFIG_BLUETOOTH_CONN */
+	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+		le_adv_report(buf);
 		break;
 	default:
 		BT_DBG("Unhandled LE event %x\n", evt->subevent);
@@ -1160,6 +1183,7 @@ static void hci_event(struct bt_buf *buf)
 	bt_buf_pull(buf, sizeof(*hdr));
 
 	switch (hdr->evt) {
+#if defined(CONFIG_BLUETOOTH_CONN)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
 		hci_disconn_complete(buf);
 		break;
@@ -1169,6 +1193,7 @@ static void hci_event(struct bt_buf *buf)
 	case BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE:
 		hci_encrypt_key_refresh_complete(buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONN */
 	case BT_HCI_EVT_LE_META_EVENT:
 		hci_le_meta_event(buf);
 		break;
@@ -1256,9 +1281,11 @@ static void rx_prio_fiber(void)
 		case BT_HCI_EVT_CMD_STATUS:
 			hci_cmd_status(buf);
 			break;
+#if defined(CONFIG_BLUETOOTH_CONN)
 		case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 			hci_num_completed_packets(buf);
 			break;
+#endif /* CONFIG_BLUETOOTH_CONN */
 		default:
 			BT_ERR("Unknown event 0x%02x\n", hdr->evt);
 			break;
@@ -1331,6 +1358,7 @@ static void le_read_buffer_size_complete(struct bt_buf *buf)
 	bt_dev.le_pkts = rp->le_max_num;
 }
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 static int set_flow_control(void)
 {
 	struct bt_hci_cp_host_buffer_size *hbs;
@@ -1365,6 +1393,7 @@ static int set_flow_control(void)
 	*enable = 0x01;
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
 }
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 static int hci_init(void)
 {
@@ -1430,26 +1459,38 @@ static int hci_init(void)
 
 	ev = bt_buf_add(buf, sizeof(*ev));
 	memset(ev, 0, sizeof(*ev));
+
+#if defined(CONFIG_BLUETOOTH_CONN)
 	ev->events[0] |= 0x10; /* Disconnection Complete */
 	ev->events[1] |= 0x08; /* Read Remote Version Information Complete */
+#endif /* CONFIG_BLUETOOTH_CONN */
+
 	ev->events[1] |= 0x20; /* Command Complete */
 	ev->events[1] |= 0x40; /* Command Status */
 	ev->events[1] |= 0x80; /* Hardware Error */
+
+#if defined(CONFIG_BLUETOOTH_CONN)
 	ev->events[2] |= 0x04; /* Number of Completed Packets */
+#endif /* CONFIG_BLUETOOTH_CONN */
+
 	ev->events[3] |= 0x02; /* Data Buffer Overflow */
 	ev->events[7] |= 0x20; /* LE Meta-Event */
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 	if (bt_dev.le_features[0] & BT_HCI_LE_ENCRYPTION) {
 		ev->events[0] |= 0x80; /* Encryption Change */
 		ev->events[5] |= 0x80; /* Encryption Key Refresh Complete */
 	}
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 	bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 	err = set_flow_control();
 	if (err) {
 		return err;
 	}
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 	if (lmp_bredr_capable(bt_dev)) {
 		struct bt_hci_cp_write_le_host_supp *cp;
@@ -1560,11 +1601,14 @@ static int bt_init(void)
 	}
 
 	err = hci_init();
-	if (err) {
-		return err;
-	}
 
-	return bt_l2cap_init();
+#if defined(CONFIG_BLUETOOTH_CONN)
+	if (!err) {
+		err = bt_l2cap_init();
+	}
+#endif /* CONFIG_BLUETOOTH_CONN */
+
+	return err;
 }
 
 static void hci_rx_fiber(bt_ready_cb_t ready_cb)
@@ -1584,9 +1628,11 @@ static void hci_rx_fiber(bt_ready_cb_t ready_cb)
 		BT_DBG("buf %p type %u len %u\n", buf, buf->type, buf->len);
 
 		switch (buf->type) {
+#if defined(CONFIG_BLUETOOTH_CONN)
 		case BT_ACL_IN:
 			hci_acl(buf);
 			break;
+#endif /* CONFIG_BLUETOOTH_CONN */
 		case BT_EVT:
 			hci_event(buf);
 			break;

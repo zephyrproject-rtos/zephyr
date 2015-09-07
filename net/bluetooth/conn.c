@@ -568,6 +568,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 
 	conn->required_sec_level = sec;
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (conn->role == BT_HCI_ROLE_MASTER) {
 		struct bt_keys *keys;
 
@@ -585,8 +586,13 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 
 		return bt_smp_send_pairing_req(conn);
 	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	return bt_smp_send_security_req(conn);
+#else
+	return -EIO;
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 }
 
 void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)

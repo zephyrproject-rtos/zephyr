@@ -508,6 +508,7 @@ static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
@@ -557,6 +558,12 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 
 	return smp_request_tk(conn, req->io_capability);
 }
+#else
+static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
 static bool sec_level_reachable(struct bt_conn *conn)
 {
@@ -572,6 +579,7 @@ static bool sec_level_reachable(struct bt_conn *conn)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 int bt_smp_send_security_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
@@ -605,7 +613,9 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 
 	return 0;
 }
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 int bt_smp_send_pairing_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
@@ -650,6 +660,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	return 0;
 }
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
 {
@@ -680,6 +691,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *rsp = (void *)buf->data;
@@ -714,6 +726,12 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 
 	return 0;
 }
+#else
+static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 static uint8_t smp_send_pairing_random(struct bt_conn *conn)
 {
@@ -744,18 +762,21 @@ static uint8_t smp_pairing_confirm(struct bt_conn *conn, struct bt_buf *buf)
 
 	memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (conn->role == BT_HCI_ROLE_MASTER) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_random(conn);
 	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_TK_VALID)) {
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		return smp_send_pairing_confirm(conn);
 	}
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
-
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 	return 0;
 }
 
@@ -795,6 +816,7 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (conn->role == BT_HCI_ROLE_MASTER) {
 		uint8_t stk[16];
 
@@ -825,7 +847,9 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 
 		return 0;
 	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
 	keys = bt_keys_get_type(BT_KEYS_SLAVE_LTK, &conn->dst);
 	if (!keys) {
 		BT_ERR("Unable to create new keys\n");
@@ -853,6 +877,7 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
 
 	smp_send_pairing_random(conn);
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
 	return 0;
 }
@@ -865,12 +890,20 @@ static void smp_reset(struct bt_conn *conn)
 	atomic_set(&smp->allowed_cmds, 0);
 	atomic_set(&smp->flags, 0);
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		atomic_set_bit(&smp->allowed_cmds,
-			       BT_SMP_CMD_SECURITY_REQUEST);
-	} else {
-		atomic_set_bit(&smp->allowed_cmds,
-			       BT_SMP_CMD_PAIRING_REQ);
+	switch(conn->role) {
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	case BT_HCI_ROLE_MASTER:
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+		break;
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	case BT_HCI_ROLE_SLAVE:
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+		break;
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+	default:
+		break;
 	}
 }
 
@@ -1030,9 +1063,11 @@ static uint8_t smp_master_ident(struct bt_conn *conn, struct bt_buf *buf)
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (conn->role == BT_HCI_ROLE_MASTER && !smp->remote_dist) {
 		bt_smp_distribute_keys(conn);
 	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 	return 0;
 }
@@ -1114,9 +1149,11 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (conn->role == BT_HCI_ROLE_MASTER && !smp->remote_dist) {
 		bt_smp_distribute_keys(conn);
 	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 	return 0;
 }
@@ -1140,13 +1177,16 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 
 	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	if (conn->role == BT_HCI_ROLE_MASTER && !smp->remote_dist) {
 		bt_smp_distribute_keys(conn);
 	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_security_request *req = (void *)buf->data;
@@ -1189,6 +1229,12 @@ pair:
 
 	return 0;
 }
+#else
+static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 static const struct {
 	uint8_t  (*func)(struct bt_conn *conn, struct bt_buf *buf);
@@ -1322,10 +1368,12 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 		bt_keys_clear(keys, BT_KEYS_ALL);
 	}
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 	/* Slave distributes it's keys first */
 	if (conn->role == BT_HCI_ROLE_MASTER && smp->remote_dist) {
 		return;
 	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 	bt_smp_distribute_keys(conn);
 }
@@ -1878,10 +1926,20 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 		return;
 	}
 
-	if (conn->role == BT_HCI_ROLE_MASTER) {
+	switch(conn->role) {
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	case BT_HCI_ROLE_MASTER:
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-	} else {
+		break;
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	case BT_HCI_ROLE_SLAVE:
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
+		break;
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+	default:
+		break;
 	}
 }
 

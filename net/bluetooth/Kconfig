@@ -39,10 +39,25 @@ menuconfig BLUETOOTH
 	  This option enables Bluetooth Low Energy support.
 
 if BLUETOOTH
+config BLUETOOTH_CONN
+	bool
+	default n
+
+config	BLUETOOTH_PERIPHERAL
+	bool "Peripheral Role support"
+	default n
+	select BLUETOOTH_CONN
+
+config BLUETOOTH_CENTRAL
+	bool "Central Role support"
+	default n
+	select BLUETOOTH_CONN
+
+if BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
 config	BLUETOOTH_MAX_CONN
 	int
 	prompt "Maximum number of simultaneous connections"
-	depends on BLUETOOTH
+	depends on BLUETOOTH_CONN
 	default 1
 	range 1 16
 	help
@@ -52,7 +67,7 @@ config	BLUETOOTH_MAX_CONN
 config	BLUETOOTH_MAX_PAIRED
 	int
 	prompt "Maximum number of paired devices"
-	depends on BLUETOOTH
+	depends on BLUETOOTH_CONN
 	default 1
 	range 1 32
 	help
@@ -148,4 +163,5 @@ config	BLUETOOTH_DEBUG_GATT
 	help
 	  This option enables debug support for the Bluetooth
 	  Generic Attribute Profile (GATT).
+endif
 endif
