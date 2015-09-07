@@ -78,6 +78,16 @@ config NETWORKING_WITH_IPV4
 	  Legacy IP.
 endchoice
 
+config	NETWORKING_STATISTICS
+	bool
+	prompt "Enable IP statistics gathering"
+	depends on NETWORKING
+	default n
+	help
+	  This is only for debugging the network. Do not activate
+	  this in live system! The option uses memory and slows
+	  down IP packet processing.
+
 if NETWORKING_WITH_IPV6
 config	NETWORKING_IPV6_NO_ND
 	bool

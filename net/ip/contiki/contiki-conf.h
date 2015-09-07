@@ -113,4 +113,8 @@ typedef unsigned int uip_stats_t;
 #undef COAP_OBSERVE_CLIENT
 #endif
 
+#ifdef CONFIG_NETWORKING_STATISTICS
+#define UIP_CONF_STATISTICS 1
+#endif
+
 #endif /* __CONTIKI_CONF_H__ */

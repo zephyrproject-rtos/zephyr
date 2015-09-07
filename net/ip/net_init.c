@@ -100,6 +100,58 @@ int net_send(struct net_buf *buf)
 	return 0;
 }
 
+#ifdef CONFIG_NETWORKING_STATISTICS
+#define STAT(s) uip_stat.s
+#define PRINT_STATISTICS_INTERVAL (10 * sys_clock_ticks_per_sec)
+#define net_print_statistics stats /* to make the debug print line shorter */
+static void stats(void)
+{
+	static clock_time_t last_print;
+
+	/* See contiki/ip/uip.h for descriptions of the different values */
+	if (clock_time() > (last_print + PRINT_STATISTICS_INTERVAL)) {
+		NET_DBG("IP recv\t%d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
+			STAT(ip.recv),
+			STAT(ip.sent),
+			STAT(ip.drop),
+			STAT(ip.forwarded));
+		NET_DBG("IP vhlerr\t%d\thblener\t%d\tlblener\t%d\n",
+			STAT(ip.vhlerr),
+			STAT(ip.hblenerr),
+			STAT(ip.lblenerr));
+		NET_DBG("IP fragerr\t%d\tchkerr\t%d\tprotoer\t%d\n",
+			STAT(ip.fragerr),
+			STAT(ip.chkerr),
+			STAT(ip.protoerr));
+
+		NET_DBG("ICMP recv\t%d\tsent\t%d\tdrop\t%d\n",
+			STAT(icmp.recv),
+			STAT(icmp.sent),
+			STAT(icmp.drop));
+		NET_DBG("ICMP typeer\t%d\tchkerr\t%d\n",
+			STAT(icmp.typeerr),
+			STAT(icmp.chkerr));
+
+		NET_DBG("UDP recv\t%d\tsent\t%d\tdrop\t%d\n",
+			STAT(udp.recv),
+			STAT(udp.sent),
+			STAT(udp.drop));
+		NET_DBG("UDP chkerr\t%d\n",
+			STAT(icmp.chkerr));
+
+#if NETSTACK_CONF_WITH_IPV6
+		NET_DBG("ND recv\t%d\tsent\t%d\tdrop\t%d\n",
+			STAT(nd6.recv),
+			STAT(nd6.sent),
+			STAT(nd6.drop));
+#endif
+		last_print = clock_time();
+	}
+}
+#else
+#define net_print_statistics()
+#endif
+
 /* Switch the ports and addresses and set route and neighbor cache.
  * Returns 1 if packet was sent properly, in this case it is the caller
  * that needs to release the net_buf. If 0 is returned, then uIP stack
@@ -466,6 +518,8 @@ static void net_tx_fiber(void)
 				  sizeof(tx_fiber_stack));
 
 		net_buf_put(buf);
+
+		net_print_statistics();
 	}
 }
 
@@ -490,6 +544,8 @@ static void net_rx_fiber(void)
 		/* The buffer is on to its way to receiver at this
 		 * point. We must not remove it here.
 		 */
+
+		net_print_statistics();
 	}
 }
 
