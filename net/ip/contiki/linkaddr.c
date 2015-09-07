@@ -78,4 +78,13 @@ linkaddr_set_node_addr(linkaddr_t *t)
   linkaddr_copy(&linkaddr_node_addr, t);
 }
 /*---------------------------------------------------------------------------*/
+linkaddr_t *linkaddr_get_node_addr(int *addr_len)
+{
+  if (addr_len) {
+    *addr_len = LINKADDR_SIZE;
+  }
+
+  return &linkaddr_node_addr;
+}
+/*---------------------------------------------------------------------------*/
 /** @} */

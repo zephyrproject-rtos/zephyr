@@ -109,6 +109,8 @@ int linkaddr_cmp(const linkaddr_t *addr1, const linkaddr_t *addr2);
  */
 void linkaddr_set_node_addr(linkaddr_t *addr);
 
+linkaddr_t *linkaddr_get_node_addr(int *addr_len);
+
 /**
  * \brief      The Rime address of the node
  *
