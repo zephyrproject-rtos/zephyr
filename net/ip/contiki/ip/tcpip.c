@@ -539,11 +539,11 @@ tcpip_ipv6_output(struct net_buf *buf)
   uip_ipaddr_t *nexthop;
   uint8_t ret = 0; /* return value 0 == failed, 1 == ok */
 
-  PRINTF("%s(): buf %p len %d\n", __FUNCTION__, buf, uip_len(buf));
-
-  if(uip_len(buf) == 0) {
+  if(!buf || uip_len(buf) == 0) {
     return 0;
   }
+
+  PRINTF("%s(): buf %p len %d\n", __FUNCTION__, buf, uip_len(buf));
 
   if(uip_len(buf) > UIP_LINK_MTU) {
     UIP_LOG("tcpip_ipv6_output: Packet to big");
