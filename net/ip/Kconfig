@@ -36,7 +36,9 @@
 
 menuconfig NETWORKING
 	bool
-	prompt "Generic networkig support [EXPERIMENTAL]"
+	prompt "Generic networking support [EXPERIMENTAL]"
+	select NANO_TIMEOUTS
+	select NANO_TIMERS
 	default n
 	help
 	  This option enabled generic networking support.
