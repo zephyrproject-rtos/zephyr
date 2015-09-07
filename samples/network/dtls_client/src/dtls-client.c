@@ -300,7 +300,7 @@ static int send_to_peer(struct dtls_context_t *ctx,
 	struct net_buf *buf;
 	int max_data_len;
 
-	buf = net_buf_get(user_data->ctx);
+	buf = net_buf_get_tx(user_data->ctx);
 	if (!buf) {
 		len = -ENOBUFS;
 		goto out;
