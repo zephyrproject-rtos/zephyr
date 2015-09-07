@@ -570,6 +570,7 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 {
 	const struct bt_att_find_type_rsp *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
+	struct bt_gatt_service value;
 	uint8_t i;
 	uint16_t end_handle = 0, start_handle;
 
@@ -590,8 +591,11 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		BT_DBG("start_handle 0x%04x end_handle 0x%04x\n", start_handle,
 		       end_handle);
 
+		value.end_handle = end_handle;
+		value.uuid = params->uuid;
+
 		attr = (&(struct bt_gatt_attr)
-			BT_GATT_PRIMARY_SERVICE(start_handle, params->uuid));
+			BT_GATT_PRIMARY_SERVICE(start_handle, &value));
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
 			goto done;

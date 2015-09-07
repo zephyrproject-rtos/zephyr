@@ -117,6 +117,8 @@ struct bt_gatt_attr {
 struct bt_gatt_service {
 	/** Service UUID. */
 	const struct bt_uuid	*uuid;
+	/** Service end handle. */
+	uint16_t		end_handle;
 };
 
 /** @brief Include Attribute Value. */
