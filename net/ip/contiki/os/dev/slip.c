@@ -190,7 +190,8 @@ slip_poll_handler(uint8_t *outbuf, uint16_t blen)
 #ifdef SLIP_CONF_ANSWER_MAC_REQUEST
   else if(rxbuf[begin] == '?') {
     /* Used by tapslip6 to request mac for auto configure */
-    int i, j;
+    int j, addr_len;
+    linkaddr_t *addr;
     char* hexchar = "0123456789abcdef";
     if(begin < end && (end - begin) >= 2
        && rxbuf[begin + 1] == 'M') {
@@ -200,13 +201,13 @@ slip_poll_handler(uint8_t *outbuf, uint16_t blen)
 
       rxbuf_init();
 
-      linkaddr_t addr = get_mac_addr();
+      addr = linkaddr_get_node_addr(&addr_len);
       /* this is just a test so far... just to see if it works */
       slip_arch_writeb('!');
       slip_arch_writeb('M');
-      for(j = 0; j < 8; j++) {
-        slip_arch_writeb(hexchar[addr.u8[j] >> 4]);
-        slip_arch_writeb(hexchar[addr.u8[j] & 15]);
+      for(j = 0; j < addr_len; j++) {
+        slip_arch_writeb(hexchar[addr->u8[j] >> 4]);
+        slip_arch_writeb(hexchar[addr->u8[j] & 15]);
       }
       slip_arch_writeb(SLIP_END);
       return 0;
