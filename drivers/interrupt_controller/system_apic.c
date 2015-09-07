@@ -1,5 +1,3 @@
-/* systemApic.c - system module for variants with LOAPIC */
-
 /*
  * Copyright (c) 2013-2015, Wind River Systems, Inc.
  *
@@ -31,9 +29,12 @@
  */
 
 /*
-DESCRIPTION
-This module provides routines to initialize and support board-level hardware
-for the atom_n28xx configuration of ia32 platform.
+ * @file
+ * @brief  system module for variants with LOAPIC
+ *
+ * This module provides routines to initialize and support
+ * board-level hardware for the basic_atom configuration of
+ * ia32 platform.
  */
 
 #include <misc/__assert.h>
@@ -80,12 +81,12 @@ for the atom_n28xx configuration of ia32 platform.
  *
  * @return the allocated interrupt vector
  *
- * INTERNAL
+ * @internal
  * For debug kernels, this routine will return -1 if there are no vectors
  * remaining in the specified <priority> level, or if the <priority> or <irq>
  * parameters are invalid.
+ * @endinternal
  */
-
 int _SysIntVecAlloc(
 	unsigned int irq,		 /* virtualized IRQ */
 	unsigned int priority,		 /* get vector from <priority> group */
@@ -184,7 +185,6 @@ int _SysIntVecAlloc(
  * - The remaining IRQs are provided by the LOAPIC and hence the LOAPIC is
  *     programmed.
  */
-
 void _SysIntVecProgram(unsigned int vector, /* vector number */
 		       unsigned int irq     /* virtualized IRQ */
 		       )
@@ -215,7 +215,6 @@ void _SysIntVecProgram(unsigned int vector, /* vector number */
  *
  * @return N/A
  */
-
 void irq_enable(unsigned int irq)
 {
 	if (irq < CONFIG_IOAPIC_NUM_RTES) {
@@ -236,7 +235,6 @@ void irq_enable(unsigned int irq)
  *
  * @return N/A
  */
-
 void irq_disable(unsigned int irq)
 {
 	if (irq < CONFIG_IOAPIC_NUM_RTES) {
