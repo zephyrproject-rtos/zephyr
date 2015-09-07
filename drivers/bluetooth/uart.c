@@ -275,7 +275,7 @@ static void bt_uart_setup(struct device *uart, struct uart_init_info *info)
 	uart_irq_rx_enable(uart);
 }
 
-static int bt_uart_open()
+static int bt_uart_open(void)
 {
 	struct uart_init_info info = {
 		.options = 0,
