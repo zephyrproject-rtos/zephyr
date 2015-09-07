@@ -41,6 +41,13 @@ config LOAPIC
 	help
 	This option selects local APIC as the interrupt controller.
 
+config LOAPIC_DEBUG
+	bool "LOAPIC Debug"
+	default n
+	depends on LOAPIC
+	help
+	This option enable debugging for the LOAPIC driver.
+
 config LOAPIC_BASE_ADDRESS
 	hex "Local APIC Base Address"
 	default 0xFEE00000

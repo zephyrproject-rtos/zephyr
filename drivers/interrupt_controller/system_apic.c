@@ -103,7 +103,7 @@ int _SysIntVecAlloc(
 	ARG_UNUSED(boiRtnParm);
 	ARG_UNUSED(boiParamRequired);
 
-#if defined(DEBUG)
+#if defined(CONFIG_LOAPIC_DEBUG)
 	if ((priority > 15) ||
 	    ((irq > (CONFIG_IOAPIC_NUM_RTES + 5)) && (irq != NANO_SOFT_IRQ)))
 		return -1;
@@ -136,7 +136,7 @@ int _SysIntVecAlloc(
 	*boiRtn = (NANO_EOI_GET_FUNC)NULL; /* a BOI handler is never required */
 	*eoiRtn = (NANO_EOI_GET_FUNC)NULL; /* assume NANO_SOFT_IRQ */
 
-#if defined(DEBUG)
+#if defined(CONFIG_LOAPIC_DEBUG)
 	if ((vector != -1) && (irq != NANO_SOFT_IRQ))
 #else
 	if (irq != NANO_SOFT_IRQ)
