@@ -176,9 +176,8 @@ uip_ds6_periodic(struct net_buf *buf)
 #if UIP_ND6_DEF_MAXDADNS > 0
       } else if((locaddr->state == ADDR_TENTATIVE)
                 && (locaddr->dadnscount <= uip_ds6_if.maxdadns)
-                && (timer_expired(&locaddr->dadtimer))
-                && (uip_len(buf) == 0)) {
-        uip_ds6_dad(buf, locaddr);
+                && (timer_expired(&locaddr->dadtimer))) {
+        uip_ds6_dad(NULL, locaddr);
 #endif /* UIP_ND6_DEF_MAXDADNS > 0 */
       }
     }
