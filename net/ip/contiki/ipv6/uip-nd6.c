@@ -154,7 +154,7 @@ ns_input(struct net_buf *buf)
   PRINTF(" to ");
   PRINT6ADDR(&UIP_IP_BUF(buf)->destipaddr);
   PRINTF(" with target address");
-  PRINT6ADDR((uip_ipaddr_t *) (&UIP_ND6_NS_BUF->tgtipaddr));
+  PRINT6ADDR((uip_ipaddr_t *) (&UIP_ND6_NS_BUF(buf)->tgtipaddr));
   PRINTF("\n");
   UIP_STAT(++uip_stat.nd6.recv);
 
