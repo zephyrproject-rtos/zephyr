@@ -57,13 +57,11 @@
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
 	static inline uint32_t read_##__reg(uint32_t addr)		\
 	{								\
-		DBG("Reading 0x%x\n", addr + __off);			\
 		return sys_read##__sz(addr + __off);			\
 	}
 #define DEFINE_MM_REG_WRITE(__reg, __off, __sz)				\
 	static inline void write_##__reg(uint32_t data, uint32_t addr)	\
 	{								\
-		DBG("Writing 0x%x\n", addr + __off);			\
 		sys_write##__sz(data, addr + __off);			\
 	}
 
@@ -97,11 +95,16 @@ DEFINE_CLEAR_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
 DEFINE_TEST_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
 DEFINE_TEST_BIT_OP(sssr_bsy, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_BSY_BIT)
 
-static void completed(struct device *dev)
+static void completed(struct device *dev, uint32_t error)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 	enum spi_cb_type cb_type;
+
+	if (error) {
+		cb_type = SPI_CB_ERROR;
+		goto out;
+	}
 
 	if (spi->t_len) {
 		return;
@@ -118,10 +121,12 @@ static void completed(struct device *dev)
 		return;
 	}
 
+out:
 	spi->tx_buf = spi->rx_buf = NULL;
 	spi->tx_buf_len = spi->rx_buf_len = 0;
 
 	write_sscr1(spi->sscr1, info->regs);
+	clear_bit_sscr0_sse(info->regs);
 
 	if (spi->callback) {
 		spi->callback(dev, cb_type);
@@ -258,15 +263,10 @@ static int spi_intel_transceive(struct device *dev,
 	spi->rx_buf = rx_buf;
 	spi->rx_buf_len = rx_buf_len;
 
-	/* Installing the registers (enabling the controller as well) */
-	write_sscr1(spi->sscr1, info->regs);
+	/* Installing the registers (enabling interrupts and controller) */
+	write_sscr1(spi->sscr1 | INTEL_SPI_SSCR1_RIE |
+				INTEL_SPI_SSCR1_TIE, info->regs);
 	write_sscr0(spi->sscr0 | INTEL_SPI_SSCR0_SSE, info->regs);
-
-	push_data(dev);
-
-	/* Enable receive interrupt */
-	write_sscr1(spi->sscr1 | INTEL_SPI_SSCR1_RIE
-			| INTEL_SPI_SSCR1_TIE, info->regs);
 
 	return DEV_OK;
 }
@@ -299,26 +299,29 @@ void spi_intel_isr(void *arg)
 {
 	struct device *dev = arg;
 	struct spi_intel_config *info = dev->config->config_info;
+	uint32_t error = 0;
 	uint32_t status;
 
 	DBG("spi_intel_isr: %p\n", dev);
 
 	status = read_sssr(info->regs);
 
-	if (!(status & (INTEL_SPI_SSSR_TFS | INTEL_SPI_SSSR_RFS))) {
-		DBG("None or unhandled interrupt\n");
-		return;
+	if (status & INTEL_SPI_SSSR_ROR) {
+		/* Unrecoverable error */
+		error = 1;
+		goto out;
 	}
 
-	if (status & INTEL_SPI_SSSR_RFS) {
+	if (status & (INTEL_SPI_SSSR_RFS | INTEL_SPI_SSSR_RNE)) {
 		pull_data(dev);
 	}
 
-	if (status & INTEL_SPI_SSSR_TFS) {
+	if (status & (INTEL_SPI_SSSR_TFS | INTEL_SPI_SSSR_TNF)) {
 		push_data(dev);
 	}
 
-	completed(dev);
+out:
+	completed(dev, error);
 }
 
 static struct spi_driver_api intel_spi_api = {
