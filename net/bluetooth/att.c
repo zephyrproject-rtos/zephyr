@@ -1586,6 +1586,7 @@ void bt_att_init(void)
 #endif /* CONFIG_BLUETOOTH_SMP */
 }
 
+#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 uint16_t bt_att_get_mtu(struct bt_conn *conn)
 {
 	struct bt_att *att = conn->att;
@@ -1654,3 +1655,4 @@ void bt_att_cancel(struct bt_conn *conn)
 
 	att_req_destroy(&att->req);
 }
+#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */

@@ -68,6 +68,11 @@ config BLUETOOTH_SIGNING
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
 
+config BLUETOOTH_GATT_CLIENT
+	bool
+	prompt "GATT client support"
+	default n
+
 config	BLUETOOTH_MAX_CONN
 	int
 	prompt "Maximum number of simultaneous connections"
