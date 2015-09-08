@@ -1,5 +1,51 @@
 802.15.4 test Application:
 
+1) Loopback in single qemu:
+
+    $ make qemu0
+
+ This enables the dummy driver will feed sending 802.15.4 frames back to
+ 15_4 Rx FIFO. 15_4 Rx FIFO will asseble all frames and feed it to IP Rx FIFO.
+
+
+2) Loopback between two qemus without monitoring support:
+
+    $ make qemu1
+
+ Then in second window start the other qemu
+
+    $ make qemu2
+
+ If you want to run test 3) then you need to remove the pipes before
+ doing so.
+
+    $ make remove_pipes
+
+3) Loopback between two qemus with monitoring support:
+
+    $ make qemu1monitor
+
+ Then in second window start the monitor (found in net/ip/tools directory)
+    $ ./monitor_15_4 sample.pcap
+
+ Then in third window start the other qemu
+
+    $ make qemu2monitor
+
+ If you want to run test 2) then you need to remove the pipes before
+ doing so.
+
+    $ make remove_pipes
+
+
+
+Expert and more detailed instructions:
+--------------------------------------
+You can execute the tests manually if needed. Just follow the instructions
+below.
+
+802.15.4 test Application:
+
  1) Loopback in single qemu:
  Enable CONFIG_NETWORKING_WITH_15_4_LOOPBACK config option in prj_x86/arm.conf
  to test 802.15.4. By enabling this option dummy driver will feed sending

@@ -37,3 +37,4 @@ CONF_FILE = prj_$(ARCH).conf
 SOURCE_DIR = $(ZEPHYR_BASE)/samples/network/test_15_4/src/
 
 include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/samples/network/test_15_4/Makefile.15_4

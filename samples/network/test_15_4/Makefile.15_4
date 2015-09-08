@@ -1,0 +1,118 @@
+# Makefile - IP 15.4 test Makefile for nano and micro kernel
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Wind River Systems nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+PIPE_BASE=/tmp/ip-15-4
+
+ifeq ($(MAKECMDGOALS),qemu1)
+	QEMU_NUM=1
+endif
+ifeq ($(MAKECMDGOALS),qemu1monitor)
+	QEMU_NUM=1
+endif
+ifeq ($(MAKECMDGOALS),qemu2)
+	QEMU_NUM=2
+endif
+ifeq ($(MAKECMDGOALS),qemu2monitor)
+	QEMU_NUM=2
+endif
+ifdef QEMU_NUM
+	QEMU_EXTRA_FLAGS += -serial none -serial pipe:${PIPE_BASE}-${QEMU_NUM} -pidfile qemu-${QEMU_NUM}.pid
+endif
+
+PIPE1_IN=${PIPE_BASE}-1.in
+PIPE1_OUT=${PIPE_BASE}-1.out
+PIPE2_IN=${PIPE_BASE}-2.in
+PIPE2_OUT=${PIPE_BASE}-2.out
+
+.PHONY: remove_pipes
+remove_pipes:
+	rm -f ${PIPE1_IN} ${PIPE1_OUT} ${PIPE2_IN} ${PIPE2_OUT}
+
+${PIPE1_IN}:
+	mkfifo $@
+
+${PIPE1_OUT}:
+	mkfifo $@
+
+${PIPE2_IN}:
+	mkfifo $@
+
+${PIPE2_OUT}:
+	mkfifo $@
+
+.PHONY: PIPE2_IN_LINK
+PIPE2_IN_LINK: ${PIPE1_IN}
+	-ln ${PIPE1_IN} ${PIPE2_OUT}
+
+.PHONY: PIPE2_OUT_LINK
+PIPE2_OUT_LINK: ${PIPE1_OUT}
+	-ln ${PIPE1_OUT} ${PIPE2_IN}
+
+SINGLE_CONFIG_OPTIONS="CONFIG_NETWORKING_WITH_15_4_LOOPBACK=y"
+
+.PHONY: set_options_default
+set_options_default:
+	echo "${SINGLE_CONFIG_OPTIONS}" >> ${DOTCONFIG}
+
+# Setup the single qemu test case (one qemu using loopback driver)
+qemu0: $(DOTCONFIG)
+	$(Q)$(call zephyrmake,$(O),qemu)
+
+# Setup the dual qemu test case (two qemus passing data between them)
+.PHONY: setup_pipes_dual
+setup_pipes_dual: ${PIPE1_IN} ${PIPE1_OUT} PIPE2_IN_LINK PIPE2_OUT_LINK
+
+# Setup the dual qemu test case with pcap support (two qemus passing data
+# between them and saving data to pcap via help of monitor applicaiton)
+.PHONY: setup_pipes_dual_monitor
+setup_pipes_dual_monitor: ${PIPE1_IN} ${PIPE1_OUT} ${PIPE2_IN} ${PIPE2_OUT}
+
+DUAL_CONFIG_OPTIONS="CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART=y"
+
+.PHONY: set_options
+set_options:
+	echo "${DUAL_CONFIG_OPTIONS}" >> ${DOTCONFIG}
+
+export QEMU_NUM
+export QEMU_EXTRA_FLAGS
+
+qemu1: setup_pipes_dual $(DOTCONFIG) set_options
+	$(Q)$(call zephyrmake,$(O),qemu)
+
+qemu2: setup_pipes_dual $(DOTCONFIG) set_options
+	$(Q)$(call zephyrmake,$(O),qemu)
+
+qemu1monitor: setup_pipes_dual_monitor $(DOTCONFIG) set_options
+	$(Q)$(call zephyrmake,$(O),qemu)
+
+qemu2monitor: setup_pipes_dual_monitor $(DOTCONFIG) set_options
+	$(Q)$(call zephyrmake,$(O),qemu)

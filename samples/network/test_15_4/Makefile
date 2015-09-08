@@ -35,8 +35,5 @@ KERNEL_TYPE = nano
 PLATFORM_CONFIG ?= basic_atom
 CONF_FILE = prj_$(ARCH).conf
 
-ifeq ($(CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART),y)
-     QEMU_EXTRA_FLAGS += -serial none -serial pipe:/tmp/ip-15-4-${QEMU_NUM} -pidfile qemu-$(QEMU_NUM).pid
-endif
-
 include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/samples/network/test_15_4/Makefile.15_4
