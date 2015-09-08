@@ -168,7 +168,11 @@ Make and run this tool
 
 $ make
 
-Usage : monitor_15_4 <sample pcap file> <pipe_1> <pipe_2>
+Usage : monitor_15_4 <sample pcap file> [<pipe_1> <pipe_2>]
+
+$ monitor_15_4 sample.pcap
+
+or
 
 $ monitor_15_4 sample.pcap /tmp/ip-15-4-1 /tmp/ip-15-4-2
 

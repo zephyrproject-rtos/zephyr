@@ -446,19 +446,27 @@ static int setup_fifofd2(void)
 int main(int argc, char *argv[])
 {
 	int fifo1, fifo2, ret;
+	char *pipe1 = "/tmp/ip-15-4-1";
+	char *pipe2 = "/tmp/ip-15-4-2";
 
-	if (argc != 4) {
-		printf("Usage: %s <pcapfile> <pipe_1> <pipe_2>\n", argv[0]);
-		printf("   e.g.: monitor_15_4 sample.pcap /tmp/ip-15-4-1 /tmp/ip-15-4-2\n");
+	if (argc < 2) {
+		printf("Usage: %s <pcapfile> [<pipe_1> <pipe_2>]\n", argv[0]);
+		printf("   e.g.: monitor_15_4 sample.pcap [/tmp/ip-15-4-1 /tmp/ip-15-4-2]\n");
 		exit(-EINVAL);
 	}
 
+	if (argc == 3)
+		pipe1 = argv[2];
+
+	if (argc == 4)
+		pipe2 = argv[3];
+
 	main_loop = g_main_loop_new(NULL, FALSE);
 
-	pipe_1_in = g_strconcat(argv[2], PIPE_IN, NULL);
-	pipe_1_out = g_strconcat(argv[2], PIPE_OUT, NULL);
-	pipe_2_in = g_strconcat(argv[3], PIPE_IN, NULL);
-	pipe_2_out = g_strconcat(argv[3], PIPE_OUT, NULL);
+	pipe_1_in = g_strconcat(pipe1, PIPE_IN, NULL);
+	pipe_1_out = g_strconcat(pipe1, PIPE_OUT, NULL);
+	pipe_2_in = g_strconcat(pipe2, PIPE_IN, NULL);
+	pipe_2_out = g_strconcat(pipe2, PIPE_OUT, NULL);
 	path = g_strdup(argv[1]);
 
 	pcap = pcap_create(path);
