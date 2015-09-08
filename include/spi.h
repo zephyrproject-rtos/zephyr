@@ -61,7 +61,8 @@ extern "C" {
 enum spi_cb_type {
 	SPI_CB_WRITE		= 1,
 	SPI_CB_READ		= 2,
-	SPI_CB_TRANSCEIVE	= 3
+	SPI_CB_TRANSCEIVE	= 3,
+	SPI_CB_ERROR		= 4
 };
 
 /* application callback function signature */
@@ -177,7 +178,7 @@ static inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */
-inline int spi_transceive(struct device *dev,
+static inline int spi_transceive(struct device *dev,
 			  uint8_t *tx_buf, uint32_t tx_buf_len,
 			  uint8_t *rx_buf, uint32_t rx_buf_len)
 {
