@@ -71,8 +71,10 @@ struct bt_keys {
 	struct bt_ltk		slave_ltk;
 	struct bt_ltk		ltk;
 	struct bt_irk		irk;
+#if defined(CONFIG_BLUETOOTH_SIGNING)
 	struct bt_csrk		local_csrk;
 	struct bt_csrk		remote_csrk;
+#endif /* BLUETOOTH_SIGNING */
 };
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);

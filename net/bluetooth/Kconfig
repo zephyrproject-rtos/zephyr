@@ -54,6 +54,14 @@ config BLUETOOTH_CENTRAL
 	select BLUETOOTH_CONN
 
 if BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
+config BLUETOOTH_SIGNING
+	bool
+	prompt "Data signing support"
+	default n
+	help
+	  This option enables data signing which is used for transferring
+	  authenticated data in an unencrypted connection.
+
 config	BLUETOOTH_MAX_CONN
 	int
 	prompt "Maximum number of simultaneous connections"

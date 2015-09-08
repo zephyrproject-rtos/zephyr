@@ -57,8 +57,13 @@
 #include "l2cap.h"
 #include "smp.h"
 
+#if defined(CONFIG_BLUETOOTH_SIGNING)
 #define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
 #define SEND_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
+#else
+#define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY)
+#define SEND_KEYS (BT_SMP_DIST_ENC_KEY)
+#endif /* CONFIG_BLUETOOTH_SIGNING */
 
 enum pairing_method {
 	JUST_WORKS,		/* JustWorks pairing */
@@ -194,6 +199,7 @@ static void xor_128(const uint128_t *p, const uint128_t *q, uint128_t *r)
 	r->b = p->b ^ q->b;
 }
 
+#if defined(CONFIG_TINYCRYPT_AES) || defined(CONFIG_BLUETOOTH_SIGNING)
 /* swap octets for LE encrypt */
 static void swap_buf(const uint8_t *src, uint8_t *dst, uint16_t len)
 {
@@ -215,6 +221,7 @@ static void swap_in_place(uint8_t *buf, uint16_t len)
 		buf[j] = tmp;
 	}
 }
+#endif /* CONFIG_TINYCRYPT_AES || CONFIG_BLUETOOTH_SIGNING */
 
 #if defined(CONFIG_TINYCRYPT_AES)
 static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
@@ -993,6 +1000,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 	}
 
+#if defined(CONFIG_BLUETOOTH_SIGNING)
 	if (smp->local_dist & BT_SMP_DIST_SIGN) {
 		struct bt_smp_signing_info *info;
 
@@ -1013,6 +1021,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 	}
+#endif /* CONFIG_BLUETOOTH_SIGNING */
 }
 
 static uint8_t smp_encrypt_info(struct bt_conn *conn, struct bt_buf *buf)
@@ -1158,6 +1167,7 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+#if defined(CONFIG_BLUETOOTH_SIGNING)
 static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_signing_info *req = (void *)buf->data;
@@ -1185,6 +1195,12 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 
 	return 0;
 }
+#else
+static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
+{
+	return BT_SMP_ERR_CMD_NOTSUPP;
+}
+#endif /* CONFIG_BLUETOOTH_SIGNING */
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
@@ -1393,7 +1409,7 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 	return !memcmp(addr->val, hash, 3);
 }
 
-
+#if defined(CONFIG_BLUETOOTH_SIGNING)
 /* 1 bit left shift */
 static void array_shift(const uint8_t *in, uint8_t *out)
 {
@@ -1672,6 +1688,17 @@ int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf)
 
 	return 0;
 }
+#else
+int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
+{
+	return -ENOTSUP;
+}
+
+int bt_smp_sign(struct bt_conn *conn, struct bt_buf *buf)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BLUETOOTH_SIGNING */
 
 #if defined(CONFIG_BLUETOOTH_SMP_SELFTEST)
 /* Test vectors are taken from RFC 4493
