@@ -91,9 +91,6 @@ After reset, the timer is initialized to zero.
 #define _loApicTimerTicklessIdleInit() \
 	do {/* nothing */              \
 	} while (0)
-#define _loApicTimerTicklessIdleSkew() \
-	do {/* nothing */              \
-	} while (0)
 #endif /* !TIMER_SUPPORTS_TICKLESS */
 #if defined(TIMER_SUPPORTS_TICKLESS)
 extern int32_t _sys_idle_elapsed_ticks;
@@ -112,7 +109,6 @@ static uint32_t idle_original_count = 0;
 static uint32_t __noinit max_system_ticks;
 static uint32_t idle_original_ticks = 0;
 static uint32_t __noinit max_load_value;
-static uint32_t __noinit timer_idle_skew;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
@@ -364,40 +360,6 @@ static void _loApicTimerTicklessIdleInit(void)
 
 /**
  *
- * @brief Calculate the skew from idle mode switching
- *
- * This routine calculates the skew from switching the timer in and out of idle
- * mode.  The typical sequence is:
- *    1. Stop timer.
- *    2. Load new counter value.
- *    3. Set timer mode to periodic/one-shot
- *    4. Start timer.
- *
- * @return N/A
- *
- * \NOMANUAL
- */
-
-static void _loApicTimerTicklessIdleSkew(void)
-{
-	volatile uint32_t dummy; /* used to replicate the 'skew time' */
-
-	/* Timer must be running for this to work */
-	timer_idle_skew = _loApicTimerGetRemaining();
-
-	_loApicTimerStart(); /* This is normally a stop operation */
-	dummy = _loApicTimerGetRemaining(); /*_loApicTimerSetCount
-					       (counterLoadVal);*/
-	_loApicTimerPeriodic();
-	_loApicTimerStart();
-	timer_mode = TIMER_MODE_PERIODIC;
-
-	/* Down counter */
-	timer_idle_skew -= _loApicTimerGetRemaining();
-}
-
-/**
- *
  * @brief Place system timer into idle state
  *
  * Re-program the timer to enter into the idle state for the given number of
@@ -418,7 +380,7 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	 * timer. So we read the count out of it and add it to the requested
 	 * time out
 	 */
-	idle_original_count = _loApicTimerGetRemaining() - timer_idle_skew;
+	idle_original_count = _loApicTimerGetRemaining();
 
 	if ((ticks == -1) || (ticks > max_system_ticks)) {
 		/*
@@ -550,8 +512,6 @@ int _sys_clock_driver_init(struct device *device)
 	 * has to be programmed into the interrupt controller.
 	 */
 	IRQ_CONFIG(loapic, CONFIG_LOAPIC_TIMER_IRQ);
-
-	_loApicTimerTicklessIdleSkew();
 
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt */
