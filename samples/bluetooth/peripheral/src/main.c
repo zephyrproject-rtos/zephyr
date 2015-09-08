@@ -435,7 +435,7 @@ static struct bt_gatt_cep vnd_long_cep = {
 	.properties = BT_GATT_CEP_RELIABLE_WRITE,
 };
 
-int signed_value;
+static int signed_value;
 
 static int read_signed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		       void *buf, uint16_t len, uint16_t offset)
