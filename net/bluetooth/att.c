@@ -77,6 +77,7 @@ struct bt_att_req {
 	void			*user_data;
 	bt_att_destroy_t	destroy;
 	struct bt_buf		*buf;
+	bool			retrying;
 };
 
 /* ATT channel specific context */
@@ -1193,6 +1194,28 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *buf)
 			     buf->len - sizeof(struct bt_att_signature));
 }
 
+static int att_change_security(struct bt_conn *conn, uint8_t err)
+{
+	bt_security_t sec;
+
+	switch (err) {
+	case BT_ATT_ERR_INSUFFICIENT_ENCRYPTION:
+		if (conn->sec_level >= BT_SECURITY_MEDIUM)
+			return -EALREADY;
+		sec = BT_SECURITY_MEDIUM;
+		break;
+	case BT_ATT_ERR_AUTHENTICATION:
+		if (conn->sec_level >= BT_SECURITY_HIGH)
+			return -EALREADY;
+		sec = BT_SECURITY_HIGH;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return bt_conn_security(conn, sec);
+}
+
 static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_att *att = conn->att;
@@ -1214,6 +1237,16 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	hdr = (void *)req->buf->data;
 
 	err = rsp->request == hdr->code ? rsp->error : BT_ATT_ERR_UNLIKELY;
+
+	if (req->retrying)
+		goto done;
+
+	/* Check if security needs to be changed */
+	if (!att_change_security(conn, err)) {
+		req->retrying = true;
+		/* Wait security_changed: TODO: Handle fail case */
+		return 0;
+	}
 
 done:
 	return att_handle_rsp(conn, NULL, 0, err);
@@ -1464,6 +1497,32 @@ static void bt_att_disconnected(struct bt_conn *conn)
 	bt_gatt_disconnected(conn);
 }
 
+static void security_changed(struct bt_conn *conn, bt_security_t level)
+{
+	struct bt_att *att = conn->att;
+	struct bt_att_req *req;
+
+	if (!att) {
+		return;
+	}
+
+	BT_DBG("conn %p level %u\n", conn, level);
+
+	req = &att->req;
+	if (!req->retrying)
+		return;
+
+	BT_DBG("Retrying\n");
+
+	/* Resend buffer */
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, req->buf);
+	req->buf = NULL;
+}
+
+static struct bt_conn_cb conn_callbacks = {
+		.security_changed = security_changed,
+};
+
 void bt_att_init(void)
 {
 	static struct bt_l2cap_chan chan = {
@@ -1474,6 +1533,8 @@ void bt_att_init(void)
 	};
 
 	bt_l2cap_chan_register(&chan);
+
+	bt_conn_cb_register(&conn_callbacks);
 }
 
 uint16_t bt_att_get_mtu(struct bt_conn *conn)
@@ -1506,6 +1567,7 @@ int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
 		}
 
 		att->req.buf = bt_buf_clone(buf);
+		att->req.retrying = false;
 		att->req.func = func;
 		att->req.user_data = user_data;
 		att->req.destroy = destroy;
