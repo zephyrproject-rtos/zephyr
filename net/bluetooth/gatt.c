@@ -1091,7 +1091,7 @@ static int gatt_prepare_write(struct bt_conn *conn, uint16_t handle,
 		return -EBUSY;
 	}
 
-	len = min(length, bt_att_get_mtu(conn) - 1);
+	len = min(length, bt_att_get_mtu(conn) - sizeof(*req) - 1);
 
 	prep_data.func = func;
 	prep_data.handle = handle;
