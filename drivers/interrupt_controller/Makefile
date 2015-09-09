@@ -1,4 +1,4 @@
-obj-${CONFIG_SHUTOFF_PIC} = i8259.o
+obj-${CONFIG_PIC_DISABLE} = i8259.o
 
 obj-$(CONFIG_LOAPIC) += system_apic.o
 obj-$(CONFIG_LOAPIC) += loapic_intr.o

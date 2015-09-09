@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_SHUTOFF_PIC)
+#if defined(CONFIG_PIC_DISABLE)
 
 /* programmable interrupt controller info (pair of cascaded 8259A devices) */
 
@@ -56,7 +56,7 @@ extern void _i8259_init(void);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* CONFIG_SHUTOFF_PIC */
+#endif /* CONFIG_PIC_DISABLE */
 
 #ifdef __cplusplus
 }

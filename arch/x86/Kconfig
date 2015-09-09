@@ -149,8 +149,8 @@ config NUM_DYNAMIC_STUBS
 	This option specifies the number of interrupt handlers that can be
 	installed dynamically using irq_connect().
 
-config SHUTOFF_PIC
-	bool "Shutoff PIC"
+config PIC_DISABLE
+	bool "Disable PIC"
 	default n
 	help
 	This option disables all interrupts on the PIC

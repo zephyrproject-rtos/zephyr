@@ -43,13 +43,13 @@ for the ia32 platform.
 #include <device.h>
 #include <init.h>
 
-#if defined(CONFIG_SHUTOFF_PIC)
+#if defined(CONFIG_PIC_DISABLE)
 #define pic_init() _i8259_init()
 #else
 #define pic_init()         \
 	do {/* nothing */ \
 	} while ((0))
-#endif /* CONFIG_SHUTOFF_PIC */
+#endif /* CONFIG_PIC_DISABLE */
 
 #ifdef CONFIG_LOAPIC
 #include <drivers/loapic.h>
