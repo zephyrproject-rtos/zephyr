@@ -997,8 +997,8 @@ static void le_adv_report(struct bt_buf *buf)
 
 	while (num_reports--) {
 		int8_t rssi = info->data[info->length];
+		const bt_addr_le_t *addr;
 		struct bt_keys *keys;
-		bt_addr_le_t addr;
 
 		BT_DBG("%s event %u, len %u, rssi %d dBm\n",
 			bt_addr_le_str(&info->addr),
@@ -1006,20 +1006,20 @@ static void le_adv_report(struct bt_buf *buf)
 
 		keys = bt_keys_find_irk(&info->addr);
 		if (keys) {
-			bt_addr_le_copy(&addr, &keys->addr);
+			addr = &keys->addr;
 			BT_DBG("Identity %s matched RPA %s\n",
 			       bt_addr_le_str(&keys->addr),
 			       bt_addr_le_str(&info->addr));
 		} else {
-			bt_addr_le_copy(&addr, &info->addr);
+			addr = &info->addr;
 		}
 
 		if (scan_dev_found_cb) {
-			scan_dev_found_cb(&addr, rssi, info->evt_type,
+			scan_dev_found_cb(addr, rssi, info->evt_type,
 					  info->data, info->length);
 		}
 
-		check_pending_conn(&addr, info->evt_type);
+		check_pending_conn(addr, info->evt_type);
 
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
