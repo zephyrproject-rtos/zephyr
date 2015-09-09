@@ -1,4 +1,7 @@
-/* keys.h - Bluetooth key handling */
+/**
+ * @file smp_null.c
+ * Security Manager Protocol stub
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -30,64 +33,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-enum {
-	BT_KEYS_SLAVE_LTK      = (1 << 0),
-	BT_KEYS_IRK            = (1 << 1),
-	BT_KEYS_LTK            = (1 << 2),
-	BT_KEYS_LOCAL_CSRK     = (1 << 3),
-	BT_KEYS_REMOTE_CSRK    = (1 << 4),
+#include <bluetooth/bluetooth.h>
+#include <errno.h>
+#include "l2cap.h"
+#include "smp.h"
 
-	BT_KEYS_ALL            = (BT_KEYS_SLAVE_LTK | BT_KEYS_IRK | \
-				  BT_KEYS_LTK | BT_KEYS_LOCAL_CSRK | \
-				  BT_KEYS_REMOTE_CSRK),
-};
-
-enum {
-	BT_KEYS_UNAUTHENTICATED,
-	BT_KEYS_AUTHENTICATED,
-};
-
-struct bt_ltk {
-	uint64_t		rand;
-	uint16_t		ediv;
-	uint8_t			val[16];
-};
-
-struct bt_irk {
-	uint8_t			val[16];
-	bt_addr_t		rpa;
-};
-
-struct bt_csrk {
-	uint8_t			val[16];
-	uint32_t		cnt;
-};
-
-struct bt_keys {
-	bt_addr_le_t		addr;
-	int			keys;
-	uint8_t			type;
-
-	struct bt_ltk		slave_ltk;
-	struct bt_ltk		ltk;
-	struct bt_irk		irk;
-#if defined(CONFIG_BLUETOOTH_SIGNING)
-	struct bt_csrk		local_csrk;
-	struct bt_csrk		remote_csrk;
-#endif /* BLUETOOTH_SIGNING */
-};
-
-#if defined(CONFIG_BLUETOOTH_SMP)
-struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
-struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr);
-void bt_keys_add_type(struct bt_keys *keys, int type);
-void bt_keys_clear(struct bt_keys *keys, int type);
-struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr);
-struct bt_keys *bt_keys_find_irk(const bt_addr_le_t *addr);
-struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr);
-#else
-static inline struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr)
+int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
 {
-	return NULL;
+	return -ENOTSUP;
 }
-#endif /* CONFIG_BLUETOOTH_SMP */
+
+static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
+{
+	struct bt_smp_pairing_fail *rsp;
+	struct bt_smp_hdr *hdr;
+
+	bt_buf_put(buf);
+
+	/* If a device does not support pairing then it shall respond with
+	 * a Pairing Failed command with the reason set to “Pairing Not
+	 * Supported” when any command is received.
+	 * Core Specification Vol. 3, Part H, 3.3
+	 */
+
+	buf = bt_l2cap_create_pdu(conn);
+	if (!buf) {
+		return;
+	}
+
+	hdr = bt_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_SMP_CMD_PAIRING_FAIL;
+
+	rsp = bt_buf_add(buf, sizeof(*rsp));
+	rsp->reason = BT_SMP_ERR_PAIRING_NOTSUPP;
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+}
+
+int bt_smp_init(void)
+{
+	static struct bt_l2cap_chan chan = {
+		.cid	= BT_L2CAP_CID_SMP,
+		.recv	= bt_smp_recv,
+	};
+
+	bt_l2cap_chan_register(&chan);
+
+	return 0;
+}

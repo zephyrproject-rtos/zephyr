@@ -104,6 +104,7 @@ static void bt_conn_disconnected(struct bt_conn *conn)
 	}
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 void bt_conn_identity_resolved(struct bt_conn *conn)
 {
 	const bt_addr_le_t *rpa;
@@ -132,6 +133,7 @@ void bt_conn_security_changed(struct bt_conn *conn)
 		}
 	}
 }
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
@@ -367,8 +369,10 @@ struct bt_conn *bt_conn_add(const bt_addr_le_t *peer)
 
 	atomic_set(&conn->ref, 1);
 	bt_addr_le_copy(&conn->dst, peer);
+#if defined(CONFIG_BLUETOOTH_SMP)
 	conn->sec_level = BT_SECURITY_LOW;
 	conn->required_sec_level = BT_SECURITY_LOW;
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 	return conn;
 }
@@ -550,6 +554,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->dst;
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 {
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -594,6 +599,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 	return -EIO;
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 }
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)
 {
@@ -704,6 +710,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 	return conn;
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 				uint16_t ediv, const uint8_t *ltk)
 {
@@ -723,6 +730,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
 }
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 			   uint16_t latency, uint16_t timeout)

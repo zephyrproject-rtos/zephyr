@@ -320,7 +320,7 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 
 /* HCI event processing */
 
-#if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BLUETOOTH_SMP)
 static void update_sec_level(struct bt_conn *conn)
 {
 	struct bt_keys *keys;
@@ -370,7 +370,7 @@ static void hci_encrypt_change(struct bt_buf *buf)
 
 	bt_conn_put(conn);
 }
-#endif /* CONFIG_BLUETOOTH_CONN */
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 static void hci_reset_complete(struct bt_buf *buf)
 {
@@ -513,7 +513,9 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 		}
 	}
 }
+#endif
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 static void hci_encrypt_key_refresh_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_encrypt_key_refresh_complete *evt = (void *)buf->data;
@@ -555,7 +557,14 @@ static void copy_id_addr(struct bt_conn *conn, const bt_addr_le_t *addr)
 		bt_addr_le_copy(&conn->dst, addr);
 	}
 }
+#else
+#if defined(CONFIG_BLUETOOTH_CONN)
+static void copy_id_addr(struct bt_conn *conn, const bt_addr_le_t *addr)
+{
+	bt_addr_le_copy(&conn->dst, addr);
+}
 #endif /* CONFIG_BLUETOOTH_CONN */
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 static int bt_hci_start_scanning(uint8_t scan_type)
 {
@@ -797,13 +806,14 @@ static int update_conn_params(struct bt_conn *conn)
 
 static struct bt_conn *find_pending_conn(const bt_addr_le_t *addr)
 {
+#if defined(CONFIG_BLUETOOTH_SMP)
 	struct bt_keys *keys;
 
 	keys = bt_keys_find_irk(addr);
 	if (keys) {
 		return bt_conn_lookup_state(&keys->addr, BT_CONN_CONNECT);
 	}
-
+#endif /* CONFIG_BLUETOOTH_SMP */
 	return bt_conn_lookup_state(addr, BT_CONN_CONNECT);
 }
 
@@ -1045,13 +1055,15 @@ static void le_adv_report(struct bt_buf *buf)
 		int8_t rssi = info->data[info->length];
 #if defined(CONFIG_BLUETOOTH_CONN)
 		const bt_addr_le_t *addr;
+#if defined(CONFIG_BLUETOOTH_SMP)
 		struct bt_keys *keys;
+#endif /* CONFIG_BLUETOOTH_SMP */
 #endif /* CONFIG_BLUETOOTH_CONN */
-
 		BT_DBG("%s event %u, len %u, rssi %d dBm\n",
 			bt_addr_le_str(&info->addr),
 			info->evt_type, info->length, rssi);
 #if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BLUETOOTH_SMP)
 		keys = bt_keys_find_irk(&info->addr);
 		if (keys) {
 			addr = &keys->addr;
@@ -1061,6 +1073,9 @@ static void le_adv_report(struct bt_buf *buf)
 		} else {
 			addr = &info->addr;
 		}
+#else
+		addr = &info->addr;
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 		if (scan_dev_found_cb) {
 			scan_dev_found_cb(addr, rssi, info->evt_type,
@@ -1082,7 +1097,7 @@ static void le_adv_report(struct bt_buf *buf)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BLUETOOTH_SMP)
 static void le_ltk_request(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
@@ -1139,7 +1154,7 @@ static void le_ltk_request(struct bt_buf *buf)
 done:
 	bt_conn_put(conn);
 }
-#endif /* CONFIG_BLUETOOTH_CONN */
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 static void hci_le_meta_event(struct bt_buf *buf)
 {
@@ -1155,9 +1170,6 @@ static void hci_le_meta_event(struct bt_buf *buf)
 	case BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE:
 		le_conn_update_complete(buf);
 		break;
-	case BT_HCI_EVT_LE_LTK_REQUEST:
-		le_ltk_request(buf);
-		break;
 	case BT_HCI_EV_LE_REMOTE_FEAT_COMPLETE:
 		le_remote_feat_complete(buf);
 		break;
@@ -1165,6 +1177,11 @@ static void hci_le_meta_event(struct bt_buf *buf)
 		le_conn_param_req(buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_CONN */
+#if defined(CONFIG_BLUETOOTH_SMP)
+	case BT_HCI_EVT_LE_LTK_REQUEST:
+		le_ltk_request(buf);
+		break;
+#endif /* CONFIG_BLUETOOTH_SMP */
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 		le_adv_report(buf);
 		break;
@@ -1187,13 +1204,15 @@ static void hci_event(struct bt_buf *buf)
 	case BT_HCI_EVT_DISCONN_COMPLETE:
 		hci_disconn_complete(buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_CONN */
+#if defined(CONFIG_BLUETOOTH_SMP)
 	case BT_HCI_EVT_ENCRYPT_CHANGE:
 		hci_encrypt_change(buf);
 		break;
 	case BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE:
 		hci_encrypt_key_refresh_complete(buf);
 		break;
-#endif /* CONFIG_BLUETOOTH_CONN */
+#endif /* CONFIG_BLUETOOTH_SMP */
 	case BT_HCI_EVT_LE_META_EVENT:
 		hci_le_meta_event(buf);
 		break;
@@ -1476,12 +1495,12 @@ static int hci_init(void)
 	ev->events[3] |= 0x02; /* Data Buffer Overflow */
 	ev->events[7] |= 0x20; /* LE Meta-Event */
 
-#if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BLUETOOTH_SMP)
 	if (bt_dev.le_features[0] & BT_HCI_LE_ENCRYPTION) {
 		ev->events[0] |= 0x80; /* Encryption Change */
 		ev->events[5] |= 0x80; /* Encryption Key Refresh Complete */
 	}
-#endif /* CONFIG_BLUETOOTH_CONN */
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 	bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 

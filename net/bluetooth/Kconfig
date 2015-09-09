@@ -54,10 +54,16 @@ config BLUETOOTH_CENTRAL
 	select BLUETOOTH_CONN
 
 if BLUETOOTH_PERIPHERAL || BLUETOOTH_CENTRAL
+config BLUETOOTH_SMP
+	bool
+	prompt "Security Manager Protocol support"
+	default n
+
 config BLUETOOTH_SIGNING
 	bool
 	prompt "Data signing support"
 	default n
+	depends on BLUETOOTH_SMP
 	help
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.

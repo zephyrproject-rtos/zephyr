@@ -80,7 +80,9 @@ struct bt_att_req {
 	void			*user_data;
 	bt_att_destroy_t	destroy;
 	struct bt_buf		*buf;
+#if defined(CONFIG_BLUETOOTH_SMP)
 	bool			retrying;
+#endif /* CONFIG_BLUETOOTH_SMP */
 };
 
 /* ATT channel specific context */
@@ -645,8 +647,14 @@ static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_ATT_ERR_AUTHENTICATION;
 	}
 
-	if ((mask & BT_GATT_PERM_ENCRYPT_MASK) && !conn->encrypt) {
+	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
+#if defined(CONFIG_BLUETOOTH_SMP)
+		if (!conn->encrypt) {
+			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+		}
+#else
 		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
+#endif /* CONFIG_BLUETOOTH_SMP */
 	}
 
 	if (mask & BT_GATT_PERM_AUTHOR) {
@@ -1206,6 +1214,7 @@ static uint8_t att_signed_write_cmd(struct bt_conn *conn, struct bt_buf *buf)
 			     buf->len - sizeof(struct bt_att_signature));
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 static int att_change_security(struct bt_conn *conn, uint8_t err)
 {
 	bt_security_t sec;
@@ -1227,6 +1236,7 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 
 	return bt_conn_security(conn, sec);
 }
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *buf)
 {
@@ -1249,7 +1259,7 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	hdr = (void *)req->buf->data;
 
 	err = rsp->request == hdr->code ? rsp->error : BT_ATT_ERR_UNLIKELY;
-
+#if defined(CONFIG_BLUETOOTH_SMP)
 	if (req->retrying)
 		goto done;
 
@@ -1259,6 +1269,7 @@ static uint8_t att_error_rsp(struct bt_conn *conn, struct bt_buf *buf)
 		/* Wait security_changed: TODO: Handle fail case */
 		return 0;
 	}
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 done:
 	return att_handle_rsp(conn, NULL, 0, err);
@@ -1531,6 +1542,7 @@ static void bt_att_disconnected(struct bt_conn *conn)
 	bt_gatt_disconnected(conn);
 }
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 static void security_changed(struct bt_conn *conn, bt_security_t level)
 {
 	struct bt_att *att = conn->att;
@@ -1556,6 +1568,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level)
 static struct bt_conn_cb conn_callbacks = {
 		.security_changed = security_changed,
 };
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 void bt_att_init(void)
 {
@@ -1568,7 +1581,9 @@ void bt_att_init(void)
 
 	bt_l2cap_chan_register(&chan);
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 	bt_conn_cb_register(&conn_callbacks);
+#endif /* CONFIG_BLUETOOTH_SMP */
 }
 
 uint16_t bt_att_get_mtu(struct bt_conn *conn)
@@ -1601,7 +1616,9 @@ int bt_att_send(struct bt_conn *conn, struct bt_buf *buf, bt_att_func_t func,
 		}
 
 		att->req.buf = bt_buf_clone(buf);
+#if defined(CONFIG_BLUETOOTH_SMP)
 		att->req.retrying = false;
+#endif /* CONFIG_BLUETOOTH_SMP */
 		att->req.func = func;
 		att->req.user_data = user_data;
 		att->req.destroy = destroy;
