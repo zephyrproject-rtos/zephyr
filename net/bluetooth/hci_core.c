@@ -958,8 +958,7 @@ static void le_conn_update_complete(struct bt_buf *buf)
 	bt_conn_put(conn);
 }
 
-static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
-			       struct bt_keys *keys)
+static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype)
 {
 	struct bt_conn *conn;
 
@@ -968,12 +967,7 @@ static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype,
 		return;
 	}
 
-	if (keys) {
-		conn = bt_conn_lookup_state(&keys->addr, BT_CONN_CONNECT_SCAN);
-	} else {
-		conn = bt_conn_lookup_state(addr, BT_CONN_CONNECT_SCAN);
-	}
-
+	conn = bt_conn_lookup_state(addr, BT_CONN_CONNECT_SCAN);
 	if (!conn) {
 		return;
 	}
@@ -1025,7 +1019,7 @@ static void le_adv_report(struct bt_buf *buf)
 					  info->data, info->length);
 		}
 
-		check_pending_conn(&info->addr, info->evt_type, keys);
+		check_pending_conn(&addr, info->evt_type);
 
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
