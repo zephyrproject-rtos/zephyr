@@ -44,6 +44,13 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+/* Helper to pass a int as a pointer or vice-versa.
+ * Those are available for 32 bits architectures: */
+#define POINTER_TO_UINT(x) ((uint32_t) (x))
+#define UINT_TO_POINTER(x) ((void *) (x))
+#define POINTER_TO_INT(x)  ((int32_t) (x))
+#define INT_TO_POINTER(x)  ((void *) (x))
+
 #define ARRAY_SIZE(array) ((unsigned long)(sizeof(array) / sizeof((array)[0])))
 #define CONTAINER_OF(ptr, type, field) \
 	((type *)(((char *)(ptr)) - offsetof(type, field)))
