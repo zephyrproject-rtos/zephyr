@@ -671,6 +671,12 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	data->rsp = bt_buf_add(data->buf, sizeof(*data->rsp));
 
+	/*
+	 * If any attribute is founded in handle range it means that error
+	 * should be changed from pre-set: invalid handle error to no error.
+	 */
+	data->err = 0x00;
+
 	if (!attr->read) {
 		data->err = BT_ATT_ERR_READ_NOT_PERMITTED;
 		return BT_GATT_ITER_STOP;
@@ -713,6 +719,9 @@ static uint8_t att_read_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 
 	data.conn = conn;
 	data.offset = offset;
+
+	/* Pre-set error if no attr will be found in handle */
+	data.err = BT_ATT_ERR_INVALID_HANDLE;
 
 	bt_gatt_foreach_attr(handle, handle, read_cb, &data);
 
