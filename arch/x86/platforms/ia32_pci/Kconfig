@@ -77,6 +77,33 @@ config DW_I2C0_INT_PRIORITY
         help
         IRQ priority
 
+choice
+depends on DW_I2C0
+prompt "I2C0 IRQ Trigger Condition"
+default DW_I2C0_IRQ_RISING_EDGE
+
+config DW_I2C0_IRQ_FALLING_EDGE
+	bool "Falling Edge"
+	help
+	  This option signifies that the I2C0 uses falling edge interrupt.
+
+config DW_I2C0_IRQ_RISING_EDGE
+	bool "Rising Edge"
+	help
+	  This option signifies that the I2C0 uses rising edge interrupt.
+
+config DW_I2C0_IRQ_LEVEL_HIGH
+	bool "Level High"
+	help
+	  This option signifies that the I2C0 uses level high interrupt.
+
+config DW_I2C0_IRQ_LEVEL_LOW
+	bool "Level Low"
+	help
+	This option signifies that the I2C0 uses level low interrupt.
+
+endchoice
+
 config DW_I2C0_BUS
 	int "PCI Bus number"
 	depends on DW_I2C0 && PCI

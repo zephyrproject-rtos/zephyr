@@ -114,6 +114,22 @@ extern struct device * const uart_devs[];
 
 #endif /* CONFIG_BLUETOOTH_UART */
 
+#ifdef CONFIG_DW_I2C0
+
+#include <drivers/ioapic.h>
+
+#if defined(CONFIG_DW_I2C0_IRQ_FALLING_EDGE)
+#define DW_I2C0_IRQ_IOAPIC_FLAGS	(IOAPIC_EDGE | IOAPIC_LOW)
+#elif defined(CONFIG_DW_I2C0_IRQ_RISING_EDGE)
+#define DW_I2C0_IRQ_IOAPIC_FLAGS	(IOAPIC_EDGE | IOAPIC_HIGH)
+#elif defined(CONFIG_DW_I2C0_IRQ_LEVEL_HIGH)
+#define DW_I2C0_IRQ_IOAPIC_FLAGS	(IOAPIC_LEVEL | IOAPIC_HIGH)
+#elif defined(CONFIG_DW_I2C0_IRQ_LEVEL_LOW)
+#define DW_I2C0_IRQ_IOAPIC_FLAGS	(IOAPIC_LEVEL | IOAPIC_LOW)
+#endif
+
+#endif /* CONFIG_DW_I2C0 */
+
 /*
  * The irq_connect() API connects to a (virtualized) IRQ and the
  * associated interrupt controller is programmed with the allocated vector.

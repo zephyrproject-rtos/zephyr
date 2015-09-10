@@ -110,6 +110,19 @@ static inline void console_irq_set(void)
 	} while ((0))
 #endif
 
+#ifdef CONFIG_DW_I2C0
+static inline void dw_i2c0_irq_set(void)
+{
+	_ioapic_irq_set(CONFIG_DW_I2C0_IRQ,
+			CONFIG_DW_I2C0_IRQ + INT_VEC_IRQ0,
+			DW_I2C0_IRQ_IOAPIC_FLAGS);
+}
+#else
+#define dw_i2c0_irq_set()	\
+	do { /* nothing */	\
+	} while ((0))
+#endif /* CONFIG_DW_I2C0 */
+
 /**
  *
  * @brief Perform basic hardware initialization
@@ -130,6 +143,8 @@ static int ia32_pci_init(struct device *arg)
 	ioapic_init();       /* NOP if not needed */
 	hpet_irq_set();      /* NOP if not needed */
 	console_irq_set();   /* NOP if not needed */
+
+	dw_i2c0_irq_set();   /* NOP if not needed */
 
 #if defined(CONFIG_PCI_DEBUG) && defined(CONFIG_PCI_ENUMERATION)
 	/* Rescan PCI and display the list of PCI attached devices */
