@@ -213,28 +213,6 @@ extern struct device * const uart_devs[];
 #define VECTOR_FROM_IRQ(irq) EXC_FROM_IRQ(irq)
 #define VECTOR_ADDR(vector) ((uint32_t *)((int)vector << 2))
 
-/*
- * Device drivers utilize the macros PLB_BYTE_REG_WRITE() and
- * PLB_BYTE_REG_READ() to access byte-wide registers on the processor
- * local bus (PLB), as opposed to a PCI bus, for example.  Boards are
- * expected to provide implementations of these macros.
- */
-
-static inline void __plbByteRegWrite(unsigned char data, unsigned char *pAddr)
-{
-	*pAddr = data;
-}
-
-#define PLB_BYTE_REG_WRITE(data, address) \
-	__plbByteRegWrite((unsigned char)data, (unsigned char *)address)
-
-static inline unsigned char __plbByteRegRead(unsigned char *pAddr)
-{
-	return *pAddr;
-}
-
-#define PLB_BYTE_REG_READ(address) __plbByteRegRead((unsigned char *)address)
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _BOARD__H_ */

@@ -127,72 +127,8 @@ extern struct device * const uart_devs[];
 #endif /* CONFIG_NS16550 */
 
 #ifndef _ASMLANGUAGE
-/*
- * Device drivers utilize the macros PLB_BYTE_REG_WRITE() and
- * PLB_BYTE_REG_READ() to access byte-wide registers on the processor
- * local bus (PLB), as opposed to a PCI bus, for example.  Boards are
- * expected to provide implementations of these macros.
- */
-
-#define PLB_BYTE_REG_WRITE(data, address) sys_out8(data, (unsigned int)address)
-#define PLB_BYTE_REG_READ(address) sys_in8((unsigned int)address)
-
-/*
- * Device drivers utilize the macros PLB_WORD_REG_WRITE() and
- * PLB_WORD_REG_READ() to access shortword-wide registers on the processor
- * local bus (PLB), as opposed to a PCI bus, for example.  Boards are
- * expected to provide implementations of these macros.
- */
-
-#define PLB_WORD_REG_WRITE(data, address) sys_out16(data, (unsigned int)address)
-#define PLB_WORD_REG_READ(address) sys_in16((unsigned int)address)
-
-
-/*
- * Device drivers utilize the macros PLB_LONG_REG_WRITE() and
- * PLB_LONG_REG_READ() to access longword-wide registers on the processor
- * local bus (PLB), as opposed to a PCI bus, for example.  Boards are
- * expected to provide implementations of these macros.
- */
-
-#define PLB_LONG_REG_WRITE(data, address) sys_out32(data, (unsigned int)address)
-#define PLB_LONG_REG_READ(address) sys_in32((unsigned int)address)
 
 extern void _SysIntVecProgram(unsigned int vector, unsigned int);
-#else /* _ASMLANGUAGE */
-
-/*
- * Assembler macros for PLB_BYTE/WORD/LONG_WRITE/READ
- *
- * Note that these macros trash the contents of EAX and EDX.
- * The read macros return the contents in the EAX register.
- */
-#define PLB_BYTE_REG_WRITE(data, address) \
-	movb $data, % al;                 \
-	movl $address, % edx;             \
-	outb % al, % dx
-
-#define PLB_BYTE_REG_READ(address) \
-	movl $address, % edx;      \
-	inb % dx, % al
-
-#define PLB_WORD_REG_WRITE(data, address) \
-	movw $data, % ax;                 \
-	movl $address, % edx;             \
-	outw % ax, % dx
-
-#define PLB_WORD_REG_READ(address) \
-	movl $address, % edx;      \
-	inw % dx, % ax
-
-#define PLB_LONG_REG_WRITE(data, address) \
-	movl $data, % ax;                 \
-	movl $address, % edx;             \
-	outl % eax, % dx
-
-#define PLB_LONG_REG_READ(address) \
-	movl $address, % edx;      \
-	inl % dx, % eax
 
 #endif /* !_ASMLANGUAGE */
 

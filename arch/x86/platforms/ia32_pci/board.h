@@ -162,42 +162,6 @@ extern struct device * const uart_devs[];
 #define PCI_INTC 3
 #define PCI_INTD 4
 
-#ifndef _ASMLANGUAGE
-
-/*
- * Device drivers utilize the macros PLB_BYTE_REG_WRITE() and
- * PLB_BYTE_REG_READ() to access byte-wide registers on the processor
- * local bus (PLB), as opposed to a PCI bus, for example.  Boards are
- * expected to provide implementations of these macros.
- */
-
-#define PLB_BYTE_REG_WRITE(data, address) \
-	sys_out8(data, (unsigned int)address)
-#define PLB_BYTE_REG_READ(address) sys_in8((unsigned int)address)
-
-/*
- * Device drivers utilize the macros PLB_WORD_REG_WRITE() and
- * PLB_WORD_REG_READ() to access shortword-wide registers on the processor
- * local bus (PLB), as opposed to a PCI bus, for example.  Boards are
- * expected to provide implementations of these macros.
- */
-
-#define PLB_WORD_REG_WRITE(data, address) \
-	sys_out16(data, (unsigned int)address)
-#define PLB_WORD_REG_READ(address) sys_in16((unsigned int)address)
-
-/*
- * Device drivers utilize the macros PLB_LONG_REG_WRITE() and
- * PLB_LONG_REG_READ() to access longword-wide registers on the processor
- * local bus (PLB), as opposed to a PCI bus, for example.  Boards are
- * expected to provide implementations of these macros.
- */
-
-#define PLB_LONG_REG_WRITE(data, address) \
-	sys_out32(data, (unsigned int)address)
-#define PLB_LONG_REG_READ(address) sys_in32((unsigned int)address)
-
-#endif /* !_ASMLANGUAGE */
 
 /**
  *
