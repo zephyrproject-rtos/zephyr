@@ -1,5 +1,3 @@
-/* loApicTimer.c - Intel Local APIC driver */
-
 /*
  * Copyright (c) 2011-2015 Wind River Systems, Inc.
  *
@@ -30,17 +28,65 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-This module implements a kernel device driver for the Intel local APIC
-device, and provides the standard "system clock driver" interfaces.
-This library contains routines for the timer in the Intel local APIC/xAPIC
-(Advanced Programmable Interrupt Controller) in P6 (PentiumPro, II, III)
-and P7 (Pentium4) family processor.
-The local APIC contains a 32-bit programmable timer for use by the local
-processor.  The time base is derived from the processor's bus clock,
-divided by a value specified in the divide configuration register.
-After reset, the timer is initialized to zero.
+/**
+ * @file
+ * @brief Intel Local APIC timer driver
+ *
+ * This module implements a kernel device driver for the Intel local APIC
+ * timer device. It provides the standard "system clock driver" interfaces for
+ * use with P6 (PentiumPro, II, III) and P7 (Pentium4) family processors.
+ * The local APIC timer contains a 32-bit programmable down counter that
+ * generates an interrupt for use by the local processor when it reaches zero.
+ * The time base is derived from the processor's bus clock, divided by a value
+ * specified in the divide configuration register. After reset, the timer is
+ * initialized to zero.
+ *
+ * Typically, the local APIC timer operates in periodic mode. That is, after
+ * its down counter reaches zero and triggers a timer interrupt, it is reset
+ * to its initial value and the down counting continues.
+ *
+ * If the TICKLESS_IDLE kernel configuration option is enabled, the timer may
+ * be programmed to wake the system in N >= TICKLESS_IDLE_THRESH ticks.  The
+ * kernel invokes _timer_idle_enter() to program the down counter in one-shot
+ * mode to trigger an interrupt in N ticks.  When the timer expires or when
+ * another interrupt is detected, the kernel's interrupt stub invokes
+ * _timer_idle_exit() to leave the tickless idle state.
+ *
+ * @internal
+ * Factors that increase the driver's complexity:
+ *
+ * 1. As the down-counter is a 32-bit value, the number of ticks for which the
+ * system can be in tickless idle is limited to 'max_system_ticks'; This
+ * corresponds to 'cycles_per_max_ticks' (as the timer is programmed in cycles).
+ *
+ * 2. When the request to enter tickless arrives, any remaining cycles until
+ * the next tick must be accounted for to maintain accuracy.
+ *
+ * 3. The act of entering tickless idle may potentially straddle a tick
+ * boundary. Thus the number of remaining cycles to the next tick read from
+ * the down counter is suspect as it could occur before or after the tick
+ * boundary (thus before or after the counter is reset). If the tick is
+ * straddled, the following will occur:
+ *    a. Enter tickless idle in one-shot mode
+ *    b. Immediately leave tickless idle
+ *    c. Process the tick event in the _timer_int_handler() and revert
+ *       to periodic mode.
+ *    d. Re-run the scheduler and possibly re-enter tickless idle
+ *
+ * 4. Tickless idle may be prematurely aborted due to a straddled tick.  See
+ * previous factor.
+ *
+ * 5. Tickless idle may be prematurely aborted due to a non-timer interrupt.
+ * Its handler may make a task or fiber ready to run, so any elapsed ticks
+ * must be accounted for and the timer must also expire at the end of the
+ * next logical tick so _timer_int_handler() can put it back in periodic mode.
+ * This can only be distinguished from the previous factor by the executiion of
+ * _timer_int_handler().
+ *
+ * 6. Tickless idle may end naturally.  The down counter should be zero in
+ * this case. However, some targets do not implement the local APIC timer
+ * correctly and the down-counter continues to decrement.
+ * @endinternal
  */
 
 #include <nanokernel.h>
@@ -85,8 +131,8 @@ After reset, the timer is initialized to zero.
 						(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG))
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-#define TIMER_MODE_PERIODIC 0
-#define TIMER_MODE_PERIODIC_ENT 1
+#define TIMER_MODE_ONE_SHOT     0
+#define TIMER_MODE_PERIODIC     1
 #else /* !TIMER_SUPPORTS_TICKLESS */
 #define tickless_idle_init() \
 	do {/* nothing */              \
@@ -109,6 +155,7 @@ static uint32_t programmed_cycles = 0;
 static uint32_t programmed_full_ticks = 0;
 static uint32_t __noinit max_system_ticks;
 static uint32_t __noinit cycles_per_max_ticks;
+static bool timer_known_to_have_expired = false;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
@@ -277,18 +324,41 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	ARG_UNUSED(unused);
 
 #ifdef TIMER_SUPPORTS_TICKLESS
-	if (timer_mode == TIMER_MODE_PERIODIC_ENT) {
-		timer_interrupt_mask();
+	if (timer_mode == TIMER_MODE_ONE_SHOT) {
+		if (!timer_known_to_have_expired) {
+			uint32_t  cycles;
+
+			/*
+			 * The timer fired unexpectedly. This is due to one of two cases:
+			 *   1. Entering tickless idle straddled a tick.
+			 *   2. Leaving tickless idle straddled the final tick.
+			 * Due to the timer reprogramming in _timer_idle_exit(), case #2
+			 * can be handled as a fall-through.
+			 *
+			 * NOTE: Although the cycle count is supposed to stop decrementing
+			 * once it hits zero in one-shot mode, not all targets implement
+			 * this properly (and continue to decrement).  Thus, we have to
+			 * perform a second comparison to check for wrap-around.
+			 */
+
+			cycles = current_count_register_get();
+			if ((cycles > 0) && (cycles < programmed_cycles)) {
+				/* Case 1 */
+				_sys_idle_elapsed_ticks = 0;
+			}
+		}
+
+		/* Return the timer to periodic mode */
+		initial_count_register_set(cycles_per_tick - 1);
 		periodic_mode_set();
-		initial_count_register_set(cycles_per_tick);
-		timer_interrupt_unmask();
+		timer_known_to_have_expired = false;
 		timer_mode = TIMER_MODE_PERIODIC;
 	}
 
 	/*
-	 * Increment the tick because _timer_idle_exit does not account
+	 * Increment the tick because _timer_idle_exit() does not account
 	 * for the tick due to the timer interrupt itself. Also, if not in
-	 * tickless mode, _sys_idle_elapsed_ticks  will be 0.
+	 * one-shot mode, _sys_idle_elapsed_ticks will be 0.
 	 */
 	_sys_idle_elapsed_ticks++;
 
@@ -298,13 +368,12 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	/*
 	 * If we transistion from 0 elapsed ticks to 1 we need to announce the
 	 * tick event to the microkernel. Other cases will have already been
-	 * covered by _timer_idle_exit
+	 * covered by _timer_idle_exit().
 	 */
 
 	if (_sys_idle_elapsed_ticks == 1) {
 		_sys_clock_tick_announce();
 	}
-
 #else
 	/* track the accumulated cycle count */
 	accumulated_cycle_count += cycles_per_tick;
@@ -322,16 +391,12 @@ void _timer_int_handler(void *unused /* parameter is not used */
 #ifdef LOAPIC_TIMER_PERIODIC_WORKAROUND
 	/*
 	 * On platforms where the LOAPIC timer periodic mode is broken,
-	 * re-program
-	 * the ICR register with the initial count value.  This is only a
-	 * temporary
-	 * workaround.
+	 * re-program the ICR register with the initial count value. This
+	 * is only a temporary workaround.
 	 */
 
-	timer_interrupt_mask();
+	initial_count_register_set(cycles_per_tick - 1);
 	periodic_mode_set();
-	initial_count_register_set(cycles_per_tick);
-	timer_interrupt_unmask();
 #endif /* LOAPIC_TIMER_PERIODIC_WORKAROUND */
 }
 
@@ -354,8 +419,13 @@ void _timer_int_handler(void *unused /* parameter is not used */
 
 static void tickless_idle_init(void)
 {
-	max_system_ticks = 0xffffffff / cycles_per_tick;
-	/* this gives a count that gives the max number of full ticks */
+	/*
+	 * Calculate the maximum number of system ticks less one. This
+	 * guarantees that an overflow will not occur when any remaining
+	 * cycles are added to <cycles_per_max_ticks> when calculating
+	 * <programmed_cycles>.
+	 */
+	max_system_ticks = (0xffffffff / cycles_per_tick) - 1;
 	cycles_per_max_ticks = max_system_ticks * cycles_per_tick;
 }
 
@@ -374,42 +444,41 @@ static void tickless_idle_init(void)
 void _timer_idle_enter(int32_t ticks /* system ticks */
 				)
 {
-	timer_interrupt_mask();
-	/*
-	 * We're being asked to have the timer fire in "ticks" from now. To
-	 * maintain accuracy we must account for the remaining time left in the
-	 * timer. So we read the count out of it and add it to the requested
-	 * time out
-	 */
-	programmed_cycles = current_count_register_get();
+	uint32_t  cycles;
 
-	if ((ticks == -1) || (ticks > max_system_ticks)) {
+	/*
+	 * Although interrupts are disabled, the LOAPIC timer is still counting
+	 * down. Take a snapshot of current count register to get the number of
+	 * cycles remaining in the timer before it signals an interrupt and apply
+	 * that towards the one-shot calculation to maintain accuracy.
+	 *
+	 * NOTE: If entering tickless idle straddles a tick, 'programmed_cycles'
+	 * and 'programmmed_full_ticks' may be incorrect as we do not know which
+	 * side of the tick the snapshot occurred.  This is not a problem as the
+	 * values will be corrected once the straddling is detected.
+	 */
+
+	cycles = current_count_register_get();
+
+	if ((ticks == TICKS_UNLIMITED) || (ticks > max_system_ticks)) {
 		/*
-		 * We've been asked to fire the timer so far in the future that
-		 * the
-		 * required count value would not fit in the 32 bit counter
-		 * register.
-		 * Instead, we program for the maximum programmable interval
-		 * minus one
-		 * system tick to prevent overflow when the left over count read
-		 * earlier
-		 * is added.
+		 * The number of cycles until the timer must fire next might not fit
+		 * in the 32-bit counter register. To work around this, program
+		 * the counter to fire in the maximum number of ticks (plus any
+		 * remaining cycles).
 		 */
-		programmed_cycles += cycles_per_max_ticks - cycles_per_tick;
-		programmed_full_ticks = max_system_ticks - 1;
+
+		programmed_full_ticks = max_system_ticks;
+		programmed_cycles = cycles + cycles_per_max_ticks;
 	} else {
-		/* leave one tick of buffer to have to time react when coming
-		 * back ? */
 		programmed_full_ticks = ticks - 1;
-		programmed_cycles += programmed_full_ticks * cycles_per_tick;
+		programmed_cycles = cycles + (programmed_full_ticks * cycles_per_tick);
 	}
 
-	timer_mode = TIMER_MODE_PERIODIC_ENT;
-
-	/* Set timer to one shot mode */
-	one_shot_mode_set();
+	/* Set timer to one-shot mode */
 	initial_count_register_set(programmed_cycles);
-	timer_interrupt_unmask();
+	one_shot_mode_set();
+	timer_mode = TIMER_MODE_ONE_SHOT;
 }
 
 /**
@@ -430,55 +499,87 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 
 void _timer_idle_exit(void)
 {
-	uint32_t count; /* timer's current count register value */
+	uint32_t remaining_cycles;
+	uint32_t remaining_full_ticks;
 
-	timer_interrupt_mask();
+	/*
+	 * Interrupts are locked and idling has ceased. The cause of the cessation
+	 * is unknown. It may be due to one of three cases.
+	 *  1. The timer, which was previously placed into one-shot mode has
+	 *     counted down to zero and signaled an interrupt.
+	 *  2. A non-timer interrupt occurred. Note that the LOAPIC timer will
+	 *     still continue to decrement and may yet signal an interrupt.
+	 *  3. The LOAPIC timer signaled an interrupt while the timer was being
+	 *     programmed for one-shot mode.
+	 *
+	 * NOTE: Although the cycle count is supposed to stop decrementing once it
+	 * hits zero in one-shot mode, not all targets implement this properly
+	 * (and continue to decrement).  Thus a second comparison is required to
+	 * check for wrap-around.
+	 */
 
-	/* timer is in idle or off mode, adjust the ticks expired */
+	remaining_cycles = current_count_register_get();
 
-	count = current_count_register_get();
-
-	if ((count == 0) || (count >= programmed_cycles)) {
-		/* Timer expired and/or wrapped around. Place back in periodic
-		 * mode */
-		periodic_mode_set();
-		initial_count_register_set(cycles_per_tick);
-		_sys_idle_elapsed_ticks = programmed_full_ticks - 1;
-		timer_mode = TIMER_MODE_PERIODIC;
+	if ((remaining_cycles == 0) ||
+		(remaining_cycles >= programmed_cycles)) {
 		/*
-		 * Announce elapsed ticks to the microkernel. Note we are
-		 * guaranteed
-		 * that the timer ISR will execute first before the tick event
-		 * is
-		 * serviced.
+		 * The timer has expired. The handler _timer_int_handler() is
+		 * guaranteed to execute. Track the number of elapsed ticks. The
+		 * handler _timer_int_handler() will account for the final tick.
 		 */
+
+		_sys_idle_elapsed_ticks = programmed_full_ticks;
+
+		/*
+		 * Announce elapsed ticks to the microkernel. Note we are guaranteed
+		 * that the timer ISR will execute before the tick event is serviced.
+		 * (The timer ISR reprograms the timer for the next tick.)
+		 */
+
 		_sys_clock_tick_announce();
-	} else {
-		uint32_t elapsed;   /* elapsed "counter time" */
-		uint32_t remaining; /* remaining "counter time" */
 
-		elapsed = programmed_cycles - count;
+		timer_known_to_have_expired = true;
 
-		remaining = elapsed % cycles_per_tick;
-
-		/* switch timer to periodic mode */
-		if (remaining == 0) {
-			periodic_mode_set();
-			initial_count_register_set(cycles_per_tick);
-			timer_mode = TIMER_MODE_PERIODIC;
-		} else if (count > remaining) {
-			/* less time remaining to the next tick than was
-			 * programmed. Leave in one shot mode */
-			initial_count_register_set(remaining);
-		}
-
-		_sys_idle_elapsed_ticks = elapsed / cycles_per_tick;
-
-		if (_sys_idle_elapsed_ticks) {
-			_sys_clock_tick_announce();
-		}
+		return;
 	}
-	timer_interrupt_unmask();
+
+	timer_known_to_have_expired = false;
+
+	/*
+	 * Either a non-timer interrupt occurred, or we straddled a tick when
+	 * entering tickless idle. It is impossible to determine which occurred
+	 * at this point. Regardless of the cause, ensure that the timer will
+	 * expire at the end of the next tick in case the ISR makes any tasks
+	 * and/or fibers ready to run.
+	 *
+	 * NOTE #1: In the case of a straddled tick, the '_sys_idle_elapsed_ticks'
+	 * calculation below may result in either 0 or 1. If 1, then this may
+	 * result in a harmless extra call to _sys_clock_tick_announce().
+	 *
+	 * NOTE #2: In the case of a straddled tick, it is assumed that when the
+	 * timer is reprogrammed, it will be reprogrammed with a cycle count
+	 * sufficiently close to one tick that the timer will not expire before
+	 * _timer_int_handler() is executed.
+	 */
+
+	remaining_full_ticks = remaining_cycles / cycles_per_tick;
+
+	_sys_idle_elapsed_ticks = programmed_full_ticks - remaining_full_ticks;
+
+	if (_sys_idle_elapsed_ticks > 0) {
+		_sys_clock_tick_announce();
+	}
+
+	if (remaining_full_ticks > 0) {
+		/*
+		 * Re-program the timer (still in one-shot mode) to fire at the end of
+		 * the tick, being careful to not program zero thus stopping the timer.
+		 */
+
+		programmed_cycles = 1 + ((remaining_cycles - 1) % cycles_per_tick);
+
+		initial_count_register_set(programmed_cycles);
+	}
 }
 #endif /* TIMER_SUPPORTS_TICKLESS */
 
@@ -499,12 +600,12 @@ int _sys_clock_driver_init(struct device *device)
 	/* determine the timer counter value (in timer clock cycles/system tick)
 	 */
 
-	cycles_per_tick = sys_clock_hw_cycles_per_tick - 1;
+	cycles_per_tick = sys_clock_hw_cycles_per_tick;
 
 	tickless_idle_init();
 
 	divide_configuration_register_set();
-	initial_count_register_set(cycles_per_tick);
+	initial_count_register_set(cycles_per_tick - 1);
 	periodic_mode_set();
 
 	/*
