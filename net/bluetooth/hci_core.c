@@ -1569,15 +1569,15 @@ int bt_enable(bt_ready_cb_t cb)
 	fiber_start(cmd_tx_fiber_stack, sizeof(cmd_tx_fiber_stack),
 		    (nano_fiber_entry_t)hci_cmd_tx_fiber, 0, 0, 7, 0);
 
-	/* RX fiber */
-	nano_fifo_init(&bt_dev.rx_queue);
-	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
-		    (nano_fiber_entry_t)hci_rx_fiber, (int)cb, 0, 7, 0);
-
 	/* RX prio fiber */
 	nano_fifo_init(&bt_dev.rx_prio_queue);
 	fiber_start(rx_prio_fiber_stack, sizeof(rx_prio_fiber_stack),
 		    (nano_fiber_entry_t)rx_prio_fiber, 0, 0, 7, 0);
+
+	/* RX fiber */
+	nano_fifo_init(&bt_dev.rx_queue);
+	fiber_start(rx_fiber_stack, sizeof(rx_fiber_stack),
+		    (nano_fiber_entry_t)hci_rx_fiber, (int)cb, 0, 7, 0);
 
 	if (!cb) {
 		return bt_init();
