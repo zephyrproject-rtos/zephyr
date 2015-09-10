@@ -158,7 +158,7 @@ static void controller_info(uint8_t *data, uint16_t len)
 static void start_advertising(const uint8_t *data, uint16_t len)
 {
 	const struct gap_start_advertising_cmd *cmd = (void *) data;
-	uint8_t status = BTP_STATUS_SUCCESS;
+	struct gap_start_advertising_rp rp;
 
 	/* TODO
 	 * type should be based on current_settings
@@ -167,23 +167,33 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 	ARG_UNUSED(cmd);
 
 	if (bt_start_advertising(BT_LE_ADV_IND, NULL, NULL) < 0) {
-		status = BTP_STATUS_FAILED;
+		tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		return;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING, CONTROLLER_INDEX,
-		   status);
+	atomic_set_bit(&current_settings, GAP_SETTINGS_ADVERTISING);
+	rp.current_settings = sys_cpu_to_le32(current_settings);
+
+	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
+			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 }
 
 static void stop_advertising(const uint8_t *data, uint16_t len)
 {
-	uint8_t status = BTP_STATUS_SUCCESS;
+	struct gap_stop_advertising_rp rp;
 
 	if (bt_stop_advertising() < 0) {
-		status = BTP_STATUS_FAILED;
+		tester_rsp(BTP_SERVICE_ID_GAP, GAP_STOP_ADVERTISING,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		return;
 	}
 
-	tester_rsp(BTP_SERVICE_ID_GAP, GAP_STOP_ADVERTISING, CONTROLLER_INDEX,
-		   status);
+	atomic_clear_bit(&current_settings, GAP_SETTINGS_ADVERTISING);
+	rp.current_settings = sys_cpu_to_le32(current_settings);
+
+	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_STOP_ADVERTISING,
+			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
