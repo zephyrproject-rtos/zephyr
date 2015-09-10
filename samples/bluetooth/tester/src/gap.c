@@ -113,6 +113,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds |= 1 << GAP_STOP_ADVERTISING;
 	cmds |= 1 << GAP_START_DISCOVERY;
 	cmds |= 1 << GAP_STOP_DISCOVERY;
+	cmds |= 1 << GAP_DISCONNECT;
 
 	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 			CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -269,6 +270,28 @@ static void stop_discovery(const uint8_t *data, uint16_t len)
 		   status);
 }
 
+static void disconnect(const uint8_t *data, uint16_t len)
+{
+	struct bt_conn *conn;
+	uint8_t status;
+
+	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	if (!conn) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN)) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	status = BTP_STATUS_SUCCESS;
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_DISCONNECT, CONTROLLER_INDEX,
+		   status);
+}
+
 void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		       uint16_t len)
 {
@@ -311,6 +334,9 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GAP_STOP_DISCOVERY:
 		stop_discovery(data, len);
+		return;
+	case GAP_DISCONNECT:
+		disconnect(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GAP, opcode, index,
