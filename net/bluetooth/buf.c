@@ -148,6 +148,21 @@ struct bt_buf *bt_buf_hold(struct bt_buf *buf)
 	return buf;
 }
 
+struct bt_buf *bt_buf_clone(struct bt_buf *buf)
+{
+	struct bt_buf *clone;
+
+	clone = bt_buf_get(buf->type, bt_buf_headroom(buf));
+	if (!clone) {
+		return NULL;
+	}
+
+	/* TODO: Add reference to the original buffer instead of copying it. */
+	memcpy(bt_buf_add(clone, buf->len), buf->data, buf->len);
+
+	return clone;
+}
+
 void *bt_buf_add(struct bt_buf *buf, size_t len)
 {
 	uint8_t *tail = bt_buf_tail(buf);

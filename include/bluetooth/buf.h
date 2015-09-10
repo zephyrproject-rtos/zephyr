@@ -129,6 +129,16 @@ void bt_buf_put(struct bt_buf *buf);
  */
 struct bt_buf *bt_buf_hold(struct bt_buf *buf);
 
+/** @brief Duplicate buffer
+ *
+ *  Duplicate given buffer including any data and headers currently stored.
+ *
+ *  @param buf Buffer.
+ *
+ *  @return Duplicated buffer or NULL if out of buffers.
+ */
+struct bt_buf *bt_buf_clone(struct bt_buf *buf);
+
 /** @brief Prepare data to be added at the end of the buffer
  *
  *  Increments the data length of a buffer to account for more data
