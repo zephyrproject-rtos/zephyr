@@ -6,3 +6,5 @@ obj-y = core/
 obj-y += prep_c.o \
          reset.o \
          vector_table.o
+
+obj-$(CONFIG_PLATFORM_GENERIC_ARC) += platforms/generic/

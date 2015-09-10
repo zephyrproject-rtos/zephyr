@@ -40,6 +40,16 @@ source "kernel/Kconfig"
 
 source "misc/Kconfig"
 
+
+choice
+prompt "Platform Selection"
+default PLATFORM_GENERIC_ARC
+
+config PLATFORM_GENERIC_ARC
+	bool "Minimum configuration for generic arc "
+
+endchoice
+
 menu "ARC EM4 processor options"
 
 config	CPU_ARCEM4
@@ -235,6 +245,9 @@ config  ARCH_HAS_NANO_FIBER_ABORT
 endmenu
 
 
+source "arch/arc/platforms/generic/Kconfig"
+
 source "drivers/Kconfig"
 
 source "net/Kconfig"
+
