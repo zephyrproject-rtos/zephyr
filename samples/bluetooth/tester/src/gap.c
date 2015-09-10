@@ -30,12 +30,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <atomic.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+
+#include <misc/byteorder.h>
 
 #include "bttester.h"
 
@@ -44,6 +47,8 @@
 
 /* TODO add api for reading real address */
 #define CONTROLLER_ADDR (&(bt_addr_t) {{1, 2, 3, 4, 5, 6}})
+
+static atomic_t current_settings;
 
 static void le_connected(struct bt_conn *conn)
 {
@@ -140,10 +145,7 @@ static void controller_info(uint8_t *data, uint16_t len)
 	rp.supported_settings |= 1 << GAP_SETTINGS_LE;
 	rp.supported_settings |= 1 << GAP_SETTINGS_ADVERTISING;
 
-	rp.current_settings = 1 << GAP_SETTINGS_POWERED;
-	rp.current_settings |= 1 << GAP_SETTINGS_CONNECTABLE;
-	rp.current_settings |= 1 << GAP_SETTINGS_BONDABLE;
-	rp.current_settings |= 1 << GAP_SETTINGS_LE;
+	rp.current_settings = sys_cpu_to_le32(current_settings);
 
 	memcpy(rp.name, CONTROLLER_NAME, sizeof(CONTROLLER_NAME));
 
@@ -310,6 +312,12 @@ uint8_t tester_init_gap(void)
 	if (bt_enable(NULL) < 0) {
 		return BTP_STATUS_FAILED;
 	}
+
+	atomic_clear(&current_settings);
+	atomic_set_bit(&current_settings, GAP_SETTINGS_POWERED);
+	atomic_set_bit(&current_settings, GAP_SETTINGS_CONNECTABLE);
+	atomic_set_bit(&current_settings, GAP_SETTINGS_BONDABLE);
+	atomic_set_bit(&current_settings, GAP_SETTINGS_LE);
 
 	bt_conn_cb_register(&conn_callbacks);
 
