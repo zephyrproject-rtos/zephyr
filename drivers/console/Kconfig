@@ -97,4 +97,19 @@ config RAM_CONSOLE_BUFFER_SIZE
 	Size of the RAM console buffer. Messages will wrap around if the
 	length is exceeded.
 
+config IPI_CONSOLE_SENDER
+	bool
+	prompt "Inter-processor Interrupt console sender"
+	default n
+	help
+	Enable the sending side of IPI console
+
+config IPI_CONSOLE_RECEIVER
+	bool
+	prompt "Inter-processor interrupt console receiver"
+	select RING_BUFFER
+	default n
+	help
+	Enable the receiving side of IPI console
+
 endif
