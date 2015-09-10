@@ -36,13 +36,6 @@ This module disables the Intel 8259A PIC (Programmable Interrupt Controller)
 to prevent it from generating spurious interrupts.
 */
 
-/*
- * A board support package's board.h header must provide definitions for the
- * following register access macros:
- *
- *   PLB_BYTE_REG_WRITE
- *   PLB_BYTE_REG_READ
- */
 
 #include <nanokernel.h>
 #include <arch/cpu.h>
@@ -66,6 +59,6 @@ to prevent it from generating spurious interrupts.
 
 void _i8259_init(void)
 {
-	PLB_BYTE_REG_WRITE(PIC_DISABLE, PIC_PORT2(PIC_SLAVE_BASE_ADRS));
-	PLB_BYTE_REG_WRITE(PIC_DISABLE, PIC_PORT2(PIC_MASTER_BASE_ADRS));
+	sys_out8(PIC_DISABLE, PIC_PORT2(PIC_SLAVE_BASE_ADRS));
+	sys_out8(PIC_DISABLE, PIC_PORT2(PIC_MASTER_BASE_ADRS));
 }

@@ -73,15 +73,15 @@ static void pci_ctrl_read(uint32_t reg,   /* PCI register to read */
 	switch (size) {
 		/* long (32 bits) */
 	case SYS_PCI_ACCESS_32BIT:
-		*data = PLB_LONG_REG_READ(reg);
+		*data = sys_in32(reg);
 		break;
 		/* word (16 bits) */
 	case SYS_PCI_ACCESS_16BIT:
-		*data = PLB_WORD_REG_READ(reg);
+		*data = sys_in16(reg);
 		break;
 		/* byte (8 bits) */
 	case SYS_PCI_ACCESS_8BIT:
-		*data = PLB_BYTE_REG_READ(reg);
+		*data = sys_in8(reg);
 		break;
 	}
 }
@@ -108,15 +108,15 @@ static void pci_ctrl_write(uint32_t reg,  /* PCI register to write */
 	switch (size) {
 		/* long (32 bits) */
 	case SYS_PCI_ACCESS_32BIT:
-		PLB_LONG_REG_WRITE(data, reg);
+		sys_out32(data, reg);
 		break;
 		/* word (16 bits) */
 	case SYS_PCI_ACCESS_16BIT:
-		PLB_WORD_REG_WRITE(data, reg);
+		sys_out16(data, reg);
 		break;
 		/* byte (8 bits) */
 	case SYS_PCI_ACCESS_8BIT:
-		PLB_BYTE_REG_WRITE(data, reg);
+		sys_out8(data, reg);
 		break;
 	}
 }

@@ -41,10 +41,6 @@ To use the driver, the platform must define:
 - Register addresses:
     - PCI_CTRL_ADDR_REG;
     - PCI_CTRL_DATA_REG;
-- Register read/write routines:
-    - PLB_LONG_REG_READ() / PLB_LONG_REG_WRITE();
-    - PLB_WORD_REG_READ() / PLB_WORD_REG_WRITE();
-    - PLB_BYTE_REG_READ() / PLB_BYTE_REG_WRITE();
 - pci_pin2irq() - the routine that converts the PCI interrupt pin
   number to IRQ number.
 
