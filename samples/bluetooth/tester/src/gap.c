@@ -109,6 +109,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds = 1 << GAP_READ_SUPPORTED_COMMANDS;
 	cmds |= 1 << GAP_READ_CONTROLLER_INDEX_LIST;
 	cmds |= 1 << GAP_READ_CONTROLLER_INFO;
+	cmds |= 1 << GAP_SET_CONNECTABLE;
 	cmds |= 1 << GAP_START_ADVERTISING;
 	cmds |= 1 << GAP_STOP_ADVERTISING;
 	cmds |= 1 << GAP_START_DISCOVERY;
@@ -156,10 +157,28 @@ static void controller_info(uint8_t *data, uint16_t len)
 			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 }
 
+static void set_connectable(uint8_t *data, uint16_t len)
+{
+	const struct gap_set_connectable_cmd *cmd = (void *) data;
+	struct gap_set_connectable_rp rp;
+
+	if (cmd->connectable) {
+		atomic_set_bit(&current_settings, GAP_SETTINGS_CONNECTABLE);
+	} else {
+		atomic_clear_bit(&current_settings, GAP_SETTINGS_CONNECTABLE);
+	}
+
+	rp.current_settings = sys_cpu_to_le32(current_settings);
+
+	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_SET_CONNECTABLE,
+			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+}
+
 static void start_advertising(const uint8_t *data, uint16_t len)
 {
 	const struct gap_start_advertising_cmd *cmd = (void *) data;
 	struct gap_start_advertising_rp rp;
+	uint8_t adv_type;
 
 	/* TODO
 	 * type should be based on current_settings
@@ -167,7 +186,13 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 	 */
 	ARG_UNUSED(cmd);
 
-	if (bt_start_advertising(BT_LE_ADV_IND, NULL, NULL) < 0) {
+	if (atomic_test_bit(&current_settings, GAP_SETTINGS_CONNECTABLE)) {
+		adv_type = BT_LE_ADV_IND;
+	} else {
+		adv_type = BT_LE_ADV_NONCONN_IND;
+	}
+
+	if (bt_start_advertising(adv_type, NULL, NULL) < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;
@@ -322,6 +347,9 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GAP_READ_CONTROLLER_INFO:
 		controller_info(data, len);
+		return;
+	case GAP_SET_CONNECTABLE:
+		set_connectable(data, len);
 		return;
 	case GAP_START_ADVERTISING:
 		start_advertising(data, len);
