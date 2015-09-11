@@ -88,7 +88,7 @@ The following parameters must be defined:
 Public Semaphore
 ----------------
 
-Define the semaphore in the application's .MDEF file using the following syntax:
+Define the semaphore in the application's MDEF using the following syntax:
 
 .. code-block:: console
 

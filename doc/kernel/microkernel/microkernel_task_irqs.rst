@@ -62,7 +62,7 @@ The default value of zero for this option disables task IRQs.
 .. note::
    Unlike most other microkernel object types, task-level IRQs are defined
    as a group using a configuration option, rather than as individual
-   public objects in an .MDEF file or private objects in a source file.
+   public objects in an MDEF or private objects in a source file.
 
 
 Example: Allocating a Task IRQ

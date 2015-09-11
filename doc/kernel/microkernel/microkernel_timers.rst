@@ -90,7 +90,7 @@ the sum of the following quantities:
 .. note::
    Unlike most other microkernel object types, microkernel timers are defined
    as a group using a configuration option, rather than as individual
-   public objects in an .MDEF file or private objects in a source file.
+   public objects in an MDEF or private objects in a source file.
 
 
 Example: Allocating a Microkernel Timer

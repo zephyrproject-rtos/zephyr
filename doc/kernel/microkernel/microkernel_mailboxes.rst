@@ -43,7 +43,7 @@ The following parameters must be defined:
 Public Mailbox
 --------------
 
-Define the mailbox in the application's .MDEF file using the following syntax:
+Define the mailbox in the application's MDEF using the following syntax:
 
 .. code-block:: console
 
@@ -77,7 +77,7 @@ For example, the following code defines a private mailbox named ``PRIV_MBX``.
    DEFINE_MAILBOX(PRIV_MBX);
 
 The mailbox ``PRIV_MBX`` can be used in the same style as those
-defined in MDEF file.
+defined in the MDEF.
 
 To utilize this mailbox from a different source file use the following syntax:
 

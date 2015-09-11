@@ -34,11 +34,12 @@ when a memory block becomes available it is given to the highest
 priority task that has waited the longest.
 
 When a request for memory is sufficiently smaller than an available
-memory pool block, the memory pool will automatically split the block
+memory pool block, the memory pool will automatically split the
 block into 4 smaller blocks. The resulting smaller
 blocks can also be split repeatedly, until a block just larger
-than the needed size is available, or the minimum block size
-(as specified in the MDEF file) is reached.
+than the needed size is available, or the minimum block size,
+as specified in the MDEF, is reached.
+
 If the memory pool is unable to find an available block
 that is at least the requested size, it will attempt to create
 one by merging adjacent free blocks; if it is unable to create
@@ -94,7 +95,7 @@ The following parameters must be defined:
 Public Memory Pool
 ------------------
 
-Define the memory pool in the application's .MDEF file using the following
+Define the memory pool in the application's MDEF using the following
 syntax:
 
 .. code-block:: console

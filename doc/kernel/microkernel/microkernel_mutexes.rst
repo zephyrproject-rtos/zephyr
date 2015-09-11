@@ -89,7 +89,7 @@ The following parameters must be defined:
 Public Mutex
 ------------
 
-Define the mutex in the application's .MDEF file using the following syntax:
+Define the mutex in the application's MDEF using the following syntax:
 
 .. code-block:: console
 

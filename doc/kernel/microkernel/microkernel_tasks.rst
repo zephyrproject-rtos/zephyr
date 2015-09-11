@@ -263,7 +263,7 @@ The following parameters must be defined:
 Public Task
 -----------
 
-Define the task in the application's .MDEF file using the following syntax:
+Define the task in the application's MDEF using the following syntax:
 
 .. code-block:: console
 

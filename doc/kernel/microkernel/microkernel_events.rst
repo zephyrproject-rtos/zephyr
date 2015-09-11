@@ -88,7 +88,7 @@ The following parameters must be defined:
 Public Event
 ------------
 
-Define the event in the application's .MDEF file using the following syntax:
+Define the event in the application's MDEF using the following syntax:
 
 .. code-block:: console
 

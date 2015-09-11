@@ -20,10 +20,10 @@ following files.
   are used; if no existing values are provided, the kernel's default
   configuration values are used.
 
-  A microkernel application typically provides an additional microkernel
-  definitions (MDEF) file (:file:`.mdef`) that defines all of the system's
-  public microkernel objects. This file is not used with a nanokernel-only
-  application.
+  A microkernel application typically provides an additional :abbr:`MDEF (Microkernel
+  Definitions File)` under the extension :file:`.mdef`. This file defines
+  all of the system's public microkernel objects. This file is not used with a
+  nanokernel-only application.
 
 * Makefile
 

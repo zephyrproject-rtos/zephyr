@@ -178,7 +178,7 @@ The following parameters must be defined:
 Public Pipe
 -----------
 
-Define the pipe in the application's .MDEF file using the following syntax:
+Define the pipe in the application's MDEF using the following syntax:
 
 .. code-block:: console
 

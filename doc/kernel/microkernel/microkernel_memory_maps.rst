@@ -62,7 +62,7 @@ The following parameters must be defined:
 Public Memory Map
 -----------------
 
-Define the memory map in the application's .MDEF file using the following
+Define the memory map in the application's MDEF using the following
 syntax:
 
 .. code-block:: console
