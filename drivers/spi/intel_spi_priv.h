@@ -51,6 +51,8 @@
 	((__msf && INTEL_SPI_CLK_DIV_MASK) << 8)
 
 /* SSCR1 settings */
+#define INTEL_SPI_SSCR1_TIE_BIT		(1)
+
 #define INTEL_SPI_SSCR1_RIE		(0x1)
 #define INTEL_SPI_SSCR1_TIE		(0x1 << 1)
 #define INTEL_SPI_SSCR1_LBM		(0x1 << 2)

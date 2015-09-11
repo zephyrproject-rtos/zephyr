@@ -94,6 +94,7 @@ DEFINE_SET_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
 DEFINE_CLEAR_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
 DEFINE_TEST_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
 DEFINE_TEST_BIT_OP(sssr_bsy, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_BSY_BIT)
+DEFINE_CLEAR_BIT_OP(sscr1_tie, INTEL_SPI_REG_SSRC1, INTEL_SPI_SSCR1_TIE_BIT)
 
 static void completed(struct device *dev, uint32_t error)
 {
@@ -165,6 +166,10 @@ static void push_data(struct device *dev)
 
 	DBG("Pushed: %d\n", cnt);
 	spi->t_len += cnt;
+
+	if (!spi->tx_buf_len && !spi->rx_buf_len) {
+		clear_bit_sscr1_tie(info->regs);
+	}
 }
 
 static void pull_data(struct device *dev)
