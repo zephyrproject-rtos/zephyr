@@ -19,12 +19,6 @@
 #include "sys/clock.h"
 #include <stdlib.h>
 
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
-#else
-#include <nanokernel.h>
-#endif
-
 #define DEBUG 0
 #include "contiki/ip/uip-debug.h"
 

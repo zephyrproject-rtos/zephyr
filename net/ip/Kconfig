@@ -247,16 +247,23 @@ default n
 help
        The 802.15.4 layer can either support loopback within
        or loopback with uart but not both at the same time.
+config	NETWORKING_WITH_15_4_TI_CC2520
+	bool
+	prompt "TI CC2520"
+	select CONFIG_NETWORKING_WITH_15_4
+	help
+	  Enable Texas Instruments CC2520 802.15.4 radio driver.
+
 config	NETWORKING_WITH_15_4_LOOPBACK
 	bool
-	prompt "Enable 802.15.4 loopback radio driver"
+	prompt "Loopback"
 	help
 	  Enable 802.15.4 loopback radio driver that receives
 	  the 802.15.4 frame and put it back 802.15.4 Rx Fifo.
 
 config NETWORKING_WITH_15_4_LOOPBACK_UART
        bool
-       prompt "Enable 802.15.4 loopback radio uart driver"
+       prompt "Loopback with UART"
        select UART_PIPE
        help
          Enable 802.15.4 loopback radio driver that sends

@@ -21,6 +21,8 @@ menu "Device Drivers"
 
 source "drivers/bluetooth/Kconfig"
 
+source "drivers/802.15.4/Kconfig"
+
 source "drivers/console/Kconfig"
 
 source "drivers/ethernet/Kconfig"

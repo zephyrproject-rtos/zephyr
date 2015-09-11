@@ -790,6 +790,10 @@ static int network_initialization(void)
 	handler_802154_join(CONFIG_NETWORKING_WITH_15_4_PAN_ID, 1);
 #endif
 
+#ifdef CONFIG_NETWORKING_WITH_15_4_PAN_ID
+	NETSTACK_RADIO.set_value(RADIO_PARAM_PAN_ID, IEEE802154_PANID);
+#endif
+
 	return 0;
 }
 
