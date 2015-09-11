@@ -82,7 +82,7 @@ typedef unsigned int uip_stats_t;
 #define UIP_CONF_IPV6_MULTICAST 1
 #endif
 
-#ifdef NETWORKING_IPV6_NO_ND
+#ifdef CONFIG_NETWORKING_IPV6_NO_ND
 /* Disabling ND will simplify the IPv6 address assignment.
  * This should only be done in testing phase.
  */
