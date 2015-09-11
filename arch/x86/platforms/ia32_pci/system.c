@@ -123,6 +123,18 @@ static inline void dw_i2c0_irq_set(void)
 	} while ((0))
 #endif /* CONFIG_DW_I2C0 */
 
+#ifdef CONFIG_GPIO_DW_0
+static inline void gpio_irq_set(void) {
+	_ioapic_irq_set(CONFIG_GPIO_DW_0_IRQ,
+			CONFIG_GPIO_DW_0_IRQ + INT_VEC_IRQ0,
+			GPIO_DW_0_IRQ_IOAPIC_FLAGS);
+}
+#else
+#define gpio_irq_set()		\
+	do { /* nothing */	\
+	} while ((0))
+#endif /* CONFIG_GPIO_DW_0 */
+
 /**
  *
  * @brief Perform basic hardware initialization
@@ -143,6 +155,7 @@ static int ia32_pci_init(struct device *arg)
 	ioapic_init();       /* NOP if not needed */
 	hpet_irq_set();      /* NOP if not needed */
 	console_irq_set();   /* NOP if not needed */
+	gpio_irq_set();      /* NOP if not needed */
 
 	dw_i2c0_irq_set();   /* NOP if not needed */
 

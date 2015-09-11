@@ -102,6 +102,18 @@ extern struct device * const uart_devs[];
 
 #endif /* CONFIG_UART_CONSOLE */
 
+#ifdef CONFIG_GPIO_DW_0
+#if defined(CONFIG_GPIO_DW_0_FALLING_EDGE)
+#define GPIO_DW_0_IRQ_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+#elif defined(CONFIG_GPIO_DW_0_RISING_EDGE)
+#define GPIO_DW_0_IRQ_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+#elif defined(CONFIG_GPIO_DW_0_LEVEL_HIGH)
+#define GPIO_DW_0_IRQ_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+#elif defined(CONFIG_GPIO_DW_0_LEVEL_LOW)
+#define GPIO_DW_0_IRQ_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#endif
+#endif /* GPIO_DW_0 */
+
 /* Bluetooth UART definitions */
 #if defined(CONFIG_BLUETOOTH_UART)
 
