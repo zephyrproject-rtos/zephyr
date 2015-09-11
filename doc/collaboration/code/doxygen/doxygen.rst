@@ -51,9 +51,11 @@ the documentation:
 .. toctree::
    :maxdepth: 2
 
+
    files.rst
    functions.rst
    variables.rst
    defines.rst
    structs.rst
    typedefs.rst
+   groups.rst
