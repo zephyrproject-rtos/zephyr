@@ -37,7 +37,7 @@ Reset handler that prepares the system for running C code.
 
 #define _ASMLANGUAGE
 
-#include <board.h>
+// #include <board.h>
 #include <toolchain.h>
 #include <sections.h>
 #include <arch/cpu.h>

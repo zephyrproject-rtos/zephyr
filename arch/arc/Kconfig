@@ -46,7 +46,7 @@ prompt "Platform Selection"
 default PLATFORM_GENERIC_ARC
 
 config PLATFORM_GENERIC_ARC
-	bool "Minimum configuration for generic arc "
+	bool "Minimum configuration for generic arc"
 
 endchoice
 
@@ -245,7 +245,7 @@ config  ARCH_HAS_NANO_FIBER_ABORT
 endmenu
 
 
-source "arch/arc/platforms/generic/Kconfig"
+source "arch/arc/platforms/generic_arc/Kconfig"
 
 source "drivers/Kconfig"
 

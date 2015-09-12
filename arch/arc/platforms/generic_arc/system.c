@@ -33,7 +33,7 @@
 /*
 DESCRIPTION
 This module provides routines to initialize and support board-level hardware
-for the generic arc BSP.
+for the generic arc platform.
 */
 
 #include <nanokernel.h>
@@ -47,36 +47,6 @@ for the generic arc BSP.
 #endif
 
 
-#if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
-#include <console/uart_console.h>
-
-/**
- *
- * @brief initialize target-only console
- *
- * Only used for debugging, no host driver involved.
- *
- * RETURNS: N/A
- *
- */
-static void consoleInit(void)
-{
-	struct uart_init_info info = {
-		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
-		.options = 0,
-		.sys_clk_freq = CONFIG_UART_CONSOLE_CLK_FREQ,
-		.regs = CONFIG_UART_CONSOLE_REGS,
-		.irq = CONFIG_UART_CONSOLE_IRQ,
-		.int_pri = CONFIG_UART_CONSOLE_INT_PRI,
-	};
-
-	uart_init(CONFIG_UART_CONSOLE_INDEX, &info);
-	uartConsoleInit();
-}
-
-#else
-#define consoleInit() do { /* do nothing */ } while ((0))
-#endif /* defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE) */
 
 /**
  *
@@ -88,13 +58,12 @@ static void consoleInit(void)
  *
  * RETURNS: N/A
  */
-static int generic_init(struct device *arg)
+static int generic_arc_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
 	_arc_v2_irq_unit_init();
-	consoleInit(); /* NOP if not needed */
 	return 0;
 }
-DECLARE_DEVICE_INIT_CONFIG(generic_0, "", generic_init, NULL);
-pure_early_init(generic_0, NULL);
+DECLARE_DEVICE_INIT_CONFIG(generic_arc_0, "", generic_arc_init, NULL);
+pure_early_init(generic_arc_0, NULL);

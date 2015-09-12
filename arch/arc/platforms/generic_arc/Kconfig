@@ -3,7 +3,7 @@
 
 config PLATFORM
 	string
-	default generic
+	default generic_arc
 	help
 	 This option holds the directory name used by the build system
 	 to locate the correct linker file.
