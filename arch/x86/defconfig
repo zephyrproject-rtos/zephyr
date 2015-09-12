@@ -63,13 +63,18 @@ CONFIG_TIMESLICE_PRIORITY=0
 # General Setup
 #
 # CONFIG_EXPERIMENTAL is not set
-CONFIG_CROSS_COMPILE=""
+
+#
+# Cryptography
+#
+# CONFIG_TINYCRYPT is not set
 
 #
 # Compile and Link Features
 #
 CONFIG_KERNEL_BIN_NAME="microkernel"
-# CONFIG_DEBUG is not set
+CONFIG_CROSS_COMPILE=""
+# CONFIG_GDB_INFO is not set
 CONFIG_COMPILER_OPT=""
 CONFIG_TOOLCHAIN_VARIANT=""
 CONFIG_MINIMAL_LIBC=y
@@ -78,6 +83,8 @@ CONFIG_MINIMAL_LIBC=y
 #
 # Debugging Options
 #
+# CONFIG_DEBUG is not set
+# CONFIG_EARLY_CONSOLE is not set
 # CONFIG_ASSERT is not set
 
 #
@@ -120,6 +127,7 @@ CONFIG_CACHE_LINE_SIZE=0
 # x86 Core Options
 #
 # CONFIG_NO_ISRS is not set
+# CONFIG_NO_NESTED_INTERRUPTS is not set
 
 #
 # Memory Layout Options
@@ -129,6 +137,11 @@ CONFIG_NUM_GDT_SPARE_ENTRIES=0
 CONFIG_PHYS_LOAD_ADDR=0x00100000
 CONFIG_PLATFORM="ia32_pci"
 CONFIG_UART_CONSOLE_INDEX=1
+
+#
+# I2C drivers
+#
+# CONFIG_DW_I2C0 is not set
 
 #
 # Device Drivers
@@ -142,6 +155,7 @@ CONFIG_UART_CONSOLE_INDEX=1
 # Interrupt Controllers
 #
 CONFIG_LOAPIC=y
+# CONFIG_LOAPIC_DEBUG is not set
 CONFIG_LOAPIC_BASE_ADDRESS=0xFEE00000
 CONFIG_IOAPIC=y
 # CONFIG_IOAPIC_DEBUG is not set
@@ -175,6 +189,12 @@ CONFIG_PCI=y
 CONFIG_PCI_ENUMERATION=y
 # CONFIG_PCI_DEBUG is not set
 # CONFIG_SPI is not set
+
+#
+# I2C
+#
+# CONFIG_I2C is not set
+# CONFIG_DW_I2C is not set
 
 #
 # Networking

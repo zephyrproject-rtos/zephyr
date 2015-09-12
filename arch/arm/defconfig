@@ -57,13 +57,18 @@ CONFIG_TIMESLICE_PRIORITY=0
 # General Setup
 #
 # CONFIG_EXPERIMENTAL is not set
-CONFIG_CROSS_COMPILE=""
+
+#
+# Cryptography
+#
+# CONFIG_TINYCRYPT is not set
 
 #
 # Compile and Link Features
 #
 CONFIG_KERNEL_BIN_NAME="microkernel"
-# CONFIG_DEBUG is not set
+CONFIG_CROSS_COMPILE=""
+# CONFIG_GDB_INFO is not set
 CONFIG_COMPILER_OPT=""
 CONFIG_TOOLCHAIN_VARIANT=""
 CONFIG_MINIMAL_LIBC=y
@@ -72,6 +77,8 @@ CONFIG_MINIMAL_LIBC=y
 #
 # Debugging Options
 #
+# CONFIG_DEBUG is not set
+# CONFIG_EARLY_CONSOLE is not set
 # CONFIG_ASSERT is not set
 
 #
@@ -141,6 +148,12 @@ CONFIG_CORTEX_M_SYSTICK=y
 # CONFIG_RANDOM_GENERATOR is not set
 # CONFIG_TEST_RANDOM_GENERATOR is not set
 # CONFIG_SPI is not set
+
+#
+# I2C
+#
+# CONFIG_I2C is not set
+# CONFIG_DW_I2C is not set
 
 #
 # Networking
