@@ -37,6 +37,10 @@
 #ifndef __NANOKERNEL_H__
 #define __NANOKERNEL_H__
 
+/**
+ * @defgroup nanokernel_services Nanokernel Services
+ */
+
 /* fundamental include files */
 
 #include <stddef.h>
@@ -54,6 +58,7 @@ extern "C" {
 #endif
 
 /*
+ * @cond internal
  * nanokernel private APIs that are exposed via the public API
  *
  * THESE ITEMS SHOULD NOT BE REFERENCED EXCEPT BY THE KERNEL ITSELF!
@@ -71,6 +76,9 @@ struct _nano_timeout {
 	struct _nano_queue *wait_q;
 	int32_t delta_ticks_from_prev;
 };
+/**
+ * @endcond
+ */
 
 struct tcs;
 
@@ -114,10 +122,14 @@ extern nano_thread_id_t sys_thread_self_get(void);
  * @return nano_context_type_t of the currently executing thread.
  */
 extern nano_context_type_t sys_execution_context_type_get(void);
+
 extern int _is_thread_essential(nano_thread_id_t pCtx);
 
-/*
- * fiber APIs
+/**
+ * @brief Nanokernel Fibers
+ * @defgroup nanokernel_fiber Nanokernel Fibers
+ * @ingroup nanokernel_services
+ * @{
  */
 /* execution context-independent method (when context is not known) */
 
@@ -253,6 +265,14 @@ extern void fiber_delayed_start_cancel(void *handle);
 extern void fiber_fiber_delayed_start_cancel(void *handle);
 #endif
 
+/**
+ * @}
+ * @brief Nanokernel Task
+ * @defgroup nanokernel_task Nanokernel Task
+ * @ingroup nanokernel_services
+ * @{
+ */
+
 /* methods for tasks */
 
 /**
@@ -283,8 +303,13 @@ extern void *task_fiber_delayed_start(char *stack,
 extern void task_fiber_delayed_start_cancel(void *handle);
 #endif
 
-/* FIFO APIs */
-
+/**
+ * @}
+ * @brief Nanokernel FIFOs
+ * @defgroup nanokernel_fifo Nanokernel FIFO
+ * @ingroup nanokernel_services
+ * @{
+ */
 struct nano_fifo {
 	union {
 		struct _nano_queue wait_q;
@@ -368,7 +393,9 @@ extern void *nano_fifo_get(struct nano_fifo *fifo);
  */
 extern void *nano_fifo_get_wait(struct nano_fifo *fifo);
 
-/* methods for ISRs */
+/*
+ * methods for ISRs
+ */
 
 /**
  *
@@ -550,6 +577,13 @@ extern void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
 
 /* LIFO APIs */
 
+/**
+ * @}
+ * @brief Nanokernel LIFOs
+ * @defgroup nanokernel_lifo Nanokernel LIFOs
+ * @ingroup nanokernel_services
+ * @{
+ */
 struct nano_lifo {
 	struct _nano_queue wait_q;
 	void *list;
@@ -753,7 +787,13 @@ extern void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
 
 #endif
 
-/* semaphore APIs */
+/**
+ * @}
+ * @brief Nanokernel Semaphores
+ * @defgroup nanokernel_semaphores Nanokernel Semaphores
+ * @ingroup nanokernel_services
+ * @{
+ */
 
 struct nano_sem {
 	struct _nano_queue wait_q;
@@ -977,8 +1017,13 @@ extern int nano_task_sem_take_wait_timeout(struct nano_sem *sem,
 		int32_t timeout);
 #endif
 
-/* stack APIs */
-
+/**
+ * @}
+ * @brief Nanokernel Stacks
+ * @defgroup nanokernel_stack Nanokernel Stacks
+ * @ingroup nanokernel_services
+ * @{
+ */
 struct nano_stack {
 	nano_thread_id_t fiber;
 	uint32_t *base;
@@ -1144,7 +1189,13 @@ extern void sys_thread_custom_data_set(void *value);
 extern void *sys_thread_custom_data_get(void);
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
 
-/* nanokernel timers */
+/**
+ * @}
+ * @brief Nanokernel Timers
+ * @defgroup nanokernel_timer Nanokernel Timers
+ * @ingroup nanokernel_services
+ * @{
+ */
 
 struct nano_timer {
 	struct nano_timer *link;
@@ -1327,6 +1378,12 @@ extern int64_t nano_tick_delta(int64_t *reftime);
  * @return 32-bit tick count since reference time; undefined for first invocation
  */
 extern uint32_t nano_tick_delta_32(int64_t *reftime);
+
+
+/**
+ * @}
+ * @} nanokernel services
+ */
 
 #ifdef __cplusplus
 }
