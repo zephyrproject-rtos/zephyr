@@ -46,9 +46,16 @@ extern "C" {
  * @ingroup microkernel_services
  * @{
  */
-
+/**
+ * @cond internal
+ */
 
 extern int _task_mem_pool_alloc(struct k_block *B, kmemory_pool_t pid, int size, int32_t time);
+
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Return memory pool block request

@@ -33,6 +33,14 @@
 #ifndef TASK_IRQ_H
 #define TASK_IRQ_H
 
+
+/**
+ * @brief Microkernel Interrupt Services
+ * @defgroup microkernel_irq Microkernel Interrupt Services
+ * @ingroup microkernel_services
+ * @{
+ */
+
 #include <microkernel/base_api.h>
 
 #define INVALID_VECTOR 0xFFFFFFFF
@@ -56,7 +64,14 @@
 extern uint32_t task_irq_alloc(kirq_t irq_obj,
 				      uint32_t irq,
 				      uint32_t priority);
+/**
+ * @cond internal
+ */
 extern int _task_irq_test(kirq_t irq_ob, int32_t time);
+
+/**
+ * @endcond
+ */
 
 /**
  *
@@ -119,4 +134,7 @@ extern void task_irq_free(kirq_t irq_obj);
 #define task_irq_test_wait_timeout(irq_obj, time) _task_irq_test(irq_obj, time)
 #endif
 
+/**
+ * @}
+ */
 #endif /* TASK_IRQ_H */

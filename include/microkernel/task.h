@@ -32,6 +32,12 @@
 
 #ifndef TASK_H
 #define TASK_H
+/**
+ * @brief Microkernel Tasks
+ * @defgroup microkernel_task Microkernel Tasks
+ * @ingroup microkernel_services
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,10 +56,36 @@ extern "C" {
 #define USR_GROUP 2 /* TASKGROUP SYS */
 #define FPU_GROUP 4 /* TASKGROUP FPU */
 
+/**
+ * @cond internal
+ */
+
+/**
+ * @brief Initialize a struct k_task given parameters.
+ *
+ * @param ident Numeric identifier of this task object.
+ * @param priority Priority of task.
+ * @param state State of task.
+ * @param groups Groups this task belong to.
+ * @param fn_start Entry function.
+ * @param workspace Pointer to workspace (aka, stack).
+ * @param worksize Size of workspace.
+ * @param fn_abort Abort function.
+ */
+#define __K_TASK_INITIALIZER(ident, priority, state, groups, \
+			     fn_start, workspace, worksize, fn_abort) \
+	{ \
+	  NULL, NULL, priority, ident, state, ((groups) ^ SYS), \
+	  fn_start, workspace, worksize, fn_abort, NULL, \
+	}
 extern struct k_task _k_task_list[];
 
 extern void _task_ioctl(ktask_t, int);
 extern void _task_group_ioctl(ktask_group_t, int);
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Yield the CPU to another task
@@ -262,24 +294,6 @@ extern void task_group_leave(uint32_t groups);
  */
 #define isr_task_group_mask_get() task_group_mask_get()
 
-/**
- * @brief Initialize a struct k_task given parameters.
- *
- * @param ident Numeric identifier of this task object.
- * @param priority Priority of task.
- * @param state State of task.
- * @param groups Groups this task belong to.
- * @param fn_start Entry function.
- * @param workspace Pointer to workspace (aka, stack).
- * @param worksize Size of workspace.
- * @param fn_abort Abort function.
- */
-#define __K_TASK_INITIALIZER(ident, priority, state, groups, \
-			     fn_start, workspace, worksize, fn_abort) \
-	{ \
-	  NULL, NULL, priority, ident, state, ((groups) ^ SYS), \
-	  fn_start, workspace, worksize, fn_abort, NULL, \
-	}
 
 /**
  * @brief Define a private microkernel task.
@@ -307,5 +321,7 @@ extern void task_group_leave(uint32_t groups);
 #ifdef __cplusplus
 }
 #endif
-
+/**
+ * @}
+ */
 #endif /* TASK_H */

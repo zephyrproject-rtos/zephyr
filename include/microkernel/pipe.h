@@ -38,20 +38,41 @@ extern "C" {
 #endif
 
 /**
- * @brief Pipes
- * @defgroup microkernel_pipes Microkernel Pipes
+ * @brief Microkernel Pipes
+ * @defgroup microkernel_pipe Microkernel Pipes
  * @ingroup microkernel_services
  * @{
  */
 
 #include <sections.h>
 
+/**
+ * @cond internal
+ */
 extern int _task_pipe_put(kpipe_t id,
 			void *pBuffer,
 			int iNbrBytesToWrite,
 			int *piNbrBytesWritten,
 			K_PIPE_OPTION Option,
 			int32_t TimeOut);
+
+/**
+ * @internal
+ * @brief Initialize a pipe struct.
+ *
+ * @param size Size of pipe buffer.
+ * @param buffer Pointer to the buffer.
+ * @endinternal
+ */
+#define __K_PIPE_INITIALIZER(size, buffer) \
+	{ \
+	  .buffer_size = size, \
+	  .Buffer = buffer, \
+	}
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Pipe write request
@@ -186,19 +207,6 @@ extern int _task_pipe_block_put(kpipe_t id,
 #define task_pipe_block_put(id, block, size, sema) \
 			_task_pipe_block_put(id, block, size, sema)
 
-/**
- * @internal
- * @brief Initialize a pipe struct.
- *
- * @param size Size of pipe buffer.
- * @param buffer Pointer to the buffer.
- * @endinternal
- */
-#define __K_PIPE_INITIALIZER(size, buffer) \
-	{ \
-	  .buffer_size = size, \
-	  .Buffer = buffer, \
-	}
 
 /**
  * @brief Define a private microkernel pipe.

@@ -36,6 +36,7 @@
 /**
  * @brief Microkernel Mutexes
  * @defgroup microkernel_mutex Microkernel Mutexes
+ * @ingroup microkernel_services
  * @{
  */
 
@@ -50,6 +51,9 @@ extern "C" {
 
 #include  <microkernel/base_api.h>
 
+/**
+ * @cond internal
+ */
 /**
  * @brief This routine is the entry to the mutex lock kernel service.
  *
@@ -68,6 +72,24 @@ extern int _task_mutex_lock(kmutex_t mutex, int32_t time);
  * @return N/A
  */
 extern void _task_mutex_unlock(kmutex_t mutex);
+
+/**
+ * @brief Initializer for mutexes
+ */
+#define __MUTEX_DEFAULT \
+	{ \
+	  .owner = ANYTASK, \
+	  .current_owner_priority = 64, \
+	  .original_owner_priority = 64, \
+	  .level = 0, \
+	  .waiters = NULL, \
+	  .count = 0, \
+	  .num_conflicts = 0, \
+	}
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Try to lock mutex.
@@ -118,20 +140,6 @@ extern void _task_mutex_unlock(kmutex_t mutex);
  * @return N/A
  */
 #define task_mutex_unlock(m) _task_mutex_unlock(m)
-
-/**
- * @brief Initializer for mutexes
- */
-#define __MUTEX_DEFAULT \
-	{ \
-	  .owner = ANYTASK, \
-	  .current_owner_priority = 64, \
-	  .original_owner_priority = 64, \
-	  .level = 0, \
-	  .waiters = NULL, \
-	  .count = 0, \
-	  .num_conflicts = 0, \
-	}
 
 /**
  * @brief Define a private mutex

@@ -32,6 +32,13 @@
  * @brief Memory map kernel services.
  */
 
+/**
+ * @brief Microkernel Memory Maps
+ * @defgroup microkernel_memorymap Microkernel Memomry Maps
+ * @ingroup microkernel_services
+ * @{
+ */
+
 #ifndef _MEMORY_MAP_H
 #define _MEMORY_MAP_H
 
@@ -41,8 +48,28 @@ extern "C" {
 
 #include <sections.h>
 
+/**
+ * @cond internal
+ */
 extern int _task_mem_map_alloc(kmemory_map_t mmap, void **mptr, int32_t time);
 extern void _task_mem_map_free(kmemory_map_t mmap, void **mptr);
+
+/**
+ * @brief Initialize a memory map struct.
+ *
+ * @param blocks Number of blocks.
+ * @param block_size Block Size (in bytes).
+ */
+#define __K_MEM_MAP_INITIALIZER(blocks, block_size, buffer) \
+	{ \
+	  .Nelms = blocks, \
+	  .element_size = block_size, \
+	  .base = buffer, \
+	}
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Read the number of used blocks in a memory map
@@ -113,19 +140,6 @@ extern int task_mem_map_used_get(kmemory_map_t map);
 #endif
 
 /**
- * @brief Initialize a memory map struct.
- *
- * @param blocks Number of blocks.
- * @param block_size Block Size (in bytes).
- */
-#define __K_MEM_MAP_INITIALIZER(blocks, block_size, buffer) \
-	{ \
-	  .Nelms = blocks, \
-	  .element_size = block_size, \
-	  .base = buffer, \
-	}
-
-/**
  * @brief Define a private microkernel memory map.
  *
  * @param name Name of the memory map.
@@ -146,3 +160,6 @@ extern int task_mem_map_used_get(kmemory_map_t map);
 #endif
 
 #endif /* _MEMORY_MAP_H */
+/**
+ * @}
+ */

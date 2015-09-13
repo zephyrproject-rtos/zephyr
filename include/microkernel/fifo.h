@@ -53,9 +53,33 @@
 extern "C" {
 #endif
 
+/**
+ * @cond internal
+ */
 extern int _task_fifo_put(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_get(kfifo_t queue, void *data, int32_t time);
 extern int _task_fifo_ioctl(kfifo_t queue, int op);
+
+/**
+ * @brief Initializer for microkernel FIFO
+ */
+#define __K_FIFO_DEFAULT(depth, width, buffer) \
+	{ \
+	  .Nelms = depth,\
+	  .element_size = width,\
+	  .base = buffer,\
+	  .end_point = (buffer + (depth * width)),\
+	  .enqueue_point = buffer,\
+	  .dequeue_point = buffer,\
+	  .waiters = NULL,\
+	  .num_used = 0,\
+	  .high_watermark = 0,\
+	  .count = 0,\
+	}
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief FIFO enqueue request
@@ -163,22 +187,6 @@ extern int _task_fifo_ioctl(kfifo_t queue, int op);
  */
 #define task_fifo_purge(q) _task_fifo_ioctl(q, 1)
 
-/**
- * @brief Initializer for microkernel FIFO
- */
-#define __K_FIFO_DEFAULT(depth, width, buffer) \
-	{ \
-	  .Nelms = depth,\
-	  .element_size = width,\
-	  .base = buffer,\
-	  .end_point = (buffer + (depth * width)),\
-	  .enqueue_point = buffer,\
-	  .dequeue_point = buffer,\
-	  .waiters = NULL,\
-	  .num_used = 0,\
-	  .high_watermark = 0,\
-	  .count = 0,\
-	}
 
 /**
  * @brief Define a private microkernel FIFO

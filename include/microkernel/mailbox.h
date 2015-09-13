@@ -51,6 +51,9 @@
 extern "C" {
 #endif
 
+/**
+ * @cond internal
+ */
 extern int _task_mbox_put(kmbox_t mbox,
 		                  kpriority_t prio,
 		                  struct k_msg *M,
@@ -69,6 +72,18 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
 				 struct k_block *rxblock,
 				 kmemory_pool_t pid,
 				 int32_t time);
+/**
+ * @brief Initializer for microkernel mailbox
+ */
+#define __K_MAILBOX_DEFAULT \
+	{ \
+	  .writers = NULL, \
+	  .readers = NULL, \
+	  .count = 0, \
+	}
+/**
+ * @endcond
+ */
 
 /**
  * @brief Send a message to a mailbox
@@ -221,15 +236,6 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
 		_task_mbox_data_block_get(m, b, p, t)
 #endif
 
-/**
- * @brief Initializer for microkernel mailbox
- */
-#define __K_MAILBOX_DEFAULT \
-	{ \
-	  .writers = NULL, \
-	  .readers = NULL, \
-	  .count = 0, \
-	}
 
 /**
  * @brief Define a private microkernel mailbox

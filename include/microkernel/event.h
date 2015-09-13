@@ -52,6 +52,24 @@ extern "C" {
 /* well-known events */
 
 #define TICK_EVENT	0
+/**
+ * @cond internal
+ */
+/**
+ *
+ * @brief Test for event request
+ *
+ * This routine tests an event to see if it has been signaled.
+ *
+ * @param event Event for which to test.
+ * @param time Maximum number of ticks to wait for event.
+ *
+ * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
+ */
+extern int _task_event_recv(kevent_t event, int32_t time);
+/**
+ * @endcond
+ */
 
 /**
  *
@@ -111,19 +129,6 @@ extern int task_event_handler_set(kevent_t event, kevent_handler_t handler);
  * @return RC_FAIL if event number is invalid, else RC_OK
  */
 extern int task_event_send(kevent_t event);
-
-/**
- *
- * @brief Test for event request
- *
- * This routine tests an event to see if it has been signaled.
- *
- * @param event Event for which to test.
- * @param time Maximum number of ticks to wait for event.
- *
- * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
- */
-extern int _task_event_recv(kevent_t event, int32_t time);
 
 /**
  *

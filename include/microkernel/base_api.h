@@ -119,6 +119,9 @@ struct k_task {
 	struct k_args *args;
 };
 
+/**
+ * @cond internal
+ */
 struct _k_mbox_struct {
 	struct k_args *writers;
 	struct k_args *readers;
@@ -213,12 +216,6 @@ struct _k_pipe_struct {
 	int count;
 };
 
-typedef enum {
-	_0_TO_N = 0x00000001,
-	_1_TO_N = 0x00000002,
-	_ALL_N = 0x00000004
-} K_PIPE_OPTION;
-
 /* Memory map related structure */
 
 struct _k_mem_map_struct {
@@ -231,6 +228,17 @@ struct _k_mem_map_struct {
 	int high_watermark;
 	int count;
 };
+
+/**
+ * @endconf
+ */
+
+typedef enum {
+	_0_TO_N = 0x00000001,
+	_1_TO_N = 0x00000002,
+	_ALL_N = 0x00000004
+} K_PIPE_OPTION;
+
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,13 @@
 #ifndef TICKS_H
 #define TICKS_H
 
+/**
+ * @brief Microkernel Timers
+ * @defgroup microkernel_timer Microkernel Timers
+ * @ingroup microkernel_services
+ * @{
+ */
+
 #include <nanokernel.h>
 #include <sys_clock.h>
 
@@ -266,5 +273,7 @@ extern void sys_workload_time_slice_set(int32_t t);
 #ifdef __cplusplus
 }
 #endif
-
+/**
+ * @}
+ */
 #endif /* TICKS_H */

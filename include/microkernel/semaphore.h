@@ -37,6 +37,13 @@
 #ifndef _SEMAPHORE_H
 #define _SEMAPHORE_H
 
+/**
+ * @brief Microkernel Semaphores
+ * @defgroup microkernel_semaphore Microkernel Semaphores
+ * @ingroup microkernel_services
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -144,6 +151,11 @@ extern void task_sem_reset(ksem_t sema);
  */
 extern void task_sem_group_reset(ksemg_t semagroup);
 
+
+
+/**
+ * @cond internal
+ */
 /**
  *
  * @brief Test a semaphore
@@ -174,6 +186,20 @@ extern int _task_sem_take(ksem_t sema, int32_t time);
  * @return N/A
  */
 extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
+
+/**
+ * @brief Initializer for microkernel semaphores
+ */
+#define __K_SEMAPHORE_DEFAULT \
+	{ \
+	  .waiters = NULL, \
+	  .level = 0, \
+	  .count = 0, \
+	}
+
+/**
+ * @endcond
+ */
 
 /**
  *
@@ -252,15 +278,6 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 #define task_sem_group_take_wait_timeout(g, t) _task_sem_group_take(g, t)
 #endif
 
-/**
- * @brief Initializer for microkernel semaphores
- */
-#define __K_SEMAPHORE_DEFAULT \
-	{ \
-	  .waiters = NULL, \
-	  .level = 0, \
-	  .count = 0, \
-	}
 
 /**
  * @brief Define a private microkernel semaphore
@@ -278,4 +295,7 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
 }
 #endif
 
+/**
+ * @}
+ */
 #endif /* _SEMAPHORE_H */
