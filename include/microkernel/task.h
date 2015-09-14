@@ -109,8 +109,10 @@ extern void task_yield(void);
  *
  * The priority should be specified in the range 0 to 62. 0 is the highest
  * priority.
+ *
  * @param task Task whose priority is to be set
  * @param prio New priority
+ *
  * @return N/A
  */
 extern void task_priority_set(ktask_t task, kpriority_t prio);
@@ -127,7 +129,8 @@ extern void task_priority_set(ktask_t task, kpriority_t prio);
  * The routine is executed when the task is started
  *
  * @param task Task to operate on.
- * @pram func Entry point
+ * @param func Entry point
+ *
  * @return N/A
  */
 extern void task_entry_set(ktask_t task, void (*func)(void));
@@ -145,7 +148,9 @@ extern void task_entry_set(ktask_t task, void (*func)(void));
  *
  * To remove an abort handler, set the parameter to NULL as below:
  *      task_abort_handler_set (NULL)
+ *
  * @param func Abort handler
+ *
  * @return N/A
  */
 extern void task_abort_handler_set(void (*func)(void));
@@ -204,21 +209,27 @@ extern kpriority_t task_priority_get();
 
 /**
  * @brief Abort a task
+ *
  * @param t Task to abort
+ *
  * @return N/A
  */
 #define task_abort(t) _task_ioctl(t, TASK_ABORT)
 
 /**
  * @brief Suspend a task
+ *
  * @param t Task to suspend
+ *
  * @return N/A
  */
 #define task_suspend(t) _task_ioctl(t, TASK_SUSPEND)
 
 /**
  * @brief Resume a task
+ *
  * @param t Task to resume
+ *
  * @return N/A
  */
 #define task_resume(t) _task_ioctl(t, TASK_RESUME)
@@ -234,41 +245,52 @@ extern uint32_t task_group_mask_get();
  * @brief Add task to task group(s)
  *
  * @param groups Task Groups
+ *
  * @return N/A
  */
 extern void task_group_join(uint32_t groups);
 
 /**
  * @brief Remove task from task group(s)
+ *
  * @param groups Task Groups
+ *
  * @return N/A
  */
 extern void task_group_leave(uint32_t groups);
 
 /**
  * @brief Start a task group
+ *
  * @param g Task group to start
+ *
  * @return N/A
  */
 #define task_group_start(g) _task_group_ioctl(g, TASK_GROUP_START)
 
 /**
  * @brief Abort a task group
+ *
  * @param g Task group to abort
+ *
  * @return N/A
  */
 #define task_group_abort(g) _task_group_ioctl(g, TASK_GROUP_ABORT)
 
 /**
  * @brief Suspend a task group
+ *
  * @param g Task group to suspend
+ *
  * @return N/A
  */
 #define task_group_suspend(g) _task_group_ioctl(g, TASK_GROUP_SUSPEND)
 
 /**
  * @brief Resume a task group
+ *
  * @param g Task group to resume
+ *
  * @return N/A
  */
 #define task_group_resume(g) _task_group_ioctl(g, TASK_GROUP_RESUME)
