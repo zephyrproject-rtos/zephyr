@@ -431,14 +431,14 @@ static void cmd_advertise(int argc, char *argv[])
 			return;
 		}
 
-		for (i = 0; i < sizeof(adv_t) / sizeof(adv_t[0]); i++) {
+		for (i = 0; i < ARRAY_SIZE(adv_t); i++) {
 			if (!strcmp(adv_type_str, adv_t[i].str)) {
 				adv_type = adv_t[i].type;
 				break;
 			}
 		}
 
-		if (strcmp(adv_type_str, adv_t[i].str)) {
+		if (i == ARRAY_SIZE(adv_t)) {
 			goto fail;
 		}
 	} else {
