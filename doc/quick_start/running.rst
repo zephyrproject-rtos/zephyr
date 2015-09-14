@@ -146,7 +146,7 @@ In Ubuntu, type:
 
 .. code-block:: bash
 
-    $ sudo apt-get install gnu-efi-i386 bison libopts25 \
+    $ sudo apt-get install gnu-efi:i386 bison libopts25 \
     libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
     libfont-freetype-perl automake autotools-dev libfreetype6-dev \
     texinfo \
@@ -159,32 +159,14 @@ In Fedora, type:
    libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
    libfont-freetype-perl automake autotools-dev libfreetype6-dev texinfo
 
-2. Clone the GRUB repository, type:
+2. Clone and build the GRUB repository using the script in Zephyr tree, type:
 
 .. code-block:: bash
 
-   $ cd ~
+   $ cd $ZEPHYR_BASE
+   $ ./scripts/build_grub.sh
 
-   $ git clone http://git.savannah.gnu.org/r/grub.git
-
-3. Build the GRUB code, type:
-
-.. code-block:: bash
-
-    $ cd grub
-
-    $ ./autogen.sh CFLAGS=”-march=i586 -m32” ./configure --with-platform=efi\
-    --target=i386 --program-prefix=""
-
-    $ make
-
-    $ cd grub-core
-
-    $ ../grub-mkimage -O i386-efi -d . -o grub.efi -p "" part_gpt part_msdos\
-     fat ext2 normal chain boot configfile linux multiboot help serial \
-     terminal elf efi_gop efi_uga terminfo
-
-4. Look for the binary at :file:`~/grub/grub-core/grub.efi`.
+4. Look for the binary at :file:`$ZEPHYR_BASE/scripts/grub/bin/grub.efi`.
 
 Troubleshoot
 ============
