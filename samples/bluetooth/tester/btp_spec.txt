@@ -400,4 +400,151 @@ Events:
 
 GATT Service (ID 2)
 ===================
-...
+
+Commands and responses:
+
+	Opcode 0x00 - Error response
+
+	Opcode 0x01 - Read Supported Commands command/response
+
+		Controller Index:	<non-controller>
+		Command parameters:	<none>
+		Response parameters:	<supported commands> (variable)
+
+		Each bit in response is a flag indicating if command with
+		opcode matching bit number is supported. Bit set to 1 means
+		that command is supported. Bit 0 is reserved and shall always
+		be set to 0. If specific bit is not present in response (less
+		than required bytes received) it shall be assumed that command
+		is not supported.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x02 - Add Service
+
+		Controller Index:	<controller id>
+		Command parameters:	Type (1 octet)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+		Response parameters:	Service_ID (2 octets)
+
+		Valid Type parameter values:
+					0x00 = Primary
+					0x01 = Secondary
+
+		Valid UUID_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This command is used to add new service to GATT Server.
+		Service ID of service declaration is returned in the response.
+		Attribute database shall be initiated sequentially.
+		After this issuing this command tester shall add characteristics
+		or included services this service contains.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x03 - Add Characteristic
+
+		Controller Index:	<controller id>
+		Command parameters:	Service_ID (2 octets)
+					Properties (1 octet)
+					Permissions (1 octet)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+		Response parameters:	Characteristic_ID (2 octets)
+
+		Possible values for the Properties parameter are a bit-wise
+		of the following bits:
+
+			0	Broadcast
+			1	Read
+			2	Write Without Response
+			3	Write
+			4	Notify
+			5	Indicate
+			6	Authenticated Signed Writes
+			7	Extended Properties
+
+		Possible values for the Permissions parameter are a bit-wise
+		of the following bits:
+
+			0	Read
+			1	Write
+			2	Read with Encryption
+			3	Write with Encryption
+			4	Read with Authentication
+			5	Write with Authentication
+			6	Authorization
+
+		This command is used to add new characteristic to GATT Server.
+		Characteristic ID of characteristic declaration is returned in
+		the response.
+		Attribute's database shall be initiated sequentially.
+		After issuing this command tester can add descriptors to this
+		characteristic.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x04 - Add Descriptor
+
+		Controller Index:	<controller id>
+		Command parameters:	Characteristic_ID (2 octets)
+					Permissions (1 octet)
+					UUID_Length (1 octet)
+					UUID (2 or 16 octets)
+		Response parameters:	Descriptor_ID (2 octets)
+
+		This command is used to add new characteristic descriptor
+		to GATT Server. The command shall be used right after
+		Add Characteristic or previous Add Descriptor command.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x05 - Add Included Service
+
+		Controller Index:	<controller id>
+		Command parameters:	Service_ID (2 octets)
+		Response parameters:	Included_Service_ID (2 octets)
+
+		This command is used to add new included service declaration
+		to GATT Server. Service that is going to be included has to be
+		already added to the server. Attribute_ID of include
+		declaration is returned in the response.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x06 - Set Characteristic/Descriptor Value
+
+		Controller Index:	<controller id>
+		Command parameters:	Attribute_ID (2 octets)
+					Value_Length (2 octet)
+					Value (1-512 octets)
+		Response parameters:	<none>
+
+		This command is used to set the value of characteristic
+		or descriptor.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x07 - Start Server
+
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Response parameters:	<none>
+
+		This command is used to start server with previously prepared
+		attributes database.
+		Subsequent calls of this command shall return an error.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x08 - Reset Server
+
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Response parameters:	<none>
+
+		This command is used to clear the server from attributes.
+
+		In case of an error, the error response will be returned.
