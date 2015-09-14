@@ -1,0 +1,377 @@
+Tester protocol for Bluetooth stack
+***********************************
+
+
+Overview
+========
+
+This document describes the format of data used for communicating between tester
+and implementation under test (IUT).
+
+The protocol is SOCK_STREAM based and follows a strict PDU specification
+with a generic header and initial registration exchange. The communication is
+driver from tester with commands/response exchange. The protocol is single PDU
+exchanged based, meaning every command requires a response. IUT will use events
+to signal notifications.
+
+Commands and events use single socket. All services are multi-plexed over same
+socket.
+
+	.--  IUT  --.                             .--Tester--.
+	|           |                             |          |
+	|           |          Command            |          |
+	|           | <-------------------------- |          |
+	|           |                             |          |
+	|           |          Response           |          |
+	|           | --------------------------> |          |
+	|           |                             |          |
+	|           |           Event             |          |
+	|           | --------------------------> |          |
+	|           |                             |          |
+	'-----------'                             '----------'
+
+
+Packet Structures
+=================
+
+Every packet will follow the basic header to support simple multi-plexing
+over the same socket. It will also support a basic control channel with service
+id 0. Due to use of single socket for command/response and events it is
+possible that event(s) will be received before response to command.
+
+	0            8       16                  24            40
+	+------------+--------+------------------+-------------+
+	| Service ID | Opcode | Controller Index | Data Length |
+	+------------+--------+------------------+-------------+
+	|                                                      |
+
+The unique service ID is assigned by this specification for each service
+supported by tester.
+
+As general rule of thumb, the opcode for command matches the opcode for a
+response. Or the opcode 0x00 for an error is returned.
+
+Events opcodes start from 0x80.
+
+All command/response opcodes have the least significant bit not set. And all
+events have the least significant bit set.
+
+All fields are in little-endian byte order (least significant byte first).
+
+Controller Index can have a special value <non-controller> to indicate that
+command or event is not related to any controller. Possible values:
+
+	<controller id>		0x00 to 0xFE
+	<non-controller>	0xFF
+
+Error response is common for all services and has fixed structure:
+
+	Opcode 0x00 - Error response
+
+		Response parameters: Status (1 octet)
+
+		Valid status values:	0x01 = Fail
+					0x02 = Unknown Command
+					0x03 = Not ready
+					0x04 = Invalid Index
+
+Core Service (ID 0)
+===================
+
+Commands and responses:
+
+	Opcode 0x00 - Error response
+
+	Opcode 0x01 - Read Supported Commands command/response
+
+		Controller Index:	<non-controller>
+		Command parameters:	<none>
+		Response parameters:	<supported commands> (variable)
+
+		Each bit in response is a flag indicating if command with
+		opcode matching bit number is supported. Bit set to 1 means
+		that command is supported. Bit 0 is reserved and shall always
+		be set to 0. If specific bit is not present in response (less
+		than required bytes received) it shall be assumed that command
+		is not supported.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x02 - Read Supported Services command/response
+
+		Controller Index:	<non-controller>
+		Command parameters:	<none>
+		Response parameters:	<supported services> (variable)
+
+		Each bit in response is a flag indicating if service with ID
+		matching bit number is supported. Bit set to 1 means that
+		service is supported. If specific bit is not present in response
+		(less than required bytes received) it shall be assumed that
+		service is not supported.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x03 - Register Service command/response
+
+		Controller Index:	<non-controller>
+		Command parameters:	Service ID (1 octet)
+		Response parameters:	<none>
+
+		In case a command is sent for an undeclared service ID, it will
+		be rejected. Also there will be no events for undeclared
+		service ID.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x04 - Unregister Service command/response
+
+		Controller Index:	<non-controller>
+		Command parameters:	Service ID (1 octet)
+		Response parameters:	<none>
+
+		In case of an error, the error response will be returned.
+
+GAP Service (ID 1)
+==================
+
+Commands and responses:
+
+	Opcode 0x00 - Error response
+
+	Opcode 0x01 - Read Supported Commands command/response
+
+		Controller Index:	<non-controller>
+		Command parameters:	<none>
+		Response parameters:	<supported commands> (variable)
+
+		Each bit in response is a flag indicating if command with
+		opcode matching bit number is supported. Bit set to 1 means
+		that command is supported. Bit 0 is reserved and shall always
+		be set to 0. If specific bit is not present in response (less
+		than required bytes received) it shall be assumed that command
+		is not supported.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x02 - Read Controller Index List command/response
+
+		Controller Index:	<non-controller>
+		Command parameters:	<none>
+		Response parameters:	Number of Controllers (1 octet)
+					Controller Index[i] (1 octet)
+
+		This command returns the list of controllers.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x03 - Read Controller Information command/response
+
+	Controller Index:	<controller id>
+	Command parameters:	<none>
+	Response parameters:	Address (6 Octets)
+				Supported_Settings (4 Octets)
+				Current_Settings (4 Octets)
+				Class_Of_Device (3 Octets)
+				Name (249 Octets)
+				Short_Name (11 Octets)
+
+		This command is used to retrieve the current state and basic
+		information of a controller. It is typically used right after
+		getting the response to the Read Controller Index List command
+
+		Current_Settings and Supported_Settings is a bitmask with
+		currently the following available bits:
+
+			0	Powered
+			1	Connectable
+			2	Fast Connectable
+			3	Discoverable
+			4	Bondable
+			5	Link Level Security (Sec. mode 3)
+			6	Secure Simple Pairing
+			7	Basic Rate/Enhanced Data Rate
+			8	High Speed
+			9	Low Energy
+			10	Advertising
+			11	Secure Connections
+			12	Debug Keys
+			13	Privacy
+			14	Controller Configuration
+			15	Static Address
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x04 - Reset command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Response parameters:	Current_Settings (4 Octets)
+
+		This allows to clean up any state data (eg. keys) and restore
+		controller to its default system state.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x05 - Set Powered command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Powered (1 octet)
+		Response parameters:	Current_Settings (4 Octets)
+
+		Valid Powered values:	0x00 = Off
+					0x01 = On
+
+		This command is used to power on or off a controller.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x06 - Set Connectable command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Connectable (1 octet)
+		Response parameters:	Current_Settings (4 Octets)
+
+		Valid Connectable values:	0x00 = Off
+						0x01 = On
+
+		This command is used to set controller connectable.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x07 - Set Fast Connectable command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Fast Connectable (1 octet)
+		Response parameters:	Current_Settings (4 Octets)
+
+		Valid Fast Connectable values:	0x00 = Off
+						0x01 = On
+
+		This command is used to set controller fast connectable.
+		This command is only available for BR/EDR capable controllers.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x08 - Set Discoverable command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Discoverable (1 octet)
+		Response parameters:	Current_Settings (4 Octets)
+
+		Valid Discoverable values:	0x00 = Off
+						0x01 = General Discoverable
+						0x02 = Limited Discoverable
+
+		This command is used to set controller discoverable.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x09 - Set Bondable command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Bondable (1 octet)
+		Response parameters:	Current_Settings (4 Octets)
+
+		Valid Bondable values:	0x00 = Off
+					0x01 = On
+
+		This command is used to set controller bondable.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x0a - Start Advertising command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Adv_Data_Len (1 octet)
+					Scan_Rsp_len (1 octet)
+					Adv_Data (0-255 octets)
+					Scan_Rsp (0-255 octets)
+		Return Parameters:	Current_Settings (4 Octets)
+
+		This command is used to start advertising.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x0b - Stop Advertising command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Return Parameters:	Current_Settings (4 Octets)
+
+		This command is used to stop advertising.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x0c - Start Discovery command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Flags (1 octet)
+		Return Parameters:	<none>
+
+		Possible values for the Flags parameter are a bit-wise or
+		of the following bits:
+					0 = LE scan
+					1 = BR/EDR scan
+					2 = Use limited discovery procedure
+
+		This command is used to start discovery.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x0d - Stop Discovery command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Return Parameters:	<none>
+
+		This command is used to stop discovery.
+
+		In case of an error, the error response will be returned.
+
+Events:
+	Opcode 0x80 - New Settings event
+
+		Controller Index:	<controller id>
+		Event parameters:	Current_Settings (4 octets)
+
+		This event indicates that one or more of the settings for a
+		controller has changed.
+
+	Opcode 0x81 - Device Found event
+
+		Controller Index:	<controller id>
+		Event parameters:	Address (6 octets)
+					Address_Type (1 octet)
+					RSSI (1 octet)
+					Flags (1 octet)
+					EIR_Data_Length (2 Octets)
+					EIR_Data (0-65535 Octets)
+
+		Possible values for the Flags parameter are a bit-wise or
+		of the following bits:
+					0 = RSSI valid
+					1 = Adv_Data included
+					2 = Scan_Rsp included
+
+		This event indicates that a device was found during device
+		discovery.
+
+	Opcode 0x82 - Device Connected event
+
+		Controller Index:	<controller id>
+		Event parameters:	Address (6 octets)
+					Address_Type (1 octet)
+
+		This event indicates that a device was connected.
+
+	Opcode 0x82 - Device Disconnected event
+
+		Controller Index:	<controller id>
+		Event parameters:	Address (6 octets)
+					Address_Type (1 octet)
+
+		This event indicates that a device was disconnected.
+
+GATT Service (ID 2)
+===================
+...
