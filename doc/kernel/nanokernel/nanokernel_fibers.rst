@@ -283,12 +283,12 @@ by :file:`microkernel.h` and by :file:`nanokernel.h`:
 +-----------------------------------+-----------------------------------------+
 | Call                              | Description                             |
 +-----------------------------------+-----------------------------------------+
-| :c:func:`fiber_yield()`           | Yields CPU to higher priority and       |
+| :cpp:func:`fiber_yield()`         | Yields CPU to higher priority and       |
 |                                   | equal priority fibers.                  |
 +-----------------------------------+-----------------------------------------+
-| :c:func:`fiber_sleep()`           | Yields CPU for a specified time period. |
+| :cpp:func:`fiber_sleep()`         | Yields CPU for a specified time period. |
 +-----------------------------------+-----------------------------------------+
-| :c:func:`fiber_abort()`           | Terminates fiber execution.             |
+| :cpp:func:`fiber_abort()`         | Terminates fiber execution.             |
 +-----------------------------------+-----------------------------------------+
 
 The following APIs affecting a specified fiber are provided

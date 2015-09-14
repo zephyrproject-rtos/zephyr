@@ -204,14 +204,14 @@ The following microkernel timer APIs are provided by :file:`microkernel.h`:
 +----------------------------------------+-----------------------------------+
 | Call                                   | Description                       |
 +========================================+===================================+
-| :c:func:`task_timer_alloc()`           | Allocates an unused timer.        |
+| :cpp:func:`task_timer_alloc()`         | Allocates an unused timer.        |
 +----------------------------------------+-----------------------------------+
-| :c:func:`task_timer_start()`           | Starts a timer.                   |
+| :cpp:func:`task_timer_start()`         | Starts a timer.                   |
 +----------------------------------------+-----------------------------------+
-| :c:func:`task_timer_restart()`         | Restarts a timer.                 |
+| :cpp:func:`task_timer_restart()`       | Restarts a timer.                 |
 +----------------------------------------+-----------------------------------+
-| :c:func:`task_timer_stop()`            | Cancels a timer.                  |
+| :cpp:func:`task_timer_stop()`          | Cancels a timer.                  |
 +----------------------------------------+-----------------------------------+
-| :c:func:`task_timer_free()`            | Marks timer as unused.            |
+| :cpp:func:`task_timer_free()`          | Marks timer as unused.            |
 +----------------------------------------+-----------------------------------+
 

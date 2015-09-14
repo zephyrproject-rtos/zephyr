@@ -252,11 +252,11 @@ The following APIs for an individual semaphore are provided by microkernel.h.
 +----------------------------------------+------------------------------------+
 | Call                                   | Description                        |
 +========================================+====================================+
-| :c:func:`isr_sem_give()`               | Signal a semaphore from an ISR.    |
+| :cpp:func:`isr_sem_give()`             | Signal a semaphore from an ISR.    |
 +----------------------------------------+------------------------------------+
-| :c:func:`fiber_sem_give()`             | Signal a semaphore from a fiber.   |
+| :cpp:func:`fiber_sem_give()`           | Signal a semaphore from a fiber.   |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_give()`              | Signal a semaphore from a task.    |
+| :cpp:func:`task_sem_give()`            | Signal a semaphore from a task.    |
 +----------------------------------------+------------------------------------+
 | :c:func:`task_sem_take()`              | Test a semaphore without waiting.  |
 +----------------------------------------+------------------------------------+
@@ -265,9 +265,9 @@ The following APIs for an individual semaphore are provided by microkernel.h.
 | :c:func:`task_sem_take_wait_timeout()` | Wait on a semaphore for a          |
 |                                        | specified time period.             |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_reset()`             | Sets the semaphore count to zero.  |
+| :cpp:func:`task_sem_reset()`           | Sets the semaphore count to zero.  |
 +----------------------------------------+------------------------------------+
-| :c:func:`task_sem_count_get()`         | Read signal count for a semaphore. |
+| :cpp:func:`task_sem_count_get()`       | Read signal count for a semaphore. |
 +----------------------------------------+------------------------------------+
 
 
@@ -276,9 +276,9 @@ The following APIs for semaphore groups are provided by microkernel.h.
 +----------------------------------------------+------------------------------+
 | Call                                         | Description                  |
 +==============================================+==============================+
-| :c:func:`task_sem_group_give()`              | Signal a set of semaphores.  |
+| :cpp:func:`task_sem_group_give()`            | Signal a set of semaphores.  |
 +----------------------------------------------+------------------------------+
-| :c:func:`task_sem_group_take()`              | Test a set of semaphores     |
+| :cpp:func:`task_sem_group_take()`            | Test a set of semaphores     |
 |                                              | without waiting.             |
 +----------------------------------------------+------------------------------+
 | :c:func:`task_sem_group_take_wait()`         | Wait on a set of semaphores. |
@@ -286,7 +286,8 @@ The following APIs for semaphore groups are provided by microkernel.h.
 | :c:func:`task_sem_group_take_wait_timeout()` | Wait on a set of semaphores  |
 |                                              | for a specified time period. |
 +----------------------------------------------+------------------------------+
-| :c:func:`task_sem_group_reset()`             | Sets the semaphore count to  |
+| :cpp:func:`task_sem_group_reset()`           | Sets the semaphore count to  |
 |                                              | to zero for a set of         |
 |                                              | semaphores.                  |
 +----------------------------------------------+------------------------------+
+

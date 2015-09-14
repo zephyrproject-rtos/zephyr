@@ -465,24 +465,24 @@ are provided by :file:`microkernel.h`.
 +-------------------------------------+-----------------------------------------+
 | Call                                | Description                             |
 +=====================================+=========================================+
-| :c:func:`task_id_get()`             | Gets the task's ID.                     |
+| :cpp:func:`task_id_get()`           | Gets the task's ID.                     |
 +-------------------------------------+-----------------------------------------+
 | :c:func:`isr_task_id_get()`         | Gets the task's ID from an ISR.         |
 +-------------------------------------+-----------------------------------------+
-| :c:func:`task_priority_get()`       | Gets the task's priority.               |
+| :cpp:func:`task_priority_get()`     | Gets the task's priority.               |
 +-------------------------------------+-----------------------------------------+
 | :c:func:`isr_task_priority_get()`   | Gets the task's priority from an ISR.   |
 +-------------------------------------+-----------------------------------------+
-| :c:func:`task_group_mask_get()`     | Gets the task's group memberships.      |
+| :cpp:func:`task_group_mask_get()`   | Gets the task's group memberships.      |
 +-------------------------------------+-----------------------------------------+
 | :c:func:`isr_task_group_mask_get()` | Gets the task's group memberships from  |
 |                                     | an ISR.                                 |
 +-------------------------------------+-----------------------------------------+
-| :c:func:`task_abort_handler_set()`  | Installs the task's abort handler.      |
+| :cpp:func:`task_abort_handler_set()`| Installs the task's abort handler.      |
 +-------------------------------------+-----------------------------------------+
-| :c:func:`task_yield()`              | Yields CPU to equal-priority tasks.     |
+| :cpp:func:`task_yield()`            | Yields CPU to equal-priority tasks.     |
 +-------------------------------------+-----------------------------------------+
-| :c:func:`task_sleep()`              | Yields CPU for a specified time period. |
+| :cpp:func:`task_sleep()`            | Yields CPU for a specified time period. |
 +-------------------------------------+-----------------------------------------+
 | :c:func:`task_offload_to_fiber()`   | Instructs the microkernel server fiber  |
 |                                     | to execute a function.                  |
@@ -494,7 +494,7 @@ are provided by :file:`microkernel.h`.
 +-------------------------------------------+----------------------------------+
 | Call                                      | Description                      |
 +===========================================+==================================+
-| :c:func:`task_priority_set()`             | Sets a task's priority.          |
+| :cpp:func:`task_priority_set()`           | Sets a task's priority.          |
 +-------------------------------------------+----------------------------------+
 | :c:func:`task_entry_set()`                | Sets a task's entry point.       |
 +-------------------------------------------+----------------------------------+
@@ -506,10 +506,10 @@ are provided by :file:`microkernel.h`.
 +-------------------------------------------+----------------------------------+
 | :c:func:`task_abort()`                    | Aborts execution of a task.      |
 +-------------------------------------------+----------------------------------+
-| :c:func:`task_group_join()`               | Adds a task to the specified     |
+| :cpp:func:`task_group_join()`             | Adds a task to the specified     |
 |                                           | task group(s).                   |
 +-------------------------------------------+----------------------------------+
-| :c:func:`task_group_leave()`              | Removes a task from the          |
+| :cpp:func:`task_group_leave()`            | Removes a task from the          |
 |                                           | specified task group(s).         |
 +-------------------------------------------+----------------------------------+
 
@@ -519,7 +519,7 @@ are provided by :file:`microkernel.h`.
 +-------------------------------------------+---------------------------------+
 | Call                                      | Description                     |
 +===========================================+=================================+
-| :c:func:`sys_scheduler_time_slice_set()`  | Sets the time slice period used |
+| :cpp:func:`sys_scheduler_time_slice_set()`| Sets the time slice period used |
 |                                           | in round-robin task scheduling. |
 +-------------------------------------------+---------------------------------+
 | :c:func:`task_group_start()`              | Starts execution of all tasks   |
@@ -534,3 +534,4 @@ are provided by :file:`microkernel.h`.
 | :c:func:`task_group_abort()`              | Aborts execution of all tasks   |
 |                                           | in the specified task groups.   |
 +-------------------------------------------+---------------------------------+
+

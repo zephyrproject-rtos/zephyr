@@ -132,13 +132,13 @@ The following task IRQ APIs are provided by :file:`microkernel.h`:
 +----------------------------------------+-----------------------------------+
 | Call                                   | Description                       |
 +========================================+===================================+
-| :c:func:`task_irq_alloc()`             | Binds a task IRQ to a device      |
+| :cpp:func:`task_irq_alloc()`           | Binds a task IRQ to a device      |
 |                                        | and enables interrupts.           |
 +----------------------------------------+-----------------------------------+
-| :c:func:`task_irq_ack()`               | Acknowledges an interrupt and     |
+| :cpp:func:`task_irq_ack()`             | Acknowledges an interrupt and     |
 |                                        | re-enables the interrupt.         |
 +----------------------------------------+-----------------------------------+
-| :c:func:`task_irq_free()`              | Unbinds a task IRQ from a device  |
+| :cpp:func:`task_irq_free()`            | Unbinds a task IRQ from a device  |
 |                                        | and disables interrupts.          |
 +----------------------------------------+-----------------------------------+
 | :c:func:`task_irq_test()`              | Tests to determine if an          |
@@ -149,3 +149,4 @@ The following task IRQ APIs are provided by :file:`microkernel.h`:
 | :c:func:`task_irq_test_wait_timeout()` | Waits for an interrupt to occur   |
 |                                        | within a specified time period.   |
 +----------------------------------------+-----------------------------------+
+
