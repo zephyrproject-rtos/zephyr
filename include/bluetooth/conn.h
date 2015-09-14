@@ -34,6 +34,7 @@
 #ifndef __BT_CONN_H
 #define __BT_CONN_H
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <stdbool.h>
 
 #include <bluetooth/hci.h>
@@ -91,6 +92,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
  */
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 /** @brief Initiate an LE connection to a remote device.
  *
  *  Allows initiate new LE link to remote peer using its address.
@@ -101,6 +103,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
  *  @return Valid connection object on success or NULL otherwise.
  */
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer);
+#endif
 
 /** Security level. */
 typedef enum {
@@ -112,6 +115,7 @@ typedef enum {
 			     */
 } bt_security_t;
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 /** @brief Set security level for a connection.
  *
  *  This function enable security (encryption) for a connection. If device is
@@ -133,16 +137,18 @@ typedef enum {
  *  @return 0 on success or negative error
  */
 int bt_conn_security(struct bt_conn *conn, bt_security_t sec);
+#endif
 
 /** Connection callback structure */
 struct bt_conn_cb {
 	void (*connected)(struct bt_conn *conn);
 	void (*disconnected)(struct bt_conn *conn);
+#if defined(CONFIG_BLUETOOTH_SMP)
 	void (*identity_resolved)(struct bt_conn *conn,
 				  const bt_addr_le_t *rpa,
 				  const bt_addr_le_t *identity);
 	void (*security_changed)(struct bt_conn *conn, bt_security_t level);
-
+#endif
 	struct bt_conn_cb *_next;
 };
 
@@ -154,6 +160,7 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
 /** @brief Automatically connect to remote device if it's in range.
  *
  *  This function enables/disables automatic connection initiation.
@@ -168,4 +175,6 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  */
 void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn);
 
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+#endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
 #endif /* __BT_CONN_H */

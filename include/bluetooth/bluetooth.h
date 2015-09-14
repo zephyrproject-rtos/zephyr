@@ -136,6 +136,7 @@ int bt_start_scanning(bt_scan_filter_dup_t filter, bt_le_scan_cb_t cb);
  */
 int bt_stop_scanning(void);
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 /** Authenticated pairing callback structure */
 struct bt_auth_cb {
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
@@ -171,6 +172,7 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
  *  @param conn Connection object.
  */
 void bt_auth_cancel(struct bt_conn *conn);
+#endif /* CONFIG_BLUETOOTH_SMP */
 
 /** @def BT_ADDR_STR_LEN
  *

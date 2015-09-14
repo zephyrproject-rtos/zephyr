@@ -34,6 +34,7 @@
 #ifndef __BT_GATT_H
 #define __BT_GATT_H
 
+#if defined(CONFIG_BLUETOOTH_CENTRAL) || defined(CONFIG_BLUETOOTH_PERIPHERAL)
 #include <misc/util.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
@@ -615,6 +616,7 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  */
 void bt_gatt_notify(uint16_t handle, const void *data, uint16_t len);
 
+#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 /* Client API */
 
 /** @brief Response callback function
@@ -795,4 +797,6 @@ void bt_gatt_cancel(struct bt_conn *conn);
 int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
 			  size_t count, bt_gatt_read_func_t func);
 
+#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+#endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
 #endif /* __BT_GATT_H */
