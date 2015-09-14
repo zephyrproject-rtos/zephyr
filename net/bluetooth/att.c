@@ -50,6 +50,7 @@
 #include "l2cap.h"
 #include "smp.h"
 #include "att.h"
+#include "gatt_internal.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_ATT)
 #undef BT_DBG

@@ -615,28 +615,6 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
  */
 void bt_gatt_notify(uint16_t handle, const void *data, uint16_t len);
 
-/** @brief connected callback.
- *
- *  @param conn Connection object.
- */
-void bt_gatt_connected(struct bt_conn *conn);
-
-/** @brief disconnected callback.
- *
- *  @param conn Connection object.
- */
-void bt_gatt_disconnected(struct bt_conn *conn);
-
-/** @brief notification callback.
- *
- *  @param conn Connection object.
- *  @param handle Attribute handle.
- *  @param data Attribute data.
- *  @param length Attribute data length.
- */
-void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
-			  const void *data, uint16_t length);
-
 /* Client API */
 
 /** @brief Response callback function
