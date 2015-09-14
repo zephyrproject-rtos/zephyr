@@ -330,6 +330,30 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x0e - Connect command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+		Return Parameters:	<none>
+
+		This command is used to create a Link Layer connection with
+		remote device.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x0f - Disconnect command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	Address_Type (1 octet)
+					Address (6 octets)
+		Return Parameters:	<none>
+
+		This command is used to terminate an existing connection or
+		to cancel pending connection attempt.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - New Settings event
 
