@@ -26,6 +26,4 @@ ecc/testfield
 *.hex
 *.elf
 *.map
-tinydtls.h
-dtls_config.h
 .project
