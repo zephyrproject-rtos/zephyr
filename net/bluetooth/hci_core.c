@@ -141,9 +141,16 @@ int bt_hci_cmd_send(uint16_t opcode, struct bt_buf *buf)
 	 * and does not generate any cmd complete/status events.
 	 */
 	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
-		bt_dev.drv->send(buf);
+		int err;
+
+		err = bt_dev.drv->send(buf);
+		if (err) {
+			BT_ERR("Unable to send to driver (err %d)\n", err);
+		}
+
 		bt_buf_put(buf);
-		return 0;
+
+		return err;
 	}
 
 	nano_fifo_put(&bt_dev.cmd_tx_queue, buf);
@@ -1174,6 +1181,7 @@ static void hci_cmd_tx_fiber(void)
 
 	while (1) {
 		struct bt_buf *buf;
+		int err;
 
 		/* Wait until ncmd > 0 */
 		BT_DBG("calling sem_take_wait\n");
@@ -1184,16 +1192,21 @@ static void hci_cmd_tx_fiber(void)
 		buf = nano_fifo_get_wait(&bt_dev.cmd_tx_queue);
 		bt_dev.ncmd = 0;
 
-		BT_DBG("Sending command %x (buf %p) to driver\n",
-		       buf->hci.opcode, buf);
-
-		drv->send(buf);
-
 		/* Clear out any existing sent command */
 		if (bt_dev.sent_cmd) {
 			BT_ERR("Uncleared pending sent_cmd\n");
 			bt_buf_put(bt_dev.sent_cmd);
 			bt_dev.sent_cmd = NULL;
+		}
+
+		BT_DBG("Sending command %x (buf %p) to driver\n",
+		       buf->hci.opcode, buf);
+
+		err = drv->send(buf);
+		if (err) {
+			BT_ERR("Unable to send to driver (err %d)\n", err);
+			bt_buf_put(buf);
+			continue;
 		}
 
 		bt_dev.sent_cmd = buf;

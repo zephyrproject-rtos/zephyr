@@ -296,6 +296,8 @@ static void conn_tx_fiber(int arg1, int arg2)
 	BT_DBG("Started for handle %u\n", conn->handle);
 
 	while (conn->state == BT_CONN_CONNECTED) {
+		int err;
+
 		/* Wait until the controller can accept ACL packets */
 		BT_DBG("calling sem_take_wait\n");
 		nano_fiber_sem_take_wait(&bt_dev.le_pkts_sem);
@@ -315,10 +317,14 @@ static void conn_tx_fiber(int arg1, int arg2)
 		}
 
 		BT_DBG("passing buf %p len %u to driver\n", buf, buf->len);
-		bt_dev.drv->send(buf);
-		bt_buf_put(buf);
+		err = bt_dev.drv->send(buf);
+		if (err) {
+			BT_ERR("Unable to send to driver (err %d)\n", err);
+		} else {
+			conn->pending_pkts++;
+		}
 
-		conn->pending_pkts++;
+		bt_buf_put(buf);
 	}
 
 	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
