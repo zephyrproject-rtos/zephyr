@@ -56,16 +56,18 @@ Handlers for the secondary serial port have not been added.
 
 
 #ifdef CONFIG_DW_I2C0
-static inline void dw_i2c0_irq_set(void)
+static int dw_i2c0_irq_set(struct device *unused)
 {
+	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_DW_I2C0_IRQ,
 			CONFIG_DW_I2C0_IRQ + INT_VEC_IRQ0,
 			DW_I2C0_IRQ_IOAPIC_FLAGS);
+	return 0;
 }
-#else
-#define dw_i2c0_irq_set()	\
-	do { /* nothing */	\
-	} while ((0))
+
+DECLARE_DEVICE_INIT_CONFIG(i2cirq_0, "", dw_i2c0_irq_set, NULL);
+pure_late_init(i2cirq_0, NULL);
+
 #endif /* CONFIG_DW_I2C0 */
 
 #ifdef CONFIG_GPIO_DW_0
@@ -96,8 +98,6 @@ pure_early_init(gpioirq_0, NULL);
 static int ia32_pci_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
-
-	dw_i2c0_irq_set();   /* NOP if not needed */
 
 #if defined(CONFIG_PCI_DEBUG) && defined(CONFIG_PCI_ENUMERATION)
 	/* Rescan PCI and display the list of PCI attached devices */
