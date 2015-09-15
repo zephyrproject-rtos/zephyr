@@ -135,16 +135,18 @@ static void controller_index_list(uint8_t *data,  uint16_t len)
 static void controller_info(uint8_t *data, uint16_t len)
 {
 	struct gap_read_controller_info_rp rp;
+	uint32_t supported_settings;
 
 	memset(&rp, 0, sizeof(rp));
 	memcpy(rp.address, CONTROLLER_ADDR, sizeof(bt_addr_t));
 
-	rp.supported_settings = 1 << GAP_SETTINGS_POWERED;
-	rp.supported_settings |= 1 << GAP_SETTINGS_CONNECTABLE;
-	rp.supported_settings |= 1 << GAP_SETTINGS_BONDABLE;
-	rp.supported_settings |= 1 << GAP_SETTINGS_LE;
-	rp.supported_settings |= 1 << GAP_SETTINGS_ADVERTISING;
+	supported_settings = 1 << GAP_SETTINGS_POWERED;
+	supported_settings |= 1 << GAP_SETTINGS_CONNECTABLE;
+	supported_settings |= 1 << GAP_SETTINGS_BONDABLE;
+	supported_settings |= 1 << GAP_SETTINGS_LE;
+	supported_settings |= 1 << GAP_SETTINGS_ADVERTISING;
 
+	rp.supported_settings = sys_cpu_to_le32(supported_settings);
 	rp.current_settings = sys_cpu_to_le32(current_settings);
 
 	memcpy(rp.name, CONTROLLER_NAME, sizeof(CONTROLLER_NAME));
