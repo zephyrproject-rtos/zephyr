@@ -1210,7 +1210,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
 		return -ENOTCONN;
 	}
 
-	if (!handle || !params || !params->func) {
+	if (!handle || !params || !params->func || !params->value) {
 		return -EINVAL;
 	}
 
@@ -1223,7 +1223,8 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
 
 		/* Check if another subscription exists */
 		if (!bt_addr_le_cmp(&tmp->_peer, &conn->dst) &&
-		    tmp->value_handle == params->value_handle) {
+		    tmp->value_handle == params->value_handle &&
+		    tmp->value >= params->value) {
 			has_subscription = true;
 		}
 	}
@@ -1234,7 +1235,7 @@ int bt_gatt_subscribe(struct bt_conn *conn, uint16_t handle,
 		return 0;
 	}
 
-	return gatt_write_ccc(conn, handle, BT_GATT_CCC_NOTIFY,
+	return gatt_write_ccc(conn, handle, params->value,
 			      att_write_ccc_rsp, params);
 }
 

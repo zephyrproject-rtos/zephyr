@@ -766,6 +766,8 @@ struct bt_gatt_subscribe_params {
 	void (*destroy)(void *user_data);
 	/** Subscribe value handle */
 	uint16_t value_handle;
+	/** Subscribe value */
+	uint16_t value;
 	struct bt_gatt_subscribe_params *_next;
 };
 

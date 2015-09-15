@@ -773,6 +773,7 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 	}
 
 	subscribe_params.value_handle = xtoi(argv[2]);
+	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.func = subscribe_func;
 	subscribe_params.destroy = subscribe_destroy;
 
