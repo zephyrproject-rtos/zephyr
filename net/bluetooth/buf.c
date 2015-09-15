@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
+#include <atomic.h>
 #include <misc/byteorder.h>
 
 #include <bluetooth/log.h>

@@ -32,6 +32,7 @@
 
 #include <string.h>
 #include <nanokernel.h>
+#include <atomic.h>
 #include <misc/util.h>
 
 #include <bluetooth/log.h>

@@ -36,6 +36,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <atomic.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
@@ -44,6 +45,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/driver.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"

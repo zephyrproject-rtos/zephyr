@@ -30,11 +30,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <atomic.h>
-#include <stdbool.h>
-#include <arch/cpu.h>
-#include <bluetooth/driver.h>
-
 /* Enabling debug increases stack size requirement considerably */
 #if defined(CONFIG_BLUETOOTH_DEBUG)
 #define BT_STACK_DEBUG_EXTRA	512

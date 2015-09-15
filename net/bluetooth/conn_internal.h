@@ -32,9 +32,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <atomic.h>
-#include <bluetooth/conn.h>
-
 typedef enum {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_CONNECT_SCAN,

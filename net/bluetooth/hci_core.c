@@ -37,12 +37,14 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <atomic.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>
 
 #include <bluetooth/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/driver.h>
 
 #include "hci_core.h"
 #include "keys.h"
