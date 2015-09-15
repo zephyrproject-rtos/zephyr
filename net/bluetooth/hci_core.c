@@ -1293,12 +1293,45 @@ static void le_read_buffer_size_complete(struct bt_buf *buf)
 	bt_dev.le_pkts = rp->le_max_num;
 }
 
-static int hci_init(void)
+static int set_flow_control(void)
 {
 	struct bt_hci_cp_host_buffer_size *hbs;
+	struct bt_buf *buf;
+	uint8_t *enable;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE,
+				sizeof(*hbs));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	hbs = bt_buf_add(buf, sizeof(*hbs));
+	memset(hbs, 0, sizeof(*hbs));
+	hbs->acl_mtu = sys_cpu_to_le16(BT_BUF_MAX_DATA -
+				       sizeof(struct bt_hci_acl_hdr) -
+				       bt_dev.drv->head_reserve);
+	hbs->acl_pkts = sys_cpu_to_le16(ACL_IN_MAX);
+
+	err = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
+	if (err) {
+		return err;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	enable = bt_buf_add(buf, sizeof(*enable));
+	*enable = 0x01;
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+}
+
+static int hci_init(void)
+{
 	struct bt_hci_cp_set_event_mask *ev;
 	struct bt_buf *buf, *rsp;
-	uint8_t *enable;
 	int i, err;
 
 	/* Send HCI_RESET */
@@ -1375,31 +1408,7 @@ static int hci_init(void)
 
 	bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_BUFFER_SIZE, sizeof(*hbs));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	hbs = bt_buf_add(buf, sizeof(*hbs));
-	memset(hbs, 0, sizeof(*hbs));
-	hbs->acl_mtu = sys_cpu_to_le16(BT_BUF_MAX_DATA -
-				       sizeof(struct bt_hci_acl_hdr) -
-				       bt_dev.drv->head_reserve);
-	hbs->acl_pkts = sys_cpu_to_le16(ACL_IN_MAX);
-
-	err = bt_hci_cmd_send(BT_HCI_OP_HOST_BUFFER_SIZE, buf);
-	if (err) {
-		return err;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, 1);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	enable = bt_buf_add(buf, sizeof(*enable));
-	*enable = 0x01;
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+	err = set_flow_control();
 	if (err) {
 		return err;
 	}
