@@ -634,7 +634,7 @@ static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	if ((mask & BT_GATT_PERM_WRITE) && !(attr->perm & BT_GATT_PERM_WRITE)) {
-		return BT_ATT_ERR_READ_NOT_PERMITTED;
+		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
 	}
 
 	mask &= attr->perm;
