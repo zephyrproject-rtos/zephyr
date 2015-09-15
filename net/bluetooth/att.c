@@ -1349,6 +1349,26 @@ static uint8_t att_notify(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
+static uint8_t att_indicate(struct bt_conn *conn, struct bt_buf *buf)
+{
+	uint16_t handle;
+
+	handle = bt_buf_pull_le16(buf);
+
+	BT_DBG("handle 0x%04x\n", handle);
+
+	bt_gatt_notification(conn, handle, buf->data, buf->len);
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_CONFIRM, 0);
+	if (!buf) {
+		return 0;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
+
+	return 0;
+}
+
 static const struct {
 	uint8_t  op;
 	uint8_t  (*func)(struct bt_conn *conn, struct bt_buf *buf);
@@ -1398,6 +1418,8 @@ static const struct {
 	{ BT_ATT_OP_EXEC_WRITE_RSP, att_handle_exec_write_rsp, 0 },
 	{ BT_ATT_OP_NOTIFY, att_notify,
 	  sizeof(struct bt_att_notify) },
+	{ BT_ATT_OP_INDICATE, att_indicate,
+	  sizeof(struct bt_att_indicate) },
 	{ BT_ATT_OP_WRITE_CMD, att_write_cmd,
 	  sizeof(struct bt_att_write_cmd) },
 	{ BT_ATT_OP_SIGNED_WRITE_CMD, att_signed_write_cmd,
