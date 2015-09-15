@@ -69,15 +69,17 @@ static inline void dw_i2c0_irq_set(void)
 #endif /* CONFIG_DW_I2C0 */
 
 #ifdef CONFIG_GPIO_DW_0
-static inline void gpio_irq_set(void) {
+static int gpio_irq_set_0(struct device *unused) {
+	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_GPIO_DW_0_IRQ,
 			CONFIG_GPIO_DW_0_IRQ + INT_VEC_IRQ0,
 			GPIO_DW_0_IRQ_IOAPIC_FLAGS);
+	return 0;
 }
-#else
-#define gpio_irq_set()		\
-	do { /* nothing */	\
-	} while ((0))
+
+DECLARE_DEVICE_INIT_CONFIG(gpioirq_0, "", gpio_irq_set_0, NULL);
+pure_early_init(gpioirq_0, NULL);
+
 #endif /* CONFIG_GPIO_DW_0 */
 
 /**
@@ -94,8 +96,6 @@ static inline void gpio_irq_set(void) {
 static int ia32_pci_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
-
-	gpio_irq_set();      /* NOP if not needed */
 
 	dw_i2c0_irq_set();   /* NOP if not needed */
 
