@@ -120,17 +120,6 @@ Running an Application on Galileo Gen2
 
 #. Power on the Galileo board.
 
-#. When asked press :kbd:`F7`.
-
-#. By default Galileo has a pre-installed GRUB and Linux distro.
-   Press :kbd:`c` to cancel the current boot.
-
-#. Quit the currently running GRUB.
-
-#. On the menu select the :guilabel:`UEFI Internal Shell` option.
-
-#. If you've added a custom GRUB, please run it from here.
-
 Building a Custom GRUB
 **********************
 
