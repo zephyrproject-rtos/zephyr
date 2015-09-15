@@ -71,6 +71,7 @@ static void supported_services(uint8_t *data, uint16_t len)
 
 	buf[0] = 1 << BTP_SERVICE_ID_CORE;
 	buf[0] |= 1 << BTP_SERVICE_ID_GAP;
+	buf[0] |= 1 << BTP_SERVICE_ID_GATT;
 
 	tester_rsp_full(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
 			BTP_INDEX_NONE, (uint8_t *) rp, sizeof(buf));
@@ -84,6 +85,9 @@ static void register_service(uint8_t *data, uint16_t len)
 	switch (cmd->id) {
 	case BTP_SERVICE_ID_GAP:
 		status = tester_init_gap();
+		break;
+	case BTP_SERVICE_ID_GATT:
+		status = tester_init_gatt();
 		break;
 	default:
 		status = BTP_STATUS_FAILED;
@@ -140,6 +144,10 @@ static void cmd_handler(int arg1, int arg2)
 		case BTP_SERVICE_ID_GAP:
 			tester_handle_gap(cmd->opcode, cmd->index, cmd->data,
 					  len);
+			break;
+		case BTP_SERVICE_ID_GATT:
+			tester_handle_gatt(cmd->opcode, cmd->index, cmd->data,
+					    len);
 			break;
 		default:
 			tester_rsp(cmd->service, cmd->opcode, cmd->index,

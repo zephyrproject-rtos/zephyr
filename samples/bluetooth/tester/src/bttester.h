@@ -36,6 +36,7 @@
 
 #define BTP_SERVICE_ID_CORE	0
 #define BTP_SERVICE_ID_GAP	1
+#define BTP_SERVICE_ID_GATT	2
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
@@ -224,6 +225,23 @@ struct gap_device_disconnected_ev {
 	uint8_t address_type;
 };
 
+/* GATT Service */
+/* commands */
+#define GATT_SERVICE_PRIMARY		0x00
+#define GATT_SERVICE_SECONDARY		0x01
+
+#define GATT_ADD_SERVICE		0x02
+struct gatt_add_service_cmd {
+	uint8_t type;
+	uint8_t uuid_length;
+	uint8_t uuid[0];
+} __packed;
+struct gatt_add_service_rp {
+	uint16_t svc_id;
+};
+
+#define GATT_START_SERVER		0x07
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_rsp_full(uint8_t service, uint8_t opcode, uint8_t index,
@@ -232,3 +250,6 @@ void tester_rsp_full(uint8_t service, uint8_t opcode, uint8_t index,
 uint8_t tester_init_gap(void);
 void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		       uint16_t len);
+uint8_t tester_init_gatt(void);
+void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
+			uint16_t len);
