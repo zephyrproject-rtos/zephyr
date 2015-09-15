@@ -71,8 +71,7 @@ following commands:
 Running an Application on Galileo Gen2
 **************************************
 
-#. Set the platform configuration to Galileo by changing the :command:`make`
-command to:
+#. Set the platform configuration to Galileo by changing the :command:`make` command to:
 
 .. code-block:: bash
 
