@@ -642,8 +642,6 @@ static int hci_le_create_conn(const bt_addr_le_t *addr)
 /* Used to determine whether to start scan and which scan type should be used */
 int bt_le_scan_update(void)
 {
-	struct bt_conn *conn;
-
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		int err;
 
@@ -657,18 +655,21 @@ int bt_le_scan_update(void)
 		}
 	}
 
-	if (scan_dev_found_cb) {
-		return bt_hci_start_scanning(BT_LE_SCAN_ACTIVE);
+	if (!scan_dev_found_cb) {
+		struct bt_conn *conn;
+
+		conn = bt_conn_lookup_state(BT_ADDR_LE_ANY,
+					    BT_CONN_CONNECT_SCAN);
+		if (!conn) {
+			return 0;
+		}
+
+		bt_conn_put(conn);
+
+		return bt_hci_start_scanning(BT_LE_SCAN_PASSIVE);
 	}
 
-	conn = bt_conn_lookup_state(BT_ADDR_LE_ANY, BT_CONN_CONNECT_SCAN);
-	if (!conn) {
-		return 0;
-	}
-
-	bt_conn_put(conn);
-
-	return bt_hci_start_scanning(BT_LE_SCAN_PASSIVE);
+	return bt_hci_start_scanning(BT_LE_SCAN_ACTIVE);
 }
 
 static void hci_disconn_complete(struct bt_buf *buf)
