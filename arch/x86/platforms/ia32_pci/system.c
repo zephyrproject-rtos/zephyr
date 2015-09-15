@@ -50,19 +50,8 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/pic.h>
 #include <drivers/pci/pci.h>
 #include <drivers/pci/pci_mgr.h>
-
-
-#ifdef CONFIG_LOAPIC
 #include <drivers/loapic.h>
-static inline void loapic_init(void)
-{
-	_loapic_init();
-}
-#else
-#define loapic_init()    \
-	do { /* nothing */   \
-	} while ((0))
-#endif
+
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
@@ -143,7 +132,6 @@ static int ia32_pci_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	loapic_init();       /* NOP if not needed */
 	ioapic_init();       /* NOP if not needed */
 	hpet_irq_set();      /* NOP if not needed */
 	console_irq_set();   /* NOP if not needed */
@@ -171,6 +159,12 @@ static int ia32_pci_init(struct device *arg)
 #endif /* CONFIG_PCI_DEBUG && CONFIG_PCI_ENUMERATION */
 	return 0;
 }
+
+#ifdef CONFIG_LOAPIC
+DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
+pure_early_init(loapic_0, NULL);
+
+#endif /* CONFIG_LOAPIC */
 
 #if defined(CONFIG_PIC_DISABLE)
 

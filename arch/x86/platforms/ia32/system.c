@@ -42,19 +42,8 @@ for the ia32 platform.
 #include <drivers/pic.h>
 #include <device.h>
 #include <init.h>
+#include <loapic.h>
 
-
-#ifdef CONFIG_LOAPIC
-#include <drivers/loapic.h>
-static inline void loapic_init(void)
-{
-	_loapic_init();
-}
-#else
-#define loapic_init()      \
-	do {/* nothing */ \
-	} while ((0))
-#endif /* CONFIG_LOAPIC */
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
@@ -108,13 +97,17 @@ static int ia32_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	loapic_init();    /* NOP if not needed */
-
 	ioapic_init();    /* NOP if not needed */
 	hpet_irq_set();   /* NOP if not needed */
 	console_irq_set();   /* NOP if not needed */
 	return 0;
 }
+
+#ifdef CONFIG_LOAPIC
+DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
+pure_early_init(loapic_0, NULL);
+
+#endif /* CONFIG_LOAPIC */
 
 #if defined(CONFIG_PIC_DISABLE)
 

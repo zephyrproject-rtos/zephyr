@@ -205,8 +205,9 @@ INCLUDE FILES: loapic.h
  *
  */
 
-void _loapic_init(void)
+int _loapic_init(struct device *unused)
 {
+	ARG_UNUSED(unused);
 	int32_t loApicMaxLvt; /* local APIC Max LVT */
 
 	/* enable the Local APIC */
@@ -259,6 +260,7 @@ void _loapic_init(void)
 	/* discard a pending interrupt if any */
 
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
+	return 0;
 }
 
 /**
