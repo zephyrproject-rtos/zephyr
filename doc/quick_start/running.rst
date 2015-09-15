@@ -92,8 +92,7 @@ command to:
 
 :file:`kernel`
 
-#. Assuming you have built a micro kernel, copy the kernel file :file:`
-microkernel.elf` to the :file:`$SDCARD/kernel` folder
+#. Assuming you have built a micro kernel, copy the kernel file :file:`microkernel.elf` to the :file:`$SDCARD/kernel` folder
 
 #. Copy your built version of GRUB to :file:`$SDCARD/EFI/BOOT/BOOTIA32.EFI`
 
