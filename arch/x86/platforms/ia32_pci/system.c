@@ -52,20 +52,9 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/pci/pci_mgr.h>
 #include <drivers/loapic.h>
 #include <drivers/ioapic.h>
-
-#ifdef CONFIG_HPET_TIMER
 #include <drivers/hpet.h>
-static inline void hpet_irq_set(void)
-{
-	_ioapic_irq_set(CONFIG_HPET_TIMER_IRQ,
-			CONFIG_HPET_TIMER_IRQ + INT_VEC_IRQ0,
-			HPET_IOAPIC_FLAGS);
-}
-#else
-#define hpet_irq_set()   \
-	do { /* nothing */       \
-	} while ((0))
-#endif
+
+
 
 #ifdef CONFIG_CONSOLE_HANDLER
 static inline void console_irq_set(void)
@@ -120,7 +109,6 @@ static int ia32_pci_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	hpet_irq_set();      /* NOP if not needed */
 	console_irq_set();   /* NOP if not needed */
 	gpio_irq_set();      /* NOP if not needed */
 
@@ -146,6 +134,22 @@ static int ia32_pci_init(struct device *arg)
 #endif /* CONFIG_PCI_DEBUG && CONFIG_PCI_ENUMERATION */
 	return 0;
 }
+
+#ifdef CONFIG_HPET_TIMER
+
+static int hpet_irq_set(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	_ioapic_irq_set(CONFIG_HPET_TIMER_IRQ,
+			CONFIG_HPET_TIMER_IRQ + INT_VEC_IRQ0,
+			HPET_IOAPIC_FLAGS);
+	return 0;
+}
+
+DECLARE_DEVICE_INIT_CONFIG(hpetirq, "", hpet_irq_set, NULL);
+pure_late_init(hpetirq, NULL);
+
+#endif /* CONFIG_HPET_TIMER */
 
 #ifdef CONFIG_IOAPIC
 DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
