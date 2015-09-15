@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
         jmp     _IntExit        /* Inform kernel interrupt is done */
 .endm
 #else /* _ASMLANGUAGE */
-void _ioapic_init(void);
+int _ioapic_init(struct device *unused);
 void _ioapic_eoi(unsigned int irq);
 void *_ioapic_eoi_get(unsigned int irq, char *argRequired, void **arg);
 void _ioapic_irq_enable(unsigned int irq);

@@ -43,19 +43,7 @@ for the ia32 platform.
 #include <device.h>
 #include <init.h>
 #include <loapic.h>
-
-
-#ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
-static inline void ioapic_init(void)
-{
-	_ioapic_init();
-}
-#else
-#define ioapic_init(mask)  \
-	do {/* nothing */ \
-	} while ((0))
-#endif /* CONFIG_IOAPIC */
 
 #ifdef CONFIG_HPET_TIMER
 #include <drivers/hpet.h>
@@ -97,11 +85,16 @@ static int ia32_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	ioapic_init();    /* NOP if not needed */
 	hpet_irq_set();   /* NOP if not needed */
 	console_irq_set();   /* NOP if not needed */
 	return 0;
 }
+
+#ifdef CONFIG_IOAPIC
+DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
+pure_early_init(ioapic_0, NULL);
+
+#endif /* CONFIG_IOAPIC */
 
 #ifdef CONFIG_LOAPIC
 DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
