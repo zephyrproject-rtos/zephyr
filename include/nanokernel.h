@@ -790,7 +790,7 @@ extern void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
 /**
  * @}
  * @brief Nanokernel Semaphores
- * @defgroup nanokernel_semaphores Nanokernel Semaphores
+ * @defgroup nanokernel_semaphore Nanokernel Semaphores
  * @ingroup nanokernel_services
  * @{
  */
