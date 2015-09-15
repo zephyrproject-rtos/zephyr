@@ -73,9 +73,9 @@ Running an Application on Galileo Gen2
 
 #. Set the platform configuration to Galileo by changing the :command:`make` command to:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   make PLATFORM_CONFIG=galileo
+      make PLATFORM_CONFIG=galileo
 
 #. Use one of these cables for serial output:
 
@@ -97,14 +97,14 @@ Running an Application on Galileo Gen2
 
 #. Create :file:`$SDCARD/efi/boot/grub.cfg` containing the following:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   set default=0
-   set timeout=10
+      set default=0
+      set timeout=10
 
-   menuentry "Zephyr microkernel" {
-      multiboot /kernel/microkernel.elf
-    }
+      menuentry "Zephyr microkernel" {
+         multiboot /kernel/microkernel.elf
+      }
 
 #. Insert the SDcard in the Galileo board.
 
