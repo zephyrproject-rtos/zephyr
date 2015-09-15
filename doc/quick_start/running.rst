@@ -86,17 +86,17 @@ command to:
 
 #. Create the following directories
 
-:file:`EFI`
+   :file:`efi`
 
-:file:`EFI/BOOT`
+   :file:`efi/boot`
 
-:file:`kernel`
+   :file:`kernel`
 
 #. Assuming you have built a micro kernel, copy the kernel file :file:`microkernel.elf` to the :file:`$SDCARD/kernel` folder
 
-#. Copy your built version of GRUB to :file:`$SDCARD/EFI/BOOT/BOOTIA32.EFI`
+#. Copy your built version of GRUB to :file:`$SDCARD/efi/boot/bootia32.efi`
 
-#. Create :file:`$SDCARD/EFI/BOOT/grub.cfg` containing the following:
+#. Create :file:`$SDCARD/efi/boot/grub.cfg` containing the following:
 
 .. code-block:: bash
 
