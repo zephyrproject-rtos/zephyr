@@ -117,6 +117,20 @@ config NEWLIB_LIBC
 
 endchoice
 
+
+config MINIMAL_LIBC_EXTENDED
+	bool "Build additional libc functions"
+	default n
+	depends on MINIMAL_LIBC && EXPERIMENTAL
+	help
+	This option enables building some optional libc functions that
+        are not used directly by the kernel but can be used in applications.
+        The option adds the following functions: strtoul, strtol, atoi,
+        strncasecmp.
+	Warning: Use the above functions only for testing, if you need to
+        use any of the functions in an application you probably should be
+        linking against a full lib c implementation instead.
+
 endmenu
 
 menu "Debugging Options"
