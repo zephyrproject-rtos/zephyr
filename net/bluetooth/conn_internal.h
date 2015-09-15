@@ -60,6 +60,8 @@ struct bt_conn {
 	bt_addr_le_t		init_addr;
 	bt_addr_le_t		resp_addr;
 
+	uint8_t			pending_pkts;
+
 	uint8_t			encrypt;
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;

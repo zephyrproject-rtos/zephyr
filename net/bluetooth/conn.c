@@ -317,6 +317,8 @@ static void conn_tx_fiber(int arg1, int arg2)
 		BT_DBG("passing buf %p len %u to driver\n", buf, buf->len);
 		bt_dev.drv->send(buf);
 		bt_buf_put(buf);
+
+		conn->pending_pkts++;
 	}
 
 	BT_DBG("handle %u disconnected - cleaning up\n", conn->handle);
@@ -324,6 +326,13 @@ static void conn_tx_fiber(int arg1, int arg2)
 	/* Give back any allocated buffers */
 	while ((buf = nano_fifo_get(&conn->tx_queue))) {
 		bt_buf_put(buf);
+	}
+
+	/* Return any unacknowledged packets */
+	if (conn->pending_pkts) {
+		while (conn->pending_pkts--) {
+			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
+		}
 	}
 
 	bt_conn_reset_rx_state(conn);

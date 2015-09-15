@@ -473,14 +473,30 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 
 	for (i = 0; i < num_handles; i++) {
 		uint16_t handle, count;
+		struct bt_conn *conn;
 
 		handle = sys_le16_to_cpu(evt->h[i].handle);
 		count = sys_le16_to_cpu(evt->h[i].count);
 
 		BT_DBG("handle %u count %u\n", handle, count);
 
-		while (count--)
+		conn = bt_conn_lookup_handle(handle);
+		if (conn) {
+			if (conn->pending_pkts >= count) {
+				conn->pending_pkts -= count;
+			} else {
+				BT_ERR("completed packets mismatch: %u > %u\n",
+				       count, conn->pending_pkts);
+				conn->pending_pkts = 0;
+			}
+			bt_conn_put(conn);
+		} else {
+			BT_ERR("No matching connection for handle %u", handle);
+		}
+
+		while (count--) {
 			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
+		}
 	}
 }
 
