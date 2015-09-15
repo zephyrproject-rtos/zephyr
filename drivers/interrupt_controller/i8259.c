@@ -41,6 +41,7 @@ to prevent it from generating spurious interrupts.
 #include <arch/cpu.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <device.h>
 
 #include <drivers/pic.h>
 #include <board.h>
@@ -57,8 +58,10 @@ to prevent it from generating spurious interrupts.
  * @return N/A
  */
 
-void _i8259_init(void)
+int _i8259_init(struct device *unused)
 {
+	ARG_UNUSED(unused);
 	sys_out8(PIC_DISABLE, PIC_PORT2(PIC_SLAVE_BASE_ADRS));
 	sys_out8(PIC_DISABLE, PIC_PORT2(PIC_MASTER_BASE_ADRS));
+	return 0;
 }

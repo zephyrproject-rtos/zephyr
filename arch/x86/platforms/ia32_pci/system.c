@@ -51,13 +51,6 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/pci/pci.h>
 #include <drivers/pci/pci_mgr.h>
 
-#if defined(CONFIG_SHUTOFF_PIC)
-#define pic_init() _i8259_init()
-#else
-#define pic_init()         \
-	do {/* nothing */ \
-	} while ((0))
-#endif /* CONFIG_SHUTOFF_PIC */
 
 #ifdef CONFIG_LOAPIC
 #include <drivers/loapic.h>
@@ -150,7 +143,6 @@ static int ia32_pci_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	pic_init();          /* NOP if not needed */
 	loapic_init();       /* NOP if not needed */
 	ioapic_init();       /* NOP if not needed */
 	hpet_irq_set();      /* NOP if not needed */
@@ -179,6 +171,13 @@ static int ia32_pci_init(struct device *arg)
 #endif /* CONFIG_PCI_DEBUG && CONFIG_PCI_ENUMERATION */
 	return 0;
 }
+
+#if defined(CONFIG_PIC_DISABLE)
+
+DECLARE_DEVICE_INIT_CONFIG(pic_0, "", _i8259_init, NULL);
+pure_early_init(pic_0, NULL);
+
+#endif /* CONFIG_PIC_DISABLE */
 
 DECLARE_DEVICE_INIT_CONFIG(ia32_pci_0, "", ia32_pci_init, NULL);
 pure_early_init(ia32_pci_0, NULL);

@@ -52,7 +52,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-extern void _i8259_init(void);
+extern int _i8259_init(struct device *unused);
 
 #endif /* _ASMLANGUAGE */
 
