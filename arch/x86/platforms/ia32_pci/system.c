@@ -55,20 +55,6 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/hpet.h>
 
 
-
-#ifdef CONFIG_CONSOLE_HANDLER
-static inline void console_irq_set(void)
-{
-	_ioapic_irq_set(CONFIG_UART_CONSOLE_IRQ,
-			CONFIG_UART_CONSOLE_IRQ + INT_VEC_IRQ0,
-			UART_IOAPIC_FLAGS);
-}
-#else
-#define console_irq_set()	\
-	do { /* nothing */	\
-	} while ((0))
-#endif
-
 #ifdef CONFIG_DW_I2C0
 static inline void dw_i2c0_irq_set(void)
 {
@@ -109,7 +95,6 @@ static int ia32_pci_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	console_irq_set();   /* NOP if not needed */
 	gpio_irq_set();      /* NOP if not needed */
 
 	dw_i2c0_irq_set();   /* NOP if not needed */
@@ -134,6 +119,23 @@ static int ia32_pci_init(struct device *arg)
 #endif /* CONFIG_PCI_DEBUG && CONFIG_PCI_ENUMERATION */
 	return 0;
 }
+
+#ifdef CONFIG_CONSOLE_HANDLER
+
+static int console_irq_set(struct device *unsued)
+{
+#if defined(CONFIG_UART_CONSOLE)
+	_ioapic_irq_set(CONFIG_UART_CONSOLE_IRQ,
+			CONFIG_UART_CONSOLE_IRQ + INT_VEC_IRQ0,
+			UART_IOAPIC_FLAGS);
+#endif
+	return 0;
+}
+
+DECLARE_DEVICE_INIT_CONFIG(consoleirq, "", console_irq_set, NULL);
+pure_late_init(consoleirq, NULL);
+
+#endif /* CONFIG_CONSOLE_HANDLER */
 
 #ifdef CONFIG_HPET_TIMER
 
