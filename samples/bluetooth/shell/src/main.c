@@ -777,6 +777,10 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 	subscribe_params.func = subscribe_func;
 	subscribe_params.destroy = subscribe_destroy;
 
+	if (argc > 3) {
+		subscribe_params.value = xtoi(argv[3]);
+	}
+
 	err = bt_gatt_subscribe(default_conn, handle, &subscribe_params);
 	if (err) {
 		printk("Subscribe failed (err %d)\n", err);
