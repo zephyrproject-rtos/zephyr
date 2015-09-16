@@ -3,14 +3,13 @@
 Supported Platforms
 ###################
 
-The Zephyr kernel supports the platforms configurations listed in the
+The |codename| supports the platform configurations listed in the
 table below. An application can use a platform configuration as is,
-or it can customize the platform configuration by changing its default
-kernel configuration settings.
+or customize it by changing the default kernel configuration settings.
 
 .. note::
-   Developers are also free to create new platform configurations
-   to allow an application to run on a target systems that is not listed.
+   Developers can create new platform configurations
+   to allow an application to run on other target systems.
 
 +----------------------+-----------------+------------------------+
 | Platform             | Instruction Set | Supported              |
@@ -29,7 +28,7 @@ kernel configuration settings.
 |                      |                 | | Galileo (Gen 2)      |
 +----------------------+-----------------+------------------------+
 
-The following sections provide details on the associated platform configuration:
+The following sections provide details on the respective platforms:
 
 .. toctree::
    :maxdepth: 1

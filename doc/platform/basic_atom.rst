@@ -42,14 +42,11 @@ hardware features:
 | UART         |            |                       |
 +--------------+------------+-----------------------+
 
-Other hardware features are not currently supported by Zephyr applications.
+The kernel currently does not support other hardware features on this platform.
 
 Interrupt Controller
 ====================
-
-.. _galileo's platform documention: galileo.html
-
-Refer to the `galileo's platform documention`_.
+Refer to the :ref:`galileo`.
 
 .. note::
    The basic_atom platform configuration does not support PCI.
@@ -61,22 +58,20 @@ The basic_atom platform configuration uses a system
 clock frequency of 25 MHz.
 
 .. note::
-   The LOAPIC timer may be used instead of the HPET; however
-   SYS_CLOCK_HW_CYCLES_PER_SEC would need to be set to a custom
-   value---one that is tied to the speed of the host system.
+   The LOAPIC timer may be used instead of the HPET. To do so,
+   set SYS_CLOCK_HW_CYCLES_PER_SEC to a custom value that is tied to the host system speed.
 
 Serial Port
 ===========
 
-The basic_atom platform configuration uses a single serial
-communication channel with a NS16550 serial driver
-that operates in polling mode.  For an interrupt-driven driver,
-enable the UART_INTERRUPT_DRIVEN kernel configuration option.
+The basic_atom platform configuration uses a single serial communication channel
+with a NS16550 serial driver that operates in polling mode.
+For an interrupt-driven driver, enable the UART_INTERRUPT_DRIVEN kernel configuration option.
 
 Known Problems or Limitations
 *****************************
 
-There is no support for the following:
+The following platform features are unsupported:
 
 * Isolated Memory Regions
 * Serial port in Direct Memory Access (DMA) mode

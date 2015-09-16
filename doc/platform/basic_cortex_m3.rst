@@ -6,7 +6,7 @@ Platform Configuration: basic_cortex_m3
 Overview
 ********
 
-The basic_cortex_m3 platform configuration is used by Zephyr applications
+The Zephyr kernel uses the basic_cortex_m3 platform configuration
 to emulate the TI LM3S6965 platform running on QEMU. It provides support
 for an ARM Cortex-M3 CPU and the following devices:
 
@@ -45,14 +45,13 @@ hardware features:
 | SYSTICK      | on-chip    | system clock         |
 +--------------+------------+----------------------+
 
-Other hardware features are not currently supported by Zephyr applications.
+The kernel currently does not support other hardware features on this platform.
 
 Interrupt Controller
 ====================
 
-.. _fsl_frdm_k64f's platform documention: fsl_frdm_k64f.html
 
-Refer to the `fsl_frdm_k64f's platform documention`_.
+Refer to the :ref:`fsl_frdm_k64f`.
 
 .. note::
    Unlike the fsl_frdm_k64 platform configuration, the basic_cortex_m3
@@ -72,7 +71,7 @@ serial communication channel with the CPU's UART0.
 Known Problems or Limitations
 *****************************
 
-There is no support for the following:
+The following platform features are unsupported:
 
 * Memory protection through optional MPU.
   However, using a XIP kernel effectively provides
@@ -86,7 +85,7 @@ Bibliography
 ************
 
 1. The Definitive Guide to the ARM Cortex-M3,
-   Second Edition by Joseph Yiu (ISBN?978-0-12-382090-7)
+   Second Edition by Joseph Yiu (ISBN 978-0-12-382090-7)
 2. ARMv7-M Architecture Technical Reference Manual
    (ARM DDI 0403D ID021310)
 3. Procedure Call Standard for the ARM Architecture

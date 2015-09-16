@@ -6,13 +6,13 @@ Platform Configuration: basic_minuteia
 Overview
 ********
 
-The basic_minuteia platform configuration is used by Zephyr applications
+The |codename| uses the basic_minuteia platform configuration
 to emulate the galileo platform (or something similar) running on QEMU.
 It provides support for an x86 Minute IA CPU and the following devices:
 
 * HPET
 
-* Advanced Programmed Interrupt Controller (APIC)
+* Advanced Programmable Interrupt Controller (APIC)
 
 * NS16550 UART
 
@@ -42,14 +42,12 @@ hardware features:
 | UART         |            |                       |
 +--------------+------------+-----------------------+
 
-Other hardware features are not currently supported by Zephyr applications.
+The kernel currently does not support other hardware features on this platform.
 
 Interrupt Controller
 ====================
 
-.. _galileo's platform documention: galileo.html
-
-Refer to the `galileo's platform documention`_.
+Refer to the :ref:`galileo`.
 
 .. note::
    The basic_minuteia platform configuration does not support PCI.
@@ -65,15 +63,13 @@ Serial Port
 
 The basic_minuteia platform configuration uses a single serial
 communication channel that uses the NS16550 serial driver
-that operates in polling mode.  However, this can be overridden
-to be interrupt driven by enabling the UART_INTERRUPT_DRIVEN
-Kconfig option.
-
+operating in polling mode. To override, enable the UART_INTERRUPT_DRIVEN
+Kconfig option, which allows the system to be interrupt-driven.
 
 Known Problems or Limitations
 *****************************
 
-There is no support for the following:
+The following platform features are unsupported:
 
 * Isolated Memory Regions
 * Serial port in Direct Memory Access (DMA) mode
