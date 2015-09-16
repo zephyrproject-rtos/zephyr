@@ -405,7 +405,10 @@ def kernel_main_c_tasks():
             "    {NULL, NULL, %d, (ktask_t)&%s,\n" % (prio, obj_name) +
             "     0x00000001, %#010x,\n" % (group_bitmask) +
             "     %s, %s, %d,\n" % (entry, stack, size) +
-            "     (taskabortfunction)NULL, NULL};\n")
+            "     (taskabortfunction)NULL, NULL};\n" +
+            "ktask_t _k_task_ptr_%s " % (name) +
+            "    __section(_k_task_ptr, public, task) = " +
+            "    (ktask_t)&%s;\n" % (obj_name))
 
     kernel_main_c_out(
         "struct k_task _k_task_idle " +
@@ -414,7 +417,10 @@ def kernel_main_c_tasks():
         "     0x00000000, 0x00000000,\n" +
         "     (taskstartfunction)NULL, main_task_stack,\n"
         "     CONFIG_MAIN_STACK_SIZE,\n" +
-        "     (taskabortfunction)NULL, NULL};\n")
+        "     (taskabortfunction)NULL, NULL};\n" +
+        "ktask_t _k_task_ptr_idle " +
+        "    __section(_k_task_ptr, idle, task) = " +
+        "    (ktask_t)&_k_task_idle;\n")
 
     # currently scheduled task (idle task)
 

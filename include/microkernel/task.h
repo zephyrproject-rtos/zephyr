@@ -338,7 +338,9 @@ extern void task_group_leave(uint32_t groups);
 			(ktask_t)&_k_task_obj_##name, \
 			priority, 0x00000001, groups, \
 			entry, &__stack_##name[0], stack_size, NULL); \
-	const ktask_t name = (ktask_t)&_k_task_obj_##name;
+	const ktask_t name \
+		__section(_k_task_ptr, private, task) = \
+		(ktask_t)&_k_task_obj_##name;
 
 #ifdef __cplusplus
 }

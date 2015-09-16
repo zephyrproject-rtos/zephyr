@@ -203,6 +203,16 @@ SECTIONS
 		_k_task_list_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+	SECTION_PROLOGUE (_k_task_ptr, (OPTIONAL),)
+	{
+		_k_task_ptr_start = .;
+			*(._k_task_ptr.public.*)
+			*(._k_task_ptr.private.*)
+			*(._k_task_ptr.idle.*)
+		KEEP(*(SORT_BY_NAME("._k_task_ptr*")))
+		_k_task_ptr_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
 	SECTION_PROLOGUE (_k_pipe_ptr, (OPTIONAL),)
 	{
 		_k_pipe_ptr_start = .;
