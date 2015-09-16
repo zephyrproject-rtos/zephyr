@@ -65,6 +65,8 @@ SECTIONS
     {
     GROUP_START(ROMABLE_REGION)
 
+	_image_rom_start = CONFIG_FLASH_BASE_ADDRESS;
+
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 	KEEP(*(.exc_vector_table))
@@ -133,6 +135,7 @@ SECTIONS
 	*(".rodata.*")
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	_image_rom_end = .;
     __data_rom_start = ALIGN(4);    /* XIP imaged DATA ROM start addr */
 
     GROUP_END(ROMABLE_REGION)
@@ -145,6 +148,7 @@ SECTIONS
     SECTION_PROLOGUE(_DATA_SECTION_NAME,,)
 #endif
 	{
+	_image_ram_start = .;
 	__data_ram_start = .;
 	*(.data)
 	*(".data.*")
@@ -244,6 +248,7 @@ SECTIONS
 
     /* Define linker symbols */
 
+	_image_ram_end = .;
     _end = .; /* end of image */
     __bss_num_words = (__bss_end - __bss_start) >> 2;
 

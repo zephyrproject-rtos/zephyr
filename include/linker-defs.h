@@ -113,6 +113,11 @@ extern char __data_ram_start[];
 extern int __data_num_words[];
 #endif
 
+extern char _image_rom_start[];
+extern char _image_rom_end[];
+extern char _image_ram_start[];
+extern char _image_ram_end[];
+
 /* end address of image. */
 extern char _end[];
 
