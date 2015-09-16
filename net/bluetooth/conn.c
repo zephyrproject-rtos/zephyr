@@ -552,8 +552,6 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 
 int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 {
-	struct bt_keys *keys;
-
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
@@ -570,24 +568,25 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 
 	conn->required_sec_level = sec;
 
-	if (conn->role == BT_HCI_ROLE_SLAVE) {
-		return bt_smp_send_security_req(conn);
-	}
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		struct bt_keys *keys;
 
-	keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
-	if (keys) {
-		if (sec > BT_SECURITY_MEDIUM &&
-		    keys->type != BT_KEYS_AUTHENTICATED) {
-			goto pair;
+		keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
+		if (keys) {
+			if (sec > BT_SECURITY_MEDIUM &&
+			    keys->type != BT_KEYS_AUTHENTICATED) {
+				return bt_smp_send_pairing_req(conn);
+			}
+
+			return bt_conn_le_start_encryption(conn, keys->ltk.rand,
+							   keys->ltk.ediv,
+							   keys->ltk.val);
 		}
 
-		return bt_conn_le_start_encryption(conn, keys->ltk.rand,
-						   keys->ltk.ediv,
-						   keys->ltk.val);
+		return bt_smp_send_pairing_req(conn);
 	}
 
-pair:
-	return bt_smp_send_pairing_req(conn);
+	return bt_smp_send_security_req(conn);
 }
 
 void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)
