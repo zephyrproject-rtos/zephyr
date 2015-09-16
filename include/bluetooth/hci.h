@@ -64,6 +64,7 @@ typedef struct {
 #define BT_EIR_SVC_DATA128		0x21 /* Service data, 128-bit UUID */
 #define BT_EIR_MANUFACTURER_DATA	0xff /* Manufacturer Specific Data */
 
+#define BT_LE_AD_LIMITED		0x01 /* Limited Discoverable */
 #define BT_LE_AD_GENERAL		0x02 /* General Discoverable */
 #define BT_LE_AD_NO_BREDR		0x04 /* BR/EDR not supported */
 
