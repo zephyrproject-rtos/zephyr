@@ -254,7 +254,7 @@ struct bt_att_indicate {
 } __packed;
 
 /* Handle Value Confirm */
-#define BT_ATT_OP_CONFIRM			0x1f
+#define BT_ATT_OP_CONFIRM			0x1e
 
 struct bt_att_signature {
 	uint8_t  value[12];
