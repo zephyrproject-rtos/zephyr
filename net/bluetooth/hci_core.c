@@ -57,8 +57,13 @@
 #endif
 
 /* How many buffers to use for incoming ACL data */
+#if defined(CONFIG_BLUETOOTH_CONN)
 #define ACL_IN_MAX	7
 #define ACL_OUT_MAX	7
+#else
+#define ACL_IN_MAX	0
+#define ACL_OUT_MAX	0
+#endif /* CONFIG_BLUETOOTH_CONN */
 
 /* Stacks for the fibers */
 static BT_STACK_NOINIT(rx_fiber_stack, 1024);
