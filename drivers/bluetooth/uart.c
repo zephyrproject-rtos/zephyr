@@ -226,6 +226,7 @@ failed:
 static int bt_uart_send(struct bt_buf *buf)
 {
 	uint8_t *type;
+	int len;
 
 	if (bt_buf_headroom(buf) < H4_HEADER_SIZE) {
 		BT_ERR("Not enough headroom in buffer\n");
@@ -249,7 +250,14 @@ static int bt_uart_send(struct bt_buf *buf)
 		return -EINVAL;
 	}
 
-	return uart_fifo_fill(BT_UART_DEV, buf->data, buf->len);
+	len = uart_fifo_fill(BT_UART_DEV, buf->data, buf->len);
+	if (len < buf->len) {
+		BT_ERR("Unable to transmit entire buffer (%d < %u)\n",
+		       len, buf->len);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 IRQ_CONNECT_STATIC(bluetooth, CONFIG_BLUETOOTH_UART_IRQ,
