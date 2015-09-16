@@ -130,6 +130,10 @@ struct gap_set_fast_connectable_rp {
 	uint32_t current_settings;
 };
 
+#define GAP_NON_DISCOVERABLE		0x00
+#define GAP_GENERAL_DISCOVERABLE	0x01
+#define GAP_LIMITED_DISCOVERABLE	0x02
+
 #define GAP_SET_DISCOVERABLE		0x08
 struct gap_set_discoverable_cmd {
 	uint8_t discoverable;

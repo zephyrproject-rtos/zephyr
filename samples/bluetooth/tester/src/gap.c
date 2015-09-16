@@ -96,6 +96,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds |= 1 << GAP_READ_CONTROLLER_INDEX_LIST;
 	cmds |= 1 << GAP_READ_CONTROLLER_INFO;
 	cmds |= 1 << GAP_SET_CONNECTABLE;
+	cmds |= 1 << GAP_SET_DISCOVERABLE;
 	cmds |= 1 << GAP_START_ADVERTISING;
 	cmds |= 1 << GAP_STOP_ADVERTISING;
 	cmds |= 1 << GAP_START_DISCOVERY;
@@ -160,11 +161,51 @@ static void set_connectable(uint8_t *data, uint16_t len)
 			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 }
 
+static struct bt_eir ad_flags = {
+		.len = 2,
+		.type = BT_EIR_FLAGS,
+		.data = { BT_LE_AD_NO_BREDR },
+};
+
+static void set_discoverable(uint8_t *data, uint16_t len)
+{
+	const struct gap_set_discoverable_cmd *cmd = (void *) data;
+	struct gap_set_discoverable_rp rp;
+	uint8_t *flags = &ad_flags.data[0];
+
+	switch (cmd->discoverable) {
+	case GAP_NON_DISCOVERABLE:
+		*flags &= ~(BT_LE_AD_GENERAL | BT_LE_AD_LIMITED);
+		atomic_clear_bit(&current_settings, GAP_SETTINGS_DISCOVERABLE);
+		break;
+	case GAP_GENERAL_DISCOVERABLE:
+		*flags &= ~BT_LE_AD_LIMITED;
+		*flags |= BT_LE_AD_GENERAL;
+		atomic_set_bit(&current_settings, GAP_SETTINGS_DISCOVERABLE);
+		break;
+	case GAP_LIMITED_DISCOVERABLE:
+		*flags &= ~BT_LE_AD_GENERAL;
+		*flags |= BT_LE_AD_LIMITED;
+		atomic_set_bit(&current_settings, GAP_SETTINGS_DISCOVERABLE);
+		break;
+	default:
+		tester_rsp(BTP_SERVICE_ID_GAP, GAP_SET_DISCOVERABLE,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		return;
+	}
+
+	rp.current_settings = sys_cpu_to_le32(current_settings);
+
+	tester_rsp_full(BTP_SERVICE_ID_GAP, GAP_SET_DISCOVERABLE,
+			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+}
+
 static void start_advertising(const uint8_t *data, uint16_t len)
 {
 	const struct gap_start_advertising_cmd *cmd = (void *) data;
 	struct gap_start_advertising_rp rp;
 	uint8_t adv_type;
+	struct bt_eir ad_data[] = { ad_flags };
 
 	/* TODO
 	 * convert adv_data and scan_rsp and pass them
@@ -177,7 +218,7 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 		adv_type = BT_LE_ADV_NONCONN_IND;
 	}
 
-	if (bt_start_advertising(adv_type, NULL, NULL) < 0) {
+	if (bt_start_advertising(adv_type, ad_data, NULL) < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, GAP_START_ADVERTISING,
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;
@@ -335,6 +376,9 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GAP_SET_CONNECTABLE:
 		set_connectable(data, len);
+		return;
+	case GAP_SET_DISCOVERABLE:
+		set_discoverable(data, len);
 		return;
 	case GAP_START_ADVERTISING:
 		start_advertising(data, len);
