@@ -1,12 +1,17 @@
-config GPIO_DW
-       bool
-
 menuconfig GPIO
         bool
 	prompt "GPIO Drivers"
         default n
         help
           Include GPIO drivers in system config
+
+config GPIO_DW
+	prompt "Designware GPIO"
+	default n
+	depends on GPIO
+	bool
+	help
+	  Enable driver for Designware GPIO
 
 config	GPIO_DW_VENDOR_ID
 	hex "PCI Vendor ID"
@@ -25,9 +30,8 @@ config	GPIO_DW_CLASS
 
 config GPIO_DW_0
        bool "Designware GPIO block 0"
-       depends on GPIO
+       depends on GPIO_DW
        default n
-       select GPIO_DW
        help
        Include Designware GPIO driver
 
@@ -84,8 +88,7 @@ config GPIO_DW_0_PRI
 
 config GPIO_DW_1
        bool "Designware GPIO block 1"
-       depends on GPIO
-       select GPIO_DW
+       depends on GPIO_DW
        default n
        help
        Include Designware GPIO driver
