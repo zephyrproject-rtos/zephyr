@@ -109,7 +109,8 @@ obj-$(CONFIG_NETWORKING_WITH_15_4) += net_driver_15_4.o \
 
 ifeq ($(CONFIG_NETWORKING_WITH_15_4),)
      obj-y += contiki/mac/nullmac.o \
-		contiki/mac/framer-nullmac.o
+		contiki/mac/framer-nullmac.o \
+		contiki/mac/nullrdc.o
 endif
 
 obj-$(CONFIG_NETWORKING_UART) += contiki/os/dev/slip.o \
