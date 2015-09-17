@@ -32,7 +32,7 @@
 
 menuconfig BLUETOOTH
 	bool
-	prompt "Bluetooth LE support [EXPERIMENTAL]"
+	prompt "Bluetooth LE support"
 	default n
 	select NANO_TIMEOUTS
 	help
