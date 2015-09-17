@@ -162,7 +162,7 @@ config  TASK_MONITOR
 	bool
 	prompt "Task monitoring [EXPERIMENTAL]"
 	default n
-	depends on MICROKERNEL
+	depends on MICROKERNEL && EXPERIMENTAL
 	help
 	This option instructs the kernel to record significant task
 	activities. These can include: task switches, task state changes,
@@ -195,7 +195,7 @@ config  OBJECT_MONITOR
 	bool
 	prompt "Kernel object monitoring [EXPERIMENTAL]"
 	default n
-	depends on MICROKERNEL
+	depends on MICROKERNEL && EXPERIMENTAL
 	help
 	  This option instructs the kernel to record statistics about
 	  microkernel object usage.
@@ -204,6 +204,7 @@ config  THREAD_MONITOR
 	bool
 	prompt "Task and fiber monitoring [EXPERIMENTAL]"
 	default n
+	depends on EXPERIMENTAL
 	help
 	  This option instructs the kernel to maintain a list of all tasks
 	  and fibers (excluding those that have not yet started or have
