@@ -248,13 +248,13 @@ dio_input(struct net_buf *buf)
       PRINTF("RPL: Neighbor added to neighbor cache ");
       PRINT6ADDR(&from);
       PRINTF(", ");
-      PRINTLLADDR((uip_lladdr_t *)buf->src);
+      PRINTLLADDR((uip_lladdr_t *)&buf->src);
       PRINTF("\n");
     } else {
       PRINTF("RPL: Out of memory, dropping DIO from ");
       PRINT6ADDR(&from);
       PRINTF(", ");
-      PRINTLLADDR((uip_lladdr_t *)buf->src);
+      PRINTLLADDR((uip_lladdr_t *)&buf->src);
       PRINTF("\n");
       return;
     }
@@ -757,13 +757,13 @@ dao_input(struct net_buf *buf)
       PRINTF("RPL: Neighbor added to neighbor cache ");
       PRINT6ADDR(&dao_sender_addr);
       PRINTF(", ");
-      PRINTLLADDR((uip_lladdr_t *)buf->src);
+      PRINTLLADDR((uip_lladdr_t *)&buf->src);
       PRINTF("\n");
     } else {
       PRINTF("RPL: Out of Memory, dropping DAO from ");
       PRINT6ADDR(&dao_sender_addr);
       PRINTF(", ");
-      PRINTLLADDR((uip_lladdr_t *)buf->src);
+      PRINTLLADDR((uip_lladdr_t *)&buf->src);
       PRINTF("\n");
       return;
     }
