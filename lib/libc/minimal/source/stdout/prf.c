@@ -35,6 +35,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <string.h>
+#include <ctype.h>
 
 #ifndef MAXFLD
 #define	MAXFLD	200
@@ -500,24 +501,6 @@ static int _to_float(char *buf, uint32_t double_temp[], int full, int c,
 	return buf - start;
 }
 
-/**
- *
- * @brief Is the input value an ASCII digit character?
- *
- * This function provides a traditional implementation of the isdigit()
- * primitive that is footprint conversative, i.e. it does not utilize a
- * lookup table.
- *
- * @return non-zero if input integer in an ASCII digit character
- *
- * INTERNAL
- */
-
-static inline int _isdigit(int c)
-{
-	return ((c >= '0') && (c <= '9'));
-}
-
 static int _atoi(char **sptr)
 {
 	register char *p;
@@ -526,7 +509,7 @@ static int _atoi(char **sptr)
 	i = 0;
 	p = *sptr;
 	p--;
-	while (_isdigit(((int) *p)))
+	while (isdigit(((int) *p)))
 		i = 10 * i + *p++ - '0';
 	*sptr = p;
 	return i;
@@ -608,7 +591,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 					width = -width;
 				}
 				c = *format++;
-			} else if (!_isdigit(c))
+			} else if (!isdigit(c))
 				width = 0;
 			else {
 				width = _atoi(&format);	/* Find width */
