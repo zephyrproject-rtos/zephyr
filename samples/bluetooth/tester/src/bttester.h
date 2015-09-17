@@ -240,6 +240,18 @@ struct gatt_add_service_rp {
 	uint16_t svc_id;
 };
 
+#define GATT_ADD_CHARACTERISTIC		0x03
+struct gatt_add_characteristic_cmd {
+	uint16_t svc_id;
+	uint8_t properties;
+	uint8_t permissions;
+	uint8_t uuid_length;
+	uint8_t uuid[0];
+} __packed;
+struct gatt_add_characteristic_rp {
+	uint16_t char_id;
+};
+
 #define GATT_START_SERVER		0x07
 
 void tester_init(void);

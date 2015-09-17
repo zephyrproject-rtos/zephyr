@@ -152,6 +152,78 @@ rsp:
 	}
 }
 
+static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(0x0000, NULL);
+static struct bt_gatt_attr chr_val = BT_GATT_LONG_DESCRIPTOR(0x0000, NULL, 0,
+							     NULL, NULL,
+							     NULL, NULL);
+
+static void add_characteristic(uint8_t *data, uint16_t len)
+{
+	const struct gatt_add_characteristic_cmd *cmd = (void *) data;
+	struct gatt_add_characteristic_rp rp;
+	struct bt_gatt_attr *attr_chrc, *attr_value;
+	struct bt_gatt_chrc chrc;
+	struct bt_uuid uuid;
+	uint8_t status;
+	uint16_t u16;
+
+	switch (cmd->uuid_length) {
+	case 0x02: /* UUID 16 */
+		uuid.type = BT_UUID_16;
+		memcpy(&u16, cmd->uuid, sizeof(u16));
+		uuid.u16 = sys_le16_to_cpu(u16);
+		break;
+	case 0x10: /* UUID 128*/
+		uuid.type = BT_UUID_128;
+		memcpy(&uuid.u128, cmd->uuid, sizeof(uuid.u128));
+		break;
+	default:
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	attr_chrc = gatt_db_add(&chr);
+	if (!attr_chrc) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	attr_value = gatt_db_add(&chr_val);
+	if (!attr_value) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	chrc.properties = cmd->properties;
+	chrc.value_handle = attr_value->handle;
+	chrc.uuid = gatt_buf_add(&uuid, sizeof(uuid));
+	if (!chrc.uuid) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	attr_chrc->user_data = gatt_buf_add(&chrc, sizeof(chrc));
+	if (!attr_chrc->user_data) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	attr_value->uuid = chrc.uuid;
+	attr_value->perm = cmd->permissions;
+
+	rp.char_id = sys_cpu_to_le16(attr_chrc->handle);
+	status = BTP_STATUS_SUCCESS;
+
+rsp:
+	if (status != BTP_STATUS_SUCCESS) {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+			   CONTROLLER_INDEX, status);
+	} else {
+		tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+				CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+	}
+}
+
 static void start_server(uint8_t *data, uint16_t len)
 {
 	int i;
@@ -178,6 +250,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 	switch (opcode) {
 	case GATT_ADD_SERVICE:
 		add_service(data, len);
+		return;
+	case GATT_ADD_CHARACTERISTIC:
+		add_characteristic(data, len);
 		return;
 	case GATT_START_SERVER:
 		start_server(data, len);
