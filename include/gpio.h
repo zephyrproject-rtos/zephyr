@@ -59,6 +59,19 @@ extern "C" {
 #define GPIO_INT_EDGE		(1 << 5)
 #define GPIO_INT_DOUBLE_EDGE	(1 << 6)
 
+/* Polarity of the GPIO (1 bit) */
+#define GPIO_POL_POS		7
+#define GPIO_POL_NORMAL		(0 << GPIO_POL_POS)
+#define GPIO_POL_INV		(1 << GPIO_POL_POS)
+#define GPIO_POL_MASK		(1 << GPIO_POL_POS)
+
+/* Pull-up/pull-down for GPIO (2 bits) */
+#define GPIO_PUD_POS		8
+#define GPIO_PUD_NORMAL		(0 << GPIO_PUD_POS)
+#define GPIO_PUD_PULL_UP	(1 << GPIO_PUD_POS)
+#define GPIO_PUD_PULL_DOWN	(2 << GPIO_PUD_POS)
+#define GPIO_PUD_MASK		(3 << GPIO_PUD_POS)
+
 /* application callback function signature*/
 typedef void (*gpio_callback_t)(struct device *port, uint32_t pin);
 
