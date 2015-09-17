@@ -110,8 +110,8 @@ typedef struct s_isrList {
 /**
  * @brief Connect a routine to an interrupt vector
  *
- * This macro "connects" the specified routine, <r>, to the specified interrupt
- * vector, <v> using the descriptor privilege level <d>. On the IA-32
+ * This macro "connects" the specified routine, @a r, to the specified interrupt
+ * vector, @a v using the descriptor privilege level @a d. On the IA-32
  * architecture, an interrupt vector is a value from 0 to 255. This macro
  * populates the special intList section with the address of the routine, the
  * vector number and the descriptor privilege level. The genIdt tool then picks
@@ -119,7 +119,7 @@ typedef struct s_isrList {
  * properly encoded. This macro replaces the _IntVecSet () routine in static
  * interrupt systems.
  *
- * The <d> argument specifies the privilege level for the interrupt-gate
+ * The @a d argument specifies the privilege level for the interrupt-gate
  * descriptor; (hardware) interrupts and exceptions should specify a level of 0,
  * whereas handlers for user-mode software generated interrupts should specify 3.
  * @param r Routine to be connected
@@ -148,12 +148,12 @@ typedef struct s_isrList {
 /**
  * @brief Connect a routine to interrupt number
  *
- * For the device <device> associates IRQ number <irq> with priority
- * <priority> with the interrupt routine <isr>, that receives parameter
- * <parameter>
+ * For the device @a device associates IRQ number @a irq with priority
+ * @a priority with the interrupt routine @a isr, that receives parameter
+ * @a parameter
  *
  * @param device Device
- * @param iqr IRQ number
+ * @param irq IRQ number
  * @param priority IRQ Priority
  * @param isr Interrupt Service Routine
  * @param parameter ISR parameter
@@ -343,7 +343,7 @@ static inline __attribute__((always_inline)) unsigned int irq_lock(void)
  *
  * @brief Enable all interrupts on the CPU (inline)
  *
- * This routine re-enables interrupts on the CPU.  The <key> parameter
+ * This routine re-enables interrupts on the CPU.  The @a key parameter
  * is an architecture-dependent lock-out key that is returned by a previous
  * invocation of irq_lock().
  *
@@ -371,7 +371,7 @@ static inline __attribute__((always_inline)) void irq_unlock(unsigned int key)
 typedef void (*NANO_EOI_GET_FUNC) (void *);
 
 /**
- * The NANO_SOFT_IRQ macro must be used as the value for the <irq> parameter
+ * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
  * to irq_connect() when connecting to a software generated interrupt.
  */
 #define NANO_SOFT_IRQ	((unsigned int) (-1))
