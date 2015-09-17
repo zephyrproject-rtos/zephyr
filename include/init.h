@@ -59,7 +59,7 @@
  *  @param id The init level id where the init object will be placed
  *  in the image.
  *
- *  @param driver_data The pointer to the driver data for the driver instance.
+ *  @param data The pointer to the driver data for the driver instance.
  *  @sa DECLARE_DEVICE_INIT_CONFIG()
  */
 #define __define_initconfig(cfg_name, id, data)			    \
