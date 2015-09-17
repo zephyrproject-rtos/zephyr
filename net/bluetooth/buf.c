@@ -103,25 +103,14 @@ struct bt_buf *bt_buf_get(enum bt_buf_type type, size_t reserve_head)
 	return buf;
 }
 
-void bt_buf_put(struct bt_buf *buf)
+static void report_completed_packet(struct bt_buf *buf)
 {
 	struct bt_hci_cp_host_num_completed_packets *cp;
 	struct bt_hci_handle_count *hc;
-	struct nano_fifo *avail = get_avail(buf->type);
 	uint16_t handle;
 
-	BT_DBG("buf %p ref %u type %d\n", buf, buf->ref, buf->type);
-
-	if (--buf->ref) {
-		return;
-	}
-
 	handle = buf->acl.handle;
-	nano_fifo_put(avail, buf);
-
-	if (avail != &avail_acl_in) {
-		return;
-	}
+	nano_fifo_put(&avail_acl_in, buf);
 
 	BT_DBG("Reporting completed packet for handle %u\n", handle);
 
@@ -140,6 +129,24 @@ void bt_buf_put(struct bt_buf *buf)
 	hc->count  = sys_cpu_to_le16(1);
 
 	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
+}
+
+void bt_buf_put(struct bt_buf *buf)
+{
+	struct nano_fifo *avail = get_avail(buf->type);
+
+	BT_DBG("buf %p ref %u type %d\n", buf, buf->ref, buf->type);
+
+	if (--buf->ref) {
+		return;
+	}
+
+	if (avail == &avail_acl_in) {
+		report_completed_packet(buf);
+		return;
+	}
+
+	nano_fifo_put(avail, buf);
 }
 
 struct bt_buf *bt_buf_hold(struct bt_buf *buf)
