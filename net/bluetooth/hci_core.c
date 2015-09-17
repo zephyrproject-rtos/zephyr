@@ -488,18 +488,20 @@ static void hci_num_completed_packets(struct bt_buf *buf)
 		BT_DBG("handle %u count %u\n", handle, count);
 
 		conn = bt_conn_lookup_handle(handle);
-		if (conn) {
-			if (conn->pending_pkts >= count) {
-				conn->pending_pkts -= count;
-			} else {
-				BT_ERR("completed packets mismatch: %u > %u\n",
-				       count, conn->pending_pkts);
-				conn->pending_pkts = 0;
-			}
-			bt_conn_put(conn);
-		} else {
-			BT_ERR("No matching connection for handle %u", handle);
+		if (!conn) {
+			BT_ERR("No connection for handle %u\n", handle);
+			continue;
 		}
+
+		if (conn->pending_pkts >= count) {
+			conn->pending_pkts -= count;
+		} else {
+			BT_ERR("completed packets mismatch: %u > %u\n",
+					count, conn->pending_pkts);
+			conn->pending_pkts = 0;
+		}
+
+		bt_conn_put(conn);
 
 		while (count--) {
 			nano_fiber_sem_give(&bt_dev.le_pkts_sem);
