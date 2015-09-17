@@ -104,6 +104,11 @@ int net_send(struct net_buf *buf)
 #define STAT(s) uip_stat.s
 #define PRINT_STATISTICS_INTERVAL (10 * sys_clock_ticks_per_sec)
 #define net_print_statistics stats /* to make the debug print line shorter */
+
+#if RPL_CONF_STATS
+#include "rpl/rpl-private.h"
+#endif
+
 static void stats(void)
 {
 	static clock_time_t last_print;
@@ -144,6 +149,24 @@ static void stats(void)
 			STAT(nd6.recv),
 			STAT(nd6.sent),
 			STAT(nd6.drop));
+#endif
+
+#if RPL_CONF_STATS
+#define RSTAT(s) RPL_STAT(rpl_stats.s)
+		NET_DBG("RPL overflows\t%d\tl-repairs\t%d\tg-repairs\t%d\n",
+			RSTAT(mem_overflows),
+			RSTAT(local_repairs),
+			RSTAT(global_repairs));
+		NET_DBG("RPL malformed\t%d\tresets   \t%d\tp-switch\t%d\n",
+			RSTAT(malformed_msgs),
+			RSTAT(resets),
+			RSTAT(parent_switch));
+		NET_DBG("RPL f-errors\t%d\tl-errors\t%d\tl-warnings\t%d\n",
+			RSTAT(forward_errors),
+			RSTAT(loop_errors),
+			RSTAT(loop_warnings));
+		NET_DBG("RPL r-repairs\t%d\n",
+			RSTAT(root_repairs));
 #endif
 		last_print = clock_time();
 	}

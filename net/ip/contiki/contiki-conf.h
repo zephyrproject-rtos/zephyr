@@ -80,6 +80,13 @@ typedef unsigned int uip_stats_t;
 #ifdef CONFIG_NETWORKING_WITH_RPL
 #define UIP_MCAST6_CONF_ENGINE UIP_MCAST6_ENGINE_SMRF
 #define UIP_CONF_IPV6_MULTICAST 1
+#ifdef CONFIG_RPL_STATS
+#define RPL_CONF_STATS 1
+#else
+#define RPL_CONF_STATS 0
+#endif /* CONFIG_RPL_STATS */
+#else /* CONFIG_NETWORKING_WITH_RPL */
+#define RPL_CONF_STATS 0
 #endif
 
 #ifdef CONFIG_NETWORKING_IPV6_NO_ND

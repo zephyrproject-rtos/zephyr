@@ -109,6 +109,15 @@ config	NETWORKING_WITH_RPL
 	  Enable RPL (RFC 6550) IPv6 Routing Protocol for
 	  Low-Power and Lossy Networks.
 
+config	RPL_STATS
+	bool
+	prompt "Enable RPL statistics"
+	depends on NETWORKING_WITH_RPL
+	select NETWORKING_STATISTICS
+	default n
+	help
+	  Enable RPL statistics support.
+
 config	NETWORKING_WITH_LOGGING
 	bool
 	prompt "Enable logging of the uIP stack"
