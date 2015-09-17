@@ -151,8 +151,8 @@ extern int _is_thread_essential(nano_thread_id_t pCtx);
  * task or fiber is performed in order to conserve footprint.
  * @endinternal
  *
- * @param pStack Pointer to the stack space
- * @param stackSize Stack size in bytes
+ * @param stack Pointer to the stack space
+ * @param stack_size Stack size in bytes
  * @param entry Fiber entry
  * @param arg1 1st parameter to entry point
  * @param arg2 2nd parameter to entry point
@@ -498,7 +498,7 @@ extern void *nano_fiber_fifo_get_wait(struct nano_fifo *fifo);
  *
  * @sa nano_task_stack_pop_wait()
  *
- * @param nano_fifo the FIFO on which to interact.
+ * @param fifo the FIFO on which to interact.
  * @param timeout_in_ticks time to wait in ticks
  *
  * @return Pointer to head element in the list, NULL if timed out
@@ -939,9 +939,8 @@ extern void nano_fiber_sem_take_wait(struct nano_sem *sem);
  * given (via nano_fiber_sem_give/nano_task_sem_give/nano_isr_sem_give). A
  * timeout can be specified.
  *
- * @param sem the semaphore to take
- * @param timeout_in_ticks time to wait in ticks
- * @param sem Pointer to a nano_sem structure.
+ * @param sem Pointer to the semaphore to take
+ * @param timeout time to wait in ticks
  *
  * @return 1 if semaphore is available, 0 if timed out
  */
@@ -1068,11 +1067,11 @@ extern void nano_isr_stack_push(struct nano_stack *stack, uint32_t data);
  * from an ISR context.
  *
  * If the stack is not empty, a data word is popped and copied to the provided
- * address <pData> and a non-zero value is returned. If the stack is empty,
+ * address @a data and a non-zero value is returned. If the stack is empty,
  * zero is returned.
  *
  * @param stack Stack on which to interact
- * @param pData Container for data to pop
+ * @param data Container for data to pop
  * @return 1 if stack is not empty, 0 otherwise
  *
  */
@@ -1103,11 +1102,11 @@ extern void nano_fiber_stack_push(struct nano_stack *stack, uint32_t data);
  * from a fiber context.
  *
  * If the stack is not empty, a data word is popped and copied to the provided
- * address <pData> and a non-zero value is returned. If the stack is empty,
+ * address @a data and a non-zero value is returned. If the stack is empty,
  * zero is returned.
  *
  * @param stack Stack on which to interact
- * @param pData Container for data to pop
+ * @param data Container for data to pop
  *
  * @return 1 if stack is not empty, 0 otherwise
  *
@@ -1157,11 +1156,11 @@ extern void nano_task_stack_push(struct nano_stack *stack, uint32_t data);
  * from a task context.
  *
  * If the stack is not empty, a data word is popped and copied to the provided
- * address <pData> and a non-zero value is returned. If the stack is empty,
+ * address @a data and a non-zero value is returned. If the stack is empty,
  * zero is returned.
  *
  * @param stack Stack on which to interact
- * @param pData Container for data to pop
+ * @param data Container for data to pop
  *
  * @return 1 if stack is not empty, 0 otherwise
  */
@@ -1211,7 +1210,7 @@ struct nano_timer {
  *
  * It may be called from either a fiber or task.
  *
- * The <userData> passed to this function must have enough space for a pointer
+ * The @a data  passed to this function must have enough space for a pointer
  * in its first field, that may be overwritten when the timer expires, plus
  * whatever data the user wishes to store and recover when the timer expires.
  *
@@ -1228,7 +1227,7 @@ extern void nano_timer_init(struct nano_timer *timer, void *data);
  * @brief Start a nanokernel timer from a fiber
  *
  * This function starts a previously initialized nanokernel timer object.
- * The timer will expire in <ticks> system clock ticks.
+ * The timer will expire in @a ticks system clock ticks.
  *
  * @param timer Timer
  * @param ticks Number of ticks
@@ -1283,7 +1282,7 @@ extern void nano_fiber_timer_stop(struct nano_timer *timer);
  * @brief Start a nanokernel timer from a task
  *
  * This function starts a previously initialized nanokernel timer object.
- * The timer will expire in <ticks> system clock ticks.
+ * The timer will expire in @a ticks system clock ticks.
  *
  * @param timer Timer
  * @param ticks Number of ticks
