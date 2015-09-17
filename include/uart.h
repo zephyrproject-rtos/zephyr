@@ -106,6 +106,7 @@ struct uart_driver_api {
 	int (*irq_is_pending)(struct device *dev);
 	int (*irq_update)(struct device *dev);
 	unsigned int (*irq_get)(struct device *dev);
+	int (*irq_input_hook)(struct device *dev, uint8_t byte);
 
 #endif
 };
@@ -414,6 +415,51 @@ static inline unsigned int uart_irq_get(struct device *dev)
 	}
 
 	return 0;
+}
+
+/**
+ * @brief Invoke the UART input hook routine if installed
+ *
+ * The input hook is a custom handler invoked by the ISR on each received
+ * character.  It allows the detection of a character escape sequence that may
+ * be used to override the behavior of the ISR handler.
+ *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param byte Byte to process
+ *
+ * @return 1 if character processing must stop, 0 or if it is to continue
+ */
+static inline int uart_irq_input_hook(struct device *dev, uint8_t byte)
+{
+	struct uart_driver_api *api;
+
+	api = (struct uart_driver_api *)dev->driver_api;
+
+	if ((api != NULL) && (api->irq_input_hook != NULL)) {
+		return api->irq_input_hook(dev, byte);
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Set the UART input hook routine
+ *
+ * @param dev UART device struct (of type struct uart_device_config_t)
+ * @param hook Routine to use as UART input hook
+ *
+ * @return N/A
+ */
+static inline void uart_irq_input_hook_set(struct device *dev,
+		int (*hook)(struct device *, uint8_t))
+{
+	struct uart_driver_api *api;
+
+	api = (struct uart_driver_api *)dev->driver_api;
+
+	if (api != NULL) {
+		api->irq_input_hook = hook;
+	}
 }
 
 #endif

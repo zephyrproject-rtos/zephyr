@@ -136,17 +136,23 @@ void uart_console_isr(void *unused)
 			uint8_t byte;
 			int rx;
 
+			rx = read_uart(UART_CONSOLE_DEV, &byte, 1);
+			if (rx < 0) {
+				return;
+			}
+
+			if (uart_irq_input_hook(UART_CONSOLE_DEV, byte) != 0) {
+				/*
+				 * The input hook indicates that no further processing
+				 * should be done by this handler.
+				 */
+				return;
+			}
 
 			if (!cmd) {
 				cmd = nano_isr_fifo_get(avail_queue);
 				if (!cmd)
 					return;
-			}
-
-			rx = read_uart(UART_CONSOLE_DEV, &byte, 1);
-			if (rx < 0) {
-				nano_isr_fifo_put(avail_queue, cmd);
-				return;
 			}
 
 			/* Echo back to console */
