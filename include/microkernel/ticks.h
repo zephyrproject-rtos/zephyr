@@ -140,14 +140,14 @@ extern void task_timer_free(ktimer_t timer);
  *
  * This routine starts or restarts the specified low resolution timer.
  *
- * When the specified number of ticks, set by <duration>, expires, the semaphore
+ * When the specified number of ticks, set by @a duration, expires, the semaphore
  * is signalled.  The timer repeats the expiration/signal cycle each time
- * <period> ticks has elapsed.
+ * @a period ticks has elapsed.
  *
- * Setting <period> to 0 stops the timer at the end of the initial delay.
+ * Setting @a period to 0 stops the timer at the end of the initial delay.
 
- * If either <duration> or <period> is passed a invalid value (<duration <= 0,
- * <period> < 0), then this kernel API acts like a task_timer_stop(): if the
+ * If either @a duration or @a period is passed a invalid value (@a duration <= 0,
+ * @a period < 0), then this kernel API acts like a task_timer_stop(): if the
  * allocated timer was still running (from a previous call), it will be
  * cancelled; if not, nothing will happen.
  *
@@ -166,7 +166,7 @@ extern void task_timer_start(ktimer_t timer,
  *
  * @brief Restart a timer
  *
- * This routine restarts the timer specified by <timer>. The timer must have
+ * This routine restarts the timer specified by @a timer. The timer must have
  * already been started by a call to task_timer_start().
  *
  * @param timer      Timer to restart.
