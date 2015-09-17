@@ -566,7 +566,7 @@ ifdef CONFIG_TINYCRYPT
 # Objects we will link into the kernel / subdirs we need to visit
 KCRYPTO_DIR := lib/crypto/tinycrypt
 libs-y += $(KCRYPTO_DIR)/
- ZEPHYRINCLUDE += -I$(srctree)/lib/crypto/tinycrypt
+ ZEPHYRINCLUDE += -I$(srctree)/lib/crypto/tinycrypt/include
 endif
 
 ifdef ZEPHYR_GCC_VARIANT
