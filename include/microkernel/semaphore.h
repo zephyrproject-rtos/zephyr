@@ -107,7 +107,7 @@ extern void task_sem_give(ksem_t sema);
  * Using task_sem_group_give() is faster than using multiple single signals,
  * and ensures all signals take place before other tasks run.
  *
- * @param group   Group of semaphores to signal.
+ * @param semagroup   Group of semaphores to signal.
  *
  * @return N/A
  */
@@ -145,7 +145,7 @@ extern void task_sem_reset(ksem_t sema);
  * group is an array of semaphore names terminated by the predefined constant
  * ENDLIST.
  *
- * @param group   Group of semaphores to reset.
+ * @param semagroup   Group of semaphores to reset.
  *
  * @return N/A
  */
