@@ -83,5 +83,4 @@ pristine:
 PHONY += FORCE initconfig
 FORCE:
 
-
 .PHONY: $(PHONY)

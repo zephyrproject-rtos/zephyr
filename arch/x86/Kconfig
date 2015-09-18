@@ -65,32 +65,25 @@ default CPU_MINUTEIA
 config CPU_ATOM
 	bool "Atom"
 	select CMOV
+	select CPU_MIGHT_SUPPORT_CLFLUSH if CACHE_FLUSHING
 	help
 	This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	bool "Minute IA"
+	select CPU_MIGHT_SUPPORT_CLFLUSH if CACHE_FLUSHING
 	help
 	This option signifies the use of a CPU from the Minute IA family.
 endchoice
 
-config CPU_MIGHT_SUPPORT_CLFLUSH
+config CACHE_FLUSHING
 	bool
 	default n
+	prompt "Enable cache flushing mechanism"
 	help
-	If a platform uses a processor that possibly implements CLFLUSH, change
-	the default in that platform's config file.
-
-#FIXME This option is not being used in the current code base.
-config CLFLUSH_INSTRUCTION_SUPPORTED
-	bool
-	prompt "CLFLUSH instruction supported" if CPU_MIGHT_SUPPORT_CLFLUSH
-	depends on CPU_MIGHT_SUPPORT_CLFLUSH
-	default n
-	help
-	Only enable this if the CLFLUSH instruction is supported, so that
-	an implementation of sys_cache_flush() that uses CLFLUSH is made
-	available, instead of the one using WBINVD.
+	This links in the sys_cache_flush() function. A mechanism for flushing the
+	cache must be selected as well. By default, that mechanism is discovered at
+	runtime.
 
 menu "Platform Capabilities"
 config ADVANCED_IDLE_SUPPORTED
@@ -167,12 +160,70 @@ config CMOV
 	This option signifies the use of an Intel CPU that supports
 	the CMOV instruction.
 
+config CACHE_LINE_SIZE_DETECT
+	bool
+	prompt "Detect cache line size at runtime"
+	default y
+	help
+	This option enables querying the CPUID register for finding the cache line
+	size at the expense of taking more memory and code and a slightly increased
+	boot time.
+
+	If the CPU's cache line size is known in advance, disable this option and
+	manually enter the value for CACHE_LINE_SIZE.
+
 config CACHE_LINE_SIZE
-	int "Cache line size"
+	int
+	prompt "Cache line size" if !CACHE_LINE_SIZE_DETECT
+	default 0 if CACHE_LINE_SIZE_DETECT
 	default 64 if CPU_ATOM
 	default 0
 	help
 	Size in bytes of a CPU cache line.
+
+	Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
+
+config CPU_MIGHT_SUPPORT_CLFLUSH
+	bool
+	depends on CACHE_FLUSHING
+	default n
+	help
+	If a platform uses a processor that possibly implements CLFLUSH, change
+	the default in that platform's config file.
+
+config CLFLUSH_INSTRUCTION_SUPPORTED
+	bool
+	prompt "CLFLUSH instruction supported" if CPU_MIGHT_SUPPORT_CLFLUSH
+	depends on CPU_MIGHT_SUPPORT_CLFLUSH && !CLFLUSH_DETECT
+	default n
+	help
+	An implementation of sys_cache_flush() that uses CLFLUSH is made
+	available, instead of the one using WBINVD.
+
+	This option should only be enabled if it is known in advance that the
+	CPU supports the CLFLUSH instruction. It disables runtime detection of
+	CLFLUSH support thereby reducing both memory footprint and boot time.
+
+config CLFLUSH_DETECT
+	bool
+	prompt "Detect support of CLFLUSH instruction at runtime"
+	depends on CPU_MIGHT_SUPPORT_CLFLUSH
+	default y
+	help
+	This option should be enabled if it is not known in advance whether the
+	CPU supports the CLFLUSH instruction or not.
+
+	The CPU is queried at boot time to determine which of the multiple
+	implementations of sys_cache_flush() linked into the image is the
+	correct one to use.
+
+	If the CPU's support (or lack thereof) of CLFLUSH is known in advance, then
+	disable this option and set CLFLUSH_INSTRUCTION_SUPPORTED as appropriate.
+
+config ARCH_CACHE_FLUSH_DETECT
+	bool
+	default y
+	depends on CLFLUSH_DETECT
 
 endmenu
 
