@@ -38,6 +38,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include <misc/printk.h>
 #include <misc/byteorder.h>
@@ -157,26 +158,6 @@ static int xtoi(const char *str)
 		}
 
 		val |= tmp;
-	}
-
-	return val;
-}
-
-static int atoi(const char *str)
-{
-	int val = 0;
-
-	if (strlen(str) > 2 && str[0] == '0' && str[1] == 'x') {
-		return xtoi(str + 2);
-	}
-
-	for (; *str != '\0'; str++) {
-		val *= 10;
-		if (*str >= '0' && *str <= '9') {
-			val += *str - '0';
-		} else {
-			return -EINVAL;
-		}
 	}
 
 	return val;
