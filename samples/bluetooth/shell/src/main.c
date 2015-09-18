@@ -146,23 +146,6 @@ static int char2hex(const char *c, uint8_t *x)
 	return 0;
 }
 
-static int xtoi(const char *str)
-{
-	int val = 0;
-	uint8_t tmp;
-
-	for (; *str != '\0'; str++) {
-		val = val << 4;
-		if (char2hex(str, &tmp) < 0) {
-			return -EINVAL;
-		}
-
-		val |= tmp;
-	}
-
-	return val;
-}
-
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int i, j;
@@ -502,16 +485,16 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	}
 
 	/* Only set the UUID if the value is valid (non zero) */
-	uuid.u16 = xtoi(argv[1]);
+	uuid.u16 = strtoul(argv[1], NULL, 16);
 	if (uuid.u16) {
 		uuid.type = BT_UUID_16;
 		discover_params.uuid = &uuid;
 	}
 
 	if (argc > 2) {
-		discover_params.start_handle = xtoi(argv[2]);
+		discover_params.start_handle = strtoul(argv[2], NULL, 16);
 		if (argc > 3) {
-			discover_params.end_handle = xtoi(argv[3]);
+			discover_params.end_handle = strtoul(argv[3], NULL, 16);
 		}
 	}
 
@@ -557,10 +540,10 @@ static void cmd_gatt_read(int argc, char *argv[])
 		return;
 	}
 
-	handle = xtoi(argv[1]);
+	handle = strtoul(argv[1], NULL, 16);
 
 	if (argc > 2) {
-		offset = xtoi(argv[2]);
+		offset = strtoul(argv[2], NULL, 16);
 	}
 
 	err = bt_gatt_read(default_conn, handle, offset, read_func);
@@ -592,7 +575,7 @@ void cmd_gatt_mread(int argc, char *argv[])
 	}
 
 	for (i = 0; i < argc - 1; i++) {
-		h[i] = xtoi(argv[i + 1]);
+		h[i] = strtoul(argv[i + 1], NULL, 16);
 	}
 
 	err = bt_gatt_read_multiple(default_conn, h, i, read_func);
@@ -622,7 +605,7 @@ static void cmd_gatt_write(int argc, char *argv[])
 		return;
 	}
 
-	handle = xtoi(argv[1]);
+	handle = strtoul(argv[1], NULL, 16);
 
 	if (argc < 3) {
 		printk("offset required\n");
@@ -630,7 +613,7 @@ static void cmd_gatt_write(int argc, char *argv[])
 	}
 
 	/* TODO: Add support for longer data */
-	offset = xtoi(argv[2]);
+	offset = strtoul(argv[2], NULL, 16);
 
 	if (argc < 4) {
 		printk("data required\n");
@@ -638,7 +621,7 @@ static void cmd_gatt_write(int argc, char *argv[])
 	}
 
 	/* TODO: Add support for longer data */
-	data = xtoi(argv[3]);
+	data = strtoul(argv[3], NULL, 16);
 
 	err = bt_gatt_write(default_conn, handle, offset, &data, sizeof(data),
 			    write_func);
@@ -665,14 +648,14 @@ static void cmd_gatt_write_without_rsp(int argc, char *argv[])
 		return;
 	}
 
-	handle = xtoi(argv[1]);
+	handle = strtoul(argv[1], NULL, 16);
 
 	if (argc < 3) {
 		printk("data required\n");
 		return;
 	}
 
-	data = xtoi(argv[2]);
+	data = strtoul(argv[2], NULL, 16);
 
 	err = bt_gatt_write_without_response(default_conn, handle, &data,
 					     sizeof(data), false);
@@ -695,14 +678,14 @@ static void cmd_gatt_write_signed(int argc, char *argv[])
 		return;
 	}
 
-	handle = xtoi(argv[1]);
+	handle = strtoul(argv[1], NULL, 16);
 
 	if (argc < 3) {
 		printk("data required\n");
 		return;
 	}
 
-	data = xtoi(argv[2]);
+	data = strtoul(argv[2], NULL, 16);
 
 	err = bt_gatt_write_without_response(default_conn, handle, &data,
 					     sizeof(data), true);
@@ -750,20 +733,20 @@ static void cmd_gatt_subscribe(int argc, char *argv[])
 		return;
 	}
 
-	handle = xtoi(argv[1]);
+	handle = strtoul(argv[1], NULL, 16);
 
 	if (argc < 3) {
 		printk("value handle required\n");
 		return;
 	}
 
-	subscribe_params.value_handle = xtoi(argv[2]);
+	subscribe_params.value_handle = strtoul(argv[2], NULL, 16);
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.func = subscribe_func;
 	subscribe_params.destroy = subscribe_destroy;
 
 	if (argc > 3) {
-		subscribe_params.value = xtoi(argv[3]);
+		subscribe_params.value = strtoul(argv[3], NULL, 16);
 	}
 
 	err = bt_gatt_subscribe(default_conn, handle, &subscribe_params);
@@ -789,7 +772,7 @@ static void cmd_gatt_unsubscribe(int argc, char *argv[])
 		return;
 	}
 
-	handle = xtoi(argv[1]);
+	handle = strtoul(argv[1], NULL, 16);
 
 	if (!subscribe_params.value_handle) {
 		printk("No subscription found\n");
