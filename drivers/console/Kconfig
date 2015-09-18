@@ -36,6 +36,13 @@ menuconfig CONSOLE
 
 if CONSOLE
 
+config CONSOLE_HAS_DRIVER
+	bool
+	default n
+	help
+	This is an option to be enabled by console drivers to signal
+	that some kind of console exists.
+
 config CONSOLE_HANDLER
 	bool
 	prompt "Enable console input handler"
@@ -50,6 +57,7 @@ config UART_CONSOLE
 	prompt "Use UART for console"
 	default n
 	depends on SERIAL && SERIAL_HAS_DRIVER
+	select CONSOLE_HAS_DRIVER
 	help
 	Enable this option to use one UART for console. Make sure
 	CONFIG_UART_CONSOLE_INDEX is also set correctly.
@@ -74,6 +82,7 @@ config UART_CONSOLE_BAUDRATE
 config RAM_CONSOLE
 	bool
 	prompt "Use RAM console"
+	select CONSOLE_HAS_DRIVER
 	default n
 	help
 	Emit console messages to a RAM buffer "ram_console" which can
