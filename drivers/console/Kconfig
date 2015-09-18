@@ -71,4 +71,21 @@ config UART_CONSOLE_BAUDRATE
 	Default is 115200, which should be usable for most RS232
 	and USB adapters.
 
+config RAM_CONSOLE
+	bool
+	prompt "Use RAM console"
+	default n
+	help
+	Emit console messages to a RAM buffer "ram_console" which can
+	be examined at runtime with a debugger. Useful in board bring-up
+	if there aren't any working serial drivers.
+
+config RAM_CONSOLE_BUFFER_SIZE
+	int "Ram Console buffer size"
+	default 1024
+	depends on RAM_CONSOLE
+	help
+	Size of the RAM console buffer. Messages will wrap around if the
+	length is exceeded.
+
 endif
