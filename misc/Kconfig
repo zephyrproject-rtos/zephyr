@@ -203,6 +203,8 @@ config DEBUG_TRACING_KERNEL_OBJECTS
 	This option enable the feature for tracing kernel objects. This option
 	is for debug purposes and increase the memory footprint of the kernel.
 
+source "misc/debug/Kconfig"
+
 endmenu
 
 
