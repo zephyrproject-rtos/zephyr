@@ -456,5 +456,4 @@ Bibliography
 5. `Intel® Quark Software Developer Manual for Linux`_.
 
 .. _Intel® Quark Software Developer Manual for Linux:
-   http://www.intel.com/content/dam/www/public/us/en/documents/manuals/
-   quark-x1000-linux-sw-developers-manual.pdf
+   http://www.intel.com/content/dam/www/public/us/en/documents/manuals/quark-x1000-linux-sw-developers-manual.pdf
