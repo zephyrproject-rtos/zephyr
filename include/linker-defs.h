@@ -115,7 +115,6 @@ extern int __data_num_words[];
 
 /* end address of image. */
 extern char _end[];
-#define _END_VPAGE (VIRT_ADDR) _end
 
 #endif /* ! _ASMLANGUAGE */
 

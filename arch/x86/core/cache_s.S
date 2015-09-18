@@ -36,7 +36,7 @@ This module contains functions for manipulating caches.
  *
  * C signature:
  *
- *   void _SysCacheFlush (VIRT_ADDR virt, size_t size)
+ *   void _SysCacheFlush (vaddr_t virt, size_t size)
  *
  * Both parameters are ignored in this implementation.
  *

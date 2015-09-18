@@ -44,7 +44,7 @@
  * @return N/A
  */
 
-void _SysCacheFlush(VIRT_ADDR virt, size_t size)
+void _SysCacheFlush(vaddr_t virt, size_t size)
 {
 	int end;
 
