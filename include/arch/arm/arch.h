@@ -46,6 +46,7 @@ extern "C" {
 #include <arch/arm/cortex_m/memory_map.h>
 #include <arch/arm/cortex_m/gdb_stub.h>
 #include <arch/arm/cortex_m/asm_inline.h>
+#include <arch/arm/cortex_m/addr_types.h>
 #endif
 
 #define STACK_ALIGN  4
