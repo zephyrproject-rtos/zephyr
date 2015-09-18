@@ -26,6 +26,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
+#include <arch/x86/addr_types.h>
 #endif
 
 /* APIs need to support non-byte addressable architectures */
