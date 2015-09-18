@@ -109,7 +109,7 @@ config  NUM_TASK_PRIORITIES
 config	WORKLOAD_MONITOR
 	bool
 	prompt "Workload monitoring [EXPERIMENTAL]"
-	default y
+	default n
 	depends on MICROKERNEL && EXPERIMENTAL
 	help
 	This option instructs the kernel to record the percentage of time
