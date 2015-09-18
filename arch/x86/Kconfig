@@ -89,7 +89,7 @@ config CLFLUSH_INSTRUCTION_SUPPORTED
 	default n
 	help
 	Only enable this if the CLFLUSH instruction is supported, so that
-	an implementation of _SysCacheFlush() that uses CLFLUSH is made
+	an implementation of sys_cache_flush() that uses CLFLUSH is made
 	available, instead of the one using WBINVD.
 
 menu "Platform Capabilities"

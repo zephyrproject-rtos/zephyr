@@ -35,8 +35,8 @@
  * @brief Flush a page to main memory
  *
  * No alignment is required for either <virt> or <size>, but since
- * _SysCacheFlush() iterates on the cache lines, a cache line alignment for both
- * is optimal.
+ * sys_cache_flush() iterates on the cache lines, a cache line alignment for
+ * both is optimal.
  *
  * The cache line size is specified via the CONFIG_CACHE_LINE_SIZE kconfig
  * option.
@@ -44,7 +44,7 @@
  * @return N/A
  */
 
-void _SysCacheFlush(vaddr_t virt, size_t size)
+void sys_cache_flush(vaddr_t virt, size_t size)
 {
 	int end;
 

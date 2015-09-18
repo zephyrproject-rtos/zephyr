@@ -26,7 +26,7 @@ This module contains functions for manipulating caches.
 #include <arch/x86/asm.h>
 
 	/* externs (internal APIs) */
-	GTEXT(_SysCacheFlush)
+	GTEXT(sys_cache_flush)
 
 /**
  *
@@ -36,14 +36,14 @@ This module contains functions for manipulating caches.
  *
  * C signature:
  *
- *   void _SysCacheFlush (vaddr_t virt, size_t size)
+ *   void sys_cache_flush (vaddr_t virt, size_t size)
  *
  * Both parameters are ignored in this implementation.
  *
  * @return N/A
  */
 
-SECTION_FUNC(TEXT, _SysCacheFlush)
+SECTION_FUNC(TEXT, sys_cache_flush)
 	wbinvd
 	ret
 
