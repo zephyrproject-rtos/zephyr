@@ -1,6 +1,8 @@
 Tester protocol for Bluetooth stack
 ***********************************
 
+Copyright (C) 2015  Intel Corporation
+
 
 Overview
 ========
