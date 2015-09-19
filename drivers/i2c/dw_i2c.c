@@ -611,6 +611,8 @@ int dw_i2c_initialize(struct device *port)
 
 /* system bindings */
 #if CONFIG_DW_I2C0
+#include <init.h>
+
 void i2c_config_0_irq(struct device *port);
 
 struct dw_i2c_rom_config i2c_config_dw_0 = {
