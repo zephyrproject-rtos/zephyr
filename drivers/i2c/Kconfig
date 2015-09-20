@@ -39,22 +39,22 @@ config I2C
 	bool "Enable I2C drivers"
 	default n
 
-config DW_I2C
+config I2C_DW
         bool "Enable Design Ware I2C support"
         default n
         select I2C
 
-config DW_I2C_VENDOR_ID
+config I2C_DW_VENDOR_ID
 	hex "PCI Vendor ID of the controllers"
 	depends on I2C && PCI
 	default 0x8086
 
-config DW_I2C_DEVICE_ID
+config I2C_DW_DEVICE_ID
 	hex "PCI Device ID of the controllers"
 	depends on I2C && PCI
 	default 0x934
 
-config DW_I2C_CLASS
+config I2C_DW_CLASS
 	hex "PCI device class"
 	depends on I2C && PCI
 	default 0x0C

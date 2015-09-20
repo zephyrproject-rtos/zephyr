@@ -29,8 +29,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __DRIVERS_DW_I2C_H
-#define __DRIVERS_DW_I2C_H
+#ifndef __DRIVERS_I2C_DW_H
+#define __DRIVERS_I2C_DW_H
 
 #include <i2c.h>
 #include <stdbool.h>
@@ -40,7 +40,7 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
-#define DW_I2C_MAGIC_KEY			0x44570140
+#define I2C_DW_MAGIC_KEY			0x44570140
 
 
 typedef void (*i2c_isr_cb_t)(struct device *port);
@@ -51,10 +51,10 @@ typedef void (*i2c_isr_cb_t)(struct device *port);
 
 
 /* dev->state values from IC_DATA_CMD Data transfer mode settings (bit 8) */
-#define DW_I2C_STATE_READY                 (0)
-#define DW_I2C_CMD_SEND                    (1 << 0)
-#define DW_I2C_CMD_RECV                    (1 << 1)
-#define DW_I2C_CMD_ERROR                   (1 << 2)
+#define I2C_DW_STATE_READY                 (0)
+#define I2C_DW_CMD_SEND                    (1 << 0)
+#define I2C_DW_CMD_RECV                    (1 << 1)
+#define I2C_DW_CMD_ERROR                   (1 << 2)
 
 
 #define DW_ENABLE_TX_INT_I2C_MASTER		(DW_INTR_STAT_TX_OVER |  \
@@ -88,19 +88,19 @@ typedef void (*i2c_isr_cb_t)(struct device *port);
  * DesignWare speed values don't directly translate from the Zephyr speed
  * selections in include/i2c.h so here we do a little translation
  */
-#define DW_I2C_SPEED_STANDARD		0x1
-#define DW_I2C_SPEED_FAST		0x2
-#define DW_I2C_SPEED_FAST_PLUS		0x2
-#define DW_I2C_SPEED_HIGH		0x3
+#define I2C_DW_SPEED_STANDARD		0x1
+#define I2C_DW_SPEED_FAST		0x2
+#define I2C_DW_SPEED_FAST_PLUS		0x2
+#define I2C_DW_SPEED_HIGH		0x3
 
 
 /*
  * These values have been randomly selected.  It would be good to test different
  * watermark levels for performance capabilities
  */
-#define DW_I2C_TX_WATERMARK		2
-#define DW_I2C_RX_WATERMARK		7
-#define DW_I2C_FIFO_DEPTH		16
+#define I2C_DW_TX_WATERMARK		2
+#define I2C_DW_RX_WATERMARK		7
+#define I2C_DW_FIFO_DEPTH		16
 
 
 struct dw_i2c_rom_config {
@@ -134,4 +134,4 @@ void dw_i2c_isr(struct device *port);
 
 extern int dw_i2c_initialize(struct device *port);
 
-#endif /* __DRIVERS_DW_I2C_H */
+#endif /* __DRIVERS_I2C_DW_H */

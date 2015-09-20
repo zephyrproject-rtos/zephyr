@@ -1,1 +1,1 @@
-obj-$(CONFIG_DW_I2C) += dw_i2c.o
+obj-$(CONFIG_I2C_DW) += dw_i2c.o

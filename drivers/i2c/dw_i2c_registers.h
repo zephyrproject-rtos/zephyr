@@ -29,8 +29,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __DRIVERS_DW_I2C_REGISTERS_H
-#define __DRIVERS_DW_I2C_REGISTERS_H
+#ifndef __DRIVERS_I2C_DW_REGISTERS_H
+#define __DRIVERS_I2C_DW_REGISTERS_H
 
 
 /*  IC_CON bits */
@@ -274,4 +274,4 @@ struct dw_i2c_registers {
 	uint32_t ic_comp_type;		/* offset 0xFC */
 };
 
-#endif /* __DRIVERS_DW_I2C_REGISTERS_H */
+#endif /* __DRIVERS_I2C_DW_REGISTERS_H */
