@@ -43,8 +43,8 @@
 #include <errno.h>
 #include <sys_io.h>
 
-#include "dw_i2c.h"
-#include "dw_i2c_registers.h"
+#include "i2c-dw.h"
+#include "i2c-registers.h"
 
 #ifndef CONFIG_I2C_DEBUG
 #define DBG(...) {;}
