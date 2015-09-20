@@ -610,23 +610,21 @@ int dw_i2c_initialize(struct device *port)
 }
 
 /* system bindings */
-
-#if CONFIG_I2C_DW0
+#if CONFIG_I2C_DW_0
 #include <init.h>
-
 void i2c_config_0_irq(struct device *port);
 
 struct dw_i2c_rom_config i2c_config_dw_0 = {
-	.base_address = CONFIG_I2C_DW0_BASE,
-	.interrupt_vector = CONFIG_I2C_DW0_IRQ,
+	.base_address = CONFIG_I2C_DW_0_BASE,
+	.interrupt_vector = CONFIG_I2C_DW_0_IRQ,
 #if CONFIG_PCI
 	.pci_dev.class = CONFIG_I2C_DW_CLASS,
-	.pci_dev.bus = CONFIG_I2C_DW0_BUS,
-	.pci_dev.dev = CONFIG_I2C_DW0_DEV,
+	.pci_dev.bus = CONFIG_I2C_DW_0_BUS,
+	.pci_dev.dev = CONFIG_I2C_DW_0_DEV,
 	.pci_dev.vendor_id = CONFIG_I2C_DW_VENDOR_ID,
 	.pci_dev.device_id = CONFIG_I2C_DW_DEVICE_ID,
-	.pci_dev.function = CONFIG_I2C_DW0_FUNCTION,
-	.pci_dev.bar = CONFIG_I2C_DW0_BAR,
+	.pci_dev.function = CONFIG_I2C_DW_0_FUNCTION,
+	.pci_dev.bar = CONFIG_I2C_DW_0_BAR,
 #endif
 	.config_func = i2c_config_0_irq
 };
@@ -634,15 +632,15 @@ struct dw_i2c_rom_config i2c_config_dw_0 = {
 struct dw_i2c_dev_config i2c_0_runtime;
 
 DECLARE_DEVICE_INIT_CONFIG(i2c_0,
-			   CONFIG_I2C_DW0_NAME,
+			   CONFIG_I2C_DW_0_NAME,
 			   &dw_i2c_initialize,
 			   &i2c_config_dw_0);
 
 pure_init(i2c_0, &i2c_0_runtime);
 
 IRQ_CONNECT_STATIC(dw_i2c_0,
-		   CONFIG_I2C_DW0_IRQ,
-		   CONFIG_I2C_DW0_INT_PRIORITY,
+		   CONFIG_I2C_DW_0_IRQ,
+		   CONFIG_I2C_DW_0_INT_PRIORITY,
 		   dw_i2c_isr_0,
 		   0);
 
@@ -657,4 +655,4 @@ void dw_i2c_isr_0(void *unused)
 	dw_i2c_isr(&__initconfig_i2c_01);
 }
 
-#endif /* CONFIG_I2C_DW0 */
+#endif /* CONFIG_I2C_DW_0 */

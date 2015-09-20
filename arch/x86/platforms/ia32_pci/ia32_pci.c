@@ -55,20 +55,20 @@ Handlers for the secondary serial port have not been added.
 #include <drivers/hpet.h>
 
 
-#ifdef CONFIG_I2C_DW0
+#ifdef CONFIG_I2C_DW_0
 static int dw_i2c0_irq_set(struct device *unused)
 {
 	ARG_UNUSED(unused);
-	_ioapic_irq_set(CONFIG_I2C_DW0_IRQ,
-			CONFIG_I2C_DW0_IRQ + INT_VEC_IRQ0,
-			I2C_DW0_IRQ_IOAPIC_FLAGS);
+	_ioapic_irq_set(CONFIG_I2C_DW_0_IRQ,
+			CONFIG_I2C_DW_0_IRQ + INT_VEC_IRQ0,
+			I2C_DW_0_IRQ_IOAPIC_FLAGS);
 	return 0;
 }
 
 DECLARE_DEVICE_INIT_CONFIG(i2cirq_0, "", dw_i2c0_irq_set, NULL);
 pure_late_init(i2cirq_0, NULL);
 
-#endif /* CONFIG_I2C_DW0 */
+#endif /* CONFIG_I2C_DW_0 */
 
 #ifdef CONFIG_GPIO_DW_0
 static int gpio_irq_set_0(struct device *unused) {

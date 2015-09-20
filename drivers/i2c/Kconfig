@@ -62,78 +62,78 @@ config I2C_DW_CLASS
 	depends on I2C_DW && PCI
 	default 0x0C
 
-config I2C_DW0
+config I2C_DW_0
         bool "Enable I2C0"
         default n
 	depends on I2C_DW
 
-config I2C_DW0_BASE
+config I2C_DW_0_BASE
         hex "Base address for I2C0"
         default 0x00000000
-        depends on I2C_DW0
+        depends on I2C_DW_0
 
-config I2C_DW0_NAME
+config I2C_DW_0_NAME
         string "Select a name for finding the device"
-        depends on I2C_DW0
+        depends on I2C_DW_0
         default "I2C0"
 
-config I2C_DW0_IRQ
+config I2C_DW_0_IRQ
 	int "Controller interrupt"
-	depends on I2C_DW0
+	depends on I2C_DW_0
 	default 0
 
-config I2C_DW0_INT_PRIORITY
+config I2C_DW_0_INT_PRIORITY
         int "Controller interrupt priority"
-        depends on I2C_DW0
+        depends on I2C_DW_0
         default 0
         help
         IRQ priority
 
 choice
 prompt "I2C0 IRQ Trigger Condition"
-default I2C_DW0_IRQ_RISING_EDGE
-depends on I2C_DW0
+default I2C_DW_0_IRQ_RISING_EDGE
+depends on I2C_DW_0
 
-config I2C_DW0_IRQ_FALLING_EDGE
+config I2C_DW_0_IRQ_FALLING_EDGE
 	bool "Falling Edge"
 	help
 	  This option signifies that the I2C0 uses falling edge interrupt.
 
-config I2C_DW0_IRQ_RISING_EDGE
+config I2C_DW_0_IRQ_RISING_EDGE
 	bool "Rising Edge"
 	help
 	  This option signifies that the I2C0 uses rising edge interrupt.
 
-config I2C_DW0_IRQ_LEVEL_HIGH
+config I2C_DW_0_IRQ_LEVEL_HIGH
 	bool "Level High"
 	help
 	  This option signifies that the I2C0 uses level high interrupt.
 
-config I2C_DW0_IRQ_LEVEL_LOW
+config I2C_DW_0_IRQ_LEVEL_LOW
 	bool "Level Low"
 	help
 	This option signifies that the I2C0 uses level low interrupt.
 
 endchoice
 
-config I2C_DW0_BUS
+config I2C_DW_0_BUS
 	int "PCI Bus number"
-	depends on I2C_DW0 && PCI
+	depends on I2C_DW_0 && PCI
 	default 0
 
-config I2C_DW0_DEV
+config I2C_DW_0_DEV
 	int "PCI device number"
-	depends on I2C_DW0 && PCI
+	depends on I2C_DW_0 && PCI
 	default 21
 
-config I2C_DW0_FUNCTION
+config I2C_DW_0_FUNCTION
 	int "PCI function number"
-	depends on I2C_DW0 && PCI
+	depends on I2C_DW_0 && PCI
 	default 2
 
-config I2C_DW0_BAR
+config I2C_DW_0_BAR
 	int "PCI BAR number"
-	depends on I2C_DW0 && PCI
+	depends on I2C_DW_0 && PCI
 	default 0
 
 config I2C_STATUS_DELAY
