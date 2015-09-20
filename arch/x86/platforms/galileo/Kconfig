@@ -47,3 +47,30 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config UART_CONSOLE_INDEX
 	default 1
 
+if GPIO && I2C
+config GPIO_PCAL9535A_0
+	def_bool y
+config GPIO_PCAL9535A_0_DEV_NAME
+	default "GPIO_P0"
+config GPIO_PCAL9535A_0_I2C_ADDR
+	default 0x25
+config GPIO_PCAL9535A_0_I2C_MASTER_DEV_NAME
+	default "I2C0"
+config GPIO_PCAL9535A_1
+	def_bool y
+
+config GPIO_PCAL9535A_1_DEV_NAME
+	default "GPIO_P1"
+config GPIO_PCAL9535A_1_I2C_ADDR
+	default 0x26
+config GPIO_PCAL9535A_1_I2C_MASTER_DEV_NAME
+	default "I2C0"
+config GPIO_PCAL9535A_2
+	def_bool y
+config GPIO_PCAL9535A_2_DEV_NAME
+	default "GPIO_P2"
+config GPIO_PCAL9535A_2_I2C_ADDR
+	default 0x27
+config GPIO_PCAL9535A_2_I2C_MASTER_DEV_NAME
+	default "I2C0"
+endif
