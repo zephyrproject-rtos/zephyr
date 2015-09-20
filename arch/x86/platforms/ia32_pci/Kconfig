@@ -48,30 +48,3 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config UART_CONSOLE_INDEX
 	default 1
 
-
-choice
-depends on GPIO_DW_0
-prompt "DW GPIO port 0 trigger condition"
-default GPIO_DW_0_RISING_EDGE
-
-config GPIO_DW_0_FALLING_EDGE
-	bool "Falling edge"
-	help
-	  "DW GPIO port 0 uses falling edge interrupt"
-
-config GPIO_DW_0_RISING_EDGE
-	bool "Rising edge"
-	help
-	  "DW GPIO port 0 uses rising edge interrupt"
-
-config GPIO_DW_0_LEVEL_HIGH
-	bool "Level high"
-	help
-	  "DW GPIO port 0 uses level high interrupt"
-
-config GPIO_DW_0_LEVEL_LOW
-	bool "Level low"
-	help
-	  "DW GPIO port 0 uses level low interrupt"
-
-endchoice

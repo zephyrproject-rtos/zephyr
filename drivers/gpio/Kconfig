@@ -124,6 +124,33 @@ config GPIO_DW_1_PRI
        help
        IRQ priority
 
+choice
+prompt "DW GPIO port 0 trigger condition"
+default GPIO_DW_0_RISING_EDGE
+depends on GPIO_DW_0
+
+config GPIO_DW_0_FALLING_EDGE
+	bool "Falling edge"
+	help
+	  DW GPIO port 0 uses falling edge interrupt
+
+config GPIO_DW_0_RISING_EDGE
+	bool "Rising edge"
+	help
+	  DW GPIO port 0 uses rising edge interrupt
+
+config GPIO_DW_0_LEVEL_HIGH
+	bool "Level high"
+	help
+	  DW GPIO port 0 uses level high interrupt
+
+config GPIO_DW_0_LEVEL_LOW
+	bool "Level low"
+	help
+	  DW GPIO port 0 uses level low interrupt
+
+endchoice
+
 config GPIO_PCAL9535A
 	bool "PCAL9535A I2C-based GPIO chip"
 	depends on GPIO && I2C
@@ -362,3 +389,4 @@ config GPIO_MMIO_1_OUTPUT
 	default 0x0
 	help
 	  The memory address for output pin level register.
+
