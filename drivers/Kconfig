@@ -41,8 +41,6 @@ source "drivers/console/Kconfig"
 
 source "drivers/serial/Kconfig"
 
-source "drivers/gpio/Kconfig"
-
 source "drivers/interrupt_controller/Kconfig"
 
 source "drivers/timer/Kconfig"
@@ -50,6 +48,8 @@ source "drivers/timer/Kconfig"
 source "drivers/random/Kconfig"
 
 source "drivers/pci/Kconfig"
+
+source "drivers/gpio/Kconfig"
 
 source "drivers/spi/Kconfig"
 
