@@ -33,30 +33,33 @@
 #
 # I2C options
 #
-menu "I2C"
-
-config I2C
-	bool "Enable I2C drivers"
+menuconfig I2C
+	bool
+	prompt "I2C Drivers"
 	default n
+	help
+	Enable I2C Driver Configuration
 
 config I2C_DW
-        bool "Enable Design Ware I2C support"
+        bool "Design Ware I2C support"
+	depends on I2C
         default n
-        select I2C
+	help
+	Enable Design Ware I2C support on the selected platform
 
 config I2C_DW_VENDOR_ID
 	hex "PCI Vendor ID of the controllers"
-	depends on I2C && PCI
+	depends on I2C_DW && PCI
 	default 0x8086
 
 config I2C_DW_DEVICE_ID
 	hex "PCI Device ID of the controllers"
-	depends on I2C && PCI
+	depends on I2C_DW && PCI
 	default 0x934
 
 config I2C_DW_CLASS
 	hex "PCI device class"
-	depends on I2C && PCI
+	depends on I2C_DW && PCI
 	default 0x0C
 
 config I2C_STATUS_DELAY
@@ -75,5 +78,3 @@ config I2C_DEBUG
 	depends on I2C
 	help
 	This option enables the debug features for I2C connections
-
-endmenu
