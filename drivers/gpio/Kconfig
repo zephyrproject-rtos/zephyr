@@ -5,6 +5,7 @@ menuconfig GPIO
         help
           Include GPIO drivers in system config
 
+if GPIO
 config GPIO_DW
 	prompt "Designware GPIO"
 	default n
@@ -158,6 +159,7 @@ config GPIO_PCAL9535A
 	help
 	  Enable driver for PCAL9535A I2C-based GPIO chip.
 
+if GPIO_PCAL9535A
 config GPIO_PCAL9535A_DEBUG
 	bool "Enable PCAL9535A Debugging"
 	depends on GPIO_PCAL9535A
@@ -280,6 +282,7 @@ config GPIO_PCAL9535A_3_I2C_MASTER_DEV_NAME
 	help
 	  Specify the device name of the I2C master device to which this
 	  PCAL9535A chip #3 is binded.
+endif #GPIO_PCAL9535A
 
 config GPIO_MMIO
 	bool "MMIO-based GPIO driver"
@@ -390,3 +393,4 @@ config GPIO_MMIO_1_OUTPUT
 	help
 	  The memory address for output pin level register.
 
+endif # GPIO
