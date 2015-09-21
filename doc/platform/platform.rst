@@ -5,11 +5,12 @@ Supported Platforms
 
 The |codename| supports the platform configurations listed in the
 table below. An application can use a platform configuration as is,
-or customize it by changing the default kernel configuration settings.
+or it can customize a platform configuration by changing its default
+kernel configuration settings.
 
 .. note::
    Developers can create new platform configurations
-   to allow an application to run on other target systems.
+   that allow an application to run on other target systems.
 
 +----------------------+-----------------+------------------------+
 | Platform             | Instruction Set | Supported              |
