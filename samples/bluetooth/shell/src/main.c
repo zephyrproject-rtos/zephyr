@@ -515,7 +515,9 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	}
 
 done:
-	if (!strcmp(argv[0], "gatt-discover-characteristic")) {
+	if (!strcmp(argv[0], "gatt-discover-include")) {
+		discover_params.type = BT_GATT_DISCOVER_INCLUDE;
+	} else if (!strcmp(argv[0], "gatt-discover-characteristic")) {
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	} else if (!strcmp(argv[0], "gatt-discover-descriptor")) {
 		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
@@ -968,6 +970,7 @@ struct shell_cmd commands[] = {
 	{ "auth-passkey", cmd_auth_passkey },
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu },
 	{ "gatt-discover", cmd_gatt_discover },
+	{ "gatt-discover-include", cmd_gatt_discover },
 	{ "gatt-discover-characteristic", cmd_gatt_discover },
 	{ "gatt-discover-descriptor", cmd_gatt_discover },
 	{ "gatt-read", cmd_gatt_read },
