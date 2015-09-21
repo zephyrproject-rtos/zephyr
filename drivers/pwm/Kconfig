@@ -1,4 +1,4 @@
-# Kconfig - drivers configuration options
+# Kconfig - PWM configuration options
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -30,31 +30,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-
-menu "Device Drivers"
-
-source "drivers/simple/Kconfig"
-
-source "drivers/bluetooth/Kconfig"
-
-source "drivers/console/Kconfig"
-
-source "drivers/serial/Kconfig"
-
-source "drivers/interrupt_controller/Kconfig"
-
-source "drivers/timer/Kconfig"
-
-source "drivers/random/Kconfig"
-
-source "drivers/pci/Kconfig"
-
-source "drivers/gpio/Kconfig"
-
-source "drivers/spi/Kconfig"
-
-source "drivers/i2c/Kconfig"
-
-source "drivers/pwm/Kconfig"
-
-endmenu
+menuconfig PWM
+	bool "PWM (Pulse Width Modulation) Drivers"
+	default n
+	help
+	  Enable config options for PWM drivers.
