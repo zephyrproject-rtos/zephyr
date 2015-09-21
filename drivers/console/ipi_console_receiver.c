@@ -56,12 +56,13 @@ static void ipi_console_fiber(int arg1, int arg2)
 
 	while (1) {
 		nano_fiber_sem_take_wait(&driver_data->sem);
+
 		ret = sys_ring_buf_get(&driver_data->rb, &type,
 				       (uint8_t *)&config_info->line_buf[pos],
 				       NULL, &size32);
 		if (ret) {
 			/* Shouldn't ever happen... */
-			printk("ipi console ring buffer error: %d", ret);
+			printk("ipi console ring buffer error: %d\n", ret);
 			size32 = 0;
 			continue;
 		}
@@ -98,9 +99,9 @@ static void ipi_console_receive_callback(void *context, uint32_t id,
 	ARG_UNUSED(data);
 	d = context;
 	driver_data = d->driver_data;
-
-	sys_ring_buf_put(&driver_data->rb, 0, id, NULL, 0);
-	nano_isr_sem_give(&driver_data->sem);
+	if (!sys_ring_buf_put(&driver_data->rb, 0, id, NULL, 0)) {
+		nano_isr_sem_give(&driver_data->sem);
+	}
 }
 
 
