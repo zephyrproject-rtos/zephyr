@@ -687,7 +687,7 @@ uip_reass(void)
     PRINTF("Starting reassembly\n");
     memcpy(FBUF, UIP_IP_BUF(buf), uip_ext_len(buf) + UIP_IPH_LEN);
     /* temporary in case we do not receive the fragment with offset 0 first */
-    etimer_set(&uip_reass_timer, UIP_REASS_MAXAGE*CLOCK_SECOND);
+    etimer_set(&uip_reass_timer, UIP_REASS_MAXAGE*CLOCK_SECOND, &tcpip_process);
     uip_reass_on = 1;
     uip_reassflags = 0;
     uip_id = UIP_FRAG_BUF->id;

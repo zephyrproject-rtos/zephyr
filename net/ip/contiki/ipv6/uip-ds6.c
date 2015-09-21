@@ -121,9 +121,10 @@ uip_ds6_init(void)
 #else /* UIP_CONF_ROUTER */
   etimer_set(&uip_ds6_timer_rs,
              random_rand() % (UIP_ND6_MAX_RTR_SOLICITATION_DELAY *
-                              CLOCK_SECOND));
+                              CLOCK_SECOND),
+	     &tcpip_process);
 #endif /* UIP_CONF_ROUTER */
-  etimer_set(&uip_ds6_timer_periodic, UIP_DS6_PERIOD);
+  etimer_set(&uip_ds6_timer_periodic, UIP_DS6_PERIOD, &tcpip_process);
 
   return;
 }
@@ -707,7 +708,8 @@ uip_ds6_send_rs(struct net_buf *buf)
     uip_nd6_rs_output(buf);
     rscount++;
     etimer_set(&uip_ds6_timer_rs,
-               UIP_ND6_RTR_SOLICITATION_INTERVAL * CLOCK_SECOND);
+               UIP_ND6_RTR_SOLICITATION_INTERVAL * CLOCK_SECOND,
+               &tcpip_process);
   } else {
     PRINTF("Router found ? (boolean): %u\n",
            (uip_ds6_defrt_choose() != NULL));

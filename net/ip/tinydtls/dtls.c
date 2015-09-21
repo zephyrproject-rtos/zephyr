@@ -1465,7 +1465,8 @@ dtls_send_multi(dtls_context_t *ctx, dtls_peer_t *peer,
       } else {
 	/* must set timer within the context of the retransmit process */
 	PROCESS_CONTEXT_BEGIN(&dtls_retransmit_process);
-	etimer_set(&ctx->retransmit_timer, n->timeout);
+	etimer_set(&ctx->retransmit_timer, n->timeout,
+		   &dtls_retransmit_process);
 	PROCESS_CONTEXT_END(&dtls_retransmit_process);
 #else /* WITH_CONTIKI */
 	dtls_debug("copied to sendqueue\n");
@@ -3781,7 +3782,7 @@ dtls_new_context(void *app_data) {
   process_start(&dtls_retransmit_process, (char *)c);
   PROCESS_CONTEXT_BEGIN(&dtls_retransmit_process);
   /* the retransmit timer must be initialized to some large value */
-  etimer_set(&c->retransmit_timer, 0xFFFF);
+  etimer_set(&c->retransmit_timer, 0xFFFF, &dtls_retransmit_process);
   PROCESS_CONTEXT_END(&dtls_retransmit_process);
 #endif /* WITH_CONTIKI */
 
@@ -4003,10 +4004,12 @@ PROCESS_THREAD(dtls_retransmit_process, ev, data, buf)
 
 	/* need to set timer to some value even if no nextpdu is available */
 	if (node) {
-	  etimer_set(&the_dtls_context.retransmit_timer, 
-		     node->t <= now ? 1 : node->t - now);
+          etimer_set(&the_dtls_context.retransmit_timer,
+                     node->t <= now ? 1 : node->t - now,
+                     &dtls_retransmit_process);
 	} else {
-	  etimer_set(&the_dtls_context.retransmit_timer, 0xFFFF);
+          etimer_set(&the_dtls_context.retransmit_timer, 0xFFFF,
+                     &dtls_retransmit_process);
 	}
       } 
     }

@@ -304,6 +304,18 @@ void toggle_observation(coap_context_t *coap_ctx)
 #define WAIT_PEER TICKS_UNLIMITED
 #endif
 
+PROCESS(coap_observe_client_process, "CoAP observe client process");
+PROCESS_THREAD(coap_observe_client_process, ev, data, buf)
+{
+  PROCESS_BEGIN();
+
+  while(1) {
+    PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_TIMER);
+    /* Currently the timeout is handled in while loop in startup() */
+  }
+  PROCESS_END();
+}
+
 void startup(void)
 {
 	static struct etimer et;
@@ -335,7 +347,8 @@ void startup(void)
 		return;
 	}
 
-	etimer_set(&et, TOGGLE_INTERVAL * sys_clock_ticks_per_sec);
+	etimer_set(&et, TOGGLE_INTERVAL * sys_clock_ticks_per_sec,
+		   &coap_observe_client_process);
 
 	while (1) {
 		while (!coap_context_is_connected(coap_ctx)) {

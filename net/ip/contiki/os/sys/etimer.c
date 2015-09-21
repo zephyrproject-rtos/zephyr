@@ -55,6 +55,8 @@
 static struct etimer *timerlist;
 static clock_time_t next_expiration;
 
+PROCESS_NAME(ctimer_process);
+
 PROCESS(etimer_process, "Event timer");
 /*---------------------------------------------------------------------------*/
 static void
@@ -97,12 +99,15 @@ PROCESS_THREAD(etimer_process, ev, data, buf)
 	     __FUNCTION__, __LINE__,
 	     t, timer_remaining(&t->timer), etimer_is_triggered(t));
       if(etimer_expired(t) && !etimer_is_triggered(t)) {
-        PRINTF("%s():%d timer %p expired\n", __FUNCTION__, __LINE__, t);
-	/*
-	 * FIXME: Fix the process thingy so that etimer can be used also
-	 *        in other Contiki processes.
-	 */
-	process_post_synch(&tcpip_process, PROCESS_EVENT_TIMER, t, NULL);
+        PRINTF("%s():%d timer %p expired, process %p\n",
+	       __FUNCTION__, __LINE__, t, t->p);
+
+	if (t->p == NULL) {
+          PRINTF("calling tcpip_process\n");
+          process_post_synch(&tcpip_process, PROCESS_EVENT_TIMER, t, NULL);
+	} else {
+          process_post_synch(t->p, PROCESS_EVENT_TIMER, t, NULL);
+	}
       }
     }
     update_time();
@@ -140,8 +145,9 @@ add_timer(struct etimer *timer)
 }
 /*---------------------------------------------------------------------------*/
 void
-etimer_set(struct etimer *et, clock_time_t interval)
+etimer_set(struct etimer *et, clock_time_t interval, struct process *p)
 {
+  et->p = p;
   timer_set(&et->timer, interval);
   add_timer(et);
 }

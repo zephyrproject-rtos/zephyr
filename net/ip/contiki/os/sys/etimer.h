@@ -76,6 +76,7 @@
 struct etimer {
   struct timer timer;
   struct etimer *next;
+  struct process *p;
 };
 
 /**
@@ -94,7 +95,8 @@ struct etimer {
  *             process that called the etimer_set() function.
  *
  */
-CCIF void etimer_set(struct etimer *et, clock_time_t interval);
+CCIF void etimer_set(struct etimer *et, clock_time_t interval,
+                     struct process *p);
 
 /**
  * \brief      Reset an event timer with the same interval as was

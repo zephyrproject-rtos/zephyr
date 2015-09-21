@@ -71,7 +71,7 @@ PROCESS_THREAD(ctimer_process, ev, data, buf)
   PROCESS_BEGIN();
 
   for(c = list_head(ctimer_list); c != NULL; c = c->next) {
-    etimer_set(&c->etimer, c->etimer.timer.interval);
+    etimer_set(&c->etimer, c->etimer.timer.interval, &ctimer_process);
   }
   initialized = 1;
 
@@ -104,14 +104,15 @@ void
 ctimer_set(struct net_mbuf *buf, struct ctimer *c, clock_time_t t,
 	   void (*f)(struct net_mbuf *, void *), void *ptr)
 {
-  PRINTF("ctimer_set %p %u\n", c, (unsigned)t);
-  c->p = PROCESS_CURRENT();
+  c->p = &ctimer_process;
   c->f = f;
   c->ptr = ptr;
   c->buf = buf;
+  PRINTF("ctimer_set %p t %u process %p buf %p etimer %p\n",
+	 c, (unsigned)t, c->p, buf, &c->etimer);
   if(initialized) {
     PROCESS_CONTEXT_BEGIN(&ctimer_process);
-    etimer_set(&c->etimer, t);
+    etimer_set(&c->etimer, t, &ctimer_process);
     PROCESS_CONTEXT_END(&ctimer_process);
   } else {
     c->etimer.timer.interval = t;

@@ -190,7 +190,7 @@ PROCESS_THREAD(rest_engine_process, ev, data, buf)
       PRINTF("Periodic: Set timer for /%s to %lu\n",
              periodic_resource->resource->url, periodic_resource->period);
       etimer_set(&periodic_resource->periodic_timer,
-                 periodic_resource->period);
+                 periodic_resource->period, &rest_engine_process);
     }
   }
   while(1) {
