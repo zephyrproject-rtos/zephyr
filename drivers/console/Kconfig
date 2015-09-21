@@ -100,6 +100,7 @@ config RAM_CONSOLE_BUFFER_SIZE
 config IPI_CONSOLE_SENDER
 	bool
 	prompt "Inter-processor Interrupt console sender"
+	select CONSOLE_HAS_DRIVER
 	default n
 	help
 	Enable the sending side of IPI console
