@@ -493,7 +493,8 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	discover_params.end_handle = 0xffff;
 
 	if (argc < 2) {
-		if (!strcmp(argv[0], "gatt-discover")) {
+		if (!strcmp(argv[0], "gatt-discover-primary") ||
+		    !strcmp(argv[0], "gatt-discover-secondary")) {
 			printk("UUID type required\n");
 			return;
 		}
@@ -515,7 +516,9 @@ static void cmd_gatt_discover(int argc, char *argv[])
 	}
 
 done:
-	if (!strcmp(argv[0], "gatt-discover-include")) {
+	if (!strcmp(argv[0], "gatt-discover-secondary")) {
+		discover_params.type = BT_GATT_DISCOVER_SECONDARY;
+	} else if (!strcmp(argv[0], "gatt-discover-include")) {
 		discover_params.type = BT_GATT_DISCOVER_INCLUDE;
 	} else if (!strcmp(argv[0], "gatt-discover-characteristic")) {
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
@@ -969,7 +972,8 @@ struct shell_cmd commands[] = {
 	{ "auth-cancel", cmd_auth_cancel },
 	{ "auth-passkey", cmd_auth_passkey },
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu },
-	{ "gatt-discover", cmd_gatt_discover },
+	{ "gatt-discover-primary", cmd_gatt_discover },
+	{ "gatt-discover-secondary", cmd_gatt_discover },
 	{ "gatt-discover-include", cmd_gatt_discover },
 	{ "gatt-discover-characteristic", cmd_gatt_discover },
 	{ "gatt-discover-descriptor", cmd_gatt_discover },
