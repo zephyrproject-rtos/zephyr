@@ -46,6 +46,11 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 
+#if defined(CONFIG_TINYCRYPT_AES)
+#include <aes.h>
+#include <utils.h>
+#endif
+
 #include "hci_core.h"
 #include "keys.h"
 #include "conn_internal.h"
@@ -189,6 +194,56 @@ static void xor_128(const uint128_t *p, const uint128_t *q, uint128_t *r)
 	r->b = p->b ^ q->b;
 }
 
+/* swap octets for LE encrypt */
+static void swap_buf(const uint8_t *src, uint8_t *dst, uint16_t len)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		dst[len - 1 - i] = src[i];
+	}
+}
+
+static void swap_in_place(uint8_t *buf, uint16_t len)
+{
+	int i, j;
+
+	for (i = 0, j = len - 1; i < j; i++, j--) {
+		uint8_t tmp = buf[i];
+
+		buf[i] = buf[j];
+		buf[j] = tmp;
+	}
+}
+
+#if defined(CONFIG_TINYCRYPT_AES)
+static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
+		      uint8_t enc_data[16])
+{
+	struct tc_aes_key_sched_struct s;
+	uint8_t tmp[16];
+
+	BT_DBG("key %s plaintext %s\n", h(key, 16), h(plaintext, 16));
+
+	swap_buf(key, tmp, 16);
+
+	if (tc_aes128_set_encrypt_key(&s, tmp) == TC_FAIL) {
+		return -EINVAL;
+	}
+
+	swap_buf(plaintext, tmp, 16);
+
+	if (tc_aes_encrypt(enc_data, tmp, &s) == TC_FAIL) {
+		return -EINVAL;
+	}
+
+	swap_in_place(enc_data, 16);
+
+	BT_DBG("enc_data %s\n", h(enc_data, 16));
+
+	return 0;
+}
+#else
 static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 		      uint8_t enc_data[16])
 {
@@ -221,6 +276,7 @@ static int le_encrypt(const uint8_t key[16], const uint8_t plaintext[16],
 
 	return 0;
 }
+#endif
 
 static int le_rand(void *buf, size_t len)
 {
@@ -1289,27 +1345,6 @@ bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 	return !memcmp(addr->val, hash, 3);
 }
 
-/* spaw octets for LE encrypt */
-static void swap_buf(const uint8_t *src, uint8_t *dst, uint16_t len)
-{
-	int i;
-
-	for (i = 0; i < len; i++) {
-		dst[len - 1 - i] = src[i];
-	}
-}
-
-static void swap_in_place(uint8_t *buf, uint16_t len)
-{
-	int i, j;
-
-	for (i = 0, j = len - 1; i < j; i++, j--) {
-		uint8_t tmp = buf[i];
-
-		buf[i] = buf[j];
-		buf[j] = tmp;
-	}
-}
 
 /* 1 bit left shift */
 static void array_shift(const uint8_t *in, uint8_t *out)
