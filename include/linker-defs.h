@@ -117,6 +117,8 @@ extern char _image_rom_start[];
 extern char _image_rom_end[];
 extern char _image_ram_start[];
 extern char _image_ram_end[];
+extern char _image_text_start[];
+extern char _image_text_end[];
 
 /* end address of image. */
 extern char _end[];

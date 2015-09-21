@@ -85,9 +85,13 @@ SECTIONS
 	KEEP(*(.security_frdm_k64f))
 	KEEP(*(".security_frdm_k64f.*"))
 
+	_image_text_start = .;
+
 	*(.text)
 	*(".text.*")
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	_image_text_end = .;
 
 	SECTION_PROLOGUE (devconfig, (OPTIONAL),)
 	{
