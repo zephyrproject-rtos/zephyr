@@ -626,17 +626,12 @@ done:
 	}
 }
 
-int bt_gatt_discover(struct bt_conn *conn,
-		     struct bt_gatt_discover_params *params)
+static int att_find_type(struct bt_conn *conn,
+			 struct bt_gatt_discover_params *params)
 {
 	struct bt_buf *buf;
 	struct bt_att_find_type_req *req;
 	uint16_t *value;
-
-	if (!conn || !params->uuid || !params->func || !params->start_handle ||
-	    !params->end_handle) {
-		return -EINVAL;
-	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_TYPE_REQ, sizeof(*req));
 	if (!buf) {
@@ -762,7 +757,7 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 	}
 
 	/* Continue to the next range */
-	if (!bt_gatt_discover_characteristic(conn, params)) {
+	if (!bt_gatt_discover(conn, params)) {
 		return;
 	}
 
@@ -772,17 +767,12 @@ done:
 	}
 }
 
-int bt_gatt_discover_characteristic(struct bt_conn *conn,
-				    struct bt_gatt_discover_params *params)
+static int att_read_type(struct bt_conn *conn,
+			 struct bt_gatt_discover_params *params)
 {
 	struct bt_buf *buf;
 	struct bt_att_read_type_req *req;
 	uint16_t *value;
-
-	if (!conn || !params->func || !params->start_handle ||
-	    !params->end_handle) {
-		return -EINVAL;
-	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_TYPE_REQ, sizeof(*req));
 	if (!buf) {
@@ -886,7 +876,7 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 	}
 
 	/* Continue to the next range */
-	if (!bt_gatt_discover_descriptor(conn, params)) {
+	if (!bt_gatt_discover(conn, params)) {
 		return;
 	}
 
@@ -896,16 +886,11 @@ done:
 	}
 }
 
-int bt_gatt_discover_descriptor(struct bt_conn *conn,
-				struct bt_gatt_discover_params *params)
+static int att_find_info(struct bt_conn *conn,
+			 struct bt_gatt_discover_params *params)
 {
 	struct bt_buf *buf;
 	struct bt_att_find_info_req *req;
-
-	if (!conn || !params->func || !params->start_handle ||
-	    !params->end_handle) {
-		return -EINVAL;
-	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_INFO_REQ, sizeof(*req));
 	if (!buf) {
@@ -920,6 +905,34 @@ int bt_gatt_discover_descriptor(struct bt_conn *conn,
 	       params->end_handle);
 
 	return gatt_send(conn, buf, att_find_info_rsp, params, NULL);
+}
+
+int bt_gatt_discover(struct bt_conn *conn,
+		     struct bt_gatt_discover_params *params)
+{
+	if (!conn || !params->func || !params->start_handle ||
+	    !params->end_handle || params->start_handle > params->end_handle) {
+		return -EINVAL;
+	}
+
+	switch (params->type) {
+	case BT_GATT_DISCOVER_PRIMARY:
+		return att_find_type(conn, params);
+	case BT_GATT_DISCOVER_SECONDARY:
+		/* TODO */
+		break;
+	case BT_GATT_DISCOVER_INCLUDE:
+		/* TODO */
+		break;
+	case BT_GATT_DISCOVER_CHARACTERISTIC:
+		return att_read_type(conn, params);
+	case BT_GATT_DISCOVER_DESCRIPTOR:
+		return att_find_info(conn, params);
+	default:
+		BT_ERR("Invalid discovery type: %u\n", params->type);
+	}
+
+	return -EINVAL;
 }
 
 static void att_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,

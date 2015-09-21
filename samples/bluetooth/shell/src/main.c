@@ -516,15 +516,14 @@ static void cmd_gatt_discover(int argc, char *argv[])
 
 done:
 	if (!strcmp(argv[0], "gatt-discover-characteristic")) {
-		err = bt_gatt_discover_characteristic(default_conn,
-						      &discover_params);
+		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	} else if (!strcmp(argv[0], "gatt-discover-descriptor")) {
-		err = bt_gatt_discover_descriptor(default_conn,
-						  &discover_params);
+		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 	} else {
-		err = bt_gatt_discover(default_conn, &discover_params);
+		discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	}
 
+	err = bt_gatt_discover(default_conn, &discover_params);
 	if (err) {
 		printk("Discover failed (err %d)\n", err);
 	} else {

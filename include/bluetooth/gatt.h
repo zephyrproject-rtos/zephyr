@@ -634,6 +634,14 @@ typedef void (*bt_gatt_rsp_func_t)(struct bt_conn *conn, uint8_t err);
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func);
 
+enum {
+	BT_GATT_DISCOVER_PRIMARY,
+	BT_GATT_DISCOVER_SECONDARY,
+	BT_GATT_DISCOVER_INCLUDE,
+	BT_GATT_DISCOVER_CHARACTERISTIC,
+	BT_GATT_DISCOVER_DESCRIPTOR,
+};
+
 /** @brief GATT Discover Primary parameters */
 struct bt_gatt_discover_params {
 	/** Discover UUID type */
@@ -646,6 +654,8 @@ struct bt_gatt_discover_params {
 	uint16_t start_handle;
 	/** Discover end handle */
 	uint16_t end_handle;
+	/** Discover type */
+	uint8_t type;
 };
 
 /** @brief Discover Primary Service by Service UUID
@@ -663,41 +673,6 @@ struct bt_gatt_discover_params {
  */
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params);
-
-/** @brief Discover Characteristic
- *
- *  This procedure is used by a client to discover all characteristics on a
- *  server.
- *  Note: In case the UUID is set in the parameter it will be matched against
- *  the attributes found before calling the function callback.
- *
- *  For each attribute found the callback is called which can then decide
- *  whether to continue discovering or stop.
- *
- *  @param conn Connection object.
- *  @param params Discover parameters.
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_gatt_discover_characteristic(struct bt_conn *conn,
-				    struct bt_gatt_discover_params *params);
-
-/** @brief Discover Descriptor
- *
- *  This procedure is used by a client to discover descriptors on a server.
- *  Note: In case the UUID is set in the parameter it will be matched against
- *  the attributes found before calling the function callback.
- *
- *  For each attribute found the callback is called which can then decide
- *  whether to continue discovering or stop.
- *
- *  @param conn Connection object.
- *  @param params Discover parameters.
- *
- *  @return 0 in case of success or negative value in case of error.
- */
-int bt_gatt_discover_descriptor(struct bt_conn *conn,
-				struct bt_gatt_discover_params *params);
 
 /** @brief Read callback function
  *

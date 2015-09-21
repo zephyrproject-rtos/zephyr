@@ -83,19 +83,19 @@ static uint8_t discover_func(const struct bt_gatt_attr *attr, void *user_data)
 	if (discover_params.uuid == &hrs) {
 		discover_params.uuid = &hrm;
 		discover_params.start_handle = attr->handle + 1;
+		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
-		err = bt_gatt_discover_characteristic(default_conn,
-						      &discover_params);
+		err = bt_gatt_discover(default_conn, &discover_params);
 		if (err) {
 			printk("Discover failed (err %d)\n", err);
 		}
 	} else if (discover_params.uuid == &hrm) {
 		discover_params.uuid = &ccc;
 		discover_params.start_handle = attr->handle + 2;
+		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 		subscribe_params.value_handle = attr->handle + 1;
 
-		err = bt_gatt_discover_descriptor(default_conn,
-						  &discover_params);
+		err = bt_gatt_discover(default_conn, &discover_params);
 		if (err) {
 			printk("Discover failed (err %d)\n", err);
 		}
@@ -128,6 +128,7 @@ static void connected(struct bt_conn *conn)
 		discover_params.func = discover_func;
 		discover_params.start_handle = 0x0001;
 		discover_params.end_handle = 0xffff;
+		discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
 		err = bt_gatt_discover(default_conn, &discover_params);
 		if (err) {
