@@ -35,3 +35,39 @@ menuconfig PWM
 	default n
 	help
 	  Enable config options for PWM drivers.
+
+config PWM_PCA9685
+	bool "PCA9685 I2C-based PWM chip"
+	depends on PWM && I2C
+	default n
+	help
+	  Enable driver for PCA9685 I2C-based PWM chip.
+
+config PWM_PCA9685_0
+	bool "PCA9685 PWM chip #0"
+	depends on PWM_PCA9685
+	default n
+	help
+	  Enable config options for the PCA9685 I2C-based PWM chip #0.
+
+config PWM_PCA9685_0_DEV_NAME
+	string "PCA9685 PWM chip #0 Device Name"
+	depends on PWM_PCA9685_0
+	default "PWM_P0"
+	help
+	  Specify the device name for the PCA9685 I2C-based PWM chip #0.
+
+config PWM_PCA9685_0_I2C_ADDR
+	hex "PCA9685 PWM chip #0 I2C slave address"
+	depends on PWM_PCA9685_0
+	default 0x0
+	help
+	  Specify the I2C slave address for the PCA9685 I2C-based PWM chip #0.
+
+config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
+	string "I2C Master where PCA9685 PWM chip #0 is connected"
+	depends on PWM_PCA9685_0
+	default ""
+	help
+	  Specify the device name of the I2C master device to which this
+	  PCA9685 chip #0 is binded.
