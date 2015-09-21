@@ -1,29 +1,28 @@
 .. _kbuild:
 
-Kbuild User Guide
-#################
+The Build System User Guide
+###########################
 
 The |codename|'s build system is based on the Kbuild system used in the
-Linux kernel (version 3.19-rc7). As a result, the kernel embraces
+Linux kernel, version 3.19-rc7. This way the kernel embraces
 the recursive model proposed by Linux and the configuration model
 proposed by Kconfig.
 
-The |codename|'s build system is project centered, which is the main difference with the Linux
-Kbuild system. The consequence is the need to define a project or application. Depending on the
-APIs included in the application, the build system will build the kernel. For that reason, the
-build structure follows the Kbuild architecture but it requires an application directory. The
-application directory hosts the project's definition and code.
+The |codename|'s build system is application centered, unlike the Linux Kbuild system. Therefore,
+the build system requires an application to build the kernel's image. For that reason, the build
+structure follows the Kbuild architecture, yet requires an application directory. The
+application's directory contains the application's definition and code files. The build system
+compiles the kernel and the application into a single image.
 
 Scope
 *****
 
-This document provides the details of the Kbuild implementation. It is
-intended for application developers wanting to use the kernel as a
-development platform and for kernel developers looking to modify or
-expand the kernel functionality.
+The following sections provide details about the build system implementation. The information is
+intended for application developers wanting to use the kernel as a development platform and for
+kernel developers looking to modify or expand the kernel's functionality.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    kbuild_kconfig
    kbuild_makefiles

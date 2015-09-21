@@ -3,7 +3,7 @@
 Development Reference Guides
 ############################
 
-This section contains all reference guides that might be needed during development.
+The following reference guides might be needed during development.
 
 .. toctree::
    :maxdepth: 1
