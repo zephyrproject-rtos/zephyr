@@ -263,7 +263,7 @@ dio_input(struct net_buf *buf)
       PRINTF(", ");
       PRINTLLADDR((uip_lladdr_t *)&buf->src);
       PRINTF("\n");
-      return;
+      goto out;
     }
   } else {
     PRINTF("RPL: Neighbor already in neighbor cache\n");
@@ -313,7 +313,7 @@ dio_input(struct net_buf *buf)
     if(len + i > buffer_length) {
       PRINTF("RPL: Invalid DIO packet\n");
       RPL_STAT(rpl_stats.malformed_msgs++);
-      return;
+      goto out;
     }
 
     PRINTF("RPL: DIO option %u, length: %u\n", subopt_type, len - 2);
@@ -323,7 +323,7 @@ dio_input(struct net_buf *buf)
       if(len < 6) {
         PRINTF("RPL: Invalid DAG MC, len = %d\n", len);
 	RPL_STAT(rpl_stats.malformed_msgs++);
-        return;
+        goto out;
       }
       dio.mc.type = buffer[i + 2];
       dio.mc.flags = buffer[i + 3] << 1;
@@ -349,14 +349,14 @@ dio_input(struct net_buf *buf)
         dio.mc.obj.energy.energy_est = buffer[i + 7];
       } else {
        PRINTF("RPL: Unhandled DAG MC type: %u\n", (unsigned)dio.mc.type);
-       return;
+       goto out;
       }
       break;
     case RPL_OPTION_ROUTE_INFO:
       if(len < 9) {
         PRINTF("RPL: Invalid destination prefix option, len = %d\n", len);
 	RPL_STAT(rpl_stats.malformed_msgs++);
-        return;
+	goto out;
       }
 
       /* The flags field includes the preference value. */
@@ -372,7 +372,7 @@ dio_input(struct net_buf *buf)
       } else {
         PRINTF("RPL: Invalid route info option, len = %d\n", len);
 	RPL_STAT(rpl_stats.malformed_msgs++);
-	return;
+	goto out;
       }
 
       break;
@@ -380,7 +380,7 @@ dio_input(struct net_buf *buf)
       if(len != 16) {
         PRINTF("RPL: Invalid DAG configuration option, len = %d\n", len);
 	RPL_STAT(rpl_stats.malformed_msgs++);
-        return;
+	goto out;
       }
 
       /* Path control field not yet implemented - at i + 2 */
@@ -402,7 +402,7 @@ dio_input(struct net_buf *buf)
       if(len != 32) {
         PRINTF("RPL: Invalid DAG prefix info, len(%d) != 32\n", len);
 	RPL_STAT(rpl_stats.malformed_msgs++);
-        return;
+	goto out;
       }
       dio.prefix_info.length = buffer[i + 2];
       dio.prefix_info.flags = buffer[i + 3];
@@ -425,6 +425,7 @@ dio_input(struct net_buf *buf)
 
   rpl_process_dio(&from, &dio);
 
+out:
   uip_len(buf) = 0;
 }
 /*---------------------------------------------------------------------------*/
