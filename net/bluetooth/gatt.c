@@ -665,21 +665,96 @@ static int att_find_type(struct bt_conn *conn,
 	return gatt_send(conn, buf, att_find_type_rsp, params, NULL);
 }
 
-static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
-			      const void *pdu, uint16_t length,
-			      void *user_data)
+static uint16_t parse_include(const void *pdu,
+			      struct bt_gatt_discover_params *params,
+			      uint16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
-	struct bt_gatt_discover_params *params = user_data;
+	struct bt_uuid uuid;
+	uint16_t handle = 0;
+	struct bt_gatt_include value;
+
+	/* Data can be either in UUID16 or UUID128 */
+	switch (rsp->len) {
+	case 8: /* UUID16 */
+		uuid.type = BT_UUID_16;
+		break;
+	case 6: /* UUID128 */
+		/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part G] page 550
+		 * To get the included service UUID when the included service
+		 * uses a 128-bit UUID, the Read Request is used.
+		 */
+		uuid.type = BT_UUID_128;
+		break;
+	default:
+		BT_ERR("Invalid data len %u\n", rsp->len);
+		goto done;
+	}
+
+	/* Parse include found */
+	for (length--, pdu = rsp->data; length >= rsp->len;
+	     length -= rsp->len, pdu += rsp->len) {
+		const struct bt_gatt_attr *attr;
+		const struct bt_att_data *data = pdu;
+		struct gatt_incl *incl = (void *)data->value;
+
+		handle = sys_le16_to_cpu(data->handle);
+		/* Handle 0 is invalid */
+		if (!handle) {
+			goto done;
+		}
+
+		/* Convert include data, bt_gatt_incl and gatt_incl
+		 * have different formats so the conversion have to be done
+		 * field by field.
+		 */
+		value.start_handle = incl->start_handle;
+		value.end_handle = incl->end_handle;
+
+		switch(uuid.type) {
+		case BT_UUID_16:
+			value.uuid = &uuid;
+			uuid.u16 = sys_le16_to_cpu(incl->uuid16);
+			break;
+		case BT_UUID_128:
+			/* Data is not available at this point */
+			break;
+		}
+
+		BT_DBG("handle 0x%04x start_handle 0x%04x end_handle 0x%04x\n",
+		       handle, value.start_handle, value.end_handle);
+
+		/* Skip if UUID is set but doesn't match */
+		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
+			continue;
+		}
+
+		attr = (&(struct bt_gatt_attr)
+			BT_GATT_INCLUDE_SERVICE(handle, &value));
+
+		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+			handle = 0;
+			goto done;
+		}
+	}
+
+	/* Stop if could not parse the whole PDU */
+	if (length > 0) {
+		return 0;
+	}
+
+done:
+	return handle;
+}
+
+static uint16_t parse_characteristic(const void *pdu,
+				     struct bt_gatt_discover_params *params,
+				     uint16_t length)
+{
+	const struct bt_att_read_type_rsp *rsp = pdu;
 	struct bt_uuid uuid;
 	uint16_t handle = 0;
 	struct bt_gatt_chrc value;
-
-	BT_DBG("err 0x%02x\n", err);
-
-	if (err) {
-		goto done;
-	}
 
 	/* Data can be either in UUID16 or UUID128 */
 	switch (rsp->len) {
@@ -736,12 +811,40 @@ static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
 			BT_GATT_CHARACTERISTIC(handle, &value));
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
+			handle = 0;
 			goto done;
 		}
 	}
 
 	/* Stop if could not parse the whole PDU */
 	if (length > 0) {
+		return 0;
+	}
+
+done:
+	return handle;
+}
+
+static void att_read_type_rsp(struct bt_conn *conn, uint8_t err,
+			      const void *pdu, uint16_t length,
+			      void *user_data)
+{
+	struct bt_gatt_discover_params *params = user_data;
+	uint16_t handle;
+
+	BT_DBG("err 0x%02x\n", err);
+
+	if (err) {
+		goto done;
+	}
+
+	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
+		handle = parse_include(pdu, params, length);
+	} else {
+		handle = parse_characteristic(pdu, params, length);
+	}
+
+	if (!handle) {
 		goto done;
 	}
 
@@ -784,7 +887,10 @@ static int att_read_type(struct bt_conn *conn,
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
 	value = bt_buf_add(buf, sizeof(*value));
-	*value = sys_cpu_to_le16(BT_UUID_GATT_CHRC);
+	if (params->type == BT_GATT_DISCOVER_INCLUDE)
+		*value = sys_cpu_to_le16(BT_UUID_GATT_INCLUDE);
+	else
+		*value = sys_cpu_to_le16(BT_UUID_GATT_CHRC);
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x\n", params->start_handle,
 	       params->end_handle);
@@ -922,8 +1028,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 		/* TODO */
 		break;
 	case BT_GATT_DISCOVER_INCLUDE:
-		/* TODO */
-		break;
+		return att_read_type(conn, params);
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		return att_read_type(conn, params);
 	case BT_GATT_DISCOVER_DESCRIPTOR:
