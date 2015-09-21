@@ -75,7 +75,7 @@ void net_context_set_receiver_registered(struct net_context *context);
 #define STACKSIZE_UNIT 1024
 static char __noinit rx_fiber_stack[STACKSIZE_UNIT * 1];
 static char __noinit tx_fiber_stack[STACKSIZE_UNIT * 1];
-static char __noinit timer_fiber_stack[600];
+static char __noinit timer_fiber_stack[STACKSIZE_UNIT * 1];
 
 static struct net_dev {
 	/* Queue for incoming packets from driver */
