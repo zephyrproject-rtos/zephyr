@@ -596,8 +596,14 @@ static void att_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		value.end_handle = end_handle;
 		value.uuid = params->uuid;
 
-		attr = (&(struct bt_gatt_attr)
-			BT_GATT_PRIMARY_SERVICE(start_handle, &value));
+		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
+			attr = (&(struct bt_gatt_attr)
+				BT_GATT_PRIMARY_SERVICE(start_handle, &value));
+		} else {
+			attr = (&(struct bt_gatt_attr)
+				BT_GATT_SECONDARY_SERVICE(start_handle,
+							  &value));
+		}
 
 		if (params->func(attr, params) == BT_GATT_ITER_STOP) {
 			goto done;
@@ -641,7 +647,12 @@ static int att_find_type(struct bt_conn *conn,
 	req = bt_buf_add(buf, sizeof(*req));
 	req->start_handle = sys_cpu_to_le16(params->start_handle);
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
-	req->type = sys_cpu_to_le16(BT_UUID_GATT_PRIMARY);
+
+	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
+		req->type = sys_cpu_to_le16(BT_UUID_GATT_PRIMARY);
+	} else {
+		req->type = sys_cpu_to_le16(BT_UUID_GATT_SECONDARY);
+	}
 
 	BT_DBG("uuid 0x%04x start_handle 0x%04x end_handle 0x%04x\n",
 	       params->uuid->u16, params->start_handle, params->end_handle);
@@ -1025,8 +1036,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_PRIMARY:
 		return att_find_type(conn, params);
 	case BT_GATT_DISCOVER_SECONDARY:
-		/* TODO */
-		break;
+		return att_find_type(conn, params);
 	case BT_GATT_DISCOVER_INCLUDE:
 		return att_read_type(conn, params);
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
