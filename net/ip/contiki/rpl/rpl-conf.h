@@ -255,7 +255,7 @@
 #ifdef RPL_CONF_PROBING_SEND_FUNC
 #define RPL_PROBING_SEND_FUNC RPL_CONF_PROBING_SEND_FUNC
 #else
-#define RPL_PROBING_SEND_FUNC(buf, instance, addr) dio_output((buf), (instance), (addr))
+#define RPL_PROBING_SEND_FUNC(instance, addr) dio_output((instance), (addr))
 #endif
 
 /*

@@ -623,7 +623,7 @@ tcpip_ipv6_output(struct net_buf *buf)
           if(dag != NULL) {
             instance = dag->instance;
 
-            rpl_repair_root(buf, instance->instance_id);
+            rpl_repair_root(instance->instance_id);
           }
 #endif /* UIP_CONF_IPV6_RPL */
           uip_ds6_route_rm(route);

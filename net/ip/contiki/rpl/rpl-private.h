@@ -270,42 +270,42 @@ extern rpl_instance_t *default_instance;
 
 /* ICMPv6 functions for RPL. */
 void dis_output(struct net_buf *buf, uip_ipaddr_t *addr);
-void dio_output(struct net_buf *buf, rpl_instance_t *, uip_ipaddr_t *uc_addr);
-void dao_output(struct net_buf *buf, rpl_parent_t *, uint8_t lifetime);
-void dao_output_target(struct net_buf *buf, rpl_parent_t *, uip_ipaddr_t *, uint8_t lifetime);
+void dio_output(rpl_instance_t *, uip_ipaddr_t *uc_addr);
+void dao_output(rpl_parent_t *, uint8_t lifetime);
+void dao_output_target(rpl_parent_t *, uip_ipaddr_t *, uint8_t lifetime);
 void dao_ack_output(struct net_buf *buf, rpl_instance_t *, uip_ipaddr_t *, uint8_t);
 void rpl_icmp6_register_handlers(void);
 
 /* RPL logic functions. */
 void rpl_join_dag(uip_ipaddr_t *from, rpl_dio_t *dio);
-void rpl_join_instance(struct net_buf *buf, uip_ipaddr_t *from, rpl_dio_t *dio);
-void rpl_local_repair(struct net_buf *buf, rpl_instance_t *instance);
-void rpl_process_dio(struct net_buf *buf, uip_ipaddr_t *, rpl_dio_t *);
-int rpl_process_parent_event(struct net_buf *buf, rpl_instance_t *, rpl_parent_t *);
+void rpl_join_instance(uip_ipaddr_t *from, rpl_dio_t *dio);
+void rpl_local_repair(rpl_instance_t *instance);
+void rpl_process_dio(uip_ipaddr_t *, rpl_dio_t *);
+int rpl_process_parent_event(rpl_instance_t *, rpl_parent_t *);
 
 /* DAG object management. */
-rpl_dag_t *rpl_alloc_dag(struct net_buf *buf, uint8_t, uip_ipaddr_t *);
+rpl_dag_t *rpl_alloc_dag(uint8_t, uip_ipaddr_t *);
 rpl_instance_t *rpl_alloc_instance(uint8_t);
-void rpl_free_dag(struct net_buf *buf, rpl_dag_t *);
-void rpl_free_instance(struct net_buf *buf, rpl_instance_t *);
+void rpl_free_dag(rpl_dag_t *);
+void rpl_free_instance(rpl_instance_t *);
 
 /* DAG parent management function. */
 rpl_parent_t *rpl_add_parent(rpl_dag_t *, rpl_dio_t *dio, uip_ipaddr_t *);
 rpl_parent_t *rpl_find_parent(rpl_dag_t *, uip_ipaddr_t *);
 rpl_parent_t *rpl_find_parent_any_dag(rpl_instance_t *instance, uip_ipaddr_t *addr);
-void rpl_nullify_parent(struct net_buf *buf, rpl_parent_t *);
-void rpl_remove_parent(struct net_buf *buf, rpl_parent_t *);
+void rpl_nullify_parent(rpl_parent_t *);
+void rpl_remove_parent(rpl_parent_t *);
 void rpl_move_parent(rpl_dag_t *dag_src, rpl_dag_t *dag_dst, rpl_parent_t *parent);
 rpl_parent_t *rpl_select_parent(rpl_dag_t *dag);
-rpl_dag_t *rpl_select_dag(struct net_buf *buf, rpl_instance_t *instance,rpl_parent_t *parent);
-void rpl_recalculate_ranks(struct net_buf *buf);
+rpl_dag_t *rpl_select_dag(rpl_instance_t *instance,rpl_parent_t *parent);
+void rpl_recalculate_ranks(void);
 
 /* RPL routing table functions. */
 void rpl_remove_routes(rpl_dag_t *dag);
 void rpl_remove_routes_by_nexthop(uip_ipaddr_t *nexthop, rpl_dag_t *dag);
 uip_ds6_route_t *rpl_add_route(rpl_dag_t *dag, uip_ipaddr_t *prefix,
                                int prefix_len, uip_ipaddr_t *next_hop);
-void rpl_purge_routes(struct net_buf *buf);
+void rpl_purge_routes(void);
 
 /* Lock a parent in the neighbor cache. */
 void rpl_lock_parent(rpl_parent_t *p);
@@ -314,18 +314,16 @@ void rpl_lock_parent(rpl_parent_t *p);
 rpl_of_t *rpl_find_of(rpl_ocp_t);
 
 /* Timer functions. */
-void rpl_schedule_dao(struct net_buf *buf, rpl_instance_t *);
-void rpl_schedule_dao_immediately(struct net_buf *buf, rpl_instance_t *);
+void rpl_schedule_dao(rpl_instance_t *);
+void rpl_schedule_dao_immediately(rpl_instance_t *);
 void rpl_cancel_dao(rpl_instance_t *instance);
 void rpl_schedule_probing(rpl_instance_t *instance);
 
-void rpl_reset_dio_timer(struct net_buf *buf, rpl_instance_t *);
-void rpl_reset_periodic_timer(struct net_buf *buf);
+void rpl_reset_dio_timer(rpl_instance_t *);
+void rpl_reset_periodic_timer(void);
 
 /* Route poisoning. */
 void rpl_poison_routes(rpl_dag_t *, rpl_parent_t *);
-
-struct net_buf *rpl_get_netbuf(void);
 
 rpl_instance_t *rpl_get_default_instance(void);
 

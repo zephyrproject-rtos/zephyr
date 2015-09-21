@@ -110,7 +110,7 @@ rpl_verify_header(struct net_buf *buf, int uip_ext_opt_offset)
     }
     RPL_STAT(rpl_stats.forward_errors++);
     /* Trigger DAO retransmission */
-    rpl_reset_dio_timer(buf, instance);
+    rpl_reset_dio_timer(instance);
     /* drop the packet as it is not routable */
     return 1;
   }
@@ -142,7 +142,7 @@ rpl_verify_header(struct net_buf *buf, int uip_ext_opt_offset)
       RPL_STAT(rpl_stats.loop_errors++);
       PRINTF("RPL: Rank error signalled in RPL option!\n");
       /* Packet must be dropped and dio trickle timer reset, see RFC6550 - 11.2.2.2 */
-      rpl_reset_dio_timer(buf, instance);
+      rpl_reset_dio_timer(instance);
       return 1;
     }
     PRINTF("RPL: Single error tolerated\n");
@@ -248,7 +248,7 @@ rpl_update_header_empty(struct net_buf *buf)
         PRINTF("RPL generate No-Path DAO\n");
         parent = rpl_get_parent((uip_lladdr_t *)&buf->src);
         if(parent != NULL) {
-          dao_output_target(buf, parent, &UIP_IP_BUF(buf)->destipaddr, RPL_ZERO_LIFETIME);
+          dao_output_target(parent, &UIP_IP_BUF(buf)->destipaddr, RPL_ZERO_LIFETIME);
         }
         /* Drop packet */
         return 1;
