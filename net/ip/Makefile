@@ -63,9 +63,7 @@ obj-$(CONFIG_NETWORKING_WITH_IPV4) += \
 # RPL (RFC 6550) support
 ifeq ($(CONFIG_NETWORKING_WITH_RPL),y)
 	EXTRA_CFLAGS += -DUIP_CONF_IPV6_RPL=1
-	obj-y += contiki/rpl/rpl-of0.o \
-		contiki/rpl/rpl-mrhof.o \
-		contiki/rpl/rpl-dag.o \
+	obj-y += contiki/rpl/rpl-dag.o \
 		contiki/rpl/rpl-timers.o \
 		contiki/rpl/rpl.o \
 		contiki/rpl/rpl-ext-header.o \
@@ -73,6 +71,9 @@ ifeq ($(CONFIG_NETWORKING_WITH_RPL),y)
 		contiki/ipv6/multicast/uip-mcast6-route.o \
 		contiki/ipv6/multicast/smrf.o \
 		contiki/ipv6/multicast/uip-mcast6-stats.o
+
+	obj-$(CONFIG_RPL_WITH_OF0) += contiki/rpl/rpl-of0.o
+	obj-$(CONFIG_RPL_WITH_MRHOF) += contiki/rpl/rpl-mrhof.o
 else
 	EXTRA_CFLAGS += -DUIP_CONF_IPV6_RPL=0
 endif

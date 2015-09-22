@@ -118,6 +118,25 @@ config	RPL_STATS
 	help
 	  Enable RPL statistics support.
 
+choice
+prompt "Objective function"
+depends on NETWORKING_WITH_RPL
+help
+	The objective function to use. All RPL nodes in a DODAG
+	must use the same OF.
+	The default is MRHOF, see RFC 6719 for details.
+	Other alternative is OF0, see RFC 6552 for details.
+default RPL_WITH_MRHOF
+config RPL_WITH_MRHOF
+	bool "Minimum Rank with Hysteresis, RFC 6719"
+	help
+	  Choose this (MRHOF) if unsure.
+config RPL_WITH_OF0
+	bool "OF Zero, RFC 6552"
+	help
+	  Objective function zero (OF0).
+endchoice
+
 config	NETWORKING_WITH_LOGGING
 	bool
 	prompt "Enable logging of the uIP stack"
