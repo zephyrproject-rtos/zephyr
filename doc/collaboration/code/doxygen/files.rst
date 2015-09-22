@@ -9,8 +9,8 @@ beginning of the file. The file header must contain:
 #. The filename. Use **@file** for Doxygen to auto-complete the
    filename.
 
-#. The brief description: A single line summarizing the contents of
-   the file. Use **@brief** to clearly mark the brief description.
+#. The brief description: A single line summarizing the file contents.
+   Use **@brief** to clearly mark the brief description.
 
 #. The detailed description: One or multiple lines describing the
    purpose of the file, how it works and any other pertinent
@@ -20,7 +20,7 @@ beginning of the file. The file header must contain:
 
    Doxygen has special commands for copyrights (@copyright), authors
    (@author), and other important information. Refer to the
-   `Doxygen documentation`_ for further details.
+   `Doxygen documentation`_ for details.
 
 .. _Doxygen documentation:
    http://www.stack.nl/~dimitri/doxygen/manual/index.html

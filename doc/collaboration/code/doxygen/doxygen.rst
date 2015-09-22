@@ -3,13 +3,11 @@
 In-Code Documentation
 #####################
 
-The in-code documentation is automatically extracted from the code. Doxygen
-generates a huge XML tree in :file:`../../../xml` that the :program:`Breathe`
-extension imports into Sphinx.
+Doxygen extracts the in-code documentation automatically from the code. Doxygen
+generates XML files that the :program:`Breathe` extension imports into Sphinx.
 
-The Doxygen pass is independent of the Sphinx pass. Using Breathe to link them together, we can
-reference the code in the documentation and vice-versa. For example, :cpp:type:`K_COMM` and
-:cpp:class:`k_timer` have been modified to have additional information.
+The Doxygen pass is independent from the Sphinx pass. Using Breathe to link them together, we can
+reference the code in the documentation and vice-versa.
 
 .. _doxygen_guides:
 
@@ -17,7 +15,7 @@ In-Code Documentation Guides
 ****************************
 
 Follow these guides to document your code using comments. The |project|
-follows the Javadoc Doxygen comments style. We provide examples on how to
+follows the Javadoc / Doxygen commenting style. We provide examples on how to
 comment different parts of the code. Files, functions, defines, structures,
 variables and type definitions must be documented.
 
@@ -30,32 +28,31 @@ the documentation:
 
 #. Start and end a comment block with :literal:`/**` and :literal:`*/`
 
-#. Start each line of the comment with :literal:` * `
+#. Start each line of the comment with :literal:`*`
 
 #. Use \@ for all Doxygen special commands.
 
 #. Files, functions, defines, structures, variables and type
    definitions must have a brief description.
 
-#. All comments must start with a capital letter and end in a period.
-   Even if the comment is a sentence fragment.
+#. All comments must be in sentence-form: begin with a capital letter and
+   end in a period, even when the comment is a sentence fragment.
 
 .. note::
-
-   Always use :literal:`/**` This is a comment. :literal:`*/` if that
-   comment should become part of the documentation.
-   Use :literal:`/*` This comment won't appear in the documentation :
-   literal:`*/` for comments that you want in the code but not in the
-   documentation.
+   Always use this syntax when your intention is to have that comment
+   become part of the documentation.
+   :literal:`/** This comment style will show up in docs. */`
+   Alternatively, use the single-asterisk syntax when your intention
+   is for that comment to appear in the code, but not in the documentation.
+   :literal:`/* This style of comment won't appear in the docs */`
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-
-   files.rst
-   functions.rst
-   variables.rst
-   defines.rst
-   structs.rst
-   typedefs.rst
-   groups.rst
+   files
+   functions
+   variables
+   defines
+   structs
+   typedefs
+   groups

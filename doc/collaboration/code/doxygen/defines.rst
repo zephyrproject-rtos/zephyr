@@ -3,17 +3,16 @@
 Define Documentation
 ####################
 
-Defines are documented similarly as functions. Some noteworthy
+Defines and functions are documented similarly. Some noteworthy
 differences are:
 
 * The best practice for defines requires the use of the **@def**
   special command.
 
-* Just as with functions we provide a full and a simplified template.
-  The simplified template is also accepted. The syntax used in the
-  simplified template should only be used if you are familiar with
-  Doxygen. Use the full template if you are having problems getting
-  the documentation to generate properly.
+* Just as with functions, we provide a full and a simplified template.
+  The syntax used in the simplified template should only be used if you are familiar with
+  Doxygen. Use the full template if you are having problems
+  generating the documentation properly.
 
 Define Comment Templates
 ************************
@@ -26,7 +25,7 @@ Full template:
      *
      * @brief Brief description of the define.
      *
-     * @details Multiple lines describing in detail what is the
+     * @details Multiple lines describing in detail the
      * purpose of the define and what it does.
    */
 
@@ -39,7 +38,7 @@ Simplified template:
    /**
      * Brief description of the define.
      *
-     * Multiple lines describing in detail what is the
+     * Multiple lines describing in detail the
      * purpose of the define and what it does.
    */
    #define name_of_define
@@ -58,9 +57,8 @@ Correct:
    :emphasize-lines: 2, 3, 5
    :linenos:
 
-Observe how each piece of information is clearly marked. There is no
-confusion regarding to what part of the code the comment belongs thanks
-to the @def on line 2.
+Observe how each piece of information is clearly marked.
+The @def on line 2 ensures that the comment is appropriately linked to the code.
 
 Incorrect:
 

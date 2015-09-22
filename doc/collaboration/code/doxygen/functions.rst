@@ -4,10 +4,9 @@ Function Documentation
 ######################
 
 Doxygen recognizes a wide variety of syntaxes and structures for the
-function comments. The syntax described here is not the only
-possible one, nor does it exhaust all possible options. If your
-development needs the use of an option not described here, use it.
-However, use the following syntax for everything else:
+function comments. The syntax described here is one of many that are possible.
+If your development requires an option that is not described here, use it.
+However, you may use the following syntax for everything else.
 
 Function Comment Templates
 **************************
@@ -61,8 +60,8 @@ Simplified template:
    my_function(int a, int b){}
 
 .. important::
-   Ensure that there is **no** blank line between the comment block
-   and the function's signature. That way Doxygen can link the comment
+   Ensure that you have **no** blank lines between the comment block
+   and the function's signature. This ensures that Doxygen can link the comment
    to the function.
 
 Function Documentation Examples
@@ -106,8 +105,8 @@ Take the more complex function hello_loop():
    :linenos:
 
 The function parameters have been documented using the correct Doxygen
-command but notice line 1. The comment block was not started with
-:literal:`/**` and therefore Doxygen won't parse it correctly.
+command, yet notice line 1. The comment block was not started with
+:literal:`/**` and, therefore, Doxygen will not parse it correctly.
 
 The parameters have been documented using the \\param command. This is
 equivalent to using @param but incorrect according to these guidelines.
@@ -118,9 +117,9 @@ Notice that there is no blank line between the comment and the
 function's signature, lines 7 and 8. This allows Doxygen to correctly
 link the comment to the function.
 
-Lines 13 and 16 contain two comments that won't be included by Doxygen
-in the documentation. Use the brief description or the detailed
-description inside the comment block to include that information.
+Lines 13 and 16 contain two comments that will not be included by Doxygen
+in the documentation. To include that information, use the brief description or the detailed
+description inside the comment block.
 Remember that variables must be documented separately. See
 :ref:`variable_documentation` for more details.
 
@@ -138,11 +137,9 @@ Comment blocks must have the following structure:
 
 #. Parameter information. See lines 9-11.
 
-#. Return information. Return information is optional for void
-   functions.
+#. Return information. Return information is optional for void functions.
 
-#. Other special commands. There is no specific order for any further
-   special commands.
+#. Other special commands. There is no specific order for any further special commands.
 
 The description of the actions referenced in lines 19 and 21 is part of
 the detailed description in the comment block. The references shown in

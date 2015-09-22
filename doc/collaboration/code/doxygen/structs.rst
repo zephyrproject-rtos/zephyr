@@ -11,8 +11,8 @@ simplified syntax is therefore appropriate.
 
 .. note::
 
-   Follow the same rules as struct when documenting an enum. Use the
-   simplified syntax to add the brief description.
+   Follow the same rules as struct when documenting an enum.
+   Use the simplified syntax to add the brief description.
 
 Structure Comments Template
 ***************************
@@ -24,8 +24,8 @@ Structs only have a simplified template:
    :emphasize-lines: 8
    :linenos:
 
-Doxygen does not require any commands to recognize the different
-comments. It does require that line 8 be left blank though.
+Doxygen does not require any commands to recognize the different comments.
+It does, however, require that line 8 be left blank.
 
 Structure Documentation Example
 *******************************
