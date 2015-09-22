@@ -57,6 +57,13 @@ struct gpio_pcal9535a_config {
 	uint16_t i2c_slave_addr;
 };
 
+/** Store the port 0/1 data for each register pair. */
+union gpio_pcal9535a_port_data {
+	uint16_t all;
+	uint8_t port[2];
+	uint8_t byte[2];
+};
+
 /** Runtime driver data */
 struct gpio_pcal9535a_drv_data {
 	/** Master I2C device */
@@ -70,6 +77,14 @@ struct gpio_pcal9535a_drv_data {
 
 	/** Use for delay between operations */
 	struct nano_timer timer;
+
+	struct {
+		union gpio_pcal9535a_port_data output;
+		union gpio_pcal9535a_port_data pol_inv;
+		union gpio_pcal9535a_port_data dir;
+		union gpio_pcal9535a_port_data pud_en;
+		union gpio_pcal9535a_port_data pud_sel;
+	} reg_cache;
 };
 
 #endif /* _GPIO_PCAL9535A_H_ */
