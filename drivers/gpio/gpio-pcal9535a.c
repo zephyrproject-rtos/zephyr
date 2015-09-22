@@ -87,7 +87,7 @@ union port_data {
  * @brief Check to see if a I2C master is identified for communication.
  *
  * @param dev Device struct.
- * @return DEV_OK if I2C master is identified, DEV_INVALID_CONF if not.
+ * @return 1 if I2C master is identified, 0 if not.
  */
 static inline int _has_i2c_master(struct device *dev)
 {
@@ -96,9 +96,9 @@ static inline int _has_i2c_master(struct device *dev)
 	struct device * const i2c_master = drv_data->i2c_master;
 
 	if (i2c_master)
-		return DEV_OK;
+		return 1;
 	else
-		return DEV_INVALID_CONF;
+		return 0;
 }
 
 #define WAIT_10MS	(sys_clock_ticks_per_sec / 100)
