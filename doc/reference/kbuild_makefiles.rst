@@ -6,53 +6,43 @@ The Makefiles
 Overview
 ========
 
-Kbuild defines a set of conventions about the correct use of Makefiles
-in the kernel source directories. The correct use of Makefiles is
-mainly driven by the concept of recursion.
+The build system defines a set of conventions for the correct use of Makefiles in the kernel source
+directories. The correct use of Makefiles is driven by the concept of recursion.
 
-In the recursion model, each directory describes the source code that
-is introduced in the build process and the subdirectories that
-participate in it. Each subdirectory follows the same
-principle. The developer focus exclusively in his own
-work. The developer describes how his module is integrated
-in the build system and plugs a very simple Makefile following the
-recursive model.
+In the recursion model, each Makefile within a directory includes the source code and any
+subdirectories to the build process. Each subdirectory follows the same principle. Developers can
+focus exclusively in their own work. They integrate their module with the build system by adding a
+very simple Makefile following the recursive model.
+
+.. _makefile_conventions:
 
 Makefile Conventions
 ====================
 
-Kbuild states the following conventions that restrict the different
-ways that modules and Makefiles can be added into the system. This
+The following conventions restrict how to add modules and Makefiles to the build system. These
 conventions guard the correct implementation of the recursive model.
 
-* There must be a single Makefile per directory. Without a
-  Makefile in the directory it is not considered a source code
-  directory.
+* Each source code directory must contain a single Makefile. Directories without a Makefile are not
+  considered source code directories.
 
-* The scope of every Makefile is restricted to the content of that
-  directory. A Makefile can only make a direct reference to its own
-  files and subdirectories. Any file outside the directory has
+* The scope of every Makefile is restricted to the contents of that directory. A Makefile can only
+  make a direct reference to its own files and subdirectories. Any file outside the directory has
   to be referenced in its home directory Makefile.
 
-* Makefiles list the object files that are included in the link
-  process. The Kbuild finds the source file that generates the
-  object file by matching the file name.
+* Makefiles list the object files that are included in the link process. The build system finds the
+  source file that generates the object file by matching the file name.
 
-* Parent directories add their child directories into the recursion
-  model.
+* Parent directories add their child directories into the recursion model.
 
-* The root Makefile adds the directories in the kernel base
-  directory into the recursion model.
+* The root Makefile adds the directories in the kernel base directory into the recursion model.
 
 
-Adding source files
+Adding Source Files
 ===================
-A source file is added into the build system by editing its home
-directory Makefile. The Makefile must refer the source build
-indirectly, specifying the object file that results from the source
-file using the :literal:`obj-y` variable. For example, if the file that we
-want to add is a C file named :file:`<file>.c` the following line should be
-added in the Makefile:
+A source file is added to the build system through its home directory Makefile. The Makefile must
+refer the source build indirectly, specifying the object file that results from the source file
+using the :literal:`obj-y` variable. For example, if the file that we want to add is a C file named
+:file:`<file>.c` the following line should be added in the Makefile:
 
 .. code-block:: make
 
@@ -60,10 +50,10 @@ added in the Makefile:
 
 .. note::
 
-   The same applies for assembly files with .s extension.
+   The same method applies for assembly files with .s extension.
 
-The source files can be conditionally added using Kconfig variables.
-For example, if the symbol :literal:`CONFIG_VAR` is set and this implies that
+Source files can be added conditionally using configuration options.
+For example, if the option :option:`CONFIG_VAR` is set and it implies that
 a source file must be added in the compilation process, then the
 following line adds the source code conditionally:
 
@@ -71,56 +61,53 @@ following line adds the source code conditionally:
 
    obj-$(CONFIG_VAR) += <file>.o
 
-Adding new directories
-======================
+Adding Directories
+==================
 
-A new directory is added into the build system editing its home
-directory Makefile. The directory is added using the :literal:`obj-y`
-variable. The syntax to indicate that we are adding a directory into
-the recursion is:
+Add a subdirectory to the build system by editing the Makefile in its directory.
+The subdirectory is added using the :literal:`obj-y` variable. The correct syntax to add a
+subdirectory into the recursion is:
 
 .. code-block:: make
 
-   obj-y += <directory_name>/**
+   obj-y += <directory_name>/
 
-The backslash at the end of the directory name denotes that the
-name is a directory that is added into the recursion.
+The backslash at the end of the directory name signals the build system that a directory, and not a
+file, is being added to the recursion.
 
-The convention require us to add only one directory per text line and
-never to mix source code with directory recursion in a single
-:literal:`obj-y` line. This helps keep the readability of the
-Makefile by making it clear when an item adds an additional lever of
-recursion.
+The conventions require us to add only one directory per line and never to mix source code with
+directory recursion in a single :literal:`obj-y` line. This helps keep the readability of the
+Makefile by making it clear when an item adds an additional lever of recursion.
 
-Directories can be conditionally added as well, just like source files:
+Directories can also be conditionally added:
 
 .. code-block:: make
 
    oby-$(CONFIG_VAR) += <directory_name>/
 
-The new directory must contain its own Makefile following the rules
-described in `Makefil Conventions`_
+The subdirectory must contain its own Makefile following the rules
+described in :ref:`makefile_conventions`.
 
-Adding new root directories
-===========================
+Adding Root Directories
+=======================
 
-Root directories are the directories inside the |project|
-base directory like the :file:`arch/`, :file:`kernel/` and the
-:file:`driver/` directories.
+Root directories are the directories inside the kernel's base directory. Examples include:
+the :file:`arch/`, :file:`kernel/` and :file:`driver/` directories.
 
-The parent directory for this directories is the root Makefile. The
-root Makefile is the located at the |project|'s base directory.
-The root Makefile defines the variable :literal:`core-y` which lists
-all the root directories that are at the root of recursion.
+The parent directory for this directories is the root directory and it contains the
+root Makefile. The root Makefile defines the variable :literal:`core-y` used to list all
+directories at the root of recursion.
 
-To add a new root directory, include the directory name in the list.
-For example:
+To add a new root directory, include the directory name in the list. For example:
 
 .. code-block:: make
 
    core-y += <directory_name/>
 
-There is the possibility that the new directory requires an specific
-variable, different from :literal:`core-y`. In order to keep the integrity
-and organization of the project, a change of this sort should be
-consulted with the project maintainer.
+A new root directory might require a specific variable instead of :literal:`core-y`. Consult with
+the code's maintainer before performing a change of this sort.
+
+.. caution::
+
+   Adding or changing root directories can potentially compromise the integrity and organization of
+   the project.
