@@ -118,6 +118,15 @@ config	RPL_STATS
 	help
 	  Enable RPL statistics support.
 
+config	RPL_PROBING
+	bool
+	prompt "Enable RPL probing"
+	depends on NETWORKING_WITH_RPL
+	default n
+	help
+	  Enable RPL probing support. When enabled, probes will be sent
+	  periodically to keep parent link estimates up to date.
+
 choice
 prompt "Objective function"
 depends on NETWORKING_WITH_RPL

@@ -85,6 +85,11 @@ typedef unsigned int uip_stats_t;
 #else
 #define RPL_CONF_OF rpl_of0
 #endif /* CONFIG_RPL_WITH_MRHOF */
+#ifdef CONFIG_RPL_PROBING
+#define RPL_CONF_WITH_PROBING 1
+#else
+#define RPL_CONF_WITH_PROBING 0
+#endif /* CONFIG_RPL_PROBING */
 #ifdef CONFIG_RPL_STATS
 #define RPL_CONF_STATS 1
 #else
