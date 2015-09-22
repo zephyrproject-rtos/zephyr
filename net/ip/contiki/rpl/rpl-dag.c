@@ -1399,7 +1399,9 @@ rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
   PRINTF(", rank %u, min_rank %u, ",
 	 instance->current_dag->rank, instance->current_dag->min_rank);
   PRINTF("parent rank %u, parent etx %u, link metric %u, instance etx %u\n",
-	 p->rank, -1/*p->mc.obj.etx*/, p->link_metric, instance->mc.obj.etx);
+	 p->rank, -1/*p->mc.obj.etx*/,
+	 rpl_get_nbr(p) ? rpl_get_nbr(p)->link_metric : 0,
+	 instance->mc.obj.etx);
 
   /* We have allocated a candidate parent; process the DIO further. */
 
