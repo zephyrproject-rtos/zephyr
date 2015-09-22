@@ -44,7 +44,7 @@
 #include <sys_io.h>
 
 #include "i2c-dw.h"
-#include "i2c-registers.h"
+#include "i2c-dw-registers.h"
 
 #ifndef CONFIG_I2C_DEBUG
 #define DBG(...) {;}
