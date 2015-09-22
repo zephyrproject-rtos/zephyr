@@ -46,6 +46,7 @@
 #include <stdio.h>
 #define DBG printf
 #else
+#include <misc/printk.h>
 #define DBG printk
 #endif /* CONFIG_STDOUT_CONSOLE */
 #endif /* CONFIG_GPIO_PCAL9535A_DEBUG */
