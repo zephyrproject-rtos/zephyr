@@ -8,11 +8,9 @@ cflags-$(PERF_OPT) += -DPERF_OPT
 cflags-$(CONFIG_LTO) += $(call cc-option,-flto,)
 
 
-ifneq ($(CONFIG_PLATFORM_IA32_PCI),y)
-iSSE_FP_MATH_ = -mno-sse
-iSSE_FP_MATH  = ${iSSE_FP_MATH_${CONFIG_SSE_FP_MATH}}
+ifneq ($(CONFIG_SSE_FP_MATH),y)
+cflags-y += -mno-sse
 endif
-cflags-y += $(iSSE_FP_MATH)
 
 arch-$(CONFIG_CPU_ATOM) += $(call cc-option,-march=atom) \
 	$(call cc-option,-mtune=atom,$(call cc-option,-mtune=generic))
