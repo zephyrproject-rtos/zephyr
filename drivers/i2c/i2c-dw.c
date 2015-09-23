@@ -190,7 +190,7 @@ void dw_i2c_isr(struct device *port)
 		regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
 		dw->state = I2C_DW_STATE_READY;
 
-		regs->ic_clr_intr = 0;
+		value = regs->ic_clr_intr;
 	}
 
 	/* Check if we are configured as a master device */
@@ -211,7 +211,7 @@ void dw_i2c_isr(struct device *port)
 				dw->state = I2C_DW_CMD_ERROR;
 				regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
 				dw->state = I2C_DW_STATE_READY;
-				regs->ic_clr_intr = 0;
+				value = regs->ic_clr_intr;
 		}
 	} else { /* we must be configured as a slave device */
 
