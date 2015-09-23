@@ -1,5 +1,5 @@
 ccflags-y +=-I$(srctree)/include/drivers
-ccflags-y +=-I$(srctree)/arch/$(ARCH)/platforms/$(strip $(CONFIG_PLATFORM))
+ccflags-y +=-I$(srctree)/arch/$(ARCH)/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))
 
 asflags-y = $(ccflags-y)
 
