@@ -328,11 +328,12 @@ static void parse_dep_file(void *map, size_t len)
 
 	while (m < end) {
 		/* Skip any "white space" */
-		while (m < end && (*m == ' ' || *m == '\\' || *m == '\n'))
+		while (m < end && (*m == ' ' || *m == '\\' || *m == '\n' || *m == '\r'))
 			m++;
 		/* Find next "white space" */
 		p = m;
-		while (p < end && *p != ' ' && *p != '\\' && *p != '\n')
+		while (p < end && *p != ' ' && !(*p == '\\' && *(p+1) == '\r')
+			&& *p != '\r' && *p != '\n')
 			p++;
 		/* Is the token we found a target name? */
 		is_target = (*(p-1) == ':');
@@ -346,7 +347,8 @@ static void parse_dep_file(void *map, size_t len)
 			s[p - m] = 0;
 
 			/* Ignore certain dependencies */
-			if (strrcmp(s, "include/generated/autoconf.h") &&
+			if ((m < end) &&
+				strrcmp(s, "include/generated/autoconf.h") &&
 			    strrcmp(s, "arch/um/include/uml-config.h") &&
 			    strrcmp(s, "include/linux/kconfig.h") &&
 			    strrcmp(s, ".ver")) {
