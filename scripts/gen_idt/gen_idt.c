@@ -60,8 +60,8 @@
 #define PRINTF(...) do {} while (0)
 #endif
 
-#if !defined(WINDOWS)
-	#define O_BINARY 0
+#if !defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__WIN32__)
+  #define O_BINARY 0
 #endif
 
 #define MAX_NUM_VECTORS           256
