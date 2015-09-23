@@ -200,13 +200,13 @@
 
 #define IIRC(dev)	(DEV_DATA(dev)->iir_cache)
 
-#if (!defined(CONFIG_NS16550_PCI) && defined(CONFIG_X86_32))
+#if (defined(CONFIG_IA32_LEGACY_IO_PORTS) && !defined(CONFIG_NS16550_PCI))
 #define INBYTE(x) sys_in8(x)
 #define OUTBYTE(x, d) sys_out8(d, x)
 #else
 #define INBYTE(x) sys_read8(x)
 #define OUTBYTE(x, d) sys_write8(d, x)
-#endif /* CONFIG_NS16550_PCI/CONFIG_X86_32 */
+#endif /* CONFIG_IA32_LEGACY_IO_PORTS/CONFIG_NS16550_PCI */
 
 static struct uart_driver_api ns16550_uart_driver_api;
 

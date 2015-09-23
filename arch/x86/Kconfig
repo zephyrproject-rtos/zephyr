@@ -179,6 +179,15 @@ config ISA_IA32
 	This option signifies the use of a CPU based on the Intel IA-32
 	instruction set architecture.
 
+config IA32_LEGACY_IO_PORTS
+	bool
+	prompt "Support IA32 legacy IO ports"
+	default n
+	depends on ISA_IA32
+	help
+	This option enables IA32 legacy IO ports. Note these are much slower
+	than memory access, so they should be used in last resort.
+
 config CMOV
 	def_bool n
 	help
