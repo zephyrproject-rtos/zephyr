@@ -246,8 +246,12 @@ int bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	bool bonded;
 	size_t i;
 
-	if (len != sizeof(*data) || offset) {
+	if (offset > sizeof(*data)) {
 		return -EINVAL;
+	}
+
+	if (offset + len > sizeof(*data)) {
+		return -EFBIG;
 	}
 
 	if (bt_keys_find_addr(&conn->dst))
