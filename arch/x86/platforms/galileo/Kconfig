@@ -73,6 +73,17 @@ config SHARED_IRQ_0_PRI
 	default 0
 endif
 
+if PCI_LEGACY_BRIDGE
+config PCI_LEGACY_BRIDGE_BUS
+	default 0
+config PCI_LEGACY_BRIDGE_DEV
+	default 31
+config PCI_LEGACY_BRIDGE_VENDOR_ID
+	default 0x8086
+config PCI_LEGACY_BRIDGE_DEVICE_ID
+	default 0x095e
+endif
+
 if I2C
 config I2C_CLOCK_SPEED
 	default 25

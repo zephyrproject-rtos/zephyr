@@ -146,6 +146,40 @@ pre_kernel_early_init(spiirq_1, NULL);
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_SHARED_IRQ */
 
+#ifdef CONFIG_PCI_LEGACY_BRIDGE
+/**
+ *
+ * @brief Configure PCI interrupt pin to IRQ mapping
+ *
+ * The routine detects PCI legacy bridge and if present,
+ * configures PCI interrupt pin to IRQ mapping for D:20
+ * and D:21 IO Fabric, that contains the following devices:
+ * - SPI0, SPI1;
+ * - I2C;
+ * - GPIO;
+ * - UART0, UART1;
+ * - SDIO/eMMC, USB, Ethernet.
+ */
+static int pci_legacy_bridge_irq_config(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	struct pci_dev_info info = {
+		.function = PCI_FUNCTION_ANY,
+		.bar = PCI_BAR_ANY,
+	};
+	if (pci_legacy_bridge_detect(&info) == 0) {
+		pci_legacy_bridge_configure(&info, 1, PCI_INTA, 16);
+		pci_legacy_bridge_configure(&info, 1, PCI_INTB, 17);
+		pci_legacy_bridge_configure(&info, 1, PCI_INTC, 18);
+		pci_legacy_bridge_configure(&info, 1, PCI_INTD, 19);
+	}
+	return 0;
+}
+
+DECLARE_DEVICE_INIT_CONFIG(pci_legacy_bridge_0, "", pci_legacy_bridge_irq_config, NULL);
+pre_kernel_late_init(pci_legacy_bridge_0, NULL);
+#endif /* CONFIG_PCI_LEGACY_BRIDGE */
+
 #ifdef CONFIG_CONSOLE_HANDLER
 
 static int console_irq_set(struct device *unsued)
