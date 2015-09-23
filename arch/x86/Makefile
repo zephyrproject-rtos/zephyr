@@ -3,8 +3,11 @@
 PERF_OPT=$(if $(filter -Os,$(KBUILD_CFLAGS)),,y)
 
 cflags-y += $(call cc-option,-ffunction-sections,) $(call cc-option,-fdata-sections,)
-cflags-$(PERF_OPT) += $(call cc-option,-mpreferred-stack-boundary=2)
-cflags-$(PERF_OPT) += -DPERF_OPT
+ifeq ($(PERF_OPT),y)
+cflags-y += -DPERF_OPT
+else
+cflags-y += $(call cc-option,-mpreferred-stack-boundary=2)
+endif
 cflags-$(CONFIG_LTO) += $(call cc-option,-flto,)
 
 

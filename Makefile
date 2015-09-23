@@ -594,7 +594,6 @@ QEMU		= $(QEMU_BIN_PATH)/$(QEMU_$(SRCARCH))
 # Defaults to zephyr, but the arch makefile usually adds further targets
 all: zephyr
 
-include arch/$(SRCARCH)/Makefile
 
 ifdef CONFIG_READABLE_ASM
 # Disable optimizations that make assembler listings hard to read.
@@ -664,6 +663,9 @@ ifdef CONFIG_DEBUG_INFO_REDUCED
 KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly) \
 		   $(call cc-option,-fno-var-tracking)
 endif
+
+include arch/$(SRCARCH)/Makefile
+
 KBUILD_CFLAGS += $(CFLAGS)
 KBUILD_AFLAGS += $(ARCHFLAGS)
 KBUILD_AFLAGS += $(CFLAGS)
