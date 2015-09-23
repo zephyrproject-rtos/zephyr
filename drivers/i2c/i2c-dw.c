@@ -70,7 +70,7 @@ static inline void i2c_dw_memory_write(uint32_t base_addr, uint32_t offset,
 }
 
 
-static void i2c_dw_data_read(struct device *dev)
+static void _i2c_dw_data_read(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
@@ -99,7 +99,7 @@ static void i2c_dw_data_read(struct device *dev)
 }
 
 
-static void i2c_dw_data_send(struct device *dev)
+static void _i2c_dw_data_send(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
@@ -186,7 +186,7 @@ void i2c_dw_isr(struct device *port)
 	 * handled.
 	 */
 	if (regs->ic_intr_stat.bits.stop_det) {
-		i2c_dw_data_read(port);
+		_i2c_dw_data_read(port);
 		regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
 		dw->state = I2C_DW_STATE_READY;
 
@@ -197,12 +197,12 @@ void i2c_dw_isr(struct device *port)
 	if (regs->ic_con.bits.master_mode) {
 		/* Check if the Master TX is ready for sending */
 		if (regs->ic_intr_stat.bits.tx_empty) {
-			i2c_dw_data_send(port);
+			_i2c_dw_data_send(port);
 		}
 
 		/* Check if the Master RX buffer is full */
 		if (regs->ic_intr_stat.bits.rx_full) {
-			i2c_dw_data_read(port);
+			_i2c_dw_data_read(port);
 		}
 
 		if ((DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_TX_OVER |
@@ -225,20 +225,20 @@ void i2c_dw_isr(struct device *port)
 				value = regs->ic_clr_tx_abrt;
 			}
 
-			i2c_dw_data_send(port);
+			_i2c_dw_data_send(port);
 			value = regs->ic_clr_rd_req;
 		}
 
 		/* The slave device is ready to receive */
 		if (regs->ic_intr_stat.bits.rx_full &&
 		    dw->app_config.bits.is_slave_read) {
-			i2c_dw_data_read(port);
+			_i2c_dw_data_read(port);
 		}
 	}
 }
 
 
-static int i2c_dw_setup(struct device *dev)
+static int _i2c_dw_setup(struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
@@ -331,7 +331,7 @@ static int i2c_dw_setup(struct device *dev)
 }
 
 
-static int i2c_dw_transfer(struct device *dev,
+static int _i2c_dw_transfer(struct device *dev,
 			     uint8_t *write_buf, uint32_t write_len,
 			     uint8_t *read_buf,  uint32_t read_len,
 			     uint16_t slave_address)
@@ -356,7 +356,7 @@ static int i2c_dw_transfer(struct device *dev,
 	/* Disable the device controller to be able set TAR */
 	regs->ic_enable.bits.enable = 0;
 
-	i2c_dw_setup(dev);
+	_i2c_dw_setup(dev);
 
 	/* Disable interrupts */
 	regs->ic_intr_mask.raw = 0;
@@ -497,7 +497,7 @@ static int i2c_dw_write(struct device *dev, uint8_t *buf,
 
 	dw->state = I2C_DW_CMD_SEND;
 
-	return i2c_dw_transfer(dev, buf, len, 0, 0, slave_addr);
+	return _i2c_dw_transfer(dev, buf, len, 0, 0, slave_addr);
 }
 
 
@@ -508,7 +508,7 @@ static int i2c_dw_read(struct device *dev, uint8_t *buf,
 
 	dw->state = I2C_DW_CMD_RECV;
 
-	return i2c_dw_transfer(dev, 0, 0, buf, len, slave_addr);
+	return _i2c_dw_transfer(dev, 0, 0, buf, len, slave_addr);
 }
 
 
