@@ -103,7 +103,7 @@ typedef void (*i2c_isr_cb_t)(struct device *port);
 #define I2C_DW_FIFO_DEPTH		16
 
 
-struct dw_i2c_rom_config {
+struct i2c_dw_rom_config {
 	uint32_t        base_address;
 	uint32_t        interrupt_vector;
 	uint32_t        interrupt_mask;
@@ -114,7 +114,7 @@ struct dw_i2c_rom_config {
 };
 
 
-struct dw_i2c_dev_config {
+struct i2c_dw_dev_config {
 	union dev_config	app_config;
 
 	volatile uint8_t	state;  /* last direction of transfer */
@@ -130,8 +130,8 @@ struct dw_i2c_dev_config {
 	uint16_t		lcnt;
 };
 
-void dw_i2c_isr(struct device *port);
+void i2c_dw_isr(struct device *port);
 
-extern int dw_i2c_initialize(struct device *port);
+extern int i2c_dw_initialize(struct device *port);
 
 #endif /* __DRIVERS_I2C_DW_H */

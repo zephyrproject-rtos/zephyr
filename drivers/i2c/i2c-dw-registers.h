@@ -1,4 +1,4 @@
-/* dw_i2c_registers.h - array access for I2C Design Ware registers */
+/* i2c_dw_registers.h - array access for I2C Design Ware registers */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -186,17 +186,17 @@ union ic_comp_param_1_register {
 
 /*
  * instantiate this like:
- *  volatile struct dw_i2c_registers *regs = (struct dw_i2c_regs *)0x80000000;
+ *  volatile struct i2c_dw_registers *regs = (struct i2c_dw_regs *)0x80000000;
  *
  *  If this is being set as a global, use the following change to avoid the
  *  base pointer from being reloaded after function calls:
- *  volatile struct d2_i2c_regs* const *regs = (struct d2_i2c_regs*)0x80000000;
+ *  volatile struct i2c_dw_regs* const *regs = (struct i2c_dw_regs*)0x80000000;
  *
  *  This will allow access to the registers like so:
  *  x = regs->ctrlreg;
  *  regs->ctrlreg = newval;
  */
-struct dw_i2c_registers {
+struct i2c_dw_registers {
 	union ic_con_register ic_con;	/* offset 0x00 */
 	uint16_t dummy1;
 	union ic_tar_register ic_tar;	/* offset 0x04 */
