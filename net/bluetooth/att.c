@@ -1077,8 +1077,20 @@ static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 
 	bt_gatt_foreach_attr(handle, handle, write_cb, &data);
 
-	/* In case of error discard data and respond with an error */
 	if (data.err) {
+		/* Don't send error response when user attribute write handler
+		 * returns invalid offset or invalid attribute value length.
+		 * Such response needs to be sent when execute write request
+		 * is received.
+		 * Refer to BT SIG 4.2 [Vol 3, Part F, 3.4.6.1] page 504
+		 */
+		if (data.op == BT_ATT_OP_PREPARE_WRITE_REQ &&
+		    (data.err == BT_ATT_ERR_INVALID_OFFSET ||
+		     data.err == BT_ATT_ERR_INVALID_ATTRIBUTE_LEN)) {
+			goto done;
+		}
+
+		/* In case of error discard data and respond with an error */
 		if (rsp) {
 			net_buf_unref(data.buf);
 			/* Respond here since handle is set */
@@ -1087,6 +1099,7 @@ static uint8_t att_write_rsp(struct bt_conn *conn, uint8_t op, uint8_t rsp,
 		return 0;
 	}
 
+done:
 	if (data.buf) {
 		/* Add prepare write response */
 		if (rsp == BT_ATT_OP_PREPARE_WRITE_RSP) {
