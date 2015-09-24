@@ -64,6 +64,7 @@ packet_sent(struct net_mbuf *buf, void *ptr, int status, int transmissions)
 static int fragment(struct net_buf *buf, void *ptr)
 {
 	struct net_mbuf *mbuf;
+	int ret;
 
 	mbuf = net_mbuf_get_reserve(0);
 	if (!mbuf) {
@@ -72,7 +73,9 @@ static int fragment(struct net_buf *buf, void *ptr)
 
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 
-	packetbuf_copyfrom(mbuf, &uip_buf(buf)[UIP_LLH_LEN], uip_len(buf));
+	ret = packetbuf_copyfrom(mbuf, &uip_buf(buf)[UIP_LLH_LEN],
+				 uip_len(buf));
+	PRINTF("%s: buffer len %d copied %d\n", __FUNCTION__, uip_len(buf), ret);
 	packetbuf_set_addr(mbuf, PACKETBUF_ADDR_RECEIVER, &buf->dest);
 	net_buf_put(buf);
 
