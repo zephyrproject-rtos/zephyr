@@ -35,6 +35,7 @@
 
 #include <misc/__assert.h>
 #include <board.h>
+#include <init.h>
 
 #include <sys_io.h>
 
@@ -96,6 +97,45 @@ DEFINE_TEST_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
 DEFINE_TEST_BIT_OP(sssr_bsy, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_BSY_BIT)
 DEFINE_CLEAR_BIT_OP(sscr1_tie, INTEL_SPI_REG_SSRC1, INTEL_SPI_SSCR1_TIE_BIT)
 
+#ifdef CONFIG_SPI_INTEL_CS_GPIO
+
+#include <gpio.h>
+
+static inline void _spi_config_cs(struct device *dev)
+{
+	struct spi_intel_config *info = dev->config->config_info;
+	struct spi_intel_data *spi = dev->driver_data;
+	struct device *gpio;
+
+	gpio = device_get_binding(info->cs_gpio_name);
+	if (!gpio) {
+		spi->cs_gpio_port = NULL;
+		return;
+	}
+
+	gpio_pin_configure(gpio, info->cs_gpio_pin, GPIO_DIR_OUT);
+	/* Default CS line to high (idling) */
+	gpio_pin_write(gpio, info->cs_gpio_pin, 1);
+
+	spi->cs_gpio_port = gpio;
+}
+
+static inline void _spi_control_cs(struct device *dev, int on)
+{
+	struct spi_intel_config *info = dev->config->config_info;
+	struct spi_intel_data *spi = dev->driver_data;
+
+	if (!spi->cs_gpio_port) {
+		return;
+	}
+
+	gpio_pin_write(spi->cs_gpio_port, info->cs_gpio_pin, !on);
+}
+#else
+#define _spi_control_cs(...) {;}
+#define _spi_config_cs(...) {;}
+#endif /* CONFIG_SPI_INTEL_CS_GPIO */
+
 static void completed(struct device *dev, uint32_t error)
 {
 	struct spi_intel_config *info = dev->config->config_info;
@@ -128,6 +168,8 @@ out:
 
 	write_sscr1(spi->sscr1, info->regs);
 	clear_bit_sscr0_sse(info->regs);
+
+	_spi_control_cs(dev, 0);
 
 	if (spi->callback) {
 		spi->callback(dev, cb_type);
@@ -268,6 +310,8 @@ static int spi_intel_transceive(struct device *dev,
 	spi->rx_buf = rx_buf;
 	spi->rx_buf_len = rx_buf_len;
 
+	_spi_control_cs(dev, 1);
+
 	/* Installing the registers (enabling interrupts and controller) */
 	write_sscr1(spi->sscr1 | INTEL_SPI_SSCR1_RIE |
 				INTEL_SPI_SSCR1_TIE, info->regs);
@@ -373,6 +417,8 @@ int spi_intel_init(struct device *dev)
 		return DEV_NOT_CONFIG;
 	}
 
+	_spi_config_cs(dev);
+
 	info->config_func(dev);
 
 	irq_enable(info->irq);
@@ -399,6 +445,10 @@ struct spi_intel_config spi_intel_config_0 = {
 	.pci_dev.vendor_id = CONFIG_SPI_INTEL_VENDOR_ID,
 	.pci_dev.device_id = CONFIG_SPI_INTEL_DEVICE_ID,
 	.pci_dev.function = CONFIG_SPI_INTEL_PORT_0_FUNCTION,
+#endif
+#ifdef CONFIG_SPI_INTEL_CS_GPIO
+	.cs_gpio_name = CONFIG_SPI_INTEL_PORT_0_CS_GPIO_PORT,
+	.cs_gpio_pin = CONFIG_SPI_INTEL_PORT_0_CS_GPIO_PIN,
 #endif
 	.config_func = spi_config_0_irq
 };
@@ -439,6 +489,9 @@ struct spi_intel_config spi_intel_config_1 = {
 	.pci_dev.function = CONFIG_SPI_INTEL_PORT_1_FUNCTION,
 	.pci_dev.vendor_id = CONFIG_SPI_INTEL_VENDOR_ID,
 	.pci_dev.device_id = CONFIG_SPI_INTEL_DEVICE_ID,
+#endif
+#ifdef CONFIG_SPI_INTEL_CS_GPIO
+	.cs_gpio_name = NULL,
 #endif
 	.config_func = spi_config_1_irq
 };
