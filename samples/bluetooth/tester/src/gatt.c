@@ -170,9 +170,18 @@ struct gatt_value {
 	uint8_t *data;
 };
 
+static int read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		      void *buf, uint16_t len, uint16_t offset)
+{
+	const struct gatt_value *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value->data,
+				 value->len);
+}
+
 static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(0x0000, NULL);
 static struct bt_gatt_attr chr_val = BT_GATT_LONG_DESCRIPTOR(0x0000, NULL, 0,
-							     NULL, NULL,
+							     read_value, NULL,
 							     NULL, NULL);
 
 static void add_characteristic(uint8_t *data, uint16_t len)
