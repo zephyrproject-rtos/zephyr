@@ -89,6 +89,19 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern)
 	return attr;
 }
 
+static struct bt_gatt_attr *gatt_db_lookup_id(uint16_t attr_id)
+{
+	if (attr_id > ARRAY_SIZE(gatt_db)) {
+		return NULL;
+	}
+
+	if (!gatt_db[attr_id - 1].handle) {
+		return NULL;
+	}
+
+	return &gatt_db[attr_id - 1];
+}
+
 static struct bt_gatt_attr svc_pri = BT_GATT_PRIMARY_SERVICE(0x0000, NULL);
 static struct bt_gatt_attr svc_sec = BT_GATT_SECONDARY_SERVICE(0x0000, NULL);
 
@@ -151,6 +164,11 @@ rsp:
 				CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
 	}
 }
+
+struct gatt_value {
+	uint8_t len;
+	uint8_t *data;
+};
 
 static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(0x0000, NULL);
 static struct bt_gatt_attr chr_val = BT_GATT_LONG_DESCRIPTOR(0x0000, NULL, 0,
@@ -224,6 +242,48 @@ rsp:
 	}
 }
 
+static void set_value(uint8_t *data, uint16_t len)
+{
+	const struct gatt_set_value_cmd *cmd = (void *) data;
+	struct gatt_value value;
+	struct bt_gatt_attr *attr;
+	uint8_t status;
+
+	attr = gatt_db_lookup_id(sys_le16_to_cpu(cmd->attr_id));
+	if (!attr) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	if (attr->uuid->u16 == BT_UUID_GATT_CHRC) {
+		struct bt_gatt_chrc *chrc = attr->user_data;
+
+		attr = gatt_db_lookup_id(chrc->value_handle);
+		if (!attr) {
+			status = BTP_STATUS_FAILED;
+			goto rsp;
+		}
+	}
+
+	value.len = cmd->len;
+	value.data = gatt_buf_add(cmd->value, cmd->len);
+	if (!value.data) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	attr->user_data = gatt_buf_add(&value, sizeof(value));
+	if (!attr->user_data) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	status = BTP_STATUS_SUCCESS;
+rsp:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_SET_VALUE, CONTROLLER_INDEX,
+		   status);
+}
+
 static void start_server(uint8_t *data, uint16_t len)
 {
 	int i;
@@ -253,6 +313,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_ADD_CHARACTERISTIC:
 		add_characteristic(data, len);
+		return;
+	case GATT_SET_VALUE:
+		set_value(data, len);
 		return;
 	case GATT_START_SERVER:
 		start_server(data, len);

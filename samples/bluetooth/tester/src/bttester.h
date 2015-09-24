@@ -252,6 +252,13 @@ struct gatt_add_characteristic_rp {
 	uint16_t char_id;
 };
 
+#define GATT_SET_VALUE			0x06
+	struct gatt_set_value_cmd {
+	uint16_t attr_id;
+	uint16_t len;
+	uint8_t value[0];
+} __packed;
+
 #define GATT_START_SERVER		0x07
 
 void tester_init(void);
