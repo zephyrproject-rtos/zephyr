@@ -1,6 +1,3 @@
-PLATFORM_CONFIG ?= basic_atom
-MDEF_FILE = prj.mdef
-KERNEL_TYPE = micro
-CONF_FILE = prj_$(ARCH).conf
+ccflags-y += ${PROJECTINCLUDE} -I$(srctree)/samples/include -I$(srctree)/lib/crypto/tinycrypt/include
+obj-y = test_sha256.o
 
-include $(ZEPHYR_BASE)/Makefile.inc
