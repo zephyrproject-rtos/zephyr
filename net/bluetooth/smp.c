@@ -597,6 +597,11 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 
 	BT_DBG("\n");
 
+	/* pairing is in progress */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+		return -EBUSY;
+	}
+
 	/* early verify if required sec level if reachable */
 	if (!sec_level_reachable(conn)) {
 		return -EINVAL;
@@ -632,6 +637,11 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	struct bt_buf *req_buf;
 
 	BT_DBG("\n");
+
+	/* pairing is in progress */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+		return -EBUSY;
+	}
 
 	/* early verify if required sec level if reachable */
 	if (!sec_level_reachable(conn)) {
