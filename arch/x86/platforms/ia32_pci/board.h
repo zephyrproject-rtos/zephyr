@@ -142,6 +142,18 @@ extern struct device * const uart_devs[];
 
 #endif /* CONFIG_I2C_DW_0 */
 
+#ifdef CONFIG_SPI_INTEL
+#if defined(CONFIG_SPI_INTEL_FALLING_EDGE)
+#define SPI_INTEL_IRQ_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
+#elif defined(CONFIG_SPI_INTEL_RISING_EDGE)
+#define SPI_INTEL_IRQ_IOAPIC_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
+#elif defined(CONFIG_SPI_INTEL_LEVEL_HIGH)
+#define SPI_INTEL_IRQ_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
+#elif defined(CONFIG_SPI_INTEL_LEVEL_LOW)
+#define SPI_INTEL_IRQ_IOAPIC_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
+#endif
+#endif /* CONFIG_SPI_INTEL */
+
 /*
  * The irq_connect() API connects to a (virtualized) IRQ and the
  * associated interrupt controller is programmed with the allocated vector.

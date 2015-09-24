@@ -88,6 +88,37 @@ pre_kernel_early_init(gpioirq_0, NULL);
 #endif /* CONFIG_GPIO_DW_0_IRQ_DIRECT */
 #endif /* CONFIG_GPIO_DW_0 */
 
+#ifdef CONFIG_SPI_INTEL_PORT_0
+static int spi_irq_set_0(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	_ioapic_irq_set(CONFIG_SPI_INTEL_PORT_0_IRQ,
+			CONFIG_SPI_INTEL_PORT_0_IRQ + INT_VEC_IRQ0,
+			SPI_INTEL_IRQ_IOAPIC_FLAGS);
+	return DEV_OK;
+}
+
+DECLARE_DEVICE_INIT_CONFIG(spiirq_0, "", spi_irq_set_0, NULL);
+pre_kernel_early_init(spiirq_0, NULL);
+
+#endif /* CONFIG_SPI_INTEL_PORT_0 */
+
+#ifdef CONFIG_SPI_INTEL_PORT_1
+static int spi_irq_set_1(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	_ioapic_irq_set(CONFIG_SPI_INTEL_PORT_1_IRQ,
+			CONFIG_SPI_INTEL_PORT_1_IRQ + INT_VEC_IRQ0,
+			SPI_INTEL_IRQ_IOAPIC_FLAGS);
+	return DEV_OK;
+
+}
+
+DECLARE_DEVICE_INIT_CONFIG(spiirq_1, "", spi_irq_set_1, NULL);
+pre_kernel_early_init(spiirq_1, NULL);
+
+#endif /* CONFIG_SPI_INTEL_PORT_1 */
+
 /**
  *
  * @brief Perform basic hardware initialization

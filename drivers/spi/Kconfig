@@ -58,6 +58,33 @@ config  SPI_INTEL
 	  was formelly found on XScale chips. It can be found nowadays
 	  on CEXXXX Intel media controller and Quark CPU (2 of them).
 
+choice
+depends on SPI_INTEL
+prompt "Intel SPI interrupt trigger condition"
+default SPI_INTEL_RISING_EDGE
+
+config SPI_INTEL_FALLING_EDGE
+	bool "Falling edge"
+	help
+	  "Intel SPI uses falling edge interrupt"
+
+config SPI_INTEL_RISING_EDGE
+	bool "Rising edge"
+	help
+	  "Intel SPI uses rising edge interrupt"
+
+config SPI_INTEL_LEVEL_HIGH
+	bool "Level high"
+	help
+	  "Intel SPI uses level high interrupt"
+
+config SPI_INTEL_LEVEL_LOW
+	bool "Level low"
+	help
+	  "Intel SPI uses level low interrupt"
+
+endchoice
+
 config	SPI_INTEL_VENDOR_ID
 	hex "PCI Vendor ID"
 	depends on SPI_INTEL && PCI
