@@ -55,8 +55,6 @@
 static struct etimer *timerlist;
 static clock_time_t next_expiration;
 
-PROCESS_NAME(ctimer_process);
-
 PROCESS(etimer_process, "Event timer");
 /*---------------------------------------------------------------------------*/
 static void
