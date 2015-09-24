@@ -76,6 +76,7 @@ enum {
 	SMP_FLAG_TK_VALID,	/* if TK values is valid */
 	SMP_FLAG_CFM_DELAYED,	/* if confirm should be send when TK is valid */
 	SMP_FLAG_ENC_PENDING,	/* if waiting for an encryption change event */
+	SMP_FLAG_PAIRING,	/* if pairing is in progress */
 };
 
 /* SMP channel specific context */
@@ -562,6 +563,7 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
+	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
 
 	return smp_request_tk(conn, req->io_capability);
 }
@@ -664,6 +666,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
+	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
 
 	return 0;
 }
@@ -968,6 +971,8 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		struct bt_smp_encrypt_info *info;
 		struct bt_smp_master_ident *ident;
 
+		smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
+
 		bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
 
 		le_rand(keys->slave_ltk.val, sizeof(keys->slave_ltk.val));
@@ -978,7 +983,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 					sizeof(*info));
 		if (!buf) {
 			BT_ERR("Unable to allocate Encrypt Info buffer\n");
-			return;
+			goto fail;
 		}
 
 		info = bt_buf_add(buf, sizeof(*info));
@@ -990,7 +995,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 					sizeof(*ident));
 		if (!buf) {
 			BT_ERR("Unable to allocate Master Ident buffer\n");
-			return;
+			goto fail;
 		}
 
 		ident = bt_buf_add(buf, sizeof(*ident));
@@ -1004,6 +1009,8 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 	if (smp->local_dist & BT_SMP_DIST_SIGN) {
 		struct bt_smp_signing_info *info;
 
+		smp->local_dist &= ~BT_SMP_DIST_SIGN;
+
 		bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
 
 		le_rand(keys->local_csrk.val, sizeof(keys->local_csrk.val));
@@ -1013,7 +1020,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 					sizeof(*info));
 		if (!buf) {
 			BT_ERR("Unable to allocate Signing Info buffer\n");
-			return;
+			goto fail;
 		}
 
 		info = bt_buf_add(buf, sizeof(*info));
@@ -1022,6 +1029,12 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 	}
 #endif /* CONFIG_BLUETOOTH_SIGNING */
+
+fail:
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
+	}
 }
 
 static uint8_t smp_encrypt_info(struct bt_conn *conn, struct bt_buf *buf)
