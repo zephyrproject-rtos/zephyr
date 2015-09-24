@@ -1,0 +1,89 @@
+# Kconfig - Pinmux configuration options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Intel Corporation nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+#
+# PinMux options
+#
+menuconfig PINMUX
+        bool "Enable platform pinmux driver"
+        default n
+
+config PINMUX_BASE
+        hex "Base Address"
+	depends on PINMUX
+        help
+        On platforms where there is a base pinmux register, set this value to
+        enable the driver to directly access the memory.
+
+config PINMUX_NUM_PINS
+	int "Number of Pins to configure"
+	depends on PINMUX
+        help
+        Select the number of pins for the pinmux to operate on.
+
+config PINMUX_DEV
+        bool "Configure pinmux for early board testing"
+        depends on PINMUX
+        default n
+        help
+        Enables the use of the pinmux_set and pinmux_get functions for early
+        prototyping on new hardware.  WARNING: When using these options, it
+        is possible to permanently damage the hardware.
+
+config PINMUX_GALILEO_EXP0_NAME
+        string "Name of the GPIO expander 0"
+        depends on PINMUX && PLATFORM_GALILEO
+        default "EXP0"
+        help
+        The name of the GPIO expander labelled as EXP0 in the schematic.
+
+config PINMUX_GALILEO_EXP1_NAME
+        string "Name of the GPIO expander 1"
+        depends on PINMUX && PLATFORM_GALILEO
+        default "EXP1"
+        help
+        The name of the GPIO expander labelled as EXP1 in the schematic.
+
+config PINMUX_GALILEO_EXP2_NAME
+        string "Name of the GPIO expander 2"
+        depends on PINMUX && PLATFORM_GALILEO
+        default "EXP2"
+        help
+        The name of the GPIO expander labelled as EXP2 in the schematic.
+
+config PINMUX_GALILEO_PWM0_NAME
+        string "Name of the PWM LED expander 0"
+        depends on PINMUX && PLATFORM_GALILEO
+        default "PWM0"
+        help
+        The name of the PWM LED expander labelled as PWM0 in the schematic.
+

@@ -57,4 +57,6 @@ source "drivers/i2c/Kconfig"
 
 source "drivers/pwm/Kconfig"
 
+source "drivers/pinmux/Kconfig"
+
 endmenu
