@@ -33,6 +33,7 @@
 #include <gpio/gpio-dw.h>
 #include <board.h>
 #include <sys_io.h>
+#include <init.h>
 
 #define SWPORTA_DR	0x00
 #define SWPORTA_DDR	0x04
