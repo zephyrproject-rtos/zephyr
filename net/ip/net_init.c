@@ -487,7 +487,14 @@ static int check_and_send_packet(struct net_buf *buf)
 			}
 			net_context_set_receiver_registered(buf->context);
 		}
+
+		/* Remember the original length as the uIP stack might
+		 * reset the uip_len(buf) value.
+		 */
+		buf->datalen = uip_len(buf);
+
 		ret = simple_udp_send(buf, udp, buf->data, buf->len);
+
 		break;
 	case IPPROTO_TCP:
 		NET_DBG("TCP not yet supported\n");

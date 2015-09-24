@@ -95,8 +95,17 @@ static void net_tx_15_4_fiber(void)
 		/* Get next packet from application - wait if necessary */
 		buf = nano_fifo_get_wait(&tx_queue);
 
+		if (uip_len(buf) == 0) {
+			/* It is possible that uIP stack overwrote the len.
+			 * We need to fix this here.
+			 */
+			uip_len(buf) = uip_slen(buf) = uip_appdatalen(buf) =
+				net_buf_datalen(buf);
+		}
+
 		NET_DBG("Sending (buf %p, len %u) to 15.4 stack\n",
 								buf, buf->len);
+
 		if (!NETSTACK_FRAGMENT.fragment(buf, NULL)) {
 			/* Release buffer on error */
 			net_buf_put(buf);
