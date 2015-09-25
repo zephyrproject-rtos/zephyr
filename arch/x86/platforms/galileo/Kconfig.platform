@@ -1,0 +1,12 @@
+
+config PLATFORM_GALILEO
+	bool "Galileo Gen2"
+	select HPET_TIMER
+	select BOOTLOADER_UNKNOWN
+	select PCI
+	help
+	The Intel Galileo Gen 2 development board is a microcontroller board
+	based on the Intel Quark SoC X1000 application processor, a 32-bit
+	Intel® Pentium® brand system on a chip (SoC). It is the first board
+	based on Intel architecture designed to be hardware and software
+	pin-compatible with shields designed for the Arduino Uno* R3.

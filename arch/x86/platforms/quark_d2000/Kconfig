@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-
+if PLATFORM_QUARK_D2000
 config PLATFORM
 	string
 	default quark_d2000
@@ -49,3 +49,5 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 
 config PHYS_RAM_ADDR
 	default 0x00280000
+
+endif

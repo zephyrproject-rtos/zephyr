@@ -50,48 +50,7 @@ config ROM_SIZE
 choice
 prompt "Platform Selection"
 default PLATFORM_IA32_PCI
-
-config PLATFORM_GALILEO
-	bool "Galileo Gen2"
-	select HPET_TIMER
-	select BOOTLOADER_UNKNOWN
-	select PCI
-	help
-	The Intel® Galileo Gen 2 development board is a microcontroller board
-	based on the Intel® Quark™ SoC X1000 application processor, a 32-bit
-	Intel® Pentium® brand system on a chip (SoC). It is the first board
-	based on Intel® architecture designed to be hardware and software
-	pin-compatible with shields designed for the Arduino Uno* R3.
-
-config PLATFORM_IA32_PCI
-	bool "IA32 with PCI"
-	select HPET_TIMER
-	select BOOTLOADER_UNKNOWN
-	select PCI
-
-config PLATFORM_IA32
-	bool "IA32"
-	select BOOTLOADER_UNKNOWN
-
-config  PLATFORM_QUARK_SE_X86
-        bool "Minimum configuration for Quark SE"
-        select CPU_MINUTEIA
-        select IOAPIC
-        select LOAPIC
-        select LOAPIC_TIMER
-        select EOI_HANDLER_SUPPORTED
-        select BOOTLOADER_UNKNOWN
-        select XIP
-
-config  PLATFORM_QUARK_D2000
-        bool "Minimum configuration for Quark D2000"
-        select CPU_MINUTEIA
-        select LOAPIC_TIMER
-        select EOI_HANDLER_SUPPORTED
-        select BOOTLOADER_UNKNOWN
-        select XIP
-        select MVIC
-
+source "arch/x86/platforms/*/Kconfig.platform"
 endchoice
 
 choice
@@ -312,25 +271,7 @@ source "arch/x86/core/Kconfig"
 
 endmenu
 
-if PLATFORM_IA32
-source "arch/x86/platforms/ia32/Kconfig"
-endif
-
-if PLATFORM_IA32_PCI
-source "arch/x86/platforms/ia32_pci/Kconfig"
-endif
-
-if PLATFORM_GALILEO
-source "arch/x86/platforms/galileo/Kconfig"
-endif
-
-if PLATFORM_QUARK_SE_X86
-source "arch/x86/platforms/quark_se-x86/Kconfig"
-endif
-
-if PLATFORM_QUARK_D2000
-source "arch/x86/platforms/quark_d2000/Kconfig"
-endif
+source "arch/x86/platforms/*/Kconfig"
 
 source "drivers/Kconfig"
 

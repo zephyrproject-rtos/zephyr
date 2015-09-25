@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+if PLATFORM_QUARK_SE_ARC
+
 config PLATFORM
 	string
 	default quark_se-arc
@@ -87,5 +89,8 @@ config I2C_QUARK_SE_SS_1_NAME
 
 config I2C_QUARK_SE_SS_1_DEFAULT_CFG
 	default 0x12
+
+
+endif
 
 endif

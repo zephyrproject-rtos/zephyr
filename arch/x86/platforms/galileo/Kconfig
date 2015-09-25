@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-
+if PLATFORM_GALILEO
 config PLATFORM
 	string
 	default galileo
@@ -333,3 +333,4 @@ config ETH_DW_0_IRQ
 config ETH_DW_0_IRQ_SHARED_NAME
 	default SHARED_IRQ_0_NAME if SHARED_IRQ
 endif
+endif # PLATFORM_GALILEO

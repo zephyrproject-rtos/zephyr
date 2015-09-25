@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+if PLATFORM_IA32_PCI
 
 config PLATFORM
 	string
@@ -44,3 +45,4 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config UART_CONSOLE_INDEX
 	default 1
 
+endif

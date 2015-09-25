@@ -1,0 +1,9 @@
+
+config  PLATFORM_QUARK_D2000
+        bool "Minimum configuration for Quark D2000"
+        select CPU_MINUTEIA
+        select LOAPIC_TIMER
+        select EOI_HANDLER_SUPPORTED
+        select BOOTLOADER_UNKNOWN
+        select XIP
+        select MVIC
