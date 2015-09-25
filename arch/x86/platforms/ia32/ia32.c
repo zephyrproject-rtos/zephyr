@@ -117,4 +117,4 @@ pure_core_init(pic_0, NULL);
 #endif /* CONFIG_PIC_DISABLE */
 
 DECLARE_DEVICE_INIT_CONFIG(ia32_0, "", ia32_init, NULL);
-pure_early_init(ia32_0, NULL);
+pre_kernel_early_init(ia32_0, NULL);

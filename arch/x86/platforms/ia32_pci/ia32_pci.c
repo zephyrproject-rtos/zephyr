@@ -80,7 +80,7 @@ static int gpio_irq_set_0(struct device *unused) {
 }
 
 DECLARE_DEVICE_INIT_CONFIG(gpioirq_0, "", gpio_irq_set_0, NULL);
-pure_early_init(gpioirq_0, NULL);
+pre_kernel_early_init(gpioirq_0, NULL);
 
 #endif /* CONFIG_GPIO_DW_0 */
 
@@ -173,4 +173,4 @@ pure_core_init(pic_0, NULL);
 #endif /* CONFIG_PIC_DISABLE */
 
 DECLARE_DEVICE_INIT_CONFIG(ia32_pci_0, "", ia32_pci_init, NULL);
-pure_early_init(ia32_pci_0, NULL);
+pre_kernel_early_init(ia32_pci_0, NULL);

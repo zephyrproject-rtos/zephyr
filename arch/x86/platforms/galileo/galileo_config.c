@@ -135,7 +135,7 @@ DECLARE_DEVICE_INIT_CONFIG(ns16550_uart0,
 #if (defined(CONFIG_EARLY_CONSOLE) && \
 		defined(CONFIG_UART_CONSOLE) && \
 		(CONFIG_UART_CONSOLE_INDEX == 0))
-pure_early_init(ns16550_uart0, &ns16550_uart_dev_data[0]);
+pre_kernel_early_init(ns16550_uart0, &ns16550_uart_dev_data[0]);
 #else
 pre_kernel_late_init(ns16550_uart0, &ns16550_uart_dev_data[0]);
 #endif /* CONFIG_EARLY_CONSOLE */
@@ -150,7 +150,7 @@ DECLARE_DEVICE_INIT_CONFIG(ns16550_uart1,
 #if (defined(CONFIG_EARLY_CONSOLE) && \
 		defined(CONFIG_UART_CONSOLE) && \
 		(CONFIG_UART_CONSOLE_INDEX == 1))
-pure_early_init(ns16550_uart1, &ns16550_uart_dev_data[1]);
+pre_kernel_early_init(ns16550_uart1, &ns16550_uart_dev_data[1]);
 #else
 pre_kernel_late_init(ns16550_uart1, &ns16550_uart_dev_data[1]);
 #endif /* CONFIG_EARLY_CONSOLE */
