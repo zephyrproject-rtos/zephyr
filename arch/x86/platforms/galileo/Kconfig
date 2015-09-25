@@ -47,6 +47,28 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config UART_CONSOLE_INDEX
 	default 1
 
+config PINMUX
+        def_bool y
+
+if I2C
+config I2C_DW
+        def_bool y
+config I2C_DW_VENDOR_ID
+        default 0x8086
+config I2C_DW_DEVICE_ID
+        default 0x934
+config I2C_DW_CLASS
+        default 0x0C
+config I2C_DW_0
+        def_bool y
+config I2C_DW_0_NAME
+        default "I2C0"
+config I2C_DW_IRQ_RISING_EDGE
+        def_bool y
+
+
+endif
+
 if GPIO && I2C
 config GPIO_PCAL9535A_0
 	def_bool y
@@ -104,4 +126,21 @@ config GPIO_MMIO_1_INPUT
 config GPIO_MMIO_1_OUTPUT
 	default 0x10A8
 endif
+endif
+
+if PINMUX
+config PINMUX_BASE
+	default 0x00000000
+config PINMUX_NUM_PINS
+        default 20
+config PINMUX_BASE
+        default 0x00000000
+config PINMUX_GALILEO_EXP0_NAME
+        default "EXP0"
+config PINMUX_GALILEO_EXP1_NAME
+        default "EXP1"
+config PINMUX_GALILEO_EXP2_NAME
+        default "EXP2"
+config PINMUX_GALILEO_PWM0_NAME
+        default "PWM0"
 endif
