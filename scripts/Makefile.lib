@@ -1,3 +1,4 @@
+# vim: filetype=make
 # Backward compatibility
 asflags-y  += $(EXTRA_AFLAGS)
 ccflags-y  += $(EXTRA_CFLAGS)
@@ -35,11 +36,15 @@ lib-y := $(filter-out $(obj-y), $(sort $(lib-y) $(lib-m)))
 # and -m subdirs.  Just put -y's first.
 #modorder	:= $(patsubst %/,%/modules.order, $(filter %/, $(obj-y)) $(obj-m:.o=.ko))
 
+_subd-y		:= $(if $(findstring *,$(subdir-y)),$(wildcard $(addprefix $(srctree)/$(obj)/,$(subdir-y))),)
+subdir-y	:= $(sort $(foreach d,$(_subd-y), $(patsubst $(srctree)/$(obj)/%,%,$(d))))
+_obj-y		:= $(sort $(foreach d,$(_subd-y), $(patsubst $(srctree)/$(obj)/%,%/built-in.o,$(d))))
 __subdir-y	:= $(patsubst %/,%,$(filter %/, $(obj-y)))
 subdir-y	+= $(__subdir-y)
 __subdir-m	:= $(patsubst %/,%,$(filter %/, $(obj-m)))
 subdir-m	+= $(__subdir-m)
 obj-y		:= $(patsubst %/, %/built-in.o, $(obj-y))
+obj-y		+= $(_obj-y)
 obj-m		:= $(filter-out %/, $(obj-m))
 
 # Subdirectories we need to descend into
