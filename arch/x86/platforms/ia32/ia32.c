@@ -77,7 +77,7 @@ static int console_irq_set(struct device *unsued)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(consoleirq, "", console_irq_set, NULL);
-pure_late_init(consoleirq, NULL);
+pre_kernel_late_init(consoleirq, NULL);
 
 #endif /* CONFIG_CONSOLE_HANDLER */
 
@@ -93,7 +93,7 @@ static int hpet_irq_set(struct device *unused)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(hpetirq, "", hpet_irq_set, NULL);
-pure_late_init(hpetirq, NULL);
+pre_kernel_late_init(hpetirq, NULL);
 
 #endif /* CONFIG_HPET_TIMER */
 

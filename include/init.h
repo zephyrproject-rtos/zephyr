@@ -36,7 +36,7 @@
 
 #define PURE_CORE	0
 #define PURE_EARLY	1
-#define PURE_LATE	2
+#define PRE_KERNEL_LATE	2
 #define NANO_EARLY	3
 #define NANO_LATE	4
 #define MICRO_EARLY	5
@@ -71,7 +71,7 @@
 /* Run on interrupt stack; no {micro,nano} kernel objects available */
 #define pure_core_init(cfg, data)	__define_initconfig(cfg, 0, data)
 #define pure_early_init(cfg, data)	__define_initconfig(cfg, 1, data)
-#define pure_late_init(cfg, data)	__define_initconfig(cfg, 2, data)
+#define pre_kernel_late_init(cfg, data)	__define_initconfig(cfg, 2, data)
 
 /* Run from nano kernel idle task; no micro kernel objects available */
 #define nano_early_init(cfg, data)	__define_initconfig(cfg, 3, data)

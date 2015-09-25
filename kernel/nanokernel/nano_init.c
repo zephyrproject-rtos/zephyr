@@ -283,7 +283,7 @@ FUNC_NORETURN void _Cstart(void)
 
 	_sys_device_do_config_level(PURE_CORE);
 	_sys_device_do_config_level(PURE_EARLY);
-	_sys_device_do_config_level(PURE_LATE);
+	_sys_device_do_config_level(PRE_KERNEL_LATE);
 
 	/*
 	 * Initialize random number generator

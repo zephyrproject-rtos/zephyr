@@ -66,7 +66,7 @@ static int dw_i2c0_irq_set(struct device *unused)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(i2cirq_0, "", dw_i2c0_irq_set, NULL);
-pure_late_init(i2cirq_0, NULL);
+pre_kernel_late_init(i2cirq_0, NULL);
 
 #endif /* CONFIG_I2C_DW_0 */
 
@@ -133,7 +133,7 @@ static int console_irq_set(struct device *unsued)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(consoleirq, "", console_irq_set, NULL);
-pure_late_init(consoleirq, NULL);
+pre_kernel_late_init(consoleirq, NULL);
 
 #endif /* CONFIG_CONSOLE_HANDLER */
 
@@ -149,7 +149,7 @@ static int hpet_irq_set(struct device *unused)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(hpetirq, "", hpet_irq_set, NULL);
-pure_late_init(hpetirq, NULL);
+pre_kernel_late_init(hpetirq, NULL);
 
 #endif /* CONFIG_HPET_TIMER */
 

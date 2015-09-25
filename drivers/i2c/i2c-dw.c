@@ -636,7 +636,7 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_0,
 			   &i2c_dw_initialize,
 			   &i2c_config_dw_0);
 
-pure_late_init(i2c_0, &i2c_0_runtime);
+pre_kernel_late_init(i2c_0, &i2c_0_runtime);
 
 IRQ_CONNECT_STATIC(i2c_dw_0,
 		   CONFIG_I2C_DW_0_IRQ,
