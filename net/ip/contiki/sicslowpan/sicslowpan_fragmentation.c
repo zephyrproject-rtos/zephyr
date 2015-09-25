@@ -319,6 +319,33 @@ static struct net_buf *copy_frags2uip(int context)
   return buf;
 }
 
+static struct net_buf *copy_buf(struct net_mbuf *mbuf)
+{
+  struct net_buf *buf = NULL;
+
+  buf = net_buf_get_reserve_rx(0);
+  if(!buf) {
+    return NULL;
+  }
+
+  /* Copy from the fragment context info buffer first */
+  linkaddr_copy(&buf->dest, packetbuf_addr(mbuf, PACKETBUF_ADDR_RECEIVER));
+  linkaddr_copy(&buf->src, packetbuf_addr(mbuf, PACKETBUF_ADDR_SENDER));
+
+  PRINTFI("%s: mbuf datalen %d dataptr %p buf %p\n", __FUNCTION__,
+	  packetbuf_datalen(mbuf), packetbuf_dataptr(mbuf), uip_buf(buf));
+  if(packetbuf_datalen(mbuf) > 0 &&
+     packetbuf_datalen(mbuf) <= UIP_BUFSIZE - UIP_LLH_LEN) {
+    memcpy(uip_buf(buf), packetbuf_dataptr(mbuf), packetbuf_datalen(mbuf));
+    uip_len(buf) = packetbuf_datalen(mbuf);
+  } else {
+    net_buf_put(buf);
+    buf = NULL;
+  }
+
+  return buf;
+}
+
 static void
 packet_sent(struct net_mbuf *buf, void *ptr, int status, int transmissions)
 {
@@ -601,8 +628,14 @@ static int reassemble(struct net_mbuf *mbuf)
       break;
 
     default:
-      PRINTF("Unknown FRAG dispatch \n");
-      goto fail;
+      /* If there is no fragmentation header, then assume that the packet
+       * is not fragmented and pass it as is to IP stack.
+       */
+      buf = copy_buf(mbuf);
+      if(!buf || net_driver_15_4_recv(buf) < 0) {
+        goto fail;
+      }
+      goto out;
   }
 
   /*
@@ -667,6 +700,7 @@ static int reassemble(struct net_mbuf *mbuf)
     }
   }
 
+out:
   /* free MAC buffer */
   net_mbuf_put(mbuf);
   return 1;
