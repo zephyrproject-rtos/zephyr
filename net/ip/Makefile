@@ -83,9 +83,12 @@ ifeq ($(CONFIG_NETWORKING_WITH_6LOWPAN),y)
      EXTRA_CFLAGS += -DSICSLOWPAN_CONF_ENABLE
      obj-y += contiki/sicslowpan/sicslowpan_compression.o
      obj-y += contiki/sicslowpan/sicslowpan_fragmentation.o
+     obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/sicslowmac/sicslowmac.o
 else
      obj-y += contiki/sicslowpan/null_compression.o
      obj-y += contiki/sicslowpan/null_fragmentation.o
+     obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/nullmac.o \
+		contiki/mac/framer-nullmac.o contiki/mac/nullrdc.o
 endif
 
 ifeq ($(CONFIG_NETWORKING_WITH_LOGGING),y)
@@ -100,8 +103,7 @@ obj-$(CONFIG_NETWORKING_WITH_15_4) += net_driver_15_4.o \
 					contiki/mac/frame802154.o \
 					contiki/mac/framer-802154.o \
 					contiki/mac/csma.o \
-					contiki/mac/mac-sequence.o \
-					contiki/mac/sicslowmac/sicslowmac.o
+					contiki/mac/mac-sequence.o
 
 # At the moment we only need nullsec driver for 802.15.4
 #obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/llsec/ccm-star.o \
