@@ -71,4 +71,4 @@ static int ti_lm3s6965_init(struct device *arg)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(ti_lm3_0, "", ti_lm3s6965_init, NULL);
-pure_core_init(ti_lm3_0, NULL);
+pre_kernel_core_init(ti_lm3_0, NULL);

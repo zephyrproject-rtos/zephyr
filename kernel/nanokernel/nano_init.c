@@ -281,7 +281,7 @@ FUNC_NORETURN void _Cstart(void)
 
 	/* perform basic hardware initialization */
 
-	_sys_device_do_config_level(PURE_CORE);
+	_sys_device_do_config_level(PRE_KERNEL_CORE);
 	_sys_device_do_config_level(PRE_KERNEL_EARLY);
 	_sys_device_do_config_level(PRE_KERNEL_LATE);
 

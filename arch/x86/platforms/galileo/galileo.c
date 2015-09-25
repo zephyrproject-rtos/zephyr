@@ -149,26 +149,26 @@ static int hpet_irq_set(struct device *unused)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(hpetirq, "", hpet_irq_set, NULL);
-pure_core_init(hpetirq, NULL);
+pre_kernel_core_init(hpetirq, NULL);
 
 #endif /* CONFIG_HPET_TIMER */
 
 #ifdef CONFIG_IOAPIC
 DECLARE_DEVICE_INIT_CONFIG(ioapic_0, "", _ioapic_init, NULL);
-pure_core_init(ioapic_0, NULL);
+pre_kernel_core_init(ioapic_0, NULL);
 
 #endif /* CONFIG_IOAPIC */
 
 #ifdef CONFIG_LOAPIC
 DECLARE_DEVICE_INIT_CONFIG(loapic_0, "", _loapic_init, NULL);
-pure_core_init(loapic_0, NULL);
+pre_kernel_core_init(loapic_0, NULL);
 
 #endif /* CONFIG_LOAPIC */
 
 #if defined(CONFIG_PIC_DISABLE)
 
 DECLARE_DEVICE_INIT_CONFIG(pic_0, "", _i8259_init, NULL);
-pure_core_init(pic_0, NULL);
+pre_kernel_core_init(pic_0, NULL);
 
 #endif /* CONFIG_PIC_DISABLE */
 
