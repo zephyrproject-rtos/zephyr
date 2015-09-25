@@ -67,6 +67,9 @@ static volatile uint16_t last_packet_timestamp;
 #define DUMMY_RADIO_15_4_FRAME_TYPE	0xF0
 static uint8_t input[NETWORK_TEST_MAX_PACKET_LEN];
 static uint8_t input_len, input_offset, input_type;
+static bool starting = true;
+#define PRINT_DATA 1
+#undef PRINT_DATA /* comment this to print transferred bytes */
 #else
 static uint8_t loopback[NETWORK_TEST_MAX_PACKET_LEN];
 #endif
@@ -75,6 +78,18 @@ static uint8_t loopback[NETWORK_TEST_MAX_PACKET_LEN];
 #if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
 static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 {
+#if PRINT_DATA
+  PRINTF("dummy154radio: %s(): input[] %d data 0x%x uart offset %d\n",
+	 __FUNCTION__, input_offset, buf[0], *off);
+#endif
+
+  if (starting) {
+    if (buf[0] == 0) {
+       goto done;
+    } else {
+       starting = false;
+    }
+  }
   if (input_len == 0 && input_offset == 0 &&
        buf[0] == DUMMY_RADIO_15_4_FRAME_TYPE) {
     input_type = buf[0];
@@ -116,6 +131,20 @@ done:
 }
 #endif
 
+#if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
+static int uart_send(unsigned char c)
+{
+  uint8_t buf[1] = { c };
+
+#if PRINT_DATA
+  PRINTF("dummy154radio: %s(): writing 0x%x\n",
+	 __FUNCTION__, buf[0]);
+#endif
+
+  return uart_simple_send(&buf[0], 1);
+}
+#endif
+
 /*---------------------------------------------------------------------------*/
 static int
 init(void)
@@ -125,6 +154,16 @@ init(void)
   static uint8_t buf[1];
 
   uart_simple_register(buf, sizeof(buf), recv_cb);
+
+  /* It seems that some of the start bytes are lost so
+   * send some null bytes in the start in order to sync
+   * the link.
+   */
+  uart_send(0);
+  uart_send(0);
+  uart_send(0);
+  uart_send(0);
+  uart_send(0);
 #endif
 
   return 0;
@@ -168,15 +207,6 @@ static void route_buf(struct net_mbuf *buf)
 
 		NET_BUF_CHECK_IF_NOT_IN_USE(mbuf);
 	}
-}
-#endif
-
-#if defined CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
-static int uart_send(unsigned char c)
-{
-  uint8_t buf[1] = { c };
-
-  return uart_simple_send(&buf[0], 1);
 }
 #endif
 

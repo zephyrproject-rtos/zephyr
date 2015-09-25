@@ -72,14 +72,15 @@ static int net_driver_15_4_open(void)
 
 static int net_driver_15_4_send(struct net_buf *buf)
 {
-
-	NET_DBG("received %d bytes\n", buf->len);
+	int orig_len = buf->len;
 
 	if (!NETSTACK_COMPRESS.compress(buf)) {
 		NET_DBG("compression failed\n");
 		net_buf_put(buf);
 		return -EINVAL;
 	}
+
+	NET_DBG("sending %d bytes (original len %d)\n", buf->len, orig_len);
 
 	nano_fifo_put(&tx_queue, buf);
 	return 1;
