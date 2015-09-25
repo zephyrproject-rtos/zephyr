@@ -189,7 +189,12 @@ send(struct net_mbuf *buf, const void *payload, unsigned short payload_len)
   uint8_t len, i;
 
   len = packetbuf_copyto(buf, output);
-  PRINTF("dummy154radio: sending %d bytes\n", len);
+  if (len != payload_len) {
+    PRINTF("dummy154radio: sending %d bytes, payload %d bytes\n",
+	   len, payload_len);
+  } else {
+    PRINTF("dummy154radio: sending %d bytes\n", len);
+  }
 
   if(!uart_send(DUMMY_RADIO_15_4_FRAME_TYPE)) { /* Type */
       PRINTF("uart_send failed\n");
