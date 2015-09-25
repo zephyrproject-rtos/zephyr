@@ -34,15 +34,15 @@
 #include <device.h>
 #include <toolchain.h>
 
-#define PURE		1
-#define PURE_EARLY	0
-#define PURE_LATE	1
-#define NANO_EARLY	2
-#define NANO_LATE	3
-#define MICRO_EARLY	4
-#define MICRO_LATE	5
-#define APP_EARLY	6
-#define APP_LATE	7
+#define PURE_CORE	0
+#define PURE_EARLY	1
+#define PURE_LATE	2
+#define NANO_EARLY	3
+#define NANO_LATE	4
+#define MICRO_EARLY	5
+#define MICRO_LATE	6
+#define APP_EARLY	7
+#define APP_LATE	8
 
 /** @def __define_initconfig
  *
@@ -69,22 +69,23 @@
 		 .driver_data = data}
 
 /* Run on interrupt stack; no {micro,nano} kernel objects available */
-#define pure_early_init(cfg, data)	__define_initconfig(cfg, 0, data)
-#define pure_late_init(cfg, data)	__define_initconfig(cfg, 1, data)
+#define pure_core_init(cfg, data)	__define_initconfig(cfg, 0, data)
+#define pure_early_init(cfg, data)	__define_initconfig(cfg, 1, data)
+#define pure_late_init(cfg, data)	__define_initconfig(cfg, 2, data)
 
 /* Run from nano kernel idle task; no micro kernel objects available */
-#define nano_early_init(cfg, data)	__define_initconfig(cfg, 2, data)
-#define nano_late_init(cfg, data)	__define_initconfig(cfg, 3, data)
+#define nano_early_init(cfg, data)	__define_initconfig(cfg, 3, data)
+#define nano_late_init(cfg, data)	__define_initconfig(cfg, 4, data)
 
 /* Run from micro kernel idle task. */
-#define micro_early_init(cfg, data)	__define_initconfig(cfg, 4, data)
-#define micro_late_init(cfg, data)	__define_initconfig(cfg, 5, data)
+#define micro_early_init(cfg, data)	__define_initconfig(cfg, 5, data)
+#define micro_late_init(cfg, data)	__define_initconfig(cfg, 6, data)
 
 /* Run in the idle task; In a nano kernel only system run after
  * nano_late_init(). In a micro kernel system after micro_late_init()
  */
-#define app_early_init(cfg, data)	__define_initconfig(cfg, 6, data)
-#define app_late_init(cfg, data)	__define_initconfig(cfg, 7, data)
+#define app_early_init(cfg, data)	__define_initconfig(cfg, 7, data)
+#define app_late_init(cfg, data)	__define_initconfig(cfg, 8, data)
 
 
 #endif /* _INIT_H_ */

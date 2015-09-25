@@ -66,4 +66,4 @@ static int generic_arc_init(struct device *arg)
 	return 0;
 }
 DECLARE_DEVICE_INIT_CONFIG(generic_arc_0, "", generic_arc_init, NULL);
-pure_early_init(generic_arc_0, NULL);
+pure_core_init(generic_arc_0, NULL);

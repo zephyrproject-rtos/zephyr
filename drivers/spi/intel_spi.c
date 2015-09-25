@@ -410,7 +410,7 @@ pure_late_init(spi_intel_port_0, &spi_intel_data_port_0);
 
 void spi_intel_isr_0(void *unused)
 {
-	spi_intel_isr(&__initconfig_spi_intel_port_01);
+	spi_intel_isr(&__initconfig_spi_intel_port_02);
 }
 
 IRQ_CONNECT_STATIC(spi_intel_irq_port_0, CONFIG_SPI_INTEL_PORT_0_IRQ,

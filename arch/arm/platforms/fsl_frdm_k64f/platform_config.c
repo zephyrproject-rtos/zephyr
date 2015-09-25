@@ -229,11 +229,11 @@ pure_late_init(k20_uart4, &k20_uart_dev_data[4]);
 
 /**< UART Devices */
 struct device * const uart_devs[] = {
-	&__initconfig_k20_uart01,
-	&__initconfig_k20_uart11,
-	&__initconfig_k20_uart21,
-	&__initconfig_k20_uart31,
-	&__initconfig_k20_uart41,
+	&__initconfig_k20_uart02,
+	&__initconfig_k20_uart12,
+	&__initconfig_k20_uart22,
+	&__initconfig_k20_uart32,
+	&__initconfig_k20_uart42,
 };
 
 #endif /* CONFIG_K20_UART */

@@ -217,9 +217,9 @@ pure_late_init(stellaris_uart2, NULL);
 
 /**< UART Devices */
 struct device * const uart_devs[] = {
-	&__initconfig_stellaris_uart01,
-	&__initconfig_stellaris_uart11,
-	&__initconfig_stellaris_uart21,
+	&__initconfig_stellaris_uart02,
+	&__initconfig_stellaris_uart12,
+	&__initconfig_stellaris_uart22,
 };
 
 #endif /* CONFIG_STELLARIS_UART */
