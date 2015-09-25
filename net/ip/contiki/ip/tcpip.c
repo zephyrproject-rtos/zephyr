@@ -736,6 +736,10 @@ tcpip_ipv6_output(struct net_buf *buf)
 #endif /*UIP_CONF_IPV6_QUEUE_PKT*/
 
       if (ret == 0) {
+        if (!net_buf_datalen(buf)) {
+          /* Set the original length if it is not set yet */
+          net_buf_datalen(buf) = uip_len(buf);
+	}
         uip_len(buf) = 0;
         uip_ext_len(buf) = 0;
       }
@@ -746,6 +750,9 @@ tcpip_ipv6_output(struct net_buf *buf)
   }
   /* Multicast IP destination address. */
   ret = tcpip_output(buf, NULL);
+  if (!net_buf_datalen(buf)) {
+    net_buf_datalen(buf) = uip_len(buf);
+  }
   uip_len(buf) = 0;
   uip_ext_len(buf) = 0;
   return ret;
