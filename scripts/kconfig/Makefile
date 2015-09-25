@@ -303,3 +303,29 @@ $(obj)/%.moc: $(src)/%.h $(obj)/.tmp_qtcheck
 $(obj)/gconf.glade.h: $(obj)/gconf.glade
 	$(Q)intltool-extract --type=gettext/glade --srcdir=$(srctree) \
 	$(obj)/gconf.glade
+
+ifdef LKC_GENPARSER
+
+# --- UNUSED, ignore ----------------------------------------------------------
+$(obj)/zconf.tab.c: $(src)/zconf.y
+$(obj)/zconf.lex.c: $(src)/zconf.l
+$(obj)/zconf.hash.c: $(src)/zconf.gperf
+
+%.tab.c: %.y
+	bison -t -l -b $* -p $(notdir $*) $<
+
+%.tab.c_shipped: %.tab.c
+	cp $< $@
+
+%.lex.c: %.l
+	flex -L -P$(notdir $*) -o$@ $<
+
+%.lex.c_shipped: %.lex.c
+	cp $< $@
+
+%.hash.c: %.gperf
+	gperf < $< > $@
+	cp $@ $@_shipped
+# --- UNUSED, ignore ----------------------------------------------------------
+
+endif

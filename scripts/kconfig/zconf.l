@@ -8,6 +8,7 @@
  * Released under the terms of the GNU GPL v2.0.
  */
 
+#include <glob.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -334,6 +335,42 @@ void zconf_nextfile(const char *name)
 	file->lineno = 1;
 	file->parent = current_file;
 	current_file = file;
+}
+
+void zconf_nextfiles(const char *wildcard)
+{
+	glob_t g;
+	char **w;
+	int i;
+	char *env, fullname[PATH_MAX+1];
+	const char *expanded = sym_expand_string_value(wildcard);
+
+	if (glob(expanded, 0, NULL, &g) != 0) {
+		env = getenv(SRCTREE);
+		if (env) {
+			sprintf(fullname, "%s/%s", env, expanded);
+			if (glob(fullname, 0, NULL, &g) != 0) {
+				return;
+			}
+		} else {
+			return;
+		}
+	}
+	if (g.gl_pathv == NULL) {
+		globfree(&g);
+		return;
+	}
+
+	/* working through files backwards, since
+	 * we're first pushing them on a stack
+	 * before actually handling them.
+	 */
+	for (i = g.gl_pathc; i > 0; i--) {
+		w = &g.gl_pathv[i - 1];
+		zconf_nextfile(*w);
+	}
+
+	globfree(&g);
 }
 
 static void zconf_endfile(void)

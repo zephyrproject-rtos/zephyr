@@ -381,7 +381,7 @@ menu_block:
 source_stmt: T_SOURCE prompt T_EOL
 {
 	printd(DEBUG_PARSE, "%s:%d:source %s\n", zconf_curname(), zconf_lineno(), $2);
-	zconf_nextfile($2);
+	zconf_nextfiles($2);
 };
 
 /* comment entry */

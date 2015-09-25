@@ -78,6 +78,7 @@ void zconf_starthelp(void);
 FILE *zconf_fopen(const char *name);
 void zconf_initscan(const char *name);
 void zconf_nextfile(const char *name);
+void zconf_nextfiles(const char *name);
 int zconf_lineno(void);
 const char *zconf_curname(void);
 
