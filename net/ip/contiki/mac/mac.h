@@ -46,6 +46,14 @@
 
 #include <net/net_buf.h>
 
+#if NET_MAC_CONF_STATS
+/* Statistics for sent bytes. */
+typedef struct net_mac_stats {
+  uint32_t bytes_sent;
+  uint32_t bytes_received;
+} net_mac_stats_t;
+extern net_mac_stats_t net_mac_stats;
+#endif
 
 typedef void (* mac_callback_t)(struct net_mbuf *buf, void *ptr, int status, int transmissions);
 

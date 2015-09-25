@@ -105,6 +105,10 @@ int net_send(struct net_buf *buf)
 #define PRINT_STATISTICS_INTERVAL (10 * sys_clock_ticks_per_sec)
 #define net_print_statistics stats /* to make the debug print line shorter */
 
+#if NET_MAC_CONF_STATS
+#include "mac/mac.h"
+#endif
+
 #if RPL_CONF_STATS
 #include "rpl/rpl-private.h"
 #endif
@@ -115,6 +119,12 @@ static void stats(void)
 
 	/* See contiki/ip/uip.h for descriptions of the different values */
 	if (clock_time() > (last_print + PRINT_STATISTICS_INTERVAL)) {
+#if NET_MAC_CONF_STATS
+#define MAC_STAT(s) (net_mac_stats.s)
+		NET_DBG("L2 bytes recv\t%d\tsent\t%d\n",
+			MAC_STAT(bytes_received),
+			MAC_STAT(bytes_sent));
+#endif
 		NET_DBG("IP recv\t%d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
 			STAT(ip.recv),
 			STAT(ip.sent),

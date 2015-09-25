@@ -106,6 +106,12 @@ typedef unsigned int uip_stats_t;
 #define RPL_CONF_STATS 0
 #endif
 
+#ifdef CONFIG_NETWORKING_STATISTICS
+#define NET_MAC_CONF_STATS 1
+#else
+#define NET_MAC_CONF_STATS 0
+#endif
+
 #ifdef CONFIG_NETWORKING_IPV6_NO_ND
 /* Disabling ND will simplify the IPv6 address assignment.
  * This should only be done in testing phase.

@@ -44,6 +44,10 @@ void uip_log(char *msg);
 #define UIP_LOG(m)
 #endif
 
+#if NET_MAC_CONF_STATS
+net_mac_stats_t net_mac_stats = {0};
+#endif /* NET_MAC_CONF_STATS */
+
 /*---------------------------------------------------------------------------*/
 void
 mac_call_sent_callback(struct net_mbuf *buf, mac_callback_t sent, void *ptr, int status, int num_tx)
@@ -65,6 +69,9 @@ mac_call_sent_callback(struct net_mbuf *buf, mac_callback_t sent, void *ptr, int
   }
 
   if(sent) {
+#if NET_MAC_CONF_STATS
+    net_mac_stats.bytes_sent += uip_pkt_buflen(buf);
+#endif
     sent(buf, ptr, status, num_tx);
   }
 }
