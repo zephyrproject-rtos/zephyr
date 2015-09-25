@@ -80,6 +80,13 @@ static const char *lorem_ipsum =
 static int expecting;
 static int ipsum_len;
 
+#ifdef CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
+/* If we are running this with echo-server running in another
+ * qemu, then set the mac addresses differently.
+ */
+static uint8_t peer_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+static uint8_t my_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
+#else
 /* The peer is the server in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
@@ -89,12 +96,22 @@ static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
 /* This is my mac address
  */
 static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+#endif
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
+
+#ifdef CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART
+/* Reverse the addresses if we are connected to echo-server that is
+ * running in qemu
+ */
+#define PEER_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
+#define MY_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x1 } } }
+#else
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
 #define MY_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }
 
 #define PEER_IPADDR { { { 0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,0x1 } } }
+#endif /* CONFIG_NETWORKING_WITH_15_4_LOOPBACK_UART */
 
 /* admin-local, dynamically allocated multicast address */
 #define MCAST_IPADDR { { { 0xff,0x84,0,0,0,0,0,0,0,0,0,0,0,0,0,0x2 } } }

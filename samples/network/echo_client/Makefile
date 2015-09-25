@@ -35,6 +35,5 @@ KERNEL_TYPE = nano
 PLATFORM_CONFIG ?= basic_atom
 CONF_FILE = prj_$(ARCH).conf
 
-QEMU_EXTRA_FLAGS = -serial none -serial unix:/tmp/slip.sock
-
 include $(ZEPHYR_BASE)/Makefile.inc
+include $(ZEPHYR_BASE)/samples/network/echo_server/Makefile.ipstack
