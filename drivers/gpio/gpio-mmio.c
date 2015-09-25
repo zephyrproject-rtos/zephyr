@@ -290,7 +290,7 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_mmio_0,
 			   CONFIG_GPIO_MMIO_0_DEV_NAME,
 			   gpio_mmio_init,
 			   &gpio_mmio_0_cfg);
-pure_init(gpio_mmio_0, (void *)0);
+pure_late_init(gpio_mmio_0, (void *)0);
 
 #endif /* CONFIG_GPIO_MMIO_0 */
 
@@ -312,6 +312,6 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_mmio_1,
 			   CONFIG_GPIO_MMIO_1_DEV_NAME,
 			   gpio_mmio_init,
 			   &gpio_mmio_1_cfg);
-pure_init(gpio_mmio_1, (void *)0);
+pure_late_init(gpio_mmio_1, (void *)0);
 
 #endif /* CONFIG_GPIO_MMIO_1 */

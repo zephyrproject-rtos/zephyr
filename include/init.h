@@ -70,7 +70,6 @@
 
 /* Run on interrupt stack; no {micro,nano} kernel objects available */
 #define pure_early_init(cfg, data)	__define_initconfig(cfg, 0, data)
-#define pure_init(cfg, data)		__define_initconfig(cfg, 1, data)
 #define pure_late_init(cfg, data)	__define_initconfig(cfg, 1, data)
 
 /* Run from nano kernel idle task; no micro kernel objects available */

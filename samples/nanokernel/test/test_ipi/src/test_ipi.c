@@ -57,7 +57,7 @@ struct ipi_dummy_config_info ipi_dummy0_config_info = {
 struct ipi_dummy_driver_data ipi_dummy0_driver_data;
 DECLARE_DEVICE_INIT_CONFIG(ipi_dummy0, "ipi_dummy0", ipi_dummy_init,
 			   &ipi_dummy0_config_info);
-pure_init(ipi_dummy0, &ipi_dummy0_driver_data);
+pure_late_init(ipi_dummy0, &ipi_dummy0_driver_data);
 
 /* Sending side of the console IPI driver, will forward anything sent
  * to printf() since we selected IPI_CONSOLE_STDOUT */
