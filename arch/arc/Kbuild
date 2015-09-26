@@ -1,7 +1,7 @@
-ccflags-y +=-I$(srctree)/arch/arc/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))
-asflags-y +=-I$(srctree)/arch/arc/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))
+subdir-ccflags-y +=-I$(srctree)/arch/arc/platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))
+subdir-ccflags-y +=-I$(srctree)/include/drivers
+subdir-ccflags-y +=-I$(srctree)/drivers
+subdir-asflags-y += $(subdir-ccflags-y)
 
 obj-y = core/
-
-obj-$(CONFIG_PLATFORM_GENERIC_ARC) += platforms/generic_arc/
-obj-$(CONFIG_PLATFORM_QUARK_SE_ARC) += platforms/quark_se-arc/
+obj-y += platforms/$(subst $(DQUOTE),,$(CONFIG_PLATFORM))/
