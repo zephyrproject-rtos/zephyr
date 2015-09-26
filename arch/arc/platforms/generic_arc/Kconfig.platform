@@ -1,0 +1,3 @@
+
+config PLATFORM_GENERIC_ARC
+        bool "Minimum configuration for generic arc"

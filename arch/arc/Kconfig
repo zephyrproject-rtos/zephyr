@@ -31,12 +31,7 @@ choice
 prompt "Platform Selection"
 default PLATFORM_GENERIC_ARC
 
-config PLATFORM_GENERIC_ARC
-	bool "Minimum configuration for generic arc"
-
-config PLATFORM_QUARK_SE_ARC
-        bool "Minimum configuration for Quark SE"
-
+source "arch/arc/platforms/*/Kconfig.platform"
 endchoice
 
 menu "ARC EM4 processor options"
@@ -252,13 +247,7 @@ config  ARCH_HAS_NANO_FIBER_ABORT
 endmenu
 
 
-if PLATFORM_GENERIC_ARC
-source "arch/arc/platforms/generic_arc/Kconfig"
-endif
-
-if PLATFORM_QUARK_SE_ARC
-source "arch/arc/platforms/quark_se-arc/Kconfig"
-endif
+source "arch/arc/platforms/*/Kconfig"
 
 source "drivers/Kconfig"
 

@@ -1,6 +1,6 @@
 # generic ARC BSP configuration options
 
-
+if PLATFORM_GENERIC_ARC
 config PLATFORM
 	string
 	default generic_arc
@@ -37,3 +37,4 @@ config RAM_SIZE
 	default 0x14000
 
 endmenu
+endif
