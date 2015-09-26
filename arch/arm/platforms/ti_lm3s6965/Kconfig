@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+if PLATFORM_TI_LM3S6965
 config PLATFORM
 	string
 	default ti_lm3s6965
@@ -41,3 +42,5 @@ config PLATFORM_TI_LM3S6965_QEMU
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 12000000
+
+endif

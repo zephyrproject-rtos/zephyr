@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
+if PLATFORM_FSL_FRDM_K64F
 config PLATFORM
 	string
 	default fsl_frdm_k64f
@@ -43,3 +44,5 @@ config WDOG_INIT
 	This processor enables the watchdog timer with a short timeout
 	upon reset. Therefore, this requires that the watchdog be configured
 	during reset handling.
+
+endif
