@@ -43,8 +43,8 @@ extern int _sys_clock_driver_init(struct device *device);
  */
 extern void _timer_int_handler(void *arg);
 
-#ifdef CONFIG_SYSTEM_TIMER_DISABLE
-extern void timer_disable(void);
+#ifdef CONFIG_SYSTEM_CLOCK_DISABLE
+extern void sys_clock_disable(void);
 #endif
 
 #ifdef CONFIG_TICKLESS_IDLE

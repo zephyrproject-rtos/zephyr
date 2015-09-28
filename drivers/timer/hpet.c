@@ -641,7 +641,7 @@ uint32_t _sys_clock_cycle_get(void)
 FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
 FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
 
-#ifdef CONFIG_SYSTEM_TIMER_DISABLE
+#ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 
 /**
  *
@@ -653,7 +653,7 @@ FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
  * @return N/A
  */
 
-void timer_disable(void)
+void sys_clock_disable(void)
 {
 	/*
 	 * disable the main HPET up counter and all timer interrupts;
@@ -665,4 +665,4 @@ void timer_disable(void)
 	*_HPET_GENERAL_CONFIG &= ~HPET_ENABLE_CNF;
 }
 
-#endif /* CONFIG_SYSTEM_TIMER_DISABLE */
+#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */

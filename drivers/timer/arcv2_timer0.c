@@ -182,7 +182,7 @@ uint32_t _sys_clock_cycle_get(void)
 FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
 FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
 
-#if defined(CONFIG_SYSTEM_TIMER_DISABLE)
+#if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
  *
  * @brief Stop announcing ticks into the kernel
@@ -192,7 +192,7 @@ FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
  *
  * @return N/A
  */
-void timer_disable(void)
+void sys_clock_disable(void)
 {
 	unsigned int key;  /* interrupt lock level */
 	uint32_t ctrl_val; /* timer control register value */
@@ -210,4 +210,4 @@ void timer_disable(void)
 
 	irq_disable(CONFIG_ARCV2_TIMER0_INT_LVL);
 }
-#endif /* CONFIG_SYSTEM_TIMER_DISABLE */
+#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */

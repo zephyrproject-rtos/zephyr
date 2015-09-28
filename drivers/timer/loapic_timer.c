@@ -166,7 +166,7 @@ static inline void periodic_mode_set(void)
 
 #if defined(TIMER_SUPPORTS_TICKLESS) ||              \
 	defined(LOAPIC_TIMER_PERIODIC_WORKAROUND) || \
-	defined(CONFIG_SYSTEM_TIMER_DISABLE)
+	defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
  *
  * @brief Mask the timer interrupt
@@ -615,7 +615,7 @@ uint32_t _sys_clock_cycle_get(void)
 FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
 FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
 
-#if defined(CONFIG_SYSTEM_TIMER_DISABLE)
+#if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
  *
  * @brief Stop announcing ticks into the kernel
@@ -625,7 +625,7 @@ FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
  *
  * @return N/A
  */
-void timer_disable(void)
+void sys_clock_disable(void)
 {
 	unsigned int key; /* interrupt lock level */
 
@@ -641,4 +641,4 @@ void timer_disable(void)
 	irq_disable(CONFIG_LOAPIC_TIMER_IRQ);
 }
 
-#endif /* CONFIG_SYSTEM_TIMER_DISABLE */
+#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */

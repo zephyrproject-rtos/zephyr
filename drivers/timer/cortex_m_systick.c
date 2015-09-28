@@ -111,7 +111,7 @@ static unsigned char idle_mode = IDLE_NOT_TICKLESS;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 #if defined(CONFIG_TICKLESS_IDLE) || \
-	defined(CONFIG_SYSTEM_TIMER_DISABLE)
+	defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 
 /**
  *
@@ -135,7 +135,7 @@ static ALWAYS_INLINE void sysTickStop(void)
 	__scs.systick.stcsr.val = reg.val;
 }
 
-#endif /* CONFIG_TICKLESS_IDLE || CONFIG_SYSTEM_TIMER_DISABLE */
+#endif /* CONFIG_TICKLESS_IDLE || CONFIG_SYSTEM_CLOCK_DISABLE */
 
 #ifdef CONFIG_TICKLESS_IDLE
 
@@ -637,7 +637,7 @@ uint32_t _sys_clock_cycle_get(void)
 FUNC_ALIAS(_sys_clock_cycle_get, nano_cycle_get_32, uint32_t);
 FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
 
-#ifdef CONFIG_SYSTEM_TIMER_DISABLE
+#ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 
 /**
  *
@@ -648,7 +648,7 @@ FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
  *
  * @return N/A
  */
-void timer_disable(void)
+void sys_clock_disable(void)
 {
 	unsigned int key; /* interrupt lock level */
 
@@ -661,4 +661,4 @@ void timer_disable(void)
 	irq_unlock(key);
 }
 
-#endif /* CONFIG_SYSTEM_TIMER_DISABLE */
+#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */
