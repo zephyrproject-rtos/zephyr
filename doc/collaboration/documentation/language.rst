@@ -3,9 +3,10 @@
 Laguage Usage Guidelines
 ########################
 
-This chapter provides usage guidelines with regard to words,
+This section provides usage guidelines with regard to words,
 punctuation, and grammar. The guidelines are not meant to replace a
-review by a professional writer but rather help collaborators to submit consistent contributions.
+review by a professional writer, but rather to help collaborators
+submit consistent contributions.
 
 Capitalization
 **************
@@ -16,12 +17,12 @@ Words should only be capitalized when:
 
 * They are proper nouns or adjectives.
 * They refer to trademarked product names.
-* When they are part of a heading using title case.
+* They are part of a heading using title case.
 
 .. important::
-   Do not capitalize a word to indicate it has a greater status than
-    other words. Never change the case of variable, function or file
-    names; always keep the original case.
+  Do not capitalize a word to indicate it has a greater status than
+  other words. Never change the case of variable, function or file
+  names; always keep the original case.
 
 Capitalization styles
 =====================
@@ -86,17 +87,16 @@ A few other menu capitalization rules to keep in mind:
 * Put the option to be selected last. "Select
   :menuselection:`View --> Side Bar --> Hide Side Bar`"
 
-* Do not include more than 3 navigation steps in a menu selection. If
-  more than three steps are needed devide the steps using
+* Keep menu selection navigation to three steps or fewer. When
+  more than three steps are needed, divide the steps using
   ``:guilabel:`` or ``:menuselection:``. For example: "Go to
   :guilabel:`File` and select
   :menuselection:`Print --> Print Preview --> Set Up`."
 
 Software Version Capitalization
 ===============================
-Do not capitalize the word version or letter v when listing software
-or hardware version numbers. The v is lowercase and closed with the
-number (no period). For example:
+When referring to software or hardware versions, the letter v
+should remain lower-case, and end with the version number. For example:
 
 * Widget Pro v5.0
 * Widget Master v2.1.12
@@ -113,7 +113,7 @@ Plurals and Possessives
 ***********************
 Because English plurals and possessives use the same /s/ and /z/
 phonemes, they can create problems for even experienced writers. This
-section deals with these issues.
+section discusses some of the common use cases.
 
 Singular vs. Plural Possessives
 ===============================
@@ -128,9 +128,8 @@ Here are some guidelines for singular and plural possessives:
 * Use apostrophe + s to show possession for a singular that ends in a
   silent sibilant: Illinois's capital.
 
-* Use apostrophe + s to show
-  possession for a singular that ends in a sibilant; s, x, c, z, or
-  others.
+* Use apostrophe + s to show possession for a singular that ends in a sibilant:
+  s, x, c, z, or others.
 
 The following table provides some examples with the correct and
 incorrect cases and the notes that accompanies them.
@@ -171,8 +170,7 @@ Apostrophe-s Anomalies
 ======================
 
 If a company name ends in s, x, c, or a sibilant sound, use the
-apostrophe-s ending for
-possessives:
+apostrophe-s ending for possessives:
 
 Traktronix's oscilloscopes
 
@@ -181,9 +179,9 @@ apostrophe-only ending:
 
 Tejada Instruments' calculators
 
-In many cases, it is actually best to avoid the possessive form
-altogether for s-ending singular possessives, such as for company
-names and use the company name as a nonpossessive modifier instead:
+In many cases, it is best to avoid the possessive form altogether for
+singular possessives that already end in s, such as for company
+names.  Use the company name as a nonpossessive modifier instead:
 
 Traktronix oscilloscopes
 Tejada Instruments calculators
@@ -196,19 +194,16 @@ use.
 Plural modifiers
 ================
 
-Avoid plural modifiers. For example, it should be a system
-administrator, not a systems administrator. It doesn't matter how many
-systems this person manage, we don't typically use the plural of a word
-to modify a noun. Here a list of exceptions:
+Avoid plural modifiers. For example: system administrator, not a systems
+administrator. It doesn't matter how many systems this person manages;
+it's better to avoid using a plural of a word to modify a noun.
+
+However, some exceptions do occur when the plural form is generally considered
+singular: sales, physics, operations. Ask if you are unsure.
 
 * operations manager
 * sales department
 * graphics team
-
-
-There are always exceptions, especially when the plural form is
-generally considered to be singular: sales, physics, operations. It is
-best to adhere to this rule and ask if you are unsure.
 
 Parenthetical plurals
 =====================
@@ -222,9 +217,8 @@ using parenthetical plurals often creates more confusion.
 
 Correct
 
-Men, women, children, college alumni, moose,
-and even desert plants such as cacti should not
-use parentheses around plurals.
+Men, women, children, college alumni, moose, and even desert plants
+such as cacti should not use parentheses around plurals.
 
 Incorrect
 
@@ -258,7 +252,7 @@ Use TRAXes, iBOXes not TRAXs, TRAX's, iBOX's, iBOXs.
 Use FAACes not FAAC's, assuming it is pronounced "face".
 Use FAACs not FAAC's Assuming it is pronounced "fake".
 
-Whenever you hear the extra syllable in the plural, add the -es suffix
+When you hear the extra syllable in the plural, add the -es suffix
 for the plural; if you do not hear the extra syllable, add the -s
 suffix for the plural.
 
@@ -275,8 +269,8 @@ Pluralize Latin terms in body text as shown:
 * Use vertexes not vertices.
 
 .. note::
-   Some Latin plurals, such as parentheses, phenomena, alumni, and
-    crises, are widely used and accepted in English.
+  Some Latin plurals, such as parentheses, phenomena, alumni, and
+  crises, are widely used and accepted in English.
 
 Contractions
 ************
@@ -289,13 +283,13 @@ because these contractions stand for more than one construction. For
 example, there's can be a contraction of there is or there has. The
 same applies to where's, it's, that's, and others.
 
-Also, avoid contractions of the word is, especially when combined with
-company or product names: Say, WidgetPro is an awesome product; not
-WidgetPro's an awesome product.
+Also avoid contractions of the word is, especially when combined with
+company or product names. Say: "WidgetPro is an awesome product"; not
+"WidgetPro's an awesome product".
 
 Hyphenation
 ***********
-The hyphen is often used to join words together to form a compound noun.
+A hyphen is often used to join words together to form a compound noun.
 Compound nouns often go through this progressions:
 
 * open compound: health care
@@ -319,16 +313,15 @@ pre, sub, un.
 Here are some words that are often inappropriately hyphenated; do not
 hyphenate these words either:
 
-antitheft device, multicamera, multiscreen, prepackaged, reuse,
-submenu, autofocus, multifamily, multiuser, pseudoscience, semiannual,
-subtotal, autoiris, multimedia, nonprofit, reengineered, semicircle,
-superuser, microarchitecture, multiposition, predefined, reevaluate,
-subfolder, superscript, microorganism, multiprotocol, predrilled,
-reinvent, submarine.
+antitheft, multicamera, multiscreen, prepackaged, reuse, submenu,
+autofocus, multifamily, multiuser, pseudoscience, semiannual, subtotal,
+autoiris, multimedia, nonprofit, reengineered, semicircle, superuser,
+microarchitecture, multiposition, predefined, reevaluate, subfolder,
+superscript, microorganism, multiprotocol, predrilled, reinvent, submarine.
 
 .. note::
-   Question whether the pre- prefix is needed at all and consider
-    leaving it off the word entirely if the meaning is the same.
+  Question whether the pre- prefix is needed at all and consider
+  leaving it off the word entirely if the meaning is the same.
 
 Exceptions
 ----------
@@ -352,6 +345,7 @@ Suffix Hyphenation
 ==================
 
 In general, do not hyphenate suffixes. Here are some examples.
+
 The suffix -wide is usually not hyphenated:
 
 * Nationwide, worldwide, systemwide, campuswide, statewide,
@@ -364,15 +358,14 @@ The suffix -wise is usually not hyphenated:
 Commas, Semicolons, and Colons
 ******************************
 Here are the most common problems encountered with commas, semicolons,
-and colons. Please refer to Merriam-Webster's Collegiate Dictionary
+and colons. Please refer to **Merriam-Webster's Collegiate Dictionary**
 when in doubt.
 
 Serial Commas
 =============
 
-When writing a series or items, use the serial comma before the
-coordinating conjunctions and and or to avoid confusion and ambiguity.
-For example:
+When writing a series or items, use the serial comma before coordinating
+conjunctions to avoid confusion and ambiguity. For example:
 
 * Mom, Dad, and I are going to the game.
 * Mom, Dad and I are going to the game.
@@ -447,7 +440,6 @@ Follow these guidelines for quotation marks:
 * Restrict use of quotation marks to terms as terms.
 * Do not use quotation marks for emphasis; use *italics* for emphasis.
 * Avoid using single-quote marks.
-* In terms of punctuation: commas and periods typically go inside the
-  end-quote; semicolons, colons, question marks, and exclamation points
-  typically go outside quotation marks. Unless they are part of the
-  actual quotation.
+* Commas and periods typically go inside the end-quote; semicolons, colons,
+  question marks, and exclamation points typically go outside quotation marks
+  unless they are part of the actual quotation.
