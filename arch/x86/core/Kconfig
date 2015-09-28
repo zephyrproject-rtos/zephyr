@@ -55,6 +55,8 @@ config IDT_NUM_VECTORS
 	int
 	prompt "Number of IDT vectors"
 	default 256
+	range 32 256
+	depends on !NO_ISRS
 	help
 	This option specifies the number of interrupt vector entries in the
 	Interrupt Descriptor Table (IDT). By default all 256 vectors are
