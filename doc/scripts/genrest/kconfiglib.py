@@ -69,6 +69,7 @@ might add it in a safe way as a client API instead."""
 import os
 import re
 import sys
+import glob
 
 # File layout:
 #
@@ -679,18 +680,20 @@ class Config(object):
             elif t0 == T_SOURCE:
                 kconfig_file = tokens.get_next()
                 exp_kconfig_file = self._expand_sym_refs(kconfig_file)
-                f = os.path.join(self.base_dir, exp_kconfig_file)
-                if not os.path.exists(f):
-                    raise IOError('{0}:{1}: sourced file "{2}" (expands to '
-                                  '"{3}") not found. Perhaps base_dir '
-                                  '(argument to Config.__init__(), currently '
-                                  '"{4}") is set to the wrong value.'
-                                  .format(line_feeder.filename,
-                                          line_feeder.linenr,
-                                          kconfig_file, exp_kconfig_file,
-                                          self.base_dir))
-                # Add items to the same block
-                self._parse_file(f, parent, deps, visible_if_deps, block)
+                g = glob.glob(self.base_dir + exp_kconfig_file)
+                for s in g:
+                    f = os.path.join(s)
+                    if not os.path.exists(f):
+                        raise IOError('{0}:{1}: sourced file "{2}" (expands to '
+                              '"{3}") not found. Perhaps base_dir '
+                              '(argument to Config.__init__(), currently '
+                              '"{4}") is set to the wrong value.'
+                              .format(line_feeder.filename,
+                                  line_feeder.linenr,
+                                  kconfig_file, exp_kconfig_file,
+                                  self.base_dir))
+                    # Add items to the same block
+                    self._parse_file(s, parent, deps, visible_if_deps, block)
 
             elif t0 == end_marker:
                 # We have reached the end of the block
