@@ -53,6 +53,17 @@ config PINMUX
 config I2C
 	def_bool y
 
+if SHARED_IRQ
+config SHARED_IRQ_0
+	def_bool y
+config SHARED_IRQ_0_NAME
+	default "SHARED_IRQ0"
+config SHARED_IRQ_0_IRQ
+	default 18
+config SHARED_IRQ_0_PRI
+	default 0
+endif
+
 if I2C
 config I2C_CLOCK_SPEED
 	default 25
@@ -84,6 +95,8 @@ config I2C_DW_0_FUNCTION
 	default 2
 config I2C_DW_0_BAR
 	default 0
+config I2C_DW_0_IRQ_SHARED_NAME
+	default "SHARED_IRQ0" if SHARED_IRQ
 endif
 
 if GPIO && I2C
