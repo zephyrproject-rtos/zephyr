@@ -78,6 +78,11 @@ config I2C_DW_IRQ_LEVEL_LOW
 
 endchoice
 
+config I2C_DW_SHARED_IRQ
+	bool
+	default n
+	depends on I2C_DW
+
 config I2C_DW_VENDOR_ID
 	hex "PCI Vendor ID of the controllers"
 	depends on I2C_DW && PCI
@@ -108,14 +113,42 @@ config I2C_DW_0_NAME
         depends on I2C_DW_0
         default "I2C0"
 
+choice
+	prompt "I2C0 Interrupts via"
+	default I2C_DW_0_IRQ_DIRECT
+	depends on I2C_DW_0
+
+config I2C_DW_0_IRQ_DIRECT
+	bool "Direct Hardware Interrupt"
+	help
+	  When interrupts fire, the driver's ISR function is being called directly.
+
+config I2C_DW_0_IRQ_SHARED
+	bool "Shared IRQ"
+	depends on SHARED_IRQ
+	select I2C_DW_SHARED_IRQ
+	help
+	  When interrupts fire, the shared IRQ driver is notified. Then the shared IRQ
+	  driver dispatches the interrupt to other drivers.
+
+endchoice
+
+config I2C_DW_0_IRQ_SHARED_NAME
+	string "Device name for Shared IRQ"
+	depends on I2C_DW_0 && I2C_DW_0_IRQ_SHARED
+	help
+	  Specify the device name for the shared IRQ driver. It is used to register
+	  this driver with the shared IRQ driver, so interrupts can be dispatched
+	  correctly.
+
 config I2C_DW_0_IRQ
 	int "Controller interrupt"
-	depends on I2C_DW_0
+	depends on I2C_DW_0 && I2C_DW_0_IRQ_DIRECT
 	default 0
 
 config I2C_DW_0_INT_PRIORITY
         int "Controller interrupt priority"
-        depends on I2C_DW_0
+        depends on I2C_DW_0 && I2C_DW_0_IRQ_DIRECT
         default 0
         help
         IRQ priority

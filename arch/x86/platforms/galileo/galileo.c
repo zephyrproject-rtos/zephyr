@@ -56,6 +56,7 @@ Handlers for the secondary serial port have not been added.
 
 
 #ifdef CONFIG_I2C_DW_0
+#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
 static int dw_i2c0_irq_set(struct device *unused)
 {
 	ARG_UNUSED(unused);
@@ -68,6 +69,7 @@ static int dw_i2c0_irq_set(struct device *unused)
 DECLARE_DEVICE_INIT_CONFIG(i2cirq_0, "", dw_i2c0_irq_set, NULL);
 pre_kernel_late_init(i2cirq_0, NULL);
 
+#endif /* CONFIG_I2C_DW_0_IRQ_DIRECT */
 #endif /* CONFIG_I2C_DW_0 */
 
 #ifdef CONFIG_GPIO_DW_0

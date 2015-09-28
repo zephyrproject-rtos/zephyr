@@ -43,6 +43,10 @@
 #include <errno.h>
 #include <sys_io.h>
 
+#ifdef CONFIG_SHARED_IRQ
+#include <shared_irq.h>
+#endif
+
 #include "i2c-dw.h"
 #include "i2c-dw-registers.h"
 
@@ -692,6 +696,8 @@ int i2c_dw_initialize(struct device *port)
 
 	port->driver_api = &funcs;
 
+	dev->app_config.raw = 0;
+
 	/*
 	 * grab the default value on initialization.  This should be set to the
 	 * IC_MAX_SPEED_MODE in the hardware.  If it does support high speed we
@@ -715,7 +721,7 @@ int i2c_dw_initialize(struct device *port)
 
 	dev->state = I2C_DW_STATE_READY;
 
-	irq_enable(rom->interrupt_vector);
+	dev->state = I2C_DW_STATE_READY;
 
 	return DEV_OK;
 }
@@ -727,7 +733,9 @@ void i2c_config_0(struct device *port);
 
 struct i2c_dw_rom_config i2c_config_dw_0 = {
 	.base_address = CONFIG_I2C_DW_0_BASE,
+#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
 	.interrupt_vector = CONFIG_I2C_DW_0_IRQ,
+#endif
 #if CONFIG_PCI
 	.pci_dev.class = CONFIG_I2C_DW_CLASS,
 	.pci_dev.bus = CONFIG_I2C_DW_0_BUS,
@@ -738,6 +746,10 @@ struct i2c_dw_rom_config i2c_config_dw_0 = {
 	.pci_dev.bar = CONFIG_I2C_DW_0_BAR,
 #endif
 	.config_func = i2c_config_0,
+
+#ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
+	.shared_irq_dev_name = CONFIG_I2C_DW_0_IRQ_SHARED_NAME,
+#endif
 };
 
 struct i2c_dw_dev_config i2c_0_runtime = {
@@ -751,22 +763,36 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_0,
 
 pre_kernel_late_init(i2c_0, &i2c_0_runtime);
 
+#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
 IRQ_CONNECT_STATIC(i2c_dw_0,
 		   CONFIG_I2C_DW_0_IRQ,
 		   CONFIG_I2C_DW_0_INT_PRIORITY,
 		   i2c_dw_isr_0,
 		   0);
+#endif
 
 void i2c_config_0(struct device *port)
 {
 	struct i2c_dw_rom_config * const config = port->config->config_info;
+	struct device *shared_irq_dev;
 
+#if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
+	ARG_UNUSED(shared_irq_dev);
 	IRQ_CONFIG(i2c_dw_0, config->interrupt_vector);
+	irq_enable(config->interrupt_vector);
+#elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
+	ARG_UNUSED(config);
+	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
+	shared_irq_isr_register(shared_irq_dev, (isr_t)i2c_dw_isr, port);
+	shared_irq_enable(shared_irq_dev, port);
+#endif
 }
 
+#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
 void i2c_dw_isr_0(void *unused)
 {
 	i2c_dw_isr(&__initconfig_i2c_02);
 }
+#endif
 
 #endif /* CONFIG_I2C_DW_0 */
