@@ -36,7 +36,6 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
-#define CONFIG_GPIO_DW_BITS 32
 extern int gpio_initialize_dw(struct device *port);
 typedef void (*gpio_config_irq_t)(struct device *port);
 

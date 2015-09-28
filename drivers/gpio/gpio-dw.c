@@ -266,7 +266,7 @@ void gpio_dw_isr(struct device *port)
 
 	if (context->enabled_callbacks) {
 		enabled_int = int_status & context->enabled_callbacks;
-		for (bit = 0; bit < 32; bit++) {
+		for (bit = 0; bit < config->bits; bit++) {
 			if (enabled_int & (1 << bit)) {
 				context->callback(port, (1 << bit));
 			}
