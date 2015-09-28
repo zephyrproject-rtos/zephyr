@@ -1,5 +1,3 @@
-/* btshell.c - Bluetooth shell */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
@@ -16,6 +14,12 @@
  * limitations under the License.
  */
 
+/**
+ * @file
+ * @brief Console handler implementation of shell.h API
+ */
+
+
 #include <zephyr.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +28,7 @@
 #include <misc/printk.h>
 #include <misc/util.h>
 
-#include "btshell.h"
+#include <misc/shell.h>
 
 /* maximum number of command parameters */
 #define ARGC_MAX 10
@@ -33,7 +37,7 @@ static struct shell_cmd *commands;
 
 static const char *prompt;
 
-#define STACKSIZE 2000
+#define STACKSIZE CONFIG_CONSOLE_HANDLER_SHELL_STACKSIZE
 static char __stack stack[STACKSIZE];
 
 #define MAX_CMD_QUEUED 3
@@ -41,6 +45,8 @@ static struct uart_console_input buf[MAX_CMD_QUEUED];
 
 static struct nano_fifo avail_queue;
 static struct nano_fifo cmds_queue;
+
+static cmd_function_t app_cmd_handler;
 
 static void line_queue_init(void)
 {
@@ -150,10 +156,14 @@ static void shell(int arg1, int arg2)
 
 		cb = get_cb(argv[0]);
 		if (!cb) {
-			printk("Unrecognized command: %s\n", argv[0]);
-			printk("Type 'help' for list of available commands\n");
-			nano_fiber_fifo_put(&avail_queue, cmd);
-			continue;
+			if (app_cmd_handler != NULL) {
+				cb = app_cmd_handler;
+			} else {
+				printk("Unrecognized command: %s\n", argv[0]);
+				printk("Type 'help' for list of available commands\n");
+				nano_fiber_fifo_put(&avail_queue, cmd);
+				continue;
+			}
 		}
 
 		/* Execute callback with arguments */
@@ -178,4 +188,13 @@ void shell_init(const char *str, struct shell_cmd *cmds)
 
 	/* Register serial console handler */
 	uart_register_input(&avail_queue, &cmds_queue);
+}
+
+/** @brief Optionally register an app default cmd handler.
+ *
+ *  @param handler To be called if no cmd found in cmds registered with shell_init.
+ */
+void shell_register_app_cmd_handler(cmd_function_t handler)
+{
+	app_cmd_handler = handler;
 }

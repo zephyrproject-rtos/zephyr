@@ -1,3 +1,3 @@
 ccflags-y +=-I$(srctree)/include/drivers
 
-obj-y = btshell.o  main.o
+obj-y = main.o

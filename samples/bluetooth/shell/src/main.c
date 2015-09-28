@@ -35,7 +35,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/l2cap.h>
 
-#include "btshell.h"
+#include <misc/shell.h>
 
 #define DEVICE_NAME "test shell"
 #define AD_SHORT_NAME		0x08

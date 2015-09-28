@@ -1,4 +1,4 @@
-/* btshell.h - Bluetooth shell headers */
+/* shell.h - Shell header */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -35,3 +35,10 @@ struct shell_cmd {
  *  @param cmds Commands to register
  */
 void shell_init(const char *prompt, struct shell_cmd *cmds);
+
+/** @brief Optionally register an app default cmd handler.
+ *
+ *  @param handler To be called if no cmd found in cmds registered with shell_init.
+ */
+void shell_register_app_cmd_handler(cmd_function_t handler);
+

@@ -39,6 +39,22 @@ config CONSOLE_HANDLER
 	This option enables console input handler allowing to write simple
 	interaction between serial console and the OS.
 
+config CONSOLE_HANDLER_SHELL
+	bool
+	prompt "Enable console input handler [ Experimental ]"
+	default n
+	depends on CONSOLE_HANDLER
+	help
+	Shell implementation based on CONSOLE_HANDLER.
+
+config CONSOLE_HANDLER_SHELL_STACKSIZE
+	int
+	prompt "Console handler shell stack size"
+	default 2000
+	depends on CONSOLE_HANDLER_SHELL
+	help
+	Stack size for the console handler shell.
+
 config UART_CONSOLE
 	bool
 	prompt "Use UART for console"
