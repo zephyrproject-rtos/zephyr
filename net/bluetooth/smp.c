@@ -57,6 +57,8 @@
 #include "l2cap.h"
 #include "smp.h"
 
+#define SMP_TIMEOUT (30 * sys_clock_ticks_per_sec)
+
 #if defined(CONFIG_BLUETOOTH_SIGNING)
 #define RECV_KEYS (BT_SMP_DIST_ID_KEY | BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
 #define SEND_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_SIGN)
@@ -77,12 +79,16 @@ enum {
 	SMP_FLAG_CFM_DELAYED,	/* if confirm should be send when TK is valid */
 	SMP_FLAG_ENC_PENDING,	/* if waiting for an encryption change event */
 	SMP_FLAG_PAIRING,	/* if pairing is in progress */
+	SMP_FLAG_TIMEOUT,	/* if SMP timeout occurred */
 };
 
 /* SMP channel specific context */
 struct bt_smp {
 	/* The connection this context is associated with */
 	struct bt_conn		*conn;
+
+	/* SMP Timeout fiber handle */
+	void			*timeout;
 
 	/* Commands that remote is allowed to send */
 	atomic_t		allowed_cmds;
@@ -116,6 +122,9 @@ struct bt_smp {
 
 	/* Remote key distribution */
 	uint8_t			remote_dist;
+
+	/* stack for timeout fiber */
+	BT_STACK(stack, 128);
 };
 
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
@@ -401,6 +410,66 @@ static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
 	return le_encrypt(k, out, out);
 }
 
+static void smp_reset(struct bt_conn *conn)
+{
+	struct bt_smp *smp = conn->smp;
+
+	smp->method = JUST_WORKS;
+	atomic_set(&smp->allowed_cmds, 0);
+	atomic_set(&smp->flags, 0);
+
+	switch(conn->role) {
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	case BT_HCI_ROLE_MASTER:
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+		break;
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	case BT_HCI_ROLE_SLAVE:
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+		break;
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+	default:
+		break;
+	}
+}
+
+static void smp_timeout(int arg1, int arg2)
+{
+	struct bt_smp *smp = (struct bt_smp *)arg1;
+	ARG_UNUSED(arg2);
+
+	BT_ERR("SMP Timeout\n");
+
+	smp->timeout = NULL;
+
+	smp_reset(smp->conn);
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_TIMEOUT);
+}
+
+static void smp_restart_timer(struct bt_smp *smp)
+{
+	if (smp->timeout) {
+		fiber_fiber_delayed_start_cancel(smp->timeout);
+	}
+
+	smp->timeout = fiber_delayed_start(smp->stack, sizeof(smp->stack),
+					   smp_timeout, (int) smp, 0, 7, 0,
+					   SMP_TIMEOUT);
+}
+
+static void smp_stop_timer(struct bt_smp *smp)
+{
+	if (!smp->timeout) {
+		return;
+	}
+
+	fiber_fiber_delayed_start_cancel(smp->timeout);
+	smp->timeout = NULL;
+}
+
 struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 {
 	struct bt_smp_hdr *hdr;
@@ -565,6 +634,8 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
 
+	smp_restart_timer(smp);
+
 	return smp_request_tk(conn, req->io_capability);
 }
 #else
@@ -596,6 +667,11 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	struct bt_buf *req_buf;
 
 	BT_DBG("\n");
+
+	/* SMP Timeout */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
+		return -EIO;
+	}
 
 	/* pairing is in progress */
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
@@ -638,6 +714,11 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	BT_DBG("\n");
 
+	/* SMP Timeout */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
+		return -EIO;
+	}
+
 	/* pairing is in progress */
 	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
 		return -EBUSY;
@@ -678,6 +759,8 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
 	atomic_set_bit(&smp->flags, SMP_FLAG_PAIRING);
 
+	smp_restart_timer(smp);
+
 	return 0;
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
@@ -707,6 +790,8 @@ static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
 
 	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+
+	smp_restart_timer(smp);
 
 	return 0;
 }
@@ -769,6 +854,8 @@ static uint8_t smp_send_pairing_random(struct bt_conn *conn)
 	memcpy(req->val, smp->prnd, sizeof(req->val));
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
+
+	smp_restart_timer(smp);
 
 	return 0;
 }
@@ -902,31 +989,6 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	return 0;
 }
 
-static void smp_reset(struct bt_conn *conn)
-{
-	struct bt_smp *smp = conn->smp;
-
-	smp->method = JUST_WORKS;
-	atomic_set(&smp->allowed_cmds, 0);
-	atomic_set(&smp->flags, 0);
-
-	switch(conn->role) {
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
-	case BT_HCI_ROLE_MASTER:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
-		break;
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	case BT_HCI_ROLE_SLAVE:
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
-		break;
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
-	default:
-		break;
-	}
-}
-
 static uint8_t smp_pairing_failed(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_fail *req = (void *)buf->data;
@@ -1013,6 +1075,8 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		ident->ediv = keys->slave_ltk.ediv;
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+
+		smp_restart_timer(smp);
 	}
 
 #if defined(CONFIG_BLUETOOTH_SIGNING)
@@ -1037,6 +1101,8 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		memcpy(info->csrk, keys->local_csrk.val, sizeof(info->csrk));
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+
+		smp_restart_timer(smp);
 	}
 #endif /* CONFIG_BLUETOOTH_SIGNING */
 
@@ -1044,6 +1110,7 @@ fail:
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
 		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
+		smp_stop_timer(smp);
 	}
 }
 
@@ -1308,6 +1375,17 @@ static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 
 	bt_buf_pull(buf, sizeof(*hdr));
 
+	/*
+	 * If SMP timeout occurred "no further SMP commands shall be sent over
+	 * the L2CAP Security Manager Channel. A new SM procedure shall only be
+	 * performed when a new physical link has been established."
+	 */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
+		BT_WARN("SMP command (code 0x%02x) received after timeout\n",
+			hdr->code);
+		goto done;
+	}
+
 	if (hdr->code >= ARRAY_SIZE(handlers) || !handlers[hdr->code].func) {
 		BT_WARN("Unhandled SMP code 0x%02x\n", hdr->code);
 		err = BT_SMP_ERR_CMD_NOTSUPP;
@@ -1371,6 +1449,8 @@ static void bt_smp_disconnected(struct bt_conn *conn)
 	BT_DBG("conn %p handle %u\n", conn, conn->handle);
 
 	conn->smp = NULL;
+
+	smp_stop_timer(smp);
 	memset(smp, 0, sizeof(*smp));
 }
 
