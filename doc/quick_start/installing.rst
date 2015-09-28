@@ -88,24 +88,24 @@ Follow these steps to install the SDK on your host system.
 
 #. Download the Yocto self-extractable binary from:
 
-   https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.5-i686-setup.run
+   https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.6-i686-setup.run
 
     .. code-block:: bash
 
        $ wget --user=USERNAME --ask-password \
-       https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.5-i686-setup.run
+       https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.6-i686-setup.run
 
 #. Run the installation binary, type:
 
     .. code-block:: bash
 
-       $ chmod +x zephyr-sdk-0.5-i686-setup.run
+       $ chmod +x zephyr-sdk-0.6-i686-setup.run
 
-       $ sudo ./zephyr-sdk-0.5-i686-setup.run
+       $ sudo ./zephyr-sdk-0.6-i686-setup.run
 
 
 #. Follow the installation instructions on the screen. The
-   toolchain's default installation location is :file:`/opt/zephyr-sdk/0.5`.
+   toolchain's default installation location is :file:`/opt/zephyr-sdk/0.6`.
 
     .. code-block:: bash
 
@@ -113,15 +113,15 @@ Follow these steps to install the SDK on your host system.
 
        Uncompressing SDK for Zephyr  100%
 
-       Enter target directory for SDK (default: /opt/zephyr-sdk/0.5):
+       Enter target directory for SDK (default: /opt/zephyr-sdk/0.6):
 
 #. Enter a new location or hit :kbd:`Return` to accept default.
 
     .. code-block:: bash
 
-       Installing SDK to /opt/zephyr-sdk/0.5
+       Installing SDK to /opt/zephyr-sdk/0.6
 
-       Creating directory /opt/zephyr-sdk/0.5
+       Creating directory /opt/zephyr-sdk/0.6
 
        Success
 
@@ -144,7 +144,7 @@ Follow these steps to install the SDK on your host system.
 
        $ export ZEPHYR_GCC_VARIANT=yocto
 
-       $ export YOCTO_SDK_INSTALL_DIR=/opt/zephyr-sdk/0.5
+       $ export YOCTO_SDK_INSTALL_DIR=/opt/zephyr-sdk/0.6
 
 Installing a Custom QEMU for ARM Platforms
 ==========================================
