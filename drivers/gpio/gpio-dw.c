@@ -35,6 +35,10 @@
 #include <sys_io.h>
 #include <init.h>
 
+#ifdef CONFIG_SHARED_IRQ
+#include <shared_irq.h>
+#endif
+
 #define SWPORTA_DR	0x00
 #define SWPORTA_DDR	0x04
 #define SWPORTB_DR	0x0c
@@ -328,7 +332,6 @@ int gpio_initialize_dw(struct device *port)
 	port->driver_api = &api_funcs;
 
 	config->config_func(port);
-	irq_enable(config->irq_num);
 
 	return 0;
 }
@@ -340,7 +343,9 @@ void gpio_config_0_irq(struct device *port);
 struct gpio_config_dw gpio_config_dw_0 = {
 	.base_addr = CONFIG_GPIO_DW_0_BASE_ADDR,
 	.bits = CONFIG_GPIO_DW_0_BITS,
+#ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	.irq_num = CONFIG_GPIO_DW_0_IRQ,
+#endif
 #if CONFIG_PCI
 	.pci_dev.class = CONFIG_GPIO_DW_CLASS,
 	.pci_dev.bus = CONFIG_GPIO_DW_0_BUS,
@@ -350,7 +355,11 @@ struct gpio_config_dw gpio_config_dw_0 = {
 	.pci_dev.function = CONFIG_GPIO_DW_0_FUNCTION,
 	.pci_dev.bar = CONFIG_GPIO_DW_0_BAR,
 #endif
-	.config_func = gpio_config_0_irq
+	.config_func = gpio_config_0_irq,
+
+#ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
+	.shared_irq_dev_name = CONFIG_GPIO_DW_0_IRQ_SHARED_NAME,
+#endif
 };
 
 struct gpio_runtime_dw gpio_0_runtime;
@@ -359,19 +368,34 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_0, CONFIG_GPIO_DW_0_NAME,
 			   gpio_initialize_dw, &gpio_config_dw_0);
 pre_kernel_late_init(gpio_0, &gpio_0_runtime);
 
+#ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 IRQ_CONNECT_STATIC(gpio_dw_0, CONFIG_GPIO_DW_0_IRQ,
 		   CONFIG_GPIO_DW_0_PRI, gpio_dw_isr_0, 0);
+#endif
 
 void gpio_config_0_irq(struct device *port)
 {
 	struct gpio_config_dw *config = port->config->config_info;
+	struct device *shared_irq_dev;
+
+#ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
+	ARG_UNUSED(shared_irq_dev);
 	IRQ_CONFIG(gpio_dw_0, config->irq_num);
+	irq_enable(config->irq_num);
+#elif defined(CONFIG_GPIO_DW_0_IRQ_SHARED)
+	ARG_UNUSED(config);
+	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
+	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
+	shared_irq_enable(shared_irq_dev, port);
+#endif
 }
 
+#ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 void gpio_dw_isr_0(void *unused)
 {
 	gpio_dw_isr(&__initconfig_gpio_02);
 }
+#endif /* CONFIG_GPIO_DW_0_IRQ_DIRECT */
 
 #endif /* CONFIG_GPIO_DW_0 */
 
@@ -382,7 +406,9 @@ void gpio_config_1_irq(struct device *port);
 struct gpio_config_dw gpio_config_dw_1 = {
 	.base_addr = CONFIG_GPIO_DW_1_BASE_ADDR,
 	.bits = CONFIG_GPIO_DW_1_BITS,
+#ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	.irq_num = CONFIG_GPIO_DW_1_IRQ,
+#endif
 #if CONFIG_PCI
 	.pci_dev.class = CONFIG_GPIO_DW_CLASS,
 	.pci_dev.bus = CONFIG_GPIO_DW_1_BUS,
@@ -392,7 +418,11 @@ struct gpio_config_dw gpio_config_dw_1 = {
 	.pci_dev.function = CONFIG_GPIO_DW_1_FUNCTION,
 	.pci_dev.bar = CONFIG_GPIO_DW_1_BAR,
 #endif
-	.config_func = gpio_config_1_irq
+	.config_func = gpio_config_1_irq,
+
+#ifdef CONFIG_GPIO_DW_1_IRQ_SHARED
+	.shared_irq_dev_name = CONFIG_GPIO_DW_1_IRQ_SHARED_NAME,
+#endif
 };
 
 struct gpio_runtime_dw gpio_1_runtime;
@@ -401,18 +431,33 @@ DECLARE_DEVICE_INIT_CONFIG(gpio_1, CONFIG_GPIO_DW_1_NAME,
 			   gpio_initialize_dw, &gpio_config_dw_1);
 pre_kernel_late_init(gpio_1, &gpio_1_runtime);
 
+#ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 IRQ_CONNECT_STATIC(gpio_dw_1, CONFIG_GPIO_DW_1_IRQ,
 		   CONFIG_GPIO_DW_1_PRI, gpio_dw_isr_1, 0);
+#endif
 
 void gpio_config_1_irq(struct device *port)
 {
 	struct gpio_config_dw *config = port->config->config_info;
+	struct device *shared_irq_dev;
+
+#ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
+	ARG_UNUSED(shared_irq_dev);
 	IRQ_CONFIG(gpio_dw_1, config->irq_num);
+	irq_enable(config->irq_num);
+#elif defined(CONFIG_GPIO_DW_1_IRQ_SHARED)
+	ARG_UNUSED(config);
+	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
+	shared_irq_isr_register(shared_irq_dev, (isr_t)gpio_dw_isr, port);
+	shared_irq_enable(shared_irq_dev, port);
+#endif
 }
 
+#ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 void gpio_dw_isr_1(void *unused)
 {
 	gpio_dw_isr(&__initconfig_gpio_12);
 }
+#endif
 
 #endif /* CONFIG_GPIO_DW_1 */

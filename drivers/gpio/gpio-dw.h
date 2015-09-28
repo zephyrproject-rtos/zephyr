@@ -48,6 +48,10 @@ struct gpio_config_dw {
 	struct pci_dev_info  pci_dev;
 #endif /* CONFIG_PCI */
 	gpio_config_irq_t config_func;
+
+#ifdef CONFIG_GPIO_DW_SHARED_IRQ
+	char *shared_irq_dev_name;
+#endif /* CONFIG_GPIO_DW_SHARED_IRQ */
 };
 
 struct gpio_runtime_dw {
