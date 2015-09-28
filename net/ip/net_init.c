@@ -746,6 +746,10 @@ int net_init(void)
 
 	initialized = 1;
 
+#if UIP_STATISTICS == 1
+	memset(&uip_stat, 0, sizeof(uip_stat));
+#endif /* UIP_STATISTICS == 1 */
+
 	net_context_init();
 	net_buf_init();
 	init_tx_queue();
