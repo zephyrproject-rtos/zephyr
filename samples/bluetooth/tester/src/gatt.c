@@ -102,6 +102,21 @@ static struct bt_gatt_attr *gatt_db_lookup_id(uint16_t attr_id)
 	return &gatt_db[attr_id - 1];
 }
 
+static void supported_commands(uint8_t *data, uint16_t len)
+{
+	uint16_t cmds;
+	struct gatt_read_supported_commands_rp *rp = (void *) &cmds;
+
+	cmds = 1 << GATT_READ_SUPPORTED_COMMANDS;
+	cmds |= 1 << GATT_ADD_SERVICE;
+	cmds |= 1 << GATT_ADD_CHARACTERISTIC;
+	cmds |= 1 << GATT_SET_VALUE;
+	cmds |= 1 << GATT_START_SERVER;
+
+	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
+			CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
+}
+
 static struct bt_gatt_attr svc_pri = BT_GATT_PRIMARY_SERVICE(0x0000, NULL);
 static struct bt_gatt_attr svc_sec = BT_GATT_SECONDARY_SERVICE(0x0000, NULL);
 
@@ -317,6 +332,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
 	switch (opcode) {
+	case GATT_READ_SUPPORTED_COMMANDS:
+		supported_commands(data, len);
+		return;
 	case GATT_ADD_SERVICE:
 		add_service(data, len);
 		return;

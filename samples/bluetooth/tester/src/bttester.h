@@ -227,6 +227,11 @@ struct gap_device_disconnected_ev {
 
 /* GATT Service */
 /* commands */
+#define GATT_READ_SUPPORTED_COMMANDS	0x01
+struct gatt_read_supported_commands_rp {
+	uint8_t data[0];
+};
+
 #define GATT_SERVICE_PRIMARY		0x00
 #define GATT_SERVICE_SECONDARY		0x01
 
