@@ -239,7 +239,7 @@ SECTION_FUNC(TEXT, _ExcExit)
 	/* discard the NANO_ESF * parameter and CR2 */
 	addl	$8, %esp
 
-#if defined(CONFIG_SUPPORT_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
+#if defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO)
 
 	movl	_nanokernel + __tNANO_current_OFFSET, %ecx
 
@@ -251,8 +251,6 @@ SECTION_FUNC(TEXT, _ExcExit)
 
 	cli
 
-#if ( defined(CONFIG_FP_SHARING) ||  \
-      defined(CONFIG_GDB_INFO) )
 	/*
 	 * Determine whether exiting from a nested interrupt.
 	 */
@@ -271,9 +269,7 @@ SECTION_FUNC(TEXT, _ExcExit)
 	andl	$~EXC_ACTIVE, __tTCS_flags_OFFSET (%ecx)
 
 BRANCH_LABEL(nestedException)
-
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
-
 
 #ifdef CONFIG_GDB_INFO
 
@@ -289,9 +285,6 @@ BRANCH_LABEL(nestedException)
 	popl	%edi
 
 #endif /* CONFIG_GDB_INFO */
-
-#endif /* CONFIG_SUPPORT_FP_SHARING || CONFIG_GDB_INFO */
-
 
 	/* restore edx and ecx which are always saved on the stack */
 
