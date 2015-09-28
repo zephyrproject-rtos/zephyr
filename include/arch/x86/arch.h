@@ -454,4 +454,11 @@ extern void	_IntVecMarkFree(unsigned int vector);
 /* Segment selector definitions are shared */
 #include "segselect.h"
 
+/* reboot through Reset Control Register (I/O port 0xcf9) */
+
+#define SYS_X86_RST_CNT_REG 0xcf9
+#define SYS_X86_RST_CNT_SYS_RST 0x02
+#define SYS_X86_RST_CNT_CPU_RST 0x4
+#define SYS_X86_RST_CNT_FULL_RST 0x08
+
 #endif /* _ARCH_IFACE_H */
