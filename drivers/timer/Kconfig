@@ -130,4 +130,12 @@ config CORTEX_M_SYSTICK
 	This module implements a kernel device driver for the Cortex-M processor
 	SYSTICK timer and provides the standard "system clock driver" interfaces.
 
+config SYSTEM_CLOCK_DISABLE
+	bool "API to disable system clock"
+	default n
+	help
+	This option enables the sys_clock_disable() API in the kernel. It is
+	needed by some subsystems (which will automatically select it), but is
+	rarely needed by applications.
+
 endmenu
