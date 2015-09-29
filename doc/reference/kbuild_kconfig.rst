@@ -63,26 +63,6 @@ in the system unless B is set to true.
 The complete set of dependency rules defines the valid configuration
 combinations that the system can be set to.
 
-Experimental Symbols
---------------------
-
-The Kconfig file located at :file:`misc/` defines the
-**EXPERIMENTAL** symbols.
-This symbol controls which configuration symbols are
-considered experimental from the development standpoint.
-
-This specific symbol hides the options marked as experimental from the
-end user. Experimental options are prone to error and users must
-specifically enable the **EXPERIMENTAL** symbol to enable the options
-listed with the experimental option.
-
-The following convention applies: Always make new experimental
-symbols dependent on the **EXPERIMENTAL** symbol.
-
-.. code-block:: kconfig
-
-   config NEW_EXP_SYMBOLS depends on EXPERIMENTAL
-
 
 Default Configurations
 ======================

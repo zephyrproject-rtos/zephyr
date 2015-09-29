@@ -31,20 +31,6 @@
 #
 
 
-menu "General Setup"
-config  EXPERIMENTAL
-	bool
-	prompt "Experimental Options"
-	default n
-	help
-	This option enables all experimental options in the project.
-	If it is disabled, all options marked as EXPERIMENTAL will
-	be disabled.
-	If it is enabled, all options marked as EXPERIMENTAL will
-	be available for selection.
-
-endmenu
-
 menu "Cryptography"
 source "lib/crypto/tinycrypt/Kconfig"
 endmenu
@@ -122,9 +108,9 @@ endchoice
 
 
 config MINIMAL_LIBC_EXTENDED
-	bool "Build additional libc functions"
+	bool "Build additional libc functions [EXPERIMENTAL]"
 	default n
-	depends on MINIMAL_LIBC && EXPERIMENTAL
+	depends on MINIMAL_LIBC
 	help
 	This option enables building some optional libc functions that
         are not used directly by the kernel but can be used in applications.
@@ -225,13 +211,11 @@ config BOOTLOADER_UNKNOWN
 endmenu
 
 menu "System Monitoring Options"
-	depends on EXPERIMENTAL
 
 config  PERFORMANCE_METRICS
 	bool
-	prompt "Enable performance metrics"
+	prompt "Enable performance metrics [EXPERIMENTAL]"
 	default n
-	depends on EXPERIMENTAL
 	help
 	Enable Performance Metrics.
 
@@ -239,7 +223,7 @@ config  BOOT_TIME_MEASUREMENT
 	bool
 	prompt "Boot time measurements [EXPERIMENTAL]"
 	default n
-	depends on EXPERIMENTAL && PERFORMANCE_METRICS
+	depends on PERFORMANCE_METRICS
 	help
 	This option enables the recording of timestamps during system start
 	up. The global variable __start_tsc records the time kernel begins
