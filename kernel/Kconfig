@@ -127,6 +127,7 @@ config PROFILER_BUFFER_SIZE
 	help
 	Buffer size in 32-bit words.
 
+
 menu "Profiler points"
 depends on KERNEL_PROFILER
 
@@ -172,12 +173,10 @@ config CUSTOM_SECURITY
 
 config STACK_CANARIES
 	bool
-	prompt "Compiler stack canaries" if CUSTOM_SECURITY
+	prompt "Compiler stack canaries"
 	default n
 	help
-	This option enables compiler stack canaries support on most functions
-	in the kernel. (Kernel functions that reside in LKMs do NOT have
-	stack canary support, due to limitations of the LKM technology.)
+	This option enables compiler stack canaries support kernel functions.
 
 	If stack canaries are supported by the compiler, it will emit
 	extra code that inserts a canary value into the stack frame when
