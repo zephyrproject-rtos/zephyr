@@ -266,7 +266,7 @@ def mdef_parse():
 kernel_main_c_data = ""
 
 kernel_main_c_filename_str = \
-    "/* kernel_main.c - microkernel mainline and kernel objects */\n\n"
+    "/* kernel_main.c - microkernel objects */\n\n"
 
 
 def kernel_main_c_out(string):
@@ -755,18 +755,6 @@ def kernel_main_c_node_init():
     kernel_main_c_out("}\n")
 
 
-def kernel_main_c_main():
-    """ Generate main() routine """
-
-    kernel_main_c_out("\n" +
-        "void main(void)\n" +
-        "{\n" +
-        "    _k_kernel_init();\n" +
-        "    task_group_start(EXE);\n" +
-        "    _k_kernel_idle();\n" +
-        "}\n")
-
-
 def kernel_main_c_generate():
     """ Generate kernel_main.c file """
 
@@ -786,7 +774,6 @@ def kernel_main_c_generate():
     kernel_main_c_maps()
     kernel_main_c_pools()
     kernel_main_c_node_init()
-    kernel_main_c_main()
 
     write_file(output_dir + 'kernel_main.c', kernel_main_c_data)
 

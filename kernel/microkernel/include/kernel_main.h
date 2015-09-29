@@ -54,8 +54,6 @@ extern int _k_ticker(int event);
 extern void _k_pipe_init(void);
 extern void _k_mem_map_init(void);
 extern void _k_mem_pool_init(void);
-extern void _k_kernel_init(void);
-extern int _k_kernel_idle(void);
 
 /* Format of routines invoked by microkernel server */
 

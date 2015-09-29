@@ -69,7 +69,7 @@ const char * const build_timestamp = BUILD_TIMESTAMP;
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 uint64_t __noinit __start_tsc; /* timestamp when kernel starts */
-uint64_t __noinit __main_tsc;  /* timestamp when main() starts */
+uint64_t __noinit __main_tsc;  /* timestamp when main task starts */
 uint64_t __noinit __idle_tsc;  /* timestamp when CPU goes idle */
 #endif
 
@@ -98,13 +98,6 @@ char __noinit __stack main_task_stack[CONFIG_MAIN_STACK_SIZE];
 char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 #endif
 
-/*
- * entry point for background task in a nanokernel-only system,
- * or the idle task in a microkernel system
- */
-
-extern void main(void);
-
 /* constructor initialization */
 
 extern void _Ctors(void);
@@ -116,32 +109,31 @@ extern void _Ctors(void);
 	#define initialize_nano_timeouts() do { } while ((0))
 #endif
 
+#ifdef CONFIG_NANOKERNEL
 /**
  *
- * In the nanokernel only configuration we still want to run the
- * app_{early,late}_init levels to maintain the correct semantics. In
- * a microkernel configuration these init levels are run in the
- * microkernel initialization.
+ * @brief Mainline for nanokernel's background task
  *
+ * This routine completes kernel initialization by invoking the remaining
+ * init functions, then invokes application's main() routine.
+ *
+ * @return N/A
  */
 
-#ifdef CONFIG_NANOKERNEL
 static void _main(void)
 {
 	_sys_device_do_config_level(NANO_EARLY);
 	_sys_device_do_config_level(NANO_LATE);
 	_sys_device_do_config_level(APP_EARLY);
 	_sys_device_do_config_level(APP_EARLY);
+
+	extern void main(void);
 	main();
 }
 #else
-static void _main(void)
-{
-	_sys_device_do_config_level(NANO_EARLY);
-	_sys_device_do_config_level(NANO_LATE);
-	main();
-}
+/* microkernel has its own implementation of _main() */
 
+extern void _main(void);
 #endif
 
 /**
@@ -191,8 +183,8 @@ static void nano_init(struct tcs *dummyOutContext)
 #endif
 
 	/*
-	 * Initialize the thread control block (TCS) for the background task
-	 * (or idle task). The entry point for this thread is 'main'.
+	 * Initialize the thread control block (TCS) for the main task (either
+	 * background or idle task). The entry point for this thread is '_main'.
 	 */
 
 	_nanokernel.task = (struct tcs *) main_task_stack;
@@ -306,7 +298,7 @@ FUNC_NORETURN void _Cstart(void)
 
 	PRINT_BOOT_BANNER();
 
-	/* context switch into background thread (entry function is main()) */
+	/* context switch to main task (entry function is _main()) */
 
 	_nano_fiber_swap();
 

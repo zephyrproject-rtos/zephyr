@@ -30,8 +30,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <microkernel.h>
 #include <micro_private.h>
-#include "nanokernel.h"
 #include <nano_private.h>
 #include <string.h>
 #include <toolchain.h>
@@ -66,14 +66,27 @@ struct nano_stack _k_command_stack = {NULL,
 
 
 extern void _k_server(int unused1, int unused2);
+extern int _k_kernel_idle(void);
 
-void _k_kernel_init(void)
+/**
+ *
+ * @brief Mainline for microkernel's idle task
+ *
+ * This routine completes kernel initialization and starts any application
+ * tasks in the EXE task group. From then on it takes care of doing idle
+ * processing whenever there is no other work for the kernel to do.
+ *
+ * @return N/A
+ */
+
+void _main(void)
 {
+	_sys_device_do_config_level(NANO_EARLY);
+	_sys_device_do_config_level(NANO_LATE);
+
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/*
-	 * record timestamp for microkernel's main() function
-	 * (an approximation, as kernel_init() is the first thing done by
-	 * main())
+	 * record timestamp for microkernel's _main() function
 	 */
 	extern uint64_t __main_tsc;
 
@@ -104,4 +117,8 @@ void _k_kernel_init(void)
 #ifdef CONFIG_WORKLOAD_MONITOR
 	_k_workload_monitor_calibrate();
 #endif
+
+	task_group_start(EXE_GROUP);
+
+	_k_kernel_idle();
 }
