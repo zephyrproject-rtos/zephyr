@@ -51,6 +51,8 @@ source "drivers/pci/Kconfig"
 
 source "drivers/gpio/Kconfig"
 
+source "drivers/shared_irq/Kconfig"
+
 source "drivers/spi/Kconfig"
 
 source "drivers/i2c/Kconfig"

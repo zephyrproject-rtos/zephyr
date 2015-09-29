@@ -79,6 +79,16 @@ by x86 platforms.
 #endif /* CONFIG_GPIO_DW_1 */
 #endif /* CONFIG_GPIO_DW */
 
+#if defined(CONFIG_SHARED_IRQ)
+#if CONFIG_SHARED_IRQ_0
+	ioapic_mkstub shared_irq_0 shared_irq_isr_0
+#endif /* CONFIG_SHIRQ_0 */
+
+#if CONFIG_SHARED_IRQ_1
+	ioapic_mkstub shared_irq_1 shared_irq_isr_1
+#endif /* CONFIG_SHARED_IRQ_1 */
+#endif /* CONFIG_SHARED_IRQ */
+
 #if defined(CONFIG_SPI_INTEL)
 #if defined(CONFIG_SPI_INTEL_PORT_0)
 	ioapic_mkstub spi_intel_irq_port_0 spi_intel_isr_0
