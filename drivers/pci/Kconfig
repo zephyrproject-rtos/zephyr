@@ -2,7 +2,7 @@
 menu "PCI Settings"
 	depends on X86_32
 config PCI
-	bool
+	bool "Enable PCI"
 	default n
 	depends on X86_32
 	help
