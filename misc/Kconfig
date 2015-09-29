@@ -222,15 +222,6 @@ config BOOTLOADER_UNKNOWN
 	at build time which method is to be used. When this option is enabled
 	the platform may have to do extra work to ensure a proper startup.
 
-config PROT_MODE_SWITCH
-	bool
-	prompt "Switch to 32-bit protected mode when booting"
-	default n
-	depends on X86_32
-	help
-	This option causes the kernel to transition from real mode (16-bit)
-	to protected mode (32-bit) during its initial booting sequence.
-
 endmenu
 
 menu "System Monitoring Options"
