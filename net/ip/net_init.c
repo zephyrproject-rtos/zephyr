@@ -667,6 +667,7 @@ int net_set_mac(uint8_t *mac, uint8_t len)
 	}
 
 	linkaddr_set_node_addr((linkaddr_t *)mac);
+	NET_DBG("MAC "); PRINTLLADDR((uip_lladdr_t *)&linkaddr_node_addr); PRINTF("\n");
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 	{
