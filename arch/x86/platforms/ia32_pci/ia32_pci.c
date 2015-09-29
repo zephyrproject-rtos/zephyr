@@ -61,7 +61,7 @@ static int dw_i2c0_irq_set(struct device *unused)
 	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_I2C_DW_0_IRQ,
 			CONFIG_I2C_DW_0_IRQ + INT_VEC_IRQ0,
-			I2C_DW_0_IRQ_IOAPIC_FLAGS);
+			I2C_DW_IRQ_IOAPIC_FLAGS);
 	return 0;
 }
 

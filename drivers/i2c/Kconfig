@@ -47,6 +47,37 @@ config I2C_DW
 	help
 	Enable Design Ware I2C support on the selected platform
 
+choice
+	prompt "IRQ Trigger Condition"
+	default I2C_DW_IRQ_RISING_EDGE
+	depends on I2C_DW
+
+config I2C_DW_IRQ_FALLING_EDGE
+	bool "Falling Edge"
+	help
+	  This option signifies that the controller
+	  uses falling edge interrupt.
+
+config I2C_DW_IRQ_RISING_EDGE
+	bool "Rising Edge"
+	help
+	  This option signifies that the controller
+	  uses rising edge interrupt.
+
+config I2C_DW_IRQ_LEVEL_HIGH
+	bool "Level High"
+	help
+	  This option signifies that the controller
+	  uses level high interrupt.
+
+config I2C_DW_IRQ_LEVEL_LOW
+	bool "Level Low"
+	help
+	  This option signifies that the controller
+	  uses level low interrupt.
+
+endchoice
+
 config I2C_DW_VENDOR_ID
 	hex "PCI Vendor ID of the controllers"
 	depends on I2C_DW && PCI
@@ -88,33 +119,6 @@ config I2C_DW_0_INT_PRIORITY
         default 0
         help
         IRQ priority
-
-choice
-prompt "I2C0 IRQ Trigger Condition"
-default I2C_DW_0_IRQ_RISING_EDGE
-depends on I2C_DW_0
-
-config I2C_DW_0_IRQ_FALLING_EDGE
-	bool "Falling Edge"
-	help
-	  This option signifies that the I2C0 uses falling edge interrupt.
-
-config I2C_DW_0_IRQ_RISING_EDGE
-	bool "Rising Edge"
-	help
-	  This option signifies that the I2C0 uses rising edge interrupt.
-
-config I2C_DW_0_IRQ_LEVEL_HIGH
-	bool "Level High"
-	help
-	  This option signifies that the I2C0 uses level high interrupt.
-
-config I2C_DW_0_IRQ_LEVEL_LOW
-	bool "Level Low"
-	help
-	This option signifies that the I2C0 uses level low interrupt.
-
-endchoice
 
 config I2C_DW_0_DEFAULT_CFG
 	hex "I2C default configuration"
