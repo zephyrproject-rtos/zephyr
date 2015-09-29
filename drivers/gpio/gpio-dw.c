@@ -254,6 +254,17 @@ void gpio_dw_isr(struct device *port)
 	uint32_t enabled_int, int_status, bit;
 
 	int_status = dw_read(base_addr, INTSTATUS);
+
+#ifdef CONFIG_SHARED_IRQ
+	/* If using with shared IRQ, this function will be called
+	 * by the shared IRQ driver. So check here if the interrupt
+	 * is coming from the GPIO controller (or somewhere else).
+	 */
+	if (!int_status) {
+		return;
+	}
+#endif
+
 	dw_write(base_addr, PORTA_EOI, -1);
 
 	if (!context->callback) {
