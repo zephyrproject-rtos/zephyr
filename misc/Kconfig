@@ -86,14 +86,11 @@ config  COMPILER_OPT
 	default ""
 	help
 	This option is a free-form string that is passed to the compiler
-	when building all parts of a project (i.e. kernel, LKMs, and USAPs).
+	when building all parts of a project (i.e. kernel).
 	The compiler options specified by this string supplement the
 	pre-defined set of compiler supplied by the build system,
 	and can be used to change compiler optimization, warning and error
 	messages, and so on.
-
-	A given LKM or USAP can override this setting by means of the
-	OVERRIDE_COMPILER_OPT make variable in its Makefile.
 
 config TOOLCHAIN_VARIANT
 	string "Cross-compiler variant name"
