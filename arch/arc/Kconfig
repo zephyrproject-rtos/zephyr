@@ -126,14 +126,6 @@ config	FIRQ_STACK_SIZE
 	  FIRQs and regular IRQs have different stacks so that a FIRQ can start
 	  running without doing stack switching in software.
 
-config	STACK_CHECKING
-	bool
-	prompt "ARC CPU stack checking is enabled/disabled."
-	depends on ENHANCED_SECURITY
-	default y
-	help
-	  Enable or disable CPU stack checking.
-
 config	FAULT_DUMP
 	int
 	prompt "Fault dump level"
