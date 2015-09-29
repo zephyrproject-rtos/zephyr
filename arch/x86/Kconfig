@@ -39,7 +39,7 @@ config ARCH_DEFCONFIG
 
 source "kernel/Kconfig"
 
-menu "General Platform Configuration"
+menu "X86 Platform Configuration options"
 
 choice
 prompt "Platform Selection"
