@@ -223,7 +223,6 @@ config  FLOAT
 	bool
 	prompt "Floating point instructions"
 	default n
-	select FP_SHARING if ENHANCED_SECURITY
 	help
 	This option enables the use of x87 FPU and MMX instructions by
 	a task or fiber.
@@ -233,10 +232,9 @@ config  FLOAT
 
 config  FP_SHARING
 	bool
-	prompt "Floating point resource sharing" if !ENHANCED_SECURITY
+	prompt "Floating point resource sharing"
 	depends on FLOAT
 	default n
-	select AUTOMATIC_FP_ENABLING if ENHANCED_SECURITY
 	help
 	This option allows multiple tasks and fibers to safely utilize
 	floating point hardware resources. Every task or fiber that wishes
@@ -258,8 +256,7 @@ config  FP_SHARING
 
 config  AUTOMATIC_FP_ENABLING
 	bool
-	prompt "Automatically enable floating point resource sharing" \
-	       if !ENHANCED_SECURITY
+	prompt "Automatically enable floating point resource sharing"
 	depends on FP_SHARING
 	default n
 	help
