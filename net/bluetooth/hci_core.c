@@ -50,6 +50,7 @@
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap.h"
+#include "stack.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
 #undef BT_DBG
@@ -249,79 +250,6 @@ static void hci_acl(struct bt_buf *buf)
 	bt_conn_put(conn);
 }
 #endif /* CONFIG_BLUETOOTH_CONN */
-
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
-#include <offsets.h>
-#include <misc/printk.h>
-
-enum {
-	STACK_DIRECTION_UP,
-	STACK_DIRECTION_DOWN,
-};
-
-static void analyze_stack(const char *name, const char *stack, unsigned size,
-			  int stack_growth)
-{
-	unsigned i, stack_offset, pcnt, unused = 0;
-
-	/* The TCS is always placed on a 4-byte aligned boundary - if
-	 * the stack beginning doesn't match that there will be some
-	 * unused bytes in the beginning.
-	 */
-	stack_offset = __tTCS_SIZEOF + ((4 - ((unsigned)stack % 4)) % 4);
-
-	if (stack_growth == STACK_DIRECTION_DOWN) {
-		for (i = stack_offset; i < size; i++) {
-			if ((unsigned char)stack[i] == 0xaa) {
-				unused++;
-			} else {
-				break;
-			}
-		}
-	} else {
-		for (i = size - 1; i >= stack_offset; i--) {
-			if ((unsigned char)stack[i] == 0xaa) {
-				unused++;
-			} else {
-				break;
-			}
-		}
-	}
-
-	/* Calculate the real size reserved for the stack */
-	size -= stack_offset;
-	pcnt = ((size - unused) * 100) / size;
-
-	printk("%s (real size %u):\tunused %u\tusage %u / %u (%u %%)\n", name,
-	       size + stack_offset, unused, size - unused, size, pcnt);
-}
-
-static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
-{
-	int stack_growth;
-
-	printk("sizeof(tTCS) = %u\n", __tTCS_SIZEOF);
-
-	if (conn > *ref) {
-		printk("stack grows up\n");
-		stack_growth = STACK_DIRECTION_UP;
-	} else {
-		printk("stack grows down\n");
-		stack_growth = STACK_DIRECTION_DOWN;
-	}
-
-	analyze_stack("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack),
-		      stack_growth);
-	analyze_stack("rx prio stack", rx_prio_fiber_stack,
-		      sizeof(rx_prio_fiber_stack), stack_growth);
-	analyze_stack("cmd tx stack", cmd_tx_fiber_stack,
-		      sizeof(cmd_tx_fiber_stack), stack_growth);
-	analyze_stack("conn tx stack", conn->stack, sizeof(conn->stack),
-		      stack_growth);
-}
-#else
-#define analyze_stacks(...)
-#endif
 
 /* HCI event processing */
 
@@ -741,8 +669,13 @@ static void hci_disconn_complete(struct bt_buf *buf)
 		return;
 	}
 
-	/* Check stack usage (no-op if not enabled) */
-	analyze_stacks(conn, &conn);
+	/* Check stacks usage (no-ops if not enabled) */
+	stack_analyze("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack));
+	stack_analyze("cmd rx stack", rx_prio_fiber_stack,
+		      sizeof(rx_prio_fiber_stack));
+	stack_analyze("cmd tx stack", cmd_tx_fiber_stack,
+		      sizeof(cmd_tx_fiber_stack));
+	stack_analyze("conn tx stack", conn->stack, sizeof(conn->stack));
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	conn->handle = 0;
