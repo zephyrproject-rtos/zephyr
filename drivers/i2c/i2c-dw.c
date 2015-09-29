@@ -383,6 +383,112 @@ static int _i2c_dw_transfer(struct device *dev,
 	return DEV_OK;
 }
 
+#define POLLING_TIMEOUT		(sys_clock_ticks_per_sec / 10)
+static int i2c_dw_polling_write(struct device *dev,
+				uint8_t *write_buf, uint32_t write_len,
+				uint16_t slave_address)
+{
+	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
+	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
+	uint32_t value = 0;
+	uint32_t i;
+	uint32_t data;
+	uint32_t start_time;
+	int ret = DEV_OK;
+
+	if (!regs->ic_con.bits.master_mode) {
+		/* Only acting as master is supported */
+		return DEV_INVALID_OP;
+	}
+
+	/* Wait for bus idle */
+	start_time = nano_tick_get_32();
+	while (regs->ic_status.bits.activity) {
+		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+			return DEV_FAIL;
+		}
+	}
+
+	dw->rx_len = 0;
+	dw->rx_buffer = NULL;
+	dw->tx_len = write_len;
+	dw->tx_buffer = write_buf;
+	dw->rx_tx_len = dw->rx_len + dw->tx_len;
+
+	/* Disable the device controller to be able set TAR */
+	regs->ic_enable.bits.enable = 0;
+
+	ret = _i2c_dw_setup(dev);
+	if (ret) {
+		return ret;
+	}
+
+	/* Disable interrupts */
+	regs->ic_intr_mask.raw = 0;
+
+	/* Clear interrupts */
+	value = regs->ic_clr_intr;
+
+	/* Set address of target slave */
+	regs->ic_tar.bits.ic_tar = slave_address;
+
+	/* Enable controller */
+	regs->ic_enable.bits.enable = 1;
+
+	/* Transmit */
+	i = 0;
+	while (dw->tx_len > 0) {
+		/* We have something to transmit to a specific host */
+		data = dw->tx_buffer[i];
+
+		/* Is this the last byte to write */
+		if (dw->tx_len == 1) {
+			data |= IC_DATA_CMD_STOP;
+		}
+
+		/* Wait for space in TX FIFO */
+		start_time = nano_tick_get_32();
+		while (!regs->ic_status.bits.tfnf) {
+			if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+				ret = DEV_FAIL;
+				goto finish;
+			}
+		}
+
+		regs->ic_data_cmd.raw = data;
+
+		i += 1;
+		dw->tx_len -= 1;
+		dw->rx_tx_len -= 1;
+	}
+
+	/* Wait for transfer to complete */
+	start_time = nano_tick_get_32();
+	while (!regs->ic_raw_intr_stat.bits.stop_det) {
+		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+			ret = DEV_FAIL;
+			goto finish;
+		}
+	}
+	value = regs->ic_clr_stop_det;
+
+	/* Wait for bus idle */
+	start_time = nano_tick_get_32();
+	while (regs->ic_status.bits.activity) {
+		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+			ret = DEV_FAIL;
+			goto finish;
+		}
+	}
+
+finish:
+	/* Disable controller when done */
+	regs->ic_enable.bits.enable = 0;
+
+	return ret;
+}
 
 static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 {
@@ -534,6 +640,7 @@ static struct i2c_driver_api funcs = {
 	.read = i2c_dw_read,
 	.suspend = i2c_dw_suspend,
 	.resume = i2c_dw_resume,
+	.polling_write = i2c_dw_polling_write,
 };
 
 
