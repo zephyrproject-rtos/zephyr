@@ -246,7 +246,6 @@ unsigned char _sys_power_save_flag = 1;
 #include <drivers/system_timer.h>
 #endif
 
-extern void nano_cpu_idle(void);
 extern void nano_cpu_set_idle(int32_t ticks);
 
 #if defined(CONFIG_TICKLESS_IDLE)
@@ -361,8 +360,6 @@ static inline int32_t _get_next_timer_expiry(void)
  */
 static void _power_save(void)
 {
-	extern void nano_cpu_idle(void);
-
 	if (_sys_power_save_flag) {
 		for (;;) {
 			irq_lock();

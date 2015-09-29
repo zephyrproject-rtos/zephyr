@@ -419,9 +419,7 @@ extern void	task_float_disable(nano_thread_id_t thread_id);
 
 #include <stddef.h>	/* for size_t */
 
-#ifdef CONFIG_NANOKERNEL
 extern void	nano_cpu_idle(void);
-#endif
 
 /** Nanokernel provided routine to report any detected fatal error. */
 extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
