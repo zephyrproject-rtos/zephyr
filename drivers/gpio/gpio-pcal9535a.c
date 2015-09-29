@@ -187,11 +187,18 @@ static int _write_port_regs(struct device *dev, uint8_t reg,
 	struct device * const i2c_master = drv_data->i2c_master;
 	uint16_t i2c_addr = config->i2c_slave_addr;
 	uint8_t cmd[] = {reg, buf->byte[0], buf->byte[1]};
+	int ret;
 
 	DBG("PCAL9535A[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X\n",
 	    i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
 
-	return i2c_write(i2c_master, cmd, sizeof(cmd), i2c_addr);
+	ret = i2c_polling_write(i2c_master, cmd, sizeof(cmd), i2c_addr);
+	if (ret) {
+		DBG("PCAL9535A[0x%X]: error writing from register 0x%X (%d)\n",
+		    i2c_addr, reg, ret);
+	}
+
+	return ret;
 }
 
 /**
