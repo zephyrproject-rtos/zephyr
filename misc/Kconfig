@@ -188,8 +188,6 @@ config ASSERT_LEVEL
 endmenu
 
 
-menu "Boot Options"
-
 config BOOTLOADER_KEXEC
 	bool
 	prompt "Boot using Linux kexec() system call"
@@ -201,14 +199,14 @@ config BOOTLOADER_KEXEC
 
 config BOOTLOADER_UNKNOWN
 	bool
+	prompt "Generic boot loader support"
 	default n
+	depends on X86_32
 	help
-	This option signifies that the target has an unknown bootloader
+	This option signifies that the target has a generic bootloader
 	or that it supports multiple ways of booting and it isn't clear
 	at build time which method is to be used. When this option is enabled
 	the platform may have to do extra work to ensure a proper startup.
-
-endmenu
 
 menu "System Monitoring Options"
 
