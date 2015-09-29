@@ -242,6 +242,22 @@ config	NETWORKING_WITH_6LOWPAN
 	help
 	  Enable 6LoWPAN in uIP stack
 
+choice
+prompt "6LoWPAN compression method"
+depends on NETWORKING_WITH_6LOWPAN
+help
+	Select the compression method that is used in 6LoWPAN.
+default 6LOWPAN_COMPRESSION_IPV6
+config 6LOWPAN_COMPRESSION_IPV6
+	bool "No compression"
+	help
+	  Choose this if unsure.
+config 6LOWPAN_COMPRESSION_IPHC
+	bool "IP header compression"
+	help
+	  IP header compression
+endchoice
+
 config	TINYDTLS
 	bool
 	prompt "Enable tinyDTLS support."
