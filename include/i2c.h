@@ -78,6 +78,7 @@ struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_io_t read;
 	i2c_api_io_t write;
+	i2c_api_io_t polling_write;
 	i2c_api_suspend_t suspend;
 	i2c_api_resume_t resume;
 };
@@ -126,6 +127,35 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
 
 	api = (struct i2c_driver_api *)dev->driver_api;
 	return api->read(dev, buf, len, addr);
+}
+
+/**
+ * @brief Provide an interrupt free write as master
+ *
+ * This is for situation where transactions are guaranteed to finish
+ * before returning.
+ *
+ * Note that this is only for I2C device acting as master.
+ * Slave mode is currently not supported.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param buf Memory pool that data should be transferred from
+ * @param len Size of the memory pool available for reading from
+ * @param addr Address of the I2C device to perform transfer
+ *
+ * @return DEV_OK if successful, otherwise failed.
+ */
+static inline int i2c_polling_write(struct device *dev, uint8_t *buf,
+				    uint32_t len, uint16_t addr)
+{
+	struct i2c_driver_api *api;
+
+	api = (struct i2c_driver_api *)dev->driver_api;
+	if (api && api->polling_write) {
+		return api->polling_write(dev, buf, len, addr);
+	} else {
+		return DEV_INVALID_OP;
+	}
 }
 
 /**
