@@ -268,10 +268,9 @@ config  SSE
 
 config SSE_FP_MATH
 	bool
-	prompt "Compiler-generated SSEx instructions" if FP_SHARING
+	prompt "Compiler-generated SSEx instructions"
 	depends on SSE
-	default n if FP_SHARING
-	default y if !FP_SHARING
+	default n
 	help
 	This option allows the compiler to generate SSEx instructions for
 	performing floating point math. This can greatly improve performance
