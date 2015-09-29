@@ -147,11 +147,6 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 		buf[3] = ((off >> 8) & 0x0F);
 	}
 
-	if (i2c_configure(i2c_master,
-			  (I2C_MODE_MASTER | (I2C_SPEED_FAST << 1)))) {
-		return DEV_FAIL;
-	}
-
 	return i2c_write(i2c_master, buf, sizeof(buf), i2c_addr);
 }
 
@@ -226,12 +221,6 @@ int pwm_pca9685_init(struct device *dev)
 		return DEV_INVALID_CONF;
 	}
 	drv_data->i2c_master = i2c_master;
-
-	/* Initialize the chip */
-	if (i2c_configure(i2c_master,
-			  (I2C_MODE_MASTER | (I2C_SPEED_FAST << 1)))) {
-		return DEV_NOT_CONFIG;
-	}
 
 	/* MODE1 register */
 	buf[0] = REG_MODE1;
