@@ -86,7 +86,6 @@ config CPU_ATOM
 
 config CPU_MINUTEIA
 	bool "Minute IA"
-	select CPU_FLOAT_UNSUPPORTED
 	help
 	This option signifies the use of a CPU from the Minute IA family.
 endchoice
@@ -194,12 +193,6 @@ config CMOV
 	This option signifies the use of an Intel CPU that supports
 	the CMOV instruction.
 
-config CPU_FLOAT_UNSUPPORTED
-	def_bool n
-	help
-	This option signifies the use of an Intel CPU that lacks support
-	for floating point operations.
-
 config CACHE_LINE_SIZE
 	int "Cache line size"
 	default 64 if CPU_ATOM
@@ -210,7 +203,6 @@ config CACHE_LINE_SIZE
 endmenu
 
 menu "Floating Point Options"
-	depends on !CPU_FLOAT_UNSUPPORTED
 
 config  FLOAT
 	bool
