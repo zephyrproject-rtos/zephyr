@@ -121,6 +121,9 @@ static void net_tx_15_4_fiber(void)
 static void net_rx_15_4_fiber(void)
 {
 	struct net_mbuf *buf;
+#if NET_MAC_CONF_STATS
+	int byte_count;
+#endif
 
 	NET_DBG("Starting 15.4 RX fiber\n");
 
@@ -131,9 +134,16 @@ static void net_rx_15_4_fiber(void)
 		net_analyze_stack("802.15.4 RX", rx_fiber_stack,
 				  sizeof(rx_fiber_stack));
 
+#if NET_MAC_CONF_STATS
+		byte_count = uip_pkt_buflen(buf);
+#endif
 		if (!NETSTACK_RDC.input(buf)) {
 			NET_DBG("RDC input failed\n");
 			net_mbuf_put(buf);
+		} else {
+#if NET_MAC_CONF_STATS
+			net_mac_stats.bytes_received += byte_count;
+#endif
 		}
 	}
 }
