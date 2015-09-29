@@ -604,7 +604,7 @@ static int reassemble(struct net_mbuf *mbuf)
        * set offset, tag, size
        * Offset is in units of 8 bytes
        */
-      PRINTFI("reasseble: FRAGN ");
+      PRINTFI("reassemble: FRAGN ");
       frag_offset = uip_packetbuf_ptr(mbuf)[PACKETBUF_FRAG_OFFSET];
       frag_tag = GET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_TAG);
       frag_size = GET16(uip_packetbuf_ptr(mbuf), PACKETBUF_FRAG_DISPATCH_SIZE) & 0x07ff;
