@@ -234,15 +234,6 @@ config PROT_MODE_SWITCH
 	This option causes the kernel to transition from real mode (16-bit)
 	to protected mode (32-bit) during its initial booting sequence.
 
-config BOOT_A20_ENABLE
-	bool "Boot A20 enable"
-	depends on PROT_MODE_SWITCH
-	default n
-	help
-	This option causes the A20 line to be enabled during the transition
-	from real mode (16-bit) to protected mode (32-bit) during its initial
-	booting sequence.
-
 endmenu
 
 menu "System Monitoring Options"
