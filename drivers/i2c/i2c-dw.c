@@ -198,6 +198,16 @@ void i2c_dw_isr(struct device *port)
 
 	uint32_t value = 0;
 
+#if CONFIG_SHARED_IRQ
+	/* If using with shared IRQ, this function will be called
+	 * by the shared IRQ driver. So check here if the interrupt
+	 * is coming from the I2C controller (or somewhere else).
+	 */
+	if (!regs->ic_intr_stat.raw) {
+		return;
+	}
+#endif
+
 	/*
 	 * Causes of an intterrupt:
 	 *   - STOP condition is detected
