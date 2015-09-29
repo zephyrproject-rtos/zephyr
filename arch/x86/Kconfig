@@ -196,16 +196,9 @@ config CMOV
 
 config CPU_FLOAT_UNSUPPORTED
 	def_bool n
-	select CPU_SSE_UNSUPPORTED
 	help
 	This option signifies the use of an Intel CPU that lacks support
 	for floating point operations.
-
-config CPU_SSE_UNSUPPORTED
-	def_bool n
-	help
-	This option signifies the use of an Intel CPU that lacks support
-	for SSEx instructions (i.e. those which pre-date Pentium III).
 
 config CACHE_LINE_SIZE
 	int "Cache line size"
@@ -273,7 +266,7 @@ config  AUTOMATIC_FP_ENABLING
 config  SSE
 	bool
 	prompt "SSEx instructions"
-	depends on FLOAT && !CPU_SSE_UNSUPPORTED
+	depends on FLOAT
 	default n
 	help
 	This option enables the use of SSEx instructions by a task or fiber.
