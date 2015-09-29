@@ -116,16 +116,6 @@ config ADVANCED_IDLE_SUPPORTED
 	This option signifies that the target supports the ADVANCED_IDLE
 	configuration option.
 
-config BOI_HANDLER_SUPPORTED
-	bool "BOI Handler Supported"
-	default n
-	help
-	This option signifies that the target has one or more devices whose
-	driver utilizes a "beginning of interrupt" handler that gets called
-	before the standard interrupt handling code. This capability
-	can be used by the driver to suppress spurious interrupts generated
-	by the device (or for other purposes).
-
 config EOI_HANDLER_SUPPORTED
 	bool "EOI Handler Supported"
 	default n

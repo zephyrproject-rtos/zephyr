@@ -357,37 +357,6 @@ int irq_connect(
 
 	offsetAdjust = 5;
 
-#ifdef CONFIG_BOI_HANDLER_SUPPORTED
-
-	/* poke in the BOI related opcodes */
-
-	if (boiRtn == NULL)
-		/* no need to insert anything */;
-	else if (boiParamRequired != 0) {
-		STUB_PTR[offsetAdjust] = IA32_PUSH_OPCODE;
-		UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1 + offsetAdjust],
-				(unsigned int)boiRtnParm);
-
-		STUB_PTR[5 + offsetAdjust] = IA32_CALL_OPCODE;
-		UNALIGNED_WRITE(
-			(unsigned int *)&STUB_PTR[6 + offsetAdjust],
-			(unsigned int)boiRtn -
-				(unsigned int)&STUB_PTR[10 + offsetAdjust]);
-
-		offsetAdjust += 10;
-		++numParameters;
-	} else {
-		STUB_PTR[offsetAdjust] = IA32_CALL_OPCODE;
-		UNALIGNED_WRITE(
-			(unsigned int *)&STUB_PTR[1 + offsetAdjust],
-			(unsigned int)boiRtn -
-				(unsigned int)&STUB_PTR[5 + offsetAdjust]);
-
-		offsetAdjust += 5;
-	}
-
-#endif /* CONFIG_BOI_HANDLER_SUPPORTED */
-
 	/* IsrParameter and IsrRoutine always required */
 
 	STUB_PTR[offsetAdjust] = IA32_PUSH_OPCODE;
