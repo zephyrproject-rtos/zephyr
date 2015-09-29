@@ -63,6 +63,10 @@
  */
 extern int gpio_mmio_init(struct device *dev);
 
+/* internal use only for register access function */
+typedef uint32_t (*__gpio_mmio_access_t)(uint32_t addr, uint32_t bit,
+					 uint32_t value);
+
 /** Configuration data */
 struct gpio_mmio_config {
 	/* config flags */
@@ -81,6 +85,12 @@ struct gpio_mmio_config {
 		/* pin level register for output */
 		uint32_t output;
 	} reg;
+
+	struct {
+		__gpio_mmio_access_t set_bit;
+		__gpio_mmio_access_t read;
+		__gpio_mmio_access_t write;
+	} access;
 };
 
 #endif /* _GPIO_MMIO_H_ */

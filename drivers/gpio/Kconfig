@@ -306,6 +306,19 @@ config GPIO_MMIO_0_DEV_NAME
 	help
 	  Specify the device name.
 
+choice
+	prompt "MMIO-based GPIO Port #0 Access Method"
+	default GPIO_MMIO_0_ACCESS_MM
+	depends on GPIO_MMIO_0
+
+config GPIO_MMIO_0_ACCESS_MM
+	bool "Direct Memory Access"
+
+config GPIO_MMIO_0_ACCESS_IO
+	bool "I/O Port"
+
+endchoice
+
 config GPIO_MMIO_0_CFG
 	hex "MMIO-based GPIO Port #0 Configuration"
 	depends on GPIO_MMIO_0
@@ -356,6 +369,19 @@ config GPIO_MMIO_1_DEV_NAME
 	default "GPIO_M1"
 	help
 	  Specify the device name.
+
+choice
+	prompt "MMIO-based GPIO Port #1 Access Method"
+	default GPIO_MMIO_1_ACCESS_MM
+	depends on GPIO_MMIO_1
+
+config GPIO_MMIO_1_ACCESS_MM
+	bool "Direct Memory Access"
+
+config GPIO_MMIO_1_ACCESS_IO
+	bool "I/O Port"
+
+endchoice
 
 config GPIO_MMIO_1_CFG
 	hex "MMIO-based GPIO Port #1 Configuration"

@@ -38,15 +38,73 @@
 
 #include "gpio-mmio.h"
 
+#if defined(CONFIG_GPIO_MMIO_0_ACCESS_MM) \
+    || defined(CONFIG_GPIO_MMIO_1_ACCESS_MM)
 
-static void _set_bit(uint32_t addr, uint32_t bit, uint8_t value)
+static uint32_t _mm_set_bit(uint32_t addr, uint32_t bit, uint32_t value)
 {
 	if (!value) {
 		sys_clear_bit(addr, bit);
 	} else {
 		sys_set_bit(addr, bit);
 	}
+
+	return 0;
 }
+
+static uint32_t _mm_read(uint32_t addr, uint32_t bit, uint32_t value)
+{
+	ARG_UNUSED(bit);
+	ARG_UNUSED(value);
+
+	return sys_read32(addr);
+}
+
+static uint32_t _mm_write(uint32_t addr, uint32_t bit, uint32_t value)
+{
+	ARG_UNUSED(bit);
+
+	sys_write32(value, addr);
+
+	return 0;
+}
+
+#endif /* if direct memory access is needed */
+
+#if defined(CONFIG_GPIO_MMIO_0_ACCESS_IO) \
+    || defined(CONFIG_GPIO_MMIO_1_ACCESS_IO)
+
+static uint32_t _io_set_bit(uint32_t addr, uint32_t bit, uint32_t value)
+{
+	uint32_t bit_mask = (1 << bit);
+	uint32_t tmp;
+
+	tmp = sys_in32(addr);
+	tmp &= ~bit_mask;
+	tmp |= (value << bit) & bit_mask;
+	sys_out32(tmp, addr);
+
+	return 0;
+}
+
+static uint32_t _io_read(uint32_t addr, uint32_t bit, uint32_t value)
+{
+	ARG_UNUSED(bit);
+	ARG_UNUSED(value);
+
+	return sys_in32(addr);
+}
+
+static uint32_t _io_write(uint32_t addr, uint32_t bit, uint32_t value)
+{
+	ARG_UNUSED(bit);
+
+	sys_out32(value, addr);
+
+	return 0;
+}
+
+#endif /* if io port access is needed */
 
 /**
  * @brief Configurate pin or port
@@ -93,10 +151,10 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 
 	switch (access_op) {
 		case GPIO_ACCESS_BY_PIN:
-			_set_bit(cfg->reg.dir, pin, value);
+			cfg->access.set_bit(cfg->reg.dir, pin, value);
 			break;
 		case GPIO_ACCESS_BY_PORT:
-			sys_write32(value, cfg->reg.dir);
+			cfg->access.write(cfg->reg.dir, 0, value);
 			break;
 		default:
 			return DEV_INVALID_OP;
@@ -124,10 +182,10 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 
 	switch (access_op) {
 		case GPIO_ACCESS_BY_PIN:
-			_set_bit(cfg->reg.en, pin, value);
+			cfg->access.set_bit(cfg->reg.en, pin, value);
 			break;
 		case GPIO_ACCESS_BY_PORT:
-			sys_write32(value, cfg->reg.en);
+			cfg->access.write(cfg->reg.en, 0, value);
 			break;
 		default:
 			return DEV_INVALID_OP;
@@ -158,10 +216,10 @@ static int gpio_mmio_write(struct device *dev, int access_op,
 
 	switch (access_op) {
 		case GPIO_ACCESS_BY_PIN:
-			_set_bit(cfg->reg.output, pin, value);
+			cfg->access.set_bit(cfg->reg.output, pin, value);
 			break;
 		case GPIO_ACCESS_BY_PORT:
-			sys_write32(value, cfg->reg.output);
+			cfg->access.write(cfg->reg.output, 0, value);
 			break;
 		default:
 			return DEV_INVALID_OP;
@@ -192,11 +250,11 @@ static int gpio_mmio_read(struct device *dev, int access_op,
 
 	switch (access_op) {
 		case GPIO_ACCESS_BY_PIN:
-			*value = sys_read32(cfg->reg.input);
+			*value = cfg->access.read(cfg->reg.input, 0, 0);
 			*value &= (1 << pin) >> pin;
 			break;
 		case GPIO_ACCESS_BY_PORT:
-			*value = sys_read32(cfg->reg.input);
+			*value = cfg->access.read(cfg->reg.input, 0, 0);
 			break;
 		default:
 			return DEV_INVALID_OP;
@@ -284,6 +342,16 @@ static struct gpio_mmio_config gpio_mmio_0_cfg = {
 	.reg.dir = CONFIG_GPIO_MMIO_0_DIR,
 	.reg.input = CONFIG_GPIO_MMIO_0_INPUT,
 	.reg.output = CONFIG_GPIO_MMIO_0_OUTPUT,
+
+#ifdef CONFIG_GPIO_MMIO_0_ACCESS_IO
+	.access.set_bit = _io_set_bit,
+	.access.read = _io_read,
+	.access.write = _io_write,
+#else /* below is for CONFIG_GPIO_MMIO_0_ACCESS_MM=y or else */
+	.access.set_bit = _mm_set_bit,
+	.access.read = _mm_read,
+	.access.write = _mm_write,
+#endif
 };
 
 DECLARE_DEVICE_INIT_CONFIG(gpio_mmio_0,
@@ -306,6 +374,16 @@ static struct gpio_mmio_config gpio_mmio_1_cfg = {
 	.reg.dir = CONFIG_GPIO_MMIO_1_DIR,
 	.reg.input = CONFIG_GPIO_MMIO_1_INPUT,
 	.reg.output = CONFIG_GPIO_MMIO_1_OUTPUT,
+
+#ifdef CONFIG_GPIO_MMIO_1_ACCESS_IO
+	.access.set_bit = _io_set_bit,
+	.access.read = _io_read,
+	.access.write = _io_write,
+#else /* below is for CONFIG_GPIO_MMIO_1_ACCESS_MM=y or else */
+	.access.set_bit = _mm_set_bit,
+	.access.read = _mm_read,
+	.access.write = _mm_write,
+#endif
 };
 
 DECLARE_DEVICE_INIT_CONFIG(gpio_mmio_1,
