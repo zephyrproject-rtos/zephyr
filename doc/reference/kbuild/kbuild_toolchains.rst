@@ -68,7 +68,7 @@ installation specifics.
 XTools Configuration
 ====================
 
-To set up a previously installed XTools toolchain in the build system,
+To set up a previously-installed XTools toolchain in the build system,
 you need to configure the XTools installation path and the GCC
 variant in the shell environment:
 
