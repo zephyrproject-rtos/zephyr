@@ -156,6 +156,7 @@ config GPIO_PCAL9535A
 	bool "PCAL9535A I2C-based GPIO chip"
 	depends on GPIO && I2C
 	default n
+	select NANO_TIMERS
 	help
 	  Enable driver for PCAL9535A I2C-based GPIO chip.
 
