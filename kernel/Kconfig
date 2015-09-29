@@ -92,7 +92,6 @@ config  XIP
 config ENHANCED_SECURITY
 	bool
 	prompt "Enhanced security features"
-	default y if ARCH="x86"
 	default n
 	help
 	This option enables all security features supported by the kernel,
