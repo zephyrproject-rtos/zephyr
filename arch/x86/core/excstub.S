@@ -304,11 +304,8 @@ BRANCH_LABEL(nestedException)
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	iret
 
-/* Static exception handler stubs */
-
-
-
-#ifdef CONFIG_AUTOMATIC_FP_ENABLING
+	/* Static exception handler stubs */
+#if CONFIG_FP_SHARING
 SYS_NANO_CPU_EXC_CONNECT(_FpNotAvailableExcHandler,IV_DEVICE_NOT_AVAILABLE)
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
+#endif /* CONFIG_FP_SHARING */
 

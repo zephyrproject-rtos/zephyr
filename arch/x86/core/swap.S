@@ -180,7 +180,6 @@ BRANCH_LABEL(swapTask)
 BRANCH_LABEL(restoreContext)
 
 #ifdef CONFIG_FP_SHARING
-#ifdef CONFIG_AUTOMATIC_FP_ENABLING
 	/*
 	 * Clear the CR0[TS] bit (in the event the current thread
 	 * doesn't have floating point enabled) to prevent the "device not
@@ -196,7 +195,6 @@ BRANCH_LABEL(restoreContext)
 	 */
 
 	clts
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 
 
 	/*
@@ -316,7 +314,6 @@ BRANCH_LABEL(restoreContext_NoFloatRestore)
 
 BRANCH_LABEL(restoreContext_NoFloatSwap)
 
-#ifdef CONFIG_AUTOMATIC_FP_ENABLING
 	/*
 	 * Leave CR0[TS] clear if incoming thread utilizes "floating point"
 	 * instructions
@@ -338,7 +335,6 @@ BRANCH_LABEL(restoreContext_NoFloatSwap)
 
 BRANCH_LABEL(CROHandlingDone)
 
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 #endif /* CONFIG_FP_SHARING */
 
 

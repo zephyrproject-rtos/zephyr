@@ -239,22 +239,6 @@ config  FP_SHARING
 	utilize x87 FPU, MMX, or SSEx instructions. (The stack size
 	requirement of all tasks and fibers remains unchanged.)
 
-config  AUTOMATIC_FP_ENABLING
-	bool
-	prompt "Automatically enable floating point resource sharing"
-	depends on FP_SHARING
-	default n
-	help
-	This option allows tasks and fibers to safely utilize floating
-	point hardware resources without requiring them to first indicate
-	their intention to do so. The system automatically detects when
-	a task or fiber that does not currently have floating point support
-	enabled uses a floating point instruction, and automatically executes
-	task_float_enable() or fiber_float_enable() on its behalf. The
-	task or fiber is enabled for using x87 FPU, MMX, or SSEx instructions
-	if SSE is configured, otherwise it is enabled for using x87 FPU or
-	MMX instructions only.
-
 config  SSE
 	bool
 	prompt "SSEx instructions"

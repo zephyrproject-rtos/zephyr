@@ -69,9 +69,6 @@ x87 FPU registers are being saved/restored.
 #error Rebuild the nanokernel with the FP_SHARING config option enabled
 #endif
 
-#ifndef CONFIG_AUTOMATIC_FP_ENABLING
-#error Rebuild the nanokernel with AUTOMATIC_FP_ENABLING config option enabled
-#endif
 #endif /* CONFIG_ISA_IA32 */
 
 
@@ -160,16 +157,16 @@ void load_store_low(void)
 	PRINT_DATA("Floating point sharing tests started\n");
 	PRINT_LINE;
 
-#if defined(CONFIG_AUTOMATIC_FP_ENABLING)
+#if defined(CONFIG_FP_SHARING)
 	/*
 	 * No need to invoke task_float_enable() since
-	 * AUTOMATIC_FP_ENABLING is in effect
+	 * FP_SHARING is in effect
 	 */
-#else /* ! CONFIG_AUTOMATIC_FP_ENABLING */
+#else /* ! CONFIG_FP_SHARING */
 #if defined(CONFIG_FLOAT)
 	task_float_enable(sys_thread_self_get());
 #endif
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
+#endif /* CONFIG_FP_SHARING */
 
 #ifdef CONFIG_NANOKERNEL
 	/*
@@ -286,7 +283,7 @@ void load_store_low(void)
 			return;
 		}
 
-#if defined(CONFIG_AUTOMATIC_FP_ENABLING)
+#if defined(CONFIG_FP_SHARING)
 		/*
 		 * After every 1000 iterations (arbitrarily chosen), explicitly
 		 * disable floating point operations for the task. The subsequent
@@ -295,14 +292,14 @@ void load_store_low(void)
 		 *
 		 * The purpose of this part of the test is to exercise the
 		 * task_float_disable() API, and to also continue exercising the
-		 * AUTOMATIC_FP_ENABLING (exception based) mechanism.
+		 * (exception based) floating enabling mechanism.
 		 */
 		if ((load_store_low_count % 1000) == 0) {
 #if defined(CONFIG_FLOAT)
 			task_float_disable(sys_thread_self_get());
 #endif
 		}
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
+#endif /* CONFIG_FP_SHARING */
 	}
 }
 

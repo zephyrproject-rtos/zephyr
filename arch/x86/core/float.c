@@ -57,13 +57,6 @@ The 'options' parameter is used to specify what non-integer capabilities are
 being used.  The same options accepted by fiber_fiber_start() are used in the
 aforementioned APIs, namely USE_FP and USE_SSE.
 
-If the nanokernel has been built with support for automatic enabling
-of floating point resource sharing (CONFIG_AUTOMATIC_FP_ENABLING) the
-system automatically enables sharing for any non-enabled task or fiber as soon
-as it begins using floating point instructions.  (Note: The task or fiber must
-have enough room available on its stack to allow floating point state info
-to be saved, otherwise stack corruption will occur.)
-
 If the nanokernel has been built without SSE instruction support
 (CONFIG_SSE), the system treats USE_SSE as if it was USE_FP.
 
@@ -197,14 +190,12 @@ void _FpEnable(struct tcs *tcs,
 
 	tcs->flags |= options | USE_FP; /* USE_FP is treated as a "dirty bit" */
 
-#ifdef CONFIG_AUTOMATIC_FP_ENABLING
 	/*
 	 * Current task/fiber might not allow FP instructions, so clear CR0[TS]
 	 * so we can use them. (CR0[TS] gets restored later on, if necessary.)
 	 */
 
 	__asm__ volatile("clts\n\t");
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 
 	/*
 	 * Save the existing non-integer context (since it is about to change),
@@ -253,9 +244,7 @@ void _FpEnable(struct tcs *tcs,
 			 */
 
 			_nanokernel.current_fp = tcs;
-#ifdef CONFIG_AUTOMATIC_FP_ENABLING
 			_FpAccessDisable();
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 		} else {
 			/*
 			 * We are FP-capable (and thus had FPU ownership on
@@ -362,10 +351,7 @@ void _FpDisable(struct tcs *tcs)
 	tcs->flags &= ~(USE_FP | USE_SSE);
 
 	if (tcs == _nanokernel.current) {
-#ifdef CONFIG_AUTOMATIC_FP_ENABLING
 		_FpAccessDisable();
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
-
 		_nanokernel.current_fp = (struct tcs *)0;
 	} else {
 		if (_nanokernel.current_fp == tcs)
@@ -410,15 +396,13 @@ FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
 
 FUNC_ALIAS(_FpDisable, task_float_disable, void);
 
-#ifdef CONFIG_AUTOMATIC_FP_ENABLING
 
 /**
  *
  * @brief Handler for "device not available" exception
  *
  * This routine is registered to handle the "device not available" exception
- * (vector = 7) when the AUTOMATIC_FP_ENABLING configuration option has been
- * been selected.
+ * (vector = 7)
  *
  * The processor will generate this exception if any x87 FPU, MMX, or SSEx
  * instruction is executed while CR0[TS]=1.  The handler then enables the
@@ -454,7 +438,5 @@ void _FpNotAvailableExcHandler(NANO_ESF * pEsf /* not used */
 
 	_FpEnable(_nanokernel.current, enableOption);
 }
-
-#endif /* CONFIG_AUTOMATIC_FP_ENABLING */
 
 #endif /* CONFIG_FP_SHARING */

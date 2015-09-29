@@ -42,8 +42,6 @@
 
 #if defined(CONFIG_ISA_IA32)
 
-/* No need to specify USE_SSE since AUTOMATIC_FP_ENABLING is in effect. */
-
 #define FP_OPTION 0
 
 /*
