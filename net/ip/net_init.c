@@ -541,9 +541,9 @@ static void net_tx_fiber(void)
 		ret = check_and_send_packet(buf);
 		if (ret < 0) {
 			net_buf_put(buf);
-			continue;
+			goto wait_next;
 		} else if (ret > 0) {
-			continue;
+			goto wait_next;
 		}
 
 		NET_BUF_CHECK_IF_NOT_IN_USE(buf);
@@ -553,11 +553,12 @@ static void net_tx_fiber(void)
 			ret = process_run(buf);
 		} while (ret > 0);
 
+		net_buf_put(buf);
+
+	wait_next:
 		/* Check stack usage (no-op if not enabled) */
 		net_analyze_stack("TX fiber", tx_fiber_stack,
 				  sizeof(tx_fiber_stack));
-
-		net_buf_put(buf);
 
 		net_print_statistics();
 	}
