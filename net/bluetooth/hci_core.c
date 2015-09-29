@@ -312,7 +312,7 @@ static void analyze_stacks(struct bt_conn *conn, struct bt_conn **ref)
 
 	analyze_stack("rx stack", rx_fiber_stack, sizeof(rx_fiber_stack),
 		      stack_growth);
-	analyze_stack("cmd rx stack", rx_prio_fiber_stack,
+	analyze_stack("rx prio stack", rx_prio_fiber_stack,
 		      sizeof(rx_prio_fiber_stack), stack_growth);
 	analyze_stack("cmd tx stack", cmd_tx_fiber_stack,
 		      sizeof(cmd_tx_fiber_stack), stack_growth);
