@@ -56,6 +56,7 @@
 #include "conn_internal.h"
 #include "l2cap.h"
 #include "smp.h"
+#include "stack.h"
 
 #define SMP_TIMEOUT (30 * sys_clock_ticks_per_sec)
 
@@ -468,6 +469,8 @@ static void smp_stop_timer(struct bt_smp *smp)
 
 	fiber_fiber_delayed_start_cancel(smp->timeout);
 	smp->timeout = NULL;
+
+	stack_analyze("smp timeout stack", smp->stack, sizeof(smp->stack));
 }
 
 struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
