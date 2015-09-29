@@ -147,7 +147,7 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 		buf[3] = ((off >> 8) & 0x0F);
 	}
 
-	return i2c_write(i2c_master, buf, sizeof(buf), i2c_addr);
+	return i2c_polling_write(i2c_master, buf, sizeof(buf), i2c_addr);
 }
 
 static int pwm_pca9685_set_duty_cycle(struct device *dev, int access_op,
@@ -225,7 +225,7 @@ int pwm_pca9685_init(struct device *dev)
 	/* MODE1 register */
 	buf[0] = REG_MODE1;
 	buf[1] = (1 << 5); /* register addr auto increment */
-	ret = i2c_write(i2c_master, buf, 2, config->i2c_slave_addr);
+	ret = i2c_polling_write(i2c_master, buf, 2, config->i2c_slave_addr);
 	if (!ret) {
 		return DEV_NOT_CONFIG;
 	}
