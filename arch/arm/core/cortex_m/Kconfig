@@ -75,15 +75,6 @@ config STACK_ALIGN_DOUBLE_WORD
 	This is needed to conform to AAPCS, the procedure call standard for
 	the ARM. It wastes stack space.
 
-
-config STACK_GROWS_DOWN
-	bool
-	prompt "Stacks grow down"
-	default y
-	help
-	Stacks can grow either up or down. Down is the default. Don't change
-	this unless you have a very good reason to do so.
-
 config NUM_IRQ_PRIO_BITS
 	int
 	#hidden option, implemented by platform

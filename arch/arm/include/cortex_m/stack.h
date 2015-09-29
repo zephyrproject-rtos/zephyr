@@ -41,12 +41,6 @@ Stack helper functions.
 #include <nano_private.h>
 #include <asm_inline.h>
 
-#ifdef CONFIG_STACK_GROWS_DOWN
-#define STACK_DIR STACK_GROWS_DOWN
-#else
-#define STACK_DIR STACK_GROWS_UP
-#endif
-
 #ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
 #define STACK_ALIGN_SIZE 8
 #else
@@ -59,12 +53,8 @@ Stack helper functions.
 
 #else
 
-#if (STACK_DIR == STACK_GROWS_DOWN)
 #define __GET_MSP() \
 	STACK_ROUND_DOWN(&_interrupt_stack[CONFIG_ISR_STACK_SIZE - 1])
-#else
-#define __GET_MSP() STACK_ROUND_UP(&_interrupt_stack[0])
-#endif
 
 extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 

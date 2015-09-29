@@ -114,9 +114,6 @@ typedef struct preempt tPreempt;
 
 /* stacks */
 
-#define STACK_GROWS_DOWN 0
-#define STACK_GROWS_UP 1
-
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
