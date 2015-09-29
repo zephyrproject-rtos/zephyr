@@ -585,10 +585,6 @@ int i2c_dw_initialize(struct device *port)
 
 	port->driver_api = &funcs;
 
-	dev->app_config.raw = 0;
-
-	rom->config_func(port);
-
 	/*
 	 * grab the default value on initialization.  This should be set to the
 	 * IC_MAX_SPEED_MODE in the hardware.  If it does support high speed we
@@ -602,6 +598,14 @@ int i2c_dw_initialize(struct device *port)
 		dev->support_hs_mode = false;
 	}
 
+	rom->config_func(port);
+
+	if (i2c_dw_runtime_configure(port, dev->app_config.raw) != DEV_OK) {
+		DBG("I2C: Cannot set default configuration 0x%x\n",
+		    dev->app_config.raw);
+		return DEV_NOT_CONFIG;
+	}
+
 	dev->state = I2C_DW_STATE_READY;
 
 	irq_enable(rom->interrupt_vector);
@@ -612,7 +616,7 @@ int i2c_dw_initialize(struct device *port)
 /* system bindings */
 #if CONFIG_I2C_DW_0
 #include <init.h>
-void i2c_config_0_irq(struct device *port);
+void i2c_config_0(struct device *port);
 
 struct i2c_dw_rom_config i2c_config_dw_0 = {
 	.base_address = CONFIG_I2C_DW_0_BASE,
@@ -626,10 +630,12 @@ struct i2c_dw_rom_config i2c_config_dw_0 = {
 	.pci_dev.function = CONFIG_I2C_DW_0_FUNCTION,
 	.pci_dev.bar = CONFIG_I2C_DW_0_BAR,
 #endif
-	.config_func = i2c_config_0_irq
+	.config_func = i2c_config_0,
 };
 
-struct i2c_dw_dev_config i2c_0_runtime;
+struct i2c_dw_dev_config i2c_0_runtime = {
+	.app_config.raw = CONFIG_I2C_DW_0_DEFAULT_CFG,
+};
 
 DECLARE_DEVICE_INIT_CONFIG(i2c_0,
 			   CONFIG_I2C_DW_0_NAME,
@@ -644,9 +650,10 @@ IRQ_CONNECT_STATIC(i2c_dw_0,
 		   i2c_dw_isr_0,
 		   0);
 
-void i2c_config_0_irq(struct device *port)
+void i2c_config_0(struct device *port)
 {
-	struct i2c_dw_rom_config *config = port->config->config_info;
+	struct i2c_dw_rom_config * const config = port->config->config_info;
+
 	IRQ_CONFIG(i2c_dw_0, config->interrupt_vector);
 }
 

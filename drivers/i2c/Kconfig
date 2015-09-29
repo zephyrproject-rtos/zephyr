@@ -116,6 +116,17 @@ config I2C_DW_0_IRQ_LEVEL_LOW
 
 endchoice
 
+config I2C_DW_0_DEFAULT_CFG
+	hex "I2C default configuration"
+        depends on I2C_DW_0
+        default 0x0
+        help
+        Allows the I2C port to be brought up with a default configuration.
+        This is useful to set if other drivers depend upon using the I2C bus
+        before the application has a chance to custom configure the port.
+        Setting this value does not prohibit the application from customizing
+        the values later.  Refer to the I2C datasheet for proper values.
+
 config I2C_DW_0_BUS
 	int "PCI Bus number"
 	depends on I2C_DW_0 && PCI
