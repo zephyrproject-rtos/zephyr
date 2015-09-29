@@ -89,18 +89,6 @@ config  XIP
 	  supply a linker command file when building your image. Enabling this
 	  option increases both the code and data footprint of the image.
 
-config ENHANCED_SECURITY
-	bool
-	prompt "Enhanced security features"
-	default n
-	help
-	This option enables all security features supported by the kernel,
-	including those that can have a significant impact on system
-	footprint or performance; it also prevents the use of certain kernel
-	features that have known security risks.
-
-	Users can customize these settings using the CUSTOM_SECURITY option
-	in the "Security Options" menu.
 
 config RING_BUFFER
 	bool
