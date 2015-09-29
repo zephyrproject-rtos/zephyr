@@ -173,7 +173,6 @@ config PROFILER_SLEEP
 endmenu
 
 menu "Security Options"
-	depends on ENHANCED_SECURITY
 
 config CUSTOM_SECURITY
 	bool
