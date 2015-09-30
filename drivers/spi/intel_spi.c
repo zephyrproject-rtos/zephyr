@@ -450,7 +450,7 @@ pre_kernel_late_init(spi_intel_port_1, &spi_intel_data_port_1);
 
 void spi_intel_isr_1(void *unused)
 {
-	spi_intel_isr(&__initconfig_spi_intel_port_11);
+	spi_intel_isr(&__initconfig_spi_intel_port_12);
 }
 
 IRQ_CONNECT_STATIC(spi_intel_irq_port_1, CONFIG_SPI_INTEL_PORT_1_IRQ,
