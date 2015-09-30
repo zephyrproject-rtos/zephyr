@@ -496,10 +496,13 @@ int irq_connect(
 
 int _IntVecAlloc(unsigned int priority)
 {
-	unsigned int imask;
+	unsigned int key;
 	unsigned int entryToScan;
 	unsigned int fsb; /* first set bit in entry */
+	unsigned int search_set;
 	int vector;
+
+	static unsigned int mask[2] = {0x0000ffff, 0xffff0000};
 
 #if defined(DEBUG)
 	/*
@@ -520,64 +523,38 @@ int _IntVecAlloc(unsigned int priority)
 	entryToScan = priority >> 1; /* interrupt_vectors_allocated[] entry to scan */
 
 	/*
-	 * The interrupt_vectors_allocated[] entry specified by 'entryToScan' is a 32-bit
-	 * quantity and thus represents the vectors for a pair of priority
-	 *levels.
-	 * Use find_msb_set() to scan for the upper of the 2, and find_lsb_set() to
-	 *scan
-	 * for the lower of the 2 priorities.
+	 * The interrupt_vectors_allocated[] entry specified by 'entryToScan' is a
+	 * 32-bit quantity and thus represents the vectors for a pair of priority
+	 * levels. Mask out the unwanted priority level and then use find_lsb_set()
+	 * to scan for an available vector of the requested priority.
 	 *
-	 * Note that find_lsb_set/find_msb_set returns bit position from 1 to 32,
+	 * Note that find_lsb_set() returns bit position from 1 to 32,
 	 * or 0 if the argument is zero.
 	 */
 
-	imask = irq_lock();
+	key = irq_lock();
 
-	if ((priority % 2) == 0) {
-		/* scan from the LSB for even priorities */
-
-		fsb = find_lsb_set(interrupt_vectors_allocated[entryToScan]);
+	search_set = mask[priority & 1] & interrupt_vectors_allocated[entryToScan];
+	fsb = find_lsb_set(search_set);
 
 #if defined(DEBUG)
-		if ((fsb == 0) || (fsb > 16)) {
-			/*
-			 * No bits are set in the lower 16 bits, thus all
-			 * vectors for this
-			 * priority have been allocated.
-			 */
+	if (fsb == 0) {
+		/* All vectors for this priority have been allocated. */
 
-			irq_unlock(imask);
-			return (-1);
-		}
-#endif /* DEBUG */
-	} else {
-		/* scan from the MSB for odd priorities */
-
-		fsb = find_msb_set(interrupt_vectors_allocated[entryToScan]);
-
-#if defined(DEBUG)
-		if ((fsb == 0) || (fsb < 17)) {
-			/*
-			 * No bits are set in the lower 16 bits, thus all
-			 * vectors for this
-			 * priority have been allocated.
-			 */
-
-			irq_unlock(imask);
-			return (-1);
-		}
-#endif /* DEBUG */
+		irq_unlock(key);
+		return (-1);
 	}
+#endif /* DEBUG */
 
-	/* ffsLsb/ffsMsb returns bit positions as 1 to 32 */
+	/*
+	 * An available vector of the requested priority was found.
+	 * Mark it as allocated.
+	 */
 
 	--fsb;
-
-	/* mark the vector as allocated */
-
 	interrupt_vectors_allocated[entryToScan] &= ~(1 << fsb);
 
-	irq_unlock(imask);
+	irq_unlock(key);
 
 	/* compute vector given allocated bit within the priority level */
 
