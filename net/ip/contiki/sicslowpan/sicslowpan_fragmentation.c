@@ -546,7 +546,9 @@ static int fragment(struct net_buf *buf, void *ptr)
     return 1;
 
 fail:
-    net_mbuf_put(mbuf);
+    if (mbuf) {
+      net_mbuf_put(mbuf);
+    }
     return 0;
 }
 
