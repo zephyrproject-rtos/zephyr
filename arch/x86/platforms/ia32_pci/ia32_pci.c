@@ -119,42 +119,6 @@ pre_kernel_early_init(spiirq_1, NULL);
 
 #endif /* CONFIG_SPI_INTEL_PORT_1 */
 
-/**
- *
- * @brief Perform basic hardware initialization
- *
- * Initialize the Intel LOAPIC and IOAPIC device driver and the
- * Intel 8250 UART device driver.
- * Also initialize the timer device driver, if required.
- *
- * @return 0
- */
-
-static int ia32_pci_init(struct device *arg)
-{
-	ARG_UNUSED(arg);
-
-#if defined(CONFIG_PCI_DEBUG) && defined(CONFIG_PCI_ENUMERATION)
-	/* Rescan PCI and display the list of PCI attached devices */
-	struct pci_dev_info info = {
-		.function = PCI_FUNCTION_ANY,
-		.bar = PCI_BAR_ANY,
-	};
-
-	pci_bus_scan_init();
-
-	while (pci_bus_scan(&info)) {
-		pci_show(&info);
-		info.class = 0;
-		info.vendor_id = 0;
-		info.device_id = 0;
-		info.function = PCI_FUNCTION_ANY;
-		info.bar = PCI_BAR_ANY;
-	}
-#endif /* CONFIG_PCI_DEBUG && CONFIG_PCI_ENUMERATION */
-	return 0;
-}
-
 #ifdef CONFIG_CONSOLE_HANDLER
 
 static int console_irq_set(struct device *unsued)
@@ -206,6 +170,3 @@ DECLARE_DEVICE_INIT_CONFIG(pic_0, "", _i8259_init, NULL);
 pre_kernel_core_init(pic_0, NULL);
 
 #endif /* CONFIG_PIC_DISABLE */
-
-DECLARE_DEVICE_INIT_CONFIG(ia32_pci_0, "", ia32_pci_init, NULL);
-pre_kernel_early_init(ia32_pci_0, NULL);
