@@ -121,41 +121,41 @@ static void stats(void)
 	if (clock_time() > (last_print + PRINT_STATISTICS_INTERVAL)) {
 #if NET_MAC_CONF_STATS
 #define MAC_STAT(s) (net_mac_stats.s)
-		NET_DBG("L2 bytes recv\t%d\tsent\t%d\n",
+		NET_DBG("L2 bytes recv  %d\tsent\t%d\n",
 			MAC_STAT(bytes_received),
 			MAC_STAT(bytes_sent));
 #endif
-		NET_DBG("IP recv\t%d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
+		NET_DBG("IP recv        %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
 			STAT(ip.recv),
 			STAT(ip.sent),
 			STAT(ip.drop),
 			STAT(ip.forwarded));
-		NET_DBG("IP vhlerr\t%d\thblener\t%d\tlblener\t%d\n",
+		NET_DBG("IP vhlerr      %d\thblener\t%d\tlblener\t%d\n",
 			STAT(ip.vhlerr),
 			STAT(ip.hblenerr),
 			STAT(ip.lblenerr));
-		NET_DBG("IP fragerr\t%d\tchkerr\t%d\tprotoer\t%d\n",
+		NET_DBG("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d\n",
 			STAT(ip.fragerr),
 			STAT(ip.chkerr),
 			STAT(ip.protoerr));
 
-		NET_DBG("ICMP recv\t%d\tsent\t%d\tdrop\t%d\n",
+		NET_DBG("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
 			STAT(icmp.recv),
 			STAT(icmp.sent),
 			STAT(icmp.drop));
-		NET_DBG("ICMP typeer\t%d\tchkerr\t%d\n",
+		NET_DBG("ICMP typeer    %d\tchkerr\t%d\n",
 			STAT(icmp.typeerr),
 			STAT(icmp.chkerr));
 
-		NET_DBG("UDP recv\t%d\tsent\t%d\tdrop\t%d\n",
+		NET_DBG("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
 			STAT(udp.recv),
 			STAT(udp.sent),
 			STAT(udp.drop));
-		NET_DBG("UDP chkerr\t%d\n",
+		NET_DBG("UDP chkerr     %d\n",
 			STAT(icmp.chkerr));
 
 #if NETSTACK_CONF_WITH_IPV6
-		NET_DBG("ND recv\t%d\tsent\t%d\tdrop\t%d\n",
+		NET_DBG("ND recv        %d\tsent\t%d\tdrop\t%d\n",
 			STAT(nd6.recv),
 			STAT(nd6.sent),
 			STAT(nd6.drop));
@@ -163,19 +163,19 @@ static void stats(void)
 
 #if RPL_CONF_STATS
 #define RSTAT(s) RPL_STAT(rpl_stats.s)
-		NET_DBG("RPL overflows\t%d\tl-repairs\t%d\tg-repairs\t%d\n",
+		NET_DBG("RPL overflows  %d\tl-repairs\t%d\tg-repairs\t%d\n",
 			RSTAT(mem_overflows),
 			RSTAT(local_repairs),
 			RSTAT(global_repairs));
-		NET_DBG("RPL malformed\t%d\tresets   \t%d\tp-switch\t%d\n",
+		NET_DBG("RPL malformed  %d\tresets   \t%d\tp-switch\t%d\n",
 			RSTAT(malformed_msgs),
 			RSTAT(resets),
 			RSTAT(parent_switch));
-		NET_DBG("RPL f-errors\t%d\tl-errors\t%d\tl-warnings\t%d\n",
+		NET_DBG("RPL f-errors   %d\tl-errors\t%d\tl-warnings\t%d\n",
 			RSTAT(forward_errors),
 			RSTAT(loop_errors),
 			RSTAT(loop_warnings));
-		NET_DBG("RPL r-repairs\t%d\n",
+		NET_DBG("RPL r-repairs  %d\n",
 			RSTAT(root_repairs));
 #endif
 		last_print = clock_time();
