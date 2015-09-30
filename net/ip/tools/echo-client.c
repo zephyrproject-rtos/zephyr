@@ -44,7 +44,7 @@
 #define SERVER_PORT  4242
 #define CLIENT_PORT  8484
 #define MAX_BUF_SIZE 1280	/* min IPv6 MTU, the actual data is smaller */
-#define MAX_TIMEOUT  3		/* in seconds */
+#define MAX_TIMEOUT  1		/* in seconds */
 
 #define ENTRY(e, expect_result) { sizeof(e), e, expect_result }
 #define ENTRY_OK(e) ENTRY(e, true)
@@ -397,10 +397,11 @@ int main(int argc, char**argv)
 	struct timeval tv = {};
 	int ifindex = -1;
 	void *address = NULL;
+	bool forever = false, help = false;
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "Fi:")) != -1) {
+	while ((c = getopt(argc, argv, "Fi:eh")) != -1) {
 		switch (c) {
 		case 'F':
 			flood = true;
@@ -408,17 +409,24 @@ int main(int argc, char**argv)
 		case 'i':
 			interface = optarg;
 			break;
+		case 'e':
+			forever = true;
+			break;
+		case 'h':
+			help = true;
+			break;
 		}
 	}
 
 	if (optind < argc)
 		target = argv[optind];
 
-	if (!target) {
+	if (!target || help) {
 		printf("usage: %s [-i iface] [-F] <IPv{6|4} address of the echo-server>\n",
 		       argv[0]);
 		printf("\n-i Use this network interface, needed if using "
 		       "multicast server address.\n");
+		printf("-e Do not quit, send packets forever\n");
 		printf("-F (flood) option will prevent the client from "
 		       "waiting the data.\n"
 		       "   The -F option will stress test the server.\n");
@@ -506,6 +514,7 @@ int main(int argc, char**argv)
 		exit(-errno);
 	}
 
+again:
 	do {
 		while (data[i].buf) {
 			ret = sendto(fd, data[i].buf, data[i].len, 0,
@@ -573,6 +582,11 @@ int main(int argc, char**argv)
 			i = 0;
 
 	} while (flood);
+
+	if (forever) {
+		i = 0;
+		goto again;
+	}
 
 	ret = timeout + 1;
 
