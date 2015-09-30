@@ -70,8 +70,19 @@ struct bt_l2cap_chan {
 	struct bt_l2cap_chan	*_next;
 };
 
+struct bt_l2cap_server {
+	uint16_t		psm;
+
+	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
+
+	struct bt_l2cap_server	*_next;
+};
+
 /* Register a fixed L2CAP channel for L2CAP */
 void bt_l2cap_chan_register(struct bt_l2cap_chan *chan);
+
+/* Register L2CAP Server */
+int bt_l2cap_server_register(struct bt_l2cap_server *server);
 
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);

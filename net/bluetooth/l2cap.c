@@ -41,6 +41,7 @@
 #endif
 
 static struct bt_l2cap_chan *channels;
+static struct bt_l2cap_server *servers;
 
 static uint8_t get_ident(struct bt_conn *conn)
 {
@@ -60,6 +61,39 @@ void bt_l2cap_chan_register(struct bt_l2cap_chan *chan)
 
 	chan->_next = channels;
 	channels = chan;
+}
+
+static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
+{
+	struct bt_l2cap_server *server;
+
+	for (server = servers; server; server = server->_next) {
+		if (server->psm == psm) {
+			return server;
+		}
+	}
+
+	return NULL;
+}
+
+int bt_l2cap_server_register(struct bt_l2cap_server *server)
+{
+	if (server->psm < 0x0080 || server->psm > 0x00ff || !server->accept) {
+		return -EINVAL;
+	}
+
+	/* Check if given PSM is already in use */
+	if (l2cap_server_lookup_psm(server->psm)) {
+		BT_DBG("PSM already registered\n");
+		return -EADDRINUSE;
+	}
+
+	BT_DBG("PSM 0x%04x\n", server->psm);
+
+	server->_next = servers;
+	servers = server;
+
+	return 0;
 }
 
 void bt_l2cap_connected(struct bt_conn *conn)
