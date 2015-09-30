@@ -40,6 +40,7 @@ menuconfig SPI
 	help
 	  Enable support for the SPI hardware bus.
 
+if SPI
 config  SPI_DEBUG
 	bool
 	prompt "SPI drivers debug output"
@@ -209,3 +210,4 @@ config  SPI_INTEL_PORT_1_PRI
 	prompt "Port 0 interrupt priority"
 	depends on SPI_INTEL_PORT_1
 	default 0
+endif # SPI

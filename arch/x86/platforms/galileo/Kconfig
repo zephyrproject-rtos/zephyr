@@ -247,3 +247,42 @@ config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
 
 endif
 endif
+
+if SPI && SPI_INTEL
+config SPI_INTEL_LEVEL_LOW
+	def_bool y
+if SPI_INTEL_PORT_0
+config SPI_INTEL_PORT_0_BUS
+	default 0
+config SPI_INTEL_PORT_0_DEV
+	default 21
+config SPI_INTEL_PORT_0_FUNCTION
+	default 0
+config SPI_INTEL_PORT_0_REGS
+	default 0x90009000
+config SPI_INTEL_PORT_0_IRQ
+	default 16
+config SPI_INTEL_PORT_0_PRI
+	default 0
+config SPI_INTEL_CS_GPIO
+	def_bool y
+config SPI_INTEL_PORT_0_CS_GPIO_PORT
+	default GPIO_DW_0_NAME
+config SPI_INTEL_PORT_0_CS_GPIO_PIN
+	default 0
+endif
+if SPI_INTEL_PORT_1
+config SPI_INTEL_PORT_1_BUS
+	default 0
+config SPI_INTEL_PORT_1_DEV
+	default 21
+config SPI_INTEL_PORT_1_FUNCTION
+	default 1
+config SPI_INTEL_PORT_0_REGS
+	default 0x90008000
+config SPI_INTEL_PORT_0_IRQ
+	default 17
+config SPI_INTEL_PORT_0_PRI
+	default 0
+endif
+endif
