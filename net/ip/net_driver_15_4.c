@@ -110,7 +110,6 @@ static void net_tx_15_4_fiber(void)
 		if (!NETSTACK_FRAGMENT.fragment(buf, NULL)) {
 			/* Release buffer on error */
 			net_buf_put(buf);
-			continue;
 		}
 
 		net_analyze_stack("802.15.4 TX", tx_fiber_stack,
@@ -131,9 +130,6 @@ static void net_rx_15_4_fiber(void)
 		/* Wait next packet from 15.4 stack */
 		buf = nano_fifo_get_wait(&rx_queue);
 
-		net_analyze_stack("802.15.4 RX", rx_fiber_stack,
-				  sizeof(rx_fiber_stack));
-
 #if NET_MAC_CONF_STATS
 		byte_count = uip_pkt_buflen(buf);
 #endif
@@ -145,6 +141,9 @@ static void net_rx_15_4_fiber(void)
 			net_mac_stats.bytes_received += byte_count;
 #endif
 		}
+
+		net_analyze_stack("802.15.4 RX", rx_fiber_stack,
+				  sizeof(rx_fiber_stack));
 	}
 }
 
