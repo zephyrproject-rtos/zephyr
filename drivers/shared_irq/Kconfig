@@ -41,6 +41,33 @@ config SHARED_IRQ_0_PRI
 	help
 	 Prioity of shared interrupt handler for the configured interrupt
 
+choice
+	depends on SHARED_IRQ_0
+	prompt "Shared IRQ #0 Trigger Condition"
+	default SHARED_IRQ_0_RISING_EDGE
+
+config SHARED_IRQ_0_FALLING_EDGE
+	bool "Falling Edge"
+	help
+	  Interrupt triggers on falling edge.
+
+config SHARED_IRQ_0_RISING_EDGE
+	bool "Rising Edge"
+	help
+	  Interrupt triggers on rising edge.
+
+config SHARED_IRQ_0_LEVEL_HIGH
+	bool "Level High"
+	help
+	  Interrupt triggers when level is high.
+
+config SHARED_IRQ_0_LEVEL_LOW
+	bool "Level Low"
+	help
+	  Interrupt triggers when level is low.
+
+endchoice
+
 config SHARED_IRQ_1
 	bool "Shared interrupt instance 1"
 	select SHARED_IRQ
@@ -65,3 +92,30 @@ config SHARED_IRQ_1_PRI
 	depends on SHARED_IRQ_0
 	help
 	 Prioity of shared interrupt handler for the configured interrupt
+
+choice
+	depends on SHARED_IRQ_1
+	prompt "Shared IRQ #1 Trigger Condition"
+	default SHARED_IRQ_1_RISING_EDGE
+
+config SHARED_IRQ_1_FALLING_EDGE
+	bool "Falling Edge"
+	help
+	  Interrupt triggers on falling edge.
+
+config SHARED_IRQ_1_RISING_EDGE
+	bool "Rising Edge"
+	help
+	  Interrupt triggers on rising edge.
+
+config SHARED_IRQ_1_LEVEL_HIGH
+	bool "Level High"
+	help
+	  Interrupt triggers when level is high.
+
+config SHARED_IRQ_1_LEVEL_LOW
+	bool "Level Low"
+	help
+	  Interrupt triggers when level is low.
+
+endchoice
