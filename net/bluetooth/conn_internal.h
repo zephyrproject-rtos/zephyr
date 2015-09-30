@@ -29,6 +29,7 @@ typedef enum {
 /* L2CAP signaling channel specific context */
 struct bt_conn_l2cap {
 	uint8_t			ident;
+	void			*channels;
 };
 
 /* bt_conn flags: the flags defined here represent connection parameters */

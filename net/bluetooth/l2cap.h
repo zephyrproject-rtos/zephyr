@@ -57,8 +57,45 @@ struct bt_l2cap_conn_param_rsp {
 	uint16_t result;
 } __packed;
 
+#define BT_L2CAP_LE_CONN_REQ		0x14
+struct bt_l2cap_le_conn_req {
+	uint16_t psm;
+	uint16_t scid;
+	uint16_t mtu;
+	uint16_t mps;
+	uint16_t credits;
+} __packed;
+
+#define BT_L2CAP_SUCCESS		0x0000
+#define BT_L2CAP_ERR_PSM_NOT_SUPP	0x0002
+#define BT_L2CAP_ERR_NO_RESOURCES	0x0004
+#define BT_L2CAP_ERR_AUTHENTICATION	0x0005
+#define BT_L2CAP_ERR_AUTHORIZATION	0x0006
+#define BT_L2CAP_ERR_KEY_SIZE		0x0007
+#define BT_L2CAP_ERR_ENCRYPTION		0x0008
+#define BT_L2CAP_ERR_INVALID_SCID	0x0009
+#define BT_L2CAP_ERR_SCID_IN_USE	0x000A
+
+#define BT_L2CAP_LE_CONN_RSP		0x15
+struct bt_l2cap_le_conn_rsp {
+	uint16_t dcid;
+	uint16_t mtu;
+	uint16_t mps;
+	uint16_t credits;
+	uint16_t result;
+};
+
 struct bt_l2cap_chan {
 	uint16_t		cid;
+
+	/* CoC fields */
+	uint16_t		dcid;
+
+	uint16_t		mps;
+	uint16_t		mtu;
+
+	uint16_t		credits_tx;
+	uint16_t		credits_rx;
 
 	void			(*connected)(struct bt_conn *conn);
 	void			(*disconnected)(struct bt_conn *conn);
