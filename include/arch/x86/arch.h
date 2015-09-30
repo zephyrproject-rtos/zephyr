@@ -150,11 +150,11 @@ typedef struct s_isrList {
  *
  * For the device @a device associates IRQ number @a irq with priority
  * @a priority with the interrupt routine @a isr, that receives parameter
- * @a parameter
+ * @a parameter.
  *
  * @param device Device
  * @param irq IRQ number
- * @param priority IRQ Priority
+ * @param priority IRQ Priority (currently ignored)
  * @param isr Interrupt Service Routine
  * @param parameter ISR parameter
  *
@@ -164,7 +164,7 @@ typedef struct s_isrList {
 #define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	\
 	const uint32_t _##device##_int_vector = INT_VEC_IRQ0 + (irq);	\
 	extern void *_##device##_##isr##_stub;				\
-	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, INT_VEC_IRQ0 + (irq), priority)
+	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, INT_VEC_IRQ0 + (irq), 0)
 
 
 /**
