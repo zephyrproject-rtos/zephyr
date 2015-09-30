@@ -168,14 +168,22 @@ static NANO_INT_STUB dynamic_stubs[ALL_DYNAMIC_STUBS] = {
 static int _int_stub_alloc(void)
 {
 	int i;
+	int rv = -1;
+	unsigned int key;
+
+	key = irq_lock();
 	for (i = 0; i < ALL_DYNAMIC_STUBS &&
 		     dynamic_stubs[i][0] != _STUB_AVAIL; i++) {
 	}
-	if (i == ALL_DYNAMIC_STUBS) {
-		return -1;
-	} else {
-		return i;
+
+	/* Mark the stub as allocated by using the CALL opcode */
+	if (i != ALL_DYNAMIC_STUBS) {
+		dynamic_stubs[i][0] = IA32_CALL_OPCODE;
+		rv = i;
 	}
+
+	irq_unlock(key);
+	return rv;
 }
 #endif /* ALL_DYNAMIC_STUBS > 0 */
 
@@ -209,21 +217,27 @@ void _IntVecSet(
 	)
 {
 	unsigned long long *pIdtEntry;
+	unsigned int key;
 
 	/*
 	 * The <vector> parameter must be less than the value of the
 	 * CONFIG_IDT_NUM_VECTORS configuration parameter, however,
-	 * explicit
-	 * validation will not be performed in this primitive.
+	 * explicit validation will not be performed in this primitive.
 	 */
 
 	pIdtEntry = (unsigned long long *)(_idt_base_address + (vector << 3));
 
+	/*
+	 * Lock interrupts to protect the IDT entry to which _IdtEntryCreate() will
+	 * write.  They must be locked here because the _IdtEntryCreate() code is
+	 * shared with the 'gen_idt' host tool.
+	 */
 
+	key = irq_lock();
 	_IdtEntCreate(pIdtEntry, routine, dpl);
+	irq_unlock(key);
 
-/* not required to synchronize the instruction and data caches */
-
+	/* not required to synchronize the instruction and data caches */
 }
 
 /*
@@ -349,9 +363,11 @@ int irq_connect(
 	 * values of <boiRtn>, <eoiRtn>, <boiRtnParm>, <eoiRtnParm>,
 	 * <boiParamRequired>, and <eoiParamRequired>.  The invocation of
 	 * _IntEnt() and _IntExit() will always be required.
+	 *
+	 * NOTE: The 'call' opcode for the call to _IntEnt() has already been
+	 * written by _int_stub_alloc() to mark the stub as allocated.
 	 */
 
-	STUB_PTR[0] = IA32_CALL_OPCODE;
 	UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1],
 			(unsigned int)&_IntEnt - (unsigned int)&STUB_PTR[5]);
 
