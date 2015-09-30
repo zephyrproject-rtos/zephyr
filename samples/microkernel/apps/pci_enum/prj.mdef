@@ -1,0 +1,5 @@
+% Application       : PCI enumeration application
+
+% TASK NAME  PRIO ENTRY          STACK GROUPS
+% ===========================================
+  TASK TASKA    7 task_enum_pci  1024  [EXE]
