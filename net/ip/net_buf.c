@@ -96,6 +96,7 @@ static inline const char *type2str(enum net_buf_type type)
 #ifdef DEBUG_NET_BUFS
 static int num_free_rx_bufs = NET_BUF_RX_SIZE;
 static int num_free_tx_bufs = NET_BUF_TX_SIZE;
+static int num_free_mbufs = NET_NUM_MAC_BUFS;
 
 static inline void dec_free_rx_bufs(struct net_buf *buf)
 {
@@ -152,11 +153,41 @@ static inline int get_frees(enum net_buf_type type)
 
 	return 0xffffffff;
 }
+
+static inline void dec_free_mbufs(struct net_mbuf *buf)
+{
+	if (!buf) {
+		return;
+	}
+
+	num_free_mbufs--;
+	if (num_free_mbufs < 0) {
+		NET_DBG("*** ERROR *** Invalid L2 buffer count.\n");
+		num_free_mbufs = 0;
+	}
+}
+
+static inline void inc_free_mbufs(struct net_mbuf *buf)
+{
+	if (!buf) {
+		return;
+	}
+
+	num_free_mbufs++;
+}
+
+static inline int get_free_mbufs(void)
+{
+	return num_free_mbufs;
+}
 #else
 #define dec_free_rx_bufs(...)
 #define inc_free_rx_bufs(...)
 #define dec_free_tx_bufs(...)
 #define inc_free_tx_bufs(...)
+#define dec_free_mbufs(...)
+#define inc_free_mbufs(...)
+#define get_free_mbufs(...)
 #endif
 
 #ifdef DEBUG_NET_BUFS
@@ -390,11 +421,14 @@ struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head)
 		return NULL;
 	}
 
+	dec_free_mbufs(buf);
+
 	NET_BUF_CHECK_IF_IN_USE(buf);
 
 #ifdef DEBUG_NET_BUFS
-	NET_DBG("buf %p reserve %u inuse %d (%s():%d)\n", buf, reserve_head,
-		buf->in_use, caller, line);
+	NET_DBG("[%d] buf %p reserve %u inuse %d (%s():%d)\n",
+		get_free_mbufs(), buf, reserve_head, buf->in_use,
+		caller, line);
 #else
 	NET_DBG("buf %p reserve %u inuse %d\n", buf, reserve_head, buf->in_use);
 #endif
@@ -421,12 +455,14 @@ void net_mbuf_put(struct net_mbuf *buf)
 	NET_BUF_CHECK_IF_NOT_IN_USE(buf);
 
 #ifdef DEBUG_NET_BUFS
-	NET_DBG("buf %p inuse %d (%s():%d)\n", buf, buf->in_use, caller, line);
+	NET_DBG("[%d] buf %p inuse %d (%s():%d)\n",
+		get_free_mbufs() + 1, buf, buf->in_use, caller, line);
 #else
 	NET_DBG("buf %p inuse %d\n", buf, buf->in_use);
 #endif
 
 	buf->in_use = false;
+	inc_free_mbufs(buf);
 
 	nano_fifo_put(&free_mbufs, buf);
 }
