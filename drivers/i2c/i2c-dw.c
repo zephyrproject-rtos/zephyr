@@ -161,6 +161,34 @@ static void _i2c_dw_data_send(struct device *dev)
 	}
 }
 
+static inline void _i2c_dw_transfer_complete(struct device *dev)
+{
+	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
+	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
+	uint32_t cb_type = 0;
+	uint32_t value;
+
+	if (dw->state == I2C_DW_CMD_ERROR) {
+		cb_type = I2C_CB_ERROR;
+	} else if (dw->tx_buffer && !dw->tx_len) {
+		cb_type = I2C_CB_WRITE;
+	} else if (dw->rx_buffer && !dw->rx_len) {
+		cb_type = I2C_CB_READ;
+	}
+
+	if (cb_type) {
+		regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
+		dw->state = I2C_DW_STATE_READY;
+		value = regs->ic_clr_intr;
+
+		if (dw->cb) {
+			dw->cb(dev, cb_type);
+		}
+	}
+}
+
 void i2c_dw_isr(struct device *port)
 {
 	struct i2c_dw_rom_config const * const rom = port->config->config_info;
@@ -191,10 +219,7 @@ void i2c_dw_isr(struct device *port)
 	 */
 	if (regs->ic_intr_stat.bits.stop_det) {
 		_i2c_dw_data_read(port);
-		regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
-		dw->state = I2C_DW_STATE_READY;
-
-		value = regs->ic_clr_intr;
+		_i2c_dw_transfer_complete(port);
 	}
 
 	/* Check if we are configured as a master device */
@@ -212,10 +237,8 @@ void i2c_dw_isr(struct device *port)
 		if ((DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_TX_OVER |
 		     DW_INTR_STAT_RX_OVER | DW_INTR_STAT_RX_UNDER) &
 		    regs->ic_intr_stat.raw) {
-				dw->state = I2C_DW_CMD_ERROR;
-				regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
-				dw->state = I2C_DW_STATE_READY;
-				value = regs->ic_clr_intr;
+			dw->state = I2C_DW_CMD_ERROR;
+			_i2c_dw_transfer_complete(port);
 		}
 	} else { /* we must be configured as a slave device */
 
@@ -599,6 +622,14 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 	return rc;
 }
 
+static int i2c_dw_set_callback(struct device *dev, i2c_callback cb)
+{
+	struct i2c_dw_dev_config * const dw = dev->driver_data;
+
+	dw->cb = cb;
+
+	return DEV_OK;
+}
 
 static int i2c_dw_write(struct device *dev, uint8_t *buf,
 			uint32_t len, uint16_t slave_addr)
@@ -640,6 +671,7 @@ static int i2c_dw_resume(struct device *dev)
 
 static struct i2c_driver_api funcs = {
 	.configure = i2c_dw_runtime_configure,
+	.set_callback = i2c_dw_set_callback,
 	.write = i2c_dw_write,
 	.read = i2c_dw_read,
 	.suspend = i2c_dw_suspend,
