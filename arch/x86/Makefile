@@ -32,8 +32,11 @@ KBUILD_AFLAGS += $(arch-y)
 
 QEMU_BIOS ?= /usr/share/qemu
 QEMU_CPU_TYPE_x86 = qemu32
+QEMU_X86_NO_REBOOT_y =
+QEMU_X86_NO_REBOOT_  = -no-reboot
 QEMU_FLAGS_x86 = -m 32 -cpu $(QEMU_CPU_TYPE_x86) \
-		-no-reboot -nographic -display none -net none \
+		$(QEMU_X86_NO_REBOOT_$(CONFIG_REBOOT)) \
+		-nographic -display none -net none \
 		-clock dynticks -no-acpi -balloon none \
 		-L $(QEMU_BIOS) -bios bios.bin \
 		-machine type=pc-0.14
