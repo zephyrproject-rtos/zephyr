@@ -64,9 +64,19 @@ union dev_config {
 	} bits;
 };
 
+enum i2c_cb_type {
+	I2C_CB_WRITE            = 1,
+	I2C_CB_READ             = 2,
+	I2C_CB_ERROR		= 3,
+};
+
+typedef void (*i2c_callback)(struct device *dev,
+			     uint32_t cb_type);
 
 typedef int (*i2c_api_configure_t)(struct device *dev,
 				   uint32_t dev_config);
+typedef int (*i2c_api_set_callback_t)(struct device *dev,
+				      i2c_callback cb);
 typedef int (*i2c_api_io_t)(struct device *dev,
 			    uint8_t *buf,
 			    uint32_t len,
@@ -76,6 +86,7 @@ typedef int (*i2c_api_resume_t)(struct device *dev);
 
 struct i2c_driver_api {
 	i2c_api_configure_t configure;
+	i2c_api_set_callback_t set_callback;
 	i2c_api_io_t read;
 	i2c_api_io_t write;
 	i2c_api_io_t polling_write;
@@ -97,6 +108,21 @@ static inline int i2c_configure(struct device *dev, uint32_t dev_config)
 
 	api = (struct i2c_driver_api *)dev->driver_api;
 	return api->configure(dev, dev_config);
+}
+
+/**
+ * @brief Set an application callback
+ * @param dev Pointer to the device structure for the driver instance
+ * @param cb A valid pointer to a callback, or NULL
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
+ */
+static inline int i2c_set_callback(struct device *dev, i2c_callback cb)
+{
+	struct i2c_driver_api *api;
+
+	api = (struct i2c_driver_api *)dev->driver_api;
+	return api->set_callback(dev, cb);
 }
 
 /**
