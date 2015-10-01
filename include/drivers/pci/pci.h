@@ -78,6 +78,11 @@ static inline int pci_bus_scan(struct pci_dev_info *dev_info)
 #endif /* CONFIG_PCI_ENUMERATION */
 
 void pci_enable_regs(struct pci_dev_info *dev_info);
+int pci_legacy_bridge_detect(struct pci_dev_info *dev_info);
+void pci_legacy_bridge_configure(struct pci_dev_info *dev_info,
+				 int io_block_num,
+				 int pci_interrupt_pin,
+				 int irq_number);
 
 #ifdef CONFIG_PCI_DEBUG
 extern void pci_show(struct pci_dev_info *dev_info);

@@ -52,6 +52,36 @@ config PCI_ENUMERATION
 	statically set in every relevant driver's configuration, it
 	might be wise to disable this option to remove useless code.
 
+config PCI_LEGACY_BRIDGE
+	bool
+	prompt "PCI legacy bridge device support"
+	depends on PCI
+	default n
+	help
+	This option adds support for PCI legacy bridge device, that
+	allows direct setup of the PCI interrupt pin to IRQ number
+	mapping.
+
+config PCI_LEGACY_BRIDGE_BUS
+        int "PCI Legacy Bridge Bus number"
+        depends on PCI_LEGACY_BRIDGE
+        default 0
+
+config PCI_LEGACY_BRIDGE_DEV
+        int "PCI Legacy Bridge Device number"
+        depends on PCI_LEGACY_BRIDGE
+        default 0
+
+config PCI_LEGACY_BRIDGE_VENDOR_ID
+        hex "PCI Legacy Bridge Vendor ID"
+        depends on PCI_LEGACY_BRIDGE
+        default 0
+
+config PCI_LEGACY_BRIDGE_DEVICE_ID
+        hex "PCI Legacy Bridge Device ID"
+        depends on PCI_LEGACY_BRIDGE
+        default 0
+
 config PCI_DEBUG
 	bool
 	prompt "Enable PCI debugging"
