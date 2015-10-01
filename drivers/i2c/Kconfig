@@ -172,12 +172,12 @@ config I2C_DW_0_BUS
 config I2C_DW_0_DEV
 	int "PCI device number"
 	depends on I2C_DW_0 && PCI
-	default 21
+	default 0
 
 config I2C_DW_0_FUNCTION
 	int "PCI function number"
 	depends on I2C_DW_0 && PCI
-	default 2
+	default 0
 
 config I2C_DW_0_BAR
 	int "PCI BAR number"
