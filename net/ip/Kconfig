@@ -198,6 +198,16 @@ config	NETWORKING_WITH_15_4
 	  it into suitable chunks ready to be sent to the 802.15.4
 	  hw driver
 
+config NETWORKING_WITH_15_4_PAN_ID
+       hex
+       prompt "IEEE 802.15.4 PAN id/address"
+       depends on NETWORKING_WITH_15_4
+       default 0xabcd
+       help
+         All the 802.15.4 devices that want to connect to each
+         other need to have same PAN id (address).
+	 Default PAN id is 0xABCD
+
 choice
 prompt "802.15.4 Radio Driver"
 depends on NETWORKING && NETWORKING_WITH_15_4

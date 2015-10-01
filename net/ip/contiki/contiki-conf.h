@@ -60,6 +60,9 @@ typedef unsigned int uip_stats_t;
 #endif /* SICSLOWPAN_CONF_ENABLE */
 
 #ifdef CONFIG_NETWORKING_WITH_15_4
+#ifdef CONFIG_NETWORKING_WITH_15_4_PAN_ID
+#define IEEE802154_CONF_PANID CONFIG_NETWORKING_WITH_15_4_PAN_ID
+#endif /* CONFIG_NETWORKING_WITH_15_4_PAN_ID */
 #define NETSTACK_CONF_FRAMER	framer_802154
 #define NETSTACK_CONF_RDC	sicslowmac_driver
 #define NETSTACK_CONF_MAC	csma_driver
