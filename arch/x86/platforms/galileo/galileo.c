@@ -225,7 +225,7 @@ static int shared_irq_config(struct device *unused)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(sharedirqcfg, "", shared_irq_config, NULL);
-pre_kernel_late_init(sharedirqcfg, NULL);
+pre_kernel_early_init(sharedirqcfg, NULL);
 
 #endif /* CONFIG_SHARED_IRQ */
 
