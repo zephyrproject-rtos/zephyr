@@ -99,25 +99,47 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
   if (input_len == 0 && input_offset == 0 &&
        input_type == DUMMY_RADIO_15_4_FRAME_TYPE) {
     input_len = buf[0];
+
+    if (input_len >= NETWORK_TEST_MAX_PACKET_LEN) {
+        PRINTF("dummy154radio: too long message %d max is %d, "
+	       "discarding packet\n", input_len, NETWORK_TEST_MAX_PACKET_LEN);
+    } else {
+       PRINTF("dummy154radio: will receive %d bytes\n", input_len);
+    }
     goto done;
   }
 
   if (input_len) {
-    input[input_offset++] = buf[0];
+    static bool printed;
+    if (input_offset >= NETWORK_TEST_MAX_PACKET_LEN) {
+      if (!printed) {
+        PRINTF("dummy154radio: too long message (offset %d), "
+	       "discarding packet\n", input_offset);
+	printed = true;
+      }
+      input_offset++;
+    } else {
+      printed = false;
+      input[input_offset++] = buf[0];
+    }
   }
 
   if (input_len && input_len == input_offset) {
-     struct net_mbuf *mbuf;
-     mbuf = net_mbuf_get_reserve(0);
-     if (mbuf) {
-       packetbuf_copyfrom(mbuf, input, input_len);
-       packetbuf_set_datalen(mbuf, input_len);
-       packetbuf_set_attr(mbuf, PACKETBUF_ATTR_TIMESTAMP, last_packet_timestamp);
-       PRINTF("dummy154radio: received %d bytes\n", input_len);
+     if (input_len < NETWORK_TEST_MAX_PACKET_LEN) {
+       struct net_mbuf *mbuf;
 
-       if (net_driver_15_4_recv_from_hw(mbuf) < 0) {
-         PRINTF("dummy154radio: rdc input failed, packet discarded\n");
-         net_mbuf_put(mbuf);
+       mbuf = net_mbuf_get_reserve(0);
+       if (mbuf) {
+         packetbuf_copyfrom(mbuf, input, input_len);
+	 packetbuf_set_datalen(mbuf, input_len);
+	 packetbuf_set_attr(mbuf, PACKETBUF_ATTR_TIMESTAMP,
+			    last_packet_timestamp);
+	 PRINTF("dummy154radio: received %d bytes\n", input_len);
+
+	 if (net_driver_15_4_recv_from_hw(mbuf) < 0) {
+           PRINTF("dummy154radio: rdc input failed, packet discarded\n");
+	   net_mbuf_put(mbuf);
+	 }
        }
      }
 
