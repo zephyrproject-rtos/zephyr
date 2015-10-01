@@ -12,7 +12,7 @@ config PCI_ENUMERATION
 	bool
 	prompt "Enable PCI device enumeration"
 	depends on PCI
-	default y
+	default n
 	help
 	This option enables the PCI enumeration for device drivers.
 	This might be useful along with PCI_DEBUG to find out which
