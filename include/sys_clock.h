@@ -74,6 +74,13 @@ extern int sys_clock_hw_cycles_per_tick;
 /* number of milliseconds per second */
 #define MSEC_PER_SEC 1000
 
+/* number of microseconds per second */
+#define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
+
+/* number of nanoseconds per second */
+#define NSEC_PER_SEC ((NSEC_PER_USEC) * (USEC_PER_MSEC) * (MSEC_PER_SEC))
+
+
 /* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
 	(((uint64_t)(X) * sys_clock_us_per_tick * NSEC_PER_USEC) / \
