@@ -247,6 +247,17 @@ struct gatt_add_characteristic_rp {
 	uint16_t char_id;
 };
 
+#define GATT_ADD_DESCRIPTOR		0x04
+struct gatt_add_descriptor_cmd {
+	uint16_t char_id;
+	uint8_t permissions;
+	uint8_t uuid_length;
+	uint8_t uuid[0];
+} __packed;
+struct gatt_add_descriptor_rp {
+	uint16_t desc_id;
+} __packed;
+
 #define GATT_ADD_INCLUDED_SERVICE	0x05
 struct gatt_add_included_service_cmd {
 	uint16_t svc_id;

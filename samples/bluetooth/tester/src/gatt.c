@@ -102,6 +102,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds = 1 << GATT_READ_SUPPORTED_COMMANDS;
 	cmds |= 1 << GATT_ADD_SERVICE;
 	cmds |= 1 << GATT_ADD_CHARACTERISTIC;
+	cmds |= 1 << GATT_ADD_DESCRIPTOR;
 	cmds |= 1 << GATT_ADD_INCLUDED_SERVICE;
 	cmds |= 1 << GATT_SET_VALUE;
 	cmds |= 1 << GATT_START_SERVER;
@@ -292,6 +293,82 @@ rsp:
 	}
 }
 
+static struct bt_gatt_attr ccc = BT_GATT_CCC(NULL, NULL);
+static struct bt_gatt_attr cep = BT_GATT_CEP(NULL);
+static struct bt_gatt_attr *dsc = &chr_val;
+
+static uint8_t add_descriptor_cb(const struct bt_gatt_attr *attr,
+				 void *user_data)
+{
+	const struct gatt_add_descriptor_cmd *cmd = user_data;
+	struct gatt_add_descriptor_rp rp;
+	struct bt_gatt_attr *attr_desc;
+	struct bt_uuid uuid;
+	uint16_t u16;
+
+	switch (cmd->uuid_length) {
+	case 0x02: /* UUID 16 */
+		uuid.type = BT_UUID_16;
+		memcpy(&u16, cmd->uuid, sizeof(u16));
+		uuid.u16 = sys_le16_to_cpu(u16);
+		break;
+	case 0x10: /* UUID 128*/
+		uuid.type = BT_UUID_128;
+		memcpy(&uuid.u128, cmd->uuid, sizeof(uuid.u128));
+		break;
+	default:
+		goto fail;
+	}
+
+	if (!bt_uuid_cmp(&uuid, cep.uuid)) {
+		/* TODO Add CEP descriptor */
+		attr_desc = NULL;
+	} else if (!bt_uuid_cmp(&uuid, ccc.uuid)) {
+		/* TODO Add CCC descriptor */
+		attr_desc = NULL;
+	} else {
+		attr_desc = gatt_db_add(dsc);
+	}
+
+	if (!attr_desc) {
+		goto fail;
+	}
+
+	/* CCC and CEP have permissions already set */
+	if (!attr_desc->perm) {
+		attr_desc->perm = cmd->permissions;
+	}
+
+	/* CCC and CEP have UUID already set */
+	if (!attr_desc->uuid) {
+		attr_desc->uuid = gatt_buf_add(&uuid, sizeof(uuid));
+		if (!attr_desc->uuid) {
+			goto fail;
+		}
+	}
+
+	rp.desc_id = sys_cpu_to_le16(attr_desc->handle);
+
+	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_DESCRIPTOR,
+			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+
+	return BT_GATT_ITER_STOP;
+fail:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_DESCRIPTOR, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void add_descriptor(uint8_t *data, uint16_t len)
+{
+	const struct gatt_add_descriptor_cmd *cmd = (void *) data;
+	uint16_t handle = sys_le16_to_cpu(cmd->char_id);
+
+	/* TODO Return error if no attribute found */
+	bt_gatt_foreach_attr(handle, handle, add_descriptor_cb, data);
+}
+
 static uint8_t get_service_handles(const struct bt_gatt_attr *attr,
 				   void *user_data)
 {
@@ -460,6 +537,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_ADD_CHARACTERISTIC:
 		add_characteristic(data, len);
+		return;
+	case GATT_ADD_DESCRIPTOR:
+		add_descriptor(data, len);
 		return;
 	case GATT_ADD_INCLUDED_SERVICE:
 		add_included(data, len);
