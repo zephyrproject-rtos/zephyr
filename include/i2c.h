@@ -88,6 +88,8 @@ struct i2c_driver_api {
  * @param dev Pointer to the device structure for the driver instance
  * @param dev_config Bit-packed 32-bit value to the device runtime configuration
  *                   for the I2C controller.
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 static inline int i2c_configure(struct device *dev, uint32_t dev_config)
 {
@@ -103,6 +105,8 @@ static inline int i2c_configure(struct device *dev, uint32_t dev_config)
  * @param buf Memory pool that data should be transferred from
  * @param len Size of the memory pool available for reading from
  * @param addr Address of the I2C device to write to
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 static inline int i2c_write(struct device *dev, uint8_t *buf,
 		     uint32_t len, uint16_t addr)
@@ -119,6 +123,8 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
  * @param buf Memory pool that data should be transferred to
  * @param len Size of the memory pool available for writing to
  * @param addr Address of the I2C device to read from
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
  */
 static inline int i2c_read(struct device *dev, uint8_t *buf,
 		    uint32_t len, uint16_t addr)
@@ -161,6 +167,8 @@ static inline int i2c_polling_write(struct device *dev, uint8_t *buf,
 /**
  * @brief Suspend an I2C driver
  * @param dev Pointer to the device structure for the driver instance
+ *
+ * @return DEV_OK
  */
 static inline int i2c_suspend(struct device *dev)
 {
@@ -173,6 +181,8 @@ static inline int i2c_suspend(struct device *dev)
 /**
  * @brief Resume an I2C driver
  * @param dev Pointer to the device structure for the driver instance
+ *
+ * @return DEV_OK
  */
 static inline int i2c_resume(struct device *dev)
 {
