@@ -77,6 +77,9 @@
 #endif
 
 #define MAX_NUM_VECTORS           256
+#define MAX_PRIORITIES            16
+#define MAX_VECTORS_PER_PRIORITY  16
+#define MAX_IRQS                  256
 
 static void get_exec_name(char *pathname);
 static void usage(int len);
@@ -96,6 +99,8 @@ struct genidt_header_s {
 
 struct genidt_entry_s {
 	void *isr;
+	unsigned int irq;
+	unsigned int priority;
 	unsigned int vector_id;
 	unsigned int dpl;
 };
@@ -116,7 +121,7 @@ enum { SHORT_USAGE, LONG_USAGE };
 static int fds[NUSERFILES] = {-1, -1};
 static char *filenames[NFILES];
 static unsigned int num_vectors = (unsigned int)-1;
-static struct version version = {KERNEL_VERSION, 1, 1, 2};
+static struct version version = {KERNEL_VERSION, 1, 1, 3};
 
 int main(int argc, char *argv[])
 {
@@ -206,6 +211,7 @@ static void open_files(void)
 	fds[OFILE] = open(filenames[OFILE], O_WRONLY | O_BINARY |
 						O_TRUNC | O_CREAT,
 						S_IWUSR | S_IRUSR);
+
 	for (ii = 0; ii < NUSERFILES; ii++) {
 		int invalid = fds[ii] == -1;
 
@@ -224,12 +230,14 @@ static void open_files(void)
 static void show_entry(struct genidt_entry_s *entry)
 {
 	fprintf(stderr,
-			"---------------\n"
 			"ISR Address: %p\n"
+			"IRQ: %d\n"
+			"Priority: %d\n"
 			"Vector ID: %d\n"
 			"DPL: %d\n"
 			"---------------\n",
-			entry->isr, entry->vector_id, entry->dpl);
+			entry->isr, entry->irq, entry->priority,
+			entry->vector_id, entry->dpl);
 }
 
 static void read_input_file(void)
@@ -246,6 +254,7 @@ static void read_input_file(void)
 	PRINTF("Spurious interrupt handlers found at %p and %p.\n",
 		    genidt_header.spurious_addr, genidt_header.spurious_no_error_addr);
 	PRINTF("There are %d ISR(s).\n", genidt_header.num_entries);
+
 
 	if (genidt_header.num_entries > num_vectors) {
 		fprintf(stderr,
@@ -266,6 +275,7 @@ static void read_input_file(void)
 
 	for (i = 0; i < genidt_header.num_entries; i++) {
 		show_entry(&supplied_entry[i]);
+		fprintf(stderr, "----------------------------\n");
 	}
 #endif
 	return;
@@ -317,10 +327,95 @@ static void validate_vector_id(void)
 	}
 }
 
+static void validate_priority(void)
+{
+	int  i;
+	int  num_priorities[MAX_PRIORITIES] = {0};
+	unsigned expected_priority;
+
+	/*
+	 * Validate the priority.
+	 *
+	 * As the current implementation of the gen_idt tool takes the vector ID
+	 * from the input file, the priority is ignored. In fact, the priority
+	 * is overridden to match <vector ID> / MAX_VECTORS_PER_PRIORITY.
+	 */
+
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		if (supplied_entry[i].irq == -1) {
+			/*
+			 * This is a software interrupt.
+			 * The priority is currently ignored.
+			 */
+			continue;
+		}
+
+		if (supplied_entry[i].priority >= MAX_PRIORITIES) {
+			fprintf(stderr, "Priority must not exceed %d.\n",
+					MAX_PRIORITIES - 1);
+			show_entry(&supplied_entry[i]);
+			clean_exit(-1);
+		}
+
+		expected_priority = supplied_entry[i].vector_id /
+							MAX_VECTORS_PER_PRIORITY;
+		if (expected_priority != supplied_entry[i].priority) {
+			supplied_entry[i].priority = expected_priority;
+			fprintf(stderr,
+					"Warning! Overriding IRQ %d priority to %d!\n",
+					supplied_entry[i].irq, supplied_entry[i].priority);
+		}
+
+		num_priorities[supplied_entry[i].priority]++;
+	}
+
+	for (i = 0; i < MAX_PRIORITIES; i++) {
+		if (num_priorities[i] > MAX_VECTORS_PER_PRIORITY) {
+			fprintf(stderr, "Too many entries for priority level %d", i);
+			clean_exit(-1);
+		}
+	}
+}
+
+static void validate_irq(void)
+{
+	int  i;
+	int  num_irqs[MAX_IRQS] = {0};
+
+	/* Validate the IRQ number */
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		if (supplied_entry[i].irq == (unsigned int) -1) {
+			/* This is a request for a software interrupt */
+			continue;
+		}
+
+		if (supplied_entry[i].irq >= MAX_IRQS) {
+			/*
+			 * If code to support the PIC is re-introduced, then this
+			 * check will need to be updated.
+			 */
+			fprintf(stderr, "IRQ must be between 0 and %d inclusive.\n",
+					MAX_IRQS - 1);
+			show_entry(&supplied_entry[i]);
+			clean_exit(-1);
+		}
+		num_irqs[i]++;
+	}
+
+	for (i = 0; i < MAX_IRQS; i++) {
+		if (num_irqs[i] > 1) {
+			fprintf(stderr, "Multiple requests for IRQ %d detected.\n", i);
+			clean_exit(-1);
+		}
+	}
+}
+
 static void validate_input_file(void)
 {
 	validate_dpl();          /* exits on error */
 	validate_vector_id();    /* exits on error */
+	validate_priority();     /* exits on error */
+	validate_irq();          /* exits on error */
 }
 
 static void generate_idt(void)
@@ -339,6 +434,10 @@ static void generate_idt(void)
 		} else {
 			generated_entry[i].isr = genidt_header.spurious_no_error_addr;
 		}
+		generated_entry[i].irq = -1;       /* Set to -1 to aid in debugging */
+		generated_entry[i].priority = -1;  /* Set to -1 to aid in debugging */
+		generated_entry[i].vector_id = i;
+		generated_entry[i].dpl = 0;
 	}
 
 	/*

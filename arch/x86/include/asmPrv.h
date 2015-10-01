@@ -46,9 +46,11 @@ extern "C" {
  * Assmembler version of the NANO_CPU_INT_REGISTER macro.
  * See arch.h for details
  */
-#define NANO_CPU_INT_REGISTER_ASM(handler, vector, dpl)     \
+#define NANO_CPU_INT_REGISTER_ASM(handler, irq, priority, vector, dpl)     \
 	.section ".intList";                                \
 	MK_ISR_NAME(handler) : .long MK_STUB_NAME(handler); \
+	.long irq;                                          \
+	.long priority;                                     \
 	.long vector;                                       \
 	.long dpl;
 
@@ -76,7 +78,7 @@ extern "C" {
  */
 
 #define NANO_CPU_EXC_CONNECT(h, v, d)                              \
-	NANO_CPU_INT_REGISTER_ASM(h, v, d) GTEXT(MK_STUB_NAME(h)); \
+	NANO_CPU_INT_REGISTER_ASM(h, -1, -1, v, d) GTEXT(MK_STUB_NAME(h)); \
 	SECTION_FUNC(TEXT, MK_STUB_NAME(h)) NANO_CPU_EXC_CONNECT_CODE(h)
 
 /**
@@ -92,7 +94,7 @@ extern "C" {
  * exception stack frame the same.
  */
 #define NANO_CPU_EXC_CONNECT_NO_ERR(h, v, d)                       \
-	NANO_CPU_INT_REGISTER_ASM(h, v, d) GTEXT(MK_STUB_NAME(h)); \
+	NANO_CPU_INT_REGISTER_ASM(h, -1, -1, v, d) GTEXT(MK_STUB_NAME(h)); \
 	SECTION_FUNC(TEXT, MK_STUB_NAME(h))                      \
 		NANO_CPU_EXC_CONNECT_NO_ERR_CODE(h)
 

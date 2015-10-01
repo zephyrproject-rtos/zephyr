@@ -71,7 +71,7 @@ typedef void* (*pfunc) (void*);
 /* ISR stub data structure */
 #ifndef TEST_max
 static void isrDummyIntStub(void *);
-NANO_CPU_INT_REGISTER(isrDummyIntStub, TEST_SOFT_INT, 0);
+NANO_CPU_INT_REGISTER(isrDummyIntStub, -1, -1, TEST_SOFT_INT, 0);
 #endif /* TEST_max */
 
 /* stack used by fiber */

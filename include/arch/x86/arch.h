@@ -101,6 +101,10 @@ typedef unsigned char __aligned(_INT_STUB_ALIGN) NANO_INT_STUB[_INT_STUB_SIZE];
 typedef struct s_isrList {
 	/** Address of ISR/stub */
 	void		*fnc;
+	/** IRQ associated with the ISR/stub */
+	unsigned int    irq;
+	/** Priority associated with the IRQ */
+	unsigned int    priority;
 	/** Vector number associated with ISR/stub */
 	unsigned int    vec;
 	/** Privilege level associated with ISR/stub */
@@ -123,6 +127,8 @@ typedef struct s_isrList {
  * descriptor; (hardware) interrupts and exceptions should specify a level of 0,
  * whereas handlers for user-mode software generated interrupts should specify 3.
  * @param r Routine to be connected
+ * @param n IRQ number
+ * @param p IRQ priority
  * @param v Interrupt Vector
  * @param d Descriptor Privilege Level
  *
@@ -130,8 +136,9 @@ typedef struct s_isrList {
  *
  */
 
-#define NANO_CPU_INT_REGISTER(r, v, d) \
-	 ISR_LIST __attribute__((section(".intList"))) MK_ISR_NAME(r) = {&r, v, d}
+#define NANO_CPU_INT_REGISTER(r, n, p, v, d) \
+	 ISR_LIST __attribute__((section(".intList"))) MK_ISR_NAME(r) = \
+			{&r, n, p, v, d}
 
 /*
  * @brief Declare a dynamic interrupt stub
@@ -161,10 +168,11 @@ typedef struct s_isrList {
  * @return N/A
  *
  */
-#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	\
-	const uint32_t _##device##_int_vector = INT_VEC_IRQ0 + (irq);	\
-	extern void *_##device##_##isr##_stub;				\
-	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, INT_VEC_IRQ0 + (irq), 0)
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	   \
+	const uint32_t _##device##_int_vector = INT_VEC_IRQ0 + (irq);	   \
+	extern void *_##device##_##isr##_stub;				               \
+	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq), (priority), \
+					INT_VEC_IRQ0 + (irq), 0)
 
 
 /**

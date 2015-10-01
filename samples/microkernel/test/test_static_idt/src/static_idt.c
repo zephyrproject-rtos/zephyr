@@ -63,7 +63,7 @@ extern unsigned char _idt_base_address[];
 extern void *nanoIntStub;
 extern void *exc_divide_error_handlerStub;
 
-NANO_CPU_INT_REGISTER(nanoIntStub, TEST_SOFT_INT, 0);
+NANO_CPU_INT_REGISTER(nanoIntStub, -1, -1, TEST_SOFT_INT, 0);
 
 static volatile int    excHandlerExecuted;
 static volatile int    intHandlerExecuted;
