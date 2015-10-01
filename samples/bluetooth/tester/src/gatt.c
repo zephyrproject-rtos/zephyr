@@ -41,6 +41,22 @@ static struct {
 	uint8_t buf[MAX_BUFFER_SIZE];
 } gatt_buf;
 
+static void *gatt_buf_reserve(size_t len)
+{
+	void *ptr;
+
+	if ((len + gatt_buf.len) > ARRAY_SIZE(gatt_buf.buf)) {
+		return NULL;
+	}
+
+	ptr = memset(gatt_buf.buf + gatt_buf.len, 0, len);
+	gatt_buf.len += len;
+
+	printk("gatt_buf: %d/%d used\n", gatt_buf.len, MAX_BUFFER_SIZE);
+
+	return ptr;
+}
+
 static void *gatt_buf_add(const void *data, size_t len)
 {
 	void *ptr;
@@ -169,6 +185,7 @@ rsp:
 struct gatt_value {
 	uint16_t len;
 	uint8_t *data;
+	uint8_t *prep_data;
 };
 
 static int read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -180,10 +197,43 @@ static int read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 value->len);
 }
 
+static int write_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		       const void *buf, uint16_t len, uint16_t offset)
+{
+	struct gatt_value *value = attr->user_data;
+
+	if (offset + len > value->len) {
+		return -EFBIG;
+	}
+
+	memcpy(value->prep_data + offset, buf, len);
+
+	return len;
+}
+
+static int flush_value(struct bt_conn *conn,
+		       const struct bt_gatt_attr *attr, uint8_t flags)
+{
+	struct gatt_value *value = attr->user_data;
+
+	switch (flags) {
+	case BT_GATT_FLUSH_SYNC:
+		/* Sync buffer to data */
+		memcpy(value->data, value->prep_data, value->len);
+		/* Fallthrough */
+	case BT_GATT_FLUSH_DISCARD:
+		memset(value->prep_data, 0, value->len);
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
 static struct bt_gatt_attr chr = BT_GATT_CHARACTERISTIC(0x0000, NULL);
 static struct bt_gatt_attr chr_val = BT_GATT_LONG_DESCRIPTOR(0x0000, NULL, 0,
-							     read_value, NULL,
-							     NULL, NULL);
+							     read_value,
+							     write_value,
+							     flush_value, NULL);
 
 static void add_characteristic(uint8_t *data, uint16_t len)
 {
@@ -297,6 +347,12 @@ static void set_value(uint8_t *data, uint16_t len)
 
 	value.data = gatt_buf_add(cmd->value, value.len);
 	if (!value.data) {
+		status = BTP_STATUS_FAILED;
+		goto rsp;
+	}
+
+	value.prep_data = gatt_buf_reserve(value.len);
+	if (!value.prep_data) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
