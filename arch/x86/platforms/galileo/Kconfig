@@ -53,6 +53,15 @@ config PINMUX
 config I2C
 	def_bool y
 
+config GPIO
+	def_bool y
+
+config PWM
+	def_bool y
+
+config SHARED_IRQ
+	def_bool y
+
 if SHARED_IRQ
 config SHARED_IRQ_0
 	def_bool y
@@ -96,38 +105,56 @@ config I2C_DW_0_FUNCTION
 config I2C_DW_0_BAR
 	default 0
 config I2C_DW_0_IRQ_SHARED_NAME
-	default "SHARED_IRQ0" if SHARED_IRQ
+	default SHARED_IRQ_0_NAME if SHARED_IRQ
 endif
 
 if GPIO && I2C
+
+config GPIO_PCAL9535A
+	def_bool y
+
 config GPIO_PCAL9535A_0
 	def_bool y
 config GPIO_PCAL9535A_0_DEV_NAME
-	default "GPIO_P0"
+	default "EXP0"
 config GPIO_PCAL9535A_0_I2C_ADDR
 	default 0x25
 config GPIO_PCAL9535A_0_I2C_MASTER_DEV_NAME
-	default "I2C0"
+	default I2C_DW_0_NAME
+
 config GPIO_PCAL9535A_1
 	def_bool y
-
 config GPIO_PCAL9535A_1_DEV_NAME
-	default "GPIO_P1"
+	default "EXP1"
 config GPIO_PCAL9535A_1_I2C_ADDR
 	default 0x26
 config GPIO_PCAL9535A_1_I2C_MASTER_DEV_NAME
-	default "I2C0"
+	default I2C_DW_0_NAME
+
 config GPIO_PCAL9535A_2
 	def_bool y
 config GPIO_PCAL9535A_2_DEV_NAME
-	default "GPIO_P2"
+	default "EXP2"
 config GPIO_PCAL9535A_2_I2C_ADDR
 	default 0x27
 config GPIO_PCAL9535A_2_I2C_MASTER_DEV_NAME
-	default "I2C0"
+	default I2C_DW_0_NAME
 endif
 
 if GPIO
+
+config GPIO_MMIO
+	def_bool y
+config GPIO_MMIO_0
+	def_bool y
+config GPIO_MMIO_1
+	def_bool y
+
+config GPIO_DW
+	def_bool y
+config GPIO_DW_0
+	def_bool y
+
 if GPIO_MMIO_0
 config GPIO_MMIO_0_DEV_NAME
 	default "GPIO_M0"
@@ -156,6 +183,26 @@ config GPIO_MMIO_1_INPUT
 config GPIO_MMIO_1_OUTPUT
 	default 0x10A8
 endif
+
+if GPIO_DW_0
+
+config GPIO_DW_0_NAME
+	default "GPIO_0"
+config GPIO_DW_0_IRQ_SHARED_NAME
+	default SHARED_IRQ_0_NAME
+config GPIO_DW_0_BASE_ADDR
+	default 0x90006000
+config GPIO_DW_0_BUS
+	default 0
+config GPIO_DW_0_DEV
+	default 21
+config GPIO_DW_0_FUNCTION
+	default 2
+config GPIO_DW_0_BAR
+	default 1
+
+endif
+
 endif
 
 if PINMUX
@@ -166,11 +213,31 @@ config PINMUX_NUM_PINS
 config PINMUX_BASE
         default 0x00000000
 config PINMUX_GALILEO_EXP0_NAME
-        default "EXP0"
+        default GPIO_PCAL9535A_0_DEV_NAME
 config PINMUX_GALILEO_EXP1_NAME
-        default "EXP1"
+        default GPIO_PCAL9535A_1_DEV_NAME
 config PINMUX_GALILEO_EXP2_NAME
-        default "EXP2"
+        default GPIO_PCAL9535A_2_DEV_NAME
 config PINMUX_GALILEO_PWM0_NAME
-        default "PWM0"
+        default PWM_PCA9685_0_DEV_NAME
+endif
+
+if PWM
+
+config PWM_PCA9685
+	def_bool y
+
+config PWM_PCA9685_0
+	def_bool y
+
+if PWM_PCA9685_0
+
+config PWM_PCA9685_0_DEV_NAME
+	default "PWM0"
+config PWM_PCA9685_0_I2C_ADDR
+	default 0x47
+config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
+	default I2C_DW_0_NAME
+
+endif
 endif
