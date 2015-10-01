@@ -180,7 +180,7 @@ static int hpet_irq_set(struct device *unused)
 }
 
 DECLARE_DEVICE_INIT_CONFIG(hpetirq, "", hpet_irq_set, NULL);
-pre_kernel_core_init(hpetirq, NULL);
+pre_kernel_early_init(hpetirq, NULL);
 
 #endif /* CONFIG_HPET_TIMER */
 
