@@ -42,6 +42,29 @@ config  KERNEL_BIN_NAME
 	default "microkernel" if MICROKERNEL
 	default "nanokernel" if NANOKERNEL
 
+
+config  HAVE_CUSTOM_LINKER_SCRIPT
+	prompt "Custom linker scripts provided"
+	def_bool n
+	help
+	Set this option if you have a custom linker script which needed to
+	be define in CUSTOM_LINKER_SCRIPT.
+
+config  CUSTOM_LINKER_SCRIPT
+	string "Path to custom linker script"
+	default ""
+	depends on HAVE_CUSTOM_LINKER_SCRIPT
+	help
+	Path to the linker script to be used instead of the one define by the
+	platform.
+
+	The linker script must be based on a version provided by Zephyr since
+	the kernel can expect a certain layout/certain regions.
+
+	This is useful when an application needs to add sections into the
+	linker script and avoid having to change the script provided by
+	Zephyr.
+
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
 	help
