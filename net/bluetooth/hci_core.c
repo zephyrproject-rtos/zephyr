@@ -252,6 +252,21 @@ static int bt_hci_stop_scanning(void)
 	return err;
 }
 
+static const bt_addr_le_t *find_id_addr(const bt_addr_le_t *addr)
+{
+#if defined(CONFIG_BLUETOOTH_SMP)
+	struct bt_keys *keys;
+
+	keys = bt_keys_find_irk(addr);
+	if (keys) {
+		BT_DBG("Identity %s matched RPA %s\n",
+		       bt_addr_le_str(&keys->addr), bt_addr_le_str(addr));
+		return &keys->addr;
+	}
+#endif
+	return addr;
+}
+
 #if defined(CONFIG_BLUETOOTH_CONN)
 static void hci_acl(struct bt_buf *buf)
 {
@@ -439,44 +454,11 @@ static int update_conn_params(struct bt_conn *conn)
 	return -EBUSY;
 }
 
-static struct bt_conn *find_pending_conn(const bt_addr_le_t *addr)
-{
-#if defined(CONFIG_BLUETOOTH_SMP)
-	struct bt_keys *keys;
-
-	keys = bt_keys_find_irk(addr);
-	if (keys) {
-		return bt_conn_lookup_state(&keys->addr, BT_CONN_CONNECT);
-	}
-#endif /* CONFIG_BLUETOOTH_SMP */
-	return bt_conn_lookup_state(addr, BT_CONN_CONNECT);
-}
-
-static void copy_id_addr(struct bt_conn *conn, const bt_addr_le_t *addr)
-{
-#if defined(CONFIG_BLUETOOTH_SMP)
-	struct bt_keys *keys;
-
-	/* If we have a keys struct we already know the identity */
-	if (conn->keys) {
-		return;
-	}
-
-	keys = bt_keys_find_irk(addr);
-	if (keys) {
-		bt_addr_le_copy(&conn->dst, &keys->addr);
-		conn->keys = keys;
-		return;
-	}
-#endif /* CONFIG_BLUETOOTH_SMP */
-
-	bt_addr_le_copy(&conn->dst, addr);
-}
-
 static void le_conn_complete(struct bt_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	const bt_addr_le_t *id_addr;
 	struct bt_conn *conn;
 	bt_addr_le_t src;
 	int err;
@@ -484,10 +466,12 @@ static void le_conn_complete(struct bt_buf *buf)
 	BT_DBG("status %u handle %u role %u %s\n", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
 
+	id_addr = find_id_addr(&evt->peer_addr);
+
 	/* Make lookup to check if there's a connection object in CONNECT state
 	 * associated with passed peer LE address.
 	 */
-	conn = find_pending_conn(&evt->peer_addr);
+	conn = bt_conn_lookup_state(id_addr, BT_CONN_CONNECT);
 
 	if (evt->status) {
 		if (!conn) {
@@ -506,7 +490,7 @@ static void le_conn_complete(struct bt_buf *buf)
 	}
 
 	if (!conn) {
-		conn = bt_conn_add(&evt->peer_addr);
+		conn = bt_conn_add(id_addr);
 	}
 
 	if (!conn) {
@@ -515,13 +499,16 @@ static void le_conn_complete(struct bt_buf *buf)
 	}
 
 	conn->handle   = handle;
-	copy_id_addr(conn, &evt->peer_addr);
+	bt_addr_le_copy(&conn->dst, id_addr);
 	conn->le_conn_interval = sys_le16_to_cpu(evt->interval);
 	conn->role = evt->role;
 
 	src.type = BT_ADDR_LE_PUBLIC;
 	memcpy(src.val, bt_dev.bdaddr.val, sizeof(bt_dev.bdaddr.val));
 
+	/* use connection address (instead of identity address) as initiator
+	 * or responder address
+	 */
 	if (conn->role == BT_HCI_ROLE_MASTER) {
 		bt_addr_le_copy(&conn->init_addr, &src);
 		bt_addr_le_copy(&conn->resp_addr, &evt->peer_addr);
@@ -1069,41 +1056,21 @@ static void le_adv_report(struct bt_buf *buf)
 
 	while (num_reports--) {
 		int8_t rssi = info->data[info->length];
-#if defined(CONFIG_BLUETOOTH_CONN)
 		const bt_addr_le_t *addr;
-#if defined(CONFIG_BLUETOOTH_SMP)
-		struct bt_keys *keys;
-#endif /* CONFIG_BLUETOOTH_SMP */
-#endif /* CONFIG_BLUETOOTH_CONN */
+
 		BT_DBG("%s event %u, len %u, rssi %d dBm\n",
 			bt_addr_le_str(&info->addr),
 			info->evt_type, info->length, rssi);
-#if defined(CONFIG_BLUETOOTH_CONN)
-#if defined(CONFIG_BLUETOOTH_SMP)
-		keys = bt_keys_find_irk(&info->addr);
-		if (keys) {
-			addr = &keys->addr;
-			BT_DBG("Identity %s matched RPA %s\n",
-			       bt_addr_le_str(&keys->addr),
-			       bt_addr_le_str(&info->addr));
-		} else {
-			addr = &info->addr;
-		}
-#else
-		addr = &info->addr;
-#endif /* CONFIG_BLUETOOTH_SMP */
+
+		addr = find_id_addr(&info->addr);
 
 		if (scan_dev_found_cb) {
 			scan_dev_found_cb(addr, rssi, info->evt_type,
 					  info->data, info->length);
 		}
 
+#if defined(CONFIG_BLUETOOTH_CONN)
 		check_pending_conn(addr, info->evt_type);
-#else
-		if (scan_dev_found_cb) {
-			scan_dev_found_cb(&info->addr, rssi, info->evt_type,
-					  info->data, info->length);
-		}
 #endif /* CONFIG_BLUETOOTH_CONN */
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
