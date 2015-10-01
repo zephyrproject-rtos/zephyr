@@ -738,8 +738,6 @@ int i2c_dw_initialize(struct device *port)
 
 	port->driver_api = &funcs;
 
-	dev->app_config.raw = 0;
-
 	/*
 	 * grab the default value on initialization.  This should be set to the
 	 * IC_MAX_SPEED_MODE in the hardware.  If it does support high speed we
@@ -760,8 +758,6 @@ int i2c_dw_initialize(struct device *port)
 		    dev->app_config.raw);
 		return DEV_NOT_CONFIG;
 	}
-
-	dev->state = I2C_DW_STATE_READY;
 
 	dev->state = I2C_DW_STATE_READY;
 
