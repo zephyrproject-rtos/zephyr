@@ -588,7 +588,65 @@ static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 	return 0;
 }
 
+static bool sec_level_reachable(struct bt_conn *conn)
+{
+	switch (conn->required_sec_level) {
+	case BT_SECURITY_LOW:
+	case BT_SECURITY_MEDIUM:
+		return true;
+	case BT_SECURITY_HIGH:
+		return bt_smp_io_capa != BT_SMP_IO_NO_INPUT_OUTPUT;
+	case BT_SECURITY_FIPS:
+	default:
+		return false;
+	}
+}
+
 #if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+int bt_smp_send_security_req(struct bt_conn *conn)
+{
+	struct bt_smp *smp = conn->smp;
+	struct bt_smp_security_request *req;
+	struct bt_buf *req_buf;
+
+	BT_DBG("\n");
+
+	/* SMP Timeout */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
+		return -EIO;
+	}
+
+	/* pairing is in progress */
+	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+		return -EBUSY;
+	}
+
+	/* early verify if required sec level if reachable */
+	if (!sec_level_reachable(conn)) {
+		return -EINVAL;
+	}
+
+	req_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SECURITY_REQUEST,
+				    sizeof(*req));
+	if (!req_buf) {
+		return -ENOBUFS;
+	}
+
+	req = bt_buf_add(req_buf, sizeof(*req));
+
+	req->auth_req = BT_SMP_AUTH_BONDING;
+
+	if (conn->required_sec_level >= BT_SECURITY_HIGH) {
+		req->auth_req |= BT_SMP_AUTH_MITM;
+	}
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+
+	return 0;
+}
+
 static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
@@ -648,65 +706,36 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 }
 #endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
-static bool sec_level_reachable(struct bt_conn *conn)
+static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
 {
-	switch (conn->required_sec_level) {
-	case BT_SECURITY_LOW:
-	case BT_SECURITY_MEDIUM:
-		return true;
-	case BT_SECURITY_HIGH:
-		return bt_smp_io_capa != BT_SMP_IO_NO_INPUT_OUTPUT;
-	case BT_SECURITY_FIPS:
-	default:
-		return false;
-	}
-}
-
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-int bt_smp_send_security_req(struct bt_conn *conn)
-{
+	struct bt_smp_pairing_confirm *req;
 	struct bt_smp *smp = conn->smp;
-	struct bt_smp_security_request *req;
-	struct bt_buf *req_buf;
+	struct bt_buf *rsp_buf;
+	int err;
 
-	BT_DBG("\n");
-
-	/* SMP Timeout */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_TIMEOUT)) {
-		return -EIO;
-	}
-
-	/* pairing is in progress */
-	if (atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
-		return -EBUSY;
-	}
-
-	/* early verify if required sec level if reachable */
-	if (!sec_level_reachable(conn)) {
-		return -EINVAL;
-	}
-
-	req_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_SECURITY_REQUEST,
+	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
 				    sizeof(*req));
-	if (!req_buf) {
-		return -ENOBUFS;
+	if (!rsp_buf) {
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	req = bt_buf_add(req_buf, sizeof(*req));
+	req = bt_buf_add(rsp_buf, sizeof(*req));
 
-	req->auth_req = BT_SMP_AUTH_BONDING;
-
-	if (conn->required_sec_level >= BT_SECURITY_HIGH) {
-		req->auth_req |= BT_SMP_AUTH_MITM;
+	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp, &conn->init_addr,
+		     &conn->resp_addr, req->val);
+	if (err) {
+		bt_buf_put(rsp_buf);
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
+
+	smp_restart_timer(smp);
 
 	return 0;
 }
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
 
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 int bt_smp_send_pairing_req(struct bt_conn *conn)
@@ -766,40 +795,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 
 	return 0;
 }
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
 
-static uint8_t smp_send_pairing_confirm(struct bt_conn *conn)
-{
-	struct bt_smp_pairing_confirm *req;
-	struct bt_smp *smp = conn->smp;
-	struct bt_buf *rsp_buf;
-	int err;
-
-	rsp_buf = bt_smp_create_pdu(conn, BT_SMP_CMD_PAIRING_CONFIRM,
-				    sizeof(*req));
-	if (!rsp_buf) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	req = bt_buf_add(rsp_buf, sizeof(*req));
-
-	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp, &conn->init_addr,
-		     &conn->resp_addr, req->val);
-	if (err) {
-		bt_buf_put(rsp_buf);
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, rsp_buf);
-
-	atomic_clear_bit(&smp->flags, SMP_FLAG_CFM_DELAYED);
-
-	smp_restart_timer(smp);
-
-	return 0;
-}
-
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
 static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing *rsp = (void *)buf->data;
