@@ -30,11 +30,12 @@
 
 /**
  * @file
- * @brief Create static IDT
+ * @brief Generate static IDT and a bitmap of allocated interrupt vectors.
  * Creates a static IA-32 Interrupt Descriptor Table (IDT).
  *
  * This program expects to be invoked as follows:
- *  gen_idt -i <input file> -o <output file> -n <number of interrupt vectors>
+ *  gen_idt -i <input file> -o <IDT output file> -n <# of interrupt vectors>
+ *          -b <allocated vectors bitmap file>
  * All parameters are required.
  *
  * The <input file> is assumed to be a binary file containing the intList
@@ -89,6 +90,7 @@ static void read_input_file(void);
 static void close_files(void);
 static void validate_input_file(void);
 static void generate_idt(void);
+static void generate_interrupt_vector_bitmap(void);
 static void clean_exit(int exit_code);
 
 struct genidt_header_s {
@@ -112,6 +114,7 @@ static struct genidt_entry_s   generated_entry[MAX_NUM_VECTORS];
 enum {
 	IFILE = 0,             /* input file */
 	OFILE,                 /* output file */
+	BFILE,                 /* allocated interrupt vector bitmap file */
 	NUSERFILES,            /* number of user-provided file names */
 	EXECFILE = NUSERFILES, /* for name of executable */
 	NFILES                 /* total number of file names */
@@ -121,7 +124,7 @@ enum { SHORT_USAGE, LONG_USAGE };
 static int fds[NUSERFILES] = {-1, -1};
 static char *filenames[NFILES];
 static unsigned int num_vectors = (unsigned int)-1;
-static struct version version = {KERNEL_VERSION, 1, 1, 3};
+static struct version version = {KERNEL_VERSION, 1, 1, 4};
 
 int main(int argc, char *argv[])
 {
@@ -131,6 +134,7 @@ int main(int argc, char *argv[])
 	read_input_file();       /* may exit */
 	validate_input_file();   /* may exit */
 	generate_idt();          /* may exit */
+	generate_interrupt_vector_bitmap();
 	close_files();
 	return 0;
 }
@@ -140,8 +144,11 @@ static void get_options(int argc, char *argv[])
 	char *endptr;
 	int ii, opt;
 
-	while ((opt = getopt(argc, argv, "hi:o:n:v")) != -1) {
+	while ((opt = getopt(argc, argv, "hb:i:o:n:v")) != -1) {
 		switch (opt) {
+		case 'b':
+			filenames[BFILE] = optarg;
+			break;
 		case 'i':
 			filenames[IFILE] = optarg;
 			break;
@@ -210,6 +217,9 @@ static void open_files(void)
 	fds[IFILE] = open(filenames[IFILE], O_RDONLY | O_BINARY);
 	fds[OFILE] = open(filenames[OFILE], O_WRONLY | O_BINARY |
 						O_TRUNC | O_CREAT,
+						S_IWUSR | S_IRUSR);
+	fds[BFILE] = open(filenames[BFILE], O_WRONLY | O_BINARY | O_CREAT |
+						O_TRUNC | O_BINARY,
 						S_IWUSR | S_IRUSR);
 
 	for (ii = 0; ii < NUSERFILES; ii++) {
@@ -472,6 +482,47 @@ static void generate_idt(void)
 	return;
 }
 
+static void generate_interrupt_vector_bitmap(void)
+{
+	int i;
+	unsigned int num_elements = (num_vectors + 31) / 32;
+	unsigned int interrupt_vector_bitmap[num_elements];
+	unsigned int index;
+	unsigned int bit;
+	size_t bytes_to_write;
+	ssize_t bytes_written;
+
+	/* Initially mark each interrupt vector as available */
+	for (i = 0; i < num_elements; i++) {
+		interrupt_vector_bitmap[i] = 0xffffffff;
+	}
+
+	/* Loop through each supplied entry and mark its vector as allocated. */
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		index = supplied_entry[i].vector_id / 32;
+		bit = supplied_entry[i].vector_id & 31;
+
+		interrupt_vector_bitmap[index] &= ~(1 << bit);
+	}
+
+	/* Ensure that any leftover entries are marked as allocated too. */
+	for (i = num_vectors; i < num_elements * 32; i++) {
+		index = i / 32;
+		bit = i & 0x1f;
+
+		interrupt_vector_bitmap[index] &= ~(1 << bit);
+	}
+
+	bytes_to_write = num_elements * sizeof(unsigned int);
+	bytes_written = write(fds[BFILE], interrupt_vector_bitmap,
+						bytes_to_write);
+	if (bytes_written != bytes_to_write) {
+		fprintf(stderr, "Failed to write all data to '%s'.\n",
+				filenames[BFILE]);
+		clean_exit(-1);
+	}
+}
+
 static void close_files(void)
 {
 	int ii;
@@ -499,10 +550,12 @@ static void usage(int len)
 	    "\n"
 	    " options\n"
 	    "\n"
+	    "    -b <allocated interrupt vector bitmap output file>\n\n"
+	    "        [Mandatory] The interrupt vector bitmap output file.\n\n"
 	    "    -i <binary file>\n\n"
 	    "        [Mandatory] The input file in binary format.\n\n"
-	    "    -o <output file>\n\n"
-	    "        [Mandatory] The output file.\n\n"
+	    "    -o <IDT output file>\n\n"
+	    "        [Mandatory] The IDT output file.\n\n"
 	    "    -n <n>\n\n"
 	    "        [Mandatory] Number of vectors\n\n"
 	    "    -v  Display version.\n\n"

@@ -77,14 +77,20 @@ initial_link()
 #Generates IDT and merge them into final binary
 # ${1} input file (${KERNEL_NAME}.elf)
 # ${2} output file (staticIdt.o)
+# ${3} output file (int_vector_alloc)
 gen_idt()
 {
 	test -z $OUTPUT_FORMAT && OUTPUT_FORMAT=elf32-i386
 	test -z $OUTPUT_ARCH && OUTPUT_ARCH=i386
 	${OBJCOPY} -I $OUTPUT_FORMAT  -O binary -j intList ${1} isrList.bin
-	${GENIDT} -i isrList.bin -n ${CONFIG_IDT_NUM_VECTORS:-256} -o staticIdt.bin
-	${OBJCOPY} -I binary -B $OUTPUT_ARCH -O $OUTPUT_FORMAT  --rename-section .data=staticIdt staticIdt.bin ${2}
+	${GENIDT} -i isrList.bin -n ${CONFIG_IDT_NUM_VECTORS:-256} \
+              -o staticIdt.bin -b ${3}.bin
+	${OBJCOPY} -I binary -B $OUTPUT_ARCH -O $OUTPUT_FORMAT \
+               --rename-section .data=staticIdt staticIdt.bin ${2}
+	${OBJCOPY} -I binary -B $OUTPUT_ARCH -O $OUTPUT_FORMAT \
+               --rename-section .data=${3} ${3}.bin ${3}.o
 	rm -f staticIdt.bin
+	rm -f ${3}.bin
 	rm -f isrList.bin
 }
 
@@ -93,9 +99,10 @@ gen_idt()
 # ${2} - linker command file (final-linker.cmd)
 # ${3} - input file (staticIdt.o)
 # ${4} - output file
+# ${5} - additional input file if applicable
 zephyr_link()
 {
-	${LD} -T ${2} @${1} ${3} -o ${4}
+	${LD} -T ${2} @${1} ${3} ${5} -o ${4}
 	${OBJCOPY} --set-section-flags intList=noload ${4} elf.tmp
 	${OBJCOPY} -R intList elf.tmp ${4}
 	rm elf.tmp
@@ -259,9 +266,10 @@ fi
 
 if [ "${SRCARCH}" = "x86" ]; then
 	info SIDT ${KERNEL_NAME}.elf
-	gen_idt ${KERNEL_NAME}.elf staticIdt.o
+	gen_idt ${KERNEL_NAME}.elf staticIdt.o int_vector_alloc
 	linker_command final-linker.cmd -DFINAL_LINK
-	zephyr_link ${KERNEL_NAME}.lnk final-linker.cmd staticIdt.o ${KERNEL_NAME}.elf
+	zephyr_link ${KERNEL_NAME}.lnk final-linker.cmd staticIdt.o \
+	            ${KERNEL_NAME}.elf int_vector_alloc.o
 fi
 
 info BIN ${KERNEL_NAME}.bin

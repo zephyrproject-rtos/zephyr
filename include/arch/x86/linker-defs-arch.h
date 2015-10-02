@@ -42,14 +42,23 @@ Commonly used macros and defines for linker script.
 #define INT_STUB_NOINIT KEEP(*(.intStubSect))
 
 #ifdef FINAL_LINK
-  /* Use the real IDT */
-  #define STATIC_IDT KEEP(*(staticIdt))
+	/* Use the real IDT */
+	#define STATIC_IDT KEEP(*(staticIdt))
+
+	/* Use the real _interrupt_vectors_allocated[] array */
+	#define INTERRUPT_VECTORS_ALLOCATED KEEP(*(int_vector_alloc))
 #else
-  /*
-   * Save space for the real IDT to prevent symbols from shifting. Note that
-   * an IDT entry is 8 bytes in size.
-   */
-  #define STATIC_IDT . += (8 * CONFIG_IDT_NUM_VECTORS);
+	/*
+	 * Save space for the real IDT to prevent symbols from shifting. Note that
+	 * an IDT entry is 8 bytes in size.
+	 */
+	#define STATIC_IDT . += (8 * CONFIG_IDT_NUM_VECTORS);
+
+	/*
+	 * Save space for the real _interrupt_vectors_allocated[] array to prevent
+	 * symbols from shifting.
+	 */
+	#define INTERRUPT_VECTORS_ALLOCATED . += ((CONFIG_IDT_NUM_VECTORS + 31) / 32);
 #endif
 
 /*
@@ -58,8 +67,13 @@ Commonly used macros and defines for linker script.
  * interrupt management code relies on.
  */
 #define IDT_MEMORY \
-  . = ALIGN(8);\
-  _idt_base_address = .;\
-  STATIC_IDT
+	. = ALIGN(8);\
+	_idt_base_address = .;\
+	STATIC_IDT
+
+#define INTERRUPT_VECTORS_ALLOCATED_MEMORY \
+	. = ALIGN(4); \
+	_interrupt_vectors_allocated = .; \
+	INTERRUPT_VECTORS_ALLOCATED
 
 #endif   /* _LINKERDEFSARCH_H */

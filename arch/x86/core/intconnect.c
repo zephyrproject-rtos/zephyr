@@ -123,22 +123,6 @@ void *__attribute__((section(".spurNoErrIsr")))
 		&_SpuriousIntNoErrCodeHandler;
 
 /*
- * Bitfield used to track which interrupt vectors are available for allocation.
- * The array is initialized to indicate all vectors are currently available.
- *
- * NOTE: For portability reasons, the ROUND_UP() macro can NOT be used to
- * perform the rounding up calculation below.  Unlike GCC, the Diab compiler
- * generates an error when a macro that takes a parameter is used to define
- * the size of an array.
- */
-
-#define VEC_ALLOC_NUM_INTS ((CONFIG_IDT_NUM_VECTORS + 31) & ~31) / 32
-
-static unsigned int interrupt_vectors_allocated[VEC_ALLOC_NUM_INTS] = {
-	[0 ...(VEC_ALLOC_NUM_INTS - 1)] = 0xffffffff
-};
-
-/*
  * Array of interrupt stubs for dynamic interrupt connection.
  */
 #ifdef CONFIG_MICROKERNEL
@@ -328,8 +312,7 @@ int irq_connect(
 	 *
 	 * The _SysIntVecAlloc() routine will use the "utility" routine
 	 * _IntVecAlloc() provided in this module to scan the
-	 *interrupt_vectors_allocated[]
-	 * array for a suitable vector.
+	 * _interrupt_vectors_allocated[] array for a suitable vector.
 	 */
 
 	vector = _SysIntVecAlloc(irq,
@@ -467,7 +450,7 @@ int irq_connect(
  *
  * @brief Allocate a free interrupt vector given <priority>
  *
- * This routine scans the interrupt_vectors_allocated[] array for a free vector
+ * This routine scans the _interrupt_vectors_allocated[] array for a free vector
  * that satisfies the specified <priority>.  It is a utility function for use
  * only by the interrupt controller's _SysIntVecAlloc() routine.
  *
@@ -515,15 +498,15 @@ int _IntVecAlloc(unsigned int priority)
 #endif /* DEBUG */
 
 	/*
-	 * Atomically allocate a vector from the interrupt_vectors_allocated[] array
-	 * to prevent race conditions with other tasks/fibers attempting to
-	 * allocate an interrupt vector.
+	 * Atomically allocate a vector from the _interrupt_vectors_allocated[]
+	 * array to prevent race conditions with other tasks/fibers attempting
+	 * to allocate an interrupt vector.
 	 */
 
-	entryToScan = priority >> 1; /* interrupt_vectors_allocated[] entry to scan */
+	entryToScan = priority >> 1;
 
 	/*
-	 * The interrupt_vectors_allocated[] entry specified by 'entryToScan' is a
+	 * The _interrupt_vectors_allocated[] entry indexed by 'entryToScan' is a
 	 * 32-bit quantity and thus represents the vectors for a pair of priority
 	 * levels. Mask out the unwanted priority level and then use find_lsb_set()
 	 * to scan for an available vector of the requested priority.
@@ -534,7 +517,7 @@ int _IntVecAlloc(unsigned int priority)
 
 	key = irq_lock();
 
-	search_set = mask[priority & 1] & interrupt_vectors_allocated[entryToScan];
+	search_set = mask[priority & 1] & _interrupt_vectors_allocated[entryToScan];
 	fsb = find_lsb_set(search_set);
 
 #if defined(DEBUG)
@@ -552,7 +535,7 @@ int _IntVecAlloc(unsigned int priority)
 	 */
 
 	--fsb;
-	interrupt_vectors_allocated[entryToScan] &= ~(1 << fsb);
+	_interrupt_vectors_allocated[entryToScan] &= ~(1 << fsb);
 
 	irq_unlock(key);
 
@@ -583,7 +566,7 @@ void _IntVecMarkAllocated(unsigned int vector)
 	unsigned int imask;
 
 	imask = irq_lock();
-	interrupt_vectors_allocated[entryToSet] &= ~(1 << bitToSet);
+	_interrupt_vectors_allocated[entryToSet] &= ~(1 << bitToSet);
 	irq_unlock(imask);
 }
 
@@ -604,7 +587,7 @@ void _IntVecMarkFree(unsigned int vector)
 	unsigned int imask;
 
 	imask = irq_lock();
-	interrupt_vectors_allocated[entryToSet] |= (1 << bitToSet);
+	_interrupt_vectors_allocated[entryToSet] |= (1 << bitToSet);
 	irq_unlock(imask);
 }
 
