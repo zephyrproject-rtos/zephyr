@@ -286,6 +286,79 @@ static inline __attribute__((always_inline))
 	return ret;
 }
 
+
+static inline __attribute__((always_inline))
+	void sys_io_set_bit(io_port_t port, int bit)
+{
+	uint32_t reg = 0;
+
+	__asm__ volatile("inl	%%dx, %%eax\n"
+			 "mov	%1, 1\n"
+			 "shl	%%cl, %1\n"
+			 "or	%%eax, %1\n"
+			 "outl	%%eax, %%dx;\n\t"
+			 :
+			 : "d" (port),
+			   "r" (reg), "d" (bit)
+			 : "memory", "cc");
+}
+
+static inline __attribute__((always_inline))
+	void sys_io_clear_bit(io_port_t port, int bit)
+{
+	uint32_t reg = 0;
+
+	__asm__ volatile("inl	%%dx, %%eax\n"
+			 "mov	%1, 1\n"
+			 "shl	%%cl, %1\n"
+			 "and	%%eax, %1\n"
+			 "outl	%%eax, %%dx;\n\t"
+			 :
+			 : "d" (port),
+			   "r" (reg), "d" (bit)
+			 : "memory", "cc");
+}
+
+static inline __attribute__((always_inline))
+	int sys_io_test_bit(io_port_t port, int bit)
+{
+	uint32_t ret;
+
+	__asm__ volatile("inl	%%dx, %%eax\n"
+			 "bt	%2, %%eax\n"
+			 "lahf\n"
+			 "mov	%1, %%eax\n"
+			 "clc;\n\t"
+			 : "=r" (ret)
+			 : "d" (port),
+			   "Mr" (bit)
+			 : "memory", "cc");
+
+	return (ret & 1);
+}
+
+static inline __attribute__((always_inline))
+	int sys_io_test_and_set_bit(io_port_t port, int bit)
+{
+	int ret;
+
+	ret = sys_io_test_bit(port, bit);
+	sys_io_set_bit(port, bit);
+
+	return ret;
+}
+
+static inline __attribute__((always_inline))
+	int sys_io_test_and_clear_bit(io_port_t port, int bit)
+{
+	int ret;
+
+	ret = sys_io_test_bit(port, bit);
+	sys_io_clear_bit(port, bit);
+
+	return ret;
+}
+
 static inline __attribute__((always_inline))
 	void sys_write8(uint8_t data, mm_reg_t addr)
 {

@@ -95,6 +95,64 @@ typedef uint32_t mem_addr_t;
  * @return the 32 bits read
  */
 
+/**
+ * @fn static inline void sys_io_set_bit(io_port_t port, int bit)
+ * @brief Set the designated bit from port to 1
+ *
+ * This functions takes the designated bit starting from port and sets it to 1.
+ *
+ * @param port the port address from where to look for the bit
+ * @param bit the designated bit to set (from 0 to n)
+ */
+
+/**
+ * @fn static inline void sys_io_clear_bit(io_port_t port, int bit)
+ * @brief Clear the designated bit from port to 0
+ *
+ * This functions takes the designated bit starting from port and sets it to 0.
+ *
+ * @param port the port address from where to look for the bit
+ * @param bit the designated bit to clear (from 0 to n)
+ */
+
+/**
+ * @fn static inline int sys_io_test_bit(io_port_t port, int bit)
+ * @brief Test the bit from port if it is set or not
+ *
+ * This functions takes the designated bit starting from port and tests its
+ * current setting. It will return the current setting.
+ *
+ * @param port the port address from where to look for the bit
+ * @param bit the designated bit to test (from 0 to n)
+ *
+ * @return 1 if it is set, 0 otherwise
+ */
+
+/**
+ * @fn static inline int sys_io_test_and_set_bit(io_port_t port, int bit)
+ * @brief Test the bit from port and set it
+ *
+ * This functions takes the designated bit starting from port, tests its
+ * current setting and sets it. It will return the previous setting.
+ *
+ * @param port the port address from where to look for the bit
+ * @param bit the designated bit to test and set (from 0 to n)
+ *
+ * @return 1 if it was set, 0 otherwise
+ */
+
+/**
+ * @fn static inline int sys_io_test_and_clear_bit(io_port_t port, int bit)
+ * @brief Test the bit from port and clear it
+ *
+ * This functions takes the designated bit starting from port, tests its
+ * current setting and clears it. It will return the previous setting.
+ *
+ * @param port the port address from where to look for the bit
+ * @param bit the designated bit to test and clear (from 0 to n)
+ *
+ * @return 0 if it was clear, 1 otherwise
+ */
 
 /* Memory mapped registers I/O functions */
 
@@ -190,7 +248,7 @@ typedef uint32_t mem_addr_t;
  * @brief Test the bit if it is set or not
  *
  * This functions takes the designated bit starting from addr and tests its
- * current setting. If it return the current setting.
+ * current setting. It will return the current setting.
  *
  * @param addr the memory address from where to look for the bit
  * @param bit the designated bit to test (from 0 to n)
@@ -219,7 +277,7 @@ typedef uint32_t mem_addr_t;
  * current setting and clears it. It will return the previous setting.
  *
  * @param addr the memory address from where to look for the bit
- * @param bit the designated bit to test (from 0 to n)
+ * @param bit the designated bit to test and clear (from 0 to n)
  *
  * @return 0 if it was clear, 1 otherwise
  */
