@@ -424,22 +424,6 @@ void bt_gatt_connected(struct bt_conn *conn)
 	bt_gatt_foreach_attr(0x0001, 0xffff, connected_cb, conn);
 }
 
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
-void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
-			  const void *data, uint16_t length)
-{
-	struct bt_gatt_subscribe_params *params;
-
-	BT_DBG("handle 0x%04x length %u\n", handle, length);
-
-	for (params = subscriptions; params; params = params->_next) {
-		if (handle == params->value_handle) {
-			params->func(conn, 0, data, length);
-		}
-	}
-}
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
-
 static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct bt_conn *conn = user_data;
@@ -486,6 +470,20 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
+			  const void *data, uint16_t length)
+{
+	struct bt_gatt_subscribe_params *params;
+
+	BT_DBG("handle 0x%04x length %u\n", handle, length);
+
+	for (params = subscriptions; params; params = params->_next) {
+		if (handle == params->value_handle) {
+			params->func(conn, 0, data, length);
+		}
+	}
+}
+
 static void gatt_subscription_remove(struct bt_gatt_subscribe_params *prev,
 				     struct bt_gatt_subscribe_params *params)
 {
@@ -515,24 +513,7 @@ static void remove_subscribtions(struct bt_conn *conn)
 		gatt_subscription_remove(prev, params);
 	}
 }
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
-void bt_gatt_disconnected(struct bt_conn *conn)
-{
-	BT_DBG("conn %p\n", conn);
-	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
-
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
-	/* If paired don't remove subscriptions */
-	if (bt_keys_find_addr(&conn->dst)) {
-		return;
-	}
-
-	remove_subscribtions(conn);
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
-}
-
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 static void gatt_mtu_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 			 uint16_t length, void *user_data)
 {
@@ -1476,3 +1457,18 @@ int bt_gatt_read_multiple(struct bt_conn *conn, const uint16_t *handles,
 	return gatt_send(conn, buf, att_read_rsp, func, NULL);
 }
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+
+void bt_gatt_disconnected(struct bt_conn *conn)
+{
+	BT_DBG("conn %p\n", conn);
+	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
+
+#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+	/* If paired don't remove subscriptions */
+	if (bt_keys_find_addr(&conn->dst)) {
+		return;
+	}
+
+	remove_subscribtions(conn);
+#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+}
