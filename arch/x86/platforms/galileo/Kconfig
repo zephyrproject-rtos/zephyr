@@ -286,3 +286,10 @@ config SPI_INTEL_PORT_0_PRI
 	default 0
 endif
 endif
+
+if NS16550
+config NS16550_PORT_0_BASE_ADDR
+	default 0x9000f000
+config NS16550_PORT_1_BASE_ADDR
+	default 0x9000b000
+endif
