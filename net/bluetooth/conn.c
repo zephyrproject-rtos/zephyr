@@ -133,6 +133,71 @@ void bt_conn_security_changed(struct bt_conn *conn)
 		}
 	}
 }
+
+int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
+				uint16_t ediv, const uint8_t *ltk)
+{
+	struct bt_hci_cp_le_start_encryption *cp;
+	struct bt_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = bt_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->rand = rand;
+	cp->ediv = ediv;
+	memcpy(cp->ltk, ltk, sizeof(cp->ltk));
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
+}
+
+int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
+{
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	/* nothing to do */
+	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
+		return 0;
+	}
+
+	/* for now we only support legacy pairing */
+	if (sec > BT_SECURITY_HIGH) {
+		return -EINVAL;
+	}
+
+	conn->required_sec_level = sec;
+
+#if defined(CONFIG_BLUETOOTH_CENTRAL)
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		struct bt_keys *keys;
+
+		keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
+		if (keys) {
+			if (sec > BT_SECURITY_MEDIUM &&
+			    keys->type != BT_KEYS_AUTHENTICATED) {
+				return bt_smp_send_pairing_req(conn);
+			}
+
+			return bt_conn_le_start_encryption(conn, keys->ltk.rand,
+							   keys->ltk.ediv,
+							   keys->ltk.val);
+		}
+
+		return bt_smp_send_pairing_req(conn);
+	}
+#endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
+	return bt_smp_send_security_req(conn);
+#else
+	return -EIO;
+#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
+}
 #endif /* CONFIG_BLUETOOTH_SMP */
 
 void bt_conn_cb_register(struct bt_conn_cb *cb)
@@ -554,53 +619,6 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->dst;
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP)
-int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
-{
-	if (conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
-	/* nothing to do */
-	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
-		return 0;
-	}
-
-	/* for now we only support legacy pairing */
-	if (sec > BT_SECURITY_HIGH) {
-		return -EINVAL;
-	}
-
-	conn->required_sec_level = sec;
-
-#if defined(CONFIG_BLUETOOTH_CENTRAL)
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		struct bt_keys *keys;
-
-		keys = bt_keys_find(BT_KEYS_LTK, &conn->dst);
-		if (keys) {
-			if (sec > BT_SECURITY_MEDIUM &&
-			    keys->type != BT_KEYS_AUTHENTICATED) {
-				return bt_smp_send_pairing_req(conn);
-			}
-
-			return bt_conn_le_start_encryption(conn, keys->ltk.rand,
-							   keys->ltk.ediv,
-							   keys->ltk.val);
-		}
-
-		return bt_smp_send_pairing_req(conn);
-	}
-#endif /* CONFIG_BLUETOOTH_CENTRAL */
-
-#if defined(CONFIG_BLUETOOTH_PERIPHERAL)
-	return bt_smp_send_security_req(conn);
-#else
-	return -EIO;
-#endif /* CONFIG_BLUETOOTH_PERIPHERAL */
-}
-#endif /* CONFIG_BLUETOOTH_SMP */
-
 void bt_conn_set_auto_conn(struct bt_conn *conn, bool auto_conn)
 {
 	if (auto_conn) {
@@ -709,28 +727,6 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer)
 
 	return conn;
 }
-
-#if defined(CONFIG_BLUETOOTH_SMP)
-int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
-				uint16_t ediv, const uint8_t *ltk)
-{
-	struct bt_hci_cp_le_start_encryption *cp;
-	struct bt_buf *buf;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = bt_buf_add(buf, sizeof(*cp));
-	cp->handle = sys_cpu_to_le16(conn->handle);
-	cp->rand = rand;
-	cp->ediv = ediv;
-	memcpy(cp->ltk, ltk, sizeof(cp->ltk));
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
-}
-#endif /* CONFIG_BLUETOOTH_SMP */
 
 int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 			   uint16_t latency, uint16_t timeout)

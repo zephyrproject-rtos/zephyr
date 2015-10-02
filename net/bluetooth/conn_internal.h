@@ -120,12 +120,6 @@ struct bt_conn *bt_conn_lookup_state(const bt_addr_le_t *peer,
 /* Set connection object in certain state and perform action related to state */
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
 
-#if defined(CONFIG_BLUETOOTH_SMP)
-/* rand and ediv should be in BT order */
-int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
-				uint16_t ediv, const uint8_t *ltk);
-#endif /* CONFIG_BLUETOOTH_SMP */
-
 int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 			   uint16_t latency, uint16_t timeout);
 
@@ -133,6 +127,10 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 void bt_conn_connected(struct bt_conn *conn);
 
 #if defined(CONFIG_BLUETOOTH_SMP)
+/* rand and ediv should be in BT order */
+int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
+				uint16_t ediv, const uint8_t *ltk);
+
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);
 
