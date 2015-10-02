@@ -30,6 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if defined(CONFIG_BLUETOOTH_SMP)
 enum {
 	BT_KEYS_SLAVE_LTK      = (1 << 0),
 	BT_KEYS_IRK            = (1 << 1),
@@ -77,7 +78,6 @@ struct bt_keys {
 #endif /* BLUETOOTH_SIGNING */
 };
 
-#if defined(CONFIG_BLUETOOTH_SMP)
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr);
 void bt_keys_add_type(struct bt_keys *keys, int type);
