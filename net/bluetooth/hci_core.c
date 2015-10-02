@@ -656,7 +656,8 @@ static void le_conn_update_complete(struct bt_buf *buf)
 	bt_conn_put(conn);
 }
 
-static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype)
+static void check_pending_conn(const bt_addr_le_t *id_addr,
+			       const bt_addr_le_t *addr, uint8_t evtype)
 {
 	struct bt_conn *conn;
 
@@ -665,7 +666,7 @@ static void check_pending_conn(const bt_addr_le_t *addr, uint8_t evtype)
 		return;
 	}
 
-	conn = bt_conn_lookup_state(addr, BT_CONN_CONNECT_SCAN);
+	conn = bt_conn_lookup_state(id_addr, BT_CONN_CONNECT_SCAN);
 	if (!conn) {
 		return;
 	}
@@ -1070,7 +1071,7 @@ static void le_adv_report(struct bt_buf *buf)
 		}
 
 #if defined(CONFIG_BLUETOOTH_CONN)
-		check_pending_conn(addr, info->evt_type);
+		check_pending_conn(addr, &info->addr, info->evt_type);
 #endif /* CONFIG_BLUETOOTH_CONN */
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
