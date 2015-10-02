@@ -66,4 +66,44 @@ extern "C" {
 }
 #endif
 
+
+/**
+ * @brief Connect a routine to interrupt number
+ *
+ * For the device @a device associates IRQ number @a irq with priority
+ * @a priority with the interrupt routine @a isr, that receives parameter
+ * @a parameter.
+ * IRQ connect static is currently not supported in ARC architecture.
+ * The macro is defined as empty for code compatibility with other
+ * architectures.
+ *
+ * @param device Device
+ * @param irq IRQ number
+ * @param priority IRQ Priority
+ * @param isr Interrupt Service Routine
+ * @param parameter ISR parameter
+ *
+ * @return N/A
+ *
+ */
+#define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)
+
+/**
+ *
+ * @brief Configure interrupt for the device
+ *
+ * For the selected device, do the neccessary configuration
+ * steps to connect and enable the IRQ line with an ISR
+ * at the priority requested.
+ * @param isr Pointer to the interruption service routine
+ * @param irq IRQ number
+ * @param priority Priority for the interruption
+ *
+ * @return N/A
+ *
+ */
+#define IRQ_CONFIG(isr, irq, priority) \
+		irq_connect(irq, priority, isr, NULL); \
+		irq_enable(irq);
+
 #endif /* _ARC_ARCH__H_ */
