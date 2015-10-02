@@ -103,7 +103,7 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 		return DEV_INVALID_OP;
 	}
 
-	/* If both ON and OFF > max ticks, treat PWM as 100%.
+	/* If either ON and/or OFF > max ticks, treat PWM as 100%.
 	 * If OFF value == 0, treat it as 0%.
 	 * Otherwise, populate registers accordingly.
 	 */
@@ -118,19 +118,25 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 		buf[3] = 0x0;
 		buf[4] = (1 << 4);
 	} else {
-		buf[0] = (on & 0xFF);
-		buf[1] = ((on >> 8) & 0x0F);
-		buf[2] = (off & 0xFF);
-		buf[3] = ((off >> 8) & 0x0F);
+		buf[1] = (on & 0xFF);
+		buf[2] = ((on >> 8) & 0x0F);
+		buf[3] = (off & 0xFF);
+		buf[4] = ((off >> 8) & 0x0F);
 	}
 
 	return i2c_polling_write(i2c_master, buf, sizeof(buf), i2c_addr);
 }
 
+/**
+ * Duty cycle describes the percentage of time a signal is turned
+ * to the ON state.
+ */
 static int pwm_pca9685_set_duty_cycle(struct device *dev, int access_op,
 				      uint32_t pwm, uint8_t duty)
 {
-	uint32_t on, off;
+	uint32_t on, off, phase;
+
+	phase = 0;     /* Hard coded until API changes */
 
 	if (duty == 0) {
 		/* Turn off PWM */
@@ -141,8 +147,8 @@ static int pwm_pca9685_set_duty_cycle(struct device *dev, int access_op,
 		on = PWM_ONE_PERIOD_TICKS + 1;
 		off = PWM_ONE_PERIOD_TICKS + 1;
 	} else {
-		on = PWM_ONE_PERIOD_TICKS * duty / 100;
-		off = PWM_ONE_PERIOD_TICKS - 1;
+		off = PWM_ONE_PERIOD_TICKS * duty / 100;
+		on = phase;
 	}
 
 	return pwm_pca9685_set_values(dev, access_op, pwm, on, off);
@@ -187,7 +193,7 @@ int pwm_pca9685_init(struct device *dev)
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
 	struct device *i2c_master;
-	uint8_t buf[] = { 0, 0};
+	uint8_t buf[] = {0, 0};
 	int ret;
 
 	dev->driver_api = &pwm_pca9685_drv_api_funcs;
@@ -200,10 +206,12 @@ int pwm_pca9685_init(struct device *dev)
 	drv_data->i2c_master = i2c_master;
 
 	/* MODE1 register */
+
 	buf[0] = REG_MODE1;
 	buf[1] = (1 << 5); /* register addr auto increment */
-	ret = i2c_polling_write(i2c_master, buf, 2, config->i2c_slave_addr);
-	if (!ret) {
+
+	ret = i2c_write(i2c_master, buf, 2, config->i2c_slave_addr);
+	if (ret != DEV_OK) {
 		return DEV_NOT_CONFIG;
 	}
 
