@@ -167,7 +167,6 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 	uint8_t adv_type;
 
 	/* TODO
-	 * type should be based on current_settings
 	 * convert adv_data and scan_rsp and pass them
 	 */
 	ARG_UNUSED(cmd);
