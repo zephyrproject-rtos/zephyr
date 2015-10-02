@@ -18,6 +18,8 @@
  * limitations under the License.
  */
 
+#include <bluetooth/l2cap.h>
+
 #define BT_L2CAP_CID_ATT		0x0004
 #define BT_L2CAP_CID_LE_SIG		0x0005
 #define BT_L2CAP_CID_SMP		0x0006
@@ -87,41 +89,16 @@ struct bt_l2cap_le_conn_rsp {
 	uint16_t result;
 };
 
-struct bt_l2cap_chan {
+struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
-
-	/* CoC fields */
-	uint16_t		dcid;
-
-	uint16_t		mps;
-	uint16_t		mtu;
-
-	uint16_t		credits_tx;
-	uint16_t		credits_rx;
-
-	void			(*connected)(struct bt_conn *conn);
-	void			(*disconnected)(struct bt_conn *conn);
-	void			(*encrypt_change)(struct bt_conn *conn);
-
-	void			(*recv)(struct bt_conn *conn,
-					struct bt_buf *buf);
-
-	struct bt_l2cap_chan	*_next;
-};
-
-struct bt_l2cap_server {
-	uint16_t		psm;
 
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 
-	struct bt_l2cap_server	*_next;
+	struct bt_l2cap_fixed_chan	*_next;
 };
 
 /* Register a fixed L2CAP channel for L2CAP */
-void bt_l2cap_chan_register(struct bt_l2cap_chan *chan);
-
-/* Register L2CAP Server */
-int bt_l2cap_server_register(struct bt_l2cap_server *server);
+void bt_l2cap_fixed_chan_register(struct bt_l2cap_fixed_chan *chan);
 
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);
@@ -146,3 +123,11 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn);
 
 /* Initialize L2CAP and supported channels */
 int bt_l2cap_init(void);
+
+/* Lookup channel by Transmission CID */
+struct bt_l2cap_chan *bt_l2cap_lookup_tx_cid(struct bt_conn *conn,
+					     uint16_t cid);
+
+/* Lookup channel by Receiver CID */
+struct bt_l2cap_chan *bt_l2cap_lookup_rx_cid(struct bt_conn *conn,
+					     uint16_t cid);

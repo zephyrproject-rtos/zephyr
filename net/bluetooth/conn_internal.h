@@ -26,12 +26,6 @@ typedef enum {
 	BT_CONN_DISCONNECT,
 } bt_conn_state_t;
 
-/* L2CAP signaling channel specific context */
-struct bt_conn_l2cap {
-	uint8_t			ident;
-	void			*channels;
-};
-
 /* bt_conn flags: the flags defined here represent connection parameters */
 enum {
 	BT_CONN_AUTO_CONNECT,
@@ -63,10 +57,8 @@ struct bt_conn {
 
 	struct bt_keys		*keys;
 
-	/* Fixed channel contexts */
-	struct bt_conn_l2cap	l2cap;
-	void			*att;
-	void			*smp;
+	/* L2CAP channels */
+	void			*channels;
 
 	uint8_t			le_conn_interval;
 

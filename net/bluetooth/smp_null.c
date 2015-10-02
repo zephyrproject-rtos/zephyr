@@ -19,18 +19,29 @@
  * limitations under the License.
  */
 
-#include <bluetooth/bluetooth.h>
+#include <nanokernel.h>
 #include <errno.h>
+#include <atomic.h>
+#include <misc/util.h>
+
+#include <bluetooth/log.h>
+#include <bluetooth/bluetooth.h>
+
+#include "hci_core.h"
+#include "conn_internal.h"
 #include "l2cap_internal.h"
 #include "smp.h"
+
+static struct bt_l2cap_chan bt_smp_pool[CONFIG_BLUETOOTH_MAX_CONN];
 
 int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)
 {
 	return -ENOTSUP;
 }
 
-static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
+static void bt_smp_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
 {
+	struct bt_conn *conn = chan->conn;
 	struct bt_smp_pairing_fail *rsp;
 	struct bt_smp_hdr *hdr;
 
@@ -56,14 +67,42 @@ static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 }
 
-int bt_smp_init(void)
+static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
-	static struct bt_l2cap_chan chan = {
-		.cid	= BT_L2CAP_CID_SMP,
-		.recv	= bt_smp_recv,
+	int i;
+	static struct bt_l2cap_chan_ops ops = {
+		.recv = bt_smp_recv,
 	};
 
-	bt_l2cap_chan_register(&chan);
+	BT_DBG("conn %p handle %u\n", conn, conn->handle);
+
+	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
+		struct bt_l2cap_chan *smp = &bt_smp_pool[i];
+
+		if (smp->conn) {
+			continue;
+		}
+
+		smp->ops = &ops;
+
+		*chan = smp;
+
+		return 0;
+	}
+
+	BT_ERR("No available SMP context for conn %p\n", conn);
+
+	return -ENOMEM;
+}
+
+int bt_smp_init(void)
+{
+	static struct bt_l2cap_fixed_chan chan = {
+		.cid	= BT_L2CAP_CID_SMP,
+		.accept	= bt_smp_accept,
+	};
+
+	bt_l2cap_fixed_chan_register(&chan);
 
 	return 0;
 }
