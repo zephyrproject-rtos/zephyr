@@ -92,6 +92,7 @@ import signal
 import threading
 import time
 import csv
+import glob
 
 if "ZEPHYR_BASE" not in os.environ:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
@@ -958,12 +959,11 @@ class TestInstance:
 
         @return A SizeCalculator object
         """
-        if self.test.ktype == "micro":
-            fn = os.path.join(self.outdir, "microkernel.elf")
-        else:
-            fn = os.path.join(self.outdir, "nanokernel.elf")
+        fns = glob.glob(os.path.join(self.outdir, "*.elf"))
+        if (len(fns) != 1):
+            raise BuildError("Missing/multiple output ELF binary")
 
-        return SizeCalculator(fn)
+        return SizeCalculator(fns[0])
 
     def __repr__(self):
         return "<TestCase %s on %s>" % (self.test.name, self.platform.name)
