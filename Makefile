@@ -1024,9 +1024,10 @@ board-dirs := $(sort $(notdir $(board-dirs:/=)))
 
 help:
 	@echo  'Cleaning targets:'
-	@echo  '  clean		  - Remove most generated files but keep the config and'
+	@echo  '  clean		  - Remove most generated files but keep configuration and backup files'
 	@echo  '  mrproper	  - Remove all generated files + config + various backup files'
 	@echo  '  distclean	  - mrproper + remove editor backup and patch files'
+	@echo  '  pristine	  - Remove the output directory with all generated files'
 	@echo  ''
 	@echo  'Configuration targets:'
 	@$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
@@ -1035,6 +1036,7 @@ help:
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* zephyr	  - Build the bare kernel'
 	@echo  '  qemu		  - Build the bare kernel and runs the emulation with qemu'
+	@echo  ''
 	@echo  'Architecture specific targets ($(SRCARCH)):'
 	@$(if $(archhelp),$(archhelp),\
 		echo '  No architecture specific help defined for $(SRCARCH)')
@@ -1062,7 +1064,6 @@ help:
 	@echo  '		Multiple levels can be combined with W=12 or W=123'
 	@echo  ''
 	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
-	@echo  'For further info see the ./README file'
 
 
 help-board-dirs := $(addprefix help-,$(board-dirs))
