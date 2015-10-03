@@ -187,6 +187,7 @@ endif
 if GPIO_DW
 config GPIO_DW_0
 	def_bool y
+	select GPIO_DW_0_IRQ_SHARED if SHARED_IRQ
 config GPIO_DW_0_NAME
 	default "GPIO_0"
 config GPIO_DW_0_BUS
@@ -205,8 +206,6 @@ config GPIO_DW_0_IRQ
 	default 18
 config GPIO_DW_0_PRI
 	default 0
-config GPIO_DW_0_IRQ_SHARED
-	def_bool y if SHARED_IRQ
 config GPIO_DW_0_IRQ_SHARED_NAME
 	default SHARED_IRQ_0_NAME if SHARED_IRQ
 endif
@@ -255,9 +254,11 @@ config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
 endif
 endif
 
+config SPI_INTEL
+	select SPI_INTEL_LEVEL_LOW
+
 if SPI && SPI_INTEL
-config SPI_INTEL_LEVEL_LOW
-	def_bool y
+
 if SPI_INTEL_PORT_0
 config SPI_INTEL_PORT_0_BUS
 	default 0
