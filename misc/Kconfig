@@ -39,8 +39,9 @@ menu "Compile and Link Features"
 
 config  KERNEL_BIN_NAME
 	string "The kernel binary name"
-	default "microkernel" if MICROKERNEL
-	default "nanokernel" if NANOKERNEL
+	default "zephyr"
+	help
+	This option sets the name of the generated kernel binary.
 
 
 config  HAVE_CUSTOM_LINKER_SCRIPT

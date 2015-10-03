@@ -729,13 +729,13 @@ Steps
 
        loadbin [filename], [addr]
 
-    Example: ``loadbin nanokernel.bin, 0x0``
+    Example: ``loadbin zephyr.bin, 0x0``
 
 4.  Enter::
 
        verifybin [filename],[addr]
 
-    Example: ``verifybin nanokernel.bin, 0x0``
+    Example: ``verifybin zephyr.bin, 0x0``
 
 5.  To reset the target, enter::
 

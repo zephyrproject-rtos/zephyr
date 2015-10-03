@@ -94,8 +94,7 @@ Running an Application on Galileo Gen2
 
    :file:`kernel`
 
-#. Assuming you have built a micro kernel, copy the kernel file :file:`microkernel.elf`
-   to the :file:`$SDCARD/kernel` folder.
+#. Copy the kernel file :file:`zephyr.elf` to the :file:`$SDCARD/kernel` folder.
 
 #. Copy your built version of GRUB to :file:`$SDCARD/efi/boot/bootia32.efi`
 
@@ -106,8 +105,8 @@ Running an Application on Galileo Gen2
       set default=0
       set timeout=10
 
-      menuentry "Zephyr microkernel" {
-         multiboot /kernel/microkernel.elf
+      menuentry "Zephyr Kernel" {
+         multiboot /kernel/zephyr.elf
       }
 
 #. Insert the SDcard in the Galileo board.
