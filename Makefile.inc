@@ -53,6 +53,8 @@ endif
 zephyrmake	= @$(MAKE) -C $(ZEPHYR_BASE)  O=$(1) CFLAGS="$(CFLAGS)" \
 			PROJECT=$(PROJECT_BASE) SOURCE_DIR=$(SOURCE_DIR) $(2)
 
+
+
 DOTCONFIG = $(O)/.config
 
 all: $(DOTCONFIG)
@@ -60,6 +62,8 @@ all: $(DOTCONFIG)
 
 qemu: $(DOTCONFIG)
 	$(Q)$(call zephyrmake,$(O),$@)
+
+initconfig: $(DOTCONFIG)
 
 # Catch all
 %:
@@ -74,7 +78,7 @@ $(DOTCONFIG): $(CONF_FILE)
 pristine:
 	$(Q)rm -rf $(O)
 
-PHONY += FORCE
+PHONY += FORCE initconfig
 FORCE:
 
 
