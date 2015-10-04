@@ -164,7 +164,7 @@ extern void task_abort_handler_set(void (*func)(void));
  * @param func function to call from within the microkernel server fiber
  * @param argp argument to pass to custom function
  *
- * @return return value from custom <func> call
+ * @return return value from custom @a func call
  */
 extern int task_offload_to_fiber(int (*)(), void *);
 

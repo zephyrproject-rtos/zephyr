@@ -172,9 +172,9 @@ static inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param tx_buf Memory buffer that data should be transferred from
- * @param tx_len Size of the memory buffer available for reading from
+ * @param tx_buf_len Size of the memory buffer available for reading from
  * @param rx_buf Memory buffer that data should be transferred to
- * @param rx_len Size of the memory buffer available for writing to
+ * @param rx_buf_len Size of the memory buffer available for writing to
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */

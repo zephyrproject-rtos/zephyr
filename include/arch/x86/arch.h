@@ -77,7 +77,7 @@
  * Floating point register set alignment.
  *
  * If support for SSEx extensions is enabled a 16 byte boundary is required,
- * since the 'fxsave' and 'fxrstor' instructions require this.  In all other
+ * since the 'fxsave' and 'fxrstor' instructions require this. In all other
  * cases a 4 byte boundary is sufficient.
  */
 

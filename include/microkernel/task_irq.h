@@ -57,13 +57,11 @@
  *
  * @param irq_obj IRQ object identifier
  * @param irq Request IRQ
- * @param Requested interrupt priority
+ * @param priority Requested interrupt priority
  *
  * @return assigned interrupt vector if successful, INVALID_VECTOR if not
  */
-extern uint32_t task_irq_alloc(kirq_t irq_obj,
-				      uint32_t irq,
-				      uint32_t priority);
+extern uint32_t task_irq_alloc(kirq_t irq_obj, uint32_t irq, uint32_t priority);
 /**
  * @cond internal
  */

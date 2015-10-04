@@ -69,9 +69,9 @@ extern void _IntExit(void);
  *
  * @brief Connect a routine to interrupt number
  *
- * For the device <device> associates IRQ number <irq> with priority
- * <priority> with the interrupt routine <isr>, that receives parameter
- * <parameter>
+ * For the device @a device associates IRQ number @a irq with priority
+ * @a priority with the interrupt routine @a isr, that receives parameter
+ * @a parameter
  *
  * @return N/A
  *
@@ -89,9 +89,11 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
  *
  * @brief Configure interrupt for the device
  *
- * For the given device do the neccessary configuration steps.
- * Fpr ARM platform, set the interrupt priority
+ * For the given device do the necessary configuration steps.
+ * For ARM platform, set the interrupt priority
  *
+ * @param device Device to configure
+ * @param irq IRQ number
  * @return N/A
  *
  */

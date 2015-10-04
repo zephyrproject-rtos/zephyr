@@ -89,13 +89,14 @@ Supports up to 240 IRQs and 256 priority levels.
  *
  * @brief Enable an IRQ
  *
- * Enable IRQ #<irq>, which is equivalent to exception #<irq>+16
+ * Enable IRQ #@a irq, which is equivalent to exception #@a irq+16
+ *
+ * @param irq IRQ number
  *
  * @return N/A
  */
 
-static inline void _NvicIrqEnable(unsigned int irq /* IRQ number */
-				  )
+static inline void _NvicIrqEnable(unsigned int irq)
 {
 	__scs.nvic.iser[REG_FROM_IRQ(irq)] = 1 << BIT_FROM_IRQ(irq);
 }
@@ -104,13 +105,13 @@ static inline void _NvicIrqEnable(unsigned int irq /* IRQ number */
  *
  * @brief Find out if an IRQ is enabled
  *
- * Find out if IRQ #<irq> is enabled.
+ * Find out if IRQ #@a irq is enabled.
  *
+ * @param irq IRQ number
  * @return 1 if IRQ is enabled, 0 otherwise
  */
 
-static inline int _NvicIsIrqEnabled(unsigned int irq /* IRQ number */
-				    )
+static inline int _NvicIsIrqEnabled(unsigned int irq)
 {
 	return __scs.nvic.iser[REG_FROM_IRQ(irq)] & (1 << BIT_FROM_IRQ(irq));
 }
@@ -119,13 +120,12 @@ static inline int _NvicIsIrqEnabled(unsigned int irq /* IRQ number */
  *
  * @brief Disable an IRQ
  *
- * Disable IRQ #<irq>, which is equivalent to exception #<irq>+16
- *
+ * Disable IRQ #@a irq, which is equivalent to exception #@a irq+16
+ * @param irq IRQ number
  * @return N/A
  */
 
-static inline void _NvicIrqDisable(unsigned int irq /* IRQ number */
-				   )
+static inline void _NvicIrqDisable(unsigned int irq)
 {
 	__scs.nvic.icer[REG_FROM_IRQ(irq)] = 1 << BIT_FROM_IRQ(irq);
 }
@@ -134,15 +134,15 @@ static inline void _NvicIrqDisable(unsigned int irq /* IRQ number */
  *
  * @brief Pend an IRQ
  *
- * Pend IRQ #<irq>, which is equivalent to exception #<irq>+16. CPU will handle
+ * Pend IRQ #@a irq, which is equivalent to exception #@a irq+16. CPU will handle
  * the IRQ when interrupts are enabled and/or returning from a higher priority
  * interrupt.
+ * @param irq IRQ number
  *
  * @return N/A
  */
 
-static inline void _NvicIrqPend(unsigned int irq /* IRQ number */
-				)
+static inline void _NvicIrqPend(unsigned int irq)
 {
 	__scs.nvic.ispr[REG_FROM_IRQ(irq)] = 1 << BIT_FROM_IRQ(irq);
 }
@@ -151,13 +151,13 @@ static inline void _NvicIrqPend(unsigned int irq /* IRQ number */
  *
  * @brief Find out if an IRQ is pending
  *
- * Find out if IRQ #<irq> is pending
+ * Find out if IRQ #@a irq is pending
  *
+ * @param irq IRQ number
  * @return 1 if IRQ is pending, 0 otherwise
  */
 
-static inline int _NvicIsIrqPending(unsigned int irq /* IRQ number */
-				    )
+static inline int _NvicIsIrqPending(unsigned int irq)
 {
 	return __scs.nvic.ispr[REG_FROM_IRQ(irq)] & (1 << BIT_FROM_IRQ(irq));
 }
@@ -166,15 +166,15 @@ static inline int _NvicIsIrqPending(unsigned int irq /* IRQ number */
  *
  * @brief Unpend an IRQ
  *
- * Unpend IRQ #<irq>, which is equivalent to exception #<irq>+16. The previously
+ * Unpend IRQ #@a irq, which is equivalent to exception #@a irq+16. The previously
  * pending interrupt will be ignored when either unlocking interrupts or
  * returning from a higher priority exception.
  *
+ * @param irq IRQ number
  * @return N/A
  */
 
-static inline void _NvicIrqUnpend(unsigned int irq /* IRQ number */
-				  )
+static inline void _NvicIrqUnpend(unsigned int irq)
 {
 	__scs.nvic.icpr[REG_FROM_IRQ(irq)] = 1 << BIT_FROM_IRQ(irq);
 }
@@ -183,14 +183,14 @@ static inline void _NvicIrqUnpend(unsigned int irq /* IRQ number */
  *
  * @brief Set priority of an IRQ
  *
- * Set priority of IRQ #<irq> to <prio>. There are 256 priority levels.
+ * Set priority of IRQ #@a irq to @a prio. There are 256 priority levels.
  *
+ * @param irq IRQ number
+ * @param prio Priority
  * @return N/A
  */
 
-static inline void _NvicIrqPrioSet(unsigned int irq, /* IRQ number */
-				   unsigned int prio /* priority */
-				   )
+static inline void _NvicIrqPrioSet(unsigned int irq, unsigned int prio)
 {
 	__ASSERT(prio < 256, "invalid priority\n");
 	__scs.nvic.ipr[irq] = prio;
@@ -200,13 +200,14 @@ static inline void _NvicIrqPrioSet(unsigned int irq, /* IRQ number */
  *
  * @brief Get priority of an IRQ
  *
- * Get priority of IRQ #<irq>.
+ * Get priority of IRQ #@a irq.
+ *
+ * @param irq IRQ number
  *
  * @return the priority level of the IRQ
  */
 
-static inline uint32_t _NvicIrqPrioGet(unsigned int irq /* IRQ number */
-				       )
+static inline uint32_t _NvicIrqPrioGet(unsigned int irq)
 {
 	return __scs.nvic.ipr[irq];
 }
@@ -215,14 +216,14 @@ static inline uint32_t _NvicIrqPrioGet(unsigned int irq /* IRQ number */
  *
  * @brief Trigger an interrupt via software
  *
- * Trigger interrupt #<irq>. The CPU will handle the IRQ when interrupts are
+ * Trigger interrupt #@a irq. The CPU will handle the IRQ when interrupts are
  * enabled and/or returning from a higher priority interrupt.
  *
+ * @param irq IRQ number
  * @return N/A
  */
 
-static inline void _NvicSwInterruptTrigger(unsigned int irq /* IRQ number */
-					   )
+static inline void _NvicSwInterruptTrigger(unsigned int irq)
 {
 #if defined(CONFIG_PLATFORM_TI_LM3S6965_QEMU)
 	/* the QEMU does not simulate the STIR register: this is a workaround */

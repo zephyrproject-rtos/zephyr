@@ -29,7 +29,8 @@
  */
 
 /**
- * @file Public PWM Driver APIs
+ * @file
+ * @brief Public PWM Driver APIs
  */
 
 #ifndef __PWM_H__
@@ -161,7 +162,6 @@ static inline int pwm_all_set_values(struct device *dev,
  * This overrides any ON/OFF values being set before.
  *
  * @param dev Pointer to device structure for driver instance.
- * @param pwm PWM output
  * @param duty Duty cycle to set the PWM to (in %, e.g. 50 => 50%)
  *
  * @return DEV_OK if successful, otherwise failed.

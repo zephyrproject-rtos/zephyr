@@ -73,7 +73,7 @@ void sys_event_logger_init(struct event_logger *logger,
  *
  * @param logger     Pointer to the event logger used.
  * @param event_id   The identification of the profiler event.
- * @param data       Pointer to the data of the message.
+ * @param event_data Pointer to the data of the message.
  * @param data_size  Size of the buffer in 32-bit words.
  *
  * @return No return value.
@@ -88,8 +88,8 @@ void sys_event_logger_put(struct event_logger *logger, uint16_t event_id,
  * @details Retrieve an event message from the ring buffer and copy it to the
  * provided buffer. If the provided buffer is smaller than the message
  * size the function returns -EMSGSIZE. Otherwise return the number of 32-bit
- * words copied. The functon retrieves messages in FIFO order. If there is no
- * message in the buffer the fuction returns immediately. It can only be called
+ * words copied. The function retrieves messages in FIFO order. If there is no
+ * message in the buffer the function returns immediately. It can only be called
  * from a fiber.
  *
  * @param logger       Pointer to the event logger used.
@@ -113,7 +113,7 @@ int sys_event_logger_get(struct event_logger *logger, uint16_t *event_id,
  * @details Retrieve an event message from the ring buffer and copy it to the
  * provided buffer. If the provided buffer is smaller than the message
  * size the function returns -EMSGSIZE. Otherwise return the number of 32-bit
- * words copied. The functon retrieves messages in FIFO order. The caller pends
+ * words copied. The function retrieves messages in FIFO order. The caller pends
  * if there is no message available in the buffer. It can only be called from a
  * fiber.
  *
