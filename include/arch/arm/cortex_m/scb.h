@@ -279,10 +279,10 @@ static inline int _ScbIsInExc(void)
  *
  * @brief Obtain the currently executing vector
  *
- * If currently handling an exception/interrupt, return the exceuting vector
+ * If currently handling an exception/interrupt, return the executing vector
  * number. If not, return 0.
  *
- * @return the currently excecuting vector number, 0 if in thread mode.
+ * @return the currently executing vector number, 0 if in thread mode.
  */
 
 static inline uint32_t _ScbActiveVectorGet(void)
@@ -325,7 +325,7 @@ static inline void _ScbVtableLocationSet(
  *
  * @brief Obtain base address of vector table
  *
- * This routine returs the vector table's base address.
+ * This routine returns the vector table's base address.
  *
  * @return the base address of the vector table
  */
@@ -339,23 +339,22 @@ static inline uint32_t _ScbVtableAddrGet(void)
  *
  * @brief Set base address of vector table
  *
- * <addr> must align to the number of exception entries in vector table:
+ * @a addr must align to the number of exception entries in vector table:
  *
  *    numException = 16 + num_interrupts where each entry is 4 Bytes
  *
- * As a minimum, <addr> must be a multiple of 128:
+ * As a minimum, @a addr must be a multiple of 128:
  *
  *  0 <= num_interrupts <  16: multiple 0x080
  * 16 <= num_interrupts <  48: multiple 0x100
  * 48 <= num_interrupts < 112: multiple 0x200
  *               ....
+ * @param addr base address, aligned on 128 minimum
  *
  * @return N/A
  */
 
-static inline void _ScbVtableAddrSet(uint32_t addr /* base address, aligned on
-						      128 minimum */
-				     )
+static inline void _ScbVtableAddrSet(uint32_t addr)
 {
 	__ASSERT(!(addr & 0x7F), "invalid vtable base Addr");
 	__scs.scb.vtor.bit.tbloff = addr;
@@ -465,7 +464,7 @@ static inline void _ScbSevOnPendClear(void)
  * When wfi/wfe is invoked, the CPU will go into a "deep sleep" mode, using less
  * power than regular sleep mode, but with some possible side-effect.
  *
- * Behaviour is processor-specific.
+ * Behavior is processor-specific.
  *
  * @return N/A
  */
@@ -509,7 +508,7 @@ static inline void _ScbDivByZeroFaultEnable(void)
  * @brief Ignore division by zero errors
  *
  * This routine disables the divide by zero fault.
- * This is the default behaviour.
+ * This is the default behavior.
  *
  * @return N/A
  */
@@ -539,7 +538,7 @@ static inline void _ScbUnalignedFaultEnable(void)
  * @brief Ignore unaligned access errors
  *
  * This routine disables the divide by zero fault.
- * This is the default behaviour.
+ * This is the default behavior.
  *
  * @return N/A
  */
@@ -555,11 +554,11 @@ static inline void _ScbUnalignedFaultDisable(void)
  *
  * This routine writes the given value to the Configuration Control Register.
  *
+ * @param val  value to write to CCR
  * @return N/A
  */
 
-static inline void ScbCcrSet(uint32_t val /* value to write to CCR */
-			     )
+static inline void ScbCcrSet(uint32_t val)
 {
 	__scs.scb.ccr.val = val;
 }
@@ -568,16 +567,16 @@ static inline void ScbCcrSet(uint32_t val /* value to write to CCR */
  *
  * @brief Obtain priority of an exception
  *
- * Only works with exceptions 4 to 15, ie. do not use this for interrupts, which
+ * Only works with exceptions 4 to 15; i.e. do not use this for interrupts, which
  * are exceptions 16+.
  *
  * Exceptions 1 to 3 priorities are fixed (-3, -2, -1).
  *
- * @return priority of exception <exc>
+ * @param exc exception number, 4 to 15
+ * @return priority of exception @a exc
  */
 
-static inline uint8_t _ScbExcPrioGet(uint8_t exc /* exception number, 4 to 15 */
-				     )
+static inline uint8_t _ScbExcPrioGet(uint8_t exc)
 {
 	/* For priority exception handler 4-15 */
 	__ASSERT((exc > 3) && (exc < 16), "");
@@ -588,7 +587,7 @@ static inline uint8_t _ScbExcPrioGet(uint8_t exc /* exception number, 4 to 15 */
  *
  * @brief Set priority of an exception
  *
- * Only works with exceptions 4 to 15, ie. do not use this for interrupts, which
+ * Only works with exceptions 4 to 15; i.e. do not use this for interrupts, which
  * are exceptions 16+.
  *
  * Note that the processor might not implement all 8 bits, in which case the
@@ -596,12 +595,12 @@ static inline uint8_t _ScbExcPrioGet(uint8_t exc /* exception number, 4 to 15 */
  *
  * Exceptions 1 to 3 priorities are fixed (-3, -2, -1).
  *
+ * @param exc  exception number, 4 to 15
+ * @param pri  priority, 0 to 255
  * @return N/A
  */
 
-static inline void _ScbExcPrioSet(uint8_t exc, /* exception number, 4 to 15 */
-				  uint8_t pri  /* priority, 0 to 255 */
-				  )
+static inline void _ScbExcPrioSet(uint8_t exc, uint8_t pri)
 {
 	/* For priority exception handler 4-15 */
 	__ASSERT((exc > 3) && (exc < 16), "");
@@ -628,7 +627,7 @@ static inline void _ScbUsageFaultEnable(void)
  * @brief Disable usage fault exceptions
  *
  * This routine disables usage faults.
- * This is the default behaviour.
+ * This is the default behavior.
  *
  * @return N/A
  */
@@ -658,7 +657,7 @@ static inline void _ScbBusFaultEnable(void)
  * @brief Disable bus fault exceptions
  *
  * This routine disables bus faults.
- * This is the default behaviour.
+ * This is the default behavior.
  *
  * @return N/A
  */
@@ -688,7 +687,7 @@ static inline void _ScbMemFaultEnable(void)
  * @brief Disable MPU fault exceptions
  *
  * This routine disables MPU faults.
- * This is the default behaviour.
+ * This is the default behavior.
  *
  * @return N/A
  */
@@ -700,8 +699,7 @@ static inline void _ScbMemFaultDisable(void)
 
 /**
  *
- * @brief Find out if a hard fault is caused by
- *                                     a bus error on vector read
+ * @brief Find out if a hard fault is caused by a bus error on vector read
  *
  * This routine determines if a hard fault is caused by a bus error during
  * a vector table read operation.
@@ -759,8 +757,7 @@ static inline int _ScbIsMemFault(void)
 
 /**
  *
- * @brief Find out if the MMFAR register contains a valid
- *                            value
+ * @brief Find out if the MMFAR register contains a valid value
  *
  * The MMFAR register contains the faulting address on an MPU fault.
  *
@@ -776,7 +773,7 @@ static inline int _ScbMemFaultIsMmfarValid(void)
  *
  * @brief Invalid the value in MMFAR
  *
- * This routine invalidates the MMFAR value.  This should be done after
+ * This routine invalidates the MMFAR value. This should be done after
  * processing an MPU fault.
  *
  * @return N/A
@@ -833,8 +830,7 @@ static inline int _ScbMemFaultIsUnstacking(void)
 
 /**
  *
- * @brief Find out if an MPU fault is a data access
- *                                     violation
+ * @brief Find out if an MPU fault is a data access violation
  *
  * If this routine returns 1, read the MMFAR register via _ScbMemFaultAddrGet()
  * to get the faulting address.
@@ -849,8 +845,7 @@ static inline int _ScbMemFaultIsDataAccessViolation(void)
 
 /**
  *
- * @brief Find out if an MPU fault is an
- *                                      instruction access violation
+ * @brief Find out if an MPU fault is an instruction access violation
  *
  * This routine determines if an MPU fault is due to an instruction access
  * violation.
@@ -891,8 +886,7 @@ static inline int _ScbIsBusFault(void)
 
 /**
  *
- * @brief Find out if the BFAR register contains a valid
- *                           value
+ * @brief Find out if the BFAR register contains a valid value
  *
  * The BFAR register contains the faulting address on bus fault.
  *
@@ -994,8 +988,7 @@ static inline int _ScbBusFaultIsPrecise(void)
 
 /**
  *
- * @brief Find out if a bus fault is an instruction bus
- *                             error
+ * @brief Find out if a bus fault is an instruction bus error
  *
  * This routine determines if a bus fault is an instruction bus error.
  * It is signalled only if the instruction is issued.
@@ -1038,10 +1031,9 @@ static inline int _ScbIsUsageFault(void)
 
 /**
  *
- * @brief Find out if a usage fault is a 'divide by zero'
- *                             fault
+ * @brief Find out if a usage fault is a 'divide by zero' fault
  *
- * This routine determines if a usage fault is a 'divde by zero' fault.
+ * This routine determines if a usage fault is a 'divide by zero' fault.
  *
  * @return 1 if so, 0 otherwise
  */
@@ -1053,8 +1045,7 @@ static inline int _ScbUsageFaultIsDivByZero(void)
 
 /**
  *
- * @brief Find out if a usage fault is a unaligned access
- *                             error
+ * @brief Find out if a usage fault is a unaligned access error
  *
  * This routine determines if a usage fault is an unaligned access error.
  *
@@ -1068,11 +1059,10 @@ static inline int _ScbUsageFaultIsUnaligned(void)
 
 /**
  *
- * @brief Find out if a usage fault is a coprocessor access
- *                        error
+ * @brief Find out if a usage fault is a co-processor access error
  *
- * This routine determines if a usage fault is caused by a coprocessor access.
- * This happens if the coprocessor is either absent or disabled.
+ * This routine determines if a usage fault is caused by a co-processor access.
+ * This happens if the co-processor is either absent or disabled.
  *
  * @return 1 if so, 0 otherwise
  */
@@ -1084,8 +1074,7 @@ static inline int _ScbUsageFaultIsNoCp(void)
 
 /**
  *
- * @brief Find out if a usage fault is a invalid PC
- *                                 load error
+ * @brief Find out if a usage fault is a invalid PC load error
  *
  * Happens if the the instruction address on an exception return is not
  * halfword-aligned.
@@ -1100,12 +1089,11 @@ static inline int _ScbUsageFaultIsInvalidPcLoad(void)
 
 /**
  *
- * @brief Find out if a usage fault is a invalid state
- *			         error
+ * @brief Find out if a usage fault is a invalid state error
  *
  * Happens if the the instruction address loaded in the PC via a branch, LDR or
  * POP, or if the instruction address installed in a exception vector, does not
- * have bit 0 set, ie., is not halfword-aligned.
+ * have bit 0 set; i.e, is not halfword-aligned.
  *
  * @return 1 if so, 0 otherwise
  */
@@ -1117,8 +1105,7 @@ static inline int _ScbUsageFaultIsInvalidState(void)
 
 /**
  *
- * @brief Find out if a usage fault is a undefined
- *			           instruction error
+ * @brief Find out if a usage fault is a undefined instruction error
  *
  * The processor tried to execute an invalid opcode.
  *
