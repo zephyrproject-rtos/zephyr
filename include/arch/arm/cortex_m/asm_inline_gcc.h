@@ -37,7 +37,7 @@
 
 /*
  * The file must not be included directly
- * Include nanokernel/cpu.h instead
+ * Include arch/cpu.h instead
  */
 
 #ifdef _ASMLANGUAGE
@@ -166,11 +166,13 @@ static ALWAYS_INLINE unsigned int irq_lock(void)
  *
  * @brief Enable all interrupts on the CPU (inline)
  *
- * This routine re-enables interrupts on the CPU.  The <key> parameter is an
+ * This routine re-enables interrupts on the CPU.  The @a key parameter is an
  * architecture-dependent lock-out key that is returned by a previous
  * invocation of irq_lock().
  *
  * This routine can be called from either interrupt, task or fiber level.
+ *
+ * @param key architecture-dependent lock-out key
  *
  * @return N/A
  */
