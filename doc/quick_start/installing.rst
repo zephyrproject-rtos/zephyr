@@ -38,7 +38,7 @@ On Fedora:
 
 .. code-block:: bash
 
-   $ sudo yum update
+   $ sudo dnf update
 
 .. _required_software:
 
@@ -72,11 +72,13 @@ Install the required packages in a Fedora host system with:
 Installing the Zephyr Software Development Kit
 ==============================================
 
-Zephyr's :abbr:`SDK (Software Development Kit)` provided by Yocto contains all necessary tools
-and cross-compilers needed to build the kernel on all supported architectures.
-Additionally, it includes host tools such as a custom QEMU and a host compiler for building host
-tools if necessary. With this SDK, there is no need to build any cross compilers or
-emulation environments. The SDK supports the following architectures:
+Zephyr's :abbr:`SDK (Software Development Kit)` contains all
+necessary tools and cross-compilers needed to build the kernel on all supported
+architectures.
+Additionally, it includes host tools such as a custom QEMU and a host compiler
+for building host tools if necessary. With this SDK, there is no need to build
+any cross compilers or emulation environments. The SDK supports the following
+architectures:
 
 * :abbr:`IA-32 (Intel Architecture 32 bits)`
 
@@ -86,7 +88,7 @@ emulation environments. The SDK supports the following architectures:
 
 Follow these steps to install the SDK on your host system.
 
-#. Download the Yocto self-extractable binary from:
+#. Download the SDK self-extractable binary from:
 
    https://zephyr-download.01.org/zephyr-sdk/zephyr-sdk-0.6-i686-setup.run
 
@@ -137,31 +139,30 @@ Follow these steps to install the SDK on your host system.
 
        Success installing SDK. SDK is ready to be used.
 
-#. To use the Yocto SDK, export the following environment variables and
+#. To use the Zephyr SDK, export the following environment variables and
    use the target location where SDK was installed, type:
 
     .. code-block:: bash
 
-       $ export ZEPHYR_GCC_VARIANT=yocto
+       $ export ZEPHYR_GCC_VARIANT=zephyr
 
        $ export YOCTO_SDK_INSTALL_DIR=/opt/zephyr-sdk/0.6
 
 Installing a Custom QEMU for ARM Platforms
 ==========================================
 
-The Yocto SDK comes with a QEMU binary suitable for running sample |codename|
+The SDK comes with a QEMU binary suitable for running sample |codename|
 applications. The steps below are needed only if you choose not to use the
 provided binary and use a custom built binary instead.
 
-If you require testing ARM builds, a localized patch to the QEMU source
+If you require testing ARM builds, a local patch to the QEMU source
 is needed. The patch corrects the issues with the locking interfaces
-QEMU uses. If you are working with the x86 builds of the Zephyr kernel,
+QEMU uses. If you are working with the x86 builds of the kernel,
 install QEMU from your systems default package manager.
 
 Follow these steps to enable a customized build of QEMU:
 
 #. Clone the QEMU repository:
-
 
    .. code-block:: bash
 

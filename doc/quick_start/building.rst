@@ -1,10 +1,10 @@
 .. _building_zephyr:
 
 Building the Zephyr Kernel
-############################
+##########################
 
 This section describes the procedure to build the kernel with a sample
-application. in a development system and describes how to get access to the
+application in a development system and describes how to get access to the
 kernel's source code.
 
 Building a Sample Application
