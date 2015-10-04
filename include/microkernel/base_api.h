@@ -230,7 +230,7 @@ struct _k_mem_map_struct {
 };
 
 /**
- * @endconf
+ * @endcond
  */
 
 typedef enum {
