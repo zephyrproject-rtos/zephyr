@@ -128,7 +128,7 @@ extern void task_mem_pool_defragment(kmemory_pool_t pid);
 #define task_mem_pool_alloc_wait_timeout(b, pid, s, t) _task_mem_pool_alloc(b, pid, s, t)
 #endif
 
-/*
+/**
  * @}
  */
 #ifdef __cplusplus
