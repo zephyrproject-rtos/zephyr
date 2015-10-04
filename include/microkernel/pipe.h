@@ -222,7 +222,7 @@ extern int _task_pipe_block_put(kpipe_t id,
 		__section(_k_pipe_ptr, private, pipe) = \
 		(kpipe_t)&_k_pipe_obj_##name;
 
-/*
+/**
  * @}
  */
 
