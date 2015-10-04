@@ -42,7 +42,7 @@
 #include <arch/x86/asm_inline.h>
 #endif
 
-/* APIs need to support non-byte addressible architectures */
+/* APIs need to support non-byte addressable architectures */
 
 #define OCTET_TO_SIZEOFUNIT(X) (X)
 #define SIZEOFUNIT_TO_OCTET(X) (X)
@@ -78,7 +78,7 @@
  *
  * If support for SSEx extensions is enabled a 16 byte boundary is required,
  * since the 'fxsave' and 'fxrstor' instructions require this.  In all other
- * cases a 4 byte bounday is sufficient.
+ * cases a 4 byte boundary is sufficient.
  */
 
 #ifdef CONFIG_SSE
@@ -171,7 +171,7 @@ typedef struct s_isrList {
  *
  * @brief Configure interrupt for the device
  *
- * For the given device do the neccessary configuration steps.
+ * For the given device do the necessary configuration steps.
  * For x86 platform configure APIC and mark interrupt vector allocated
  * @param device Device
  * @param irq IRQ
@@ -188,6 +188,7 @@ typedef struct s_isrList {
 
 /**
  * @brief Nanokernel Exception Stack Frame
+ *
  * A pointer to an "exception stack frame" (ESF) is passed as an argument
  * to exception handlers registered via nanoCpuExcConnect().  When an exception
  * occurs while PL=0, then only the EIP, CS, and EFLAGS are pushed onto the stack.
@@ -231,6 +232,7 @@ typedef struct nanoEsf {
 
 /**
  * @brief Nanokernel "interrupt stack frame" (ISF)
+ *
  * An "interrupt stack frame" (ISF) as constructed by the processor
  * and the interrupt wrapper function _IntExit().  When an interrupt
  * occurs while PL=0, only the EIP, CS, and EFLAGS are pushed onto the stack.
@@ -324,7 +326,6 @@ void _int_latency_stop(void);
  * @return An architecture-dependent lock-out key representing the
  * "interrupt disable state" prior to the call.
  *
- * \NOMANUAL
  */
 
 static inline __attribute__((always_inline)) unsigned int irq_lock(void)
@@ -351,7 +352,6 @@ static inline __attribute__((always_inline)) unsigned int irq_lock(void)
  *
  * @return N/A
  *
- * \NOMANUAL
  */
 
 static inline __attribute__((always_inline)) void irq_unlock(unsigned int key)
@@ -438,7 +438,7 @@ extern const NANO_ESF _default_esf;
  *
  * This routine is invoked by the kernel to configure an interrupt vector of
  * the specified priority.  To this end, it allocates an interrupt vector,
- * programs hardware to route interrupt requests on the specified irq to that
+ * programs hardware to route interrupt requests on the specified IRQ to that
  * vector, and returns the vector number along with its associated BOI/EOI
  * information.
  */
@@ -462,7 +462,7 @@ extern void	_IntVecMarkFree(unsigned int vector);
 
 #endif /* !_ASMLANGUAGE */
 
-/* Segment selector defintions are shared */
+/* Segment selector definitions are shared */
 #include "segselect.h"
 
 #endif /* _ARCH_IFACE_H */
