@@ -36,8 +36,14 @@ Each testcase.ini block can define the following key/value pairs:
   arch_whitelist = <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should only be run for.
 
+  arch_exclude = <list of arches, such as x86, arm, arc>
+    Set of architectures that this test case should not run on.
+
   platform_whitelist = <list of platforms>
-    Set of platforms that this test case should only be run for for.
+    Set of platforms that this test case should only be run for.
+
+  platform_exclude = <list of platforms>
+    Set of platforms that this test case should not run on.
 
   config_whitelist = <list of config options>
     Config options can either be config names like CONFIG_FOO which
@@ -707,6 +713,8 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "build_only" : {"type" : "bool", "default" : False},
                        "timeout" : {"type" : "int", "default" : 60},
                        "arch_whitelist" : {"type" : "set"},
+                       "arch_exclude" : {"type" : "set"},
+                       "platform_exclude" : {"type" : "set"},
                        "platform_whitelist" : {"type" : "set"},
                        "config_whitelist" : {"type" : "set"}}
 
@@ -945,6 +953,8 @@ class TestCase:
         self.tags = tc_dict["tags"]
         self.extra_args = tc_dict["extra_args"]
         self.arch_whitelist = tc_dict["arch_whitelist"]
+        self.arch_exclude = tc_dict["arch_exclude"]
+        self.platform_exclude = tc_dict["platform_exclude"]
         self.platform_whitelist = tc_dict["platform_whitelist"]
         self.config_whitelist = tc_dict["config_whitelist"]
         self.timeout = tc_dict["timeout"]
@@ -1165,6 +1175,14 @@ class TestSuite:
 
                     if tc.arch_whitelist and arch.name not in tc.arch_whitelist:
                         discards[instance] = "Not in test case arch whitelist"
+                        continue
+
+                    if tc.arch_exclude and arch.name in tc.arch_exclude:
+                        discards[instance] = "In test case arch exclude"
+                        continue
+
+                    if tc.platform_exclude and plat.name in tc.platform_exclude:
+                        discards[instance] = "In test case platform exclude"
                         continue
 
                     if platform_filter and plat.name not in platform_filter:
