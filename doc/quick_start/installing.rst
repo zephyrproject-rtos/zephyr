@@ -67,7 +67,7 @@ Install the required packages in a Fedora host system with:
      glib2-devel.i686 g++ libc6-dev-i386 g++-multilib \
      glibc-static libstdc++-static
 
-.. _yocto_sdk:
+.. _zephyr_sdk:
 
 Installing the Zephyr Software Development Kit
 ==============================================
@@ -146,7 +146,7 @@ Follow these steps to install the SDK on your host system.
 
        $ export ZEPHYR_GCC_VARIANT=zephyr
 
-       $ export YOCTO_SDK_INSTALL_DIR=/opt/zephyr-sdk/0.6
+       $ export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk/0.6
 
 Installing a Custom QEMU for ARM Platforms
 ==========================================

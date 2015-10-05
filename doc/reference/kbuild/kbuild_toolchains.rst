@@ -11,28 +11,28 @@ installation:
 
 .. code-block:: bash
 
-   $ export ZEPHYR_GCC_VARIANT = yocto
+   $ export ZEPHYR_GCC_VARIANT=zephyr
 
-   $ export ZEPHYR_GCC_VARIANT = xtools
+   $ export ZEPHYR_GCC_VARIANT=xtools
 
 The supported values for the :envvar:`ZEPHYR_GCC_VARIANT` variable are:
-**yocto** and **xtools**.
+**zephyr** and **xtools**.
 
 Yocto Configuration
 ===================
 
-To set up a previously installed Yocto toolchain in the build system,
-you need to configure the Yocto SDK installation path and the GCC
+To set up a previously installed Zephyr toolchain in the build system,
+you need to configure the Zephyr SDK installation path and the GCC
 variant in the shell environment:
 
 .. code-block:: bash
 
-   $ export YOCTO_SDK_INSTALL_DIR = <yocto-installation-path>
+   $ export ZEPHYR_SDK_INSTALL_DIR=<sdk-installation-path>
 
-   $ export ZEPHYR_GCC_VARIANT = yocto
+   $ export ZEPHYR_GCC_VARIANT=zephyr
 
 The build system configuration is done by the file
-:file:`$(ZEPHYR_BASE)/scripts/Makefile.toochain.yocto`. The build
+:file:`$(ZEPHYR_BASE)/scripts/Makefile.toochain.zephyr`. The build
 system takes the following configuration values:
 
 * x86 default configuration values
@@ -62,7 +62,7 @@ system takes the following configuration values:
 
 The cross-compile target, cross-compile version, toolchain library and
 library path can be adjusted in the file
-:file:`$(ZEPHYR_BASE)/scripts/Makefile.toochain.yocto` following your
+:file:`$(ZEPHYR_BASE)/scripts/Makefile.toochain.zephyr` following your
 installation specifics.
 
 XTools Configuration
@@ -74,9 +74,9 @@ variant in the shell environment:
 
 .. code-block:: bash
 
-   $ export XTOOLS_TOOLCHAIN_PATH = <yocto-installation-path>
+   $ export XTOOLS_TOOLCHAIN_PATH=<sdk-installation-path>
 
-   $ export ZEPHYR_GCC_VARIANT = xtools
+   $ export ZEPHYR_GCC_VARIANT=xtools
 
 The build system configuration is done by the file
 :file:`$(ZEPHYR_BASE)/scripts/Makefile.toochain.xtools`. The build
