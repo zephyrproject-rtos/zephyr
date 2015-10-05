@@ -8,6 +8,6 @@ The following reference guides might be needed during development.
 .. toctree::
    :maxdepth: 1
 
-   api
-   configuration
-   kbuild
+   api.rst
+   configuration.rst
+   kbuild/kbuild.rst
