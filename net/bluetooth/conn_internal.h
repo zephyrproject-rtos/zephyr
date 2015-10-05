@@ -123,9 +123,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
 int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 			   uint16_t latency, uint16_t timeout);
 
-/* Notify higher layers of a new connection */
-void bt_conn_connected(struct bt_conn *conn);
-
 #if defined(CONFIG_BLUETOOTH_SMP)
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,

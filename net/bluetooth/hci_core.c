@@ -527,9 +527,7 @@ static void le_conn_complete(struct bt_buf *buf)
 		}
 	}
 
-	if (update_conn_params(conn)) {
-		bt_conn_connected(conn);
-	}
+	update_conn_params(conn);
 
 done:
 	bt_conn_put(conn);
@@ -553,9 +551,7 @@ static void le_remote_feat_complete(struct bt_buf *buf)
 		       sizeof(conn->le_features));
 	}
 
-	if (update_conn_params(conn)) {
-		bt_conn_connected(conn);
-	}
+	update_conn_params(conn);
 
 	bt_conn_put(conn);
 }
