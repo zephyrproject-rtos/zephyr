@@ -2,7 +2,6 @@
     Zephyr Project documentation master file
 
 
-.. include:: documentation_license.rst
 
 .. include:: disclaimers.rst
 
@@ -42,3 +41,5 @@ Indices and tables
 * :ref:`genindex`
 
 * :ref:`search`
+
+.. include:: documentation_license.rst

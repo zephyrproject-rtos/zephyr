@@ -1,5 +1,3 @@
-Copyright © 2015 Intel Corporation
-
 .. raw:: html
 
    <a rel="license"

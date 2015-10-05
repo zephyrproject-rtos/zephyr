@@ -49,7 +49,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Zephyr Project'
-copyright = u'2015, many'
+copyright = u'2015, Intel Corporation, Wind River Systems, Inc.'
 author = u'many'
 
 # The version info for the project you're documenting, acts as replacement for
