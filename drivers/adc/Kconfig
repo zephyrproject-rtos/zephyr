@@ -1,4 +1,4 @@
-# Kconfig - drivers configuration options
+# Kconfig - ADC configuration options
 
 #
 # Copyright (c) 2015 Intel Corporation
@@ -30,37 +30,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+#
+# ADC options
+#
+menuconfig ADC
+	bool
+	prompt "ADC drivers"
+	default n
+	help
+	Enable ADC (Analog to Digital Converter) driver configuration
 
-menu "Device Drivers"
-
-source "drivers/simple/Kconfig"
-
-source "drivers/bluetooth/Kconfig"
-
-source "drivers/console/Kconfig"
-
-source "drivers/serial/Kconfig"
-
-source "drivers/interrupt_controller/Kconfig"
-
-source "drivers/timer/Kconfig"
-
-source "drivers/random/Kconfig"
-
-source "drivers/pci/Kconfig"
-
-source "drivers/gpio/Kconfig"
-
-source "drivers/shared_irq/Kconfig"
-
-source "drivers/spi/Kconfig"
-
-source "drivers/i2c/Kconfig"
-
-source "drivers/pwm/Kconfig"
-
-source "drivers/pinmux/Kconfig"
-
-source "drivers/adc/Kconfig"
-
-endmenu
+config  ADC_DEBUG
+	bool "ADC drivers debug output"
+	depends on ADC
+	default n
+	help
+	Enable debug output for ADC drivers

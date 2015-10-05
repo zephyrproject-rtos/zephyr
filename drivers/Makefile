@@ -15,3 +15,4 @@ obj-$(CONFIG_SPI) += spi/
 obj-$(CONFIG_GPIO) += gpio/
 obj-$(CONFIG_I2C) += i2c/
 obj-$(CONFIG_PWM) += pwm/
+obj-$(CONFIG_ADC) += adc/
