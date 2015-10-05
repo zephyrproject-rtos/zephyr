@@ -32,7 +32,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "l2cap.h"
+#include "l2cap_internal.h"
 #include "att.h"
 #include "smp.h"
 

@@ -21,7 +21,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <errno.h>
-#include "l2cap.h"
+#include "l2cap_internal.h"
 #include "smp.h"
 
 int bt_smp_sign_verify(struct bt_conn *conn, struct bt_buf *buf)

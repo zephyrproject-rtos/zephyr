@@ -1,4 +1,6 @@
-/* l2cap.h - L2CAP handling */
+/** @file
+ *  @brief Internal APIs for Bluetooth L2CAP handling.
+ */
 
 /*
  * Copyright (c) 2015 Intel Corporation

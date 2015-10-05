@@ -35,7 +35,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "l2cap.h"
+#include "l2cap_internal.h"
 #include "smp.h"
 #include "att.h"
 #include "gatt_internal.h"

@@ -35,7 +35,7 @@
 #include "hci_core.h"
 #include "keys.h"
 #include "conn_internal.h"
-#include "l2cap.h"
+#include "l2cap_internal.h"
 #include "stack.h"
 
 #if !defined(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
