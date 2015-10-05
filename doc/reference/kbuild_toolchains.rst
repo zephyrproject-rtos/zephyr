@@ -39,7 +39,7 @@ system takes the following configuration values:
 
   * Crosscompile target: i586-poky-elf
 
-  * Crosscompile version: 4.9.2
+  * Crosscompile version: 4.9.3
 
   * Toolchain library: gcc
 
@@ -48,7 +48,7 @@ system takes the following configuration values:
 
   * Crosscompile target: arm-poky-eabi
 
-  * Crosscompile version: 4.9.2
+  * Crosscompile version: 5.2.0
 
   * Toolchain library: gcc
 
