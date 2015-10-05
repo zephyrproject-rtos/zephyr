@@ -139,7 +139,7 @@ int sys_event_logger_get_wait(struct event_logger *logger,  uint16_t *event_id,
  * @details Retrieve an event message from the ring buffer and copy it to the
  * provided buffer. If the provided buffer is smaller than the message
  * size the function returns -EMSGSIZE. Otherwise return the number of dwords
- * copied. The functon retrieves messages in FIFO order. The caller pends if
+ * copied. The function retrieves messages in FIFO order. The caller pends if
  * there is no message available in the buffer until a new message is added or
  * the timeout expires. It can only be called from a fiber.
  *
