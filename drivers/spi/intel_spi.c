@@ -172,7 +172,7 @@ out:
 	_spi_control_cs(dev, 0);
 
 	if (spi->callback) {
-		spi->callback(dev, cb_type);
+		spi->callback(dev, cb_type, spi->user_data);
 	}
 }
 
@@ -236,7 +236,8 @@ static void pull_data(struct device *dev)
 	spi->t_len -= cnt;
 }
 
-static int spi_intel_configure(struct device *dev, struct spi_config *config)
+static int spi_intel_configure(struct device *dev,
+				struct spi_config *config, void *user_data)
 {
 	struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
@@ -288,6 +289,7 @@ static int spi_intel_configure(struct device *dev, struct spi_config *config)
 	spi->tx_buf = spi->rx_buf = NULL;
 	spi->tx_buf_len = spi->rx_buf_len = spi->t_len = 0;
 	spi->callback = config->callback;
+	spi->user_data = user_data;
 
 	return DEV_OK;
 }

@@ -57,6 +57,7 @@ extern "C" {
 
 #define SPI_WORD_SIZE_MASK	(0xFF << 3)
 #define SPI_WORD_SIZE_GET(_in_) ((_in_ & SPI_WORD_SIZE_MASK) >> 3)
+#define SPI_WORD_SIZE(_in_)	(_in_ << 3)
 
 enum spi_cb_type {
 	SPI_CB_WRITE		= 1,
@@ -66,7 +67,8 @@ enum spi_cb_type {
 };
 
 /* application callback function signature */
-typedef void (*spi_callback)(struct device *dev, enum spi_cb_type cb_type);
+typedef void (*spi_callback)(struct device *dev,
+				enum spi_cb_type cb_type, void *user_data);
 
 /*
  * config is a bit field with the following parts:
@@ -85,7 +87,8 @@ struct spi_config {
 	spi_callback	callback;
 };
 
-typedef int (*spi_api_configure)(struct device *dev, struct spi_config *config);
+typedef int (*spi_api_configure)(struct device *dev,
+				 struct spi_config *config, void *user_data);
 typedef int (*spi_api_slave_select)(struct device *dev, uint32_t slave);
 typedef int (*spi_api_io)(struct device *dev,
 			  uint8_t *tx_buf, uint32_t tx_buf_len,
@@ -104,13 +107,16 @@ struct spi_driver_api {
  * @brief Configure a host controller for operating against slaves
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to the application provided configuration
+ * @param user_data Pointer to some user application memory which will
+ *                  be forwarded via the callback.
  *
  * @return DEV_OK if successful, another DEV_* code otherwise.
  */
-static inline int spi_configure(struct device *dev, struct spi_config *config)
+static inline int spi_configure(struct device *dev,
+				struct spi_config *config, void *user_data)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
-	return api->configure(dev, config);
+	return api->configure(dev, config, user_data);
 }
 
 /**

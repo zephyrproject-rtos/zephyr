@@ -60,6 +60,7 @@ struct spi_intel_data {
 	uint32_t sscr0;
 	uint32_t sscr1;
 	spi_callback callback;
+	void *user_data;
 	uint8_t *tx_buf;
 	uint32_t tx_buf_len;
 	uint8_t *rx_buf;
