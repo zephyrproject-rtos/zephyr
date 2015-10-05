@@ -77,40 +77,40 @@
 #endif
 
 static void get_exec_name(char *pathname);
-static void usage(const int len);
+static void usage(int len);
 static void get_options(int argc, char *argv[]);
 static void open_files(void);
 static void close_files(void);
 static void genIdt(void);
-static void clean_exit(const int exit_code);
+static void clean_exit(int exit_code);
 
-typedef struct s_isrList {
+struct s_isrList {
 	void *fnc;
 	unsigned int dpl;
-} ISR_LIST;
+};
 
-static ISR_LIST idt[256];
+static struct s_isrList idt[256];
 
 enum {
-	IFILE=0,             /* input file */
-	OFILE,               /* output file */
-	NUSERFILES,          /* number of user-provided file names */
-	EXECFILE=NUSERFILES, /* for name of executable */
-	NFILES               /* total number of files open */
+	IFILE = 0,             /* input file */
+	OFILE,                 /* output file */
+	NUSERFILES,            /* number of user-provided file names */
+	EXECFILE = NUSERFILES, /* for name of executable */
+	NFILES                 /* total number of files open */
 };
 enum { SHORT_USAGE, LONG_USAGE };
 
 static int fds[NUSERFILES] = {-1, -1};
 static char *filenames[NFILES];
 static unsigned int numVecs = (unsigned int)-1;
-static struct version version = {KERNEL_VERSION, 1, 1, 0};
+static struct version version = {KERNEL_VERSION, 1, 1, 1};
 
 int main(int argc, char *argv[])
 {
 	get_exec_name(argv[0]);
 	get_options(argc, argv); /* may exit */
-	open_files();	     /* may exit */
-	genIdt();
+	open_files();            /* may exit */
+	genIdt();                /* may exit */
 	close_files();
 	return 0;
 }
@@ -121,7 +121,7 @@ static void get_options(int argc, char *argv[])
 	int ii, opt;
 
 	while ((opt = getopt(argc, argv, "hi:o:n:v")) != -1) {
-		switch(opt) {
+		switch (opt) {
 		case 'i':
 			filenames[IFILE] = optarg;
 			break;
@@ -164,7 +164,7 @@ static void get_options(int argc, char *argv[])
 
 static void get_exec_name(char *pathname)
 {
-	int end = strlen(pathname)-1;
+	int end = strlen(pathname) - 1;
 
 	while (end != -1) {
 		#if defined(WINDOWS) /* Might have both slashes in path */
@@ -173,7 +173,7 @@ static void get_exec_name(char *pathname)
 		if (pathname[end] == '/')
 		#endif
 		{
-			if (0 == end || pathname[end-1] != '\\') {
+			if (0 == end || pathname[end - 1] != '\\') {
 				++end;
 				break;
 			}
@@ -187,13 +187,16 @@ static void open_files(void)
 {
 	int ii;
 
-	fds[IFILE] = open(filenames[IFILE], O_RDONLY|O_BINARY);
-	fds[OFILE] = open(filenames[OFILE], O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,
-		                                S_IWUSR|S_IRUSR);
+	fds[IFILE] = open(filenames[IFILE], O_RDONLY | O_BINARY);
+	fds[OFILE] = open(filenames[OFILE], O_WRONLY | O_CREAT |
+						O_TRUNC | O_BINARY,
+						S_IWUSR | S_IRUSR);
 	for (ii = 0; ii < NUSERFILES; ii++) {
 		int invalid = fds[ii] == -1;
+
 		if (invalid) {
 			char *invalid = filenames[ii];
+
 			fprintf(stderr, "invalid file %s\n", invalid);
 			for (--ii; ii >= 0; ii--) {
 				close(fds[ii]);
@@ -246,8 +249,10 @@ static void genIdt(void)
 	PRINTF("There are %d ISR(s)\n", size);
 
 	if (size > numVecs) {
-		fprintf(stderr, "Too many ISRs found. Got %u. Expected less than %u."
-			             " Malformed input file?\n", size, numVecs);
+		fprintf(stderr,
+				"Too many ISRs found. Got %u. Expected less than %u.\n"
+				"Malformed input file?\n",
+				size, numVecs);
 		clean_exit(-1);
 	}
 
@@ -290,7 +295,8 @@ static void genIdt(void)
 	return;
 
 readError:
-	fprintf(stderr, "Error occurred while reading input file. Aborting...\n");
+	fprintf(stderr,
+			"Error occurred while reading input file. Aborting...\n");
 	clean_exit(-1);
 }
 
@@ -303,13 +309,13 @@ static void close_files(void)
 	}
 }
 
-static void clean_exit(const int exit_code)
+static void clean_exit(int exit_code)
 {
 	close_files();
 	exit(exit_code);
 }
 
-static void usage(const int len)
+static void usage(int len)
 {
 	fprintf(stderr, "\n%s -i <input file> -n <n>\n", filenames[EXECFILE]);
 
