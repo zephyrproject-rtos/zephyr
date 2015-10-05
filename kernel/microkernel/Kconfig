@@ -195,44 +195,4 @@ config  THREAD_MONITOR
 	  and fibers (excluding those that have not yet started or have
 	  already terminated).
 
-config ADVANCED_POWER_MANAGEMENT
-	bool
-	prompt "Advanced power management"
-	default n
-	depends on MICROKERNEL
-	help
-	This option enables the platform to implement extra power management
-	policies whenever the kernel becomes idle. The kernel invokes
-	_sys_power_save_idle() to inform the power management subsystem of the
-	number of ticks until the next kernel timer is due to expire.
-
-menu "Advanced Power Management Features"
-	depends on MICROKERNEL && ADVANCED_POWER_MANAGEMENT && ADVANCED_IDLE_SUPPORTED
-
-config  ADVANCED_IDLE
-	bool
-	prompt "Advanced idle state"
-	default n
-	depends on ADVANCED_POWER_MANAGEMENT && ADVANCED_IDLE_SUPPORTED
-	help
-	This option enables the kernel to interface to a custom advanced idle
-	power saving manager. This permits the system to enter a custom
-	power saving state when the kernel becomes idle for extended periods,
-	and then to restore the system to its previous state (rather than
-	booting up from scratch) when the kernel is re-activated.
-
-config ADV_IDLE_STACK_SIZE
-	int
-	prompt "Advanced idle state stack size"
-	default 16
-	depends on ADVANCED_IDLE
-	help
-	This option defines the size of the separate stack used during the
-	system state check while the booting up. A separate stack is used
-	to avoid memory corruption on the system re-activation from power
-	down mode. The stack size must be large enough to hold the return
-	address (4 bytes) and the _AdvIdleCheckSleep() stack frame.
-
-endmenu
-
 endmenu

@@ -182,16 +182,58 @@ endmenu
 endmenu
 source "kernel/nanokernel/Kconfig"
 
+config ADVANCED_POWER_MANAGEMENT
+	bool
+	prompt "Advanced power management"
+	default n
+	help
+	This option enables the platform to implement extra power management
+	policies whenever the kernel becomes idle. The kernel invokes
+	_sys_power_save_idle() to inform the power management subsystem of the
+	number of ticks until the next kernel timer is due to expire.
+
+menu "Advanced Power Management Features"
+	depends on ADVANCED_POWER_MANAGEMENT
+
+config  ADVANCED_IDLE
+	bool
+	prompt "Advanced idle state"
+	default n
+	depends on MICROKERNEL && ADVANCED_POWER_MANAGEMENT && ADVANCED_IDLE_SUPPORTED
+	help
+	This option enables the kernel to interface to a custom advanced idle
+	power saving manager. This permits the system to enter a custom
+	power saving state when the kernel becomes idle for extended periods,
+	and then to restore the system to its previous state (rather than
+	booting up from scratch) when the kernel is re-activated.
+
+config ADV_IDLE_STACK_SIZE
+	int
+	prompt "Advanced idle state stack size"
+	default 16
+	depends on ADVANCED_IDLE
+	help
+	This option defines the size of the separate stack used during the
+	system state check while the booting up. A separate stack is used
+	to avoid memory corruption on the system re-activation from power
+	down mode. The stack size must be large enough to hold the return
+	address (4 bytes) and the _AdvIdleCheckSleep() stack frame.
+
 config TICKLESS_IDLE
 	bool
 	prompt "Tickless idle"
 	default y
-	depends on ADVANCED_POWER_MANAGEMENT
+	depends on MICROKERNEL || NANOKERNEL_TICKLESS_IDLE_SUPPORTED
 	help
 	This option suppresses periodic system clock interrupts whenever the
 	kernel becomes idle. This permits the system to remain in a power
 	saving state for extended periods without having to wake up to
 	service each tick as it occurs.
+
+	As a policy, an architecture should always provide support for tickless in
+	the microkernel. If an architecture also provides support for nanokernel
+	systems, it must select the NANOKERNEL_TICKLESS_IDLE_SUPPORTED kconfig
+	option.
 
 config TICKLESS_IDLE_THRESH
 	int
@@ -199,10 +241,12 @@ config TICKLESS_IDLE_THRESH
 	default 3
 	depends on TICKLESS_IDLE
 	help
-	This option disables clock interrupt suppression when the kernel idles
+	This option enables clock interrupt suppression when the kernel idles
 	for only a short period of time. It specifies the minimum number of
 	ticks that must occur before the next kernel timer expires in order
 	for suppression to happen.
+
+endmenu
 
 if MICROKERNEL
 source "kernel/microkernel/Kconfig"
