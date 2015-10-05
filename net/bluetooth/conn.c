@@ -82,7 +82,7 @@ static const char *state2str(bt_conn_state_t state)
 }
 #endif
 
-static void bt_conn_connected(struct bt_conn *conn)
+static void notify_connected(struct bt_conn *conn)
 {
 	struct bt_conn_cb *cb;
 
@@ -93,7 +93,7 @@ static void bt_conn_connected(struct bt_conn *conn)
 	}
 }
 
-static void bt_conn_disconnected(struct bt_conn *conn)
+static void notify_disconnected(struct bt_conn *conn)
 {
 	struct bt_conn_cb *cb;
 
@@ -497,7 +497,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			    (int)bt_conn_get(conn), 0, 7, 0);
 
 		bt_l2cap_connected(conn);
-		bt_conn_connected(conn);
+		notify_connected(conn);
 		break;
 	case BT_CONN_DISCONNECTED:
 		/* Send dummy buffer to wake up and stop the tx fiber
@@ -506,7 +506,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		if (old_state == BT_CONN_CONNECTED ||
 		    old_state == BT_CONN_DISCONNECT) {
 			bt_l2cap_disconnected(conn);
-			bt_conn_disconnected(conn);
+			notify_disconnected(conn);
 
 			nano_fifo_put(&conn->tx_queue, bt_buf_get(BT_DUMMY, 0));
 		}
