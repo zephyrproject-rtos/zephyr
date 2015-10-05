@@ -46,3 +46,51 @@ config  ADC_DEBUG
 	default n
 	help
 	Enable debug output for ADC drivers
+
+config  ADC_TI_ADC108S102
+	bool "TI adc108s102 chip driver"
+	depends on ADC
+	select SPI
+	default n
+	help
+	Enable support for TI's ADC chip adc108s102 driver.
+
+config  ADC_TI_ADC108S102_0
+	bool "First instance of TI's adc108s102 chip"
+	depends on ADC_TI_ADC108S102
+	default n
+	help
+	Enalbe first instance of adc108s102 driver.
+
+config  ADC_TI_ADC108S102_0_DRV_NAME
+	string "Driver's name"
+	depends on ADC_TI_ADC108S102_0
+	default "adc108s102_0"
+
+config  ADC_TI_ADC108S102_0_SPI_PORT_NAME
+	string "Master SPI port name"
+	depends on ADC_TI_ADC108S102_0
+	default ""
+	help
+	Master SPI port name through which adc108s102 chip is accessed.
+
+config  ADC_TI_ADC108S102_0_SPI_CONFIGURATION
+	hex "Master SPI port configuration"
+	depends on ADC_TI_ADC108S102_0
+	default 0x0
+	help
+	Master SPI port configuration flags used to access adc108s102 chip.
+
+config  ADC_TI_ADC108S102_0_SPI_MAX_FREQ
+	int "Master SPI port max frequency"
+	depends on ADC_TI_ADC108S102_0
+	default 0
+	help
+	Master SPI port maximum frequency used to access adc108s102 chip.
+
+config  ADC_TI_ADC108S102_0_SPI_SLAVE
+	int "SPI slave slot"
+	depends on ADC_TI_ADC108S102_0
+	default 0
+	help
+	adc108s102 chip's SPI slave number on master SPI port.
