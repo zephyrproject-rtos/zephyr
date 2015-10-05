@@ -16,14 +16,39 @@
 
 /**
  * @file
- * @brief ARC timer 0 device driver
+ * @brief ARC Timer0 device driver
  *
- * This module implements a kernel device driver for the ARCv2 processor timer 0
+ * This module implements a kernel device driver for the ARCv2 processor Timer0
  * and provides the standard "system clock driver" interfaces.
  *
- * \INTERNAL IMPLEMENTATION DETAILS
+ * If the TICKLESS_IDLE kernel configuration option is enabled, the timer may
+ * be programmed to wake the system in N >= TICKLESS_IDLE_THRESH ticks. The
+ * kernel invokes _timer_idle_enter() to program the up counter to trigger an
+ * interrupt in N ticks.  When the timer expires (or when another interrupt is
+ * detected), the kernel's interrupt stub invokes _timer_idle_exit() to leave
+ * the tickless idle state.
+ *
+ * @internal
  * The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero
  * counter.
+ *
+ * Factors that increase the driver's tickless idle complexity:
+ * 1. As the Timer0 up-counter is a 32-bit value, the number of ticks for which
+ * the system can be in tickless idle is limited to 'max_system_ticks'.
+ *
+ * 2. The act of entering tickless idle may potentially straddle a tick
+ * boundary. This can be detected in _timer_idle_enter() after Timer0 is
+ * programmed with the new limit and acted upon in _timer_idle_exit().
+ *
+ * 3. Tickless idle may be prematurely aborted due to a straddled tick. See
+ * previous factor.
+ *
+ * 4. Tickless idle may end naturally.  This is detected and handled in
+ * _timer_idle_exit().
+ *
+ * 5. Tickless idle may be prematurely aborted due to a non-timer interrupt.
+ * If this occurs, Timer0 is reprogrammed to trigger at the next tick.
+ * @endinternal
  */
 
 #include <nanokernel.h>
@@ -34,6 +59,7 @@
 #include <arch/arc/v2/aux_regs.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
+#include <stdbool.h>
 
 /*
  * A board support package's board.h header must provide definitions for the
@@ -52,60 +78,82 @@
 #define _ARC_V2_TMR_CTRL_IP 0x8 /* interrupt pending flag */
 
 /* running total of timer count */
-static uint32_t clock_accumulated_count;
+static uint32_t __noinit cycles_per_tick;
+static uint32_t accumulated_cycle_count;
 
-
-/**
- *
- * @brief Enable the timer with the given limit/countup value
- *
- * This routine sets up the timer for operation by:
- * - setting value to which the timer will count up to;
- * - setting the timer's start value to zero; and
- * - enabling interrupt generation.
- *
- * @return N/A
- */
-static ALWAYS_INLINE void enable(
-	uint32_t count /* interrupt triggers when up-counter reaches this value */
-)
-{
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_LIMIT, count); /* write limit value */
-
-	/* count only when not halted for debug and enable interrupts */
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL,
-		      _ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
-
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, 0); /* write the start value */
-}
+#ifdef CONFIG_TICKLESS_IDLE
+static uint32_t __noinit max_system_ticks;
+static uint32_t __noinit programmed_limit;
+static uint32_t __noinit programmed_ticks;
+static bool     straddled_tick_on_idle_enter = false;
+#endif
 
 /**
  *
- * @brief Get the current counter value
+ * @brief Get contents of Timer0 count register
  *
- * This routine gets the value from the timer's count register.  This
- * value is the 'time' elapsed from the starting count (assumed to be 0).
- *
- * @return the current counter value
+ * @return Current Timer0 count
  */
-static ALWAYS_INLINE uint32_t count_get(void)
+static ALWAYS_INLINE uint32_t timer0_count_register_get(void)
 {
 	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
 }
 
 /**
  *
- * @brief Get the limit/countup value
+ * @brief Set Timer0 count register to the specified value
  *
- * This routine gets the value from the timer's limit register, which is the
- * value to which the timer will count up to.
- *
- * @return the limit value
+ * @return N/A
  */
-static ALWAYS_INLINE uint32_t limit_get(void)
+static ALWAYS_INLINE void timer0_count_register_set(uint32_t value)
 {
-	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
+	_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, value);
 }
+
+/**
+ *
+ * @brief Get contents of Timer0 control register
+ *
+ * @return N/A
+ */
+static ALWAYS_INLINE uint32_t timer0_control_register_get(void)
+{
+	return _arc_v2_aux_reg_read(_ARC_V2_TMR0_CONTROL);
+}
+
+/**
+ *
+ * @brief Set Timer0 control register to the specified value
+ *
+ * @return N/A
+ */
+static ALWAYS_INLINE void timer0_control_register_set(uint32_t value)
+{
+	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, value);
+}
+
+/**
+ *
+ * @brief Set Timer0 limit register to the specified value
+ *
+ * @return N/A
+ */
+static ALWAYS_INLINE void timer0_limit_register_set(uint32_t count)
+{
+	_arc_v2_aux_reg_write(_ARC_V2_TMR0_LIMIT, count);
+}
+
+#ifdef CONFIG_TICKLESS_IDLE
+static ALWAYS_INLINE void update_accumulated_count(void)
+{
+	accumulated_cycle_count += (_sys_idle_elapsed_ticks * cycles_per_tick);
+}
+#else /* CONFIG_TICKLESS_IDLE */
+static ALWAYS_INLINE void update_accumulated_count(void)
+{
+	accumulated_cycle_count += cycles_per_tick;
+}
+#endif /* CONFIG_TICKLESS_IDLE */
 
 /**
  *
@@ -117,17 +165,146 @@ static ALWAYS_INLINE uint32_t limit_get(void)
  */
 void _timer_int_handler(void *unused)
 {
-	uint32_t zero_ip_bit = _ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE;
-
 	ARG_UNUSED(unused);
 
 	/* clear the interrupt by writing 0 to IP bit of the control register */
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, zero_ip_bit);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
-	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
+#if defined(CONFIG_TICKLESS_IDLE)
+	timer0_limit_register_set(cycles_per_tick - 1);
 
+	_sys_idle_elapsed_ticks++;
+
+	update_accumulated_count();
+	if (_sys_idle_elapsed_ticks == 1) {
+		_sys_clock_tick_announce();
+	}
+#else
+	update_accumulated_count();
 	_sys_clock_tick_announce();
+#endif
 }
+
+#if defined(CONFIG_TICKLESS_IDLE)
+/*
+ * @brief initialize the tickless idle feature
+ *
+ * This routine initializes the tickless idle feature.
+ *
+ * @return N/A
+ */
+
+static void tickless_idle_init(void)
+{
+	/* calculate the max number of ticks with this 32-bit H/W counter */
+	max_system_ticks = 0xffffffff / cycles_per_tick;
+}
+
+/*
+ * @brief Place the system timer into idle state
+ *
+ * Re-program the timer to enter into the idle state for either the given
+ * number of ticks or the maximum number of ticks that can be programmed
+ * into hardware.
+ *
+ * @return N/A
+ */
+
+void _timer_idle_enter(int32_t ticks)
+{
+	uint32_t  status;
+
+	if ((ticks == TICKS_UNLIMITED) || (ticks > max_system_ticks)) {
+		/*
+		 * The number of cycles until the timer must fire next might not fit
+		 * in the 32-bit counter register. To work around this, program
+		 * the counter to fire in the maximum number of ticks.
+		 */
+		ticks = max_system_ticks;
+	}
+
+	programmed_ticks = ticks;
+	programmed_limit = (programmed_ticks * cycles_per_tick);
+
+	timer0_limit_register_set(programmed_limit);
+
+	/*
+	 * If Timer0's IP bit is set, then it is known that we have straddled
+	 * a tick boundary while entering tickless idle.
+	 */
+
+	status = timer0_control_register_get();
+	if (status & _ARC_V2_TMR_CTRL_IP) {
+		straddled_tick_on_idle_enter = true;
+	}
+}
+
+/*
+ * @brief handling of tickless idle when interrupted
+ *
+ * The routine, called by _SysPowerSaveIdleExit, is responsible for taking the
+ * timer out of idle mode and generating an interrupt at the next tick
+ * interval.  It is expected that interrupts have been disabled.
+ *
+ * Note that in this routine, _sys_idle_elapsed_ticks must be zero because the
+ * ticker has done its work and consumed all the ticks. This has to be true
+ * otherwise idle mode wouldn't have been entered in the first place.
+ *
+ * RETURNS: N/A
+ */
+
+void _timer_idle_exit(void)
+{
+	if (straddled_tick_on_idle_enter) {
+		/* Aborting the tickless idle due to a straddled tick. */
+		_sys_idle_elapsed_ticks = 0;
+		straddled_tick_on_idle_enter = false;
+		return;
+	}
+
+	uint32_t  control;
+	uint32_t  current_count;
+
+	current_count = timer0_count_register_get();
+	control = timer0_control_register_get();
+	if (control & _ARC_V2_TMR_CTRL_IP) {
+		/*
+		 * The timer has expired. The handler _timer_int_handler() is
+		 * guaranteed to execute. Track the number of elapsed ticks. The
+		 * handler _timer_int_handler() will account for the final tick.
+		 */
+
+		_sys_idle_elapsed_ticks = programmed_ticks - 1;
+
+		return;
+	}
+
+	/*
+	 * A non-timer interrupt occurred.  Announce any
+	 * ticks that have elapsed during the tickless idle.
+	 */
+
+	uint32_t remaining_cycles = programmed_limit - current_count;
+
+	_sys_idle_elapsed_ticks = current_count / cycles_per_tick;
+	if (_sys_idle_elapsed_ticks > 0) {
+		_sys_clock_tick_announce();
+	}
+
+	/*
+	 * Ensure the timer will expire at the end of the next tick in case
+	 * the ISR makes any tasks and/or fibers ready to run.
+	 */
+
+	if (remaining_cycles >= cycles_per_tick) {
+		timer0_count_register_set(programmed_limit -
+			((remaining_cycles - 1) % cycles_per_tick) - 1);
+	}
+}
+#else
+static void tickless_idle_init(void) {}
+#endif /* CONFIG_TICKLESS_IDLE */
+
 
 /**
  *
@@ -146,8 +323,10 @@ int _sys_clock_driver_init(struct device *device)
 	ARG_UNUSED(device);
 
 	/* ensure that the timer will not generate interrupts */
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, 0);
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, 0); /* clear the count value */
+	timer0_control_register_set(0);
+	timer0_count_register_set(0);
+
+	cycles_per_tick = sys_clock_hw_cycles_per_tick;
 
 	(void)irq_connect(irq, prio, _timer_int_handler, 0, 0);
 
@@ -156,9 +335,13 @@ int _sys_clock_driver_init(struct device *device)
 	 * counter and interrupt generation.
 	 */
 
-	enable(sys_clock_hw_cycles_per_tick - 1);
+	tickless_idle_init();
+
+	timer0_limit_register_set(cycles_per_tick - 1);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
 	/* everything has been configured: safe to enable the interrupt */
+
 	irq_enable(CONFIG_ARCV2_TIMER0_INT_LVL);
 
 	return 0;
@@ -175,7 +358,7 @@ int _sys_clock_driver_init(struct device *device)
  */
 uint32_t sys_cycle_get_32(void)
 {
-	return (clock_accumulated_count + count_get());
+	return (accumulated_cycle_count + timer0_count_register_get());
 }
 
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
@@ -191,14 +374,14 @@ uint32_t sys_cycle_get_32(void)
 void sys_clock_disable(void)
 {
 	unsigned int key;  /* interrupt lock level */
-	uint32_t ctrl_val; /* timer control register value */
+	uint32_t control; /* timer control register value */
 
 	key = irq_lock();
 
 	/* disable interrupt generation */
 
-	ctrl_val = _arc_v2_aux_reg_read(_ARC_V2_TMR0_CONTROL);
-	_arc_v2_aux_reg_write(_ARC_V2_TMR0_CONTROL, ctrl_val & ~_ARC_V2_TMR_CTRL_IE);
+	control = timer0_control_register_get();
+	timer0_control_register_set(control & ~_ARC_V2_TMR_CTRL_IE);
 
 	irq_unlock(key);
 
