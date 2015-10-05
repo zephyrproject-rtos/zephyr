@@ -22,12 +22,13 @@
  * data structure.
  */
 
-#ifdef CONFIG_ADVANCED_POWER_MANAGEMENT
 
 #include <nanokernel.h>
 #include <nano_private.h>
 #include <toolchain.h>
 #include <sections.h>
+#include <drivers/system_timer.h>
+#include <wait_q.h>
 
 /**
  *
@@ -46,4 +47,70 @@ void nano_cpu_set_idle(int32_t ticks)
 	_nanokernel.idle = ticks;
 }
 
-#endif /* CONFIG_ADVANCED_POWER_MANAGEMENT */
+#if defined(CONFIG_NANOKERNEL) && defined(CONFIG_TICKLESS_IDLE)
+
+int32_t _sys_idle_ticks_threshold = CONFIG_TICKLESS_IDLE_THRESH;
+
+#if defined(CONFIG_NANO_TIMEOUTS)
+static inline int32_t get_next_timeout_expiry(void)
+{
+	return _nano_get_earliest_timeouts_deadline();
+}
+#else
+#define get_next_timeout_expiry(void) TICKS_UNLIMITED
+#endif
+
+/**
+*
+* @brief - obtain number of ticks until next timer expires
+*
+* Must be called with interrupts locked to prevent the timer queues from
+* changing.
+*
+* @return Number of ticks until next timer expires.
+*
+*/
+
+static inline int32_t get_next_timer_expiry(void)
+{
+	return _nano_timer_list ? _nano_timer_list->ticks : TICKS_UNLIMITED;
+}
+
+static inline int was_in_tickless_idle(void)
+{
+	return	(_nanokernel.idle == TICKS_UNLIMITED) ||
+			(_nanokernel.idle >= _sys_idle_ticks_threshold);
+}
+
+static inline int must_enter_tickless_idle(void)
+{
+	/* uses same logic as was_in_tickless_idle() */
+	return was_in_tickless_idle();
+}
+
+static inline int32_t get_next_tick_expiry(void)
+{
+	int32_t timers = get_next_timer_expiry();
+	int32_t timeouts = get_next_timeout_expiry();
+
+	return (int32_t)min((uint32_t)timers, (uint32_t)timeouts);
+}
+
+void _power_save_idle(void)
+{
+	_nanokernel.idle = get_next_tick_expiry();
+
+	if (must_enter_tickless_idle()) {
+		_timer_idle_enter((uint32_t)_nanokernel.idle);
+	}
+}
+
+void _power_save_idle_exit(void)
+{
+	if (was_in_tickless_idle()) {
+		_timer_idle_exit();
+		_nanokernel.idle = 0;
+	}
+}
+
+#endif /* CONFIG_NANOKERNEL && CONFIG_TICKLESS_IDLE */
