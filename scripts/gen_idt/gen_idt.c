@@ -1,5 +1,3 @@
-/* genIdt.c - Create static IDT */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -30,22 +28,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
-DESCRIPTION
-Creates a static IA-32 Interrupt Descriptor Table (IDT).
-
-This program expects to be invoked as follows:
-    genIdt <file name> <number of interrupt vectors>
-All parameters are required.
-
-<file name> is assumed to be a binary file containing the intList section from
-the Zephyr Kernel ELF image (microkernel.elf, nanokernel.elf, etc.)
-
-<number of interrupt vectors> is the same as CONFIG_IDT_NUM_VECTORS.
-
-No help on usage is provided as it is expected that this program is invoked
-from within the build system during the link stage.
-*/
+/**
+ * @file
+ * @brief Create static IDT
+ * Creates a static IA-32 Interrupt Descriptor Table (IDT).
+ *
+ * This program expects to be invoked as follows:
+ *  gen_idt -i <input file> -o <output file> -n <number of interrupt vectors>
+ * All parameters are required.
+ *
+ * The <input file> is assumed to be a binary file containing the intList
+ * section from the Zephyr Kernel ELF image.
+ *
+ * <number of interrupt vectors> is the same as CONFIG_IDT_NUM_VECTORS.
+ *
+ * It is expected that this program is invoked from within the build system
+ * during the link stage.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
