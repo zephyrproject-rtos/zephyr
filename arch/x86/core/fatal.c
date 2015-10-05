@@ -34,12 +34,11 @@
  * the caller does not have a NANO_ESF to pass
  */
 const NANO_ESF _default_esf = {
-#ifdef CONFIG_GDB_INFO
+	0xdeaddead, /* ESP */
 	0xdeaddead, /* EBP */
 	0xdeaddead, /* EBX */
 	0xdeaddead, /* ESI */
 	0xdeaddead, /* EDI */
-#endif		    /* CONFIG_GDB_INFO */
 	0xdeaddead, /* EDX */
 	0xdeaddead, /* ECX */
 	0xdeaddead, /* EAX */
@@ -47,8 +46,6 @@ const NANO_ESF _default_esf = {
 	0xdeaddead, /* EIP */
 	0xdeaddead, /* CS */
 	0xdeaddead, /* EFLAGS */
-	0xdeaddead, /* ESP */
-	0xdeaddead  /* SS */
 };
 
 /**

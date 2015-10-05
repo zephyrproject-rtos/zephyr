@@ -198,28 +198,21 @@ extern unsigned char _irq_to_interrupt_vector[];
  * @brief Nanokernel Exception Stack Frame
  *
  * A pointer to an "exception stack frame" (ESF) is passed as an argument
- * to exception handlers registered via nanoCpuExcConnect().  When an exception
- * occurs while PL=0, then only the EIP, CS, and EFLAGS are pushed onto the stack.
- * The least significant pair of bits in the CS value should be examined to
- * determine whether the exception occurred while PL=3, in which case the ESP
- * and SS values will also be present in the ESF.  If the exception occurred
- * while in PL=0, neither the SS nor ESP values will be present in the ESF.
+ * to exception handlers registered via nanoCpuExcConnect().  As the system
+ * always operates at ring 0, only the EIP, CS and EFLAGS registers are pushed
+ * onto the stack when an exception occurs.
  *
- * The exception stack frame includes the volatile registers EAX, ECX, and EDX
- * pushed on the stack by _ExcEnt().
- *
- * If configured for host-based debug tools such as GDB, the 4 non-volatile
- * registers (EDI, ESI, EBX, EBP) are also pushed by _ExcEnt()
- * for use by the debug tools.
+ * The exception stack frame includes the volatile registers (EAX, ECX, and
+ * EDX) as well as the 5 non-volatile registers (EDI, ESI, EBX, EBP and ESP).
+ * Those registers are pushed onto the stack by _ExcEnt().
  */
 
 typedef struct nanoEsf {
-#ifdef CONFIG_GDB_INFO
+	unsigned int esp;
 	unsigned int ebp;
 	unsigned int ebx;
 	unsigned int esi;
 	unsigned int edi;
-#endif /* CONFIG_GDB_INFO */
 	unsigned int edx;
 	unsigned int ecx;
 	unsigned int eax;
@@ -227,28 +220,18 @@ typedef struct nanoEsf {
 	unsigned int eip;
 	unsigned int cs;
 	unsigned int eflags;
-	unsigned int esp;
-	unsigned int ss;
 } NANO_ESF;
 
 /**
  * @brief Nanokernel "interrupt stack frame" (ISF)
  *
  * An "interrupt stack frame" (ISF) as constructed by the processor
- * and the interrupt wrapper function _IntExit().  When an interrupt
- * occurs while PL=0, only the EIP, CS, and EFLAGS are pushed onto the stack.
- * The least significant pair of bits in the CS value should be examined to
- * determine whether the exception occurred while PL=3, in which case the ESP
- * and SS values will also be present in the ESF.  If the exception occurred
- * while in PL=0, neither the SS nor ESP values will be present in the ISF.
+ * and the interrupt wrapper function _IntEnt().  As the system always operates
+ * at ring 0, only the EIP, CS and EFLAGS registers are pushed onto the stack
+ * when an interrupt occurs.
  *
  * The interrupt stack frame includes the volatile registers EAX, ECX, and EDX
- * pushed on the stack by _IntExit()..
- *
- * The host-based debug tools such as GDB do not require the 4 non-volatile
- * registers (EDI, ESI, EBX, EBP) to be preserved during an interrupt.
- * The register values saved/restored by _Swap() called from _IntExit() are
- * sufficient.
+ * pushed on the stack by _IntEnt().
  */
 
 typedef struct nanoIsf {
@@ -258,8 +241,6 @@ typedef struct nanoIsf {
 	unsigned int eip;
 	unsigned int cs;
 	unsigned int eflags;
-	unsigned int esp;
-	unsigned int ss;
 } NANO_ISF;
 
 #endif /* !_ASMLANGUAGE */

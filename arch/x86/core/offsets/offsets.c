@@ -90,12 +90,11 @@ GEN_ABSOLUTE_SYM(__tSwapStk_SIZEOF, sizeof(tSwapStk));
 
 /* NANO_ESF structure member offsets */
 
-#ifdef CONFIG_GDB_INFO
+GEN_OFFSET_SYM(NANO_ESF, esp);
 GEN_OFFSET_SYM(NANO_ESF, ebp);
 GEN_OFFSET_SYM(NANO_ESF, ebx);
 GEN_OFFSET_SYM(NANO_ESF, esi);
 GEN_OFFSET_SYM(NANO_ESF, edi);
-#endif /* CONFIG_GDB_INFO */
 GEN_OFFSET_SYM(NANO_ESF, edx);
 GEN_OFFSET_SYM(NANO_ESF, ecx);
 GEN_OFFSET_SYM(NANO_ESF, eax);
@@ -103,8 +102,6 @@ GEN_OFFSET_SYM(NANO_ESF, errorCode);
 GEN_OFFSET_SYM(NANO_ESF, eip);
 GEN_OFFSET_SYM(NANO_ESF, cs);
 GEN_OFFSET_SYM(NANO_ESF, eflags);
-GEN_OFFSET_SYM(NANO_ESF, esp);
-GEN_OFFSET_SYM(NANO_ESF, ss);
 
 /* tTaskStateSegment structure member offsets */
 

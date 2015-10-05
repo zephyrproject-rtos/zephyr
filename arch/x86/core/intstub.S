@@ -403,6 +403,18 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 
 	cld				/* Clear direction flag */
 
+	/* Create the ESF */
+
+	pushl %eax
+	pushl %ecx
+	pushl %edx
+	pushl %edi
+	pushl %esi
+	pushl %ebx
+	pushl %ebp
+
+	leal	44(%esp), %ecx   /* Calculate ESP before exception occurred */
+	pushl	%ecx             /* Save calculated ESP */
 
 	/*
 	 * The task's regular stack is being used, but push the value of ESP

@@ -142,8 +142,6 @@ BRANCH_LABEL(_ExcEntSetupDone)
 	pushl	%ecx
 	pushl	%edx
 
-#ifdef CONFIG_GDB_INFO
-
 	/*
 	 * Push the cooperative registers on the existing stack as they are
 	 * required by debug tools.
@@ -154,7 +152,8 @@ BRANCH_LABEL(_ExcEntSetupDone)
 	pushl	%ebx
 	pushl	%ebp
 
-#endif /* CONFIG_GDB_INFO */
+	leal	44(%esp), %ecx   /* Calculate ESP before interrupt occurred */
+	pushl	%ecx             /* Save calculated ESP */
 
 	/* ESP is pointing to the ESF at this point */
 
@@ -271,20 +270,17 @@ SECTION_FUNC(TEXT, _ExcExit)
 BRANCH_LABEL(nestedException)
 #endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
 
-#ifdef CONFIG_GDB_INFO
-
 	/*
 	 * Pop the non-volatile registers from the stack.
 	 * Note that debug tools may have altered the saved register values while
 	 * the task was stopped, and we want to pick up the altered values.
 	 */
 
+	popl	%ebp		/* Discard saved ESP */
 	popl	%ebp
 	popl	%ebx
 	popl	%esi
 	popl	%edi
-
-#endif /* CONFIG_GDB_INFO */
 
 	/* restore edx and ecx which are always saved on the stack */
 
