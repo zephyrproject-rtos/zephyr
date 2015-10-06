@@ -167,7 +167,7 @@ rsp:
 }
 
 struct gatt_value {
-	uint8_t len;
+	uint16_t len;
 	uint8_t *data;
 };
 
@@ -275,8 +275,8 @@ static void set_value(uint8_t *data, uint16_t len)
 		}
 	}
 
-	value.len = cmd->len;
-	value.data = gatt_buf_add(cmd->value, cmd->len);
+	value.len = sys_le16_to_cpu(cmd->len);
+	value.data = gatt_buf_add(cmd->value, value.len);
 	if (!value.data) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;
