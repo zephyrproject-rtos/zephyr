@@ -1,58 +1,55 @@
 .. _kbuild_project:
 
-Developing an Application Project Using Kbuild
+Developing an Application and the Build System
 **********************************************
 
-The build system is a project centric system. The |codename|
-must have a defined project that allows the build of the kernel
-binary.
+The build system is an application centric system. The application drives the
+configuration and build process of the kernel binary.
 
-A project can be organized in three independent directories: the
-kernel base directory, the project directory, and the project source
-code directory.
+Application development can be organized in three independent directories:
+the kernel base directory, the project directory, and the project source code
+directory.
 
-The kernel base directory is the |codename| base directory. This directory
-hosts the kernel source code, the configuration options and the kernel
-build definitions.
+The |codename|'s base directory hosts the kernel source code, the
+configuration options, and the kernel build definitions.
 
-The project directory is the directory that puts together the kernel
-project with the developer project. This directory hosts the definition
-of the developers' projects, for example: specific configuration options
-and file location of the source code.
-
-The project source code directory hosts the source code of the
-developers' projects.
+The application directory is the directory that puts together the kernel with
+the developer's application. It hosts the definitions of the developers'
+applications. For example, application-specific configuration options and the
+application's
+source code.
 
 The Application Project
 =======================
 
 A common application project is composed of the following files:
 
-* Makefile: Configures the project and integrates the
-  developer's project with the |codename| Kbuild system.
+* **Makefile**: Defines the application's build process and integrates the
+  developer's application with the kernel's build system.
 
-* Configuration file: Allows the user
-  to override the standard configuration.
+* **Configuration file**: Allows the developer to override the platform's
+  default configuration.
 
-* MDEF file: Defines the set of kernel objects instantiated by the
-  project. Required only by microkernel architectures.
+* **MDEF**: Defines the set of kernel objects that the the application
+  instantiates. Required only by the microkernel.
 
-* The :file:`src/` directory: Hosts by default the project source code.
-   This directory can be overridden and defined in a different
-   directory.
+* **The :file:`src/` directory**: By default, this directory hosts the
+  application's source code. This location can be overridden and defined in a
+  different directory.
 
-   * Makefile: Adds the developer's source code into the Kbuild
-     recursion model.
+   * **Makefile**: Adds the developer's source code into the build system's
+   recursion model.
 
-The project source code can be organized in subdirectories.
-Each directory should follow the Kbuild Makefile conventions.
+The application's source code can be organized in subdirectories.
+Each directory must follow the Kbuild Makefile conventions; see
+:ref:`kbuild_makefiles`.
 
-Project Definition
-==================
+Application Definition
+======================
 
-The application project is defined through the project Makefile.
-The project is integrated into the Kbuild system by including the
-Makefile.inc file provided.
+The developer defines the relationship of application to build system through
+the Makefiles. The application is integrated into the build system by
+including the Makefile.inc file provided.
 
 .. code-block:: make
 
@@ -60,91 +57,94 @@ Makefile.inc file provided.
 
 The following predefined variables configure the development project:
 
-* :makevar:`ARCH`: Specifies the build architecture for the |codename|
-  The architectures currently supported are x86, arm and arc. The build
-  system sets C flags, selects the default configuration and the
+* :makevar:`ARCH`: Specifies the build architecture for the kernel. The
+  architectures currently supported are x86, arm and arc. The build system
+  sets C flags, selects the default configuration and uses the appropriate
   toolchain tools. The default value is x86.
 
-* :makevar:`ZEPHYR_BASE`: Sets the path to the |project| base directory.
-  This variable is usually set by the :file:`timo_env.sh` script.
-  It can be used to get the |project| base directory (as used in the
-  Makefile.inc inclusion) or it can be overridden to select an
-  specific instance of the |codename|.
+* :makevar:`ZEPHYR_BASE`: Sets the path to the kernel's base directory.
+  This variable is usually set by the :file:`zephyr_env.sh` script.
+  It can be used to get the kernel's base directory, as used in the
+  Makefile.inc inclusion above, or it can be overridden to select an
+  specific instance of the kernel.
 
-* :makevar:`PROJECT_BASE`: Provides the developer
-  project directory path. It is set by the :file:`Makefile.inc`,
+* :makevar:`PROJECT_BASE`: Provides the developer's application project
+  directory path. It is set by the :file:`Makefile.inc` file.
 
-* :makevar:`SOURCE_DIR`: Overrides the default value for the
-  developer source code directory. The developer source code directory
-  is set to :file:`$(PROJECT_BASE/)src/` by default. This directory
-  name should end with backslash **'/'**.
+* :makevar:`SOURCE_DIR`: Overrides the default value for the application's
+  source code directory. The developer source code directory is set to
+  :file:`$(PROJECT_BASE/)src/` by default. This directory name should end
+  with slash **'/'**.
 
-* :makevar:`PLATFORM_CONFIG`:Selects the platform of the default
-  configuration used by the project build.
+* :makevar:`PLATFORM_CONFIG`: Selects the platform that the application's
+  build will use for the default configuration.
 
-* :makevar:`KERNEL_TYPE`: Select the kernel type of the default
-  configuration used by the project build. It indicates if this is
-  a nanokernel or microkernel architecture. The supported values
-  are **nano** and **micro**.
+* :makevar:`KERNEL_TYPE`: Selects the kernel type that the application's
+  build will use for the default configuration. It indicates whether to use a
+  nanokernel or microkernel architecture.
+  The supported values are **nano** and **micro**.
 
-* :makevar:`MDEF_FILE`: Indicates the name of the MDEF file. It is
-  required for microkernel architectures only.
+* :makevar:`MDEF_FILE`: Indicates the name of the MDEF file; required for
+  microkernel architectures only.
 
-* :makevar:`CONF_FILE`: Indicates the name of a configuration
-  snippet file. This file includes the kconfig values that are
-  overridden from the default configuration.
+* :makevar:`CONF_FILE`: Indicates the name of a configuration fragment file.
+  This file includes the kconfig configuration values that override the
+  default configuration values.
 
-* :makevar:`O`: Optional. Indicates the output directory used by Kconfig.
-  The output directory stores all the Kconfig generated files.
-  The default output directory is set to the
-  :file:`$(PROJECT_BASE)/output` directory.
+* :makevar:`O`: Optional. Indicates the output directory that Kconfig uses.
+  The output directory stores all the files generated during the build
+  process. The default output directory is the :file:`$(PROJECT_BASE)/outdir`
+  directory.
 
-Project Debugging
-=================
+Application Debugging
+=====================
 
-This section is a quick hands-on reference to start debugging |project|
-with QEMU. Most of the content in this section is already covered on
+This section is a quick hands-on reference to start debugging your
+application with QEMU. Most content in this section is already covered on
 `QEMU`_ and `GNU_Debugger`_ reference manuals.
 
 .. _QEMU: http://wiki.qemu.org/Main_Page
 
 .. _GNU_Debugger: http://www.gnu.org/software/gdb
 
-In this quick reference you find shortcuts, specific environmental
-variables and parameters that can help you to quickly setup your
-debugging environment.
+In this quick reference you find shortcuts, specific environmental variables
+and parameters that can help you to quickly set up your debugging
+environment.
 
 The simplest way to debug an application running in QEMU is using the GNU
 Debugger and setting a local GDB server in your development system
 through QEMU.
 
 You will need an ELF binary image for debugging purposes.
-This image will be generated by the build system in the output directory.
+The build system generates the image in the output directory.
 By default, the kernel binary name is :file:`zephyr.elf`.  The name can be
 changed using Kconfig.
 
 .. note::
 
-   We will use the standard 1234 TCP port to open a :abbr:`GDB (GNU Debugger)`
-   server instance in this reference manual. This port number can be changed
-   for a port that best suits your development system.
+   We will use the standard 1234 TCP port to open a
+   :abbr:`GDB (GNU Debugger)` server instance. This port number can be
+   changed for a port that best suits the development system.
 
-|codename| uses QEMU as the supported emulation system. QEMU must be invoked
-with the -s and -S parameters.
+QEMU is the supported emulation system of the kernel. QEMU must be invoked
+with the -s and -S options.
 
-* -S  Do not start CPU at startup (you must type 'c' in the monitor).
-* -s  Shorthand for -gdb tcp::1234, i.e. open a GDB server on TCP port 1234.
+* :option:`-S` Do not start CPU at startup; rather, you must type 'c' in the
+monitor.
+* :option:`-s` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
+TCP port 1234.
 
 The build system can build the elf binary and call the QEMU process with
-the :makevar:`qemu` target. The QEMU debug parameters can be set using the
-environment variable :makevar `QEMU_EXTRA_FLAGS`. To set the -s and -S
-parameters type:
+the :makevar:`qemu` target. The QEMU debug options can be set using the
+environment variable :envvar:`QEMU_EXTRA_FLAGS`. To set the :option:`-s` and
+:option:`-S` options:
 
 .. code-block:: bash
 
     export QEMU_EXTRA_FLAGS="-s -S"
 
-The build and emulation processes are called with the Makefile qemu target:
+The build and emulation processes are called with the Makefile :option:`qemu`
+target:
 
 .. code-block:: bash
 
@@ -154,9 +154,9 @@ The build system will start a QEMU instance with the CPU halted at startup
 and with a GDB server instance listening at the TCP port 1234.
 
 The :file:`.gdbinit` will help initialize your GDB instance on every run.
-In this example, the initialization file points to the GDB server instace.
+In this example, the initialization file points to the GDB server instance.
 It configures a connection to a remote target at the local host on the TCP
-port 1234. The initialization should set the kernel's root directory as a
+port 1234. The initialization sets the kernel's root directory as a
 reference. The :file:`.gdbinit` file contains the following lines:
 
 .. code-block:: bash
@@ -168,12 +168,12 @@ reference. The :file:`.gdbinit` file contains the following lines:
 
    Substitute ZEPHYR_BASE for the current kernel's root directory.
 
-Execute your debug application from the same directory that you chose for
-the :file:`gdbinit` file. The command may include the --tui option to enable
-the use if a teminal user interface. The following commands connects to the
-GDB server using :file:`gdb`. --tui).The command loads the symbol table from
-the elf binary file. In this example, the elf binary file name corresponds
-to :file:`zephyr.elf` file:
+Execute the application to debug from the same directory that you chose for
+the :file:`gdbinit` file. The command can include the :option:`--tui` option
+to enable the use of a terminal user interface. The following commands
+connects to the GDB server using :file:`gdb`. The command loads the symbol
+table from the elf binary file. In this example, the elf binary file name
+corresponds to :file:`zephyr.elf` file:
 
 .. code-block:: bash
 
@@ -181,8 +181,8 @@ to :file:`zephyr.elf` file:
 
 .. note::
 
-   The --tui option might not be supported by the GDB
-   version installed in your development system.
+   The GDB version on the development system might not support the --tui
+   option.
 
 Finally, this command connects to the GDB server using the Data
 Displayer Debugger (:file:`ddd`). The command loads the symbol table from the
@@ -190,8 +190,9 @@ elf binary file, in this instance, the :file:`zephyr.elf` file.
 
 .. note::
 
-   The Data Displayer Debugger may not be installed in your development
-   system by default. Follow your system instructions to install it.
+   The :abbr:`DDD (Data Displayer Debugger)` may not be installed in your
+   development system by default. Follow your system instructions to install
+   it.
 
 .. code-block:: bash
 
@@ -199,6 +200,6 @@ elf binary file, in this instance, the :file:`zephyr.elf` file.
 
 .. note::
 
-   Both commands use the :command:`gdb` to execute the GNU Debugger.
+   Both commands execute the :abbr:`gdb (GNU Debugger)`.
    The command name might change depending on the toolchain you are using
    and your cross-development tools.
