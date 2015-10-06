@@ -163,7 +163,7 @@ SECTIONS
 		KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
 	} GROUP_LINK_IN(RAM)
 
-	SECTION_PROLOGUE (_k_task_list, (OPTIONAL),)
+	SECTION_PROLOGUE (_k_task_list, ALIGN(4), ALIGN(4))
 	{
 		_k_task_list_start = .;
 			*(._k_task_list.public.*)
