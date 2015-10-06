@@ -9,7 +9,9 @@ endif
 ifneq ("$(wildcard $(MDEF_FILE))","")
 MDEF_FILE_PATH=$(MDEF_FILE)
 else
+ifneq ($(MDEF_FILE),)
 MDEF_FILE_PATH=$(PROJECT_BASE)/$(MDEF_FILE)
+endif
 endif
 
 define filechk_prj.mdef
@@ -36,7 +38,9 @@ define filechk_prj.mdef
 		i=$$(($$i+1));\
 		done; \
 	fi; \
-	cat $(MDEF_FILE_PATH);)
+	if test -e "$(MDEF_FILE_PATH)"; then \
+		cat $(MDEF_FILE_PATH); \
+	fi;)
 endef
 
 misc/generated/sysgen/prj.mdef:	$(MDEF_FILE_PATH) \
