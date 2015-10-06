@@ -276,6 +276,25 @@ static void set_value(uint8_t *data, uint16_t len)
 	}
 
 	value.len = sys_le16_to_cpu(cmd->len);
+
+	/* Check if attribute value has been already set */
+	if (attr->user_data) {
+		struct gatt_value *gatt_value = attr->user_data;
+
+		/* Fail if value length doesn't match  */
+		if (value.len != gatt_value->len) {
+			status = BTP_STATUS_FAILED;
+			goto rsp;
+		}
+
+		memcpy(gatt_value->data, cmd->value, gatt_value->len);
+
+		/* TODO Send notification */
+
+		status = BTP_STATUS_SUCCESS;
+		goto rsp;
+	}
+
 	value.data = gatt_buf_add(cmd->value, value.len);
 	if (!value.data) {
 		status = BTP_STATUS_FAILED;
