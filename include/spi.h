@@ -28,22 +28,22 @@ extern "C" {
 #endif
 
 /* SPI Polarity & Phase Modes */
-#define SPI_MODE_CPOL		0x0
-#define SPI_MODE_CPHA		0x1
-#define SPI_MODE_LOOP		0x2
+#define SPI_MODE_CPOL		0x1
+#define SPI_MODE_CPHA		0x2
+#define SPI_MODE_LOOP		0x4
 
-#define SPI_MODE_MASK		(0x3)
-#define SPI_MODE(_in_)		(_in_ & SPI_MODE_MASK)
+#define SPI_MODE_MASK		(0x7)
+#define SPI_MODE(_in_)		((_in_) & SPI_MODE_MASK)
 
 /* SPI Transfer modes (host controller dependent) */
-#define SPI_TRANSFER_MSB	(0 << 2)
-#define SPI_TRANSFER_LSB	(1 << 2)
+#define SPI_TRANSFER_MSB	(0 << 3)
+#define SPI_TRANSFER_LSB	(1 << 3)
 
-#define SPI_TRANSFER_MASK	(0x4)
+#define SPI_TRANSFER_MASK	(0x8)
 
-#define SPI_WORD_SIZE_MASK	(0xFF << 3)
-#define SPI_WORD_SIZE_GET(_in_) ((_in_ & SPI_WORD_SIZE_MASK) >> 3)
-#define SPI_WORD_SIZE(_in_)	(_in_ << 3)
+#define SPI_WORD_SIZE_MASK	(0xFF << 4)
+#define SPI_WORD_SIZE_GET(_in_) (((_in_) & SPI_WORD_SIZE_MASK) >> 4)
+#define SPI_WORD(_in_) ((_in_) << 4)
 
 enum spi_cb_type {
 	SPI_CB_WRITE		= 1,
@@ -60,8 +60,9 @@ typedef void (*spi_callback)(struct device *dev,
  * config is a bit field with the following parts:
  * mode			[ 0 : 1 ]   - Polarity and phase mode
  * transfer_mode	[ 2 ]       - LSB or MSB first transfer mode
- * word_size		[ 3 : 10 ]  - Size of a data train in bits
- * RESERVED		[ 11 : 31 ] - undefined usage
+ * loop_mode		[ 3 ]       - Enable or disable loopback mode
+ * word_size		[ 4 : 11 ]  - Size of a data train in bits
+ * RESERVED		[ 12 : 31 ] - undefined usage
  *
  * max_sys_freq is the maximum frequency supported by the slave it
  * will deal with. This value depends on the host controller (the driver
