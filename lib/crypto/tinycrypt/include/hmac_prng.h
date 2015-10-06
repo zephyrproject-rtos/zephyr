@@ -19,14 +19,15 @@
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  */
 
 /**
@@ -34,17 +35,17 @@
  * @brief Interface to an HMAC-PRNG implementation.
  *
  *  Overview:   A pseudo-random number generator (PRNG) generates a sequence
- *                      of numbers that have a distribution close to the one expected
- *                      for a sequence of truly random numbers. The NIST Special
- *                      Publication 800-90A specifies several mechanisms to generate
- *                      sequences of pseudo random numbers, including the HMAC-PRNG one
- *                      which is based on HMAC. TinyCrypt implements HMAC-PRNG with
- *                      certain modifications from the NIST SP 800-90A spec.
+ *              of numbers that have a distribution close to the one expected
+ *              for a sequence of truly random numbers. The NIST Special
+ *              Publication 800-90A specifies several mechanisms to generate
+ *              sequences of pseudo random numbers, including the HMAC-PRNG one
+ *              which is based on HMAC. TinyCrypt implements HMAC-PRNG with
+ *              certain modifications from the NIST SP 800-90A spec.
  *
  *  Security:   A cryptographically secure PRNG depends on the existence of an
- *                      entropy source to provide a truly random seed as well as the
- *                      security of the primitives used as the building blocks (HMAC and
- *                      SHA256, for TinyCrypt).
+ *              entropy source to provide a truly random seed as well as the
+ *              security of the primitives used as the building blocks (HMAC and
+ *              SHA256, for TinyCrypt).
  *
  *              The NIST SP 800-90A standard tolerates a null personalization,
  *              while TinyCrypt requires a non-null personalization. This is
@@ -71,10 +72,14 @@
 #include <hmac.h>
 
 struct tc_hmac_prng_struct {
-        struct tc_hmac_state_struct h;       /* the HMAC instance for this PRNG */
-        uint8_t key[TC_SHA256_DIGEST_SIZE];  /* the PRNG key */
-        uint8_t v[TC_SHA256_DIGEST_SIZE];    /* PRNG state */
-        uint32_t countdown;     /* calls to tc_hmac_prng_generate left before re-seed */
+	/* the HMAC instance for this PRNG */
+        struct tc_hmac_state_struct h;
+	/* the PRNG key */
+        uint8_t key[TC_SHA256_DIGEST_SIZE];
+	/* PRNG state */
+        uint8_t v[TC_SHA256_DIGEST_SIZE];
+	/* calls to tc_hmac_prng_generate left before re-seed */
+        uint32_t countdown;
 };
 
 typedef struct tc_hmac_prng_struct *TCHmacPrng_t;
@@ -101,7 +106,9 @@ typedef struct tc_hmac_prng_struct *TCHmacPrng_t;
  *  @param personalization IN -- personalization string
  *  @param plen IN -- personalization length in bytes
  */
-int32_t tc_hmac_prng_init(TCHmacPrng_t prng, const uint8_t *personalization, uint32_t plen);
+int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
+			  const uint8_t *personalization,
+			  uint32_t plen);
 
 /**
  *  @brief HMAC-PRNG reseed procedure
@@ -123,8 +130,9 @@ int32_t tc_hmac_prng_init(TCHmacPrng_t prng, const uint8_t *personalization, uin
  *  @param additional_input IN -- additional input to the prng
  *  @param additionallen IN -- additional input length in bytes
  */
-int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed, uint32_t seedlen,
-                            const uint8_t *additional_input, uint32_t additionallen);
+int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed,
+			    uint32_t seedlen, const uint8_t *additional_input,
+			    uint32_t additionallen);
 
 /**
  *  @brief HMAC-PRNG generate procedure

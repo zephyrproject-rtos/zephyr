@@ -19,21 +19,23 @@
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <cbc_mode.h>
 #include <utils.h>
 
 int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
-                            uint32_t inlen, const uint8_t *iv, const TCAesKeySched_t sched)
+                            uint32_t inlen, const uint8_t *iv,
+			    const TCAesKeySched_t sched)
 {
 
         uint8_t buffer[TC_AES_BLOCK_SIZE];
@@ -61,7 +63,8 @@ int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
                 buffer[m++] ^= *in++;
                 if (m == TC_AES_BLOCK_SIZE) {
                         (void)tc_aes_encrypt(buffer, buffer, sched);
-                        (void)_copy(out, TC_AES_BLOCK_SIZE, buffer, TC_AES_BLOCK_SIZE);
+                        (void)_copy(out, TC_AES_BLOCK_SIZE,
+				    buffer, TC_AES_BLOCK_SIZE);
                         out += TC_AES_BLOCK_SIZE;
                         m = 0;
                 }
@@ -71,7 +74,8 @@ int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 }
 
 int32_t tc_cbc_mode_decrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
-                            uint32_t inlen, const uint8_t *iv, const TCAesKeySched_t sched)
+                            uint32_t inlen, const uint8_t *iv,
+			    const TCAesKeySched_t sched)
 {
         uint8_t buffer[TC_AES_BLOCK_SIZE];
         const uint8_t *p;
@@ -90,8 +94,8 @@ int32_t tc_cbc_mode_decrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
         }
 
         /* Note that in == iv + ciphertext, i.e. the iv and the ciphertext are
-         * contiguous. This allows for a very efficient decryption algorithm that
-         * would not otherwise be possible. */
+         * contiguous. This allows for a very efficient decryption algorithm
+	 * that would not otherwise be possible. */
         p = iv;
         for (n = m = 0; n < inlen; ++n) {
                 if ((n % TC_AES_BLOCK_SIZE) == 0) {

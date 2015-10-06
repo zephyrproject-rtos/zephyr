@@ -19,14 +19,15 @@
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <hmac_prng.h>
@@ -95,7 +96,9 @@ static void update(TCHmacPrng_t prng, const uint8_t *e, uint32_t len)
         (void)tc_hmac_final(prng->v, sizeof(prng->v), &prng->h);
 }
 
-int32_t tc_hmac_prng_init(TCHmacPrng_t prng, const uint8_t *personalization, uint32_t plen)
+int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
+			  const uint8_t *personalization,
+			  uint32_t plen)
 {
         /* input sanity check: */
         if (prng == (TCHmacPrng_t) 0 ||
@@ -118,8 +121,11 @@ int32_t tc_hmac_prng_init(TCHmacPrng_t prng, const uint8_t *personalization, uin
         return TC_SUCCESS;
 }
 
-int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed, uint32_t seedlen,
-                            const uint8_t *additional_input, uint32_t additionallen)
+int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
+			    const uint8_t *seed,
+			    uint32_t seedlen,
+                            const uint8_t *additional_input,
+			    uint32_t additionallen)
 {
         /* input sanity check: */
         if (prng == (TCHmacPrng_t) 0 ||
@@ -130,7 +136,8 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed, uint32_t see
         }
 
         if (additional_input != (const uint8_t *) 0) {
-                /* Abort if additional_input is provided but has inappropriate length */
+                /* Abort if additional_input is provided but has inappropriate
+		 * length */
                 if (additionallen == 0 ||
                     additionallen > MAX_ALEN) {
                         return TC_FAIL;
@@ -171,11 +178,13 @@ int32_t tc_hmac_prng_generate(uint8_t *out, uint32_t outlen, TCHmacPrng_t prng)
                 (void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
                 (void)tc_hmac_final(prng->v, sizeof(prng->v), &prng->h);
 
-                bufferlen = (TC_SHA256_DIGEST_SIZE > outlen) ? outlen : TC_SHA256_DIGEST_SIZE;
+                bufferlen = (TC_SHA256_DIGEST_SIZE > outlen) ?
+			outlen : TC_SHA256_DIGEST_SIZE;
                 (void)_copy(out, bufferlen, prng->v, bufferlen);
 
                 out += bufferlen;
-                outlen = (outlen > TC_SHA256_DIGEST_SIZE) ? (outlen - TC_SHA256_DIGEST_SIZE) : 0;
+                outlen = (outlen > TC_SHA256_DIGEST_SIZE) ?
+			(outlen - TC_SHA256_DIGEST_SIZE) : 0;
         }
 
         /* block future PRNG compromises from revealing past state */

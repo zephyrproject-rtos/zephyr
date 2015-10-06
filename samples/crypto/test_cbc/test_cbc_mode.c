@@ -19,16 +19,16 @@
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
   DESCRIPTION
   This module tests the following AES-CBC Mode routines:
@@ -112,14 +112,17 @@ uint32_t test_1_and_2(void)
         (void)memcpy(iv_buffer, iv, TC_AES_BLOCK_SIZE);
 
         TC_PRINT("CBC test #1 (encryption SP 800-38a tests):\n");
-        if (tc_cbc_mode_encrypt(encrypted, sizeof(plaintext) + TC_AES_BLOCK_SIZE,
-                                plaintext, sizeof(plaintext), iv_buffer, &a) == 0) {
+        if (tc_cbc_mode_encrypt(encrypted,
+				sizeof(plaintext) + TC_AES_BLOCK_SIZE,
+                                plaintext, sizeof(plaintext),
+				iv_buffer, &a) == 0) {
                 TC_ERROR("CBC test #1 (encryption SP 800-38a tests) failed in %s.\n", __func__);
                 result = TC_FAIL;
                 goto exitTest1;
         }
 
-        result = check_result(1, ciphertext, sizeof(encrypted), encrypted, sizeof(encrypted), 1);
+        result = check_result(1, ciphertext, sizeof(encrypted),
+			      encrypted, sizeof(encrypted), 1);
         TC_END_RESULT(result);
 
         TC_PRINT("CBC test #2 (decryption SP 800-38a tests):\n");
@@ -135,7 +138,8 @@ uint32_t test_1_and_2(void)
                 goto exitTest1;
         }
 
-        result = check_result(2, plaintext, sizeof(decrypted), decrypted, sizeof(decrypted), 1);
+        result = check_result(2, plaintext, sizeof(decrypted),
+			      decrypted, sizeof(decrypted), 1);
 
  exitTest1:
         TC_END_RESULT(result);

@@ -19,14 +19,15 @@
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sha256.h>
@@ -42,8 +43,9 @@ int32_t tc_sha256_init(TCSha256State_t s)
         }
 
         /* Setting the initial state values.
-           These values correspond to the first 32 bits of the fractional parts of
-           the square roots of the first 8 primes: 2, 3, 5, 7, 11, 13, 17 and 19. */
+         * These values correspond to the first 32 bits of the fractional parts
+	 * of the square roots of the first 8 primes: 2, 3, 5, 7, 11, 13, 17
+	 * and 19. */
         _set((uint8_t *) s, 0x00, sizeof(*s));
         s->iv[0] = 0x6a09e667;
         s->iv[1] = 0xbb67ae85;
@@ -130,8 +132,8 @@ int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s)
 }
 
 /* Initializing SHA-256 Hash constant words K.
-   These values correspond to the first 32 bits of the fractional parts of the
-   cube roots of the first 64 primes between 2 and 311. */
+ * These values correspond to the first 32 bits of the fractional parts of the
+ * cube roots of the first 64 primes between 2 and 311. */
 static const uint32_t k256[64] = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
         0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -187,7 +189,8 @@ static void compress(uint32_t *iv, const uint8_t *data)
                 t1 = work_space[i] = n;
                 t1 += h + Sigma1(e) + Ch(e, f, g) + k256[i];
                 t2 = Sigma0(a) + Maj(a, b, c);
-                h = g; g = f; f = e; e = d + t1; d = c; c = b; b = a; a = t1 + t2;
+                h = g; g = f; f = e; e = d + t1;
+		d = c; c = b; b = a; a = t1 + t2;
         }
 
         for ( ; i < 64; ++i) {
@@ -199,7 +202,8 @@ static void compress(uint32_t *iv, const uint8_t *data)
                 t1 = work_space[i&0xf] += s0 + s1 + work_space[(i+9)&0xf];
                 t1 += h + Sigma1(e) + Ch(e, f, g) + k256[i];
                 t2 = Sigma0(a) + Maj(a, b, c);
-                h = g; g = f; f = e; e = d + t1; d = c; c = b; b = a; a = t1 + t2;
+                h = g; g = f; f = e; e = d + t1;
+		d = c; c = b; b = a; a = t1 + t2;
         }
 
         iv[0] += a; iv[1] += b; iv[2] += c; iv[3] += d;

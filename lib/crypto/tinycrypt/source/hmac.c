@@ -19,14 +19,15 @@
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <hmac.h>
@@ -47,7 +48,9 @@ static void rekey(uint8_t *key, const uint8_t *new_key, uint32_t key_size)
         }
 }
 
-int32_t tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key, uint32_t key_size)
+int32_t tc_hmac_set_key(TCHmacState_t ctx,
+			const uint8_t *key,
+			uint32_t key_size)
 {
         /* input sanity check: */
         if (ctx == (TCHmacState_t) 0 ||
@@ -60,12 +63,15 @@ int32_t tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key, uint32_t key_size
         struct tc_hmac_state_struct dummy_state;
 
         if (key_size <= TC_SHA256_BLOCK_SIZE) {
-                /* The next three lines consist of dummy calls just to avoid certain timing
-                 * attacks. Without these dummy calls, adversaries would be able to learn
-                 * whether the key_size is greater than TC_SHA256_BLOCK_SIZE by measuring the
-                 * time consumed in this process.*/
+                /* The next three lines consist of dummy calls just to avoid
+		 * certain timing attacks. Without these dummy calls,
+		 * adversaries would be able to learn whether the key_size is
+		 * greater than TC_SHA256_BLOCK_SIZE by measuring the time
+		 * consumed in this process.*/
                 (void)tc_sha256_init(&dummy_state.hash_state);
-                (void)tc_sha256_update(&dummy_state.hash_state, dummy_key, key_size);
+                (void)tc_sha256_update(&dummy_state.hash_state,
+				       dummy_key,
+				       key_size);
                 (void)tc_sha256_final(&dummy_state.key[TC_SHA256_DIGEST_SIZE],
                                       &dummy_state.hash_state);
 
@@ -74,8 +80,11 @@ int32_t tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key, uint32_t key_size
         } else {
                 (void)tc_sha256_init(&ctx->hash_state);
                 (void)tc_sha256_update(&ctx->hash_state, key, key_size);
-                (void)tc_sha256_final(&ctx->key[TC_SHA256_DIGEST_SIZE], &ctx->hash_state);
-                rekey(ctx->key, &ctx->key[TC_SHA256_DIGEST_SIZE], TC_SHA256_DIGEST_SIZE);
+                (void)tc_sha256_final(&ctx->key[TC_SHA256_DIGEST_SIZE],
+				      &ctx->hash_state);
+                rekey(ctx->key,
+		      &ctx->key[TC_SHA256_DIGEST_SIZE],
+		      TC_SHA256_DIGEST_SIZE);
         }
 
         return TC_SUCCESS;
@@ -90,16 +99,19 @@ int32_t tc_hmac_init(TCHmacState_t ctx)
         }
 
         (void)tc_sha256_init(&ctx->hash_state);
-        (void)tc_sha256_update(&ctx->hash_state, ctx->key, TC_SHA256_BLOCK_SIZE);
+        (void)tc_sha256_update(&ctx->hash_state,
+			       ctx->key,
+			       TC_SHA256_BLOCK_SIZE);
 
         return TC_SUCCESS;
 }
 
-int32_t tc_hmac_update(TCHmacState_t ctx, const void *data, uint32_t data_length)
+int32_t tc_hmac_update(TCHmacState_t ctx,
+		       const void *data,
+		       uint32_t data_length)
 {
         /* input sanity check: */
-        if (ctx == (TCHmacState_t) 0 ||
-            ctx->key == (uint8_t *) 0) {
+        if (ctx == (TCHmacState_t) 0 || ctx->key == (uint8_t *) 0) {
                 return TC_FAIL;
         }
 
@@ -121,7 +133,8 @@ int32_t tc_hmac_final(uint8_t *tag, uint32_t taglen, TCHmacState_t ctx)
         (void) tc_sha256_final(tag, &ctx->hash_state);
 
         (void)tc_sha256_init(&ctx->hash_state);
-        (void)tc_sha256_update(&ctx->hash_state, &ctx->key[TC_SHA256_BLOCK_SIZE],
+        (void)tc_sha256_update(&ctx->hash_state,
+			       &ctx->key[TC_SHA256_BLOCK_SIZE],
                                 TC_SHA256_BLOCK_SIZE);
         (void)tc_sha256_update(&ctx->hash_state, tag, TC_SHA256_DIGEST_SIZE);
         (void)tc_sha256_final(tag, &ctx->hash_state);
