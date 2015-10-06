@@ -8,7 +8,7 @@ resource-constrained systems, from simple embedded environmental sensors and
 LED wearables to sophisticated smart watches and IoT wireless gateways.
 
 The open source project associated with the Zephyr kernel makes it available
-to users and developers under a Revised BSD License.
+to users and developers under the Apache License, version 2.0.
 
 Key Features
 ************
