@@ -30,8 +30,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <aes.h>
-#include <utils.h>
+#include <tinycrypt/aes.h>
+#include <tinycrypt/utils.h>
 
 #define ZERO_BYTE 0x00
 
