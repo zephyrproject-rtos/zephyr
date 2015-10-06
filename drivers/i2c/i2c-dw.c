@@ -74,32 +74,62 @@ static inline void i2c_dw_memory_write(uint32_t base_addr, uint32_t offset,
 }
 
 
+static inline void _i2c_dw_data_ask(struct device *dev, uint8_t restart)
+{
+	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
+	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
+	uint32_t data;
+
+	/* No more bytes to request */
+	if (dw->request_bytes == 0) {
+		return;
+	}
+
+	/* Tell controller to get another byte */
+	data = IC_DATA_CMD_CMD;
+
+	/* Send restart if needed) */
+	if (restart) {
+		data |= IC_DATA_CMD_RESTART;
+	}
+
+	/* After receiving the last byte, send STOP */
+	if (dw->request_bytes == 1) {
+		data |= IC_DATA_CMD_STOP;
+	}
+
+	regs->ic_data_cmd.raw = data;
+
+	dw->request_bytes--;
+}
+
 static void _i2c_dw_data_read(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
-	uint32_t i = 0;
-	uint32_t rx_cnt = 0;
 
-	/* Make sure we have some buffer to read/write to */
+	while (regs->ic_status.bits.rfne && (dw->rx_len > 0)) {
+		dw->rx_buffer[0] = regs->ic_data_cmd.raw;
+
+		dw->rx_buffer += 1;
+		dw->rx_len -= 1;
+
+		if (dw->rx_len == 0) {
+			break;
+		}
+
+		_i2c_dw_data_ask(dev, 0);
+	}
+
+	/* Nothing to receive anymore */
 	if (dw->rx_len == 0) {
+		dw->state &= ~I2C_DW_CMD_RECV;
 		return;
 	}
-
-	rx_cnt = regs->ic_rxflr;
-
-	if (rx_cnt > dw->rx_len) {
-		rx_cnt = dw->rx_len;
-	}
-
-	for (i = 0; i < rx_cnt; i++) {
-		dw->rx_buffer[i] = regs->ic_data_cmd.raw;
-	}
-
-	dw->rx_buffer += i;
-	dw->rx_len -= i;
 }
 
 
@@ -109,55 +139,44 @@ static void _i2c_dw_data_send(struct device *dev)
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
-	uint32_t i = 0;
-	uint32_t tx_cnt = 0;
 	uint32_t data = 0;
 
+	/* Nothing to send anymore, mask the interrupt */
+	if (dw->tx_len == 0) {
+		regs->ic_intr_mask.bits.tx_empty = 0;
 
-	if (dw->rx_tx_len == 0) {
+		if (dw->rx_len > 0) {
+			/* Tell controller to grab a byte.
+			 * RESTART if something has ben sent.
+			 */
+			_i2c_dw_data_ask(dev, (dw->state & I2C_DW_CMD_SEND));
+
+			/* QUIRK:
+			 * If requesting more than one byte, the process has
+			 * to be jump-started by requesting two bytes first.
+			 */
+			_i2c_dw_data_ask(dev, 0);
+		}
+
+		dw->state &= ~I2C_DW_CMD_SEND;
+
 		return;
 	}
 
-	tx_cnt = I2C_DW_FIFO_DEPTH - regs->ic_txflr;
+	while (regs->ic_status.bits.tfnf && (dw->tx_len > 0)) {
+		/* We have something to transmit to a specific host */
+		data = dw->tx_buffer[0];
 
-	if (tx_cnt > dw->rx_tx_len) {
-		tx_cnt = dw->rx_tx_len;
-	}
-
-	for (i = 0; i < tx_cnt; i++) {
-		if (dw->tx_len > 0) {
-			/* We have something to transmit to a specific host */
-			data = dw->tx_buffer[i];
-
-			/* Is this the last byte to write */
-			if (dw->tx_len == 1) {
-				data |= (dw->rx_len > 0) ?
-					IC_DATA_CMD_RESTART : IC_DATA_CMD_STOP;
-			}
-
-			dw->tx_len -= 1;
-		} else {
-			/*
-			 * We want to send out a request to read data from a
-			 * specific host
-			 */
-			data = IC_DATA_CMD_CMD;
-
-			/* This is the last dummy byte to write */
-			if (dw->rx_tx_len == 1) {
-				data |= IC_DATA_CMD_STOP;
-			}
+		/* If this is the last byte to write
+		 * and nothing to receive, send STOP.
+		 */
+		if ((dw->tx_len == 1) && (dw->rx_len == 0)) {
+			data |= IC_DATA_CMD_STOP;
 		}
 
 		regs->ic_data_cmd.raw = data;
-		dw->rx_tx_len -= 1;
-	}
-
-	dw->tx_buffer += i;
-
-	if (dw->rx_tx_len <= 0) {
-		regs->ic_intr_mask.bits.tx_empty = 0;
-		regs->ic_intr_mask.bits.stop_det = 1;
+		dw->tx_len -= 1;
+		dw->tx_buffer += 1;
 	}
 }
 
@@ -187,6 +206,8 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 			dw->cb(dev, cb_type);
 		}
 	}
+
+	dw->state &= ~I2C_DW_BUSY;
 }
 
 void i2c_dw_isr(struct device *port)
@@ -209,7 +230,7 @@ void i2c_dw_isr(struct device *port)
 #endif
 
 	/*
-	 * Causes of an intterrupt:
+	 * Causes of an interrupt:
 	 *   - STOP condition is detected
 	 *   - Transfer is aborted
 	 *   - Transmit FIFO is empy
@@ -228,7 +249,7 @@ void i2c_dw_isr(struct device *port)
 	 * handled.
 	 */
 	if (regs->ic_intr_stat.bits.stop_det) {
-		_i2c_dw_data_read(port);
+		value = regs->ic_clr_stop_det;
 		_i2c_dw_transfer_complete(port);
 	}
 
@@ -239,7 +260,7 @@ void i2c_dw_isr(struct device *port)
 			_i2c_dw_data_send(port);
 		}
 
-		/* Check if the Master RX buffer is full */
+		/* Check if the RX FIFO reached threshold */
 		if (regs->ic_intr_stat.bits.rx_full) {
 			_i2c_dw_data_read(port);
 		}
@@ -352,48 +373,63 @@ static int _i2c_dw_setup(struct device *dev)
 	DBG("I2C: lcnt = %d\n", dw->lcnt);
 	DBG("I2C: hcnt = %d\n", dw->hcnt);
 
-	/* Set TX interrupt mode */
-	ic_con.bits.tx_empty_ctl = 1;
-
 	/* Set the IC_CON register */
 	regs->ic_con = ic_con;
 	/* END of setup IC_CON */
 
-	/* Set RX fifo threshold level */
-	regs->ic_rx_tl = (regs->ic_comp_param_1.bits.rx_buffer_depth / 2);
-	/* Set TX fifo threshold level */
-	regs->ic_tx_tl = (regs->ic_comp_param_1.bits.tx_buffer_depth / 2);
+	/* Set RX fifo threshold level.
+	 * Setting it to zero automatically triggers interrupt
+	 * RX_FULL whenever there is data received.
+	 *
+	 * TODO: extend the threshold for multi-byte RX.
+	 */
+	regs->ic_rx_tl = 0;
+
+	/* Set TX fifo threshold level.
+	 * TX_EMPTY interrupt is triggered only when the
+	 * TX FIFO is truly empty.
+	 *
+	 * TODO: threshold set to just enough for TX
+	 */
+	regs->ic_tx_tl = 0;
 
 	return rc;
 }
 
 
-static int _i2c_dw_transfer(struct device *dev,
-			     uint8_t *write_buf, uint32_t write_len,
-			     uint8_t *read_buf,  uint32_t read_len,
-			     uint16_t slave_address)
+static int _i2c_dw_transfer_init(struct device *dev,
+				 uint8_t *write_buf, uint32_t write_len,
+				 uint8_t *read_buf,  uint32_t read_len,
+				 uint16_t slave_address)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 	uint32_t value = 0;
+	int ret;
 
-	/* First step, check if there is current activity */
-	if (regs->ic_status.bits.activity) {
-		return DEV_FAIL;
+	dw->state |= I2C_DW_BUSY;
+	if (write_len > 0) {
+		dw->state |= I2C_DW_CMD_SEND;
+	}
+	if (read_len > 0) {
+		dw->state |= I2C_DW_CMD_RECV;
 	}
 
 	dw->rx_len = read_len;
 	dw->rx_buffer = read_buf;
 	dw->tx_len = write_len;
 	dw->tx_buffer = write_buf;
-	dw->rx_tx_len = dw->rx_len + dw->tx_len;
+	dw->request_bytes = read_len;
 
 	/* Disable the device controller to be able set TAR */
 	regs->ic_enable.bits.enable = 0;
 
-	_i2c_dw_setup(dev);
+	ret = _i2c_dw_setup(dev);
+	if (ret) {
+		return ret;
+	}
 
 	/* Disable interrupts */
 	regs->ic_intr_mask.raw = 0;
@@ -404,12 +440,43 @@ static int _i2c_dw_transfer(struct device *dev,
 	if (regs->ic_con.bits.master_mode) {
 		/* Set address of target slave */
 		regs->ic_tar.bits.ic_tar = slave_address;
+	} else {
+		/* Set slave address for device */
+		regs->ic_sar.bits.ic_sar = slave_address;
+	}
+
+	return DEV_OK;
+}
+
+static int _i2c_dw_transfer_start(struct device *dev,
+				  uint8_t *write_buf, uint32_t write_len,
+				  uint8_t *read_buf,  uint32_t read_len,
+				  uint16_t slave_address)
+{
+	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
+	int ret;
+
+	/* First step, check if there is current activity */
+	if (regs->ic_status.bits.activity) {
+		return DEV_FAIL;
+	}
+
+	ret = _i2c_dw_transfer_init(dev, write_buf, write_len,
+				    read_buf, read_len, slave_address);
+	if (ret) {
+		return ret;
+	}
+
+	/* Trigger IRQ when TX_EMPTY */
+	regs->ic_con.bits.tx_empty_ctl = 1;
+
+	if (regs->ic_con.bits.master_mode) {
 		/* Enable necessary interrupts */
 		regs->ic_intr_mask.raw = (DW_ENABLE_TX_INT_I2C_MASTER |
 					  DW_ENABLE_RX_INT_I2C_MASTER);
 	} else {
-		/* Set slave address for device */
-		regs->ic_sar.bits.ic_sar = slave_address;
 		/* Enable necessary interrupts */
 		regs->ic_intr_mask.raw = DW_ENABLE_TX_INT_I2C_SLAVE;
 	}
@@ -430,8 +497,6 @@ static int i2c_dw_polling_write(struct device *dev,
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 	uint32_t value = 0;
-	uint32_t i;
-	uint32_t data;
 	uint32_t start_time;
 	int ret = DEV_OK;
 
@@ -448,43 +513,17 @@ static int i2c_dw_polling_write(struct device *dev,
 		}
 	}
 
-	dw->rx_len = 0;
-	dw->rx_buffer = NULL;
-	dw->tx_len = write_len;
-	dw->tx_buffer = write_buf;
-	dw->rx_tx_len = dw->rx_len + dw->tx_len;
-
-	/* Disable the device controller to be able set TAR */
-	regs->ic_enable.bits.enable = 0;
-
-	ret = _i2c_dw_setup(dev);
+	ret = _i2c_dw_transfer_init(dev, write_buf, write_len,
+				    NULL, 0, slave_address);
 	if (ret) {
 		return ret;
 	}
-
-	/* Disable interrupts */
-	regs->ic_intr_mask.raw = 0;
-
-	/* Clear interrupts */
-	value = regs->ic_clr_intr;
-
-	/* Set address of target slave */
-	regs->ic_tar.bits.ic_tar = slave_address;
 
 	/* Enable controller */
 	regs->ic_enable.bits.enable = 1;
 
 	/* Transmit */
-	i = 0;
 	while (dw->tx_len > 0) {
-		/* We have something to transmit to a specific host */
-		data = dw->tx_buffer[i];
-
-		/* Is this the last byte to write */
-		if (dw->tx_len == 1) {
-			data |= IC_DATA_CMD_STOP;
-		}
-
 		/* Wait for space in TX FIFO */
 		start_time = nano_tick_get_32();
 		while (!regs->ic_status.bits.tfnf) {
@@ -494,12 +533,14 @@ static int i2c_dw_polling_write(struct device *dev,
 			}
 		}
 
-		regs->ic_data_cmd.raw = data;
-
-		i += 1;
-		dw->tx_len -= 1;
-		dw->rx_tx_len -= 1;
+		_i2c_dw_data_send(dev);
 	}
+
+	/* Finalize TX when there is nothing more to send as
+	 * the data send function has code to deal with the end of
+	 * TX phase.
+	 */
+	_i2c_dw_data_send(dev);
 
 	/* Wait for transfer to complete */
 	start_time = nano_tick_get_32();
@@ -644,22 +685,14 @@ static int i2c_dw_set_callback(struct device *dev, i2c_callback cb)
 static int i2c_dw_write(struct device *dev, uint8_t *buf,
 			uint32_t len, uint16_t slave_addr)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
-
-	dw->state = I2C_DW_CMD_SEND;
-
-	return _i2c_dw_transfer(dev, buf, len, 0, 0, slave_addr);
+	return _i2c_dw_transfer_start(dev, buf, len, 0, 0, slave_addr);
 }
 
 
 static int i2c_dw_read(struct device *dev, uint8_t *buf,
 			uint32_t len, uint16_t slave_addr)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
-
-	dw->state = I2C_DW_CMD_RECV;
-
-	return _i2c_dw_transfer(dev, 0, 0, buf, len, slave_addr);
+	return _i2c_dw_transfer_start(dev, 0, 0, buf, len, slave_addr);
 }
 
 

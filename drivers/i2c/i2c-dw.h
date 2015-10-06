@@ -55,6 +55,7 @@ typedef void (*i2c_isr_cb_t)(struct device *port);
 #define I2C_DW_CMD_SEND                    (1 << 0)
 #define I2C_DW_CMD_RECV                    (1 << 1)
 #define I2C_DW_CMD_ERROR                   (1 << 2)
+#define I2C_DW_BUSY                        (1 << 3)
 
 
 #define DW_ENABLE_TX_INT_I2C_MASTER		(DW_INTR_STAT_TX_OVER |  \
@@ -123,11 +124,11 @@ struct i2c_dw_dev_config {
 
 	volatile uint8_t	state;  /* last direction of transfer */
 	uint8_t			slave_mode;
+	uint8_t			request_bytes;
 	uint8_t			rx_len;
 	uint8_t			*rx_buffer;
 	uint8_t			tx_len;
 	uint8_t			*tx_buffer;
-	uint8_t			rx_tx_len;
 
 	bool			support_hs_mode;
 	uint16_t		hcnt;
