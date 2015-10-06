@@ -40,17 +40,17 @@
 uint32_t _copy(uint8_t *to, uint32_t to_len,
 	       const uint8_t *from, uint32_t from_len)
 {
-        if (from_len <= to_len) {
-                (void)memcpy(to, from, from_len);
-                return from_len;
-        } else {
-                return TC_FAIL;
-        }
+	if (from_len <= to_len) {
+		(void)memcpy(to, from, from_len);
+		return from_len;
+	} else {
+		return TC_FAIL;
+	}
 }
 
 void _set(uint8_t *to, uint8_t val, uint32_t len)
 {
-        (void)memset(to, val, len);
+	(void)memset(to, val, len);
 }
 
 /* Doubles the value of a byte for values up to 127. Original 'return
@@ -58,6 +58,6 @@ void _set(uint8_t *to, uint8_t val, uint32_t len)
  * the compiler won't be able to optimize */
 uint8_t _double_byte(uint8_t a)
 {
-        return (a & MASK_MOST_SIG_BIT) ?
+	return (a & MASK_MOST_SIG_BIT) ?
 		((a << 1) ^ MASK_TWENTY_SEVEN) : (a << 1);
 }
