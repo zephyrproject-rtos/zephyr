@@ -812,7 +812,14 @@ static void le_ltk_request(struct bt_buf *buf)
 
 		cp = bt_buf_add(buf, sizeof(*cp));
 		cp->handle = evt->handle;
-		memcpy(cp->ltk, conn->keys->slave_ltk.val, 16);
+
+		/* use only enc_size bytes of key for encryption */
+		memcpy(cp->ltk, conn->keys->slave_ltk.val,
+		       conn->keys->enc_size);
+		if (conn->keys->enc_size < sizeof(cp->ltk)) {
+			memset(cp->ltk + conn->keys->enc_size, 0,
+			       sizeof(cp->ltk) - conn->keys->enc_size);
+		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
 	} else {

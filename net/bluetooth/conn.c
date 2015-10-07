@@ -179,7 +179,7 @@ int bt_conn_security(struct bt_conn *conn, bt_security_t sec)
 			err = bt_conn_le_start_encryption(conn, keys->ltk.rand,
 							  keys->ltk.ediv,
 							  keys->ltk.val,
-							  sizeof(keys->ltk.val));
+							  keys->enc_size);
 			goto done;
 		}
 

@@ -663,7 +663,7 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 	rsp->auth_req = get_auth(req->auth_req);
 	rsp->io_capability = bt_smp_io_capa;
 	rsp->oob_flag = BT_SMP_OOB_NOT_PRESENT;
-	rsp->max_key_size = req->max_key_size;
+	rsp->max_key_size = BT_SMP_MAX_ENC_KEY_SIZE;
 	rsp->init_key_dist = (req->init_key_dist & RECV_KEYS);
 	rsp->resp_key_dist = (req->resp_key_dist & SEND_KEYS);
 
@@ -884,6 +884,20 @@ static uint8_t get_keys_type(uint8_t method)
 	}
 }
 
+static uint8_t get_encryption_key_size(struct bt_smp *smp)
+{
+	struct bt_smp_pairing *req, *rsp;
+
+	req = (struct bt_smp_pairing *)&smp->preq[1];
+	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
+
+	/* The smaller value of the initiating and responding devices maximum
+	 * encryption key length parameters shall be used as the encryption key
+	 * size.
+	 */
+	return min(req->max_key_size, rsp->max_key_size);
+}
+
 static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_pairing_random *req = (void *)buf->data;
@@ -928,9 +942,11 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		 * security level upon encryption
 		 */
 		keys->type = get_keys_type(smp->method);
+		keys->enc_size = get_encryption_key_size(smp);
 
 		/* Rand and EDiv are 0 for the STK */
-		if (bt_conn_le_start_encryption(conn, 0, 0, stk, sizeof(stk))) {
+		if (bt_conn_le_start_encryption(conn, 0, 0, stk,
+						keys->enc_size)) {
 			BT_ERR("Failed to start encryption\n");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -959,6 +975,7 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 	 * security level upon encryption
 	 */
 	keys->type = get_keys_type(smp->method);
+	keys->enc_size = get_encryption_key_size(smp);
 
 	/* Rand and EDiv are 0 for the STK */
 	keys->slave_ltk.rand = 0;
@@ -1023,6 +1040,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 	 * on local distribution only.
 	 */
 	keys->type = get_keys_type(smp->method);
+	keys->enc_size = get_encryption_key_size(smp);
 
 	if (smp->local_dist & BT_SMP_DIST_ENC_KEY) {
 		struct bt_smp_encrypt_info *info;
@@ -1044,7 +1062,13 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		}
 
 		info = bt_buf_add(buf, sizeof(*info));
-		memcpy(info->ltk, keys->slave_ltk.val, sizeof(info->ltk));
+
+		/* distributed only enc_size bytes of key */
+		memcpy(info->ltk, keys->slave_ltk.val, keys->enc_size);
+		if (keys->enc_size < sizeof(info->ltk)) {
+			memset(info->ltk + keys->enc_size, 0,
+			       sizeof(info->ltk) - keys->enc_size);
+		}
 
 		bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
 
@@ -1319,8 +1343,7 @@ static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	if (bt_conn_le_start_encryption(conn, keys->ltk.rand, keys->ltk.ediv,
-					keys->ltk.val,
-					sizeof(keys->ltk.val)) < 0) {
+					keys->ltk.val, keys->enc_size) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 

@@ -54,6 +54,7 @@ struct bt_keys {
 	bt_addr_le_t		addr;
 	int			keys;
 	uint8_t			type;
+	uint8_t			enc_size;
 
 	struct bt_ltk		slave_ltk;
 	struct bt_ltk		ltk;
