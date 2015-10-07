@@ -389,6 +389,7 @@ static inline int spi_intel_setup(struct device *dev)
 	info->regs = info->pci_dev.addr;
 	info->irq = info->pci_dev.irq;
 #endif
+
 	pci_enable_regs(&info->pci_dev);
 
 	pci_show(&info->pci_dev);
@@ -448,11 +449,11 @@ struct spi_intel_config spi_intel_config_0 = {
 DECLARE_DEVICE_INIT_CONFIG(spi_intel_port_0, CONFIG_SPI_INTEL_PORT_0_DRV_NAME,
 			   spi_intel_init, &spi_intel_config_0);
 
-pre_kernel_late_init(spi_intel_port_0, &spi_intel_data_port_0);
+nano_early_init(spi_intel_port_0, &spi_intel_data_port_0);
 
 void spi_intel_isr_0(void *unused)
 {
-	spi_intel_isr(&__initconfig_spi_intel_port_02);
+	spi_intel_isr(&__initconfig_spi_intel_port_03);
 }
 
 IRQ_CONNECT_STATIC(spi_intel_irq_port_0, CONFIG_SPI_INTEL_PORT_0_IRQ,
