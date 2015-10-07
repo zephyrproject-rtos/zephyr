@@ -81,6 +81,13 @@ typedef int (*i2c_api_io_t)(struct device *dev,
 			    uint8_t *buf,
 			    uint32_t len,
 			    uint16_t slave_addr);
+typedef int (*i2c_api_full_io_t)(struct device *dev,
+				 uint8_t *tx_buf,
+				 uint32_t tx_len,
+				 uint8_t *rx_buf,
+				 uint32_t rx_len,
+				 uint16_t addr,
+				 uint32_t ctrl_flags);
 typedef int (*i2c_api_suspend_t)(struct device *dev);
 typedef int (*i2c_api_resume_t)(struct device *dev);
 
@@ -90,6 +97,8 @@ struct i2c_driver_api {
 	i2c_api_io_t read;
 	i2c_api_io_t write;
 	i2c_api_io_t polling_write;
+	i2c_api_full_io_t transfer;
+	i2c_api_full_io_t poll_transfer;
 	i2c_api_suspend_t suspend;
 	i2c_api_resume_t resume;
 };
@@ -185,6 +194,75 @@ static inline int i2c_polling_write(struct device *dev, uint8_t *buf,
 	api = (struct i2c_driver_api *)dev->driver_api;
 	if (api && api->polling_write) {
 		return api->polling_write(dev, buf, len, addr);
+	} else {
+		return DEV_INVALID_OP;
+	}
+}
+
+/**
+ * @brief Performs data transfer to another I2C device
+ *
+ * This provides a generic interface to perform data transfer
+ * to another I2C device. If a simple read or write is needed,
+ * use i2c_read()/i2c_write() instead.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param tx_buf Memory pool that data should be transferred from
+ * @param tx_len Size of the memory pool available for reading from
+ * @param rx_buf Memory pool that data should be transferred to
+ * @param rx_len Size of the memory pool available for writing to
+ * @param addr Address of the I2C target device
+ * @param ctrl_flags Control flags for this transfer
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
+ */
+static inline int i2c_transfer(struct device *dev,
+			       uint8_t *tx_buf, uint32_t tx_len,
+			       uint8_t *rx_buf, uint32_t rx_len,
+			       uint16_t addr, uint32_t ctrl_flags)
+{
+	struct i2c_driver_api *api;
+
+	api = (struct i2c_driver_api *)dev->driver_api;
+	if (api && api->transfer) {
+		return api->transfer(dev, tx_buf, tx_len,
+				     rx_buf, rx_len, addr, ctrl_flags);
+	} else {
+		return DEV_INVALID_OP;
+	}
+}
+
+/**
+ * @brief Performs interrupt free data transfer
+ *
+ * This provides a generic interface to perform data transfer
+ * to another I2C device. This is for situation where transactions
+ * are guaranteed to finish before returning.
+ *
+ * Note that this is only for I2C device acting as master.
+ * Slave mode is currently not supported.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param tx_buf Memory pool that data should be transferred from
+ * @param tx_len Size of the memory pool available for reading from
+ * @param rx_buf Memory pool that data should be transferred to
+ * @param rx_len Size of the memory pool available for writing to
+ * @param addr Address of the I2C target device
+ * @param ctrl_flags Control flags for this transfer
+ *
+ * @return DEV_OK if successful, another DEV_* code otherwise.
+ */
+static inline int i2c_poll_transfer(struct device *dev,
+				    uint8_t *tx_buf, uint32_t tx_len,
+				    uint8_t *rx_buf, uint32_t rx_len,
+				    uint16_t addr, uint32_t ctrl_flags)
+{
+	struct i2c_driver_api *api;
+
+	api = (struct i2c_driver_api *)dev->driver_api;
+	if (api && api->poll_transfer) {
+		return api->poll_transfer(dev, tx_buf, tx_len,
+					  rx_buf, rx_len, addr, ctrl_flags);
 	} else {
 		return DEV_INVALID_OP;
 	}
