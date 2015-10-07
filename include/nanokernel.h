@@ -126,6 +126,23 @@ extern nano_context_type_t sys_execution_context_type_get(void);
 extern int _is_thread_essential(nano_thread_id_t pCtx);
 
 /**
+ *
+ * @brief Busy wait the currently executing thread
+ *
+ * This routine causes the current task or fiber to execute a "do nothing"
+ * loop for a specified period of time.
+ *
+ * @warning This routine utilizes the system clock, so it must not be invoked
+ *          until the system clock is fully operational or while interrupts
+ *          are locked.
+ *
+ * @param usec_to_wait Number of microseconds to busy wait.
+ *
+ * @return N/A
+ */
+extern void sys_thread_busy_wait(uint32_t usec_to_wait);
+
+/**
  * @brief Nanokernel Fibers
  * @defgroup nanokernel_fiber Nanokernel Fibers
  * @ingroup nanokernel_services

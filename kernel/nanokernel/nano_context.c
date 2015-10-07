@@ -41,6 +41,8 @@ tasks or fibers.
 
 #include <nano_private.h>
 #include <misc/printk.h>
+#include <sys_clock.h>
+#include <drivers/system_timer.h>
 
 
 nano_thread_id_t sys_thread_self_get(void)
@@ -104,6 +106,37 @@ int _is_thread_essential(struct tcs *pCtx /* pointer to thread */
 {
 	return ((pCtx == NULL) ? _nanokernel.current : pCtx)->flags & ESSENTIAL;
 }
+
+/*
+ * Don't build sys_thread_busy_wait() for ARM, since intrinsics libraries in
+ * current Zephyr SDK use non-Thumb code that isn't supported on Cortex-M CPUs.
+ * For the time being any ARM-based application that attempts to use this API
+ * will get a link error (which is preferable to a mysterious exception).
+ */
+
+#ifndef CONFIG_ARM
+
+void sys_thread_busy_wait(uint32_t usec_to_wait)
+{
+	/* use 64-bit math to prevent overflow when multiplying */
+	uint32_t cycles_to_wait = (uint32_t)(
+		(uint64_t)usec_to_wait *
+		(uint64_t)sys_clock_hw_cycles_per_sec /
+		(uint64_t)USEC_PER_SEC
+	);
+	uint32_t start_cycles = _sys_clock_cycle_get();
+
+	for (;;) {
+		uint32_t current_cycles = _sys_clock_cycle_get();
+
+		/* this handles the rollover on an unsigned 32-bit value */
+		if ((current_cycles - start_cycles) >= cycles_to_wait) {
+			break;
+		}
+	}
+}
+
+#endif /* CONFIG_ARM */
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 
