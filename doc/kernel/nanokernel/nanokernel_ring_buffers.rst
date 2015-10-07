@@ -57,7 +57,6 @@ these will always be slower due to use of modulo operations:
     #define MY_RING_BUF_SIZE	93
     SYS_RING_BUF_DECLARE_SIZE(my_ring_buf, MY_RING_BUF_SIZE);
 
-
 Alternatively, a ring buffer may be initialized manually. Whether the buffer
 will use modulo or mask operations will be detected automatically:
 
@@ -120,24 +119,23 @@ Example: Retrieving data
 APIs
 ****
 
-The following APIs for ring buffers are provided by :file:`ring_buffer.h`.
+The following APIs for ring buffers are provided by :file:`ring_buffer.h`:
 
-+------------------------------------------------+------------------------------------+
-| Call                                           | Description                        |
-+================================================+====================================+
-| :c:func:`sys_ring_buf_init()`                  | Initialize a ring buffer.          |
-+------------------------------------------------+------------------------------------+
-| :c:func:`SYS_RING_BUF_DECLARE_POW2()`          | Declare and init a file-scope      |
-| :c:func:`SYS_RING_BUF_DECLARE_SIZE()`          | ring buffer.                       |
-+------------------------------------------------+------------------------------------+
-| :c:func:`sys_ring_buf_get_space()`             | Return the amount of free buffer   |
-|                                                | storage space in 32-bit dwords     |
-+------------------------------------------------+------------------------------------+
-| :c:func:`sys_ring_buf_is_empty()`              | Indicate whether a buffer is empty |
-+------------------------------------------------+------------------------------------+
-| :c:func:`sys_ring_buf_put()`                   | Enqueue an item                    |
-+------------------------------------------------+------------------------------------+
-| :c:func:`sys_ring_buf_get()`                   | De-queue an item                   |
-+------------------------------------------------+------------------------------------+
+:c:func:`sys_ring_buf_init()`
+   Initializes a ring buffer.
 
+:c:func:`SYS_RING_BUF_DECLARE_POW2()`,
+:c:func:`SYS_RING_BUF_DECLARE_SIZE()`
+   Declare and init a file-scope ring buffer.
 
+:c:func:`sys_ring_buf_get_space()`
+   Returns the amount of free buffer storage space in 32-bit dwords.
+
+:c:func:`sys_ring_buf_is_empty()`
+   Indicates whether a buffer is empty.
+
+:c:func:`sys_ring_buf_put()`
+   Enqueues an item.
+
+:c:func:`sys_ring_buf_get()`
+   De-queues an item.

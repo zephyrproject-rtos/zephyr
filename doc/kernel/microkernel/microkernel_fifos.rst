@@ -38,7 +38,6 @@ Any number of tasks may wait on an empty FIFO simultaneously; when a data item
 becomes available it is given to the highest priority task that has waited
 the longest.
 
-
 Purpose
 *******
 
@@ -60,7 +59,6 @@ anonymous manner.
    sending task to determine the name of the task that received its data.
    The microkernel's mailbox object type *does* support non-anonymous data
    transfer.
-
 
 Usage
 *****
@@ -101,7 +99,6 @@ that holds up to 10 items that are each 12 bytes long as follows:
 A public FIFO can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
 
-
 Private FIFO
 ------------
 
@@ -122,7 +119,6 @@ To utilize this FIFO from a different source file use the following syntax:
 .. code-block:: c
 
    extern const kfifo_t PRIV_FIFO;
-
 
 Example: Writing to a FIFO
 ==========================
@@ -172,39 +168,34 @@ one or more producing tasks.
        }
    }
 
-
 APIs
 ****
 
-The following APIs for a microkernel FIFO are provided by microkernel.h.
+The following APIs for a microkernel FIFO are provided by
+:file:`microkernel.h`:
 
-+----------------------------------------+-----------------------------------+
-| Call                                   | Description                       |
-+========================================+===================================+
-| :c:func:`task_fifo_put()`              | Write item to a FIFO, or fail and |
-|                                        | continue if it is full.           |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_put_wait()`         | Write item to a FIFO, or wait     |
-|                                        | for room to write if it is full.  |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_put_wait_timeout()` | Write item to a FIFO, or wait for |
-|                                        | a specified time period if it     |
-|                                        | is full.                          |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_get()`              | Read item from a FIFO, or fail    |
-|                                        | and continue if it is empty.      |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_get_wait()`         | Read item from a FIFO, or wait    |
-|                                        | for an item if it is empty.       |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_get_wait_timeout()` | Read item from a FIFO, or wait    |
-|                                        | for an item for a specified time  |
-|                                        | period if it is empty.            |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_purge()`            | Discard all items in a FIFO and   |
-|                                        | unblock any tasks waiting to read |
-|                                        | or write an item.                 |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_fifo_size_get()`         | Read the number of items          |
-|                                        | currently in a FIFO.              |
-+----------------------------------------+-----------------------------------+
+:c:func:`task_fifo_put()`
+   Writes item to a FIFO, or fail and continue if it is full.
+
+:c:func:`task_fifo_put_wait()`
+   Writes item to a FIFO, or wait for room to write if it is full.
+
+:c:func:`task_fifo_put_wait_timeout()`
+   Writes item to a FIFO, or wait for a specified time period if it is full.
+
+:c:func:`task_fifo_get()`
+   Reads item from a FIFO, or fail and continue if it is empty.
+
+:c:func:`task_fifo_get_wait()`
+   Reads item from a FIFO, or wait for an item if it is empty.
+
+:c:func:`task_fifo_get_wait_timeout()`
+   Reads item from a FIFO, or wait for an
+   item for a specified time period if it is empty.
+
+:c:func:`task_fifo_purge()`
+   Discards all items in a FIFO and unblock any tasks
+   waiting to read or write an item.
+
+:c:func:`task_fifo_size_get()`
+   Reads the number of items currently in a FIFO.

@@ -58,14 +58,12 @@ needed. For example, different applications can utilize
 different memory pools so that one application does not
 allocate all of the available blocks.
 
-
 Purpose
 *******
 Use memory pools to allocate memory in variable-size blocks.
 
 Use memory pool blocks when sending data to a mailbox
 asynchronously.
-
 
 Usage
 *****
@@ -90,7 +88,6 @@ The following parameters must be defined:
    *num_max*
           This specifies the number of maximum size memory blocks
           available at startup.
-
 
 Public Memory Pool
 ------------------
@@ -118,7 +115,6 @@ includes the file :file:`zephyr.h`.
 .. note::
    Private memory pools are not supported by the Zephyr kernel.
 
-
 Example: Requesting a Memory Block from a Pool with No Conditions
 =================================================================
 
@@ -132,7 +128,6 @@ available, then fills it with zeroes.
   task_mem_pool_alloc_wait(&block, MYPOOL, 80);
 
   memset(block.pointer_to_data, 0, 80);
-
 
 Example: Requesting a Memory Block from a Pool with a Conditional Time-out
 ==========================================================================
@@ -151,7 +146,6 @@ in that time.
       printf('Memory allocation timeout');
   }
 
-
 Example: Requesting a Memory Block from a Pool with a No Blocking Condition
 ===========================================================================
 
@@ -168,7 +162,6 @@ a memory block of 80 bytes.
       printf('Memory allocation timeout');
   }
 
-
 Example: Freeing a Memory Block Back to a Pool
 ==============================================
 
@@ -181,7 +174,6 @@ This code releases a memory block back to a pool when it is no longer needed.
   task_mem_pool_alloc(&block, MYPOOL, size);
       /* use memory block */
   task_mem_pool_free(&block);
-
 
 Example: Manually Defragmenting a Memory Pool
 =============================================
@@ -199,23 +191,20 @@ each time a memory block allocation occurs.
 APIs
 ****
 
-The following Memory Pools APIs are provided by microkernel.h.
+The following Memory Pools APIs are provided by :file:`microkernel.h`:
 
-+----------------------------------------------+------------------------------+
-| Call                                         | Description                  |
-+==============================================+==============================+
-| :c:func:`task_mem_pool_alloc()`              | Allocates a block from       |
-|                                              | a memory pool.               |
-+----------------------------------------------+------------------------------+
-| :c:func:`task_mem_pool_alloc_wait()`         | Waits for a block of memory  |
-|                                              | until it is available.       |
-+----------------------------------------------+------------------------------+
-| :c:func:`task_mem_pool_alloc_wait_timeout()` | Waits for a block of memory  |
-|                                              | for the time period defined  |
-|                                              | by the time-out parameter.   |
-+----------------------------------------------+------------------------------+
-| :c:func:`task_mem_pool_free()`               | Returns a block of memory    |
-|                                              | to a memory pool.            |
-+----------------------------------------------+------------------------------+
-| :c:func:`task_mem_pool_defragment()`         | Defragments a memory pool.   |
-+----------------------------------------------+------------------------------+
+:c:func:`task_mem_pool_alloc()`
+   Allocates a block from a memory pool.
+
+:c:func:`task_mem_pool_alloc_wait()`
+   Waits for a block of memory until it is available.
+
+:c:func:`task_mem_pool_alloc_wait_timeout()`
+   Waits for a block of memory for the time period defined by the time-out
+   parameter.
+
+:c:func:`task_mem_pool_free()`
+   Returns a block of memory to a memory pool.
+
+:c:func:`task_mem_pool_defragment()`
+   Defragments a memory pool.

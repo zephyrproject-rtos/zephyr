@@ -48,7 +48,6 @@ allowing the same function to be shared by multiple events. An event's event
 handler function is specified at compile-time, but can be changed subsequently
 at run-time.
 
-
 Purpose
 *******
 
@@ -57,7 +56,6 @@ detected by another task, a fiber, or an ISR.
 
 Use an event handler to allow the microkernel server fiber to handle an event,
 prior to (or instead of) letting a task handle the event.
-
 
 Usage
 *****
@@ -83,7 +81,7 @@ The following parameters must be defined:
                  ...
              }
 
-          If no event handler is required specify :c:macro:`NULL`.
+          If no event handler is required specify :cpp:macro:`NULL`.
 
 Public Event
 ------------
@@ -109,7 +107,6 @@ the file :file:`zephyr.h`.
 
 .. note::
    Private events are not supported by the Zephyr kernel.
-
 
 Example: Signaling an Event from an ISR
 ========================================
@@ -173,7 +170,6 @@ so that the receiving task only wakes up when needed.
        }
    }
 
-
    void keypress_task(void)
    {
        /* register the filtering routine */
@@ -190,29 +186,28 @@ so that the receiving task only wakes up when needed.
        }
    }
 
-
 APIs
 ****
 
-The following Event APIs are provided by microkernel.h.
+The following Event APIs are provided by :file:`microkernel.h`:
 
-+------------------------------------------+----------------------------------+
-| Call                                     | Description                      |
-+==========================================+==================================+
-| :c:func:`isr_event_send()`               | Signal an event from an ISR      |
-+------------------------------------------+----------------------------------+
-| :c:func:`fiber_event_send()`             | Signal an event from a fiber.    |
-+------------------------------------------+----------------------------------+
-| :c:func:`task_event_send()`              | Signal an event from a task.     |
-+------------------------------------------+----------------------------------+
-| :c:func:`task_event_recv()`              | Tests for an event signal        |
-|                                          | without waiting.                 |
-+------------------------------------------+----------------------------------+
-| :c:func:`task_event_recv_wait()`         | Waits for an event signal.       |
-+------------------------------------------+----------------------------------+
-| :c:func:`task_event_recv_wait_timeout()` | Waits for an event signal        |
-|                                          | for a specified time period.     |
-+------------------------------------------+----------------------------------+
-| :c:func:`task_event_handler_set()`       | Registers an event handler       |
-|                                          | function for an event.           |
-+------------------------------------------+----------------------------------+
+:cpp:func:`isr_event_send()`
+   Signal an event from an ISR.
+
+:cpp:func:`fiber_event_send()`
+   Signal an event from a fiber.
+
+:cpp:func:`task_event_send()`
+   Signal an event from a task.
+
+:c:func:`task_event_recv()`
+   Tests for an event signal without waiting.
+
+:c:func:`task_event_recv_wait()`
+   Waits for an event signal.
+
+:c:func:`task_event_recv_wait_timeout()`
+   Waits for an event signal for a specified time period.
+
+:cpp:func:`task_event_handler_set()`
+   Registers an event handler function for an event.

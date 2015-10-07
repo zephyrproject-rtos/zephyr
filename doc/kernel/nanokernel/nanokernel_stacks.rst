@@ -14,7 +14,7 @@ Each stack uses an array of 32-bit words to hold its data values. The array
 may be of any size, but must be aligned on a 4-byte boundary.
 
 Any number of nanokernel stacks can be defined. Each stack is a distinct
-variable of type :c:type:`struct nano_stack`, and is referenced using a pointer
+variable of type :cpp:type:`struct nano_stack`, and is referenced using a pointer
 to that variable. A stack must be initialized to use its array before it
 can be used to send or receive data values.
 
@@ -51,15 +51,13 @@ waiting fiber, or to a waiting task if no fiber is waiting.
    If multiple tasks in a microkernel application wait on the same nanokernel
    stack, higher priority tasks are given data values in preference to lower
    priority tasks. However, the order in which equal priority tasks are given
-   data values is unpredictible.
-
+   data values is unpredictable.
 
 Purpose
 *******
 
 Use a nanokernel stack to store and retrieve 32-bit data values in a "last in,
 first out" manner, when the maximum number of stored items is known.
-
 
 Usage
 *****
@@ -82,7 +80,6 @@ up to 10 items.
 
    nano_stack_init(&alarm_stack, stack_area);
 
-
 Example: Writing to a Nanokernel Stack
 ======================================
 
@@ -100,7 +97,6 @@ indication to a processing fiber.
        nano_isr_stack_push(&alarm_stack, OVERHEAT_ALARM);
        ...
    }
-
 
 Example: Reading from a Nanokernel Stack
 ========================================
@@ -125,26 +121,23 @@ in which alarms are processed isn't significant.
        }
    }
 
-
 APIs
 ****
 
-The following APIs for a nanokernel stack are provided by :file:`nanokernel.h.`
+The following APIs for a nanokernel stack are provided by
+:file:`nanokernel.h`:
 
-+-----------------------------------------+-----------------------------------+
-| Call                                    | Description                       |
-+=========================================+===================================+
-| :c:func:`nano_stack_init()`             | Initializes a stack.              |
-+-----------------------------------------+-----------------------------------+
-| | :c:func:`nano_task_stack_push()`      | Adds item to a stack.             |
-| | :c:func:`nano_fiber_stack_push()`     |                                   |
-| | :c:func:`nano_isr_stack_push()`       |                                   |
-+-----------------------------------------+-----------------------------------+
-| | :c:func:`nano_task_stack_pop()`       | Removes item from a stack,        |
-| | :c:func:`nano_fiber_stack_pop()`      | or fails and continues            |
-| | :c:func:`nano_isr_stack_pop()`        | if it is empty.                   |
-+-----------------------------------------+-----------------------------------+
-| | :c:func:`nano_task_stack_pop_wait()`  | Removes item from a stack, or     |
-| | :c:func:`nano_fiber_stack_pop_wait()` | waits for an item if it is empty. |
-+-----------------------------------------+-----------------------------------+
+:cpp:func:`nano_stack_init()`
+   Initializes a stack.
 
+:cpp:func:`nano_task_stack_push()`, :cpp:func:`nano_fiber_stack_push()`,
+:cpp:func:`nano_isr_stack_push()`
+   Add an item to a stack.
+
+:cpp:func:`nano_task_stack_pop()`, :cpp:func:`nano_fiber_stack_pop()`,
+:cpp:func:`nano_isr_stack_pop()`
+   Remove an item from a stack, or fails and continues if it is empty.
+
+:cpp:func:`nano_task_stack_pop_wait()`,
+:cpp:func:`nano_fiber_stack_pop_wait()`
+   Remove an item from a stack, or waits for an item if it is empty.

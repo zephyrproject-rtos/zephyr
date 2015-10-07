@@ -55,7 +55,6 @@ then starting it afresh.
 When a task no longer needs a timer it should free the timer.
 This makes the timer available for reallocation.
 
-
 Purpose
 *******
 
@@ -65,13 +64,12 @@ other work.
 
 .. note::
    If a task has no other work to perform while waiting for time to pass
-   it can simply call :c:func:`task_sleep()`.
+   it can simply call :cpp:func:`task_sleep()`.
 
 .. note::
    The microkernel provides additional APIs that allow a task to monitor
    the system clock, as well as the higher precision hardware clock,
    without using a microkernel timer.
-
 
 Usage
 *****
@@ -92,7 +90,6 @@ the sum of the following quantities:
    as a group using a configuration option, rather than as individual
    public objects in an MDEF or private objects in a source file.
 
-
 Example: Allocating a Microkernel Timer
 =======================================
 
@@ -103,7 +100,6 @@ This code allocates an unused timer.
    ktimer_t timer_id;
 
    timer_id = task_timer_alloc();
-
 
 Example: Starting a One Shot Microkernel Timer
 ==============================================
@@ -129,7 +125,6 @@ a period of zero, it stops automatically once it expires.
 
    /* process the new data */
    ...
-
 
 Example: Starting a Periodic Microkernel Timer
 ==============================================
@@ -158,7 +153,6 @@ reactivate the timer.
        ...
    }
 
-
 Example: Cancelling a Microkernel Timer
 =======================================
 This code illustrates how an active timer can be stopped prematurely.
@@ -184,7 +178,6 @@ This code illustrates how an active timer can be stopped prematurely.
        printf("Warning: Input took too long to arrive!");
    }
 
-
 Example: Freeing a Microkernel Timer
 ====================================
 This code allows a task to relinquish a previously allocated timer
@@ -195,23 +188,22 @@ so it can be used by other tasks.
    task_timer_free(timer_id);
 
 
-
 APIs
 ****
 
 The following microkernel timer APIs are provided by :file:`microkernel.h`:
 
-+----------------------------------------+-----------------------------------+
-| Call                                   | Description                       |
-+========================================+===================================+
-| :cpp:func:`task_timer_alloc()`         | Allocates an unused timer.        |
-+----------------------------------------+-----------------------------------+
-| :cpp:func:`task_timer_start()`         | Starts a timer.                   |
-+----------------------------------------+-----------------------------------+
-| :cpp:func:`task_timer_restart()`       | Restarts a timer.                 |
-+----------------------------------------+-----------------------------------+
-| :cpp:func:`task_timer_stop()`          | Cancels a timer.                  |
-+----------------------------------------+-----------------------------------+
-| :cpp:func:`task_timer_free()`          | Marks timer as unused.            |
-+----------------------------------------+-----------------------------------+
+:cpp:func:`task_timer_alloc()`
+   Allocates an unused timer.
 
+:cpp:func:`task_timer_start()`
+   Starts a timer.
+
+:cpp:func:`task_timer_restart()`
+   Restarts a timer.
+
+:cpp:func:`task_timer_stop()`
+   Cancels a timer.
+
+:cpp:func:`task_timer_free()`
+   Marks timer as unused.

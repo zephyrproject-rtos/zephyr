@@ -66,7 +66,6 @@ co-ordindate with another task to invoke such APIs indirectly.
    The kernel does not currently make any claims regarding an application's
    ability to restart a terminated task.
 
-
 Task Scheduling
 ===============
 
@@ -224,7 +223,6 @@ task groups can be defined by the application.
       context information during context switches. (Tasks in this group are
       implicitly members of the :c:macro:`FPU` task group too.)
 
-
 Usage
 *****
 
@@ -290,7 +288,6 @@ of six tasks as follows:
 A public task can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
 
-
 Private Task
 ------------
 
@@ -316,7 +313,6 @@ To utilize this task from a different source file use the following syntax:
 .. code-block:: c
 
    extern const ktask_t PRIV_TASK;
-
 
 Defining a Task Group
 =====================
@@ -353,7 +349,6 @@ includes the file :file:`zephyr.h`.
 .. note::
    Private task groups are not supported by the Zephyr kernel.
 
-
 Example: Starting a Task from Another Task
 ==========================================
 
@@ -373,7 +368,6 @@ This code shows how the currently executing task can start another task.
        ...
    }
 
-
 Example: Suspending and Resuming a Set of Tasks
 ===============================================
 
@@ -392,13 +386,15 @@ the execution of all tasks belonging to the designated task groups.
 
            /* suspend non-essential tasks when overheating is detected */
            if (now_overheated && !was_overheated) {
-              task_group_suspend(VIDEO_TASKS | AUDIO_TASKS);
+              task_group_suspend(VIDEO_TASKS
+   AUDIO_TASKS);
               was_overheated = 1;
            }
 
            /* resume non-essential tasks when overheating abates */
            if (!now_overheated && was_overheated) {
-              task_group_resume(VIDEO_TASKS | AUDIO_TASKS);
+              task_group_resume(VIDEO_TASKS
+   AUDIO_TASKS);
               was_overheated = 0;
            }
 
@@ -460,78 +456,79 @@ APIs
 ****
 
 The following APIs affecting the currently executing task
-are provided by :file:`microkernel.h`.
+are provided by :file:`microkernel.h`:
 
-+-------------------------------------+-----------------------------------------+
-| Call                                | Description                             |
-+=====================================+=========================================+
-| :cpp:func:`task_id_get()`           | Gets the task's ID.                     |
-+-------------------------------------+-----------------------------------------+
-| :c:func:`isr_task_id_get()`         | Gets the task's ID from an ISR.         |
-+-------------------------------------+-----------------------------------------+
-| :cpp:func:`task_priority_get()`     | Gets the task's priority.               |
-+-------------------------------------+-----------------------------------------+
-| :c:func:`isr_task_priority_get()`   | Gets the task's priority from an ISR.   |
-+-------------------------------------+-----------------------------------------+
-| :cpp:func:`task_group_mask_get()`   | Gets the task's group memberships.      |
-+-------------------------------------+-----------------------------------------+
-| :c:func:`isr_task_group_mask_get()` | Gets the task's group memberships from  |
-|                                     | an ISR.                                 |
-+-------------------------------------+-----------------------------------------+
-| :cpp:func:`task_abort_handler_set()`| Installs the task's abort handler.      |
-+-------------------------------------+-----------------------------------------+
-| :cpp:func:`task_yield()`            | Yields CPU to equal-priority tasks.     |
-+-------------------------------------+-----------------------------------------+
-| :cpp:func:`task_sleep()`            | Yields CPU for a specified time period. |
-+-------------------------------------+-----------------------------------------+
-| :c:func:`task_offload_to_fiber()`   | Instructs the microkernel server fiber  |
-|                                     | to execute a function.                  |
-+-------------------------------------+-----------------------------------------+
+:cpp:func:`task_id_get()`
+   Gets the task's ID.
+
+:c:func:`isr_task_id_get()`
+   Gets the task's ID from an ISR.
+
+:cpp:func:`task_priority_get()`
+   Gets the task's priority.
+
+:c:func:`isr_task_priority_get()`
+   Gets the task's priority from an ISR.
+
+:cpp:func:`task_group_mask_get()`
+   Gets the task's group memberships.
+
+:c:func:`isr_task_group_mask_get()`
+   Gets the task's group memberships from an ISR.
+
+:cpp:func:`task_abort_handler_set()`
+   Installs the task's abort handler.
+
+:cpp:func:`task_yield()`
+   Yields CPU to equal-priority tasks.
+
+:cpp:func:`task_sleep()`
+   Yields CPU for a specified time period.
+
+:cpp:func:`task_offload_to_fiber()`
+   Instructs the microkernel server fiber to execute a function.
 
 The following APIs affecting a specified task
-are provided by :file:`microkernel.h`.
+are provided by :file:`microkernel.h`:
 
-+-------------------------------------------+----------------------------------+
-| Call                                      | Description                      |
-+===========================================+==================================+
-| :cpp:func:`task_priority_set()`           | Sets a task's priority.          |
-+-------------------------------------------+----------------------------------+
-| :c:func:`task_entry_set()`                | Sets a task's entry point.       |
-+-------------------------------------------+----------------------------------+
-| :c:func:`task_start()`                    | Starts execution of a task.      |
-+-------------------------------------------+----------------------------------+
-| :c:func:`task_suspend()`                  | Suspends execution of a task.    |
-+-------------------------------------------+----------------------------------+
-| :c:func:`task_resume()`                   | Resumes execution of a task.     |
-+-------------------------------------------+----------------------------------+
-| :c:func:`task_abort()`                    | Aborts execution of a task.      |
-+-------------------------------------------+----------------------------------+
-| :cpp:func:`task_group_join()`             | Adds a task to the specified     |
-|                                           | task group(s).                   |
-+-------------------------------------------+----------------------------------+
-| :cpp:func:`task_group_leave()`            | Removes a task from the          |
-|                                           | specified task group(s).         |
-+-------------------------------------------+----------------------------------+
+:cpp:func:`task_priority_set()`
+   Sets a task's priority.
+
+:cpp:func:`task_entry_set()`
+   Sets a task's entry point.
+
+:c:func:`task_start()`
+   Starts execution of a task.
+
+:c:func:`task_suspend()`
+   Suspends execution of a task.
+
+:c:func:`task_resume()`
+   Resumes execution of a task.
+
+:c:func:`task_abort()`
+   Aborts execution of a task.
+
+:cpp:func:`task_group_join()`
+   Adds a task to the specified task group(s).
+
+:cpp:func:`task_group_leave()`
+   Removes a task from the specified task group(s).
 
 The following APIs affecting multiple tasks
-are provided by :file:`microkernel.h`.
+are provided by :file:`microkernel.h`:
 
-+-------------------------------------------+---------------------------------+
-| Call                                      | Description                     |
-+===========================================+=================================+
-| :cpp:func:`sys_scheduler_time_slice_set()`| Sets the time slice period used |
-|                                           | in round-robin task scheduling. |
-+-------------------------------------------+---------------------------------+
-| :c:func:`task_group_start()`              | Starts execution of all tasks   |
-|                                           | in the specified task groups.   |
-+-------------------------------------------+---------------------------------+
-| :c:func:`task_group_suspend()`            | Suspends execution of all tasks |
-|                                           | in the specified task groups.   |
-+-------------------------------------------+---------------------------------+
-| :c:func:`task_group_resume()`             | Resumes execution of all tasks  |
-|                                           | in the specified task groups.   |
-+-------------------------------------------+---------------------------------+
-| :c:func:`task_group_abort()`              | Aborts execution of all tasks   |
-|                                           | in the specified task groups.   |
-+-------------------------------------------+---------------------------------+
+:cpp:func:`sys_scheduler_time_slice_set()`
+   Sets the time slice period used in round-robin task scheduling.
 
+:c:func:`task_group_start()`
+   Starts execution of all tasks in the specified task groups.
+
+:c:func:`task_group_suspend()`
+   Suspends execution of all tasks in the specified task groups.
+
+:c:func:`task_group_resume()`
+   Resumes execution of all tasks in the specified task groups.
+
+:c:func:`task_group_abort()`
+   Aborts execution of all tasks in the specified task groups.

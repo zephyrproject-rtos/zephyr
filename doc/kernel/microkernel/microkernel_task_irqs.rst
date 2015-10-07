@@ -40,7 +40,6 @@ When a task no longer needs a task IRQ it should free the task IRQ.
 This disables the interrupt associated with the task IRQ
 and makes the task IRQ available for re-allocation.
 
-
 Purpose
 *******
 
@@ -64,7 +63,6 @@ The default value of zero for this option disables task IRQs.
    as a group using a configuration option, rather than as individual
    public objects in an MDEF or private objects in a source file.
 
-
 Example: Allocating a Task IRQ
 ==============================
 
@@ -82,7 +80,6 @@ so they can be processed using the task IRQ.
       /* The task IRQ or the interrupt source is not available */
       printf("Task IRQ allocation failed!");
    }
-
 
 Example: Servicing Interrupts using a Task IRQ
 ==============================================
@@ -102,14 +99,12 @@ acknowledge the interrupt, and take the necessary steps to service it.
    /* Device interrupt is now unmasked */
    /* Do post-acknowledgement device processing (if any) */
 
-
 The steps required to service a device are device-specific.
 In some cases all processing may need to be completed
 before the interrupt is acknowledged,
 while in other cases no processing at all should be done
 until the interrupt is acknowledged.
 Some devices may require processing both before and after acknowledgement.
-
 
 Example: Freeing a Task IRQ
 ===========================
@@ -123,30 +118,25 @@ Interrupts from that device are no longer enabled.
    task_irq_free(FOO_DEVICE);
 
 
-
 APIs
 ****
 
 The following task IRQ APIs are provided by :file:`microkernel.h`:
 
-+----------------------------------------+-----------------------------------+
-| Call                                   | Description                       |
-+========================================+===================================+
-| :cpp:func:`task_irq_alloc()`           | Binds a task IRQ to a device      |
-|                                        | and enables interrupts.           |
-+----------------------------------------+-----------------------------------+
-| :cpp:func:`task_irq_ack()`             | Acknowledges an interrupt and     |
-|                                        | re-enables the interrupt.         |
-+----------------------------------------+-----------------------------------+
-| :cpp:func:`task_irq_free()`            | Unbinds a task IRQ from a device  |
-|                                        | and disables interrupts.          |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_irq_test()`              | Tests to determine if an          |
-|                                        | interrupt has occurred.           |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_irq_test_wait()`         | Waits for an interrupt to occur.  |
-+----------------------------------------+-----------------------------------+
-| :c:func:`task_irq_test_wait_timeout()` | Waits for an interrupt to occur   |
-|                                        | within a specified time period.   |
-+----------------------------------------+-----------------------------------+
+:cpp:func:`task_irq_alloc()`
+   Binds a task IRQ to a device and enables interrupts.
 
+:cpp:func:`task_irq_ack()`
+   Acknowledges an interrupt and re-enables the interrupt.
+
+:cpp:func:`task_irq_free()`
+   Unbinds a task IRQ from a device and disables interrupts.
+
+:c:func:`task_irq_test()`
+   Tests to determine if an interrupt has occurred.
+
+:c:func:`task_irq_test_wait()`
+   Waits for an interrupt to occur.
+
+:c:func:`task_irq_test_wait_timeout()`
+   Waits for an interrupt to occur within a specified time period.

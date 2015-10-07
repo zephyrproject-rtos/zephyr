@@ -71,7 +71,6 @@ Use one of the following procedures to install an ISR:
 * `Installing a Static ISR`_
 * `Installing a Dynamic ISR`_
 
-
 Installing a Static ISR
 =======================
 
@@ -119,7 +118,6 @@ For x86 platforms only, you must also create an interrupt stub as follows:
 
    ioapic_mkstub my_dev my_isr
 
-
 Installing a Dynamic ISR
 ========================
 
@@ -139,7 +137,6 @@ Prerequisites
 
 * (x86 only) Set the :option:`NUM_DYNAMIC_STUBS` configuration option
   to specify the maximum number of dynamic ISRs allowed in the project.
-
 
 Example
 -------
@@ -166,7 +163,6 @@ This is an example of a dynamic interrupt for x86:
        ...
    }
 
-
 Working with Interrupts
 ***********************
 
@@ -174,7 +170,6 @@ Use the following:
 
 * `Offloading ISR Work`_
 * `IDT Security`_
-
 
 Offloading ISR Work
 ===================
@@ -231,7 +226,6 @@ Additional intermediate context switches may be required
 to execute any currently executing fiber or any higher-priority tasks
 that are scheduled to run.
 
-
 IDT Security
 ============
 
@@ -245,38 +239,33 @@ therefore *not* protected. This is true even for systems using
 reside in read-only memory (such as flash memory or ROM).
 
 
-
 APIs
 ****
 
-This table lists interrupt-related Application Program Interfaces.
+These are the interrupt-related Application Program Interfaces.
 
-+-------------------------+-------------------------------------------------+
-| Call                    | Description                                     |
-+=========================+=================================================+
-| :c:func:`irq_connect()` | Registers a dynamic ISR with the IDT and        |
-|                         | interrupt controller.                           |
-+-------------------------+-------------------------------------------------+
-| :c:func:`irq_enable()`  | Enables interrupts from a specific IRQ.         |
-+-------------------------+-------------------------------------------------+
-| :c:func:`irq_disable()` | Disables interrupts from a specific IRQ.        |
-+-------------------------+-------------------------------------------------+
-| :c:func:`irq_lock()`    | Locks out interrupts from all sources.          |
-+-------------------------+-------------------------------------------------+
-| :c:func:`irq_unlock()`  | Removes lock on interrupts from all sources.    |
-+-------------------------+-------------------------------------------------+
+:c:func:`irq_connect()`
+   Registers a dynamic ISR with the IDT and interrupt controller.
 
+:c:func:`irq_enable()`
+   Enables interrupts from a specific IRQ.
+
+:c:func:`irq_disable()`
+   Disables interrupts from a specific IRQ.
+
+:c:func:`irq_lock()`
+   Locks out interrupts from all sources.
+
+:c:func:`irq_unlock()`
+   Removes lock on interrupts from all sources.
 
 Macros
 ******
 
-This table lists the macros used to install a static ISR.
+These are the macros used to install a static ISR.
 
-+----------------------------------+-----------------------------------------+
-| Call                             | Description                             |
-+==================================+=========================================+
-| :c:macro:`IRQ_CONNECT_STATIC( )` | Registers a static ISR with the IDT.    |
-+----------------------------------+-----------------------------------------+
-| :c:macro:`IRQ_CONFIG( )`         | Registers a static ISR with the         |
-|                                  | interrupt controller.                   |
-+----------------------------------+-----------------------------------------+
+:c:macro:`IRQ_CONNECT_STATIC( )`
+   Registers a static ISR with the IDT.
+
+:c:macro:`IRQ_CONFIG( )`
+   Registers a static ISR with the interrupt controller.

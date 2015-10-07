@@ -29,7 +29,6 @@ to convert the time units used by the clocks into standard time units
 (e.g. seconds, milliseconds, nanoseconds, etc), and to convert between
 the two types of clock time units.
 
-
 Purpose
 *******
 
@@ -45,7 +44,6 @@ time measurements.
    means that counter rollover must be taken into account when taking
    high-precision measurements over an extended period of time.
 
-
 Usage
 *****
 
@@ -60,7 +58,6 @@ to zero disables all system clock and hardware clock capabilities.
    Making the system clock frequency value larger allows the system clock
    to provide finer-grained timing, but also increases the amount of work
    the kernel has to do to process ticks (since they occur more frequently).
-
 
 Example: Measuring Time with Normal Precision
 =============================================
@@ -80,7 +77,6 @@ between two points in time.
 
    /* compute how long the work took & update time stamp */
    ticks_spent = task_tick_delta(&time_stamp);
-
 
 Example: Measuring Time with High Precision
 ===========================================
@@ -108,60 +104,46 @@ between two points in time.
    nanoseconds_spent = SYS_CLOCK_HW_CYCLES_TO_NS(cycles_spent);
 
 
-
 APIs
 ****
 
 The following kernel clock APIs are provided by :file:`microkernel.h`:
 
-+-----------------------------------+----------------------------------------+
-| Call                              | Description                            |
-+===================================+========================================+
-| | :c:func:`task_tick_get()`       | Reads system clock.                    |
-| | :c:func:`task_tick_get_32()`    |                                        |
-| | :c:func:`fiber_tick_get()`      |                                        |
-| | :c:func:`fiber_tick_get_32()`   |                                        |
-| | :c:func:`isr_tick_get()`        |                                        |
-| | :c:func:`isr_tick_get_32()`     |                                        |
-+-----------------------------------+----------------------------------------+
-| | :c:func:`task_tick_delta()`     | Computes elapsed time since an         |
-| | :c:func:`task_tick_delta_32()`  | earlier system clock reading.          |
-+-----------------------------------+----------------------------------------+
-| | :c:func:`task_cycle_get_32()`   | Reads hardware clock.                  |
-| | :c:func:`fiber_cycle_get_32()`  |                                        |
-| | :c:func:`isr_cycle_get_32()`    |                                        |
-+-----------------------------------+----------------------------------------+
+:cpp:func:`task_tick_get()`, :cpp:func:`task_tick_get_32()`,
+:c:func:`fiber_tick_get()`, :c:func:`fiber_tick_get_32()`,
+:c:func:`isr_tick_get()`, :c:func:`isr_tick_get_32()`
+   Read the system clock.
+
+:cpp:func:`task_tick_delta()`, :cpp:func:`task_tick_delta_32()`
+   Compute the elapsed time since an earlier system clock reading.
+
+:cpp:func:`task_cycle_get_32()`, :c:func:`fiber_cycle_get_32()`,
+:c:func:`isr_cycle_get_32()`
+   Read the hardware clock.
 
 The following kernel clock APIs are provided by :file:`microkernel.h`
 and by :file:`nanokernel.h`:
 
-+-----------------------------------+----------------------------------------+
-| Call                              | Description                            |
-+===================================+========================================+
-| | :c:func:`nano_tick_get()`       | Reads system clock.                    |
-| | :c:func:`nano_tick_get_32()`    |                                        |
-+-----------------------------------+----------------------------------------+
-| | :c:func:`nano_tick_delta()`     | Computes elapsed time since an         |
-| | :c:func:`nano_tick_delta_32()`  | earlier system clock reading.          |
-+-----------------------------------+----------------------------------------+
-| :c:func:`nano_cycle_get_32()`     | Reads hardware clock.                  |
-+-----------------------------------+----------------------------------------+
+:cpp:func:`nano_tick_get()`, :cpp:func:`nano_tick_get_32()`
+   Read the system clock.
+
+:cpp:func:`nano_tick_delta()`, :cpp:func:`nano_tick_delta_32()`
+   Compute the elapsed time since an earlier system clock reading.
+
+:cpp:func:`nano_cycle_get_32()`
+   Reads hardware clock.
 
 The following kernel clock variables are provided by :file:`microkernel.h`
 and by :file:`nanokernel.h`:
 
-+-----------------------------------+----------------------------------------+
-| Variable                          | Description                            |
-+===================================+========================================+
-| sys_clock_ticks_per_sec           | The number of system clock ticks       |
-|                                   | in a single second.                    |
-+-----------------------------------+----------------------------------------+
-| sys_clock_hw_cycles_per_sec       | The number of hardware clock cycles    |
-|                                   | in a single second.                    |
-+-----------------------------------+----------------------------------------+
-| sys_clock_us_per_tick             | The number of microseconds in a single |
-|                                   | system clock tick.                     |
-+-----------------------------------+----------------------------------------+
-| sys_clock_hw_cycles_per_tick      | The number of hardware clock cycles    |
-|                                   | in a single system clock tick.         |
-+-----------------------------------+----------------------------------------+
+:c:data:`sys_clock_ticks_per_sec`
+   The number of system clock ticks in a single second.
+
+:c:data:`sys_clock_hw_cycles_per_sec`
+   The number of hardware clock cycles in a single second.
+
+:c:data:`sys_clock_us_per_tick`
+   The number of microseconds in a single system clock tick.
+
+:c:data:`sys_clock_hw_cycles_per_tick`
+   The number of hardware clock cycles in a single system clock tick.

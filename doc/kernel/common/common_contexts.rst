@@ -71,15 +71,14 @@ have a custom data value.
        if (sys_execution_context_type_get() != NANO_CTX_ISR) {
           call_count = (uint32_t)sys_thread_custom_data_get();
           if (call_count == CALL_LIMIT)
-	      return -1;
-	  call_count++;
-	  sys_thread_custom_data_set((void *)call_count);
+         return -1;
+     call_count++;
+     sys_thread_custom_data_set((void *)call_count);
        }
 
        /* do rest of routine's processing */
        ...
    }
-
 
 APIs
 ****
@@ -87,21 +86,15 @@ APIs
 The following kernel execution context APIs are provided by
 :file:`microkernel.h` and by :file:`nanokernel.h`:
 
-+--------------------------------------------+---------------------------------------+
-| Call                                       | Description                           |
-+============================================+=======================================+
-| :c:func:`sys_thread_self_get()`            | Gets thread identifier of currently   |
-|                                            | executing task or fiber.              |
-+--------------------------------------------+---------------------------------------+
-| :c:func:`sys_execution_context_type_get()` | Gets type of currently executing      |
-|                                            | context (i.e. task, fiber, or ISR).   |
-+--------------------------------------------+---------------------------------------+
-| :c:func:`sys_thread_custom_data_set()`     | Writes custom data for currently      |
-|                                            | executing task or fiber.              |
-+--------------------------------------------+---------------------------------------+
-| :c:func:`sys_thread_custom_data_get()`     | Reads custom data for currently       |
-|                                            | executing task or fiber.              |
-+--------------------------------------------+---------------------------------------+
-| :c:func:`sys_thread_busy_wait()`           | Performs a busy wait for the          |
-|                                            | specified time period.                |
-+--------------------------------------------+---------------------------------------+
+
+:c:func:`sys_thread_self_get()`
+   Gets thread identifier of currently executing task or fiber.
+
+:c:func:`sys_execution_context_type_get()`
+   Gets type of currently executing context (i.e. task, fiber, or ISR).
+
+:c:func:`sys_thread_custom_data_set()`
+   Writes custom data for currently executing task or fiber.
+
+:c:func:`sys_thread_custom_data_get()`
+   Reads custom data for currently executing task or fiber.

@@ -73,7 +73,6 @@ Purpose
 Use mutexes to provide exclusive access to a resource,
 such as a physical device.
 
-
 Usage
 *****
 
@@ -84,7 +83,6 @@ The following parameters must be defined:
 
    *name*
           This specifies a unique name for the mutex.
-
 
 Public Mutex
 ------------
@@ -105,7 +103,6 @@ For example, the file :file:`projName.mdef` defines a single mutex as follows:
 
 A public mutex can be referenced by name from any source file that includes
 the file :file:`zephyr.h`.
-
 
 Private Mutex
 -------------
@@ -128,7 +125,6 @@ To utilize this mutex from a different source file use the following syntax:
 
    extern const kmutex_t XYZ;
 
-
 Example: Locking a Mutex with No Conditions
 ===========================================
 
@@ -141,7 +137,6 @@ mutex is in use.
    moveto(100,100);
    lineto(200,100);
    task_mutex_unlock(XYZ);
-
 
 Example: Locking a Mutex with a Conditional Timeout
 ===================================================
@@ -164,7 +159,6 @@ in the specified amount of time.
     }
 
 
-
 Example: Locking a Mutex with a No Blocking Condition
 =====================================================
 
@@ -182,33 +176,24 @@ This code gives an immediate warning when a mutex is in use.
      display_warning(); /* and do not unlock mutex*/
     }
 
-
 APIs
 ****
 
-The following Mutex APIs are provided by :file:`microkernel.h`.
+The following Mutex APIs are provided by :file:`microkernel.h`:
 
-+------------------------------------------+-----------------------------------+
-| Call                                     | Description                       |
-+==========================================+===================================+
-| :c:func:`task_mutex_lock()`              | Locks a mutex, and increments     |
-|                                          | the lock count.                   |
-+------------------------------------------+-----------------------------------+
-| :c:func:`task_mutex_lock_wait()`         | Waits on a locked mutex until it  |
-|                                          | is unlocked, then locks the mutex |
-|                                          | and increments the lock count.    |
-+------------------------------------------+-----------------------------------+
-| :c:func:`task_mutex_lock_wait_timeout()` | Waits on a locked mutex for       |
-|                                          | the period of time defined by     |
-|                                          | the timeout parameter. If the     |
-|                                          | mutex becomes available during    |
-|                                          | that period, the function         |
-|                                          | locks the mutex, and              |
-|                                          | increments the lock count.        |
-|                                          | If the timeout expires, it        |
-|                                          | returns RC_TIME.                  |
-+------------------------------------------+-----------------------------------+
-| :c:func:`task_mutex_unlock()`            | Decrements a mutex lock count,    |
-|                                          | and unlocks the mutex when the    |
-|                                          | count reaches zero.               |
-+------------------------------------------+-----------------------------------+
+:c:func:`task_mutex_lock()`
+   Locks a mutex, and increments the lock count.
+
+:c:func:`task_mutex_lock_wait()`
+   Waits on a locked mutex until it is unlocked, then locks the mutex and
+   increments the lock count.
+
+:c:func:`task_mutex_lock_wait_timeout()`
+   Waits on a locked mutex for the period of time defined by the timeout
+   parameter. If the mutex becomes available during that period, the function
+   locks the mutex, and increments the lock count. If the timeout expires, it
+   returns RC_TIME.
+
+:c:func:`task_mutex_unlock()`
+   Decrements a mutex lock count, and unlocks the mutex when the count
+   reaches zero.

@@ -53,7 +53,7 @@ be reused.
 A fiber may also terminate non-gracefully by *aborting*. The kernel
 automatically aborts a fiber when it generates a fatal error condition,
 such as dereferencing a null pointer. A fiber can also explicitly abort itself
-using :c:func:`fiber_abort()`. As with graceful fiber termination, the kernel
+using :cpp:func:`fiber_abort()`. As with graceful fiber termination, the kernel
 does not attempt to reclaim system resources owned by the fiber.
 
 .. note::
@@ -124,7 +124,7 @@ by the nanokernel until one of the following occurs:
 * The fiber terminates itself by returning from its entry point function.
 
 * The fiber aborts itself by performing an operation that causes a fatal error,
-  or by calling :c:func:`fiber_abort()`.
+  or by calling :cpp:func:`fiber_abort()`.
 
 Once the current task becomes the current context it remains scheduled for
 execution by the nanokernel until is supplanted by a fiber.
@@ -145,14 +145,14 @@ to time to permit other fibers to execute.
 
 A fiber can relinquish the CPU in two ways:
 
-* Calling :c:func:`fiber_yield()` places the fiber back in the nanokernel
+* Calling :cpp:func:`fiber_yield()` places the fiber back in the nanokernel
   scheduler's list of executable fibers and then invokes the scheduler.
   All executable fibers whose priority is higher or equal to that of the
   yielding fiber are then allowed to execute before the yielding fiber is
   rescheduled. If no such executable fibers exist, the scheduler immediately
   reschedules the yielding fiber without context switching.
 
-* Calling :c:func:`fiber_sleep()` blocks the execution of the fiber for
+* Calling :cpp:func:`fiber_sleep()` blocks the execution of the fiber for
   a specified time period. Executable fibers of all priorities are then
   allowed to execute, although there is no guarantee that fibers whose
   priority is lower than that of the sleeping task will actually be scheduled
@@ -172,15 +172,14 @@ options is spawned using an options value of 0.
 
 The fiber options listed below are pre-defined by the kernel.
 
-   :c:macro:`USE_FP`
+:c:macro:`USE_FP`
       Instructs the kernel to save the fiber's x87 FPU and MMX floating point
       context information during context switches.
 
-   :c:macro:`USE_SSE`
+:c:macro:`USE_SSE`
       Instructs the kernel to save the fiber's SSE floating point context
       information during context switches. (A fiber using this option
       implicitly uses the :c:macro:`USE_FP` option too.)
-
 
 Usage
 *****
@@ -226,7 +225,6 @@ The following properties must be defined when spawning a fiber:
 
    *options*
       This specifies the fiber's options.
-
 
 Example: Spawning a Fiber from a Task
 =====================================
@@ -280,32 +278,28 @@ APIs
 The following APIs affecting the currently executing fiber are provided
 by :file:`microkernel.h` and by :file:`nanokernel.h`:
 
-+-----------------------------------+-----------------------------------------+
-| Call                              | Description                             |
-+-----------------------------------+-----------------------------------------+
-| :cpp:func:`fiber_yield()`         | Yields CPU to higher priority and       |
-|                                   | equal priority fibers.                  |
-+-----------------------------------+-----------------------------------------+
-| :cpp:func:`fiber_sleep()`         | Yields CPU for a specified time period. |
-+-----------------------------------+-----------------------------------------+
-| :cpp:func:`fiber_abort()`         | Terminates fiber execution.             |
-+-----------------------------------+-----------------------------------------+
+:cpp:func:`fiber_yield()`
+   Yields CPU to higher priority and equal priority fibers.
+
+:cpp:func:`fiber_sleep()`
+   Yields CPU for a specified time period.
+
+:cpp:func:`fiber_abort()`
+   Terminates fiber execution.
 
 The following APIs affecting a specified fiber are provided
 by :file:`microkernel.h` and by :file:`nanokernel.h`:
 
-+------------------------------------------------+----------------------------+
-| Call                                           | Description                |
-+------------------------------------------------+----------------------------+
-| | :c:func:`task_fiber_start()`                 | Spawns a new fiber.        |
-| | :c:func:`fiber_fiber_start()`                |                            |
-| | :c:func:`fiber_start()`                      |                            |
-+------------------------------------------------+----------------------------+
-| | :c:func:`task_fiber_delayed_start()`         | Spawns a new fiber after   |
-| | :c:func:`fiber_fiber_delayed_start()`        | a specified time period    |
-| | :c:func:`fiber_delayed_start()`              |                            |
-+------------------------------------------------+----------------------------+
-| | :c:func:`task_fiber_delayed_start_cancel()`  | Cancels spawning of a      |
-| | :c:func:`fiber_fiber_delayed_start_cancel()` | new fiber, if not already  |
-| | :c:func:`fiber_delayed_start_cancel()`       | started.                   |
-+------------------------------------------------+----------------------------+
+:c:func:`task_fiber_start()`, :cpp:func:`fiber_fiber_start()`,
+:cpp:func:`fiber_start()`
+   Spawn a new fiber.
+
+:c:func:`task_fiber_delayed_start()`,
+:cpp:func:`fiber_fiber_delayed_start()`,
+:cpp:func:`fiber_delayed_start()`
+   Spawn a new fiber after a specified time period.
+
+:c:func:`task_fiber_delayed_start_cancel()`,
+:cpp:func:`fiber_fiber_delayed_start_cancel()`,
+:cpp:func:`fiber_delayed_start_cancel()`
+   Cancel spawning of a new fiber, if not already started.

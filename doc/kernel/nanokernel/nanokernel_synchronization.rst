@@ -18,7 +18,7 @@ The nanokernel's semaphore object type is an implementation of a traditional
 counting semaphore. It is mainly intended for use by fibers.
 
 Any number of nanokernel semaphores can be defined. Each semaphore is a
-distinct variable of type :c:type:`struct nano_sem`, and is referenced
+distinct variable of type :cpp:type:`struct nano_sem`, and is referenced
 using a pointer to that variable. A semaphore must be initialized before
 it can be used.
 
@@ -50,8 +50,7 @@ that has waited longest, or to a waiting task if no fiber is waiting.
    If multiple tasks in a microkernel application wait on the same nanokernel
    semaphore, higher priority tasks are given the semaphore in preference to
    lower priority tasks. However, the order in which equal priority tasks
-   are given the semaphore is unpredictible.
-
+   are given the semaphore is unpredictable.
 
 Purpose
 =======
@@ -61,7 +60,6 @@ fibers.
 
 Use a nanokernel semaphore to synchronize processing between a producing task,
 fiber, or ISR and one or more consuming fibers.
-
 
 Usage
 =====
@@ -114,31 +112,28 @@ and gives warning if it is not obtained in that time.
        ...
    }
 
-
 APIs
 ====
 
 The following APIs for a nanokernel semaphore are provided
-by :file:`nanokernel.h.`
+by :file:`nanokernel.h`:
 
-+------------------------------------------------+----------------------------+
-| Call                                           | Description                |
-+================================================+============================+
-| :c:func:`nano_sem_init()`                      | Initializes a semaphore.   |
-+------------------------------------------------+----------------------------+
-| | :c:func:`nano_task_sem_give()`               | Signals a sempahore.       |
-| | :c:func:`nano_fiber_sem_give()`              |                            |
-| | :c:func:`nano_isr_sem_give()`                |                            |
-| | :c:func:`nano_sem_give()`                    |                            |
-+------------------------------------------------+----------------------------+
-| | :c:func:`nano_task_sem_take()`               | Tests a semaphore.         |
-| | :c:func:`nano_fiber_sem_take()`              |                            |
-| | :c:func:`nano_isr_sem_take()`                |                            |
-+------------------------------------------------+----------------------------+
-| | :c:func:`nano_task_sem_take_wait()`          | Waits on a semaphore.      |
-| | :c:func:`nano_fiber_sem_take_wait()`         |                            |
-| | :c:func:`nano_sem_task_wait()`               |                            |
-+------------------------------------------------+----------------------------+
-| | :c:func:`nano_task_sem_take_wait_timeout()`  | Waits on a semaphore for a |
-| | :c:func:`nano_fiber_sem_take_wait_timeout()` | specified time period.     |
-+------------------------------------------------+----------------------------+
+:cpp:func:`nano_sem_init()`
+   Initializes a semaphore.
+
+:cpp:func:`nano_task_sem_give()`, :cpp:func:`nano_fiber_sem_give()`,
+:cpp:func:`nano_isr_sem_give()`, :cpp:func:`nano_sem_give()`
+   Signal a sempahore.
+
+:cpp:func:`nano_task_sem_take()`, :cpp:func:`nano_fiber_sem_take()`,
+:cpp:func:`nano_isr_sem_take()`
+   Test a semaphore.
+
+:cpp:func:`nano_task_sem_take_wait()`,
+:cpp:func:`nano_fiber_sem_take_wait()`,
+:cpp:func:`nano_sem_task_wait()`
+   Wait on a semaphore.
+
+:cpp:func:`nano_task_sem_take_wait_timeout()`,
+:cpp:func:`nano_fiber_sem_take_wait_timeout()`
+   Wait on a semaphore for a specified time period.

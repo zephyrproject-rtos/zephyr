@@ -18,19 +18,19 @@ the first 32 bits of each item for use as a pointer to the next data item
 in the LIFO's linked list. Consequently, a data item that holds N bytes
 of application data requires N+4 bytes of memory.
 
-Any number of nanokernel LIFOs can be defined. Each LIFO is a distinct variable
-of type :c:type:`struct nano_lifo`, and is referenced using a pointer to that
-variable. A LIFO must be initialized before it can be used to send or receive
-data items.
+Any number of nanokernel LIFOs can be defined. Each LIFO is a distinct
+variable of type :cpp:type:`struct nano_lifo`, and is referenced using a
+pointer to that variable. A LIFO must be initialized before it can be used to
+send or receive data items.
 
 Items can be added to a nanokernel LIFO in a non-blocking manner by any
 context type (i.e. ISR, fiber, or task).
 
 Items can be removed from a nanokernel LIFO in a non-blocking manner by any
-context type; if the LIFO is empty the :c:macro:`NULL` return code indicates
-that no item was removed. Items can also be removed from a nanokernel LIFO
-in a blocking manner by a fiber or task; if the LIFO is empty the thread
-waits for an item to be added.
+context type; if the LIFO is empty the :c:macro:`NULL` return code
+indicates that no item was removed. Items can also be removed from a
+nanokernel LIFO in a blocking manner by a fiber or task; if the LIFO is empty
+the thread waits for an item to be added.
 
 Any number of threads may wait on an empty nanokernel LIFO simultaneously.
 When a data item becomes available it is given to the fiber that has waited
@@ -47,15 +47,13 @@ longest, or to a waiting task if no fiber is waiting.
    If multiple tasks in a microkernel application wait on the same nanokernel
    LIFO, higher priority tasks are given data items in preference to lower
    priority tasks. However, the order in which equal priority tasks are given
-   data items is unpredictible.
-
+   data items is unpredictable.
 
 Purpose
 *******
 
 Use a nanokernel LIFO to asynchronously transfer data items of arbitrary size
 in a "last in, first out" manner.
-
 
 Usage
 *****
@@ -126,25 +124,23 @@ which are then processed in some manner.
 APIs
 ****
 
-The following APIs for a nanokernel LIFO are provided by :file:`nanokernel.h.`
+The following APIs for a nanokernel LIFO are provided by :file:`nanokernel.h`:
 
-+------------------------------------------------+------------------------------------+
-| Call                                           | Description                        |
-+================================================+====================================+
-| :c:func:`nano_lifo_init()`                     | Initializes a LIFO.                |
-+------------------------------------------------+------------------------------------+
-| | :c:func:`nano_task_lifo_put()`               | Adds item to a LIFO.               |
-| | :c:func:`nano_fiber_lifo_put()`              |                                    |
-| | :c:func:`nano_isr_lifo_put()`                |                                    |
-+------------------------------------------------+------------------------------------+
-| | :c:func:`nano_task_lifo_get()`               | Removes item from a LIFO, or fails |
-| | :c:func:`nano_fiber_lifo_get()`              | and continues if it is empty.      |
-| | :c:func:`nano_isr_lifo_get()`                |                                    |
-+------------------------------------------------+------------------------------------+
-| | :c:func:`nano_task_lifo_get_wait()`          | Removes item from a LIFO, or waits |
-| | :c:func:`nano_fiber_lifo_get_wait()`         | for an item if it is empty.        |
-+------------------------------------------------+------------------------------------+
-| | :c:func:`nano_task_lifo_get_wait_timeout()`  | Removes item from a LIFO, or waits |
-| | :c:func:`nano_fiber_lifo_get_wait_timeout()` | for an item for a specified time   |
-| |                                              | period if it is empty.             |
-+------------------------------------------------+------------------------------------+
+:cpp:func:`nano_lifo_init()`
+   Initializes a LIFO.
+
+:cpp:func:`nano_task_lifo_put()`, :cpp:func:`nano_fiber_lifo_put()`,
+:cpp:func:`nano_isr_lifo_put()`
+   Add an item to a LIFO.
+
+:cpp:func:`nano_task_lifo_get()`, :cpp:func:`nano_fiber_lifo_get()`,
+:cpp:func:`nano_isr_lifo_get()`
+   Remove an item from a LIFO, or fails and continues if it is empty.
+
+:cpp:func:`nano_task_lifo_get_wait()`, :cpp:func:`nano_fiber_lifo_get_wait()`
+   Remove an item from a LIFO, or waits for an item if it is empty.
+
+:cpp:func:`nano_task_lifo_get_wait_timeout()`,
+:cpp:func:`nano_fiber_lifo_get_wait_timeout()`
+   Remove an item from a LIFO, or waits for an item for a specified time
+   period if it is empty.

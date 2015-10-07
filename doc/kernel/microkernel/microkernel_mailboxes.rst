@@ -60,7 +60,6 @@ For example, the file :file:`projName.mdef` defines a mailbox as follows:
 A public mailbox can be referenced by name from any source file that
 includes the file :file:`zephyr.h`.
 
-
 Private Mailbox
 ---------------
 
@@ -84,7 +83,6 @@ To utilize this mailbox from a different source file use the following syntax:
 .. code-block:: c
 
    extern const kmbox_t PRIV_MBX;
-
 
 Example: Sending Variable-Sized Mailbox Messages
 ================================================
@@ -334,59 +332,49 @@ a large message.
    containing the message data using RXPOOL. However, the performance benefit
    of using the asynchronous approach is lost.
 
-
 APIs
 ****
 
 The following APIs for synchronous mailbox operations are provided
-by microkernel.h.
+by :file:`microkernel.h`:
 
-+-----------------------------------------+------------------------------------+
-| Call                                    | Description                        |
-+=========================================+====================================+
-| :c:func:`task_mbox_put()`               | Puts message in a mailbox, or      |
-|                                         | fails if a receiver isn't waiting. |
-+-----------------------------------------+------------------------------------+
-| :c:func:`task_mbox_put_wait()`          | Puts message in a mailbox and      |
-|                                         | waits until it is received.        |
-+-----------------------------------------+------------------------------------+
-| :c:func:`task_mbox_put_wait_timeout()`  | Puts message in a mailbox and      |
-|                                         | waits for a specified time period  |
-|                                         | for it to be received.             |
-+-----------------------------------------+------------------------------------+
-| :c:func:`task_mbox_get()`               | Gets message from a mailbox, or    |
-|                                         | fails if no message is available.  |
-+-----------------------------------------+------------------------------------+
-| :c:func:`task_mbox_get_wait()`          | Gets message from a mailbox, or    |
-|                                         | waits until one is available.      |
-+-----------------------------------------+------------------------------------+
-| :c:func:`task_mbox_get_wait_timeout()`  | Gets message from a mailbox, or    |
-|                                         | waits for a specified time period  |
-|                                         | for one to become available.       |
-+-----------------------------------------+------------------------------------+
-| :c:func:`task_mbox_data_get()`          | Finishes receiving message that    |
-|                                         | was received without its data.     |
-+-----------------------------------------+------------------------------------+
+:c:func:`task_mbox_put()`
+   Puts message in a mailbox, or fails if a receiver isn't waiting.
+
+:c:func:`task_mbox_put_wait()`
+   Puts message in a mailbox and waits until it is received.
+
+:c:func:`task_mbox_put_wait_timeout()`
+   Puts message in a mailbox and waits for a specified time period for it to
+   be received.
+
+:c:func:`task_mbox_get()`
+   Gets message from a mailbox, or fails if no message is available.
+
+:c:func:`task_mbox_get_wait()`
+   Gets message from a mailbox, or waits until one is available.
+
+:c:func:`task_mbox_get_wait_timeout()`
+   Gets message from a mailbox, or waits for a specified time period for one
+   to become available.
+
+:c:func:`task_mbox_data_get()`
+   Finishes receiving message that was received without its data.
 
 The following APIs for asynchronous mailbox operations using memory pool blocks
 are provided by microkernel.h.
 
-+---------------------------------------------------+-----------------------------------+
-| Call                                              | Description                       |
-+===================================================+===================================+
-| :c:func:`task_mbox_block_put()`                   | Puts message in a mailbox, even   |
-|                                                   | if a receiver isn't waiting.      |
-+---------------------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_data_block_get()`              | Finishes receiving message that   |
-|                                                   | was received without its data, or |
-|                                                   | fails if no block is available.   |
-+---------------------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_data_block_get_wait()`         | Finishes receiving message that   |
-|                                                   | was received without its data, or |
-|                                                   | waits until a block is available. |
-+---------------------------------------------------+-----------------------------------+
-| :c:func:`task_mbox_data_block_get_wait_timeout()` | Finishes receiving message that   |
-|                                                   | was received without its data, or |
-|                                                   | waits for a specified time period |
-|                                                   | for a block to become available.  |
-+---------------------------------------------------+-----------------------------------+
+:c:func:`task_mbox_block_put()`
+   Puts message in a mailbox, even if a receiver isn't waiting.
+
+:c:func:`task_mbox_data_block_get()`
+   Finishes receiving message that was received without its data, or fails if
+   no block is available.
+
+:c:func:`task_mbox_data_block_get_wait()`
+   Finishes receiving message that was received without its data, or waits
+   until a block is available.
+
+:c:func:`task_mbox_data_block_get_wait_timeout()`
+   Finishes receiving message that was received without its data, or waits
+   for a specified time period for a block to become available.

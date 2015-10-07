@@ -23,7 +23,7 @@ Any remaining bytes of this area can be used to hold data that is helpful
 to the thread that uses the timer.
 
 Any number of nanokernel timers can be defined. Each timer is a distinct
-variable of type :c:type:`struct nano_timer`, and is referenced using a pointer
+variable of type :cpp:type:`struct nano_timer`, and is referenced using a pointer
 to that variable. A timer must be initialized with its user data structure
 before it can be used.
 
@@ -78,8 +78,8 @@ other work.
 
 .. note::
    If a fiber or task has no other work to perform while waiting
-   for time to pass it can simply call :c:func:`fiber_sleep()`
-   or :c:func:`task_sleep()`, respectively.
+   for time to pass it can simply call :cpp:func:`fiber_sleep()`
+   or :cpp:func:`task_sleep()`, respectively.
 
 .. note::
    The kernel provides additional APIs that allow a fiber or task to monitor
@@ -153,23 +153,19 @@ APIs
 ****
 
 The following APIs for a nanokernel timer are provided
-by :file:`nanokernel.h.`
+by :file:`nanokernel.h`:
 
-+------------------------------------------------+----------------------------+
-| Call                                           | Description                |
-+================================================+============================+
-| :c:func:`nano_timer_init()`                    | Initializes a timer.       |
-+------------------------------------------------+----------------------------+
-| | :c:func:`nano_task_timer_start()`            | Starts a timer.            |
-| | :c:func:`nano_fiber_timer_start()`           |                            |
-+------------------------------------------------+----------------------------+
-| | :c:func:`nano_task_timer_test()`             | Tests a timer              |
-| | :c:func:`nano_fiber_timer_test()`            | to see if it has expired.  |
-+------------------------------------------------+----------------------------+
-| | :c:func:`nano_task_timer_wait()`             | Waits on a timer           |
-| | :c:func:`nano_fiber_timer_wait()`            | until it expires.          |
-+------------------------------------------------+----------------------------+
-| | :c:func:`nano_task_timer_stop()`             | Forces timer expiration,   |
-| | :c:func:`nano_fiber_timer_stop()`            | if not already expired.    |
-+------------------------------------------------+----------------------------+
+:cpp:func:`nano_timer_init()`
+   Initializes a timer.
 
+:cpp:func:`nano_task_timer_start()`, :cpp:func:`nano_fiber_timer_start()`
+   Start a timer.
+
+:cpp:func:`nano_task_timer_test()`, :cpp:func:`nano_fiber_timer_test()`
+   Test a timer to see if it has expired.
+
+:cpp:func:`nano_task_timer_wait()`, :cpp:func:`nano_fiber_timer_wait()`
+   Wait on a timer until it expires.
+
+:cpp:func:`nano_task_timer_stop()`, :cpp:func:`nano_fiber_timer_stop()`
+   Force timer expiration, if not already expired.

@@ -34,12 +34,10 @@ Unlike a heap, more than one memory map can be defined, if needed. This
 allows for a memory map with smaller blocks and others with larger-sized
 blocks. Alternatively, a memory pool object may be used.
 
-
 Purpose
 *******
 
 Use a memory map to allocate and free memory in fixed-size blocks.
-
 
 Usage
 *****
@@ -57,7 +55,6 @@ The following parameters must be defined:
 
    *block_size*
           This specifies the size in bytes of each memory block.
-
 
 Public Memory Map
 -----------------
@@ -82,7 +79,6 @@ as follows:
 A public memory map can be referenced by name from any source file that
 includes the file :file:`zephyr.h`.
 
-
 Private Memory Map
 ------------------
 
@@ -106,7 +102,6 @@ the following syntax:
 
    extern const kmemory_map_t PRIV_MEM_MAP;
 
-
 Example: Requesting a Memory Block from a Map with No Conditions
 ================================================================
 
@@ -118,7 +113,6 @@ available if all the memory blocks are in use.
   char *block_ptr;
 
   task_mem_map_alloc_wait(MYMAP, &block_ptr);
-
 
 
 Example: Requesting a Memory Block from a Map with a Conditional Time-out
@@ -139,7 +133,6 @@ in the specified time.
   }
 
 
-
 Example: Requesting a Memory Block from a Map with a No Blocking Condition
 ==========================================================================
 
@@ -155,7 +148,6 @@ This code gives an immediate warning when all memory blocks are in use.
     display_warning(); /* and do not allocate memory block*/
   }
 
-
 Example: Freeing a Memory Block back to a Map
 =============================================
 
@@ -170,28 +162,23 @@ This code releases a memory block back when it is no longer needed.
   task_mem_map_free(&block_ptr);
 
 
-
 APIs
 ****
 
-The following Memory Map APIs are provided by :file:`microkernel.h`.
+The following Memory Map APIs are provided by :file:`microkernel.h`:
 
-+---------------------------------------------+-----------------------------------+
-| Call                                        | Description                       |
-+=============================================+===================================+
-| :c:func:`task_mem_map_alloc()`              | Requests a block from a memory    |
-|                                             | map.                              |
-+---------------------------------------------+-----------------------------------+
-| :c:func:`task_mem_map_alloc_wait()`         | Waits on a block of memory until  |
-|                                             | it is available.                  |
-+---------------------------------------------+-----------------------------------+
-| :c:func:`task_mem_map_alloc_wait_timeout()` | Waits on a block of memory        |
-|                                             | for the period of time            |
-|                                             | defined by the time-out           |
-|                                             | parameter.                        |
-+---------------------------------------------+-----------------------------------+
-| :c:func:`task_mem_map_free()`               | Returns a block to a memory map.  |
-+---------------------------------------------+-----------------------------------+
-| :c:func:`task_mem_map_used_get()`           | Returns the number of used blocks |
-|                                             | in a memory map.                  |
-+---------------------------------------------+-----------------------------------+
+:c:func:`task_mem_map_alloc()`
+   Requests a block from a memory map.
+
+:c:func:`task_mem_map_alloc_wait()`
+   Waits on a block of memory until it is available.
+
+:c:func:`task_mem_map_alloc_wait_timeout()`
+   Waits on a block of memory for the period of time defined by the time-out
+   parameter.
+
+:c:func:`task_mem_map_free()`
+   Returns a block to a memory map.
+
+:cpp:func:`task_mem_map_used_get()`
+   Returns the number of used blocks in a memory map.

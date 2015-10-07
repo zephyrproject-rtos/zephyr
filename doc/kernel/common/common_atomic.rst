@@ -12,7 +12,6 @@ in an uninterruptible manner. This guarantees that the desired operation
 will not be interfered with due to the scheduling of a higher priority context,
 even if the higher priority context manipulates the same variable.
 
-
 Purpose
 *******
 
@@ -24,7 +23,6 @@ requires the manipulation of a single 32-bit data item.
    other techniques to implement critical sections such as using
    a microkernel mutex, offloading the processing to a fiber, or
    locking interrupts.
-
 
 Usage
 *****
@@ -50,46 +48,58 @@ calls the routine.
        ...
    }
 
-
 APIs
 ****
 
-The following atomic operation APIs are provided by :file:`atomic.h`.
+The following atomic operation APIs are provided by :file:`atomic.h`:
 
-+---------------------------------------+-------------------------------------+
-| Call                                  | Description                         |
-+=======================================+=====================================+
-| :c:func:`atomic_get()`                | Reads an atomic variable.           |
-+---------------------------------------+-------------------------------------+
-| :c:func:`atomic_set()`                | Writes an atomic variable.          |
-+---------------------------------------+-------------------------------------+
-| :c:func:`atomic_clear()`              | Zeroes an atomic variable.          |
-+---------------------------------------+-------------------------------------+
-| | :c:func:`atomic_add()`              | Performs an arithmetic operation    |
-| | :c:func:`atomic_sub()`              | on an atomic variable.              |
-| | :c:func:`atomic_inc()`              |                                     |
-| | :c:func:`atomic_dec()`              |                                     |
-+---------------------------------------+-------------------------------------+
-| | :c:func:`atomic_and()`              | Performs a logical operation        |
-| | :c:func:`atomic_or()`               | on an atomic variable.              |
-| | :c:func:`atomic_xor()`              |                                     |
-| | :c:func:`atomic_nand()`             |                                     |
-+---------------------------------------+-------------------------------------+
-| :c:func:`atomic_cas()`                | Performs compare-and-set operation  |
-|                                       | on an atomic variable.              |
-+---------------------------------------+-------------------------------------+
-| :c:func:`atomic_set_bit()`            | Sets specified bit of an atomic     |
-|                                       | variable to 1.                      |
-+---------------------------------------+-------------------------------------+
-| :c:func:`atomic_clear_bit()`          | Sets specified bit of an atomic     |
-|                                       | variable to 0.                      |
-+---------------------------------------+-------------------------------------+
-| :c:func:`atomic_test_bit()`           | Reads specified bit of an atomic    |
-|                                       | variable.                           |
-+---------------------------------------+-------------------------------------+
-| :c:func:`atomic_test_and_set_bit()`   | Reads specified bit of an atomic    |
-|                                       | variable and sets it to 1.          |
-+---------------------------------------+-------------------------------------+
-| :c:func:`atomic_test_and_clear_bit()` | Reads specified bit of an atomic    |
-|                                       | variable and sets it to 0.          |
-+---------------------------------------+-------------------------------------+
+:c:func:`atomic_get()`
+   Reads an atomic variable.
+
+:c:func:`atomic_set()`
+   Writes an atomic variable.
+
+:c:func:`atomic_clear()`
+   Clears an atomic variable.
+
+:c:func:`atomic_add()`
+   Performs an addition operation on an atomic variable.
+
+:c:func:`atomic_sub()`
+   Performs a subtraction operation on an atomic variable.
+
+:c:func:`atomic_inc()`
+   Performs an increment operation on an atomic variable.
+
+:c:func:`atomic_dec()`
+   Performs a decrement operation on an atomic variable.
+
+:c:func:`atomic_and()`
+   Perform an "and" operation on an atomic variable.
+
+:c:func:`atomic_or()`
+   Perform an "or" operation on an atomic variable.
+
+:c:func:`atomic_xor()`
+   Perform a "xor" operation on an atomic variable.
+
+:c:func:`atomic_nand()`
+   Perform a "nand" operation on an atomic variable.
+
+:c:func:`atomic_cas()`
+   Performs compare-and-set operation on an atomic variable.
+
+:c:func:`atomic_set_bit()`
+   Sets specified bit of an atomic variable to 1.
+
+:c:func:`atomic_clear_bit()`
+   Sets specified bit of an atomic variable to 0.
+
+:c:func:`atomic_test_bit()`
+   Reads specified bit of an atomic variable.
+
+:c:func:`atomic_test_and_set_bit()`
+   Reads specified bit of an atomic variable and sets it to 1.
+
+:c:func:`atomic_test_and_clear_bit()`
+   Reads specified bit of an atomic variable and sets it to 0.
