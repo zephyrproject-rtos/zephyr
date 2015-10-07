@@ -1054,7 +1054,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 					sizeof(*info));
 		if (!buf) {
 			BT_ERR("Unable to allocate Encrypt Info buffer\n");
-			goto fail;
+			return;
 		}
 
 		info = bt_buf_add(buf, sizeof(*info));
@@ -1066,7 +1066,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 					sizeof(*ident));
 		if (!buf) {
 			BT_ERR("Unable to allocate Master Ident buffer\n");
-			goto fail;
+			return;
 		}
 
 		ident = bt_buf_add(buf, sizeof(*ident));
@@ -1093,7 +1093,7 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 					sizeof(*info));
 		if (!buf) {
 			BT_ERR("Unable to allocate Signing Info buffer\n");
-			goto fail;
+			return;
 		}
 
 		info = bt_buf_add(buf, sizeof(*info));
@@ -1104,13 +1104,6 @@ static void bt_smp_distribute_keys(struct bt_conn *conn)
 		smp_restart_timer(smp);
 	}
 #endif /* CONFIG_BLUETOOTH_SIGNING */
-
-fail:
-	/* if all keys were distributed, pairing is done */
-	if (!smp->local_dist && !smp->remote_dist) {
-		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
-		smp_stop_timer(smp);
-	}
 }
 
 static uint8_t smp_encrypt_info(struct bt_conn *conn, struct bt_buf *buf)
@@ -1166,6 +1159,12 @@ static uint8_t smp_master_ident(struct bt_conn *conn, struct bt_buf *buf)
 		bt_smp_distribute_keys(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
+		smp_stop_timer(smp);
+	}
 
 	return 0;
 }
@@ -1253,6 +1252,12 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
+		smp_stop_timer(smp);
+	}
+
 	return 0;
 }
 
@@ -1281,6 +1286,12 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 		bt_smp_distribute_keys(conn);
 	}
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
+		smp_stop_timer(smp);
+	}
 
 	return 0;
 }
@@ -1494,6 +1505,12 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
 	bt_smp_distribute_keys(conn);
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
+		smp_stop_timer(smp);
+	}
 }
 
 bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
