@@ -296,6 +296,13 @@ class QEMUHandler:
 
 
 class SizeCalculator:
+
+    alloc_sections = ["bss", "noinit"]
+    rw_sections = ["datas", "initlevel", "_k_mem_map_ptr", "_k_pipe_ptr",
+                   "_k_task_ptr", "_k_task_list", "initlevel"]
+    # These get copied into RAM only on non-XIP
+    ro_sections = ["text", "ctors", "rodata", "devconfig"]
+
     def __init__(self, filename):
         """Constructor
 
@@ -316,9 +323,8 @@ class SizeCalculator:
         self.is_xip = (len(is_xip_output) != 0)
 
         self.filename = filename
-        self.sections = {}
-        self.xip_rom_size = 0
-        self.xip_ram_size = 0
+        self.sections = []
+        self.rom_size = 0
         self.ram_size = 0
 
         self._calculate_sizes()
@@ -328,17 +334,14 @@ class SizeCalculator:
 
         @return amount of RAM, in bytes
         """
-        if self.is_xip:
-            return self.xip_ram_size
-        else:
-            return self.ram_size
+        return self.ram_size
 
     def get_rom_size(self):
         """Get the size of the data that this application uses on device's flash
 
         @return amount of ROM, in bytes
         """
-        return self.xip_rom_size
+        return self.rom_size
 
     def unrecognized_sections(self):
         """Get a list of sections inside the binary that weren't recognized
@@ -346,9 +349,9 @@ class SizeCalculator:
         @return list of unrecogized section names
         """
         slist = []
-        for k, v in self.sections.iteritems():
+        for v in self.sections:
             if not v["recognized"]:
-                slist.append(k)
+                slist.append(v["name"])
         return slist
 
     def _calculate_sizes(self):
@@ -371,35 +374,35 @@ class SizeCalculator:
             if (name[0] == '.'):                # starting with '.'
                 continue
 
+            # TODO this doesn't actually reflect the size in flash or RAM as
+            # it doesn't include linker-imposed padding between sections.
+            # It is close though.
             size = int(words[2], 16)
-            phys_addr = int(words[4], 16)
+            load_addr = int(words[4], 16)
+            virt_addr = int(words[3], 16)
 
             # Add section to memory use totals (for both non-XIP and XIP scenarios)
-            #
-            # In an XIP image, the following sections are placed into ROM:
-            #     text, ctors, rodata and datas
-            # In an XIP image, the following sections are placed into RAM:
-            #     datas, bss and noinit
-            # In a non-XIP image, the following sections are placed into RAM
-            #     text, ctors, rodata, datas, bss and noinit
             # Unrecognized section names are not included in the calculations.
-
-            self.ram_size += size
             recognized = True
-
-            if ((name == "text") or (name == "ctors") or (name == "rodata")):
-                self.xip_rom_size += size
-            elif (name == "datas"):
-                self.xip_rom_size += size
-                self.xip_ram_size += size
-            elif ((name == "bss") or (name == "noinit")):
-                self.xip_ram_size += size
+            if name in SizeCalculator.alloc_sections:
+                self.ram_size += size
+                stype = "alloc"
+            elif name in SizeCalculator.rw_sections:
+                self.ram_size += size
+                self.rom_size += size
+                stype = "rw"
+            elif name in SizeCalculator.ro_sections:
+                self.rom_size += size
+                if not self.is_xip:
+                    self.ram_size += size
+                stype = "ro"
             else:
+                stype = "unknown"
                 recognized = False
-                self.ram_size -= size   # Undo the calculation
 
-            self.sections[name] = {"phys_addr" : phys_addr, "size" : size,
-                                   "recognized" : recognized}
+            self.sections.append({"name" : name, "load_addr" : load_addr,
+                                  "size" : size, "virt_addr" : virt_addr,
+                                  "type" : stype, "recognized" : recognized})
 
 
 class MakeGoal:
@@ -1209,6 +1212,7 @@ class TestSuite:
             sc = i.calculate_sizes()
             goal.metrics["ram_size"] = sc.get_ram_size()
             goal.metrics["rom_size"] = sc.get_rom_size()
+            goal.metrics["unrecognized"] = sc.unrecognized_sections()
         return self.goals
 
     def discard_report(self, filename):
@@ -1450,18 +1454,13 @@ def chatty_test_cb(instances, goals, goal):
 
 def size_report(sc):
     info(sc.filename)
-    info("SECTION NAME         ADDRESS     SIZE   HEX")
-    for k, v in sc.sections.iteritems():
-        if not v["recognized"]:
-            k += "*"
-
-        info("%-17s 0x%08x %8d %5x" %
-             (k, v["phys_addr"], v["size"], v["size"]))
-    if sc.is_xip:
-        info("Total: %d bytes (ROM) + %d bytes (RAM)" %
-             (sc.xip_rom_size, sc.xip_ram_size))
-    else:
-        info("Total: %d bytes (RAM)" % sc.ram_size)
+    info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
+    for v in sc.sections:
+        info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
+             (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
+              v["type"]))
+    info("Totals: %d bytes (ROM), %d bytes (RAM)" %
+             (sc.rom_size, sc.ram_size))
     info("")
 
 
@@ -1537,6 +1536,11 @@ def main():
     failed = 0
     for name, goal in goals.iteritems():
         if goal.failed:
+            failed += 1
+        elif goal.metrics["unrecognized"]:
+            info("%sFAILED%s: %s has unrecognized binary sections: %s" %
+                 (COLOR_RED, COLOR_NORMAL, goal.name,
+                  str(goal.metrics["unrecognized"])))
             failed += 1
 
     info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
