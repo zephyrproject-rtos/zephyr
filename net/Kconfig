@@ -22,4 +22,18 @@ source "net/bluetooth/Kconfig"
 
 source "net/ip/Kconfig"
 
+config NET_BUF
+	bool "Network buffer support"
+	default n
+	help
+	  This option enebles support for generic network protocol
+	  buffers.
+
+config	NET_BUF_DEBUG
+	bool "Network buffer debugging"
+	depends on NET_BUF
+	default n
+	help
+	  Enable debug logs and checks for the generic network buffers.
+
 endmenu

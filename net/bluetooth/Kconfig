@@ -21,6 +21,7 @@ menuconfig BLUETOOTH
 	prompt "Bluetooth LE support"
 	default n
 	select NANO_TIMEOUTS
+	select NET_BUF
 	help
 	  This option enables Bluetooth Low Energy support.
 
