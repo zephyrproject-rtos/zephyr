@@ -113,7 +113,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn, uint16_t min, uint16_t max,
 #if defined(CONFIG_BLUETOOTH_SMP)
 /* rand and ediv should be in BT order */
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint64_t rand,
-				uint16_t ediv, const uint8_t *ltk);
+				uint16_t ediv, const uint8_t *ltk, size_t len);
 
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);

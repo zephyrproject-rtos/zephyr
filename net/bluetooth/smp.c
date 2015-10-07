@@ -930,7 +930,7 @@ static uint8_t smp_pairing_random(struct bt_conn *conn, struct bt_buf *buf)
 		keys->type = get_keys_type(smp->method);
 
 		/* Rand and EDiv are 0 for the STK */
-		if (bt_conn_le_start_encryption(conn, 0, 0, stk)) {
+		if (bt_conn_le_start_encryption(conn, 0, 0, stk, sizeof(stk))) {
 			BT_ERR("Failed to start encryption\n");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -1319,7 +1319,8 @@ static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	if (bt_conn_le_start_encryption(conn, keys->ltk.rand, keys->ltk.ediv,
-					keys->ltk.val) < 0) {
+					keys->ltk.val,
+					sizeof(keys->ltk.val)) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
