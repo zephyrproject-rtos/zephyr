@@ -20,12 +20,22 @@ task or fiber is zero.
    The custom data value is not available to ISRs, which operate in the shared
    kernel interrupt handling context.
 
+The kernel allows a task or fiber to delay its processing for a specified time
+period by performing a busy wait. This allows the delay to occur without
+requiring the kernel to perform the context switching that occurs with its
+more typical timer and timeout services.
+
 
 Purpose
 *******
 
 Use the kernel execution context services when writing code that needs to
 operate differently when executed by different contexts.
+
+Use the busy wait service when the required delay is too short to warrant
+context switching to another task or fiber, or when performing a delay
+as part of the nanokernel's background task (which is not allowed to
+volutarily relinquish the CPU).
 
 
 Usage
@@ -91,4 +101,7 @@ The following kernel execution context APIs are provided by
 +--------------------------------------------+---------------------------------------+
 | :c:func:`sys_thread_custom_data_get()`     | Reads custom data for currently       |
 |                                            | executing task or fiber.              |
++--------------------------------------------+---------------------------------------+
+| :c:func:`sys_thread_busy_wait()`           | Performs a busy wait for the          |
+|                                            | specified time period.                |
 +--------------------------------------------+---------------------------------------+
