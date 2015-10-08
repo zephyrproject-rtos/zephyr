@@ -365,11 +365,11 @@ void spi_intel_isr(void *arg)
 		goto out;
 	}
 
-	if (status & (INTEL_SPI_SSSR_RFS | INTEL_SPI_SSSR_RNE)) {
+	if (status & INTEL_SPI_SSSR_RFS) {
 		pull_data(dev);
 	}
 
-	if (status & (INTEL_SPI_SSSR_TFS | INTEL_SPI_SSSR_TNF)) {
+	if (status & INTEL_SPI_SSSR_TFS) {
 		push_data(dev);
 	}
 
