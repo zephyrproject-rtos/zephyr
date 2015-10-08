@@ -27,7 +27,7 @@ This module provides the _NanoFatalErrorHandler() routine.
 #include <nanokernel.h>
 #include <nano_private.h>
 #include <misc/printk.h>
-
+#include <asmPrv.h>
 
 /*
  * Define a default ESF for use with _NanoFatalErrorHandler() in the event
@@ -119,3 +119,43 @@ FUNC_NORETURN void _NanoFatalErrorHandler(
 
 	_SysFatalErrorHandler(reason, pEsf);
 }
+
+#if CONFIG_EXCEPTION_DEBUG
+
+static FUNC_NORETURN void generic_exc_handle(char *description,
+					     unsigned int vector,
+					     const NANO_ESF *pEsf)
+{
+	printk("***** CPU exception %d: %s\n", vector, description);
+	if (pEsf->errorCode) {
+		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
+	}
+	_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, pEsf);
+}
+
+#define EXC_FUNC(vector, description) \
+FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
+{ \
+	generic_exc_handle(description, vector, pEsf); \
+}
+
+EXC_FUNC(IV_DIVIDE_ERROR, "Division by zero");
+EXC_FUNC(IV_NON_MASKABLE_INTERRUPT, "Non-maskable interrupt");
+EXC_FUNC(IV_OVERFLOW, "Overflow");
+EXC_FUNC(IV_BOUND_RANGE, "Bounds");
+EXC_FUNC(IV_INVALID_OPCODE, "Invalid opcode");
+#ifndef CONFIG_FP_SHARING
+EXC_FUNC(IV_DEVICE_NOT_AVAILABLE, "FPU device not available");
+#endif
+EXC_FUNC(IV_DOUBLE_FAULT, "Double fault");
+EXC_FUNC(IV_INVALID_TSS, "Invalid task state segment");
+EXC_FUNC(IV_SEGMENT_NOT_PRESENT, "Segment not present");
+EXC_FUNC(IV_STACK_FAULT, "Stack fault");
+EXC_FUNC(IV_GENERAL_PROTECTION, "General protection fault");
+EXC_FUNC(IV_PAGE_FAULT, "Page fault");
+EXC_FUNC(IV_X87_FPU_FP_ERROR, "Floating point error");
+EXC_FUNC(IV_ALIGNMENT_CHECK, "Alignment error");
+EXC_FUNC(IV_MACHINE_CHECK, "Machine check");
+
+#endif /* CONFIG_EXCEPTION_DEBUG */
+

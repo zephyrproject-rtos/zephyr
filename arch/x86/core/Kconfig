@@ -34,6 +34,16 @@ config NO_NESTED_INTERRUPTS
 	help
 	disable nest interrupts.
 
+config EXCEPTION_DEBUG
+	bool
+	prompt "Unhandled exception debugging"
+	default y
+	depends on PRINTK
+	help
+	Install handlers for various CPU exception/trap vectors to
+	make debugging them easier, at a small expense in code size.
+	This prints out the specific exception vector and any associated
+	error codes.
 
 menu "Memory Layout Options"
 
