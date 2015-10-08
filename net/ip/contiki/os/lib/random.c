@@ -32,6 +32,5 @@ unsigned short random_rand(void)
 	 *        implemented so fix this func when random numbers
 	 *        are available.
 	 */
-#warning "FIX the random number generator!!!"
 	return (unsigned short)_sys_clock_cycle_get();
 }
