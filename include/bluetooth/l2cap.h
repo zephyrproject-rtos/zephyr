@@ -79,6 +79,8 @@ struct bt_l2cap_chan_ops {
 					struct bt_buf *buf);
 };
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {
 	/** Server PSM */
@@ -100,5 +102,6 @@ struct bt_l2cap_server {
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
 
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 #endif /* CONFIG_BLUETOOTH_CENTRAL || CONFIG_BLUETOOTH_PERIPHERAL */
 #endif /* __BT_L2CAP_H */

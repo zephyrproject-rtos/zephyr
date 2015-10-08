@@ -45,6 +45,11 @@ config BLUETOOTH_SMP
 	prompt "Security Manager Protocol support"
 	default n
 
+config BLUETOOTH_L2CAP_DYNAMIC_CHANNEL
+	bool
+	prompt "L2CAP Dynamic Channel support"
+	default n
+
 config BLUETOOTH_SIGNING
 	bool
 	prompt "Data signing support"

@@ -48,7 +48,9 @@
 #define L2CAP_LE_CID_END	0x007f
 
 static struct bt_l2cap_fixed_chan *channels;
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 static struct bt_l2cap_server *servers;
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
 struct bt_l2cap {
@@ -99,39 +101,6 @@ void bt_l2cap_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
 
 	chan->_next = channels;
 	channels = chan;
-}
-
-static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
-{
-	struct bt_l2cap_server *server;
-
-	for (server = servers; server; server = server->_next) {
-		if (server->psm == psm) {
-			return server;
-		}
-	}
-
-	return NULL;
-}
-
-int bt_l2cap_server_register(struct bt_l2cap_server *server)
-{
-	if (server->psm < 0x0080 || server->psm > 0x00ff || !server->accept) {
-		return -EINVAL;
-	}
-
-	/* Check if given PSM is already in use */
-	if (l2cap_server_lookup_psm(server->psm)) {
-		BT_DBG("PSM already registered\n");
-		return -EADDRINUSE;
-	}
-
-	BT_DBG("PSM 0x%04x\n", server->psm);
-
-	server->_next = servers;
-	servers = server;
-
-	return 0;
 }
 
 static void l2cap_chan_alloc_cid(struct bt_conn *conn,
@@ -332,6 +301,40 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 }
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
 
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
+static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
+{
+	struct bt_l2cap_server *server;
+
+	for (server = servers; server; server = server->_next) {
+		if (server->psm == psm) {
+			return server;
+		}
+	}
+
+	return NULL;
+}
+
+int bt_l2cap_server_register(struct bt_l2cap_server *server)
+{
+	if (server->psm < 0x0080 || server->psm > 0x00ff || !server->accept) {
+		return -EINVAL;
+	}
+
+	/* Check if given PSM is already in use */
+	if (l2cap_server_lookup_psm(server->psm)) {
+		BT_DBG("PSM already registered\n");
+		return -EADDRINUSE;
+	}
+
+	BT_DBG("PSM 0x%04x\n", server->psm);
+
+	server->_next = servers;
+	servers = server;
+
+	return 0;
+}
+
 static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			struct bt_buf *buf)
 {
@@ -432,6 +435,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 rsp:
 	bt_l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 
 static void l2cap_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
 {
@@ -469,9 +473,11 @@ static void l2cap_recv(struct bt_l2cap_chan *chan, struct bt_buf *buf)
 		le_conn_param_update_req(l2cap, hdr->ident, buf);
 		break;
 #endif /* CONFIG_BLUETOOTH_CENTRAL */
+#if defined(CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL)
 	case BT_L2CAP_LE_CONN_REQ:
 		le_conn_req(l2cap, hdr->ident, buf);
 		break;
+#endif /* CONFIG_BLUETOOTH_L2CAP_DYNAMIC_CHANNEL */
 	default:
 		BT_WARN("Unknown L2CAP PDU code 0x%02x\n", hdr->code);
 		rej_not_understood(chan->conn, hdr->ident);
