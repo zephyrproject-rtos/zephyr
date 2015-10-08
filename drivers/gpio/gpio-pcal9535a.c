@@ -127,34 +127,11 @@ static int _read_port_regs(struct device *dev, uint8_t reg,
 	struct device * const i2c_master = drv_data->i2c_master;
 	uint16_t i2c_addr = config->i2c_slave_addr;
 	int ret;
-	int cnt;
+	uint8_t cmd[] = { reg };
 
-	/* Tell the chip we want to read from a particular register. */
-	buf->byte[0] = reg;
-	buf->byte[1] = 0;
-	ret = i2c_write(i2c_master, buf->byte, 1, i2c_addr);
+	ret = i2c_poll_transfer(i2c_master, cmd, 1, buf->byte, 2, i2c_addr, 0);
 	if (ret) {
-		DBG("PCAL9535A[0x%X]: error writing to register 0x%X (%d)\n",
-		    i2c_addr, reg, ret);
-		goto error;
-	}
-
-	/* Then, read those register values back.
-	 * The I2C bus may not be ready for read yet,
-	 * so retry a few times.
-	 */
-	cnt = 5;
-	do {
-		/* wait for i2c master to idle */
-		_wait_10ms(&drv_data->timer);
-
-		ret = i2c_read(i2c_master, buf->byte, 2, i2c_addr);
-		if (!ret) {
-			break;
-		}
-	} while (cnt--);
-	if (ret) {
-		DBG("PCAL9535A[0x%X]: error reading from register 0x%X (%d)\n",
+		DBG("PCAL9535A[0x%X]: error reading register 0x%X (%d)\n",
 		    i2c_addr, reg, ret);
 		goto error;
 	}
