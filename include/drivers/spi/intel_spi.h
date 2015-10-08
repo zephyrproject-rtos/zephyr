@@ -33,49 +33,6 @@
 #ifndef __INTEL_SPI_H__
 #define __INTEL_SPI_H__
 
-#include <spi.h>
-
-#ifdef CONFIG_PCI
-#include <pci/pci.h>
-#include <pci/pci_mgr.h>
-#endif /* CONFIG_PCI */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern void spi_intel_isr(void *data);
-
-int spi_intel_init(struct device *dev);
-typedef void (*spi_intel_config_t)(struct device *dev);
-
-struct spi_intel_config {
-	uint32_t regs;
-	uint32_t irq;
-#ifdef CONFIG_PCI
-	struct pci_dev_info pci_dev;
-#endif /* CONFIG_PCI */
-	spi_intel_config_t config_func;
-#ifdef CONFIG_SPI_INTEL_CS_GPIO
-	char *cs_gpio_name;
-	uint32_t cs_gpio_pin;
-#endif /* CONFIG_SPI_INTEL_CS_GPIO */
-};
-
-struct spi_intel_data {
-#ifdef CONFIG_SPI_INTEL_CS_GPIO
-	struct device *cs_gpio_port;
-#endif /* CONFIG_SPI_INTEL_CS_GPIO */
-	uint32_t sscr0;
-	uint32_t sscr1;
-	spi_callback callback;
-	uint8_t *tx_buf;
-	uint32_t tx_buf_len;
-	uint8_t *rx_buf;
-	uint32_t rx_buf_len;
-	uint32_t t_len;
-};
-
 /* SPI Maximum supported system frequencies */
 #define SPI_MAX_CLK_FREQ_25MHZ     ((0x800000 << 8))
 #define SPI_MAX_CLK_FREQ_20MHz     ((0x666666 << 8) | 1)
@@ -109,9 +66,5 @@ struct spi_intel_data {
 #define SPI_MAX_CLK_FREQ_10KHZ     ((0x20000 << 8) | 77)
 #define SPI_MAX_CLK_FREQ_5KHZ      ((0x20000 << 8) | 154)
 #define SPI_MAX_CLK_FREQ_1KHZ      ((0x8000 << 8) | 194)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __INTEL_SPI_H__ */
