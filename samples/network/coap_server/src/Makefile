@@ -1,12 +1,12 @@
-EXTRA_CFLAGS += ${PROJECTINCLUDE}
-EXTRA_CFLAGS +=-I${srctree}/net/ip/contiki
-EXTRA_CFLAGS +=-I${srctree}/net/ip/contiki/os/lib
-EXTRA_CFLAGS +=-I${srctree}/net/ip/contiki/os/sys
-EXTRA_CFLAGS +=-I${srctree}/net/ip/contiki/os
-EXTRA_CFLAGS +=-I${srctree}/net/ip/tinydtls
-EXTRA_CFLAGS +=-I${srctree}/net/ip/er-coap
-EXTRA_CFLAGS +=-I${srctree}/net/ip/rest-engine
-EXTRA_CFLAGS +=-I${srctree}/net/ip
+ccflags-y += ${PROJECTINCLUDE}
+ccflags-y +=-I${srctree}/net/ip/contiki
+ccflags-y +=-I${srctree}/net/ip/contiki/os/lib
+ccflags-y +=-I${srctree}/net/ip/contiki/os/sys
+ccflags-y +=-I${srctree}/net/ip/contiki/os
+ccflags-y +=-I${srctree}/net/ip/tinydtls
+ccflags-y +=-I${srctree}/net/ip/er-coap
+ccflags-y +=-I${srctree}/net/ip/rest-engine
+ccflags-y +=-I${srctree}/net/ip
 
 obj-y = coap-server.o
 

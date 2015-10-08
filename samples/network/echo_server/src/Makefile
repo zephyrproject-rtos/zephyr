@@ -1,7 +1,7 @@
-EXTRA_CFLAGS += ${PROJECTINCLUDE}
-EXTRA_CFLAGS +=-I${srctree}/net/ip/contiki
-EXTRA_CFLAGS +=-I${srctree}/net/ip/contiki/os/lib
-EXTRA_CFLAGS +=-I${srctree}/net/ip/contiki/os
-EXTRA_CFLAGS +=-I${srctree}/net/ip
+ccflags-y += ${PROJECTINCLUDE}
+ccflags-y +=-I${srctree}/net/ip/contiki
+ccflags-y +=-I${srctree}/net/ip/contiki/os/lib
+ccflags-y +=-I${srctree}/net/ip/contiki/os
+ccflags-y +=-I${srctree}/net/ip
 
 obj-y = echo-server.o
