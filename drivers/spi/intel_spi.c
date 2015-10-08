@@ -421,9 +421,9 @@ int spi_intel_init(struct device *dev)
 		return DEV_NOT_CONFIG;
 	}
 
-	_spi_config_cs(dev);
-
 	info->config_func(dev);
+
+	_spi_config_cs(dev);
 
 	irq_enable(info->irq);
 
