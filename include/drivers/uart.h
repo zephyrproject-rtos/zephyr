@@ -152,11 +152,7 @@ static inline int uart_poll_in(struct device *dev, unsigned char *p_char)
 	struct uart_driver_api *api;
 
 	api = (struct uart_driver_api *)dev->driver_api;
-	if (api && api->poll_in) {
-		return api->poll_in(dev, p_char);
-	}
-
-	return -DEV_INVALID_OP;
+	return api->poll_in(dev, p_char);
 }
 
 /**
@@ -179,11 +175,7 @@ static inline unsigned char uart_poll_out(struct device *dev,
 	struct uart_driver_api *api;
 
 	api = (struct uart_driver_api *)dev->driver_api;
-	if (api && api->poll_out) {
-		return api->poll_out(dev, out_char);
-	}
-
-	return 0;
+	return api->poll_out(dev, out_char);
 }
 
 
