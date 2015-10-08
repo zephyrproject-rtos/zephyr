@@ -21,38 +21,38 @@
 
 #if !defined(_ASMLANGUAGE)
 
-#define __section(seg, hash, line)					\
+#define __in_section(seg, hash, line)					\
 	__attribute__((section("." _STRINGIFY(seg)		\
 				"." _STRINGIFY(hash)				\
 				"." _STRINGIFY(line))))
 
-#define __noinit     __section(NOINIT,    _FILE_PATH_HASH, __COUNTER__)
+#define __noinit     __in_section(NOINIT,    _FILE_PATH_HASH, __COUNTER__)
 
 #if defined(CONFIG_ARM)
-#define __scs_section  __section(SCS_SECTION, _FILE_PATH_HASH, __COUNTER__)
-#define __scp_section  __section(SCP_SECTION, _FILE_PATH_HASH, __COUNTER__)
+#define __scs_section  __in_section(SCS_SECTION, _FILE_PATH_HASH, __COUNTER__)
+#define __scp_section  __in_section(SCP_SECTION, _FILE_PATH_HASH, __COUNTER__)
 
-#define __isr_table_section __section(ISR_TABLE_SECTION, _FILE_PATH_HASH, \
+#define __isr_table_section __in_section(ISR_TABLE_SECTION, _FILE_PATH_HASH, \
 				      __COUNTER__)
 
-#define __irq_vector_table  __section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, \
+#define __irq_vector_table  __in_section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, \
 				      __COUNTER__)
 
-#define __security_frdm_k64f_section   __section(SECURITY_FRDM_K64F,	\
+#define __security_frdm_k64f_section   __in_section(SECURITY_FRDM_K64F,	\
 						 _FILE_PATH_HASH, __COUNTER__)
 
 #if defined(CONFIG_GDB_INFO) && !defined(CONFIG_SW_ISR_TABLE)
-#define __gdb_stub_irq_vector_table  __section(GDB_STUB_IRQ_VECTOR_TABLE, \
+#define __gdb_stub_irq_vector_table  __in_section(GDB_STUB_IRQ_VECTOR_TABLE, \
 					       _FILE_PATH_HASH, __COUNTER__)
 #endif  /* CONFIG_GDB_INFO && !CONFIG_SW_ISR_TABLE */
 
 #elif defined(CONFIG_ARC)
 
 	#define __irq_vector_table \
-		__section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, __COUNTER__)
+		__in_section(IRQ_VECTOR_TABLE, _FILE_PATH_HASH, __COUNTER__)
 
 	#define __isr_table_section \
-		__section(ISR_TABLE_SECTION, _FILE_PATH_HASH, __COUNTER__)
+		__in_section(ISR_TABLE_SECTION, _FILE_PATH_HASH, __COUNTER__)
 
 #endif /* CONFIG_ARC */
 

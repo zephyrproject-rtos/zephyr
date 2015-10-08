@@ -133,13 +133,13 @@ extern int task_mem_map_used_get(kmemory_map_t map);
  * @param block_size Size of each blocks (in bytes).
  */
 #define DEFINE_MEM_MAP(name, blocks, block_size) \
-       char __noinit __mem_map_buffer_##name[(blocks * block_size)]; \
-       struct _k_mem_map_struct _k_mem_map_obj_##name = \
-               __K_MEM_MAP_INITIALIZER(blocks, block_size, \
-				       __mem_map_buffer_##name); \
-       const kmemory_map_t name \
-               __section(_k_mem_map_ptr, private, mem_map) = \
-               (kmemory_map_t)&_k_mem_map_obj_##name;
+	char __noinit __mem_map_buffer_##name[(blocks * block_size)]; \
+	struct _k_mem_map_struct _k_mem_map_obj_##name = \
+		__K_MEM_MAP_INITIALIZER(blocks, block_size, \
+		__mem_map_buffer_##name); \
+	const kmemory_map_t name \
+		__in_section(_k_mem_map_ptr, private, mem_map) = \
+		(kmemory_map_t)&_k_mem_map_obj_##name;
 
 #ifdef __cplusplus
 }

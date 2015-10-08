@@ -205,7 +205,7 @@ extern int _task_pipe_block_put(kpipe_t id,
 	struct _k_pipe_struct _k_pipe_obj_##name = \
 		__K_PIPE_INITIALIZER(size, __pipe_buffer_##name); \
 	const kpipe_t name \
-		__section(_k_pipe_ptr, private, pipe) = \
+		__in_section(_k_pipe_ptr, private, pipe) = \
 		(kpipe_t)&_k_pipe_obj_##name;
 
 /**

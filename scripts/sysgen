@@ -356,25 +356,25 @@ def kernel_main_c_tasks():
 
         kernel_main_c_out(
             "struct k_task %s " % (obj_name)+
-            "__section(_k_task_list, public, task) =\n" +
+            "__in_section(_k_task_list, public, task) =\n" +
             "    {NULL, NULL, %d, (ktask_t)&%s,\n" % (prio, obj_name) +
             "     0x00000001, %#010x,\n" % (group_bitmask) +
             "     %s, %s, %d,\n" % (entry, stack, size) +
             "     (taskabortfunction)NULL, NULL};\n" +
             "ktask_t _k_task_ptr_%s " % (name) +
-            "    __section(_k_task_ptr, public, task) = " +
+            "    __in_section(_k_task_ptr, public, task) = " +
             "    (ktask_t)&%s;\n" % (obj_name))
 
     kernel_main_c_out(
         "struct k_task _k_task_idle " +
-        "__section(_k_task_list, idle, task) =\n" +
+        "__in_section(_k_task_list, idle, task) =\n" +
         "    {NULL, NULL, %d, 0x00000000,\n" % (num_prios - 1) +
         "     0x00000000, 0x00000000,\n" +
         "     (taskstartfunction)NULL, main_task_stack,\n"
         "     CONFIG_MAIN_STACK_SIZE,\n" +
         "     (taskabortfunction)NULL, NULL};\n" +
         "ktask_t _k_task_ptr_idle " +
-        "    __section(_k_task_ptr, idle, task) = " +
+        "    __in_section(_k_task_ptr, idle, task) = " +
         "    (ktask_t)&_k_task_idle;\n")
 
     # currently scheduled task (idle task)
@@ -555,7 +555,7 @@ def kernel_main_c_pipes():
         kernel_main_c_out("struct _k_pipe_struct _k_pipe_obj_%s = " % (name) +
             "    __K_PIPE_INITIALIZER(%d, %s);\n" % (size, buffer) +
             "kpipe_t _k_pipe_ptr_%s " % (name) +
-            "    __section(_k_pipe_ptr, public, pipe) =\n" +
+            "    __in_section(_k_pipe_ptr, public, pipe) =\n" +
             "    (kpipe_t)&_k_pipe_obj_%s;\n" % (name))
 
 
@@ -606,7 +606,7 @@ def kernel_main_c_maps():
             "    __K_MEM_MAP_INITIALIZER(%d, %d, __MAP_%s_buffer);\n" %
                     (blocks, block_size, map[0]) +
             "kmemory_map_t _k_mem_map_ptr_%s " % (name) +
-            "    __section(_k_mem_map_ptr, public, mem_map) =\n" +
+            "    __in_section(_k_mem_map_ptr, public, mem_map) =\n" +
             "    (kmemory_map_t)&_k_mem_map_obj_%s;\n" % (name))
 
 
