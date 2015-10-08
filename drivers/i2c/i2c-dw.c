@@ -448,10 +448,10 @@ static int _i2c_dw_transfer_init(struct device *dev,
 	return DEV_OK;
 }
 
-static int _i2c_dw_transfer_start(struct device *dev,
-				  uint8_t *write_buf, uint32_t write_len,
-				  uint8_t *read_buf,  uint32_t read_len,
-				  uint16_t slave_address)
+static int i2c_dw_transfer(struct device *dev,
+			   uint8_t *write_buf, uint32_t write_len,
+			   uint8_t *read_buf,  uint32_t read_len,
+			   uint16_t slave_address, uint32_t flags)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	volatile struct i2c_dw_registers * const regs =
@@ -488,9 +488,10 @@ static int _i2c_dw_transfer_start(struct device *dev,
 }
 
 #define POLLING_TIMEOUT		(sys_clock_ticks_per_sec / 10)
-static int i2c_dw_polling_write(struct device *dev,
+static int i2c_dw_poll_transfer(struct device *dev,
 				uint8_t *write_buf, uint32_t write_len,
-				uint16_t slave_address)
+				uint8_t *read_buf,  uint32_t read_len,
+				uint16_t slave_address, uint32_t flags)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
@@ -514,13 +515,17 @@ static int i2c_dw_polling_write(struct device *dev,
 	}
 
 	ret = _i2c_dw_transfer_init(dev, write_buf, write_len,
-				    NULL, 0, slave_address);
+				    read_buf, read_len, slave_address);
 	if (ret) {
 		return ret;
 	}
 
 	/* Enable controller */
 	regs->ic_enable.bits.enable = 1;
+
+	if (dw->tx_len == 0) {
+		goto do_receive;
+	}
 
 	/* Transmit */
 	while (dw->tx_len > 0) {
@@ -536,12 +541,41 @@ static int i2c_dw_polling_write(struct device *dev,
 		_i2c_dw_data_send(dev);
 	}
 
+	/* Wait for TX FIFO empty to be sure everything is sent. */
+	start_time = nano_tick_get_32();
+	while (!regs->ic_status.bits.tfe) {
+		if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+			ret = DEV_FAIL;
+			goto finish;
+		}
+	}
+
+do_receive:
 	/* Finalize TX when there is nothing more to send as
 	 * the data send function has code to deal with the end of
 	 * TX phase.
 	 */
 	_i2c_dw_data_send(dev);
 
+	/* Finish transfer when there is nothing to receive */
+	if (dw->rx_len == 0) {
+		goto stop_det;
+	}
+
+	while (dw->rx_len > 0) {
+		/* Wait for data in RX FIFO*/
+		start_time = nano_tick_get_32();
+		while (!regs->ic_status.bits.rfne) {
+			if ((nano_tick_get_32() - start_time) > POLLING_TIMEOUT) {
+				ret = DEV_FAIL;
+				goto finish;
+			}
+		}
+
+		_i2c_dw_data_read(dev);
+	}
+
+stop_det:
 	/* Wait for transfer to complete */
 	start_time = nano_tick_get_32();
 	while (!regs->ic_raw_intr_stat.bits.stop_det) {
@@ -685,16 +719,23 @@ static int i2c_dw_set_callback(struct device *dev, i2c_callback cb)
 static int i2c_dw_write(struct device *dev, uint8_t *buf,
 			uint32_t len, uint16_t slave_addr)
 {
-	return _i2c_dw_transfer_start(dev, buf, len, 0, 0, slave_addr);
+	return i2c_dw_transfer(dev, buf, len, 0, 0, slave_addr, 0);
 }
 
 
 static int i2c_dw_read(struct device *dev, uint8_t *buf,
 			uint32_t len, uint16_t slave_addr)
 {
-	return _i2c_dw_transfer_start(dev, 0, 0, buf, len, slave_addr);
+	return i2c_dw_transfer(dev, 0, 0, buf, len, slave_addr, 0);
 }
 
+static int i2c_dw_polling_write(struct device *dev,
+				    uint8_t *write_buf, uint32_t write_len,
+				    uint16_t slave_address)
+{
+	return i2c_dw_poll_transfer(dev, write_buf, write_len,
+				    0, 0, slave_address, 0);
+}
 
 static int i2c_dw_suspend(struct device *dev)
 {
@@ -717,9 +758,11 @@ static struct i2c_driver_api funcs = {
 	.set_callback = i2c_dw_set_callback,
 	.write = i2c_dw_write,
 	.read = i2c_dw_read,
+	.transfer = i2c_dw_transfer,
 	.suspend = i2c_dw_suspend,
 	.resume = i2c_dw_resume,
 	.polling_write = i2c_dw_polling_write,
+	.poll_transfer = i2c_dw_poll_transfer,
 };
 
 
