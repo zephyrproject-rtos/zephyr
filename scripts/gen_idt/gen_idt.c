@@ -64,7 +64,7 @@
 #include "idtEnt.h"
 
 /* Define the following macro to see a verbose or debug output from the tool */
-/*#define DEBUG_GENIDT*/
+/* #define DEBUG_GENIDT */
 
 #ifdef DEBUG_GENIDT
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -73,44 +73,59 @@
 #endif
 
 #if !defined(WINDOWS)
-  #define O_BINARY 0
+	#define O_BINARY 0
 #endif
+
+#define MAX_NUM_VECTORS           256
 
 static void get_exec_name(char *pathname);
 static void usage(int len);
 static void get_options(int argc, char *argv[]);
 static void open_files(void);
+static void read_input_file(void);
 static void close_files(void);
-static void genIdt(void);
+static void validate_input_file(void);
+static void generate_idt(void);
 static void clean_exit(int exit_code);
 
-struct s_isrList {
-	void *fnc;
+struct genidt_header_s {
+	void *spurious_addr;
+	void *spurious_no_error_addr;
+	unsigned int num_entries;
+};
+
+struct genidt_entry_s {
+	void *isr;
+	unsigned int vector_id;
 	unsigned int dpl;
 };
 
-static struct s_isrList idt[256];
+static struct genidt_header_s  genidt_header;
+static struct genidt_entry_s   supplied_entry[MAX_NUM_VECTORS];
+static struct genidt_entry_s   generated_entry[MAX_NUM_VECTORS];
 
 enum {
 	IFILE = 0,             /* input file */
 	OFILE,                 /* output file */
 	NUSERFILES,            /* number of user-provided file names */
 	EXECFILE = NUSERFILES, /* for name of executable */
-	NFILES                 /* total number of files open */
+	NFILES                 /* total number of file names */
 };
 enum { SHORT_USAGE, LONG_USAGE };
 
 static int fds[NUSERFILES] = {-1, -1};
 static char *filenames[NFILES];
-static unsigned int numVecs = (unsigned int)-1;
-static struct version version = {KERNEL_VERSION, 1, 1, 1};
+static unsigned int num_vectors = (unsigned int)-1;
+static struct version version = {KERNEL_VERSION, 1, 1, 2};
 
 int main(int argc, char *argv[])
 {
 	get_exec_name(argv[0]);
 	get_options(argc, argv); /* may exit */
 	open_files();            /* may exit */
-	genIdt();                /* may exit */
+	read_input_file();       /* may exit */
+	validate_input_file();   /* may exit */
+	generate_idt();          /* may exit */
 	close_files();
 	return 0;
 }
@@ -134,8 +149,8 @@ static void get_options(int argc, char *argv[])
 			usage(LONG_USAGE);
 			exit(0);
 		case 'n':
-			numVecs = (unsigned int)strtoul(optarg, &endptr, 10);
-			if (*optarg == '\0' || *endptr != '\0') {
+			num_vectors = (unsigned int) strtoul(optarg, &endptr, 10);
+			if ((*optarg == '\0') || (*endptr != '\0')) {
 				usage(SHORT_USAGE);
 				exit(-1);
 				}
@@ -149,7 +164,7 @@ static void get_options(int argc, char *argv[])
 	    }
 	}
 
-	if ((unsigned int)-1 == numVecs) {
+	if (num_vectors > MAX_NUM_VECTORS) {
 		usage(SHORT_USAGE);
 		exit(-1);
 	}
@@ -168,12 +183,12 @@ static void get_exec_name(char *pathname)
 
 	while (end != -1) {
 		#if defined(WINDOWS) /* Might have both slashes in path */
-		if (pathname[end] == '/' || pathname[end] == '\\')
+		if ((pathname[end] == '/') || (pathname[end] == '\\'))
 		#else
 		if (pathname[end] == '/')
 		#endif
 		{
-			if (0 == end || pathname[end - 1] != '\\') {
+			if ((0 == end) || (pathname[end - 1] != '\\')) {
 				++end;
 				break;
 			}
@@ -188,8 +203,8 @@ static void open_files(void)
 	int ii;
 
 	fds[IFILE] = open(filenames[IFILE], O_RDONLY | O_BINARY);
-	fds[OFILE] = open(filenames[OFILE], O_WRONLY | O_CREAT |
-						O_TRUNC | O_BINARY,
+	fds[OFILE] = open(filenames[OFILE], O_WRONLY | O_BINARY |
+						O_TRUNC | O_CREAT,
 						S_IWUSR | S_IRUSR);
 	for (ii = 0; ii < NUSERFILES; ii++) {
 		int invalid = fds[ii] == -1;
@@ -206,98 +221,156 @@ static void open_files(void)
 	}
 }
 
-static void genIdt(void)
+static void show_entry(struct genidt_entry_s *entry)
 {
-	unsigned int i;
-	unsigned int size;
-	void *spurAddr;
-	void *spurNoErrAddr;
+	fprintf(stderr,
+			"---------------\n"
+			"ISR Address: %p\n"
+			"Vector ID: %d\n"
+			"DPL: %d\n"
+			"---------------\n",
+			entry->isr, entry->vector_id, entry->dpl);
+}
 
-    /*
-     * First find the address of the spurious interrupt handlers. They are the
-     * contained in the first 8 bytes of the input file.
-     */
-	if (read(fds[IFILE], &spurAddr, 4) < 4) {
-		goto readError;
+static void read_input_file(void)
+{
+	ssize_t  bytes_read;
+	size_t   bytes_to_read;
+
+	/* Read the header information. */
+	bytes_read = read(fds[IFILE], &genidt_header, sizeof(genidt_header));
+	if (bytes_read != sizeof(genidt_header)) {
+		goto read_error;
 	}
 
-	if (read(fds[IFILE], &spurNoErrAddr, 4) < 4) {
-		goto readError;
-	}
+	PRINTF("Spurious interrupt handlers found at %p and %p.\n",
+		    genidt_header.spurious_addr, genidt_header.spurious_no_error_addr);
+	PRINTF("There are %d ISR(s).\n", genidt_header.num_entries);
 
-	PRINTF("Spurious int handlers found at %p and %p\n",
-		    spurAddr, spurNoErrAddr);
-
-	/* Initially fill in the IDT array with the spurious handlers */
-	for (i = 0; i < numVecs; i++) {
-		if ((((1 << i) & _EXC_ERROR_CODE_FAULTS)) && (i < 32)) {
-			idt[i].fnc = spurAddr;
-		} else {
-			idt[i].fnc = spurNoErrAddr;
-		}
-	}
-
-    /*
-     * Now parse the rest of the input file for the other ISRs. The number of
-     * entries is the next 4 bytes
-     */
-
-	if (read(fds[IFILE], &size, 4) < 4) {
-		goto readError;
-	}
-
-	PRINTF("There are %d ISR(s)\n", size);
-
-	if (size > numVecs) {
+	if (genidt_header.num_entries > num_vectors) {
 		fprintf(stderr,
-				"Too many ISRs found. Got %u. Expected less than %u.\n"
+				"Too many ISRs found. Got %u. Expected no more than %u.\n"
 				"Malformed input file?\n",
-				size, numVecs);
+				genidt_header.num_entries, num_vectors);
 		clean_exit(-1);
 	}
 
-	while (size--) {
-		void *addr;
-		unsigned int vec;
-		unsigned int dpl;
+	bytes_to_read = sizeof(struct genidt_entry_s) * genidt_header.num_entries;
+	bytes_read = read(fds[IFILE], supplied_entry, bytes_to_read);
+	if (bytes_read != bytes_to_read) {
+		goto read_error;
+	}
 
-		/* Get address */
-		if (read(fds[IFILE], &addr, 4) < 4) {
-			goto readError;
+#ifdef DEBUG_GENIDT
+	int i;
+
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		show_entry(&supplied_entry[i]);
+	}
+#endif
+	return;
+
+read_error:
+	fprintf(stderr, "Error occurred while reading input file. Aborting...\n");
+	clean_exit(-1);
+}
+
+static void validate_dpl(void)
+{
+	int  i;
+
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		if (supplied_entry[i].dpl != 0) {
+			fprintf(stderr,
+					"Invalid DPL bits specified.  Must be zero.\n");
+			show_entry(&supplied_entry[i]);
+			clean_exit(-1);
 		}
-		/* Get vector */
-		if (read(fds[IFILE], &vec, 4) < 4) {
-			goto readError;
-		}
-		/* Get dpl */
-		if (read(fds[IFILE], &dpl, 4) < 4) {
-			goto readError;
+	}
+}
+
+static void validate_vector_id(void)
+{
+	int  i;
+	int  vectors[MAX_NUM_VECTORS] = {0};
+
+	/*
+	 * NOTE: Future versions of the gen_idt tool may generate the vector ID
+	 * instead of relying upon values already existing in the input file.
+	 */
+
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		if (supplied_entry[i].vector_id >= num_vectors) {
+			fprintf(stderr,
+					"Vector ID exceeds specified # of vectors (%d).\n",
+					num_vectors);
+			show_entry(&supplied_entry[i]);
+			clean_exit(-1);
 		}
 
-		PRINTF("ISR @ %p on Vector %d: dpl %d\n", addr, vec, dpl);
-		idt[vec].fnc = addr;
-		idt[vec].dpl = dpl;
+		if (vectors[supplied_entry[i].vector_id] != 0) {
+			fprintf(stderr, "Duplicate vector ID found.\n");
+			show_entry(&supplied_entry[i]);
+			clean_exit(-1);
+		}
+	vectors[supplied_entry[i].vector_id]++;
+	}
+}
+
+static void validate_input_file(void)
+{
+	validate_dpl();          /* exits on error */
+	validate_vector_id();    /* exits on error */
+}
+
+static void generate_idt(void)
+{
+	unsigned int  i;
+	unsigned int  vector_id;
+
+	/*
+	 * Initialize the generated entries with default
+	 * spurious interrupt handlers.
+	 */
+
+	for (i = 0; i < num_vectors; i++) {
+		if ((((1 << i) & _EXC_ERROR_CODE_FAULTS)) && (i < 32)) {
+			generated_entry[i].isr = genidt_header.spurious_addr;
+		} else {
+			generated_entry[i].isr = genidt_header.spurious_no_error_addr;
+		}
+	}
+
+	/*
+	 * Overwrite the generated entries as appropriate with the
+	 * validated supplied entries.
+	 */
+
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		vector_id = supplied_entry[i].vector_id;
+		generated_entry[vector_id] = supplied_entry[i];
 	}
 
     /*
-     * We now have the address of all ISR stub/functions captured in idt[].
-     * Now construct the actual idt.
+     * We now have the address of all ISR stub/functions captured in
+     * generated_entry[]. Now construct the actual IDT.
      */
 
-	for (i = 0; i < numVecs; i++) {
-		unsigned long long idtEnt;
+	for (i = 0; i < num_vectors; i++) {
+		unsigned long long idt_entry;
+		ssize_t bytes_written;
 
-		 _IdtEntCreate(&idtEnt, idt[i].fnc, idt[i].dpl);
+		 _IdtEntCreate(&idt_entry, generated_entry[i].isr,
+						generated_entry[i].dpl);
 
-		write(fds[OFILE], &idtEnt, 8);
+		bytes_written = write(fds[OFILE], &idt_entry, sizeof(idt_entry));
+		if (bytes_written != sizeof(idt_entry)) {
+			fprintf(stderr, "Failed to write IDT entry %u.\n", num_vectors);
+			clean_exit(-1);
+		}
 	}
 
 	return;
-
-readError:
-	fprintf(stderr,
-			"Error occurred while reading input file. Aborting...\n");
-	clean_exit(-1);
 }
 
 static void close_files(void)
