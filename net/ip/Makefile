@@ -1,12 +1,12 @@
-EXTRA_CFLAGS += ${PROJECTINCLUDE}
-EXTRA_CFLAGS += -I${srctree}/net/ip/contiki
-EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os/lib
-EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os
-EXTRA_CFLAGS += -I${srctree}/net/ip
-EXTRA_CFLAGS += -I${srctree}/include/drivers
+ccflags-y += ${PROJECTINCLUDE}
+ccflags-y += -I${srctree}/net/ip/contiki
+ccflags-y += -I${srctree}/net/ip/contiki/os/lib
+ccflags-y += -I${srctree}/net/ip/contiki/os
+ccflags-y += -I${srctree}/net/ip
+ccflags-y += -I${srctree}/include/drivers
 
 ifneq ($(CONFIG_NET_BUF_SIZE),)
-EXTRA_CFLAGS += -DNET_NUM_BUFS=$(CONFIG_NET_BUF_SIZE)
+ccflags-y += -DNET_NUM_BUFS=$(CONFIG_NET_BUF_SIZE)
 endif
 
 # Zypher specific files
@@ -62,7 +62,7 @@ obj-$(CONFIG_NETWORKING_WITH_IPV4) += \
 
 # RPL (RFC 6550) support
 ifeq ($(CONFIG_NETWORKING_WITH_RPL),y)
-	EXTRA_CFLAGS += -DUIP_CONF_IPV6_RPL=1
+	ccflags-y += -DUIP_CONF_IPV6_RPL=1
 	obj-y += contiki/rpl/rpl-dag.o \
 		contiki/rpl/rpl-timers.o \
 		contiki/rpl/rpl.o \
@@ -75,12 +75,12 @@ ifeq ($(CONFIG_NETWORKING_WITH_RPL),y)
 	obj-$(CONFIG_RPL_WITH_OF0) += contiki/rpl/rpl-of0.o
 	obj-$(CONFIG_RPL_WITH_MRHOF) += contiki/rpl/rpl-mrhof.o
 else
-	EXTRA_CFLAGS += -DUIP_CONF_IPV6_RPL=0
+	ccflags-y += -DUIP_CONF_IPV6_RPL=0
 endif
 
 # 6LoWPAN support
 ifeq ($(CONFIG_NETWORKING_WITH_6LOWPAN),y)
-     EXTRA_CFLAGS += -DSICSLOWPAN_CONF_ENABLE
+     ccflags-y += -DSICSLOWPAN_CONF_ENABLE
      obj-y += contiki/sicslowpan/sicslowpan_compression.o
      obj-y += contiki/sicslowpan/sicslowpan_fragmentation.o
      obj-$(CONFIG_NETWORKING_WITH_15_4) += contiki/mac/sicslowmac/sicslowmac.o
@@ -91,9 +91,8 @@ else
 		contiki/mac/framer-nullmac.o contiki/mac/nullrdc.o
 endif
 
-ifeq ($(CONFIG_NETWORKING_WITH_LOGGING),y)
-     EXTRA_CFLAGS += -DUIP_CONF_LOGGING=1
-endif
+ccflags-$(CONFIG_NETWORKING_WITH_LOGGING) += -DUIP_CONF_LOGGING=1
+
 obj-$(CONFIG_NETWORKING_WITH_LOGGING) += contiki/uip-log.o
 
 obj-$(CONFIG_NETWORKING_WITH_LOOPBACK) += net_driver_loopback.o
@@ -120,13 +119,12 @@ obj-$(CONFIG_NETWORKING_UART) += contiki/os/dev/slip.o \
 				contiki/os/dev/slip-arch.o \
 				net_driver_slip.o
 
-ifeq ($(CONFIG_TINYDTLS),y)
-	EXTRA_CFLAGS += -DCONTIKI_TARGET_ZEPHYR=1
-	EXTRA_CFLAGS += -DWITH_SHA256=1
-	EXTRA_CFLAGS += -DDTLS_TICKS_PER_SECOND=sys_clock_ticks_per_sec
-	EXTRA_CFLAGS += -I${srctree}/net/ip/contiki/os/sys
-	EXTRA_CFLAGS += -I${srctree}/net/ip/tinydtls
-endif
+ccflags-$(CONFIG_TINYDTLS) += -DCONTIKI_TARGET_ZEPHYR=1
+ccflags-$(CONFIG_TINYDTLS) += -DWITH_SHA256=1
+ccflags-$(CONFIG_TINYDTLS) += -DDTLS_TICKS_PER_SECOND=sys_clock_ticks_per_sec
+ccflags-$(CONFIG_TINYDTLS) += -I${srctree}/net/ip/contiki/os/sys
+ccflags-$(CONFIG_TINYDTLS) += -I${srctree}/net/ip/tinydtls
+
 obj-$(CONFIG_TINYDTLS) += tinydtls/dtls.o \
 			tinydtls/crypto.o \
 			tinydtls/hmac.o \
@@ -141,14 +139,13 @@ obj-$(CONFIG_TINYDTLS) += tinydtls/dtls.o \
 
 
 ifeq ($(CONFIG_TINYDTLS_DEBUG),)
-	EXTRA_CFLAGS += -DNDEBUG
+	ccflags-y += -DNDEBUG
 endif
 obj-$(CONFIG_TINYDTLS_DEBUG) += tinydtls/debug.o
 
-ifeq ($(CONFIG_ER_COAP),y)
-	EXTRA_CFLAGS += -I${srctree}/net/ip/rest-engine
-	EXTRA_CFLAGS += -I${srctree}/net/ip/er-coap
-endif
+ccflags-$(CONFIG_ER_COAP) += -I${srctree}/net/ip/rest-engine
+ccflags-$(CONFIG_ER_COAP) += -I${srctree}/net/ip/er-coap
+
 obj-$(CONFIG_ER_COAP) += er-coap/er-coap.o \
 			er-coap/er-coap-engine.o \
 			er-coap/er-coap-transactions.o \
