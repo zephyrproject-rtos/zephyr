@@ -265,9 +265,6 @@ config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
 endif
 endif
 
-config SPI_INTEL
-	select SPI_INTEL_LEVEL_LOW
-
 if SPI && SPI_INTEL
 
 if SPI_INTEL_PORT_0
