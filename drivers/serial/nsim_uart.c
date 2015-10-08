@@ -82,6 +82,13 @@ unsigned char nsim_uart_poll_out(struct device *dev, unsigned char c)
 	return c;
 }
 
+static int nsim_uart_poll_in(struct device *dev, unsigned char *c)
+{
+	return -DEV_INVALID_OP;
+
+}
+
 static struct uart_driver_api nsim_uart_driver_api = {
 	.poll_out = nsim_uart_poll_out,
+	.poll_in = nsim_uart_poll_in,
 };
