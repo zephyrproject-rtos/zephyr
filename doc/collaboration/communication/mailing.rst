@@ -1,45 +1,46 @@
 .. _mailing:
 
-Rules for Collaboration on an Open Source Mailing List
-######################################################
+Open Source Mailing List Collaboration Tips
+###########################################
 
-Follow these rules to use the mailing list effectively and get as much
-feedback as possible on your work.
+Below are some recommended guidelines for using the |project|'s mailing list.
+When submitting feedback and contribution ideas to the listserv, please follow
+these guidelines:
 
 * Use the mailing list as much as possible.
 
 * Learn the rules.
 
-* Read the archives if in doubt.
+* Read the archives when in doubt.
 
 * Choose a meaningful subject line.
 
 * Ask questions and write to the subject matter experts directly and
   CC the mailing list.
 
-* Before doing any large coding work, send a design document with your
-  proposed changes to the mailing list. This will save you from losing
+* Before doing any large-scale code changes, send a design document with
+  the proposed changes to the mailing list. This will prevent wasted
   time implementing a solution that the community may reject.
 
-* Write briefly and to the point but give enough context for someone
+* Write briefly and to the point, yet give enough context for someone
   to respond without re-creating your thought process.
 
-* Be persistent if you are not getting a response but be measured.
+* Be persistent, but measured, if you are not getting a response.
 
-* Write a separate email for each work item. If they are connected, say so
-  in each email.
+* Write a separate email for each work item. If work items are connected,
+  explicity state so in each email.
 
 * Don't rehash old issues.
 
-* Only reply if you can provide new information or a new perspective.
-  Avoid "me-too" posts.
+* Reply only when you're offering new information or a new perspective;
+  avoid "me-too" posts.
 
-* When replying in-line to a mail that was CC'ed to the list, trim out
-  unnecessary context between replies and at the end of your mail.
+* When replying in-line to message that was CC'ed to the list, trim out
+  unnecessary context between replies and at the end of your message.
 
-* Do not use capital letters to emphasize a point.
+* Refrain from using capital letters to emphasize a point.
 
-* Make sure your lines are between 72 to 76 characters long.
+* Check your line length; keep it under 72-76 characters.
 
 References
 **********
@@ -56,7 +57,7 @@ References
 
    + http://lifehacker.com/5473859/basic-etiquette-for-email-lists-and-forums
 
-* Reasons why top posting is considered harmful:
+* Why top posting is considered harmful:
 
    + https://lkml.org/lkml/2005/1/11/111
 
