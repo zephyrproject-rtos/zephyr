@@ -3,7 +3,7 @@
 Kernel Fundamentals
 ###################
 
-This section provides a high level overview of the concepts and capabilities
+This section provides a high-level overview of the concepts and capabilities
 of the Zephyr kernel.
 
 Organization
@@ -16,20 +16,20 @@ including a library of device drivers and networking software.
 Applications can be developed using both the microkernel and the nanokernel,
 or using the nanokernel only.
 
-The nanokernel is a high performance, multi-threaded execution environment
-providing a basic set of kernel features. The nanokernel is ideal for systems
-with extremely limited memory (the kernel itself requires as little as 2 KB!)
-or simple multi-threading requirements (for example, a set of interrupt
+The nanokernel is a high-performance, multi-threaded execution environment
+with a basic set of kernel features. The nanokernel is ideal for systems
+with sparse memory (the kernel itself requires as little as 2 KB!) or only
+simple multi-threading requirements (such as a set of interrupt
 handlers and a single background task). Examples of such systems include:
 embedded sensor hubs, environmental sensors, simple LED wearables, and
 store inventory tags.
 
 The microkernel supplements the capabilities of the nanokernel to provide
-a much richer set of kernel features. The microkernel is suitable for systems
-with larger amounts of memory (50 to 900 KB), multiple communication devices
-(like WIFI and Bluetooth Low Energy), and the need to support multiple
-data processing tasks. Examples of such systems include: fitness wearables,
-smart watches, and IoT wireless gateways.
+a richer set of kernel features. The microkernel is suitable for systems
+with heftier memory (50 to 900 KB), multiple communication devices
+(like WIFI and Bluetooth Low Energy), and multiple data processing tasks.
+Examples of such systems include: fitness wearables, smart watches, and
+IoT wireless gateways.
 
 Related sections:
 
@@ -40,27 +40,27 @@ Related sections:
 Multi-threading
 ***************
 
-The Zephyr kernel supports multi-threaded processing using three types
+The Zephyr kernel supports multi-threaded processing for three types
 of execution contexts.
 
-* A *task context* is a preemptible thread, and is normally used to perform
-  processing that is lengthy or complex. Task scheduling is priority based,
+* A *task context* is a preemptible thread, normally used to perform
+  processing that is lengthy or complex. Task scheduling is priority-based,
   so that the execution of a higher priority task preempts the execution
   of a lower priority task. The kernel also supports an optional round-robin
   time slicing capability so that equal priority tasks can execute in turn,
   without the risk of any one task monopolizing the CPU.
 
-* A *fiber context* is a lightweight, non-preemptible thread, and is typically
+* A *fiber context* is a lightweight and non-preemptible thread, typically
   used for device drivers and performance critical work. Fiber scheduling is
-  priority based, so that a higher priority fiber is scheduled for execution
+  priority-based, so that a higher priority fiber is scheduled for execution
   before a lower priority fiber; however, once a fiber is scheduled it remains
   scheduled until it performs an operation that blocks its own execution.
-  Fiber execution takes precedence over task execution, so tasks only execute
+  Fiber execution takes precedence over task execution, so tasks execute only
   when no fiber can be scheduled.
 
-* The *interrupt context* is a special kernel context that is used to execute
+* The *interrupt context* is a special kernel context used to execute
   Interrupt Service Routines (ISRs). The interrupt context takes
-  precedence over all other contexts, so tasks and fibers only execute
+  precedence over all other contexts, so tasks and fibers execute only
   when no ISR needs to run. (See below for more on interrupt handling.)
 
 The Zephyr microkernel does not limit the number of tasks or fibers used
@@ -80,22 +80,21 @@ interrupts by interrupt handlers, known as *Interrupt Service Routines* (ISRs).
 Interrupt handling takes precedence over task and fiber processing, so that
 an ISR preempts the currently scheduled task or fiber whenever it needs
 to run. The kernel also supports nested interrupt handling, allowing a higher
-priority ISR to interrupt the execution of a lower priority ISR should the
+priority ISR to interrupt the execution of a lower priority ISR, should the
 need arise.
 
 The nanokernel supplies ISRs for a few interrupt sources (IRQs), such as the
 hardware timer device and system console device. The ISRs for all other IRQs
-are supplied either by device drivers or application code. Each ISR can
+are supplied by either device drivers or application code. Each ISR can
 be registered with the kernel at compile time, but can also be registered
 dynamically once the kernel is up and running. Zephyr supports ISRs that
 are written entirely in C, but also permits the use of assembly language.
 
 In situations where an ISR cannot complete the processing of an interrupt in a
-timely manner by itself the kernel's synchronization and data passing mechanisms
-can be used to hand off the remaining processing to a fiber or task.
-In addition, the microkernel provides a *task IRQ* object type that streamlines
-the handoff to a task in a manner that does not require the device driver
-or application code to supply an ISR at all.
+timely manner by itself, the kernel's synchronization and data passing mechanisms
+can hand off the remaining processing to a fiber or task. The microkernel provides
+a *task IRQ* object type that streamlines the handoff to a task in a manner that
+does not require the device driver or application code to supply an ISR at all.
 
 Related sections:
 
@@ -109,7 +108,7 @@ Kernel clocking is based on time units called *ticks*, whose duration is
 configurable. A 64-bit *system clock* counts the number of ticks that have
 elapsed since the kernel started executing.
 
-Zephyr also supports a higher resolution *hardware clock*, which can be used
+Zephyr also supports a higher-resolution *hardware clock*, which can be used
 to measure durations requiring sub-tick interval precision.
 
 The nanokernel allows a fiber or thread to perform time-based processing
@@ -133,9 +132,8 @@ Synchronization
 The Zephyr kernel provides four types of objects that allow different
 contexts to synchronize their execution.
 
-The microkernel provides the object types listed below. These types are
-primarily designed to be used by tasks, and have only a limited ability
-to be used by fibers and ISRs.
+The microkernel provides the object types listed below. These types
+are intended for tasks, with limited ability to be used by fibers and ISRs.
 
 * A *semaphore* is a counting semaphore, which indicates how many units
   of a particular resource are available.
@@ -149,16 +147,15 @@ to be used by fibers and ISRs.
   execution of a lower priority thread that holds a resource needed by a
   higher priority thread.
 
-The nanokernel provides the object types listed below. These types are
-primarily designed to be used by fibers, and have only a limited ability
-to be used by tasks and ISRs.
+The nanokernel provides the object type listed below. This type
+is intended for fibers, with only limited ability to be used by tasks and ISRs.
 
 * A *nanokernel semaphore* is a counting semaphore, which indicates
   how many units of a particular resource are available.
 
-Each of these types has specific capabilities and limitations that affect
-its suitability for a given situation. For more details, see the documentation
-for each specific object type.
+Each type has specific capabilities and limitations that affect suitability
+of use in a given situation. For more details, see the documentation for each
+specific object type.
 
 Related sections:
 
@@ -200,8 +197,8 @@ to be used by tasks and ISRs.
   32-bit data items in an asynchronous, "last in, first out" manner.
 
 Each of these types has specific capabilities and limitations that affect
-its suitability for a given situation. For more details, see the documentation
-for each specific object type.
+suitability for use in a given situation. For more details, see the
+documentation for each specific object type.
 
 Related sections:
 
@@ -260,13 +257,13 @@ operate in exactly the same manner using the same set of APIs.
 In most cases, the decision to make a given microkernel object a public
 object or a private object is simply a matter of convenience. For example,
 when defining a server-type subsystem that handles requests from multiple
-clients it usually makes sense to define public objects.
+clients, it usually makes sense to define public objects.
 
-.. note:
-   Nanokernel object types can only be defined as private objects.
-   This means a nanokernel object can only be accessed by code
-   outside the file in which the object is defined if it is defined
-   using a global variable.
+.. note::
+   Nanokernel object types can only be defined as private objects. This means
+   a nanokernel object must be defined using a global variable to allow it to
+   be accessed by code outside the file in which the object is defined.
+
 
 .. _microkernel_server:
 
@@ -284,7 +281,7 @@ occurs:
 #. The task creates a *command packet*, which contains the input parameters
    needed to carry out the desired operation.
 
-#. The task enqueues the command packet on the microkernel server's
+#. The task queues the command packet on the microkernel server's
    *command stack*. The kernel then preempts the task and schedules
    the microkernel server.
 
@@ -300,34 +297,33 @@ occurs:
    the results of the operation.
 
 The actual sequence of steps may vary from the above guideline in some
-instances. For example, if the operation causes a higher priority task
-to become runnable the requesting task is not scheduled for execution by
+instances. For example, if the operation causes a higher-priority task
+to become runnable, the requesting task is not scheduled for execution by
 the kernel until *after* the higher priority task is first scheduled.
 In addition, a few operations involving microkernel objects do not require
 the use of a command packet at all.
 
 While this indirect execution approach may seem somewhat inefficient,
-it actually has a number of important benefits.
+it actually has a number of important benefits:
 
 * All operations performed by the microkernel server are inherently free
-  from race conditions, since they are processed serially by a single fiber
+  from race conditions; operations are processed serially by a single fiber
   that cannot be preempted by tasks or other fibers. This means the
   microkernel server can manipulate any of the microkernel objects in the
   system during any operation without having to take additional steps
   to prevent interference by other contexts.
 
-* Microkernel operations have minimal impact on interrupt latency, since
+* Microkernel operations have minimal impact on interrupt latency;
   interrupts are never locked for a significant period to prevent race
   conditions.
 
 * The microkernel server can easily decompose complex operations into two or
-  more simpler operations by creating additional command packets and enqueuing
+  more simpler operations by creating additional command packets and queueing
   them on the command stack.
 
-* It has the potential to reduce the overall memory footprint of the system,
-  since tasks using microkernel objects only have to reserve space on their
-  stacks for the first step of the above sequence, rather than for all steps
-  required to perform the operation.
+* The overall memory footprint of the system is reduced; a task using microkernel
+  objects only needs to provide stack space for the first step of the above sequence,
+  rather than for all steps required to perform the operation.
 
 For additional information see:
 
@@ -337,7 +333,7 @@ Standard C Library
 ******************
 
 The Zephyr kernel currently provides only the minimal subset of the
-standard C library require to meet the kernel's own needs, primarily
+standard C library required to meet the kernel's own needs, primarily
 in the areas of string manipulation and display.
 
 Applications that require a more extensive C library can either submit
@@ -348,23 +344,22 @@ Device Driver Library
 *********************
 
 The Zephyr kernel supports a variety of device drivers. The specific set of
-device drivers available for an application's platform configuration varies,
-based on the presence of the associated hardware components and of
-corresponding device driver software.
+device drivers available for an application's platform configuration varies
+according to the associated hardware components and device driver software.
 
 Device drivers which are present on all supported platform configurations
 are listed below.
 
-* Interrupt controller: This device driver is used by the nanokernel's
+* **Interrupt controller**: This device driver is used by the nanokernel's
   interrupt management subsystem.
 
-* Timer: This device driver is used by the kernel's system clock and
+* **Timer**: This device driver is used by the kernel's system clock and
   hardware clock subsystem.
 
-* Serial communication: This device driver is used by the kernel's
+* **Serial communication**: This device driver is used by the kernel's
   system console subsystem.
 
-* Random number generator: This device driver provides a source of random
+* **Random number generator**: This device driver provides a source of random
   numbers. (**IMPORTANT**: Certain implementations of this device driver
   do not generate sequences of values that are truly random.)
 
