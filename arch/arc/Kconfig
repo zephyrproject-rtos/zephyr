@@ -15,17 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-config	ARC
-	def_bool y
+menu "ARC architecture"
+	depends on ARC
+
+config ARCH
+	default "arc"
 
 config ARCH_DEFCONFIG
-        string
-        default "arch/arc/defconfig"
-
-source "kernel/Kconfig"
-
-source "misc/Kconfig"
-
+	string
+	default "arch/arc/defconfig"
 
 choice
 prompt "Platform Selection"
@@ -41,7 +39,7 @@ config	CPU_ARCEM4
 	default y
 	select CPU_ARCV2
 	help
-         This option signifies the use of an ARC EM4 CPU
+	This option signifies the use of an ARC EM4 CPU
 
 endmenu
 
@@ -50,7 +48,6 @@ menu "ARCv2 Family Options"
 config	CPU_ARCV2
 	bool
 	default y
-	select ARC
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
 
@@ -249,7 +246,4 @@ endmenu
 
 source "arch/arc/platforms/*/Kconfig"
 
-source "drivers/Kconfig"
-
-source "net/Kconfig"
-
+endmenu

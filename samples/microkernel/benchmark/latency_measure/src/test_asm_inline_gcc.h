@@ -19,7 +19,7 @@
 #ifndef _TEST_ASM_INLINE_GCC_H
 #define _TEST_ASM_INLINE_GCC_H
 
-#if !defined(__GNUC__) || !defined(CONFIG_X86_32)
+#if !defined(__GNUC__) || !defined(CONFIG_X86)
 #error test_asm_inline_gcc.h goes only with x86 GCC
 #endif
 

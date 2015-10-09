@@ -15,24 +15,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-config SRCARCH
-        string
-        option env="SRCARCH"
-
-source "arch/$SRCARCH/Kconfig"
-
-
-config ARCH
-        string
-        option env="ARCH"
-
 config KERNELVERSION
         string
         option env="KERNELVERSION"
 
-config DEFCONFIG_LIST
-        string
-        option defconfig_list
-        default "$ARCH_DEFCONFIG"
-        default "arch/$ARCH/defconfig"
+source "arch/Kconfig"
+
+source "kernel/Kconfig"
+
+source "drivers/Kconfig"
+
+source "net/Kconfig"
+
+source "misc/Kconfig"
+

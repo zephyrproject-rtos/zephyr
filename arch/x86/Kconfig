@@ -16,14 +16,11 @@
 # limitations under the License.
 #
 
-config X86_32
-	def_bool y
+menu "x86 architecture"
+	depends on X86
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/x86/defconfig"
-
-source "kernel/Kconfig"
+config ARCH
+        default "x86"
 
 menu "X86 Platform Configuration options"
 
@@ -273,8 +270,4 @@ endmenu
 
 source "arch/x86/platforms/*/Kconfig"
 
-source "drivers/Kconfig"
-
-source "net/Kconfig"
-
-source "misc/Kconfig"
+endmenu

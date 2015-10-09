@@ -199,13 +199,13 @@ static void nano_init(struct tcs *dummyOutContext)
 
 extern void *__stack_chk_guard;
 
-#if defined(CONFIG_X86_32)
+#if defined(CONFIG_X86)
 #define _MOVE_INSTR "movl "
 #elif defined(CONFIG_ARM)
 #define _MOVE_INSTR "str "
 #else
 #error "Unknown Architecture type"
-#endif /* CONFIG_X86_32 */
+#endif /* CONFIG_X86 */
 
 #define STACK_CANARY_INIT()                                \
 	do {                                               \

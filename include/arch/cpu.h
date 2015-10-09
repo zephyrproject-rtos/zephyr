@@ -19,7 +19,7 @@
 #ifndef __ARCHCPU_H__
 #define __ARCHCPU_H__
 
-#if defined(CONFIG_X86_32)
+#if defined(CONFIG_X86)
 #include <arch/x86/arch.h>
 #elif defined(CONFIG_ARM)
 #include <arch/arm/arch.h>

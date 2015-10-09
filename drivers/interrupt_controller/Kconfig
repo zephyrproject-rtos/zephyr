@@ -23,7 +23,7 @@ config LOAPIC
 	bool "LOAPIC"
 	default n
 	select IOAPIC
-	depends on X86_32
+	depends on X86
 	help
 	This option selects local APIC as the interrupt controller.
 
@@ -77,7 +77,7 @@ config IOAPIC_NUM_RTES
 config  MVIC
 	bool "Intel Quark D2000 Interrupt Controller (MVIC)"
 	default n
-	depends on X86_32
+	depends on X86
 	help
 	The MVIC (Intel Quark microcontroller D2000 Interrupt Controller) is
 	configured by default to support 32 external interrupt lines. Unlike the

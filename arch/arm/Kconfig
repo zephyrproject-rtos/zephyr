@@ -15,16 +15,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-config ARM
-	def_bool y
+
+
+menu "ARM architecture"
+	depends on ARM
+
+config ARCH
+	default "arm"
 
 config ARCH_DEFCONFIG
-        string
-        default "arch/arm/defconfig"
-
-source "kernel/Kconfig"
-
-source "misc/Kconfig"
+	string
+	default "arch/arm/defconfig"
 
 menu "General Platform Configuration"
 
@@ -72,6 +73,4 @@ endmenu
 
 source "arch/arm/platforms/*/Kconfig"
 
-source "drivers/Kconfig"
-
-source "net/Kconfig"
+endmenu

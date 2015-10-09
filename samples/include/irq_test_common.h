@@ -25,7 +25,7 @@ Interrupt stuff, abstracted across CPU architectures.
 #ifndef _IRQ_TEST_COMMON__H_
 #define _IRQ_TEST_COMMON__H_
 
-#if defined(CONFIG_X86_32)
+#if defined(CONFIG_X86)
   #define IRQ_PRIORITY 3
 #elif defined(CONFIG_ARM)
   #if defined(CONFIG_CPU_CORTEX_M)
@@ -46,7 +46,7 @@ Interrupt stuff, abstracted across CPU architectures.
 typedef void (*vvfn)(void);	/* void-void function pointer */
 typedef void (*vvpfn)(void *);	/* void-void_pointer function pointer */
 
-#if defined(CONFIG_X86_32)
+#if defined(CONFIG_X86)
 /*
  * Opcode for generating a software interrupt.  The ISR associated with each
  * of these software interrupts will call either nano_isr_lifo_put() or
@@ -98,7 +98,7 @@ struct isrInitInfo {
 
 static int initIRQ(struct isrInitInfo *i)
 {
-#if defined(CONFIG_X86_32)
+#if defined(CONFIG_X86)
 	int  vector;     /* vector to which interrupt is connected */
 
 	if (i->isr[0]) {
@@ -131,7 +131,7 @@ static int initIRQ(struct isrInitInfo *i)
 		irq_enable(1);
 	}
 #endif /* CONFIG_CPU_CORTEX_M */
-#endif /* CONFIG_X86_32 */
+#endif /* CONFIG_X86 */
 
 	return 0;
 }

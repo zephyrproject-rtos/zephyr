@@ -33,7 +33,7 @@
 #include <sections.h>
 
 /* include platform dependent linker-defs */
-#ifdef CONFIG_X86_32
+#ifdef CONFIG_X86
 #include <arch/x86/linker-defs-arch.h>
 #elif defined(CONFIG_ARM)
 /* Nothing yet to include */
@@ -71,7 +71,7 @@
 		DEVICE_INIT_LEVEL(APPLICATION)	\
 		__device_init_end = .;			\
 
-#ifdef CONFIG_X86_32 /* LINKER FILES: defines used by linker script */
+#ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
 #if defined(CONFIG_XIP)
 #define ROMABLE_REGION ROM

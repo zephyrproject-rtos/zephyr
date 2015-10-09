@@ -18,3 +18,29 @@
 #
 
 
+choice
+	prompt "Architecture"
+	default X86
+
+config ARC
+	bool "ARC architecture"
+
+config ARM
+	bool "ARM architecture"
+
+config X86
+	bool "x86 architecture"
+
+endchoice
+
+config ARCH
+	string
+	help
+	System architecture string.
+
+config SOC
+	string
+	help
+	SOC being used.
+
+source "arch/*/Kconfig"

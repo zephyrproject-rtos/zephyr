@@ -73,7 +73,7 @@ static struct task_irq_info task_irq_object[MAX_TASK_IRQS] = {
 
 /* architecture-specific */
 
-#if defined(CONFIG_X86_32)
+#if defined(CONFIG_X86)
 
 #define RELEASE_VECTOR(v) _IntVecMarkFree(v)
 

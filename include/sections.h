@@ -37,7 +37,7 @@
 
 /* Various text section names */
 #define TEXT text
-#if defined(CONFIG_X86_32)
+#if defined(CONFIG_X86)
 #define TEXT_START text_start /* beginning of TEXT section */
 #else
 #define TEXT_START text /* beginning of TEXT section */

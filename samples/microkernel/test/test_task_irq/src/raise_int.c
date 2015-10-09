@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 
-#if defined(CONFIG_X86_32)
+#if defined(CONFIG_X86)
 
 static void genInt0(void)
 {

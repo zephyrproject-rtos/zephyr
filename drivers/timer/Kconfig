@@ -22,7 +22,7 @@ menu "Timer Drivers"
 config HPET_TIMER
 	bool "HPET timer"
 	default n
-	depends on X86_32
+	depends on X86
         select IOAPIC
         select LOAPIC
 	help
@@ -95,7 +95,7 @@ endchoice
 
 config LOAPIC_TIMER
 	bool "LOAPIC timer"
-	depends on (LOAPIC || MVIC) && X86_32
+	depends on (LOAPIC || MVIC) && X86
 	default n
 	help
 	This option selects LOAPIC timer as a system timer.
@@ -116,7 +116,7 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 
 config LOAPIC_TIMER_DIVIDER_UNSUPPORTED
 	bool "LOAPIC timer divider unsupported"
-	depends on LOAPIC_TIMER  && MVIC && X86_32
+	depends on LOAPIC_TIMER  && MVIC && X86
 	default n
 	help
 	This option selects if Local Apic Timer divider register is supported.

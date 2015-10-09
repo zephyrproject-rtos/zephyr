@@ -18,11 +18,11 @@
 
 
 menu "PCI Settings"
-	depends on X86_32
+	depends on X86
 config PCI
 	bool "Enable PCI"
 	default n
-	depends on X86_32
+	depends on X86
 	help
 	This options enables support of PCI bus for device drivers.
 

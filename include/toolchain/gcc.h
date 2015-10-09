@@ -253,7 +253,7 @@ A##a:
 		",%B0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
 
-#elif defined(CONFIG_X86_32) || defined(CONFIG_ARC)
+#elif defined(CONFIG_X86) || defined(CONFIG_ARC)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \

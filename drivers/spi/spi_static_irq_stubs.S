@@ -15,7 +15,7 @@
  */
 #define _ASMLANGUAGE
 
-#ifdef CONFIG_X86_32
+#ifdef CONFIG_X86
 #include <arch/x86/asm.h>
 #include <drivers/ioapic.h>
 #endif
