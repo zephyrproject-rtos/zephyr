@@ -294,11 +294,11 @@ config SPI_INTEL_PORT_1_DEV
 	default 21
 config SPI_INTEL_PORT_1_FUNCTION
 	default 1
-config SPI_INTEL_PORT_0_REGS
+config SPI_INTEL_PORT_1_REGS
 	default 0x90008000
-config SPI_INTEL_PORT_0_IRQ
+config SPI_INTEL_PORT_1_IRQ
 	default 17
-config SPI_INTEL_PORT_0_PRI
+config SPI_INTEL_PORT_1_PRI
 	default 0
 endif
 endif
