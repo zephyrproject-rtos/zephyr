@@ -1,8 +1,12 @@
 % Application       : test microkernel task APIs
 
+% TASKGROUP	NAME
+% ==================================================
+  TASKGROUP	TEST
+
 % TASK NAME        PRIO ENTRY           STACK GROUPS
 % ==================================================
-  TASK HT_TASKID    20 HelperTask        2048 [EXE]
+  TASK HT_TASKID    20 HelperTask        2048 [TEST]
   TASK RT_TASKID    10 RegressionTask    2048 [EXE]
 
 % SEMA NAME

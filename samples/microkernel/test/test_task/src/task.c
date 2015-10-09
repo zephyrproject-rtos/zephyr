@@ -514,6 +514,7 @@ void RegressionTask(void)
 	PRINT_LINE;
 
 	microObjectsInit();
+	task_start(HT_TASKID);
 
 	TC_PRINT("Testing isr_task_id_get() and isr_task_priority_get()\n");
 	rv = isrAPIsTest(RT_TASKID, RT_PRIO);
