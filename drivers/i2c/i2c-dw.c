@@ -716,27 +716,6 @@ static int i2c_dw_set_callback(struct device *dev, i2c_callback cb)
 	return DEV_OK;
 }
 
-static int i2c_dw_write(struct device *dev, uint8_t *buf,
-			uint32_t len, uint16_t slave_addr)
-{
-	return i2c_dw_transfer(dev, buf, len, 0, 0, slave_addr, 0);
-}
-
-
-static int i2c_dw_read(struct device *dev, uint8_t *buf,
-			uint32_t len, uint16_t slave_addr)
-{
-	return i2c_dw_transfer(dev, 0, 0, buf, len, slave_addr, 0);
-}
-
-static int i2c_dw_polling_write(struct device *dev,
-				    uint8_t *write_buf, uint32_t write_len,
-				    uint16_t slave_address)
-{
-	return i2c_dw_poll_transfer(dev, write_buf, write_len,
-				    0, 0, slave_address, 0);
-}
-
 static int i2c_dw_suspend(struct device *dev)
 {
 	DBG("I2C: suspend called - function not yet implemented\n");
@@ -756,12 +735,9 @@ static int i2c_dw_resume(struct device *dev)
 static struct i2c_driver_api funcs = {
 	.configure = i2c_dw_runtime_configure,
 	.set_callback = i2c_dw_set_callback,
-	.write = i2c_dw_write,
-	.read = i2c_dw_read,
 	.transfer = i2c_dw_transfer,
 	.suspend = i2c_dw_suspend,
 	.resume = i2c_dw_resume,
-	.polling_write = i2c_dw_polling_write,
 	.poll_transfer = i2c_dw_poll_transfer,
 };
 

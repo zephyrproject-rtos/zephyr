@@ -77,10 +77,6 @@ typedef int (*i2c_api_configure_t)(struct device *dev,
 				   uint32_t dev_config);
 typedef int (*i2c_api_set_callback_t)(struct device *dev,
 				      i2c_callback cb);
-typedef int (*i2c_api_io_t)(struct device *dev,
-			    uint8_t *buf,
-			    uint32_t len,
-			    uint16_t slave_addr);
 typedef int (*i2c_api_full_io_t)(struct device *dev,
 				 uint8_t *tx_buf,
 				 uint32_t tx_len,
@@ -94,9 +90,6 @@ typedef int (*i2c_api_resume_t)(struct device *dev);
 struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_set_callback_t set_callback;
-	i2c_api_io_t read;
-	i2c_api_io_t write;
-	i2c_api_io_t polling_write;
 	i2c_api_full_io_t transfer;
 	i2c_api_full_io_t poll_transfer;
 	i2c_api_suspend_t suspend;
@@ -149,7 +142,7 @@ static inline int i2c_write(struct device *dev, uint8_t *buf,
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->write(dev, buf, len, addr);
+	return api->transfer(dev, buf, len, 0, 0, addr, 0);
 }
 
 /**
@@ -167,7 +160,7 @@ static inline int i2c_read(struct device *dev, uint8_t *buf,
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	return api->read(dev, buf, len, addr);
+	return api->transfer(dev, 0, 0, buf, len, addr, 0);
 }
 
 /**
@@ -192,11 +185,7 @@ static inline int i2c_polling_write(struct device *dev, uint8_t *buf,
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	if (api && api->polling_write) {
-		return api->polling_write(dev, buf, len, addr);
-	} else {
-		return DEV_INVALID_OP;
-	}
+	return api->poll_transfer(dev, buf, len, 0, 0, addr, 0);
 }
 
 /**
@@ -224,12 +213,8 @@ static inline int i2c_transfer(struct device *dev,
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	if (api && api->transfer) {
-		return api->transfer(dev, tx_buf, tx_len,
-				     rx_buf, rx_len, addr, ctrl_flags);
-	} else {
-		return DEV_INVALID_OP;
-	}
+	return api->transfer(dev, tx_buf, tx_len,
+			     rx_buf, rx_len, addr, ctrl_flags);
 }
 
 /**
@@ -260,12 +245,8 @@ static inline int i2c_poll_transfer(struct device *dev,
 	struct i2c_driver_api *api;
 
 	api = (struct i2c_driver_api *)dev->driver_api;
-	if (api && api->poll_transfer) {
-		return api->poll_transfer(dev, tx_buf, tx_len,
-					  rx_buf, rx_len, addr, ctrl_flags);
-	} else {
-		return DEV_INVALID_OP;
-	}
+	return api->poll_transfer(dev, tx_buf, tx_len,
+				  rx_buf, rx_len, addr, ctrl_flags);
 }
 
 /**
