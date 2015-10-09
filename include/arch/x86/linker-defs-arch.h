@@ -33,6 +33,9 @@
 
 	/* Use the real _interrupt_vectors_allocated[] array */
 	#define INTERRUPT_VECTORS_ALLOCATED KEEP(*(int_vector_alloc))
+
+	/* Use the real _irq_to_interrupt_vector[] array */
+	#define IRQ_TO_INTERRUPT_VECTOR KEEP(*(irq_int_vector_map))
 #else
 	/*
 	 * Save space for the real IDT to prevent symbols from shifting. Note
@@ -45,6 +48,11 @@
 	 * prevent symbols from shifting.
 	 */
 	#define INTERRUPT_VECTORS_ALLOCATED . += ((CONFIG_IDT_NUM_VECTORS + 31) / 32);
+	/*
+	 * Both IRQs and interrupt vectors may be in the range of 0..255 inclusive.
+	 * Save 256 bytes for the IRQ to interrupt vector mapping.
+	 */
+	#define IRQ_TO_INTERRUPT_VECTOR . += 256;
 #endif
 
 /*
@@ -61,5 +69,10 @@
 	. = ALIGN(4); \
 	_interrupt_vectors_allocated = .; \
 	INTERRUPT_VECTORS_ALLOCATED
+
+#define IRQ_TO_INTERRUPT_VECTOR_MEMORY \
+	. = ALIGN(4); \
+	_irq_to_interrupt_vector = .; \
+	IRQ_TO_INTERRUPT_VECTOR
 
 #endif   /* _LINKERDEFSARCH_H */

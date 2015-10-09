@@ -154,11 +154,18 @@ typedef struct s_isrList {
  *
  */
 #define IRQ_CONNECT_STATIC(device, irq, priority, isr, parameter)	   \
-	const uint32_t _##device##_int_vector = INT_VEC_IRQ0 + (irq);	   \
 	extern void *_##device##_##isr##_stub;				               \
-	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq), (priority), \
-					INT_VEC_IRQ0 + (irq), 0)
+	NANO_CPU_INT_REGISTER(_##device##_##isr##_stub, (irq), (priority), -1, 0)
 
+
+extern unsigned char _irq_to_interrupt_vector[];
+/**
+ * @brief Convert a statically connected IRQ to its interrupt vector number
+ *
+ * @param irq IRQ number
+ */
+#define _IRQ_TO_INTERRUPT_VECTOR(irq)                       \
+			((unsigned int) _irq_to_interrupt_vector[irq])
 
 /**
  *
@@ -166,7 +173,7 @@ typedef struct s_isrList {
  *
  * For the given device do the necessary configuration steps.
  * For x86 platform configure APIC and mark interrupt vector allocated
- * @param device Device
+ * @param device Device - not used by macro
  * @param irq IRQ
  * @param priority IRQ priority, unused on this platform
  *
@@ -175,8 +182,7 @@ typedef struct s_isrList {
  */
 #define IRQ_CONFIG(device, irq, priority)			\
 	do {							\
-		_SysIntVecProgram(_##device##_int_vector, irq); \
-		_IntVecMarkAllocated(_##device##_int_vector);	\
+		_SysIntVecProgram(_IRQ_TO_INTERRUPT_VECTOR(irq), irq); \
 	} while (0)
 
 

@@ -488,6 +488,10 @@ int _IntVecAlloc(unsigned int priority)
 	 * Atomically allocate a vector from the _interrupt_vectors_allocated[]
 	 * array to prevent race conditions with other tasks/fibers attempting
 	 * to allocate an interrupt vector.
+	 *
+	 * Note: As _interrupt_vectors_allocated[] is initialized by the 'gen_idt'
+	 * tool, it is critical that this routine use the same algorithm as the
+	 * 'gen_idt' tool for allocating interrupt vectors.
 	 */
 
 	entryToScan = priority >> 1;

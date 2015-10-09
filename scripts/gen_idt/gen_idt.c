@@ -39,6 +39,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "version.h"
@@ -105,6 +106,7 @@ enum {
 	IFILE = 0,             /* input file */
 	OFILE,                 /* output file */
 	BFILE,                 /* allocated interrupt vector bitmap file */
+	MFILE,                 /* irq to interrupt vector mapping file */
 	NUSERFILES,            /* number of user-provided file names */
 	EXECFILE = NUSERFILES, /* for name of executable */
 	NFILES                 /* total number of file names */
@@ -114,17 +116,17 @@ enum { SHORT_USAGE, LONG_USAGE };
 static int fds[NUSERFILES] = {-1, -1};
 static char *filenames[NFILES];
 static unsigned int num_vectors = (unsigned int)-1;
-static struct version version = {KERNEL_VERSION, 1, 1, 5};
+static struct version version = {KERNEL_VERSION, 1, 1, 6};
 
 int main(int argc, char *argv[])
 {
 	get_exec_name(argv[0]);
-	get_options(argc, argv); /* may exit */
-	open_files();            /* may exit */
-	read_input_file();       /* may exit */
-	validate_input_file();   /* may exit */
-	generate_idt();          /* may exit */
-	generate_interrupt_vector_bitmap();
+	get_options(argc, argv);             /* may exit */
+	open_files();                        /* may exit */
+	read_input_file();                   /* may exit */
+	validate_input_file();               /* may exit */
+	generate_interrupt_vector_bitmap();  /* may exit */
+	generate_idt();                      /* may exit */
 	close_files();
 	return 0;
 }
@@ -134,7 +136,7 @@ static void get_options(int argc, char *argv[])
 	char *endptr;
 	int ii, opt;
 
-	while ((opt = getopt(argc, argv, "hb:i:o:n:v")) != -1) {
+	while ((opt = getopt(argc, argv, "hb:i:o:m:n:v")) != -1) {
 		switch (opt) {
 		case 'b':
 			filenames[BFILE] = optarg;
@@ -143,10 +145,11 @@ static void get_options(int argc, char *argv[])
 			filenames[IFILE] = optarg;
 			break;
 		case 'o':
-			{
 			filenames[OFILE] = optarg;
 			break;
-			}
+		case 'm':
+			filenames[MFILE] = optarg;
+			break;
 		case 'h':
 			usage(LONG_USAGE);
 			exit(0);
@@ -209,6 +212,9 @@ static void open_files(void)
 						O_TRUNC | O_CREAT,
 						S_IWUSR | S_IRUSR);
 	fds[BFILE] = open(filenames[BFILE], O_WRONLY | O_BINARY | O_CREAT |
+						O_TRUNC | O_BINARY,
+						S_IWUSR | S_IRUSR);
+	fds[MFILE] = open(filenames[MFILE], O_WRONLY | O_BINARY | O_CREAT |
 						O_TRUNC | O_BINARY,
 						S_IWUSR | S_IRUSR);
 
@@ -304,12 +310,15 @@ static void validate_vector_id(void)
 	int  i;
 	int  vectors[MAX_NUM_VECTORS] = {0};
 
-	/*
-	 * NOTE: Future versions of the gen_idt tool may generate the vector ID
-	 * instead of relying upon values already existing in the input file.
-	 */
-
 	for (i = 0; i < genidt_header.num_entries; i++) {
+		if (supplied_entry[i].vector_id == UNSPECIFIED_INT_VECTOR) {
+			/*
+			 * Vector is to be allocated.  No further validation to be
+			 * done at the moment.
+			 */
+			continue;
+		}
+
 		if (supplied_entry[i].vector_id >= num_vectors) {
 			fprintf(stderr,
 					"Vector ID exceeds specified # of vectors (%d).\n",
@@ -331,23 +340,35 @@ static void validate_priority(void)
 {
 	int  i;
 	int  num_priorities[MAX_PRIORITIES] = {0};
-	unsigned expected_priority;
+	unsigned int expected_priority;
 
 	/*
-	 * Validate the priority.
-	 *
-	 * As the current implementation of the gen_idt tool takes the vector ID
-	 * from the input file, the priority is ignored. In fact, the priority
-	 * is overridden to match <vector ID> / MAX_VECTORS_PER_PRIORITY.
+	 * Treat all out-of-range vectors as if they were used.  This ensures
+	 * that all we can easily detect all cases where we try to allocate more
+	 * vectors for a given priority level than there are slots available.
 	 */
 
+	for (i = num_vectors; i < MAX_NUM_VECTORS; i++) {
+		num_priorities[i / MAX_VECTORS_PER_PRIORITY]++;
+	}
+
+	/* Validate the priority. */
+
 	for (i = 0; i < genidt_header.num_entries; i++) {
-		if (supplied_entry[i].irq == UNSPECIFIED_IRQ) {
+		if (supplied_entry[i].priority == UNSPECIFIED_PRIORITY) {
+			if (supplied_entry[i].vector_id == UNSPECIFIED_INT_VECTOR) {
+				fprintf(stderr,
+						"Either priority or vector ID must be specified.\n");
+				show_entry(&supplied_entry[i]);
+				clean_exit(-1);
+			}
+
 			/*
-			 * This is a software interrupt.
-			 * The priority is currently ignored.
+			 * A vector ID was specified; calculate and update its priority
+			 * so as not to unnecesarily burden the user.
 			 */
-			continue;
+			supplied_entry[i].priority =
+				supplied_entry[i].vector_id / MAX_VECTORS_PER_PRIORITY;
 		}
 
 		if (supplied_entry[i].priority >= MAX_PRIORITIES) {
@@ -357,13 +378,16 @@ static void validate_priority(void)
 			clean_exit(-1);
 		}
 
-		expected_priority = supplied_entry[i].vector_id /
-							MAX_VECTORS_PER_PRIORITY;
-		if (expected_priority != supplied_entry[i].priority) {
-			supplied_entry[i].priority = expected_priority;
-			fprintf(stderr,
-					"Warning! Overriding IRQ %d priority to %d!\n",
-					supplied_entry[i].irq, supplied_entry[i].priority);
+		if (supplied_entry[i].vector_id != UNSPECIFIED_INT_VECTOR) {
+			expected_priority = supplied_entry[i].vector_id /
+								MAX_VECTORS_PER_PRIORITY;
+
+			if (expected_priority != supplied_entry[i].priority) {
+				supplied_entry[i].priority = expected_priority;
+				fprintf(stderr,
+						"Warning! Overriding IRQ %d priority to %d!\n",
+						supplied_entry[i].irq, supplied_entry[i].priority);
+			}
 		}
 
 		num_priorities[supplied_entry[i].priority]++;
@@ -371,7 +395,7 @@ static void validate_priority(void)
 
 	for (i = 0; i < MAX_PRIORITIES; i++) {
 		if (num_priorities[i] > MAX_VECTORS_PER_PRIORITY) {
-			fprintf(stderr, "Too many entries for priority level %d", i);
+			fprintf(stderr, "Too many requests for priority level %d!\n", i);
 			clean_exit(-1);
 		}
 	}
@@ -385,7 +409,12 @@ static void validate_irq(void)
 	/* Validate the IRQ number */
 	for (i = 0; i < genidt_header.num_entries; i++) {
 		if (supplied_entry[i].irq == UNSPECIFIED_IRQ) {
-			/* This is a request for a software interrupt */
+			if (supplied_entry[i].vector_id == UNSPECIFIED_INT_VECTOR) {
+				fprintf(stderr,
+						"Either IRQ or vector ID must be specified.\n");
+				show_entry(&supplied_entry[i]);
+				clean_exit(-1);
+			}
 			continue;
 		}
 
@@ -473,30 +502,39 @@ static void generate_idt(void)
 	return;
 }
 
+static int find_first_set_lsb(unsigned int value)
+{
+	int i;
+
+	for (i = 0; i < 32; i++) {
+		if ((value & (1 << i)) != 0) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 static void generate_interrupt_vector_bitmap(void)
 {
 	int i;
 	unsigned int num_elements = (num_vectors + 31) / 32;
 	unsigned int interrupt_vector_bitmap[num_elements];
+	uint8_t  map_irq_to_vector_id[MAX_IRQS] = {0};
+	unsigned int value;
 	unsigned int index;
-	unsigned int bit;
+	unsigned int mask_index;
+	int bit;
 	size_t bytes_to_write;
 	ssize_t bytes_written;
+	static unsigned int mask[2] = {0x0000ffff, 0xffff0000};
 
 	/* Initially mark each interrupt vector as available */
 	for (i = 0; i < num_elements; i++) {
 		interrupt_vector_bitmap[i] = 0xffffffff;
 	}
 
-	/* Loop through each supplied entry and mark its vector as allocated. */
-	for (i = 0; i < genidt_header.num_entries; i++) {
-		index = supplied_entry[i].vector_id / 32;
-		bit = supplied_entry[i].vector_id & 31;
-
-		interrupt_vector_bitmap[index] &= ~(1 << bit);
-	}
-
-	/* Ensure that any leftover entries are marked as allocated too. */
+	/* Ensure that any leftover entries are marked as allocated. */
 	for (i = num_vectors; i < num_elements * 32; i++) {
 		index = i / 32;
 		bit = i & 0x1f;
@@ -504,12 +542,69 @@ static void generate_interrupt_vector_bitmap(void)
 		interrupt_vector_bitmap[index] &= ~(1 << bit);
 	}
 
+	/*
+	 * Vector allocation is done in two steps.
+	 * 1. Loop through each supplied entry and if an explicit vector was
+	 *    specified, mark it as allocated.
+	 * 2. Loop through each supplied entry and allocate the vector if
+	 *    it is required.
+	 * This approach guarantees that explicitly specified interrupt vectors
+	 * will get their requested slots.
+	 */
+
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		if (supplied_entry[i].vector_id == UNSPECIFIED_INT_VECTOR) {
+			/* This vector will be allocated in the next for-loop. */
+			continue;
+		}
+
+		index = supplied_entry[i].vector_id / 32;
+		bit = supplied_entry[i].vector_id & 31;
+
+		interrupt_vector_bitmap[index] &= ~(1 << bit);
+	}
+
+	for (i = 0; i < genidt_header.num_entries; i++) {
+		if (supplied_entry[i].vector_id != UNSPECIFIED_INT_VECTOR) {
+			/* This vector has already been processed. */
+			continue;
+		}
+
+		index = supplied_entry[i].priority / 2;
+		mask_index = supplied_entry[i].priority & 1;
+		value = interrupt_vector_bitmap[index] & mask[mask_index];
+		bit = find_first_set_lsb(value);
+		if (bit < 0) {
+			/*
+			 * This should not occur due to the previous priority validation.
+			 * However, it is here as a final sanity check.
+			 */
+
+			fprintf(stderr,
+					"No vectors for priority %d are available.\n",
+					supplied_entry[i].priority);
+			clean_exit(-1);
+		}
+
+		interrupt_vector_bitmap[index] &= ~(1 << bit);
+		map_irq_to_vector_id[supplied_entry[i].irq] = (index * 32) + bit;
+
+		supplied_entry[i].vector_id = (index * 32) + bit;
+	}
+
 	bytes_to_write = num_elements * sizeof(unsigned int);
-	bytes_written = write(fds[BFILE], interrupt_vector_bitmap,
-						bytes_to_write);
+	bytes_written = write(fds[BFILE], interrupt_vector_bitmap, bytes_to_write);
 	if (bytes_written != bytes_to_write) {
 		fprintf(stderr, "Failed to write all data to '%s'.\n",
 				filenames[BFILE]);
+		clean_exit(-1);
+	}
+
+	bytes_to_write = sizeof(map_irq_to_vector_id);
+	bytes_written = write(fds[MFILE], map_irq_to_vector_id, bytes_to_write);
+	if (bytes_written != bytes_to_write) {
+		fprintf(stderr, "Failed to write all data to '%s'.\n",
+				filenames[MFILE]);
 		clean_exit(-1);
 	}
 }
@@ -547,6 +642,8 @@ static void usage(int len)
 	    "        [Mandatory] The input file in binary format.\n\n"
 	    "    -o <IDT output file>\n\n"
 	    "        [Mandatory] The IDT output file.\n\n"
+	    "    -m <IRQ to interrupt vector map file>\n\n"
+	    "        [Mandatory] The IRQ to interrupt vector output file\n\n"
 	    "    -n <n>\n\n"
 	    "        [Mandatory] Number of vectors\n\n"
 	    "    -v  Display version.\n\n"
