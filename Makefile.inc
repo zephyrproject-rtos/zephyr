@@ -1,9 +1,10 @@
 # vim: filetype=make
+#
+
+ARCH ?= x86
 
 PROJECT_BASE ?= $(shell pwd)
 O ?= $(PROJECT_BASE)/outdir
-
-ARCH ?= x86
 
 # Turn O into an absolute path; we call the main Kbuild with $(MAKE) -C
 # which changes the working directory, relative paths don't work right.
@@ -18,7 +19,7 @@ KERNEL_TYPE = micro
 endif
 
 ifdef PLATFORM_CONFIG
-KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/arch/$(ARCH)/configs/$(PLATFORM_CONFIG)_defconfig
+KBUILD_DEFCONFIG_PATH=$(ZEPHYR_BASE)/configs/$(PLATFORM_CONFIG)_defconfig
 export KBUILD_DEFCONFIG_PATH
 else
 $(error PLATFORM_CONFIG is not defined!)
