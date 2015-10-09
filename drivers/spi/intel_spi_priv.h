@@ -88,6 +88,6 @@
 
 /* DSS_RATE settings */
 #define INTEL_SPI_DSS_RATE(__msf) \
-	((__msf && (INTEL_SPI_DDS_RATE_MASK)) >> 8)
+	((__msf & (INTEL_SPI_DDS_RATE_MASK)) >> 8)
 
 #endif /* __INTEL_SPI_PRIV_H__ */
