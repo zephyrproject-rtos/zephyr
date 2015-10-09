@@ -3,13 +3,17 @@
 
 % Application       : test microkernel semaphore APIs
 
+% TASKGROUP	NAME
+% =====================================================
+  TASKGROUP	TEST
+
 % TASK NAME       PRIO ENTRY               STACK GROUPS
 % =====================================================
   TASK MONITORTASK   5 MonitorTaskEntry     2048 [EXE]
-  TASK tHigh         4 HighPriTaskEntry     2048 [EXE]
-  TASK tStartTask    5 RegressionTaskEntry  2048 [EXE]
-  TASK tAlternate    6 AlternateTaskEntry   2048 [EXE]
-  TASK tLow          7 LowPriTaskEntry      2048 [EXE]
+  TASK tHigh         4 HighPriTaskEntry     2048 [TEST]
+  TASK tStartTask    5 RegressionTaskEntry  2048 [TEST]
+  TASK tAlternate    6 AlternateTaskEntry   2048 [TEST]
+  TASK tLow          7 LowPriTaskEntry      2048 [TEST]
 
 % SEMA NAME
 % ======================

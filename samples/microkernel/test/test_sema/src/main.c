@@ -252,6 +252,8 @@ void MonitorTaskEntry(void)
 	PRINT_DATA("Starting semaphore tests\n");
 	PRINT_LINE;
 
+	task_group_start(TEST);
+
 	/*
 	 * the various test tasks start executing automatically;
 	 * wait for all tasks to complete or a failure to occur,
