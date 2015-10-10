@@ -962,6 +962,7 @@ class TestCase:
         self.path = os.path.join(workdir, name)
         self.name = self.path # for now
         self.ktype = None
+        self.defconfig = {}
 
         with open(os.path.join(testcase_root, workdir, "Makefile")) as makefile:
             for line in makefile.readlines():
@@ -1066,52 +1067,6 @@ class TestSuite:
                     self.platforms.extend(arch.platforms)
 
 
-        # Now that we know the full set of arches/platforms, get the defconfig
-        # information from them by calling Make
-        info("Building platform defconfigs...")
-        dlist = {}
-        config_outdir = os.path.join(self.outdir, "configs")
-        mg = MakeGenerator(config_outdir)
-
-        for plat in self.platforms:
-            ktypes = ["nano"]
-            if plat.microkernel_support:
-                ktypes.append("micro")
-
-            for ktype in ktypes:
-                stem = ktype + "_" + plat.name
-
-                in_defconfig = stem + "_defconfig"
-                out_config = os.path.join(config_outdir, stem + "_config")
-                dlist[plat, ktype] = out_config
-
-                args = ["ARCH=" + plat.arch.name,
-                        "KBUILD_DEFCONFIG=" + in_defconfig,
-                        "KCONFIG_CONFIG=" + out_config, "defconfig"]
-                # FIXME would be nice to use a common outdir for this so that
-                # conf, gen_idt, etc aren't rebuilt for every plat/ktype combo,
-                # need a way to avoid different Make processe from clobbering
-                # each other since they all try to build them simultaneously
-                mg.add_build_goal(stem, ZEPHYR_BASE, os.path.join(config_outdir,
-                                                                  plat.name,
-                                                                  ktype), args)
-
-        results = mg.execute(defconfig_cb)
-        for name, goal in results.iteritems():
-            if goal.failed:
-                raise SanityRuntimeError("Couldn't build some defconfigs")
-
-        for k, out_config in dlist.iteritems():
-            plat, ktype = k
-            defconfig = {}
-            with open(out_config, "r") as fp:
-                for line in fp.readlines():
-                    m = TestSuite.config_re.match(line)
-                    if not m:
-                        continue
-                    defconfig[m.group(1)] = m.group(2).strip()
-            plat.set_defconfig(ktype, defconfig)
-
         self.instances = {}
 
     def get_last_failed(self):
@@ -1150,6 +1105,75 @@ class TestSuite:
         if "all" in platform_filter:
             info("Selecting all possible platforms per test case")
             platform_filter = []
+
+        mg = MakeGenerator(self.outdir)
+        dlist = {}
+        for tc_name, tc in self.testcases.iteritems():
+            for arch_name, arch in self.arches.iteritems():
+                instance_list = []
+                for plat in arch.platforms:
+                    instance = TestInstance(tc, plat, self.outdir)
+
+                    if tag_filter and not tc.tags.intersection(tag_filter):
+                        continue
+
+                    if testcase_filter and tc_name not in testcase_filter:
+                        continue
+
+                    if last_failed and (tc.name, plat.name) not in failed_tests:
+                        continue
+
+                    if arch_filter and arch_name not in arch_filter:
+                        continue
+
+                    if tc.arch_whitelist and arch.name not in tc.arch_whitelist:
+                        continue
+
+                    if tc.arch_exclude and arch.name in tc.arch_exclude:
+                        continue
+
+                    if tc.platform_exclude and plat.name in tc.platform_exclude:
+                        continue
+
+                    if platform_filter and plat.name not in platform_filter:
+                        continue
+
+                    if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
+                        continue
+
+                    if not plat.microkernel_support and tc.ktype == "micro":
+                        continue
+
+                    for cw in tc.config_whitelist:
+                        args = ["ARCH=" + plat.arch.name,
+                                "PLATFORM_CONFIG=" + plat.name, "initconfig"]
+                        # FIXME would be nice to use a common outdir for this so that
+                        # conf, gen_idt, etc aren't rebuilt for every plat/ktype combo,
+                        # need a way to avoid different Make processe from clobbering
+                        # each other since they all try to build them simultaneously
+
+                        o = os.path.join(self.outdir, plat.name, tc.path)
+                        dlist[tc, plat, tc.ktype, tc.name.split("/")[-1]] = os.path.join(o,".config")
+                        goal = "_".join([plat.name, tc.ktype, "_".join(tc.name.split("/")), "initconfig"])
+                        mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location), o, args)
+
+        info("Building testcase defconfigs...")
+        results = mg.execute(defconfig_cb)
+
+        for name, goal in results.iteritems():
+            if goal.failed:
+                raise SanityRuntimeError("Couldn't build some defconfigs")
+
+        for k, out_config in dlist.iteritems():
+            test, plat, ktype, name = k
+            defconfig = {}
+            with open(out_config, "r") as fp:
+                for line in fp.readlines():
+                    m = TestSuite.config_re.match(line)
+                    if not m:
+                        continue
+                    defconfig[m.group(1)] = m.group(2).strip()
+            test.defconfig[plat,ktype] = defconfig
 
         for tc_name, tc in self.testcases.iteritems():
             for arch_name, arch in self.arches.iteritems():
@@ -1197,8 +1221,15 @@ class TestSuite:
                         discards[instance] = "No microkernel support for platform"
                         continue
 
-                    defconfig = plat.get_defconfig(tc.ktype)
+                    defconfig = {}
+                    for tcase, tdefconfig in tc.defconfig.iteritems():
+                        p, k = tcase
+                        if k == tc.ktype and p == plat:
+                            defconfig = tdefconfig
+                            break
+
                     config_pass = True
+
                     # FIXME this is kind of gross clean it up
                     for cw in tc.config_whitelist:
                         invert = (cw[0] == "!")
@@ -1227,6 +1258,7 @@ class TestSuite:
 
                     if not config_pass:
                         continue
+
 
                     instance_list.append(instance)
 
