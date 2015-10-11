@@ -410,7 +410,14 @@ struct pool_struct {
 	struct pool_block *frag_tab;
 
 	char *bufblock;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct pool_struct *next;
+#endif
 };
+
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+struct pool_struct *_track_list_micro_mem_pool;
+#endif
 
 struct evstr {
 	int status;
