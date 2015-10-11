@@ -67,7 +67,7 @@
 #ifndef __TC_CTR_MODE_H__
 #define __TC_CTR_MODE_H__
 
-#include <tinycrypt/aes.h>
+#include <aes.h>
 
 /**
  *  @brief CTR mode encryption/decryption procedure.

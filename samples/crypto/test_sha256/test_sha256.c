@@ -38,7 +38,7 @@
   - NIST SHA256 test vectors
 */
 
-#include <tinycrypt/sha256.h>
+#include <sha256.h>
 #include <test_utils.h>
 
 #include <stdio.h>

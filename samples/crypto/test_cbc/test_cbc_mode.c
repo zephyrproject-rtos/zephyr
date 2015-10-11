@@ -37,7 +37,7 @@
   - AES128 CBC mode encryption SP 800-38a tests
 */
 
-#include <tinycrypt/cbc_mode.h>
+#include <cbc_mode.h>
 #include "test_utils.h"
 
 #include <stdlib.h>

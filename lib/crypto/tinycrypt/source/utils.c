@@ -30,7 +30,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <tinycrypt/utils.h>
+#include <utils.h>
 
 #include <string.h>
 

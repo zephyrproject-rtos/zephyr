@@ -42,7 +42,7 @@
 */
 
 #include <test_utils.h>
-#include <tinycrypt/aes.h>
+#include <aes.h>
 
 #include <stdint.h>
 #include <stddef.h>

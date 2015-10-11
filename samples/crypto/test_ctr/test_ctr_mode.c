@@ -38,7 +38,7 @@
   - AES128 CTR mode encryption SP 800-38a tests
 */
 
-#include <tinycrypt/ctr_mode.h>
+#include <ctr_mode.h>
 #include <test_utils.h>
 
 #include <stdio.h>

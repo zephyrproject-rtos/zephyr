@@ -30,9 +30,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <tinycrypt/hmac_prng.h>
-#include <tinycrypt/hmac.h>
-#include <tinycrypt/utils.h>
+#include <hmac_prng.h>
+#include <hmac.h>
+#include <utils.h>
 
 /* min bytes in the seed string.
  * MIN_SLEN*8 must be at least the expected security level. */
