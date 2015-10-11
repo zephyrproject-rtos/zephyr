@@ -65,10 +65,10 @@
 #define TC_SHA256_STATE_BLOCKS (TC_SHA256_DIGEST_SIZE/4)
 
 struct tc_sha256_state_struct {
-	uint32_t iv[TC_SHA256_STATE_BLOCKS];
-	uint64_t bits_hashed;
-	uint8_t leftover[TC_SHA256_BLOCK_SIZE];
-	size_t leftover_offset;
+        uint32_t iv[TC_SHA256_STATE_BLOCKS];
+        uint64_t bits_hashed;
+        uint8_t leftover[TC_SHA256_BLOCK_SIZE];
+        size_t leftover_offset;
 };
 
 typedef struct tc_sha256_state_struct *TCSha256State_t;

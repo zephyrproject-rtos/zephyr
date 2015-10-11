@@ -58,7 +58,7 @@
 #define TC_AES_KEY_SIZE (Nb*Nk)
 
 struct tc_aes_key_sched_struct {
-	uint32_t words[Nb*(Nr+1)];
+        uint32_t words[Nb*(Nr+1)];
 };
 typedef struct tc_aes_key_sched_struct *TCAesKeySched_t;
 
