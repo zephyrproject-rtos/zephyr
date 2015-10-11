@@ -605,10 +605,6 @@ KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
                  $(call cc-option,-fno-partial-inlining)
 endif
 
-STACK_CANARIES_FLAG_y = $(call cc-option,-fstack-protector-all,)
-STACK_CANARIES_FLAG_  = $(call cc-option,-fno-stack-protector,)
-STACK_CANARIES_FLAG = $(STACK_CANARIES_FLAG_$(CONFIG_STACK_CANARIES))
-
 # Handle stack protector mode.
 #
 # Since kbuild can potentially perform two passes (first with the old
@@ -653,12 +649,6 @@ KBUILD_CFLAGS += $(subst $(DQUOTE),,$(CONFIG_COMPILER_OPT))
 
 export LDFLAG_LINKERCMD OUTPUT_FORMAT OUTPUT_ARCH
 
-ARCHFLAGS = $($(SRCARCH)_FLAGS)
-
-KBUILD_CFLAGS   += $(SSE_FP_MATH_FLAG) \
-		$(STACK_CANARIES_FLAG) \
-		$(ARCHFLAGS)
-
 ifdef CONFIG_DEBUG_INFO_REDUCED
 KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly) \
 		   $(call cc-option,-fno-var-tracking)
@@ -667,7 +657,6 @@ endif
 include arch/$(SRCARCH)/Makefile
 
 KBUILD_CFLAGS += $(CFLAGS)
-KBUILD_AFLAGS += $(ARCHFLAGS)
 KBUILD_AFLAGS += $(CFLAGS)
 
 ifdef CONFIG_FUNCTION_TRACER

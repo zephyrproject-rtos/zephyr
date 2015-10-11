@@ -19,6 +19,13 @@ arch-$(CONFIG_CPU_ATOM) += $(call cc-option,-march=atom) \
 	$(call cc-option,-mtune=atom,$(call cc-option,-mtune=generic))
 arch-$(CONFIG_CPU_MINUTEIA) += $(call cc-option,-march=pentium)
 
+ifeq ($(CONFIG_STACK_CANARIES),y)
+cflags-y  += $(call cc-option,-fstack-protector-all,)
+else
+cflags-y += $(call cc-option,-fno-stack-protector,)
+endif
+
+
 KBUILD_CFLAGS += $(cflags-y) $(arch-y)
 KBUILD_AFLAGS += $(arch-y)
 

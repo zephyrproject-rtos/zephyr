@@ -9,6 +9,12 @@ arch-$(CONFIG_CPU_CORTEX_M4) += $(call cc-option,-mthumb -mcpu=cortex-m4) \
 
 cflags-$(CONFIG_LTO) = $(call cc-option,-flto,)
 
+ifeq ($(CONFIG_STACK_CANARIES),y)
+cflags-y  += $(call cc-option,-fstack-protector-all,)
+else
+cflags-y += $(call cc-option,-fno-stack-protector,)
+endif
+
 KBUILD_CFLAGS += $(cflags-y) $(arch-y)
 KBUILD_AFLAGS += $(arch-y)
 
