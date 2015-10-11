@@ -195,6 +195,14 @@ config ASSERT_LEVEL
 	Level 1: on + warning in every file that includes __assert.h
 	Level 2: on + no warning
 
+config DEBUG_TRACING_KERNEL_OBJECTS
+	bool
+	prompt "Debug tracing object"
+	default n
+	help
+	This option enable the feature for tracing kernel objects. This option
+	is for debug purposes and increase the memory footprint of the kernel.
+
 endmenu
 
 
