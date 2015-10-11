@@ -86,17 +86,19 @@ TMPOUT := $(if $(KBUILD_EXTMOD),$(firstword $(KBUILD_EXTMOD))/)
 # Usage: option = $(call try-run, $(CC)...-o "$$TMP",option-ok,otherwise)
 # Exit code chooses option. "$$TMP" is can be used as temporary file and
 # is automatically cleaned up.
-# try-run = $(shell set -e;		\
-# 	TMP="$(TMPOUT).$$$$.tmp";	\
-# 	TMPO="$(TMPOUT).$$$$.o";	\
-# 	if ($(1)) >/dev/null 2>&1;	\
-# 	then echo "$(2)";		\
-# 	else echo "$(3)";		\
-# 	fi;				\
-# 	rm -f "$$TMP" "$$TMPO")
+ifndef DISABLE_TRYRUN
 try-run = $(shell set -e;		\
+	TMP="$(TMPOUT).$$$$.tmp";	\
+	TMPO="$(TMPOUT).$$$$.o";	\
+	if ($(1)) >/dev/null 2>&1;	\
+	then echo "$(2)";		\
+	else echo "$(3)";		\
+	fi;				\
+	rm -f "$$TMP" "$$TMPO")
+else
+try-run = $(shell set -e;              \
 	echo "$(2)";)
-
+endif
 
 # as-option
 # Usage: cflags-y += $(call as-option,-Wa$(comma)-isa=foo,)
