@@ -319,6 +319,9 @@ struct nano_fifo {
 		struct _nano_queue data_q;
 	};
 	int stat;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct nano_fifo *next;
+#endif
 };
 
 /**
@@ -590,6 +593,9 @@ extern void *nano_task_fifo_get_wait_timeout(struct nano_fifo *fifo,
 struct nano_lifo {
 	struct _nano_queue wait_q;
 	void *list;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct nano_lifo *next;
+#endif
 };
 
 /**
@@ -801,6 +807,9 @@ extern void *nano_task_lifo_get_wait_timeout(struct nano_lifo *lifo,
 struct nano_sem {
 	struct _nano_queue wait_q;
 	int nsig;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct nano_sem *next;
+#endif
 };
 
 /**
@@ -1204,6 +1213,9 @@ struct nano_timer {
 	uint32_t ticks;
 	struct nano_lifo lifo;
 	void *userData;
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+	struct nano_timer *next;
+#endif
 };
 
 /**
@@ -1381,6 +1393,40 @@ extern int64_t nano_tick_delta(int64_t *reftime);
  */
 extern uint32_t nano_tick_delta_32(int64_t *reftime);
 
+
+/*
+ * Lists for object tracing
+ */
+#ifdef CONFIG_DEBUG_TRACING_KERNEL_OBJECTS
+
+struct nano_sem *_track_list_nano_sem;
+
+struct nano_fifo *_track_list_nano_fifo;
+
+struct nano_lifo *_track_list_nano_lifo;
+
+struct nano_timer *_track_list_nano_timer;
+
+#define DEBUG_TRACING_OBJ_INIT(type, obj, list) { \
+	obj->next = NULL; \
+	if (list == NULL) { \
+		list = obj; \
+	} \
+	else { \
+		if (list != obj) { \
+			type link = list; \
+			while ((link->next != NULL) && (link->next != obj)) { \
+				link = link->next; \
+			} \
+			if (link->next == NULL) { \
+				link->next = obj; \
+			} \
+		} \
+	} \
+}
+#else
+#define DEBUG_TRACING_OBJ_INIT(type, obj, list) do { } while ((0))
+#endif
 
 /**
  * @}

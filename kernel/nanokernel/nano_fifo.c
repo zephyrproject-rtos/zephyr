@@ -64,6 +64,8 @@ void nano_fifo_init(struct nano_fifo *fifo)
 	 */
 
 	fifo->stat = 0;
+
+	DEBUG_TRACING_OBJ_INIT(struct nano_fifo *, fifo, _track_list_nano_fifo);
 }
 
 FUNC_ALIAS(_fifo_put_non_preemptible, nano_isr_fifo_put, void);

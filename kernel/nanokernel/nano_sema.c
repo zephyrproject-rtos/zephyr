@@ -55,6 +55,7 @@ void nano_sem_init(struct nano_sem *sem)
 {
 	sem->nsig = 0;
 	_nano_wait_q_init(&sem->wait_q);
+	DEBUG_TRACING_OBJ_INIT(struct nano_sem *, sem, _track_list_nano_sem);
 }
 
 FUNC_ALIAS(_sem_give_non_preemptible, nano_isr_sem_give, void);

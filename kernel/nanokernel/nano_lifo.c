@@ -48,6 +48,7 @@ void nano_lifo_init(struct nano_lifo *lifo)
 {
 	lifo->list = (void *) 0;
 	_nano_wait_q_init(&lifo->wait_q);
+	DEBUG_TRACING_OBJ_INIT(struct nano_lifo *, lifo, _track_list_nano_lifo);
 }
 
 FUNC_ALIAS(_lifo_put_non_preemptible, nano_isr_lifo_put, void);
