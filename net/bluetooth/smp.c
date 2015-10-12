@@ -401,6 +401,14 @@ static void smp_reset(struct bt_conn *conn)
 {
 	struct bt_smp *smp = conn->smp;
 
+	if (smp->timeout) {
+		fiber_fiber_delayed_start_cancel(smp->timeout);
+		smp->timeout = NULL;
+
+		stack_analyze("smp timeout stack", smp->stack,
+			      sizeof(smp->stack));
+	}
+
 	smp->method = JUST_WORKS;
 	atomic_set(&smp->allowed_cmds, 0);
 	atomic_set(&smp->flags, 0);
@@ -445,18 +453,6 @@ static void smp_restart_timer(struct bt_smp *smp)
 	smp->timeout = fiber_delayed_start(smp->stack, sizeof(smp->stack),
 					   smp_timeout, (int) smp, 0, 7, 0,
 					   SMP_TIMEOUT);
-}
-
-static void smp_stop_timer(struct bt_smp *smp)
-{
-	if (!smp->timeout) {
-		return;
-	}
-
-	fiber_fiber_delayed_start_cancel(smp->timeout);
-	smp->timeout = NULL;
-
-	stack_analyze("smp timeout stack", smp->stack, sizeof(smp->stack));
 }
 
 struct bt_buf *bt_smp_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
@@ -1172,8 +1168,7 @@ static uint8_t smp_master_ident(struct bt_conn *conn, struct bt_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
-		smp_stop_timer(smp);
+		smp_reset(conn);
 	}
 
 	return 0;
@@ -1264,8 +1259,7 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
-		smp_stop_timer(smp);
+		smp_reset(conn);
 	}
 
 	return 0;
@@ -1299,8 +1293,7 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
-		smp_stop_timer(smp);
+		smp_reset(conn);
 	}
 
 	return 0;
@@ -1470,7 +1463,10 @@ static void bt_smp_disconnected(struct bt_conn *conn)
 
 	conn->smp = NULL;
 
-	smp_stop_timer(smp);
+	if (smp->timeout) {
+		fiber_fiber_delayed_start_cancel(smp->timeout);
+	}
+
 	memset(smp, 0, sizeof(*smp));
 }
 
@@ -1518,8 +1514,7 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		atomic_clear_bit(&smp->flags, SMP_FLAG_PAIRING);
-		smp_stop_timer(smp);
+		smp_reset(conn);
 	}
 }
 
