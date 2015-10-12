@@ -132,7 +132,7 @@ Example:
 
 $ make TINYDTLS=/home/user/tinydtls-0.8.2 dtls-client
 
-$ ./dtls-client 2001:db8::2
+$ ./dtls-client -b 2001:db8::1 2001:db8::2
 
 
 dtls-server

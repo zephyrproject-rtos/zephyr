@@ -683,13 +683,14 @@ int main(int argc, char**argv)
 	struct sockaddr *addr_send, *addr_recv;
 	int family, addr_len;
 	const struct in6_addr any = IN6ADDR_ANY_INIT;
-	const char *target = NULL, *interface = NULL;
+	const char *target = NULL, *interface = NULL, *source = NULL;
 	fd_set rfds;
 	struct timeval tv = {};
 	int ifindex = -1, on, port;
 	void *address = NULL;
 	session_t dst;
 	struct client_data user_data;
+	char addr_buf[INET6_ADDRSTRLEN];
 
 #ifdef DTLS_PSK
 	psk_id_length = strlen(PSK_DEFAULT_IDENTITY);
@@ -700,8 +701,11 @@ int main(int argc, char**argv)
 
 	opterr = 0;
 
-	while ((c = getopt(argc, argv, "i:Dr")) != -1) {
+	while ((c = getopt(argc, argv, "b:i:Dr")) != -1) {
 		switch (c) {
+		case 'b':
+			source = optarg;
+			break;
 		case 'i':
 			interface = optarg;
 			break;
@@ -724,9 +728,10 @@ int main(int argc, char**argv)
 	if (!target) {
 		printf("usage: %s [-i tun0] [-D] [-r] <IPv{6|4} address of the dtls-server>\n",
 		       argv[0]);
-		printf("\n-i Use this network interface.\n");
-		printf("\n-r Renegoating keys once during the test run.\n");
-		printf("\n-D Activate debugging.\n");
+		printf("-i Use this network interface.\n");
+		printf("-r Renegoating keys once during the test run.\n");
+		printf("-D Activate debugging.\n");
+		printf("-b Bind to this IP address when sending data.\n");
 		exit(-EINVAL);
 	}
 
@@ -739,22 +744,48 @@ int main(int argc, char**argv)
 			addr_recv = (struct sockaddr *)&addr4_recv;
 			addr4_send.sin_port = port = htons(SERVER_PORT);
 			addr4_recv.sin_family = AF_INET;
-			addr4_recv.sin_addr.s_addr = INADDR_ANY;
 			addr4_recv.sin_port = htons(CLIENT_PORT);
 			family = AF_INET;
 			addr_len = sizeof(addr4_send);
 			address = &addr4_recv.sin_addr;
+
+			if (source) {
+				if (inet_pton(AF_INET, source,
+					      &addr4_recv.sin_addr) != 1) {
+					printf("Invalid address family for "
+					       "source IPv4 address\n");
+					exit(-EINVAL);
+				}
+
+				printf("Binding to %s\n",
+				       inet_ntop(family, address,
+						 addr_buf, sizeof(addr_buf)));
+			} else
+				addr4_recv.sin_addr.s_addr = INADDR_ANY;
 		}
 	} else {
 		addr_send = (struct sockaddr *)&addr6_send;
 		addr_recv = (struct sockaddr *)&addr6_recv;
 		addr6_send.sin6_port = port = htons(SERVER_PORT);
 		addr6_recv.sin6_family = AF_INET6;
-		addr6_recv.sin6_addr = any;
 		addr6_recv.sin6_port = htons(CLIENT_PORT);
 		family = AF_INET6;
 		addr_len = sizeof(addr6_send);
 		address = &addr6_recv.sin6_addr;
+
+		if (source) {
+			if (inet_pton(AF_INET6, source,
+					      &addr6_recv.sin6_addr) != 1) {
+				printf("Invalid address family for "
+				       "source IPv6 address\n");
+				exit(-EINVAL);
+			}
+
+			printf("Binding to %s\n", inet_ntop(family, address,
+					    addr_buf, sizeof(addr_buf)));
+		} else
+			addr6_recv.sin6_addr = any;
+
 	}
 
 	addr_send->sa_family = family;
@@ -768,7 +799,6 @@ int main(int argc, char**argv)
 
 	if (interface) {
 		struct ifreq ifr;
-		char addr_buf[INET6_ADDRSTRLEN];
 
 		memset(&ifr, 0, sizeof(ifr));
 		snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), interface);
@@ -779,16 +809,18 @@ int main(int argc, char**argv)
 			exit(-errno);
 		}
 
-		ifindex = get_ifindex(interface);
-		if (ifindex < 0) {
-			printf("Invalid interface %s\n", interface);
-			exit(-EINVAL);
-		}
+		if (!source) {
+			ifindex = get_ifindex(interface);
+			if (ifindex < 0) {
+				printf("Invalid interface %s\n", interface);
+				exit(-EINVAL);
+			}
 
-		get_address(ifindex, family, address);
+			get_address(ifindex, family, address);
 
-		printf("Binding to %s\n", inet_ntop(family, address,
+			printf("Binding to %s\n", inet_ntop(family, address,
 					    addr_buf, sizeof(addr_buf)));
+		}
 	}
 
 	ret = bind(fd, addr_recv, addr_len);
