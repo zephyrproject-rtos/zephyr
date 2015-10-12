@@ -37,6 +37,8 @@
 #include "btshell.h"
 
 #define DEVICE_NAME "test shell"
+#define AD_SHORT_NAME		0x08
+#define AD_COMPLETE_NAME	0x09
 
 static struct bt_conn *default_conn = NULL;
 
@@ -44,10 +46,46 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 			 const uint8_t *ad, uint8_t len)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
+	char name[30];
+
+	memset(name, 0, sizeof(name));
+
+	while (len) {
+		if (len < 2) {
+			break;
+		};
+
+		/* Look for early termination */
+		if (!ad[0]) {
+			break;
+		}
+
+		/* Check if field length is correct */
+		if (ad[0] > len - 1) {
+			break;
+		}
+
+		switch (ad[1]) {
+		case AD_SHORT_NAME:
+		case AD_COMPLETE_NAME:
+			if (ad[0] > sizeof(name) - 1) {
+				memcpy(name, &ad[2], sizeof(name) - 1);
+			} else {
+				memcpy(name, &ad[2], ad[0] - 1);
+			}
+			break;
+		default:
+			break;
+		}
+
+		/* Parse next AD Structure */
+		len -= ad[0] + 1;
+		ad += ad[0] + 1;
+	}
 
 	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
-	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
-		le_addr, evtype, len, rssi);
+	printk("[DEVICE]: %s, AD evt type %u, RSSI %i %s\n", le_addr, evtype,
+	       rssi, name);
 }
 
 static void connected(struct bt_conn *conn)
