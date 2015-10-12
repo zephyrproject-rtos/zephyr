@@ -319,3 +319,16 @@ config NS16550_PORT_0_BASE_ADDR
 config NS16550_PORT_1_BASE_ADDR
 	default 0x9000b000
 endif
+
+if ADC
+config ADC_TI_ADC108S102
+	def_bool y
+config ADC_TI_ADC108S102_0
+	def_bool y
+config ADC_TI_ADC108S102_0_SPI_PORT_NAME
+	default "SPI0"
+config ADC_TI_ADC108S102_0_SPI_CONFIGURATION
+	default 0x103
+config ADC_TI_ADC108S102_0_SPI_MAX_FREQ
+	default 2147483650
+endif
