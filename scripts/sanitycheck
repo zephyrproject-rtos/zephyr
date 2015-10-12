@@ -21,6 +21,9 @@ Each testcase.ini block can define the following key/value pairs:
     functional domains but can be anything. Command line invocations
     of this script can filter the set of tests to run based on tag.
 
+  skip = <True|False>
+    skip testcase unconditionally. This can be used for broken tests.
+
   extra_args = <list of extra arguments>
     Extra arguments to pass to Make when building or running the
     test case.
@@ -712,6 +715,7 @@ platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
 testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "extra_args" : {"type" : "list"},
                        "build_only" : {"type" : "bool", "default" : False},
+                       "skip" : {"type" : "bool", "default" : False},
                        "timeout" : {"type" : "int", "default" : 60},
                        "arch_whitelist" : {"type" : "set"},
                        "arch_exclude" : {"type" : "set"},
@@ -955,6 +959,7 @@ class TestCase:
         self.extra_args = tc_dict["extra_args"]
         self.arch_whitelist = tc_dict["arch_whitelist"]
         self.arch_exclude = tc_dict["arch_exclude"]
+        self.skip = tc_dict["skip"]
         self.platform_exclude = tc_dict["platform_exclude"]
         self.platform_whitelist = tc_dict["platform_whitelist"]
         self.config_whitelist = tc_dict["config_whitelist"]
@@ -1115,6 +1120,9 @@ class TestSuite:
                 for plat in arch.platforms:
                     instance = TestInstance(tc, plat, self.outdir)
 
+                    if tc.skip:
+                        continue
+
                     if tag_filter and not tc.tags.intersection(tag_filter):
                         continue
 
@@ -1181,6 +1189,10 @@ class TestSuite:
                 instance_list = []
                 for plat in arch.platforms:
                     instance = TestInstance(tc, plat, self.outdir)
+
+                    if tc.skip:
+                        discards[instance] = "Skip filter"
+                        continue
 
                     if tag_filter and not tc.tags.intersection(tag_filter):
                         discards[instance] = "Command line testcase tag filter"
