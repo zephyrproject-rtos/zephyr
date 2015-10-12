@@ -22,6 +22,10 @@ $ socat PTY,link=/tmp/slip.dev UNIX-LISTEN:/tmp/slip.sock
 $ make PLATFORM_CONFIG=basic_cortex_m3 ARCH=arm \
      QEMU_EXTRA_FLAGS="-serial none -serial unix:/tmp/slip.sock" qemu
 
+  or just simply
+
+$ make qemu
+
 3) Start tunslip6
 
 $ sudo ./tunslip6 -s `readlink /tmp/slip.dev` 2001:db8::1/64
@@ -31,6 +35,23 @@ $ sudo ./tunslip6 -s `readlink /tmp/slip.dev` 2001:db8::1/64
 $ nc -u -6 2001:db8::2 4242 <<EOF
 foobar
 EOF
+
+There are also convenience scripts for running socat, radvd and
+tunslip6 processes called loop-socat.sh, loop-radvd.sh and
+loop-slip.sh. So to simplify things you need three terminals
+for doing this:
+
+Terminal 1:
+$ ./loop-socat.sh
+
+Terminal 2:
+$ sudo ./loop-slip.sh
+
+Terminal 3:
+$ sudo ./loop-radvd.sh
+
+After running these scripts you do not need to manual restart
+them when qemu process stops.
 
 
 radvd
