@@ -59,6 +59,9 @@ config GPIO
 config PWM
 	def_bool y
 
+config SPI
+	def_bool y
+
 config SHARED_IRQ
 	def_bool y
 
@@ -265,9 +268,14 @@ config PWM_PCA9685_0_I2C_MASTER_DEV_NAME
 endif
 endif
 
-if SPI && SPI_INTEL
+if SPI
+config SPI_INTEL
+	def_bool y
 
-if SPI_INTEL_PORT_0
+config SPI_INTEL_PORT_0
+	def_bool y
+config SPI_INTEL_PORT_0_DRV_NAME
+	default "SPI0"
 config SPI_INTEL_PORT_0_BUS
 	default 0
 config SPI_INTEL_PORT_0_DEV
@@ -286,8 +294,11 @@ config SPI_INTEL_PORT_0_CS_GPIO_PORT
 	default GPIO_DW_0_NAME
 config SPI_INTEL_PORT_0_CS_GPIO_PIN
 	default 0
-endif
-if SPI_INTEL_PORT_1
+
+config SPI_INTEL_PORT_1
+	def_bool y
+config SPI_INTEL_PORT_1_DRV_NAME
+	default "SPI1"
 config SPI_INTEL_PORT_1_BUS
 	default 0
 config SPI_INTEL_PORT_1_DEV
@@ -300,8 +311,7 @@ config SPI_INTEL_PORT_1_IRQ
 	default 17
 config SPI_INTEL_PORT_1_PRI
 	default 0
-endif
-endif
+endif # SPI
 
 if NS16550
 config NS16550_PORT_0_BASE_ADDR
