@@ -74,7 +74,7 @@
 #ifndef __TC_CBC_MODE_H__
 #define __TC_CBC_MODE_H__
 
-#include <aes.h>
+#include <tinycrypt/aes.h>
 
 /**
  *  @brief CBC encryption procedure

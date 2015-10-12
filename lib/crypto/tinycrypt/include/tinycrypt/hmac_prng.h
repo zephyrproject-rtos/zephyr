@@ -68,8 +68,8 @@
 #ifndef __TC_HMAC_PRNG_H__
 #define __TC_HMAC_PRNG_H__
 
-#include <sha256.h>
-#include <hmac.h>
+#include <tinycrypt/sha256.h>
+#include <tinycrypt/hmac.h>
 
 struct tc_hmac_prng_struct {
 	/* the HMAC instance for this PRNG */

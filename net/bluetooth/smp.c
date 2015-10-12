@@ -47,8 +47,8 @@
 #include <bluetooth/bluetooth.h>
 
 #if defined(CONFIG_TINYCRYPT_AES)
-#include <aes.h>
-#include <utils.h>
+#include <tinycrypt/aes.h>
+#include <tinycrypt/utils.h>
 #endif
 
 #include "hci_core.h"

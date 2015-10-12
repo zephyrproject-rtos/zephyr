@@ -44,7 +44,7 @@
 #include <drivers/system_timer.h>
 #include <stdio.h>
 
-#include <hmac_prng.h>
+#include <tinycrypt/hmac_prng.h>
 
 /*
  * Main task to test AES
