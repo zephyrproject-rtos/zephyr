@@ -2021,15 +2021,15 @@ static inline int smp_self_test(void)
 
 static uint8_t get_io_capa(const struct bt_auth_cb *cb)
 {
-	if (auth_cb->passkey_display && auth_cb->passkey_entry) {
+	if (cb->passkey_display && cb->passkey_entry) {
 		return BT_SMP_IO_KEYBOARD_DISPLAY;
 	}
 
-	if (auth_cb->passkey_entry) {
+	if (cb->passkey_entry) {
 		return BT_SMP_IO_KEYBOARD_ONLY;
 	}
 
-	if (auth_cb->passkey_display) {
+	if (cb->passkey_display) {
 		return BT_SMP_IO_DISPLAY_ONLY;
 	}
 
