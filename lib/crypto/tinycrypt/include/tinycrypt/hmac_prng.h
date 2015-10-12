@@ -73,13 +73,13 @@
 
 struct tc_hmac_prng_struct {
 	/* the HMAC instance for this PRNG */
-        struct tc_hmac_state_struct h;
+	struct tc_hmac_state_struct h;
 	/* the PRNG key */
-        uint8_t key[TC_SHA256_DIGEST_SIZE];
+	uint8_t key[TC_SHA256_DIGEST_SIZE];
 	/* PRNG state */
-        uint8_t v[TC_SHA256_DIGEST_SIZE];
+	uint8_t v[TC_SHA256_DIGEST_SIZE];
 	/* calls to tc_hmac_prng_generate left before re-seed */
-        uint32_t countdown;
+	uint32_t countdown;
 };
 
 typedef struct tc_hmac_prng_struct *TCHmacPrng_t;

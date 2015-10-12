@@ -67,9 +67,9 @@
 
 struct tc_hmac_state_struct {
 	/* the internal state required by h */
-        struct tc_sha256_state_struct hash_state;
+	struct tc_sha256_state_struct hash_state;
 	/* HMAC key schedule */
-        uint8_t key[2*TC_SHA256_BLOCK_SIZE];
+	uint8_t key[2*TC_SHA256_BLOCK_SIZE];
 };
 typedef struct tc_hmac_state_struct *TCHmacState_t;
 
