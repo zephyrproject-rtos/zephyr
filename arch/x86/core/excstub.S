@@ -156,16 +156,7 @@ BRANCH_LABEL(_ExcEntSetupDone)
 
 #endif /* CONFIG_GDB_INFO */
 
-	/*
-	 * Save possible faulting address: this has to be done before
-	 * interrupts are re-enabled.
-	 */
-	movl  %cr2, %ecx
-	pushl %ecx
-
 	/* ESP is pointing to the ESF at this point */
-
-
 
 #if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
 
@@ -246,8 +237,7 @@ SECTION_FUNC(TEXT, _ExcExit)
 
 	/* On entry, interrupts may or may not be enabled. */
 
-	/* discard the NANO_ESF * parameter and CR2 */
-	addl	$8, %esp
+	popl %ecx      /* discard the NANO_ESF * parameter */
 
 #if defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO)
 

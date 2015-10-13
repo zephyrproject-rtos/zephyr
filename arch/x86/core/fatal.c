@@ -34,7 +34,6 @@
  * the caller does not have a NANO_ESF to pass
  */
 const NANO_ESF _default_esf = {
-	0xdeaddead, /* CR2 */
 #ifdef CONFIG_GDB_INFO
 	0xdeaddead, /* EBP */
 	0xdeaddead, /* EBX */

@@ -208,19 +208,12 @@ extern unsigned char _irq_to_interrupt_vector[];
  * The exception stack frame includes the volatile registers EAX, ECX, and EDX
  * pushed on the stack by _ExcEnt().
  *
- * It also contains the value of CR2, used when the exception is a page fault.
- * Since that register is shared amongst threads of execution, it might get
- * overwritten if another thread is context-switched in and then itself
- * page-faults before the first thread has time to read CR2.
- *
  * If configured for host-based debug tools such as GDB, the 4 non-volatile
  * registers (EDI, ESI, EBX, EBP) are also pushed by _ExcEnt()
  * for use by the debug tools.
  */
 
 typedef struct nanoEsf {
-	/** putting cr2 here allows discarding it and pEsf in one instruction */
-	unsigned int cr2;
 #ifdef CONFIG_GDB_INFO
 	unsigned int ebp;
 	unsigned int ebx;
