@@ -291,7 +291,7 @@ config SPI_INTEL_PORT_0_CS_GPIO_PIN
 	default 0
 
 config SPI_INTEL_PORT_1
-	def_bool y
+	def_bool n
 config SPI_INTEL_PORT_1_DRV_NAME
 	default "SPI1"
 config SPI_INTEL_PORT_1_BUS
