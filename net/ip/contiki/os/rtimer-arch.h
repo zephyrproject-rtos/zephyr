@@ -8,9 +8,7 @@
 
 #define RTIMER_ARCH_SECOND CLOCK_CONF_SECOND
 
-// FIXME - implement these
-
-static inline rtimer_clock_t rtimer_arch_now(void) { return 0; }
+static inline rtimer_clock_t rtimer_arch_now(void) { return clock_time(); }
 int rtimer_arch_check(void);
 int rtimer_arch_pending(void);
 rtimer_clock_t rtimer_arch_next(void);
