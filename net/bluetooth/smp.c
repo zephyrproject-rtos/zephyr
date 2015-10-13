@@ -413,6 +413,12 @@ static void smp_reset(struct bt_conn *conn)
 	atomic_set(&smp->allowed_cmds, 0);
 	atomic_set(&smp->flags, 0);
 
+	if (conn->required_sec_level != conn->sec_level) {
+		/* TODO report error */
+		/* reset required security level in case of error */
+		conn->required_sec_level = conn->sec_level;
+	}
+
 	switch(conn->role) {
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	case BT_HCI_ROLE_MASTER:

@@ -735,13 +735,17 @@ static void hci_encrypt_change(struct bt_buf *buf)
 	BT_DBG("status %u handle %u encrypt 0x%02x\n", evt->status, handle,
 	       evt->encrypt);
 
-	if (evt->status) {
-		return;
-	}
-
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
 		BT_ERR("Unable to look up conn with handle %u\n", handle);
+		return;
+	}
+
+	if (evt->status) {
+		/* TODO report error */
+		/* reset required security level in case of error */
+		conn->required_sec_level = conn->sec_level;
+		bt_conn_put(conn);
 		return;
 	}
 
