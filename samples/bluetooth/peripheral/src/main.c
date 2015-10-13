@@ -587,6 +587,30 @@ static void bt_ready(int err)
 	printk("Advertising successfully started\n");
 }
 
+static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Passkey for %s: %u\n", addr, passkey);
+}
+
+static void auth_cancel(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Pairing cancelled: %s\n", addr);
+}
+
+static struct bt_auth_cb auth_cb_display = {
+	.passkey_display = auth_passkey_display,
+	.passkey_entry = NULL,
+	.cancel = auth_cancel,
+};
+
 #ifdef CONFIG_MICROKERNEL
 void mainloop(void)
 #else
@@ -607,6 +631,7 @@ void main(void)
 	bt_gatt_register(attrs, ARRAY_SIZE(attrs));
 
 	bt_conn_cb_register(&conn_callbacks);
+	bt_auth_cb_register(&auth_cb_display);
 
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
