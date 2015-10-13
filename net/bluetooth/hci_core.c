@@ -774,7 +774,9 @@ static void hci_encrypt_key_refresh_complete(struct bt_buf *buf)
 		return;
 	}
 
+	update_sec_level(conn);
 	bt_l2cap_encrypt_change(conn);
+	bt_conn_security_changed(conn);
 	bt_conn_put(conn);
 }
 
