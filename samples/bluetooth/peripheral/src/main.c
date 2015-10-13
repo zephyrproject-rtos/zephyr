@@ -508,7 +508,7 @@ static const struct bt_gatt_attr attrs[] = {
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_ENCRYPT |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT,
 			   read_vnd, write_vnd, vnd_value),
-	BT_GATT_CHARACTERISTIC(0x001f, &vnd_auth_chrc),
+	BT_GATT_CHARACTERISTIC(0x001e, &vnd_auth_chrc),
 	BT_GATT_DESCRIPTOR(0x001f, &vnd_auth_uuid,
 			   BT_GATT_PERM_READ | BT_GATT_PERM_READ_AUTHEN |
 			   BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_AUTHEN,
