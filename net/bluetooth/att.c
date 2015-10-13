@@ -785,6 +785,15 @@ static uint8_t att_read_mult_req(struct bt_conn *conn, struct bt_buf *buf)
 
 		BT_DBG("handle 0x%04x \n", handle);
 
+		/* An Error Response shall be sent by the server in response to
+		 * the Read Multiple Request [....] if a read operation is not
+		 * permitted on any of the Characteristic Values.
+		 *
+		 * If handle is not valid then return invalid handle error.
+		 * If handle is found error will be cleared by read_cb.
+		 */
+		data.err = BT_ATT_ERR_INVALID_HANDLE;
+
 		bt_gatt_foreach_attr(handle, handle, read_cb, &data);
 
 		/* Stop reading in case of error */
