@@ -23,6 +23,11 @@
 
 #include <bluetooth/uuid.h>
 
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+#include <stdio.h>
+#include <misc/byteorder.h>
+#endif /* CONFIG_BLUETOOTH_DEBUG */
+
 /* TODO: Decide wether to continue using BLE format or switch to RFC 4122 */
 static const struct bt_uuid uuid128_base = {
 	.type = BT_UUID_128,
@@ -69,3 +74,31 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 
 	return -EINVAL;
 }
+
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
+{
+	uint32_t tmp0, tmp5;
+	uint16_t tmp1, tmp2, tmp3, tmp4;
+
+	switch (uuid->type) {
+	case BT_UUID_16:
+		snprintf(str, len, "%.4x", uuid->u16);
+		break;
+	case BT_UUID_128:
+		memcpy(&tmp0, &uuid->u128[0], sizeof(tmp0));
+		memcpy(&tmp1, &uuid->u128[4], sizeof(tmp1));
+		memcpy(&tmp2, &uuid->u128[6], sizeof(tmp2));
+		memcpy(&tmp3, &uuid->u128[8], sizeof(tmp3));
+		memcpy(&tmp4, &uuid->u128[10], sizeof(tmp4));
+		memcpy(&tmp5, &uuid->u128[12], sizeof(tmp5));
+
+		snprintf(str, len, "%.8x-%.4x-%.4x-%.4x-%.8x%.4x",
+			 tmp5, tmp4, tmp3, tmp2, tmp1, tmp0);
+		break;
+	default:
+		memset(str, 0, len);
+		return;
+	}
+}
+#endif /* CONFIG_BLUETOOTH_DEBUG */

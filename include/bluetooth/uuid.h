@@ -163,4 +163,19 @@ struct bt_uuid {
  */
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
 
+#if defined(CONFIG_BLUETOOTH_DEBUG)
+/** @brief Convert Bluetooth UUID to string.
+ *
+ *  Converts Bluetooth UUID to string. UUID has to be in 16 bits or 128 bits
+ *  format.
+ *
+ *  @param uuid Bluetooth UUID
+ *  @param str pointer where to put converted string
+ *  @param len length of str
+ *
+ *  @return none
+ */
+void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
+#endif /* CONFIG_BLUETOOTH_DEBUG */
+
 #endif /* __BT_UUID_H */
