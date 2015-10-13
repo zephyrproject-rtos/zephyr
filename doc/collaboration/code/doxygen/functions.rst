@@ -8,6 +8,13 @@ function comments. The syntax described here is one of many that are possible.
 If your development requires an option that is not described here, use it.
 However, you may use the following syntax for everything else.
 
+.. note::
+
+   When linking functions within a ReST file, two possible markups are:
+   ``:cpp:`` or ``:c:``. Use ``:cpp:`` for functions defined using an
+   :code:c:`extern`. Use ``:c:`` for functions defined using a
+   :code:c:`#define`.
+
 Function Comment Templates
 **************************
 
