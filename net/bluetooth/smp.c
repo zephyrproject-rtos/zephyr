@@ -1309,6 +1309,7 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 {
 	struct bt_smp_security_request *req = (void *)buf->data;
+	struct bt_smp *smp = conn->smp;
 	struct bt_keys *keys;
 	uint8_t auth;
 
@@ -1339,6 +1340,8 @@ static uint8_t smp_security_request(struct bt_conn *conn, struct bt_buf *buf)
 					keys->ltk.val, keys->enc_size) < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
+
+	atomic_set_bit(&smp->flags, SMP_FLAG_ENC_PENDING);
 
 	return 0;
 pair:
@@ -1483,6 +1486,18 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 	}
 
 	if (!atomic_test_and_clear_bit(&smp->flags, SMP_FLAG_ENC_PENDING)) {
+		return;
+	}
+
+	/* We were waiting for encryption but with no pairing in progress.
+	 * This can happen if paired slave sent Security Request and we
+	 * enabled encryption.
+	 *
+	 * Since it is possible that slave might sent another Security Request
+	 * eg with different AuthReq we should allow it.
+	 */
+	if (!atomic_test_bit(&smp->flags, SMP_FLAG_PAIRING)) {
+		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 		return;
 	}
 
