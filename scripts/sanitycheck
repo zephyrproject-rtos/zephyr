@@ -1623,10 +1623,10 @@ def main():
                                         (args.footprint_threshold / 100.0)):
                 continue
 
-            info("{:<25} {:<50} {}{}{}: {} is now {} {:+.2%}".format(
+            info("{:<25} {:<50} {}{}{}: {} {:+}, is now {} {:+.2%}".format(
                  i.platform.name, i.test.name, COLOR_YELLOW,
                  "INFO" if args.all_deltas else "WARNING", COLOR_NORMAL,
-                 metric, value, percentage))
+                 metric, delta, value, percentage))
             warnings += 1
 
     if warnings:
