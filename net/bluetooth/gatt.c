@@ -918,11 +918,11 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 	switch (rsp->format) {
 	case BT_ATT_INFO_16:
 		uuid.type = BT_UUID_16;
-		len = sizeof(info.i16);
+		len = sizeof(*info.i16);
 		break;
 	case BT_ATT_INFO_128:
 		uuid.type = BT_UUID_128;
-		len = sizeof(info.i128);
+		len = sizeof(*info.i128);
 		break;
 	default:
 		BT_ERR("Invalid format %u\n", rsp->format);
