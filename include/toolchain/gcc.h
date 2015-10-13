@@ -83,11 +83,10 @@ __extension__ ({							\
 #define _GENERIC_SECTION(segment) __attribute__((section(#segment)))
 
 #define __packed        __attribute__((__packed__))
-#define __aligned(x)    __attribute__((aligned(x)))
+#define __aligned(x)	__attribute__((__aligned__(x)))
 #define __may_alias     __attribute__((__may_alias__))
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
-#define __used          __attribute__((used))
-
+#define __used		__attribute__((__used__))
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   __builtin_expect((long)!!(x), 1L)
