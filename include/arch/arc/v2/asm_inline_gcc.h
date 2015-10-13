@@ -30,6 +30,42 @@
 /* Implementation of sys_io.h's documented functions */
 
 static inline __attribute__((always_inline))
+	void sys_out8(uint8_t data, io_port_t port)
+{
+	_arc_v2_aux_reg_write(port, data);
+}
+
+static inline __attribute__((always_inline))
+	uint8_t sys_in8(io_port_t port)
+{
+	return (uint8_t)(_arc_v2_aux_reg_read(port) & 0x000000ff);
+}
+
+static inline __attribute__((always_inline))
+	void sys_out16(uint16_t data, io_port_t port)
+{
+	_arc_v2_aux_reg_write(port, data);
+}
+
+static inline __attribute__((always_inline))
+	uint16_t sys_in16(io_port_t port)
+{
+	return (uint16_t)(_arc_v2_aux_reg_read(port) & 0x0000ffff);
+}
+
+static inline __attribute__((always_inline))
+	void sys_out32(uint32_t data, io_port_t port)
+{
+	_arc_v2_aux_reg_write(port, data);
+}
+
+static inline __attribute__((always_inline))
+	uint32_t sys_in32(io_port_t port)
+{
+	return _arc_v2_aux_reg_read(port);
+}
+
+static inline __attribute__((always_inline))
 	void sys_write8(uint8_t data, mm_reg_t addr)
 {
 	__asm__ volatile("stb%U1	%0, %1;\n\t"
