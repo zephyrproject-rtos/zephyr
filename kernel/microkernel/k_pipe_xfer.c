@@ -381,7 +381,7 @@ static int WriterInProgressIsBlocked(struct _k_pipe_struct *pipe_ptr,
 	if (0 != pipe_ptr->desc.num_pending_writes ||
 	    0 != pipe_ptr->desc.num_pending_reads) {
 		/* buffer activity detected, can't say now that processing is blocked */
-		return 0; 
+		return 0;
 	}
 
 	/* third condition: */

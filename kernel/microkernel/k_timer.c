@@ -108,7 +108,7 @@ void _k_timeout_alloc(struct k_args *P)
  *
  * The command that is processed following cancellation is typically NOT the
  * command that would have occurred had the timeout expired on its own.
- * 
+ *
  * @return N/A
  */
 void _k_timeout_cancel(struct k_args *A)
