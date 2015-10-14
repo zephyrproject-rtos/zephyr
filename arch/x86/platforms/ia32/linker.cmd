@@ -36,10 +36,10 @@ This is the linker script for both standard images and XIP images.
 MEMORY
     {
 #ifdef CONFIG_XIP
-    ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = 72K
-    RAM (wx)        : ORIGIN = PHYS_RAM_ADDR, LENGTH = 128K
+    ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = CONFIG_ROM_SIZE*1K
+    RAM (wx)        : ORIGIN = PHYS_RAM_ADDR, LENGTH = CONFIG_RAM_SIZE*1K
 #else  /* !CONFIG_XIP */
-    RAM (wx)	    : ORIGIN = PHYS_LOAD_ADDR, LENGTH = 192K
+    RAM (wx)	    : ORIGIN = PHYS_LOAD_ADDR, LENGTH = CONFIG_RAM_SIZE*1K
 #endif /* CONFIG_XIP */
 
     /*

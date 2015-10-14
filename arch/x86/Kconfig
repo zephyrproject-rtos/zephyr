@@ -27,6 +27,26 @@ source "kernel/Kconfig"
 
 menu "X86 Platform Configuration options"
 
+config RAM_SIZE
+	int "Amount of RAM given to the kernel (in kB)"
+	help
+	This option specifies the amount of RAM given to the kernel. It must
+	not exceed the amount available on the target.  When running an XIP
+	kernel, it must be large enough to contain the data, bss and noinit
+	sections.  When not running an XIP kernel, it must be large enough to
+	contain the full image.
+
+	The default value is specified by the platform.
+
+config ROM_SIZE
+	int "Amount of ROM given to the kernel (in kB)" if XIP
+	help
+	This option specifies the amount of ROM given to the kernel. It must
+	not exceed the amount available on the target.  It must also be large
+	enough to contain the full image.
+
+	The default value is specified by the platform.
+
 choice
 prompt "Platform Selection"
 default PLATFORM_IA32_PCI
