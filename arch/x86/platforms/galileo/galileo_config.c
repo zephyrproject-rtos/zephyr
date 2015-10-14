@@ -83,6 +83,7 @@ struct uart_device_config ns16550_uart_dev_cfg[] = {
 		.port_init = ns16550_uart_port_init,
 #if defined(CONFIG_UART_CONSOLE) || defined(CONFIG_BLUETOOTH_UART)
 		.config_func = ns16550_uart_init,
+		.irq = CONFIG_UART_CONSOLE_IRQ,
 #endif
 		.pci_dev.class = PCI_CLASS_COMM_CTLR,
 		.pci_dev.bus = CONFIG_UART_PCI_BUS,
@@ -100,6 +101,7 @@ struct uart_device_config ns16550_uart_dev_cfg[] = {
 		.port_init = ns16550_uart_port_init,
 #if defined(CONFIG_UART_CONSOLE) || defined(CONFIG_BLUETOOTH_UART)
 		.config_func = ns16550_uart_init,
+		.irq = CONFIG_UART_CONSOLE_IRQ,
 #endif
 		.pci_dev.class = PCI_CLASS_COMM_CTLR,
 		.pci_dev.bus = CONFIG_UART_PCI_BUS,
