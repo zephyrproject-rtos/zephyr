@@ -670,6 +670,10 @@ KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
 
+# generate an extra file that specifies the maximum amount of stack used,
+# on a per-function basis.
+KBUILD_CFLAGS	+= $(call cc-option,-fstack-usage)
+
 # conserve stack if available
 KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
 
