@@ -134,14 +134,14 @@ IRQ_CONNECT_STATIC(loapic, CONFIG_LOAPIC_TIMER_IRQ,
 
 static uint32_t __noinit cycles_per_tick; /* computed counter 0
 							  initial count value */
-static uint32_t accumulated_cycle_count = 0;
+static uint32_t accumulated_cycle_count;
 
 #if defined(TIMER_SUPPORTS_TICKLESS)
-static uint32_t programmed_cycles = 0;
-static uint32_t programmed_full_ticks = 0;
+static uint32_t programmed_cycles;
+static uint32_t programmed_full_ticks;
 static uint32_t __noinit max_system_ticks;
 static uint32_t __noinit cycles_per_max_ticks;
-static bool timer_known_to_have_expired = false;
+static bool timer_known_to_have_expired;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif /* TIMER_SUPPORTS_TICKLESS */
 

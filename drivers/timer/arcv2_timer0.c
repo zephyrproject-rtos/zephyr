@@ -51,7 +51,7 @@ The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero counter.
 #define _ARC_V2_TMR_CTRL_IP 0x8 /* interrupt pending flag */
 
 /* running total of timer count */
-static uint32_t clock_accumulated_count = 0;
+static uint32_t clock_accumulated_count;
 
 
 /**

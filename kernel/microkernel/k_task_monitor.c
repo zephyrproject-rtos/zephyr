@@ -30,8 +30,8 @@ static const int k_monitor_capacity = CONFIG_TASK_MONITOR_CAPACITY;
 const int _k_monitor_mask = CONFIG_TASK_MONITOR_MASK;
 
 static struct k_mrec *k_monitor_wptr = k_monitor_buff;
-static int k_monitor_nrec = 0;
-static int K_monitor_wind = 0;
+static int k_monitor_nrec;
+static int K_monitor_wind;
 
 k_task_monitor_hook_t _k_task_switch_callback = NULL;
 

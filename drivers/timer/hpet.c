@@ -172,8 +172,8 @@ IRQ_CONNECT_STATIC(hpet, CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
 		   _timer_int_handler, 0);
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-static uint32_t main_count_first_irq_value = 0;
-static uint32_t main_count_expected_value = 0;
+static uint32_t main_count_first_irq_value;
+static uint32_t main_count_expected_value;
 #endif
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK

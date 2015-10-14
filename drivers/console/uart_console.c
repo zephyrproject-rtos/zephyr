@@ -103,7 +103,7 @@ extern void __printk_hook_install(int (*fn)(int));
 #endif
 
 #if defined(CONFIG_CONSOLE_HANDLER)
-static size_t pos = 0;
+static size_t pos;
 
 static struct nano_fifo *avail_queue;
 static struct nano_fifo *lines_queue;

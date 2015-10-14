@@ -35,7 +35,7 @@ random number generator.
  * Symbols used to ensure a rapid series of calls to random number generator
  * return different values.
  */
-static atomic_val_t _rand32_counter = 0;
+static atomic_val_t _rand32_counter;
 
 #define _RAND32_INC 1000000013
 

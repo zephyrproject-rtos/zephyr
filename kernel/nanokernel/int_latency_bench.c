@@ -32,22 +32,22 @@
  * Timestamp corresponding to when interrupt were turned off.
  * A value of zero indicated interrupt are not currently locked.
  */
-static uint32_t int_locked_timestamp = 0;
+static uint32_t int_locked_timestamp;
 
 /* stats tracking the minimum and maximum time when interrupts were locked */
 static uint32_t int_locked_latency_min = ULONG_MAX;
-static uint32_t int_locked_latency_max = 0;
+static uint32_t int_locked_latency_max;
 
 /* overhead added to intLock/intUnlock by this latency benchmark */
-static uint32_t initial_start_delay = 0;
-static uint32_t nesting_delay = 0;
-static uint32_t stop_delay = 0;
+static uint32_t initial_start_delay;
+static uint32_t nesting_delay;
+static uint32_t stop_delay;
 
 /* counter tracking intLock/intUnlock calls once interrupt are locked */
-static uint32_t int_lock_unlock_nest = 0;
+static uint32_t int_lock_unlock_nest;
 
 /* indicate if the interrupt latency benchamrk is ready to be used */
-static uint32_t int_latency_bench_ready = 0;
+static uint32_t int_latency_bench_ready;
 
 /* min amount of time it takes from HW interrupt generation to 'C' handler */
 uint32_t _hw_irq_to_c_handler_latency = ULONG_MAX;

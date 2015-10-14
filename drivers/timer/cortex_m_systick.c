@@ -53,7 +53,7 @@ extern struct nano_stack _k_command_stack;
 #endif /* CONFIG_MICROKERNEL */
 
 /* running total of timer count */
-static uint32_t clock_accumulated_count = 0;
+static uint32_t clock_accumulated_count;
 
 /*
  * A board support package's board.h header must provide definitions for the
@@ -101,9 +101,9 @@ extern int32_t _sys_idle_elapsed_ticks;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static uint32_t __noinit default_load_value; /* default count */
-static uint32_t idle_original_count = 0;
+static uint32_t idle_original_count;
 static uint32_t __noinit max_system_ticks;
-static uint32_t idle_original_ticks = 0;
+static uint32_t idle_original_ticks;
 static uint32_t __noinit max_load_value;
 static uint32_t __noinit timer_idle_skew;
 static unsigned char timer_mode = TIMER_MODE_PERIODIC;
