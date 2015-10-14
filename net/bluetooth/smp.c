@@ -526,9 +526,8 @@ static uint8_t get_auth(uint8_t auth)
 	return auth;
 }
 
-static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
+static uint8_t smp_request_tk(struct bt_smp *smp, uint8_t remote_io)
 {
-	struct bt_smp *smp = conn->smp;
 	struct bt_keys *keys;
 	uint32_t passkey;
 
@@ -538,7 +537,7 @@ static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 	 * distributed in new pairing. This is to avoid replacing authenticated
 	 * keys with unauthenticated ones.
 	  */
-	keys = bt_keys_find_addr(&conn->dst);
+	keys = bt_keys_find_addr(&smp->conn->dst);
 	if (keys && keys->type == BT_KEYS_AUTHENTICATED &&
 	    smp->method == JUST_WORKS) {
 		BT_ERR("JustWorks failed, authenticated keys present\n");
@@ -553,7 +552,7 @@ static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 
 		passkey %= 1000000;
 
-		auth_cb->passkey_display(conn, passkey);
+		auth_cb->passkey_display(smp->conn, passkey);
 
 		passkey = sys_cpu_to_le32(passkey);
 		memcpy(smp->tk, &passkey, sizeof(passkey));
@@ -561,7 +560,7 @@ static uint8_t smp_request_tk(struct bt_conn *conn, uint8_t remote_io)
 
 		break;
 	case PASSKEY_INPUT:
-		auth_cb->passkey_entry(conn);
+		auth_cb->passkey_entry(smp->conn);
 		break;
 	case JUST_WORKS:
 		atomic_set_bit(&smp->flags, SMP_FLAG_TK_VALID);
@@ -683,7 +682,7 @@ static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
 
 	smp_restart_timer(smp);
 
-	return smp_request_tk(conn, req->io_capability);
+	return smp_request_tk(smp, req->io_capability);
 }
 #else
 static uint8_t smp_pairing_req(struct bt_conn *conn, struct bt_buf *buf)
@@ -802,7 +801,7 @@ static uint8_t smp_pairing_rsp(struct bt_conn *conn, struct bt_buf *buf)
 	smp->prsp[0] = BT_SMP_CMD_PAIRING_RSP;
 	memcpy(smp->prsp + 1, rsp, sizeof(*rsp));
 
-	ret = smp_request_tk(conn, rsp->io_capability);
+	ret = smp_request_tk(smp, rsp->io_capability);
 	if (ret) {
 		return ret;
 	}
