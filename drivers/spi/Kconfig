@@ -223,6 +223,15 @@ config SPI_DW
 	help
 	  Enable support for Designware's SPI controllers.
 
+config SPI_DW_ARC_AUX_REGS
+	bool "Registers are part of ARC auxiliary registers"
+	depends on SPI_DW && ARC
+	default y
+	help
+	  SPI IP block registers are part of user extended auxiliary
+	  registers and thus their access is different than memory
+	  mapped registers.
+
 choice
 depends on SPI_DW
 prompt "DesignWare SPI interrupt trigger condition"

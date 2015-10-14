@@ -47,15 +47,29 @@
 #endif /* CONFIG_STDOUT_CONSOLE */
 #endif /* CONFIG_SPI_DEBUG */
 
+#if defined(CONFIG_SPI_DW_ARC_AUX_REGS)
+#define _REG_READ(__sz) sys_in##__sz
+#define _REG_WRITE(__sz) sys_out##__sz
+#define _REG_SET_BIT _sys_io_set_bit
+#define _REG_CLEAR_BIT _sys_io_clear_bit
+#define _REG_TEST_BIT _sys_io_test_bit
+#else
+#define _REG_READ(__sz) sys_read##__sz
+#define _REG_WRITE(__sz) sys_write##__sz
+#define _REG_SET_BIT sys_set_bit
+#define _REG_CLEAR_BIT sys_clear_bit
+#define _REG_TEST_BIT sys_test_bit
+#endif /* SPI_DW_ARC_AUX_REGS */
+
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
 	static inline uint32_t read_##__reg(uint32_t addr)		\
 	{								\
-		return sys_read##__sz(addr + __off);			\
+		return _REG_READ(__sz)(addr + __off);			\
 	}
 #define DEFINE_MM_REG_WRITE(__reg, __off, __sz)				\
 	static inline void write_##__reg(uint32_t data, uint32_t addr)	\
 	{								\
-		sys_write##__sz(data, addr + __off);			\
+		_REG_WRITE(__sz)(data, addr + __off);			\
 	}
 
 #ifdef CONFIG_ARC
@@ -80,19 +94,19 @@ DEFINE_MM_REG_READ(ssi_comp_version, DW_SPI_REG_SSI_COMP_VERSION, 32)
 #define DEFINE_SET_BIT_OP(__reg_bit, __reg_off, __bit)			\
 	static inline void set_bit_##__reg_bit(uint32_t addr)		\
 	{								\
-		sys_set_bit(addr + __reg_off, __bit);			\
+		_REG_SET_BIT(addr + __reg_off, __bit);			\
 	}
 
 #define DEFINE_CLEAR_BIT_OP(__reg_bit, __reg_off, __bit)		\
 	static inline void clear_bit_##__reg_bit(uint32_t addr)		\
 	{								\
-		sys_clear_bit(addr + __reg_off, __bit);			\
+		_REG_CLEAR_BIT(addr + __reg_off, __bit);		\
 	}
 
 #define DEFINE_TEST_BIT_OP(__reg_bit, __reg_off, __bit)			\
 	static inline int test_bit_##__reg_bit(uint32_t addr)		\
 	{								\
-		return sys_test_bit(addr + __reg_off, __bit);		\
+		return _REG_TEST_BIT(addr + __reg_off, __bit);		\
 	}
 
 DEFINE_SET_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
