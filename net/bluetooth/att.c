@@ -142,7 +142,8 @@ static uint8_t att_mtu_req(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("Client MTU %u\n", mtu);
 
-	if (mtu > BT_ATT_MAX_LE_MTU || mtu < BT_ATT_DEFAULT_LE_MTU) {
+	/* Check if MTU is valid */
+	if (mtu < BT_ATT_DEFAULT_LE_MTU) {
 		return BT_ATT_ERR_INVALID_PDU;
 	}
 
@@ -205,8 +206,8 @@ static uint8_t att_mtu_rsp(struct bt_conn *conn, struct bt_buf *buf)
 
 	BT_DBG("Server MTU %u\n", mtu);
 
-	/* Check if MTU is within allowed range */
-	if (mtu > BT_ATT_MAX_LE_MTU || mtu < BT_ATT_DEFAULT_LE_MTU) {
+	/* Check if MTU is valid */
+	if (mtu < BT_ATT_DEFAULT_LE_MTU) {
 		return att_handle_rsp(conn, NULL, 0, BT_ATT_ERR_INVALID_PDU);
 	}
 

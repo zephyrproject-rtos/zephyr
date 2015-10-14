@@ -17,7 +17,6 @@
  */
 
 #define BT_ATT_DEFAULT_LE_MTU	23
-#define BT_ATT_MAX_LE_MTU	517
 
 struct bt_att_hdr {
 	uint8_t  code;
