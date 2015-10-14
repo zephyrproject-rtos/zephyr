@@ -54,7 +54,7 @@ config SHARED_IRQ_0_IRQ
 
 config SHARED_IRQ_0_PRI
 	int "instance 0 interrupt priority"
-	default 0
+	default 2
 	depends on SHARED_IRQ_0
 	help
 	 Prioity of shared interrupt handler for the configured interrupt
@@ -106,7 +106,7 @@ config SHARED_IRQ_1_IRQ
 
 config SHARED_IRQ_1_PRI
 	int "instance 1 interrupt priority"
-	default 0
+	default 2
 	depends on SHARED_IRQ_0
 	help
 	 Prioity of shared interrupt handler for the configured interrupt

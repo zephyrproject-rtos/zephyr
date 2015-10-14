@@ -134,7 +134,7 @@ config GPIO_DW_0_IRQ
 config GPIO_DW_0_PRI
        int "Controller interrupt priority"
        depends on GPIO_DW_0 && GPIO_DW_0_IRQ_DIRECT
-       default 0
+       default 2
        help
        IRQ priority
 
@@ -200,7 +200,7 @@ config GPIO_DW_1_IRQ
 config GPIO_DW_1_PRI
        int "Controller interrupt priority"
        depends on GPIO_DW_1 && GPIO_DW_1_IRQ_DIRECT
-       default 0
+       default 2
        help
        IRQ priority
 

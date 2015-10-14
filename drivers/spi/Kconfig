@@ -137,7 +137,7 @@ config  SPI_INTEL_PORT_0_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_INTEL_PORT_0
-	default 0
+	default 2
 
 config  SPI_INTEL_PORT_0_CS_GPIO_PORT
 	string
@@ -195,5 +195,5 @@ config  SPI_INTEL_PORT_1_PRI
 	int
 	prompt "Port 0 interrupt priority"
 	depends on SPI_INTEL_PORT_1
-	default 0
+	default 2
 endif # SPI

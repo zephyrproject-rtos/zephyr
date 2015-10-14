@@ -59,7 +59,7 @@ config SHARED_IRQ_0_NAME
 config SHARED_IRQ_0_IRQ
 	default 18
 config SHARED_IRQ_0_PRI
-	default 0
+	default 2
 endif
 
 if PCI_LEGACY_BRIDGE
@@ -95,7 +95,7 @@ config I2C_DW_0_BASE
 config I2C_DW_0_IRQ
 	default 18
 config I2C_DW_0_INT_PRIORITY
-	default 0
+	default 2
 config I2C_DW_0_BUS
 	default 0
 config I2C_DW_0_DEV
@@ -205,7 +205,7 @@ config GPIO_DW_0_BASE_ADDR
 config GPIO_DW_0_IRQ
 	default 18
 config GPIO_DW_0_PRI
-	default 0
+	default 2
 config GPIO_DW_0_IRQ_SHARED_NAME
 	default SHARED_IRQ_0_NAME if SHARED_IRQ
 endif
@@ -273,7 +273,7 @@ config SPI_INTEL_PORT_0_REGS
 config SPI_INTEL_PORT_0_IRQ
 	default 16
 config SPI_INTEL_PORT_0_PRI
-	default 0
+	default 2
 config SPI_INTEL_CS_GPIO
 	def_bool y
 config SPI_INTEL_PORT_0_CS_GPIO_PORT
@@ -296,7 +296,7 @@ config SPI_INTEL_PORT_1_REGS
 config SPI_INTEL_PORT_1_IRQ
 	default 17
 config SPI_INTEL_PORT_1_PRI
-	default 0
+	default 2
 endif # SPI
 
 if NS16550
