@@ -131,20 +131,8 @@ pre_kernel_early_init(ns16550_uart1, &ns16550_uart_dev_data[1]);
 
 /**< UART Devices */
 struct device * const uart_devs[] = {
-#if (defined(CONFIG_EARLY_CONSOLE) && \
-		defined(CONFIG_UART_CONSOLE) && \
-		(CONFIG_UART_CONSOLE_INDEX == 0))
 	&__initconfig_ns16550_uart0,
-#else
-	&__initconfig_ns16550_uart0,
-#endif /* CONFIG_EARLY_CONSOLE */
-#if (defined(CONFIG_EARLY_CONSOLE) && \
-		defined(CONFIG_UART_CONSOLE) && \
-		(CONFIG_UART_CONSOLE_INDEX == 1))
 	&__initconfig_ns16550_uart1,
-#else
-	&__initconfig_ns16550_uart1,
-#endif /* CONFIG_EARLY_CONSOLE */
 };
 
 #endif
