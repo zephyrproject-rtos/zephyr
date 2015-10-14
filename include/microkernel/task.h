@@ -177,14 +177,14 @@ extern int task_offload_to_fiber(int (*)(), void *);
  *
  * @return identifier for current task
  */
-extern ktask_t task_id_get();
+extern ktask_t task_id_get(void);
 
 /**
  * @brief Get task priority
  *
  * @return priority of current task
  */
-extern kpriority_t task_priority_get();
+extern kpriority_t task_priority_get(void);
 
 /**
  * @brief Start a task
@@ -225,7 +225,7 @@ extern kpriority_t task_priority_get();
  *
  * @return task groups associated with current task
  */
-extern uint32_t task_group_mask_get();
+extern uint32_t task_group_mask_get(void);
 
 /**
  * @brief Add task to task group(s)

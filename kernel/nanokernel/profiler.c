@@ -115,7 +115,7 @@ void sys_profiler_register_as_collector(void)
 
 
 #ifdef CONFIG_PROFILER_INTERRUPT
-void _sys_profiler_interrupt()
+void _sys_profiler_interrupt(void)
 {
 	uint32_t data[2];
 
