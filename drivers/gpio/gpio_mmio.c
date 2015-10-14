@@ -136,14 +136,14 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 	}
 
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			cfg->access.set_bit(cfg->reg.dir, pin, value);
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			cfg->access.write(cfg->reg.dir, 0, value);
-			break;
-		default:
-			return DEV_INVALID_OP;
+	case GPIO_ACCESS_BY_PIN:
+		cfg->access.set_bit(cfg->reg.dir, pin, value);
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		cfg->access.write(cfg->reg.dir, 0, value);
+		break;
+	default:
+		return DEV_INVALID_OP;
 	}
 
 	/*
@@ -167,14 +167,14 @@ static int gpio_mmio_config(struct device *dev, int access_op,
 	}
 
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			cfg->access.set_bit(cfg->reg.en, pin, value);
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			cfg->access.write(cfg->reg.en, 0, value);
-			break;
-		default:
-			return DEV_INVALID_OP;
+	case GPIO_ACCESS_BY_PIN:
+		cfg->access.set_bit(cfg->reg.en, pin, value);
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		cfg->access.write(cfg->reg.en, 0, value);
+		break;
+	default:
+		return DEV_INVALID_OP;
 	}
 
 	return DEV_OK;
@@ -201,14 +201,14 @@ static int gpio_mmio_write(struct device *dev, int access_op,
 	}
 
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			cfg->access.set_bit(cfg->reg.output, pin, value);
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			cfg->access.write(cfg->reg.output, 0, value);
-			break;
-		default:
-			return DEV_INVALID_OP;
+	case GPIO_ACCESS_BY_PIN:
+		cfg->access.set_bit(cfg->reg.output, pin, value);
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		cfg->access.write(cfg->reg.output, 0, value);
+		break;
+	default:
+		return DEV_INVALID_OP;
 	}
 
 	return DEV_OK;
@@ -235,15 +235,15 @@ static int gpio_mmio_read(struct device *dev, int access_op,
 	}
 
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			*value = cfg->access.read(cfg->reg.input, 0, 0);
-			*value &= (1 << pin) >> pin;
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			*value = cfg->access.read(cfg->reg.input, 0, 0);
-			break;
-		default:
-			return DEV_INVALID_OP;
+	case GPIO_ACCESS_BY_PIN:
+		*value = cfg->access.read(cfg->reg.input, 0, 0);
+		*value &= (1 << pin) >> pin;
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		*value = cfg->access.read(cfg->reg.input, 0, 0);
+		break;
+	default:
+		return DEV_INVALID_OP;
 	}
 
 	return DEV_OK;

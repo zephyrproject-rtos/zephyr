@@ -90,17 +90,17 @@ static int pwm_pca9685_set_values(struct device *dev, int access_op,
 	}
 
 	switch (access_op) {
-		case PWM_ACCESS_BY_PIN:
-			if (pwm > MAX_PWM_OUT) {
-				return DEV_INVALID_CONF;
-			}
-			buf[0] = REG_LED_ON_L(pwm);
-			break;
-		case PWM_ACCESS_ALL:
-			buf[0] = REG_ALL_LED_ON_L;
-			break;
-		default:
-			return DEV_INVALID_OP;
+	case PWM_ACCESS_BY_PIN:
+		if (pwm > MAX_PWM_OUT) {
+			return DEV_INVALID_CONF;
+		}
+		buf[0] = REG_LED_ON_L(pwm);
+		break;
+	case PWM_ACCESS_ALL:
+		buf[0] = REG_ALL_LED_ON_L;
+		break;
+	default:
+		return DEV_INVALID_OP;
 	}
 
 	/* If both ON and OFF > max ticks, treat PWM as 100%.

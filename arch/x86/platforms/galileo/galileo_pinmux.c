@@ -559,63 +559,63 @@ uint8_t _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
 
 	for (i = 0; i < 5; i++) {
 		switch(enable->path[i].mux) {
-			case EXP0:
-				gpio_pin_write(drv_data->exp0,
-						   enable->path[i].pin,
-						   enable->path[i].level);
-				gpio_pin_configure(drv_data->exp0,
-						   enable->path[i].pin,
-						   enable->path[i].cfg);
-				break;
-			case EXP1:
-				gpio_pin_write(drv_data->exp1,
-						   enable->path[i].pin,
-						   enable->path[i].level);
-				gpio_pin_configure(drv_data->exp1,
-						   enable->path[i].pin,
-						   enable->path[i].cfg);
-				break;
-			case EXP2:
-				gpio_pin_write(drv_data->exp2,
-						   enable->path[i].pin,
-						   enable->path[i].level);
-				gpio_pin_configure(drv_data->exp2,
-						   enable->path[i].pin,
-						   enable->path[i].cfg);
-				break;
-			case PWM0:
-				pwm_pin_set_duty_cycle(drv_data->pwm0,
-					enable->path[i].pin,
-					enable->path[i].level ? 100 : 0);
-				break;
-			case G_DW:
-				gpio_pin_write(drv_data->gpio_dw,
-						   enable->path[i].pin,
-						   enable->path[i].level);
-				gpio_pin_configure(drv_data->gpio_dw,
-						   enable->path[i].pin,
-						   enable->path[i].cfg);
-				break;
-			case G_CW:
-				gpio_pin_write(drv_data->gpio_core,
-						   enable->path[i].pin,
-						   enable->path[i].level);
-				gpio_pin_configure(drv_data->gpio_core,
-						   enable->path[i].pin,
-						   enable->path[i].cfg);
-				break;
-			case G_RW:
-				gpio_pin_write(drv_data->gpio_resume,
-						   enable->path[i].pin,
-						   enable->path[i].level);
-				gpio_pin_configure(drv_data->gpio_resume,
-						   enable->path[i].pin,
-						   enable->path[i].cfg);
-				break;
+		case EXP0:
+			gpio_pin_write(drv_data->exp0,
+					   enable->path[i].pin,
+					   enable->path[i].level);
+			gpio_pin_configure(drv_data->exp0,
+					   enable->path[i].pin,
+					   enable->path[i].cfg);
+			break;
+		case EXP1:
+			gpio_pin_write(drv_data->exp1,
+					   enable->path[i].pin,
+					   enable->path[i].level);
+			gpio_pin_configure(drv_data->exp1,
+					   enable->path[i].pin,
+					   enable->path[i].cfg);
+			break;
+		case EXP2:
+			gpio_pin_write(drv_data->exp2,
+					   enable->path[i].pin,
+					   enable->path[i].level);
+			gpio_pin_configure(drv_data->exp2,
+					   enable->path[i].pin,
+					   enable->path[i].cfg);
+			break;
+		case PWM0:
+			pwm_pin_set_duty_cycle(drv_data->pwm0,
+				enable->path[i].pin,
+				enable->path[i].level ? 100 : 0);
+			break;
+		case G_DW:
+			gpio_pin_write(drv_data->gpio_dw,
+					   enable->path[i].pin,
+					   enable->path[i].level);
+			gpio_pin_configure(drv_data->gpio_dw,
+					   enable->path[i].pin,
+					   enable->path[i].cfg);
+			break;
+		case G_CW:
+			gpio_pin_write(drv_data->gpio_core,
+					   enable->path[i].pin,
+					   enable->path[i].level);
+			gpio_pin_configure(drv_data->gpio_core,
+					   enable->path[i].pin,
+					   enable->path[i].cfg);
+			break;
+		case G_RW:
+			gpio_pin_write(drv_data->gpio_resume,
+					   enable->path[i].pin,
+					   enable->path[i].level);
+			gpio_pin_configure(drv_data->gpio_resume,
+					   enable->path[i].pin,
+					   enable->path[i].cfg);
+			break;
 
-			case NONE:
-				/* no need to do anything */
-				break;
+		case NONE:
+			/* no need to do anything */
+			break;
 		}
 	}
 

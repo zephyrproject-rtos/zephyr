@@ -158,15 +158,15 @@ void bt_uart_isr(void *unused)
 			}
 
 			switch (type) {
-				case H4_EVT:
-					buf = bt_uart_evt_recv(&remaining);
-					break;
-				case H4_ACL:
-					buf = bt_uart_acl_recv(&remaining);
-					break;
-				default:
-					BT_ERR("Unknown H4 type %u\n", type);
-					return;
+			case H4_EVT:
+				buf = bt_uart_evt_recv(&remaining);
+				break;
+			case H4_ACL:
+				buf = bt_uart_acl_recv(&remaining);
+				break;
+			default:
+				BT_ERR("Unknown H4 type %u\n", type);
+				return;
 			}
 
 			if (buf && remaining > bt_buf_tailroom(buf)) {

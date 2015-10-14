@@ -185,29 +185,29 @@ static int _setup_pin_dir(struct device *dev, int access_op,
 	int ret;
 
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			bit_mask = 1 << pin;
+	case GPIO_ACCESS_BY_PIN:
+		bit_mask = 1 << pin;
 
-			/* Config 0 == output, 1 == input */
-			if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-				new_value = 1 << pin;
-			}
+		/* Config 0 == output, 1 == input */
+		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
+			new_value = 1 << pin;
+		}
 
-			port->all &= ~bit_mask;
-			port->all |= new_value;
+		port->all &= ~bit_mask;
+		port->all |= new_value;
 
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			/* Config 0 == output, 1 == input */
-			if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-				port->all = 0xFFFF;
-			} else {
-				port->all = 0x0;
-			}
-			break;
-		default:
-			ret = DEV_INVALID_OP;
-			goto done;
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		/* Config 0 == output, 1 == input */
+		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
+			port->all = 0xFFFF;
+		} else {
+			port->all = 0x0;
+		}
+		break;
+	default:
+		ret = DEV_INVALID_OP;
+		goto done;
 	}
 
 	ret = _write_port_regs(dev, REG_CONF_PORT0, port);
@@ -246,29 +246,29 @@ static int _setup_pin_pullupdown(struct device *dev, int access_op,
 	/* Setup pin pull up or pull down */
 	port = &drv_data->reg_cache.pud_sel;
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			bit_mask = 1 << pin;
+	case GPIO_ACCESS_BY_PIN:
+		bit_mask = 1 << pin;
 
-			/* pull down == 0, pull up == 1*/
-			if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
-				new_value = 1 << pin;
-			}
+		/* pull down == 0, pull up == 1*/
+		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
+			new_value = 1 << pin;
+		}
 
-			port->all &= ~bit_mask;
-			port->all |= new_value;
+		port->all &= ~bit_mask;
+		port->all |= new_value;
 
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			/* pull down == 0, pull up == 1*/
-			if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
-				port->all = 0xFFFF;
-			} else {
-				port->all = 0x0;
-			}
-			break;
-		default:
-			ret = DEV_INVALID_OP;
-			goto done;
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		/* pull down == 0, pull up == 1*/
+		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
+			port->all = 0xFFFF;
+		} else {
+			port->all = 0x0;
+		}
+		break;
+	default:
+		ret = DEV_INVALID_OP;
+		goto done;
 	}
 
 	ret = _write_port_regs(dev, REG_PUD_SEL_PORT0, port);
@@ -280,27 +280,27 @@ en_dis:
 	/* enable/disable pull up/down */
 	port = &drv_data->reg_cache.pud_en;
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			bit_mask = 1 << pin;
+	case GPIO_ACCESS_BY_PIN:
+		bit_mask = 1 << pin;
 
-			if ((flags & GPIO_PUD_MASK) != GPIO_PUD_NORMAL) {
-				new_value = 1 << pin;
-			}
+		if ((flags & GPIO_PUD_MASK) != GPIO_PUD_NORMAL) {
+			new_value = 1 << pin;
+		}
 
-			port->all &= ~bit_mask;
-			port->all |= new_value;
+		port->all &= ~bit_mask;
+		port->all |= new_value;
 
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			if ((flags & GPIO_PUD_MASK) != GPIO_PUD_NORMAL) {
-				port->all = 0xFFFF;
-			} else {
-				port->all = 0x0;
-			}
-			break;
-		default:
-			ret = DEV_INVALID_OP;
-			goto done;
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		if ((flags & GPIO_PUD_MASK) != GPIO_PUD_NORMAL) {
+			port->all = 0xFFFF;
+		} else {
+			port->all = 0x0;
+		}
+		break;
+	default:
+		ret = DEV_INVALID_OP;
+		goto done;
 	}
 
 	ret = _write_port_regs(dev, REG_PUD_EN_PORT0, port);
@@ -330,29 +330,29 @@ static int _setup_pin_polarity(struct device *dev, int access_op,
 	int ret;
 
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			bit_mask = 1 << pin;
+	case GPIO_ACCESS_BY_PIN:
+		bit_mask = 1 << pin;
 
-			/* normal == 0, invert == 1 */
-			if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
-				new_value = 1 << pin;
-			}
+		/* normal == 0, invert == 1 */
+		if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
+			new_value = 1 << pin;
+		}
 
-			port->all &= ~bit_mask;
-			port->all |= new_value;
+		port->all &= ~bit_mask;
+		port->all |= new_value;
 
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			/* normal == 0, invert == 1 */
-			if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
-				port->all = 0xFFFF;
-			} else {
-				port->all = 0x0;
-			}
-			break;
-		default:
-			ret = DEV_INVALID_OP;
-			goto done;
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		/* normal == 0, invert == 1 */
+		if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
+			port->all = 0xFFFF;
+		} else {
+			port->all = 0x0;
+		}
+		break;
+	default:
+		ret = DEV_INVALID_OP;
+		goto done;
 	}
 
 	ret = _write_port_regs(dev, REG_POL_INV_PORT0, port);
@@ -440,32 +440,32 @@ static int gpio_pcal9535a_write(struct device *dev, int access_op,
 
 	/* Invert input value for pins configurated as active low. */
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			bit_mask = 1 << pin;
+	case GPIO_ACCESS_BY_PIN:
+		bit_mask = 1 << pin;
 
-			new_value = (value << pin) & bit_mask;
-			new_value ^= (drv_data->out_pol_inv & bit_mask);
-			new_value &= bit_mask;
+		new_value = (value << pin) & bit_mask;
+		new_value ^= (drv_data->out_pol_inv & bit_mask);
+		new_value &= bit_mask;
 
-			port->all &= ~bit_mask;
-			port->all |= new_value;
+		port->all &= ~bit_mask;
+		port->all |= new_value;
 
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			port->all = value;
-			bit_mask = drv_data->out_pol_inv;
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		port->all = value;
+		bit_mask = drv_data->out_pol_inv;
 
-			new_value = value & bit_mask;
-			new_value ^= drv_data->out_pol_inv;
-			new_value &= bit_mask;
+		new_value = value & bit_mask;
+		new_value ^= drv_data->out_pol_inv;
+		new_value &= bit_mask;
 
-			port->all &= ~bit_mask;
-			port->all |= new_value;
+		port->all &= ~bit_mask;
+		port->all |= new_value;
 
-			break;
-		default:
-			ret = DEV_INVALID_OP;
-			goto done;
+		break;
+	default:
+		ret = DEV_INVALID_OP;
+		goto done;
 	}
 
 	ret = _write_port_regs(dev, REG_OUTPUT_PORT0, port);
@@ -500,15 +500,15 @@ static int gpio_pcal9535a_read(struct device *dev, int access_op,
 	}
 
 	switch (access_op) {
-		case GPIO_ACCESS_BY_PIN:
-			*value = (buf.all >> pin) & 0x01;
-			break;
-		case GPIO_ACCESS_BY_PORT:
-			*value = buf.all;
-			break;
-		default:
-			ret = DEV_INVALID_OP;
-			break;
+	case GPIO_ACCESS_BY_PIN:
+		*value = (buf.all >> pin) & 0x01;
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		*value = buf.all;
+		break;
+	default:
+		ret = DEV_INVALID_OP;
+		break;
 	}
 
 done:
