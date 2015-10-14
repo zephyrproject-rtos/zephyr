@@ -215,11 +215,11 @@ pre_kernel_late_init(k20_uart4, &k20_uart_dev_data[4]);
 
 /**< UART Devices */
 struct device * const uart_devs[] = {
-	&__initconfig_k20_uart02,
-	&__initconfig_k20_uart12,
-	&__initconfig_k20_uart22,
-	&__initconfig_k20_uart32,
-	&__initconfig_k20_uart42,
+	&__initconfig_k20_uart0,
+	&__initconfig_k20_uart1,
+	&__initconfig_k20_uart2,
+	&__initconfig_k20_uart3,
+	&__initconfig_k20_uart4,
 };
 
 #endif /* CONFIG_K20_UART */

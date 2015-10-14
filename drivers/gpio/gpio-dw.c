@@ -390,7 +390,7 @@ void gpio_config_0_irq(struct device *port)
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 void gpio_dw_isr_0(void *unused)
 {
-	gpio_dw_isr(&__initconfig_gpio_02);
+	gpio_dw_isr(&__initconfig_gpio_0);
 }
 #endif /* CONFIG_GPIO_DW_0_IRQ_DIRECT */
 
@@ -453,7 +453,7 @@ void gpio_config_1_irq(struct device *port)
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 void gpio_dw_isr_1(void *unused)
 {
-	gpio_dw_isr(&__initconfig_gpio_12);
+	gpio_dw_isr(&__initconfig_gpio_1);
 }
 #endif
 

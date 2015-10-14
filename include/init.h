@@ -50,7 +50,7 @@
  *  @sa DECLARE_DEVICE_INIT_CONFIG()
  */
 #define __define_initconfig(cfg_name, id, data)			    \
-	 static struct device (__initconfig_##cfg_name##id) __used  \
+	 static struct device (__initconfig_##cfg_name) __used  \
 	__attribute__((__section__(".initconfig" #id ".init"))) = { \
 		 .config = &(config_##cfg_name),\
 		 .driver_data = data}

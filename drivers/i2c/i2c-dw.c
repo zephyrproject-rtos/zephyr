@@ -867,7 +867,7 @@ void i2c_config_0(struct device *port)
 #ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
 void i2c_dw_isr_0(void *unused)
 {
-	i2c_dw_isr(&__initconfig_i2c_02);
+	i2c_dw_isr(&__initconfig_i2c_0);
 }
 #endif
 
