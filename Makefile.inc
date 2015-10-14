@@ -62,6 +62,9 @@ qemu: $(DOTCONFIG)
 
 initconfig: $(DOTCONFIG)
 
+menuconfig: initconfig
+	$(Q)$(call zephyrmake,$(O),$@)
+
 # Catch all
 %:
 	$(Q)$(call zephyrmake,$(O),$@)
