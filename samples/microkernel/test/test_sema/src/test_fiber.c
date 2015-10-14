@@ -38,8 +38,8 @@ extern ksem_t semList[];
 
 static char __stack fiberStack[FIBER_STACK_SIZE]; /* test fiber stack size */
 
-/* array of command packets used by test fiber to signal semaphores */
-static CMD_PKT_SET_INSTANCE(cmdPktSet, N_TESTS + 1);
+/* command packet set used by test fiber to signal semaphores */
+CMD_PKT_SET_INSTANCE(cmdPktSetFiber, N_TESTS + 1);
 
 /**
  *
@@ -59,18 +59,18 @@ static void testFiberEntry(void)
 	int i;
 	/* release semaphore test task is waiting for */
 	nano_fiber_sem_take_wait(&fiberSem);
-	fiber_sem_give(simpleSem, &CMD_PKT_SET(cmdPktSet));
+	fiber_sem_give(simpleSem, &cmdPktSetFiber);
 
 	/* release the semaphore for N_TESTS times */
 	nano_fiber_sem_take_wait(&fiberSem);
 	for (i = 0; i < N_TESTS; i++) {
-		fiber_sem_give(simpleSem, &CMD_PKT_SET(cmdPktSet));
+		fiber_sem_give(simpleSem, &cmdPktSetFiber);
 	}
 
 	/* signal each semaphore in the group */
 	for (i = 0; semList[i] != ENDLIST; i++) {
 		nano_fiber_sem_take_wait(&fiberSem);
-		fiber_sem_give(semList[i], &CMD_PKT_SET(cmdPktSet));
+		fiber_sem_give(semList[i], &cmdPktSetFiber);
 	}
 }
 

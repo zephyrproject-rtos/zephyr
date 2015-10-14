@@ -28,8 +28,8 @@
  * Each command packet set is created in global memory using ...
  *   CMD_PKT_SET_INSTANCE(set variable name, # of command packets in the set);
  *
- * Once created, the command packet set is accessed using ...
- *   CMD_PKT_SET(set variable name).<member field name>
+ * Once created, the command packet set is referenced as an ordinary structured
+ * variable.
 
  * A command packet set is a simple ring buffer.  No error checking is performed
  * when a command packet is retrieved from the set.  Each obtained command packet
@@ -52,47 +52,34 @@ extern "C" {
 
 #define CMD_PKT_SIZE_IN_WORDS (19)
 
-/**
- * @brief Define a command packet set
- *
- *
- * This macro is used to create a command packet set in the global namespace.
- * Each packet set can have a different number of packets.
- *
- * @param name Name of command packet set
- * @param num Number of packets in the set
- *
- * @internal
- * It is critical that the word corresponding to the [alloc] field in the
- * equivalent struct k_args command packet be zero so that the system knows that the
- * command packet is not part of the free list.
- * @endinternal
- */
-#define CMD_PKT_SET_INSTANCE(name, num) \
-	uint32_t name[2 + CMD_PKT_SIZE_IN_WORDS * (num)] = {num, 0}
-
-/**
- * @brief Wrapper for accessing a command packet set
- *
- * A command packet set must be typecast to the cmd_pkt_set type
- * when accessed, because it is instantiated as an array of uint32_t.
- *
- * @param name Name of command packet set
- *
- */
-#define CMD_PKT_SET(name) (*(struct cmd_pkt_set *)(name))
+/* define command packet set types */
 
 typedef uint32_t cmdPkt_t[CMD_PKT_SIZE_IN_WORDS];
 
 struct cmd_pkt_set {
-	uint32_t num_packets;    /* number of command packets in set */
-	uint32_t index;    /* index into command packet array */
-	cmdPkt_t command_packet[]; /* array of command packets */
+	uint32_t num_packets;      /* number of command packets in set */
+	uint32_t index;            /* index into command packet array */
+	cmdPkt_t *command_packet;  /* pointer to array of command packets */
 };
+
+/**
+ * @brief Define a command packet set
+ *
+ * This macro is used to create a command packet set of the specified size.
+ *
+ * @param name Name of command packet set
+ * @param num Number of packets in the set
+ *
+ * @warning The command packet set exists in the global namespace,
+ * and cannot be hidden by prefixing the macro with "static".
+ */
+#define CMD_PKT_SET_INSTANCE(name, num) \
+	uint32_t __noinit (_k_cmd_pkts_ ## name)[CMD_PKT_SIZE_IN_WORDS * (num)]; \
+	struct cmd_pkt_set name = {(num), 0, (cmdPkt_t *)(_k_cmd_pkts_ ## name)}
 
 /* externs */
 
-extern cmdPkt_t *_cmd_pkt_get(struct cmd_pkt_set *pSet);
+extern struct k_args *_cmd_pkt_get(struct cmd_pkt_set *pSet);
 
 #ifdef __cplusplus
 }

@@ -407,13 +407,7 @@ void isr_sem_give(ksem_t sema, struct cmd_pkt_set *pSet)
 {
 	struct k_args *pCommand; /* ptr to command packet */
 
-	/*
-	 * The cmdPkt_t data structure was designed to work seamlessly with the
-	 * struct k_args data structure and it is thus safe (and expected) to typecast
-	 * the return value of _cmd_pkt_get() to "struct k_args *".
-	 */
-
-	pCommand = (struct k_args *)_cmd_pkt_get(pSet);
+	pCommand = _cmd_pkt_get(pSet);
 	pCommand->Comm = _K_SVC_SEM_SIGNAL;
 	pCommand->args.s1.sema = sema;
 
