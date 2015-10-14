@@ -29,11 +29,13 @@ static inline int isalpha(int c)
 	return (((unsigned)c|32)-'a') < 26;
 }
 
-static inline int isspace(int c) {
+static inline int isspace(int c)
+{
 	return c == ' ' || ((unsigned)c-'\t') < 5;
 }
 
-static inline int isdigit(int a) {
+static inline int isdigit(int a)
+{
 	return (((unsigned)(a)-'0') < 10);
 }
 

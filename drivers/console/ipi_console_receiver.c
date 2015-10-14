@@ -54,8 +54,7 @@ static void ipi_console_fiber(int arg1, int arg2)
 		}
 
 		if (config_info->line_buf[pos] == '\n' ||
-		    pos == config_info->lb_size - 2)
-		{
+		    pos == config_info->lb_size - 2) {
 			if (pos != config_info->lb_size - 2) {
 				config_info->line_buf[pos] = '\0';
 			} else {

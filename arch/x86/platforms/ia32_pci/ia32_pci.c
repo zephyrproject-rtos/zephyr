@@ -60,7 +60,8 @@ pre_kernel_late_init(i2cirq_0, NULL);
 
 #ifdef CONFIG_GPIO_DW_0
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
-static int gpio_irq_set_0(struct device *unused) {
+static int gpio_irq_set_0(struct device *unused)
+{
 	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_GPIO_DW_0_IRQ,
 			CONFIG_GPIO_DW_0_IRQ + INT_VEC_IRQ0,
