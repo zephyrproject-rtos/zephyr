@@ -57,8 +57,7 @@
 						BT_GATT_PERM_WRITE_ENCRYPT)
 #define BT_GATT_PERM_AUTHEN_MASK		(BT_GATT_PERM_READ_AUTHEN | \
 						BT_GATT_PERM_WRITE_AUTHEN)
-#define BT_ATT_OP_CMD_MASK			(BT_ATT_OP_WRITE_CMD & \
-						BT_ATT_OP_SIGNED_WRITE_CMD)
+#define BT_ATT_OP_CMD_FLAG			0x40
 
 /* ATT request context */
 struct bt_att_req {
@@ -1466,7 +1465,7 @@ static void bt_att_recv(struct bt_conn *conn, struct bt_buf *buf)
 	}
 
 	/* Commands don't have response */
-	if ((hdr->code & BT_ATT_OP_CMD_MASK)) {
+	if ((hdr->code & BT_ATT_OP_CMD_FLAG)) {
 		goto done;
 	}
 
