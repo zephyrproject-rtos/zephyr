@@ -434,7 +434,7 @@ int _loapic_isr_vector_get(void)
 {
 	/* pointer to ISR vector table */
 	volatile int *pReg;
-	int block=0;
+	int block = 0;
 
 	while (block < 8) {
 		pReg = (volatile int *)

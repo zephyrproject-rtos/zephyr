@@ -84,7 +84,7 @@ struct spi_intel_data {
 #define INTEL_SPI_SSCR1_RFT(__rft) \
 	(((__rft) - 1) << 11)
 #define INTEL_SPI_SSCR1_EFWR		(0x1 << 16)
-#define INTEL_SPI_SSCR1_STRF		(0x1 << 17)
+#define INTEL_SPI_SSCR1_STRF		(0x1 << 17)
 
 #define INTEL_SPI_SSCR1_TFT_DFLT	(8)
 #define INTEL_SPI_SSCR1_RFT_DFLT	(8)

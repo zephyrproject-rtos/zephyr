@@ -29,7 +29,7 @@
 uint32_t _sys_profiler_buffer[CONFIG_PROFILER_BUFFER_SIZE];
 
 #ifdef CONFIG_PROFILER_CONTEXT_SWITCH
-void *_collector_fiber=NULL;
+void *_collector_fiber = NULL;
 #endif
 
 #ifdef CONFIG_PROFILER_SLEEP

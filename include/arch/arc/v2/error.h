@@ -29,7 +29,7 @@ ARC-specific nanokernel error handling interface. Included by ARC/arch.h.
 #ifndef _ASMLANGUAGE
 #include <toolchain/gcc.h>
 extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int,
-						 const NANO_ESF *);
+						 const NANO_ESF*);
 extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 #endif
 

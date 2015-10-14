@@ -28,8 +28,8 @@ ARM-specific nanokernel error handling interface. Included by ARM/arch.h.
 
 #ifndef _ASMLANGUAGE
 extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int,
-						 const NANO_ESF *);
-extern void _SysFatalErrorHandler(unsigned int, const NANO_ESF *);
+						 const NANO_ESF*);
+extern void _SysFatalErrorHandler(unsigned int, const NANO_ESF*);
 #endif
 
 #define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */

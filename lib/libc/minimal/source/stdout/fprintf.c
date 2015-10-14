@@ -24,7 +24,7 @@
 extern int _prf(int (*func)(), void *dest,
 				const char *format, va_list vargs);
 
-int fprintf(FILE *restrict F, const char *restrict format, ...)
+int fprintf(FILE * restrict F, const char *restrict format, ...)
 {
 	va_list vargs;
 	int     r;
@@ -36,7 +36,7 @@ int fprintf(FILE *restrict F, const char *restrict format, ...)
 	return r;
 }
 
-int vfprintf(FILE *restrict F, const char *restrict format, va_list vargs)
+int vfprintf(FILE * restrict F, const char *restrict format, va_list vargs)
 {
 	int r;
 

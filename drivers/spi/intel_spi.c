@@ -30,7 +30,7 @@
 #include "intel_spi_priv.h"
 
 #ifndef CONFIG_SPI_DEBUG
-#define DBG(...) {;}
+#define DBG(...) { ; }
 #else
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
@@ -118,8 +118,8 @@ static inline void _spi_control_cs(struct device *dev, int on)
 	gpio_pin_write(spi->cs_gpio_port, info->cs_gpio_pin, !on);
 }
 #else
-#define _spi_control_cs(...) {;}
-#define _spi_config_cs(...) {;}
+#define _spi_control_cs(...) { ; }
+#define _spi_config_cs(...) { ; }
 #endif /* CONFIG_SPI_INTEL_CS_GPIO */
 
 static void completed(struct device *dev, uint32_t error)
@@ -171,7 +171,7 @@ static void push_data(struct device *dev)
 
 	DBG("spi: push_data\n");
 
-	while(read_sssr(info->regs) & INTEL_SPI_SSSR_TNF) {
+	while (read_sssr(info->regs) & INTEL_SPI_SSSR_TNF) {
 		if (spi->tx_buf && spi->tx_buf_len > 0) {
 			data = *(uint8_t *)(spi->tx_buf);
 			spi->tx_buf++;
@@ -207,7 +207,7 @@ static void pull_data(struct device *dev)
 	uint32_t cnt = 0;
 	uint8_t data;
 
-	while(read_sssr(info->regs) & INTEL_SPI_SSSR_RNE) {
+	while (read_sssr(info->regs) & INTEL_SPI_SSSR_RNE) {
 		data = (uint8_t) read_ssdr(info->regs);
 		cnt++;
 

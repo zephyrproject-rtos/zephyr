@@ -33,8 +33,8 @@ typedef struct {
 	uint8_t  val[6];
 } bt_addr_le_t;
 
-#define BT_ADDR_ANY    (&(bt_addr_t) {{0, 0, 0, 0, 0, 0}})
-#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0}})
+#define BT_ADDR_ANY    (&(bt_addr_t) {{0, 0, 0, 0, 0, 0} })
+#define BT_ADDR_LE_ANY (&(bt_addr_le_t) { 0, {0, 0, 0, 0, 0, 0} })
 
 /* HCI Error Codes */
 #define BT_HCI_ERR_UNKNOWN_CONN_ID		0x02

@@ -31,7 +31,7 @@
 
 #if CONFIG_GDB_INFO
 GTEXT(_GdbStubExcEntry)
-_GDB_STUB_EXC_ENTRY:    .macro
+_GDB_STUB_EXC_ENTRY :    .macro
 	push {lr}
 	bl irq_lock
 	bl _GdbStubExcEntry
@@ -40,7 +40,7 @@ _GDB_STUB_EXC_ENTRY:    .macro
 .endm
 
 GTEXT(_GdbStubExcExit)
-_GDB_STUB_EXC_EXIT:     .macro
+_GDB_STUB_EXC_EXIT :     .macro
 	push {lr}
 	bl irq_lock
 	bl _GdbStubExcExit

@@ -133,7 +133,7 @@ void *_lifo_get(struct nano_lifo *lifo)
  * task cannot pend on a nanokernel object.  Instead, tasks will poll
  * the lifo object.
  */
-void *nano_fiber_lifo_get_wait(struct nano_lifo *lifo )
+void *nano_fiber_lifo_get_wait(struct nano_lifo *lifo)
 {
 	void *data;
 	unsigned int imask;

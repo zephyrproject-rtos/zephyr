@@ -56,7 +56,7 @@ struct pci_dev_info {
 extern void pci_bus_scan_init(void);
 extern int pci_bus_scan(struct pci_dev_info *dev_info);
 #else
-#define pci_bus_scan_init(void) {;}
+#define pci_bus_scan_init(void) { ; }
 static inline int pci_bus_scan(struct pci_dev_info *dev_info)
 {
 	return 1;
@@ -73,7 +73,7 @@ void pci_legacy_bridge_configure(struct pci_dev_info *dev_info,
 #ifdef CONFIG_PCI_DEBUG
 extern void pci_show(struct pci_dev_info *dev_info);
 #else
-#define pci_show(__unused__) {;}
+#define pci_show(__unused__) { ; }
 #endif
 
 #endif /* _PCI_H_ */

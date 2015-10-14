@@ -26,7 +26,7 @@
 #include "gpio_pcal9535a.h"
 
 #ifndef CONFIG_GPIO_PCAL9535A_DEBUG
-#define DBG(...) {;}
+#define DBG(...) { ; }
 #else
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
@@ -614,7 +614,7 @@ static struct gpio_pcal9535a_config gpio_pcal9535a_0_cfg = {
 static struct gpio_pcal9535a_drv_data gpio_pcal9535a_0_drvdata = {
 	/* Default for registers according to datasheet */
 	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.pol_inv ={ .all = 0x0 },
+	.reg_cache.pol_inv = { .all = 0x0 },
 	.reg_cache.dir = { .all = 0xFFFF },
 	.reg_cache.pud_en = { .all = 0x0 },
 	.reg_cache.pud_sel = { .all = 0xFFFF },
@@ -642,7 +642,7 @@ static struct gpio_pcal9535a_config gpio_pcal9535a_1_cfg = {
 static struct gpio_pcal9535a_drv_data gpio_pcal9535a_1_drvdata = {
 	/* Default for registers according to datasheet */
 	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.pol_inv ={ .all = 0x0 },
+	.reg_cache.pol_inv = { .all = 0x0 },
 	.reg_cache.dir = { .all = 0xFFFF },
 	.reg_cache.pud_en = { .all = 0x0 },
 	.reg_cache.pud_sel = { .all = 0xFFFF },
@@ -670,7 +670,7 @@ static struct gpio_pcal9535a_config gpio_pcal9535a_2_cfg = {
 static struct gpio_pcal9535a_drv_data gpio_pcal9535a_2_drvdata = {
 	/* Default for registers according to datasheet */
 	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.pol_inv ={ .all = 0x0 },
+	.reg_cache.pol_inv = { .all = 0x0 },
 	.reg_cache.dir = { .all = 0xFFFF },
 	.reg_cache.pud_en = { .all = 0x0 },
 	.reg_cache.pud_sel = { .all = 0xFFFF },
@@ -698,7 +698,7 @@ static struct gpio_pcal9535a_config gpio_pcal9535a_3_cfg = {
 static struct gpio_pcal9535a_drv_data gpio_pcal9535a_3_drvdata = {
 	/* Default for registers according to datasheet */
 	.reg_cache.output = { .all = 0xFFFF },
-	.reg_cache.pol_inv ={ .all = 0x0 },
+	.reg_cache.pol_inv = { .all = 0x0 },
 	.reg_cache.dir = { .all = 0xFFFF },
 	.reg_cache.pud_en = { .all = 0x0 },
 	.reg_cache.pud_sel = { .all = 0xFFFF },

@@ -47,7 +47,7 @@
 			NET_ERR("**ERROR** buf %p in use (%s:%s():%d)\n", \
 				buf, __FILE__, __FUNCTION__, __LINE__);	\
 		}							\
-	} while(0)
+	} while (0)
 
 #define NET_BUF_CHECK_IF_NOT_IN_USE(buf)				\
 	do {								\
@@ -55,7 +55,7 @@
 			NET_ERR("**ERROR** buf %p not in use (%s:%s():%d)\n",\
 				buf, __FILE__, __FUNCTION__, __LINE__);	\
 		}							\
-	} while(0)
+	} while (0)
 #else
 #define NET_BUF_CHECK_IF_IN_USE(buf)
 #define NET_BUF_CHECK_IF_NOT_IN_USE(buf)
@@ -222,8 +222,8 @@ struct net_buf *net_buf_get_tx(struct net_context *context);
  */
 /* Same as net_buf_get, but also reserve headroom for potential headers */
 #ifdef DEBUG_NET_BUFS
-#define net_buf_get_reserve_rx(res) net_buf_get_reserve_rx_debug(res,__FUNCTION__,__LINE__)
-#define net_buf_get_reserve_tx(res) net_buf_get_reserve_tx_debug(res,__FUNCTION__,__LINE__)
+#define net_buf_get_reserve_rx(res) net_buf_get_reserve_rx_debug(res, __FUNCTION__, __LINE__)
+#define net_buf_get_reserve_tx(res) net_buf_get_reserve_tx_debug(res, __FUNCTION__, __LINE__)
 struct net_buf *net_buf_get_reserve_rx_debug(uint16_t reserve_head, const char *caller, int line);
 struct net_buf *net_buf_get_reserve_tx_debug(uint16_t reserve_head, const char *caller, int line);
 #else
@@ -345,7 +345,7 @@ struct net_mbuf {
  * @return Network buffer if successful, NULL otherwise.
  */
 #ifdef DEBUG_NET_BUFS
-#define net_mbuf_get_reserve(res) net_mbuf_get_reserve_debug(res,__FUNCTION__,__LINE__)
+#define net_mbuf_get_reserve(res) net_mbuf_get_reserve_debug(res, __FUNCTION__, __LINE__)
 struct net_mbuf *net_mbuf_get_reserve_debug(uint16_t reserve_head, const char *caller, int line);
 #else
 struct net_mbuf *net_mbuf_get_reserve(uint16_t reserve_head);

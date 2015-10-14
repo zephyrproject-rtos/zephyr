@@ -68,7 +68,7 @@ static inline void nonEssentialTaskAbort(void)
 
 void _SysFatalErrorHandler(
 	unsigned int reason, /* fatal error reason */
-	const NANO_ESF *pEsf /* pointer to exception stack frame */
+	const NANO_ESF * pEsf /* pointer to exception stack frame */
 )
 {
 	nano_context_type_t curCtx = sys_execution_context_type_get();

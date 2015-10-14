@@ -44,13 +44,13 @@ int sys_ring_buf_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 		header->value = value;
 
 		if (likely(buf->mask)) {
-			for (i=0; i < size32; ++i) {
+			for (i = 0; i < size32; ++i) {
 				index = (i + buf->tail + 1) & buf->mask;
 				buf->buf[index] = data[i];
 			}
 			buf->tail = (buf->tail + size32 + 1) & buf->mask;
 		} else {
-			for (i=0; i < size32; ++i) {
+			for (i = 0; i < size32; ++i) {
 				index = (i + buf->tail + 1) % buf->size;
 				buf->buf[index] = data[i];
 			}

@@ -158,7 +158,7 @@ static inline void handle_expired_nano_timeouts(int ticks)
 	}
 }
 #else
-	#define handle_expired_nano_timeouts(ticks) do { } while((0))
+	#define handle_expired_nano_timeouts(ticks) do { } while ((0))
 #endif
 
 /* handle the expired nano timers in the nano timers queue */
@@ -178,7 +178,7 @@ static inline void handle_expired_nano_timers(int ticks)
 	}
 }
 #else
-	#define handle_expired_nano_timers(ticks) do { } while((0))
+	#define handle_expired_nano_timers(ticks) do { } while ((0))
 #endif
 
 #if defined(CONFIG_NANO_TIMEOUTS) || defined(CONFIG_NANO_TIMERS)

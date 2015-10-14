@@ -37,7 +37,7 @@
 #include "i2c_dw_registers.h"
 
 #ifndef CONFIG_I2C_DEBUG
-#define DBG(...) {;}
+#define DBG(...) { ; }
 #else
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>

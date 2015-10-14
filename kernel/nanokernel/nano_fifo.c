@@ -122,7 +122,7 @@ void _fifo_put_non_preemptible(struct nano_fifo *fifo, void *data)
 	irq_unlock(imask);
 }
 
-void nano_task_fifo_put( struct nano_fifo *fifo, void *data)
+void nano_task_fifo_put(struct nano_fifo *fifo, void *data)
 {
 	unsigned int imask;
 
@@ -203,7 +203,7 @@ void *_fifo_get(struct nano_fifo *fifo)
 	return data;
 }
 
-void *nano_fiber_fifo_get_wait( struct nano_fifo *fifo)
+void *nano_fiber_fifo_get_wait(struct nano_fifo *fifo)
 {
 	void *data;
 	unsigned int imask;
@@ -222,7 +222,7 @@ void *nano_fiber_fifo_get_wait( struct nano_fifo *fifo)
 	return data;
 }
 
-void *nano_task_fifo_get_wait( struct nano_fifo *fifo)
+void *nano_task_fifo_get_wait(struct nano_fifo *fifo)
 {
 	void *data;
 	unsigned int imask;
