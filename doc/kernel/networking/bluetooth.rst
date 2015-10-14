@@ -6,23 +6,22 @@ Bluetooth Implementation
 Initialization
 **************
 
-Initialize the Bluetooth subsystem using :c:func:`bt_init()`. Caller shall be
-either task or a fiber. Caller must ensure that function succeeds by checking
-return code for errors.
+Initialize the Bluetooth subsystem using :c:func:`bt_init()`. Caller shall
+be either task or a fiber. Caller must ensure that function succeeds by
+checking return code for errors.
 
-Application Program Interfaces
-******************************
+APIs
+****
 
-+------------------------------------------+------------------------------------------------------+
-| Call                                     | Description                                          |
-+==========================================+======================================================+
-| :c:func:`bt_init()`                      | Initializes the Bluetooth subsystem                  |
-+------------------------------------------+------------------------------------------------------+
-| :c:func:`bt_start_advertising()`         | Set advertisement and scan data and start            |
-|                                          | advertising                                          |
-+------------------------------------------+------------------------------------------------------+
+The following Bluetooth APIs are provided:
 
-TODO: Describe all API
+:c:func:`bt_init()`
+   Initializes the Bluetooth subsystem.
+
+:c:func:`bt_start_advertising()`
+   Sets up advertisement, scans for data, and starts advertising.
+
+.. todo:: Describe all API
 
 Bluetooth Application Example
 *****************************
