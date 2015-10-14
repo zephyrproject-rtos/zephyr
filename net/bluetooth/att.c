@@ -134,16 +134,16 @@ static uint8_t att_mtu_req(struct bt_conn *conn, struct bt_buf *buf)
 	struct bt_att_exchange_mtu_req *req;
 	struct bt_att_exchange_mtu_rsp *rsp;
 	struct bt_buf *pdu;
-	uint16_t mtu;
+	uint16_t mtu_client, mtu_server;
 
 	req = (void *)buf->data;
 
-	mtu = sys_le16_to_cpu(req->mtu);
+	mtu_client = sys_le16_to_cpu(req->mtu);
 
-	BT_DBG("Client MTU %u\n", mtu);
+	BT_DBG("Client MTU %u\n", mtu_client);
 
 	/* Check if MTU is valid */
-	if (mtu < BT_ATT_DEFAULT_LE_MTU) {
+	if (mtu_client < BT_ATT_DEFAULT_LE_MTU) {
 		return BT_ATT_ERR_INVALID_PDU;
 	}
 
@@ -155,17 +155,18 @@ static uint8_t att_mtu_req(struct bt_conn *conn, struct bt_buf *buf)
 	/* Select MTU based on the amount of room we have in bt_buf including
 	 * one extra byte for ATT header.
 	 */
-	mtu = min(mtu, bt_buf_tailroom(pdu) + 1);
+	mtu_server = bt_buf_tailroom(pdu) + 1;
 
-	BT_DBG("Server MTU %u\n", mtu);
-
-	att->mtu = mtu;
+	BT_DBG("Server MTU %u\n", mtu_server);
 
 	rsp = bt_buf_add(pdu, sizeof(*rsp));
-	rsp->mtu = sys_cpu_to_le16(mtu);
+	rsp->mtu = sys_cpu_to_le16(mtu_server);
 
 	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, pdu);
 
+	att->mtu = min(mtu_client, mtu_server);
+
+	BT_DBG("Negotiated MTU %u\n", att->mtu);
 	return 0;
 }
 
