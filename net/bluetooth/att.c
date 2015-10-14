@@ -219,6 +219,8 @@ static uint8_t att_mtu_rsp(struct bt_conn *conn, struct bt_buf *buf)
 		       sizeof(struct bt_hci_acl_hdr) +
 		       bt_dev.drv->head_reserve));
 
+	BT_DBG("Negotiated MTU %u\n", att->mtu);
+
 	return att_handle_rsp(conn, rsp, buf->len, 0);
 }
 
