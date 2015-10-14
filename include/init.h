@@ -21,96 +21,87 @@
 #include <device.h>
 #include <toolchain.h>
 
-#define PRE_KERNEL_CORE		0
-#define PRE_KERNEL_EARLY	1
-#define PRE_KERNEL_LATE		2
-#define NANO_EARLY		3
-#define NANO_LATE		4
-#define MICRO_EARLY		5
-#define MICRO_LATE		6
-#define APP_EARLY		7
-#define APP_LATE		8
-
-/** @def __define_initconfig
- *
- *  @brief Define an init object
- *
- *  @details This macro declares an init object to be placed in a
- *  given init level section in the image. This macro should not be used
- *  directly.
- *
- *  @param cfg_name Name of the config object created with
- *  DECLARE_DEVICE_INIT_CONFIG() macro that will be referenced by
- *  init object.
- *
- *  @param id The init level id where the init object will be placed
- *  in the image.
- *
- *  @param data The pointer to the driver data for the driver instance.
- *  @sa DECLARE_DEVICE_INIT_CONFIG()
- */
-#define __define_initconfig(cfg_name, id, data)			    \
-	 static struct device (__initconfig_##cfg_name) __used  \
-	__attribute__((__section__(".initconfig" #id ".init"))) = { \
-		 .config = &(config_##cfg_name),\
-		 .driver_data = data}
 /*
- * There are four distinct init levels, pre_kernel, nano, micro
- * and app. Each init level a unique set of restrictions placed on the
- * component being initialized within the level.
- *   pre_kernel:
- *     At this level no kernel objects or services are available to
- *     the component. pre_kernel has three phases, core, early and
- *     late. The core phase is intended for components that rely
- *     solely on hardware present in the processor/SOC and do *not*
- *     rely on services from any other component in the system. The
- *     early phase can be used by components that do *not* need kernel
- *     services and may rely on components from the core phase. The
- *     late phase can be used by components that do *not* need kernel
- *     services and may rely on components from the core and early
- *     phases.
- *  nano:
- *     At this level nano kernel services are available to the
- *     component. All services provided by the components initialized
- *     in the pre_kernel are also available. The nano level has an
- *     early and late phase.  Components in the early phase may rely
- *     on the nano kernel and pre_kernel services.  Components in the
- *     late phase may rely on, nano kernel, pre_kernel services and
- *     nano_early services
- *  micro:
- *     At this level micro kernel, nano kernel and pre_kernel services
- *     are available to the component. The micor level has an
- *     early and late phase.  Components in the early phase may rely
- *     on micro kernel, nano kernel and pre_kernel services.
- *     Components in the late phase may rely on, micro kernel, nano
- *     kernel, pre_kernel services and  micro_early services
- *  app:
- *    The app level is not intended for core kernel components but for
- *    the application developer to add any components that they wish to
- *    have initialized automatically during kernel initialization.  The
- *    app level is executed as the final init stage in both nanokernel
- *    and microkernel configurations. The application component may
- *    rely any component configured into the system.
-*/
-
-/* Run on pre_kernel stack; no {micro,nano} kernel objects available */
-#define pre_kernel_core_init(cfg, data)	 __define_initconfig(cfg, 0, data)
-#define pre_kernel_early_init(cfg, data) __define_initconfig(cfg, 1, data)
-#define pre_kernel_late_init(cfg, data)	 __define_initconfig(cfg, 2, data)
-
-/* Run from nano kernel idle task; no micro kernel objects available */
-#define nano_early_init(cfg, data)	__define_initconfig(cfg, 3, data)
-#define nano_late_init(cfg, data)	__define_initconfig(cfg, 4, data)
-
-/* Run from micro kernel idle task. */
-#define micro_early_init(cfg, data)	__define_initconfig(cfg, 5, data)
-#define micro_late_init(cfg, data)	__define_initconfig(cfg, 6, data)
-
-/* Run in the idle task; In a nano kernel only system run after
- * nano_late_init(). In a micro kernel system after micro_late_init()
+ * System initialization levels. The PRIMARY and SECONDARY levels are
+ * executed in the kernel's initialization context, which uses the interrupt
+ * stack. The remaining levels are executed in the kernel's main task
+ * (i.e. the nanokernel's background task or the microkernel's idle task).
  */
-#define app_early_init(cfg, data)	__define_initconfig(cfg, 7, data)
-#define app_late_init(cfg, data)	__define_initconfig(cfg, 8, data)
 
+#define _SYS_INIT_LEVEL_PRIMARY      0
+#define _SYS_INIT_LEVEL_SECONDARY    1
+#define _SYS_INIT_LEVEL_NANOKERNEL   2
+#define _SYS_INIT_LEVEL_MICROKERNEL  3
+#define _SYS_INIT_LEVEL_APPLICATION  4
+
+
+/** @def SYS_DEFINE_DEVICE
+ *
+ *  @brief Define device object
+ *
+ *  @details This macro defines a device object that is automatically
+ *  configured by the kernel during system initialization.
+ *
+ *  @param name Device name.
+ *
+ *  @param data Pointer to the device's configuration data.
+ *  @sa DECLARE_DEVICE_INIT_CONFIG()
+ *
+ *  @param level The initialization level at which configuration occurs.
+ *  Must be one of the following symbols, which are listed in the order
+ *  they are performed by the kernel:
+ *
+ *  PRIMARY: Used for devices that have no dependencies, such as those
+ *  that rely solely on hardware present in the processor/SOC. These devices
+ *  cannot use any kernel services during configuration, since they are not
+ *  yet available.
+ *
+ *  SECONDARY: Used for devices that rely on the initialization of devices
+ *  initialized as part of the PRIMARY level. These devices cannot use any
+ *  kernel services during configuration, since they are not yet available.
+ *
+ *  NANOKERNEL: Used for devices that require nanokernel services during
+ *  configuration.
+ *
+ *  MICROKERNEL: Used for devices that require microkernel services during
+ *  configuration.
+ *
+ *  APPLICATION: Used for application components (i.e. non-kernel components)
+ *  that need automatic configuration. These devices can use all services
+ *  provided by the kernel during configuration.
+ *
+ *  @param priority The initialization priority of the device, relative to
+ *  other devices of the same initialization level. Specified as an integer
+ *  value in the range 0 to 99; lower values indicate earlier initialization.
+ *  Must be expressed as a hard-coded decimal integer literal without leading
+ *  zeroes (e.g. 32); symbolic expressions are @not permitted.
+ */
+
+#define SYS_DEFINE_DEVICE(name, data, level, priority)			    \
+	 static struct device (__initconfig_##name) __used  \
+	__attribute__((__section__(".init_" #level #priority))) = { \
+		 .config = &(config_##name),\
+		 .driver_data = data}
+
+/* The following legacy APIs are provided for backwards compatibility */
+
+#define pre_kernel_core_init(cfg, data)	\
+		SYS_DEFINE_DEVICE(cfg, data, PRIMARY, 0)
+#define pre_kernel_early_init(cfg, data) \
+		SYS_DEFINE_DEVICE(cfg, data, SECONDARY, 0)
+#define pre_kernel_late_init(cfg, data)	\
+		SYS_DEFINE_DEVICE(cfg, data, SECONDARY, 50)
+#define nano_early_init(cfg, data) \
+		SYS_DEFINE_DEVICE(cfg, data, NANOKERNEL, 0)
+#define nano_late_init(cfg, data) \
+		SYS_DEFINE_DEVICE(cfg, data, NANOKERNEL, 50)
+#define micro_early_init(cfg, data)	\
+		SYS_DEFINE_DEVICE(cfg, data, MICROKERNEL, 0)
+#define micro_late_init(cfg, data) \
+		SYS_DEFINE_DEVICE(cfg, data, MICROKERNEL, 50)
+#define app_early_init(cfg, data) \
+		SYS_DEFINE_DEVICE(cfg, data, APPLICATION, 0)
+#define app_late_init(cfg, data) \
+		SYS_DEFINE_DEVICE(cfg, data, APPLICATION, 50)
 
 #endif /* _INIT_H_ */

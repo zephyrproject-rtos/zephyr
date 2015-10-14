@@ -2,36 +2,31 @@
 #include <device.h>
 #include <misc/util.h>
 
-extern struct device __initconfig_start[];
-extern struct device __initconfig0_start[];
-extern struct device __initconfig1_start[];
-extern struct device __initconfig2_start[];
-extern struct device __initconfig3_start[];
-extern struct device __initconfig4_start[];
-extern struct device __initconfig5_start[];
-extern struct device __initconfig6_start[];
-extern struct device __initconfig7_start[];
-extern struct device __initconfig_end[];
+extern struct device __device_init_start[];
+extern struct device __device_PRIMARY_start[];
+extern struct device __device_SECONDARY_start[];
+extern struct device __device_NANOKERNEL_start[];
+extern struct device __device_MICROKERNEL_start[];
+extern struct device __device_APPLICATION_start[];
+extern struct device __device_init_end[];
 
 static struct device *config_levels[] = {
-	__initconfig0_start,
-	__initconfig1_start,
-	__initconfig2_start,
-	__initconfig3_start,
-	__initconfig4_start,
-	__initconfig5_start,
-	__initconfig6_start,
-	__initconfig7_start,
-	__initconfig_end,
+	__device_PRIMARY_start,
+	__device_SECONDARY_start,
+	__device_NANOKERNEL_start,
+	__device_MICROKERNEL_start,
+	__device_APPLICATION_start,
+	__device_init_end,
 };
 
 /**
- * @brief Execute all the driver init functions at a given level
+ * @brief Execute all the device initialization functions at a given level
  *
- * @details Driver init objects are created with the
- * __define_initconfig() macro and are placed in RAM by the linker
- * script. The {nano|micro}kernel code will execute the init level at
- * the appropriate time.
+ * @details Invokes the initialization routine for each device object
+ * created by the SYS_DEFINE_DEVICE() macro using the specified level.
+ * The linker script places the device objects in memory in the order
+ * they need to be invoked, with symbols indicating where one level leaves
+ * off and the next one begins.
  *
  * @param level init level to run.
  */

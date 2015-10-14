@@ -108,10 +108,8 @@ extern void _Ctors(void);
 
 static void _main(void)
 {
-	_sys_device_do_config_level(NANO_EARLY);
-	_sys_device_do_config_level(NANO_LATE);
-	_sys_device_do_config_level(APP_EARLY);
-	_sys_device_do_config_level(APP_EARLY);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_NANOKERNEL);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
 
 	extern void main(void);
 	main();
@@ -259,9 +257,8 @@ FUNC_NORETURN void _Cstart(void)
 
 	/* perform basic hardware initialization */
 
-	_sys_device_do_config_level(PRE_KERNEL_CORE);
-	_sys_device_do_config_level(PRE_KERNEL_EARLY);
-	_sys_device_do_config_level(PRE_KERNEL_LATE);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRIMARY);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_SECONDARY);
 
 	/*
 	 * Initialize random number generator

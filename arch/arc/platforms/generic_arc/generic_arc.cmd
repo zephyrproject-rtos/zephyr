@@ -34,11 +34,8 @@ Linker script for the Generic ARC BSPs.
 	#define KENTRY _VxMicroStart
 #endif
 
+#include <linker-defs.h>
 #include <linker-tool.h>
-
-#define INIT_LEVEL(level)				\
-		__initconfig##level##_start = .;	\
-		*(.initconfig##level##.init)		\
 
 /* physical address of RAM */
 #ifdef CONFIG_XIP
@@ -133,17 +130,7 @@ SECTIONS {
 
 	SECTION_PROLOGUE(initlevel, (OPTIONAL),)
 	{
-		__initconfig_start = .;
-		INIT_LEVEL(0)
-		INIT_LEVEL(1)
-		INIT_LEVEL(2)
-		INIT_LEVEL(3)
-		INIT_LEVEL(4)
-		INIT_LEVEL(5)
-		INIT_LEVEL(6)
-		INIT_LEVEL(7)
-		KEEP(*(SORT_BY_NAME(".initconfig*")))
-		__initconfig_end = .;
+		DEVICE_INIT_SECTIONS()
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 

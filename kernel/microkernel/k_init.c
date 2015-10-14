@@ -67,8 +67,7 @@ extern int _k_kernel_idle(void);
 
 void _main(void)
 {
-	_sys_device_do_config_level(NANO_EARLY);
-	_sys_device_do_config_level(NANO_LATE);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_NANOKERNEL);
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/*
@@ -94,10 +93,8 @@ void _main(void)
 			   CONFIG_MICROKERNEL_SERVER_PRIORITY,
 			   0);
 
-	_sys_device_do_config_level(MICRO_EARLY);
-	_sys_device_do_config_level(MICRO_LATE);
-	_sys_device_do_config_level(APP_EARLY);
-	_sys_device_do_config_level(APP_LATE);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_MICROKERNEL);
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
 
 
 #ifdef CONFIG_WORKLOAD_MONITOR

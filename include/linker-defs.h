@@ -42,6 +42,33 @@ This file may be included by:
 #endif
 
 #ifdef _LINKER
+
+/*
+ * generate a symbol to mark the start of the device initialization objects for
+ * the specified level, then link all of those objects (sorted by priority);
+ * ensure the objects aren't discarded if there is no direct reference to them
+ */
+
+#define DEVICE_INIT_LEVEL(level)				\
+		__device_##level##_start = .;			\
+		KEEP(*(SORT(.init_##level[0-9])));		\
+		KEEP(*(SORT(.init_##level[1-9][0-9])));	\
+
+/*
+ * link in device initialization objects for all devices that are automatically
+ * initialized by the kernel; the objects are sorted in the order they will be
+ * initialized (i.e. ordered by level, sorted by priority within a level)
+ */
+
+#define	DEVICE_INIT_SECTIONS()			\
+		__device_init_start = .;		\
+		DEVICE_INIT_LEVEL(PRIMARY)		\
+		DEVICE_INIT_LEVEL(SECONDARY)	\
+		DEVICE_INIT_LEVEL(NANOKERNEL)	\
+		DEVICE_INIT_LEVEL(MICROKERNEL)	\
+		DEVICE_INIT_LEVEL(APPLICATION)	\
+		__device_init_end = .;			\
+
 #ifdef CONFIG_X86_32 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
 #if defined(CONFIG_XIP)
@@ -63,6 +90,7 @@ This file may be included by:
 #endif
 
 #elif defined(_ASMLANGUAGE)
+
 /* Assembly FILES: declaration defined by the linker script */
 GDATA(__bss_start)
 GDATA(__bss_num_words)
@@ -72,7 +100,7 @@ GDATA(__data_ram_start)
 GDATA(__data_num_words)
 #endif
 
-#else
+#else /* ! _ASMLANGUAGE */
 
 #include <stdint.h>
 extern char __bss_start[];
