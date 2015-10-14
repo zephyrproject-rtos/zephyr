@@ -764,7 +764,7 @@ int i2c_dw_initialize(struct device *port)
 		return DEV_NOT_CONFIG;
 	}
 
-	regs = (struct i2c_dw_registers*) rom->base_address;
+	regs = (struct i2c_dw_registers *) rom->base_address;
 
 	/* verify that we have a valid DesignWare register first */
 	if (regs->ic_comp_type != I2C_DW_MAGIC_KEY) {

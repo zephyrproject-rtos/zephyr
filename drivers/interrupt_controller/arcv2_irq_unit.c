@@ -28,7 +28,7 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <board.h>
-extern void * _VectorTable;
+extern void *_VectorTable;
 
 /*
  * @brief Initialize the interrupt unit device driver

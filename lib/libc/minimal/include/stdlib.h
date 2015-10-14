@@ -30,8 +30,8 @@
 typedef unsigned int  size_t;
 #endif
 
-unsigned long int strtoul(const char* str, char** endptr, int base);
-long int strtol (const char* str, char** endptr, int base);
+unsigned long int strtoul(const char *str, char **endptr, int base);
+long int strtol(const char *str, char **endptr, int base);
 int atoi(const char *s);
 
 

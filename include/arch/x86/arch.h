@@ -420,10 +420,10 @@ extern void	nano_cpu_idle(void);
 
 /** Nanokernel provided routine to report any detected fatal error. */
 extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
-						 const NANO_ESF * pEsf);
+						 const NANO_ESF *pEsf);
 /** User provided routine to handle any detected fatal error post reporting. */
 extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
-						const NANO_ESF * pEsf);
+						const NANO_ESF *pEsf);
 /** Dummy ESF for fatal errors that would otherwise not have an ESF */
 extern const NANO_ESF _default_esf;
 
