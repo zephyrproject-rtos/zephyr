@@ -397,10 +397,8 @@ static int smp_s1(const uint8_t k[16], const uint8_t r1[16],
 	return le_encrypt(k, out, out);
 }
 
-static void smp_reset(struct bt_conn *conn)
+static void smp_reset(struct bt_smp *smp)
 {
-	struct bt_smp *smp = conn->smp;
-
 	if (smp->timeout) {
 		fiber_fiber_delayed_start_cancel(smp->timeout);
 		smp->timeout = NULL;
@@ -413,13 +411,13 @@ static void smp_reset(struct bt_conn *conn)
 	atomic_set(&smp->allowed_cmds, 0);
 	atomic_set(&smp->flags, 0);
 
-	if (conn->required_sec_level != conn->sec_level) {
+	if (smp->conn->required_sec_level != smp->conn->sec_level) {
 		/* TODO report error */
 		/* reset required security level in case of error */
-		conn->required_sec_level = conn->sec_level;
+		smp->conn->required_sec_level = smp->conn->sec_level;
 	}
 
-	switch(conn->role) {
+	switch(smp->conn->role) {
 #if defined(CONFIG_BLUETOOTH_CENTRAL)
 	case BT_HCI_ROLE_MASTER:
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
@@ -445,7 +443,7 @@ static void smp_timeout(int arg1, int arg2)
 
 	smp->timeout = NULL;
 
-	smp_reset(smp->conn);
+	smp_reset(smp);
 
 	atomic_set_bit(&smp->flags, SMP_FLAG_TIMEOUT);
 }
@@ -1015,7 +1013,7 @@ static uint8_t smp_pairing_failed(struct bt_conn *conn, struct bt_buf *buf)
 		break;
 	}
 
-	smp_reset(conn);
+	smp_reset(smp);
 
 	/* return no error to avoid sending Pairing Failed in response */
 	return 0;
@@ -1174,7 +1172,7 @@ static uint8_t smp_master_ident(struct bt_conn *conn, struct bt_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(conn);
+		smp_reset(smp);
 	}
 
 	return 0;
@@ -1265,7 +1263,7 @@ static uint8_t smp_ident_addr_info(struct bt_conn *conn, struct bt_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(conn);
+		smp_reset(smp);
 	}
 
 	return 0;
@@ -1299,7 +1297,7 @@ static uint8_t smp_signing_info(struct bt_conn *conn, struct bt_buf *buf)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(conn);
+		smp_reset(smp);
 	}
 
 	return 0;
@@ -1432,7 +1430,7 @@ static void bt_smp_recv(struct bt_conn *conn, struct bt_buf *buf)
 	if (err) {
 		send_err_rsp(conn, err);
 
-		smp_reset(conn);
+		smp_reset(smp);
 	}
 
 done:
@@ -1455,7 +1453,7 @@ static void bt_smp_connected(struct bt_conn *conn)
 		smp->conn = conn;
 		conn->smp = smp;
 
-		smp_reset(conn);
+		smp_reset(smp);
 
 		return;
 	}
@@ -1538,7 +1536,7 @@ static void bt_smp_encrypt_change(struct bt_conn *conn)
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		smp_reset(conn);
+		smp_reset(smp);
 	}
 }
 
@@ -2121,7 +2119,7 @@ void bt_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 void bt_auth_cancel(struct bt_conn *conn)
 {
 	send_err_rsp(conn, BT_SMP_ERR_PASSKEY_ENTRY_FAILED);
-	smp_reset(conn);
+	smp_reset(conn->smp);
 }
 
 int bt_smp_init(void)
