@@ -31,6 +31,7 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/driver.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -538,10 +539,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn, bt_gatt_rsp_func_t func)
 		return -ENOMEM;
 	}
 
-	/* Select MTU based on the amount of room we have in bt_buf including
-	 * one extra byte for ATT header.
-	 */
-	mtu = bt_buf_tailroom(buf) + 1;
+	mtu = BT_ATT_MAX_LE_MTU;
 
 	BT_DBG("Client MTU %u\n", mtu);
 

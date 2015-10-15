@@ -151,10 +151,7 @@ static uint8_t att_mtu_req(struct bt_att *att, struct bt_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	/* Select MTU based on the amount of room we have in bt_buf including
-	 * one extra byte for ATT header.
-	 */
-	mtu_server = bt_buf_tailroom(pdu) + 1;
+	mtu_server = BT_ATT_MAX_LE_MTU;
 
 	BT_DBG("Server MTU %u\n", mtu_server);
 
@@ -215,14 +212,7 @@ static uint8_t att_mtu_rsp(struct bt_att *att, struct bt_buf *buf)
 		return att_handle_rsp(att, NULL, 0, BT_ATT_ERR_INVALID_PDU);
 	}
 
-	/* Clip MTU based on the maximum amount of data bt_buf can hold
-	 * excluding L2CAP, ACL and driver headers.
-	 */
-	att->chan.rx.mtu = min(mtu, BT_BUF_MAX_DATA -
-		       (sizeof(struct bt_l2cap_hdr) +
-		       sizeof(struct bt_hci_acl_hdr) +
-		       bt_dev.drv->head_reserve));
-
+	att->chan.rx.mtu = min(mtu, BT_ATT_MAX_LE_MTU);
 
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
 	 *

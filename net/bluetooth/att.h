@@ -18,6 +18,14 @@
 
 #define BT_ATT_DEFAULT_LE_MTU	23
 
+/* Size of MTU is based on the maximum amount of data bt_buf can hold
+ * excluding L2CAP, ACL and driver headers.
+ */
+#define BT_ATT_MAX_LE_MTU	(BT_BUF_MAX_DATA - \
+				 sizeof(struct bt_l2cap_hdr) - \
+				 sizeof(struct bt_hci_acl_hdr) - \
+				 bt_dev.drv->head_reserve)
+
 struct bt_att_hdr {
 	uint8_t  code;
 } __packed;
