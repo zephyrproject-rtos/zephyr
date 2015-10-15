@@ -838,12 +838,13 @@ DECLARE_DEVICE_INIT_CONFIG(i2c_0,
 			   &i2c_config_dw_0);
 
 pre_kernel_late_init(i2c_0, &i2c_0_runtime);
+struct device *i2c_dw_isr_0_device = SYS_GET_DEVICE(i2c_0);
 
 #ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
 IRQ_CONNECT_STATIC(i2c_dw_0,
 		   CONFIG_I2C_DW_0_IRQ,
 		   CONFIG_I2C_DW_0_INT_PRIORITY,
-		   i2c_dw_isr_0,
+		   i2c_dw_isr,
 		   0);
 #endif
 
@@ -863,12 +864,5 @@ void i2c_config_0(struct device *port)
 	shared_irq_enable(shared_irq_dev, port);
 #endif
 }
-
-#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
-void i2c_dw_isr_0(void *unused)
-{
-	i2c_dw_isr(&__initconfig_i2c_0);
-}
-#endif
 
 #endif /* CONFIG_I2C_DW_0 */
