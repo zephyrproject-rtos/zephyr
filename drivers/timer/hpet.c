@@ -575,7 +575,7 @@ int _sys_clock_driver_init(struct device *device)
 	 */
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
 	*_HPET_TIMER0_COMPARATOR = counter_load_value;
-        /*
+	/*
 	 * After the comparator is loaded, 32-bit mode can be safely
 	 * switched off
 	 */

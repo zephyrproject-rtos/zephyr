@@ -69,8 +69,8 @@ struct bt_eir {
  *  @param len Length of advertiser data contained in buffer.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
-		             uint8_t adv_type, const uint8_t *adv_data,
-		             uint8_t len);
+			     uint8_t adv_type, const uint8_t *adv_data,
+			     uint8_t len);
 
 /** @brief Start advertising
  *

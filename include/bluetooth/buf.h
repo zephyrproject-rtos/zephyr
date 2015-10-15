@@ -76,7 +76,7 @@ struct bt_buf {
 	uint8_t len;
 
 	uint8_t ref:5,   /** Reference count */
-	        type:3;  /** Type of data contained in the buffer */
+		type:3;  /** Type of data contained in the buffer */
 
 	/** The full available buffer. */
 	uint8_t buf[BT_BUF_MAX_DATA];

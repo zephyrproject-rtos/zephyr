@@ -41,23 +41,23 @@ extern "C" {
  * @cond internal
  */
 extern int _task_mbox_put(kmbox_t mbox,
-		                  kpriority_t prio,
-		                  struct k_msg *M,
-		                  int32_t time);
+				kpriority_t prio,
+				struct k_msg *M,
+				int32_t time);
 
 extern int _task_mbox_get(kmbox_t mbox, struct k_msg *M, int32_t time);
 
 extern void _task_mbox_block_put(kmbox_t mbox,
-		                         kpriority_t prio,
-		                         struct k_msg *M,
-		                         ksem_t sem);
+					kpriority_t prio,
+					struct k_msg *M,
+					ksem_t sem);
 
 extern void _task_mbox_data_get(struct k_msg *M);
 
 extern int _task_mbox_data_block_get(struct k_msg *M,
-				 struct k_block *rxblock,
-				 kmemory_pool_t pid,
-				 int32_t time);
+					struct k_block *rxblock,
+					kmemory_pool_t pid,
+					int32_t time);
 /**
  * @brief Initializer for microkernel mailbox
  */
@@ -232,8 +232,8 @@ extern int _task_mbox_data_block_get(struct k_msg *M,
  * @param name Name of the mailbox
  */
 #define DEFINE_MAILBOX(name) \
-       struct _k_mbox_struct _k_mbox_obj_##name = __K_MAILBOX_DEFAULT; \
-       const kmbox_t name = (kmbox_t)&_k_mbox_obj_##name;
+	struct _k_mbox_struct _k_mbox_obj_##name = __K_MAILBOX_DEFAULT; \
+	const kmbox_t name = (kmbox_t)&_k_mbox_obj_##name;
 
 #ifdef __cplusplus
 }
