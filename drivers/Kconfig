@@ -33,6 +33,8 @@ source "drivers/timer/Kconfig"
 
 source "drivers/random/Kconfig"
 
+source "drivers/grove/Kconfig"
+
 source "drivers/pci/Kconfig"
 
 source "drivers/gpio/Kconfig"
