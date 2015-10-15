@@ -83,6 +83,24 @@
 		 .config = &(config_##name),\
 		 .driver_data = data}
 
+/**
+ * @def SYS_GET_DEVICE
+ *
+ * @brief Obtain a pointer to a device object by name
+ *
+ * @details Return the address of a device object created by
+ * SYS_DEFINE_DEVICE(), using the @name provided to SYS_DEFINE_DEVICE().
+ *
+ * @param name The same name provided to SYS_DEFINE_DEVICE()
+ *
+ * @return A pointer to the device object created by SYS_DEFINE_DEVICE()
+ */
+
+#define _PASTE2(a, b) a##b
+#define _PASTE(a, b) _PASTE2(a, b)
+
+#define SYS_GET_DEVICE(name) (&(_PASTE(__initconfig_, name)))
+
 /* The following legacy APIs are provided for backwards compatibility */
 
 #define pre_kernel_core_init(cfg, data)	\
