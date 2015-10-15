@@ -32,6 +32,7 @@ config CONSOLE_HAS_DRIVER
 config CONSOLE_HANDLER
 	bool
 	prompt "Enable console input handler"
+	depends on UART_CONSOLE
 	select UART_INTERRUPT_DRIVEN
 	default n
 	help

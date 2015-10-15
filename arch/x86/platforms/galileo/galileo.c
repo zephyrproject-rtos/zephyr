@@ -171,11 +171,10 @@ pre_kernel_late_init(pci_legacy_bridge_0, NULL);
 
 static int console_irq_set(struct device *unsued)
 {
-#if defined(CONFIG_UART_CONSOLE)
 	_ioapic_irq_set(CONFIG_UART_CONSOLE_IRQ,
 			CONFIG_UART_CONSOLE_IRQ + INT_VEC_IRQ0,
 			UART_IOAPIC_FLAGS);
-#endif
+
 	return 0;
 }
 
