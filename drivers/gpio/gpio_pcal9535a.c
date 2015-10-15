@@ -23,7 +23,7 @@
 #include <gpio.h>
 #include <i2c.h>
 
-#include "gpio-pcal9535a.h"
+#include "gpio_pcal9535a.h"
 
 #ifndef CONFIG_GPIO_PCAL9535A_DEBUG
 #define DBG(...) {;}

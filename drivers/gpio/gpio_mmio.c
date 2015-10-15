@@ -22,7 +22,7 @@
 
 #include <gpio.h>
 
-#include "gpio-mmio.h"
+#include "gpio_mmio.h"
 
 #if defined(CONFIG_GPIO_MMIO_0_ACCESS_MM) \
     || defined(CONFIG_GPIO_MMIO_1_ACCESS_MM)

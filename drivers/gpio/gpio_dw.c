@@ -16,7 +16,7 @@
 
 #include <nanokernel.h>
 #include <gpio.h>
-#include <gpio/gpio-dw.h>
+#include "gpio_dw.h"
 #include <board.h>
 #include <sys_io.h>
 #include <init.h>
