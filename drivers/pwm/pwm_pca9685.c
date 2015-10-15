@@ -23,7 +23,7 @@
 #include <i2c.h>
 #include <pwm.h>
 
-#include "pwm-pca9685.h"
+#include "pwm_pca9685.h"
 
 #define REG_MODE1		0x00
 #define REG_MODE2		0x01
