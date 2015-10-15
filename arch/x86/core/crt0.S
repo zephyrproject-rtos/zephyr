@@ -108,12 +108,7 @@ SECTION_FUNC(TEXT_START, __start)
 	movw	%ax, %gs	/* set GS */
 	movw	%ax, %ss	/* set SS */
 
-	/* this is 'ljmp $0x08:$_csSet': diab 5.9.1.0 does not encode
-	 * it correctly */
-	.byte 0xea
-	.long __csSet
-	.byte 0x08
-	.byte 0x00
+	ljmp	$0x08, $__csSet	/* set CS = 0x08 */
 
 __csSet:
 #endif /* CONFIG_BOOTLOADER_UNKNOWN */
