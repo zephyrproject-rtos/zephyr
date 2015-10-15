@@ -1,1 +1,1 @@
-obj-$(CONFIG_ADC_TI_ADC108S102) += adc-ti-adc108s102.o
+obj-$(CONFIG_ADC_TI_ADC108S102) += adc_ti_adc108s102.o

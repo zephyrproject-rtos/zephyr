@@ -21,7 +21,7 @@
 #include <string.h>
 #include <init.h>
 
-#include <adc-ti-adc108s102.h>
+#include <adc_ti_adc108s102.h>
 
 #ifndef CONFIG_ADC_DEBUG
 #define DBG(...) { ; }
