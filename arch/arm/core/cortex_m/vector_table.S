@@ -36,8 +36,6 @@ rest should not be triggered until the kernel is ready to handle them.
 
 _ASM_FILE_PROLOGUE
 
-/* Diab requires a __start symbol */
-SECTION_SUBSEC_FUNC(exc_vector_table,_Start,__start)
 SECTION_SUBSEC_FUNC(exc_vector_table,_Start,_VectorTableROM)
 
     .word __CORTEXM_BOOT_MSP
