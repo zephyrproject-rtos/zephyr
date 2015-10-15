@@ -89,7 +89,6 @@ extern "C" {
  *
  */
 #define IRQ_CONFIG(isr, irq, priority) \
-		irq_connect(irq, priority, isr, NULL); \
-		irq_enable(irq);
+		irq_connect(irq, priority, isr, NULL);
 
 #endif /* _ARC_ARCH__H_ */
