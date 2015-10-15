@@ -24,19 +24,23 @@ Audience
 
 This style guide has two audiences:
 
-* Primary audience: Developers who author content that describes product function, code examples,
-  procedures and more. Guidelines apply to human and machine generated content, such as APIs.
+* Primary audience: Developers who author content that describes product
+  function, code examples, procedures and more. Guidelines apply to human and
+  machine generated content, such as APIs.
 
-* Technical writers that wish to create technical documentation for the |project| (writers).
+* Technical writers that wish to create technical documentation for the
+  |project| (writers).
 
-* Secondary audience: Developers that wish to document their code and features (authors).
+* Secondary audience: Developers that wish to document their code and
+  features (authors).
 
 Where the guideline makes a distinction for the two audiences, we will
 refer to these groups as writers and authors.
 
 .. note::
-   As secondary audience, developers are not expected to master the style and writing guidelines
-   in this document; it is available to them as a reference.
+   As secondary audience, developers are not expected to master the style and
+   writing guidelines in this document; it is available to them as a
+   reference.
 
 Methodology
 ***********

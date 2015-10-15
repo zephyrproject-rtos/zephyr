@@ -112,14 +112,14 @@ Action Verbs vs. Nominalizations
 Avoid nominalizations, which are nouns formed from verbs. For example:
 
 ===================== =====================
-Verbs 						Nominalizations
+Verbs             Nominalizations
 ===================== =====================
-complete  						completion
-introduce  						introduction
-provide  						provision
-fail  							failure
-arrange  						arrangement
-install  						installation
+complete              completion
+introduce             introduction
+provide             provision
+fail                failure
+arrange             arrangement
+install             installation
 ===================== =====================
 
 The problem with nominalizations is that they are often used instead of
