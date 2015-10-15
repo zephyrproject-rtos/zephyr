@@ -33,8 +33,8 @@
 #include <shared_irq.h>
 #endif
 
-#include "i2c-dw.h"
-#include "i2c-dw-registers.h"
+#include "i2c_dw.h"
+#include "i2c_dw_registers.h"
 
 #ifndef CONFIG_I2C_DEBUG
 #define DBG(...) {;}
