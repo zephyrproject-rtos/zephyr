@@ -1,57 +1,65 @@
 .. _about_zephyr::
 
-About Zephyr
-############
+About
+#####
 
-The Zephyr kernel is a small footprint kernel designed for use on
-resource-constrained systems, from simple embedded environmental sensors and
-LED wearables to sophisticated smart watches and IoT wireless gateways.
+The |codename| is a small-footprint kernel designed for use on
+resource-constrained systems: from simple embedded environmental
+sensors and LED wearables to sophisticated smart watches and IoT
+wireless gateways.
 
-The open source project associated with the Zephyr kernel makes it available
+It is designed to be supported by multiple architectures, including
+ARM Cortex-M, Intel x86, and ARC. The full list of supported platforms
+can be found :ref:`here <platform>`.
+
+Licensing
+*********
+
+The Zephyr project associated with the kernel makes it available
 to users and developers under the Apache License, version 2.0.
 
-Key Features
-************
+Distinguishing Features
+***********************
 
-A Zephyr application combines application-specific code with a custom
-configured kernel to create a monolithic image that is loaded and executed
-on a system's hardware. Both the application code and kernel code execute
-in a single shared address space.
+The |codename| offers a number of features that distinguish it from other
+small-footprint OSes:
 
-The Zephyr kernel provides an extensive suite of services,
-which are summarized below.
+#. **Single address-space OS**. Combines application-specific code
+   with a custom kernel to create a monolithic image that gets loaded
+   and executed on a system's hardware. Both the application code and
+   kernel code execute in a single shared address space.
 
-* Multi-threading services, including both priority-based, non-preemptive fibers
-  and priority-based, preemptive tasks (with optional round robin time-slicing).
+#. **Highly configurable**. Allows an application to incorporate *only*
+   the capabilities it needs as it needs them, and to specify their
+   quantity and size.
 
-* Interrupt services, including both compile-time and run-time registration
-  of interrupt handlers, which can be written in C or assembly language.
+#.  **Resources defined at compile-time**. Requires all system resources
+   be defined at compilation time, which reduces code size and
+   increases performance.
 
-* Inter-thread synchronization services, including binary semaphores,
-  counting semaphores, and mutex semaphores.
+#. **Minimal error checking**. Provides minimal run-time error checking
+   to reduce code size and increase performance. An optional error-checking
+   infrastructure is provided to assist in debugging during application
+   development.
 
-* Inter-thread data passing services, including basic message queues,
-  enhanced message queues, and byte streams.
+#. **Extensive suite of services** Offers a number of familiar services
+   for development:
 
-* Memory allocation services, including dynamic allocation and freeing of
-  fixed-size or variable-size memory blocks.
+    * *Multi-threading Services* for both priority-based, non-preemptive
+      fibers and priority-based, preemptive tasks with optional round robin
+      time-slicing.
 
-* Power management services, including tickless idle and an advanced idling
-  infrastructure.
+    * *Interrupt Services* for both compile-time and run-time registration
+      of interrupt handlers.
 
-There are several additional features that distinguish Zephyr from
-other small footprint kernels.
+    * *Inter-thread Synchronization Services* for binary sempahores,
+      counting semaphores, and mutex semaphores.
 
-* Zephyr is highly configurable, allowing an application to incorporate only
-  the capabilities it needs, and to specify their quantity and size.
+   * *Inter-thread Data Passing Services* for basic message queues, enhanced
+     message queues, and byte streams.
 
-* Zephyr requires all system resources to be defined at compile-time
-  to reduce code size and increase performance.
+   * *Memory Allocation Services* for dynamic allocation and freeing of
+     fixed-size or variable-size memory blocks.
 
-* Zephyr provides minimal run-time error checking to reduce code size and
-  increase performance. An optional error checking infrastructure is provided
-  that can assist in debugging during application development.
-
-The Zephyr kernel is supported on multiple architectures,
-including ARM Cortex-M, Intel x86, and ARC. The list of supported platforms
-can be found :ref:`here <platform>`.
+   * *Power Management Services* such as tickless idle and an advanced idling
+     infrastructure.
