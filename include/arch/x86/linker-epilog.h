@@ -24,12 +24,6 @@
 #ifdef _LINKER
 
 /*
- * DIAB linker does not support multiple SECTIONS commands
- * in linker script
- */
-#if defined(__GCC_LINKER_CMD__)
-
-/*
  * The following guard prevents usage of orphaned sections --
  * the sections that are not explicitly mentioned in the linker script
  */
@@ -76,7 +70,6 @@ SECTIONS
 	}
 ASSERT(SIZEOF(.trashcan) == 0, "Section(s) undefined in the linker script used.")
 
-#endif /* (__GCC_LINKER_CMD__) */
 #endif /* _LINKER */
 
 #endif /* _LINKER_EPILOG_H */

@@ -835,10 +835,9 @@ static inline void fiberRtnValueSet(
  * Performance optimization
  *
  * Macro PERF_OPT is defined if project is compiled with option other than
- * size optimization ("-Os" for GCC, "-XO -Xsize-opt" for Diab). If the
- * last of the compiler options is the size optimization, PERF_OPT is not
- * defined and the project is optimized for size, hence the stub should be
- * aligned to 1 and not 16.
+ * size optimization ("-Os" for GCC). If the last of the compiler options
+ * is the size optimization, PERF_OPT is not defined and the project is
+ * optimized for size, hence the stub should be aligned to 1 and not 16.
  */
 #ifdef PERF_OPT
 #define _EXC_STUB_ALIGN 16

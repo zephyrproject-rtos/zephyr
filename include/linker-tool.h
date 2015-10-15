@@ -28,8 +28,6 @@ definitions (based on the toolchain) for the linker script.
 #if defined(_LINKER)
 #if defined(__GCC_LINKER_CMD__)
 #include <linker-tool-gcc.h>
-#elif defined(__DIAB_LINKER_CMD__)
-#include <linker-tool-diab.h>
 #else
 #error "Unknown toolchain"
 #endif
