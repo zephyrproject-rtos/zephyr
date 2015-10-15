@@ -622,10 +622,17 @@ uint8_t _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
 	return DEV_OK;
 }
 
+#ifdef CONFIG_PINMUX_DEV
 static uint32_t galileo_dev_set(struct device *dev,
 				uint32_t pin,
 				uint8_t func)
 {
+	if (pin > CONFIG_PINMUX_NUM_PINS) {
+		return DEV_INVALID_CONF;
+	}
+
+	mux_config[pin].mode = func;
+
 	return _galileo_set_pin(dev, pin, func);
 }
 
@@ -633,8 +640,37 @@ static uint32_t galileo_dev_get(struct device *dev,
 				uint32_t pin,
 				uint8_t *func)
 {
+	if (pin > CONFIG_PINMUX_NUM_PINS) {
+		return DEV_INVALID_CONF;
+	}
+
+	*func = mux_config[pin].mode;
+
 	return DEV_OK;
 }
+#else
+static uint32_t galileo_dev_set(struct device *dev,
+				uint32_t pin,
+				uint8_t func)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pin);
+	ARG_UNUSED(func);
+
+	return DEV_INVALID_OP;
+}
+
+static uint32_t galileo_dev_get(struct device *dev,
+				uint32_t pin,
+				uint8_t *func)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pin);
+	ARG_UNUSED(func);
+
+	return DEV_INVALID_OP;
+}
+#endif
 
 static struct pinmux_driver_api api_funcs = {
 	.set = galileo_dev_set,
