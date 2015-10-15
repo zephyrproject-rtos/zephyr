@@ -621,7 +621,7 @@ static void le_conn_update_complete(struct bt_buf *buf)
 	handle = sys_le16_to_cpu(evt->handle);
 	interval = sys_le16_to_cpu(evt->interval);
 
-	BT_DBG("status %u, handle %u", evt->status, handle);
+	BT_DBG("status %u, handle %u\n", evt->status, handle);
 
 	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
