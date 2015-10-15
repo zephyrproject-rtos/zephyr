@@ -106,6 +106,23 @@ pre_kernel_early_init(spiirq_1, NULL);
 
 #endif /* CONFIG_SPI_INTEL_PORT_1 */
 
+#ifdef CONFIG_ETH_DW_0
+#ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
+static int eth_irq_set_0(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	_ioapic_irq_set(CONFIG_ETH_DW_0_IRQ,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_ETH_DW_0_IRQ),
+			ETH_DW_0_IRQ_IOAPIC_FLAGS);
+	return 0;
+}
+
+DECLARE_DEVICE_INIT_CONFIG(ethirq_0, "", eth_irq_set_0, NULL);
+pre_kernel_early_init(ethirq_0, NULL);
+
+#endif /* CONFIG_ETH_DW_0_IRQ_DIRECT */
+#endif /* CONFIG_ETH_DW_0 */
+
 #ifdef CONFIG_CONSOLE_HANDLER
 
 static int console_irq_set(struct device *unsued)

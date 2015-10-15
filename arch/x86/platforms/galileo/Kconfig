@@ -322,3 +322,14 @@ config ADC_TI_ADC108S102_0_SPI_CONFIGURATION
 config ADC_TI_ADC108S102_0_SPI_MAX_FREQ
 	default 2147483650
 endif
+
+if ETH_DW
+config ETH_DW_0
+	def_bool y
+config ETH_DW_0_BASE_ADDR
+	default 0x90002000
+config ETH_DW_0_IRQ
+	default 18
+config ETH_DW_0_IRQ_SHARED_NAME
+	default SHARED_IRQ_0_NAME if SHARED_IRQ
+endif
