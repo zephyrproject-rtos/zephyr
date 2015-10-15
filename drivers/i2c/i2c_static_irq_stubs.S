@@ -29,13 +29,13 @@
 
 #if defined(CONFIG_I2C_DW_0)
 #ifdef CONFIG_IOAPIC
-    ioapic_mkstub i2c_dw_0 i2c_dw_isr_0
+    ioapic_mkstub i2c_dw_0 i2c_dw_isr_0 0
 #endif
 #endif /* CONFIG_I2C_DW_0 */
 
 #if defined(CONFIG_I2C_DW_1)
 #ifdef CONFIG_IOAPIC
-    ioapic_mkstub i2c_dw_1 i2c_dw_isr_1
+    ioapic_mkstub i2c_dw_1 i2c_dw_isr_1 0
 #endif
 #endif /* CONFIG_I2C_DW_1 */
 

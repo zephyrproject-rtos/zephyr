@@ -30,57 +30,57 @@ by x86 platforms.
 #include <drivers/system_timer.h>
 
 #if defined(CONFIG_LOAPIC_TIMER)
-	loapic_mkstub loapic _timer_int_handler
+	loapic_mkstub loapic _timer_int_handler 0
 #endif
 
 #if defined(CONFIG_HPET_TIMER)
-	ioapic_mkstub hpet _timer_int_handler
+	ioapic_mkstub hpet _timer_int_handler 0
 #endif
 
 #if defined(CONFIG_BLUETOOTH_UART)
 #if defined(CONFIG_IOAPIC)
-	ioapic_mkstub bluetooth bt_uart_isr
+	ioapic_mkstub bluetooth bt_uart_isr 0
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_BLUETOOTH_UART */
 
 #if defined(CONFIG_CONSOLE_HANDLER)
 #if defined(CONFIG_IOAPIC)
-	ioapic_mkstub console uart_console_isr
+	ioapic_mkstub console uart_console_isr 0
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_CONSOLE_HANDLER */
 
 #if defined(CONFIG_UART_SIMPLE)
 #if defined(CONFIG_IOAPIC)
-	ioapic_mkstub uart_simple uart_simple_isr
+	ioapic_mkstub uart_simple uart_simple_isr 0
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_UART_SIMPLE */
 
 #if defined(CONFIG_GPIO_DW)
 #if CONFIG_GPIO_DW_0
-	ioapic_mkstub gpio_dw_0 gpio_dw_isr_0
+	ioapic_mkstub gpio_dw_0 gpio_dw_isr_0 0
 #endif /* CONFIG_GPIO_DW_0 */
 
 #if CONFIG_GPIO_DW_1
-	ioapic_mkstub gpio_dw_1 gpio_dw_isr_1
+	ioapic_mkstub gpio_dw_1 gpio_dw_isr_1 0
 #endif /* CONFIG_GPIO_DW_1 */
 #endif /* CONFIG_GPIO_DW */
 
 #if defined(CONFIG_SHARED_IRQ)
 #if CONFIG_SHARED_IRQ_0
-	ioapic_mkstub shared_irq_0 shared_irq_isr_0
+	ioapic_mkstub shared_irq_0 shared_irq_isr_0 0
 #endif /* CONFIG_SHIRQ_0 */
 
 #if CONFIG_SHARED_IRQ_1
-	ioapic_mkstub shared_irq_1 shared_irq_isr_1
+	ioapic_mkstub shared_irq_1 shared_irq_isr_1 0
 #endif /* CONFIG_SHARED_IRQ_1 */
 #endif /* CONFIG_SHARED_IRQ */
 
 #if defined(CONFIG_SPI_INTEL)
 #if defined(CONFIG_SPI_INTEL_PORT_0)
-	ioapic_mkstub spi_intel_irq_port_0 spi_intel_isr_0
+	ioapic_mkstub spi_intel_irq_port_0 spi_intel_isr_0 0
 #endif /* CONFIG_SPI_INTEL_PORT_0 */
 #if defined(CONFIG_SPI_INTEL_PORT_1)
-	ioapic_mkstub spi_intel_irq_port_1 spi_intel_isr_1
+	ioapic_mkstub spi_intel_irq_port_1 spi_intel_isr_1 0
 #endif /* CONFIG_SPI_INTEL_PORT_1 */
 #endif /* CONFIG_SPI_INTEL */
 

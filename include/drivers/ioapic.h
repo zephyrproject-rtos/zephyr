@@ -47,12 +47,12 @@ extern "C" {
 #ifdef _ASMLANGUAGE
 GTEXT(_ioapic_eoi)
 
-.macro ioapic_mkstub device isr
+.macro ioapic_mkstub device isr context
 GTEXT(_\()\device\()_\()\isr\()_stub)
 
 SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
 	call    _IntEnt         /* Inform kernel interrupt has begun */
-	pushl   $0              /* Push dummy parameter */
+	pushl   \context        /* Push context parameter */
 	call    \isr            /* Call actual interrupt handler */
 	call    _ioapic_eoi     /* Inform ioapic interrupt is done */
 	addl    $4, %esp        /* Clean-up stack from push above */
