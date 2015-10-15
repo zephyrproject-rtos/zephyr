@@ -35,6 +35,7 @@
 #include <net/net_core.h>
 #include <net/net_socket.h>
 
+#ifndef CONFIG_ETHERNET
 /* The peer is the client in our case. Just invent a mac
  * address for it because lower parts of the stack cannot set it
  * in this test as we do not have any radios.
@@ -44,6 +45,7 @@ static uint8_t peer_mac[] = { 0x15, 0x0a, 0xbe, 0xef, 0xf0, 0x0d };
 /* This is my mac address
  */
 static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
+#endif
 
 #ifdef CONFIG_NETWORKING_WITH_IPV6
 /* The 2001:db8::/32 is the private address space for documentation RFC 3849 */
@@ -64,7 +66,9 @@ static inline void init_server()
 {
 	PRINT("%s: run echo server\n", __func__);
 
+#ifndef CONFIG_ETHERNET
 	net_set_mac(my_mac, sizeof(my_mac));
+#endif
 
 #ifdef CONFIG_NETWORKING_WITH_IPV4
 	{
@@ -99,11 +103,13 @@ static inline struct net_buf *prepare_reply(const char *name,
 	 */
 	reverse(net_buf_data(buf), net_buf_datalen(buf));
 
+#ifndef CONFIG_ETHERNET
 	/* Set the mac address of the peer in net_buf because
 	 * there is no radio layer involved in this test app.
 	 * Normally there is no need to do this.
 	 */
 	memcpy(&buf->src, &peer_mac, sizeof(buf->src));
+#endif
 
 	return buf;
 }
