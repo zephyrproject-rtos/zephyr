@@ -257,6 +257,8 @@ endif
 if SPI
 config SPI_INTEL
 	def_bool y
+config SPI_INTEL_CS_GPIO
+	def_bool y
 
 config SPI_INTEL_PORT_0
 	def_bool y
@@ -274,8 +276,6 @@ config SPI_INTEL_PORT_0_IRQ
 	default 16
 config SPI_INTEL_PORT_0_PRI
 	default 2
-config SPI_INTEL_CS_GPIO
-	def_bool y
 config SPI_INTEL_PORT_0_CS_GPIO_PORT
 	default GPIO_DW_0_NAME
 config SPI_INTEL_PORT_0_CS_GPIO_PIN
@@ -296,6 +296,10 @@ config SPI_INTEL_PORT_1_REGS
 config SPI_INTEL_PORT_1_IRQ
 	default 17
 config SPI_INTEL_PORT_1_PRI
+	default 2
+config SPI_INTEL_PORT_1_CS_GPIO_PORT
+	default GPIO_DW_0_NAME
+config SPI_INTEL_PORT_1_CS_GPIO_PIN
 	default 2
 endif # SPI
 

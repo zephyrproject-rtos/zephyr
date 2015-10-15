@@ -481,7 +481,8 @@ struct spi_intel_config spi_intel_config_1 = {
 	.pci_dev.device_id = CONFIG_SPI_INTEL_DEVICE_ID,
 #endif
 #ifdef CONFIG_SPI_INTEL_CS_GPIO
-	.cs_gpio_name = NULL,
+	.cs_gpio_name = CONFIG_SPI_INTEL_PORT_1_CS_GPIO_PORT,
+	.cs_gpio_pin = CONFIG_SPI_INTEL_PORT_1_CS_GPIO_PIN,
 #endif
 	.config_func = spi_config_1_irq
 };
@@ -489,7 +490,7 @@ struct spi_intel_config spi_intel_config_1 = {
 DECLARE_DEVICE_INIT_CONFIG(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME,
 			   spi_intel_init, &spi_intel_config_1);
 
-pre_kernel_late_init(spi_intel_port_1, &spi_intel_data_port_1);
+nano_early_init(spi_intel_port_1, &spi_intel_data_port_1);
 struct device *spi_intel_isr_port_1 = SYS_GET_DEVICE(spi_intel_port_1);
 
 IRQ_CONNECT_STATIC(spi_intel_irq_port_1, CONFIG_SPI_INTEL_PORT_1_IRQ,

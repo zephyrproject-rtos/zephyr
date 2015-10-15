@@ -142,12 +142,12 @@ config  SPI_INTEL_PORT_0_PRI
 config  SPI_INTEL_PORT_0_CS_GPIO_PORT
 	string
 	prompt "The GPIO port which is used to control CS"
-	depends on SPI_INTEL_CS_GPIO
+	depends on SPI_INTEL_PORT_0 && SPI_INTEL_CS_GPIO
 	default GPIO_DW_0_NAME
 
 config  SPI_INTEL_PORT_0_CS_GPIO_PIN
 	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_INTEL_CS_GPIO
+	depends on SPI_INTEL_PORT_0 && SPI_INTEL_CS_GPIO
 	default 0
 
 config  SPI_INTEL_PORT_1
@@ -196,4 +196,16 @@ config  SPI_INTEL_PORT_1_PRI
 	prompt "Port 0 interrupt priority"
 	depends on SPI_INTEL_PORT_1
 	default 2
+
+config  SPI_INTEL_PORT_1_CS_GPIO_PORT
+	string
+	prompt "The GPIO port which is used to control CS"
+	depends on SPI_INTEL_PORT_1 && SPI_INTEL_CS_GPIO
+	default GPIO_DW_0_NAME
+
+config  SPI_INTEL_PORT_1_CS_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	depends on SPI_INTEL_PORT_1 && SPI_INTEL_CS_GPIO
+	default 0
+
 endif # SPI
