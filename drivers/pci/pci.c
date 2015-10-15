@@ -393,7 +393,7 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 }
 #endif /* CONFIG_PCI_ENUMERATION */
 
-void pci_enable_regs(struct pci_dev_info *dev_info)
+static void pci_set_command_bits(struct pci_dev_info *dev_info, uint32_t bits)
 {
 	union pci_addr_reg pci_ctrl_addr;
 	uint32_t pci_data;
@@ -405,7 +405,7 @@ void pci_enable_regs(struct pci_dev_info *dev_info)
 	pci_ctrl_addr.field.reg = 1;
 
 #ifdef CONFIG_PCI_DEBUG
-	printk("pci_enable_regs 0x%x\n", pci_ctrl_addr);
+	printk("pci_set_command_bits 0x%x\n", pci_ctrl_addr);
 #endif
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
@@ -413,12 +413,22 @@ void pci_enable_regs(struct pci_dev_info *dev_info)
 			sizeof(uint16_t),
 			&pci_data);
 
-	pci_data = pci_data | PCI_CMD_MEM_ENABLE;
+	pci_data = pci_data | bits;
 
 	pci_write(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
 			sizeof(uint16_t),
 			pci_data);
+}
+
+void pci_enable_regs(struct pci_dev_info *dev_info)
+{
+	pci_set_command_bits(dev_info, PCI_CMD_MEM_ENABLE);
+}
+
+void pci_enable_bus_master(struct pci_dev_info *dev_info)
+{
+	pci_set_command_bits(dev_info, PCI_CMD_MASTER_ENABLE);
 }
 
 #ifdef CONFIG_PCI_DEBUG
