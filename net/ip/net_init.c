@@ -511,7 +511,7 @@ static void net_tx_fiber(void)
 
 	while (1) {
 		struct net_buf *buf;
-		uint8_t ret;
+		int ret;
 
 		/* Get next packet from application - wait if necessary */
 		buf = nano_fifo_get_wait(&netdev.tx_queue);
