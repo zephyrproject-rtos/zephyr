@@ -151,16 +151,31 @@ config	NETWORKING_WITH_LOOPBACK
 	  neighbor cache. All packets transmitted are
 	  looped back to the receiving fifo/fiber.
 
+choice
+prompt "Wired networking support"
+depends on NETWORKING
+default NETWORKING_NO_WIRED
+config  NETWORKING_NO_WIRED
+	bool "No wired network driver"
+	help
+	  Do not enable any wired network driver. It is still
+	  possible to select other types of network drivers if
+	  this option is selected.
 config	NETWORKING_UART
-	bool
-	prompt "Network UART/slip driver"
-	depends on NETWORKING
+	bool "Network UART/slip driver"
 	select UART_SIMPLE
-	default n
 	help
 	  Enable UART driver for passing IPv6 packets using slip.
 	  This requires running tunslip6 tool in host. See README
 	  file at net/ip/contiki/tools directory for details.
+config  ETHERNET
+	bool "Ethernet drivers"
+	help
+	  Include Ethernet drivers in system config. This
+	  option enables Ethernet support in the core network
+	  subsystem, but it is necessary to also select a
+	  specific Ethernet device driver.
+endchoice
 
 config	NETWORKING_DEBUG_UART
 	bool
@@ -170,6 +185,14 @@ config	NETWORKING_DEBUG_UART
 	help
 	  This option enables debug support for network UART
 	  driver.
+
+config	ETHERNET_DEBUG
+	bool
+	prompt "Network Ethernet driver debug"
+	depends on NETWORKING_WITH_LOGGING
+	default n
+	help
+	  This option enables debug support for Ethernet drivers.
 
 config	NETWORKING_WITH_15_4
 	bool

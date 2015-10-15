@@ -119,6 +119,8 @@ obj-$(CONFIG_NETWORKING_UART) += contiki/os/dev/slip.o \
 				contiki/os/dev/slip-arch.o \
 				net_driver_slip.o
 
+obj-$(CONFIG_ETHERNET) += net_driver_ethernet.o
+
 ccflags-$(CONFIG_TINYDTLS) += -DCONTIKI_TARGET_ZEPHYR=1
 ccflags-$(CONFIG_TINYDTLS) += -DWITH_SHA256=1
 ccflags-$(CONFIG_TINYDTLS) += -DDTLS_TICKS_PER_SECOND=sys_clock_ticks_per_sec

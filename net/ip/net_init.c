@@ -38,6 +38,7 @@
 
 #include "net_driver_15_4.h"
 #include "net_driver_slip.h"
+#include "net_driver_ethernet.h"
 
 #include "contiki/os/sys/process.h"
 #include "contiki/os/sys/etimer.h"
@@ -669,6 +670,8 @@ int net_set_mac(uint8_t *mac, uint8_t len)
 
 		lladdr->state = ADDR_AUTOCONF;
 	}
+#else
+	memcpy(&uip_lladdr, mac, len);
 #endif
 	return 0;
 }
@@ -765,6 +768,7 @@ int net_init(void)
 #endif
 
 	net_driver_slip_init();
+	net_driver_ethernet_init();
 
 	return network_initialization();
 }

@@ -151,4 +151,8 @@ typedef unsigned int uip_stats_t;
 #define UIP_CONF_STATISTICS 1
 #endif
 
+#ifdef CONFIG_ETHERNET
+#define UIP_CONF_LLH_LEN 14
+#endif
+
 #endif /* __CONTIKI_CONF_H__ */
