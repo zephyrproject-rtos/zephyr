@@ -22,7 +22,7 @@
 #include <misc/util.h>
 #include <string.h>
 #include <board.h>
-#include <drivers/uart.h>
+#include <uart.h>
 
 #define NSIM_UART_DATA 0
 #define NSIM_UART_STATUS 1

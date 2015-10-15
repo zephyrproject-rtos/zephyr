@@ -21,7 +21,7 @@
 #ifndef _DRIVERS_UART_STELLARIS_H_
 #define _DRIVERS_UART_STELLARIS_H_
 
-#include <drivers/uart.h>
+#include <uart.h>
 
 void stellaris_uart_port_init(struct device *,
 			      const struct uart_init_info * const);

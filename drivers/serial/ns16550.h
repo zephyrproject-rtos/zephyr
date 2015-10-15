@@ -21,7 +21,7 @@
 #ifndef _DRIVERS_UART_NS16550_H_
 #define _DRIVERS_UART_NS16550_H_
 
-#include <drivers/uart.h>
+#include <uart.h>
 
 /** Device data structure */
 struct uart_ns16550_dev_data_t {

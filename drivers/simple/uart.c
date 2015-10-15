@@ -25,7 +25,7 @@
 #include <arch/cpu.h>
 
 #include <board.h>
-#include <drivers/uart.h>
+#include <uart.h>
 
 #include <simple/uart.h>
 #include <misc/printk.h>

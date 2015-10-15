@@ -37,7 +37,7 @@
 #include <board.h>
 #include <toolchain.h>
 #include <sections.h>
-#include <drivers/uart.h>
+#include <uart.h>
 #include <sys_io.h>
 #ifdef CONFIG_PCI
 #include <pci/pci.h>

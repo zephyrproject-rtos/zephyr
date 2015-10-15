@@ -26,7 +26,7 @@
 #include <stdint.h>
 
 #include <board.h>
-#include <drivers/uart.h>
+#include <uart.h>
 #include <drivers/k20_uart.h>
 #include <drivers/k20_sim.h>
 #include <toolchain.h>

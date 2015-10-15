@@ -21,7 +21,7 @@
 #include <nanokernel.h>
 #include <arch/cpu.h>
 #include <board.h>
-#include <drivers/uart.h>
+#include <uart.h>
 
 #define UART1 (uart_devs[1])
 #define UART1_IRQ COM2_INT_LVL

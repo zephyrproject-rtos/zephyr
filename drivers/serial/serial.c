@@ -17,7 +17,7 @@
 #include <nanokernel.h>
 #include <device.h>
 
-#include <drivers/uart.h>
+#include <uart.h>
 
 /**
  * @brief UART initialization routine for platform drivers.

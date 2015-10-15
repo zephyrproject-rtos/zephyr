@@ -30,7 +30,7 @@
 #include <arch/cpu.h>
 #include <misc/__assert.h>
 #include <board.h>
-#include <drivers/uart.h>
+#include <uart.h>
 #include <sections.h>
 
 /* definitions */

@@ -27,7 +27,7 @@ for the fsl_frdm_k64f platform.
 #include <init.h>
 #include <board.h>
 #include <drivers/k20_mcg.h>
-#include <drivers/uart.h>
+#include <uart.h>
 #include <drivers/k20_pcr.h>
 #include <drivers/k20_sim.h>
 #include <drivers/k6x_mpu.h>

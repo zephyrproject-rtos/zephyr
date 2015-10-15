@@ -26,7 +26,7 @@
 #include "board.h"
 
 #ifdef CONFIG_K20_UART
-#include <drivers/uart.h>
+#include <uart.h>
 #include <drivers/k20_pcr.h>
 #include <drivers/k20_uart.h>
 #include <console/uart_console.h>

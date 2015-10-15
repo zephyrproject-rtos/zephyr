@@ -24,7 +24,7 @@ for the ia32 platform.
 
 #include <nanokernel.h>
 #include "board.h"
-#include <drivers/uart.h>
+#include <uart.h>
 #include <drivers/pic.h>
 #include <device.h>
 #include <init.h>

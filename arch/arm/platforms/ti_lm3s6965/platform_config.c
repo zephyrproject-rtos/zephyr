@@ -26,7 +26,7 @@
 #include "board.h"
 
 #ifdef CONFIG_STELLARIS_UART
-#include <drivers/uart.h>
+#include <uart.h>
 #include <console/uart_console.h>
 #include <serial/stellarisUartDrv.h>
 

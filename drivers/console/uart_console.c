@@ -34,7 +34,7 @@
 #include <init.h>
 
 #include <board.h>
-#include <drivers/uart.h>
+#include <uart.h>
 #include <console/uart_console.h>
 #include <toolchain.h>
 #include <sections.h>

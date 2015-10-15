@@ -31,7 +31,7 @@ Handlers for the secondary serial port have not been added.
 #include <misc/printk.h>
 #include <misc/__assert.h>
 #include "board.h"
-#include <drivers/uart.h>
+#include <uart.h>
 #include <drivers/ioapic.h>
 #include <drivers/pic.h>
 #include <drivers/pci/pci.h>
