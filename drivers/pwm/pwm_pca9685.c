@@ -63,15 +63,6 @@ static inline int _has_i2c_master(struct device *dev)
 		return 0;
 }
 
-//#define WAIT_10MS	(sys_clock_ticks_per_sec / 100)
-//static void _wait_10ms()
-//{
-//	int64_t start = nano_tick_get();
-//
-//	(void)nano_tick_delta(&start);
-//	while (nano_tick_delta(&start) < WAIT_10MS);
-//}
-
 static int pwm_pca9685_configure(struct device *dev, int access_op,
 				 uint32_t pwm, int flags)
 {
