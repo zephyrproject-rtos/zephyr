@@ -60,10 +60,8 @@ struct bt_smp_hdr {
 #define BT_SMP_AUTH_NONE			0x00
 #define BT_SMP_AUTH_BONDING			0x01
 #define BT_SMP_AUTH_MITM			0x04
-#define BT_SMP_AUTH_SC				0x08
-#define BT_SMP_AUTH_KEYPRESS			0x10
 
-#define BT_SMP_AUTH_MASK			0x1f
+#define BT_SMP_AUTH_MASK			0x07
 
 #define BT_SMP_CMD_PAIRING_REQ			0x01
 #define BT_SMP_CMD_PAIRING_RSP			0x02
