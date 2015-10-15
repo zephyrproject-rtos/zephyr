@@ -6,8 +6,8 @@ In-Code Documentation
 Doxygen extracts the in-code documentation automatically from the code. Doxygen
 generates XML files that the :program:`Breathe` extension imports into Sphinx.
 
-The Doxygen pass is independent from the Sphinx pass. Using Breathe to link them together, we can
-reference the code in the documentation and vice-versa.
+The Doxygen pass is independent from the Sphinx pass. Using Breathe to link
+them together, we can reference the code in the documentation and vice-versa.
 
 .. _doxygen_guides:
 
@@ -45,6 +45,9 @@ the documentation:
    Alternatively, use the single-asterisk syntax when your intention
    is for that comment to appear in the code, but not in the documentation.
    :literal:`/* This style of comment won't appear in the docs */`
+
+.. _Javadoc / Doxygen:
+   http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html
 
 .. toctree::
    :maxdepth: 1
