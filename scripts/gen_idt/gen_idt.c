@@ -68,6 +68,10 @@
 #define MAX_VECTORS_PER_PRIORITY  16
 #define MAX_IRQS                  256
 
+#define UNSPECIFIED_INT_VECTOR    ((unsigned int) -1)
+#define UNSPECIFIED_PRIORITY      ((unsigned int) -1)
+#define UNSPECIFIED_IRQ           ((unsigned int) -1)
+
 static void get_exec_name(char *pathname);
 static void usage(int len);
 static void get_options(int argc, char *argv[]);
@@ -110,7 +114,7 @@ enum { SHORT_USAGE, LONG_USAGE };
 static int fds[NUSERFILES] = {-1, -1};
 static char *filenames[NFILES];
 static unsigned int num_vectors = (unsigned int)-1;
-static struct version version = {KERNEL_VERSION, 1, 1, 4};
+static struct version version = {KERNEL_VERSION, 1, 1, 5};
 
 int main(int argc, char *argv[])
 {
@@ -338,7 +342,7 @@ static void validate_priority(void)
 	 */
 
 	for (i = 0; i < genidt_header.num_entries; i++) {
-		if (supplied_entry[i].irq == -1) {
+		if (supplied_entry[i].irq == UNSPECIFIED_IRQ) {
 			/*
 			 * This is a software interrupt.
 			 * The priority is currently ignored.
@@ -380,7 +384,7 @@ static void validate_irq(void)
 
 	/* Validate the IRQ number */
 	for (i = 0; i < genidt_header.num_entries; i++) {
-		if (supplied_entry[i].irq == (unsigned int) -1) {
+		if (supplied_entry[i].irq == UNSPECIFIED_IRQ) {
 			/* This is a request for a software interrupt */
 			continue;
 		}
@@ -430,8 +434,9 @@ static void generate_idt(void)
 		} else {
 			generated_entry[i].isr = genidt_header.spurious_no_error_addr;
 		}
-		generated_entry[i].irq = -1;       /* Set to -1 to aid in debugging */
-		generated_entry[i].priority = -1;  /* Set to -1 to aid in debugging */
+		/* Initialize the [irq] and [priority] fields to aid in debugging.  */
+		generated_entry[i].irq = UNSPECIFIED_IRQ;
+		generated_entry[i].priority = UNSPECIFIED_PRIORITY;
 		generated_entry[i].vector_id = i;
 		generated_entry[i].dpl = 0;
 	}
