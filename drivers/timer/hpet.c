@@ -613,7 +613,7 @@ int _sys_clock_driver_init(struct device *device)
 	 * has to be programmed into the interrupt controller.
 	 */
 
-	IRQ_CONFIG(hpet, CONFIG_HPET_TIMER_IRQ);
+	IRQ_CONFIG(hpet, CONFIG_HPET_TIMER_IRQ, 0);
 
 	/* enable the IRQ in the interrupt controller */
 

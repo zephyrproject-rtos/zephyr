@@ -173,7 +173,7 @@ typedef struct s_isrList {
  * @return N/A
  *
  */
-#define IRQ_CONFIG(device, irq)					\
+#define IRQ_CONFIG(device, irq, priority)			\
 	do {							\
 		_SysIntVecProgram(_##device##_int_vector, irq); \
 		_IntVecMarkAllocated(_##device##_int_vector);	\

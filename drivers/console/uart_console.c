@@ -176,7 +176,7 @@ static void console_input_init(void)
 
 	uart_irq_rx_disable(UART_CONSOLE_DEV);
 	uart_irq_tx_disable(UART_CONSOLE_DEV);
-	IRQ_CONFIG(console, uart_irq_get(UART_CONSOLE_DEV));
+	IRQ_CONFIG(console, uart_irq_get(UART_CONSOLE_DEV), 0);
 	irq_enable(uart_irq_get(UART_CONSOLE_DEV));
 
 	/* Drain the fifo */

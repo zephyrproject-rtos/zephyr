@@ -257,7 +257,7 @@ static void bt_uart_setup(struct device *uart, struct uart_init_info *info)
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-	IRQ_CONFIG(bluetooth, uart_irq_get(uart));
+	IRQ_CONFIG(bluetooth, uart_irq_get(uart), 0);
 	irq_enable(uart_irq_get(uart));
 
 	/* Drain the fifo */

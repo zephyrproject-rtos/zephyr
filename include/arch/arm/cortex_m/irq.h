@@ -83,7 +83,8 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
  * @return N/A
  *
  */
-#define IRQ_CONFIG(device, irq) _irq_priority_set(irq, _##device##_int_priority)
+#define IRQ_CONFIG(device, irq, priority) \
+	_irq_priority_set(irq, _##device##_int_priority)
 
 #endif /* _ASMLANGUAGE */
 

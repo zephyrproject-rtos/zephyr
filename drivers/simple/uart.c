@@ -76,7 +76,7 @@ static void uart_simple_setup(struct device *uart, struct uart_init_info *info)
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-	IRQ_CONFIG(uart_simple, uart_irq_get(uart));
+	IRQ_CONFIG(uart_simple, uart_irq_get(uart), 0);
 	irq_enable(uart_irq_get(uart));
 
 	/* Drain the fifo */

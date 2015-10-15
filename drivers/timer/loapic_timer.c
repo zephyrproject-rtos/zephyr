@@ -599,7 +599,7 @@ int _sys_clock_driver_init(struct device *device)
 	 * still
 	 * has to be programmed into the interrupt controller.
 	 */
-	IRQ_CONFIG(loapic, CONFIG_LOAPIC_TIMER_IRQ);
+	IRQ_CONFIG(loapic, CONFIG_LOAPIC_TIMER_IRQ, 0);
 
 	/* Everything has been configured. It is now safe to enable the
 	 * interrupt */
