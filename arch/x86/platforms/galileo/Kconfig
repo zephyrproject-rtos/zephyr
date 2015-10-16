@@ -54,6 +54,9 @@ config PWM
 config SPI
 	def_bool y
 
+config ADC
+	def_bool y
+
 config SHARED_IRQ
 	def_bool y
 
