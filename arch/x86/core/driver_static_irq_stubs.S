@@ -55,17 +55,6 @@ by x86 platforms.
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_UART_SIMPLE */
 
-
-#if defined(CONFIG_SPI_INTEL)
-#if defined(CONFIG_SPI_INTEL_PORT_0)
-	ioapic_mkstub spi_intel_irq_port_0 spi_intel_isr_0 0
-#endif /* CONFIG_SPI_INTEL_PORT_0 */
-#if defined(CONFIG_SPI_INTEL_PORT_1)
-	ioapic_mkstub spi_intel_irq_port_1 spi_intel_isr_1 0
-#endif /* CONFIG_SPI_INTEL_PORT_1 */
-#endif /* CONFIG_SPI_INTEL */
-
-
 	/* externs (internal APIs) */
 
 	GTEXT(_IntEnt)
