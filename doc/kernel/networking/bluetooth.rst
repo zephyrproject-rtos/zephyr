@@ -32,7 +32,7 @@ It acts as a Bluetooth Low Energy broadcaster.
 
 .. literalinclude:: ../../../samples/bluetooth/beacon/src/main.c
    :language: c
-   :lines: 33-
+   :lines: 19-
    :linenos:
 
 Testing with QEMU
