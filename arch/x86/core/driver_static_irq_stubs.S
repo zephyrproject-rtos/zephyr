@@ -55,16 +55,6 @@ by x86 platforms.
 #endif /* CONFIG_IOAPIC */
 #endif /* CONFIG_UART_SIMPLE */
 
-#if defined(CONFIG_GPIO_DW)
-#if CONFIG_GPIO_DW_0
-	ioapic_mkstub gpio_dw_0 gpio_dw_isr_0 0
-#endif /* CONFIG_GPIO_DW_0 */
-
-#if CONFIG_GPIO_DW_1
-	ioapic_mkstub gpio_dw_1 gpio_dw_isr_1 0
-#endif /* CONFIG_GPIO_DW_1 */
-#endif /* CONFIG_GPIO_DW */
-
 #if defined(CONFIG_SHARED_IRQ)
 #if CONFIG_SHARED_IRQ_0
 	ioapic_mkstub shared_irq_0 shared_irq_isr_0 0
