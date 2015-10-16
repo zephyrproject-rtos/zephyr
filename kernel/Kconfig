@@ -94,51 +94,51 @@ config EVENT_LOGGER
 	Enable event logging feature. Allow the usage of a ring buffer to
 	transmit event messages with a single interface to collect them.
 
-config KERNEL_PROFILER
+config KERNEL_EVENT_LOGGER
 	bool
-	prompt "Enable profiler features"
+	prompt "Enable kernel event logger features"
 	default n
 	select EVENT_LOGGER
 	help
 	This feature enables the usage of the profiling logger. Provides the
 	logging of sleep events (either entering or leaving low power conditions),
 	context switch events, interrupt events, boot events and a method to
-	collect these profile messages.
+	collect these event messages.
 
-config PROFILER_BUFFER_SIZE
+config KERNEL_EVENT_LOGGER_BUFFER_SIZE
 	int
-	prompt "Profiler buffer size"
+	prompt "Kernel event logger buffer size"
 	default 128
-	depends on KERNEL_PROFILER
+	depends on KERNEL_EVENT_LOGGER
 	help
 	Buffer size in 32-bit words.
 
 
-menu "Profiler points"
-depends on KERNEL_PROFILER
+menu "Kernel event logging points"
+depends on KERNEL_EVENT_LOGGER
 
-config PROFILER_CONTEXT_SWITCH
+config KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	bool
-	prompt "Context switch profiler point"
+	prompt "Context switch event logging point"
 	default n
-	depends on KERNEL_PROFILER
+	depends on KERNEL_EVENT_LOGGER
 	help
 	Enable the context switch event messages.
 
-config PROFILER_INTERRUPT
+config KERNEL_EVENT_LOGGER_INTERRUPT
 	bool
-	prompt "Interrupt profiler point"
+	prompt "Interrupt event logging point"
 	default n
-	depends on KERNEL_PROFILER
+	depends on KERNEL_EVENT_LOGGER
 	help
 	Enable interrupt event messages. These messages provide the following
 	information: The time when interrupts occur.
 
-config PROFILER_SLEEP
+config KERNEL_EVENT_LOGGER_SLEEP
 	bool
-	prompt "Sleep profiler point"
+	prompt "Sleep event logging point"
 	default n
-	depends on KERNEL_PROFILER && ADVANCED_POWER_MANAGEMENT
+	depends on KERNEL_EVENT_LOGGER && ADVANCED_POWER_MANAGEMENT
 	help
 	Enable low power condition event messages. These messages provide the
 	following information:

@@ -320,9 +320,9 @@ void _sys_power_save_idle_exit(int32_t ticks)
 #else
 	ARG_UNUSED(ticks);
 #endif /* CONFIG_TICKLESS_IDLE */
-#ifdef CONFIG_PROFILER_SLEEP
-	extern void _sys_profiler_exit_sleep(void);
-	_sys_profiler_exit_sleep();
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+	extern void _sys_k_event_logger_exit_sleep(void);
+	_sys_k_event_logger_exit_sleep();
 #endif
 }
 

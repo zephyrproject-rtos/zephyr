@@ -1,4 +1,4 @@
-Title: Profiler Sample
+Title: Kernel Event Logger Sample
 
 Description:
 

@@ -58,10 +58,10 @@ SECTION_FUNC(TEXT, __pendsv)
 
     _GDB_STUB_EXC_ENTRY
 
-#ifdef CONFIG_PROFILER_CONTEXT_SWITCH
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	/* Register the context switch */
 	push {lr}
-	bl _sys_profiler_context_switch
+	bl _sys_k_event_logger_context_switch
 	pop {lr}
 #endif
 

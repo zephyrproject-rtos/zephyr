@@ -120,9 +120,9 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
  */
 
 SECTION_FUNC(TEXT, nano_cpu_idle)
-#ifdef CONFIG_PROFILER_SLEEP
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	push {lr}
-	bl    _sys_profiler_enter_sleep
+	bl    _sys_k_event_logger_enter_sleep
 	pop {lr}
 #endif
 
@@ -161,9 +161,9 @@ SECTION_FUNC(TEXT, nano_cpu_idle)
  */
 
 SECTION_FUNC(TEXT, nano_cpu_atomic_idle)
-#ifdef CONFIG_PROFILER_SLEEP
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	push {lr}
-	bl    _sys_profiler_enter_sleep
+	bl    _sys_k_event_logger_enter_sleep
 	pop {lr}
 #endif
 

@@ -1,4 +1,4 @@
-/* profiler_collector_sample.c - Profiler sample project */
+/* kernel_event_collector_sample.c - Kernel event collector sample project */
 
 /*
  * Copyright (c) 2015 Intel Corporation
@@ -19,17 +19,17 @@
 #include <zephyr.h>
 
 #include "phil.h"
-#include <misc/profiler.h>
+#include <misc/kernel_event_logger.h>
 #include <string.h>
 
-#define RANDOM(x) (((nano_tick_get_32() * ((x) +1)) & 0x2F) + 1)
+#define RANDOM(x) (((nano_tick_get_32() * ((x) + 1)) & 0x2F) + 1)
 
 #define TEST_EVENT_ID 255
 
 extern void philEntry(void);
 
 #define STSIZE 1024
-char __stack profiler_stack[2][STSIZE];
+char __stack kernel_event_logger_stack[2][STSIZE];
 
 struct context_switch_data_t {
 	uint32_t thread_id;
@@ -37,7 +37,7 @@ struct context_switch_data_t {
 	uint32_t count;
 };
 
-int total_dropped_counter=0;
+int total_dropped_counter;
 
 #define MAX_BUFFER_CONTEXT_DATA       20
 
@@ -56,7 +56,7 @@ struct sleep_data_t {
 struct sleep_data_t sleep_event_data;
 
 int is_busy_task_awake;
-int forks_available=1;
+int forks_available = 1;
 
 
 void register_context_switch_data(uint32_t timestamp, uint32_t thread_id)
@@ -64,17 +64,17 @@ void register_context_switch_data(uint32_t timestamp, uint32_t thread_id)
 	int found;
 	int i;
 
-	found=0;
-	for (i=0; (i<MAX_BUFFER_CONTEXT_DATA) && (found==0); i++) {
+	found = 0;
+	for (i = 0; (i < MAX_BUFFER_CONTEXT_DATA) && (found == 0); i++) {
 		if (context_switch_summary_data[i].thread_id == thread_id) {
 			context_switch_summary_data[i].last_time_executed = timestamp;
 			context_switch_summary_data[i].count += 1;
-			found=1;
+			found = 1;
 		}
 	}
 
 	if (!found) {
-		for (i=0; i<MAX_BUFFER_CONTEXT_DATA; i++) {
+		for (i = 0; i < MAX_BUFFER_CONTEXT_DATA; i++) {
 			if (context_switch_summary_data[i].thread_id == 0) {
 				context_switch_summary_data[i].thread_id = thread_id;
 				context_switch_summary_data[i].last_time_executed = timestamp;
@@ -152,7 +152,7 @@ void busy_task_entry(void)
 		 * go to sleep for 1000 ticks allowing the system entering to sleep
 		 * mode if required.
 		 */
-		is_busy_task_awake=0;
+		is_busy_task_awake = 0;
 		task_sleep(1000);
 		ticks_when_awake = nano_tick_get_32();
 
@@ -160,8 +160,8 @@ void busy_task_entry(void)
 		 * keep the cpu busy for 1000 ticks preventing the system entering
 		 * to sleep mode.
 		 */
-		is_busy_task_awake=1;
-		while(nano_tick_get_32() - ticks_when_awake < 1000) {
+		is_busy_task_awake = 1;
+		while (nano_tick_get_32() - ticks_when_awake < 1000) {
 			i++;
 		}
 	}
@@ -180,7 +180,7 @@ void summary_data_printer(void)
 {
 	int i;
 
-	while(1) {
+	while (1) {
 		/* print task data */
 		PRINTF("\x1b[1;32HFork manager task");
 		if (forks_available) {
@@ -211,7 +211,7 @@ void summary_data_printer(void)
 		PRINTF("\x1b[13;1HCONTEXT SWITCH EVENT DATA");
 		PRINTF("\x1b[14;1H-------------------------");
 		PRINTF("\x1b[15;1HThread ID   Switches");
-		for (i=0; i<MAX_BUFFER_CONTEXT_DATA; i++) {
+		for (i = 0; i < MAX_BUFFER_CONTEXT_DATA; i++) {
 			if (context_switch_summary_data[i].thread_id != 0) {
 				print_context_data(context_switch_summary_data[i].thread_id,
 					context_switch_summary_data[i].count,
@@ -236,8 +236,10 @@ void summary_data_printer(void)
 		PRINTF("\x1b[15;32HINTERRUPT EVENT DATA");
 		PRINTF("\x1b[16;32H--------------------");
 		PRINTF("\x1b[17;32HInterrupt counters");
-		int line=0;
-		for (i=0; i<255; i++) {
+
+		int line = 0;
+
+		for (i = 0; i < 255; i++) {
 			if (interrupt_counters[i] > 0) {
 				PRINTF("\x1b[%d;%dHirq #%d : %d times", 18 + line, 32, i,
 					interrupt_counters[i]);
@@ -252,9 +254,9 @@ void summary_data_printer(void)
 
 
 /**
- * @brief Profiler data collector fiber
+ * @brief Kernel event data collector fiber
  *
- * @details Collect the profiler messages and process them depending
+ * @details Collect the kernel event messages and process them depending
  * the kind of event received.
  *
  * @return No return value.
@@ -269,12 +271,13 @@ void profiling_data_collector(void)
 	/* We register the fiber as collector to avoid this fiber generating a
 	 * context switch event every time it collects the data
 	 */
-	sys_profiler_register_as_collector();
+	sys_k_event_logger_register_as_collector();
 
-	while(1) {
+	while (1) {
 		/* collect the data */
 		uint8_t data_length = SIZE32_OF(data);
-		res = sys_profiler_get_wait(&event_id, &dropped_count, data,
+
+		res = sys_k_event_logger_get_wait(&event_id, &dropped_count, data,
 					    &data_length);
 		if (res > 0) {
 			/* Register the amount of droppped events occurred */
@@ -284,7 +287,7 @@ void profiling_data_collector(void)
 
 			/* process the data */
 			switch (event_id) {
-			case PROFILER_CONTEXT_SWITCH_EVENT_ID:
+			case KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID:
 				if (data_length != 2) {
 					PRINTF("\x1b[13;1HError in context switch message. "
 						"event_id = %d, Expected %d, received %d\n",
@@ -293,7 +296,7 @@ void profiling_data_collector(void)
 					register_context_switch_data(data[0], data[1]);
 				}
 				break;
-			case PROFILER_INTERRUPT_EVENT_ID:
+			case KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID:
 				if (data_length != 2) {
 					PRINTF("\x1b[13;1HError in sleep message. "
 						"event_id = %d, Expected %d, received %d\n",
@@ -302,7 +305,7 @@ void profiling_data_collector(void)
 					register_interrupt_event_data(data[0], data[1]);
 				}
 				break;
-			case PROFILER_SLEEP_EVENT_ID:
+			case KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID:
 				if (data_length != 3) {
 					PRINTF("\x1b[13;1HError in sleep message. "
 						"event_id = %d, Expected %d, received %d\n",
@@ -317,7 +320,7 @@ void profiling_data_collector(void)
 		} else {
 			/* This error should never happen */
 			if (res == -EMSGSIZE) {
-				PRINTF("FATAL ERROR. The buffer provided to collect the"
+				PRINTF("FATAL ERROR. The buffer provided to collect the "
 					"profiling events is too small\n");
 			}
 		}
@@ -328,17 +331,17 @@ void profiling_data_collector(void)
 /**
  * @brief Start the demo fibers
  *
- * @details Start the profiler data colector fiber and the summary printer
+ * @details Start the kernel event data colector fiber and the summary printer
  * fiber that shows the context switch data.
  *
  * @return No return value.
  */
-void profiler_fiber_start(void)
+void kernel_event_logger_fiber_start(void)
 {
 	PRINTF("\x1b[2J\x1b[15;1H");
-	task_fiber_start(&profiler_stack[0][0], STSIZE,
+	task_fiber_start(&kernel_event_logger_stack[0][0], STSIZE,
 		(nano_fiber_entry_t) profiling_data_collector, 0, 0, 6, 0);
-	task_fiber_start(&profiler_stack[1][0], STSIZE,
+	task_fiber_start(&kernel_event_logger_stack[1][0], STSIZE,
 		(nano_fiber_entry_t) summary_data_printer, 0, 0, 6, 0);
 }
 
@@ -349,7 +352,7 @@ struct nano_sem forks[N_PHILOSOPHERS];
 /**
  * @brief Manokernel entry point.
  *
- * @details Start the profiler data colector fiber. Then
+ * @details Start the kernel event data colector fiber. Then
  * do wait forever.
  * @return No return value.
  */
@@ -357,7 +360,7 @@ int main(void)
 {
 	int i;
 
-	profiler_fiber_start();
+	kernel_event_logger_fiber_start();
 
 	/* initialize philosopher semaphores */
 	for (i = 0; i < N_PHILOSOPHERS; i++) {
@@ -383,14 +386,14 @@ int main(void)
 /**
  * @brief Microkernel task.
  *
- * @details Start the profiler data colector fiber. Then
+ * @details Start the kernel event data colector fiber. Then
  * do wait forever.
  *
  * @return No return value.
  */
-void profiler_demo(void)
+void k_event_logger_demo(void)
 {
-	profiler_fiber_start();
+	kernel_event_logger_fiber_start();
 
 	task_group_start(PHI);
 }

@@ -233,9 +233,9 @@ void _TIMER_INT_HANDLER(void *unused)
 {
 	ARG_UNUSED(unused);
 
-#ifdef CONFIG_PROFILER_INTERRUPT
-	extern void _sys_profiler_interrupt(void);
-	_sys_profiler_interrupt();
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
+	extern void _sys_k_event_logger_interrupt(void);
+	_sys_k_event_logger_interrupt();
 #endif
 
 

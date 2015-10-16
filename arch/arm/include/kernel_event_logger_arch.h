@@ -16,11 +16,11 @@
 
 /*
  * @file
- * @brief Profiler support for x86
+ * @brief Kernel event logger support for ARM
  */
 
-#ifndef __PROFILE_X86_H__
-#define __PROFILE_X86_H__
+#ifndef __KERNEL_EVENT_LOGGER_ARCH_H__
+#define __KERNEL_EVENT_LOGGER_ARCH_H__
 
 /**
  * @brief Get the identification of the current interrupt.
@@ -32,9 +32,7 @@
  */
 int _sys_current_irq_key_get(void)
 {
-	extern int _loapic_isr_vector_get(void);
-
-	return _loapic_isr_vector_get();
+	return _IpsrGet();
 }
 
-#endif /* __PROFILE_X86_H__ */
+#endif /* __KERNEL_EVENT_LOGGER_ARCH_H__ */

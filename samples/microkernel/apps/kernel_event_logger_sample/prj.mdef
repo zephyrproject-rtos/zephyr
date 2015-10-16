@@ -6,7 +6,7 @@
 
 % TASK NAME        PRIO ENTRY           STACK GROUPS
 % ==================================================
-  TASK profiler      5 profiler_demo        1024 [EXE]
+  TASK k_logger      5 k_event_logger_demo  1024 [EXE]
   TASK phi1Task0     6 philEntry            1024 [PHI]
   TASK philTask1     6 philEntry            1024 [PHI]
   TASK philTask2     6 philEntry            1024 [PHI]

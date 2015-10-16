@@ -153,12 +153,12 @@ SECTION_FUNC(TEXT, _IntEnt)
 	popl	%eax
 #endif
 
-#ifdef CONFIG_PROFILER_INTERRUPT
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 	/*
 	 * Preserve EAX as it contains the stub return address.
 	 */
 	pushl	%eax
-	call	_sys_profiler_interrupt
+	call	_sys_k_event_logger_interrupt
 	popl	%eax
 #endif
 

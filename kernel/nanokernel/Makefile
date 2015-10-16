@@ -14,5 +14,5 @@ obj-$(CONFIG_INT_LATENCY_BENCHMARK) += int_latency_bench.o
 obj-$(CONFIG_ADVANCED_POWER_MANAGEMENT) += idle.o
 obj-$(CONFIG_NANO_TIMERS) += nano_timer.o
 obj-$(CONFIG_EVENT_LOGGER) += event_logger.o
-obj-$(CONFIG_KERNEL_PROFILER) += profiler.o
+obj-$(CONFIG_KERNEL_EVENT_LOGGER) += kernel_event_logger.o
 obj-$(CONFIG_RING_BUFFER) += ring_buffer.o

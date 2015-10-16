@@ -1,8 +1,11 @@
-Title: Profiler Sample
+Title: Kernel Event Logger Sample
 
 Description:
 
-A sample that shows how profiler events can be retrieved.
+This sample uses the philosopher sample with two additional tasks to show the
+profiling data on different system's states. The fork manager task controls the
+fork's availibilty. The worker task performs intermitently heavy processing,
+allowing or preventing the system to go idle.
 
 --------------------------------------------------------------------------------
 
@@ -25,6 +28,12 @@ issuing one of the following commands then rebuilding the project:
 or
     make pristine       # discard results of previous builds
                         # and restore pre-defined configuration info
+
+
+Problems with QEMU on ARM:
+Qemu v2.1 for ARM platform do not support tickless idle. If run the sample
+project in QEMU with the CONFIG_TICKLESS_IDLE option enabled, the project
+could present an erratic behaviour.
 
 --------------------------------------------------------------------------------
 
