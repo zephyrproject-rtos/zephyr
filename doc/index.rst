@@ -1,8 +1,6 @@
 ..
     Zephyr Project documentation master file
 
-
-
 Getting Started
 ###############
 
@@ -39,5 +37,3 @@ Indices and tables
 * :ref:`genindex`
 
 * :ref:`search`
-
-.. include:: documentation_license.rst
