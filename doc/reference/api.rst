@@ -48,6 +48,13 @@ Timers
    :project: Zephyr
    :content-only:
 
+Kernel Event Logger
+-------------------
+
+.. doxygengroup:: nanokernel_event_logger
+   :project: Zephyr
+   :content-only:
+
 Microkernel
 ***********
 

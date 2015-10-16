@@ -39,7 +39,14 @@
 #define KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID                      0x0003
 #endif
 
+/**
+ * @brief Kernel Event Logger
+ * @defgroup nanokernel_event_logger Kernel Event Logger
+ * @{
+ */
+
 #ifndef _ASMLANGUAGE
+
 /**
  * Global variable of the ring buffer that allows user to implement
  * their own reading routine.
@@ -179,6 +186,10 @@ static inline void sys_k_event_logger_put(uint16_t event_id, uint32_t *event_dat
 static inline void sys_k_event_logger_put_timed(uint16_t event_id) {};
 
 #endif /* _ASMLANGUAGE */
+
+/**
+* @}
+*/
 
 #endif /* CONFIG_KERNEL_EVENT_LOGGER */
 
