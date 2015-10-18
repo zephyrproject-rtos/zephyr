@@ -1,7 +1,7 @@
 .. _about_zephyr::
 
-About
-#####
+Introduction to the Zephyr Project
+##################################
 
 The |codename| is a small-footprint kernel designed for use on
 resource-constrained systems: from simple embedded environmental
