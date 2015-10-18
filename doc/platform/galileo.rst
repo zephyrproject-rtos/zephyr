@@ -9,7 +9,7 @@ Overview
 Developers can use the galileo platform configuration
 to build a |codename| that runs on a Galileo Development Board (Gen 1 or Gen 2).
 
-This platform configuration enables kernel support for the board's Quark CPU,
+This platform configuration enables kernel support for the board's Quark SoC,
 along with the following devices:
 
 * High Precision Event Timer (HPET)
@@ -162,10 +162,6 @@ Interrupts
 +-------+-----------+------------------+-------------------------------+
 | 20    | timer     |   HPET           | timer driver                  |
 +-------+-----------+------------------+-------------------------------+
-
-.. note::
-   The galileo platform configuration does not support interrupt sharing.
-   For example, two PCI devices cannot use the same IRQ.
 
 Configuration Options
 =====================
@@ -423,9 +419,6 @@ At this time, the kernel does not support the following:
 
 * Isolated Memory Regions
 * Serial port in Direct Memory Access (DMA) mode
-* Serial Peripheral Interface (SPI) flash
-* General-Purpose Input/Output (GPIO)
-* Inter-Integrated Circuit (I2C)
 * Ethernet
 * Supervisor Mode Execution Protection (SMEP)
 
