@@ -10,7 +10,7 @@ The build system defines a set of conventions for the correct use of Makefiles i
 directories. The correct use of Makefiles is driven by the concept of recursion.
 
 In the recursion model, each Makefile within a directory includes the source code and any
-subdirectories to the build process. Each subdirectory follows the same principle. Developers can
+sub-directories to the build process. Each sub-directory follows the same principle. Developers can
 focus exclusively in their own work. They integrate their module with the build system by adding a
 very simple Makefile following the recursive model.
 
@@ -26,7 +26,7 @@ conventions guard the correct implementation of the recursive model.
   considered source code directories.
 
 * The scope of every Makefile is restricted to the contents of that directory. A Makefile can only
-  make a direct reference to its own files and subdirectories. Any file outside the directory has
+  make a direct reference to its own files and sub-directories. Any file outside the directory has
   to be referenced in its home directory Makefile.
 
 * Makefiles list the object files that are included in the link process. The build system finds the

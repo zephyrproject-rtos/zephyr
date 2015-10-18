@@ -67,20 +67,15 @@ Default Configurations
 ======================
 
 The default configuration files define the default configuration for a specific
-kernel on a specific platform. For example: :file:`arch/arm/configs`,
-:file:`arch/x86/configs` and :file:`arch/arc/configs`.
+kernel on a specific platform. For example:
 
-The file name convention for a :abbr:`defconfig (default configuration)` file
-mandates that the type of kernel and the platform are included within the file
-name. Further, all the defconfig files must end with the suffix defconfig. For
-example, the :file:`micro_galileo_defconfig` file contains the configuration
-information for the microkernel architecture for the galileo platform
-configuration and the :file:`nano_basic_atom_defconfig` file contains the
-configuration information for the nanokernel architecture for the basic atom
-platform.
+* :file:`arch/arm/configs`,
+* :file:`arch/x86/configs` and
+* :file:`arch/arc/configs`.
 
-The defconfig files are used to dynamically determine the configuration that
-corresponds to the platform tested by the sanity checks.
+All the defconfig files must end with the suffix defconfig. For
+example, the :file:`galileo_defconfig` file contains the configuration
+information for the galileo platform.
 
 The :file:`Makefile.inc` file uses defconfig files to provide a clean interface
 to developers using environment variables to define the kernel type and the
@@ -91,9 +86,9 @@ example:
 
 .. code-block:: bash
 
-   $ make defconfig micro_galileo_defconfig
+   $ make galileo_defconfig
 
-The command takes the default configuration for the microkernel architecture
+The command takes the default configuration for the architecture
 and the galileo platform configuration to compile the kernel.
 
 .. _configuration_snippets:
@@ -101,7 +96,7 @@ and the galileo platform configuration to compile the kernel.
 Merging Configuration Fragments
 ===============================
 
-Configuration file snippets can be merged with the current project
+Configuration file fragment can be merged with the current project
 configuration during the build.
 
 Developers can provide a configuration file that defines a small subset of
@@ -116,6 +111,6 @@ world** overrides the base configuration with the configuration snippet
 .. caution::
    Invalid configurations, or configurations that do not comply with
    the dependencies stated in the Kconfig files, are ignored by the merge process.
-   When adding configuration options through a configuration snippet, ensure that
-   the the complete sequence complies with the dependency rules defined in the
+   When adding configuration options through a configuration fragment, ensure that
+   the complete sequence complies with the dependency rules defined in the
    Kconfig files.
