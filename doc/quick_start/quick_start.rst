@@ -24,6 +24,6 @@ Perform the steps in the installation procedures in the order they appear.
 .. toctree::
    :maxdepth: 2
 
-   installing.rst
-   building.rst
-   running.rst
+   installation.rst
+   local_development.rst
+   application.rst
