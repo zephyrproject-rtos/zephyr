@@ -443,14 +443,8 @@ extern const NANO_ESF _default_esf;
  * information.
  */
 extern int _SysIntVecAlloc(unsigned int irq,
-			 unsigned int priority,
-			 NANO_EOI_GET_FUNC *boiRtn,
-			 NANO_EOI_GET_FUNC *eoiRtn,
-			 void **boiRtnParm,
-			 void **eoiRtnParm,
-			 unsigned char *boiParamRequired,
-			 unsigned char *eoiParamRequired
-			 );
+			   unsigned int priority,
+			   NANO_EOI_GET_FUNC *eoiRtn);
 
 /* functions provided by the kernel for usage by _SysIntVecAlloc() */
 

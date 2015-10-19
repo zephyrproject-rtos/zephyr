@@ -50,18 +50,19 @@ GTEXT(_ioapic_eoi)
 .macro ioapic_mkstub device isr context
 GTEXT(_\()\device\()_\()\isr\()_stub)
 
+/* We call _loapic_eoi as it will inform the IOAPIC what vector just got
+ * serviced
+ */
 SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
 	call    _IntEnt         /* Inform kernel interrupt has begun */
 	pushl   \context        /* Push context parameter */
 	call    \isr            /* Call actual interrupt handler */
-	call    _ioapic_eoi     /* Inform ioapic interrupt is done */
-	addl    $4, %esp        /* Clean-up stack from push above */
+	popl    %eax	        /* Clean-up stack from push above */
+	call    _loapic_eoi     /* Inform loapic interrupt is done */
 	jmp     _IntExit        /* Inform kernel interrupt is done */
 .endm
 #else /* _ASMLANGUAGE */
 int _ioapic_init(struct device *unused);
-void _ioapic_eoi(unsigned int irq);
-void *_ioapic_eoi_get(unsigned int irq, char *argRequired, void **arg);
 void _ioapic_irq_enable(unsigned int irq);
 void _ioapic_irq_disable(unsigned int irq);
 void _ioapic_int_vec_set(unsigned int irq, unsigned int vector);

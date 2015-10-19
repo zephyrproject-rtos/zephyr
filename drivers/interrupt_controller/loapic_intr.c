@@ -295,9 +295,8 @@ void _loapic_disable(void)
  * @return N/A
  */
 
-void _loapic_eoi(unsigned int irq)
+void _loapic_eoi(void)
 {
-	ARG_UNUSED(irq);
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
 }
 

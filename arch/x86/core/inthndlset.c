@@ -83,8 +83,8 @@ void _irq_handler_set(unsigned int vector,
 
 	/*
 	 * Given the generation of the stub is dynamic, i.e. the invocations of
-	 * an EOI routine (with parameter) and/or BOI routine (with parameter)
-	 * are optional based on the requirements of the interrupt controller,
+	 * an EOI routine (with parameter) are optional based on the
+	 * requirements of the interrupt controller,
 	 * the <oldRoutine> parameter is used to quickly find the correct
 	 * bytes in the stub code to update.
 	 */

@@ -38,16 +38,9 @@
  *
  * The IA-32 code that makes up a "full" interrupt stub is shown below.  A full
  * interrupt stub is one that is associated with an interrupt vector that
- * requires a "beginning of interrupt" (BOI) callout and an "end of interrupt"
- * (EOI) callout (both of which require a parameter).
+ * requires an "end of interrupt" (EOI) callout.
  *
  * 0x00   call    _IntEnt         /@ inform kernel of interrupt @/
- * Machine code:  0xe8, 0x00, 0x00, 0x00, 0x00
- *
- * 0x05   pushl   $BoiParameter   /@ optional: push BOI handler parameter @/
- * Machine code:  0x68, 0x00, 0x00, 0x00, 0x00
- *
- * 0x0a   call    BoiRoutine      /@ optional: callout to BOI rtn @/
  * Machine code:  0xe8, 0x00, 0x00, 0x00, 0x00
  *
  * 0x0f   pushl   $IsrParameter   /@ push ISR parameter @/
@@ -56,13 +49,10 @@
  * 0x14   call    IsrRoutine      /@ invoke ISR @/
  * Machine code: 0xe8, 0x00, 0x00, 0x00, 0x00
  *
- * 0x19   pushl   $EoiParameter   /@ optional: push EOI handler parameter @/
- * Machine code: 0x68, 0x00, 0x00, 0x00, 0x00
- *
  * 0x1e   call    EoiRoutine      /@ optional: callout to EOI rtn @/
  * Machine code: 0xe8, 0x00, 0x00, 0x00, 0x00
  *
- * 0x23   addl    $(4 * numParams), %esp    /@ pop parameters @/
+ * 0x23   popl    %esp            /@ pop ISR parameter @/
  * Machine code: 0x83, 0xc4, (4 * numParams)
  *
  * 0x26  jmp      _IntExit        /@ restore thread or reschedule @/
@@ -281,19 +271,13 @@ int irq_connect(unsigned int irq, unsigned int priority,
 	extern void _IntExit(void);
 
 	int vector;
-	NANO_EOI_GET_FUNC boiRtn;
 	NANO_EOI_GET_FUNC eoiRtn;
-	void *boiRtnParm;
-	void *eoiRtnParm;
-	unsigned char boiParamRequired;
-	unsigned char eoiParamRequired;
 	int stub_idx;
 
 	/*
 	 * Invoke the interrupt controller routine _SysIntVecAlloc() which will:
 	 *  a) allocate a vector satisfying the requested priority,
-	 *  b) return EOI and BOI related information for stub code synthesis,
-	 *and
+	 *  b) return EOI related information for stub code synthesis,
 	 *  c) program the underlying interrupt controller device such that
 	 *     when <irq> is asserted, the allocated interrupt vector will be
 	 *     presented to the CPU.
@@ -303,15 +287,7 @@ int irq_connect(unsigned int irq, unsigned int priority,
 	 * _interrupt_vectors_allocated[] array for a suitable vector.
 	 */
 
-	vector = _SysIntVecAlloc(irq,
-				 priority,
-				 &boiRtn,
-				 &eoiRtn,
-				 &boiRtnParm,
-				 &eoiRtnParm,
-				 &boiParamRequired,
-				 &eoiParamRequired);
-
+	vector = _SysIntVecAlloc(irq, priority, &eoiRtn);
 #if defined(DEBUG)
 	/*
 	 * The return value from _SysIntVecAlloc() will be -1 if an invalid
@@ -331,9 +307,8 @@ int irq_connect(unsigned int irq, unsigned int priority,
 
 	/*
 	 * A minimal interrupt stub code will be synthesized based on the
-	 * values of <boiRtn>, <eoiRtn>, <boiRtnParm>, <eoiRtnParm>,
-	 * <boiParamRequired>, and <eoiParamRequired>.  The invocation of
-	 * _IntEnt() and _IntExit() will always be required.
+	 * values of <eoiRtn>, <eoiRtnParm>, and <eoiParamRequired>. The
+	 * invocation of * _IntEnt() and _IntExit() will always be required.
 	 *
 	 * NOTE: The 'call' opcode for the call to _IntEnt() has already been
 	 * written by _int_stub_alloc() to mark the stub as allocated.
@@ -357,25 +332,25 @@ int irq_connect(unsigned int irq, unsigned int priority,
 
 	offsetAdjust += 10;
 
-#ifdef CONFIG_EOI_HANDLER_SUPPORTED
+	/*
+	 * Poke in the stack popping related opcode. Do it a byte at a time
+	 * because
+	 * &STUB_PTR[offsetAdjust] may not be aligned which does not work for
+	 * all
+	 * targets.
+	 */
 
+	STUB_PTR[offsetAdjust] = IA32_ADD_OPCODE & 0xFF;
+	STUB_PTR[1 + offsetAdjust] = IA32_ADD_OPCODE >> 8;
+	STUB_PTR[2 + offsetAdjust] = (unsigned char)(4 * numParameters);
+
+	offsetAdjust += 3;
+
+#ifdef CONFIG_EOI_HANDLER_SUPPORTED
 	/* poke in the EOI related opcodes */
 
-	if (eoiRtn == NULL)
-		/* no need to insert anything */;
-	else if (eoiParamRequired != 0) {
-		STUB_PTR[offsetAdjust] = IA32_PUSH_OPCODE;
-		UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1 + offsetAdjust],
-				(unsigned int)eoiRtnParm);
-
-		STUB_PTR[5 + offsetAdjust] = IA32_CALL_OPCODE;
-		UNALIGNED_WRITE(
-			(unsigned int *)&STUB_PTR[6 + offsetAdjust],
-			(unsigned int)eoiRtn -
-				(unsigned int)&STUB_PTR[10 + offsetAdjust]);
-
-		offsetAdjust += 10;
-		++numParameters;
+	if (eoiRtn == NULL) {
+		/* no need to insert anything */
 	} else {
 		STUB_PTR[offsetAdjust] = IA32_CALL_OPCODE;
 		UNALIGNED_WRITE(
@@ -387,18 +362,6 @@ int irq_connect(unsigned int irq, unsigned int priority,
 	}
 
 #endif /* CONFIG_EOI_HANDLER_SUPPORTED */
-
-	/*
-	 * Poke in the stack popping related opcode. Do it a byte at a time
-	 * because &STUB_PTR[offsetAdjust] may not be aligned which does not
-	 * work for all targets.
-	 */
-
-	STUB_PTR[offsetAdjust] = IA32_ADD_OPCODE & 0xFF;
-	STUB_PTR[1 + offsetAdjust] = IA32_ADD_OPCODE >> 8;
-	STUB_PTR[2 + offsetAdjust] = (unsigned char)(4 * numParameters);
-
-	offsetAdjust += 3;
 
 	/*
 	 * generate code that invokes _IntExit(); note that a jump is used,

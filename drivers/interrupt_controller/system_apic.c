@@ -41,8 +41,8 @@
  *     routine _IntVecAlloc() provided by the nanokernel will be used to
  *     perform the the allocation since the local APIC prioritizes interrupts
  *     as assumed by _IntVecAlloc().
- *  b) Provides End of Interrupt (EOI) and Beginning of Interrupt (BOI) related
- *     information to be used when generating the interrupt stub code.
+ *  b) Provides End of Interrupt (EOI) related information to be used when
+ *     generating the interrupt stub code.
  *  c) If an interrupt vector can be allocated, and the <irq> argument is not
  *     equal to NANO_SOFT_IRQ, the IOAPIC redirection table (RED) or the
  *     LOAPIC local vector table (LVT) will be updated with the allocated
@@ -67,12 +67,7 @@
  *
  * @param irq virtualized IRQ
  * @param priority get vector from <priority> group
- * @param boiRtn pointer to the BOI routine; NULL if none
  * @param eoiRtn pointer to the EOI routine; NULL if none
- * @param boiRtnParm the BOI routine parameter if any
- * @param eoiRtnParm the EOI routine parameter if any
- * @param boiParamRequired the BOI routine parameter req?
- * @param eoiParamRequired the EOI routine parameter req?
  *
  * @return the allocated interrupt vector
  *
@@ -82,15 +77,13 @@
  * parameters are invalid.
  * @endinternal
  */
-int _SysIntVecAlloc(unsigned int irq, unsigned int priority,
-	NANO_EOI_GET_FUNC * boiRtn, NANO_EOI_GET_FUNC * eoiRtn,
-	void **boiRtnParm, void **eoiRtnParm,
-	unsigned char *boiParamRequired, unsigned char *eoiParamRequired)
+int _SysIntVecAlloc(
+	unsigned int irq,		 /* virtualized IRQ */
+	unsigned int priority,		 /* get vector from <priority> group */
+	NANO_EOI_GET_FUNC *eoiRtn	 /* ptr to EOI routine; NULL if none */
+	)
 {
 	int vector;
-
-	ARG_UNUSED(boiRtnParm);
-	ARG_UNUSED(boiParamRequired);
 
 #if defined(CONFIG_LOAPIC_DEBUG)
 	if ((priority > 15) ||
@@ -110,18 +103,13 @@ int _SysIntVecAlloc(unsigned int irq, unsigned int priority,
 	/*
 	 * Set up the appropriate interrupt controller to generate the allocated
 	 * interrupt vector for the specified IRQ.  Also, provide the required
-	 * EOI and BOI related information for the interrupt stub code
-	 * generation step.
+	 * EOI related information for the interrupt stub code generation
+	 * step.
 	 *
 	 * For software interrupts (NANO_SOFT_IRQ), skip the interrupt
-	 * controller programming step, and indicate that a BOI and EOI handler
-	 * is not required.
-	 *
-	 * Skip both steps if a vector could not be allocated.
+	 * controller programming step, and indicate that an EOI handler is not
+	 * required.
 	 */
-
-	*boiRtn = (NANO_EOI_GET_FUNC)NULL; /* a BOI handler is never required */
-	*eoiRtn = (NANO_EOI_GET_FUNC)NULL; /* assume NANO_SOFT_IRQ */
 
 #if defined(CONFIG_LOAPIC_DEBUG)
 	if ((vector != -1) && (irq != NANO_SOFT_IRQ))
@@ -129,28 +117,10 @@ int _SysIntVecAlloc(unsigned int irq, unsigned int priority,
 	if (irq != NANO_SOFT_IRQ)
 #endif
 	{
-		if (irq < CONFIG_IOAPIC_NUM_RTES) {
-			_ioapic_int_vec_set(irq, vector);
-
-			/*
-			 * query IOAPIC driver to obtain EOI handler information
-			 * for the interrupt vector that was just assigned to
-			 * the specified IRQ
-			 */
-
-			*eoiRtn = (NANO_EOI_GET_FUNC)_ioapic_eoi_get(
-				irq, (char *)eoiParamRequired, eoiRtnParm);
-		} else {
-			_loapic_int_vec_set(irq - CONFIG_IOAPIC_NUM_RTES, vector);
-
-			/*
-			 * specify that the EOI handler in loApicIntr.c driver
-			 * be invoked
-			 */
-
-			*eoiRtn = (NANO_EOI_GET_FUNC)_loapic_eoi;
-			*eoiParamRequired = 0;
-		}
+		_SysIntVecProgram(vector, irq);
+		*eoiRtn = (NANO_EOI_GET_FUNC)_loapic_eoi;
+	} else {
+		*eoiRtn = (NANO_EOI_GET_FUNC)NULL;
 	}
 
 	return vector;

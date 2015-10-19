@@ -242,60 +242,6 @@ int _ioapic_init(struct device *unused)
 
 /**
  *
- * @brief Send EOI (End Of Interrupt) signal to IO APIC
- *
- * This routine sends an EOI signal to the IO APIC's interrupting source.
- * @param irq Interrupt number to send EOI
- *
- * @return N/A
- */
-void _ioapic_eoi(unsigned int irq)
-{
-	*(volatile unsigned int *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_EOI) = irq;
-	*(volatile unsigned int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
-}
-
-/**
- *
- * @brief Get EOI (End Of Interrupt) information
- *
- * This routine returns EOI signalling information for a specific IRQ.
- *
- * @param irq IRQ number of interest
- * @param argRequired Pointer to "argument required" result area
- * @param arg Pointer to "argument value" result area
- * @return address of routine to be called to signal EOI;
- *          as a side effect, also passes back indication if routine requires
- *          an interrupt vector argument and what the argument value should be
- */
-void *_ioapic_eoi_get(unsigned int irq, char *argRequired, void **arg)
-{
-#ifndef XIOAPIC_DIRECT_ADDRESSING
-	if (!(__IoApicGet(IOAPIC_VERS) & IOAPIC_PRQ)) {
-		*argRequired = 0;
-		return _loapic_eoi;
-	}
-#endif
-
-	/* indicate that an argument to the EOI handler is required */
-
-	*argRequired = 1;
-
-	/*
-	 * The parameter to the ioApicIntEoi() routine is the vector programmed
-	 * into the redirection table.  The interrupt controller's
-	 * _SysIntVecAlloc() routine must invoke _IoApicIntEoiGet() after
-	 * _IoApicRedVecSet() to ensure the redirection table contains the desired
-	 * interrupt vector.
-	 */
-
-	*arg = (void *)(ioApicRedGetLo(irq) & IOAPIC_VEC_MASK);
-
-	return _ioapic_eoi;
-}
-
-/**
- *
  * @brief Enable a specified APIC interrupt input line
  *
  * This routine enables a specified APIC interrupt input line.
