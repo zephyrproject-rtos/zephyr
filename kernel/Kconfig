@@ -149,14 +149,6 @@ endmenu
 
 menu "Security Options"
 
-config CUSTOM_SECURITY
-	bool
-	prompt "Customized security"
-	default n
-	help
-	This option allow users to disable enhanced security features they do
-	not wish to use or enable the use of features with security exposures.
-
 config STACK_CANARIES
 	bool
 	prompt "Compiler stack canaries"
