@@ -23,17 +23,15 @@ it is specified:
    When the default platform configuration settings are sufficient
    for your application, a :file:`prj.conf` file is not needed.
    Skip ahead to
-  :ref:`Overriding the Application's Default Kernel Configuration`.
+  :ref:`override_kernel_conf`.
 
 
 Procedures
 **********
 
-* `Defining the Application's Default Kernel Configuration`_
+* `define_default_kernel_conf`_
 
 * `Overriding the Application's Default Kernel Configuration`_
-
-.. _Defining the Application's Default Kernel Configuration:
 
 The procedures that follow describe how to configure a :file:`prj.conf`
 file and how to configure kernel options for microkernel and nanokernel
@@ -45,6 +43,8 @@ inter-dependencies and platform configuration-default options, see the
 
    There are currently a number of experimental options not yet
    fully supported.
+
+.. _define_default_kernel_conf:
 
 Defining the Application's Default Kernel Configuration
 =======================================================
@@ -97,7 +97,7 @@ Steps
 3. Save and close the file.
 
 
-.. _Overriding the Application's Default Kernel Configuration:
+.. _override_kernel_conf:
 
 Overriding the Application's Default Kernel Configuration
 =========================================================
@@ -107,6 +107,7 @@ temporarily alter the application’s configuration, perhaps
 to test the effect of a change.
 
 .. _note::
+
    If you want to permanently alter the configuration you
    should revise the :file:`.conf` file.
 

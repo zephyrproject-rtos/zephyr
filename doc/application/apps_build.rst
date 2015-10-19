@@ -54,8 +54,8 @@ following procedure:
 
 #. Navigate to the application directory :file:`~/appDir`.
 
-#. Run :command:`$ make clean`, or manually delete the generated files, including
-   the :file:`.config` file.
+#. Run :command:`$ make clean`, or manually delete the generated files,
+   including the :file:`.config` file.
 
 #. Run :command:`$ make pristine`.
 

@@ -3,55 +3,55 @@
 Application Code Development
 ############################
 
-* `Services`_
-* `Understanding Naming Conventions`_
-* `Understanding src Directory Makefile Requirements`_
-* `Adding Source Files and Makefiles to src Directories`_
-* `Enhancing the Zephyr Kernel`_
+.. contents::
+   :local:
+   :depth: 1
+
+.. _develop_services:
 
 Services
 ********
-.. _Services:
 
-The |codename| kernel services architecture has services that are
+The |codename| services architecture has services that are
 specific to the microkernel, services that are specific to the
 nanokernel, and services that are common, or shared, between the
 two.
 
-**Microkernel Services**
+Microkernel Services
+====================
 
 For a complete list of microkernel services, including a description
-of each with code examples, see :ref:`Microkernel Services`.
+of each with code examples, see :ref:`microkernel`.
 
 .. _note::
 
-  There are more microkernel services than those defined in
-  the MDEF.
+   There are more microkernel services than those defined in
+   the MDEF.
 
-**Nanokernel Services**
+Nanokernel Services
+===================
 
 For a complete list of nanokernel services, including a description
-of each with code examples, see :ref:`Nanokernel Services`.
+of each with code examples, see :ref:`nanokernel`.
 
-**Common Services**
+Common Services
+===============
 
 For a complete list of services common to both the nanokernel and
 microkernel, including a description of each with code examples,
-see :ref:`Common Services`.
+see :ref:`common_kernel_services`.
 
 
 Procedures and Conventions
 **************************
 
-. ._Understanding Naming Conventions:
-
 Understanding Naming Conventions
 ================================
 
-|codename| limits the use of some prefixes to internal use only. For
+The kernel limits the use of some prefixes to internal use only. For
 more information, see :ref:`naming_conventions`.
 
-.. _Understanding src Directory Makefile Requirements:
+.. _src_makefiles_reqs:
 
 Understanding src Directory Makefile Requirements
 =================================================
@@ -75,8 +75,7 @@ directory:
    The src directory Makefiles discussed here are distinct from
    the top-level application Makefile.
 
-
-.. _Adding Source Files and Makefiles to src Directories:
+.. _src_files_directories:
 
 Adding Source Files and Makefiles to src Directories
 ====================================================
@@ -90,8 +89,8 @@ file names identified in the Makefile.
 
 .. _note::
 
-  Source code without an associated Makefile is not included
-  when the application is built.
+   Source code without an associated Makefile is not included
+   when the application is built.
 
 Before You Begin
 -----------------
@@ -110,25 +109,25 @@ Steps
 
 2. Create a :file:`Makefile` for each :file:`src` directory.
 
- a) Add the following line to each :file:`Makefile`:
+   a) Add the following line to each :file:`Makefile`:
 
-  .. code-block:: make
+      .. code-block:: make
 
-     ccflags-y += ${PROJECTINCLUDE}
-
-
- b) Use the following syntax to add file references:
-
-  .. code-block:: make
-
-     obj-y += file.o file.o
+         ccflags-y += ${PROJECTINCLUDE}
 
 
- c) Use the following syntax to add directory references:
+   b) Use the following syntax to add file references:
 
-  .. code-block:: make
+      .. code-block:: make
 
-     obj-y += directory_name/**
+         obj-y += file.o file.o
+
+
+   c) Use the following syntax to add directory references:
+
+      .. code-block:: make
+
+         obj-y += directory_name/**
 
 
 Example src Makefile
@@ -144,7 +143,7 @@ examine this file in context, navigate to:
    obj-y = phil_fiber.o phil_task.o
 
 
-.. _`Enhancing the Zephyr Kernel:
+.. _`enhancing_kernel`:
 
 Enhancing the Zephyr Kernel
 ===========================

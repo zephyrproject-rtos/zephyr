@@ -10,7 +10,7 @@ in lieu of) loading and running it on actual target hardware.
 Procedures
 **********
 
-.. _qemu:
+.. _run_app_qemu:
 
 Running an Application using QEMU
 =================================

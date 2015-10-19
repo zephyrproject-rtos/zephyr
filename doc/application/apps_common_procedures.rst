@@ -9,13 +9,13 @@ and referred to from the procedures that require them.
 Procedures
 **********
 
-* `Setting Environment Variables`_
+* `set_environment_variables`_
 
 Setting Environment Variables
 =============================
 
 Set environment variables every time you open a terminal console to work on
-|codename| applications.
+|codename|'s applications.
 
 Steps
 -----
@@ -25,25 +25,24 @@ Steps
 
    a) For a Yocto toolchain:
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-     $ export ZEPHYR_GCC_VARIANT=yocto
-     $ export YOCTO_SDK_INSTALL_DIR=<yocto-installation-path>
+         $ export ZEPHYR_GCC_VARIANT=yocto
+         $ export YOCTO_SDK_INSTALL_DIR=<yocto-installation-path>
 
    Go to Step 2.
 
    b) For an Xtools toolchain:
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-     $ export ZEPHYR_GCC_VARIANT=xtools
-     $ export XTOOLS_TOOLCHAIN_PATH=/opt/otc_viper/x-tools/
-     $ export QEMU_BIN_PATH=/usr/local/bin
+         $ export ZEPHYR_GCC_VARIANT=xtools
+         $ export XTOOLS_TOOLCHAIN_PATH=/opt/otc_viper/x-tools/
+         $ export QEMU_BIN_PATH=/usr/local/bin
 
-2. Navigate to the |codename| installation directory and enter:
+2. To set the environment variable :envvar:`$(ZEPHYR_BASE)`, navigate to the
+   kernel's installation directory and enter:
 
-  .. code-block:: bash
+      .. code-block:: bash
 
-   $ source zephyr-env.sh
-
-  To set the environment variable :envvar:`$(ZEPHYR_BASE)`.
+         $ source zephyr-env.sh

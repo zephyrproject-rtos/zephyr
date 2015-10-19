@@ -10,7 +10,7 @@ Audience
 --------
 
 Although anybody may use this primer to learn how to build microkernel and
-nanokernel applications on |project|, the primary audience for this guide
+nanokernel applications on the |codename|, the primary audience for this guide
 is:
 
 * Application developers coding an application.
