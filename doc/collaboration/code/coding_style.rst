@@ -36,9 +36,6 @@ code, edit your :file:`.git/hooks/pre-commit` file to contain:
 
    set -e exec
 
-   exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl --mailback --no-tree \
-        --no-signoff --emacs --summary-file --show-types \
-        --ignore BRACES,PRINTK_WITHOUT_KERN_LEVEL,SPLIT_STRING \
-        --max-line-length=100 - || true
+   exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl - || true
 
 .. _Linux kernel coding style: https://www.kernel.org/doc/Documentation/CodingStyle
