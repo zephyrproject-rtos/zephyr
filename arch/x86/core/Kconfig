@@ -26,13 +26,12 @@ config NO_ISRS
 	This option disables asynchronous interrupts support.
 
 
-config NO_NESTED_INTERRUPTS
+config NESTED_INTERRUPTS
 	bool
 	prompt "Enable nested interrupts"
-	default n
-	depends on X86_32
+	default y
 	help
-	disable nest interrupts.
+	This option enables support for nested interrupts.
 
 config EXCEPTION_DEBUG
 	bool
