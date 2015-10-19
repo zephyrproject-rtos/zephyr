@@ -60,8 +60,9 @@ struct bt_smp_hdr {
 #define BT_SMP_AUTH_NONE			0x00
 #define BT_SMP_AUTH_BONDING			0x01
 #define BT_SMP_AUTH_MITM			0x04
+#define BT_SMP_AUTH_SC				0x08
 
-#define BT_SMP_AUTH_MASK			0x07
+#define BT_SMP_AUTH_MASK			0x0f
 
 #define BT_SMP_CMD_PAIRING_REQ			0x01
 #define BT_SMP_CMD_PAIRING_RSP			0x02
@@ -118,6 +119,17 @@ struct bt_smp_signing_info {
 #define BT_SMP_CMD_SECURITY_REQUEST		0x0b
 struct bt_smp_security_request {
 	uint8_t  auth_req;
+} __packed;
+
+#define BT_SMP_CMD_PUBLIC_KEY			0x0c
+struct bt_smp_public_key {
+	uint8_t x[32];
+	uint8_t y[32];
+} __packed;
+
+#define BT_SMP_DHKEY_CHECK			0x0d
+struct bt_smp_dhkey_check {
+	uint8_t e[16];
 } __packed;
 
 bool bt_smp_irk_matches(const uint8_t irk[16], const bt_addr_t *addr);
