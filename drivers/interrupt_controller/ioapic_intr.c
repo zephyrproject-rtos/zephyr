@@ -78,61 +78,6 @@
 #define IOAPIC_IRQPA 0x20 /* IRQ Pin Assertion Register */
 #define IOAPIC_EOI 0x40   /* EOI Register */
 
-#ifdef IOAPIC_MSI_REDIRECT
-
-/* direct addressing of the RTEs; including the "configuration register" */
-
-#define IOAPIC_RTE0_LOW 0x1000
-#define IOAPIC_RTE0_HIGH 0x1004
-#define IOAPIC_RTE0_CONFIG 0x1008
-#define IOAPIC_RTE1_LOW 0x1010
-#define IOAPIC_RTE1_HIGH 0x1014
-#define IOAPIC_RTE1_CONFIG 0x1018
-#define IOAPIC_RTE2_LOW 0x1020
-#define IOAPIC_RTE2_HIGH 0x1024
-#define IOAPIC_RTE2_CONFIG 0x1028
-
-/*
- * etc., etc. until IOAPIC_RTE63_LOW/IOAPIC_RTE63_HIGH/IOAPIC_RTE63_CONFIG
- *
- *  rteLowOffset    = IOAPIC_RTE0_LOW    + (irq * 0x10)
- *  rteHighOffset   = IOAPIC_RTE0_HIGH   + (irq * 0x10)
- *  rteConfigOffset = IOAPIC_RTE0_CONFIG + (irq * 0x10)
- */
-
-/*
- * An extention to the "standard" IOAPIC design supports a redirection
- * capability that allows each RTE to specify which of the 8 "redirection
- * registers" to use for determining the MSI address.
- */
-
-#define IOAPIC_REDIR_ADDR0 0x2000 /* Dummy entry; reads return all 0's */
-#define IOAPIC_REDIR_ADDR1 0x2004 /* MSI redirection selection reg 1 */
-#define IOAPIC_REDIR_ADDR2 0x2008 /* MSI redirection selection reg 2 */
-#define IOAPIC_REDIR_ADDR3 0x200c /* MSI redirection selection reg 3 */
-#define IOAPIC_REDIR_ADDR4 0x2010 /* MSI redirection selection reg 4 */
-#define IOAPIC_REDIR_ADDR5 0x2014 /* MSI redirection selection reg 5 */
-#define IOAPIC_REDIR_ADDR6 0x2018 /* MSI redirection selection reg 6 */
-#define IOAPIC_REDIR_ADDR7 0x201c /* MSI redirection selection reg 7 */
-
-/* interrupt status for line interrupts generated via RTE0 through RTE31 */
-
-#define IOAPIC_LINE_INT_STAT0 0x2040
-
-/* interrupt status for line interrupts generated via RTE32 through RTE64 */
-
-#define IOAPIC_LINE_INT_STAT1 0x2044
-
-/* interrupt mask for line interrupts generated via RTE0 to RTE31 */
-
-#define IOAPIC_LINE_INT_MASK0 0x2048
-
-/* interrupt mask for line interrupts generated via RTE32 to RTE63 */
-
-#define IOAPIC_LINE_INT_MASK1 0x204c
-
-#endif /* IOAPIC_MSI_REDIRECT */
-
 /* IO APIC indirect register offset */
 
 #define IOAPIC_ID 0x00     /* IOAPIC ID */
@@ -164,24 +109,8 @@
 
 #define IOAPIC_VEC_MASK 0x000000ff
 
-#ifdef IOAPIC_MSI_REDIRECT
-
-/* RTE configuration register bits */
-
-#define IOAPIC_RTE_CONFIG_REDIR_SEL 0x7
-#define IOAPIC_RTE_CONFIG_LI0EN 0x8
-#define IOAPIC_RTE_CONFIG_LI1EN 0x10
-#define IOAPIC_RTE_CONFIG_LI2EN 0x20
-#define IOAPIC_RTE_CONFIG_BYPASS_MSI_DISABLE 0x40
-#define IOAPIC_RTE_CONFIG_DISABLE_INT_EXT 0x80
-
-#endif /* IOAPIC_MSI_REDIRECT */
-
-#ifndef XIOAPIC_DIRECT_ADDRESSING
 static uint32_t __IoApicGet(int32_t offset);
 static void __IoApicSet(int32_t offset, uint32_t value);
-#endif
-
 static void ioApicRedSetHi(unsigned int irq, uint32_t upper32);
 static void ioApicRedSetLo(unsigned int irq, uint32_t lower32);
 static uint32_t ioApicRedGetLo(unsigned int irq);
@@ -207,10 +136,6 @@ int _ioapic_init(struct device *unused)
 	ARG_UNUSED(unused);
 	int32_t ix;	/* redirection table index */
 	uint32_t rteValue; /* value to copy into redirection table entry */
-
-#ifdef IOAPIC_MSI_REDIRECT
-	_IoApicRedirRegSet(MSI_REDIRECT_SELECT_ID, MSI_REDIRECT_TARGET_ADDR);
-#endif
 
 	/*
 	 * The platform must set the Kconfig option IOAPIC_NUM_RTES to indicate
@@ -305,8 +230,6 @@ void _ioapic_int_vec_set(unsigned int irq, unsigned int vector)
 	_IoApicRedUpdateLo(irq, vector, IOAPIC_VEC_MASK);
 }
 
-#ifndef XIOAPIC_DIRECT_ADDRESSING
-
 /**
  *
  * @brief Read a 32 bit IO APIC register
@@ -358,8 +281,6 @@ static void __IoApicSet(int32_t offset, uint32_t value)
 	irq_unlock(key);
 }
 
-#endif
-
 /**
  *
  * @brief Get low 32 bits of Redirection Table entry
@@ -371,18 +292,9 @@ static void __IoApicSet(int32_t offset, uint32_t value)
  */
 static uint32_t ioApicRedGetLo(unsigned int irq)
 {
-#ifdef XIOAPIC_DIRECT_ADDRESSING
-	volatile uint32_t *pEntry; /* pointer to redirection table entry */
-
-	pEntry = (volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + (irq * 0x10) +
-				       IOAPIC_RTE0_LOW);
-
-	return *pEntry;
-#else
 	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
 
 	return __IoApicGet(offset);
-#endif
 }
 
 /**
@@ -397,18 +309,9 @@ static uint32_t ioApicRedGetLo(unsigned int irq)
  */
 static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
 {
-#ifdef XIOAPIC_DIRECT_ADDRESSING
-	volatile uint32_t *pEntry; /* pointer to redirection table entry */
-
-	pEntry = (volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + (irq * 0x10) +
-				       IOAPIC_RTE0_LOW);
-
-	*pEntry = lower32;
-#else
 	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
 
 	__IoApicSet(offset, lower32);
-#endif
 }
 
 /**
@@ -423,18 +326,9 @@ static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
  */
 static void ioApicRedSetHi(unsigned int irq, uint32_t upper32)
 {
-#ifdef XIOAPIC_DIRECT_ADDRESSING
-	volatile uint32_t *pEntry; /* pointer to redirection table entry */
-
-	pEntry = (volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + (irq * 0x10) +
-				       IOAPIC_RTE0_HIGH);
-
-	*pEntry = upper32;
-#else
 	int32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
 
 	__IoApicSet(offset, upper32);
-#endif
 }
 
 /**
@@ -456,65 +350,3 @@ static void _IoApicRedUpdateLo(unsigned int irq,
 	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
 }
 
-#ifdef IOAPIC_MSI_REDIRECT
-
-/*
- * The platform is responsible for defining the IOAPIC_MSI_REDIRECT
- * macro if the I/O APIC supports the MSI redirect capability.
- */
-
-/**
- *
- * @brief Write to the RTE config register for specified IRQ
- *
- * This routine writes the specified 32-bit <value> into the RTE configuration
- * register for the specified <irq> (0 to (CONFIG_IOAPIC_NUM_RTES - 1))
- *
- * @param irq INTIN number
- * @param value Value to be written
- * @return N/A
- */
-static void _IoApicRteConfigSet(unsigned int irq, uint32_t value)
-{
-	unsigned int offset; /* register offset */
-
-#ifdef CONFIG_IOAPIC_DEBUG
-	if (irq >= CONFIG_IOAPIC_NUM_RTES)
-		return; /* do nothing if <irq> is invalid */
-#endif
-
-	offset = IOAPIC_RTE0_CONFIG + (irq * 0x10);
-
-	/* use direct addressing when writing to RTE config register */
-
-	*((volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + offset)) = value;
-}
-
-/**
- *
- * @brief Write to the specified MSI redirection register
- *
- * This routine writes the 32-bit <value> into the redirection register
- * specified by <reg>.
- * @param reg Register
- * @param value Value to be written
- *
- * @return N/A
- */
-static void _IoApicRedirRegSet(unsigned int reg, uint32_t value)
-{
-	unsigned int offset; /* register offset */
-
-#ifdef CONFIG_IOAPIC_DEBUG
-	if ((reg > 7) || (reg == 0))
-		return; /* do nothing if <reg> is invalid */
-#endif
-
-	offset = IOAPIC_REDIR_ADDR0 + (reg * 4);
-
-	/* use direct addressing when writing to RTE config register */
-
-	*((volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + offset)) = value;
-}
-
-#endif /* IOAPIC_MSI_REDIRECT */
