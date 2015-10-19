@@ -46,6 +46,7 @@ static int ns16550_uart_init(struct device *dev)
 	struct uart_init_info info = {
 		.baud_rate = CONFIG_UART_CONSOLE_BAUDRATE,
 		.sys_clk_freq = UART_XTAL_FREQ,
+		.irq_pri = CONFIG_UART_CONSOLE_INT_PRI
 	};
 
 	if (dev == UART_CONSOLE_DEV) {
@@ -93,6 +94,8 @@ struct uart_device_config_t ns16550_uart_dev_cfg[] = {
 	},
 	{
 		.port = CONFIG_NS16550_PORT_1_BASE_ADDR,
+		.irq = CONFIG_UART_PORT_1_IRQ,
+		.irq_pri = CONFIG_UART_PORT_1_IRQ_PRIORITY,
 
 		.port_init = ns16550_uart_port_init,
 #if defined(CONFIG_UART_CONSOLE) || defined(CONFIG_BLUETOOTH_UART)

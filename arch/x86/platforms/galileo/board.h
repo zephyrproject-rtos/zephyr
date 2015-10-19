@@ -59,6 +59,7 @@
 
 #define COM2_BAUD_RATE 115200
 #define COM2_INT_LVL 0x11 /* COM2 connected to IRQ17 */
+#define COM2_INT_PRI 3
 
 #define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
 #define UART_XTAL_FREQ (2764800 * 16)
@@ -74,6 +75,9 @@
 #define CONFIG_UART_PORT_1_FUNCTION 5
 #define CONFIG_UART_PCI_BAR       0
 #define CONFIG_UART_BAUDRATE COM1_BAUD_RATE
+
+#define CONFIG_UART_PORT_1_IRQ		COM2_INT_LVL
+#define CONFIG_UART_PORT_1_IRQ_PRIORITY	COM2_INT_PRI
 
 #ifndef _ASMLANGUAGE
 extern struct device * const uart_devs[];
