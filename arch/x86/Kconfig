@@ -34,7 +34,6 @@ default PLATFORM_IA32_PCI
 config PLATFORM_GALILEO
 	bool "Galileo Gen2"
 	select HPET_TIMER
-	select EOI_HANDLER_SUPPORTED
 	select BOOTLOADER_UNKNOWN
 	select PCI
 	help
@@ -47,13 +46,11 @@ config PLATFORM_GALILEO
 config PLATFORM_IA32_PCI
 	bool "IA32 with PCI"
 	select HPET_TIMER
-	select EOI_HANDLER_SUPPORTED
 	select BOOTLOADER_UNKNOWN
 	select PCI
 
 config PLATFORM_IA32
 	bool "IA32"
-	select EOI_HANDLER_SUPPORTED
 	select BOOTLOADER_UNKNOWN
 
 endchoice
@@ -93,16 +90,6 @@ config ADVANCED_IDLE_SUPPORTED
 	This option signifies that the target supports the ADVANCED_IDLE
 	configuration option.
 
-config EOI_HANDLER_SUPPORTED
-	bool "EOI Handler Supported"
-	default n
-	help
-	This option signifies that the target has one or more devices whose
-	driver utilizes an "end of interrupt" handler that gets called
-	after the standard interrupt handling code. This capability
-	can be used by the driver to tell the device that an interrupt
-	has been handled (or for other purposes).
-
 config UNALIGNED_WRITE_UNSUPPORTED
 	bool "Unaligned Write Unsupported"
 	default n
@@ -127,6 +114,22 @@ config NUM_DYNAMIC_STUBS
 	help
 	This option specifies the number of interrupt handlers that can be
 	installed dynamically using irq_connect().
+
+config NUM_DYNAMIC_EXC_STUBS
+	int "Number of dynamic exception stubs"
+	default 0
+	help
+	This option specifies the maximum number of dynamically allocated
+	exception stubs that are to be used with exceptions that push an
+	error code onto the stack.
+
+config NUM_DYNAMIC_EXC_NOERR_STUBS
+	int "Number of dynamic exception stubs"
+	default 0
+	help
+	This option specifies the maximum number of dynamically allocated
+	exception stubs that are to be used with exceptions that do not push
+	an error code onto the stack.
 
 config PIC_DISABLE
 	bool "Disable PIC"

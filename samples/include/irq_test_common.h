@@ -53,20 +53,19 @@ typedef void (*vvpfn)(void *);	/* void-void_pointer function pointer */
  * nano_isr_lifo_get().  The imm8 data in the opcode sequence will need to be
  * filled in after calling irq_connect().
  */
+#include <drivers/loapic.h>
+static uint8_t sw_irq_vectors[NUM_SW_IRQS];
 
-static char sw_isr_trigger_0[] = {
-	0xcd,     /* OPCODE: INT imm8 */
-	0x00,     /* imm8 data (vector to trigger) filled in at runtime */
-	0xc3      /* OPCODE: RET (near) */
-	};
+static inline void sw_isr_trigger_0(void)
+{
+	loapic_int_vec_trigger(sw_irq_vectors[0]);
+}
 
 #if NUM_SW_IRQS >= 2
-static char sw_isr_trigger_1[] = {
-	/* same as above */
-	0xcd,
-	0x00,
-	0xc3
-	};
+static inline void sw_isr_trigger_1(void)
+{
+	loapic_int_vec_trigger(sw_irq_vectors[1]);
+}
 #endif /* NUM_SW_IRQS >= 2 */
 
 #elif defined(CONFIG_ARM)
@@ -108,7 +107,7 @@ static int initIRQ(struct isrInitInfo *i)
 		if (-1 == vector) {
 			return -1;
 		}
-		sw_isr_trigger_0[1] = vector;
+		sw_irq_vectors[0] = vector;
 	}
 
 #if NUM_SW_IRQS >= 2
@@ -118,7 +117,7 @@ static int initIRQ(struct isrInitInfo *i)
 		if (-1 == vector) {
 			return -1;
 		}
-		sw_isr_trigger_1[1] = vector;
+		sw_irq_vectors[1] = vector;
 	}
 #endif /* NUM_SW_IRQS >= 2 */
 #elif defined(CONFIG_ARM)

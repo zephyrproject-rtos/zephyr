@@ -37,11 +37,35 @@ and exiting a C exception handler.
 	/* exports (internal APIs) */
 
 	GTEXT(_ExcEnt)
+	GTEXT(_ExcEntNoErr)
 	GTEXT(_ExcExit)
+	GTEXT(_DynExcStubsBegin)
+	GTEXT(_DynExcStubsNoErrBegin)
 
 	/* externs (internal APIs) */
 
+/**
+ *
+ * @brief Inform the kernel of an exception with no error code
+ *
+ * This is very similar to _ExcEnt() but the stack is first massaged
+ * so that a dummy error code is inserted.
+ */
+SECTION_FUNC(TEXT, _ExcEntNoErr)
+	/* Clear direction flag, auto-restored when the exception exits */
+	cld
 
+	/* Stash current value of EAX to free up the register */
+	pushl	%eax
+
+	/* Save the return address of the stub into EAX */
+	movl	4(%esp), %eax
+
+	/*
+	 * The spot for the error code contains useless data, but
+	 * we don't particularly care since it will be unused.
+	 */
+	jmp	_ExcEntSetupDone
 
 /**
  *
@@ -110,9 +134,20 @@ SECTION_FUNC(TEXT, _ExcEnt)
 
 #endif /* CONFIG_LOCK_INSTRUCTION_UNSUPPORTED*/
 
+BRANCH_LABEL(_ExcEntSetupDone)
+
+	/* By the time we get here, the stack should look like this:
+	 * ESP -> EAX (excepting task)
+	 *	  Exception Error code (or 0)
+	 *	  EIP (excepting task)
+	 *	  CS (excepting task)
+	 *	  EFLAGS (excepting task)
+	 *	  ...
+	 *
+	 * EAX now contains the EIP of the calling exception stub */
+
 	/*
 	 * Push the remaining volatile registers on the existing stack.
-	 * Note that eax has already been saved on the execution context stack.
 	 */
 
 	pushl	%ecx
@@ -310,5 +345,125 @@ EXC_HANDLER_CODE(IV_PAGE_FAULT)
 EXC_HANDLER(IV_X87_FPU_FP_ERROR)
 EXC_HANDLER_CODE(IV_ALIGNMENT_CHECK)
 EXC_HANDLER(IV_MACHINE_CHECK)
-
 #endif /* CONFIG_EXCEPTION_DEBUG */
+
+#if ALL_DYN_EXC_STUBS > 0
+BRANCH_LABEL(_DynExcStubCommon)
+	call _common_dynamic_exc_handler
+	/* Cleanse the stack of stub_num */
+	pop %eax
+	/* Clean up and call IRET */
+	jmp _ExcExit
+
+/*
+ * Create nice labels for all the stubs so we can see where we
+ * are in a debugger
+ */
+.altmacro
+.macro __EXC_STUB_NUM id
+BRANCH_LABEL(_DynExcStub\id)
+.endm
+.macro EXC_STUB_NUM id
+__EXC_STUB_NUM %id
+.endm
+
+stub_num = 0
+
+SECTION_FUNC(TEXT, _DynExcStubsBegin)
+#if CONFIG_NUM_DYNAMIC_EXC_STUBS > 0
+
+/* Create all the dynamic IRQ stubs
+ *
+ * NOTE: Please update DYN_STUB_SIZE in include/arch/x86/arch.h if you change
+ * how large the generated stubs are, otherwise _get_dynamic_stub() will
+ * be unable to correctly determine the offset
+ */
+.rept ((CONFIG_NUM_DYNAMIC_EXC_STUBS + DYN_STUB_PER_BLOCK - 1) / DYN_STUB_PER_BLOCK)
+	block_counter = 0
+	.rept DYN_STUB_PER_BLOCK
+		.if stub_num < CONFIG_NUM_DYNAMIC_EXC_STUBS
+			EXC_STUB_NUM stub_num
+			/*
+			 * TODO: make this call in _DynExcStubCommon, saving
+			 * 5 bytes per stub. Some voodoo will be necessary
+			 * in _ExcEnt/_ExcExit to transplant the pushed
+			 * stub_num to the irq stack
+			 */
+			call _ExcEnt
+
+			/*
+			 * 2-byte push imm8. Consumed by
+			 * _common_dynamic_exc_handler(), see excconnect.c
+			 */
+			push $stub_num
+
+			/*
+			 * Check to make sure this isn't the last stub in
+			 * a block, in which case we just fall through
+			 */
+			.if (block_counter <> (DYN_STUB_PER_BLOCK - 1) && \
+			     (stub_num <> CONFIG_NUM_DYNAMIC_EXC_STUBS - 1))
+				/* This should always be a 2-byte jmp rel8 */
+				jmp 1f
+			.endif
+			stub_num = stub_num + 1
+			block_counter = block_counter + 1
+		.endif
+	.endr
+	/*
+	 * This must a 5-bvte jump rel32, which is why _DynStubCommon
+	 * is before the actual stubs
+	 */
+1:	jmp _DynExcStubCommon
+.endr
+#endif
+
+SECTION_FUNC(TEXT, _DynExcStubsNoErrBegin)
+#if CONFIG_NUM_DYNAMIC_EXC_NOERR_STUBS > 0
+
+/* Same as above, but these stubs push a dummy error code as they will be
+ * associated with exception that don't push one of their own.
+ * Note that we don't reset stub_num to 0, we have a single set of indices
+ * for error/non-error stubs */
+.rept ((CONFIG_NUM_DYNAMIC_EXC_NOERR_STUBS + DYN_STUB_PER_BLOCK - 1) / DYN_STUB_PER_BLOCK)
+	block_counter = 0
+	.rept DYN_STUB_PER_BLOCK
+		.if stub_num < ALL_DYN_EXC_STUBS
+			EXC_STUB_NUM stub_num
+			/*
+			 * TODO: make this call in _DynExcStubCommon, saving
+			 * 5 bytes per stub. Some voodoo will be necessary
+			 * in _ExcEnt/_ExcExit to transplant the pushed
+			 * stub_num to the irq stack
+			 */
+			call _ExcEntNoErr
+
+			/*
+			 * 2-byte push imm8. Consumed by
+			 * _common_dynamic_exc_handler(), see excconnect.c
+			 */
+			push $stub_num
+
+			/*
+			 * Check to make sure this isn't the last stub in
+			 * a block, in which case we just fall through
+			 */
+			.if (block_counter <> (DYN_STUB_PER_BLOCK - 1) && \
+			     (stub_num <> ALL_DYN_EXC_STUBS - 1))
+				/* This should always be a 2-byte jmp rel8 */
+				jmp 1f
+			.endif
+			stub_num = stub_num + 1
+			block_counter = block_counter + 1
+		.endif
+	.endr
+	/*
+	 * This must a 5-bvte jump rel32, which is why _DynStubCommon
+	 * is before the actual stubs
+	 */
+1:	jmp _DynExcStubCommon
+.endr
+
+#endif /* CONFIG_NUM_DYNAMIC_EXC_NOERR_STUBS */
+#endif /* ALL_DYN_EXC_STUBS */
+

@@ -40,24 +40,44 @@
  */
 #define MK_ISR_NAME(x) __isr__##x
 
+#ifdef CONFIG_MICROKERNEL
+#define ALL_DYN_IRQ_STUBS (CONFIG_NUM_DYNAMIC_STUBS + CONFIG_MAX_NUM_TASK_IRQS)
+#elif defined(CONFIG_NANOKERNEL)
+#define ALL_DYN_IRQ_STUBS (CONFIG_NUM_DYNAMIC_STUBS)
+#endif
+
+#define ALL_DYN_EXC_STUBS (CONFIG_NUM_DYNAMIC_EXC_STUBS + \
+			   CONFIG_NUM_DYNAMIC_EXC_NOERR_STUBS)
+
+#define ALL_DYN_STUBS (ALL_DYN_EXC_STUBS + ALL_DYN_IRQ_STUBS)
+
+/*
+ * Synchronize these DYN_STUB_* macros with the generated assembly for
+ * _DynIntStubsBegin in intstub.S / _DynExcStubsBegin in excstub.S
+ * Assumes all stub types are same size/format
+ */
+
+/* Size of each dynamic interrupt/exception stub in bytes */
+#define DYN_STUB_SIZE		9
+
+/*
+ * Offset from the beginning of a stub to the byte containing the argument
+ * to the push instruction, which is the stub index
+ */
+#define DYN_STUB_IDX_OFFSET	6
+
+/* Size of the periodic jmp instruction to the common handler */
+#define DYN_STUB_JMP_SIZE	5
+
+/*
+ * How many consecutive stubs we have until we encounter a periodic
+ * jump to _DynStubCommon
+ */
+#define DYN_STUB_PER_BLOCK	8
+
 #ifndef _ASMLANGUAGE
 
 /* interrupt/exception/error related definitions */
-
-#define _INT_STUB_SIZE		0x2b
-/**
- * Performance optimization
- *
- * Macro PERF_OPT is defined if project is compiled with option other than
- * size optimization ("-Os" for GCC). If the last of the compiler options
- * is the size optimization, PERF_OPT is not defined and the project is
- * optimized for size, hence the stub should be aligned to 1 and not 16.
- */
-#ifdef PERF_OPT
-#define _INT_STUB_ALIGN	16
-#else
-#define _INT_STUB_ALIGN	1
-#endif
 
 /**
  * Floating point register set alignment.
@@ -82,8 +102,6 @@
 
 #define STACK_ALIGN  FP_REG_SET_ALIGN
 
-typedef unsigned char __aligned(_INT_STUB_ALIGN) NANO_INT_STUB[_INT_STUB_SIZE];
-
 typedef struct s_isrList {
 	/** Address of ISR/stub */
 	void		*fnc;
@@ -96,6 +114,7 @@ typedef struct s_isrList {
 	/** Privilege level associated with ISR/stub */
 	unsigned int    dpl;
 } ISR_LIST;
+
 
 /**
  * @brief Connect a routine to an interrupt vector
@@ -125,18 +144,6 @@ typedef struct s_isrList {
 #define NANO_CPU_INT_REGISTER(r, n, p, v, d) \
 	 ISR_LIST __attribute__((section(".intList"))) MK_ISR_NAME(r) = \
 			{&r, n, p, v, d}
-
-/*
- * @brief Declare a dynamic interrupt stub
- *
- * Macro to declare a dynamic interrupt stub. Using the macro places the stub
- * in the .intStubSection which is located in the image according to the kernel
- * configuration.
- * @param s Stub to be declared
- */
-#define NANO_CPU_INT_STUB_DECL(s) \
-	_NODATA_SECTION(.intStubSect) NANO_INT_STUB(s)
-
 
 /**
  * @brief Connect a routine to interrupt number
@@ -439,12 +446,10 @@ extern const NANO_ESF _default_esf;
  * This routine is invoked by the kernel to configure an interrupt vector of
  * the specified priority.  To this end, it allocates an interrupt vector,
  * programs hardware to route interrupt requests on the specified IRQ to that
- * vector, and returns the vector number along with its associated BOI/EOI
- * information.
+ * vector, and returns the vector number
  */
 extern int _SysIntVecAlloc(unsigned int irq,
-			   unsigned int priority,
-			   NANO_EOI_GET_FUNC *eoiRtn);
+			   unsigned int priority);
 
 /* functions provided by the kernel for usage by _SysIntVecAlloc() */
 

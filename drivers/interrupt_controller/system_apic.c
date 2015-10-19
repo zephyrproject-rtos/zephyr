@@ -41,9 +41,7 @@
  *     routine _IntVecAlloc() provided by the nanokernel will be used to
  *     perform the the allocation since the local APIC prioritizes interrupts
  *     as assumed by _IntVecAlloc().
- *  b) Provides End of Interrupt (EOI) related information to be used when
- *     generating the interrupt stub code.
- *  c) If an interrupt vector can be allocated, and the <irq> argument is not
+ *  b) If an interrupt vector can be allocated, and the <irq> argument is not
  *     equal to NANO_SOFT_IRQ, the IOAPIC redirection table (RED) or the
  *     LOAPIC local vector table (LVT) will be updated with the allocated
  *     interrupt vector.
@@ -67,7 +65,6 @@
  *
  * @param irq virtualized IRQ
  * @param priority get vector from <priority> group
- * @param eoiRtn pointer to the EOI routine; NULL if none
  *
  * @return the allocated interrupt vector
  *
@@ -79,8 +76,7 @@
  */
 int _SysIntVecAlloc(
 	unsigned int irq,		 /* virtualized IRQ */
-	unsigned int priority,		 /* get vector from <priority> group */
-	NANO_EOI_GET_FUNC *eoiRtn	 /* ptr to EOI routine; NULL if none */
+	unsigned int priority		 /* get vector from <priority> group */
 	)
 {
 	int vector;
@@ -118,9 +114,6 @@ int _SysIntVecAlloc(
 #endif
 	{
 		_SysIntVecProgram(vector, irq);
-		*eoiRtn = (NANO_EOI_GET_FUNC)_loapic_eoi;
-	} else {
-		*eoiRtn = (NANO_EOI_GET_FUNC)NULL;
 	}
 
 	return vector;

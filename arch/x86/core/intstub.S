@@ -41,6 +41,7 @@ entering and exiting a C interrupt handler.
 	GTEXT(_IntExit)
 	GTEXT(_SpuriousIntNoErrCodeHandler)
 	GTEXT(_SpuriousIntHandler)
+	GTEXT(_DynIntStubsBegin)
 
  	/* externs */
 
@@ -444,4 +445,72 @@ BRANCH_LABEL(callFatalHandler)
 
 	jmp	callFatalHandler
 
+#if ALL_DYN_IRQ_STUBS > 0
+BRANCH_LABEL(_DynIntStubCommon)
+	call _common_dynamic_irq_handler
+	/* Cleanse the stack of stub_num */
+	pop %eax
+	/* Clean up and call IRET */
+	jmp _IntExit
+
+/* Create all the dynamic IRQ stubs
+ *
+ * NOTE: Please update DYN_STUB_SIZE in include/arch/x86/arch.h if you change
+ * how large the generated stubs are, otherwise _get_dynamic_stub() will
+ * be unable to correctly determine the offset
+ */
+
+/*
+ * Create nice labels for all the stubs so we can see where we
+ * are in a debugger
+ */
+.altmacro
+.macro __INT_STUB_NUM id
+BRANCH_LABEL(_DynIntStub\id)
+.endm
+.macro INT_STUB_NUM id
+__INT_STUB_NUM %id
+.endm
+
+SECTION_FUNC(TEXT, _DynIntStubsBegin)
+stub_num = 0
+.rept ((ALL_DYN_IRQ_STUBS + DYN_STUB_PER_BLOCK - 1) / DYN_STUB_PER_BLOCK)
+	block_counter = 0
+	.rept DYN_STUB_PER_BLOCK
+		.if stub_num < ALL_DYN_IRQ_STUBS
+			INT_STUB_NUM stub_num
+			/*
+			 * TODO: make this call in _DynIntStubCommon, saving
+			 * 5 bytes per stub. Some voodoo will be necessary
+			 * in _IntEnt/_IntExit to transplant the pushed
+			 * stub_num to the irq stack
+			 */
+			call _IntEnt
+
+			/*
+			 * 2-byte push imm8. Consumed by
+			 * common_dynamic_handler(), see intconnect.c
+			 */
+			push $stub_num
+
+			/*
+			 * Check to make sure this isn't the last stub in
+			 * a block, in which case we just fall through
+			 */
+			.if (block_counter <> (DYN_STUB_PER_BLOCK - 1) && \
+			     (stub_num <> ALL_DYN_IRQ_STUBS - 1))
+				/* This should always be a 2-byte jmp rel8 */
+				jmp 1f
+			.endif
+			stub_num = stub_num + 1
+			block_counter = block_counter + 1
+		.endif
+	.endr
+	/*
+	 * This must a 5-bvte jump rel32, which is why _DynStubCommon
+	 * is before the actual stubs
+	 */
+1:	jmp _DynIntStubCommon
+.endr
+#endif /* ALL_DYN_IRQ_STUBS */
 #endif /* CONFIG_NO_ISRS */

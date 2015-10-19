@@ -394,13 +394,6 @@
 #define EFLAGS_INITIAL 0x00000200
 #define EFLAGS_MASK 0x00003200
 
-/* The following opcodes are used to create interrupt and exception stubs */
-
-#define IA32_CALL_OPCODE 0xe8
-#define IA32_PUSH_OPCODE 0x68
-#define IA32_JMP_OPCODE 0xe9
-#define IA32_ADD_OPCODE 0xc483
-
 #ifndef _ASMLANGUAGE
 
 #include <misc/util.h>
@@ -820,36 +813,12 @@ static inline void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
 
 #define _EXC_STUB_SIZE 0x14
 
-/*
- * Performance optimization
- *
- * Macro PERF_OPT is defined if project is compiled with option other than
- * size optimization ("-Os" for GCC). If the last of the compiler options
- * is the size optimization, PERF_OPT is not defined and the project is
- * optimized for size, hence the stub should be aligned to 1 and not 16.
- */
-#ifdef PERF_OPT
-#define _EXC_STUB_ALIGN 16
-#else
-#define _EXC_STUB_ALIGN 1
-#endif
-
-typedef unsigned char __aligned(_EXC_STUB_ALIGN) NANO_EXC_STUB[_EXC_STUB_SIZE];
-
-/*
- * Macro to declare a dynamic exception stub. Using the macro places the stub
- * in the .intStubSection which is located in the image according to the kernel
- * configuration.
- */
-#define NANO_CPU_EXC_STUB_DECL(s) _NODATA_SECTION(.intStubSect) NANO_EXC_STUB(s)
-
 /* function prototypes */
 
 extern void nano_cpu_atomic_idle(unsigned int imask);
 
 extern void nanoCpuExcConnect(unsigned int vector,
-			      void (*routine)(NANO_ESF * pEsf),
-			      NANO_EXC_STUB pExcStubMem);
+			      void (*routine)(NANO_ESF *pEsf));
 
 extern void _IntVecSet(unsigned int vector,
 		       void (*routine)(void *),
@@ -867,6 +836,13 @@ extern uint64_t _MsrRead(unsigned int msr);
 static inline void _IntLibInit(void)
 {
 }
+
+int _stub_alloc(unsigned int *ep, unsigned int limit);
+void *_get_dynamic_stub(int stub_idx, void *base_ptr);
+uint8_t _stub_idx_from_vector(int vector);
+
+/* the _idt_base_address symbol is generated via a linker script */
+extern unsigned char _idt_base_address[];
 
 #include <stddef.h> /* For size_t */
 

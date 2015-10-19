@@ -81,7 +81,6 @@ typedef void (* enable_interrupt_func)(int);
 
 /* Cortex-M3/M4 does not implement connecting non-IRQ exception handlers */
 #if !defined(CONFIG_CPU_CORTEX_M3_M4)
-static NANO_CPU_EXC_STUB_DECL(nanoExcStub);
 static volatile int    excHandlerExecuted;
 #endif
 
@@ -169,7 +168,7 @@ int initNanoObjects(void)
 
 /* no nanoCpuExcConnect on Cortex-M3/M4 */
 #if !defined(CONFIG_CPU_CORTEX_M3_M4)
-	nanoCpuExcConnect(IV_DIVIDE_ERROR, exc_divide_error_handler, nanoExcStub);
+	nanoCpuExcConnect(IV_DIVIDE_ERROR, exc_divide_error_handler);
 #endif
 
 	struct isrInitInfo i = {

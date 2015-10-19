@@ -53,8 +53,7 @@ extern "C" {
 	jmp _ExcExit;
 
 #define NANO_CPU_EXC_CONNECT_NO_ERR_CODE(h) \
-	pushl $0;                           \
-	call _ExcEnt;                       \
+	call _ExcEntNoErr;                  \
 	call h;                             \
 	jmp _ExcExit;
 

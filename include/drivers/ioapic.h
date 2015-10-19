@@ -19,6 +19,8 @@
 #ifndef __INCioapich
 #define __INCioapich
 
+#include <drivers/loapic.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,22 +47,7 @@ extern "C" {
 #define IOAPIC_EXTINT 0x00000700
 
 #ifdef _ASMLANGUAGE
-GTEXT(_ioapic_eoi)
-
-.macro ioapic_mkstub device isr context
-GTEXT(_\()\device\()_\()\isr\()_stub)
-
-/* We call _loapic_eoi as it will inform the IOAPIC what vector just got
- * serviced
- */
-SECTION_FUNC(TEXT, _\()\device\()_\()\isr\()_stub)
-	call    _IntEnt         /* Inform kernel interrupt has begun */
-	pushl   \context        /* Push context parameter */
-	call    \isr            /* Call actual interrupt handler */
-	popl    %eax	        /* Clean-up stack from push above */
-	call    _loapic_eoi     /* Inform loapic interrupt is done */
-	jmp     _IntExit        /* Inform kernel interrupt is done */
-.endm
+#define ioapic_mkstub loapic_mkstub
 #else /* _ASMLANGUAGE */
 #include <device.h>
 int _ioapic_init(struct device *unused);

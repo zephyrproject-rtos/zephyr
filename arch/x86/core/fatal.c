@@ -125,7 +125,7 @@ static FUNC_NORETURN void generic_exc_handle(char *description,
 					     const NANO_ESF *pEsf)
 {
 	printk("***** CPU exception %d: %s\n", vector, description);
-	if (pEsf->errorCode) {
+	if ((1 << vector) & _EXC_ERROR_CODE_FAULTS) {
 		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
 	}
 	_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, pEsf);

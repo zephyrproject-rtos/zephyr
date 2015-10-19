@@ -65,11 +65,20 @@
 
 #include <nanokernel.h>
 #include <nano_private.h>
+#include <misc/__assert.h>
 
+#if ALL_DYN_EXC_STUBS > 0
+
+static void (*exc_handlers[ALL_DYN_EXC_STUBS])(NANO_ESF *pEsf);
+
+static unsigned int next_exc_stub;
+static unsigned int next_exc_noerr_stub;
+
+extern void *_DynExcStubsBegin;
+extern void *_DynExcStubsNoErrBegin;
 
 void _NanoCpuExcConnectAtDpl(unsigned int vector,
 			     void (*routine)(NANO_ESF * pEsf),
-			     NANO_EXC_STUB pExcStubMem,
 			     unsigned int dpl);
 
 /**
@@ -107,10 +116,9 @@ void _NanoCpuExcConnectAtDpl(unsigned int vector,
 void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
 					     * IA-32
 					     */
-		       void (*routine)(NANO_ESF * pEsf),
-		       NANO_EXC_STUB pExcStubMem)
+		       void (*routine)(NANO_ESF * pEsf))
 {
-	_NanoCpuExcConnectAtDpl(vector, routine, pExcStubMem, 0);
+	_NanoCpuExcConnectAtDpl(vector, routine, 0);
 }
 
 /**
@@ -137,6 +145,9 @@ void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
  * The handler is connected via an interrupt-gate descriptor having the supplied
  * descriptor privilege level (DPL).
  *
+ * WARNING memory will leak if the vector was already connected to a different
+ * dynamic handler
+ *
  * @return N/A
  *
  * INTERNAL
@@ -148,82 +159,44 @@ void nanoCpuExcConnect(unsigned int vector, /* interrupt vector: 0 to 255 on
 void _NanoCpuExcConnectAtDpl(
 	unsigned int vector, /* interrupt vector: 0 to 255 on IA-32 */
 	void (*routine)(NANO_ESF * pEsf),
-	NANO_EXC_STUB pExcStubMem,
 	unsigned int dpl /* priv level for interrupt-gate descriptor */
 	)
 {
-	extern void _ExcEnt(void);
-	extern void _ExcExit(void);
-	unsigned int offsetAdjust = 0;
-
-#define STUB_PTR pExcStubMem
+	int stub_idx, limit, offset;
+	unsigned int *next_p;
+	void *base_ptr;
 
 	/*
-	 * The <vector> parameter must be less than IV_INTEL_RESERVED_END,
-	 * however, explicit validation will not be performed in this primitive.
+	 * Check to see if this exception type takes an error code, we
+	 * have different stubs for that
 	 */
-
-	/*
-	 * If the specified <vector> represents an exception type where the CPU
-	 * does not push an error code onto the stack, then generate a stub that
-	 * pushes a dummy code.  This results in a single implementation of
-	 * _ExcEnt
-	 * and _ExcExit which expects an error code to be pushed onto the stack
-	 * (along with the faulting CS:EIP and EFLAGS).
-	 */
-
 	if (((1 << vector) & _EXC_ERROR_CODE_FAULTS) == 0) {
-		STUB_PTR[0] = IA32_PUSH_OPCODE;
-
-		UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1],
-				(unsigned int)0 /* value of dummy error code */
-				);
-
-		offsetAdjust = 5;
+		base_ptr = &_DynExcStubsNoErrBegin;
+		next_p = &next_exc_noerr_stub;
+		limit = CONFIG_NUM_DYNAMIC_EXC_NOERR_STUBS;
+		offset = CONFIG_NUM_DYNAMIC_EXC_STUBS;
+	} else {
+		base_ptr = &_DynExcStubsBegin;
+		next_p = &next_exc_stub;
+		limit = CONFIG_NUM_DYNAMIC_EXC_STUBS;
+		offset = 0;
 	}
 
-	/* generate code that invokes _ExcEnt() */
-
-	STUB_PTR[offsetAdjust] = IA32_CALL_OPCODE;
-	UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1 + offsetAdjust],
-			(unsigned int)&_ExcEnt -
-				(unsigned int)&pExcStubMem[5 + offsetAdjust]);
-	offsetAdjust += 5;
-
-	/* generate code that invokes the exception handler  */
-
-	STUB_PTR[offsetAdjust] = IA32_CALL_OPCODE;
-	UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1 + offsetAdjust],
-			(unsigned int)routine -
-				(unsigned int)&pExcStubMem[5 + offsetAdjust]);
-	offsetAdjust += 5;
-
+	stub_idx = _stub_alloc(next_p, limit);
+	__ASSERT(stub_idx != -1, "No available execption stubs");
 	/*
-	 * generate code that invokes _ExcExit(); note that a jump is used,
-	 * since _ExcExit() takes care of popping the error code and returning
-	 * back to the execution context that triggered the exception
+	 * We have the same array for both error code and non error code
+	 * exceptions, the second half is reserved for the non error code
+	 * handlers
 	 */
-
-	STUB_PTR[offsetAdjust] = IA32_JMP_OPCODE;
-	UNALIGNED_WRITE((unsigned int *)&STUB_PTR[1 + offsetAdjust],
-			(unsigned int)&_ExcExit -
-				(unsigned int)&pExcStubMem[5 + offsetAdjust]);
-
-
-	/*
-	 * There is no need to explicitly synchronize or flush the instruction
-	 * cache due to the above code synthesis.  See the Intel 64 and IA-32
-	 * Architectures Software Developer's Manual: Volume 3A: System
-	 *Programming
-	 * Guide; specifically the section titled "Self Modifying Code".
-	 *
-	 * Cache synchronization/flushing is not required for the i386 as it
-	 * does not contain any on-chip I-cache; likewise, post-i486 processors
-	 * invalidate the I-cache automatically.  An i486 requires the CPU
-	 * to perform a 'jmp' instruction before executing the synthesized code;
-	 * however, the call and return that follows meets this requirement.
-	 */
-
-	_IntVecSet(vector, (void (*)(void *))pExcStubMem, dpl);
+	exc_handlers[stub_idx + offset] = routine;
+	_IntVecSet(vector, _get_dynamic_stub(stub_idx, base_ptr), dpl);
 }
+
+void _common_dynamic_exc_handler(uint32_t stub_idx, NANO_ESF *pEsf)
+{
+	exc_handlers[stub_idx](pEsf);
+}
+
+#endif /* ALL_DYN_EXC_STUBS */
 

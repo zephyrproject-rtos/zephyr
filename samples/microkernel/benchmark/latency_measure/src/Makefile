@@ -11,5 +11,4 @@ obj-y = main.o \
 	micro_int_to_task.o \
 	micro_task_switch_yield.o \
 	nano_int_lock_unlock.o \
-	raise_int.o \
 	utils.o

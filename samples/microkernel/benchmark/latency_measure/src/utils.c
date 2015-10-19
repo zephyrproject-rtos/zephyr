@@ -22,15 +22,13 @@
  */
 
 #include <zephyr.h>
+#include <drivers/loapic.h>
 
 #include "timestamp.h"
 #include "utils.h"
 
 
 static uint8_t vector; /* the interrupt vector we allocate */
-
-/* current pointer to the ISR */
-static ptestIsr pcurrIsrFunc;
 
 /* scratchpad for the string used to print on console */
 char tmpString[TMP_STRING_SIZE];
@@ -49,8 +47,6 @@ int initSwInterrupt(ptestIsr pIsrHdlr)
 {
 	vector = irq_connect(NANO_SOFT_IRQ, IRQ_PRIORITY, pIsrHdlr,
 			     (void *) 0);
-	pcurrIsrFunc = pIsrHdlr;
-
 	return vector;
 }
 
@@ -66,10 +62,9 @@ int initSwInterrupt(ptestIsr pIsrHdlr)
  */
 void setSwInterrupt(ptestIsr pIsrHdlr)
 {
-	extern void _irq_handler_set(unsigned int irq, void (*old)(void *arg),
-									void (*new)(void *arg), void *arg);
-	_irq_handler_set(vector, pcurrIsrFunc, pIsrHdlr, (void *)0);
-	pcurrIsrFunc = pIsrHdlr;
+	extern void _irq_handler_set(unsigned int irq,
+				     void (*new)(void *arg), void *arg);
+	_irq_handler_set(vector, pIsrHdlr, (void *)0);
 }
 
 /**
@@ -85,5 +80,5 @@ void setSwInterrupt(ptestIsr pIsrHdlr)
  */
 void raiseIntFunc(void)
 {
-	raiseInt(vector);
+	loapic_int_vec_trigger(vector);
 }
