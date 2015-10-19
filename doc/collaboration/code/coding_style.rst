@@ -9,8 +9,8 @@ the project's style and naming conventions.
 In general, follow the `Linux kernel coding style`_, with the following
 exceptions:
 
-* Add braces to every if and else body, even if it is a single line.
-  Use the :option:`--ignore BRACES` flag to make :program:`checkpatch`
+* Add braces to every ``if`` and ``else`` body, even for single-line code
+  blocks. Use the :option:`--ignore BRACES` flag to make :program:`checkpatch`
   stop complaining.
 * Use hard tab stops. Set the tab width to either 4 or 8 spaces. Train
   :program:`checkpatch` to only warn when lines are over 100
@@ -25,10 +25,10 @@ exceptions:
 Checking for Conformity Using Checkpatch
 ****************************************
 
-The Linux kernel GPL-licensed tool, :program:`checkpatch` is used to
-check the conformity to the coding style. The tool is available in the
-scripts directory. To invoke :program:`checkpatch` when you commit
-code, edit your :file:`.git/hooks/pre-commit` file to contain:
+The Linux kernel GPL-licensed tool :program:`checkpatch` is used to
+check coding style conformity. :program:`Checkpatch` is available in the
+scripts directory. To invoke it when committing code, edit your
+:file:`.git/hooks/pre-commit` file to contain:
 
 .. code-block:: bash
 
