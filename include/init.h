@@ -74,7 +74,7 @@
  *  other devices of the same initialization level. Specified as an integer
  *  value in the range 0 to 99; lower values indicate earlier initialization.
  *  Must be expressed as a hard-coded decimal integer literal without leading
- *  zeroes (e.g. 32); symbolic expressions are @not permitted.
+ *  zeroes (e.g. 32); symbolic expressions are not permitted.
  */
 
 #define SYS_DEFINE_DEVICE(name, data, level, priority)			    \
