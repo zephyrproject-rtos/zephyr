@@ -83,7 +83,7 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 		 * variable" warning when the PRINTK kconfig option is disabled.
 		 */
 
-		static char *ctxText[] = {"ISR", "essential fiber",
+		static const char * const ctxText[] = {"ISR", "essential fiber",
 					  "essential task"};
 
 		PRINTK("Fatal %s error! Spinning...\n", ctxText[curCtx]);
