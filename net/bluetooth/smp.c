@@ -131,10 +131,19 @@ static uint8_t bt_smp_io_capa = BT_SMP_IO_NO_INPUT_OUTPUT;
 
 static uint8_t get_pair_method(struct bt_smp *smp, uint8_t remote_io)
 {
+	struct bt_smp_pairing *req, *rsp;
 	uint8_t method;
 
 	if (remote_io > BT_SMP_IO_KEYBOARD_DISPLAY)
 		return JUST_WORKS;
+
+	req = (struct bt_smp_pairing *)&smp->preq[1];
+	rsp = (struct bt_smp_pairing *)&smp->prsp[1];
+
+	/* if none side requires MITM use JustWorks */
+	if (!(req->auth_req & rsp->auth_req & BT_SMP_AUTH_MITM)) {
+		return JUST_WORKS;
+	}
 
 	method = gen_method[remote_io][bt_smp_io_capa];
 
