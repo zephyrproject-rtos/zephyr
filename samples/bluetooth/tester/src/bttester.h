@@ -247,6 +247,14 @@ struct gatt_add_characteristic_rp {
 	uint16_t char_id;
 };
 
+#define GATT_ADD_INCLUDED_SERVICE	0x05
+struct gatt_add_included_service_cmd {
+	uint16_t svc_id;
+} __packed;
+struct gatt_add_included_service_rp {
+	uint16_t included_service_id;
+} __packed;
+
 #define GATT_SET_VALUE			0x06
 	struct gatt_set_value_cmd {
 	uint16_t attr_id;

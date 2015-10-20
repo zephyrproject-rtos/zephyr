@@ -102,6 +102,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	cmds = 1 << GATT_READ_SUPPORTED_COMMANDS;
 	cmds |= 1 << GATT_ADD_SERVICE;
 	cmds |= 1 << GATT_ADD_CHARACTERISTIC;
+	cmds |= 1 << GATT_ADD_INCLUDED_SERVICE;
 	cmds |= 1 << GATT_SET_VALUE;
 	cmds |= 1 << GATT_START_SERVER;
 
@@ -291,6 +292,86 @@ rsp:
 	}
 }
 
+static uint8_t get_service_handles(const struct bt_gatt_attr *attr,
+				   void *user_data)
+{
+	struct bt_gatt_include *include = user_data;
+
+	/*
+	 * The first attribute found is service declaration.
+	 * Preset end handle - next attribute can be a service.
+	 */
+	if (!include->start_handle) {
+		include->start_handle = attr->handle;
+		include->end_handle = attr->handle;
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	/* Stop if attribute is a service */
+	if (!bt_uuid_cmp(attr->uuid, svc_pri.uuid) ||
+	    !bt_uuid_cmp(attr->uuid, svc_sec.uuid)) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	include->end_handle = attr->handle;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static struct bt_gatt_attr svc_inc = BT_GATT_INCLUDE_SERVICE(NULL);
+
+static uint8_t add_included_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct gatt_add_included_service_rp rp;
+	struct bt_gatt_attr *attr_incl;
+	struct bt_gatt_include include;
+
+	/* Fail if attribute stored under requested handle is not a service */
+	if (bt_uuid_cmp(attr->uuid, svc_pri.uuid) &&
+	    bt_uuid_cmp(attr->uuid, svc_sec.uuid)) {
+		goto fail;
+	}
+
+	attr_incl = gatt_db_add(&svc_inc);
+	if (!attr_incl) {
+		goto fail;
+	}
+
+	include.uuid = attr->user_data;
+	include.start_handle = 0;
+
+	attr_incl->user_data = gatt_buf_add(&include, sizeof(include));
+	if (!attr_incl->user_data) {
+		goto fail;
+	}
+
+	/* Lookup for service end handle */
+	bt_gatt_foreach_attr(attr->handle, 0xffff, get_service_handles,
+			     attr_incl->user_data);
+
+	rp.included_service_id = sys_cpu_to_le16(attr_incl->handle);
+
+	tester_rsp_full(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+			CONTROLLER_INDEX, (uint8_t *) &rp, sizeof(rp));
+
+	return BT_GATT_ITER_STOP;
+fail:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_ADD_CHARACTERISTIC,
+		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void add_included(uint8_t *data, uint16_t len)
+{
+	const struct gatt_add_included_service_cmd *cmd = (void *) data;
+	uint16_t handle = sys_le16_to_cpu(cmd->svc_id);
+
+	/* TODO Return error if no attribute found */
+	bt_gatt_foreach_attr(handle, handle, add_included_cb, data);
+}
+
 static uint8_t set_value_cb(struct bt_gatt_attr *attr, void *user_data)
 {
 	const struct gatt_set_value_cmd *cmd = user_data;
@@ -379,6 +460,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_ADD_CHARACTERISTIC:
 		add_characteristic(data, len);
+		return;
+	case GATT_ADD_INCLUDED_SERVICE:
+		add_included(data, len);
 		return;
 	case GATT_SET_VALUE:
 		set_value(data, len);
