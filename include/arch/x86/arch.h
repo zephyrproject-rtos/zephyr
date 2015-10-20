@@ -168,6 +168,7 @@ typedef struct s_isrList {
  * For x86 platform configure APIC and mark interrupt vector allocated
  * @param device Device
  * @param irq IRQ
+ * @param priority IRQ priority, unused on this platform
  *
  * @return N/A
  *
