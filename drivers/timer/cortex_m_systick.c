@@ -20,13 +20,13 @@
  * DESCRIPTION
  * This module implements the kernel's CORTEX-M ARM's systick device driver.
  * It provides the standard kernel "system clock driver" interfaces.
- * 
+ *
  * The driver utilizes systick to provide kernel ticks.
- * 
+ *
  * \INTERNAL IMPLEMENTATION DETAILS
  * The systick device provides a 24-bit clear-on-write, decrementing,
  * wrap-on-zero counter. Only edge sensitive triggered interrupt is supported.
- * 
+ *
  * \INTERNAL PACKAGING DETAILS
  * The systick device driver is part of the microkernel in both a monolithic
  * kernel system and a split kernel system; it is not included in the

@@ -47,7 +47,7 @@
  *
  * If the nanokernel has been built without SSE instruction support
  * (CONFIG_SSE), the system treats USE_SSE as if it was USE_FP.
- * 
+ *
  * If the nanokernel has been built without floating point resource sharing
  * support (CONFIG_FP_SHARING), the aforementioned APIs and capabilities do not
  * exist.
@@ -60,7 +60,7 @@
  *
  * WARNING
  * The use of floating point instructions by ISRs is not supported by the
- * kernel.  
+ * kernel.
  *
  * INTERNAL
  * If automatic enabling of floating point resource sharing _is not_ configured

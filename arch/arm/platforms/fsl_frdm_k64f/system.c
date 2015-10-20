@@ -308,7 +308,7 @@ static int fsl_frdm_k64f_init(struct device *arg)
 
 	/*
 	 * install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise 
+	 * if configured in the kernel, NOP otherwise
 	 */
 	NMI_INIT();
 

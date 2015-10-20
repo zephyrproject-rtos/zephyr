@@ -325,7 +325,7 @@ static int ReaderInProgressIsBlocked(struct _k_pipe_struct *pipe_ptr,
 	    ) {
 		/*
 		 * requester can still wait (for some time or forever), no
-		 * problem for now 
+		 * problem for now
 		 */
 		return 0;
 	}
@@ -835,7 +835,7 @@ void _k_pipe_process(struct _k_pipe_struct *pipe_ptr, struct k_args *pNLWriter,
 					continue;
 				} else {
 					/* we could break as well,
-					 * but then nothing else will happen 
+					 * but then nothing else will happen
 					 */
 					return;
 				}
@@ -844,7 +844,7 @@ void _k_pipe_process(struct _k_pipe_struct *pipe_ptr, struct k_args *pNLWriter,
 				if (reader_ptr && (_TIME_NB !=
 					_k_pipe_time_type_get(&writer_ptr->args))) {
 					/* force transfer (we make exception
-					 * for non-blocked writer) 
+					 * for non-blocked writer)
 					 */
 					pipe_read_write(pipe_ptr, writer_ptr, reader_ptr);
 					continue;

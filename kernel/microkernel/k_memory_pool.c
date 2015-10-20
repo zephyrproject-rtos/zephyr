@@ -332,7 +332,7 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 		defrag(P,
 		       P->nr_of_frags - 1, /* start from the smallest blocks */
 		       startindex); /* but only until the requested blocksize
-				     * (fragmentation level) !! 
+				     * (fragmentation level) !!
 				     */
 
 		found = search_block_on_frag_level(&(fr_table[index]), &i);

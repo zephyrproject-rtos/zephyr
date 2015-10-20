@@ -20,28 +20,28 @@
  * DESCRIPTION
  * Define the System Control Space for the CORTEX-M series of processors and
  * provide an interface for miscellaneous SCS functionalities.
- * 
+ *
  * All register and bit-field names come from the
- * 
+ *
  *   Cortex-M3 Devices
  *   Generic User Guide
  *   ARM DUI 0552A (ID121610)
- * 
+ *
  * and
- * 
+ *
  *   Cortex-M3
  *   Revision r2p1
  *   Technical Reference Manual
  *   ARM DDI 0337I (ID072410)
- * 
+ *
  * documents from ARM.
- * 
+ *
  * The API does not account for all possible usages of the SCS, only the
  * functionalities needed by the kernel. It does not contain NVIC and
  * SCB functionalities either: these can be found in nvic.h and scb.h.
- * 
+ *
  * MPU functionalities are not implemented.
- * 
+ *
  * The same effect can be achieved by directly writing in the registers of the
  * SCS, using the __scs data structure (or hardcoded values), but the APIs found
  * here are less error-prone, especially for registers with multiple instances

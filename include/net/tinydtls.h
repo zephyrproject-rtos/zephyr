@@ -1,6 +1,6 @@
 /** @file
  * @brief tinyDTLS API
- * 
+ *
  * API providing DTLS functionality.
  */
 

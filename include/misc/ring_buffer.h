@@ -47,7 +47,7 @@ struct ring_buf {
  * will not need to use expensive modulo operations.
  *
  * @param name File-scoped name of the ring buffer to declare
- * @param pow Create a buffer of 2^pow 32-bit elements 
+ * @param pow Create a buffer of 2^pow 32-bit elements
  */
 #define SYS_RING_BUF_DECLARE_POW2(name, pow) \
 	static uint32_t _ring_buffer_data_##name[1 << (pow)]; \

@@ -70,7 +70,7 @@
  * For each bus it will run through each device on which it will loop on each
  * function and BARs, as long as the criterias does not match or until it hit
  * the limit of bus/dev/functions to scan.
- * 
+ *
  * On a successful match, it will stop the loop, fill in the caller's
  * pci_dev_info structure with the found device information, and return 1.
  * Hopefully, the lookup structure still remembers where it stopped and the

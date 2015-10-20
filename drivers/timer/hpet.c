@@ -21,9 +21,9 @@
  * This module implements a kernel device driver for the Intel High Precision
  * Event Timer (HPET) device, and provides the standard "system clock driver"
  * interfaces.
- * 
+ *
  * The driver utilizes HPET timer0 to provide kernel ticks.
- * 
+ *
  * \INTERNAL IMPLEMENTATION DETAILS
  * The HPET device driver makes no assumption about the initial state of the
  * HPET, and explicitly puts the device into a reset-like state. It also assumes

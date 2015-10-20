@@ -83,7 +83,7 @@
  * should allocate no more than 2 interrupt vectors per priority.  The Pentium4
  * processor expands this support of all acceptance of two interrupts per vector
  * rather than per priority level.
- * 
+ *
  * INCLUDE FILES: loapic.h
  */
 
