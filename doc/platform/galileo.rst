@@ -51,13 +51,13 @@ which must be set to match the external operating voltage of either 3.3 V or 5 V
 
 The Galileo default switch settings are:
 
-+--------------+--------------+
-| Jumper       | Setting      |
-+==============+==============+
-| IOREF        | 3.3V or 5V   |
-+--------------+--------------+
-| VIN          | 5V  Jumpered |
-+--------------+--------------+
++--------+--------------+
+| Jumper | Setting      |
++========+==============+
+| IOREF  | 3.3V or 5V   |
++--------+--------------+
+| VIN    | 5V  Jumpered |
++--------+--------------+
 
 For more information, see page 14 of the
 `Intel® Galileo Board User Guide`_.
@@ -96,18 +96,18 @@ The galileo platform configuration supports the following hardware features:
 
 * Serial Ports in Polling and Interrupt Driven Modes
 
-+------------------+------------+-----------------------+
-| Interface        | Controller | Driver/Component      |
-+==================+============+=======================+
-| HPET             | on-chip    | system clock          |
-+------------------+------------+-----------------------+
-| PCI              | on-chip    | PCI library           |
-+------------------+------------+-----------------------+
-| APIC             | on-chip    | interrupt controller  |
-+------------------+------------+-----------------------+
-| UART             | on-chip    | serial port-polling;  |
-|                  |            | serial port-interrupt |
-+------------------+------------+-----------------------+
++-----------+------------+-----------------------+
+| Interface | Controller | Driver/Component      |
++===========+============+=======================+
+| HPET      | on-chip    | system clock          |
++-----------+------------+-----------------------+
+| PCI       | on-chip    | PCI library           |
++-----------+------------+-----------------------+
+| APIC      | on-chip    | interrupt controller  |
++-----------+------------+-----------------------+
+| UART      | on-chip    | serial port-polling;  |
+|           |            | serial port-interrupt |
++-----------+------------+-----------------------+
 
 The kernel currently does not support other hardware features.
 See the `Intel® Quark Core Hardware Reference Manual`_ for a
@@ -154,22 +154,14 @@ interrupt redirection table.
 Interrupts
 ----------
 
-+-------+-----------+------------------+-------------------------------+
-| IRQ   | Name      | Remarks          | Used by Zephyr Kernel         |
-+=======+===========+==================+===============================+
-| 17    | INTB      |   UART           | serial port when used in      |
-|       |           |                  | interrupt mode                |
-+-------+-----------+------------------+-------------------------------+
-| 20    | timer     |   HPET           | timer driver                  |
-+-------+-----------+------------------+-------------------------------+
-
-Configuration Options
-=====================
-
-:option:`CONFIG_PCI_DEBUG`
-      Set to "y" to enable PCI debugging functions for PCI bus scanning.
-      Allows a list of all the PCI devices found to be printed.
-
++-----+-------+---------+--------------------------+
+| IRQ | Name  | Remarks | Used by Zephyr Kernel    |
++=====+=======+=========+==========================+
+| 17  | INTB  | UART    | serial port when used in |
+|     |       |         | interrupt mode           |
++-----+-------+---------+--------------------------+
+| 20  | timer | HPET    | timer driver             |
++-----+-------+---------+--------------------------+
 
 HPET System Clock Support
 =========================
@@ -192,168 +184,97 @@ Use the following procedures for booting an image on a Galileo board.
 Creating a GRUB2 Boot Loader Image from a Linux Host
 ====================================================
 
-Create a GRUB2 boot loader image needed later to load
-the application's image onto a Galileo board.
+If you are having problems running an application using the default GRUB
+of the hardware, follow these steps to test on Galileo2 boards using a custom
+GRUB.
 
+#. Install the requirements to build GRUB on your host machine.
 
-The tested configuration uses:
+   On Ubuntu, type:
 
-* Linux host computer running Ubuntu 12.04.
+   .. code-block:: console
 
-* GNU EFI development libraries (version 3.0u).
+    $ sudo apt-get install gnu-efi:i386 bison libopts25 \
+    libselinux1-dev autogen m4 autoconf help2man libopts25-dev flex \
+    libfont-freetype-perl automake autotools-dev libfreetype6-dev \
+    texinfo
 
-* GRUB 2.0 source code.
+   On Fedora, type:
 
-  .. note:
-     Only the specified release of the GRUB2 tarball works with the
-     galileo platform configuration.
+   .. code-block:: console
 
-* The appropriate image in the project directory.
+     $ sudo dnf install gnu-efi bison m4 autoconf help2man flex \
+        automake texinfo
 
-Steps
------
+#. Clone and build the GRUB repository using the script in Zephyr tree, type:
 
-1. Install the required development packages on the host computer.
+   .. code-block:: console
 
-   a. Open a web browser and download the GNU EFI development libraries:
-      https://launchpad.net/ubuntu/+source/gnu-efi/3.0u+debian-1ubuntu2~12.04.0/+build/5052631
+     $ cd $ZEPHYR_BASE
+     $ ./scripts/build_grub.sh
 
-      The source code is unpacked to the ~/grub-2.00 directory.
-
-   b. In a Linux console, enter the following commands:
-
-      .. code-block:: console
-
-        $ sudo dpkg -i gnu-efi_3.0u+debian-1ubuntu2~12.04.0_i386.deb
-        $ sudo apt-get install bison libopts25 libselinux1-dev
-          autogen m4 autoconf help2man libopts25-dev flex
-          libfont-freetype-perlautomake autotools-dev
-          libfreetype6-dev texinfo
-
-   c. Install any additional packages listed in the :file:`INSTALL`
-      file included with the GRUB2 source code.
-
-2. Download the GRUB2 source code and unpack it.
-
-   a. In a Linux console, enter the following commands to download GRUB2:
-
-      .. code-block:: console
-
-        $ cd
-        $ wget ftp://ftp.gnu.org/gnu/grub/grub-2.00.tar.gz
-
-   b. Enter the following command to unpack GRUB2:
-
-      .. code-block:: console
-
-        $ tar -xzf grub-2.00.tar.gz
-
-      The source code is downloaded and unpacked to
-      the :file:`~/grub-2.00` directory.
-
-3. Configure and build the :file:`GRUB2 EFI` image.
-
-   a. In a Linux console, enter the following commands to configure GRUB2:
-
-      .. code-block:: console
-
-        $ cd ~/grub-2.00
-        $ ./autogen.sh
-        $ CFLAGS="-march=i586" ./configure --with-platform=efi
-          --target=i386 --program-prefix=""
-
-   b. Enter the following commands to build the :file:`grub.efi` image:
-
-      .. code-block:: console
-
-        $ make
-        $ cd grub-core
-        $ ../grub-mkimage -O i386-efi -d . -o grub.efi -p "" part_gpt
-          part_msdos ext2 normal chain boot configfile linux multiboot
-          help serial terminal elf efi_gop efi_uga terminfo
-
-      The file :file:`grub.efi` is created in the following directory
-      :file:`~/grub-2.00/grub-core`.
+#. Find the binary at :file:`$ZEPHYR_BASE/scripts/grub/bin/grub.efi`.
 
 
 
 Preparing the Boot Device
 =========================
 
-Prepare either an SD-micro card or USB flash drive to boot the
-Zephyr application image on a Galileo board. The
-following instructions apply to both devices.
+Prepare either an SD-micro card or USB flash drive to boot the Zephyr
+application image on a Galileo board. The following instructions apply to both
+devices.
 
 
-Prerequisites
--------------
+#. Set the platform configuration to Galileo by changing the :command:`make`
+   command to:
 
-* Access to a Windows host.
+   .. code-block:: console
 
-* Access to the stripped project image and the GRUB2 image
-  which have been previously copied
-  from your Linux host to your Windows host.
-
-* Access to a serial port for communication.
+      $ make PLATFORM_CONFIG=galileo
 
 
-Steps
------
+#. Use one of these cables for serial output:
 
-1. Insert the boot device into the Windows host computer;
-   make note of the Drive letter assigned to the device.
+   `<http://www.ftdichip.com/Products/Cables/USBTTLSerial.htm>`_
 
-2. In the :guilabel:`Windows Computer` folder, right click the boot
-   device and select :guilabel:`Format`.
+#. Format a microSD as FAT
 
-3. Format the boot device with the FAT file system.
-   This is typically the default file system type on Windows.
+#. Create the following directories
 
-4. Double-click the formatted device to open it.
+   :file:`efi`
 
-5. Create the following directory tree on the device:
+   :file:`efi/boot`
 
-   ::
+   :file:`kernel`
 
-      -- F:
-         |-- efi
-         |   |-- boot
-         ‘-- kernel
+#. Copy the kernel file :file:`zephyr.strip` to the :file:`$SDCARD/kernel` folder.
 
-6. Copy the images to the directory tree.
+#. Copy your built version of GRUB to :file:`$SDCARD/efi/boot/bootia32.efi`
 
-   a. For a microkernel image: copy the file :file:`microkernel.strip`
-      to the kernel directory.
+#. Create :file:`$SDCARD/efi/boot/grub.cfg` containing the following:
 
-   b. Alternatively, for a nanokernel image, copy the file
-      :file:`nanokernel.strip` to the kernel directory.
+   .. code-block:: console
 
-   c. Copy the file :file:`grub.efi` to the boot directory.
+      set default=0
+      set timeout=10
 
-7. Create a :file:`GRUB2` configuration file.
+      menuentry "Zephyr Kernel" {
+         multiboot /kernel/zephyr.elf
+      }
 
-   a. In the boot directory, create a text file :file:`grub.cfg`
-      that contains the following:
+#. Insert the SDcard in the Galileo board.
 
-      .. code-block:: console
+#. Connect the board to the host system using the serial cable.
 
-        set default=0
-        set timeout=10
-        menuentry "Zephyr Microkernel" {
-             multiboot /kernel/microkernel.strip
-        }
+#. Configure your host system to watch for serial data.
 
-   b. Alternatively, if you want to use a nanokernel image,
-      add the following:
+   * On Linux, screen is a popular method for reading serial
+      data.
 
-      .. code-block:: console
+   * On Windows, PuTTY has an option to set up configuration for
+      serial data.
 
-        menuentry "Zephyr Nanokernel" {
-            multiboot /kernel/nanokernel.strip
-        }
-
-   The image on the SD-micro card or USB flash drive is now ready for use to boot the board.
-
+#. Power on the Galileo board.
 
 Booting the Galileo Board
 =========================
