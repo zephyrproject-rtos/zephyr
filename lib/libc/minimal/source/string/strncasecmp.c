@@ -70,17 +70,18 @@ strncasecmp(s1, s2, n)
 	const char *s1, *s2;
 	register size_t n;
 {
-    register unsigned char u1, u2;
+	register unsigned char u1, u2;
 
-    for (; n != 0; --n) {
-	u1 = (unsigned char) *s1++;
-	u2 = (unsigned char) *s2++;
-	if (charmap[u1] != charmap[u2]) {
-	    return charmap[u1] - charmap[u2];
+	for (; n != 0; --n) {
+		u1 = (unsigned char) *s1++;
+		u2 = (unsigned char) *s2++;
+		if (charmap[u1] != charmap[u2]) {
+			return charmap[u1] - charmap[u2];
+		}
+
+		if (u1 == '\0') {
+			return 0;
+		}
 	}
-	if (u1 == '\0') {
-	    return 0;
-	}
-    }
-    return 0;
+	return 0;
 }

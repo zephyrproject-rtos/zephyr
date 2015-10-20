@@ -25,7 +25,7 @@
 #include "gpio_mmio.h"
 
 #if defined(CONFIG_GPIO_MMIO_0_ACCESS_MM) \
-    || defined(CONFIG_GPIO_MMIO_1_ACCESS_MM)
+	|| defined(CONFIG_GPIO_MMIO_1_ACCESS_MM)
 
 static uint32_t _mm_set_bit(uint32_t addr, uint32_t bit, uint32_t value)
 {
@@ -58,7 +58,7 @@ static uint32_t _mm_write(uint32_t addr, uint32_t bit, uint32_t value)
 #endif /* if direct memory access is needed */
 
 #if defined(CONFIG_GPIO_MMIO_0_ACCESS_IO) \
-    || defined(CONFIG_GPIO_MMIO_1_ACCESS_IO)
+	|| defined(CONFIG_GPIO_MMIO_1_ACCESS_IO)
 
 static uint32_t _io_set_bit(uint32_t addr, uint32_t bit, uint32_t value)
 {

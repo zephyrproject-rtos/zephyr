@@ -274,8 +274,8 @@ extern ksem_t _task_sem_group_take(ksemg_t semagroup, int32_t time);
  * @param name Name of the semaphore
  */
 #define DEFINE_SEMAPHORE(name) \
-       struct _k_sem_struct _k_sem_obj_##name = __K_SEMAPHORE_DEFAULT; \
-       const ksem_t name = (ksem_t)&_k_sem_obj_##name;
+	struct _k_sem_struct _k_sem_obj_##name = __K_SEMAPHORE_DEFAULT; \
+	const ksem_t name = (ksem_t)&_k_sem_obj_##name;
 
 #ifdef __cplusplus
 }
