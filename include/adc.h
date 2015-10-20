@@ -152,7 +152,7 @@ static inline void adc_set_callback(struct device *dev, adc_callback_t cb)
  * available for consumption until it is indicated by a callback.
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param seq_tbl Pointer to the structure that represents the sequence table
+ * @param seq_table Pointer to the structure that represents the sequence table
  *
  * @return Returns DEV_OK on success, or else otherwise.
  */
