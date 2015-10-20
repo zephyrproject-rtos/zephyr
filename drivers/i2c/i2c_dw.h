@@ -106,6 +106,7 @@ struct i2c_dw_rom_config {
 
 
 struct i2c_dw_dev_config {
+	device_sync_call_t	sync;
 	union dev_config	app_config;
 
 	volatile uint8_t	state;  /* last direction of transfer */

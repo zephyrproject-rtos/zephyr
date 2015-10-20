@@ -193,6 +193,7 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 		dw->state = I2C_DW_STATE_READY;
 		value = regs->ic_clr_intr;
 
+		synchronous_call_complete(&dw->sync);
 		if (dw->cb) {
 			dw->cb(dev, cb_type);
 		}
@@ -446,6 +447,7 @@ static int i2c_dw_transfer(struct device *dev,
 			   uint16_t slave_address, uint32_t flags)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
+	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	int ret;
 
 	volatile struct i2c_dw_registers * const regs =
@@ -476,6 +478,8 @@ static int i2c_dw_transfer(struct device *dev,
 
 	/* Enable controller */
 	regs->ic_enable.bits.enable = 1;
+
+	synchronous_call_wait(&dw->sync);
 
 	return DEV_OK;
 }
@@ -773,6 +777,8 @@ int i2c_dw_initialize(struct device *port)
 	if (!i2c_dw_pci_setup(port)) {
 		return DEV_NOT_CONFIG;
 	}
+
+	synchronous_call_init(&dev->sync);
 
 	regs = (struct i2c_dw_registers *) rom->base_address;
 
