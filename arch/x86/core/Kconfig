@@ -57,14 +57,6 @@ config IDT_NUM_VECTORS
 	Interrupt Descriptor Table (IDT). By default all 256 vectors are
 	supported in an IDT requiring 2048 bytes of memory.
 
-config NUM_GDT_SPARE_ENTRIES
-	int
-	prompt "Number of spare GDT entries"
-	default 0
-	help
-	This option specifies the number of spare entries in the Global
-	Descriptor Table (GDT).
-
 config PHYS_LOAD_ADDR
 	hex "Physical load address"
 	# Default value must be supplied by platform

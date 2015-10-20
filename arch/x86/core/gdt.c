@@ -30,29 +30,22 @@
 #include <arch/cpu.h>
 #include <gdt.h>
 
-#if (CONFIG_NUM_GDT_SPARE_ENTRIES < 0)
-#error "**** CONFIG_NUM_GDT_SPARE_ENTRIES must be at least 0\n\n"
-#endif
-
-#define NUM_BASE_GDT_ENTRIES 3
-
-#define MAX_GDT_ENTRIES \
-	(NUM_BASE_GDT_ENTRIES + CONFIG_NUM_GDT_SPARE_ENTRIES)
+#define NUM_GDT_ENTRIES 3
 
 /*
  * The RAM based global descriptor table. It is aligned on an 8 byte boundary
  * as the Intel manuals recommend this for best performance.
  */
 
-/*
- * For MM_POMS, _gdt_entries must be global so the linker script can
- * generate a _GdtEntriesP for crt0.s
- */
-static
-	tGdtDesc
-		_gdt_entries[MAX_GDT_ENTRIES] __aligned(8) = {
+static tGdtDesc _gdt_entries[NUM_GDT_ENTRIES] __aligned(8) = {
 		{/* Entry 0 (selector=0x0000): The "NULL descriptor" */
-		 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00},
+		 0x0000,
+		 0x0000,
+		 0x00,
+		 0x00,
+		 0x00,
+		 0x00
+		},
 		{	/* Entry 1 (selector=0x0008): Code descriptor: DPL0 */
 		 0xffff, /* limit: xffff */
 		 0x0000, /* base : xxxx0000 */
@@ -71,10 +64,4 @@ static
 		},
 };
 
-tGdtHeader _gdt = {
-	sizeof(tGdtDesc[MAX_GDT_ENTRIES - CONFIG_NUM_GDT_SPARE_ENTRIES]) -
-		1,
-	&_gdt_entries[0]};
-
-
-
+tGdtHeader _gdt = {sizeof(_gdt_entries) - 1, &_gdt_entries[0]};
