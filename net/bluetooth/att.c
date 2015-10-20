@@ -654,8 +654,13 @@ static uint8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	mask &= attr->perm;
 	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
-		/* TODO: Check conn authentication */
+#if defined(CONFIG_BLUETOOTH_SMP)
+		if (conn->sec_level < BT_SECURITY_HIGH) {
+			return BT_ATT_ERR_AUTHENTICATION;
+		}
+#else
 		return BT_ATT_ERR_AUTHENTICATION;
+#endif /* CONFIG_BLUETOOTH_SMP */
 	}
 
 	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
