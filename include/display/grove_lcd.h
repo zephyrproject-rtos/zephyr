@@ -21,6 +21,7 @@
 
 /**
  *  @brief Send text to the screen
+ *
  *  @param port Pointer to device structure for driver instance.
  *  @param data the ASCII text to display
  *  @param size the length of the text in bytes
@@ -30,6 +31,7 @@ void glcd_print(struct device *port, unsigned char *data, uint32_t size);
 
 /**
  *  @brief Set text cursor position for next additions
+ *
  *  @param port Pointer to device structure for driver instance.
  *  @param col the column for the cursor to be moved to (0-15)
  *  @param row the row it should be moved to (0 or 1)
@@ -38,6 +40,7 @@ void glcd_cursor_pos_set(struct device *port, uint8_t col, uint8_t row);
 
 /**
  *  @brief Clear the current display
+ *
  *  @param port Pointer to device structure for driver instance.
  */
 void glcd_clear(struct device *port);
@@ -51,19 +54,21 @@ void glcd_clear(struct device *port);
 #define GLCD_DS_BLINK_OFF		(0 << 0)
 /**
  *  @brief Function to change the display state.
- *  @param port Pointer to device structure for driver instance.
- *  @param opt An 8bit bitmask of GLCD_DS_* options.
- *
  *  @details This function provides the user the ability to change the state
  *  of the display as per needed. Controlling things like powering on or off
  *  the screen, the option to display the cusror or not, and the ability to
  *  blink the cursor.
+ *
+ *  @param port Pointer to device structure for driver instance.
+ *  @param opt An 8bit bitmask of GLCD_DS_* options.
+ *
  */
 void glcd_display_state_set(struct device *port, uint8_t opt);
 
 /**
  * @brief return the display feature set associated with the device
- * @param the Grove LCD to get the display features set
+ *
+ * @param port the Grove LCD to get the display features set
  *
  * @return the display feature set associated with the device.
  */
@@ -76,18 +81,20 @@ uint8_t glcd_display_state_get(struct device *port);
 #define GLCD_IS_ENTRY_RIGHT	(0 << 0)
 /**
  *  @brief Function to change the input state.
- *  @param port Pointer to device structure for driver instance.
- *  @param opt A bitmask of GLCD_IS_* options
- *
  *  @details This function provides the user the ability to change the state
  *  of the text input. Controlling things like text entry from the left or
  *  right side, and how far to increment on new text
+ *
+ *  @param port Pointer to device structure for driver instance.
+ *  @param opt A bitmask of GLCD_IS_* options
+ *
  */
 void glcd_input_state_set(struct device *port, uint8_t opt);
 
 /**
  * @brief return the input set associated with the device
- * @param the Grove LCD to get the input features set
+ *
+ * @param port the Grove LCD to get the input features set
  *
  * @return the input set associated with the device.
  */
@@ -114,7 +121,8 @@ void glcd_function_set(struct device *port, uint8_t opt);
 
 /**
  * @brief return the function set associated with the device
- * @param the Grove LCD to get the functions set
+ *
+ * @param port the Grove LCD to get the functions set
  *
  * @return the function features set associated with the device.
  */
@@ -136,6 +144,7 @@ void glcd_color_select(struct device *port, uint8_t color);
 
 /**
  *  @brief Set LCD background to custom RGB color value
+ *
  *  @param port Pointer to device structure for driver instance.
  *  @param r A numeric value for the red color (max is 255)
  *  @param g A numeric value for the green color (max is 255)
@@ -146,7 +155,9 @@ void glcd_color_set(struct device *port, uint8_t r, uint8_t g, uint8_t b);
 
 /**
  *  @brief Initialize the Grove LCD panel
+ *
  *  @param port Pointer to device structure for driver instance.
+ *
  *  @return Returns DEV_OK if all passes
  */
 int glcd_initialize(struct device *port);
