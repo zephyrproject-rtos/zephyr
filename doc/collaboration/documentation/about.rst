@@ -7,7 +7,7 @@ Purpose
 *******
 
 This style guide provides general information, guidelines, procedures, and
-instructions for the documentation work of the |project|.
+instructions for the documentation work of the Zephyr Project.
 
 Consistent style is important for readers, authors and editors. For readers,
 consistency promotes clarity and confidence. For example, using an
@@ -29,7 +29,7 @@ This style guide has two audiences:
   machine generated content, such as APIs.
 
 * Technical writers that wish to create technical documentation for the
-  |project| (writers).
+  Zephyr Project (writers).
 
 * Secondary audience: Developers that wish to document their code and
   features (authors).

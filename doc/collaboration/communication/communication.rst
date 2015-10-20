@@ -16,7 +16,7 @@ can be used to hold design discussions, remember to submit all changes using
 Gerrit.
 
 The following sections contain information about the communication tools
-used with the |project|.
+used with the Zephyr Project.
 
 .. toctree::
    :maxdepth: 2

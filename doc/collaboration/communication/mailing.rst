@@ -3,7 +3,7 @@
 Open Source Mailing List Collaboration Tips
 ###########################################
 
-Below are some recommended guidelines for using the |project|'s mailing list.
+Below are some recommended guidelines for using the Zephyr Project's mailing list.
 When submitting feedback and contribution ideas to the listserv, please follow
 these guidelines:
 

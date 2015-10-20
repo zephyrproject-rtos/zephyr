@@ -4,7 +4,7 @@ Documentation Style Guide
 ##########################
 
 This Documentation Style Guide is produced and maintained
-by the |project|. This section provides overview information about the
+by the Zephyr Project. This section provides overview information about the
 scope and purpose of this manual and links to related resources.
 
 These guidelines help you write in a manner that is clear, concise, and

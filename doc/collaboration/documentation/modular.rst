@@ -13,7 +13,7 @@ rewriting.
 
 Modular writing doesn't include any content format formating. The format
 of the output is handled by a style sheet, which is applied when the
-content is published. The |project| uses Sphinx to build the
+content is published. The Zephyr Project uses Sphinx to build the
 documentation. Sphinx gathers the content from all modules and produces
 HTML output that allows the use of CSS stylesheets for format.
 
@@ -33,7 +33,7 @@ Requirements: Must use these materials.
 
 Guidelines: Specific things to do.
 
-The |project| strives for full modularization of content. The
+The Zephyr Project strives for full modularization of content. The
 modularization is still a work in progress and new content must be
 structured following this guidelines.
 
@@ -62,7 +62,7 @@ the modules that follow:
 * Focus on the overall goal of the information, so the users know why
   it is important for them and what they will accomplish.
 
-The |project|'s documentation uses overview modules as container
+The Zephyr Project's documentation uses overview modules as container
 modules. Container modules include a toctree directive that includes
 either other container modules or concept, task and reference modules.
 For example in a System Requirements overview module:

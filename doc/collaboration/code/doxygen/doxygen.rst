@@ -14,7 +14,7 @@ them together, we can reference the code in the documentation and vice-versa.
 In-Code Documentation Guides
 ****************************
 
-Follow these guides to document your code using comments. The |project|
+Follow these guides to document your code using comments. The Zephyr Project
 follows the Javadoc / Doxygen commenting style. We provide examples on how to
 comment different parts of the code. Files, functions, defines, structures,
 variables and type definitions must be documented.

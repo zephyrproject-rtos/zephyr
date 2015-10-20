@@ -6,10 +6,10 @@ Welcome to Zephyr Kernel
    More information at `<http://sphinx-doc.org/rest.html>`_.
    This is a comment that won't show up in formatted output
 
-Welcome to the |project|.
+Welcome to the Zephyr Project.
 
-Thank you for your interest in the |project|. These instructions are
-designed to walk you through generating the |project|'s documentation.
+Thank you for your interest in the Zephyr Project. These instructions are
+designed to walk you through generating the Zephyr Project's documentation.
 
 
 Documentation Notes
@@ -52,7 +52,7 @@ Install the current version of :program:`Sphinx`, type:
 Running the documentation generators
 ************************************
 
-Assuming that the |project| tree with the doc directory is in
+Assuming that the Zephyr Project tree with the doc directory is in
 :file:`DIRECTORY`, type:
 
 .. code-block:: bash

@@ -5,8 +5,8 @@ Tables
 
 Tables must only be used for information that is either too numerous or too
 related for a list to be appropriate. The general rule of thumb is that the
-minimal size of a table is a 2x2 not counting the table header. The |project|
-'s use of ReST makes table size much more important. Tables are difficult to
+minimal size of a table is a 2x2 not counting the table header. The
+use of ReST makes table size much more important. Tables are difficult to
 do properly in ReST following the line length restrictions. If you plan on
 adding content in form of a table consider transforming it into a list
 before you embark on creating a table. Follow these general guidelines:

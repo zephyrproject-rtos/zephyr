@@ -9,7 +9,7 @@ Building a Sample Application from Source
 
 To build an example application follow these steps:
 
-#. Go to the root directory of the |project|.
+#. Go to the root directory of the Zephyr Project.
 
 #. Set the paths properly in the :file:`$ZEPHYR_BASE` directory,
    type:

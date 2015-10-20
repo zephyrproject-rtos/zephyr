@@ -225,7 +225,7 @@ Pronouns
 First Person
 ============
 
-We recommend using we or the |project|, if you want to sound more
+We recommend using we or the Zephyr Project, if you want to sound more
 formal, to provide an agent, someone who does the action in a sentence,
 and avoid passive constructions such as "It is recommended...." For
 example:

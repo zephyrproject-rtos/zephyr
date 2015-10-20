@@ -6,7 +6,7 @@ Detailed Writing Style Guidelines
 Tone and audience
 *****************
 
-The tone of the |project|'s documentation should be clear, concise,
+The tone of the Zephyr Project's documentation should be clear, concise,
 confident, and courteous. We are writing to peers, so we want to be
 familiar. Use you, we and avoid the passive voice, but while remaining
 professional. The writing should carry an undertone of cordiality,

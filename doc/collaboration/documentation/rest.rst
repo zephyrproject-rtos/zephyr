@@ -3,7 +3,7 @@
 Restructured Text Guidelines
 ############################
 
-The |project| uses Sphinx and Restructured Text as authoring tools for
+The Zephyr Project uses Sphinx and Restructured Text as authoring tools for
 documentation. Here you can find the preferred methods for using
 :abbr:`ReST (Restructured Text)` markup on your documents. Please refer to
 the `Sphinx documentation`_ for the complete list of available markup.

@@ -12,8 +12,8 @@ consistency of the documents.
 Internal Cross References
 =========================
 
-An internal cross reference is a reference to a location within the |project|
-'s documentation. Use explicit markup labels and the ``:ref:`` markup to
+An internal cross reference is a reference to a location within the Zephyr Project's
+documentation. Use explicit markup labels and the ``:ref:`` markup to
 create cross references to headings, figures, and code examples as needed.
 All modules must have a label before their titles in order to be able to
 cross reference them, see :ref:`modular` for more information regarding

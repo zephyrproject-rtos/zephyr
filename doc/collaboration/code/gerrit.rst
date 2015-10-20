@@ -4,10 +4,10 @@ Working with Gerrit
 ###################
 
 
-Follow these instructions to collaborate on the |project| using
+Follow these instructions to collaborate on the Zephyr Project using
 the infrastructure within Intel’s Open Source site, ``01.org``. First, let
 us answer a couple of common questions regarding the use of Gerrit
-within the |project|.
+within the Zephyr Project.
 
 #. Who has access to the Gerrit infrastructure?
 
@@ -63,7 +63,7 @@ change be pushed to a special branch. The name of this special branch
 contains a reference to the final branch where the code should reside,
 once accepted.
 
-For the |project|, the special branch is called :literal:`refs/for/master` .
+For the Zephyr Project, the special branch is called :literal:`refs/for/master` .
 
 1. Push the current local development branch to the gerrit server, type:
 

@@ -11,7 +11,7 @@ on graphics than those reading in their primary language because the
 understanding they gain from the graphics helps them understand the
 text.
 
-Follow these guidelines when creating graphics for the |project|:
+Follow these guidelines when creating graphics for the Zephyr Project:
 
 * Captions. Include a caption to explain or describe what the graphic
   illustrates or to use as a navigational tool when referring to the
