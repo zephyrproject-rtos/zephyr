@@ -124,7 +124,7 @@ static void pci_ctrl_write(uint32_t reg, uint32_t data, uint32_t size)
  */
 
 static int pci_ctrl_data_read(uint32_t controller, uint32_t offset,
-		              uint32_t *data, uint32_t size)
+				uint32_t *data, uint32_t size)
 {
 	/* we only support one controller */
 
