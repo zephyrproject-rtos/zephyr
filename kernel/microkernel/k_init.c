@@ -39,8 +39,8 @@ int _k_debug_halt;
 
 #ifdef CONFIG_INIT_STACKS
 static uint32_t _k_server_command_stack_storage
-						[CONFIG_COMMAND_STACK_SIZE] =
-	{ [0 ... CONFIG_COMMAND_STACK_SIZE - 1] = 0xAAAAAAAA };
+						[CONFIG_COMMAND_STACK_SIZE] = {
+	[0 ... CONFIG_COMMAND_STACK_SIZE - 1] = 0xAAAAAAAA };
 #else
 static uint32_t __noinit _k_server_command_stack_storage
 						[CONFIG_COMMAND_STACK_SIZE];

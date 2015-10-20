@@ -114,7 +114,8 @@ atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value) {
+atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
+{
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
