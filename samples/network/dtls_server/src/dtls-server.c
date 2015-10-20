@@ -86,7 +86,7 @@ static struct in_addr in4addr_my = MY_IPADDR;
 
 static inline void init_server()
 {
-	PRINT("%s: run dtls server\n", __FUNCTION__);
+	PRINT("%s: run dtls server\n", __func__);
 
 	net_set_mac(my_mac, sizeof(my_mac));
 
@@ -179,7 +179,7 @@ static inline struct net_context *get_context(void)
 			      &any_addr, 0,
 			      &my_addr, MY_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return NULL;
 	}
 
@@ -190,7 +190,7 @@ static int read_from_peer(struct dtls_context_t *ctx,
 			  session_t *session,
 			  uint8 *data, size_t len)
 {
-	PRINT("%s: read from peer %p len %d\n", __FUNCTION__, data, len);
+	PRINT("%s: read from peer %p len %d\n", __func__, data, len);
 
 	/* In this test we reverse the received bytes.
 	 * We could also just pass the data back as is.
@@ -219,11 +219,11 @@ static int send_to_peer(struct dtls_context_t *ctx,
 	max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
 					sizeof(struct uip_ip_hdr);
 
-	PRINT("%s: reply to peer data %p len %d\n", __FUNCTION__, data, len);
+	PRINT("%s: reply to peer data %p len %d\n", __func__, data, len);
 
 	if (len > max_data_len) {
 		PRINT("%s: too much (%d bytes) data to send (max %d bytes)\n",
-		      __FUNCTION__, len, max_data_len);
+		      __func__, len, max_data_len);
 		net_buf_put(buf);
 		len = -EINVAL;
 		goto out;
@@ -392,18 +392,18 @@ void startup(void)
 
 	recv = get_context();
 	if (!recv) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
 	init_dtls(recv, &dtls);
 	if (!dtls) {
-		PRINT("%s: Cannot get DTLS context\n", __FUNCTION__);
+		PRINT("%s: Cannot get DTLS context\n", __func__);
 		return;
 	}
 
 	while (1) {
-		receive_message(__FUNCTION__, recv, dtls);
+		receive_message(__func__, recv, dtls);
 	}
 }
 

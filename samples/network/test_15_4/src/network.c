@@ -89,7 +89,7 @@ static const char *lorem_ipsum =
 
 static inline void init_test()
 {
-	PRINT("%s: run 802.15.4 loopback tester\n", __FUNCTION__);
+	PRINT("%s: run 802.15.4 loopback tester\n", __func__);
 
 	net_set_mac(src_mac, sizeof(src_mac));
 
@@ -133,11 +133,11 @@ static void send_data(const char *taskname, struct net_context *ctx)
 
 		if (net_send(buf) < 0) {
 			PRINT("%s: %s(): sending %d bytes failed\n",
-			      taskname, __FUNCTION__, len);
+			      taskname, __func__, len);
 			net_buf_put(buf);
 		} else {
 			PRINT("%s: %s(): sent %d bytes\n", taskname,
-			      __FUNCTION__, sent_len);
+			      __func__, sent_len);
 		}
 	}
 }
@@ -149,7 +149,7 @@ static void receive_data(const char *taskname, struct net_context *ctx)
 	buf = net_receive(ctx, TICKS_NONE);
 	if (buf) {
 		PRINT("%s: %s(): received %d bytes\n", taskname,
-		      __FUNCTION__, net_buf_datalen(buf));
+		      __func__, net_buf_datalen(buf));
 		if (memcmp(net_buf_data(buf), lorem_ipsum, sizeof(lorem_ipsum))) {
 			PRINT("ERROR: data does not match\n");
 		}
@@ -168,7 +168,7 @@ static struct net_context *get_context(const struct net_addr *remote,
 			      remote, remote_port,
 			      local, local_port);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return NULL;
 	}
 
@@ -223,14 +223,14 @@ void taskA(void)
 
 	ctx = get_context(&any_addr, SRC_PORT, &loopback_addr, DEST_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
 	/* taskA gives its own semaphore, allowing it to say hello right away */
 	task_sem_give(TASKASEM);
 
-	listen(__FUNCTION__, TASKASEM, TASKBSEM, ctx);
+	listen(__func__, TASKASEM, TASKBSEM, ctx);
 }
 
 static void send(const char *taskname, ksem_t mySem, ksem_t otherSem,
@@ -253,13 +253,13 @@ void taskB(void)
 
 	ctx = get_context(&loopback_addr, DEST_PORT, &any_addr, SRC_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
 	set_routes();
 
-	send(__FUNCTION__, TASKBSEM, TASKASEM, ctx);
+	send(__func__, TASKBSEM, TASKASEM, ctx);
 }
 
 #else /*  CONFIG_NANOKERNEL */
@@ -298,7 +298,7 @@ void fiber_receiving(void)
 
 	ctx = get_context(&any_addr, SRC_PORT, &loopback_addr, DEST_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
@@ -336,7 +336,7 @@ void fiber_sending(void)
 
 void main(void)
 {
-	PRINT("%s: run test_15_4\n", __FUNCTION__);
+	PRINT("%s: run test_15_4\n", __func__);
 
 	net_init();
 	init_test();

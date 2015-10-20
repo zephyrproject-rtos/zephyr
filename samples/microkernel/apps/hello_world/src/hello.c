@@ -66,13 +66,13 @@ void taskA(void)
 	task_sem_give(TASKASEM);
 
 	/* invoke routine that allows task to ping-pong hello messages with taskB */
-	helloLoop(__FUNCTION__, TASKASEM, TASKBSEM);
+	helloLoop(__func__, TASKASEM, TASKBSEM);
 }
 
 void taskB(void)
 {
 	/* invoke routine that allows task to ping-pong hello messages with taskA */
-	helloLoop(__FUNCTION__, TASKBSEM, TASKASEM);
+	helloLoop(__func__, TASKBSEM, TASKASEM);
 }
 
 #else /*  CONFIG_NANOKERNEL */
@@ -111,7 +111,7 @@ void fiberEntry(void)
 		nano_fiber_sem_take_wait(&nanoSemFiber);
 
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", __FUNCTION__);
+		PRINT("%s: Hello World!\n", __func__);
 
 		/* wait a while, then let task have a turn */
 		nano_fiber_timer_start(&timer, SLEEPTICKS);
@@ -133,7 +133,7 @@ void main(void)
 
 	while (1) {
 		/* say "hello" */
-		PRINT("%s: Hello World!\n", __FUNCTION__);
+		PRINT("%s: Hello World!\n", __func__);
 
 		/* wait a while, then let fiber have a turn */
 		nano_task_timer_start(&timer, SLEEPTICKS);

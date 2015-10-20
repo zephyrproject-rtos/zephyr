@@ -66,7 +66,7 @@ static uint8_t my_mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 
 static inline void init_server()
 {
-	PRINT("%s: run echo server\n", __FUNCTION__);
+	PRINT("%s: run echo server\n", __func__);
 
 	net_set_mac(my_mac, sizeof(my_mac));
 
@@ -185,7 +185,7 @@ static inline bool get_context(struct net_context **recv,
 				&any_addr, 0,
 				&my_addr, MY_PORT);
 	if (!*recv) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return NULL;
 	}
 
@@ -194,7 +194,7 @@ static inline bool get_context(struct net_context **recv,
 				      &mcast_addr, MY_PORT);
 	if (!*mcast_recv) {
 		PRINT("%s: Cannot get receiving mcast network context\n",
-		      __FUNCTION__);
+		      __func__);
 		return false;
 	}
 
@@ -213,12 +213,12 @@ void task_receive(void)
 	init_server();
 
 	if (!get_context(&recv, &mcast_recv)) {
-		PRINT("%s: Cannot get network contexts\n", __FUNCTION__);
+		PRINT("%s: Cannot get network contexts\n", __func__);
 		return;
 	}
 
 	while (1) {
-		receive_and_reply(__FUNCTION__, recv, mcast_recv);
+		receive_and_reply(__func__, recv, mcast_recv);
 	}
 }
 
@@ -234,12 +234,12 @@ void fiber_receive(void)
 	static struct net_context *mcast_recv;
 
 	if (!get_context(&recv, &mcast_recv)) {
-		PRINT("%s: Cannot get network contexts\n", __FUNCTION__);
+		PRINT("%s: Cannot get network contexts\n", __func__);
 		return;
 	}
 
 	while (1) {
-		receive_and_reply(__FUNCTION__, recv, mcast_recv);
+		receive_and_reply(__func__, recv, mcast_recv);
 	}
 }
 

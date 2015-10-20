@@ -125,7 +125,7 @@ static struct net_context *unicast, *multicast;
 
 static inline void init_server()
 {
-	PRINT("%s: run mcast tester\n", __FUNCTION__);
+	PRINT("%s: run mcast tester\n", __func__);
 
 	sys_rand32_init();
 
@@ -191,12 +191,12 @@ static inline bool send_packet(const char *name,
 
 		if (net_send(buf) < 0) {
 			PRINT("%s: sending %d bytes failed\n",
-			      __FUNCTION__, sending_len);
+			      __func__, sending_len);
 			net_buf_put(buf);
 			fail = true;
 			goto out;
 		} else {
-			PRINT("%s: sent %d bytes\n", __FUNCTION__,
+			PRINT("%s: sent %d bytes\n", __func__,
 			      sending_len);
 		}
 	}
@@ -240,7 +240,7 @@ static inline bool wait_reply(const char *name,
 			goto free_buf;
 		}
 
-		PRINT("%s: received %d bytes\n", __FUNCTION__,
+		PRINT("%s: received %d bytes\n", __func__,
 			      expected_len);
 
 	free_buf:
@@ -301,7 +301,7 @@ static inline bool get_context(struct net_context **unicast,
 				   &my_addr, MY_PORT);
 	if (!*unicast) {
 		PRINT("%s: Cannot get sending network context\n",
-		      __FUNCTION__);
+		      __func__);
 		return false;
 	}
 
@@ -310,7 +310,7 @@ static inline bool get_context(struct net_context **unicast,
 				     &my_addr, MY_PORT);
 	if (!*multicast) {
 		PRINT("%s: Cannot get mcast sending network context\n",
-		      __FUNCTION__);
+		      __func__);
 		return false;
 	}
 
@@ -338,18 +338,18 @@ void sending_loop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 	while (1) {
 		task_sem_take_wait(mySem);
 
-		PRINT("%s: Sending packet\n", __FUNCTION__);
+		PRINT("%s: Sending packet\n", __func__);
 
 		expecting = sys_rand32_get() % ipsum_len;
 
 		if (send_unicast) {
-			if (send_packet(__FUNCTION__, unicast, ipsum_len,
+			if (send_packet(__func__, unicast, ipsum_len,
 					expecting)) {
 				PRINT("Unicast sending %d bytes FAIL\n",
 				      ipsum_len - expecting);
 			}
 		} else {
-			if (send_packet(__FUNCTION__, multicast, ipsum_len,
+			if (send_packet(__func__, multicast, ipsum_len,
 					expecting)) {
 				PRINT("Multicast sending %d bytes FAIL\n",
 				      ipsum_len - expecting);
@@ -369,9 +369,9 @@ void receiving_loop(const char *taskname, ksem_t mySem, ksem_t otherSem)
 	while (1) {
 		task_sem_take_wait(mySem);
 
-		PRINT("%s: Waiting packet\n", __FUNCTION__);
+		PRINT("%s: Waiting packet\n", __func__);
 
-		if (wait_reply(__FUNCTION__, unicast, ipsum_len, expecting)) {
+		if (wait_reply(__func__, unicast, ipsum_len, expecting)) {
 			PRINT("Waiting %d bytes -> FAIL\n",
 			      ipsum_len - expecting);
 		}
@@ -393,7 +393,7 @@ void taskA(void)
 	nano_sem_init(&flag);
 
 	if (!get_context(&unicast, &multicast)) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
@@ -401,13 +401,13 @@ void taskA(void)
 	task_sem_give(TASKASEM);
 
 	/* invoke routine that allows task to ping-pong hello messages with taskB */
-	sending_loop(__FUNCTION__, TASKASEM, TASKBSEM);
+	sending_loop(__func__, TASKASEM, TASKBSEM);
 }
 
 void taskB(void)
 {
 	/* invoke routine that allows task to ping-pong hello messages with taskA */
-	receiving_loop(__FUNCTION__, TASKBSEM, TASKASEM);
+	receiving_loop(__func__, TASKBSEM, TASKASEM);
 }
 
 #else /*  CONFIG_NANOKERNEL */
@@ -433,18 +433,18 @@ void fiber_sending(void)
 	nano_timer_init(&timer, data);
 
 	while (1) {
-		PRINT("%s: Sending packet\n", __FUNCTION__);
+		PRINT("%s: Sending packet\n", __func__);
 
 		expecting = sys_rand32_get() % ipsum_len;
 
 		if (send_unicast) {
-			if (send_packet(__FUNCTION__, unicast, ipsum_len,
+			if (send_packet(__func__, unicast, ipsum_len,
 					expecting)) {
 				PRINT("Unicast sending %d bytes FAIL\n",
 				      ipsum_len - expecting);
 			}
 		} else {
-			if (send_packet(__FUNCTION__, multicast, ipsum_len,
+			if (send_packet(__func__, multicast, ipsum_len,
 					expecting)) {
 				PRINT("Multicast sending %d bytes FAIL\n",
 				      ipsum_len - expecting);
@@ -464,9 +464,9 @@ void fiber_receiving(void)
 	nano_timer_init(&timer, data);
 
 	while (1) {
-		PRINT("%s: Waiting packet\n", __FUNCTION__);
+		PRINT("%s: Waiting packet\n", __func__);
 
-		if (wait_reply(__FUNCTION__, unicast,
+		if (wait_reply(__func__, unicast,
 			       ipsum_len, expecting)) {
 			PRINT("Waiting %d bytes -> FAIL\n",
 			      ipsum_len - expecting);
@@ -488,7 +488,7 @@ void main(void)
 	nano_sem_init(&flag);
 
 	if (!get_context(&unicast, &multicast)) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 

@@ -72,7 +72,7 @@ static struct net_context *get_context(void)
 			      &any_addr, 0,
 			      &my_addr, 4242);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return NULL;
 	}
 
@@ -141,13 +141,13 @@ void taskA(void)
 	task_sem_give(TASKASEM);
 
 	/* invoke routine that allows task to ping-pong hello messages with taskB */
-	helloLoop(__FUNCTION__, TASKASEM, TASKBSEM);
+	helloLoop(__func__, TASKASEM, TASKBSEM);
 }
 
 void taskB(void)
 {
 	/* invoke routine that allows task to ping-pong hello messages with taskA */
-	helloLoop(__FUNCTION__, TASKBSEM, TASKASEM);
+	helloLoop(__func__, TASKBSEM, TASKASEM);
 }
 
 #else /*  CONFIG_NANOKERNEL */
@@ -181,7 +181,7 @@ void fiberEntry(void)
 
 	ctx = get_context();
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
@@ -194,7 +194,7 @@ void fiberEntry(void)
 
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
-			PRINT("%s: received %d bytes\n", __FUNCTION__,
+			PRINT("%s: received %d bytes\n", __func__,
 				net_buf_datalen(buf));
 			net_buf_put(buf);
 		}
@@ -213,7 +213,7 @@ void main(void)
 
 	net_init();
 
-	PRINT("%s: run listener\n", __FUNCTION__);
+	PRINT("%s: run listener\n", __func__);
 
 	set_mac();
 

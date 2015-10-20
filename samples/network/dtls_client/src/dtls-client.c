@@ -116,7 +116,7 @@ static struct in_addr in4addr_my = MY_IPADDR;
 
 static inline void init_server()
 {
-	PRINT("%s: run echo server\n", __FUNCTION__);
+	PRINT("%s: run echo server\n", __func__);
 
 	net_set_mac(my_mac, sizeof(my_mac));
 
@@ -238,7 +238,7 @@ static inline struct net_context *get_context(void)
 			      &peer_addr, PEER_PORT,
 			      &my_addr, MY_PORT);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return NULL;
 	}
 
@@ -252,11 +252,11 @@ static int read_from_peer(struct dtls_context_t *ctx,
 	struct data *user_data = (struct data *)dtls_get_app_data(ctx);
 	int pos;
 
-	PRINT("%s: read from peer %p len %d\n", __FUNCTION__, data, len);
+	PRINT("%s: read from peer %p len %d\n", __func__, data, len);
 
 	if (user_data->expecting != len) {
 		PRINT("%s: received %d bytes, expected %d\n",
-		      __FUNCTION__, len, user_data->expecting);
+		      __func__, len, user_data->expecting);
 		user_data->fail = true;
 		return 0;
 	}
@@ -271,7 +271,7 @@ static int read_from_peer(struct dtls_context_t *ctx,
 	pos = user_data->ipsum_len - user_data->expecting;
 
 	if (memcmp(lorem_ipsum + pos, data, user_data->expecting)) {
-		PRINT("%s: received data mismatch.\n", __FUNCTION__);
+		PRINT("%s: received data mismatch.\n", __func__);
 		user_data->fail = true;
 	}
 
@@ -295,11 +295,11 @@ static int send_to_peer(struct dtls_context_t *ctx,
 	max_data_len = sizeof(buf->buf) - sizeof(struct uip_udp_hdr) -
 					sizeof(struct uip_ip_hdr);
 
-	PRINT("%s: send to peer data %p len %d\n", __FUNCTION__, data, len);
+	PRINT("%s: send to peer data %p len %d\n", __func__, data, len);
 
 	if (len > max_data_len) {
 		PRINT("%s: too much (%d bytes) data to send (max %d bytes)\n",
-		      __FUNCTION__, len, max_data_len);
+		      __func__, len, max_data_len);
 		net_buf_put(buf);
 		len = -EINVAL;
 		goto out;
@@ -458,13 +458,13 @@ void startup(void)
 
 	user_data.ctx = get_context();
 	if (!user_data.ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
 	init_dtls(&user_data, &dtls);
 	if (!dtls) {
-		PRINT("%s: Cannot get DTLS context\n", __FUNCTION__);
+		PRINT("%s: Cannot get DTLS context\n", __func__);
 		return;
 	}
 
@@ -481,9 +481,9 @@ void startup(void)
 
 	while (!user_data.fail) {
 		if (user_data.connected) {
-			send_message(__FUNCTION__, dtls, &session);
+			send_message(__func__, dtls, &session);
 		}
-		if (!wait_reply(__FUNCTION__, dtls, &session)) {
+		if (!wait_reply(__func__, dtls, &session)) {
 			if (user_data.connected) {
 				break;
 			}

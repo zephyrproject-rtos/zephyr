@@ -44,7 +44,7 @@ struct nano_sem sem[3];
 
 void isr0(void)
 {
-	printk("%s ran!\n", __FUNCTION__);
+	printk("%s ran!\n", __func__);
 	nano_isr_sem_give(&sem[0]);
 	_IntExit();
 }
@@ -58,7 +58,7 @@ void isr0(void)
 
 void isr1(void)
 {
-	printk("%s ran!\n", __FUNCTION__);
+	printk("%s ran!\n", __func__);
 	nano_isr_sem_give(&sem[1]);
 	_IntExit();
 }
@@ -72,7 +72,7 @@ void isr1(void)
 
 void isr2(void)
 {
-	printk("%s ran!\n", __FUNCTION__);
+	printk("%s ran!\n", __func__);
 	nano_isr_sem_give(&sem[2]);
 	_IntExit();
 }

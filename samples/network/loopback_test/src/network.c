@@ -103,7 +103,7 @@ void fiberEntry(void)
 			      &any_addr, 0,
 			      &loopback_addr, 4242);
 	if (!ctx) {
-		PRINT("%s: Cannot get network context\n", __FUNCTION__);
+		PRINT("%s: Cannot get network context\n", __func__);
 		return;
 	}
 
@@ -116,7 +116,7 @@ void fiberEntry(void)
 
 		buf = net_receive(ctx, TICKS_NONE);
 		if (buf) {
-			PRINT("%s: received %d bytes\n", __FUNCTION__,
+			PRINT("%s: received %d bytes\n", __func__,
 				net_buf_datalen(buf));
 			net_buf_put(buf);
 		}
@@ -139,7 +139,7 @@ void main(void)
 	/* Pretend to be ethernet with 6 byte mac */
 	uint8_t mac[] = { 0x0a, 0xbe, 0xef, 0x15, 0xf0, 0x0d };
 
-	PRINT("%s: run net_loopback_test\n", __FUNCTION__);
+	PRINT("%s: run net_loopback_test\n", __func__);
 
 	net_init();
 	net_driver_loopback_init();
@@ -181,10 +181,10 @@ void main(void)
 
 			if (net_send(buf) < 0) {
 				PRINT("%s: sending %d bytes failed\n",
-					__FUNCTION__, len);
+					__func__, len);
 				net_buf_put(buf);
 			} else
-				PRINT("%s: sent %d bytes\n", __FUNCTION__,
+				PRINT("%s: sent %d bytes\n", __func__,
 					sent_len);
 		}
 

@@ -96,7 +96,7 @@ static struct in_addr in4addr_my = MY_IPADDR;
 
 static inline void init_server()
 {
-	PRINT("%s: run coap observe client\n", __FUNCTION__);
+	PRINT("%s: run coap observe client\n", __func__);
 
 	net_set_mac(my_mac, sizeof(my_mac));
 
