@@ -23,26 +23,16 @@ Steps
 1. In a shell terminal console, enter an :command:`export` command that is
   consistent with your toolchain.
 
-   a) For a Yocto toolchain:
+   For the Zephyr SDK:
 
-      .. code-block:: bash
+     .. code-block:: console
 
-         $ export ZEPHYR_GCC_VARIANT=yocto
-         $ export YOCTO_SDK_INSTALL_DIR=<yocto-installation-path>
-
-   Go to Step 2.
-
-   b) For an Xtools toolchain:
-
-      .. code-block:: bash
-
-         $ export ZEPHYR_GCC_VARIANT=xtools
-         $ export XTOOLS_TOOLCHAIN_PATH=/opt/otc_viper/x-tools/
-         $ export QEMU_BIN_PATH=/usr/local/bin
+      $ export ZEPHYR_GCC_VARIANT=zephyr
+      $ export ZEPHYR_SDK_INSTALL_DIR=<yocto-installation-path>
 
 2. To set the environment variable :envvar:`$(ZEPHYR_BASE)`, navigate to the
    kernel's installation directory and enter:
 
-      .. code-block:: bash
+      .. code-block:: console
 
          $ source zephyr-env.sh
