@@ -200,11 +200,11 @@ extern int32_t _sys_idle_elapsed_ticks;
 /* main counter units per system tick */
 static uint32_t __noinit counter_load_value;
 /* counter value for most recent tick */
-static uint64_t counter_last_value = 0;
+static uint64_t counter_last_value;
 /* # ticks timer is programmed for */
 static int32_t programmed_ticks = 1;
 /* is stale interrupt possible? */
-static int stale_irq_check = 0;
+static int stale_irq_check;
 
 /**
  *
