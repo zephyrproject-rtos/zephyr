@@ -146,7 +146,6 @@ static inline void _TimeSliceUpdate(void)
  *
  * @return number of ticks to process
  */
-
 static inline int32_t _SysIdleElapsedTicksGet(void)
 {
 #ifdef CONFIG_TICKLESS_IDLE

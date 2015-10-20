@@ -49,14 +49,14 @@ extern int _AdvIdleCheckSleep(void);
  * passes to the _AdvIdleFunc() that put the system to sleep, which then
  * finishes executing.
  *
+ * @param _Cstart the address of the _Cstart function
+ * @param _gdt the address of the global descriptor table in RAM
+ * @param _GlobalTss the address of the TSS descriptor
+ *
  * @return does not return to caller
  */
 
-extern void _AdvIdleStart(
-	void (*_Cstart)(void), /* addr of _Cstart function */
-	void *_gdt,	    /* addr of global descriptor table in RAM */
-	void *_GlobalTss       /* addr of TSS descriptor */
-	);
+extern void _AdvIdleStart(void (*_Cstart)(void), void *_gdt, void *_GlobalTss);
 
 /*
  * @brief Perform advanced sleep
@@ -66,11 +66,12 @@ extern void _AdvIdleStart(
  * to sleep and then later allows it to resume processing; if not, the routine
  * returns immediately without sleeping.
  *
+ * @param ticks the upcoming kernel idle time
+ *
  * @return  non-zero if advanced sleep occurred; otherwise zero
  */
 
-extern int _AdvIdleFunc(int32_t ticks /* upcoming kernel idle time */
-			);
+extern int _AdvIdleFunc(int32_t ticks);
 
 #endif /* CONFIG_ADVANCED_IDLE */
 

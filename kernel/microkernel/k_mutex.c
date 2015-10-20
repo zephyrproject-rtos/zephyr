@@ -264,14 +264,11 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
  * This routine is the entry to the mutex lock kernel service.
  *
  * @param mutex Mutex object
- * @param time Timeout value (in ticks)
+ * @param time The maximum Timeout value (in ticks)
  *
  * @return RC_OK on success, RC_FAIL on error, RC_TIME on timeout
  */
-int _task_mutex_lock(
-	kmutex_t mutex,   /* mutex to lock */
-	int32_t time /* max # of ticks to wait for mutex */
-	)
+int _task_mutex_lock(kmutex_t mutex, int32_t time)
 {
 	struct k_args A; /* argument packet */
 
@@ -291,13 +288,11 @@ int _task_mutex_lock(
  * of the current owner to the priority level it had when it acquired the
  * mutex.
  *
- * @param A k_args
+ * @param A pointer to mutex unlock request arguments
  *
  * @return N/A
  */
-void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
-						 request arguments */
-				    )
+void _k_mutex_unlock(struct k_args *A)
 {
 	struct _k_mutex_struct *Mutex; /* pointer internal mutex structure */
 	int MutexId;                /* mutex ID obtained from unlock request */
@@ -380,12 +375,11 @@ void _k_mutex_unlock(struct k_args *A /* pointer to mutex unlock
  *
  * This routine is the entry to the mutex unlock kernel service.
  *
- * @param mutex Mutex
+ * @param mutex mutex to unlock
  *
  * @return N/A
  */
-void _task_mutex_unlock(kmutex_t mutex /* mutex to unlock */
-					 )
+void _task_mutex_unlock(kmutex_t mutex)
 {
 	struct k_args A; /* argument packet */
 

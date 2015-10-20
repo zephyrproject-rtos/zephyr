@@ -64,7 +64,6 @@ extern int _k_kernel_idle(void);
  *
  * @return N/A
  */
-
 void _main(void)
 {
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_NANOKERNEL);

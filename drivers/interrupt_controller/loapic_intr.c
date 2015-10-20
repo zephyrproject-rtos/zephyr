@@ -347,14 +347,14 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
  *
  * @brief Enable an individual LOAPIC interrupt (IRQ)
  *
+ * @param irq the IRQ number of the interrupt
+ *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
  *
  * @return N/A
  */
 
-void _loapic_irq_enable(unsigned int irq /* IRQ number of
-						     the interrupt */
-				 )
+void _loapic_irq_enable(unsigned int irq)
 {
 	volatile int *pLvt; /* pointer to local vector table */
 	int32_t oldLevel;   /* previous interrupt lock level */
@@ -378,14 +378,14 @@ void _loapic_irq_enable(unsigned int irq /* IRQ number of
  *
  * @brief Disable an individual LOAPIC interrupt (IRQ)
  *
+ * @param irq the IRQ number of the interrupt
+ *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
  *
  * @return N/A
  */
 
-void _loapic_irq_disable(unsigned int irq /* IRQ number of the
-						      interrupt */
-				  )
+void _loapic_irq_disable(unsigned int irq)
 {
 	volatile int *pLvt; /* pointer to local vector table */
 	int32_t oldLevel;   /* previous interrupt lock level */

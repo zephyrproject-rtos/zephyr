@@ -530,16 +530,17 @@ void _k_mem_pool_block_get(struct k_args *A)
  * This routine allocates a free block from the specified memory pool, ensuring
  * that its size is at least as big as the size requested (in bytes).
  *
+ * @param blockptr poitner to requested block
+ * @param pool_id pool from which to get block
+ * @param reqsize requested block size
+ * @param time maximum number of ticks to wait
+ *
  * @return RC_OK, RC_FAIL, RC_TIME on success, failure, timeout respectively
  */
-int _task_mem_pool_alloc(struct k_block *blockptr, /* ptr to requested block */
-		     kmemory_pool_t pool_id,     /* pool from which to get block */
-		     int reqsize,       /* requested block size */
-		     int32_t time       /* maximum number of ticks to wait */
-		     )
+int _task_mem_pool_alloc(struct k_block *blockptr, kmemory_pool_t pool_id,
+			 int reqsize, int32_t time)
 {
 	struct k_args A;
-
 
 	A.Comm = _K_SVC_MEM_POOL_BLOCK_GET;
 	A.Time.ticks = time;

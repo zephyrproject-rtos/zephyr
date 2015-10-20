@@ -29,7 +29,6 @@
  *
  * @return N/A
  */
-
 void _k_pipe_put_request(struct k_args *RequestOrig)
 {
 	struct k_args *Request;
@@ -195,7 +194,6 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
  *
  * @return N/A
  */
-
 void _k_pipe_put_timeout(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(NULL != ReqProc->Time.timer);
@@ -215,7 +213,6 @@ void _k_pipe_put_timeout(struct k_args *ReqProc)
  *
  * @return N/A
  */
-
 void _k_pipe_put_reply(struct k_args *ReqProc)
 {
 	__ASSERT_NO_MSG(
@@ -269,7 +266,6 @@ void _k_pipe_put_reply(struct k_args *ReqProc)
  *
  * @return N/A
  */
-
 void _k_pipe_put_ack(struct k_args *Request)
 {
 	if (_ASYNCREQ == _k_pipe_request_type_get(&Request->args)) {

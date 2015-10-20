@@ -35,11 +35,12 @@ data structure.
  *
  * Sets the nanokernel data structure idle field to a non-zero value.
  *
+ * @param ticks the number of ticks to idle
+ *
  * @return N/A
  *
  * \NOMANUAL
  */
-
 void nano_cpu_set_idle(int32_t ticks)
 {
 	extern tNANO _nanokernel;

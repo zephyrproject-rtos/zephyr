@@ -25,6 +25,9 @@
  *  nano_fiber_stack_pop, nano_task_stack_pop, nano_isr_stack_pop
  *  nano_fiber_stack_pop_wait, nano_task_stack_pop_wait
  *
+ * @param stack the stack to initialize
+ * @param data pointer to the container for the stack
+ *
  * @internal
  * In some cases the compiler "alias" attribute is used to map two or more
  * APIs to the same function, since they have identical implementations.
@@ -37,10 +40,7 @@
 #include <sections.h>
 
 
-void nano_stack_init(
-	struct nano_stack *stack,	/* stack to initialize */
-	uint32_t *data				/* container for stack */
-	)
+void nano_stack_init(struct nano_stack *stack, uint32_t *data)
 {
 	stack->next = stack->base = data;
 	stack->fiber = (struct tcs *)0;

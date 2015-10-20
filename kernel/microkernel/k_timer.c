@@ -152,7 +152,6 @@ void _k_timeout_free(struct k_timer *T)
  * @param ticks Number of ticks
  * @return N/A
  */
-
 void _k_timer_list_update(int ticks)
 {
 	struct k_timer *T;

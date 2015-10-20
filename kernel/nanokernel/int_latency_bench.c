@@ -62,7 +62,6 @@ uint32_t _hw_irq_to_c_handler_latency = ULONG_MAX;
  * @return N/A
  *
  */
-
 void _int_latency_start(void)
 {
 	/* when interrupts are not already locked, take time stamp */
@@ -82,7 +81,6 @@ void _int_latency_start(void)
  * @return N/A
  *
  */
-
 void _int_latency_stop(void)
 {
 	uint32_t delta;
@@ -133,7 +131,6 @@ void _int_latency_stop(void)
  * @return N/A
  *
  */
-
 void int_latency_init(void)
 {
 	uint32_t timeToReadTime;
@@ -186,7 +183,6 @@ void int_latency_init(void)
  * @return N/A
  *
  */
-
 void int_latency_show(void)
 {
 	uint32_t intHandlerLatency = 0;

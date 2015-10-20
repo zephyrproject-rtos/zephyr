@@ -45,7 +45,6 @@ extern CtorFuncPtr __CTOR_END__[];
  * This routine is invoked by the nanokernel routine _Cstart() after the basic
  * hardware has been initialized.
  */
-
 void _Ctors(void)
 {
 	unsigned int nCtors;

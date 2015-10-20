@@ -63,15 +63,16 @@ const NANO_ESF _default_esf = {
  * fatal error does not have a hardware generated ESF, the caller should either
  * create its own or use a pointer to the global default ESF <_default_esf>.
  *
+ * @param reason the reason that the handler was called
+ * @param pEsf pointer to the exception stack frame
+ *
  * @return This function does not return.
  *
  * \NOMANUAL
  */
 
-FUNC_NORETURN void _NanoFatalErrorHandler(
-	unsigned int reason, /* reason that handler was called */
-	const NANO_ESF *pEsf /* pointer to exception stack frame */
-	)
+FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+					  const NANO_ESF *pEsf)
 {
 
 #ifdef CONFIG_PRINTK

@@ -38,24 +38,23 @@ Intel-specific parts of start_task(). Only FP functionality currently.
 #define SSE_GROUP 0x10
 
 /**
- *
  * @brief Intel-specific parts of task initialization
+ *
+ * @param X pointer to task control block
+ * @param pOpt thread options container
  *
  * @return N/A
  */
 
-void _StartTaskArch(
-	struct k_task *X,	 /* ptr to task control block */
-	unsigned int *pOpt /* thread options container */
-	)
+void _StartTaskArch( struct k_task *X, unsigned int *pOpt)
 {
 	/*
 	 * The IA-32 nanokernel implementation uses the USE_FP bit in the
-	 * struct tcs->flags structure as a "dirty bit".  The USE_FP flag bit will be
-	 * set whenever a thread uses any non-integer capability, whether it's
-	 * just the x87 FPU capability, SSE instructions, or a combination of
-	 * both. The USE_SSE flag bit will only be set if a thread uses SSE
-	 * instructions.
+	 * struct tcs->flags structure as a "dirty bit".  The USE_FP flag bit
+	 * will be set whenever a thread uses any non-integer capability,
+	 * whether it's just the x87 FPU capability, SSE instructions, or a
+	 * combination of both. The USE_SSE flag bit will only be set if a
+	 * thread uses SSE instructions.
 	 *
 	 * However, callers of fiber_fiber_start(), task_fiber_start(), or even
 	 * _new_thread() don't need to follow the protocol used by the IA-32
@@ -68,11 +67,10 @@ void _StartTaskArch(
 	 * Likewise, the placement of tasks into "groups" doesn't need to follow
 	 * the protocol used by the IA-32 nanokernel w.r.t. managing the
 	 * struct tcs->flags field.  If a task will utilize just the x87 FPU
-	 *capability,
-	 * then the task only needs to be placed in the FPU_GROUP group.
-	 * If a task utilizes SSE instructions (and possibly x87 FPU
-	 *capability),
-	 * then the task only needs to be placed in the SSE_GROUP group.
+	 * capability, then the task only needs to be placed in the FPU_GROUP
+	 * group.  If a task utilizes SSE instructions (and possibly x87 FPU
+	 * capability), then the task only needs to be placed in the SSE_GROUP
+	 * group.
 	 */
 
 	*pOpt |= (X->group & SSE_GROUP) ? USE_SSE

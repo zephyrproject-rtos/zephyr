@@ -42,6 +42,10 @@ This module implements the PCI H/W access functions.
  *
  * @brief Read a PCI controller register
  *
+ * @param reg PCI register to read
+ * @param data where to put the data
+ * @param size size of the data to read (8/16/32 bits)
+ *
  * This routine reads the specified register from the PCI controller and
  * places the data into the provided buffer.
  *
@@ -49,10 +53,7 @@ This module implements the PCI H/W access functions.
  *
  */
 
-static void pci_ctrl_read(uint32_t reg,   /* PCI register to read */
-		    uint32_t *data, /* where to put the data */
-		    uint32_t size /* size of the data to read (8/16/32 bits) */
-		    )
+static void pci_ctrl_read(uint32_t reg, uint32_t *data, uint32_t size)
 {
 	/* read based on the size requested */
 
@@ -76,6 +77,10 @@ static void pci_ctrl_read(uint32_t reg,   /* PCI register to read */
  *
  * @brief Write a PCI controller register
  *
+ * @param reg PCI register to write
+ * @param data data to write
+ * @param size size of the data to write (8/16/32 bits)
+ *
  * This routine writes the provided data to the specified register in the PCI
  * controller.
  *
@@ -83,11 +88,7 @@ static void pci_ctrl_read(uint32_t reg,   /* PCI register to read */
  *
  */
 
-static void pci_ctrl_write(uint32_t reg,  /* PCI register to write */
-		     uint32_t data, /* data to write */
-		     uint32_t size  /* size of the data to write (8/16/32 bits)
-				      */
-		     )
+static void pci_ctrl_write(uint32_t reg, uint32_t data, uint32_t size)
 {
 	/* write based on the size requested */
 
@@ -111,22 +112,25 @@ static void pci_ctrl_write(uint32_t reg,  /* PCI register to write */
  *
  * @brief Read the PCI controller data register
  *
+ * @param controller controller number
+ * @param offset is the offset within the data region
+ * @param data is the returned data
+ * @param size is the size of the data to read
+ *
  * This routine reads the data register of the specified PCI controller.
  *
  * @return 0 or -1
  *
  */
 
-static int pci_ctrl_data_read(uint32_t controller, /* controller number */
-		       uint32_t offset,     /* offset within data region */
-		       uint32_t *data,      /* returned data */
-		       uint32_t size	/* size of data to read */
-		       )
+static int pci_ctrl_data_read(uint32_t controller, uint32_t offset,
+		              uint32_t *data, uint32_t size)
 {
 	/* we only support one controller */
 
-	if (controller != DEFAULT_PCI_CONTROLLER)
+	if (controller != DEFAULT_PCI_CONTROLLER) {
 		return (-1);
+	}
 
 	pci_ctrl_read(PCI_CTRL_DATA_REG + offset, data, size);
 
@@ -137,6 +141,11 @@ static int pci_ctrl_data_read(uint32_t controller, /* controller number */
  *
  * @brief Write the PCI controller data register
  *
+ * @param controller the controller number
+ * @param offset is the offset within the address register
+ * @param data is the data to write
+ * @param size is the size of the data
+ *
  * This routine writes the provided data to the data register of the
  * specified PCI controller.
  *
@@ -144,16 +153,14 @@ static int pci_ctrl_data_read(uint32_t controller, /* controller number */
  *
  */
 
-static int pci_ctrl_data_write(uint32_t controller, /* controller number */
-			uint32_t offset, /* offset within address register */
-			uint32_t data,   /* data to write */
-			uint32_t size    /* size of data */
-			)
+static int pci_ctrl_data_write(uint32_t controller, uint32_t offset,
+			       uint32_t data, uint32_t size)
 {
 	/* we only support one controller */
 
-	if (controller != DEFAULT_PCI_CONTROLLER)
+	if (controller != DEFAULT_PCI_CONTROLLER) {
 		return (-1);
+	}
 
 	pci_ctrl_write(PCI_CTRL_DATA_REG + offset, data, size);
 
@@ -164,6 +171,11 @@ static int pci_ctrl_data_write(uint32_t controller, /* controller number */
  *
  * @brief Write the PCI controller address register
  *
+ * @param controller is the controller number
+ * @param offset is the offset within the address register
+ * @param data is the data to write
+ * @param size is the size of the data
+ *
  * This routine writes the provided data to the address register of the
  * specified PCI controller.
  *
@@ -171,16 +183,14 @@ static int pci_ctrl_data_write(uint32_t controller, /* controller number */
  *
  */
 
-static int pci_ctrl_addr_write(uint32_t controller, /* controller number */
-			uint32_t offset, /* offset within address register */
-			uint32_t data,   /* data to write */
-			uint32_t size    /* size of data */
-			)
+static int pci_ctrl_addr_write(uint32_t controller, uint32_t offset,
+			       uint32_t data, uint32_t size)
 {
 	/* we only support one controller */
 
-	if (controller != DEFAULT_PCI_CONTROLLER)
+	if (controller != DEFAULT_PCI_CONTROLLER) {
 		return (-1);
+	}
 
 	pci_ctrl_write(PCI_CTRL_ADDR_REG + offset, data, size);
 	return 0;
@@ -229,15 +239,17 @@ static int pci_ctrl_addr_write(uint32_t controller, /* controller number */
  *   Reading of PCI data must be performed as an atomic operation. It is up to
  *   the caller to enforce this.
  *
+ * @param controller is the PCI controller number to use
+ * @param addr is the PCI address to read
+ * @param size is the size of the data in bytes
+ * @param data is a pointer to the data read from the device
+ *
  * @return N/A
  *
  */
 
-void pci_read(uint32_t controller, /* PCI controller to use */
-	     union pci_addr_reg addr,       /* PCI address to read   */
-	     uint32_t size,       /* size of data in bytes */
-	     uint32_t *data       /* data read from device */
-	     )
+void pci_read(uint32_t controller, union pci_addr_reg addr,
+	      uint32_t size, uint32_t *data)
 {
 	uint32_t access_size;
 	uint32_t access_offset;
@@ -318,16 +330,17 @@ void pci_read(uint32_t controller, /* PCI controller to use */
  *   Writing of PCI data must be performed as an atomic operation. It is up to
  *   the caller to enforce this.
  *
+ * @param controller is the PCI controller to use
+ * @param addr is the PCI addres to read
+ * @param size is the size in bytes to write
+ * @param data is the data to write
  *
  * @return N/A
  *
  */
 
-void pci_write(uint32_t controller, /* controller to use   */
-	      union pci_addr_reg addr,       /* PCI address to read */
-	      uint32_t size,       /* size in bytes       */
-	      uint32_t data	/* data to write       */
-	      )
+void pci_write(uint32_t controller, union pci_addr_reg addr,
+	       uint32_t size, uint32_t data)
 {
 	uint32_t access_size;
 	uint32_t access_offset;
@@ -376,8 +389,8 @@ void pci_write(uint32_t controller, /* controller to use   */
  */
 
 void pci_header_get(uint32_t controller,
-			union pci_addr_reg pci_ctrl_addr,
-			union pci_dev *pci_dev_header)
+		    union pci_addr_reg pci_ctrl_addr,
+		    union pci_dev *pci_dev_header)
 {
 	uint32_t i;
 

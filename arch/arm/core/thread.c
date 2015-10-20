@@ -87,19 +87,21 @@ static ALWAYS_INLINE void _thread_monitor_init(struct tcs *tcs /* thread */
  *
  * <options> is currently unused.
  *
+ * @param pStackMem the aligned stack memory
+ * @param stackSize stack size in bytes
+ * @param pEntry the entry point
+ * @param parameter1 entry point to the first param
+ * @param parameter2 entry point to the second param
+ * @param parameter3 entry point to the third param
+ * @param priority thread priority (-1 for tasks)
+ * @param misc options (future use)
+ *
  * @return N/A
  */
 
-void _new_thread(
-	char *pStackMem,      /* aligned stack memory */
-	unsigned stackSize,   /* stack size in bytes */
-	_thread_entry_t pEntry, /* entry point */
-	void *parameter1,     /* entry point first param */
-	void *parameter2,     /* entry point second param */
-	void *parameter3,     /* entry point third param */
-	int priority,	 /* thread priority (-1 for tasks) */
-	unsigned options      /* misc options (future) */
-	)
+void _new_thread(char *pStackMem, unsigned stackSize, _thread_entry_t pEntry,
+		 void *parameter1, void *parameter2, void *parameter3,
+		 int priority, unsigned options)
 {
 	char *stackEnd = pStackMem + stackSize;
 	struct __esf *pInitCtx;

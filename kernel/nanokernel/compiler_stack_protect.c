@@ -42,7 +42,6 @@ function __stack_chk_fail and global variable __stack_chk_guard.
  *
  * @return Does not return
  */
-
 void FUNC_NORETURN _StackCheckHandler(void)
 {
 	/* Stack canary error is a software fatal condition; treat it as such.
@@ -61,7 +60,6 @@ void FUNC_NORETURN _StackCheckHandler(void)
  * Symbol referenced by GCC compiler generated code for canary value.
  * The canary value gets initialized in _Cstart().
  */
-
 void __noinit *__stack_chk_guard;
 
 /**
@@ -71,6 +69,5 @@ void __noinit *__stack_chk_guard;
  * This routine is invoked when a stack canary error is detected, indicating
  * a buffer overflow or stack corruption problem.
  */
-
 FUNC_ALIAS(_StackCheckHandler, __stack_chk_fail, void);
 #endif

@@ -36,7 +36,6 @@ a task to measure the overhead involved in issuing a kernel service request.
  *
  * @return N/A
  */
-
 void _k_nop(struct k_args *A)
 {
 	ARG_UNUSED(A);
@@ -50,7 +49,6 @@ void _k_nop(struct k_args *A)
  *
  * @return N/A
  */
-
 void _task_nop(void)
 {
 	struct k_args A;

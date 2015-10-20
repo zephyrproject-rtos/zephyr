@@ -38,7 +38,6 @@ definitions and more complex routines, if needed.
  *
  * @return N/A
  */
-
 void _ScbSystemReset(void)
 {
 	union __aircr reg;
@@ -51,8 +50,8 @@ void _ScbSystemReset(void)
 
 /**
  *
- * @brief Set the number of priority groups based on the number
- *                      of exception priorities desired
+ * @brief Set the number of priority groups based on the number of exception
+ * priorities desired
  *
  * Exception priorities can be divided in priority groups, inside which there is
  * no preemption. The priorities inside a group are only used to decide which
@@ -60,11 +59,11 @@ void _ScbSystemReset(void)
  *
  * The number of priorities has to be a power of two, from 1 to 128.
  *
+ * @param n the number of priorities
+ *
  * @return N/A
  */
-
-void _ScbNumPriGroupSet(unsigned int n /* number of priorities */
-			)
+void _ScbNumPriGroupSet(unsigned int n)
 {
 	unsigned int set;
 	union __aircr reg;

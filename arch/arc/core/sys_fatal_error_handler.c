@@ -61,15 +61,14 @@ static inline void nonEssentialTaskAbort(void)
  * implementation to take other actions, such as logging error (or debug)
  * information to a persistent repository and/or rebooting the system.
  *
+ * @param reason the fatal error reason
+ * @param pEsf pointer to exception stack frame
+ *
  * @return N/A
  *
  * \NOMANUAL
  */
-
-void _SysFatalErrorHandler(
-	unsigned int reason, /* fatal error reason */
-	const NANO_ESF * pEsf /* pointer to exception stack frame */
-)
+void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF * pEsf)
 {
 	nano_context_type_t curCtx = sys_execution_context_type_get();
 

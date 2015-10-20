@@ -161,6 +161,10 @@ static int _int_stub_alloc(void)
  *
  * @brief Connect a routine to an interrupt vector
  *
+ * @param vector interrupt vector: 0 to 255 on IA-32
+ * @param routine a function pointer to the interrupt routine
+ * @param dpl priv level for interrupt-gate descriptor
+ *
  * This routine "connects" the specified <routine> to the specified interrupt
  * <vector>.  On the IA-32 architecture, an interrupt vector is a value from
  * 0 to 255.  This routine merely fills in the appropriate interrupt
@@ -180,11 +184,7 @@ static int _int_stub_alloc(void)
  *
  */
 
-void _IntVecSet(
-	unsigned int vector, /* interrupt vector: 0 to 255 on IA-32 */
-	void (*routine)(void *),
-	unsigned int dpl /* priv level for interrupt-gate descriptor */
-	)
+void _IntVecSet( unsigned int vector, void (*routine)(void *), unsigned int dpl)
 {
 	unsigned long long *pIdtEntry;
 	unsigned int key;
@@ -198,9 +198,9 @@ void _IntVecSet(
 	pIdtEntry = (unsigned long long *)(_idt_base_address + (vector << 3));
 
 	/*
-	 * Lock interrupts to protect the IDT entry to which _IdtEntryCreate() will
-	 * write.  They must be locked here because the _IdtEntryCreate() code is
-	 * shared with the 'gen_idt' host tool.
+	 * Lock interrupts to protect the IDT entry to which _IdtEntryCreate()
+	 * will write.  They must be locked here because the _IdtEntryCreate()
+	 * code is shared with the 'gen_idt' host tool.
 	 */
 
 	key = irq_lock();
@@ -220,6 +220,11 @@ void _IntVecSet(
 /**
  *
  * @brief Connect a C routine to a hardware interrupt
+ *
+ * @param irq virtualized IRQ to connect to
+ * @param priority requested priority of interrupt
+ * @param routine the C interrupt handler
+ * @param parameter parameter passed to C routine
  *
  * This routine connects an interrupt service routine (ISR) coded in C to
  * the specified hardware <irq>.  An interrupt vector will be allocated to
@@ -265,12 +270,8 @@ void _IntVecSet(
  * vectors remaining in the specified <priority> level.
  */
 
-int irq_connect(
-	unsigned int irq,		  /* virtualized IRQ to connect to */
-	unsigned int priority,		  /* requested priority of interrupt */
-	void (*routine)(void *parameter), /* C interrupt handler */
-	void *parameter			  /* parameter passed to C routine */
-	)
+int irq_connect( unsigned int irq, unsigned int priority,
+	void (*routine)(void *parameter), void *parameter)
 {
 	unsigned char offsetAdjust;
 	unsigned char numParameters = 1; /* stub always pushes ISR parameter */
@@ -388,10 +389,8 @@ int irq_connect(
 
 	/*
 	 * Poke in the stack popping related opcode. Do it a byte at a time
-	 * because
-	 * &STUB_PTR[offsetAdjust] may not be aligned which does not work for
-	 * all
-	 * targets.
+	 * because &STUB_PTR[offsetAdjust] may not be aligned which does not
+	 * work for all targets.
 	 */
 
 	STUB_PTR[offsetAdjust] = IA32_ADD_OPCODE & 0xFF;
@@ -401,9 +400,10 @@ int irq_connect(
 	offsetAdjust += 3;
 
 	/*
-	 * generate code that invokes _IntExit(); note that a jump is used, since
-	 * _IntExit() takes care of returning back to the execution context that
-	 * experienced the interrupt (i.e. branch tail optimization)
+	 * generate code that invokes _IntExit(); note that a jump is used,
+	 * since _IntExit() takes care of returning back to the execution
+	 * context that experienced the interrupt (i.e. branch tail
+	 * optimization)
 	 */
 
 	STUB_PTR[offsetAdjust] = IA32_JMP_OPCODE;
@@ -416,8 +416,8 @@ int irq_connect(
 	 * There is no need to explicitly synchronize or flush the instruction
 	 * cache due to the above code synthesis.  See the Intel 64 and IA-32
 	 * Architectures Software Developer's Manual: Volume 3A: System
-	 *Programming
-	 * Guide; specifically the section titled "Self Modifying Code".
+	 * Programming Guide; specifically the section titled "Self Modifying
+	 * Code".
 	 *
 	 * Cache synchronization/flushing is not required for the i386 as it
 	 * does not contain any on-chip I-cache; likewise, post-i486 processors

@@ -175,15 +175,16 @@ static ALWAYS_INLINE void nanoArchInit(void)
  * to <value>.  It is assumed that the specified <fiber> is pending, and thus
  * the fiber's thread is stored in its struct tcs structure.
  *
+ * @param fiber pointer to the fiber
+ * @param value is the value to set as a return value
+ *
  * @return N/A
  *
  * \NOMANUAL
  */
 
-static ALWAYS_INLINE void fiberRtnValueSet(
-	struct tcs *fiber,       /* pointer to fiber */
-	unsigned int value /* value to set as return value */
-	)
+static ALWAYS_INLINE void fiberRtnValueSet(struct tcs *fiber,
+					   unsigned int value)
 {
 	tESF *pEsf = (void *)fiber->preempReg.psp;
 

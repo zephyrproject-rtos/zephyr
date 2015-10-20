@@ -134,6 +134,7 @@ void task_irq_free(kirq_t irq_obj)
  *
  * This re-enables the interrupt for a task IRQ object.
  * @param irq_obj IRQ object identifier
+ *
  * @return N/A
  */
 void task_irq_ack(kirq_t irq_obj)
@@ -152,6 +153,7 @@ void task_irq_ack(kirq_t irq_obj)
  * This tests a task IRQ object to see if it has signaled an interrupt.
  * @param irq_obj IRQ object identifier
  * @param time  Time to wait (in ticks)
+ *
  * @return RC_OK, RC_FAIL, or RC_TIME
  */
 int _task_irq_test(kirq_t irq_obj, int32_t time)
@@ -169,6 +171,7 @@ int _task_irq_test(kirq_t irq_obj, int32_t time)
  *
  * This routine allocates a task IRQ object to a task.
  * @param arg Pointer to registration request arguments
+ *
  * @return ptr to allocated task IRQ object if successful, NULL if not
  */
 static int _k_task_irq_alloc(void *arg)

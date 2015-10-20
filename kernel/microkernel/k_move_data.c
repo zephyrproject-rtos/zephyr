@@ -28,7 +28,6 @@
  *
  * @return N/A
  */
-
 static void mvdreq_docont(struct k_args *Cont)
 {
 	struct k_args *next;
@@ -46,7 +45,6 @@ static void mvdreq_docont(struct k_args *Cont)
  *
  * @return N/A
  */
-
 static void mvdreq_copy(struct moved_req *ReqArgs)
 {
 	memcpy(ReqArgs->destination, ReqArgs->source,
@@ -64,7 +62,6 @@ static void mvdreq_copy(struct moved_req *ReqArgs)
  *
  * @return N/A
  */
-
 void _k_movedata_request(struct k_args *Req)
 {
 	struct moved_req *ReqArgs;

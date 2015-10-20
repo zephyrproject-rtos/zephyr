@@ -104,7 +104,6 @@ int64_t nano_tick_get(void)
  * NOTE: We use inline function for both 64-bit and 32-bit functions.
  * Compiler optimizes out 64-bit result handling in 32-bit version.
  */
-
 static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
 {
 	int64_t  delta;
@@ -192,7 +191,6 @@ static inline void handle_expired_nano_timers(int ticks)
  *
  * @return N/A
  */
-
 void _nano_sys_clock_tick_announce(uint32_t ticks)
 {
 	_nano_ticks += ticks;

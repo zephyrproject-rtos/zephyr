@@ -51,14 +51,14 @@ as there is no requirement for this capability.
  * and the write of the new value (if it occurs) all happen atomically with
  * respect to both interrupts and accesses of other processors to <target>.
  *
+ * @param target the address to be tested
+ * @param oldvalue the value to be compared against
+ * @param newValue the value to be set to
+ *
  * @return Returns 1 if <newValue> is written, 0 otherwise.
  */
 
-int atomic_cas(
-	atomic_t *target,     /* address to be tested */
-	atomic_val_t oldValue, /* value to compare against */
-	atomic_val_t newValue  /* value to set to */
-	)
+int atomic_cas(atomic_t *target, atomic_val_t oldValue, atomic_val_t newValue)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* temporary storage */
@@ -82,13 +82,13 @@ int atomic_cas(
  * atomically added to the value at <target>, placing the result at <target>,
  * and the old value from <target> is returned.
  *
+ * @param target memory location to add to
+ * @param value the value to add
+ *
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_add(
-	atomic_t *target, /* memory location to add to */
-	atomic_val_t value /* value to add */
-	)
+atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
@@ -108,14 +108,13 @@ atomic_val_t atomic_add(
  * atomically subtracted from the value at <target>, placing the result at
  * <target>, and the old value from <target> is returned.
  *
+ * @param target the memory location to subtract from
+ * @param value the value to subtract
+ *
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_sub(
-	atomic_t *target, /* memory location to subtract from */
-	atomic_val_t value /* value to subtract */
-	)
-{
+atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value) {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
 
@@ -130,15 +129,15 @@ atomic_val_t atomic_sub(
  *
  * @brief Atomic increment primitive
  *
+ * @param target memory location to increment
+ *
  * This routine provides the atomic increment operator. The value at <target>
  * is atomically incremented by 1, and the old value from <target> is returned.
  *
  * @return The value from <target> before the increment
  */
 
-atomic_val_t atomic_inc(
-	atomic_t *target /* memory location to increment */
-	)
+atomic_val_t atomic_inc(atomic_t *target)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* value from <target> before the increment */
@@ -154,15 +153,15 @@ atomic_val_t atomic_inc(
  *
  * @brief Atomic decrement primitive
  *
+ * @param target memory location to decrement
+ *
  * This routine provides the atomic decrement operator. The value at <target>
  * is atomically decremented by 1, and the old value from <target> is returned.
  *
  * @return The value from <target> prior to the decrement
  */
 
-atomic_val_t atomic_dec(
-	atomic_t *target /* memory location to decrement */
-	)
+atomic_val_t atomic_dec(atomic_t *target)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* value from <target> prior to the decrement */
@@ -178,6 +177,8 @@ atomic_val_t atomic_dec(
  *
  * @brief Atomic get primitive
  *
+ * @param target memory location to read from
+ *
  * This routine provides the atomic get primitive to atomically read
  * a value from <target>. It simply does an ordinary load.  Note that <target>
  * is expected to be aligned to a 4-byte boundary.
@@ -185,8 +186,7 @@ atomic_val_t atomic_dec(
  * @return The value read from <target>
  */
 
-atomic_val_t atomic_get(const atomic_t *target /* memory location to read from */
-			  )
+atomic_val_t atomic_get(const atomic_t *target)
 {
 	return *target;
 }
@@ -198,13 +198,13 @@ atomic_val_t atomic_get(const atomic_t *target /* memory location to read from *
  * This routine provides the atomic set operator. The <value> is atomically
  * written at <target> and the previous value at <target> is returned.
  *
+ * @param target the memory location to write to
+ * @param value the value to write
+ *
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_set(
-	atomic_t *target, /* memory location to write to */
-	atomic_val_t value /* value to write */
-	)
+atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
@@ -224,12 +224,12 @@ atomic_val_t atomic_set(
  * written at <target> and the previous value at <target> is returned. (Hence,
  * atomic_clear(pAtomicVar) is equivalent to atomic_set(pAtomicVar, 0).)
  *
+ * @param target the memory location to write
+ *
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_clear(
-	atomic_t *target /* memory location to write to */
-	)
+atomic_val_t atomic_clear(atomic_t *target)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
@@ -249,13 +249,13 @@ atomic_val_t atomic_clear(
  * is atomically bitwise OR'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
+ * @param target the memory location to be modified
+ * @param value the value to OR
+ *
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_or(
-	atomic_t *target, /* memory location to be modified */
-	atomic_val_t value /* value to OR */
-	)
+atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
@@ -275,13 +275,13 @@ atomic_val_t atomic_or(
  * is atomically bitwise XOR'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
+ * @param target the memory location to be modified
+ * @param value the value to XOR
+ *
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_xor(
-	atomic_t *target, /* memory location to be modified */
-	atomic_val_t value /* value to XOR */
-	)
+atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
@@ -301,13 +301,13 @@ atomic_val_t atomic_xor(
  * atomically bitwise AND'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
+ * @param target the memory location to be modified
+ * @param value the value to AND
+ *
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_and(
-	atomic_t *target, /* memory location to be modified */
-	atomic_val_t value /* value to AND */
-	)
+atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */
@@ -327,13 +327,13 @@ atomic_val_t atomic_and(
  * atomically bitwise NAND'ed with the value at <target>, placing the result
  * at <target>, and the previous value at <target> is returned.
  *
+ * @param target the memory location to be modified
+ * @param value the value to NAND
+ *
  * @return The previous value from <target>
  */
 
-atomic_val_t atomic_nand(
-	atomic_t *target, /* memory location to be modified */
-	atomic_val_t value /* value to NAND */
-	)
+atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 {
 	int key;	    /* interrupt lock level */
 	atomic_val_t ovalue; /* previous value from <target> */

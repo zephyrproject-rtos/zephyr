@@ -134,8 +134,7 @@ static void _FaultThreadShow(const NANO_ESF *esf)
  * \NOMANUAL
  */
 
-static void _MpuFault(const NANO_ESF *esf,
-					    int fromHardFault)
+static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 {
 	PR_EXC("***** MPU FAULT *****\n");
 
@@ -169,8 +168,7 @@ static void _MpuFault(const NANO_ESF *esf,
  * \NOMANUAL
  */
 
-static void _BusFault(const NANO_ESF *esf,
-					    int fromHardFault)
+static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 {
 	PR_EXC("***** BUS FAULT *****\n");
 
@@ -294,8 +292,7 @@ static void _DebugMonitor(const NANO_ESF *esf)
  * \NOMANUAL
  */
 
-static void _ReservedException(const NANO_ESF *esf,
-						     int fault)
+static void _ReservedException(const NANO_ESF *esf, int fault)
 {
 	PR_EXC("***** %s %d) *****\n",
 	       fault < 16 ? "Reserved Exception (" : "Spurious interrupt (IRQ ",
@@ -362,15 +359,15 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  * interrupt was already being handled, it is passed a pointer to both and has
  * to find out on which the ESP is present.
  *
+ * @param msp pointer to potential ESF on MSP
+ * @param psp pointer to potential ESF on PSP
+ *
  * @return This function does not return.
  *
  * \NOMANUAL
  */
 
-void _Fault(
-	const NANO_ESF *msp, /* pointer to potential ESF on MSP */
-	const NANO_ESF *psp  /* pointer to potential ESF on PSP */
-	)
+void _Fault( const NANO_ESF *msp, const NANO_ESF *psp)
 {
 	const NANO_ESF *esf = _ScbIsNestedExc() ? msp : psp;
 	int fault = _ScbActiveVectorGet();

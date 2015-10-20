@@ -45,7 +45,6 @@ extern void __reserved(void);
  *
  * @return N/A
  */
-
 void _irq_handler_set(unsigned int irq,
 						void (*old)(void *arg),
 						void (*new)(void *arg),
@@ -73,7 +72,6 @@ void _irq_handler_set(unsigned int irq,
  *
  * @return N/A
  */
-
 void irq_enable(unsigned int irq)
 {
 	/* before enabling interrupts, ensure that interrupt is cleared */
@@ -90,7 +88,6 @@ void irq_enable(unsigned int irq)
  *
  * @return N/A
  */
-
 void irq_disable(unsigned int irq)
 {
 	_NvicIrqDisable(irq);
@@ -111,7 +108,6 @@ void irq_disable(unsigned int irq)
  *
  * @return N/A
  */
-
 void _irq_priority_set(unsigned int irq,
 					     unsigned int prio)
 {
@@ -130,7 +126,6 @@ void _irq_priority_set(unsigned int irq,
  *
  * @return N/A
  */
-
 void _irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -149,7 +144,6 @@ void _irq_spurious(void *unused)
  *
  * @return the interrupt line number
  */
-
 int irq_connect(unsigned int irq,
 					    unsigned int prio,
 					    void (*isr)(void *arg),
@@ -172,7 +166,6 @@ int irq_connect(unsigned int irq,
  *
  * @return N/A
  */
-
 void _irq_disconnect(unsigned int irq)
 {
 	_irq_handler_set(irq, _sw_isr_table[irq].isr, _irq_spurious, NULL);

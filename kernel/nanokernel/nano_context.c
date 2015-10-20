@@ -98,10 +98,12 @@ int _is_thread_essential(struct tcs *pCtx /* pointer to thread */
  * current Zephyr SDK use non-Thumb code that isn't supported on Cortex-M CPUs.
  * For the time being any ARM-based application that attempts to use this API
  * will get a link error (which is preferable to a mysterious exception).
+ *
+ * @param usec_to_wait
+ *
+ * @return N/A
  */
-
 #ifndef CONFIG_ARM
-
 void sys_thread_busy_wait(uint32_t usec_to_wait)
 {
 	/* use 64-bit math to prevent overflow when multiplying */
@@ -121,7 +123,6 @@ void sys_thread_busy_wait(uint32_t usec_to_wait)
 		}
 	}
 }
-
 #endif /* CONFIG_ARM */
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
@@ -207,6 +208,11 @@ void _thread_exit(struct tcs *thread)
  * passes it three arguments.  It also handles graceful termination of the
  * task or fiber if the entry point function ever returns.
  *
+ * @param pEntry address of the app entry point function
+ * @param parameter1 1st arg to the app entry point function
+ * @param parameter2 2nd arg to the app entry point function
+ * @param parameter3 3rd arg to the app entry point function
+ *
  * @internal
  * The 'noreturn' attribute is applied to this function so that the compiler
  * can dispense with generating the usual preamble that is only required for
@@ -215,12 +221,10 @@ void _thread_exit(struct tcs *thread)
  * @return Does not return
  *
  */
-FUNC_NORETURN void _thread_entry(
-	_thread_entry_t pEntry,   /* address of app entry point function */
-	_thread_arg_t parameter1, /* 1st arg to app entry point function */
-	_thread_arg_t parameter2, /* 2nd arg to app entry point function */
-	_thread_arg_t parameter3  /* 3rd arg to app entry point function */
-	)
+FUNC_NORETURN void _thread_entry(_thread_entry_t pEntry,
+					_thread_arg_t parameter1,
+					_thread_arg_t parameter2,
+					_thread_arg_t parameter3)
 {
 	/* Execute the "application" entry point function */
 

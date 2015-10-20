@@ -99,9 +99,10 @@ extern uint32_t _sse_mxcsr_default_value; /* SSE control/status register default
  * specified TCS.  If the specified task or fiber supports SSE then
  * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
  *
+ * @param tcs TBD
+ *
  * @return N/A
  */
-
 static void _FpCtxSave(struct tcs *tcs)
 {
 	_do_fp_ctx_save(tcs->flags & USE_SSE, &tcs->preempFloatReg);
@@ -113,9 +114,10 @@ static void _FpCtxSave(struct tcs *tcs)
  *
  * This routine initializes the system's "live" non-integer context.
  *
+ * @param tcs TBD
+ *
  * @return N/A
  */
-
 static inline void _FpCtxInit(struct tcs *tcs)
 {
 	_do_fp_ctx_init(tcs->flags & USE_SSE);
@@ -142,6 +144,9 @@ static inline void _FpCtxInit(struct tcs *tcs)
  * This routine should only be used to enable floating point support for a
  * task/fiber that does not currently have such support enabled already.
  *
+ * @param tcs  TDB
+ * @param options set to either USE_FP or USE_SSE
+ *
  * @return N/A
  *
  * INTERNAL
@@ -159,10 +164,7 @@ static inline void _FpCtxInit(struct tcs *tcs)
  * are only used from a fiber, rather than from "generic" code used by both
  * tasks and fibers.
  */
-
-void _FpEnable(struct tcs *tcs,
-			     unsigned int options /* USE_FP or USE_SSE */
-			     )
+void _FpEnable(struct tcs *tcs, unsigned int options)
 {
 	unsigned int imask;
 	struct tcs *fp_owner;
@@ -272,7 +274,6 @@ void _FpEnable(struct tcs *tcs,
  *
  * @return N/A
  */
-
 FUNC_ALIAS(_FpEnable, fiber_float_enable, void);
 
 /**
@@ -286,7 +287,6 @@ FUNC_ALIAS(_FpEnable, fiber_float_enable, void);
  *
  * @return N/A
  */
-
 FUNC_ALIAS(_FpEnable, task_float_enable, void);
 
 /**
@@ -300,6 +300,8 @@ FUNC_ALIAS(_FpEnable, task_float_enable, void);
  * WARNING
  * This routine should only be used to disable floating point support for
  * a task/fiber that currently has such support enabled.
+ *
+ * @param tcs TBD
  *
  * @return N/A
  *
@@ -318,7 +320,6 @@ FUNC_ALIAS(_FpEnable, task_float_enable, void);
  * are only used from a fiber, rather than from "generic" code used by both
  * tasks and fibers.
  */
-
 void _FpDisable(struct tcs *tcs)
 {
 	unsigned int imask;
@@ -362,7 +363,6 @@ void _FpDisable(struct tcs *tcs)
  *
  * @return N/A
  */
-
 FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
 
 /**
@@ -379,7 +379,6 @@ FUNC_ALIAS(_FpDisable, fiber_float_disable, void);
  *
  * @return N/A
  */
-
 FUNC_ALIAS(_FpDisable, task_float_disable, void);
 
 
@@ -395,11 +394,11 @@ FUNC_ALIAS(_FpDisable, task_float_disable, void);
  * current task or fiber with the USE_FP option (or the USE_SSE option if the
  * SSE configuration option has been enabled).
  *
+ * @param pEsf this value is not used for this architecture
+ *
  * @return N/A
  */
-
-void _FpNotAvailableExcHandler(NANO_ESF * pEsf /* not used */
-			       )
+void _FpNotAvailableExcHandler(NANO_ESF * pEsf)
 {
 	unsigned int enableOption;
 

@@ -808,6 +808,9 @@ static inline void nanoArchInit(void)
  *
  * @brief Set the return value for the specified fiber (inline)
  *
+ * @param fiber pointer to fiber
+ * @param value value to set as return value
+ *
  * The register used to store the return value from a function call invocation is
  * set to <value>.  It is assumed that the specified <fiber> is pending, and
  * thus the fibers context is stored in its TCS.
@@ -817,10 +820,7 @@ static inline void nanoArchInit(void)
  * \NOMANUAL
  */
 
-static inline void fiberRtnValueSet(
-	struct tcs *fiber,       /* pointer to fiber */
-	unsigned int value /* value to set as return value */
-	)
+static inline void fiberRtnValueSet( struct tcs *fiber, unsigned int value)
 {
 	/* write into 'eax' slot created in _Swap() entry */
 

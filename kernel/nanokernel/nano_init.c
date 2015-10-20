@@ -105,7 +105,6 @@ extern void _Ctors(void);
  *
  * @return N/A
  */
-
 static void _main(void)
 {
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_NANOKERNEL);
@@ -132,7 +131,6 @@ extern void _main(void);
  *
  * @return N/A
  */
-
 static void nano_init(struct tcs *dummyOutContext)
 {
 	/*
@@ -240,7 +238,6 @@ extern void *__stack_chk_guard;
  *
  * @return Does not return
  */
-
 FUNC_NORETURN void _Cstart(void)
 {
 	/* floating point operations are NOT performed during nanokernel init */

@@ -39,6 +39,9 @@
  *
  * @brief Copy a packet
  *
+ * @param in the packet to be copied
+ * @param out the packet to copy to
+ *
  * @return N/A
  */
 static void copy_packet(struct k_args **out, struct k_args *in)
