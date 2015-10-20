@@ -33,7 +33,7 @@ small-footprint OSes:
    the capabilities it needs as it needs them, and to specify their
    quantity and size.
 
-#.  **Resources defined at compile-time**. Requires all system resources
+#. **Resources defined at compile-time**. Requires all system resources
    be defined at compilation time, which reduces code size and
    increases performance.
 
@@ -45,15 +45,15 @@ small-footprint OSes:
 #. **Extensive suite of services** Offers a number of familiar services
    for development:
 
-    * *Multi-threading Services* for both priority-based, non-preemptive
-      fibers and priority-based, preemptive tasks with optional round robin
-      time-slicing.
+   * *Multi-threading Services* for both priority-based, non-preemptive
+     fibers and priority-based, preemptive tasks with optional round robin
+     time-slicing.
 
-    * *Interrupt Services* for both compile-time and run-time registration
-      of interrupt handlers.
+   * *Interrupt Services* for both compile-time and run-time registration
+     of interrupt handlers.
 
-    * *Inter-thread Synchronization Services* for binary sempahores,
-      counting semaphores, and mutex semaphores.
+   * *Inter-thread Synchronization Services* for binary sempahores,
+     counting semaphores, and mutex semaphores.
 
    * *Inter-thread Data Passing Services* for basic message queues, enhanced
      message queues, and byte streams.
