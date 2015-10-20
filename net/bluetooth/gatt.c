@@ -299,6 +299,31 @@ struct notify_data {
 	uint16_t handle;
 };
 
+static int att_notify(struct bt_conn *conn, uint16_t handle, const void *data,
+		      size_t len)
+{
+	struct bt_buf *buf;
+	struct bt_att_notify *nfy;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY, sizeof(*nfy) + len);
+	if (!buf) {
+		BT_WARN("No buffer available to send notification");
+		return -ENOMEM;
+	}
+
+	BT_DBG("conn %p handle 0x%04x\n", conn, handle);
+
+	nfy = bt_buf_add(buf, sizeof(*nfy));
+	nfy->handle = sys_cpu_to_le16(handle);
+
+	bt_buf_add(buf, len);
+	memcpy(nfy->value, data, len);
+
+	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
+
+	return 0;
+}
+
 static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct notify_data *data = user_data;
@@ -325,8 +350,6 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	/* Notify all peers configured */
 	for (i = 0; i < ccc->cfg_len; i++) {
 		struct bt_conn *conn;
-		struct bt_buf *buf;
-		struct bt_att_notify *nfy;
 
 		/* TODO: Handle indications */
 		if (ccc->value != BT_GATT_CCC_NOTIFY) {
@@ -338,38 +361,33 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 			continue;
 		}
 
-		buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY,
-					sizeof(*nfy) + data->len);
-		if (!buf) {
-			BT_WARN("No buffer available to send notification");
+		if (att_notify(conn, data->handle, data->data, data->len) < 0) {
 			bt_conn_put(conn);
 			return BT_GATT_ITER_STOP;
 		}
 
-		BT_DBG("conn %p handle 0x%04x\n", conn, data->handle);
-
-		nfy = bt_buf_add(buf, sizeof(*nfy));
-		nfy->handle = sys_cpu_to_le16(data->handle);
-
-		bt_buf_add(buf, data->len);
-		memcpy(nfy->value, data->data, data->len);
-
-		bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
 		bt_conn_put(conn);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void bt_gatt_notify(uint16_t handle, const void *data, uint16_t len)
+int bt_gatt_notify(struct bt_conn *conn, uint16_t handle, const void *data,
+		   uint16_t len)
 {
 	struct notify_data nfy;
+
+	if (conn) {
+		return att_notify(conn, handle, data, len);
+	}
 
 	nfy.handle = handle;
 	nfy.data = data;
 	nfy.len = len;
 
 	bt_gatt_foreach_attr(handle, 0xffff, notify_cb, &nfy);
+
+	return 0;
 }
 
 static uint8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)

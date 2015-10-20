@@ -592,15 +592,17 @@ int bt_gatt_attr_read_cep(struct bt_conn *conn,
 
 /** @brief Notify attribute value change.
  *
- *  Send notification of attribute value change.
- *  Note: This function should only be called if CCC is declared with
- *  BT_GATT_CCC otherwise it cannot find a valid peer configuration.
+ *  Send notification of attribute value change, if connection is NULL notify
+ *  all peer that have notification enabled via CCC otherwise do a direct
+ *  notification only the given connection.
  *
+ *  @param conn Connection object.
  *  @param handle Attribute handle.
  *  @param value Attribute value.
  *  @param len Attribute value length.
  */
-void bt_gatt_notify(uint16_t handle, const void *data, uint16_t len);
+int bt_gatt_notify(struct bt_conn *conn, uint16_t handle, const void *data,
+		   uint16_t len);
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 /* Client API */
