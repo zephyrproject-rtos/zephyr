@@ -367,7 +367,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  * \NOMANUAL
  */
 
-void _Fault( const NANO_ESF *msp, const NANO_ESF *psp)
+void _Fault(const NANO_ESF *msp, const NANO_ESF *psp)
 {
 	const NANO_ESF *esf = _ScbIsNestedExc() ? msp : psp;
 	int fault = _ScbActiveVectorGet();

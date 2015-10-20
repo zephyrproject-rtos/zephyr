@@ -46,7 +46,7 @@
  * @return N/A
  */
 
-void _StartTaskArch( struct k_task *X, unsigned int *pOpt)
+void _StartTaskArch(struct k_task *X, unsigned int *pOpt)
 {
 	/*
 	 * The IA-32 nanokernel implementation uses the USE_FP bit in the

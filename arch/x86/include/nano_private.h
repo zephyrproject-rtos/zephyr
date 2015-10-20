@@ -815,7 +815,7 @@ static inline void nanoArchInit(void)
  * \NOMANUAL
  */
 
-static inline void fiberRtnValueSet( struct tcs *fiber, unsigned int value)
+static inline void fiberRtnValueSet(struct tcs *fiber, unsigned int value)
 {
 	/* write into 'eax' slot created in _Swap() entry */
 

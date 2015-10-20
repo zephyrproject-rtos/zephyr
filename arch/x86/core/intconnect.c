@@ -185,7 +185,7 @@ static int _int_stub_alloc(void)
  *
  */
 
-void _IntVecSet( unsigned int vector, void (*routine)(void *), unsigned int dpl)
+void _IntVecSet(unsigned int vector, void (*routine)(void *), unsigned int dpl)
 {
 	unsigned long long *pIdtEntry;
 	unsigned int key;
@@ -271,7 +271,7 @@ void _IntVecSet( unsigned int vector, void (*routine)(void *), unsigned int dpl)
  * vectors remaining in the specified <priority> level.
  */
 
-int irq_connect( unsigned int irq, unsigned int priority,
+int irq_connect(unsigned int irq, unsigned int priority,
 	void (*routine)(void *parameter), void *parameter)
 {
 	unsigned char offsetAdjust;

@@ -70,7 +70,7 @@ static inline void nonEssentialTaskAbort(void)
  * \NOMANUAL
  */
 
-void _SysFatalErrorHandler( unsigned int reason, const NANO_ESF * pEsf)
+void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF * pEsf)
 {
 	nano_context_type_t curCtx = sys_execution_context_type_get();
 
