@@ -3,8 +3,6 @@
 
 
 
-.. include:: disclaimers.rst
-
 Getting Started
 ###############
 
