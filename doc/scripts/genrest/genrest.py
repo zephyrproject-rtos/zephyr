@@ -28,7 +28,7 @@ def print_items(items, outdir, indent):
             #print_with_indent("config {0}".format(item.get_name()), indent)
 
             var = "CONFIG_%s" %item.get_name()
-            f.write("     kconfig/%s.rst\n" %var)
+            f.write("     %s.rst\n" %var)
             config = open("%s/%s.rst" % (outdir, var), "w")
             config.write("\n.. _CONFIG_%s:\n" %item.get_name())
             config.write("\n%s\n" %var)
@@ -52,6 +52,15 @@ def print_items(items, outdir, indent):
 
 
 f = open("%s/index.rst" % (sys.argv[2]), "w")
+f.write(""".. _configuration:
+
+Configuration Options Reference Guide
+#####################################
+
+The configuration options' information is extracted directly from :program:`Kconfig` using the
+:file:`~/doc/scripts/genrest/genrest.py` script.
+
+""")
 f.write(".. toctree::\n     :maxdepth: 2\n\n")
 conf = kconfiglib.Config(sys.argv[1])
 print_items(conf.get_top_level_items(), sys.argv[2],  0)
