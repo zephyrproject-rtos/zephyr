@@ -198,8 +198,8 @@ static	void _rlrshift(uint32_t value[])
 }
 
  /*
-    64 bit divide by 5 function for _to_float.
-    The result is ROUNDED, not TRUNCATED.
+  * 64 bit divide by 5 function for _to_float.
+  * The result is ROUNDED, not TRUNCATED.
   */
 
 static	void _ldiv5(uint32_t value[])

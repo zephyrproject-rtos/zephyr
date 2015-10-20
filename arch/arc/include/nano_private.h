@@ -17,14 +17,14 @@
  */
 
 /*
-DESCRIPTION
-This file contains private nanokernel structures definitions and various other
-definitions for the ARCv2 processor architecture.
-
-This file is also included by assembly language files which must #define
-_ASMLANGUAGE before including this header file.  Note that nanokernel assembly
-source files obtains structure offset values via "absolute symbols" in the
-offsets.o module.
+ * DESCRIPTION
+ * This file contains private nanokernel structures definitions and various
+ * other definitions for the ARCv2 processor architecture.
+ *
+ * This file is also included by assembly language files which must #define
+ * _ASMLANGUAGE before including this header file.  Note that nanokernel
+ * assembly source files obtains structure offset values via "absolute
+ * symbols" in the offsets.o module.
  */
 
 #ifndef _NANO_PRIVATE_H
@@ -160,15 +160,16 @@ typedef struct firq_regs tFirqRegs;
 #ifndef _ASMLANGUAGE
 
 struct tcs {
-	struct tcs *link;          /* node in singly-linked list
-								* _nanokernel.fibers */
-	uint32_t flags;            /* bitmask of flags above */
-	uint32_t intlock_key;      /* interrupt key when relinquishing control */
-	int relinquish_cause;      /* one of the _CAUSE_xxxx definitions above */
-	unsigned int return_value; /* return value from _Swap */
-	int prio;                  /* fiber priority, -1 for a task */
+	struct tcs *link;         /* node in singly-linked list
+				   * _nanokernel.fibers
+				   */
+	uint32_t flags;           /* bitmask of flags above */
+	uint32_t intlock_key;     /* interrupt key when relinquishing control */
+	int relinquish_cause;     /* one of the _CAUSE_xxxx definitions above */
+	unsigned int return_value;/* return value from _Swap */
+	int prio;                 /* fiber priority, -1 for a task */
 #ifdef CONFIG_THREAD_CUSTOM_DATA
-	void *custom_data;         /* available for custom use */
+	void *custom_data;        /* available for custom use */
 #endif
 	struct coop coopReg;
 	struct preempt preempReg;

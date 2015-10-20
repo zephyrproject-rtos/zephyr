@@ -186,8 +186,9 @@ typedef volatile struct {
 	uint8_t u_7816[0x20 - 0x17];     /* 0x017-0x1F UART ISO-7816 standard */
 	uint8_t u_cea709_1[0x32 - 0x20]; /* 0x020-0x31 UART CEA8709.1 standard
 					    */
-	uint8_t z_reserv_statused038_03c[0x1000 - 0x32]; /* 0x032-0xFFF
-							    Reserved */
+	/* 0x032-0xFFF Reserved */
+	uint8_t z_reserv_statused038_03c[0x1000 - 0x32];
+
 } K20_UART_t; /* K20 Microntroller UART module */
 
 /** Device data structure */

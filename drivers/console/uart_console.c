@@ -17,10 +17,10 @@
  */
 
 /*
-  DESCRIPTION
-
-  Serial console driver.
-  Hooks into the printk and fputc (for printf) modules. Poll driven.
+ * DESCRIPTION
+ *
+ * Serial console driver.
+ * Hooks into the printk and fputc (for printf) modules. Poll driven.
  */
 
 #include <nanokernel.h>
@@ -51,6 +51,7 @@ static int consoleIn(void)
 {
 #ifdef UART_CONSOLE_DEV
 	unsigned char c;
+
 	if (uart_poll_in(UART_CONSOLE_DEV, &c) < 0)
 		return EOF;
 	else

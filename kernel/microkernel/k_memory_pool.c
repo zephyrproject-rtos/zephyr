@@ -332,7 +332,8 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 		defrag(P,
 		       P->nr_of_frags - 1, /* start from the smallest blocks */
 		       startindex); /* but only until the requested blocksize
-				       (fragmentation level) !! */
+				     * (fragmentation level) !! 
+				     */
 
 		found = search_block_on_frag_level(&(fr_table[index]), &i);
 		if (found != NULL) {
@@ -344,8 +345,9 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 
 	/* end of list and i is index of first empty entry in blocktable */
 	{
+		/* get a block of one size larger */
 		larger_block = get_block_recusive(
-			P, index - 1, startindex); /* get a block of one size larger */
+			P, index - 1, startindex);
 	}
 
 	if (larger_block != NULL) {
@@ -366,7 +368,8 @@ static char *get_block_recusive(struct pool_struct *P, int index, int startindex
 		defrag(P,
 		       P->nr_of_frags - 1, /* start from the smallest blocks */
 		       startindex); /* but only until the requested blocksize
-				       (fragmentation level) !! */
+				     * (fragmentation level) !!
+				     */
 
 		found = search_block_on_frag_level(&(fr_table[index]), &i);
 		if (found != NULL) {
@@ -398,7 +401,8 @@ void _k_block_waiters_get(struct k_args *A)
 	int start_size, offset;
 
 	curr_task = P->waiters;
-	prev_task = (struct k_args *)&(P->waiters); /* forw is first field in struct */
+	/* forw is first field in struct */
+	prev_task = (struct k_args *)&(P->waiters);
 
 	/* loop all waiters */
 	while (curr_task != NULL) {

@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This header file is used to specify and describe board-level aspects for
-the 'ia32_pci' platform.
+ * DESCRIPTION
+ * This header file is used to specify and describe board-level aspects for
+ * the 'ia32_pci' platform.
  */
 
 #ifndef __INCboardh

@@ -33,7 +33,8 @@ struct ring_buf {
 	uint32_t head;	 /**< Index in buf for the head element */
 	uint32_t tail;	 /**< Index in buf for the tail element */
 	uint32_t dropped_put_count; /**< Running tally of the number of failed
-				     * put attempts */
+				     * put attempts
+				     */
 	uint32_t size;   /**< Size of buf in 32-bit chunks */
 	uint32_t *buf;	 /**< Memory region for stored entries */
 	uint32_t mask;   /**< Modulo mask if size is a power of 2 */
@@ -46,7 +47,8 @@ struct ring_buf {
  * will not need to use expensive modulo operations.
  *
  * @param name File-scoped name of the ring buffer to declare
- * @param pow Create a buffer of 2^pow 32-bit elements */
+ * @param pow Create a buffer of 2^pow 32-bit elements 
+ */
 #define SYS_RING_BUF_DECLARE_POW2(name, pow) \
 	static uint32_t _ring_buffer_data_##name[1 << (pow)]; \
 	struct ring_buf name = { \
@@ -62,7 +64,8 @@ struct ring_buf {
  * but will use more expensive modulo operations to maintain itself.
  *
  * @param name File-scoped name of the ring buffer to declare
- * @param size32 Size of buffer in 32-bit elements */
+ * @param size32 Size of buffer in 32-bit elements
+ */
 #define SYS_RING_BUF_DECLARE_SIZE(name, size32) \
 	static uint32_t _ring_buffer_data_##name[size32]; \
 	struct ring_buf name = { \
@@ -100,7 +103,8 @@ static inline void sys_ring_buf_init(struct ring_buf *buf, uint32_t size,
 /**
  * @brief Determine if a ring buffer is empty
  *
- * @return nonzero if the buffer is empty */
+ * @return nonzero if the buffer is empty
+ */
 static inline int sys_ring_buf_is_empty(struct ring_buf *buf)
 {
 	return (buf->head == buf->tail);

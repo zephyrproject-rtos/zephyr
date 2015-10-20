@@ -17,20 +17,20 @@
  */
 
 /*
-DESCRIPTION
-Vector table with exceptions filled in. The reset vector is the system entry
-point, ie. the first instruction executed.
-
-The table is populated with all the system exception handlers. No exception
-should not be triggered until the kernel is ready to handle them.
-
-We are using a C file instead of an assembly file (like the ARM vector table)
-to work around an issue with the assembler where:
-
-  .word <function>
-
-statements would end up with the two half-words of the functions' addresses
-swapped.
+ * DESCRIPTION
+ * Vector table with exceptions filled in. The reset vector is the system entry
+ * point, ie. the first instruction executed.
+ *
+ * The table is populated with all the system exception handlers. No exception
+ * should not be triggered until the kernel is ready to handle them.
+ *
+ * We are using a C file instead of an assembly file (like the ARM vector table)
+ * to work around an issue with the assembler where:
+ *
+ *   .word <function>
+ *
+ * statements would end up with the two half-words of the functions' addresses
+ * swapped.
  */
 
 #include <stdint.h>

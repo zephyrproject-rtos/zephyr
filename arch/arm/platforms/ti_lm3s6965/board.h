@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This header file is used to specify and describe board-level aspects for
-the 'ti_lm3s6965' platform.
+ * DESCRIPTION
+ * This header file is used to specify and describe board-level aspects for
+ * the 'ti_lm3s6965' platform.
  */
 
 #ifndef _BOARD__H_

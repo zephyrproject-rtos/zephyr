@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
+ * DESCRIPTION
+ * ARC-specific nanokernel ffs interface. Included by ARC/arch.h.
  */
 
 #ifndef _ARCH_ARC_V2_FFS_H_

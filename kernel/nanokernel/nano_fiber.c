@@ -88,8 +88,10 @@ void _fiber_start(char *pStack,
 			priority,
 			options);
 
-	/* _new_thread() has already set the flags depending on the 'options'
-	 * and 'priority' parameters passed to it */
+	/*
+	 * _new_thread() has already set the flags depending on the 'options'
+	 * and 'priority' parameters passed to it
+	 */
 
 	/* lock interrupts to prevent corruption of the runnable fiber list */
 

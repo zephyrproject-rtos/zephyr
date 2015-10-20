@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-
-This module implements the PCI config space access functions
-
+ * DESCRIPTION
+ *
+ * This module implements the PCI config space access functions
+ *
  */
 
 #include <nanokernel.h>

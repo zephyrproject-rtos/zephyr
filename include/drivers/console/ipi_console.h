@@ -26,8 +26,10 @@
 #define IPI_CONSOLE_STDOUT	(1 << 0)
 #define IPI_CONSOLE_PRINTK	(1 << 1)
 
-/* Good way to determine these numbers other than trial-and-error?
- * using printf() in the fiber seems to require a lot more stack space */
+/*
+ * Good way to determine these numbers other than trial-and-error?
+ * using printf() in the fiber seems to require a lot more stack space
+ */
 #define IPI_CONSOLE_STACK_SIZE		512
 #define IPI_CONSOLE_PRI			2
 
@@ -35,27 +37,35 @@ struct ipi_console_receiver_config_info {
 	/** Name of the low-level IPI driver to bind to */
 	char *bind_to;
 
-	/** Stack for the receiver's fiber, which prints out messages as
-	 * they come in. Should be sized IPI_CONSOLE_STACK_SIZE */
+	/**
+	 * Stack for the receiver's fiber, which prints out messages as
+	 * they come in. Should be sized IPI_CONSOLE_STACK_SIZE
+	 */
 	char *fiber_stack;
 
-	/** Ring buffer data area for stashing characters from the interrupt
-	 * callback */
+	/**
+	 * Ring buffer data area for stashing characters from the interrupt
+	 * callback
+	 */
 	uint32_t *ring_buf_data;
 
 	/** Size of ring_buf_data in 32-bit chunks */
 	unsigned int rb_size32;
 
-	/** Line buffer for incoming messages, characters accumulate here
+	/**
+	 * Line buffer for incoming messages, characters accumulate here
 	 * and then are sent to printk() once full (including a trailing NULL)
-	 * or a carriage return seen */
+	 * or a carriage return seen
+	 */
 	char *line_buf;
 
 	/** Size in bytes of the line buffer. Must be at least 2 */
 	unsigned int lb_size;
 
-	/** Destination for received console messages, one of
-	 * IPI_CONSOLE_STDOUT or IPI_CONSOLE_PRINTK */
+	/**
+	 * Destination for received console messages, one of
+	 * IPI_CONSOLE_STDOUT or IPI_CONSOLE_PRINTK
+	 */
 	unsigned int flags;
 };
 
@@ -74,8 +84,10 @@ struct ipi_console_sender_config_info {
 	/** Name of the low-level driver to bind to */
 	char *bind_to;
 
-	/** Source of messages to forward, hooks will be installed.
-	 * Can be IPI_CONSOLE_STDOUT, IPI_CONSOLE_PRINTK, or both */
+	/**
+	 * Source of messages to forward, hooks will be installed.
+	 * Can be IPI_CONSOLE_STDOUT, IPI_CONSOLE_PRINTK, or both
+	 */
 	int flags;
 };
 

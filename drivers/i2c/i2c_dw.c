@@ -64,9 +64,10 @@ static inline void _i2c_dw_data_ask(struct device *dev, uint8_t restart)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	uint32_t data;
+
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
-	uint32_t data;
 
 	/* No more bytes to request */
 	if (dw->request_bytes == 0) {
@@ -95,6 +96,7 @@ static void _i2c_dw_data_read(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
+
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
 
@@ -123,9 +125,10 @@ static void _i2c_dw_data_send(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	uint32_t data = 0;
+
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
-	uint32_t data = 0;
 
 	/* Nothing to send anymore, mask the interrupt */
 	if (dw->tx_len == 0) {
@@ -170,10 +173,11 @@ static inline void _i2c_dw_transfer_complete(struct device *dev)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
 	uint32_t cb_type = 0;
 	uint32_t value;
+
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
 
 	if (dw->state == I2C_DW_CMD_ERROR) {
 		cb_type = I2C_CB_ERROR;
@@ -200,10 +204,10 @@ void i2c_dw_isr(struct device *port)
 {
 	struct i2c_dw_rom_config const * const rom = port->config->config_info;
 	struct i2c_dw_dev_config * const dw = port->driver_data;
+	uint32_t value = 0;
+
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
-
-	uint32_t value = 0;
 
 #if CONFIG_SHARED_IRQ
 	/* If using with shared IRQ, this function will be called
@@ -390,10 +394,11 @@ static int _i2c_dw_transfer_init(struct device *dev,
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
 	uint32_t value = 0;
 	int ret;
+
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
 
 	dw->state |= I2C_DW_BUSY;
 	if (write_len > 0) {
@@ -440,9 +445,10 @@ static int i2c_dw_transfer(struct device *dev,
 			   uint16_t slave_address, uint32_t flags)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
+	int ret;
+
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)rom->base_address;
-	int ret;
 
 	/* First step, check if there is current activity */
 	if (regs->ic_status.bits.activity) {
@@ -481,11 +487,12 @@ static int i2c_dw_poll_transfer(struct device *dev,
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
 	uint32_t value = 0;
 	uint32_t start_time;
 	int ret = DEV_OK;
+
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
 
 	if (!regs->ic_con.bits.master_mode) {
 		/* Only acting as master is supported */
@@ -592,10 +599,11 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 {
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
 	uint32_t	value = 0;
 	uint32_t	rc = DEV_OK;
+
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
 
 	dw->app_config.raw = config;
 
@@ -758,6 +766,7 @@ int i2c_dw_initialize(struct device *port)
 {
 	struct i2c_dw_rom_config const * const rom = port->config->config_info;
 	struct i2c_dw_dev_config * const dev = port->driver_data;
+
 	volatile struct i2c_dw_registers *regs;
 
 	if (!i2c_dw_pci_setup(port)) {

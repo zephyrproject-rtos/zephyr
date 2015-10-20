@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-Provides a boot time handler that simply hangs in a sleep loop, and a run time
-handler that resets the CPU. Also provides a mechanism for hooking a custom
-run time handler.
+ * DESCRIPTION
+ * Provides a boot time handler that simply hangs in a sleep loop, and a run
+ * time handler that resets the CPU. Also provides a mechanism for hooking a
+ * custom run time handler.
  */
 
 #include <nanokernel.h>

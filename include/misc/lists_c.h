@@ -24,8 +24,8 @@ extern "C" {
 #endif
 
 /**
-Example code from list insertion etc
- *******************************************************************************/
+ * Example code from list insertion etc
+ ******************************************************************************/
 
 #include <misc/lists.h>
 

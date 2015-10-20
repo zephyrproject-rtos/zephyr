@@ -1,8 +1,7 @@
 /** @file
- @brief Network buffer API
-
- Network data is passed between application and IP stack via
- a net_buf struct.
+ * @brief Network buffer API
+ * 
+ * Network data is passed between application and IP stack via a net_buf struct.
  */
 
 /*

@@ -17,33 +17,34 @@
  */
 
 /*
-DESCRIPTION
-This script defines the memory location of the various sections that make up
-a Zephyr Kernel image. This file is used by the linker.
-
-This script places the various sections of the image according to what features
-are enabled by the kernel's configuration options.
-
-For a build that does not use the execute in place (XIP) feature, the script
-generates an image suitable for loading into and executing from RAM by placing
-all the sections adjacent to each other.  There is also no separate load
-address for the DATA section which means it doesn't have to be copied into RAM.
-
-For builds using XIP, there is a different load memory address (LMA) and
-virtual memory address (VMA) for the DATA section.  In this case the DATA
-section is copied into RAM at runtime.
-
-When building an XIP image the data section is placed into ROM.  In this case,
-the LMA is set to __data_rom_start so the data section is concatenated at the
-end of the RODATA section.  At runtime, the DATA section is copied into the RAM
-region so it can be accessed with read and write permission.
-
-Most symbols defined in the sections below are subject to be referenced in the
-Zephyr Kernel image. If a symbol is used but not defined the linker will emit an
-undefined symbol error.
-
-Please do not change the order of the section as the nanokernel expects this
-order when programming the MMU.
+ * DESCRIPTION
+ * This script defines the memory location of the various sections that make up
+ * a Zephyr Kernel image. This file is used by the linker.
+ *
+ * This script places the various sections of the image according to what
+ * features are enabled by the kernel's configuration options.
+ *
+ * For a build that does not use the execute in place (XIP) feature, the script
+ * generates an image suitable for loading into and executing from RAM by
+ * placing all the sections adjacent to each other.  There is also no separate
+ * load address for the DATA section which means it doesn't have to be copied
+ * into RAM.
+ *
+ * For builds using XIP, there is a different load memory address (LMA) and
+ * virtual memory address (VMA) for the DATA section.  In this case the DATA
+ * section is copied into RAM at runtime.
+ *
+ * When building an XIP image the data section is placed into ROM.  In this
+ * case, the LMA is set to __data_rom_start so the data section is concatenated
+ * at the end of the RODATA section.  At runtime, the DATA section is copied
+ * into the RAM region so it can be accessed with read and write permission.
+ *
+ * Most symbols defined in the sections below are subject to be referenced in
+ * the Zephyr Kernel image. If a symbol is used but not defined the linker will
+ * emit an undefined symbol error.
+ *
+ * Please do not change the order of the section as the nanokernel expects this
+ * order when programming the MMU.
  */
 
 #define _LINKER

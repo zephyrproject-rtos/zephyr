@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-Exception/interrupt context helpers.
+ * DESCRIPTION
+ * Exception/interrupt context helpers.
  */
 
 #ifndef _ARM_CORTEXM_ISR__H_

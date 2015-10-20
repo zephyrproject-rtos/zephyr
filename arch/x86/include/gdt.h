@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This file provides definitions for the Global Descriptor Table (GDT) for the
-IA-32 architecture.
+ * DESCRIPTION
+ * This file provides definitions for the Global Descriptor Table (GDT) for the
+ * IA-32 architecture.
  */
 
 #ifndef _GDT_H

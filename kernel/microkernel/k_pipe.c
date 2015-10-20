@@ -62,10 +62,12 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 {
 	struct k_args A;
 
-	/* some users do not check the FUNCTION return value,
-	   but immediately use iNbrBytesRead; make sure it always
-	   has a good value, even when we return failure immediately
-	   (see below) */
+	/*
+	 * some users do not check the FUNCTION return value,
+	 * but immediately use iNbrBytesRead; make sure it always
+	 * has a good value, even when we return failure immediately
+	 * (see below)
+	 */
 
 	*piNbrBytesRead = 0;
 
@@ -73,8 +75,10 @@ int _task_pipe_get(kpipe_t Id, void *pBuffer,
 		return RC_ALIGNMENT;
 	}
 	if (unlikely(0 == iNbrBytesToRead)) {
-		/* not allowed because enlisted requests with zero size
-		   will hang in _k_pipe_process() */
+		/*
+		 * not allowed because enlisted requests with zero size
+		 * will hang in _k_pipe_process()
+		 */
 		return RC_FAIL;
 	}
 	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut)) {
@@ -112,10 +116,12 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 {
 	struct k_args A;
 
-	/* some users do not check the FUNCTION return value,
-	   but immediately use iNbrBytesWritten; make sure it always
-	   has a good value, even when we return failure immediately
-	   (see below) */
+	/*
+	 * some users do not check the FUNCTION return value,
+	 * but immediately use iNbrBytesWritten; make sure it always
+	 * has a good value, even when we return failure immediately
+	 * (see below)
+	 */
 
 	*piNbrBytesWritten = 0;
 
@@ -123,8 +129,10 @@ int _task_pipe_put(kpipe_t Id, void *pBuffer,
 		return RC_ALIGNMENT;
 	}
 	if (unlikely(0 == iNbrBytesToWrite)) {
-		/* not allowed because enlisted requests with zero size
-		   will hang in _k_pipe_process() */
+		/*
+		 * not allowed because enlisted requests with zero size
+		 * will hang in _k_pipe_process()
+		 */
 		return RC_FAIL;
 	}
 	if (unlikely(_0_TO_N == Option && TICKS_NONE != TimeOut)) {
@@ -169,8 +177,10 @@ int _task_pipe_block_put(kpipe_t Id, struct k_block Block,
 		return RC_ALIGNMENT;
 	}
 	if (unlikely(0 == iSize2Xfer)) {
-		/* not allowed because enlisted requests with zero size
-		   will hang in _k_pipe_process() */
+		/*
+		 * not allowed because enlisted requests with zero size
+		 * will hang in _k_pipe_process()
+		 */
 		return RC_FAIL;
 	}
 

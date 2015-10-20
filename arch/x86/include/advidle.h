@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 /*
-DESCRIPTION
-This header file specifies the custom advanced idle management interface.
-All of the APIs declared here must be supplied by the custom advanced idle
-management system, namely the _AdvIdleCheckSleep(), _AdvIdleFunc()
-and _AdvIdleStart() functions.
+ * DESCRIPTION
+ * This header file specifies the custom advanced idle management interface.
+ * All of the APIs declared here must be supplied by the custom advanced idle
+ * management system, namely the _AdvIdleCheckSleep(), _AdvIdleFunc()
+ * and _AdvIdleStart() functions.
  */
 
 #ifndef __INCadvidle

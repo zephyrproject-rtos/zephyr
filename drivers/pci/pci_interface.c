@@ -17,10 +17,9 @@
  */
 
 /*
-DESCRIPTION
-
-This module implements the PCI H/W access functions.
-
+ * DESCRIPTION
+ *
+ * This module implements the PCI H/W access functions.
  */
 
 #include <nanokernel.h>

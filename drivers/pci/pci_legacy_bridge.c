@@ -17,11 +17,11 @@
  */
 
 /*
-DESCRIPTION
-Module provides routines for utilizing the PCI legacy bridge, including
-detection of the bridge and using the bridge to configure the routing between
-PCI interrupt pins and IRQs.
-*/
+ * DESCRIPTION
+ * Module provides routines for utilizing the PCI legacy bridge, including
+ * detection of the bridge and using the bridge to configure the routing between
+ * PCI interrupt pins and IRQs.
+ */
 #include <nanokernel.h>
 #include <arch/cpu.h>
 

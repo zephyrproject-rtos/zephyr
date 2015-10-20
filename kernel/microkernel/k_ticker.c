@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-This module implements the microkernel's tick event handler.
+ * DESCRIPTION
+ * This module implements the microkernel's tick event handler.
  */
 
 #include <nanokernel.h>

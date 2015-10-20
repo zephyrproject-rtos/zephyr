@@ -17,21 +17,21 @@
  */
 
 /*
-DESCRIPTION
-This module defines the System Control Peripheral Registers for TI LM3S6965
-processor. The registers defined are in region 0x400fe000.
-
-  System Control	0x400fe000
-
-These modules are not defined:
-
-  Hibernation Module	0x400fc000
-  Internal Memory	0x400fd000
-  Hibernation Module	0x400fc000
-
-The registers and bit field names are taken from the 'Stellaris LM3S6965
-Microcontroller DATA SHEET (DS-LM3S6965-12746.2515) revision H' document,
-section 5.4/5.5, pp .184-200.
+ * DESCRIPTION
+ * This module defines the System Control Peripheral Registers for TI LM3S6965
+ * processor. The registers defined are in region 0x400fe000.
+ *
+ *   System Control	0x400fe000
+ *
+ * These modules are not defined:
+ *
+ *   Hibernation Module	0x400fc000
+ *   Internal Memory	0x400fd000
+ *   Hibernation Module	0x400fc000
+ *
+ * The registers and bit field names are taken from the 'Stellaris LM3S6965
+ * Microcontroller DATA SHEET (DS-LM3S6965-12746.2515) revision H' document,
+ * section 5.4/5.5, pp .184-200.
  */
 
 #ifndef _SCP_H_

@@ -177,9 +177,11 @@ struct _k_pipe_marker_list {
 
 typedef enum {
 	BUFF_EMPTY, /* buffer is empty, disregarding the pending data Xfers
-		       (reads) still finishing up */
+		     * (reads) still finishing up
+		     */
 	BUFF_FULL, /* buffer is full, disregarding the pending data Xfers
-		      (writes) still finishing up */
+		    * (writes) still finishing up
+		    */
 	BUFF_OTHER
 } _K_PIPE_BUFF_STATE;
 

@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-When GDB is enabled, the static IRQ vector table needs to install the
-_irq_vector_table_entry_with_gdb_stub stub to do some work before calling the
-user-installed ISRs.
+ * DESCRIPTION
+ * When GDB is enabled, the static IRQ vector table needs to install the
+ * _irq_vector_table_entry_with_gdb_stub stub to do some work before calling the
+ * user-installed ISRs.
  */
 
 #include <toolchain.h>

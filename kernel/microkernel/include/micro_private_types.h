@@ -185,8 +185,7 @@ struct _pipe_req_arg {
 
 struct _pipe_xfer_req_arg {
 	struct req_info req_info;
-	void *data_ptr; /* if NULL, data is embedded in
-			     cmd packet		    */
+	void *data_ptr; /* if NULL, data is embedded in cmd packet */
 	int total_size;      /* total size of data/free space    */
 	int xferred_size;    /* size of data ALREADY Xferred	    */
 	PIPE_REQUEST_STATUS status; /* status of processing of request  */
@@ -206,11 +205,14 @@ struct _pipe_xfer_ack_arg {
 	struct _k_pipe_struct *pipe_ptr;
 	XFER_TYPE xfer_type; /* W2B, B2R or W2R		    */
 	struct k_args *writer_ptr;    /* if there's a writer involved,
-				 this is the link to it      */
+				       * this is the link to it
+				       */
 	struct k_args *reader_ptr; /* if there's a reader involved,
-				 this is the link to it      */
-	int id; /* if it is a Xfer to/from a buffer,
-		   this is the registered Xfer's ID */
+				    * this is the link to it
+				    */
+	int id; /* if it is a Xfer to/from a buffer, this is the registered
+		 * Xfer's ID
+		 */
 	int size; /* amount of data Xferred	    */
 };
 

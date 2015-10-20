@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-Commonly used macros and defines for linker script.
+ * DESCRIPTION
+ * Commonly used macros and defines for linker script.
  */
 #ifndef _LINKERDEFSARCH_H
 #define _LINKERDEFSARCH_H
@@ -35,14 +35,14 @@ Commonly used macros and defines for linker script.
 	#define INTERRUPT_VECTORS_ALLOCATED KEEP(*(int_vector_alloc))
 #else
 	/*
-	 * Save space for the real IDT to prevent symbols from shifting. Note that
-	 * an IDT entry is 8 bytes in size.
+	 * Save space for the real IDT to prevent symbols from shifting. Note
+	 * that an IDT entry is 8 bytes in size.
 	 */
 	#define STATIC_IDT . += (8 * CONFIG_IDT_NUM_VECTORS);
 
 	/*
-	 * Save space for the real _interrupt_vectors_allocated[] array to prevent
-	 * symbols from shifting.
+	 * Save space for the real _interrupt_vectors_allocated[] array to
+	 * prevent symbols from shifting.
 	 */
 	#define INTERRUPT_VECTORS_ALLOCATED . += ((CONFIG_IDT_NUM_VECTORS + 31) / 32);
 #endif

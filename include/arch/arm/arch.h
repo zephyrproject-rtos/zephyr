@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-This header contains the ARM specific nanokernel interface.  It is
-included by the nanokernel interface architecture-abstraction header
-(nanokernel/cpu.h)
+ * DESCRIPTION
+ * This header contains the ARM specific nanokernel interface.  It is
+ * included by the nanokernel interface architecture-abstraction header
+ * (nanokernel/cpu.h)
  */
 
 #ifndef _ARM_ARCH__H_

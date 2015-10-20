@@ -17,16 +17,16 @@
  */
 
 /*
-DESCRIPTION
-This file contains the IRQ part of the vector table. It is meant to be used
-for one of two cases:
-
-a) When software-managed ISRs (SW_ISR_TABLE) is enabled, and in that case it
-   binds _IsrWrapper() to all the IRQ entries in the vector table.
-
-b) When the BSP is written so that device ISRs are installed directly in the
-   vector table, they are enumerated here.
-*/
+ * DESCRIPTION
+ * This file contains the IRQ part of the vector table. It is meant to be used
+ * for one of two cases:
+ *
+ * a) When software-managed ISRs (SW_ISR_TABLE) is enabled, and in that case it
+ *    binds _IsrWrapper() to all the IRQ entries in the vector table.
+ *
+ * b) When the BSP is written so that device ISRs are installed directly in the
+ *    vector table, they are enumerated here.
+ */
 
 #include <toolchain.h>
 #include <sections.h>

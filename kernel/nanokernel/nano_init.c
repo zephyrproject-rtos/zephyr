@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-This module contains routines that are used to initialize the nanokernel.
+ * DESCRIPTION
+ * This module contains routines that are used to initialize the nanokernel.
  */
 
 #include <offsets.h>

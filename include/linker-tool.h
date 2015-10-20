@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This header file is used to automatically select the proper set of macro
-definitions (based on the toolchain) for the linker script.
+ * DESCRIPTION
+ * This header file is used to automatically select the proper set of macro
+ * definitions (based on the toolchain) for the linker script.
  */
 
 #ifndef __LINKER_TOOL_H

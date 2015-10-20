@@ -112,9 +112,8 @@ void _k_event_test(struct k_args *A)
 				}
 #endif
 			} else {
-				A->Time.rcode = RC_FAIL; /* already a
-								waiter
-								present */
+				/* already a waiter present */
+				A->Time.rcode = RC_FAIL;
 			}
 		} else {
 			/* Caller will not wait for the event */

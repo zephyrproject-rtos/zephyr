@@ -11,13 +11,12 @@
  */
 
 /*
-@deftypefn Supplemental int strncasecmp (const char *@var{s1}, const char *@var{s2})
-
-A case-insensitive @code{strncmp}.
-
-@end deftypefn
-
-*/
+ * @deftypefn Supplemental int strncasecmp (const char *@var{s1}, const char *@var{s2})
+ * 
+ * A case-insensitive @code{strncmp}.
+ * 
+ * @end deftypefn
+ */
 
 /* From:
  * http://opensource.apple.com/source/gcc_os/gcc_os-1671/libiberty/strncasecmp.c

@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-This module contains definitions for the memory map parts specific to the
-CORTEX-M3/M4 series of processors. It is included by nanokernel/ARM/memory_map.h
-
+ * DESCRIPTION
+ * This module contains definitions for the memory map parts specific to the
+ * CORTEX-M3/M4 series of processors. It is included by
+ * nanokernel/ARM/memory_map.h
  */
 
 #ifndef _MEMORY_MAP_M3_M4__H_

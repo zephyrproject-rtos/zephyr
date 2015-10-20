@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-This module disables the Intel 8259A PIC (Programmable Interrupt Controller)
-to prevent it from generating spurious interrupts.
-*/
+ * DESCRIPTION
+ * This module disables the Intel 8259A PIC (Programmable Interrupt Controller)
+ * to prevent it from generating spurious interrupts.
+ */
 
 
 #include <nanokernel.h>

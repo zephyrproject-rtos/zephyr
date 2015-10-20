@@ -17,13 +17,13 @@
  */
 
 /*
-DESCRIPTION
-
-Initialization of full C support: zero the .bss, copy the .data if XIP,
-call _Cstart().
-
-Stack is available in this module, but not the global data/bss until their
-initialization is performed.
+ * DESCRIPTION
+ *
+ * Initialization of full C support: zero the .bss, copy the .data if XIP,
+ * call _Cstart().
+ *
+ * Stack is available in this module, but not the global data/bss until their
+ * initialization is performed.
  */
 
 #include <stdint.h>

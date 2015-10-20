@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-This module provides the _NanoFatalErrorHandler() routine for ARM Cortex-M.
+ * DESCRIPTION
+ * This module provides the _NanoFatalErrorHandler() routine for ARM Cortex-M.
  */
 
 #include <toolchain.h>

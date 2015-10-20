@@ -17,10 +17,10 @@
  */
 
 /*
-  DESCRIPTION
-  Macros to abstract compiler capabilities for GCC toolchain.
-
-  \NOMANUAL
+ * DESCRIPTION
+ * Macros to abstract compiler capabilities for GCC toolchain.
+ *
+ * \NOMANUAL
  */
 
 #include <toolchain/common.h>

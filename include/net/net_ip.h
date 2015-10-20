@@ -1,7 +1,7 @@
 /** @file
- @brief IPv6 and IPv4 definitions
-
- Generic IPv6 and IPv4 address definitions.
+ * @brief IPv6 and IPv4 definitions
+ * 
+ * Generic IPv6 and IPv4 address definitions.
  */
 
 /*

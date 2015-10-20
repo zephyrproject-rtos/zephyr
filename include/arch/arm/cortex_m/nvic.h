@@ -17,21 +17,21 @@
  */
 
 /*
-DESCRIPTION
-Provide an interface to the Nested Vectored Interrupt Controller found on
-ARM Cortex-M processors.
-
-The API does not account for all possible usages of the NVIC, only the
-functionalities needed by the kernel.
-
-The same effect can be achieved by directly writing in the registers of the
-NVIC, with the layout available from scs.h, using the __scs.nvic data
-structure (or hardcoded values), but these APIs are less error-prone,
-especially for registers with multiple instances to account for potentially
-240 interrupt lines. If access to a missing functionality is needed, this is
-the way to implement it.
-
-Supports up to 240 IRQs and 256 priority levels.
+ * DESCRIPTION
+ * Provide an interface to the Nested Vectored Interrupt Controller found on
+ * ARM Cortex-M processors.
+ *
+ * The API does not account for all possible usages of the NVIC, only the
+ * functionalities needed by the kernel.
+ *
+ * The same effect can be achieved by directly writing in the registers of the
+ * NVIC, with the layout available from scs.h, using the __scs.nvic data
+ * structure (or hardcoded values), but these APIs are less error-prone,
+ * especially for registers with multiple instances to account for potentially
+ * 240 interrupt lines. If access to a missing functionality is needed, this is
+ * the way to implement it.
+ *
+ * Supports up to 240 IRQs and 256 priority levels.
  */
 
 #ifndef _NVIC_H_

@@ -17,12 +17,12 @@
  */
 
 /*
-DESCRIPTION
-This module provides routines to initialize and support board-level hardware
-for the galileo platform.
-
-Implementation Remarks:
-Handlers for the secondary serial port have not been added.
+ * DESCRIPTION
+ * This module provides routines to initialize and support board-level hardware
+ * for the galileo platform.
+ *
+ * Implementation Remarks:
+ * Handlers for the secondary serial port have not been added.
  */
 
 #include <nanokernel.h>

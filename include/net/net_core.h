@@ -1,7 +1,7 @@
 /** @file
- @brief Network core definitions
-
- Definitions for networking support.
+ * @brief Network core definitions
+ *
+ * Definitions for networking support.
  */
 
 /*

@@ -52,7 +52,8 @@ FUNC_ALIAS(_timer_start, nano_task_timer_start, void);
  */
 void _timer_start(struct nano_timer *timer, /* timer to start */
 				       int ticks /* number of system ticks
-						    before expiry */
+						  * before expiry
+						  */
 				       )
 {
 	unsigned int imask;

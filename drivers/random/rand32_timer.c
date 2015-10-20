@@ -17,11 +17,11 @@
  */
 
 /*
-DESCRIPTION
-This module provides a non-random implementation of sys_rand32_get(), which is
-not meant to be used in a final product as a truly random number generator. It
-was provided to allow testing on a platform that does not (yet) provide a
-random number generator.
+ * DESCRIPTION
+ * This module provides a non-random implementation of sys_rand32_get(), which
+ * is not meant to be used in a final product as a truly random number
+ * generator. It was provided to allow testing on a platform that does not (yet)
+ * provide a random number generator.
  */
 
 #include <drivers/rand32.h>

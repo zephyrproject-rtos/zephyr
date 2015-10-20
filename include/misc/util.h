@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-Misc utilities usable by nanokernel, microkernel, and application code.
+ * DESCRIPTION
+ * Misc utilities usable by nanokernel, microkernel, and application code.
  */
 
 #ifndef _UTIL__H_
@@ -31,7 +31,8 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 /* Helper to pass a int as a pointer or vice-versa.
- * Those are available for 32 bits architectures: */
+ * Those are available for 32 bits architectures:
+ */
 #define POINTER_TO_UINT(x) ((uint32_t) (x))
 #define UINT_TO_POINTER(x) ((void *) (x))
 #define POINTER_TO_INT(x)  ((int32_t) (x))

@@ -18,8 +18,8 @@
 
 
 /* Implementation remarks:
-- when using a floating end pointer: do not use pipe_desc->iBuffsize for
-  (pipe_desc->end_ptr - pipe_desc->begin_ptr)
+ * - when using a floating end pointer: do not use pipe_desc->iBuffsize for
+ *  (pipe_desc->end_ptr - pipe_desc->begin_ptr)
  */
 
 #include <microkernel/base_api.h>
@@ -31,21 +31,17 @@
 
 #define STORE_NBR_MARKERS
 /* NOTE: the number of pending write and read Xfers is always stored,
-   as it is required for the pipes to function properly. It is stored in the
-   pipe descriptor fields num_pending_writes and num_pending_reads.
-
-   In the Writer and Reader MarkersList, the number of markers (==nbr. of
-   unreleased Xfers)
-   is monitored as well. They actually equal num_pending_writes and
-   num_pending_reads.
-   Their existence depends on STORE_NBR_MARKERS. A reason to have them
-   additionally is that
-   some extra consistency checking is performed in the markers manipulation
-   functionality
-   itself.
-   Drawback: double storage of nbr. of pending write Xfers (but for test
-   purposes this is
-   acceptable I think)
+ * as it is required for the pipes to function properly. It is stored in the
+ * pipe descriptor fields num_pending_writes and num_pending_reads.
+ *
+ * In the Writer and Reader MarkersList, the number of markers (==nbr. of
+ * unreleased Xfers) is monitored as well. They actually equal
+ * num_pending_writes and num_pending_reads.
+ * Their existence depends on STORE_NBR_MARKERS. A reason to have them
+ * additionally is that some extra consistency checking is performed in the
+ * markers manipulation functionality itself.
+ * Drawback: double storage of nbr. of pending write Xfers (but for test
+ * purposes this is acceptable I think)
  */
 
 #define CHECK_BUFFER_POINTER(data_ptr) \
@@ -206,28 +202,29 @@ static void MarkersClear(struct _k_pipe_marker_list *pMarkerList)
 /**/
 
 /* note on setting/clearing markers/guards:
-
-  If there is at least one marker, there is a guard and equals one of the
-  markers; if there are no markers (*), there is no guard.
-  Consequently, if a marker is add when there were none, the guard will equal
-  it. If additional markers are add, the guard will not change.
-  However, if a marker is deleted:
-    if it equals the guard a new guard must be selected (**)
-    if not, guard doesn't change
-
-  (*) we need to housekeep how much markers there are or we can inspect the
-  guard
-  (**) for this, the complete markers table needs to be investigated
+ *
+ * If there is at least one marker, there is a guard and equals one of the
+ * markers; if there are no markers (*), there is no guard.
+ * Consequently, if a marker is add when there were none, the guard will equal
+ * it. If additional markers are add, the guard will not change.
+ * However, if a marker is deleted:
+ *  if it equals the guard a new guard must be selected (**)
+ *  if not, guard doesn't change
+ *
+ * (*) we need to housekeep how much markers there are or we can inspect the
+ * guard
+ * (**) for this, the complete markers table needs to be investigated
  */
 
 /**/
 
-/* This function will see if one or more 'areas' in the buffer
-   can be made available (either for writing xor reading).
-   Note: such a series of areas starts from the beginning.
+/*
+ * This function will see if one or more 'areas' in the buffer can be made
+ * available (either for writing xor reading).
+ * Note: such a series of areas starts from the beginning.
  */
 static int ScanMarkers(struct _k_pipe_marker_list *pMarkerList,
-					   int *piSizeBWA, int *piSizeAWA, int *piNbrPendingXfers)
+		   int *piSizeBWA, int *piSizeAWA, int *piNbrPendingXfers)
 {
 	struct _k_pipe_marker *pM;
 	bool bMarkersAreNowAWA;
@@ -244,7 +241,8 @@ static int ScanMarkers(struct _k_pipe_marker_list *pMarkerList,
 		__ASSERT_NO_MSG(index == pMarkerList->first_marker);
 
 		if (index == pMarkerList->post_wrap_around_marker) {
-			bMarkersAreNowAWA = true; /* from now on, everything is AWA */
+			/* from now on, everything is AWA */
+			bMarkersAreNowAWA = true;
 		}
 
 		pM = &(pMarkerList->markers[index]);
@@ -333,7 +331,8 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *free_space_count_ptr,
 	} else {
 		/*
 		 * if buffer_state==BUFF_EMPTY but we have a WriteGuard,
-		 * we still need to calculate it as a normal [Start,Stop] interval
+		 * we still need to calculate it as a normal [Start,Stop]
+		 * interval
 		 */
 
 		if (BUFF_EMPTY == desc->buffer_state) {
@@ -345,8 +344,8 @@ int CalcFreeSpace(struct _k_pipe_desc *desc, int *free_space_count_ptr,
 	}
 
 	/*
-	 * on the other hand, if buffer_state is full, we do not need a special flow;
-	 * it will be correct as (pStop - pStart) equals 0
+	 * on the other hand, if buffer_state is full, we do not need a special
+	 * flow; it will be correct as (pStop - pStart) equals 0
 	 */
 
 	if (pStop >= pStart) {
@@ -416,8 +415,8 @@ int CalcAvailData(struct _k_pipe_desc *desc, int *available_data_count_ptr,
 	}
 
 	/*
-	 * on the other hand, if buffer_state is empty, we do not need a special flow;
-	 * it will be correct as (pStop - pStart) equals 0
+	 * on the other hand, if buffer_state is empty, we do not need a
+	 * special flow; it will be correct as (pStop - pStart) equals 0
 	 */
 
 	if (pStop >= pStart) {
@@ -690,7 +689,7 @@ void BuffDeQA_End(struct _k_pipe_desc *desc, int iTransferID,
  */
 
 static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
-								 unsigned char *pBegin2, int iSize2)
+				 unsigned char *pBegin2, int iSize2)
 {
 	unsigned char *pEnd1;
 	unsigned char *pEnd2;
@@ -709,8 +708,10 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 			/* intrusion!! */
 			return true;
 		} else {
-			/* pBegin2 lies outside and to the right of the first area,
-			  intrusion is impossible */
+			/*
+			 * pBegin2 lies outside and to the right of the first
+			 * area, intrusion is impossible
+			 */
 			return false;
 		}
 	} else {
@@ -721,7 +722,8 @@ static bool AreasCheck4Intrusion(unsigned char *pBegin1, int iSize1,
 			return true;
 		} else {
 			/* pEnd2 lies outside and to the left of the first area,
-			   intrusion is impossible */
+			 * intrusion is impossible
+			 */
 			return false;
 		}
 	}

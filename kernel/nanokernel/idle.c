@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module provides routines to set the idle field in the nanokernel
-data structure.
+ * DESCRIPTION
+ * This module provides routines to set the idle field in the nanokernel
+ * data structure.
  */
 
 #ifdef CONFIG_ADVANCED_POWER_MANAGEMENT

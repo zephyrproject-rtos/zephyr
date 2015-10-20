@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-Core nanokernel fiber related primitives for the ARM Cortex-M processor
-architecture.
+ * DESCRIPTION
+ * Core nanokernel fiber related primitives for the ARM Cortex-M processor
+ * architecture.
  */
 
 #include <nanokernel.h>
@@ -57,8 +57,9 @@ static ALWAYS_INLINE void _thread_monitor_init(struct tcs *tcs /* thread */
 	unsigned int key;
 
 	/*
-	 * Add the newly initialized thread to head of the list of threads.  This
-	 * singly linked list of threads maintains ALL the threads in the system:
+	 * Add the newly initialized thread to head of the list of threads.
+	 * This singly linked list of threads maintains ALL the threads in the
+	 * system:
 	 * both tasks and fibers regardless of whether they are runnable.
 	 */
 

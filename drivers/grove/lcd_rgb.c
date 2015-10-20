@@ -302,8 +302,10 @@ int glcd_initialize(struct device *port)
 	 */
 
 
-	/* We're here!  Let's just make sure we've had enough time for the
-	 * VDD to power on, so pause a little here, 30 ms min, so we go 50 */
+	/*
+	 * We're here!  Let's just make sure we've had enough time for the
+	 * VDD to power on, so pause a little here, 30 ms min, so we go 50
+	 */
 	DBG("Grove LCD: delay 50 ms while the VDD powers on\n");
 	_sleep(50);
 

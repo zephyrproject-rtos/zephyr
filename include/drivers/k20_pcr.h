@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module defines the PCR (Port/Pin Control/Configuration Registers) for the
-K20 Family of microprocessors
+ * DESCRIPTION
+ * This module defines the PCR (Port/Pin Control/Configuration Registers) for
+ * the K20 Family of microprocessors
  */
 
 #ifndef _K20PCR_H_

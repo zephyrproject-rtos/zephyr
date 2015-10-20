@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-
-Definitions for auxiliary registers.
+ * DESCRIPTION
+ *
+ * Definitions for auxiliary registers.
  */
 
 #ifndef _ARC_V2_AUX_REGS__H_

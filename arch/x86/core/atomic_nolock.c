@@ -17,18 +17,18 @@
  */
 
 /*
-DESCRIPTION
-This module provides the atomic operators for IA-32 architectures on platforms
-that do not support the LOCK prefix instruction.
-
-The atomic operations are guaranteed to be atomic with respect to interrupt
-service routines. However, they are NOT guaranteed to be atomic with respect
-to operations performed by peer processors, unlike the versions of these
-operators that do utilize the LOCK prefix instruction.
-
-INTERNAL
-These operators are currently unavailable to user space applications
-as there is no requirement for this capability.
+ * DESCRIPTION
+ * This module provides the atomic operators for IA-32 architectures on
+ * platforms that do not support the LOCK prefix instruction.
+ *
+ * The atomic operations are guaranteed to be atomic with respect to interrupt
+ * service routines. However, they are NOT guaranteed to be atomic with respect
+ *to operations performed by peer processors, unlike the versions of these
+ * operators that do utilize the LOCK prefix instruction.
+ *
+ * INTERNAL
+ * These operators are currently unavailable to user space applications
+ * as there is no requirement for this capability.
  */
 
 #if defined(CONFIG_LOCK_INSTRUCTION_UNSUPPORTED)

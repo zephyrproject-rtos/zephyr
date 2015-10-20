@@ -17,13 +17,13 @@
  */
 
 /*
-DESCRIPTION
-The ARM Cortex-M architecture provides its own _TaskAbort() to deal with
-different CPU modes (handler vs thread) when a task aborts. When its entry
-point returns or when it aborts itself, the CPU is in thread mode and must
-call the equivalent of task_abort(<self>), but when in handler mode, the
-CPU must queue a packet to _k_server(), then exit handler mode to queue the
-PendSV exception and cause the immediate context switch to _k_server.
+ * DESCRIPTION
+ * The ARM Cortex-M architecture provides its own _TaskAbort() to deal with
+ * different CPU modes (handler vs thread) when a task aborts. When its entry
+ * point returns or when it aborts itself, the CPU is in thread mode and must
+ * call the equivalent of task_abort(<self>), but when in handler mode, the
+ * CPU must queue a packet to _k_server(), then exit handler mode to queue the
+ * PendSV exception and cause the immediate context switch to _k_server.
  */
 
 #ifdef CONFIG_MICROKERNEL

@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module provides general purpose thread support, with applies to both
-tasks or fibers.
+ * DESCRIPTION
+ * This module provides general purpose thread support, with applies to both
+ * tasks or fibers.
  */
 
 #include <toolchain.h>

@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module provides routines to initialize and support board-level hardware
-for the ia32 platform.
+ * DESCRIPTION
+ * This module provides routines to initialize and support board-level hardware
+ * for the ia32 platform.
  */
 
 #include <nanokernel.h>

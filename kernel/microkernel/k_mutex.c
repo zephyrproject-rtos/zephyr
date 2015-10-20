@@ -153,7 +153,8 @@ void _k_mutex_lock_reply_timeout(struct k_args *A)
  * @return N/A
  */
 void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
-						  request arguments */
+					     * request arguments
+					     */
 				     )
 {
 	struct _k_mutex_struct *Mutex; /* pointer to internal mutex structure */
@@ -174,9 +175,9 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 		Mutex->owner = A->args.l1.task;
 
 		/*
-		 * Assign the current owner's priority from the priority found in the
-		 * current task's task object: the priority stored there may be more
-		 * recent than the one stored in struct k_args.
+		 * Assign the current owner's priority from the priority found
+		 * in the current task's task object: the priority stored there
+		 * may be more recent than the one stored in struct k_args.
 		 */
 		Mutex->current_owner_priority = _k_current_task->priority;
 
@@ -203,8 +204,10 @@ void _k_mutex_lock_request(struct k_args *A /* pointer to mutex lock
 #endif
 
 		if (likely(A->Time.ticks != TICKS_NONE)) {
-			/* A non-zero timeout was specified. */
-			/* ensure the priority saved in the request is up to date */
+			/*
+			 * A non-zero timeout was specified.  Ensure the
+			 * priority saved in the request is up to date
+			 */
 			A->Ctxt.task = _k_current_task;
 			A->priority = _k_current_task->priority;
 			_k_state_bit_set(_k_current_task, TF_LOCK);
@@ -346,8 +349,9 @@ void _k_mutex_unlock(struct k_args *A)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 			if (X->Time.timer) {
 				/*
-				 * Trigger a call to _k_mutex_lock_reply()--it will
-				 * send a reply with a return code of RC_OK.
+				 * Trigger a call to _k_mutex_lock_reply()--it
+				 * will send a reply with a return code of
+				 * RC_OK.
 				 */
 				_k_timeout_cancel(X);
 				X->Comm = _K_SVC_MUTEX_LOCK_REPLY;
@@ -388,5 +392,3 @@ void _task_mutex_unlock(kmutex_t mutex)
 	A.args.l1.task = _k_current_task->id;
 	KERNEL_ENTRY(&A);
 }
-
-

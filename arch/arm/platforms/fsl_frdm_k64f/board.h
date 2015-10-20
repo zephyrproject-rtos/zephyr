@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This header file is used to specify and describe board-level aspects for the
-'fsl_frdm_k64f' platform.
+ * DESCRIPTION
+ * This header file is used to specify and describe board-level aspects for the
+ * 'fsl_frdm_k64f' platform.
  */
 
 #ifndef _BOARD__H_

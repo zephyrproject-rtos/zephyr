@@ -17,11 +17,11 @@
  */
 
 /*
-DESCRIPTION
-
-Most of the SCB interface consists of simple bit-flipping methods, and is
-implemented as inline functions in scb.h. This module thus contains only data
-definitions and more complex routines, if needed.
+ * DESCRIPTION
+ *
+ * Most of the SCB interface consists of simple bit-flipping methods, and is
+ * implemented as inline functions in scb.h. This module thus contains only data
+ * definitions and more complex routines, if needed.
  */
 
 #include <nanokernel.h>

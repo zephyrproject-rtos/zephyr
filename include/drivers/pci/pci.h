@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-Module declares routines of PCI bus initialization and query
+ * DESCRIPTION
+ * Module declares routines of PCI bus initialization and query
  */
 
 #ifndef _PCI_H_

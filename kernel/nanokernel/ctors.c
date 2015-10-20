@@ -17,16 +17,16 @@
  */
 
 /*
-DESCRIPTION
-This module provides the C++ style constructor mechanism used by various
-components to initialize themselves automatically.
-
-The _Ctors() routine is called from the nanokernel's _Cstart() routine after
-hardware initialization has completed.
-
-Although ctors are traditionally a C++ feature, normal C code can use them too
-through the appropriate use of GCC's constructor attribute.
-No destructor support (dtors) is provided.
+ * DESCRIPTION
+ * This module provides the C++ style constructor mechanism used by various
+ * components to initialize themselves automatically.
+ *
+ * The _Ctors() routine is called from the nanokernel's _Cstart() routine after
+ * hardware initialization has completed.
+ *
+ * Although ctors are traditionally a C++ feature, normal C code can use them
+ * too through the appropriate use of GCC's constructor attribute.
+ * No destructor support (dtors) is provided.
  */
 
 /* What a constructor function pointer looks like */

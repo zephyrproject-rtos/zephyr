@@ -17,15 +17,15 @@
  */
 
 /*
-DESCRIPTION
-
-Definitions for the boot vector table.
-
-System exception handler names all have the same format:
-
-  __<exception name with underscores>
-
-No other symbol has the same format, so they are easy to spot.
+ * DESCRIPTION
+ *
+ * Definitions for the boot vector table.
+ *
+ * System exception handler names all have the same format:
+ *
+ *   __<exception name with underscores>
+ *
+ * No other symbol has the same format, so they are easy to spot.
  */
 
 #ifndef _VECTOR_TABLE__H_

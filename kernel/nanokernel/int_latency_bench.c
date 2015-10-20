@@ -152,7 +152,8 @@ void int_latency_init(void)
 		timeToReadTime = _sys_clock_cycle_get() - timeToReadTime;
 
 		/* measure time to call intLatencyStart() and intLatencyStop
-		 * takes */
+		 * takes
+		 */
 		initial_start_delay = _sys_clock_cycle_get();
 		_int_latency_start();
 		initial_start_delay =

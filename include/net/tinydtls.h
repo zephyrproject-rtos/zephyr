@@ -1,7 +1,7 @@
 /** @file
- @brief tinyDTLS API
-
- API providing DTLS functionality.
+ * @brief tinyDTLS API
+ * 
+ * API providing DTLS functionality.
  */
 
 /*

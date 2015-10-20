@@ -17,14 +17,14 @@
  */
 
 /*
-DESCRIPTION
-This file contains private nanokernel structures definitions and various other
-definitions for the ARM Cortex-M3 processor architecture.
-
-This file is also included by assembly language files which must #define
-_ASMLANGUAGE before including this header file.  Note that nanokernel assembly
-source files obtains structure offset values via "absolute symbols" in the
-offsets.o module.
+ * DESCRIPTION
+ * This file contains private nanokernel structures definitions and various
+ * other definitions for the ARM Cortex-M3 processor architecture.
+ *
+ * This file is also included by assembly language files which must #define
+ * _ASMLANGUAGE before including this header file.  Note that nanokernel
+ * assembly source files obtains structure offset values via "absolute symbols"
+ * in the offsets.o module.
  */
 
 #ifndef _NANO_PRIVATE_H

@@ -17,12 +17,13 @@
  */
 
 /*
-DESCRIPTION
-This module implements a kernel device driver for the ARCv2 processor timer 0
-and provides the standard "system clock driver" interfaces.
-
-\INTERNAL IMPLEMENTATION DETAILS
-The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero counter.
+ * DESCRIPTION
+ * This module implements a kernel device driver for the ARCv2 processor timer 0
+ * and provides the standard "system clock driver" interfaces.
+ *
+ * \INTERNAL IMPLEMENTATION DETAILS
+ * The ARCv2 processor timer provides a 32-bit incrementing, wrap-to-zero
+ * counter.
  */
 
 #include <nanokernel.h>

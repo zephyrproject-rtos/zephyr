@@ -82,6 +82,7 @@ static void uart_simple_setup(struct device *uart, struct uart_init_info *info)
 	/* Drain the fifo */
 	while (uart_irq_rx_ready(uart)) {
 		unsigned char c;
+
 		uart_fifo_read(uart, &c, 1);
 	}
 

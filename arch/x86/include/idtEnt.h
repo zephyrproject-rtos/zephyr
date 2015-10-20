@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This header file provides code for constructing an IA-32 interrupt descriptor.
-
+ * DESCRIPTION
+ * This header file provides code for constructing an IA-32 interrupt
+ * descriptor.
  */
 
 #ifndef _IDTENT_H

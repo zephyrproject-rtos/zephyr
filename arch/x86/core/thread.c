@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module provides core nanokernel fiber related primitives for the IA-32
-processor architecture.
+ * DESCRIPTION
+ * This module provides core nanokernel fiber related primitives for the IA-32
+ * processor architecture.
  */
 
 #ifdef CONFIG_MICROKERNEL
@@ -257,7 +257,8 @@ static void _new_thread_internal(char *pStackMem, unsigned stackSize,
 __asm__("\t.globl _thread_entry\n"
 	"\t.section .text\n"
 	"_thread_entry_wrapper:\n" /* should place this func .S file and use
-				     SECTION_FUNC */
+				    * SECTION_FUNC
+				    */
 	"\tmovl $0, (%esp)\n" /* zero initialEFLAGS location */
 	"\tjmp _thread_entry\n");
 #endif /* CONFIG_GDB_INFO */

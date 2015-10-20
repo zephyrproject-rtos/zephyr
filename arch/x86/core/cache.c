@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 /*
-DESCRIPTION
-This module contains functions for manipulation caches.
+ * DESCRIPTION
+ * This module contains functions for manipulation caches.
  */
 
 #include <nanokernel.h>

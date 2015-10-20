@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-
-Declare variables used by both system timer device driver and kernel components
-that use timer functionality.
+ * DESCRIPTION
+ *
+ * Declare variables used by both system timer device driver and kernel
+ * components that use timer functionality.
  */
 
 #ifndef _SYS_CLOCK__H_

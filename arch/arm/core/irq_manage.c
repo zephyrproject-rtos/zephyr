@@ -17,10 +17,11 @@
  */
 
 /*
-DESCRIPTION
-
-Interrupt management: enabling/disabling and dynamic ISR connecting/replacing.
-SW_ISR_TABLE_DYNAMIC has to be enabled for connecting ISRs at runtime.
+ * DESCRIPTION
+ *
+ * Interrupt management: enabling/disabling and dynamic ISR
+ * connecting/replacing.  SW_ISR_TABLE_DYNAMIC has to be enabled for
+ * connecting ISRs at runtime.
  */
 
 #include <nanokernel.h>

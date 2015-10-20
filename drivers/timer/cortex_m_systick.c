@@ -17,24 +17,24 @@
  */
 
 /*
-DESCRIPTION
-This module implements the kernel's CORTEX-M ARM's systick device driver.
-It provides the standard kernel "system clock driver" interfaces.
-
-The driver utilizes systick to provide kernel ticks.
-
-\INTERNAL IMPLEMENTATION DETAILS
-The systick device provides a 24-bit clear-on-write, decrementing,
-wrap-on-zero counter. Only edge sensitive triggered interrupt is supported.
-
-\INTERNAL PACKAGING DETAILS
-The systick device driver is part of the microkernel in both a monolithic kernel
-system and a split kernel system; it is not included in the nanokernel portion
-of a split kernel.
-
-The device driver is also part of a nanokernel-only system, but omits more
-complex capabilities (such as tickless idle support) that are only used in
-conjunction with a microkernel.
+ * DESCRIPTION
+ * This module implements the kernel's CORTEX-M ARM's systick device driver.
+ * It provides the standard kernel "system clock driver" interfaces.
+ * 
+ * The driver utilizes systick to provide kernel ticks.
+ * 
+ * \INTERNAL IMPLEMENTATION DETAILS
+ * The systick device provides a 24-bit clear-on-write, decrementing,
+ * wrap-on-zero counter. Only edge sensitive triggered interrupt is supported.
+ * 
+ * \INTERNAL PACKAGING DETAILS
+ * The systick device driver is part of the microkernel in both a monolithic
+ * kernel system and a split kernel system; it is not included in the
+ * nanokernel portion of a split kernel.
+ *
+ * The device driver is also part of a nanokernel-only system, but omits more
+ * complex capabilities (such as tickless idle support) that are only used in
+ * conjunction with a microkernel.
  */
 
 #include <nanokernel.h>
@@ -477,20 +477,19 @@ void _timer_idle_enter(int32_t ticks /* system ticks */
 	if ((ticks == -1) || (ticks > max_system_ticks)) {
 		/*
 		 * We've been asked to fire the timer so far in the future that
-		 * the
-		 * required count value would not fit in the 24-bit reload
+		 * the required count value would not fit in the 24-bit reload
 		 * register.
 		 * Instead, we program for the maximum programmable interval
-		 * minus one
-		 * system tick to prevent overflow when the left over count read
-		 * earlier
-		 * is added.
+		 * minus one system tick to prevent overflow when the left over
+		 * count read earlier is added.
 		 */
 		idle_original_count += max_load_value - default_load_value;
 		idle_original_ticks = max_system_ticks - 1;
 	} else {
-		/* leave one tick of buffer to have to time react when coming
-		 * back */
+		/*
+		 * leave one tick of buffer to have to time react when coming
+		 * back
+		 */
 		idle_original_ticks = ticks - 1;
 		idle_original_count += idle_original_ticks * default_load_value;
 	}

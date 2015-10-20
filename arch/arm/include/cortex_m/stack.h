@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-Stack helper functions.
+ * DESCRIPTION
+ * Stack helper functions.
  */
 
 #ifndef _ARM_CORTEXM_STACK__H_

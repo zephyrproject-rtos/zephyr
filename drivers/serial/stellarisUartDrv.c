@@ -163,15 +163,19 @@ static void baudrate_set(struct device *dev,
 	div = (16 * baudrate);
 	rem = sys_clk_freq_hz % div;
 
-	/* floating part of baud rate (LM3S6965 p.433), equivalent to
-	 * [float part of (SYSCLK / div)] * 64 + 0.5 */
+	/*
+	 * floating part of baud rate (LM3S6965 p.433), equivalent to
+	 * [float part of (SYSCLK / div)] * 64 + 0.5
+	 */
 	brdf = ((((rem * 64) << 1) / div) + 1) >> 1;
 
 	/* integer part of baud rate (LM3S6965 p.433) */
 	brdi = sys_clk_freq_hz / div;
 
-	/* those registers are 32-bit, but the reserved bits should be
-	 * preserved */
+	/*
+	 * those registers are 32-bit, but the reserved bits should be
+	 * preserved
+	 */
 	uart->ibrd = (uint16_t)(brdi & 0xffff); /* 16 bits */
 	uart->fbrd = (uint8_t)(brdf & 0x3f);    /* 6 bits */
 }

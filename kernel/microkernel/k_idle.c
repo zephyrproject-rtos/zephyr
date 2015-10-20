@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-Microkernel idle logic. Different forms of idling are performed by the idle
-task, depending on how the kernel is configured.
+ * DESCRIPTION
+ * Microkernel idle logic. Different forms of idling are performed by the idle
+ * task, depending on how the kernel is configured.
  */
 
 #include <micro_private.h>
@@ -369,9 +369,10 @@ static void _power_save(void)
 			_sys_power_save_idle(_get_next_timer_expiry());
 #else
 			/*
-			 * nano_cpu_idle() is invoked here directly only if APM is
-			 * disabled. Otherwise the microkernel decides either to invoke
-			 * it or to implement advanced idle functionality
+			 * nano_cpu_idle() is invoked here directly only if APM
+			 * is disabled. Otherwise the microkernel decides
+			 * either to invoke it or to implement advanced idle
+			 * functionality
 			 */
 
 			nano_cpu_idle();
@@ -420,8 +421,8 @@ int _k_kernel_idle(void)
 	}
 
 	/*
-	 * Code analyzers may complain that _k_kernel_idle() uses an infinite loop
-	 * unless we indicate that this is intentional
+	 * Code analyzers may complain that _k_kernel_idle() uses an infinite
+	 * loop unless we indicate that this is intentional
 	 */
 
 	CODE_UNREACHABLE;

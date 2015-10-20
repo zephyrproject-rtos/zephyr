@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-Common fault handler for ARM Cortex-M processors.
+ * DESCRIPTION
+ * Common fault handler for ARM Cortex-M processors.
  */
 
 #include <toolchain.h>

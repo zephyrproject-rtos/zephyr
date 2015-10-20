@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-This module provides the _NanoFatalErrorHandler() routine.
+ * DESCRIPTION
+ * This module provides the _NanoFatalErrorHandler() routine.
  */
 
 #include <toolchain.h>

@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-ARM-specific nanokernel miscellaneous interface. Included by ARM/arch.h.
+ * DESCRIPTION
+ * ARM-specific nanokernel miscellaneous interface. Included by ARM/arch.h.
  */
 
 #ifndef _ARCH_ARM_CORTEXM_MISC_H_

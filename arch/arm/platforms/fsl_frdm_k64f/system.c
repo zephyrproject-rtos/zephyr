@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module provides routines to initialize and support board-level hardware
-for the fsl_frdm_k64f platform.
+ * DESCRIPTION
+ * This module provides routines to initialize and support board-level
+ * hardware for the fsl_frdm_k64f platform.
  */
 
 #include <nanokernel.h>
@@ -67,7 +67,7 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
 	/* Backdoor Comparison Key (unused) */
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 	/* Program flash protection; 1 bit/region - 0=protected, 1=unprotected
-	   */
+	 */
 	0xFF, 0xFF, 0xFF, 0xFF,
 	/*
 	 * Flash security: Backdoor key disabled, Mass erase enabled,
@@ -89,7 +89,8 @@ uint8_t __security_frdm_k64f_section __security_frdm_k64f[] = {
  * that the current MCG mode is FLL Engaged Internal (FEI), as from reset.
  * It transitions through the FLL Bypassed External (FBE) and
  * PLL Bypassed External (PBE) modes to get to the desired
- * PLL Engaged External (PEE) mode and generate the maximum 120 MHz system clock.
+ * PLL Engaged External (PEE) mode and generate the maximum 120 MHz system
+ * clock.
  *
  * @return N/A
  *
@@ -152,15 +153,19 @@ static void clkInit(void)
 
 	mcg_p->c1 = temp_reg;
 
-	/* Confirm that the external reference clock is the FLL reference source
+	/*
+	 * Confirm that the external reference clock is the FLL reference
+	 * source
 	 */
 
 	while ((mcg_p->s & MCG_S_IREFST_MASK) != 0)
 		;
 	;
 
-	/* Confirm the external ref. clock is the system clock source
-	 * (MCGOUTCLK) */
+	/*
+	 * Confirm the external ref. clock is the system clock source
+	 * (MCGOUTCLK)
+	 */
 
 	while ((mcg_p->s & MCG_S_CLKST_MASK) != MCG_S_CLKST_EXT_REF)
 		;
@@ -298,10 +303,14 @@ static int fsl_frdm_k64f_init(struct device *arg)
 				(SIM_CLKDIV(3) << SIM_CLKDIV1_OUTDIV3_SHIFT) |
 				(SIM_CLKDIV(5) << SIM_CLKDIV1_OUTDIV4_SHIFT));
 
-	clkInit(); /* Initialize PLL/system clock to 120 MHz */
+	/* Initialize PLL/system clock to 120 MHz */
+	clkInit();
 
-	NMI_INIT(); /* install default handler that simply resets the CPU
-		     * if configured in the kernel, NOP otherwise */
+	/*
+	 * install default handler that simply resets the CPU
+	 * if configured in the kernel, NOP otherwise 
+	 */
+	NMI_INIT();
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);

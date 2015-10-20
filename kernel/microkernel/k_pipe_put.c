@@ -56,8 +56,8 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 	mycopypacket(&Request, RequestOrig);
 
 	/* Now, we need a new packet for processing of the request; the
-	   Request package is too small b/c of space lost due to possible
-	   embedded local data
+	 * Request package is too small b/c of space lost due to possible
+	 * embedded local data
 	 */
 
 	mycopypacket(&RequestProc, Request);
@@ -130,8 +130,10 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		/* check if request was processed */
 
 		if (TERM_XXX & RequestProc->args.pipe_xfer_req.status) {
-			RequestProc->Time.timer = NULL; /* not really required */
-			return; /* not listed anymore --> completely processed */
+			/* not really required */
+			RequestProc->Time.timer = NULL;
+			/* not listed anymore --> completely processed */
+			return;
 		}
 
 	} while (0);
@@ -146,8 +148,8 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		INSERT_ELM(pipe_ptr->writers, RequestProc);
 		/*
 		 * NOTE: It is both faster and simpler to blindly assign the
-		 * PIPE_PUT_TIMEOUT microkernel command to the packet even though it
-		 * is only useful to the finite timeout case.
+		 * PIPE_PUT_TIMEOUT microkernel command to the packet even
+		 * though it is only useful to the finite timeout case.
 		 */
 		RequestProc->Comm = _K_SVC_PIPE_PUT_TIMEOUT;
 		if (_TIME_B == _k_pipe_time_type_get(&RequestProc->args)) {
@@ -170,8 +172,8 @@ void _k_pipe_put_request(struct k_args *RequestOrig)
 		}
 	} else {
 		/* call is non-blocking;
-		   Check if we don't have to queue it b/c it could not
-		   be processed at once
+		 * Check if we don't have to queue it b/c it could not
+		 * be processed at once
 		 */
 		RequestProc->Time.timer = NULL;
 

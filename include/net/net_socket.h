@@ -1,8 +1,8 @@
 /** @file
- @brief Simple socket API
-
- Simple socket API for applications to connection establishment and
- disconnection.
+ * @brief Simple socket API
+ *
+ * Simple socket API for applications to connection establishment and
+ * disconnection.
  */
 
 /*

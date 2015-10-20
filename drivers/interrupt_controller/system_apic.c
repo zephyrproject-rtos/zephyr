@@ -143,8 +143,10 @@ int _SysIntVecAlloc(unsigned int irq, unsigned int priority,
 		} else {
 			_loapic_int_vec_set(irq - CONFIG_IOAPIC_NUM_RTES, vector);
 
-			/* specify that the EOI handler in loApicIntr.c driver
-			 * be invoked */
+			/*
+			 * specify that the EOI handler in loApicIntr.c driver
+			 * be invoked
+			 */
 
 			*eoiRtn = (NANO_EOI_GET_FUNC)_loapic_eoi;
 			*eoiParamRequired = 0;

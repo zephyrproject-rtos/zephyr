@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This header file is used to specify and describe board-level aspects for
-the 'galileo' platform.
+ * DESCRIPTION
+ * This header file is used to specify and describe board-level aspects for
+ * the 'galileo' platform.
  */
 
 #ifndef __INCboardh

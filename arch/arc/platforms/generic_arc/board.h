@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-This header file is used to specify and describe board-level aspects for the
-generic arc BSP.
-*/
+ * DESCRIPTION
+ * This header file is used to specify and describe board-level aspects for the
+ * generic arc BSP.
+ */
 
 #ifndef _BOARD__H_
 #define _BOARD__H_

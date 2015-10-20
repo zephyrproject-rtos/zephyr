@@ -17,12 +17,12 @@
  */
 
 /*
-DESCRIPTION
-This module implements the microkernel server, which processes service requests
-from tasks (and, less commonly, fibers and ISRs). The requests are service by
-a high priority fiber, thereby ensuring that requests are processed in a timely
-manner and in a single threaded manner that prevents simultaneous requests from
-interfering with each other.
+ * DESCRIPTION
+ * This module implements the microkernel server, which processes service
+ * requests from tasks (and, less commonly, fibers and ISRs). The requests are
+ * service by a high priority fiber, thereby ensuring that requests are
+ * processed in a timely manner and in a single threaded manner that prevents
+ * simultaneous requests from interfering with each other.
  */
 
 #include <toolchain.h>
@@ -117,8 +117,10 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 				(*pArgs->Comm)(pArgs);
 			}
 
-			/* check if another fiber (of equal or greater priority)
-			 * needs to run */
+			/*
+			 * check if another fiber (of equal or greater priority)
+			 * needs to run
+			 */
 
 			if (_nanokernel.fiber) {
 				fiber_yield();
@@ -129,7 +131,10 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 
 		if (_k_current_task != pNextTask) {
 
-			/* switch from currently selected task to a different one */
+			/*
+			 * switch from currently selected task to a different
+			 * one
+			 */
 
 #ifdef CONFIG_WORKLOAD_MONITOR
 			if (pNextTask->id == 0x00000000) {

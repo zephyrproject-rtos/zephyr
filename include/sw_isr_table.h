@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-Data types for a software-managed ISR table, with a parameter per-ISR.
+ * DESCRIPTION
+ * Data types for a software-managed ISR table, with a parameter per-ISR.
  */
 
 #ifndef _SW_ISR_TABLE__H_

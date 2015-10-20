@@ -17,67 +17,66 @@
  */
 
 /*
-DESCRIPTION
-Module implements routines for PCI bus initialization and query.
-
-USAGE
-To use the driver, the platform must define:
-- Numbers of BUSes:
-    - PCI_BUS_NUMBERS;
-- Register addresses:
-    - PCI_CTRL_ADDR_REG;
-    - PCI_CTRL_DATA_REG;
-- pci_pin2irq() - the routine that converts the PCI interrupt pin
-  number to IRQ number.
-
-About scanning the PCI buses:
-At every new usage of this API, the code should call pci_bus_scan_init().
-It should own a struct pci_dev_info, filled in with the parameters it is
-interested to look for: class and/or vendor_id/device_id.
-
-Then it can loop on pci_bus_scan() providing a pointer on that structure.
-Such function can be called as long as it returns 1. At every successful
-return of pci_bus_scan() it means the provided structure pointer will have
-been updated with the current scan result which the code might be interested
-in. On pci_bus_scan() returning 0, the code should discard the result and
-stop calling pci_bus_scan(). If it wants to retrieve the result, it will
-have to restart the procedure all over again.
-
-EXAMPLE
-struct pci_dev_info info = {
-	.class = PCI_CLASS_COMM_CTLR
-};
-
-pci_bus_scan_init();
-
-while (pci_bus_scan(&info) {
-	// do something with "info" which holds a valid result, i.e. some
-	// device information matching the PCI class PCI_CLASS_COMM_CTLR
-}
-
-INTERNALS
-The whole logic runs around a structure: struct lookup_data, which exists
-on one instanciation called 'lookup'.
-Such structure is used for 2 distinct roles:
-- to match devices the caller is looking for
-- to loop on PCI bus, devices, function and BARs
-
-The search criterias are the class and/or the vendor_id/device_id of a PCI
-device. The caller first initializes the lookup structure by calling
-pci_bus_scan_init(), which will reset the search criterias as well as the
-loop paramaters to 0. At the very first subsequent call of pci_bus_scan()
-the lookup structure will store the search criterias. Then the loop starts.
-For each bus it will run through each device on which it will loop on each
-function and BARs, as long as the criterias does not match or until it hit
-the limit of bus/dev/functions to scan.
-
-On a successful match, it will stop the loop, fill in the caller's
-pci_dev_info structure with the found device information, and return 1.
-Hopefully, the lookup structure still remembers where it stopped and the
-original search criterias. Thus, when the caller asks to scan again for
-a possible result next, the loop will restart where it stopped.
-That will work as long as there are relevant results found.
-
+ * DESCRIPTION
+ * Module implements routines for PCI bus initialization and query.
+ *
+ * USAGE
+ * To use the driver, the platform must define:
+ * - Numbers of BUSes:
+ *     - PCI_BUS_NUMBERS;
+ * - Register addresses:
+ *     - PCI_CTRL_ADDR_REG;
+ *     - PCI_CTRL_DATA_REG;
+ * - pci_pin2irq() - the routine that converts the PCI interrupt pin
+ *   number to IRQ number.
+ *
+ * About scanning the PCI buses:
+ * At every new usage of this API, the code should call pci_bus_scan_init().
+ * It should own a struct pci_dev_info, filled in with the parameters it is
+ * interested to look for: class and/or vendor_id/device_id.
+ *
+ * Then it can loop on pci_bus_scan() providing a pointer on that structure.
+ * Such function can be called as long as it returns 1. At every successful
+ * return of pci_bus_scan() it means the provided structure pointer will have
+ * been updated with the current scan result which the code might be interested
+ * in. On pci_bus_scan() returning 0, the code should discard the result and
+ * stop calling pci_bus_scan(). If it wants to retrieve the result, it will
+ * have to restart the procedure all over again.
+ *
+ * EXAMPLE
+ * struct pci_dev_info info = {
+ * 	.class = PCI_CLASS_COMM_CTLR
+ * };
+ *
+ * pci_bus_scan_init();
+ *
+ * while (pci_bus_scan(&info) {
+ * 	// do something with "info" which holds a valid result, i.e. some
+ * 	// device information matching the PCI class PCI_CLASS_COMM_CTLR
+ * }
+ *
+ * INTERNALS
+ * The whole logic runs around a structure: struct lookup_data, which exists
+ * on one instanciation called 'lookup'.
+ * Such structure is used for 2 distinct roles:
+ * - to match devices the caller is looking for
+ * - to loop on PCI bus, devices, function and BARs
+ *
+ * The search criterias are the class and/or the vendor_id/device_id of a PCI
+ * device. The caller first initializes the lookup structure by calling
+ * pci_bus_scan_init(), which will reset the search criterias as well as the
+ * loop paramaters to 0. At the very first subsequent call of pci_bus_scan()
+ * the lookup structure will store the search criterias. Then the loop starts.
+ * For each bus it will run through each device on which it will loop on each
+ * function and BARs, as long as the criterias does not match or until it hit
+ * the limit of bus/dev/functions to scan.
+ * 
+ * On a successful match, it will stop the loop, fill in the caller's
+ * pci_dev_info structure with the found device information, and return 1.
+ * Hopefully, the lookup structure still remembers where it stopped and the
+ * original search criterias. Thus, when the caller asks to scan again for
+ * a possible result next, the loop will restart where it stopped.
+ * That will work as long as there are relevant results found.
  */
 
 #include <nanokernel.h>

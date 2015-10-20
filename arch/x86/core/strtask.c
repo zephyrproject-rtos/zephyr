@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-Intel-specific parts of start_task(). Only FP functionality currently.
+ * DESCRIPTION
+ * Intel-specific parts of start_task(). Only FP functionality currently.
  */
 
 #ifdef CONFIG_MICROKERNEL

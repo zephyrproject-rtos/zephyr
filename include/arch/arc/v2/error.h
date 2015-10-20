@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-ARC-specific nanokernel error handling interface. Included by ARC/arch.h.
+ * DESCRIPTION
+ * ARC-specific nanokernel error handling interface. Included by ARC/arch.h.
  */
 
 #ifndef _ARCH_ARC_V2_ERROR_H_

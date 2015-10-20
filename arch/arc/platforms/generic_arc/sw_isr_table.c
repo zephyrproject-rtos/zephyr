@@ -17,11 +17,11 @@
  */
 
 /*
-DESCRIPTION
-This contains the ISR table meant to be used for ISRs that take a parameter.
-It is also used when ISRs are to be connected at runtime, and in this case
-provides a table that is filled with _SpuriousIRQ bindings.
-*/
+ * DESCRIPTION
+ * This contains the ISR table meant to be used for ISRs that take a parameter.
+ * It is also used when ISRs are to be connected at runtime, and in this case
+ * provides a table that is filled with _SpuriousIRQ bindings.
+ */
 
 #include <toolchain.h>
 #include <sections.h>

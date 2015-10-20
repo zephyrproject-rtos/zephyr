@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-This module defines Watch Dog Registers for the K20 Family of microprocessors
+ * DESCRIPTION
+ * This module defines Watch Dog Registers for the K20 Family of microprocessors
  */
 
 #ifndef _K20WDOG_H_

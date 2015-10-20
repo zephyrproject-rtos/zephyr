@@ -44,8 +44,8 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 	mycopypacket(&Request, RequestOrig);
 
 	/* Now, we need a new packet for processing of the request;
-	   the Request package is too small b/c of space lost due to possible
-	   embedded local data
+	 * the Request package is too small b/c of space lost due to possible
+	 * embedded local data
 	 */
 
 	mycopypacket(&RequestProc, Request);
@@ -151,8 +151,8 @@ void _k_pipe_get_request(struct k_args *RequestOrig)
 		}
 	} else {
 		/* call is non-blocking;
-		   Check if we don't have to queue it b/c it could not
-		   be processed at once
+		 * Check if we don't have to queue it b/c it could not
+		 * be processed at once
 		 */
 		RequestProc->Time.timer = NULL;
 

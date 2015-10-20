@@ -17,8 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module provides the _SysFatalErrorHandler() routine for Cortex-M platforms.
+ * DESCRIPTION
+ * This module provides the _SysFatalErrorHandler() routine for Cortex-M
+ * platforms.
  */
 
 #include <nanokernel.h>

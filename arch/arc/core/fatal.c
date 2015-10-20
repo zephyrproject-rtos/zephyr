@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module implements the routines necessary for handling fatal faults on
-ARCv2 CPUs.
+ * DESCRIPTION
+ * This module implements the routines necessary for handling fatal faults on
+ * ARCv2 CPUs.
  */
 
 #include <nano_private.h>

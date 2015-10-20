@@ -17,8 +17,8 @@
  */
 
 /*
-DESCRIPTION
-ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
+ * DESCRIPTION
+ * ARM-specific nanokernel interrupt handling interface. Included by ARM/arch.h.
  */
 
 #ifndef _ARCH_ARM_CORTEXM_IRQ_H_

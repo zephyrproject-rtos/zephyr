@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-Most of the SCS interface consists of simple bit-flipping methods, and is
-implemented as inline functions in scs.h. This module thus contains only data
-definitions and more complex routines, if needed.
+ * DESCRIPTION
+ * Most of the SCS interface consists of simple bit-flipping methods, and is
+ * implemented as inline functions in scs.h. This module thus contains only data
+ * definitions and more complex routines, if needed.
  */
 
 #include <nanokernel.h>

@@ -17,9 +17,9 @@
  */
 
 /*
-DESCRIPTION
-This module provides routines to initialize and support board-level hardware
-for the ti_lm3s6965 platform.
+ * DESCRIPTION
+ * This module provides routines to initialize and support board-level hardware
+ * for the ti_lm3s6965 platform.
  */
 
 #include <nanokernel.h>

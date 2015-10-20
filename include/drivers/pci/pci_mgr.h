@@ -72,30 +72,30 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 /*
-
-PCI Address Register
-
-The configuration address register is a 32-bit register with the format
-shown below. Bit 31 is an enable flag for determining when accesses to
-the configuration data should be translated to configuration cycles. Bits
-23 through 16 allow the configuration software to choose a specific PCI
-bus in the system. Bits 15 through 11 select the specific device on the
-PCI Bus. Bits 10 through 8 choose a specific function in a device (if the
-device supports multiple functions). Bits 7 through 2 select the specific
-32-bit area in the device's configuration space.
-
-+--------------------------------------------------------+
-|      Bit 31      |    Bits 30-24    |    Bits 23-16    |
-+------------------+------------------+------------------+
-|      Enable      |     Reserved     |    Bus Number    |
-+--------------------------------------------------------+
-
-+---------------------------------------------------------------------------+
-|    Bits 15-11    |    Bits 10-8     |    Bits 7-2      |    Bits 1-0      |
-+------------------+------------------+------------------+------------------+
-|   Device Number  | Function Number  | Register Number  |        00        |
-+---------------------------------------------------------------------------+
-
+ *
+ * PCI Address Register
+ *
+ * The configuration address register is a 32-bit register with the format
+ * shown below. Bit 31 is an enable flag for determining when accesses to the
+ * configuration data should be translated to configuration cycles. Bits 23
+ * through 16 allow the configuration software to choose a specific PCI bus in
+ * the system. Bits 15 through 11 select the specific device on the PCI Bus.
+ * Bits 10 through 8 choose a specific function in a device (if the device
+ * supports multiple functions). Bits 7 through 2 select the specific 32-bit
+ * area in the device's configuration space.
+ *
+ * +--------------------------------------------------------+
+ * |      Bit 31      |    Bits 30-24    |    Bits 23-16    |
+ * +------------------+------------------+------------------+
+ * |      Enable      |     Reserved     |    Bus Number    |
+ * +--------------------------------------------------------+
+ *
+ * +---------------------------------------------------------------------------+
+ * |    Bits 15-11    |    Bits 10-8     |    Bits 7-2      |    Bits 1-0      |
+ * +------------------+------------------+------------------+------------------+
+ * |   Device Number  | Function Number  | Register Number  |        00        |
+ * +---------------------------------------------------------------------------+
+ * 
  */
 
 union pci_addr_reg {
@@ -123,30 +123,29 @@ union pci_addr_reg {
 
 
 /*
-
-PCI Extended Address Register
-
-The configuration address register is a 32-bit register with the format
-shown below. Bit 31 is an enable flag for determining when accesses to
-the configuration data should be translated to configuration cycles. Bits
-23 through 16 allow the configuration software to choose a specific PCI
-bus in the system. Bits 15 through 11 select the specific device on the
-PCI Bus. Bits 10 through 8 choose a specific function in a device (if the
-device supports multiple functions). Bits 7 through 2 select the specific
-32-bit area in the device's configuration space.
-
-+--------------------------------------------------------+
-|      Bit 31      |    Bits 30-24    |    Bits 23-16    |
-+------------------+------------------+------------------+
-|      Enable      |     Reserved     |    Bus Number    |
-+--------------------------------------------------------+
-
-+---------------------------------------------------------------------------+
-|    Bits 15-11    |    Bits 10-8     |    Bits 7-2      |    Bits 1-0      |
-+------------------+------------------+------------------+------------------+
-|   Device Number  | Function Number  | Register Number  |        00        |
-+---------------------------------------------------------------------------+
-
+ *
+ * PCI Extended Address Register
+ *
+ * The configuration address register is a 32-bit register with the format
+ * shown below. Bit 31 is an enable flag for determining when accesses to the9
+ * configuration data should be translated to configuration cycles. Bits 23
+ * through 16 allow the configuration software to choose a specific PCI bus in
+ * the system. Bits 15 through 11 select the specific device on the PCI Bus.
+ * Bits 10 through 8 choose a specific function in a device (if the device
+ * supports multiple functions). Bits 7 through 2 select the specific 32-bit
+ * area in the device's configuration space.
+ *
+ * +--------------------------------------------------------+
+ * |      Bit 31      |    Bits 30-24    |    Bits 23-16    |
+ * +------------------+------------------+------------------+
+ * |      Enable      |     Reserved     |    Bus Number    |
+ * +--------------------------------------------------------+
+ *
+ * +---------------------------------------------------------------------------+
+ * |    Bits 15-11    |    Bits 10-8     |    Bits 7-2      |    Bits 1-0      |
+ * +------------------+------------------+------------------+------------------+
+ * |   Device Number  | Function Number  | Register Number  |        00        |
+ * +---------------------------------------------------------------------------+
  */
 
 union pcie_addr_reg {
@@ -171,98 +170,96 @@ union pcie_addr_reg {
 };
 
 /*
-
-PCI Device Structure
-
-The PCI Specification defines the organization of the 256-byte Configuration
-Space registers and imposes a specific template for the space. The table
-below shows the layout of the 256-byte Configuration space. All PCI
-compliant devices must support the Vendor ID, Device ID, Command and Status,
-Revision ID, Class Code and Header Type fields. Implementation of the other
-registers is optional, depending upon the devices functionality.
-
-The PCI devices follow little ENDIAN ordering. The lower addresses contain
-the least significant portions of the field. Software to manipulate this
-structure must take particular care that the endian-ordering follows the PCI
-devices, not the CPUs.
-
-Header Type 0x00:
-
-+-----------------------------------------------------------------------------+
-| Register |   Bits 31-24   |   Bits 23-16   |    Bits 15-8   |   Bits 7-0    |
-+----------+----------------+----------------+----------------+---------------+
-|    00    |  Device ID                      |  Vendor ID                     |
-+----------+---------------------------------+--------------------------------+
-|    04    |  Status                         |  Command                       |
-+----------+----------------+----------------+--------------------------------+
-|    08    |  Class Code    |  Subclass      |  Register IF   |  Revision ID  |
-+----------+----------------+----------------+----------------+---------------+
-|    0C    |  BIST          | Header type    | Latency Timer  |Cache Line Size|
-+----------+----------------+----------------+----------------+---------------+
-|    10    |  Base address #0 (BAR0)                                          |
-+----------+------------------------------------------------------------------+
-|    14    |  Base address #1 (BAR1)                                          |
-+----------+------------------------------------------------------------------+
-|    18    |  Base address #2 (BAR2)                                          |
-+----------+------------------------------------------------------------------+
-|    1C    |  Base address #3 (BAR3)                                          |
-+----------+------------------------------------------------------------------+
-|    20    |  Base address #4 (BAR4)                                          |
-+----------+------------------------------------------------------------------+
-|    24    |  Base address #5 (BAR5)                                          |
-+----------+------------------------------------------------------------------+
-|    28    |  Cardbus CIS Pointer                                             |
-+----------+---------------------------------+--------------------------------+
-|    2C    |  Subsystem ID                   |  Subsystem Vendor ID           |
-+----------+---------------------------------+--------------------------------+
-|    30    |  Expansion ROM base address                                      |
-+----------+------------------------------------------------------------------+
-|    34    |  Reserved                                        | Capability Ptr|
-+----------+------------------------------------------------------------------+
-|    38    |  Reserved                                                        |
-+----------+----------------+----------------+----------------+---------------+
-|    3C    |  Max Latency   |  Min Grant     | Interrupt PIN  | Interrupt Line|
-+-----------------------------------------------------------------------------+
-
-
-Header Type 0x01 (PCI-to-PCI bridge):
-
-+-----------------------------------------------------------------------------+
-| Register |   Bits 31-24   |   Bits 23-16   |    Bits 15-8   |   Bits 7-0    |
-+----------+----------------+----------------+----------------+---------------+
-|    00    |  Device ID                      |  Vendor ID                     |
-+----------+---------------------------------+--------------------------------+
-|    04    |  Status                         |  Command                       |
-+----------+----------------+----------------+--------------------------------+
-|    08    |  Class Code    |  Subclass                       | Revision ID   |
-+----------+----------------+----------------+----------------+---------------+
-|    0C    |  BIST          | Header type    | Latency Timer  |Cache Line Size|
-+----------+----------------+----------------+----------------+---------------+
-|    10    |  Base address #0 (BAR0)                                          |
-+----------+------------------------------------------------------------------+
-|    14    |  Base address #1 (BAR1)                                          |
-+----------+----------------+----------------+----------------+---------------+
-|    18    |  Sec Latency   | Subordinate Bus|  Secondary Bus |  Primary Bus  |
-+----------+----------------+----------------+----------------+---------------+
-|    1C    |  Secondary Status               |    I/O Limit   |    I/O Base   |
-+----------+---------------------------------+----------------+---------------+
-|    20    |  Memory Limit                   |  Memory Base                   |
-+----------+---------------------------------+--------------------------------+
-|    24    |  Prefetchable Memory Limit      |  Prefetchable Memory Base      |
-+----------+---------------------------------+--------------------------------+
-|    28    |  Prefetchable Base Upper 32 Bits                                 |
-+----------+------------------------------------------------------------------+
-|    2C    |  Prefetchable Limit Upper 32 Bits                                |
-+----------+---------------------------------+--------------------------------+
-|    30    |  I/O Limit Upper 16 Bits        |  I/O Base Upper 16 Bits        |
-+----------+---------------------------------+----------------+---------------+
-|    34    |  Reserved                                        | Capability Ptr|
-+----------+--------------------------------------------------+---------------+
-|    38    |  Expansion ROM base address                                      |
-+----------+------------------------------------------------------------------+
-|    3C    |  Bridge Control                 | Interrupt PIN  | Interrupt Line|
-+-----------------------------------------------------------------------------+
-
+ * PCI Device Structure
+ *
+ * The PCI Specification defines the organization of the 256-byte Configuration
+ * Space registers and imposes a specific template for the space. The table
+ * below shows the layout of the 256-byte Configuration space. All PCI
+ * compliant devices must support the Vendor ID, Device ID, Command and Status,
+ * Revision ID, Class Code and Header Type fields. Implementation of the other
+ * registers is optional, depending upon the devices functionality.
+ *
+ * The PCI devices follow little ENDIAN ordering. The lower addresses contain
+ * the least significant portions of the field. Software to manipulate this
+ * structure must take particular care that the endian-ordering follows the PCI
+ * devices, not the CPUs.
+ *
+ * Header Type 0x00:
+ *
+ * +---------------------------------------------------------------------------+
+ * | Register |   Bits 31-24  |   Bits 23-16   |    Bits 15-8   |   Bits 7-0   |
+ * +----------+---------------+----------------+----------------+--------------+
+ * |    00    | Device ID                      |  Vendor ID                    |
+ * +----------+--------------------------------+-------------------------------+
+ * |    04    | Status                         |  Command                      |
+ * +----------+---------------+----------------+-------------------------------+
+ * |    08    | Class Code    |  Subclass      |  Register IF   |  Revision ID |
+ * +----------+---------------+----------------+----------------+--------------+
+ * |    0C    | BIST          | Header type    |Latency Timer  |Cache Line Size|
+ * +----------+---------------+----------------+----------------+--------------+
+ * |    10    | Base address #0 (BAR0)                                         |
+ * +----------+----------------------------------------------------------------+
+ * |    14    | Base address #1 (BAR1)                                         |
+ * +----------+----------------------------------------------------------------+
+ * |    18    | Base address #2 (BAR2)                                         |
+ * +----------+----------------------------------------------------------------+
+ * |    1C    | Base address #3 (BAR3)                                         |
+ * +----------+----------------------------------------------------------------+
+ * |    20    | Base address #4 (BAR4)                                         |
+ * +----------+----------------------------------------------------------------+
+ * |    24    | Base address #5 (BAR5)                                         |
+ * +----------+----------------------------------------------------------------+
+ * |    28    | Cardbus CIS Pointer                                            |
+ * +----------+--------------------------------+-------------------------------+
+ * |    2C    | Subsystem ID                   |  Subsystem Vendor ID          |
+ * +----------+--------------------------------+-------------------------------+
+ * |    30    | Expansion ROM base address                                     |
+ * +----------+----------------------------------------------------------------+
+ * |    34    | Reserved                                        |Capability Ptr|
+ * +----------+----------------------------------------------------------------+
+ * |    38    | Reserved                                                       |
+ * +----------+---------------+----------------+----------------+--------------+
+ * |    3C    | Max Latency   |  Min Grant     | Interrupt PIN  |Interrupt Line|
+ * +---------------------------------------------------------------------------+
+ *
+ *
+ * Header Type 0x01 (PCI-to-PCI bridge):
+ *
+ * +---------------------------------------------------------------------------+
+ * | Register |   Bits 31-24   |   Bits 23-16   |   Bits 15-8   |   Bits 7-0   |
+ * +----------+----------------+----------------+---------------+--------------+
+ * |    00    |  Device ID                      |  Vendor ID                   |
+ * +----------+---------------------------------+------------------------------+
+ * |    04    |  Status                         |  Command                     |
+ * +----------+----------------+----------------+------------------------------+
+ * |    08    |  Class Code    |  Subclass                      | Revision ID  |
+ * +----------+----------------+----------------+---------------+--------------+
+ * |    0C    |  BIST          | Header type    | Latency Timer |CacheLine Size|
+ * +----------+----------------+----------------+---------------+--------------+
+ * |    10    |  Base address #0 (BAR0)                                        |
+ * +----------+----------------------------------------------------------------+
+ * |    14    |  Base address #1 (BAR1)                                        |
+ * +----------+----------------+----------------+----------------+-------------+
+ * |    18    |  Sec Latency   | Subordinate Bus|  Secondary Bus | Primary Bus |
+ * +----------+----------------+----------------+----------------+-------------+
+ * |    1C    |  Secondary Status               |    I/O Limit   |    I/O Base |
+ * +----------+---------------------------------+----------------+-------------+
+ * |    20    |  Memory Limit                   |  Memory Base                 |
+ * +----------+---------------------------------+------------------------------+
+ * |    24    |  Prefetchable Memory Limit      |  Prefetchable Memory Base    |
+ * +----------+---------------------------------+------------------------------+
+ * |    28    |  Prefetchable Base Upper 32 Bits                               |
+ * +----------+----------------------------------------------------------------+
+ * |    2C    |  Prefetchable Limit Upper 32 Bits                              |
+ * +----------+---------------------------------+------------------------------+
+ * |    30    |  I/O Limit Upper 16 Bits        | I/O Base Upper 16 Bits       |
+ * +----------+---------------------------------+----------------+-------------+
+ * |    34    |  Reserved                                        |CapabilityPtr|
+ * +----------+--------------------------------------------------+-------------+
+ * |    38    |  Expansion ROM base address                                    |
+ * +----------+----------------------------------------------------------------+
+ * |    3C    |  Bridge Control                 | Interrupt PIN  |InterruptLine|
+ * +---------------------------------------------------------------------------+
  */
 
 union pci_dev {
@@ -540,20 +537,20 @@ union pci_dev {
 	} word;
 
 	struct {
-		uint32_t word[PCI_HEADER_WORDS]; /* array of words for the
-						    header	*/
+		/* array of words for the header */
+		uint32_t word[PCI_HEADER_WORDS];
 	} words;
 
 };
 
 /*
-Generic Capability register set header:
-
-+-----------------------------------------------------------------------------+
-| Register |   Bits 31-24   |   Bits 23-16   |    Bits 15-8   |   Bits 7-0    |
-+----------+----------------+----------------+----------------+---------------+
-|    00    |  Capability specific data       |  Next Pointer  |    Cap ID     |
-+-----------------------------------------------------------------------------+
+ * Generic Capability register set header:
+ *
+ * +---------------------------------------------------------------------------+
+ * | Register |   Bits 31-24   |   Bits 23-16   |   Bits 15-8   |  Bits 7-0    |
+ * +----------+----------------+----------------+---------------+--------------+
+ * |    00    |  Capability specific data       | Next Pointer  |   Cap ID     |
+ * +---------------------------------------------------------------------------+
  */
 
 union pci_cap_hdr {
@@ -582,95 +579,80 @@ union pcie_cap_hdr {
 };
 
 /*
-MSI Capability register set (32-bit):
-
-+-----------------------------------------------------------------------------+
-| Register |   Bits 31-24   |   Bits 23-16   |    Bits 15-8   |   Bits 7-0    |
-+----------+----------------+----------------+----------------+---------------+
-|    00    |  Message Control Register       |  Next Pointer  |    Cap ID     |
-+----------+---------------------------------+----------------+---------------+
-|    04    |                      Message Address Register                0 0 |
-+----------+---------------------------------+--------------------------------+
-|    0C    |                                 |      Message Data Register     |
-+-----------------------------------------------------------------------------+
-
-MSI Capability register set (64-bit):
-
-+-----------------------------------------------------------------------------+
-| Register |   Bits 31-24   |   Bits 23-16   |    Bits 15-8   |   Bits 7-0    |
-+----------+----------------+----------------+----------------+---------------+
-|    00    |  Message Control Register       |  Next Pointer  |    Cap ID     |
-+----------+---------------------------------+----------------+---------------+
-|    04    |  Least-Significant 32-bits of Message Address Register       0 0 |
-+----------+--------------------------------------------------+---------------+
-|    08    |  Most-Significant 32-bits of Message Address Register            |
-+----------+---------------------------------+--------------------------------+
-|    0C    |                                 |      Message Data Register     |
-+-----------------------------------------------------------------------------+
-
+ * MSI Capability register set (32-bit):
+ * 
+ * +---------------------------------------------------------------------------+
+ * |Register|   Bits 31-24   |   Bits 23-16   |    Bits 15-8   |   Bits 7-0    |
+ * +--------+----------------+----------------+----------------+---------------+
+ * |    00  |  Message Control Register       |  Next Pointer  |    Cap ID     |
+ * +--------+---------------------------------+----------------+---------------+
+ * |    04  |                      Message Address Register                0 0 |
+ * +--------+---------------------------------+--------------------------------+
+ * |    0C  |                                 |      Message Data Register     |
+ * +---------------------------------------------------------------------------+
+ * 
+ * MSI Capability register set (64-bit):
+ * 
+ * +---------------------------------------------------------------------------+
+ * |Register|   Bits 31-24   |   Bits 23-16   |    Bits 15-8   |   Bits 7-0    |
+ * +--------+----------------+----------------+----------------+---------------+
+ * |    00  |  Message Control Register       |  Next Pointer  |    Cap ID     |
+ * +--------+---------------------------------+----------------+---------------+
+ * |    04  |  Least-Significant 32-bits of Message Address Register       0 0 |
+ * +--------+--------------------------------------------------+---------------+
+ * |    08  |  Most-Significant 32-bits of Message Address Register            |
+ * +--------+---------------------------------+--------------------------------+
+ * |    0C  |                                 |      Message Data Register     |
+ * +---------------------------------------------------------------------------+
  */
 
 struct _pci_msi_hdr {
 	/* common MSI header */
 	union {
 		struct {
-			/* offset 00:			  */
-			uint32_t id : 8; /*	 capability ID */
-			uint32_t next_ptr
-				: 8; /*	 pointer to next capability	  */
-			uint32_t enabled
-				: 1; /*	   MSI enabled			  */
-			uint32_t msg_req
-				: 3; /*	   requested message count	  */
-			uint32_t msg_grant
-				: 3; /*	   granted message count	  */
-			uint32_t is_64_bit
-				: 1; /*	   64-bit capable		  */
-			uint32_t reserved
-				: 8; /*					  */
+						/* offset 00:		      */
+			uint32_t id : 8;	/* capability ID              */
+			uint32_t next_ptr : 8;	/* pointer to next capability */
+			uint32_t enabled : 1;	/* MSI enabled		      */
+			uint32_t msg_req : 3;	/* requested message count    */
+			uint32_t msg_grant : 3; /* granted message count      */
+			uint32_t is_64_bit : 1; /* 64-bit capable             */
+			uint32_t reserved : 8;	/*			      */
 		} msi_cap;
 
 		struct {
-			/* offset 00:			  */
-			uint32_t id : 8; /*	 capability ID */
-			uint32_t next_ptr
-				: 8; /*	 pointer to next capability	  */
-			uint32_t table_size
-				: 11; /*	   MSI-x table size */
-			uint32_t reserved
-				: 3; /*				          */
-			uint32_t func_mask
-				: 1; /*	  1 for vectors masked		  */
-			uint32_t enabled
-				: 1; /*	   MSI-x enabled		  */
+						/* offset 00:		      */
+			uint32_t id : 8;	/* capability ID              */
+			uint32_t next_ptr : 8;	/* pointer to next capability */
+			uint32_t table_size : 11; /* MSI-x table size         */
+			uint32_t reserved : 3;	/*		              */
+			uint32_t func_mask : 1; /* 1 for vectors masked	      */
+			uint32_t enabled : 1;	/* MSI-x enabled              */
 		} msix_cap;
 	} cap;
 
 	union {
 		/* 32-bit MSI header */
 		struct {
-			/* offset 04:			  */
-			uint32_t addr;      /*   message address register	  */
-						/* offset 08:			  */
-			uint32_t data : 16; /*   message data register
-					       */
-			uint32_t spare
-				: 16; /*				  */
+						/* offset 04:		      */
+			uint32_t addr;          /* message address register   */
+						/* offset 08		      */
+			uint32_t data : 16;	/*   message data register    */
+			uint32_t spare : 16;	/*			      */
 		} regs32;
 		/* 64-bit MSI header */
 		struct {
-			/* offset 04:			  */
-			uint32_t
-				addr_low; /*   message address register (lower)
-					     */
-			/* offset 08:			  */
-			uint32_t addr_high; /*   message address register
-					       (upper) */
-			/* offset 0C:			  */
-			uint32_t data : 16; /*   message data register
-					       */
-			uint32_t spare
-				: 16; /*				  */
+						/* offset 04:		      */
+			uint32_t addr_low;	/*  message address register
+						 *  (lower)
+						 */
+						/* offset 08:		      */
+			uint32_t addr_high;	/*   message address register
+						 * (upper)
+						 */
+						/* offset 0C:		      */
+			uint32_t data : 16;	/*  message data register     */
+			uint32_t spare : 16;	/*			      */
 		} regs64;
 	} regs;
 };
@@ -680,10 +662,11 @@ union pci_msi_hdr {
 	uint32_t word[4];   /* array of words for the header	  */
 };
 
-extern uint32_t pci_controller_cnt; /* number of pci controllers;
-					   * initialized to 0 until
-					   * the controllers have been
-					   * created */
+/*
+ * number of pci controllers; initialized to 0 until the controllers have been
+ * created
+ */
+extern uint32_t pci_controller_cnt;
 
 struct pci_msix_table {
 	uint32_t msg_addr;
@@ -725,7 +708,8 @@ extern void pci_config_out_long(uint32_t bus,    /* bus number */
 			     uint32_t dev,    /* device number */
 			     uint32_t func,   /* function number */
 			     uint32_t offset, /* offset into the configuration
-						 space */
+					       * space
+					       */
 			     uint32_t data /* data written to the offset */
 			     );
 
@@ -733,7 +717,8 @@ extern void pci_config_out_word(uint32_t bus,    /* bus number */
 			     uint32_t dev,    /* device number */
 			     uint32_t func,   /* function number */
 			     uint32_t offset, /* offset into the configuration
-						 space */
+					       * space
+					       */
 			     uint16_t data /* data written to the offset */
 			     );
 
@@ -741,7 +726,8 @@ extern void pci_config_out_byte(uint32_t bus,    /* bus number */
 			     uint32_t dev,    /* device number */
 			     uint32_t func,   /* function number */
 			     uint32_t offset, /* offset into the configuration
-						 space */
+					       * space
+					       */
 			     uint8_t data /* data written to the offset */
 			     );
 
@@ -749,7 +735,8 @@ extern void pci_config_in_long(uint32_t bus,    /* bus number */
 			    uint32_t dev,    /* device number */
 			    uint32_t func,   /* function number */
 			    uint32_t offset, /* offset into the configuration
-						space */
+					      * space
+					      */
 			    uint32_t *data /* return value address */
 			    );
 
@@ -757,7 +744,8 @@ extern void pci_config_in_word(uint32_t bus,    /* bus number */
 			    uint32_t dev,    /* device number */
 			    uint32_t func,   /* function number */
 			    uint32_t offset, /* offset into the configuration
-						space */
+					      * space
+					      */
 			    uint16_t *data /* return value address */
 			    );
 
@@ -765,7 +753,8 @@ extern void pci_config_in_byte(uint32_t bus,    /* bus number */
 			    uint32_t dev,    /* device number */
 			    uint32_t func,   /* function number */
 			    uint32_t offset, /* offset into the configuration
-						space */
+					      * space
+					      */
 			    uint8_t *data /* return value address */
 			    );
 
@@ -1143,12 +1132,8 @@ extern int pci_config_ext_cap_ptr_find(
 #define PCI_CFG_MASTER_ABORT 0x20  /* Signal master abort */
 #define PCI_CFG_SEC_BUS_RESET 0x40 /* secondary bus reset */
 #define PCI_CFG_FAST_BACK 0x80     /* FBB enabled on secondary */
-#define PCI_CFG_PRI_DIS_TO                \
-	0x100 /* Primary Discard Timeout: \
-		  2^10 PCI cycles */
-#define PCI_CFG_SEC_DIS_TO               \
-	0x200 /* 2ndary Discard Timeout: \
-		  2^10 PCI cycles */
+#define PCI_CFG_PRI_DIS_TO 0x100 /* Primary Discard Timeout: *2^10 PCI cycles */
+#define PCI_CFG_SEC_DIS_TO 0x200 /* 2ndary Discard Timeout: * 2^10 PCI cycles */
 #define PCI_CFG_DIS_TIMER_STAT 0x400   /* Discard Timer status */
 #define PCI_CFG_DIS_TIMER_ENABLE 0x800 /* Discard Timer enable */
 

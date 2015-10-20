@@ -17,10 +17,10 @@
  */
 
 /*
-DESCRIPTION
-Macros to abstract compiler capabilities (common to all toolchains).
-
-\NOMANUAL
+ * DESCRIPTION
+ * Macros to abstract compiler capabilities (common to all toolchains).
+ *
+ * \NOMANUAL
  */
 
 /*

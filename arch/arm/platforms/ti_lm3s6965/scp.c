@@ -17,12 +17,12 @@
  */
 
 /*
-DESCRIPTION
-
-Library for controlling target-specific devices present in the 0x400fe000
-peripherals memory region.
-
-Currently, only enabling the main OSC with default value is implemented.
+ * DESCRIPTION
+ *
+ * Library for controlling target-specific devices present in the 0x400fe000
+ * peripherals memory region.
+ *
+ * Currently, only enabling the main OSC with default value is implemented.
  */
 
 #include <stdint.h>

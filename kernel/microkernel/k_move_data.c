@@ -73,21 +73,19 @@ void _k_movedata_request(struct k_args *Req)
 		SIZEOFUNIT_TO_OCTET(1))); /* must be a multiple of size_t */
 	__ASSERT_NO_MSG(!(ReqArgs->action & MVDACT_INVALID));
 
-	/* If no data is to be transferred, just execute the continuation
-	   packet,
-	   if any, and get out:
+	/*
+	 * If no data is to be transferred, just execute the continuation
+	 * packet, if any, and get out:
 	 */
 	if (0 == ReqArgs->total_size) {
 		if (ReqArgs->action & MVDACT_SNDACK)
+			/* Send ack continuation */
 			mvdreq_docont(
-				ReqArgs->extra.setup.continuation_send); /* Send ack
-								  continuation
-								  */
+				ReqArgs->extra.setup.continuation_send);
 		if (ReqArgs->action & MVDACT_RCVACK)
+			/* Recv ack continuation */
 			mvdreq_docont(
-				ReqArgs->extra.setup.continuation_receive); /* Recv ack
-								  continuation
-								  */
+				ReqArgs->extra.setup.continuation_receive);
 		return;
 	}
 

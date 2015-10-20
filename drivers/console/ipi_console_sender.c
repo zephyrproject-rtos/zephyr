@@ -29,8 +29,10 @@ static int consoleOut(int character)
 		return character;
 	}
 
-	/* We just stash the character into the id field and don't supply
-	 * any extra data */
+	/*
+	 * We just stash the character into the id field and don't supply
+	 * any extra data
+	 */
 	ipi_send(ipi_console_device, 1, character, NULL, 0);
 
 	return character;

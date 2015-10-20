@@ -173,9 +173,11 @@ static void _ti_adc108s102_spi_cb(struct device *spi_dev,
 
 static void ti_adc108s102_enable(struct device *dev)
 {
-	/* There is nothing to be done. If there is no sampling going on,
+	/*
+	 * There is nothing to be done. If there is no sampling going on,
 	 * the chip will put itself on power-saving mode (that is because
-	 * SPI will release CS) */
+	 * SPI will release CS)
+	 */
 }
 
 static void ti_adc108s102_disable(struct device *dev)

@@ -17,12 +17,12 @@
  */
 
 /*
-DESCRIPTION
-Doubly-linked list implementation.
-
-The lists are expected to be initialized such that both the head and tail
-pointers point to the list itself.  Initializing the lists in such a fashion
-simplifies the adding and removing of nodes to/from the list.
+ * DESCRIPTION
+ * Doubly-linked list implementation.
+ *
+ * The lists are expected to be initialized such that both the head and tail
+ * pointers point to the list itself.  Initializing the lists in such a fashion
+ * simplifies the adding and removing of nodes to/from the list.
  */
 
 #ifndef _misc_dlist__h_

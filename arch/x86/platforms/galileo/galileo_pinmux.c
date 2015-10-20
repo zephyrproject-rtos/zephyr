@@ -552,8 +552,11 @@ uint8_t _galileo_set_pin(struct device *port, uint8_t pin, uint8_t func)
 
 	/* NUM_PIN_FUNCS being the number of alt functions */
 	mux_index = NUM_PIN_FUNCS * pin;
-	mux_index += func; /* functions are in numeric order, we can just
-			      skip to the index needed */
+	/*
+	 * functions are in numeric order, we can just skip to the index
+	 * needed
+	 */
+	mux_index += func;
 
 	enable = &_galileo_path[mux_index];
 
