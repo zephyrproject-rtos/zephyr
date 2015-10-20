@@ -615,9 +615,9 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 		 * must have register values larger than IC_FS_SPKLEN + 7
 		 */
 		if (I2C_STD_LCNT <= (regs->ic_fs_spklen + 7)) {
-		       value = regs->ic_fs_spklen + 8;
+			value = regs->ic_fs_spklen + 8;
 		} else {
-		       value = I2C_STD_LCNT;
+			value = I2C_STD_LCNT;
 		}
 
 		dw->lcnt = value;
@@ -626,9 +626,9 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 		 * must have register values larger than IC_FS_SPKLEN + 5
 		 */
 		if (I2C_STD_HCNT <= (regs->ic_fs_spklen + 5)) {
-		       value = regs->ic_fs_spklen + 6;
+			value = regs->ic_fs_spklen + 6;
 		} else {
-		       value = I2C_STD_HCNT;
+			value = I2C_STD_HCNT;
 		}
 
 		dw->hcnt = value;
@@ -641,9 +641,9 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 		 * must have register values larger than IC_FS_SPKLEN + 7
 		 */
 		if (I2C_FS_LCNT <= (regs->ic_fs_spklen + 7)) {
-		       value = regs->ic_fs_spklen + 8;
+			value = regs->ic_fs_spklen + 8;
 		} else {
-		       value = I2C_FS_LCNT;
+			value = I2C_FS_LCNT;
 		}
 
 		dw->lcnt = value;
@@ -653,9 +653,9 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 		 * must have register values larger than IC_FS_SPKLEN + 5
 		 */
 		if (I2C_FS_HCNT <= (regs->ic_fs_spklen + 5)) {
-		       value = regs->ic_fs_spklen + 6;
+			value = regs->ic_fs_spklen + 6;
 		} else {
-		       value = I2C_FS_HCNT;
+			value = I2C_FS_HCNT;
 		}
 
 		dw->hcnt = value;
@@ -663,17 +663,17 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 	case I2C_SPEED_HIGH:
 		if (dw->support_hs_mode) {
 			if (I2C_HS_LCNT <= (regs->ic_hs_spklen + 7)) {
-			       value = regs->ic_hs_spklen + 8;
+				value = regs->ic_hs_spklen + 8;
 			} else {
-			       value = I2C_HS_LCNT;
+				value = I2C_HS_LCNT;
 			}
 
 			dw->lcnt = value;
 
 			if (I2C_HS_HCNT <= (regs->ic_hs_spklen + 5)) {
-			       value = regs->ic_hs_spklen + 6;
+				value = regs->ic_hs_spklen + 6;
 			} else {
-			       value = I2C_HS_HCNT;
+				value = I2C_HS_HCNT;
 			}
 
 			dw->hcnt = value;
