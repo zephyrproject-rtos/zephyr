@@ -34,7 +34,7 @@ extern void _k_init_dynamic(void);     /* defined by sysgen */
 char __noinit __stack _k_server_stack[CONFIG_MICROKERNEL_SERVER_STACK_SIZE];
 
 #ifdef CONFIG_TASK_DEBUG
-int _k_debug_halt = 0;
+int _k_debug_halt;
 #endif
 
 #ifdef CONFIG_INIT_STACKS

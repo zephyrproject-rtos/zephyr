@@ -18,7 +18,7 @@
 
 #include <nano_private.h>
 
-struct nano_timer *_nano_timer_list = NULL;
+struct nano_timer *_nano_timer_list;
 
 
 void nano_timer_init(struct nano_timer *timer, void *data)

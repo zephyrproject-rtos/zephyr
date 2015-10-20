@@ -26,8 +26,8 @@
 
 extern struct k_timer _k_timer_blocks[];
 
-struct k_timer  *_k_timer_list_head = NULL;
-struct k_timer  *_k_timer_list_tail = NULL;
+struct k_timer  *_k_timer_list_head;
+struct k_timer  *_k_timer_list_tail;
 
 /**
  * @brief Insert a timer into the timer queue

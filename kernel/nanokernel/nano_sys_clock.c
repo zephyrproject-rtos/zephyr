@@ -40,7 +40,7 @@ int sys_clock_hw_cycles_per_tick;
 uint32_t _sys_idle_elapsed_ticks = 1;
 #endif /*  CONFIG_NANOKERNEL */
 
-int64_t _nano_ticks = 0;
+int64_t _nano_ticks;
 
 /**
  *

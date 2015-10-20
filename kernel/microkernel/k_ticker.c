@@ -31,7 +31,7 @@
 #include <toolchain.h>
 #include <sections.h>
 
-int64_t _k_sys_clock_tick_count = 0;
+int64_t _k_sys_clock_tick_count;
 
 #ifdef CONFIG_TIMESLICING
 static int32_t slice_count = (int32_t)0;
@@ -42,7 +42,7 @@ static kpriority_t slice_prio =
 
 #ifdef CONFIG_TICKLESS_IDLE
 /* Number of ticks elapsed that have not been announced to the microkernel */
-int32_t _sys_idle_elapsed_ticks = 0; /* Initial value must be 0 */
+int32_t _sys_idle_elapsed_ticks; /* Initial value must be 0 */
 #endif
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS

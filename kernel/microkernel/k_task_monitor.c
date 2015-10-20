@@ -33,7 +33,7 @@ static struct k_mrec *k_monitor_wptr = k_monitor_buff;
 static int k_monitor_nrec;
 static int K_monitor_wind;
 
-k_task_monitor_hook_t _k_task_switch_callback = NULL;
+k_task_monitor_hook_t _k_task_switch_callback;
 
 extern const int _k_num_events;
 

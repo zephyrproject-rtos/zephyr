@@ -20,7 +20,7 @@
 
 #define HEAP_SIZE 4096
 unsigned char heap[HEAP_SIZE];
-unsigned int heap_sz = 0;
+unsigned int heap_sz;
 
 static int _stdout_hook_default(int c)
 {
