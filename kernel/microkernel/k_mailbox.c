@@ -139,8 +139,8 @@ static bool prepare_transfer(struct k_args *move,
 
 	if (move) {
 		/* { move != NULL, which means full data exchange } */
-
 		bool all_data_present = true;
+
 		move->Comm = _K_SVC_MOVEDATA_REQ;
 		/*
 		 * transfer the data with the highest
@@ -872,6 +872,7 @@ int _task_mbox_data_block_get(struct k_msg *message,
 	 */
 
 	struct k_args A;
+
 	A.args.m1.mess = *message;
 	A.Comm = _K_SVC_MBOX_RECEIVE_DATA;
 	KERNEL_ENTRY(&A);

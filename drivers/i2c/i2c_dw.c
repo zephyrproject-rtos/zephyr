@@ -290,11 +290,11 @@ static int _i2c_dw_setup(struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	struct i2c_dw_rom_config const * const rom = dev->config->config_info;
-	volatile struct i2c_dw_registers * const regs =
-		(struct i2c_dw_registers *)rom->base_address;
 	uint32_t value = 0;
 	union ic_con_register ic_con;
 	int rc = DEV_OK;
+	volatile struct i2c_dw_registers * const regs =
+		(struct i2c_dw_registers *)rom->base_address;
 
 	ic_con.raw = 0;
 

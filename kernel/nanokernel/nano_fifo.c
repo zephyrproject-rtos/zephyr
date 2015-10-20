@@ -115,6 +115,7 @@ void _fifo_put_non_preemptible(struct nano_fifo *fifo, void *data)
 	fifo->stat++;
 	if (fifo->stat <= 0) {
 		struct tcs *tcs = _nano_wait_q_remove_no_check(&fifo->wait_q);
+
 		_nano_timeout_abort(tcs);
 		fiberRtnValueSet(tcs, (unsigned int)data);
 	} else {
@@ -133,6 +134,7 @@ void nano_task_fifo_put(struct nano_fifo *fifo, void *data)
 	fifo->stat++;
 	if (fifo->stat <= 0) {
 		struct tcs *tcs = _nano_wait_q_remove_no_check(&fifo->wait_q);
+
 		_nano_timeout_abort(tcs);
 		fiberRtnValueSet(tcs, (unsigned int)data);
 		_Swap(imask);

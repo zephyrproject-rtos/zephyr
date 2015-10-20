@@ -36,6 +36,7 @@ void _sys_device_do_config_level(int level)
 
 	for (info = config_levels[level]; info < config_levels[level+1]; info++) {
 		struct device_config *device = info->config;
+
 		device->init(info);
 	}
 }

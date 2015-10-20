@@ -767,9 +767,9 @@ static inline void nanoArchInit(void)
 {
 	extern void *__isr___SpuriousIntHandler;
 	extern void *_dummy_spurious_interrupt;
-	extern void _ExcEnt(void);
 	extern void *_dummy_exception_vector_stub;
 	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
+	extern void _ExcEnt(void);
 
 	_nanokernel.nested = 0;
 

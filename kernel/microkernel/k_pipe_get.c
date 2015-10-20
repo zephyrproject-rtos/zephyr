@@ -205,6 +205,7 @@ void _k_pipe_get_reply(struct k_args *ReqProc)
 
 	struct k_args *ReqOrig = ReqProc->Ctxt.args;
 	PIPE_REQUEST_STATUS status;
+
 	ReqOrig->Comm = _K_SVC_PIPE_GET_ACK;
 
 	/* determine return value */

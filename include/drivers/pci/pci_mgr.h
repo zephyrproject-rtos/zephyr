@@ -283,13 +283,11 @@ union pci_dev {
 /* offset 04:				*/
 
 #ifdef _BIG_ENDIAN
-		uint32_t status : 16; /*   device status */
-		uint32_t command
-			: 16; /*   device command register		*/
+		uint32_t status : 16;  /*   device status */
+		uint32_t command : 16; /*   device command register	*/
 #else
-		uint32_t command
-			: 16; /*   device command register		*/
-		uint32_t status : 16; /*   device status */
+		uint32_t command : 16; /*   device command register	*/
+		uint32_t status : 16;  /*   device status */
 #endif
 
 /* offset 08:				*/

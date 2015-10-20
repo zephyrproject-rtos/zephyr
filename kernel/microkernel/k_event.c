@@ -185,6 +185,7 @@ void _k_do_event_signal(kevent_t event)
 void _k_event_signal(struct k_args *A)
 {
 	kevent_t event = A->args.e1.event;
+
 	_k_do_event_signal(event);
 	A->Time.rcode = RC_OK;
 }

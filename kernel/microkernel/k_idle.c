@@ -72,6 +72,7 @@ static void workload_loop(void)
 
 	while (++_k_workload_i != _k_workload_n1) {
 		unsigned int s_iCountDummyProc = 0;
+
 		while (64 != s_iCountDummyProc++) { /* 64 == 2^6 */
 			x >>= y;
 			x <<= y;
@@ -413,6 +414,7 @@ int _k_kernel_idle(void)
 	/* record timestamp when idling begins */
 
 	extern uint64_t __idle_tsc;
+
 	__idle_tsc = _NanoTscRead();
 #endif
 

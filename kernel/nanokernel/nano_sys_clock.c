@@ -71,6 +71,7 @@ int64_t nano_tick_get(void)
 	 * _nano_ticks
 	 */
 	unsigned int imask = irq_lock();
+
 	tmp_nano_ticks = _nano_ticks;
 	irq_unlock(imask);
 	return tmp_nano_ticks;
@@ -116,6 +117,7 @@ static ALWAYS_INLINE int64_t _nano_tick_delta(int64_t *reftime)
 	 * _nano_ticks
 	 */
 	unsigned int imask = irq_lock();
+
 	saved = _nano_ticks;
 	irq_unlock(imask);
 	delta = saved - (*reftime);
@@ -171,6 +173,7 @@ static inline void handle_expired_nano_timers(int ticks)
 		while (_nano_timer_list && (!_nano_timer_list->ticks)) {
 			struct nano_timer *expired = _nano_timer_list;
 			struct nano_lifo *lifo = &expired->lifo;
+
 			_nano_timer_list = expired->link;
 			nano_isr_lifo_put(lifo, expired->userData);
 		}

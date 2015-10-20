@@ -103,6 +103,7 @@ static inline int spi_configure(struct device *dev,
 				struct spi_config *config, void *user_data)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+
 	return api->configure(dev, config, user_data);
 }
 
@@ -141,6 +142,7 @@ inline int spi_slave_select(struct device *dev, uint32_t slave)
 static inline int spi_read(struct device *dev, uint8_t *buf, uint32_t len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+
 	return api->transceive(dev, NULL, 0, buf, len);
 }
 
@@ -155,6 +157,7 @@ static inline int spi_read(struct device *dev, uint8_t *buf, uint32_t len)
 static inline int spi_write(struct device *dev, uint8_t *buf, uint32_t len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+
 	return api->transceive(dev, buf, len, NULL, 0);
 }
 
@@ -176,6 +179,7 @@ static inline int spi_transceive(struct device *dev,
 			  uint8_t *rx_buf, uint32_t rx_buf_len)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+
 	return api->transceive(dev, tx_buf, tx_buf_len, rx_buf, rx_buf_len);
 }
 
@@ -188,6 +192,7 @@ static inline int spi_transceive(struct device *dev,
 static inline int spi_suspend(struct device *dev)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+
 	return api->suspend(dev);
 }
 
@@ -200,6 +205,7 @@ static inline int spi_suspend(struct device *dev)
 static inline int spi_resume(struct device *dev)
 {
 	struct spi_driver_api *api = (struct spi_driver_api *)dev->driver_api;
+
 	return api->resume(dev);
 }
 
