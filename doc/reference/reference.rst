@@ -10,4 +10,3 @@ The following reference guides might be needed during development.
 
    api.rst
    kconfig/index.rst
-   kbuild/kbuild.rst

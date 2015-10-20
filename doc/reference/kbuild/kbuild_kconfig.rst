@@ -20,11 +20,9 @@ they add to the configuration menus. For example:
   defined for and apply to the entire build system.
 
 * The Kconfig file at the :file:`kernel` directory contains the general
-  configuration related to the micro- and the nanokernel. Some configuration
-  options contained here are: :option:`Kernel Type`
-  and :option:`Enhanced Security`.
+  configuration related to the micro- and the nanokernel.
 
-* The Kconfig file at the :file:`driver` directory organizes the inclusion of
+* The Kconfig file at the :file:`drivers` directory organizes the inclusion of
   the various Kconfig files needed for each supported driver in the system.
 
 * The Kconfig file at the :file:`misc` directory contains the configuration
@@ -73,7 +71,7 @@ kernel on a specific platform. For example:
 * :file:`arch/x86/configs` and
 * :file:`arch/arc/configs`.
 
-All the defconfig files must end with the suffix defconfig. For
+All the default configuration files must end with the suffix _defconfig. For
 example, the :file:`galileo_defconfig` file contains the configuration
 information for the galileo platform.
 
@@ -84,7 +82,7 @@ target's defconfig. The build system takes the specified defconfig file and
 sets it as the current :file:`.config` file for the current project. For
 example:
 
-.. code-block:: bash
+.. code-block:: console
 
    $ make galileo_defconfig
 
@@ -104,8 +102,8 @@ configuration options.  The subset must contain the specific configuration
 options that differ from the default configuration.
 
 The **initconfig** target pulls the default configuration file and merges it
-with the configuration snippet. For example, the sample application **hello
-world** overrides the base configuration with the configuration snippet
+with the local configuration fragments. For example, the sample application **hello
+world** overrides the base configuration with the configuration fragment in
 :file:`prj.conf`.
 
 .. caution::
