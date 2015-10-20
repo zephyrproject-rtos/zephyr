@@ -13,7 +13,6 @@ and how to use them.
    common/common.rst
    microkernel/microkernel.rst
    nanokernel/nanokernel.rst
-   drivers/drivers.rst
    networking/networking.rst
 
 .. rubric:: Abbreviations
