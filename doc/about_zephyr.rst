@@ -3,7 +3,7 @@
 Introduction to the Zephyr Project
 ##################################
 
-The |codename| is a small-footprint kernel designed for use on
+The Zephyr Kernel is a small-footprint kernel designed for use on
 resource-constrained systems: from simple embedded environmental
 sensors and LED wearables to sophisticated smart watches and IoT
 wireless gateways.
@@ -21,7 +21,7 @@ to users and developers under the Apache License, version 2.0.
 Distinguishing Features
 ***********************
 
-The |codename| offers a number of features that distinguish it from other
+The Zephyr Kernel offers a number of features that distinguish it from other
 small-footprint OSes:
 
 #. **Single address-space OS**. Combines application-specific code

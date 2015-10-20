@@ -6,7 +6,7 @@ Platform Configuration: basic_minuteia
 Overview
 ********
 
-The |codename| uses the basic_minuteia platform configuration
+The Zephyr Kernel uses the basic_minuteia platform configuration
 to emulate the galileo platform (or something similar) running on QEMU.
 It provides support for an x86 Minute IA CPU and the following devices:
 

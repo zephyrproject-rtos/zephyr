@@ -10,7 +10,7 @@ Application development can be organized in three independent directories:
 the kernel base directory, the project directory, and the project source code
 directory.
 
-The |codename|'s base directory hosts the kernel source code, the
+The Zephyr Kernel's base directory hosts the kernel source code, the
 configuration options, and the kernel build definitions.
 
 The application directory is the directory that puts together the kernel with

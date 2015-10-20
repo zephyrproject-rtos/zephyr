@@ -10,7 +10,7 @@ workspace directory. The application developer also creates a
 
 .. note::
 
-   The |codename| either supplies or generates all other application
+   The Zephyr Kernel either supplies or generates all other application
    directories.
 
 Procedures

@@ -3,7 +3,7 @@
 Doxygen Groups
 ##############
 
-The |codename|'s in-code documentation implements Doxygen groups.
+The Zephyr Kernel's in-code documentation implements Doxygen groups.
 The comments regarding the various services are contained in their respective groups.
 The services groups are then contained in one of two main groups: either microkernel or nanokernel.
 Each group can contain other groups, functions, variables, enums, typedefs and defines.

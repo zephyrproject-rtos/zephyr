@@ -12,7 +12,7 @@ Application Code Development
 Services
 ********
 
-The |codename| services architecture has services that are
+The Zephyr kernel services architecture has services that are
 specific to the microkernel, services that are specific to the
 nanokernel, and services that are common, or shared, between the
 two.

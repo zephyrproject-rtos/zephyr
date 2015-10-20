@@ -3,8 +3,8 @@
 Application Development Workflow
 ################################
 
-The application development workflow identifies the procedures needed to
-create, build, and run a |codename|'s microkernel or nanokernel application.
+The application development workflow identifies procedures needed to create, build, and
+run a Zephyr microkernel or nanokernel application.
 
 Before you build
 ----------------

@@ -3,9 +3,9 @@
 License Guidelines
 ##################
 
-The |codename| is licensed under a BSD 3-clause license. This is a
+The Zephyr Kernel is licensed under a BSD 3-clause license. This is a
 permissive license that allows our customers to write kernel-level code
-without having to open source their code. All code linked in a |codename|
+without having to open source their code. All code linked in a Zephyr Kernel
 binary image must be permissively licensed. The source tree includes some GPL
 -licensed build tools, but those are not linked to the final binary image,
 and thus the image itself is not GPL-tainted.

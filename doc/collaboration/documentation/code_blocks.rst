@@ -3,14 +3,14 @@
 Code Examples
 *************
 
-Collaborating to the |codename| is all about code. Therefore, your
+Collaborating to the Zephyr Kernel is all about code. Therefore, your
 documentation must include code examples. The code examples can be
 written directly in the documentation or included from a source file.
 Use these guidelines to insert code blocks to your documentation:
 
 * Include code examples from a source file . Only write the code
   example directly into the documentation if the example is less than 10
-  lines long or not part of the code base of |codename|.
+  lines long or not part of the code base of the Zephyr Kernel.
 
 * Use the ``:lineos:`` option of the directives to add line numbers to
   your example if it is larger than 12 lines.
@@ -69,7 +69,7 @@ Renders as:
 
    $ mkdir ${HOME}/cross-src
 
-Finally, this is a code example that is not part of the |codename|'s
+Finally, this is a code example that is not part of the Zephyr Kernel's
 code base. It is not even valid code but it is used to illustrate a
 concept.
 
@@ -127,7 +127,7 @@ We have included templates for a basic ``.. code-block::`` directive
 and for a ``.. literalinclude::`` directive.
 
 Use ``code-block`` for console commands, brief examples and examples
-outside the code base of the |codename|.
+outside the code base of the Zephyr Kernel.
 
 .. code-block:: rst
 

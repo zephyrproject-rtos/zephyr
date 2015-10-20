@@ -15,7 +15,7 @@ Setting Environment Variables
 =============================
 
 Set environment variables every time you open a terminal console to work on
-|codename|'s applications.
+applications.
 
 Steps
 -----

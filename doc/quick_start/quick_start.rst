@@ -4,10 +4,10 @@ Quick Start Guide
 #################
 
 Use this guide to install the Zephyr development environment on your
-development system and to build the |codename| on the supported platforms.
+development system and to build the Zephyr Kernel on the supported platforms.
 
 Currently, the |project| supports Linux development systems only. This guide
-was tested by compiling and running the |codename|'s sample applications on
+was tested by compiling and running the Zephyr Kernel's sample applications on
 the following Linux distributions:
 
 * Ubuntu 14.04 LTS 64 bit

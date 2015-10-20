@@ -7,7 +7,7 @@ Overview
 ********
 
 Developers can use the galileo platform configuration
-to build a |codename| that runs on a Galileo Development Board (Gen 1 or Gen 2).
+to build a Zephyr Kernel that runs on a Galileo Development Board (Gen 1 or Gen 2).
 
 This platform configuration enables kernel support for the board's Quark SoC,
 along with the following devices:

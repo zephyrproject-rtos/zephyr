@@ -3,7 +3,7 @@
 Supported Platforms
 ###################
 
-The |codename| supports the platform configurations listed in the
+The Zephyr Kernel supports the platform configurations listed in the
 table below. An application can use a platform configuration as is,
 or it can customize a platform configuration by changing its default
 kernel configuration settings.

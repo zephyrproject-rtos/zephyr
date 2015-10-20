@@ -21,7 +21,7 @@ least one Makefile. The application's kernel configuration settings enable the b
 system to create a kernel tailor-made to meet the needs of the application
 and to make the best use of the system's resources.
 
-The |codename| supports a variety of target systems, known as *platforms*;
+The Zephyr Kernel supports a variety of target systems, known as *platforms*;
 each :dfn:`platform` has its own set of hardware devices and capabilities. One or more
 *platform configurations* are defined for a given platform; each
 :dfn:`platform configuration` indicates how the devices that may be present on the

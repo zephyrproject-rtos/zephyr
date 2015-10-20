@@ -1,5 +1,5 @@
-Welcome to |codename|
-#####################
+Welcome to Zephyr Kernel
+########################
 
 .. This document is in Restructured Text Format.
 
