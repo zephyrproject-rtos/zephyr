@@ -612,13 +612,15 @@ void _k_mem_pool_block_release(struct k_args *A)
 				if (P->waiters != NULL) {
 					struct k_args *NewGet;
 					/*
-					 * get new command packet that calls the function
-					 * that reallocate blocks for the waiting tasks
+					 * get new command packet that calls
+					 * the function that reallocate blocks
+					 * for the waiting tasks
 					 */
 					GETARGS(NewGet);
 					*NewGet = *A;
 					NewGet->Comm = _K_SVC_BLOCK_WAITERS_GET;
-					TO_ALIST(&_k_command_stack, NewGet); /* push on command stack */
+					/* push on command stack */
+					TO_ALIST(&_k_command_stack, NewGet);
 				}
 				if (A->alloc) {
 					FREEARGS(A);

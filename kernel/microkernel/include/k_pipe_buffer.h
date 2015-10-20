@@ -25,15 +25,21 @@ extern "C" {
 
 #include <micro_private_types.h>
 
-void BuffInit(unsigned char *pBuffer, int *piBuffSize, struct _k_pipe_desc *desc);
+void BuffInit(unsigned char *pBuffer,
+	      int *piBuffSize,
+	      struct _k_pipe_desc *desc);
 
 void BuffGetFreeSpaceTotal(struct _k_pipe_desc *desc, int *piTotalFreeSpace);
-void BuffGetFreeSpace(struct _k_pipe_desc *desc, int *piTotalFreeSpace,
-					  int *free_space_count_ptr, int *free_space_post_wrap_around_ptr);
+void BuffGetFreeSpace(struct _k_pipe_desc *desc,
+		      int *piTotalFreeSpace,
+		      int *free_space_count_ptr,
+		      int *free_space_post_wrap_around_ptr);
 
 void BuffGetAvailDataTotal(struct _k_pipe_desc *desc, int *piAvailDataTotal);
-void BuffGetAvailData(struct _k_pipe_desc *desc, int *piAvailDataTotal,
-					  int *available_data_count_ptr, int *available_data_post_wrap_around_ptr);
+void BuffGetAvailData(struct _k_pipe_desc *desc,
+		      int *piAvailDataTotal,
+		      int *available_data_count_ptr,
+		      int *available_data_post_wrap_around_ptr);
 
 int BuffEmpty(struct _k_pipe_desc *desc);
 int BuffFull(struct _k_pipe_desc *desc);

@@ -68,7 +68,8 @@ void _k_state_bit_reset(struct k_task *X, uint32_t bits)
 		X->next = NULL;
 		H->tail->next = X;
 		H->tail = X;
-		_k_task_priority_bitmap[X->priority >> 5] |= (1 << (X->priority & 0x1F));
+		_k_task_priority_bitmap[X->priority >> 5] |=
+			(1 << (X->priority & 0x1F));
 	}
 
 #ifdef CONFIG_TASK_MONITOR
@@ -127,7 +128,8 @@ void _k_state_bit_set(struct k_task *task_ptr, uint32_t bits)
 		volatile
 #endif
 #endif
-			struct k_tqhd *task_queue = _k_task_priority_list + task_ptr->priority;
+			struct k_tqhd *task_queue = _k_task_priority_list +
+							task_ptr->priority;
 		struct k_task *cur_task = (struct k_task *)(&task_queue->head);
 
 		/*
@@ -149,7 +151,8 @@ void _k_state_bit_set(struct k_task *task_ptr, uint32_t bits)
 		 * runnable, then clear that bit in the global priority bit map.
 		 */
 		if (task_queue->head == NULL) {
-			_k_task_priority_bitmap[task_ptr->priority >> 5] &= ~(1 << (task_ptr->priority & 0x1F));
+			_k_task_priority_bitmap[task_ptr->priority >> 5] &=
+				~(1 << (task_ptr->priority & 0x1F));
 		}
 	}
 

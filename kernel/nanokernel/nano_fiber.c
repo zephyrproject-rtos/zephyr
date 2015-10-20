@@ -197,16 +197,16 @@ FUNC_ALIAS(fiber_delayed_start, fiber_fiber_delayed_start, void *);
 FUNC_ALIAS(fiber_delayed_start, task_fiber_delayed_start, void *);
 
 void *fiber_delayed_start(char *stack, unsigned int stack_size_in_bytes,
-							nano_fiber_entry_t entry_point, int param1,
-							int param2, unsigned int priority,
-							unsigned int options, int32_t timeout_in_ticks)
+			  nano_fiber_entry_t entry_point, int param1,
+			  int param2, unsigned int priority,
+			  unsigned int options, int32_t timeout_in_ticks)
 {
 	unsigned int key;
 	struct tcs *tcs;
 
 	tcs = (struct tcs *)stack;
 	_new_thread(stack, stack_size_in_bytes, (_thread_entry_t)entry_point,
-				(void *)param1, (void *)param2, (void *)0, priority, options);
+		(void *)param1, (void *)param2, (void *)0, priority, options);
 
 	key = irq_lock();
 

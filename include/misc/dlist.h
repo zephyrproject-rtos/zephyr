@@ -122,7 +122,7 @@ static inline sys_dnode_t *sys_dlist_peek_head(sys_dlist_t *list)
  */
 
 static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
-												sys_dnode_t *node)
+					       sys_dnode_t *node)
 {
 	return node == list->tail ? NULL : node->next;
 }

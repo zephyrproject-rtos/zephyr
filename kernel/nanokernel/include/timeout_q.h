@@ -92,7 +92,8 @@ static inline void _nano_timeout_abort(struct tcs *tcs)
 
 	if (!sys_dlist_is_tail(timeout_q, &t->node)) {
 		struct _nano_timeout *next =
-			(struct _nano_timeout *)sys_dlist_peek_next(timeout_q, &t->node);
+			(struct _nano_timeout *)sys_dlist_peek_next(timeout_q,
+								    &t->node);
 		next->delta_ticks_from_prev += t->delta_ticks_from_prev;
 	}
 	sys_dlist_remove(&t->node);
@@ -127,8 +128,8 @@ static int _nano_timeout_insert_point_test(sys_dnode_t *test, void *timeout)
 
 /* put a fiber on the timeout queue and record its wait queue */
 static inline void _nano_timeout_add(struct tcs *tcs,
-										struct _nano_queue *wait_q,
-										int32_t timeout)
+				     struct _nano_queue *wait_q,
+				     int32_t timeout)
 {
 	sys_dlist_t *timeout_q = &_nanokernel.timeout_q;
 	struct _nano_timeout *t = &tcs->nano_timeout;

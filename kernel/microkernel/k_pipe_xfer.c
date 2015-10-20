@@ -619,14 +619,14 @@ static void pipe_read_write(struct _k_pipe_struct *pipe_ptr,
 	pipe_read_req = &reader_ptr->args.pipe_xfer_req;
 
 	/* Calculate iT1, iT2 and iT3 */
-	int iFreeSpaceReader =
-		(pipe_read_req->total_size - pipe_read_req->xferred_size);
-	int iAvailDataWriter =
-		(pipe_write_req->total_size - pipe_write_req->xferred_size);
-	int iFreeSpaceBuffer =
-		(pipe_ptr->desc.free_space_count + pipe_ptr->desc.free_space_post_wrap_around);
-	int iAvailDataBuffer =
-		(pipe_ptr->desc.available_data_count + pipe_ptr->desc.available_data_post_wrap_around);
+	int iFreeSpaceReader = (pipe_read_req->total_size -
+				pipe_read_req->xferred_size);
+	int iAvailDataWriter = (pipe_write_req->total_size -
+				pipe_write_req->xferred_size);
+	int iFreeSpaceBuffer = (pipe_ptr->desc.free_space_count +
+				pipe_ptr->desc.free_space_post_wrap_around);
+	int iAvailDataBuffer = (pipe_ptr->desc.available_data_count +
+				pipe_ptr->desc.available_data_post_wrap_around);
 
 	iT1 = min(iFreeSpaceReader, iAvailDataBuffer);
 
@@ -667,7 +667,8 @@ static void pipe_read_write(struct _k_pipe_struct *pipe_ptr,
 		__ASSERT_NO_MSG(TERM_SATISFIED != reader_ptr->args.pipe_xfer_req.status);
 
 		GETARGS(Moved_req);
-		setup_movedata(Moved_req, pipe_ptr, XFER_W2R, writer_ptr, reader_ptr,
+		setup_movedata(Moved_req, pipe_ptr, XFER_W2R,
+			writer_ptr, reader_ptr,
 			(char *)(pipe_read_req->data_ptr) +
 			OCTET_TO_SIZEOFUNIT(pipe_read_req->xferred_size),
 			(char *)(pipe_write_req->data_ptr) +
@@ -775,7 +776,8 @@ void _k_pipe_process(struct _k_pipe_struct *pipe_ptr, struct k_args *pNLWriter,
 				int iFreeBufferSpace;
 				int iTotalSpace2Write;
 
-				iSpace2WriteinReaders = CalcFreeReaderSpace(pipe_ptr->readers);
+				iSpace2WriteinReaders =
+					CalcFreeReaderSpace(pipe_ptr->readers);
 				if (pNLReader)
 					iSpace2WriteinReaders +=
 						(pNLReader->args.pipe_xfer_req.total_size -
@@ -931,17 +933,17 @@ void _k_pipe_process(struct _k_pipe_struct *pipe_ptr, struct k_args *pNLWriter,
 
 	/* in the sequel, we will:
 	 * 1. check the hypothesis that an existing reader_ptr/writer_ptr is
-	 * not completed
+	 *    not completed
 	 * 2. check if we can force the termination of a X_TO_N request when
-	 * some data transfer took place
+	 *    some data transfer took place
 	 * 3. check if we have to cancel a timer when the (first) data has been
-	 * Xferred
+	 *    Xferred
 	 * 4. Check if we have to kick out a queued request because its
-	 * processing is really blocked (for some reason)
+	 *    processing is really blocked (for some reason)
 	 */
 	if (reader_ptr && writer_ptr) {
 		__ASSERT_NO_MSG(!(TERM_XXX & reader_ptr->args.pipe_xfer_req.status) &&
-						!(TERM_XXX & writer_ptr->args.pipe_xfer_req.status));
+			!(TERM_XXX & writer_ptr->args.pipe_xfer_req.status));
 		/*
 		 * this could be possible when data Xfer operations are jammed
 		 * (out of data Xfer resources e.g.)

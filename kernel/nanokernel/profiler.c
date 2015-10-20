@@ -110,7 +110,9 @@ void _sys_profiler_context_switch(void)
 		 * switch during the process.
 		 */
 		_sys_event_logger_put_non_preemptible(&sys_profiler_logger,
-			PROFILER_CONTEXT_SWITCH_EVENT_ID, data, ARRAY_SIZE(data));
+					PROFILER_CONTEXT_SWITCH_EVENT_ID,
+					data,
+					ARRAY_SIZE(data));
 	}
 }
 
@@ -145,7 +147,8 @@ void _sys_profiler_exit_sleep(void)
 	uint32_t data[3];
 
 	data[0] = nano_tick_get_32();
-	data[1] = (nano_cycle_get_32() - _sys_profiler_sleep_start_time) / sys_clock_hw_cycles_per_tick;
+	data[1] = (nano_cycle_get_32() - _sys_profiler_sleep_start_time) /
+					sys_clock_hw_cycles_per_tick;
 	/* register the cause of exiting sleep mode */
 	data[2] = _sys_current_irq_key_get();
 
