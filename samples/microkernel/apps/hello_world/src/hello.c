@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
+
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define PRINT           printf
@@ -32,7 +34,6 @@
  * a controlled rate.
  */
 
-#include <zephyr.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
@@ -83,8 +84,6 @@ void taskB(void)
  * a controlled rate.
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 

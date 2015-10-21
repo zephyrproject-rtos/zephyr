@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
+
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define PRINT           printf
@@ -87,8 +89,6 @@ static struct net_context *get_context(void)
  * a controlled rate.
  */
 
-#include <zephyr.h>
-
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
 #define SLEEPTIME  500
@@ -158,7 +158,6 @@ void taskB(void)
  * a controlled rate.
  */
 
-#include <nanokernel.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 

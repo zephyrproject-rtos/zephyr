@@ -16,14 +16,8 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NANOKERNEL
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#include "phil.h"
-#else
 #include <zephyr.h>
 #include "phil.h"
-#endif
 
 #define DEMO_DESCRIPTION  \
 	"\x1b[2J\x1b[15;1H"   \

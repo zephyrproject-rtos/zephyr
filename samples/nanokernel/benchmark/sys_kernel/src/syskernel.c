@@ -16,12 +16,7 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_MICROKERNEL
 #include <zephyr.h>
-#else
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#endif
 
 #include "syskernel.h"
 

@@ -27,8 +27,6 @@ This modules tests the following semaphore routines:
   isr_sem_give(),  fiber_sem_give()
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
 #include <zephyr.h>
 #include <tc_util.h>
 

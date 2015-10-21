@@ -16,8 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
+#include <zephyr.h>
 
 #include <device.h>
 #include <misc/byteorder.h>

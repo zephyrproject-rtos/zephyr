@@ -19,7 +19,7 @@
 #ifndef _MASTER_H
 #define _MASTER_H
 
-#include <microkernel.h>
+#include <zephyr.h>
 
 #include <stdio.h>
 

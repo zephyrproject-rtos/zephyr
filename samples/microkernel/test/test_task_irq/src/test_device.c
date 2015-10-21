@@ -26,7 +26,7 @@ that has already been allocated by another task. The taskB() function also
 exercises the task_irq_free() API.
  */
 
-#include <microkernel.h>
+#include <zephyr.h>
 #include <misc/printk.h>
 
 #include <tc_util.h>

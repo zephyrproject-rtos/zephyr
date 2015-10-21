@@ -21,18 +21,11 @@
  * this file contains commonly used functions
  */
 
+#include <zephyr.h>
+
 #include "timestamp.h"
 #include "utils.h"
 
-#ifdef CONFIG_NANOKERNEL
-
-#elif defined(CONFIG_MICROKERNEL)
-
-#include <microkernel.h>
-
-#endif /*  CONFIG_NANOKERNEL */
-
-#include <arch/cpu.h>
 
 static uint8_t vector; /* the interrupt vector we allocate */
 

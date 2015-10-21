@@ -21,19 +21,14 @@ DESCRIPTION
 Ensures interrupt and exception stubs are installed correctly.
  */
 
+#include <zephyr.h>
 #include <tc_util.h>
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
 #include <nano_private.h>
 #if defined(__GNUC__)
 #include <test_asm_inline_gcc.h>
 #else
 #include <test_asm_inline_other.h>
-#endif
-
-#ifdef CONFIG_MICROKERNEL
-#include <zephyr.h>
 #endif
 
 /* These vectors are somewhat arbitrary. We try and use unused vectors */

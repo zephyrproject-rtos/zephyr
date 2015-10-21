@@ -16,12 +16,7 @@
  * limitations under the License.
  */
 
-#ifdef CONFIG_NANOKERNEL
-#include <nanokernel.h>
-#include <arch/cpu.h>
-#else
 #include <zephyr.h>
-#endif
 
 #include "phil.h"
 #include <misc/profiler.h>

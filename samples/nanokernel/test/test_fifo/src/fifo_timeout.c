@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <tc_util.h>
-#include <nanokernel.h>
 #include <misc/__assert.h>
 #include <misc/util.h>
 

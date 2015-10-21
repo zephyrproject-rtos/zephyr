@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <toolchain.h>
 
 volatile int i = 0;		/* counter used by background task */
@@ -24,7 +24,6 @@ volatile int i = 0;		/* counter used by background task */
 #ifndef TEST_min
 
 #include <misc/printk.h>
-#include <arch/cpu.h>
 #include <stdio.h>
 
 #ifdef TEST_reg

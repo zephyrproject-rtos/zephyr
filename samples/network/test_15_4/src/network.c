@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
+
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define PRINT           printf
@@ -24,11 +26,6 @@
 #define PRINT           printk
 #endif
 
-#ifdef CONFIG_MICROKERNEL
-#include <zephyr.h>
-#else
-#include <nanokernel.h>
-#endif
 
 #include <net/net_core.h>
 #include <net/net_socket.h>
@@ -269,8 +266,6 @@ void taskB(void)
  * semaphores and timers to take turns printing a greeting message at
  * a controlled rate.
  */
-
-#include <nanokernel.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 

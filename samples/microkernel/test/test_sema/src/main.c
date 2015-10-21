@@ -28,8 +28,6 @@ these semaphores until it detects a failure or the completion of all test tasks,
 then announces the result of the test.
  */
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
 #include <zephyr.h>
 #include <tc_util.h>
 

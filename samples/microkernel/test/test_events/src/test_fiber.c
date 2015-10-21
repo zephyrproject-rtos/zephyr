@@ -21,9 +21,6 @@ DESCRIPTION
 The module implements functions for the fiber that tests
 event signaling
  */
-
-#include <nanokernel.h>
-#include <arch/cpu.h>
 #include <zephyr.h>
 
 #define N_TESTS 10 /* number of tests to run */

@@ -38,8 +38,9 @@ subsequent computations must produce the same value, otherwise an error
 has occurred.
  */
 
+#include <zephyr.h>
+
 #ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
 #include <stdio.h>
 #include <tc_util.h>
 

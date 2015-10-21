@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <microkernel.h>
+#include <zephyr.h>
 #include <toolchain.h>
 
 #ifdef TEST_min
@@ -25,7 +25,6 @@
 
 #else
 
-#include <arch/cpu.h>
 #include <misc/printk.h>
 #include <stdio.h>
 

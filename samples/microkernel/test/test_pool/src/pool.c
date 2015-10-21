@@ -24,10 +24,8 @@ This modules tests the following memory pool routines:
   task_mem_pool_free()
  */
 
-#include <tc_util.h>
-#include <nanokernel.h>
-#include <arch/cpu.h>
 #include <zephyr.h>
+#include <tc_util.h>
 #include <misc/util.h>
 
 #define  ONE_SECOND     (sys_clock_ticks_per_sec)

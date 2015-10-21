@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <stdint.h>
-#include <nanokernel.h>
 #include <toolchain.h>
 
 #include "bttester.h"

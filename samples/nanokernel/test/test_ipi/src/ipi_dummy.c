@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <ipi.h>
 #include <errno.h>
 #include <device.h>

@@ -58,11 +58,7 @@ x87 FPU registers are being saved/restored.
 #endif /* CONFIG_ISA_IA32 */
 
 
-#ifdef CONFIG_MICROKERNEL
-#include <microkernel.h>
-#else
-#include <nanokernel.h>
-#endif
+#include <zephyr.h>
 
 #if defined(__GNUC__)
 #include <float_regs_x86_gcc.h>

@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
+
 #include <errno.h>
 #include <tc_util.h>
-
-#include <nanokernel.h>
-#include <arch/cpu.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/driver.h>

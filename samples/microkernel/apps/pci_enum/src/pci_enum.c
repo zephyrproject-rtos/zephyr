@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <zephyr.h>
 
 #include <stdint.h>
 #include <pci/pci.h>
@@ -48,7 +49,6 @@ void pci_enumerate(void)
 
 #ifdef CONFIG_MICROKERNEL
 
-#include <zephyr.h>
 
 static int done = 0;
 
@@ -64,9 +64,6 @@ void task_enum_pci(void)
 }
 
 #else /* CONFIG_NANOKERNEL */
-
-#include <nanokernel.h>
-#include <arch/cpu.h>
 
 void main(void)
 {

@@ -42,8 +42,8 @@ Scenario #4:
 These scenarios will be tested using a combinations of tasks, fibers and ISRs.
  */
 
+#include <zephyr.h>
 #include <tc_util.h>
-#include <nanokernel.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
 

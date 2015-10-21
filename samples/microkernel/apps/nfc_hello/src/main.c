@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
-#include <nanokernel.h>
-#include <arch/cpu.h>
 #include <board.h>
 #include <uart.h>
 

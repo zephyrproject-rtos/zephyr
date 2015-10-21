@@ -18,7 +18,7 @@
 
 #ifndef _IPI_DUMMY_H_
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <device.h>
 #include <ipi.h>
 

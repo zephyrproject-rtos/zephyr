@@ -44,7 +44,7 @@ are not (yet) tested include:
   to ensure higher priority tasks get preference.
  */
 
-#include <microkernel.h>
+#include <zephyr.h>
 
 #include <tc_util.h>
 

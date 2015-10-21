@@ -19,11 +19,7 @@
 #ifndef __TC_UTIL_H__
 #define __TC_UTIL_H__
 
-#if defined(CONFIG_NANOKERNEL)
-#include <nanokernel.h>
-#else
-#include <microkernel.h>
-#endif
+#include <zephyr.h>
 
 #include <misc/printk.h>
 #include <string.h>

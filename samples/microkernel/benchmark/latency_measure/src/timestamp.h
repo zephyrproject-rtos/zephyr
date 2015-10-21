@@ -24,6 +24,7 @@
 
 #ifndef _TIMESTAMP_H_
 #define _TIMESTAMP_H_
+#include <zephyr.h>
 
 #include <limits.h>
 #if defined(__GNUC__)
@@ -34,7 +35,6 @@
 
 #if defined(CONFIG_NANOKERNEL)
 
-#include <nanokernel.h>
 
 #define OS_GET_TIME() nano_cycle_get_32()
 
@@ -54,8 +54,6 @@ static inline void TICK_SYNCH(void)
 }
 
 #elif (defined(CONFIG_MICROKERNEL) && defined(KERNEL))
-#include <zephyr.h>
-
 #define OS_GET_TIME() task_cycle_get_32()
 
 typedef int64_t TICK_TYPE;

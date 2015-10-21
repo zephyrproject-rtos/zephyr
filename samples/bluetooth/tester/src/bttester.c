@@ -16,13 +16,13 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 
 #include <toolchain.h>
 #include <misc/printk.h>
-#include <nanokernel.h>
 #include <misc/byteorder.h>
 #include <simple/uart.h>
 

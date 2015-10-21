@@ -37,11 +37,7 @@
 #define PRINT           printk
 #endif
 
-#ifdef CONFIG_MICROKERNEL
 #include <zephyr.h>
-#else /*  CONFIG_NANOKERNEL */
-#include <nanokernel.h>
-#endif
 
 #include <drivers/rand32.h>
 

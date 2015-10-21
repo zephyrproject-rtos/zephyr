@@ -31,10 +31,7 @@
 #endif
 #include "contiki/ip/uip-debug.h"
 
-#ifdef CONFIG_MICROKERNEL
 #include <zephyr.h>
-#else
-#include <nanokernel.h>
 
 #if defined(CONFIG_TINYDTLS)
 /* DTLS needs bigger stack */

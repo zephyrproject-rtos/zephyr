@@ -31,11 +31,7 @@
 #endif
 #include "contiki/ip/uip-debug.h"
 
-#ifdef CONFIG_MICROKERNEL
 #include <zephyr.h>
-#else
-#include <nanokernel.h>
-#endif
 
 #include <drivers/rand32.h>
 

@@ -16,11 +16,9 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <nanokernel.h>
-#include <arch/cpu.h>
 
 #include <console/uart_console.h>
 #include <misc/printk.h>

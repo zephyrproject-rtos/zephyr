@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <ipi.h>
 #include <drivers/console/ipi_console.h>
-#include <nanokernel.h>
 #include <device.h>
 #include <init.h>
 #include <stdio.h>

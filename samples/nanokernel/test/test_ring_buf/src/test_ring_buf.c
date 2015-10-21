@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
 #include <tc_util.h>
-#include <nanokernel.h>
 #include <misc/ring_buffer.h>
 
 SYS_RING_BUF_DECLARE_POW2(ring_buf, 8);

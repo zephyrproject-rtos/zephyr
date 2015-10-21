@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <zephyr.h>
+
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define PRINT           printf
@@ -57,7 +59,6 @@ static const char *lorem_ipsum =
  * a controlled rate.
  */
 
-#include <microkernel.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 
@@ -71,8 +72,6 @@ static const char *lorem_ipsum =
  * semaphores and timers to take turns printing a greeting message at
  * a controlled rate.
  */
-
-#include <nanokernel.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */
 

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-#include <nanokernel.h>
+#include <zephyr.h>
 #include <toolchain.h>
 
 
 #include <misc/printk.h>
-#include <arch/cpu.h>
 #include <stdio.h>
 
 #ifdef CONFIG_OBJECTS_WHILELOOP

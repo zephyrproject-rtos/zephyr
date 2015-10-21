@@ -30,11 +30,7 @@
 #define PRINT           printk
 #endif
 
-#ifdef CONFIG_MICROKERNEL
 #include <zephyr.h>
-#else
-#include <nanokernel.h>
-#endif
 
 #include <net/net_core.h>
 #include <net/net_socket.h>

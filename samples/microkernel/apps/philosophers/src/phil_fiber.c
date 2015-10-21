@@ -15,15 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifdef CONFIG_NANOKERNEL
-  #include <nanokernel.h>
-  #include "phil.h"
-#else  /* ! CONFIG_NANOKERNEL */
-  #include <zephyr.h>
-  #include "phil.h"
-#endif /*  CONFIG_NANOKERNEL */
-
-#include <arch/cpu.h>	/* irq_lock/irq_unlock */
+#include <zephyr.h>
+#include "phil.h"
 
 #ifdef CONFIG_NANOKERNEL
   #define FORK(x) &forks[x]

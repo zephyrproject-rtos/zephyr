@@ -51,8 +51,8 @@ Scenario #4:
    Timeout scenarios with multiple FIFOs and fibers.
  */
 
+#include <zephyr.h>
 #include <tc_util.h>
-#include <nanokernel.h>
 #include <misc/__assert.h>
 #include <misc/util.h>
 
