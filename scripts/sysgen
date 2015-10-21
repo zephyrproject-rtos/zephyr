@@ -867,6 +867,7 @@ def generate_sysgen_h_obj_ids():
 
     # mutex object ids
 
+    sysgen_h_data += "\n"
     for mutex in mutex_list:
         name = mutex[0]
         sysgen_h_data += \
@@ -876,6 +877,7 @@ def generate_sysgen_h_obj_ids():
 
     # semaphore object ids
 
+    sysgen_h_data += "\n"
     for semaphore in sema_list:
         name = semaphore[0]
         sysgen_h_data += \
@@ -885,6 +887,7 @@ def generate_sysgen_h_obj_ids():
 
     # fifo object ids
 
+    sysgen_h_data += "\n"
     for fifo in fifo_list:
         name = fifo[0]
         sysgen_h_data += \
@@ -894,6 +897,7 @@ def generate_sysgen_h_obj_ids():
 
     # mailbox object ids
 
+    sysgen_h_data += "\n"
     for mbx in mbx_list:
         name = mbx[0]
         sysgen_h_data += \
@@ -903,7 +907,7 @@ def generate_sysgen_h_obj_ids():
 
     # pipe object id
 
-    kernel_main_c_out("\n")
+    sysgen_h_data += "\n"
     for pipe in pipe_list:
         name = pipe[0];
         sysgen_h_data += \
@@ -912,7 +916,7 @@ def generate_sysgen_h_obj_ids():
 
     # memory map object id
 
-    kernel_main_c_out("\n")
+    sysgen_h_data += "\n"
     for map in map_list:
         name = map[0];
         sysgen_h_data += \
@@ -921,7 +925,7 @@ def generate_sysgen_h_obj_ids():
 
     # task object id
 
-    kernel_main_c_out("\n")
+    sysgen_h_data += "\n"
     for task in task_list:
         name = task[0];
         sysgen_h_data += \
