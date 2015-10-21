@@ -82,24 +82,6 @@ SECTIONS
 
 	_image_text_end = .;
 
-	SECTION_PROLOGUE(_CTOR_SECTION_NAME, (OPTIONAL),)
-	{
-	/*
-	 * The compiler fills the constructor pointers table below, hence symbol
-	 * __CTOR_LIST__ must be aligned on 4 byte boundary.
-	 * To align with the C++ standard, the first element of the array
-	 * contains the number of actual constructors. The last element is
-	 * NULL.
-	 */
-	. = ALIGN(4);
-	__CTOR_LIST__ = .;
-	LONG((__CTOR_END__ - __CTOR_LIST__) / 4 - 2)
-	KEEP(*(SORT_BY_NAME(".ctors*")))
-	LONG(0)
-	__CTOR_END__ = .;
-	KEXEC_PGALIGN_PAD(MMU_PAGE_SIZE)
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
 	SECTION_PROLOGUE(devconfig, (OPTIONAL),)
 	{
 		__devconfig_start = .;

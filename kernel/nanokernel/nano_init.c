@@ -82,10 +82,6 @@ char __noinit __stack main_task_stack[CONFIG_MAIN_STACK_SIZE];
 
 char __noinit _interrupt_stack[CONFIG_ISR_STACK_SIZE];
 
-/* constructor initialization */
-
-extern void _Ctors(void);
-
 #ifdef CONFIG_NANO_TIMEOUTS
 	#include <misc/dlist.h>
 	#define initialize_nano_timeouts() sys_dlist_init(&_nanokernel.timeout_q)
@@ -265,10 +261,6 @@ FUNC_NORETURN void _Cstart(void)
 	/* initialize stack canaries */
 
 	STACK_CANARY_INIT();
-
-	/* invoke C++ constructors */
-
-	_Ctors();
 
 	/* display boot banner */
 
