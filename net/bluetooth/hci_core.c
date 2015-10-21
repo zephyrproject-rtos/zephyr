@@ -1352,6 +1352,16 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 	bt_dev.le.pkts = rp->le_max_num;
 }
 
+static void read_supported_commands_complete(struct net_buf *buf)
+{
+	struct bt_hci_rp_read_supported_commands *rp = (void *)buf->data;
+
+	BT_DBG("status %u\n", rp->status);
+
+	memcpy(bt_dev.supported_commands, rp->commands,
+	       sizeof(bt_dev.supported_commands));
+}
+
 static int common_init(void)
 {
 	struct net_buf *rsp;
@@ -1419,6 +1429,15 @@ static int le_init(void)
 		return err;
 	}
 	read_le_features_complete(rsp);
+	net_buf_unref(rsp);
+
+	/* Read Local Supported Commands */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_SUPPORTED_COMMANDS, NULL,
+				   &rsp);
+	if (err) {
+		return err;
+	}
+	read_supported_commands_complete(rsp);
 	net_buf_unref(rsp);
 
 	/* Read LE Buffer Size */

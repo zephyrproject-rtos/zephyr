@@ -70,6 +70,9 @@ struct bt_dev {
 	uint8_t			features[8];
 
 	/* Current state of controller activity */
+	/* Supported commands */
+	uint8_t			supported_commands[36];
+
 	atomic_t		flags[1];
 
 	/* LE controller specific features */

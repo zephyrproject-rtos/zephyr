@@ -159,6 +159,12 @@ struct bt_hci_rp_read_local_version_info {
 	uint16_t lmp_subversion;
 } __packed;
 
+#define BT_HCI_OP_READ_SUPPORTED_COMMANDS	BT_OP(BT_OGF_INFO, 0x0002)
+struct bt_hci_rp_read_supported_commands {
+	uint8_t  status;
+	uint8_t  commands[36];
+} __packed;
+
 #define BT_HCI_OP_READ_LOCAL_FEATURES		BT_OP(BT_OGF_INFO, 0x0003)
 struct bt_hci_rp_read_local_features {
 	uint8_t  status;
