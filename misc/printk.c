@@ -84,54 +84,55 @@ static inline void _vprintk(const char *fmt, va_list ap)
 				might_format = 1;
 			}
 		} else {
-			if (*fmt == '%') {
-				_char_out((int)'%');
-				might_format = 0;
-			} else {
-				switch (*fmt) {
-				case 'd':
-				case 'i': {
-					long d = va_arg(ap, long);
-					if (d < 0) {
-						_char_out((int)'-');
-						d = -d;
-					}
-					_printk_dec_ulong(d);
-					break;
-				}
-				case 'u': {
-					unsigned long u = va_arg(
-						ap, unsigned long);
-					_printk_dec_ulong(u);
-					break;
-				}
-				case 'x':
-				case 'X':
-				case 'p': {
-					unsigned long x = va_arg(
-						ap, unsigned long);
-					_printk_hex_ulong(x);
-					break;
-				}
-				case 's': {
-					char *s = va_arg(ap, char *);
-					while (*s)
-						_char_out((int)(*s++));
-					break;
-				}
-				case 'c': {
-					int c = va_arg(ap, int);
+			switch (*fmt) {
+			case 'd':
+			case 'i': {
+				long d = va_arg(ap, long);
 
-					_char_out(c);
-					break;
+				if (d < 0) {
+					_char_out((int)'-');
+					d = -d;
 				}
-				default:
-					_char_out((int)'%');
-					_char_out((int)*fmt);
-					break;
-				}
-				might_format = 0;
+				_printk_dec_ulong(d);
+				break;
 			}
+			case 'u': {
+				unsigned long u = va_arg(
+					ap, unsigned long);
+				_printk_dec_ulong(u);
+				break;
+			}
+			case 'x':
+			case 'X':
+			case 'p': {
+				unsigned long x = va_arg(
+					ap, unsigned long);
+				_printk_hex_ulong(x);
+				break;
+			}
+			case 's': {
+				char *s = va_arg(ap, char *);
+
+				while (*s)
+					_char_out((int)(*s++));
+				break;
+			}
+			case 'c': {
+				int c = va_arg(ap, int);
+
+				_char_out(c);
+				break;
+			}
+			case '%': {
+				_char_out((int)'%');
+				break;
+			}
+			default:
+				_char_out((int)'%');
+				_char_out((int)*fmt);
+				break;
+			}
+			might_format = 0;
 		}
 
 		++fmt;
