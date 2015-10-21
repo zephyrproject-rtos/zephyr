@@ -655,8 +655,9 @@ static int att_find_type(struct bt_conn *conn,
 		req->type = sys_cpu_to_le16(BT_UUID_GATT_SECONDARY);
 	}
 
-	BT_DBG("uuid 0x%04x start_handle 0x%04x end_handle 0x%04x\n",
-	       params->uuid->u16, params->start_handle, params->end_handle);
+	BT_DBG("uuid %s start_handle 0x%04x end_handle 0x%04x\n",
+	       bt_uuid_str(params->uuid), params->start_handle,
+	       params->end_handle);
 
 	switch (params->uuid->type) {
 	case BT_UUID_16:
@@ -733,8 +734,9 @@ static uint16_t parse_include(const void *pdu,
 			break;
 		}
 
-		BT_DBG("handle 0x%04x start_handle 0x%04x end_handle 0x%04x\n",
-		       handle, value.start_handle, value.end_handle);
+		BT_DBG("handle 0x%04x uuid %s start_handle 0x%04x "
+		       "end_handle 0x%04x\n", handle, bt_uuid_str(&uuid),
+		       value.start_handle, value.end_handle);
 
 		/* Skip if UUID is set but doesn't match */
 		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
@@ -811,8 +813,9 @@ static uint16_t parse_characteristic(const void *pdu,
 			break;
 		}
 
-		BT_DBG("handle 0x%04x properties 0x%02x value_handle 0x%04x\n",
-		       handle, value.properties, value.value_handle);
+		BT_DBG("handle 0x%04x uuid %s properties 0x%02x "
+		       "value_handle 0x%04x\n", handle, bt_uuid_str(&uuid),
+		       value.properties, value.value_handle);
 
 		/* Skip if UUID is set but doesn't match */
 		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
@@ -962,7 +965,7 @@ static void att_find_info_rsp(struct bt_conn *conn, uint8_t err,
 			break;
 		}
 
-		BT_DBG("handle 0x%04x\n", handle);
+		BT_DBG("handle 0x%04x uuid %s\n", handle, bt_uuid_str(&uuid));
 
 		/* Skip if UUID is set but doesn't match */
 		if (params->uuid && bt_uuid_cmp(&uuid, params->uuid)) {
