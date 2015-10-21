@@ -342,6 +342,13 @@ struct bt_hci_cp_le_conn_param_req_neg_reply {
 	uint8_t  reason;
 } __packed;
 
+#define BT_HCI_OP_LE_P256_PUBLIC_KEY		BT_OP(BT_OGF_LE, 0x0025)
+
+#define BT_HCI_OP_LE_GENERATE_DHKEY		BT_OP(BT_OGF_LE, 0x0026)
+struct bt_hci_cp_le_generate_dhkey {
+	uint8_t key[64];
+} __packed;
+
 /* Event definitions */
 
 #define BT_HCI_EVT_DISCONN_COMPLETE		0x05
@@ -441,6 +448,18 @@ struct bt_hci_evt_le_conn_param_req {
 	uint16_t interval_max;
 	uint16_t latency;
 	uint16_t timeout;
+} __packed;
+
+#define BT_HCI_EVT_LE_P256_PUBLIC_KEY_COMPLETE	0x08
+struct bt_hci_evt_le_p256_public_key_complete {
+	uint8_t status;
+	uint8_t key[64];
+} __packed;
+
+#define BT_HCI_EVT_LE_GENERATE_DHKEY_COMPLETE	0x09
+struct bt_hci_evt_le_generate_dhkey_complete {
+	uint8_t status;
+	uint8_t dhkey[32];
 } __packed;
 
 #endif /* __BT_HCI_H */
