@@ -85,9 +85,8 @@ extern void _irq_disconnect(unsigned int irq);
 #error "Unknown target"
 #endif
 
-/* event id used by first task IRQ object */
-
-extern const kevent_t _TaskIrqEvt0_objId;
+/* array of event id used by task IRQ objects */
+extern const kevent_t _TaskIrqEvt_objIds[];
 
 /**
  *
@@ -200,7 +199,7 @@ static int _k_task_irq_alloc(void *arg)
 	irq_obj_ptr = &task_irq_object[argp->irq_obj];
 	irq_obj_ptr->task_id = argp->task_id;
 	irq_obj_ptr->irq = argp->irq;
-	irq_obj_ptr->event = (_TaskIrqEvt0_objId + argp->irq_obj);
+	irq_obj_ptr->event = _TaskIrqEvt_objIds[argp->irq_obj];
 	irq_obj_ptr->vector = INVALID_VECTOR;
 
 	return (int)irq_obj_ptr;

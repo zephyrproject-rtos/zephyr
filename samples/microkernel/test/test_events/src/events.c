@@ -49,7 +49,7 @@ static int  handlerRetVal = 0;
 extern void testFiberInit(void);
 extern struct nano_sem fiberSem; /* semaphore that allows test control the fiber */
 
-extern const int _k_num_events; /* non-public microkernel global variable */
+extern kevent_t _k_event_list_end[];
 
 /**
  *
@@ -391,7 +391,8 @@ int eventSignalHandlerTest(void)
 	int  rv;     /* return value from task_event_xxx() calls */
 
 	/* Expect this call to task_event_handler_set() to fail */
-	rv = task_event_handler_set(EVENT_ID + 10, eventHandler);
+	rv = task_event_handler_set((uint32_t)_k_event_list_end + 10,
+				    eventHandler);
 	if (rv != RC_FAIL) {
 		TC_ERROR("task_event_handler_set() returned %d not %d\n",
 			rv, RC_FAIL);

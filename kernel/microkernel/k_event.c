@@ -24,7 +24,8 @@
 #include <toolchain.h>
 #include <sections.h>
 
-extern struct evstr _k_event_list[];
+extern kevent_t _k_event_list_start[];
+extern kevent_t _k_event_list_end[];
 
 /**
  *
@@ -34,8 +35,7 @@ extern struct evstr _k_event_list[];
  */
 void _k_event_handler_set(struct k_args *A)
 {
-	kevent_t event = A->args.e1.event;
-	struct evstr *E = _k_event_list + event;
+	struct _k_event_struct *E = (struct _k_event_struct *)A->args.e1.event;
 
 	if (E->func != NULL) {
 		if (likely(A->args.e1.func == NULL)) {
@@ -73,8 +73,7 @@ int task_event_handler_set(kevent_t event, kevent_handler_t handler)
  */
 void _k_event_test_timeout(struct k_args *A)
 {
-	kevent_t event = A->args.e1.event;
-	struct evstr *E = _k_event_list + event;
+	struct _k_event_struct *E = (struct _k_event_struct *)A->args.e1.event;
 
 	FREETIMER(A->Time.timer);
 	A->Time.rcode = RC_TIME;
@@ -90,8 +89,7 @@ void _k_event_test_timeout(struct k_args *A)
  */
 void _k_event_test(struct k_args *A)
 {
-	kevent_t event = A->args.e1.event;
-	struct evstr *E = _k_event_list + event;
+	struct _k_event_struct *E = (struct _k_event_struct *)A->args.e1.event;
 
 	if (E->status) { /* the next event can be received */
 		E->status = 0;
@@ -145,7 +143,7 @@ int _task_event_recv(kevent_t event, int32_t time)
  */
 void _k_do_event_signal(kevent_t event)
 {
-	struct evstr *E = _k_event_list + event;
+	struct _k_event_struct *E = (struct _k_event_struct *)event;
 	struct k_args *A = E->waiter;
 	int ret_val = 1; /* If no handler is available, then ret_val is 1 by default */
 

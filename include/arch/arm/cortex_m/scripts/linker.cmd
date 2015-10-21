@@ -204,6 +204,14 @@ SECTIONS
 		_k_mem_map_ptr_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+	SECTION_PROLOGUE(_k_event_list, (OPTIONAL),)
+	{
+		_k_event_list_start = .;
+			*(._k_event_list.event.*)
+		KEEP(*(SORT_BY_NAME("._k_event_list*")))
+		_k_event_list_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
     __data_ram_end = .;
 
     SECTION_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)

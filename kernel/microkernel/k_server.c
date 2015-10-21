@@ -35,6 +35,8 @@
 #include <drivers/system_timer.h>
 
 extern const kernelfunc _k_server_dispatch_table[];
+extern kevent_t _k_event_list_start[];
+extern kevent_t _k_event_list_end[];
 
 /**
  *
@@ -99,9 +101,9 @@ FUNC_NORETURN void _k_server(int unused1, int unused2)
 			&_k_command_stack); /* will schedule */
 		do {
 			kevent_t event;
-			/* if event < _k_num_events, it's a well-known event */
 			event = (kevent_t)(pArgs);
-			if (event < (kevent_t)_k_num_events) {
+			if ((event >= (kevent_t)_k_event_list_start) &&
+			    (event <  (kevent_t)_k_event_list_end)) {
 #ifdef CONFIG_TASK_MONITOR
 				if (_k_monitor_mask & MON_EVENT) {
 					_k_task_monitor_args(pArgs);

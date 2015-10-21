@@ -37,6 +37,7 @@ import subprocess
 num_kargs = 0
 num_timers = 0
 num_prios = 0
+num_task_irqs = 0
 
 task_list = []
 event_list = []
@@ -424,47 +425,32 @@ def kernel_main_c_priorities():
 def kernel_main_c_events():
     """ Generate event variables """
 
-    total_events = 4 + len(event_list)
+    global num_task_irqs
 
     # event descriptors
 
-    kernel_main_c_out("\n" +
-        "struct evstr _k_event_list[%d] =\n" % (total_events) +
-        "{\n")
-    # pre-defined events
+    # pre-defined event for timer
     if (num_timers > 0):
-        kernel_main_c_out(
-            "    {0, (kevent_handler_t)_k_ticker, " +
-            "(struct k_args *)NULL, 0},\n")
+        kernel_main_c_out("DEFINE_EVENT(TICK_EVENT, _k_ticker);\n")
     else:
-        kernel_main_c_out(
-            "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n")
-    kernel_main_c_out(
-        "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n" +
-        "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n" +
-        "    {0, (kevent_handler_t)NULL, (struct k_args *)NULL, 0},\n"
-    )
+        kernel_main_c_out("DEFINE_EVENT(TICK_EVENT, NULL);\n")
+
     # project-specific events
     for event in event_list:
-        kernel_main_c_out(
-            "    {0, (kevent_handler_t)%s, (struct k_args *)NULL, 0},\n" %
-            (event[1]))
-    kernel_main_c_out("};\n")
+        kernel_main_c_out("DEFINE_EVENT(%s, %s);\n" % (event[0], event[1]))
 
-    # number of events
+        if (event[0].startswith("_TaskIrqEvt")):
+            num_task_irqs += 1
 
-    kernel_main_c_out("\n" +
-        "const int _k_num_events = %d;\n" % (total_events))
+    if (num_task_irqs > 0):
+        kernel_main_c_out("const kevent_t _TaskIrqEvt_objIds[] = {\n")
 
-    # event object identifiers (for project-defined events only)
-
-    if (len(event_list) > 0):
-        kernel_main_c_out("\n")
-
-        for event_name in event_list:
+        for i in range(0, num_task_irqs):
             kernel_main_c_out(
-                "const kevent_t %s_objId = %s;\n" %
-                (event_name[0], event_name[0]))
+                "    (kevent_t)&_k_event_obj__TaskIrqEvt%d,\n" % (i)
+            )
+
+        kernel_main_c_out("};\n")
 
 
 def kernel_main_c_mutexes():
@@ -877,14 +863,7 @@ def generate_obj_id_lines(obj_types):
 def generate_sysgen_h_obj_ids():
 
     global sysgen_h_data
-
-    base_event = 4  # no need to generate ids for the 4 pre-defined events
-    event_id = base_event
-    for event in event_list:
-        sysgen_h_data += "#define %s %u\n" % (str(event[0]), event_id)
-        event_id += 1
-    if event_id > base_event:
-        sysgen_h_data += "\n"
+    global num_task_irqs
 
     # mutex object ids
 
@@ -949,6 +928,15 @@ def generate_sysgen_h_obj_ids():
             "extern struct k_task _k_task_obj_%s;\n" % (name) + \
             "#define %s ((ktask_t)&_k_task_obj_%s)\n" % (name, name)
 
+    # event object id
+
+    sysgen_h_data += "\n"
+    for event in event_list:
+        # no need to expose the irq task events
+        if not (event[0].startswith("_TaskIrqEvt")):
+            name = event[0];
+            sysgen_h_data += \
+                "extern const kevent_t %s;\n" % (name)
 
     # all other object ids
 

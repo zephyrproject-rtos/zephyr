@@ -421,13 +421,6 @@ struct pool_struct {
 struct pool_struct *_track_list_micro_mem_pool;
 #endif
 
-struct evstr {
-	int status;
-	kevent_handler_t func;
-	struct k_args *waiter;
-	int count;
-};
-
 #ifdef __cplusplus
 }
 #endif

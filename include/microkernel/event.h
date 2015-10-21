@@ -36,8 +36,8 @@ extern "C" {
 #include <microkernel/command_packet.h>
 
 /* well-known events */
+extern const kevent_t TICK_EVENT;
 
-#define TICK_EVENT	0
 /**
  * @cond internal
  */
@@ -158,6 +158,29 @@ extern int task_event_send(kevent_t event);
 /**
  * @}
  */
+
+#define _K_EVENT_INITIALIZER(handler) \
+	{ \
+		.status = 0, \
+		.func = (kevent_handler_t)handler, \
+		.waiter = NULL, \
+		.count = 0, \
+	}
+
+/**
+ * @brief Define a private microkernel event
+ *
+ * This declares and initializes a private event. The new event
+ * can be passed to the microkernel event functions.
+ *
+ * @param name Name of the event
+ * @param handler Function to handle the event (can be NULL)
+ */
+#define DEFINE_EVENT(name, handler) \
+	struct _k_event_struct _k_event_obj_##name \
+		__in_section(_k_event_list, event, name) = \
+		_K_EVENT_INITIALIZER(handler); \
+	const kevent_t name = (kevent_t)&_k_event_obj_##name;
 
 #ifdef __cplusplus
 }

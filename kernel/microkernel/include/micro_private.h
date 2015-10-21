@@ -34,8 +34,6 @@ extern struct pool_struct _k_mem_pool_list[];
 
 extern int _k_mem_pool_count;
 
-extern const int _k_num_events;
-
 extern struct k_task *_k_current_task;
 extern uint32_t _k_task_priority_bitmap[];
 
