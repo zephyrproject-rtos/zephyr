@@ -119,6 +119,12 @@ static inline void _vprintk(const char *fmt, va_list ap)
 						_char_out((int)(*s++));
 					break;
 				}
+				case 'c': {
+					int c = va_arg(ap, int);
+
+					_char_out(c);
+					break;
+				}
 				default:
 					_char_out((int)'%');
 					_char_out((int)*fmt);
