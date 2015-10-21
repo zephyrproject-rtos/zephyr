@@ -14,7 +14,7 @@ of the system, initializes it, and runs forever as the system's sole application
 Both application code and kernel code execute as privileged code within a single
 shared address space.
 
-A :dfn:`application` is a set of user-supplied files that the Zephyr build
+An :dfn:`application` is a set of user-supplied files that the Zephyr build
 system processes to generate an application image. The application consists of
 application-specific code, a collection of kernel configuration settings, and at
 least one Makefile. The application's kernel configuration settings enable the build

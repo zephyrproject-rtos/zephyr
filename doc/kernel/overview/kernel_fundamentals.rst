@@ -43,14 +43,14 @@ Multi-threading
 The Zephyr kernel supports multi-threaded processing for three types
 of execution contexts.
 
-* A *task context* is a preemptible thread, normally used to perform
+* A **task context** is a preemptible thread, normally used to perform
   processing that is lengthy or complex. Task scheduling is priority-based,
   so that the execution of a higher priority task preempts the execution
   of a lower priority task. The kernel also supports an optional round-robin
   time slicing capability so that equal priority tasks can execute in turn,
   without the risk of any one task monopolizing the CPU.
 
-* A *fiber context* is a lightweight and non-preemptible thread, typically
+* A **fiber context** is a lightweight and non-preemptible thread, typically
   used for device drivers and performance critical work. Fiber scheduling is
   priority-based, so that a higher priority fiber is scheduled for execution
   before a lower priority fiber; however, once a fiber is scheduled it remains
@@ -58,8 +58,8 @@ of execution contexts.
   Fiber execution takes precedence over task execution, so tasks execute only
   when no fiber can be scheduled.
 
-* The *interrupt context* is a special kernel context used to execute
-  Interrupt Service Routines (ISRs). The interrupt context takes
+* The **interrupt context** is a special kernel context used to execute
+  :abbr:`ISRs Interrupt Service Routines`. The interrupt context takes
   precedence over all other contexts, so tasks and fibers execute only
   when no ISR needs to run. (See below for more on interrupt handling.)
 
@@ -76,12 +76,11 @@ Interrupts
 **********
 
 The Zephyr kernel supports the handling of hardware interrupts and software
-interrupts by interrupt handlers, known as *Interrupt Service Routines* (ISRs).
-Interrupt handling takes precedence over task and fiber processing, so that
-an ISR preempts the currently scheduled task or fiber whenever it needs
-to run. The kernel also supports nested interrupt handling, allowing a higher
-priority ISR to interrupt the execution of a lower priority ISR, should the
-need arise.
+interrupts by interrupt handlers, also known as ISRs. Interrupt handling takes
+precedence over task and fiber processing, so that an ISR preempts the currently
+scheduled task or fiber whenever it needs to run. The kernel also supports nested
+interrupt handling, allowing a higher priority ISR to interrupt the execution of
+a lower priority ISR, should the need arise.
 
 The nanokernel supplies ISRs for a few interrupt sources (IRQs), such as the
 hardware timer device and system console device. The ISRs for all other IRQs
@@ -104,9 +103,9 @@ Related sections:
 Clocks and Timers
 *****************
 
-Kernel clocking is based on time units called *ticks*, whose duration is
-configurable. A 64-bit *system clock* counts the number of ticks that have
-elapsed since the kernel started executing.
+Kernel clocking is based on time units called :dfn:`ticks` which have a
+configurable duration. A 64-bit *system clock* counts the number of ticks
+that have elapsed since the kernel started executing.
 
 Zephyr also supports a higher-resolution *hardware clock*, which can be used
 to measure durations requiring sub-tick interval precision.
@@ -135,13 +134,13 @@ contexts to synchronize their execution.
 The microkernel provides the object types listed below. These types
 are intended for tasks, with limited ability to be used by fibers and ISRs.
 
-* A *semaphore* is a counting semaphore, which indicates how many units
+* A :dfn:`semaphore` is a counting semaphore, which indicates how many units
   of a particular resource are available.
 
-* An *event* is a binary semaphore, which simply indicates if a particular
+* An :dfn:`event` is a binary semaphore, which simply indicates if a particular
   resource is available or not.
 
-* A *mutex* is a reentrant mutex with priority inversion protection. It is
+* A :dfn:`mutex` is a reentrant mutex with priority inversion protection. It is
   similar to a binary semaphore, but contains additional logic to ensure that
   only the owner of the associated resource can release it and to expedite the
   execution of a lower priority thread that holds a resource needed by a
@@ -150,7 +149,7 @@ are intended for tasks, with limited ability to be used by fibers and ISRs.
 The nanokernel provides the object type listed below. This type
 is intended for fibers, with only limited ability to be used by tasks and ISRs.
 
-* A *nanokernel semaphore* is a counting semaphore, which indicates
+* A :dfn:`nanokernel semaphore` is a counting semaphore that indicates
   how many units of a particular resource are available.
 
 Each type has specific capabilities and limitations that affect suitability
@@ -171,15 +170,16 @@ contexts to exchange data.
 The microkernel provides the object types listed below. These types are
 designed to be used by tasks, and cannot be used by fibers and ISRs.
 
-* A *microkernel FIFO* is a queuing mechanism that allows tasks to exchange
-  fixed-size data items in an asychronous, "first in, first out" manner.
+* A :dfn:`microkernel FIFO` is a queuing mechanism that allows tasks to exchange
+  fixed-size data items in an asychronous :abbr:`First In, First Out (FIFO)`
+  manner.
 
-* A *mailbox* is a queuing mechanism that allows tasks to exchange
+* A :dfn:`mailbox` is a queuing mechanism that allows tasks to exchange
   variable-size data items in a synchronous, "first in, first out" manner.
   Mailboxes also support asynchronous exchanges, and allow tasks to exchange
   messages both anonymously and non-anonymously using the same mailbox.
 
-* A *pipe* is a queuing mechanism that allows a task to send a stream
+* A :dfn:`pipe` is a queuing mechanism that allows a task to send a stream
   of bytes to another task. Both asynchronous and synchronous exchanges
   can be supported by a pipe.
 
@@ -187,14 +187,14 @@ The nanokernel provides the object types listed below. These types are
 primarily designed to be used by fibers, and have only a limited ability
 to be used by tasks and ISRs.
 
-* A *nanokernel FIFO* is a queuing mechanism that allows contexts to exchange
-  variable-size data items in an asychronous, "first in, first out" manner.
+* A :dfn:`nanokernel FIFO` is a queuing mechanism that allows contexts to exchange
+  variable-size data items in an asychronous, first-in, first-out manner.
 
-* A *nanokernel LIFO* is a queuing mechanism that allows contexts to exchange
-  variable-size data items in an asychronous, "last in, first out" manner.
+* A :dfn:`nanokernel LIFO` is a queuing mechanism that allows contexts to exchange
+  variable-size data items in an asychronous, last-in, first-out manner.
 
-* A *nanokernel stack* is a queuing mechanism that allows contexts to exchange
-  32-bit data items in an asynchronous, "last in, first out" manner.
+* A :dfn:`nanokernel stack` is a queuing mechanism that allows contexts to exchange
+  32-bit data items in an asynchronous first-in, first-out manner.
 
 Each of these types has specific capabilities and limitations that affect
 suitability for use in a given situation. For more details, see the
@@ -216,12 +216,12 @@ This support can be used in place of C standard library calls like
 The microkernel provides two types of objects that allow tasks to dynamically
 allocate memory blocks. These object types cannot be used by fibers or ISRs.
 
-* A *memory map* is a memory region that supports the dynamic allocation and
+* A :dfn:`memory map` is a memory region that supports the dynamic allocation and
   release of memory blocks of a single fixed size. An application can have
   multiple memory maps, whose block size and block capacity can be configured
   individually.
 
-* A *memory pool* is a memory region that supports the dynamic allocation and
+* A :dfn:`memory pool` is a memory region that supports the dynamic allocation and
   release of memory blocks of multiple fixed sizes. This allows more efficient
   use of available memory when an application requires blocks of different
   sizes. An application can have multiple memory pools, whose block sizes
@@ -240,11 +240,11 @@ Public and Private Microkernel Objects
 Microkernel objects, such as semaphores, mailboxes, or tasks,
 can usually be defined as a public object or a private object.
 
-* A *public object* is one that is available for general use by all parts
+* A :dfn:`public object` is one that is available for general use by all parts
   of the application. Any code that includes :file:`zephyr.h` can interact
   with the object by referencing the object's name.
 
-* A *private object* is one that is intended for use only by a specific
+* A :dfn:`private object` is one that is intended for use only by a specific
   part of the application, such as a single device driver or subsystem.
   The object's name is visible only to code within the file where the object
   is defined, hiding it from general use unless the code which defined the
@@ -360,8 +360,12 @@ are listed below.
   system console subsystem.
 
 * **Random number generator**: This device driver provides a source of random
-  numbers. (**IMPORTANT**: Certain implementations of this device driver
-  do not generate sequences of values that are truly random.)
+  numbers.
+
+  .. important::
+
+    Certain implementations of this device driver do not generate sequences of
+    values that are truly random.
 
 Networking Library
 ******************
