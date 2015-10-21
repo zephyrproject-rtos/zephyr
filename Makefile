@@ -366,6 +366,7 @@ ZEPHYRINCLUDE    := \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
 		-I$(CURDIR)/include/generated \
+		-I$(CURDIR)/misc/generated/sysgen \
 		$(USERINCLUDE) \
 		$(STDINCLUDE)
 
@@ -937,7 +938,7 @@ kselftest:
 CLEAN_DIRS  += $(MODVERDIR)
 
 CLEAN_FILES += 	misc/generated/sysgen/kernel_main.c \
-		misc/generated/sysgen/zephyr.h \
+		misc/generated/sysgen/sysgen.h \
 		misc/generated/sysgen/prj.mdef
 
 # Directories & files removed with 'make mrproper'

@@ -26,7 +26,7 @@
 #   - kernel_main.c file
 #   - kernel_main.h file (local copy)
 #   - micro_private_types.h file (local copy)
-#   - zephyr.h file
+#   - sysgen.h file
 
 import os
 import sys
@@ -239,7 +239,7 @@ def kernel_main_c_header():
         copyright +
         do_not_edit_warning +
         "\n" +
-        "#include <zephyr.h>\n" +
+        "#include <sysgen.h>\n" +
         "#include <micro_private_types.h>\n" +
         "#include <kernel_main.h>\n" +
         "#include <toolchain.h>\n" +
@@ -811,49 +811,49 @@ def micro_private_types_h_generate():
 
 
 #
-# GENERATE zephyr.h FILE
+# GENERATE sysgen.h FILE
 #
 
 
-zephyr_h_data = ""
+sysgen_h_data = ""
 
-zephyr_h_filename_str = \
-    "/* zephyr.h - microkernel master header file */\n\n"
+sysgen_h_filename_str = \
+    "/* sysgen.h - system generated microkernel definitions */\n\n"
 
-zephyr_h_include_guard = "_ZEPHYR__H_"
+sysgen_h_include_guard = "_SYSGEN__H_"
 
-zephyr_h_header_include_guard_str = \
-    "#ifndef " + zephyr_h_include_guard + "\n" \
-    "#define " + zephyr_h_include_guard + "\n\n"
+sysgen_h_header_include_guard_str = \
+    "#ifndef " + sysgen_h_include_guard + "\n" \
+    "#define " + sysgen_h_include_guard + "\n\n"
 
 
-def generate_zephyr_h_header():
+def generate_sysgen_h_header():
 
-    global zephyr_h_data
-    zephyr_h_data += \
-        zephyr_h_filename_str + \
+    global sysgen_h_data
+    sysgen_h_data += \
+        sysgen_h_filename_str + \
         copyright + \
         do_not_edit_warning + \
-        zephyr_h_header_include_guard_str + \
         "#include <microkernel.h>\n" + \
+        sysgen_h_header_include_guard_str + \
         "\n"
 
 
 def generate_taskgroup_line(taskgroup, group_id):
 
-    global zephyr_h_data
-    zephyr_h_data += \
+    global sysgen_h_data
+    sysgen_h_data += \
         "#define " + taskgroup + " 0x%8.8x\n" % group_id
 
 
-def generate_zephyr_h_taskgroups():
+def generate_sysgen_h_taskgroups():
 
-    global zephyr_h_data
+    global sysgen_h_data
 
     for group in group_key_list:
         generate_taskgroup_line(group, group_dictionary[group])
 
-    zephyr_h_data += "\n"
+    sysgen_h_data += "\n"
 
 
 def generate_obj_id_line(name, obj_id):
@@ -874,52 +874,52 @@ def generate_obj_id_lines(obj_types):
     return data
 
 
-def generate_zephyr_h_obj_ids():
+def generate_sysgen_h_obj_ids():
 
-    global zephyr_h_data
+    global sysgen_h_data
 
     base_event = 4  # no need to generate ids for the 4 pre-defined events
     event_id = base_event
     for event in event_list:
-        zephyr_h_data += "#define %s %u\n" % (str(event[0]), event_id)
+        sysgen_h_data += "#define %s %u\n" % (str(event[0]), event_id)
         event_id += 1
     if event_id > base_event:
-        zephyr_h_data += "\n"
+        sysgen_h_data += "\n"
 
     # mutex object ids
 
     for mutex in mutex_list:
         name = mutex[0]
-        zephyr_h_data += \
+        sysgen_h_data += \
             "extern struct _k_mutex_struct _k_mutex_obj_%s;\n" % (name)
-        zephyr_h_data += \
+        sysgen_h_data += \
             "#define %s ((kmutex_t)&_k_mutex_obj_%s)\n\n" % (name, name)
 
     # semaphore object ids
 
     for semaphore in sema_list:
         name = semaphore[0]
-        zephyr_h_data += \
+        sysgen_h_data += \
             "extern struct _k_sem_struct _k_sem_obj_%s;\n" % (name)
-        zephyr_h_data += \
+        sysgen_h_data += \
             "#define %s ((ksem_t)&_k_sem_obj_%s)\n\n" % (name, name)
 
     # fifo object ids
 
     for fifo in fifo_list:
         name = fifo[0]
-        zephyr_h_data += \
+        sysgen_h_data += \
             "extern struct _k_fifo_struct _k_fifo_obj_%s;\n" % (name)
-        zephyr_h_data += \
+        sysgen_h_data += \
             "#define %s ((kfifo_t)&_k_fifo_obj_%s)\n\n" % (name, name)
 
     # mailbox object ids
 
     for mbx in mbx_list:
         name = mbx[0]
-        zephyr_h_data += \
+        sysgen_h_data += \
             "extern struct _k_mbox_struct _k_mbox_obj_%s;\n" % (name)
-        zephyr_h_data += \
+        sysgen_h_data += \
             "#define %s ((kmbox_t)&_k_mbox_obj_%s)\n\n" % (name, name)
 
     # pipe object id
@@ -927,7 +927,7 @@ def generate_zephyr_h_obj_ids():
     kernel_main_c_out("\n")
     for pipe in pipe_list:
         name = pipe[0];
-        zephyr_h_data += \
+        sysgen_h_data += \
             "extern struct _k_pipe_struct _k_pipe_obj_%s;\n" % (name) + \
             "#define %s ((kpipe_t)&_k_pipe_obj_%s)\n\n" % (name, name)
 
@@ -936,7 +936,7 @@ def generate_zephyr_h_obj_ids():
     kernel_main_c_out("\n")
     for map in map_list:
         name = map[0];
-        zephyr_h_data += \
+        sysgen_h_data += \
             "extern struct _k_mem_map_struct _k_mem_map_obj_%s;\n" % (name) + \
             "#define %s ((kmemory_map_t)&_k_mem_map_obj_%s)\n" % (name, name)
 
@@ -945,7 +945,7 @@ def generate_zephyr_h_obj_ids():
     kernel_main_c_out("\n")
     for task in task_list:
         name = task[0];
-        zephyr_h_data += \
+        sysgen_h_data += \
             "extern struct k_task _k_task_obj_%s;\n" % (name) + \
             "#define %s ((ktask_t)&_k_task_obj_%s)\n" % (name, name)
 
@@ -955,29 +955,29 @@ def generate_zephyr_h_obj_ids():
     obj_types = [
         [pool_list, 0],
     ]
-    zephyr_h_data += generate_obj_id_lines(obj_types)
+    sysgen_h_data += generate_obj_id_lines(obj_types)
 
 
-zephyr_h_footer_include_guard_str = \
-    "\n#endif /* " + zephyr_h_include_guard + " */\n"
+sysgen_h_footer_include_guard_str = \
+    "\n#endif /* " + sysgen_h_include_guard + " */\n"
 
 
-def generate_zephyr_h_footer():
+def generate_sysgen_h_footer():
 
-    global zephyr_h_data
-    zephyr_h_data += \
-        zephyr_h_footer_include_guard_str
+    global sysgen_h_data
+    sysgen_h_data += \
+        sysgen_h_footer_include_guard_str
 
 
-def zephyr_h_generate():
-    """ Generate zephyr.h file """
+def sysgen_h_generate():
+    """ Generate sysgen.h file """
 
-    generate_zephyr_h_header()
-    generate_zephyr_h_taskgroups()
-    generate_zephyr_h_obj_ids()
-    generate_zephyr_h_footer()
+    generate_sysgen_h_header()
+    generate_sysgen_h_taskgroups()
+    generate_sysgen_h_obj_ids()
+    generate_sysgen_h_footer()
 
-    write_file(output_dir + 'zephyr.h', zephyr_h_data)
+    write_file(output_dir + 'sysgen.h', sysgen_h_data)
 
 
 #
@@ -990,4 +990,4 @@ get_output_dir()
 kernel_main_c_generate()
 kernel_main_h_generate()
 micro_private_types_h_generate()
-zephyr_h_generate()
+sysgen_h_generate()
