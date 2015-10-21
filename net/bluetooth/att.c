@@ -285,6 +285,8 @@ static uint8_t find_info_cb(const struct bt_gatt_attr *attr, void *user_data)
 		if (att->chan.tx.mtu - data->buf->len > sizeof(*data->info16)) {
 			return BT_GATT_ITER_CONTINUE;
 		}
+
+		break;
 	case BT_ATT_INFO_128:
 		if (attr->uuid->type != BT_UUID_128) {
 			return BT_GATT_ITER_STOP;
