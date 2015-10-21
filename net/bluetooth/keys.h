@@ -23,10 +23,11 @@ enum {
 	BT_KEYS_LTK            = (1 << 2),
 	BT_KEYS_LOCAL_CSRK     = (1 << 3),
 	BT_KEYS_REMOTE_CSRK    = (1 << 4),
+	BT_KEYS_LTK_P256       = (1 << 5),
 
 	BT_KEYS_ALL            = (BT_KEYS_SLAVE_LTK | BT_KEYS_IRK | \
 				  BT_KEYS_LTK | BT_KEYS_LOCAL_CSRK | \
-				  BT_KEYS_REMOTE_CSRK),
+				  BT_KEYS_REMOTE_CSRK | BT_KEYS_LTK_P256),
 };
 
 enum {
