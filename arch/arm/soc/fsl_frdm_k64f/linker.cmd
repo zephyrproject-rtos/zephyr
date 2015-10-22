@@ -21,12 +21,21 @@
  * This is the linker script for both standard images and XIP images.
  */
 
+#include <autoconf.h>
+
 /*
  * K64F Flash configuration fields
  * These are 16 bytes, which must be loaded to address 0x400, and include
  * default protection and security settings.
  * They are loaded at reset to various Flash Memory module (FTFE) registers.
  */
-#define SKIP_TO_SECURITY_FRDM_K64F . = 0x400;
+
+/*
+ * No need to account for this when running a RAM-only image since that
+ * security feature resides in ROM.
+ */
+#if defined(CONFIG_XIP)
+	#define SKIP_TO_SECURITY_FRDM_K64F . = 0x400;
+#endif
 
 #include <arch/arm/cortex_m/scripts/linker.cmd>
