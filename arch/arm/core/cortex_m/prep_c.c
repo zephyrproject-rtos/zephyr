@@ -26,6 +26,7 @@
  * initialization is performed.
  */
 
+#include <nanokernel.h>
 #include <stdint.h>
 #include <toolchain.h>
 #include <linker-defs.h>
@@ -69,9 +70,17 @@ static void dataCopy(void)
 		pRAM[n] = pROM[n];
 	}
 }
+
+static inline void relocate_vector_table(void) { /* do nothing */ }
 #else
 static void dataCopy(void)
 {
+}
+
+static inline void relocate_vector_table(void)
+{
+	/* vector table is already in SRAM, just point to it */
+	_scs_relocate_vector_table((void *)CONFIG_SRAM_BASE_ADDRESS);
 }
 #endif
 
@@ -87,6 +96,7 @@ extern FUNC_NORETURN void _Cstart(void);
 
 void _PrepC(void)
 {
+	relocate_vector_table();
 	bssZero();
 	dataCopy();
 	_Cstart();
