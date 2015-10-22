@@ -61,6 +61,6 @@ Install the required packages in a Fedora host system with:
 
    $ sudo dnf group install "Development Tools"
    $ sudo dnf install git make gcc glib-devel.i686 glib2-devel.i686 \
-     glibc-static libstdc++-static
+     glibc-static libstdc++-static glibc-devel.i686
 
 
