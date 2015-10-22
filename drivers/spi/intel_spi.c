@@ -449,7 +449,7 @@ struct spi_intel_config spi_intel_config_0 = {
 DECLARE_DEVICE_INIT_CONFIG(spi_intel_port_0, CONFIG_SPI_INTEL_PORT_0_DRV_NAME,
 			   spi_intel_init, &spi_intel_config_0);
 
-nano_early_init(spi_intel_port_0, &spi_intel_data_port_0);
+nano_late_init(spi_intel_port_0, &spi_intel_data_port_0);
 struct device *spi_intel_isr_port_0 = SYS_GET_DEVICE(spi_intel_port_0);
 
 IRQ_CONNECT_STATIC(spi_intel_irq_port_0, CONFIG_SPI_INTEL_PORT_0_IRQ,
@@ -490,7 +490,7 @@ struct spi_intel_config spi_intel_config_1 = {
 DECLARE_DEVICE_INIT_CONFIG(spi_intel_port_1, CONFIG_SPI_INTEL_PORT_1_DRV_NAME,
 			   spi_intel_init, &spi_intel_config_1);
 
-nano_early_init(spi_intel_port_1, &spi_intel_data_port_1);
+nano_late_init(spi_intel_port_1, &spi_intel_data_port_1);
 struct device *spi_intel_isr_port_1 = SYS_GET_DEVICE(spi_intel_port_1);
 
 IRQ_CONNECT_STATIC(spi_intel_irq_port_1, CONFIG_SPI_INTEL_PORT_1_IRQ,
