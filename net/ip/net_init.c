@@ -675,6 +675,8 @@ int net_set_mac(uint8_t *mac, uint8_t len)
 
 static uint8_t net_tcpip_output(struct net_buf *buf, const uip_lladdr_t *lladdr)
 {
+	int res;
+
 	if (!netdev.drv) {
 		return 0;
 	}
@@ -685,7 +687,11 @@ static uint8_t net_tcpip_output(struct net_buf *buf, const uip_lladdr_t *lladdr)
 		linkaddr_copy(&buf->dest, (const linkaddr_t *)lladdr);
 	}
 
-	return netdev.drv->send(buf);
+	res = netdev.drv->send(buf);
+	if (res < 0) {
+		res = 0;
+	}
+	return (uint8_t)res;
 }
 
 static int network_initialization(void)
