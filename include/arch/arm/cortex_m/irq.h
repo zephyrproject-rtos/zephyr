@@ -80,6 +80,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio);
  *
  * @param device Device to configure
  * @param irq IRQ number
+ * @param priority IRQ priority (unused on this architecture)
  * @return N/A
  *
  */
