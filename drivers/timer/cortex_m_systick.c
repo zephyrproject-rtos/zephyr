@@ -651,7 +651,6 @@ FUNC_ALIAS(_sys_clock_cycle_get, task_cycle_get_32, uint32_t);
 void timer_disable(void)
 {
 	unsigned int key; /* interrupt lock level */
-	union __stcsr reg;
 
 	key = irq_lock();
 
