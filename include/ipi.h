@@ -148,7 +148,8 @@ static inline uint32_t ipi_max_id_val_get(struct device *ipidev)
 /**
  * For inbound channels, enable interrupts/callbacks
  *
- * @param enabled 0=disable nonzero=enable
+ * @param ipidev Driver instance pointer
+ * @param enable 0=disable nonzero=enable
  *
  * @return 0 on success, -EINVAL if this isn't an inbound channel
  */
