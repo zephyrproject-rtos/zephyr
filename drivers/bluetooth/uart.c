@@ -209,19 +209,16 @@ failed:
 	buf = NULL;
 }
 
-static int uart_out(struct device *dev, const uint8_t *data, int size)
+static void uart_out(struct device *dev, const uint8_t *data, int size)
 {
 	for (int i = 0; i < size; i++) {
 		uart_poll_out(dev, data[i]);
 	}
-
-	return size;
 }
 
 static int bt_uart_send(struct bt_buf *buf)
 {
 	uint8_t *type;
-	int len;
 
 	if (bt_buf_headroom(buf) < H4_HEADER_SIZE) {
 		BT_ERR("Not enough headroom in buffer\n");
@@ -245,12 +242,7 @@ static int bt_uart_send(struct bt_buf *buf)
 		return -EINVAL;
 	}
 
-	len = uart_out(BT_UART_DEV, buf->data, buf->len);
-	if (len < buf->len) {
-		BT_ERR("Unable to transmit entire buffer (%d < %u)\n",
-		       len, buf->len);
-		return -EIO;
-	}
+	uart_out(BT_UART_DEV, buf->data, buf->len);
 
 	return 0;
 }
