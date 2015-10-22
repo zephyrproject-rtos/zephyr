@@ -26,7 +26,7 @@
  *
  * SW_ISR_TABLE_DYNAMIC has to be enabled for connecting ISRs at runtime.
  *
- * An IRQ number passed to the <irq> parameters found in this file is a
+ * An IRQ number passed to the @a irq parameters found in this file is a
  * number from 16 to last IRQ number on the platform.
  */
 
@@ -45,7 +45,7 @@
  * An interrupt's ISR can be replaced at runtime. Care must be taken that the
  * interrupt is disabled before doing this.
  *
- * This routine will hang if <old> is not found in the table and ASSERT_ON is
+ * This routine will hang if @a old is not found in the table and ASSERT_ON is
  * enabled.
  *
  * @return N/A
@@ -77,7 +77,7 @@ void _irq_handler_set(
  *
  * Clear possible pending interrupts on the line, and enable the interrupt
  * line. After this call, the CPU will receive interrupts for the specified
- * <irq>.
+ * @a irq.
  *
  * @return N/A
  */
@@ -94,7 +94,7 @@ void irq_enable(unsigned int irq)
  * @brief Disable an interrupt line
  *
  * Disable an interrupt line. After this call, the CPU will stop receiving
- * interrupts for the specified <irq>.
+ * interrupts for the specified @a irq.
  *
  * @return N/A
  */
@@ -155,11 +155,11 @@ void _irq_spurious(void *unused)
 /*
  * @brief Connect an ISR to an interrupt line
  *
- * <isr> is connected to interrupt line <irq>, a number greater than or equal
- * 16. No prior ISR can have been connected on <irq> interrupt line since the
+ * @a isr is connected to interrupt line @a irq, a number greater than or equal
+ * 16. No prior ISR can have been connected on @a irq interrupt line since the
  * system booted.
  *
- * This routine will hang if another ISR was connected for interrupt line <irq>
+ * This routine will hang if another ISR was connected for interrupt line @a irq
  * and ASSERT_ON is enabled; if ASSERT_ON is disabled, it will fail silently.
  *
  * @return the interrupt line number
@@ -182,7 +182,7 @@ int irq_connect(
  *
  * @brief Disconnect an ISR from an interrupt line
  *
- * Interrupt line <irq> is disconnected from its ISR and the latter is
+ * Interrupt line @a irq is disconnected from its ISR and the latter is
  * replaced by _irq_spurious(). irq_disable() should have been called before
  * invoking this routine.
  *
