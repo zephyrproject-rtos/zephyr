@@ -87,7 +87,7 @@ static ALWAYS_INLINE unsigned int irq_lock(void)
  *
  * @brief Enable all interrupts on the local CPU
  *
- * This routine re-enables interrupts on the local CPU.  The <key> parameter
+ * This routine re-enables interrupts on the local CPU.  The @a key parameter
  * is an architecture-dependent lock-out key that is returned by a previous
  * invocation of irq_lock().
  *
