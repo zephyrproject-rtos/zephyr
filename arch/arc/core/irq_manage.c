@@ -128,7 +128,7 @@ void _irq_priority_set(
 {
 	int key = irq_lock();
 
-	__ASSERT(prio >= 0 && prio < CONFIG_NUM_IRQ_PRIORITIES,
+	__ASSERT(prio >= 0 && prio < CONFIG_NUM_IRQ_PRIO_LEVELS,
 			 "invalid priority!");
 	_arc_v2_irq_unit_prio_set(irq, prio);
 	irq_unlock(key);
