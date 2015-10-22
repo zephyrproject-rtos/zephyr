@@ -186,7 +186,7 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
  *
  *  @return String representation of the UUID given
  */
-const char *bt_uuid_str(struct bt_uuid *uuid);
+const char *bt_uuid_str(const struct bt_uuid *uuid);
 #endif /* CONFIG_BLUETOOTH_DEBUG */
 
 #endif /* __BT_UUID_H */

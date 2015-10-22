@@ -102,7 +102,7 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 	}
 }
 
-const char *bt_uuid_str(struct bt_uuid *uuid)
+const char *bt_uuid_str(const struct bt_uuid *uuid)
 {
 	static char str[37];
 
