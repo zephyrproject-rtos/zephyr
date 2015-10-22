@@ -98,6 +98,7 @@ struct bt_gatt_attr {
 	uint16_t		handle;
 	/** Attribute permissions */
 	uint8_t			perm;
+	struct bt_gatt_attr	*_next;
 };
 
 /** @brief Service Attribute Value. */
@@ -229,8 +230,10 @@ struct bt_gatt_ccc {
  *
  *  @param attrs Database table containing the available attributes.
  *  @param count Size of the database table.
+ *
+ * @return 0 in case of success or negative value in case of error.
  */
-void bt_gatt_register(const struct bt_gatt_attr *attrs, size_t count);
+int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count);
 
 enum {
 	BT_GATT_ITER_STOP = 0,

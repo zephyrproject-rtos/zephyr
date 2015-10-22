@@ -459,7 +459,7 @@ static struct bt_gatt_chrc vnd_signed_chrc = {
 	.uuid = &vnd_signed_uuid,
 };
 
-static const struct bt_gatt_attr attrs[] = {
+static struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(0x0001, &gap_uuid),
 	BT_GATT_CHARACTERISTIC(0x0002, &name_chrc),
 	BT_GATT_DESCRIPTOR(0x0003, &device_name_uuid, BT_GATT_PERM_READ,

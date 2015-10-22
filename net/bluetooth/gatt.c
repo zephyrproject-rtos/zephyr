@@ -46,17 +46,63 @@
 #define BT_DBG(fmt, ...)
 #endif
 
-static const struct bt_gatt_attr *db = NULL;
-static size_t attr_count = 0;
+static struct bt_gatt_attr *db;
 
 #if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
 static struct bt_gatt_subscribe_params *subscriptions;
 #endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
 
-void bt_gatt_register(const struct bt_gatt_attr *attrs, size_t count)
+int bt_gatt_register(struct bt_gatt_attr *attrs, size_t count)
 {
-	db = attrs;
-	attr_count = count;
+	struct bt_gatt_attr *last;
+	uint16_t handle;
+
+	if (!attrs || !count) {
+		return -EINVAL;
+	}
+
+	if (!db) {
+		db = attrs;
+		last = NULL;
+		handle = 0;
+		goto populate;
+	}
+
+	/* Fast forward to last attribute in the list */
+	for (last = db; last->_next;) {
+		last = last->_next;
+	}
+
+	handle = last->handle;
+	last->_next = attrs;
+
+populate:
+	/* Populate the handles and _next pointers */
+	for (; attrs && count; attrs++, count--) {
+		if (!attrs->handle) {
+			/* Allocate handle if not set already */
+			attrs->handle = ++handle;
+		} else if (attrs->handle > handle) {
+			/* Use existing handle if valid */
+			handle = attrs->handle;
+		} else {
+			/* Service has conflicting handles */
+			last->_next = NULL;
+			BT_ERR("Unable to register handle 0x%04x",
+			       attrs->handle);
+			return -EINVAL;
+		}
+
+		if (count > 1) {
+			attrs->_next = &attrs[1];
+		}
+
+		BT_DBG("attr %p next %p handle 0x%04x uuid %s perm 0x%02x\n",
+		       attrs, attrs->_next, attrs->handle,
+		       bt_uuid_str(attrs->uuid), attrs->perm);
+	}
+
+	return 0;
 }
 
 int bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -163,11 +209,9 @@ int bt_gatt_attr_read_chrc(struct bt_conn *conn,
 void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_handle,
 			  bt_gatt_attr_func_t func, void *user_data)
 {
-	size_t i;
+	const struct bt_gatt_attr *attr;
 
-	for (i = 0; i < attr_count; i++) {
-		const struct bt_gatt_attr *attr = &db[i];
-
+	for (attr = db; attr; attr = attr->_next) {
 		/* Check if attribute handle is within range */
 		if (attr->handle < start_handle || attr->handle > end_handle) {
 			continue;
