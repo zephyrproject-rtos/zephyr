@@ -47,7 +47,7 @@ static int dw_i2c0_irq_set(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_I2C_DW_0_IRQ,
-			CONFIG_I2C_DW_0_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_I2C_DW_0_IRQ),
 			I2C_DW_IRQ_IOAPIC_FLAGS);
 	return 0;
 }
@@ -64,7 +64,7 @@ static int gpio_irq_set_0(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_GPIO_DW_0_IRQ,
-			CONFIG_GPIO_DW_0_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_GPIO_DW_0_IRQ),
 			GPIO_DW_0_IRQ_IOAPIC_FLAGS);
 	return 0;
 }
@@ -80,7 +80,7 @@ static int spi_irq_set_0(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_SPI_INTEL_PORT_0_IRQ,
-			CONFIG_SPI_INTEL_PORT_0_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_SPI_INTEL_PORT_0_IRQ),
 			SPI_INTEL_IRQ_IOAPIC_FLAGS);
 	return 0;
 }
@@ -95,7 +95,7 @@ static int spi_irq_set_1(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_SPI_INTEL_PORT_1_IRQ,
-			CONFIG_SPI_INTEL_PORT_1_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_SPI_INTEL_PORT_1_IRQ),
 			SPI_INTEL_IRQ_IOAPIC_FLAGS);
 	return 0;
 
@@ -174,7 +174,7 @@ static int console_irq_set(struct device *unused)
 	ARG_UNUSED(unused);
 
 	_ioapic_irq_set(CONFIG_UART_CONSOLE_IRQ,
-			CONFIG_UART_CONSOLE_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_UART_CONSOLE_IRQ),
 			UART_IOAPIC_FLAGS);
 
 	return 0;
@@ -192,7 +192,7 @@ static int bluetooth_irq_set(struct device *unused)
 	ARG_UNUSED(unused);
 
 	_ioapic_irq_set(CONFIG_BLUETOOTH_UART_IRQ,
-			CONFIG_BLUETOOTH_UART_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_BLUETOOTH_UART_IRQ),
 			UART_IOAPIC_FLAGS);
 
 	return 0;
@@ -209,7 +209,7 @@ static int hpet_irq_set(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_HPET_TIMER_IRQ,
-			CONFIG_HPET_TIMER_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_HPET_TIMER_IRQ),
 			HPET_IOAPIC_FLAGS);
 	return 0;
 }
@@ -246,13 +246,13 @@ static int shared_irq_config(struct device *unused)
 
 #ifdef SHARED_IRQ_0_IOAPIC_FLAGS
 	_ioapic_irq_set(CONFIG_SHARED_IRQ_0_IRQ,
-			CONFIG_SHARED_IRQ_0_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_SHARED_IRQ_0_IRQ),
 			SHARED_IRQ_0_IOAPIC_FLAGS);
 #endif
 
 #ifdef SHARED_IRQ_1_IOAPIC_FLAGS
 	_ioapic_irq_set(CONFIG_SHARED_IRQ_1_IRQ,
-			CONFIG_SHARED_IRQ_1_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_SHARED_IRQ_1_IRQ),
 			SHARED_IRQ_1_IOAPIC_FLAGS);
 #endif
 

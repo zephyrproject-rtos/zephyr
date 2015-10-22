@@ -57,7 +57,7 @@ static int console_irq_set(struct device *unused)
 	ARG_UNUSED(unused);
 
 	_ioapic_irq_set(CONFIG_UART_CONSOLE_IRQ,
-			CONFIG_UART_CONSOLE_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_UART_CONSOLE_IRQ),
 			UART_IOAPIC_FLAGS);
 
 	return 0;
@@ -75,7 +75,7 @@ static int bluetooth_irq_set(struct device *unused)
 	ARG_UNUSED(unused);
 
 	_ioapic_irq_set(CONFIG_BLUETOOTH_UART_IRQ,
-			CONFIG_BLUETOOTH_UART_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_BLUETOOTH_UART_IRQ),
 			UART_IOAPIC_FLAGS);
 
 	return 0;
@@ -92,7 +92,7 @@ static int hpet_irq_set(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	_ioapic_irq_set(CONFIG_HPET_TIMER_IRQ,
-			CONFIG_HPET_TIMER_IRQ + INT_VEC_IRQ0,
+			_IRQ_TO_INTERRUPT_VECTOR(CONFIG_HPET_TIMER_IRQ),
 			HPET_IOAPIC_FLAGS);
 	return 0;
 }
