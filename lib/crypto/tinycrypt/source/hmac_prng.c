@@ -34,29 +34,41 @@
 #include <tinycrypt/hmac.h>
 #include <tinycrypt/utils.h>
 
-/* min bytes in the seed string.
- * MIN_SLEN*8 must be at least the expected security level. */
+/*
+ * min bytes in the seed string.
+ * MIN_SLEN*8 must be at least the expected security level.
+ */
 static const uint32_t MIN_SLEN = 32;
 
-/* max bytes in the seed string;
- * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).*/
+/*
+ * max bytes in the seed string;
+ * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).
+ */
 static const uint32_t MAX_SLEN = UINT32_MAX;
 
-/* max bytes in the personalization string;
- * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).*/
+/*
+ * max bytes in the personalization string;
+ * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).
+ */
 static const uint32_t MAX_PLEN = UINT32_MAX;
 
-/* max bytes in the additional_info string;
- * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).*/
+/*
+ * max bytes in the additional_info string;
+ * SP800-90A specifies a maximum of 2^35 bits (i.e., 2^32 bytes).
+ */
 static const uint32_t MAX_ALEN = UINT32_MAX;
 
-/* max number of generates between re-seeds;
+/*
+ * max number of generates between re-seeds;
  * TinyCrypt accepts up to (2^32 - 1) which is the maximal value of
- * a uint32_t variable, while SP800-90A specifies a maximum of 2^48.*/
+ * a uint32_t variable, while SP800-90A specifies a maximum of 2^48.
+ */
 static const uint32_t MAX_GENS = UINT32_MAX;
 
-/* maximum bytes per generate call;
- * SP800-90A specifies a maximum up to 2^19.*/
+/*
+ * maximum bytes per generate call;
+ * SP800-90A specifies a maximum up to 2^19.
+ */
 static const uint32_t MAX_OUT = (1 << 19);
 
 /*
@@ -136,8 +148,10 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng,
 	}
 
 	if (additional_input != (const uint8_t *) 0) {
-		/* Abort if additional_input is provided but has inappropriate
-		 * length */
+		/*
+		 * Abort if additional_input is provided but has inappropriate
+		 * length
+		 */
 		if (additionallen == 0 ||
 		    additionallen > MAX_ALEN) {
 			return TC_FAIL;

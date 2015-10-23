@@ -63,11 +63,13 @@ int32_t tc_hmac_set_key(TCHmacState_t ctx,
 	struct tc_hmac_state_struct dummy_state;
 
 	if (key_size <= TC_SHA256_BLOCK_SIZE) {
-		/* The next three lines consist of dummy calls just to avoid
+		/*
+		 * The next three lines consist of dummy calls just to avoid
 		 * certain timing attacks. Without these dummy calls,
 		 * adversaries would be able to learn whether the key_size is
 		 * greater than TC_SHA256_BLOCK_SIZE by measuring the time
-		 * consumed in this process.*/
+		 * consumed in this process.
+		 */
 		(void)tc_sha256_init(&dummy_state.hash_state);
 		(void)tc_sha256_update(&dummy_state.hash_state,
 				       dummy_key,

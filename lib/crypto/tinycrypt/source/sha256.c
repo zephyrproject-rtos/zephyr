@@ -42,10 +42,12 @@ int32_t tc_sha256_init(TCSha256State_t s)
 		return TC_FAIL;
 	}
 
-	/* Setting the initial state values.
+	/*
+	 * Setting the initial state values.
 	 * These values correspond to the first 32 bits of the fractional parts
 	 * of the square roots of the first 8 primes: 2, 3, 5, 7, 11, 13, 17
-	 * and 19. */
+	 * and 19.
+	 */
 	_set((uint8_t *) s, 0x00, sizeof(*s));
 	s->iv[0] = 0x6a09e667;
 	s->iv[1] = 0xbb67ae85;
@@ -131,9 +133,11 @@ int32_t tc_sha256_final(uint8_t *digest, TCSha256State_t s)
 	return TC_SUCCESS;
 }
 
-/* Initializing SHA-256 Hash constant words K.
+/*
+ * Initializing SHA-256 Hash constant words K.
  * These values correspond to the first 32 bits of the fractional parts of the
- * cube roots of the first 64 primes between 2 and 311. */
+ * cube roots of the first 64 primes between 2 and 311.
+ */
 static const uint32_t k256[64] = {
 	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
 	0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,

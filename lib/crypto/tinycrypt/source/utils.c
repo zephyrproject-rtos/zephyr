@@ -53,9 +53,11 @@ void _set(uint8_t *to, uint8_t val, uint32_t len)
 	(void)memset(to, val, len);
 }
 
-/* Doubles the value of a byte for values up to 127. Original 'return
+/*
+ * Doubles the value of a byte for values up to 127. Original 'return
  * ((a<<1) ^ ((a>>7) * 0x1b))' re-written to avoid extra multiplicaiton which
- * the compiler won't be able to optimize */
+ * the compiler won't be able to optimize
+ */
 uint8_t _double_byte(uint8_t a)
 {
 	return (a & MASK_MOST_SIG_BIT) ?

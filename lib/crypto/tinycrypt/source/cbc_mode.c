@@ -93,9 +93,11 @@ int32_t tc_cbc_mode_decrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
 		return TC_FAIL;
 	}
 
-	/* Note that in == iv + ciphertext, i.e. the iv and the ciphertext are
+	/*
+	 * Note that in == iv + ciphertext, i.e. the iv and the ciphertext are
 	 * contiguous. This allows for a very efficient decryption algorithm
-	 * that would not otherwise be possible. */
+	 * that would not otherwise be possible.
+	 */
 	p = iv;
 	for (n = m = 0; n < inlen; ++n) {
 		if ((n % TC_AES_BLOCK_SIZE) == 0) {
