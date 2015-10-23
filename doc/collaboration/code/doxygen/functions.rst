@@ -12,8 +12,8 @@ However, you may use the following syntax for everything else.
 
    When linking functions within a ReST file, two possible markups are:
    ``:cpp:`` or ``:c:``. Use ``:cpp:`` for functions defined using an
-   :code:c:`extern`. Use ``:c:`` for functions defined using a
-   :code:c:`#define`.
+   :code:`extern`. Use ``:c:`` for functions defined using a
+   :code:`#define`.
 
 Function Comment Templates
 **************************

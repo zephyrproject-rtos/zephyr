@@ -21,7 +21,7 @@ some cases, the necessary objects aren't obvious until you begin
 writing code. However, all objects used in your code must be defined
 before your application will compile successfully.
 
-.. _note::
+.. note::
 
   Nanokernel applications do not use an MDEF because microkernel
   objects cannot be used in applications of this type.
@@ -73,7 +73,7 @@ Steps
 
    POOL name min_block_size max_block_size numMax
 
-.. _note::
+.. note::
 
    Some microkernel objects, such as Task IRQs, are not
    defined in an :file:`.mdef` file.

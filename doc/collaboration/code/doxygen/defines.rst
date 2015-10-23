@@ -57,14 +57,16 @@ Correct:
    :emphasize-lines: 2, 3, 5
    :linenos:
 
-Observe how each piece of information is clearly marked.
-The @def on line 2 ensures that the comment is appropriately linked to the code.
+Observe how each piece of information is clearly marked. The @def on line 2
+ensures that the comment is appropriately linked to the code.
 
 Incorrect:
 
-.. literalinclude:: ../../../../samples/microkernel/apps/philosophers/src/phil.h
+.. literalinclude::
+   ../../../../samples/microkernel/apps/philosophers/src/phil.h
+
    :language: c
-   :lines: 42-47
+   :lines: 24-28
    :emphasize-lines: 2, 5
    :linenos:
 

@@ -27,32 +27,30 @@ Workflow
    b) :ref:`create_src_makefile`
 
 3. Define the application's default kernel configuration using
-   :ref:`Defining the Application's Default Kernel Configuration`.
+   :ref:`define_default_kernel_conf`.
 
 4. Define kernel configuration override options for the application
-   using :ref:`Overriding the Application's Default Kernel
-   Configuration`.
+   using :ref:`override_kernel_conf`.
 
 5. For a microkernel application, define objects as you develop code
-   using :ref:`Creating and Configuring an MDEF File for a Microkernel
-   Application`.
+   using :ref:`create_mdef`.
 
 6. For all applications, define nanokernel objects as you need them in
    code.
 
 7. Develop source code and add source code files to the src directory.
 
-   * :ref:`Understanding Naming Conventions`
-   * :ref:`Understanding src Directory Makefile Requirements`
-   * :ref:`Adding Source Files and Makefiles to src Directories`
+   * :ref:`naming_conventions`
+   * :ref:`src_makefiles_reqs`
+   * :ref:`src_files_directories`
 
 8. Build an application image.
 
-   * :ref:`Building an Application`
-   * :ref:`Rebuilding an Application`
+   * :ref:`apps_build`
+
 
 9. To test the application image's functionality on simulated hardware
-   with QEMU, see :ref:`Running an Application`.
+   with QEMU, see :ref:`apps_run`.
 
 10. To load an application image on a target hardware, see using
-    :ref:`Platform` documentation.
+    :ref:`platform` documentation.

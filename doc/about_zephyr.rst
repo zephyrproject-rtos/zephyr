@@ -1,4 +1,4 @@
-.. _about_zephyr::
+.. _about_zephyr:
 
 Introduction to the Zephyr Project
 ##################################

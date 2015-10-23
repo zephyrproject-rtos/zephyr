@@ -50,7 +50,7 @@ The command above needs to be entered only once.
 
 
 Avoid Pushing Untested Work to a Gerrit Server
-***************************************
+**********************************************
 
 To avoid pushing untested work to Gerrit, we recommend you follow these steps:
 

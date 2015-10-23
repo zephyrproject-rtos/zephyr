@@ -20,10 +20,9 @@ it is specified:
 
 .. note::
 
-   When the default platform configuration settings are sufficient
-   for your application, a :file:`prj.conf` file is not needed.
-   Skip ahead to
-  :ref:`override_kernel_conf`.
+   When the default platform configuration settings are sufficient for your
+   application, a :file:`prj.conf` file is not needed. Skip ahead to
+   :ref:`override_kernel_conf`.
 
 
 Procedures
@@ -73,7 +72,7 @@ Steps
 
 
   The default name is :file:`prj.conf`. The filename must match
-  the :option:`CONF_FILE =` entry in the application :file:`Makefile`.
+  the :option:`CONF_FILE` entry in the application :file:`Makefile`.
 
 2. Edit the file and add the appropriate configuration entries.
 
@@ -106,7 +105,7 @@ Override the application's default kernel configuration to
 temporarily alter the application’s configuration, perhaps
 to test the effect of a change.
 
-.. _note::
+.. note::
 
    If you want to permanently alter the configuration you
    should revise the :file:`.conf` file.
@@ -169,7 +168,7 @@ Steps
    * Press :kbd:`Tab` to navigate the command menu at the
      bottom of the display.
 
-   .. _note::
+   .. note::
 
     When a non-default entry is selected for options that
     are nonnumerical, an asterisk :kbd:`*` appears between the
@@ -205,7 +204,7 @@ Steps
     directory. The outdir directory contains symbolic links
     to files under $(ZEPHYR_BASE).
 
-   .. _note::
+   .. note::
 
     At present, only a :file:`.config` file can be built. If
     you have saved files with different file names and want to build

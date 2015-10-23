@@ -33,7 +33,7 @@ Before You Begin
 ----------------
 
 * The environment variable must be set for each console terminal using
-  :ref:`Setting the Environment Variables`.
+  :ref:`set_environment_variables`.
 
 Steps
 -----

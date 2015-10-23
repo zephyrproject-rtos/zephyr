@@ -19,7 +19,7 @@ in the FIFO's linked list. Consequently, a data item that holds N bytes
 of application data requires N+4 bytes of memory.
 
 Any number of nanokernel FIFOs can be defined. Each FIFO is a distinct
-variable of type :cpp:type:`struct nano_fifo`, and is referenced using a
+variable of type :c:type:`struct nano_fifo`, and is referenced using a
 pointer to that variable. A FIFO must be initialized before it can be used to
 send or receive data items.
 

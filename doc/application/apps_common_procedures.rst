@@ -9,7 +9,7 @@ and referred to from the procedures that require them.
 Procedures
 **********
 
-* `set_environment_variables`_
+.. _set_environment_variables:
 
 Setting Environment Variables
 =============================
@@ -21,7 +21,7 @@ Steps
 -----
 
 1. In a shell terminal console, enter an :command:`export` command that is
-  consistent with your toolchain.
+   consistent with your toolchain.
 
    For the Zephyr SDK:
 

@@ -23,7 +23,7 @@ Microkernel Services
 For a complete list of microkernel services, including a description
 of each with code examples, see :ref:`microkernel`.
 
-.. _note::
+.. note::
 
    There are more microkernel services than those defined in
    the MDEF.
@@ -70,7 +70,7 @@ directory:
 * A Makefile cannot directly reference source code; it can only
   reference object files (.o files) produced by source code.
 
- .. _note::
+ .. note::
 
    The src directory Makefiles discussed here are distinct from
    the top-level application Makefile.
@@ -87,7 +87,7 @@ be used to reference each directory. During the build process, Kbuild
 finds the source files to generate the object files by matching the
 file names identified in the Makefile.
 
-.. _note::
+.. note::
 
    Source code without an associated Makefile is not included
    when the application is built.
